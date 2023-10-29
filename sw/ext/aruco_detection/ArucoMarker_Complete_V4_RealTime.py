@@ -33,15 +33,14 @@ import pymap3d
 import cv2.aruco
 import threading
 import numpy as np
-from KalmanFilter_V1 import init, predict, update, route
 
 # # --------- Ivybus Specific --------- # 
-# sys.path.append("/home/kevin/paparazzi/sw/ext/pprzlink/lib/v2.0/python/")
+sys.path.append("/home/orangepi/paparazzi/sw/ext/pprzlink/lib/v2.0/python/")
 
-# from ivy.std_api import *
-# import pprzlink.ivy
-# import pprzlink.messages_xml_map as messages_xml_map
-# import pprzlink.message as message          
+from ivy.std_api import *
+import pprzlink.ivy
+import pprzlink.messages_xml_map as messages_xml_map
+import pprzlink.message as message          
 
                                         # STREAM WORKING CHECK #
 # # ------------------------------------------------------------------------------------------------------- #
@@ -61,6 +60,7 @@ from KalmanFilter_V1 import init, predict, update, route
 # # When everything done, release the capture
 # cap.release()
 # cv2.destroyAllWindows()
+
                                       # LOAD CAMERA PARAMETERS #
 # ------------------------------------------------------------------------------------------------------- #
 # pathLoad = './CameraCalibration_Variables/Videos/MAPIR_cameraCalibration_Video_w1152_h648_HERELINKV2.xml'
@@ -130,95 +130,82 @@ wp_id_RAW     = 9                     # Waypoint ID for LAT, LONG from Aruco det
 
 #                                   # FUNCTIONS -> IVYBUS MESSAGES #
 # # ------------------------------------------------------------------------------------------------------- #
-# # --------- Bind to Drone Attitude Message --------- # 
-# def attitude_callback(ac_id, pprzMsg):
-#     global PITCH_values
-#     global ROLL_values
-#     global YAW_values
+# --------- Bind to Drone Attitude Message --------- # 
+def attitude_callback(ac_id, pprzMsg):
+    global PITCH_values
+    global ROLL_values
+    global YAW_values
     
-#     pitch = pprzMsg['theta']
-#     roll  = pprzMsg['phi']
-#     yaw   = pprzMsg['psi']
-#     PITCH_values = pitch
-#     ROLL_values  = roll
-#     YAW_values   = yaw
+    pitch = pprzMsg['theta']
+    roll  = pprzMsg['phi']
+    yaw   = pprzMsg['psi']
+    PITCH_values = pitch
+    ROLL_values  = roll
+    YAW_values   = yaw
 
-# # --------- Bind to Drone NED Position Message --------- # 
-# def NED_callback(ac_id, pprzMsg):
-#     global NORTH_values
-#     global EAST_values
-#     global UP_values
+# --------- Bind to Drone NED Position Message --------- # 
+def NED_callback(ac_id, pprzMsg):
+    global NORTH_values
+    global EAST_values
+    global UP_values
     
-#     NORTH_Drone  = pprzMsg['north']
-#     EAST_Drone   = pprzMsg['east']
-#     UP_Drone     = pprzMsg['up']
-#     NORTH_values = NORTH_Drone
-#     EAST_values  = EAST_Drone
-#     UP_values    = UP_Drone
+    NORTH_Drone  = pprzMsg['north']
+    EAST_Drone   = pprzMsg['east']
+    UP_Drone     = pprzMsg['up']
+    NORTH_values = NORTH_Drone
+    EAST_values  = EAST_Drone
+    UP_values    = UP_Drone
 
-# # --------- Bind to Drone Latitude, Longitude, and Altitude Message --------- # 
-# def ref_lat_long_alt_callback(ac_id, pprzMsg):
-#     global REF_LAT_values
-#     global REF_LONG_values
-#     global REF_ALT_values
-    
-#     lat_drone    = pprzMsg['lat0']
-#     long_drone   = pprzMsg['lon0']
-#     alt_drone    = pprzMsg['alt0']
-#     REF_LAT_values   = lat_drone
-#     REF_LONG_values  = long_drone
-#     REF_ALT_values   = alt_drone
+# --------- Get Attitude Values --------- # 
+def get_attitude_values():
+    global PITCH_values
+    global ROLL_values
+    global YAW_values
+    return PITCH_values, ROLL_values, YAW_values
 
-# # --------- Get Attitude Values --------- # 
-# def get_attitude_values():
-#     global PITCH_values
-#     global ROLL_values
-#     global YAW_values
-#     return PITCH_values, ROLL_values, YAW_values
+# --------- Get NED Position Values --------- # 
+def get_NED_values():
+    global NORTH_values
+    global EAST_values
+    global UP_values
+    return NORTH_values, EAST_values, UP_values
 
-# # --------- Get NED Position Values --------- # 
-# def get_NED_values():
-#     global NORTH_values
-#     global EAST_values
-#     global UP_values
-#     return NORTH_values, EAST_values, UP_values
-
-# # --------- Get Reference Latitude, Longitude, and Altitude --------- # 
-# def get_ref_lat_long_alt_values():
-#     global REF_LAT_values
-#     global REF_LONG_values
-#     global REF_ALT_values
-#     return REF_LAT_values, REF_LONG_values, REF_ALT_values
+# --------- Get Reference Latitude, Longitude, and Altitude --------- # 
+def get_ref_lat_long_alt_values():
+    global REF_LAT_values
+    global REF_LONG_values
+    global REF_ALT_values
+    return REF_LAT_values, REF_LONG_values, REF_ALT_values
 
 #                                   # FUNCTIONS -> NED COORDINATES CONVERSION #
 # # ------------------------------------------------------------------------------------------------------- #
-# def NED_conversion(pitch, roll, yaw, Aruco_position):
-#     # --------- Rotation Matrix (Rotation around Z-Axis/Yaw) ------- # 
-#     RZ= np.array([
-#                  [np.cos(yaw), -np.sin(yaw), 0],
-#                  [np.sin(yaw), np.cos(yaw),  0],
-#                  [          0,           0,  1]])
+def NED_conversion(pitch, roll, yaw, Aruco_position):
+    # --------- Rotation Matrix (Rotation around Z-Axis/Yaw) ------- # 
+    RZ= np.array([
+                 [np.cos(yaw), -np.sin(yaw), 0],
+                 [np.sin(yaw), np.cos(yaw),  0],
+                 [          0,           0,  1]])
 
-#     # --------- Rotation Matrix (Rotation around Y-Axis/Pitch) ------- # 
-#     RY = np.array([
-#                   [ np.cos(pitch),  0, np.sin(pitch)],
-#                   [             0,  1,             0],
-#                   [-np.sin(pitch),  0, np.cos(pitch)]])
+    # --------- Rotation Matrix (Rotation around Y-Axis/Pitch) ------- # 
+    RY = np.array([
+                  [ np.cos(pitch),  0, np.sin(pitch)],
+                  [             0,  1,             0],
+                  [-np.sin(pitch),  0, np.cos(pitch)]])
 
-#     # --------- Rotation Matrix (Rotation around X-Axis/Roll) ------- # 
-#     RX = np.array([
-#                   [1,            0,             0],
-#                   [0, np.cos(roll), -np.sin(roll)],
-#                   [0, np.sin(roll),  np.cos(roll)]])
+    # --------- Rotation Matrix (Rotation around X-Axis/Roll) ------- # 
+    RX = np.array([
+                  [1,            0,             0],
+                  [0, np.cos(roll), -np.sin(roll)],
+                  [0, np.sin(roll),  np.cos(roll)]])
 
-#     # --------- Rotation Matrix ------- # 
-#     R = RZ @ RY @ RX 
+    # --------- Rotation Matrix ------- # 
+    R = RZ @ RY @ RX 
 
-#     # --------- Obtain NED Coordinates ------- #
-#     NED_vector = np.dot(R, Aruco_position)
-#     NORTH, EAST, UP = NED_vector.squeeze()
+    # --------- Obtain NED Coordinates ------- #
+    NED_vector = np.dot(R, Aruco_position)
+    NORTH, EAST, UP = NED_vector.squeeze()
 
-#     return NORTH, EAST, UP
+    return NORTH, EAST, UP
 
                                 # FUNCTION -> VISUALISE LEGEND #
 # ------------------------------------------------------------------------------------------------------- #
@@ -270,7 +257,7 @@ def visualizeLegend(frame_legend, width, height):
 
   # --------- Show Aruco RAW NORTH --------- # 
   org = (int(0.03*width), int(0.35*height))
-  text = f"RAW NORTH: "
+  text = f"X_NED: "
   font = cv2.FONT_HERSHEY_PLAIN
   fontScale = 1
   color = (255, 255, 255)
@@ -279,7 +266,7 @@ def visualizeLegend(frame_legend, width, height):
 
   # --------- Show Aruco RAW EAST --------- # 
   org = (int(0.03*width), int(0.39*height))
-  text = f"RAW EAST: "
+  text = f"Y_NED: "
   font = cv2.FONT_HERSHEY_PLAIN
   fontScale = 1
   color = (255, 255, 255)
@@ -287,40 +274,40 @@ def visualizeLegend(frame_legend, width, height):
   frame_legend = cv2.putText(frame_legend, text, org, font, fontScale, color, lineThickness, cv2.LINE_AA)
 
   # --------- Show Aruco FILTERED NORTH --------- # 
-  org = (int(0.03*width), int(0.43*height))
-  text = f"FILT NORTH: "
-  font = cv2.FONT_HERSHEY_PLAIN
-  fontScale = 1
-  color = (255, 255, 255)
-  lineThickness = 2
-  frame_legend = cv2.putText(frame_legend, text, org, font, fontScale, color, lineThickness, cv2.LINE_AA)
+  # org = (int(0.03*width), int(0.43*height))
+  # text = f"FILT NORTH: "
+  # font = cv2.FONT_HERSHEY_PLAIN
+  # fontScale = 1
+  # color = (255, 255, 255)
+  # lineThickness = 2
+  # frame_legend = cv2.putText(frame_legend, text, org, font, fontScale, color, lineThickness, cv2.LINE_AA)
 
   # --------- Show Aruco FILTERED EAST --------- # 
-  org = (int(0.03*width), int(0.47*height))
-  text = f"FILT EAST: "
-  font = cv2.FONT_HERSHEY_PLAIN
-  fontScale = 1
-  color = (255, 255, 255)
-  lineThickness = 2
-  frame_legend = cv2.putText(frame_legend, text, org, font, fontScale, color, lineThickness, cv2.LINE_AA)
+  # org = (int(0.03*width), int(0.47*height))
+  # text = f"FILT EAST: "
+  # font = cv2.FONT_HERSHEY_PLAIN
+  # fontScale = 1
+  # color = (255, 255, 255)
+  # lineThickness = 2
+  # frame_legend = cv2.putText(frame_legend, text, org, font, fontScale, color, lineThickness, cv2.LINE_AA)
 
    # --------- Show Aruco LAT --------- # 
-  org = (int(0.03*width), int(0.51*height))
-  text = f"LAT: "
-  font = cv2.FONT_HERSHEY_PLAIN
-  fontScale = 1
-  color = (255, 255, 255)
-  lineThickness = 2
-  frame_legend = cv2.putText(frame_legend, text, org, font, fontScale, color, lineThickness, cv2.LINE_AA)
+  # org = (int(0.03*width), int(0.51*height))
+  # text = f"LAT: "
+  # font = cv2.FONT_HERSHEY_PLAIN
+  # fontScale = 1
+  # color = (255, 255, 255)
+  # lineThickness = 2
+  # frame_legend = cv2.putText(frame_legend, text, org, font, fontScale, color, lineThickness, cv2.LINE_AA)
 
   # --------- Show Aruco LONG --------- # 
-  org = (int(0.03*width), int(0.55*height))
-  text = f"LONG: "
-  font = cv2.FONT_HERSHEY_PLAIN
-  fontScale = 1
-  color = (255, 255, 255)
-  lineThickness = 2
-  frame_legend = cv2.putText(frame_legend, text, org, font, fontScale, color, lineThickness, cv2.LINE_AA)
+  # org = (int(0.03*width), int(0.55*height))
+  # text = f"LONG: "
+  # font = cv2.FONT_HERSHEY_PLAIN
+  # fontScale = 1
+  # color = (255, 255, 255)
+  # lineThickness = 2
+  # frame_legend = cv2.putText(frame_legend, text, org, font, fontScale, color, lineThickness, cv2.LINE_AA)
 
   # --------- Show "DRONE" --------- # 
   org = (int(0.02*width), int(0.62*height))
@@ -681,16 +668,15 @@ def visualiseDroneNEDPosition(NORTH_visual, EAST_visual, UP_visual, frame_pos, w
 
 #                                       # Ivybus INITIALISATION #
 # # ------------------------------------------------------------------------------------------------------- #
-# # --------- Create Ivy Interface --------- # 
-# ivy = pprzlink.ivy.IvyMessagesInterface(agent_name="ArucoMarker", start_ivy=False, ivy_bus="127.255.255.255:2010")
+# --------- Create Ivy Interface --------- # 
+ivy = pprzlink.ivy.IvyMessagesInterface(agent_name="ArucoMarker", start_ivy=False, ivy_bus="127.255.255.255:2010")
 
-# # --------- Start Ivy Interface --------- # 
-# ivy.start()
+# --------- Start Ivy Interface --------- # 
+ivy.start()
 
-# # --------- Subscribe to Ivy Messages --------- # 
-# ivy.subscribe(attitude_callback, message.PprzMessage("telemetry", "ROTORCRAFT_FP"))
-# ivy.subscribe(NED_callback, message.PprzMessage("telemetry", "ROTORCRAFT_FP"))
-# ivy.subscribe(ref_lat_long_alt_callback, message.PprzMessage("telemetry", "INS_REF"))
+# --------- Subscribe to Ivy Messages --------- # 
+ivy.subscribe(attitude_callback, message.PprzMessage("telemetry", "ROTORCRAFT_FP"))
+ivy.subscribe(NED_callback, message.PprzMessage("telemetry", "ROTORCRAFT_FP"))
 
                                 # FUNCTION -> VISUALISE LEGEND #
 # ------------------------------------------------------------------------------------------------------- #
@@ -721,25 +707,17 @@ def timeout(timeout_duration=1):
 
   return ret, frame 
 
-#                                  # FUNCTION -> MOVE WAYPOINT #
+#                                  # FUNCTION -> SEND ARUCO POSITION MESSAGE ON IVY BUS#
 # # ------------------------------------------------------------------------------------------------------- #
-# def move_waypoint_KF(ac_id, wp_id, aruco_lat, aruco_long, aruco_alt):
-#     msg = message.PprzMessage("ground", "MOVE_WAYPOINT")
-#     msg['ac_id'] = ac_id
-#     msg['wp_id'] = wp_id
-#     msg['lat'] = aruco_lat
-#     msg['long'] = aruco_long
-#     msg['alt'] = aruco_alt
-#     ivy.send(msg)
 
-# def move_waypoint_RAW(ac_id, wp_id, aruco_lat, aruco_long, aruco_alt):
-#     msg = message.PprzMessage("ground", "MOVE_WAYPOINT")
-#     msg['ac_id'] = ac_id
-#     msg['wp_id'] = wp_id
-#     msg['lat'] = aruco_lat
-#     msg['long'] = aruco_long
-#     msg['alt'] = aruco_alt
-#     ivy.send(msg)
+def update_aruco_position_NED(ac_id, flag, aruco_NED_pos_x, aruco_NED_pos_y, aruco_NED_pos_z):
+    msg = message.PprzMessage("ground", "DESIRED_SP")
+    msg['ac_id'] = ac_id
+    msg['flag'] = flag
+    msg['ux'] = aruco_NED_pos_x
+    msg['uy'] = aruco_NED_pos_y
+    msg['uz'] = aruco_NED_pos_z
+    ivy.send(msg)
 
 # ac_id = input("Enter Aicraft ID: ")
 
@@ -815,14 +793,14 @@ while(cap.isOpened()):
   # --------- Update Iteration Counter --------- # 
   C_STEP = C_STEP + 1
 
-  # # --------- Get Attitude Values from Ivybus --------- # 
-  # PITCH_DRONE, ROLL_DRONE, YAW_DRONE = get_attitude_values()
+  # --------- Get Attitude Values from Ivybus --------- # 
+  PITCH_DRONE, ROLL_DRONE, YAW_DRONE = get_attitude_values()
   
-  # # --------- Get NED Values from Ivybus --------- # 
-  # NORTH_DRONE, EAST_DRONE, UP_DRONE = get_NED_values()
+  # --------- Get NED Values from Ivybus --------- # 
+  NORTH_DRONE, EAST_DRONE, UP_DRONE = get_NED_values()
 
-  # # --------- Get LAT, LONG, and ALT Values from Ivybus --------- # 
-  # LAT_0, LONG_0, ALT_0 = get_ref_lat_long_alt_values()
+  # --------- Get LAT, LONG, and ALT Values from Ivybus --------- # 
+  LAT_0, LONG_0, ALT_0 = get_ref_lat_long_alt_values()
 
   # --------- Read Frame-by-Frame --------- # 
   ret, frame = timeout()
@@ -846,51 +824,51 @@ while(cap.isOpened()):
     frame = visualizeLegend(frame, resized_frame_width, resized_frame_height)
 
     # # --------- Save, Print, and Show Drone Attitude --------- # 
-    # if PITCH_DRONE is not None:
-    #   PITCH_DRONE = float(PITCH_DRONE)
-    #   ROLL_DRONE  = float(ROLL_DRONE)
-    #   YAW_DRONE   = float(YAW_DRONE)
+    if PITCH_DRONE is not None:
+      PITCH_DRONE = float(PITCH_DRONE)
+      ROLL_DRONE  = float(ROLL_DRONE)
+      YAW_DRONE   = float(YAW_DRONE)
       
-    #   PITCH_DRONE = PITCH_DRONE*pprz_attitude_conversion
-    #   ROLL_DRONE  = ROLL_DRONE*pprz_attitude_conversion
-    #   YAW_DRONE   = YAW_DRONE*pprz_attitude_conversion 
+      PITCH_DRONE = PITCH_DRONE*pprz_attitude_conversion
+      ROLL_DRONE  = ROLL_DRONE*pprz_attitude_conversion
+      YAW_DRONE   = YAW_DRONE*pprz_attitude_conversion 
 
-    #   PITCH_DRONE_m.append(PITCH_DRONE) # Save measured pitch
-    #   print(f"-------- ITERATION: {C_STEP} --------")      
-    #   print(f"Drone PITCH: {PITCH_DRONE}")
+      # PITCH_DRONE_m.append(PITCH_DRONE) # Save measured pitch
+      # print(f"-------- ITERATION: {C_STEP} --------")      
+      # print(f"Drone PITCH: {PITCH_DRONE}")
 
-    #   ROLL_DRONE_m.append(ROLL_DRONE)   # Save measured roll
-    #   print(f"Drone ROLL: {ROLL_DRONE}")
+      # ROLL_DRONE_m.append(ROLL_DRONE)   # Save measured roll
+      # print(f"Drone ROLL: {ROLL_DRONE}")
 
-    #   YAW_DRONE_m.append(YAW_DRONE)     # Save measured yaw
-    #   print(f"Drone YAW: {YAW_DRONE}")
+      # YAW_DRONE_m.append(YAW_DRONE)     # Save measured yaw
+      # print(f"Drone YAW: {YAW_DRONE}")
 
-    #   frame = visualiseDroneAttitude(frame, resized_frame_width, resized_frame_height, PITCH_DRONE, ROLL_DRONE, YAW_DRONE)
+      frame = visualiseDroneAttitude(frame, resized_frame_width, resized_frame_height, PITCH_DRONE, ROLL_DRONE, YAW_DRONE)
 
-    # # --------- Save, Print, and Show Drone NORTH, EAST, and UP --------- # 
-    # if NORTH_DRONE is not None:
-    #   NORTH_DRONE = float(NORTH_DRONE)
-    #   EAST_DRONE  = float(EAST_DRONE)
-    #   UP_DRONE    = float(UP_DRONE)
+    # --------- Save, Print, and Show Drone NORTH, EAST, and UP --------- # 
+    if NORTH_DRONE is not None:
+      NORTH_DRONE = float(NORTH_DRONE)
+      EAST_DRONE  = float(EAST_DRONE)
+      UP_DRONE    = float(UP_DRONE)
 
-    #   NORTH_DRONE = NORTH_DRONE*pprz_NED_conversion
-    #   EAST_DRONE  = EAST_DRONE*pprz_NED_conversion
-    #   UP_DRONE    = UP_DRONE*pprz_NED_conversion 
+      NORTH_DRONE = NORTH_DRONE*pprz_NED_conversion
+      EAST_DRONE  = EAST_DRONE*pprz_NED_conversion
+      UP_DRONE    = UP_DRONE*pprz_NED_conversion 
 
-    #   NORTH_DRONE_m.append(NORTH_DRONE) # Save measured drone NORTH
-    #   print(f"Drone NORTH: {NORTH_DRONE}")
+      # NORTH_DRONE_m.append(NORTH_DRONE) # Save measured drone NORTH
+      # print(f"Drone NORTH: {NORTH_DRONE}")
       
-    #   EAST_DRONE_m.append(EAST_DRONE)   # Save measured drone EAST
-    #   print(f"Drone EAST: {EAST_DRONE}")      
+      # EAST_DRONE_m.append(EAST_DRONE)   # Save measured drone EAST
+      # print(f"Drone EAST: {EAST_DRONE}")      
       
-    #   UP_DRONE_m.append(UP_DRONE)   # Save measured drone UP
-    #   print(f"Drone UP: {UP_DRONE}")
+      # UP_DRONE_m.append(UP_DRONE)   # Save measured drone UP
+      # print(f"Drone UP: {UP_DRONE}")
       
-    #   # --------- Visualise NED Drone Position --------- # 
-    #   frame = visualiseDroneNEDPosition(NORTH_DRONE, EAST_DRONE, UP_DRONE, frame, resized_frame_width, resized_frame_height)
+      # --------- Visualise NED Drone Position --------- # 
+      frame = visualiseDroneNEDPosition(NORTH_DRONE, EAST_DRONE, UP_DRONE, frame, resized_frame_width, resized_frame_height)
 
-    # # --------- FLAG -> Aruco Marker Not Detected --------- # 
-    # DETECTION = 0
+    # --------- FLAG -> Aruco Marker Not Detected --------- # 
+    DETECTION = 0
 
     if len(markerCorners) > 0: # At least one marker detected
       # --------- Aruco Marker Pose Estimation --------- # 
@@ -901,16 +879,16 @@ while(cap.isOpened()):
       # --------- Save and Print X, Y, and Z --------- # 
       try:
         X_ARUCO = tvec[0][0][0]
-        X_ARUCO_m.append(X_ARUCO)          # Save measured X
-        print(f"Aruco X: {X_ARUCO}")
+        # X_ARUCO_m.append(X_ARUCO)          # Save measured X
+        # print(f"Aruco X: {X_ARUCO}")
 
         Y_ARUCO = tvec[0][0][1]
-        Y_ARUCO_m.append(Y_ARUCO)          # Save measured Y
-        print(f"Aruco Y: {Y_ARUCO}")
+        # Y_ARUCO_m.append(Y_ARUCO)          # Save measured Y
+        # print(f"Aruco Y: {Y_ARUCO}")
 
         Z_ARUCO = tvec[0][0][2]
-        Z_ARUCO_m.append(Z_ARUCO)          # Save measured Z
-        print(f"Aruco Z: {Z_ARUCO}")
+        # Z_ARUCO_m.append(Z_ARUCO)          # Save measured Z
+        # print(f"Aruco Z: {Z_ARUCO}")
 
       # --------- Visualise X, Y, Z Aruco Marker Position --------- # 
         frame = visualiseArucoXYZMarkerPosition(X_ARUCO, Y_ARUCO, Z_ARUCO, frame, resized_frame_width, resized_frame_height, rvec[0], tvec[0], camera_Matrix, distortion_Coeff)
@@ -922,134 +900,54 @@ while(cap.isOpened()):
         continue 
 
       # # --------- NED Conversion and Moving to Relative Position --------- # 
-      # if PITCH_DRONE is not None: 
-      #   PITCH_DRONE = math.radians(PITCH_DRONE)
-      #   ROLL_DRONE  = math.radians(ROLL_DRONE)
-      #   YAW_DRONE   = math.radians(YAW_DRONE)
+      if PITCH_DRONE is not None: 
+        PITCH_DRONE = math.radians(PITCH_DRONE)
+        ROLL_DRONE  = math.radians(ROLL_DRONE)
+        YAW_DRONE   = math.radians(YAW_DRONE)
 
-      #   # --------- Convert Aruco marker Position in Image Coordinates to Body Coordinates --------- #
-      #   # X (body) = Y (image plane), Y(body) = -X (image plane)
-      #   X_ARUCO_B = Y_ARUCO
-      #   Y_ARUCO_B = -X_ARUCO
-      #   Z_ARUCO_B = Z_ARUCO
+        # --------- Convert Aruco marker Position in Image Coordinates to Body Coordinates --------- #
+        # X (body) = Y (image plane), Y(body) = -X (image plane)
+        X_ARUCO_B = Y_ARUCO
+        Y_ARUCO_B = -X_ARUCO
+        Z_ARUCO_B = Z_ARUCO
 
       #   # --------- Visualise Body Aruco Marker Position --------- # 
-      #   frame = visualiseArucoBODYMarkerPosition(X_ARUCO_B, Y_ARUCO_B, frame, resized_frame_width, resized_frame_height)
+        frame = visualiseArucoBODYMarkerPosition(X_ARUCO_B, Y_ARUCO_B, frame, resized_frame_width, resized_frame_height)
 
       #   # Generate Aruco position row vector
-      #   ARUCO_POSITION_B = np.array([[X_ARUCO_B], [Y_ARUCO_B], [Z_ARUCO_B]])
+        ARUCO_POSITION_B = np.array([[X_ARUCO_B], [Y_ARUCO_B], [Z_ARUCO_B]])
 
       #   # --------- Convert Aruco Position in Image Coordinates to NED Coordinates Relative to Drone --------- # 
-      #   NORTH_REL, EAST_REL, UP_REL = NED_conversion(PITCH_DRONE, ROLL_DRONE, YAW_DRONE, ARUCO_POSITION_B)
+        NORTH_REL, EAST_REL, UP_REL = NED_conversion(PITCH_DRONE, ROLL_DRONE, YAW_DRONE, ARUCO_POSITION_B)
 
       #   # --------- NED Aruco Marker Position --------- # 
-      #   if NORTH_DRONE is not None:
-      #     # --------- NED Relative and NED Drone Summation --------- # 
-      #     NORTH_ARUCO = NORTH_REL + NORTH_DRONE
-      #     EAST_ARUCO  = EAST_REL + EAST_DRONE
-      #     UP_ARUCO    = UP_REL                     # Application based decision -> take Aruco relative UP value (Z not relevant)  
+        if NORTH_DRONE is not None:
+          # --------- NED Relative and NED Drone Summation --------- # 
+          NORTH_ARUCO = NORTH_REL + NORTH_DRONE
+          EAST_ARUCO  = EAST_REL + EAST_DRONE
+          UP_ARUCO    = UP_DRONE - UP_REL             # Application based decision -> take Aruco relative UP value (Z not relevant)  
 
-      #     # --------- Save and Print Aruco Marker NORTH, EAST, and UP --------- # 
-      #     NORTH_ARUCO_m.append(NORTH_ARUCO)        # Save measured Aruco Marker NORTH
-      #     print(f"Aruco NORTH: {NORTH_ARUCO}")
+          # --------- Save and Print Aruco Marker NORTH, EAST, and UP --------- # 
+          # NORTH_ARUCO_m.append(NORTH_ARUCO)        # Save measured Aruco Marker NORTH
+          # print(f"Aruco NORTH: {NORTH_ARUCO}")
 
-      #     EAST_ARUCO_m.append(EAST_ARUCO)          # Save measured Aruco Marker EAST
-      #     print(f"Aruco EAST: {EAST_ARUCO}")
+          # EAST_ARUCO_m.append(EAST_ARUCO)          # Save measured Aruco Marker EAST
+          # print(f"Aruco EAST: {EAST_ARUCO}")
 
-      #     UP_ARUCO_m.append(UP_ARUCO)              # Save measured Aruco Marker UP
-      #     print(f"Aruco UP: {UP_ARUCO}")
+          # UP_ARUCO_m.append(UP_ARUCO)              # Save measured Aruco Marker UP
+          # print(f"Aruco UP: {UP_ARUCO}")
 
       #     # --------- Visualise NED Aruco Marker Position --------- # 
-      #     frame = visualiseArucoNEDMarkerPosition(NORTH_ARUCO, EAST_ARUCO, frame, resized_frame_width, resized_frame_height)
+          frame = visualiseArucoNEDMarkerPosition(NORTH_ARUCO, EAST_ARUCO, frame, resized_frame_width, resized_frame_height)
           
           # # --------- FLAG -> Aruco Marker Detected --------- # 
-          # DETECTION = 1
-                                              # KALMAN FILTER #
-    # # ------------------------------------------------------------------------------------------------------- #
-    # if IS_FILT_INIT:            # Check if KF is initialised
-    #   dt = 1/FPS                # Set time step 
-      
-    #   # --------- PREDICTION STEP --------- # 
-    #   NED_PRED = predict(dt)
-    #   FILT_N = NED_PRED[0]
-    #   FILT_E = NED_PRED[1]
+          DETECTION = 1
 
-    #   FILT_N = float(FILT_N)
-    #   FILT_E = float(FILT_E)
-    #   FILT_U = UP_ARUCO
-
-    #   FILT_N_PRED_m.append(FILT_N)
-    #   FILT_E_PRED_m.append(FILT_E)
-
-    # if DETECTION == 1:
-    #   if not IS_FILT_INIT:
-    #     # --------- FILTER INITIALISATION --------- # 
-    #     init([NORTH_ARUCO, EAST_ARUCO, UP_ARUCO])
-    #     IS_FILT_INIT = True
-    #   else:
-    #     # --------- UPDATE STEP --------- # 
-    #     NED_UPD = update([NORTH_ARUCO, EAST_ARUCO, UP_ARUCO])
-    #     FILT_N = NED_UPD[0]
-    #     FILT_E = NED_UPD[1]
-    #     FILT_U = UP_ARUCO 
-
-    #     FILT_N = float(FILT_N)
-    #     FILT_E = float(FILT_E)
-        
-    #     FILT_N_UPD_m.append(FILT_N)
-    #     FILT_E_UPD_m.append(FILT_E)
-
-    # # --------- Visualise Filtered NED Aruco Marker Position --------- # 
-    # frame = visualiseArucoFNEDMarkerPosition(FILT_N, FILT_E, frame, resized_frame_width, resized_frame_height)
-
-    # # --------- RAW MEASUREMENTS --------- # 
-    # FILT_N_RAW = NORTH_ARUCO
-    # FILT_E_RAW = EAST_ARUCO
-    # FILT_U_RAW = UP_ARUCO
-
-    # # --------- Convert To LAT, LONG, and ALT Aruco Marker Position and Move Waypoint --------- #
-    # if LAT_0 is not None: 
-    #   LAT_0  = float(LAT_0)
-    #   LONG_0 = float(LONG_0)
-    #   ALT_0  = float(ALT_0)
-      
-    #   LAT_0  = LAT_0*pprz_lat_long_conversion
-    #   LONG_0 = LONG_0*pprz_lat_long_conversion
-    #   ALT_0  = ALT_0*pprz_alt_conversion
-            
-    #   LAT_0_m.append(LAT_0)             # Save measured drone Ref LAT
-    #   print(f"Drone Latitude0: {LAT_0}")
-      
-    #   LONG_0_m.append(LONG_0)           # Save measured drone Ref LONG
-    #   print(f"Drone Longitude0: {LONG_0}")      
-      
-    #   ALT_0_m.append(ALT_0)             # Save measured drone Ref ALT
-    #   print(f"Drone Altitude0: {ALT_0}")
-            
-    #   # --------- Conversion --------- #
-    #   LAT_ARUCO, LONG_ARUCO, _         = pymap3d.ned2geodetic(FILT_N, FILT_E, FILT_U, LAT_0, LONG_0, ALT_0)
-    #   LAT_ARUCO_RAW, LONG_ARUCO_RAW, _ = pymap3d.ned2geodetic(FILT_N_RAW, FILT_E_RAW, FILT_U_RAW, LAT_0, LONG_0, ALT_0)
-
-    #   # --------- Altitude -> Aldenhoven Testing Centre Specific (42m AGL) --------- #
-    #   ALT_ARUCO = 25                       # Check GCS Alt in Paparazzi by clicking on standby waypoint and manually fill in reference altitude
-
-    #   # --------- Save and Print Aruco Marker NORTH, EAST, and UP --------- # 
-    #   LAT_ARUCO_m.append(LAT_ARUCO)            # Save measured Aruco Marker LATITUDE
-    #   print(f"Aruco Latitude: {LAT_ARUCO}")
-
-    #   LONG_ARUCO_m.append(LONG_ARUCO)          # Save measured Aruco Marker LONGITUDE
-    #   print(f"Aruco Longitude: {LONG_ARUCO}")
-
-    #   ALT_ARUCO_m.append(ALT_ARUCO)            # Save measured Aruco Marker ALTITUDE
-    #   print(f"Aruco Altitude: {ALT_ARUCO}")
-    #   print("-------------------------------") 
-
-    #   # --------- Visualise NED Aruco Marker Position --------- # 
-    #   frame = visualiseArucoGeodeticMarkerPosition(LAT_ARUCO, LONG_ARUCO, ALT_ARUCO, frame, resized_frame_width, resized_frame_height)
-
+    # # --------- Move Waypoint --------- #
+    if  DETECTION == 1 : 
       # # --------- Move Waypoint --------- #
       # move_waypoint_KF(ac_id, wp_id_KF, LAT_ARUCO, LONG_ARUCO, ALT_ARUCO)
-      # move_waypoint_RAW(ac_id, wp_id_RAW, LAT_ARUCO_RAW, LONG_ARUCO_RAW, ALT_ARUCO)
+      update_aruco_position_NED(1, 0, NORTH_ARUCO, EAST_ARUCO, -UP_ARUCO)
       
     # --------- Write Video --------- # 
     # out.write(frame)

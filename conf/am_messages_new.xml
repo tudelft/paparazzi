@@ -3651,6 +3651,21 @@
       <field name="source" type="string">ground_name of the agent sending the message</field>
       <field name="msg" type="string"/>
     </message>
+
+    <message name="DESIRED_SP" id="102" >
+      <description>
+        This message is used to set 3D desired vehicle's states such as accelerations or velocities.
+        The 'flag' field can be used at the user convenience to provide indication about the type of
+        value to track (like  position, speed, acceleration, ...) or the reference frame (ENU / NED,
+        LTP / body frame, ...)
+      </description>
+      <field name="ac_id" type="uint8">AC_ID of the vehicle</field>
+      <field name="flag"  type="uint8">Up to the user, for example to distinguish between ENU or NED</field>
+      <field name="ux"    type="float">Quantity to be tracked in the X axis</field>
+      <field name="uy"    type="float">Quantity to be tracked in the Y axis</field>
+      <field name="uz"    type="float">Quantity to be tracked in the Z axis</field>
+    </message>
+
   </msg_class>
 
   <msg_class name="alert" id="4">

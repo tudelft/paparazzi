@@ -204,17 +204,17 @@ void send_states_on_ivy(){
     if(verbose_ivy_bus) printf("Sent received message from UAV on ivy bus\n");
     IvySendMsg("1 ROTORCRAFT_FP  %d %d %d  %d %d %d  %d %d %d  %d %d %d  %d %d %d",
 
-            (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_x/0.0039063),
             (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_y/0.0039063),
-            (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_z/0.0039063),
+            (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_x/0.0039063),
+            (int32_t) (-myam7_data_in_copy_for_ivy.UAV_NED_pos_z/0.0039063),
 
             (int32_t) (-1/0.0000019),
             (int32_t) (-1/0.0000019),
             (int32_t) (-1/0.0000019),
 
-            (int32_t) ( (myam7_data_in_copy_for_ivy.phi_state_int/0.01) /0.0139882),
-            (int32_t) ( (myam7_data_in_copy_for_ivy.theta_state_int/0.01) /0.0139882),
-            (int32_t) ( (myam7_data_in_copy_for_ivy.psi_state_int/0.01) /0.0139882),
+            (int32_t) ( (myam7_data_in_copy_for_ivy.phi_state_int*0.01) /0.0139882),
+            (int32_t) ( (myam7_data_in_copy_for_ivy.theta_state_int*0.01) /0.0139882),
+            (int32_t) ( (myam7_data_in_copy_for_ivy.psi_state_int*0.01) /0.0139882),
 
             (int32_t) (-1/0.0039063),
             (int32_t) (-1/0.0039063),
@@ -638,6 +638,11 @@ void* second_thread() //Run the optimization code
     memcpy(&aruco_detection_local, &aruco_detection, sizeof(struct aruco_detection_t));
     pthread_mutex_unlock(&mutex_aruco); 
 
+
+    myam7_data_out_copy_internal.aruco_detection_timestamp = aruco_detection_local.timestamp_detection;
+    myam7_data_out_copy_internal.aruco_NED_pos_x = aruco_detection_local.NED_pos_x;
+    myam7_data_out_copy_internal.aruco_NED_pos_y = aruco_detection_local.NED_pos_y;
+    myam7_data_out_copy_internal.aruco_NED_pos_z = aruco_detection_local.NED_pos_z;
     
     //Copy out structure
     pthread_mutex_lock(&mutex_am7);
@@ -652,21 +657,21 @@ static void aruco_position_report(IvyClientPtr app, void *user_data, int argc, c
 {
   if (argc != 4)
   {
-    fprintf(stderr,"ERROR: invalid message length MOVE_WAYPOINT\n");
+    fprintf(stderr,"ERROR: invalid message length DESIRED_SP\n");
   }
   struct aruco_detection_t aruco_detection_local; 
 
   gettimeofday(&aruco_time, NULL); 
   aruco_detection_local.timestamp_detection = (aruco_time.tv_sec*1e6 - starting_time_program_execution.tv_sec*1e6 + aruco_time.tv_usec - starting_time_program_execution.tv_usec)*1e-6;
-  aruco_detection_local.lat_aruco = atof(argv[1]); 
-  aruco_detection_local.long_aruco = atof(argv[2]);  
-  aruco_detection_local.rel_alt_aruco  = atof(argv[3]);  
+  aruco_detection_local.NED_pos_x = atof(argv[1]); 
+  aruco_detection_local.NED_pos_y = atof(argv[2]);  
+  aruco_detection_local.NED_pos_z  = atof(argv[3]);  
   
   if(verbose_aruco){
     printf("\n Aruco timestamp = %f \n", aruco_detection_local.timestamp_detection); 
-    printf("\n Aruco lat = %f \n",(float) aruco_detection_local.lat_aruco ); 
-    printf("\n Aruco long = %f \n",(float) aruco_detection_local.long_aruco ); 
-    printf("\n Aruco relative alt = %f \n",(float) aruco_detection_local.rel_alt_aruco ); 
+    printf("\n Aruco NED pos_x = %f \n",(float) aruco_detection_local.NED_pos_x ); 
+    printf("\n Aruco NED pos_y = %f \n",(float) aruco_detection_local.NED_pos_y ); 
+    printf("\n Aruco NED pos_z  = %f \n",(float) aruco_detection_local.NED_pos_z ); 
   }
 
   pthread_mutex_lock(&mutex_aruco);
@@ -693,7 +698,7 @@ void main() {
 
   IvyInit ("NonlinearCA", "NonlinearCA READY", NULL, NULL, NULL, NULL);
   IvyStart(ivy_bus);
-  IvyBindMsg(aruco_position_report, NULL, "^ground MOVE_WAYPOINT %s (\\S*) (\\S*) (\\S*) (\\S*)", "1");
+  IvyBindMsg(aruco_position_report, NULL, "^ground DESIRED_SP %s (\\S*) (\\S*) (\\S*) (\\S*)", "1");
 
   pthread_t thread1, thread2;
 
@@ -702,6 +707,10 @@ void main() {
   pthread_create(&thread2, NULL, second_thread, NULL);
 
   g_main_loop_run(ml);
+
+  while(true){
+
+  }
 
   //Close the serial and clean the variables 
   fflush (stdout);
