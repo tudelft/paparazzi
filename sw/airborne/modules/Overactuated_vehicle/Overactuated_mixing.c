@@ -924,7 +924,6 @@ void get_actuator_state_v2(void)
     actuator_state[1] = 2.0*M_PI*myserial_act_t4_in_local.motor_2_rpm_int/60.0;
     actuator_state[2] = 2.0*M_PI*myserial_act_t4_in_local.motor_3_rpm_int/60.0;
     actuator_state[3] = 2.0*M_PI*myserial_act_t4_in_local.motor_4_rpm_int/60.0;
-
     
     //Elevatoion angles: 
     actuator_state[4] = ((myserial_act_t4_in_local.servo_2_angle_int/100.0)/FBW_T4_K_RATIO_GEAR_EL) * M_PI/180.0 + OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE/FBW_T4_K_RATIO_GEAR_EL; 
@@ -1189,7 +1188,7 @@ void assign_variables(void){
         airspeed = 10;
         beta_deg = 0;
     #else
-        airspeed = ms45xx.airspeed;
+        airspeed = fmax(0.0,ms45xx.airspeed);
         beta_deg = - aoa_pwm.angle * 180/M_PI;
     #endif
     
