@@ -1,5 +1,5 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
-<airframe name="OVERQUAD_TUD00341_NICO">
+<airframe name="OVERQUAD_TUD00341_CYBERZOO">
   <description>
     Overactuated vehicle airframe equipped with a Hextronix Cube Orange flight controller hardware
   </description>
