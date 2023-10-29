@@ -122,9 +122,9 @@ struct  __attribute__((__packed__)) am7_data_in {
 
 struct aruco_detection_t {
     float timestamp_detection; 
-    float lat_aruco; 
-    float long_aruco;
-    float rel_alt_aruco;
+    float NED_pos_x; 
+    float NED_pos_y;
+    float NED_pos_z;
 };
 
 #endif
