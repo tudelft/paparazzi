@@ -199,14 +199,15 @@ void send_states_on_ivy(){
     pthread_mutex_lock(&mutex_am7);   
     memcpy(&myam7_data_in_copy_for_ivy, &myam7_data_in, sizeof(struct am7_data_in));
     pthread_mutex_unlock(&mutex_am7);
+./p_deg_s
 
     //Send messages over ivy bus for the python thread: 
     if(verbose_ivy_bus) printf("Sent received message from UAV on ivy bus\n");
     IvySendMsg("1 ROTORCRAFT_FP  %d %d %d  %d %d %d  %d %d %d  %d %d %d  %d %d %d",
 
-            (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_x/0.0039063),
             (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_y/0.0039063),
-            (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_z/0.0039063),
+            (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_x/0.0039063),
+            (int32_t) (-myam7_data_in_copy_for_ivy.UAV_NED_pos_z/0.0039063),
 
             (int32_t) (-1/0.0000019),
             (int32_t) (-1/0.0000019),
