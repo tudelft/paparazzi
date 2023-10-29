@@ -3,7 +3,6 @@
 #include "MATLAB_generated_files/Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains.h"
 #include "MATLAB_generated_files/rt_nonfinite.h"
 #include <string.h>
-#include <stdint.h>
 #include <glib.h>
 #include <Ivy/ivy.h>
 #include <Ivy/ivyglibloop.h>
@@ -18,13 +17,13 @@ struct am7_data_in myam7_data_in;
 struct am7_data_in myam7_data_in_copy;
 float extra_data_in[255], extra_data_in_copy[255];
 float extra_data_out[255], extra_data_out_copy[255];
-uint16_T buffer_in_counter;
+uint16_t buffer_in_counter;
 char am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((aligned));
 char am7_msg_buf_out[sizeof(struct am7_data_out)]  __attribute__((aligned));
-uint32_T received_packets = 0, received_packets_tot = 0;
-uint32_T sent_packets = 0, sent_packets_tot = 0;
-uint32_T missed_packets = 0;
-uint16_T sent_msg_id = 0, received_msg_id = 0;
+uint32_t received_packets = 0, received_packets_tot = 0;
+uint32_t sent_packets = 0, sent_packets_tot = 0;
+uint32_t missed_packets = 0;
+uint16_t sent_msg_id = 0, received_msg_id = 0;
 int serial_port;
 int serial_port_tf_mini;
 float ca7_message_frequency_RX, ca7_message_frequency_TX;
@@ -87,7 +86,7 @@ void readLiDAR(){
 void am7_init(){
 
   //Init serial port for the communication
-  if ((serial_port = serialOpen ("/dev/ttyS4", BAUDRATE_AM7)) < 0){
+  if ((serial_port = serialOpen ("/dev/ttyS0", BAUDRATE_AM7)) < 0){
     fprintf (stderr, "Unable to open serial device: %s\n", strerror (errno)) ;
   }
   if (wiringPiSetup () == -1){
@@ -205,38 +204,25 @@ void send_states_on_ivy(){
     if(verbose_ivy_bus) printf("Sent received message from UAV on ivy bus\n");
     IvySendMsg("1 ROTORCRAFT_FP  %d %d %d  %d %d %d  %d %d %d  %d %d %d  %d %d %d",
 
-            (int32_t) 50,
-            (int32_t) 50,
-            (int32_t) 50,
+            (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_x/0.0039063),
+            (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_y/0.0039063),
+            (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_z/0.0039063),
 
-            (int32_t) 50,
-            (int32_t) 50,
-            (int32_t) 50,
+            (int32_t) (-1/0.0000019),
+            (int32_t) (-1/0.0000019),
+            (int32_t) (-1/0.0000019),
 
-            (int32_t) (30.0/0.0139882),
-            (int32_t) (30.0/0.0139882),
-            (int32_t) (30.0/0.0139882),
+            (int32_t) ( (myam7_data_in_copy_for_ivy.phi_state_int/0.01) /0.0139882),
+            (int32_t) ( (myam7_data_in_copy_for_ivy.theta_state_int/0.01) /0.0139882),
+            (int32_t) ( (myam7_data_in_copy_for_ivy.psi_state_int/0.01) /0.0139882),
 
-            (int32_t) 50,
-            (int32_t) 50,
-            (int32_t) 50,
+            (int32_t) (-1/0.0039063),
+            (int32_t) (-1/0.0039063),
+            (int32_t) (-1/0.0039063),
 
-            (int32_t) 50,
-            (int32_t) 50,
-            (uint16_t) 50);
-
-    IvySendMsg("1 INS_REF  %d %d %d  %d %d %d  %d %f",
-
-            (int32_t) 50,
-            (int32_t) 50,
-            (int32_t) 50,
-
-            (int32_t) (15.75/0.0000001),
-            (int32_t) (45.2/0.0000001),
-            (int32_t) 50,
-
-            (int32_t) (10),
-            0.04);
+            (int32_t) (-1/0.0039063),
+            (int32_t) (-1/0.0039063),
+            (uint16_t) (-1/0.0039063));
 }
 
 void print_statistics(){

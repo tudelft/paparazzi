@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -42,9 +43,9 @@ struct  __attribute__((__packed__)) am7_data_out {
     int16_t phi_cmd_int;
     int16_t ailerons_cmd_int;
     //Optimization info
-    uint16_T n_iteration;
-    uint16_T n_evaluation;
-    uint16_T elapsed_time_us;
+    uint16_t n_iteration;
+    uint16_t n_evaluation;
+    uint16_t elapsed_time_us;
     int16_t exit_flag_optimizer;
     //Residuals
     int16_t residual_ax_int;
@@ -56,10 +57,15 @@ struct  __attribute__((__packed__)) am7_data_out {
     //Lidar status
     int16_t lidar_value_cm; 
     int16_t lidar_strength; 
+    //Aruco infos: 
+    float aruco_detection_timestamp;
+    float aruco_NED_pos_x;
+    float aruco_NED_pos_y;
+    float aruco_NED_pos_z;
     //Rolling_msg
     float rolling_msg_out;
-    uint8_T rolling_msg_out_id;
-	uint8_T checksum_out;
+    uint8_t rolling_msg_out_id;
+	uint8_t checksum_out;
 };
 
 struct  __attribute__((__packed__)) am7_data_in {
@@ -80,6 +86,7 @@ struct  __attribute__((__packed__)) am7_data_in {
     //Variable states
     int16_t theta_state_int;
     int16_t phi_state_int;
+    int16_t psi_state_int;
     int16_t gamma_state_int;
     int16_t p_state_int;
     int16_t q_state_int;
@@ -103,9 +110,14 @@ struct  __attribute__((__packed__)) am7_data_in {
     int16_t desired_theta_value_int;
     int16_t desired_phi_value_int;
     int16_t desired_ailerons_value_int;
+    //UAV position NED: 
+    float UAV_NED_pos_x;
+    float UAV_NED_pos_y;
+    float UAV_NED_pos_z;
+    //Rolling msg
     float rolling_msg_in;
-    uint8_T rolling_msg_in_id;  
-	uint8_T checksum_in;
+    uint8_t rolling_msg_in_id;  
+	uint8_t checksum_in;
 };
 
 struct aruco_detection_t {
