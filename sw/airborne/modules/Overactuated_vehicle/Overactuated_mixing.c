@@ -984,6 +984,7 @@ void send_values_to_raspberry_pi(void){
 
     am7_data_out_local.theta_state_int = (int16_t) (actuator_state_filt[12] * 1e2 * 180/M_PI);
     am7_data_out_local.phi_state_int = (int16_t) (actuator_state_filt[13] * 1e2 * 180/M_PI);
+    am7_data_out_local.psi_state_int = (int16_t) (euler_vect[2] * 1e2 * 180/M_PI);
     am7_data_out_local.ailerons_state_int = (int16_t) (actuator_state_filt[14] * 1e2 * 180/M_PI);
 
     am7_data_out_local.gamma_state_int = (int16_t) (flight_path_angle_filtered.o[0] * 1e2 * 180/M_PI);
@@ -1020,6 +1021,11 @@ void send_values_to_raspberry_pi(void){
     //Adding the corrected message from lidar: 
     am7_data_out_local.approach_boolean = (int16_t) (approach_state);
     am7_data_out_local.lidar_alt_corrected_int = (int16_t) (altitude_lidar_agl_meters * 1e2);
+
+    //NED position for aruco: 
+    am7_data_out_local.UAV_NED_pos_x = pos_vect[0];
+    am7_data_out_local.UAV_NED_pos_y = pos_vect[1];
+    am7_data_out_local.UAV_NED_pos_z = pos_vect[2];
 
     #ifdef USE_NEW_THR_ESTIMATION_OPTIMIZATION
     extra_data_out_local[0] = PROP_MODEL_KT_REF;
