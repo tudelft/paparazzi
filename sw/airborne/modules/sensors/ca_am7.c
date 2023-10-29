@@ -47,20 +47,20 @@ static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((alig
     #include "modules/datalink/telemetry.h"
     static void am7_downlink(struct transport_tx *trans, struct link_device *dev)
     {
-        int16_t motor_1_cmd_int_telemetry = myam7_data_in.motor_1_cmd_int;
-        int16_t motor_2_cmd_int_telemetry = myam7_data_in.motor_2_cmd_int;
-        int16_t motor_3_cmd_int_telemetry = myam7_data_in.motor_3_cmd_int;
-        int16_t motor_4_cmd_int_telemetry = myam7_data_in.motor_4_cmd_int;
+        int16_t motors_cmd_int_telemetry[4] = {myam7_data_in.motor_1_cmd_int,
+                                            myam7_data_in.motor_2_cmd_int,
+                                            myam7_data_in.motor_3_cmd_int,
+                                            myam7_data_in.motor_4_cmd_int};
 
-        int16_t el_1_cmd_int_telemetry = myam7_data_in.el_1_cmd_int;
-        int16_t el_2_cmd_int_telemetry = myam7_data_in.el_2_cmd_int;
-        int16_t el_3_cmd_int_telemetry = myam7_data_in.el_3_cmd_int;
-        int16_t el_4_cmd_int_telemetry = myam7_data_in.el_4_cmd_int;
+        int16_t tilt_el_cmd_int_telemetry[4] = {myam7_data_in.el_1_cmd_int,
+                                            myam7_data_in.el_2_cmd_int,
+                                            myam7_data_in.el_3_cmd_int,
+                                            myam7_data_in.el_4_cmd_int};
 
-        int16_t az_1_cmd_int_telemetry = myam7_data_in.az_1_cmd_int;
-        int16_t az_2_cmd_int_telemetry = myam7_data_in.az_2_cmd_int;
-        int16_t az_3_cmd_int_telemetry = myam7_data_in.az_3_cmd_int;
-        int16_t az_4_cmd_int_telemetry = myam7_data_in.az_4_cmd_int;
+        int16_t tilt_az_cmd_int_telemetry[4] = {myam7_data_in.az_1_cmd_int,
+                                            myam7_data_in.az_2_cmd_int,
+                                            myam7_data_in.az_3_cmd_int,
+                                            myam7_data_in.az_4_cmd_int};
 
         int16_t theta_cmd_int_telemetry = myam7_data_in.theta_cmd_int;
         int16_t phi_cmd_int_telemetry = myam7_data_in.phi_cmd_int;
@@ -72,12 +72,13 @@ static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((alig
 
         uint16_t elapsed_time_us_telemetry = myam7_data_in.elapsed_time_us;
         int16_t exit_flag_optimizer_telemetry = myam7_data_in.exit_flag_optimizer;
-        int16_t residual_ax_int_telemetry = myam7_data_in.residual_ax_int;
-        int16_t residual_ay_int_telemetry = myam7_data_in.residual_ay_int;
-        int16_t residual_az_int_telemetry = myam7_data_in.residual_az_int;
-        int16_t residual_p_dot_int_telemetry = myam7_data_in.residual_p_dot_int;
-        int16_t residual_q_dot_int_telemetry = myam7_data_in.residual_q_dot_int;
-        int16_t residual_r_dot_int_telemetry = myam7_data_in.residual_r_dot_int;
+
+        int16_t residuals_array_telemetry = {myam7_data_in.residual_ax_int,
+                                             myam7_data_in.residual_ay_int,
+                                             myam7_data_in.residual_az_int,
+                                             myam7_data_in.residual_p_dot_int,
+                                             myam7_data_in.residual_q_dot_int,
+                                             myam7_data_in.residual_r_dot_int};
 
         int16_t lidar_value_cm_telemetry = myam7_data_in.lidar_value_cm;
         int16_t lidar_strength_telemetry = myam7_data_in.lidar_strength;
@@ -85,18 +86,13 @@ static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((alig
         float rolling_msg_in_telemetry = myam7_data_in.rolling_msg_in;
         uint8_t rolling_msg_in_id_telemetry = myam7_data_in.rolling_msg_in_id;
 
-        pprz_msg_send_AM7_IN(trans, dev, AC_ID, &motor_1_cmd_int_telemetry, &motor_2_cmd_int_telemetry, &motor_3_cmd_int_telemetry,
-                &motor_4_cmd_int_telemetry, &el_1_cmd_int_telemetry, &el_2_cmd_int_telemetry, &el_3_cmd_int_telemetry,
-                &el_4_cmd_int_telemetry, &az_1_cmd_int_telemetry,  &az_2_cmd_int_telemetry, &az_3_cmd_int_telemetry,
-                &az_4_cmd_int_telemetry, &theta_cmd_int_telemetry, &phi_cmd_int_telemetry, &ailerons_cmd_int_telemetry, &n_iteration_telemetry, &n_evaluation_telemetry,
-                &elapsed_time_us_telemetry, &exit_flag_optimizer_telemetry, &residual_ax_int_telemetry,&residual_ay_int_telemetry, &residual_az_int_telemetry,
-                &residual_p_dot_int_telemetry, &residual_q_dot_int_telemetry,&residual_r_dot_int_telemetry, &missed_packets, &ca7_message_frequency_RX,
-                &lidar_value_cm_telemetry, &lidar_strength_telemetry,
-                &rolling_msg_in_telemetry, &rolling_msg_in_id_telemetry);
+        pprz_msg_send_AM7_IN(trans, dev, AC_ID, 4, &motors_cmd_int_telemetry , 4 , &tilt_el_cmd_int_telemetry ,
+                4, &tilt_el_cmd_int_telemetry , &theta_cmd_int_telemetry, &phi_cmd_int_telemetry, &ailerons_cmd_int_telemetry, &n_iteration_telemetry, &n_evaluation_telemetry,
+                &elapsed_time_us_telemetry, &exit_flag_optimizer_telemetry, 6, &residuals_array_telemetry, &missed_packets, &ca7_message_frequency_RX,
+                &lidar_value_cm_telemetry, &lidar_strength_telemetry, &rolling_msg_in_telemetry, &rolling_msg_in_id_telemetry);
     }
     static void am7_uplink(struct transport_tx *trans, struct link_device *dev)
     {
-
         int16_t motor_1_state_int_telemetry = myam7_data_out.motor_1_state_int;
         int16_t motor_2_state_int_telemetry = myam7_data_out.motor_2_state_int;
         int16_t motor_3_state_int_telemetry = myam7_data_out.motor_3_state_int;

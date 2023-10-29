@@ -67,8 +67,13 @@ struct __attribute__((__packed__)) am7_data_in {
     int16_t residual_r_dot_int;
     //Lidar status
     int16_t lidar_value_cm; 
-    int16_t lidar_strength;  
-    //Rolling_msg  
+    int16_t lidar_strength; 
+    //Aruco infos: 
+    float aruco_detection_timestamp;
+    float aruco_NED_pos_x;
+    float aruco_NED_pos_y;
+    float aruco_NED_pos_z;
+    //Rolling_msg
     float rolling_msg_in;
     uint8_t rolling_msg_in_id;
     uint8_t checksum_in;
@@ -92,6 +97,7 @@ struct __attribute__((__packed__)) am7_data_out {
     //Variable states
     int16_t theta_state_int;
     int16_t phi_state_int;
+    int16_t psi_state_int;
     int16_t gamma_state_int;
     int16_t p_state_int;
     int16_t q_state_int;
@@ -100,7 +106,7 @@ struct __attribute__((__packed__)) am7_data_out {
     int16_t beta_state_int;
     //Approach boolean and lidar corrected altitude for the rotor constraint application 
     int16_t approach_boolean; 
-    int16_t lidar_alt_corrected_int;  
+    int16_t lidar_alt_corrected_int;
     //Pseudo-control cmd
     int16_t pseudo_control_ax_int;
     int16_t pseudo_control_ay_int;
@@ -115,6 +121,11 @@ struct __attribute__((__packed__)) am7_data_out {
     int16_t desired_theta_value_int;
     int16_t desired_phi_value_int;
     int16_t desired_ailerons_value_int;
+    //UAV position NED: 
+    float UAV_NED_pos_x;
+    float UAV_NED_pos_y;
+    float UAV_NED_pos_z;
+    //Rolling msg
     float rolling_msg_out;
     uint8_t rolling_msg_out_id;
     uint8_t checksum_out;
