@@ -1,0 +1,27 @@
+USEFUL COMMANDS IN PAPARAZZI :
+
+- Command to run the optitrack for external pose, you can use the following command (EKF2) from the paparazzi directory: 
+$ ./sw/ground_segment/python/natnet3.x/natnet2ivy.py --long_edge right --x_side right --ac_nose right -ac "rigid_body_id" "drone_id" -o
+(where "drone_id" is the UAV id and "rigid_body_id" is the optitrack recorded rigid body id)
+
+- Command to run on the ship box's Raspberry pi to forward the telemetry message from the ship box AP to the common wireless network: 
+$ /paparazzi/sw/misc/link/pprzlink_router_cc -e uart:///dev/ttyS0:460800 -e udp://0.0.0.0:4343:192.168.42.255:4342 &
+(where ttyS0 is the Raspberry pi UART port where the AutoPilot is connected and 4342/4343 is the udp port where the telemetry packets are forwarded)
+
+- Command to run on the ship box's Raspberry pi to forward the RTCM message from the ship box GPS to the common wireless network: 
+$ /paparazzi/sw/misc/link/pprzlink_router_cc -e uart:///dev/ttyS1:460800 -e udp://0.0.0.0:4252:192.168.42.255:4253 &
+(where ttyS1 is the Raspberry pi UART port where the GPS is connected and 4252/4253 is the udp port where the telemetry packets are forwarded)
+
+- Command to forward the GPS RTCM messages from a local udp port on the shared wireless network to the drone: 
+$ ./paparazzi/sw/ground_segment/misc/ublox2ivy -i "drone_id" -e udp://0.0.0.0:4252:192.168.1.255:4253 -v
+(where 4252/4253 is the udp port where the RTCM packets are shared on the common wireless network)
+
+- Connect wirelessly to the Herelink using adb: 
+$ adb connect 192.168.1.101:5555 
+(where 192.168.1.101 is the herelink Ip address in the shared wireless network)
+
+- Command for the Herelink to forward udp telemetry packets from the UAV to the common wireless network: 
+$ adb shell /oem/bin/pprzlink_router_cc -e udp://192.168.0.11:5242:192.168.0.10:5243 -e udp://0.0.0.0:4243:192.168.43.255:4242 & 
+
+- Command for Herelink to forward udp telemetry packets from the UAV to the USB local thetering:  
+$ adb shell /oem/bin/pprzlink_router_cc -e udp://192.168.0.11:5242:192.168.0.10:5243 -e udp://0.0.0.0:4243:192.168.42.255:4242 & 
