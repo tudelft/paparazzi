@@ -9,12 +9,16 @@ $ /paparazzi/sw/misc/link/pprzlink_router_cc -e uart:///dev/ttyS0:460800 -e udp:
 (where ttyS0 is the Raspberry pi UART port where the AutoPilot is connected and 4342/4343 is the udp port where the telemetry packets are forwarded)
 
 - Command to run on the ship box's Raspberry pi to forward the RTCM message from the ship box GPS to the common wireless network: 
-$ /paparazzi/sw/misc/link/pprzlink_router_cc -e uart:///dev/ttyS1:460800 -e udp://0.0.0.0:4252:192.168.42.255:4253 &
-(where ttyS1 is the Raspberry pi UART port where the GPS is connected and 4252/4253 is the udp port where the telemetry packets are forwarded)
+$ /paparazzi/sw/misc/link/pprzlink_router_cc -e uart:///dev/ttyS1:460800 -e udp://0.0.0.0:4253:192.168.42.255:4252 &
+(where ttyS1 is the Raspberry pi UART port where the GPS is connected, 460800 is the baudrate of the UART communication and 4252/4253 is the udp port where the telemetry packets are forwarded)
 
 - Command to forward the GPS RTCM messages from a local udp port on the shared wireless network to the drone: 
-$ ./paparazzi/sw/ground_segment/misc/ublox2ivy -i "drone_id" -e udp://0.0.0.0:4252:192.168.1.255:4253 -v
-(where 4252/4253 is the udp port where the RTCM packets are shared on the common wireless network)
+$ ./paparazzi/sw/ground_segment/misc/ublox2ivy -i "drone_id" -e udp://0.0.0.0:4252:192.168.1.255:4253
+(where 4252/4253 is the udp port where the RTCM packets are received on the common wireless network)
+
+- Command to forward the GPS RTCM messages from a local UART port to the drone: 
+$ ./paparazzi/sw/ground_segment/misc/ublox2ivy -i "drone_id" -e uart:///dev/ttyS1:460800
+(where ttyS1 is the UART port where the RTCM packets are received and 460800 is the baudrate of the UART communication)
 
 - Connect wirelessly to the Herelink using adb: 
 $ adb connect 192.168.1.101:5555 
