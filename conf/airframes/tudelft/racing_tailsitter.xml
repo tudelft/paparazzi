@@ -15,8 +15,8 @@
       <module name="radio_control" type="sbus">
         <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>
         <define name="RADIO_KILL_SWITCH" value="5"/>
-        <define name="RADIO_KILL" value="5"/>
-        <!-- <define name="RADIO_PIVOT_SWITCH" value="6"/> -->
+        <!--<define name="RADIO_KILL" value="5"/>-->
+        <define name="RADIO_PIVOT_SWITCH" value="6"/> 
       </module>
 
         <module name="airspeed" type="ms45xx_i2c">
@@ -52,7 +52,7 @@
     </target>
 
 <!-- ****************** Common to both ********************* -->
-    <module name="gps" type="ubx_ucenter"/>
+    <!--<module name="gps" type="ubx_ucenter"/>-->
     
     <module name="tlsf"/>
     <module name="pprzlog"/>
@@ -103,15 +103,20 @@
       <define name="USE_AIRSPEED_AIR_DATA" value="TRUE"/>
     </module>
 
-    <module name="gps" type="ublox">
-      <!-- <configure name="GPS_BAUD" value="B57600"/> -->
-    </module>
+    <!--<module name="gps" type="ublox">
+      <configure name="GPS_BAUD" value="B57600"/>
+    </module>-->
+   <module name="gps" type="datalink"/>
 
    <module name="stabilization" type="indi">
       <configure name="INDI_NUM_ACT" value="6"/>
+      <define name="WLS_N_U" value="6"/>
+      <define name="WLS_N_V" value="4"/>
     </module>
 
-    <module name="ins" type="ekf2"/>
+    <module name="ins" type="ekf2">
+      <define name="INS_EKF2_OPTITRACK" value="true"/>
+    </module>
     <!--<module name="ins" type="float_invariant">
       <define name="INS_PROPAGATE_FREQUENCY" value="500"/>
     <define name="INS_FINV_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>
@@ -153,7 +158,7 @@
     <servo name="RM" no="2" min="1000" neutral="1100" max="2000"/>
     <servo name="LM" no="3" min="1000" neutral="1100" max="2000"/>
     <servo name="ELE_LEFT"  no="4" min="690" neutral="1440" max="2190"/> <!--neutral 1526-->
-    <servo name="ELE_RIGHT"  no="5" min="770" neutral="1520" max="2270"/>
+    <servo name="ELE_RIGHT"  no="5" min="700" neutral="1450" max="2200"/>
     <!--<servo name="SERVO_TEST" no="4" min="1000" neutral="1500" max="2000"/>-->
   </servos>
 
@@ -323,6 +328,7 @@
 <!-- Definitions for control effectiveness calculator module -->
   <section name="CONTROL_EFFECTIVENESS" prefix="CTRL_EFF_CALC_">
   	<define name="GROUND_CONTACT" value="0"/>
+    <define name="THRUST_LOWER_LIM" value="1500"/>
   	
         <!-- Drone specific metrics -->
     	<define name="MASS" value="0.3756"/>		<!--[kg]-->
