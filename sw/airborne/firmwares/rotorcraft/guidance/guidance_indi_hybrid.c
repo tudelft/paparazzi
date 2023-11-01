@@ -170,19 +170,11 @@ float guidance_indi_line_gain = GUIDANCE_INDI_LINE_GAIN;
 #else
 float guidance_indi_line_gain = 1.0;
 #endif
-<<<<<<< HEAD
 
 #ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
 #define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
 #endif
 
-=======
-
-#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
-#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
-#endif
-
->>>>>>> 1cf6407e65a61546f16964a6e27eb5902865a8ed
 float guidance_indi_pitch_eff_scaling = GUIDANCE_INDI_PITCH_EFF_SCALING;
 float d_cg = 0.16;
 float inv_eff[4];
