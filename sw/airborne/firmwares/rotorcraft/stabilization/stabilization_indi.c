@@ -173,7 +173,7 @@ float act_dyn[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_DYN;
 float indi_u_memory[INDI_NUM_ACT][actuator_mem_buf_size];
 float actuator_state_prev[INDI_NUM_ACT];
 float actuator_state_prev_prev[INDI_NUM_ACT];
-int servo_delay = (int) (STABILIZATION_INDI_SERVO_DELAY * PERIODIC_FREQUENCY);
+//int servo_delay = (int) (STABILIZATION_INDI_SERVO_DELAY * PERIODIC_FREQUENCY);
 //float servo_max_rate = STABILIZATION_INDI_SERVO_RATE_LIMIT;
 
 #ifdef STABILIZATION_INDI_COUNTER_TORQUE_INDIFFERENCE
@@ -467,23 +467,14 @@ void init_filters(void)
   // Filtering of the accel body z
   init_butterworth_2_low_pass(&acceleration_lowpass_filter, tau_est, sample_time, 0.0);
 
-#if STABILIZATION_INDI_FILTER_RATES_SECOND_ORDER
-  tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_P);
-  init_butterworth_2_low_pass(&rates_filt_so[0], tau, sample_time, 0.0);
-  tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_Q);
-  init_butterworth_2_low_pass(&rates_filt_so[1], tau, sample_time, 0.0);
-  tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_R);
-  init_butterworth_2_low_pass(&rates_filt_so[2], tau, sample_time, 0.0);
-#else
-  // Init rate filter for feedback
+ // Init rate filter for feedback
   float time_constants[3] = {1.0 / (2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_P), 1.0 / (2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_Q), 1.0 / (2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_R)};
 
   init_first_order_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
   init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
   init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
-#endif
 
-  tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_2ORDER_QFILT_CUTOFF);
+  //tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_2ORDER_QFILT_CUTOFF);
   init_butterworth_2_low_pass(&qfilt, tau_est, sample_time, 0.0);
 
   // Initialize 2nd order actuator state variables
@@ -994,48 +985,25 @@ void stabilization_indi_read_rc(bool in_flight, bool in_carefree, bool coordinat
  */
 void get_actuator_state(void)
 {
-#if STABILIZATION_INDI_RPM_FEEDBACK
+#if INDI_RPM_FEEDBACK
   float_vect_copy(actuator_state, act_obs, INDI_NUM_ACT);
 #else
   //actuator dynamics
   int8_t i;
   float UNUSED prev_actuator_state;
   for (i = 0; i < INDI_NUM_ACT; i++) {
-	  if (i < 2) {
-		  // Second order dynamics for servos
-		  actuator_state[i] = -STABILIZATION_INDI_SERVO_2ND_ORD_DEN_2 * actuator_state_prev[i] -
-				  	  	  	   STABILIZATION_INDI_SERVO_2ND_ORD_DEN_3 * actuator_state_prev_prev[i] +
-							   STABILIZATION_INDI_SERVO_2ND_ORD_NUM_1 * indi_u_memory[i][actuator_mem_buf_size - servo_delay] +
-							   STABILIZATION_INDI_SERVO_2ND_ORD_NUM_2 * indi_u_memory[i][actuator_mem_buf_size - servo_delay - 1] +
-							   STABILIZATION_INDI_SERVO_2ND_ORD_NUM_3 * indi_u_memory[i][actuator_mem_buf_size - servo_delay - 2];
+    prev_actuator_state = actuator_state[i];
+
+    actuator_state[i] = actuator_state[i]
+                        + act_dyn[i] * (indi_u[i] - actuator_state[i]);
 
 #ifdef STABILIZATION_INDI_ACT_RATE_LIMIT
-		if ((actuator_state[i] - actuator_state_prev[i]) > act_rate_limit[i]) {
-		  actuator_state[i] = actuator_state_prev[i] + act_rate_limit[i];
-		} else if ((actuator_state[i] - actuator_state_prev[i]) < -act_rate_limit[i]) {
-		  actuator_state[i] = actuator_state_prev[i] - act_rate_limit[i];
-		}
+    if ((actuator_state[i] - prev_actuator_state) > act_rate_limit[i]) {
+      actuator_state[i] = prev_actuator_state + act_rate_limit[i];
+    } else if ((actuator_state[i] - prev_actuator_state) < -act_rate_limit[i]) {
+      actuator_state[i] = prev_actuator_state - act_rate_limit[i];
+    }
 #endif
-
-	  } else {
-		  prev_actuator_state = actuator_state[i];
-		  actuator_state[i] = actuator_state[i]
-								+ act_dyn[i] * (indi_u[i] - actuator_state[i]);
-#ifdef STABILIZATION_INDI_ACT_RATE_LIMIT
-		  if ((actuator_state[i] - prev_actuator_state) > act_rate_limit[i]) {
-			  actuator_state[i] = prev_actuator_state + act_rate_limit[i];
-		  } else if ((actuator_state[i] - prev_actuator_state) < -act_rate_limit[i]) {
-			  actuator_state[i] = prev_actuator_state - act_rate_limit[i];
-		  }
-#endif
-	  }
-	  //Assign the memory variables:
-	  actuator_state_prev_prev[i] = actuator_state_prev[i];
-	  actuator_state_prev[i] = actuator_state[i];
-	  for (int j = 1; j < actuator_mem_buf_size ; j++){
-		  indi_u_memory[i][j-1] = indi_u_memory[i][j];
-	  }
-	  indi_u_memory[i][actuator_mem_buf_size-1] = indi_u[i];
   }
 
 #endif
