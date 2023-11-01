@@ -170,11 +170,19 @@ float guidance_indi_line_gain = GUIDANCE_INDI_LINE_GAIN;
 #else
 float guidance_indi_line_gain = 1.0;
 #endif
+<<<<<<< HEAD
 
 #ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
 #define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
 #endif
 
+=======
+
+#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
+#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
+#endif
+
+>>>>>>> 1cf6407e65a61546f16964a6e27eb5902865a8ed
 float guidance_indi_pitch_eff_scaling = GUIDANCE_INDI_PITCH_EFF_SCALING;
 float d_cg = 0.16;
 float inv_eff[4];
@@ -772,7 +780,51 @@ void guidance_indi_propagate_filters(void) {
  * @param a_diff acceleration errors in earth frame
  * @param body_v 3D vector to write the control objective v
  */
-#if GUIDANCE_INDI_HYBRID_USE_WLS
+#if defined(GUIDANCE_INDI_QUADPLANE)
+/**
+ * Perform WLS
+ *
+ * @param Gmat Dynamics matrix
+ * @param a_diff acceleration errors in earth frame
+ * @param body_v 3D vector to write the control objective v
+ */
+void WEAK guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_HYBRID_U], struct FloatVect3 a_diff, float body_v[GUIDANCE_INDI_HYBRID_V]) {
+  /*Pre-calculate sines and cosines*/
+  float sphi = sinf(eulers_zxy.phi);
+  float cphi = cosf(eulers_zxy.phi);
+  float stheta = sinf(eulers_zxy.theta);
+  float ctheta = cosf(eulers_zxy.theta);
+  float spsi = sinf(eulers_zxy.psi);
+  float cpsi = cosf(eulers_zxy.psi);
+
+  /*Amount of lift produced by the wing*/
+  float lift_thrust_bz = accel_bodyz_filt.o[0]; // Sum of lift and thrust in boxy z axis (level flight)
+
+  // get the derivative of the lift wrt to theta
+  float liftd = guidance_indi_get_liftd(0.0f, 0.0f);
+
+  Gmat[0][0] = -sphi*stheta*lift_thrust_bz;
+  Gmat[1][0] = -cphi*lift_thrust_bz;
+  Gmat[2][0] = -sphi*ctheta*lift_thrust_bz;
+
+  Gmat[0][1] =  cphi*ctheta*lift_thrust_bz*guidance_indi_pitch_eff_scaling;
+  Gmat[1][1] =  sphi*stheta*lift_thrust_bz*guidance_indi_pitch_eff_scaling - sphi*liftd;
+  Gmat[2][1] = -cphi*stheta*lift_thrust_bz*guidance_indi_pitch_eff_scaling + cphi*liftd;
+
+  Gmat[0][2] =  cphi*stheta;
+  Gmat[1][2] = -sphi;
+  Gmat[2][2] =  cphi*ctheta;
+
+  Gmat[0][3] =  ctheta;
+  Gmat[1][3] =  0;
+  Gmat[2][3] = -stheta;
+
+  // Convert acceleration error to body axis system
+  body_v[0] =  cpsi * a_diff.x + spsi * a_diff.y;
+  body_v[1] = -spsi * a_diff.x + cpsi * a_diff.y;
+  body_v[2] =  a_diff.z;
+}
+#else
 void WEAK guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_HYBRID_U], struct FloatVect3 a_diff, float v_gih[GUIDANCE_INDI_HYBRID_V]) {
 
   /*Pre-calculate sines and cosines*/
@@ -807,59 +859,6 @@ void WEAK guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_I
   v_gih[1] = a_diff.y;
   v_gih[2] = a_diff.z;
 }
-#elif defined(GUIDANCE_INDI_QUADPLANE)
-/**
- * Perform WLS
- *
- * @param Gmat Dynamics matrix
- * @param a_diff acceleration errors in earth frame
- * @param body_v 3D vector to write the control objective v
- */
-void WEAK guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_HYBRID_U], struct FloatVect3 a_diff, float body_v[GUIDANCE_INDI_HYBRID_V]) {
-  /*Pre-calculate sines and cosines*/
-  float sphi = sinf(eulers_zxy.phi);
-  float cphi = cosf(eulers_zxy.phi);
-  float stheta = sinf(eulers_zxy.theta);
-  float ctheta = cosf(eulers_zxy.theta);
-  float spsi = sinf(eulers_zxy.psi);
-  float cpsi = cosf(eulers_zxy.psi);
-
-#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
-#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
-#endif
-
-  /*Amount of lift produced by the wing*/
-  float lift_thrust_bz = accel_bodyz_filt.o[0]; // Sum of lift and thrust in boxy z axis (level flight)
-
-  // get the derivative of the lift wrt to theta
-  float liftd = guidance_indi_get_liftd(0.0f, 0.0f);
-
-  Gmat[0][0] = -sphi*stheta*lift_thrust_bz;
-  Gmat[1][0] = -cphi*lift_thrust_bz;
-  Gmat[2][0] = -sphi*ctheta*lift_thrust_bz;
-
-  Gmat[0][1] =  cphi*ctheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING;
-  Gmat[1][1] =  sphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*liftd;
-  Gmat[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
-
-  Gmat[0][2] =  cphi*stheta;
-  Gmat[1][2] = -sphi;
-  Gmat[2][2] =  cphi*ctheta;
-
-  Gmat[0][3] =  ctheta;
-  Gmat[1][3] =  0;
-  Gmat[2][3] = -stheta;
-
-  // Convert acceleration error to body axis system
-  body_v[0] =  cpsi * a_diff.x + spsi * a_diff.y;
-  body_v[1] = -spsi * a_diff.x + cpsi * a_diff.y;
-  body_v[2] =  a_diff.z;
-}
-
-#else
-
-void WEAK guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_HYBRID_U] UNUSED, struct FloatVect3 a_diff UNUSED, float body_v[GUIDANCE_INDI_HYBRID_V] UNUSED) {}
-
 #endif
 /**
  *
