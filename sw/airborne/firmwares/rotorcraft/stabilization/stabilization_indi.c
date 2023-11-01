@@ -176,12 +176,15 @@ float actuator_state_prev_prev[INDI_NUM_ACT];
 //int servo_delay = (int) (STABILIZATION_INDI_SERVO_DELAY * PERIODIC_FREQUENCY);
 //float servo_max_rate = STABILIZATION_INDI_SERVO_RATE_LIMIT;
 
+<<<<<<< HEAD
 #ifdef STABILIZATION_INDI_COUNTER_TORQUE_INDIFFERENCE
 float ratio_moi = STABILIZATION_INDI_MOMENT_INERTIA_RATIO;
 float pprz_to_rad_servo = STABILIZATION_INDI_GRADIENT;
 float actuator_state_filt_vectd_cti[INDI_NUM_ACT];
 float actuator_state_filt_vectdd_cti[INDI_NUM_ACT];
 #endif
+=======
+>>>>>>> 1cf6407e65a61546f16964a6e27eb5902865a8ed
 //-------------------------------------
 float pivot_gain_q = STABILIZATION_INDI_PIVOT_GAIN_Q;
 float pivot_gain_theta = STABILIZATION_INDI_PIVOT_GAIN_THETA;
