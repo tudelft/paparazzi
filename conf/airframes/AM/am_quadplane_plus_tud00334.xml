@@ -140,6 +140,8 @@
       <configure name="NAV_HYBRID_POS_GAIN" value="1"/>
       <configure name="NAV_MAX_SPEED" value="15"/>
       <configure name="NAV_HYBRID_LINE_GAIN" value="1"/>
+      <configure name="NAV_HYBRID_MAX_AIRSPEED" value="15"/>
+      <configure name="NAV_HYBRID_SPEED_MARGIN" value="10"/>
     </module>
 
     <module name="ahrs" type="float_cmpl_quat">
