@@ -91,10 +91,6 @@
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
-    <block name="Pre-Standby">
-      <while cond="check_1st_nav"/>
-      <call_once fun="NavSetWaypointPosAndAltHere(WP_STDBY)"/>
-    </block>
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <stay wp="STDBY"/>
     </block>

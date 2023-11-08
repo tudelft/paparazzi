@@ -47,15 +47,12 @@
       <message name="AHRS_REF_QUAT"            period="0.1"/>
       <message name="INS_FLOW_INFO"	           period="0.1"/> 
       <message name="GPS_RTK"                  period="0.1"/>
+      <message name="AIRSPEED_RAW"             period="0.1"/>
       <message name="ROTATING_WING_STATE"	     period="0.2"/>
-      <message name="AOA"			                 period="0.2"/>
       <message name="ACTUATORS"                period="0.02"/>
-      <message name="INDI_G"			             period="0.2"/>
-      <message name="ONELOOP_ANDI"             period="0.02"/>
-      <message name="ONELOOP_G"                period="0.02"/>
-      <message name="ONELOOP_GUIDANCE"         period="0.02"/>  
-      <message name="PUSHER_TEST"              period="0.02"/>     
-      <!-- <message name="COMMANDS"                 period="0.02"/> -->
+      <message name="EFF_MAT_G"                period="0.02"/>
+      <message name="GUIDANCE"                 period="0.02"/> 
+      <message name="STAB_ATTITUDE"            period="0.02"/>
     </mode>
 
     <mode name="calibration">
@@ -114,7 +111,6 @@
       <message name="AHRS_QUAT_INT"      period=".25"/>
       <message name="AHRS_EULER_INT"     period=".1"/>
       <message name="AHRS_EULER"         period=".1"/>
-<!--      <message name="AHRS_RMAT_INT"   period=".5"/> -->
     </mode>
 
     <mode name="rate_loop">
@@ -140,8 +136,8 @@
       <message name="STAB_ATTITUDE_REF_INT"   period=".03"/>
       <message name="STAB_ATTITUDE_FLOAT"     period=".03"/>
       <message name="STAB_ATTITUDE_REF_FLOAT" period=".03"/>
-      <message name="STAB_ATTITUDE_INDI"      period=".25"/>
-      <message name="INDI_G"                  period="2.0"/>
+      <message name="STAB_ATTITUDE"           period=".25"/>
+      <message name="EFF_MAT_G"               period="2.0"/>
     </mode>
 
     <mode name="vert_loop" key_press="v">
@@ -157,9 +153,9 @@
     </mode>
 
     <mode name="vel_guidance" key_press="q">
-      <message name="ALIVE" period="0.9"/>
+      <message name="ALIVE"                   period="0.9"/>
       <message name="HYBRID_GUIDANCE"         period="0.062"/>
-      <!--<message name="STAB_ATTITUDE_REF" period="0.4"/>-->
+      <message name="GUIDANCE_INDI_HYBRID"     period="0.1"/>
       <message name="ROTORCRAFT_FP"           period="0.8"/>
       <message name="ROTORCRAFT_STATUS"       period="1.2"/>
       <message name="ROTORCRAFT_NAV_STATUS"   period="1.6"/>
@@ -175,7 +171,6 @@
       <message name="GUIDANCE_H_REF_INT"      period="0.062"/>
       <message name="STAB_ATTITUDE_INT"       period="0.4"/>
       <message name="STAB_ATTITUDE_FLOAT"     period="0.4"/>
-      <!--<message name="STAB_ATTITUDE_REF_INT" period="0.4"/>-->
       <message name="ROTORCRAFT_FP"           period="0.8"/>
       <message name="ROTORCRAFT_STATUS"       period="1.2"/>
       <message name="ROTORCRAFT_NAV_STATUS"   period="1.6"/>
@@ -242,18 +237,14 @@
       <message name="GUIDANCE_INDI_HYBRID"     period="0.002"/>
       <message name="HYBRID_GUIDANCE"          period="0.02"/>
       <message name="ESC"                      period="0.02"/>
-      <message name="STAB_ATTITUDE_INDI"       period="0.002"/>
+      <message name="STAB_ATTITUDE"            period="0.002"/>
       <message name="PPM"                      period="0.05"/>
-      <message name="INDI_G"                   period="0.1"/>
       <message name="ACTUATORS"                period="0.002"/>
       <message name="GPS_RTK"                  period="0.1"/>
       <message name="IMU_HEATER"               period="1.0"/>
-      <message name="ROTATING_WING_STATE"	     period="0.2"/>
-      <message name="AOA"			                 period="0.02"/>
-      <message name="ONELOOP_ANDI"             period="0.002"/>
-      <message name="ONELOOP_G"                period="0.002"/>
-      <message name="ONELOOP_GUIDANCE"         period="0.002"/>
-      <message name="PUSHER_TEST"              period="0.002"/>  
+      <message name="AIRSPEED_RAW"             period="0.01"/>
+      <message name="EFF_MAT_G"                period="0.002"/>
+      <message name="GUIDANCE"                 period="0.002"/> 
     </mode>
   </process>
 
