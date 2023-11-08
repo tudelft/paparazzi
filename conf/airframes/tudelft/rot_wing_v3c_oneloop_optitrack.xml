@@ -10,6 +10,7 @@
     <description>RotatingWingV3C</description>
 
     <firmware name="rotorcraft">
+     <autopilot name="rotorcraft_oneloop_with_backup.xml"/>
         <target name="ap" board="cube_orange">
             <configure VALUE="500" NAME="PERIODIC_FREQUENCY"/>
             <module TYPE="sbus" NAME="radio_control">
@@ -76,6 +77,7 @@
         </module>
         
         <module name="guidance" type="oneloop"/>
+        <module name="nav_hybrid"/>
 
         <module TYPE="ekf2" NAME="ins">
          <define name="INS_EKF2_OPTITRACK" value="true"/>
@@ -96,6 +98,10 @@
             <configure name="MAG_RM3100_I2C_DEV" value="I2C2"/>
         </module>
 
+        <module name="wls">
+            <define name="WLS_N_U" value = "7"/>
+            <define name="WLS_N_V" value = "6"/>
+        </module>
         <module name="AOA_pwm">
             <define name="USE_PWM_INPUT1" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>
             <define name="AOA_ANGLE_OFFSET" value="3.5807"/>
@@ -119,7 +125,7 @@
     </firmware>
 
     <servos DRIVER="Pwm">
-        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1031" NEUTRAL="1031" MAX="1986"/>
+        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1031" NEUTRAL="1330" MAX="2260"/>
     </servos>
 
     <servos DRIVER="Uavcan1">
@@ -199,8 +205,8 @@
         <define VALUE="45." UNIT="deg"   NAME="STABILIZATION_ATTITUDE_SP_MAX_THETA"/>
         <define VALUE="90." UNIT="deg/s" NAME="STABILIZATION_ATTITUDE_SP_MAX_R"/>
         <define VALUE="200"              NAME="STABILIZATION_ATTITUDE_DEADBAND_R"/>
-        <define name="WLS_N_U" value="8"/>
-        <define name="WLS_N_V" value="6"/>
+        <define name="GUIDANCE_INDI_MAX_AIRSPEED"          value = "5.0f"/> <!--remove once hybrid nav is made not dependent on guidance indi hybrid-->
+        <define name="GUIDANCE_INDI_NAV_SPEED_MARGIN"      value = "0.0"/>  <!--remove once hybrid nav is made not dependent on guidance indi hybrid-->
     </section>
 
     <section name="IMU" prefix="IMU_">
@@ -245,7 +251,7 @@
 
     <section NAME="AUTOPILOT">
         <define VALUE="AP_MODE_ATTITUDE_DIRECT"         NAME="MODE_MANUAL"/>
-        <define VALUE="AP_MODE_HOVER_Z_HOLD"            NAME="MODE_AUTO1"/>
+        <define VALUE="AP_MODE_MODULE      "            NAME="MODE_AUTO1"/>
         <define VALUE="AP_MODE_NAV"                     NAME="MODE_AUTO2"/>
         <define VALUE="AP_MODE_ATTITUDE_DIRECT"         NAME="MODE_STARTUP"/>
         <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/>
