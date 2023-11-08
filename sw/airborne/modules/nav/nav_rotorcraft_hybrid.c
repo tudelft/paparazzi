@@ -49,6 +49,7 @@ float nav_goto_speed = GUIDANCE_INDI_GOTO_SPEED;
 #define NAV_HYBRID_MAX_DECELERATION 1.0
 #endif
 
+#ifdef NAV_HYBRID_MAX_DECELERATION
 float nav_max_deceleration_sp = NAV_HYBRID_MAX_DECELERATION;
 #else
 float nav_max_deceleration_sp = 1.0;
