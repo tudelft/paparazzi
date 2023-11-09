@@ -11,13 +11,13 @@
 
     <firmware name="rotorcraft">
         <autopilot name="rotorcraft_oneloop_with_backup.xml"/>
-        <target name="ap" board="cube_orange">
+        <target name="ap" board="cube_orangeplus">
             <configure VALUE="500" NAME="PERIODIC_FREQUENCY"/>
             <module TYPE="sbus" NAME="radio_control">
                 <configure VALUE="UART3" NAME="SBUS_PORT"/>
             </module>
-            <module NAME="sys_mon"/>
-            <module NAME="flight_recorder"/>
+            <module name="sys_mon"/>
+            <module name="flight_recorder"/>
             <module TYPE="ms45xx_i2c" NAME="airspeed">
                 <define NAME="USE_I2C2"/>
                 <define VALUE="i2c2" NAME="MS45XX_I2C_DEV"/>
@@ -29,8 +29,8 @@
             <module name="airspeed" type="uavcan"/>
 
             <module name="lidar_tfmini">
-                <configure name="TFMINI_PORT" value="UART8"/>
-                <configure name="USE_TFMINI_AGL" value="TRUE"/>
+                <configure name="TFMINI_PORT"     value="UART8"/>
+                <configure name="USE_TFMINI_AGL"  value="TRUE"/>
             </module>     
             <define VALUE="RADIO_AUX1" NAME="RADIO_TH_HOLD"/>
             <define VALUE="RADIO_AUX2" NAME="RADIO_FMODE"/>
