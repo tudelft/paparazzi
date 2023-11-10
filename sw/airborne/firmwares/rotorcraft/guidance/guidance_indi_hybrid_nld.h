@@ -59,5 +59,6 @@ extern float guidance_indi_max_airspeed;
 extern float nav_max_speed;
 extern bool take_heading_control;
 extern float guidance_indi_max_bank;
+extern float lift_pitch_eff;
 
 #endif /* GUIDANCE_INDI_HYBRID_NLD_H */

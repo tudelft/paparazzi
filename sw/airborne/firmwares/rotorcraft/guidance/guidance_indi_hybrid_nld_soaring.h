@@ -46,6 +46,7 @@ extern void guidance_indi_soaring_init(void);
 extern void guidance_indi_soaring_propagate_filters(void);
 extern void guidance_indi_hybrid_soaring_start(void);
 extern void guidance_indi_hybrid_soaring_stop(void);
+extern void guidance_indi_hybrid_soaring_reset(void);
 
 struct guidance_indi_hybrid_params {
   float pos_gain;
@@ -66,6 +67,7 @@ extern float guidance_indi_max_airspeed;
 extern float nav_max_speed;
 extern bool take_heading_control;
 extern float guidance_indi_max_bank;
+extern float lift_pitch_eff;
 
 extern struct FloatVect3 guidance_wind_gradient;
 
@@ -82,6 +84,7 @@ extern float gd_gamma_sq;
 extern float gd_Wv[3];
 extern float gd_Wu[3];
 extern float gd_du_pref[3];
+extern bool use_variable_weights;
 
 extern struct FloatVect2 heading_target;
 extern struct FloatVect3 soaring_spd_sp;
