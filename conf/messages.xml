@@ -480,7 +480,6 @@
          <field name="roll_filt" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
          <field name="theta_filt" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
          <field name="psi" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
-         <field name="wls_num_iter" type="int16"/>
          <field name="thr_filt" type="float"/>
      </message>
 

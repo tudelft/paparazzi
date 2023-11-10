@@ -312,31 +312,31 @@ void guidance_indi_run(float *heading_sp) {
 //  if((airspeed > 10.0) && (norm_des_as > 12.0)) {
 
   // Give the wind cancellation priority.
-    if (norm_des_as > guidance_indi_max_airspeed) {
-      float groundspeed_factor = 0.0;
-
-      // if the wind is faster than we can fly, just fly in the wind direction
-      if(FLOAT_VECT2_NORM(windspeed) < guidance_indi_max_airspeed) {
-        float av = speed_sp.x * speed_sp.x + speed_sp.y * speed_sp.y;
-        float bv = -2 * (windspeed.x * speed_sp.x + windspeed.y * speed_sp.y);
-        float cv = windspeed.x * windspeed.x + windspeed.y * windspeed.y - guidance_indi_max_airspeed * guidance_indi_max_airspeed;
-
-        float dv = bv * bv - 4.0 * av * cv;
-
-        // dv can only be positive, but just in case
-        if(dv < 0.0) {
-          dv = fabs(dv);
-        }
-        float d_sqrt = sqrtf(dv);
-
-        groundspeed_factor = (-bv + d_sqrt)  / (2.0 * av);
-      }
-
-      desired_airspeed.x = groundspeed_factor * speed_sp.x - windspeed.x;
-      desired_airspeed.y = groundspeed_factor * speed_sp.y - windspeed.y;
-
-      speed_sp_b_x = guidance_indi_max_airspeed;
-    }
+//    if (norm_des_as > guidance_indi_max_airspeed) {
+//      float groundspeed_factor = 0.0;
+//
+//      // if the wind is faster than we can fly, just fly in the wind direction
+//      if(FLOAT_VECT2_NORM(windspeed) < guidance_indi_max_airspeed) {
+//        float av = speed_sp.x * speed_sp.x + speed_sp.y * speed_sp.y;
+//        float bv = -2 * (windspeed.x * speed_sp.x + windspeed.y * speed_sp.y);
+//        float cv = windspeed.x * windspeed.x + windspeed.y * windspeed.y - guidance_indi_max_airspeed * guidance_indi_max_airspeed;
+//
+//        float dv = bv * bv - 4.0 * av * cv;
+//
+//        // dv can only be positive, but just in case
+//        if(dv < 0.0) {
+//          dv = fabs(dv);
+//        }
+//        float d_sqrt = sqrtf(dv);
+//
+//        groundspeed_factor = (-bv + d_sqrt)  / (2.0 * av);
+//      }
+//
+//      desired_airspeed.x = groundspeed_factor * speed_sp.x - windspeed.x;
+//      desired_airspeed.y = groundspeed_factor * speed_sp.y - windspeed.y;
+//
+//      speed_sp_b_x = guidance_indi_max_airspeed;
+//    }
 
     // desired airspeed can not be larger than max airspeed
     speed_sp_b_x = Min(norm_des_as,guidance_indi_max_airspeed);
@@ -718,11 +718,11 @@ struct FloatVect3 nav_get_speed_sp_from_line(struct FloatVect2 line_v_enu, struc
   }
 
   // Bound vertical speed setpoint
-  if(stateGetAirspeed_f() > 13.0) {
-    Bound(speed_sp_return.z, -4.0, 5.0);
-  } else {
+//  if(stateGetAirspeed_f() > 13.0) {
+//    Bound(speed_sp_return.z, -4.0, 5.0);
+//  } else {
     Bound(speed_sp_return.z, -nav_climb_vspeed, -nav_descend_vspeed);
-  }
+//  }
 
   return speed_sp_return;
 }
@@ -774,11 +774,11 @@ struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_ga
   }
 
   // Bound vertical speed setpoint
-  if(stateGetAirspeed_f() > 13.0) {
-    Bound(speed_sp_return.z, -4.0, 5.0);
-  } else {
+//  if(stateGetAirspeed_f() > 13.0) {
+//    Bound(speed_sp_return.z, -4.0, 5.0);
+//  } else {
     Bound(speed_sp_return.z, -nav_climb_vspeed, -nav_descend_vspeed);
-  }
+//  }
 
   return speed_sp_return;
 }
