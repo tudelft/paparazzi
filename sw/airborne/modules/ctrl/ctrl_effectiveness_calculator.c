@@ -86,13 +86,10 @@ void ctrl_eff(void)
 
     float delta_l0 = pprz_to_rad_left(actuator_state_filt_vect[0]);
     float delta_r0 = pprz_to_rad_right(actuator_state_filt_vect[1]);
-#if STABILIZATION_INDI_COUNTER_TORQUE_INDIFFERENCE
-    float motor_r0 = actuator_state_filt_vect[2] < min_thrust ? min_thrust : actuator_state_filt_vect[2];
-    float motor_l0 = actuator_state_filt_vect[3] < min_thrust ? min_thrust : actuator_state_filt_vect[3];
-#else
+
     float motor_r0 = actuator_state_filt_vect[2] < thrust_lower_lim ? thrust_lower_lim : actuator_state_filt_vect[2]; // [pprz]
     float motor_l0 = actuator_state_filt_vect[3] < thrust_lower_lim ? thrust_lower_lim : actuator_state_filt_vect[3]; // [pprz]
-#endif
+
     // thrust_loss_r = thrust_correcting_ratio(motor_r0, delta_r0);
     // thrust_loss_l = thrust_correcting_ratio(motor_l0, delta_l0);
     thrust_loss_r = 1.0;

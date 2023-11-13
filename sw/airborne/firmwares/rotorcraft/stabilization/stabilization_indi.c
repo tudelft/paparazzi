@@ -109,7 +109,6 @@ float du_pref_stab_indi[INDI_NUM_ACT];
 float indi_v[INDI_OUTPUTS];
 float *Bwls[INDI_OUTPUTS];
 int num_iter = 0;
-
 static void lms_estimation(void);
 static void get_actuator_state(void);
 static void calc_g1_element(float dx_error, int8_t i, int8_t j, float mu_extra);
@@ -146,13 +145,13 @@ float act_rate_limit[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_RATE_LIMIT;
 #ifdef STABILIZATION_INDI_ACT_IS_SERVO
 bool act_is_servo[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_IS_SERVO;
 #else
-bool act_is_servo[INDI_NUM_ACT] = {0};
+bool act_is_servo[INDI_NUM_ACT] = {[0 ... INDI_NUM_ACT - 1] = 0};
 #endif
 
 #ifdef STABILIZATION_INDI_ACT_IS_THRUSTER_X
 bool act_is_thruster_x[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_IS_THRUSTER_X;
 #else
-bool act_is_thruster_x[INDI_NUM_ACT] = {0};
+bool act_is_thruster_x[INDI_NUM_ACT] = {[0 ... INDI_NUM_ACT - 1] = 0};
 #endif
 
 bool act_is_thruster_z[INDI_NUM_ACT];
@@ -162,19 +161,10 @@ bool act_is_thruster_z[INDI_NUM_ACT];
 float act_pref[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_PREF;
 #else
 // Assume 0 is neutral
-float act_pref[INDI_NUM_ACT] = {0.0};
+float act_pref[INDI_NUM_ACT] = {[0 ... INDI_NUM_ACT - 1] = 0.0f};
 #endif
 
 float act_dyn[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_DYN;
-
-//-------------------------------------
-// Variables for second order dynamics
-#define actuator_mem_buf_size 10
-float indi_u_memory[INDI_NUM_ACT][actuator_mem_buf_size];
-float actuator_state_prev[INDI_NUM_ACT];
-float actuator_state_prev_prev[INDI_NUM_ACT];
-//int servo_delay = (int) (STABILIZATION_INDI_SERVO_DELAY * PERIODIC_FREQUENCY);
-//float servo_max_rate = STABILIZATION_INDI_SERVO_RATE_LIMIT;
 
 //-------------------------------------
 float pivot_gain_q = STABILIZATION_INDI_PIVOT_GAIN_Q;
@@ -331,7 +321,7 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
   struct Int32Vect3 *body_accel_i = stateGetAccelBody_i();
   struct FloatVect3 body_accel_f_telem;
   ACCELS_FLOAT_OF_BFP(body_accel_f_telem, *body_accel_i);
-  float zero = 0;
+
   pprz_msg_send_STAB_ATTITUDE_INDI(trans, dev, AC_ID,
                                    &body_accel_f_telem.x,    // input lin.acc
                                    &body_accel_f_telem.y,
@@ -348,9 +338,11 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
                                    &angular_accel_ref.p,     // ang.acc.sp
                                    &angular_accel_ref.q,
                                    &angular_accel_ref.r,
-                                   &zero, &zero,             // eff.mat
-                                   &zero, &zero,
-                                   INDI_NUM_ACT, indi_u);    // out
+                                   &actuator_state_filt_vect[0],
+                                   &actuator_state_filt_vect[1],
+                                   &actuator_state_filt_vect[4],
+                                   &actuator_state_filt_vect[5],
+                                   INDI_NUM_ACT, indi_du);    // out
 }
 #endif
 
@@ -466,15 +458,6 @@ void init_filters(void)
 
   //tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_2ORDER_QFILT_CUTOFF);
   init_butterworth_2_low_pass(&qfilt, tau_est, sample_time, 0.0);
-
-  // Initialize 2nd order actuator state variables
-  for(int i = 0; i < INDI_NUM_ACT; i++){
-      for(int j = 0; j < actuator_mem_buf_size; j++ ){
-          indi_u_memory[i][j] = 0;
-      }
-      actuator_state_prev[i] = 0;
-      actuator_state_prev_prev[i] = 0;
-  }
 }
 
 /**
@@ -685,42 +668,11 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   stabilization_indi_set_wls_settings(use_increment);
 
   for (i = 0; i < INDI_NUM_ACT; i++) {
-#ifdef STABILIZATION_INDI_MIN_THROTTLE
-//    float airspeed = stateGetAirspeed_f();
-//    // Limit minimum thrust ap can give
-//    if (!act_is_servo[i]) {
-//    	if (airspeed < 8.0){
-//    		du_min_stab_indi[i] = STABILIZATION_INDI_MIN_THROTTLE - actuator_state_filt_vect[i];
-//    	} else{
-//    		du_min_stab_indi[i] = STABILIZATION_INDI_MIN_THROTTLE_FWD - actuator_state_filt_vect[i];
-//    	}
-//    }
-    if (!act_is_servo[i]) {
-    	if (autopilot.mode == AP_MODE_ATTITUDE_DIRECT) {
-    		du_min_stab_indi[i] = STABILIZATION_INDI_MIN_THROTTLE - actuator_state_filt_vect[i];
-      } else if (autopilot.mode == AP_MODE_FORWARD) {
-        du_min_stab_indi[i] = STABILIZATION_INDI_MIN_THROTTLE_FWD - actuator_state_filt_vect[i];
-      }
-    }
-#endif
 
 #ifdef STABILIZATION_INDI_MAX_SERVO_INCREMENT
     if (act_is_servo[i]) {
     	BoundAbs(du_min_stab_indi[i], STABILIZATION_INDI_MAX_SERVO_INCREMENT);
     	BoundAbs(du_max_stab_indi[i], STABILIZATION_INDI_MAX_SERVO_INCREMENT);
-    }
-#endif
-
-#ifdef GUIDANCE_INDI_MIN_THROTTLE
-    //limit minimum thrust ap can give
-    if (!act_is_servo[i]) {
-      if ((guidance_h.mode == GUIDANCE_H_MODE_HOVER) || (guidance_h.mode == GUIDANCE_H_MODE_NAV)) {
-        if (airspeed < STABILIZATION_INDI_THROTTLE_LIMIT_AIRSPEED_FWD) {
-          du_min_stab_indi[i] = GUIDANCE_INDI_MIN_THROTTLE - use_increment*actuator_state_filt_vect[i];
-        } else {
-          du_min_stab_indi[i] = GUIDANCE_INDI_MIN_THROTTLE_FWD - use_increment*actuator_state_filt_vect[i];
-        }
-      }
     }
 #endif
   }
@@ -733,7 +685,13 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   indi_Wu[4] = (fun_elevon > 1.0f) ? 1.0f: ((fun_elevon < 0.001f) ? 0.001f : fun_elevon);
   indi_Wu[5] = indi_Wu[4];
 
-  // RunOnceEvery(200, DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 6, indi_Wu));
+  // indi_Wu[4] = 1000.0f;
+  // indi_Wu[5] = 1000.0f;
+
+  char name[1];
+
+  RunOnceEvery(200, DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 6, du_min_stab_indi));
+  RunOnceEvery(200, DOWNLINK_SEND_DEBUG_VECT(DefaultChannel, DefaultDevice, 1, name, 6, du_max_stab_indi));
 
   // WLS Control Allocator
   num_iter =
@@ -904,7 +862,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 
     Bound(pivot_ratio, 0.0f, 1.0f);
 
-    int16_t servo_command = (-eulers_zxy.theta + pivot_ratio*(att_err.qy * pivot_servogain_theta - pivot_servogain_q * body_rates->q))/(55.0/180.0*M_PI)*9600;
+    int16_t servo_command = (-eulers_zxy.theta + pivot_ratio*(att_err.qy * pivot_servogain_theta - pivot_servogain_q * body_rates->q))/(63.0/180.0*M_PI)*9600;
     Bound(servo_command,-9600,9600);
 
     actuators_pprz[0] = servo_command;
@@ -931,7 +889,6 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   } else { // not in a takeoff stage, flying
 	  /* compute the INDI command */
 	  stabilization_indi_rate_run(rate_sp, in_flight);
-
 	  // Reset thrust increment boolean
 	  indi_thrust_increment_set = false;
   }
