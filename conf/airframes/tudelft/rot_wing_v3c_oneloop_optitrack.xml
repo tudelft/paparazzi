@@ -75,7 +75,10 @@
         </module>
         
         <module name="guidance" type="oneloop"/>
-        <!-- <module name="nav_hybrid"/> -->
+        <module name="nav_hybrid">
+            <define name="NAV_HYBRID_MAX_AIRSPEED" value="5.0f"/>
+            <define name="NAV_HYBRID_SPEED_MARGIN" value="0.0f"/>
+        </module>
 
         <module TYPE="ekf2" NAME="ins">
          <define name="INS_EKF2_OPTITRACK" value="true"/>
@@ -100,6 +103,7 @@
 
         <module name="agl_dist"/>
         <module name="wing_rotation_controller_servo"/>
+        <module name="rotwing_state"/>
     </firmware>
 
     <servos DRIVER="Pwm">
@@ -184,8 +188,6 @@
         <define VALUE="45." UNIT="deg"   NAME="STABILIZATION_ATTITUDE_SP_MAX_THETA"/>
         <define VALUE="90." UNIT="deg/s" NAME="STABILIZATION_ATTITUDE_SP_MAX_R"/>
         <define VALUE="200"              NAME="STABILIZATION_ATTITUDE_DEADBAND_R"/>
-        <define name="GUIDANCE_INDI_MAX_AIRSPEED"          value = "5.0f"/> <!--remove once hybrid nav is made not dependent on guidance indi hybrid-->
-        <define name="GUIDANCE_INDI_NAV_SPEED_MARGIN"      value = "0.0"/>  <!--remove once hybrid nav is made not dependent on guidance indi hybrid-->
     </section>
 
     <section name="IMU" prefix="IMU_">

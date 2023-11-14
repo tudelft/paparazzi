@@ -270,46 +270,6 @@ float max_v_nav = ONELOOP_MAX_AIRSPEED; // Consider implications of difference G
 float max_v_nav = 5.0;
 #endif
 
-
-// DELETE ONCE NAV HYBRID IS MADE COMPATIBLE WITH ANY GUIDANCE///////////////////////////////////////////
-#ifndef GUIDANCE_INDI_SPEED_GAIN
-#define GUIDANCE_INDI_SPEED_GAIN 1.8
-#define GUIDANCE_INDI_SPEED_GAINZ 1.8
-#endif
-
-#ifndef GUIDANCE_INDI_POS_GAIN
-#define GUIDANCE_INDI_POS_GAIN 0.5
-#define GUIDANCE_INDI_POS_GAINZ 0.5
-#endif
-
-#ifndef GUIDANCE_INDI_LIFTD_ASQ
-#define GUIDANCE_INDI_LIFTD_ASQ 0.20
-#endif
-
-/* If lift effectiveness at low airspeed not defined,
- * just make one interpolation segment that connects to
- * the quadratic part from 12 m/s onward
- */
-#ifndef GUIDANCE_INDI_LIFTD_P50
-#define GUIDANCE_INDI_LIFTD_P80 (GUIDANCE_INDI_LIFTD_ASQ*12*12)
-#define GUIDANCE_INDI_LIFTD_P50 (GUIDANCE_INDI_LIFTD_P80/2)
-#endif
-
-struct guidance_indi_hybrid_params gih_params = {
-  .pos_gain = GUIDANCE_INDI_POS_GAIN,
-  .pos_gainz = GUIDANCE_INDI_POS_GAINZ,
-
-  .speed_gain = GUIDANCE_INDI_SPEED_GAIN,
-  .speed_gainz = GUIDANCE_INDI_SPEED_GAINZ,
-
-  .heading_bank_gain = 5.0,
-  .liftd_asq = GUIDANCE_INDI_LIFTD_ASQ, // coefficient of airspeed squared
-  .liftd_p80 = GUIDANCE_INDI_LIFTD_P80,
-  .liftd_p50 = GUIDANCE_INDI_LIFTD_P50,
-};
-bool force_forward = false;
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 /*  Define Section of the functions used in this module*/
 void  init_poles(void);
 void  calc_normalization(void);
@@ -945,7 +905,7 @@ void init_poles(void){
  */
 void init_controller(void){
   /*Register a variable from nav_hybrid. SHould be improved when nav hybrid is final.*/
-  max_v_nav = 5.0;//nav_max_speed;
+  max_v_nav = nav_max_speed;
   /*Some calculations in case new poles have been specified*/
   p_att_e.p3  = p_att_e.omega_n  * p_att_e.zeta;
   p_att_rm.p3 = p_att_rm.omega_n * p_att_rm.zeta;
@@ -979,9 +939,7 @@ void init_controller(void){
   k_pos_rm.k1[1] = k_pos_rm.k1[0];  
   k_pos_rm.k2[1] = k_pos_rm.k2[0];  
   k_pos_rm.k3[1] = k_pos_rm.k3[0];
-
-  gih_params.pos_gain   = k_pos_rm.k1[0];  //delete once nav hybrid is fixed
-  gih_params.speed_gain = k_pos_rm.k2[0]; //delete once nav hybrid is fixed
+  nav_hybrid_pos_gain   = k_pos_rm.k1[0];
 
   /*Altitude Loop*/
   k_pos_e.k1[2]  = k_e_1_3_f_v2(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3);
@@ -990,8 +948,6 @@ void init_controller(void){
   k_pos_rm.k1[2] = k_rm_1_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3);
   k_pos_rm.k2[2] = k_rm_2_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3);
   k_pos_rm.k3[2] = k_rm_3_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3);
-  gih_params.pos_gainz   = k_pos_rm.k1[2];  //delete once nav hybrid is fixed
-  gih_params.speed_gainz = k_pos_rm.k2[2]; //delete once nav hybrid is fixed
 
   /*Heading Loop Manual*/
   k_head_e.k2  = k_e_1_2_f(p_head_e.p3, p_head_e.p3);
