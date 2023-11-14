@@ -999,7 +999,7 @@ void send_values_to_raspberry_pi(void){
     #endif
 
     float fake_beta = 0;
-    if(abs(radio_control.values[RADIO_MANUAL_PITCH_CMD] / MAX_PPRZ) > 0.5){
+    if(fabs((radio_control.values[RADIO_MANUAL_PITCH_CMD] * 1.0f) / (MAX_PPRZ*1.0f)) >= 0.5){
         fake_beta = 3; 
     }
     

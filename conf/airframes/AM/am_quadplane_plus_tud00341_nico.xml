@@ -417,8 +417,8 @@
    <define name="MOTOR_MAX_OMEGA" value="1037" unit="rad/s"/> -->
 
     <define name="MOTOR_MIN_OMEGA" value="150" unit="rad/s"/><!-- Needed to make the INDI to work-->
-    <define name="SERVO_AZ_MIN_ANGLE" value="-40" unit="deg"/><!-- Always remember to update the PWM range as well-->
-    <define name="SERVO_AZ_MAX_ANGLE" value="40" unit="deg"/>
+    <define name="SERVO_AZ_MIN_ANGLE" value="-110" unit="deg"/><!-- Always remember to update the PWM range as well-->
+    <define name="SERVO_AZ_MAX_ANGLE" value="110" unit="deg"/>
 
     <define name="SERVO_EL_MAX_ANGLE" value="22" unit="deg"/>
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
@@ -434,17 +434,17 @@
     <define name="SERVO_AZ_3_ZERO_VALUE" value="-6.06" unit="deg"/>
     <define name="SERVO_AZ_4_ZERO_VALUE" value="2.02" unit="deg"/>
 
-    <define name="MAX_THETA_INDI" value="60" unit="deg"/>
+    <define name="MAX_THETA_INDI" value="50" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
     <!-- <define name="MAX_PHI_INDI" value="30" unit="deg"/> -->
-     <define name="MAX_PHI_INDI" value="40" unit="deg"/>
+     <define name="MAX_PHI_INDI" value="90" unit="deg"/>
     <define name="MAX_AOA_INDI" value="15" unit="deg"/>
     <define name="MIN_AOA_INDI" value="-15" unit="deg"/>
 
     <define name="MAX_DELTA_AILERONS" value="25" unit="deg"/>
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
 
-    <define name="SPEED_AOA_PROTECTION" value="2" unit="m/s"/>
+    <define name="SPEED_AOA_PROTECTION" value="8" unit="m/s"/>
 
     <!-- Tilting angle constraint in the approach and takeoff phase -->
     <define name="K_ALT_TILT_CONSTRAINT" value="50" unit="deg/meters"/>
