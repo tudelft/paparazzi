@@ -999,7 +999,10 @@ void send_values_to_raspberry_pi(void){
     #endif
 
     float fake_beta = 0;
-
+    if(abs(radio_control.values[RADIO_MANUAL_PITCH_CMD] / MAX_PPRZ) > 0.5){
+        fake_beta = 3; 
+    }
+    
     am7_data_out_local.beta_state_int = (int16_t) (fake_beta * 1e2);
 
     am7_data_out_local.pseudo_control_ax_int = (int16_t) (INDI_pseudocontrol[0] * 1e2);
@@ -1496,7 +1499,8 @@ void overactuated_mixing_run(void)
 
         //Calculate the desired euler angles from the auxiliary joystick channels:
         manual_phi_value = MANUAL_CONTROL_MAX_CMD_ROLL_ANGLE * radio_control.values[RADIO_MANUAL_ROLL_CMD] / MAX_PPRZ;
-        manual_theta_value = MANUAL_CONTROL_MAX_CMD_PITCH_ANGLE * radio_control.values[RADIO_MANUAL_PITCH_CMD] / MAX_PPRZ;
+
+        manual_theta_value = 0.0f;
 
         #ifdef USE_EXT_REF_ATTITUDE
             manual_phi_value = ship_info_receive.phi * M_PI/180;

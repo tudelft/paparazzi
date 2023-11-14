@@ -755,7 +755,7 @@
   <section name="MISC">
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
 
-    <define name="USE_EXT_REF_ATTITUDE" value="TRUE"/>
+    <!-- <define name="USE_EXT_REF_ATTITUDE" value="TRUE"/> -->
 
     <define name="FULLY_MANUAL_HEADING" value="TRUE"/>
 
