@@ -53,7 +53,7 @@
           <dl_setting var="soaring_move_wp_cost_threshold" min="1" step="0.5" max="300" shortname="cost_threshold"/>
 
           <dl_setting var="soaring_use_fixed_step_size" min="0" step="1" max="1" values="OFF|ON" shortname="use_fixed_step_size"/>
-          <dl_setting var="soaring_fixed_step_size" min="0" step="0.05" max="1" shortname="fixed_step_size"/>
+          <dl_setting var="soaring_fixed_step_size" min="0" step="0.05" max="10" shortname="fixed_step_size"/>
 
           <dl_setting var="soaring_step_size_big" min="0" step="0.05" max="10" shortname="step_size_big"/>
           <dl_setting var="soaring_step_size_mid" min="0" step="0.05" max="5" shortname="step_size_mid"/>
