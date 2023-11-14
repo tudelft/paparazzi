@@ -705,10 +705,10 @@ NOTES:
     <define name="G2" value="{0, 0, 0, 0, 0}"/>
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="40.0"/>
+    <define name="REF_ERR_P" value="30.0"/>
     <define name="REF_ERR_Q" value="30.0"/>
     <define name="REF_ERR_R" value="80.0"/>
-    <define name="REF_RATE_P" value="14.0"/>
+    <define name="REF_RATE_P" value="16.0"/>
     <define name="REF_RATE_Q" value="15.0"/>
     <define name="REF_RATE_R" value="15.0"/>
 
@@ -841,8 +841,8 @@ NOTES:
     <define name="NO_GPS_LOST_WITH_DATALINK_TIME" value="50"/>
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
 
-    <define name="NAV_CLIMB_VSPEED" value="3.5"/>
-    <define name="NAV_DESCEND_VSPEED" value="-2.0"/>
+    <define name="NAV_CLIMB_VSPEED" value="4.0"/>
+    <define name="NAV_DESCEND_VSPEED" value="-4.0"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     <define name="ROTORCRAFT_COMMANDS_YAW_ALWAYS_ENABLED" value="TRUE"/>
     <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/>
