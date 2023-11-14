@@ -59,8 +59,13 @@
       <call_once fun="NavResurrect()"/>
       <go from="HOME" pitch="-70" throttle="1.0" wp="CLIMB"/>
     </block>
-    <block name="SetStbyHere">
+    <block name="SetStbyHere3D">
       <call_once fun="waypoint_set_here(WP_STDBY)"/>
+      <deroute block="Standby"/>
+    </block>
+    <block name="SetStbyHere2D">
+      <call_once fun="waypoint_set_here_2d(WP_STDBY)"/>
+      <deroute block="Standby"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <call_once fun="NavResurrect()"/>

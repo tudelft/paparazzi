@@ -334,8 +334,9 @@ float soaring_move_wp_cost_threshold = GUIDANCE_INDI_SOARING_WP_COST_THRES;
 bool soaring_explore_positions = GUIDANCE_INDI_SOARING_MOVE_WP;
 
 struct SoaringPositionMap soaring_position_map[MAP_MAX_NUM_POINTS];
-struct FloatVect3 preset_move_ned[8] = {{1.0, 0., 0.}, {0., 0., 1.0}, {0., 0., -1.0}, {-1.0, 0., 0.}, {1.0, 0., 1.0}, {1.0, 0., -1.0}, {-1.0, 0., 1.0}, {-1.0, 0., -1.0}};
+struct FloatVect3 preset_move_body[8] = {{1.0, 0., 0.}, {0., 0., 1.0}, {0., 0., -1.0}, {-1.0, 0., 0.}, {1.0, 0., 1.0}, {1.0, 0., -1.0}, {-1.0, 0., 1.0}, {-1.0, 0., -1.0}};
 struct FloatVect3 amount_to_move_ned = {0., 0., 0.};
+struct FloatVect3 amount_to_move_body = {0., 0., 0.};
 int soar_map_idx = 0;
 float prev_wp_sum_cost = -1;
 int16_t prev_move_idx = 0;
@@ -499,16 +500,23 @@ void guidance_indi_soaring_move_wp(float cost_avg_val){
 
     // Set a step size
     if (soaring_use_fixed_step_size) {
-        VECT3_SMUL(amount_to_move_ned, preset_move_ned[idx_to_move], soaring_fixed_step_size);
+        VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], soaring_fixed_step_size);
     } else if (cost_avg_val > (soaring_move_wp_cost_threshold*soaring_step_k_big)) {
-        VECT3_SMUL(amount_to_move_ned, preset_move_ned[idx_to_move], soaring_step_size_big);
+        VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], soaring_step_size_big);
     } else if (cost_avg_val > (soaring_move_wp_cost_threshold*soaring_step_k_mid)) {
-        VECT3_SMUL(amount_to_move_ned, preset_move_ned[idx_to_move], soaring_step_size_mid);
+        VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], soaring_step_size_mid);
     } else if (cost_avg_val > (soaring_move_wp_cost_threshold*soaring_step_k_small)) {
-        VECT3_SMUL(amount_to_move_ned, preset_move_ned[idx_to_move], soaring_step_size_small);
+        VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], soaring_step_size_small);
     } else {
-        VECT3_SMUL(amount_to_move_ned, preset_move_ned[idx_to_move], soaring_step_size_fine);
+        VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], soaring_step_size_fine);
     }
+
+    float psi = eulers_zxy.psi;
+
+    // rotate wp body to ned
+    amount_to_move_ned.x = cosf(psi)*amount_to_move_body.x - sinf(psi)*amount_to_move_body.y;
+    amount_to_move_ned.y = sinf(psi)*amount_to_move_body.x + cosf(psi)*amount_to_move_body.y;
+    amount_to_move_ned.z = amount_to_move_body.z;   // z doesn't change
 
     // move waypoints
     waypoints[soar_wp_id].enu_i.x += POS_BFP_OF_REAL(amount_to_move_ned.y);
@@ -520,6 +528,7 @@ void guidance_indi_soaring_move_wp(float cost_avg_val){
     wp_pos_x = waypoints[soar_wp_id].enu_i.y;
     wp_pos_y = waypoints[soar_wp_id].enu_i.x;
     wp_pos_z = waypoints[soar_wp_id].enu_i.z;
+    nav_flight_altitude = wp_pos_z; // FIXME: manually set z ref
 
     DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &soar_wp_id,
                                &(waypoints[soar_wp_id].enu_i.x),
@@ -537,6 +546,7 @@ void guidance_indi_soaring_reset_wp(void) {
     wp_pos_x = waypoints[soar_wp_id].enu_i.y;
     wp_pos_y = waypoints[soar_wp_id].enu_i.x;
     wp_pos_z = waypoints[soar_wp_id].enu_i.z;
+    nav_flight_altitude = wp_pos_z;
 
     DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &soar_wp_id,
                                &(waypoints[soar_wp_id].enu_i.x),
@@ -573,6 +583,7 @@ void guidance_indi_hybrid_soaring_reset(void) {
     wp_pos_x = waypoints[stdby_wp_id].enu_i.y;
     wp_pos_y = waypoints[stdby_wp_id].enu_i.x;
     wp_pos_z = waypoints[stdby_wp_id].enu_i.z;
+    nav_flight_altitude = wp_pos_z;
 
     DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &soar_wp_id,
                                &(waypoints[stdby_wp_id].enu_i.x),
@@ -670,7 +681,7 @@ void guidance_indi_soaring_run(float *heading_sp) {
     sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain;
     sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
 
-//    failsafe
+//    FIXME: failsafe
     if (stab_indi_kill_throttle) {
         sp_accel.z = (1.0 - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
 //        Bound(sp_accel.z, -1.0, 3.0);
