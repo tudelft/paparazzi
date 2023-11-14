@@ -22,6 +22,17 @@
    gui_color="#ffffffffffff"
   />
   <aircraft
+   name="Seal_rotorcraft_NPS_outdoor_dune"
+   ac_id="39"
+   airframe="airframes/TUDELFT/sh_seal_soaring_dune.xml"
+   radio="radios/crossfire_sbus.xml"
+   telemetry="telemetry/sh_seal_rotorcraft.xml"
+   flight_plan="flight_plans/tudelft/seal_FP_NPS_soaring_dune.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/air_data.xml modules/airspeed_sdp3x.xml modules/ctrl_effectiveness_scheduling_nld.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid_nld_soaring.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi.xml"
+   gui_color="#ffffffffffff"
+  />
+  <aircraft
    name="Seal_rotorcraft_NPS_soaring_wind"
    ac_id="36"
    airframe="airframes/TUDELFT/sh_seal_zorro_nps_soaring_wind.xml"

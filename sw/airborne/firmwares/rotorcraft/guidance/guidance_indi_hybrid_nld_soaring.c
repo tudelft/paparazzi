@@ -630,12 +630,18 @@ void guidance_indi_soaring_run(float *heading_sp) {
   pos_y_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y) - stateGetPositionNed_f()->y;
   pos_z_err = POS_FLOAT_OF_BFP(guidance_v_z_ref - stateGetPositionNed_i()->z);
 
-  // position ctrl TODO: regulate airspeed
+  // position ctrl TODO: regulate airspeed?
   speed_sp.x = pos_x_err * gih_params.pos_gain;
   speed_sp.y = pos_y_err * gih_params.pos_gain;
   speed_sp.z = pos_z_err * gih_params.pos_gainz;
 
-  // y position control to keep it in the wind section
+    float norm_spd_sp = FLOAT_VECT2_NORM(speed_sp);
+    if (norm_spd_sp > nav_max_speed){
+        vect_scale(&speed_sp, nav_max_speed);
+    }
+    Bound(speed_sp.z, -nav_climb_vspeed, -nav_descend_vspeed);
+
+    // y position control to keep it in the wind section
     if(!y_position_ctrl){
         speed_sp.y = 0;
     }
