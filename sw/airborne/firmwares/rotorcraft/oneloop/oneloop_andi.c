@@ -934,6 +934,10 @@ void init_poles(void){
   p_head_e.omega_n = 1.5;
   p_head_e.zeta    = 1.0;
   p_head_e.p3      = p_head_e.omega_n * p_head_e.zeta;
+
+  p_head_rm.omega_n = 1.5;
+  p_head_rm.zeta    = 1.0;
+  p_head_rm.p3      = p_head_rm.omega_n * p_head_rm.zeta;
 }
 /** 
  * @brief Initialize Controller Gains
@@ -941,7 +945,7 @@ void init_poles(void){
  */
 void init_controller(void){
   /*Register a variable from nav_hybrid. SHould be improved when nav hybrid is final.*/
-  max_v_nav = nav_max_speed;
+  max_v_nav = 5.0;//nav_max_speed;
   /*Some calculations in case new poles have been specified*/
   p_att_e.p3  = p_att_e.omega_n  * p_att_e.zeta;
   p_att_rm.p3 = p_att_rm.omega_n * p_att_rm.zeta;
@@ -1354,6 +1358,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     andi_u[ANDI_NUM_ACT+1] = andi_du[ANDI_NUM_ACT+1];
   }
 
+  if ((ONELOOP_ANDI_AC_HAS_PUSHER)&&(half_loop)){
+    andi_u[ONELOOP_ANDI_PUSHER_IDX] = radio_control.values[RADIO_AUX4];
+  }
   // TODO : USE THE PROVIDED MAX AND MIN and change limits for phi and theta
   // Bound the inputs to the actuators
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
@@ -1375,6 +1382,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     eulers_zxy_des.theta =  andi_u[ANDI_NUM_ACT+1];
   }
   psi_des_deg = psi_des_rad * 180.0 / M_PI;  
+  stabilization_cmd[COMMAND_ROLL] = (int16_t) (eulers_zxy_des.phi   * 180.0 / M_PI * MAX_PPRZ / 45.0);
+  stabilization_cmd[COMMAND_PITCH] = (int16_t) (eulers_zxy_des.theta * 180.0 / M_PI * MAX_PPRZ / 45.0);
+  stabilization_cmd[COMMAND_YAW] = (int16_t) (psi_des_deg * MAX_PPRZ / 180.0);
 }
 
 /** @brief  Function to reconstruct actuator state using first order dynamics */
