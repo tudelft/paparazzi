@@ -11,13 +11,13 @@
 
     <firmware name="rotorcraft">
         <autopilot name="rotorcraft_oneloop_with_backup.xml"/>
-        <target name="ap" board="cube_orange">
+        <target name="ap" board="cube_orangeplus">
             <configure VALUE="500" NAME="PERIODIC_FREQUENCY"/>
             <module TYPE="sbus" NAME="radio_control">
                 <configure VALUE="UART3" NAME="SBUS_PORT"/>
             </module>
-            <module NAME="sys_mon"/>
-            <module NAME="flight_recorder"/>
+            <module name="sys_mon"/>
+            <module name="flight_recorder"/>
             <module TYPE="ms45xx_i2c" NAME="airspeed">
                 <define NAME="USE_I2C2"/>
                 <define VALUE="i2c2" NAME="MS45XX_I2C_DEV"/>
@@ -29,7 +29,7 @@
             <module name="airspeed" type="uavcan"/>
 
             <module name="lidar_tfmini">
-                <configure name="TFMINI_PORT" value="UART8"/>
+                <configure name="TFMINI_PORT"    value="UART8"/>
                 <configure name="USE_TFMINI_AGL" value="TRUE"/>
             </module>        
             <define VALUE="RADIO_AUX1" NAME="RADIO_TH_HOLD"/>
@@ -69,7 +69,7 @@
         <module name="imu" type="cube"/>
 
         <module name="gps"           type="ublox">
-            <configure name="UBX_GPS_BAUD" value="B460800"/>
+            <configure name="UBX_GPS_BAUD"  value="B460800"/>
             <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
         </module>
 
@@ -78,7 +78,10 @@
         </module>
 
         <module name="guidance" type="oneloop"/>
-        <module name="nav_hybrid"/>
+        <module name="nav_hybrid">
+            <define name="NAV_HYBRID_MAX_AIRSPEED" value="5.0f"/>
+            <define name="NAV_HYBRID_SPEED_MARGIN" value="0.0f"/>
+        </module>
 
         <module TYPE="ekf2" NAME="ins"/>
         <module name="oneloop" type="andi">
@@ -100,21 +103,22 @@
         </module>
 
         <module name="agl_dist"/>
-
+        <module name="wing_rotation_controller_servo"/>
+        <module name="rotwing_state"/>
     </firmware>
 
     <servos DRIVER="Pwm">
-        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1031" NEUTRAL="1330" MAX="2260"/>
+        <servo NO="0" NAME="ROTATION_MECH"   MIN="1031" NEUTRAL="1330" MAX="2260"/>
     </servos>
 
     <servos DRIVER="Uavcan1">
-        <servo NO="0" NAME="MOTOR_FRONT"    MIN="0"     NEUTRAL="600" MAX="8191"/>
-        <servo NO="1" NAME="MOTOR_RIGHT"    MIN="0"     NEUTRAL="600" MAX="8191"/>
-        <servo NO="2" NAME="MOTOR_BACK"     MIN="0"     NEUTRAL="600" MAX="8191"/>
-        <servo NO="3" NAME="MOTOR_LEFT"     MIN="0"     NEUTRAL="600" MAX="8191"/>
-        <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="200"    MAX="6552"/>
-        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="4000"  NEUTRAL="4000" MAX="-5500"/>
-        <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"    MAX="8191"/>
+        <servo NO="0" NAME="MOTOR_FRONT"    MIN="0"     NEUTRAL="600"   MAX="8191"/>
+        <servo NO="1" NAME="MOTOR_RIGHT"    MIN="0"     NEUTRAL="600"   MAX="8191"/>
+        <servo NO="2" NAME="MOTOR_BACK"     MIN="0"     NEUTRAL="600"   MAX="8191"/>
+        <servo NO="3" NAME="MOTOR_LEFT"     MIN="0"     NEUTRAL="600"   MAX="8191"/>
+        <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="200"   MAX="6552"/>
+        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="4000"  NEUTRAL="4000"  MAX="-5500"/>
+        <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"     MAX="8191"/>
     </servos>
 
     <servos DRIVER="Uavcan2">
@@ -126,10 +130,10 @@
 
     <!-- CAN BUS 1 command outputs-->
     <servos driver="Uavcan2Cmd">
-        <servo name="AIL_LEFT" no="7" min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
-        <servo name="FLAP_LEFT" no="8" min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
-        <servo name="FLAP_RIGHT" no="9" min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
-        <servo name="AIL_RIGHT" no="10" min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
+        <servo name="AIL_LEFT"      no="7"  min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
+        <servo name="FLAP_LEFT"     no="8"  min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
+        <servo name="FLAP_RIGHT"    no="9"  min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
+        <servo name="AIL_RIGHT"     no="10" min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
     </servos>
 
     <commands>
@@ -148,18 +152,19 @@
 
     <command_laws>
         <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[0])"           SERVO="MOTOR_FRONT"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[1])"           SERVO="MOTOR_RIGHT"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[2])"           SERVO="MOTOR_BACK"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[3])"           SERVO="MOTOR_LEFT"/>
-        <set VALUE="($th_hold?     0 : actuators_pprz[5])"           SERVO="SERVO_RUDDER"/>
-        <set VALUE="(!autopilot_in_flight()? 0 : actuators_pprz[6])" SERVO="SERVO_ELEVATOR"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[4])"           SERVO="MOTOR_PUSH"/>
-        <set VALUE=" wing_rotation.servo_pprz_cmd"                   SERVO="SERVO_ROTWING"/>
-        <set VALUE="($th_hold? 0 : actuators_pprz[7])"               SERVO="AIL_LEFT"/>
-        <set VALUE="($th_hold? 0 : actuators_pprz[7])"               SERVO="AIL_RIGHT"/>
-        <set VALUE="($th_hold? 0 : actuators_pprz[8])"               SERVO="FLAP_LEFT"/>
-        <set VALUE="($th_hold? 0 : actuators_pprz[8])"               SERVO="FLAP_RIGHT"/>
+        <let VAR="servo_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[0])"                                                                      SERVO="MOTOR_FRONT"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[1])"                                                                      SERVO="MOTOR_RIGHT"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[2])"                                                                      SERVO="MOTOR_BACK"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[3])"                                                                      SERVO="MOTOR_LEFT"/>
+        <set VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : actuators_pprz[5])"                                           SERVO="SERVO_RUDDER"/>
+        <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? 0 : actuators_pprz[6]))"  SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[4])"                                                                      SERVO="MOTOR_PUSH"/>
+        <set VALUE=" wing_rotation_controller.servo_pprz_cmd"                                                                   SERVO="ROTATION_MECH"/>
+        <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])"                                          SERVO="AIL_LEFT"/>
+        <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])"                                          SERVO="AIL_RIGHT"/>
+        <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[8])"                                          SERVO="FLAP_LEFT"/>
+        <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[8])"                                          SERVO="FLAP_RIGHT"/>
 
         <!-- Backup commands -->
         <set VALUE="($th_hold? -9600 : actuators_pprz[0])" SERVO="BMOTOR_FRONT"/>
@@ -184,8 +189,6 @@
         <define VALUE="45." UNIT="deg"   NAME="STABILIZATION_ATTITUDE_SP_MAX_THETA"/>
         <define VALUE="90." UNIT="deg/s" NAME="STABILIZATION_ATTITUDE_SP_MAX_R"/>
         <define VALUE="200"              NAME="STABILIZATION_ATTITUDE_DEADBAND_R"/>
-        <define name="GUIDANCE_INDI_MAX_AIRSPEED"          value = "5.0f"/> <!--remove once hybrid nav is made not dependent on guidance indi hybrid-->
-        <define name="GUIDANCE_INDI_NAV_SPEED_MARGIN"      value = "0.0"/>  <!--remove once hybrid nav is made not dependent on guidance indi hybrid-->
     </section>
 
     <section name="IMU" prefix="IMU_">

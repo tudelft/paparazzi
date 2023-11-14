@@ -29,8 +29,8 @@
             <module name="airspeed" type="uavcan"/>
 
             <module name="lidar_tfmini">
-                <configure name="TFMINI_PORT"     value="UART8"/>
-                <configure name="USE_TFMINI_AGL"  value="TRUE"/>
+                <configure name="TFMINI_PORT"    value="UART8"/>
+                <configure name="USE_TFMINI_AGL" value="TRUE"/>
             </module>     
             <define VALUE="RADIO_AUX1" NAME="RADIO_TH_HOLD"/>
             <define VALUE="RADIO_AUX2" NAME="RADIO_FMODE"/>
@@ -78,7 +78,10 @@
         </module>
 
         <module name="guidance" type="oneloop"/>
-        <module name="nav_hybrid"/>
+        <module name="nav_hybrid">
+            <define name="NAV_HYBRID_MAX_AIRSPEED" value="5.0f"/>
+            <define name="NAV_HYBRID_SPEED_MARGIN" value="0.0f"/>
+        </module>
 
         <module TYPE="ekf2" NAME="ins"/>
         <module name="oneloop" type="andi">
@@ -99,22 +102,13 @@
             <define name="WLS_N_V" value = "6"/>
         </module>
 
-        <module name="wing_rotation_controller_v3b">
-            <define name="WING_ROTATION_POSITION_ADC_0" value="62930"/>
-            <define name="WING_ROTATION_POSITION_ADC_90" value="41760"/>
-            <define name="WING_ROTATION_DEADZONE_PPRZ_CMD" value="500"/>
-            <define name="WING_ROTATION_P_GAIN" value="-50000"/>
-            <define name="WING_ROTATION_MAX_CMD" value="9600"/>
-            <define name="WING_ROTATION_RESET_RADIO_CHANNEL" value="10"/>
-        </module>
-
         <module name="agl_dist"/>
-        <module name="navigation_oneloop"/>
-
+        <module name="wing_rotation_controller_servo"/>
+        <module name="rotwing_state"/>
     </firmware>
 
     <servos DRIVER="Pwm">
-        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1031" NEUTRAL="1330" MAX="2260"/>
+        <servo NO="0" NAME="ROTATION_MECH"   MIN="1031" NEUTRAL="1330" MAX="2260"/>
     </servos>
 
     <servos DRIVER="Uavcan1">
@@ -166,7 +160,7 @@
         <set VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : actuators_pprz[5])"                                           SERVO="SERVO_RUDDER"/>
         <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? 0 : actuators_pprz[6]))"  SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[4])"                                                                      SERVO="MOTOR_PUSH"/>
-        <set VALUE=" wing_rotation_controller.servo_pprz_cmd"                                                                   SERVO="SERVO_ROTWING"/>
+        <set VALUE=" wing_rotation_controller.servo_pprz_cmd"                                                                   SERVO="ROTATION_MECH"/>
         <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])"                                          SERVO="AIL_LEFT"/>
         <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])"                                          SERVO="AIL_RIGHT"/>
         <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[8])"                                          SERVO="FLAP_LEFT"/>
@@ -195,8 +189,6 @@
         <define VALUE="45." UNIT="deg"   NAME="STABILIZATION_ATTITUDE_SP_MAX_THETA"/>
         <define VALUE="90." UNIT="deg/s" NAME="STABILIZATION_ATTITUDE_SP_MAX_R"/>
         <define VALUE="200"              NAME="STABILIZATION_ATTITUDE_DEADBAND_R"/>
-        <define name="GUIDANCE_INDI_MAX_AIRSPEED"          value = "5.0f"/> <!--remove once hybrid nav is made not dependent on guidance indi hybrid-->
-        <define name="GUIDANCE_INDI_NAV_SPEED_MARGIN"      value = "0.0"/>  <!--remove once hybrid nav is made not dependent on guidance indi hybrid-->
     </section>
 
     <section name="IMU" prefix="IMU_">
