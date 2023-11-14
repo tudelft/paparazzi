@@ -5,11 +5,11 @@ $ ./sw/ground_segment/python/natnet3.x/natnet2ivy.py --long_edge right --x_side 
 (where "drone_id" is the UAV id and "rigid_body_id" is the optitrack recorded rigid body id)
 
 - Command to run on the ship box's Raspberry pi to forward the telemetry message from the ship box AP to the common wireless network: 
-$ /paparazzi/sw/misc/link/pprzlink_router_cc -e uart:///dev/ttyS0:460800 -e udp://0.0.0.0:4343:192.168.1.255:4342 &
+$ ./paparazzi/sw/misc/link/pprzlink_router_cc -e uart:///dev/ttyS0:460800 -e udp://0.0.0.0:4343:192.168.1.255:4342 &
 (where ttyS0 is the Raspberry pi UART port where the AutoPilot is connected and 4342/4343 is the udp port where the telemetry packets are forwarded)
 
 - Command to forward the RTCM message from the ship box GPS to the common wireless network: 
-$ /paparazzi/sw/misc/link/pprzlink_router_cc -e uart:///dev/ttyS1:460800 -e udp://0.0.0.0:4253:192.168.1.255:4252 &
+$ ./paparazzi/sw/misc/link/pprzlink_router_cc -e uart:///dev/ttyS1:460800 -e udp://0.0.0.0:4253:192.168.1.255:4252 &
 (where ttyS1 is the Raspberry pi UART port where the GPS is connected, 460800 is the baudrate of the UART communication and 4252/4253 is the udp port where the telemetry packets are forwarded)
 
 - Command to forward the SHIP_INFO_MSG message from a local udp port on the drone's IVY bus: 
