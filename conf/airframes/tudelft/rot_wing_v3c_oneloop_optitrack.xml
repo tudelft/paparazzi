@@ -7,7 +7,7 @@
 -->
 
 <airframe name="RotatingWingV3C">
-    <description>RotatingWingV3C</description>
+    <description>RotatingWingV3C with optitrack</description>
 
     <firmware name="rotorcraft">
      <autopilot name="rotorcraft_oneloop_with_backup.xml"/>
@@ -102,7 +102,9 @@
         </module>
 
         <module name="agl_dist"/>
-        <module name="wing_rotation_controller_servo"/>
+        <module name="wing_rotation_controller_servo">
+            <define name = "ROT_MECH_IDX" value = "9"/>
+        </module>
         <module name="rotwing_state"/>
     </firmware>
 

@@ -7,7 +7,7 @@
 -->
 
 <airframe name="RotatingWingV3C">
-    <description>RotatingWingV3C</description>
+    <description>RotatingWingV3C for simulation</description>
 
     <firmware name="rotorcraft">
         <autopilot name="rotorcraft_oneloop_with_backup.xml"/>
@@ -103,7 +103,9 @@
         </module>
 
         <module name="agl_dist"/>
-        <module name="wing_rotation_controller_servo"/>
+        <module name="wing_rotation_controller_servo">
+            <define name = "ROT_MECH_IDX" value = "9"/>
+        </module>
         <module name="rotwing_state"/>
     </firmware>
 
@@ -250,10 +252,10 @@
     </section>
 
     <section name="SIMULATOR" prefix="NPS_">
-        <define name="ACTUATOR_NAMES"  value="front_motor, right_motor, back_motor, left_motor, pusher, rudder, elevator, aileron_left, aileron_right" type="string[]"/>
-        <define name="JSBSIM_MODEL"    value="rotwingv3c" type="string"/>
+        <define name="ACTUATOR_NAMES"  value="front_motor, right_motor, back_motor, left_motor, pusher, rudder, elevator, aileron, flap, skew" type="string[]"/>
+        <define name="JSBSIM_MODEL"    value="rotwing3" type="string"/>
         <define name="SENSORS_PARAMS"  value="nps_sensors_params_default.h" type="string"/>
-        <define name="COMMANDS_NB"     value="9"/>
+        <define name="COMMANDS_NB"     value="10"/>
         <define name="NO_MOTOR_MIXING" value="TRUE"/>
         <define name="JS_AXIS_MODE"    value="4"/>
     </section>

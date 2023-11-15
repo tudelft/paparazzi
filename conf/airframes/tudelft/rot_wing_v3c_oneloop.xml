@@ -7,7 +7,7 @@
 -->
 
 <airframe name="RotatingWingV3C">
-    <description>RotatingWingV3C</description>
+    <description>RotatingWingV3C for outdoor flight</description>
 
     <firmware name="rotorcraft">
         <autopilot name="rotorcraft_oneloop_with_backup.xml"/>
