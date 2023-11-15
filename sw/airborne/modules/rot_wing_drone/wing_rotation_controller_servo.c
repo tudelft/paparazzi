@@ -59,6 +59,10 @@
 #define WING_ROTATION_CONTROLLER_SECOND_DYN 0.003
 #endif
 
+#ifndef ROT_MECH_IDX
+#error "Define ROT_MECH_IDX in airframe file"
+#endif 
+
 // Parameters
 struct wing_rotation_controller_t wing_rotation_controller = {0};
 
@@ -135,6 +139,6 @@ void wing_rotation_compute_pprz_cmd(void)
   wing_rotation_controller.servo_pprz_cmd = servo_pprz_cmd;
 
 #if USE_NPS
-  actuators_pprz[INDI_NUM_ACT] = servo_pprz_cmd;
+  actuators_pprz[ROT_MECH_IDX] = servo_pprz_cmd;
 #endif
 }
