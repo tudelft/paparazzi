@@ -674,12 +674,35 @@ void guidance_indi_soaring_run(float *heading_sp) {
   struct FloatVect2 windspeed;
   VECT2_DIFF(windspeed, *groundspeed, airspeed_v);
 
-  VECT2_DIFF(desired_airspeed, speed_sp, windspeed); // Use 2d part of speed_sp
-  float norm_des_as = FLOAT_VECT2_NORM(desired_airspeed);
-
-    sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain;
-    sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain;
-    sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
+//  if (airspeed > guidance_indi_max_airspeed) {
+//      VECT2_DIFF(desired_airspeed, speed_sp, windspeed); // Use 2d part of speed_sp
+//      float norm_des_as = FLOAT_VECT2_NORM(desired_airspeed);
+//      float min_des_as = Min(norm_des_as, guidance_indi_max_airspeed);
+//
+//      float speed_sp_b_x = cosf(psi) * speed_sp.x + sinf(psi) * speed_sp.y;
+//      float speed_sp_b_y = -sinf(psi) * speed_sp.x + cosf(psi) * speed_sp.y;
+//
+//      speed_sp_b_x = Min(speed_sp_b_x, min_des_as);
+//
+//      // Calculate accel sp in body axes, because we need to regulate airspeed
+//      struct FloatVect2 sp_accel_b;
+//      // In turn acceleration proportional to heading diff
+//      sp_accel_b.y = atan2(desired_airspeed.y, desired_airspeed.x) - psi;
+//      FLOAT_ANGLE_NORMALIZE(sp_accel_b.y);
+//      sp_accel_b.y *= gih_params.heading_bank_gain;
+//
+//      // Control the airspeed
+//      sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
+//
+//      sp_accel.x = cosf(psi) * sp_accel_b.x - sinf(psi) * sp_accel_b.y;
+//      sp_accel.y = sinf(psi) * sp_accel_b.x + cosf(psi) * sp_accel_b.y;
+//
+//      sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
+//  } else {
+      sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain;
+      sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain;
+      sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
+//  }
 
 //    FIXME: failsafe
     if (stab_indi_kill_throttle) {
