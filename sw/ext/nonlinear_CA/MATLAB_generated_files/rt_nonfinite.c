@@ -2,10 +2,12 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: rt_nonfinite.c
  *
- * MATLAB Coder version            : 5.4
- * C/C++ source code generated on  : 16-Nov-2023 01:21:31
+ * rt_nonfinite.c
+ *
+ * Code generation for function
+ * 'Nonlinear_controller_fcn_control_rf_aero_models'
+ *
  */
 
 /*
@@ -13,7 +15,7 @@
  *      MATLAB for code generation function to initialize non-finites,
  *      (Inf, NaN and -Inf).
  */
-/* Include Files */
+/* Include files */
 #include "rt_nonfinite.h"
 #include <math.h>
 
@@ -72,8 +74,4 @@ boolean_T rtIsNaNF(real32_T value)
   return (isnan((real_T)value) != 0U);
 }
 
-/*
- * File trailer for rt_nonfinite.c
- *
- * [EOF]
- */
+/* End of code generation (rt_nonfinite.c) */

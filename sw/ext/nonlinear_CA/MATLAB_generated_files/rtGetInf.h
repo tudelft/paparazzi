@@ -2,16 +2,18 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: rtGetInf.h
  *
- * MATLAB Coder version            : 5.4
- * C/C++ source code generated on  : 16-Nov-2023 01:21:31
+ * rtGetInf.h
+ *
+ * Code generation for function
+ * 'Nonlinear_controller_fcn_control_rf_aero_models'
+ *
  */
 
 #ifndef RTGETINF_H
 #define RTGETINF_H
 
-/* Include Files */
+/* Include files */
 #include "rtwtypes.h"
 
 #ifdef __cplusplus
@@ -27,8 +29,4 @@ extern real32_T rtGetMinusInfF(void);
 }
 #endif
 #endif
-/*
- * File trailer for rtGetInf.h
- *
- * [EOF]
- */
+/* End of code generation (rtGetInf.h) */

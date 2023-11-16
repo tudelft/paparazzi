@@ -2,17 +2,19 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: rtGetNaN.c
  *
- * MATLAB Coder version            : 5.4
- * C/C++ source code generated on  : 16-Nov-2023 01:21:31
+ * rtGetNaN.c
+ *
+ * Code generation for function
+ * 'Nonlinear_controller_fcn_control_rf_aero_models'
+ *
  */
 
 /*
  * Abstract:
  *       MATLAB for code generation function to initialize non-finite, NaN
  */
-/* Include Files */
+/* Include files */
 #include "rtGetNaN.h"
 #include "rt_nonfinite.h"
 
@@ -40,8 +42,4 @@ real32_T rtGetNaNF(void)
   return rtNaNF;
 }
 
-/*
- * File trailer for rtGetNaN.c
- *
- * [EOF]
- */
+/* End of code generation (rtGetNaN.c) */

@@ -3,28 +3,19 @@
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
  *
- * rtGetNaN.h
+ * Nonlinear_controller_fcn_control_rf_aero_models_types.h
  *
  * Code generation for function
  * 'Nonlinear_controller_fcn_control_rf_aero_models'
  *
  */
 
-#ifndef RTGETNAN_H
-#define RTGETNAN_H
+#ifndef NONLINEAR_CONTROLLER_FCN_CONTROL_RF_AERO_MODELS_TYPES_H
+#define NONLINEAR_CONTROLLER_FCN_CONTROL_RF_AERO_MODELS_TYPES_H
 
 /* Include files */
 #include "rtwtypes.h"
 
-#ifdef __cplusplus
-extern "C" {
 #endif
-
-extern real_T rtGetNaN(void);
-extern real32_T rtGetNaNF(void);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-/* End of code generation (rtGetNaN.h) */
+/* End of code generation
+ * (Nonlinear_controller_fcn_control_rf_aero_models_types.h) */

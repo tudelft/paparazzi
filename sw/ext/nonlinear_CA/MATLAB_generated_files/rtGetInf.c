@@ -2,10 +2,12 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: rtGetInf.c
  *
- * MATLAB Coder version            : 5.4
- * C/C++ source code generated on  : 16-Nov-2023 01:21:31
+ * rtGetInf.c
+ *
+ * Code generation for function
+ * 'Nonlinear_controller_fcn_control_rf_aero_models'
+ *
  */
 
 /*
@@ -13,7 +15,7 @@
  *       MATLAB for code generation function to initialize non-finite, Inf and
  * MinusInf
  */
-/* Include Files */
+/* Include files */
 #include "rtGetInf.h"
 #include "rt_nonfinite.h"
 
@@ -57,8 +59,4 @@ real32_T rtGetMinusInfF(void)
   return rtMinusInfF;
 }
 
-/*
- * File trailer for rtGetInf.c
- *
- * [EOF]
- */
+/* End of code generation (rtGetInf.c) */

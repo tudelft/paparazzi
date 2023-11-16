@@ -1,6 +1,6 @@
 #include "am7x.h"
 #include <pthread.h>
-#include "MATLAB_generated_files/Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains.h"
+#include "MATLAB_generated_files/Nonlinear_controller_fcn_control_rf_aero_models.h"
 #include "MATLAB_generated_files/rt_nonfinite.h"
 #include <string.h>
 #include <glib.h>
@@ -372,9 +372,9 @@ void* second_thread() //Run the optimization code
 
       Beta = 0 * pi/180;
       flight_path_angle = 0 * pi/180;
-      V = 9;
+      V = 15;
       Phi = 0 * pi/180;
-      Theta = 0 * pi/180;
+      Theta = 3 * pi/180;
       Omega_1 = 600;
       Omega_2 = 600;
       Omega_3 = 600;
@@ -389,7 +389,7 @@ void* second_thread() //Run the optimization code
       g_4 = 0 * pi/180;
       delta_ailerons = 0 * pi/180;
 
-      W_act_motor_const = 3;
+      W_act_motor_const = 5;
       W_act_motor_speed = 0; 
       W_act_tilt_el_const = 0;
       W_act_tilt_el_speed = 0;
@@ -399,18 +399,18 @@ void* second_thread() //Run the optimization code
       W_act_theta_speed = -15;
       W_act_phi_const = 100;
       W_act_phi_speed = -15;
-      W_act_ailerons_const = 10;
+      W_act_ailerons_const = 1000;
       W_act_ailerons_speed = -3; 
 
-      W_dv_1 = 0.03;
-      W_dv_2 = 0.03;
-      W_dv_3 = 0.06; 
-      W_dv_4 = 0.09; 
-      W_dv_5 = 0.09; 
-      W_dv_6 = 0.09;
+      W_dv_1 = 0.01;
+      W_dv_2 = 0.01;
+      W_dv_3 = 0.02; 
+      W_dv_4 = 0.05; 
+      W_dv_5 = 0.05; 
+      W_dv_6 = 0.05;
       gamma_quadratic = .5e-5; 
 
-      max_omega = 1400; 
+      max_omega = 1000; 
       min_omega = 100;
       max_b = 25; 
       min_b = -130; 
@@ -418,25 +418,25 @@ void* second_thread() //Run the optimization code
       min_g = -45;  
       max_theta = 60;
       min_theta = -15;
-      max_phi = 40; 
+      max_phi = 70; 
       max_delta_ailerons = 25;
       min_delta_ailerons = -25; 
 
-      dv[0] = 10.1;
-      dv[1] = -3.2;
-      dv[2] = 3.5;
-      dv[3] = 5.6;
-      dv[4] = 15.1;
-      dv[5] = -5.8;
+      dv[0] = 0;
+      dv[1] = 0;
+      dv[2] = 0;
+      dv[3] = 10;
+      dv[4] = 0;
+      dv[5] = 0;
 
       p = 0 * pi/180; 
       q = 0 * pi/180; 
       r = 0 * pi/180; 
-      Cm_zero = 0.05; 
+      Cm_zero = 0.0; 
       Cl_alpha = 3.5; 
-      Cd_zero = 0.25; 
-      K_Cd = 0.2;
-      Cm_alpha = -0.1; 
+      Cd_zero = 0.2; 
+      K_Cd = 0.08;
+      Cm_alpha = 0; 
       CL_aileron = 0.1; 
       rho = 1.225; 
       S = 0.43;
@@ -444,7 +444,7 @@ void* second_thread() //Run the optimization code
       max_alpha = 15 * pi/180; 
       min_alpha  = 1 * pi/180; 
 
-      desired_motor_value = 100; 
+      desired_motor_value = 0; 
       desired_el_value = 0 * pi/180;
       desired_az_value = 0 * pi/180;
       desired_theta_value = 0 * pi/180; 
@@ -456,11 +456,41 @@ void* second_thread() //Run the optimization code
       k_alt_tilt_constraint = 55;
       min_alt_tilt_constraint = 0.2;
       lidar_alt_corrected = 1;
-      approach_mode = 1; 
+      approach_mode = 0; 
       transition_speed = 8; 
     #endif 
 
-    Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(  K_p_T,  K_p_M,  m,  I_xx,  I_yy,  I_zz,
+    Nonlinear_controller_fcn_control_rf_aero_models( m,  I_xx,  I_yy,  I_zz,  l_1,  l_2,
+                                                    l_3,  l_4,  l_z,  Phi,  Theta,
+                                                    Omega_1,  Omega_2,  Omega_3,  Omega_4,  b_1,
+                                                    b_2,  b_3,  b_4,  g_1,  g_2,  g_3,
+                                                    g_4,  delta_ailerons,  W_act_motor_const,
+                                                    W_act_motor_speed,  W_act_tilt_el_const,
+                                                    W_act_tilt_el_speed,  W_act_tilt_az_const,
+                                                    W_act_tilt_az_speed,  W_act_theta_const,
+                                                    W_act_theta_speed,  W_act_phi_const,  W_act_phi_speed,
+                                                    W_act_ailerons_const,  W_act_ailerons_speed,  W_dv_1,
+                                                    W_dv_2,  W_dv_3,  W_dv_4,  W_dv_5,  W_dv_6,
+                                                    max_omega,  min_omega,  max_b,  min_b,
+                                                    max_g,  min_g,  max_theta,  min_theta,
+                                                    max_phi,  max_delta_ailerons,  min_delta_ailerons,
+                                                    dv,  p,  q,  r,  Cm_zero,
+                                                    Cl_alpha,  Cd_zero,  K_Cd,  Cm_alpha,
+                                                    CL_aileron,  rho,  V,  S,  wing_chord,
+                                                    flight_path_angle,  max_alpha,  min_alpha,  Beta,
+                                                    gamma_quadratic,  desired_motor_value,
+                                                    desired_el_value,  desired_az_value,
+                                                    desired_theta_value,  desired_phi_value,
+                                                    desired_ailerons_value,  k_alt_tilt_constraint,
+                                                    min_alt_tilt_constraint,  lidar_alt_corrected,
+                                                    approach_mode,  verbose_optimizer,  speed_aoa_protection,
+                                                    transition_speed,  u_out,  residuals,
+                                                    &elapsed_time,  &N_iterations,  &N_evaluation,
+                                                    &exitflag);
+    
+    
+    
+    (  K_p_T,  K_p_M,  m,  I_xx,  I_yy,  I_zz,
                                                               l_1,  l_2,  l_3,  l_4,  l_z,  Phi,
                                                               Theta,  Omega_1,  Omega_2,  Omega_3,
                                                               Omega_4,  b_1,  b_2,  b_3,  b_4,  g_1,
