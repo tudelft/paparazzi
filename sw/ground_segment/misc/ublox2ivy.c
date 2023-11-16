@@ -41,7 +41,7 @@
 #include <Ivy/ivyglibloop.h>
 #include "ublox2ivy.h"
 
-#define UDP_BUFFER_SIZE   1024
+#define UDP_BUFFER_SIZE   4096
 #define NAV_RELPOSNED_VERSION   0x01
 #define INVALID_HEADING  361
 
