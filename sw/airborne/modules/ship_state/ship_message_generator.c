@@ -47,10 +47,14 @@ static void send_ship_info_message(struct transport_tx *trans, struct link_devic
     float z_dot_telemetry = stateGetSpeedNed_f()->z;
     float x_ddot_telemetry = stateGetAccelNed_f()->x;
     float y_ddot_telemetry = stateGetAccelNed_f()->y;
-    float z_ddot_telemetry = stateGetAccelNed_f()->z;       
+    float z_ddot_telemetry = stateGetAccelNed_f()->z;  
+    float lat_state_telemetry = stateGetPositionLla_f()->lat*180/M_PI; 
+    float long_state_telemetry = stateGetPositionLla_f()->lon*180/M_PI; 
+    float alt_state_telemetry = stateGetPositionLla_f()->alt;      
     pprz_msg_send_SHIP_INFO_MSG_GROUND(trans, dev, AC_ID, &phi_telemetry, &theta_telemetry, &psi_telemetry,
                                 &phi_dot_telemetry, &theta_dot_telemetry, &psi_dot_telemetry,
                                 &x_telemetry, &y_telemetry, &z_telemetry,
+                                &lat_state_telemetry, &long_state_telemetry, &alt_state_telemetry,
                                 &x_dot_telemetry, &y_dot_telemetry, &z_dot_telemetry,
                                 &x_ddot_telemetry, &y_ddot_telemetry, &z_ddot_telemetry);
 }

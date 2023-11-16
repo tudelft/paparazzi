@@ -1774,6 +1774,9 @@
       <field name="x" type="float" unit="m">position_x</field>
       <field name="y" type="float" unit="m">position_y</field>
       <field name="z" type="float" unit="m">position_z</field>
+      <field name="lat_ship" type="float" unit="m">lat_ship</field>
+      <field name="long_ship" type="float" unit="m">long_ship</field>
+      <field name="alt_ship" type="float" unit="m">alt_ship</field>      
       <field name="x_dot" type="float" unit="m/s">speed_x</field>
       <field name="y_dot" type="float" unit="m/s">speed_y</field>
       <field name="z_dot" type="float" unit="m/s">speed_z</field>
@@ -3230,6 +3233,9 @@
       <field name="x" type="float" unit="m">position_x</field>
       <field name="y" type="float" unit="m">position_y</field>
       <field name="z" type="float" unit="m">position_z</field>
+      <field name="lat_ship" type="float" unit="m">lat_ship</field>
+      <field name="long_ship" type="float" unit="m">long_ship</field>
+      <field name="alt_ship" type="float" unit="m">alt_ship</field>         
       <field name="x_dot" type="float" unit="m/s">speed_x</field>
       <field name="y_dot" type="float" unit="m/s">speed_y</field>
       <field name="z_dot" type="float" unit="m/s">speed_z</field>
