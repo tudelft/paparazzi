@@ -34,12 +34,12 @@ pthread_mutex_t mutex_am7;
 
 pthread_mutex_t mutex_aruco;
 
-int verbose_connection = 0;
+int verbose_connection = 1;
 int verbose_optimizer = 0;
 int verbose_runtime = 0; 
 int verbose_received_data = 0; 
 int verbose_ivy_bus = 0; 
-int verbose_aruco = 1; 
+int verbose_aruco = 0; 
 
 int16_t lidar_dist_cm = -1; 
 int16_t lidar_signal_strength = -1; 
@@ -352,6 +352,9 @@ void* second_thread() //Run the optimization code
     dv[0] = (myam7_data_in_copy.pseudo_control_ax_int*1e-2); dv[1] = (myam7_data_in_copy.pseudo_control_ay_int*1e-2);
     dv[2] = (myam7_data_in_copy.pseudo_control_az_int*1e-2); dv[3] = (myam7_data_in_copy.pseudo_control_p_dot_int*1e-1 * M_PI/180);
     dv[4] = (myam7_data_in_copy.pseudo_control_q_dot_int*1e-1 * M_PI/180); dv[5] = (myam7_data_in_copy.pseudo_control_r_dot_int*1e-1 * M_PI/180);
+
+    double transition_speed = 6; 
+
     #ifdef TEST_CONTROLLER
     #warning "You are using the testing variable, watch out!"
       float pi = M_PI;
@@ -419,12 +422,12 @@ void* second_thread() //Run the optimization code
       max_delta_ailerons = 25;
       min_delta_ailerons = -25; 
 
-      dv[0] = 10;
-      dv[1] = -3;
-      dv[2] = 3;
-      dv[3] = 5;
-      dv[4] = 15;
-      dv[5] = -5;
+      dv[0] = 10.1;
+      dv[1] = -3.2;
+      dv[2] = 3.5;
+      dv[3] = 5.6;
+      dv[4] = 15.1;
+      dv[5] = -5.8;
 
       p = 0 * pi/180; 
       q = 0 * pi/180; 
@@ -439,7 +442,7 @@ void* second_thread() //Run the optimization code
       S = 0.43;
       wing_chord = 0.3; 
       max_alpha = 15 * pi/180; 
-      min_alpha  = -15 * pi/180; 
+      min_alpha  = 1 * pi/180; 
 
       desired_motor_value = 100; 
       desired_el_value = 0 * pi/180;
@@ -454,31 +457,36 @@ void* second_thread() //Run the optimization code
       min_alt_tilt_constraint = 0.2;
       lidar_alt_corrected = 1;
       approach_mode = 1; 
+      transition_speed = 8; 
     #endif 
 
-    Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains( K_p_T, K_p_M, m, I_xx,  I_yy,  I_zz,
-                                                            l_1,  l_2,  l_3,  l_4,  l_z,  Phi,  Theta,  
-                                                            Omega_1,  Omega_2,  Omega_3,  Omega_4,  
-                                                            b_1,  b_2,  b_3,  b_4,  
-                                                            g_1,  g_2,  g_3,  g_4,  delta_ailerons,
-                                                            W_act_motor_const,  W_act_motor_speed,
-                                                            W_act_tilt_el_const,  W_act_tilt_el_speed,
-                                                            W_act_tilt_az_const,  W_act_tilt_az_speed,
-                                                            W_act_theta_const,  W_act_theta_speed,  
-                                                            W_act_phi_const,  W_act_phi_speed,  
-                                                            W_act_ailerons_const,  W_act_ailerons_speed,  
-                                                            W_dv_1,  W_dv_2,  W_dv_3,  W_dv_4,  W_dv_5,  W_dv_6,  
-                                                            max_omega,  min_omega,  max_b,  min_b,  max_g,  min_g,
-                                                            max_theta,  min_theta,  max_phi,  max_delta_ailerons,  min_delta_ailerons, 
-                                                            dv,
-                                                            p,  q,  r,  
-                                                            Cm_zero,  Cl_alpha,  Cd_zero,  K_Cd,  Cm_alpha,  CL_aileron,  
-                                                            rho,  V,  S,  wing_chord,  flight_path_angle,
-                                                            max_alpha,  min_alpha,  Beta,  gamma_quadratic,
-                                                            desired_motor_value,  desired_el_value,  desired_az_value,  desired_theta_value,  desired_phi_value,  desired_ailerons_value,
-                                                            k_alt_tilt_constraint,  min_alt_tilt_constraint,  lidar_alt_corrected,  approach_mode,  
-                                                            verbose_optimizer,  speed_aoa_protection,  u_out,  residuals,  
-                                                            &elapsed_time,  &N_iterations,  &N_evaluation,  &exitflag);
+    Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(  K_p_T,  K_p_M,  m,  I_xx,  I_yy,  I_zz,
+                                                              l_1,  l_2,  l_3,  l_4,  l_z,  Phi,
+                                                              Theta,  Omega_1,  Omega_2,  Omega_3,
+                                                              Omega_4,  b_1,  b_2,  b_3,  b_4,  g_1,
+                                                              g_2,  g_3,  g_4,  delta_ailerons,
+                                                              W_act_motor_const,  W_act_motor_speed,
+                                                              W_act_tilt_el_const,  W_act_tilt_el_speed,
+                                                              W_act_tilt_az_const,  W_act_tilt_az_speed,
+                                                              W_act_theta_const,  W_act_theta_speed,  W_act_phi_const,
+                                                              W_act_phi_speed,  W_act_ailerons_const,
+                                                              W_act_ailerons_speed,  W_dv_1,  W_dv_2,  W_dv_3,
+                                                              W_dv_4,  W_dv_5,  W_dv_6,  max_omega,
+                                                              min_omega,  max_b,  min_b,  max_g,  min_g,
+                                                              max_theta,  min_theta,  max_phi,
+                                                              max_delta_ailerons,  min_delta_ailerons, dv,
+                                                              p,  q,  r,  Cm_zero,  Cl_alpha,
+                                                              Cd_zero,  K_Cd,  Cm_alpha,  CL_aileron,  rho,
+                                                              V,  S,  wing_chord,  flight_path_angle,
+                                                              max_alpha,  min_alpha,  Beta,  gamma_quadratic,
+                                                              desired_motor_value,  desired_el_value,
+                                                              desired_az_value,  desired_theta_value,
+                                                              desired_phi_value,  desired_ailerons_value,
+                                                              k_alt_tilt_constraint,  min_alt_tilt_constraint,
+                                                              lidar_alt_corrected,  approach_mode,  verbose_optimizer,
+                                                              speed_aoa_protection,  transition_speed,  u_out,
+                                                              residuals,  &elapsed_time,  &N_iterations,
+                                                              &N_evaluation,  &exitflag);
 
     //Convert the function output into integer to be transmitted to the pixhawk again: 
     myam7_data_out_copy_internal.motor_1_cmd_int = (int16_T) (u_out[0]*1e1) , myam7_data_out_copy_internal.motor_2_cmd_int = (int16_T) (u_out[1]*1e1);

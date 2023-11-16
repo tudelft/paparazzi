@@ -5,7 +5,7 @@
  * File: Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains.c
  *
  * MATLAB Coder version            : 5.4
- * C/C++ source code generated on  : 02-Jun-2023 12:17:03
+ * C/C++ source code generated on  : 16-Nov-2023 01:21:31
  */
 
 /* Include Files */
@@ -372,7 +372,7 @@ static void b_driver(const double lb[15], const double ub[15], i_struct_T
                      double Hessian[225], f_struct_T *QRManager, g_struct_T
                      *CholManager, struct_T *QPObjective);
 static double b_maxConstraintViolation(const k_struct_T *obj, const double x[16]);
-static double b_norm(const double x[6]);
+static double b_norm(const double x[15]);
 static void b_test_exit(c_struct_T *Flags, e_struct_T *memspace, b_struct_T
   *MeritFunction, const k_struct_T *WorkingSet, i_struct_T *TrialState,
   f_struct_T *QRManager, const double lb[15], const double ub[15]);
@@ -386,7 +386,7 @@ static void c_compute_acc_nonlinear_control(const double u_in[15], double p,
   double Cl_alpha, double Cd_zero, double K_Cd, double Cm_alpha, double Cm_zero,
   double CL_aileron, double rho, double V, double S, double wing_chord, double
   flight_path_angle, double Beta, double computed_acc[6]);
-static double c_norm(const double x[15]);
+static double c_norm(const double x[6]);
 static double computeComplError(const double xCurrent[15], const int finiteLB[16],
   int mLB, const double lb[15], const int finiteUB[16], int mUB, const double
   ub[15], const double lambda[31], int iL0);
@@ -1377,17 +1377,17 @@ static double b_maxConstraintViolation(const k_struct_T *obj, const double x[16]
 }
 
 /*
- * Arguments    : const double x[6]
+ * Arguments    : const double x[15]
  * Return Type  : double
  */
-static double b_norm(const double x[6])
+static double b_norm(const double x[15])
 {
   double scale;
   double y;
   int k;
   y = 0.0;
   scale = 3.3121686421112381E-170;
-  for (k = 0; k < 6; k++) {
+  for (k = 0; k < 15; k++) {
     double absxk;
     absxk = fabs(x[k]);
     if (absxk > scale) {
@@ -2051,17 +2051,17 @@ static void c_compute_acc_nonlinear_control(const double u_in[15], double p,
 }
 
 /*
- * Arguments    : const double x[15]
+ * Arguments    : const double x[6]
  * Return Type  : double
  */
-static double c_norm(const double x[15])
+static double c_norm(const double x[6])
 {
   double scale;
   double y;
   int k;
   y = 0.0;
   scale = 3.3121686421112381E-170;
-  for (k = 0; k < 15; k++) {
+  for (k = 0; k < 6; k++) {
     double absxk;
     absxk = fabs(x[k]);
     if (absxk > scale) {
@@ -7684,6 +7684,7 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double approach_mode
  *                double verbose
  *                double aoa_protection_speed
+ *                double transition_speed
  *                double u_out[15]
  *                double residuals[6]
  *                double *elapsed_time
@@ -7713,9 +7714,9 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   double desired_az_value, double desired_theta_value, double desired_phi_value,
   double desired_ailerons_value, double k_alt_tilt_constraint, double
   min_alt_tilt_constraint, double lidar_alt_corrected, double approach_mode,
-  double verbose, double aoa_protection_speed, double u_out[15], double
-  residuals[6], double *elapsed_time, double *N_iterations, double *N_evaluation,
-  double *exitflag)
+  double verbose, double aoa_protection_speed, double transition_speed, double
+  u_out[15], double residuals[6], double *elapsed_time, double *N_iterations,
+  double *N_evaluation, double *exitflag)
 {
   b_captured_var dv_global;
   captured_var W_act_ailerons;
@@ -7774,13 +7775,17 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   double u_max[15];
   double u_max_scaled[15];
   double u_min[15];
+  double current_accelerations[6];
+  double final_accelerations[6];
   double b_max_approach;
   double b_max_tilt_value_approach;
   double b_min_approach;
   double g_max_approach;
+  double g_min_approach;
   double max_theta_protection;
   double min_theta_protection;
   int i;
+  char b_expl_temp[3];
   if (!isInitialized_Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains) {
     Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains_initialize();
   }
@@ -7827,12 +7832,12 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
 
   /*  Create variables necessary for the optimization */
   if (b_V.contents > aoa_protection_speed) {
-    min_theta_protection = (max_alpha + b_flight_path_angle.contents) * 180.0 /
+    b_min_approach = (max_alpha + b_flight_path_angle.contents) * 180.0 /
       3.1415926535897931;
-    max_theta_protection = fmin(max_theta, min_theta_protection);
-    min_theta_protection = (min_alpha + b_flight_path_angle.contents) * 180.0 /
+    max_theta_protection = fmin(max_theta, b_min_approach);
+    b_min_approach = (min_alpha + b_flight_path_angle.contents) * 180.0 /
       3.1415926535897931;
-    min_theta_protection = fmax(min_theta, min_theta_protection);
+    min_theta_protection = fmax(min_theta, b_min_approach);
   } else {
     max_theta_protection = max_theta;
     min_theta_protection = min_theta;
@@ -7904,7 +7909,6 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   u_min[14] = min_delta_ailerons;
   if (approach_mode != 0.0) {
     double max_tilt_value_approach[2];
-    double g_min_approach;
     max_tilt_value_approach[0] = 0.0;
     max_tilt_value_approach[1] = k_alt_tilt_constraint * lidar_alt_corrected -
       min_alt_tilt_constraint * k_alt_tilt_constraint;
@@ -7969,46 +7973,46 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   u_max_scaled[1] = u_max[1] / gain_motor.contents;
   u_max_scaled[2] = u_max[2] / gain_motor.contents;
   u_max_scaled[3] = u_max[3] / gain_motor.contents;
-  min_theta_protection = u_min[0] / gain_motor.contents;
-  b_max_tilt_value_approach = u_min[1] / gain_motor.contents;
-  b_max_approach = u_min[2] / gain_motor.contents;
-  b_min_approach = u_min[3] / gain_motor.contents;
-  u_min[0] = min_theta_protection;
-  u_min[1] = b_max_tilt_value_approach;
-  u_min[2] = b_max_approach;
-  u_min[3] = b_min_approach;
-  min_theta_protection = u_max_scaled[4] / gain_el.contents;
-  b_max_tilt_value_approach = u_max_scaled[5] / gain_el.contents;
-  b_max_approach = u_max_scaled[6] / gain_el.contents;
-  b_min_approach = u_max_scaled[7] / gain_el.contents;
-  u_max_scaled[4] = min_theta_protection;
-  u_max_scaled[5] = b_max_tilt_value_approach;
-  u_max_scaled[6] = b_max_approach;
-  u_max_scaled[7] = b_min_approach;
-  min_theta_protection = u_min[4] / gain_el.contents;
-  b_max_tilt_value_approach = u_min[5] / gain_el.contents;
-  b_max_approach = u_min[6] / gain_el.contents;
-  b_min_approach = u_min[7] / gain_el.contents;
-  u_min[4] = min_theta_protection;
-  u_min[5] = b_max_tilt_value_approach;
-  u_min[6] = b_max_approach;
-  u_min[7] = b_min_approach;
-  min_theta_protection = u_max_scaled[8] / gain_az.contents;
-  b_max_tilt_value_approach = u_max_scaled[9] / gain_az.contents;
-  b_max_approach = u_max_scaled[10] / gain_az.contents;
-  b_min_approach = u_max_scaled[11] / gain_az.contents;
-  u_max_scaled[8] = min_theta_protection;
-  u_max_scaled[9] = b_max_tilt_value_approach;
-  u_max_scaled[10] = b_max_approach;
-  u_max_scaled[11] = b_min_approach;
-  min_theta_protection = u_min[8] / gain_az.contents;
-  b_max_tilt_value_approach = u_min[9] / gain_az.contents;
-  b_max_approach = u_min[10] / gain_az.contents;
-  b_min_approach = u_min[11] / gain_az.contents;
-  u_min[8] = min_theta_protection;
-  u_min[9] = b_max_tilt_value_approach;
-  u_min[10] = b_max_approach;
-  u_min[11] = b_min_approach;
+  b_max_tilt_value_approach = u_min[0] / gain_motor.contents;
+  b_max_approach = u_min[1] / gain_motor.contents;
+  b_min_approach = u_min[2] / gain_motor.contents;
+  g_max_approach = u_min[3] / gain_motor.contents;
+  u_min[0] = b_max_tilt_value_approach;
+  u_min[1] = b_max_approach;
+  u_min[2] = b_min_approach;
+  u_min[3] = g_max_approach;
+  b_max_tilt_value_approach = u_max_scaled[4] / gain_el.contents;
+  b_max_approach = u_max_scaled[5] / gain_el.contents;
+  b_min_approach = u_max_scaled[6] / gain_el.contents;
+  g_max_approach = u_max_scaled[7] / gain_el.contents;
+  u_max_scaled[4] = b_max_tilt_value_approach;
+  u_max_scaled[5] = b_max_approach;
+  u_max_scaled[6] = b_min_approach;
+  u_max_scaled[7] = g_max_approach;
+  b_max_tilt_value_approach = u_min[4] / gain_el.contents;
+  b_max_approach = u_min[5] / gain_el.contents;
+  b_min_approach = u_min[6] / gain_el.contents;
+  g_max_approach = u_min[7] / gain_el.contents;
+  u_min[4] = b_max_tilt_value_approach;
+  u_min[5] = b_max_approach;
+  u_min[6] = b_min_approach;
+  u_min[7] = g_max_approach;
+  b_max_tilt_value_approach = u_max_scaled[8] / gain_az.contents;
+  b_max_approach = u_max_scaled[9] / gain_az.contents;
+  b_min_approach = u_max_scaled[10] / gain_az.contents;
+  g_max_approach = u_max_scaled[11] / gain_az.contents;
+  u_max_scaled[8] = b_max_tilt_value_approach;
+  u_max_scaled[9] = b_max_approach;
+  u_max_scaled[10] = b_min_approach;
+  u_max_scaled[11] = g_max_approach;
+  b_max_tilt_value_approach = u_min[8] / gain_az.contents;
+  b_max_approach = u_min[9] / gain_az.contents;
+  b_min_approach = u_min[10] / gain_az.contents;
+  g_max_approach = u_min[11] / gain_az.contents;
+  u_min[8] = b_max_tilt_value_approach;
+  u_min[9] = b_max_approach;
+  u_min[10] = b_min_approach;
+  u_min[11] = g_max_approach;
   u_max_scaled[12] /= gain_theta.contents;
   u_min[12] /= gain_theta.contents;
   u_max_scaled[13] /= gain_phi.contents;
@@ -8020,22 +8024,22 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   u_max[1] = Omega_2 / gain_motor.contents;
   u_max[2] = Omega_3 / gain_motor.contents;
   u_max[3] = Omega_4 / gain_motor.contents;
-  min_theta_protection = u_max[4] / gain_el.contents;
-  b_max_tilt_value_approach = u_max[5] / gain_el.contents;
-  b_max_approach = u_max[6] / gain_el.contents;
-  b_min_approach = u_max[7] / gain_el.contents;
-  u_max[4] = min_theta_protection;
-  u_max[5] = b_max_tilt_value_approach;
-  u_max[6] = b_max_approach;
-  u_max[7] = b_min_approach;
-  min_theta_protection = u_max[8] / gain_az.contents;
-  b_max_tilt_value_approach = u_max[9] / gain_az.contents;
-  b_max_approach = u_max[10] / gain_az.contents;
-  b_min_approach = u_max[11] / gain_az.contents;
-  u_max[8] = min_theta_protection;
-  u_max[9] = b_max_tilt_value_approach;
-  u_max[10] = b_max_approach;
-  u_max[11] = b_min_approach;
+  b_max_tilt_value_approach = u_max[4] / gain_el.contents;
+  b_max_approach = u_max[5] / gain_el.contents;
+  b_min_approach = u_max[6] / gain_el.contents;
+  g_max_approach = u_max[7] / gain_el.contents;
+  u_max[4] = b_max_tilt_value_approach;
+  u_max[5] = b_max_approach;
+  u_max[6] = b_min_approach;
+  u_max[7] = g_max_approach;
+  b_max_tilt_value_approach = u_max[8] / gain_az.contents;
+  b_max_approach = u_max[9] / gain_az.contents;
+  b_min_approach = u_max[10] / gain_az.contents;
+  g_max_approach = u_max[11] / gain_az.contents;
+  u_max[8] = b_max_tilt_value_approach;
+  u_max[9] = b_max_approach;
+  u_max[10] = b_min_approach;
+  u_max[11] = g_max_approach;
   u_max[12] /= gain_theta.contents;
   u_max[13] /= gain_phi.contents;
   u_max[14] /= gain_ailerons.contents;
@@ -8048,29 +8052,48 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
     b_Cl_alpha.contents, b_Cd_zero.contents, b_K_Cd.contents,
     b_Cm_alpha.contents, b_Cm_zero.contents, b_CL_aileron.contents,
     b_rho.contents, b_V.contents, b_S.contents, b_wing_chord.contents,
-    b_flight_path_angle.contents, b_Beta.contents, dv_global.contents);
+    b_flight_path_angle.contents, b_Beta.contents, current_accelerations);
   for (i = 0; i < 6; i++) {
-    dv_global.contents[i] += dv[i];
+    dv_global.contents[i] = dv[i] + current_accelerations[i];
   }
 
-  char b_expl_temp[3];
+  /* Pseudo-control hedging:  */
+  if (b_V.contents > transition_speed) {
+    b_max_approach = b_Cl_alpha.contents * max_alpha;
+    b_min_approach = b_Cl_alpha.contents * min_alpha;
+    b_max_tilt_value_approach = b_V.contents;
+    g_max_approach = b_max_approach * 0.5 * b_rho.contents * b_S.contents *
+      (b_max_tilt_value_approach * b_max_tilt_value_approach) * cos
+      (max_theta_protection * 3.1415926535897931 / 180.0);
+    b_max_tilt_value_approach = b_V.contents;
+    b_max_approach = b_min_approach * 0.5 * b_rho.contents * b_S.contents *
+      (b_max_tilt_value_approach * b_max_tilt_value_approach) * cos
+      (min_theta_protection * 3.1415926535897931 / 180.0);
+    b_max_tilt_value_approach = 9.81 - b_max_approach / b_m.contents;
+    b_max_approach = 9.81 - g_max_approach / b_m.contents;
+    b_min_approach = 0.0;
+    if (dv_global.contents[2] >= b_max_tilt_value_approach) {
+      b_min_approach = dv_global.contents[2] - b_max_tilt_value_approach;
+    } else if (dv_global.contents[2] <= b_max_approach) {
+      b_min_approach = dv_global.contents[2] - b_max_approach;
+    }
+
+    dv_global.contents[2] -= b_min_approach;
+  }
 
   /* Compute weights for actuators and make sure they are always positive */
-  min_theta_protection = W_act_motor_const + W_act_motor_speed * b_V.contents;
-  W_act_motor.contents = fmax(0.0, min_theta_protection);
-  min_theta_protection = W_act_tilt_el_const + W_act_tilt_el_speed *
-    b_V.contents;
-  W_act_tilt_el.contents = fmax(0.0, min_theta_protection);
-  min_theta_protection = W_act_tilt_az_const + W_act_tilt_az_speed *
-    b_V.contents;
-  W_act_tilt_az.contents = fmax(0.0, min_theta_protection);
-  min_theta_protection = W_act_theta_const + W_act_theta_speed * b_V.contents;
-  W_act_theta.contents = fmax(0.0, min_theta_protection);
-  min_theta_protection = W_act_phi_const + W_act_phi_speed * b_V.contents;
-  W_act_phi.contents = fmax(0.0, min_theta_protection);
-  min_theta_protection = W_act_ailerons_const + W_act_ailerons_speed *
-    b_V.contents;
-  W_act_ailerons.contents = fmax(0.0, min_theta_protection);
+  b_min_approach = W_act_motor_const + W_act_motor_speed * b_V.contents;
+  W_act_motor.contents = fmax(0.0, b_min_approach);
+  b_min_approach = W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
+  W_act_tilt_el.contents = fmax(0.0, b_min_approach);
+  b_min_approach = W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
+  W_act_tilt_az.contents = fmax(0.0, b_min_approach);
+  b_min_approach = W_act_theta_const + W_act_theta_speed * b_V.contents;
+  W_act_theta.contents = fmax(0.0, b_min_approach);
+  b_min_approach = W_act_phi_const + W_act_phi_speed * b_V.contents;
+  W_act_phi.contents = fmax(0.0, b_min_approach);
+  b_min_approach = W_act_ailerons_const + W_act_ailerons_speed * b_V.contents;
+  W_act_ailerons.contents = fmax(0.0, b_min_approach);
 
   /* Default values for the optimizer: */
   tic();
@@ -8126,26 +8149,26 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   expl_temp.Cl_alpha = &b_Cl_alpha;
   expl_temp.gain_theta = &gain_theta;
   expl_temp.dv_global = &dv_global;
-  fmincon(&expl_temp, u_max, u_min, u_max_scaled, u_out, &min_theta_protection,
-          exitflag, N_iterations, N_evaluation, b_expl_temp,
-          &b_max_tilt_value_approach, &b_max_approach, &b_min_approach,
-          &g_max_approach);
+  fmincon(&expl_temp, u_max, u_min, u_max_scaled, u_out,
+          &b_max_tilt_value_approach, exitflag, N_iterations, N_evaluation,
+          b_expl_temp, &b_max_approach, &b_min_approach, &g_max_approach,
+          &g_min_approach);
   *elapsed_time = toc();
-  min_theta_protection = gain_motor.contents;
-  u_out[0] *= min_theta_protection;
-  u_out[1] *= min_theta_protection;
-  u_out[2] *= min_theta_protection;
-  u_out[3] *= min_theta_protection;
-  min_theta_protection = gain_el.contents;
-  u_out[4] *= min_theta_protection;
-  u_out[5] *= min_theta_protection;
-  u_out[6] *= min_theta_protection;
-  u_out[7] *= min_theta_protection;
-  min_theta_protection = gain_az.contents;
-  u_out[8] *= min_theta_protection;
-  u_out[9] *= min_theta_protection;
-  u_out[10] *= min_theta_protection;
-  u_out[11] *= min_theta_protection;
+  b_min_approach = gain_motor.contents;
+  u_out[0] *= b_min_approach;
+  u_out[1] *= b_min_approach;
+  u_out[2] *= b_min_approach;
+  u_out[3] *= b_min_approach;
+  b_min_approach = gain_el.contents;
+  u_out[4] *= b_min_approach;
+  u_out[5] *= b_min_approach;
+  u_out[6] *= b_min_approach;
+  u_out[7] *= b_min_approach;
+  b_min_approach = gain_az.contents;
+  u_out[8] *= b_min_approach;
+  u_out[9] *= b_min_approach;
+  u_out[10] *= b_min_approach;
+  u_out[11] *= b_min_approach;
   u_out[12] *= gain_theta.contents;
   u_out[13] *= gain_phi.contents;
   u_out[14] *= gain_ailerons.contents;
@@ -8156,16 +8179,16 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
     b_Cl_alpha.contents, b_Cd_zero.contents, b_K_Cd.contents,
     b_Cm_alpha.contents, b_Cm_zero.contents, b_CL_aileron.contents,
     b_rho.contents, b_V.contents, b_S.contents, b_wing_chord.contents,
-    b_flight_path_angle.contents, b_Beta.contents, residuals);
+    b_flight_path_angle.contents, b_Beta.contents, final_accelerations);
   for (i = 0; i < 6; i++) {
-    residuals[i] = dv_global.contents[i] - residuals[i];
+    residuals[i] = dv_global.contents[i] - final_accelerations[i];
   }
 
   /*  Print infos */
   if (verbose != 0.0) {
     printf("\n Solution: \n");
     fflush(stdout);
-    printf("Motors [rad/s] =  ");
+    printf(" Motors [rad/s] =  ");
     fflush(stdout);
     printf(" %f ", u_out[0]);
     fflush(stdout);
@@ -8177,7 +8200,7 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
     fflush(stdout);
     printf("\n");
     fflush(stdout);
-    printf("Elevator angles [deg] =  ");
+    printf(" Elevator angles [deg] =  ");
     fflush(stdout);
     printf(" %f ", u_out[4] * 180.0 / 3.1415926535897931);
     fflush(stdout);
@@ -8189,7 +8212,7 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
     fflush(stdout);
     printf("\n");
     fflush(stdout);
-    printf("Azimuth angles [deg] =  ");
+    printf(" Azimuth angles [deg] =  ");
     fflush(stdout);
     printf(" %f ", u_out[8] * 180.0 / 3.1415926535897931);
     fflush(stdout);
@@ -8201,19 +8224,19 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
     fflush(stdout);
     printf("\n");
     fflush(stdout);
-    printf("Theta [deg] =  ");
+    printf(" Theta [deg] =  ");
     fflush(stdout);
     printf(" %f ", u_out[12] * 180.0 / 3.1415926535897931);
     fflush(stdout);
     printf("\n");
     fflush(stdout);
-    printf("Phi [deg] =  ");
+    printf(" Phi [deg] =  ");
     fflush(stdout);
     printf(" %f ", u_out[13] * 180.0 / 3.1415926535897931);
     fflush(stdout);
     printf("\n");
     fflush(stdout);
-    printf("Ailerons deflection [deg] =  ");
+    printf(" Ailerons deflection [deg] =  ");
     fflush(stdout);
     printf(" %f ", u_out[14] * 180.0 / 3.1415926535897931);
     fflush(stdout);
@@ -8221,48 +8244,85 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
     fflush(stdout);
     printf("\n Elapsed time = %f \n", *elapsed_time);
     fflush(stdout);
-    printf("\n Number of iterations = %f \n", *N_iterations);
+    printf("\n Number of iterations / evaluations = %f ", *N_iterations);
     fflush(stdout);
-    printf("\n Number of evaluation = %f \n", *N_evaluation);
-    fflush(stdout);
-    printf("\n Residuals = ");
-    fflush(stdout);
-    for (i = 0; i < 6; i++) {
-      printf(" %f ", residuals[i]);
-      fflush(stdout);
-    }
-
-    printf("\n");
-    fflush(stdout);
-    printf("\n Residual norm = %f \n", b_norm(residuals));
+    printf("/ %f \n", *N_evaluation);
     fflush(stdout);
     memcpy(&u_max[0], &u_out[0], 15U * sizeof(double));
     u_max[0] = u_out[0] / gain_motor.contents;
     u_max[1] = u_out[1] / gain_motor.contents;
     u_max[2] = u_out[2] / gain_motor.contents;
     u_max[3] = u_out[3] / gain_motor.contents;
-    min_theta_protection = u_max[4] / gain_el.contents;
-    b_max_tilt_value_approach = u_max[5] / gain_el.contents;
-    b_max_approach = u_max[6] / gain_el.contents;
-    b_min_approach = u_max[7] / gain_el.contents;
-    u_max[4] = min_theta_protection;
-    u_max[5] = b_max_tilt_value_approach;
-    u_max[6] = b_max_approach;
-    u_max[7] = b_min_approach;
-    min_theta_protection = u_max[8] / gain_az.contents;
-    b_max_tilt_value_approach = u_max[9] / gain_az.contents;
-    b_max_approach = u_max[10] / gain_az.contents;
-    b_min_approach = u_max[11] / gain_az.contents;
-    u_max[8] = min_theta_protection;
-    u_max[9] = b_max_tilt_value_approach;
-    u_max[10] = b_max_approach;
-    u_max[11] = b_min_approach;
+    b_max_tilt_value_approach = u_max[4] / gain_el.contents;
+    b_max_approach = u_max[5] / gain_el.contents;
+    b_min_approach = u_max[6] / gain_el.contents;
+    g_max_approach = u_max[7] / gain_el.contents;
+    u_max[4] = b_max_tilt_value_approach;
+    u_max[5] = b_max_approach;
+    u_max[6] = b_min_approach;
+    u_max[7] = g_max_approach;
+    b_max_tilt_value_approach = u_max[8] / gain_az.contents;
+    b_max_approach = u_max[9] / gain_az.contents;
+    b_min_approach = u_max[10] / gain_az.contents;
+    g_max_approach = u_max[11] / gain_az.contents;
+    u_max[8] = b_max_tilt_value_approach;
+    u_max[9] = b_max_approach;
+    u_max[10] = b_min_approach;
+    u_max[11] = g_max_approach;
     u_max[12] /= gain_theta.contents;
     u_max[13] /= gain_phi.contents;
     u_max[14] /= gain_ailerons.contents;
-    printf("\n Solution scaled norm = %f \n", c_norm(u_max));
+    printf("\n Solution scaled norm = %f \n", b_norm(u_max));
     fflush(stdout);
     printf("\n Exit flag optimizer = %f \n", *exitflag);
+    fflush(stdout);
+    printf("\n Modeled accelerations =   ");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      printf(" %f ", current_accelerations[i]);
+      fflush(stdout);
+    }
+
+    printf("\n");
+    fflush(stdout);
+    printf("\n desired acc increment =    ");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      printf(" %f ", dv[i]);
+      fflush(stdout);
+    }
+
+    printf("\n");
+    fflush(stdout);
+    printf("\n Requested accelerations =  ");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      b_min_approach = dv_global.contents[i];
+      printf(" %f ", b_min_approach);
+      fflush(stdout);
+    }
+
+    printf("\n");
+    fflush(stdout);
+    printf("\n Achieved accelerations =   ");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      printf(" %f ", final_accelerations[i]);
+      fflush(stdout);
+    }
+
+    printf("\n");
+    fflush(stdout);
+    printf("\n Acc residuals / norm  =    ");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      printf(" %f ", residuals[i]);
+      fflush(stdout);
+    }
+
+    printf(" / ");
+    fflush(stdout);
+    printf(" %f \n", c_norm(residuals));
     fflush(stdout);
   }
 }

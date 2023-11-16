@@ -5,7 +5,7 @@
  * File: Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains.h
  *
  * MATLAB Coder version            : 5.4
- * C/C++ source code generated on  : 02-Jun-2023 12:17:03
+ * C/C++ source code generated on  : 16-Nov-2023 01:21:31
  */
 
 #ifndef NONLINEAR_CA_CONTROL_RF_W_AIL_SINGULAR_TILT_CONSTRAINS_H
@@ -46,9 +46,9 @@ extern void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(
     double desired_phi_value, double desired_ailerons_value,
     double k_alt_tilt_constraint, double min_alt_tilt_constraint,
     double lidar_alt_corrected, double approach_mode, double verbose,
-    double aoa_protection_speed, double u_out[15], double residuals[6],
-    double *elapsed_time, double *N_iterations, double *N_evaluation,
-    double *exitflag);
+    double aoa_protection_speed, double transition_speed, double u_out[15],
+    double residuals[6], double *elapsed_time, double *N_iterations,
+    double *N_evaluation, double *exitflag);
 
 extern void
 Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains_initialize(void);

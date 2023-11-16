@@ -5,7 +5,7 @@
  * File: Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains_types.h
  *
  * MATLAB Coder version            : 5.4
- * C/C++ source code generated on  : 02-Jun-2023 12:17:03
+ * C/C++ source code generated on  : 16-Nov-2023 01:21:31
  */
 
 #ifndef NONLINEAR_CA_CONTROL_RF_W_AIL_SINGULAR_TILT_CONSTRAINS_TYPES_H
