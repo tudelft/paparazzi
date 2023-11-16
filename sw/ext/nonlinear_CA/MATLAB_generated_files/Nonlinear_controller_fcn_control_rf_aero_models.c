@@ -2164,7 +2164,7 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
         int exitg1;
         do {
           exitg1 = 0;
-          if (TrialState->FunctionEvaluations < 1000) {
+          if (TrialState->FunctionEvaluations < 1000 && toc() <= 5e-3) {
             if (evalWellDefined && (phi_alpha <= MeritFunction->phi + alpha *
                                     0.0001 * MeritFunction->phiPrimePlus)) {
               exitg1 = 1;
@@ -2810,7 +2810,7 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
         }
 
         if (guard1) {
-          if (TrialState->sqpIterations >= 150) {
+          if (TrialState->sqpIterations >= 200 || toc() >= 5e-3) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
           } else if (TrialState->FunctionEvaluations >= 1000) {
