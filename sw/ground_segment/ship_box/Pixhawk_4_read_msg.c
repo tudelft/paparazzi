@@ -42,7 +42,7 @@
 #include "Pixhawk_4_read_msg.h"
 
 
-#define UDP_BUFFER_SIZE   16384
+#define UDP_BUFFER_SIZE   1024
 
 struct timeval current_time, last_time;
 
@@ -110,7 +110,7 @@ struct endpoint_t {
   } ep;
 };
 
-struct payload_ship_info_msg_ground {
+struct __attribute__((__packed__)) payload_ship_info_msg_ground {
   float phi; 
   float theta; 
   float psi; 
@@ -229,6 +229,10 @@ uint8_t parse_single_byte(unsigned char in_byte)
       break;
 
     case ParsingMsgPayload:
+      if(parser.counter-4 > 254){
+        parser.counter = 0;
+        parser.state = SearchingPPRZ_STX;
+      }
       parser.payload[parser.counter-4] = in_byte;
       parser.crc_a += in_byte;
       parser.crc_b += parser.crc_a;
@@ -306,10 +310,10 @@ void *udp_endpoint(void *arg) {
     int n = recvfrom(ep->fd, buffer, UDP_BUFFER_SIZE, MSG_WAITALL, (struct sockaddr *)&client, &len);
 
     // Ignore errors
-    if(n < 0)
+    if(n <= 0)
       continue;
 
-    if(verbose) printf("Got packet at endpoint [%s:%d] with length %d\r\n", ep->server_addr, ep->server_port, n);
+    // if(verbose) printf("Got packet at endpoint [%s:%d] with length %d\r\n", ep->server_addr, ep->server_port, n);
 
     // Send the message to the handler
     packet_handler(ep, buffer, n);
