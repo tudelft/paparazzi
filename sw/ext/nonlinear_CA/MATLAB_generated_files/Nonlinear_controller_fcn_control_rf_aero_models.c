@@ -13,7 +13,6 @@
 #include "Nonlinear_controller_fcn_control_rf_aero_models.h"
 #include "rt_nonfinite.h"
 #include "coder_posix_time.h"
-#include "omp.h"
 #include "rt_nonfinite.h"
 #include <math.h>
 #include <stdio.h>
@@ -583,7 +582,6 @@ static double freq;
 static bool freq_not_empty;
 static coderTimespec savedTime;
 static bool savedTime_not_empty;
-omp_nest_lock_t Nonlinear_controller_fcn_control_rf_aero_models_nestLockGlobal;
 static bool isInitialized_Nonlinear_controller_fcn_control_rf_aero_models =
   false;
 
@@ -902,62 +900,61 @@ static void PresolveWorkingSet(g_struct_T *solution, d_struct_T *memspace,
   h_struct_T *workingset, e_struct_T *qrmanager)
 {
   double tol;
-  int idx;
   int idxDiag;
   int idx_col;
   int ix;
+  int ix0;
   int k;
-  int mTotalWorkingEq;
+  int mTotalWorkingEq_tmp_tmp;
   int mWorkingFixed;
   int nDepInd;
   solution->state = 82;
   mWorkingFixed = workingset->nWConstr[0];
-  mTotalWorkingEq = workingset->nWConstr[0] + workingset->nWConstr[1];
+  mTotalWorkingEq_tmp_tmp = workingset->nWConstr[0] + workingset->nWConstr[1];
   nDepInd = 0;
-  if (mTotalWorkingEq > 0) {
+  if (mTotalWorkingEq_tmp_tmp > 0) {
     int i;
+    int i1;
+    int u0;
     i = (unsigned char)workingset->nVar;
-    for (idxDiag = 0; idxDiag < mTotalWorkingEq; idxDiag++) {
+    for (ix = 0; ix < mTotalWorkingEq_tmp_tmp; ix++) {
       for (idx_col = 0; idx_col < i; idx_col++) {
-        qrmanager->QR[idxDiag + 31 * idx_col] = workingset->ATwset[idx_col +
-          (idxDiag << 4)];
+        qrmanager->QR[ix + 31 * idx_col] = workingset->ATwset[idx_col + (ix << 4)];
       }
     }
 
-    nDepInd = mTotalWorkingEq - workingset->nVar;
+    nDepInd = mTotalWorkingEq_tmp_tmp - workingset->nVar;
     if (nDepInd <= 0) {
       nDepInd = 0;
     }
 
-    if (i - 1 >= 0) {
-      memset(&qrmanager->jpvt[0], 0, (unsigned int)i * sizeof(int));
-    }
-
-    if (mTotalWorkingEq * workingset->nVar == 0) {
-      qrmanager->mrows = mTotalWorkingEq;
+    memset(&qrmanager->jpvt[0], 0, (unsigned int)i * sizeof(int));
+    i1 = mTotalWorkingEq_tmp_tmp * workingset->nVar;
+    if (i1 == 0) {
+      qrmanager->mrows = mTotalWorkingEq_tmp_tmp;
       qrmanager->ncols = workingset->nVar;
       qrmanager->minRowCol = 0;
     } else {
       qrmanager->usedPivoting = true;
-      qrmanager->mrows = mTotalWorkingEq;
+      qrmanager->mrows = mTotalWorkingEq_tmp_tmp;
       qrmanager->ncols = workingset->nVar;
       idxDiag = workingset->nVar;
-      if (mTotalWorkingEq <= idxDiag) {
-        idxDiag = mTotalWorkingEq;
+      if (mTotalWorkingEq_tmp_tmp <= idxDiag) {
+        idxDiag = mTotalWorkingEq_tmp_tmp;
       }
 
       qrmanager->minRowCol = idxDiag;
-      xgeqp3(qrmanager->QR, mTotalWorkingEq, workingset->nVar, qrmanager->jpvt,
-             qrmanager->tau);
+      xgeqp3(qrmanager->QR, mTotalWorkingEq_tmp_tmp, workingset->nVar,
+             qrmanager->jpvt, qrmanager->tau);
     }
 
     tol = 100.0 * (double)workingset->nVar * 2.2204460492503131E-16;
-    idxDiag = workingset->nVar;
-    if (idxDiag > mTotalWorkingEq) {
-      idxDiag = mTotalWorkingEq;
+    u0 = workingset->nVar;
+    if (u0 > mTotalWorkingEq_tmp_tmp) {
+      u0 = mTotalWorkingEq_tmp_tmp;
     }
 
-    idxDiag += 31 * (idxDiag - 1);
+    idxDiag = u0 + 31 * (u0 - 1);
     while ((idxDiag > 0) && (fabs(qrmanager->QR[idxDiag - 1]) < tol)) {
       idxDiag -= 32;
       nDepInd++;
@@ -966,13 +963,13 @@ static void PresolveWorkingSet(g_struct_T *solution, d_struct_T *memspace,
     if (nDepInd > 0) {
       bool exitg1;
       computeQ_(qrmanager, qrmanager->mrows);
-      idx_col = 0;
+      idxDiag = 0;
       exitg1 = false;
-      while ((!exitg1) && (idx_col <= nDepInd - 1)) {
+      while ((!exitg1) && (idxDiag <= nDepInd - 1)) {
         double qtb;
-        ix = 31 * ((mTotalWorkingEq - idx_col) - 1);
+        ix = 31 * ((mTotalWorkingEq_tmp_tmp - idxDiag) - 1);
         qtb = 0.0;
-        for (k = 0; k < mTotalWorkingEq; k++) {
+        for (k = 0; k < mTotalWorkingEq_tmp_tmp; k++) {
           qtb += qrmanager->Q[ix + k] * workingset->bwset[k];
         }
 
@@ -980,100 +977,62 @@ static void PresolveWorkingSet(g_struct_T *solution, d_struct_T *memspace,
           nDepInd = -1;
           exitg1 = true;
         } else {
-          idx_col++;
+          idxDiag++;
         }
       }
     }
 
     if (nDepInd > 0) {
-      for (idx_col = 0; idx_col < mTotalWorkingEq; idx_col++) {
+      for (idx_col = 0; idx_col < mTotalWorkingEq_tmp_tmp; idx_col++) {
         idxDiag = 31 * idx_col;
-        ix = idx_col << 4;
+        ix0 = idx_col << 4;
         for (k = 0; k < i; k++) {
-          qrmanager->QR[idxDiag + k] = workingset->ATwset[ix + k];
+          qrmanager->QR[idxDiag + k] = workingset->ATwset[ix0 + k];
         }
       }
 
-      if (mWorkingFixed < 400) {
-        for (idx = 0; idx < mWorkingFixed; idx++) {
-          qrmanager->jpvt[idx] = 1;
-        }
-      } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-        for (idx = 0; idx < mWorkingFixed; idx++) {
-          qrmanager->jpvt[idx] = 1;
-        }
+      for (idxDiag = 0; idxDiag < mWorkingFixed; idxDiag++) {
+        qrmanager->jpvt[idxDiag] = 1;
       }
 
       i = workingset->nWConstr[0] + 1;
-      if ((mTotalWorkingEq - i) + 1 < 400) {
-        if (i <= mTotalWorkingEq) {
-          memset(&qrmanager->jpvt[i + -1], 0, (unsigned int)((mTotalWorkingEq -
-                   i) + 1) * sizeof(int));
-        }
-      } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-        for (idx = i; idx <= mTotalWorkingEq; idx++) {
-          qrmanager->jpvt[idx - 1] = 0;
-        }
+      if (i <= mTotalWorkingEq_tmp_tmp) {
+        memset(&qrmanager->jpvt[i + -1], 0, (unsigned int)
+               ((mTotalWorkingEq_tmp_tmp - i) + 1) * sizeof(int));
       }
 
-      if (workingset->nVar * mTotalWorkingEq == 0) {
+      if (i1 == 0) {
         qrmanager->mrows = workingset->nVar;
-        qrmanager->ncols = mTotalWorkingEq;
+        qrmanager->ncols = mTotalWorkingEq_tmp_tmp;
         qrmanager->minRowCol = 0;
       } else {
         qrmanager->usedPivoting = true;
         qrmanager->mrows = workingset->nVar;
-        qrmanager->ncols = mTotalWorkingEq;
-        idxDiag = workingset->nVar;
-        if (idxDiag > mTotalWorkingEq) {
-          idxDiag = mTotalWorkingEq;
-        }
-
-        qrmanager->minRowCol = idxDiag;
-        xgeqp3(qrmanager->QR, workingset->nVar, mTotalWorkingEq, qrmanager->jpvt,
-               qrmanager->tau);
+        qrmanager->ncols = mTotalWorkingEq_tmp_tmp;
+        qrmanager->minRowCol = u0;
+        xgeqp3(qrmanager->QR, workingset->nVar, mTotalWorkingEq_tmp_tmp,
+               qrmanager->jpvt, qrmanager->tau);
       }
 
-      if (nDepInd < 400) {
-        for (idx = 0; idx < nDepInd; idx++) {
-          memspace->workspace_int[idx] = qrmanager->jpvt[(mTotalWorkingEq -
-            nDepInd) + idx];
-        }
-      } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-        for (idx = 0; idx < nDepInd; idx++) {
-          memspace->workspace_int[idx] = qrmanager->jpvt[(mTotalWorkingEq -
-            nDepInd) + idx];
-        }
+      for (idxDiag = 0; idxDiag < nDepInd; idxDiag++) {
+        memspace->workspace_int[idxDiag] = qrmanager->jpvt
+          [(mTotalWorkingEq_tmp_tmp - nDepInd) + idxDiag];
       }
 
       countsort(memspace->workspace_int, nDepInd, memspace->workspace_sort, 1,
-                mTotalWorkingEq);
-      for (idx_col = nDepInd; idx_col >= 1; idx_col--) {
-        i = workingset->nWConstr[0] + workingset->nWConstr[1];
-        if (i != 0) {
-          idxDiag = memspace->workspace_int[idx_col - 1];
-          if (idxDiag <= i) {
-            if ((workingset->nActiveConstr == i) || (idxDiag == i)) {
-              workingset->mEqRemoved++;
+                mTotalWorkingEq_tmp_tmp);
+      for (idxDiag = nDepInd; idxDiag >= 1; idxDiag--) {
+        i = memspace->workspace_int[idxDiag - 1];
+        if (i <= mTotalWorkingEq_tmp_tmp) {
+          if ((workingset->nActiveConstr == mTotalWorkingEq_tmp_tmp) || (i ==
+               mTotalWorkingEq_tmp_tmp)) {
+            workingset->mEqRemoved++;
 
-              /* A check that is always false is detected at compile-time. Eliminating code that follows. */
-            } else {
-              workingset->mEqRemoved++;
+            /* A check that is always false is detected at compile-time. Eliminating code that follows. */
+          } else {
+            workingset->mEqRemoved++;
 
-              /* A check that is always false is detected at compile-time. Eliminating code that follows. */
-            }
+            /* A check that is always false is detected at compile-time. Eliminating code that follows. */
           }
         }
       }
@@ -1109,17 +1068,17 @@ static void PresolveWorkingSet(g_struct_T *solution, d_struct_T *memspace,
     }
   } else {
     solution->state = -3;
-    idxDiag = (workingset->nWConstr[0] + workingset->nWConstr[1]) + 1;
+    idxDiag = mTotalWorkingEq_tmp_tmp + 1;
     ix = workingset->nActiveConstr;
-    for (idx_col = idxDiag; idx_col <= ix; idx_col++) {
-      workingset->isActiveConstr[(workingset->isActiveIdx[workingset->
-        Wid[idx_col - 1] - 1] + workingset->Wlocalidx[idx_col - 1]) - 2] = false;
+    for (ix0 = idxDiag; ix0 <= ix; ix0++) {
+      workingset->isActiveConstr[(workingset->isActiveIdx[workingset->Wid[ix0 -
+        1] - 1] + workingset->Wlocalidx[ix0 - 1]) - 2] = false;
     }
 
     workingset->nWConstr[2] = 0;
     workingset->nWConstr[3] = 0;
     workingset->nWConstr[4] = 0;
-    workingset->nActiveConstr = workingset->nWConstr[0] + workingset->nWConstr[1];
+    workingset->nActiveConstr = mTotalWorkingEq_tmp_tmp;
   }
 }
 
@@ -1129,55 +1088,34 @@ static void RemoveDependentIneq_(h_struct_T *workingset, e_struct_T *qrmanager,
   int idx;
   int idx_col;
   int k;
-  int nActiveConstr;
+  int nActiveConstr_tmp;
   int nFixedConstr;
   int nVar;
-  nActiveConstr = workingset->nActiveConstr;
+  nActiveConstr_tmp = workingset->nActiveConstr;
   nFixedConstr = workingset->nWConstr[0] + workingset->nWConstr[1];
   nVar = workingset->nVar;
   if ((workingset->nWConstr[2] + workingset->nWConstr[3]) + workingset->
       nWConstr[4] > 0) {
     double tol;
-    int i;
     int idxDiag;
     int nDepIneq;
     tol = tolfactor * (double)workingset->nVar * 2.2204460492503131E-16;
-    if (nFixedConstr < 400) {
-      for (idx = 0; idx < nFixedConstr; idx++) {
-        qrmanager->jpvt[idx] = 1;
-      }
-    } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-      for (idx = 0; idx < nFixedConstr; idx++) {
-        qrmanager->jpvt[idx] = 1;
-      }
+    for (idx = 0; idx < nFixedConstr; idx++) {
+      qrmanager->jpvt[idx] = 1;
     }
 
-    i = nFixedConstr + 1;
-    if (nActiveConstr - nFixedConstr < 400) {
-      if (i <= nActiveConstr) {
-        memset(&qrmanager->jpvt[i + -1], 0, (unsigned int)((nActiveConstr - i) +
-                1) * sizeof(int));
-      }
-    } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-      for (idx = i; idx <= nActiveConstr; idx++) {
-        qrmanager->jpvt[idx - 1] = 0;
-      }
+    idxDiag = nFixedConstr + 1;
+    if (idxDiag <= nActiveConstr_tmp) {
+      memset(&qrmanager->jpvt[idxDiag + -1], 0, (unsigned int)
+             ((nActiveConstr_tmp - idxDiag) + 1) * sizeof(int));
     }
 
-    for (idx_col = 0; idx_col < nActiveConstr; idx_col++) {
-      idxDiag = 31 * idx_col;
-      nDepIneq = idx_col << 4;
-      i = (unsigned char)nVar;
-      for (k = 0; k < i; k++) {
-        qrmanager->QR[idxDiag + k] = workingset->ATwset[nDepIneq + k];
+    for (idx_col = 0; idx_col < nActiveConstr_tmp; idx_col++) {
+      nDepIneq = 31 * idx_col;
+      idx = idx_col << 4;
+      idxDiag = (unsigned char)nVar;
+      for (k = 0; k < idxDiag; k++) {
+        qrmanager->QR[nDepIneq + k] = workingset->ATwset[idx + k];
       }
     }
 
@@ -1201,27 +1139,25 @@ static void RemoveDependentIneq_(h_struct_T *workingset, e_struct_T *qrmanager,
     }
 
     nDepIneq = 0;
-    for (nActiveConstr = workingset->nActiveConstr - 1; nActiveConstr + 1 > nVar;
-         nActiveConstr--) {
+    for (idx = workingset->nActiveConstr - 1; idx + 1 > nVar; idx--) {
       nDepIneq++;
-      memspace->workspace_int[nDepIneq - 1] = qrmanager->jpvt[nActiveConstr];
+      memspace->workspace_int[nDepIneq - 1] = qrmanager->jpvt[idx];
     }
 
-    if (nActiveConstr + 1 <= workingset->nVar) {
-      idxDiag = nActiveConstr + 31 * nActiveConstr;
-      while ((nActiveConstr + 1 > nFixedConstr) && (fabs(qrmanager->QR[idxDiag])
-              < tol)) {
+    if (idx + 1 <= workingset->nVar) {
+      idxDiag = idx + 31 * idx;
+      while ((idx + 1 > nFixedConstr) && (fabs(qrmanager->QR[idxDiag]) < tol)) {
         nDepIneq++;
-        memspace->workspace_int[nDepIneq - 1] = qrmanager->jpvt[nActiveConstr];
-        nActiveConstr--;
+        memspace->workspace_int[nDepIneq - 1] = qrmanager->jpvt[idx];
+        idx--;
         idxDiag -= 32;
       }
     }
 
     countsort(memspace->workspace_int, nDepIneq, memspace->workspace_sort,
               nFixedConstr + 1, workingset->nActiveConstr);
-    for (nActiveConstr = nDepIneq; nActiveConstr >= 1; nActiveConstr--) {
-      removeConstr(workingset, memspace->workspace_int[nActiveConstr - 1]);
+    for (idx = nDepIneq; idx >= 1; idx--) {
+      removeConstr(workingset, memspace->workspace_int[idx - 1]);
     }
   }
 }
@@ -1230,8 +1166,6 @@ static void addBoundToActiveSetMatrix_(h_struct_T *obj, int TYPE, int idx_local)
 {
   int colOffset;
   int i;
-  int i1;
-  int idx;
   int idx_bnd_local;
   obj->nWConstr[TYPE - 1]++;
   obj->isActiveConstr[(obj->isActiveIdx[TYPE - 1] + idx_local) - 2] = true;
@@ -1255,20 +1189,10 @@ static void addBoundToActiveSetMatrix_(h_struct_T *obj, int TYPE, int idx_local)
 
   obj->ATwset[idx_bnd_local + colOffset] = 2.0 * (double)(TYPE == 5) - 1.0;
   i = idx_bnd_local + 1;
-  i1 = obj->nVar;
-  if (i1 - idx_bnd_local < 400) {
-    if (i <= i1) {
-      memset(&obj->ATwset[i + colOffset], 0, (unsigned int)((((i1 + colOffset) -
-                i) - colOffset) + 1) * sizeof(double));
-    }
-  } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-    for (idx = i; idx <= i1; idx++) {
-      obj->ATwset[idx + colOffset] = 0.0;
-    }
+  idx_bnd_local = obj->nVar;
+  if (i <= idx_bnd_local) {
+    memset(&obj->ATwset[i + colOffset], 0, (unsigned int)((((idx_bnd_local +
+               colOffset) - i) - colOffset) + 1) * sizeof(double));
   }
 
   switch (obj->probType) {
@@ -1291,10 +1215,7 @@ static void b_computeGradLag(double workspace[496], int nVar, const double grad
   int iL0;
   int idx;
   i = (unsigned char)nVar;
-  if (i - 1 >= 0) {
-    memcpy(&workspace[0], &grad[0], (unsigned int)i * sizeof(double));
-  }
-
+  memcpy(&workspace[0], &grad[0], (unsigned int)i * sizeof(double));
   i = (unsigned char)mFixed;
   for (idx = 0; idx < i; idx++) {
     i1 = finiteFixed[idx];
@@ -2061,7 +1982,6 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
   i_struct_T expl_temp;
   j_struct_T Flags;
   int i;
-  int i1;
   int ineqStart;
   int ixlast;
   int k;
@@ -2092,24 +2012,17 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
   CholManager->workspace_ = rtInf;
   CholManager->workspace2_ = rtInf;
   QRManager->ldq = 31;
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-  for (i = 0; i < 961; i++) {
-    CholManager->FMat[i] = 0.0;
-    QRManager->QR[i] = 0.0;
-    QRManager->Q[i] = 0.0;
-  }
-
+  memset(&CholManager->FMat[0], 0, 961U * sizeof(double));
+  memset(&QRManager->QR[0], 0, 961U * sizeof(double));
+  memset(&QRManager->Q[0], 0, 961U * sizeof(double));
   QRManager->mrows = 0;
   QRManager->ncols = 0;
   memset(&QRManager->jpvt[0], 0, 31U * sizeof(int));
   memset(&QRManager->tau[0], 0, 31U * sizeof(double));
   QRManager->minRowCol = 0;
   QRManager->usedPivoting = false;
-  for (i1 = 0; i1 < 225; i1++) {
-    Hessian[i1] = iv[i1];
+  for (i = 0; i < 225; i++) {
+    Hessian[i] = iv[i];
   }
 
   nVar_tmp_tmp = WorkingSet->nVar;
@@ -2143,22 +2056,22 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
     double phi_alpha;
     while (!(Flags.stepAccepted || Flags.failedLineSearch)) {
       if (Flags.stepType != 3) {
-        i1 = (unsigned char)mLB;
-        for (ixlast = 0; ixlast < i1; ixlast++) {
+        i = (unsigned char)mLB;
+        for (ixlast = 0; ixlast < i; ixlast++) {
           WorkingSet->lb[WorkingSet->indexLB[ixlast] - 1] = -lb
             [WorkingSet->indexLB[ixlast] - 1] + TrialState->xstarsqp
             [WorkingSet->indexLB[ixlast] - 1];
         }
 
-        i1 = (unsigned char)mUB;
-        for (ixlast = 0; ixlast < i1; ixlast++) {
+        i = (unsigned char)mUB;
+        for (ixlast = 0; ixlast < i; ixlast++) {
           WorkingSet->ub[WorkingSet->indexUB[ixlast] - 1] = ub
             [WorkingSet->indexUB[ixlast] - 1] - TrialState->xstarsqp
             [WorkingSet->indexUB[ixlast] - 1];
         }
 
-        i1 = (unsigned char)mFixed;
-        for (ixlast = 0; ixlast < i1; ixlast++) {
+        i = (unsigned char)mFixed;
+        for (ixlast = 0; ixlast < i; ixlast++) {
           phi_alpha = ub[WorkingSet->indexFixed[ixlast] - 1] -
             TrialState->xstarsqp[WorkingSet->indexFixed[ixlast] - 1];
           WorkingSet->ub[WorkingSet->indexFixed[ixlast] - 1] = phi_alpha;
@@ -2171,8 +2084,8 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
             ineqStart = 1;
           }
 
-          i1 = WorkingSet->nActiveConstr;
-          for (ixlast = ineqStart; ixlast <= i1; ixlast++) {
+          i = WorkingSet->nActiveConstr;
+          for (ixlast = ineqStart; ixlast <= i; ixlast++) {
             switch (WorkingSet->Wid[ixlast - 1]) {
              case 4:
               WorkingSet->bwset[ixlast - 1] = WorkingSet->lb[WorkingSet->
@@ -2195,8 +2108,8 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
       expl_temp.ObjectiveLimit = rtMinusInf;
       expl_temp.StepTolerance = 1.0E-6;
       expl_temp.MaxIterations = qpoptions_MaxIterations;
-      for (i1 = 0; i1 < 7; i1++) {
-        expl_temp.SolverName[i1] = qpoptions_SolverName[i1];
+      for (i = 0; i < 7; i++) {
+        expl_temp.SolverName[i] = qpoptions_SolverName[i];
       }
 
       b_expl_temp = expl_temp;
@@ -2204,8 +2117,8 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
         MeritFunction, memspace, WorkingSet, QRManager, CholManager, QPObjective,
         &b_expl_temp);
       if (Flags.stepAccepted) {
-        i1 = (unsigned char)nVar_tmp_tmp;
-        for (ineqStart = 0; ineqStart < i1; ineqStart++) {
+        i = (unsigned char)nVar_tmp_tmp;
+        for (ineqStart = 0; ineqStart < i; ineqStart++) {
           TrialState->xstarsqp[ineqStart] += TrialState->delta_x[ineqStart];
         }
 
@@ -2238,7 +2151,7 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
         }
 
         evalWellDefined = Flags.fevalOK;
-        i1 = WorkingSet->nVar;
+        i = WorkingSet->nVar;
         alpha = 1.0;
         exitflagLnSrch = 1;
         phi_alpha = MeritFunction->phiFullStep;
@@ -2251,7 +2164,7 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
         int exitg1;
         do {
           exitg1 = 0;
-          if (TrialState->FunctionEvaluations < 2000 && toc() <= 5e-3) {
+          if (TrialState->FunctionEvaluations < 1000) {
             if (evalWellDefined && (phi_alpha <= MeritFunction->phi + alpha *
                                     0.0001 * MeritFunction->phiPrimePlus)) {
               exitg1 = 1;
@@ -2259,15 +2172,15 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
               bool exitg2;
               bool tooSmallX;
               alpha *= 0.7;
-              ineqStart = (unsigned char)i1;
+              ineqStart = (unsigned char)i;
               for (ixlast = 0; ixlast < ineqStart; ixlast++) {
                 TrialState->delta_x[ixlast] = alpha * TrialState->xstar[ixlast];
               }
 
               if (socTaken) {
                 phi_alpha = alpha * alpha;
-                if ((i1 >= 1) && (!(phi_alpha == 0.0))) {
-                  ixlast = i1 - 1;
+                if ((i >= 1) && (!(phi_alpha == 0.0))) {
+                  ixlast = i - 1;
                   for (k = 0; k <= ixlast; k++) {
                     TrialState->delta_x[k] += phi_alpha *
                       TrialState->socDirection[k];
@@ -2278,7 +2191,7 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
               tooSmallX = true;
               ixlast = 0;
               exitg2 = false;
-              while ((!exitg2) && (ixlast <= (unsigned char)i1 - 1)) {
+              while ((!exitg2) && (ixlast <= (unsigned char)i - 1)) {
                 if (1.0E-9 * fmax(1.0, fabs(TrialState->xstarsqp[ixlast])) <=
                     fabs(TrialState->delta_x[ixlast])) {
                   tooSmallX = false;
@@ -2326,14 +2239,14 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
     }
 
     if (Flags.stepAccepted && (!Flags.failedLineSearch)) {
-      i1 = (unsigned char)nVar_tmp_tmp;
-      for (ixlast = 0; ixlast < i1; ixlast++) {
+      i = (unsigned char)nVar_tmp_tmp;
+      for (ixlast = 0; ixlast < i; ixlast++) {
         TrialState->xstarsqp[ixlast] = TrialState->xstarsqp_old[ixlast] +
           TrialState->delta_x[ixlast];
       }
 
-      i1 = (unsigned char)mConstr;
-      for (ixlast = 0; ixlast < i1; ixlast++) {
+      i = (unsigned char)mConstr;
+      for (ixlast = 0; ixlast < i; ixlast++) {
         phi_alpha = TrialState->lambdasqp[ixlast];
         phi_alpha += TrialState->steplength * (TrialState->lambda[ixlast] -
           phi_alpha);
@@ -2367,9 +2280,9 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
       Flags.stepAccepted = false;
       Flags.stepType = 1;
       Flags.failedLineSearch = false;
-      i1 = (unsigned char)nVar_tmp_tmp;
+      i = (unsigned char)nVar_tmp_tmp;
       memcpy(&TrialState->delta_gradLag[0], &TrialState->grad[0], (unsigned int)
-             i1 * sizeof(double));
+             i * sizeof(double));
       if (nVar_tmp_tmp >= 1) {
         ixlast = nVar_tmp_tmp - 1;
         for (k = 0; k <= ixlast; k++) {
@@ -2598,14 +2511,14 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
   double optimRelativeFactor;
   double s;
   double smax;
+  int b_i;
   int b_k;
   int i;
-  int idx;
+  int i1;
   int idx_max;
   int k;
   int mFixed;
   int nVar;
-  int u1;
   bool dxTooSmall;
   bool exitg1;
   bool isFeasible;
@@ -2644,14 +2557,14 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
   }
 
   smax = 0.0;
-  u1 = (unsigned char)WorkingSet->sizes[3];
-  for (idx_max = 0; idx_max < u1; idx_max++) {
+  i1 = (unsigned char)WorkingSet->sizes[3];
+  for (idx_max = 0; idx_max < i1; idx_max++) {
     nVar = WorkingSet->indexLB[idx_max] - 1;
     smax = fmax(smax, lb[nVar] - TrialState->xstarsqp[nVar]);
   }
 
-  u1 = (unsigned char)WorkingSet->sizes[4];
-  for (idx_max = 0; idx_max < u1; idx_max++) {
+  i1 = (unsigned char)WorkingSet->sizes[4];
+  for (idx_max = 0; idx_max < i1; idx_max++) {
     nVar = WorkingSet->indexUB[idx_max] - 1;
     smax = fmax(smax, TrialState->xstarsqp[nVar] - ub[nVar]);
   }
@@ -2664,10 +2577,10 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
   isFeasible = (smax <= 1.0E-6 * MeritFunction->feasRelativeFactor);
   dxTooSmall = true;
   smax = 0.0;
-  u1 = (unsigned char)WorkingSet->nVar;
+  i1 = (unsigned char)WorkingSet->nVar;
   idx_max = 0;
   exitg1 = false;
-  while ((!exitg1) && (idx_max <= u1 - 1)) {
+  while ((!exitg1) && (idx_max <= i1 - 1)) {
     dxTooSmall = ((!rtIsInf(TrialState->gradLag[idx_max])) && (!rtIsNaN
       (TrialState->gradLag[idx_max])));
     if (!dxTooSmall) {
@@ -2703,7 +2616,7 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
                        WorkingSet->sizes[4], TrialState->lambdaStopTestPrev);
       s = 0.0;
       idx_max = 0;
-      while ((idx_max <= u1 - 1) && ((!rtIsInf(memspace->
+      while ((idx_max <= i1 - 1) && ((!rtIsInf(memspace->
                 workspace_double[idx_max])) && (!rtIsNaN
                (memspace->workspace_double[idx_max])))) {
         s = fmax(s, fabs(memspace->workspace_double[idx_max]));
@@ -2749,7 +2662,7 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
           dxTooSmall = true;
           idx_max = 0;
           exitg1 = false;
-          while ((!exitg1) && (idx_max <= u1 - 1)) {
+          while ((!exitg1) && (idx_max <= i1 - 1)) {
             if (1.0E-9 * fmax(1.0, fabs(TrialState->xstarsqp[idx_max])) <= fabs
                 (TrialState->delta_x[idx_max])) {
               dxTooSmall = false;
@@ -2778,7 +2691,7 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
                   TrialState->lambda[k] = 0.0;
                   idx_max = k << 4;
                   rankR = 31 * k;
-                  for (b_k = 0; b_k < u1; b_k++) {
+                  for (b_k = 0; b_k < i1; b_k++) {
                     QRManager->QR[rankR + b_k] = WorkingSet->ATwset[idx_max +
                       b_k];
                   }
@@ -2788,12 +2701,12 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
                 QRManager->mrows = WorkingSet->nVar;
                 QRManager->ncols = WorkingSet->nActiveConstr;
                 nVar = WorkingSet->nVar;
-                u1 = WorkingSet->nActiveConstr;
-                if (nVar <= u1) {
-                  u1 = nVar;
+                b_k = WorkingSet->nActiveConstr;
+                if (nVar <= b_k) {
+                  b_k = nVar;
                 }
 
-                QRManager->minRowCol = u1;
+                QRManager->minRowCol = b_k;
                 xgeqp3(QRManager->QR, WorkingSet->nVar,
                        WorkingSet->nActiveConstr, QRManager->jpvt,
                        QRManager->tau);
@@ -2808,7 +2721,7 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
                   (double)idx_max * 2.2204460492503131E-16);
                 rankR = 0;
                 nVar = 0;
-                while ((rankR < u1) && (fabs(QRManager->QR[nVar]) > smax)) {
+                while ((rankR < b_k) && (fabs(QRManager->QR[nVar]) > smax)) {
                   rankR++;
                   nVar += 32;
                 }
@@ -2816,42 +2729,33 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
                 b_xgemv(WorkingSet->nVar, WorkingSet->nVar, QRManager->Q,
                         TrialState->grad, memspace->workspace_double);
                 if (rankR != 0) {
-                  for (b_k = rankR; b_k >= 1; b_k--) {
-                    nVar = (b_k + (b_k - 1) * 31) - 1;
-                    memspace->workspace_double[b_k - 1] /= QRManager->QR[nVar];
-                    for (k = 0; k <= b_k - 2; k++) {
-                      idx_max = (b_k - k) - 2;
+                  for (k = rankR; k >= 1; k--) {
+                    nVar = (k + (k - 1) * 31) - 1;
+                    memspace->workspace_double[k - 1] /= QRManager->QR[nVar];
+                    for (b_i = 0; b_i <= k - 2; b_i++) {
+                      idx_max = (k - b_i) - 2;
                       memspace->workspace_double[idx_max] -=
-                        memspace->workspace_double[b_k - 1] * QRManager->QR
-                        [(nVar - k) - 1];
+                        memspace->workspace_double[k - 1] * QRManager->QR[(nVar
+                        - b_i) - 1];
                     }
                   }
                 }
 
                 nVar = WorkingSet->nActiveConstr;
-                if (nVar <= u1) {
-                  u1 = nVar;
+                if (nVar <= b_k) {
+                  b_k = nVar;
                 }
 
-                u1 = (unsigned char)u1;
-                for (idx_max = 0; idx_max < u1; idx_max++) {
+                nVar = (unsigned char)b_k;
+                for (idx_max = 0; idx_max < nVar; idx_max++) {
                   TrialState->lambda[QRManager->jpvt[idx_max] - 1] =
                     memspace->workspace_double[idx_max];
                 }
 
-                u1 = WorkingSet->sizes[0] + 1;
-                if ((mFixed - u1) + 1 < 400) {
-                  for (idx = u1; idx <= mFixed; idx++) {
-                    TrialState->lambda[idx - 1] = -TrialState->lambda[idx - 1];
-                  }
-                } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-                  for (idx = u1; idx <= mFixed; idx++) {
-                    TrialState->lambda[idx - 1] = -TrialState->lambda[idx - 1];
-                  }
+                nVar = WorkingSet->sizes[0] + 1;
+                for (idx_max = nVar; idx_max <= mFixed; idx_max++) {
+                  TrialState->lambda[idx_max - 1] = -TrialState->lambda[idx_max
+                    - 1];
                 }
 
                 sortLambdaQP(TrialState->lambda, WorkingSet->nActiveConstr,
@@ -2864,9 +2768,8 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
                                  WorkingSet->sizes[3], WorkingSet->indexUB,
                                  WorkingSet->sizes[4], TrialState->lambda);
                 smax = 0.0;
-                u1 = (unsigned char)WorkingSet->nVar;
                 idx_max = 0;
-                while ((idx_max <= u1 - 1) && ((!rtIsInf
+                while ((idx_max <= i1 - 1) && ((!rtIsInf
                          (memspace->workspace_double[idx_max])) && (!rtIsNaN
                          (memspace->workspace_double[idx_max])))) {
                   smax = fmax(smax, fabs(memspace->workspace_double[idx_max]));
@@ -2907,7 +2810,7 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
         }
 
         if (guard1) {
-          if (TrialState->sqpIterations >= 400 || toc() >= 5e-3) {
+          if (TrialState->sqpIterations >= 150) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
           } else if (TrialState->FunctionEvaluations >= 1000) {
@@ -2975,23 +2878,9 @@ static void b_xgemv(int m, int n, const double A[961], const double x[16],
 {
   int ia;
   int iac;
-  int iy;
   if (m != 0) {
     int i;
-    if (n < 400) {
-      if (n - 1 >= 0) {
-        memset(&y[0], 0, (unsigned int)n * sizeof(double));
-      }
-    } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-      for (iy = 0; iy < n; iy++) {
-        y[iy] = 0.0;
-      }
-    }
-
+    memset(&y[0], 0, (unsigned int)n * sizeof(double));
     i = 31 * (n - 1) + 1;
     for (iac = 1; iac <= i; iac += 31) {
       double c;
@@ -3521,7 +3410,6 @@ static double computeFval(const struct_T *obj, double workspace[496], const
 {
   double val;
   int idx;
-  int k;
   switch (obj->objtype) {
    case 5:
     val = obj->gammaScalar * x[obj->nvar - 1];
@@ -3534,8 +3422,8 @@ static double computeFval(const struct_T *obj, double workspace[496], const
       if (obj->nvar >= 1) {
         int i;
         i = (unsigned char)obj->nvar;
-        for (k = 0; k < i; k++) {
-          val += x[k] * workspace[k];
+        for (idx = 0; idx < i; idx++) {
+          val += x[idx] * workspace[idx];
         }
       }
     }
@@ -3546,23 +3434,13 @@ static double computeFval(const struct_T *obj, double workspace[496], const
       int i;
       linearForm_(obj->hasLinear, obj->nvar, workspace, H, f, x);
       i = obj->nvar + 1;
-      if (16 - i < 400) {
-        for (idx = i; idx < 16; idx++) {
-          workspace[idx - 1] = 0.5 * obj->beta * x[idx - 1] + obj->rho;
-        }
-      } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-        for (idx = i; idx < 16; idx++) {
-          workspace[idx - 1] = 0.5 * obj->beta * x[idx - 1] + obj->rho;
-        }
+      for (idx = i; idx < 16; idx++) {
+        workspace[idx - 1] = 0.5 * obj->beta * x[idx - 1] + obj->rho;
       }
 
       val = 0.0;
-      for (k = 0; k < 15; k++) {
-        val += x[k] * workspace[k];
+      for (idx = 0; idx < 15; idx++) {
+        val += x[idx] * workspace[idx];
       }
     }
     break;
@@ -3574,11 +3452,7 @@ static double computeFval(const struct_T *obj, double workspace[496], const
 static double computeFval_ReuseHx(const struct_T *obj, double workspace[496],
   const double f[16], const double x[16])
 {
-  double d;
   double val;
-  double valPrime;
-  int i;
-  int idx;
   int k;
   switch (obj->objtype) {
    case 5:
@@ -3586,85 +3460,67 @@ static double computeFval_ReuseHx(const struct_T *obj, double workspace[496],
     break;
 
    case 3:
-    if (obj->hasLinear) {
-      i = (unsigned char)obj->nvar;
-      for (k = 0; k < i; k++) {
-        workspace[k] = 0.5 * obj->Hx[k] + f[k];
-      }
-
-      val = 0.0;
-      if (obj->nvar >= 1) {
-        for (k = 0; k < i; k++) {
-          val += x[k] * workspace[k];
-        }
-      }
-    } else {
-      val = 0.0;
-      if (obj->nvar >= 1) {
+    {
+      if (obj->hasLinear) {
+        int i;
         i = (unsigned char)obj->nvar;
         for (k = 0; k < i; k++) {
-          val += x[k] * obj->Hx[k];
+          workspace[k] = 0.5 * obj->Hx[k] + f[k];
         }
-      }
 
-      val *= 0.5;
+        val = 0.0;
+        if (obj->nvar >= 1) {
+          for (k = 0; k < i; k++) {
+            val += x[k] * workspace[k];
+          }
+        }
+      } else {
+        val = 0.0;
+        if (obj->nvar >= 1) {
+          int i;
+          i = (unsigned char)obj->nvar;
+          for (k = 0; k < i; k++) {
+            val += x[k] * obj->Hx[k];
+          }
+        }
+
+        val *= 0.5;
+      }
     }
     break;
 
    default:
-    if (obj->hasLinear) {
-      i = (unsigned char)obj->nvar;
-      if (i - 1 >= 0) {
-        memcpy(&workspace[0], &f[0], (unsigned int)i * sizeof(double));
-      }
+    {
+      if (obj->hasLinear) {
+        int i;
+        i = (unsigned char)obj->nvar;
+        if (i - 1 >= 0) {
+          memcpy(&workspace[0], &f[0], (unsigned int)i * sizeof(double));
+        }
 
-      i = 14 - obj->nvar;
-      for (k = 0; k <= i; k++) {
-        workspace[obj->nvar + k] = obj->rho;
-      }
+        i = 14 - obj->nvar;
+        for (k = 0; k <= i; k++) {
+          workspace[obj->nvar + k] = obj->rho;
+        }
 
-      val = 0.0;
-      for (k = 0; k < 15; k++) {
-        d = workspace[k] + 0.5 * obj->Hx[k];
-        workspace[k] = d;
-        val += x[k] * d;
-      }
-    } else {
-      val = 0.0;
-      for (k = 0; k < 15; k++) {
-        val += x[k] * obj->Hx[k];
-      }
-
-      val *= 0.5;
-      i = obj->nvar + 1;
-      if (16 - i < 400) {
-        for (idx = i; idx < 16; idx++) {
-          val += x[idx - 1] * obj->rho;
+        val = 0.0;
+        for (k = 0; k < 15; k++) {
+          double d;
+          d = workspace[k] + 0.5 * obj->Hx[k];
+          workspace[k] = d;
+          val += x[k] * d;
         }
       } else {
+        int i;
+        val = 0.0;
+        for (k = 0; k < 15; k++) {
+          val += x[k] * obj->Hx[k];
+        }
 
-#pragma omp parallel \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4) \
- private(valPrime)
-
-        {
-          valPrime = 0.0;
-
-#pragma omp for nowait
-
-          for (idx = i; idx < 16; idx++) {
-            valPrime += x[idx - 1] * obj->rho;
-          }
-
-          omp_set_nest_lock
-            (&Nonlinear_controller_fcn_control_rf_aero_models_nestLockGlobal);
-
-          {
-            val += valPrime;
-          }
-
-          omp_unset_nest_lock
-            (&Nonlinear_controller_fcn_control_rf_aero_models_nestLockGlobal);
+        val *= 0.5;
+        i = obj->nvar + 1;
+        for (k = i; k < 16; k++) {
+          val += x[k - 1] * obj->rho;
         }
       }
     }
@@ -3683,10 +3539,7 @@ static void computeGradLag(double workspace[16], int nVar, const double grad[16]
   int iL0;
   int idx;
   i = (unsigned char)nVar;
-  if (i - 1 >= 0) {
-    memcpy(&workspace[0], &grad[0], (unsigned int)i * sizeof(double));
-  }
-
+  memcpy(&workspace[0], &grad[0], (unsigned int)i * sizeof(double));
   i = (unsigned char)mFixed;
   for (idx = 0; idx < i; idx++) {
     i1 = finiteFixed[idx];
@@ -3710,25 +3563,15 @@ static void computeGradLag(double workspace[16], int nVar, const double grad[16]
 static void computeGrad_StoreHx(struct_T *obj, const double H[225], const double
   f[16], const double x[16])
 {
-  int idx;
+  int ixlast;
   int k;
   switch (obj->objtype) {
    case 5:
     {
       int i;
       i = obj->nvar;
-      if (i - 1 < 400) {
-        if (i - 2 >= 0) {
-          memset(&obj->grad[0], 0, (unsigned int)(i - 1) * sizeof(double));
-        }
-      } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-        for (idx = 0; idx <= i - 2; idx++) {
-          obj->grad[idx] = 0.0;
-        }
+      if (i - 2 >= 0) {
+        memset(&obj->grad[0], 0, (unsigned int)(i - 1) * sizeof(double));
       }
 
       obj->grad[obj->nvar - 1] = obj->gammaScalar;
@@ -3745,20 +3588,9 @@ static void computeGrad_StoreHx(struct_T *obj, const double H[225], const double
       }
 
       if (obj->hasLinear && (obj->nvar >= 1)) {
-        int ixlast;
         ixlast = obj->nvar - 1;
-        if (ixlast + 1 < 400) {
-          for (k = 0; k <= ixlast; k++) {
-            obj->grad[k] += f[k];
-          }
-        } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-          for (k = 0; k <= ixlast; k++) {
-            obj->grad[k] += f[k];
-          }
+        for (k = 0; k <= ixlast; k++) {
+          obj->grad[k] += f[k];
         }
       }
     }
@@ -3767,60 +3599,27 @@ static void computeGrad_StoreHx(struct_T *obj, const double H[225], const double
    default:
     {
       int i;
-      int ixlast;
       xgemv(obj->nvar, obj->nvar, H, obj->nvar, x, obj->Hx);
       i = obj->nvar + 1;
-      if (16 - i < 400) {
-        for (idx = i; idx < 16; idx++) {
-          obj->Hx[idx - 1] = obj->beta * x[idx - 1];
-        }
-      } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-        for (idx = i; idx < 16; idx++) {
-          obj->Hx[idx - 1] = obj->beta * x[idx - 1];
-        }
+      for (ixlast = i; ixlast < 16; ixlast++) {
+        obj->Hx[ixlast - 1] = obj->beta * x[ixlast - 1];
       }
 
       memcpy(&obj->grad[0], &obj->Hx[0], 15U * sizeof(double));
       if (obj->hasLinear && (obj->nvar >= 1)) {
         ixlast = obj->nvar - 1;
-        if (ixlast + 1 < 400) {
-          for (k = 0; k <= ixlast; k++) {
-            obj->grad[k] += f[k];
-          }
-        } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-          for (k = 0; k <= ixlast; k++) {
-            obj->grad[k] += f[k];
-          }
+        for (k = 0; k <= ixlast; k++) {
+          obj->grad[k] += f[k];
         }
       }
 
       if (15 - obj->nvar >= 1) {
-        int iy;
-        iy = obj->nvar;
+        ixlast = obj->nvar;
         i = 14 - obj->nvar;
-        if (i + 1 < 400) {
-          for (k = 0; k <= i; k++) {
-            ixlast = iy + k;
-            obj->grad[ixlast] += obj->rho;
-          }
-        } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4) \
- private(idx)
-
-          for (k = 0; k <= i; k++) {
-            idx = iy + k;
-            obj->grad[idx] += obj->rho;
-          }
+        for (k = 0; k <= i; k++) {
+          int i1;
+          i1 = ixlast + k;
+          obj->grad[i1] += obj->rho;
         }
       }
     }
@@ -4704,47 +4503,22 @@ static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
   struct_T *objective, bool alwaysPositiveDef)
 {
   int b_i;
-  int b_idx;
   int idx;
   int ix;
-  int j;
   int jA;
   int jjA;
-  int mNull;
-  int nVar;
-  int nVars;
-  nVar = qrmanager->mrows - 1;
-  mNull = qrmanager->mrows - qrmanager->ncols;
-  if (mNull <= 0) {
-    if (nVar + 1 < 400) {
-      if (nVar >= 0) {
-        memset(&solution->searchDir[0], 0, (unsigned int)(nVar + 1) * sizeof
-               (double));
-      }
-    } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-      for (idx = 0; idx <= nVar; idx++) {
-        solution->searchDir[idx] = 0.0;
-      }
+  int mNull_tmp;
+  int nVar_tmp;
+  nVar_tmp = qrmanager->mrows - 1;
+  mNull_tmp = qrmanager->mrows - qrmanager->ncols;
+  if (mNull_tmp <= 0) {
+    if (nVar_tmp >= 0) {
+      memset(&solution->searchDir[0], 0, (unsigned int)(nVar_tmp + 1) * sizeof
+             (double));
     }
   } else {
-    int i;
-    i = (nVar + 1 < 400);
-    if (i) {
-      for (idx = 0; idx <= nVar; idx++) {
-        solution->searchDir[idx] = -objective->grad[idx];
-      }
-    } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-      for (idx = 0; idx <= nVar; idx++) {
-        solution->searchDir[idx] = -objective->grad[idx];
-      }
+    for (idx = 0; idx <= nVar_tmp; idx++) {
+      solution->searchDir[idx] = -objective->grad[idx];
     }
 
     if (qrmanager->ncols <= 0) {
@@ -4755,12 +4529,13 @@ static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
        case 3:
         {
           double smax;
+          int nVars;
           if (alwaysPositiveDef) {
             cholmanager->ndims = qrmanager->mrows;
-            for (b_idx = 0; b_idx <= nVar; b_idx++) {
-              jjA = (nVar + 1) * b_idx;
-              jA = 31 * b_idx;
-              for (ix = 0; ix <= nVar; ix++) {
+            for (idx = 0; idx <= nVar_tmp; idx++) {
+              jjA = (nVar_tmp + 1) * idx;
+              jA = 31 * idx;
+              for (ix = 0; ix <= nVar_tmp; ix++) {
                 cholmanager->FMat[jA + ix] = H[jjA + ix];
               }
             }
@@ -4768,10 +4543,10 @@ static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
             cholmanager->info = xpotrf(qrmanager->mrows, cholmanager->FMat);
           } else {
             cholmanager->ndims = qrmanager->mrows;
-            for (b_idx = 0; b_idx <= nVar; b_idx++) {
-              jjA = qrmanager->mrows * b_idx;
-              jA = 31 * b_idx;
-              for (ix = 0; ix <= nVar; ix++) {
+            for (idx = 0; idx <= nVar_tmp; idx++) {
+              jjA = qrmanager->mrows * idx;
+              jA = 31 * idx;
+              for (ix = 0; ix <= nVar_tmp; ix++) {
                 cholmanager->FMat[jA + ix] = H[jjA + ix];
               }
             }
@@ -4782,7 +4557,7 @@ static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
               nVars = 0;
               if (qrmanager->mrows > 1) {
                 smax = fabs(cholmanager->FMat[0]);
-                for (ix = 2; ix <= nVar + 1; ix++) {
+                for (ix = 2; ix <= nVar_tmp + 1; ix++) {
                   double s;
                   s = fabs(cholmanager->FMat[(ix - 1) << 5]);
                   if (s > smax) {
@@ -4797,16 +4572,16 @@ static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
               nVars]) * 2.2204460492503131E-16, 0.0);
             fullColLDL2_(cholmanager, qrmanager->mrows);
             if (cholmanager->ConvexCheck) {
-              b_idx = 0;
+              idx = 0;
               int exitg1;
               do {
                 exitg1 = 0;
-                if (b_idx <= nVar) {
-                  if (cholmanager->FMat[b_idx + 31 * b_idx] <= 0.0) {
-                    cholmanager->info = -b_idx - 1;
+                if (idx <= nVar_tmp) {
+                  if (cholmanager->FMat[idx + 31 * idx] <= 0.0) {
+                    cholmanager->info = -idx - 1;
                     exitg1 = 1;
                   } else {
-                    b_idx++;
+                    idx++;
                   }
                 } else {
                   cholmanager->ConvexCheck = false;
@@ -4821,35 +4596,36 @@ static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
           } else if (alwaysPositiveDef) {
             solve(cholmanager, solution->searchDir);
           } else {
+            int i;
             nVars = cholmanager->ndims - 2;
             if (cholmanager->ndims != 0) {
-              for (j = 0; j <= nVars + 1; j++) {
-                jjA = j + j * 31;
-                i = nVars - j;
+              for (idx = 0; idx <= nVars + 1; idx++) {
+                jjA = idx + idx * 31;
+                i = nVars - idx;
                 for (b_i = 0; b_i <= i; b_i++) {
-                  ix = (j + b_i) + 1;
-                  solution->searchDir[ix] -= solution->searchDir[j] *
+                  ix = (idx + b_i) + 1;
+                  solution->searchDir[ix] -= solution->searchDir[idx] *
                     cholmanager->FMat[(jjA + b_i) + 1];
                 }
               }
             }
 
             nVars = cholmanager->ndims;
-            for (b_idx = 0; b_idx < nVars; b_idx++) {
-              solution->searchDir[b_idx] /= cholmanager->FMat[b_idx + 31 * b_idx];
+            for (idx = 0; idx < nVars; idx++) {
+              solution->searchDir[idx] /= cholmanager->FMat[idx + 31 * idx];
             }
 
             if (cholmanager->ndims != 0) {
-              for (j = nVars; j >= 1; j--) {
-                jA = (j - 1) * 31;
-                smax = solution->searchDir[j - 1];
-                i = j + 1;
+              for (idx = nVars; idx >= 1; idx--) {
+                jA = (idx - 1) * 31;
+                smax = solution->searchDir[idx - 1];
+                i = idx + 1;
                 for (b_i = nVars; b_i >= i; b_i--) {
                   smax -= cholmanager->FMat[(jA + b_i) - 1] *
                     solution->searchDir[b_i - 1];
                 }
 
-                solution->searchDir[j - 1] = smax;
+                solution->searchDir[idx - 1] = smax;
               }
             }
           }
@@ -4859,11 +4635,12 @@ static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
        default:
         {
           if (alwaysPositiveDef) {
+            int nVars;
             nVars = objective->nvar;
             cholmanager->ndims = objective->nvar;
-            for (b_idx = 0; b_idx < nVars; b_idx++) {
-              jjA = nVars * b_idx;
-              jA = 31 * b_idx;
+            for (idx = 0; idx < nVars; idx++) {
+              jjA = nVars * idx;
+              jA = 31 * idx;
               for (ix = 0; ix < nVars; ix++) {
                 cholmanager->FMat[jA + ix] = H[jjA + ix];
               }
@@ -4874,22 +4651,13 @@ static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
               solution->state = -6;
             } else {
               double smax;
+              int i;
               solve(cholmanager, solution->searchDir);
               smax = 1.0 / objective->beta;
               jjA = objective->nvar + 1;
               i = qrmanager->mrows;
-              if ((i - jjA) + 1 < 400) {
-                for (idx = jjA; idx <= i; idx++) {
-                  solution->searchDir[idx - 1] *= smax;
-                }
-              } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-                for (idx = jjA; idx <= i; idx++) {
-                  solution->searchDir[idx - 1] *= smax;
-                }
+              for (ix = jjA; ix <= i; ix++) {
+                solution->searchDir[ix - 1] *= smax;
               }
             }
           }
@@ -4897,37 +4665,26 @@ static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
         break;
       }
     } else {
-      int nullStartIdx;
-      nullStartIdx = 31 * qrmanager->ncols + 1;
+      int nullStartIdx_tmp;
+      nullStartIdx_tmp = 31 * qrmanager->ncols + 1;
       if (objective->objtype == 5) {
-        for (b_idx = 0; b_idx < mNull; b_idx++) {
-          memspace->workspace_double[b_idx] = -qrmanager->Q[nVar + 31 *
-            (qrmanager->ncols + b_idx)];
+        for (idx = 0; idx < mNull_tmp; idx++) {
+          memspace->workspace_double[idx] = -qrmanager->Q[nVar_tmp + 31 *
+            (qrmanager->ncols + idx)];
         }
 
         if (qrmanager->mrows != 0) {
-          if (i) {
-            if (nVar >= 0) {
-              memset(&solution->searchDir[0], 0, (unsigned int)(nVar + 1) *
-                     sizeof(double));
-            }
-          } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-            for (idx = 0; idx <= nVar; idx++) {
-              solution->searchDir[idx] = 0.0;
-            }
-          }
-
+          int i;
+          memset(&solution->searchDir[0], 0, (unsigned int)(nVar_tmp + 1) *
+                 sizeof(double));
           ix = 0;
-          i = nullStartIdx + 31 * (mNull - 1);
-          for (nVars = nullStartIdx; nVars <= i; nVars += 31) {
-            b_idx = nVars + nVar;
-            for (jjA = nVars; jjA <= b_idx; jjA++) {
-              jA = jjA - nVars;
-              solution->searchDir[jA] += qrmanager->Q[jjA - 1] *
+          i = nullStartIdx_tmp + 31 * (mNull_tmp - 1);
+          for (jjA = nullStartIdx_tmp; jjA <= i; jjA += 31) {
+            int nVars;
+            nVars = jjA + nVar_tmp;
+            for (idx = jjA; idx <= nVars; idx++) {
+              jA = idx - jjA;
+              solution->searchDir[jA] += qrmanager->Q[idx - 1] *
                 memspace->workspace_double[ix];
             }
 
@@ -4936,36 +4693,41 @@ static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
         }
       } else {
         double smax;
+        int i;
+        int nVars;
         if (objective->objtype == 3) {
-          xgemm(qrmanager->mrows, mNull, qrmanager->mrows, H, qrmanager->mrows,
-                qrmanager->Q, nullStartIdx, memspace->workspace_double);
-          b_xgemm(mNull, mNull, qrmanager->mrows, qrmanager->Q, nullStartIdx,
-                  memspace->workspace_double, cholmanager->FMat);
+          xgemm(qrmanager->mrows, mNull_tmp, qrmanager->mrows, H,
+                qrmanager->mrows, qrmanager->Q, nullStartIdx_tmp,
+                memspace->workspace_double);
+          b_xgemm(mNull_tmp, mNull_tmp, qrmanager->mrows, qrmanager->Q,
+                  nullStartIdx_tmp, memspace->workspace_double,
+                  cholmanager->FMat);
         } else if (alwaysPositiveDef) {
           nVars = qrmanager->mrows;
-          xgemm(objective->nvar, mNull, objective->nvar, H, objective->nvar,
-                qrmanager->Q, nullStartIdx, memspace->workspace_double);
-          b_idx = objective->nvar + 1;
-          for (jA = 0; jA < mNull; jA++) {
-            for (jjA = b_idx; jjA <= nVars; jjA++) {
+          xgemm(objective->nvar, mNull_tmp, objective->nvar, H, objective->nvar,
+                qrmanager->Q, nullStartIdx_tmp, memspace->workspace_double);
+          i = objective->nvar + 1;
+          for (jA = 0; jA < mNull_tmp; jA++) {
+            for (jjA = i; jjA <= nVars; jjA++) {
               memspace->workspace_double[(jjA + 31 * jA) - 1] = objective->beta *
                 qrmanager->Q[(jjA + 31 * (jA + qrmanager->ncols)) - 1];
             }
           }
 
-          b_xgemm(mNull, mNull, qrmanager->mrows, qrmanager->Q, nullStartIdx,
-                  memspace->workspace_double, cholmanager->FMat);
+          b_xgemm(mNull_tmp, mNull_tmp, qrmanager->mrows, qrmanager->Q,
+                  nullStartIdx_tmp, memspace->workspace_double,
+                  cholmanager->FMat);
         }
 
         if (alwaysPositiveDef) {
-          cholmanager->ndims = mNull;
-          cholmanager->info = xpotrf(mNull, cholmanager->FMat);
+          cholmanager->ndims = mNull_tmp;
+          cholmanager->info = xpotrf(mNull_tmp, cholmanager->FMat);
         } else {
-          cholmanager->ndims = mNull;
+          cholmanager->ndims = mNull_tmp;
           nVars = 0;
-          if (mNull > 1) {
+          if (mNull_tmp > 1) {
             smax = fabs(cholmanager->FMat[0]);
-            for (ix = 2; ix <= mNull; ix++) {
+            for (ix = 2; ix <= mNull_tmp; ix++) {
               double s;
               s = fabs(cholmanager->FMat[(ix - 1) << 5]);
               if (s > smax) {
@@ -4977,18 +4739,18 @@ static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
 
           cholmanager->regTol_ = fmax(fabs(cholmanager->FMat[nVars + 31 * nVars])
             * 2.2204460492503131E-16, 0.0);
-          fullColLDL2_(cholmanager, mNull);
+          fullColLDL2_(cholmanager, mNull_tmp);
           if (cholmanager->ConvexCheck) {
-            b_idx = 0;
+            idx = 0;
             int exitg1;
             do {
               exitg1 = 0;
-              if (b_idx <= mNull - 1) {
-                if (cholmanager->FMat[b_idx + 31 * b_idx] <= 0.0) {
-                  cholmanager->info = -b_idx - 1;
+              if (idx <= mNull_tmp - 1) {
+                if (cholmanager->FMat[idx + 31 * idx] <= 0.0) {
+                  cholmanager->info = -idx - 1;
                   exitg1 = 1;
                 } else {
-                  b_idx++;
+                  idx++;
                 }
               } else {
                 cholmanager->ConvexCheck = false;
@@ -5002,116 +4764,94 @@ static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
           solution->state = -6;
         } else {
           if (qrmanager->mrows != 0) {
-            if (mNull < 400) {
-              memset(&memspace->workspace_double[0], 0, (unsigned int)mNull *
-                     sizeof(double));
-            } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-              for (idx = 0; idx < mNull; idx++) {
-                memspace->workspace_double[idx] = 0.0;
-              }
-            }
-
-            b_idx = nullStartIdx + 31 * (mNull - 1);
-            for (nVars = nullStartIdx; nVars <= b_idx; nVars += 31) {
+            memset(&memspace->workspace_double[0], 0, (unsigned int)mNull_tmp *
+                   sizeof(double));
+            i = nullStartIdx_tmp + 31 * (mNull_tmp - 1);
+            for (jjA = nullStartIdx_tmp; jjA <= i; jjA += 31) {
               smax = 0.0;
-              jA = nVars + nVar;
-              for (jjA = nVars; jjA <= jA; jjA++) {
-                smax += qrmanager->Q[jjA - 1] * objective->grad[jjA - nVars];
+              nVars = jjA + nVar_tmp;
+              for (idx = jjA; idx <= nVars; idx++) {
+                smax += qrmanager->Q[idx - 1] * objective->grad[idx - jjA];
               }
 
-              jA = div_nde_s32_floor(nVars - nullStartIdx);
-              memspace->workspace_double[jA] -= smax;
+              nVars = div_nde_s32_floor(jjA - nullStartIdx_tmp);
+              memspace->workspace_double[nVars] -= smax;
             }
           }
 
           if (alwaysPositiveDef) {
             nVars = cholmanager->ndims;
             if (cholmanager->ndims != 0) {
-              for (j = 0; j < nVars; j++) {
-                jA = j * 31;
-                smax = memspace->workspace_double[j];
-                for (b_i = 0; b_i < j; b_i++) {
+              for (idx = 0; idx < nVars; idx++) {
+                jA = idx * 31;
+                smax = memspace->workspace_double[idx];
+                for (b_i = 0; b_i < idx; b_i++) {
                   smax -= cholmanager->FMat[jA + b_i] *
                     memspace->workspace_double[b_i];
                 }
 
-                memspace->workspace_double[j] = smax / cholmanager->FMat[jA + j];
+                memspace->workspace_double[idx] = smax / cholmanager->FMat[jA +
+                  idx];
               }
             }
 
             if (cholmanager->ndims != 0) {
-              for (j = nVars; j >= 1; j--) {
-                jjA = (j + (j - 1) * 31) - 1;
-                memspace->workspace_double[j - 1] /= cholmanager->FMat[jjA];
-                for (b_i = 0; b_i <= j - 2; b_i++) {
-                  ix = (j - b_i) - 2;
-                  memspace->workspace_double[ix] -= memspace->workspace_double[j
-                    - 1] * cholmanager->FMat[(jjA - b_i) - 1];
+              for (idx = nVars; idx >= 1; idx--) {
+                jjA = (idx + (idx - 1) * 31) - 1;
+                memspace->workspace_double[idx - 1] /= cholmanager->FMat[jjA];
+                for (b_i = 0; b_i <= idx - 2; b_i++) {
+                  ix = (idx - b_i) - 2;
+                  memspace->workspace_double[ix] -= memspace->
+                    workspace_double[idx - 1] * cholmanager->FMat[(jjA - b_i) -
+                    1];
                 }
               }
             }
           } else {
             nVars = cholmanager->ndims - 2;
             if (cholmanager->ndims != 0) {
-              for (j = 0; j <= nVars + 1; j++) {
-                jjA = j + j * 31;
-                b_idx = nVars - j;
-                for (b_i = 0; b_i <= b_idx; b_i++) {
-                  ix = (j + b_i) + 1;
-                  memspace->workspace_double[ix] -= memspace->workspace_double[j]
-                    * cholmanager->FMat[(jjA + b_i) + 1];
+              for (idx = 0; idx <= nVars + 1; idx++) {
+                jjA = idx + idx * 31;
+                i = nVars - idx;
+                for (b_i = 0; b_i <= i; b_i++) {
+                  ix = (idx + b_i) + 1;
+                  memspace->workspace_double[ix] -= memspace->
+                    workspace_double[idx] * cholmanager->FMat[(jjA + b_i) + 1];
                 }
               }
             }
 
             nVars = cholmanager->ndims;
-            for (b_idx = 0; b_idx < nVars; b_idx++) {
-              memspace->workspace_double[b_idx] /= cholmanager->FMat[b_idx + 31 *
-                b_idx];
+            for (idx = 0; idx < nVars; idx++) {
+              memspace->workspace_double[idx] /= cholmanager->FMat[idx + 31 *
+                idx];
             }
 
             if (cholmanager->ndims != 0) {
-              for (j = nVars; j >= 1; j--) {
-                jA = (j - 1) * 31;
-                smax = memspace->workspace_double[j - 1];
-                b_idx = j + 1;
-                for (b_i = nVars; b_i >= b_idx; b_i--) {
+              for (idx = nVars; idx >= 1; idx--) {
+                jA = (idx - 1) * 31;
+                smax = memspace->workspace_double[idx - 1];
+                i = idx + 1;
+                for (b_i = nVars; b_i >= i; b_i--) {
                   smax -= cholmanager->FMat[(jA + b_i) - 1] *
                     memspace->workspace_double[b_i - 1];
                 }
 
-                memspace->workspace_double[j - 1] = smax;
+                memspace->workspace_double[idx - 1] = smax;
               }
             }
           }
 
           if (qrmanager->mrows != 0) {
-            if (i) {
-              if (nVar >= 0) {
-                memset(&solution->searchDir[0], 0, (unsigned int)(nVar + 1) *
-                       sizeof(double));
-              }
-            } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-              for (idx = 0; idx <= nVar; idx++) {
-                solution->searchDir[idx] = 0.0;
-              }
-            }
-
+            memset(&solution->searchDir[0], 0, (unsigned int)(nVar_tmp + 1) *
+                   sizeof(double));
             ix = 0;
-            i = nullStartIdx + 31 * (mNull - 1);
-            for (nVars = nullStartIdx; nVars <= i; nVars += 31) {
-              b_idx = nVars + nVar;
-              for (jjA = nVars; jjA <= b_idx; jjA++) {
-                jA = jjA - nVars;
-                solution->searchDir[jA] += qrmanager->Q[jjA - 1] *
+            i = nullStartIdx_tmp + 31 * (mNull_tmp - 1);
+            for (jjA = nullStartIdx_tmp; jjA <= i; jjA += 31) {
+              nVars = jjA + nVar_tmp;
+              for (idx = jjA; idx <= nVars; idx++) {
+                jA = idx - jjA;
+                solution->searchDir[jA] += qrmanager->Q[idx - 1] *
                   memspace->workspace_double[ix];
               }
 
@@ -5127,60 +4867,39 @@ static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
 static void countsort(int x[31], int xLen, int workspace[31], int xMin, int xMax)
 {
   int idx;
-  int idxEnd;
   int idxFill;
-  int idxW;
   if ((xLen > 1) && (xMax > xMin)) {
+    int idxEnd;
     int idxStart;
     int maxOffset;
     idxStart = xMax - xMin;
-    if (idxStart + 1 < 400) {
-      if (idxStart >= 0) {
-        memset(&workspace[0], 0, (unsigned int)(idxStart + 1) * sizeof(int));
-      }
-    } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-      for (idx = 0; idx <= idxStart; idx++) {
-        workspace[idx] = 0;
-      }
+    if (idxStart >= 0) {
+      memset(&workspace[0], 0, (unsigned int)(idxStart + 1) * sizeof(int));
     }
 
     maxOffset = idxStart - 1;
-    for (idxEnd = 0; idxEnd < xLen; idxEnd++) {
-      idxStart = x[idxEnd] - xMin;
+    for (idx = 0; idx < xLen; idx++) {
+      idxStart = x[idx] - xMin;
       workspace[idxStart]++;
     }
 
-    for (idxEnd = 2; idxEnd <= maxOffset + 2; idxEnd++) {
-      workspace[idxEnd - 1] += workspace[idxEnd - 2];
+    for (idx = 2; idx <= maxOffset + 2; idx++) {
+      workspace[idx - 1] += workspace[idx - 2];
     }
 
     idxStart = 1;
     idxEnd = workspace[0];
-    for (idxW = 0; idxW <= maxOffset; idxW++) {
+    for (idx = 0; idx <= maxOffset; idx++) {
       for (idxFill = idxStart; idxFill <= idxEnd; idxFill++) {
-        x[idxFill - 1] = idxW + xMin;
+        x[idxFill - 1] = idx + xMin;
       }
 
-      idxStart = workspace[idxW] + 1;
-      idxEnd = workspace[idxW + 1];
+      idxStart = workspace[idx] + 1;
+      idxEnd = workspace[idx + 1];
     }
 
-    if ((idxEnd - idxStart) + 1 < 400) {
-      for (idx = idxStart; idx <= idxEnd; idx++) {
-        x[idx - 1] = xMax;
-      }
-    } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-      for (idx = idxStart; idx <= idxEnd; idx++) {
-        x[idx - 1] = xMax;
-      }
+    for (idx = idxStart; idx <= idxEnd; idx++) {
+      x[idx - 1] = xMax;
     }
   }
 }
@@ -5552,7 +5271,6 @@ static double evalObjAndConstr(const c_struct_T *c_obj_next_next_next_next_next_
 
 static void factorQR(e_struct_T *obj, const double A[496], int mrows, int ncols)
 {
-  int b_idx;
   int i;
   int idx;
   int k;
@@ -5584,18 +5302,8 @@ static void factorQR(e_struct_T *obj, const double A[496], int mrows, int ncols)
     obj->usedPivoting = false;
     obj->mrows = mrows;
     obj->ncols = ncols;
-    if (ncols < 400) {
-      for (b_idx = 0; b_idx < ncols; b_idx++) {
-        obj->jpvt[b_idx] = b_idx + 1;
-      }
-    } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-      for (b_idx = 0; b_idx < ncols; b_idx++) {
-        obj->jpvt[b_idx] = b_idx + 1;
-      }
+    for (idx = 0; idx < ncols; idx++) {
+      obj->jpvt[idx] = idx + 1;
     }
 
     if (mrows <= ncols) {
@@ -5616,11 +5324,9 @@ static bool feasibleX0ForWorkingSet(double workspace[496], double xCurrent[16],
   const h_struct_T *workingset, e_struct_T *qrmanager)
 {
   double B[496];
-  double d;
   int b_i;
   int br;
   int iAcol;
-  int idx;
   int j;
   int jBcol;
   int k;
@@ -5634,23 +5340,10 @@ static bool feasibleX0ForWorkingSet(double workspace[496], double xCurrent[16],
     double c;
     int i;
     int i1;
-    if (mWConstr < 400) {
-      for (idx = 0; idx < mWConstr; idx++) {
-        d = workingset->bwset[idx];
-        workspace[idx] = d;
-        workspace[idx + 31] = d;
-      }
-    } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4) \
- private(d)
-
-      for (idx = 0; idx < mWConstr; idx++) {
-        d = workingset->bwset[idx];
-        workspace[idx] = d;
-        workspace[idx + 31] = d;
-      }
+    for (iAcol = 0; iAcol < mWConstr; iAcol++) {
+      c = workingset->bwset[iAcol];
+      workspace[iAcol] = c;
+      workspace[iAcol + 31] = c;
     }
 
     if (mWConstr != 0) {
@@ -5934,7 +5627,6 @@ static double fmincon(c_struct_T *fun_workspace, const double x0[15], const
                       *output_lssteplength, double *output_firstorderopt)
 {
   b_struct_T MeritFunction;
-  c_struct_T c_FcnEvaluator_next_next_next_n;
   d_struct_T memspace;
   e_struct_T QRManager;
   f_struct_T CholManager;
@@ -5946,10 +5638,10 @@ static double fmincon(c_struct_T *fun_workspace, const double x0[15], const
   double scale;
   double y;
   int b_i;
-  int c_i;
   int colOffsetATw;
   int i;
   int mFixed;
+  int mLB;
   int mUB;
   signed char b_obj_tmp[5];
   signed char obj_tmp[5];
@@ -5976,7 +5668,6 @@ static double fmincon(c_struct_T *fun_workspace, const double x0[15], const
   TrialState.maxConstr = 0.0;
   TrialState.iterations = 0;
   memcpy(&TrialState.xstarsqp[0], &x0[0], 15U * sizeof(double));
-  c_FcnEvaluator_next_next_next_n = *fun_workspace;
   WorkingSet.nVar = 15;
   WorkingSet.nVarOrig = 15;
   WorkingSet.nVarMax = 16;
@@ -5984,25 +5675,18 @@ static double fmincon(c_struct_T *fun_workspace, const double x0[15], const
   memset(&WorkingSet.lb[0], 0, 16U * sizeof(double));
   memset(&WorkingSet.ub[0], 0, 16U * sizeof(double));
   WorkingSet.mEqRemoved = 0;
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-  for (i = 0; i < 496; i++) {
-    WorkingSet.ATwset[i] = 0.0;
-  }
-
+  memset(&WorkingSet.ATwset[0], 0, 496U * sizeof(double));
   WorkingSet.nActiveConstr = 0;
   memset(&WorkingSet.bwset[0], 0, 31U * sizeof(double));
   memset(&WorkingSet.maxConstrWorkspace[0], 0, 31U * sizeof(double));
   memset(&WorkingSet.Wid[0], 0, 31U * sizeof(int));
   memset(&WorkingSet.Wlocalidx[0], 0, 31U * sizeof(int));
-  for (b_i = 0; b_i < 31; b_i++) {
-    WorkingSet.isActiveConstr[b_i] = false;
+  for (i = 0; i < 31; i++) {
+    WorkingSet.isActiveConstr[i] = false;
   }
 
-  for (b_i = 0; b_i < 5; b_i++) {
-    WorkingSet.nWConstr[b_i] = 0;
+  for (i = 0; i < 5; i++) {
+    WorkingSet.nWConstr[i] = 0;
   }
 
   WorkingSet.probType = 3;
@@ -6010,20 +5694,20 @@ static double fmincon(c_struct_T *fun_workspace, const double x0[15], const
   memset(&WorkingSet.indexLB[0], 0, 16U * sizeof(int));
   memset(&WorkingSet.indexUB[0], 0, 16U * sizeof(int));
   memset(&WorkingSet.indexFixed[0], 0, 16U * sizeof(int));
-  colOffsetATw = 0;
+  mLB = 0;
   mUB = 0;
   mFixed = 0;
-  for (b_i = 0; b_i < 15; b_i++) {
+  for (colOffsetATw = 0; colOffsetATw < 15; colOffsetATw++) {
     bool guard1 = false;
-    y = lb[b_i];
+    y = lb[colOffsetATw];
     guard1 = false;
     if ((!rtIsInf(y)) && (!rtIsNaN(y))) {
-      if (fabs(y - ub[b_i]) < 1.0E-6) {
+      if (fabs(y - ub[colOffsetATw]) < 1.0E-6) {
         mFixed++;
-        WorkingSet.indexFixed[mFixed - 1] = b_i + 1;
+        WorkingSet.indexFixed[mFixed - 1] = colOffsetATw + 1;
       } else {
-        colOffsetATw++;
-        WorkingSet.indexLB[colOffsetATw - 1] = b_i + 1;
+        mLB++;
+        WorkingSet.indexLB[mLB - 1] = colOffsetATw + 1;
         guard1 = true;
       }
     } else {
@@ -6031,116 +5715,107 @@ static double fmincon(c_struct_T *fun_workspace, const double x0[15], const
     }
 
     if (guard1) {
-      y = ub[b_i];
+      y = ub[colOffsetATw];
       if ((!rtIsInf(y)) && (!rtIsNaN(y))) {
         mUB++;
-        WorkingSet.indexUB[mUB - 1] = b_i + 1;
+        WorkingSet.indexUB[mUB - 1] = colOffsetATw + 1;
       }
     }
   }
 
-  b_i = (colOffsetATw + mUB) + mFixed;
-  WorkingSet.mConstr = b_i;
-  WorkingSet.mConstrOrig = b_i;
+  i = (mLB + mUB) + mFixed;
+  WorkingSet.mConstr = i;
+  WorkingSet.mConstrOrig = i;
   WorkingSet.mConstrMax = 31;
   obj_tmp[0] = (signed char)mFixed;
   obj_tmp[1] = 0;
   obj_tmp[2] = 0;
-  obj_tmp[3] = (signed char)colOffsetATw;
+  obj_tmp[3] = (signed char)mLB;
   obj_tmp[4] = (signed char)mUB;
   b_obj_tmp[0] = (signed char)mFixed;
   b_obj_tmp[1] = 0;
   b_obj_tmp[2] = 0;
-  b_obj_tmp[3] = (signed char)(colOffsetATw + 1);
+  b_obj_tmp[3] = (signed char)(mLB + 1);
   b_obj_tmp[4] = (signed char)mUB;
   WorkingSet.isActiveIdx[0] = 1;
   WorkingSet.isActiveIdx[1] = mFixed;
   WorkingSet.isActiveIdx[2] = 0;
   WorkingSet.isActiveIdx[3] = 0;
-  WorkingSet.isActiveIdx[4] = colOffsetATw;
+  WorkingSet.isActiveIdx[4] = mLB;
   WorkingSet.isActiveIdx[5] = mUB;
-  for (b_i = 0; b_i < 5; b_i++) {
+  for (i = 0; i < 5; i++) {
     signed char i1;
     signed char i2;
-    i1 = obj_tmp[b_i];
-    WorkingSet.sizes[b_i] = i1;
-    WorkingSet.sizesNormal[b_i] = i1;
-    i2 = b_obj_tmp[b_i];
-    WorkingSet.sizesPhaseOne[b_i] = i2;
-    WorkingSet.sizesRegularized[b_i] = i1;
-    WorkingSet.sizesRegPhaseOne[b_i] = i2;
-    WorkingSet.isActiveIdx[b_i + 1] += WorkingSet.isActiveIdx[b_i];
+    i1 = obj_tmp[i];
+    WorkingSet.sizes[i] = i1;
+    WorkingSet.sizesNormal[i] = i1;
+    i2 = b_obj_tmp[i];
+    WorkingSet.sizesPhaseOne[i] = i2;
+    WorkingSet.sizesRegularized[i] = i1;
+    WorkingSet.sizesRegPhaseOne[i] = i2;
+    WorkingSet.isActiveIdx[i + 1] += WorkingSet.isActiveIdx[i];
   }
 
-  for (c_i = 0; c_i < 6; c_i++) {
-    WorkingSet.isActiveIdxNormal[c_i] = WorkingSet.isActiveIdx[c_i];
+  for (b_i = 0; b_i < 6; b_i++) {
+    WorkingSet.isActiveIdxNormal[b_i] = WorkingSet.isActiveIdx[b_i];
   }
 
   WorkingSet.isActiveIdxPhaseOne[0] = 1;
   WorkingSet.isActiveIdxPhaseOne[1] = mFixed;
   WorkingSet.isActiveIdxPhaseOne[2] = 0;
   WorkingSet.isActiveIdxPhaseOne[3] = 0;
-  WorkingSet.isActiveIdxPhaseOne[4] = colOffsetATw + 1;
+  WorkingSet.isActiveIdxPhaseOne[4] = mLB + 1;
   WorkingSet.isActiveIdxPhaseOne[5] = mUB;
-  for (b_i = 0; b_i < 5; b_i++) {
-    WorkingSet.isActiveIdxPhaseOne[b_i + 1] +=
-      WorkingSet.isActiveIdxPhaseOne[b_i];
+  for (i = 0; i < 5; i++) {
+    WorkingSet.isActiveIdxPhaseOne[i + 1] += WorkingSet.isActiveIdxPhaseOne[i];
   }
 
-  for (c_i = 0; c_i < 6; c_i++) {
-    WorkingSet.isActiveIdxRegularized[c_i] = WorkingSet.isActiveIdx[c_i];
-    WorkingSet.isActiveIdxRegPhaseOne[c_i] = WorkingSet.isActiveIdxPhaseOne[c_i];
+  for (b_i = 0; b_i < 6; b_i++) {
+    WorkingSet.isActiveIdxRegularized[b_i] = WorkingSet.isActiveIdx[b_i];
+    WorkingSet.isActiveIdxRegPhaseOne[b_i] = WorkingSet.isActiveIdxPhaseOne[b_i];
   }
 
-  for (b_i = 0; b_i < colOffsetATw; b_i++) {
-    c_i = WorkingSet.indexLB[b_i];
-    TrialState.xstarsqp[c_i - 1] = fmax(TrialState.xstarsqp[c_i - 1], lb[c_i - 1]);
+  for (colOffsetATw = 0; colOffsetATw < mLB; colOffsetATw++) {
+    b_i = WorkingSet.indexLB[colOffsetATw];
+    TrialState.xstarsqp[b_i - 1] = fmax(TrialState.xstarsqp[b_i - 1], lb[b_i - 1]);
   }
 
-  for (b_i = 0; b_i < mUB; b_i++) {
-    c_i = WorkingSet.indexUB[b_i];
-    TrialState.xstarsqp[c_i - 1] = fmin(TrialState.xstarsqp[c_i - 1], ub[c_i - 1]);
+  for (colOffsetATw = 0; colOffsetATw < mUB; colOffsetATw++) {
+    b_i = WorkingSet.indexUB[colOffsetATw];
+    TrialState.xstarsqp[b_i - 1] = fmin(TrialState.xstarsqp[b_i - 1], ub[b_i - 1]);
   }
 
-  for (b_i = 0; b_i < mFixed; b_i++) {
-    c_i = WorkingSet.indexFixed[b_i];
-    TrialState.xstarsqp[c_i - 1] = ub[c_i - 1];
+  for (colOffsetATw = 0; colOffsetATw < mFixed; colOffsetATw++) {
+    b_i = WorkingSet.indexFixed[colOffsetATw];
+    TrialState.xstarsqp[b_i - 1] = ub[b_i - 1];
   }
 
-  TrialState.sqpFval = c_computeObjectiveAndUserGradie
-    (&c_FcnEvaluator_next_next_next_n, TrialState.xstarsqp, TrialState.grad,
-     &b_i);
+  TrialState.sqpFval = c_computeObjectiveAndUserGradie(fun_workspace,
+    TrialState.xstarsqp, TrialState.grad, &i);
   TrialState.FunctionEvaluations = 1;
-  for (b_i = 0; b_i < colOffsetATw; b_i++) {
-    WorkingSet.lb[WorkingSet.indexLB[b_i] - 1] = -lb[WorkingSet.indexLB[b_i] - 1]
-      + x0[WorkingSet.indexLB[b_i] - 1];
+  for (colOffsetATw = 0; colOffsetATw < mLB; colOffsetATw++) {
+    WorkingSet.lb[WorkingSet.indexLB[colOffsetATw] - 1] =
+      -lb[WorkingSet.indexLB[colOffsetATw] - 1] +
+      x0[WorkingSet.indexLB[colOffsetATw] - 1];
   }
 
-  for (b_i = 0; b_i < mUB; b_i++) {
-    WorkingSet.ub[WorkingSet.indexUB[b_i] - 1] = ub[WorkingSet.indexUB[b_i] - 1]
-      - x0[WorkingSet.indexUB[b_i] - 1];
+  for (colOffsetATw = 0; colOffsetATw < mUB; colOffsetATw++) {
+    WorkingSet.ub[WorkingSet.indexUB[colOffsetATw] - 1] =
+      ub[WorkingSet.indexUB[colOffsetATw] - 1] -
+      x0[WorkingSet.indexUB[colOffsetATw] - 1];
   }
 
-  for (b_i = 0; b_i < mFixed; b_i++) {
-    y = ub[WorkingSet.indexFixed[b_i] - 1] - x0[WorkingSet.indexFixed[b_i] - 1];
-    WorkingSet.ub[WorkingSet.indexFixed[b_i] - 1] = y;
-    WorkingSet.bwset[b_i] = y;
+  for (colOffsetATw = 0; colOffsetATw < mFixed; colOffsetATw++) {
+    y = ub[WorkingSet.indexFixed[colOffsetATw] - 1] -
+      x0[WorkingSet.indexFixed[colOffsetATw] - 1];
+    WorkingSet.ub[WorkingSet.indexFixed[colOffsetATw] - 1] = y;
+    WorkingSet.bwset[colOffsetATw] = y;
   }
 
   setProblemType(&WorkingSet, 3);
-  b_i = WorkingSet.isActiveIdx[2];
-  if (32 - WorkingSet.isActiveIdx[2] < 400) {
-    for (i = b_i; i < 32; i++) {
-      WorkingSet.isActiveConstr[i - 1] = false;
-    }
-  } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-    for (i = b_i; i < 32; i++) {
-      WorkingSet.isActiveConstr[i - 1] = false;
-    }
+  i = WorkingSet.isActiveIdx[2];
+  for (colOffsetATw = i; colOffsetATw < 32; colOffsetATw++) {
+    WorkingSet.isActiveConstr[colOffsetATw - 1] = false;
   }
 
   WorkingSet.nWConstr[0] = WorkingSet.sizes[0];
@@ -6149,28 +5824,27 @@ static double fmincon(c_struct_T *fun_workspace, const double x0[15], const
   WorkingSet.nWConstr[3] = 0;
   WorkingSet.nWConstr[4] = 0;
   WorkingSet.nActiveConstr = WorkingSet.nWConstr[0];
-  c_i = (unsigned char)WorkingSet.sizes[0];
-  for (b_i = 0; b_i < c_i; b_i++) {
-    WorkingSet.Wid[b_i] = 1;
-    WorkingSet.Wlocalidx[b_i] = b_i + 1;
-    WorkingSet.isActiveConstr[b_i] = true;
-    colOffsetATw = b_i << 4;
-    mUB = WorkingSet.indexFixed[b_i];
-    if (mUB - 2 >= 0) {
-      memset(&WorkingSet.ATwset[colOffsetATw], 0, (unsigned int)(((mUB +
+  b_i = (unsigned char)WorkingSet.sizes[0];
+  for (i = 0; i < b_i; i++) {
+    WorkingSet.Wid[i] = 1;
+    WorkingSet.Wlocalidx[i] = i + 1;
+    WorkingSet.isActiveConstr[i] = true;
+    colOffsetATw = i << 4;
+    mLB = WorkingSet.indexFixed[i];
+    if (mLB - 2 >= 0) {
+      memset(&WorkingSet.ATwset[colOffsetATw], 0, (unsigned int)(((mLB +
                 colOffsetATw) - colOffsetATw) - 1) * sizeof(double));
     }
 
-    WorkingSet.ATwset[(WorkingSet.indexFixed[b_i] + colOffsetATw) - 1] = 1.0;
-    mUB = WorkingSet.indexFixed[b_i] + 1;
-    mFixed = WorkingSet.nVar;
-    if (mUB <= mFixed) {
-      memset(&WorkingSet.ATwset[(mUB + colOffsetATw) + -1], 0, (unsigned int)
-             ((((mFixed + colOffsetATw) - mUB) - colOffsetATw) + 1) * sizeof
-             (double));
+    WorkingSet.ATwset[(WorkingSet.indexFixed[i] + colOffsetATw) - 1] = 1.0;
+    mLB = WorkingSet.indexFixed[i] + 1;
+    mUB = WorkingSet.nVar;
+    if (mLB <= mUB) {
+      memset(&WorkingSet.ATwset[(mLB + colOffsetATw) + -1], 0, (unsigned int)
+             ((((mUB + colOffsetATw) - mLB) - colOffsetATw) + 1) * sizeof(double));
     }
 
-    WorkingSet.bwset[b_i] = WorkingSet.ub[WorkingSet.indexFixed[b_i] - 1];
+    WorkingSet.bwset[i] = WorkingSet.ub[WorkingSet.indexFixed[i] - 1];
   }
 
   double Hessian[225];
@@ -6190,8 +5864,7 @@ static double fmincon(c_struct_T *fun_workspace, const double x0[15], const
   MeritFunction.nlpComplError = 0.0;
   MeritFunction.firstOrderOpt = 0.0;
   MeritFunction.hasObjective = true;
-  r.next.next.next.next.next.next.next.next.value.workspace =
-    c_FcnEvaluator_next_next_next_n;
+  r.next.next.next.next.next.next.next.next.value.workspace = *fun_workspace;
   b_driver(lb, ub, &TrialState, &MeritFunction, &r, &memspace, &WorkingSet,
            Hessian, &QRManager, &CholManager, &QPObjective);
   fval = TrialState.sqpFval;
@@ -6201,10 +5874,10 @@ static double fmincon(c_struct_T *fun_workspace, const double x0[15], const
   *output_constrviolation = MeritFunction.nlpPrimalFeasError;
   y = 0.0;
   scale = 3.3121686421112381E-170;
-  for (b_i = 0; b_i < 15; b_i++) {
+  for (i = 0; i < 15; i++) {
     double absxk;
-    x[b_i] = TrialState.xstarsqp[b_i];
-    absxk = fabs(TrialState.delta_x[b_i]);
+    x[i] = TrialState.xstarsqp[i];
+    absxk = fabs(TrialState.delta_x[i]);
     if (absxk > scale) {
       double t;
       t = scale / absxk;
@@ -7201,9 +6874,7 @@ static void linearForm_(bool obj_hasLinear, int obj_nvar, double workspace[496],
     int ix;
     if (beta1 != 1) {
       beta1 = (unsigned char)obj_nvar;
-      if (beta1 - 1 >= 0) {
-        memset(&workspace[0], 0, (unsigned int)beta1 * sizeof(double));
-      }
+      memset(&workspace[0], 0, (unsigned int)beta1 * sizeof(double));
     }
 
     ix = 0;
@@ -7409,7 +7080,6 @@ static double rt_powd_snf(double u0, double u1)
 
 static void setProblemType(h_struct_T *obj, int PROBLEM_TYPE)
 {
-  int b_idx;
   int i;
   int idx;
   int idx_col;
@@ -7456,18 +7126,8 @@ static void setProblemType(h_struct_T *obj, int PROBLEM_TYPE)
       obj->lb[15] = 1.0E-5;
       idxStartIneq = obj->isActiveIdx[2];
       i = obj->nActiveConstr;
-      if ((i - idxStartIneq) + 1 < 400) {
-        for (b_idx = idxStartIneq; b_idx <= i; b_idx++) {
-          obj->ATwset[((b_idx - 1) << 4) + 15] = -1.0;
-        }
-      } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-        for (b_idx = idxStartIneq; b_idx <= i; b_idx++) {
-          obj->ATwset[((b_idx - 1) << 4) + 15] = -1.0;
-        }
+      for (idx = idxStartIneq; idx <= i; idx++) {
+        obj->ATwset[((idx - 1) << 4) + 15] = -1.0;
       }
 
       if (obj->nWConstr[4] > 0) {
@@ -7511,19 +7171,9 @@ static void setProblemType(h_struct_T *obj, int PROBLEM_TYPE)
 
         i = obj->isActiveIdx[4];
         i1 = obj->isActiveIdxRegularized[4] - 1;
-        if ((i1 - i) + 1 < 400) {
-          if (i <= i1) {
-            memset(&obj->isActiveConstr[i + -1], 0, (unsigned int)((i1 - i) + 1)
-                   * sizeof(bool));
-          }
-        } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-          for (b_idx = i; b_idx <= i1; b_idx++) {
-            obj->isActiveConstr[b_idx - 1] = false;
-          }
+        if (i <= i1) {
+          memset(&obj->isActiveConstr[i + -1], 0, (unsigned int)((i1 - i) + 1) *
+                 sizeof(bool));
         }
 
         idxStartIneq = obj->isActiveIdx[2];
@@ -7576,18 +7226,8 @@ static void setProblemType(h_struct_T *obj, int PROBLEM_TYPE)
       obj->lb[15] = 1.0E-5;
       idxStartIneq = obj->isActiveIdx[2];
       i = obj->nActiveConstr;
-      if ((i - idxStartIneq) + 1 < 400) {
-        for (b_idx = idxStartIneq; b_idx <= i; b_idx++) {
-          obj->ATwset[((b_idx - 1) << 4) + 15] = -1.0;
-        }
-      } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-        for (b_idx = idxStartIneq; b_idx <= i; b_idx++) {
-          obj->ATwset[((b_idx - 1) << 4) + 15] = -1.0;
-        }
+      for (idx = idxStartIneq; idx <= i; idx++) {
+        obj->ATwset[((idx - 1) << 4) + 15] = -1.0;
       }
 
       if (obj->nWConstr[4] > 0) {
@@ -7640,50 +7280,37 @@ static void sortLambdaQP(double lambda[31], int WorkingSet_nActiveConstr, const
   int WorkingSet_sizes[5], const int WorkingSet_isActiveIdx[6], const int
   WorkingSet_Wid[31], const int WorkingSet_Wlocalidx[31], double workspace[496])
 {
-  int k;
   if (WorkingSet_nActiveConstr != 0) {
-    int currentMplier;
+    int idx;
     int idxOffset;
     int mAll;
     mAll = (WorkingSet_sizes[0] + WorkingSet_sizes[3]) + WorkingSet_sizes[4];
-    currentMplier = (unsigned char)mAll;
-    if (currentMplier - 1 >= 0) {
-      memcpy(&workspace[0], &lambda[0], (unsigned int)currentMplier * sizeof
-             (double));
+    idx = (unsigned char)mAll;
+    if (idx - 1 >= 0) {
+      memcpy(&workspace[0], &lambda[0], (unsigned int)idx * sizeof(double));
     }
 
-    if (mAll < 400) {
-      if (mAll - 1 >= 0) {
-        memset(&lambda[0], 0, (unsigned int)mAll * sizeof(double));
-      }
-    } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-      for (k = 0; k < mAll; k++) {
-        lambda[k] = 0.0;
-      }
+    if (mAll - 1 >= 0) {
+      memset(&lambda[0], 0, (unsigned int)mAll * sizeof(double));
     }
 
-    currentMplier = 0;
     mAll = 0;
-    while ((mAll + 1 <= WorkingSet_nActiveConstr) && (WorkingSet_Wid[mAll] <= 2))
+    idx = 0;
+    while ((idx + 1 <= WorkingSet_nActiveConstr) && (WorkingSet_Wid[idx] <= 2))
     {
-      if (WorkingSet_Wid[mAll] == 1) {
+      if (WorkingSet_Wid[idx] == 1) {
         idxOffset = 1;
       } else {
         idxOffset = WorkingSet_isActiveIdx[1];
       }
 
-      lambda[(idxOffset + WorkingSet_Wlocalidx[mAll]) - 2] =
-        workspace[currentMplier];
-      currentMplier++;
+      lambda[(idxOffset + WorkingSet_Wlocalidx[idx]) - 2] = workspace[mAll];
       mAll++;
+      idx++;
     }
 
-    while (mAll + 1 <= WorkingSet_nActiveConstr) {
-      switch (WorkingSet_Wid[mAll]) {
+    while (idx + 1 <= WorkingSet_nActiveConstr) {
+      switch (WorkingSet_Wid[idx]) {
        case 3:
         idxOffset = WorkingSet_isActiveIdx[2];
         break;
@@ -7697,10 +7324,9 @@ static void sortLambdaQP(double lambda[31], int WorkingSet_nActiveConstr, const
         break;
       }
 
-      lambda[(idxOffset + WorkingSet_Wlocalidx[mAll]) - 2] =
-        workspace[currentMplier];
-      currentMplier++;
+      lambda[(idxOffset + WorkingSet_Wlocalidx[idx]) - 2] = workspace[mAll];
       mAll++;
+      idx++;
     }
   }
 }
@@ -8226,10 +7852,7 @@ static void xgemv(int m, int n, const double A[225], int lda, const double x[16]
     int i;
     int ix;
     i = (unsigned char)m;
-    if (i - 1 >= 0) {
-      memset(&y[0], 0, (unsigned int)i * sizeof(double));
-    }
-
+    memset(&y[0], 0, (unsigned int)i * sizeof(double));
     ix = 0;
     i = lda * (n - 1) + 1;
     for (iac = 1; lda < 0 ? iac >= i : iac <= i; iac += lda) {
@@ -8251,33 +7874,21 @@ static void xgeqp3(double A[961], int m, int n, int jpvt[31], double tau[31])
   double vn1[31];
   double vn2[31];
   double work[31];
-  double d;
   double temp;
   int b_i;
-  int j;
   int k;
-  int minmn;
+  int minmn_tmp;
   int pvt;
   if (m <= n) {
-    minmn = m;
+    minmn_tmp = m;
   } else {
-    minmn = n;
+    minmn_tmp = n;
   }
 
   memset(&tau[0], 0, 31U * sizeof(double));
-  if (minmn < 1) {
-    if (n < 400) {
-      for (j = 0; j < n; j++) {
-        jpvt[j] = j + 1;
-      }
-    } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-      for (j = 0; j < n; j++) {
-        jpvt[j] = j + 1;
-      }
+  if (minmn_tmp < 1) {
+    for (pvt = 0; pvt < n; pvt++) {
+      jpvt[pvt] = pvt + 1;
     }
   } else {
     int i;
@@ -8310,124 +7921,108 @@ static void xgeqp3(double A[961], int m, int n, int jpvt[31], double tau[31])
       }
     }
 
-    if (nfxd > minmn) {
-      nfxd = minmn;
+    if (nfxd > minmn_tmp) {
+      nfxd = minmn_tmp;
     }
 
     qrf(A, m, n, nfxd, tau);
-    if (nfxd < minmn) {
-      int i1;
+    if (nfxd < minmn_tmp) {
+      double d;
       memset(&work[0], 0, 31U * sizeof(double));
       memset(&vn1[0], 0, 31U * sizeof(double));
       memset(&vn2[0], 0, 31U * sizeof(double));
       i = nfxd + 1;
-      i1 = nfxd + 1;
-      iy = nfxd + 1;
-      if (n - nfxd < 400) {
-        for (j = i; j <= n; j++) {
-          d = xnrm2(m - nfxd, A, (nfxd + (j - 1) * 31) + 1);
-          vn1[j - 1] = d;
-          vn2[j - 1] = d;
-        }
-      } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4) \
- private(d)
-
-        for (j = iy; j <= n; j++) {
-          d = xnrm2(m - nfxd, A, (nfxd + (j - 1) * 31) + 1);
-          vn1[j - 1] = d;
-          vn2[j - 1] = d;
-        }
+      for (pvt = i; pvt <= n; pvt++) {
+        d = xnrm2(m - nfxd, A, (nfxd + (pvt - 1) * 31) + 1);
+        vn1[pvt - 1] = d;
+        vn2[pvt - 1] = d;
       }
 
-      for (b_i = i1; b_i <= minmn; b_i++) {
-        double d1;
+      for (b_i = i; b_i <= minmn_tmp; b_i++) {
         double s;
         int ii;
         int ip1;
         int mmi;
         int nmi;
         ip1 = b_i + 1;
-        nfxd = (b_i - 1) * 31;
-        ii = (nfxd + b_i) - 1;
+        iy = (b_i - 1) * 31;
+        ii = (iy + b_i) - 1;
         nmi = (n - b_i) + 1;
         mmi = m - b_i;
         if (nmi < 1) {
-          iy = -2;
+          nfxd = -2;
         } else {
-          iy = -1;
+          nfxd = -1;
           if (nmi > 1) {
             temp = fabs(vn1[b_i - 1]);
             for (k = 2; k <= nmi; k++) {
               s = fabs(vn1[(b_i + k) - 2]);
               if (s > temp) {
-                iy = k - 2;
+                nfxd = k - 2;
                 temp = s;
               }
             }
           }
         }
 
-        pvt = b_i + iy;
+        pvt = b_i + nfxd;
         if (pvt + 1 != b_i) {
           ix = pvt * 31;
           for (k = 0; k < m; k++) {
             temp_tmp = ix + k;
             temp = A[temp_tmp];
-            i = nfxd + k;
-            A[temp_tmp] = A[i];
-            A[i] = temp;
+            nfxd = iy + k;
+            A[temp_tmp] = A[nfxd];
+            A[nfxd] = temp;
           }
 
-          iy = jpvt[pvt];
+          nfxd = jpvt[pvt];
           jpvt[pvt] = jpvt[b_i - 1];
-          jpvt[b_i - 1] = iy;
+          jpvt[b_i - 1] = nfxd;
           vn1[pvt] = vn1[b_i - 1];
           vn2[pvt] = vn2[b_i - 1];
         }
 
         if (b_i < m) {
           temp = A[ii];
-          d1 = xzlarfg(mmi + 1, &temp, A, ii + 2);
-          tau[b_i - 1] = d1;
+          d = xzlarfg(mmi + 1, &temp, A, ii + 2);
+          tau[b_i - 1] = d;
           A[ii] = temp;
         } else {
-          d1 = 0.0;
+          d = 0.0;
           tau[b_i - 1] = 0.0;
         }
 
         if (b_i < n) {
           temp = A[ii];
           A[ii] = 1.0;
-          xzlarf(mmi + 1, nmi - 1, ii + 1, d1, A, ii + 32, work);
+          xzlarf(mmi + 1, nmi - 1, ii + 1, d, A, ii + 32, work);
           A[ii] = temp;
         }
 
         for (pvt = ip1; pvt <= n; pvt++) {
-          iy = b_i + (pvt - 1) * 31;
-          d1 = vn1[pvt - 1];
-          if (d1 != 0.0) {
-            temp = fabs(A[iy - 1]) / d1;
+          nfxd = b_i + (pvt - 1) * 31;
+          d = vn1[pvt - 1];
+          if (d != 0.0) {
+            temp = fabs(A[nfxd - 1]) / d;
             temp = 1.0 - temp * temp;
             if (temp < 0.0) {
               temp = 0.0;
             }
 
-            s = d1 / vn2[pvt - 1];
+            s = d / vn2[pvt - 1];
             s = temp * (s * s);
             if (s <= 1.4901161193847656E-8) {
               if (b_i < m) {
-                d1 = xnrm2(mmi, A, iy + 1);
-                vn1[pvt - 1] = d1;
-                vn2[pvt - 1] = d1;
+                d = xnrm2(mmi, A, nfxd + 1);
+                vn1[pvt - 1] = d;
+                vn2[pvt - 1] = d;
               } else {
                 vn1[pvt - 1] = 0.0;
                 vn2[pvt - 1] = 0.0;
               }
             } else {
-              vn1[pvt - 1] = d1 * sqrt(temp);
+              vn1[pvt - 1] = d * sqrt(temp);
             }
           }
         }
@@ -8593,7 +8188,6 @@ static void xzlarf(int m, int n, int iv0, double tau, double C[961], int ic0,
   int i;
   int ia;
   int iac;
-  int iy;
   int lastc;
   int lastv;
   if (tau != 0.0) {
@@ -8638,18 +8232,8 @@ static void xzlarf(int m, int n, int iv0, double tau, double C[961], int ic0,
     double c;
     int b_i;
     if (lastc + 1 != 0) {
-      if (lastc + 1 < 400) {
-        if (lastc >= 0) {
-          memset(&work[0], 0, (unsigned int)(lastc + 1) * sizeof(double));
-        }
-      } else {
-
-#pragma omp parallel for \
- num_threads(4 > omp_get_max_threads() ? omp_get_max_threads() : 4)
-
-        for (iy = 0; iy <= lastc; iy++) {
-          work[iy] = 0.0;
-        }
+      if (lastc >= 0) {
+        memset(&work[0], 0, (unsigned int)(lastc + 1) * sizeof(double));
       }
 
       b_i = ic0 + 31 * lastc;
@@ -9406,8 +8990,6 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
 
 void Nonlinear_controller_fcn_control_rf_aero_models_initialize(void)
 {
-  omp_init_nest_lock
-    (&Nonlinear_controller_fcn_control_rf_aero_models_nestLockGlobal);
   savedTime_not_empty = false;
   freq_not_empty = false;
   isInitialized_Nonlinear_controller_fcn_control_rf_aero_models = true;
@@ -9415,8 +8997,6 @@ void Nonlinear_controller_fcn_control_rf_aero_models_initialize(void)
 
 void Nonlinear_controller_fcn_control_rf_aero_models_terminate(void)
 {
-  omp_destroy_nest_lock
-    (&Nonlinear_controller_fcn_control_rf_aero_models_nestLockGlobal);
   isInitialized_Nonlinear_controller_fcn_control_rf_aero_models = false;
 }
 

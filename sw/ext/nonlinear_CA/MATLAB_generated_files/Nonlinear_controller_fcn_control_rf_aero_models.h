@@ -15,13 +15,8 @@
 
 /* Include files */
 #include "rtwtypes.h"
-#include "omp.h"
 #include <stddef.h>
 #include <stdlib.h>
-
-/* Variable Declarations */
-extern omp_nest_lock_t
-    Nonlinear_controller_fcn_control_rf_aero_models_nestLockGlobal;
 
 #ifdef __cplusplus
 extern "C" {
