@@ -42,7 +42,7 @@
 #include "Pixhawk_4_read_msg.h"
 
 
-#define UDP_BUFFER_SIZE   1024
+#define UDP_BUFFER_SIZE   16384
 
 struct timeval current_time, last_time;
 

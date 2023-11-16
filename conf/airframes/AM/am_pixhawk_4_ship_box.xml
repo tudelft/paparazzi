@@ -140,6 +140,7 @@
     <!--     For OUTSIDE -->
     <module name="gps" type="ublox">
       <configure name="GPS_BAUD" value="B460800"/> 
+      <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
     </module>
 
     <!--     For OPTITRACK -->
