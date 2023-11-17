@@ -520,8 +520,8 @@ static float k_rm_2_3_f(float omega_n, float zeta, float p1) {
 
 static float k_rm_3_3_f(float omega_n, float zeta, float p1) {
     omega_n = positive_non_zero(omega_n);
-    zeta    = positive_non_zero(p1);
-    p1      = positive_non_zero(zeta);
+    zeta    = positive_non_zero(zeta);
+    p1      = positive_non_zero(p1);
     return p1 + omega_n * zeta * 2.0;
 }
 
@@ -933,9 +933,9 @@ void init_controller(void){
   k_pos_e.k1[1]  = k_pos_e.k1[0];  
   k_pos_e.k2[1]  = k_pos_e.k2[0];  
   k_pos_e.k3[1]  = k_pos_e.k3[0];  
-  k_pos_rm.k1[0] = k_e_1_3_f_v2(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);
-  k_pos_rm.k2[0] = k_e_2_3_f_v2(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);
-  k_pos_rm.k3[0] = k_e_3_3_f_v2(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);
+  k_pos_rm.k1[0] = k_rm_1_3_f(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);
+  k_pos_rm.k2[0] = k_rm_2_3_f(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);
+  k_pos_rm.k3[0] = k_rm_3_3_f(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);
   k_pos_rm.k1[1] = k_pos_rm.k1[0];  
   k_pos_rm.k2[1] = k_pos_rm.k2[0];  
   k_pos_rm.k3[1] = k_pos_rm.k3[0];
@@ -1327,7 +1327,8 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   stabilization_cmd[COMMAND_THRUST] = 0;
   for (i = 0; i < ANDI_NUM_ACT; i++) {
     actuators_pprz[i] = (int16_t) andi_u[i];
-    stabilization_cmd[COMMAND_THRUST] += actuator_state_1l[i];
+    stabilization_cmd[COMMAND_THRUST] += actuator_state_1l[i]; 
+    printf("motor %i: %d\n",i,actuators_pprz[i]);
   }
   stabilization_cmd[COMMAND_THRUST] = stabilization_cmd[COMMAND_THRUST]/num_thrusters_oneloop;
   if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
@@ -1338,9 +1339,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     eulers_zxy_des.theta =  andi_u[ANDI_NUM_ACT+1];
   }
   psi_des_deg = psi_des_rad * 180.0 / M_PI;  
-  stabilization_cmd[COMMAND_ROLL] = (int16_t) (eulers_zxy_des.phi   * 180.0 / M_PI * MAX_PPRZ / 45.0);
+  stabilization_cmd[COMMAND_ROLL]  = (int16_t) (eulers_zxy_des.phi   * 180.0 / M_PI * MAX_PPRZ / 45.0);
   stabilization_cmd[COMMAND_PITCH] = (int16_t) (eulers_zxy_des.theta * 180.0 / M_PI * MAX_PPRZ / 45.0);
-  stabilization_cmd[COMMAND_YAW] = (int16_t) (psi_des_deg * MAX_PPRZ / 180.0);
+  stabilization_cmd[COMMAND_YAW]   = (int16_t) (psi_des_deg * MAX_PPRZ / 180.0);
 }
 
 /** @brief  Function to reconstruct actuator state using first order dynamics */
