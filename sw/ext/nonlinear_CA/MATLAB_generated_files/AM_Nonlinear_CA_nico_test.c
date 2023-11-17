@@ -8227,8 +8227,8 @@ void AM_Nonlinear_CA_nico_test(double K_p_T, double K_p_M, double m, double I_xx
 
   /* Build the max and minimum actuator array: */
   if (W_MOTOR_FAILURE_WEIGHT > 0.0) {
-    max_omega_fail = 1.0;
-    tilt_el_fail = 1.0;
+    max_omega_fail = 155.0; //From sim tests this being lower than the INDI ajdusted
+    tilt_el_fail = 1.0;     //min rpm caused the optimiser failure.
     tilt_az_fail = 1.0;
   } else {
     max_omega_fail = max_omega;
