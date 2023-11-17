@@ -54,7 +54,7 @@
  
 // #define STB_WP_TARGET 
 
-#define USE_SEC_AHRS_IN_FAILSAFE_MODE
+// #define USE_SEC_AHRS_IN_FAILSAFE_MODE
 
 #define USE_NAV_HYBRID_MODULE
 
