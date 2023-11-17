@@ -100,6 +100,12 @@
 #endif
 #endif
 
+#if STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
+bool indi_use_pseudo_inverse = true;
+#else
+bool indi_use_pseudo_inverse = false;
+#endif
+
 float du_min_stab_indi[INDI_NUM_ACT];
 float du_max_stab_indi[INDI_NUM_ACT];
 float du_pref_stab_indi[INDI_NUM_ACT];
@@ -643,13 +649,17 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
 #if STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
   // Calculate the increment for each actuator
-  for (i = 0; i < INDI_NUM_ACT; i++) {
-    indi_du[i] = (g1g2_pseudo_inv[i][0] * indi_v[0])
-                 + (g1g2_pseudo_inv[i][1] * indi_v[1])
-                 + (g1g2_pseudo_inv[i][2] * indi_v[2])
-                 + (g1g2_pseudo_inv[i][3] * indi_v[3]);
-  }
-#else
+  if (indi_use_pseudo_inverse) {
+
+    for (i = 0; i < INDI_NUM_ACT; i++) {
+      indi_du[i] = (g1g2_pseudo_inv[i][0] * indi_v[0])
+                   + (g1g2_pseudo_inv[i][1] * indi_v[1])
+                   + (g1g2_pseudo_inv[i][2] * indi_v[2])
+                   + (g1g2_pseudo_inv[i][3] * indi_v[3]);
+    }
+
+  } else {
+#endif
   stabilization_indi_set_wls_settings(use_increment);
 
 
@@ -657,7 +667,11 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   num_iter =
     wls_alloc(indi_du, indi_v, du_min_stab_indi, du_max_stab_indi, Bwls, 0, 0, Wv, indi_Wu, du_pref_stab_indi, 10000, 10,
               INDI_NUM_ACT, INDI_OUTPUTS);
+
+#if STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
+  }
 #endif
+
 
   if (in_flight) {
     // Add the increments to the actuators
@@ -787,7 +801,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   angular_rate_ref.r = rate_sp.r;
 
   // Possibly we can use some bounding here
-  /*BoundAbs(rate_sp.r, 5.0);*/
+  BoundAbs(rate_sp.r, 3.0);
 
   /* compute the INDI command */
   stabilization_indi_rate_run(rate_sp, in_flight);
@@ -950,7 +964,8 @@ void lms_estimation(void)
 
 #if STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
   // Calculate the inverse of (G1+G2)
-  calc_g1g2_pseudo_inv();
+  if (indi_use_pseudo_inverse)
+    calc_g1g2_pseudo_inv();
 #endif
 }
 

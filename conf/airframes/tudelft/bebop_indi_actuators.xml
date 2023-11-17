@@ -22,12 +22,14 @@
     <module name="radio_control" type="datalink"/>
     <module name="actuators" type="bebop"/>
     <module name="imu" type="bebop"/>
-    <module name="gps" type="furuno"/>
-    <module name="stabilization" type="indi"/>
+    <module name="gps" type="datalink"/>
+    <module name="stabilization" type="indi">
+      <define name="TILT_TWIST_CTRL" value="TRUE"/>
+    </module>
     <module name="stabilization" type="rate_indi"/>
     <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="TRUE"/>
-      <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
+      <configure name="USE_MAGNETOMETER" value="FALSE"/>
+      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
     </module>
     <module name="ins" type="extended"/>
     <module name="guidance" type="indi">
@@ -65,6 +67,12 @@
     <set servo="BOTTOM_RIGHT" value="autopilot_get_motors_on() ? actuators_pprz[2] : -MAX_PPRZ"/>
     <set servo="BOTTOM_LEFT"  value="autopilot_get_motors_on() ? actuators_pprz[3] : -MAX_PPRZ"/>
   </command_laws>
+  
+  <section name="INS" prefix="INS_">
+    <define name="USE_GPS_ALT" value="1"/>
+    <define name="USE_GPS_ALT_SPEED" value="1"/>
+    <define name="VFF_R_GPS" value="0.01"/>
+  </section>
 
   <section name="AIR_DATA" prefix="AIR_DATA_">
     <define name="CALC_AIRSPEED" value="FALSE"/>
@@ -91,6 +99,8 @@
 
     <!-- For vibrating airfames -->
     <define name="GRAVITY_HEURISTIC_FACTOR" value="0"/>
+    <!-- Needed to use optitrack heading at any speed -->
+    <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
   </section>
 
   <section name="INS" prefix="INS_">
@@ -101,10 +111,12 @@
     <!-- setpoint limits for attitude stabilization rc flight -->
     <define name="SP_MAX_PHI" value="45" unit="deg"/>
     <define name="SP_MAX_THETA" value="45" unit="deg"/>
-    <define name="SP_MAX_R" value="400" unit="deg/s"/>
+    <define name="SP_MAX_R" value="200" unit="deg/s"/>
     <define name="DEADBAND_A" value="0"/>
     <define name="DEADBAND_E" value="0"/>
     <define name="DEADBAND_R" value="50"/>
+    
+    <define name="SP_PSI_DELTA_LIMIT" value="90" unit="deg"/>
   </section>
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
@@ -131,11 +143,13 @@
     <define name="ACT_DYN" value="{0.1, 0.1, 0.1, 0.1}"/>
 
     <!-- Adaptive Learning Rate -->
-    <define name="USE_ADAPTIVE" value="TRUE"/>
+    <define name="USE_ADAPTIVE" value="FALSE"/>
     <define name="ADAPTIVE_MU" value="0.0001"/>
 
+    <define name="ALLOCATION_PSEUDO_INVERSE" value="TRUE"/>
+    
     <!--Priority for each axis (roll, pitch, yaw and thrust)-->
-    <define name="WLS_PRIORITIES" value="{1000, 1000, 1, 100}"/>
+    <define name="WLS_PRIORITIES" value="{1000, 1000, 1, 500}"/>
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">

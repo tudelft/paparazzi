@@ -37,6 +37,7 @@ extern float actuator_state_filt_vect[INDI_NUM_ACT];
 extern bool act_is_servo[INDI_NUM_ACT];
 
 extern bool indi_use_adaptive;
+extern bool indi_use_pseudo_inverse;
 
 extern float du_min_stab_indi[INDI_NUM_ACT];
 extern float du_max_stab_indi[INDI_NUM_ACT];
