@@ -227,7 +227,7 @@
     <define name="MAX_LAT_SPEED" value="13.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_FWD_ACC" value="5.0" unit="m/s^2"/>
-    <define name="MIN_FWD_ACC" value="-2.5" unit="m/s^2"/> 
+    <define name="MIN_FWD_ACC" value="-2" unit="m/s^2"/> 
     <define name="MAX_LAT_ACC" value="7.0" unit="m/s^2"/>
     <define name="MAX_VERT_ACC" value="3.0" unit="m/s^2"/>
   </section>
