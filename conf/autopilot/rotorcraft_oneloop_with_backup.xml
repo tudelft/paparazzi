@@ -79,10 +79,11 @@
         <call fun="stabilization_attitude_enter()"/>
         <call fun="guidance_v_z_enter()"/>
       </on_enter>
-      <control freq="NAVIGATION_FREQUENCY">
+      <!-- <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
-      </control>
+      </control> -->
       <control>
+        <call fun="nav_periodic_task()"/>
         <call fun="guidance_v_read_rc()"/>
         <call fun="guidance_v_thrust_adapt(autopilot_in_flight())"/>
         <call fun="guidance_v_from_nav(autopilot_in_flight())"/>
