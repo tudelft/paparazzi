@@ -143,6 +143,8 @@ extern bool yaw_with_tilting_PID;
 extern bool manual_heading;
 extern int manual_heading_value_rad;
 
+extern float slider_phi_value, slider_theta_value;
+
 //Variable for the lateral acceleration and yaw rate control:
 extern float overestimation_coeff;
 

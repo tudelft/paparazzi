@@ -7,6 +7,15 @@
 
   <settings>
     <dl_settings>
+      <dl_settings NAME="NICO TEST">
+        <dl_setting var="slider_phi_value"  min="-100" step="1" max="100" shortname="des_phi_value" />
+        <dl_setting var="slider_theta_value"  min="-20" step="1" max="100" shortname="des_theta_value" />
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <settings>
+    <dl_settings>
       <dl_settings NAME="FBW Control">
         <dl_setting var="K_p_rad_s_dshot"  min="0" step=".1" max="20" shortname="K_p_rad_s_dshot" />
         <dl_setting var="K_i_rad_s_dshot"  min="0" step=".001" max="1" shortname="K_i_rad_s_dshot" />

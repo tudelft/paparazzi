@@ -73,6 +73,7 @@
 #define OVERESTIMATE_LATERAL_FORCES
 float overestimation_coeff = 1.4;
 
+float slider_phi_value = 0.0f, slider_theta_value = 0.0f;
 
 #define FBW_ACTUATORS
 #define MAX_DSHOT_VALUE 1999.0
@@ -1501,9 +1502,9 @@ void overactuated_mixing_run(void)
         get_actuator_state_v2();
 
         //Calculate the desired euler angles from the auxiliary joystick channels:
-        manual_phi_value = MANUAL_CONTROL_MAX_CMD_ROLL_ANGLE * radio_control.values[RADIO_MANUAL_ROLL_CMD] / MAX_PPRZ;
+        manual_phi_value = slider_phi_value*M_PI/180;
 
-        manual_theta_value = 0.0f;
+        manual_theta_value = slider_theta_value*M_PI/180;
 
         #ifdef USE_EXT_REF_ATTITUDE
             manual_phi_value = ship_info_receive.phi * M_PI/180;
