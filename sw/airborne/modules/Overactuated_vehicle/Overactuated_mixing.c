@@ -1187,6 +1187,9 @@ void assign_variables(void){
         beta_deg = 0;
     #else
         airspeed = ms45xx.airspeed;
+        #ifdef DISABLE_AIRSPEED_IN_OVERACT_MIXING
+            airspeed = 0.0f;
+        #endif
         beta_deg = - aoa_pwm.angle * 180/M_PI;
     #endif
     

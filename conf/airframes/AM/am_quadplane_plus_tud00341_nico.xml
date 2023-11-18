@@ -757,6 +757,8 @@
 
     <!-- <define name="USE_EXT_REF_ATTITUDE" value="TRUE"/> -->
 
+    <define name="DISABLE_AIRSPEED_IN_OVERACT_MIXING" value="TRUE"/>
+
     <define name="FULLY_MANUAL_HEADING" value="TRUE"/>
 
     <!-- Basic navigation settings -->
