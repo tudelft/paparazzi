@@ -400,10 +400,12 @@ static void serial_act_t4_abi_in(uint8_t sender_id __attribute__((unused)), stru
  */
 static void send_ship_info_msg_ground( struct transport_tx *trans , struct link_device * dev ) {
     // Send telemetry message
+    float local_variable = 0.0;
     pprz_msg_send_SHIP_INFO_MSG_GROUND(trans , dev , AC_ID ,
                 & ship_info_receive.phi,& ship_info_receive.theta,& ship_info_receive.psi,
                 & ship_info_receive.phi_dot,& ship_info_receive.theta_dot,& ship_info_receive.psi_dot,
                 & ship_info_receive.x,& ship_info_receive.y,& ship_info_receive.z,
+                &local_variable, &local_variable, &local_variable,
                 & ship_info_receive.x_dot,& ship_info_receive.y_dot,& ship_info_receive.z_dot, 
                 & ship_info_receive.x_ddot,& ship_info_receive.y_ddot,& ship_info_receive.z_ddot);
 }
@@ -1508,7 +1510,7 @@ void overactuated_mixing_run(void)
             manual_theta_value = ship_info_receive.theta * M_PI/180;
         #endif
 
-        manual_motor_value = OVERACTUATED_MIXING_MOTOR_MIN_OMEGA;
+        manual_motor_value = 0;
 
         euler_setpoint[0] = indi_u[13];
         euler_setpoint[1] = indi_u[12];
