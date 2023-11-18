@@ -477,9 +477,9 @@
     <define name="W_ACT_EL_SPEED" value="0"/>
     <define name="W_ACT_AZ_CONST" value="1"/>
     <define name="W_ACT_AZ_SPEED" value="0"/>
-    <define name="W_ACT_THETA_CONST" value="50"/>
+    <define name="W_ACT_THETA_CONST" value="0.05"/>
     <define name="W_ACT_THETA_SPEED" value="0"/>
-    <define name="W_ACT_PHI_CONST" value="50"/>
+    <define name="W_ACT_PHI_CONST" value="0.05"/>
     <define name="W_ACT_PHI_SPEED" value="0"/>
 
     <define name="W_ACT_AILERONS_CONST" value="0.5"/>
