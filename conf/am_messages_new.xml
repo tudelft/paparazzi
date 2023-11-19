@@ -1986,8 +1986,8 @@
 
      <message name= "AM7_OUT" id = "185">
          <field name = "motors_state_rad_s" type="float[4]">Filtered motors state [rad/s]</field>
-         <field name = "tile_elevation_state_deg" type="float[4]">Filtered tilt elevation state [deg]</field>
-         <field name = "tile_azimuth_state_deg" type="float[4]">Filtered tilt elevation state [deg]</field>
+         <field name = "tilt_elevation_state_deg" type="float[4]">Filtered tilt elevation state [deg]</field>
+         <field name = "tilt_azimuth_state_deg" type="float[4]">Filtered tilt elevation state [deg]</field>
          <field name = "theta_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Theta value from AHRS filtered</field>
          <field name = "phi_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Phi value from AHRS filtered</field>
          <field name = "psi_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Psi value from AHRS filtered</field>
