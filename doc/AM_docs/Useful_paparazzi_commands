@@ -38,3 +38,6 @@ $ adb shell /oem/bin/pprzlink_router_cc -e udp://192.168.0.11:5242:192.168.0.10:
 - Install dependencies needed for the Aruco detection algorithm in sw/ext/aruco_detection: 
 $ pip3 install opencv-python opencv-contrib-python pymap3d pyserial
 $ pip3 install numpy --upgrade
+
+- Save PAPARAZZI_HOME env variable in linux: 
+$ sudo nano /etc/environment --> add a line --> PAPARAZZI_HOME="/home/USER/paparazzi"
