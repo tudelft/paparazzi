@@ -47,10 +47,10 @@ static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((alig
     #include "modules/datalink/telemetry.h"
     static void am7_downlink(struct transport_tx *trans, struct link_device *dev)
     {
-        float motors_cmd_float_telemetry[4] = {myam7_data_in.motor_1_cmd_int*0.01f,
-                                              myam7_data_in.motor_2_cmd_int*0.01f,
-                                              myam7_data_in.motor_3_cmd_int*0.01f,
-                                              myam7_data_in.motor_4_cmd_int*0.01f};
+        float motors_cmd_float_telemetry[4] = {myam7_data_in.motor_1_cmd_int*0.1f,
+                                              myam7_data_in.motor_2_cmd_int*0.1f,
+                                              myam7_data_in.motor_3_cmd_int*0.1f,
+                                              myam7_data_in.motor_4_cmd_int*0.1f};
 
         float elevation_tilt_cmd_float_telemetry[4] = {myam7_data_in.el_1_cmd_int*0.01f,
                                                        myam7_data_in.el_2_cmd_int*0.01f,
