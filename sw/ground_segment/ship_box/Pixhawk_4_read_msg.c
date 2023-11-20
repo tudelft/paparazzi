@@ -120,6 +120,9 @@ struct __attribute__((__packed__)) payload_ship_info_msg_ground {
   float x; 
   float y; 
   float z; 
+  float lat; 
+  float lon; 
+  float alt;   
   float x_dot; 
   float y_dot; 
   float z_dot; 
@@ -551,6 +554,9 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
             printf("Ship pos x [m] : %f \n",paylod_ship.x);  
             printf("Ship pos y [m] : %f \n",paylod_ship.y);  
             printf("Ship pos z [m] : %f \n",paylod_ship.z);  
+            printf("Ship lat [deg] : %f \n",paylod_ship.lat);  
+            printf("Ship pos lon [deg] : %f \n",paylod_ship.lon);  
+            printf("Ship pos alt [m] : %f \n",paylod_ship.alt);              
             printf("Ship speed x [m/s] : %f \n",paylod_ship.x_dot);  
             printf("Ship speed y [m/s] : %f \n",paylod_ship.y_dot);  
             printf("Ship speed z [m/s] : %f \n",paylod_ship.z_dot);  
@@ -568,7 +574,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
 
 void ivy_send_ship_info_msg(void){
   // if(verbose) printf("Sent received Ship message on ivy bus\n");
-  IvySendMsg("ground SHIP_INFO_MSG %d %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f",
+  IvySendMsg("ground SHIP_INFO_MSG %d %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f",
           ac_id,
           
           paylod_ship.phi,
@@ -582,6 +588,10 @@ void ivy_send_ship_info_msg(void){
           paylod_ship.x,
           paylod_ship.y,
           paylod_ship.z,
+
+          paylod_ship.lat,
+          paylod_ship.lon,
+          paylod_ship.alt,
 
           paylod_ship.x_dot,
           paylod_ship.y_dot,

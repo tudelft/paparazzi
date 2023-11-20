@@ -1774,6 +1774,9 @@
       <field name="x" type="float" unit="m">position_x</field>
       <field name="y" type="float" unit="m">position_y</field>
       <field name="z" type="float" unit="m">position_z</field>
+      <field name="lat_ship" type="float" unit="m">lat_ship</field>
+      <field name="long_ship" type="float" unit="m">long_ship</field>
+      <field name="alt_ship" type="float" unit="m">alt_ship</field>      
       <field name="x_dot" type="float" unit="m/s">speed_x</field>
       <field name="y_dot" type="float" unit="m/s">speed_y</field>
       <field name="z_dot" type="float" unit="m/s">speed_z</field>
@@ -1983,8 +1986,8 @@
 
      <message name= "AM7_OUT" id = "185">
          <field name = "motors_state_rad_s" type="float[4]">Filtered motors state [rad/s]</field>
-         <field name = "tile_elevation_state_deg" type="float[4]">Filtered tilt elevation state [deg]</field>
-         <field name = "tile_azimuth_state_deg" type="float[4]">Filtered tilt elevation state [deg]</field>
+         <field name = "tilt_elevation_state_deg" type="float[4]">Filtered tilt elevation state [deg]</field>
+         <field name = "tilt_azimuth_state_deg" type="float[4]">Filtered tilt elevation state [deg]</field>
          <field name = "theta_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Theta value from AHRS filtered</field>
          <field name = "phi_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Phi value from AHRS filtered</field>
          <field name = "psi_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Psi value from AHRS filtered</field>
@@ -3230,6 +3233,9 @@
       <field name="x" type="float" unit="m">position_x</field>
       <field name="y" type="float" unit="m">position_y</field>
       <field name="z" type="float" unit="m">position_z</field>
+      <field name="lat_ship" type="float" unit="m">lat_ship</field>
+      <field name="long_ship" type="float" unit="m">long_ship</field>
+      <field name="alt_ship" type="float" unit="m">alt_ship</field>         
       <field name="x_dot" type="float" unit="m/s">speed_x</field>
       <field name="y_dot" type="float" unit="m/s">speed_y</field>
       <field name="z_dot" type="float" unit="m/s">speed_z</field>

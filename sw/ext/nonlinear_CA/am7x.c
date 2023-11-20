@@ -86,7 +86,7 @@ void readLiDAR(){
 void am7_init(){
 
   //Init serial port for the communication
-  if ((serial_port = serialOpen ("/dev/ttyS0", BAUDRATE_AM7)) < 0){
+  if ((serial_port = serialOpen ("/dev/ttyS4", BAUDRATE_AM7)) < 0){
     fprintf (stderr, "Unable to open serial device: %s\n", strerror (errno)) ;
   }
   if (wiringPiSetup () == -1){
