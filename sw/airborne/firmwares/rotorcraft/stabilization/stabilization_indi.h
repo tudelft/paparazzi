@@ -52,6 +52,10 @@ extern float thrust_bx_state_filt;
 extern float act_pref[INDI_NUM_ACT];
 
 extern float indi_Wu[INDI_NUM_ACT];
+extern float indi_wls_priorities_roll;
+extern float indi_wls_priorities_pitch;
+extern float indi_wls_priorities_yaw;
+extern float indi_wls_priorities_thrust;
 
 struct Indi_gains {
   struct FloatRates att;

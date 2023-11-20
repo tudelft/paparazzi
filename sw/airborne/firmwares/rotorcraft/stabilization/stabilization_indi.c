@@ -181,6 +181,12 @@ static float Wv[INDI_OUTPUTS] = {1000, 1000, 1, 100};
 #endif
 #endif
 
+// new dynamic priorities, will be set to Wv defaults in init. 0 for debugging
+float indi_wls_priorities_roll = 0;
+float indi_wls_priorities_pitch = 0;
+float indi_wls_priorities_yaw = 0;
+float indi_wls_priorities_thrust = 0;
+
 /**
  * Weighting of different actuators in the cost function
  */
@@ -361,6 +367,12 @@ void stabilization_indi_init(void)
   //Calculate G1G2_PSEUDO_INVERSE
   calc_g1g2_pseudo_inv();
 #endif
+
+  // new dynamic priorities, init to Wv defualts
+  indi_wls_priorities_roll = Wv[0];
+  indi_wls_priorities_pitch = Wv[1];
+  indi_wls_priorities_yaw = Wv[2];
+  indi_wls_priorities_thrust = Wv[3];
 
   int8_t i;
   // Initialize the array of pointers to the rows of g1g2
@@ -731,6 +743,11 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
  */
 void WEAK stabilization_indi_set_wls_settings(float use_increment)
 {
+  Wv[0] = indi_wls_priorities_roll;
+  Wv[1] = indi_wls_priorities_pitch;
+  Wv[2] = indi_wls_priorities_yaw;
+  Wv[3] = indi_wls_priorities_thrust;
+
   // Calculate the min and max increments
   for (uint8_t i = 0; i < INDI_NUM_ACT; i++) {
     du_min_stab_indi[i] = -MAX_PPRZ * act_is_servo[i] - use_increment * actuator_state_filt_vect[i];
