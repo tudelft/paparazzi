@@ -1332,7 +1332,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   for (i = 0; i < ANDI_NUM_ACT; i++) {
     actuators_pprz[i] = (int16_t) andi_u[i];
     stabilization_cmd[COMMAND_THRUST] += actuator_state_1l[i]; 
-    printf("motor %i: %d\n",i,actuators_pprz[i]);
   }
   stabilization_cmd[COMMAND_THRUST] = stabilization_cmd[COMMAND_THRUST]/num_thrusters_oneloop;
   if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
