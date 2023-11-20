@@ -876,16 +876,16 @@ void init_poles(void){
   p_att_rm.p3      = p_att_rm.omega_n * p_att_rm.zeta;
 
   p_pos_e.omega_n = 1.41;
-  p_pos_e.zeta    = 0.85;
-  p_pos_e.p3      = 6.0;
+  p_pos_e.zeta    = 1.0; //0.85
+  p_pos_e.p3      = p_pos_e.omega_n * p_pos_e.zeta;
 
   p_pos_rm.omega_n = 0.6;
   p_pos_rm.zeta    = 1.0;  
-  p_pos_rm.p3      = 6.0;
+  p_pos_rm.p3      = p_pos_rm.omega_n * p_pos_rm.zeta;
 
   p_alt_e.omega_n = 3.54;
-  p_alt_e.zeta    = 0.85;
-  p_alt_e.p3      = 6.0;
+  p_alt_e.zeta    = 1.0; //0.85
+  p_alt_e.p3      = p_alt_e.omega_n * p_alt_e.zeta;
 
   p_alt_rm.omega_n = 2.0;
   p_alt_rm.zeta    = 1.0;
@@ -907,14 +907,18 @@ void init_controller(void){
   /*Register a variable from nav_hybrid. SHould be improved when nav hybrid is final.*/
   max_v_nav = nav_max_speed;
   /*Some calculations in case new poles have been specified*/
-  p_att_e.p3  = p_att_e.omega_n  * p_att_e.zeta;
-  p_att_rm.p3 = p_att_rm.omega_n * p_att_rm.zeta;
-  p_alt_rm.p3 = p_alt_rm.omega_n * p_alt_rm.zeta;
-  p_head_e.p3 = p_head_e.omega_n * p_head_e.zeta;
+  p_att_e.p3   = p_att_e.omega_n   * p_att_e.zeta;
+  p_att_rm.p3  = p_att_rm.omega_n  * p_att_rm.zeta;
+  p_pos_e.p3   = p_pos_e.omega_n   * p_pos_e.zeta;
+  p_pos_rm.p3  = p_pos_rm.omega_n  * p_pos_rm.zeta;
+  p_alt_e.p3   = p_alt_e.omega_n   * p_alt_e.zeta;
+  p_alt_rm.p3  = p_alt_rm.omega_n  * p_alt_rm.zeta;
+  p_head_e.p3  = p_head_e.omega_n  * p_head_e.zeta;
+  p_head_rm.p3 = p_head_rm.omega_n * p_head_rm.zeta;
   /*Attitude Loop*/
-  k_att_e.k1[0]  = k_e_1_3_f(p_att_e.p3, p_att_e.p3, p_att_e.p3);
-  k_att_e.k2[0]  = k_e_2_3_f(p_att_e.p3, p_att_e.p3, p_att_e.p3);
-  k_att_e.k3[0]  = k_e_3_3_f(p_att_e.p3, p_att_e.p3, p_att_e.p3);
+  k_att_e.k1[0]  = k_e_1_3_f_v2(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
+  k_att_e.k2[0]  = k_e_2_3_f_v2(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
+  k_att_e.k3[0]  = k_e_3_3_f_v2(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
   k_att_e.k1[1]  = k_att_e.k1[0]; 
   k_att_e.k2[1]  = k_att_e.k2[0]; 
   k_att_e.k3[1]  = k_att_e.k3[0]; 
