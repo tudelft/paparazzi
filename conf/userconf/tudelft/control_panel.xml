@@ -127,6 +127,30 @@
         <arg flag="4252"/>
       </program>
     </session>
+    <session name="Demo">
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Server"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
+      </program>
+      <program name="Joystick">
+        <arg flag="-ac" constant="Bebop_default"/>
+        <arg flag="sm600.xml"/>
+        <arg flag="-d" constant="2"/>
+      </program>
+      <program name="NatNet3">
+        <arg flag="-ac" constant="130"/>
+        <arg flag="24"/>
+        <arg flag="-le" constant="right"/>
+        <arg flag="-xs" constant="right"/>
+        <arg flag="-an" constant="far"/>
+      </program>
+      <program name="Messages">
+        <arg flag="-c" constant="datalink"/>
+      </program>
+    </session>
     <session name="EKF Full">
       <program name="Data Link">
         <arg flag="-d" constant="/dev/ttyUSB0"/>
@@ -463,29 +487,6 @@
         <arg flag="hobbyking.xml"/>
       </program>
     </session>
-    <session name="Demo">
-      <program name="Data Link">
-        <arg flag="-udp"/>
-      </program>
-      <program name="Server"/>
-      <program name="GCS">
-        <arg flag="-speech"/>
-      </program>
-      <program name="Joystick">
-        <arg flag="-ac" constant="Bebop_default"/>
-        <arg flag="sm600.xml"/>
-        <arg flag="-d" constant="2"/>
-      </program>
-      <program name="NatNet3">
-        <arg flag="-ac" constant="130"/>
-        <arg flag="24"/>
-        <arg flag="-le" constant="right"/>
-        <arg flag="-xs" constant="right"/>
-        <arg flag="-an" constant="far"/>
-      </program>
-      <program name="Messages">
-        <arg flag="-c" constant="datalink"/>
-      </program>
-    </session>
+    <session name="DemoTest"/>
   </section>
 </control_panel>

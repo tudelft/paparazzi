@@ -42,8 +42,8 @@
     </sector>
   </sectors>
   <exceptions>
-      <exception cond="datalink_time>=2" deroute="Force Kill Engines"/>
-      <exception cond="radio_control.status == RC_REALLY_LOST" deroute="Force Kill Engines"/>
+      <exception cond="datalink_time>=2 @AND (nav_block @GT IndexOfBlock('Takeoff'))" deroute="Force Kill Engines"/>
+      <exception cond="radio_control.status == RC_REALLY_LOST @AND (nav_block @GT IndexOfBlock('Takeoff'))" deroute="land here"/>
   </exceptions>
   <blocks>
     <block name="Wait GPS">
@@ -83,9 +83,7 @@
       <go wp="TD" />
     </block>
     <block name="flare">
-      <exception cond="NavDetectGround()" deroute="Holding point" />
       <exception cond="!nav_is_in_flight()" deroute="landed" />
-      <call_once fun="NavStartDetectGround()" />
       <stay climb="nav.descend_vspeed" vmode="climb" wp="TD" />
     </block>
     <block name="landed">
