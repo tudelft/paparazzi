@@ -6,15 +6,23 @@
   <settings>
    <dl_settings>
      <dl_settings NAME="oneloop">
-       <dl_setting var="p_att_e.omega_n"  min="0.1"     step="0.001" max="20.0"  shortname="p_att_e_omega_n"/>
-       <dl_setting var="p_att_e.zeta"     min="0.1"     step="0.001" max="1.0"   shortname="p_att_e_zeta"/>
-       <dl_setting var="p_head_e.omega_n" min="0.1"     step="0.001" max="20.0"  shortname="p_head_e_omega_n"/>
-       <dl_setting var="p_head_e.zeta"    min="0.1"     step="0.001" max="1.0"   shortname="p_head_e_zeta"/>
-       <dl_setting var="p_pos_e.omega_n"  min="0.1"     step="0.001" max="20.0"  shortname="p_pos_e_omega_n"/>
-       <dl_setting var="p_pos_e.zeta"     min="0.1"     step="0.001" max="1.0"   shortname="p_pos_e_zeta"/>
-       <dl_setting var="p_alt_e.omega_n"  min="0.1"     step="0.001" max="20.0"  shortname="p_alt_e_omega_n"/>
-       <dl_setting var="p_alt_e.zeta"     min="0.1"     step="0.001" max="1.0"   shortname="p_alt_e_zeta"/>
-       <dl_setting var="psi_des_deg"      min="-180.0"  step="0.1"   max="180.0" shortname="psi_des"/>
+       <dl_setting var="psi_des_deg"        min="-180.0"  step="0.1"   max="180.0" shortname="psi_des"/>     
+       <dl_setting var="p_att_e.omega_n"    min="0.1"     step="0.001" max="20.0"  shortname="p_att_e_omega_n"/>
+       <dl_setting var="p_att_e.zeta"       min="0.1"     step="0.001" max="1.0"   shortname="p_att_e_zeta"/>
+       <dl_setting var="p_att_rm.omega_n"   min="0.1"     step="0.001" max="20.0"  shortname="p_att_rm_omega_n"/>
+       <dl_setting var="p_att_rm.zeta"      min="0.1"     step="0.001" max="1.0"   shortname="p_att_rm_zeta"/>
+       <dl_setting var="p_head_e.omega_n"   min="0.1"     step="0.001" max="20.0"  shortname="p_head_e_omega_n"/>
+       <dl_setting var="p_head_e.zeta"      min="0.1"     step="0.001" max="1.0"   shortname="p_head_e_zeta"/>
+       <dl_setting var="p_head_rm.omega_n"  min="0.1"     step="0.001" max="20.0"  shortname="p_head_rm_omega_n"/>
+       <dl_setting var="p_head_rm.zeta"     min="0.1"     step="0.001" max="1.0"   shortname="p_head_rm_zeta"/>
+       <dl_setting var="p_pos_e.omega_n"    min="0.1"     step="0.001" max="20.0"  shortname="p_pos_e_omega_n"/>
+       <dl_setting var="p_pos_e.zeta"       min="0.1"     step="0.001" max="1.0"   shortname="p_pos_e_zeta"/>
+       <dl_setting var="p_pos_rm.omega_n"   min="0.1"     step="0.001" max="20.0"  shortname="p_pos_rm_omega_n"/>
+       <dl_setting var="p_pos_rm.zeta"      min="0.1"     step="0.001" max="1.0"   shortname="p_pos_rm_zeta"/>       
+       <dl_setting var="p_alt_e.omega_n"    min="0.1"     step="0.001" max="20.0"  shortname="p_alt_e_omega_n"/>
+       <dl_setting var="p_alt_e.zeta"       min="0.1"     step="0.001" max="1.0"   shortname="p_alt_e_zeta"/>
+       <dl_setting var="p_alt_rm.omega_n"   min="0.1"     step="0.001" max="20.0"  shortname="p_alt_rm_omega_n"/>
+       <dl_setting var="p_alt_rm.zeta"      min="0.1"     step="0.001" max="1.0"   shortname="p_alt_rm_zeta"/>       
      </dl_settings>
    </dl_settings>
   </settings>
