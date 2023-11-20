@@ -167,6 +167,10 @@ extern float min_lidar_alt_ground_detect;
 extern float time_tolerance_land;
 extern float az_tolerance_land;
 
+extern float WLS_tilt_constraint_deg; 
+extern int Controller_id; 
+extern float W_act_motor; 
+
 /* External used functions */
 extern void overactuated_mixing_init(void);
 extern void overactuated_mixing_run(void);

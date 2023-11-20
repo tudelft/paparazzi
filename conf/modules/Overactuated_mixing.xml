@@ -7,6 +7,16 @@
 
   <settings>
     <dl_settings>
+      <dl_settings NAME="Athens Demo">
+        <dl_setting var="WLS_tilt_constraint_deg"  min="0" step="1" max="20" shortname="tilt_constr_deg" />
+        <dl_setting var="Controller_id"  min="1" step="1" max="3" shortname="controller_id" />
+        <dl_setting var="W_act_motor"  min="1" step="1" max="10" shortname="W_act_motor" />
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <settings>
+    <dl_settings>
       <dl_settings NAME="FBW Control">
         <dl_setting var="K_p_rad_s_dshot"  min="0" step=".1" max="20" shortname="K_p_rad_s_dshot" />
         <dl_setting var="K_i_rad_s_dshot"  min="0" step=".001" max="1" shortname="K_i_rad_s_dshot" />

@@ -74,6 +74,10 @@
 float overestimation_coeff = 1.4;
 
 
+float WLS_tilt_constraint_deg = 0; 
+int Controller_id = 1; 
+float W_act_motor = 1; 
+
 #define FBW_ACTUATORS
 #define MAX_DSHOT_VALUE 1999.0
 #define RPM_CONTROL
@@ -1083,7 +1087,7 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[16] = (OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE * 180/M_PI);
     extra_data_out_local[17] = (OVERACTUATED_MIXING_MAX_THETA_INDI * 180/M_PI);
     extra_data_out_local[18] = (OVERACTUATED_MIXING_MIN_THETA_INDI * 180/M_PI);
-    extra_data_out_local[19] = (OVERACTUATED_MIXING_MAX_AOA_INDI * 180/M_PI);
+    extra_data_out_local[19] = (WLS_tilt_constraint_deg);
     extra_data_out_local[20] = (OVERACTUATED_MIXING_MIN_AOA_INDI * 180/M_PI);
     extra_data_out_local[21] = (OVERACTUATED_MIXING_MAX_PHI_INDI * 180/M_PI);
     extra_data_out_local[22] = VEHICLE_CM_ZERO;
@@ -1095,7 +1099,7 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[28] = VEHICLE_WING_CHORD;
     extra_data_out_local[29] = 1.225; //rho value at MSL
 
-    extra_data_out_local[30] = OVERACTUATED_MIXING_W_ACT_MOTOR_CONST;
+    extra_data_out_local[30] = W_act_motor;
     extra_data_out_local[31] = OVERACTUATED_MIXING_W_ACT_MOTOR_SPEED;
     extra_data_out_local[32] = OVERACTUATED_MIXING_W_ACT_EL_CONST;
     extra_data_out_local[33] = OVERACTUATED_MIXING_W_ACT_EL_SPEED;
@@ -1135,6 +1139,9 @@ void send_values_to_raspberry_pi(void){
     //Approach tilting angle constraint: 
     extra_data_out_local[58] = OVERACTUATED_MIXING_K_ALT_TILT_CONSTRAINT;     
     extra_data_out_local[59] = OVERACTUATED_MIXING_MIN_ALT_TILT_CONSTRAINT;   
+
+    extra_data_out_local[60] = 10000; //gamma quadratic wls
+    extra_data_out_local[60] = Controller_id;
 }
 
 /**
@@ -1214,7 +1221,11 @@ void assign_variables(void){
         airspeed = 10;
         beta_deg = 0;
     #else
+        
         airspeed = fmax(0.0,ms45xx.airspeed);
+        #ifdef DISCARD_AIRSPEED_NONLINEAR_CA
+            airspeed = 0; 
+        #endif
         beta_deg = - aoa_pwm.angle * 180/M_PI;
     #endif
     
