@@ -139,11 +139,11 @@
         <c1> 10.1 </c1>
         <output> fcs/left_motor_lag</output>
       </lag_filter>
-      <!-- <lag_filter name="pusher_lag">
+      <lag_filter name="pusher_lag">
         <input> fcs/pusher </input>
         <c1> 24.07 </c1>
         <output> fcs/pusher_lag</output>
-      </lag_filter> -->
+      </lag_filter>
     </channel>
   </flight_control>
 
@@ -159,10 +159,10 @@
     <property>fcs/left_motor_lag</property>
     <!-- <property>fcs/rudder</property>
     <property>fcs/elevator</property>
-    <property>fcs/aileron</property>
+    <property>fcs/aileron</property>-->
     <property>fcs/pusher</property>
     <property>fcs/pusher_lag</property>
-    <property>fcs/flap</property>
+     <!-- <property>fcs/flap</property>
     <property>fcs/skew</property> -->
 
     <!-- First the lift forces produced by each propeller -->
@@ -243,7 +243,7 @@
       </direction>
     </force>
 
-    <!-- <force name="pusher_motor" frame="BODY" unit="N">
+    <force name="pusher_motor" frame="BODY" unit="N">
       <function>
         <product>
           <property>fcs/pusher_lag</property>
@@ -260,7 +260,7 @@
         <y>0</y>
         <z>0</z>
       </direction>
-    </force> -->
+    </force>
 
     <!-- Now the moment couples -->
     <force name="front_motor_couple1" frame="BODY" unit="N">
