@@ -252,8 +252,8 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 
 
 /* Declaration of Navigation Variables*/
-#ifdef ONELOOP_MAX_ACC
-float max_a_nav = ONELOOP_MAX_ACC;
+#ifdef NAV_HYBRID_MAX_DECELERATION
+float max_a_nav = NAV_HYBRID_MAX_DECELERATION;
 #else
 float max_a_nav = 4.0;   // (35[N]/6.5[Kg]) = 5.38[m/s2]  [0.8 SF]
 #endif
@@ -264,8 +264,8 @@ float max_j_nav = ONELOOP_MAX_JERK;
 float max_j_nav = 500.0; // Pusher Test shows erros above 2[Hz] ramp commands [0.6 SF]
 #endif
 
-#ifdef ONELOOP_MAX_AIRSPEED
-float max_v_nav = ONELOOP_MAX_AIRSPEED; // Consider implications of difference Ground speed and airspeed
+#ifdef NAV_HYBRID_MAX_AIRSPEED
+float max_v_nav = NAV_HYBRID_MAX_AIRSPEED; // Consider implications of difference Ground speed and airspeed
 #else
 float max_v_nav = 5.0;
 #endif

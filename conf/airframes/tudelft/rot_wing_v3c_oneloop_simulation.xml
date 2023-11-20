@@ -103,9 +103,10 @@
 
         <module name="guidance" type="oneloop"/>
         <module name="nav" type="hybrid">
-            <define name="NAV_HYBRID_MAX_AIRSPEED" value="5.0f"/>
-            <define name="NAV_HYBRID_SPEED_MARGIN" value="0.0f"/>
-            <define name="GUIDANCE_H_USE_REF" value="FALSE"/>
+            <define name="NAV_HYBRID_MAX_AIRSPEED"      value="5.0f"/>
+            <define name="NAV_HYBRID_SPEED_MARGIN"      value="0.0f"/>
+            <define name="NAV_HYBRID_MAX_DECELERATION"  value="1.0f"/>
+            <define name="GUIDANCE_H_USE_REF"           value="FALSE"/>
         </module>
 
         <module name="oneloop" type="andi">
@@ -259,7 +260,6 @@
         <define name  = "WV"                        value = "{1.0f, 1.0f, 1.0f, 1000.0f, 1000.0f, 100.0f}"/>
         <define name  = "WU"                        value = "{3.0f, 3.0f, 3.0f, 3.0f, 1.0f, 2.0f, 2.0f}"/>
         <define name  = "U_PREF"                    value = "{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}"/>
-        <define name  = "MAX_AIRSPEED"              value = "5.0f"/>
     </section>
 
     <section NAME="AUTOPILOT">
