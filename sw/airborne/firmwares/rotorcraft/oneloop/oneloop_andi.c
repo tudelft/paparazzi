@@ -379,6 +379,7 @@ float nu[ANDI_OUTPUTS];
 static float act_dynamics_d[ANDI_NUM_ACT_TOT];
 float actuator_state_1l[ANDI_NUM_ACT];
 static float a_thrust = 0.0;
+static float g2_ff= 0.0;
 
 /*Attitude related variables*/
 struct Int32Eulers stab_att_sp_euler_1l;// here for now to correct warning, can be better eploited in the future 
@@ -1265,7 +1266,13 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   for (i = 0; i < ANDI_OUTPUTS; i++) {
     bwls_1l[i] = g1g2_1l[i];
   }
-
+  // Calculated feedforward signal for yaW CONTROL
+  g2_ff = 0.0;
+  for (i = 0; i < ANDI_NUM_ACT; i++) {
+    g2_ff += g2_1l[i] * act_dynamics[i] * andi_du[i];
+  }
+  //G2 is scaled by INDI_G_SCALING to make it readable
+  g2_ff = g2_ff / INDI_G_SCALING;
   // Run the Reference Model (RM)
   oneloop_andi_RM(half_loop, PSA_des, rm_order_h, rm_order_v);
   // Generate pseudo control for stabilization vector (nu) based on error controller
@@ -1275,7 +1282,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     nu[2] = a_thrust;
     nu[3] = ec_3rd(oneloop_andi.sta_ref.att[0],   oneloop_andi.sta_ref.att_d[0],  oneloop_andi.sta_ref.att_2d[0], oneloop_andi.sta_ref.att_3d[0],  oneloop_andi.sta_state.att[0],    oneloop_andi.sta_state.att_d[0], oneloop_andi.sta_state.att_2d[0], k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
     nu[4] = ec_3rd(oneloop_andi.sta_ref.att[1],   oneloop_andi.sta_ref.att_d[1],  oneloop_andi.sta_ref.att_2d[1], oneloop_andi.sta_ref.att_3d[1],  oneloop_andi.sta_state.att[1],    oneloop_andi.sta_state.att_d[1], oneloop_andi.sta_state.att_2d[1], k_att_e.k1[1], k_att_e.k2[1], k_att_e.k3[1]);
-    nu[5] = ec_2rd(oneloop_andi.sta_ref.att_d[2], oneloop_andi.sta_ref.att_2d[2], oneloop_andi.sta_ref.att_3d[2], oneloop_andi.sta_state.att_d[2], oneloop_andi.sta_state.att_2d[2], k_head_e.k2, k_head_e.k3);
+    nu[5] = ec_2rd(oneloop_andi.sta_ref.att_d[2], oneloop_andi.sta_ref.att_2d[2], oneloop_andi.sta_ref.att_3d[2], oneloop_andi.sta_state.att_d[2], oneloop_andi.sta_state.att_2d[2], k_head_e.k2, k_head_e.k3) + g2_ff;
   }else{
     float y_4d_att[3];
     ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3);
@@ -1284,7 +1291,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     nu[2] = ec_3rd(oneloop_andi.gui_ref.pos[2], oneloop_andi.gui_ref.vel[2], oneloop_andi.gui_ref.acc[2], oneloop_andi.gui_ref.jer[2], oneloop_andi.gui_state.pos[2], oneloop_andi.gui_state.vel[2], oneloop_andi.gui_state.acc[2], k_pos_e.k1[2], k_pos_e.k2[2], k_pos_e.k3[2]); 
     nu[3] = y_4d_att[0];  
     nu[4] = y_4d_att[1]; 
-    nu[5] = y_4d_att[2]; 
+    nu[5] = y_4d_att[2] + g2_ff; 
   }
 
   // Calculate the min and max increments
