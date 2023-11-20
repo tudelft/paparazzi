@@ -5,7 +5,7 @@
  * File: rtwtypes.h
  *
  * MATLAB Coder version            : 5.4
- * C/C++ source code generated on  : 16-Nov-2023 01:21:31
+ * C/C++ source code generated on  : 20-Nov-2023 22:27:20
  */
 
 #ifndef RTWTYPES_H

@@ -2,14 +2,14 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains.c
+ * File: Global_controller_fcn_earth_rf_journal.c
  *
  * MATLAB Coder version            : 5.4
- * C/C++ source code generated on  : 16-Nov-2023 01:21:31
+ * C/C++ source code generated on  : 20-Nov-2023 22:27:20
  */
 
 /* Include Files */
-#include "Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains.h"
+#include "Global_controller_fcn_earth_rf_journal.h"
 #include "rt_nonfinite.h"
 #include "coder_posix_time.h"
 #include "rt_nonfinite.h"
@@ -352,8 +352,7 @@ static double freq;
 static bool freq_not_empty;
 static coderTimespec savedTime;
 static bool savedTime_not_empty;
-static bool isInitialized_Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains
-  = false;
+static bool isInitialized_Global_controller_fcn_earth_rf_journal = false;
 
 /* Function Declarations */
 static bool BFGSUpdate(int nvar, double Bk[225], const double sk[16], double yk
@@ -377,16 +376,66 @@ static void b_test_exit(c_struct_T *Flags, e_struct_T *memspace, b_struct_T
   *MeritFunction, const k_struct_T *WorkingSet, i_struct_T *TrialState,
   f_struct_T *QRManager, const double lb[15], const double ub[15]);
 static void b_timeKeeper(double *outTime_tv_sec, double *outTime_tv_nsec);
+static void b_xaxpy(int n, double a, const double x[72], int ix0, double y[12],
+                    int iy0);
+static double b_xdotc(int n, const double x[36], int ix0, const double y[36],
+                      int iy0);
 static void b_xgemm(int m, int n, int k, const double A[961], int ia0, const
                     double B[496], double C[961]);
 static double b_xnrm2(int n, const double x[16]);
+static void b_xrot(double x[72], int ix0, int iy0, double c, double s);
+static void b_xswap(double x[72], int ix0, int iy0);
+static void c_Nonlinear_controller_fcn_cont(double K_p_T, double K_p_M, double m,
+  double I_xx, double I_yy, double I_zz, double l_1, double l_2, double l_3,
+  double l_4, double l_z, double Phi, double Theta, double Omega_1, double
+  Omega_2, double Omega_3, double Omega_4, double b_1, double b_2, double b_3,
+  double b_4, double g_1, double g_2, double g_3, double g_4, double
+  W_act_motor_const, double W_act_motor_speed, double W_act_tilt_el_const,
+  double W_act_tilt_el_speed, double W_act_tilt_az_const, double
+  W_act_tilt_az_speed, double W_act_theta_const, double W_act_theta_speed,
+  double W_act_phi_const, double W_act_phi_speed, double W_dv_1, double W_dv_2,
+  double W_dv_3, double W_dv_4, double W_dv_5, double W_dv_6, double max_omega,
+  double min_omega, double max_b, double min_b, double max_g, double min_g,
+  double max_theta, double min_theta, double max_phi, const double dv[6], double
+  p, double q, double r, double Cm_zero, double Cl_alpha, double Cd_zero, double
+  K_Cd, double Cm_alpha, double rho, double V, double S, double wing_chord,
+  double flight_path_angle, double max_alpha, double min_alpha, double Beta,
+  double gamma_quadratic_du, double desired_motor_value, double desired_el_value,
+  double desired_az_value, double desired_theta_value, double desired_phi_value,
+  double verbose, double u_out[15], double residuals[6], double *elapsed_time,
+  double *N_iterations, double *N_evaluation, double *exitflag);
+static void c_WLS_controller_fcn_earth_rf_j(double K_p_T, double K_p_M, double m,
+  double I_xx, double I_yy, double I_zz, double l_1, double l_2, double l_3,
+  double l_4, double l_z, double Phi, double Theta, double Psi, double Omega_1,
+  double Omega_2, double Omega_3, double Omega_4, double b_1, double b_2, double
+  b_3, double b_4, double g_1, double g_2, double g_3, double g_4, double
+  W_act_motor_const, double W_act_motor_speed, double W_act_tilt_el_const,
+  double W_act_tilt_el_speed, double W_act_tilt_az_const, double
+  W_act_tilt_az_speed, double W_dv_1, double W_dv_2, double W_dv_3, double
+  W_dv_4, double W_dv_5, double W_dv_6, double max_omega, double min_omega,
+  double max_b, double min_b, double max_g, double min_g, double dv[6], double p,
+  double q, double r, double Cm_zero, double Cl_alpha, double Cd_zero, double
+  K_Cd, double Cm_alpha, double rho, double V, double S, double wing_chord,
+  double flight_path_angle, double max_alpha, double Beta, double gammasq,
+  double desired_motor_value, double desired_el_value, double desired_az_value,
+  double desired_theta_value, double desired_phi_value, double u_out[14], double
+  residuals[6], double *elapsed_time, double *N_iterations, double *N_evaluation,
+  double *exitflag);
 static void c_compute_acc_nonlinear_control(const double u_in[15], double p,
   double q, double r, double K_p_T, double K_p_M, double m, double I_xx, double
   I_yy, double I_zz, double l_1, double l_2, double l_3, double l_4, double l_z,
   double Cl_alpha, double Cd_zero, double K_Cd, double Cm_alpha, double Cm_zero,
   double CL_aileron, double rho, double V, double S, double wing_chord, double
   flight_path_angle, double Beta, double computed_acc[6]);
-static double c_norm(const double x[6]);
+static void c_compute_acc_nonlinear_earth_r(const double u_in[12], double Theta,
+  double Phi, double Psi, double p, double q, double r, double K_p_T, double
+  K_p_M, double m, double I_xx, double I_yy, double I_zz, double l_1, double l_2,
+  double l_3, double l_4, double l_z, double Cl_alpha, double Cd_zero, double
+  K_Cd, double Cm_alpha, double Cm_zero, double rho, double V, double S, double
+  wing_chord, double flight_path_angle, double Beta, double computed_acc[6]);
+static void c_xaxpy(int n, double a, const double x[12], int ix0, double y[72],
+                    int iy0);
+static double c_xnrm2(int n, const double x_data[], int ix0);
 static double computeComplError(const double xCurrent[15], const int finiteLB[16],
   int mLB, const double lb[15], const int finiteUB[16], int mUB, const double
   ub[15], const double lambda[31], int iL0);
@@ -427,12 +476,15 @@ static void compute_deltax(const double H[225], i_struct_T *solution, e_struct_T
   *memspace, const f_struct_T *qrmanager, g_struct_T *cholmanager, const
   struct_T *objective, bool alwaysPositiveDef);
 static void countsort(int x[31], int xLen, int workspace[31], int xMin, int xMax);
+static void d_xaxpy(int n, double a, int ix0, double y[36], int iy0);
+static double d_xnrm2(int n, const double x[72], int ix0);
 static void deleteColMoveEnd(f_struct_T *obj, int idx);
-static int div_nde_s32_floor(int numerator);
+static int div_nde_s32_floor(int numerator, int denominator);
 static void driver(const double H[225], const double f[16], i_struct_T *solution,
                    e_struct_T *memspace, k_struct_T *workingset, f_struct_T
                    *qrmanager, g_struct_T *cholmanager, struct_T *objective,
                    h_struct_T *options, int runTimeOptions_MaxIterations);
+static double e_xnrm2(int n, const double x[6], int ix0);
 static void evalObjAndConstr(const d_struct_T *obj_objfun_workspace, const
   double x[15], double *fval, int *status);
 static void evalObjAndConstrAndDerivatives(const d_struct_T
@@ -467,9 +519,9 @@ static void linearForm_(bool obj_hasLinear, int obj_nvar, double workspace[496],
   const double H[225], const double f[16], const double x[16]);
 static double maxConstraintViolation(const k_struct_T *obj, const double x[496],
   int ix0);
-static double maximum(const double x[2]);
-static double mean(const double x[4]);
-static double minimum(const double x[2]);
+static void minimum(const double x[12], double *ex, int *idx);
+static void mldivide(const double A_data[], const int A_size[2], const double B
+                     [18], double Y_data[], int *Y_size);
 static void qrf(double A[961], int m, int n, int nfxd, double tau[31]);
 static double rt_hypotd_snf(double u0, double u1);
 static void setProblemType(k_struct_T *obj, int PROBLEM_TYPE);
@@ -482,6 +534,7 @@ static bool step(int *STEP_TYPE, double Hessian[225], const double lb[15], const
                  *MeritFunction, e_struct_T *memspace, k_struct_T *WorkingSet,
                  f_struct_T *QRManager, g_struct_T *CholManager, struct_T
                  *QPObjective, h_struct_T *qpoptions);
+static void svd(const double A[72], double U[72], double s[6], double V[36]);
 static void test_exit(b_struct_T *MeritFunction, const k_struct_T *WorkingSet,
                       i_struct_T *TrialState, const double lb[15], const double
                       ub[15], bool *Flags_gradOK, bool *Flags_fevalOK, bool
@@ -490,6 +543,9 @@ static void test_exit(b_struct_T *MeritFunction, const k_struct_T *WorkingSet,
 static void tic(void);
 static void timeKeeper(double newTime_tv_sec, double newTime_tv_nsec);
 static double toc(void);
+static void xaxpy(int n, double a, int ix0, double y[72], int iy0);
+static double xdotc(int n, const double x[72], int ix0, const double y[72], int
+                    iy0);
 static void xgemm(int m, int n, int k, const double A[225], int lda, const
                   double B[961], int ib0, double C[496]);
 static void xgemv(int m, int n, const double A[961], const double x[16], double
@@ -497,7 +553,9 @@ static void xgemv(int m, int n, const double A[961], const double x[16], double
 static void xgeqp3(double A[961], int m, int n, int jpvt[31], double tau[31]);
 static double xnrm2(int n, const double x[961], int ix0);
 static int xpotrf(int n, double A[961]);
+static void xrot(double x[36], int ix0, int iy0, double c, double s);
 static void xrotg(double *a, double *b, double *c, double *s);
+static void xswap(double x[36], int ix0, int iy0);
 static void xzlarf(int m, int n, int iv0, double tau, double C[961], int ic0,
                    double work[31]);
 static double xzlarfg(int n, double *alpha1, double x[961], int ix0);
@@ -1215,7 +1273,7 @@ static void b_driver(const double lb[15], const double ub[15], i_struct_T
         int exitg1;
         do {
           exitg1 = 0;
-          if (TrialState->FunctionEvaluations < 2000 && toc() <= 5e-3) {
+          if (TrialState->FunctionEvaluations < 200) {
             if (evalWellDefined && (phi_alpha <= MeritFunction->phi + alpha *
                                     0.0001 * MeritFunction->phiPrimePlus)) {
               exitg1 = 1;
@@ -1719,10 +1777,10 @@ static void b_test_exit(c_struct_T *Flags, e_struct_T *memspace, b_struct_T
         }
 
         if (guard1) {
-          if (TrialState->sqpIterations >= 400 || toc() >= 5e-3) {
+          if (TrialState->sqpIterations >= 40) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
-          } else if (TrialState->FunctionEvaluations >= 2000) {
+          } else if (TrialState->FunctionEvaluations >= 200) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
           }
@@ -1741,6 +1799,51 @@ static void b_timeKeeper(double *outTime_tv_sec, double *outTime_tv_nsec)
 {
   *outTime_tv_sec = savedTime.tv_sec;
   *outTime_tv_nsec = savedTime.tv_nsec;
+}
+
+/*
+ * Arguments    : int n
+ *                double a
+ *                const double x[72]
+ *                int ix0
+ *                double y[12]
+ *                int iy0
+ * Return Type  : void
+ */
+static void b_xaxpy(int n, double a, const double x[72], int ix0, double y[12],
+                    int iy0)
+{
+  int k;
+  if (!(a == 0.0)) {
+    int i;
+    i = n - 1;
+    for (k = 0; k <= i; k++) {
+      int i1;
+      i1 = (iy0 + k) - 1;
+      y[i1] += a * x[(ix0 + k) - 1];
+    }
+  }
+}
+
+/*
+ * Arguments    : int n
+ *                const double x[36]
+ *                int ix0
+ *                const double y[36]
+ *                int iy0
+ * Return Type  : double
+ */
+static double b_xdotc(int n, const double x[36], int ix0, const double y[36],
+                      int iy0)
+{
+  double d;
+  int k;
+  d = 0.0;
+  for (k = 0; k < n; k++) {
+    d += x[(ix0 + k) - 1] * y[(iy0 + k) - 1];
+  }
+
+  return d;
 }
 
 /*
@@ -1831,6 +1934,1692 @@ static double b_xnrm2(int n, const double x[16])
   }
 
   return y;
+}
+
+/*
+ * Arguments    : double x[72]
+ *                int ix0
+ *                int iy0
+ *                double c
+ *                double s
+ * Return Type  : void
+ */
+static void b_xrot(double x[72], int ix0, int iy0, double c, double s)
+{
+  int k;
+  for (k = 0; k < 12; k++) {
+    double b_temp_tmp;
+    double d_temp_tmp;
+    int c_temp_tmp;
+    int temp_tmp;
+    temp_tmp = (iy0 + k) - 1;
+    b_temp_tmp = x[temp_tmp];
+    c_temp_tmp = (ix0 + k) - 1;
+    d_temp_tmp = x[c_temp_tmp];
+    x[temp_tmp] = c * b_temp_tmp - s * d_temp_tmp;
+    x[c_temp_tmp] = c * d_temp_tmp + s * b_temp_tmp;
+  }
+}
+
+/*
+ * Arguments    : double x[72]
+ *                int ix0
+ *                int iy0
+ * Return Type  : void
+ */
+static void b_xswap(double x[72], int ix0, int iy0)
+{
+  int k;
+  for (k = 0; k < 12; k++) {
+    double temp;
+    int i;
+    int temp_tmp;
+    temp_tmp = (ix0 + k) - 1;
+    temp = x[temp_tmp];
+    i = (iy0 + k) - 1;
+    x[temp_tmp] = x[i];
+    x[i] = temp;
+  }
+}
+
+/*
+ * Testing parameters:
+ *  (0.5e-5, 2e-7, 2.4, 0.15, 0.15, 0.2, 0.25, 0.25, 0.35, 0.35, 0, ...
+ *  0, 0, 100, 100, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
+ *  1, 0, 0, 0, ...
+ *  0, 1.5, 100, -15, 100, -15, 0.5, 0, ...
+ *  0.01, 0.01, 0.05, 0.1, 0.1, 0.1, ...
+ *  1000, 100, 25, -130, 45, -45, 80, 15, 40, 25, -25, [0 0 -5 0 0 0]', 0, 0, 0, 0.1, 3, 0.3, 0.15,...
+ *  -0.1, 0.1, 1.15, 0, 0.3, 0.3, 0, 15, -5, 0, 1e-5, ...
+ *  100, 0, 0, 0, 0, 0, 1, 7)
+ *  or
+ *  (0.5e-5, 2e-7, 2.4, 0.15, 0.15, 0.2, 0.25, 0.25, 0.35, 0.35, 0, 0, 0, 100, 100, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1.5, 100, -15, 100, -15, 0.5, 0, 0.01, 0.01, 0.05, 0.1, 0.1, 0.1, 1000, 100, 25, 130, 45, -45, 80, 15, 40, 25, -25, [0 0 -5 0 0 0]', 0, 0, 0, 0.1, 3, 0.3, 0.15, -0.1, 0.1, 1.15, 0, 0.3, 0.3, 0, 15, -5, 0, 1e-5, 100, 0, 0, 0, 0, 0, 1, 7)
+ *
+ * Arguments    : double K_p_T
+ *                double K_p_M
+ *                double m
+ *                double I_xx
+ *                double I_yy
+ *                double I_zz
+ *                double l_1
+ *                double l_2
+ *                double l_3
+ *                double l_4
+ *                double l_z
+ *                double Phi
+ *                double Theta
+ *                double Omega_1
+ *                double Omega_2
+ *                double Omega_3
+ *                double Omega_4
+ *                double b_1
+ *                double b_2
+ *                double b_3
+ *                double b_4
+ *                double g_1
+ *                double g_2
+ *                double g_3
+ *                double g_4
+ *                double W_act_motor_const
+ *                double W_act_motor_speed
+ *                double W_act_tilt_el_const
+ *                double W_act_tilt_el_speed
+ *                double W_act_tilt_az_const
+ *                double W_act_tilt_az_speed
+ *                double W_act_theta_const
+ *                double W_act_theta_speed
+ *                double W_act_phi_const
+ *                double W_act_phi_speed
+ *                double W_dv_1
+ *                double W_dv_2
+ *                double W_dv_3
+ *                double W_dv_4
+ *                double W_dv_5
+ *                double W_dv_6
+ *                double max_omega
+ *                double min_omega
+ *                double max_b
+ *                double min_b
+ *                double max_g
+ *                double min_g
+ *                double max_theta
+ *                double min_theta
+ *                double max_phi
+ *                const double dv[6]
+ *                double p
+ *                double q
+ *                double r
+ *                double Cm_zero
+ *                double Cl_alpha
+ *                double Cd_zero
+ *                double K_Cd
+ *                double Cm_alpha
+ *                double rho
+ *                double V
+ *                double S
+ *                double wing_chord
+ *                double flight_path_angle
+ *                double max_alpha
+ *                double min_alpha
+ *                double Beta
+ *                double gamma_quadratic_du
+ *                double desired_motor_value
+ *                double desired_el_value
+ *                double desired_az_value
+ *                double desired_theta_value
+ *                double desired_phi_value
+ *                double verbose
+ *                double u_out[15]
+ *                double residuals[6]
+ *                double *elapsed_time
+ *                double *N_iterations
+ *                double *N_evaluation
+ *                double *exitflag
+ * Return Type  : void
+ */
+static void c_Nonlinear_controller_fcn_cont(double K_p_T, double K_p_M, double m,
+  double I_xx, double I_yy, double I_zz, double l_1, double l_2, double l_3,
+  double l_4, double l_z, double Phi, double Theta, double Omega_1, double
+  Omega_2, double Omega_3, double Omega_4, double b_1, double b_2, double b_3,
+  double b_4, double g_1, double g_2, double g_3, double g_4, double
+  W_act_motor_const, double W_act_motor_speed, double W_act_tilt_el_const,
+  double W_act_tilt_el_speed, double W_act_tilt_az_const, double
+  W_act_tilt_az_speed, double W_act_theta_const, double W_act_theta_speed,
+  double W_act_phi_const, double W_act_phi_speed, double W_dv_1, double W_dv_2,
+  double W_dv_3, double W_dv_4, double W_dv_5, double W_dv_6, double max_omega,
+  double min_omega, double max_b, double min_b, double max_g, double min_g,
+  double max_theta, double min_theta, double max_phi, const double dv[6], double
+  p, double q, double r, double Cm_zero, double Cl_alpha, double Cd_zero, double
+  K_Cd, double Cm_alpha, double rho, double V, double S, double wing_chord,
+  double flight_path_angle, double max_alpha, double min_alpha, double Beta,
+  double gamma_quadratic_du, double desired_motor_value, double desired_el_value,
+  double desired_az_value, double desired_theta_value, double desired_phi_value,
+  double verbose, double u_out[15], double residuals[6], double *elapsed_time,
+  double *N_iterations, double *N_evaluation, double *exitflag)
+{
+  b_captured_var dv_global;
+  captured_var CL_aileron;
+  captured_var W_act_ailerons;
+  captured_var W_act_motor;
+  captured_var W_act_phi;
+  captured_var W_act_theta;
+  captured_var W_act_tilt_az;
+  captured_var W_act_tilt_el;
+  captured_var b_Beta;
+  captured_var b_Cd_zero;
+  captured_var b_Cl_alpha;
+  captured_var b_Cm_alpha;
+  captured_var b_Cm_zero;
+  captured_var b_I_xx;
+  captured_var b_I_yy;
+  captured_var b_I_zz;
+  captured_var b_K_Cd;
+  captured_var b_K_p_M;
+  captured_var b_K_p_T;
+  captured_var b_S;
+  captured_var b_V;
+  captured_var b_W_dv_1;
+  captured_var b_W_dv_2;
+  captured_var b_W_dv_3;
+  captured_var b_W_dv_4;
+  captured_var b_W_dv_5;
+  captured_var b_W_dv_6;
+  captured_var b_desired_az_value;
+  captured_var b_desired_el_value;
+  captured_var b_desired_motor_value;
+  captured_var b_desired_phi_value;
+  captured_var b_desired_theta_value;
+  captured_var b_flight_path_angle;
+  captured_var b_gamma_quadratic_du;
+  captured_var b_l_1;
+  captured_var b_l_2;
+  captured_var b_l_3;
+  captured_var b_l_4;
+  captured_var b_l_z;
+  captured_var b_m;
+  captured_var b_p;
+  captured_var b_q;
+  captured_var b_r;
+  captured_var b_rho;
+  captured_var b_wing_chord;
+  captured_var desired_ailerons_value;
+  captured_var gain_ailerons;
+  captured_var gain_az;
+  captured_var gain_el;
+  captured_var gain_motor;
+  captured_var gain_phi;
+  captured_var gain_theta;
+  d_struct_T expl_temp;
+  double actual_u[15];
+  double u_max[15];
+  double u_max_scaled[15];
+  double u_min[15];
+  double c_expl_temp;
+  double max_theta_protection;
+  double min_theta_protection;
+  double t;
+  double y;
+  int i;
+  b_K_p_T.contents = K_p_T;
+  b_K_p_M.contents = K_p_M;
+  b_m.contents = m;
+  b_I_xx.contents = I_xx;
+  b_I_yy.contents = I_yy;
+  b_I_zz.contents = I_zz;
+  b_l_1.contents = l_1;
+  b_l_2.contents = l_2;
+  b_l_3.contents = l_3;
+  b_l_4.contents = l_4;
+  b_l_z.contents = l_z;
+  b_W_dv_1.contents = W_dv_1;
+  b_W_dv_2.contents = W_dv_2;
+  b_W_dv_3.contents = W_dv_3;
+  b_W_dv_4.contents = W_dv_4;
+  b_W_dv_5.contents = W_dv_5;
+  b_W_dv_6.contents = W_dv_6;
+  b_p.contents = p;
+  b_q.contents = q;
+  b_r.contents = r;
+  b_Cm_zero.contents = Cm_zero;
+  b_Cl_alpha.contents = Cl_alpha;
+  b_Cd_zero.contents = Cd_zero;
+  b_K_Cd.contents = K_Cd;
+  b_Cm_alpha.contents = Cm_alpha;
+  CL_aileron.contents = 0.1;
+  b_rho.contents = rho;
+  b_V.contents = V;
+  b_S.contents = S;
+  b_wing_chord.contents = wing_chord;
+  b_flight_path_angle.contents = flight_path_angle;
+  b_Beta.contents = Beta;
+  b_gamma_quadratic_du.contents = gamma_quadratic_du;
+  b_desired_motor_value.contents = desired_motor_value;
+  b_desired_el_value.contents = desired_el_value;
+  b_desired_az_value.contents = desired_az_value;
+  b_desired_theta_value.contents = desired_theta_value;
+  b_desired_phi_value.contents = desired_phi_value;
+  desired_ailerons_value.contents = 0.0;
+
+  /*  Create variables necessary for the optimization */
+  if (b_V.contents > 20.0) {
+    y = (max_alpha + b_flight_path_angle.contents) * 180.0 / 3.1415926535897931;
+    max_theta_protection = fmin(max_theta, y);
+    y = (min_alpha + b_flight_path_angle.contents) * 180.0 / 3.1415926535897931;
+    min_theta_protection = fmax(min_theta, y);
+  } else {
+    max_theta_protection = max_theta;
+    min_theta_protection = min_theta;
+  }
+
+  if (b_desired_motor_value.contents < min_omega) {
+    b_desired_motor_value.contents = (((Omega_1 + Omega_2) + Omega_3) + Omega_4)
+      / 4.0;
+  }
+
+  gain_motor.contents = max_omega / 2.0;
+  gain_el.contents = (max_b - min_b) * 3.1415926535897931 / 180.0 / 2.0;
+  gain_az.contents = (max_g - min_g) * 3.1415926535897931 / 180.0 / 2.0;
+  gain_theta.contents = (max_theta_protection - min_theta_protection) *
+    3.1415926535897931 / 180.0 / 2.0;
+  gain_phi.contents = max_phi * 3.1415926535897931 / 180.0;
+  gain_ailerons.contents = 0.017453292519943295;
+  actual_u[0] = Omega_1;
+  actual_u[1] = Omega_2;
+  actual_u[2] = Omega_3;
+  actual_u[3] = Omega_4;
+  actual_u[4] = b_1;
+  actual_u[5] = b_2;
+  actual_u[6] = b_3;
+  actual_u[7] = b_4;
+  actual_u[8] = g_1;
+  actual_u[9] = g_2;
+  actual_u[10] = g_3;
+  actual_u[11] = g_4;
+  actual_u[12] = Theta;
+  actual_u[13] = Phi;
+  actual_u[14] = 0.0;
+
+  /* Build the max and minimum actuator array:  */
+  u_max[0] = max_omega;
+  u_max[1] = max_omega;
+  u_max[2] = max_omega;
+  u_max[3] = max_omega;
+  u_max[4] = max_b;
+  u_max[5] = max_b;
+  u_max[6] = max_b;
+  u_max[7] = max_b;
+  u_max[8] = max_g;
+  u_max[9] = max_g;
+  u_max[10] = max_g;
+  u_max[11] = max_g;
+  u_max[12] = max_theta_protection;
+  u_max[13] = max_phi;
+  u_max[14] = 1.0;
+  u_min[0] = min_omega;
+  u_min[1] = min_omega;
+  u_min[2] = min_omega;
+  u_min[3] = min_omega;
+  u_min[4] = min_b;
+  u_min[5] = min_b;
+  u_min[6] = min_b;
+  u_min[7] = min_b;
+  u_min[8] = min_g;
+  u_min[9] = min_g;
+  u_min[10] = min_g;
+  u_min[11] = min_g;
+  u_min[12] = min_theta_protection;
+  u_min[13] = -max_phi;
+  u_min[14] = -1.0;
+  for (i = 0; i < 11; i++) {
+    u_max[i + 4] = u_max[i + 4] * 3.1415926535897931 / 180.0;
+    u_min[i + 4] = u_min[i + 4] * 3.1415926535897931 / 180.0;
+  }
+
+  memcpy(&u_max_scaled[0], &u_max[0], 15U * sizeof(double));
+  u_max_scaled[0] = u_max[0] / gain_motor.contents;
+  u_max_scaled[1] = u_max[1] / gain_motor.contents;
+  u_max_scaled[2] = u_max[2] / gain_motor.contents;
+  u_max_scaled[3] = u_max[3] / gain_motor.contents;
+  min_theta_protection = u_min[0] / gain_motor.contents;
+  max_theta_protection = u_min[1] / gain_motor.contents;
+  t = u_min[2] / gain_motor.contents;
+  y = u_min[3] / gain_motor.contents;
+  u_min[0] = min_theta_protection;
+  u_min[1] = max_theta_protection;
+  u_min[2] = t;
+  u_min[3] = y;
+  min_theta_protection = u_max_scaled[4] / gain_el.contents;
+  max_theta_protection = u_max_scaled[5] / gain_el.contents;
+  t = u_max_scaled[6] / gain_el.contents;
+  y = u_max_scaled[7] / gain_el.contents;
+  u_max_scaled[4] = min_theta_protection;
+  u_max_scaled[5] = max_theta_protection;
+  u_max_scaled[6] = t;
+  u_max_scaled[7] = y;
+  min_theta_protection = u_min[4] / gain_el.contents;
+  max_theta_protection = u_min[5] / gain_el.contents;
+  t = u_min[6] / gain_el.contents;
+  y = u_min[7] / gain_el.contents;
+  u_min[4] = min_theta_protection;
+  u_min[5] = max_theta_protection;
+  u_min[6] = t;
+  u_min[7] = y;
+  min_theta_protection = u_max_scaled[8] / gain_az.contents;
+  max_theta_protection = u_max_scaled[9] / gain_az.contents;
+  t = u_max_scaled[10] / gain_az.contents;
+  y = u_max_scaled[11] / gain_az.contents;
+  u_max_scaled[8] = min_theta_protection;
+  u_max_scaled[9] = max_theta_protection;
+  u_max_scaled[10] = t;
+  u_max_scaled[11] = y;
+  min_theta_protection = u_min[8] / gain_az.contents;
+  max_theta_protection = u_min[9] / gain_az.contents;
+  t = u_min[10] / gain_az.contents;
+  y = u_min[11] / gain_az.contents;
+  u_min[8] = min_theta_protection;
+  u_min[9] = max_theta_protection;
+  u_min[10] = t;
+  u_min[11] = y;
+  u_max_scaled[12] /= gain_theta.contents;
+  u_min[12] /= gain_theta.contents;
+  u_max_scaled[13] /= gain_phi.contents;
+  u_min[13] /= gain_phi.contents;
+  u_max_scaled[14] /= gain_ailerons.contents;
+  u_min[14] /= gain_ailerons.contents;
+  memcpy(&u_max[0], &actual_u[0], 15U * sizeof(double));
+  u_max[0] = Omega_1 / gain_motor.contents;
+  u_max[1] = Omega_2 / gain_motor.contents;
+  u_max[2] = Omega_3 / gain_motor.contents;
+  u_max[3] = Omega_4 / gain_motor.contents;
+  min_theta_protection = u_max[4] / gain_el.contents;
+  max_theta_protection = u_max[5] / gain_el.contents;
+  t = u_max[6] / gain_el.contents;
+  y = u_max[7] / gain_el.contents;
+  u_max[4] = min_theta_protection;
+  u_max[5] = max_theta_protection;
+  u_max[6] = t;
+  u_max[7] = y;
+  min_theta_protection = u_max[8] / gain_az.contents;
+  max_theta_protection = u_max[9] / gain_az.contents;
+  t = u_max[10] / gain_az.contents;
+  y = u_max[11] / gain_az.contents;
+  u_max[8] = min_theta_protection;
+  u_max[9] = max_theta_protection;
+  u_max[10] = t;
+  u_max[11] = y;
+  u_max[12] /= gain_theta.contents;
+  u_max[13] /= gain_phi.contents;
+  u_max[14] /= gain_ailerons.contents;
+
+  /*  Apply Nonlinear optimization algorithm: */
+  c_compute_acc_nonlinear_control(actual_u, b_p.contents, b_q.contents,
+    b_r.contents, b_K_p_T.contents, b_K_p_M.contents, b_m.contents,
+    b_I_xx.contents, b_I_yy.contents, b_I_zz.contents, b_l_1.contents,
+    b_l_2.contents, b_l_3.contents, b_l_4.contents, b_l_z.contents,
+    b_Cl_alpha.contents, b_Cd_zero.contents, b_K_Cd.contents,
+    b_Cm_alpha.contents, b_Cm_zero.contents, CL_aileron.contents, b_rho.contents,
+    b_V.contents, b_S.contents, b_wing_chord.contents,
+    b_flight_path_angle.contents, b_Beta.contents, dv_global.contents);
+  for (i = 0; i < 6; i++) {
+    dv_global.contents[i] += dv[i];
+  }
+
+  char b_expl_temp[3];
+
+  /* Compute weights for actuators and make sure they are always positive */
+  y = W_act_motor_const + W_act_motor_speed * b_V.contents;
+  W_act_motor.contents = fmax(0.0, y);
+  y = W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
+  W_act_tilt_el.contents = fmax(0.0, y);
+  y = W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
+  W_act_tilt_az.contents = fmax(0.0, y);
+  y = W_act_theta_const + W_act_theta_speed * b_V.contents;
+  W_act_theta.contents = fmax(0.0, y);
+  y = W_act_phi_const + W_act_phi_speed * b_V.contents;
+  W_act_phi.contents = fmax(0.0, y);
+  y = 0.0 * b_V.contents + 100.0;
+  W_act_ailerons.contents = fmax(0.0, y);
+
+  /* Default values for the optimizer: */
+  tic();
+  expl_temp.desired_ailerons_value = &desired_ailerons_value;
+  expl_temp.W_act_ailerons = &W_act_ailerons;
+  expl_temp.desired_phi_value = &b_desired_phi_value;
+  expl_temp.W_act_phi = &W_act_phi;
+  expl_temp.desired_theta_value = &b_desired_theta_value;
+  expl_temp.W_act_theta = &W_act_theta;
+  expl_temp.desired_az_value = &b_desired_az_value;
+  expl_temp.W_act_tilt_az = &W_act_tilt_az;
+  expl_temp.desired_el_value = &b_desired_el_value;
+  expl_temp.W_act_tilt_el = &W_act_tilt_el;
+  expl_temp.W_dv_2 = &b_W_dv_2;
+  expl_temp.W_dv_1 = &b_W_dv_1;
+  expl_temp.W_dv_3 = &b_W_dv_3;
+  expl_temp.W_dv_5 = &b_W_dv_5;
+  expl_temp.desired_motor_value = &b_desired_motor_value;
+  expl_temp.gamma_quadratic_du = &b_gamma_quadratic_du;
+  expl_temp.W_act_motor = &W_act_motor;
+  expl_temp.W_dv_6 = &b_W_dv_6;
+  expl_temp.W_dv_4 = &b_W_dv_4;
+  expl_temp.gain_ailerons = &gain_ailerons;
+  expl_temp.CL_aileron = &CL_aileron;
+  expl_temp.l_2 = &b_l_2;
+  expl_temp.l_1 = &b_l_1;
+  expl_temp.q = &b_q;
+  expl_temp.Cm_alpha = &b_Cm_alpha;
+  expl_temp.l_3 = &b_l_3;
+  expl_temp.l_4 = &b_l_4;
+  expl_temp.wing_chord = &b_wing_chord;
+  expl_temp.Cm_zero = &b_Cm_zero;
+  expl_temp.K_p_M = &b_K_p_M;
+  expl_temp.l_z = &b_l_z;
+  expl_temp.I_yy = &b_I_yy;
+  expl_temp.I_xx = &b_I_xx;
+  expl_temp.r = &b_r;
+  expl_temp.p = &b_p;
+  expl_temp.I_zz = &b_I_zz;
+  expl_temp.m = &b_m;
+  expl_temp.gain_az = &gain_az;
+  expl_temp.gain_el = &gain_el;
+  expl_temp.gain_motor = &gain_motor;
+  expl_temp.K_p_T = &b_K_p_T;
+  expl_temp.gain_phi = &gain_phi;
+  expl_temp.Cd_zero = &b_Cd_zero;
+  expl_temp.K_Cd = &b_K_Cd;
+  expl_temp.Beta = &b_Beta;
+  expl_temp.flight_path_angle = &b_flight_path_angle;
+  expl_temp.rho = &b_rho;
+  expl_temp.V = &b_V;
+  expl_temp.S = &b_S;
+  expl_temp.Cl_alpha = &b_Cl_alpha;
+  expl_temp.gain_theta = &gain_theta;
+  expl_temp.dv_global = &dv_global;
+  fmincon(&expl_temp, u_max, u_min, u_max_scaled, u_out, &min_theta_protection,
+          exitflag, N_iterations, N_evaluation, b_expl_temp,
+          &max_theta_protection, &t, &y, &c_expl_temp);
+  *elapsed_time = toc();
+  y = gain_motor.contents;
+  u_out[0] *= y;
+  u_out[1] *= y;
+  u_out[2] *= y;
+  u_out[3] *= y;
+  y = gain_el.contents;
+  u_out[4] *= y;
+  u_out[5] *= y;
+  u_out[6] *= y;
+  u_out[7] *= y;
+  y = gain_az.contents;
+  u_out[8] *= y;
+  u_out[9] *= y;
+  u_out[10] *= y;
+  u_out[11] *= y;
+  u_out[12] *= gain_theta.contents;
+  u_out[13] *= gain_phi.contents;
+  u_out[14] *= gain_ailerons.contents;
+  c_compute_acc_nonlinear_control(u_out, b_p.contents, b_q.contents,
+    b_r.contents, b_K_p_T.contents, b_K_p_M.contents, b_m.contents,
+    b_I_xx.contents, b_I_yy.contents, b_I_zz.contents, b_l_1.contents,
+    b_l_2.contents, b_l_3.contents, b_l_4.contents, b_l_z.contents,
+    b_Cl_alpha.contents, b_Cd_zero.contents, b_K_Cd.contents,
+    b_Cm_alpha.contents, b_Cm_zero.contents, CL_aileron.contents, b_rho.contents,
+    b_V.contents, b_S.contents, b_wing_chord.contents,
+    b_flight_path_angle.contents, b_Beta.contents, residuals);
+  for (i = 0; i < 6; i++) {
+    residuals[i] = dv_global.contents[i] - residuals[i];
+  }
+
+  /*  Print infos */
+  if (verbose != 0.0) {
+    printf("\n Solution: \n");
+    fflush(stdout);
+    printf("Motors [rad/s] =  ");
+    fflush(stdout);
+    printf(" %f ", u_out[0]);
+    fflush(stdout);
+    printf(" %f ", u_out[1]);
+    fflush(stdout);
+    printf(" %f ", u_out[2]);
+    fflush(stdout);
+    printf(" %f ", u_out[3]);
+    fflush(stdout);
+    printf("\n");
+    fflush(stdout);
+    printf("Elevator angles [deg] =  ");
+    fflush(stdout);
+    printf(" %f ", u_out[4] * 180.0 / 3.1415926535897931);
+    fflush(stdout);
+    printf(" %f ", u_out[5] * 180.0 / 3.1415926535897931);
+    fflush(stdout);
+    printf(" %f ", u_out[6] * 180.0 / 3.1415926535897931);
+    fflush(stdout);
+    printf(" %f ", u_out[7] * 180.0 / 3.1415926535897931);
+    fflush(stdout);
+    printf("\n");
+    fflush(stdout);
+    printf("Azimuth angles [deg] =  ");
+    fflush(stdout);
+    printf(" %f ", u_out[8] * 180.0 / 3.1415926535897931);
+    fflush(stdout);
+    printf(" %f ", u_out[9] * 180.0 / 3.1415926535897931);
+    fflush(stdout);
+    printf(" %f ", u_out[10] * 180.0 / 3.1415926535897931);
+    fflush(stdout);
+    printf(" %f ", u_out[11] * 180.0 / 3.1415926535897931);
+    fflush(stdout);
+    printf("\n");
+    fflush(stdout);
+    printf("Theta [deg] =  ");
+    fflush(stdout);
+    printf(" %f ", u_out[12] * 180.0 / 3.1415926535897931);
+    fflush(stdout);
+    printf("\n");
+    fflush(stdout);
+    printf("Phi [deg] =  ");
+    fflush(stdout);
+    printf(" %f ", u_out[13] * 180.0 / 3.1415926535897931);
+    fflush(stdout);
+    printf("\n");
+    fflush(stdout);
+    printf("Ailerons deflection [deg] =  ");
+    fflush(stdout);
+    printf(" %f ", u_out[14] * 180.0 / 3.1415926535897931);
+    fflush(stdout);
+    printf("\n");
+    fflush(stdout);
+    printf("\n Elapsed time = %f \n", *elapsed_time);
+    fflush(stdout);
+    printf("\n Number of iterations = %f \n", *N_iterations);
+    fflush(stdout);
+    printf("\n Number of evaluation = %f \n", *N_evaluation);
+    fflush(stdout);
+    printf("\n Residuals = ");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      printf(" %f ", residuals[i]);
+      fflush(stdout);
+    }
+
+    printf("\n");
+    fflush(stdout);
+    y = 0.0;
+    min_theta_protection = 3.3121686421112381E-170;
+    for (i = 0; i < 6; i++) {
+      max_theta_protection = fabs(residuals[i]);
+      if (max_theta_protection > min_theta_protection) {
+        t = min_theta_protection / max_theta_protection;
+        y = y * t * t + 1.0;
+        min_theta_protection = max_theta_protection;
+      } else {
+        t = max_theta_protection / min_theta_protection;
+        y += t * t;
+      }
+    }
+
+    y = min_theta_protection * sqrt(y);
+    printf("\n Residual norm = %f \n", y);
+    fflush(stdout);
+    memcpy(&u_max[0], &u_out[0], 15U * sizeof(double));
+    u_max[0] = u_out[0] / gain_motor.contents;
+    u_max[1] = u_out[1] / gain_motor.contents;
+    u_max[2] = u_out[2] / gain_motor.contents;
+    u_max[3] = u_out[3] / gain_motor.contents;
+    min_theta_protection = u_max[4] / gain_el.contents;
+    max_theta_protection = u_max[5] / gain_el.contents;
+    t = u_max[6] / gain_el.contents;
+    y = u_max[7] / gain_el.contents;
+    u_max[4] = min_theta_protection;
+    u_max[5] = max_theta_protection;
+    u_max[6] = t;
+    u_max[7] = y;
+    min_theta_protection = u_max[8] / gain_az.contents;
+    max_theta_protection = u_max[9] / gain_az.contents;
+    t = u_max[10] / gain_az.contents;
+    y = u_max[11] / gain_az.contents;
+    u_max[8] = min_theta_protection;
+    u_max[9] = max_theta_protection;
+    u_max[10] = t;
+    u_max[11] = y;
+    u_max[12] /= gain_theta.contents;
+    u_max[13] /= gain_phi.contents;
+    u_max[14] /= gain_ailerons.contents;
+    printf("\n Solution scaled norm = %f \n", b_norm(u_max));
+    fflush(stdout);
+    printf("\n Exit flag optimizer = %f \n", *exitflag);
+    fflush(stdout);
+  }
+}
+
+/*
+ * Arguments    : double K_p_T
+ *                double K_p_M
+ *                double m
+ *                double I_xx
+ *                double I_yy
+ *                double I_zz
+ *                double l_1
+ *                double l_2
+ *                double l_3
+ *                double l_4
+ *                double l_z
+ *                double Phi
+ *                double Theta
+ *                double Psi
+ *                double Omega_1
+ *                double Omega_2
+ *                double Omega_3
+ *                double Omega_4
+ *                double b_1
+ *                double b_2
+ *                double b_3
+ *                double b_4
+ *                double g_1
+ *                double g_2
+ *                double g_3
+ *                double g_4
+ *                double W_act_motor_const
+ *                double W_act_motor_speed
+ *                double W_act_tilt_el_const
+ *                double W_act_tilt_el_speed
+ *                double W_act_tilt_az_const
+ *                double W_act_tilt_az_speed
+ *                double W_dv_1
+ *                double W_dv_2
+ *                double W_dv_3
+ *                double W_dv_4
+ *                double W_dv_5
+ *                double W_dv_6
+ *                double max_omega
+ *                double min_omega
+ *                double max_b
+ *                double min_b
+ *                double max_g
+ *                double min_g
+ *                double dv[6]
+ *                double p
+ *                double q
+ *                double r
+ *                double Cm_zero
+ *                double Cl_alpha
+ *                double Cd_zero
+ *                double K_Cd
+ *                double Cm_alpha
+ *                double rho
+ *                double V
+ *                double S
+ *                double wing_chord
+ *                double flight_path_angle
+ *                double max_alpha
+ *                double Beta
+ *                double gammasq
+ *                double desired_motor_value
+ *                double desired_el_value
+ *                double desired_az_value
+ *                double desired_theta_value
+ *                double desired_phi_value
+ *                double u_out[14]
+ *                double residuals[6]
+ *                double *elapsed_time
+ *                double *N_iterations
+ *                double *N_evaluation
+ *                double *exitflag
+ * Return Type  : void
+ */
+static void c_WLS_controller_fcn_earth_rf_j(double K_p_T, double K_p_M, double m,
+  double I_xx, double I_yy, double I_zz, double l_1, double l_2, double l_3,
+  double l_4, double l_z, double Phi, double Theta, double Psi, double Omega_1,
+  double Omega_2, double Omega_3, double Omega_4, double b_1, double b_2, double
+  b_3, double b_4, double g_1, double g_2, double g_3, double g_4, double
+  W_act_motor_const, double W_act_motor_speed, double W_act_tilt_el_const,
+  double W_act_tilt_el_speed, double W_act_tilt_az_const, double
+  W_act_tilt_az_speed, double W_dv_1, double W_dv_2, double W_dv_3, double
+  W_dv_4, double W_dv_5, double W_dv_6, double max_omega, double min_omega,
+  double max_b, double min_b, double max_g, double min_g, double dv[6], double p,
+  double q, double r, double Cm_zero, double Cl_alpha, double Cd_zero, double
+  K_Cd, double Cm_alpha, double rho, double V, double S, double wing_chord,
+  double flight_path_angle, double max_alpha, double Beta, double gammasq,
+  double desired_motor_value, double desired_el_value, double desired_az_value,
+  double desired_theta_value, double desired_phi_value, double u_out[14], double
+  residuals[6], double *elapsed_time, double *N_iterations, double *N_evaluation,
+  double *exitflag)
+{
+  double A[216];
+  double Wu[144];
+  double B_eval[72];
+  double gam_sq[72];
+  double Wv[36];
+  double b_A[18];
+  double d[18];
+  double actual_u[12];
+  double desired_u_scaled[12];
+  double max_u_scaled[12];
+  double min_u_scaled[12];
+  double u_max[12];
+  double u_max_constrain[12];
+  double u_min[12];
+  double u_min_constrain[12];
+  double v[6];
+  double B_eval_tmp;
+  double B_eval_tmp_tmp;
+  double W_act_az;
+  double W_act_el;
+  double W_act_motor;
+  double ab_B_eval_tmp;
+  double ac_B_eval_tmp;
+  double b_B_eval_tmp;
+  double bb_B_eval_tmp;
+  double c_B_eval_tmp;
+  double cb_B_eval_tmp;
+  double d_B_eval_tmp;
+  double db_B_eval_tmp;
+  double e_B_eval_tmp;
+  double eb_B_eval_tmp;
+  double f_B_eval_tmp;
+  double fb_B_eval_tmp;
+  double g_B_eval_tmp;
+  double gain_az;
+  double gain_el;
+  double gain_motor;
+  double gb_B_eval_tmp;
+  double h_B_eval_tmp;
+  double hb_B_eval_tmp;
+  double i_B_eval_tmp;
+  double ib_B_eval_tmp;
+  double j_B_eval_tmp;
+  double jb_B_eval_tmp;
+  double k_B_eval_tmp;
+  double kb_B_eval_tmp;
+  double l_B_eval_tmp;
+  double lb_B_eval_tmp;
+  double m_B_eval_tmp;
+  double mb_B_eval_tmp;
+  double n_B_eval_tmp;
+  double nb_B_eval_tmp;
+  double o_B_eval_tmp;
+  double ob_B_eval_tmp;
+  double p_B_eval_tmp;
+  double pb_B_eval_tmp;
+  double q_B_eval_tmp;
+  double qb_B_eval_tmp;
+  double r_B_eval_tmp;
+  double rb_B_eval_tmp;
+  double s_B_eval_tmp;
+  double sb_B_eval_tmp;
+  double t_B_eval_tmp;
+  double tb_B_eval_tmp;
+  double u_B_eval_tmp;
+  double ub_B_eval_tmp;
+  double v_B_eval_tmp;
+  double vb_B_eval_tmp;
+  double w_B_eval_tmp;
+  double wb_B_eval_tmp;
+  double x_B_eval_tmp;
+  double xb_B_eval_tmp;
+  double y_B_eval_tmp;
+  double yb_B_eval_tmp;
+  int A_free_size[2];
+  int aoffset;
+  int b_N_iterations;
+  int b_i;
+  int b_trueCount;
+  int i;
+  int iter;
+  int k;
+  signed char b_tmp_data[12];
+  signed char c_tmp_data[12];
+  signed char d_tmp_data[12];
+  signed char tmp_data[12];
+  bool i_free[12];
+  bool exitg1;
+  tic();
+
+  /*  Assign geometrical and create variables */
+  gain_motor = max_omega / 2.0;
+  gain_el = (max_b - min_b) * 3.1415926535897931 / 180.0 / 2.0;
+  gain_az = (max_g - min_g) * 3.1415926535897931 / 180.0 / 2.0;
+
+  /*  Identify and evaluate the effectiveness matrix [6,12] */
+  B_eval_tmp = cos(Psi);
+  b_B_eval_tmp = cos(Phi);
+  c_B_eval_tmp = sin(Psi);
+  d_B_eval_tmp = sin(Phi);
+  e_B_eval_tmp = sin(Theta);
+  f_B_eval_tmp = cos(Theta);
+  g_B_eval_tmp = cos(g_1);
+  h_B_eval_tmp = sin(b_1);
+  i_B_eval_tmp = cos(b_1);
+  j_B_eval_tmp = sin(g_1);
+  k_B_eval_tmp = cos(g_2);
+  l_B_eval_tmp = sin(b_2);
+  m_B_eval_tmp = cos(b_2);
+  n_B_eval_tmp = sin(g_2);
+  o_B_eval_tmp = cos(g_3);
+  p_B_eval_tmp = sin(b_3);
+  q_B_eval_tmp = cos(b_3);
+  r_B_eval_tmp = sin(g_3);
+  s_B_eval_tmp = cos(g_4);
+  t_B_eval_tmp = sin(b_4);
+  u_B_eval_tmp = cos(b_4);
+  v_B_eval_tmp = sin(g_4);
+  w_B_eval_tmp = 2.0 * K_p_T * Omega_1;
+  B_eval[0] = -((w_B_eval_tmp * B_eval_tmp * f_B_eval_tmp * h_B_eval_tmp +
+                 w_B_eval_tmp * i_B_eval_tmp * g_B_eval_tmp * (d_B_eval_tmp *
+    c_B_eval_tmp + b_B_eval_tmp * B_eval_tmp * e_B_eval_tmp)) + 2.0 * K_p_T
+                * Omega_1 * cos(b_1) * j_B_eval_tmp * (b_B_eval_tmp *
+    c_B_eval_tmp - B_eval_tmp * d_B_eval_tmp * e_B_eval_tmp)) / m;
+  x_B_eval_tmp = 2.0 * K_p_T * Omega_2;
+  y_B_eval_tmp = sin(Phi) * sin(Psi) + cos(Phi) * cos(Psi) * sin(Theta);
+  ab_B_eval_tmp = cos(Phi) * sin(Psi) - cos(Psi) * sin(Phi) * sin(Theta);
+  B_eval[6] = -((x_B_eval_tmp * B_eval_tmp * f_B_eval_tmp * l_B_eval_tmp +
+                 x_B_eval_tmp * m_B_eval_tmp * k_B_eval_tmp * y_B_eval_tmp) +
+                2.0 * K_p_T * Omega_2 * cos(b_2) * n_B_eval_tmp * ab_B_eval_tmp)
+    / m;
+  bb_B_eval_tmp = 2.0 * K_p_T * Omega_3;
+  B_eval[12] = -((bb_B_eval_tmp * B_eval_tmp * f_B_eval_tmp * p_B_eval_tmp +
+                  bb_B_eval_tmp * q_B_eval_tmp * o_B_eval_tmp * y_B_eval_tmp) +
+                 2.0 * K_p_T * Omega_3 * cos(b_3) * r_B_eval_tmp * ab_B_eval_tmp)
+    / m;
+  cb_B_eval_tmp = 2.0 * K_p_T * Omega_4;
+  B_eval[18] = -((cb_B_eval_tmp * B_eval_tmp * f_B_eval_tmp * t_B_eval_tmp +
+                  cb_B_eval_tmp * u_B_eval_tmp * s_B_eval_tmp * y_B_eval_tmp) +
+                 2.0 * K_p_T * Omega_4 * cos(b_4) * v_B_eval_tmp * ab_B_eval_tmp)
+    / m;
+  W_act_motor = Omega_1 * Omega_1;
+  db_B_eval_tmp = K_p_T * W_act_motor;
+  eb_B_eval_tmp = db_B_eval_tmp * g_B_eval_tmp * h_B_eval_tmp;
+  fb_B_eval_tmp = db_B_eval_tmp * h_B_eval_tmp * j_B_eval_tmp;
+  B_eval[24] = ((eb_B_eval_tmp * y_B_eval_tmp - db_B_eval_tmp * B_eval_tmp *
+                 f_B_eval_tmp * i_B_eval_tmp) + fb_B_eval_tmp * ab_B_eval_tmp) /
+    m;
+  W_act_el = Omega_2 * Omega_2;
+  gb_B_eval_tmp = K_p_T * W_act_el;
+  hb_B_eval_tmp = gb_B_eval_tmp * k_B_eval_tmp * l_B_eval_tmp;
+  ib_B_eval_tmp = gb_B_eval_tmp * l_B_eval_tmp * n_B_eval_tmp;
+  B_eval[30] = ((hb_B_eval_tmp * y_B_eval_tmp - gb_B_eval_tmp * B_eval_tmp *
+                 f_B_eval_tmp * m_B_eval_tmp) + ib_B_eval_tmp * ab_B_eval_tmp) /
+    m;
+  W_act_az = Omega_3 * Omega_3;
+  jb_B_eval_tmp = K_p_T * W_act_az;
+  kb_B_eval_tmp = jb_B_eval_tmp * o_B_eval_tmp * p_B_eval_tmp;
+  lb_B_eval_tmp = jb_B_eval_tmp * p_B_eval_tmp * r_B_eval_tmp;
+  B_eval[36] = ((kb_B_eval_tmp * y_B_eval_tmp - jb_B_eval_tmp * B_eval_tmp *
+                 f_B_eval_tmp * q_B_eval_tmp) + lb_B_eval_tmp * ab_B_eval_tmp) /
+    m;
+  B_eval_tmp_tmp = Omega_4 * Omega_4;
+  mb_B_eval_tmp = K_p_T * B_eval_tmp_tmp;
+  nb_B_eval_tmp = mb_B_eval_tmp * s_B_eval_tmp * t_B_eval_tmp;
+  ob_B_eval_tmp = mb_B_eval_tmp * t_B_eval_tmp * v_B_eval_tmp;
+  B_eval[42] = ((nb_B_eval_tmp * y_B_eval_tmp - mb_B_eval_tmp * B_eval_tmp *
+                 f_B_eval_tmp * u_B_eval_tmp) + ob_B_eval_tmp * ab_B_eval_tmp) /
+    m;
+  B_eval_tmp = db_B_eval_tmp * i_B_eval_tmp;
+  pb_B_eval_tmp = B_eval_tmp * g_B_eval_tmp;
+  qb_B_eval_tmp = B_eval_tmp * j_B_eval_tmp;
+  B_eval[48] = -(pb_B_eval_tmp * ab_B_eval_tmp - qb_B_eval_tmp * y_B_eval_tmp) /
+    m;
+  rb_B_eval_tmp = gb_B_eval_tmp * m_B_eval_tmp;
+  sb_B_eval_tmp = rb_B_eval_tmp * k_B_eval_tmp;
+  tb_B_eval_tmp = rb_B_eval_tmp * n_B_eval_tmp;
+  B_eval[54] = -(sb_B_eval_tmp * ab_B_eval_tmp - tb_B_eval_tmp * y_B_eval_tmp) /
+    m;
+  ub_B_eval_tmp = jb_B_eval_tmp * q_B_eval_tmp;
+  vb_B_eval_tmp = ub_B_eval_tmp * o_B_eval_tmp;
+  wb_B_eval_tmp = ub_B_eval_tmp * r_B_eval_tmp;
+  B_eval[60] = -(vb_B_eval_tmp * ab_B_eval_tmp - wb_B_eval_tmp * y_B_eval_tmp) /
+    m;
+  xb_B_eval_tmp = mb_B_eval_tmp * u_B_eval_tmp;
+  yb_B_eval_tmp = xb_B_eval_tmp * s_B_eval_tmp;
+  ac_B_eval_tmp = xb_B_eval_tmp * v_B_eval_tmp;
+  B_eval[66] = -(yb_B_eval_tmp * ab_B_eval_tmp - ac_B_eval_tmp * y_B_eval_tmp) /
+    m;
+  B_eval[1] = ((2.0 * K_p_T * Omega_1 * cos(b_1) * cos(g_1) * (cos(Psi) * sin
+    (Phi) - cos(Phi) * sin(Psi) * e_B_eval_tmp) - w_B_eval_tmp * f_B_eval_tmp *
+                c_B_eval_tmp * h_B_eval_tmp) + 2.0 * K_p_T * Omega_1 * cos(b_1) *
+               sin(g_1) * (cos(Phi) * cos(Psi) + sin(Phi) * sin(Psi) *
+    e_B_eval_tmp)) / m;
+  e_B_eval_tmp = cos(Psi) * sin(Phi) - cos(Phi) * sin(Psi) * sin(Theta);
+  y_B_eval_tmp = cos(Phi) * cos(Psi) + sin(Phi) * sin(Psi) * sin(Theta);
+  B_eval[7] = ((2.0 * K_p_T * Omega_2 * cos(b_2) * cos(g_2) * e_B_eval_tmp -
+                x_B_eval_tmp * f_B_eval_tmp * c_B_eval_tmp * l_B_eval_tmp) + 2.0
+               * K_p_T * Omega_2 * cos(b_2) * sin(g_2) * y_B_eval_tmp) / m;
+  B_eval[13] = ((2.0 * K_p_T * Omega_3 * cos(b_3) * cos(g_3) * e_B_eval_tmp -
+                 bb_B_eval_tmp * f_B_eval_tmp * c_B_eval_tmp * p_B_eval_tmp) +
+                2.0 * K_p_T * Omega_3 * cos(b_3) * sin(g_3) * y_B_eval_tmp) / m;
+  B_eval[19] = ((2.0 * K_p_T * Omega_4 * cos(b_4) * cos(g_4) * e_B_eval_tmp -
+                 cb_B_eval_tmp * f_B_eval_tmp * c_B_eval_tmp * t_B_eval_tmp) +
+                2.0 * K_p_T * Omega_4 * cos(b_4) * sin(g_4) * y_B_eval_tmp) / m;
+  ab_B_eval_tmp = db_B_eval_tmp * f_B_eval_tmp;
+  B_eval[25] = -((ab_B_eval_tmp * c_B_eval_tmp * i_B_eval_tmp + eb_B_eval_tmp *
+                  e_B_eval_tmp) + fb_B_eval_tmp * y_B_eval_tmp) / m;
+  eb_B_eval_tmp = gb_B_eval_tmp * f_B_eval_tmp;
+  B_eval[31] = -((eb_B_eval_tmp * c_B_eval_tmp * m_B_eval_tmp + hb_B_eval_tmp *
+                  e_B_eval_tmp) + ib_B_eval_tmp * y_B_eval_tmp) / m;
+  fb_B_eval_tmp = jb_B_eval_tmp * f_B_eval_tmp;
+  B_eval[37] = -((fb_B_eval_tmp * c_B_eval_tmp * q_B_eval_tmp + kb_B_eval_tmp *
+                  e_B_eval_tmp) + lb_B_eval_tmp * y_B_eval_tmp) / m;
+  hb_B_eval_tmp = mb_B_eval_tmp * f_B_eval_tmp;
+  B_eval[43] = -((hb_B_eval_tmp * c_B_eval_tmp * u_B_eval_tmp + nb_B_eval_tmp *
+                  e_B_eval_tmp) + ob_B_eval_tmp * y_B_eval_tmp) / m;
+  B_eval[49] = (pb_B_eval_tmp * y_B_eval_tmp - qb_B_eval_tmp * e_B_eval_tmp) / m;
+  B_eval[55] = (sb_B_eval_tmp * y_B_eval_tmp - tb_B_eval_tmp * e_B_eval_tmp) / m;
+  B_eval[61] = (vb_B_eval_tmp * y_B_eval_tmp - wb_B_eval_tmp * e_B_eval_tmp) / m;
+  B_eval[67] = (yb_B_eval_tmp * y_B_eval_tmp - ac_B_eval_tmp * e_B_eval_tmp) / m;
+  B_eval[2] = ((w_B_eval_tmp * h_B_eval_tmp * e_B_eval_tmp + 2.0 * K_p_T
+                * Omega_1 * cos(Theta) * d_B_eval_tmp * i_B_eval_tmp *
+                j_B_eval_tmp) - w_B_eval_tmp * b_B_eval_tmp * f_B_eval_tmp *
+               i_B_eval_tmp * g_B_eval_tmp) / m;
+  B_eval[8] = ((x_B_eval_tmp * l_B_eval_tmp * e_B_eval_tmp + 2.0 * K_p_T
+                * Omega_2 * cos(Theta) * d_B_eval_tmp * m_B_eval_tmp *
+                n_B_eval_tmp) - x_B_eval_tmp * b_B_eval_tmp * f_B_eval_tmp *
+               m_B_eval_tmp * k_B_eval_tmp) / m;
+  B_eval[14] = ((bb_B_eval_tmp * p_B_eval_tmp * e_B_eval_tmp + 2.0 * K_p_T
+                 * Omega_3 * cos(Theta) * d_B_eval_tmp * q_B_eval_tmp *
+                 r_B_eval_tmp) - bb_B_eval_tmp * b_B_eval_tmp * f_B_eval_tmp *
+                q_B_eval_tmp * o_B_eval_tmp) / m;
+  B_eval[20] = ((cb_B_eval_tmp * t_B_eval_tmp * e_B_eval_tmp + 2.0 * K_p_T
+                 * Omega_4 * cos(Theta) * d_B_eval_tmp * u_B_eval_tmp *
+                 v_B_eval_tmp) - cb_B_eval_tmp * b_B_eval_tmp * f_B_eval_tmp *
+                u_B_eval_tmp * s_B_eval_tmp) / m;
+  c_B_eval_tmp = db_B_eval_tmp * b_B_eval_tmp * f_B_eval_tmp;
+  y_B_eval_tmp = ab_B_eval_tmp * d_B_eval_tmp;
+  B_eval[26] = ((B_eval_tmp * e_B_eval_tmp + c_B_eval_tmp * g_B_eval_tmp *
+                 h_B_eval_tmp) - y_B_eval_tmp * h_B_eval_tmp * j_B_eval_tmp) / m;
+  B_eval_tmp = gb_B_eval_tmp * b_B_eval_tmp * f_B_eval_tmp;
+  ab_B_eval_tmp = eb_B_eval_tmp * d_B_eval_tmp;
+  B_eval[32] = ((rb_B_eval_tmp * e_B_eval_tmp + B_eval_tmp * k_B_eval_tmp *
+                 l_B_eval_tmp) - ab_B_eval_tmp * l_B_eval_tmp * n_B_eval_tmp) /
+    m;
+  eb_B_eval_tmp = jb_B_eval_tmp * b_B_eval_tmp * f_B_eval_tmp;
+  fb_B_eval_tmp *= d_B_eval_tmp;
+  B_eval[38] = ((ub_B_eval_tmp * e_B_eval_tmp + eb_B_eval_tmp * o_B_eval_tmp *
+                 p_B_eval_tmp) - fb_B_eval_tmp * p_B_eval_tmp * r_B_eval_tmp) /
+    m;
+  b_B_eval_tmp = mb_B_eval_tmp * b_B_eval_tmp * f_B_eval_tmp;
+  d_B_eval_tmp *= hb_B_eval_tmp;
+  B_eval[44] = ((xb_B_eval_tmp * e_B_eval_tmp + b_B_eval_tmp * s_B_eval_tmp *
+                 t_B_eval_tmp) - d_B_eval_tmp * t_B_eval_tmp * v_B_eval_tmp) / m;
+  B_eval[50] = (c_B_eval_tmp * i_B_eval_tmp * j_B_eval_tmp + y_B_eval_tmp *
+                i_B_eval_tmp * g_B_eval_tmp) / m;
+  B_eval[56] = (B_eval_tmp * m_B_eval_tmp * n_B_eval_tmp + ab_B_eval_tmp *
+                m_B_eval_tmp * k_B_eval_tmp) / m;
+  B_eval[62] = (eb_B_eval_tmp * q_B_eval_tmp * r_B_eval_tmp + fb_B_eval_tmp *
+                q_B_eval_tmp * o_B_eval_tmp) / m;
+  B_eval[68] = (b_B_eval_tmp * u_B_eval_tmp * v_B_eval_tmp + d_B_eval_tmp *
+                u_B_eval_tmp * s_B_eval_tmp) / m;
+  B_eval_tmp = w_B_eval_tmp * l_z;
+  b_B_eval_tmp = 2.0 * K_p_M * Omega_1;
+  c_B_eval_tmp = w_B_eval_tmp * l_1;
+  B_eval[3] = ((b_B_eval_tmp * h_B_eval_tmp + B_eval_tmp * i_B_eval_tmp *
+                j_B_eval_tmp) + c_B_eval_tmp * i_B_eval_tmp * g_B_eval_tmp) /
+    I_xx;
+  d_B_eval_tmp = x_B_eval_tmp * l_z;
+  e_B_eval_tmp = 2.0 * K_p_M * Omega_2;
+  f_B_eval_tmp = x_B_eval_tmp * l_1;
+  B_eval[9] = -((e_B_eval_tmp * l_B_eval_tmp - d_B_eval_tmp * m_B_eval_tmp *
+                 n_B_eval_tmp) + f_B_eval_tmp * m_B_eval_tmp * k_B_eval_tmp) /
+    I_xx;
+  y_B_eval_tmp = 2.0 * K_p_M * Omega_3;
+  ab_B_eval_tmp = bb_B_eval_tmp * l_z;
+  eb_B_eval_tmp = bb_B_eval_tmp * l_2;
+  B_eval[15] = ((y_B_eval_tmp * p_B_eval_tmp + ab_B_eval_tmp * q_B_eval_tmp *
+                 r_B_eval_tmp) - eb_B_eval_tmp * q_B_eval_tmp * o_B_eval_tmp) /
+    I_xx;
+  fb_B_eval_tmp = cb_B_eval_tmp * l_z;
+  hb_B_eval_tmp = 2.0 * K_p_M * Omega_4;
+  ib_B_eval_tmp = cb_B_eval_tmp * l_2;
+  B_eval[21] = ((fb_B_eval_tmp * u_B_eval_tmp * v_B_eval_tmp - hb_B_eval_tmp *
+                 t_B_eval_tmp) + ib_B_eval_tmp * u_B_eval_tmp * s_B_eval_tmp) /
+    I_xx;
+  kb_B_eval_tmp = db_B_eval_tmp * l_z;
+  lb_B_eval_tmp = db_B_eval_tmp * l_1;
+  nb_B_eval_tmp = K_p_M * W_act_motor;
+  ob_B_eval_tmp = nb_B_eval_tmp * i_B_eval_tmp;
+  B_eval[27] = -((lb_B_eval_tmp * g_B_eval_tmp * h_B_eval_tmp - ob_B_eval_tmp) +
+                 kb_B_eval_tmp * h_B_eval_tmp * j_B_eval_tmp) / I_xx;
+  pb_B_eval_tmp = gb_B_eval_tmp * l_z;
+  qb_B_eval_tmp = gb_B_eval_tmp * l_1;
+  rb_B_eval_tmp = K_p_M * W_act_el;
+  sb_B_eval_tmp = rb_B_eval_tmp * m_B_eval_tmp;
+  B_eval[33] = -((sb_B_eval_tmp - qb_B_eval_tmp * k_B_eval_tmp * l_B_eval_tmp) +
+                 pb_B_eval_tmp * l_B_eval_tmp * n_B_eval_tmp) / I_xx;
+  tb_B_eval_tmp = jb_B_eval_tmp * l_z;
+  ub_B_eval_tmp = jb_B_eval_tmp * l_2;
+  vb_B_eval_tmp = K_p_M * W_act_az;
+  wb_B_eval_tmp = vb_B_eval_tmp * q_B_eval_tmp;
+  B_eval[39] = ((wb_B_eval_tmp + ub_B_eval_tmp * o_B_eval_tmp * p_B_eval_tmp) -
+                tb_B_eval_tmp * p_B_eval_tmp * r_B_eval_tmp) / I_xx;
+  xb_B_eval_tmp = mb_B_eval_tmp * l_z;
+  yb_B_eval_tmp = mb_B_eval_tmp * l_2;
+  ac_B_eval_tmp = K_p_M * B_eval_tmp_tmp;
+  W_act_motor = ac_B_eval_tmp * u_B_eval_tmp;
+  B_eval[45] = -((W_act_motor + yb_B_eval_tmp * s_B_eval_tmp * t_B_eval_tmp) +
+                 xb_B_eval_tmp * t_B_eval_tmp * v_B_eval_tmp) / I_xx;
+  kb_B_eval_tmp *= i_B_eval_tmp;
+  lb_B_eval_tmp *= i_B_eval_tmp;
+  B_eval[51] = (kb_B_eval_tmp * g_B_eval_tmp - lb_B_eval_tmp * j_B_eval_tmp) /
+    I_xx;
+  pb_B_eval_tmp *= m_B_eval_tmp;
+  qb_B_eval_tmp *= m_B_eval_tmp;
+  B_eval[57] = (pb_B_eval_tmp * k_B_eval_tmp + qb_B_eval_tmp * n_B_eval_tmp) /
+    I_xx;
+  tb_B_eval_tmp *= q_B_eval_tmp;
+  ub_B_eval_tmp *= q_B_eval_tmp;
+  B_eval[63] = (tb_B_eval_tmp * o_B_eval_tmp + ub_B_eval_tmp * r_B_eval_tmp) /
+    I_xx;
+  xb_B_eval_tmp *= u_B_eval_tmp;
+  yb_B_eval_tmp *= u_B_eval_tmp;
+  B_eval[69] = (xb_B_eval_tmp * s_B_eval_tmp - yb_B_eval_tmp * v_B_eval_tmp) /
+    I_xx;
+  B_eval[4] = ((B_eval_tmp * h_B_eval_tmp - b_B_eval_tmp * i_B_eval_tmp *
+                j_B_eval_tmp) + w_B_eval_tmp * l_4 * i_B_eval_tmp * g_B_eval_tmp)
+    / I_yy;
+  B_eval[10] = ((d_B_eval_tmp * l_B_eval_tmp + e_B_eval_tmp * m_B_eval_tmp *
+                 n_B_eval_tmp) + x_B_eval_tmp * l_4 * m_B_eval_tmp *
+                k_B_eval_tmp) / I_yy;
+  B_eval[16] = -((y_B_eval_tmp * q_B_eval_tmp * r_B_eval_tmp - ab_B_eval_tmp *
+                  p_B_eval_tmp) + bb_B_eval_tmp * l_3 * q_B_eval_tmp *
+                 o_B_eval_tmp) / I_yy;
+  B_eval[22] = ((fb_B_eval_tmp * t_B_eval_tmp + hb_B_eval_tmp * u_B_eval_tmp *
+                 v_B_eval_tmp) - cb_B_eval_tmp * l_3 * u_B_eval_tmp *
+                s_B_eval_tmp) / I_yy;
+  B_eval_tmp = db_B_eval_tmp * l_4;
+  B_eval[28] = ((nb_B_eval_tmp * h_B_eval_tmp * j_B_eval_tmp + kb_B_eval_tmp) -
+                B_eval_tmp * g_B_eval_tmp * h_B_eval_tmp) / I_yy;
+  b_B_eval_tmp = gb_B_eval_tmp * l_4;
+  B_eval[34] = -((rb_B_eval_tmp * l_B_eval_tmp * n_B_eval_tmp - pb_B_eval_tmp) +
+                 b_B_eval_tmp * k_B_eval_tmp * l_B_eval_tmp) / I_yy;
+  d_B_eval_tmp = jb_B_eval_tmp * l_3;
+  B_eval[40] = ((vb_B_eval_tmp * p_B_eval_tmp * r_B_eval_tmp + tb_B_eval_tmp) +
+                d_B_eval_tmp * o_B_eval_tmp * p_B_eval_tmp) / I_yy;
+  e_B_eval_tmp = mb_B_eval_tmp * l_3;
+  B_eval[46] = ((xb_B_eval_tmp - ac_B_eval_tmp * t_B_eval_tmp * v_B_eval_tmp) +
+                e_B_eval_tmp * s_B_eval_tmp * t_B_eval_tmp) / I_yy;
+  i_B_eval_tmp *= B_eval_tmp;
+  B_eval[52] = -(ob_B_eval_tmp * g_B_eval_tmp + i_B_eval_tmp * j_B_eval_tmp) /
+    I_yy;
+  m_B_eval_tmp *= b_B_eval_tmp;
+  B_eval[58] = (sb_B_eval_tmp * k_B_eval_tmp - m_B_eval_tmp * n_B_eval_tmp) /
+    I_yy;
+  q_B_eval_tmp *= d_B_eval_tmp;
+  B_eval[64] = -(wb_B_eval_tmp * o_B_eval_tmp - q_B_eval_tmp * r_B_eval_tmp) /
+    I_yy;
+  u_B_eval_tmp *= e_B_eval_tmp;
+  B_eval[70] = (W_act_motor * s_B_eval_tmp + u_B_eval_tmp * v_B_eval_tmp) / I_yy;
+  B_eval[5] = ((2.0 * K_p_M * Omega_1 * cos(b_1) * g_B_eval_tmp - c_B_eval_tmp *
+                h_B_eval_tmp) + 2.0 * K_p_T * Omega_1 * l_4 * cos(b_1) *
+               j_B_eval_tmp) / I_zz;
+  B_eval[11] = ((f_B_eval_tmp * l_B_eval_tmp - 2.0 * K_p_M * Omega_2 * cos(b_2) *
+                 k_B_eval_tmp) + 2.0 * K_p_T * Omega_2 * l_4 * cos(b_2) *
+                n_B_eval_tmp) / I_zz;
+  B_eval[17] = ((eb_B_eval_tmp * p_B_eval_tmp + 2.0 * K_p_M * Omega_3 * cos(b_3)
+                 * o_B_eval_tmp) - 2.0 * K_p_T * Omega_3 * l_3 * cos(b_3) *
+                r_B_eval_tmp) / I_zz;
+  B_eval[23] = -((ib_B_eval_tmp * t_B_eval_tmp + 2.0 * K_p_M * Omega_4 * cos(b_4)
+                  * s_B_eval_tmp) + 2.0 * K_p_T * Omega_4 * l_3 * cos(b_4) *
+                 v_B_eval_tmp) / I_zz;
+  B_eval[29] = -((lb_B_eval_tmp + nb_B_eval_tmp * g_B_eval_tmp * h_B_eval_tmp) +
+                 B_eval_tmp * h_B_eval_tmp * j_B_eval_tmp) / I_zz;
+  B_eval[35] = ((qb_B_eval_tmp + rb_B_eval_tmp * k_B_eval_tmp * l_B_eval_tmp) -
+                b_B_eval_tmp * l_B_eval_tmp * n_B_eval_tmp) / I_zz;
+  B_eval[41] = ((ub_B_eval_tmp - vb_B_eval_tmp * o_B_eval_tmp * p_B_eval_tmp) +
+                d_B_eval_tmp * p_B_eval_tmp * r_B_eval_tmp) / I_zz;
+  B_eval[47] = ((ac_B_eval_tmp * s_B_eval_tmp * t_B_eval_tmp - yb_B_eval_tmp) +
+                e_B_eval_tmp * t_B_eval_tmp * v_B_eval_tmp) / I_zz;
+  B_eval[53] = -(ob_B_eval_tmp * j_B_eval_tmp - i_B_eval_tmp * g_B_eval_tmp) /
+    I_zz;
+  B_eval[59] = (sb_B_eval_tmp * n_B_eval_tmp + m_B_eval_tmp * k_B_eval_tmp) /
+    I_zz;
+  B_eval[65] = -(wb_B_eval_tmp * r_B_eval_tmp + q_B_eval_tmp * o_B_eval_tmp) /
+    I_zz;
+  B_eval[71] = (W_act_motor * v_B_eval_tmp - u_B_eval_tmp * s_B_eval_tmp) / I_zz;
+  actual_u[0] = Omega_1;
+  actual_u[1] = Omega_2;
+  actual_u[2] = Omega_3;
+  actual_u[3] = Omega_4;
+  actual_u[4] = b_1;
+  actual_u[5] = b_2;
+  actual_u[6] = b_3;
+  actual_u[7] = b_4;
+  actual_u[8] = g_1;
+  actual_u[9] = g_2;
+  actual_u[10] = g_3;
+  actual_u[11] = g_4;
+
+  /*  Apply gains for the normalization of the effectiveness matrix: */
+  c_compute_acc_nonlinear_earth_r(actual_u, Theta, Phi, Psi, p, q, r, K_p_T,
+    K_p_M, m, I_xx, I_yy, I_zz, l_1, l_2, l_3, l_4, l_z, Cl_alpha, Cd_zero, K_Cd,
+    Cm_alpha, Cm_zero, rho, V, S, wing_chord, flight_path_angle, Beta, residuals);
+  for (i = 0; i < 6; i++) {
+    W_act_motor = dv[i];
+    residuals[i] += W_act_motor;
+    W_act_el = 0.0;
+    for (k = 0; k < 12; k++) {
+      W_act_el += B_eval[i + 6 * k] * actual_u[k];
+    }
+
+    W_act_motor += W_act_el;
+    dv[i] = W_act_motor;
+  }
+
+  for (i = 0; i < 4; i++) {
+    for (k = 0; k < 6; k++) {
+      aoffset = k + 6 * i;
+      B_eval[aoffset] *= gain_motor;
+      aoffset = k + 6 * (i + 4);
+      B_eval[aoffset] *= gain_el;
+      aoffset = k + 6 * (i + 8);
+      B_eval[aoffset] *= gain_az;
+    }
+  }
+
+  /*  Apply WLS algorithm: */
+  /* Build the max and minimum actuator array:  */
+  u_max[0] = max_omega;
+  u_max[1] = max_omega;
+  u_max[2] = max_omega;
+  u_max[3] = max_omega;
+  u_max[4] = max_b;
+  u_max[5] = max_b;
+  u_max[6] = max_b;
+  u_max[7] = max_b;
+  u_max[8] = max_g;
+  u_max[9] = max_g;
+  u_max[10] = max_g;
+  u_max[11] = max_g;
+  u_min[0] = min_omega;
+  u_min[1] = min_omega;
+  u_min[2] = min_omega;
+  u_min[3] = min_omega;
+  u_min[4] = min_b;
+  u_min[5] = min_b;
+  u_min[6] = min_b;
+  u_min[7] = min_b;
+  u_min[8] = min_g;
+  u_min[9] = min_g;
+  u_min[10] = min_g;
+  u_min[11] = min_g;
+  for (i = 0; i < 8; i++) {
+    u_max[i + 4] = u_max[i + 4] * 3.1415926535897931 / 180.0;
+    u_min[i + 4] = u_min[i + 4] * 3.1415926535897931 / 180.0;
+  }
+
+  /* Comput now the delta to take from the actual actuator position to the desired one:  */
+  W_act_el = desired_motor_value / gain_motor;
+  desired_u_scaled[0] = W_act_el;
+  desired_u_scaled[1] = W_act_el;
+  desired_u_scaled[2] = W_act_el;
+  desired_u_scaled[3] = W_act_el;
+  W_act_el = desired_el_value / gain_el;
+  desired_u_scaled[4] = W_act_el;
+  W_act_motor = desired_az_value / gain_az;
+  desired_u_scaled[8] = W_act_motor;
+  desired_u_scaled[5] = W_act_el;
+  desired_u_scaled[9] = W_act_motor;
+  desired_u_scaled[6] = W_act_el;
+  desired_u_scaled[10] = W_act_motor;
+  desired_u_scaled[7] = W_act_el;
+  desired_u_scaled[11] = W_act_motor;
+
+  /* Compute the maximum and minimum control input value for each channel:  */
+  /*  Motor */
+  memcpy(&u_max_constrain[0], &u_max[0], 12U * sizeof(double));
+  memcpy(&u_min_constrain[0], &u_min[0], 12U * sizeof(double));
+  if (max_alpha > 3.0) {
+    W_act_el = max_alpha * 3.1415926535897931 / 180.0;
+    for (i = 0; i < 8; i++) {
+      W_act_motor = actual_u[i + 4];
+      u_max_constrain[i + 4] = W_act_motor + W_act_el;
+      u_min_constrain[i + 4] = W_act_motor - W_act_el;
+    }
+  }
+
+  /*  Elevator */
+  for (k = 0; k < 12; k++) {
+    max_u_scaled[k] = fmin(u_max[k], u_max_constrain[k]);
+    min_u_scaled[k] = fmax(u_min[k], u_min_constrain[k]);
+  }
+
+  max_u_scaled[0] /= gain_motor;
+  min_u_scaled[0] /= gain_motor;
+  max_u_scaled[4] /= gain_el;
+  min_u_scaled[4] /= gain_el;
+  max_u_scaled[8] /= gain_az;
+  min_u_scaled[8] /= gain_az;
+  max_u_scaled[1] /= gain_motor;
+  min_u_scaled[1] /= gain_motor;
+  max_u_scaled[5] /= gain_el;
+  min_u_scaled[5] /= gain_el;
+  max_u_scaled[9] /= gain_az;
+  min_u_scaled[9] /= gain_az;
+  max_u_scaled[2] /= gain_motor;
+  min_u_scaled[2] /= gain_motor;
+  max_u_scaled[6] /= gain_el;
+  min_u_scaled[6] /= gain_el;
+  max_u_scaled[10] /= gain_az;
+  min_u_scaled[10] /= gain_az;
+  max_u_scaled[3] /= gain_motor;
+  min_u_scaled[3] /= gain_motor;
+  max_u_scaled[7] /= gain_el;
+  min_u_scaled[7] /= gain_el;
+  max_u_scaled[11] /= gain_az;
+  min_u_scaled[11] /= gain_az;
+
+  /* Weighting matrix for the control objective and pseudo control: */
+  W_act_motor = fmax(1.0, W_act_motor_const + W_act_motor_speed * V);
+  W_act_el = fmax(0.0, W_act_tilt_el_const + W_act_tilt_el_speed * V);
+  W_act_az = fmax(0.0, W_act_tilt_az_const + W_act_tilt_az_speed * V);
+  v[0] = W_dv_1;
+  v[1] = W_dv_2;
+  v[2] = W_dv_3;
+  v[3] = W_dv_4;
+  v[4] = W_dv_5;
+  v[5] = W_dv_6;
+  memset(&Wv[0], 0, 36U * sizeof(double));
+  for (aoffset = 0; aoffset < 6; aoffset++) {
+    Wv[aoffset + 6 * aoffset] = v[aoffset];
+  }
+
+  actual_u[0] = W_act_motor;
+  actual_u[1] = W_act_motor;
+  actual_u[2] = W_act_motor;
+  actual_u[3] = W_act_motor;
+  actual_u[4] = W_act_el;
+  actual_u[5] = W_act_el;
+  actual_u[6] = W_act_el;
+  actual_u[7] = W_act_el;
+  actual_u[8] = W_act_az;
+  actual_u[9] = W_act_az;
+  actual_u[10] = W_act_az;
+  actual_u[11] = W_act_az;
+  memset(&Wu[0], 0, 144U * sizeof(double));
+  for (aoffset = 0; aoffset < 12; aoffset++) {
+    Wu[aoffset + 12 * aoffset] = actual_u[aoffset];
+  }
+
+  /*  WLS_ALLOC - Control allocation using weighted least squares. */
+  /*  */
+  /*   [u,W,iter] = wls_alloc(B,v,umin,umax,[Wv,Wu,ud,gamma,u0,W0,imax]) */
+  /*  */
+  /*  Solves the weighted, bounded least-squares problem */
+  /*  */
+  /*    min ||Wu(u-ud)||^2 + gamma ||Wv(Bu-v)||^2 */
+  /*  */
+  /*    subj. to  umin <= u <= umax */
+  /*  */
+  /*  using an active set method. */
+  /*  */
+  /*   Inputs: */
+  /*   ------- */
+  /*  B     control effectiveness matrix (k x m) */
+  /*  v     commanded virtual control (k x 1) */
+  /*  umin  lower position limits (m x 1) */
+  /*  umax  upper position limits (m x 1) */
+  /*  Wv    virtual control weighting matrix (k x k) [I] */
+  /*  Wu    control weighting matrix (m x m) [I] */
+  /*  ud    desired control (m x 1) [0] */
+  /*  gamma weight (scalar) [1e6] */
+  /*  u0    initial point (m x 1) */
+  /*  W0    initial working set (m x 1) [empty] */
+  /*  imax  max no. of iterations [100] */
+  /*   */
+  /*   Outputs: */
+  /*   ------- */
+  /*  u     optimal control */
+  /*  W     optimal active set */
+  /*  iter  no. of iterations (= no. of changes in the working set + 1) */
+  /*  */
+  /*                             0 if u_i not saturated */
+  /*  Working set syntax: W_i = -1 if u_i = umin_i */
+  /*                            +1 if u_i = umax_i */
+  /*  */
+  /*  See also: WLSC_ALLOC, IP_ALLOC, FXP_ALLOC, QP_SIM. */
+  memset(&u_max_constrain[0], 0, 12U * sizeof(double));
+  memset(&u_min[0], 0, 12U * sizeof(double));
+
+  /*  Number of variables */
+  /*  Set default values of optional arguments */
+  W_act_el = sqrt(gammasq * gammasq);
+  for (i = 0; i < 6; i++) {
+    for (k = 0; k < 12; k++) {
+      W_act_motor = 0.0;
+      for (aoffset = 0; aoffset < 6; aoffset++) {
+        W_act_motor += W_act_el * Wv[i + 6 * aoffset] * B_eval[aoffset + 6 * k];
+      }
+
+      gam_sq[i + 6 * k] = W_act_motor;
+    }
+  }
+
+  for (i = 0; i < 12; i++) {
+    for (k = 0; k < 6; k++) {
+      A[k + 18 * i] = gam_sq[k + 6 * i];
+    }
+
+    memcpy(&A[i * 18 + 6], &Wu[i * 12], 12U * sizeof(double));
+  }
+
+  /*  Initial residual. */
+  for (i = 0; i < 6; i++) {
+    W_act_motor = 0.0;
+    for (k = 0; k < 6; k++) {
+      W_act_motor += W_act_el * Wv[i + 6 * k] * dv[k];
+    }
+
+    v[i] = W_act_motor;
+  }
+
+  for (i = 0; i < 12; i++) {
+    W_act_motor = 0.0;
+    for (k = 0; k < 12; k++) {
+      W_act_motor += Wu[i + 12 * k] * desired_u_scaled[k];
+    }
+
+    u_min_constrain[i] = W_act_motor;
+  }
+
+  for (i = 0; i < 6; i++) {
+    d[i] = v[i];
+  }
+
+  memcpy(&d[6], &u_min_constrain[0], 12U * sizeof(double));
+  for (i = 0; i < 18; i++) {
+    W_act_motor = 0.0;
+    for (k = 0; k < 12; k++) {
+      W_act_motor += A[i + 18 * k] * 0.0;
+    }
+
+    d[i] -= W_act_motor;
+  }
+
+  /*  Determine indeces of free variables. */
+  for (b_i = 0; b_i < 12; b_i++) {
+    i_free[b_i] = true;
+  }
+
+  /*  Iterate until optimum is found or maximum number of iterations */
+  /*  is reached. */
+  b_N_iterations = 1;
+  iter = 0;
+  exitg1 = false;
+  while ((!exitg1) && (iter < 100)) {
+    double A_free_data[216];
+    int trueCount;
+    bool x_data[12];
+    bool exitg2;
+    bool y;
+    b_N_iterations = iter + 1;
+
+    /*  ---------------------------------------- */
+    /*   Compute optimal perturbation vector p. */
+    /*  ---------------------------------------- */
+    /*  Eliminate saturated variables. */
+    trueCount = 0;
+    aoffset = 0;
+    for (b_i = 0; b_i < 12; b_i++) {
+      if (i_free[b_i]) {
+        trueCount++;
+        tmp_data[aoffset] = (signed char)(b_i + 1);
+        aoffset++;
+      }
+    }
+
+    A_free_size[0] = 18;
+    A_free_size[1] = trueCount;
+    for (i = 0; i < trueCount; i++) {
+      for (k = 0; k < 18; k++) {
+        A_free_data[k + 18 * i] = A[k + 18 * (tmp_data[i] - 1)];
+      }
+    }
+
+    /*  Solve the reduced optimization problem for free variables. */
+    mldivide(A_free_data, A_free_size, d, u_min_constrain, &aoffset);
+
+    /*  Zero all perturbations corresponding to active constraints. */
+    /*  Insert perturbations from p_free into free the variables. */
+    aoffset = 0;
+
+    /*  ---------------------------- */
+    /*   Is the new point feasible? */
+    /*  ---------------------------- */
+    b_trueCount = 0;
+    k = 0;
+    for (b_i = 0; b_i < 12; b_i++) {
+      W_act_motor = 0.0;
+      u_max[b_i] = 0.0;
+      y = i_free[b_i];
+      if (y) {
+        W_act_motor = u_min_constrain[aoffset];
+        u_max[b_i] = u_min_constrain[aoffset];
+        aoffset++;
+      }
+
+      actual_u[b_i] = u_min[b_i] + W_act_motor;
+      if (y) {
+        b_trueCount++;
+        b_tmp_data[k] = (signed char)(b_i + 1);
+        k++;
+      }
+    }
+
+    for (i = 0; i < b_trueCount; i++) {
+      aoffset = b_tmp_data[i] - 1;
+      W_act_el = actual_u[aoffset];
+      x_data[i] = ((W_act_el < min_u_scaled[aoffset]) || (W_act_el >
+        max_u_scaled[aoffset]));
+    }
+
+    y = false;
+    aoffset = 1;
+    exitg2 = false;
+    while ((!exitg2) && (aoffset <= b_trueCount)) {
+      if (x_data[aoffset - 1]) {
+        y = true;
+        exitg2 = true;
+      } else {
+        aoffset++;
+      }
+    }
+
+    if (!y) {
+      /*  ---------------------------- */
+      /*   Yes, check for optimality. */
+      /*  ---------------------------- */
+      /*  Update point and residual. */
+      memcpy(&u_min[0], &actual_u[0], 12U * sizeof(double));
+      memset(&b_A[0], 0, 18U * sizeof(double));
+      for (k = 0; k < trueCount; k++) {
+        aoffset = k * 18;
+        for (b_i = 0; b_i < 18; b_i++) {
+          i = aoffset + b_i;
+          b_A[b_i] += A[i % 18 + 18 * (tmp_data[i / 18] - 1)] *
+            u_min_constrain[k];
+        }
+      }
+
+      for (i = 0; i < 18; i++) {
+        d[i] -= b_A[i];
+      }
+
+      /*  Compute Lagrangian multipliers. */
+      for (i = 0; i < 12; i++) {
+        W_act_motor = 0.0;
+        for (k = 0; k < 18; k++) {
+          W_act_motor += A[k + 18 * i] * d[k];
+        }
+
+        actual_u[i] = u_max_constrain[i] * W_act_motor;
+      }
+
+      /*  Are all lambda non-negative? */
+      y = true;
+      k = 0;
+      exitg2 = false;
+      while ((!exitg2) && (k < 12)) {
+        if (!(actual_u[k] >= -2.2204460492503131E-16)) {
+          y = false;
+          exitg2 = true;
+        } else {
+          k++;
+        }
+      }
+
+      if (y) {
+        /*  / ------------------------ \ */
+        /*  | Optimum found, bail out. | */
+        /*  \ ------------------------ / */
+        exitg1 = true;
+      } else {
+        /*  -------------------------------------------------- */
+        /*   Optimum not found, remove one active constraint. */
+        /*  -------------------------------------------------- */
+        /*  Remove constraint with most negative lambda from the */
+        /*  working set. */
+        minimum(actual_u, &W_act_el, &b_trueCount);
+        u_max_constrain[b_trueCount - 1] = 0.0;
+        i_free[b_trueCount - 1] = true;
+        iter++;
+      }
+    } else {
+      bool bv[12];
+
+      /*  --------------------------------------- */
+      /*   No, find primary bounding constraint. */
+      /*  --------------------------------------- */
+      /*  Compute distances to the different boundaries. Since alpha < 1 */
+      /*  is the maximum step length, initiate with ones. */
+      b_trueCount = 0;
+      aoffset = 0;
+      for (b_i = 0; b_i < 12; b_i++) {
+        bool b;
+        actual_u[b_i] = 1.0;
+        W_act_motor = u_max[b_i];
+        y = (W_act_motor < 0.0);
+        x_data[b_i] = y;
+        bv[b_i] = (W_act_motor > 0.0);
+        b = i_free[b_i];
+        if (b && y) {
+          b_trueCount++;
+          c_tmp_data[aoffset] = (signed char)(b_i + 1);
+          aoffset++;
+        }
+      }
+
+      for (i = 0; i < b_trueCount; i++) {
+        k = c_tmp_data[i] - 1;
+        desired_u_scaled[i] = (min_u_scaled[k] - u_min[k]) / u_max[k];
+      }
+
+      aoffset = 0;
+      b_trueCount = 0;
+      k = 0;
+      for (b_i = 0; b_i < 12; b_i++) {
+        y = i_free[b_i];
+        if (y && x_data[b_i]) {
+          actual_u[b_i] = desired_u_scaled[aoffset];
+          aoffset++;
+        }
+
+        if (y && bv[b_i]) {
+          b_trueCount++;
+          d_tmp_data[k] = (signed char)(b_i + 1);
+          k++;
+        }
+      }
+
+      for (i = 0; i < b_trueCount; i++) {
+        k = d_tmp_data[i] - 1;
+        desired_u_scaled[i] = (max_u_scaled[k] - u_min[k]) / u_max[k];
+      }
+
+      aoffset = 0;
+      for (b_i = 0; b_i < 12; b_i++) {
+        if (i_free[b_i] && bv[b_i]) {
+          actual_u[b_i] = desired_u_scaled[aoffset];
+          aoffset++;
+        }
+      }
+
+      /*  Proportion of p to travel */
+      minimum(actual_u, &W_act_el, &b_trueCount);
+
+      /*  Update point and residual. */
+      for (i = 0; i < 12; i++) {
+        u_min[i] += W_act_el * u_max[i];
+      }
+
+      aoffset = 18 * trueCount;
+      for (i = 0; i < aoffset; i++) {
+        A_free_data[i] *= W_act_el;
+      }
+
+      memset(&b_A[0], 0, 18U * sizeof(double));
+      for (k = 0; k < trueCount; k++) {
+        aoffset = k * 18;
+        for (b_i = 0; b_i < 18; b_i++) {
+          b_A[b_i] += A_free_data[aoffset + b_i] * u_min_constrain[k];
+        }
+      }
+
+      for (i = 0; i < 18; i++) {
+        d[i] -= b_A[i];
+      }
+
+      /*  Add corresponding constraint to working set. */
+      W_act_motor = u_max[b_trueCount - 1];
+      u_max_constrain[b_trueCount - 1] = W_act_motor;
+      if (!rtIsNaN(W_act_motor)) {
+        if (u_max[b_trueCount - 1] < 0.0) {
+          u_max_constrain[b_trueCount - 1] = -1.0;
+        } else {
+          u_max_constrain[b_trueCount - 1] = (u_max[b_trueCount - 1] > 0.0);
+        }
+      }
+
+      i_free[b_trueCount - 1] = false;
+      iter++;
+    }
+  }
+
+  *N_iterations = b_N_iterations;
+
+  /* Scale back the increment to remove the normalization */
+  u_min[0] *= gain_motor;
+  u_min[4] *= gain_el;
+  u_min[8] *= gain_az;
+  u_min[1] *= gain_motor;
+  u_min[5] *= gain_el;
+  u_min[9] *= gain_az;
+  u_min[2] *= gain_motor;
+  u_min[6] *= gain_el;
+  u_min[10] *= gain_az;
+  u_min[3] *= gain_motor;
+  u_min[7] *= gain_el;
+  u_min[11] *= gain_az;
+  c_compute_acc_nonlinear_earth_r(u_min, Theta, Phi, Psi, p, q, r, K_p_T, K_p_M,
+    m, I_xx, I_yy, I_zz, l_1, l_2, l_3, l_4, l_z, Cl_alpha, Cd_zero, K_Cd,
+    Cm_alpha, Cm_zero, rho, V, S, wing_chord, flight_path_angle, Beta, v);
+  for (i = 0; i < 6; i++) {
+    residuals[i] -= v[i];
+  }
+
+  memcpy(&u_out[0], &u_min[0], 12U * sizeof(double));
+  u_out[12] = desired_theta_value * 3.1415926535897931 / 180.0;
+  u_out[13] = desired_phi_value * 3.1415926535897931 / 180.0;
+  *elapsed_time = toc();
+  *N_evaluation = b_N_iterations;
+  for (i = 0; i < 12; i++) {
+    i_free[i] = rtIsNaN(u_min[i]);
+  }
+
+  aoffset = i_free[0];
+  for (k = 0; k < 11; k++) {
+    aoffset += i_free[k + 1];
+  }
+
+  if (aoffset > 0.5) {
+    *exitflag = -1.0;
+  } else {
+    *exitflag = 1.0;
+  }
 }
 
 /*
@@ -2051,19 +3840,295 @@ static void c_compute_acc_nonlinear_control(const double u_in[15], double p,
 }
 
 /*
- * Arguments    : const double x[6]
+ * Arguments    : const double u_in[12]
+ *                double Theta
+ *                double Phi
+ *                double Psi
+ *                double p
+ *                double q
+ *                double r
+ *                double K_p_T
+ *                double K_p_M
+ *                double m
+ *                double I_xx
+ *                double I_yy
+ *                double I_zz
+ *                double l_1
+ *                double l_2
+ *                double l_3
+ *                double l_4
+ *                double l_z
+ *                double Cl_alpha
+ *                double Cd_zero
+ *                double K_Cd
+ *                double Cm_alpha
+ *                double Cm_zero
+ *                double rho
+ *                double V
+ *                double S
+ *                double wing_chord
+ *                double flight_path_angle
+ *                double Beta
+ *                double computed_acc[6]
+ * Return Type  : void
+ */
+static void c_compute_acc_nonlinear_earth_r(const double u_in[12], double Theta,
+  double Phi, double Psi, double p, double q, double r, double K_p_T, double
+  K_p_M, double m, double I_xx, double I_yy, double I_zz, double l_1, double l_2,
+  double l_3, double l_4, double l_z, double Cl_alpha, double Cd_zero, double
+  K_Cd, double Cm_alpha, double Cm_zero, double rho, double V, double S, double
+  wing_chord, double flight_path_angle, double Beta, double computed_acc[6])
+{
+  double ab_computed_acc_tmp;
+  double b_computed_acc_tmp;
+  double b_computed_acc_tmp_tmp;
+  double bb_computed_acc_tmp;
+  double c_computed_acc_tmp;
+  double c_computed_acc_tmp_tmp;
+  double cb_computed_acc_tmp;
+  double computed_acc_tmp;
+  double computed_acc_tmp_tmp;
+  double d_computed_acc_tmp;
+  double d_computed_acc_tmp_tmp;
+  double db_computed_acc_tmp;
+  double e_computed_acc_tmp;
+  double eb_computed_acc_tmp;
+  double f_computed_acc_tmp;
+  double fb_computed_acc_tmp;
+  double g_computed_acc_tmp;
+  double gb_computed_acc_tmp;
+  double h_computed_acc_tmp;
+  double hb_computed_acc_tmp;
+  double i_computed_acc_tmp;
+  double j_computed_acc_tmp;
+  double k_computed_acc_tmp;
+  double l_computed_acc_tmp;
+  double m_computed_acc_tmp;
+  double n_computed_acc_tmp;
+  double o_computed_acc_tmp;
+  double p_computed_acc_tmp;
+  double q_computed_acc_tmp;
+  double r_computed_acc_tmp;
+  double s_computed_acc_tmp;
+  double t_computed_acc_tmp;
+  double u_computed_acc_tmp;
+  double v_computed_acc_tmp;
+  double w_computed_acc_tmp;
+  double x_computed_acc_tmp;
+  double y_computed_acc_tmp;
+
+  /*      computed_acc(1) = -((sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta))*(K_p_T*cos(b_1)*cos(g_1)*Omega_1^2 + K_p_T*cos(b_2)*cos(g_2)*Omega_2^2 + K_p_T*cos(b_3)*cos(g_3)*Omega_3^2 + K_p_T*cos(b_4)*cos(g_4)*Omega_4^2) + (cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta))*(K_p_T*cos(b_1)*sin(g_1)*Omega_1^2 + K_p_T*cos(b_2)*sin(g_2)*Omega_2^2 + K_p_T*cos(b_3)*sin(g_3)*Omega_3^2 + K_p_T*cos(b_4)*sin(g_4)*Omega_4^2) + cos(Psi)*cos(Theta)*(K_p_T*sin(b_1)*Omega_1^2 + K_p_T*sin(b_2)*Omega_2^2 + K_p_T*sin(b_3)*Omega_3^2 + K_p_T*sin(b_4)*Omega_4^2) + (S*V^2*rho*(Cd_zero + Cl_alpha^2*K_Cd*(Theta - flight_path_angle)^2)*(cos(Beta)*sin(Theta - flight_path_angle)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - sin(Beta)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)) + cos(Beta)*cos(Psi)*cos(Theta)*cos(Theta - flight_path_angle)))/2 + (Cl_alpha*S*V^2*rho*(cos(Theta - flight_path_angle)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - cos(Psi)*cos(Theta)*sin(Theta - flight_path_angle))*(Theta - flight_path_angle))/2)/m; */
+  /*      computed_acc(2) = ((cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta))*(K_p_T*cos(b_1)*cos(g_1)*Omega_1^2 + K_p_T*cos(b_2)*cos(g_2)*Omega_2^2 + K_p_T*cos(b_3)*cos(g_3)*Omega_3^2 + K_p_T*cos(b_4)*cos(g_4)*Omega_4^2) + (cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta))*(K_p_T*cos(b_1)*sin(g_1)*Omega_1^2 + K_p_T*cos(b_2)*sin(g_2)*Omega_2^2 + K_p_T*cos(b_3)*sin(g_3)*Omega_3^2 + K_p_T*cos(b_4)*sin(g_4)*Omega_4^2) - cos(Theta)*sin(Psi)*(K_p_T*sin(b_1)*Omega_1^2 + K_p_T*sin(b_2)*Omega_2^2 + K_p_T*sin(b_3)*Omega_3^2 + K_p_T*sin(b_4)*Omega_4^2) - (S*V^2*rho*(Cd_zero + Cl_alpha^2*K_Cd*(Theta - flight_path_angle)^2)*(sin(Beta)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)) - cos(Beta)*sin(Theta - flight_path_angle)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + cos(Beta)*cos(Theta)*sin(Psi)*cos(Theta - flight_path_angle)))/2 + (Cl_alpha*S*V^2*rho*(cos(Theta - flight_path_angle)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + cos(Theta)*sin(Psi)*sin(Theta - flight_path_angle))*(Theta - flight_path_angle))/2)/m; */
+  /*      computed_acc(3) =                                                 981/100 - (cos(Phi)*cos(Theta)*(K_p_T*cos(b_1)*cos(g_1)*Omega_1^2 + K_p_T*cos(b_2)*cos(g_2)*Omega_2^2 + K_p_T*cos(b_3)*cos(g_3)*Omega_3^2 + K_p_T*cos(b_4)*cos(g_4)*Omega_4^2) - cos(Theta)*sin(Phi)*(K_p_T*cos(b_1)*sin(g_1)*Omega_1^2 + K_p_T*cos(b_2)*sin(g_2)*Omega_2^2 + K_p_T*cos(b_3)*sin(g_3)*Omega_3^2 + K_p_T*cos(b_4)*sin(g_4)*Omega_4^2) - (cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta))*(K_p_T*sin(b_1)*Omega_1^2 + K_p_T*sin(b_2)*Omega_2^2 + K_p_T*sin(b_3)*Omega_3^2 + K_p_T*sin(b_4)*Omega_4^2) + (S*V^2*rho*(Cd_zero + Cl_alpha^2*K_Cd*(Theta - flight_path_angle)^2)*(sin(Beta)*cos(Theta)*sin(Phi) - cos(Beta)*cos(Theta - flight_path_angle)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + cos(Beta)*cos(Phi)*cos(Theta)*sin(Theta - flight_path_angle)))/2 + (Cl_alpha*S*V^2*rho*(sin(Theta - flight_path_angle)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + cos(Phi)*cos(Theta)*cos(Theta - flight_path_angle))*(Theta - flight_path_angle))/2)/m; */
+  computed_acc_tmp = cos(Phi);
+  b_computed_acc_tmp = sin(Psi);
+  c_computed_acc_tmp = cos(Psi);
+  d_computed_acc_tmp = sin(Phi);
+  computed_acc_tmp_tmp = sin(Theta);
+  b_computed_acc_tmp_tmp = Theta - flight_path_angle;
+  e_computed_acc_tmp = cos(b_computed_acc_tmp_tmp);
+  f_computed_acc_tmp = sin(b_computed_acc_tmp_tmp);
+  g_computed_acc_tmp = cos(Theta);
+  h_computed_acc_tmp = V;
+  if (!rtIsNaN(V)) {
+    if (V < 0.0) {
+      h_computed_acc_tmp = -1.0;
+    } else {
+      h_computed_acc_tmp = (V > 0.0);
+    }
+  }
+
+  i_computed_acc_tmp = sin(u_in[4]);
+  j_computed_acc_tmp = sin(u_in[5]);
+  k_computed_acc_tmp = sin(u_in[6]);
+  l_computed_acc_tmp = sin(u_in[7]);
+  m_computed_acc_tmp = cos(u_in[4]);
+  n_computed_acc_tmp = cos(u_in[8]);
+  o_computed_acc_tmp = cos(u_in[5]);
+  p_computed_acc_tmp = cos(u_in[9]);
+  q_computed_acc_tmp = cos(u_in[6]);
+  r_computed_acc_tmp = cos(u_in[10]);
+  s_computed_acc_tmp = cos(u_in[7]);
+  t_computed_acc_tmp = cos(u_in[11]);
+  u_computed_acc_tmp = sin(u_in[8]);
+  v_computed_acc_tmp = sin(u_in[9]);
+  w_computed_acc_tmp = sin(u_in[10]);
+  x_computed_acc_tmp = sin(u_in[11]);
+  y_computed_acc_tmp = V * V;
+  ab_computed_acc_tmp = u_in[0] * u_in[0];
+  bb_computed_acc_tmp = u_in[1] * u_in[1];
+  cb_computed_acc_tmp = u_in[2] * u_in[2];
+  db_computed_acc_tmp = u_in[3] * u_in[3];
+  c_computed_acc_tmp_tmp = S * y_computed_acc_tmp * rho;
+  eb_computed_acc_tmp = c_computed_acc_tmp_tmp * cos(Beta);
+  y_computed_acc_tmp = Cl_alpha * S * y_computed_acc_tmp * rho;
+  fb_computed_acc_tmp = c_computed_acc_tmp_tmp * sin(Beta);
+  gb_computed_acc_tmp = Cd_zero + Cl_alpha * Cl_alpha * K_Cd *
+    (b_computed_acc_tmp_tmp * b_computed_acc_tmp_tmp);
+  hb_computed_acc_tmp = eb_computed_acc_tmp * f_computed_acc_tmp *
+    gb_computed_acc_tmp / 2.0 + y_computed_acc_tmp * e_computed_acc_tmp *
+    b_computed_acc_tmp_tmp / 2.0;
+  e_computed_acc_tmp = eb_computed_acc_tmp * e_computed_acc_tmp *
+    gb_computed_acc_tmp / 2.0 - y_computed_acc_tmp * f_computed_acc_tmp *
+    b_computed_acc_tmp_tmp / 2.0;
+  f_computed_acc_tmp = fb_computed_acc_tmp * gb_computed_acc_tmp;
+  computed_acc[0] = -((((((d_computed_acc_tmp * b_computed_acc_tmp +
+    computed_acc_tmp * c_computed_acc_tmp * computed_acc_tmp_tmp) * (((K_p_T
+    * m_computed_acc_tmp * n_computed_acc_tmp * ab_computed_acc_tmp + K_p_T
+    * o_computed_acc_tmp * p_computed_acc_tmp * bb_computed_acc_tmp) + K_p_T
+    * q_computed_acc_tmp * r_computed_acc_tmp * cb_computed_acc_tmp) + K_p_T
+    * s_computed_acc_tmp * t_computed_acc_tmp * db_computed_acc_tmp) +
+    hb_computed_acc_tmp * (sin(Phi) * sin(Psi) + cos(Phi) * cos(Psi) * sin(Theta)))
+    + (computed_acc_tmp * b_computed_acc_tmp - c_computed_acc_tmp *
+       d_computed_acc_tmp * computed_acc_tmp_tmp) * (((K_p_T * cos(u_in[4]) *
+    u_computed_acc_tmp * ab_computed_acc_tmp + K_p_T * cos(u_in[5]) *
+    v_computed_acc_tmp * bb_computed_acc_tmp) + K_p_T * cos(u_in[6]) *
+    w_computed_acc_tmp * cb_computed_acc_tmp) + K_p_T * cos(u_in[7]) *
+    x_computed_acc_tmp * db_computed_acc_tmp)) + c_computed_acc_tmp *
+                        g_computed_acc_tmp * (((K_p_T * i_computed_acc_tmp *
+    ab_computed_acc_tmp + K_p_T * j_computed_acc_tmp * bb_computed_acc_tmp) +
+    K_p_T * k_computed_acc_tmp * cb_computed_acc_tmp) + K_p_T
+    * l_computed_acc_tmp * db_computed_acc_tmp)) + cos(Psi) * cos(Theta) *
+                       h_computed_acc_tmp * e_computed_acc_tmp) -
+                      f_computed_acc_tmp * (cos(Phi) * sin(Psi) - cos(Psi) * sin
+    (Phi) * sin(Theta)) / 2.0) / m;
+  d_computed_acc_tmp_tmp = cos(Psi) * sin(Phi) - cos(Phi) * sin(Psi) *
+    computed_acc_tmp_tmp;
+  c_computed_acc_tmp = ((K_p_T * sin(u_in[4]) * (u_in[0] * u_in[0]) + K_p_T
+    * sin(u_in[5]) * (u_in[1] * u_in[1])) + K_p_T * sin(u_in[6]) * (u_in[2] *
+    u_in[2])) + K_p_T * sin(u_in[7]) * (u_in[3] * u_in[3]);
+  y_computed_acc_tmp = ((K_p_T * cos(u_in[4]) * sin(u_in[8]) * (u_in[0] * u_in[0])
+    + K_p_T * cos(u_in[5]) * sin(u_in[9]) * (u_in[1] * u_in[1])) + K_p_T * cos
+                        (u_in[6]) * sin(u_in[10]) * (u_in[2] * u_in[2])) + K_p_T
+    * cos(u_in[7]) * sin(u_in[11]) * (u_in[3] * u_in[3]);
+  eb_computed_acc_tmp = ((K_p_T * cos(u_in[4]) * cos(u_in[8]) * (u_in[0] * u_in
+    [0]) + K_p_T * cos(u_in[5]) * cos(u_in[9]) * (u_in[1] * u_in[1])) + K_p_T
+    * cos(u_in[6]) * cos(u_in[10]) * (u_in[2] * u_in[2])) + K_p_T * cos(u_in[7])
+    * cos(u_in[11]) * (u_in[3] * u_in[3]);
+  computed_acc[1] = (((((d_computed_acc_tmp_tmp * eb_computed_acc_tmp +
+    hb_computed_acc_tmp * d_computed_acc_tmp_tmp) + (cos(Phi) * cos(Psi) + sin
+    (Phi) * sin(Psi) * computed_acc_tmp_tmp) * y_computed_acc_tmp) -
+                       g_computed_acc_tmp * b_computed_acc_tmp *
+                       c_computed_acc_tmp) - cos(Theta) * sin(Psi) *
+                      h_computed_acc_tmp * e_computed_acc_tmp) -
+                     f_computed_acc_tmp * (cos(Phi) * cos(Psi) + sin(Phi) * sin
+    (Psi) * sin(Theta)) / 2.0) / m;
+  computed_acc[2] = (((((d_computed_acc_tmp_tmp * c_computed_acc_tmp +
+    h_computed_acc_tmp * e_computed_acc_tmp * d_computed_acc_tmp_tmp) +
+                        g_computed_acc_tmp * d_computed_acc_tmp *
+                        y_computed_acc_tmp) - computed_acc_tmp *
+                       g_computed_acc_tmp * eb_computed_acc_tmp) - cos(Phi) *
+                      cos(Theta) * hb_computed_acc_tmp) - fb_computed_acc_tmp *
+                     g_computed_acc_tmp * d_computed_acc_tmp *
+                     gb_computed_acc_tmp / 2.0) / m + 9.81;
+
+  /*      computed_acc(4) =                                                                            (K_p_M*Omega_1^2*sin(b_1) - K_p_M*Omega_2^2*sin(b_2) + K_p_M*Omega_3^2*sin(b_3) - K_p_M*Omega_4^2*sin(b_4) + I_yy*q*r - I_zz*q*r + K_p_T*Omega_1^2*l_1*cos(b_1)*cos(g_1) - K_p_T*Omega_2^2*l_1*cos(b_2)*cos(g_2) - K_p_T*Omega_3^2*l_2*cos(b_3)*cos(g_3) + K_p_T*Omega_4^2*l_2*cos(b_4)*cos(g_4) + K_p_T*Omega_1^2*l_z*cos(b_1)*sin(g_1) + K_p_T*Omega_2^2*l_z*cos(b_2)*sin(g_2) + K_p_T*Omega_3^2*l_z*cos(b_3)*sin(g_3) + K_p_T*Omega_4^2*l_z*cos(b_4)*sin(g_4))/I_xx; */
+  /*      computed_acc(5) = (I_zz*p*r - I_xx*p*r + K_p_T*Omega_1^2*l_z*sin(b_1) + K_p_T*Omega_2^2*l_z*sin(b_2) + K_p_T*Omega_3^2*l_z*sin(b_3) + K_p_T*Omega_4^2*l_z*sin(b_4) - K_p_M*Omega_1^2*cos(b_1)*sin(g_1) + K_p_M*Omega_2^2*cos(b_2)*sin(g_2) - K_p_M*Omega_3^2*cos(b_3)*sin(g_3) + K_p_M*Omega_4^2*cos(b_4)*sin(g_4) + (S*V^2*rho*wing_chord*(Cm_zero + Cm_alpha*(Theta - flight_path_angle)))/2 + K_p_T*Omega_1^2*l_4*cos(b_1)*cos(g_1) + K_p_T*Omega_2^2*l_4*cos(b_2)*cos(g_2) - K_p_T*Omega_3^2*l_3*cos(b_3)*cos(g_3) - K_p_T*Omega_4^2*l_3*cos(b_4)*cos(g_4))/I_yy; */
+  /*      computed_acc(6) =                                                                        (I_xx*p*q - I_yy*p*q - K_p_T*Omega_1^2*l_1*sin(b_1) + K_p_T*Omega_2^2*l_1*sin(b_2) + K_p_T*Omega_3^2*l_2*sin(b_3) - K_p_T*Omega_4^2*l_2*sin(b_4) + K_p_M*Omega_1^2*cos(b_1)*cos(g_1) - K_p_M*Omega_2^2*cos(b_2)*cos(g_2) + K_p_M*Omega_3^2*cos(b_3)*cos(g_3) - K_p_M*Omega_4^2*cos(b_4)*cos(g_4) + K_p_T*Omega_1^2*l_4*cos(b_1)*sin(g_1) + K_p_T*Omega_2^2*l_4*cos(b_2)*sin(g_2) - K_p_T*Omega_3^2*l_3*cos(b_3)*sin(g_3) - K_p_T*Omega_4^2*l_3*cos(b_4)*sin(g_4))/I_zz; */
+  computed_acc_tmp = K_p_T * ab_computed_acc_tmp;
+  b_computed_acc_tmp = K_p_T * bb_computed_acc_tmp;
+  c_computed_acc_tmp = K_p_T * cb_computed_acc_tmp;
+  d_computed_acc_tmp = K_p_T * db_computed_acc_tmp;
+  e_computed_acc_tmp = computed_acc_tmp * l_z;
+  f_computed_acc_tmp = b_computed_acc_tmp * l_z;
+  g_computed_acc_tmp = c_computed_acc_tmp * l_z;
+  h_computed_acc_tmp = d_computed_acc_tmp * l_z;
+  y_computed_acc_tmp = K_p_M * ab_computed_acc_tmp;
+  ab_computed_acc_tmp = K_p_M * bb_computed_acc_tmp;
+  bb_computed_acc_tmp = K_p_M * cb_computed_acc_tmp;
+  cb_computed_acc_tmp = K_p_M * db_computed_acc_tmp;
+  db_computed_acc_tmp = computed_acc_tmp * l_1;
+  eb_computed_acc_tmp = b_computed_acc_tmp * l_1;
+  fb_computed_acc_tmp = c_computed_acc_tmp * l_2;
+  gb_computed_acc_tmp = d_computed_acc_tmp * l_2;
+  computed_acc[3] = (((((((((((((y_computed_acc_tmp * i_computed_acc_tmp -
+    ab_computed_acc_tmp * j_computed_acc_tmp) + bb_computed_acc_tmp *
+    k_computed_acc_tmp) - cb_computed_acc_tmp * l_computed_acc_tmp) + I_yy * q *
+    r) - I_zz * q * r) + db_computed_acc_tmp * m_computed_acc_tmp *
+    n_computed_acc_tmp) - eb_computed_acc_tmp * o_computed_acc_tmp *
+    p_computed_acc_tmp) - fb_computed_acc_tmp * q_computed_acc_tmp *
+    r_computed_acc_tmp) + gb_computed_acc_tmp * s_computed_acc_tmp *
+    t_computed_acc_tmp) + e_computed_acc_tmp * m_computed_acc_tmp *
+                        u_computed_acc_tmp) + f_computed_acc_tmp *
+                       o_computed_acc_tmp * v_computed_acc_tmp) +
+                      g_computed_acc_tmp * q_computed_acc_tmp *
+                      w_computed_acc_tmp) + h_computed_acc_tmp *
+                     s_computed_acc_tmp * x_computed_acc_tmp) / I_xx;
+  hb_computed_acc_tmp = I_xx * p;
+  y_computed_acc_tmp *= m_computed_acc_tmp;
+  ab_computed_acc_tmp *= o_computed_acc_tmp;
+  bb_computed_acc_tmp *= q_computed_acc_tmp;
+  cb_computed_acc_tmp *= s_computed_acc_tmp;
+  computed_acc_tmp = computed_acc_tmp * l_4 * m_computed_acc_tmp;
+  b_computed_acc_tmp = b_computed_acc_tmp * l_4 * o_computed_acc_tmp;
+  c_computed_acc_tmp = c_computed_acc_tmp * l_3 * q_computed_acc_tmp;
+  d_computed_acc_tmp = d_computed_acc_tmp * l_3 * s_computed_acc_tmp;
+  computed_acc[4] = ((((((((((((((I_zz * p * r - hb_computed_acc_tmp * r) +
+    e_computed_acc_tmp * i_computed_acc_tmp) + f_computed_acc_tmp *
+    j_computed_acc_tmp) + g_computed_acc_tmp * k_computed_acc_tmp) +
+    h_computed_acc_tmp * l_computed_acc_tmp) - y_computed_acc_tmp *
+    u_computed_acc_tmp) + ab_computed_acc_tmp * v_computed_acc_tmp) -
+    bb_computed_acc_tmp * w_computed_acc_tmp) + cb_computed_acc_tmp *
+    x_computed_acc_tmp) + c_computed_acc_tmp_tmp * wing_chord * (Cm_zero +
+    Cm_alpha * b_computed_acc_tmp_tmp) / 2.0) + computed_acc_tmp *
+                        n_computed_acc_tmp) + b_computed_acc_tmp *
+                       p_computed_acc_tmp) - c_computed_acc_tmp *
+                      r_computed_acc_tmp) - d_computed_acc_tmp *
+                     t_computed_acc_tmp) / I_yy;
+  computed_acc[5] = (((((((((((((hb_computed_acc_tmp * q - I_yy * p * q) -
+    db_computed_acc_tmp * i_computed_acc_tmp) + eb_computed_acc_tmp *
+    j_computed_acc_tmp) + fb_computed_acc_tmp * k_computed_acc_tmp) -
+    gb_computed_acc_tmp * l_computed_acc_tmp) + y_computed_acc_tmp *
+    n_computed_acc_tmp) - ab_computed_acc_tmp * p_computed_acc_tmp) +
+    bb_computed_acc_tmp * r_computed_acc_tmp) - cb_computed_acc_tmp *
+    t_computed_acc_tmp) + computed_acc_tmp * u_computed_acc_tmp) +
+                       b_computed_acc_tmp * v_computed_acc_tmp) -
+                      c_computed_acc_tmp * w_computed_acc_tmp) -
+                     d_computed_acc_tmp * x_computed_acc_tmp) / I_zz;
+}
+
+/*
+ * Arguments    : int n
+ *                double a
+ *                const double x[12]
+ *                int ix0
+ *                double y[72]
+ *                int iy0
+ * Return Type  : void
+ */
+static void c_xaxpy(int n, double a, const double x[12], int ix0, double y[72],
+                    int iy0)
+{
+  int k;
+  if (!(a == 0.0)) {
+    int i;
+    i = n - 1;
+    for (k = 0; k <= i; k++) {
+      int i1;
+      i1 = (iy0 + k) - 1;
+      y[i1] += a * x[(ix0 + k) - 1];
+    }
+  }
+}
+
+/*
+ * Arguments    : int n
+ *                const double x_data[]
+ *                int ix0
  * Return Type  : double
  */
-static double c_norm(const double x[6])
+static double c_xnrm2(int n, const double x_data[], int ix0)
 {
   double scale;
   double y;
   int k;
+  int kend;
   y = 0.0;
   scale = 3.3121686421112381E-170;
-  for (k = 0; k < 6; k++) {
+  kend = (ix0 + n) - 1;
+  for (k = ix0; k <= kend; k++) {
     double absxk;
-    absxk = fabs(x[k]);
+    absxk = fabs(x_data[k - 1]);
     if (absxk > scale) {
       double t;
       t = scale / absxk;
@@ -2515,7 +4580,7 @@ static void computeQ_(f_struct_T *obj, int nrows)
                 c += obj->Q[ia - 1] * obj->Q[((iaii + ia) - n) - 1];
               }
 
-              iQR0 = div_nde_s32_floor((n - iaii) - 31);
+              iQR0 = div_nde_s32_floor((n - iaii) - 31, 31);
               work[iQR0] += c;
             }
           }
@@ -3793,7 +5858,7 @@ static void compute_deltax(const double H[225], i_struct_T *solution, e_struct_T
                 smax += qrmanager->Q[k - 1] * objective->grad[k - idx];
               }
 
-              idx_row = div_nde_s32_floor(idx - nullStartIdx_tmp);
+              idx_row = div_nde_s32_floor(idx - nullStartIdx_tmp, 31);
               memspace->workspace_double[idx_row] += -smax;
             }
           }
@@ -3933,6 +5998,61 @@ static void countsort(int x[31], int xLen, int workspace[31], int xMin, int xMax
 }
 
 /*
+ * Arguments    : int n
+ *                double a
+ *                int ix0
+ *                double y[36]
+ *                int iy0
+ * Return Type  : void
+ */
+static void d_xaxpy(int n, double a, int ix0, double y[36], int iy0)
+{
+  int k;
+  if (!(a == 0.0)) {
+    int i;
+    i = n - 1;
+    for (k = 0; k <= i; k++) {
+      int i1;
+      i1 = (iy0 + k) - 1;
+      y[i1] += a * y[(ix0 + k) - 1];
+    }
+  }
+}
+
+/*
+ * Arguments    : int n
+ *                const double x[72]
+ *                int ix0
+ * Return Type  : double
+ */
+static double d_xnrm2(int n, const double x[72], int ix0)
+{
+  double scale;
+  double y;
+  int k;
+  int kend;
+  y = 0.0;
+  scale = 3.3121686421112381E-170;
+  kend = (ix0 + n) - 1;
+  for (k = ix0; k <= kend; k++) {
+    double absxk;
+    absxk = fabs(x[k - 1]);
+    if (absxk > scale) {
+      double t;
+      t = scale / absxk;
+      y = y * t * t + 1.0;
+      scale = absxk;
+    } else {
+      double t;
+      t = absxk / scale;
+      y += t * t;
+    }
+  }
+
+  return scale * sqrt(y);
+}
+
+/*
  * Arguments    : f_struct_T *obj
  *                int idx
  * Return Type  : void
@@ -4052,18 +6172,20 @@ static void deleteColMoveEnd(f_struct_T *obj, int idx)
 
 /*
  * Arguments    : int numerator
+ *                int denominator
  * Return Type  : int
  */
-static int div_nde_s32_floor(int numerator)
+static int div_nde_s32_floor(int numerator, int denominator)
 {
   int b_numerator;
-  if ((numerator < 0) && (numerator % 31 != 0)) {
+  if (((numerator < 0) != (denominator < 0)) && (numerator % denominator != 0))
+  {
     b_numerator = -1;
   } else {
     b_numerator = 0;
   }
 
-  return numerator / 31 + b_numerator;
+  return numerator / denominator + b_numerator;
 }
 
 /*
@@ -4266,6 +6388,39 @@ static void driver(const double H[225], const double f[16], i_struct_T *solution
               options->ObjectiveLimit, runTimeOptions_MaxIterations);
     }
   }
+}
+
+/*
+ * Arguments    : int n
+ *                const double x[6]
+ *                int ix0
+ * Return Type  : double
+ */
+static double e_xnrm2(int n, const double x[6], int ix0)
+{
+  double scale;
+  double y;
+  int k;
+  int kend;
+  y = 0.0;
+  scale = 3.3121686421112381E-170;
+  kend = (ix0 + n) - 1;
+  for (k = ix0; k <= kend; k++) {
+    double absxk;
+    absxk = fabs(x[k - 1]);
+    if (absxk > scale) {
+      double t;
+      t = scale / absxk;
+      y = y * t * t + 1.0;
+      scale = absxk;
+    } else {
+      double t;
+      t = absxk / scale;
+      y += t * t;
+    }
+  }
+
+  return scale * sqrt(y);
 }
 
 /*
@@ -5728,7 +7883,7 @@ static void iterate(const double H[225], const double f[16], i_struct_T
                   ia) - idx];
               }
 
-              iyend = idxRotGCol + div_nde_s32_floor(idx - 1);
+              iyend = idxRotGCol + div_nde_s32_floor(idx - 1, 31);
               qrmanager->QR[iyend] += c;
             }
           }
@@ -6129,44 +8284,366 @@ static double maxConstraintViolation(const k_struct_T *obj, const double x[496],
 }
 
 /*
- * Arguments    : const double x[2]
- * Return Type  : double
+ * Arguments    : const double x[12]
+ *                double *ex
+ *                int *idx
+ * Return Type  : void
  */
-static double maximum(const double x[2])
+static void minimum(const double x[12], double *ex, int *idx)
 {
-  double ex;
-  if ((x[0] < x[1]) || (rtIsNaN(x[0]) && (!rtIsNaN(x[1])))) {
-    ex = x[1];
+  int k;
+  if (!rtIsNaN(x[0])) {
+    *idx = 1;
   } else {
-    ex = x[0];
+    bool exitg1;
+    *idx = 0;
+    k = 2;
+    exitg1 = false;
+    while ((!exitg1) && (k < 13)) {
+      if (!rtIsNaN(x[k - 1])) {
+        *idx = k;
+        exitg1 = true;
+      } else {
+        k++;
+      }
+    }
   }
 
-  return ex;
+  if (*idx == 0) {
+    *ex = x[0];
+    *idx = 1;
+  } else {
+    int i;
+    *ex = x[*idx - 1];
+    i = *idx + 1;
+    for (k = i; k < 13; k++) {
+      double d;
+      d = x[k - 1];
+      if (*ex > d) {
+        *ex = d;
+        *idx = k;
+      }
+    }
+  }
 }
 
 /*
- * Arguments    : const double x[4]
- * Return Type  : double
+ * Arguments    : const double A_data[]
+ *                const int A_size[2]
+ *                const double B[18]
+ *                double Y_data[]
+ *                int *Y_size
+ * Return Type  : void
  */
-static double mean(const double x[4])
+static void mldivide(const double A_data[], const int A_size[2], const double B
+                     [18], double Y_data[], int *Y_size)
 {
-  return (((x[0] + x[1]) + x[2]) + x[3]) / 4.0;
-}
-
-/*
- * Arguments    : const double x[2]
- * Return Type  : double
- */
-static double minimum(const double x[2])
-{
-  double ex;
-  if ((x[0] > x[1]) || (rtIsNaN(x[0]) && (!rtIsNaN(x[1])))) {
-    ex = x[1];
+  double b_A_data[216];
+  double b_B[18];
+  double tau_data[12];
+  double vn1_data[12];
+  double vn2_data[12];
+  double work_data[12];
+  int i;
+  int ix0;
+  int iy;
+  int j;
+  int k;
+  signed char jpvt_data[12];
+  if (A_size[1] == 0) {
+    *Y_size = 0;
   } else {
-    ex = x[0];
-  }
+    double absxk;
+    double scale;
+    double smax;
+    double t;
+    int A_size_idx_1;
+    int b_i;
+    int kend;
+    int n;
+    A_size_idx_1 = A_size[1];
+    kend = 18 * A_size[1];
+    memcpy(&b_A_data[0], &A_data[0], kend * sizeof(double));
+    n = A_size[1];
+    kend = A_size[1];
+    memset(&tau_data[0], 0, kend * sizeof(double));
+    kend = A_size[1];
+    memset(&jpvt_data[0], 0, kend * sizeof(signed char));
+    for (k = 0; k < n; k++) {
+      jpvt_data[k] = (signed char)(k + 1);
+    }
 
-  return ex;
+    kend = A_size[1];
+    memset(&work_data[0], 0, kend * sizeof(double));
+    kend = A_size[1];
+    memset(&vn1_data[0], 0, kend * sizeof(double));
+    kend = A_size[1];
+    memset(&vn2_data[0], 0, kend * sizeof(double));
+    for (j = 0; j < n; j++) {
+      ix0 = j * 18;
+      smax = 0.0;
+      scale = 3.3121686421112381E-170;
+      kend = ix0 + 18;
+      for (k = ix0 + 1; k <= kend; k++) {
+        absxk = fabs(A_data[k - 1]);
+        if (absxk > scale) {
+          t = scale / absxk;
+          smax = smax * t * t + 1.0;
+          scale = absxk;
+        } else {
+          t = absxk / scale;
+          smax += t * t;
+        }
+      }
+
+      absxk = scale * sqrt(smax);
+      vn1_data[j] = absxk;
+      vn2_data[j] = absxk;
+    }
+
+    for (i = 0; i < n; i++) {
+      int ii;
+      int ip1;
+      int nmi;
+      int pvt;
+      ip1 = i + 2;
+      ii = i * 18 + i;
+      nmi = n - i;
+      if (nmi < 1) {
+        kend = -1;
+      } else {
+        kend = 0;
+        if (nmi > 1) {
+          smax = fabs(vn1_data[i]);
+          for (k = 2; k <= nmi; k++) {
+            scale = fabs(vn1_data[(i + k) - 1]);
+            if (scale > smax) {
+              kend = k - 1;
+              smax = scale;
+            }
+          }
+        }
+      }
+
+      pvt = i + kend;
+      if (pvt != i) {
+        kend = pvt * 18;
+        iy = i * 18;
+        for (k = 0; k < 18; k++) {
+          ix0 = kend + k;
+          smax = b_A_data[ix0];
+          b_i = iy + k;
+          b_A_data[ix0] = b_A_data[b_i];
+          b_A_data[b_i] = smax;
+        }
+
+        kend = jpvt_data[pvt];
+        jpvt_data[pvt] = jpvt_data[i];
+        jpvt_data[i] = (signed char)kend;
+        vn1_data[pvt] = vn1_data[i];
+        vn2_data[pvt] = vn2_data[i];
+      }
+
+      t = b_A_data[ii];
+      ix0 = ii + 2;
+      tau_data[i] = 0.0;
+      smax = c_xnrm2(17 - i, b_A_data, ii + 2);
+      if (smax != 0.0) {
+        absxk = b_A_data[ii];
+        scale = rt_hypotd_snf(absxk, smax);
+        if (absxk >= 0.0) {
+          scale = -scale;
+        }
+
+        if (fabs(scale) < 1.0020841800044864E-292) {
+          kend = 0;
+          b_i = (ii - i) + 18;
+          do {
+            kend++;
+            for (k = ix0; k <= b_i; k++) {
+              b_A_data[k - 1] *= 9.9792015476736E+291;
+            }
+
+            scale *= 9.9792015476736E+291;
+            t *= 9.9792015476736E+291;
+          } while ((fabs(scale) < 1.0020841800044864E-292) && (kend < 20));
+
+          scale = rt_hypotd_snf(t, c_xnrm2(17 - i, b_A_data, ii + 2));
+          if (t >= 0.0) {
+            scale = -scale;
+          }
+
+          tau_data[i] = (scale - t) / scale;
+          smax = 1.0 / (t - scale);
+          for (k = ix0; k <= b_i; k++) {
+            b_A_data[k - 1] *= smax;
+          }
+
+          for (k = 0; k < kend; k++) {
+            scale *= 1.0020841800044864E-292;
+          }
+
+          t = scale;
+        } else {
+          tau_data[i] = (scale - absxk) / scale;
+          smax = 1.0 / (absxk - scale);
+          b_i = (ii - i) + 18;
+          for (k = ix0; k <= b_i; k++) {
+            b_A_data[k - 1] *= smax;
+          }
+
+          t = scale;
+        }
+      }
+
+      b_A_data[ii] = t;
+      if (i + 1 < n) {
+        int lastv;
+        b_A_data[ii] = 1.0;
+        k = ii + 19;
+        if (tau_data[i] != 0.0) {
+          bool exitg2;
+          lastv = 18 - i;
+          kend = (ii - i) + 17;
+          while ((lastv > 0) && (b_A_data[kend] == 0.0)) {
+            lastv--;
+            kend--;
+          }
+
+          nmi -= 2;
+          exitg2 = false;
+          while ((!exitg2) && (nmi + 1 > 0)) {
+            int exitg1;
+            kend = (ii + nmi * 18) + 18;
+            ix0 = kend;
+            do {
+              exitg1 = 0;
+              if (ix0 + 1 <= kend + lastv) {
+                if (b_A_data[ix0] != 0.0) {
+                  exitg1 = 1;
+                } else {
+                  ix0++;
+                }
+              } else {
+                nmi--;
+                exitg1 = 2;
+              }
+            } while (exitg1 == 0);
+
+            if (exitg1 == 1) {
+              exitg2 = true;
+            }
+          }
+        } else {
+          lastv = 0;
+          nmi = -1;
+        }
+
+        if (lastv > 0) {
+          if (nmi + 1 != 0) {
+            if (nmi >= 0) {
+              memset(&work_data[0], 0, (nmi + 1) * sizeof(double));
+            }
+
+            b_i = (ii + 18 * nmi) + 19;
+            for (iy = k; iy <= b_i; iy += 18) {
+              smax = 0.0;
+              pvt = (iy + lastv) - 1;
+              for (ix0 = iy; ix0 <= pvt; ix0++) {
+                smax += b_A_data[ix0 - 1] * b_A_data[(ii + ix0) - iy];
+              }
+
+              kend = div_nde_s32_floor((iy - ii) - 19, 18);
+              work_data[kend] += smax;
+            }
+          }
+
+          if (!(-tau_data[i] == 0.0)) {
+            kend = ii;
+            for (j = 0; j <= nmi; j++) {
+              absxk = work_data[j];
+              if (absxk != 0.0) {
+                smax = absxk * -tau_data[i];
+                b_i = kend + 19;
+                pvt = lastv + kend;
+                for (ix0 = b_i; ix0 <= pvt + 18; ix0++) {
+                  b_A_data[ix0 - 1] += b_A_data[((ii + ix0) - kend) - 19] * smax;
+                }
+              }
+
+              kend += 18;
+            }
+          }
+        }
+
+        b_A_data[ii] = t;
+      }
+
+      for (j = ip1; j <= n; j++) {
+        kend = i + (j - 1) * 18;
+        absxk = vn1_data[j - 1];
+        if (absxk != 0.0) {
+          smax = fabs(b_A_data[kend]) / absxk;
+          smax = 1.0 - smax * smax;
+          if (smax < 0.0) {
+            smax = 0.0;
+          }
+
+          scale = absxk / vn2_data[j - 1];
+          scale = smax * (scale * scale);
+          if (scale <= 1.4901161193847656E-8) {
+            absxk = c_xnrm2(17 - i, b_A_data, kend + 2);
+            vn1_data[j - 1] = absxk;
+            vn2_data[j - 1] = absxk;
+          } else {
+            vn1_data[j - 1] = absxk * sqrt(smax);
+          }
+        }
+      }
+    }
+
+    iy = 0;
+    smax = 3.9968028886505635E-14 * fabs(b_A_data[0]);
+    while ((iy < A_size_idx_1) && (!(fabs(b_A_data[iy + 18 * iy]) <= smax))) {
+      iy++;
+    }
+
+    memcpy(&b_B[0], &B[0], 18U * sizeof(double));
+    *Y_size = A_size[1];
+    memset(&Y_data[0], 0, A_size_idx_1 * sizeof(double));
+    for (j = 0; j < A_size_idx_1; j++) {
+      if (tau_data[j] != 0.0) {
+        smax = b_B[j];
+        b_i = j + 2;
+        for (i = b_i; i < 19; i++) {
+          smax += b_A_data[(i + 18 * j) - 1] * b_B[i - 1];
+        }
+
+        smax *= tau_data[j];
+        if (smax != 0.0) {
+          b_B[j] -= smax;
+          for (i = b_i; i < 19; i++) {
+            b_B[i - 1] -= b_A_data[(i + 18 * j) - 1] * smax;
+          }
+        }
+      }
+    }
+
+    for (i = 0; i < iy; i++) {
+      Y_data[jpvt_data[i] - 1] = b_B[i];
+    }
+
+    for (j = iy; j >= 1; j--) {
+      signed char i1;
+      i1 = jpvt_data[j - 1];
+      kend = 18 * (j - 1);
+      Y_data[i1 - 1] /= b_A_data[(j + kend) - 1];
+      for (i = 0; i <= j - 2; i++) {
+        ix0 = jpvt_data[i] - 1;
+        Y_data[ix0] -= Y_data[jpvt_data[j - 1] - 1] * b_A_data[i + kend];
+      }
+    }
+  }
 }
 
 /*
@@ -6820,6 +9297,398 @@ static bool step(int *STEP_TYPE, double Hessian[225], const double lb[15], const
 }
 
 /*
+ * Arguments    : const double A[72]
+ *                double U[72]
+ *                double s[6]
+ *                double V[36]
+ * Return Type  : void
+ */
+static void svd(const double A[72], double U[72], double s[6], double V[36])
+{
+  double b_A[72];
+  double Vf[36];
+  double work[12];
+  double b_s[6];
+  double e[6];
+  double nrm;
+  double rt;
+  double sm;
+  double snorm;
+  double sqds;
+  int i;
+  int ii;
+  int jj;
+  int k;
+  int m;
+  int q;
+  int qp1;
+  int qp1jj;
+  int qq;
+  memcpy(&b_A[0], &A[0], 72U * sizeof(double));
+  for (i = 0; i < 6; i++) {
+    b_s[i] = 0.0;
+    e[i] = 0.0;
+  }
+
+  memset(&work[0], 0, 12U * sizeof(double));
+  memset(&U[0], 0, 72U * sizeof(double));
+  memset(&Vf[0], 0, 36U * sizeof(double));
+  for (q = 0; q < 6; q++) {
+    bool apply_transform;
+    qp1 = q + 2;
+    qq = (q + 12 * q) + 1;
+    apply_transform = false;
+    nrm = d_xnrm2(12 - q, b_A, qq);
+    if (nrm > 0.0) {
+      apply_transform = true;
+      if (b_A[qq - 1] < 0.0) {
+        nrm = -nrm;
+      }
+
+      b_s[q] = nrm;
+      if (fabs(nrm) >= 1.0020841800044864E-292) {
+        nrm = 1.0 / nrm;
+        qp1jj = (qq - q) + 11;
+        for (k = qq; k <= qp1jj; k++) {
+          b_A[k - 1] *= nrm;
+        }
+      } else {
+        qp1jj = (qq - q) + 11;
+        for (k = qq; k <= qp1jj; k++) {
+          b_A[k - 1] /= b_s[q];
+        }
+      }
+
+      b_A[qq - 1]++;
+      b_s[q] = -b_s[q];
+    } else {
+      b_s[q] = 0.0;
+    }
+
+    for (jj = qp1; jj < 7; jj++) {
+      i = q + 12 * (jj - 1);
+      if (apply_transform) {
+        xaxpy(12 - q, -(xdotc(12 - q, b_A, qq, b_A, i + 1) / b_A[q + 12 * q]),
+              qq, b_A, i + 1);
+      }
+
+      e[jj - 1] = b_A[i];
+    }
+
+    for (ii = q + 1; ii < 13; ii++) {
+      i = (ii + 12 * q) - 1;
+      U[i] = b_A[i];
+    }
+
+    if (q + 1 <= 4) {
+      nrm = e_xnrm2(5 - q, e, q + 2);
+      if (nrm == 0.0) {
+        e[q] = 0.0;
+      } else {
+        if (e[q + 1] < 0.0) {
+          e[q] = -nrm;
+        } else {
+          e[q] = nrm;
+        }
+
+        nrm = e[q];
+        if (fabs(e[q]) >= 1.0020841800044864E-292) {
+          nrm = 1.0 / e[q];
+          for (k = qp1; k < 7; k++) {
+            e[k - 1] *= nrm;
+          }
+        } else {
+          for (k = qp1; k < 7; k++) {
+            e[k - 1] /= nrm;
+          }
+        }
+
+        e[q + 1]++;
+        e[q] = -e[q];
+        for (ii = qp1; ii < 13; ii++) {
+          work[ii - 1] = 0.0;
+        }
+
+        for (jj = qp1; jj < 7; jj++) {
+          b_xaxpy(11 - q, e[jj - 1], b_A, (q + 12 * (jj - 1)) + 2, work, q + 2);
+        }
+
+        for (jj = qp1; jj < 7; jj++) {
+          c_xaxpy(11 - q, -e[jj - 1] / e[q + 1], work, q + 2, b_A, (q + 12 * (jj
+                    - 1)) + 2);
+        }
+      }
+
+      for (ii = qp1; ii < 7; ii++) {
+        Vf[(ii + 6 * q) - 1] = e[ii - 1];
+      }
+    }
+  }
+
+  m = 4;
+  e[4] = b_A[64];
+  e[5] = 0.0;
+  for (q = 5; q >= 0; q--) {
+    qp1 = q + 2;
+    qq = q + 12 * q;
+    if (b_s[q] != 0.0) {
+      for (jj = qp1; jj < 7; jj++) {
+        i = (q + 12 * (jj - 1)) + 1;
+        xaxpy(12 - q, -(xdotc(12 - q, U, qq + 1, U, i) / U[qq]), qq + 1, U, i);
+      }
+
+      for (ii = q + 1; ii < 13; ii++) {
+        i = (ii + 12 * q) - 1;
+        U[i] = -U[i];
+      }
+
+      U[qq]++;
+      for (ii = 0; ii < q; ii++) {
+        U[ii + 12 * q] = 0.0;
+      }
+    } else {
+      memset(&U[q * 12], 0, 12U * sizeof(double));
+      U[qq] = 1.0;
+    }
+  }
+
+  for (q = 5; q >= 0; q--) {
+    if ((q + 1 <= 4) && (e[q] != 0.0)) {
+      qp1 = q + 2;
+      i = (q + 6 * q) + 2;
+      for (jj = qp1; jj < 7; jj++) {
+        qp1jj = (q + 6 * (jj - 1)) + 2;
+        d_xaxpy(5 - q, -(b_xdotc(5 - q, Vf, i, Vf, qp1jj) / Vf[i - 1]), i, Vf,
+                qp1jj);
+      }
+    }
+
+    for (ii = 0; ii < 6; ii++) {
+      Vf[ii + 6 * q] = 0.0;
+    }
+
+    Vf[q + 6 * q] = 1.0;
+  }
+
+  qq = 0;
+  snorm = 0.0;
+  for (q = 0; q < 6; q++) {
+    nrm = b_s[q];
+    if (nrm != 0.0) {
+      rt = fabs(nrm);
+      nrm /= rt;
+      b_s[q] = rt;
+      if (q + 1 < 6) {
+        e[q] /= nrm;
+      }
+
+      i = 12 * q;
+      qp1jj = i + 12;
+      for (k = i + 1; k <= qp1jj; k++) {
+        U[k - 1] *= nrm;
+      }
+    }
+
+    if (q + 1 < 6) {
+      nrm = e[q];
+      if (nrm != 0.0) {
+        rt = fabs(nrm);
+        nrm = rt / nrm;
+        e[q] = rt;
+        b_s[q + 1] *= nrm;
+        i = 6 * (q + 1);
+        qp1jj = i + 6;
+        for (k = i + 1; k <= qp1jj; k++) {
+          Vf[k - 1] *= nrm;
+        }
+      }
+    }
+
+    snorm = fmax(snorm, fmax(fabs(b_s[q]), fabs(e[q])));
+  }
+
+  while ((m + 2 > 0) && (qq < 75)) {
+    bool exitg1;
+    jj = m + 1;
+    ii = m + 1;
+    exitg1 = false;
+    while (!(exitg1 || (ii == 0))) {
+      nrm = fabs(e[ii - 1]);
+      if ((nrm <= 2.2204460492503131E-16 * (fabs(b_s[ii - 1]) + fabs(b_s[ii]))) ||
+          (nrm <= 1.0020841800044864E-292) || ((qq > 20) && (nrm <=
+            2.2204460492503131E-16 * snorm))) {
+        e[ii - 1] = 0.0;
+        exitg1 = true;
+      } else {
+        ii--;
+      }
+    }
+
+    if (ii == m + 1) {
+      i = 4;
+    } else {
+      qp1jj = m + 2;
+      i = m + 2;
+      exitg1 = false;
+      while ((!exitg1) && (i >= ii)) {
+        qp1jj = i;
+        if (i == ii) {
+          exitg1 = true;
+        } else {
+          nrm = 0.0;
+          if (i < m + 2) {
+            nrm = fabs(e[i - 1]);
+          }
+
+          if (i > ii + 1) {
+            nrm += fabs(e[i - 2]);
+          }
+
+          rt = fabs(b_s[i - 1]);
+          if ((rt <= 2.2204460492503131E-16 * nrm) || (rt <=
+               1.0020841800044864E-292)) {
+            b_s[i - 1] = 0.0;
+            exitg1 = true;
+          } else {
+            i--;
+          }
+        }
+      }
+
+      if (qp1jj == ii) {
+        i = 3;
+      } else if (qp1jj == m + 2) {
+        i = 1;
+      } else {
+        i = 2;
+        ii = qp1jj;
+      }
+    }
+
+    switch (i) {
+     case 1:
+      {
+        rt = e[m];
+        e[m] = 0.0;
+        for (k = jj; k >= ii + 1; k--) {
+          xrotg(&b_s[k - 1], &rt, &sm, &sqds);
+          if (k > ii + 1) {
+            double b;
+            b = e[k - 2];
+            rt = -sqds * b;
+            e[k - 2] = b * sm;
+          }
+
+          xrot(Vf, 6 * (k - 1) + 1, 6 * (m + 1) + 1, sm, sqds);
+        }
+      }
+      break;
+
+     case 2:
+      {
+        rt = e[ii - 1];
+        e[ii - 1] = 0.0;
+        for (k = ii + 1; k <= m + 2; k++) {
+          double b;
+          xrotg(&b_s[k - 1], &rt, &sm, &sqds);
+          b = e[k - 1];
+          rt = -sqds * b;
+          e[k - 1] = b * sm;
+          b_xrot(U, 12 * (k - 1) + 1, 12 * (ii - 1) + 1, sm, sqds);
+        }
+      }
+      break;
+
+     case 3:
+      {
+        double b;
+        double scale;
+        nrm = b_s[m + 1];
+        scale = fmax(fmax(fmax(fmax(fabs(nrm), fabs(b_s[m])), fabs(e[m])), fabs
+                          (b_s[ii])), fabs(e[ii]));
+        sm = nrm / scale;
+        nrm = b_s[m] / scale;
+        rt = e[m] / scale;
+        sqds = b_s[ii] / scale;
+        b = ((nrm + sm) * (nrm - sm) + rt * rt) / 2.0;
+        nrm = sm * rt;
+        nrm *= nrm;
+        if ((b != 0.0) || (nrm != 0.0)) {
+          rt = sqrt(b * b + nrm);
+          if (b < 0.0) {
+            rt = -rt;
+          }
+
+          rt = nrm / (b + rt);
+        } else {
+          rt = 0.0;
+        }
+
+        rt += (sqds + sm) * (sqds - sm);
+        nrm = sqds * (e[ii] / scale);
+        for (k = ii + 1; k <= jj; k++) {
+          xrotg(&rt, &nrm, &sm, &sqds);
+          if (k > ii + 1) {
+            e[k - 2] = rt;
+          }
+
+          nrm = e[k - 1];
+          b = b_s[k - 1];
+          e[k - 1] = sm * nrm - sqds * b;
+          rt = sqds * b_s[k];
+          b_s[k] *= sm;
+          xrot(Vf, 6 * (k - 1) + 1, 6 * k + 1, sm, sqds);
+          b_s[k - 1] = sm * b + sqds * nrm;
+          xrotg(&b_s[k - 1], &rt, &sm, &sqds);
+          rt = sm * e[k - 1] + sqds * b_s[k];
+          b_s[k] = -sqds * e[k - 1] + sm * b_s[k];
+          nrm = sqds * e[k];
+          e[k] *= sm;
+          b_xrot(U, 12 * (k - 1) + 1, 12 * k + 1, sm, sqds);
+        }
+
+        e[m] = rt;
+        qq++;
+      }
+      break;
+
+     default:
+      if (b_s[ii] < 0.0) {
+        b_s[ii] = -b_s[ii];
+        i = 6 * ii;
+        qp1jj = i + 6;
+        for (k = i + 1; k <= qp1jj; k++) {
+          Vf[k - 1] = -Vf[k - 1];
+        }
+      }
+
+      qp1 = ii + 1;
+      while ((ii + 1 < 6) && (b_s[ii] < b_s[qp1])) {
+        rt = b_s[ii];
+        b_s[ii] = b_s[qp1];
+        b_s[qp1] = rt;
+        xswap(Vf, 6 * ii + 1, 6 * (ii + 1) + 1);
+        b_xswap(U, 12 * ii + 1, 12 * (ii + 1) + 1);
+        ii = qp1;
+        qp1++;
+      }
+
+      qq = 0;
+      m--;
+      break;
+    }
+  }
+
+  for (k = 0; k < 6; k++) {
+    s[k] = b_s[k];
+    for (i = 0; i < 6; i++) {
+      qp1jj = i + 6 * k;
+      V[qp1jj] = Vf[qp1jj];
+    }
+  }
+}
+
+/*
  * Arguments    : b_struct_T *MeritFunction
  *                const k_struct_T *WorkingSet
  *                i_struct_T *TrialState
@@ -7002,6 +9871,49 @@ static double toc(void)
 }
 
 /*
+ * Arguments    : int n
+ *                double a
+ *                int ix0
+ *                double y[72]
+ *                int iy0
+ * Return Type  : void
+ */
+static void xaxpy(int n, double a, int ix0, double y[72], int iy0)
+{
+  int k;
+  if (!(a == 0.0)) {
+    int i;
+    i = n - 1;
+    for (k = 0; k <= i; k++) {
+      int i1;
+      i1 = (iy0 + k) - 1;
+      y[i1] += a * y[(ix0 + k) - 1];
+    }
+  }
+}
+
+/*
+ * Arguments    : int n
+ *                const double x[72]
+ *                int ix0
+ *                const double y[72]
+ *                int iy0
+ * Return Type  : double
+ */
+static double xdotc(int n, const double x[72], int ix0, const double y[72], int
+                    iy0)
+{
+  double d;
+  int k;
+  d = 0.0;
+  for (k = 0; k < n; k++) {
+    d += x[(ix0 + k) - 1] * y[(iy0 + k) - 1];
+  }
+
+  return d;
+}
+
+/*
  * Arguments    : int m
  *                int n
  *                int k
@@ -7079,7 +9991,7 @@ static void xgemv(int m, int n, const double A[961], const double x[16], double
         c += A[ia - 1] * x[ia - iac];
       }
 
-      i1 = div_nde_s32_floor(iac - 1);
+      i1 = div_nde_s32_floor(iac - 1, 31);
       y[i1] += c;
     }
   }
@@ -7348,7 +10260,7 @@ static int xpotrf(int n, double A[961])
               c += A[ia - 1] * A[(idxA1j + ia) - iac];
             }
 
-            i1 = (idxAjj + div_nde_s32_floor((iac - idxA1j) - 32) * 31) + 31;
+            i1 = (idxAjj + div_nde_s32_floor((iac - idxA1j) - 32, 31) * 31) + 31;
             A[i1] += -c;
           }
         }
@@ -7369,6 +10281,31 @@ static int xpotrf(int n, double A[961])
   }
 
   return info;
+}
+
+/*
+ * Arguments    : double x[36]
+ *                int ix0
+ *                int iy0
+ *                double c
+ *                double s
+ * Return Type  : void
+ */
+static void xrot(double x[36], int ix0, int iy0, double c, double s)
+{
+  int k;
+  for (k = 0; k < 6; k++) {
+    double b_temp_tmp;
+    double d_temp_tmp;
+    int c_temp_tmp;
+    int temp_tmp;
+    temp_tmp = (iy0 + k) - 1;
+    b_temp_tmp = x[temp_tmp];
+    c_temp_tmp = (ix0 + k) - 1;
+    d_temp_tmp = x[c_temp_tmp];
+    x[temp_tmp] = c * b_temp_tmp - s * d_temp_tmp;
+    x[c_temp_tmp] = c * d_temp_tmp + s * b_temp_tmp;
+  }
 }
 
 /*
@@ -7418,6 +10355,27 @@ static void xrotg(double *a, double *b, double *c, double *s)
     }
 
     *a = scale;
+  }
+}
+
+/*
+ * Arguments    : double x[36]
+ *                int ix0
+ *                int iy0
+ * Return Type  : void
+ */
+static void xswap(double x[36], int ix0, int iy0)
+{
+  int k;
+  for (k = 0; k < 6; k++) {
+    double temp;
+    int i;
+    int temp_tmp;
+    temp_tmp = (ix0 + k) - 1;
+    temp = x[temp_tmp];
+    i = (iy0 + k) - 1;
+    x[temp_tmp] = x[i];
+    x[i] = temp;
   }
 }
 
@@ -7493,7 +10451,7 @@ static void xzlarf(int m, int n, int iv0, double tau, double C[961], int ic0,
           c += C[ia - 1] * C[((iv0 + ia) - iac) - 1];
         }
 
-        i = div_nde_s32_floor(iac - ic0);
+        i = div_nde_s32_floor(iac - ic0, 31);
         work[i] += c;
       }
     }
@@ -7586,17 +10544,7 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
 }
 
 /*
- * Testing parameters:
- *  (0.5e-5, 2e-7, 2.4, 0.15, 0.15, 0.2, 0.25, 0.25, 0.35, 0.35, 0, ...
- *  0, 0, 100, 100, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
- *  1, 0, 0, 0, ...
- *  0, 1.5, 100, -15, 100, -15, 0.5, 0, ...
- *  0.01, 0.01, 0.05, 0.1, 0.1, 0.1, ...
- *  1000, 100, 25, -130, 45, -45, 80, 15, 40, 25, -25, [0 0 -5 0 0 0]', 0, 0, 0, 0.1, 3, 0.3, 0.15,...
- *  -0.1, 0.1, 1.15, 0, 0.3, 0.3, 0, 15, -5, 0, 1e-5, ...
- *  100, 0, 0, 0, 0, 0, 1, 7)
- *  or
- *  (0.5e-5, 2e-7, 2.4, 0.15, 0.15, 0.2, 0.25, 0.25, 0.35, 0.35, 0, 0, 0, 100, 100, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1.5, 100, -15, 100, -15, 0.5, 0, 0.01, 0.01, 0.05, 0.1, 0.1, 0.1, 1000, 100, 25, 130, 45, -45, 80, 15, 40, 25, -25, [0 0 -5 0 0 0]', 0, 0, 0, 0.1, 3, 0.3, 0.15, -0.1, 0.1, 1.15, 0, 0.3, 0.3, 0, 15, -5, 0, 1e-5, 100, 0, 0, 0, 0, 0, 1, 7)
+ * NONLINEAR CA controller
  *
  * Arguments    : double K_p_T
  *                double K_p_M
@@ -7611,6 +10559,7 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double l_z
  *                double Phi
  *                double Theta
+ *                double Psi
  *                double Omega_1
  *                double Omega_2
  *                double Omega_3
@@ -7623,7 +10572,6 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double g_2
  *                double g_3
  *                double g_4
- *                double delta_ailerons
  *                double W_act_motor_const
  *                double W_act_motor_speed
  *                double W_act_tilt_el_const
@@ -7634,8 +10582,6 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double W_act_theta_speed
  *                double W_act_phi_const
  *                double W_act_phi_speed
- *                double W_act_ailerons_const
- *                double W_act_ailerons_speed
  *                double W_dv_1
  *                double W_dv_2
  *                double W_dv_3
@@ -7651,9 +10597,7 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double max_theta
  *                double min_theta
  *                double max_phi
- *                double max_delta_ailerons
- *                double min_delta_ailerons
- *                const double dv[6]
+ *                double dv[6]
  *                double p
  *                double q
  *                double r
@@ -7662,7 +10606,6 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double Cd_zero
  *                double K_Cd
  *                double Cm_alpha
- *                double CL_aileron
  *                double rho
  *                double V
  *                double S
@@ -7672,20 +10615,15 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double min_alpha
  *                double Beta
  *                double gamma_quadratic_du
+ *                double gamma_quadratic_wls
  *                double desired_motor_value
  *                double desired_el_value
  *                double desired_az_value
- *                double desired_theta_value
  *                double desired_phi_value
- *                double desired_ailerons_value
- *                double k_alt_tilt_constraint
- *                double min_alt_tilt_constraint
- *                double lidar_alt_corrected
- *                double approach_mode
+ *                double desired_theta_value
+ *                double controller_id
  *                double verbose
- *                double aoa_protection_speed
- *                double transition_speed
- *                double u_out[15]
+ *                double u_out[14]
  *                double residuals[6]
  *                double *elapsed_time
  *                double *N_iterations
@@ -7693,636 +10631,816 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double *exitflag
  * Return Type  : void
  */
-void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
-  K_p_M, double m, double I_xx, double I_yy, double I_zz, double l_1, double l_2,
-  double l_3, double l_4, double l_z, double Phi, double Theta, double Omega_1,
+void Global_controller_fcn_earth_rf_journal(double K_p_T, double K_p_M, double m,
+  double I_xx, double I_yy, double I_zz, double l_1, double l_2, double l_3,
+  double l_4, double l_z, double Phi, double Theta, double Psi, double Omega_1,
   double Omega_2, double Omega_3, double Omega_4, double b_1, double b_2, double
   b_3, double b_4, double g_1, double g_2, double g_3, double g_4, double
-  delta_ailerons, double W_act_motor_const, double W_act_motor_speed, double
-  W_act_tilt_el_const, double W_act_tilt_el_speed, double W_act_tilt_az_const,
-  double W_act_tilt_az_speed, double W_act_theta_const, double W_act_theta_speed,
-  double W_act_phi_const, double W_act_phi_speed, double W_act_ailerons_const,
-  double W_act_ailerons_speed, double W_dv_1, double W_dv_2, double W_dv_3,
-  double W_dv_4, double W_dv_5, double W_dv_6, double max_omega, double
-  min_omega, double max_b, double min_b, double max_g, double min_g, double
-  max_theta, double min_theta, double max_phi, double max_delta_ailerons, double
-  min_delta_ailerons, const double dv[6], double p, double q, double r, double
-  Cm_zero, double Cl_alpha, double Cd_zero, double K_Cd, double Cm_alpha, double
-  CL_aileron, double rho, double V, double S, double wing_chord, double
-  flight_path_angle, double max_alpha, double min_alpha, double Beta, double
-  gamma_quadratic_du, double desired_motor_value, double desired_el_value,
-  double desired_az_value, double desired_theta_value, double desired_phi_value,
-  double desired_ailerons_value, double k_alt_tilt_constraint, double
-  min_alt_tilt_constraint, double lidar_alt_corrected, double approach_mode,
-  double verbose, double aoa_protection_speed, double transition_speed, double
-  u_out[15], double residuals[6], double *elapsed_time, double *N_iterations,
-  double *N_evaluation, double *exitflag)
+  W_act_motor_const, double W_act_motor_speed, double W_act_tilt_el_const,
+  double W_act_tilt_el_speed, double W_act_tilt_az_const, double
+  W_act_tilt_az_speed, double W_act_theta_const, double W_act_theta_speed,
+  double W_act_phi_const, double W_act_phi_speed, double W_dv_1, double W_dv_2,
+  double W_dv_3, double W_dv_4, double W_dv_5, double W_dv_6, double max_omega,
+  double min_omega, double max_b, double min_b, double max_g, double min_g,
+  double max_theta, double min_theta, double max_phi, double dv[6], double p,
+  double q, double r, double Cm_zero, double Cl_alpha, double Cd_zero, double
+  K_Cd, double Cm_alpha, double rho, double V, double S, double wing_chord,
+  double flight_path_angle, double max_alpha, double min_alpha, double Beta,
+  double gamma_quadratic_du, double gamma_quadratic_wls, double
+  desired_motor_value, double desired_el_value, double desired_az_value, double
+  desired_phi_value, double desired_theta_value, double controller_id, double
+  verbose, double u_out[14], double residuals[6], double *elapsed_time, double
+  *N_iterations, double *N_evaluation, double *exitflag)
 {
-  b_captured_var dv_global;
-  captured_var W_act_ailerons;
-  captured_var W_act_motor;
-  captured_var W_act_phi;
-  captured_var W_act_theta;
-  captured_var W_act_tilt_az;
-  captured_var W_act_tilt_el;
-  captured_var b_Beta;
-  captured_var b_CL_aileron;
-  captured_var b_Cd_zero;
-  captured_var b_Cl_alpha;
-  captured_var b_Cm_alpha;
-  captured_var b_Cm_zero;
-  captured_var b_I_xx;
-  captured_var b_I_yy;
-  captured_var b_I_zz;
-  captured_var b_K_Cd;
-  captured_var b_K_p_M;
-  captured_var b_K_p_T;
-  captured_var b_S;
-  captured_var b_V;
-  captured_var b_W_dv_1;
-  captured_var b_W_dv_2;
-  captured_var b_W_dv_3;
-  captured_var b_W_dv_4;
-  captured_var b_W_dv_5;
-  captured_var b_W_dv_6;
-  captured_var b_desired_ailerons_value;
-  captured_var b_desired_az_value;
-  captured_var b_desired_el_value;
-  captured_var b_desired_motor_value;
-  captured_var b_desired_phi_value;
-  captured_var b_desired_theta_value;
-  captured_var b_flight_path_angle;
-  captured_var b_gamma_quadratic_du;
-  captured_var b_l_1;
-  captured_var b_l_2;
-  captured_var b_l_3;
-  captured_var b_l_4;
-  captured_var b_l_z;
-  captured_var b_m;
-  captured_var b_p;
-  captured_var b_q;
-  captured_var b_r;
-  captured_var b_rho;
-  captured_var b_wing_chord;
-  captured_var gain_ailerons;
-  captured_var gain_az;
-  captured_var gain_el;
-  captured_var gain_motor;
-  captured_var gain_phi;
-  captured_var gain_theta;
-  d_struct_T expl_temp;
-  double actual_u[15];
-  double u_max[15];
-  double u_max_scaled[15];
-  double u_min[15];
-  double current_accelerations[6];
-  double final_accelerations[6];
-  double b_max_approach;
-  double b_max_tilt_value_approach;
-  double b_min_approach;
-  double g_max_approach;
-  double g_min_approach;
-  double max_theta_protection;
-  double min_theta_protection;
+  double u_out_local_data[210];
+  double B_eval[72];
+  double u_out_local[15];
+  double u_out_scaled[14];
+  double actual_u[12];
+  double desired_u[12];
+  double varargin_2[12];
+  double absx;
+  double absxk;
+  double gain_az;
+  double gain_el;
+  double gain_motor;
+  double t;
+  double tol;
+  int ar;
+  int b_i;
+  int br;
   int i;
-  char b_expl_temp[3];
-  if (!isInitialized_Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains) {
-    Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains_initialize();
+  int i1;
+  int i2;
+  int ib;
+  int ic;
+  if (!isInitialized_Global_controller_fcn_earth_rf_journal) {
+    Global_controller_fcn_earth_rf_journal_initialize();
   }
 
-  b_K_p_T.contents = K_p_T;
-  b_K_p_M.contents = K_p_M;
-  b_m.contents = m;
-  b_I_xx.contents = I_xx;
-  b_I_yy.contents = I_yy;
-  b_I_zz.contents = I_zz;
-  b_l_1.contents = l_1;
-  b_l_2.contents = l_2;
-  b_l_3.contents = l_3;
-  b_l_4.contents = l_4;
-  b_l_z.contents = l_z;
-  b_W_dv_1.contents = W_dv_1;
-  b_W_dv_2.contents = W_dv_2;
-  b_W_dv_3.contents = W_dv_3;
-  b_W_dv_4.contents = W_dv_4;
-  b_W_dv_5.contents = W_dv_5;
-  b_W_dv_6.contents = W_dv_6;
-  b_p.contents = p;
-  b_q.contents = q;
-  b_r.contents = r;
-  b_Cm_zero.contents = Cm_zero;
-  b_Cl_alpha.contents = Cl_alpha;
-  b_Cd_zero.contents = Cd_zero;
-  b_K_Cd.contents = K_Cd;
-  b_Cm_alpha.contents = Cm_alpha;
-  b_CL_aileron.contents = CL_aileron;
-  b_rho.contents = rho;
-  b_V.contents = V;
-  b_S.contents = S;
-  b_wing_chord.contents = wing_chord;
-  b_flight_path_angle.contents = flight_path_angle;
-  b_Beta.contents = Beta;
-  b_gamma_quadratic_du.contents = gamma_quadratic_du;
-  b_desired_motor_value.contents = desired_motor_value;
-  b_desired_el_value.contents = desired_el_value;
-  b_desired_az_value.contents = desired_az_value;
-  b_desired_theta_value.contents = desired_theta_value;
-  b_desired_phi_value.contents = desired_phi_value;
-  b_desired_ailerons_value.contents = desired_ailerons_value;
-
-  /*  Create variables necessary for the optimization */
-  if (b_V.contents > aoa_protection_speed) {
-    b_min_approach = (max_alpha + b_flight_path_angle.contents) * 180.0 /
-      3.1415926535897931;
-    max_theta_protection = fmin(max_theta, b_min_approach);
-    b_min_approach = (min_alpha + b_flight_path_angle.contents) * 180.0 /
-      3.1415926535897931;
-    min_theta_protection = fmax(min_theta, b_min_approach);
-  } else {
-    max_theta_protection = max_theta;
-    min_theta_protection = min_theta;
-  }
-
-  if (b_desired_motor_value.contents < min_omega) {
-    double b_Omega_1[4];
-    b_Omega_1[0] = Omega_1;
-    b_Omega_1[1] = Omega_2;
-    b_Omega_1[2] = Omega_3;
-    b_Omega_1[3] = Omega_4;
-    b_desired_motor_value.contents = mean(b_Omega_1);
-  }
-
-  gain_motor.contents = max_omega / 2.0;
-  gain_el.contents = (max_b - min_b) * 3.1415926535897931 / 180.0 / 2.0;
-  gain_az.contents = (max_g - min_g) * 3.1415926535897931 / 180.0 / 2.0;
-  gain_theta.contents = (max_theta_protection - min_theta_protection) *
-    3.1415926535897931 / 180.0 / 2.0;
-  gain_phi.contents = max_phi * 3.1415926535897931 / 180.0;
-  gain_ailerons.contents = (max_delta_ailerons - min_delta_ailerons) *
-    3.1415926535897931 / 180.0 / 2.0;
-  actual_u[0] = Omega_1;
-  actual_u[1] = Omega_2;
-  actual_u[2] = Omega_3;
-  actual_u[3] = Omega_4;
-  actual_u[4] = b_1;
-  actual_u[5] = b_2;
-  actual_u[6] = b_3;
-  actual_u[7] = b_4;
-  actual_u[8] = g_1;
-  actual_u[9] = g_2;
-  actual_u[10] = g_3;
-  actual_u[11] = g_4;
-  actual_u[12] = Theta;
-  actual_u[13] = Phi;
-  actual_u[14] = delta_ailerons;
-
-  /* Build the max and minimum actuator array: */
-  u_max[0] = max_omega;
-  u_max[1] = max_omega;
-  u_max[2] = max_omega;
-  u_max[3] = max_omega;
-  u_max[4] = max_b;
-  u_max[5] = max_b;
-  u_max[6] = max_b;
-  u_max[7] = max_b;
-  u_max[8] = max_g;
-  u_max[9] = max_g;
-  u_max[10] = max_g;
-  u_max[11] = max_g;
-  u_max[12] = max_theta_protection;
-  u_max[13] = max_phi;
-  u_max[14] = max_delta_ailerons;
-  u_min[0] = min_omega;
-  u_min[1] = min_omega;
-  u_min[2] = min_omega;
-  u_min[3] = min_omega;
-  u_min[4] = min_b;
-  u_min[5] = min_b;
-  u_min[6] = min_b;
-  u_min[7] = min_b;
-  u_min[8] = min_g;
-  u_min[9] = min_g;
-  u_min[10] = min_g;
-  u_min[11] = min_g;
-  u_min[12] = min_theta_protection;
-  u_min[13] = -max_phi;
-  u_min[14] = min_delta_ailerons;
-  if (approach_mode != 0.0) {
-    double max_tilt_value_approach[2];
-    max_tilt_value_approach[0] = 0.0;
-    max_tilt_value_approach[1] = k_alt_tilt_constraint * lidar_alt_corrected -
-      min_alt_tilt_constraint * k_alt_tilt_constraint;
-    b_max_tilt_value_approach = maximum(max_tilt_value_approach);
-
-    /* Elevation angle */
-    max_tilt_value_approach[0] = b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = max_b;
-    b_max_approach = minimum(max_tilt_value_approach);
-    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = min_b;
-    b_min_approach = maximum(max_tilt_value_approach);
-
-    /* Azimuth angle */
-    max_tilt_value_approach[0] = b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = max_g;
-    g_max_approach = minimum(max_tilt_value_approach);
-    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = min_g;
-    g_min_approach = maximum(max_tilt_value_approach);
-    u_max[4] = b_max_approach;
-    u_min[4] = b_min_approach;
-    u_max[8] = g_max_approach;
-    u_min[8] = g_min_approach;
-    u_max[5] = b_max_approach;
-    u_min[5] = b_min_approach;
-    u_max[9] = g_max_approach;
-    u_min[9] = g_min_approach;
-    u_max[6] = b_max_approach;
-    u_min[6] = b_min_approach;
-    u_max[10] = g_max_approach;
-    u_min[10] = g_min_approach;
-    u_max[7] = b_max_approach;
-    u_min[7] = b_min_approach;
-    u_max[11] = g_max_approach;
-    u_min[11] = g_min_approach;
-
-    /* Pitch angle  */
-    max_tilt_value_approach[0] = b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = max_theta_protection;
-    u_max[12] = minimum(max_tilt_value_approach);
-    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = min_theta_protection;
-    u_min[12] = maximum(max_tilt_value_approach);
-
-    /* Roll angle  */
-    max_tilt_value_approach[0] = b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = max_phi;
-    u_max[13] = minimum(max_tilt_value_approach);
-    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = -max_phi;
-    u_min[13] = maximum(max_tilt_value_approach);
-  }
-
-  for (i = 0; i < 11; i++) {
-    u_max[i + 4] = u_max[i + 4] * 3.1415926535897931 / 180.0;
-    u_min[i + 4] = u_min[i + 4] * 3.1415926535897931 / 180.0;
-  }
-
-  memcpy(&u_max_scaled[0], &u_max[0], 15U * sizeof(double));
-  u_max_scaled[0] = u_max[0] / gain_motor.contents;
-  u_max_scaled[1] = u_max[1] / gain_motor.contents;
-  u_max_scaled[2] = u_max[2] / gain_motor.contents;
-  u_max_scaled[3] = u_max[3] / gain_motor.contents;
-  b_max_tilt_value_approach = u_min[0] / gain_motor.contents;
-  b_max_approach = u_min[1] / gain_motor.contents;
-  b_min_approach = u_min[2] / gain_motor.contents;
-  g_max_approach = u_min[3] / gain_motor.contents;
-  u_min[0] = b_max_tilt_value_approach;
-  u_min[1] = b_max_approach;
-  u_min[2] = b_min_approach;
-  u_min[3] = g_max_approach;
-  b_max_tilt_value_approach = u_max_scaled[4] / gain_el.contents;
-  b_max_approach = u_max_scaled[5] / gain_el.contents;
-  b_min_approach = u_max_scaled[6] / gain_el.contents;
-  g_max_approach = u_max_scaled[7] / gain_el.contents;
-  u_max_scaled[4] = b_max_tilt_value_approach;
-  u_max_scaled[5] = b_max_approach;
-  u_max_scaled[6] = b_min_approach;
-  u_max_scaled[7] = g_max_approach;
-  b_max_tilt_value_approach = u_min[4] / gain_el.contents;
-  b_max_approach = u_min[5] / gain_el.contents;
-  b_min_approach = u_min[6] / gain_el.contents;
-  g_max_approach = u_min[7] / gain_el.contents;
-  u_min[4] = b_max_tilt_value_approach;
-  u_min[5] = b_max_approach;
-  u_min[6] = b_min_approach;
-  u_min[7] = g_max_approach;
-  b_max_tilt_value_approach = u_max_scaled[8] / gain_az.contents;
-  b_max_approach = u_max_scaled[9] / gain_az.contents;
-  b_min_approach = u_max_scaled[10] / gain_az.contents;
-  g_max_approach = u_max_scaled[11] / gain_az.contents;
-  u_max_scaled[8] = b_max_tilt_value_approach;
-  u_max_scaled[9] = b_max_approach;
-  u_max_scaled[10] = b_min_approach;
-  u_max_scaled[11] = g_max_approach;
-  b_max_tilt_value_approach = u_min[8] / gain_az.contents;
-  b_max_approach = u_min[9] / gain_az.contents;
-  b_min_approach = u_min[10] / gain_az.contents;
-  g_max_approach = u_min[11] / gain_az.contents;
-  u_min[8] = b_max_tilt_value_approach;
-  u_min[9] = b_max_approach;
-  u_min[10] = b_min_approach;
-  u_min[11] = g_max_approach;
-  u_max_scaled[12] /= gain_theta.contents;
-  u_min[12] /= gain_theta.contents;
-  u_max_scaled[13] /= gain_phi.contents;
-  u_min[13] /= gain_phi.contents;
-  u_max_scaled[14] /= gain_ailerons.contents;
-  u_min[14] /= gain_ailerons.contents;
-  memcpy(&u_max[0], &actual_u[0], 15U * sizeof(double));
-  u_max[0] = Omega_1 / gain_motor.contents;
-  u_max[1] = Omega_2 / gain_motor.contents;
-  u_max[2] = Omega_3 / gain_motor.contents;
-  u_max[3] = Omega_4 / gain_motor.contents;
-  b_max_tilt_value_approach = u_max[4] / gain_el.contents;
-  b_max_approach = u_max[5] / gain_el.contents;
-  b_min_approach = u_max[6] / gain_el.contents;
-  g_max_approach = u_max[7] / gain_el.contents;
-  u_max[4] = b_max_tilt_value_approach;
-  u_max[5] = b_max_approach;
-  u_max[6] = b_min_approach;
-  u_max[7] = g_max_approach;
-  b_max_tilt_value_approach = u_max[8] / gain_az.contents;
-  b_max_approach = u_max[9] / gain_az.contents;
-  b_min_approach = u_max[10] / gain_az.contents;
-  g_max_approach = u_max[11] / gain_az.contents;
-  u_max[8] = b_max_tilt_value_approach;
-  u_max[9] = b_max_approach;
-  u_max[10] = b_min_approach;
-  u_max[11] = g_max_approach;
-  u_max[12] /= gain_theta.contents;
-  u_max[13] /= gain_phi.contents;
-  u_max[14] /= gain_ailerons.contents;
-
-  /*  Apply Nonlinear optimization algorithm: */
-  c_compute_acc_nonlinear_control(actual_u, b_p.contents, b_q.contents,
-    b_r.contents, b_K_p_T.contents, b_K_p_M.contents, b_m.contents,
-    b_I_xx.contents, b_I_yy.contents, b_I_zz.contents, b_l_1.contents,
-    b_l_2.contents, b_l_3.contents, b_l_4.contents, b_l_z.contents,
-    b_Cl_alpha.contents, b_Cd_zero.contents, b_K_Cd.contents,
-    b_Cm_alpha.contents, b_Cm_zero.contents, b_CL_aileron.contents,
-    b_rho.contents, b_V.contents, b_S.contents, b_wing_chord.contents,
-    b_flight_path_angle.contents, b_Beta.contents, current_accelerations);
-  for (i = 0; i < 6; i++) {
-    dv_global.contents[i] = dv[i] + current_accelerations[i];
-  }
-
-  /* Pseudo-control hedging:  */
-  if (b_V.contents > transition_speed) {
-    b_max_approach = b_Cl_alpha.contents * max_alpha;
-    b_min_approach = b_Cl_alpha.contents * min_alpha;
-    b_max_tilt_value_approach = b_V.contents;
-    g_max_approach = b_max_approach * 0.5 * b_rho.contents * b_S.contents *
-      (b_max_tilt_value_approach * b_max_tilt_value_approach) * cos
-      (max_theta_protection * 3.1415926535897931 / 180.0);
-    b_max_tilt_value_approach = b_V.contents;
-    b_max_approach = b_min_approach * 0.5 * b_rho.contents * b_S.contents *
-      (b_max_tilt_value_approach * b_max_tilt_value_approach) * cos
-      (min_theta_protection * 3.1415926535897931 / 180.0);
-    b_max_tilt_value_approach = 9.81 - b_max_approach / b_m.contents;
-    b_max_approach = 9.81 - g_max_approach / b_m.contents;
-    b_min_approach = 0.0;
-    if (dv_global.contents[2] >= b_max_tilt_value_approach) {
-      b_min_approach = dv_global.contents[2] - b_max_tilt_value_approach;
-    } else if (dv_global.contents[2] <= b_max_approach) {
-      b_min_approach = dv_global.contents[2] - b_max_approach;
+  if (controller_id == 1.0) {
+    double R_gc_tmp[9];
+    double y[3];
+    tol = sin(Psi);
+    absx = cos(Psi);
+    R_gc_tmp[0] = absx;
+    R_gc_tmp[3] = tol;
+    R_gc_tmp[6] = 0.0;
+    R_gc_tmp[1] = -tol;
+    R_gc_tmp[4] = absx;
+    R_gc_tmp[7] = 0.0;
+    R_gc_tmp[2] = 0.0;
+    R_gc_tmp[5] = 0.0;
+    R_gc_tmp[8] = 1.0;
+    absxk = dv[0];
+    tol = dv[1];
+    absx = dv[2];
+    for (i1 = 0; i1 < 3; i1++) {
+      y[i1] = (R_gc_tmp[i1] * absxk + R_gc_tmp[i1 + 3] * tol) + R_gc_tmp[i1 + 6]
+        * absx;
     }
 
-    dv_global.contents[2] -= b_min_approach;
+    dv[0] = y[0];
+    dv[1] = y[1];
+    dv[2] = y[2];
+    c_Nonlinear_controller_fcn_cont(K_p_T, K_p_M, m, I_xx, I_yy, I_zz, l_1, l_2,
+      l_3, l_4, l_z, Phi, Theta, Omega_1, Omega_2, Omega_3, Omega_4, b_1, b_2,
+      b_3, b_4, g_1, g_2, g_3, g_4, W_act_motor_const, W_act_motor_speed,
+      W_act_tilt_el_const, W_act_tilt_el_speed, W_act_tilt_az_const,
+      W_act_tilt_az_speed, W_act_theta_const, W_act_theta_speed, W_act_phi_const,
+      W_act_phi_speed, W_dv_1, W_dv_2, W_dv_3, W_dv_4, W_dv_5, W_dv_6, max_omega,
+      min_omega, max_b, min_b, max_g, min_g, max_theta, min_theta, max_phi, dv,
+      p, q, r, Cm_zero, Cl_alpha, Cd_zero, K_Cd, Cm_alpha, rho, V, S, wing_chord,
+      flight_path_angle, max_alpha, min_alpha, Beta, gamma_quadratic_du,
+      desired_motor_value, desired_el_value, desired_az_value,
+      desired_theta_value * 3.1415926535897931 / 180.0, desired_phi_value *
+      3.1415926535897931 / 180.0, verbose, u_out_local, residuals, elapsed_time,
+      N_iterations, N_evaluation, exitflag);
+    memcpy(&u_out_local_data[0], &u_out_local[0], 14U * sizeof(double));
+
+    /* WLS CA controller */
+  } else if (controller_id == 2.0) {
+    double b_dv[6];
+    for (i = 0; i < 6; i++) {
+      b_dv[i] = dv[i];
+    }
+
+    c_WLS_controller_fcn_earth_rf_j(K_p_T, K_p_M, m, I_xx, I_yy, I_zz, l_1, l_2,
+      l_3, l_4, l_z, Phi, Theta, Psi, Omega_1, Omega_2, Omega_3, Omega_4, b_1,
+      b_2, b_3, b_4, g_1, g_2, g_3, g_4, W_act_motor_const, W_act_motor_speed,
+      W_act_tilt_el_const, W_act_tilt_el_speed, W_act_tilt_az_const,
+      W_act_tilt_az_speed, W_dv_1, W_dv_2, W_dv_3, W_dv_4, W_dv_5, W_dv_6,
+      max_omega, min_omega, max_b, min_b, max_g, min_g, b_dv, p, q, r, Cm_zero,
+      Cl_alpha, Cd_zero, K_Cd, Cm_alpha, rho, V, S, wing_chord,
+      flight_path_angle, max_alpha, Beta, gamma_quadratic_wls,
+      desired_motor_value, desired_el_value, desired_az_value, desired_phi_value,
+      desired_theta_value, u_out_scaled, residuals, elapsed_time, N_iterations,
+      N_evaluation, exitflag);
+    memcpy(&u_out_local_data[0], &u_out_scaled[0], 14U * sizeof(double));
+
+    /* Max and min alpha are the new constraint for the tilt angles.  */
+    /* PINV controller */
+  } else if (controller_id == 3.0) {
+    double A[72];
+    double u_out_feasible[12];
+    double u_scaled[12];
+    double x[12];
+    double b_dv[6];
+    double B_eval_tmp;
+    double B_eval_tmp_tmp;
+    double ab_B_eval_tmp;
+    double b_B_eval_tmp;
+    double b_B_eval_tmp_tmp;
+    double bb_B_eval_tmp;
+    double c_B_eval_tmp;
+    double c_B_eval_tmp_tmp;
+    double cb_B_eval_tmp;
+    double d_B_eval_tmp;
+    double d_B_eval_tmp_tmp;
+    double db_B_eval_tmp;
+    double e_B_eval_tmp;
+    double e_B_eval_tmp_tmp;
+    double eb_B_eval_tmp;
+    double f_B_eval_tmp;
+    double f_B_eval_tmp_tmp;
+    double fb_B_eval_tmp;
+    double g_B_eval_tmp;
+    double g_B_eval_tmp_tmp;
+    double gb_B_eval_tmp;
+    double h_B_eval_tmp;
+    double hb_B_eval_tmp;
+    double i_B_eval_tmp;
+    double ib_B_eval_tmp;
+    double j_B_eval_tmp;
+    double jb_B_eval_tmp;
+    double k_B_eval_tmp;
+    double kb_B_eval_tmp;
+    double l_B_eval_tmp;
+    double lb_B_eval_tmp;
+    double m_B_eval_tmp;
+    double mb_B_eval_tmp;
+    double n_B_eval_tmp;
+    double nb_B_eval_tmp;
+    double o_B_eval_tmp;
+    double ob_B_eval_tmp;
+    double p_B_eval_tmp;
+    double pb_B_eval_tmp;
+    double q_B_eval_tmp;
+    double qb_B_eval_tmp;
+    double r_B_eval_tmp;
+    double rb_B_eval_tmp;
+    double s_B_eval_tmp;
+    double sb_B_eval_tmp;
+    double t_B_eval_tmp;
+    double tb_B_eval_tmp;
+    double u_B_eval_tmp;
+    double ub_B_eval_tmp;
+    double v_B_eval_tmp;
+    double vb_B_eval_tmp;
+    double w_B_eval_tmp;
+    double wb_B_eval_tmp;
+    double x_B_eval_tmp;
+    double y_B_eval_tmp;
+    bool b_x[12];
+    bool b_p;
+    if (desired_motor_value < 120.0) {
+      desired_motor_value = (((Omega_1 + Omega_2) + Omega_3) + Omega_4) / 4.0;
+    }
+
+    /*  Testing parameters: */
+    /*  (9e-06, 1.31e-07, 2.35, 0.15, 0.13, 0.2, 0.231, 0.231, 0.39, 0.39, 0, ... */
+    /*  0, 0, 0, 100, 100, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0,... */
+    /*  1, 1, 1, 0,... */
+    /*  1, 100, 400, -50, 500, -60,... */
+    /*  0.01, 0.01, 0.01, 0.1, 0.1, 0.01,... */
+    /*  900, 0, 25, -130, 45, -45, 100, -30, 40, [0 0 -5 0 0 0]', 0, 0, 0, 0.1, 5.18, 0.38, 0.2, ... */
+    /*  -.1, 1.225, 0, 0.55, 0.33, 0, 15, -15, 0, 1e-07,... */
+    /*  0, 0, 0, 0, 0)   */
+    tic();
+
+    /*  Assign geometrical and create variables */
+    gain_motor = max_omega / 2.0;
+    gain_el = (max_b - min_b) * 3.1415926535897931 / 180.0 / 2.0;
+    gain_az = (max_g - min_g) * 3.1415926535897931 / 180.0 / 2.0;
+
+    /*  Identify and evaluate the effectiveness matrix [6,12] */
+    B_eval_tmp = cos(Psi);
+    B_eval_tmp_tmp = cos(Phi);
+    b_B_eval_tmp = sin(Psi);
+    b_B_eval_tmp_tmp = sin(Phi);
+    absx = sin(Theta);
+    c_B_eval_tmp = cos(Theta);
+    d_B_eval_tmp = cos(g_1);
+    e_B_eval_tmp = sin(b_1);
+    f_B_eval_tmp = cos(b_1);
+    g_B_eval_tmp = sin(g_1);
+    h_B_eval_tmp = cos(g_2);
+    i_B_eval_tmp = sin(b_2);
+    j_B_eval_tmp = cos(b_2);
+    k_B_eval_tmp = sin(g_2);
+    l_B_eval_tmp = cos(g_3);
+    m_B_eval_tmp = sin(b_3);
+    n_B_eval_tmp = cos(b_3);
+    o_B_eval_tmp = sin(g_3);
+    p_B_eval_tmp = cos(g_4);
+    q_B_eval_tmp = sin(b_4);
+    r_B_eval_tmp = cos(b_4);
+    s_B_eval_tmp = sin(g_4);
+    t_B_eval_tmp = 2.0 * K_p_T * Omega_1;
+    B_eval[0] = -((t_B_eval_tmp * B_eval_tmp * c_B_eval_tmp * e_B_eval_tmp +
+                   t_B_eval_tmp * f_B_eval_tmp * d_B_eval_tmp *
+                   (b_B_eval_tmp_tmp * b_B_eval_tmp + B_eval_tmp_tmp *
+                    B_eval_tmp * absx)) + 2.0 * K_p_T * Omega_1 * cos(b_1) *
+                  g_B_eval_tmp * (B_eval_tmp_tmp * b_B_eval_tmp - B_eval_tmp *
+      b_B_eval_tmp_tmp * absx)) / m;
+    u_B_eval_tmp = 2.0 * K_p_T * Omega_2;
+    tol = b_B_eval_tmp_tmp * sin(Psi);
+    absxk = B_eval_tmp_tmp * cos(Psi);
+    v_B_eval_tmp = tol + absxk * absx;
+    t = B_eval_tmp_tmp * sin(Psi);
+    c_B_eval_tmp_tmp = cos(Psi) * b_B_eval_tmp_tmp;
+    w_B_eval_tmp = t - c_B_eval_tmp_tmp * absx;
+    B_eval[6] = -((u_B_eval_tmp * B_eval_tmp * c_B_eval_tmp * i_B_eval_tmp +
+                   u_B_eval_tmp * j_B_eval_tmp * h_B_eval_tmp * v_B_eval_tmp) +
+                  2.0 * K_p_T * Omega_2 * cos(b_2) * k_B_eval_tmp * w_B_eval_tmp)
+      / m;
+    x_B_eval_tmp = 2.0 * K_p_T * Omega_3;
+    B_eval[12] = -((x_B_eval_tmp * B_eval_tmp * c_B_eval_tmp * m_B_eval_tmp +
+                    x_B_eval_tmp * n_B_eval_tmp * l_B_eval_tmp * v_B_eval_tmp) +
+                   2.0 * K_p_T * Omega_3 * cos(b_3) * o_B_eval_tmp *
+                   w_B_eval_tmp) / m;
+    y_B_eval_tmp = 2.0 * K_p_T * Omega_4;
+    B_eval[18] = -((y_B_eval_tmp * B_eval_tmp * c_B_eval_tmp * q_B_eval_tmp +
+                    y_B_eval_tmp * r_B_eval_tmp * p_B_eval_tmp * v_B_eval_tmp) +
+                   2.0 * K_p_T * Omega_4 * cos(b_4) * s_B_eval_tmp *
+                   w_B_eval_tmp) / m;
+    d_B_eval_tmp_tmp = Omega_1 * Omega_1;
+    ab_B_eval_tmp = K_p_T * d_B_eval_tmp_tmp;
+    bb_B_eval_tmp = ab_B_eval_tmp * d_B_eval_tmp * e_B_eval_tmp;
+    cb_B_eval_tmp = ab_B_eval_tmp * e_B_eval_tmp * g_B_eval_tmp;
+    B_eval[24] = ((bb_B_eval_tmp * v_B_eval_tmp - ab_B_eval_tmp * B_eval_tmp *
+                   c_B_eval_tmp * f_B_eval_tmp) + cb_B_eval_tmp * w_B_eval_tmp) /
+      m;
+    e_B_eval_tmp_tmp = Omega_2 * Omega_2;
+    db_B_eval_tmp = K_p_T * e_B_eval_tmp_tmp;
+    eb_B_eval_tmp = db_B_eval_tmp * h_B_eval_tmp * i_B_eval_tmp;
+    fb_B_eval_tmp = db_B_eval_tmp * i_B_eval_tmp * k_B_eval_tmp;
+    B_eval[30] = ((eb_B_eval_tmp * v_B_eval_tmp - db_B_eval_tmp * B_eval_tmp *
+                   c_B_eval_tmp * j_B_eval_tmp) + fb_B_eval_tmp * w_B_eval_tmp) /
+      m;
+    f_B_eval_tmp_tmp = Omega_3 * Omega_3;
+    gb_B_eval_tmp = K_p_T * f_B_eval_tmp_tmp;
+    hb_B_eval_tmp = gb_B_eval_tmp * l_B_eval_tmp * m_B_eval_tmp;
+    ib_B_eval_tmp = gb_B_eval_tmp * m_B_eval_tmp * o_B_eval_tmp;
+    B_eval[36] = ((hb_B_eval_tmp * v_B_eval_tmp - gb_B_eval_tmp * B_eval_tmp *
+                   c_B_eval_tmp * n_B_eval_tmp) + ib_B_eval_tmp * w_B_eval_tmp) /
+      m;
+    g_B_eval_tmp_tmp = Omega_4 * Omega_4;
+    jb_B_eval_tmp = K_p_T * g_B_eval_tmp_tmp;
+    kb_B_eval_tmp = jb_B_eval_tmp * p_B_eval_tmp * q_B_eval_tmp;
+    lb_B_eval_tmp = jb_B_eval_tmp * q_B_eval_tmp * s_B_eval_tmp;
+    B_eval[42] = ((kb_B_eval_tmp * v_B_eval_tmp - jb_B_eval_tmp * B_eval_tmp *
+                   c_B_eval_tmp * r_B_eval_tmp) + lb_B_eval_tmp * w_B_eval_tmp) /
+      m;
+    B_eval_tmp = ab_B_eval_tmp * f_B_eval_tmp;
+    mb_B_eval_tmp = B_eval_tmp * d_B_eval_tmp;
+    nb_B_eval_tmp = B_eval_tmp * g_B_eval_tmp;
+    B_eval[48] = -(mb_B_eval_tmp * w_B_eval_tmp - nb_B_eval_tmp * v_B_eval_tmp) /
+      m;
+    ob_B_eval_tmp = db_B_eval_tmp * j_B_eval_tmp;
+    pb_B_eval_tmp = ob_B_eval_tmp * h_B_eval_tmp;
+    qb_B_eval_tmp = ob_B_eval_tmp * k_B_eval_tmp;
+    B_eval[54] = -(pb_B_eval_tmp * w_B_eval_tmp - qb_B_eval_tmp * v_B_eval_tmp) /
+      m;
+    rb_B_eval_tmp = gb_B_eval_tmp * n_B_eval_tmp;
+    sb_B_eval_tmp = rb_B_eval_tmp * l_B_eval_tmp;
+    tb_B_eval_tmp = rb_B_eval_tmp * o_B_eval_tmp;
+    B_eval[60] = -(sb_B_eval_tmp * w_B_eval_tmp - tb_B_eval_tmp * v_B_eval_tmp) /
+      m;
+    ub_B_eval_tmp = jb_B_eval_tmp * r_B_eval_tmp;
+    vb_B_eval_tmp = ub_B_eval_tmp * p_B_eval_tmp;
+    wb_B_eval_tmp = ub_B_eval_tmp * s_B_eval_tmp;
+    B_eval[66] = -(vb_B_eval_tmp * w_B_eval_tmp - wb_B_eval_tmp * v_B_eval_tmp) /
+      m;
+    B_eval[1] = ((2.0 * K_p_T * Omega_1 * cos(b_1) * cos(g_1) *
+                  (c_B_eval_tmp_tmp - t * absx) - t_B_eval_tmp * c_B_eval_tmp *
+                  b_B_eval_tmp * e_B_eval_tmp) + 2.0 * K_p_T * Omega_1 * cos(b_1)
+                 * sin(g_1) * (absxk + tol * absx)) / m;
+    v_B_eval_tmp = cos(Psi) * sin(Phi) - cos(Phi) * sin(Psi) * sin(Theta);
+    w_B_eval_tmp = cos(Phi) * cos(Psi) + sin(Phi) * sin(Psi) * sin(Theta);
+    B_eval[7] = ((2.0 * K_p_T * Omega_2 * cos(b_2) * cos(g_2) * v_B_eval_tmp -
+                  u_B_eval_tmp * c_B_eval_tmp * b_B_eval_tmp * i_B_eval_tmp) +
+                 2.0 * K_p_T * Omega_2 * cos(b_2) * sin(g_2) * w_B_eval_tmp) / m;
+    B_eval[13] = ((2.0 * K_p_T * Omega_3 * cos(b_3) * cos(g_3) * v_B_eval_tmp -
+                   x_B_eval_tmp * c_B_eval_tmp * b_B_eval_tmp * m_B_eval_tmp) +
+                  2.0 * K_p_T * Omega_3 * cos(b_3) * sin(g_3) * w_B_eval_tmp) /
+      m;
+    B_eval[19] = ((2.0 * K_p_T * Omega_4 * cos(b_4) * cos(g_4) * v_B_eval_tmp -
+                   y_B_eval_tmp * c_B_eval_tmp * b_B_eval_tmp * q_B_eval_tmp) +
+                  2.0 * K_p_T * Omega_4 * cos(b_4) * sin(g_4) * w_B_eval_tmp) /
+      m;
+    t = ab_B_eval_tmp * c_B_eval_tmp;
+    B_eval[25] = -((t * b_B_eval_tmp * f_B_eval_tmp + bb_B_eval_tmp *
+                    v_B_eval_tmp) + cb_B_eval_tmp * w_B_eval_tmp) / m;
+    bb_B_eval_tmp = db_B_eval_tmp * c_B_eval_tmp;
+    B_eval[31] = -((bb_B_eval_tmp * b_B_eval_tmp * j_B_eval_tmp + eb_B_eval_tmp *
+                    v_B_eval_tmp) + fb_B_eval_tmp * w_B_eval_tmp) / m;
+    cb_B_eval_tmp = gb_B_eval_tmp * c_B_eval_tmp;
+    B_eval[37] = -((cb_B_eval_tmp * b_B_eval_tmp * n_B_eval_tmp + hb_B_eval_tmp *
+                    v_B_eval_tmp) + ib_B_eval_tmp * w_B_eval_tmp) / m;
+    eb_B_eval_tmp = jb_B_eval_tmp * c_B_eval_tmp;
+    B_eval[43] = -((eb_B_eval_tmp * b_B_eval_tmp * r_B_eval_tmp + kb_B_eval_tmp *
+                    v_B_eval_tmp) + lb_B_eval_tmp * w_B_eval_tmp) / m;
+    B_eval[49] = (mb_B_eval_tmp * w_B_eval_tmp - nb_B_eval_tmp * v_B_eval_tmp) /
+      m;
+    B_eval[55] = (pb_B_eval_tmp * w_B_eval_tmp - qb_B_eval_tmp * v_B_eval_tmp) /
+      m;
+    B_eval[61] = (sb_B_eval_tmp * w_B_eval_tmp - tb_B_eval_tmp * v_B_eval_tmp) /
+      m;
+    B_eval[67] = (vb_B_eval_tmp * w_B_eval_tmp - wb_B_eval_tmp * v_B_eval_tmp) /
+      m;
+    B_eval[2] = ((t_B_eval_tmp * e_B_eval_tmp * v_B_eval_tmp + 2.0 * K_p_T
+                  * Omega_1 * cos(Theta) * b_B_eval_tmp_tmp * f_B_eval_tmp *
+                  g_B_eval_tmp) - t_B_eval_tmp * B_eval_tmp_tmp * c_B_eval_tmp *
+                 f_B_eval_tmp * d_B_eval_tmp) / m;
+    B_eval[8] = ((u_B_eval_tmp * i_B_eval_tmp * v_B_eval_tmp + 2.0 * K_p_T
+                  * Omega_2 * cos(Theta) * b_B_eval_tmp_tmp * j_B_eval_tmp *
+                  k_B_eval_tmp) - u_B_eval_tmp * B_eval_tmp_tmp * c_B_eval_tmp *
+                 j_B_eval_tmp * h_B_eval_tmp) / m;
+    B_eval[14] = ((x_B_eval_tmp * m_B_eval_tmp * v_B_eval_tmp + 2.0 * K_p_T
+                   * Omega_3 * cos(Theta) * b_B_eval_tmp_tmp * n_B_eval_tmp *
+                   o_B_eval_tmp) - x_B_eval_tmp * B_eval_tmp_tmp * c_B_eval_tmp *
+                  n_B_eval_tmp * l_B_eval_tmp) / m;
+    B_eval[20] = ((y_B_eval_tmp * q_B_eval_tmp * v_B_eval_tmp + 2.0 * K_p_T
+                   * Omega_4 * cos(Theta) * b_B_eval_tmp_tmp * r_B_eval_tmp *
+                   s_B_eval_tmp) - y_B_eval_tmp * B_eval_tmp_tmp * c_B_eval_tmp *
+                  r_B_eval_tmp * p_B_eval_tmp) / m;
+    b_B_eval_tmp = ab_B_eval_tmp * B_eval_tmp_tmp * c_B_eval_tmp;
+    w_B_eval_tmp = t * b_B_eval_tmp_tmp;
+    B_eval[26] = ((B_eval_tmp * v_B_eval_tmp + b_B_eval_tmp * d_B_eval_tmp *
+                   e_B_eval_tmp) - w_B_eval_tmp * e_B_eval_tmp * g_B_eval_tmp) /
+      m;
+    B_eval_tmp = db_B_eval_tmp * B_eval_tmp_tmp * c_B_eval_tmp;
+    bb_B_eval_tmp *= b_B_eval_tmp_tmp;
+    B_eval[32] = ((ob_B_eval_tmp * v_B_eval_tmp + B_eval_tmp * h_B_eval_tmp *
+                   i_B_eval_tmp) - bb_B_eval_tmp * i_B_eval_tmp * k_B_eval_tmp) /
+      m;
+    fb_B_eval_tmp = gb_B_eval_tmp * B_eval_tmp_tmp * c_B_eval_tmp;
+    cb_B_eval_tmp *= b_B_eval_tmp_tmp;
+    B_eval[38] = ((rb_B_eval_tmp * v_B_eval_tmp + fb_B_eval_tmp * l_B_eval_tmp *
+                   m_B_eval_tmp) - cb_B_eval_tmp * m_B_eval_tmp * o_B_eval_tmp) /
+      m;
+    c_B_eval_tmp *= jb_B_eval_tmp * B_eval_tmp_tmp;
+    eb_B_eval_tmp *= b_B_eval_tmp_tmp;
+    B_eval[44] = ((ub_B_eval_tmp * v_B_eval_tmp + c_B_eval_tmp * p_B_eval_tmp *
+                   q_B_eval_tmp) - eb_B_eval_tmp * q_B_eval_tmp * s_B_eval_tmp) /
+      m;
+    B_eval[50] = (b_B_eval_tmp * f_B_eval_tmp * g_B_eval_tmp + w_B_eval_tmp *
+                  f_B_eval_tmp * d_B_eval_tmp) / m;
+    B_eval[56] = (B_eval_tmp * j_B_eval_tmp * k_B_eval_tmp + bb_B_eval_tmp *
+                  j_B_eval_tmp * h_B_eval_tmp) / m;
+    B_eval[62] = (fb_B_eval_tmp * n_B_eval_tmp * o_B_eval_tmp + cb_B_eval_tmp *
+                  n_B_eval_tmp * l_B_eval_tmp) / m;
+    B_eval[68] = (c_B_eval_tmp * r_B_eval_tmp * s_B_eval_tmp + eb_B_eval_tmp *
+                  r_B_eval_tmp * p_B_eval_tmp) / m;
+    B_eval_tmp = t_B_eval_tmp * l_z;
+    b_B_eval_tmp = 2.0 * K_p_M * Omega_1;
+    c_B_eval_tmp = t_B_eval_tmp * l_1;
+    B_eval[3] = ((b_B_eval_tmp * e_B_eval_tmp + B_eval_tmp * f_B_eval_tmp *
+                  g_B_eval_tmp) + c_B_eval_tmp * f_B_eval_tmp * d_B_eval_tmp) /
+      I_xx;
+    v_B_eval_tmp = u_B_eval_tmp * l_z;
+    w_B_eval_tmp = 2.0 * K_p_M * Omega_2;
+    bb_B_eval_tmp = u_B_eval_tmp * l_1;
+    B_eval[9] = -((w_B_eval_tmp * i_B_eval_tmp - v_B_eval_tmp * j_B_eval_tmp *
+                   k_B_eval_tmp) + bb_B_eval_tmp * j_B_eval_tmp * h_B_eval_tmp) /
+      I_xx;
+    cb_B_eval_tmp = 2.0 * K_p_M * Omega_3;
+    eb_B_eval_tmp = x_B_eval_tmp * l_z;
+    fb_B_eval_tmp = x_B_eval_tmp * l_2;
+    B_eval[15] = ((cb_B_eval_tmp * m_B_eval_tmp + eb_B_eval_tmp * n_B_eval_tmp *
+                   o_B_eval_tmp) - fb_B_eval_tmp * n_B_eval_tmp * l_B_eval_tmp) /
+      I_xx;
+    hb_B_eval_tmp = y_B_eval_tmp * l_z;
+    ib_B_eval_tmp = 2.0 * K_p_M * Omega_4;
+    kb_B_eval_tmp = y_B_eval_tmp * l_2;
+    B_eval[21] = ((hb_B_eval_tmp * r_B_eval_tmp * s_B_eval_tmp - ib_B_eval_tmp *
+                   q_B_eval_tmp) + kb_B_eval_tmp * r_B_eval_tmp * p_B_eval_tmp) /
+      I_xx;
+    lb_B_eval_tmp = ab_B_eval_tmp * l_z;
+    mb_B_eval_tmp = ab_B_eval_tmp * l_1;
+    nb_B_eval_tmp = K_p_M * d_B_eval_tmp_tmp;
+    ob_B_eval_tmp = nb_B_eval_tmp * f_B_eval_tmp;
+    B_eval[27] = -((mb_B_eval_tmp * d_B_eval_tmp * e_B_eval_tmp - ob_B_eval_tmp)
+                   + lb_B_eval_tmp * e_B_eval_tmp * g_B_eval_tmp) / I_xx;
+    pb_B_eval_tmp = db_B_eval_tmp * l_z;
+    qb_B_eval_tmp = db_B_eval_tmp * l_1;
+    rb_B_eval_tmp = K_p_M * e_B_eval_tmp_tmp;
+    sb_B_eval_tmp = rb_B_eval_tmp * j_B_eval_tmp;
+    B_eval[33] = -((sb_B_eval_tmp - qb_B_eval_tmp * h_B_eval_tmp * i_B_eval_tmp)
+                   + pb_B_eval_tmp * i_B_eval_tmp * k_B_eval_tmp) / I_xx;
+    tb_B_eval_tmp = gb_B_eval_tmp * l_z;
+    ub_B_eval_tmp = gb_B_eval_tmp * l_2;
+    vb_B_eval_tmp = K_p_M * f_B_eval_tmp_tmp;
+    wb_B_eval_tmp = vb_B_eval_tmp * n_B_eval_tmp;
+    B_eval[39] = ((wb_B_eval_tmp + ub_B_eval_tmp * l_B_eval_tmp * m_B_eval_tmp)
+                  - tb_B_eval_tmp * m_B_eval_tmp * o_B_eval_tmp) / I_xx;
+    t = jb_B_eval_tmp * l_z;
+    absxk = jb_B_eval_tmp * l_2;
+    absx = K_p_M * g_B_eval_tmp_tmp;
+    tol = absx * r_B_eval_tmp;
+    B_eval[45] = -((tol + absxk * p_B_eval_tmp * q_B_eval_tmp) + t *
+                   q_B_eval_tmp * s_B_eval_tmp) / I_xx;
+    lb_B_eval_tmp *= f_B_eval_tmp;
+    mb_B_eval_tmp *= f_B_eval_tmp;
+    B_eval[51] = (lb_B_eval_tmp * d_B_eval_tmp - mb_B_eval_tmp * g_B_eval_tmp) /
+      I_xx;
+    pb_B_eval_tmp *= j_B_eval_tmp;
+    qb_B_eval_tmp *= j_B_eval_tmp;
+    B_eval[57] = (pb_B_eval_tmp * h_B_eval_tmp + qb_B_eval_tmp * k_B_eval_tmp) /
+      I_xx;
+    tb_B_eval_tmp *= n_B_eval_tmp;
+    ub_B_eval_tmp *= n_B_eval_tmp;
+    B_eval[63] = (tb_B_eval_tmp * l_B_eval_tmp + ub_B_eval_tmp * o_B_eval_tmp) /
+      I_xx;
+    t *= r_B_eval_tmp;
+    absxk *= r_B_eval_tmp;
+    B_eval[69] = (t * p_B_eval_tmp - absxk * s_B_eval_tmp) / I_xx;
+    B_eval[4] = ((B_eval_tmp * e_B_eval_tmp - b_B_eval_tmp * f_B_eval_tmp *
+                  g_B_eval_tmp) + t_B_eval_tmp * l_4 * f_B_eval_tmp *
+                 d_B_eval_tmp) / I_yy;
+    B_eval[10] = ((v_B_eval_tmp * i_B_eval_tmp + w_B_eval_tmp * j_B_eval_tmp *
+                   k_B_eval_tmp) + u_B_eval_tmp * l_4 * j_B_eval_tmp *
+                  h_B_eval_tmp) / I_yy;
+    B_eval[16] = -((cb_B_eval_tmp * n_B_eval_tmp * o_B_eval_tmp - eb_B_eval_tmp *
+                    m_B_eval_tmp) + x_B_eval_tmp * l_3 * n_B_eval_tmp *
+                   l_B_eval_tmp) / I_yy;
+    B_eval[22] = ((hb_B_eval_tmp * q_B_eval_tmp + ib_B_eval_tmp * r_B_eval_tmp *
+                   s_B_eval_tmp) - y_B_eval_tmp * l_3 * r_B_eval_tmp *
+                  p_B_eval_tmp) / I_yy;
+    B_eval_tmp = ab_B_eval_tmp * l_4;
+    B_eval[28] = ((nb_B_eval_tmp * e_B_eval_tmp * g_B_eval_tmp + lb_B_eval_tmp)
+                  - B_eval_tmp * d_B_eval_tmp * e_B_eval_tmp) / I_yy;
+    b_B_eval_tmp = db_B_eval_tmp * l_4;
+    B_eval[34] = -((rb_B_eval_tmp * i_B_eval_tmp * k_B_eval_tmp - pb_B_eval_tmp)
+                   + b_B_eval_tmp * h_B_eval_tmp * i_B_eval_tmp) / I_yy;
+    t_B_eval_tmp = gb_B_eval_tmp * l_3;
+    B_eval[40] = ((vb_B_eval_tmp * m_B_eval_tmp * o_B_eval_tmp + tb_B_eval_tmp)
+                  + t_B_eval_tmp * l_B_eval_tmp * m_B_eval_tmp) / I_yy;
+    u_B_eval_tmp = jb_B_eval_tmp * l_3;
+    B_eval[46] = ((t - absx * q_B_eval_tmp * s_B_eval_tmp) + u_B_eval_tmp *
+                  p_B_eval_tmp * q_B_eval_tmp) / I_yy;
+    f_B_eval_tmp *= B_eval_tmp;
+    B_eval[52] = -(ob_B_eval_tmp * d_B_eval_tmp + f_B_eval_tmp * g_B_eval_tmp) /
+      I_yy;
+    j_B_eval_tmp *= b_B_eval_tmp;
+    B_eval[58] = (sb_B_eval_tmp * h_B_eval_tmp - j_B_eval_tmp * k_B_eval_tmp) /
+      I_yy;
+    n_B_eval_tmp *= t_B_eval_tmp;
+    B_eval[64] = -(wb_B_eval_tmp * l_B_eval_tmp - n_B_eval_tmp * o_B_eval_tmp) /
+      I_yy;
+    r_B_eval_tmp *= u_B_eval_tmp;
+    B_eval[70] = (tol * p_B_eval_tmp + r_B_eval_tmp * s_B_eval_tmp) / I_yy;
+    B_eval[5] = ((2.0 * K_p_M * Omega_1 * cos(b_1) * d_B_eval_tmp - c_B_eval_tmp
+                  * e_B_eval_tmp) + 2.0 * K_p_T * Omega_1 * l_4 * cos(b_1) *
+                 g_B_eval_tmp) / I_zz;
+    B_eval[11] = ((bb_B_eval_tmp * i_B_eval_tmp - 2.0 * K_p_M * Omega_2 * cos
+                   (b_2) * h_B_eval_tmp) + 2.0 * K_p_T * Omega_2 * l_4 * cos(b_2)
+                  * k_B_eval_tmp) / I_zz;
+    B_eval[17] = ((fb_B_eval_tmp * m_B_eval_tmp + 2.0 * K_p_M * Omega_3 * cos
+                   (b_3) * l_B_eval_tmp) - 2.0 * K_p_T * Omega_3 * l_3 * cos(b_3)
+                  * o_B_eval_tmp) / I_zz;
+    B_eval[23] = -((kb_B_eval_tmp * q_B_eval_tmp + 2.0 * K_p_M * Omega_4 * cos
+                    (b_4) * p_B_eval_tmp) + 2.0 * K_p_T * Omega_4 * l_3 * cos
+                   (b_4) * s_B_eval_tmp) / I_zz;
+    B_eval[29] = -((mb_B_eval_tmp + nb_B_eval_tmp * d_B_eval_tmp * e_B_eval_tmp)
+                   + B_eval_tmp * e_B_eval_tmp * g_B_eval_tmp) / I_zz;
+    B_eval[35] = ((qb_B_eval_tmp + rb_B_eval_tmp * h_B_eval_tmp * i_B_eval_tmp)
+                  - b_B_eval_tmp * i_B_eval_tmp * k_B_eval_tmp) / I_zz;
+    B_eval[41] = ((ub_B_eval_tmp - vb_B_eval_tmp * l_B_eval_tmp * m_B_eval_tmp)
+                  + t_B_eval_tmp * m_B_eval_tmp * o_B_eval_tmp) / I_zz;
+    B_eval[47] = ((absx * p_B_eval_tmp * q_B_eval_tmp - absxk) + u_B_eval_tmp *
+                  q_B_eval_tmp * s_B_eval_tmp) / I_zz;
+    B_eval[53] = -(ob_B_eval_tmp * g_B_eval_tmp - f_B_eval_tmp * d_B_eval_tmp) /
+      I_zz;
+    B_eval[59] = (sb_B_eval_tmp * k_B_eval_tmp + j_B_eval_tmp * h_B_eval_tmp) /
+      I_zz;
+    B_eval[65] = -(wb_B_eval_tmp * o_B_eval_tmp + n_B_eval_tmp * l_B_eval_tmp) /
+      I_zz;
+    B_eval[71] = (tol * s_B_eval_tmp - r_B_eval_tmp * p_B_eval_tmp) / I_zz;
+    actual_u[0] = Omega_1;
+    actual_u[1] = Omega_2;
+    actual_u[2] = Omega_3;
+    actual_u[3] = Omega_4;
+    actual_u[4] = b_1;
+    actual_u[5] = b_2;
+    actual_u[6] = b_3;
+    actual_u[7] = b_4;
+    actual_u[8] = g_1;
+    actual_u[9] = g_2;
+    actual_u[10] = g_3;
+    actual_u[11] = g_4;
+    desired_u[0] = desired_motor_value;
+    desired_u[1] = desired_motor_value;
+    desired_u[2] = desired_motor_value;
+    desired_u[3] = desired_motor_value;
+    desired_u[4] = desired_el_value;
+    desired_u[5] = desired_el_value;
+    desired_u[6] = desired_el_value;
+    desired_u[7] = desired_el_value;
+    desired_u[8] = desired_az_value;
+    desired_u[9] = desired_az_value;
+    desired_u[10] = desired_az_value;
+    desired_u[11] = desired_az_value;
+    for (i1 = 0; i1 < 12; i1++) {
+      u_scaled[i1] = actual_u[i1] - desired_u[i1];
+    }
+
+    for (i1 = 0; i1 < 6; i1++) {
+      absxk = 0.0;
+      for (i2 = 0; i2 < 12; i2++) {
+        absxk += B_eval[i1 + 6 * i2] * u_scaled[i2];
+      }
+
+      b_dv[i1] = dv[i1] + absxk;
+    }
+
+    /*  Apply gains for the normalization of the effectiveness matrix: */
+    for (i1 = 0; i1 < 4; i1++) {
+      for (i2 = 0; i2 < 6; i2++) {
+        b_i = i2 + 6 * i1;
+        B_eval[b_i] *= gain_motor;
+        b_i = i2 + 6 * (i1 + 4);
+        B_eval[b_i] *= gain_el;
+        b_i = i2 + 6 * (i1 + 8);
+        B_eval[b_i] *= gain_az;
+      }
+    }
+
+    /*  Apply basic inversion to compute the control input array: */
+    for (i1 = 0; i1 < 6; i1++) {
+      for (i2 = 0; i2 < 12; i2++) {
+        A[i2 + 12 * i1] = B_eval[i1 + 6 * i2];
+      }
+    }
+
+    b_p = true;
+    for (ar = 0; ar < 72; ar++) {
+      B_eval[ar] = 0.0;
+      if ((!b_p) || (rtIsInf(A[ar]) || rtIsNaN(A[ar]))) {
+        b_p = false;
+      }
+    }
+
+    if (!b_p) {
+      for (i1 = 0; i1 < 72; i1++) {
+        B_eval[i1] = rtNaN;
+      }
+    } else {
+      double U[72];
+      double b_V[36];
+      double s[6];
+      int b_r;
+      svd(A, U, s, b_V);
+      absx = fabs(s[0]);
+      if ((!rtIsInf(absx)) && (!rtIsNaN(absx))) {
+        if (absx <= 2.2250738585072014E-308) {
+          tol = 4.94065645841247E-324;
+        } else {
+          frexp(absx, &br);
+          tol = ldexp(1.0, br - 53);
+        }
+      } else {
+        tol = rtNaN;
+      }
+
+      tol *= 12.0;
+      b_r = -1;
+      ar = 0;
+      while ((ar < 6) && (s[ar] > tol)) {
+        b_r++;
+        ar++;
+      }
+
+      if (b_r + 1 > 0) {
+        b_i = 1;
+        for (br = 0; br <= b_r; br++) {
+          absx = 1.0 / s[br];
+          i1 = b_i + 5;
+          for (ar = b_i; ar <= i1; ar++) {
+            b_V[ar - 1] *= absx;
+          }
+
+          b_i += 6;
+        }
+
+        for (b_i = 0; b_i <= 66; b_i += 6) {
+          i1 = b_i + 1;
+          i2 = b_i + 6;
+          if (i1 <= i2) {
+            memset(&B_eval[i1 + -1], 0, ((i2 - i1) + 1) * sizeof(double));
+          }
+        }
+
+        br = 0;
+        for (b_i = 0; b_i <= 66; b_i += 6) {
+          ar = -1;
+          br++;
+          i1 = br + 12 * b_r;
+          for (ib = br; ib <= i1; ib += 12) {
+            int i3;
+            i2 = b_i + 1;
+            i3 = b_i + 6;
+            for (ic = i2; ic <= i3; ic++) {
+              B_eval[ic - 1] += U[ib - 1] * b_V[(ar + ic) - b_i];
+            }
+
+            ar += 6;
+          }
+        }
+      }
+    }
+
+    for (i1 = 0; i1 < 12; i1++) {
+      absxk = 0.0;
+      for (i2 = 0; i2 < 6; i2++) {
+        absxk += B_eval[i2 + 6 * i1] * b_dv[i2];
+      }
+
+      u_scaled[i1] = absxk;
+    }
+
+    /* Scale back the increment to remove the normalization */
+    u_scaled[0] *= gain_motor;
+    u_scaled[4] *= gain_el;
+    u_scaled[8] *= gain_az;
+    u_scaled[1] *= gain_motor;
+    u_scaled[5] *= gain_el;
+    u_scaled[9] *= gain_az;
+    u_scaled[2] *= gain_motor;
+    u_scaled[6] *= gain_el;
+    u_scaled[10] *= gain_az;
+    u_scaled[3] *= gain_motor;
+    u_scaled[7] *= gain_el;
+    u_scaled[11] *= gain_az;
+    varargin_2[0] = max_omega;
+    varargin_2[1] = max_omega;
+    varargin_2[2] = max_omega;
+    varargin_2[3] = max_omega;
+    varargin_2[4] = max_b;
+    varargin_2[5] = max_b;
+    varargin_2[6] = max_b;
+    varargin_2[7] = max_b;
+    varargin_2[8] = max_g;
+    varargin_2[9] = max_g;
+    varargin_2[10] = max_g;
+    varargin_2[11] = max_g;
+    for (ar = 0; ar < 12; ar++) {
+      absxk = u_scaled[ar] + desired_u[ar];
+      desired_u[ar] = absxk;
+      x[ar] = fmin(absxk, varargin_2[ar]);
+    }
+
+    varargin_2[0] = min_omega;
+    varargin_2[1] = min_omega;
+    varargin_2[2] = min_omega;
+    varargin_2[3] = min_omega;
+    varargin_2[4] = min_b;
+    varargin_2[5] = min_b;
+    varargin_2[6] = min_b;
+    varargin_2[7] = min_b;
+    varargin_2[8] = min_g;
+    varargin_2[9] = min_g;
+    varargin_2[10] = min_g;
+    varargin_2[11] = min_g;
+    for (ar = 0; ar < 12; ar++) {
+      u_out_feasible[ar] = fmax(x[ar], varargin_2[ar]);
+    }
+
+    c_compute_acc_nonlinear_earth_r(actual_u, Theta, Phi, Psi, p, q, r, K_p_T,
+      K_p_M, m, I_xx, I_yy, I_zz, l_1, l_2, l_3, l_4, l_z, Cl_alpha, Cd_zero,
+      K_Cd, Cm_alpha, Cm_zero, rho, V, S, wing_chord, flight_path_angle, Beta,
+      residuals);
+    c_compute_acc_nonlinear_earth_r(u_out_feasible, Theta, Phi, Psi, p, q, r,
+      K_p_T, K_p_M, m, I_xx, I_yy, I_zz, l_1, l_2, l_3, l_4, l_z, Cl_alpha,
+      Cd_zero, K_Cd, Cm_alpha, Cm_zero, rho, V, S, wing_chord, flight_path_angle,
+      Beta, b_dv);
+    for (i1 = 0; i1 < 6; i1++) {
+      residuals[i1] = (dv[i1] + residuals[i1]) - b_dv[i1];
+    }
+
+    *elapsed_time = toc();
+    for (b_i = 0; b_i < 12; b_i++) {
+      b_x[b_i] = rtIsNaN(u_scaled[b_i]);
+    }
+
+    b_i = b_x[0];
+    for (ar = 0; ar < 11; ar++) {
+      b_i += b_x[ar + 1];
+    }
+
+    if (b_i > 0.5) {
+      *exitflag = -1.0;
+    } else {
+      *exitflag = 1.0;
+    }
+
+    memcpy(&u_out_scaled[0], &desired_u[0], 12U * sizeof(double));
+    u_out_scaled[12] = desired_phi_value * 3.1415926535897931 / 180.0;
+    u_out_scaled[13] = desired_theta_value * 3.1415926535897931 / 180.0;
+    memcpy(&u_out_local_data[0], &u_out_scaled[0], 14U * sizeof(double));
+    *N_iterations = 1.0;
+    *N_evaluation = 1.0;
+  } else {
+    memset(&u_out_local_data[0], 0, 12U * sizeof(double));
+    for (b_i = 0; b_i < 6; b_i++) {
+      residuals[b_i] = 0.0;
+    }
+
+    *elapsed_time = 0.0;
+    *N_iterations = 0.0;
+    *N_evaluation = 0.0;
+    *exitflag = -10.0;
   }
 
-  /* Compute weights for actuators and make sure they are always positive */
-  b_min_approach = W_act_motor_const + W_act_motor_speed * b_V.contents;
-  W_act_motor.contents = fmax(0.0, b_min_approach);
-  b_min_approach = W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
-  W_act_tilt_el.contents = fmax(0.0, b_min_approach);
-  b_min_approach = W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
-  W_act_tilt_az.contents = fmax(0.0, b_min_approach);
-  b_min_approach = W_act_theta_const + W_act_theta_speed * b_V.contents;
-  W_act_theta.contents = fmax(0.0, b_min_approach);
-  b_min_approach = W_act_phi_const + W_act_phi_speed * b_V.contents;
-  W_act_phi.contents = fmax(0.0, b_min_approach);
-  b_min_approach = W_act_ailerons_const + W_act_ailerons_speed * b_V.contents;
-  W_act_ailerons.contents = fmax(0.0, b_min_approach);
-
-  /* Default values for the optimizer: */
-  tic();
-  expl_temp.desired_ailerons_value = &b_desired_ailerons_value;
-  expl_temp.W_act_ailerons = &W_act_ailerons;
-  expl_temp.desired_phi_value = &b_desired_phi_value;
-  expl_temp.W_act_phi = &W_act_phi;
-  expl_temp.desired_theta_value = &b_desired_theta_value;
-  expl_temp.W_act_theta = &W_act_theta;
-  expl_temp.desired_az_value = &b_desired_az_value;
-  expl_temp.W_act_tilt_az = &W_act_tilt_az;
-  expl_temp.desired_el_value = &b_desired_el_value;
-  expl_temp.W_act_tilt_el = &W_act_tilt_el;
-  expl_temp.W_dv_2 = &b_W_dv_2;
-  expl_temp.W_dv_1 = &b_W_dv_1;
-  expl_temp.W_dv_3 = &b_W_dv_3;
-  expl_temp.W_dv_5 = &b_W_dv_5;
-  expl_temp.desired_motor_value = &b_desired_motor_value;
-  expl_temp.gamma_quadratic_du = &b_gamma_quadratic_du;
-  expl_temp.W_act_motor = &W_act_motor;
-  expl_temp.W_dv_6 = &b_W_dv_6;
-  expl_temp.W_dv_4 = &b_W_dv_4;
-  expl_temp.gain_ailerons = &gain_ailerons;
-  expl_temp.CL_aileron = &b_CL_aileron;
-  expl_temp.l_2 = &b_l_2;
-  expl_temp.l_1 = &b_l_1;
-  expl_temp.q = &b_q;
-  expl_temp.Cm_alpha = &b_Cm_alpha;
-  expl_temp.l_3 = &b_l_3;
-  expl_temp.l_4 = &b_l_4;
-  expl_temp.wing_chord = &b_wing_chord;
-  expl_temp.Cm_zero = &b_Cm_zero;
-  expl_temp.K_p_M = &b_K_p_M;
-  expl_temp.l_z = &b_l_z;
-  expl_temp.I_yy = &b_I_yy;
-  expl_temp.I_xx = &b_I_xx;
-  expl_temp.r = &b_r;
-  expl_temp.p = &b_p;
-  expl_temp.I_zz = &b_I_zz;
-  expl_temp.m = &b_m;
-  expl_temp.gain_az = &gain_az;
-  expl_temp.gain_el = &gain_el;
-  expl_temp.gain_motor = &gain_motor;
-  expl_temp.K_p_T = &b_K_p_T;
-  expl_temp.gain_phi = &gain_phi;
-  expl_temp.Cd_zero = &b_Cd_zero;
-  expl_temp.K_Cd = &b_K_Cd;
-  expl_temp.Beta = &b_Beta;
-  expl_temp.flight_path_angle = &b_flight_path_angle;
-  expl_temp.rho = &b_rho;
-  expl_temp.V = &b_V;
-  expl_temp.S = &b_S;
-  expl_temp.Cl_alpha = &b_Cl_alpha;
-  expl_temp.gain_theta = &gain_theta;
-  expl_temp.dv_global = &dv_global;
-  fmincon(&expl_temp, u_max, u_min, u_max_scaled, u_out,
-          &b_max_tilt_value_approach, exitflag, N_iterations, N_evaluation,
-          b_expl_temp, &b_max_approach, &b_min_approach, &g_max_approach,
-          &g_min_approach);
-  *elapsed_time = toc();
-  b_min_approach = gain_motor.contents;
-  u_out[0] *= b_min_approach;
-  u_out[1] *= b_min_approach;
-  u_out[2] *= b_min_approach;
-  u_out[3] *= b_min_approach;
-  b_min_approach = gain_el.contents;
-  u_out[4] *= b_min_approach;
-  u_out[5] *= b_min_approach;
-  u_out[6] *= b_min_approach;
-  u_out[7] *= b_min_approach;
-  b_min_approach = gain_az.contents;
-  u_out[8] *= b_min_approach;
-  u_out[9] *= b_min_approach;
-  u_out[10] *= b_min_approach;
-  u_out[11] *= b_min_approach;
-  u_out[12] *= gain_theta.contents;
-  u_out[13] *= gain_phi.contents;
-  u_out[14] *= gain_ailerons.contents;
-  c_compute_acc_nonlinear_control(u_out, b_p.contents, b_q.contents,
-    b_r.contents, b_K_p_T.contents, b_K_p_M.contents, b_m.contents,
-    b_I_xx.contents, b_I_yy.contents, b_I_zz.contents, b_l_1.contents,
-    b_l_2.contents, b_l_3.contents, b_l_4.contents, b_l_z.contents,
-    b_Cl_alpha.contents, b_Cd_zero.contents, b_K_Cd.contents,
-    b_Cm_alpha.contents, b_Cm_zero.contents, b_CL_aileron.contents,
-    b_rho.contents, b_V.contents, b_S.contents, b_wing_chord.contents,
-    b_flight_path_angle.contents, b_Beta.contents, final_accelerations);
-  for (i = 0; i < 6; i++) {
-    residuals[i] = dv_global.contents[i] - final_accelerations[i];
-  }
+  memcpy(&u_out[0], &u_out_local_data[0], 14U * sizeof(double));
 
   /*  Print infos */
   if (verbose != 0.0) {
-    printf("\n Solution: \n");
+    printf("\n Solution = ");
     fflush(stdout);
-    printf(" Motors [rad/s] =  ");
-    fflush(stdout);
-    printf(" %f ", u_out[0]);
-    fflush(stdout);
-    printf(" %f ", u_out[1]);
-    fflush(stdout);
-    printf(" %f ", u_out[2]);
-    fflush(stdout);
-    printf(" %f ", u_out[3]);
-    fflush(stdout);
-    printf("\n");
-    fflush(stdout);
-    printf(" Elevator angles [deg] =  ");
-    fflush(stdout);
-    printf(" %f ", u_out[4] * 180.0 / 3.1415926535897931);
-    fflush(stdout);
-    printf(" %f ", u_out[5] * 180.0 / 3.1415926535897931);
-    fflush(stdout);
-    printf(" %f ", u_out[6] * 180.0 / 3.1415926535897931);
-    fflush(stdout);
-    printf(" %f ", u_out[7] * 180.0 / 3.1415926535897931);
-    fflush(stdout);
-    printf("\n");
-    fflush(stdout);
-    printf(" Azimuth angles [deg] =  ");
-    fflush(stdout);
-    printf(" %f ", u_out[8] * 180.0 / 3.1415926535897931);
-    fflush(stdout);
-    printf(" %f ", u_out[9] * 180.0 / 3.1415926535897931);
-    fflush(stdout);
-    printf(" %f ", u_out[10] * 180.0 / 3.1415926535897931);
-    fflush(stdout);
-    printf(" %f ", u_out[11] * 180.0 / 3.1415926535897931);
-    fflush(stdout);
-    printf("\n");
-    fflush(stdout);
-    printf(" Theta [deg] =  ");
-    fflush(stdout);
-    printf(" %f ", u_out[12] * 180.0 / 3.1415926535897931);
-    fflush(stdout);
-    printf("\n");
-    fflush(stdout);
-    printf(" Phi [deg] =  ");
-    fflush(stdout);
-    printf(" %f ", u_out[13] * 180.0 / 3.1415926535897931);
-    fflush(stdout);
-    printf("\n");
-    fflush(stdout);
-    printf(" Ailerons deflection [deg] =  ");
-    fflush(stdout);
-    printf(" %f ", u_out[14] * 180.0 / 3.1415926535897931);
-    fflush(stdout);
+    for (b_i = 0; b_i < 12; b_i++) {
+      printf(" %f ", u_out_local_data[b_i]);
+      fflush(stdout);
+    }
+
     printf("\n");
     fflush(stdout);
     printf("\n Elapsed time = %f \n", *elapsed_time);
     fflush(stdout);
-    printf("\n Number of iterations / evaluations = %f ", *N_iterations);
+    printf("\n Number of iterations = %f \n", *N_iterations);
     fflush(stdout);
-    printf("/ %f \n", *N_evaluation);
+    printf("\n Number of evaluation = %f \n", *N_evaluation);
     fflush(stdout);
-    memcpy(&u_max[0], &u_out[0], 15U * sizeof(double));
-    u_max[0] = u_out[0] / gain_motor.contents;
-    u_max[1] = u_out[1] / gain_motor.contents;
-    u_max[2] = u_out[2] / gain_motor.contents;
-    u_max[3] = u_out[3] / gain_motor.contents;
-    b_max_tilt_value_approach = u_max[4] / gain_el.contents;
-    b_max_approach = u_max[5] / gain_el.contents;
-    b_min_approach = u_max[6] / gain_el.contents;
-    g_max_approach = u_max[7] / gain_el.contents;
-    u_max[4] = b_max_tilt_value_approach;
-    u_max[5] = b_max_approach;
-    u_max[6] = b_min_approach;
-    u_max[7] = g_max_approach;
-    b_max_tilt_value_approach = u_max[8] / gain_az.contents;
-    b_max_approach = u_max[9] / gain_az.contents;
-    b_min_approach = u_max[10] / gain_az.contents;
-    g_max_approach = u_max[11] / gain_az.contents;
-    u_max[8] = b_max_tilt_value_approach;
-    u_max[9] = b_max_approach;
-    u_max[10] = b_min_approach;
-    u_max[11] = g_max_approach;
-    u_max[12] /= gain_theta.contents;
-    u_max[13] /= gain_phi.contents;
-    u_max[14] /= gain_ailerons.contents;
-    printf("\n Solution scaled norm = %f \n", b_norm(u_max));
+    printf("\n Residuals = ");
+    fflush(stdout);
+    for (b_i = 0; b_i < 6; b_i++) {
+      printf(" %f ", residuals[b_i]);
+      fflush(stdout);
+    }
+
+    printf("\n");
+    fflush(stdout);
+    absx = 0.0;
+    tol = 3.3121686421112381E-170;
+    for (ar = 0; ar < 6; ar++) {
+      absxk = fabs(residuals[ar]);
+      if (absxk > tol) {
+        t = tol / absxk;
+        absx = absx * t * t + 1.0;
+        tol = absxk;
+      } else {
+        t = absxk / tol;
+        absx += t * t;
+      }
+    }
+
+    absx = tol * sqrt(absx);
+    printf("\n Residual norm = %f \n", absx);
+    fflush(stdout);
+    memcpy(&u_out_scaled[0], &u_out[0], 14U * sizeof(double));
+    gain_motor = max_omega / 2.0;
+    gain_el = (max_b - min_b) * 3.1415926535897931 / 180.0 / 2.0;
+    gain_az = (max_g - min_g) * 3.1415926535897931 / 180.0 / 2.0;
+    u_out_scaled[0] = u_out[0] / gain_motor;
+    u_out_scaled[4] /= gain_el;
+    u_out_scaled[8] /= gain_az;
+    u_out_scaled[1] = u_out[1] / gain_motor;
+    u_out_scaled[5] /= gain_el;
+    u_out_scaled[9] /= gain_az;
+    u_out_scaled[2] = u_out[2] / gain_motor;
+    u_out_scaled[6] /= gain_el;
+    u_out_scaled[10] /= gain_az;
+    u_out_scaled[3] = u_out[3] / gain_motor;
+    u_out_scaled[7] /= gain_el;
+    u_out_scaled[11] /= gain_az;
+    absx = 0.0;
+    tol = 3.3121686421112381E-170;
+    for (ar = 0; ar < 14; ar++) {
+      absxk = fabs(u_out_scaled[ar]);
+      if (absxk > tol) {
+        t = tol / absxk;
+        absx = absx * t * t + 1.0;
+        tol = absxk;
+      } else {
+        t = absxk / tol;
+        absx += t * t;
+      }
+    }
+
+    printf("\n Solution scaled norm = %f \n", tol * sqrt(absx));
     fflush(stdout);
     printf("\n Exit flag optimizer = %f \n", *exitflag);
-    fflush(stdout);
-    printf("\n Modeled accelerations =   ");
-    fflush(stdout);
-    for (i = 0; i < 6; i++) {
-      printf(" %f ", current_accelerations[i]);
-      fflush(stdout);
-    }
-
-    printf("\n");
-    fflush(stdout);
-    printf("\n desired acc increment =    ");
-    fflush(stdout);
-    for (i = 0; i < 6; i++) {
-      printf(" %f ", dv[i]);
-      fflush(stdout);
-    }
-
-    printf("\n");
-    fflush(stdout);
-    printf("\n Requested accelerations =  ");
-    fflush(stdout);
-    for (i = 0; i < 6; i++) {
-      b_min_approach = dv_global.contents[i];
-      printf(" %f ", b_min_approach);
-      fflush(stdout);
-    }
-
-    printf("\n");
-    fflush(stdout);
-    printf("\n Achieved accelerations =   ");
-    fflush(stdout);
-    for (i = 0; i < 6; i++) {
-      printf(" %f ", final_accelerations[i]);
-      fflush(stdout);
-    }
-
-    printf("\n");
-    fflush(stdout);
-    printf("\n Acc residuals / norm  =    ");
-    fflush(stdout);
-    for (i = 0; i < 6; i++) {
-      printf(" %f ", residuals[i]);
-      fflush(stdout);
-    }
-
-    printf(" / ");
-    fflush(stdout);
-    printf(" %f \n", c_norm(residuals));
     fflush(stdout);
   }
 }
@@ -8331,24 +11449,24 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
  * Arguments    : void
  * Return Type  : void
  */
-void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains_initialize(void)
+void Global_controller_fcn_earth_rf_journal_initialize(void)
 {
   savedTime_not_empty = false;
   freq_not_empty = false;
-  isInitialized_Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains = true;
+  isInitialized_Global_controller_fcn_earth_rf_journal = true;
 }
 
 /*
  * Arguments    : void
  * Return Type  : void
  */
-void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains_terminate(void)
+void Global_controller_fcn_earth_rf_journal_terminate(void)
 {
-  isInitialized_Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains = false;
+  isInitialized_Global_controller_fcn_earth_rf_journal = false;
 }
 
 /*
- * File trailer for Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains.c
+ * File trailer for Global_controller_fcn_earth_rf_journal.c
  *
  * [EOF]
  */
