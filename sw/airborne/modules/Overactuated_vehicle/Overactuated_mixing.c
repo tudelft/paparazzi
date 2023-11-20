@@ -541,6 +541,28 @@ void from_earth_to_control(float * out_array, float * in_array, float Psi){
     }
 }
 
+void from_control_to_earth(float * out_array, float * in_array, float Psi){
+    float R_gc_matrix[3][3];
+    R_gc_matrix[0][0] = cos(Psi);
+    R_gc_matrix[0][1] = sin(Psi);
+    R_gc_matrix[0][2] = 0;
+    R_gc_matrix[1][0] = -sin(Psi) ;
+    R_gc_matrix[1][1] = cos(Psi) ;
+    R_gc_matrix[1][2] = 0 ;
+    R_gc_matrix[2][0] = 0 ;
+    R_gc_matrix[2][1] = 0 ;
+    R_gc_matrix[2][2] = 1 ;
+
+    //Do the multiplication between the income array and the transposition matrix:
+    for (int j = 0; j < 3; j++) {
+        //Initialize value to zero:
+        out_array[j] = 0.;
+        for (int k = 0; k < 3; k++) {
+            out_array[j] += in_array[k] * R_gc_matrix[k][j];
+        }
+    }
+}
+
 /**
  * Function which computes the thrust in the body reference frame using the inflow angle 
  * characteristics determined in the wind tunnel:
@@ -1677,9 +1699,19 @@ void overactuated_mixing_run(void)
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
         // LINEAR ACCELERATION IN CONTROL RF
-        INDI_pseudocontrol[0] = acc_setpoint[0] - accel_vect_filt_control_rf[0];
-        INDI_pseudocontrol[1] = acc_setpoint[1] - accel_vect_filt_control_rf[1];
-        INDI_pseudocontrol[2] = acc_setpoint[2] - accel_vect_filt_control_rf[2];
+        static float acc_increments_control_rf[3]; 
+        static float acc_increments_earth_rf[3]; 
+
+        acc_increments_control_rf[0] = acc_setpoint[0] - accel_vect_filt_control_rf[0];
+        acc_increments_control_rf[1] = acc_setpoint[1] - accel_vect_filt_control_rf[1];
+        acc_increments_control_rf[2] = acc_setpoint[2] - accel_vect_filt_control_rf[2];
+
+        from_control_to_earth(&acc_increments_earth_rf[0], &acc_increments_control_rf[0], euler_vect[2]);
+
+        INDI_pseudocontrol[0] = acc_increments_earth_rf[0]; 
+        INDI_pseudocontrol[1] = acc_increments_earth_rf[1]; 
+        INDI_pseudocontrol[2] = acc_increments_earth_rf[2]; 
+
 
         //Send desired accelleration increments to the Raspberry pi:
         send_values_to_raspberry_pi();
