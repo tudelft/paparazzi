@@ -147,7 +147,7 @@ NOTES:
         <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
         <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
 <!--        <define name="MS45XX_PRESSURE_OFFSET" value="8552.5" />&lt;!&ndash; 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)&ndash;&gt;-->
-        <define name="MS45XX_PRESSURE_OFFSET" value="8549"/>
+        <define name="MS45XX_PRESSURE_OFFSET" value="8549"/>      <!-- tuned at Maasvlakte -->
         <!-- <define name="MS45XX_AIRSPEED_SCALE" value="1.6327"/>--> <!--description="quadratic scale factor to convert differential pressure to airspeed"&ndash;&gt;-->
         <define name="MS45XX_LOWPASS_TAU" value="0.15"/> <!--description="Time constant for second order Butterworth low pass filter"-->
         <define name="USE_AIRSPEED_LOWPASS_FILTER" value="TRUE"/>
@@ -713,9 +713,12 @@ NOTES:
     <define name="G2" value="{0, 0, 0, 0, 0}"/>
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="30.0"/>
-    <define name="REF_ERR_Q" value="30.0"/>
-    <define name="REF_ERR_R" value="80.0"/>
+<!--    <define name="REF_ERR_P" value="30.0"/>-->
+<!--    <define name="REF_ERR_Q" value="30.0"/>-->
+<!--    <define name="REF_ERR_R" value="80.0"/>-->
+      <define name="REF_ERR_P" value="70.0"/>
+      <define name="REF_ERR_Q" value="100.0"/>
+      <define name="REF_ERR_R" value="90.0"/>
     <define name="REF_RATE_P" value="16.0"/>
     <define name="REF_RATE_Q" value="15.0"/>
     <define name="REF_RATE_R" value="15.0"/>
@@ -773,10 +776,10 @@ NOTES:
   </section>
 
   <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
-      <define name="POS_GAIN" value="0.2"/>
+      <define name="POS_GAIN" value="0.4"/>
       <define name="POS_GAINZ" value="0.5"/>
-      <define name="SPEED_GAIN" value="0.45"/>
-      <define name="SPEED_GAINZ" value="0.4"/>  <!-- 0.2? -->
+      <define name="SPEED_GAIN" value="0.7"/>
+      <define name="SPEED_GAINZ" value="0.6"/>  <!-- 0.2? -->
       <define name="MAX_AIRSPEED" value="12."/>     <!--THIS IS *CRUISE* AISPEED!!! -->
       <define name="ZERO_AIRSPEED" value="FALSE"/>
       <define name="NAV_SPEED_MARGIN" value="8.0"/>
@@ -789,16 +792,18 @@ NOTES:
       <define name="MIN_THROTTLE_FWD" value="0.0"/>
       <define name="MIN_PITCH" value="-120."/>
       <define name="MAX_PITCH" value="-60."/>
+    <define name="MIN_ACC_SP" value="-4.0"/>  <!-- min and max acc sp; MIN is upward, MAX is downward -->
+    <define name="MAX_ACC_SP" value="4.0"/>
 
 
 <!--    SOARING-->
     <define name="PREF_THROTTLE" value="-0.01"/>
 
-    <define name="SPEED_SP_FROM_GRADIENT" value="FALSE"/>
-    <define name="GRAD_GAIN_X" value="0.1"/>
-    <define name="GRAD_GAIN_Z" value="0.1"/>
-    <define name="GRAD_GAIN_REC_X" value="0.001"/>
-    <define name="GRAD_GAIN_REC_Z" value="0.001"/>
+<!--    <define name="SPEED_SP_FROM_GRADIENT" value="FALSE"/>-->
+<!--    <define name="GRAD_GAIN_X" value="0.1"/>-->
+<!--    <define name="GRAD_GAIN_Z" value="0.1"/>-->
+<!--    <define name="GRAD_GAIN_REC_X" value="0.001"/>-->
+<!--    <define name="GRAD_GAIN_REC_Z" value="0.001"/>-->
     <define name="POS_CTRL" value="TRUE"/>
     <define name="Y_POSITION_CTRL" value="TRUE"/>
 
@@ -806,6 +811,15 @@ NOTES:
     <define name="SOARING_STEP_MED" value="0.5"/>
     <define name="SOARING_STEP_SMALL" value="0.3"/>
     <define name="SOARING_STEP_FINE" value="0.1"/>
+
+    <define name="SOARING_WP_ARRIVAL_DIST" value="4"/>  <!-- in meters, 3d dist-->
+    <define name="SOARING_WP_WAIT_SEC" value="15"/> <!-- in sec, timeout for unreachable WP -->
+    <define name="SOARING_MIN_ALT" value="5"/> <!-- minimum altitude for moving WP -->
+
+    <!-- define WP ids -->
+    <define name="SOARING_STDBY_WP_ID" value="2"/>
+    <define name="SOARING_SOARING_WP_ID" value="3"/>
+    <define name="SOARING_HEADING_WP_ID" value="4"/>
   </section>
 
   <section name="BAT">
