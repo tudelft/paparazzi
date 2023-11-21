@@ -231,12 +231,12 @@
     </section>
 
     <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
-        <define name  = "G1_ROLL"                   value = "{ 0.0f,   -15.0f,   0.0f,    15.0f,  0.0f,  0.0f, 0.0f}"/>
-        <define name  = "G1_PITCH"                  value = "{ 1.5f,    0.0f,   -1.5f,    0.0f,   0.0f,  0.0f, 0.0f}"/>  
-        <define name  = "G1_YAW"                    value = "{-0.3f,    0.3f,   -0.3f,    0.3f,   0.0f,  0.0f, 0.0f}"/>
+        <define name  = "G1_ROLL"                   value = "{ 0.0f,   -13.0f,   0.0f,    13.0f,  0.0f,  0.0f, 0.0f}"/>
+        <define name  = "G1_PITCH"                  value = "{ 1.6f,    0.0f,   -1.6f,    0.0f,   0.0f,  0.0f, 0.0f}"/>  
+        <define name  = "G1_YAW"                    value = "{-0.4f,    0.4f,   -0.4f,    0.4f,   0.0f,  0.0f, 0.0f}"/>
         <define name  = "G1_THRUST"                 value = "{-0.575f, -0.575f, -0.575f, -0.575f, 0.55f, 0.0f, 0.0f}"/>  
         <define name  = "G1_ZERO"                   value = "{ 0.0f,    0.0f,    0.0f,    0.0f,   0.0f,  0.0f, 0.0f}"/> 
-        <define name  = "G2"                        value = "{ 0.0f,    0.0f,    0.0f,    0.0f,   0.0f,  0.0f, 0.0f}"/>
+        <define name  = "G2"                        value = "{-0.02f,   0.02f,  -0.02f,   0.02f,  0.0f,  0.0f, 0.0f}"/>
         <define name  = "MAX_R"                     value = "120.0" unit="deg/s"/>
         <define name  = "FILT_CUTOFF"               value = "5.0" />
         <define name  = "FILT_CUTOFF_ACC"           value = "5.0"/>
