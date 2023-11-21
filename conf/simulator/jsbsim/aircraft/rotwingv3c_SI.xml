@@ -35,8 +35,8 @@
   </metrics>
 
   <mass_balance>
-    <ixx unit="KG*M2">  0.10948</ixx>
-    <iyy unit="KG*M2">  1.13505</iyy>
+    <ixx unit="KG*M2">  0.126323</ixx>
+    <iyy unit="KG*M2">  1.064109</iyy>
     <izz unit="KG*M2">  1.00000</izz>
     <ixy unit="KG*M2">  0.0 </ixy>
     <ixz unit="KG*M2">  0.0 </ixz>
@@ -272,7 +272,7 @@
       </function>
       <location unit="M">
         <x>0</x>
-        <y>0.144</y>
+        <y>0.192</y>
         <z>0</z>
       </location>
       <direction>
@@ -291,7 +291,7 @@
       </function>
       <location unit="M">
         <x>0</x>
-        <y>-0.144</y>
+        <y>-0.192</y>
         <z>0</z>
       </location>
       <direction>
@@ -310,7 +310,7 @@
       </function>
       <location unit="M">
         <x>0</x>
-        <y>-0.144</y>
+        <y>-0.192</y>
         <z>0</z>
       </location>
       <direction>
@@ -329,7 +329,7 @@
       </function>
       <location unit="M">
         <x>0</x>
-        <y>0.144</y>
+        <y>0.192</y>
         <z>0</z>
       </location>
       <direction>
@@ -348,7 +348,7 @@
       </function>
       <location unit="M">
         <x>0</x>
-        <y>0.144</y>
+        <y>0.192</y>
         <z>0</z>
       </location>
       <direction>
@@ -367,7 +367,7 @@
       </function>
       <location unit="M">
         <x>0</x>
-        <y>-0.144</y>
+        <y>-0.192</y>
         <z>0</z>
       </location>
       <direction>
@@ -386,7 +386,7 @@
       </function>
       <location unit="M">
         <x>0</x>
-        <y>-0.144</y>
+        <y>-0.192</y>
         <z>0</z>
       </location>
       <direction>
@@ -405,7 +405,7 @@
       </function>
       <location unit="M">
         <x>0</x>
-        <y>0.144</y>
+        <y>0.192</y>
         <z>0</z>
       </location>
       <direction>
