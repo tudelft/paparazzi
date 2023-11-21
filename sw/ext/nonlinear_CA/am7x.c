@@ -299,7 +299,7 @@ void* second_thread() //Run the optimization code
     float l_3 = extra_data_in_copy[8], l_4 = extra_data_in_copy[9], l_z = extra_data_in_copy[10];
     float max_omega = extra_data_in_copy[11], min_omega = extra_data_in_copy[12], max_b = extra_data_in_copy[13], min_b = extra_data_in_copy[14];
     float max_g = extra_data_in_copy[15], min_g = extra_data_in_copy[16], max_theta = extra_data_in_copy[17], min_theta = extra_data_in_copy[18];
-    float max_alpha = extra_data_in_copy[19]* M_PI/180, min_alpha = extra_data_in_copy[20]* M_PI/180, max_phi = extra_data_in_copy[21];
+    float max_alpha = extra_data_in_copy[19], min_alpha = extra_data_in_copy[20]* M_PI/180, max_phi = extra_data_in_copy[21];
     float Cm_zero = extra_data_in_copy[22], Cm_alpha = extra_data_in_copy[23], Cl_alpha = extra_data_in_copy[24], Cd_zero = extra_data_in_copy[25];
     float K_Cd = extra_data_in_copy[26], S = extra_data_in_copy[27], wing_chord = extra_data_in_copy[28], rho = extra_data_in_copy[29];
 
@@ -465,7 +465,7 @@ void* second_thread() //Run the optimization code
       transition_speed = 8; 
 
       gamma_quadratic_wls = 10000; 
-      controller_id = 1;
+      controller_id = 2;
 
     #endif 
 
@@ -488,7 +488,7 @@ void* second_thread() //Run the optimization code
                                             gamma_quadratic,  gamma_quadratic_wls,
                                             desired_motor_value,  desired_el_value,
                                             desired_az_value,  desired_phi_value,
-                                            desired_theta_value,  controller_id,  0,
+                                            desired_theta_value,  controller_id,  verbose_optimizer,
                                             u_out,  residuals,  &elapsed_time,
                                             &N_iterations,  &N_evaluation,  &exitflag);
 
@@ -569,6 +569,8 @@ void* second_thread() //Run the optimization code
       printf(" min_delta_ailerons = %f \n",(float) min_delta_ailerons);
       printf(" max_delta_ailerons = %f \n",(float) max_delta_ailerons);
       printf(" CL_aileron = %f \n",(float) CL_aileron);
+      printf(" W_act_motor = %f \n",(float) W_act_motor_const);
+      printf(" controller id = %f \n",(float) controller_id);
 
       printf("\n REAL TIME VARIABLES IN------------------------------------------------------ \n"); 
       printf(" Phi_deg = %f \n",(float) Phi*180/M_PI);
