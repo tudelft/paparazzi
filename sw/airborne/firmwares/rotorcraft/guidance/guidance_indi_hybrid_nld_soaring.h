@@ -47,6 +47,8 @@ extern void guidance_indi_soaring_propagate_filters(void);
 extern void guidance_indi_hybrid_soaring_start(void);
 extern void guidance_indi_hybrid_soaring_stop(void);
 extern void guidance_indi_hybrid_soaring_reset(void);
+extern void guidance_indi_soaring_reset_stby_wp(void);
+extern void guidance_indi_soaring_reset_soaring_wp(void);
 
 struct guidance_indi_hybrid_params {
   float pos_gain;
@@ -72,11 +74,6 @@ extern float lift_pitch_eff;
 extern struct FloatVect3 guidance_wind_gradient;
 
 extern float guidance_soaring_max_throttle;
-extern float guidance_grad_gain_x;
-extern float guidance_grad_gain_z;
-extern float guidance_grad_gain_rec_x;
-extern float guidance_grad_gain_rec_z;
-extern bool speed_sp_from_gradient;
 extern bool speed_sp_from_position;
 extern bool y_position_ctrl;
 extern bool soaring_explore_positions;
@@ -110,5 +107,10 @@ extern float soaring_step_size_fine;
 extern float arrival_check_dist_3d;
 extern float stay_wp_duration;
 extern float weight_logistic_fn_factor;
+
+extern float min_acc_sp;
+extern float max_acc_sp;
+
+extern float soaring_min_alt;
 
 #endif /* GUIDANCE_INDI_HYBRID_NLD_SOARING_H */

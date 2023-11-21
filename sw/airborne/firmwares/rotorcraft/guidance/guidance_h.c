@@ -289,6 +289,7 @@ void guidance_h_mode_changed(uint8_t new_mode)
 
     case GUIDANCE_H_MODE_NAV:
 #if GUIDANCE_INDI_SOARING
+    guidance_indi_soaring_reset_stby_wp();
 guidance_indi_soaring_enter();
 #elif GUIDANCE_INDI
       guidance_indi_enter();

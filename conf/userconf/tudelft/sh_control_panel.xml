@@ -457,7 +457,7 @@
       </program>
       <program name="Gazebo"/>
     </session>
-    <session name="Simulation - wind+msg+att_vis">
+    <session name="Simulation - wind+msg+att_vis+joy">
       <program name="Simulator">
         <arg flag="-a" constant="@AIRCRAFT"/>
         <arg flag="-t" constant="nps"/>
@@ -474,6 +474,11 @@
       <program name="Messages"/>
       <program name="Environment Simulator"/>
       <program name="Attitude Visualizer"/>
+      <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
+        <arg flag="-ac" constant="@AIRCRAFT"/>
+        <arg flag="hobbyking.xml"/>
+        <arg flag="-d 0"/>
+      </program>
     </session>
   </section>
 </control_panel>
