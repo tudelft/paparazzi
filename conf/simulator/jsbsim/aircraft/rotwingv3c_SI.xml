@@ -420,5 +420,32 @@
   <propulsion/>
 
   <flight_control name="FGFCS"/>
-  <aerodynamics/>
+  
+  <aerodynamics>
+    <axis name="DRAG">
+      <function name="aero/coefficient/CD">
+        <description>Drag</description>
+        <product>
+          <property>aero/qbar-psf</property>
+          <value>47.9</value> <!-- Conversion to pascals -->
+          <value>0.0151</value> <!-- CD x Area (m^2) -->
+          <value>0.224808943</value> <!-- N to LBS -->
+        </product>
+      </function>
+    </axis>
+
+    <axis name="SIDE">
+     <function name="aero/force/Side_beta">
+       <description>Side force due to beta</description>
+       <product>
+           <property>aero/qbar-psf</property>
+           <property>metrics/Sw-sqft</property>
+           <property>aero/beta-rad</property>
+           <value>-4</value>
+       </product>
+     </function>
+
+  </axis>
+  </aerodynamics>
+
 </fdm_config>
