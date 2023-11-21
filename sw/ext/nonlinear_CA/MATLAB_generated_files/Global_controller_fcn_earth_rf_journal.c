@@ -5,7 +5,7 @@
  * File: Global_controller_fcn_earth_rf_journal.c
  *
  * MATLAB Coder version            : 5.4
- * C/C++ source code generated on  : 20-Nov-2023 22:27:20
+ * C/C++ source code generated on  : 21-Nov-2023 12:37:26
  */
 
 /* Include Files */
@@ -10733,9 +10733,9 @@ void Global_controller_fcn_earth_rf_journal(double K_p_T, double K_p_M, double m
       max_omega, min_omega, max_b, min_b, max_g, min_g, b_dv, p, q, r, Cm_zero,
       Cl_alpha, Cd_zero, K_Cd, Cm_alpha, rho, V, S, wing_chord,
       flight_path_angle, max_alpha, Beta, gamma_quadratic_wls,
-      desired_motor_value, desired_el_value, desired_az_value, desired_phi_value,
-      desired_theta_value, u_out_scaled, residuals, elapsed_time, N_iterations,
-      N_evaluation, exitflag);
+      desired_motor_value, desired_el_value, desired_az_value,
+      desired_theta_value, desired_phi_value, u_out_scaled, residuals,
+      elapsed_time, N_iterations, N_evaluation, exitflag);
     memcpy(&u_out_local_data[0], &u_out_scaled[0], 14U * sizeof(double));
 
     /* Max and min alpha are the new constraint for the tilt angles.  */
@@ -11346,8 +11346,8 @@ void Global_controller_fcn_earth_rf_journal(double K_p_T, double K_p_M, double m
     }
 
     memcpy(&u_out_scaled[0], &desired_u[0], 12U * sizeof(double));
-    u_out_scaled[12] = desired_phi_value * 3.1415926535897931 / 180.0;
-    u_out_scaled[13] = desired_theta_value * 3.1415926535897931 / 180.0;
+    u_out_scaled[12] = desired_theta_value * 3.1415926535897931 / 180.0;
+    u_out_scaled[13] = desired_phi_value * 3.1415926535897931 / 180.0;
     memcpy(&u_out_local_data[0], &u_out_scaled[0], 14U * sizeof(double));
     *N_iterations = 1.0;
     *N_evaluation = 1.0;

@@ -5,7 +5,7 @@
  * File: Global_controller_fcn_earth_rf_journal.h
  *
  * MATLAB Coder version            : 5.4
- * C/C++ source code generated on  : 20-Nov-2023 22:27:20
+ * C/C++ source code generated on  : 21-Nov-2023 12:37:26
  */
 
 #ifndef GLOBAL_CONTROLLER_FCN_EARTH_RF_JOURNAL_H
