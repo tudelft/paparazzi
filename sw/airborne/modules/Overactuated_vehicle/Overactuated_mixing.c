@@ -1141,7 +1141,7 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[59] = OVERACTUATED_MIXING_MIN_ALT_TILT_CONSTRAINT;   
 
     extra_data_out_local[60] = 10000; //gamma quadratic wls
-    extra_data_out_local[60] = Controller_id;
+    extra_data_out_local[61] = Controller_id;
 }
 
 /**
