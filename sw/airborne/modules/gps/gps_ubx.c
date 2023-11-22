@@ -101,6 +101,26 @@ struct rtcm_t rtcm = { 0 };
 #define GPS_UBX_BOOTRESET 0
 #endif
 
+// reject rtk heading by length
+#ifndef GPS_UBX_RTK_REJECT_HEADING_BY_POSLENGTH
+#define GPS_UBX_RTK_REJECT_HEADING_BY_POSLENGTH FALSE
+#endif
+#ifndef GPS_UBX_RTK_MIN_POSLENGTH
+#define GPS_UBX_RTK_MIN_POSLENGTH 50
+#endif
+#ifndef GPS_UBX_RTK_MAX_POSLENGTH
+#define GPS_UBX_RTK_MAX_POSLENGTH 90
+#endif
+// rtk heading offset
+#ifndef GPS_UBX_RTK_HEADING_OFFSET
+#define GPS_UBX_RTK_HEADING_OFFSET 0
+#endif
+
+bool reject_heading_by_poslength = GPS_UBX_RTK_REJECT_HEADING_BY_POSLENGTH;
+float rtk_heading_min_poslength = GPS_UBX_RTK_MIN_POSLENGTH;
+float rtk_heading_max_poslength = GPS_UBX_RTK_MAX_POSLENGTH;
+float rtk_heading_offset = GPS_UBX_RTK_HEADING_OFFSET;
+
 void gps_ubx_init(void)
 {
   gps_ubx.status = UNINIT;
@@ -424,15 +444,34 @@ static void gps_ubx_parse_nav_relposned(void)
       gps_relposned.diffSoln    = diffSoln;
       gps_relposned.gnssFixOK   = gnssFixOK;
 
-      // RELHEADING
-      gps_relposned.relPosHeading = ((UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf) * 1e-5f)-180.0);
-      if(relPosValid && (diffSoln && carrSoln >= 1)) {
-          // FIXME: remove hard coded 180 deg offset
-          gps_ubx.state.relPosHeading = (RadOfDeg((UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf)*1e-5f - 180.0)*1e5f * 10)) * 10;
-      } else {
-          gps_ubx.state.relPosHeading = NAN;
-      }
       gps_relposned.relPosLength = UBX_NAV_RELPOSNED_relPosLength(gps_ubx.msg_buf);
+
+      // RELHEADING
+      // measurement value (RTK msg)
+      gps_relposned.relPosHeading = ((UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf) * 1e-5f)-rtk_heading_offset);
+
+      gps_ubx.state.relPosHeading = NAN;
+      gps_ubx.state.relPosHeadingValid = 0;
+
+      // for EKF fusion, save it to gps state
+      if(relPosValid && (diffSoln && carrSoln >= 1)) {
+          if (reject_heading_by_poslength) {
+               if ((gps_relposned.relPosLength < rtk_heading_max_poslength) && (gps_relposned.relPosLength > rtk_heading_min_poslength)) {
+                     gps_ubx.state.relPosHeading = (RadOfDeg((UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf)*1e-5f - rtk_heading_offset)*1e5f * 10)) * 10;
+                     gps_ubx.state.relPosHeadingValid = 1;
+               }
+//               else {
+//                   gps_ubx.state.relPosHeading = NAN;
+//               }
+          } else {
+              gps_ubx.state.relPosHeading = (RadOfDeg((UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf)*1e-5f - rtk_heading_offset)*1e5f * 10)) * 10;
+              gps_ubx.state.relPosHeadingValid = 1;
+          }
+      }
+//      else {
+//          gps_ubx.state.relPosHeading = NAN;
+//      }
+//      gps_relposned.relPosLength = UBX_NAV_RELPOSNED_relPosLength(gps_ubx.msg_buf);
     }
   }
 #endif

@@ -45,6 +45,7 @@
 
       <message name="ROTORCRAFT_CMD"           period="1.0"/>
       <message name="AIRSPEED_MS45XX"          period=".5"/>
+<!--      <message name="AIRSPEED_RAW"             period=".5"/>-->
 
       <message name="AHRS_BIAS"                period="7.5"/>
       <message name="AHRS_REF_QUAT"            period="1.0"/>
@@ -69,6 +70,8 @@
 <!--      <message name="BARO_MS5611"               period="3.0"/>-->
       <message name="FBW_STATUS"          period="1.0"/>
 <!--      <message name="IMCU_FBW_STATUS"     period="1.0"/>-->
+
+<!--      <message name="AIRSPEED_WIND_ESTIMATOR_EKF" period="0.2"/>-->
 
     </mode>
 
@@ -268,6 +271,8 @@
       <!--      <message name="ACTUATORS"                 period="0.02"/>-->
       <!--      <message name="ROTORCRAFT_RADIO_CONTROL" period="0.05"/>-->
       <message name="GPS_RTK"                  period=".05"/>
+
+<!--      <message name="AIRSPEED_WIND_ESTIMATOR_EKF" period="0.1"/>-->
     </mode>
 
   </process>
