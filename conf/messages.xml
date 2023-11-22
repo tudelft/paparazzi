@@ -726,16 +726,6 @@
 <!--         <field name="Follow_me_pitch" type="uint8"/>-->
 <!--     </message>-->
 
-     <message name="LTP_POSITION" id="139">
-         <description>
-             Request for wind data; send Pprz LTP Position and targe wind speed
-         </description>
-         <field name="ac_id" type="uint8"/>
-         <field name="ltpp_x"   type="float" unit="m"/>
-         <field name="ltpp_y"   type="float" unit="m"/>
-         <field name="ltpp_z"   type="float" unit="m"/>
-         <field name="wind_speed" type="uint8" unit="m/s"/>
-     </message>
 
     <!--message for Invariant filter with position-->
     <message name="INV_FILTER" id="78">
@@ -1278,7 +1268,14 @@
       <field name="airspeed" type="float" unit="m/s"/>
     </message>
 
-    <!-- 139 is free -->
+     <message name="AIRSPEED_RAW" id="139">
+         <field name="sensor_id" type="uint8"/>
+         <field name="raw" type="uint16"/>
+         <field name="offset"  type="float" unit="Pa"/>
+         <field name="diffPress" type="float" unit="Pa"/>
+         <field name="temperature" type="float" unit="deg_celcius"/>
+         <field name="airspeed" type="float" unit="m/s"/>
+     </message>
 
     <message name="STAB_ATTITUDE_INT" id="140">
       <field name="est_p"         type="int32" alt_unit="deg/s" alt_unit_coef="0.0139882"/>
@@ -1673,7 +1670,17 @@
       <field name="mag_y" type="float" unit="mGauss">Magnetometer y-bias in mGauss</field>
       <field name="mag_z" type="float" unit="mGauss">Magnetometer z-bias in mGauss</field>
     </message>
-    <!-- 172 is free -->
+
+     <message name="LTP_POSITION" id="172">
+         <description>
+             Request for wind data; send Pprz LTP Position and targe wind speed
+         </description>
+         <field name="ac_id" type="uint8"/>
+         <field name="ltpp_x"   type="float" unit="m"/>
+         <field name="ltpp_y"   type="float" unit="m"/>
+         <field name="ltpp_z"   type="float" unit="m"/>
+         <field name="wind_speed" type="uint8" unit="m/s"/>
+     </message>
 
     <message name="AHRS_EULER" id="173">
       <field name="phi"   type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.29578" />
@@ -1770,7 +1777,30 @@
 
     <!-- 194 is free -->
     <!-- 195 is free -->
-    <!-- 196 is free -->
+
+     <message name="AIRSPEED_WIND_ESTIMATOR_EKF" id="196">
+         <field name="u_est"     type="float" unit="m/s"/>
+         <field name="v_est"     type="float" unit="m/s"/>
+         <field name="w_est"     type="float" unit="m/s"/>
+         <field name="mu_N"      type="float" unit="m/s"/>
+         <field name="mu_E"      type="float" unit="m/s"/>
+         <field name="mu_D"      type="float" unit="m/s"/>
+         <field name="offset_x"  type="float" unit="-"/>
+         <field name="offset_y"  type="float" unit="-"/>
+         <field name="offset_z"  type="float" unit="-"/>
+         <field name="healthy"   type="uint8" unit="bool"/>
+         <field name="crashes_n"  type="uint16" unit="-"/>
+         <field name="innov_V_gnd_x"  type="float" unit="-"/>
+         <field name="innov_V_gnd_y"  type="float" unit="-"/>
+         <field name="innov_V_gnd_z"  type="float" unit="-"/>
+         <field name="innov_acc_x"  type="float" unit="-"/>
+         <field name="innov_acc_y"  type="float" unit="-"/>
+         <field name="innov_acc_z"  type="float" unit="-"/>
+         <field name="innov_V_pitot"  type="float" unit="-"/>
+         <field name="debug_1"  type="float" unit="-"/>
+         <field name="debug_2"  type="float" unit="-"/>
+         <field name="debug_3"  type="float" unit="-"/>
+     </message>
 
     <message name="NPS_SENSORS_SCALED" id="197">
       <field name="acc_x"    type="float" />

@@ -120,7 +120,8 @@ struct GpsState {
   uint32_t last_msg_time;        ///< cpu time in sec at last received GPS message
   uint16_t reset;                ///< hotstart, warmstart, coldstart
 
-    float relPosHeading;
+  float relPosHeading;          ///< Heading measurement from two RTK, same unit in course heading
+  bool relPosHeadingValid;      ///< Heading validity
 };
 
 /** data structure for GPS time sync */

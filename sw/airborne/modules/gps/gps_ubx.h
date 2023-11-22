@@ -97,6 +97,11 @@ struct GpsUbxRaw {
 extern struct GpsUbxRaw gps_ubx_raw;
 #endif
 
+extern bool reject_heading_by_poslength;
+extern float rtk_heading_min_poslength;
+extern float rtk_heading_max_poslength;
+extern float rtk_heading_offset;
+
 /*
  * This part is used by the autopilot to read data from a uart
  */

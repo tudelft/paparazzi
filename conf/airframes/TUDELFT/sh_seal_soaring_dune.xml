@@ -117,12 +117,13 @@ NOTES:
 <!--     <module name="current_sensor">-->
 <!--        <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.05"/>-->
 <!--      </module>-->
-      <!--define name="ADC_CURRENT_DISABLE" value="TRUE"/-->
+
+<!--      <define name="ADC_CURRENT_DISABLE" value="TRUE"/>-->
 
 <!--      <module name="adc_generic">-->
 <!--&lt;!&ndash;        <configure name="USE_ADC_4" value="TRUE"/>&ndash;&gt;-->
-<!--        <configure name="ADC_CHANNEL_GENERIC1" value="ADC_2"/>-->
-<!--        <configure name="ADC_CHANNEL_GENERIC2" value="ADC_3"/>-->
+<!--        <configure name="ADC_CHANNEL_GENERIC1" value="ADC_1"/>-->
+<!--        <configure name="ADC_CHANNEL_GENERIC2" value="ADC_2"/>-->
 <!--        &lt;!&ndash;<configure name="ADC_CHANNEL_GENERIC2" value="RSSI_IN"/>&ndash;&gt;-->
 <!--&lt;!&ndash;        <configure name="ADC_CHANNEL_GENERIC2" value="ADC_4"/>&ndash;&gt;-->
 <!--      </module>-->
@@ -139,35 +140,36 @@ NOTES:
       <!-- TODO: Cube Orange test peripherals/ak8975 if compatible with AK09916 else create Internal MAG driver -->
       <!-- on the ICM- 20948 there ia an AK09916 mag embedded -->
 
-      <module name="airspeed" type="ms45xx_i2c">
-        <define name="USE_I2C4"/><!-- 4525D5AI 001D -->
-        <define name="MS45XX_I2C_DEV" value="i2c4"/>
-        <!--<define name="MS45XX_PRESSURE_TYPE" value="0"/> --><!--description="Pressure Differential or Gauge, default is Differential">-->
-        <define name="MS45XX_PRESSURE_RANGE" value="1" /><!-- description="pressure range in psi (default: 1)"-->
-        <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
-        <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
-<!--        <define name="MS45XX_PRESSURE_OFFSET" value="8552.5" />&lt;!&ndash; 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)&ndash;&gt;-->
-        <define name="MS45XX_PRESSURE_OFFSET" value="8549"/>      <!-- tuned at Maasvlakte -->
-        <!-- <define name="MS45XX_AIRSPEED_SCALE" value="1.6327"/>--> <!--description="quadratic scale factor to convert differential pressure to airspeed"&ndash;&gt;-->
-        <define name="MS45XX_LOWPASS_TAU" value="0.15"/> <!--description="Time constant for second order Butterworth low pass filter"-->
-        <define name="USE_AIRSPEED_LOWPASS_FILTER" value="TRUE"/>
-        <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
-        <!--<define name="AIRSPEED_MS45XX_SYNC_SEND"/>--><!-- For debugging and also handy for finding the Pressure Offset in Pa-->
-        <!--<define name="MS45XX_SYNC_SEND" value="TRUE" />--> <!--description="flag to enable sending every new measurement via telemetry (default:FALSE)-->
-      </module>
-
-<!--      <module name="airspeed" type="sdp3x">-->
+<!--      <module name="airspeed" type="ms45xx_i2c">-->
 <!--        <define name="USE_I2C4"/>&lt;!&ndash; 4525D5AI 001D &ndash;&gt;-->
-<!--        <define name="SDP3X_I2C_DEV" value="i2c4"/>-->
-<!--&lt;!&ndash;        <define name="SDP3X_I2C_ADDR" value="0x50" description="i2c slave address (default: 0x50)"/>&ndash;&gt;-->
-<!--        <define name="SDP3X_SYNC_SEND" value="TRUE"/>-->
-<!--&lt;!&ndash;        <define name="SDP3X_PRESSURE_SCALE" value="1.0" description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"/>&ndash;&gt;-->
-<!--&lt;!&ndash;        <define name="SDP3X_PRESSURE_OFFSET" value="0.0" description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)"/>&ndash;&gt;-->
-<!--&lt;!&ndash;        <define name="SDP3X_AIRSPEED_SCALE" value="1.6327" description="quadratic scale factor to convert differential pressure to airspeed"/>&ndash;&gt;-->
-<!--        <define name="SDP3X_LOWPASS_TAU" value="0.15"/>-->
-<!--        <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>-->
-<!--        <define name="USE_AIRSPEED" value="TRUE"/>-->
+<!--        <define name="MS45XX_I2C_DEV" value="i2c4"/>-->
+<!--        &lt;!&ndash;<define name="MS45XX_PRESSURE_TYPE" value="0"/> &ndash;&gt;&lt;!&ndash;description="Pressure Differential or Gauge, default is Differential">&ndash;&gt;-->
+<!--        <define name="MS45XX_PRESSURE_RANGE" value="1" />&lt;!&ndash; description="pressure range in psi (default: 1)"&ndash;&gt;-->
+<!--        <define name="MS45XX_OUTPUT_TYPE" value="0"/> &lt;!&ndash;description="set to 0 for output type A, to 1 for output type B (default: type A)"/>&ndash;&gt;-->
+<!--        <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> &lt;!&ndash;description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"&ndash;&gt;-->
+<!--&lt;!&ndash;        <define name="MS45XX_PRESSURE_OFFSET" value="8552.5" />&lt;!&ndash; 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)&ndash;&gt;&ndash;&gt;-->
+<!--        <define name="MS45XX_PRESSURE_OFFSET" value="8549"/>      &lt;!&ndash; tuned at Maasvlakte &ndash;&gt;-->
+<!--        &lt;!&ndash; <define name="MS45XX_AIRSPEED_SCALE" value="1.6327"/>&ndash;&gt; &lt;!&ndash;description="quadratic scale factor to convert differential pressure to airspeed"&ndash;&gt;&ndash;&gt;-->
+<!--        <define name="MS45XX_LOWPASS_TAU" value="0.15"/> &lt;!&ndash;description="Time constant for second order Butterworth low pass filter"&ndash;&gt;-->
+<!--        <define name="USE_AIRSPEED_LOWPASS_FILTER" value="TRUE"/>-->
+<!--        <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> &lt;!&ndash;description="Set airspeed in state interface for this sensor" &ndash;&gt;-->
+<!--        &lt;!&ndash;<define name="AIRSPEED_MS45XX_SYNC_SEND"/>&ndash;&gt;&lt;!&ndash; For debugging and also handy for finding the Pressure Offset in Pa&ndash;&gt;-->
+<!--        &lt;!&ndash;<define name="MS45XX_SYNC_SEND" value="TRUE" />&ndash;&gt; &lt;!&ndash;description="flag to enable sending every new measurement via telemetry (default:FALSE)&ndash;&gt;-->
 <!--      </module>-->
+
+      <module name="airspeed" type="sdp3x">
+        <define name="USE_I2C4"/><!-- 4525D5AI 001D -->
+        <define name="SDP3X_I2C_DEV" value="i2c4"/>
+<!--        <define name="SDP3X_I2C_ADDR" value="0x50" description="i2c slave address (default: 0x50)"/>-->
+        <define name="SDP3X_SYNC_SEND" value="TRUE"/>
+<!--        <define name="SDP3X_PRESSURE_SCALE" value="1.0" description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"/>-->
+<!--        <define name="SDP3X_PRESSURE_OFFSET" value="0.0" description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)"/>-->
+<!--        <define name="SDP3X_AIRSPEED_SCALE" value="1.6327" description="quadratic scale factor to convert differential pressure to airspeed"/>-->
+        <define name="SDP3X_LOWPASS_TAU" value="0.15"/>
+        <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
+        <define name="USE_AIRSPEED" value="TRUE"/>
+        <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>      <!-- sdp33 -->
+      </module>
 
       <!--module name="gps" type="datalink"/--><!--Enable this for CyberZoo tests , disable the uBlox module -->
 
@@ -176,6 +178,10 @@ NOTES:
         <configure name="GPS_PORT" value="UART1"/><!-- Uses the default GPS port on FC can be remove if only connected there -->
         <configure name="GPS_BAUD" value="B460800"/><!-- UBX message only but rate set to ~?HZ with GPS, GLONASS, BEIDU and GALILEIO at the SAME time is a LOT of GNSS message data-->
         <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
+        <define name="GPS_UBX_RTK_REJECT_HEADING_BY_POSLENGTH" value="TRUE"/>
+        <define name="GPS_UBX_RTK_MIN_POSLENGTH" value="50"/>
+        <define name="GPS_UBX_RTK_MAX_POSLENGTH" value="90"/>
+        <define name="GPS_UBX_RTK_HEADING_OFFSET" value="180"/>
       </module>
 
       <!-- Just in case 2n GPS in the front -->
@@ -825,10 +831,12 @@ NOTES:
   <section name="BAT">
     <!-- Hex Brick on Pixhawk 4 only -->
     <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 12.09f * adc)"/>
-    <define name="MilliAmpereOfAdc(adc)" value="((3.3f/4096.0f) * 39.877f * adc)"/><!-- TODO: validate -->
-    
+<!--    <define name="MilliAmpereOfAdc(adc)" value="((3.3f/4096.0f) * 39.877f * adc)"/>&lt;!&ndash; TODO: validate &ndash;&gt;-->
+    <define name="MilliAmpereOfAdc(adc)" value="(1000.0f * (0.0368f * adc + 1.7258))"/>
+
     <define name="MAX_BAT_CAPACITY" value="3300" unit="mAh"/>
-    <define name="MILLIAMP_AT_IDLE_THROTTLE" value="500" unit="mA"/>
+<!--    <define name="MILLIAMP_AT_IDLE_THROTTLE" value="500" unit="mA"/>-->
+    <define name="MILLIAMP_AT_IDLE_THROTTLE" value="1000" unit="mA"/>
     <define name="MILLIAMP_AT_FULL_THROTTLE" value="30000" unit="mA"/>
     <define name="MAX_BAT_LEVEL" value="16.8" unit="V"/>
     <define name="LOW_BAT_LEVEL" value="14.0" unit="V"/>
@@ -878,7 +886,8 @@ NOTES:
 <!--    <define name="USE_GPS" value="TRUE"/>-->
 <!--    <define name="telemetry_mode_Fbw" value="1"/>-->
     <define name="INS_EKF2_GPS_COURSE_YAW" value="FALSE"/>
-    <define name="INS_EKF2_GPS_RTK_YAW" value="FALSE"/>
+    <define name="INS_EKF2_GPS_RTK_YAW" value="TRUE"/>
+<!--    <define name="INS_EKF2_GPS_RTK_YAW" value="FALSE"/>-->
     <define name="INS_EKF2_FUSION_MODE" value="MASK_USE_GPS | MASK_USE_GPSYAW"/>
     <define name="INS_EKF2_MAG_FUSION_TYPE" value="0"/> <!-- 5 is NONE  AUTO|HEADING|3D|AUTOFW|INDOOR|NONE -->
 <!--    <define name="INS_EKF2_VDIST_SENSOR_TYPE" value="VDIST_SENSOR_GPS"/>-->
