@@ -90,7 +90,10 @@ void gps_feed_value(void)
     gps_nps.fix = GPS_FIX_NONE;
   }
 
-  // publish gps data
+  // For RTK yaw
+    gps_nps.relPosHeading = fdm.ltp_to_body_eulers.psi * 1e7;
+
+    // publish gps data
   uint32_t now_ts = get_sys_time_usec();
   gps_nps.last_msg_ticks = sys_time.nb_sec_rem;
   gps_nps.last_msg_time = sys_time.nb_sec;

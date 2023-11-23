@@ -926,7 +926,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   gps_msg.yaw = wrap_pi((float)gps_s->course / 1e7);
   gps_msg.yaw_offset = 0;
 #elif INS_EKF2_GPS_RTK_YAW
-  if (ISFINITE(gps_s->relPosHeading)) {
+  if (ISFINITE(gps_s->relPosHeading) && (gps_s->relPosHeadingValid)) {
         gps_msg.yaw = wrap_pi((float)gps_s->relPosHeading / 1e7);
         _last_gps_rtk_yaw = wrap_pi((float)gps_s->relPosHeading / 1e7);
         _time_last_gps_rtk_yaw_valid = stamp;
