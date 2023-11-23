@@ -281,6 +281,9 @@ void ms45xx_i2c_event(void)
       // Compute airspeed
       ms45xx.airspeed = sqrtf(Max(ms45xx.pressure * ms45xx.airspeed_scale, 0));
 
+#warning "HACK to get correct airspeed, fix nicely"
+      ms45xx.airspeed = ms45xx.airspeed*1.2;
+
 #if USE_AIRSPEED_MS45XX
       stateSetAirspeed_f(ms45xx.airspeed);
 #endif
