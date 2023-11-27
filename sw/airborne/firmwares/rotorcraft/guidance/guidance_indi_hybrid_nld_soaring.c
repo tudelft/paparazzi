@@ -524,7 +524,7 @@ void guidance_indi_soaring_move_wp(float cost_avg_val){
 
     VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], step_size);
 
-    if ((waypoints[soar_wp_id].enu_i.z - amount_to_move_body.z) < soaring_min_alt) {
+    if ((POS_FLOAT_OF_BFP(waypoints[soar_wp_id].enu_i.z) - amount_to_move_body.z) < soaring_min_alt) {
         // pick a random neighbour that doesn't go down; default is 5m
         idx_to_move = abs((int)(filt_accel_ned[2].o[0]*100))%5;
         prev_move_idx = idx_to_move;
