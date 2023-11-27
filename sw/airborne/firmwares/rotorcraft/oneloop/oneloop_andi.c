@@ -424,7 +424,7 @@ struct Gains3rdOrder k_pos_e;
 struct Gains3rdOrder k_pos_rm; 
 
 /* Effectiveness Matrix definition */
-float g2_1l[ANDI_NUM_ACT_TOT]               = ONELOOP_ANDI_G2; //scaled by INDI_G_SCALING
+float g2_1l[ANDI_NUM_ACT_TOT]               = ONELOOP_ANDI_G2; //scaled by ANDI_G_SCALING
 float g1_1l[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT] = {ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_THRUST, ONELOOP_ANDI_G1_ROLL, ONELOOP_ANDI_G1_PITCH, ONELOOP_ANDI_G1_YAW};  
 float g1g2_1l[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
 float *bwls_1l[ANDI_OUTPUTS];
@@ -1271,8 +1271,8 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   for (i = 0; i < ANDI_NUM_ACT; i++) {
     g2_ff += g2_1l[i] * act_dynamics[i] * andi_du[i];
   }
-  //G2 is scaled by INDI_G_SCALING to make it readable
-  g2_ff = g2_ff / INDI_G_SCALING;
+  //G2 is scaled by ANDI_G_SCALING to make it readable
+  g2_ff = g2_ff / ANDI_G_SCALING;
   // Run the Reference Model (RM)
   oneloop_andi_RM(half_loop, PSA_des, rm_order_h, rm_order_v);
   // Generate pseudo control for stabilization vector (nu) based on error controller

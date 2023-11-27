@@ -11,7 +11,7 @@
 
     <firmware name="rotorcraft">
      <autopilot name="rotorcraft_oneloop_with_backup.xml"/>
-        <target name="ap" board="cube_orangeplus">
+        <target name="ap" board="cube_orange">
             <configure VALUE="500" NAME="PERIODIC_FREQUENCY"/>
             <module TYPE="sbus" NAME="radio_control">
                 <configure VALUE="UART3" NAME="SBUS_PORT"/>
@@ -71,7 +71,7 @@
         <module name="gps" type="datalink"/>
 
         <module name="stabilization" type="oneloop" >
-            <configure name="INDI_NUM_ACT" value="8"/>
+            <configure name="INDI_NUM_ACT" value="9"/>
         </module>
         
         <module name="guidance" type="oneloop"/>
@@ -111,30 +111,35 @@
     <servos DRIVER="Pwm">
         <servo NO="0" NAME="ROTATION_MECH"   MIN="1031" NEUTRAL="1330" MAX="2260"/>
     </servos>
-
-    <servos DRIVER="Uavcan1">
-        <servo NO="0" NAME="MOTOR_FRONT"    MIN="0"     NEUTRAL="600"   MAX="8191"/>
-        <servo NO="1" NAME="MOTOR_RIGHT"    MIN="0"     NEUTRAL="600"   MAX="8191"/>
-        <servo NO="2" NAME="MOTOR_BACK"     MIN="0"     NEUTRAL="600"   MAX="8191"/>
-        <servo NO="3" NAME="MOTOR_LEFT"     MIN="0"     NEUTRAL="600"   MAX="8191"/>
-        <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="200"   MAX="6552"/>
-        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="4000"  NEUTRAL="4000"  MAX="-5500"/>
-        <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"     MAX="8191"/>
-    </servos>
-
-    <servos DRIVER="Uavcan2">
-        <servo NO="0" NAME="BMOTOR_FRONT" MIN="0" NEUTRAL="600" MAX="8191"/>
-        <servo NO="1" NAME="BMOTOR_RIGHT" MIN="0" NEUTRAL="600" MAX="8191"/>
-        <servo NO="2" NAME="BMOTOR_BACK"  MIN="0" NEUTRAL="600" MAX="8191"/>
-        <servo NO="3" NAME="BMOTOR_LEFT"  MIN="0" NEUTRAL="600" MAX="8191"/>
+    <!-- Can bus 1 actuators -->
+    <servos driver="Uavcan1">
+        <servo no="0" name="MOTOR_FRONT"    min="0"     neutral="600" max="8191"/>
+        <servo no="1" name="MOTOR_RIGHT"    min="0"     neutral="600" max="8191"/>
+        <servo no="2" name="MOTOR_BACK"     min="0"     neutral="600" max="8191"/>
+        <servo no="3" name="MOTOR_LEFT"     min="0"     neutral="600" max="8191"/>
+        <servo no="4" name="MOTOR_PUSH"     min="0"     neutral="600" max="8191"/>
     </servos>
 
     <!-- CAN BUS 1 command outputs-->
+    <servos driver="Uavcan1Cmd">
+        <servo no="5" name="SERVO_ELEVATOR" min="3250"  neutral="3250" max="-3250"/>
+        <servo no="6" name="SERVO_RUDDER"   min="-3250" neutral="0"    max="3250"/>
+    </servos>
+    
+    <!-- Can bus 2 actuators -->
+    <servos driver="Uavcan2">
+        <servo no="0" name="BMOTOR_FRONT" min="0" neutral="600" max="8191"/>
+        <servo no="1" name="BMOTOR_RIGHT" min="0" neutral="600" max="8191"/>
+        <servo no="2" name="BMOTOR_BACK"  min="0" neutral="600" max="8191"/>
+        <servo no="3" name="BMOTOR_LEFT"  min="0" neutral="600" max="8191"/>
+    </servos>
+
+    <!-- CAN BUS 2 command outputs-->
     <servos driver="Uavcan2Cmd">
-        <servo name="AIL_LEFT"      no="7"  min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
-        <servo name="FLAP_LEFT"     no="8"  min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
-        <servo name="FLAP_RIGHT"    no="9"  min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
-        <servo name="AIL_RIGHT"     no="10" min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
+        <servo no="7"  name="AIL_LEFT"   min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
+        <servo no="8"  name="FLAP_LEFT"  min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
+        <servo no="9"  name="FLAP_RIGHT" min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
+        <servo no="10" name="AIL_RIGHT"  min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
     </servos>
 
     <commands>
@@ -158,9 +163,9 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[1])"                                                                      SERVO="MOTOR_RIGHT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[2])"                                                                      SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])"                                                                      SERVO="MOTOR_LEFT"/>
-        <set VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : actuators_pprz[5])"                                           SERVO="SERVO_RUDDER"/>
-        <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? 0 : actuators_pprz[6]))"  SERVO="SERVO_ELEVATOR"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[4])"                                                                      SERVO="MOTOR_PUSH"/>
+        <set VALUE="RadioControlValues(RADIO_YAW)"                                           SERVO="SERVO_RUDDER"/>
+        <set VALUE="(RadioControlValues(RADIO_PITCH)/4+7200)"  SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="($th_hold? -9600 : 1000)"                                                                      SERVO="MOTOR_PUSH"/>
         <set VALUE=" wing_rotation_controller.servo_pprz_cmd"                                                                   SERVO="ROTATION_MECH"/>
         <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])"                                          SERVO="AIL_LEFT"/>
         <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])"                                          SERVO="AIL_RIGHT"/>
