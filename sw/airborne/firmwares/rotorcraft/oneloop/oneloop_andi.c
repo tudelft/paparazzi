@@ -389,6 +389,7 @@ struct FloatEulers eulers_zxy;
 static float  psi_des_rad = 0.0;
 float  psi_des_deg = 0.0;
 static float  psi_vec[4]  = {0.0, 0.0, 0.0, 0.0};
+bool heading_manual = true;
 
 /*WLS Settings*/
 static float gamma_wls = 1000.0;
@@ -1236,8 +1237,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   }
   
   // Update desired Heading (psi_des_rad) based on previous loop or changed setting
-  psi_des_rad = psi_des_deg * M_PI / 180.0;
-
+  if (heading_manual){
+    psi_des_rad = psi_des_deg * M_PI / 180.0;
+  }
   // Register the state of the drone in the variables used in RM and EC
   // (1) Attitude related
   oneloop_andi.sta_state.att[0] = eulers_zxy.phi                        * use_increment;
@@ -1341,6 +1343,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     stabilization_cmd[COMMAND_THRUST] += actuator_state_1l[i]; 
   }
   stabilization_cmd[COMMAND_THRUST] = stabilization_cmd[COMMAND_THRUST]/num_thrusters_oneloop;
+  autopilot.throttle = stabilization_cmd[COMMAND_THRUST];
   if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
     eulers_zxy_des.phi   =  andi_u[ANDI_NUM_ACT];
     eulers_zxy_des.theta =  andi_u[ANDI_NUM_ACT+1];
@@ -1348,7 +1351,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     eulers_zxy_des.phi   =  andi_u[ANDI_NUM_ACT];
     eulers_zxy_des.theta =  andi_u[ANDI_NUM_ACT+1];
   }
-  psi_des_deg = psi_des_rad * 180.0 / M_PI;  
+  if (heading_manual){
+    psi_des_deg = psi_des_rad * 180.0 / M_PI;
+  }  
   stabilization_cmd[COMMAND_ROLL]  = (int16_t) (eulers_zxy_des.phi   * 180.0 / M_PI * MAX_PPRZ / 45.0);
   stabilization_cmd[COMMAND_PITCH] = (int16_t) (eulers_zxy_des.theta * 180.0 / M_PI * MAX_PPRZ / 45.0);
   stabilization_cmd[COMMAND_YAW]   = (int16_t) (psi_des_deg * MAX_PPRZ / 180.0);
