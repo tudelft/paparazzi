@@ -150,6 +150,9 @@
       <program name="Messages">
         <arg flag="-c" constant="datalink"/>
       </program>
+      <program name="Attitude Visualizer">
+        <arg flag="--help"/>
+      </program>
     </session>
     <session name="EKF Full">
       <program name="Data Link">
