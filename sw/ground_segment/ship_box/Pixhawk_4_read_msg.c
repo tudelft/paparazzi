@@ -549,7 +549,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
             printf("Ship roll angle [deg] : %f \n",paylod_ship.phi);
             printf("Ship theta angle [deg] : %f \n",paylod_ship.theta);
             printf("Ship psi angle [deg] : %f \n",paylod_ship.psi);
-            printf("Ship heading angle [deg] : %f \n",paylod_ship.heading*180/pi);
+            printf("Ship heading angle [deg] : %f \n",paylod_ship.heading*180/M_PI);
             printf("Ship roll rate [deg/s] : %f \n",paylod_ship.phi_dot);
             printf("Ship pitch rate [deg/s] : %f \n",paylod_ship.theta_dot);
             printf("Ship yaw rate [deg/s] : %f \n",paylod_ship.psi_dot);  
