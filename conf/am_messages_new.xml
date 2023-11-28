@@ -1768,6 +1768,7 @@
       <field name="phi" type="float" unit="deg">Roll</field>
       <field name="theta" type="float" unit="deg">Pitch</field>
       <field name="psi" type="float" unit="deg">Yaw</field>
+      <field name="heading" type="float" unit="rad*10">Heading</field>
       <field name="phi_dot" type="float" unit="deg/s">roll rate</field>
       <field name="theta_dot" type="float" unit="deg/s">pitch rate</field>
       <field name="psi_dot" type="float" unit="deg/s">yaw rate</field>      
