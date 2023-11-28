@@ -37,7 +37,8 @@ static void send_ship_info_message(struct transport_tx *trans, struct link_devic
     float phi_telemetry = stateGetNedToBodyEulers_f()->phi * 180/M_PI;
     float theta_telemetry = stateGetNedToBodyEulers_f()->theta * 180/M_PI;
     float psi_telemetry = stateGetNedToBodyEulers_f()->psi * 180/M_PI;
-    float heading_state = gps_ubx.state.course;
+    float heading_state = gps_relposned.heading;
+    float course_state = gps_ubx.state.course;
     float phi_dot_telemetry = phi_dot_state * 180/M_PI;
     float theta_dot_telemetry = theta_dot_state * 180/M_PI;
     float psi_dot_telemetry = psi_dot_state * 180/M_PI;
@@ -53,7 +54,7 @@ static void send_ship_info_message(struct transport_tx *trans, struct link_devic
     float lat_state_telemetry = stateGetPositionLla_f()->lat*180/M_PI; 
     float long_state_telemetry = stateGetPositionLla_f()->lon*180/M_PI; 
     float alt_state_telemetry = stateGetPositionLla_f()->alt;      
-    pprz_msg_send_SHIP_INFO_MSG_GROUND(trans, dev, AC_ID, &phi_telemetry, &theta_telemetry, &psi_telemetry, &heading_state,
+    pprz_msg_send_SHIP_INFO_MSG_GROUND(trans, dev, AC_ID, &phi_telemetry, &theta_telemetry, &psi_telemetry, &heading_state, &course_state,
                                 &phi_dot_telemetry, &theta_dot_telemetry, &psi_dot_telemetry,
                                 &x_telemetry, &y_telemetry, &z_telemetry,
                                 &lat_state_telemetry, &long_state_telemetry, &alt_state_telemetry,
