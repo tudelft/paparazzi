@@ -241,6 +241,17 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 #define ONELOOP_ANDI_PUSHER_IDX  4
 #endif
 
+// Assume phi and theta are the first actuators after the real ones unless otherwise specified
+#ifndef ONELOOP_ANDI_PHI_IDX
+#define ONELOOP_ANDI_PHI_IDX  ANDI_NUM_ACT
+#endif
+
+#define ONELOOP_ANDI_MAX_BANK  act_max[ONELOOP_ANDI_PHI_IDX]
+
+#ifndef ONELOOP_ANDI_THETA_IDX
+#define ONELOOP_ANDI_THETA_IDX  ANDI_NUM_ACT+1
+#endif
+
 #if ANDI_NUM_ACT_TOT != WLS_N_U
 #error Matrix-WLS_N_U is not equal to the number of actuators: define WLS_N_U == ANDI_NUM_ACT_TOT in airframe file
 #define WLS_N_U == ANDI_NUM_ACT_TOT
@@ -249,7 +260,6 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 #error Matrix-WLS_N_V is not equal to the number of controlled axis: define WLS_N_V == ANDI_OUTPUTS in airframe file
 #define WLS_N_V == ANDI_OUTPUTS
 #endif
-
 
 /* Declaration of Navigation Variables*/
 #ifdef NAV_HYBRID_MAX_DECELERATION
@@ -268,6 +278,12 @@ float max_j_nav = 500.0; // Pusher Test shows erros above 2[Hz] ramp commands [0
 float max_v_nav = NAV_HYBRID_MAX_AIRSPEED; // Consider implications of difference Ground speed and airspeed
 #else
 float max_v_nav = 5.0;
+#endif
+
+#ifndef FWD_SIDESLIP_GAIN
+float fwd_sideslip_gain = 1.0;
+#else
+float fwd_sideslip_gain = FWD_SIDESLIP_GAIN;
 #endif
 
 /*  Define Section of the functions used in this module*/
@@ -292,7 +308,7 @@ void  rm_2nd_pos(float dt, float x_d_ref[], float x_2d_ref[], float x_3d_ref[], 
 void  rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], float k3_rm[], float x_3d_bound, int n);
 void  ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3]);
 void  calc_model(void);
-
+float oneloop_andi_sideslip(void);
 /* Define messages of the module*/
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -438,6 +454,7 @@ static struct FirstOrderLowPass rates_filt_fo[3];
 static struct FirstOrderLowPass model_pred_a_filt[3];
 static Butterworth2LowPass att_dot_meas_lowpass_filters[3];
 static Butterworth2LowPass model_pred_filt[ANDI_OUTPUTS];
+static Butterworth2LowPass accely_filt;
 
 
 /** @brief Function to make sure that inputs are positive non zero vaues*/
@@ -970,8 +987,8 @@ void init_controller(void){
   k_att_rm.k3[2] = k_rm_3_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
 
   /*Approximated Dynamics*/
-  act_dynamics[ANDI_NUM_ACT]   = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
-  act_dynamics[ANDI_NUM_ACT+1] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
+  act_dynamics[ONELOOP_ANDI_PHI_IDX]   = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
+  act_dynamics[ONELOOP_ANDI_THETA_IDX] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
 }
 
 
@@ -1004,6 +1021,7 @@ void init_filter(void)
     init_butterworth_2_low_pass(&model_pred_filt[i], tau, sample_time, 0.0);
     }
   }
+  init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
 }
 
 
@@ -1030,7 +1048,11 @@ void oneloop_andi_propagate_filters(void) {
  
     ang_acc[i] = (att_dot_meas_lowpass_filters[i].o[0]- att_dot_meas_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY + model_pred[3+i] - model_pred_filt[3+i].o[0];
     lin_acc[i] = filt_accel_ned[i].last_out + model_pred[i] - model_pred_a_filt[i].last_out;     
-}}
+  }
+  // Propagate filter for sideslip correction
+  float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
+  update_butterworth_2_low_pass(&accely_filt, accely);
+}
 
 /** @brief Init function of Oneloop ANDI controller  */
 void oneloop_andi_init(void)
@@ -1239,7 +1261,11 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   // Update desired Heading (psi_des_rad) based on previous loop or changed setting
   if (heading_manual){
     psi_des_rad = psi_des_deg * M_PI / 180.0;
+  } else {
+    psi_des_rad += oneloop_andi_sideslip() * dt_1l;
+    NormRadAngle(psi_des_rad);
   }
+
   // Register the state of the drone in the variables used in RM and EC
   // (1) Attitude related
   oneloop_andi.sta_state.att[0] = eulers_zxy.phi                        * use_increment;
@@ -1318,13 +1344,13 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   if (in_flight_oneloop) {
     // Add the increments to the actuators
     float_vect_sum(andi_u, actuator_state_1l, andi_du, ANDI_NUM_ACT);
-    andi_u[ANDI_NUM_ACT]   = andi_du[ANDI_NUM_ACT]   + oneloop_andi.sta_state.att[0];
-    andi_u[ANDI_NUM_ACT+1] = andi_du[ANDI_NUM_ACT+1] + oneloop_andi.sta_state.att[1];
+    andi_u[ONELOOP_ANDI_PHI_IDX]   = andi_du[ONELOOP_ANDI_PHI_IDX]   + oneloop_andi.sta_state.att[0];
+    andi_u[ONELOOP_ANDI_THETA_IDX] = andi_du[ONELOOP_ANDI_THETA_IDX] + oneloop_andi.sta_state.att[1];
   } else {
     // Not in flight, so don't increment
     float_vect_copy(andi_u, andi_du, ANDI_NUM_ACT);
-    andi_u[ANDI_NUM_ACT] = andi_du[ANDI_NUM_ACT];
-    andi_u[ANDI_NUM_ACT+1] = andi_du[ANDI_NUM_ACT+1];
+    andi_u[ONELOOP_ANDI_PHI_IDX] = andi_du[ONELOOP_ANDI_PHI_IDX];
+    andi_u[ONELOOP_ANDI_THETA_IDX] = andi_du[ONELOOP_ANDI_THETA_IDX];
   }
 
   if ((ONELOOP_ANDI_AC_HAS_PUSHER)&&(half_loop)){
@@ -1345,11 +1371,11 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   stabilization_cmd[COMMAND_THRUST] = stabilization_cmd[COMMAND_THRUST]/num_thrusters_oneloop;
   autopilot.throttle = stabilization_cmd[COMMAND_THRUST];
   if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
-    eulers_zxy_des.phi   =  andi_u[ANDI_NUM_ACT];
-    eulers_zxy_des.theta =  andi_u[ANDI_NUM_ACT+1];
+    eulers_zxy_des.phi   =  andi_u[ONELOOP_ANDI_PHI_IDX];
+    eulers_zxy_des.theta =  andi_u[ONELOOP_ANDI_THETA_IDX];
   } else {
-    eulers_zxy_des.phi   =  andi_u[ANDI_NUM_ACT];
-    eulers_zxy_des.theta =  andi_u[ANDI_NUM_ACT+1];
+    eulers_zxy_des.phi   =  andi_u[ONELOOP_ANDI_PHI_IDX];
+    eulers_zxy_des.theta =  andi_u[ONELOOP_ANDI_THETA_IDX];
   }
   if (heading_manual){
     psi_des_deg = psi_des_rad * 180.0 / M_PI;
@@ -1414,7 +1440,7 @@ void sum_g1g2_1l(void) {
     }else{
       scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i];
       // Effectiveness vector for Phi (virtual actuator)
-      if (i == ANDI_NUM_ACT){
+      if (i == ONELOOP_ANDI_PHI_IDX){
         g1g2_1l[0][i] = ( cphi * ctheta * spsi * T - cphi * spsi * stheta * P) * scaler;
         g1g2_1l[1][i] = (-cphi * ctheta * cpsi * T + cphi * cpsi * stheta * P) * scaler;
         g1g2_1l[2][i] = (-sphi * ctheta * T + sphi * stheta * P) * scaler;
@@ -1423,7 +1449,7 @@ void sum_g1g2_1l(void) {
         g1g2_1l[5][i] = 0.0;
       }
       // Effectiveness vector for Theta (virtual actuator)
-      if (i == ANDI_NUM_ACT+1){
+      if (i == ONELOOP_ANDI_THETA_IDX){
         g1g2_1l[0][i] = ((ctheta*cpsi - sphi*stheta*spsi) * T - (cpsi * stheta + ctheta * sphi * spsi) * P) * scaler;
         g1g2_1l[1][i] = ((ctheta*spsi + sphi*stheta*cpsi) * T - (spsi * stheta - cpsi * ctheta * sphi) * P) * scaler;
         g1g2_1l[2][i] = (-stheta * cphi * T - cphi * ctheta * P) * scaler;
@@ -1517,4 +1543,28 @@ void oneloop_from_nav(bool in_flight)
   oneloop_andi_run(in_flight, false, PSA_des, rm_order_h, rm_order_v);
 }
 
-
+/** @brief Function to calculate corrections for sideslip*/
+float oneloop_andi_sideslip(void)
+{
+  // Coordinated turn
+  // feedforward estimate angular rotation omega = g*tan(phi)/v
+  float omega;
+  const float max_phi = RadOfDeg(ONELOOP_ANDI_MAX_BANK);
+  float airspeed_turn = stateGetAirspeed_f();
+  Bound(airspeed_turn, 10.0f, 30.0f);
+  // Use the current roll angle to determine the corresponding heading rate of change.
+  float coordinated_turn_roll = eulers_zxy.phi;
+  // Prevent flipping
+  if( (andi_u[ONELOOP_ANDI_THETA_IDX] > 0.0f) && ( fabs(andi_u[ONELOOP_ANDI_PHI_IDX]) < andi_u[ONELOOP_ANDI_THETA_IDX])) {
+    coordinated_turn_roll = ((andi_u[ONELOOP_ANDI_PHI_IDX] > 0.0f) - (andi_u[ONELOOP_ANDI_PHI_IDX] < 0.0f)) * andi_u[ONELOOP_ANDI_THETA_IDX];
+  }
+  BoundAbs(coordinated_turn_roll, max_phi);
+  omega = g / airspeed_turn * tanf(coordinated_turn_roll);
+  #ifdef FWD_SIDESLIP_GAIN
+  // Add sideslip correction
+  printf("accely_filt.o[0]: %f\n",accely_filt.o[0]);
+  omega -= accely_filt.o[0]*fwd_sideslip_gain;
+  #endif
+  printf("omega: %f\n",omega);
+  return omega;
+}

@@ -40,6 +40,7 @@ extern float andi_u[ANDI_NUM_ACT_TOT];
 extern float andi_du[ANDI_NUM_ACT_TOT];
 extern float psi_des_deg;
 extern bool  heading_manual;
+extern float fwd_sideslip_gain;
 
 // Delete once hybrid nav is fixed //////////////////////////////////////////////////////////////////////////////////
 struct guidance_indi_hybrid_params {
