@@ -1263,6 +1263,7 @@
         <arg flag="-c" constant="*:telemetry:GUIDANCE:acc_D_ref"/>
         <arg flag="-c" constant="*:telemetry:GUIDANCE:acc_D"/>
       </program>
+      <program name="Environment Simulator"/>
     </session>
     <session name="Raw Sensors">
       <program name="Data Link">

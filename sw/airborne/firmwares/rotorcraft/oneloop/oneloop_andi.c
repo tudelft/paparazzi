@@ -1180,8 +1180,6 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     // Make sure X and Y jerk objectives are active
     Wv_wls[0] = Wv[0];
     Wv_wls[1] = Wv[1];
-    // Register Attitude Setpoints from previous loop
-    float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, psi_des_rad};
     // Generate Reference signals for positioning using RM
     if (rm_order_h == 3){
       rm_3rd_pos(dt_1l, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target, k_pos_rm.k1, k_pos_rm.k2, k_pos_rm.k3, max_v_nav, max_a_nav, max_j_nav, 2);    
@@ -1193,6 +1191,19 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
       float_vect_copy(oneloop_andi.gui_ref.vel, oneloop_andi.gui_state.vel,2);
       rm_1st_pos(dt_1l, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target, k_pos_rm.k3, max_j_nav, 2);   
     }
+    // Update desired Heading (psi_des_rad) based on previous loop or changed setting
+    if (heading_manual){
+      psi_des_rad = psi_des_deg * M_PI / 180.0;
+    } else {
+      float ref_mag_vel = float_vect_norm(oneloop_andi.gui_ref.vel,2);
+      if (ref_mag_vel > 3.0){
+        psi_des_rad = atan2f(oneloop_andi.gui_ref.vel[1],oneloop_andi.gui_ref.vel[0]);
+      }
+      psi_des_rad += oneloop_andi_sideslip() * dt_1l;
+      NormRadAngle(psi_des_rad);
+    }
+    // Register Attitude Setpoints from previous loop
+    float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, psi_des_rad};
 
     // The RM functions want an array as input. Create a single entry array and write the vertical guidance entries. 
     float single_value_ref[1]        = {oneloop_andi.gui_ref.pos[2]};
@@ -1258,14 +1269,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     in_flight_oneloop = false;
   }
   
-  // Update desired Heading (psi_des_rad) based on previous loop or changed setting
-  if (heading_manual){
-    psi_des_rad = psi_des_deg * M_PI / 180.0;
-  } else {
-    psi_des_rad += oneloop_andi_sideslip() * dt_1l;
-    NormRadAngle(psi_des_rad);
-  }
-
   // Register the state of the drone in the variables used in RM and EC
   // (1) Attitude related
   oneloop_andi.sta_state.att[0] = eulers_zxy.phi                        * use_increment;
@@ -1282,9 +1285,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   oneloop_andi.gui_state.pos[0] = stateGetPositionNed_f()->x;   
   oneloop_andi.gui_state.pos[1] = stateGetPositionNed_f()->y;   
   oneloop_andi.gui_state.pos[2] = stateGetPositionNed_f()->z;   
-  oneloop_andi.gui_state.vel[0]  = stateGetSpeedNed_f()->x;      
-  oneloop_andi.gui_state.vel[1]  = stateGetSpeedNed_f()->y;      
-  oneloop_andi.gui_state.vel[2]  = stateGetSpeedNed_f()->z;      
+  oneloop_andi.gui_state.vel[0] = stateGetSpeedNed_f()->x;      
+  oneloop_andi.gui_state.vel[1] = stateGetSpeedNed_f()->y;      
+  oneloop_andi.gui_state.vel[2] = stateGetSpeedNed_f()->z;      
   oneloop_andi.gui_state.acc[0] = lin_acc[0];
   oneloop_andi.gui_state.acc[1] = lin_acc[1];
   oneloop_andi.gui_state.acc[2] = lin_acc[2];
