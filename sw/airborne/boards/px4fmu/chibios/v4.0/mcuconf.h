@@ -240,7 +240,11 @@
 #define STM32_ICU_USE_TIM1                  FALSE
 #define STM32_ICU_USE_TIM2                  FALSE
 #define STM32_ICU_USE_TIM3                  FALSE
-#define STM32_ICU_USE_TIM4                  FALSE
+//#ifdef USE_PWM_INPUT1
+//#define STM32_ICU_USE_TIM4                  TRUE
+//#else
+ #define STM32_ICU_USE_TIM4                  FALSE
+//#endif
 #define STM32_ICU_USE_TIM5                  FALSE
 #define STM32_ICU_USE_TIM8                  FALSE
 #define STM32_ICU_USE_TIM9                  TRUE
@@ -455,6 +459,8 @@
  * workaround hardware bug in REV.A revision of old STM32F4 (sold in 2012, early 2013)
  */
 
-#define STM32_USE_REVISION_A_FIX 1
+//#ifndef STM32_USE_REVISION_A_FIX
+ #define STM32_USE_REVISION_A_FIX 1
+//#endif
 
 #endif /* MCUCONF_H */
