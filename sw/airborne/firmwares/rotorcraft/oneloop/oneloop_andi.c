@@ -82,9 +82,6 @@
 #include "generated/airframe.h"
 #include "modules/radio_control/radio_control.h"
 #include "modules/actuators/actuators.h"
-#ifdef   STABILIZATION_ANDI_ROTWING_V3A
-#include "modules/rot_wing_drone/wing_rotation_controller_v3a.h"
-#endif
 #include "modules/core/abi.h"
 #include "filters/low_pass_filter.h"
 #include "math/wls/wls_alloc.h"
@@ -247,6 +244,7 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 #endif
 
 #define ONELOOP_ANDI_MAX_BANK  act_max[ONELOOP_ANDI_PHI_IDX]
+
 
 #ifndef ONELOOP_ANDI_THETA_IDX
 #define ONELOOP_ANDI_THETA_IDX  ANDI_NUM_ACT+1
@@ -963,6 +961,7 @@ void init_controller(void){
   k_pos_rm.k2[1] = k_pos_rm.k2[0];  
   k_pos_rm.k3[1] = k_pos_rm.k3[0];
   nav_hybrid_pos_gain   = k_pos_rm.k1[0];
+  nav_hybrid_max_bank   = ONELOOP_ANDI_MAX_BANK;
 
   /*Altitude Loop*/
   k_pos_e.k1[2]  = k_e_1_3_f_v2(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3);

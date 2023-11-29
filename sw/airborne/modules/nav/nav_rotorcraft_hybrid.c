@@ -30,7 +30,9 @@
 
 // if NAV_HYBRID_MAX_BANK is not defined, set it to 30 degrees. 
 #ifndef NAV_HYBRID_MAX_BANK
-#define NAV_HYBRID_MAX_BANK 0.52f
+float nav_hybrid_max_bank = 0.52f;
+#else
+float nav_hybrid_max_bank = NAV_HYBRID_MAX_BANK;
 #endif
 
 // Max ground speed that will be commanded
@@ -252,7 +254,7 @@ static void nav_hybrid_circle(struct EnuCoor_f *wp_center, float radius)
     } else {
       // close to circle, speed function of radius for a feasible turn
       // 0.8 * MAX_BANK gives some margins for the turns
-      desired_speed = sqrtf(PPRZ_ISA_GRAVITY * abs_radius * tanf(0.8f * NAV_HYBRID_MAX_BANK));
+      desired_speed = sqrtf(PPRZ_ISA_GRAVITY * abs_radius * tanf(0.8f * nav_hybrid_max_bank));
     }
     Bound(desired_speed, 0.0f, nav_max_speed);
   }
