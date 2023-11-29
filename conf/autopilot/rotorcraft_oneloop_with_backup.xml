@@ -141,10 +141,12 @@
       <on_enter>
         <call fun="oneloop_andi_enter(false)"/>
       </on_enter>
-      <control freq="NAVIGATION_FREQUENCY">
+      <!-- <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
-      </control>
+      </control> -->
       <control>
+        <call fun="nav_periodic_task()"/>
+        <call fun="guidance_h_set_pos(nav.carrot.y, nav.carrot.x)"/>
         <call fun="oneloop_from_nav(autopilot_in_flight())"/>
       </control>
       <exception cond="RCLost()" deroute="FAILSAFE"/>

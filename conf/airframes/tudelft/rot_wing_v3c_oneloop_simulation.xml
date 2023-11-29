@@ -179,7 +179,8 @@
         <define VALUE="TRUE" NAME="NO_RC_THRUST_LIMIT"/>
         <define VALUE="2.0" NAME="NAV_CLIMB_VSPEED"/>
         <define VALUE="-1.0" NAME="NAV_DESCEND_VSPEED"/>
-        <define name="NAV_CARROT_DIST" value="200"/>
+        <define name="NAV_CARROT_DIST"   value="15"/>
+        <define name="CLOSE_TO_WAYPOINT" value="15"/>
         <define name="THRESHOLD_GROUND_DETECT" value="40"/>
         <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST" value="500"/>
         <define VALUE="50.0" NAME="ARRIVED_AT_WAYPOINT"/>
