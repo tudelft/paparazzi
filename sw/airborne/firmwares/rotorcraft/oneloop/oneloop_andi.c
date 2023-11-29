@@ -453,6 +453,7 @@ static struct FirstOrderLowPass model_pred_a_filt[3];
 static Butterworth2LowPass att_dot_meas_lowpass_filters[3];
 static Butterworth2LowPass model_pred_filt[ANDI_OUTPUTS];
 static Butterworth2LowPass accely_filt;
+static Butterworth2LowPass airspeed_filt;
 
 
 /** @brief Function to make sure that inputs are positive non zero vaues*/
@@ -1021,6 +1022,8 @@ void init_filter(void)
     }
   }
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
+  init_butterworth_2_low_pass(&airspeed_filt, tau, sample_time, 0.0);
+  
 }
 
 
@@ -1051,6 +1054,8 @@ void oneloop_andi_propagate_filters(void) {
   // Propagate filter for sideslip correction
   float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
   update_butterworth_2_low_pass(&accely_filt, accely);
+  float airspeed_meas = stateGetAirspeed_f();
+  update_butterworth_2_low_pass(&airspeed_filt, airspeed_meas);
 }
 
 /** @brief Init function of Oneloop ANDI controller  */
@@ -1552,7 +1557,7 @@ float oneloop_andi_sideslip(void)
   // feedforward estimate angular rotation omega = g*tan(phi)/v
   float omega;
   const float max_phi = RadOfDeg(ONELOOP_ANDI_MAX_BANK);
-  float airspeed_turn = stateGetAirspeed_f();
+  float airspeed_turn = airspeed_filt.o[0];
   Bound(airspeed_turn, 10.0f, 30.0f);
   // Use the current roll angle to determine the corresponding heading rate of change.
   float coordinated_turn_roll = eulers_zxy.phi;
@@ -1564,9 +1569,7 @@ float oneloop_andi_sideslip(void)
   omega = g / airspeed_turn * tanf(coordinated_turn_roll);
   #ifdef FWD_SIDESLIP_GAIN
   // Add sideslip correction
-  printf("accely_filt.o[0]: %f\n",accely_filt.o[0]);
   omega -= accely_filt.o[0]*fwd_sideslip_gain;
   #endif
-  printf("omega: %f\n",omega);
   return omega;
 }
