@@ -23,6 +23,7 @@
       <define  name="DLModeGuided()" value="(autopilot_mode_auto2 == AP_MODE_GUIDED)"/>
       <define  name="DLModeModule()" value="(MODE_AUTO1 == AP_MODE_MODULE)"/>
       <define  name="DLModeAZH()"    value="(MODE_AUTO1 == AP_MODE_ATTITUDE_Z_HOLD)"/>
+      <define  name="ONELOOP_CONTROLLER" value="TRUE"/>
     </includes>
 
     <settings>
