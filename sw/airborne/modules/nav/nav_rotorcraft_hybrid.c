@@ -74,11 +74,11 @@ float nav_hybrid_line_gain = 1.0f;
 #ifdef NAV_HYBRID_POS_GAIN 
 float nav_hybrid_pos_gain = NAV_HYBRID_POS_GAIN; 
 #else
-float nav_hybrid_pos_gain = 1.0; 
+float nav_hybrid_pos_gain = 1.0f; 
 #endif
 
 #ifndef GUIDANCE_INDI_HYBRID
-bool force_forward = 0;
+bool force_forward = 0.0f;
 #endif
 
 /** Implement basic nav function for the hybrid case
