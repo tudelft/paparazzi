@@ -109,6 +109,8 @@ float du_pref_stab_indi[INDI_NUM_ACT];
 float indi_v[INDI_OUTPUTS];
 float *Bwls[INDI_OUTPUTS];
 int num_iter = 0;
+// Global variable for the counter
+uint32_t indi_counter = 0;
 static void lms_estimation(void);
 static void get_actuator_state(void);
 static void calc_g1_element(float dx_error, int8_t i, int8_t j, float mu_extra);
@@ -321,7 +323,7 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
   struct Int32Vect3 *body_accel_i = stateGetAccelBody_i();
   struct FloatVect3 body_accel_f_telem;
   ACCELS_FLOAT_OF_BFP(body_accel_f_telem, *body_accel_i);
-
+  
   pprz_msg_send_STAB_ATTITUDE_INDI(trans, dev, AC_ID,
                                    &body_accel_f_telem.x,    // input lin.acc
                                    &body_accel_f_telem.y,
@@ -341,8 +343,8 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
                                    &actuator_state_filt_vect[0],
                                    &actuator_state_filt_vect[1],
                                    &actuator_state_filt_vect[4],
-                                   &actuator_state_filt_vect[5],
-                                   INDI_NUM_ACT, indi_du);    // out
+                                   &indi_counter,
+                                   INDI_NUM_ACT, indi_u);    // out
 }
 #endif
 
@@ -540,6 +542,7 @@ void stabilization_indi_set_stab_sp(struct StabilizationSetpoint *sp)
  *
  * Function that calculates the INDI commands
  */
+
 void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 {
   float airspeed = stateGetAirspeed_f();
@@ -685,13 +688,9 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   indi_Wu[4] = (fun_elevon > 1.0f) ? 1.0f: ((fun_elevon < 0.001f) ? 0.001f : fun_elevon);
   indi_Wu[5] = indi_Wu[4];
 
-  // indi_Wu[4] = 1000.0f;
-  // indi_Wu[5] = 1000.0f;
 
-  char name[1];
-
-  RunOnceEvery(200, DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 6, du_min_stab_indi));
-  RunOnceEvery(200, DOWNLINK_SEND_DEBUG_VECT(DefaultChannel, DefaultDevice, 1, name, 6, du_max_stab_indi));
+  RunOnceEvery(200, DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 1,indi_counter));
+  //RunOnceEvery(200, DOWNLINK_SEND_DEBUG_VECT(DefaultChannel, DefaultDevice, 1, name, 6, du_max_stab_indi));
 
   // WLS Control Allocator
   num_iter =
@@ -748,6 +747,9 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   stabilization_cmd[COMMAND_ROLL] = 42;
   stabilization_cmd[COMMAND_PITCH] = 42;
   stabilization_cmd[COMMAND_YAW] = 42;
+
+  //counter indi run to check 500hz
+  indi_counter++;
 }
 
 /**

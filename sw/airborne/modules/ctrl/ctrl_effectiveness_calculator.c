@@ -19,7 +19,7 @@ float y_dist = CTRL_EFF_CALC_Y_DIST;
 float z_dist = CTRL_EFF_CALC_Z_DIST;
 float mapping = CTRL_EFF_CALC_MAPPING;
 
-float min_thrust = 1300;				// [pprz] this is mapped to PWM range
+float min_thrust = 3000;				// [pprz] this is mapped to PWM range
 #ifdef CTRL_EFF_CALC_THRUST_LOWER_LIM
 float thrust_lower_lim = CTRL_EFF_CALC_THRUST_LOWER_LIM;
 #else
@@ -206,7 +206,7 @@ float pprz_to_rad_left(float x)
 	//			  y = -0.0901x + 135.15 (right)	[deg]
 //	float gradient = 0.000099157;	// [rad]
 //	return gradient * x;
-	float m = 0.0001;
+	float m = 0.0001148;
 	float c = 0.0;
 	return m * x + c;
 }
@@ -223,7 +223,7 @@ float pprz_to_rad_right(float x)
 	//			  y = -0.0901x + 135.15 (right)	[deg]
 //	float gradient = 0.000099157;	// [rad]
 //	return gradient * x;
-	float m = 0.0001;
+	float m = 0.0001148;
 	float c = 0.0;
 	return m * x + c;
 }
