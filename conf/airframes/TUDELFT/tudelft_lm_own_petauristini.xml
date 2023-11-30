@@ -33,26 +33,19 @@ NOTES:
   <firmware name="rotorcraft">
     <target name="ap" board="px4fmu_4.0_chibios">
         <!--<configure name="RTOS_DEBUG" value="FALSE"/>-->
-      <configure name="CPU_LED" value="1"/> <!-- Change to whatever you like -->
+      <configure name="CPU_LED" value="1"/> 
       <!--<define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>-->
-      <!--<define name="GPS_UBX_MAX_PAYLOAD" value="2048"/>--><!-- Temp enlarge buffer for debugging velocity issue of uBlox M9 types FW v4.03-->
-      <!-- Towards better kind of aligner initial conditions -->
-      <!--<define name="AHRS_ALIGNER_SAMPLES_NB" value="600"/>-->
-      <!--<define name="LOW_NOISE_THRESHOLD" value="3500"/>
-      <define name="LOW_NOISE_TIME" value="10"/>-->
 
-      <!-- Best to use numbers from this list 1, 2, 4, 5, 10, 20, 25, 50, 100, 125, 250, 500 -->
-      <!-- Note that PERIODIC_FREQUENCY should be least equal or greater than AHRS_PROPAGATE_FREQUENCY -->
-
+      <!-- FREQ all in HZ-->
       <configure name="PERIODIC_FREQUENCY"  value="500"/>
-      <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/><!--  unit="Hz" -->
-      <configure name="AHRS_CORRECT_FREQUENCY" value="500"/> <!--  unit="Hz" -->
-      <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/><!-- TODO: Determine maxed value, unit="Hz" -->
+      <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
+      <configure name="AHRS_CORRECT_FREQUENCY" value="500"/>
+      <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/>
 
-      <configure name="NAVIGATION_FREQUENCY" value="20"/> <!--  unit="Hz" -->
-      <configure name="CONTROL_FREQUENCY" value="100"/> <!--  unit="Hz" -->
-      <configure name="TELEMETRY_FREQUENCY" value="50"/> <!--  unit="Hz" -->
-      <configure name="MODULES_FREQUENCY" value="500"/> <!--  unit="Hz" -->
+      <configure name="NAVIGATION_FREQUENCY" value="20"/>
+      <configure name="CONTROL_FREQUENCY" value="100"/>
+      <configure name="TELEMETRY_FREQUENCY" value="50"/>
+      <configure name="MODULES_FREQUENCY" value="500"/>
 
       <!--Switch advanced INDI scheduling functions on or off-->
       <define name="INDI_FUNCTIONS_RC_CHANNEL" value="6"/>
@@ -63,12 +56,12 @@ NOTES:
         <define name="IMU_MPU9250_READ_MAG" value="FALSE"/>
 
         <!-- To be able to set AP IMU orientaion when AP is mounted rotated, body to IMU should also work -->
-        <define name="IMU_MPU9250_CHAN_X" value="0"/>
-        <define name="IMU_MPU9250_CHAN_Y" value="2"/>
-        <define name="IMU_MPU9250_CHAN_Z" value="1"/>
+        <!-- <define name="IMU_MPU9250_CHAN_X" value="0"/>
+        <define name="IMU_MPU9250_CHAN_Y" value="1"/>
+        <define name="IMU_MPU9250_CHAN_Z" value="2"/>
         <define name="IMU_MPU9250_X_SIGN" value="-1"/>
         <define name="IMU_MPU9250_Y_SIGN" value="+1"/>
-        <define name="IMU_MPU9250_Z_SIGN" value="+1"/>
+        <define name="IMU_MPU9250_Z_SIGN" value="+1"/> -->
       </module>
 
       <module name="baro_ms5611_spi">
@@ -88,16 +81,7 @@ NOTES:
         <define name="SERVO_HZ" value="400"/>
       </module>
 
-      <module name="airspeed_ets">
-        <configure name="AIRSPEED_ETS_I2C_DEV" value="i2c1"/>       
-        <define name="AIRSPEED_ETS_START_DELAY" value="0.7"/>
-        <define name="AIRSPEED_ETS_SCALE" value="1.76"/><!-- 1.8 default -->
-        <!-- <define name="AIRSPEED_ETS_OFFSET" value="2"/> -->
-        <define name="AIRSPEED_ETS_3RD_PARTY_MODE" value="FALSE"/><!-- The default out of the box is ETS mode-->
-        <define name="AIRSPEED_ETS_USE_FILTER" value="TRUE"/> 
-        <define name="AIRSPEED_ETS_LOWPASS_TAU" value=".20"/>
-        <define name="AIRSPEED_ETS_SYNC_SEND"/> <!-- TODO Disable after sull validation ~10 test flights -->
-      </module>
+<!-- TODO: add module airspeed SDP3x -->
 
       <module name="gps" type="ublox">
         <configure name="GPS_BAUD" value="B460800"/>
@@ -116,18 +100,19 @@ NOTES:
       </module>
 
       <!-- USB For easier on desk testing usb_serial, else UART3 -->
+      <!-- UART3 is Telem2 on pixracer -->
       <module name="telemetry" type="transparent">
-        <!--<configure name="MODEM_PORT" value="usb_serial"/>--><!-- USB connector on pixracer -->
-        <configure name="MODEM_PORT" value="UART3"/><!-- Telem2 on pixracer -->
-        <configure name="MODEM_BAUD" value="B57600"/>
+        <configure name="MODEM_PORT" value="usb_serial"/>
+        <!-- <configure name="MODEM_PORT" value="UART3"/>
+        <configure name="MODEM_BAUD" value="B57600"/> -->
       </module>
 
-      <module name="tlsf"/>
+      <!-- <module name="tlsf"/>
       <module name="pprzlog">
         <define name="SDLOG_START_DELAY" value="10"/>
       </module>
       <module name="logger" type="sd_chibios"/>
-      <module name="flight_recorder"/>
+      <module name="flight_recorder"/> -->
 
       <!-- Below example of what to add to your telemetry_something.xml file
       <process name="FlightRecorder">
@@ -151,8 +136,7 @@ NOTES:
       the servo arm and mechanically be able to set the neutrals and also be eble
       to test e.g.end positions on your servo without a servo tester. -->
 
-      <!--<module name="servo_tester"/>-->
-      
+      <!--<module name="servo_tester"/>--> 
       <!--<module name="led_safety_status"/>--><!-- TODO: Not working atm due to incomplete board file -->
 
     </target>
@@ -192,12 +176,12 @@ NOTES:
     <!--<module name="ins"/>-->
     <module name="ins" type="float_invariant">
       <define name="INS_PROPAGATE_FREQUENCY" value="500"/>
-      <define name="INS_FINV_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>
+      <!-- <define name="INS_FINV_MAG_ID" value="MAG_WHATEVERYOUHAVE_SENDER_ID"/> -->
     </module>
 
-    <module name="air_data">
+    <!-- <module name="air_data">
       <define name="USE_AIRSPEED_AIR_DATA" value="FALSE"/>
-    </module>
+    </module> -->
 
     <module name="eff_scheduling_cyfoam">
       <define name="SQUARED_ROLL_EFF" value="0.0018"/>
@@ -212,7 +196,9 @@ NOTES:
 
   </firmware>
 
-  <!-- Note: A servos the no e.g. no=4 is the Physical Pin on Flightcontroller or external actuator board the servo is connected to-->
+  <!-- Note: A servos the no e.g. no=4 is the Physical Pin on Flightcontroller the servo is connected to
+    for external serial servos it is the sero ID programmed into the servo-->
+  
   <!--
   As actuators we have:
     2x ElectronicSpeedController for hover upright and forward and yaw in forward is roll in hover (MOTOR_LEFT, MOTOR_RIGHT)
@@ -222,23 +208,16 @@ NOTES:
     1x Tail (ELEVATOR)
   -->
 
-  <!-- PWM from FC direct -->
-  <servos driver="Pwm">
-    <servo name="MOTOR_LEFT" no="1" min="1095" neutral="1100" max="1900"/>
-    <servo name="MOTOR_RIGHT" no="2" min="1095" neutral="1100" max="1900"/>
+  <servos>
+    <servo name="LM" no="1" min="1095" neutral="1100" max="1900"/>
+    <servo name="RM" no="2" min="1095" neutral="1100" max="1900"/>
+    <servo name="ELEVON_LEFT"  no="3" min="1000" neutral="1500" max="2000"/>
+    <servo name="ELEVON_RIGHT" no="4" min="1000" neutral="1500" max="2000"/>
+    <!-- <servo name="SPOILERON"  no="3" min="0" neutral="180" max="360"/> 
+    <servo name="ARM_LEFT"  no="4" min="1000" neutral="1500" max="2000"/>   
+    <servo name="ARM_RIGHT"  no="5" min="1000" neutral="1500" max="2000"/>  
+    <servo name="ELEVATOR" no="8" min="1000" neutral="1500" max="2000"/> -->
   </servos>
-
-  <!-- for a RushRash compatible board-->
-
-  <!-- <servos driver="rushrash_uart">-->
-      <!-- <configure name="ACTUATORS_RUSHRASH_UART_DEV" default="uart1"/> -->
-  <!--  <servo name="SPOILERON"  no="1" min="0" neutral="180" max="360"/> 
-    <servo name="ARM_LEFT"  no="2" min="1000" neutral="1500" max="2000"/>   
-    <servo name="ARM_RIGHT"  no="3" min="1000" neutral="1500" max="2000"/>  
-    <servo name="ELEVON_LEFT"  no="4" min="1000" neutral="1500" max="2000"/>
-    <servo name="ELEVON_RIGHT" no="5" min="1000" neutral="1500" max="2000"/>
-    <servo name="ELEVATOR" no="6" min="1000" neutral="1500" max="2000"/>
-  </servos> -->
 
   <!--<servo name="SERVO_TEST" no="3" min="1000" neutral="1500" max="2000"/>-->
 
@@ -265,7 +244,7 @@ NOTES:
     <define name="LANDINGGEAR_RETRACT" value="MAX_PPRZ"/>
     <define name="FLAP_FULL" value="-MAX_PPRZ"/>
     <define name="FLAP_HALF" value="-MAX_PPRZ/2"/>
-    <define name="FLAP_NONE" value="0"/><!-- TODO hardware mod use full servo range -->
+    <define name="FLAP_NONE" value="0"/>
     <define name="BEACON_ROTATE" value="MAX_PPRZ"/>
     <define name="BEACON_FLASH" value="0"/>
     <define name="BEACON_OFF" value="-MAX_PPRZ"/>
@@ -290,12 +269,10 @@ NOTES:
   </commands>
 
   <command_laws>
-    <set servo="MOTOR_LEFT" value="-MAX_PPRZ"/>
-    <set servo="MOTOR RIGHT" value="-MAX_PPRZ"/>
-    <!-- <set servo="MOTOR_LEFT" value="autopilot.motors_on ? actuators_pprz[2] : -MAX_PPRZ"/>
-    <set servo="MOTOR RIGHT" value="autopilot.motors_on ? actuators_pprz[3] : -MAX_PPRZ"/> -->
-    <!-- <set servo="ELEVON_LEFT"     value="autopilot.motors_on ? actuators_pprz[0] : 0"/>
-    <set servo="ELEVON_RIGHT"    value="autopilot.motors_on ? actuators_pprz[1] : 0"/> -->
+    <set servo="LM" value="autopilot.motors_on ? actuators_pprz[1] : -MAX_PPRZ"/>
+    <set servo="RM" value="autopilot.motors_on ? actuators_pprz[2] : -MAX_PPRZ"/>
+    <set servo="ELEVON_LEFT" value="actuators_pprz[3]"/>
+    <set servo="ELEVON_RIGHT" value="actuators_pprz[4]"/>
   </command_laws>
 
   <section name="IMU" prefix="IMU_">
@@ -311,14 +288,15 @@ NOTES:
     <define name="BODY_TO_IMU_PHI"   value="180." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="90." unit="deg"/>
     <define name="BODY_TO_IMU_PSI"   value="180." unit="deg"/>
+
   </section>
 
   <section name="CTRL_EFF_SCHEDULING" prefix="FWD_">
     <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
-    <define name="G1_ROLL"   value="{    0,     0, -13.0,  13.0}"/>
-    <define name="G1_PITCH"  value="{-12.0,  12.0,     0,     0}"/>
-    <define name="G1_YAW"    value="{-20.0, -20.0,   0.0,   0.0}"/>
-    <define name="G1_THRUST" value="{    0,     0,  -0.9,  -0.9}"/>
+    <define name="G1_ROLL"   value="{-13.0,  13.0,   0.0,   0.0}"/>
+    <define name="G1_PITCH"  value="{  0.0,   0.0, -12.0,  12.0}"/>
+    <define name="G1_YAW"    value="{  0.0,   0.0, -20.0, -20.0}"/>
+    <define name="G1_THRUST" value="{ -0.9,  -0.9,   0.0,   0.0}"/>
   </section>
 
   <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
@@ -333,10 +311,10 @@ NOTES:
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
-    <define name="G1_ROLL"   value="{   0,    0}"/>
-    <define name="G1_PITCH"  value="{-2.1,  2.1}"/>
-    <define name="G1_YAW"    value="{-2.0, -2.0}"/>
-    <define name="G1_THRUST" value="{   0,    0}"/>
+    <define name="G1_ROLL"   value="{ -13.3,  13.3,   0.0,  0.0}"/>
+    <define name="G1_PITCH"  value="{   0.0,   0.0,  -2.1,  2.1}"/>
+    <define name="G1_YAW"    value="{   0.0,   0.0,  -2.0, -2.0}"/>
+    <define name="G1_THRUST" value="{  -1.1,  -1.1,   0.0,  0.0}"/>
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{0, 0}"/>
 
@@ -355,12 +333,12 @@ NOTES:
     <define name="FILT_CUTOFF" value="5.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN" value="{0.045, 0.045}"/>
-    <define name="ACT_RATE_LIMIT" value="{9600, 9600}"/>
-    <define name="ACT_IS_SERVO" value="{0, 0}"/>
+    <define name="ACT_DYN" value="{0.045, 0.045, 0.1, 0.1}"/>
+    <define name="ACT_RATE_LIMIT" value="{9600, 9600, 170, 170}"/>
+    <define name="ACT_IS_SERVO" value="{0, 0, 1, 1}"/>
 
     <!-- Adaptive Learning Rate -->
-    <define name="USE_ADAPTIVE" value="FALSE"/>
+    <define name="USE_ADAPTIVE" value="TRUE"/>
     <define name="ADAPTIVE_MU" value="0.0004"/>
   </section>
 
@@ -403,12 +381,12 @@ NOTES:
     <!-- <define name="MilliAmpereOfAdc(adc)" value="(float)(adc-30) * 9.89"/>
     <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 10.38782f * adc)"/> -->
     <define name="MILLIAMP_AT_IDLE_THROTTLE" value="300" unit="mA"/><!-- We substract ESC selfusage+AP+telemetry max-->
-    <define name="MILLIAMP_AT_FULL_THROTTLE" value="60000" unit="mA"/><!--at 12.0VS-->
+    <define name="MILLIAMP_AT_FULL_THROTTLE" value="60000" unit="mA"/><!--at 12.0VS 2x ESC motors full-->
 
     <define name="MAX_BAT_LEVEL" value="16.4" unit="V"/> <!-- 4S LiPo 4x4.2 = 16.4 -->
-    <!--<define name="BAT_NB_CELLS" value="3"/> -->
+    <!--<define name="BAT_NB_CELLS" value="4"/> -->
     <define name="LOW_BAT_LEVEL" value="14.4" unit="V"/>
-    <define name="CRITIC_BAT_LEVEL" value="13.8" unit="V"/>
+    <define name="CRITIC_BAT_LEVEL" value="13.6" unit="V"/>
     <define name="CATASTROPHIC_BAT_LEVEL" value="12.8" unit="V"/>
     <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.05"/>
 
