@@ -1,0 +1,30 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="serial_act_t4" dir="actuators" task="actuators">
+  <doc>
+    <description>
+      Actuators Driver using RushRash protocol to a RushRash compatible servo board
+    </description>
+    <configure name="ACTUATORS_RUSHRASH_UART_DEV" value="UARTX" description="UART port (default uart2)"/>
+  </doc>
+  <dep>
+    <depends>uart,actuators</depends>
+    <provides>actuators</provides>
+  </dep>
+  <header>
+    <file name="serial_act_t4.h"/>
+  </header>
+  <makefile target="!sim">
+    <configure name="ACTUATORS_RUSHRASH_UART_DEV" default="uart2" case="upper|lower"/>
+    <define name="ACTUATORS_RUSHRASH_UART_DEV" value="$(ACTUATORS_RUSHRASH_UART_DEV_LOWER)"/>
+    <define name="USE_$(ACTUATORS_RUSHRASH_UART_DEV_UPPER)"/>
+    <define name="$(ACTUATORS_RUSHRASH_UART_DEV_UPPER)_BAUD" value="921600"/>
+    <define name="USE_$(ACTUATORS_RUSHRASH_UART_DEV_UPPER)_RX" value="FALSE"/>
+    <file name="serial_act_t4.c"/>
+    <test>
+        <define name="USE_UART2"/>
+        <define name="PERIODIC_FREQUENCY" value="500"/>
+        <define name="ACTUATORS_RUSHRASH_UART_DEV" value="uart2"/>
+    </test>
+  </makefile>
+</module>
