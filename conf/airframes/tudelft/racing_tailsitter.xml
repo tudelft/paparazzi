@@ -9,7 +9,7 @@
     <!-- ****************** Autopilot Target ******************* -->
     <target name="ap" board="px4fmu_4.0_chibios">
       <define name="FLASH_MODE" value="PX4_BOOTLOADER"/>
-      <configure name="PERIODIC_FREQUENCY" value="500"/>
+      <configure name="PERIODIC_FREQUENCY" value="200"/>
 
       <!-- <module name="radio_control" type="datalink"/>-->
       <module name="radio_control" type="sbus">
@@ -95,6 +95,9 @@
       <configure name="IMU_MPU9250_SPI_DEV" value="spi1"/>
       <configure name="IMU_MPU9250_SPI_SLAVE_IDX" value="SPI_SLAVE2"/>
       <define name="IMU_MPU9250_READ_MAG" value="TRUE"/>
+      <define name="IMU_MPU9250_GYRO_LOWPASS_FILTER" value="MPU9250_DLPF_GYRO_92HZ"/> 
+      <define name="IMU_MPU9250_ACCEL_LOWPASS_FILTER" value="MPU9250_DLPF_ACCEL_92HZ"/> 
+      <define name="IMU_MPU9250_SMPLRT_DIV" value="4"/> 
     </module>
 
     <!--<module name="servo_tester"/>-->
@@ -271,19 +274,19 @@
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
     <!-- Actuators					 tilt_l tilt_r  m_r  m_l						-->
-    <define name="G1_ROLL" value="{0.0, 0.0, -15.2, 15.2, 0.0, 0.0}"/>
-    <define name="G1_PITCH" value="{4.3, 4.3, 0.0, 0.0, -8.0, 8.0}"/>
-    <define name="G1_YAW" value="{-2.631, 2.631, 0.0, 0.0, -2.0, -2.0}"/>
-    <define name="G1_THRUST" value="{0.0, 0.0, -1.695, -1.695, 0.0, 0.0}"/>
+    <define name="G1_ROLL" value="{0.0, 0.0, -12.7, 12.7, 0.0, 0.0}"/>
+    <define name="G1_PITCH" value="{7.3, 7.3, 0.0, 0.0, -4.0, 4.0}"/>
+    <define name="G1_YAW" value="{-2.9, 2.9, 0.0, 0.0, -2.0, -2.0}"/>
+    <define name="G1_THRUST" value="{0.0, 0.0, -0.8, -0.8, 0.0, 0.0}"/>
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{0, 0, 0, 0, 0, 0}"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="80"/> <!-- 107 50.0 25.0 20-->
-    <define name="REF_ERR_Q" value="40"/> <!-- was 80-->
+    <define name="REF_ERR_Q" value="90"/> <!-- was 80-->
     <define name="REF_ERR_R" value="80"/> <!-- was 100 200 20.0 65.0 20, increase from 60-->
     <define name="REF_RATE_P" value="9.0"/> <!--was 12 14.0 9.0 10-->
-    <define name="REF_RATE_Q" value="6.0"/> <!-- was 12 15.0 14.0 10-->
+    <define name="REF_RATE_Q" value="9.0"/> <!-- was 12 15.0 14.0 10-->
     <define name="REF_RATE_R" value="9.0"/> <!-- was 14 15.0 10.0 10, increase from 12.5--> 
 
     <!--Maxium yaw rate, to avoid instability-->
@@ -293,13 +296,13 @@
 
     <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
     <define name="FILT_CUTOFF" value="1.0"/>
-    <define name="FILT_CUTOFF_P" value="10.0"/>
-    <define name="FILT_CUTOFF_Q" value="1.0"/>
-    <define name="FILT_CUTOFF_R" value="10.0"/>
+    <define name="FILT_CUTOFF_P" value="20.0"/>
+    <define name="FILT_CUTOFF_Q" value="20.0"/>
+    <define name="FILT_CUTOFF_R" value="20.0"/>
 
     <!-- first order actuator dynamics -->
-     <define name="ACT_DYN" value="{0.0982, 0.0982, 0.045, 0.045, 0.0982, 0.0982}"/> <!-- [0.05 0.05 0.045 0.045] before -->
-    <define name="ACT_RATE_LIMIT" value="{100, 100, 9600, 9600, 100, 100}"/>
+     <define name="ACT_DYN" value="{0.227, 0.227, 0.11, 0.11, 0.227, 0.227}"/> <!-- [0.05 0.05 0.045 0.045] before -->
+    <define name="ACT_RATE_LIMIT" value="{250, 250, 9600, 9600, 250, 250}"/>
     <define name="ACT_IS_SERVO" value="{1, 1, 0, 0, 1, 1}"/>
 
     <!-- Adaptive Learning Rate -->
@@ -312,7 +315,7 @@
     <define name="GRADIENT" value="0.0001"/>				<!-- gradient in linear relationship between pprz and angle (in rad), must be same as in 'ctrl_effectiveness_calc.c' -->
 
     <!-- Minimum throttle that can be assign to motors -->
-	  <define name="MIN_THROTTLE" value="2000"/> <!-- 2500 before -->
+	  <define name="MIN_THROTTLE" value="2500"/> <!-- 2500 before -->
 	  <define name="MIN_THROTTLE_FWD" value="1500"/>
 
 	  <!-- Maximum servo increment in PPRZ units -->
@@ -332,11 +335,11 @@
     <define name="THRUST_LOWER_LIM" value="1200"/>
   	
         <!-- Drone specific metrics -->
-    	<define name="MASS" value="0.3756"/>		<!--[kg]-->
-    	<define name="I_XX" value="0.00526"/>	<!--[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
+    	<define name="MASS" value="0.4561"/>		<!--[kg]-->
+    	<define name="I_XX" value="0.00638"/>	<!--[kg m2] 0.00526 -->
     	<!--<define name="I_YY" value="0.04914925"/>-->	<!--[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
-    	<define name="I_YY" value="0.0011"/>
-    	<define name="I_ZZ" value="0.00341"/>	<!--[kg m2] The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
+    	<define name="I_YY" value="0.0027"/><!--0.0015 0.0011-->
+    	<define name="I_ZZ" value="0.0038"/>	<!--[kg m2] 0.00403 0.00341 -->
  	    <!--<define name="I_XX" value="0.017897"/>	[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
     	<!--<define name="I_YY" value="0.003390"/>	[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
     	<!--<define name="I_ZZ" value="0.020337"/>	[kg m2] The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
@@ -346,7 +349,7 @@
     	<define name="K1" value="0.00000005"/>
     	<define name="K2" value="0.0003"/>
     	<define name="K3" value="0.1486"/>
-    	
+    	<!--[kg]-->
       <define name="CDE" value="0.02"/>
 
       <define name="CDA" value="0.02"/>
@@ -356,7 +359,7 @@
     	<define name="Y_DIST" value="0.16"/>		<!--[m]-->
     	<define name="Z_DIST" value="0.075"/>	<!--[m]-->
 
-      <define name="MAPPING" value="0.00011"/>	<!--This the is mapping of PPRZ units to rads for the servos -->
+      <define name="MAPPING" value="0.0001148"/>	<!--This the is mapping of PPRZ units to rads for the servos -->
   </section>
   <!-- Gains for vertical navigation -->
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
