@@ -95,6 +95,7 @@ static uint8_t serial_act_t4_msg_buf_in[sizeof(struct serial_act_t4_in)*2]__attr
         int16_t servo_5_temp_telemetry = myserial_act_t4_in.servo_5_temp_int;
         int16_t servo_6_temp_telemetry = myserial_act_t4_in.servo_6_temp_int;
         
+
         float rolling_msg_in_telemetry = myserial_act_t4_in.rolling_msg_in;
         uint8_t rolling_msg_in_id_telemetry = myserial_act_t4_in.rolling_msg_in_id; 
 
@@ -110,6 +111,7 @@ static uint8_t serial_act_t4_msg_buf_in[sizeof(struct serial_act_t4_in)*2]__attr
                             
                             );
 
+
     }
 
     static void serial_act_t4_uplink(struct transport_tx *trans, struct link_device *dev)
@@ -124,6 +126,7 @@ static uint8_t serial_act_t4_msg_buf_in[sizeof(struct serial_act_t4_in)*2]__attr
     int16_t servo_5_angle_cmd_int_telemetry = myserial_act_t4_out.servo_5_cmd_int; 
     int16_t servo_6_angle_cmd_int_telemetry = myserial_act_t4_out.servo_6_cmd_int; 
 
+
     float rolling_msg_out_telemetry = myserial_act_t4_out.rolling_msg_out;
     uint8_t rolling_msg_out_id_telemetry = myserial_act_t4_out.rolling_msg_out_id;
 
@@ -131,6 +134,7 @@ static uint8_t serial_act_t4_msg_buf_in[sizeof(struct serial_act_t4_in)*2]__attr
                     &servo_arm_int_telemetry,
                     &servo_1_angle_cmd_int_telemetry, &servo_2_angle_cmd_int_telemetry, &servo_3_angle_cmd_int_telemetry, 
                     &servo_4_angle_cmd_int_telemetry, &servo_5_angle_cmd_int_telemetry, &servo_6_angle_cmd_int_telemetry, 
+
                     &rolling_msg_out_telemetry, &rolling_msg_out_id_telemetry);
 
     }
@@ -144,6 +148,7 @@ static void data_serial_act_t4_out(uint8_t sender_id __attribute__((unused)), st
 
     //Increase the counter to track the sending messages:
     myserial_act_t4_out.rolling_msg_out = 0.0;
+
     myserial_act_t4_out.rolling_msg_out_id = serial_act_t4_out_msg_id;
     serial_act_t4_out_msg_id++;
     if(serial_act_t4_out_msg_id == 255){
@@ -194,7 +199,6 @@ void serial_act_t4_parse_msg_in(void)
 /* Event checking if serial packet are available on the bus */
 void serial_act_t4_event()
 {
-
     if(fabs(get_sys_time_float() - serial_act_t4_last_ts) > 5){ //Reset received packets to zero every 5 second to update the statistics
         serial_act_t4_received_packets = 0;
         serial_act_t4_last_ts = get_sys_time_float();
