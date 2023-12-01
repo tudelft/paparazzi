@@ -77,9 +77,15 @@ NOTES:
       </module-->
 
       <!-- TODO make autoload if servos device is Pwm -->
-      <module name="actuators"  type="pwm">
+      <module name="actuators" type="pwm"> <!-- todo, check if pwm is right-->
         <define name="SERVO_HZ" value="400"/>
       </module>
+
+      <module name="serial_act_t4">
+        <configure name="SERIAL_ACT_T4_PORT" value="UART2"/>
+        <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>
+      </module>
+
 
 <!-- TODO: add module airspeed SDP3x -->
 
@@ -102,9 +108,9 @@ NOTES:
       <!-- USB For easier on desk testing usb_serial, else UART3 -->
       <!-- UART3 is Telem2 on pixracer -->
       <module name="telemetry" type="transparent">
-        <configure name="MODEM_PORT" value="usb_serial"/>
-        <!-- <configure name="MODEM_PORT" value="UART3"/>
-        <configure name="MODEM_BAUD" value="B57600"/> -->
+        <!-- <configure name="MODEM_PORT" value="usb_serial"/> -->
+        <configure name="MODEM_PORT" value="UART3"/>
+        <configure name="MODEM_BAUD" value="B57600"/>
       </module>
 
       <!-- <module name="tlsf"/>
@@ -208,17 +214,19 @@ NOTES:
     1x Tail (ELEVATOR)
   -->
 
-  <servos>
-    <servo name="LM" no="1" min="1095" neutral="1100" max="1900"/>
-    <servo name="RM" no="2" min="1095" neutral="1100" max="1900"/>
-    <servo name="ELEVON_LEFT"  no="3" min="1000" neutral="1500" max="2000"/>
-    <servo name="ELEVON_RIGHT" no="4" min="1000" neutral="1500" max="2000"/>
-    <!-- <servo name="SPOILERON"  no="3" min="0" neutral="180" max="360"/> 
-    <servo name="ARM_LEFT"  no="4" min="1000" neutral="1500" max="2000"/>   
-    <servo name="ARM_RIGHT"  no="5" min="1000" neutral="1500" max="2000"/>  
-    <servo name="ELEVATOR" no="8" min="1000" neutral="1500" max="2000"/> -->
+  <servos driver="Pwm">
+    <servo name="LM" no="0" min="1095" neutral="1100" max="1900"/>
+    <servo name="RM" no="1" min="1095" neutral="1100" max="1900"/>
   </servos>
 
+  <servos>
+    <servo name="ARM_LEFT"  no="2" min="1000" neutral="1500" max="2000"/>   
+    <servo name="SPOILERON"  no="3" min="1000" neutral="1500" max="2000"/> 
+    <servo name="ARM_RIGHT"  no="4" min="1000" neutral="1500" max="2000"/>  
+    <servo name="ELEVON_RIGHT" no="5" min="1000" neutral="1500" max="2000"/>
+    <servo name="ELEVATOR" no="6" min="1000" neutral="1500" max="2000"/> 
+    <servo name="ELEVON_LEFT"  no="7" min="1000" neutral="1500" max="2000"/>
+  </servos>
   <!--<servo name="SERVO_TEST" no="3" min="1000" neutral="1500" max="2000"/>-->
 
   <!-- <servos driver="rushrash_i2c">
@@ -269,10 +277,21 @@ NOTES:
   </commands>
 
   <command_laws>
-    <set servo="LM" value="autopilot.motors_on ? actuators_pprz[1] : -MAX_PPRZ"/>
-    <set servo="RM" value="autopilot.motors_on ? actuators_pprz[2] : -MAX_PPRZ"/>
-    <set servo="ELEVON_LEFT" value="actuators_pprz[3]"/>
-    <set servo="ELEVON_RIGHT" value="actuators_pprz[4]"/>
+
+    <!-- <set servo="LM" value="autopilot.motors_on ? actuators_pprz[0] : -MAX_PPRZ"/> -->
+    <!-- <set servo="RM" value="autopilot.motors_on ? actuators_pprz[1] : -MAX_PPRZ"/> -->
+    <set servo="RM" value="@THRUST"/>
+    <set servo="LM" value="@THRUST"/>
+    <!-- <set servo="ARM_LEFT" value="actuators_pprz[3]"/> -->
+    <!-- <set servo="ELEVON_RIGHT" value="actuators_pprz[3]"/> -->
+
+
+    <set servo="ARM_LEFT" value="@ROLL"/>
+    <!-- <set servo="SPOILERON" value="@PITCH"/> -->
+    <set servo="ARM_RIGHT" value="-@ROLL"/>
+    <set servo="ELEVON_RIGHT" value="@ROLL"/>
+    <set servo="ELEVATOR" value="@PITCH"/>
+    <set servo="ELEVON_LEFT" value="-@ROLL"/>
   </command_laws>
 
   <section name="IMU" prefix="IMU_">
@@ -481,9 +500,9 @@ NOTES:
   </section>
 
   <section name="AUTOPILOT">
-    <define name="MODE_MANUAL"  value="AP_MODE_ATTITUDE_DIRECT"/>
+    <!-- <define name="MODE_MANUAL"  value="AP_MODE_ATTITUDE_DIRECT"/> -->
     <!-- <define name="MODE_MANUAL" value="AP_MODE_RATE_DIRECT"/> -->
-    <!-- <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/> -->
+    <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_FORWARD"/>
     <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>
     <define name="MODE_STARTUP"  value="AP_MODE_ATTITUDE_DIRECT"/>
