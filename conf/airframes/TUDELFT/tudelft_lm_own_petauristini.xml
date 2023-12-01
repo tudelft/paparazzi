@@ -86,6 +86,17 @@ NOTES:
         <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>
       </module>
 
+      <module name="airspeed" type="sdp3x">
+        <!-- <define name="USE_I2C1"/> -->
+        <define name="SDP3X_I2C_DEV" value="i2c1"/>
+        <!-- <define name="SDP3X_I2C_ADDR" value="0x50"--><!-- slave address default 0x50"/>-->
+        <define name="SDP3X_SYNC_SEND" value="TRUE"/>
+        <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/> <!-- sdp33 -->
+        <define name="SDP3X_LOWPASS_TAU" value="0.15"/>
+        <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
+        <define name="USE_AIRSPEED" value="TRUE"/>
+      </module>
+
 
 <!-- TODO: add module airspeed SDP3x -->
 
@@ -287,7 +298,7 @@ NOTES:
 
 
     <set servo="ARM_LEFT" value="@ROLL"/>
-    <!-- <set servo="SPOILERON" value="@PITCH"/> -->
+    <set servo="SPOILERON" value="0"/>
     <set servo="ARM_RIGHT" value="-@ROLL"/>
     <set servo="ELEVON_RIGHT" value="@ROLL"/>
     <set servo="ELEVATOR" value="@PITCH"/>
@@ -397,8 +408,8 @@ NOTES:
 
   <section name="BAT">
     <define name="MAX_BAT_CAPACITY" value="650" unit="mAh"/><!-- Change if battery is different and you have no current measurement -->
-    <!-- <define name="MilliAmpereOfAdc(adc)" value="(float)(adc-30) * 9.89"/>
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 10.38782f * adc)"/> -->
+    <!-- <define name="MilliAmpereOfAdc(adc)" value="(float)(adc-30) * 9.89"/>-->
+    <define name="VoltageOfAdc(adc)" value="15.4"/> <!--"((3.3f/4096.0f) * 10.38782f * adc)"/> -->
     <define name="MILLIAMP_AT_IDLE_THROTTLE" value="300" unit="mA"/><!-- We substract ESC selfusage+AP+telemetry max-->
     <define name="MILLIAMP_AT_FULL_THROTTLE" value="60000" unit="mA"/><!--at 12.0VS 2x ESC motors full-->
 
