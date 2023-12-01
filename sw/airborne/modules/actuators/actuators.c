@@ -30,6 +30,7 @@
 #include "mcu_periph/sys_time.h"
 #include "modules/core/abi.h"
 #include "modules/radio_control/radio_control.h"
+#include "modules/sensors/serial_act_t4.h"
 #ifdef INTERMCU_AP
 #include "modules/intermcu/intermcu_ap.h"
 #endif
@@ -124,12 +125,24 @@ void actuators_periodic(void)
   struct serial_act_t4_out test;
   test.servo_arm_int = 1;
 
+#ifdef SERVO_ELEVON_LEFT_IDX
   test.servo_6_cmd_int = 2.0 * 3000.0 * ( 1.0f * actuators[SERVO_ELEVON_LEFT_IDX] - 1500.0) / 500;
+#endif
+#ifdef SERVO_ELEVON_RIGHT_IDX
   test.servo_4_cmd_int = 2.0 * 3000.0 * ( 1.0f * actuators[SERVO_ELEVON_RIGHT_IDX] - 1500.0) / 500;
+#endif
+#ifdef SERVO_ARM_LEFT_IDX
   test.servo_1_cmd_int = 45.0/19.0 * 3000.0 * ( 1.0f * actuators[SERVO_ARM_LEFT_IDX] - 1500.0) / 500;
+#endif
+#ifdef SERVO_ARM_RIGHT_IDX
   test.servo_3_cmd_int = 45.0/19.0 * 3000.0 * ( 1.0f * actuators[SERVO_ARM_RIGHT_IDX] - 1500.0) / 500;
+#endif
+#ifdef SERVO_ELEVATOR_IDX
   test.servo_5_cmd_int = 39.0/19.0 * 3000.0 * ( 1.0f * actuators[SERVO_ELEVATOR_IDX] - 1500.0) / 500;
+#endif
+#ifdef SERVO_SPOILERON_IDX
   test.servo_2_cmd_int = 45.0/19.0 * 3000.0 * ( 1.0f * actuators[SERVO_SPOILERON_IDX] - 1500.0) / 500;
+#endif
   
   AbiSendMsgSERIAL_ACT_T4_OUT(ABI_SERIAL_ACT_T4_OUT_ID, &test, &extra);
   // TODO SetApOnlyActuatorsFromCommands(ap_commands, autopilot_get_mode());
