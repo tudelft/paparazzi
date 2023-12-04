@@ -87,7 +87,7 @@ NOTES:
       </module>
 
       <module name="airspeed" type="sdp3x">
-        <!-- <define name="USE_I2C1"/> -->
+        <define name="USE_I2C1"/>
         <define name="SDP3X_I2C_DEV" value="i2c1"/>
         <!-- <define name="SDP3X_I2C_ADDR" value="0x50"--><!-- slave address default 0x50"/>-->
         <define name="SDP3X_SYNC_SEND" value="TRUE"/>
@@ -291,18 +291,18 @@ NOTES:
 
     <!-- <set servo="LM" value="autopilot.motors_on ? actuators_pprz[0] : -MAX_PPRZ"/> -->
     <!-- <set servo="RM" value="autopilot.motors_on ? actuators_pprz[1] : -MAX_PPRZ"/> -->
-    <set servo="RM" value="@THRUST"/>
-    <set servo="LM" value="@THRUST"/>
+    <set servo="RM" value="@THRUST * 0.8 + @YAW * 0."/>
+    <set servo="LM" value="@THRUST * 0.8 - @YAW * 0.2"/>
     <!-- <set servo="ARM_LEFT" value="actuators_pprz[3]"/> -->
     <!-- <set servo="ELEVON_RIGHT" value="actuators_pprz[3]"/> -->
 
 
-    <set servo="ARM_LEFT" value="@ROLL"/>
+    <set servo="ARM_LEFT" value="-@ROLL"/>
     <set servo="SPOILERON" value="0"/>
     <set servo="ARM_RIGHT" value="-@ROLL"/>
     <set servo="ELEVON_RIGHT" value="@ROLL"/>
     <set servo="ELEVATOR" value="@PITCH"/>
-    <set servo="ELEVON_LEFT" value="-@ROLL"/>
+    <set servo="ELEVON_LEFT" value="@ROLL"/>
   </command_laws>
 
   <section name="IMU" prefix="IMU_">
@@ -363,7 +363,7 @@ NOTES:
     <define name="FILT_CUTOFF" value="5.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN" value="{0.045, 0.045, 0.1, 0.1}"/>
+        <define name="ACT_DYN" value="{0.045, 0.045, 0.1, 0.1}"/>
     <define name="ACT_RATE_LIMIT" value="{9600, 9600, 170, 170}"/>
     <define name="ACT_IS_SERVO" value="{0, 0, 1, 1}"/>
 
@@ -481,7 +481,7 @@ NOTES:
     <!-- This is the pitch angle that the aircraft will have in forward flight, where 0 degrees is hover-->
     <define name="TRANSITION_MAX_OFFSET" value="-85.0" unit="deg"/>
 <!--    set a fixed offset for FIXED WING aircraft -->
-<!--    <define name="FIXED_THETA_OFFSET" value="-90"/>-->
+   <!--    <define name="FIXED_THETA_OFFSET" value="-90"/>-->
     <!-- For hybrid guidance by default set to 15-->
     <!--<define name="MAX_AIRSPEED" value="20.0"/>-->
   </section>
