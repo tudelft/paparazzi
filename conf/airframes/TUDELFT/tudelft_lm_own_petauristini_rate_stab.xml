@@ -83,8 +83,8 @@ NOTES:
         <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>
       </module>
 
-      <module name="airspeed" type="sdp3x">
-        <define name="USE_I2C1"/>
+     <module name="airspeed" type="sdp3x">
+        <define name="USE_I2C1"/> 
         <define name="SDP3X_I2C_DEV" value="i2c1"/>
         <!-- <define name="SDP3X_I2C_ADDR" value="0x50"--><!-- slave address default 0x50"/>-->
         <define name="SDP3X_SYNC_SEND" value="TRUE"/>
@@ -260,8 +260,8 @@ NOTES:
 
     <!-- <set servo="LM" value="autopilot.motors_on ? actuators_pprz[0] : -MAX_PPRZ"/> -->
     <!-- <set servo="RM" value="autopilot.motors_on ? actuators_pprz[1] : -MAX_PPRZ"/> -->
-    <set servo="RM" value="@THRUST + @YAW"/>
-    <set servo="LM" value="@THRUST - @YAW"/>
+    <set servo="RM" value="@THRUST * 0.8 + @YAW * 0.2"/>
+    <set servo="LM" value="@THRUST * 0.8 - @YAW * 0.2"/>
     <!-- <set servo="ARM_LEFT" value="actuators_pprz[3]"/> -->
     <!-- <set servo="ELEVON_RIGHT" value="actuators_pprz[3]"/> -->
 

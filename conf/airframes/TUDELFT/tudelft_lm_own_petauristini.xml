@@ -85,15 +85,15 @@ NOTES:
         <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>
       </module>
 
-      <module name="airspeed" type="sdp3x">
-        <define name="USE_I2C2"/>
-        <define name="SDP3X_I2C_DEV" value="i2c2"/>
+     <module name="airspeed" type="sdp3x">
+        <define name="USE_I2C1"/> 
+        <define name="SDP3X_I2C_DEV" value="i2c1"/>
         <!-- <define name="SDP3X_I2C_ADDR" value="0x50"--><!-- slave address default 0x50"/>-->
         <define name="SDP3X_SYNC_SEND" value="TRUE"/>
         <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/> <!-- sdp33 -->
         <define name="SDP3X_LOWPASS_TAU" value="0.15"/>
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
-        <!-- <define name="USE_AIRSPEED" value="TRUE"/> -->
+        <define name="USE_AIRSPEED" value="TRUE"/>
       </module>
 
       <module name="gps" type="ublox">
