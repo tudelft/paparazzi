@@ -16,6 +16,9 @@
 #ifndef AM7_H
 #define AM7_H
 
+#define first_opt_iter_max_time 2.5e-3
+#define second_opt_iter_max_time 5e-3
+
 //Define the baudrate for the module and the starting byte 
 #define START_BYTE 0x9B  //1st start block identifier byte
 #define BAUDRATE_AM7 921600 //Define the baudrate
