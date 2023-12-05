@@ -241,6 +241,8 @@ NOTES:
  <!-- optional mixing add what is wanded oneself -->
   <section name="MIXER">
     <define name="AILERON_DIFF" value="0.3"/>
+    <define name="ELEVON_PITCH_FACTOR" value="0.6f"/>
+
   </section>
 
   <command_laws>
@@ -257,9 +259,9 @@ NOTES:
     <set servo="RM" value="@THROTTLE * 0.8 + $yaw_ctrl_sgl"/>
     <set servo="LM" value="@THROTTLE * 0.8 - $yaw_ctrl_sgl"/><!-- TODO: check sign-->
 
-    <set servo="ARM_LEFT" value="-@ROLL * 0.6 + @PITCH * 0.4"/>
+    <set servo="ARM_LEFT" value="-@ROLL * 0.6 - @PITCH * 0.4"/>
     <set servo="SPOILERON" value="0"/>
-    <set servo="ARM_RIGHT" value="-@ROLL * 0.6 - @PITCH * 0.4"/>
+    <set servo="ARM_RIGHT" value="-@ROLL * 0.6 + @PITCH * 0.4"/>
     <set servo="ELEVON_RIGHT" value="@ROLL"/>
     <set servo="ELEVATOR" value="@PITCH"/>
     <set servo="ELEVON_LEFT" value="@ROLL"/>
@@ -272,6 +274,7 @@ NOTES:
     <set command="YAW" value="@YAW"/>
     <set command="GEAR" value="@AUX1"/>
     <set command="FLAP" value="@AUX2"/>
+    <set command="SUPPATHING" value="@AUX2"/>
     <!-- for tuning via RC these ones below, Sadly botched for now since latest master code changes . in settings from TX... -->
     <!--<set command="GAIN1"    value="@AUX7"/>-->
   </rc_commands>
@@ -303,6 +306,7 @@ NOTES:
     <axis name="YAW" failsafe_value="0"/>
     <axis name="GEAR" failsafe_value="0"/>
     <axis name="FLAP" failsafe_value="0"/> <!-- 9000 ? start automatic logging? -->
+    <axis name="SUPPATHING" failsafe_value="0"/>
   </commands>
 
 <!-- ************************ AUTO1 ***************************** -->
@@ -312,8 +316,6 @@ NOTES:
     <define name="MAX_ROLL" value="60" unit="deg"/> <!-- To make sure to have enough autority while testflying for first time -->
     <define name="MAX_PITCH" value="55" unit="deg"/> <!-- To make sure to have enough autority while testflying for first time -->
   </section>
-
-
 
   <!-- <section name="TRIM" prefix="COMMAND_">
     <define name="ROLL_TRIM" value="0.0"/>
