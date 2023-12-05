@@ -307,6 +307,8 @@ void  rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[],
 void  ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3]);
 void  calc_model(void);
 float oneloop_andi_sideslip(void);
+void  chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
+void  chirp_call(bool* chirp_on, bool* chirp_first_call, float dt, float* time_elapsed, float f0, float f1, float t_chirp, float A, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
 /* Define messages of the module*/
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -417,6 +419,15 @@ static float model_pred[ANDI_OUTPUTS];
 static float ang_acc[3];
 static float lin_acc[3];
 
+/*Chirp test Variables*/
+bool  chirp_on            = false;
+bool  chirp_first_call    = true;
+float time_elapsed_chirp  = 0.0;
+float f0_chirp            = 0.8 / (2.0 * M_PI);
+float f1_chirp            = 1.5 / (2.0 * M_PI);
+float t_chirp             = 10.0;
+float A_chirp             = 1.0;
+float p_ref_0[3]          = {0.0, 0.0, 0.0};
 
 /*Declaration of Reference Model and Error Controller Gains*/
 struct PolePlacement p_att_e;
@@ -1208,7 +1219,8 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     }
     // Register Attitude Setpoints from previous loop
     float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, psi_des_rad};
-
+    // Run chirp test if turnerd on
+    chirp_call(&chirp_on, &chirp_first_call, dt_1l, &time_elapsed_chirp, f0_chirp, f1_chirp, t_chirp, A_chirp, att_des[2], oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer,p_ref_0);
     // The RM functions want an array as input. Create a single entry array and write the vertical guidance entries. 
     float single_value_ref[1]        = {oneloop_andi.gui_ref.pos[2]};
     float single_value_d_ref[1]      = {oneloop_andi.gui_ref.vel[2]};
@@ -1572,4 +1584,84 @@ float oneloop_andi_sideslip(void)
   omega -= accely_filt.o[0]*fwd_sideslip_gain;
   #endif
   return omega;
+}
+
+/** @brief Function to calculate the position reference during the chirp*/
+static float chirp_pos_p_ref(float delta_t, float f0, float k, float A){
+  float p_ref_fun = sinf(delta_t * M_PI * (f0 + k * delta_t) * 2.0);
+  return (A * p_ref_fun);
+}
+/** @brief Function to calculate the velocity reference during the chirp*/
+static float chirp_pos_v_ref(float delta_t, float f0, float k, float A){
+  float v_ref_fun = cosf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * (M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0);
+  return (A * v_ref_fun);
+}
+/** @brief Function to calculate the acceleration reference during the chirp*/
+static float chirp_pos_a_ref(float delta_t, float f0, float k, float A){
+  float a_ref_fun = -sinf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * pow((M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0), 2) + k * M_PI * cosf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * 4.0;
+  return (A * a_ref_fun);
+}
+/** @brief Function to calculate the jerk reference during the chirp*/
+static float chirp_pos_j_ref(float delta_t, float f0, float k, float A){
+  float j_ref_fun = -cosf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * pow((M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0), 3) - k * M_PI * sinf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * (M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0) * 1.2e+1;
+  return (A * j_ref_fun);
+}
+
+/** 
+ * @brief Reference Model Definition for 3rd order system specific to positioning with bounds
+ * @param dt      [s]    time passed since start of the chirp
+ * @param f0      [Hz]   initial frequency of the chirp
+ * @param f1      [Hz]   final frequency of the chirp
+ * @param t_chirp [s]    duration of the chirp
+ * @param p_ref   [m]    position reference
+ * @param v_ref   [m/s]  velocity reference
+ * @param a_ref   [m/s2] acceleration reference
+ * @param j_ref   [m/s3] jerk reference
+ */
+void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]) {
+  f0      = positive_non_zero(f0);
+  f1      = positive_non_zero(f1);
+  t_chirp = positive_non_zero(t_chirp);
+  A       = positive_non_zero(A);
+  if ((f1-f0) < -FLT_EPSILON){
+    f1 = f0;
+  }
+  // i think there should not be a problem with f1 being equal to f0
+  float k = (f1 - f0) / t_chirp;
+  float p_ref_chirp = chirp_pos_p_ref(time_elapsed, f0, k, A);
+  float v_ref_chirp = chirp_pos_v_ref(time_elapsed, f0, k, A);
+  float a_ref_chirp = chirp_pos_a_ref(time_elapsed, f0, k, A);
+  float j_ref_chirp = chirp_pos_j_ref(time_elapsed, f0, k, A);
+
+  float spsi   = sinf(psi);
+  float cpsi   = cosf(psi);
+  p_ref[0] = p_ref_0[0] + p_ref_chirp * cpsi;
+  p_ref[1] = p_ref_0[1] + p_ref_chirp * spsi;
+  v_ref[0] = v_ref_chirp * cpsi;
+  v_ref[1] = v_ref_chirp * spsi;
+  a_ref[0] = a_ref_chirp * cpsi;
+  a_ref[1] = a_ref_chirp * spsi;
+  j_ref[0] = j_ref_chirp * cpsi;
+  j_ref[1] = j_ref_chirp * spsi;
+}
+
+void chirp_call(bool *chirp_on, bool *chirp_first_call, float dt, float* time_elapsed, float f0, float f1, float t_chirp, float A, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]){
+  if (*chirp_on){
+    if (*chirp_first_call){
+      *time_elapsed = 0.0;
+      *chirp_first_call = false;
+      p_ref_0[0] = p_ref[0];
+      p_ref_0[1] = p_ref[1];
+    }
+    if (*time_elapsed < t_chirp){
+      printf("time_elapsed = %f\n", *time_elapsed);
+      chirp_pos(*time_elapsed, f0, f1, t_chirp, A, psi, p_ref, v_ref, a_ref, j_ref, p_ref_0);
+      *time_elapsed += dt;
+      printf("time_elapsed = %f\n", *time_elapsed);
+    } else {
+      *chirp_on   = false;
+      *chirp_first_call = true;
+      *time_elapsed = 0.0;
+    }
+  }
 }

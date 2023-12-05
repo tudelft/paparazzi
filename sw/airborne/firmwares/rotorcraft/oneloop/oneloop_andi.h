@@ -42,6 +42,13 @@ extern float psi_des_deg;
 extern bool  heading_manual;
 extern float fwd_sideslip_gain;
 
+/*Chirp test Variables*/
+extern bool  chirp_on;
+extern float f0_chirp;
+extern float f1_chirp;
+extern float t_chirp;
+extern float A_chirp;
+
 // Delete once hybrid nav is fixed //////////////////////////////////////////////////////////////////////////////////
 struct guidance_indi_hybrid_params {
   float pos_gain;
