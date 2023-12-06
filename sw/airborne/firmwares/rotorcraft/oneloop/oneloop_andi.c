@@ -1654,10 +1654,8 @@ void chirp_call(bool *chirp_on, bool *chirp_first_call, float dt, float* time_el
       p_ref_0[1] = p_ref[1];
     }
     if (*time_elapsed < t_chirp){
-      printf("time_elapsed = %f\n", *time_elapsed);
       chirp_pos(*time_elapsed, f0, f1, t_chirp, A, psi, p_ref, v_ref, a_ref, j_ref, p_ref_0);
       *time_elapsed += dt;
-      printf("time_elapsed = %f\n", *time_elapsed);
     } else {
       *chirp_on   = false;
       *chirp_first_call = true;
