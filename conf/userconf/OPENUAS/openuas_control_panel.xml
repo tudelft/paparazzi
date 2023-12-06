@@ -911,7 +911,6 @@
         <arg flag="--ac_nose" constant="right"/>
         <arg flag="-ac" constant="1"/>
         <arg flag="33"/>
-        <arg flag="-o"/>
         <arg flag="-f" constant="500"/>
       </program>
     </session>

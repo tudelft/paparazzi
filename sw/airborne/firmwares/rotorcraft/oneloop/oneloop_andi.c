@@ -425,8 +425,8 @@ bool  chirp_first_call    = true;
 float time_elapsed_chirp  = 0.0;
 float f0_chirp            = 0.8 / (2.0 * M_PI);
 float f1_chirp            = 1.5 / (2.0 * M_PI);
-float t_chirp             = 10.0;
-float A_chirp             = 1.0;
+float t_chirp             = 45.0;
+float A_chirp             = 0.5;
 float p_ref_0[3]          = {0.0, 0.0, 0.0};
 
 /*Declaration of Reference Model and Error Controller Gains*/
