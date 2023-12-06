@@ -206,9 +206,8 @@ float pprz_to_rad_left(float x)
 	//			  y = -0.0901x + 135.15 (right)	[deg]
 //	float gradient = 0.000099157;	// [rad]
 //	return gradient * x;
-	float m = 0.0001148;
 	float c = 0.0;
-	return m * x + c;
+	return mapping * x + c;
 }
 
 /*
@@ -223,15 +222,14 @@ float pprz_to_rad_right(float x)
 	//			  y = -0.0901x + 135.15 (right)	[deg]
 //	float gradient = 0.000099157;	// [rad]
 //	return gradient * x;
-	float m = 0.0001148;
 	float c = 0.0;
-	return m * x + c;
+	return mapping * x + c;
 }
 
 /*
  * Function which maps PPRZ to rad/s, from static thrust tests
  */
-float pprz_to_omega(float x)
+float UNUSED pprz_to_omega(float x)
 {
     float k1 = -0.000006;
     float k2 = 0.2033;
