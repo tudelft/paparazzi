@@ -85,7 +85,7 @@
    flight_plan="flight_plans/AM/Ship_box_EH8R.xml"
    settings=""
    settings_modules="modules/AOA_pwm.xml modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/electrical.xml modules/follow_me.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_pid_rotorcraft.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_rotorcraft.xml modules/stabilization_indi_simple.xml"
-   gui_color="red"
+   gui_color="#5700e3008900"
   />
   <aircraft
    name="TUD00358_DEN_HELDER"

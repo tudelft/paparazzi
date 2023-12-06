@@ -404,7 +404,7 @@ static void serial_act_t4_abi_in(uint8_t sender_id __attribute__((unused)), stru
 static void send_ship_info_msg_ground( struct transport_tx *trans , struct link_device * dev ) {
     // Send telemetry message
     pprz_msg_send_SHIP_INFO_MSG_GROUND(trans , dev , AC_ID ,
-                & ship_info_receive.phi,& ship_info_receive.theta,& ship_info_receive.psi, & ship_info_receive.psi,
+                & ship_info_receive.phi,& ship_info_receive.theta,& ship_info_receive.psi, & ship_info_receive.psi, & ship_info_receive.psi,
                 & ship_info_receive.phi_dot,& ship_info_receive.theta_dot,& ship_info_receive.psi_dot,
                 & ship_info_receive.x,& ship_info_receive.y,& ship_info_receive.z,
                 & ship_info_receive.lat,& ship_info_receive.lon,& ship_info_receive.alt,
