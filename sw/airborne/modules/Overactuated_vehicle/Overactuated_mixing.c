@@ -208,6 +208,9 @@ float max_rate_el = OVERACTUATED_MIXING_INDI_EL_SECOND_ORD_RATE_LIMIT / PERIODIC
 #endif
 
 
+//Values for the cascaded Nonlinear CA: 
+float phi_gain_value, theta_gain_value, p_body_gain_value, q_body_gain_value, r_body_gain_value, des_psi_dot_value;
+
 //Setpoints and pseudocontrol
 float pos_setpoint[3];
 float speed_setpoint_control_rf[3];
@@ -1030,6 +1033,22 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.UAV_NED_pos_y = pos_vect[1];
     am7_data_out_local.UAV_NED_pos_z = pos_vect[2];
 
+    //Adding variables for the cascaded Nonlinear CA
+    am7_data_out_local.p_body_current_int = (int16_t) (rate_vect_filt[0] * 1e1 * 180/M_PI);
+    am7_data_out_local.q_body_current_int = (int16_t) (rate_vect_filt[1] * 1e1 * 180/M_PI);
+    am7_data_out_local.r_body_current_int = (int16_t) (rate_vect_filt[2] * 1e1 * 180/M_PI);
+    am7_data_out_local.p_dot_current_int = (int16_t) (rate_vect_filt_dot[0] * 1e1 * 180/M_PI);
+    am7_data_out_local.q_dot_current_int = (int16_t) (rate_vect_filt_dot[1] * 1e1 * 180/M_PI);
+    am7_data_out_local.r_dot_current_int = (int16_t) (rate_vect_filt_dot[2] * 1e1 * 180/M_PI);
+    am7_data_out_local.phi_current_int = (int16_t) (euler_vect[0] * 1e2 * 180/M_PI);
+    am7_data_out_local.theta_current_int = (int16_t) (euler_vect[1] * 1e2 * 180/M_PI);
+    am7_data_out_local.phi_gain_int = (int16_t) (phi_gain_value * 1e2);
+    am7_data_out_local.theta_gain_int = (int16_t) (theta_gain_value * 1e2);
+    am7_data_out_local.p_body_gain_int = (int16_t) (p_body_gain_value * 1e2);
+    am7_data_out_local.q_body_gain_int = (int16_t) (q_body_gain_value * 1e2);
+    am7_data_out_local.r_body_gain_int = (int16_t) (r_body_gain_value * 1e2);
+    am7_data_out_local.des_psi_dot_int = (int16_t) (des_psi_dot_value * 1e2 * 180/M_PI);
+
     #ifdef USE_NEW_THR_ESTIMATION_OPTIMIZATION
     extra_data_out_local[0] = PROP_MODEL_KT_REF;
     #else
@@ -1113,6 +1132,8 @@ void send_values_to_raspberry_pi(void){
     //Approach tilting angle constraint: 
     extra_data_out_local[58] = OVERACTUATED_MIXING_K_ALT_TILT_CONSTRAINT;     
     extra_data_out_local[59] = OVERACTUATED_MIXING_MIN_ALT_TILT_CONSTRAINT;   
+
+    extra_data_out_local[60] = OVERACTUATED_MIXING_REF_SPEED_TRANSITION;   
 }
 
 /**
@@ -1541,9 +1562,12 @@ void overactuated_mixing_run(void)
         Bound(gain_to_speed_constant, 0.1, 1);
 
         //Apply euler angle gains: 
-        float phi_dot = euler_error[0]  * indi_gains_over.p.phi * gain_to_speed_constant;
-        float theta_dot = euler_error[1]  * indi_gains_over.p.theta * gain_to_speed_constant;
+        phi_gain_value = indi_gains_over.p.phi * gain_to_speed_constant;
+        theta_gain_value = indi_gains_over.p.theta * gain_to_speed_constant;
+        float phi_dot = euler_error[0]  * phi_gain_value;
+        float theta_dot = euler_error[1]  * theta_gain_value;
         float psi_dot = euler_error[2]  * indi_gains_over.p.psi * gain_to_speed_constant;
+        des_psi_dot_value = psi_dot; 
         float phi_value = euler_vect[0];
         float theta_value = euler_vect[1];
         
@@ -1557,9 +1581,12 @@ void overactuated_mixing_run(void)
         rate_setpoint[2] = angular_body_error[2] ;
 
         //Compute the angular acceleration setpoint using the filtered rates:
-        acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * indi_gains_over.d.phi * gain_to_speed_constant;
-        acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * indi_gains_over.d.theta * gain_to_speed_constant;
-        acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * indi_gains_over.d.psi * gain_to_speed_constant;
+        p_body_gain_value = indi_gains_over.d.phi * gain_to_speed_constant;
+        q_body_gain_value = indi_gains_over.d.theta * gain_to_speed_constant;
+        r_body_gain_value = indi_gains_over.d.psi * gain_to_speed_constant;
+        acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * p_body_gain_value;
+        acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * q_body_gain_value;
+        acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * r_body_gain_value;
 
         // //Compute the angular acceleration setpoint using the unfiltered rates:
         // acc_setpoint[3] = (rate_setpoint[0] - rate_vect[0]) * indi_gains_over.d.phi;

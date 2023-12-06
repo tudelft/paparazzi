@@ -94,7 +94,7 @@ struct __attribute__((__packed__)) am7_data_out {
     int16_t az_3_state_int;
     int16_t az_4_state_int;
     int16_t ailerons_state_int;
-    //Variable states
+    //Variable states filtered with battworth filter 
     int16_t theta_state_int;
     int16_t phi_state_int;
     int16_t psi_state_int;
@@ -125,6 +125,21 @@ struct __attribute__((__packed__)) am7_data_out {
     float UAV_NED_pos_x;
     float UAV_NED_pos_y;
     float UAV_NED_pos_z;
+    //Extra variables for the cascaded Nonlinear CA
+    int16_t p_body_current_int; //degrees/sec value * 10
+    int16_t q_body_current_int; //degrees/sec value * 10
+    int16_t r_body_current_int; //degrees/sec value * 10
+    int16_t p_dot_current_int; //degrees/sec^2 value * 10
+    int16_t q_dot_current_int; //degrees/sec^2 value * 10
+    int16_t r_dot_current_int; //degrees/sec^2 value * 10
+    int16_t theta_current_int; //degrees value * 100
+    int16_t phi_current_int; //value * 100 
+    int16_t theta_gain_int; //value * 100 
+    int16_t phi_gain_int; //value * 100 
+    int16_t p_body_gain_int; //value * 100 
+    int16_t q_body_gain_int; //value * 100 
+    int16_t r_body_gain_int; //value * 100 
+    int16_t des_psi_dot_int; //degrees value * 100 
     //Rolling msg
     float rolling_msg_out;
     uint8_t rolling_msg_out_id;

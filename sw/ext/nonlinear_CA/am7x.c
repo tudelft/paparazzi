@@ -7,8 +7,8 @@
 #include <Ivy/ivy.h>
 #include <Ivy/ivyglibloop.h>
 
-//Totest the controller with random variables:
-#define TEST_CONTROLLER
+//To test the controller with random variables:
+// #define TEST_CONTROLLER
 
 struct am7_data_out myam7_data_out;
 struct am7_data_out myam7_data_out_copy;
@@ -34,8 +34,8 @@ pthread_mutex_t mutex_am7;
 
 pthread_mutex_t mutex_aruco;
 
-int verbose_connection = 0;
-int verbose_optimizer = 1;
+int verbose_connection = 1;
+int verbose_optimizer = 0;
 int verbose_runtime = 0; 
 int verbose_received_data = 0; 
 int verbose_ivy_bus = 0; 
@@ -326,7 +326,8 @@ void* second_thread() //Run the optimization code
     float k_alt_tilt_constraint = extra_data_in_copy[58];
     float min_alt_tilt_constraint = extra_data_in_copy[59];
 
-  
+    float transition_speed = extra_data_in_copy[60];
+
     // Real time variables:
     double Phi = (myam7_data_in_copy.phi_state_int*1e-2 * M_PI/180);
     double Theta = (myam7_data_in_copy.theta_state_int*1e-2 * M_PI/180);
@@ -352,8 +353,21 @@ void* second_thread() //Run the optimization code
     dv[0] = (myam7_data_in_copy.pseudo_control_ax_int*1e-2); dv[1] = (myam7_data_in_copy.pseudo_control_ay_int*1e-2);
     dv[2] = (myam7_data_in_copy.pseudo_control_az_int*1e-2); dv[3] = (myam7_data_in_copy.pseudo_control_p_dot_int*1e-1 * M_PI/180);
     dv[4] = (myam7_data_in_copy.pseudo_control_q_dot_int*1e-1 * M_PI/180); dv[5] = (myam7_data_in_copy.pseudo_control_r_dot_int*1e-1 * M_PI/180);
-
-    double transition_speed = 6; 
+ 
+    double p_body_current = (myam7_data_in_copy.p_body_current_int*1e-1 * M_PI/180); 
+    double q_body_current = (myam7_data_in_copy.q_body_current_int*1e-1 * M_PI/180); 
+    double r_body_current = (myam7_data_in_copy.r_body_current_int*1e-1 * M_PI/180); 
+    double p_dot_current = (myam7_data_in_copy.p_body_current_int*1e-1 * M_PI/180); 
+    double q_dot_current = (myam7_data_in_copy.q_body_current_int*1e-1 * M_PI/180);
+    double r_dot_current = (myam7_data_in_copy.r_body_current_int*1e-1 * M_PI/180);
+    double phi_current = (myam7_data_in_copy.phi_current_int*1e-2 * M_PI/180);
+    double theta_current = (myam7_data_in_copy.theta_current_int*1e-2 * M_PI/180);
+    double theta_gain = (myam7_data_in_copy.theta_gain_int*1e-2);
+    double phi_gain = (myam7_data_in_copy.phi_gain_int*1e-2);
+    double p_body_gain = (myam7_data_in_copy.p_body_gain_int*1e-2);
+    double q_body_gain = (myam7_data_in_copy.q_body_gain_int*1e-2);
+    double r_body_gain = (myam7_data_in_copy.r_body_gain_int*1e-2);
+    double des_psi_dot = (myam7_data_in_copy.des_psi_dot_int*1e-2 * M_PI/180);
 
     #ifdef TEST_CONTROLLER
     #warning "You are using the testing variable, watch out!"
@@ -425,8 +439,8 @@ void* second_thread() //Run the optimization code
       max_delta_ailerons = 25;
       min_delta_ailerons = -25; 
 
-      dv[0] = 0;
-      dv[1] = 0;
+      dv[0] = 3;
+      dv[1] = 5;
       dv[2] = -5;
       dv[3] = 0;
       dv[4] = 0;
@@ -459,22 +473,21 @@ void* second_thread() //Run the optimization code
       lidar_alt_corrected = 1;
       approach_mode = 0; 
 
+       p_body_current = 0; 
+       q_body_current = 0; 
+       r_body_current = 0;  
+       p_dot_current = 0;
+       q_dot_current = 0; 
+       r_dot_current = 0;
+       phi_current = Phi;
+       theta_current = Theta;  
+       theta_gain = 1;  
+       phi_gain = 1;
+       p_body_gain = 5;  
+       q_body_gain = 5;   
+       r_body_gain = 2;
+       des_psi_dot = 0; 
 
-      double p_body_current = 0; 
-      
-      double q_body_current = 0; 
-      double r_body_current = 0;  
-      double p_dot_current = 0;
-      double q_dot_current = 0; 
-      double r_dot_current = 0;
-      double phi_current = Phi;
-      double theta_current = Theta;  
-      double theta_gain = 1;  
-      double phi_gain = 1;
-      double p_body_gain = 5;  
-      double q_body_gain = 5;   
-      double r_body_gain = 2;
-      double des_psi_dot = 0; 
     #endif 
 
 Cascaded_nonlinear_controller_control_rf_w_ailerons(K_p_T,  K_p_M,  m,  I_xx,  I_yy,  I_zz,

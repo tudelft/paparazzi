@@ -5,7 +5,7 @@
  * File: Cascaded_nonlinear_controller_control_rf_w_ailerons_types.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 05-Dec-2023 22:29:53
+ * C/C++ source code generated on  : 05-Dec-2023 23:51:26
  */
 
 #ifndef CASCADED_NONLINEAR_CONTROLLER_CONTROL_RF_W_AILERONS_TYPES_H

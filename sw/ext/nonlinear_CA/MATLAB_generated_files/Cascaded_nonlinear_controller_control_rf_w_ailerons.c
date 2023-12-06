@@ -5,7 +5,7 @@
  * File: Cascaded_nonlinear_controller_control_rf_w_ailerons.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 05-Dec-2023 22:29:53
+ * C/C++ source code generated on  : 05-Dec-2023 23:51:26
  */
 
 /* Include Files */
@@ -14064,7 +14064,7 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double *elapsed_time
  *                double *N_iterations
  *                double *N_evaluations
- *                double *exitflag
+ *                double *exitflag_second
  * Return Type  : void
  */
 void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
@@ -14094,7 +14094,7 @@ void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
   double theta_current, double theta_gain, double phi_gain, double p_body_gain,
   double q_body_gain, double r_body_gain, double des_psi_dot, double u_out[15],
   double residuals[6], double *elapsed_time, double *N_iterations, double
-  *N_evaluations, double *exitflag)
+  *N_evaluations, double *exitflag_second)
 {
   b_captured_var dv_global;
   captured_var W_act_ailerons;
@@ -14165,6 +14165,8 @@ void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
   double b_dv[9];
   double c_accelerations_attitude_alloca[6];
   double current_accelerations[6];
+  double final_accelerations[6];
+  double pseudo_hedge_cut_acc[6];
   double des_body_rates[3];
   double b_max_approach;
   double b_min_approach;
@@ -14172,6 +14174,7 @@ void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
   double des_phi_first_iteration;
   double des_theta_first_iteration;
   double elapsed_time_first;
+  double exitflag_first;
   double g_max_approach;
   double g_min_approach;
   double max_theta_protection;
@@ -14179,6 +14182,7 @@ void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
   double min_theta_protection;
   double output_funcCount;
   double output_iterations;
+  double vert_acc_cut;
   int i;
   char c_expl_temp[3];
   if (!isInitialized_Cascaded_nonlinear_controller_control_rf_w_ailerons) {
@@ -14429,27 +14433,27 @@ void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
   }
 
   /* Pseudo-control hedging:  */
+  vert_acc_cut = 0.0;
   if (b_V.contents > transition_speed) {
     /*  CL_max =  Cl_alpha * max_alpha;   */
-    b_max_approach = b_Cl_alpha.contents * min_alpha;
+    max_tilt_value_approach = b_Cl_alpha.contents * min_alpha;
 
     /*  max_vert_force_fwd = CL_max * 0.5 * rho * S * V^2 * cos(max_theta_protection*pi/180); */
-    max_tilt_value_approach = b_V.contents;
-    b_max_approach = b_max_approach * 0.5 * b_rho.contents * b_S.contents *
-      (max_tilt_value_approach * max_tilt_value_approach) * cos
+    b_max_approach = b_V.contents;
+    max_tilt_value_approach = max_tilt_value_approach * 0.5 * b_rho.contents *
+      b_S.contents * (b_max_approach * b_max_approach) * cos
       (min_theta_protection * 3.1415926535897931 / 180.0);
-    b_max_approach = 9.81 - b_max_approach / b_m.contents;
+    max_tilt_value_approach = 9.81 - max_tilt_value_approach / b_m.contents;
 
     /*      min_vert_acc_fwd = 9.81 - max_vert_force_fwd / m;  */
-    max_tilt_value_approach = 0.0;
-    if (dv_global.contents[2] >= b_max_approach) {
-      max_tilt_value_approach = dv_global.contents[2] - b_max_approach;
+    if (dv_global.contents[2] >= max_tilt_value_approach) {
+      vert_acc_cut = dv_global.contents[2] - max_tilt_value_approach;
 
       /*      elseif(dv_global(3) <= min_vert_acc_fwd) */
       /*          vert_acc_cut = dv_global(3) - min_vert_acc_fwd;  */
     }
 
-    dv_global.contents[2] -= max_tilt_value_approach;
+    dv_global.contents[2] -= vert_acc_cut;
   }
 
   /* Compute weights for actuators and make sure they are always positive */
@@ -14527,9 +14531,9 @@ void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
   expl_temp.Beta = &b_Beta;
   expl_temp.dv_global = &dv_global;
   b_expl_temp = expl_temp;
-  fmincon(&b_expl_temp, u_min, u_min_scaled, u_max_scaled, &b_max_approach,
-          &output_iterations, &output_funcCount, c_expl_temp, &b_min_approach,
-          &g_max_approach, &g_min_approach, &max_theta_protection);
+  fmincon(&b_expl_temp, u_min, u_min_scaled, u_max_scaled, &exitflag_first,
+          &output_iterations, &output_funcCount, c_expl_temp, &b_max_approach,
+          &b_min_approach, &g_max_approach, &g_min_approach);
   elapsed_time_first = toc();
   des_theta_first_iteration = u_min[12] * gain_theta.contents;
   des_phi_first_iteration = u_min[13] * gain_phi.contents;
@@ -14544,16 +14548,20 @@ void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
     b_rho.contents, b_V.contents, b_S.contents, b_wing_chord.contents,
     b_flight_path_angle.contents, b_Beta.contents,
     c_accelerations_attitude_alloca);
+  for (i = 0; i < 6; i++) {
+    c_accelerations_attitude_alloca[i] = current_accelerations[i] -
+      c_accelerations_attitude_alloca[i];
+  }
+
   max_tilt_value_approach = 1.0 / transition_speed * b_V.contents;
   max_tilt_value_approach = fmin(1.0, max_tilt_value_approach);
   for (i = 0; i < 6; i++) {
-    c_accelerations_attitude_alloca[i] = dv_global.contents[i] +
-      (current_accelerations[i] - c_accelerations_attitude_alloca[i]) *
-      max_tilt_value_approach;
+    pseudo_hedge_cut_acc[i] = dv_global.contents[i] +
+      c_accelerations_attitude_alloca[i] * max_tilt_value_approach;
   }
 
   for (i = 0; i < 6; i++) {
-    dv_global.contents[i] = c_accelerations_attitude_alloca[i];
+    dv_global.contents[i] = pseudo_hedge_cut_acc[i];
   }
 
   /* with the desired theta and phi, let's compute the associated angular */
@@ -14656,12 +14664,12 @@ void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
   b_u_max_scaled[12] = u_max_scaled[14];
   e_expl_temp = d_expl_temp;
   b_fmincon(&e_expl_temp, u_out_second, b_u_min_scaled, b_u_max_scaled, &d,
-            &b_max_approach, &min_theta_protection, c_expl_temp, &b_min_approach,
-            &g_max_approach, &g_min_approach, &max_theta_protection);
-  *exitflag = d;
+            &max_theta_protection, &min_theta_protection, c_expl_temp,
+            &b_max_approach, &b_min_approach, &g_max_approach, &g_min_approach);
+  *exitflag_second = d;
   *elapsed_time = toc();
   *N_evaluations = output_funcCount + min_theta_protection;
-  *N_iterations = output_iterations + b_max_approach;
+  *N_iterations = output_iterations + max_theta_protection;
   max_tilt_value_approach = gain_motor.contents;
   u_out[0] = u_out_second[0] * max_tilt_value_approach;
   u_out[1] = u_out_second[1] * max_tilt_value_approach;
@@ -14687,10 +14695,9 @@ void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
     b_Cl_alpha.contents, b_Cd_zero.contents, b_K_Cd.contents,
     b_Cm_alpha.contents, b_Cm_zero.contents, b_CL_aileron.contents,
     b_rho.contents, b_V.contents, b_S.contents, b_wing_chord.contents,
-    b_flight_path_angle.contents, b_Beta.contents,
-    c_accelerations_attitude_alloca);
+    b_flight_path_angle.contents, b_Beta.contents, final_accelerations);
   for (i = 0; i < 6; i++) {
-    residuals[i] = dv_global.contents[i] - c_accelerations_attitude_alloca[i];
+    residuals[i] = dv_global.contents[i] - final_accelerations[i];
   }
 
   u_out[12] = des_theta_first_iteration;
@@ -14758,12 +14765,13 @@ void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
            *elapsed_time);
     fflush(stdout);
     printf("\n Number of iterations first / second = %f / %f", output_iterations,
-           b_max_approach);
+           max_theta_protection);
     fflush(stdout);
     printf("\n Number of evaluations first / second = %f / %f", output_funcCount,
            min_theta_protection);
     fflush(stdout);
-    printf("\n Exit flag optimizer = %f \n", *exitflag);
+    printf("\n Exit flag optimizer first / second = %f / %f\n", exitflag_first, *
+           exitflag_second);
     fflush(stdout);
     printf("\n Modeled accelerations =   ");
     fflush(stdout);
@@ -14772,8 +14780,6 @@ void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
       fflush(stdout);
     }
 
-    printf("\n");
-    fflush(stdout);
     printf("\n desired acc increment =    ");
     fflush(stdout);
     for (i = 0; i < 6; i++) {
@@ -14781,8 +14787,25 @@ void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
       fflush(stdout);
     }
 
-    printf("\n");
+    for (i = 0; i < 6; i++) {
+      pseudo_hedge_cut_acc[i] = 0.0;
+    }
+
+    pseudo_hedge_cut_acc[2] = vert_acc_cut;
+    printf("\n Acc cut pseudo hedging =    ");
     fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      printf(" %f ", pseudo_hedge_cut_acc[i]);
+      fflush(stdout);
+    }
+
+    printf("\n Acc achieved w attitude =    ");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      printf(" %f ", c_accelerations_attitude_alloca[i]);
+      fflush(stdout);
+    }
+
     printf("\n Requested accelerations =  ");
     fflush(stdout);
     for (i = 0; i < 6; i++) {
@@ -14791,17 +14814,13 @@ void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
       fflush(stdout);
     }
 
-    printf("\n");
-    fflush(stdout);
     printf("\n Achieved accelerations =   ");
     fflush(stdout);
     for (i = 0; i < 6; i++) {
-      printf(" %f ", c_accelerations_attitude_alloca[i]);
+      printf(" %f ", final_accelerations[i]);
       fflush(stdout);
     }
 
-    printf("\n");
-    fflush(stdout);
     printf("\n Acc residuals / norm  =    ");
     fflush(stdout);
     for (i = 0; i < 6; i++) {
