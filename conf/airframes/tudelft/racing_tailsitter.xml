@@ -360,6 +360,7 @@
     	<define name="Z_DIST" value="0.075"/>	<!--[m]-->
 
       <define name="MAPPING" value="0.0001148"/>	<!--This the is mapping of PPRZ units to rads for the servos -->
+      <define name="TORQUE" value="0.8"/>		<!--[kg/cm] Assuming constant torque output, the torque at any position is the same as the maximum torque --> 
   </section>
   <!-- Gains for vertical navigation -->
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
