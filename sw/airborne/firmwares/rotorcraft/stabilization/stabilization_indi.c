@@ -103,6 +103,8 @@
 #endif
 #endif
 
+float I_yy = CTRL_EFF_CALC_I_YY;
+float torque = CTRL_EFF_CALC_TORQUE;
 float du_min_stab_indi[INDI_NUM_ACT];
 float du_max_stab_indi[INDI_NUM_ACT];
 float du_pref_stab_indi[INDI_NUM_ACT];
@@ -603,7 +605,22 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   angular_accel_ref.q = (rate_sp.q - rates_filt.q) * indi_gains.rate.q;
   angular_accel_ref.r = (rate_sp.r - rates_filt.r) * indi_gains.rate.r;
 
-  g2_times_du = 0.0;
+  float delta_time = 1/200; //calculate the time step
+  // Calculate the derivative of the tilt angle
+  float tilt_angle_rate_left = (indi_u[1] - actuator_state_filt_vect[1]) / delta_time;
+  float tilt_angle_rate_right = (indi_u[2] - actuator_state_filt_vect[2]) / delta_time;
+  
+  // calculate compensation for servo reaction moment (torque)
+  float servo_moment_pitch_left = torque * 9.8 * z_dist * tilt_angle_rate_left ;
+  float servo_moment_pitch_right = torque * 9.8 * z_dist * tilt_angle_rate_right;
+
+  // combine left and right servo reaction moments
+  float servo_moment_pitch = servo_moment_pitch_left + servo_moment_pitch_right;
+  //Compensate the counteract servo reaction moment
+  angular_accel_ref.q += servo_moment_pitch / I_yy;
+
+
+  g2_times_du = 0.0; 
   for (i = 0; i < INDI_NUM_ACT; i++) {
     g2_times_du += g2[i] * indi_du[i];
   }
@@ -689,7 +706,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   indi_Wu[5] = indi_Wu[4];
 
 
-  RunOnceEvery(200, DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 1,indi_counter));
+  //RunOnceEvery(200, DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 1,indi_counter));
   //RunOnceEvery(200, DOWNLINK_SEND_DEBUG_VECT(DefaultChannel, DefaultDevice, 1, name, 6, du_max_stab_indi));
 
   // WLS Control Allocator
