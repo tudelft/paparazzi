@@ -407,7 +407,7 @@ static void serial_act_t4_abi_in(uint8_t sender_id __attribute__((unused)), stru
 static void send_ship_info_msg_ground( struct transport_tx *trans , struct link_device * dev ) {
     // Send telemetry message
     pprz_msg_send_SHIP_INFO_MSG_GROUND(trans , dev , AC_ID ,
-                & ship_info_receive.phi,& ship_info_receive.theta,& ship_info_receive.psi, & ship_info_receive.psi,
+                & ship_info_receive.phi,& ship_info_receive.theta,& ship_info_receive.psi, & ship_info_receive.psi, & ship_info_receive.psi,
                 & ship_info_receive.phi_dot,& ship_info_receive.theta_dot,& ship_info_receive.psi_dot,
                 & ship_info_receive.x,& ship_info_receive.y,& ship_info_receive.z,
                 & ship_info_receive.lat,& ship_info_receive.lon,& ship_info_receive.alt,
@@ -1134,6 +1134,12 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[59] = OVERACTUATED_MIXING_MIN_ALT_TILT_CONSTRAINT;   
 
     extra_data_out_local[60] = OVERACTUATED_MIXING_REF_SPEED_TRANSITION;   
+
+    extra_data_out_local[61] = -OVERACTUATED_MIXING_MAX_THETA; //min hard theta rad
+    extra_data_out_local[62] = OVERACTUATED_MIXING_MAX_THETA; //max hard theta rad
+    extra_data_out_local[63] = -OVERACTUATED_MIXING_MAX_PHI;  //min hard phi rad
+    extra_data_out_local[64] = OVERACTUATED_MIXING_MAX_PHI;  //max hard phi rad
+
 }
 
 /**
@@ -1213,7 +1219,10 @@ void assign_variables(void){
         airspeed = 10;
         beta_deg = 0;
     #else
+    airspeed = 0.0f; 
+    #ifndef IGNORE_AIRSPEED_NONLINEAR_CA
         airspeed = fmax(0.0,ms45xx.airspeed);
+    #endif
         beta_deg = - aoa_pwm.angle * 180/M_PI;
     #endif
     
