@@ -328,6 +328,11 @@ void* second_thread() //Run the optimization code
 
     float transition_speed = extra_data_in_copy[60];
 
+    float min_theta_hard = extra_data_in_copy[61];
+    float max_theta_hard = extra_data_in_copy[62];
+    float min_phi_hard = extra_data_in_copy[63];
+    float max_phi_hard = extra_data_in_copy[64];
+
     // Real time variables:
     double Phi = (myam7_data_in_copy.phi_state_int*1e-2 * M_PI/180);
     double Theta = (myam7_data_in_copy.theta_state_int*1e-2 * M_PI/180);
@@ -357,9 +362,9 @@ void* second_thread() //Run the optimization code
     double p_body_current = (myam7_data_in_copy.p_body_current_int*1e-1 * M_PI/180); 
     double q_body_current = (myam7_data_in_copy.q_body_current_int*1e-1 * M_PI/180); 
     double r_body_current = (myam7_data_in_copy.r_body_current_int*1e-1 * M_PI/180); 
-    double p_dot_current = (myam7_data_in_copy.p_body_current_int*1e-1 * M_PI/180); 
-    double q_dot_current = (myam7_data_in_copy.q_body_current_int*1e-1 * M_PI/180);
-    double r_dot_current = (myam7_data_in_copy.r_body_current_int*1e-1 * M_PI/180);
+    double p_dot_current = (myam7_data_in_copy.p_dot_current_int*1e-1 * M_PI/180); 
+    double q_dot_current = (myam7_data_in_copy.q_dot_current_int*1e-1 * M_PI/180);
+    double r_dot_current = (myam7_data_in_copy.r_dot_current_int*1e-1 * M_PI/180);
     double phi_current = (myam7_data_in_copy.phi_current_int*1e-2 * M_PI/180);
     double theta_current = (myam7_data_in_copy.theta_current_int*1e-2 * M_PI/180);
     double theta_gain = (myam7_data_in_copy.theta_gain_int*1e-2);
@@ -473,20 +478,20 @@ void* second_thread() //Run the optimization code
       lidar_alt_corrected = 1;
       approach_mode = 0; 
 
-       p_body_current = 0; 
-       q_body_current = 0; 
-       r_body_current = 0;  
-       p_dot_current = 0;
-       q_dot_current = 0; 
-       r_dot_current = 0;
-       phi_current = Phi;
-       theta_current = Theta;  
-       theta_gain = 1;  
-       phi_gain = 1;
-       p_body_gain = 5;  
-       q_body_gain = 5;   
-       r_body_gain = 2;
-       des_psi_dot = 0; 
+      p_body_current = 0; 
+      q_body_current = 0; 
+      r_body_current = 0;  
+      p_dot_current = 0;
+      q_dot_current = 0; 
+      r_dot_current = 0;
+      phi_current = Phi;
+      theta_current = Theta;  
+      theta_gain = 1;  
+      phi_gain = 1;
+      p_body_gain = 5;  
+      q_body_gain = 5;   
+      r_body_gain = 2;
+      des_psi_dot = 0; 
 
     #endif 
 
@@ -519,7 +524,9 @@ Cascaded_nonlinear_controller_control_rf_w_ailerons(K_p_T,  K_p_M,  m,  I_xx,  I
                                           q_dot_current,  r_dot_current,  phi_current,
                                           theta_current,  theta_gain,  phi_gain,
                                           p_body_gain,  q_body_gain,  r_body_gain,
-                                          des_psi_dot,  u_out,  residuals,
+                                          des_psi_dot, min_theta_hard, max_theta_hard,
+                                          min_phi_hard, max_phi_hard,
+                                          u_out,  residuals,
                                           &elapsed_time, &N_iterations,  &N_evaluation,
                                           &exitflag);
 
@@ -599,6 +606,16 @@ Cascaded_nonlinear_controller_control_rf_w_ailerons(K_p_T,  K_p_M,  m,  I_xx,  I
       printf(" max_delta_ailerons = %f \n",(float) max_delta_ailerons);
       printf(" CL_aileron = %f \n",(float) CL_aileron);
 
+      printf(" max_thrust_loss = %f \n",(float) max_thrust_loss);
+      printf(" C_dr = %f \n",(float) C_dr);
+      printf(" k_alt_tilt_constraint = %f \n",(float) k_alt_tilt_constraint);
+      printf(" min_alt_tilt_constraint = %f \n",(float) min_alt_tilt_constraint);
+      printf(" transition_speed = %f \n",(float) transition_speed);
+      printf(" min_theta_hard = %f \n",(float) min_theta_hard);
+      printf(" max_theta_hard = %f \n",(float) max_theta_hard);
+      printf(" min_phi_hard = %f \n",(float) min_phi_hard);
+      printf(" max_phi_hard = %f \n",(float) max_phi_hard);
+
       printf("\n REAL TIME VARIABLES IN------------------------------------------------------ \n"); 
       printf(" Phi_deg = %f \n",(float) Phi*180/M_PI);
       printf(" Theta_deg = %f \n",(float) Theta*180/M_PI);
@@ -633,6 +650,26 @@ Cascaded_nonlinear_controller_control_rf_w_ailerons(K_p_T,  K_p_M,  m,  I_xx,  I
       printf(" dv[3] = %f \n",(float) dv[3]);
       printf(" dv[4] = %f \n",(float) dv[4]);
       printf(" dv[5] = %f \n",(float) dv[5]);
+
+      printf(" p_body_current_deg_s = %f \n",(float) p_body_current*180/M_PI);
+      printf(" q_body_current_deg_s = %f \n",(float) q_body_current*180/M_PI);
+      printf(" r_body_current_deg_s = %f \n",(float) r_body_current*180/M_PI);
+
+      printf(" p_dot_body_current_deg_s^2 = %f \n",(float) p_dot_current*180/M_PI);
+      printf(" q_dot_body_current_deg_s^2 = %f \n",(float) q_dot_current*180/M_PI);
+      printf(" r_dot_body_current_deg_s^2 = %f \n",(float) r_dot_current*180/M_PI);
+
+      printf(" phi_current_unfiltred = %f \n",(float) phi_current*180/M_PI);
+      printf(" theta_current_unfiltred = %f \n",(float) theta_current*180/M_PI);
+
+      printf(" theta_gain = %f \n",(float) theta_gain);
+      printf(" phi_gain = %f \n",(float) phi_gain);
+      printf(" p_body_gain = %f \n",(float) p_body_gain);
+      printf(" q_body_gain = %f \n",(float) q_body_gain);
+      printf(" r_body_gain = %f \n",(float) r_body_gain);
+
+      printf(" des_psi_dot_deg_s = %f \n",(float) des_psi_dot*180/M_PI);
+
 
       printf("\n REAL TIME VARIABLES OUT------------------------------------------------------ \n"); 
       printf(" motor_1_cmd_rad_s = %f \n",(float) u_out[0]);

@@ -5,7 +5,7 @@
  * File: Cascaded_nonlinear_controller_control_rf_w_ailerons.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 05-Dec-2023 23:51:26
+ * C/C++ source code generated on  : 06-Dec-2023 16:06:10
  */
 
 #ifndef CASCADED_NONLINEAR_CONTROLLER_CONTROL_RF_W_AILERONS_H
@@ -51,9 +51,10 @@ extern void Cascaded_nonlinear_controller_control_rf_w_ailerons(
     double q_dot_current, double r_dot_current, double phi_current,
     double theta_current, double theta_gain, double phi_gain,
     double p_body_gain, double q_body_gain, double r_body_gain,
-    double des_psi_dot, double u_out[15], double residuals[6],
-    double *elapsed_time, double *N_iterations, double *N_evaluations,
-    double *exitflag_second);
+    double des_psi_dot, double min_theta_hard, double max_theta_hard,
+    double min_phi_hard, double max_phi_hard, double u_out[15],
+    double residuals[6], double *elapsed_time, double *N_iterations,
+    double *N_evaluations, double *exitflag_second);
 
 extern void
 Cascaded_nonlinear_controller_control_rf_w_ailerons_initialize(void);

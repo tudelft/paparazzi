@@ -5,7 +5,7 @@
  * File: Cascaded_nonlinear_controller_control_rf_w_ailerons.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 05-Dec-2023 23:51:26
+ * C/C++ source code generated on  : 06-Dec-2023 16:06:10
  */
 
 /* Include Files */
@@ -14059,6 +14059,10 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double q_body_gain
  *                double r_body_gain
  *                double des_psi_dot
+ *                double min_theta_hard
+ *                double max_theta_hard
+ *                double min_phi_hard
+ *                double max_phi_hard
  *                double u_out[15]
  *                double residuals[6]
  *                double *elapsed_time
@@ -14092,9 +14096,10 @@ void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
   p_body_current, double q_body_current, double r_body_current, double
   p_dot_current, double q_dot_current, double r_dot_current, double phi_current,
   double theta_current, double theta_gain, double phi_gain, double p_body_gain,
-  double q_body_gain, double r_body_gain, double des_psi_dot, double u_out[15],
-  double residuals[6], double *elapsed_time, double *N_iterations, double
-  *N_evaluations, double *exitflag_second)
+  double q_body_gain, double r_body_gain, double des_psi_dot, double
+  min_theta_hard, double max_theta_hard, double min_phi_hard, double
+  max_phi_hard, double u_out[15], double residuals[6], double *elapsed_time,
+  double *N_iterations, double *N_evaluations, double *exitflag_second)
 {
   b_captured_var dv_global;
   captured_var W_act_ailerons;
@@ -14566,31 +14571,23 @@ void Cascaded_nonlinear_controller_control_rf_w_ailerons(double K_p_T, double
 
   /* with the desired theta and phi, let's compute the associated angular */
   /* accelerations through the EC gains and feedbacks:  */
-  max_tilt_value_approach = b_Theta.contents;
-  max_tilt_value_approach = sin(max_tilt_value_approach);
-  b_max_approach = b_Phi.contents;
-  b_max_approach = cos(b_max_approach);
-  b_min_approach = b_Phi.contents;
-  b_min_approach = sin(b_min_approach);
-  g_max_approach = b_Theta.contents;
-  g_max_approach = cos(g_max_approach);
-  g_min_approach = b_Phi.contents;
-  g_min_approach = sin(g_min_approach);
-  max_theta_protection = b_Phi.contents;
-  max_theta_protection = cos(max_theta_protection);
-  min_theta_protection = b_Theta.contents;
-  min_theta_protection = cos(min_theta_protection);
+  /* Apply constraint to max hard theta and phi:  */
+  max_tilt_value_approach = sin(phi_current);
+  b_max_approach = cos(phi_current);
+  b_min_approach = cos(theta_current);
   b_dv[0] = 1.0;
   b_dv[3] = 0.0;
-  b_dv[6] = -max_tilt_value_approach;
+  b_dv[6] = -sin(theta_current);
   b_dv[1] = 0.0;
   b_dv[4] = b_max_approach;
-  b_dv[7] = b_min_approach * g_max_approach;
+  b_dv[7] = max_tilt_value_approach * b_min_approach;
   b_dv[2] = 0.0;
-  b_dv[5] = -g_min_approach;
-  b_dv[8] = max_theta_protection * min_theta_protection;
-  max_tilt_value_approach = (des_phi_first_iteration - phi_current) * phi_gain;
-  b_max_approach = (des_theta_first_iteration - theta_current) * theta_gain;
+  b_dv[5] = -max_tilt_value_approach;
+  b_dv[8] = b_max_approach * b_min_approach;
+  max_tilt_value_approach = (fmin(fmax(des_phi_first_iteration, min_phi_hard),
+    max_phi_hard) - phi_current) * phi_gain;
+  b_max_approach = (fmin(fmax(des_theta_first_iteration, min_theta_hard),
+    max_theta_hard) - theta_current) * theta_gain;
   for (i = 0; i < 3; i++) {
     des_body_rates[i] = (b_dv[i] * max_tilt_value_approach + b_dv[i + 3] *
                          b_max_approach) + b_dv[i + 6] * des_psi_dot;
