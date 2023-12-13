@@ -444,9 +444,9 @@ void* second_thread() //Run the optimization code
       max_delta_ailerons = 25;
       min_delta_ailerons = -25; 
 
-      dv[0] = 3;
-      dv[1] = 5;
-      dv[2] = -5;
+      dv[0] = 0;
+      dv[1] = 0;
+      dv[2] = 9;
       dv[3] = 0;
       dv[4] = 0;
       dv[5] = 0;
