@@ -1,0 +1,207 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="180" ground_alt="60" lat0="52.3931434" lon0="5.9205099" max_dist_from_home="9000" name="Rotating wing Harde" security_height="2">
+  <header/>
+  <waypoints>
+    <waypoint name="HOME" x="12.6" y="-48.7"/>
+    <waypoint name="CLIMB" x="62.6" y="-80.4"/>
+    <waypoint name="trans" x="100." y="100."/>
+    <waypoint name="decel" x="100." y="100."/>
+    <waypoint name="end_trans" x="100." y="100."/>
+    <waypoint name="STDBY" lat="52.3940343" lon="5.9229692"/>
+    <waypoint name="begin_trans"  lat="52.3941568" lon="5.9231750"/>
+    <waypoint name="p1" lat="52.3963465" lon="5.9267684"/>
+    <waypoint name="p2" lat="52.3994182" lon="5.9333586"/>
+    <waypoint name="p3" lat="52.4033999" lon="5.9292886"/>
+    <waypoint name="p4" lat="52.3999490" lon="5.9231485"/>
+    <waypoint name="circ" lat="52.39535877874752" lon="5.924914921610622"/>
+    <waypoint name="TD" lat="52.39306725044085" lon="5.92060993591204"/>
+    <waypoint lat="52.4034734" lon="5.9067552" name="C1"/>
+    <waypoint lat="52.3878517" lon="5.9212118" name="C2"/>
+    <waypoint lat="52.4054122" lon="5.9581765" name="C3"/>
+    <waypoint lat="52.4179727" lon="6.0083051" name="C4"/>
+    <waypoint lat="52.442091206182084" lon="5.987117813607398" name="C5"/>
+  </waypoints>
+  <sectors>
+    <sector color="red" name="Flyzone">
+      <corner name="C1"/>
+      <corner name="C2"/>
+      <corner name="C3"/>
+      <corner name="C4"/>
+      <corner name="C5"/>
+    </sector>
+  </sectors>
+  <modules>
+  </modules>
+  <exceptions>
+    <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
+    <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby')) @AND !(nav_block == IndexOfBlock('Link_loss'))" deroute="Link_loss"/>
+  </exceptions>
+  <blocks>
+    <block name="Wait GPS">
+      <set value="false" var="force_forward"/>
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid() || !state.ned_initialized_i"/>
+    </block>
+    <block name="Geo init">
+      <set value="false" var="force_forward"/>
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetAltitudeReferenceHere()"/>
+    </block>
+    <block name="Holding point">
+      <set value="false" var="force_forward"/>
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Start Engine">
+        <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
+        <call_once fun="NavResurrect()"/>
+        <attitude pitch="0" roll="0" throttle="0" until="stage_time>10" vmode="throttle"/>
+    </block>
+    <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+        <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
+        <exception cond="getPosAlt() @LT 4.0" deroute="Standby"/>
+        <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+        <attitude pitch="0" roll="0" throttle="0.75" until="stage_time>2" vmode="throttle"/>
+    </block>
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+        <set value="7" var="nav_max_speed"/>
+        <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
+        <stay wp="STDBY" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+    </block>
+    <block name="Link_loss">
+        <set value="false" var="force_forward"/>
+        <stay wp="STDBY" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+    </block>
+    <block name="stay_begin-trans">
+      <set value="7" var="nav_max_speed"/>
+      <set value="false" var="force_forward"/>
+      <call fun="set_wing_rotation_scheduler(false)"/>
+      <stay wp="begin_trans" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+    </block>
+    <block name="line_trans_fwd">
+      <set value="30" var="nav_max_speed"/>
+      <set value="false" var="force_forward"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
+      <call_once fun="NavSetWaypointHere(WP_begin_trans)"/>
+      <go wp="end_trans"/>
+      <deroute block="end_transition"/>
+    </block>
+    <block name="end_transition">
+      <set value="7" var="nav_max_speed"/>
+      <set value="false" var="force_forward"/>
+      <call fun="set_wing_rotation_scheduler(false)"/>
+      <stay wp="end_trans"/>
+    </block>
+    <block name="transition_CW">
+      <set value="30" var="nav_max_speed"/>
+      <set value="false" var="force_forward"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
+      <stay wp="end_trans"/>
+      <exception cond="RotWingAutomationReadyForForward()" deroute="Circle_CW_fwd"/>
+    </block>
+    <block name="transition_CCW">
+      <set value="30" var="nav_max_speed"/>
+      <set value="false" var="force_forward"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
+      <stay wp="end_trans"/>
+      <exception cond="RotWingAutomationReadyForForward()" deroute="Circle_CCW_fwd"/>
+    </block>
+    <block name="route">
+      <set value="true" var="force_forward"/>
+      <set value="30" var="nav_max_speed"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p3"/>
+      <go from="p3" hmode="route" wp="p4"/>
+      <go from="p4" hmode="route" wp="p1"/>
+      <deroute block="route"/>
+    </block>
+    <block name="small_route">
+      <set value="30" var="nav_max_speed"/>
+      <set value="true" var="force_forward"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
+      <go wp="p2"/>
+      <go wp="p3"/>
+      <go wp="p4"/>
+      <go wp="p1"/>
+      <deroute block="small_route"/>
+    </block>
+    <block name="Circle_CW_fwd">
+      <set value="30" var="nav_max_speed"/>
+      <set value="true" var="force_forward"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
+      <circle radius="100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+    </block>
+    <block name="Circle_CCW_fwd">
+      <set value="30" var="nav_max_speed"/>
+      <set value="true" var="force_forward"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
+      <circle radius="-100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+    </block>
+    <block name="big_Circle_CW_fwd">
+      <set value="30" var="nav_max_speed"/>
+      <set value="true" var="force_forward"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
+      <circle radius="150" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+    </block>
+    <block name="big_Circle_CCW_fwd">
+      <set value="30" var="nav_max_speed"/>
+      <set value="true" var="force_forward"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
+      <circle radius="-150" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+    </block>
+    <block name="Transition_quad">
+      <set value="30" var="nav_max_speed"/>
+      <set value="false" var="force_forward"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
+      <go wp="STDBY"/>
+      <deroute block="Standby"/>
+    </block>
+    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
+        <set value="7" var="nav_max_speed"/>
+        <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
+        <call_once fun="NavSetWaypointHere(WP_TD)"/>
+    </block>
+    <block name="land">
+        <set value="7" var="nav_max_speed"/>
+        <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
+        <go wp="TD"/>
+    </block>
+    <block name="descend">
+        <set value="7" var="nav_max_speed"/>
+        <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
+        <exception cond="!(getPosAlt() @LT 12.0)" deroute="flare"/>
+        <stay climb="-1.0" vmode="climb" wp="TD"/>
+    </block>
+    <block name="flare">
+        <set value="7" var="nav_max_speed"/>
+        <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
+        <stay climb="-0.5" vmode="climb" wp="TD"/>
+        <!--<exception cond="!(getPosAlt() @LT 2.0)" deroute="flare_low"/>-->
+        <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.24)" deroute="flare_low"/>
+    </block>
+    <block name="flare_low">
+        <set value="7" var="nav_max_speed"/>
+        <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
+        <exception cond="NavDetectGround()" deroute="Holding point"/>
+        <exception cond="!nav_is_in_flight()" deroute="Holding point"/>
+        <call_once fun="NavStartDetectGround()"/>
+        <stay climb="-0.5" vmode="climb" wp="TD"/>
+    </block>
+    <block name="landed">
+        <set value="7" var="nav_max_speed"/>
+        <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
+        <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>
