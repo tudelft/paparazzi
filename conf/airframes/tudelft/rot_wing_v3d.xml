@@ -218,15 +218,32 @@
         <servo no="11" name="AIL_RIGHT"  min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
     </servos>
 
-    <commands>
-        <axis name="ROLL"       failsafe_value="0"/>
-        <axis name="PITCH"      failsafe_value="0"/>
-        <axis name="YAW"        failsafe_value="0"/>
-        <axis name="THRUST"     failsafe_value="0"/>
-        <axis name="THRUST_X"   failsafe_value="0"/>
+    <commands><!-- order must match the INDI ctrl_eff -->
+        <axis name="FRONT_MOTOR" failsafe_value="0"/>
+        <axis name="RIGHT_MOTOR" failsafe_value="0"/>
+        <axis name="BACK_MOTOR"  failsafe_value="0"/>
+        <axis name="LEFT_MOTOR"  failsafe_value="0"/>
+        <axis name="RUDDER"      failsafe_value="0"/>
+        <axis name="ELEVATOR"    failsafe_value="0"/>
+        <axis name="AILERON"     failsafe_value="0"/>
+        <axis name="FLAP"        failsafe_value="0"/>
+        <axis name="PUSHER"      failsafe_value="0"/>
+        <axis name="SKEW"        failsafe_value="0"/>
+
+        <axis name="ROLL"        failsafe_value="0"/>
+        <axis name="PITCH"       failsafe_value="0"/>
+        <axis name="YAW"         failsafe_value="0"/>
+        <axis name="THRUST"      failsafe_value="0"/>
+        <axis name="THRUST_X"    failsafe_value="0"/>
     </commands>
 
     <command_laws>
+        <!--
+          - actuators[SERVO_NAME_IDX] ACTUATORS_NB (allen in gebruik) alles na elkaar
+          - functonal numbers of SERVO: SERVO_NAME -> no="" vb: MOTOR_FRONT = 0 = BMOTOR_FRONT === CAN nummering
+          - actuators_pprz[] ACTUATORS_NB waarvan enkel INDI_U in gebruik + Rotation. Nummering afhankelijk van INDI matrix
+          - commands[] COMMAND_NB
+        -->
         <let var="th_hold" value="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
         <let VAR="servo_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
         <let VAR="hover_off" VALUE="Or($th_hold, bool_disable_hover_motors)"/>
