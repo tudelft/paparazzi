@@ -161,7 +161,7 @@ NOTES:
         <define name="USE_I2C4"/><!-- 4525D5AI 001D -->
         <define name="SDP3X_I2C_DEV" value="i2c4"/>
 <!--        <define name="SDP3X_I2C_ADDR" value="0x50" description="i2c slave address (default: 0x50)"/>-->
-        <define name="SDP3X_SYNC_SEND" value="TRUE"/>
+        <define name="SDP3X_SYNC_SEND" value="FALSE"/>
 <!--        <define name="SDP3X_PRESSURE_SCALE" value="1.0" description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"/>-->
 <!--        <define name="SDP3X_PRESSURE_OFFSET" value="0.0" description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)"/>-->
 <!--        <define name="SDP3X_AIRSPEED_SCALE" value="1.6327" description="quadratic scale factor to convert differential pressure to airspeed"/>-->
@@ -723,10 +723,10 @@ NOTES:
 <!--    <define name="REF_ERR_Q" value="30.0"/>-->
 <!--    <define name="REF_ERR_R" value="80.0"/>-->
       <define name="REF_ERR_P" value="70.0"/>
-      <define name="REF_ERR_Q" value="100.0"/>
+      <define name="REF_ERR_Q" value="120.0"/>
       <define name="REF_ERR_R" value="90.0"/>
     <define name="REF_RATE_P" value="16.0"/>
-    <define name="REF_RATE_Q" value="15.0"/>
+    <define name="REF_RATE_Q" value="16.0"/>
     <define name="REF_RATE_R" value="15.0"/>
 
     <!--Maxium yaw rate, to avoid instability-->
@@ -783,9 +783,9 @@ NOTES:
 
   <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
       <define name="POS_GAIN" value="0.4"/>
-      <define name="POS_GAINZ" value="0.5"/>
+      <define name="POS_GAINZ" value="0.7"/>
       <define name="SPEED_GAIN" value="0.7"/>
-      <define name="SPEED_GAINZ" value="0.6"/>  <!-- 0.2? -->
+      <define name="SPEED_GAINZ" value="0.8"/>  <!-- 0.2? -->
       <define name="MAX_AIRSPEED" value="12."/>     <!--THIS IS *CRUISE* AISPEED!!! -->
       <define name="ZERO_AIRSPEED" value="FALSE"/>
       <define name="NAV_SPEED_MARGIN" value="8.0"/>
@@ -819,8 +819,14 @@ NOTES:
     <define name="SOARING_STEP_FINE" value="0.1"/>
 
     <define name="SOARING_WP_ARRIVAL_DIST" value="4"/>  <!-- in meters, 3d dist-->
+    <define name="SOARING_WP_STAY_DURATION" value="8"/> <!-- WP arrival count -->
     <define name="SOARING_WP_WAIT_SEC" value="15"/> <!-- in sec, timeout for unreachable WP -->
     <define name="SOARING_MIN_ALT" value="5"/> <!-- minimum altitude for moving WP -->
+
+    <define name="SOARING_USE_FIXED_HEADING_WP" value="FALSE" /> <!-- use wp to set heading sp, -->
+    <define name="SOARING_HEADING_GAIN" value="0.1" />
+
+    <define name="SOARING_MAX_SEARCH_STEPS" value="1000" /> <!-- max search steps -->
 
     <!-- define WP ids -->
     <define name="SOARING_STDBY_WP_ID" value="2"/>

@@ -113,4 +113,8 @@ extern float max_acc_sp;
 
 extern float soaring_min_alt;
 
+extern bool use_fixed_heading_wp;
+extern float soaring_heading_gain;
+extern uint16_t soaring_max_search_steps;
+
 #endif /* GUIDANCE_INDI_HYBRID_NLD_SOARING_H */

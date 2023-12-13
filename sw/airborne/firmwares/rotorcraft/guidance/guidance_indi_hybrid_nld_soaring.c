@@ -289,6 +289,18 @@ struct FloatVect3 guidance_wind_gradient = {0.0, 0.0, 0.0};
 #define GUIDANCE_INDI_MIN_ACC_SP -3.0
 #endif
 
+#ifndef GUIDANCE_INDI_SOARING_USE_FIXED_HEADING_WP
+#define GUIDANCE_INDI_SOARING_USE_FIXED_HEADING_WP FALSE
+#endif
+
+#ifndef GUIDANCE_INDI_SOARING_HEADING_GAIN
+#define GUIDANCE_INDI_SOARING_HEADING_GAIN 0.001
+#endif
+
+#ifndef GUIDANCE_INDI_SOARING_MAX_SEARCH_STEPS
+#define GUIDANCE_INDI_SOARING_MAX_SEARCH_STEPS 1000
+#endif
+
 // 2m/0.1 = 20 data points for one axis
 #define MAP_MAX_NUM_POINTS 400
 
@@ -361,6 +373,13 @@ float soaring_step_size_fine = GUIDANCE_INDI_SOARING_STEP_FINE;
 float max_acc_sp = GUIDANCE_INDI_MAX_ACC_SP;
 float min_acc_sp = GUIDANCE_INDI_MIN_ACC_SP;
 float soaring_min_alt = GUIDANCE_INDI_SOARING_MIN_ALT;
+float soaring_heading_sp = 0;       // in rad
+float soaring_heading_gain = GUIDANCE_INDI_SOARING_HEADING_GAIN;
+bool use_fixed_heading_wp = GUIDANCE_INDI_SOARING_USE_FIXED_HEADING_WP;
+
+uint16_t soaring_max_search_steps = GUIDANCE_INDI_SOARING_MAX_SEARCH_STEPS;
+uint16_t soaring_search_cnt_steps = 0;
+float soaring_min_cost = INFINITY;
 
 int32_t wp_pos_x;
 int32_t wp_pos_y;
@@ -434,7 +453,10 @@ static void send_soaring_wp_map(struct transport_tx *trans, struct link_device *
                                &soaring_move_wp_cost_threshold,
                                &arrival_check_dist_3d,
                                &stay_wp_duration,
-                               &soaring_move_wp_wait_sec
+                               &soaring_move_wp_wait_sec,
+                               &soaring_search_cnt_steps,
+                               &soaring_max_search_steps,
+                               &soaring_min_cost
                               );
 }
 #endif
@@ -479,6 +501,8 @@ void guidance_indi_soaring_enter(void) {
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, stateGetNedToBodyEulers_f()->theta);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, thrust_in);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
+
+  soaring_heading_sp = ANGLE_FLOAT_OF_BFP(nav_heading);
 }
 
 void guidance_indi_soaring_move_wp(float cost_avg_val){
@@ -506,19 +530,14 @@ void guidance_indi_soaring_move_wp(float cost_avg_val){
 
     // Set a step size
     if (soaring_use_fixed_step_size) {
-//        VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], soaring_fixed_step_size);
         step_size = soaring_fixed_step_size;
     } else if (cost_avg_val > (soaring_move_wp_cost_threshold*soaring_step_k_big)) {
-//        VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], soaring_step_size_big);
         step_size = soaring_step_size_big;
     } else if (cost_avg_val > (soaring_move_wp_cost_threshold*soaring_step_k_mid)) {
-//        VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], soaring_step_size_mid);
         step_size = soaring_step_size_mid;
     } else if (cost_avg_val > (soaring_move_wp_cost_threshold*soaring_step_k_small)) {
-//        VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], soaring_step_size_small);
         step_size = soaring_step_size_small;
     } else {
-//        VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], soaring_step_size_fine);
         step_size = soaring_step_size_fine;
     }
 
@@ -555,6 +574,17 @@ void guidance_indi_soaring_move_wp(float cost_avg_val){
                                &(waypoints[soar_wp_id].enu_i.x),
                                &(waypoints[soar_wp_id].enu_i.y),
                                &(waypoints[soar_wp_id].enu_i.z));
+
+    soaring_search_cnt_steps ++;
+    if (soaring_min_cost > cost_avg_val) {
+        soaring_min_cost = cost_avg_val;
+    }
+    // update threshold
+    if (soaring_search_cnt_steps > soaring_max_search_steps) {
+        if (soaring_move_wp_cost_threshold < soaring_min_cost) {
+            soaring_move_wp_cost_threshold = soaring_min_cost;
+        }
+    }
 }
 
 // reset wp to current position
@@ -606,6 +636,7 @@ void guidance_indi_hybrid_soaring_start(void) {
 }
 void guidance_indi_hybrid_soaring_stop(void) {
     soaring_move_wp_running = false;
+    soaring_search_cnt_steps = 0;
 }
 // reset soaring wp to stdby
 void guidance_indi_hybrid_soaring_reset(void) {
@@ -621,6 +652,7 @@ void guidance_indi_hybrid_soaring_reset(void) {
     prev_wp_sum_cost = -1;
     move_wp_sum_cost = 0;
     move_wp_wait_count = 0;
+    soaring_search_cnt_steps = 0;
 }
 
 /**
@@ -651,20 +683,6 @@ void guidance_indi_soaring_run(float *heading_sp) {
 (INT32_ANGLE_FRAC - INT32_PERCENTAGE_FRAC)) / 100, max_offset, INT32_ANGLE_FRAC);
 #endif
 
-  // set heading towards the wind tunnel
-  float psi = eulers_zxy.psi;
-  struct FloatVect2 heading_pos_diff;
-
-  VECT2_DIFF(heading_pos_diff, heading_target, *stateGetPositionNed_f());
-//    float heading_f = atan2f(heading_pos_diff.y, heading_pos_diff.x);
-
-//    if (VECT2_NORM2(heading_pos_diff) > 0.25) {
-//        float heading_f = atan2f(heading_pos_diff.x, heading_pos_diff.y);
-  float soaring_heading_sp = atan2f(heading_pos_diff.y, heading_pos_diff.x);
-//    } else {
-//        heading_sp = eulers_zxy.psi;
-//    }
-//    printf("%f %f %f %f %f\n", heading_target.x, heading_target.y, heading_pos_diff.x, heading_pos_diff.y ,soaring_heading_sp);
 
   //filter accel to get rid of noise and filter attitude to synchronize with accel
   guidance_indi_soaring_propagate_filters();
@@ -696,7 +714,7 @@ void guidance_indi_soaring_run(float *heading_sp) {
     }
 
     //for rc control horizontal, rotate from body axes to NED
-//  float psi = eulers_zxy.psi;
+  float psi = eulers_zxy.psi;
   /*NAV mode*/
 //  float speed_sp_b_x = cosf(psi) * speed_sp.x + sinf(psi) * speed_sp.y;
 //  float speed_sp_b_y =-sinf(psi) * speed_sp.x + cosf(psi) * speed_sp.y;
@@ -860,14 +878,30 @@ void guidance_indi_soaring_run(float *heading_sp) {
   Bound(guidance_euler_cmd.phi, -guidance_indi_max_bank, guidance_indi_max_bank);
   Bound(guidance_euler_cmd.theta, RadOfDeg(GUIDANCE_INDI_MIN_PITCH), RadOfDeg(GUIDANCE_INDI_MAX_PITCH));
 
-//    printf("%f %f %f\n", guidance_wind_gradient.x, guidance_wind_gradient.y, guidance_wind_gradient.z);
+//    struct FloatVect2 heading_pos_diff;
+//    VECT2_DIFF(heading_pos_diff, heading_target, *stateGetPositionNed_f());
+//    float heading_f = atan2f(heading_pos_diff.y, heading_pos_diff.x);
+
+//    if (VECT2_NORM2(heading_pos_diff) > 0.25) {
+//        float heading_f = atan2f(heading_pos_diff.x, heading_pos_diff.y);
+//    float soaring_heading_sp = atan2f(heading_pos_diff.y, heading_pos_diff.x);
+//    } else {
+//        heading_sp = eulers_zxy.psi;
+//    }
+//    printf("%f %f %f %f %f\n", heading_target.x, heading_target.y, heading_pos_diff.x, heading_pos_diff.y ,soaring_heading_sp);
 
 // Set heading to a fixed WP
-//    guidance_euler_cmd.psi = soaring_heading_sp;
-//    guidance_euler_cmd.psi = nav_heading;
+if (use_fixed_heading_wp) {
     nav_set_heading_towards_waypoint(heading_wp_id);
-//    *heading_sp = ANGLE_FLOAT_OF_BFP(nav_heading);
-    guidance_euler_cmd.psi = ANGLE_FLOAT_OF_BFP(nav_heading);
+    soaring_heading_sp = ANGLE_FLOAT_OF_BFP(nav_heading);
+//    guidance_euler_cmd.psi = ANGLE_FLOAT_OF_BFP(nav_heading);
+} else {
+    float heading_ref_to_add = ((soaring_heading_sp - psi) / PERIODIC_FREQUENCY * soaring_heading_gain);
+    Bound(heading_ref_to_add, -10.0, 10.0);
+    soaring_heading_sp -= heading_ref_to_add;
+//    guidance_euler_cmd.psi = soaring_heading_sp;
+}
+    guidance_euler_cmd.psi = soaring_heading_sp;
 
   // Set the quaternion setpoint from eulers_zxy
   struct FloatQuat sp_quat;
@@ -901,7 +935,7 @@ void guidance_indi_soaring_run(float *heading_sp) {
                 guidance_indi_soaring_move_wp(move_wp_sum_cost);    // explore or go back to the original position
             } else {
                 // stay
-                prev_wp_sum_cost = -1;
+                prev_wp_sum_cost = -2;
             }
                 // reset count & cost
             move_wp_entry_time = autopilot.flight_time;

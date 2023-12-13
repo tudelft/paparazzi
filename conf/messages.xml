@@ -917,6 +917,9 @@
         <field name="wp_arrival_dist" type="float"/>
         <field name="wp_arrival_duration" type="float"/>
         <field name="timeout_duration" type="float"/>
+        <field name="soaring_cnt_steps" type="uint16"/>
+        <field name="max_steps" type="uint16"/>
+        <field name="min_cost" type="float"/>
     </message>
 
     <message name="HIH_STATUS" id="96">
