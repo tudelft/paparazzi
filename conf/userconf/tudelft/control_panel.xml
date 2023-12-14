@@ -443,6 +443,25 @@
       </program>
       <program name="Gazebo"/>
     </session>
+    <session name="Tailsitter_cyberzoo">
+      <program name="NatNet3">
+        <arg flag="-xs" constant="right"/>
+        <arg flag="-le" constant="right"/>
+        <arg flag="-an" constant="far"/>
+        <arg flag="-ac" constant="125"/>
+        <arg flag="88"/>
+        <arg flag="-up" constant="z_up"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Server"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
+        <arg flag="-layout" constant="bottom_settings.xml"/>
+      </program>
+      <program name="Messages"/>
+    </session>
     <session name="helidd">
       <program name="BluegigaUsbDongle">
         <arg flag="/dev/ttyACM0" constant="00:07:80:2d:d6:d9"/>
@@ -464,24 +483,24 @@
         <arg flag="hobbyking.xml"/>
       </program>
     </session>
-    <session name="Tailsitter_cyberzoo">
+    <session name="racing_cyberzoo">
+      <program name="Messages"/>
       <program name="NatNet3">
         <arg flag="-xs" constant="right"/>
         <arg flag="-le" constant="right"/>
         <arg flag="-an" constant="far"/>
-        <arg flag="-ac" constant="125"/>
+        <arg flag="-ac" constant="2"/>
         <arg flag="88"/>
-        <arg flag="-up" constant="z_up"/>
+        <arg flag="--up_axis" constant="z_up"/>
       </program>
       <program name="Data Link">
-        <arg flag="-udp"/>
+        <arg flag="-d" constant="/dev/ttyUSB0"/>
+        <arg flag="-s" constant="57600"/>
       </program>
       <program name="Server"/>
       <program name="GCS">
         <arg flag="-speech"/>
-        <arg flag="-layout" constant="bottom_settings.xml"/>
       </program>
-      <program name="Messages"/>
     </session>
   </section>
 </control_panel>

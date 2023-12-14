@@ -27,6 +27,7 @@
 #include "modules/radio_control/radio_control.h"
 #include "firmwares/rotorcraft/autopilot_static.h"
 #include "autopilot.h"
+#include "modules/actuators/actuators.h"
 
 #ifndef RADIO_THROTTLE
 #define RADIO_THROTTLE   0
@@ -36,11 +37,11 @@ int16_t stage = 0;
 int16_t counter = 0;
 float Kq = TAKEOFF_Q_GAIN;
 
-float t_scale_to_thrust = 1.3;
+float t_scale_to_thrust = 3.5;
 
 #define TAKEOFF_MODULE_FREQ 500
 
-int16_t pwm2pprz(float pwm);
+//int16_t pwm2pprz(float pwm);
 int16_t take_off_stage(float theta);
 int16_t take_off_thrust(void);
 void take_off_enter(void);
@@ -51,7 +52,6 @@ void take_off_enter(void){
 }
 
 int16_t take_off_thrust(void){
-  float thrust_pwm=1000;
   int16_t thrust_pprz=0;
   struct FloatEulers eulers_zxy;
   struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
@@ -59,16 +59,13 @@ int16_t take_off_thrust(void){
   float_eulers_of_quat_zxy(&eulers_zxy, statequat);
 
   if(autopilot.mode == AP_MODE_NAV){
-    if(stage == 0){
-      thrust_pwm = 1000;
-      thrust_pprz = pwm2pprz(thrust_pwm);
-    } else if(stage == 1){
-      int16_t pitch_rate_cont = (int16_t) ceil(Kq*(0.3 - body_rates->q));
-      thrust_pprz = 6000 - pitch_rate_cont + counter*t_scale_to_thrust;
-    } else{ // stage 2 (thrust not used actually?)
-      thrust_pwm = 1542;
-      thrust_pprz = pwm2pprz(thrust_pwm);
-    }
+    if(stage == 1){
+      int16_t pitch_rate_cont = (int16_t) ceil(Kq*(3.0 - body_rates->q));
+      thrust_pprz = 2800 - pitch_rate_cont;//basic thrust T=mg 2800 required, thrust not increase during pivot, vertical acceleration undesired
+    } 
+    // else if (stage == 2){ // stage 2 (takeoff thrust not used actually)
+    //   thrust_pprz = 3800;
+    // }
   }
   else{
     thrust_pprz = radio_control.values[RADIO_THROTTLE];
@@ -83,7 +80,7 @@ int16_t take_off_stage(float theta){
       stage = 0;
       counter = 0;
     }
-    if(stage == 0 && counter/TAKEOFF_MODULE_FREQ > 1.0){
+    else if(stage == 0 && counter/TAKEOFF_MODULE_FREQ > 1.0){
       stage = 1;
       counter = 0;
     }
@@ -104,9 +101,4 @@ int16_t take_off_stage(float theta){
     }
   }
   return stage;
-}
-int16_t pwm2pprz(float pwm){
-  int16_t pprz_cmd;
-  pprz_cmd =  9600/900*pwm - 10666.67; //(int16_t)ceil((pwm - [1560 1350 1150 1150 1500 1500])./[-600 600 750 750 400 400]*9600);
-  return pprz_cmd;
 }

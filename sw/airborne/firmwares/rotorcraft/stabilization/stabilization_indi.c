@@ -113,6 +113,7 @@ float *Bwls[INDI_OUTPUTS];
 int num_iter = 0;
 // Global variable for the counter
 uint32_t indi_counter = 0;
+void update_filters(void);
 static void lms_estimation(void);
 static void get_actuator_state(void);
 static void calc_g1_element(float dx_error, int8_t i, int8_t j, float mu_extra);
@@ -344,8 +345,8 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
                                    &angular_accel_ref.r,
                                    &actuator_state_filt_vect[0],
                                    &actuator_state_filt_vect[1],
-                                   &actuator_state_filt_vect[4],
-                                   &indi_counter,
+                                   &actuator_state_filt_vect[2],
+                                   &actuator_state_filt_vect[3],
                                    INDI_NUM_ACT, indi_u);    // out
 }
 #endif
@@ -537,18 +538,7 @@ void stabilization_indi_set_stab_sp(struct StabilizationSetpoint *sp)
   stab_att_ff_rates = stab_sp_to_rates_f(sp);
 }
 
-/**
- * @param att_err attitude error
- * @param rate_control boolean that states if we are in rate control or attitude control
- * @param in_flight boolean that states if the UAV is in flight or not
- *
- * Function that calculates the INDI commands
- */
-
-void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
-{
-  float airspeed = stateGetAirspeed_f();
-
+void update_filters(void) {
   /* Propagate the filter on the gyroscopes */
   struct FloatRates *body_rates = stateGetBodyRates_f();
   float rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
@@ -566,7 +556,36 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     estimation_rate_d[i] = (estimation_output_lowpass_filters[i].o[0] - estimation_output_lowpass_filters[i].o[1]) *
                            PERIODIC_FREQUENCY;
     estimation_rate_dd[i] = (estimation_rate_d[i] - estimation_rate_d_prev) * PERIODIC_FREQUENCY;
+
+ // Propagate actuator filters
+  get_actuator_state();
+  for (i = 0; i < INDI_NUM_ACT; i++) {
+    update_butterworth_2_low_pass(&actuator_lowpass_filters[i], actuator_state[i]);
+    update_butterworth_2_low_pass(&estimation_input_lowpass_filters[i], actuator_state[i]);
+    actuator_state_filt_vect[i] = actuator_lowpass_filters[i].o[0];
+
+    // calculate derivatives for estimation
+    float actuator_state_filt_vectd_prev = actuator_state_filt_vectd[i];
+    actuator_state_filt_vectd[i] = (estimation_input_lowpass_filters[i].o[0] - estimation_input_lowpass_filters[i].o[1]) *
+                                   PERIODIC_FREQUENCY;
+    actuator_state_filt_vectdd[i] = (actuator_state_filt_vectd[i] - actuator_state_filt_vectd_prev) * PERIODIC_FREQUENCY;
   }
+  }
+}
+
+/**
+ * @param att_err attitude error
+ * @param rate_control boolean that states if we are in rate control or attitude control
+ * @param in_flight boolean that states if the UAV is in flight or not
+ *
+ * Function that calculates the INDI commands
+ */
+
+void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
+{
+  float airspeed = stateGetAirspeed_f();
+  struct FloatRates *body_rates = stateGetBodyRates_f();
+  update_filters();
 
   //The rates used for feedback are by default the measured rates.
   //If there is a lot of noise on the gyroscope, it might be good to use the filtered value for feedback.
@@ -605,22 +624,24 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   angular_accel_ref.q = (rate_sp.q - rates_filt.q) * indi_gains.rate.q;
   angular_accel_ref.r = (rate_sp.r - rates_filt.r) * indi_gains.rate.r;
 
+/*
   float delta_time = 1/200; //calculate the time step
   // Calculate the derivative of the tilt angle
-  float tilt_angle_rate_left = (indi_u[1] - actuator_state_filt_vect[1]) / delta_time;
-  float tilt_angle_rate_right = (indi_u[2] - actuator_state_filt_vect[2]) / delta_time;
+  float tilt_angle_rate_left = mapping * (indi_u[1] - actuator_state_filt_vect[1]) / delta_time;
+  float tilt_angle_rate_right = mapping * (indi_u[2] - actuator_state_filt_vect[2]) / delta_time;
   
   // calculate compensation for servo reaction moment (torque)
-  float servo_moment_pitch_left = torque * 9.8 * z_dist * tilt_angle_rate_left ;
-  float servo_moment_pitch_right = torque * 9.8 * z_dist * tilt_angle_rate_right;
+  float servo_moment_pitch_left = torque * 9.8 * tilt_angle_rate_left ;
+  float servo_moment_pitch_right = torque * 9.8 * tilt_angle_rate_right;
 
   // combine left and right servo reaction moments
   float servo_moment_pitch = servo_moment_pitch_left + servo_moment_pitch_right;
   //Compensate the counteract servo reaction moment
   angular_accel_ref.q += servo_moment_pitch / I_yy;
+*/
 
-
-  g2_times_du = 0.0; 
+  g2_times_du = 0.0;
+  int8_t i;
   for (i = 0; i < INDI_NUM_ACT; i++) {
     g2_times_du += g2[i] * indi_du[i];
   }
@@ -734,20 +755,6 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
         indi_u[i] = -MAX_PPRZ;
       }
     }
-  }
-
-  // Propagate actuator filters
-  get_actuator_state();
-  for (i = 0; i < INDI_NUM_ACT; i++) {
-    update_butterworth_2_low_pass(&actuator_lowpass_filters[i], actuator_state[i]);
-    update_butterworth_2_low_pass(&estimation_input_lowpass_filters[i], actuator_state[i]);
-    actuator_state_filt_vect[i] = actuator_lowpass_filters[i].o[0];
-
-    // calculate derivatives for estimation
-    float actuator_state_filt_vectd_prev = actuator_state_filt_vectd[i];
-    actuator_state_filt_vectd[i] = (estimation_input_lowpass_filters[i].o[0] - estimation_input_lowpass_filters[i].o[1]) *
-                                   PERIODIC_FREQUENCY;
-    actuator_state_filt_vectdd[i] = (actuator_state_filt_vectd[i] - actuator_state_filt_vectd_prev) * PERIODIC_FREQUENCY;
   }
 
   // Use online effectiveness estimation only when flying
@@ -865,7 +872,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 
   int16_t takeoff_stage = take_off_stage(eulers_zxy.theta);
   float takeoff_thrust = take_off_thrust();
-
+  static bool isFirstEntryToStage2 = true;
   if (takeoff_stage == 0){
     // initialize pivoting by putting motors up
 	  actuators_pprz[0] = MAX_PPRZ;
@@ -903,11 +910,25 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     actuators_pprz[4] = 0;
     actuators_pprz[5] = 0;
 
+    int8_t i;
+    for (i = 0; i < INDI_NUM_ACT; i++) {
+      indi_u[i] = actuators_pprz[i];
+    }
+
+    update_filters();
+
     /* reset psi setpoint to current psi angle */
     stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
   } else { // not in a takeoff stage, flying
 	  /* compute the INDI command */
 	  stabilization_indi_rate_run(rate_sp, in_flight);
+  //   if (isFirstEntryToStage2) {
+  //   actuators_pprz[2] = takeoff_thrust;
+  //   actuators_pprz[3] = takeoff_thrust; 
+  //   actuators_pprz[4] = 0;
+  //   actuators_pprz[5] = 0;
+  //   isFirstEntryToStage2 = false;
+  // }
 	  // Reset thrust increment boolean
 	  indi_thrust_increment_set = false;
   }
