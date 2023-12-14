@@ -106,21 +106,21 @@
       <define name="USE_AIRSPEED_AIR_DATA" value="TRUE"/>
     </module>
 
-    <module name="gps" type="ublox">
+    <!--<module name="gps" type="ublox">
       <configure name="GPS_BAUD" value="B57600"/>
-    </module>
-   <!--<module name="gps" type="datalink"/>-->
+    </module>-->
+    <module name="gps" type="datalink"/>
 
-   <module name="stabilization" type="indi">
+    <module name="stabilization" type="indi">
       <configure name="INDI_NUM_ACT" value="6"/>
       <define name="WLS_N_U" value="6"/>
       <define name="WLS_N_V" value="4"/>
     </module>
 
-    <module name="ins" type="ekf2"/>
-    <!--<module name="ins" type="ekf2">
+    <!--<module name="ins" type="ekf2"/>-->
+    <module name="ins" type="ekf2">
       <define name="INS_EKF2_OPTITRACK" value="true"/>
-    </module> -->
+    </module>
     <!--<module name="ins" type="float_invariant">
       <define name="INS_PROPAGATE_FREQUENCY" value="500"/>
       <define name="INS_FINV_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>
@@ -136,13 +136,13 @@
     </module>-->
     <module name="geo_mag"/>
     <module name="tailsitter_auto_takeoff">
-      <define name="TAKEOFF_Q_GAIN" value="10.0"/>
+      <define name="TAKEOFF_Q_GAIN" value="1.04"/>
     </module>
 
     <module name="agl_dist">
       <define name="AGL_DIST_ID" value="AGL_LIDAR_TFMINI_ID"/>
-      <define name="AGL_DIST_MAX_RANGE" value="12.0"/>
-      <define name="AGL_DIST_MIN_RANGE" value="0.05"/>
+      <define name="AGL_DIST_MAX_RANGE" value="5.0"/>
+      <define name="AGL_DIST_MIN_RANGE" value="0.001"/>
       <define name="AGL_DIST_FILTER" value="0.1"/>
     </module>
 
@@ -156,8 +156,8 @@
   </firmware>
 	  	 
   <servos driver="Pwm">
-    <servo name="TILT_LEFT"  no="0" min="2250" neutral="1500" max="750"/>
-    <servo name="TILT_RIGHT" no="1" min="750" neutral="1500" max="2250"/> <!--neutral 1515-->
+    <servo name="TILT_LEFT"  no="0" min="2240" neutral="1490" max="740"/>
+    <servo name="TILT_RIGHT" no="1" min="775" neutral="1525" max="2275"/> <!--neutral 1515-->
     <!--<servo name="ELEVON_RIGHT"  no="1" min="820" neutral="1520" max="2220"/>-->
     <servo name="RM" no="2" min="1000" neutral="1100" max="2000"/>
     <servo name="LM" no="3" min="1000" neutral="1100" max="2000"/>
@@ -283,7 +283,7 @@
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="80"/> <!-- 107 50.0 25.0 20-->
-    <define name="REF_ERR_Q" value="90"/> <!-- was 80-->
+    <define name="REF_ERR_Q" value="105"/> <!-- was 80-->
     <define name="REF_ERR_R" value="80"/> <!-- was 100 200 20.0 65.0 20, increase from 60-->
     <define name="REF_RATE_P" value="9.0"/> <!--was 12 14.0 9.0 10-->
     <define name="REF_RATE_Q" value="9.0"/> <!-- was 12 15.0 14.0 10-->
@@ -314,17 +314,13 @@
     <define name="MOMENT_INERTIA_RATIO" value="0.004478"/>	<!-- ratio between MoI of tilt vs. rest of drone [total MoI minus one tilt]. Both measure around axis of servo. -->
     <define name="GRADIENT" value="0.0001"/>				<!-- gradient in linear relationship between pprz and angle (in rad), must be same as in 'ctrl_effectiveness_calc.c' -->
 
-    <!-- Minimum throttle that can be assign to motors -->
-	  <define name="MIN_THROTTLE" value="2500"/> <!-- 2500 before -->
-	  <define name="MIN_THROTTLE_FWD" value="1500"/>
-
 	  <!-- Maximum servo increment in PPRZ units -->
 	  <define name="MAX_SERVO_INCREMENT" value="4500"/>
 	
-	  <define name="PIVOT_GAIN_Q" value="100"/>
+	  <define name="PIVOT_GAIN_Q" value="10"/>
 	  <define name="PIVOT_GAIN_THETA" value="0.1"/>
-    <define name="PIVOT_SERVOGAIN_Q" value="0.1"/>
-    <define name="PIVOT_SERVOGAIN_THETA" value="2.2"/>
+    <define name="PIVOT_SERVOGAIN_Q" value="0.04"/>
+    <define name="PIVOT_SERVOGAIN_THETA" value="0.8"/>
     <define name="PIVOT_Q" value="25"/>
     <define name="PIVOT_THETA" value="100"/>
     </section>

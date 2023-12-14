@@ -31,7 +31,7 @@ extern float cda_offset;
 
 extern float g14and5;
 extern float c_delta_e;
-extern float z_dist;
+extern float mapping;
 
 extern struct MassProperties mass_property;
 extern float thrust_lower_lim;

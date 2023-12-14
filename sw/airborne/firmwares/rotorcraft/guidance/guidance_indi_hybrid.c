@@ -352,14 +352,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   float rc_y = (radio_control.values[RADIO_ROLL]/9600.0)*8.0;
   sp_accel.x = cosf(psi) * rc_x - sinf(psi) * rc_y;
   sp_accel.y = sinf(psi) * rc_x + cosf(psi) * rc_y;
-    if(use_vibration_compensation) {
-      // Subtract d_cg * q_dot from the x component of the body-frame acceleration
-      float sp_accel_bx_diff = d_cg * angular_acceleration[1];
 
-      // Add it to the acceleration setpoint in NED frame
-      sp_accel.x += cpsi * sp_accel_bx_diff;
-      sp_accel.y += spsi * sp_accel_bx_diff;
-    }
   // for rc vertical control
   sp_accel.z = -(radio_control.values[RADIO_THROTTLE]-4500)*8.0/9600.0;
 #endif
