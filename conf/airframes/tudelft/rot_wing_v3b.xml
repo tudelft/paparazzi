@@ -18,9 +18,6 @@
             </module>
             <module name="sys_mon"/>
             <module name="flight_recorder"/>
-            <module name="adc_generic">
-                <configure name="ADC_CHANNEL_GENERIC1" value="ADC_3"/>
-            </module>
 
             <!-- RC switches -->
             <define name="RADIO_TH_HOLD"            value="RADIO_AUX1"/>
