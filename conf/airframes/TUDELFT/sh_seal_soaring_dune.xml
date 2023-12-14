@@ -120,13 +120,15 @@ NOTES:
 
 <!--      <define name="ADC_CURRENT_DISABLE" value="TRUE"/>-->
 
-<!--      <module name="adc_generic">-->
-<!--&lt;!&ndash;        <configure name="USE_ADC_4" value="TRUE"/>&ndash;&gt;-->
-<!--        <configure name="ADC_CHANNEL_GENERIC1" value="ADC_1"/>-->
-<!--        <configure name="ADC_CHANNEL_GENERIC2" value="ADC_2"/>-->
-<!--        &lt;!&ndash;<configure name="ADC_CHANNEL_GENERIC2" value="RSSI_IN"/>&ndash;&gt;-->
-<!--&lt;!&ndash;        <configure name="ADC_CHANNEL_GENERIC2" value="ADC_4"/>&ndash;&gt;-->
-<!--      </module>-->
+<!--        <configure name="USE_ADC_3" value="TRUE"/>-->
+        <configure name="USE_ADC_5" value="TRUE"/>
+        <module name="adc_generic">
+<!--        <configure name="USE_ADC_4" value="TRUE"/>-->
+        <configure name="ADC_CHANNEL_GENERIC1" value="ADC_5"/>
+<!--        <configure name="ADC_CHANNEL_GENERIC2" value="ADC_5"/>-->
+        <!--<configure name="ADC_CHANNEL_GENERIC2" value="RSSI_IN"/>-->
+<!--        <configure name="ADC_CHANNEL_GENERIC2" value="ADC_4"/>-->
+      </module>
 
       <!--
       <module name="sonar_pwm">  
@@ -818,15 +820,18 @@ NOTES:
     <define name="SOARING_STEP_SMALL" value="0.3"/>
     <define name="SOARING_STEP_FINE" value="0.1"/>
 
-    <define name="SOARING_WP_ARRIVAL_DIST" value="4"/>  <!-- in meters, 3d dist-->
-    <define name="SOARING_WP_STAY_DURATION" value="8"/> <!-- WP arrival count -->
-    <define name="SOARING_WP_WAIT_SEC" value="15"/> <!-- in sec, timeout for unreachable WP -->
+    <define name="SOARING_WP_ARRIVAL_DIST" value="3"/>  <!-- in meters, 3d dist-->
+    <define name="SOARING_WP_STAY_DURATION" value="10"/> <!-- WP arrival count -->
+    <define name="SOARING_WP_WAIT_SEC" value="30"/> <!-- in sec, timeout for unreachable WP -->
     <define name="SOARING_MIN_ALT" value="5"/> <!-- minimum altitude for moving WP -->
 
-    <define name="SOARING_USE_FIXED_HEADING_WP" value="FALSE" /> <!-- use wp to set heading sp, -->
-    <define name="SOARING_HEADING_GAIN" value="0.1" />
+    <define name="SOARING_USE_FIXED_HEADING_WP" value="TRUE" /> <!-- use wp to set heading sp, -->
+    <define name="SOARING_HEADING_GAIN" value="0.01" />
 
-    <define name="SOARING_MAX_SEARCH_STEPS" value="1000" /> <!-- max search steps -->
+      <!-- 100 steps * 30 sec = 3000 sec = 50 min (maximum) -->
+      <!-- 100 steps * 10 sec = 1000 sec = 16.6 min -->
+    <define name="SOARING_MAX_EXPLORATION_STEPS" value="100" /> <!-- max search steps -->
+    <define name="SOARING_WP_COST_THRES" value="70"/>
 
     <!-- define WP ids -->
     <define name="SOARING_STDBY_WP_ID" value="2"/>
@@ -840,7 +845,7 @@ NOTES:
 <!--    <define name="MilliAmpereOfAdc(adc)" value="((3.3f/4096.0f) * 39.877f * adc)"/>&lt;!&ndash; TODO: validate &ndash;&gt;-->
     <define name="MilliAmpereOfAdc(adc)" value="(1000.0f * (0.0368f * adc + 1.7258))"/>
 
-    <define name="MAX_BAT_CAPACITY" value="3300" unit="mAh"/>
+    <define name="MAX_BAT_CAPACITY" value="3000" unit="mAh"/>
 <!--    <define name="MILLIAMP_AT_IDLE_THROTTLE" value="500" unit="mA"/>-->
     <define name="MILLIAMP_AT_IDLE_THROTTLE" value="1000" unit="mA"/>
     <define name="MILLIAMP_AT_FULL_THROTTLE" value="30000" unit="mA"/>

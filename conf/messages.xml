@@ -913,13 +913,16 @@
         <field name="k_spd_x" type="float"/>
         <field name="k_spd_z" type="float"/>
         <field name="k_pitch" type="float"/>
-        <field name="move_cost_threshold" type="float"/>
-        <field name="wp_arrival_dist" type="float"/>
-        <field name="wp_arrival_duration" type="float"/>
-        <field name="timeout_duration" type="float"/>
-        <field name="soaring_cnt_steps" type="uint16"/>
-        <field name="max_steps" type="uint16"/>
-        <field name="min_cost" type="float"/>
+        <field name="move_cost_threshold" type="float"/>        <!-- cost threshold value -->
+        <field name="wp_arrival_dist" type="float"/>            <!-- 3D distance to check wp arrival in meters -->
+        <field name="wp_arrival_duration" type="float"/>        <!-- count for the arrival check -->
+        <field name="timeout_duration" type="float"/>           <!-- timeout to reset the wp -->
+        <field name="soaring_cnt_steps" type="uint16"/>         <!-- current step count -->
+        <field name="max_exploration_steps" type="uint16"/>     <!-- max exploration step setting -->
+        <field name="min_cost" type="float"/>                   <!-- min cost during the exploration.. so far! -->
+        <field name="min_cost_wp_north" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+        <field name="min_cost_wp_east" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+        <field name="min_cost_wp_up" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
     </message>
 
     <message name="HIH_STATUS" id="96">

@@ -297,8 +297,8 @@ struct FloatVect3 guidance_wind_gradient = {0.0, 0.0, 0.0};
 #define GUIDANCE_INDI_SOARING_HEADING_GAIN 0.001
 #endif
 
-#ifndef GUIDANCE_INDI_SOARING_MAX_SEARCH_STEPS
-#define GUIDANCE_INDI_SOARING_MAX_SEARCH_STEPS 1000
+#ifndef GUIDANCE_INDI_SOARING_MAX_EXPLORATION_STEPS
+#define GUIDANCE_INDI_SOARING_MAX_EXPLORATION_STEPS 1000
 #endif
 
 // 2m/0.1 = 20 data points for one axis
@@ -377,13 +377,17 @@ float soaring_heading_sp = 0;       // in rad
 float soaring_heading_gain = GUIDANCE_INDI_SOARING_HEADING_GAIN;
 bool use_fixed_heading_wp = GUIDANCE_INDI_SOARING_USE_FIXED_HEADING_WP;
 
-uint16_t soaring_max_search_steps = GUIDANCE_INDI_SOARING_MAX_SEARCH_STEPS;
+uint16_t soaring_max_exploration_steps = GUIDANCE_INDI_SOARING_MAX_EXPLORATION_STEPS;
 uint16_t soaring_search_cnt_steps = 0;
 float soaring_min_cost = INFINITY;
 
 int32_t wp_pos_x;
 int32_t wp_pos_y;
 int32_t wp_pos_z;
+
+int32_t min_cost_wp_e;
+int32_t min_cost_wp_n;
+int32_t min_cost_wp_u;
 
 time_t rand_seed;
 
@@ -455,8 +459,11 @@ static void send_soaring_wp_map(struct transport_tx *trans, struct link_device *
                                &stay_wp_duration,
                                &soaring_move_wp_wait_sec,
                                &soaring_search_cnt_steps,
-                               &soaring_max_search_steps,
-                               &soaring_min_cost
+                               &soaring_max_exploration_steps,
+                               &soaring_min_cost,
+                               &min_cost_wp_n,
+                               &min_cost_wp_e,
+                               &min_cost_wp_u
                               );
 }
 #endif
@@ -578,9 +585,12 @@ void guidance_indi_soaring_move_wp(float cost_avg_val){
     soaring_search_cnt_steps ++;
     if (soaring_min_cost > cost_avg_val) {
         soaring_min_cost = cost_avg_val;
+        min_cost_wp_e = waypoints[soar_wp_id].enu_i.x;
+        min_cost_wp_n = waypoints[soar_wp_id].enu_i.y;
+        min_cost_wp_u = waypoints[soar_wp_id].enu_i.z;
     }
     // update threshold
-    if (soaring_search_cnt_steps > soaring_max_search_steps) {
+    if (soaring_search_cnt_steps > soaring_max_exploration_steps) {
         if (soaring_move_wp_cost_threshold < soaring_min_cost) {
             soaring_move_wp_cost_threshold = soaring_min_cost;
         }

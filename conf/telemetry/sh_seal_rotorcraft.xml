@@ -72,6 +72,7 @@
 <!--      <message name="IMCU_FBW_STATUS"     period="1.0"/>-->
 
 <!--      <message name="AIRSPEED_WIND_ESTIMATOR_EKF" period="0.2"/>-->
+      <message name="ADC_GENERIC" period="1.0"/>
 
     </mode>
 
@@ -307,7 +308,7 @@
 <!--      <message name="INS_Z"                    period=".1"/>-->
       <message name="I2C_ERRORS"               period="4.1"/>
       <message name="UART_ERRORS"              period="3.1"/>
-      <message name="ENERGY"                   period="0.1"/>
+      <message name="ENERGY"                   period="0.02"/>
       <message name="DATALINK_REPORT"          period="5.1"/>
       <message name="STATE_FILTER_STATUS"      period="3.2"/>
       <message name="AIR_DATA"                 period="0.02"/>
@@ -352,6 +353,8 @@
 <!--      <message name="ACTUATORS"                 period="0.02"/>-->
 <!--      <message name="ROTORCRAFT_RADIO_CONTROL" period="0.05"/>-->
       <message name="GPS_RTK"                  period=".05"/>
+
+      <message name="ADC_GENERIC" period="0.02"/>
 
     </mode>
   </process>
