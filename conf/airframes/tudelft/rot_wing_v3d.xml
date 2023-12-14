@@ -218,18 +218,7 @@
         <servo no="11" name="AIL_RIGHT"  min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
     </servos>
 
-    <commands><!-- order must match the INDI ctrl_eff -->
-        <axis name="FRONT_MOTOR" failsafe_value="0"/>
-        <axis name="RIGHT_MOTOR" failsafe_value="0"/>
-        <axis name="BACK_MOTOR"  failsafe_value="0"/>
-        <axis name="LEFT_MOTOR"  failsafe_value="0"/>
-        <axis name="RUDDER"      failsafe_value="0"/>
-        <axis name="ELEVATOR"    failsafe_value="0"/>
-        <axis name="AILERON"     failsafe_value="0"/>
-        <axis name="FLAP"        failsafe_value="0"/>
-        <axis name="PUSHER"      failsafe_value="0"/>
-        <axis name="SKEW"        failsafe_value="0"/>
-
+    <commands>
         <axis name="ROLL"        failsafe_value="0"/>
         <axis name="PITCH"       failsafe_value="0"/>
         <axis name="YAW"         failsafe_value="0"/>
@@ -405,12 +394,12 @@
         <define name="G2"           value="{   0.0,    0.0,    0.0,    0.0, 0.0, 0.0, 0.0, 0.0,  0.0}"/>
 
         <!-- Actuator dynamics -->
-        <define name="ACT_FREQ"             value="{10.1, 10.1, 10.0, 10.1, 52.7, 52.7, 52.7, 52.7, 24.1}"/>
+        <define name="ACT_FREQ"             value="{10.1, 10.1, 10.1, 10.1, 52.7, 52.7, 52.7, 52.7, 24.1}"/>
         <define name="ACT_IS_SERVO"         value="{   0,    0,    0,    0,    1,    1,    1,    1,    0}"/>
         <define name="ACT_IS_THRUSTER_X"    value="{   0,    0,    0,    0,    0,    0,    0,    0,    1}"/>
 
         <!-- Reference -->
-        <define name="REF_ERR_P"                    value="38.0"/>
+        <define name="REF_ERR_P"                    value="30.0"/>
         <define name="REF_ERR_Q"                    value="32.0"/>
         <define name="REF_ERR_R"                    value="23.0"/>
         <define name="REF_RATE_P"                   value="5.0"/>
