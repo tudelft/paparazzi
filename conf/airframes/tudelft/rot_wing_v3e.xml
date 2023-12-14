@@ -383,12 +383,12 @@
         <define name="G2"           value="{   0.0,    0.0,    0.0,    0.0, 0.0, 0.0, 0.0, 0.0,  0.0}"/>
 
         <!-- Actuator dynamics -->
-        <define name="ACT_FREQ"             value="{20.0, 20.0, 20.0, 20.0, 52.7, 52.7, 52.7, 52.7, 24.1}"/>
+        <define name="ACT_FREQ"             value="{10.1, 10.1, 10.1, 10.1, 52.7, 52.7, 52.7, 52.7, 24.1}"/>
         <define name="ACT_IS_SERVO"         value="{   0,    0,    0,    0,    1,    1,    1,    1,    0}"/>
         <define name="ACT_IS_THRUSTER_X"    value="{   0,    0,    0,    0,    0,    0,    0,    0,    1}"/>
 
         <!-- Reference -->
-        <define name="REF_ERR_P"                    value="38.0"/>
+        <define name="REF_ERR_P"                    value="30.0"/>
         <define name="REF_ERR_Q"                    value="32.0"/>
         <define name="REF_ERR_R"                    value="23.0"/>
         <define name="REF_RATE_P"                   value="5.0"/>
