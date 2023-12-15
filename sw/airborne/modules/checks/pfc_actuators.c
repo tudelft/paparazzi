@@ -41,13 +41,6 @@
 #define PFC_ACTUATORS_MAX_RPM_ERROR 250.0f
 #endif
 
-/**
- * Maximum time to wait for the actuators to move in seconds
-*/
-#ifndef PFC_ACTUATORS_TIMEOUT
-#define PFC_ACTUATORS_TIMEOUT 1.5f
-#endif
-
 enum pfc_actuators_state_t {
   PFC_ACTUATORS_STATE_INIT,
   PFC_ACTUATORS_STATE_RUNNING,
@@ -69,6 +62,8 @@ struct pfc_actuator_t {
   int16_t high;
   float low_feedback;
   float high_feedback;
+
+  float timeout;
 };
 
 struct pfc_actuators_t {
@@ -78,7 +73,6 @@ struct pfc_actuators_t {
   uint8_t act_nb;
   enum pfc_actuator_state_t act_state;
   float act_start_time;
-  struct pfc_actuator_t *actuators;
 
   float last_feedback;
   float last_feedback_err;
@@ -125,7 +119,6 @@ void pfc_actuators_init(void) {
   pfc_actuators.state = PFC_ACTUATORS_STATE_INIT;
   pfc_actuators.act_state = PFC_ACTUATOR_STATE_WAIT;
   pfc_actuators.act_idx = 0;
-  pfc_actuators.actuators = pfc_acts;
   pfc_actuators.act_nb = sizeof(pfc_acts) / sizeof(struct pfc_actuator_t);
   pfc_actuators.last_feedback = NAN;
   pfc_actuators.last_feedback2 = NAN;
@@ -139,12 +132,15 @@ void pfc_actuators_init(void) {
  */
 void pfc_actuators_run(void) {
   // Only actuate when running
-  if(pfc_actuators.state != PFC_ACTUATORS_STATE_RUNNING) {
+  if(pfc_actuators.state != PFC_ACTUATORS_STATE_RUNNING || pfc_actuators.act_idx >= pfc_actuators.act_nb) {
     return;
   }
 
+  // Get the actuators
+  struct pfc_actuator_t *act = &pfc_acts[pfc_actuators.act_idx];
+
   // Verify the result and continue
-  if((get_sys_time_float() - pfc_actuators.act_start_time) > PFC_ACTUATORS_TIMEOUT) {
+  if((get_sys_time_float() - pfc_actuators.act_start_time) > act->timeout) {
     switch(pfc_actuators.act_state) {
       case PFC_ACTUATOR_STATE_WAIT:
         pfc_actuators_debug("Actuator %d starting LOW", pfc_actuators.act_idx);
@@ -155,17 +151,17 @@ void pfc_actuators_run(void) {
         break;
       case PFC_ACTUATOR_STATE_LOW:
         // Check if the feedback is correct
-        if(pfc_actuators.actuators[pfc_actuators.act_idx].feedback_id != 255 && 
-          (pfc_actuators.last_feedback < (pfc_actuators.actuators[pfc_actuators.act_idx].low_feedback - pfc_actuators.last_feedback_err) || pfc_actuators.last_feedback > (pfc_actuators.actuators[pfc_actuators.act_idx].low_feedback + pfc_actuators.last_feedback_err))) {
-          pfc_actuators_debug("Actuator %d not responding correctly LOW %f < %f < %f", pfc_actuators.act_idx, pfc_actuators.actuators[pfc_actuators.act_idx].low_feedback - pfc_actuators.last_feedback_err, pfc_actuators.last_feedback, pfc_actuators.actuators[pfc_actuators.act_idx].low_feedback + pfc_actuators.last_feedback_err);
+        if(act->feedback_id != 255 && 
+          (pfc_actuators.last_feedback < (act->low_feedback - pfc_actuators.last_feedback_err) || pfc_actuators.last_feedback > (act->low_feedback + pfc_actuators.last_feedback_err))) {
+          pfc_actuators_debug("Actuator %d not responding correctly LOW %.2f < %.2f < %.2f", pfc_actuators.act_idx, act->low_feedback - pfc_actuators.last_feedback_err, pfc_actuators.last_feedback, act->low_feedback + pfc_actuators.last_feedback_err);
           pfc_actuators.state = PFC_ACTUATORS_STATE_ERROR;
-        } else if(pfc_actuators.actuators[pfc_actuators.act_idx].feedback_id2 != 255 && 
-          (pfc_actuators.last_feedback2 < (pfc_actuators.actuators[pfc_actuators.act_idx].low_feedback - pfc_actuators.last_feedback_err2) || pfc_actuators.last_feedback2 > (pfc_actuators.actuators[pfc_actuators.act_idx].low_feedback + pfc_actuators.last_feedback_err2))) {
-          pfc_actuators_debug("Actuator %d not responding correctly LOW2 %f < %f < %f", pfc_actuators.act_idx, pfc_actuators.actuators[pfc_actuators.act_idx].low_feedback - pfc_actuators.last_feedback_err2, pfc_actuators.last_feedback, pfc_actuators.actuators[pfc_actuators.act_idx].low_feedback + pfc_actuators.last_feedback_err2);
+        } else if(act->feedback_id2 != 255 && 
+          (pfc_actuators.last_feedback2 < (act->low_feedback - pfc_actuators.last_feedback_err2) || pfc_actuators.last_feedback2 > (act->low_feedback + pfc_actuators.last_feedback_err2))) {
+          pfc_actuators_debug("Actuator %d not responding correctly LOW2 %.2f < %.2f < %.2f", pfc_actuators.act_idx, act->low_feedback - pfc_actuators.last_feedback_err2, pfc_actuators.last_feedback2, act->low_feedback + pfc_actuators.last_feedback_err2);
           pfc_actuators.state = PFC_ACTUATORS_STATE_ERROR;
         }
-        if(pfc_actuators.state != PFC_ACTUATORS_STATE_ERROR || true) {
-          pfc_actuators_debug("Actuator %d LOW ok %f, %f starting HIGH", pfc_actuators.act_idx, pfc_actuators.last_feedback, pfc_actuators.last_feedback2);
+        if(pfc_actuators.state != PFC_ACTUATORS_STATE_ERROR || PFC_ACTUATORS_DEBUG) {
+          pfc_actuators_debug("Actuator %d LOW ok %.2f, %.2f starting HIGH", pfc_actuators.act_idx, pfc_actuators.last_feedback, pfc_actuators.last_feedback2);
           pfc_actuators.state = PFC_ACTUATORS_STATE_RUNNING;
           pfc_actuators.act_state = PFC_ACTUATOR_STATE_HIGH;
           pfc_actuators.act_start_time = get_sys_time_float();
@@ -175,17 +171,17 @@ void pfc_actuators_run(void) {
         break;
       case PFC_ACTUATOR_STATE_HIGH:
         // Check if the feedback is correct
-        if(pfc_actuators.actuators[pfc_actuators.act_idx].feedback_id != 255 && 
-          (pfc_actuators.last_feedback < (pfc_actuators.actuators[pfc_actuators.act_idx].high_feedback - pfc_actuators.last_feedback_err) || pfc_actuators.last_feedback > (pfc_actuators.actuators[pfc_actuators.act_idx].high_feedback + pfc_actuators.last_feedback_err))) {
-          pfc_actuators_debug("Actuator %d not responding correctly HIGH %f < %f < %f", pfc_actuators.act_idx, pfc_actuators.actuators[pfc_actuators.act_idx].high_feedback - pfc_actuators.last_feedback_err, pfc_actuators.last_feedback, pfc_actuators.actuators[pfc_actuators.act_idx].high_feedback + pfc_actuators.last_feedback_err);
+        if(act->feedback_id != 255 && 
+          (pfc_actuators.last_feedback < (act->high_feedback - pfc_actuators.last_feedback_err) || pfc_actuators.last_feedback > (act->high_feedback + pfc_actuators.last_feedback_err))) {
+          pfc_actuators_debug("Actuator %d not responding correctly HIGH %.2f < %.2f < %.2f", pfc_actuators.act_idx, act->high_feedback - pfc_actuators.last_feedback_err, pfc_actuators.last_feedback, act->high_feedback + pfc_actuators.last_feedback_err);
           pfc_actuators.state = PFC_ACTUATORS_STATE_ERROR;
-        } else if(pfc_actuators.actuators[pfc_actuators.act_idx].feedback_id2 != 255 && 
-          (pfc_actuators.last_feedback2 < (pfc_actuators.actuators[pfc_actuators.act_idx].high_feedback - pfc_actuators.last_feedback_err2) || pfc_actuators.last_feedback2 > (pfc_actuators.actuators[pfc_actuators.act_idx].high_feedback + pfc_actuators.last_feedback_err2))) {
-          pfc_actuators_debug("Actuator %d not responding correctly HIGH2 %f < %f < %f", pfc_actuators.act_idx, pfc_actuators.actuators[pfc_actuators.act_idx].high_feedback - pfc_actuators.last_feedback_err2, pfc_actuators.last_feedback, pfc_actuators.actuators[pfc_actuators.act_idx].high_feedback + pfc_actuators.last_feedback_err2);
+        } else if(act->feedback_id2 != 255 && 
+          (pfc_actuators.last_feedback2 < (act->high_feedback - pfc_actuators.last_feedback_err2) || pfc_actuators.last_feedback2 > (act->high_feedback + pfc_actuators.last_feedback_err2))) {
+          pfc_actuators_debug("Actuator %d not responding correctly HIGH2 %.2f < %.2f < %.2f", pfc_actuators.act_idx, act->high_feedback - pfc_actuators.last_feedback_err2, pfc_actuators.last_feedback2, act->high_feedback + pfc_actuators.last_feedback_err2);
           pfc_actuators.state = PFC_ACTUATORS_STATE_ERROR;
         } 
-        if(pfc_actuators.state != PFC_ACTUATORS_STATE_ERROR || true) {
-          pfc_actuators_debug("Actuator %d HIGH ok %f, %f", pfc_actuators.act_idx, pfc_actuators.last_feedback, pfc_actuators.last_feedback2);
+        if(pfc_actuators.state != PFC_ACTUATORS_STATE_ERROR || PFC_ACTUATORS_DEBUG) {
+          pfc_actuators_debug("Actuator %d HIGH ok %.2f, %.2f", pfc_actuators.act_idx, pfc_actuators.last_feedback, pfc_actuators.last_feedback2);
           pfc_actuators.state = PFC_ACTUATORS_STATE_RUNNING;
           pfc_actuators.act_state = PFC_ACTUATOR_STATE_WAIT;
           pfc_actuators.act_start_time = get_sys_time_float();
@@ -228,10 +224,10 @@ int16_t pfc_actuators_value(uint8_t idx, int16_t value) {
   }
 
   if(pfc_actuators.act_state == PFC_ACTUATOR_STATE_LOW) {
-    return pfc_actuators.actuators[pfc_actuators.act_idx].low;
+    return pfc_acts[pfc_actuators.act_idx].low;
   }
   else if(pfc_actuators.act_state == PFC_ACTUATOR_STATE_HIGH) {
-    return pfc_actuators.actuators[pfc_actuators.act_idx].high;
+    return pfc_acts[pfc_actuators.act_idx].high;
   }
 
   return value;
@@ -270,18 +266,18 @@ static void pfc_act_feedback_cb(uint8_t sender_id __attribute__((unused)), struc
 
   // Save the last feedback values
   for(uint8_t i = 0; i < num_act; i++) {
-    if(feedback[i].idx == pfc_actuators.actuators[pfc_actuators.act_idx].feedback_id && feedback[i].set.rpm) {
+    if(feedback[i].idx == pfc_acts[pfc_actuators.act_idx].feedback_id && feedback[i].set.rpm) {
       pfc_actuators.last_feedback = feedback[i].rpm;
       pfc_actuators.last_feedback_err = PFC_ACTUATORS_MAX_RPM_ERROR;
-    } else if(feedback[i].idx == pfc_actuators.actuators[pfc_actuators.act_idx].feedback_id && feedback[i].set.position) {
+    } else if(feedback[i].idx == pfc_acts[pfc_actuators.act_idx].feedback_id && feedback[i].set.position) {
       pfc_actuators.last_feedback = feedback[i].position;
       pfc_actuators.last_feedback_err = PFC_ACTUATORS_MAX_ANGLE_ERROR;
     }
 
-    if(feedback[i].idx == pfc_actuators.actuators[pfc_actuators.act_idx].feedback_id2 && feedback[i].set.rpm) {
+    if(feedback[i].idx == pfc_acts[pfc_actuators.act_idx].feedback_id2 && feedback[i].set.rpm) {
       pfc_actuators.last_feedback2 = feedback[i].rpm;
       pfc_actuators.last_feedback_err2 = PFC_ACTUATORS_MAX_RPM_ERROR;
-    } else if(feedback[i].idx == pfc_actuators.actuators[pfc_actuators.act_idx].feedback_id2 && feedback[i].set.position) {
+    } else if(feedback[i].idx == pfc_acts[pfc_actuators.act_idx].feedback_id2 && feedback[i].set.position) {
       pfc_actuators.last_feedback2 = feedback[i].position;
       pfc_actuators.last_feedback_err2 = PFC_ACTUATORS_MAX_ANGLE_ERROR;
     }
