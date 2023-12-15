@@ -41,6 +41,13 @@
 #define PFC_ACTUATORS_MAX_RPM_ERROR 250.0f
 #endif
 
+/**
+ * Enable debugging to set the expected feedback values
+*/
+#ifndef PFC_ACTUATORS_DEBUG
+#define PFC_ACTUATORS_DEBUG false
+#endif
+
 enum pfc_actuators_state_t {
   PFC_ACTUATORS_STATE_INIT,
   PFC_ACTUATORS_STATE_RUNNING,
@@ -184,7 +191,7 @@ void pfc_actuators_run(void) {
           pfc_actuators_debug("Actuator %d HIGH ok %.2f, %.2f", pfc_actuators.act_idx, pfc_actuators.last_feedback, pfc_actuators.last_feedback2);
           pfc_actuators.state = PFC_ACTUATORS_STATE_RUNNING;
           pfc_actuators.act_state = PFC_ACTUATOR_STATE_WAIT;
-          pfc_actuators.act_start_time = get_sys_time_float();
+          pfc_actuators.act_start_time = 0;
           pfc_actuators.act_idx++;
         }
         break;
