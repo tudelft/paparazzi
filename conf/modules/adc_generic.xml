@@ -15,7 +15,7 @@
     <file name="adc_generic.h"/>
   </header>
   <init fun="adc_generic_init()"/>
-  <periodic fun="adc_generic_periodic()" freq="4"/>
+  <periodic fun="adc_generic_periodic()" freq="20"/>
   <makefile target="ap">
     <file name="adc_generic.c"/>
     <define name="USE_${ADC_CHANNEL_GENERIC1}" cond="ifneq ($(ADC_CHANNEL_GENERIC1),)"/>

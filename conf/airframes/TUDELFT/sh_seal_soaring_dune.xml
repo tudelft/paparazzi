@@ -123,6 +123,7 @@ NOTES:
 <!--        <configure name="USE_ADC_3" value="TRUE"/>-->
         <configure name="USE_ADC_5" value="TRUE"/>
         <module name="adc_generic">
+<!--            <define name="ADC_CHANNEL_GENERIC_NB_SAMPLES" value=""/>-->
 <!--        <configure name="USE_ADC_4" value="TRUE"/>-->
         <configure name="ADC_CHANNEL_GENERIC1" value="ADC_5"/>
 <!--        <configure name="ADC_CHANNEL_GENERIC2" value="ADC_5"/>-->
@@ -800,7 +801,7 @@ NOTES:
       <define name="MIN_THROTTLE_FWD" value="0.0"/>
       <define name="MIN_PITCH" value="-120."/>
       <define name="MAX_PITCH" value="-60."/>
-    <define name="MIN_ACC_SP" value="-4.0"/>  <!-- min and max acc sp; MIN is upward, MAX is downward -->
+    <define name="MIN_ACC_SP" value="-4.5"/>  <!-- min and max acc sp; MIN is upward, MAX is downward -->
     <define name="MAX_ACC_SP" value="4.0"/>
 
 

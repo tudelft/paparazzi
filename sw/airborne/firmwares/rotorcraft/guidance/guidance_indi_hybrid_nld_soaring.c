@@ -318,8 +318,8 @@ float indi_d_euler[3];
 float indi_euler_cmd[3];
 float euler_state_filt_vect[3];
 float gd_gamma_sq = 1000.;
-float gd_Wv[3] = {1.0, 1.0, 3.0};         // x y z
-float gd_Wu[3] = {1.0, 100.0, 1.0};         // roll pitch thrust
+float gd_Wv[3] = {1.0, 1.0, 5.0};         // x y z
+float gd_Wu[3] = {1.0, 100.0, 2.0};         // roll pitch thrust
 float gd_du_min[3];
 float gd_du_max[3];
 float gd_du_pref[3];
