@@ -122,7 +122,9 @@
         <module name="ground_detect_sensor"/>
         <module name="rotwing_state"/>
         <module name="preflight_checks"/>
-        <module name="pfc_actuators"/>
+        <module name="pfc_actuators">
+            <define name="PFC_ACTUATORS_DEBUG" value="true"/>
+        </module>
         <module name="agl_dist"/>
         <module name="approach_moving_target"/>
 
@@ -234,12 +236,13 @@
         <let var="flap_limit_hit" value="LessThan(rotwing_state_skewing.wing_angle_deg, 50)"/>
 
         <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
+        <call fun="pfc_actuators_run()"/>
         <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(7, -9600)) : actuators_pprz[0])" SERVO="MOTOR_FRONT"/>
         <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(8, -9600)) : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
         <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(9, -9600)) : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(10, -9600)) : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
         <set VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : pfc_actuators_value(1, actuators_pprz[4]))" SERVO="SERVO_RUDDER"/>
-        <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? pfc_actuators_value(0,0) : actuators_pprz[5]))" SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? pfc_actuators_value(0, 0) : actuators_pprz[5]))" SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($th_hold? ($servo_hold? -9600 : pfc_actuators_value(11, -9600)) : actuators_pprz[8])" SERVO="MOTOR_PUSH"/>
         <set VALUE="pfc_actuators_value(6, rotwing_state_skewing.servo_pprz_cmd)"  SERVO="ROTATION_MECH"/>
         <set VALUE="$ail_limit_hit? pfc_actuators_value(2, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])" SERVO="AIL_LEFT"/>
