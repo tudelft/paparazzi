@@ -10,48 +10,6 @@
     <description>RotatingWingV3B</description>
 
     <firmware name="rotorcraft">
-        <target name="ap" board="cube_orange">
-            <configure name="PERIODIC_FREQUENCY" value="500"/> <!-- Configure the main periodic frequency to 500Hz -->
-
-            <module name="radio_control" type="sbus">
-                <configure name="SBUS_PORT" value="UART3"/> <!-- On the TELEM2 port -->
-            </module>
-            <module name="sys_mon"/>
-            <module name="flight_recorder"/>
-
-            <!-- RC switches -->
-            <define name="RADIO_TH_HOLD"            value="RADIO_AUX1"/>
-            <define name="RADIO_KILL_SWITCH"        value="RADIO_AUX1"/>
-            <define name="RADIO_FMODE"              value="RADIO_AUX2"/>
-            <define name="RADIO_FBW_MODE"           value="RADIO_AUX3"/>
-            <define name="RADIO_CONTROL_THRUST_X"   value="RADIO_AUX4"/>
-
-            <!-- EKF2 configure inputs -->
-            <define name="INS_EKF2_GYRO_ID"     value="IMU_CUBE1_ID"/>
-            <define name="INS_EKF2_ACCEL_ID"    value="IMU_CUBE1_ID"/>
-            <define name="INS_EKF2_MAG_ID"      value="MAG_RM3100_SENDER_ID"/>
-
-            <!--Only send gyro and accel that is being used-->
-            <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
-            <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
-
-            <module name="lidar_tfmini">
-                <configure name="TFMINI_PORT"     value="UART8"/>
-                <configure name="USE_TFMINI_AGL"  value="TRUE"/>
-            </module>
-
-            <!-- <module name="mavlink">
-                <configure name="MAVLINK_BAUD" value="B115200"/>
-                <configure name="MAVLINK_PORT" value="UART8"/>
-                <define name="MAV_AUTOPILOT_ID" value="MAV_AUTOPILOT_ARDUPILOTMEGA"/>
-            </module> -->
-
-            <!-- Log in high speed (Remove for outdoor flights) -->
-            <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
-
-            <define name="I2C2_CLOCK_SPEED" value="100000"/>
-        </target>
-
         <target name="nps" board="pc">
             <module name="radio_control" type="datalink"/>
             <module name="fdm" type="jsbsim"/>
@@ -126,11 +84,9 @@
         <!-- Other -->
         <module name="sys_id_doublet"/>
         <module name="sys_id_auto_doublets"/>
-        <module name="wing_rotation_adc_sensor"/>
         <module name="rot_wing_automation"/>
         <module name="ground_detect_sensor"/>
         <module name="rotwing_state"/>
-        <module name="preflight_checks"/>
         <module name="agl_dist"/>
         <module name="approach_moving_target"/>
 
