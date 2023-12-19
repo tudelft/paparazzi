@@ -827,7 +827,7 @@ NOTES:
     <define name="SOARING_MIN_ALT" value="5"/> <!-- minimum altitude for moving WP -->
 
     <define name="SOARING_USE_FIXED_HEADING_WP" value="TRUE" /> <!-- use wp to set heading sp, -->
-    <define name="SOARING_HEADING_GAIN" value="0.01" />
+    <define name="SOARING_HEADING_GAIN" value="0.05" />
 
       <!-- 100 steps * 30 sec = 3000 sec = 50 min (maximum) -->
       <!-- 100 steps * 10 sec = 1000 sec = 16.6 min -->

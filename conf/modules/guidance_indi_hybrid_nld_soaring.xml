@@ -42,6 +42,9 @@
           <dl_setting var="use_variable_weights" min="0" step="1" max="1" values="OFF|ON" shortname="variable_weight"/>
           <!--          <dl_setting var="gd_gamma_sq" min="0" step="1" max="10000" shortname="gamma_sq"/>-->
         </dl_settings>
+<!--        <dl_settings name="flags">-->
+<!--          -->
+<!--        </dl_settings>-->
         <dl_settings name="soaring">
           <dl_setting var="speed_sp_from_position" min="0" step="1" max="1" values="OFF|ON" shortname="sp_position"/>
           <dl_setting var="y_position_ctrl" min="0" step="1" max="1" values="OFF|ON" shortname="y_pos_ctrl"/>
@@ -57,7 +60,19 @@
           <dl_setting var="stay_wp_duration" min="0" step="0.5" max="20" shortname="wp_arr_count"/>
           <dl_setting var="arrival_check_dist_3d" min="0" step="0.1" max="10" shortname="wp_arrival_dist"/>
 
-          <dl_setting var="soaring_move_wp_cost_threshold" min="1" step="0.5" max="300" shortname="cost_threshold"/>
+<!--          <dl_setting var="heading_target.x" min="1.0" step="0.5" max="50" shortname="heading_target_x"/>-->
+<!--          <dl_setting var="heading_target.y" min="-10.0" step="0.5" max="1.0" shortname="heading_target_y"/>-->
+        </dl_settings>
+        <dl_settings name="costs">
+          <dl_setting var="soaring_move_wp_cost_threshold" min="1" step="0.5" max="500" shortname="cost_threshold"/>
+
+          <dl_setting var="gd_k_thr" min="0" step="0.001" max="10" shortname="wp_throttle_weight"/>
+          <dl_setting var="gd_k_spd_x" min="0" step="0.1" max="100" shortname="wp_spd_x_weight"/>
+          <dl_setting var="gd_k_spd_z" min="0" step="0.1" max="100" shortname="wp_spd_z_weight"/>
+          <dl_setting var="gd_k_pitch" min="0" step="0.1" max="100" shortname="wp_pitch_weight"/>
+        </dl_settings>
+        <dl_settings name="step_sizes">
+          <dl_setting var="soaring_max_exploration_steps" min="1" step="1" max="1000" shortname="max_explore_steps"/>
 
           <dl_setting var="soaring_use_fixed_step_size" min="0" step="1" max="1" values="OFF|ON" shortname="use_fixed_step_size"/>
           <dl_setting var="soaring_fixed_step_size" min="0" step="0.05" max="10" shortname="fixed_step_size"/>
@@ -70,16 +85,12 @@
           <dl_setting var="soaring_step_k_big" min="0" step="0.1" max="1000" shortname="big_step_cost_multiplier"/>
           <dl_setting var="soaring_step_k_mid" min="0" step="0.1" max="1000" shortname="mid_step_cost_multiplier"/>
           <dl_setting var="soaring_step_k_small" min="0" step="0.1" max="1000" shortname="small_step_cost_multiplier"/>
-
-          <dl_setting var="gd_k_thr" min="0" step="0.001" max="10" shortname="wp_throttle_weight"/>
-          <dl_setting var="gd_k_spd_x" min="0" step="0.1" max="100" shortname="wp_spd_x_weight"/>
-          <dl_setting var="gd_k_spd_z" min="0" step="0.1" max="100" shortname="wp_spd_z_weight"/>
-          <dl_setting var="gd_k_pitch" min="0" step="0.1" max="100" shortname="wp_pitch_weight"/>
-
-          <dl_setting var="soaring_max_exploration_steps" min="1" step="1" max="1000" shortname="max_explore_steps"/>
-
-<!--          <dl_setting var="heading_target.x" min="1.0" step="0.5" max="50" shortname="heading_target_x"/>-->
-<!--          <dl_setting var="heading_target.y" min="-10.0" step="0.5" max="1.0" shortname="heading_target_y"/>-->
+        </dl_settings>
+        <dl_settings name="manual_search">
+          <dl_setting var="soaring_manual_search" min="0" max="1" step="1" values="OFF|ON" shortname="manual_search"/>
+          <dl_setting var="soaring_wp_move_forward" min="-10" step="0.1" max="10" shortname="wp_move_forward"/>
+          <dl_setting var="soaring_wp_move_up" min="-10" step="0.1" max="10" shortname="wp_move_up"/>
+          <dl_setting var="soaring_wp_move_right" min="-10" step="0.1" max="10" shortname="wp_move_right"/>
         </dl_settings>
       </dl_settings>
     </dl_settings>

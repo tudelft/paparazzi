@@ -117,4 +117,9 @@ extern bool use_fixed_heading_wp;
 extern float soaring_heading_gain;
 extern uint16_t soaring_max_exploration_steps;
 
+extern float soaring_wp_move_forward;
+extern float soaring_wp_move_right;
+extern float soaring_wp_move_up;
+extern bool soaring_manual_search;
+
 #endif /* GUIDANCE_INDI_HYBRID_NLD_SOARING_H */

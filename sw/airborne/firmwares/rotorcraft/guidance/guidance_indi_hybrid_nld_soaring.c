@@ -318,8 +318,8 @@ float indi_d_euler[3];
 float indi_euler_cmd[3];
 float euler_state_filt_vect[3];
 float gd_gamma_sq = 1000.;
-float gd_Wv[3] = {1.0, 1.0, 5.0};         // x y z
-float gd_Wu[3] = {1.0, 100.0, 2.0};         // roll pitch thrust
+float gd_Wv[3] = {1.0, 1.0, 6.5};         // x y z
+float gd_Wu[3] = {1.0, 100.0, 1.0};         // roll pitch thrust
 float gd_du_min[3];
 float gd_du_max[3];
 float gd_du_pref[3];
@@ -380,6 +380,11 @@ bool use_fixed_heading_wp = GUIDANCE_INDI_SOARING_USE_FIXED_HEADING_WP;
 uint16_t soaring_max_exploration_steps = GUIDANCE_INDI_SOARING_MAX_EXPLORATION_STEPS;
 uint16_t soaring_search_cnt_steps = 0;
 float soaring_min_cost = INFINITY;
+
+float soaring_wp_move_forward = 0;
+float soaring_wp_move_right = 0;
+float soaring_wp_move_up = 0;
+bool soaring_manual_search = false;
 
 int32_t wp_pos_x;
 int32_t wp_pos_y;
@@ -641,12 +646,14 @@ void guidance_indi_hybrid_soaring_start(void) {
         guidance_indi_soaring_reset_soaring_wp();   // reset wp to current position
     }
     soaring_move_wp_running = true;
+    soaring_manual_search = false;
 
     move_wp_entry_time = autopilot.flight_time;
 }
 void guidance_indi_hybrid_soaring_stop(void) {
     soaring_move_wp_running = false;
     soaring_search_cnt_steps = 0;
+    soaring_manual_search = false;
 }
 // reset soaring wp to stdby
 void guidance_indi_hybrid_soaring_reset(void) {
@@ -959,6 +966,36 @@ if (use_fixed_heading_wp) {
             move_wp_entry_time = autopilot.flight_time;
             move_wp_sum_cost = 0;
             move_wp_wait_count = 0;
+        }
+    }
+
+    // in soaring mode && manual search
+    if (soaring_move_wp_running && soaring_manual_search && (!soaring_explore_positions)) {
+        if (fabs(soaring_wp_move_forward) > 0.05 || fabs(soaring_wp_move_right) > 0.05 || fabs(soaring_wp_move_up) > 0.05) {
+            amount_to_move_body.x = soaring_wp_move_forward;
+            amount_to_move_body.y = soaring_wp_move_right;
+            amount_to_move_body.z = -soaring_wp_move_up;
+
+            // rotate wp body to ned
+            amount_to_move_ned.x = cosf(psi)*amount_to_move_body.x - sinf(psi)*amount_to_move_body.y;
+            amount_to_move_ned.y = sinf(psi)*amount_to_move_body.x + cosf(psi)*amount_to_move_body.y;
+            amount_to_move_ned.z = amount_to_move_body.z;   // z doesn't change
+
+            // move waypoints
+            waypoints[soar_wp_id].enu_i.x += POS_BFP_OF_REAL(amount_to_move_ned.y);
+            waypoints[soar_wp_id].enu_i.y += POS_BFP_OF_REAL(amount_to_move_ned.x);
+            waypoints[soar_wp_id].enu_i.z += POS_BFP_OF_REAL(-1.0*amount_to_move_ned.z);
+
+            nav_flight_altitude = waypoints[soar_wp_id].enu_i.z; // FIXME: manually set z ref
+
+            DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &soar_wp_id,
+                                       &(waypoints[soar_wp_id].enu_i.x),
+                                       &(waypoints[soar_wp_id].enu_i.y),
+                                       &(waypoints[soar_wp_id].enu_i.z));
+
+            soaring_wp_move_forward = 0;
+            soaring_wp_move_right = 0;
+            soaring_wp_move_up = 0;
         }
     }
 }
