@@ -48,6 +48,7 @@ extern float f0_chirp;
 extern float f1_chirp;
 extern float t_chirp;
 extern float A_chirp;
+extern int8_t chirp_axis;
 
 // Delete once hybrid nav is fixed //////////////////////////////////////////////////////////////////////////////////
 struct guidance_indi_hybrid_params {

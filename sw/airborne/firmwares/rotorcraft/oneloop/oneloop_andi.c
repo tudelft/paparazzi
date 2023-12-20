@@ -307,8 +307,8 @@ void  rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[],
 void  ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3]);
 void  calc_model(void);
 float oneloop_andi_sideslip(void);
-void  chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
-void  chirp_call(bool* chirp_on, bool* chirp_first_call, float dt, float* time_elapsed, float f0, float f1, float t_chirp, float A, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
+void  chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
+void  chirp_call(bool* chirp_on, bool* chirp_first_call, float dt, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
 /* Define messages of the module*/
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -424,9 +424,10 @@ bool  chirp_on            = false;
 bool  chirp_first_call    = true;
 float time_elapsed_chirp  = 0.0;
 float f0_chirp            = 0.8 / (2.0 * M_PI);
-float f1_chirp            = 1.5 / (2.0 * M_PI);
+float f1_chirp            = 1.0 / (2.0 * M_PI);
 float t_chirp             = 45.0;
-float A_chirp             = 0.5;
+float A_chirp             = 0.2;
+int8_t chirp_axis         = 0;
 float p_ref_0[3]          = {0.0, 0.0, 0.0};
 
 /*Declaration of Reference Model and Error Controller Gains*/
@@ -904,9 +905,18 @@ void init_poles(void){
   p_att_rm.zeta    = 1.0;
   p_att_rm.p3      = p_att_rm.omega_n * p_att_rm.zeta;
 
+  // p_att_rm.omega_n = 61.4; //ended up using about 5
+  // p_att_rm.zeta    = 1.0;
+  // p_att_rm.p3      = 2.0467;
+
   p_pos_e.omega_n = 1.41;
   p_pos_e.zeta    = 1.0; //0.85
   p_pos_e.p3      = p_pos_e.omega_n * p_pos_e.zeta;
+
+  // p_pos_e.omega_n = 35.4;
+  // p_pos_e.zeta    = 1.0; //0.85
+  // p_pos_e.p3      = 1.18;
+
 
   p_pos_rm.omega_n = 0.6;
   p_pos_rm.zeta    = 1.0;  
@@ -951,12 +961,14 @@ void init_controller(void){
   k_att_e.k1[1]  = k_att_e.k1[0]; 
   k_att_e.k2[1]  = k_att_e.k2[0]; 
   k_att_e.k3[1]  = k_att_e.k3[0]; 
+  //printf("k_att_e [k1,k2,k3] = [%f,%f,%f]\n",k_att_e.k1[0],k_att_e.k2[0],k_att_e.k3[0]);
   k_att_rm.k1[0] = k_rm_1_3_f(p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
   k_att_rm.k2[0] = k_rm_2_3_f(p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
   k_att_rm.k3[0] = k_rm_3_3_f(p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
   k_att_rm.k1[1] = k_att_rm.k1[0];
   k_att_rm.k2[1] = k_att_rm.k2[0];
   k_att_rm.k3[1] = k_att_rm.k3[0];
+  //printf("k_att_rm [k1,k2,k3] = [%f,%f,%f]\n",k_att_rm.k1[0],k_att_rm.k2[0],k_att_rm.k3[0]);
 
   /*Position Loop*/
 
@@ -965,13 +977,15 @@ void init_controller(void){
   k_pos_e.k3[0]  = k_e_3_3_f_v2(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
   k_pos_e.k1[1]  = k_pos_e.k1[0];  
   k_pos_e.k2[1]  = k_pos_e.k2[0];  
-  k_pos_e.k3[1]  = k_pos_e.k3[0];  
+  k_pos_e.k3[1]  = k_pos_e.k3[0]; 
+  //printf("k_pos_e [k1,k2,k3] = [%f,%f,%f]\n",k_pos_e.k1[0],k_pos_e.k2[0],k_pos_e.k3[0]); 
   k_pos_rm.k1[0] = k_rm_1_3_f(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);
   k_pos_rm.k2[0] = k_rm_2_3_f(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);
   k_pos_rm.k3[0] = k_rm_3_3_f(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);
   k_pos_rm.k1[1] = k_pos_rm.k1[0];  
   k_pos_rm.k2[1] = k_pos_rm.k2[0];  
   k_pos_rm.k3[1] = k_pos_rm.k3[0];
+  //printf("k_pos_rm [k1,k2,k3] = [%f,%f,%f]\n",k_pos_rm.k1[0],k_pos_rm.k2[0],k_pos_rm.k3[0]);
   nav_hybrid_pos_gain   = k_pos_rm.k1[0];
   nav_hybrid_max_bank   = ONELOOP_ANDI_MAX_BANK;
 
@@ -998,8 +1012,10 @@ void init_controller(void){
   k_att_rm.k3[2] = k_rm_3_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
 
   /*Approximated Dynamics*/
-  act_dynamics[ONELOOP_ANDI_PHI_IDX]   = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
-  act_dynamics[ONELOOP_ANDI_THETA_IDX] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
+  act_dynamics[ONELOOP_ANDI_PHI_IDX]   = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);//p_att_rm.p3;//
+  act_dynamics[ONELOOP_ANDI_THETA_IDX] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);//p_att_rm.p3;//
+  //printf("act_dynamics[ONELOOP_ANDI_PHI_IDX] = %f\n",act_dynamics[ONELOOP_ANDI_PHI_IDX]);
+  //printf("act_dynamics[ONELOOP_ANDI_THETA_IDX] = %f\n",act_dynamics[ONELOOP_ANDI_THETA_IDX]);
 }
 
 
@@ -1220,7 +1236,7 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     // Register Attitude Setpoints from previous loop
     float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, psi_des_rad};
     // Run chirp test if turnerd on
-    chirp_call(&chirp_on, &chirp_first_call, dt_1l, &time_elapsed_chirp, f0_chirp, f1_chirp, t_chirp, A_chirp, att_des[2], oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer,p_ref_0);
+    chirp_call(&chirp_on, &chirp_first_call, dt_1l, &time_elapsed_chirp, f0_chirp, f1_chirp, t_chirp, A_chirp, chirp_axis, att_des[2], oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer,p_ref_0);
     // The RM functions want an array as input. Create a single entry array and write the vertical guidance entries. 
     float single_value_ref[1]        = {oneloop_andi.gui_ref.pos[2]};
     float single_value_d_ref[1]      = {oneloop_andi.gui_ref.vel[2]};
@@ -1424,6 +1440,7 @@ void get_act_state_oneloop(void)
  * FIXME: make this function into a for loop to make it more adaptable to different configurations
  */
 void sum_g1g2_1l(void) {
+  int i = 0;
   //struct FloatEulers *euler = stateGetNedToBodyEulers_f();
   float sphi   = sinf(eulers_zxy.phi);
   float cphi   = cosf(eulers_zxy.phi);
@@ -1431,13 +1448,17 @@ void sum_g1g2_1l(void) {
   float ctheta = cosf(eulers_zxy.theta);
   float spsi   = sinf(eulers_zxy.psi);
   float cpsi   = cosf(eulers_zxy.psi);
-  float T      = -9.81; //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
+  // float T      = 0.0;
+  // for (i = 0; i < 4; i++){
+  //   T += actuator_state_1l[i] * g1_1l[2][i];
+  // }
+  // T = T / num_thrusters_oneloop;
+  float T      = -9.81/(cphi*ctheta);//-9.81; //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
   float P      = 0.0;
   if (ONELOOP_ANDI_AC_HAS_PUSHER){
     P    = actuator_state_1l[ONELOOP_ANDI_PUSHER_IDX] * g1_1l[2][ONELOOP_ANDI_PUSHER_IDX] / ANDI_G_SCALING;
   } 
   float scaler;
-  int i = 0;
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     // Effectiveness vector for real actuators (e.g. motors, servos)
     if (i < ANDI_NUM_ACT){
@@ -1509,9 +1530,16 @@ void calc_model(void){
   float ctheta = cosf(eulers_zxy.theta);
   float spsi   = sinf(eulers_zxy.psi);
   float cpsi   = cosf(eulers_zxy.psi);
-  float T      = -9.81; 
+  // float T      = 0.0;
+  // for (i = 0; i < 4; i++){
+  //   T += actuator_state_1l[i] * g1_1l[2][i];
+  // }
+  // T = T / num_thrusters_oneloop;
+  float T      = -9.81/(cphi*ctheta); // -9.81;
+  float P      = 0.0;
+  if (ONELOOP_ANDI_AC_HAS_PUSHER){  
   float P      = actuator_state_1l[ONELOOP_ANDI_PUSHER_IDX] * g1_1l[2][ONELOOP_ANDI_PUSHER_IDX] / ANDI_G_SCALING;
-  
+  }
   model_pred[0] = (cpsi * stheta + ctheta * sphi * spsi) * T + (cpsi * ctheta + sphi * spsi * stheta) * P;
   model_pred[1] = (spsi * stheta - cpsi * ctheta * sphi) * T + (ctheta * spsi + cpsi * sphi * stheta) * P;
   model_pred[2] = g + cphi * ctheta * T - cphi * stheta * P;
@@ -1618,13 +1646,20 @@ static float chirp_pos_j_ref(float delta_t, float f0, float k, float A){
  * @param a_ref   [m/s2] acceleration reference
  * @param j_ref   [m/s3] jerk reference
  */
-void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]) {
+void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]) {
   f0      = positive_non_zero(f0);
   f1      = positive_non_zero(f1);
   t_chirp = positive_non_zero(t_chirp);
   A       = positive_non_zero(A);
   if ((f1-f0) < -FLT_EPSILON){
     f1 = f0;
+  }
+  // 0 body x, 1 body y, 2 body z
+  if (n > 2){
+    n = 0;
+  }
+  if (n < 0){
+    n = 0;
   }
   // i think there should not be a problem with f1 being equal to f0
   float k = (f1 - f0) / t_chirp;
@@ -1635,26 +1670,51 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, f
 
   float spsi   = sinf(psi);
   float cpsi   = cosf(psi);
-  p_ref[0] = p_ref_0[0] + p_ref_chirp * cpsi;
-  p_ref[1] = p_ref_0[1] + p_ref_chirp * spsi;
-  v_ref[0] = v_ref_chirp * cpsi;
-  v_ref[1] = v_ref_chirp * spsi;
-  a_ref[0] = a_ref_chirp * cpsi;
-  a_ref[1] = a_ref_chirp * spsi;
-  j_ref[0] = j_ref_chirp * cpsi;
-  j_ref[1] = j_ref_chirp * spsi;
+  float mult_0 = 0.0;
+  float mult_1 = 0.0;
+  float mult_2 = 0.0;
+  if (n == 0){
+    mult_0 = cpsi;
+    mult_1 = spsi;
+    mult_2 = 0.0;
+  }else if(n==1){
+    mult_0 = -spsi;
+    mult_1 = cpsi;
+    mult_2 = 0.0;
+  }else{
+    mult_0 = 0.0;
+    mult_1 = 0.0;
+    mult_2 = 1.0;
+  }
+  printf("mult_0: %f\n",mult_0);
+  printf("mult_1: %f\n",mult_1);
+  printf("mult_2: %f\n",mult_2);
+
+  p_ref[0] = p_ref_0[0] + p_ref_chirp * mult_0;
+  p_ref[1] = p_ref_0[1] + p_ref_chirp * mult_1;
+  p_ref[2] = p_ref_0[2] + p_ref_chirp * mult_2;
+  v_ref[0] = v_ref_chirp * mult_0;
+  v_ref[1] = v_ref_chirp * mult_1;
+  v_ref[2] = v_ref_chirp * mult_2;
+  a_ref[0] = a_ref_chirp * mult_0;
+  a_ref[1] = a_ref_chirp * mult_1;
+  a_ref[2] = a_ref_chirp * mult_2;
+  j_ref[0] = j_ref_chirp * mult_0;
+  j_ref[1] = j_ref_chirp * mult_1;
+  j_ref[2] = j_ref_chirp * mult_2;
 }
 
-void chirp_call(bool *chirp_on, bool *chirp_first_call, float dt, float* time_elapsed, float f0, float f1, float t_chirp, float A, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]){
+void chirp_call(bool *chirp_on, bool *chirp_first_call, float dt, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]){
   if (*chirp_on){
     if (*chirp_first_call){
       *time_elapsed = 0.0;
       *chirp_first_call = false;
       p_ref_0[0] = p_ref[0];
       p_ref_0[1] = p_ref[1];
+      p_ref_0[2] = p_ref[2];
     }
     if (*time_elapsed < t_chirp){
-      chirp_pos(*time_elapsed, f0, f1, t_chirp, A, psi, p_ref, v_ref, a_ref, j_ref, p_ref_0);
+      chirp_pos(*time_elapsed, f0, f1, t_chirp, A, n, psi, p_ref, v_ref, a_ref, j_ref, p_ref_0);
       *time_elapsed += dt;
     } else {
       *chirp_on   = false;
