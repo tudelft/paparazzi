@@ -38,6 +38,7 @@ int16_t counter = 0;
 float Kq = TAKEOFF_Q_GAIN;
 
 float t_scale_to_thrust = 3.5;
+float theta_d;
 
 #define TAKEOFF_MODULE_FREQ 500
 
@@ -51,28 +52,6 @@ void take_off_enter(void){
   counter = 0;
 }
 
-int16_t take_off_thrust(void){
-  int16_t thrust_pprz=0;
-  struct FloatEulers eulers_zxy;
-  struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
-  struct FloatRates * body_rates = stateGetBodyRates_f();
-  float_eulers_of_quat_zxy(&eulers_zxy, statequat);
-
-  if(autopilot.mode == AP_MODE_NAV){
-    if(stage == 1){
-      int16_t pitch_rate_cont = (int16_t) ceil(Kq*(3.0 - body_rates->q));
-      thrust_pprz = 2800 - pitch_rate_cont;//basic thrust T=mg 2800 required, thrust not increase during pivot, vertical acceleration undesired
-    } 
-    // else if (stage == 2){ // stage 2 (takeoff thrust not used actually)
-    //   thrust_pprz = 3800;
-    // }
-  }
-  else{
-    thrust_pprz = radio_control.values[RADIO_THROTTLE];
-  }
-  return thrust_pprz;
-}
-
 int16_t take_off_stage(float theta){
   counter++;
   if(autopilot.mode == AP_MODE_NAV){
@@ -84,7 +63,7 @@ int16_t take_off_stage(float theta){
       stage = 1;
       counter = 0;
     }
-    else if(stage == 1 && fabsf(theta) < RadOfDeg(5.0)){
+    else if(stage == 1 && theta==theta_d && counter/TAKEOFF_MODULE_FREQ > 10.0 ){
       stage = 2;
       counter = 0;
     }
