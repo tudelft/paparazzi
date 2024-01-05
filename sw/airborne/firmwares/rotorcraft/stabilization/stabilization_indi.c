@@ -50,7 +50,7 @@
 
 // Factor that the estimated G matrix is allowed to deviate from initial one
 #define INDI_ALLOWED_G_FACTOR 2.0
-
+#define SIZE 2
 #ifdef STABILIZATION_INDI_FILT_CUTOFF_P
 #define STABILIZATION_INDI_FILTER_ROLL_RATE TRUE
 #else
@@ -103,7 +103,18 @@
 #endif
 #endif
 
-float I_yy = CTRL_EFF_CALC_I_YY;
+float L1 = CTRL_EFF_CALC_L1;
+float L2 = CTRL_EFF_CALC_L2;
+float K1 = CTRL_EFF_CALC_K1;
+float K2 = CTRL_EFF_CALC_K2;
+float K3 = CTRL_EFF_CALC_K3;
+
+float m = CTRL_EFF_CALC_MASS;
+
+//define the size of B and W matrix used in takeoff
+#define TYPE_ACT 2  // Type of actuator outputs
+#define NUM_OUT 1  //B is 1x2
+//float I_yy = CTRL_EFF_CALC_I_YY;
 float torque = CTRL_EFF_CALC_TORQUE;
 float du_min_stab_indi[INDI_NUM_ACT];
 float du_max_stab_indi[INDI_NUM_ACT];
@@ -118,6 +129,10 @@ static void lms_estimation(void);
 static void get_actuator_state(void);
 static void calc_g1_element(float dx_error, int8_t i, int8_t j, float mu_extra);
 static void calc_g2_element(float dx_error, int8_t j, float mu_extra);
+void multiplyMatrixByScalar(float matrix[TYPE_ACT][NUM_OUT], float scalar, float result[TYPE_ACT][NUM_OUT]);
+void pseudoinv_B(float B[NUM_OUT][TYPE_ACT], float W[TYPE_ACT][TYPE_ACT], float B_inv[TYPE_ACT][NUM_OUT]);
+int16_t calculatePPRZCommand(float K1, float K2, float K3, float thrust);
+
 #if STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
 static void calc_g1g2_pseudo_inv(void);
 #endif
@@ -175,8 +190,8 @@ float act_dyn[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_DYN;
 float pivot_gain_q = STABILIZATION_INDI_PIVOT_GAIN_Q;
 float pivot_gain_theta = STABILIZATION_INDI_PIVOT_GAIN_THETA;
 float pivot_ratio;
-float pivot_servogain_q= STABILIZATION_INDI_PIVOT_SERVOGAIN_Q;
-float pivot_servogain_theta= STABILIZATION_INDI_PIVOT_SERVOGAIN_THETA;
+// float pivot_servogain_q= STABILIZATION_INDI_PIVOT_SERVOGAIN_Q;
+// float pivot_servogain_theta= STABILIZATION_INDI_PIVOT_SERVOGAIN_THETA;
 //-------------------------------------
 
 #ifdef STABILIZATION_INDI_WLS_PRIORITIES
@@ -871,8 +886,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   float_eulers_of_quat_zxy(&eulers_zxy, statequat);
 
   int16_t takeoff_stage = take_off_stage(eulers_zxy.theta);
-  float takeoff_thrust = take_off_thrust();
-  static bool isFirstEntryToStage2 = true;
+  //static bool isFirstEntryToStage2 = true;
   if (takeoff_stage == 0){
     // initialize pivoting by putting motors up
 	  actuators_pprz[0] = MAX_PPRZ;
@@ -883,30 +897,39 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     actuators_pprz[4] = 0;
     actuators_pprz[5] = 0;
   } else if (takeoff_stage == 1) {
-    // 60 degrees pitch should get max deflection
-    float pivot_ratio = 1.f - fabsf(eulers_zxy.theta)/RadOfDeg(30.0);
+    float theta_d = 5*M_PI/180;
+    // Define B as a 1x2 matrix and W as a 2x2 diagonal matrix
+        // Calculate B using the provided equation
+    float B[NUM_OUT][TYPE_ACT] = {{sin(-eulers_zxy.theta ) * L1, m * 9.81 * L2 / L1 * cos(-eulers_zxy.theta ) * L1}};
+    float W[TYPE_ACT][TYPE_ACT] = {{1 / pow(10, 2), 0}, {0, 1 / pow(63 * M_PI / 180, 2)}};
+    float B_inv[TYPE_ACT][NUM_OUT];
 
-    Bound(pivot_ratio, 0.0f, 1.0f);
+    pseudoinv_B(B, W, B_inv);
+    
+    float du = pivot_gain_theta * (theta_d - eulers_zxy.theta ) - pivot_gain_q * body_rates->q;  
+    float du_out[TYPE_ACT][1];
+    // Multiply B_inv by du
+    multiplyMatrixByScalar(B_inv, du, du_out); 
+    float thrust_eq = m*9.81*L2/L1;
+    float tilt_eq = -eulers_zxy.theta;
+    float takeoff_thrust = (thrust_eq + du_out[0][0])*0.5; //for one motor half 
+    float takeoff_tilt = tilt_eq + du_out[1][0];
 
-    int16_t servo_command = (-eulers_zxy.theta + pivot_ratio*(att_err.qy * pivot_servogain_theta - pivot_servogain_q * body_rates->q))/(63.0/180.0*M_PI)*9600;
-    Bound(servo_command,-9600,9600);
-
+    int16_t servo_command = takeoff_tilt/(63.0/180.0*M_PI)*9600;
     actuators_pprz[0] = servo_command;
     actuators_pprz[1] = servo_command;
-
     if (autopilot_get_motors_on()) {
-    int16_t motor_command = takeoff_thrust + (1.f - pivot_ratio)*(- body_rates->q * pivot_gain_q - att_err.qy * pivot_gain_theta);
-    angular_accel_ref.p = att_err.qx * indi_gains.att.p - body_rates->p * indi_gains.rate.p;
-
-    actuators_pprz[2] = motor_command - angular_accel_ref.p * roll_gain;
-    actuators_pprz[3] = motor_command + angular_accel_ref.p * roll_gain;
+    int16_t motor_command = calculatePPRZCommand(K1, K2, K3, takeoff_thrust);
+    actuators_pprz[2] = motor_command;
+    actuators_pprz[3] = motor_command;
     } else {
       for (i = 2; i < INDI_NUM_ACT; i++) {
         actuators_pprz[i] = -9600;
       }
     }
 
-    // don't use the ailerons for the takeoff
+
+   // don't use the ailerons for the takeoff
     actuators_pprz[4] = 0;
     actuators_pprz[5] = 0;
 
@@ -922,13 +945,6 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   } else { // not in a takeoff stage, flying
 	  /* compute the INDI command */
 	  stabilization_indi_rate_run(rate_sp, in_flight);
-  //   if (isFirstEntryToStage2) {
-  //   actuators_pprz[2] = takeoff_thrust;
-  //   actuators_pprz[3] = takeoff_thrust; 
-  //   actuators_pprz[4] = 0;
-  //   actuators_pprz[5] = 0;
-  //   isFirstEntryToStage2 = false;
-  // }
 	  // Reset thrust increment boolean
 	  indi_thrust_increment_set = false;
   }
@@ -1225,4 +1241,102 @@ static void bound_g_mat(void)
       g2_est[j] = min_limit;
     }
   }
+}
+
+void invertDiagonalMatrix(float W[TYPE_ACT][TYPE_ACT], float W_inv[TYPE_ACT][TYPE_ACT]) {
+    // Initialize the whole W_inv array to zero first
+    for (int i = 0; i < TYPE_ACT; i++) {
+        for (int j = 0; j < TYPE_ACT; j++) {
+            W_inv[i][j] = 0.0f; // Initialize all elements to zero
+        }
+    }
+    // Now invert only the diagonal elements
+    for (int i = 0; i < TYPE_ACT; i++) {
+        W_inv[i][i] = 1.0f / W[i][i]; // Only diagonal elements are non-zero
+    }
+}
+
+
+void transposeMatrix(float matrix[NUM_OUT][TYPE_ACT], float transposed[TYPE_ACT][NUM_OUT]) {
+    for (int i = 0; i < NUM_OUT; i++) {
+        for (int j = 0; j < TYPE_ACT; j++) {
+            transposed[j][i] = matrix[i][j];
+        }
+    }
+}
+
+void multiplyMatrices(float matrix1[TYPE_ACT][TYPE_ACT], float matrix2[NUM_OUT][TYPE_ACT], float result[NUM_OUT][TYPE_ACT]) {
+    for (int i = 0; i < NUM_OUT; i++) {
+        for (int j = 0; j < TYPE_ACT; j++) {
+            result[i][j] = 0.0f;
+            for (int k = 0; k < TYPE_ACT; k++) {
+                result[i][j] += matrix1[k][j] * matrix2[i][k];
+            }
+        }
+    }
+}
+
+// Function to multiply a 2x1 matrix by a scalar
+void multiplyMatrixByScalar(float matrix[TYPE_ACT][1], float scalar, float result[TYPE_ACT][1]) {
+    for (int i = 0; i < TYPE_ACT; i++) {
+        result[i][0] = matrix[i][0] * scalar;
+    }
+}
+
+void pseudoinv_B(float B[NUM_OUT][TYPE_ACT], float W[TYPE_ACT][TYPE_ACT], float B_inv[TYPE_ACT][NUM_OUT]) {
+    float W_inv[TYPE_ACT][TYPE_ACT], B_transposed[TYPE_ACT][NUM_OUT], B_W_inv[NUM_OUT][TYPE_ACT];
+    float B_W_inv_B_transposed[NUM_OUT][NUM_OUT], B_W_inv_B_transposed_inv;
+
+    // Invert W
+    invertDiagonalMatrix(W, W_inv);
+    
+    // Transpose B
+    transposeMatrix(B, B_transposed);
+
+    // Multiply B by W_inv
+    multiplyMatrices(W_inv, B, B_W_inv);
+
+    // Multiply B_W_inv by B_transposed to get a scalar since B is 1x2 and B_W_inv is 1x2
+    B_W_inv_B_transposed[0][0] = 0.0f;
+    for (int k = 0; k < TYPE_ACT; k++) {
+        B_W_inv_B_transposed[0][0] += B_W_inv[0][k] * B_transposed[k][0];
+    }
+
+    // Invert B_W_inv_B_transposed (it's a scalar in this case)
+    B_W_inv_B_transposed_inv = 1.0f / B_W_inv_B_transposed[0][0];
+
+    // Finally, calculate B_inv by multiplying W_inv_B_transposed by B_W_inv_B_transposed_inv
+    for (int i = 0; i < TYPE_ACT; i++) {
+        B_inv[i][0] = B_transposed[i][0] * B_W_inv_B_transposed_inv;
+    }
+}
+
+int16_t calculatePPRZCommand(float K1, float K2, float K3, float thrust) {
+    float a = K1;
+    float b = K2;
+    float c = K3 - thrust;
+    float discriminant = b * b - 4 * a * c;
+
+    // Check for no real solutions
+    if (discriminant < 0) {
+        return -1; // Indicate no solution
+    } else {
+        float x1 = (-b + sqrt(discriminant)) / (2 * a);
+        float x2 = (-b - sqrt(discriminant)) / (2 * a);
+
+        // Check if solutions are within the valid range and return the valid one
+        if ((x1 >= 0 && x1 <= 9600) && (x2 >= 0 && x2 <= 9600)) {
+            // Both solutions are valid, return the smallest integer larger than or equal to the smaller one
+            return (int)ceil(fmin(x1, x2));
+        } else if (x1 >= 0 && x1 <= 9600) {
+            // Only x1 is valid
+            return (int)ceil(x1);
+        } else if (x2 >= 0 && x2 <= 9600) {
+            // Only x2 is valid
+            return (int)ceil(x2);
+        } else {
+            // No valid solution
+            return -1;
+        }
+    }
 }
