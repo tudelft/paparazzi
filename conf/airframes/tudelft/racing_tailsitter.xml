@@ -334,8 +334,8 @@
 	  <define name="PIVOT_GAIN_THETA" value="0.1"/>
     <define name="PIVOT_SERVOGAIN_Q" value="0.04"/>
     <define name="PIVOT_SERVOGAIN_THETA" value="0.8"/> -->
-    <define name="PIVOT_GAIN_Q" value="3"/>
-    <define name="PIVOT_GAIN_THETA" value="2"/>
+    <define name="PIVOT_GAIN_Q" value="0.1"/>
+    <define name="PIVOT_GAIN_THETA" value="0.2"/>
 
     </section>
 
