@@ -1472,7 +1472,7 @@ void sum_g1g2_1l(void) {
   //   T += actuator_state_1l[i] * g1_1l[2][i];
   // }
   // T = T / num_thrusters_oneloop;
-  float T      = -9.81/(cphi*ctheta);//-9.81; //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
+  float T      = -g/(cphi*ctheta);//-9.81; //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
   float P      = 0.0;
   if (ONELOOP_ANDI_AC_HAS_PUSHER){
     P    = actuator_state_1l[ONELOOP_ANDI_PUSHER_IDX] * g1_1l[2][ONELOOP_ANDI_PUSHER_IDX] / ANDI_G_SCALING;
@@ -1554,12 +1554,12 @@ void calc_model(void){
   //   T += actuator_state_1l[i] * g1_1l[2][i];
   // }
   // T = T / num_thrusters_oneloop;
-  float T      = -9.81/(cphi*ctheta); // -9.81;
+  float T      = -g/(cphi*ctheta); // -9.81;
   float P      = 0.0;
   if (ONELOOP_ANDI_AC_HAS_PUSHER){  
   float P      = actuator_state_1l[ONELOOP_ANDI_PUSHER_IDX] * g1_1l[2][ONELOOP_ANDI_PUSHER_IDX] / ANDI_G_SCALING;
   }
-  model_pred[0] = (cpsi * stheta + ctheta * sphi * spsi) * T + (cpsi * ctheta + sphi * spsi * stheta) * P;
+  model_pred[0] = (cpsi * stheta + ctheta * sphi * spsi) * T + (cpsi * ctheta - sphi * spsi * stheta) * P;
   model_pred[1] = (spsi * stheta - cpsi * ctheta * sphi) * T + (ctheta * spsi + cpsi * sphi * stheta) * P;
   model_pred[2] = g + cphi * ctheta * T - cphi * stheta * P;
 
