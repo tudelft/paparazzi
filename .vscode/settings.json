@@ -10,7 +10,13 @@
     },
     "files.associations": {
         "Makefile.*": "makefile",
-        "chrono": "c"
+        "chrono": "c",
+        "matrixfunctions": "c",
+        "bit": "c",
+        "*.tcc": "c",
+        "cmath": "c",
+        "complex": "c",
+        "random": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",

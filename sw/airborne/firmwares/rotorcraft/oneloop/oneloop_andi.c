@@ -308,7 +308,7 @@ void  ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref
 void  calc_model(void);
 float oneloop_andi_sideslip(void);
 void  chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
-void  chirp_call(bool* chirp_on, bool* chirp_first_call, float dt, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
+void  chirp_call(bool* chirp_on, bool* chirp_first_call, float* t_0_chirp, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
 /* Define messages of the module*/
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -423,10 +423,11 @@ static float lin_acc[3];
 bool  chirp_on            = false;
 bool  chirp_first_call    = true;
 float time_elapsed_chirp  = 0.0;
+float t_0_chirp           = 0.0;
 float f0_chirp            = 0.8 / (2.0 * M_PI);
-float f1_chirp            = 1.0 / (2.0 * M_PI);
+float f1_chirp            = 0.8 / (2.0 * M_PI);
 float t_chirp             = 45.0;
-float A_chirp             = 0.2;
+float A_chirp             = 0.5;
 int8_t chirp_axis         = 0;
 float p_ref_0[3]          = {0.0, 0.0, 0.0};
 
@@ -1235,8 +1236,6 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     }
     // Register Attitude Setpoints from previous loop
     float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, psi_des_rad};
-    // Run chirp test if turnerd on
-    chirp_call(&chirp_on, &chirp_first_call, dt_1l, &time_elapsed_chirp, f0_chirp, f1_chirp, t_chirp, A_chirp, chirp_axis, att_des[2], oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer,p_ref_0);
     // The RM functions want an array as input. Create a single entry array and write the vertical guidance entries. 
     float single_value_ref[1]        = {oneloop_andi.gui_ref.pos[2]};
     float single_value_d_ref[1]      = {oneloop_andi.gui_ref.vel[2]};
@@ -1266,11 +1265,13 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
       oneloop_andi.gui_ref.acc[2] = single_value_2d_ref[0];
       oneloop_andi.gui_ref.jer[2] = single_value_3d_ref[0];  
     }    
+    // Run chirp test if turnerd on (overwrite the guidance references)
+    chirp_call(&chirp_on, &chirp_first_call, &t_0_chirp, &time_elapsed_chirp, f0_chirp, f1_chirp, t_chirp, A_chirp, chirp_axis, att_des[2], oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer,p_ref_0);
     // Generate Reference signals for attitude using RM
     // FIX ME ow not yet defined, will be useful in the future to have accurate psi tracking in NAV functions
     bool ow_psi = false;
     rm_3rd_attitude(dt_1l, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, att_des, ow_psi, psi_vec, k_att_rm.k1, k_att_rm.k2, k_att_rm.k3);
-}
+ }
 }
 
 /**
@@ -1686,40 +1687,43 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, i
     mult_1 = 0.0;
     mult_2 = 1.0;
   }
-  printf("mult_0: %f\n",mult_0);
-  printf("mult_1: %f\n",mult_1);
-  printf("mult_2: %f\n",mult_2);
-
-  p_ref[0] = p_ref_0[0] + p_ref_chirp * mult_0;
-  p_ref[1] = p_ref_0[1] + p_ref_chirp * mult_1;
-  p_ref[2] = p_ref_0[2] + p_ref_chirp * mult_2;
-  v_ref[0] = v_ref_chirp * mult_0;
-  v_ref[1] = v_ref_chirp * mult_1;
-  v_ref[2] = v_ref_chirp * mult_2;
-  a_ref[0] = a_ref_chirp * mult_0;
-  a_ref[1] = a_ref_chirp * mult_1;
-  a_ref[2] = a_ref_chirp * mult_2;
-  j_ref[0] = j_ref_chirp * mult_0;
-  j_ref[1] = j_ref_chirp * mult_1;
-  j_ref[2] = j_ref_chirp * mult_2;
+  // Do not overwrite the reference if chirp is not on that axis
+  if (n == 2){
+    p_ref[2] = p_ref_0[2] + p_ref_chirp * mult_2;
+    v_ref[2] = v_ref_chirp * mult_2;
+    a_ref[2] = a_ref_chirp * mult_2;
+    j_ref[2] = j_ref_chirp * mult_2;
+  } else{
+    p_ref[0] = p_ref_0[0] + p_ref_chirp * mult_0;
+    p_ref[1] = p_ref_0[1] + p_ref_chirp * mult_1; 
+    v_ref[0] = v_ref_chirp * mult_0;
+    v_ref[1] = v_ref_chirp * mult_1;
+    a_ref[0] = a_ref_chirp * mult_0;
+    a_ref[1] = a_ref_chirp * mult_1; 
+    j_ref[0] = j_ref_chirp * mult_0;
+    j_ref[1] = j_ref_chirp * mult_1;
+  }
 }
 
-void chirp_call(bool *chirp_on, bool *chirp_first_call, float dt, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]){
+void chirp_call(bool *chirp_on, bool *chirp_first_call, float* t_0, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]){
   if (*chirp_on){
     if (*chirp_first_call){
       *time_elapsed = 0.0;
       *chirp_first_call = false;
+      *t_0 = get_sys_time_float();
       p_ref_0[0] = p_ref[0];
       p_ref_0[1] = p_ref[1];
       p_ref_0[2] = p_ref[2];
     }
     if (*time_elapsed < t_chirp){
+      *time_elapsed = get_sys_time_float() - *t_0;
       chirp_pos(*time_elapsed, f0, f1, t_chirp, A, n, psi, p_ref, v_ref, a_ref, j_ref, p_ref_0);
-      *time_elapsed += dt;
     } else {
       *chirp_on   = false;
       *chirp_first_call = true;
       *time_elapsed = 0.0;
+      *t_0 = 0.0;
+      oneloop_andi_enter(false);
     }
   }
 }
