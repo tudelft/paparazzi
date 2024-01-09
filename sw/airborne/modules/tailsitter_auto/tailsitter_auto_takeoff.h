@@ -23,10 +23,10 @@
 #define TAILSITTER_AUTO_TOFF_H
 
 extern int16_t take_off_stage(float theta);
-extern int16_t take_off_thrust(void);
+extern int16_t take_off_theta(void);
 extern void take_off_enter(void);
 
-extern float Kq;
-extern float t_scale_to_thrust;
+extern float theta_ref;
+extern float t_scale_to_theta;
 
 #endif // TAILSITTER_AUTO_TOFF_H
