@@ -29,27 +29,44 @@
 #include "autopilot.h"
 #include "modules/actuators/actuators.h"
 
-#ifndef RADIO_THROTTLE
-#define RADIO_THROTTLE   0
+#ifndef RADIO_PITCH
+#define RADIO_PITCH   0
 #endif
 
 int16_t stage = 0;
 int16_t counter = 0;
-float Kq = TAKEOFF_Q_GAIN;
+float theta_ref = TAKEOFF_THETA_REF;
 
-float t_scale_to_thrust = 3.5;
+float t_scale_to_theta = 0.0039;
 float theta_d;
 
-#define TAKEOFF_MODULE_FREQ 500
+#define TAKEOFF_MODULE_FREQ 200
 
 //int16_t pwm2pprz(float pwm);
 int16_t take_off_stage(float theta);
-int16_t take_off_thrust(void);
+float take_off_theta(void);
 void take_off_enter(void);
 
 void take_off_enter(void){
   stage = 0;
   counter = 0;
+}
+
+float take_off_theta(void){
+
+  if(autopilot.mode == AP_MODE_NAV){
+    if (stage == 1) {
+    //theta_d gradually increase for nav mode
+    theta_d = RadOfDeg(-90.0) + counter * t_scale_to_theta;
+      if (theta_d > theta_ref) {//Theta_d finally depends on the theta_ref which can be tuned in settings
+        theta_d = theta_ref;
+    }
+  }
+  }
+  else{
+    theta_d = (radio_control.values[RADIO_PITCH] / 9600.0) * 60.0 * M_PI / 180.0;
+  }
+  return theta_d;
 }
 
 int16_t take_off_stage(float theta){

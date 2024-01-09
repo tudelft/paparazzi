@@ -149,7 +149,7 @@
     </module>-->
     <module name="geo_mag"/>
     <module name="tailsitter_auto_takeoff">
-      <define name="TAKEOFF_Q_GAIN" value="1.04"/>
+      <define name="TAKEOFF_THETA_REF" value="0.0"/>
     </module>
 
     <module name="agl_dist">

@@ -901,7 +901,9 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     actuators_pprz[4] = 0;
     actuators_pprz[5] = 0;
   } else if (takeoff_stage == 1) {
-    float theta_d = (radio_control.values[RADIO_PITCH]/9600)*45*M_PI/180;
+    float theta_d = take_off_theta();
+    stab_att_sp_euler.theta = theta_d;
+
     // Define B as a 1x2 matrix and W as a 2x2 diagonal matrix
         // Calculate B using the provided equation
     float B[NUM_OUT][TYPE_ACT] = {{sin(-eulers_zxy.theta ) * L1, m * 9.81 * L2 / L1 * cos(-eulers_zxy.theta ) * L1}};
@@ -919,7 +921,6 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     float takeoff_thrust = (thrust_eq + du_out[0][0])*0.5; //for one motor half 
     float takeoff_tilt = tilt_eq + du_out[1][0];
 
-    // int16_t servo_command = takeoff_tilt/(63.0/180.0*M_PI)*9600;
     int16_t servo_command = (int16_t)fmax(fmin(takeoff_tilt / (63.0 / 180.0 * M_PI) * 9600, 9600), -9600);
     actuators_pprz[0] = servo_command;
     actuators_pprz[1] = servo_command;
@@ -1347,7 +1348,7 @@ int16_t calculatePPRZCommand(float K1, float K2, float K3, float thrust) {
             return (int)ceil(x);
         } else if (x < 0) {
             return 0;
-        } else if (x > 9600) {
+        } else  {
             return 9600;
         } 
     }
