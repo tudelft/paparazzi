@@ -49,8 +49,12 @@
  
         <!-- IMU / INS -->       
         <module name="imu" type="cube"/>
-        <module name="ins" type="ekf2" />      
- 
+        <!-- <module name="ins" type="ekf2" />       -->
+        <module name="ahrs" type="int_cmpl_quat">
+            <configure name="USE_MAGNETOMETER" value="TRUE"/>
+            <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
+        </module>
+        <module name="ins" type="extended" />   
         <!-- Actuators on dual CAN bus -->
         <module name="actuators" type="uavcan">
             <configure value="TRUE" name="UAVCAN_USE_CAN1"/>
@@ -235,6 +239,16 @@
         <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/>
     </section>
 
+    <!-- local magnetic field -->
+    <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
+    <section name="AHRS" prefix="AHRS_">
+        <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
+        <!-- Delft -->
+        <define name="H_X" value="0.3892503"/>
+        <define name="H_Y" value="0.0017972"/>
+        <define name="H_Z" value="0.9211303"/>
+    </section>
+    
     <section NAME="BAT">
         <define VALUE="18.0" UNIT="V" NAME="CATASTROPHIC_BAT_LEVEL"/>
         <define VALUE="18.6" UNIT="V" NAME="CRITIC_BAT_LEVEL"/>

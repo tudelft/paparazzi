@@ -376,6 +376,22 @@ static void send_guidance_oneloop_andi(struct transport_tx *trans, struct link_d
                                         &oneloop_andi.gui_ref.jer[1],
                                         &oneloop_andi.gui_ref.jer[2]);
 }
+
+static void debug_vect(struct transport_tx *trans, struct link_device *dev, char *name, float *data, int datasize)
+{
+  pprz_msg_send_DEBUG_VECT(trans, dev, AC_ID,
+                           strlen(name), name,
+                           datasize, data);
+}
+
+static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
+{
+  float temp_att_des[3];
+  temp_att_des[0] = eulers_zxy_des.phi;
+  temp_att_des[1] = eulers_zxy_des.theta;
+  temp_att_des[2] = psi_des_rad;
+  debug_vect(trans, dev, "att_des", temp_att_des, 3);
+}
 #endif
 
 /*Define general struct of the Oneloop ANDI controller*/
@@ -402,7 +418,8 @@ struct Int32Eulers stab_att_sp_euler_1l;// here for now to correct warning, can 
 struct Int32Quat   stab_att_sp_quat_1l; // here for now to correct warning, can be better eploited in the future
 struct FloatEulers eulers_zxy_des;
 struct FloatEulers eulers_zxy;
-static float  psi_des_rad = 0.0;
+//static float  psi_des_rad = 0.0;
+float  psi_des_rad = 0.0;
 float  psi_des_deg = 0.0;
 static float  psi_vec[4]  = {0.0, 0.0, 0.0, 0.0};
 bool heading_manual = true;
@@ -910,7 +927,7 @@ void init_poles(void){
   // p_att_rm.zeta    = 1.0;
   // p_att_rm.p3      = 2.0467;
 
-  p_pos_e.omega_n = 1.41;
+  p_pos_e.omega_n = 2.5;//1.41;
   p_pos_e.zeta    = 1.0; //0.85
   p_pos_e.p3      = p_pos_e.omega_n * p_pos_e.zeta;
 
@@ -1128,6 +1145,7 @@ void oneloop_andi_init(void)
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_G, send_eff_mat_g_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE, send_guidance_oneloop_andi);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_oneloop_debug);
   #endif
 }
 

@@ -41,6 +41,8 @@ extern float andi_du[ANDI_NUM_ACT_TOT];
 extern float psi_des_deg;
 extern bool  heading_manual;
 extern float fwd_sideslip_gain;
+extern struct FloatEulers eulers_zxy_des;
+extern float psi_des_rad;
 
 /*Chirp test Variables*/
 extern bool  chirp_on;
