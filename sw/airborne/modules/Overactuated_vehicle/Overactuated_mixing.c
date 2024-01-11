@@ -1512,7 +1512,7 @@ void overactuated_mixing_run(void)
             manual_theta_value = ship_info_receive.theta * M_PI/180;
         #endif
 
-        manual_motor_value = OVERACTUATED_MIXING_MOTOR_MIN_OMEGA;
+        manual_motor_value = 0;
 
         euler_setpoint[0] = indi_u[13];
         euler_setpoint[1] = indi_u[12];
