@@ -302,7 +302,6 @@ void* second_thread() //Run the optimization code
     float max_alpha = extra_data_in_copy[19]* M_PI/180, min_alpha = extra_data_in_copy[20]* M_PI/180, max_phi = extra_data_in_copy[21];
     float Cm_zero = extra_data_in_copy[22], Cm_alpha = extra_data_in_copy[23], Cl_alpha = extra_data_in_copy[24], Cd_zero = extra_data_in_copy[25];
     float K_Cd = extra_data_in_copy[26], S = extra_data_in_copy[27], wing_chord = extra_data_in_copy[28], rho = extra_data_in_copy[29];
-    float wing_span = 1.4f;
 
     float W_act_motor_const = extra_data_in_copy[30], W_act_motor_speed = extra_data_in_copy[31]; 
     float W_act_tilt_el_const = extra_data_in_copy[32], W_act_tilt_el_speed = extra_data_in_copy[33]; 
@@ -373,9 +372,9 @@ void* second_thread() //Run the optimization code
 
       Beta = 0 * pi/180;
       flight_path_angle = 0 * pi/180;
-      V = 15;
+      V = 13;
       Phi = 0 * pi/180;
-      Theta = 3 * pi/180;
+      Theta = 5 * pi/180;
       Omega_1 = 600;
       Omega_2 = 600;
       Omega_3 = 600;
@@ -390,7 +389,7 @@ void* second_thread() //Run the optimization code
       g_4 = 0 * pi/180;
       delta_ailerons = 0 * pi/180;
 
-      W_act_motor_const = 5;
+      W_act_motor_const = 1;
       W_act_motor_speed = 0; 
       W_act_tilt_el_const = 0;
       W_act_tilt_el_speed = 0;
@@ -426,7 +425,7 @@ void* second_thread() //Run the optimization code
       dv[0] = 0;
       dv[1] = 0;
       dv[2] = 0;
-      dv[3] = 10;
+      dv[3] = 0;
       dv[4] = 0;
       dv[5] = 0;
 
