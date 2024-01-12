@@ -110,16 +110,20 @@ struct endpoint_t {
   } ep;
 };
 
-struct payload_ship_info_msg_ground {
+struct __attribute__((__packed__)) payload_ship_info_msg_ground {
   float phi; 
   float theta; 
   float psi; 
+  float heading; 
   float phi_dot; 
   float theta_dot; 
   float psi_dot; 
   float x; 
   float y; 
   float z; 
+  float lat; 
+  float lon; 
+  float alt;   
   float x_dot; 
   float y_dot; 
   float z_dot; 
@@ -229,6 +233,10 @@ uint8_t parse_single_byte(unsigned char in_byte)
       break;
 
     case ParsingMsgPayload:
+      if(parser.counter-4 > 254){
+        parser.counter = 0;
+        parser.state = SearchingPPRZ_STX;
+      }
       parser.payload[parser.counter-4] = in_byte;
       parser.crc_a += in_byte;
       parser.crc_b += parser.crc_a;
@@ -306,10 +314,10 @@ void *udp_endpoint(void *arg) {
     int n = recvfrom(ep->fd, buffer, UDP_BUFFER_SIZE, MSG_WAITALL, (struct sockaddr *)&client, &len);
 
     // Ignore errors
-    if(n < 0)
+    if(n <= 0)
       continue;
 
-    if(verbose) printf("Got packet at endpoint [%s:%d] with length %d\r\n", ep->server_addr, ep->server_port, n);
+    // if(verbose) printf("Got packet at endpoint [%s:%d] with length %d\r\n", ep->server_addr, ep->server_port, n);
 
     // Send the message to the handler
     packet_handler(ep, buffer, n);
@@ -541,12 +549,16 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
             printf("Ship roll angle [deg] : %f \n",paylod_ship.phi);
             printf("Ship theta angle [deg] : %f \n",paylod_ship.theta);
             printf("Ship psi angle [deg] : %f \n",paylod_ship.psi);
+            printf("Ship heading angle [deg] : %f \n",paylod_ship.heading*180/M_PI);
             printf("Ship roll rate [deg/s] : %f \n",paylod_ship.phi_dot);
             printf("Ship pitch rate [deg/s] : %f \n",paylod_ship.theta_dot);
             printf("Ship yaw rate [deg/s] : %f \n",paylod_ship.psi_dot);  
             printf("Ship pos x [m] : %f \n",paylod_ship.x);  
             printf("Ship pos y [m] : %f \n",paylod_ship.y);  
             printf("Ship pos z [m] : %f \n",paylod_ship.z);  
+            printf("Ship lat [deg] : %f \n",paylod_ship.lat);  
+            printf("Ship pos lon [deg] : %f \n",paylod_ship.lon);  
+            printf("Ship pos alt [m] : %f \n",paylod_ship.alt);              
             printf("Ship speed x [m/s] : %f \n",paylod_ship.x_dot);  
             printf("Ship speed y [m/s] : %f \n",paylod_ship.y_dot);  
             printf("Ship speed z [m/s] : %f \n",paylod_ship.z_dot);  
@@ -564,7 +576,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
 
 void ivy_send_ship_info_msg(void){
   // if(verbose) printf("Sent received Ship message on ivy bus\n");
-  IvySendMsg("ground SHIP_INFO_MSG %d %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f",
+  IvySendMsg("ground SHIP_INFO_MSG %d %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f",
           ac_id,
           
           paylod_ship.phi,
@@ -578,6 +590,10 @@ void ivy_send_ship_info_msg(void){
           paylod_ship.x,
           paylod_ship.y,
           paylod_ship.z,
+
+          paylod_ship.lat,
+          paylod_ship.lon,
+          paylod_ship.alt,
 
           paylod_ship.x_dot,
           paylod_ship.y_dot,

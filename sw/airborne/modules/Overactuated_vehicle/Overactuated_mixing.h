@@ -86,6 +86,9 @@ struct ship_info_msg {
     float x; 
     float y; 
     float z; 
+    float lat; 
+    float lon; 
+    float alt;     
     float x_dot; 
     float y_dot; 
     float z_dot; 

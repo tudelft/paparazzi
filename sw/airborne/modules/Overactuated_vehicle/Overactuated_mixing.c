@@ -54,7 +54,7 @@
  
 // #define STB_WP_TARGET 
 
-#define USE_SEC_AHRS_IN_FAILSAFE_MODE
+// #define USE_SEC_AHRS_IN_FAILSAFE_MODE
 
 #define USE_NAV_HYBRID_MODULE
 
@@ -344,6 +344,9 @@ void overactuated_mixing_parse_SHIP_INFO_MSG(uint8_t *buf) {
     ship_info_receive.x = DL_SHIP_INFO_MSG_x(buf);  
     ship_info_receive.y = DL_SHIP_INFO_MSG_y(buf); 
     ship_info_receive.z = DL_SHIP_INFO_MSG_z(buf);  
+    ship_info_receive.lat = DL_SHIP_INFO_MSG_lat_ship(buf);  
+    ship_info_receive.lon = DL_SHIP_INFO_MSG_long_ship(buf); 
+    ship_info_receive.alt = DL_SHIP_INFO_MSG_alt_ship(buf);      
     ship_info_receive.x_dot = DL_SHIP_INFO_MSG_x_dot(buf);  
     ship_info_receive.y_dot = DL_SHIP_INFO_MSG_y_dot(buf); 
     ship_info_receive.z_dot = DL_SHIP_INFO_MSG_z_dot(buf);  
@@ -401,9 +404,10 @@ static void serial_act_t4_abi_in(uint8_t sender_id __attribute__((unused)), stru
 static void send_ship_info_msg_ground( struct transport_tx *trans , struct link_device * dev ) {
     // Send telemetry message
     pprz_msg_send_SHIP_INFO_MSG_GROUND(trans , dev , AC_ID ,
-                & ship_info_receive.phi,& ship_info_receive.theta,& ship_info_receive.psi,
+                & ship_info_receive.phi,& ship_info_receive.theta,& ship_info_receive.psi, & ship_info_receive.psi, & ship_info_receive.psi,
                 & ship_info_receive.phi_dot,& ship_info_receive.theta_dot,& ship_info_receive.psi_dot,
                 & ship_info_receive.x,& ship_info_receive.y,& ship_info_receive.z,
+                & ship_info_receive.lat,& ship_info_receive.lon,& ship_info_receive.alt,
                 & ship_info_receive.x_dot,& ship_info_receive.y_dot,& ship_info_receive.z_dot, 
                 & ship_info_receive.x_ddot,& ship_info_receive.y_ddot,& ship_info_receive.z_ddot);
 }

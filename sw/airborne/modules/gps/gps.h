@@ -140,6 +140,7 @@ struct GpsRelposNED {
   uint8_t relPosValid;
   uint8_t diffSoln;
   uint8_t gnssFixOK;
+  float heading;
 };
 
 struct RtcmMan {

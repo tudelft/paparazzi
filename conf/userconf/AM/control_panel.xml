@@ -199,7 +199,9 @@
       </program>
     </session>
     <session name="Herelink ship old GCS">
-      <program name="Server"/>
+      <program name="Server">
+        <arg flag="-no_md5_check"/>
+      </program>
       <program name="GCS">
         <arg flag="-speech"/>
       </program>

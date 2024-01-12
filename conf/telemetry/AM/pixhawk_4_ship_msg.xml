@@ -5,7 +5,10 @@
 
   <process name="Main">
 
-     
+     <!-- <mode name="ship_only_extreme">         
+	<message name="SHIP_INFO_MSG_GROUND"     period="0.01"/>      
+    </mode> -->
+         
      <mode name="ship_only">         
 	<message name="SHIP_INFO_MSG_GROUND"     period="0.002"/>      
 	<message name="AUTOPILOT_VERSION"        period="11.1"/>
@@ -18,6 +21,7 @@
 	<message name="GPS_INT"                  period=".25"/>
 	<message name="INS_EKF2"                 period=".25"/>
 	<message name="INS_EKF2_EXT"             period=".25"/>
+	<message name="TARGET_POS"               period="0.1"/>  
     </mode>
 
     <mode name="default" key_press="d">
@@ -233,6 +237,7 @@
 	<message name="ALIVE"                    period="2.1"/>
 	<message name="DATALINK_REPORT"          period="5.1"/>
 	<message name="LOGGER_STATUS"            period="1.0"/>
+	<message name="TARGET_POS"               period="0.1"/>  
     </mode>
   </process>
 

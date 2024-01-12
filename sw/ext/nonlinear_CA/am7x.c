@@ -353,7 +353,7 @@ void* second_thread() //Run the optimization code
     dv[2] = (myam7_data_in_copy.pseudo_control_az_int*1e-2); dv[3] = (myam7_data_in_copy.pseudo_control_p_dot_int*1e-1 * M_PI/180);
     dv[4] = (myam7_data_in_copy.pseudo_control_q_dot_int*1e-1 * M_PI/180); dv[5] = (myam7_data_in_copy.pseudo_control_r_dot_int*1e-1 * M_PI/180);
 
-    double transition_speed = 6; 
+    double transition_speed = 12; 
 
     #ifdef TEST_CONTROLLER
     #warning "You are using the testing variable, watch out!"

@@ -45,7 +45,8 @@
       <message name="AM7_OUT"        	        period=".5"/>
       <message name="SERIAL_ACT_T4_IN"         period=".5"/>
       <message name="SERIAL_ACT_T4_OUT"        period=".5"/>   
-      <message name="SHIP_INFO_MSG_GROUND"     period=".5"/>        
+      <message name="SHIP_INFO_MSG_GROUND"     period=".5"/>       
+      <message name="TARGET_POS" period="0.5"/> 
     </mode>
 
     <mode name="super" key_press="s">
@@ -246,7 +247,8 @@
       <message name="AM7_OUT"        	        period=".002"/>
       <message name="SERIAL_ACT_T4_IN"         period=".002"/>
       <message name="SERIAL_ACT_T4_OUT"        period=".002"/>  
-      <message name="SHIP_INFO_MSG_GROUND"     period=".002"/>        
+      <message name="SHIP_INFO_MSG_GROUND"     period=".002"/>   
+      <message name="TARGET_POS" period="0.1"/>     
     </mode>
   </process>
 

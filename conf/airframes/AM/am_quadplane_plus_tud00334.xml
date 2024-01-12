@@ -771,7 +771,7 @@
 
   <section name="BAT">
     <!-- Brick on only -->
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.52* adc)"/>
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.357* adc)"/>
     <!-- <define name="MAX_BAT_CAPACITY" value="5000" unit="mAh"/> -->
     <!-- <define name="MILLIAMP_AT_IDLE_THROTTLE" value="500" unit="mA"/> -->
     <!-- <define name="MILLIAMP_AT_FULL_THROTTLE" value="30000" unit="mA"/> -->

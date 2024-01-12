@@ -140,6 +140,7 @@
     <!--     For OUTSIDE -->
     <module name="gps" type="ublox">
       <configure name="GPS_BAUD" value="B460800"/> 
+      <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
     </module>
 
     <!--     For OPTITRACK -->
@@ -201,7 +202,7 @@
       <define name="LIS3MDL_CHAN_Z" value="2"/>     
    </module> -->
 
-  <!-- updated with new orientation 17-10-2022 -->
+  <!-- updated with new orientation 17-10-2023 -->
   <module name="mag" type="rm3100">
     <configure name="MAG_RM3100_I2C_DEV" value="i2c4"/>
     <define name="RM3100_CHAN_X_SIGN" value="+"/>
