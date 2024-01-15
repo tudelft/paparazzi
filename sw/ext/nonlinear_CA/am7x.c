@@ -1,10 +1,13 @@
 #include "am7x.h"
 #include <pthread.h>
-#include "MATLAB_generated_files/AM_Nonlinear_CA_nico_test.h"
+#include "MATLAB_generated_files/Cascaded_nonlinear_controller_control_rf_w_ailerons.h"
 #include "MATLAB_generated_files/rt_nonfinite.h"
 #include <string.h>
+#include <glib.h>
+#include <Ivy/ivy.h>
+#include <Ivy/ivyglibloop.h>
 
-//Totest the controller with random variables:
+//To test the controller with random variables:
 // #define TEST_CONTROLLER
 
 struct am7_data_out myam7_data_out;
@@ -14,30 +17,34 @@ struct am7_data_in myam7_data_in;
 struct am7_data_in myam7_data_in_copy;
 float extra_data_in[255], extra_data_in_copy[255];
 float extra_data_out[255], extra_data_out_copy[255];
-uint16_T buffer_in_counter;
+uint16_t buffer_in_counter;
 char am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((aligned));
 char am7_msg_buf_out[sizeof(struct am7_data_out)]  __attribute__((aligned));
-uint32_T received_packets = 0, received_packets_tot = 0;
-uint32_T sent_packets = 0, sent_packets_tot = 0;
-uint32_T missed_packets = 0;
-uint16_T sent_msg_id = 0, received_msg_id = 0;
+uint32_t received_packets = 0, received_packets_tot = 0;
+uint32_t sent_packets = 0, sent_packets_tot = 0;
+uint32_t missed_packets = 0;
+uint16_t sent_msg_id = 0, received_msg_id = 0;
 int serial_port;
 int serial_port_tf_mini;
 float ca7_message_frequency_RX, ca7_message_frequency_TX;
+struct timeval current_time, last_time, last_sent_msg_time, aruco_time, starting_time_program_execution;
 
-struct timeval current_time, last_time, last_sent_msg_time, time_run_optimizer;
 
 pthread_mutex_t mutex_am7;
+
+pthread_mutex_t mutex_aruco;
 
 int verbose_connection = 1;
 int verbose_optimizer = 0;
 int verbose_runtime = 0; 
 int verbose_received_data = 0; 
+int verbose_ivy_bus = 0; 
+int verbose_aruco = 0; 
 
 int16_t lidar_dist_cm = -1; 
 int16_t lidar_signal_strength = -1; 
 
-double previous_controls[15]; 
+struct aruco_detection_t aruco_detection; 
 
 void readLiDAR(){
   // Data Format for Benewake TFmini
@@ -187,6 +194,38 @@ void reading_routine(){
     }
 } 
 
+void send_states_on_ivy(){
+    //Copy received message from UAV autopilot 
+    struct am7_data_in myam7_data_in_copy_for_ivy;
+    pthread_mutex_lock(&mutex_am7);   
+    memcpy(&myam7_data_in_copy_for_ivy, &myam7_data_in, sizeof(struct am7_data_in));
+    pthread_mutex_unlock(&mutex_am7);
+
+    //Send messages over ivy bus for the python thread: 
+    if(verbose_ivy_bus) printf("Sent received message from UAV on ivy bus\n");
+    IvySendMsg("1 ROTORCRAFT_FP  %d %d %d  %d %d %d  %d %d %d  %d %d %d  %d %d %d",
+
+            (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_y/0.0039063),
+            (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_x/0.0039063),
+            (int32_t) (-myam7_data_in_copy_for_ivy.UAV_NED_pos_z/0.0039063),
+
+            (int32_t) (-1/0.0000019),
+            (int32_t) (-1/0.0000019),
+            (int32_t) (-1/0.0000019),
+
+            (int32_t) ( (myam7_data_in_copy_for_ivy.phi_state_int*0.01) /0.0139882),
+            (int32_t) ( (myam7_data_in_copy_for_ivy.theta_state_int*0.01) /0.0139882),
+            (int32_t) ( (myam7_data_in_copy_for_ivy.psi_state_int*0.01) /0.0139882),
+
+            (int32_t) (-1/0.0039063),
+            (int32_t) (-1/0.0039063),
+            (int32_t) (-1/0.0039063),
+
+            (int32_t) (-1/0.0039063),
+            (int32_t) (-1/0.0039063),
+            (uint16_t) (-1/0.0039063));
+}
+
 void print_statistics(){
   gettimeofday(&current_time, NULL); 
   if((current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time.tv_sec*1e6 + last_time.tv_usec) > 2*1e6){
@@ -216,6 +255,7 @@ void send_receive_am7(){
   gettimeofday(&current_time, NULL); 
   if((current_time.tv_sec*1e6 + current_time.tv_usec) - (last_sent_msg_time.tv_sec*1e6 + last_sent_msg_time.tv_usec) > (1e6/MAX_FREQUENCY_MSG_OUT)){
     writing_routine();
+    send_states_on_ivy();
   }
 
   // usleep(1e9/MAX_FREQUENCY_MSG_OUT);
@@ -279,7 +319,7 @@ void* second_thread() //Run the optimization code
   
     float Cy_beta = extra_data_in_copy[47], Cl_beta = extra_data_in_copy[48], wing_span = extra_data_in_copy[49];
 
-    float aoa_protection_speed = extra_data_in_copy[50];
+    float speed_aoa_protection = extra_data_in_copy[50];
 
     float W_act_ailerons_const = extra_data_in_copy[51], W_act_ailerons_speed = extra_data_in_copy[52]; 
     float min_delta_ailerons = extra_data_in_copy[53], max_delta_ailerons = extra_data_in_copy[54];
@@ -291,7 +331,13 @@ void* second_thread() //Run the optimization code
     float k_alt_tilt_constraint = extra_data_in_copy[58];
     float min_alt_tilt_constraint = extra_data_in_copy[59];
 
-  
+    float transition_speed = extra_data_in_copy[60];
+
+    float min_theta_hard = extra_data_in_copy[61];
+    float max_theta_hard = extra_data_in_copy[62];
+    float min_phi_hard = extra_data_in_copy[63];
+    float max_phi_hard = extra_data_in_copy[64];
+
     // Real time variables:
     double Phi = (myam7_data_in_copy.phi_state_int*1e-2 * M_PI/180);
     double Theta = (myam7_data_in_copy.theta_state_int*1e-2 * M_PI/180);
@@ -305,7 +351,7 @@ void* second_thread() //Run the optimization code
     double p = (myam7_data_in_copy.p_state_int*1e-1 * M_PI/180), q = (myam7_data_in_copy.q_state_int*1e-1 * M_PI/180); 
     double r = (myam7_data_in_copy.r_state_int*1e-1 * M_PI/180), V = (myam7_data_in_copy.airspeed_state_int*1e-2);
     double flight_path_angle = (myam7_data_in_copy.gamma_state_int*1e-2 * M_PI/180);
-    double Beta = 0.0;
+    double Beta = (myam7_data_in_copy.beta_state_int*1e-2 * M_PI/180);
     double desired_motor_value = (myam7_data_in_copy.desired_motor_value_int*1e-1), desired_el_value = (myam7_data_in_copy.desired_el_value_int*1e-2 * M_PI/180);
     double desired_az_value = (myam7_data_in_copy.desired_az_value_int*1e-2 * M_PI/180), desired_theta_value = (myam7_data_in_copy.desired_theta_value_int*1e-2 * M_PI/180);
     double desired_phi_value = (myam7_data_in_copy.desired_phi_value_int*1e-2 * M_PI/180);
@@ -317,15 +363,30 @@ void* second_thread() //Run the optimization code
     dv[0] = (myam7_data_in_copy.pseudo_control_ax_int*1e-2); dv[1] = (myam7_data_in_copy.pseudo_control_ay_int*1e-2);
     dv[2] = (myam7_data_in_copy.pseudo_control_az_int*1e-2); dv[3] = (myam7_data_in_copy.pseudo_control_p_dot_int*1e-1 * M_PI/180);
     dv[4] = (myam7_data_in_copy.pseudo_control_q_dot_int*1e-1 * M_PI/180); dv[5] = (myam7_data_in_copy.pseudo_control_r_dot_int*1e-1 * M_PI/180);
-    
+ 
+    double p_body_current = (myam7_data_in_copy.p_body_current_int*1e-1 * M_PI/180); 
+    double q_body_current = (myam7_data_in_copy.q_body_current_int*1e-1 * M_PI/180); 
+    double r_body_current = (myam7_data_in_copy.r_body_current_int*1e-1 * M_PI/180); 
+    double p_dot_current = (myam7_data_in_copy.p_dot_current_int*1e-1 * M_PI/180); 
+    double q_dot_current = (myam7_data_in_copy.q_dot_current_int*1e-1 * M_PI/180);
+    double r_dot_current = (myam7_data_in_copy.r_dot_current_int*1e-1 * M_PI/180);
+    double phi_current = (myam7_data_in_copy.phi_current_int*1e-2 * M_PI/180);
+    double theta_current = (myam7_data_in_copy.theta_current_int*1e-2 * M_PI/180);
+    double theta_gain = (myam7_data_in_copy.theta_gain_int*1e-2);
+    double phi_gain = (myam7_data_in_copy.phi_gain_int*1e-2);
+    double p_body_gain = (myam7_data_in_copy.p_body_gain_int*1e-2);
+    double q_body_gain = (myam7_data_in_copy.q_body_gain_int*1e-2);
+    double r_body_gain = (myam7_data_in_copy.r_body_gain_int*1e-2);
+    double des_psi_dot = (myam7_data_in_copy.des_psi_dot_int*1e-2 * M_PI/180);
+
     double gamma_quadratic_du2 = 0.5e-6;
     double W_MOTOR_FAILURE_WEIGHT = (myam7_data_in_copy.beta_state_int*1e-2) ;
 
     #ifdef TEST_CONTROLLER
     #warning "You are using the testing variable, watch out!"
       float pi = M_PI;
-      K_p_T = 0.545e-5;
-      K_p_M = 0.936722e-7;
+      K_p_T = 1.106465e-5;
+      K_p_M = 1.835091e-7;
       m = 2.45; 
       I_xx = 0.156548;
       I_yy = 0.161380; 
@@ -336,15 +397,18 @@ void* second_thread() //Run the optimization code
       l_4 = 0.37;
       l_z = 0;
 
+      speed_aoa_protection = 3;
+      transition_speed = 7;
+
       Beta = 0 * pi/180;
       flight_path_angle = 0 * pi/180;
-      V = 9;
+      V = 12;
       Phi = 0 * pi/180;
-      Theta = 0 * pi/180;
-      Omega_1 = 600;
-      Omega_2 = 600;
-      Omega_3 = 600;
-      Omega_4 = 600;
+      Theta = 5 * pi/180;
+      Omega_1 = 620;
+      Omega_2 = 620;
+      Omega_3 = 620;
+      Omega_4 = 620;
       b_1 = -90 * pi/180;
       b_2 = -90 * pi/180;
       b_3 = -90 * pi/180;
@@ -376,7 +440,7 @@ void* second_thread() //Run the optimization code
       W_dv_6 = 0.09;
       gamma_quadratic = .5e-5; 
 
-      max_omega = 1400; 
+      max_omega = 1000; 
       min_omega = 100;
       max_b = 25; 
       min_b = -130; 
@@ -384,7 +448,7 @@ void* second_thread() //Run the optimization code
       min_g = -45;  
       max_theta = 60;
       min_theta = -15;
-      max_phi = 40; 
+      max_phi = 70; 
       max_delta_ailerons = 25;
       min_delta_ailerons = -25; 
 
@@ -401,14 +465,14 @@ void* second_thread() //Run the optimization code
       Cm_zero = 0.05; 
       Cl_alpha = 3.5; 
       Cd_zero = 0.25; 
-      K_Cd = 0.2;
+      K_Cd = 0.08;
       Cm_alpha = -0.1; 
       CL_aileron = 0.1; 
       rho = 1.225; 
       S = 0.43;
       wing_chord = 0.3; 
       max_alpha = 15 * pi/180; 
-      min_alpha  = -15 * pi/180; 
+      min_alpha = 1 * pi/180; 
 
       desired_motor_value = 100; 
       desired_el_value = 0 * pi/180;
@@ -417,39 +481,62 @@ void* second_thread() //Run the optimization code
       desired_phi_value = 0 * pi/180; 
       desired_ailerons_value = 0 * pi/180;
 
-      aoa_protection_speed = 6;
-
       k_alt_tilt_constraint = 55;
       min_alt_tilt_constraint = 0.2;
       lidar_alt_corrected = 1;
-      approach_mode = 1; 
+      approach_mode = 0; 
 
-      W_MOTOR_FAILURE_WEIGHT = 0;
+      p_body_current = 0; 
+      q_body_current = 0; 
+      r_body_current = 0;  
+      p_dot_current = 0;
+      q_dot_current = 0; 
+      r_dot_current = 0;
+      phi_current = Phi;
+      theta_current = Theta;  
+      theta_gain = 1;  
+      phi_gain = 1;
+      p_body_gain = 5;  
+      q_body_gain = 5;   
+      r_body_gain = 2;
+      des_psi_dot = 0; 
+
     #endif 
 
-    AM_Nonlinear_CA_nico_test (K_p_T, K_p_M, m, I_xx, I_yy, I_zz, l_1, l_2, l_3, l_4, l_z, 
-                                             Phi, Theta, Omega_1, Omega_2, Omega_3, Omega_4, b_1, b_2, b_3, b_4, g_1, g_2, g_3, g_4, delta_ailerons, 
-                                             W_act_motor_const, W_MOTOR_FAILURE_WEIGHT, W_act_motor_speed, W_act_tilt_el_const, W_act_tilt_el_speed, 
-                                             W_act_tilt_az_const, W_act_tilt_az_speed, W_act_theta_const, W_act_theta_speed, W_act_phi_const, W_act_phi_speed, W_act_ailerons_const, W_act_ailerons_speed, 
-                                             W_dv_1, W_dv_2, W_dv_3, W_dv_4, W_dv_5, W_dv_6, 
-                                             max_omega, min_omega, max_b, min_b, max_g, min_g, max_theta, min_theta, max_phi, max_delta_ailerons, min_delta_ailerons, 
-                                             dv, p, q, r, Cm_zero, Cl_alpha, Cd_zero, K_Cd,
-                                             Cm_alpha, CL_aileron, rho, V, S, wing_chord, flight_path_angle, max_alpha, min_alpha, Beta, gamma_quadratic, gamma_quadratic_du2, 
-                                             desired_motor_value, desired_el_value, desired_az_value, desired_theta_value, desired_phi_value, desired_ailerons_value,
-                                             previous_controls,
-                                             k_alt_tilt_constraint, min_alt_tilt_constraint, lidar_alt_corrected, approach_mode, verbose_optimizer, aoa_protection_speed, 
-                                             u_out,  residuals, &elapsed_time,  &N_iterations,  &N_evaluation,  &exitflag);
-
-    //Saving the old actuators solution for the next iteration: 
-
-    memcpy(&previous_controls,&u_out,sizeof(previous_controls));
-
-    gettimeofday(&current_time, NULL); 
-    while((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_run_optimizer.tv_sec*1e6 + time_run_optimizer.tv_usec) <= 5*1e3)
-    {
-      gettimeofday(&current_time, NULL); 
-    } 
-    gettimeofday(&time_run_optimizer, NULL); 
+Cascaded_nonlinear_controller_control_rf_w_ailerons(K_p_T,  K_p_M,  m,  I_xx,  I_yy,  I_zz,
+                                          l_1,  l_2,  l_3,  l_4,  l_z,  Phi,
+                                          Theta,  Omega_1,  Omega_2,  Omega_3,
+                                          Omega_4,  b_1,  b_2,  b_3,  b_4,  g_1,
+                                          g_2,  g_3,  g_4,  delta_ailerons,
+                                          W_act_motor_const,  W_act_motor_speed,
+                                          W_act_tilt_el_const,  W_act_tilt_el_speed,
+                                          W_act_tilt_az_const,  W_act_tilt_az_speed,
+                                          W_act_theta_const,  W_act_theta_speed,  W_act_phi_const,
+                                          W_act_phi_speed,  W_act_ailerons_const,
+                                          W_act_ailerons_speed,  W_dv_1,  W_dv_2,  W_dv_3,
+                                          W_dv_4,  W_dv_5,  W_dv_6,  max_omega,
+                                          min_omega,  max_b,  min_b,  max_g,  min_g,
+                                          max_theta,  min_theta,  max_phi,
+                                          max_delta_ailerons,  min_delta_ailerons,  dv,
+                                          p,  q,  r,  Cm_zero,  Cl_alpha,
+                                          Cd_zero,  K_Cd,  Cm_alpha,  CL_aileron,  rho,
+                                          V,  S,  wing_chord,  flight_path_angle,
+                                          max_alpha,  min_alpha,  Beta,  gamma_quadratic,
+                                          desired_motor_value,  desired_el_value,
+                                          desired_az_value,  desired_theta_value,
+                                          desired_phi_value,  desired_ailerons_value,
+                                          k_alt_tilt_constraint,  min_alt_tilt_constraint,
+                                          lidar_alt_corrected,  approach_mode,  verbose_optimizer,
+                                          speed_aoa_protection,  transition_speed,  p_body_current,
+                                          q_body_current,  r_body_current,  p_dot_current,
+                                          q_dot_current,  r_dot_current,  phi_current,
+                                          theta_current,  theta_gain,  phi_gain,
+                                          p_body_gain,  q_body_gain,  r_body_gain,
+                                          des_psi_dot, min_theta_hard, max_theta_hard,
+                                          min_phi_hard, max_phi_hard,
+                                          u_out,  residuals,
+                                          &elapsed_time, &N_iterations,  &N_evaluation,
+                                          &exitflag);
 
     //Convert the function output into integer to be transmitted to the pixhawk again: 
     myam7_data_out_copy_internal.motor_1_cmd_int = (int16_T) (u_out[0]*1e1) , myam7_data_out_copy_internal.motor_2_cmd_int = (int16_T) (u_out[1]*1e1);
@@ -520,12 +607,22 @@ void* second_thread() //Run the optimization code
       printf(" Cy_beta = %f \n",(float) Cy_beta);
       printf(" Cl_beta = %f \n",(float) Cl_beta);
       printf(" wing_span = %f \n",(float) wing_span);
-      printf(" speed_aoa_protection = %f \n",(float) aoa_protection_speed);
+      printf(" speed_aoa_protection = %f \n",(float) speed_aoa_protection);
       printf(" W_act_ailerons_const = %f \n",(float) W_act_ailerons_const);
       printf(" W_act_ailerons_speed = %f \n",(float) W_act_ailerons_speed);
       printf(" min_delta_ailerons = %f \n",(float) min_delta_ailerons);
       printf(" max_delta_ailerons = %f \n",(float) max_delta_ailerons);
       printf(" CL_aileron = %f \n",(float) CL_aileron);
+
+      printf(" max_thrust_loss = %f \n",(float) max_thrust_loss);
+      printf(" C_dr = %f \n",(float) C_dr);
+      printf(" k_alt_tilt_constraint = %f \n",(float) k_alt_tilt_constraint);
+      printf(" min_alt_tilt_constraint = %f \n",(float) min_alt_tilt_constraint);
+      printf(" transition_speed = %f \n",(float) transition_speed);
+      printf(" min_theta_hard = %f \n",(float) min_theta_hard);
+      printf(" max_theta_hard = %f \n",(float) max_theta_hard);
+      printf(" min_phi_hard = %f \n",(float) min_phi_hard);
+      printf(" max_phi_hard = %f \n",(float) max_phi_hard);
 
       printf("\n REAL TIME VARIABLES IN------------------------------------------------------ \n"); 
       printf(" Phi_deg = %f \n",(float) Phi*180/M_PI);
@@ -561,6 +658,26 @@ void* second_thread() //Run the optimization code
       printf(" dv[3] = %f \n",(float) dv[3]);
       printf(" dv[4] = %f \n",(float) dv[4]);
       printf(" dv[5] = %f \n",(float) dv[5]);
+
+      printf(" p_body_current_deg_s = %f \n",(float) p_body_current*180/M_PI);
+      printf(" q_body_current_deg_s = %f \n",(float) q_body_current*180/M_PI);
+      printf(" r_body_current_deg_s = %f \n",(float) r_body_current*180/M_PI);
+
+      printf(" p_dot_body_current_deg_s^2 = %f \n",(float) p_dot_current*180/M_PI);
+      printf(" q_dot_body_current_deg_s^2 = %f \n",(float) q_dot_current*180/M_PI);
+      printf(" r_dot_body_current_deg_s^2 = %f \n",(float) r_dot_current*180/M_PI);
+
+      printf(" phi_current_unfiltred = %f \n",(float) phi_current*180/M_PI);
+      printf(" theta_current_unfiltred = %f \n",(float) theta_current*180/M_PI);
+
+      printf(" theta_gain = %f \n",(float) theta_gain);
+      printf(" phi_gain = %f \n",(float) phi_gain);
+      printf(" p_body_gain = %f \n",(float) p_body_gain);
+      printf(" q_body_gain = %f \n",(float) q_body_gain);
+      printf(" r_body_gain = %f \n",(float) r_body_gain);
+
+      printf(" des_psi_dot_deg_s = %f \n",(float) des_psi_dot*180/M_PI);
+
 
       printf("\n REAL TIME VARIABLES OUT------------------------------------------------------ \n"); 
       printf(" motor_1_cmd_rad_s = %f \n",(float) u_out[0]);
@@ -603,6 +720,19 @@ void* second_thread() //Run the optimization code
     extra_data_out_copy[0] = 1.453; 
     extra_data_out_copy[1] = 1.23423; 
     
+    struct aruco_detection_t aruco_detection_local; 
+  
+    pthread_mutex_lock(&mutex_aruco);
+    memcpy(&aruco_detection_local, &aruco_detection, sizeof(struct aruco_detection_t));
+    pthread_mutex_unlock(&mutex_aruco); 
+
+
+    myam7_data_out_copy_internal.aruco_detection_timestamp = aruco_detection_local.timestamp_detection;
+    myam7_data_out_copy_internal.aruco_NED_pos_x = aruco_detection_local.NED_pos_x;
+    myam7_data_out_copy_internal.aruco_NED_pos_y = aruco_detection_local.NED_pos_y;
+    myam7_data_out_copy_internal.aruco_NED_pos_z = aruco_detection_local.NED_pos_z;
+    
+    //Copy out structure
     pthread_mutex_lock(&mutex_am7);
     memcpy(&myam7_data_out_copy, &myam7_data_out_copy_internal, sizeof(struct am7_data_out));
     memcpy(&extra_data_out, &extra_data_out_copy, sizeof(struct am7_data_out));
@@ -610,10 +740,52 @@ void* second_thread() //Run the optimization code
   }
 }
 
+static void aruco_position_report(IvyClientPtr app, void *user_data, int argc, char *argv[])
+{
+  if (argc != 4)
+  {
+    fprintf(stderr,"ERROR: invalid message length DESIRED_SP\n");
+  }
+  struct aruco_detection_t aruco_detection_local; 
+
+  gettimeofday(&aruco_time, NULL); 
+  aruco_detection_local.timestamp_detection = (aruco_time.tv_sec*1e6 - starting_time_program_execution.tv_sec*1e6 + aruco_time.tv_usec - starting_time_program_execution.tv_usec)*1e-6;
+  aruco_detection_local.NED_pos_x = atof(argv[1]); 
+  aruco_detection_local.NED_pos_y = atof(argv[2]);  
+  aruco_detection_local.NED_pos_z  = atof(argv[3]);  
+  
+  if(verbose_aruco){
+    printf("\n Aruco timestamp = %f \n", aruco_detection_local.timestamp_detection); 
+    printf("\n Aruco NED pos_x = %f \n",(float) aruco_detection_local.NED_pos_x ); 
+    printf("\n Aruco NED pos_y = %f \n",(float) aruco_detection_local.NED_pos_y ); 
+    printf("\n Aruco NED pos_z  = %f \n",(float) aruco_detection_local.NED_pos_z ); 
+  }
+
+  pthread_mutex_lock(&mutex_aruco);
+  memcpy(&aruco_detection, &aruco_detection_local, sizeof(struct aruco_detection_t));
+  pthread_mutex_unlock(&mutex_aruco); 
+
+}
+
 void main() {
 
   //Initialize the serial 
   am7_init();
+  //Initialize timer: 
+  gettimeofday(&starting_time_program_execution, NULL); 
+  
+  //Init 
+  #ifdef __APPLE__
+    char* ivy_bus = "224.255.255.255";
+  #else
+    char *ivy_bus = "127.255.255.255";
+  #endif
+
+  GMainLoop *ml =  g_main_loop_new(NULL, FALSE);
+
+  IvyInit ("NonlinearCA", "NonlinearCA READY", NULL, NULL, NULL, NULL);
+  IvyStart(ivy_bus);
+  IvyBindMsg(aruco_position_report, NULL, "^ground DESIRED_SP %s (\\S*) (\\S*) (\\S*) (\\S*)", "1");
 
   pthread_t thread1, thread2;
 
@@ -621,9 +793,11 @@ void main() {
   pthread_create(&thread1, NULL, first_thread, NULL);
   pthread_create(&thread2, NULL, second_thread, NULL);
 
-  // wait for them to finish
-  pthread_join(thread1, NULL);
-  pthread_join(thread2, NULL); 
+  g_main_loop_run(ml);
+
+  while(true){
+
+  }
 
   //Close the serial and clean the variables 
   fflush (stdout);

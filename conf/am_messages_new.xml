@@ -1768,12 +1768,17 @@
       <field name="phi" type="float" unit="deg">Roll</field>
       <field name="theta" type="float" unit="deg">Pitch</field>
       <field name="psi" type="float" unit="deg">Yaw</field>
+      <field name="heading" type="float" unit="deg*1e5">Heading</field>
+      <field name="course" type="float" unit="rad*1e5">Heading</field>
       <field name="phi_dot" type="float" unit="deg/s">roll rate</field>
       <field name="theta_dot" type="float" unit="deg/s">pitch rate</field>
       <field name="psi_dot" type="float" unit="deg/s">yaw rate</field>      
       <field name="x" type="float" unit="m">position_x</field>
       <field name="y" type="float" unit="m">position_y</field>
       <field name="z" type="float" unit="m">position_z</field>
+      <field name="lat_ship" type="float" unit="m">lat_ship</field>
+      <field name="long_ship" type="float" unit="m">long_ship</field>
+      <field name="alt_ship" type="float" unit="m">alt_ship</field>      
       <field name="x_dot" type="float" unit="m/s">speed_x</field>
       <field name="y_dot" type="float" unit="m/s">speed_y</field>
       <field name="z_dot" type="float" unit="m/s">speed_z</field>
@@ -1979,22 +1984,15 @@
       <field name="commands" type="int32[]">Commands send to actuators</field>
     </message>
 
+
+
      <message name= "AM7_OUT" id = "185">
-         <description>Transmitted message to companion computer</description>
-         <field name = "motor_1_state" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1">Filtered motor 1 state</field>
-         <field name = "motor_2_state" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1">Filtered motor 2 state</field>
-         <field name = "motor_3_state" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1">Filtered motor 3 state</field>
-         <field name = "motor_4_state" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1">Filtered motor 4 state</field>
-         <field name = "el_1_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Filtered el 1 state</field>
-         <field name = "el_2_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Filtered el 2 state</field>
-         <field name = "el_3_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Filtered el 3 state</field>
-         <field name = "el_4_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Filtered el 4 state</field>
-         <field name = "az_1_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Filtered az 1 state</field>
-         <field name = "az_2_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Filtered az 2 state</field>
-         <field name = "az_3_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Filtered az 3 state</field>
-         <field name = "az_4_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Filtered az 4 state</field>
+         <field name = "motors_state_rad_s" type="float[4]">Filtered motors state [rad/s]</field>
+         <field name = "tilt_elevation_state_deg" type="float[4]">Filtered tilt elevation state [deg]</field>
+         <field name = "tilt_azimuth_state_deg" type="float[4]">Filtered tilt elevation state [deg]</field>
          <field name = "theta_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Theta value from AHRS filtered</field>
          <field name = "phi_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Phi value from AHRS filtered</field>
+         <field name = "psi_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Psi value from AHRS filtered</field>
          <field name = "ailerons_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Filtered Ailerons state</field>
          <field name = "gamma_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Flight path angle</field>
          <field name = "p_state" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1">Body rate around x axes filtered</field>
@@ -2016,41 +2014,34 @@
          <field name = "desired_theta_value" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Desired theta value</field>
          <field name = "desired_phi_value" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Desired phi value</field>
          <field name = "desired_ailerons_value" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Desired ailerons value</field>
+         <field name = "NED_UAV_pos_x" type="float">NED current pos_x</field>
+         <field name = "NED_UAV_pos_y" type="float">NED current pos_y</field>
+         <field name = "NED_UAV_pos_z" type="float">NED current pos_z</field>         
          <field name = "rolling_msg_out" type="float">Rolling message out content</field>
          <field name = "rolling_msg_out_id" type="uint8">Rolling message out id</field>
      </message>
 
      <message name= "AM7_IN" id = "186">
          <description>Received message from companion computer</description>
-         <field name = "motor_1_cmd" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1">Command for motor 1</field>
-         <field name = "motor_2_cmd" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1">Command for motor 2</field>
-         <field name = "motor_3_cmd" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1">Command for motor 3</field>
-         <field name = "motor_4_cmd" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1">Command for motor 4</field>
-         <field name = "el_1_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Command for elevator tilt 1</field>
-         <field name = "el_2_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Command for elevator tilt 2</field>
-         <field name = "el_3_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Command for elevator tilt 3</field>
-         <field name = "el_4_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Command for elevator tilt 4</field>
-         <field name = "az_1_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Command for azimuth tilt 1</field>
-         <field name = "az_2_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Command for azimuth tilt 2</field>
-         <field name = "az_3_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Command for azimuth tilt 3</field>
-         <field name = "az_4_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Command for azimuth tilt 4</field>
-         <field name = "theta_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Command for desired theta value</field>
-         <field name = "phi_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Command for desired phi value</field>
-         <field name = "ailerons_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Command for ailerons</field>
+         <field name = "motors_cmd_rad_s" type="float[4]" >Command for mot [rad/s]</field>
+         <field name = "tilt_elevation_cmds_deg" type="float[4]">Command for elevator tilt [deg]</field>
+         <field name = "tilt_azimuth_cmds_deg" type="float[4]">Command for azimuth tilt [deg]</field>
+         <field name = "theta_cmd_deg" type="float">Command for desired theta value [deg]</field>
+         <field name = "phi_cmd_deg" type="float">Command for desired phi value [deg]</field>
+         <field name = "ailerons_cmd_deg" type="float">Command for ailerons [deg]</field>
          <field name = "n_iteration" type="uint16">Number of iterations made for the optimization of the solution</field>
          <field name = "n_evaluation" type="uint16">Number of function evaluation made for the optimization of the solution</field>
          <field name = "elapsed_time_us" type="uint16">Elapsed time for the determination of the optimal solution</field>
          <field name = "exit_flag_optimizer" type="int16">Exit flag of the optimization process. Negative value means a failure of the optimization process</field>
-         <field name = "residual_ax" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01">Residual x-axes acceleration of the computed optimised solution</field>
-         <field name = "residual_ay" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01">Residual y-axes acceleration of the computed optimised solution</field>
-         <field name = "residual_az" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01">Residual z-axes acceleration of the computed optimised solution</field>
-         <field name = "residual_p_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1">Residual x-body angular acceleration of the computed optimised solution</field>
-         <field name = "residual_q_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1">Residual y-body angular acceleration of the computed optimised solution</field>
-         <field name = "residual_r_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1">Residual z-body angular acceleration of the computed optimised solution</field>
+         <field name = "residuals_array" type="float[6]">Residual acceleration of the computed optimised solution [m/s^2 or rad/s^2]</field>
          <field name = "missed_packets" type="uint32">Missed packets on serial communication</field>
          <field name = "message_frequency" type="uint16">Refresh rate of the incoming messages from companion computer</field>
-         <field name = "lidar_altitude" type="int16" unit="cm" alt_unit="m" alt_unit_coef="0.01">Altitude read by the lidar</field>
+         <field name = "lidar_altitude_m" type="float">Altitude read by the lidar in meters</field>
          <field name = "lidar_strength" type="int16">Signal strength of the lidar</field>
+         <field name = "timestamp_aruco_detection" type="float">Timestamp of last aruco marker detection</field>
+         <field name = "NED_aruco_pos_x" type="float">NED pos_x last aruco marker detection</field>
+         <field name = "NED_aruco_pos_y" type="float">NED pos_y last aruco marker detection</field>
+         <field name = "NED_aruco_pos_z" type="float">NED pos_z last aruco marker detection</field>         
          <field name = "rolling_msg_in" type="float">Rolling message in content</field>
          <field name = "rolling_msg_in_id" type="uint8">Rolling message in id</field>
      </message>
@@ -3244,6 +3235,9 @@
       <field name="x" type="float" unit="m">position_x</field>
       <field name="y" type="float" unit="m">position_y</field>
       <field name="z" type="float" unit="m">position_z</field>
+      <field name="lat_ship" type="float" unit="m">lat_ship</field>
+      <field name="long_ship" type="float" unit="m">long_ship</field>
+      <field name="alt_ship" type="float" unit="m">alt_ship</field>         
       <field name="x_dot" type="float" unit="m/s">speed_x</field>
       <field name="y_dot" type="float" unit="m/s">speed_y</field>
       <field name="z_dot" type="float" unit="m/s">speed_z</field>
@@ -3642,6 +3636,21 @@
       <field name="source" type="string">ground_name of the agent sending the message</field>
       <field name="msg" type="string"/>
     </message>
+
+    <message name="DESIRED_SP" id="102" >
+      <description>
+        This message is used to set 3D desired vehicle's states such as accelerations or velocities.
+        The 'flag' field can be used at the user convenience to provide indication about the type of
+        value to track (like  position, speed, acceleration, ...) or the reference frame (ENU / NED,
+        LTP / body frame, ...)
+      </description>
+      <field name="ac_id" type="uint8">AC_ID of the vehicle</field>
+      <field name="flag"  type="uint8">Up to the user, for example to distinguish between ENU or NED</field>
+      <field name="ux"    type="float">Quantity to be tracked in the X axis</field>
+      <field name="uy"    type="float">Quantity to be tracked in the Y axis</field>
+      <field name="uz"    type="float">Quantity to be tracked in the Z axis</field>
+    </message>
+
   </msg_class>
 
   <msg_class name="alert" id="4">

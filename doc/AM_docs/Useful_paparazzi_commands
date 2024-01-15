@@ -1,0 +1,43 @@
+USEFUL COMMANDS IN PAPARAZZI :
+
+- Command to run the optitrack for external pose, you can use the following command (EKF2) from the paparazzi directory: 
+$ ./sw/ground_segment/python/natnet3.x/natnet2ivy.py --long_edge right --x_side right --ac_nose right -ac "rigid_body_id" "drone_id" -o
+(where "drone_id" is the UAV id and "rigid_body_id" is the optitrack recorded rigid body id) (remember, y is up!!!)
+
+- Command to run on the ship box's Raspberry pi to forward the telemetry message from the ship box AP to the common wireless network: 
+$ ./paparazzi/sw/misc/link/pprzlink_router_cc -e uart:///dev/ttyS0:460800 -e udp://0.0.0.0:4343:192.168.1.255:4342 -e udp://0.0.0.0:4383:192.168.1.255:4382 &
+
+(where ttyS0 is the Raspberry pi UART port where the AutoPilot is connected and 4342/4343 and 4382/4383 the udp ports where the telemetry packets are forwarded)
+
+- Command to forward the RTCM message from the ship box GPS to the common wireless network: 
+$ ./paparazzi/sw/misc/link/pprzlink_router_cc -e uart:///dev/ttyS1:460800 -e udp://0.0.0.0:4253:192.168.1.255:4252 &
+(where ttyS1 is the Raspberry pi UART port where the GPS is connected, 460800 is the baudrate of the UART communication and 4252/4253 is the udp port where the telemetry packets are forwarded)
+
+- Command to forward the SHIP_INFO_MSG message from a local udp port on the drone's IVY bus: 
+$ ./paparazzi/sw/ground_segment/ship_box/Pixhawk_4_read_msg -i "drone_id" -e udp://0.0.0.0:4382:192.168.1.255:4383 &
+(where 4282/4283 is the udp port where the RTCM packets are received on the common wireless network)
+
+- Command to forward the GPS RTCM messages from a local udp port on the shared wireless network to the drone's IVY bus: 
+$ ./paparazzi/sw/ground_segment/misc/ublox2ivy -i "drone_id" -e udp://0.0.0.0:4252:192.168.1.255:4253 &
+(where 4252/4253 is the udp port where the RTCM packets are received on the common wireless network)
+
+- Command to forward the GPS RTCM messages from a local UART port to the drone: 
+$ ./paparazzi/sw/ground_segment/misc/ublox2ivy -i "drone_id" -e uart:///dev/ttyS1:460800
+(where ttyS1 is the UART port where the RTCM packets are received and 460800 is the baudrate of the UART communication)
+
+- Connect wirelessly to the Herelink using adb: 
+$ adb connect 192.168.1.101:5555 
+(where 192.168.1.101 is the herelink Ip address in the shared wireless network)
+
+- Command for the Herelink to forward udp telemetry packets from the UAV to the common wireless network: 
+$ adb shell /oem/bin/pprzlink_router_cc -e udp://192.168.0.11:5242:192.168.0.10:5243 -e udp://0.0.0.0:4243:192.168.43.255:4242 & 
+
+- Command for Herelink to forward udp telemetry packets from the UAV to the USB local thetering:  
+$ adb shell /oem/bin/pprzlink_router_cc -e udp://192.168.0.11:5242:192.168.0.10:5243 -e udp://0.0.0.0:4243:192.168.42.255:4242 & 
+
+- Install dependencies needed for the Aruco detection algorithm in sw/ext/aruco_detection: 
+$ pip3 install opencv-python opencv-contrib-python pymap3d pyserial
+$ pip3 install numpy --upgrade
+
+- Save PAPARAZZI_HOME env variable in linux: 
+$ sudo nano /etc/environment --> add a line --> PAPARAZZI_HOME="/home/USER/paparazzi"

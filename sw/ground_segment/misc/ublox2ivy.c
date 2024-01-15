@@ -40,8 +40,9 @@
 #include <Ivy/ivy.h>
 #include <Ivy/ivyglibloop.h>
 #include "ublox2ivy.h"
+#include <sys/time.h>
 
-#define UDP_BUFFER_SIZE   1024
+#define UDP_BUFFER_SIZE   4096
 #define NAV_RELPOSNED_VERSION   0x01
 #define INVALID_HEADING  361
 
@@ -85,6 +86,9 @@ static struct gps_ubx_t gps_ubx;
 static struct gps_rtcm_t gps_rtcm;
 static uint8_t ac_id = 0;
 static float ground_heading = INVALID_HEADING;
+
+struct timeval current_time, last_time_sent_RTCM;
+int max_freq_RTCM = 0; 
 
 void packet_handler(void *ep, uint8_t *data, uint16_t len);
 
@@ -527,7 +531,7 @@ void gps_ubx_parse(uint8_t c)
       goto error;
   }
   return;
-error:
+  error:
   gps_ubx.error_cnt++;
 
   /* Try to resync */
@@ -552,7 +556,7 @@ error:
       return;
     }
   }
-restart:
+  restart:
   gps_ubx.status = UNINIT;
   return;
 }
@@ -664,8 +668,17 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
       if(verbose) printf("Got a succesfull RTCM message [%d]\r\n", RTCMgetbitu(gps_rtcm.msg_buf, 24 + 0, 12));
 
       /* Forward the message to inject into the drone */
-      if(rtcm_forward)
-        send_gps_inject(gps_rtcm.msg_buf, gps_rtcm.len + 6);
+      if(rtcm_forward){
+        gettimeofday(&current_time, NULL);
+        if(max_freq_RTCM > 0){
+          if((current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time_sent_RTCM.tv_sec*1e6 + last_time_sent_RTCM.tv_usec) >= (1.0f/max_freq_RTCM)*1e6){
+            send_gps_inject(gps_rtcm.msg_buf, gps_rtcm.len + 6);
+            gettimeofday(&last_time_sent_RTCM, NULL);
+          }
+        }  
+        else
+          send_gps_inject(gps_rtcm.msg_buf, gps_rtcm.len + 6);
+      }
 
       gps_rtcm.msg_available = false;
     }
@@ -691,6 +704,7 @@ int main(int argc, char** argv) {
     {"ac_id", required_argument, NULL, 'i'},
     {"endpoint", required_argument, NULL, 'e'},
     {"rtcm_disable", no_argument, NULL, 'r'},
+    {"max_freq_RTCM", no_argument, NULL, 'f'},
     {"help", no_argument, NULL, 'h'},
     {"verbose", no_argument, NULL, 'v'},
     {0, 0, 0, 0}
@@ -701,12 +715,13 @@ int main(int argc, char** argv) {
     "   -i --ac_id [aircraft_id]               Aircraft id\n"
     "   -e --endpoint [endpoint_str]           Endpoint address of the GPS\n"
     "   -r --rtcm_disable                      Disables RTCM forwarding"
+    "   -f --max_freq_RTCM                      Disables RTCM forwarding"
     "   -h --help                              Display this help\n"
     "   -v --verbose                           Print verbose information\n";
 
   int c;
   int option_index = 0;
-  while((c = getopt_long(argc, argv, "i:e:rhv", long_options, &option_index)) != -1) {
+  while((c = getopt_long(argc, argv, "i:e:f:rhv", long_options, &option_index)) != -1) {
     switch (c) {
       case 'i':
         ac_id = atoi(optarg);
@@ -742,6 +757,14 @@ int main(int argc, char** argv) {
       case 'r':
         rtcm_forward = false;
         break;
+
+      case 'f': 
+        //Parse the maximum frequency allowed for RTCM
+        if(sscanf(optarg, "%d", &max_freq_RTCM) != 1) {
+          fprintf(stderr, "Failed to parse maximum frequency of RTCM out \n");
+          return 2;
+        } 
+        break; 
 
       case 'v':
         verbose = true;

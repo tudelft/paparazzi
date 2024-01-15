@@ -1,5 +1,5 @@
 /* MATLAB Coder time APIs */
-/* Copyright 2020-2021 The MathWorks, Inc. */
+/* Copyright 2020-2022 The MathWorks, Inc. */
 
 /* Sort out the defines early before any headers are included
  * to avoid includes with inconsistent defines
@@ -11,8 +11,13 @@
 /* Ensure we get the right _POSIX_C_SOURCE and isolate our define to just this C file */
 #if !defined(CODER_WINAPI)
 #undef _POSIX_C_SOURCE
+#if defined(__QNX__)
+/* QNX wants a newer POSIX version to make CLOCK_MONOTONIC available */
+#define _POSIX_C_SOURCE 200112L
+#else
 #define _POSIX_C_SOURCE 199309L
-#endif
+#endif /* defined(__QNX__) */
+#endif /* !defined(CODER_WINAPI) */
 
 #ifdef CODER_WINAPI
 #define NOMINMAX
