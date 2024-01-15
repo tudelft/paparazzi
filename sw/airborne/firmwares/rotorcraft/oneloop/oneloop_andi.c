@@ -390,7 +390,10 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
   temp_att_des[0] = eulers_zxy_des.phi;
   temp_att_des[1] = eulers_zxy_des.theta;
   temp_att_des[2] = psi_des_rad;
-  debug_vect(trans, dev, "att_des", temp_att_des, 3);
+  //debug_vect(trans, dev, "att_des", temp_att_des, 3);
+  struct  FloatRates *body_rates_temp = stateGetBodyRates_f();
+  float   rate_vect_temp[3] = {stateGetBodyRates_f()->p, stateGetBodyRates_f()->q, stateGetBodyRates_f()->r};
+  debug_vect(trans, dev, "att_rate", rate_vect_temp, 3);
 }
 #endif
 
@@ -477,13 +480,13 @@ float ratio_u_un[ANDI_NUM_ACT_TOT];
 float ratio_vn_v[ANDI_NUM_ACT_TOT];
 
 /*Filters Initialization*/
-static struct FirstOrderLowPass filt_accel_ned[3];
-static struct FirstOrderLowPass rates_filt_fo[3];
-static struct FirstOrderLowPass model_pred_a_filt[3];
-static Butterworth2LowPass att_dot_meas_lowpass_filters[3];
-static Butterworth2LowPass model_pred_filt[ANDI_OUTPUTS];
-static Butterworth2LowPass accely_filt;
-static Butterworth2LowPass airspeed_filt;
+static Butterworth2LowPass filt_accel_ned[3];            // Low pass filter for acceleration NED (1)                       - oneloop_andi_filt_cutoff_a (tau_a)
+static Butterworth2LowPass rates_filt_fo[3];                  // Low pass filter for angular rates                              - ONELOOP_ANDI_FILT_CUTOFF_P/Q/R
+static Butterworth2LowPass model_pred_la_filt[3];        // Low pass filter for model prediction linear acceleration (1)   - oneloop_andi_filt_cutoff_a (tau_a)
+static Butterworth2LowPass att_dot_meas_lowpass_filters[3];   // Low pass filter for attitude derivative measurements           - oneloop_andi_filt_cutoff (tau)
+static Butterworth2LowPass model_pred_aa_filt[3];             // Low pass filter for model prediction angular acceleration      - oneloop_andi_filt_cutoff (tau)
+static Butterworth2LowPass accely_filt;                       // Low pass filter for acceleration in y direction                - oneloop_andi_filt_cutoff (tau)
+static Butterworth2LowPass airspeed_filt;                     // Low pass filter for airspeed                                   - oneloop_andi_filt_cutoff (tau)
 
 
 /** @brief Function to make sure that inputs are positive non zero vaues*/
@@ -927,7 +930,7 @@ void init_poles(void){
   // p_att_rm.zeta    = 1.0;
   // p_att_rm.p3      = 2.0467;
 
-  p_pos_e.omega_n = 2.5;//1.41;
+  p_pos_e.omega_n = 1.41;//1.41; next try 2.5
   p_pos_e.zeta    = 1.0; //0.85
   p_pos_e.p3      = p_pos_e.omega_n * p_pos_e.zeta;
 
@@ -1014,7 +1017,7 @@ void init_controller(void){
   k_pos_rm.k1[2] = k_rm_1_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3);
   k_pos_rm.k2[2] = k_rm_2_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3);
   k_pos_rm.k3[2] = k_rm_3_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3);
-
+  //printf("k_pos_e [k1,k2,k3] = [%f,%f,%f]\n",k_pos_e.k1[2],k_pos_e.k2[2],k_pos_e.k3[2]); 
   /*Heading Loop Manual*/
   k_head_e.k2  = k_e_1_2_f(p_head_e.p3, p_head_e.p3);
   k_head_e.k3  = k_e_2_2_f(p_head_e.p3, p_head_e.p3);
@@ -1040,7 +1043,7 @@ void init_controller(void){
 /** @brief  Initialize the filters */
 void init_filter(void)
 {
-  float tau   = 1.0 / (2.0 * M_PI *oneloop_andi_filt_cutoff);
+  float tau   = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff);
   float tau_a = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_a);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
 
@@ -1048,27 +1051,23 @@ void init_filter(void)
   int8_t i;
   for (i = 0; i < 3; i++) {
     init_butterworth_2_low_pass(&att_dot_meas_lowpass_filters[i], tau, sample_time, 0.0);
-    init_first_order_low_pass(&filt_accel_ned[i], tau_a, sample_time, 0.0 );
+    init_butterworth_2_low_pass(&model_pred_aa_filt[i],           tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&filt_accel_ned[i],               tau_a, sample_time, 0.0 );
+    init_butterworth_2_low_pass(&model_pred_la_filt[i],           tau_a, sample_time, 0.0); 
   }
 
   // Init rate filter for feedback
   float time_constants[3] = {1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_P), 1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_Q), 1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_R)};
-  init_first_order_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
-  init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
-  init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
+  // init_first_order_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
+  // init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
+  // init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
+  init_butterworth_2_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
+  init_butterworth_2_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
+  init_butterworth_2_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
   
-  // Remember to change the time constant if you provide different P Q R filters
-  for (i = 0; i < ANDI_OUTPUTS; i++){
-    if (i < 3){
-       init_butterworth_2_low_pass(&model_pred_filt[i], tau_a, sample_time, 0.0);
-       init_first_order_low_pass(&model_pred_a_filt[i], tau_a, sample_time, 0.0);      
-    } else {
-    init_butterworth_2_low_pass(&model_pred_filt[i], tau, sample_time, 0.0);
-    }
-  }
+  // Some other filters
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&airspeed_filt, tau, sample_time, 0.0);
-  
 }
 
 
@@ -1077,24 +1076,21 @@ void oneloop_andi_propagate_filters(void) {
   struct  NedCoor_f *accel = stateGetAccelNed_f();
   struct  FloatRates *body_rates = stateGetBodyRates_f();
   float   rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
-  update_first_order_low_pass(&filt_accel_ned[0], accel->x);
-  update_first_order_low_pass(&filt_accel_ned[1], accel->y);
-  update_first_order_low_pass(&filt_accel_ned[2], accel->z);
-
-  
+  update_butterworth_2_low_pass(&filt_accel_ned[0], accel->x);
+  update_butterworth_2_low_pass(&filt_accel_ned[1], accel->y);
+  update_butterworth_2_low_pass(&filt_accel_ned[2], accel->z);  
   calc_model();
   int8_t i;
-  for (i = 0; i < ANDI_OUTPUTS; i++){
-    update_butterworth_2_low_pass(&model_pred_filt[i], model_pred[i]);
-  }
-  
+
   for (i = 0; i < 3; i++) {
-    update_first_order_low_pass(&model_pred_a_filt[i], model_pred[i]);
+    update_butterworth_2_low_pass(&model_pred_aa_filt[i], model_pred[3+i]);
+    update_butterworth_2_low_pass(&model_pred_la_filt[i],   model_pred[i]);
     update_butterworth_2_low_pass(&att_dot_meas_lowpass_filters[i], rate_vect[i]);
-    update_first_order_low_pass(&rates_filt_fo[i], rate_vect[i]);
- 
-    ang_acc[i] = (att_dot_meas_lowpass_filters[i].o[0]- att_dot_meas_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY + model_pred[3+i] - model_pred_filt[3+i].o[0];
-    lin_acc[i] = filt_accel_ned[i].last_out + model_pred[i] - model_pred_a_filt[i].last_out;     
+    // update_first_order_low_pass(&rates_filt_fo[i], rate_vect[i]);
+    update_butterworth_2_low_pass(&rates_filt_fo[i], rate_vect[i]);
+
+    ang_acc[i] = (att_dot_meas_lowpass_filters[i].o[0]- att_dot_meas_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY + model_pred[3+i] - model_pred_aa_filt[i].o[0];
+    lin_acc[i] = filt_accel_ned[i].o[0] + model_pred[i] - model_pred_la_filt[i].o[0];     
   }
   // Propagate filter for sideslip correction
   float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
@@ -1326,9 +1322,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   oneloop_andi.sta_state.att[1] = eulers_zxy.theta                      * use_increment;
   oneloop_andi.sta_state.att[2] = eulers_zxy.psi                        * use_increment;
   oneloop_andi_propagate_filters();   //needs to be after update of attitude vector
-  oneloop_andi.sta_state.att_d[0]  = rates_filt_fo[0].last_out             * use_increment;
-  oneloop_andi.sta_state.att_d[1]  = rates_filt_fo[1].last_out             * use_increment;
-  oneloop_andi.sta_state.att_d[2]  = rates_filt_fo[2].last_out             * use_increment;
+  oneloop_andi.sta_state.att_d[0]  = rates_filt_fo[0].o[0] * use_increment;//rates_filt_fo[0].last_out             * use_increment;
+  oneloop_andi.sta_state.att_d[1]  = rates_filt_fo[1].o[0] * use_increment;//rates_filt_fo[1].last_out             * use_increment;
+  oneloop_andi.sta_state.att_d[2]  = rates_filt_fo[2].o[0] * use_increment;//rates_filt_fo[2].last_out             * use_increment;
   oneloop_andi.sta_state.att_2d[0] = ang_acc[0]                            * use_increment;
   oneloop_andi.sta_state.att_2d[1] = ang_acc[1]                            * use_increment;
   oneloop_andi.sta_state.att_2d[2] = ang_acc[2]                            * use_increment;
