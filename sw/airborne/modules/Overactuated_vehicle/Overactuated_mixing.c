@@ -113,6 +113,9 @@ float euler_order[3];
 float psi_order_motor = 0;
 
 
+int motor_failure_id = 3; 
+
+
 //Rotors test: 
 float des_az_angle_test = 0; 
 float des_el_angle_test = 0;
@@ -1009,7 +1012,7 @@ void send_values_to_raspberry_pi(void){
 
     float fake_beta = 0;
     if(fabs((radio_control.values[RADIO_MANUAL_PITCH_CMD] * 1.0f) / (MAX_PPRZ*1.0f)) >= 0.5){
-        fake_beta = 3; 
+        fake_beta = motor_failure_id; 
     }
     
     am7_data_out_local.beta_state_int = (int16_t) (fake_beta * 1e2);

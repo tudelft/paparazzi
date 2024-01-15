@@ -124,6 +124,8 @@ struct overactuated_mixing_t {
     int32_t commands[N_ACT_REAL];      ///< The output commands
 };
 
+extern int motor_failure_id; 
+
 extern struct overactuated_mixing_t overactuated_mixing;
 extern struct PID_over pid_gains_over;
 extern struct PD_indi_over indi_gains_over;

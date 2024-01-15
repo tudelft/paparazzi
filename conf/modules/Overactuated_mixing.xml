@@ -10,6 +10,7 @@
       <dl_settings NAME="NICO TEST">
         <dl_setting var="slider_phi_value"  min="-100" step="1" max="100" shortname="des_phi_value" />
         <dl_setting var="slider_theta_value"  min="-20" step="1" max="100" shortname="des_theta_value" />
+        <dl_setting var="motor_failure_id"  min="0" step="1" max="4" shortname="mot_fail_id" />
       </dl_settings>
     </dl_settings>
   </settings>
