@@ -87,8 +87,6 @@
 #include "math/wls/wls_alloc.h"
 #include "modules/nav/nav_rotorcraft_hybrid.h"
 #include "firmwares/rotorcraft/navigation.h"
-
-
 #include <stdio.h>
 
 // Number of real actuators (e.g. motors, servos)
@@ -139,27 +137,30 @@ float  oneloop_andi_filt_cutoff_v = 2.0;
 #endif
 
 #ifdef ONELOOP_ANDI_FILT_CUTOFF_POS
-float  oneloop_andi_filt_cutoff_p = ONELOOP_ANDI_FILT_CUTOFF_POS;
+float  oneloop_andi_filt_cutoff_pos = ONELOOP_ANDI_FILT_CUTOFF_POS;
 #else
-float  oneloop_andi_filt_cutoff_p = 2.0;
+float  os = 2.0;
 #endif
 
 #ifdef  ONELOOP_ANDI_FILT_CUTOFF_P
 #define ONELOOP_ANDI_FILTER_ROLL_RATE TRUE
+float oneloop_andi_filt_cutoff_p = ONELOOP_ANDI_FILT_CUTOFF_P;
 #else
-#define ONELOOP_ANDI_FILT_CUTOFF_P 20.0
+float oneloop_andi_filt_cutoff_p = 20.0;
 #endif
 
 #ifdef  ONELOOP_ANDI_FILT_CUTOFF_Q
 #define ONELOOP_ANDI_FILTER_PITCH_RATE TRUE
+float oneloop_andi_filt_cutoff_q = ONELOOP_ANDI_FILT_CUTOFF_Q;
 #else
-#define ONELOOP_ANDI_FILT_CUTOFF_Q 20.0
+float oneloop_andi_filt_cutoff_q = 20.0;
 #endif
 
 #ifdef  ONELOOP_ANDI_FILT_CUTOFF_R
 #define ONELOOP_ANDI_FILTER_YAW_RATE TRUE
+float oneloop_andi_filt_cutoff_r = ONELOOP_ANDI_FILT_CUTOFF_R;
 #else
-#define ONELOOP_ANDI_FILT_CUTOFF_R 20.0
+float oneloop_andi_filt_cutoff_r = 20.0;
 #endif
 
 #ifdef ONELOOP_ANDI_ACT_IS_SERVO
@@ -1043,6 +1044,7 @@ void init_controller(void){
 /** @brief  Initialize the filters */
 void init_filter(void)
 {
+  //printf("oneloop andi filt cutoff PQR: %f %f %f\n", oneloop_andi_filt_cutoff_p,oneloop_andi_filt_cutoff_q,oneloop_andi_filt_cutoff_r);
   float tau   = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff);
   float tau_a = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_a);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
@@ -1057,7 +1059,7 @@ void init_filter(void)
   }
 
   // Init rate filter for feedback
-  float time_constants[3] = {1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_P), 1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_Q), 1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_R)};
+  float time_constants[3] = {1.0 / (2 * M_PI * oneloop_andi_filt_cutoff_p), 1.0 / (2 * M_PI * oneloop_andi_filt_cutoff_q), 1.0 / (2 * M_PI * oneloop_andi_filt_cutoff_r)};
   // init_first_order_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
   // init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
   // init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
