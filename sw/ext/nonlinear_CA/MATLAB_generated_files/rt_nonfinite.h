@@ -4,12 +4,8 @@
  * government, commercial, or other organizational use.
  * File: rt_nonfinite.h
  *
- * MATLAB Coder version            : 5.4
-<<<<<<< HEAD:sw/ext/nonlinear_CA/MATLAB_generated_files/rt_nonfinite.h
- * C/C++ source code generated on  : 26-Oct-2023 15:50:45
-=======
- * C/C++ source code generated on  : 16-Nov-2023 01:21:31
->>>>>>> tudelft/overactuated_quadplane_outer_inner_loop_nonlinear_ca:sw/ext/Nonlinear_CA/MATLAB_generated_files/rt_nonfinite.h
+ * MATLAB Coder version            : 23.2
+ * C/C++ source code generated on  : 15-Jan-2024 11:44:34
  */
 
 #ifndef RT_NONFINITE_H

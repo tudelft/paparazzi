@@ -4,13 +4,8 @@
  * government, commercial, or other organizational use.
  * File: rtwtypes.h
  *
-<<<<<<< HEAD:sw/ext/nonlinear_CA/MATLAB_generated_files/rtwtypes.h
- * MATLAB Coder version            : 5.4
- * C/C++ source code generated on  : 26-Oct-2023 15:50:45
-=======
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 13-Dec-2023 11:42:44
->>>>>>> tudelft/overactuated_quadplane_outer_inner_loop_nonlinear_ca:sw/ext/Nonlinear_CA/MATLAB_generated_files/rtwtypes.h
+ * C/C++ source code generated on  : 15-Jan-2024 11:44:34
  */
 
 #ifndef RTWTYPES_H

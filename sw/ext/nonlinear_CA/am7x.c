@@ -1,6 +1,6 @@
 #include "am7x.h"
 #include <pthread.h>
-#include "MATLAB_generated_files/Cascaded_nonlinear_controller_control_rf_w_ailerons.h"
+#include "MATLAB_generated_files/Cascaded_nonlinear_TestFlight.h"
 #include "MATLAB_generated_files/rt_nonfinite.h"
 #include <string.h>
 #include <glib.h>
@@ -291,11 +291,13 @@ void* second_thread() //Run the optimization code
     //Init the variables for the function:
     double u_out[15];
     double dv[6];
+    double gradient[13];
     double residuals[6];
     double elapsed_time; 
     double N_iterations; 
     double N_evaluation;
     double exitflag;
+    double cost; 
 
     //Assign variables coming from the communication and physical system properties
     // Float msg variables
@@ -379,8 +381,16 @@ void* second_thread() //Run the optimization code
     double r_body_gain = (myam7_data_in_copy.r_body_gain_int*1e-2);
     double des_psi_dot = (myam7_data_in_copy.des_psi_dot_int*1e-2 * M_PI/180);
 
-    double gamma_quadratic_du2 = 0.5e-6;
-    double W_MOTOR_FAILURE_WEIGHT = (myam7_data_in_copy.beta_state_int*1e-2) ;
+    //kinda hardcoded values:
+    double gamma_quadratic_du2 = 0.5e-5;
+    double m_failure_ID = (myam7_data_in_copy.beta_state_int*1e-2) ;
+
+    double W_act_motor_du = 20; 
+    double W_act_tilt_el_du = 20; 
+    double W_act_tilt_az_du = 20; 
+    double W_act_ailerons_du = 0; 
+    double W_act_theta_du = 25; 
+    double W_act_phi_du = 25; 
 
     #ifdef TEST_CONTROLLER
     #warning "You are using the testing variable, watch out!"
@@ -503,40 +513,42 @@ void* second_thread() //Run the optimization code
 
     #endif 
 
-Cascaded_nonlinear_controller_control_rf_w_ailerons(K_p_T,  K_p_M,  m,  I_xx,  I_yy,  I_zz,
-                                          l_1,  l_2,  l_3,  l_4,  l_z,  Phi,
-                                          Theta,  Omega_1,  Omega_2,  Omega_3,
-                                          Omega_4,  b_1,  b_2,  b_3,  b_4,  g_1,
-                                          g_2,  g_3,  g_4,  delta_ailerons,
-                                          W_act_motor_const,  W_act_motor_speed,
-                                          W_act_tilt_el_const,  W_act_tilt_el_speed,
-                                          W_act_tilt_az_const,  W_act_tilt_az_speed,
-                                          W_act_theta_const,  W_act_theta_speed,  W_act_phi_const,
-                                          W_act_phi_speed,  W_act_ailerons_const,
-                                          W_act_ailerons_speed,  W_dv_1,  W_dv_2,  W_dv_3,
-                                          W_dv_4,  W_dv_5,  W_dv_6,  max_omega,
-                                          min_omega,  max_b,  min_b,  max_g,  min_g,
-                                          max_theta,  min_theta,  max_phi,
-                                          max_delta_ailerons,  min_delta_ailerons,  dv,
-                                          p,  q,  r,  Cm_zero,  Cl_alpha,
-                                          Cd_zero,  K_Cd,  Cm_alpha,  CL_aileron,  rho,
-                                          V,  S,  wing_chord,  flight_path_angle,
-                                          max_alpha,  min_alpha,  Beta,  gamma_quadratic,
-                                          desired_motor_value,  desired_el_value,
-                                          desired_az_value,  desired_theta_value,
-                                          desired_phi_value,  desired_ailerons_value,
-                                          k_alt_tilt_constraint,  min_alt_tilt_constraint,
-                                          lidar_alt_corrected,  approach_mode,  verbose_optimizer,
-                                          speed_aoa_protection,  transition_speed,  p_body_current,
-                                          q_body_current,  r_body_current,  p_dot_current,
-                                          q_dot_current,  r_dot_current,  phi_current,
-                                          theta_current,  theta_gain,  phi_gain,
-                                          p_body_gain,  q_body_gain,  r_body_gain,
-                                          des_psi_dot, min_theta_hard, max_theta_hard,
-                                          min_phi_hard, max_phi_hard,
-                                          u_out,  residuals,
-                                          &elapsed_time, &N_iterations,  &N_evaluation,
-                                          &exitflag);
+Cascaded_nonlinear_TestFlight(m_failure_ID,  K_p_T,  K_p_M,  m,  I_xx,
+                              I_yy,  I_zz,  l_1,  l_2,  l_3,  l_4,
+                              l_z,  Phi,  Theta,  Omega_1,  Omega_2,
+                              Omega_3,  Omega_4,  b_1,  b_2,  b_3,
+                              b_4,  g_1,  g_2,  g_3,  g_4,
+                              delta_ailerons,  W_act_theta_du,  W_act_phi_du,
+                              W_act_motor_const,  W_act_motor_speed,
+                              W_act_tilt_el_const,  W_act_tilt_el_speed,
+                              W_act_tilt_az_const,  W_act_tilt_az_speed,
+                              W_act_theta_const,  W_act_theta_speed,  W_act_phi_const,
+                              W_act_phi_speed,  W_act_ailerons_const,
+                              W_act_ailerons_speed,  W_dv_1,  W_dv_2,  W_dv_3,
+                              W_dv_4,  W_dv_5,  W_dv_6,  max_omega,
+                              min_omega,  max_b,  min_b,  max_g,  min_g,
+                              max_theta,  min_theta,  max_phi,
+                              max_delta_ailerons,  min_delta_ailerons,  dv,
+                              p,  q,  r,  Cm_zero,  Cl_alpha,
+                              Cd_zero,  K_Cd,  Cm_alpha,  CL_aileron,  rho,
+                              V,  W_act_motor_du,  W_act_tilt_el_du,
+                              W_act_tilt_az_du,  W_act_ailerons_du,  S,
+                              wing_chord,  flight_path_angle,  max_alpha,
+                              min_alpha,  Beta,  gamma_quadratic_du2,
+                              gamma_quadratic_du2,  desired_motor_value,
+                              desired_el_value,  desired_az_value,
+                              desired_theta_value,  desired_phi_value,
+                              desired_ailerons_value,  k_alt_tilt_constraint,
+                              min_alt_tilt_constraint,  lidar_alt_corrected,
+                              approach_mode,  verbose_optimizer,  speed_aoa_protection,
+                              transition_speed,  p_body_current,  q_body_current,
+                              r_body_current,  p_dot_current,  q_dot_current,
+                              r_dot_current,  phi_current,  theta_current,
+                              theta_gain,  phi_gain,  p_body_gain,  q_body_gain,
+                              r_body_gain,  des_psi_dot,  u_out,
+                              residuals,  gradient,  &cost,
+                              &elapsed_time,  &N_iterations,  &N_evaluation,
+                              &exitflag);
 
     //Convert the function output into integer to be transmitted to the pixhawk again: 
     myam7_data_out_copy_internal.motor_1_cmd_int = (int16_T) (u_out[0]*1e1) , myam7_data_out_copy_internal.motor_2_cmd_int = (int16_T) (u_out[1]*1e1);
