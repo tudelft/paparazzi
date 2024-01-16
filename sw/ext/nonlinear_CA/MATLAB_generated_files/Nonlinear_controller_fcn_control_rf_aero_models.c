@@ -25,7 +25,7 @@
 typedef struct {
   double grad[16];
   double Hx[15];
-  boolean_T hasLinear;
+  bool hasLinear;
   int nvar;
   int maxVar;
   double beta;
@@ -33,7 +33,7 @@ typedef struct {
   int objtype;
   int prev_objtype;
   int prev_nvar;
-  boolean_T prev_hasLinear;
+  bool prev_hasLinear;
   double gammaScalar;
 } struct_T;
 
@@ -58,24 +58,10 @@ typedef struct {
   double nlpDualFeasError;
   double nlpComplError;
   double firstOrderOpt;
-  boolean_T hasObjective;
+  bool hasObjective;
 } b_struct_T;
 
 #endif                                 /* typedef_b_struct_T */
-
-#ifndef typedef_c_struct_T
-#define typedef_c_struct_T
-
-typedef struct {
-  boolean_T gradOK;
-  boolean_T fevalOK;
-  boolean_T done;
-  boolean_T stepAccepted;
-  boolean_T failedLineSearch;
-  int stepType;
-} c_struct_T;
-
-#endif                                 /* typedef_c_struct_T */
 
 #ifndef typedef_captured_var
 #define typedef_captured_var
@@ -95,8 +81,8 @@ typedef struct {
 
 #endif                                 /* typedef_b_captured_var */
 
-#ifndef typedef_d_struct_T
-#define typedef_d_struct_T
+#ifndef typedef_c_struct_T
+#define typedef_c_struct_T
 
 typedef struct {
   captured_var *gain_theta;
@@ -158,15 +144,15 @@ typedef struct {
   captured_var *rho;
   captured_var *wing_span;
   captured_var *wing_chord;
-} d_struct_T;
+} c_struct_T;
 
-#endif                                 /* typedef_d_struct_T */
+#endif                                 /* typedef_c_struct_T */
 
 #ifndef typedef_nested_function
 #define typedef_nested_function
 
 typedef struct {
-  d_struct_T workspace;
+  c_struct_T workspace;
 } nested_function;
 
 #endif                                 /* typedef_nested_function */
@@ -252,6 +238,17 @@ typedef struct {
 
 #endif                                 /* typedef_i_coder_internal_stickyStruct */
 
+#ifndef typedef_d_struct_T
+#define typedef_d_struct_T
+
+typedef struct {
+  double workspace_double[496];
+  int workspace_int[31];
+  int workspace_sort[31];
+} d_struct_T;
+
+#endif                                 /* typedef_d_struct_T */
+
 #ifndef typedef_e_struct_T
 #define typedef_e_struct_T
 
@@ -264,7 +261,7 @@ typedef struct {
   int ncols;
   double tau[31];
   int minRowCol;
-  boolean_T usedPivoting;
+  bool usedPivoting;
 } e_struct_T;
 
 #endif                                 /* typedef_e_struct_T */
@@ -278,7 +275,7 @@ typedef struct {
   int ndims;
   int info;
   double scaleFactor;
-  boolean_T ConvexCheck;
+  bool ConvexCheck;
   double regTol_;
   double workspace_;
   double workspace2_;
@@ -288,39 +285,6 @@ typedef struct {
 
 #ifndef typedef_g_struct_T
 #define typedef_g_struct_T
-
-typedef struct {
-  double workspace_double[496];
-  int workspace_int[31];
-  int workspace_sort[31];
-} g_struct_T;
-
-#endif                                 /* typedef_g_struct_T */
-
-#ifndef typedef_h_struct_T
-#define typedef_h_struct_T
-
-typedef struct {
-  nested_function objfun;
-  double f_1;
-  double f_2;
-  int nVar;
-  int mIneq;
-  int mEq;
-  int numEvals;
-  boolean_T SpecifyObjectiveGradient;
-  boolean_T SpecifyConstraintGradient;
-  boolean_T isEmptyNonlcon;
-  boolean_T hasLB[15];
-  boolean_T hasUB[15];
-  boolean_T hasBounds;
-  int FiniteDifferenceType;
-} h_struct_T;
-
-#endif                                 /* typedef_h_struct_T */
-
-#ifndef typedef_i_struct_T
-#define typedef_i_struct_T
 
 typedef struct {
   int nVarMax;
@@ -356,12 +320,12 @@ typedef struct {
   double maxConstr;
   int iterations;
   double searchDir[16];
-} i_struct_T;
+} g_struct_T;
 
-#endif                                 /* typedef_i_struct_T */
+#endif                                 /* typedef_g_struct_T */
 
-#ifndef typedef_j_struct_T
-#define typedef_j_struct_T
+#ifndef typedef_h_struct_T
+#define typedef_h_struct_T
 
 typedef struct {
   int mConstr;
@@ -391,59 +355,70 @@ typedef struct {
   int isActiveIdxPhaseOne[6];
   int isActiveIdxRegularized[6];
   int isActiveIdxRegPhaseOne[6];
-  boolean_T isActiveConstr[31];
+  bool isActiveConstr[31];
   int Wid[31];
   int Wlocalidx[31];
   int nWConstr[5];
   int probType;
   double SLACK0;
-} j_struct_T;
+} h_struct_T;
 
-#endif                                 /* typedef_j_struct_T */
+#endif                                 /* typedef_h_struct_T */
 
-#ifndef typedef_k_struct_T
-#define typedef_k_struct_T
+#ifndef typedef_i_struct_T
+#define typedef_i_struct_T
 
 typedef struct {
   char SolverName[7];
   int MaxIterations;
   double StepTolerance;
   double ObjectiveLimit;
-} k_struct_T;
+} i_struct_T;
 
-#endif                                 /* typedef_k_struct_T */
+#endif                                 /* typedef_i_struct_T */
+
+#ifndef typedef_j_struct_T
+#define typedef_j_struct_T
+
+typedef struct {
+  bool fevalOK;
+  bool done;
+  bool stepAccepted;
+  bool failedLineSearch;
+  int stepType;
+} j_struct_T;
+
+#endif                                 /* typedef_j_struct_T */
 
 /* Variable Definitions */
 static double freq;
-static boolean_T freq_not_empty;
+static bool freq_not_empty;
 static coderTimespec savedTime;
-static boolean_T savedTime_not_empty;
-static boolean_T isInitialized_Nonlinear_controller_fcn_control_rf_aero_models =
+static bool savedTime_not_empty;
+static bool isInitialized_Nonlinear_controller_fcn_control_rf_aero_models =
   false;
 
 /* Function Declarations */
-static boolean_T BFGSUpdate(int nvar, double Bk[225], const double sk[16],
-  double yk[16], double workspace[496]);
-static void PresolveWorkingSet(i_struct_T *solution, g_struct_T *memspace,
-  j_struct_T *workingset, e_struct_T *qrmanager);
-static void RemoveDependentIneq_(j_struct_T *workingset, e_struct_T *qrmanager,
-  g_struct_T *memspace, double tolfactor);
-static void addBoundToActiveSetMatrix_(j_struct_T *obj, int TYPE, int idx_local);
-static boolean_T b_computeDualFeasError(int nVar, const double gradLag[496],
-  double *val);
+static bool BFGSUpdate(int nvar, double Bk[225], const double sk[16], double yk
+  [16], double workspace[496]);
+static void PresolveWorkingSet(g_struct_T *solution, d_struct_T *memspace,
+  h_struct_T *workingset, e_struct_T *qrmanager);
+static void RemoveDependentIneq_(h_struct_T *workingset, e_struct_T *qrmanager,
+  d_struct_T *memspace, double tolfactor);
+static void addBoundToActiveSetMatrix_(h_struct_T *obj, int TYPE, int idx_local);
 static void b_computeGradLag(double workspace[496], int nVar, const double grad
   [16], const int finiteFixed[16], int mFixed, const int finiteLB[16], int mLB,
   const int finiteUB[16], int mUB, const double lambda[31]);
-static void b_driver(const double lb[15], const double ub[15], i_struct_T
+static void b_driver(const double lb[15], const double ub[15], g_struct_T
                      *TrialState, b_struct_T *MeritFunction, const
-                     i_coder_internal_stickyStruct *FcnEvaluator, g_struct_T
-                     *memspace, j_struct_T *WorkingSet, double Hessian[225],
+                     i_coder_internal_stickyStruct *FcnEvaluator, d_struct_T
+                     *memspace, h_struct_T *WorkingSet, double Hessian[225],
                      e_struct_T *QRManager, f_struct_T *CholManager, struct_T
                      *QPObjective);
-static double b_maxConstraintViolation(const j_struct_T *obj, const double x[16]);
+static double b_maxConstraintViolation(const h_struct_T *obj, const double x[16]);
 static double b_norm(const double x[15]);
-static void b_test_exit(c_struct_T *Flags, g_struct_T *memspace, b_struct_T
-  *MeritFunction, const j_struct_T *WorkingSet, i_struct_T *TrialState,
+static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
+  *MeritFunction, const h_struct_T *WorkingSet, g_struct_T *TrialState,
   e_struct_T *QRManager, const double lb[15], const double ub[15]);
 static double b_timeKeeper(double *outTime_tv_nsec);
 static void b_xgemm(int m, int n, int k, const double A[961], int ia0, const
@@ -451,16 +426,13 @@ static void b_xgemm(int m, int n, int k, const double A[961], int ia0, const
 static void b_xgemv(int m, int n, const double A[961], const double x[16],
                     double y[496]);
 static double b_xnrm2(int n, const double x[16]);
-static void c_CoderTimeAPI_callCoderClockGe(void);
-static double c_computeObjectiveAndUserGradie(const d_struct_T
+static double c_computeObjectiveAndUserGradie(const c_struct_T
   *c_obj_next_next_next_next_next_, const double x[15], double grad_workspace[16],
   int *status);
 static double c_norm(const double x[6]);
 static double computeComplError(const double xCurrent[15], const int finiteLB[16],
   int mLB, const double lb[15], const int finiteUB[16], int mUB, const double
   ub[15], const double lambda[31], int iL0);
-static boolean_T computeDualFeasError(int nVar, const double gradLag[16], double
-  *val);
 static double computeFval(const struct_T *obj, double workspace[496], const
   double H[225], const double f[16], const double x[16]);
 static double computeFval_ReuseHx(const struct_T *obj, double workspace[496],
@@ -503,72 +475,70 @@ static double compute_cost_and_gradient(double Alpha, double Beta, double
   prop_delta, double prop_sigma, double prop_theta, double q, double r, double
   rho, double wing_span, double wing_chord, double gradient_data[], int
   *gradient_size);
-static void compute_deltax(const double H[225], i_struct_T *solution, g_struct_T
+static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
   *memspace, const e_struct_T *qrmanager, f_struct_T *cholmanager, const
-  struct_T *objective, boolean_T alwaysPositiveDef);
+  struct_T *objective, bool alwaysPositiveDef);
 static void countsort(int x[31], int xLen, int workspace[31], int xMin, int xMax);
 static void deleteColMoveEnd(e_struct_T *obj, int idx);
 static int div_nde_s32_floor(int numerator);
-static void driver(const double H[225], const double f[16], i_struct_T *solution,
-                   g_struct_T *memspace, j_struct_T *workingset, e_struct_T
+static void driver(const double H[225], const double f[16], g_struct_T *solution,
+                   d_struct_T *memspace, h_struct_T *workingset, e_struct_T
                    *qrmanager, f_struct_T *cholmanager, struct_T *objective,
-                   k_struct_T *options, int runTimeOptions_MaxIterations);
-static double evalObjAndConstr(const d_struct_T *c_obj_next_next_next_next_next_,
+                   i_struct_T *options, int runTimeOptions_MaxIterations);
+static double evalObjAndConstr(const c_struct_T *c_obj_next_next_next_next_next_,
   const double x[15], int *status);
 static void factorQR(e_struct_T *obj, const double A[496], int mrows, int ncols);
-static void factoryConstruct(d_struct_T *objfun_workspace, const double lb[15],
-  const double ub[15], h_struct_T *obj);
-static boolean_T feasibleX0ForWorkingSet(double workspace[496], double xCurrent
-  [16], const j_struct_T *workingset, e_struct_T *qrmanager);
+static bool feasibleX0ForWorkingSet(double workspace[496], double xCurrent[16],
+  const h_struct_T *workingset, e_struct_T *qrmanager);
 static double feasibleratiotest(const double solution_xstar[16], const double
   solution_searchDir[16], int workingset_nVar, const double workingset_lb[16],
   const double workingset_ub[16], const int workingset_indexLB[16], const int
   workingset_indexUB[16], const int workingset_sizes[5], const int
-  workingset_isActiveIdx[6], const boolean_T workingset_isActiveConstr[31],
-  const int workingset_nWConstr[5], boolean_T isPhaseOne, boolean_T *newBlocking,
-  int *constrType, int *constrIdx);
-static double fmincon(d_struct_T *fun_workspace, double x0[15], const double lb
-                      [15], const double ub[15], double *exitflag, double
-                      *output_iterations, double *output_funcCount, char
-                      output_algorithm[3], double *output_constrviolation,
-                      double *output_stepsize, double *output_lssteplength,
-                      double *output_firstorderopt);
+  workingset_isActiveIdx[6], const bool workingset_isActiveConstr[31], const int
+  workingset_nWConstr[5], bool isPhaseOne, bool *newBlocking, int *constrType,
+  int *constrIdx);
+static double fmincon(c_struct_T *fun_workspace, const double x0[15], const
+                      double lb[15], const double ub[15], double x[15], double
+                      *exitflag, double *output_iterations, double
+                      *output_funcCount, char output_algorithm[3], double
+                      *output_constrviolation, double *output_stepsize, double
+                      *output_lssteplength, double *output_firstorderopt);
 static double ft_1(const double ct[254], double gradient_data[], int
                    *gradient_size);
 static void fullColLDL2_(f_struct_T *obj, int NColsRemain);
-static void iterate(const double H[225], const double f[16], i_struct_T
-                    *solution, g_struct_T *memspace, j_struct_T *workingset,
+static void iterate(const double H[225], const double f[16], g_struct_T
+                    *solution, d_struct_T *memspace, h_struct_T *workingset,
                     e_struct_T *qrmanager, f_struct_T *cholmanager, struct_T
                     *objective, const char options_SolverName[7], double
                     options_StepTolerance, double options_ObjectiveLimit, int
                     runTimeOptions_MaxIterations);
-static void linearForm_(boolean_T obj_hasLinear, int obj_nvar, double workspace
-  [496], const double H[225], const double f[16], const double x[16]);
-static double maxConstraintViolation(const j_struct_T *obj, const double x[496],
+static void linearForm_(bool obj_hasLinear, int obj_nvar, double workspace[496],
+  const double H[225], const double f[16], const double x[16]);
+static double maxConstraintViolation(const h_struct_T *obj, const double x[496],
   int ix0);
 static double maximum(const double x[2]);
 static double minimum(const double x[2]);
 static void qrf(double A[961], int m, int n, int nfxd, double tau[31]);
-static void removeConstr(j_struct_T *obj, int idx_global);
+static void removeConstr(h_struct_T *obj, int idx_global);
 static double rt_hypotd_snf(double u0, double u1);
 static double rt_powd_snf(double u0, double u1);
-static void setProblemType(j_struct_T *obj, int PROBLEM_TYPE);
+static void setProblemType(h_struct_T *obj, int PROBLEM_TYPE);
 static void solve(const f_struct_T *obj, double rhs[16]);
 static void sortLambdaQP(double lambda[31], int WorkingSet_nActiveConstr, const
   int WorkingSet_sizes[5], const int WorkingSet_isActiveIdx[6], const int
   WorkingSet_Wid[31], const int WorkingSet_Wlocalidx[31], double workspace[496]);
-static boolean_T step(int *STEP_TYPE, double Hessian[225], const double lb[15],
-                      const double ub[15], i_struct_T *TrialState, b_struct_T
-                      *MeritFunction, g_struct_T *memspace, j_struct_T
-                      *WorkingSet, e_struct_T *QRManager, f_struct_T
-                      *CholManager, struct_T *QPObjective, k_struct_T *qpoptions);
-static boolean_T test_exit(b_struct_T *MeritFunction, const j_struct_T
-  *WorkingSet, i_struct_T *TrialState, const double lb[15], const double ub[15],
-  boolean_T *Flags_fevalOK, boolean_T *Flags_done, boolean_T *Flags_stepAccepted,
-  boolean_T *Flags_failedLineSearch, int *Flags_stepType);
+static bool step(int *STEP_TYPE, double Hessian[225], const double lb[15], const
+                 double ub[15], g_struct_T *TrialState, b_struct_T
+                 *MeritFunction, d_struct_T *memspace, h_struct_T *WorkingSet,
+                 e_struct_T *QRManager, f_struct_T *CholManager, struct_T
+                 *QPObjective, i_struct_T *qpoptions);
+static bool test_exit(b_struct_T *MeritFunction, const h_struct_T *WorkingSet,
+                      g_struct_T *TrialState, const double lb[15], const double
+                      ub[15], bool *Flags_fevalOK, bool *Flags_done, bool
+                      *Flags_stepAccepted, bool *Flags_failedLineSearch, int
+                      *Flags_stepType);
 static void tic(void);
 static void timeKeeper(double newTime_tv_sec, double newTime_tv_nsec);
-static void timeKeeper_init(void);
 static double toc(void);
 static void xgemm(int m, int n, int k, const double A[225], int lda, const
                   double B[961], int ib0, double C[496]);
@@ -583,8 +553,8 @@ static void xzlarf(int m, int n, int iv0, double tau, double C[961], int ic0,
 static double xzlarfg(int n, double *alpha1, double x[961], int ix0);
 
 /* Function Definitions */
-static boolean_T BFGSUpdate(int nvar, double Bk[225], const double sk[16],
-  double yk[16], double workspace[496])
+static bool BFGSUpdate(int nvar, double Bk[225], const double sk[16], double yk
+  [16], double workspace[496])
 {
   double curvatureS;
   double dotSY;
@@ -596,7 +566,7 @@ static boolean_T BFGSUpdate(int nvar, double Bk[225], const double sk[16],
   int iac;
   int ix;
   int k;
-  boolean_T success;
+  bool success;
   dotSY = 0.0;
   i = (unsigned char)nvar;
   for (k = 0; k < i; k++) {
@@ -690,13 +660,10 @@ static boolean_T BFGSUpdate(int nvar, double Bk[225], const double sk[16],
   return success;
 }
 
-static void PresolveWorkingSet(i_struct_T *solution, g_struct_T *memspace,
-  j_struct_T *workingset, e_struct_T *qrmanager)
+static void PresolveWorkingSet(g_struct_T *solution, d_struct_T *memspace,
+  h_struct_T *workingset, e_struct_T *qrmanager)
 {
-  double qtb;
   double tol;
-  int i;
-  int i1;
   int idxDiag;
   int idx_col;
   int ix;
@@ -705,15 +672,14 @@ static void PresolveWorkingSet(i_struct_T *solution, g_struct_T *memspace,
   int mTotalWorkingEq_tmp_tmp;
   int mWorkingFixed;
   int nDepInd;
-  int u0;
-  boolean_T exitg1;
-  boolean_T guard1;
-  boolean_T okWorkingSet;
   solution->state = 82;
   mWorkingFixed = workingset->nWConstr[0];
   mTotalWorkingEq_tmp_tmp = workingset->nWConstr[0] + workingset->nWConstr[1];
   nDepInd = 0;
   if (mTotalWorkingEq_tmp_tmp > 0) {
+    int i;
+    int i1;
+    int u0;
     i = (unsigned char)workingset->nVar;
     for (ix = 0; ix < mTotalWorkingEq_tmp_tmp; ix++) {
       for (idx_col = 0; idx_col < i; idx_col++) {
@@ -759,10 +725,12 @@ static void PresolveWorkingSet(i_struct_T *solution, g_struct_T *memspace,
     }
 
     if (nDepInd > 0) {
+      bool exitg1;
       computeQ_(qrmanager, qrmanager->mrows);
       idxDiag = 0;
       exitg1 = false;
       while ((!exitg1) && (idxDiag <= nDepInd - 1)) {
+        double qtb;
         ix = 31 * ((mTotalWorkingEq_tmp_tmp - idxDiag) - 1);
         qtb = 0.0;
         for (k = 0; k < mTotalWorkingEq_tmp_tmp; k++) {
@@ -836,6 +804,8 @@ static void PresolveWorkingSet(i_struct_T *solution, g_struct_T *memspace,
   }
 
   if ((nDepInd != -1) && (workingset->nActiveConstr <= 31)) {
+    bool guard1;
+    bool okWorkingSet;
     RemoveDependentIneq_(workingset, qrmanager, memspace, 100.0);
     okWorkingSet = feasibleX0ForWorkingSet(memspace->workspace_double,
       solution->xstar, workingset, qrmanager);
@@ -876,16 +846,13 @@ static void PresolveWorkingSet(i_struct_T *solution, g_struct_T *memspace,
   }
 }
 
-static void RemoveDependentIneq_(j_struct_T *workingset, e_struct_T *qrmanager,
-  g_struct_T *memspace, double tolfactor)
+static void RemoveDependentIneq_(h_struct_T *workingset, e_struct_T *qrmanager,
+  d_struct_T *memspace, double tolfactor)
 {
-  double tol;
   int idx;
-  int idxDiag;
   int idx_col;
   int k;
   int nActiveConstr_tmp;
-  int nDepIneq;
   int nFixedConstr;
   int nVar;
   nActiveConstr_tmp = workingset->nActiveConstr;
@@ -893,6 +860,9 @@ static void RemoveDependentIneq_(j_struct_T *workingset, e_struct_T *qrmanager,
   nVar = workingset->nVar;
   if ((workingset->nWConstr[2] + workingset->nWConstr[3]) + workingset->
       nWConstr[4] > 0) {
+    double tol;
+    int idxDiag;
+    int nDepIneq;
     tol = tolfactor * (double)workingset->nVar * 2.2204460492503131E-16;
     for (idx = 0; idx < nFixedConstr; idx++) {
       qrmanager->jpvt[idx] = 1;
@@ -956,7 +926,7 @@ static void RemoveDependentIneq_(j_struct_T *workingset, e_struct_T *qrmanager,
   }
 }
 
-static void addBoundToActiveSetMatrix_(j_struct_T *obj, int TYPE, int idx_local)
+static void addBoundToActiveSetMatrix_(h_struct_T *obj, int TYPE, int idx_local)
 {
   int colOffset;
   int i;
@@ -1000,34 +970,6 @@ static void addBoundToActiveSetMatrix_(j_struct_T *obj, int TYPE, int idx_local)
   }
 }
 
-static boolean_T b_computeDualFeasError(int nVar, const double gradLag[496],
-  double *val)
-{
-  double u1;
-  int idx;
-  boolean_T exitg1;
-  boolean_T gradOK;
-  gradOK = true;
-  *val = 0.0;
-  idx = 0;
-  exitg1 = false;
-  while ((!exitg1) && (idx <= (unsigned char)nVar - 1)) {
-    gradOK = ((!rtIsInf(gradLag[idx])) && (!rtIsNaN(gradLag[idx])));
-    if (!gradOK) {
-      exitg1 = true;
-    } else {
-      u1 = fabs(gradLag[idx]);
-      if ((!(*val >= u1)) && (!rtIsNaN(u1))) {
-        *val = u1;
-      }
-
-      idx++;
-    }
-  }
-
-  return gradOK;
-}
-
 static void b_computeGradLag(double workspace[496], int nVar, const double grad
   [16], const int finiteFixed[16], int mFixed, const int finiteLB[16], int mLB,
   const int finiteUB[16], int mUB, const double lambda[31])
@@ -1063,10 +1005,10 @@ static void b_computeGradLag(double workspace[496], int nVar, const double grad
   }
 }
 
-static void b_driver(const double lb[15], const double ub[15], i_struct_T
+static void b_driver(const double lb[15], const double ub[15], g_struct_T
                      *TrialState, b_struct_T *MeritFunction, const
-                     i_coder_internal_stickyStruct *FcnEvaluator, g_struct_T
-                     *memspace, j_struct_T *WorkingSet, double Hessian[225],
+                     i_coder_internal_stickyStruct *FcnEvaluator, d_struct_T
+                     *memspace, h_struct_T *WorkingSet, double Hessian[225],
                      e_struct_T *QRManager, f_struct_T *CholManager, struct_T
                      *QPObjective)
 {
@@ -1084,13 +1026,9 @@ static void b_driver(const double lb[15], const double ub[15], i_struct_T
   static const char qpoptions_SolverName[7] = { 'f', 'm', 'i', 'n', 'c', 'o',
     'n' };
 
-  c_struct_T Flags;
-  k_struct_T b_expl_temp;
-  k_struct_T expl_temp;
-  double alpha;
-  double phi_alpha;
-  int exitflagLnSrch;
-  int exitg1;
+  i_struct_T b_expl_temp;
+  i_struct_T expl_temp;
+  j_struct_T Flags;
   int i;
   int ineqStart;
   int ixlast;
@@ -1101,10 +1039,6 @@ static void b_driver(const double lb[15], const double ub[15], i_struct_T
   int mUB;
   int nVar_tmp_tmp;
   int qpoptions_MaxIterations;
-  boolean_T evalWellDefined;
-  boolean_T exitg2;
-  boolean_T socTaken;
-  boolean_T tooSmallX;
   memset(&QPObjective->grad[0], 0, 16U * sizeof(double));
   memset(&QPObjective->Hx[0], 0, 15U * sizeof(double));
   QPObjective->hasLinear = true;
@@ -1153,9 +1087,9 @@ static void b_driver(const double lb[15], const double ub[15], i_struct_T
 
   qpoptions_MaxIterations = 10 * ixlast;
   TrialState->steplength = 1.0;
-  Flags.gradOK = test_exit(MeritFunction, WorkingSet, TrialState, lb, ub,
-    &Flags.fevalOK, &Flags.done, &Flags.stepAccepted, &Flags.failedLineSearch,
-    &Flags.stepType);
+  test_exit(MeritFunction, WorkingSet, TrialState, lb, ub, &Flags.fevalOK,
+            &Flags.done, &Flags.stepAccepted, &Flags.failedLineSearch,
+            &Flags.stepType);
   TrialState->sqpFval_old = TrialState->sqpFval;
   for (k = 0; k < 15; k++) {
     TrialState->xstarsqp_old[k] = TrialState->xstarsqp[k];
@@ -1167,6 +1101,7 @@ static void b_driver(const double lb[15], const double ub[15], i_struct_T
   }
 
   while (!Flags.done) {
+    double phi_alpha;
     while (!(Flags.stepAccepted || Flags.failedLineSearch)) {
       if (Flags.stepType != 3) {
         i = (unsigned char)mLB;
@@ -1253,6 +1188,10 @@ static void b_driver(const double lb[15], const double ub[15], i_struct_T
         Flags.stepType = 3;
         Flags.stepAccepted = false;
       } else {
+        double alpha;
+        int exitflagLnSrch;
+        bool evalWellDefined;
+        bool socTaken;
         if ((Flags.stepType == 3) && Flags.stepAccepted) {
           socTaken = true;
         } else {
@@ -1270,6 +1209,7 @@ static void b_driver(const double lb[15], const double ub[15], i_struct_T
                   int)ineqStart * sizeof(double));
         }
 
+        int exitg1;
         do {
           exitg1 = 0;
           if (TrialState->FunctionEvaluations < 1000 && toc() <= 5e-3) {
@@ -1277,6 +1217,8 @@ static void b_driver(const double lb[15], const double ub[15], i_struct_T
                                     0.0001 * MeritFunction->phiPrimePlus)) {
               exitg1 = 1;
             } else {
+              bool exitg2;
+              bool tooSmallX;
               alpha *= 0.7;
               ineqStart = (unsigned char)i;
               for (ixlast = 0; ixlast < ineqStart; ixlast++) {
@@ -1298,12 +1240,8 @@ static void b_driver(const double lb[15], const double ub[15], i_struct_T
               ixlast = 0;
               exitg2 = false;
               while ((!exitg2) && (ixlast <= (unsigned char)i - 1)) {
-                phi_alpha = fabs(TrialState->xstarsqp[ixlast]);
-                if ((phi_alpha <= 1.0) || rtIsNaN(phi_alpha)) {
-                  phi_alpha = 1.0;
-                }
-
-                if (1.0E-12 * phi_alpha <= fabs(TrialState->delta_x[ixlast])) {
+                if (1.0E-12 * fmax(1.0, fabs(TrialState->xstarsqp[ixlast])) <=
+                    fabs(TrialState->delta_x[ixlast])) {
                   tooSmallX = false;
                   exitg2 = true;
                 } else {
@@ -1369,7 +1307,6 @@ static void b_driver(const double lb[15], const double ub[15], i_struct_T
         TrialState->grad_old[k] = TrialState->grad[k];
       }
 
-      Flags.gradOK = true;
       TrialState->sqpFval = c_computeObjectiveAndUserGradie
         (&FcnEvaluator->next.next.next.next.next.next.next.next.value.workspace,
          TrialState->xstarsqp, TrialState->grad, &ineqStart);
@@ -1408,42 +1345,34 @@ static void b_driver(const double lb[15], const double ub[15], i_struct_T
   }
 }
 
-static double b_maxConstraintViolation(const j_struct_T *obj, const double x[16])
+static double b_maxConstraintViolation(const h_struct_T *obj, const double x[16])
 {
-  double u1;
   double v;
   int i;
   int idx;
-  int idxFixed;
+  int idxLB;
   v = 0.0;
   if (obj->sizes[3] > 0) {
     i = (unsigned char)obj->sizes[3];
     for (idx = 0; idx < i; idx++) {
-      u1 = -x[obj->indexLB[idx] - 1] - obj->lb[obj->indexLB[idx] - 1];
-      if ((!(v >= u1)) && (!rtIsNaN(u1))) {
-        v = u1;
-      }
+      idxLB = obj->indexLB[idx] - 1;
+      v = fmax(v, -x[idxLB] - obj->lb[idxLB]);
     }
   }
 
   if (obj->sizes[4] > 0) {
     i = (unsigned char)obj->sizes[4];
     for (idx = 0; idx < i; idx++) {
-      u1 = x[obj->indexUB[idx] - 1] - obj->ub[obj->indexUB[idx] - 1];
-      if ((!(v >= u1)) && (!rtIsNaN(u1))) {
-        v = u1;
-      }
+      idxLB = obj->indexUB[idx] - 1;
+      v = fmax(v, x[idxLB] - obj->ub[idxLB]);
     }
   }
 
   if (obj->sizes[0] > 0) {
     i = (unsigned char)obj->sizes[0];
     for (idx = 0; idx < i; idx++) {
-      idxFixed = obj->indexFixed[idx] - 1;
-      u1 = fabs(x[idxFixed] - obj->ub[idxFixed]);
-      if ((!(v >= u1)) && (!rtIsNaN(u1))) {
-        v = u1;
-      }
+      v = fmax(v, fabs(x[obj->indexFixed[idx] - 1] - obj->ub[obj->indexFixed[idx]
+                       - 1]));
     }
   }
 
@@ -1452,20 +1381,21 @@ static double b_maxConstraintViolation(const j_struct_T *obj, const double x[16]
 
 static double b_norm(const double x[15])
 {
-  double absxk;
   double scale;
-  double t;
   double y;
   int k;
   y = 0.0;
   scale = 3.3121686421112381E-170;
   for (k = 0; k < 15; k++) {
+    double absxk;
     absxk = fabs(x[k]);
     if (absxk > scale) {
+      double t;
       t = scale / absxk;
       y = y * t * t + 1.0;
       scale = absxk;
     } else {
+      double t;
       t = absxk / scale;
       y += t * t;
     }
@@ -1474,27 +1404,24 @@ static double b_norm(const double x[15])
   return scale * sqrt(y);
 }
 
-static void b_test_exit(c_struct_T *Flags, g_struct_T *memspace, b_struct_T
-  *MeritFunction, const j_struct_T *WorkingSet, i_struct_T *TrialState,
+static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
+  *MeritFunction, const h_struct_T *WorkingSet, g_struct_T *TrialState,
   e_struct_T *QRManager, const double lb[15], const double ub[15])
 {
-  double d;
-  double nlpComplErrorTmp;
   double optimRelativeFactor;
   double s;
   double smax;
+  int b_i;
   int b_k;
   int i;
+  int i1;
   int idx_max;
   int k;
   int mFixed;
   int nVar;
-  int rankR;
-  int u1;
-  boolean_T dxTooSmall;
-  boolean_T exitg1;
-  boolean_T guard1;
-  boolean_T isFeasible;
+  bool dxTooSmall;
+  bool exitg1;
+  bool isFeasible;
   nVar = WorkingSet->nVar;
   mFixed = WorkingSet->sizes[0];
   i = (unsigned char)((WorkingSet->sizes[0] + WorkingSet->sizes[3]) +
@@ -1524,49 +1451,48 @@ static void b_test_exit(c_struct_T *Flags, g_struct_T *memspace, b_struct_T
     }
   }
 
-  smax = fabs(TrialState->grad[idx_max - 1]);
-  if ((smax <= 1.0) || rtIsNaN(smax)) {
-    optimRelativeFactor = 1.0;
-  } else {
-    optimRelativeFactor = smax;
-  }
-
+  optimRelativeFactor = fmax(1.0, fabs(TrialState->grad[idx_max - 1]));
   if (rtIsInf(optimRelativeFactor)) {
     optimRelativeFactor = 1.0;
   }
 
-  s = 0.0;
-  u1 = (unsigned char)WorkingSet->sizes[3];
-  for (nVar = 0; nVar < u1; nVar++) {
-    smax = lb[WorkingSet->indexLB[nVar] - 1] - TrialState->xstarsqp
-      [WorkingSet->indexLB[nVar] - 1];
-    if ((!(s >= smax)) && (!rtIsNaN(smax))) {
-      s = smax;
-    }
+  smax = 0.0;
+  i1 = (unsigned char)WorkingSet->sizes[3];
+  for (idx_max = 0; idx_max < i1; idx_max++) {
+    nVar = WorkingSet->indexLB[idx_max] - 1;
+    smax = fmax(smax, lb[nVar] - TrialState->xstarsqp[nVar]);
   }
 
-  u1 = (unsigned char)WorkingSet->sizes[4];
-  for (nVar = 0; nVar < u1; nVar++) {
-    smax = TrialState->xstarsqp[WorkingSet->indexUB[nVar] - 1] - ub
-      [WorkingSet->indexUB[nVar] - 1];
-    if ((!(s >= smax)) && (!rtIsNaN(smax))) {
-      s = smax;
-    }
+  i1 = (unsigned char)WorkingSet->sizes[4];
+  for (idx_max = 0; idx_max < i1; idx_max++) {
+    nVar = WorkingSet->indexUB[idx_max] - 1;
+    smax = fmax(smax, TrialState->xstarsqp[nVar] - ub[nVar]);
   }
 
-  MeritFunction->nlpPrimalFeasError = s;
+  MeritFunction->nlpPrimalFeasError = smax;
   if (TrialState->sqpIterations == 0) {
-    if (s <= 1.0) {
-      MeritFunction->feasRelativeFactor = 1.0;
+    MeritFunction->feasRelativeFactor = fmax(1.0, smax);
+  }
+
+  isFeasible = (smax <= 1.0E-6 * MeritFunction->feasRelativeFactor);
+  dxTooSmall = true;
+  smax = 0.0;
+  i1 = (unsigned char)WorkingSet->nVar;
+  idx_max = 0;
+  exitg1 = false;
+  while ((!exitg1) && (idx_max <= i1 - 1)) {
+    dxTooSmall = ((!rtIsInf(TrialState->gradLag[idx_max])) && (!rtIsNaN
+      (TrialState->gradLag[idx_max])));
+    if (!dxTooSmall) {
+      exitg1 = true;
     } else {
-      MeritFunction->feasRelativeFactor = s;
+      smax = fmax(smax, fabs(TrialState->gradLag[idx_max]));
+      idx_max++;
     }
   }
 
-  isFeasible = (s <= 1.0E-6 * MeritFunction->feasRelativeFactor);
-  Flags->gradOK = computeDualFeasError(WorkingSet->nVar, TrialState->gradLag,
-    &MeritFunction->nlpDualFeasError);
-  if (!Flags->gradOK) {
+  MeritFunction->nlpDualFeasError = smax;
+  if (!dxTooSmall) {
     Flags->done = true;
     if (isFeasible) {
       TrialState->sqpExitFlag = 2;
@@ -1578,31 +1504,30 @@ static void b_test_exit(c_struct_T *Flags, g_struct_T *memspace, b_struct_T
       WorkingSet->indexLB, WorkingSet->sizes[3], lb, WorkingSet->indexUB,
       WorkingSet->sizes[4], ub, TrialState->lambdaStopTest, WorkingSet->sizes[0]
       + 1);
-    if ((MeritFunction->nlpDualFeasError >= MeritFunction->nlpComplError) ||
-        rtIsNaN(MeritFunction->nlpComplError)) {
-      smax = MeritFunction->nlpDualFeasError;
-    } else {
-      smax = MeritFunction->nlpComplError;
-    }
-
+    smax = fmax(smax, MeritFunction->nlpComplError);
     MeritFunction->firstOrderOpt = smax;
     if (TrialState->sqpIterations > 1) {
+      double d;
+      double nlpComplErrorTmp;
       b_computeGradLag(memspace->workspace_double, WorkingSet->nVar,
                        TrialState->grad, WorkingSet->indexFixed,
                        WorkingSet->sizes[0], WorkingSet->indexLB,
                        WorkingSet->sizes[3], WorkingSet->indexUB,
                        WorkingSet->sizes[4], TrialState->lambdaStopTestPrev);
-      b_computeDualFeasError(WorkingSet->nVar, memspace->workspace_double, &s);
+      s = 0.0;
+      idx_max = 0;
+      while ((idx_max <= i1 - 1) && ((!rtIsInf(memspace->
+                workspace_double[idx_max])) && (!rtIsNaN
+               (memspace->workspace_double[idx_max])))) {
+        s = fmax(s, fabs(memspace->workspace_double[idx_max]));
+        idx_max++;
+      }
+
       nlpComplErrorTmp = computeComplError(TrialState->xstarsqp,
         WorkingSet->indexLB, WorkingSet->sizes[3], lb, WorkingSet->indexUB,
         WorkingSet->sizes[4], ub, TrialState->lambdaStopTestPrev,
         WorkingSet->sizes[0] + 1);
-      if ((s >= nlpComplErrorTmp) || rtIsNaN(nlpComplErrorTmp)) {
-        d = s;
-      } else {
-        d = nlpComplErrorTmp;
-      }
-
+      d = fmax(s, nlpComplErrorTmp);
       if (d < smax) {
         MeritFunction->nlpDualFeasError = s;
         MeritFunction->nlpComplError = nlpComplErrorTmp;
@@ -1631,23 +1556,19 @@ static void b_test_exit(c_struct_T *Flags, g_struct_T *memspace, b_struct_T
         Flags->done = true;
         TrialState->sqpExitFlag = -3;
       } else {
+        bool guard1;
         guard1 = false;
         if (TrialState->sqpIterations > 0) {
           dxTooSmall = true;
-          u1 = (unsigned char)WorkingSet->nVar;
-          nVar = 0;
+          idx_max = 0;
           exitg1 = false;
-          while ((!exitg1) && (nVar <= u1 - 1)) {
-            smax = fabs(TrialState->xstarsqp[nVar]);
-            if ((smax <= 1.0) || rtIsNaN(smax)) {
-              smax = 1.0;
-            }
-
-            if (1.0E-12 * smax <= fabs(TrialState->delta_x[nVar])) {
+          while ((!exitg1) && (idx_max <= i1 - 1)) {
+            if (1.0E-12 * fmax(1.0, fabs(TrialState->xstarsqp[idx_max])) <= fabs
+                (TrialState->delta_x[idx_max])) {
               dxTooSmall = false;
               exitg1 = true;
             } else {
-              nVar++;
+              idx_max++;
             }
           }
 
@@ -1665,11 +1586,12 @@ static void b_test_exit(c_struct_T *Flags, g_struct_T *memspace, b_struct_T
             } else {
               nVar = WorkingSet->nActiveConstr - 1;
               if (WorkingSet->nActiveConstr > 0) {
+                int rankR;
                 for (k = 0; k <= nVar; k++) {
                   TrialState->lambda[k] = 0.0;
                   idx_max = k << 4;
                   rankR = 31 * k;
-                  for (b_k = 0; b_k < u1; b_k++) {
+                  for (b_k = 0; b_k < i1; b_k++) {
                     QRManager->QR[rankR + b_k] = WorkingSet->ATwset[idx_max +
                       b_k];
                   }
@@ -1679,12 +1601,12 @@ static void b_test_exit(c_struct_T *Flags, g_struct_T *memspace, b_struct_T
                 QRManager->mrows = WorkingSet->nVar;
                 QRManager->ncols = WorkingSet->nActiveConstr;
                 nVar = WorkingSet->nVar;
-                u1 = WorkingSet->nActiveConstr;
-                if (nVar <= u1) {
-                  u1 = nVar;
+                b_k = WorkingSet->nActiveConstr;
+                if (nVar <= b_k) {
+                  b_k = nVar;
                 }
 
-                QRManager->minRowCol = u1;
+                QRManager->minRowCol = b_k;
                 xgeqp3(QRManager->QR, WorkingSet->nVar,
                        WorkingSet->nActiveConstr, QRManager->jpvt,
                        QRManager->tau);
@@ -1695,15 +1617,11 @@ static void b_test_exit(c_struct_T *Flags, g_struct_T *memspace, b_struct_T
                   idx_max = nVar;
                 }
 
-                smax = (double)idx_max * 2.2204460492503131E-16;
-                if (smax >= 1.4901161193847656E-8) {
-                  smax = 1.4901161193847656E-8;
-                }
-
-                smax *= fabs(QRManager->QR[0]);
+                smax = fabs(QRManager->QR[0]) * fmin(1.4901161193847656E-8,
+                  (double)idx_max * 2.2204460492503131E-16);
                 rankR = 0;
                 nVar = 0;
-                while ((rankR < u1) && (fabs(QRManager->QR[nVar]) > smax)) {
+                while ((rankR < b_k) && (fabs(QRManager->QR[nVar]) > smax)) {
                   rankR++;
                   nVar += 32;
                 }
@@ -1711,32 +1629,33 @@ static void b_test_exit(c_struct_T *Flags, g_struct_T *memspace, b_struct_T
                 b_xgemv(WorkingSet->nVar, WorkingSet->nVar, QRManager->Q,
                         TrialState->grad, memspace->workspace_double);
                 if (rankR != 0) {
-                  for (b_k = rankR; b_k >= 1; b_k--) {
-                    nVar = (b_k + (b_k - 1) * 31) - 1;
-                    memspace->workspace_double[b_k - 1] /= QRManager->QR[nVar];
-                    for (k = 0; k <= b_k - 2; k++) {
-                      idx_max = (b_k - k) - 2;
+                  for (k = rankR; k >= 1; k--) {
+                    nVar = (k + (k - 1) * 31) - 1;
+                    memspace->workspace_double[k - 1] /= QRManager->QR[nVar];
+                    for (b_i = 0; b_i <= k - 2; b_i++) {
+                      idx_max = (k - b_i) - 2;
                       memspace->workspace_double[idx_max] -=
-                        memspace->workspace_double[b_k - 1] * QRManager->QR
-                        [(nVar - k) - 1];
+                        memspace->workspace_double[k - 1] * QRManager->QR[(nVar
+                        - b_i) - 1];
                     }
                   }
                 }
 
                 nVar = WorkingSet->nActiveConstr;
-                if (nVar <= u1) {
-                  u1 = nVar;
+                if (nVar <= b_k) {
+                  b_k = nVar;
                 }
 
-                u1 = (unsigned char)u1;
-                for (nVar = 0; nVar < u1; nVar++) {
-                  TrialState->lambda[QRManager->jpvt[nVar] - 1] =
-                    memspace->workspace_double[nVar];
+                nVar = (unsigned char)b_k;
+                for (idx_max = 0; idx_max < nVar; idx_max++) {
+                  TrialState->lambda[QRManager->jpvt[idx_max] - 1] =
+                    memspace->workspace_double[idx_max];
                 }
 
-                u1 = WorkingSet->sizes[0] + 1;
-                for (nVar = u1; nVar <= mFixed; nVar++) {
-                  TrialState->lambda[nVar - 1] = -TrialState->lambda[nVar - 1];
+                nVar = WorkingSet->sizes[0] + 1;
+                for (idx_max = nVar; idx_max <= mFixed; idx_max++) {
+                  TrialState->lambda[idx_max - 1] = -TrialState->lambda[idx_max
+                    - 1];
                 }
 
                 sortLambdaQP(TrialState->lambda, WorkingSet->nActiveConstr,
@@ -1748,8 +1667,15 @@ static void b_test_exit(c_struct_T *Flags, g_struct_T *memspace, b_struct_T
                                  WorkingSet->sizes[0], WorkingSet->indexLB,
                                  WorkingSet->sizes[3], WorkingSet->indexUB,
                                  WorkingSet->sizes[4], TrialState->lambda);
-                b_computeDualFeasError(WorkingSet->nVar,
-                  memspace->workspace_double, &smax);
+                smax = 0.0;
+                idx_max = 0;
+                while ((idx_max <= i1 - 1) && ((!rtIsInf
+                         (memspace->workspace_double[idx_max])) && (!rtIsNaN
+                         (memspace->workspace_double[idx_max])))) {
+                  smax = fmax(smax, fabs(memspace->workspace_double[idx_max]));
+                  idx_max++;
+                }
+
                 s = computeComplError(TrialState->xstarsqp, WorkingSet->indexLB,
                                       WorkingSet->sizes[3], lb,
                                       WorkingSet->indexUB, WorkingSet->sizes[4],
@@ -1759,12 +1685,7 @@ static void b_test_exit(c_struct_T *Flags, g_struct_T *memspace, b_struct_T
                      optimRelativeFactor)) {
                   MeritFunction->nlpDualFeasError = smax;
                   MeritFunction->nlpComplError = s;
-                  if (smax >= s) {
-                    MeritFunction->firstOrderOpt = smax;
-                  } else {
-                    MeritFunction->firstOrderOpt = s;
-                  }
-
+                  MeritFunction->firstOrderOpt = fmax(smax, s);
                   if (i - 1 >= 0) {
                     memcpy(&TrialState->lambdaStopTest[0], &TrialState->lambda[0],
                            (unsigned int)i * sizeof(double));
@@ -1813,16 +1734,14 @@ static double b_timeKeeper(double *outTime_tv_nsec)
 static void b_xgemm(int m, int n, int k, const double A[961], int ia0, const
                     double B[496], double C[961])
 {
-  double temp;
-  int ar;
-  int br;
   int cr;
-  int i;
-  int i1;
   int ic;
-  int lastColC;
   int w;
   if ((m != 0) && (n != 0)) {
+    int br;
+    int i;
+    int i1;
+    int lastColC;
     lastColC = 31 * (n - 1);
     for (cr = 0; cr <= lastColC; cr += 31) {
       i = cr + 1;
@@ -1834,10 +1753,12 @@ static void b_xgemm(int m, int n, int k, const double A[961], int ia0, const
 
     br = -1;
     for (cr = 0; cr <= lastColC; cr += 31) {
+      int ar;
       ar = ia0;
       i = cr + 1;
       i1 = cr + m;
       for (ic = i; ic <= i1; ic++) {
+        double temp;
         temp = 0.0;
         for (w = 0; w < k; w++) {
           temp += A[(w + ar) - 1] * B[(w + br) + 1];
@@ -1855,15 +1776,15 @@ static void b_xgemm(int m, int n, int k, const double A[961], int ia0, const
 static void b_xgemv(int m, int n, const double A[961], const double x[16],
                     double y[496])
 {
-  double c;
-  int i;
-  int i1;
   int ia;
   int iac;
   if (m != 0) {
+    int i;
     memset(&y[0], 0, (unsigned int)n * sizeof(double));
     i = 31 * (n - 1) + 1;
     for (iac = 1; iac <= i; iac += 31) {
+      double c;
+      int i1;
       c = 0.0;
       i1 = (iac + m) - 1;
       for (ia = iac; ia <= i1; ia++) {
@@ -1878,26 +1799,27 @@ static void b_xgemv(int m, int n, const double A[961], const double x[16],
 
 static double b_xnrm2(int n, const double x[16])
 {
-  double absxk;
-  double scale;
-  double t;
   double y;
-  int i;
   int k;
   y = 0.0;
   if (n >= 1) {
     if (n == 1) {
       y = fabs(x[0]);
     } else {
+      double scale;
+      int i;
       scale = 3.3121686421112381E-170;
       i = (unsigned char)n;
       for (k = 0; k < i; k++) {
+        double absxk;
         absxk = fabs(x[k]);
         if (absxk > scale) {
+          double t;
           t = scale / absxk;
           y = y * t * t + 1.0;
           scale = absxk;
         } else {
+          double t;
           t = absxk / scale;
           y += t * t;
         }
@@ -1910,12 +1832,7 @@ static double b_xnrm2(int n, const double x[16])
   return y;
 }
 
-static void c_CoderTimeAPI_callCoderClockGe(void)
-{
-  freq_not_empty = false;
-}
-
-static double c_computeObjectiveAndUserGradie(const d_struct_T
+static double c_computeObjectiveAndUserGradie(const c_struct_T
   *c_obj_next_next_next_next_next_, const double x[15], double grad_workspace[16],
   int *status)
 {
@@ -1929,7 +1846,7 @@ static double c_computeObjectiveAndUserGradie(const d_struct_T
   double dv_global_6;
   double fval;
   int idx_current;
-  boolean_T allFinite;
+  bool allFinite;
   Alpha = x[12] * c_obj_next_next_next_next_next_->gain_theta->contents -
     c_obj_next_next_next_next_next_->flight_path_angle->contents;
   dv_global_1 = c_obj_next_next_next_next_next_->dv_global->contents[0];
@@ -2035,20 +1952,21 @@ static double c_computeObjectiveAndUserGradie(const d_struct_T
 
 static double c_norm(const double x[6])
 {
-  double absxk;
   double scale;
-  double t;
   double y;
   int k;
   y = 0.0;
   scale = 3.3121686421112381E-170;
   for (k = 0; k < 6; k++) {
+    double absxk;
     absxk = fabs(x[k]);
     if (absxk > scale) {
+      double t;
       t = scale / absxk;
       y = y * t * t + 1.0;
       scale = absxk;
     } else {
+      double t;
       t = absxk / scale;
       y += t * t;
     }
@@ -2061,38 +1979,23 @@ static double computeComplError(const double xCurrent[15], const int finiteLB[16
   int mLB, const double lb[15], const int finiteUB[16], int mUB, const double
   ub[15], const double lambda[31], int iL0)
 {
-  double lbDelta;
-  double lbLambda;
   double nlpComplError;
-  double u0;
-  double u1;
-  int i;
-  int i1;
   int idx;
-  int ubOffset;
   nlpComplError = 0.0;
   if (mLB + mUB > 0) {
+    double lbDelta;
+    double lbLambda;
+    int i;
+    int i1;
+    int ubOffset;
     ubOffset = (iL0 + mLB) - 1;
     i = (unsigned char)mLB;
     for (idx = 0; idx < i; idx++) {
       i1 = finiteLB[idx];
       lbDelta = xCurrent[i1 - 1] - lb[i1 - 1];
       lbLambda = lambda[(iL0 + idx) - 1];
-      u0 = fabs(lbDelta);
-      if ((u0 <= lbLambda) || rtIsNaN(lbLambda)) {
-        u1 = u0;
-      } else {
-        u1 = lbLambda;
-      }
-
-      u0 = fabs(lbDelta * lbLambda);
-      if ((u0 <= u1) || rtIsNaN(u1)) {
-        u1 = u0;
-      }
-
-      if ((!(nlpComplError >= u1)) && (!rtIsNaN(u1))) {
-        nlpComplError = u1;
-      }
+      nlpComplError = fmax(nlpComplError, fmin(fabs(lbDelta * lbLambda), fmin
+        (fabs(lbDelta), lbLambda)));
     }
 
     i = (unsigned char)mUB;
@@ -2100,60 +2003,18 @@ static double computeComplError(const double xCurrent[15], const int finiteLB[16
       i1 = finiteUB[idx];
       lbDelta = ub[i1 - 1] - xCurrent[i1 - 1];
       lbLambda = lambda[ubOffset + idx];
-      u0 = fabs(lbDelta);
-      if ((u0 <= lbLambda) || rtIsNaN(lbLambda)) {
-        u1 = u0;
-      } else {
-        u1 = lbLambda;
-      }
-
-      u0 = fabs(lbDelta * lbLambda);
-      if ((u0 <= u1) || rtIsNaN(u1)) {
-        u1 = u0;
-      }
-
-      if ((!(nlpComplError >= u1)) && (!rtIsNaN(u1))) {
-        nlpComplError = u1;
-      }
+      nlpComplError = fmax(nlpComplError, fmin(fabs(lbDelta * lbLambda), fmin
+        (fabs(lbDelta), lbLambda)));
     }
   }
 
   return nlpComplError;
 }
 
-static boolean_T computeDualFeasError(int nVar, const double gradLag[16], double
-  *val)
-{
-  double u1;
-  int idx;
-  boolean_T exitg1;
-  boolean_T gradOK;
-  gradOK = true;
-  *val = 0.0;
-  idx = 0;
-  exitg1 = false;
-  while ((!exitg1) && (idx <= (unsigned char)nVar - 1)) {
-    gradOK = ((!rtIsInf(gradLag[idx])) && (!rtIsNaN(gradLag[idx])));
-    if (!gradOK) {
-      exitg1 = true;
-    } else {
-      u1 = fabs(gradLag[idx]);
-      if ((!(*val >= u1)) && (!rtIsNaN(u1))) {
-        *val = u1;
-      }
-
-      idx++;
-    }
-  }
-
-  return gradOK;
-}
-
 static double computeFval(const struct_T *obj, double workspace[496], const
   double H[225], const double f[16], const double x[16])
 {
   double val;
-  int i;
   int idx;
   switch (obj->objtype) {
    case 5:
@@ -2161,26 +2022,32 @@ static double computeFval(const struct_T *obj, double workspace[496], const
     break;
 
    case 3:
-    linearForm_(obj->hasLinear, obj->nvar, workspace, H, f, x);
-    val = 0.0;
-    if (obj->nvar >= 1) {
-      i = (unsigned char)obj->nvar;
-      for (idx = 0; idx < i; idx++) {
-        val += x[idx] * workspace[idx];
+    {
+      linearForm_(obj->hasLinear, obj->nvar, workspace, H, f, x);
+      val = 0.0;
+      if (obj->nvar >= 1) {
+        int i;
+        i = (unsigned char)obj->nvar;
+        for (idx = 0; idx < i; idx++) {
+          val += x[idx] * workspace[idx];
+        }
       }
     }
     break;
 
    default:
-    linearForm_(obj->hasLinear, obj->nvar, workspace, H, f, x);
-    i = obj->nvar + 1;
-    for (idx = i; idx < 16; idx++) {
-      workspace[idx - 1] = 0.5 * obj->beta * x[idx - 1] + obj->rho;
-    }
+    {
+      int i;
+      linearForm_(obj->hasLinear, obj->nvar, workspace, H, f, x);
+      i = obj->nvar + 1;
+      for (idx = i; idx < 16; idx++) {
+        workspace[idx - 1] = 0.5 * obj->beta * x[idx - 1] + obj->rho;
+      }
 
-    val = 0.0;
-    for (idx = 0; idx < 15; idx++) {
-      val += x[idx] * workspace[idx];
+      val = 0.0;
+      for (idx = 0; idx < 15; idx++) {
+        val += x[idx] * workspace[idx];
+      }
     }
     break;
   }
@@ -2191,9 +2058,7 @@ static double computeFval(const struct_T *obj, double workspace[496], const
 static double computeFval_ReuseHx(const struct_T *obj, double workspace[496],
   const double f[16], const double x[16])
 {
-  double d;
   double val;
-  int i;
   int k;
   switch (obj->objtype) {
    case 5:
@@ -2201,59 +2066,68 @@ static double computeFval_ReuseHx(const struct_T *obj, double workspace[496],
     break;
 
    case 3:
-    if (obj->hasLinear) {
-      i = (unsigned char)obj->nvar;
-      for (k = 0; k < i; k++) {
-        workspace[k] = 0.5 * obj->Hx[k] + f[k];
-      }
-
-      val = 0.0;
-      if (obj->nvar >= 1) {
-        for (k = 0; k < i; k++) {
-          val += x[k] * workspace[k];
-        }
-      }
-    } else {
-      val = 0.0;
-      if (obj->nvar >= 1) {
+    {
+      if (obj->hasLinear) {
+        int i;
         i = (unsigned char)obj->nvar;
         for (k = 0; k < i; k++) {
-          val += x[k] * obj->Hx[k];
+          workspace[k] = 0.5 * obj->Hx[k] + f[k];
         }
-      }
 
-      val *= 0.5;
+        val = 0.0;
+        if (obj->nvar >= 1) {
+          for (k = 0; k < i; k++) {
+            val += x[k] * workspace[k];
+          }
+        }
+      } else {
+        val = 0.0;
+        if (obj->nvar >= 1) {
+          int i;
+          i = (unsigned char)obj->nvar;
+          for (k = 0; k < i; k++) {
+            val += x[k] * obj->Hx[k];
+          }
+        }
+
+        val *= 0.5;
+      }
     }
     break;
 
    default:
-    if (obj->hasLinear) {
-      i = (unsigned char)obj->nvar;
-      if (i - 1 >= 0) {
-        memcpy(&workspace[0], &f[0], (unsigned int)i * sizeof(double));
-      }
+    {
+      if (obj->hasLinear) {
+        int i;
+        i = (unsigned char)obj->nvar;
+        if (i - 1 >= 0) {
+          memcpy(&workspace[0], &f[0], (unsigned int)i * sizeof(double));
+        }
 
-      i = 14 - obj->nvar;
-      for (k = 0; k <= i; k++) {
-        workspace[obj->nvar + k] = obj->rho;
-      }
+        i = 14 - obj->nvar;
+        for (k = 0; k <= i; k++) {
+          workspace[obj->nvar + k] = obj->rho;
+        }
 
-      val = 0.0;
-      for (k = 0; k < 15; k++) {
-        d = workspace[k] + 0.5 * obj->Hx[k];
-        workspace[k] = d;
-        val += x[k] * d;
-      }
-    } else {
-      val = 0.0;
-      for (k = 0; k < 15; k++) {
-        val += x[k] * obj->Hx[k];
-      }
+        val = 0.0;
+        for (k = 0; k < 15; k++) {
+          double d;
+          d = workspace[k] + 0.5 * obj->Hx[k];
+          workspace[k] = d;
+          val += x[k] * d;
+        }
+      } else {
+        int i;
+        val = 0.0;
+        for (k = 0; k < 15; k++) {
+          val += x[k] * obj->Hx[k];
+        }
 
-      val *= 0.5;
-      i = obj->nvar + 1;
-      for (k = i; k < 16; k++) {
-        val += x[k - 1] * obj->rho;
+        val *= 0.5;
+        i = obj->nvar + 1;
+        for (k = i; k < 16; k++) {
+          val += x[k - 1] * obj->rho;
+        }
       }
     }
     break;
@@ -2300,56 +2174,64 @@ static void computeGradLag(double workspace[16], int nVar, const double grad[16]
 static void computeGrad_StoreHx(struct_T *obj, const double H[225], const double
   f[16], const double x[16])
 {
-  int i;
-  int i1;
   int ixlast;
   int k;
   switch (obj->objtype) {
    case 5:
-    i = obj->nvar;
-    if (i - 2 >= 0) {
-      memset(&obj->grad[0], 0, (unsigned int)(i - 1) * sizeof(double));
-    }
+    {
+      int i;
+      i = obj->nvar;
+      if (i - 2 >= 0) {
+        memset(&obj->grad[0], 0, (unsigned int)(i - 1) * sizeof(double));
+      }
 
-    obj->grad[obj->nvar - 1] = obj->gammaScalar;
+      obj->grad[obj->nvar - 1] = obj->gammaScalar;
+    }
     break;
 
    case 3:
-    xgemv(obj->nvar, obj->nvar, H, obj->nvar, x, obj->Hx);
-    i = (unsigned char)obj->nvar;
-    if (i - 1 >= 0) {
-      memcpy(&obj->grad[0], &obj->Hx[0], (unsigned int)i * sizeof(double));
-    }
+    {
+      int i;
+      xgemv(obj->nvar, obj->nvar, H, obj->nvar, x, obj->Hx);
+      i = (unsigned char)obj->nvar;
+      if (i - 1 >= 0) {
+        memcpy(&obj->grad[0], &obj->Hx[0], (unsigned int)i * sizeof(double));
+      }
 
-    if (obj->hasLinear && (obj->nvar >= 1)) {
-      ixlast = obj->nvar - 1;
-      for (k = 0; k <= ixlast; k++) {
-        obj->grad[k] += f[k];
+      if (obj->hasLinear && (obj->nvar >= 1)) {
+        ixlast = obj->nvar - 1;
+        for (k = 0; k <= ixlast; k++) {
+          obj->grad[k] += f[k];
+        }
       }
     }
     break;
 
    default:
-    xgemv(obj->nvar, obj->nvar, H, obj->nvar, x, obj->Hx);
-    i = obj->nvar + 1;
-    for (ixlast = i; ixlast < 16; ixlast++) {
-      obj->Hx[ixlast - 1] = obj->beta * x[ixlast - 1];
-    }
-
-    memcpy(&obj->grad[0], &obj->Hx[0], 15U * sizeof(double));
-    if (obj->hasLinear && (obj->nvar >= 1)) {
-      ixlast = obj->nvar - 1;
-      for (k = 0; k <= ixlast; k++) {
-        obj->grad[k] += f[k];
+    {
+      int i;
+      xgemv(obj->nvar, obj->nvar, H, obj->nvar, x, obj->Hx);
+      i = obj->nvar + 1;
+      for (ixlast = i; ixlast < 16; ixlast++) {
+        obj->Hx[ixlast - 1] = obj->beta * x[ixlast - 1];
       }
-    }
 
-    if (15 - obj->nvar >= 1) {
-      ixlast = obj->nvar;
-      i = 14 - obj->nvar;
-      for (k = 0; k <= i; k++) {
-        i1 = ixlast + k;
-        obj->grad[i1] += obj->rho;
+      memcpy(&obj->grad[0], &obj->Hx[0], 15U * sizeof(double));
+      if (obj->hasLinear && (obj->nvar >= 1)) {
+        ixlast = obj->nvar - 1;
+        for (k = 0; k <= ixlast; k++) {
+          obj->grad[k] += f[k];
+        }
+      }
+
+      if (15 - obj->nvar >= 1) {
+        ixlast = obj->nvar;
+        i = 14 - obj->nvar;
+        for (k = 0; k <= i; k++) {
+          int i1;
+          i1 = ixlast + k;
+          obj->grad[i1] += obj->rho;
+        }
       }
     }
     break;
@@ -2359,21 +2241,13 @@ static void computeGrad_StoreHx(struct_T *obj, const double H[225], const double
 static void computeQ_(e_struct_T *obj, int nrows)
 {
   double work[31];
-  double c;
   int b_i;
-  int exitg1;
-  int i;
-  int i1;
   int iQR0;
   int ia;
-  int iaii;
   int idx;
-  int itau;
   int lastc;
-  int lastv;
   int m;
   int n;
-  boolean_T exitg2;
   lastc = obj->minRowCol;
   for (idx = 0; idx < lastc; idx++) {
     iQR0 = 31 * idx + idx;
@@ -2386,6 +2260,9 @@ static void computeQ_(e_struct_T *obj, int nrows)
 
   m = obj->mrows;
   if (nrows >= 1) {
+    int i;
+    int i1;
+    int itau;
     i = nrows - 1;
     for (idx = lastc; idx <= i; idx++) {
       ia = idx * 31;
@@ -2398,11 +2275,14 @@ static void computeQ_(e_struct_T *obj, int nrows)
     itau = obj->minRowCol - 1;
     memset(&work[0], 0, 31U * sizeof(double));
     for (b_i = obj->minRowCol; b_i >= 1; b_i--) {
+      int iaii;
       iaii = b_i + (b_i - 1) * 31;
       if (b_i < nrows) {
+        int lastv;
         obj->Q[iaii - 1] = 1.0;
         idx = iaii + 31;
         if (obj->tau[itau] != 0.0) {
+          bool exitg2;
           lastv = m - b_i;
           iQR0 = (iaii + m) - b_i;
           while ((lastv + 1 > 0) && (obj->Q[iQR0 - 1] == 0.0)) {
@@ -2413,6 +2293,7 @@ static void computeQ_(e_struct_T *obj, int nrows)
           lastc = (nrows - b_i) - 1;
           exitg2 = false;
           while ((!exitg2) && (lastc + 1 > 0)) {
+            int exitg1;
             iQR0 = (iaii + lastc * 31) + 31;
             ia = iQR0;
             do {
@@ -2439,6 +2320,7 @@ static void computeQ_(e_struct_T *obj, int nrows)
         }
 
         if (lastv + 1 > 0) {
+          double c;
           if (lastc + 1 != 0) {
             if (lastc >= 0) {
               memset(&work[0], 0, (unsigned int)(lastc + 1) * sizeof(double));
@@ -3460,23 +3342,17 @@ static double compute_cost_and_gradient(double Alpha, double Beta, double
   return cost;
 }
 
-static void compute_deltax(const double H[225], i_struct_T *solution, g_struct_T
+static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
   *memspace, const e_struct_T *qrmanager, f_struct_T *cholmanager, const
-  struct_T *objective, boolean_T alwaysPositiveDef)
+  struct_T *objective, bool alwaysPositiveDef)
 {
-  double s;
-  double smax;
   int b_i;
-  int exitg1;
-  int i;
   int idx;
   int ix;
   int jA;
   int jjA;
   int mNull_tmp;
   int nVar_tmp;
-  int nVars;
-  int nullStartIdx_tmp;
   nVar_tmp = qrmanager->mrows - 1;
   mNull_tmp = qrmanager->mrows - qrmanager->ncols;
   if (mNull_tmp <= 0) {
@@ -3495,138 +3371,145 @@ static void compute_deltax(const double H[225], i_struct_T *solution, g_struct_T
         break;
 
        case 3:
-        if (alwaysPositiveDef) {
-          cholmanager->ndims = qrmanager->mrows;
-          for (idx = 0; idx <= nVar_tmp; idx++) {
-            jjA = (nVar_tmp + 1) * idx;
-            jA = 31 * idx;
-            for (ix = 0; ix <= nVar_tmp; ix++) {
-              cholmanager->FMat[jA + ix] = H[jjA + ix];
+        {
+          double smax;
+          int nVars;
+          if (alwaysPositiveDef) {
+            cholmanager->ndims = qrmanager->mrows;
+            for (idx = 0; idx <= nVar_tmp; idx++) {
+              jjA = (nVar_tmp + 1) * idx;
+              jA = 31 * idx;
+              for (ix = 0; ix <= nVar_tmp; ix++) {
+                cholmanager->FMat[jA + ix] = H[jjA + ix];
+              }
             }
-          }
 
-          cholmanager->info = xpotrf(qrmanager->mrows, cholmanager->FMat);
-        } else {
-          cholmanager->ndims = qrmanager->mrows;
-          for (idx = 0; idx <= nVar_tmp; idx++) {
-            jjA = qrmanager->mrows * idx;
-            jA = 31 * idx;
-            for (ix = 0; ix <= nVar_tmp; ix++) {
-              cholmanager->FMat[jA + ix] = H[jjA + ix];
-            }
-          }
-
-          if (qrmanager->mrows < 1) {
-            nVars = -1;
+            cholmanager->info = xpotrf(qrmanager->mrows, cholmanager->FMat);
           } else {
-            nVars = 0;
-            if (qrmanager->mrows > 1) {
-              smax = fabs(cholmanager->FMat[0]);
-              for (ix = 2; ix <= nVar_tmp + 1; ix++) {
-                s = fabs(cholmanager->FMat[(ix - 1) << 5]);
-                if (s > smax) {
-                  nVars = ix - 1;
-                  smax = s;
+            cholmanager->ndims = qrmanager->mrows;
+            for (idx = 0; idx <= nVar_tmp; idx++) {
+              jjA = qrmanager->mrows * idx;
+              jA = 31 * idx;
+              for (ix = 0; ix <= nVar_tmp; ix++) {
+                cholmanager->FMat[jA + ix] = H[jjA + ix];
+              }
+            }
+
+            if (qrmanager->mrows < 1) {
+              nVars = -1;
+            } else {
+              nVars = 0;
+              if (qrmanager->mrows > 1) {
+                smax = fabs(cholmanager->FMat[0]);
+                for (ix = 2; ix <= nVar_tmp + 1; ix++) {
+                  double s;
+                  s = fabs(cholmanager->FMat[(ix - 1) << 5]);
+                  if (s > smax) {
+                    nVars = ix - 1;
+                    smax = s;
+                  }
                 }
               }
             }
-          }
 
-          smax = fabs(cholmanager->FMat[nVars + 31 * nVars]) *
-            2.2204460492503131E-16;
-          if (smax >= 0.0) {
-            cholmanager->regTol_ = smax;
-          } else {
-            cholmanager->regTol_ = 0.0;
-          }
-
-          fullColLDL2_(cholmanager, qrmanager->mrows);
-          if (cholmanager->ConvexCheck) {
-            idx = 0;
-            do {
-              exitg1 = 0;
-              if (idx <= nVar_tmp) {
-                if (cholmanager->FMat[idx + 31 * idx] <= 0.0) {
-                  cholmanager->info = -idx - 1;
-                  exitg1 = 1;
+            cholmanager->regTol_ = fmax(fabs(cholmanager->FMat[nVars + 31 *
+              nVars]) * 2.2204460492503131E-16, 0.0);
+            fullColLDL2_(cholmanager, qrmanager->mrows);
+            if (cholmanager->ConvexCheck) {
+              idx = 0;
+              int exitg1;
+              do {
+                exitg1 = 0;
+                if (idx <= nVar_tmp) {
+                  if (cholmanager->FMat[idx + 31 * idx] <= 0.0) {
+                    cholmanager->info = -idx - 1;
+                    exitg1 = 1;
+                  } else {
+                    idx++;
+                  }
                 } else {
-                  idx++;
+                  cholmanager->ConvexCheck = false;
+                  exitg1 = 1;
                 }
-              } else {
-                cholmanager->ConvexCheck = false;
-                exitg1 = 1;
-              }
-            } while (exitg1 == 0);
-          }
-        }
-
-        if (cholmanager->info != 0) {
-          solution->state = -6;
-        } else if (alwaysPositiveDef) {
-          solve(cholmanager, solution->searchDir);
-        } else {
-          nVars = cholmanager->ndims - 2;
-          if (cholmanager->ndims != 0) {
-            for (idx = 0; idx <= nVars + 1; idx++) {
-              jjA = idx + idx * 31;
-              i = nVars - idx;
-              for (b_i = 0; b_i <= i; b_i++) {
-                ix = (idx + b_i) + 1;
-                solution->searchDir[ix] -= solution->searchDir[idx] *
-                  cholmanager->FMat[(jjA + b_i) + 1];
-              }
+              } while (exitg1 == 0);
             }
           }
 
-          nVars = cholmanager->ndims;
-          for (idx = 0; idx < nVars; idx++) {
-            solution->searchDir[idx] /= cholmanager->FMat[idx + 31 * idx];
-          }
-
-          if (cholmanager->ndims != 0) {
-            for (idx = nVars; idx >= 1; idx--) {
-              jA = (idx - 1) * 31;
-              smax = solution->searchDir[idx - 1];
-              i = idx + 1;
-              for (b_i = nVars; b_i >= i; b_i--) {
-                smax -= cholmanager->FMat[(jA + b_i) - 1] * solution->
-                  searchDir[b_i - 1];
+          if (cholmanager->info != 0) {
+            solution->state = -6;
+          } else if (alwaysPositiveDef) {
+            solve(cholmanager, solution->searchDir);
+          } else {
+            int i;
+            nVars = cholmanager->ndims - 2;
+            if (cholmanager->ndims != 0) {
+              for (idx = 0; idx <= nVars + 1; idx++) {
+                jjA = idx + idx * 31;
+                i = nVars - idx;
+                for (b_i = 0; b_i <= i; b_i++) {
+                  ix = (idx + b_i) + 1;
+                  solution->searchDir[ix] -= solution->searchDir[idx] *
+                    cholmanager->FMat[(jjA + b_i) + 1];
+                }
               }
+            }
 
-              solution->searchDir[idx - 1] = smax;
+            nVars = cholmanager->ndims;
+            for (idx = 0; idx < nVars; idx++) {
+              solution->searchDir[idx] /= cholmanager->FMat[idx + 31 * idx];
+            }
+
+            if (cholmanager->ndims != 0) {
+              for (idx = nVars; idx >= 1; idx--) {
+                jA = (idx - 1) * 31;
+                smax = solution->searchDir[idx - 1];
+                i = idx + 1;
+                for (b_i = nVars; b_i >= i; b_i--) {
+                  smax -= cholmanager->FMat[(jA + b_i) - 1] *
+                    solution->searchDir[b_i - 1];
+                }
+
+                solution->searchDir[idx - 1] = smax;
+              }
             }
           }
         }
         break;
 
        default:
-        if (alwaysPositiveDef) {
-          nVars = objective->nvar;
-          cholmanager->ndims = objective->nvar;
-          for (idx = 0; idx < nVars; idx++) {
-            jjA = nVars * idx;
-            jA = 31 * idx;
-            for (ix = 0; ix < nVars; ix++) {
-              cholmanager->FMat[jA + ix] = H[jjA + ix];
+        {
+          if (alwaysPositiveDef) {
+            int nVars;
+            nVars = objective->nvar;
+            cholmanager->ndims = objective->nvar;
+            for (idx = 0; idx < nVars; idx++) {
+              jjA = nVars * idx;
+              jA = 31 * idx;
+              for (ix = 0; ix < nVars; ix++) {
+                cholmanager->FMat[jA + ix] = H[jjA + ix];
+              }
             }
-          }
 
-          cholmanager->info = xpotrf(objective->nvar, cholmanager->FMat);
-          if (cholmanager->info != 0) {
-            solution->state = -6;
-          } else {
-            solve(cholmanager, solution->searchDir);
-            smax = 1.0 / objective->beta;
-            jjA = objective->nvar + 1;
-            i = qrmanager->mrows;
-            for (ix = jjA; ix <= i; ix++) {
-              solution->searchDir[ix - 1] *= smax;
+            cholmanager->info = xpotrf(objective->nvar, cholmanager->FMat);
+            if (cholmanager->info != 0) {
+              solution->state = -6;
+            } else {
+              double smax;
+              int i;
+              solve(cholmanager, solution->searchDir);
+              smax = 1.0 / objective->beta;
+              jjA = objective->nvar + 1;
+              i = qrmanager->mrows;
+              for (ix = jjA; ix <= i; ix++) {
+                solution->searchDir[ix - 1] *= smax;
+              }
             }
           }
         }
         break;
       }
     } else {
+      int nullStartIdx_tmp;
       nullStartIdx_tmp = 31 * qrmanager->ncols + 1;
       if (objective->objtype == 5) {
         for (idx = 0; idx < mNull_tmp; idx++) {
@@ -3635,11 +3518,13 @@ static void compute_deltax(const double H[225], i_struct_T *solution, g_struct_T
         }
 
         if (qrmanager->mrows != 0) {
+          int i;
           memset(&solution->searchDir[0], 0, (unsigned int)(nVar_tmp + 1) *
                  sizeof(double));
           ix = 0;
           i = nullStartIdx_tmp + 31 * (mNull_tmp - 1);
           for (jjA = nullStartIdx_tmp; jjA <= i; jjA += 31) {
+            int nVars;
             nVars = jjA + nVar_tmp;
             for (idx = jjA; idx <= nVars; idx++) {
               jA = idx - jjA;
@@ -3651,6 +3536,9 @@ static void compute_deltax(const double H[225], i_struct_T *solution, g_struct_T
           }
         }
       } else {
+        double smax;
+        int i;
+        int nVars;
         if (objective->objtype == 3) {
           xgemm(qrmanager->mrows, mNull_tmp, qrmanager->mrows, H,
                 qrmanager->mrows, qrmanager->Q, nullStartIdx_tmp,
@@ -3684,6 +3572,7 @@ static void compute_deltax(const double H[225], i_struct_T *solution, g_struct_T
           if (mNull_tmp > 1) {
             smax = fabs(cholmanager->FMat[0]);
             for (ix = 2; ix <= mNull_tmp; ix++) {
+              double s;
               s = fabs(cholmanager->FMat[(ix - 1) << 5]);
               if (s > smax) {
                 nVars = ix - 1;
@@ -3692,17 +3581,12 @@ static void compute_deltax(const double H[225], i_struct_T *solution, g_struct_T
             }
           }
 
-          smax = fabs(cholmanager->FMat[nVars + 31 * nVars]) *
-            2.2204460492503131E-16;
-          if (smax >= 0.0) {
-            cholmanager->regTol_ = smax;
-          } else {
-            cholmanager->regTol_ = 0.0;
-          }
-
+          cholmanager->regTol_ = fmax(fabs(cholmanager->FMat[nVars + 31 * nVars])
+            * 2.2204460492503131E-16, 0.0);
           fullColLDL2_(cholmanager, mNull_tmp);
           if (cholmanager->ConvexCheck) {
             idx = 0;
+            int exitg1;
             do {
               exitg1 = 0;
               if (idx <= mNull_tmp - 1) {
@@ -3827,11 +3711,11 @@ static void compute_deltax(const double H[225], i_struct_T *solution, g_struct_T
 static void countsort(int x[31], int xLen, int workspace[31], int xMin, int xMax)
 {
   int idx;
-  int idxEnd;
   int idxFill;
-  int idxStart;
-  int maxOffset;
   if ((xLen > 1) && (xMax > xMin)) {
+    int idxEnd;
+    int idxStart;
+    int maxOffset;
     idxStart = xMax - xMin;
     if (idxStart >= 0) {
       memset(&workspace[0], 0, (unsigned int)(idxStart + 1) * sizeof(int));
@@ -3866,19 +3750,11 @@ static void countsort(int x[31], int xLen, int workspace[31], int xMin, int xMax
 
 static void deleteColMoveEnd(e_struct_T *obj, int idx)
 {
-  double c;
   double s;
-  double temp;
   double temp_tmp;
-  int QRk0;
-  int b_i;
   int b_k;
-  int b_temp_tmp;
-  int endIdx;
   int i;
   int k;
-  int n;
-  int u0;
   if (obj->usedPivoting) {
     i = 1;
     while ((i <= obj->ncols) && (obj->jpvt[i - 1] != idx)) {
@@ -3891,6 +3767,8 @@ static void deleteColMoveEnd(e_struct_T *obj, int idx)
   if (idx >= obj->ncols) {
     obj->ncols--;
   } else {
+    int b_i;
+    int u0;
     b_i = obj->ncols - 1;
     obj->jpvt[idx - 1] = obj->jpvt[b_i];
     i = obj->minRowCol;
@@ -3907,6 +3785,12 @@ static void deleteColMoveEnd(e_struct_T *obj, int idx)
 
     obj->minRowCol = i;
     if (idx < obj->mrows) {
+      double c;
+      double temp;
+      int QRk0;
+      int b_temp_tmp;
+      int endIdx;
+      int n;
       u0 = obj->mrows - 1;
       endIdx = obj->ncols;
       if (u0 <= endIdx) {
@@ -3990,20 +3874,16 @@ static int div_nde_s32_floor(int numerator)
   return numerator / 31 + i;
 }
 
-static void driver(const double H[225], const double f[16], i_struct_T *solution,
-                   g_struct_T *memspace, j_struct_T *workingset, e_struct_T
+static void driver(const double H[225], const double f[16], g_struct_T *solution,
+                   d_struct_T *memspace, h_struct_T *workingset, e_struct_T
                    *qrmanager, f_struct_T *cholmanager, struct_T *objective,
-                   k_struct_T *options, int runTimeOptions_MaxIterations)
+                   i_struct_T *options, int runTimeOptions_MaxIterations)
 {
-  double maxConstr_new;
-  int PROBTYPE_ORIG;
-  int idxEndIneq_tmp_tmp;
   int idxStartIneq;
   int idx_global;
   int mConstr;
   int nVar_tmp;
-  boolean_T exitg1;
-  boolean_T guard1;
+  bool guard1;
   solution->iterations = 0;
   nVar_tmp = workingset->nVar;
   guard1 = false;
@@ -4045,6 +3925,8 @@ static void driver(const double H[225], const double f[16], i_struct_T *solution
     solution->iterations = 0;
     solution->maxConstr = b_maxConstraintViolation(workingset, solution->xstar);
     if (solution->maxConstr > 1.0E-6) {
+      int PROBTYPE_ORIG;
+      int idxEndIneq_tmp_tmp;
       PROBTYPE_ORIG = workingset->probType;
       solution->xstar[15] = solution->maxConstr + 1.0;
       if (workingset->probType == 3) {
@@ -4083,6 +3965,7 @@ static void driver(const double H[225], const double f[16], i_struct_T *solution
               runTimeOptions_MaxIterations);
       if (workingset->isActiveConstr[(workingset->isActiveIdx[3] +
            workingset->sizes[3]) - 2]) {
+        bool exitg1;
         idxStartIneq = workingset->sizes[0];
         exitg1 = false;
         while ((!exitg1) && (idxStartIneq + 1 <= workingset->nActiveConstr)) {
@@ -4120,6 +4003,7 @@ static void driver(const double H[225], const double f[16], i_struct_T *solution
           solution->state = -2;
         } else {
           if (solution->maxConstr > 0.0) {
+            double maxConstr_new;
             mConstr = (unsigned char)nVar_tmp;
             if (mConstr - 1 >= 0) {
               memcpy(&solution->searchDir[0], &solution->xstar[0], (unsigned int)
@@ -4150,7 +4034,7 @@ static void driver(const double H[225], const double f[16], i_struct_T *solution
   }
 }
 
-static double evalObjAndConstr(const d_struct_T *c_obj_next_next_next_next_next_,
+static double evalObjAndConstr(const c_struct_T *c_obj_next_next_next_next_next_,
   const double x[15], int *status)
 {
   double gradient_data[15];
@@ -4163,7 +4047,7 @@ static double evalObjAndConstr(const d_struct_T *c_obj_next_next_next_next_next_
   double dv_global_6;
   double fval;
   int gradient_size;
-  boolean_T b;
+  bool b;
   Alpha = x[12] * c_obj_next_next_next_next_next_->gain_theta->contents -
     c_obj_next_next_next_next_next_->flight_path_angle->contents;
   dv_global_1 = c_obj_next_next_next_next_next_->dv_global->contents[0];
@@ -4255,14 +4139,14 @@ static void factorQR(e_struct_T *obj, const double A[496], int mrows, int ncols)
 {
   int i;
   int idx;
-  int ix0;
-  int iy0;
   int k;
-  boolean_T guard1;
+  bool guard1;
   i = mrows * ncols;
   guard1 = false;
   if (i > 0) {
     for (idx = 0; idx < ncols; idx++) {
+      int ix0;
+      int iy0;
       ix0 = idx << 4;
       iy0 = 31 * idx;
       i = (unsigned char)mrows;
@@ -4302,75 +4186,26 @@ static void factorQR(e_struct_T *obj, const double A[496], int mrows, int ncols)
   }
 }
 
-static void factoryConstruct(d_struct_T *objfun_workspace, const double lb[15],
-  const double ub[15], h_struct_T *obj)
-{
-  int i;
-  boolean_T bv[15];
-  boolean_T b;
-  obj->objfun.workspace = *objfun_workspace;
-  obj->f_1 = 0.0;
-  obj->f_2 = 0.0;
-  obj->nVar = 15;
-  obj->mIneq = 0;
-  obj->mEq = 0;
-  obj->numEvals = 0;
-  obj->SpecifyObjectiveGradient = true;
-  obj->SpecifyConstraintGradient = false;
-  obj->isEmptyNonlcon = true;
-  obj->FiniteDifferenceType = 0;
-  for (i = 0; i < 15; i++) {
-    bv[i] = obj->hasUB[i];
-  }
-
-  b = false;
-  i = 0;
-  while ((!b) && (i + 1 <= 15)) {
-    obj->hasLB[i] = ((!rtIsInf(lb[i])) && (!rtIsNaN(lb[i])));
-    bv[i] = ((!rtIsInf(ub[i])) && (!rtIsNaN(ub[i])));
-    if (obj->hasLB[i] || bv[i]) {
-      b = true;
-    }
-
-    i++;
-  }
-
-  while (i + 1 <= 15) {
-    obj->hasLB[i] = ((!rtIsInf(lb[i])) && (!rtIsNaN(lb[i])));
-    bv[i] = ((!rtIsInf(ub[i])) && (!rtIsNaN(ub[i])));
-    i++;
-  }
-
-  for (i = 0; i < 15; i++) {
-    obj->hasUB[i] = bv[i];
-  }
-
-  obj->hasBounds = b;
-}
-
-static boolean_T feasibleX0ForWorkingSet(double workspace[496], double xCurrent
-  [16], const j_struct_T *workingset, e_struct_T *qrmanager)
+static bool feasibleX0ForWorkingSet(double workspace[496], double xCurrent[16],
+  const h_struct_T *workingset, e_struct_T *qrmanager)
 {
   double B[496];
-  double c;
-  double constrViolation_basicX;
   int b_i;
   int br;
-  int exitg1;
-  int i;
-  int i1;
-  int i2;
   int iAcol;
   int j;
   int jBcol;
   int k;
   int mWConstr;
   int nVar;
-  boolean_T nonDegenerateWset;
+  bool nonDegenerateWset;
   mWConstr = workingset->nActiveConstr;
   nVar = workingset->nVar;
   nonDegenerateWset = true;
   if (mWConstr != 0) {
+    double c;
+    int i;
+    int i1;
     for (iAcol = 0; iAcol < mWConstr; iAcol++) {
       c = workingset->bwset[iAcol];
       workspace[iAcol] = c;
@@ -4456,6 +4291,7 @@ static boolean_T feasibleX0ForWorkingSet(double workspace[496], double xCurrent
             workspace[i] = c / qrmanager->QR[k + iAcol];
             i1 = (unsigned char)(k - 1);
             for (b_i = 0; b_i < i1; b_i++) {
+              int i2;
               i2 = (b_i + jBcol) + 1;
               workspace[i2] -= workspace[i] * qrmanager->QR[(b_i + iAcol) + 1];
             }
@@ -4496,6 +4332,7 @@ static boolean_T feasibleX0ForWorkingSet(double workspace[496], double xCurrent
         i = br + 1;
         i1 = br + mWConstr;
         for (j = i; j <= i1; j++) {
+          int i2;
           i2 = b_i + 1;
           iAcol = b_i + nVar;
           for (k = i2; k <= iAcol; k++) {
@@ -4510,6 +4347,7 @@ static boolean_T feasibleX0ForWorkingSet(double workspace[496], double xCurrent
     }
 
     iAcol = 0;
+    int exitg1;
     do {
       exitg1 = 0;
       if (iAcol <= (unsigned char)nVar - 1) {
@@ -4526,6 +4364,7 @@ static boolean_T feasibleX0ForWorkingSet(double workspace[496], double xCurrent
           }
         }
       } else {
+        double constrViolation_basicX;
         iAcol = nVar - 1;
         for (k = 0; k <= iAcol; k++) {
           workspace[k] += xCurrent[k];
@@ -4554,9 +4393,9 @@ static double feasibleratiotest(const double solution_xstar[16], const double
   solution_searchDir[16], int workingset_nVar, const double workingset_lb[16],
   const double workingset_ub[16], const int workingset_indexLB[16], const int
   workingset_indexUB[16], const int workingset_sizes[5], const int
-  workingset_isActiveIdx[6], const boolean_T workingset_isActiveConstr[31],
-  const int workingset_nWConstr[5], boolean_T isPhaseOne, boolean_T *newBlocking,
-  int *constrType, int *constrIdx)
+  workingset_isActiveIdx[6], const bool workingset_isActiveConstr[31], const int
+  workingset_nWConstr[5], bool isPhaseOne, bool *newBlocking, int *constrType,
+  int *constrIdx)
 {
   double alpha;
   double denomTol;
@@ -4564,7 +4403,6 @@ static double feasibleratiotest(const double solution_xstar[16], const double
   double phaseOneCorrectionX;
   double pk_corrected;
   double ratio;
-  double u0;
   int i;
   int i1;
   int idx;
@@ -4587,12 +4425,7 @@ static double feasibleratiotest(const double solution_xstar[16], const double
            [(workingset_isActiveIdx[3] + idx) - 1])) {
         ratio = (-solution_xstar[i1 - 1] - workingset_lb[i1 - 1]) -
           phaseOneCorrectionX;
-        u0 = fabs(ratio);
-        if ((!(u0 <= 1.0E-6 - ratio)) && (!rtIsNaN(1.0E-6 - ratio))) {
-          u0 = 1.0E-6 - ratio;
-        }
-
-        pk_corrected = u0 / pk_corrected;
+        pk_corrected = fmin(fabs(ratio), 1.0E-6 - ratio) / pk_corrected;
         if (pk_corrected < alpha) {
           alpha = pk_corrected;
           *constrType = 4;
@@ -4607,12 +4440,7 @@ static double feasibleratiotest(const double solution_xstar[16], const double
     if ((pk_corrected > denomTol) && (!workingset_isActiveConstr
          [(workingset_isActiveIdx[3] + workingset_sizes[3]) - 2])) {
       ratio = -solution_xstar[i] - workingset_lb[i];
-      u0 = fabs(ratio);
-      if ((!(u0 <= 1.0E-6 - ratio)) && (!rtIsNaN(1.0E-6 - ratio))) {
-        u0 = 1.0E-6 - ratio;
-      }
-
-      pk_corrected = u0 / pk_corrected;
+      pk_corrected = fmin(fabs(ratio), 1.0E-6 - ratio) / pk_corrected;
       if (pk_corrected < alpha) {
         alpha = pk_corrected;
         *constrType = 4;
@@ -4635,12 +4463,7 @@ static double feasibleratiotest(const double solution_xstar[16], const double
            [(workingset_isActiveIdx[4] + idx) - 1])) {
         ratio = (solution_xstar[i1 - 1] - workingset_ub[i1 - 1]) -
           phaseOneCorrectionX;
-        u0 = fabs(ratio);
-        if ((!(u0 <= 1.0E-6 - ratio)) && (!rtIsNaN(1.0E-6 - ratio))) {
-          u0 = 1.0E-6 - ratio;
-        }
-
-        pk_corrected = u0 / pk_corrected;
+        pk_corrected = fmin(fabs(ratio), 1.0E-6 - ratio) / pk_corrected;
         if (pk_corrected < alpha) {
           alpha = pk_corrected;
           *constrType = 5;
@@ -4656,332 +4479,286 @@ static double feasibleratiotest(const double solution_xstar[16], const double
       *newBlocking = false;
     }
 
-    if (!(alpha <= 1.0)) {
-      alpha = 1.0;
-    }
+    alpha = fmin(alpha, 1.0);
   }
 
   return alpha;
 }
 
-static double fmincon(d_struct_T *fun_workspace, double x0[15], const double lb
-                      [15], const double ub[15], double *exitflag, double
-                      *output_iterations, double *output_funcCount, char
-                      output_algorithm[3], double *output_constrviolation,
-                      double *output_stepsize, double *output_lssteplength,
-                      double *output_firstorderopt)
+static double fmincon(c_struct_T *fun_workspace, const double x0[15], const
+                      double lb[15], const double ub[15], double x[15], double
+                      *exitflag, double *output_iterations, double
+                      *output_funcCount, char output_algorithm[3], double
+                      *output_constrviolation, double *output_stepsize, double
+                      *output_lssteplength, double *output_firstorderopt)
 {
   b_struct_T MeritFunction;
-  d_struct_T b_fun_workspace;
-  d_struct_T c_FcnEvaluator_next_next_next_n;
+  d_struct_T memspace;
   e_struct_T QRManager;
   f_struct_T CholManager;
-  g_struct_T memspace;
-  h_struct_T unusedExpr;
+  g_struct_T TrialState;
+  h_struct_T WorkingSet;
   i_coder_internal_stickyStruct r;
-  i_struct_T TrialState;
-  j_struct_T WorkingSet;
   struct_T QPObjective;
-  double Hessian[225];
-  double absxk;
   double fval;
   double scale;
-  double t;
   double y;
   int b_i;
+  int colOffsetATw;
   int i;
-  int idx;
   int mFixed;
   int mLB;
   int mUB;
   signed char b_obj_tmp[5];
   signed char obj_tmp[5];
-  signed char i1;
-  signed char i2;
-  boolean_T exitg1;
-  boolean_T guard1;
-  *exitflag = rtInf;
-  i = 0;
-  exitg1 = false;
-  while ((!exitg1) && (i < 15)) {
-    if (lb[i] > ub[i]) {
-      *exitflag = -2.0;
-      exitg1 = true;
-    } else {
-      i++;
-    }
+  output_algorithm[0] = 's';
+  output_algorithm[1] = 'q';
+  output_algorithm[2] = 'p';
+  TrialState.nVarMax = 16;
+  TrialState.mNonlinIneq = 0;
+  TrialState.mNonlinEq = 0;
+  TrialState.mIneq = 0;
+  TrialState.mEq = 0;
+  TrialState.iNonIneq0 = 1;
+  TrialState.iNonEq0 = 1;
+  TrialState.sqpFval_old = 0.0;
+  TrialState.sqpIterations = 0;
+  TrialState.sqpExitFlag = 0;
+  memset(&TrialState.lambdasqp[0], 0, 31U * sizeof(double));
+  TrialState.steplength = 1.0;
+  memset(&TrialState.delta_x[0], 0, 16U * sizeof(double));
+  TrialState.fstar = 0.0;
+  TrialState.firstorderopt = 0.0;
+  memset(&TrialState.lambda[0], 0, 31U * sizeof(double));
+  TrialState.state = 0;
+  TrialState.maxConstr = 0.0;
+  TrialState.iterations = 0;
+  memcpy(&TrialState.xstarsqp[0], &x0[0], 15U * sizeof(double));
+  WorkingSet.nVar = 15;
+  WorkingSet.nVarOrig = 15;
+  WorkingSet.nVarMax = 16;
+  WorkingSet.ldA = 16;
+  memset(&WorkingSet.lb[0], 0, 16U * sizeof(double));
+  memset(&WorkingSet.ub[0], 0, 16U * sizeof(double));
+  WorkingSet.mEqRemoved = 0;
+  memset(&WorkingSet.ATwset[0], 0, 496U * sizeof(double));
+  WorkingSet.nActiveConstr = 0;
+  memset(&WorkingSet.bwset[0], 0, 31U * sizeof(double));
+  memset(&WorkingSet.maxConstrWorkspace[0], 0, 31U * sizeof(double));
+  memset(&WorkingSet.Wid[0], 0, 31U * sizeof(int));
+  memset(&WorkingSet.Wlocalidx[0], 0, 31U * sizeof(int));
+  for (i = 0; i < 31; i++) {
+    WorkingSet.isActiveConstr[i] = false;
   }
 
-  if (*exitflag == -2.0) {
-    fval = rtInf;
-    *output_iterations = 0.0;
-    *output_funcCount = 0.0;
-    output_algorithm[0] = 's';
-    output_algorithm[1] = 'q';
-    output_algorithm[2] = 'p';
-    *output_constrviolation = rtInf;
-    *output_stepsize = rtInf;
-    *output_lssteplength = rtInf;
-    *output_firstorderopt = rtInf;
-  } else {
-    TrialState.nVarMax = 16;
-    TrialState.mNonlinIneq = 0;
-    TrialState.mNonlinEq = 0;
-    TrialState.mIneq = 0;
-    TrialState.mEq = 0;
-    TrialState.iNonIneq0 = 1;
-    TrialState.iNonEq0 = 1;
-    TrialState.sqpFval_old = 0.0;
-    TrialState.sqpIterations = 0;
-    TrialState.sqpExitFlag = 0;
-    memset(&TrialState.lambdasqp[0], 0, 31U * sizeof(double));
-    TrialState.steplength = 1.0;
-    memset(&TrialState.delta_x[0], 0, 16U * sizeof(double));
-    TrialState.fstar = 0.0;
-    TrialState.firstorderopt = 0.0;
-    memset(&TrialState.lambda[0], 0, 31U * sizeof(double));
-    TrialState.state = 0;
-    TrialState.maxConstr = 0.0;
-    TrialState.iterations = 0;
-    memcpy(&TrialState.xstarsqp[0], &x0[0], 15U * sizeof(double));
-    c_FcnEvaluator_next_next_next_n = *fun_workspace;
-    b_fun_workspace = *fun_workspace;
-    factoryConstruct(&b_fun_workspace, lb, ub, &unusedExpr);
-    WorkingSet.nVar = 15;
-    WorkingSet.nVarOrig = 15;
-    WorkingSet.nVarMax = 16;
-    WorkingSet.ldA = 16;
-    memset(&WorkingSet.lb[0], 0, 16U * sizeof(double));
-    memset(&WorkingSet.ub[0], 0, 16U * sizeof(double));
-    WorkingSet.mEqRemoved = 0;
-    memset(&WorkingSet.ATwset[0], 0, 496U * sizeof(double));
-    WorkingSet.nActiveConstr = 0;
-    memset(&WorkingSet.bwset[0], 0, 31U * sizeof(double));
-    memset(&WorkingSet.maxConstrWorkspace[0], 0, 31U * sizeof(double));
-    memset(&WorkingSet.Wid[0], 0, 31U * sizeof(int));
-    memset(&WorkingSet.Wlocalidx[0], 0, 31U * sizeof(int));
-    for (i = 0; i < 31; i++) {
-      WorkingSet.isActiveConstr[i] = false;
-    }
+  for (i = 0; i < 5; i++) {
+    WorkingSet.nWConstr[i] = 0;
+  }
 
-    for (i = 0; i < 5; i++) {
-      WorkingSet.nWConstr[i] = 0;
-    }
-
-    WorkingSet.probType = 3;
-    WorkingSet.SLACK0 = 1.0E-5;
-    memset(&WorkingSet.indexLB[0], 0, 16U * sizeof(int));
-    memset(&WorkingSet.indexUB[0], 0, 16U * sizeof(int));
-    memset(&WorkingSet.indexFixed[0], 0, 16U * sizeof(int));
-    mLB = 0;
-    mUB = 0;
-    mFixed = 0;
-    for (idx = 0; idx < 15; idx++) {
-      y = lb[idx];
-      guard1 = false;
-      if ((!rtIsInf(y)) && (!rtIsNaN(y))) {
-        if (fabs(y - ub[idx]) < 1.0E-6) {
-          mFixed++;
-          WorkingSet.indexFixed[mFixed - 1] = idx + 1;
-        } else {
-          mLB++;
-          WorkingSet.indexLB[mLB - 1] = idx + 1;
-          guard1 = true;
-        }
+  WorkingSet.probType = 3;
+  WorkingSet.SLACK0 = 1.0E-5;
+  memset(&WorkingSet.indexLB[0], 0, 16U * sizeof(int));
+  memset(&WorkingSet.indexUB[0], 0, 16U * sizeof(int));
+  memset(&WorkingSet.indexFixed[0], 0, 16U * sizeof(int));
+  mLB = 0;
+  mUB = 0;
+  mFixed = 0;
+  for (colOffsetATw = 0; colOffsetATw < 15; colOffsetATw++) {
+    bool guard1;
+    y = lb[colOffsetATw];
+    guard1 = false;
+    if ((!rtIsInf(y)) && (!rtIsNaN(y))) {
+      if (fabs(y - ub[colOffsetATw]) < 1.0E-6) {
+        mFixed++;
+        WorkingSet.indexFixed[mFixed - 1] = colOffsetATw + 1;
       } else {
+        mLB++;
+        WorkingSet.indexLB[mLB - 1] = colOffsetATw + 1;
         guard1 = true;
       }
+    } else {
+      guard1 = true;
+    }
 
-      if (guard1) {
-        y = ub[idx];
-        if ((!rtIsInf(y)) && (!rtIsNaN(y))) {
-          mUB++;
-          WorkingSet.indexUB[mUB - 1] = idx + 1;
-        }
+    if (guard1) {
+      y = ub[colOffsetATw];
+      if ((!rtIsInf(y)) && (!rtIsNaN(y))) {
+        mUB++;
+        WorkingSet.indexUB[mUB - 1] = colOffsetATw + 1;
       }
     }
-
-    i = (mLB + mUB) + mFixed;
-    WorkingSet.mConstr = i;
-    WorkingSet.mConstrOrig = i;
-    WorkingSet.mConstrMax = 31;
-    obj_tmp[0] = (signed char)mFixed;
-    obj_tmp[1] = 0;
-    obj_tmp[2] = 0;
-    obj_tmp[3] = (signed char)mLB;
-    obj_tmp[4] = (signed char)mUB;
-    b_obj_tmp[0] = (signed char)mFixed;
-    b_obj_tmp[1] = 0;
-    b_obj_tmp[2] = 0;
-    b_obj_tmp[3] = (signed char)(mLB + 1);
-    b_obj_tmp[4] = (signed char)mUB;
-    WorkingSet.isActiveIdx[0] = 1;
-    WorkingSet.isActiveIdx[1] = mFixed;
-    WorkingSet.isActiveIdx[2] = 0;
-    WorkingSet.isActiveIdx[3] = 0;
-    WorkingSet.isActiveIdx[4] = mLB;
-    WorkingSet.isActiveIdx[5] = mUB;
-    for (i = 0; i < 5; i++) {
-      i1 = obj_tmp[i];
-      WorkingSet.sizes[i] = i1;
-      WorkingSet.sizesNormal[i] = i1;
-      i2 = b_obj_tmp[i];
-      WorkingSet.sizesPhaseOne[i] = i2;
-      WorkingSet.sizesRegularized[i] = i1;
-      WorkingSet.sizesRegPhaseOne[i] = i2;
-      WorkingSet.isActiveIdx[i + 1] += WorkingSet.isActiveIdx[i];
-    }
-
-    for (b_i = 0; b_i < 6; b_i++) {
-      WorkingSet.isActiveIdxNormal[b_i] = WorkingSet.isActiveIdx[b_i];
-    }
-
-    WorkingSet.isActiveIdxPhaseOne[0] = 1;
-    WorkingSet.isActiveIdxPhaseOne[1] = mFixed;
-    WorkingSet.isActiveIdxPhaseOne[2] = 0;
-    WorkingSet.isActiveIdxPhaseOne[3] = 0;
-    WorkingSet.isActiveIdxPhaseOne[4] = mLB + 1;
-    WorkingSet.isActiveIdxPhaseOne[5] = mUB;
-    for (i = 0; i < 5; i++) {
-      WorkingSet.isActiveIdxPhaseOne[i + 1] += WorkingSet.isActiveIdxPhaseOne[i];
-    }
-
-    for (b_i = 0; b_i < 6; b_i++) {
-      WorkingSet.isActiveIdxRegularized[b_i] = WorkingSet.isActiveIdx[b_i];
-      WorkingSet.isActiveIdxRegPhaseOne[b_i] =
-        WorkingSet.isActiveIdxPhaseOne[b_i];
-    }
-
-    for (idx = 0; idx < mLB; idx++) {
-      b_i = WorkingSet.indexLB[idx];
-      y = lb[b_i - 1];
-      scale = TrialState.xstarsqp[b_i - 1];
-      if ((scale >= y) || rtIsNaN(y)) {
-        TrialState.xstarsqp[b_i - 1] = scale;
-      } else {
-        TrialState.xstarsqp[b_i - 1] = y;
-      }
-    }
-
-    for (idx = 0; idx < mUB; idx++) {
-      b_i = WorkingSet.indexUB[idx];
-      y = ub[b_i - 1];
-      scale = TrialState.xstarsqp[b_i - 1];
-      if ((scale <= y) || rtIsNaN(y)) {
-        TrialState.xstarsqp[b_i - 1] = scale;
-      } else {
-        TrialState.xstarsqp[b_i - 1] = y;
-      }
-    }
-
-    for (idx = 0; idx < mFixed; idx++) {
-      b_i = WorkingSet.indexFixed[idx];
-      TrialState.xstarsqp[b_i - 1] = ub[b_i - 1];
-    }
-
-    TrialState.sqpFval = c_computeObjectiveAndUserGradie
-      (&c_FcnEvaluator_next_next_next_n, TrialState.xstarsqp, TrialState.grad,
-       &i);
-    TrialState.FunctionEvaluations = 1;
-    for (idx = 0; idx < mLB; idx++) {
-      WorkingSet.lb[WorkingSet.indexLB[idx] - 1] = -lb[WorkingSet.indexLB[idx] -
-        1] + x0[WorkingSet.indexLB[idx] - 1];
-    }
-
-    for (idx = 0; idx < mUB; idx++) {
-      WorkingSet.ub[WorkingSet.indexUB[idx] - 1] = ub[WorkingSet.indexUB[idx] -
-        1] - x0[WorkingSet.indexUB[idx] - 1];
-    }
-
-    for (idx = 0; idx < mFixed; idx++) {
-      y = ub[WorkingSet.indexFixed[idx] - 1] - x0[WorkingSet.indexFixed[idx] - 1];
-      WorkingSet.ub[WorkingSet.indexFixed[idx] - 1] = y;
-      WorkingSet.bwset[idx] = y;
-    }
-
-    setProblemType(&WorkingSet, 3);
-    i = WorkingSet.isActiveIdx[2];
-    for (idx = i; idx < 32; idx++) {
-      WorkingSet.isActiveConstr[idx - 1] = false;
-    }
-
-    WorkingSet.nWConstr[0] = WorkingSet.sizes[0];
-    WorkingSet.nWConstr[1] = 0;
-    WorkingSet.nWConstr[2] = 0;
-    WorkingSet.nWConstr[3] = 0;
-    WorkingSet.nWConstr[4] = 0;
-    WorkingSet.nActiveConstr = WorkingSet.nWConstr[0];
-    b_i = (unsigned char)WorkingSet.sizes[0];
-    for (mUB = 0; mUB < b_i; mUB++) {
-      WorkingSet.Wid[mUB] = 1;
-      WorkingSet.Wlocalidx[mUB] = mUB + 1;
-      WorkingSet.isActiveConstr[mUB] = true;
-      i = mUB << 4;
-      idx = WorkingSet.indexFixed[mUB];
-      if (idx - 2 >= 0) {
-        memset(&WorkingSet.ATwset[i], 0, (unsigned int)(((idx + i) - i) - 1) *
-               sizeof(double));
-      }
-
-      WorkingSet.ATwset[(WorkingSet.indexFixed[mUB] + i) - 1] = 1.0;
-      idx = WorkingSet.indexFixed[mUB] + 1;
-      mLB = WorkingSet.nVar;
-      if (idx <= mLB) {
-        memset(&WorkingSet.ATwset[(idx + i) + -1], 0, (unsigned int)((((mLB + i)
-                  - idx) - i) + 1) * sizeof(double));
-      }
-
-      WorkingSet.bwset[mUB] = WorkingSet.ub[WorkingSet.indexFixed[mUB] - 1];
-    }
-
-    MeritFunction.initFval = TrialState.sqpFval;
-    MeritFunction.penaltyParam = 1.0;
-    MeritFunction.threshold = 0.0001;
-    MeritFunction.nPenaltyDecreases = 0;
-    MeritFunction.linearizedConstrViol = 0.0;
-    MeritFunction.initConstrViolationEq = 0.0;
-    MeritFunction.initConstrViolationIneq = 0.0;
-    MeritFunction.phi = 0.0;
-    MeritFunction.phiPrimePlus = 0.0;
-    MeritFunction.phiFullStep = 0.0;
-    MeritFunction.feasRelativeFactor = 0.0;
-    MeritFunction.nlpPrimalFeasError = 0.0;
-    MeritFunction.nlpDualFeasError = 0.0;
-    MeritFunction.nlpComplError = 0.0;
-    MeritFunction.firstOrderOpt = 0.0;
-    MeritFunction.hasObjective = true;
-    r.next.next.next.next.next.next.next.next.value.workspace =
-      c_FcnEvaluator_next_next_next_n;
-    b_driver(lb, ub, &TrialState, &MeritFunction, &r, &memspace, &WorkingSet,
-             Hessian, &QRManager, &CholManager, &QPObjective);
-    fval = TrialState.sqpFval;
-    *exitflag = TrialState.sqpExitFlag;
-    *output_iterations = TrialState.sqpIterations;
-    *output_funcCount = TrialState.FunctionEvaluations;
-    output_algorithm[0] = 's';
-    output_algorithm[1] = 'q';
-    output_algorithm[2] = 'p';
-    *output_constrviolation = MeritFunction.nlpPrimalFeasError;
-    y = 0.0;
-    scale = 3.3121686421112381E-170;
-    for (i = 0; i < 15; i++) {
-      x0[i] = TrialState.xstarsqp[i];
-      absxk = fabs(TrialState.delta_x[i]);
-      if (absxk > scale) {
-        t = scale / absxk;
-        y = y * t * t + 1.0;
-        scale = absxk;
-      } else {
-        t = absxk / scale;
-        y += t * t;
-      }
-    }
-
-    *output_stepsize = scale * sqrt(y);
-    *output_lssteplength = TrialState.steplength;
-    *output_firstorderopt = MeritFunction.firstOrderOpt;
   }
 
+  i = (mLB + mUB) + mFixed;
+  WorkingSet.mConstr = i;
+  WorkingSet.mConstrOrig = i;
+  WorkingSet.mConstrMax = 31;
+  obj_tmp[0] = (signed char)mFixed;
+  obj_tmp[1] = 0;
+  obj_tmp[2] = 0;
+  obj_tmp[3] = (signed char)mLB;
+  obj_tmp[4] = (signed char)mUB;
+  b_obj_tmp[0] = (signed char)mFixed;
+  b_obj_tmp[1] = 0;
+  b_obj_tmp[2] = 0;
+  b_obj_tmp[3] = (signed char)(mLB + 1);
+  b_obj_tmp[4] = (signed char)mUB;
+  WorkingSet.isActiveIdx[0] = 1;
+  WorkingSet.isActiveIdx[1] = mFixed;
+  WorkingSet.isActiveIdx[2] = 0;
+  WorkingSet.isActiveIdx[3] = 0;
+  WorkingSet.isActiveIdx[4] = mLB;
+  WorkingSet.isActiveIdx[5] = mUB;
+  for (i = 0; i < 5; i++) {
+    signed char i1;
+    signed char i2;
+    i1 = obj_tmp[i];
+    WorkingSet.sizes[i] = i1;
+    WorkingSet.sizesNormal[i] = i1;
+    i2 = b_obj_tmp[i];
+    WorkingSet.sizesPhaseOne[i] = i2;
+    WorkingSet.sizesRegularized[i] = i1;
+    WorkingSet.sizesRegPhaseOne[i] = i2;
+    WorkingSet.isActiveIdx[i + 1] += WorkingSet.isActiveIdx[i];
+  }
+
+  for (b_i = 0; b_i < 6; b_i++) {
+    WorkingSet.isActiveIdxNormal[b_i] = WorkingSet.isActiveIdx[b_i];
+  }
+
+  WorkingSet.isActiveIdxPhaseOne[0] = 1;
+  WorkingSet.isActiveIdxPhaseOne[1] = mFixed;
+  WorkingSet.isActiveIdxPhaseOne[2] = 0;
+  WorkingSet.isActiveIdxPhaseOne[3] = 0;
+  WorkingSet.isActiveIdxPhaseOne[4] = mLB + 1;
+  WorkingSet.isActiveIdxPhaseOne[5] = mUB;
+  for (i = 0; i < 5; i++) {
+    WorkingSet.isActiveIdxPhaseOne[i + 1] += WorkingSet.isActiveIdxPhaseOne[i];
+  }
+
+  for (b_i = 0; b_i < 6; b_i++) {
+    WorkingSet.isActiveIdxRegularized[b_i] = WorkingSet.isActiveIdx[b_i];
+    WorkingSet.isActiveIdxRegPhaseOne[b_i] = WorkingSet.isActiveIdxPhaseOne[b_i];
+  }
+
+  for (colOffsetATw = 0; colOffsetATw < mLB; colOffsetATw++) {
+    b_i = WorkingSet.indexLB[colOffsetATw];
+    TrialState.xstarsqp[b_i - 1] = fmax(TrialState.xstarsqp[b_i - 1], lb[b_i - 1]);
+  }
+
+  for (colOffsetATw = 0; colOffsetATw < mUB; colOffsetATw++) {
+    b_i = WorkingSet.indexUB[colOffsetATw];
+    TrialState.xstarsqp[b_i - 1] = fmin(TrialState.xstarsqp[b_i - 1], ub[b_i - 1]);
+  }
+
+  for (colOffsetATw = 0; colOffsetATw < mFixed; colOffsetATw++) {
+    b_i = WorkingSet.indexFixed[colOffsetATw];
+    TrialState.xstarsqp[b_i - 1] = ub[b_i - 1];
+  }
+
+  TrialState.sqpFval = c_computeObjectiveAndUserGradie(fun_workspace,
+    TrialState.xstarsqp, TrialState.grad, &i);
+  TrialState.FunctionEvaluations = 1;
+  for (colOffsetATw = 0; colOffsetATw < mLB; colOffsetATw++) {
+    WorkingSet.lb[WorkingSet.indexLB[colOffsetATw] - 1] =
+      -lb[WorkingSet.indexLB[colOffsetATw] - 1] +
+      x0[WorkingSet.indexLB[colOffsetATw] - 1];
+  }
+
+  for (colOffsetATw = 0; colOffsetATw < mUB; colOffsetATw++) {
+    WorkingSet.ub[WorkingSet.indexUB[colOffsetATw] - 1] =
+      ub[WorkingSet.indexUB[colOffsetATw] - 1] -
+      x0[WorkingSet.indexUB[colOffsetATw] - 1];
+  }
+
+  for (colOffsetATw = 0; colOffsetATw < mFixed; colOffsetATw++) {
+    y = ub[WorkingSet.indexFixed[colOffsetATw] - 1] -
+      x0[WorkingSet.indexFixed[colOffsetATw] - 1];
+    WorkingSet.ub[WorkingSet.indexFixed[colOffsetATw] - 1] = y;
+    WorkingSet.bwset[colOffsetATw] = y;
+  }
+
+  setProblemType(&WorkingSet, 3);
+  i = WorkingSet.isActiveIdx[2];
+  for (colOffsetATw = i; colOffsetATw < 32; colOffsetATw++) {
+    WorkingSet.isActiveConstr[colOffsetATw - 1] = false;
+  }
+
+  WorkingSet.nWConstr[0] = WorkingSet.sizes[0];
+  WorkingSet.nWConstr[1] = 0;
+  WorkingSet.nWConstr[2] = 0;
+  WorkingSet.nWConstr[3] = 0;
+  WorkingSet.nWConstr[4] = 0;
+  WorkingSet.nActiveConstr = WorkingSet.nWConstr[0];
+  b_i = (unsigned char)WorkingSet.sizes[0];
+  for (i = 0; i < b_i; i++) {
+    WorkingSet.Wid[i] = 1;
+    WorkingSet.Wlocalidx[i] = i + 1;
+    WorkingSet.isActiveConstr[i] = true;
+    colOffsetATw = i << 4;
+    mLB = WorkingSet.indexFixed[i];
+    if (mLB - 2 >= 0) {
+      memset(&WorkingSet.ATwset[colOffsetATw], 0, (unsigned int)(((mLB +
+                colOffsetATw) - colOffsetATw) - 1) * sizeof(double));
+    }
+
+    WorkingSet.ATwset[(WorkingSet.indexFixed[i] + colOffsetATw) - 1] = 1.0;
+    mLB = WorkingSet.indexFixed[i] + 1;
+    mUB = WorkingSet.nVar;
+    if (mLB <= mUB) {
+      memset(&WorkingSet.ATwset[(mLB + colOffsetATw) + -1], 0, (unsigned int)
+             ((((mUB + colOffsetATw) - mLB) - colOffsetATw) + 1) * sizeof(double));
+    }
+
+    WorkingSet.bwset[i] = WorkingSet.ub[WorkingSet.indexFixed[i] - 1];
+  }
+
+  double Hessian[225];
+  MeritFunction.initFval = TrialState.sqpFval;
+  MeritFunction.penaltyParam = 1.0;
+  MeritFunction.threshold = 0.0001;
+  MeritFunction.nPenaltyDecreases = 0;
+  MeritFunction.linearizedConstrViol = 0.0;
+  MeritFunction.initConstrViolationEq = 0.0;
+  MeritFunction.initConstrViolationIneq = 0.0;
+  MeritFunction.phi = 0.0;
+  MeritFunction.phiPrimePlus = 0.0;
+  MeritFunction.phiFullStep = 0.0;
+  MeritFunction.feasRelativeFactor = 0.0;
+  MeritFunction.nlpPrimalFeasError = 0.0;
+  MeritFunction.nlpDualFeasError = 0.0;
+  MeritFunction.nlpComplError = 0.0;
+  MeritFunction.firstOrderOpt = 0.0;
+  MeritFunction.hasObjective = true;
+  r.next.next.next.next.next.next.next.next.value.workspace = *fun_workspace;
+  b_driver(lb, ub, &TrialState, &MeritFunction, &r, &memspace, &WorkingSet,
+           Hessian, &QRManager, &CholManager, &QPObjective);
+  fval = TrialState.sqpFval;
+  *exitflag = TrialState.sqpExitFlag;
+  *output_iterations = TrialState.sqpIterations;
+  *output_funcCount = TrialState.FunctionEvaluations;
+  *output_constrviolation = MeritFunction.nlpPrimalFeasError;
+  y = 0.0;
+  scale = 3.3121686421112381E-170;
+  for (i = 0; i < 15; i++) {
+    double absxk;
+    x[i] = TrialState.xstarsqp[i];
+    absxk = fabs(TrialState.delta_x[i]);
+    if (absxk > scale) {
+      double t;
+      t = scale / absxk;
+      y = y * t * t + 1.0;
+      scale = absxk;
+    } else {
+      double t;
+      t = absxk / scale;
+      y += t * t;
+    }
+  }
+
+  *output_stepsize = scale * sqrt(y);
+  *output_lssteplength = TrialState.steplength;
+  *output_firstorderopt = MeritFunction.firstOrderOpt;
   return fval;
 }
 
@@ -4997,14 +4774,15 @@ static double ft_1(const double ct[254], double gradient_data[], int
   double t455_tmp;
   double t455_tmp_tmp;
   double t456;
+  double t456_tmp;
   double t456_tmp_tmp;
   double t457;
-  double t457_tmp;
   double t457_tmp_tmp;
   double t458;
   double t458_tmp_tmp;
   double t471;
   double t472;
+  double t472_tmp;
   double t473;
   double t473_tmp;
   double t474;
@@ -5096,12 +4874,11 @@ static double ft_1(const double ct[254], double gradient_data[], int
   double t827;
   double t828;
   double t831;
-  double t832;
   double t834;
   double t835;
   double t836;
   double t837;
-  double t838;
+  double t839;
   double t841;
   double t842;
   double t858;
@@ -5136,22 +4913,22 @@ static double ft_1(const double ct[254], double gradient_data[], int
   t455 = t455_tmp * t443 * 3.1415926535897931 / 4.0;
   t456_tmp_tmp = t675 * ct[83] * ct[127];
   t677 = t456_tmp_tmp * ct[149];
-  t858 = t677 * ct[199] * ct[47];
-  t456 = t858 * t444 * 3.1415926535897931 / 4.0;
+  t456_tmp = t677 * ct[199] * ct[47];
+  t456 = t456_tmp * t444 * 3.1415926535897931 / 4.0;
   t457_tmp_tmp = t675 * ct[86] * ct[127];
   t678 = t457_tmp_tmp * ct[149];
-  t457_tmp = t678 * ct[200] * ct[47];
-  t457 = t457_tmp * t445 * 3.1415926535897931 / 4.0;
+  t858 = t678 * ct[200] * ct[47];
+  t457 = t858 * t445 * 3.1415926535897931 / 4.0;
   t458_tmp_tmp = t675 * ct[92] * ct[127];
   t675 = t458_tmp_tmp * ct[149];
   t835 = t675 * ct[203] * ct[47];
   t458 = t835 * t446 * 3.1415926535897931 / 4.0;
   t676 *= ct[184];
-  t832 = t676 * ct[194] * ct[47];
-  t471 = t832 * t443 * 3.1415926535897931 / 4.0;
+  t839 = t676 * ct[194] * ct[47];
+  t471 = t839 * t443 * 3.1415926535897931 / 4.0;
   t677 *= ct[190];
-  t838 = t677 * ct[195] * ct[47];
-  t472 = t838 * t444 * 3.1415926535897931 / 4.0;
+  t472_tmp = t677 * ct[195] * ct[47];
+  t472 = t472_tmp * t444 * 3.1415926535897931 / 4.0;
   t678 *= ct[191];
   t473_tmp = t678 * ct[196] * ct[47];
   t473 = t473_tmp * t445 * 3.1415926535897931 / 4.0;
@@ -5267,16 +5044,16 @@ static double ft_1(const double ct[254], double gradient_data[], int
   t675 = t672_tmp_tmp * ct[31] * ct[32] * ct[43] * ct[44] * ct[148];
   t590 = t675 * ct[199];
   t822 = (((t676 * ct[83] * ct[127] * ct[149] * ct[190] * ct[47] * t444 *
-            3.1415926535897931 / 4.0 + t858 * t580 * 3.1415926535897931 / 4.0) +
-           t675 * ct[190] * ct[47] * ct[66] * t576 * 3.1415926535897931 / 4.0) -
-          t590 * ct[47] * ct[70] * t576 * 3.1415926535897931 / 4.0) - ct[223];
+            3.1415926535897931 / 4.0 + t456_tmp * t580 * 3.1415926535897931 /
+            4.0) + t675 * ct[190] * ct[47] * ct[66] * t576 * 3.1415926535897931 /
+           4.0) - t590 * ct[47] * ct[70] * t576 * 3.1415926535897931 / 4.0) -
+    ct[223];
   t678 = t673_tmp_tmp * ct[31] * ct[32] * ct[43] * ct[44] * ct[148];
   t589 = t678 * ct[200];
   t823 = (((t676 * ct[86] * ct[127] * ct[149] * ct[191] * ct[47] * t445 *
-            3.1415926535897931 / 4.0 + t457_tmp * t581 * 3.1415926535897931 /
-            4.0) + t678 * ct[191] * ct[47] * ct[67] * t577 * 3.1415926535897931 /
-           4.0) - t589 * ct[47] * ct[71] * t577 * 3.1415926535897931 / 4.0) -
-    ct[224];
+            3.1415926535897931 / 4.0 + t858 * t581 * 3.1415926535897931 / 4.0) +
+           t678 * ct[191] * ct[47] * ct[67] * t577 * 3.1415926535897931 / 4.0) -
+          t589 * ct[47] * ct[71] * t577 * 3.1415926535897931 / 4.0) - ct[224];
   t677 = t674_tmp_tmp * ct[31] * ct[32] * ct[43] * ct[44] * ct[148];
   t588 = t677 * ct[203];
   t824 = (((t676 * ct[92] * ct[127] * ct[149] * ct[192] * ct[47] * t446 *
@@ -5286,12 +5063,12 @@ static double ft_1(const double ct[254], double gradient_data[], int
   t836 = ((t759 + t760) + t761) + t762;
   t837 = ((t763 + t764) + t765) + t766;
   t676 = ct[31] * ct[194];
-  t825 = (((t676 * t455 - t832 * t579 * 3.1415926535897931 / 4.0) + t676 * t591)
+  t825 = (((t676 * t455 - t839 * t579 * 3.1415926535897931 / 4.0) + t676 * t591)
           + t587 * ct[194] * ct[198] * ct[47] * ct[65] * t575 *
           3.1415926535897931 / 4.0) - ct[226];
   t676 = ct[31] * ct[195];
-  t826 = (((t676 * t456 - t838 * t580 * 3.1415926535897931 / 4.0) + t676 * t592)
-          + t675 * ct[195] * ct[199] * ct[47] * ct[66] * t576 *
+  t826 = (((t676 * t456 - t472_tmp * t580 * 3.1415926535897931 / 4.0) + t676 *
+           t592) + t675 * ct[195] * ct[199] * ct[47] * ct[66] * t576 *
           3.1415926535897931 / 4.0) - ct[228];
   t676 = ct[31] * ct[196];
   t827 = (((t676 * t457 - t473_tmp * t581 * 3.1415926535897931 / 4.0) + t676 *
@@ -5314,42 +5091,42 @@ static double ft_1(const double ct[254], double gradient_data[], int
           + t589 * ct[221] * ct[47] * ct[67] * t577 * 3.1415926535897931 / 4.0)
     - ct[233];
   t675 = ct[31] * ct[227];
-  t832 = (((t675 * t458 - t478_tmp * t582 * 3.1415926535897931 / 4.0) + t675 *
+  t446 = (((t675 * t458 - t478_tmp * t582 * 3.1415926535897931 / 4.0) + t675 *
            t594) + t588 * ct[227] * ct[47] * ct[68] * t578 * 3.1415926535897931 /
           4.0) - ct[234];
   t675 = ((t745 + t746) + t747) + t748;
-  t838 = ct[159] * t836;
-  t593 = ct[167] * t837;
+  t592 = ct[159] * t836;
+  t839 = ct[167] * t837;
+  t472_tmp = ct[159] * ct[160];
+  t593 = t472_tmp * t837;
   t473_tmp = ct[159] * ct[193];
   t841 = t473_tmp * t837;
   t594 = ct[160] * ct[167];
   t842 = t594 * t836;
   t834 = ct[160] * t675;
   t835 = ct[193] * t675;
-  t591 = ct[167] * ct[193];
-  t446 = -(t591 * t836);
-  t592 = ct[23] + ct[236] * ((((((((((ct[51] + ct[171]) + ct[80]) + ct[39] *
+  t591 = ct[23] + ct[236] * ((((((((((ct[51] + ct[171]) + ct[80]) + ct[39] *
     t745) + ct[39] * t746) + ct[39] * t747) + ct[39] * t748) + ct[38] * t763) +
     ct[38] * t764) - ct[37] * t765) - ct[37] * t766);
-  t444 = ct[20] + ct[251] * (((ct[84] + ct[115]) + t838) + t593);
+  t445 = ct[20] + ct[251] * (((ct[84] + ct[115]) + t592) + t839);
   t858 = ct[22] + ct[235] * (((((((((((ct[52] + ct[176]) + ct[78]) + ct[201]) +
     ct[36] * t763) + ct[36] * t766) + ct[39] * t759) + ct[39] * t760) + ct[39] *
     t761) + ct[39] * t762) - ct[36] * t764) - ct[36] * t765);
-  t445 = ct[159] * ct[160];
-  t457_tmp = t445 * t837;
   t476 = (ct[21] + ct[251] * (((((ct[94] + ct[117]) + ct[120]) + t835) + t842) -
-           t457_tmp)) - 9.81;
+           t593)) - 9.81;
   t477 = ct[24] - ct[237] * (((((((((ct[49] + ct[162]) + ct[36] * t745) + ct[36]
     * t748) - ct[36] * t746) - ct[36] * t747) + ct[37] * t761) + ct[37] * t762)
     - ct[38] * t759) - ct[38] * t760);
-  t474 = ct[19] - ct[251] * (((((ct[97] + ct[116]) + ct[118]) + t834) + t841) +
-    t446);
-  t478 = ct[17] * ct[246];
-  t676 = ct[7] - t478;
-  t587_tmp = ct[18] * ct[247];
-  t677 = ct[9] - t587_tmp;
-  t671_tmp_tmp = ct[16] * ct[250];
-  t678 = ct[15] - t671_tmp_tmp;
+  t478 = ct[167] * ct[193];
+  t587_tmp = t478 * t836;
+  t474 = ct[19] - ct[251] * (((((ct[97] + ct[116]) + ct[118]) + t834) + t841) -
+    t587_tmp);
+  t671_tmp_tmp = ct[17] * ct[246];
+  t676 = ct[7] - t671_tmp_tmp;
+  t672_tmp_tmp = ct[18] * ct[247];
+  t677 = ct[9] - t672_tmp_tmp;
+  t673_tmp_tmp = ct[16] * ct[250];
+  t678 = ct[15] - t673_tmp_tmp;
   t675 = ct[11] + ct[58];
   t589 = ct[12] + ct[58];
   t587 = ct[13] + ct[58];
@@ -5359,28 +5136,27 @@ static double ft_1(const double ct[254], double gradient_data[], int
   t672 = ct[27] + ct[60];
   t673 = ct[28] + ct[60];
   t475 = ct[35] * ct[99];
-  t672_tmp_tmp = ct[35] * ct[122];
-  t673_tmp_tmp = ct[35] * ct[124];
-  t674_tmp_tmp = ct[35] * ct[98];
-  t443 = ct[35] * ct[96];
-  t455_tmp = ct[35] * ct[125];
-  cost = (((((((((((((((((((ct[119] * (t477 * t477) + ct[110] * (t444 * t444)) +
-    ct[113] * (t592 * t592)) + ct[112] * (t858 * t858)) + ct[100] * (t474 * t474))
+  t674_tmp_tmp = ct[35] * ct[122];
+  t443 = ct[35] * ct[124];
+  t455_tmp = ct[35] * ct[98];
+  t444 = ct[35] * ct[96];
+  t456_tmp = ct[35] * ct[125];
+  cost = (((((((((((((((((((ct[119] * (t477 * t477) + ct[110] * (t445 * t445)) +
+    ct[113] * (t591 * t591)) + ct[112] * (t858 * t858)) + ct[100] * (t474 * t474))
                         + ct[111] * (t476 * t476)) + t475 * (t805 * t805)) +
                       t475 * (t806 * t806)) + t475 * (t807 * t807)) + t475 *
-                    (t808 * t808)) + t443 * (t676 * t676)) + t674_tmp_tmp *
-                  (t677 * t677)) + t455_tmp * (t678 * t678)) + t672_tmp_tmp *
-                (t675 * t675)) + t672_tmp_tmp * (t589 * t589)) + t672_tmp_tmp *
-              (t587 * t587)) + t672_tmp_tmp * (t588 * t588)) + t673_tmp_tmp *
-            (t590 * t590)) + t673_tmp_tmp * (t671 * t671)) + t673_tmp_tmp *
-          (t672 * t672)) + t673_tmp_tmp * (t673 * t673);
+                    (t808 * t808)) + t444 * (t676 * t676)) + t455_tmp * (t677 *
+    t677)) + t456_tmp * (t678 * t678)) + t674_tmp_tmp * (t675 * t675)) +
+               t674_tmp_tmp * (t589 * t589)) + t674_tmp_tmp * (t587 * t587)) +
+             t674_tmp_tmp * (t588 * t588)) + t443 * (t590 * t590)) + t443 *
+           (t671 * t671)) + t443 * (t672 * t672)) + t443 * (t673 * t673);
   *gradient_size = 15;
   t674 = ct[41] * ct[144];
   t809_tmp = ct[112] * ct[235] * t858;
   t471 = ct[8] * ct[44] * ct[95] * ct[253];
   t472 = ct[119] * ct[237] * t477;
-  t473 = ct[113] * ct[236] * t592;
-  t673 = ct[110] * ct[251] * t444;
+  t473 = ct[113] * ct[236] * t591;
+  t673 = ct[110] * ct[251] * t445;
   t672 = ct[111] * ct[251] * t476;
   t590 = ct[100] * ct[251] * t474;
   t671 = ct[126] - ct[143];
@@ -5397,8 +5173,8 @@ static double ft_1(const double ct[254], double gradient_data[], int
                     -0.020516396677824081) / 2.0) * 2.0) - t472 * (ct[36] * t809
     - ct[38] * t817) * 2.0) + t473 * (ct[38] * t813 + ct[39] * t809) * 2.0) +
                        t673 * (ct[159] * t817 + ct[167] * t813) * 2.0) + t672 *
-                      ((ct[193] * t809 - t445 * t813) + t594 * t817) * 2.0) -
-    t590 * ((ct[160] * t809 + t473_tmp * t813) - t591 * t817) * 2.0;
+                      ((ct[193] * t809 - t472_tmp * t813) + t594 * t817) * 2.0)
+    - t590 * ((ct[160] * t809 + t473_tmp * t813) - t478 * t817) * 2.0;
   t589 = ct[128] - ct[145];
   gradient_data[1] = (((((t475 * t806 * (t806_tmp * ct[64] * 3.1415926535897931 *
     (((-ct[163] * t589 + ct[132] * (ct[40] * ct[163] * 6.0 - ct[42] * ct[163] *
@@ -5413,8 +5189,8 @@ static double ft_1(const double ct[254], double gradient_data[], int
                     -0.020516396677824081) / 2.0) * 2.0) + t472 * (ct[36] * t810
     + ct[38] * t818) * 2.0) + t473 * (ct[38] * t814 + ct[39] * t810) * 2.0) +
                        t673 * (ct[159] * t818 + ct[167] * t814) * 2.0) + t672 *
-                      ((ct[193] * t810 - t445 * t814) + t594 * t818) * 2.0) -
-    t590 * ((ct[160] * t810 + t473_tmp * t814) - t591 * t818) * 2.0;
+                      ((ct[193] * t810 - t472_tmp * t814) + t594 * t818) * 2.0)
+    - t590 * ((ct[160] * t810 + t473_tmp * t814) - t478 * t818) * 2.0;
   t588 = ct[129] - ct[146];
   gradient_data[2] = (((((t475 * t807 * (t807_tmp * ct[64] * 3.1415926535897931 *
     (((-ct[164] * t588 + ct[133] * (ct[40] * ct[164] * 6.0 - ct[42] * ct[164] *
@@ -5423,8 +5199,8 @@ static double ft_1(const double ct[254], double gradient_data[], int
     3.1415926535897931 * 1.5) * -2.0 + t472 * (ct[36] * t811 - ct[37] * t819) *
     2.0) - t473 * (ct[37] * t815 - ct[39] * t811) * 2.0) - t809_tmp * (ct[36] *
     t815 - ct[39] * t819) * 2.0) + t673 * (ct[159] * t819 + ct[167] * t815) *
-                       2.0) + t672 * ((ct[193] * t811 - t445 * t815) + t594 *
-    t819) * 2.0) - t590 * ((ct[160] * t811 + t473_tmp * t815) - t591 * t819) *
+                       2.0) + t672 * ((ct[193] * t811 - t472_tmp * t815) + t594 *
+    t819) * 2.0) - t590 * ((ct[160] * t811 + t473_tmp * t815) - t478 * t819) *
     2.0;
   t587 = ct[130] - ct[147];
   gradient_data[3] = (((((t475 * t808 * (t808_tmp * ct[64] * 3.1415926535897931 *
@@ -5434,131 +5210,129 @@ static double ft_1(const double ct[254], double gradient_data[], int
     3.1415926535897931 * 1.5) * -2.0 - t472 * (ct[36] * t812 + ct[37] * t820) *
     2.0) - t473 * (ct[37] * t816 - ct[39] * t812) * 2.0) + t809_tmp * (ct[36] *
     t816 + ct[39] * t820) * 2.0) + t673 * (ct[159] * t820 + ct[167] * t816) *
-                       2.0) + t672 * ((ct[193] * t812 - t445 * t816) + t594 *
-    t820) * 2.0) - t590 * ((ct[160] * t812 + t473_tmp * t816) - t591 * t820) *
+                       2.0) + t672 * ((ct[193] * t812 - t472_tmp * t816) + t594 *
+    t820) * 2.0) - t590 * ((ct[160] * t812 + t473_tmp * t816) - t478 * t820) *
     2.0;
   t675 = ct[3] * ct[31];
   t676 = t675 * ct[184];
   t677 = ct[35] * ct[43] * ct[44];
   t678 = ct[31] * ct[95];
-  gradient_data[4] = ((((((t672_tmp_tmp * (ct[11] * 2.0 + ct[59]) - t809_tmp *
+  gradient_data[4] = ((((((t674_tmp_tmp * (ct[11] * 2.0 + ct[59]) - t809_tmp *
     ((ct[36] * t825 + ct[39] * t575) - t471 * ((((t675 * ct[198] *
     -0.01228634392023026 - ct[31] * ct[81] * ct[198] * 0.0075456152077779167) +
     t676 * ct[56] * 0.0046429750925043979) + t675 * ct[95] * ct[198] * ct[249] *
     0.020516396677824081) + t676 * ct[198] * ct[203] * 0.0078699742549041447) /
      2.0) * 2.0) - t472 * (ct[36] * t821 + ct[38] * t575) * 2.0) - t473 * (ct[38]
     * t825 - ct[39] * t821) * 2.0) - t673 * (ct[159] * t575 + ct[167] * t825) *
-                        2.0) + t672 * ((ct[193] * t821 + t445 * t825) - t594 *
-    t575) * 2.0) - t590 * ((ct[160] * t821 - t473_tmp * t825) + t591 * t575) *
+                        2.0) + t672 * ((ct[193] * t821 + t472_tmp * t825) - t594
+    * t575) * 2.0) - t590 * ((ct[160] * t821 - t473_tmp * t825) + t478 * t575) *
                       2.0) + t677 * ct[82] * ct[99] * ct[127] * ct[153] * ct[64]
     * t805 * 3.1415926535897931 * (((ct[166] * t671 - ct[131] * (ct[40] * ct[166]
     * 6.0 - ct[42] * ct[166] * 6.0)) - t674 * ct[166] * 3.0) + t678 * ct[238] *
     ct[248] * ct[46] * ct[47] * ct[62] * ct[65] * ct[69] * 6.0);
   t671 = ct[4] * ct[31];
   t676 = t671 * ct[190];
-  gradient_data[5] = ((((((t672_tmp_tmp * (ct[12] * 2.0 + ct[59]) - t809_tmp *
+  gradient_data[5] = ((((((t674_tmp_tmp * (ct[12] * 2.0 + ct[59]) - t809_tmp *
     ((-ct[36] * t826 + ct[39] * t579) + t471 * ((((t671 * ct[199] *
     -0.01228634392023026 - ct[31] * ct[83] * ct[199] * 0.0075456152077779167) +
     t676 * ct[55] * 0.0046429750925043979) + t671 * ct[95] * ct[199] * ct[249] *
     0.020516396677824081) + t676 * ct[199] * ct[200] * 0.0078699742549041447) /
      2.0) * 2.0) + t472 * (ct[36] * t822 - ct[38] * t579) * 2.0) - t473 * (ct[38]
     * t826 - ct[39] * t822) * 2.0) - t673 * (ct[159] * t579 + ct[167] * t826) *
-                        2.0) + t672 * ((ct[193] * t822 + t445 * t826) - t594 *
-    t579) * 2.0) - t590 * ((ct[160] * t822 - t473_tmp * t826) + t591 * t579) *
+                        2.0) + t672 * ((ct[193] * t822 + t472_tmp * t826) - t594
+    * t579) * 2.0) - t590 * ((ct[160] * t822 - t473_tmp * t826) + t478 * t579) *
                       2.0) + t677 * ct[85] * ct[99] * ct[127] * ct[153] * ct[64]
     * t806 * 3.1415926535897931 * (((ct[168] * t589 - ct[132] * (ct[40] * ct[168]
     * 6.0 - ct[42] * ct[168] * 6.0)) - t674 * ct[168] * 3.0) + t678 * ct[240] *
     ct[248] * ct[46] * ct[47] * ct[62] * ct[66] * ct[70] * 6.0);
   t589 = t671 * ct[191];
-  gradient_data[6] = (t672_tmp_tmp * (ct[13] * 2.0 + ct[59]) + t809_tmp * ((ct
+  gradient_data[6] = (t674_tmp_tmp * (ct[13] * 2.0 + ct[59]) + t809_tmp * ((ct
     [36] * t827 - ct[39] * t831) + t471 * (((t671 * rt_powd_snf(ct[191], 3.0) *
     0.0064381447596962606 - t589 * (ct[200] * ct[200]) * 0.012876289519392519) +
     t589 * ct[54] * 0.0039349871274520724) + t589 * ct[199] * ct[200] *
     0.0092859501850087959) / 2.0) * 2.0) + (((((t472 * (ct[36] * t823 + ct[37] *
     t831) * 2.0 + t473 * (ct[37] * t827 + ct[39] * t823) * 2.0) - t673 * (ct[159]
-    * t831 + ct[167] * t827) * 2.0) + t672 * ((ct[193] * t823 + t445 * t827) -
-    t594 * t831) * 2.0) - t590 * ((ct[160] * t823 - t473_tmp * t827) + t591 *
+    * t831 + ct[167] * t827) * 2.0) + t672 * ((ct[193] * t823 + t472_tmp * t827)
+    - t594 * t831) * 2.0) - t590 * ((ct[160] * t823 - t473_tmp * t827) + t478 *
     t831) * 2.0) + t677 * ct[91] * ct[99] * ct[127] * ct[153] * ct[64] * t807 *
     3.1415926535897931 * (((ct[169] * t588 - ct[133] * (ct[40] * ct[169] * 6.0 -
     ct[42] * ct[169] * 6.0)) - t674 * ct[169] * 3.0) + t678 * ct[242] * ct[248] *
     ct[46] * ct[47] * ct[62] * ct[67] * ct[71] * 6.0));
   t671 = t675 * ct[192];
-  gradient_data[7] = (t672_tmp_tmp * (ct[14] * 2.0 + ct[59]) - t809_tmp * ((ct
-    [36] * t828 + ct[39] * t832) + t471 * (((t675 * rt_powd_snf(ct[192], 3.0) *
+  gradient_data[7] = (t674_tmp_tmp * (ct[14] * 2.0 + ct[59]) - t809_tmp * ((ct
+    [36] * t828 + ct[39] * t446) + t471 * (((t675 * rt_powd_snf(ct[192], 3.0) *
     0.0064381447596962606 - t671 * (ct[203] * ct[203]) * 0.012876289519392519) +
     t671 * ct[53] * 0.0039349871274520724) + t671 * ct[198] * ct[203] *
     0.0092859501850087959) / 2.0) * 2.0) + (((((t472 * (ct[36] * t824 - ct[37] *
-    t832) * -2.0 + t473 * (ct[37] * t828 + ct[39] * t824) * 2.0) - t673 * (ct
-    [159] * t832 + ct[167] * t828) * 2.0) + t672 * ((ct[193] * t824 + t445 *
-    t828) - t594 * t832) * 2.0) - t590 * ((ct[160] * t824 - t473_tmp * t828) +
-    t591 * t832) * 2.0) + t677 * ct[93] * ct[99] * ct[127] * ct[153] * ct[64] *
+    t446) * -2.0 + t473 * (ct[37] * t828 + ct[39] * t824) * 2.0) - t673 * (ct
+    [159] * t446 + ct[167] * t828) * 2.0) + t672 * ((ct[193] * t824 + t472_tmp *
+    t828) - t594 * t446) * 2.0) - t590 * ((ct[160] * t824 - t473_tmp * t828) +
+    t478 * t446) * 2.0) + t677 * ct[93] * ct[99] * ct[127] * ct[153] * ct[64] *
     t808 * 3.1415926535897931 * (((ct[170] * t587 - ct[134] * (ct[40] * ct[170] *
     6.0 - ct[42] * ct[170] * 6.0)) - t674 * ct[170] * 3.0) + t678 * ct[244] *
     ct[248] * ct[46] * ct[47] * ct[62] * ct[68] * ct[72] * 6.0));
   t674 = ct[38] * ct[119] * ct[237];
   t471 = ct[38] * ct[113] * ct[236];
-  gradient_data[8] = (((((t673_tmp_tmp * (ct[25] * 2.0 + ct[61]) + t672 * (t594 *
-    t775 + t445 * t787) * 2.0) + t590 * (t591 * t775 + t473_tmp * t787) * 2.0) -
+  gradient_data[8] = (((((t443 * (ct[25] * 2.0 + ct[61]) + t672 * (t594 * t775 +
+    t472_tmp * t787) * 2.0) + t590 * (t478 * t775 + t473_tmp * t787) * 2.0) -
                         t809_tmp * (ct[36] * t787 - ct[39] * t775) * 2.0) + t673
                        * (ct[159] * t775 - ct[167] * t787) * 2.0) + t674 * t775 *
-                      t477 * 2.0) - t471 * t787 * t592 * 2.0;
-  gradient_data[9] = (((((t673_tmp_tmp * (ct[26] * 2.0 + ct[61]) + t672 * (t594 *
-    t776 + t445 * t788) * 2.0) + t590 * (t591 * t776 + t473_tmp * t788) * 2.0) +
+                      t477 * 2.0) - t471 * t787 * t591 * 2.0;
+  gradient_data[9] = (((((t443 * (ct[26] * 2.0 + ct[61]) + t672 * (t594 * t776 +
+    t472_tmp * t788) * 2.0) + t590 * (t478 * t776 + t473_tmp * t788) * 2.0) +
                         t809_tmp * (ct[36] * t788 + ct[39] * t776) * 2.0) + t673
                        * (ct[159] * t776 - ct[167] * t788) * 2.0) + t674 * t776 *
-                      t477 * 2.0) - t471 * t788 * t592 * 2.0;
+                      t477 * 2.0) - t471 * t788 * t591 * 2.0;
   t674 = ct[37] * ct[119] * ct[237];
   t471 = ct[37] * ct[113] * ct[236];
-  gradient_data[10] = (((((t673_tmp_tmp * (ct[27] * 2.0 + ct[61]) + t672 * (t594
-    * t777 + t445 * t789) * 2.0) + t590 * (t591 * t777 + t473_tmp * t789) * 2.0)
-    + t809_tmp * (ct[36] * t789 + ct[39] * t777) * 2.0) + t673 * (ct[159] * t777
-    - ct[167] * t789) * 2.0) - t674 * t777 * t477 * 2.0) + t471 * t789 * t592 *
+  gradient_data[10] = (((((t443 * (ct[27] * 2.0 + ct[61]) + t672 * (t594 * t777
+    + t472_tmp * t789) * 2.0) + t590 * (t478 * t777 + t473_tmp * t789) * 2.0) +
+    t809_tmp * (ct[36] * t789 + ct[39] * t777) * 2.0) + t673 * (ct[159] * t777 -
+    ct[167] * t789) * 2.0) - t674 * t777 * t477 * 2.0) + t471 * t789 * t591 *
     2.0;
-  gradient_data[11] = (((((t673_tmp_tmp * (ct[28] * 2.0 + ct[61]) + t672 * (t594
-    * t778 + t445 * t790) * 2.0) + t590 * (t591 * t778 + t473_tmp * t790) * 2.0)
-    - t809_tmp * (ct[36] * t790 - ct[39] * t778) * 2.0) + t673 * (ct[159] * t778
-    - ct[167] * t790) * 2.0) - t674 * t778 * t477 * 2.0) + t471 * t790 * t592 *
+  gradient_data[11] = (((((t443 * (ct[28] * 2.0 + ct[61]) + t672 * (t594 * t778
+    + t472_tmp * t790) * 2.0) + t590 * (t478 * t778 + t473_tmp * t790) * 2.0) -
+    t809_tmp * (ct[36] * t790 - ct[39] * t778) * 2.0) + t673 * (ct[159] * t778 -
+    ct[167] * t790) * 2.0) - t674 * t778 * t477 * 2.0) + t471 * t790 * t591 *
     2.0;
   t674 = ct[2] * ct[8] * ct[34] * ct[44] * ct[109] * ct[74] * ct[95];
-  gradient_data[12] = (((t674_tmp_tmp * (ct[9] * 2.0 - t587_tmp * 2.0) + t590 *
+  gradient_data[12] = (((t455_tmp * (ct[9] * 2.0 - t672_tmp_tmp * 2.0) + t590 *
     ((((((((ct[34] * ct[94] + ct[34] * ct[117]) + ct[34] * ct[120]) + ct[34] *
-          t835) + ct[34] * t842) + ct[34] * -t457_tmp) + ct[123] * ct[160]) +
+          t835) + ct[34] * t842) + ct[34] * -t593) + ct[123] * ct[160]) +
       t473_tmp * ct[121]) - t674 * ct[167] * ct[193] * ct[57]) * 2.0) - t673 *
                         (ct[121] * ct[167] + t674 * ct[159] * ct[57]) * 2.0) +
                        t672 * ((((((((ct[34] * ct[116] + ct[34] * ct[118]) + ct
-    [34] * t834) + ct[34] * t841) + ct[34] * t446) - ct[123] * ct[193]) + t445 *
-    ct[121]) - ct[8] * ct[34] * ct[44] * ct[109] * ct[95] * ct[167] * ct[193] *
-    ct[79] / 2.0) - t674 * ct[160] * ct[167] * ct[57]) * 2.0) - ct[1] * ct[8] *
-    ct[34] * ct[44] * ct[95] * ct[113] * ct[236] * t592 * ct[252];
+    [34] * t834) + ct[34] * t841) + ct[34] * -t587_tmp) - ct[123] * ct[193]) +
+    t472_tmp * ct[121]) - ct[8] * ct[34] * ct[44] * ct[109] * ct[95] * ct[167] *
+    ct[193] * ct[79] / 2.0) - t674 * ct[160] * ct[167] * ct[57]) * 2.0) - ct[1] *
+    ct[8] * ct[34] * ct[44] * ct[95] * ct[113] * ct[236] * t591 * ct[252];
   t674 = ct[33] * ct[159];
   t809_tmp = ct[33] * ct[160];
   t471 = ct[33] * ct[193];
-  gradient_data[13] = ((t443 * (ct[7] * 2.0 - t478 * 2.0) + t673 * (((t674 * ct
-    [114] + t674 * t837) - ct[33] * ct[167] * t836) - ct[8] * ct[33] * ct[44] *
-    ct[109] * ct[95] * ct[167] * ct[79] / 2.0) * 2.0) + t672 * (((t809_tmp * ct
-    [84] + t809_tmp * ct[115]) + t809_tmp * t838) + t809_tmp * t593) * 2.0) +
-    t590 * (((t471 * ct[84] + t471 * ct[115]) + t471 * t838) + t471 * t593) *
-    2.0;
-  gradient_data[14] = t455_tmp * (ct[15] * 2.0 - t671_tmp_tmp * 2.0) - ct[0] *
+  gradient_data[13] = ((t444 * (ct[7] * 2.0 - t671_tmp_tmp * 2.0) + t673 *
+                        (((t674 * ct[114] + t674 * t837) - ct[33] * ct[167] *
+    t836) - ct[8] * ct[33] * ct[44] * ct[109] * ct[95] * ct[167] * ct[79] / 2.0)
+                        * 2.0) + t672 * (((t809_tmp * ct[84] + t809_tmp * ct[115])
+    + t809_tmp * t592) + t809_tmp * t839) * 2.0) + t590 * (((t471 * ct[84] +
+    t471 * ct[115]) + t471 * t592) + t471 * t839) * 2.0;
+  gradient_data[14] = t456_tmp * (ct[15] * 2.0 - t673_tmp_tmp * 2.0) - ct[0] *
     ct[8] * ct[29] * ct[44] * ct[95] * ct[112] * ct[235] * t858;
   return cost;
 }
 
 static void fullColLDL2_(f_struct_T *obj, int NColsRemain)
 {
-  double alpha1;
-  double temp;
-  double y;
-  int LD_diagOffset;
-  int i;
-  int i1;
   int ijA;
   int j;
   int jA;
   int k;
-  int offset1;
-  int subMatrixDim;
   for (k = 0; k < NColsRemain; k++) {
+    double alpha1;
+    double y;
+    int LD_diagOffset;
+    int i;
+    int offset1;
+    int subMatrixDim;
     LD_diagOffset = k << 5;
     alpha1 = -1.0 / obj->FMat[LD_diagOffset];
     subMatrixDim = (NColsRemain - k) - 2;
@@ -5573,6 +5347,8 @@ static void fullColLDL2_(f_struct_T *obj, int NColsRemain)
       jA = LD_diagOffset;
       for (j = 0; j <= subMatrixDim; j++) {
         if (y != 0.0) {
+          double temp;
+          int i1;
           temp = y * alpha1;
           i = jA + 33;
           i1 = subMatrixDim + jA;
@@ -5593,8 +5369,8 @@ static void fullColLDL2_(f_struct_T *obj, int NColsRemain)
   }
 }
 
-static void iterate(const double H[225], const double f[16], i_struct_T
-                    *solution, g_struct_T *memspace, j_struct_T *workingset,
+static void iterate(const double H[225], const double f[16], g_struct_T
+                    *solution, d_struct_T *memspace, h_struct_T *workingset,
                     e_struct_T *qrmanager, f_struct_T *cholmanager, struct_T
                     *objective, const char options_SolverName[7], double
                     options_StepTolerance, double options_ObjectiveLimit, int
@@ -5602,28 +5378,18 @@ static void iterate(const double H[225], const double f[16], i_struct_T
 {
   static const char b[7] = { 'f', 'm', 'i', 'n', 'c', 'o', 'n' };
 
-  double c;
-  double minLambda;
   double s;
   double temp;
   int TYPE;
   int activeSetChangeID;
-  int exitg1;
   int globalActiveConstrIdx;
   int i;
   int idx;
-  int idxQR;
-  int ix0;
   int iyend;
   int nActiveConstr;
   int nVar;
-  boolean_T b_guard1;
-  boolean_T b_guard2;
-  boolean_T guard1;
-  boolean_T guard2;
-  boolean_T nonDegenerateWset;
-  boolean_T subProblemChanged;
-  boolean_T updateFval;
+  bool subProblemChanged;
+  bool updateFval;
   subProblemChanged = true;
   updateFval = true;
   activeSetChangeID = 0;
@@ -5640,62 +5406,72 @@ static void iterate(const double H[225], const double f[16], i_struct_T
   }
 
   memset(&solution->lambda[0], 0, 31U * sizeof(double));
+  int exitg1;
   do {
     exitg1 = 0;
     if (solution->state == -5) {
+      double minLambda;
+      int idxQR;
+      int ix0;
+      bool guard1;
+      bool guard2;
       guard1 = false;
       guard2 = false;
       if (subProblemChanged) {
         switch (activeSetChangeID) {
          case 1:
-          ix0 = (workingset->nActiveConstr - 1) << 4;
-          iyend = qrmanager->mrows;
-          idxQR = qrmanager->ncols + 1;
-          if (iyend <= idxQR) {
-            idxQR = iyend;
-          }
-
-          qrmanager->minRowCol = idxQR;
-          idxQR = 31 * qrmanager->ncols;
-          if (qrmanager->mrows != 0) {
-            iyend = idxQR + qrmanager->mrows;
-            if (idxQR + 1 <= iyend) {
-              memset(&qrmanager->QR[idxQR], 0, (unsigned int)(iyend - idxQR) *
-                     sizeof(double));
+          {
+            double c;
+            ix0 = (workingset->nActiveConstr - 1) << 4;
+            iyend = qrmanager->mrows;
+            idxQR = qrmanager->ncols + 1;
+            if (iyend <= idxQR) {
+              idxQR = iyend;
             }
 
-            i = 31 * (qrmanager->mrows - 1) + 1;
-            for (iyend = 1; iyend <= i; iyend += 31) {
-              c = 0.0;
-              nActiveConstr = (iyend + qrmanager->mrows) - 1;
-              for (idx = iyend; idx <= nActiveConstr; idx++) {
-                c += qrmanager->Q[idx - 1] * workingset->ATwset[(ix0 + idx) -
-                  iyend];
+            qrmanager->minRowCol = idxQR;
+            idxQR = 31 * qrmanager->ncols;
+            if (qrmanager->mrows != 0) {
+              iyend = idxQR + qrmanager->mrows;
+              if (idxQR + 1 <= iyend) {
+                memset(&qrmanager->QR[idxQR], 0, (unsigned int)(iyend - idxQR) *
+                       sizeof(double));
               }
 
-              nActiveConstr = idxQR + div_nde_s32_floor(iyend - 1);
-              qrmanager->QR[nActiveConstr] += c;
-            }
-          }
+              i = 31 * (qrmanager->mrows - 1) + 1;
+              for (iyend = 1; iyend <= i; iyend += 31) {
+                c = 0.0;
+                nActiveConstr = (iyend + qrmanager->mrows) - 1;
+                for (idx = iyend; idx <= nActiveConstr; idx++) {
+                  c += qrmanager->Q[idx - 1] * workingset->ATwset[(ix0 + idx) -
+                    iyend];
+                }
 
-          qrmanager->ncols++;
-          i = qrmanager->ncols - 1;
-          qrmanager->jpvt[i] = qrmanager->ncols;
-          for (idx = qrmanager->mrows - 2; idx + 2 > qrmanager->ncols; idx--) {
-            nActiveConstr = idx + 31 * i;
-            temp = qrmanager->QR[nActiveConstr + 1];
-            c = xrotg(&qrmanager->QR[nActiveConstr], &temp, &s);
-            qrmanager->QR[nActiveConstr + 1] = temp;
-            iyend = 31 * idx;
-            ix0 = qrmanager->mrows;
-            if (qrmanager->mrows >= 1) {
-              for (nActiveConstr = 0; nActiveConstr < ix0; nActiveConstr++) {
-                idxQR = iyend + nActiveConstr;
-                minLambda = qrmanager->Q[idxQR + 31];
-                temp = c * qrmanager->Q[idxQR] + s * minLambda;
-                qrmanager->Q[idxQR + 31] = c * minLambda - s * qrmanager->
-                  Q[idxQR];
-                qrmanager->Q[idxQR] = temp;
+                nActiveConstr = idxQR + div_nde_s32_floor(iyend - 1);
+                qrmanager->QR[nActiveConstr] += c;
+              }
+            }
+
+            qrmanager->ncols++;
+            i = qrmanager->ncols - 1;
+            qrmanager->jpvt[i] = qrmanager->ncols;
+            for (idx = qrmanager->mrows - 2; idx + 2 > qrmanager->ncols; idx--)
+            {
+              nActiveConstr = idx + 31 * i;
+              temp = qrmanager->QR[nActiveConstr + 1];
+              c = xrotg(&qrmanager->QR[nActiveConstr], &temp, &s);
+              qrmanager->QR[nActiveConstr + 1] = temp;
+              iyend = 31 * idx;
+              ix0 = qrmanager->mrows;
+              if (qrmanager->mrows >= 1) {
+                for (nActiveConstr = 0; nActiveConstr < ix0; nActiveConstr++) {
+                  idxQR = iyend + nActiveConstr;
+                  minLambda = qrmanager->Q[idxQR + 31];
+                  temp = c * qrmanager->Q[idxQR] + s * minLambda;
+                  qrmanager->Q[idxQR + 31] = c * minLambda - s * qrmanager->
+                    Q[idxQR];
+                  qrmanager->Q[idxQR] = temp;
+                }
               }
             }
           }
@@ -5786,6 +5562,7 @@ static void iterate(const double H[225], const double f[16], i_struct_T
       if (guard2) {
         nActiveConstr = qrmanager->ncols;
         if (qrmanager->ncols > 0) {
+          bool b_guard1;
           b_guard1 = false;
           if (objective->objtype != 4) {
             minLambda = 100.0 * (double)qrmanager->mrows *
@@ -5797,6 +5574,7 @@ static void iterate(const double H[225], const double f[16], i_struct_T
             }
 
             if (updateFval) {
+              bool b_guard2;
               idx = qrmanager->ncols;
               b_guard2 = false;
               if (qrmanager->mrows < qrmanager->ncols) {
@@ -5911,6 +5689,7 @@ static void iterate(const double H[225], const double f[16], i_struct_T
           }
 
           if (minLambda > 1.0E-6) {
+            bool nonDegenerateWset;
             i = (unsigned char)objective->nvar;
             if (i - 1 >= 0) {
               memcpy(&solution->searchDir[0], &solution->xstar[0], (unsigned int)
@@ -5957,16 +5736,12 @@ static void iterate(const double H[225], const double f[16], i_struct_T
   } while (exitg1 == 0);
 }
 
-static void linearForm_(boolean_T obj_hasLinear, int obj_nvar, double workspace
-  [496], const double H[225], const double f[16], const double x[16])
+static void linearForm_(bool obj_hasLinear, int obj_nvar, double workspace[496],
+  const double H[225], const double f[16], const double x[16])
 {
-  double c;
   int beta1;
-  int i;
-  int i1;
   int ia;
   int iac;
-  int ix;
   beta1 = 0;
   if (obj_hasLinear) {
     beta1 = (unsigned char)obj_nvar;
@@ -5978,6 +5753,7 @@ static void linearForm_(boolean_T obj_hasLinear, int obj_nvar, double workspace
   }
 
   if (obj_nvar != 0) {
+    int ix;
     if (beta1 != 1) {
       beta1 = (unsigned char)obj_nvar;
       memset(&workspace[0], 0, (unsigned int)beta1 * sizeof(double));
@@ -5986,9 +5762,12 @@ static void linearForm_(boolean_T obj_hasLinear, int obj_nvar, double workspace
     ix = 0;
     beta1 = obj_nvar * (obj_nvar - 1) + 1;
     for (iac = 1; obj_nvar < 0 ? iac >= beta1 : iac <= beta1; iac += obj_nvar) {
+      double c;
+      int i;
       c = 0.5 * x[ix];
       i = (iac + obj_nvar) - 1;
       for (ia = iac; ia <= i; ia++) {
+        int i1;
         i1 = ia - iac;
         workspace[i1] += H[ia - 1] * c;
       }
@@ -5998,43 +5777,35 @@ static void linearForm_(boolean_T obj_hasLinear, int obj_nvar, double workspace
   }
 }
 
-static double maxConstraintViolation(const j_struct_T *obj, const double x[496],
+static double maxConstraintViolation(const h_struct_T *obj, const double x[496],
   int ix0)
 {
-  double u1;
   double v;
   int i;
   int idx;
-  int idxFixed;
+  int idxLB;
   v = 0.0;
   if (obj->sizes[3] > 0) {
     i = (unsigned char)obj->sizes[3];
     for (idx = 0; idx < i; idx++) {
-      u1 = -x[(ix0 + obj->indexLB[idx]) - 2] - obj->lb[obj->indexLB[idx] - 1];
-      if ((!(v >= u1)) && (!rtIsNaN(u1))) {
-        v = u1;
-      }
+      idxLB = obj->indexLB[idx] - 1;
+      v = fmax(v, -x[(ix0 + idxLB) - 1] - obj->lb[idxLB]);
     }
   }
 
   if (obj->sizes[4] > 0) {
     i = (unsigned char)obj->sizes[4];
     for (idx = 0; idx < i; idx++) {
-      u1 = x[(ix0 + obj->indexUB[idx]) - 2] - obj->ub[obj->indexUB[idx] - 1];
-      if ((!(v >= u1)) && (!rtIsNaN(u1))) {
-        v = u1;
-      }
+      idxLB = obj->indexUB[idx] - 1;
+      v = fmax(v, x[(ix0 + idxLB) - 1] - obj->ub[idxLB]);
     }
   }
 
   if (obj->sizes[0] > 0) {
     i = (unsigned char)obj->sizes[0];
     for (idx = 0; idx < i; idx++) {
-      idxFixed = obj->indexFixed[idx] - 1;
-      u1 = fabs(x[(ix0 + idxFixed) - 1] - obj->ub[idxFixed]);
-      if ((!(v >= u1)) && (!rtIsNaN(u1))) {
-        v = u1;
-      }
+      v = fmax(v, fabs(x[(ix0 + obj->indexFixed[idx]) - 2] - obj->ub
+                       [obj->indexFixed[idx] - 1]));
     }
   }
 
@@ -6069,15 +5840,15 @@ static void qrf(double A[961], int m, int n, int nfxd, double tau[31])
 {
   double work[31];
   double atmp;
-  double d;
   int b_i;
   int i;
-  int ii;
-  int mmi;
   memset(&tau[0], 0, 31U * sizeof(double));
   memset(&work[0], 0, 31U * sizeof(double));
   i = (unsigned char)nfxd;
   for (b_i = 0; b_i < i; b_i++) {
+    double d;
+    int ii;
+    int mmi;
     ii = b_i * 31 + b_i;
     mmi = m - b_i;
     if (b_i + 1 < m) {
@@ -6099,7 +5870,7 @@ static void qrf(double A[961], int m, int n, int nfxd, double tau[31])
   }
 }
 
-static void removeConstr(j_struct_T *obj, int idx_global)
+static void removeConstr(h_struct_T *obj, int idx_global)
 {
   int TYPE_tmp;
   int i;
@@ -6145,12 +5916,12 @@ static double rt_hypotd_snf(double u0, double u1)
 
 static double rt_powd_snf(double u0, double u1)
 {
-  double d;
-  double d1;
   double y;
   if (rtIsNaN(u0) || rtIsNaN(u1)) {
     y = rtNaN;
   } else {
+    double d;
+    double d1;
     d = fabs(u0);
     d1 = fabs(u1);
     if (rtIsInf(u1)) {
@@ -6189,14 +5960,11 @@ static double rt_powd_snf(double u0, double u1)
   return y;
 }
 
-static void setProblemType(j_struct_T *obj, int PROBLEM_TYPE)
+static void setProblemType(h_struct_T *obj, int PROBLEM_TYPE)
 {
   int i;
-  int i1;
   int idx;
-  int idxStartIneq;
   int idx_col;
-  int idx_lb;
   switch (PROBLEM_TYPE) {
    case 3:
     obj->nVar = 15;
@@ -6219,129 +5987,140 @@ static void setProblemType(j_struct_T *obj, int PROBLEM_TYPE)
     break;
 
    case 1:
-    obj->nVar = 16;
-    obj->mConstr = obj->mConstrOrig + 1;
-    for (i = 0; i < 5; i++) {
-      obj->sizes[i] = obj->sizesPhaseOne[i];
-    }
-
-    for (i = 0; i < 6; i++) {
-      obj->isActiveIdx[i] = obj->isActiveIdxPhaseOne[i];
-    }
-
-    i = (unsigned char)obj->sizes[0];
-    for (idx = 0; idx < i; idx++) {
-      obj->ATwset[(idx << 4) + 15] = 0.0;
-    }
-
-    obj->indexLB[obj->sizes[3] - 1] = 16;
-    obj->lb[15] = 1.0E-5;
-    idxStartIneq = obj->isActiveIdx[2];
-    i = obj->nActiveConstr;
-    for (idx = idxStartIneq; idx <= i; idx++) {
-      obj->ATwset[((idx - 1) << 4) + 15] = -1.0;
-    }
-
-    if (obj->nWConstr[4] > 0) {
-      i = (unsigned char)(obj->sizesNormal[4] + 1);
-      for (idx = 0; idx < i; idx++) {
-        obj->isActiveConstr[(obj->isActiveIdx[4] + idx) - 1] = false;
+    {
+      int idxStartIneq;
+      obj->nVar = 16;
+      obj->mConstr = obj->mConstrOrig + 1;
+      for (i = 0; i < 5; i++) {
+        obj->sizes[i] = obj->sizesPhaseOne[i];
       }
-    }
 
-    obj->isActiveConstr[obj->isActiveIdx[4] - 2] = false;
-    break;
+      for (i = 0; i < 6; i++) {
+        obj->isActiveIdx[i] = obj->isActiveIdxPhaseOne[i];
+      }
 
-   case 2:
-    obj->nVar = 15;
-    obj->mConstr = 30;
-    for (i = 0; i < 5; i++) {
-      obj->sizes[i] = obj->sizesRegularized[i];
-    }
+      i = (unsigned char)obj->sizes[0];
+      for (idx = 0; idx < i; idx++) {
+        obj->ATwset[(idx << 4) + 15] = 0.0;
+      }
 
-    if (obj->probType != 4) {
-      idx_lb = 15;
-      i = obj->sizesNormal[3] + 1;
-      i1 = obj->sizesRegularized[3];
-      for (idx = i; idx <= i1; idx++) {
-        idx_lb++;
-        obj->indexLB[idx - 1] = idx_lb;
+      obj->indexLB[obj->sizes[3] - 1] = 16;
+      obj->lb[15] = 1.0E-5;
+      idxStartIneq = obj->isActiveIdx[2];
+      i = obj->nActiveConstr;
+      for (idx = idxStartIneq; idx <= i; idx++) {
+        obj->ATwset[((idx - 1) << 4) + 15] = -1.0;
       }
 
       if (obj->nWConstr[4] > 0) {
-        i = (unsigned char)obj->sizesRegularized[4];
+        i = (unsigned char)(obj->sizesNormal[4] + 1);
         for (idx = 0; idx < i; idx++) {
-          obj->isActiveConstr[obj->isActiveIdxRegularized[4] + idx] =
-            obj->isActiveConstr[(obj->isActiveIdx[4] + idx) - 1];
+          obj->isActiveConstr[(obj->isActiveIdx[4] + idx) - 1] = false;
         }
       }
 
-      i = obj->isActiveIdx[4];
-      i1 = obj->isActiveIdxRegularized[4] - 1;
-      if (i <= i1) {
-        memset(&obj->isActiveConstr[i + -1], 0, (unsigned int)((i1 - i) + 1) *
-               sizeof(boolean_T));
-      }
-
-      idxStartIneq = obj->isActiveIdx[2];
-      i = obj->nActiveConstr;
-      for (idx_col = idxStartIneq; idx_col <= i; idx_col++) {
-        idx_lb = ((idx_col - 1) << 4) - 1;
-        if (obj->Wid[idx_col - 1] == 3) {
-          i1 = obj->Wlocalidx[idx_col - 1];
-          idx = i1 + 14;
-          if (idx >= 16) {
-            memset(&obj->ATwset[idx_lb + 16], 0, (unsigned int)(((idx + idx_lb)
-                     - idx_lb) - 15) * sizeof(double));
-          }
-
-          obj->ATwset[(i1 + idx_lb) + 15] = -1.0;
-          i1 += 16;
-          if (i1 <= 15) {
-            memset(&obj->ATwset[i1 + idx_lb], 0, (unsigned int)(((idx_lb - i1) -
-                     idx_lb) + 16) * sizeof(double));
-          }
-        }
-      }
+      obj->isActiveConstr[obj->isActiveIdx[4] - 2] = false;
     }
+    break;
 
-    for (i = 0; i < 6; i++) {
-      obj->isActiveIdx[i] = obj->isActiveIdxRegularized[i];
+   case 2:
+    {
+      obj->nVar = 15;
+      obj->mConstr = 30;
+      for (i = 0; i < 5; i++) {
+        obj->sizes[i] = obj->sizesRegularized[i];
+      }
+
+      if (obj->probType != 4) {
+        int i1;
+        int idxStartIneq;
+        int idx_lb;
+        idx_lb = 15;
+        i = obj->sizesNormal[3] + 1;
+        i1 = obj->sizesRegularized[3];
+        for (idx = i; idx <= i1; idx++) {
+          idx_lb++;
+          obj->indexLB[idx - 1] = idx_lb;
+        }
+
+        if (obj->nWConstr[4] > 0) {
+          i = (unsigned char)obj->sizesRegularized[4];
+          for (idx = 0; idx < i; idx++) {
+            obj->isActiveConstr[obj->isActiveIdxRegularized[4] + idx] =
+              obj->isActiveConstr[(obj->isActiveIdx[4] + idx) - 1];
+          }
+        }
+
+        i = obj->isActiveIdx[4];
+        i1 = obj->isActiveIdxRegularized[4] - 1;
+        if (i <= i1) {
+          memset(&obj->isActiveConstr[i + -1], 0, (unsigned int)((i1 - i) + 1) *
+                 sizeof(bool));
+        }
+
+        idxStartIneq = obj->isActiveIdx[2];
+        i = obj->nActiveConstr;
+        for (idx_col = idxStartIneq; idx_col <= i; idx_col++) {
+          idx_lb = ((idx_col - 1) << 4) - 1;
+          if (obj->Wid[idx_col - 1] == 3) {
+            i1 = obj->Wlocalidx[idx_col - 1];
+            idx = i1 + 14;
+            if (idx >= 16) {
+              memset(&obj->ATwset[idx_lb + 16], 0, (unsigned int)(((idx + idx_lb)
+                       - idx_lb) - 15) * sizeof(double));
+            }
+
+            obj->ATwset[(i1 + idx_lb) + 15] = -1.0;
+            i1 += 16;
+            if (i1 <= 15) {
+              memset(&obj->ATwset[i1 + idx_lb], 0, (unsigned int)(((idx_lb - i1)
+                       - idx_lb) + 16) * sizeof(double));
+            }
+          }
+        }
+      }
+
+      for (i = 0; i < 6; i++) {
+        obj->isActiveIdx[i] = obj->isActiveIdxRegularized[i];
+      }
     }
     break;
 
    default:
-    obj->nVar = 16;
-    obj->mConstr = 31;
-    for (i = 0; i < 5; i++) {
-      obj->sizes[i] = obj->sizesRegPhaseOne[i];
-    }
-
-    for (i = 0; i < 6; i++) {
-      obj->isActiveIdx[i] = obj->isActiveIdxRegPhaseOne[i];
-    }
-
-    i = (unsigned char)obj->sizes[0];
-    for (idx = 0; idx < i; idx++) {
-      obj->ATwset[(idx << 4) + 15] = 0.0;
-    }
-
-    obj->indexLB[obj->sizes[3] - 1] = 16;
-    obj->lb[15] = 1.0E-5;
-    idxStartIneq = obj->isActiveIdx[2];
-    i = obj->nActiveConstr;
-    for (idx = idxStartIneq; idx <= i; idx++) {
-      obj->ATwset[((idx - 1) << 4) + 15] = -1.0;
-    }
-
-    if (obj->nWConstr[4] > 0) {
-      i = (unsigned char)(obj->sizesNormal[4] + 1);
-      for (idx = 0; idx < i; idx++) {
-        obj->isActiveConstr[(obj->isActiveIdx[4] + idx) - 1] = false;
+    {
+      int idxStartIneq;
+      obj->nVar = 16;
+      obj->mConstr = 31;
+      for (i = 0; i < 5; i++) {
+        obj->sizes[i] = obj->sizesRegPhaseOne[i];
       }
-    }
 
-    obj->isActiveConstr[obj->isActiveIdx[4] - 2] = false;
+      for (i = 0; i < 6; i++) {
+        obj->isActiveIdx[i] = obj->isActiveIdxRegPhaseOne[i];
+      }
+
+      i = (unsigned char)obj->sizes[0];
+      for (idx = 0; idx < i; idx++) {
+        obj->ATwset[(idx << 4) + 15] = 0.0;
+      }
+
+      obj->indexLB[obj->sizes[3] - 1] = 16;
+      obj->lb[15] = 1.0E-5;
+      idxStartIneq = obj->isActiveIdx[2];
+      i = obj->nActiveConstr;
+      for (idx = idxStartIneq; idx <= i; idx++) {
+        obj->ATwset[((idx - 1) << 4) + 15] = -1.0;
+      }
+
+      if (obj->nWConstr[4] > 0) {
+        i = (unsigned char)(obj->sizesNormal[4] + 1);
+        for (idx = 0; idx < i; idx++) {
+          obj->isActiveConstr[(obj->isActiveIdx[4] + idx) - 1] = false;
+        }
+      }
+
+      obj->isActiveConstr[obj->isActiveIdx[4] - 2] = false;
+    }
     break;
   }
 
@@ -6350,15 +6129,14 @@ static void setProblemType(j_struct_T *obj, int PROBLEM_TYPE)
 
 static void solve(const f_struct_T *obj, double rhs[16])
 {
-  double temp;
   int i;
-  int ix;
   int j;
-  int jA;
   int n_tmp;
   n_tmp = obj->ndims;
   if (obj->ndims != 0) {
+    int jA;
     for (j = 0; j < n_tmp; j++) {
+      double temp;
       jA = j * 31;
       temp = rhs[j];
       for (i = 0; i < j; i++) {
@@ -6367,13 +6145,12 @@ static void solve(const f_struct_T *obj, double rhs[16])
 
       rhs[j] = temp / obj->FMat[jA + j];
     }
-  }
 
-  if (obj->ndims != 0) {
     for (j = n_tmp; j >= 1; j--) {
       jA = (j + (j - 1) * 31) - 1;
       rhs[j - 1] /= obj->FMat[jA];
       for (i = 0; i <= j - 2; i++) {
+        int ix;
         ix = (j - i) - 2;
         rhs[ix] -= rhs[j - 1] * obj->FMat[(jA - i) - 1];
       }
@@ -6385,10 +6162,10 @@ static void sortLambdaQP(double lambda[31], int WorkingSet_nActiveConstr, const
   int WorkingSet_sizes[5], const int WorkingSet_isActiveIdx[6], const int
   WorkingSet_Wid[31], const int WorkingSet_Wlocalidx[31], double workspace[496])
 {
-  int idx;
-  int idxOffset;
-  int mAll;
   if (WorkingSet_nActiveConstr != 0) {
+    int idx;
+    int idxOffset;
+    int mAll;
     mAll = (WorkingSet_sizes[0] + WorkingSet_sizes[3]) + WorkingSet_sizes[4];
     idx = (unsigned char)mAll;
     if (idx - 1 >= 0) {
@@ -6436,27 +6213,22 @@ static void sortLambdaQP(double lambda[31], int WorkingSet_nActiveConstr, const
   }
 }
 
-static boolean_T step(int *STEP_TYPE, double Hessian[225], const double lb[15],
-                      const double ub[15], i_struct_T *TrialState, b_struct_T
-                      *MeritFunction, g_struct_T *memspace, j_struct_T
-                      *WorkingSet, e_struct_T *QRManager, f_struct_T
-                      *CholManager, struct_T *QPObjective, k_struct_T *qpoptions)
+static bool step(int *STEP_TYPE, double Hessian[225], const double lb[15], const
+                 double ub[15], g_struct_T *TrialState, b_struct_T
+                 *MeritFunction, d_struct_T *memspace, h_struct_T *WorkingSet,
+                 e_struct_T *QRManager, f_struct_T *CholManager, struct_T
+                 *QPObjective, i_struct_T *qpoptions)
 {
-  k_struct_T b_qpoptions;
+  i_struct_T b_qpoptions;
   double dv[16];
-  double beta;
   double oldDirIdx;
   double s;
-  double u1;
-  int exitg1;
   int idxEndIneq_tmp_tmp;
   int idxStartIneq;
   int k;
   int nVar_tmp_tmp;
-  int temp;
-  boolean_T checkBoundViolation;
-  boolean_T guard1;
-  boolean_T stepSuccess;
+  bool checkBoundViolation;
+  bool stepSuccess;
   stepSuccess = true;
   checkBoundViolation = true;
   nVar_tmp_tmp = WorkingSet->nVar;
@@ -6472,7 +6244,10 @@ static boolean_T step(int *STEP_TYPE, double Hessian[225], const double lb[15],
     }
   }
 
+  int exitg1;
+  bool guard1;
   do {
+    int temp;
     exitg1 = 0;
     guard1 = false;
     switch (*STEP_TYPE) {
@@ -6485,11 +6260,7 @@ static boolean_T step(int *STEP_TYPE, double Hessian[225], const double lb[15],
         MeritFunction->phi = TrialState->sqpFval;
         MeritFunction->linearizedConstrViol = 0.0;
         MeritFunction->penaltyParam = 1.0;
-        if (TrialState->fstar <= 0.0) {
-          MeritFunction->phiPrimePlus = TrialState->fstar;
-        } else {
-          MeritFunction->phiPrimePlus = 0.0;
-        }
+        MeritFunction->phiPrimePlus = fmin(TrialState->fstar, 0.0);
       }
 
       sortLambdaQP(TrialState->lambda, WorkingSet->nActiveConstr,
@@ -6509,148 +6280,141 @@ static boolean_T step(int *STEP_TYPE, double Hessian[225], const double lb[15],
       break;
 
      case 2:
-      temp = WorkingSet->nWConstr[0] + WorkingSet->nWConstr[1];
-      idxStartIneq = temp + 1;
-      idxEndIneq_tmp_tmp = WorkingSet->nActiveConstr;
-      for (k = idxStartIneq; k <= idxEndIneq_tmp_tmp; k++) {
-        WorkingSet->isActiveConstr[(WorkingSet->isActiveIdx[WorkingSet->Wid[k -
-          1] - 1] + WorkingSet->Wlocalidx[k - 1]) - 2] = false;
-      }
-
-      WorkingSet->nWConstr[2] = 0;
-      WorkingSet->nWConstr[3] = 0;
-      WorkingSet->nWConstr[4] = 0;
-      WorkingSet->nActiveConstr = temp;
-      memcpy(&dv[0], &TrialState->xstar[0], 16U * sizeof(double));
-      idxEndIneq_tmp_tmp = (unsigned char)WorkingSet->sizes[3];
-      for (k = 0; k < idxEndIneq_tmp_tmp; k++) {
-        s = WorkingSet->lb[WorkingSet->indexLB[k] - 1];
-        if (-dv[WorkingSet->indexLB[k] - 1] > s) {
-          if (rtIsInf(ub[WorkingSet->indexLB[k] - 1])) {
-            dv[WorkingSet->indexLB[k] - 1] = -s + fabs(s);
-          } else {
-            dv[WorkingSet->indexLB[k] - 1] = (WorkingSet->ub[WorkingSet->
-              indexLB[k] - 1] - s) / 2.0;
-          }
+      {
+        double beta;
+        temp = WorkingSet->nWConstr[0] + WorkingSet->nWConstr[1];
+        idxStartIneq = temp + 1;
+        idxEndIneq_tmp_tmp = WorkingSet->nActiveConstr;
+        for (k = idxStartIneq; k <= idxEndIneq_tmp_tmp; k++) {
+          WorkingSet->isActiveConstr[(WorkingSet->isActiveIdx[WorkingSet->Wid[k
+            - 1] - 1] + WorkingSet->Wlocalidx[k - 1]) - 2] = false;
         }
-      }
 
-      idxEndIneq_tmp_tmp = (unsigned char)WorkingSet->sizes[4];
-      for (k = 0; k < idxEndIneq_tmp_tmp; k++) {
-        s = WorkingSet->ub[WorkingSet->indexUB[k] - 1];
-        if (dv[WorkingSet->indexUB[k] - 1] > s) {
-          if (rtIsInf(lb[WorkingSet->indexUB[k] - 1])) {
-            dv[WorkingSet->indexUB[k] - 1] = s - fabs(s);
-          } else {
-            dv[WorkingSet->indexUB[k] - 1] = (s - WorkingSet->lb
-              [WorkingSet->indexUB[k] - 1]) / 2.0;
-          }
-        }
-      }
-
-      memcpy(&TrialState->xstar[0], &dv[0], 16U * sizeof(double));
-      idxEndIneq_tmp_tmp = WorkingSet->nVar;
-      beta = 0.0;
-      idxStartIneq = (unsigned char)WorkingSet->nVar;
-      for (k = 0; k < idxStartIneq; k++) {
-        beta += Hessian[k + 15 * k];
-      }
-
-      beta /= (double)WorkingSet->nVar;
-      if (TrialState->sqpIterations <= 1) {
-        temp = QPObjective->nvar;
-        if (QPObjective->nvar < 1) {
-          idxStartIneq = 0;
-        } else {
-          idxStartIneq = 1;
-          if (QPObjective->nvar > 1) {
-            oldDirIdx = fabs(TrialState->grad[0]);
-            for (k = 2; k <= temp; k++) {
-              s = fabs(TrialState->grad[k - 1]);
-              if (s > oldDirIdx) {
-                idxStartIneq = k;
-                oldDirIdx = s;
-              }
+        WorkingSet->nWConstr[2] = 0;
+        WorkingSet->nWConstr[3] = 0;
+        WorkingSet->nWConstr[4] = 0;
+        WorkingSet->nActiveConstr = temp;
+        memcpy(&dv[0], &TrialState->xstar[0], 16U * sizeof(double));
+        idxEndIneq_tmp_tmp = (unsigned char)WorkingSet->sizes[3];
+        for (k = 0; k < idxEndIneq_tmp_tmp; k++) {
+          s = WorkingSet->lb[WorkingSet->indexLB[k] - 1];
+          if (-dv[WorkingSet->indexLB[k] - 1] > s) {
+            if (rtIsInf(ub[WorkingSet->indexLB[k] - 1])) {
+              dv[WorkingSet->indexLB[k] - 1] = -s + fabs(s);
+            } else {
+              dv[WorkingSet->indexLB[k] - 1] = (WorkingSet->ub
+                [WorkingSet->indexLB[k] - 1] - s) / 2.0;
             }
           }
         }
 
-        u1 = fabs(TrialState->grad[idxStartIneq - 1]);
-        if ((u1 <= 1.0) || rtIsNaN(u1)) {
-          u1 = 1.0;
-        }
-
-        s = 100.0 * u1;
-      } else {
-        temp = WorkingSet->mConstr;
-        if (WorkingSet->mConstr < 1) {
-          idxStartIneq = 0;
-        } else {
-          idxStartIneq = 1;
-          if (WorkingSet->mConstr > 1) {
-            oldDirIdx = fabs(TrialState->lambdasqp[0]);
-            for (k = 2; k <= temp; k++) {
-              s = fabs(TrialState->lambdasqp[k - 1]);
-              if (s > oldDirIdx) {
-                idxStartIneq = k;
-                oldDirIdx = s;
-              }
+        idxEndIneq_tmp_tmp = (unsigned char)WorkingSet->sizes[4];
+        for (k = 0; k < idxEndIneq_tmp_tmp; k++) {
+          s = WorkingSet->ub[WorkingSet->indexUB[k] - 1];
+          if (dv[WorkingSet->indexUB[k] - 1] > s) {
+            if (rtIsInf(lb[WorkingSet->indexUB[k] - 1])) {
+              dv[WorkingSet->indexUB[k] - 1] = s - fabs(s);
+            } else {
+              dv[WorkingSet->indexUB[k] - 1] = (s - WorkingSet->lb
+                [WorkingSet->indexUB[k] - 1]) / 2.0;
             }
           }
         }
 
-        s = fabs(TrialState->lambdasqp[idxStartIneq - 1]);
-      }
-
-      QPObjective->nvar = WorkingSet->nVar;
-      QPObjective->beta = beta;
-      QPObjective->rho = s;
-      QPObjective->hasLinear = true;
-      QPObjective->objtype = 4;
-      setProblemType(WorkingSet, 2);
-      temp = qpoptions->MaxIterations;
-      qpoptions->MaxIterations = (qpoptions->MaxIterations + WorkingSet->nVar) -
-        idxEndIneq_tmp_tmp;
-      memcpy(&dv[0], &TrialState->grad[0], 16U * sizeof(double));
-      b_qpoptions = *qpoptions;
-      driver(Hessian, dv, TrialState, memspace, WorkingSet, QRManager,
-             CholManager, QPObjective, &b_qpoptions, qpoptions->MaxIterations);
-      qpoptions->MaxIterations = temp;
-      if (TrialState->state != -6) {
-        s = (TrialState->fstar - s * 0.0) - beta / 2.0 * 0.0;
-        MeritFunction->phi = TrialState->sqpFval;
-        MeritFunction->linearizedConstrViol = 0.0;
-        MeritFunction->penaltyParam = 1.0;
-        if (s <= 0.0) {
-          MeritFunction->phiPrimePlus = s;
-        } else {
-          MeritFunction->phiPrimePlus = 0.0;
+        memcpy(&TrialState->xstar[0], &dv[0], 16U * sizeof(double));
+        idxEndIneq_tmp_tmp = WorkingSet->nVar;
+        beta = 0.0;
+        idxStartIneq = (unsigned char)WorkingSet->nVar;
+        for (k = 0; k < idxStartIneq; k++) {
+          beta += Hessian[k + 15 * k];
         }
 
-        temp = WorkingSet->isActiveIdx[2];
-        idxStartIneq = WorkingSet->nActiveConstr;
-        for (k = temp; k <= idxStartIneq; k++) {
-          if (WorkingSet->Wid[k - 1] == 3) {
-            TrialState->lambda[k - 1] *= (double)memspace->
-              workspace_int[WorkingSet->Wlocalidx[k - 1] - 1];
+        beta /= (double)WorkingSet->nVar;
+        if (TrialState->sqpIterations <= 1) {
+          temp = QPObjective->nvar;
+          if (QPObjective->nvar < 1) {
+            idxStartIneq = 0;
+          } else {
+            idxStartIneq = 1;
+            if (QPObjective->nvar > 1) {
+              oldDirIdx = fabs(TrialState->grad[0]);
+              for (k = 2; k <= temp; k++) {
+                s = fabs(TrialState->grad[k - 1]);
+                if (s > oldDirIdx) {
+                  idxStartIneq = k;
+                  oldDirIdx = s;
+                }
+              }
+            }
+          }
+
+          s = 100.0 * fmax(1.0, fabs(TrialState->grad[idxStartIneq - 1]));
+        } else {
+          temp = WorkingSet->mConstr;
+          if (WorkingSet->mConstr < 1) {
+            idxStartIneq = 0;
+          } else {
+            idxStartIneq = 1;
+            if (WorkingSet->mConstr > 1) {
+              oldDirIdx = fabs(TrialState->lambdasqp[0]);
+              for (k = 2; k <= temp; k++) {
+                s = fabs(TrialState->lambdasqp[k - 1]);
+                if (s > oldDirIdx) {
+                  idxStartIneq = k;
+                  oldDirIdx = s;
+                }
+              }
+            }
+          }
+
+          s = fabs(TrialState->lambdasqp[idxStartIneq - 1]);
+        }
+
+        QPObjective->nvar = WorkingSet->nVar;
+        QPObjective->beta = beta;
+        QPObjective->rho = s;
+        QPObjective->hasLinear = true;
+        QPObjective->objtype = 4;
+        setProblemType(WorkingSet, 2);
+        temp = qpoptions->MaxIterations;
+        qpoptions->MaxIterations = (qpoptions->MaxIterations + WorkingSet->nVar)
+          - idxEndIneq_tmp_tmp;
+        memcpy(&dv[0], &TrialState->grad[0], 16U * sizeof(double));
+        b_qpoptions = *qpoptions;
+        driver(Hessian, dv, TrialState, memspace, WorkingSet, QRManager,
+               CholManager, QPObjective, &b_qpoptions, qpoptions->MaxIterations);
+        qpoptions->MaxIterations = temp;
+        if (TrialState->state != -6) {
+          MeritFunction->phi = TrialState->sqpFval;
+          MeritFunction->linearizedConstrViol = 0.0;
+          MeritFunction->penaltyParam = 1.0;
+          MeritFunction->phiPrimePlus = fmin((TrialState->fstar - s * 0.0) -
+            beta / 2.0 * 0.0, 0.0);
+          temp = WorkingSet->isActiveIdx[2];
+          idxStartIneq = WorkingSet->nActiveConstr;
+          for (k = temp; k <= idxStartIneq; k++) {
+            if (WorkingSet->Wid[k - 1] == 3) {
+              TrialState->lambda[k - 1] *= (double)memspace->
+                workspace_int[WorkingSet->Wlocalidx[k - 1] - 1];
+            }
           }
         }
-      }
 
-      QPObjective->nvar = idxEndIneq_tmp_tmp;
-      QPObjective->hasLinear = true;
-      QPObjective->objtype = 3;
-      setProblemType(WorkingSet, 3);
-      sortLambdaQP(TrialState->lambda, WorkingSet->nActiveConstr,
-                   WorkingSet->sizes, WorkingSet->isActiveIdx, WorkingSet->Wid,
-                   WorkingSet->Wlocalidx, memspace->workspace_double);
-      idxEndIneq_tmp_tmp = (unsigned char)nVar_tmp_tmp;
-      if (idxEndIneq_tmp_tmp - 1 >= 0) {
-        memcpy(&TrialState->delta_x[0], &TrialState->xstar[0], (unsigned int)
-               idxEndIneq_tmp_tmp * sizeof(double));
-      }
+        QPObjective->nvar = idxEndIneq_tmp_tmp;
+        QPObjective->hasLinear = true;
+        QPObjective->objtype = 3;
+        setProblemType(WorkingSet, 3);
+        sortLambdaQP(TrialState->lambda, WorkingSet->nActiveConstr,
+                     WorkingSet->sizes, WorkingSet->isActiveIdx, WorkingSet->Wid,
+                     WorkingSet->Wlocalidx, memspace->workspace_double);
+        idxEndIneq_tmp_tmp = (unsigned char)nVar_tmp_tmp;
+        if (idxEndIneq_tmp_tmp - 1 >= 0) {
+          memcpy(&TrialState->delta_x[0], &TrialState->xstar[0], (unsigned int)
+                 idxEndIneq_tmp_tmp * sizeof(double));
+        }
 
-      guard1 = true;
+        guard1 = true;
+      }
       break;
 
      default:
@@ -6709,24 +6473,11 @@ static boolean_T step(int *STEP_TYPE, double Hessian[225], const double lb[15],
         oldDirIdx = 0.0;
         s = 1.0;
         for (k = 0; k < 15; k++) {
-          u1 = fabs(TrialState->grad[k]);
-          if ((!(oldDirIdx >= u1)) && (!rtIsNaN(u1))) {
-            oldDirIdx = u1;
-          }
-
-          u1 = fabs(TrialState->xstar[k]);
-          if ((!(s >= u1)) && (!rtIsNaN(u1))) {
-            s = u1;
-          }
+          oldDirIdx = fmax(oldDirIdx, fabs(TrialState->grad[k]));
+          s = fmax(s, fabs(TrialState->xstar[k]));
         }
 
-        u1 = oldDirIdx / s;
-        if ((u1 <= 2.2204460492503131E-16) || rtIsNaN(u1)) {
-          s = 2.2204460492503131E-16;
-        } else {
-          s = u1;
-        }
-
+        s = fmax(2.2204460492503131E-16, oldDirIdx / s);
         for (idxStartIneq = 0; idxStartIneq < 15; idxStartIneq++) {
           temp = 15 * idxStartIneq;
           for (k = 0; k < idxStartIneq; k++) {
@@ -6775,20 +6526,21 @@ static boolean_T step(int *STEP_TYPE, double Hessian[225], const double lb[15],
   return stepSuccess;
 }
 
-static boolean_T test_exit(b_struct_T *MeritFunction, const j_struct_T
-  *WorkingSet, i_struct_T *TrialState, const double lb[15], const double ub[15],
-  boolean_T *Flags_fevalOK, boolean_T *Flags_done, boolean_T *Flags_stepAccepted,
-  boolean_T *Flags_failedLineSearch, int *Flags_stepType)
+static bool test_exit(b_struct_T *MeritFunction, const h_struct_T *WorkingSet,
+                      g_struct_T *TrialState, const double lb[15], const double
+                      ub[15], bool *Flags_fevalOK, bool *Flags_done, bool
+                      *Flags_stepAccepted, bool *Flags_failedLineSearch, int
+                      *Flags_stepType)
 {
-  double feasError;
   double s;
   double smax;
   int i;
   int idx_max;
   int k;
   int nVar;
-  boolean_T Flags_gradOK;
-  boolean_T isFeasible;
+  bool Flags_gradOK;
+  bool exitg1;
+  bool isFeasible;
   *Flags_fevalOK = true;
   *Flags_done = false;
   *Flags_stepAccepted = false;
@@ -6822,46 +6574,44 @@ static boolean_T test_exit(b_struct_T *MeritFunction, const j_struct_T
     }
   }
 
-  smax = fabs(TrialState->grad[idx_max - 1]);
-  if ((smax <= 1.0) || rtIsNaN(smax)) {
-    s = 1.0;
-  } else {
-    s = smax;
-  }
-
+  s = fmax(1.0, fabs(TrialState->grad[idx_max - 1]));
   if (rtIsInf(s)) {
     s = 1.0;
   }
 
-  feasError = 0.0;
-  nVar = (unsigned char)WorkingSet->sizes[3];
-  for (idx_max = 0; idx_max < nVar; idx_max++) {
-    smax = lb[WorkingSet->indexLB[idx_max] - 1] - TrialState->
-      xstarsqp[WorkingSet->indexLB[idx_max] - 1];
-    if ((!(feasError >= smax)) && (!rtIsNaN(smax))) {
-      feasError = smax;
+  smax = 0.0;
+  idx_max = (unsigned char)WorkingSet->sizes[3];
+  for (k = 0; k < idx_max; k++) {
+    nVar = WorkingSet->indexLB[k] - 1;
+    smax = fmax(smax, lb[nVar] - TrialState->xstarsqp[nVar]);
+  }
+
+  idx_max = (unsigned char)WorkingSet->sizes[4];
+  for (k = 0; k < idx_max; k++) {
+    nVar = WorkingSet->indexUB[k] - 1;
+    smax = fmax(smax, TrialState->xstarsqp[nVar] - ub[nVar]);
+  }
+
+  MeritFunction->nlpPrimalFeasError = smax;
+  MeritFunction->feasRelativeFactor = fmax(1.0, smax);
+  isFeasible = (smax <= 1.0E-6 * MeritFunction->feasRelativeFactor);
+  Flags_gradOK = true;
+  smax = 0.0;
+  idx_max = (unsigned char)WorkingSet->nVar;
+  k = 0;
+  exitg1 = false;
+  while ((!exitg1) && (k <= idx_max - 1)) {
+    Flags_gradOK = ((!rtIsInf(TrialState->gradLag[k])) && (!rtIsNaN
+      (TrialState->gradLag[k])));
+    if (!Flags_gradOK) {
+      exitg1 = true;
+    } else {
+      smax = fmax(smax, fabs(TrialState->gradLag[k]));
+      k++;
     }
   }
 
-  nVar = (unsigned char)WorkingSet->sizes[4];
-  for (idx_max = 0; idx_max < nVar; idx_max++) {
-    smax = TrialState->xstarsqp[WorkingSet->indexUB[idx_max] - 1] -
-      ub[WorkingSet->indexUB[idx_max] - 1];
-    if ((!(feasError >= smax)) && (!rtIsNaN(smax))) {
-      feasError = smax;
-    }
-  }
-
-  MeritFunction->nlpPrimalFeasError = feasError;
-  if (feasError <= 1.0) {
-    MeritFunction->feasRelativeFactor = 1.0;
-  } else {
-    MeritFunction->feasRelativeFactor = feasError;
-  }
-
-  isFeasible = (feasError <= 1.0E-6 * MeritFunction->feasRelativeFactor);
-  Flags_gradOK = computeDualFeasError(WorkingSet->nVar, TrialState->gradLag,
-    &MeritFunction->nlpDualFeasError);
+  MeritFunction->nlpDualFeasError = smax;
   if (!Flags_gradOK) {
     *Flags_done = true;
     if (isFeasible) {
@@ -6871,18 +6621,13 @@ static boolean_T test_exit(b_struct_T *MeritFunction, const j_struct_T
     }
   } else {
     MeritFunction->nlpComplError = 0.0;
-    if (MeritFunction->nlpDualFeasError >= 0.0) {
-      MeritFunction->firstOrderOpt = MeritFunction->nlpDualFeasError;
-    } else {
-      MeritFunction->firstOrderOpt = 0.0;
-    }
-
+    MeritFunction->firstOrderOpt = smax;
     if (i - 1 >= 0) {
       memcpy(&TrialState->lambdaStopTestPrev[0], &TrialState->lambdaStopTest[0],
              (unsigned int)i * sizeof(double));
     }
 
-    if (isFeasible && (MeritFunction->nlpDualFeasError <= 1.0E-12 * s)) {
+    if (isFeasible && (smax <= 1.0E-12 * s)) {
       *Flags_done = true;
       TrialState->sqpExitFlag = 1;
     } else if (isFeasible && (TrialState->sqpFval < -1.0E+20)) {
@@ -6908,8 +6653,8 @@ static void tic(void)
 
 static void timeKeeper(double newTime_tv_sec, double newTime_tv_nsec)
 {
-  coderTimespec b_timespec;
   if (!savedTime_not_empty) {
+    coderTimespec b_timespec;
     if (!freq_not_empty) {
       freq_not_empty = true;
       coderInitTimeFunctions(&freq);
@@ -6921,11 +6666,6 @@ static void timeKeeper(double newTime_tv_sec, double newTime_tv_nsec)
 
   savedTime.tv_sec = newTime_tv_sec;
   savedTime.tv_nsec = newTime_tv_nsec;
-}
-
-static void timeKeeper_init(void)
-{
-  savedTime_not_empty = false;
 }
 
 static double toc(void)
@@ -6947,16 +6687,14 @@ static double toc(void)
 static void xgemm(int m, int n, int k, const double A[225], int lda, const
                   double B[961], int ib0, double C[496])
 {
-  int ar;
-  int br;
   int cr;
-  int i;
-  int i1;
-  int i2;
   int ib;
   int ic;
-  int lastColC;
   if ((m != 0) && (n != 0)) {
+    int br;
+    int i;
+    int i1;
+    int lastColC;
     br = ib0;
     lastColC = 31 * (n - 1);
     for (cr = 0; cr <= lastColC; cr += 31) {
@@ -6968,9 +6706,11 @@ static void xgemm(int m, int n, int k, const double A[225], int lda, const
     }
 
     for (cr = 0; cr <= lastColC; cr += 31) {
+      int ar;
       ar = -1;
       i = br + k;
       for (ib = br; ib < i; ib++) {
+        int i2;
         i1 = cr + 1;
         i2 = cr + m;
         for (ic = i1; ic <= i2; ic++) {
@@ -6988,20 +6728,20 @@ static void xgemm(int m, int n, int k, const double A[225], int lda, const
 static void xgemv(int m, int n, const double A[225], int lda, const double x[16],
                   double y[15])
 {
-  int i;
-  int i1;
-  int i2;
   int ia;
   int iac;
-  int ix;
   if ((m != 0) && (n != 0)) {
+    int i;
+    int ix;
     i = (unsigned char)m;
     memset(&y[0], 0, (unsigned int)i * sizeof(double));
     ix = 0;
     i = lda * (n - 1) + 1;
     for (iac = 1; lda < 0 ? iac >= i : iac <= i; iac += lda) {
+      int i1;
       i1 = (iac + m) - 1;
       for (ia = iac; ia <= i1; ia++) {
+        int i2;
         i2 = ia - iac;
         y[i2] += A[ia - 1] * x[ix];
       }
@@ -7016,22 +6756,11 @@ static void xgeqp3(double A[961], int m, int n, int jpvt[31], double tau[31])
   double vn1[31];
   double vn2[31];
   double work[31];
-  double d;
-  double s;
   double temp;
   int b_i;
-  int i;
-  int ii;
-  int ip1;
-  int ix;
-  int iy;
   int k;
   int minmn_tmp;
-  int mmi;
-  int nfxd;
-  int nmi;
   int pvt;
-  int temp_tmp;
   if (m <= n) {
     minmn_tmp = m;
   } else {
@@ -7044,6 +6773,11 @@ static void xgeqp3(double A[961], int m, int n, int jpvt[31], double tau[31])
       jpvt[pvt] = pvt + 1;
     }
   } else {
+    int i;
+    int ix;
+    int iy;
+    int nfxd;
+    int temp_tmp;
     nfxd = 0;
     for (pvt = 0; pvt < n; pvt++) {
       if (jpvt[pvt] != 0) {
@@ -7075,6 +6809,7 @@ static void xgeqp3(double A[961], int m, int n, int jpvt[31], double tau[31])
 
     qrf(A, m, n, nfxd, tau);
     if (nfxd < minmn_tmp) {
+      double d;
       memset(&work[0], 0, 31U * sizeof(double));
       memset(&vn1[0], 0, 31U * sizeof(double));
       memset(&vn2[0], 0, 31U * sizeof(double));
@@ -7086,6 +6821,11 @@ static void xgeqp3(double A[961], int m, int n, int jpvt[31], double tau[31])
       }
 
       for (b_i = i; b_i <= minmn_tmp; b_i++) {
+        double s;
+        int ii;
+        int ip1;
+        int mmi;
+        int nmi;
         ip1 = b_i + 1;
         iy = (b_i - 1) * 31;
         ii = (iy + b_i) - 1;
@@ -7175,26 +6915,27 @@ static void xgeqp3(double A[961], int m, int n, int jpvt[31], double tau[31])
 
 static double xnrm2(int n, const double x[961], int ix0)
 {
-  double absxk;
-  double scale;
-  double t;
   double y;
   int k;
-  int kend;
   y = 0.0;
   if (n >= 1) {
     if (n == 1) {
       y = fabs(x[ix0 - 1]);
     } else {
+      double scale;
+      int kend;
       scale = 3.3121686421112381E-170;
       kend = (ix0 + n) - 1;
       for (k = ix0; k <= kend; k++) {
+        double absxk;
         absxk = fabs(x[k - 1]);
         if (absxk > scale) {
+          double t;
           t = scale / absxk;
           y = y * t * t + 1.0;
           scale = absxk;
         } else {
+          double t;
           t = absxk / scale;
           y += t * t;
         }
@@ -7209,24 +6950,20 @@ static double xnrm2(int n, const double x[961], int ix0)
 
 static int xpotrf(int n, double A[961])
 {
-  double c;
-  double ssq;
-  int i;
-  int i1;
   int ia;
-  int ia0;
   int iac;
-  int idxA1j;
-  int idxAjj;
-  int idxAjjp1;
   int info;
   int j;
   int nmj;
-  boolean_T exitg1;
+  bool exitg1;
   info = 0;
   j = 0;
   exitg1 = false;
   while ((!exitg1) && (j <= n - 1)) {
+    double c;
+    double ssq;
+    int idxA1j;
+    int idxAjj;
     idxA1j = j * 31;
     idxAjj = idxA1j + j;
     ssq = 0.0;
@@ -7242,12 +6979,16 @@ static int xpotrf(int n, double A[961])
       ssq = sqrt(ssq);
       A[idxAjj] = ssq;
       if (j + 1 < n) {
+        int i;
+        int ia0;
+        int idxAjjp1;
         nmj = (n - j) - 2;
         ia0 = idxA1j + 32;
         idxAjjp1 = idxAjj + 32;
         if ((j != 0) && (nmj + 1 != 0)) {
           i = (idxA1j + 31 * nmj) + 32;
           for (iac = ia0; iac <= i; iac += 31) {
+            int i1;
             c = 0.0;
             i1 = (iac + j) - 1;
             for (ia = iac; ia <= i1; ia++) {
@@ -7281,8 +7022,6 @@ static double xrotg(double *a, double *b, double *s)
 {
   double absa;
   double absb;
-  double ads;
-  double bds;
   double c;
   double roe;
   double scale;
@@ -7300,6 +7039,8 @@ static double xrotg(double *a, double *b, double *s)
     *a = 0.0;
     *b = 0.0;
   } else {
+    double ads;
+    double bds;
     ads = absa / scale;
     bds = absb / scale;
     scale *= sqrt(ads * ads + bds * bds);
@@ -7326,16 +7067,13 @@ static double xrotg(double *a, double *b, double *s)
 static void xzlarf(int m, int n, int iv0, double tau, double C[961], int ic0,
                    double work[31])
 {
-  double c;
-  int b_i;
-  int exitg1;
   int i;
   int ia;
   int iac;
   int lastc;
   int lastv;
-  boolean_T exitg2;
   if (tau != 0.0) {
+    bool exitg2;
     lastv = m;
     i = iv0 + m;
     while ((lastv > 0) && (C[i - 2] == 0.0)) {
@@ -7346,6 +7084,7 @@ static void xzlarf(int m, int n, int iv0, double tau, double C[961], int ic0,
     lastc = n - 1;
     exitg2 = false;
     while ((!exitg2) && (lastc + 1 > 0)) {
+      int exitg1;
       i = ic0 + lastc * 31;
       ia = i;
       do {
@@ -7372,6 +7111,8 @@ static void xzlarf(int m, int n, int iv0, double tau, double C[961], int ic0,
   }
 
   if (lastv > 0) {
+    double c;
+    int b_i;
     if (lastc + 1 != 0) {
       if (lastc >= 0) {
         memset(&work[0], 0, (unsigned int)(lastc + 1) * sizeof(double));
@@ -7410,22 +7151,22 @@ static void xzlarf(int m, int n, int iv0, double tau, double C[961], int ic0,
 
 static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
 {
-  double beta1;
   double tau;
-  double xnorm;
-  int i;
   int k;
-  int knt;
   tau = 0.0;
   if (n > 0) {
+    double xnorm;
     xnorm = xnrm2(n - 1, x, ix0);
     if (xnorm != 0.0) {
+      double beta1;
       beta1 = rt_hypotd_snf(*alpha1, xnorm);
       if (*alpha1 >= 0.0) {
         beta1 = -beta1;
       }
 
       if (fabs(beta1) < 1.0020841800044864E-292) {
+        int i;
+        int knt;
         knt = 0;
         i = (ix0 + n) - 2;
         do {
@@ -7455,6 +7196,7 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
 
         *alpha1 = beta1;
       } else {
+        int i;
         tau = (beta1 - *alpha1) / beta1;
         xnorm = 1.0 / (*alpha1 - beta1);
         i = (ix0 + n) - 2;
@@ -7492,10 +7234,12 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   desired_phi_value, double desired_ailerons_value, double k_alt_tilt_constraint,
   double min_alt_tilt_constraint, double lidar_alt_corrected, double
   approach_mode, double verbose, double aoa_protection_speed, double
-  transition_speed, double u_out_scaled[15], double residuals[6], double
-  *elapsed_time, double *N_iterations, double *N_evaluation, double *exitflag)
+  transition_speed, double u_out[15], double residuals[6], double *elapsed_time,
+  double *N_iterations, double *N_evaluation, double *exitflag)
 {
   b_captured_var dv_global;
+  c_struct_T b_expl_temp;
+  c_struct_T expl_temp;
   captured_var W_act_ailerons;
   captured_var W_act_motor;
   captured_var W_act_phi;
@@ -7554,15 +7298,12 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   captured_var prop_delta;
   captured_var prop_sigma;
   captured_var prop_theta;
-  d_struct_T b_expl_temp;
-  d_struct_T expl_temp;
   double actual_u[15];
   double u_max[15];
   double u_max_scaled[15];
   double u_min[15];
   double current_accelerations[6];
   double final_accelerations[6];
-  double max_tilt_value_approach[2];
   double b_gain_airspeed;
   double b_gain_az;
   double b_gain_el;
@@ -7570,7 +7311,6 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   double b_gain_phi;
   double b_gain_theta;
   double b_max_approach;
-  double b_max_tilt_value_approach;
   double b_min_approach;
   double c_CL_aileron;
   double c_Cd_zero;
@@ -7592,6 +7332,7 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   double g_max_approach;
   double g_min_approach;
   double max_theta_protection;
+  double max_tilt_value_approach;
   double min_theta_protection;
   int i;
   char c_expl_temp[3];
@@ -7640,21 +7381,12 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
 
   /*  Create variables necessary for the optimization */
   if (b_V.contents > aoa_protection_speed) {
-    b_max_approach = (max_alpha + b_flight_path_angle.contents) * 180.0 /
-      3.1415926535897931;
-    if ((max_theta <= b_max_approach) || rtIsNaN(b_max_approach)) {
-      max_theta_protection = max_theta;
-    } else {
-      max_theta_protection = b_max_approach;
-    }
-
-    b_max_approach = (min_alpha + b_flight_path_angle.contents) * 180.0 /
-      3.1415926535897931;
-    if ((min_theta >= b_max_approach) || rtIsNaN(b_max_approach)) {
-      min_theta_protection = min_theta;
-    } else {
-      min_theta_protection = b_max_approach;
-    }
+    max_tilt_value_approach = (max_alpha + b_flight_path_angle.contents) * 180.0
+      / 3.1415926535897931;
+    max_theta_protection = fmin(max_theta, max_tilt_value_approach);
+    max_tilt_value_approach = (min_alpha + b_flight_path_angle.contents) * 180.0
+      / 3.1415926535897931;
+    min_theta_protection = fmax(min_theta, max_tilt_value_approach);
   } else {
     max_theta_protection = max_theta;
     min_theta_protection = min_theta;
@@ -7720,26 +7452,27 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   u_min[13] = -max_phi;
   u_min[14] = min_delta_ailerons;
   if (approach_mode != 0.0) {
-    max_tilt_value_approach[0] = 0.0;
-    max_tilt_value_approach[1] = k_alt_tilt_constraint * lidar_alt_corrected -
+    double b_max_tilt_value_approach[2];
+    b_max_tilt_value_approach[0] = 0.0;
+    b_max_tilt_value_approach[1] = k_alt_tilt_constraint * lidar_alt_corrected -
       min_alt_tilt_constraint * k_alt_tilt_constraint;
-    b_max_tilt_value_approach = maximum(max_tilt_value_approach);
+    max_tilt_value_approach = maximum(b_max_tilt_value_approach);
 
     /* Elevation angle */
-    max_tilt_value_approach[0] = b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = max_b;
-    b_max_approach = minimum(max_tilt_value_approach);
-    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = min_b;
-    b_min_approach = maximum(max_tilt_value_approach);
+    b_max_tilt_value_approach[0] = max_tilt_value_approach;
+    b_max_tilt_value_approach[1] = max_b;
+    b_max_approach = minimum(b_max_tilt_value_approach);
+    b_max_tilt_value_approach[0] = -max_tilt_value_approach;
+    b_max_tilt_value_approach[1] = min_b;
+    b_min_approach = maximum(b_max_tilt_value_approach);
 
     /* Azimuth angle */
-    max_tilt_value_approach[0] = b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = max_g;
-    g_max_approach = minimum(max_tilt_value_approach);
-    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = min_g;
-    g_min_approach = maximum(max_tilt_value_approach);
+    b_max_tilt_value_approach[0] = max_tilt_value_approach;
+    b_max_tilt_value_approach[1] = max_g;
+    g_max_approach = minimum(b_max_tilt_value_approach);
+    b_max_tilt_value_approach[0] = -max_tilt_value_approach;
+    b_max_tilt_value_approach[1] = min_g;
+    g_min_approach = maximum(b_max_tilt_value_approach);
     u_max[4] = b_max_approach;
     u_min[4] = b_min_approach;
     u_max[8] = g_max_approach;
@@ -7758,20 +7491,20 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
     u_min[11] = g_min_approach;
 
     /* Pitch angle  */
-    max_tilt_value_approach[0] = b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = max_theta_protection;
-    u_max[12] = minimum(max_tilt_value_approach);
-    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = min_theta_protection;
-    u_min[12] = maximum(max_tilt_value_approach);
+    b_max_tilt_value_approach[0] = max_tilt_value_approach;
+    b_max_tilt_value_approach[1] = max_theta_protection;
+    u_max[12] = minimum(b_max_tilt_value_approach);
+    b_max_tilt_value_approach[0] = -max_tilt_value_approach;
+    b_max_tilt_value_approach[1] = min_theta_protection;
+    u_min[12] = maximum(b_max_tilt_value_approach);
 
     /* Roll angle  */
-    max_tilt_value_approach[0] = b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = max_phi;
-    u_max[13] = minimum(max_tilt_value_approach);
-    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
-    max_tilt_value_approach[1] = -max_phi;
-    u_min[13] = maximum(max_tilt_value_approach);
+    b_max_tilt_value_approach[0] = max_tilt_value_approach;
+    b_max_tilt_value_approach[1] = max_phi;
+    u_max[13] = minimum(b_max_tilt_value_approach);
+    b_max_tilt_value_approach[0] = -max_tilt_value_approach;
+    b_max_tilt_value_approach[1] = -max_phi;
+    u_min[13] = maximum(b_max_tilt_value_approach);
   }
 
   for (i = 0; i < 11; i++) {
@@ -7781,29 +7514,49 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
 
   memcpy(&u_max_scaled[0], &u_max[0], 15U * sizeof(double));
   u_max_scaled[0] = u_max[0] / gain_motor.contents;
-  u_min[0] /= gain_motor.contents;
-  u_max_scaled[4] /= gain_el.contents;
-  u_min[4] /= gain_el.contents;
-  u_max_scaled[8] /= gain_az.contents;
-  u_min[8] /= gain_az.contents;
   u_max_scaled[1] = u_max[1] / gain_motor.contents;
-  u_min[1] /= gain_motor.contents;
-  u_max_scaled[5] /= gain_el.contents;
-  u_min[5] /= gain_el.contents;
-  u_max_scaled[9] /= gain_az.contents;
-  u_min[9] /= gain_az.contents;
   u_max_scaled[2] = u_max[2] / gain_motor.contents;
-  u_min[2] /= gain_motor.contents;
-  u_max_scaled[6] /= gain_el.contents;
-  u_min[6] /= gain_el.contents;
-  u_max_scaled[10] /= gain_az.contents;
-  u_min[10] /= gain_az.contents;
   u_max_scaled[3] = u_max[3] / gain_motor.contents;
-  u_min[3] /= gain_motor.contents;
-  u_max_scaled[7] /= gain_el.contents;
-  u_min[7] /= gain_el.contents;
-  u_max_scaled[11] /= gain_az.contents;
-  u_min[11] /= gain_az.contents;
+  max_tilt_value_approach = u_min[0] / gain_motor.contents;
+  b_max_approach = u_min[1] / gain_motor.contents;
+  b_min_approach = u_min[2] / gain_motor.contents;
+  g_max_approach = u_min[3] / gain_motor.contents;
+  u_min[0] = max_tilt_value_approach;
+  u_min[1] = b_max_approach;
+  u_min[2] = b_min_approach;
+  u_min[3] = g_max_approach;
+  max_tilt_value_approach = u_max_scaled[4] / gain_el.contents;
+  b_max_approach = u_max_scaled[5] / gain_el.contents;
+  b_min_approach = u_max_scaled[6] / gain_el.contents;
+  g_max_approach = u_max_scaled[7] / gain_el.contents;
+  u_max_scaled[4] = max_tilt_value_approach;
+  u_max_scaled[5] = b_max_approach;
+  u_max_scaled[6] = b_min_approach;
+  u_max_scaled[7] = g_max_approach;
+  max_tilt_value_approach = u_min[4] / gain_el.contents;
+  b_max_approach = u_min[5] / gain_el.contents;
+  b_min_approach = u_min[6] / gain_el.contents;
+  g_max_approach = u_min[7] / gain_el.contents;
+  u_min[4] = max_tilt_value_approach;
+  u_min[5] = b_max_approach;
+  u_min[6] = b_min_approach;
+  u_min[7] = g_max_approach;
+  max_tilt_value_approach = u_max_scaled[8] / gain_az.contents;
+  b_max_approach = u_max_scaled[9] / gain_az.contents;
+  b_min_approach = u_max_scaled[10] / gain_az.contents;
+  g_max_approach = u_max_scaled[11] / gain_az.contents;
+  u_max_scaled[8] = max_tilt_value_approach;
+  u_max_scaled[9] = b_max_approach;
+  u_max_scaled[10] = b_min_approach;
+  u_max_scaled[11] = g_max_approach;
+  max_tilt_value_approach = u_min[8] / gain_az.contents;
+  b_max_approach = u_min[9] / gain_az.contents;
+  b_min_approach = u_min[10] / gain_az.contents;
+  g_max_approach = u_min[11] / gain_az.contents;
+  u_min[8] = max_tilt_value_approach;
+  u_min[9] = b_max_approach;
+  u_min[10] = b_min_approach;
+  u_min[11] = g_max_approach;
   u_max_scaled[12] /= gain_theta.contents;
   u_min[12] /= gain_theta.contents;
   u_max_scaled[13] /= gain_phi.contents;
@@ -7812,23 +7565,31 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   u_min[14] /= gain_ailerons.contents;
   memcpy(&u_max[0], &actual_u[0], 15U * sizeof(double));
   u_max[0] = Omega_1 / gain_motor.contents;
-  u_max[4] /= gain_el.contents;
-  u_max[8] /= gain_az.contents;
   u_max[1] = Omega_2 / gain_motor.contents;
-  u_max[5] /= gain_el.contents;
-  u_max[9] /= gain_az.contents;
   u_max[2] = Omega_3 / gain_motor.contents;
-  u_max[6] /= gain_el.contents;
-  u_max[10] /= gain_az.contents;
   u_max[3] = Omega_4 / gain_motor.contents;
-  u_max[7] /= gain_el.contents;
-  u_max[11] /= gain_az.contents;
+  max_tilt_value_approach = u_max[4] / gain_el.contents;
+  b_max_approach = u_max[5] / gain_el.contents;
+  b_min_approach = u_max[6] / gain_el.contents;
+  g_max_approach = u_max[7] / gain_el.contents;
+  u_max[4] = max_tilt_value_approach;
+  u_max[5] = b_max_approach;
+  u_max[6] = b_min_approach;
+  u_max[7] = g_max_approach;
+  max_tilt_value_approach = u_max[8] / gain_az.contents;
+  b_max_approach = u_max[9] / gain_az.contents;
+  b_min_approach = u_max[10] / gain_az.contents;
+  g_max_approach = u_max[11] / gain_az.contents;
+  u_max[8] = max_tilt_value_approach;
+  u_max[9] = b_max_approach;
+  u_max[10] = b_min_approach;
+  u_max[11] = g_max_approach;
   u_max[12] /= gain_theta.contents;
   u_max[13] /= gain_phi.contents;
   u_max[14] /= gain_ailerons.contents;
 
   /*  Apply Nonlinear optimization algorithm: */
-  b_max_tilt_value_approach = b_p.contents;
+  max_tilt_value_approach = b_p.contents;
   b_max_approach = b_q.contents;
   b_min_approach = b_r.contents;
   g_max_approach = b_m.contents;
@@ -7871,7 +7632,7 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
               c_flight_path_angle, g_1 / b_gain_az, g_2 / b_gain_az, g_3 /
               b_gain_az, g_4 / b_gain_az, b_gain_el, b_gain_az, b_gain_phi,
               b_gain_theta, b_gain_motor, b_gain_airspeed, c_l_1, c_l_3, c_l_4,
-              c_l_z, g_max_approach, b_max_tilt_value_approach, b_max_approach,
+              c_l_z, g_max_approach, max_tilt_value_approach, b_max_approach,
               b_min_approach, c_rho, c_wing_span, c_wing_chord,
               current_accelerations);
   for (i = 0; i < 6; i++) {
@@ -7881,64 +7642,38 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   /* Pseudo-control hedging:  */
   if (b_V.contents > transition_speed) {
     b_max_approach = b_Cl_alpha.contents * min_alpha;
-    b_max_tilt_value_approach = b_V.contents;
+    max_tilt_value_approach = b_V.contents;
     b_max_approach = b_max_approach * 0.5 * b_rho.contents * b_S.contents *
-      (b_max_tilt_value_approach * b_max_tilt_value_approach) * cos
+      (max_tilt_value_approach * max_tilt_value_approach) * cos
       (min_theta_protection * 3.1415926535897931 / 180.0);
     b_max_approach = 9.81 - b_max_approach / b_m.contents;
-    b_max_tilt_value_approach = 0.0;
+    max_tilt_value_approach = 0.0;
     if (dv_global.contents[2] >= b_max_approach) {
-      b_max_tilt_value_approach = dv_global.contents[2] - b_max_approach;
+      max_tilt_value_approach = dv_global.contents[2] - b_max_approach;
     }
 
-    dv_global.contents[2] -= b_max_tilt_value_approach;
+    dv_global.contents[2] -= max_tilt_value_approach;
   }
 
   /* Compute weights for actuators and make sure they are always positive */
-  b_max_approach = W_act_motor_const + W_act_motor_speed * b_V.contents;
-  if ((b_max_approach <= 0.0) || rtIsNaN(b_max_approach)) {
-    W_act_motor.contents = 0.0;
-  } else {
-    W_act_motor.contents = b_max_approach;
-  }
-
-  b_max_approach = W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
-  if ((b_max_approach <= 0.0) || rtIsNaN(b_max_approach)) {
-    W_act_tilt_el.contents = 0.0;
-  } else {
-    W_act_tilt_el.contents = b_max_approach;
-  }
-
-  b_max_approach = W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
-  if ((b_max_approach <= 0.0) || rtIsNaN(b_max_approach)) {
-    W_act_tilt_az.contents = 0.0;
-  } else {
-    W_act_tilt_az.contents = b_max_approach;
-  }
-
-  b_max_approach = W_act_theta_const + W_act_theta_speed * b_V.contents;
-  if ((b_max_approach <= 0.0) || rtIsNaN(b_max_approach)) {
-    W_act_theta.contents = 0.0;
-  } else {
-    W_act_theta.contents = b_max_approach;
-  }
-
-  b_max_approach = W_act_phi_const + W_act_phi_speed * b_V.contents;
-  if ((b_max_approach <= 0.0) || rtIsNaN(b_max_approach)) {
-    W_act_phi.contents = 0.0;
-  } else {
-    W_act_phi.contents = b_max_approach;
-  }
-
-  b_max_approach = W_act_ailerons_const + W_act_ailerons_speed * b_V.contents;
-  if ((b_max_approach <= 0.0) || rtIsNaN(b_max_approach)) {
-    W_act_ailerons.contents = 0.0;
-  } else {
-    W_act_ailerons.contents = b_max_approach;
-  }
+  max_tilt_value_approach = W_act_motor_const + W_act_motor_speed * b_V.contents;
+  W_act_motor.contents = fmax(0.0, max_tilt_value_approach);
+  max_tilt_value_approach = W_act_tilt_el_const + W_act_tilt_el_speed *
+    b_V.contents;
+  W_act_tilt_el.contents = fmax(0.0, max_tilt_value_approach);
+  max_tilt_value_approach = W_act_tilt_az_const + W_act_tilt_az_speed *
+    b_V.contents;
+  W_act_tilt_az.contents = fmax(0.0, max_tilt_value_approach);
+  max_tilt_value_approach = W_act_theta_const + W_act_theta_speed * b_V.contents;
+  W_act_theta.contents = fmax(0.0, max_tilt_value_approach);
+  max_tilt_value_approach = W_act_phi_const + W_act_phi_speed * b_V.contents;
+  W_act_phi.contents = fmax(0.0, max_tilt_value_approach);
+  max_tilt_value_approach = W_act_ailerons_const + W_act_ailerons_speed *
+    b_V.contents;
+  W_act_ailerons.contents = fmax(0.0, max_tilt_value_approach);
 
   /*  New prop model */
-  prop_Cl_0.contents = 0.06;
+  prop_Cl_0.contents = 0.075;
   prop_Cl_a.contents = 3.46;
   prop_Cd_0.contents = 0.05;
   prop_Cd_a.contents = 0.36;
@@ -8012,30 +7747,29 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   expl_temp.flight_path_angle = &b_flight_path_angle;
   expl_temp.gain_theta = &gain_theta;
   b_expl_temp = expl_temp;
-  fmincon(&b_expl_temp, u_max, u_min, u_max_scaled, exitflag, N_iterations,
-          N_evaluation, c_expl_temp, &b_max_approach, &b_min_approach,
-          &g_max_approach, &g_min_approach);
+  fmincon(&b_expl_temp, u_max, u_min, u_max_scaled, u_out, exitflag,
+          N_iterations, N_evaluation, c_expl_temp, &b_max_approach,
+          &b_min_approach, &g_max_approach, &g_min_approach);
   *elapsed_time = toc();
-  memcpy(&u_out_scaled[0], &u_max[0], 15U * sizeof(double));
-  b_max_tilt_value_approach = gain_motor.contents;
-  b_max_approach = gain_el.contents;
-  b_min_approach = gain_az.contents;
-  u_max[0] *= b_max_tilt_value_approach;
-  u_max[4] *= b_max_approach;
-  u_max[8] *= b_min_approach;
-  u_max[1] *= b_max_tilt_value_approach;
-  u_max[5] *= b_max_approach;
-  u_max[9] *= b_min_approach;
-  u_max[2] *= b_max_tilt_value_approach;
-  u_max[6] *= b_max_approach;
-  u_max[10] *= b_min_approach;
-  u_max[3] *= b_max_tilt_value_approach;
-  u_max[7] *= b_max_approach;
-  u_max[11] *= b_min_approach;
-  u_max[12] *= gain_theta.contents;
-  u_max[13] *= gain_phi.contents;
-  u_max[14] *= gain_ailerons.contents;
-  b_max_tilt_value_approach = b_p.contents;
+  max_tilt_value_approach = gain_motor.contents;
+  u_out[0] *= max_tilt_value_approach;
+  u_out[1] *= max_tilt_value_approach;
+  u_out[2] *= max_tilt_value_approach;
+  u_out[3] *= max_tilt_value_approach;
+  max_tilt_value_approach = gain_el.contents;
+  u_out[4] *= max_tilt_value_approach;
+  u_out[5] *= max_tilt_value_approach;
+  u_out[6] *= max_tilt_value_approach;
+  u_out[7] *= max_tilt_value_approach;
+  max_tilt_value_approach = gain_az.contents;
+  u_out[8] *= max_tilt_value_approach;
+  u_out[9] *= max_tilt_value_approach;
+  u_out[10] *= max_tilt_value_approach;
+  u_out[11] *= max_tilt_value_approach;
+  u_out[12] *= gain_theta.contents;
+  u_out[13] *= gain_phi.contents;
+  u_out[14] *= gain_ailerons.contents;
+  max_tilt_value_approach = b_p.contents;
   b_max_approach = b_q.contents;
   b_min_approach = b_r.contents;
   g_max_approach = b_m.contents;
@@ -8069,17 +7803,17 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   /*  prop_Cd_0 = 0.75; */
   /*  prop_Cd_a = 0.7; */
   /*  New aero models */
-  compute_acc(u_max[12] - c_flight_path_angle, c_CL_aileron, c_Cd_zero,
+  compute_acc(u_out[12] - c_flight_path_angle, c_CL_aileron, c_Cd_zero,
               c_Cl_alpha, c_Cm_zero, c_Cm_alpha, g_min_approach,
-              max_theta_protection, c_I_zz, c_K_Cd, u_max[0] / b_gain_motor,
-              u_max[1] / b_gain_motor, u_max[2] / b_gain_motor, u_max[3] /
-              b_gain_motor, u_max[13] / b_gain_phi, c_S, u_max[12] /
-              b_gain_theta, c_V, u_max[4] / b_gain_el, u_max[5] / b_gain_el,
-              u_max[6] / b_gain_el, u_max[7] / b_gain_el, u_max[14],
-              c_flight_path_angle, u_max[8] / b_gain_az, u_max[9] / b_gain_az,
-              u_max[10] / b_gain_az, u_max[11] / b_gain_az, b_gain_el, b_gain_az,
+              max_theta_protection, c_I_zz, c_K_Cd, u_out[0] / b_gain_motor,
+              u_out[1] / b_gain_motor, u_out[2] / b_gain_motor, u_out[3] /
+              b_gain_motor, u_out[13] / b_gain_phi, c_S, u_out[12] /
+              b_gain_theta, c_V, u_out[4] / b_gain_el, u_out[5] / b_gain_el,
+              u_out[6] / b_gain_el, u_out[7] / b_gain_el, u_out[14],
+              c_flight_path_angle, u_out[8] / b_gain_az, u_out[9] / b_gain_az,
+              u_out[10] / b_gain_az, u_out[11] / b_gain_az, b_gain_el, b_gain_az,
               b_gain_phi, b_gain_theta, b_gain_motor, b_gain_airspeed, c_l_1,
-              c_l_3, c_l_4, c_l_z, g_max_approach, b_max_tilt_value_approach,
+              c_l_3, c_l_4, c_l_z, g_max_approach, max_tilt_value_approach,
               b_max_approach, b_min_approach, c_rho, c_wing_span, c_wing_chord,
               final_accelerations);
   for (i = 0; i < 6; i++) {
@@ -8092,55 +7826,55 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
     fflush(stdout);
     printf(" Motors [rad/s] =  ");
     fflush(stdout);
-    printf(" %f ", u_max[0]);
+    printf(" %f ", u_out[0]);
     fflush(stdout);
-    printf(" %f ", u_max[1]);
+    printf(" %f ", u_out[1]);
     fflush(stdout);
-    printf(" %f ", u_max[2]);
+    printf(" %f ", u_out[2]);
     fflush(stdout);
-    printf(" %f ", u_max[3]);
+    printf(" %f ", u_out[3]);
     fflush(stdout);
     printf("\n");
     fflush(stdout);
     printf(" Elevator angles [deg] =  ");
     fflush(stdout);
-    printf(" %f ", u_max[4] * 180.0 / 3.1415926535897931);
+    printf(" %f ", u_out[4] * 180.0 / 3.1415926535897931);
     fflush(stdout);
-    printf(" %f ", u_max[5] * 180.0 / 3.1415926535897931);
+    printf(" %f ", u_out[5] * 180.0 / 3.1415926535897931);
     fflush(stdout);
-    printf(" %f ", u_max[6] * 180.0 / 3.1415926535897931);
+    printf(" %f ", u_out[6] * 180.0 / 3.1415926535897931);
     fflush(stdout);
-    printf(" %f ", u_max[7] * 180.0 / 3.1415926535897931);
+    printf(" %f ", u_out[7] * 180.0 / 3.1415926535897931);
     fflush(stdout);
     printf("\n");
     fflush(stdout);
     printf(" Azimuth angles [deg] =  ");
     fflush(stdout);
-    printf(" %f ", u_max[8] * 180.0 / 3.1415926535897931);
+    printf(" %f ", u_out[8] * 180.0 / 3.1415926535897931);
     fflush(stdout);
-    printf(" %f ", u_max[9] * 180.0 / 3.1415926535897931);
+    printf(" %f ", u_out[9] * 180.0 / 3.1415926535897931);
     fflush(stdout);
-    printf(" %f ", u_max[10] * 180.0 / 3.1415926535897931);
+    printf(" %f ", u_out[10] * 180.0 / 3.1415926535897931);
     fflush(stdout);
-    printf(" %f ", u_max[11] * 180.0 / 3.1415926535897931);
+    printf(" %f ", u_out[11] * 180.0 / 3.1415926535897931);
     fflush(stdout);
     printf("\n");
     fflush(stdout);
     printf(" Theta [deg] =  ");
     fflush(stdout);
-    printf(" %f ", u_max[12] * 180.0 / 3.1415926535897931);
+    printf(" %f ", u_out[12] * 180.0 / 3.1415926535897931);
     fflush(stdout);
     printf("\n");
     fflush(stdout);
     printf(" Phi [deg] =  ");
     fflush(stdout);
-    printf(" %f ", u_max[13] * 180.0 / 3.1415926535897931);
+    printf(" %f ", u_out[13] * 180.0 / 3.1415926535897931);
     fflush(stdout);
     printf("\n");
     fflush(stdout);
     printf(" Ailerons deflection [deg] =  ");
     fflush(stdout);
-    printf(" %f ", u_max[14] * 180.0 / 3.1415926535897931);
+    printf(" %f ", u_out[14] * 180.0 / 3.1415926535897931);
     fflush(stdout);
     printf("\n");
     fflush(stdout);
@@ -8150,23 +7884,31 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
     fflush(stdout);
     printf("/ %f \n", *N_evaluation);
     fflush(stdout);
-    memcpy(&u_out_scaled[0], &u_max[0], 15U * sizeof(double));
-    u_out_scaled[0] = u_max[0] / gain_motor.contents;
-    u_out_scaled[4] /= gain_el.contents;
-    u_out_scaled[8] /= gain_az.contents;
-    u_out_scaled[1] = u_max[1] / gain_motor.contents;
-    u_out_scaled[5] /= gain_el.contents;
-    u_out_scaled[9] /= gain_az.contents;
-    u_out_scaled[2] = u_max[2] / gain_motor.contents;
-    u_out_scaled[6] /= gain_el.contents;
-    u_out_scaled[10] /= gain_az.contents;
-    u_out_scaled[3] = u_max[3] / gain_motor.contents;
-    u_out_scaled[7] /= gain_el.contents;
-    u_out_scaled[11] /= gain_az.contents;
-    u_out_scaled[12] /= gain_theta.contents;
-    u_out_scaled[13] /= gain_phi.contents;
-    u_out_scaled[14] /= gain_ailerons.contents;
-    printf("\n Solution scaled norm = %f \n", b_norm(u_out_scaled));
+    memcpy(&u_max[0], &u_out[0], 15U * sizeof(double));
+    u_max[0] = u_out[0] / gain_motor.contents;
+    u_max[1] = u_out[1] / gain_motor.contents;
+    u_max[2] = u_out[2] / gain_motor.contents;
+    u_max[3] = u_out[3] / gain_motor.contents;
+    max_tilt_value_approach = u_max[4] / gain_el.contents;
+    b_max_approach = u_max[5] / gain_el.contents;
+    b_min_approach = u_max[6] / gain_el.contents;
+    g_max_approach = u_max[7] / gain_el.contents;
+    u_max[4] = max_tilt_value_approach;
+    u_max[5] = b_max_approach;
+    u_max[6] = b_min_approach;
+    u_max[7] = g_max_approach;
+    max_tilt_value_approach = u_max[8] / gain_az.contents;
+    b_max_approach = u_max[9] / gain_az.contents;
+    b_min_approach = u_max[10] / gain_az.contents;
+    g_max_approach = u_max[11] / gain_az.contents;
+    u_max[8] = max_tilt_value_approach;
+    u_max[9] = b_max_approach;
+    u_max[10] = b_min_approach;
+    u_max[11] = g_max_approach;
+    u_max[12] /= gain_theta.contents;
+    u_max[13] /= gain_phi.contents;
+    u_max[14] /= gain_ailerons.contents;
+    printf("\n Solution scaled norm = %f \n", b_norm(u_max));
     fflush(stdout);
     printf("\n Exit flag optimizer = %f \n", *exitflag);
     fflush(stdout);
@@ -8191,8 +7933,8 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
     printf("\n Requested accelerations =  ");
     fflush(stdout);
     for (i = 0; i < 6; i++) {
-      b_max_tilt_value_approach = dv_global.contents[i];
-      printf(" %f ", b_max_tilt_value_approach);
+      max_tilt_value_approach = dv_global.contents[i];
+      printf(" %f ", max_tilt_value_approach);
       fflush(stdout);
     }
 
@@ -8223,9 +7965,8 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
 
 void Nonlinear_controller_fcn_control_rf_aero_models_initialize(void)
 {
-  rt_InitInfAndNaN();
-  c_CoderTimeAPI_callCoderClockGe();
-  timeKeeper_init();
+  savedTime_not_empty = false;
+  freq_not_empty = false;
   isInitialized_Nonlinear_controller_fcn_control_rf_aero_models = true;
 }
 

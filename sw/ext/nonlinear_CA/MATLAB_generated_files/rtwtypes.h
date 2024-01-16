@@ -15,6 +15,10 @@
 
 /* Include files */
 
+#ifndef __cplusplus
+#include <stdbool.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -55,7 +59,7 @@ typedef double real64_T;
 
 typedef double real_T;
 typedef double time_T;
-typedef unsigned char boolean_T;
+typedef bool boolean_T;
 typedef int int_T;
 typedef unsigned int uint_T;
 typedef unsigned long ulong_T;

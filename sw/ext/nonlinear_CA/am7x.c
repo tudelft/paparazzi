@@ -379,10 +379,10 @@ void* second_thread() //Run the optimization code
       Omega_2 = 600;
       Omega_3 = 600;
       Omega_4 = 600;
-      b_1 = -90 * pi/180;
-      b_2 = -90 * pi/180;
-      b_3 = -90 * pi/180;
-      b_4 = -90 * pi/180;
+      b_1 = 0 * pi/180;
+      b_2 = 0 * pi/180;
+      b_3 = 0 * pi/180;
+      b_4 = 0 * pi/180;
       g_1 = 0 * pi/180;
       g_2 = 0 * pi/180;
       g_3 = 0 * pi/180;
