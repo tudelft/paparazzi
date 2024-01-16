@@ -372,35 +372,35 @@ void* second_thread() //Run the optimization code
 
       Beta = 0 * pi/180;
       flight_path_angle = 0 * pi/180;
-      V = 13;
+      V = 15;
       Phi = 0 * pi/180;
       Theta = 5 * pi/180;
       Omega_1 = 600;
       Omega_2 = 600;
       Omega_3 = 600;
       Omega_4 = 600;
-      b_1 = 0 * pi/180;
-      b_2 = 0 * pi/180;
-      b_3 = 0 * pi/180;
-      b_4 = 0 * pi/180;
+      b_1 = -70 * pi/180;
+      b_2 = -70 * pi/180;
+      b_3 = -70 * pi/180;
+      b_4 = -70 * pi/180;
       g_1 = 0 * pi/180;
       g_2 = 0 * pi/180;
       g_3 = 0 * pi/180;
       g_4 = 0 * pi/180;
       delta_ailerons = 0 * pi/180;
 
-      W_act_motor_const = 1;
-      W_act_motor_speed = 0; 
+      W_act_motor_const = 5;
+      W_act_motor_speed = 0.5; 
       W_act_tilt_el_const = 0;
       W_act_tilt_el_speed = 0;
       W_act_tilt_az_const = 0; 
-      W_act_tilt_az_speed = 2;
-      W_act_theta_const = 100;
-      W_act_theta_speed = -15;
-      W_act_phi_const = 100;
-      W_act_phi_speed = -15;
+      W_act_tilt_az_speed = 1;
+      W_act_theta_const = 0.5;
+      W_act_theta_speed = 0;
+      W_act_phi_const = 15;
+      W_act_phi_speed = 0;
       W_act_ailerons_const = 1000;
-      W_act_ailerons_speed = -3; 
+      W_act_ailerons_speed = 0; 
 
       W_dv_1 = 0.01;
       W_dv_2 = 0.01;
@@ -435,7 +435,7 @@ void* second_thread() //Run the optimization code
       Cm_zero = 0.0; 
       Cl_alpha = 3.5; 
       Cd_zero = 0.2; 
-      K_Cd = 0.08;
+      K_Cd = 0.1;
       Cm_alpha = 0; 
       CL_aileron = 0.1; 
       rho = 1.225; 
@@ -452,7 +452,7 @@ void* second_thread() //Run the optimization code
       desired_phi_value = 0 * pi/180; 
       desired_ailerons_value = 0 * pi/180;
 
-      speed_aoa_protection = 6;
+      speed_aoa_protection = 2;
 
       k_alt_tilt_constraint = 55;
       min_alt_tilt_constraint = 0.2;
