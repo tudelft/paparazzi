@@ -759,6 +759,8 @@
 
     <define name="FULLY_MANUAL_HEADING" value="TRUE"/>
 
+    <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/>
+
     <!-- Basic navigation settings -->
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>
     <define name="NAV_DESCEND_VSPEED" value="-0.5"/>
