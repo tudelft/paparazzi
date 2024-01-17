@@ -320,18 +320,18 @@
     <define name="INDI_REF_ERR_Q" value="3"/>
     <define name="INDI_REF_ERR_R" value="1.5"/>
 
-    <define name="INDI_REF_ERR_X" value="0.25"/>
-    <define name="INDI_REF_ERR_Y" value="0.25"/>
-    <define name="INDI_REF_ERR_Z" value="0.25"/>
+    <define name="INDI_REF_ERR_X" value="0.15"/>
+    <define name="INDI_REF_ERR_Y" value="0.15"/>
+    <define name="INDI_REF_ERR_Z" value="0.15"/>
 
     <!-- INDI derivative gains -->
     <define name="INDI_REF_RATE_P" value="6"/>
     <define name="INDI_REF_RATE_Q" value="6"/>
     <define name="INDI_REF_RATE_R" value="5"/>
 
-    <define name="INDI_REF_RATE_X" value="5"/>
-    <define name="INDI_REF_RATE_Y" value="5"/>
-    <define name="INDI_REF_RATE_Z" value="5"/>
+    <define name="INDI_REF_RATE_X" value="3"/>
+    <define name="INDI_REF_RATE_Y" value="3"/>
+    <define name="INDI_REF_RATE_Z" value="3"/>
 
     <!-- Actuator dynamics and mapping-->
     <define name="INDI_ACT_DYN_MOTOR" value="0.038" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
