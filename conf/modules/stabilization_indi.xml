@@ -61,11 +61,14 @@
         <dl_setting var="indi_gains.att.r" min="0" step="1" max="2500" shortname="kp_r" param="STABILIZATION_INDI_REF_ERR_R"/>
         <dl_setting var="indi_gains.rate.r" min="0.1" step="0.1" max="100" shortname="kd_r" param="STABILIZATION_INDI_REF_RATE_P"/>
         <dl_setting var="indi_use_adaptive" min="0" step="1" max="1" shortname="use_adaptive" values="FALSE|TRUE" param="STABILIZATION_INDI_USE_ADAPTIVE" type="uint8"/>
-        <dl_setting var="pivot_gain_q" min="0" step="1" max="2500" shortname="motor_q_pivot" param="STABILIZATION_INDI_PIVOT_GAIN_Q"/>
-        <dl_setting var="pivot_gain_theta" min="0" step="1" max="2500" shortname="motor_theta_pivot" param="STABILIZATION_INDI_PIVOT_GAIN_THETA"/>
-        <!-- <dl_setting var="pivot_servogain_q" min="0" step="0.001" max="0.1" shortname="pivot_tilt_q" param="STABILIZATION_INDI_PIVOT_SERVOGAIN_Q"/>
-        <dl_setting var="pivot_servogain_theta" min="0" step="0.1" max="100" shortname="pivot_tilt_theta" param="STABILIZATION_INDI_PIVOT_SERVOGAIN_THETA"/> -->
-        <dl_setting var="roll_gain" min="0" step="0.1" max="1000" shortname="roll gain"/>
+        <dl_setting var="pivot_gain_q" min="0" step="0.01" max="10" shortname="q_pivot" param="STABILIZATION_INDI_PIVOT_GAIN_Q"/>
+        <dl_setting var="pivot_gain_theta" min="0" step="0.01" max="10" shortname="theta_pivot" param="STABILIZATION_INDI_PIVOT_GAIN_THETA"/>
+        <dl_setting var="pivot_gain_i" min="0" step="0.01" max="10" shortname="integrator_pivot" param="STABILIZATION_INDI_PIVOT_GAIN_I"/>
+        <dl_setting var="L1" min="0" step="0.001" max="1" shortname="l1" param="STABILIZATION_INDI_L1"/>
+        <dl_setting var="L2" min="0" step="0.001" max="1" shortname="l2" param="STABILIZATION_INDI_L2"/>
+        <dl_setting var="weight_T" min="0" step="0.01" max="20" shortname="W_T" param="STABILIZATION_INDI_WEIGHT_T"/>
+        <dl_setting var="weight_S" min="0" step="0.01" max="10" shortname="W_S" param="STABILIZATION_INDI_WEIGHT_S"/>
+        <dl_setting var="roll_gain" min="0" step="0.01" max="10" shortname="roll gain"/>
         <dl_setting var="side_slip_gain_rc" min="0" step="0.01" max="10" shortname="sideslip_gain"/>
       </dl_settings>
     </dl_settings>

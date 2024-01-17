@@ -32,7 +32,7 @@
 #ifndef RADIO_PITCH
 #define RADIO_PITCH   0
 #endif
-
+struct FloatQuat quat_sp_f;
 int16_t stage = 0;
 int16_t counter = 0;
 float theta_ref = TAKEOFF_THETA_REF;
@@ -64,7 +64,9 @@ float take_off_theta(void){
   }
   }
   else{
-    theta_d = (radio_control.values[RADIO_PITCH] / 9600.0) * 60.0 * M_PI / 180.0;
+    struct FloatEulers euler_sp;
+    float_eulers_of_quat_zxy(&euler_sp, &quat_sp_f);
+    theta_d = euler_sp.theta;
   }
   return theta_d;
 }
@@ -76,11 +78,11 @@ int16_t take_off_stage(float theta){
       stage = 0;
       counter = 0;
     }
-    else if(stage == 0 && counter/TAKEOFF_MODULE_FREQ > 1.0){
+    else if(stage == 0 && counter/TAKEOFF_MODULE_FREQ > 0.5){
       stage = 1;
       counter = 0;
     }
-    else if(stage == 1 && theta==theta_d && counter/TAKEOFF_MODULE_FREQ > 10.0 ){
+    else if(stage == 1 && theta==theta_d && counter/TAKEOFF_MODULE_FREQ > 20.0 ){
       stage = 2;
       counter = 0;
     }

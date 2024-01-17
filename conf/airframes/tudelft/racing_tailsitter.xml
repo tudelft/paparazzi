@@ -293,7 +293,7 @@
     <define name="G1_THRUST" value="{0.0, 0.0, -0.8, -0.8, 0.0, 0.0}"/>
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{0, 0, 0, 0, 0, 0}"/>
-
+    <define name="TILT_TWIST_CTRL" value="TRUE"/>
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="80"/> <!-- 107 50.0 25.0 20-->
     <define name="REF_ERR_Q" value="105"/> <!-- was 80-->
@@ -314,7 +314,7 @@
     <define name="FILT_CUTOFF_R" value="20.0"/>
 
     <!-- first order actuator dynamics -->
-     <define name="ACT_DYN" value="{0.227, 0.227, 0.11, 0.11, 0.227, 0.227}"/> <!-- [0.05 0.05 0.045 0.045] before -->
+    <define name="ACT_DYN" value="{0.227, 0.227, 0.11, 0.11, 0.227, 0.227}"/> <!-- [0.05 0.05 0.045 0.045] before -->
     <define name="ACT_RATE_LIMIT" value="{250, 250, 9600, 9600, 250, 250}"/>
     <define name="ACT_IS_SERVO" value="{1, 1, 0, 0, 1, 1}"/>
 
@@ -335,8 +335,14 @@
     <define name="PIVOT_SERVOGAIN_Q" value="0.04"/>
     <define name="PIVOT_SERVOGAIN_THETA" value="0.8"/> -->
     <define name="PIVOT_GAIN_Q" value="0.1"/>
-    <define name="PIVOT_GAIN_THETA" value="0.2"/>
+    <define name="PIVOT_GAIN_THETA" value="0.5"/>
+    <define name="PIVOT_GAIN_I" value="0.01"/>
 
+    <define name="L1" value="0.225"/>		<!--force distance from tilt to tail, for pitch pivoting[m]-->
+    <define name="L2" value="0.155"/>	<!--force distance from CG to tail, for pitch pivoting[m]-->
+
+    <define name="WEIGHT_T" value="8.56"/>
+    <define name="WEIGHT_S" value="1.0"/>
     </section>
 
 <!-- Definitions for control effectiveness calculator module -->
@@ -368,9 +374,7 @@
     	<!-- Location of the Motors w.r.t. the c.g. -->
     	<define name="Y_DIST" value="0.16"/>		<!--[m]-->
     	<define name="Z_DIST" value="0.075"/>	<!--[m]-->
-      <define name="L1" value="0.205"/>		<!--force distance from tilt to tail, for pitch pivoting[m]-->
-    	<define name="L2" value="0.13"/>	<!--force distance from CG to tail, for pitch pivoting[m]-->
-
+    
       <define name="MAPPING" value="0.0001148"/>	<!--This the is mapping of PPRZ units to rads for the servos -->
       <define name="TORQUE" value="0.8"/>		<!--[kg/cm] Assuming constant torque output, the torque at any position is the same as the maximum torque --> 
   </section>
