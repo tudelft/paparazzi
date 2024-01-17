@@ -11,6 +11,7 @@
     <waypoint name="STDBY" x="-162.1" y="39.1"/>
     <waypoint name="SOAR" x="-274.6" y="56.0"/>
     <waypoint name="H1" x="-834.7" y="127.2"/>
+    <waypoint name="BACKUP" x="-300" y="60.0"/>
     <waypoint name="S1_WP" x="-219.9" y="-18.6"/>
     <waypoint name="CLIMB" x="-556.6" y="19.5"/>
     <waypoint name="GF1" x="-237.4" y="605.6"/>
@@ -27,12 +28,62 @@
     </sector>
   </sectors>
   <exceptions>
-    <exception cond="autopilot.mode == MODE_AUTO2 && And(datalink_time > 10, !GpsFixValid()) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyThrottle"/>
-    <exception cond="autopilot.mode == MODE_AUTO2 && GpsFixValid() && datalink_time > 10  && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyThrottle"/>
-    <exception cond="autopilot.mode == MODE_AUTO2 && !GpsFixValid()  && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyThrottle"/>
-    <exception cond="autopilot.mode == MODE_AUTO2 && GpsFixValid() && datalink_time > 10 && radio_control.status == RC_REALLY_LOST && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyThrottle"/>
+    <!-- RC direct and AUTO1: in case of RC lost, it automatically goes into failsafe mode TODO: double check -->
+    <!-- In AUTO2, if RC valid, don't throw the exceptions, except Geofence -->
+    <!-- In AUTO2, RC lost but datalink and GPS valid, don't throw an exception TODO: double check // order? -->
+    <!-- TODO: triple check every cases very carefully!!! (logically and NPS) -->
+    <!-- TODO: also check 'do nothing' cases, make sure it does really nothing in those cases -->
+
+    <!-- In AUTO2, No RC, No Datalink, No GPS: TODO: what should I do? -->
+    <exception cond="autopilot.mode == MODE_AUTO2 && radio_control.status == RC_REALLY_LOST && datalink_time > 15 && !GpsFixValid() && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="StayAndDescend"/>
+
+    <!-- In AUTO2, RC lost and datalink lost, it is an emergency, but it can still fly if GPS is fixed: stay there for some time and descend slowly-->
+    <exception cond="autopilot.mode == MODE_AUTO2 && And(radio_control.status == RC_REALLY_LOST, datalink_time > 15) && GpsFixValid() && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="StayAndDescend"/>
+
+    <!-- In AUTO2, RC lost and GPS lost, but still have datalink then we can do something from the ground; just stay there -> descend -->
+    <exception cond="autopilot.mode == MODE_AUTO2 && And(radio_control.status == RC_REALLY_LOST, !GpsFixValid()) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="StayAndDescend"/>
+
+    <!-- In AUTO2, Datalink lost and GPS lost: stay there -> descend after 60 sec / safety pilot takes the control -->
+    <exception cond="autopilot.mode == MODE_AUTO2 && And(datalink_time > 15, !GpsFixValid()) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="StayAndDescend"/>
+
+    <!-- AUTO2, (outside of geofence || alt higher than 150m) && GPS fixed && (not in preparation blocks) : GEOFENCE block (go to STDBY) -->
     <exception cond="autopilot.mode == MODE_AUTO2 && Or(!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 150) && GpsFixValid() && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="GeoFence"/>
+
+    <!--    AUTO2, Datalink lost, GPS valid; -->
+<!--    <exception cond="autopilot.mode == MODE_AUTO2 && GpsFixValid() && datalink_time > 10  && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyThrottle"/>-->
+
+    <!--    in Auto2: GPS failure, Datalink valid -->
+<!--    <exception cond="autopilot.mode == MODE_AUTO2 && !GpsFixValid()  && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyThrottle"/>-->
+
+    <!--    AUTO2, Datalink lost && RC lost, GPS valid;-->
+    <!--    <exception cond="autopilot.mode == MODE_AUTO2 && GpsFixValid() && datalink_time > 10 && radio_control.status == RC_REALLY_LOST && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyThrottle"/>-->
   </exceptions>
+
+<!--  <exceptions>-->
+<!--    &lt;!&ndash;    <exception cond="radio_control.status == RC_REALLY_LOST" deroute="RCFailsafe"/>&ndash;&gt;-->
+
+<!--    &lt;!&ndash; *******ROUTE should be used instead of STDBY!!!!!!!!!********   &ndash;&gt;-->
+
+<!--    &lt;!&ndash;    AUTO2: Datalink and GPS both fails, return NO throttle &ndash;&gt;-->
+<!--    <exception cond="autopilot.mode == MODE_AUTO2 && And(datalink_time > 10, !GpsFixValid()) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyThrottle"/>-->
+
+<!--    &lt;!&ndash;    in AUTO2: RC lost, Datalink & GPS valid;
+<!--    &lt;!&ndash;    <exception cond="autopilot.mode == MODE_AUTO2 && radio_control.status == RC_REALLY_LOST && GpsFixValid() && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyThrottle"/>&ndash;&gt;-->
+<!--    &lt;!&ndash;    AUTO2, Datalink lost, GPS valid; &ndash;&gt;-->
+<!--    <exception cond="autopilot.mode == MODE_AUTO2 && GpsFixValid() && datalink_time > 10  && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyThrottle" />-->
+<!--    &lt;!&ndash;    in Auto2: GPS failure, Datalink valid &ndash;&gt;-->
+<!--    <exception cond="autopilot.mode == MODE_AUTO2 && !GpsFixValid()  && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyThrottle"/>-->
+
+<!--    &lt;!&ndash;    AUTO2, Datalink lost && RC lost, GPS valid;&ndash;&gt;-->
+<!--    <exception cond="autopilot.mode == MODE_AUTO2 && GpsFixValid() && datalink_time > 10 && radio_control.status == RC_REALLY_LOST && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyThrottle" />-->
+
+<!--    &lt;!&ndash;    (outside geofence || alt higher than 150m) && GPS fixed && (not in preparation blocks) : go to Geofence block &ndash;&gt;-->
+<!--    <exception cond="autopilot.mode == MODE_AUTO2 && Or(!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 150) && GpsFixValid() && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="GeoFence"/>-->
+
+<!--    &lt;!&ndash;    <exception cond="datalink_time > 25 && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="route"/>&ndash;&gt;-->
+<!--    &lt;!&ndash;    <exception cond="radio_control.status == RC_REALLY_LOST && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="route"/>&ndash;&gt;-->
+<!--  </exceptions>-->
+
   <blocks>
     <block name="Wait GPS">
       <set value="true" var="force_forward"/>
@@ -108,6 +159,19 @@
       <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
       <go wp="STDBY"/>
       <stay wp="STDBY"/>
+    </block>
+    <block name="StayAndDescend">
+      <set value="true" var="force_forward"/>
+      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
+      <call_once fun="waypoint_set_here(WP_STDBY)"/>
+      <go wp="STDBY"/>
+      <stay wp="STDBY" until="stage_time @GT 60"/>
+<!--      <while cond="TRUE">-->
+<!--        <go wp="STDBY"/>-->
+<!--        <stay wp="STDBY" until="stage_time @GT 60"/>-->
+<!--        <set var="nav_flight_altitude" value="GetPosAlt()-2"/>-->
+<!--      </while>-->
+      <stay climb="-0.5" vmode="climb" wp="STDBY"/>
     </block>
   </blocks>
 </flight_plan>

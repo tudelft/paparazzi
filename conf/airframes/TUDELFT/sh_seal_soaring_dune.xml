@@ -402,7 +402,7 @@ NOTES:
       <define name="RADIO_TH_HOLD"     value="0"/> <!-- Throttle hold in command laws -->
       <define name="RADIO_FMODE"       value="0"/> <!-- Throttle curve select -->
       <define name="RADIO_FBW_MODE"    value="0"/> <!-- Switch between AP and FBW control -->
-      <define name="RADIO_KILL_SWITCH" value="0"/>
+      <define name="RADIO_KILL_SWITCH" value="5"/>
 
 <!--      MOVED BC FBW-->
       <module name="actuators" type="pwm"/>
@@ -592,15 +592,24 @@ NOTES:
 
   <section name="IMU" prefix="IMU_">
 
-    <!-- Calibrate Accelometer on 150423 20:40 UTC-->
-    <!-- <define name="IMU_ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={-410,19,-56}, .scale={{13420,4554,56119},{2923,931,11629}}}}"/> -->
+<!--      IMU ACCEL CALIB on 201223 (new pixhawk mount)-->
+<!--      <define name="IMU_ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={-411,19,-58}, .scale={{34909,55408,49891},{7605,11335,10345}}}}"/>-->
 
-    <define name="ACCEL_X_NEUTRAL" value="-410"/>
-    <define name="ACCEL_Y_NEUTRAL" value="19"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-56"/>
-    <define name="ACCEL_X_SENS" value="4.591173431212081" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.891514448303641" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.825780378432305" integer="16"/>
+      <define name="ACCEL_X_NEUTRAL" value="-411"/>
+      <define name="ACCEL_Y_NEUTRAL" value="19"/>
+      <define name="ACCEL_Z_NEUTRAL" value="-58"/>
+      <define name="ACCEL_X_SENS" value="4.590269558543954" integer="16"/>
+      <define name="ACCEL_Y_SENS" value="4.8882223167402445" integer="16"/>
+      <define name="ACCEL_Z_SENS" value="4.822716288246021" integer="16"/>
+
+      <!-- Calibrate Accelometer on 150423 20:40 UTC-->
+    <!-- <define name="IMU_ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={-410,19,-56}, .scale={{13420,4554,56119},{2923,931,11629}}}}"/> -->
+<!--    <define name="ACCEL_X_NEUTRAL" value="-410"/>-->
+<!--    <define name="ACCEL_Y_NEUTRAL" value="19"/>-->
+<!--    <define name="ACCEL_Z_NEUTRAL" value="-56"/>-->
+<!--    <define name="ACCEL_X_SENS" value="4.591173431212081" integer="16"/>-->
+<!--    <define name="ACCEL_Y_SENS" value="4.891514448303641" integer="16"/>-->
+<!--    <define name="ACCEL_Z_SENS" value="4.825780378432305" integer="16"/>-->
 
     <!--    <define name="MAG_X_NEUTRAL" value="7"/>-->
     <!--    <define name="MAG_Y_NEUTRAL" value="76"/>-->

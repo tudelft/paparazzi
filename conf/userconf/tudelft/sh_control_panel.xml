@@ -457,7 +457,7 @@
       </program>
       <program name="Gazebo"/>
     </session>
-    <session name="Simulation - wind+msg+att_vis+joy">
+    <session name="Simulation:tx16s+wind+msg+att_vis">
       <program name="Simulator">
         <arg flag="-a" constant="@AIRCRAFT"/>
         <arg flag="-t" constant="nps"/>
@@ -476,7 +476,30 @@
       <program name="Attitude Visualizer"/>
       <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
         <arg flag="-ac" constant="@AIRCRAFT"/>
-        <arg flag="hobbyking.xml"/>
+        <arg flag="TX16S.xml"/>
+        <arg flag="-d 0"/>
+      </program>
+    </session>
+    <session name="Simulation:sm600+wind+msg+att_vis">
+      <program name="Simulator">
+        <arg flag="-a" constant="@AIRCRAFT"/>
+        <arg flag="-t" constant="nps"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="GCS">
+        <arg flag="-speech"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Environment Simulator"/>
+      <program name="Attitude Visualizer"/>
+      <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
+        <arg flag="-ac" constant="@AIRCRAFT"/>
+        <arg flag="sm600_mode.xml"/>
         <arg flag="-d 0"/>
       </program>
     </session>
