@@ -112,6 +112,9 @@ float euler_order[3];
 float psi_order_motor = 0;
 
 
+float slider_power_cd0 = 0.084; 
+float slider_power_cda = 1.21; 
+
 //Rotors test: 
 float des_az_angle_test = 0; 
 float des_el_angle_test = 0;
@@ -1113,6 +1116,10 @@ void send_values_to_raspberry_pi(void){
     //Approach tilting angle constraint: 
     extra_data_out_local[58] = OVERACTUATED_MIXING_K_ALT_TILT_CONSTRAINT;     
     extra_data_out_local[59] = OVERACTUATED_MIXING_MIN_ALT_TILT_CONSTRAINT;   
+
+    extra_data_out_local[60] = slider_power_cd0; 
+    extra_data_out_local[61] = slider_power_cda;    
+
 }
 
 /**
