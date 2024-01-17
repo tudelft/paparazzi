@@ -103,8 +103,10 @@
 #endif
 #endif
 
-float L1 = CTRL_EFF_CALC_L1;
-float L2 = CTRL_EFF_CALC_L2;
+float L1 = STABILIZATION_INDI_L1;
+float L2 = STABILIZATION_INDI_L2;
+float weight_T = STABILIZATION_INDI_WEIGHT_T;
+float weight_S = STABILIZATION_INDI_WEIGHT_S;
 float K1 = CTRL_EFF_CALC_K1;
 float K2 = CTRL_EFF_CALC_K2;
 float K3 = CTRL_EFF_CALC_K3;
@@ -193,6 +195,7 @@ float act_dyn[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_DYN;
 //-------------------------------------
 float pivot_gain_q = STABILIZATION_INDI_PIVOT_GAIN_Q;
 float pivot_gain_theta = STABILIZATION_INDI_PIVOT_GAIN_THETA;
+float pivot_gain_i = STABILIZATION_INDI_PIVOT_GAIN_I;
 float pivot_ratio;
 // float pivot_servogain_q= STABILIZATION_INDI_PIVOT_SERVOGAIN_Q;
 // float pivot_servogain_theta= STABILIZATION_INDI_PIVOT_SERVOGAIN_THETA;
@@ -294,7 +297,7 @@ float g1_init[INDI_OUTPUTS][INDI_NUM_ACT];
 float g2_init[INDI_NUM_ACT];
 
 //Variables for the auto take off
-float roll_gain = 0.0;
+float roll_gain = 0.01;
 
 Butterworth2LowPass actuator_lowpass_filters[INDI_NUM_ACT];
 Butterworth2LowPass estimation_input_lowpass_filters[INDI_NUM_ACT];
@@ -646,8 +649,8 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 /*
   float delta_time = 1/200; //calculate the time step
   // Calculate the derivative of the tilt angle
-  float tilt_angle_rate_left = mapping * (indi_u[1] - actuator_state_filt_vect[1]) / delta_time;
-  float tilt_angle_rate_right = mapping * (indi_u[2] - actuator_state_filt_vect[2]) / delta_time;
+  float tilt_angle_rate_left = mapping * (indi_u[0] - actuator_state_filt_vect[0]) / delta_time;
+  float tilt_angle_rate_right = mapping * (indi_u[1] - actuator_state_filt_vect[1]) / delta_time;
   
   // calculate compensation for servo reaction moment (torque)
   float servo_moment_pitch_left = torque * 9.8 * tilt_angle_rate_left ;
@@ -901,18 +904,29 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     actuators_pprz[4] = 0;
     actuators_pprz[5] = 0;
   } else if (takeoff_stage == 1) {
+    struct FloatRates rates_filt;
+    rates_filt.q = update_first_order_low_pass(&rates_filt_fo[1], body_rates->q);
     float theta_d = take_off_theta();
-    stab_att_sp_euler.theta = theta_d;
+    struct FloatEulers euler_sp;
+    float_eulers_of_quat_zxy(&euler_sp, &quat_sp_f);
+    theta_d = euler_sp.theta;
 
     // Define B as a 1x2 matrix and W as a 2x2 diagonal matrix
         // Calculate B using the provided equation
     float B[NUM_OUT][TYPE_ACT] = {{sin(-eulers_zxy.theta ) * L1, m * 9.81 * L2 / L1 * cos(-eulers_zxy.theta ) * L1}};
-    float W[TYPE_ACT][TYPE_ACT] = {{1 / pow(10, 2), 0}, {0, 1 / pow(63 * M_PI / 180, 2)}};
+  
+    float W[TYPE_ACT][TYPE_ACT] = {{1 / pow(weight_T, 2), 0}, {0, weight_S / pow(63 * M_PI / 180, 2)}};
     float B_inv[TYPE_ACT][NUM_OUT];
 
     pseudoinv_B(B, W, B_inv);
-    
-    float du = pivot_gain_theta * (theta_d - eulers_zxy.theta ) - pivot_gain_q * body_rates->q;  
+   
+    float integral_theta_error = 0.0f;
+    float theta_error = theta_d - eulers_zxy.theta;
+    // Update the integrator with the current error
+    integral_theta_error += theta_error * 1.0/ PERIODIC_FREQUENCY;
+
+    float du = pivot_gain_theta * theta_error + pivot_gain_i * integral_theta_error - pivot_gain_q * rates_filt.q;
+ 
     float du_out[TYPE_ACT][1];
     // Multiply B_inv by du
     multiplyMatrixByScalar(B_inv, du, du_out); 
@@ -926,14 +940,13 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     actuators_pprz[1] = servo_command;
     if (autopilot_get_motors_on()) {
     int16_t motor_command = calculatePPRZCommand(K1, K2, K3, takeoff_thrust);
-    actuators_pprz[2] = motor_command;
-    actuators_pprz[3] = motor_command;
+    actuators_pprz[2] = motor_command - angular_accel_ref.p * roll_gain;
+    actuators_pprz[3] = motor_command + angular_accel_ref.p * roll_gain;
     } else {
       for (i = 2; i < INDI_NUM_ACT; i++) {
         actuators_pprz[i] = -9600;
       }
     }
-
 
    // don't use the ailerons for the takeoff
     actuators_pprz[4] = 0;
@@ -944,10 +957,9 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
       indi_u[i] = actuators_pprz[i];
     }
 
-    update_filters();
-
     /* reset psi setpoint to current psi angle */
     stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
+    update_filters();
   } else { // not in a takeoff stage, flying
 	  /* compute the INDI command */
 	  stabilization_indi_rate_run(rate_sp, in_flight);

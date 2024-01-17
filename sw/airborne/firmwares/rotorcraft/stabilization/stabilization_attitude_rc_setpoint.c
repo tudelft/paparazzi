@@ -257,7 +257,11 @@ void stabilization_attitude_read_rc_setpoint_eulers(struct Int32Eulers *sp, bool
       sp->theta = temp_theta;
     }
   } else { /* if not flying, use current yaw as setpoint */
-    sp->psi = stateGetNedToBodyEulers_i()->psi;
+    //sp->psi = stateGetNedToBodyEulers_i()->psi;
+    struct FloatEulers eulers_zxy;
+    struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
+    float_eulers_of_quat_zxy(&eulers_zxy, statequat);
+    sp->psi = ANGLE_BFP_OF_REAL(eulers_zxy.psi);
   }
 
   /* update timestamp for dt calculation */
@@ -349,7 +353,11 @@ void stabilization_attitude_read_rc_setpoint_eulers_f(struct FloatEulers *sp, bo
       sp->theta = temp_theta;
     }
   } else { /* if not flying, use current yaw as setpoint */
-    sp->psi = stateGetNedToBodyEulers_f()->psi;
+    //sp->psi = stateGetNedToBodyEulers_f()->psi;
+    struct FloatEulers eulers_zxy;
+    struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
+    float_eulers_of_quat_zxy(&eulers_zxy, statequat);
+    sp->psi = eulers_zxy.psi;
   }
 
   /* update timestamp for dt calculation */

@@ -37,8 +37,11 @@ extern float actuator_state_filt_vect[INDI_NUM_ACT];
 extern bool act_is_servo[INDI_NUM_ACT];
 extern float pivot_gain_q;
 extern float pivot_gain_theta;
-extern float pivot_servogain_q;
-extern float pivot_servogain_theta;
+extern float pivot_gain_i;
+extern float L1;
+extern float L2;
+extern float weight_T;
+extern float weight_S;
 extern float roll_gain;
 extern float indi_Wu_motor;
 extern float indi_Wu_servo;
@@ -56,6 +59,7 @@ extern float thrust_bx_eff;
 extern float thrust_bx_act_dyn;
 extern float actuator_thrust_bx_pprz;
 extern float thrust_bx_state_filt;
+extern struct FloatQuat quat_sp_f;
 
 extern float act_pref[INDI_NUM_ACT];
 
