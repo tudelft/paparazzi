@@ -46,7 +46,7 @@
         <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
         <define name="MS45XX_SYNC_SEND" value="FALSE" /> <!--description="flag to enable sending every new measurement via telemetry (default:FALSE)-->
         <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
-        <define name="MS45XX_PRESSURE_OFFSET" value="8476" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
+        <define name="MS45XX_PRESSURE_OFFSET" value="8056" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
         <define name="MS45XX_LOWPASS_TAU" value="0.25"/> <!--description="Time constant for second order Butterworth low pass filter"-->
         <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
       </module>
@@ -287,14 +287,14 @@
 
     <define name="SERVO_9_MIN_PWM" value="2200" />   
     <define name="SERVO_9_MAX_PWM" value="800" />   
-    <define name="SERVO_9_NEUTRAL_PWM" value="1500" /> 
+    <define name="SERVO_9_NEUTRAL_PWM" value="1608" /> 
     <define name="SERVO_9_MIN_ANGLE_DEG" value="-25" /> 
     <define name="SERVO_9_MAX_ANGLE_DEG" value="25" /> 
     <define name="SERVO_9_DELAY_TS" value="5" /> 
 
     <define name="SERVO_10_MIN_PWM" value="2200" />   
     <define name="SERVO_10_MAX_PWM" value="800" />   
-    <define name="SERVO_10_NEUTRAL_PWM" value="1500" /> 
+    <define name="SERVO_10_NEUTRAL_PWM" value="1390" /> 
     <define name="SERVO_10_MIN_ANGLE_DEG" value="-25" /> 
     <define name="SERVO_10_MAX_ANGLE_DEG" value="25" /> 
     <define name="SERVO_10_DELAY_TS" value="5" /> 
@@ -455,15 +455,15 @@
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
     <!-- ball bearings vehicle -->
-    <define name="SERVO_EL_1_ZERO_VALUE" value="-1.93" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="10.81" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="-4.5" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="1.23" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="3.42" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="-3.17" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-7.38" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="-6.15" unit="deg"/>
 
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="-7.5" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="-7.11" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="-1.31" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="-2.37" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="4.5" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="-3.16" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="-4.74" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="-0.26" unit="deg"/>
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
@@ -771,7 +771,7 @@
 
   <section name="BAT">
     <!-- Brick on only -->
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.52* adc)"/>
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.365 * adc)"/>
     <!-- <define name="MAX_BAT_CAPACITY" value="5000" unit="mAh"/> -->
     <!-- <define name="MILLIAMP_AT_IDLE_THROTTLE" value="500" unit="mA"/> -->
     <!-- <define name="MILLIAMP_AT_FULL_THROTTLE" value="30000" unit="mA"/> -->
