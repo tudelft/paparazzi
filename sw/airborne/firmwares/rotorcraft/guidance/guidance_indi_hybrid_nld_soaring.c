@@ -301,6 +301,8 @@ struct FloatVect3 guidance_wind_gradient = {0.0, 0.0, 0.0};
 #define GUIDANCE_INDI_SOARING_MAX_EXPLORATION_STEPS 1000
 #endif
 
+#define SOARING_RESET_STDBY_TIMEOUT 3     // seconds
+
 // 2m/0.1 = 20 data points for one axis
 #define MAP_MAX_NUM_POINTS 400
 
@@ -395,6 +397,8 @@ int32_t min_cost_wp_n;
 int32_t min_cost_wp_u;
 
 time_t rand_seed;
+uint16_t stdby_entry_time = 0;
+uint16_t reset_stdby_timeout = SOARING_RESET_STDBY_TIMEOUT;
 
 void guidance_indi_soaring_propagate_filters(void);
 static void guidance_indi_calcg_wing(struct FloatMat33 *Gmat);
@@ -515,6 +519,7 @@ void guidance_indi_soaring_enter(void) {
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
 
   soaring_heading_sp = ANGLE_FLOAT_OF_BFP(nav_heading);
+    guidance_indi_soaring_reset_soaring_wp();
 }
 
 void guidance_indi_soaring_move_wp(float cost_avg_val){
@@ -630,6 +635,9 @@ void guidance_indi_soaring_reset_soaring_wp(void) {
 void guidance_indi_soaring_reset_stby_wp(void) {
 //    guidance_indi_soaring_reset_wp(&stdby_wp_id);
     waypoint_set_here(stdby_wp_id);
+
+    // save entry time
+    stdby_entry_time = autopilot.flight_time;
 }
 
 void write_map_position_cost_info(struct FloatVect3 soaring_position, float corres_sum_cost){
@@ -997,6 +1005,12 @@ if (use_fixed_heading_wp) {
             soaring_wp_move_right = 0;
             soaring_wp_move_up = 0;
         }
+    }
+
+    if (stdby_entry_time > 0 && (stdby_entry_time+reset_stdby_timeout < autopilot.flight_time)) {
+        waypoint_set_here(stdby_wp_id);
+        guidance_indi_soaring_reset_soaring_wp();
+        stdby_entry_time = 0;
     }
 }
 

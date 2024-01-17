@@ -122,4 +122,6 @@ extern float soaring_wp_move_right;
 extern float soaring_wp_move_up;
 extern bool soaring_manual_search;
 
+extern uint16_t reset_stdby_timeout;
+
 #endif /* GUIDANCE_INDI_HYBRID_NLD_SOARING_H */
