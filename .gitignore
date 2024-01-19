@@ -197,3 +197,5 @@ tests/results/*
 
 # K-develop
 *.kate-swp
+conf/TMLDP_messages.xml
+conf/messages.xml
