@@ -227,14 +227,14 @@
         <define name  = "G1_ZERO"                   value = "{ 0.0f,    0.0f,    0.0f,    0.0f,   0.0f,  0.0f, 0.0f}"/> 
         <define name  = "G2"                        value = "{-0.02f,   0.02f,  -0.02f,   0.02f,  0.0f,  0.0f, 0.0f}"/>
         <define name  = "MAX_R"                     value = "120.0" unit="deg/s"/>
-        <define name  = "FILT_CUTOFF"               value = "5.0" />
-        <define name  = "FILT_CUTOFF_ACC"           value = "5.0"/>
-        <define name  = "FILT_CUTOFF_VEL"           value = "10.0"/>
+        <define name  = "FILT_CUTOFF"               value = "3.0" />
+        <define name  = "FILT_CUTOFF_ACC"           value = "3.0"/>
+        <define name  = "FILT_CUTOFF_VEL"           value = "3.0"/>
         <define name  = "FILT_CUTOFF_POS"           value = "10.0"/>
         <define name  = "ESTIMATION_FILT_CUTOFF"    value = "3.2" />
-        <define name  = "FILT_CUTOFF_P"             value = "5.0"/>
-        <define name  = "FILT_CUTOFF_Q"             value = "5.0"/>
-        <define name  = "FILT_CUTOFF_R"             value = "5.0" />
+        <define name  = "FILT_CUTOFF_P"             value = "3.0"/>
+        <define name  = "FILT_CUTOFF_Q"             value = "3.0"/>
+        <define name  = "FILT_CUTOFF_R"             value = "3.0" />
         <define name  = "FILT_CUTOFF_RDOT"          value = "0.5" />
         <define name  = "FILTER_YAW_RATE"           value = "TRUE"/>
         <define name  = "ACT_DYN"                   value = "{10.1f, 10.1f, 10.1f, 10.1f, 24.07f, 0.0f,0.0f}" />
