@@ -507,7 +507,7 @@ float ratio_vn_v[ANDI_NUM_ACT_TOT];
 /*Filters Initialization*/
 static Butterworth2LowPass filt_accel_ned[3];                 // Low pass filter for acceleration NED (1)                       - oneloop_andi_filt_cutoff_a (tau_a)
 static Butterworth2LowPass filt_veloc_ned[3];                 // Low pass filter for velocity NED                      - oneloop_andi_filt_cutoff_a (tau_a)       
-static Butterworth2LowPass rates_filt_fo[3];                  // Low pass filter for angular rates                              - ONELOOP_ANDI_FILT_CUTOFF_P/Q/R
+static Butterworth2LowPass rates_filt_bt[3];                  // Low pass filter for angular rates                              - ONELOOP_ANDI_FILT_CUTOFF_P/Q/R
 static Butterworth2LowPass model_pred_la_filt[3];             // Low pass filter for model prediction linear acceleration (1)   - oneloop_andi_filt_cutoff_a (tau_a)
 static Butterworth2LowPass att_dot_meas_lowpass_filters[3];   // Low pass filter for attitude derivative measurements           - oneloop_andi_filt_cutoff (tau)
 static Butterworth2LowPass model_pred_aa_filt[3];             // Low pass filter for model prediction angular acceleration      - oneloop_andi_filt_cutoff (tau)
@@ -1087,12 +1087,9 @@ void init_filter(void)
 
   // Init rate filter for feedback
   float time_constants[3] = {1.0 / (2 * M_PI * oneloop_andi_filt_cutoff_p), 1.0 / (2 * M_PI * oneloop_andi_filt_cutoff_q), 1.0 / (2 * M_PI * oneloop_andi_filt_cutoff_r)};
-  // init_first_order_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
-  // init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
-  // init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
-  init_butterworth_2_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
-  init_butterworth_2_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
-  init_butterworth_2_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
+  init_butterworth_2_low_pass(&rates_filt_bt[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
+  init_butterworth_2_low_pass(&rates_filt_bt[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
+  init_butterworth_2_low_pass(&rates_filt_bt[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
   
   // Some other filters
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
@@ -1119,8 +1116,7 @@ void oneloop_andi_propagate_filters(void) {
     update_butterworth_2_low_pass(&model_pred_aa_filt[i], model_pred[3+i]);
     update_butterworth_2_low_pass(&model_pred_la_filt[i],   model_pred[i]);
     update_butterworth_2_low_pass(&att_dot_meas_lowpass_filters[i], rate_vect[i]);
-    // update_first_order_low_pass(&rates_filt_fo[i], rate_vect[i]);
-    update_butterworth_2_low_pass(&rates_filt_fo[i], rate_vect[i]);
+    update_butterworth_2_low_pass(&rates_filt_bt[i], rate_vect[i]);
 
     ang_acc[i] = (att_dot_meas_lowpass_filters[i].o[0]- att_dot_meas_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY + model_pred[3+i] - model_pred_aa_filt[i].o[0];
     lin_acc[i] = filt_accel_ned[i].o[0] + model_pred[i] - model_pred_la_filt[i].o[0];     
@@ -1352,16 +1348,16 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   
   // Register the state of the drone in the variables used in RM and EC
   // (1) Attitude related
-  oneloop_andi.sta_state.att[0] = eulers_zxy.phi                        * use_increment;
-  oneloop_andi.sta_state.att[1] = eulers_zxy.theta                      * use_increment;
-  oneloop_andi.sta_state.att[2] = eulers_zxy.psi                        * use_increment;
+  oneloop_andi.sta_state.att[0]    = eulers_zxy.phi        * use_increment;
+  oneloop_andi.sta_state.att[1]    = eulers_zxy.theta      * use_increment;
+  oneloop_andi.sta_state.att[2]    = eulers_zxy.psi        * use_increment;
   oneloop_andi_propagate_filters();   //needs to be after update of attitude vector
-  oneloop_andi.sta_state.att_d[0]  = rates_filt_fo[0].o[0] * use_increment;//rates_filt_fo[0].last_out             * use_increment;
-  oneloop_andi.sta_state.att_d[1]  = rates_filt_fo[1].o[0] * use_increment;//rates_filt_fo[1].last_out             * use_increment;
-  oneloop_andi.sta_state.att_d[2]  = rates_filt_fo[2].o[0] * use_increment;//rates_filt_fo[2].last_out             * use_increment;
-  oneloop_andi.sta_state.att_2d[0] = ang_acc[0]                            * use_increment;
-  oneloop_andi.sta_state.att_2d[1] = ang_acc[1]                            * use_increment;
-  oneloop_andi.sta_state.att_2d[2] = ang_acc[2]                            * use_increment;
+  oneloop_andi.sta_state.att_d[0]  = rates_filt_bt[0].o[0] * use_increment;
+  oneloop_andi.sta_state.att_d[1]  = rates_filt_bt[1].o[0] * use_increment;
+  oneloop_andi.sta_state.att_d[2]  = rates_filt_bt[2].o[0] * use_increment;
+  oneloop_andi.sta_state.att_2d[0] = ang_acc[0]            * use_increment;
+  oneloop_andi.sta_state.att_2d[1] = ang_acc[1]            * use_increment;
+  oneloop_andi.sta_state.att_2d[2] = ang_acc[2]            * use_increment;
   // (2) Position related
   oneloop_andi.gui_state.pos[0] = stateGetPositionNed_f()->x;   
   oneloop_andi.gui_state.pos[1] = stateGetPositionNed_f()->y;   
