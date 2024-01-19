@@ -88,6 +88,7 @@
 #include "modules/nav/nav_rotorcraft_hybrid.h"
 #include "firmwares/rotorcraft/navigation.h"
 #include <stdio.h>
+//#include "nps/nps_fdm.h"
 
 // Number of real actuators (e.g. motors, servos)
 #ifndef ANDI_NUM_ACT
@@ -139,7 +140,7 @@ float  oneloop_andi_filt_cutoff_v = 2.0;
 #ifdef ONELOOP_ANDI_FILT_CUTOFF_POS
 float  oneloop_andi_filt_cutoff_pos = ONELOOP_ANDI_FILT_CUTOFF_POS;
 #else
-float  os = 2.0;
+float  oneloop_andi_filt_cutoff_pos = 2.0;
 #endif
 
 #ifdef  ONELOOP_ANDI_FILT_CUTOFF_P
@@ -396,6 +397,29 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
   float   rate_vect_temp[3] = {stateGetBodyRates_f()->p, stateGetBodyRates_f()->q, stateGetBodyRates_f()->r};
   debug_vect(trans, dev, "att_rate", rate_vect_temp, 3);
 }
+
+// static void send_oneloop_nps(struct transport_tx *trans, struct link_device *dev)
+// {
+//   float nps_acc_N = (float) fdm.ltpprz_ecef_accel.x;
+//   float nps_acc_E = (float) fdm.ltpprz_ecef_accel.y;
+//   float nps_acc_D = (float) fdm.ltpprz_ecef_accel.z;
+//   float nps_vel_N = (float) fdm.ltpprz_ecef_vel.x  ;
+//   float nps_vel_E = (float) fdm.ltpprz_ecef_vel.y  ;
+//   float nps_vel_D = (float) fdm.ltpprz_ecef_vel.z  ;
+//   float nps_pos_N = (float) fdm.ltpprz_pos.x       ;
+//   float nps_pos_E = (float) fdm.ltpprz_pos.y       ;
+//   float nps_pos_D = (float) fdm.ltpprz_pos.z       ;
+//   pprz_msg_send_NPS_SPEED_POS(trans, dev, AC_ID,
+//                                         &nps_acc_N,
+//                                         &nps_acc_E,
+//                                         &nps_acc_D,
+//                                         &nps_vel_N,
+//                                         &nps_vel_E,
+//                                         &nps_vel_D,
+//                                         &nps_pos_N,
+//                                         &nps_pos_E,
+//                                         &nps_pos_D);
+// }
 #endif
 
 /*Define general struct of the Oneloop ANDI controller*/
@@ -448,7 +472,7 @@ float t_0_chirp           = 0.0;
 float f0_chirp            = 0.8 / (2.0 * M_PI);
 float f1_chirp            = 0.8 / (2.0 * M_PI);
 float t_chirp             = 45.0;
-float A_chirp             = 0.5;
+float A_chirp             = 1.0;
 int8_t chirp_axis         = 0;
 float p_ref_0[3]          = {0.0, 0.0, 0.0};
 
@@ -481,9 +505,10 @@ float ratio_u_un[ANDI_NUM_ACT_TOT];
 float ratio_vn_v[ANDI_NUM_ACT_TOT];
 
 /*Filters Initialization*/
-static Butterworth2LowPass filt_accel_ned[3];            // Low pass filter for acceleration NED (1)                       - oneloop_andi_filt_cutoff_a (tau_a)
+static Butterworth2LowPass filt_accel_ned[3];                 // Low pass filter for acceleration NED (1)                       - oneloop_andi_filt_cutoff_a (tau_a)
+static Butterworth2LowPass filt_veloc_ned[3];                 // Low pass filter for velocity NED                      - oneloop_andi_filt_cutoff_a (tau_a)       
 static Butterworth2LowPass rates_filt_fo[3];                  // Low pass filter for angular rates                              - ONELOOP_ANDI_FILT_CUTOFF_P/Q/R
-static Butterworth2LowPass model_pred_la_filt[3];        // Low pass filter for model prediction linear acceleration (1)   - oneloop_andi_filt_cutoff_a (tau_a)
+static Butterworth2LowPass model_pred_la_filt[3];             // Low pass filter for model prediction linear acceleration (1)   - oneloop_andi_filt_cutoff_a (tau_a)
 static Butterworth2LowPass att_dot_meas_lowpass_filters[3];   // Low pass filter for attitude derivative measurements           - oneloop_andi_filt_cutoff (tau)
 static Butterworth2LowPass model_pred_aa_filt[3];             // Low pass filter for model prediction angular acceleration      - oneloop_andi_filt_cutoff (tau)
 static Butterworth2LowPass accely_filt;                       // Low pass filter for acceleration in y direction                - oneloop_andi_filt_cutoff (tau)
@@ -1047,6 +1072,7 @@ void init_filter(void)
   //printf("oneloop andi filt cutoff PQR: %f %f %f\n", oneloop_andi_filt_cutoff_p,oneloop_andi_filt_cutoff_q,oneloop_andi_filt_cutoff_r);
   float tau   = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff);
   float tau_a = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_a);
+  float tau_v = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_v);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
 
   // Filtering of the Inputs with 3 dimensions (e.g. rates and accelerations)
@@ -1055,6 +1081,7 @@ void init_filter(void)
     init_butterworth_2_low_pass(&att_dot_meas_lowpass_filters[i], tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&model_pred_aa_filt[i],           tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&filt_accel_ned[i],               tau_a, sample_time, 0.0 );
+    init_butterworth_2_low_pass(&filt_veloc_ned[i],               tau_v, sample_time, 0.0 );
     init_butterworth_2_low_pass(&model_pred_la_filt[i],           tau_a, sample_time, 0.0); 
   }
 
@@ -1076,11 +1103,15 @@ void init_filter(void)
 /** @brief  Propagate the filters */
 void oneloop_andi_propagate_filters(void) {
   struct  NedCoor_f *accel = stateGetAccelNed_f();
+  struct  NedCoor_f *veloc = stateGetSpeedNed_f();
   struct  FloatRates *body_rates = stateGetBodyRates_f();
   float   rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
   update_butterworth_2_low_pass(&filt_accel_ned[0], accel->x);
   update_butterworth_2_low_pass(&filt_accel_ned[1], accel->y);
-  update_butterworth_2_low_pass(&filt_accel_ned[2], accel->z);  
+  update_butterworth_2_low_pass(&filt_accel_ned[2], accel->z); 
+  update_butterworth_2_low_pass(&filt_veloc_ned[0], veloc->x);
+  update_butterworth_2_low_pass(&filt_veloc_ned[1], veloc->y);
+  update_butterworth_2_low_pass(&filt_veloc_ned[2], veloc->z); 
   calc_model();
   int8_t i;
 
@@ -1144,6 +1175,7 @@ void oneloop_andi_init(void)
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_G, send_eff_mat_g_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE, send_guidance_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_oneloop_debug);
+    //register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_NPS_SPEED_POS, send_oneloop_nps);
   #endif
 }
 
@@ -1334,9 +1366,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   oneloop_andi.gui_state.pos[0] = stateGetPositionNed_f()->x;   
   oneloop_andi.gui_state.pos[1] = stateGetPositionNed_f()->y;   
   oneloop_andi.gui_state.pos[2] = stateGetPositionNed_f()->z;   
-  oneloop_andi.gui_state.vel[0] = stateGetSpeedNed_f()->x;      
-  oneloop_andi.gui_state.vel[1] = stateGetSpeedNed_f()->y;      
-  oneloop_andi.gui_state.vel[2] = stateGetSpeedNed_f()->z;      
+  oneloop_andi.gui_state.vel[0] = filt_veloc_ned[0].o[0];      
+  oneloop_andi.gui_state.vel[1] = filt_veloc_ned[1].o[0];      
+  oneloop_andi.gui_state.vel[2] = filt_veloc_ned[2].o[0];      
   oneloop_andi.gui_state.acc[0] = lin_acc[0];
   oneloop_andi.gui_state.acc[1] = lin_acc[1];
   oneloop_andi.gui_state.acc[2] = lin_acc[2];
