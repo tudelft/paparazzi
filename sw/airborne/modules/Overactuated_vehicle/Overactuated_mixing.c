@@ -112,8 +112,8 @@ float euler_order[3];
 float psi_order_motor = 0;
 
 
-float slider_power_cd0 = 0.084; 
-float slider_power_cda = 1.21; 
+float slider_power_cd0 = 0.03; 
+float slider_power_cda = 2.0; 
 
 //Rotors test: 
 float des_az_angle_test = 0; 
