@@ -29,7 +29,7 @@
   </sectors>
   <exceptions>
 
-    <!-- In AUTO2, No RC, No Datalink, No GPS: TODO: what should I do? -->
+    <!-- In AUTO2, No RC, No Datalink, No GPS: Stay and descend??-->
     <exception cond="autopilot.mode == MODE_AUTO2 && radio_control.status == RC_REALLY_LOST && datalink_time > 15 && !GpsFixValid() && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="StayAndDescend"/>
 
     <!-- In AUTO2, RC lost and datalink lost, it is an emergency, but it can still fly if GPS is fixed: stay there for some time and descend slowly-->
