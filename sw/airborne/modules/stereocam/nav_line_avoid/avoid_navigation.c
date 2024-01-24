@@ -91,8 +91,8 @@ void run_avoid_navigation_onvision(void)
           //Stop and put waypoint 2.5 m ahead
           struct EnuCoor_i new_coor;
           struct EnuCoor_i *pos = stateGetPositionEnu_i();
-          float sin_heading = sinf(ANGLE_FLOAT_OF_BFP(nav_heading));
-          float cos_heading = cosf(ANGLE_FLOAT_OF_BFP(nav_heading));
+          float sin_heading = sinf(nav.heading);
+          float cos_heading = cosf(nav.heading);
           new_coor.x = pos->x + POS_BFP_OF_REAL(sin_heading * (NAV_LINE_AVOID_SEGMENT_LENGTH));
           new_coor.y = pos->y + POS_BFP_OF_REAL(cos_heading * (NAV_LINE_AVOID_SEGMENT_LENGTH));
           new_coor.z = pos->z;
@@ -114,7 +114,7 @@ void run_avoid_navigation_onvision(void)
   avoid_navigation_data.stereo_bin[4] = counter;
 }
 
-void increase_nav_heading(int32_t *heading, int32_t increment)
+void increase_nav_heading(float *heading, float increment)
 {
   *heading = *heading + increment;
 }

@@ -234,6 +234,12 @@ void stabilization_attitude_set_rpy_setpoint_i(struct Int32Eulers *rpy)
   float_quat_of_eulers(&stab_att_sp_quat, &stab_att_sp_euler);
 }
 
+void stabilization_attitude_set_quat_setpoint_i(struct Int32Quat *quat)
+{
+  QUAT_FLOAT_OF_BFP(stab_att_sp_quat, *quat);
+  float_eulers_of_quat(&stab_att_sp_euler, &stab_att_sp_quat);
+}
+
 void stabilization_attitude_set_earth_cmd_i(struct Int32Vect2 *cmd, int32_t heading)
 {
   struct FloatVect2 cmd_f;
@@ -243,6 +249,12 @@ void stabilization_attitude_set_earth_cmd_i(struct Int32Vect2 *cmd, int32_t head
   heading_f = ANGLE_FLOAT_OF_BFP(heading);
 
   quat_from_earth_cmd_f(&stab_att_sp_quat, &cmd_f, heading_f);
+}
+
+void stabilization_attitude_set_stab_sp(struct StabilizationSetpoint *sp)
+{
+  stab_att_sp_euler = stab_sp_to_eulers_f(sp);
+  stab_att_sp_quat = stab_sp_to_quat_f(sp);
 }
 
 #ifndef GAIN_PRESCALER_FF

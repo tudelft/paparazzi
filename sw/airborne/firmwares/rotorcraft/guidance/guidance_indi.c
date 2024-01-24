@@ -69,12 +69,13 @@ float guidance_indi_speed_gain = 1.8;
 #endif
 abi_event accel_sp_ev;
 static void accel_sp_cb(uint8_t sender_id, uint8_t flag, struct FloatVect3 *accel_sp);
-struct FloatVect3 indi_accel_sp = {0.0, 0.0, 0.0};
+struct FloatVect3 indi_accel_sp = {0.0f, 0.0f, 0.0f};
 bool indi_accel_sp_set_2d = false;
 bool indi_accel_sp_set_3d = false;
 
-struct FloatVect3 speed_sp = {0.0, 0.0, 0.0};
-struct FloatVect3 sp_accel = {0.0, 0.0, 0.0};
+// FIXME make a proper structure for these variables
+struct FloatVect3 speed_sp = {0.0f, 0.0f, 0.0f};
+struct FloatVect3 sp_accel = {0.0f, 0.0f, 0.0f};
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
 float guidance_indi_specific_force_gain = GUIDANCE_INDI_SPECIFIC_FORCE_GAIN;
 static void guidance_indi_filter_thrust(void);
@@ -172,29 +173,26 @@ void guidance_indi_enter(void)
 }
 
 /**
+ * @param accel_sp accel setpoint in NED frame [m/s^2]
  * @param heading_sp the desired heading [rad]
+ * @return stabilization setpoint structure
  *
  * main indi guidance function
  */
-void guidance_indi_run(float *heading_sp)
+struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, float heading_sp)
 {
   struct FloatEulers eulers_yxz;
   struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
   float_eulers_of_quat_yxz(&eulers_yxz, statequat);
 
+  // set global accel sp variable FIXME clean this
+  sp_accel = *accel_sp;
+
   //filter accel to get rid of noise and filter attitude to synchronize with accel
   guidance_indi_propagate_filters(&eulers_yxz);
 
-  //Linear controller to find the acceleration setpoint from position and velocity
-  float pos_x_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.x) - stateGetPositionNed_f()->x;
-  float pos_y_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y) - stateGetPositionNed_f()->y;
-  float pos_z_err = POS_FLOAT_OF_BFP(guidance_v_z_ref - stateGetPositionNed_i()->z);
-
-  // Use feed forward part from reference model
-  speed_sp.x = pos_x_err * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(guidance_h.ref.speed.x);
-  speed_sp.y = pos_y_err * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(guidance_h.ref.speed.y);
-  speed_sp.z = pos_z_err * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(guidance_v_zd_ref);
-
+  // FIXME the ABI message overwrite the accel setpoint
+  // it update should be replaced by a call to the run function
   // If the acceleration setpoint is set over ABI message
   if (indi_accel_sp_set_2d) {
     sp_accel.x = indi_accel_sp.x;
@@ -215,11 +213,8 @@ void guidance_indi_run(float *heading_sp)
     if (dt > 0.5) {
       indi_accel_sp_set_3d = false;
     }
-  } else {
-    sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * guidance_indi_speed_gain + ACCEL_FLOAT_OF_BFP(guidance_h.ref.accel.x);
-    sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * guidance_indi_speed_gain + ACCEL_FLOAT_OF_BFP(guidance_h.ref.accel.y);
-    sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * guidance_indi_speed_gain + ACCEL_FLOAT_OF_BFP(guidance_v_zdd_ref);
   }
+  // else, don't change sp_accel
 
 #if GUIDANCE_INDI_RC_DEBUG
 #warning "GUIDANCE_INDI_RC_DEBUG lets you control the accelerations via RC, but disables autonomous flight!"
@@ -262,7 +257,7 @@ void guidance_indi_run(float *heading_sp)
 
   guidance_euler_cmd.theta = pitch_filt.o[0] + control_increment.x;
   guidance_euler_cmd.phi = roll_filt.o[0] + control_increment.y;
-  guidance_euler_cmd.psi = *heading_sp;
+  guidance_euler_cmd.psi = heading_sp;
 
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
   guidance_indi_filter_thrust();
@@ -288,7 +283,44 @@ void guidance_indi_run(float *heading_sp)
   //set the quat setpoint with the calculated roll and pitch
   struct FloatQuat q_sp;
   float_quat_of_eulers_yxz(&q_sp, &guidance_euler_cmd);
-  QUAT_BFP_OF_REAL(stab_att_sp_quat, q_sp);
+
+  return stab_sp_from_quat_f(&q_sp);
+}
+
+struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight UNUSED, struct HorizontalGuidance *gh, struct VerticalGuidance *gv, enum GuidanceIndi_HMode h_mode, enum GuidanceIndi_VMode v_mode)
+{
+  struct FloatVect3 pos_err = { 0 };
+  struct FloatVect3 accel_sp = { 0 };
+
+  if (h_mode == GUIDANCE_INDI_H_POS) {
+    pos_err.x = POS_FLOAT_OF_BFP(gh->ref.pos.x) - stateGetPositionNed_f()->x;
+    pos_err.y = POS_FLOAT_OF_BFP(gh->ref.pos.y) - stateGetPositionNed_f()->y;
+    speed_sp.x = pos_err.x * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
+    speed_sp.y = pos_err.y * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
+  }
+  else if (h_mode == GUIDANCE_INDI_H_SPEED) {
+    speed_sp.x = SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
+    speed_sp.y = SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
+  }
+  else { // H_ACCEL
+    speed_sp.x = 0.f;
+    speed_sp.y = 0.f;
+  }
+
+  if (v_mode == GUIDANCE_INDI_V_POS) {
+    pos_err.z = POS_FLOAT_OF_BFP(gv->z_ref) - stateGetPositionNed_f()->z;
+    speed_sp.z = pos_err.z * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(gv->zd_ref);
+  } else if (v_mode == GUIDANCE_INDI_V_SPEED) {
+    speed_sp.z = SPEED_FLOAT_OF_BFP(gv->zd_ref);
+  } else { // V_ACCEL
+    speed_sp.z = 0.f;
+  }
+
+  accel_sp.x = (speed_sp.x - stateGetSpeedNed_f()->x) * guidance_indi_speed_gain + ACCEL_FLOAT_OF_BFP(gh->ref.accel.x);
+  accel_sp.y = (speed_sp.y - stateGetSpeedNed_f()->y) * guidance_indi_speed_gain + ACCEL_FLOAT_OF_BFP(gh->ref.accel.y);
+  accel_sp.z = (speed_sp.z - stateGetSpeedNed_f()->z) * guidance_indi_speed_gain + ACCEL_FLOAT_OF_BFP(gv->zdd_ref);
+
+  return guidance_indi_run(&accel_sp, gh->sp.heading);
 }
 
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
@@ -400,4 +432,58 @@ static void accel_sp_cb(uint8_t sender_id __attribute__((unused)), uint8_t flag,
     time_of_accel_sp_3d = get_sys_time_float();
   }
 }
+
+#if GUIDANCE_INDI_USE_AS_DEFAULT
+// guidance indi control function is implementing the default functions of guidance
+
+void guidance_h_run_enter(void)
+{
+  guidance_indi_enter();
+}
+
+void guidance_v_run_enter(void)
+{
+  // nothing to do
+}
+
+static struct VerticalGuidance *_gv = &guidance_v;
+static enum GuidanceIndi_VMode _v_mode = GUIDANCE_INDI_V_POS;
+
+struct StabilizationSetpoint guidance_h_run_pos(bool in_flight, struct HorizontalGuidance *gh)
+{
+  return guidance_indi_run_mode(in_flight, gh, _gv, GUIDANCE_INDI_H_POS, _v_mode);
+}
+
+struct StabilizationSetpoint guidance_h_run_speed(bool in_flight, struct HorizontalGuidance *gh)
+{
+  return guidance_indi_run_mode(in_flight, gh, _gv, GUIDANCE_INDI_H_SPEED, _v_mode);
+}
+
+struct StabilizationSetpoint guidance_h_run_accel(bool in_flight, struct HorizontalGuidance *gh)
+{
+  return guidance_indi_run_mode(in_flight, gh, _gv, GUIDANCE_INDI_H_ACCEL, _v_mode);
+}
+
+int32_t guidance_v_run_pos(bool in_flight UNUSED, struct VerticalGuidance *gv)
+{
+  _gv = gv;
+  _v_mode = GUIDANCE_INDI_V_POS;
+  return 0; // nothing to do
+}
+
+int32_t guidance_v_run_speed(bool in_flight UNUSED, struct VerticalGuidance *gv)
+{
+  _gv = gv;
+  _v_mode = GUIDANCE_INDI_V_SPEED;
+  return 0; // nothing to do
+}
+
+int32_t guidance_v_run_accel(bool in_flight UNUSED, struct VerticalGuidance *gv)
+{
+  _gv = gv;
+  _v_mode = GUIDANCE_INDI_V_ACCEL;
+  return 0; // nothing to do
+}
+
+#endif
 

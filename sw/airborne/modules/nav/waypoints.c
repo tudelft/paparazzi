@@ -31,6 +31,22 @@
 const uint8_t nb_waypoint = NB_WAYPOINT;
 struct Waypoint waypoints[NB_WAYPOINT];
 
+#if PERIODIC_TELEMETRY
+#include "modules/datalink/telemetry.h"
+
+static void send_wp_moved(struct transport_tx *trans, struct link_device *dev)
+{
+  static uint8_t i;
+  i++;
+  if (i >= nb_waypoint) { i = 0; }
+  pprz_msg_send_WP_MOVED_ENU(trans, dev, AC_ID,
+                             &i,
+                             &(waypoints[i].enu_i.x),
+                             &(waypoints[i].enu_i.y),
+                             &(waypoints[i].enu_i.z));
+}
+#endif
+
 /** initialize global and local waypoints */
 void waypoints_init(void)
 {
@@ -50,6 +66,10 @@ void waypoints_init(void)
       waypoint_set_enu(i, &wp_tmp_float[i]);
     }
   }
+
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WP_MOVED, send_wp_moved);
+#endif
 }
 
 bool waypoint_is_global(uint8_t wp_id)
@@ -96,6 +116,42 @@ float waypoint_get_alt(uint8_t wp_id)
     return waypoints[wp_id].enu_f.z;
   }
   return 0.f;
+}
+
+float waypoint_get_lat_deg(uint8_t wp_id)
+{
+  if (wp_id < nb_waypoint) {
+    if (!waypoint_is_global(wp_id) && !bit_is_set(waypoints[wp_id].flags, WP_FLAG_LLA_I)) {
+      waypoint_globalize(wp_id);
+    }
+    return DEG_OF_EM7DEG(waypoints[wp_id].lla.lat);
+  }
+  else {
+    return 0.f;
+  }
+}
+
+float waypoint_get_lat_rad(uint8_t wp_id)
+{
+  return RadOfDeg(waypoint_get_lat_deg(wp_id));
+}
+
+float waypoint_get_lon_deg(uint8_t wp_id)
+{
+  if (wp_id < nb_waypoint) {
+    if (!waypoint_is_global(wp_id) && !bit_is_set(waypoints[wp_id].flags, WP_FLAG_LLA_I)) {
+      waypoint_globalize(wp_id);
+    }
+    return DEG_OF_EM7DEG(waypoints[wp_id].lla.lon);
+  }
+  else {
+    return 0.f;
+  }
+}
+
+float waypoint_get_lon_rad(uint8_t wp_id)
+{
+  return RadOfDeg(waypoint_get_lon_deg(wp_id));
 }
 
 void waypoint_set_enu_i(uint8_t wp_id, struct EnuCoor_i *enu)
@@ -314,6 +370,32 @@ struct LlaCoor_i *waypoint_get_lla(uint8_t wp_id)
       waypoint_globalize(wp_id);
     }
     return &waypoints[wp_id].lla;
+  }
+  else {
+    return NULL;
+  }
+}
+
+struct EnuCoor_f *waypoint_get_enu_f(uint8_t wp_id)
+{
+  if (wp_id < nb_waypoint) {
+    if (waypoint_is_global(wp_id) && !bit_is_set(waypoints[wp_id].flags, WP_FLAG_ENU_F)) {
+      waypoint_localize(wp_id);
+    }
+    return &waypoints[wp_id].enu_f;
+  }
+  else {
+    return NULL;
+  }
+}
+
+struct EnuCoor_i *waypoint_get_enu_i(uint8_t wp_id)
+{
+  if (wp_id < nb_waypoint) {
+    if (waypoint_is_global(wp_id) && !bit_is_set(waypoints[wp_id].flags, WP_FLAG_ENU_I)) {
+      waypoint_localize(wp_id);
+    }
+    return &waypoints[wp_id].enu_i;
   }
   else {
     return NULL;

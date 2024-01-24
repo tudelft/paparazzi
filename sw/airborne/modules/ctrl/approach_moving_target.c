@@ -160,13 +160,13 @@ void follow_diagonal_approach(void) {
     ref_relvel.z + target_vel.z + ec_vel.z,
   };
 
-  vect_bound_in_3d(&des_vel, 10.0);
+  float_vect3_bound_in_3d(&des_vel, 10.0);
 
   // Bound vertical speed setpoint
   if(stateGetAirspeed_f() > 13.0) {
     Bound(des_vel.z, -4.0, 5.0);
   } else {
-    Bound(des_vel.z, -nav_climb_vspeed, -nav_descend_vspeed);
+    Bound(des_vel.z, -nav.climb_vspeed, -nav.descend_vspeed);
   }
 
   AbiSendMsgVEL_SP(VEL_SP_FCR_ID, &des_vel);
@@ -177,7 +177,7 @@ void follow_diagonal_approach(void) {
   float min_speed;
   float sin_gamma_ref = sinf(gamma_ref);
   if (sin_gamma_ref > 0.05) {
-    min_speed = (nav_descend_vspeed+0.1) / sin_gamma_ref;
+    min_speed = (nav.descend_vspeed+0.1) / sin_gamma_ref;
   } else {
     min_speed = -5.0; // prevent dividing by zero
   }

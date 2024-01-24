@@ -81,8 +81,6 @@ extern bool nav_in_segment;
 extern float nav_circle_x, nav_circle_y, nav_circle_radius; /* m */
 extern float nav_segment_x_1, nav_segment_y_1, nav_segment_x_2, nav_segment_y_2; /* m */
 
-extern uint8_t last_wp __attribute__((unused));
-
 extern int nav_mode;
 #define NAV_MODE_ROLL 1
 #define NAV_MODE_COURSE 2
@@ -98,6 +96,11 @@ extern void fly_to_xy(float x, float y);
 #define NavGotoWaypoint(_wp) { \
     horizontal_mode = HORIZONTAL_MODE_WAYPOINT; \
     fly_to_xy(waypoints[_wp].x, waypoints[_wp].y); \
+  }
+
+#define NavGotoPoint(_point) { \
+    horizontal_mode = HORIZONTAL_MODE_WAYPOINT; \
+    fly_to_xy(_point.x, _point.y); \
   }
 
 
@@ -142,17 +145,11 @@ extern void nav_follow(uint8_t _ac_id, float _distance, float _height);
 #define NavFollow(_ac_id, _distance, _height) nav_follow(_ac_id, _distance, _height)
 
 extern void nav_glide(uint8_t start_wp, uint8_t wp);
+extern void nav_glide_alt(float start_alt, float final_alt);
 #define NavGlide(_start_wp, _wp) nav_glide(_start_wp, _wp)
 
 #define NavCircleWaypoint(wp, radius) \
   nav_circle_XY(waypoints[wp].x, waypoints[wp].y, radius)
-
-/** Normalize a degree angle between 0 and 359 */
-#define NormCourse(x) { \
-    uint8_t dont_loop_forever = 0;  \
-    while (x < 0 && ++dont_loop_forever) x += 360; \
-    while (x >= 360 && ++dont_loop_forever) x -= 360; \
-  }
 
 #define NavCircleCountNoRewind() (nav_circle_radians_no_rewind / (2*M_PI))
 #define NavCircleCount() (fabs(nav_circle_radians) / (2*M_PI))

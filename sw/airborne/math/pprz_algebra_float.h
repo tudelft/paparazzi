@@ -145,7 +145,7 @@ static inline float float_vect2_norm(struct FloatVect2 *v)
 static inline void float_vect2_normalize(struct FloatVect2 *v)
 {
   const float n = float_vect2_norm(v);
-  if (n > 0) {
+  if (n > 1e-4f) {
     v->x /= n;
     v->y /= n;
   }
@@ -177,7 +177,7 @@ static inline float float_vect3_norm(struct FloatVect3 *v)
 static inline void float_vect3_normalize(struct FloatVect3 *v)
 {
   const float n = float_vect3_norm(v);
-  if (n > 0) {
+  if (n > 1e-4f) {
     v->x /= n;
     v->y /= n;
     v->z /= n;
@@ -883,11 +883,13 @@ static inline void float_mat_diagonal_scal(float **o, float v, int n)
 
 extern bool float_mat_inv_2d(float inv_out[4], float mat_in[4]);
 extern void float_mat2_mult(struct FloatVect2 *vect_out, float mat[4], struct FloatVect2 vect_in);
-extern bool float_mat_inv_4d(float invOut[16], float mat_in[16]);
+extern bool float_mat_inv_4d(float invOut[4][4], float mat_in[4][4]);
 
-extern void vect_bound_in_2d(struct FloatVect3 *vect3, float bound);
-extern void vect_bound_in_3d(struct FloatVect3 *vect3, float bound);
-extern void vect_scale(struct FloatVect3 *vect3, float norm_des);
+extern void float_vect3_bound_in_2d(struct FloatVect3 *vect3, float bound);
+extern void float_vect3_bound_in_3d(struct FloatVect3 *vect3, float bound);
+extern void float_vect3_scale_in_2d(struct FloatVect3 *vect3, float norm_des);
+extern void float_vect2_bound_in_2d(struct FloatVect2 *vect2, float bound);
+extern void float_vect2_scale_in_2d(struct FloatVect2 *vect2, float norm_des);
 
 #ifdef __cplusplus
 } /* extern "C" */

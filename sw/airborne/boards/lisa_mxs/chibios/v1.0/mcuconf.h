@@ -244,7 +244,7 @@
  * ICU driver system settings.
  */
 #define STM32_ICU_USE_TIM1                  TRUE
-#define STM32_ICU_USE_TIM2                  FALSE
+#define STM32_ICU_USE_TIM2                  TRUE //for PPM input support
 #define STM32_ICU_USE_TIM3                  FALSE
 #define STM32_ICU_USE_TIM4                  FALSE
 #define STM32_ICU_USE_TIM5                  FALSE
@@ -427,7 +427,7 @@
 /*
  * USB driver system settings.
  */
-#if USE_USB_SERIAL
+#if USE_USB_SERIAL || USE_USB_SERIAL_DEBUG
 #define STM32_USB_USE_OTG1                  TRUE
 #else
 #define STM32_USB_USE_OTG1                  FALSE
