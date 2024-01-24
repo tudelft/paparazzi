@@ -66,6 +66,7 @@ int actuator_ardrone2_fd; /**< File descriptor for the port */
 #define ARDRONE_GPIO_PIN_IRQ_INPUT    176
 
 uint32_t led_hw_values;
+uint16_t actuators_pwm_values[ACTUATORS_ARDRONE_NB];
 
 static inline void actuators_ardrone_reset_flipflop(void)
 {
@@ -192,7 +193,7 @@ void actuators_ardrone_motor_status(void)
     if (autopilot_get_motors_on()) {
       if (last_motor_on) {
         // Tell paparazzi that one motor has stalled
-        autopilot_set_motors_on(FALSE);
+        autopilot_set_motors_on(false);
       } else {
         // Toggle Flipflop reset so motors can be re-enabled
         reset_flipflop_counter = 20;

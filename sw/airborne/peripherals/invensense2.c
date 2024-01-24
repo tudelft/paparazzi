@@ -74,7 +74,7 @@ static const struct Int32Vect3 invensense2_accel_scale[5][2] = {
 /**
  * @brief Initialize the invensense v2 sensor instance
  * 
- * @param inv The structure containing the configuratio of the invensense v2 instance
+ * @param inv The structure containing the configuration of the invensense v2 instance
  */
 void invensense2_init(struct invensense2_t *inv) {
   /* General setup */
@@ -314,8 +314,8 @@ static void invensense2_parse_data(struct invensense2_t *inv, volatile uint8_t *
 
   // Send the scaled values over ABI
   uint32_t now_ts = get_sys_time_usec();
-  AbiSendMsgIMU_GYRO_RAW(inv->abi_id, now_ts, gyro, samples, temp_f);
-  AbiSendMsgIMU_ACCEL_RAW(inv->abi_id, now_ts, accel, j, temp_f);
+  AbiSendMsgIMU_GYRO_RAW(inv->abi_id, now_ts, gyro, samples, gyro_samplerate*(1+inv->timebase_correction_pll/100.f), temp_f);
+  AbiSendMsgIMU_ACCEL_RAW(inv->abi_id, now_ts, accel, j, accel_samplerate*(1+inv->timebase_correction_pll/100.f), temp_f);
 }
 
 /**
@@ -504,7 +504,7 @@ static bool invensense2_config(struct invensense2_t *inv) {
       /* Configure accelerometer */
       uint8_t accel_config = 0;
       if(inv->accel_dlpf != INVENSENSE2_ACCEL_DLPF_OFF)
-        accel_config |= BIT_ACCEL_DLPF_ENABLE | ((inv->accel_dlpf - 1) << ACCEL_DLPF_CFG_SHIFT);
+        accel_config |= BIT_ACCEL_DLPF_ENABLE | (inv->accel_dlpf << ACCEL_DLPF_CFG_SHIFT);
       if((inv->device == INVENSENSE2_ICM20649 && inv->accel_range > 0) || inv->accel_range > 3)
         accel_config |= (inv->accel_range - 1) << ACCEL_FS_SEL_SHIFT;
       else
@@ -514,26 +514,39 @@ static bool invensense2_config(struct invensense2_t *inv) {
       break;
     }
     case 5:
+      /* Request TIMEBASE_CORRECTION_PLL */
+      if(invensense2_register_read(inv, INV2REG_TIMEBASE_CORRECTIO, 1))
+        inv->config_idx++;
+      break;
+    case 6:
+      /* Read the TIMEBASE_CORRECTION_PLL */
+      if(inv->bus == INVENSENSE2_SPI) {
+        inv->timebase_correction_pll = ((int8_t)inv->spi.rx_buf[1]) * 0.079f;
+      }
+      else {
+        inv->timebase_correction_pll = ((int8_t)inv->i2c.trans.buf[1]) * 0.079f;
+      }
+      
       /* Set the FIFO mode */
       if(invensense2_register_write(inv, INV2REG_FIFO_MODE, 0xF))
         inv->config_idx++;
       break;
-    case 6:
+    case 7:
       /* Set the GYRO sample rate divider */
       if(invensense2_register_write(inv, INV2REG_GYRO_SMPLRT_DIV, 0))
         inv->config_idx++;
       break;
-    case 7:
+    case 8:
       /* FIFO reset 1 */
       if(invensense2_register_write(inv, INV2REG_FIFO_RST, 0x0F))
         inv->config_idx++;
       break;
-    case 8:
+    case 9:
       /* FIFO reset 2 */
       if(invensense2_register_write(inv, INV2REG_FIFO_RST, 0x00))
         inv->config_idx++;
       break;
-    case 9: {
+    case 10: {
       /* Enable FIFO */
       uint8_t user_ctrl = BIT_USER_CTRL_FIFO_EN;
       if(inv->bus == INVENSENSE2_SPI)
@@ -542,13 +555,13 @@ static bool invensense2_config(struct invensense2_t *inv) {
         inv->config_idx++;
       break;
     }
-    case 10:
+    case 11:
       /* Cofigure FIFO enable */
       if(invensense2_register_write(inv, INV2REG_FIFO_EN_2, BIT_XG_FIFO_EN | BIT_YG_FIFO_EN |
                     BIT_ZG_FIFO_EN | BIT_ACCEL_FIFO_EN | BIT_TEMP_FIFO_EN))
         inv->config_idx++;
       break;
-    case 11:
+    case 12:
       /* Enable interrupt pin/status */
       if(invensense2_register_write(inv, INV2REG_INT_ENABLE_1, 0x1))
         inv->config_idx++;

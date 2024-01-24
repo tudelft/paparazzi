@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Felix Ruess <felix.ruess@gmail.com
+ * Copyright (C) 2012 Felix Ruess <felix.ruess@gmail.com>
  *
  * This file is part of paparazzi.
  *
@@ -14,9 +14,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with paparazzi; see the file COPYING.  If not, write to
- * the Free Software Foundation, 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * along with paparazzi; see the file COPYING.  If not, see
+ * <http://www.gnu.org/licenses/>.
  */
 
 #include "modules/imu/imu_nps.h"
@@ -84,15 +83,16 @@ void imu_feed_mag(void)
 
 }
 
+
 void imu_nps_event(void)
 {
   uint32_t now_ts = get_sys_time_usec();
   if (imu_nps.gyro_available) {
-    AbiSendMsgIMU_GYRO_RAW(IMU_NPS_ID, now_ts, &imu_nps.gyro, 1, NAN);
+    AbiSendMsgIMU_GYRO_RAW(IMU_NPS_ID, now_ts, &imu_nps.gyro, 1, NPS_PROPAGATE, NAN);
     imu_nps.gyro_available = false;
   }
   if (imu_nps.accel_available) {
-    AbiSendMsgIMU_ACCEL_RAW(IMU_NPS_ID, now_ts, &imu_nps.accel, 1, NAN);
+    AbiSendMsgIMU_ACCEL_RAW(IMU_NPS_ID, now_ts, &imu_nps.accel, 1, NPS_PROPAGATE, NAN);
     imu_nps.accel_available = false;
   }
   if (imu_nps.mag_available) {

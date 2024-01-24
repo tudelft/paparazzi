@@ -39,15 +39,9 @@
 #include "modules/datalink/telemetry.h"
 #endif
 
-#ifndef USE_AIRSPEED_MS45XX
-#if USE_AIRSPEED
-#define USE_AIRSPEED_MS45XX TRUE
-PRINT_CONFIG_MSG("USE_AIRSPEED_MS45XX set to TRUE since this is set USE_AIRSPEED")
-#endif
-#endif
-
-#if USE_AIRSPEED_MS45XX
-#include "state.h"
+/* Enable ABI sending */
+#ifndef AIRSPEED_MS45XX_SEND_ABI
+#define AIRSPEED_MS45XX_SEND_ABI true
 #endif
 
 /** Default I2C device
@@ -117,14 +111,14 @@ PRINT_CONFIG_MSG("USE_AIRSPEED_MS45XX set to TRUE since this is set USE_AIRSPEED
  * p_diff = (p_raw - 0.1*16383) * 2*RANGE/(0.8*16383) - RANGE
  * p_diff = p_raw * 2*RANGE/(0.8*16383) - (RANGE + (0.1 * 16383) * 2*RANGE/(0.8*16383)
  * p_diff = p_raw * 2*RANGE/(0.8*16383) - (1.25 * RANGE)
- * p_diff = p_raw * scale - offset
+ * p_diff = (p_raw - offset) * scale
  * then convert to Pascal
  */
 #ifndef MS45XX_PRESSURE_SCALE
 #define MS45XX_PRESSURE_SCALE (2 * MS45XX_PRESSURE_RANGE / (0.8 * 16383) * OutputPressureToPa)
 #endif
 #ifndef MS45XX_PRESSURE_OFFSET
-#define MS45XX_PRESSURE_OFFSET (1.25 * MS45XX_PRESSURE_RANGE * OutputPressureToPa)
+#define MS45XX_PRESSURE_OFFSET (16383 / 2)
 #endif
 #else /* Can still be improved using another if statment with MS45XX_PRESSURE_TYPE etc. */
 /* Offset and scaling for OUTPUT TYPE B:
@@ -134,7 +128,7 @@ PRINT_CONFIG_MSG("USE_AIRSPEED_MS45XX set to TRUE since this is set USE_AIRSPEED
 #define MS45XX_PRESSURE_SCALE (MS45XX_PRESSURE_RANGE/(0.9*16383)*OutputPressureToPa)
 #endif
 #ifndef MS45XX_PRESSURE_OFFSET
-#define MS45XX_PRESSURE_OFFSET (((MS45XX_PRESSURE_RANGE*0.05*16383)/(0.9*16383))*OutputPressureToPa)
+#define MS45XX_PRESSURE_OFFSET (0.05*16383)
 #endif
 #endif
 
@@ -144,21 +138,18 @@ PRINT_CONFIG_VAR(MS45XX_PRESSURE_RANGE)
 PRINT_CONFIG_VAR(MS45XX_PRESSURE_SCALE)
 PRINT_CONFIG_VAR(MS45XX_PRESSURE_OFFSET)
 
-/** Send a AIRSPEED_MS45XX message with every new measurement.
- * Mainly for debugging, use with caution, sends message at ~100Hz.
- */
-#ifndef MS45XX_SYNC_SEND
-#define MS45XX_SYNC_SEND FALSE
-#endif
 
 /** Quadratic scale factor for indicated airspeed.
  * airspeed = sqrt(2*p_diff/density)
  * With p_diff in Pa and standard air density of 1.225 kg/m^3,
  * default airspeed scale is 2/1.225
  */
-#ifndef MS45XX_AIRSPEED_SCALE
-#define MS45XX_AIRSPEED_SCALE 1.6327
+#ifdef MS45XX_AIRSPEED_SCALE
+PRINT_CONFIG_MSG("MS45XX changed air density. PS: Use MS45XX_PRESSURE_SCALE to calibrate the MS45XX.");
 #endif
+
+#define MS45XX_RHO_DIV_2 1.6327
+
 
 /** Time constant for second order Butterworth low pass filter
  * Default of 0.15 should give cut-off freq of 1/(2*pi*tau) ~= 1Hz
@@ -173,11 +164,30 @@ static struct i2c_transaction ms45xx_trans;
 static Butterworth2LowPass ms45xx_filter;
 #endif
 
+#if PREFLIGHT_CHECKS
+/* Preflight checks */
+#include "modules/checks/preflight_checks.h"
+static struct preflight_check_t ms45xx_i2c_pfc;
+
+static void ms45xx_preflight(struct preflight_result_t *result) {
+  if(ms45xx.offset_set) {
+    preflight_success(result, "Airspeed sensor succesfully nulled (MS45XX)");
+  } else {
+    preflight_error(result, "Airspeed sensor not nulled (MS45XX)");
+  }
+}
+#endif // PREFLIGHT_CHECKS
+
 static void ms45xx_downlink(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_AIRSPEED_MS45XX(trans,dev,AC_ID,
+  uint8_t dev_id = MS45XX_SENDER_ID;
+  float temp = ((float)ms45xx.temperature) * 0.1f;
+  pprz_msg_send_AIRSPEED_RAW(trans,dev,AC_ID,
+                                &dev_id,
+                                &ms45xx.raw_p,
+                                &ms45xx.pressure_offset,
                                 &ms45xx.pressure,
-                                &ms45xx.temperature,
+                                &temp,
                                 &ms45xx.airspeed);
 }
 
@@ -186,11 +196,11 @@ void ms45xx_i2c_init(void)
   ms45xx.pressure = 0.;
   ms45xx.temperature = 0;
   ms45xx.airspeed = 0.;
+  ms45xx.raw_p = 0;
   ms45xx.pressure_type = MS45XX_PRESSURE_TYPE;
   ms45xx.pressure_scale = MS45XX_PRESSURE_SCALE;
   ms45xx.pressure_offset = MS45XX_PRESSURE_OFFSET;
-  ms45xx.airspeed_scale = MS45XX_AIRSPEED_SCALE;
-  ms45xx.sync_send = MS45XX_SYNC_SEND;
+  ms45xx.offset_set = false;
 
   ms45xx_trans.status = I2CTransDone;
   // setup low pass filter with time constant and 100Hz sampling freq
@@ -200,7 +210,12 @@ void ms45xx_i2c_init(void)
 #endif
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AIRSPEED_MS45XX, ms45xx_downlink);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AIRSPEED_RAW, ms45xx_downlink);
+#endif
+
+  /* Register preflight checks */
+#if PREFLIGHT_CHECKS
+  preflight_check_register(&ms45xx_i2c_pfc, ms45xx_preflight);
 #endif
 }
 
@@ -228,6 +243,7 @@ void ms45xx_i2c_event(void)
     if (status == 0) {
       /* 14bit raw pressure */
       uint16_t p_raw = 0x3FFF & (((uint16_t)(ms45xx_trans.buf[0]) << 8) | (uint16_t)(ms45xx_trans.buf[1]));
+      ms45xx.raw_p = p_raw;
 
       /* 11bit raw temperature, 5 LSB bits not used */
       uint16_t temp_raw = 0xFFE0 & (((uint16_t)(ms45xx_trans.buf[2]) << 8) |
@@ -246,10 +262,23 @@ void ms45xx_i2c_event(void)
        * swings positive when Port 1> Port 2. Output is 50% of total counts
        * when Port 1=Port 2.
        * For type Gauge
-       * p_out = p_raw * scale - offset
+       * p_out = (p_raw - offset) * scale
        */
 
-      float p_out = (p_raw * ms45xx.pressure_scale) - ms45xx.pressure_offset;
+      float p_out = (p_raw - ms45xx.pressure_offset) * ms45xx.pressure_scale;
+
+      /* 0 = -50degC, 20147 = 150degC
+       * ms45xx_temperature in 0.1 deg Celcius
+       */
+      ms45xx.temperature = ((uint32_t)temp_raw * 2000) / 2047 - 500;
+
+      // if(electrical.vboard != 0) {
+      //   float volt_diff = electrical.vboard - 5.0f;
+      //   Bound(volt_diff, -0.7f, 0.5f);
+
+      //   p_out -= 65.0f * volt_diff;
+      //   ms45xx.temperature -= 8.87f * volt_diff;
+      // }
 #ifdef USE_AIRSPEED_LOWPASS_FILTER
       ms45xx.pressure = update_butterworth_2_low_pass(&ms45xx_filter, p_out);
 #else
@@ -258,38 +287,34 @@ void ms45xx_i2c_event(void)
 
       if (ms45xx.autoset_offset) {
         if (autoset_nb < AUTOSET_NB_MAX) {
-          autoset_offset += p_raw * ms45xx.pressure_scale;
+          autoset_offset += p_raw;
           autoset_nb++;
         } else {
           ms45xx.pressure_offset = autoset_offset / (float)autoset_nb;
           autoset_offset = 0.f;
           autoset_nb = 0;
           ms45xx.autoset_offset = false;
+          ms45xx.offset_set = true;
         }
       }
 
-      /* 0 = -50degC, 20147 = 150degC
-       * ms45xx_temperature in 0.1 deg Celcius
-       */
-      ms45xx.temperature = ((uint32_t)temp_raw * 2000) / 2047 - 500;
-
       // Send (differential) pressure via ABI
+      #if AIRSPEED_MS45XX_SEND_ABI
       AbiSendMsgBARO_DIFF(MS45XX_SENDER_ID, ms45xx.pressure);
+
       // Send temperature as float in deg Celcius via ABI
       float temp = ms45xx.temperature / 10.0f;
+
       AbiSendMsgTEMPERATURE(MS45XX_SENDER_ID, temp);
+      #endif
+
       // Compute airspeed
-      ms45xx.airspeed = sqrtf(Max(ms45xx.pressure * ms45xx.airspeed_scale, 0));
-
-#warning "HACK to get correct airspeed, fix nicely"
-      ms45xx.airspeed = ms45xx.airspeed*1.2;
-
-#if USE_AIRSPEED_MS45XX
-      stateSetAirspeed_f(ms45xx.airspeed);
-#endif
-      if (ms45xx.sync_send) {
-        ms45xx_downlink(&(DefaultChannel).trans_tx, &(DefaultDevice).device);
+      float sign = 1.0f;
+      if (ms45xx.pressure < 0.0f) {
+        sign = -1.0f;
       }
+      ms45xx.airspeed = sqrtf(ms45xx.pressure * sign * MS45XX_RHO_DIV_2) * sign;
+
     }
 
     // Set to done

@@ -87,6 +87,8 @@
       <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
     </module> -->
     <module name="stabilization" type="indi">
+      <define name="WLS_N_U" value="4"/>
+      <define name="WLS_N_V" value="4"/>
       <!--define name="TILT_TWIST_CTRL" value="TRUE"/-->
     </module>
     <module name="stabilization" type="rate_indi"/>
@@ -95,7 +97,7 @@
     <module name="guidance" type="indi">
       <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>
       <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
-      <define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.0354"/>
+      <define name="GUIDANCE_INDI_THRUST_DYNAMICS_FREQ" value="18.0"/>
     </module>
 
     <module name="air_data"/>
@@ -134,13 +136,6 @@
     <axis name="YAW"    failsafe_value="0"/>
     <axis name="THRUST" failsafe_value="0"/>
   </commands>
-
-  <rc_commands>
-    <set command="THRUST" value="@THROTTLE" />
-    <set command="ROLL" value="@ROLL" />
-    <set command="PITCH" value="@PITCH" />
-    <set command="YAW" value="@YAW" />
-  </rc_commands>
 
   <section name="MIXING" prefix="MOTOR_MIXING_">
     <define name="TYPE" value="QUAD_X"/>
@@ -280,7 +275,7 @@
     <define name="FILTER_YAW_RATE" value="TRUE"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN" value="{0.0354, 0.0354, 0.0354, 0.0354}"/>
+    <define name="ACT_FREQ" value="{18.0, 18.0, 18.0, 18.0}"/>
 
     <define name="WLS_PRIORITIES" value="{1000.f, 1000.f, 1.f, 100.f}"/>
 

@@ -46,7 +46,7 @@ CHIBIOS_BOARD_STARTUP = startup_stm32h7xx.mk
 FLASH_MODE ?= PX4_BOOTLOADER
 PX4_TARGET = "ap"
 PX4_PROTOTYPE ?= "${PAPARAZZI_HOME}/sw/tools/px4/cube_orange.prototype"
-PX4_BL_PORT ?= "/dev/serial/by-id/usb-Hex_ProfiCNC_CubeOrange*-BL*"
+PX4_BL_PORT ?= "/dev/serial/by-id/*-BL_*,/dev/serial/by-id/*_BL_*"
 
 #
 # default LED configuration

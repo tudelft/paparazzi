@@ -150,7 +150,6 @@ unsigned int RTCMgetbitu(unsigned char *buff, int pos, int lenb)
  * Create an UDP endpoint thread
  */
 void *udp_endpoint(void *arg) {
-    printf("udp endpoint\n");
   struct endpoint_udp_t *ep = (struct endpoint_udp_t *)arg;
 
   /* Create the socket */
@@ -310,9 +309,7 @@ int get_baud(unsigned int baud_rate)
  * Create an UART endpoint thread
  */
 void *uart_endpoint(void *arg) {
-    printf("uart endpoint\n");
-
-    struct endpoint_uart_t *ep = (struct endpoint_uart_t *)arg;
+  struct endpoint_uart_t *ep = (struct endpoint_uart_t *)arg;
 
   /* Open de uart device in blocking Read/Write mode */
   ep->fd = open(ep->devname, O_RDWR | O_NOCTTY);
@@ -761,8 +758,11 @@ int main(int argc, char** argv) {
     }
   }
 
-    printf("Started ublox2ivy for aircraft id %d!\n", ac_id);
-    g_main_loop_run(ml);
+  g_main_loop_run(ml);
+
+  /*while(true) {
+    usleep(50000);
+  }*/
 
   return 0;
 }

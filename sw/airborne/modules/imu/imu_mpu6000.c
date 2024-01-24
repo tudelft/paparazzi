@@ -29,6 +29,7 @@
 #include "modules/imu/imu.h"
 #include "modules/core/abi.h"
 #include "mcu_periph/spi.h"
+#include "generated/modules.h"
 #if IMU_MPU_USE_MEDIAN_FILTER
 #include "filters/median_filter.h"
 #endif
@@ -67,7 +68,7 @@ PRINT_CONFIG_MSG("Gyro/Accel output rate is 100Hz at 1kHz internal sampling")
 #ifndef IMU_MPU_ACCEL_LOWPASS_FILTER
 #define IMU_MPU_ACCEL_LOWPASS_FILTER MPU60X0_DLPF_ACC_44HZ // for ICM sensors
 #endif
-INFO("Non-default PERIODIC_FREQUENCY: using default IMU_MPU_LOWPASS_FILTER and IMU_MPU_SMPLRT_DIV.")
+#warning "Non-default PERIODIC_FREQUENCY: please define IMU_MPU_LOWPASS_FILTER and IMU_MPU_SMPLRT_DIV."
 #endif
 #endif
 PRINT_CONFIG_VAR(IMU_MPU_LOWPASS_FILTER)
@@ -165,7 +166,7 @@ void imu_mpu_spi_event(void)
     imu_mpu_spi.mpu.data_available = false;
 
     // Send the scaled values over ABI
-    AbiSendMsgIMU_GYRO_RAW(IMU_MPU6000_ID, now_ts, &rates, 1, imu_mpu_spi.mpu.temp);
-    AbiSendMsgIMU_ACCEL_RAW(IMU_MPU6000_ID, now_ts, &accel, 1, imu_mpu_spi.mpu.temp);
+    AbiSendMsgIMU_GYRO_RAW(IMU_MPU6000_ID, now_ts, &rates, 1, IMU_MPU_SPI_PERIODIC_FREQ, imu_mpu_spi.mpu.temp);
+    AbiSendMsgIMU_ACCEL_RAW(IMU_MPU6000_ID, now_ts, &accel, 1, IMU_MPU_SPI_PERIODIC_FREQ, imu_mpu_spi.mpu.temp);
   }
 }

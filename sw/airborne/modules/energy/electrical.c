@@ -33,6 +33,7 @@
 #include "autopilot.h"
 
 #include "generated/airframe.h"
+#include "generated/modules.h"
 #include BOARD_CONFIG
 
 #ifdef MILLIAMP_PER_PERCENT
@@ -52,35 +53,24 @@
 #define BAT_CHECKER_DELAY 5
 #endif
 
-#define ELECTRICAL_PERIODIC_FREQ 10
-static float period_to_hour = 1 / 3600.f / ELECTRICAL_PERIODIC_FREQ;
-
 #ifndef MIN_BAT_LEVEL
 #define MIN_BAT_LEVEL 3
 #endif
+
+#ifndef TAKEOFF_BAT_LEVEL
+#define TAKEOFF_BAT_LEVEL LOW_BAT_LEVEL
+#endif
+PRINT_CONFIG_VAR(TAKEOFF_BAT_LEVEL)
 
 PRINT_CONFIG_VAR(LOW_BAT_LEVEL)
 PRINT_CONFIG_VAR(CRITIC_BAT_LEVEL)
 PRINT_CONFIG_VAR(MIN_BAT_LEVEL)
 
-struct Electrical electrical;
-
-#if defined ADC_CHANNEL_VSUPPLY || (defined ADC_CHANNEL_CURRENT && !defined SITL) || defined MILLIAMP_AT_FULL_THROTTLE
-static struct {
-#ifdef ADC_CHANNEL_VSUPPLY
-  struct adc_buf vsupply_adc_buf;
-#endif
-#if defined ADC_CHANNEL_CURRENT && !defined SITL
-  struct adc_buf current_adc_buf;
-#endif
-#ifdef MILLIAMP_AT_FULL_THROTTLE
-  float nonlin_factor;
-#endif
-} electrical_priv;
-#endif
-
 #ifndef VoltageOfAdc
 #define VoltageOfAdc(adc) DefaultVoltageOfAdc(adc)
+#endif
+#ifndef VBoardOfAdc
+#define VBoardOfAdc(adc) DefaultVBoardOfAdc(adc)
 #endif
 #ifndef MilliAmpereOfAdc
 #define MilliAmpereOfAdc(adc) DefaultMilliAmpereOfAdc(adc)
@@ -89,6 +79,7 @@ static struct {
 #ifndef CURRENT_ESTIMATION_NONLINEARITY
 #define CURRENT_ESTIMATION_NONLINEARITY 1.2
 #endif
+PRINT_CONFIG_VAR(CURRENT_ESTIMATION_NONLINEARITY)
 
 #if defined MILLIAMP_AT_FULL_THROTTLE && !defined MILLIAMP_AT_IDLE_THROTTLE
   PRINT_CONFIG_MSG("Assuming 0 mA at idle throttle")
@@ -97,12 +88,52 @@ static struct {
 
 PRINT_CONFIG_VAR(MILLIAMP_AT_IDLE_THROTTLE)
 
+/* Main external structure */
+struct Electrical electrical;
+
+#if defined ADC_CHANNEL_VSUPPLY || (defined ADC_CHANNEL_CURRENT && !defined SITL) || defined MILLIAMP_AT_FULL_THROTTLE
+static struct {
+#ifdef ADC_CHANNEL_VSUPPLY
+  struct adc_buf vsupply_adc_buf;
+#endif
+#if defined ADC_CHANNEL_VBOARD
+  struct adc_buf vboard_adc_buf;
+#endif
+#if defined ADC_CHANNEL_CURRENT && !defined SITL
+  struct adc_buf current_adc_buf;
+#endif
+#if defined ADC_CHANNEL_CURRENT2 && !defined SITL
+  struct adc_buf current2_adc_buf;
+#endif
+#ifdef MILLIAMP_AT_FULL_THROTTLE
+  float nonlin_factor;
+#endif
+} electrical_priv;
+#endif
+
+#ifdef PREFLIGHT_CHECKS
+/* Preflight checks */
+#include "modules/checks/preflight_checks.h"
+static struct preflight_check_t electrical_pfc;
+
+static void electrical_preflight(struct preflight_result_t *result) {
+  if(electrical.vsupply < TAKEOFF_BAT_LEVEL) {
+    preflight_error(result, "Battery level %.2fV below minimum takeoff level %.2fV", electrical.vsupply, TAKEOFF_BAT_LEVEL);
+  } else {
+    preflight_success(result, "Battery level %.2fV above takeoff level %.2fV", electrical.vsupply, TAKEOFF_BAT_LEVEL);
+  }
+}
+#endif // PREFLIGHT_CHECKS
+
 void electrical_init(void)
 {
   electrical.vsupply = 0.f;
+  electrical.vboard = 0.f;
   electrical.current = 0.f;
   electrical.charge  = 0.f;
   electrical.energy  = 0.f;
+  electrical.avg_power = 0;
+  electrical.avg_cnt = 0;
 
   electrical.bat_low = false;
   electrical.bat_critical = false;
@@ -111,12 +142,24 @@ void electrical_init(void)
   adc_buf_channel(ADC_CHANNEL_VSUPPLY, &electrical_priv.vsupply_adc_buf, DEFAULT_AV_NB_SAMPLE);
 #endif
 
+#if defined ADC_CHANNEL_VBOARD
+  adc_buf_channel(ADC_CHANNEL_VBOARD, &electrical_priv.vboard_adc_buf, DEFAULT_AV_NB_SAMPLE);
+#endif
+
   /* measure current if available, otherwise estimate it */
 #if defined ADC_CHANNEL_CURRENT && !defined SITL
   adc_buf_channel(ADC_CHANNEL_CURRENT, &electrical_priv.current_adc_buf, DEFAULT_AV_NB_SAMPLE);
+
+#if defined ADC_CHANNEL_CURRENT2 && !defined SITL
+  adc_buf_channel(ADC_CHANNEL_CURRENT2, &electrical_priv.current2_adc_buf, DEFAULT_AV_NB_SAMPLE);
+#endif
 #elif defined MILLIAMP_AT_FULL_THROTTLE
-  PRINT_CONFIG_VAR(CURRENT_ESTIMATION_NONLINEARITY)
   electrical_priv.nonlin_factor = CURRENT_ESTIMATION_NONLINEARITY;
+#endif
+
+  /* Register preflight checks */
+#if PREFLIGHT_CHECKS
+  preflight_check_register(&electrical_pfc, electrical_preflight);
 #endif
 }
 
@@ -131,10 +174,20 @@ void electrical_periodic(void)
                                           electrical_priv.vsupply_adc_buf.av_nb_sample));
 #endif
 
+#if defined(ADC_CHANNEL_VBOARD) && !defined(SITL)
+  electrical.vboard = VBoardOfAdc((electrical_priv.vboard_adc_buf.sum /
+                                         electrical_priv.vboard_adc_buf.av_nb_sample));
+#endif
+
 #ifdef ADC_CHANNEL_CURRENT
 #ifndef SITL
   int32_t current_adc = electrical_priv.current_adc_buf.sum / electrical_priv.current_adc_buf.av_nb_sample;
   electrical.current = MilliAmpereOfAdc(current_adc) / 1000.f;
+
+#ifdef ADC_CHANNEL_CURRENT2
+  current_adc = electrical_priv.current2_adc_buf.sum / electrical_priv.current2_adc_buf.av_nb_sample;
+  electrical.current += MilliAmpereOfAdc2(current_adc) / 1000.f;
+#endif
 #endif
 #elif defined MILLIAMP_AT_FULL_THROTTLE && defined COMMAND_CURRENT_ESTIMATION
   /*
@@ -174,6 +227,7 @@ void electrical_periodic(void)
 #endif
 #endif /* ADC_CHANNEL_CURRENT */
 
+  static const float period_to_hour = 1 / 3600.f / ELECTRICAL_PERIODIC_FREQ;
   float consumed_since_last = electrical.current * period_to_hour;
 
   electrical.charge += consumed_since_last;
@@ -212,4 +266,13 @@ void electrical_periodic(void)
     }
   }
 
+  float power = electrical.vsupply * electrical.current;
+  electrical.avg_power += power;
+  electrical.avg_cnt++;
+}
+
+void electrical_avg_reset(float var __attribute__((unused)))
+{
+  electrical.avg_power = 0;
+  electrical.avg_cnt = 0;
 }

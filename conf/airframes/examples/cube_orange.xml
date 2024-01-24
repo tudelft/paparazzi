@@ -14,18 +14,18 @@
   <description>Neddrone5</description>
 
   <firmware name="rotorcraft">
-    <target name="ap" board="cube_orange">
+    <target name="ap" board="cube_orangeplus">
       <configure name="PERIODIC_FREQUENCY"  value="500"/>
+      <define name="SYS_TIME_FREQUENCY" value="1500"/><!-- To be able to send 3x IMU measurements -->
+      <configure name="TELEMETRY_FREQUENCY" value="1500"/><!-- To be able to send 3x IMU measurements -->
       <!--configure name="RTOS_DEBUG" value="1"/-->
 
       <module name="radio_control" type="sbus">
         <configure name="SBUS_PORT" value="UART3"/>
       </module>
 
-      <module name="airspeed" type="ms45xx_i2c">
-        <define name="USE_I2C2"/>
-        <define name="MS45XX_I2C_DEV" value="i2c2"/>
-      </module>
+      <module name="airspeed" type="uavcan"/>
+      <module name="range_sensor" type="uavcan"/>
 
       <module name="scheduling_indi_simple"/>
 
@@ -71,8 +71,10 @@
       <define name="RADIO_KILL_SWITCH" value="0"/>
     </target>
 
+    <module name="preflight_checks"/>
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B115200"/>
+      <configure name="MODEM_PORT" value="usb_serial"/>
     </module>
 
     <module name="actuators"     type="uavcan">
@@ -86,6 +88,7 @@
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
     <module name="ins"           type="ekf2"/>
+    <module name="nav"           type="hybrid"/>
 
     <module name="air_data"/>
 
@@ -106,7 +109,7 @@
       <configure name="USE_TFMINI_AGL" value="FALSE"/>
     </module-->
 
-    <module name="guidance" type="indi_hybrid">
+    <module name="guidance" type="indi_hybrid_tailsitter">
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
       <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>
       <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
@@ -123,6 +126,7 @@
       <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="0.5"/>
       <define name="GUIDANCE_INDI_LINE_GAIN" value="0.2"/>
       <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>
+      <define name="GUIDANCE_INDI_THRUST_DYNAMICS_FREQ" value="18"/>
     </module>
 
     <module name="motor_mixing"/>
@@ -297,9 +301,9 @@
     <define name="FILT_CUTOFF_R" value="4.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN_P" value="0.0354"/>
-    <define name="ACT_DYN_Q" value="0.0354"/>
-    <define name="ACT_DYN_R" value="0.0354"/>
+    <define name="ACT_FREQ_P" value="18"/>
+    <define name="ACT_FREQ_Q" value="18"/>
+    <define name="ACT_FREQ_R" value="18"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>

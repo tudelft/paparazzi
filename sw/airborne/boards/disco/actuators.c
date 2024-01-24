@@ -40,6 +40,11 @@
 
 #include <stdio.h>
 
+
+#ifndef SERVO_MOTOR_IDX
+#warning "Disco actuators require a <servo name=MOTOR>"
+#endif
+
 /**
  * private observation structure
  */
@@ -169,7 +174,11 @@ void actuators_disco_commit(void)
   }
 
   // Send ABI message
-  AbiSendMsgRPM(RPM_SENSOR_ID, &actuators_disco.rpm_obs, 1);//FIXME & or not
+  struct act_feedback_t feedback = {0};
+  feedback.idx = SERVO_MOTOR_IDX;
+  feedback.rpm = actuators_disco.rpm_obs;
+  feedback.set.rpm = true;
+  AbiSendMsgACT_FEEDBACK(ACT_FEEDBACK_BOARD_ID, &feedback, 1);
 }
 
 static uint8_t actuators_disco_checksum(uint8_t *bytes, uint8_t size)

@@ -93,6 +93,8 @@ static void esc_msg_send(struct transport_tx *trans, struct link_device *dev) {
       float bat_voltage = electrical.vsupply;
       float power = actuators_dshot_values[i].current * bat_voltage;
       float energy = (float)dtelem->consumption;
+      float temp = dtelem->temp;
+      float temp_dev = 0;
       pprz_msg_send_ESC(trans, dev, AC_ID,
           &actuators_dshot_values[i].current,
           &bat_voltage,
@@ -100,6 +102,9 @@ static void esc_msg_send(struct transport_tx *trans, struct link_device *dev) {
           &actuators_dshot_values[i].rpm,
           &actuators_dshot_values[i].voltage,
           &energy,
+          &temp,
+          &temp_dev,
+          &i,
           &i);
     }
   }
@@ -140,6 +145,7 @@ void actuators_dshot_arch_init(void)
       CONCAT_GPIO(DSHOT_TIM1_TELEMETRY_NUM, PORT_RX),
       CONCAT_GPIO(DSHOT_TIM1_TELEMETRY_NUM, RX),
       CONCAT_GPIO(DSHOT_TIM1_TELEMETRY_NUM, AF), FALSE);
+  PRINT_CONFIG_VAR(DSHOT_TIM1_TELEMETRY_NUM);
 #endif
 #ifdef DSHOT_TIM2_TELEMETRY_NUM
   gpio_setup_pin_af(
@@ -158,6 +164,7 @@ void actuators_dshot_arch_init(void)
       CONCAT_GPIO(DSHOT_TIM4_TELEMETRY_NUM, PORT_RX),
       CONCAT_GPIO(DSHOT_TIM4_TELEMETRY_NUM, RX),
       CONCAT_GPIO(DSHOT_TIM4_TELEMETRY_NUM, AF), FALSE);
+  PRINT_CONFIG_VAR(DSHOT_TIM4_TELEMETRY_NUM);
 #endif
 #ifdef DSHOT_TIM5_TELEMETRY_NUM
   gpio_setup_pin_af(
@@ -322,12 +329,15 @@ void actuators_dshot_arch_commit(void)
   dshotSendFrame(&DSHOTD9);
 #endif
 
-  uint16_t rpm_list[ACTUATORS_DSHOT_NB] = { 0 };
+
+  struct act_feedback_t feedback[ACTUATORS_DSHOT_NB] = { 0 };
   for (uint8_t i = 0; i < ACTUATORS_DSHOT_NB; i++) {
+    feedback[i].idx = ACTUATORS_DSHOT_OFFSET + i;
     if (actuators_dshot_values[i].activated) {
       const DshotTelemetry *dtelem = dshotGetTelemetry(actuators_dshot_private[i].driver, actuators_dshot_private[i].channel);
-      rpm_list[i] = dtelem->rpm;
+      feedback[i].rpm = dtelem->rpm;
+      feedback[i].set.rpm = true;
     }
   }
-  AbiSendMsgRPM(RPM_DSHOT_ID, rpm_list, ACTUATORS_DSHOT_NB);
+  AbiSendMsgACT_FEEDBACK(ACT_FEEDBACK_DSHOT_ID, feedback, ACTUATORS_DSHOT_NB);
 }

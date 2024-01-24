@@ -1,10 +1,11 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="mavlink" dir="datalink">
+<module name="mavlink" dir="datalink" task="datalink">
   <doc>
     <description>Basic MAVLink implementation</description>
     <configure name="MAVLINK_PORT" value="UARTx|UDPx|UsbS" description="The port device to use for mavlink (default: UART1)"/>
     <configure name="MAVLINK_BAUD" value="B57600" description="Baud rate if MAVLINK_PORT is a UART"/>
+    <define name="MAV_AUTOPILOT_ID" value="MAV_AUTOPILOT_PPZ|MAV_AUTOPILOT_ARDUPILOTMEGA" description="Some MAVLink GCS/Devices require specific ID's to work. Default is to identify as MAV_AUTOPILOT_PPZ."/>
   </doc>
   <header>
     <file name="mavlink.h"/>
@@ -12,7 +13,7 @@
 
   <init fun="mavlink_init()"/>
   <periodic fun="mavlink_periodic()" freq="10" autorun="TRUE"/>
-  <periodic fun="mavlink_periodic_telemetry()" freq="TELEMETRY_FREQUENCY" autorun="TRUE"/>
+  <periodic fun="mavlink_periodic_telemetry()" autorun="TRUE"/>
   <event fun="mavlink_event()"/>
 
   <makefile>

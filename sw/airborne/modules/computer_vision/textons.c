@@ -33,20 +33,39 @@
 #include <stdio.h>
 #include "modules/computer_vision/cv.h"
 #include "modules/computer_vision/textons.h"
+#include "mcu_periph/sys_time.h"
+#include "generated/airframe.h"
 
 float ** **dictionary;
 uint32_t learned_samples = 0;
 uint8_t dictionary_initialized = 0;
 float *texton_distribution;
 
+#define MAX_N_TEXTONS 255
+
 // initial settings:
+#ifndef TEXTONS_RUN
+#define TEXTONS_RUN 1
+#endif
+PRINT_CONFIG_VAR(TEXTONS_RUN)
+
+#ifndef TEXTONS_FPS
+#define TEXTONS_FPS 30
+#endif
+PRINT_CONFIG_VAR(TEXTONS_FPS)
+
 #ifndef TEXTONS_LOAD_DICTIONARY
 #define TEXTONS_LOAD_DICTIONARY 1
 #endif
 PRINT_CONFIG_VAR(TEXTONS_LOAD_DICTIONARY)
 
+#ifndef TEXTONS_REINITIALIZE_DICTIONARY
+#define TEXTONS_REINITIALIZE_DICTIONARY 0
+#endif
+PRINT_CONFIG_VAR(TEXTONS_REINITIALIZE_DICTIONARY)
+
 #ifndef TEXTONS_ALPHA
-#define TEXTONS_ALPHA 10
+#define TEXTONS_ALPHA 0
 #endif
 PRINT_CONFIG_VAR(TEXTONS_ALPHA)
 
@@ -56,7 +75,7 @@ PRINT_CONFIG_VAR(TEXTONS_ALPHA)
 PRINT_CONFIG_VAR(TEXTONS_N_TEXTONS)
 
 #ifndef TEXTONS_N_SAMPLES
-#define TEXTONS_N_SAMPLES 100
+#define TEXTONS_N_SAMPLES 250
 #endif
 PRINT_CONFIG_VAR(TEXTONS_N_SAMPLES)
 
@@ -66,7 +85,7 @@ PRINT_CONFIG_VAR(TEXTONS_N_SAMPLES)
 PRINT_CONFIG_VAR(TEXTONS_PATCH_SIZE)
 
 #ifndef TEXTONS_N_LEARNING_SAMPLES
-#define TEXTONS_N_LEARNING_SAMPLES 10000
+#define TEXTONS_N_LEARNING_SAMPLES 5000
 #endif
 PRINT_CONFIG_VAR(TEXTONS_N_LEARNING_SAMPLES)
 
@@ -90,8 +109,15 @@ PRINT_CONFIG_VAR(TEXTONS_BORDER_HEIGHT)
 #endif
 PRINT_CONFIG_VAR(TEXTONS_DICTIONARY_NUMBER)
 
+#ifndef TEXTONS_DICTIONARY_PATH
+#define TEXTONS_DICTIONARY_PATH /data/ftp/internal_000
+#endif
 
+struct video_listener *listener = NULL;
+
+uint8_t running = TEXTONS_RUN;
 uint8_t load_dictionary = TEXTONS_LOAD_DICTIONARY;
+uint8_t reinitialize_dictionary = TEXTONS_REINITIALIZE_DICTIONARY;
 uint8_t alpha_uint = TEXTONS_ALPHA;
 uint8_t n_textons = TEXTONS_N_TEXTONS;
 uint8_t patch_size = TEXTONS_PATCH_SIZE;
@@ -108,18 +134,17 @@ float alpha = 0.0;
 
 // File pointer for saving the dictionary
 static FILE *dictionary_logger = NULL;
-#ifndef DICTIONARY_PATH
-#define DICTIONARY_PATH /data/video/
-#endif
 
 /**
  * Main texton processing function that first either loads or learns a dictionary and then extracts the texton histogram.
  * @param[out] *img The output image
  * @param[in] *img The input image (YUV422)
  */
-struct image_t *texton_func(struct image_t *img);
-struct image_t *texton_func(struct image_t *img)
+struct image_t *texton_func(struct image_t *img, UNUSED uint8_t p);
+struct image_t *texton_func(struct image_t *img, UNUSED uint8_t p)
 {
+  // whether to execute the function:
+  if (!running) { return img; }
 
   if (img->buf_size == 0) { return img; }
 
@@ -129,9 +154,24 @@ struct image_t *texton_func(struct image_t *img)
   // if patch size odd, correct:
   if (patch_size % 2 == 1) { patch_size++; }
 
+  // check whether we have to reinitialize the dictionary:
+  if (reinitialize_dictionary) {
+    // set all vars to trigger a reinitialization and learning phase of the dictionary:
+    dictionary_ready = 0;
+    dictionary_initialized = 0;
+    load_dictionary = 0;
+    learned_samples = 0;
+    alpha_uint = 10;
+    // reset reinitialize_dictionary
+    reinitialize_dictionary = 0;
+  }
+
   // if dictionary not initialized:
   if (dictionary_ready == 0) {
     if (load_dictionary == 0) {
+
+      printf("Learned samples: %d / %d\n", learned_samples, n_learning_samples);
+
       // Train the dictionary:
       DictionaryTrainingYUV(frame, img->w, img->h);
 
@@ -143,14 +183,35 @@ struct image_t *texton_func(struct image_t *img)
         dictionary_ready = 1;
         // lower learning rate
         alpha = 0.0;
+        printf("Enough learning!\n");
+        alpha_uint = 0;
+        // set learned samples back to 0
+        learned_samples = 0;
       }
     } else {
       // Load the dictionary:
       load_texton_dictionary();
     }
   } else {
-    // Extract distributions
-    DistributionExtraction(frame, img->w, img->h);
+    if (alpha_uint > 0) {
+
+      // printf("Learning, frame time = %d\n", img->ts.tv_sec * 1000 + img->ts.tv_usec / 1000);
+
+      DictionaryTrainingYUV(frame, img->w, img->h);
+
+      if (learned_samples >= n_learning_samples) {
+        // Save the dictionary:
+        save_texton_dictionary();
+        // reset learned_samples:
+        learned_samples = 0;
+      }
+    } else {
+      // Extract distributions
+      DistributionExtraction(frame, img->w, img->h);
+    }
+
+    // printf("N textons = %d\n", n_samples_image);
+    // printf("Entropy texton distribution = %f\n", get_entropy(texton_distribution, n_textons));
   }
 
   return img; // Colorfilter did not make a new image
@@ -226,7 +287,7 @@ void DictionaryTrainingYUV(uint8_t *frame, uint16_t width, uint16_t height)
     }
 
     // Extract and learn from n_samples_image per image
-    for (s = 0; s < n_samples_image; s++) {
+    for (s = 0; s < (int) n_samples_image; s++) {
       // select a random sample from the image
       x = rand() % (width - patch_size);
       y = rand() % (height - patch_size);
@@ -320,8 +381,6 @@ void DistributionExtraction(uint8_t *frame, uint16_t width, uint16_t height)
   //       EXECUTION
   // ************************
 
-  printf("Execute!\n");
-
   // Allocate memory for texton distances and image patch:
   float *texton_distances, * **patch;
   texton_distances = (float *)calloc(n_textons, sizeof(float));
@@ -388,7 +447,7 @@ void DistributionExtraction(uint8_t *frame, uint16_t width, uint16_t height)
     texton_distribution[assignment]++;
     n_extracted_textons++;
 
-    if (!FULL_SAMPLING && n_extracted_textons == n_samples_image) {
+    if (!FULL_SAMPLING && n_extracted_textons == (int) n_samples_image) {
       finished = 1;
     } else {
       // FULL_SAMPLING is actually a sampling that covers the image:
@@ -411,9 +470,10 @@ void DistributionExtraction(uint8_t *frame, uint16_t width, uint16_t height)
   }
 
   // Normalize distribution:
-  for (i = 0; i < n_textons; i++) {
-    texton_distribution[i] = texton_distribution[i] / (float) n_extracted_textons;
-    // printf("textons[%d] = %f\n", i, texton_distribution[i]);
+  if (n_extracted_textons > 0) { // should always be the case
+    for (i = 0; i < n_textons; i++) {
+      texton_distribution[i] = texton_distribution[i] / (float) n_extracted_textons;
+    }
   }
   // printf("\n");
 
@@ -444,11 +504,12 @@ void save_texton_dictionary(void)
   char filename[512];
 
   // Check for available files
-  sprintf(filename, "%s/Dictionary_%05d.dat", STRINGIFY(DICTIONARY_PATH), dictionary_number);
+  sprintf(filename, "%s/Dictionary_%05d.dat", STRINGIFY(TEXTONS_DICTIONARY_PATH), dictionary_number);
 
   dictionary_logger = fopen(filename, "w");
 
   if (dictionary_logger == NULL) {
+    printf("Filename: %s\n", filename);
     perror("Error while opening the file.\n");
   } else {
     // (over-)write dictionary
@@ -471,7 +532,7 @@ void save_texton_dictionary(void)
 void load_texton_dictionary(void)
 {
   char filename[512];
-  sprintf(filename, "%s/Dictionary_%05d.dat", STRINGIFY(DICTIONARY_PATH), dictionary_number);
+  sprintf(filename, "%s/Dictionary_%05d.dat", STRINGIFY(TEXTONS_DICTIONARY_PATH), dictionary_number);
 
   if ((dictionary_logger = fopen(filename, "r"))) {
     // Load the dictionary:
@@ -501,12 +562,12 @@ void load_texton_dictionary(void)
 void textons_init(void)
 {
   printf("Textons init\n");
-  texton_distribution = (float *)calloc(n_textons, sizeof(float));
+  texton_distribution = (float *)calloc(MAX_N_TEXTONS, sizeof(float));
   dictionary_initialized = 0;
   learned_samples = 0;
   dictionary_ready = 0;
-  dictionary = (float ** **)calloc(n_textons, sizeof(float ** *));
-  for (int w = 0; w < n_textons; w++) {
+  dictionary = (float ** **)calloc(MAX_N_TEXTONS, sizeof(float ** *));
+  for (int w = 0; w < MAX_N_TEXTONS; w++) {
     dictionary[w] = (float ** *) calloc(patch_size, sizeof(float **));
     for (int i = 0; i < patch_size; i++) {
       dictionary[w][i] = (float **) calloc(patch_size, sizeof(float *));
@@ -516,7 +577,7 @@ void textons_init(void)
     }
   }
 
-  cv_add(texton_func);
+  listener = cv_add_to_device(&TEXTONS_CAMERA, texton_func, TEXTONS_FPS, 0);
 }
 
 void textons_stop(void)
@@ -525,3 +586,20 @@ void textons_stop(void)
   free(dictionary);
 }
 
+/**
+ * Function that calculates a base-2 Shannon entropy for a probability distribution.
+ * @param[in] p_dist The probability distribution array
+ * @param[in] D Size of the array
+ */
+float get_entropy(float *p_dist, int D)
+{
+  float entropy = 0.0f;
+  int i;
+  for (i = 0; i < D; i++) {
+    if (p_dist[i] > 0) {
+      entropy -= p_dist[i] * log2(p_dist[i]);
+    }
+  }
+
+  return entropy;
+}

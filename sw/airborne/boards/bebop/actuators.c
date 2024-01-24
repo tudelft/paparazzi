@@ -87,7 +87,7 @@ void actuators_bebop_commit(void)
   // When detected a suicide
   actuators_bebop.i2c_trans.buf[10] = actuators_bebop.i2c_trans.buf[10] & 0x7;
   if (actuators_bebop.i2c_trans.buf[11] == 2 && actuators_bebop.i2c_trans.buf[10] != 1) {
-    autopilot_set_motors_on(FALSE);
+    autopilot_set_motors_on(false);
   }
 
   // Start the motors
@@ -137,8 +137,15 @@ void actuators_bebop_commit(void)
 
     actuators_bebop.led = led_hw_values & 0x3;
   }
+  
   // Send ABI message
-  AbiSendMsgRPM(RPM_SENSOR_ID, actuators_bebop.rpm_obs, 4);
+  struct act_feedback_t feedback[4];
+  for (int i=0;i<4;i++) {
+    feedback[i].idx = get_servo_idx(i);
+    feedback[i].rpm = actuators_bebop.rpm_obs[i];
+    feedback[i].set.rpm = true;
+  }
+  AbiSendMsgACT_FEEDBACK(ACT_FEEDBACK_BOARD_ID, feedback, 4);
 }
 
 static uint8_t actuators_bebop_checksum(uint8_t *bytes, uint8_t size)
