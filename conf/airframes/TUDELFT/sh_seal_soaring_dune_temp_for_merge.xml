@@ -435,7 +435,6 @@ NOTES:
       <module name="guidance" type="indi_hybrid">
         <!--        <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>-->
         <!--        <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="2500"/>-->
-          <!--          -->
       </module>
 
       <module name="ins" type="ekf2">
