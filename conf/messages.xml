@@ -114,12 +114,13 @@
     </message>
 
     <message name="ENERGY" id="12">
-      <field name="throttle" type="uint8" unit="%">Throttle setting</field>
-      <field name="voltage"  type="float" unit="V">Input battery voltage</field>
-      <field name="current"  type="float" unit="A">Current consumption</field>
-      <field name="power"    type="float" unit="W">Electrical power</field>
-      <field name="charge"   type="float" unit="Ah">Accumulated consumed charge</field>
-      <field name="energy"   type="float" unit="Wh">Accumulated consumed energy</field>
+      <field name="throttle"  type="uint8" unit="%">Throttle setting</field>
+      <field name="voltage"   type="float" unit="V">Input battery voltage</field>
+      <field name="current"   type="float" unit="A">Current consumption</field>
+      <field name="power"     type="float" unit="W">Electrical power</field>
+      <field name="avg_power" type="float" unit="W">Average electrical power</field>
+      <field name="charge"    type="float" unit="Ah">Accumulated consumed charge</field>
+      <field name="energy"    type="float" unit="Wh">Accumulated consumed energy</field>
     </message>
 
     <message name="DEBUG_MCU_LINK" id="13">
@@ -445,15 +446,14 @@
       <field name="values" type="int16[]" alt_unit_coef="1e-3"/>
     </message>
 
-    <message name="DEBUG_IR_I2C" id="53">
-      <field name="ir1" type="int16" unit="adc"/>
-      <field name="ir2" type="int16" unit="adc"/>
-      <field name="top" type="int16" unit="adc"/>
+    <message name="DEBUG_VECT" id="53">
+      <field name="name" type="char[]"/>
+      <field name="vector" type="float[]"/>
     </message>
 
     <message name="AIRSPEED" id="54">
-      <field name="airspeed" type="float" unit="m/s"/>
-      <field name="airspeed_sp" type="float" unit="m/s"/>
+      <field name="airspeed" type="float" unit="m/s">Fused airspeed from all sources</field>
+      <field name="airspeed_sp" type="float" unit="m/s">Airspeed setpoint</field>
       <field name="airspeed_cnt" type="float" unit="m/s"/>
       <field name="groundspeed_sp" type="float" unit="m/s"/>
     </message>
@@ -1515,24 +1515,26 @@
       <field name="comp_id" type="uint8" values="NONE|GENERIC|IR|ICQ|ICE|FC|DCM|FINV|MLKF|GX3|CHIMU|VN"/>
     </message>
 
-
-     <message name="INS_ANALYSER" id="158">
-         <field name="pned_x" type="float"/>
-         <field name="pned_y" type="float"/>
-         <field name="pned_z" type="float"/>
-
-         <field name="vned_x" type="float"/>
-         <field name="vned_y" type="float"/>
-         <field name="vned_z" type="float"/>
-
-         <field name="aned_x" type="float"/>
-         <field name="aned_y" type="float"/>
-         <field name="aned_z" type="float"/>
-
-         <field name="abody_x" type="int32" alt_unit_coef="0.0009766"/>
-         <field name="abody_y" type="int32" alt_unit_coef="0.0009766"/>
-         <field name="abody_z" type="int32" alt_unit_coef="0.0009766"/>
-     </message>
+    <message name="INS_FLOW_INFO" id="158">
+      <field name="vy"  type="float" unit="m/s"/>
+      <field name="phi"  type="float" unit="deg"/>
+      <field name="p"  type="float" unit="deg/s"/>
+      <field name="vx"  type="float" unit="m/s"/>
+      <field name="theta"  type="float" unit="deg"/>
+      <field name="q"  type="float" unit="deg/s"/>
+      <field name="z"  type="float" unit="m"/>
+      <field name="vz"  type="float" unit="m/s"/>
+      <field name="vy_GT"  type="float" unit="m/s"/>
+      <field name="phi_GT"  type="float" unit="deg"/>
+      <field name="p_GT"  type="float" unit="deg/s"/>
+      <field name="vx_GT"  type="float" unit="m/s"/>
+      <field name="theta_GT"  type="float" unit="deg"/>
+      <field name="q_GT"  type="float" unit="deg/s"/>
+      <field name="z_GT"  type="float" unit="m"/>
+      <field name="vz_GT"  type="float" unit="m/s"/>
+      <field name="thrust_bias"  type="float" unit="N"/>
+      <field name="use_filter"  type="int32" unit="-"/>
+    </message>
 
     <message name="ROTORCRAFT_NAV_STATUS" id="159">
       <field name="block_time" type="uint16" unit="s"/>
@@ -1751,8 +1753,37 @@
 
     <!-- 181 is free -->
     <!-- 182 is free -->
-    <!-- 183 is free -->
-    <!-- 184 is free -->
+    <message name="DOUBLET" id="183">
+      <field name="active"              type="uint8">Doublet is active</field>
+      <field name="axis"                type="uint8">Current doublet axis</field>
+      <field name="amplitude"           type="int16">Amplitude</field>
+      <field name="current_value"       type="int16">Current doublet value</field>
+      <field name="doublet_mode_3211"   type="uint8">Mode 3211 enabled</field>
+    </message>
+
+    <message name="GUIDANCE" id="184">
+      <field name="pos_N_ref" type="float"    unit="m"/>
+      <field name="pos_E_ref" type="float"    unit="m"/>
+      <field name="pos_D_ref" type="float"    unit="m"/>
+      <field name="pos_N"     type="float"    unit="m"/>
+      <field name="pos_E"     type="float"    unit="m"/>
+      <field name="pos_D"     type="float"    unit="m"/>
+      <field name="vel_N_ref" type="float"    unit="m/s"/>
+      <field name="vel_E_ref" type="float"    unit="m/s"/>
+      <field name="vel_D_ref" type="float"    unit="m/s"/>
+      <field name="vel_N"     type="float"    unit="m/s"/>
+      <field name="vel_E"     type="float"    unit="m/s"/>
+      <field name="vel_D"     type="float"    unit="m/s"/>
+      <field name="acc_N_ref" type="float"    unit="m/s^2"/>
+      <field name="acc_E_ref" type="float"    unit="m/s^2"/>
+      <field name="acc_D_ref" type="float"    unit="m/s^2"/>
+      <field name="acc_N"     type="float"    unit="m/s^2"/>
+      <field name="acc_E"     type="float"    unit="m/s^2"/>
+      <field name="acc_D"     type="float"    unit="m/s^2"/>
+      <field name="jerk_N"    type="float"    unit="m/s^3"/>
+      <field name="jerk_E"    type="float"    unit="m/s^3"/>
+      <field name="jerk_D"    type="float"    unit="m/s^3"/>
+    </message>
     <!-- 185 is free -->
     <!-- 186 is free -->
     <!-- 187 is free -->
@@ -1784,29 +1815,29 @@
     <!-- 194 is free -->
     <!-- 195 is free -->
 
-     <message name="AIRSPEED_WIND_ESTIMATOR_EKF" id="196">
-         <field name="u_est"     type="float" unit="m/s"/>
-         <field name="v_est"     type="float" unit="m/s"/>
-         <field name="w_est"     type="float" unit="m/s"/>
-         <field name="mu_N"      type="float" unit="m/s"/>
-         <field name="mu_E"      type="float" unit="m/s"/>
-         <field name="mu_D"      type="float" unit="m/s"/>
-         <field name="offset_x"  type="float" unit="-"/>
-         <field name="offset_y"  type="float" unit="-"/>
-         <field name="offset_z"  type="float" unit="-"/>
-         <field name="healthy"   type="uint8" unit="bool"/>
-         <field name="crashes_n"  type="uint16" unit="-"/>
-         <field name="innov_V_gnd_x"  type="float" unit="-"/>
-         <field name="innov_V_gnd_y"  type="float" unit="-"/>
-         <field name="innov_V_gnd_z"  type="float" unit="-"/>
-         <field name="innov_acc_x"  type="float" unit="-"/>
-         <field name="innov_acc_y"  type="float" unit="-"/>
-         <field name="innov_acc_z"  type="float" unit="-"/>
-         <field name="innov_V_pitot"  type="float" unit="-"/>
-         <field name="debug_1"  type="float" unit="-"/>
-         <field name="debug_2"  type="float" unit="-"/>
-         <field name="debug_3"  type="float" unit="-"/>
-     </message>
+    <message name="AIRSPEED_WIND_ESTIMATOR_EKF" id="196">
+      <field name="u_est"     type="float" unit="m/s"/>
+      <field name="v_est"     type="float" unit="m/s"/>
+      <field name="w_est"     type="float" unit="m/s"/>
+      <field name="mu_N"      type="float" unit="m/s"/>
+      <field name="mu_E"      type="float" unit="m/s"/>
+      <field name="mu_D"      type="float" unit="m/s"/>
+      <field name="offset_x"  type="float" unit="-"/>
+      <field name="offset_y"  type="float" unit="-"/>
+      <field name="offset_z"  type="float" unit="-"/>
+      <field name="healthy"   type="uint8" unit="bool"/>
+      <field name="crashes_n"  type="uint16" unit="-"/>
+      <field name="innov_V_gnd_x"  type="float" unit="-"/>
+      <field name="innov_V_gnd_y"  type="float" unit="-"/>
+      <field name="innov_V_gnd_z"  type="float" unit="-"/>
+      <field name="innov_acc_x"  type="float" unit="-"/>
+      <field name="innov_acc_y"  type="float" unit="-"/>
+      <field name="innov_acc_z"  type="float" unit="-"/>
+      <field name="innov_V_pitot"  type="float" unit="-"/>
+      <field name="debug_1"  type="float" unit="-"/>
+      <field name="debug_2"  type="float" unit="-"/>
+      <field name="debug_3"  type="float" unit="-"/>
+    </message>
 
     <message name="NPS_SENSORS_SCALED" id="197">
       <field name="acc_x"    type="float" />
@@ -1959,17 +1990,27 @@
       <field name="msg" type="char[]"/>
     </message>
 
-    <message name="STAB_ATTITUDE_INDI" id="216">
-      <field name="angular_accel_p" type="float"/>
-      <field name="angular_accel_q" type="float"/>
-      <field name="angular_accel_r" type="float"/>
-      <field name="angular_accel_ref_p" type="float"/>
-      <field name="angular_accel_ref_q" type="float"/>
-      <field name="angular_accel_ref_r" type="float"/>
-      <field name="g1_p" type="float"/>
-      <field name="g1_q" type="float"/>
-      <field name="g1_r" type="float"/>
-      <field name="g2_r" type="float"/>
+    <message name="STAB_ATTITUDE" id="216">
+      <field name="phi"                 type="float"    unit="rad"     alt_unit="deg"    /><!-- attitude tracking -->
+      <field name="theta"               type="float"    unit="rad"     alt_unit="deg"    />
+      <field name="psi"                 type="float"    unit="rad"     alt_unit="deg"    />
+      <field name="phi_ref"             type="float"    unit="rad"     alt_unit="deg"    />
+      <field name="theta_ref"           type="float"    unit="rad"     alt_unit="deg"    />
+      <field name="psi_ref"             type="float"    unit="rad"     alt_unit="deg"    />
+      <field name="angular_rate_p"      type="float"    unit="rad/s"   alt_unit="deg/s"  /><!-- rate tracking -->
+      <field name="angular_rate_q"      type="float"    unit="rad/s"   alt_unit="deg/s"  />
+      <field name="angular_rate_r"      type="float"    unit="rad/s"   alt_unit="deg/s"  />
+      <field name="angular_rate_ref_p"  type="float"    unit="rad/s"   alt_unit="deg/s"  />
+      <field name="angular_rate_ref_q"  type="float"    unit="rad/s"   alt_unit="deg/s"  />
+      <field name="angular_rate_ref_r"  type="float"    unit="rad/s"   alt_unit="deg/s"  />
+      <field name="angular_accel_p"     type="float"    unit="rad/s2"  alt_unit="deg/s2"/><!-- angular acceleration -->
+      <field name="angular_accel_q"     type="float"    unit="rad/s2"  alt_unit="deg/s2"/>
+      <field name="angular_accel_r"     type="float"    unit="rad/s2"  alt_unit="deg/s2"/>
+      <field name="angular_accel_ref_p" type="float"    unit="rad/s2"  alt_unit="deg/s2"/>
+      <field name="angular_accel_ref_q" type="float"    unit="rad/s2"  alt_unit="deg/s2"/>
+      <field name="angular_accel_ref_r" type="float"    unit="rad/s2"  alt_unit="deg/s2"/>
+      <field name="nu"                  type="float[]"  unit="none">Input of control allocation</field>
+      <field name="u"                   type="float[]"  unit="none">Output of control allocation</field>
     </message>
 
     <message name="ROTORCRAFT_FP_MIN" id="217">
@@ -2035,6 +2076,7 @@
       <field name="pstate" type="float"> gain state in adaptive gain control: indicative of height (-) </field>
       <field name="pused" type="float"> gain used for control, includes the effect of the p-gain of adaptive control (-) </field>
       <field name="sonar" type="float"> measurement from the sonar (mm)</field>
+      <field name="front_divergence" type="float"> divergence from front cam </field>
     </message>
 
     <message name="VIDEO_SYNC" id="225">
@@ -2102,7 +2144,8 @@
       <field name="ap_h_mode"    type="uint8" values="KILL|RATE|ATTITUDE|HOVER|NAV|RC_DIRECT|CF|FORWARD|MODULE|FLIP|GUIDED"/>
       <field name="ap_v_mode"    type="uint8" values="KILL|RC_DIRECT|RC_CLIMB|CLIMB|HOVER|NAV|MODULE|FLIP|GUIDED"/>
       <field name="cpu_time"     type="uint16" unit="s"/>
-      <field name="vsupply"      type="float" unit="V"/>
+      <field name="vsupply"      type="float" unit="V">Main supply voltage</field>
+      <field name="vboard"       type="float" unit="V">AP Board voltage</field>
     </message>
 
     <message name="STATE_FILTER_STATUS" id="232">
@@ -2231,6 +2274,9 @@
       <field name="rpm"         type="float" unit="rpm">Motor rotation speed</field>
       <field name="motor_volts" type="float" unit="V">Motor voltage</field>
       <field name="energy"      type="float" unit="Wh">Accumulated consumed energy</field>
+      <field name="temperature" type="float" unit="C">Temperature</field>
+      <field name="temperature_dev" type="float" unit="C">Device temperature</field>
+      <field name="node_id"     type="uint8">Node ID</field>
       <field name="motor_id"    type="uint8">Motor ID</field>
     </message>
 
@@ -2277,12 +2323,15 @@
       <field name="Crc1087"      type="uint32"  />
     </message>
 
-    <message name="INDI_G" id="250">
-      <field name="G1_roll" type="float[]" unit="none"/>
-      <field name="G1_pitch" type="float[]" unit="none"/>
-      <field name="G1_yaw" type="float[]" unit="none"/>
+    <message name="EFF_MAT_G" id="250">
+      <field name="G1_aN"     type="float[]" unit="none"/>
+      <field name="G1_aE"     type="float[]" unit="none"/>
+      <field name="G1_aZ"     type="float[]" unit="none"/>
+      <field name="G1_roll"   type="float[]" unit="none"/>
+      <field name="G1_pitch"  type="float[]" unit="none"/>
+      <field name="G1_yaw"    type="float[]" unit="none"/>
       <field name="G1_thrust" type="float[]" unit="none"/>
-      <field name="G2" type="float[]" unit="none"/>
+      <field name="G2"        type="float[]" unit="none"/>
     </message>
 
     <message name="GPS_RTK" id="251">
@@ -2602,6 +2651,16 @@
       <field name="params" type="float[]">List of parameters, 12 max</field>
     </message>
 
+    <message name="MISSION_UPDATE" id="29" link="forwarded">
+      <description>
+        Update parameters of a mission element without changing the mission element list or current execution.
+      </description>
+      <field name="ac_id" type="uint8">Aircraft ID</field>
+      <field name="index" type="uint8">Index of mission element to update</field>
+      <field name="duration" type="float" unit="s">Duration of the element, -1 for unlimited, -9 for no change</field>
+      <field name="params" type="float[]">List of parameters, 12 max</field>
+    </message>
+
     <message name="GOTO_MISSION" id="30" link="forwarded">
       <field name="ac_id" type="uint8"/>
       <field name="mission_id" type="uint8"/>
@@ -2850,7 +2909,50 @@
           <field name="course"  type="int32"  alt_unit="deg" alt_unit_coef="0.0000057296"/>
       </message>
 
-    <message name="KITE_COMMAND" id="96">
+
+      <message name="HITL_IMU" id="70" link="forwarded">
+          <field name="gp" type="float" unit="rad/s" alt_unit="deg/s"/>
+          <field name="gq" type="float" unit="rad/s" alt_unit="deg/s"/>
+          <field name="gr" type="float" unit="rad/s" alt_unit="deg/s"/>
+          <field name="ax" type="float" unit="m/s-2"/>
+          <field name="ay" type="float" unit="m/s-2"/>
+          <field name="az" type="float" unit="m/s-2"/>
+          <field name="mx" type="float" />
+          <field name="my" type="float" />
+          <field name="mz" type="float" />
+          <field name="ac_id" type="uint8"/>
+      </message>
+
+      <message name="HITL_GPS" id="71" link="forwarded">
+          <field name="lat" type="float" unit="deg"/>
+          <field name="lon" type="float" unit="deg"/>
+          <field name="alt" type="float" unit="m">ellipsoid alt</field>
+          <field name="hmsl" type="float" unit="m">geoid alt</field>
+          <field name="ecef_vel_x" type="float" unit="m/s"/>
+          <field name="ecef_vel_y" type="float" unit="m/s"/>
+          <field name="ecef_vel_z" type="float" unit="m/s"/>
+          <field name="time" type="float" unit="s"/>
+          <field name="fix" type="uint8"/>
+          <field name="ac_id" type="uint8"/>
+      </message>
+
+      <message name="HITL_UBX" id="72" link="forwarded">
+          <field name="class" type="uint8"/>
+          <field name="id" type="uint8"/>
+          <field name="ac_id" type="uint8"/>
+          <field name="ubx_payload" type="uint8[]"/>
+      </message>
+
+      <message name="HITL_AIR_DATA" id="73" link="forwarded">
+          <field name="baro" type="float" unit="Pa"/>
+          <field name="airspeed" type="float" unit="m/s"/>
+          <field name="aoa" type="float" unit="rad"/>
+          <field name="sideslip" type="float" unit="rad"/>
+          <field name="update_flag" type="uint8">bit 0: baro, bit 1: airspeed, bit 2: aoa, bit 3: sideslip</field>
+          <field name="ac_id" type="uint8"/>
+      </message>
+
+      <message name="KITE_COMMAND" id="96">
       <field name="POWER"     type="uint16"/>
       <field name="TURN"      type="uint16"/>
     </message>
@@ -2950,6 +3052,13 @@
       <field name="ac_id" type="uint8">ID of the table's aircraft to be updated</field>
       <field name="msg_type" type="uint8" values="P_AE|P_BE|SIG"/>
       <field name="msg_data" type="uint8[]"/>
+    </message>
+
+    <message name="INFO_MSG_UP" id="160" link="broadcasted">
+      <description>Message from ground to be logged on the drone</description>
+      <field name="ac_id" type="uint8"/>
+      <field name="fd" type="uint8" values="ALL|FLIGHT_RECORDER|PPRZLOG">where the message will be logged</field>
+      <field name="msg" type="char[]"/>
     </message>
 
   </msg_class>
@@ -3351,6 +3460,13 @@
       <field name="lats" type="string" format="csv"/>
       <field name="longs" type="string" format="csv"/>
       <field name="values" type="string" format="csv"/>
+    </message>
+
+    <message name="INFO_MSG_GROUND" id="101">
+      <description>Message from ground to be logged on the drone or send to other ground agents</description>
+      <field name="dest" type="string">ac_id:file_descriptor | ground_name | 0 (ground broadcast) | 0xFF (broadcast)</field>
+      <field name="source" type="string">ground_name of the agent sending the message</field>
+      <field name="msg" type="string"/>
     </message>
   </msg_class>
 

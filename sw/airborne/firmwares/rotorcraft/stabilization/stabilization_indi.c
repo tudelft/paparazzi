@@ -334,26 +334,26 @@ static void send_indi_schedule_g1(struct transport_tx *trans, struct link_device
 }
 #endif
 
-#if STABILIZATION_INDI_PUBLISH_ATTITUDE
-static void send_att_indi(struct transport_tx *trans, struct link_device *dev)
-{
-    float g2_disp = 0;
-  pprz_msg_send_STAB_ATTITUDE_INDI(trans, dev, AC_ID,
-                                   &angular_acceleration[0],
-                                   &angular_acceleration[1],
-                                   &angular_acceleration[2],
-                                   &angular_accel_ref.p,
-                                   &angular_accel_ref.q,
-                                   &angular_accel_ref.r,
-//                                   &Bwls[0][3],
-//                                   &Bwls[1][2],
-//                                   &Bwls[2][1],
-                                    &g2_disp,
-                                   &g2_disp,
-                                   &g2_disp,
-                                   &g2_disp);
-}
-#endif
+//#if STABILIZATION_INDI_PUBLISH_ATTITUDE
+//static void send_att_indi(struct transport_tx *trans, struct link_device *dev)
+//{
+//    float g2_disp = 0;
+//  pprz_msg_send_STAB_ATTITUDE_INDI(trans, dev, AC_ID,
+//                                   &angular_acceleration[0],
+//                                   &angular_acceleration[1],
+//                                   &angular_acceleration[2],
+//                                   &angular_accel_ref.p,
+//                                   &angular_accel_ref.q,
+//                                   &angular_accel_ref.r,
+////                                   &Bwls[0][3],
+////                                   &Bwls[1][2],
+////                                   &Bwls[2][1],
+//                                    &g2_disp,
+//                                   &g2_disp,
+//                                   &g2_disp,
+//                                   &g2_disp);
+//}
+//#endif
 
 
 static void send_att_full_indi(struct transport_tx *trans, struct link_device *dev)
@@ -449,9 +449,9 @@ void stabilization_indi_init(void)
     #if CTRL_EFFECTIVENESS_SEND_SCHEDULING_MSG
         register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_SCHEDULE_G1, send_indi_schedule_g1);
     #endif
-    #if STABILIZATION_INDI_PUBLISH_ATTITUDE
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_INDI, send_att_indi);
-    #endif
+//    #if STABILIZATION_INDI_PUBLISH_ATTITUDE
+//    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_INDI, send_att_indi);
+//    #endif
 #endif
 }
 
@@ -771,18 +771,19 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   for (i = 0; i < INDI_NUM_ACT; i++) {
     actuators_pprz[i] = (int16_t) indi_u[i];
   }
-}
 
-//  // Set the stab_cmd to 42 to indicate that it is not used
+    //  // Set the stab_cmd to 42 to indicate that it is not used
 //  stabilization_cmd[COMMAND_ROLL] = 42;
 //  stabilization_cmd[COMMAND_PITCH] = 42;
 //  stabilization_cmd[COMMAND_YAW] = 42;
 
 //    FIXME
-  if (stab_indi_kill_throttle) {
-      stabilization_cmd[COMMAND_THRUST] = 0;
-      actuators_pprz[4] = 0;
-  }
+    if (stab_indi_kill_throttle) {
+        stabilization_cmd[COMMAND_THRUST] = 0;
+        actuators_pprz[4] = 0;
+    }
+}
+
 /**
  * @param use_increment
  *

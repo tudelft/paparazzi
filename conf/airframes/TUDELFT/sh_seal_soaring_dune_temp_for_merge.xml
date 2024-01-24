@@ -222,7 +222,7 @@ NOTES:
       </module>
       -->
 
-      <module name="logger_ins_analyser" />
+<!--      <module name="logger_ins_analyser" />-->
 
 <!--      MOVED BECAUSE OF FBW   -->
       <module name="actuators" type="pwm"/>
@@ -257,7 +257,7 @@ NOTES:
 <!--        &lt;!&ndash;        <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="2500"/>&ndash;&gt;-->
 <!--      </module>-->
 
-      <module name="guidance" type="indi_hybrid">
+      <module name="guidance" type="indi">
       </module>
 
 
@@ -432,7 +432,7 @@ NOTES:
         <!--        <configure name="INDI_OUTPUTS" value="4"/>-->
       </module>
 
-      <module name="guidance" type="indi_hybrid">
+      <module name="guidance" type="indi">
         <!--        <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>-->
         <!--        <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="2500"/>-->
       </module>
@@ -687,15 +687,15 @@ NOTES:
     <define name="INS_SONAR_MIN_RANGE" value="0.15"/>
   </section>
 
-  <section name="SONAR" prefix="SONAR_">
-    <define name="USE_ADC_FILTER"/>
-    <define name="MEDIAN_SIZE" value="15"/>
-    <define name="COMPENSATE_ROTATION" value="TRUE"/>
-    <define name="SCALE" value="0.0025375" integer="16"/>
-    <define name="OFFSET" value="90.0"/>
-    <define name="MAX_RANGE" value="6.0" unit="m"/>
-    <define name="MIN_RANGE" value="0.15" unit="m"/>
-  </section>
+<!--  <section name="SONAR" prefix="SONAR_">-->
+<!--    <define name="USE_ADC_FILTER"/>-->
+<!--    <define name="MEDIAN_SIZE" value="15"/>-->
+<!--    <define name="COMPENSATE_ROTATION" value="TRUE"/>-->
+<!--    <define name="SCALE" value="0.0025375" integer="16"/>-->
+<!--    <define name="OFFSET" value="90.0"/>-->
+<!--    <define name="MAX_RANGE" value="6.0" unit="m"/>-->
+<!--    <define name="MIN_RANGE" value="0.15" unit="m"/>-->
+<!--  </section>-->
 
   <section name="AGL" prefix="AGL_DIST_SONAR_">
     <define name="ID" value="ABI_BROADCAST"/>

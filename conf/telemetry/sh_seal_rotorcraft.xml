@@ -49,7 +49,8 @@
 
       <message name="AHRS_BIAS"                period="7.5"/>
       <message name="AHRS_REF_QUAT"            period="1.0"/>
-      <message name="STAB_ATTITUDE_INDI"       period="0.1"/>
+      <!--      <message name="STAB_ATTITUDE_INDI"       period="0.1"/>--> <!-- not used anymore -->
+      <message name="STAB_ATTITUDE"            period="0.1"/>
       <message name="GUIDANCE_INDI_HYBRID"    period="1.0"/>
       <message name="GUIDANCE_INDI_HYBRID_SOARING"    period="1.0"/>
 
@@ -59,7 +60,7 @@
       <message name="ROTORCRAFT_RADIO_CONTROL" period="1.5"/>
 <!--            <message name="COMMANDS"                 period=".5"/>-->
 
-<!--      <message name="INS_ANALYSER"            period="3.0"/>-->
+      <message name="INS_FLOW_INFO"            period="3.0"/>
 <!--      <message name="INDI_G"                   period="1.0"/>-->
       <message name="INDI_SCHEDULE_G1"          period="0.5"/>
 
@@ -144,8 +145,8 @@
       <message name="STAB_ATTITUDE_REF_INT"   period=".03"/>
       <message name="STAB_ATTITUDE_FLOAT"     period=".03"/>
       <message name="STAB_ATTITUDE_REF_FLOAT" period=".03"/>
-      <message name="STAB_ATTITUDE_INDI"      period=".25"/>
-      <message name="INDI_G"            period="2.0"/>
+      <message name="STAB_ATTITUDE"      period=".25"/>
+<!--      <message name="INDI_G"            period="2.0"/>-->
     </mode>
 
     <mode name="vert_loop" key_press="v">
@@ -250,7 +251,8 @@
       <message name="GUIDANCE_H_REF_INT"       period="0.05"/>
       <message name="VERT_LOOP"         period=".05"/>
 
-      <message name="STAB_ATTITUDE_INDI"       period="0.002"/>
+<!--      <message name="STAB_ATTITUDE_INDI"       period="0.002"/>-->
+      <message name="STAB_ATTITUDE"            period="0.002"/>
 
       <message name="AHRS_REF_QUAT"            period="0.002"/>
       <message name="ROTORCRAFT_CMD"           period=".002"/>
@@ -331,12 +333,13 @@
       <message name="GUIDANCE_H_REF_INT"       period="0.05"/>
       <message name="VERT_LOOP"         period=".05"/>
 
-            <message name="STAB_ATTITUDE_INDI"       period="0.002"/>
+<!--      <message name="STAB_ATTITUDE_INDI"       period="0.002"/>-->
+      <message name="STAB_ATTITUDE"       period="0.002"/>
 
       <message name="AHRS_REF_QUAT"            period="0.002"/>
       <message name="ROTORCRAFT_CMD"           period=".002"/>
       <message name="AIRSPEED_MS45XX"          period=".02"/>
-      <message name="INS_ANALYSER" period="0.002"/>
+<!--      <message name="INS_ANALYSER" period="0.002"/>--> <!-- not used anymore -->
 
       <message name="ACTUATORS"                 period="0.1"/>
       <message name="ROTORCRAFT_RADIO_CONTROL" period="0.1"/>
