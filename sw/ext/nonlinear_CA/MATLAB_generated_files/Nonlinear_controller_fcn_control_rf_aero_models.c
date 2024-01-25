@@ -244,17 +244,6 @@ typedef struct {
 #define typedef_d_struct_T
 
 typedef struct {
-  double workspace_double[496];
-  int workspace_int[31];
-  int workspace_sort[31];
-} d_struct_T;
-
-#endif                                 /* typedef_d_struct_T */
-
-#ifndef typedef_e_struct_T
-#define typedef_e_struct_T
-
-typedef struct {
   int ldq;
   double QR[961];
   double Q[961];
@@ -264,12 +253,12 @@ typedef struct {
   double tau[31];
   int minRowCol;
   bool usedPivoting;
-} e_struct_T;
+} d_struct_T;
 
-#endif                                 /* typedef_e_struct_T */
+#endif                                 /* typedef_d_struct_T */
 
-#ifndef typedef_f_struct_T
-#define typedef_f_struct_T
+#ifndef typedef_e_struct_T
+#define typedef_e_struct_T
 
 typedef struct {
   double FMat[961];
@@ -281,12 +270,45 @@ typedef struct {
   double regTol_;
   double workspace_;
   double workspace2_;
+} e_struct_T;
+
+#endif                                 /* typedef_e_struct_T */
+
+#ifndef typedef_f_struct_T
+#define typedef_f_struct_T
+
+typedef struct {
+  double workspace_double[496];
+  int workspace_int[31];
+  int workspace_sort[31];
 } f_struct_T;
 
 #endif                                 /* typedef_f_struct_T */
 
 #ifndef typedef_g_struct_T
 #define typedef_g_struct_T
+
+typedef struct {
+  nested_function objfun;
+  double f_1;
+  double f_2;
+  int nVar;
+  int mIneq;
+  int mEq;
+  int numEvals;
+  bool SpecifyObjectiveGradient;
+  bool SpecifyConstraintGradient;
+  bool isEmptyNonlcon;
+  bool hasLB[15];
+  bool hasUB[15];
+  bool hasBounds;
+  int FiniteDifferenceType;
+} g_struct_T;
+
+#endif                                 /* typedef_g_struct_T */
+
+#ifndef typedef_h_struct_T
+#define typedef_h_struct_T
 
 typedef struct {
   int nVarMax;
@@ -322,12 +344,12 @@ typedef struct {
   double maxConstr;
   int iterations;
   double searchDir[16];
-} g_struct_T;
+} h_struct_T;
 
-#endif                                 /* typedef_g_struct_T */
+#endif                                 /* typedef_h_struct_T */
 
-#ifndef typedef_h_struct_T
-#define typedef_h_struct_T
+#ifndef typedef_i_struct_T
+#define typedef_i_struct_T
 
 typedef struct {
   int mConstr;
@@ -363,18 +385,6 @@ typedef struct {
   int nWConstr[5];
   int probType;
   double SLACK0;
-} h_struct_T;
-
-#endif                                 /* typedef_h_struct_T */
-
-#ifndef typedef_i_struct_T
-#define typedef_i_struct_T
-
-typedef struct {
-  char SolverName[7];
-  int MaxIterations;
-  double StepTolerance;
-  double ObjectiveLimit;
 } i_struct_T;
 
 #endif                                 /* typedef_i_struct_T */
@@ -383,14 +393,26 @@ typedef struct {
 #define typedef_j_struct_T
 
 typedef struct {
+  char SolverName[7];
+  int MaxIterations;
+  double StepTolerance;
+  double ObjectiveLimit;
+} j_struct_T;
+
+#endif                                 /* typedef_j_struct_T */
+
+#ifndef typedef_k_struct_T
+#define typedef_k_struct_T
+
+typedef struct {
   bool fevalOK;
   bool done;
   bool stepAccepted;
   bool failedLineSearch;
   int stepType;
-} j_struct_T;
+} k_struct_T;
 
-#endif                                 /* typedef_j_struct_T */
+#endif                                 /* typedef_k_struct_T */
 
 /* Variable Definitions */
 static double freq;
@@ -403,31 +425,32 @@ static bool isInitialized_Nonlinear_controller_fcn_control_rf_aero_models =
 /* Function Declarations */
 static bool BFGSUpdate(int nvar, double Bk[225], const double sk[16], double yk
   [16], double workspace[496]);
-static void PresolveWorkingSet(g_struct_T *solution, d_struct_T *memspace,
-  h_struct_T *workingset, e_struct_T *qrmanager);
-static void RemoveDependentIneq_(h_struct_T *workingset, e_struct_T *qrmanager,
-  d_struct_T *memspace, double tolfactor);
-static void addBoundToActiveSetMatrix_(h_struct_T *obj, int TYPE, int idx_local);
+static void PresolveWorkingSet(h_struct_T *solution, f_struct_T *memspace,
+  i_struct_T *workingset, d_struct_T *qrmanager);
+static void RemoveDependentIneq_(i_struct_T *workingset, d_struct_T *qrmanager,
+  f_struct_T *memspace, double tolfactor);
+static void addBoundToActiveSetMatrix_(i_struct_T *obj, int TYPE, int idx_local);
 static void b_computeGradLag(double workspace[496], int nVar, const double grad
   [16], const int finiteFixed[16], int mFixed, const int finiteLB[16], int mLB,
   const int finiteUB[16], int mUB, const double lambda[31]);
-static void b_driver(const double lb[15], const double ub[15], g_struct_T
+static void b_driver(const double lb[15], const double ub[15], h_struct_T
                      *TrialState, b_struct_T *MeritFunction, const
-                     i_coder_internal_stickyStruct *FcnEvaluator, d_struct_T
-                     *memspace, h_struct_T *WorkingSet, double Hessian[225],
-                     e_struct_T *QRManager, f_struct_T *CholManager, struct_T
+                     i_coder_internal_stickyStruct *FcnEvaluator, f_struct_T
+                     *memspace, i_struct_T *WorkingSet, double Hessian[225],
+                     d_struct_T *QRManager, e_struct_T *CholManager, struct_T
                      *QPObjective);
-static double b_maxConstraintViolation(const h_struct_T *obj, const double x[16]);
+static double b_maxConstraintViolation(const i_struct_T *obj, const double x[16]);
 static double b_norm(const double x[15]);
-static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
-  *MeritFunction, const h_struct_T *WorkingSet, g_struct_T *TrialState,
-  e_struct_T *QRManager, const double lb[15], const double ub[15]);
+static void b_test_exit(k_struct_T *Flags, f_struct_T *memspace, b_struct_T
+  *MeritFunction, const i_struct_T *WorkingSet, h_struct_T *TrialState,
+  d_struct_T *QRManager, const double lb[15], const double ub[15]);
 static double b_timeKeeper(double *outTime_tv_nsec);
 static void b_xgemm(int m, int n, int k, const double A[961], int ia0, const
                     double B[496], double C[961]);
 static void b_xgemv(int m, int n, const double A[961], const double x[16],
                     double y[496]);
 static double b_xnrm2(int n, const double x[16]);
+static void c_CoderTimeAPI_callCoderClockGe(void);
 static double c_computeObjectiveAndUserGradie(const c_struct_T
   *c_obj_next_next_next_next_next_, const double x[15], double grad_workspace[16],
   int *status);
@@ -444,7 +467,7 @@ static void computeGradLag(double workspace[16], int nVar, const double grad[16]
   int finiteUB[16], int mUB, const double lambda[31]);
 static void computeGrad_StoreHx(struct_T *obj, const double H[225], const double
   f[16], const double x[16]);
-static void computeQ_(e_struct_T *obj, int nrows);
+static void computeQ_(d_struct_T *obj, int nrows);
 static void compute_acc(double Alpha, double CL_aileron, double Cd_zero, double
   Cl_alpha, double Cm_zero, double Cm_alpha, double I_xx, double I_yy, double
   I_zz, double K_Cd, double Omega_1_scaled, double Omega_2_scaled, double
@@ -477,21 +500,23 @@ static double compute_cost_and_gradient(double Alpha, double Beta, double
   prop_Cd_a, double prop_Cl_a, double prop_delta, double prop_sigma, double
   prop_theta, double q, double r, double rho, double wing_span, double
   wing_chord, double gradient_data[], int *gradient_size);
-static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
-  *memspace, const e_struct_T *qrmanager, f_struct_T *cholmanager, const
+static void compute_deltax(const double H[225], h_struct_T *solution, f_struct_T
+  *memspace, const d_struct_T *qrmanager, e_struct_T *cholmanager, const
   struct_T *objective, bool alwaysPositiveDef);
 static void countsort(int x[31], int xLen, int workspace[31], int xMin, int xMax);
-static void deleteColMoveEnd(e_struct_T *obj, int idx);
+static void deleteColMoveEnd(d_struct_T *obj, int idx);
 static int div_nde_s32_floor(int numerator);
-static void driver(const double H[225], const double f[16], g_struct_T *solution,
-                   d_struct_T *memspace, h_struct_T *workingset, e_struct_T
-                   *qrmanager, f_struct_T *cholmanager, struct_T *objective,
-                   i_struct_T *options, int runTimeOptions_MaxIterations);
+static void driver(const double H[225], const double f[16], h_struct_T *solution,
+                   f_struct_T *memspace, i_struct_T *workingset, d_struct_T
+                   *qrmanager, e_struct_T *cholmanager, struct_T *objective,
+                   j_struct_T *options, int runTimeOptions_MaxIterations);
 static double evalObjAndConstr(const c_struct_T *c_obj_next_next_next_next_next_,
   const double x[15], int *status);
-static void factorQR(e_struct_T *obj, const double A[496], int mrows, int ncols);
+static void factorQR(d_struct_T *obj, const double A[496], int mrows, int ncols);
+static void factoryConstruct(c_struct_T *objfun_workspace, const double lb[15],
+  const double ub[15], g_struct_T *obj);
 static bool feasibleX0ForWorkingSet(double workspace[496], double xCurrent[16],
-  const h_struct_T *workingset, e_struct_T *qrmanager);
+  const i_struct_T *workingset, d_struct_T *qrmanager);
 static double feasibleratiotest(const double solution_xstar[16], const double
   solution_searchDir[16], int workingset_nVar, const double workingset_lb[16],
   const double workingset_ub[16], const int workingset_indexLB[16], const int
@@ -499,48 +524,49 @@ static double feasibleratiotest(const double solution_xstar[16], const double
   workingset_isActiveIdx[6], const bool workingset_isActiveConstr[31], const int
   workingset_nWConstr[5], bool isPhaseOne, bool *newBlocking, int *constrType,
   int *constrIdx);
-static double fmincon(c_struct_T *fun_workspace, const double x0[15], const
-                      double lb[15], const double ub[15], double x[15], double
-                      *exitflag, double *output_iterations, double
-                      *output_funcCount, char output_algorithm[3], double
-                      *output_constrviolation, double *output_stepsize, double
-                      *output_lssteplength, double *output_firstorderopt);
+static double fmincon(c_struct_T *fun_workspace, double x0[15], const double lb
+                      [15], const double ub[15], double *exitflag, double
+                      *output_iterations, double *output_funcCount, char
+                      output_algorithm[3], double *output_constrviolation,
+                      double *output_stepsize, double *output_lssteplength,
+                      double *output_firstorderopt);
 static double ft_1(const double ct[254], double gradient_data[], int
                    *gradient_size);
-static void fullColLDL2_(f_struct_T *obj, int NColsRemain);
-static void iterate(const double H[225], const double f[16], g_struct_T
-                    *solution, d_struct_T *memspace, h_struct_T *workingset,
-                    e_struct_T *qrmanager, f_struct_T *cholmanager, struct_T
+static void fullColLDL2_(e_struct_T *obj, int NColsRemain);
+static void iterate(const double H[225], const double f[16], h_struct_T
+                    *solution, f_struct_T *memspace, i_struct_T *workingset,
+                    d_struct_T *qrmanager, e_struct_T *cholmanager, struct_T
                     *objective, const char options_SolverName[7], double
                     options_StepTolerance, double options_ObjectiveLimit, int
                     runTimeOptions_MaxIterations);
 static void linearForm_(bool obj_hasLinear, int obj_nvar, double workspace[496],
   const double H[225], const double f[16], const double x[16]);
-static double maxConstraintViolation(const h_struct_T *obj, const double x[496],
+static double maxConstraintViolation(const i_struct_T *obj, const double x[496],
   int ix0);
 static double maximum(const double x[2]);
 static double minimum(const double x[2]);
 static void qrf(double A[961], int m, int n, int nfxd, double tau[31]);
-static void removeConstr(h_struct_T *obj, int idx_global);
+static void removeConstr(i_struct_T *obj, int idx_global);
 static double rt_hypotd_snf(double u0, double u1);
 static double rt_powd_snf(double u0, double u1);
-static void setProblemType(h_struct_T *obj, int PROBLEM_TYPE);
-static void solve(const f_struct_T *obj, double rhs[16]);
+static void setProblemType(i_struct_T *obj, int PROBLEM_TYPE);
+static void solve(const e_struct_T *obj, double rhs[16]);
 static void sortLambdaQP(double lambda[31], int WorkingSet_nActiveConstr, const
   int WorkingSet_sizes[5], const int WorkingSet_isActiveIdx[6], const int
   WorkingSet_Wid[31], const int WorkingSet_Wlocalidx[31], double workspace[496]);
 static bool step(int *STEP_TYPE, double Hessian[225], const double lb[15], const
-                 double ub[15], g_struct_T *TrialState, b_struct_T
-                 *MeritFunction, d_struct_T *memspace, h_struct_T *WorkingSet,
-                 e_struct_T *QRManager, f_struct_T *CholManager, struct_T
-                 *QPObjective, i_struct_T *qpoptions);
-static bool test_exit(b_struct_T *MeritFunction, const h_struct_T *WorkingSet,
-                      g_struct_T *TrialState, const double lb[15], const double
+                 double ub[15], h_struct_T *TrialState, b_struct_T
+                 *MeritFunction, f_struct_T *memspace, i_struct_T *WorkingSet,
+                 d_struct_T *QRManager, e_struct_T *CholManager, struct_T
+                 *QPObjective, j_struct_T *qpoptions);
+static bool test_exit(b_struct_T *MeritFunction, const i_struct_T *WorkingSet,
+                      h_struct_T *TrialState, const double lb[15], const double
                       ub[15], bool *Flags_fevalOK, bool *Flags_done, bool
                       *Flags_stepAccepted, bool *Flags_failedLineSearch, int
                       *Flags_stepType);
 static void tic(void);
 static void timeKeeper(double newTime_tv_sec, double newTime_tv_nsec);
+static void timeKeeper_init(void);
 static double toc(void);
 static void xgemm(int m, int n, int k, const double A[225], int lda, const
                   double B[961], int ib0, double C[496]);
@@ -662,8 +688,8 @@ static bool BFGSUpdate(int nvar, double Bk[225], const double sk[16], double yk
   return success;
 }
 
-static void PresolveWorkingSet(g_struct_T *solution, d_struct_T *memspace,
-  h_struct_T *workingset, e_struct_T *qrmanager)
+static void PresolveWorkingSet(h_struct_T *solution, f_struct_T *memspace,
+  i_struct_T *workingset, d_struct_T *qrmanager)
 {
   double tol;
   int idxDiag;
@@ -848,8 +874,8 @@ static void PresolveWorkingSet(g_struct_T *solution, d_struct_T *memspace,
   }
 }
 
-static void RemoveDependentIneq_(h_struct_T *workingset, e_struct_T *qrmanager,
-  d_struct_T *memspace, double tolfactor)
+static void RemoveDependentIneq_(i_struct_T *workingset, d_struct_T *qrmanager,
+  f_struct_T *memspace, double tolfactor)
 {
   int idx;
   int idx_col;
@@ -928,7 +954,7 @@ static void RemoveDependentIneq_(h_struct_T *workingset, e_struct_T *qrmanager,
   }
 }
 
-static void addBoundToActiveSetMatrix_(h_struct_T *obj, int TYPE, int idx_local)
+static void addBoundToActiveSetMatrix_(i_struct_T *obj, int TYPE, int idx_local)
 {
   int colOffset;
   int i;
@@ -1007,11 +1033,11 @@ static void b_computeGradLag(double workspace[496], int nVar, const double grad
   }
 }
 
-static void b_driver(const double lb[15], const double ub[15], g_struct_T
+static void b_driver(const double lb[15], const double ub[15], h_struct_T
                      *TrialState, b_struct_T *MeritFunction, const
-                     i_coder_internal_stickyStruct *FcnEvaluator, d_struct_T
-                     *memspace, h_struct_T *WorkingSet, double Hessian[225],
-                     e_struct_T *QRManager, f_struct_T *CholManager, struct_T
+                     i_coder_internal_stickyStruct *FcnEvaluator, f_struct_T
+                     *memspace, i_struct_T *WorkingSet, double Hessian[225],
+                     d_struct_T *QRManager, e_struct_T *CholManager, struct_T
                      *QPObjective)
 {
   static const signed char iv[225] = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1028,9 +1054,9 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
   static const char qpoptions_SolverName[7] = { 'f', 'm', 'i', 'n', 'c', 'o',
     'n' };
 
-  i_struct_T b_expl_temp;
-  i_struct_T expl_temp;
-  j_struct_T Flags;
+  j_struct_T b_expl_temp;
+  j_struct_T expl_temp;
+  k_struct_T Flags;
   int i;
   int ineqStart;
   int ixlast;
@@ -1242,7 +1268,7 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
               ixlast = 0;
               exitg2 = false;
               while ((!exitg2) && (ixlast <= (unsigned char)i - 1)) {
-                if (1.0E-9 * fmax(1.0, fabs(TrialState->xstarsqp[ixlast])) <=
+                if (1.0E-12 * fmax(1.0, fabs(TrialState->xstarsqp[ixlast])) <=
                     fabs(TrialState->delta_x[ixlast])) {
                   tooSmallX = false;
                   exitg2 = true;
@@ -1347,7 +1373,7 @@ static void b_driver(const double lb[15], const double ub[15], g_struct_T
   }
 }
 
-static double b_maxConstraintViolation(const h_struct_T *obj, const double x[16])
+static double b_maxConstraintViolation(const i_struct_T *obj, const double x[16])
 {
   double v;
   int i;
@@ -1406,9 +1432,9 @@ static double b_norm(const double x[15])
   return scale * sqrt(y);
 }
 
-static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
-  *MeritFunction, const h_struct_T *WorkingSet, g_struct_T *TrialState,
-  e_struct_T *QRManager, const double lb[15], const double ub[15])
+static void b_test_exit(k_struct_T *Flags, f_struct_T *memspace, b_struct_T
+  *MeritFunction, const i_struct_T *WorkingSet, h_struct_T *TrialState,
+  d_struct_T *QRManager, const double lb[15], const double ub[15])
 {
   double optimRelativeFactor;
   double s;
@@ -1547,9 +1573,9 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
              (unsigned int)i * sizeof(double));
     }
 
-    if (isFeasible && (MeritFunction->nlpDualFeasError <= 1.0E-9 *
+    if (isFeasible && (MeritFunction->nlpDualFeasError <= 1.0E-12 *
                        optimRelativeFactor) && (MeritFunction->nlpComplError <=
-         1.0E-9 * optimRelativeFactor)) {
+         1.0E-12 * optimRelativeFactor)) {
       Flags->done = true;
       TrialState->sqpExitFlag = 1;
     } else {
@@ -1565,7 +1591,7 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
           idx_max = 0;
           exitg1 = false;
           while ((!exitg1) && (idx_max <= i1 - 1)) {
-            if (1.0E-9 * fmax(1.0, fabs(TrialState->xstarsqp[idx_max])) <= fabs
+            if (1.0E-12 * fmax(1.0, fabs(TrialState->xstarsqp[idx_max])) <= fabs
                 (TrialState->delta_x[idx_max])) {
               dxTooSmall = false;
               exitg1 = true;
@@ -1683,7 +1709,7 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
                                       WorkingSet->indexUB, WorkingSet->sizes[4],
                                       ub, TrialState->lambda, WorkingSet->sizes
                                       [0] + 1);
-                if ((smax <= 1.0E-9 * optimRelativeFactor) && (s <= 1.0E-9 *
+                if ((smax <= 1.0E-12 * optimRelativeFactor) && (s <= 1.0E-12 *
                      optimRelativeFactor)) {
                   MeritFunction->nlpDualFeasError = smax;
                   MeritFunction->nlpComplError = s;
@@ -1715,7 +1741,7 @@ static void b_test_exit(j_struct_T *Flags, d_struct_T *memspace, b_struct_T
           if (TrialState->sqpIterations >= 200 || toc() >= 5e-3) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
-          } else if (TrialState->FunctionEvaluations >= 1000) {
+          } else if (TrialState->FunctionEvaluations >= 1000 || toc() >= 5e-3) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
           }
@@ -1832,6 +1858,11 @@ static double b_xnrm2(int n, const double x[16])
   }
 
   return y;
+}
+
+static void c_CoderTimeAPI_callCoderClockGe(void)
+{
+  freq_not_empty = false;
 }
 
 static double c_computeObjectiveAndUserGradie(const c_struct_T
@@ -2242,7 +2273,7 @@ static void computeGrad_StoreHx(struct_T *obj, const double H[225], const double
   }
 }
 
-static void computeQ_(e_struct_T *obj, int nrows)
+static void computeQ_(d_struct_T *obj, int nrows)
 {
   double work[31];
   int b_i;
@@ -2540,49 +2571,53 @@ static void compute_acc(double Alpha, double CL_aileron, double Cd_zero, double
   t160 = t12 * t5 / 2.0 + t160_tmp * t11 * t102 / 2.0;
   t161 = t12 * t11 / 2.0 - t160_tmp * t5 * t102 / 2.0;
   t5 = t20 * t49 * t57 * 62.000124000248007;
-  t12 = V * 3.46 * 0.0551;
-  t14 = (V * t48 * t56 * 7.8740157480314963 * t14 / 2.0 - 0.0190646) + sqrt(((t5
-    * (t14 * t14) * 16.0 + t12 * t48 * t56 * -0.8 * 7.8740157480314963 * t14 *
-    8.0) + -0.0053208017385071357 * t20 * t49 * t57 * 62.000124000248007 * t8 *
-    -8.0) - -0.22040000000000004 * (3.46 * (0.2188 * (t5 * t8 * 8.0 + 3.2) +
-    0.030503360000000007) + 0.1152)) / 8.0;
+  t12 = V * 4.0 * 0.0551;
+  t14 = (V * t48 * t56 * 7.8740157480314963 * t14 / 2.0 - 0.022040000000000004)
+    + sqrt(((t5 * (t14 * t14) * 16.0 + t12 * t48 * t56 * -0.8 *
+             7.8740157480314963 * t14 * 8.0) + -0.023943607823282111 * t20 * t49
+            * t57 * 62.000124000248007 * t8 * -8.0) - -0.22040000000000004 *
+           (4.0 * (0.2188 * (t5 * t8 * 8.0 + 3.2) + 0.035264000000000011) +
+            0.51840000000000008)) / 8.0;
   t5 = t20 * t51 * t57 * 62.000124000248007;
-  t13 = (V * t50 * t56 * 7.8740157480314963 * t7 / 2.0 - 0.0190646) + sqrt(((t5 *
-    (t7 * t7) * 16.0 + t12 * t50 * t56 * -0.8 * 7.8740157480314963 * t7 * 8.0) +
-    -0.0053208017385071357 * t20 * t51 * t57 * 62.000124000248007 * t10 * -8.0)
-    - -0.22040000000000004 * (3.46 * (0.2188 * (t5 * t10 * 8.0 + 3.2) +
-    0.030503360000000007) + 0.1152)) / 8.0;
+  t13 = (V * t50 * t56 * 7.8740157480314963 * t7 / 2.0 - 0.022040000000000004) +
+    sqrt(((t5 * (t7 * t7) * 16.0 + t12 * t50 * t56 * -0.8 * 7.8740157480314963 *
+           t7 * 8.0) + -0.023943607823282111 * t20 * t51 * t57 *
+          62.000124000248007 * t10 * -8.0) - -0.22040000000000004 * (4.0 *
+          (0.2188 * (t5 * t10 * 8.0 + 3.2) + 0.035264000000000011) +
+          0.51840000000000008)) / 8.0;
   t5 = t20 * t53 * t57 * 62.000124000248007;
-  t11 = (V * t52 * t56 * 7.8740157480314963 * t9 / 2.0 - 0.0190646) + sqrt(((t5 *
-    (t9 * t9) * 16.0 + t12 * t52 * t56 * -0.8 * 7.8740157480314963 * t9 * 8.0) +
-    -0.0053208017385071357 * t20 * t53 * t57 * 62.000124000248007 * t6 * -8.0) -
-    -0.22040000000000004 * (3.46 * (0.2188 * (t5 * t6 * 8.0 + 3.2) +
-    0.030503360000000007) + 0.1152)) / 8.0;
+  t11 = (V * t52 * t56 * 7.8740157480314963 * t9 / 2.0 - 0.022040000000000004) +
+    sqrt(((t5 * (t9 * t9) * 16.0 + t12 * t52 * t56 * -0.8 * 7.8740157480314963 *
+           t9 * 8.0) + -0.023943607823282111 * t20 * t53 * t57 *
+          62.000124000248007 * t6 * -8.0) - -0.22040000000000004 * (4.0 *
+          (0.2188 * (t5 * t6 * 8.0 + 3.2) + 0.035264000000000011) +
+          0.51840000000000008)) / 8.0;
   t5 = t20 * t55 * t57 * 62.000124000248007;
-  t5 = (V * t54 * t56 * 7.8740157480314963 * t88 / 2.0 - 0.0190646) + sqrt(((t5 *
-    (t88 * t88) * 16.0 + t12 * t54 * t56 * -0.8 * 7.8740157480314963 * t88 * 8.0)
-    + -0.0053208017385071357 * t20 * t55 * t57 * 62.000124000248007 * t100 *
-    -8.0) - -0.22040000000000004 * (3.46 * (0.2188 * (t5 * t100 * 8.0 + 3.2) +
-    0.030503360000000007) + 0.1152)) / 8.0;
-  t234 = -0.019313254949209203 * t20 * t49 * t57 * 62.000124000248007 * t8 +
-    -0.8 * ((0.75704799999999994 * t20 * t49 * t57 * 62.000124000248007 * t8 +
-             0.0144) - 0.69200000000000006 * (t14 - 0.2188) * 2.0);
-  t235 = -0.019313254949209203 * t20 * t51 * t57 * 62.000124000248007 * t10 +
-    -0.8 * ((0.75704799999999994 * t20 * t51 * t57 * 62.000124000248007 * t10 +
-             0.0144) - 0.69200000000000006 * (t13 - 0.2188) * 2.0);
-  t56 = -0.019313254949209203 * t20 * t53 * t57 * 62.000124000248007 * t6 + -0.8
-    * ((0.75704799999999994 * t20 * t53 * t57 * 62.000124000248007 * t6 + 0.0144)
-       - 0.69200000000000006 * (t11 - 0.2188) * 2.0);
-  t57 = -0.019313254949209203 * t20 * t55 * t57 * 62.000124000248007 * t100 +
-    -0.8 * ((0.75704799999999994 * t20 * t55 * t57 * 62.000124000248007 * t100 +
-             0.0144) - 0.69200000000000006 * (t5 - 0.2188) * 2.0);
-  t10 = -0.019313254949209203 * t14 + -0.8 * (0.2188 * (t14 * 2.74 +
-    0.15753599999999998) + 0.020000000000000004);
-  t49 = -0.019313254949209203 * t13 + -0.8 * (0.2188 * (t13 * 2.74 +
-    0.15753599999999998) + 0.020000000000000004);
-  t51 = -0.019313254949209203 * t11 + -0.8 * (0.2188 * (t11 * 2.74 +
-    0.15753599999999998) + 0.020000000000000004);
-  t52 = -0.019313254949209203 * t5 + -0.8 * (0.2188 * (t5 * 2.74 +
+  t5 = (V * t54 * t56 * 7.8740157480314963 * t88 / 2.0 - 0.022040000000000004) +
+    sqrt(((t5 * (t88 * t88) * 16.0 + t12 * t54 * t56 * -0.8 * 7.8740157480314963
+           * t88 * 8.0) + -0.023943607823282111 * t20 * t55 * t57 *
+          62.000124000248007 * t100 * -8.0) - -0.22040000000000004 * (4.0 *
+          (0.2188 * (t5 * t100 * 8.0 + 3.2) + 0.035264000000000011) +
+          0.51840000000000008)) / 8.0;
+  t234 = -0.086909647271441431 * t20 * t49 * t57 * 62.000124000248007 * t8 +
+    -0.8 * ((0.8752 * t20 * t49 * t57 * 62.000124000248007 * t8 +
+             0.06480000000000001) - 0.8 * (t14 - 0.2188) * 2.0);
+  t235 = -0.086909647271441431 * t20 * t51 * t57 * 62.000124000248007 * t10 +
+    -0.8 * ((0.8752 * t20 * t51 * t57 * 62.000124000248007 * t10 +
+             0.06480000000000001) - 0.8 * (t13 - 0.2188) * 2.0);
+  t56 = -0.086909647271441431 * t20 * t53 * t57 * 62.000124000248007 * t6 + -0.8
+    * ((0.8752 * t20 * t53 * t57 * 62.000124000248007 * t6 + 0.06480000000000001)
+       - 0.8 * (t11 - 0.2188) * 2.0);
+  t57 = -0.086909647271441431 * t20 * t55 * t57 * 62.000124000248007 * t100 +
+    -0.8 * ((0.8752 * t20 * t55 * t57 * 62.000124000248007 * t100 +
+             0.06480000000000001) - 0.8 * (t5 - 0.2188) * 2.0);
+  t10 = -0.086909647271441431 * t14 + -0.8 * (0.2188 * (t14 * 3.2800000000000002
+    + 0.15753599999999998) + 0.020000000000000004);
+  t49 = -0.086909647271441431 * t13 + -0.8 * (0.2188 * (t13 * 3.2800000000000002
+    + 0.15753599999999998) + 0.020000000000000004);
+  t51 = -0.086909647271441431 * t11 + -0.8 * (0.2188 * (t11 * 3.2800000000000002
+    + 0.15753599999999998) + 0.020000000000000004);
+  t52 = -0.086909647271441431 * t5 + -0.8 * (0.2188 * (t5 * 3.2800000000000002 +
     0.15753599999999998) + 0.020000000000000004);
   t5 = 0.0551 * rho * t16 * t21 * 0.000260144641;
   t8 = Omega_1_scaled * V * gain_motor * 0.0551 * rho * 0.002048383;
@@ -3345,8 +3380,8 @@ static double compute_cost_and_gradient(double Alpha, double Beta, double
   return cost;
 }
 
-static void compute_deltax(const double H[225], g_struct_T *solution, d_struct_T
-  *memspace, const e_struct_T *qrmanager, f_struct_T *cholmanager, const
+static void compute_deltax(const double H[225], h_struct_T *solution, f_struct_T
+  *memspace, const d_struct_T *qrmanager, e_struct_T *cholmanager, const
   struct_T *objective, bool alwaysPositiveDef)
 {
   int b_i;
@@ -3751,7 +3786,7 @@ static void countsort(int x[31], int xLen, int workspace[31], int xMin, int xMax
   }
 }
 
-static void deleteColMoveEnd(e_struct_T *obj, int idx)
+static void deleteColMoveEnd(d_struct_T *obj, int idx)
 {
   double s;
   double temp_tmp;
@@ -3877,10 +3912,10 @@ static int div_nde_s32_floor(int numerator)
   return numerator / 31 + i;
 }
 
-static void driver(const double H[225], const double f[16], g_struct_T *solution,
-                   d_struct_T *memspace, h_struct_T *workingset, e_struct_T
-                   *qrmanager, f_struct_T *cholmanager, struct_T *objective,
-                   i_struct_T *options, int runTimeOptions_MaxIterations)
+static void driver(const double H[225], const double f[16], h_struct_T *solution,
+                   f_struct_T *memspace, i_struct_T *workingset, d_struct_T
+                   *qrmanager, e_struct_T *cholmanager, struct_T *objective,
+                   j_struct_T *options, int runTimeOptions_MaxIterations)
 {
   int idxStartIneq;
   int idx_global;
@@ -4140,7 +4175,7 @@ static double evalObjAndConstr(const c_struct_T *c_obj_next_next_next_next_next_
   return fval;
 }
 
-static void factorQR(e_struct_T *obj, const double A[496], int mrows, int ncols)
+static void factorQR(d_struct_T *obj, const double A[496], int mrows, int ncols)
 {
   int i;
   int idx;
@@ -4191,8 +4226,54 @@ static void factorQR(e_struct_T *obj, const double A[496], int mrows, int ncols)
   }
 }
 
+static void factoryConstruct(c_struct_T *objfun_workspace, const double lb[15],
+  const double ub[15], g_struct_T *obj)
+{
+  int i;
+  bool bv[15];
+  bool b;
+  obj->objfun.workspace = *objfun_workspace;
+  obj->f_1 = 0.0;
+  obj->f_2 = 0.0;
+  obj->nVar = 15;
+  obj->mIneq = 0;
+  obj->mEq = 0;
+  obj->numEvals = 0;
+  obj->SpecifyObjectiveGradient = true;
+  obj->SpecifyConstraintGradient = false;
+  obj->isEmptyNonlcon = true;
+  obj->FiniteDifferenceType = 0;
+  for (i = 0; i < 15; i++) {
+    bv[i] = obj->hasUB[i];
+  }
+
+  b = false;
+  i = 0;
+  while ((!b) && (i + 1 <= 15)) {
+    obj->hasLB[i] = ((!rtIsInf(lb[i])) && (!rtIsNaN(lb[i])));
+    bv[i] = ((!rtIsInf(ub[i])) && (!rtIsNaN(ub[i])));
+    if (obj->hasLB[i] || bv[i]) {
+      b = true;
+    }
+
+    i++;
+  }
+
+  while (i + 1 <= 15) {
+    obj->hasLB[i] = ((!rtIsInf(lb[i])) && (!rtIsNaN(lb[i])));
+    bv[i] = ((!rtIsInf(ub[i])) && (!rtIsNaN(ub[i])));
+    i++;
+  }
+
+  for (i = 0; i < 15; i++) {
+    obj->hasUB[i] = bv[i];
+  }
+
+  obj->hasBounds = b;
+}
+
 static bool feasibleX0ForWorkingSet(double workspace[496], double xCurrent[16],
-  const h_struct_T *workingset, e_struct_T *qrmanager)
+  const i_struct_T *workingset, d_struct_T *qrmanager)
 {
   double B[496];
   int b_i;
@@ -4490,280 +4571,315 @@ static double feasibleratiotest(const double solution_xstar[16], const double
   return alpha;
 }
 
-static double fmincon(c_struct_T *fun_workspace, const double x0[15], const
-                      double lb[15], const double ub[15], double x[15], double
-                      *exitflag, double *output_iterations, double
-                      *output_funcCount, char output_algorithm[3], double
-                      *output_constrviolation, double *output_stepsize, double
-                      *output_lssteplength, double *output_firstorderopt)
+static double fmincon(c_struct_T *fun_workspace, double x0[15], const double lb
+                      [15], const double ub[15], double *exitflag, double
+                      *output_iterations, double *output_funcCount, char
+                      output_algorithm[3], double *output_constrviolation,
+                      double *output_stepsize, double *output_lssteplength,
+                      double *output_firstorderopt)
 {
   b_struct_T MeritFunction;
-  d_struct_T memspace;
-  e_struct_T QRManager;
-  f_struct_T CholManager;
-  g_struct_T TrialState;
-  h_struct_T WorkingSet;
+  c_struct_T b_fun_workspace;
+  c_struct_T c_FcnEvaluator_next_next_next_n;
+  d_struct_T QRManager;
+  e_struct_T CholManager;
+  f_struct_T memspace;
+  g_struct_T unusedExpr;
+  h_struct_T TrialState;
   i_coder_internal_stickyStruct r;
+  i_struct_T WorkingSet;
   struct_T QPObjective;
   double fval;
-  double scale;
-  double y;
   int b_i;
-  int colOffsetATw;
   int i;
-  int mFixed;
-  int mLB;
+  int idx;
   int mUB;
   signed char b_obj_tmp[5];
   signed char obj_tmp[5];
-  output_algorithm[0] = 's';
-  output_algorithm[1] = 'q';
-  output_algorithm[2] = 'p';
-  TrialState.nVarMax = 16;
-  TrialState.mNonlinIneq = 0;
-  TrialState.mNonlinEq = 0;
-  TrialState.mIneq = 0;
-  TrialState.mEq = 0;
-  TrialState.iNonIneq0 = 1;
-  TrialState.iNonEq0 = 1;
-  TrialState.sqpFval_old = 0.0;
-  TrialState.sqpIterations = 0;
-  TrialState.sqpExitFlag = 0;
-  memset(&TrialState.lambdasqp[0], 0, 31U * sizeof(double));
-  TrialState.steplength = 1.0;
-  memset(&TrialState.delta_x[0], 0, 16U * sizeof(double));
-  TrialState.fstar = 0.0;
-  TrialState.firstorderopt = 0.0;
-  memset(&TrialState.lambda[0], 0, 31U * sizeof(double));
-  TrialState.state = 0;
-  TrialState.maxConstr = 0.0;
-  TrialState.iterations = 0;
-  memcpy(&TrialState.xstarsqp[0], &x0[0], 15U * sizeof(double));
-  WorkingSet.nVar = 15;
-  WorkingSet.nVarOrig = 15;
-  WorkingSet.nVarMax = 16;
-  WorkingSet.ldA = 16;
-  memset(&WorkingSet.lb[0], 0, 16U * sizeof(double));
-  memset(&WorkingSet.ub[0], 0, 16U * sizeof(double));
-  WorkingSet.mEqRemoved = 0;
-  memset(&WorkingSet.ATwset[0], 0, 496U * sizeof(double));
-  WorkingSet.nActiveConstr = 0;
-  memset(&WorkingSet.bwset[0], 0, 31U * sizeof(double));
-  memset(&WorkingSet.maxConstrWorkspace[0], 0, 31U * sizeof(double));
-  memset(&WorkingSet.Wid[0], 0, 31U * sizeof(int));
-  memset(&WorkingSet.Wlocalidx[0], 0, 31U * sizeof(int));
-  for (i = 0; i < 31; i++) {
-    WorkingSet.isActiveConstr[i] = false;
+  bool exitg1;
+  *exitflag = rtInf;
+  i = 0;
+  exitg1 = false;
+  while ((!exitg1) && (i < 15)) {
+    if (lb[i] > ub[i]) {
+      *exitflag = -2.0;
+      exitg1 = true;
+    } else {
+      i++;
+    }
   }
 
-  for (i = 0; i < 5; i++) {
-    WorkingSet.nWConstr[i] = 0;
-  }
+  if (*exitflag == -2.0) {
+    fval = rtInf;
+    *output_iterations = 0.0;
+    *output_funcCount = 0.0;
+    output_algorithm[0] = 's';
+    output_algorithm[1] = 'q';
+    output_algorithm[2] = 'p';
+    *output_constrviolation = rtInf;
+    *output_stepsize = rtInf;
+    *output_lssteplength = rtInf;
+    *output_firstorderopt = rtInf;
+  } else {
+    double scale;
+    double y;
+    int mFixed;
+    int mLB;
+    TrialState.nVarMax = 16;
+    TrialState.mNonlinIneq = 0;
+    TrialState.mNonlinEq = 0;
+    TrialState.mIneq = 0;
+    TrialState.mEq = 0;
+    TrialState.iNonIneq0 = 1;
+    TrialState.iNonEq0 = 1;
+    TrialState.sqpFval_old = 0.0;
+    TrialState.sqpIterations = 0;
+    TrialState.sqpExitFlag = 0;
+    memset(&TrialState.lambdasqp[0], 0, 31U * sizeof(double));
+    TrialState.steplength = 1.0;
+    memset(&TrialState.delta_x[0], 0, 16U * sizeof(double));
+    TrialState.fstar = 0.0;
+    TrialState.firstorderopt = 0.0;
+    memset(&TrialState.lambda[0], 0, 31U * sizeof(double));
+    TrialState.state = 0;
+    TrialState.maxConstr = 0.0;
+    TrialState.iterations = 0;
+    memcpy(&TrialState.xstarsqp[0], &x0[0], 15U * sizeof(double));
+    c_FcnEvaluator_next_next_next_n = *fun_workspace;
+    b_fun_workspace = *fun_workspace;
+    factoryConstruct(&b_fun_workspace, lb, ub, &unusedExpr);
+    WorkingSet.nVar = 15;
+    WorkingSet.nVarOrig = 15;
+    WorkingSet.nVarMax = 16;
+    WorkingSet.ldA = 16;
+    memset(&WorkingSet.lb[0], 0, 16U * sizeof(double));
+    memset(&WorkingSet.ub[0], 0, 16U * sizeof(double));
+    WorkingSet.mEqRemoved = 0;
+    memset(&WorkingSet.ATwset[0], 0, 496U * sizeof(double));
+    WorkingSet.nActiveConstr = 0;
+    memset(&WorkingSet.bwset[0], 0, 31U * sizeof(double));
+    memset(&WorkingSet.maxConstrWorkspace[0], 0, 31U * sizeof(double));
+    memset(&WorkingSet.Wid[0], 0, 31U * sizeof(int));
+    memset(&WorkingSet.Wlocalidx[0], 0, 31U * sizeof(int));
+    for (i = 0; i < 31; i++) {
+      WorkingSet.isActiveConstr[i] = false;
+    }
 
-  WorkingSet.probType = 3;
-  WorkingSet.SLACK0 = 1.0E-5;
-  memset(&WorkingSet.indexLB[0], 0, 16U * sizeof(int));
-  memset(&WorkingSet.indexUB[0], 0, 16U * sizeof(int));
-  memset(&WorkingSet.indexFixed[0], 0, 16U * sizeof(int));
-  mLB = 0;
-  mUB = 0;
-  mFixed = 0;
-  for (colOffsetATw = 0; colOffsetATw < 15; colOffsetATw++) {
-    bool guard1;
-    y = lb[colOffsetATw];
-    guard1 = false;
-    if ((!rtIsInf(y)) && (!rtIsNaN(y))) {
-      if (fabs(y - ub[colOffsetATw]) < 1.0E-6) {
-        mFixed++;
-        WorkingSet.indexFixed[mFixed - 1] = colOffsetATw + 1;
+    for (i = 0; i < 5; i++) {
+      WorkingSet.nWConstr[i] = 0;
+    }
+
+    WorkingSet.probType = 3;
+    WorkingSet.SLACK0 = 1.0E-5;
+    memset(&WorkingSet.indexLB[0], 0, 16U * sizeof(int));
+    memset(&WorkingSet.indexUB[0], 0, 16U * sizeof(int));
+    memset(&WorkingSet.indexFixed[0], 0, 16U * sizeof(int));
+    mLB = 0;
+    mUB = 0;
+    mFixed = 0;
+    for (idx = 0; idx < 15; idx++) {
+      bool guard1;
+      y = lb[idx];
+      guard1 = false;
+      if ((!rtIsInf(y)) && (!rtIsNaN(y))) {
+        if (fabs(y - ub[idx]) < 1.0E-6) {
+          mFixed++;
+          WorkingSet.indexFixed[mFixed - 1] = idx + 1;
+        } else {
+          mLB++;
+          WorkingSet.indexLB[mLB - 1] = idx + 1;
+          guard1 = true;
+        }
       } else {
-        mLB++;
-        WorkingSet.indexLB[mLB - 1] = colOffsetATw + 1;
         guard1 = true;
       }
-    } else {
-      guard1 = true;
-    }
 
-    if (guard1) {
-      y = ub[colOffsetATw];
-      if ((!rtIsInf(y)) && (!rtIsNaN(y))) {
-        mUB++;
-        WorkingSet.indexUB[mUB - 1] = colOffsetATw + 1;
+      if (guard1) {
+        y = ub[idx];
+        if ((!rtIsInf(y)) && (!rtIsNaN(y))) {
+          mUB++;
+          WorkingSet.indexUB[mUB - 1] = idx + 1;
+        }
       }
     }
-  }
 
-  i = (mLB + mUB) + mFixed;
-  WorkingSet.mConstr = i;
-  WorkingSet.mConstrOrig = i;
-  WorkingSet.mConstrMax = 31;
-  obj_tmp[0] = (signed char)mFixed;
-  obj_tmp[1] = 0;
-  obj_tmp[2] = 0;
-  obj_tmp[3] = (signed char)mLB;
-  obj_tmp[4] = (signed char)mUB;
-  b_obj_tmp[0] = (signed char)mFixed;
-  b_obj_tmp[1] = 0;
-  b_obj_tmp[2] = 0;
-  b_obj_tmp[3] = (signed char)(mLB + 1);
-  b_obj_tmp[4] = (signed char)mUB;
-  WorkingSet.isActiveIdx[0] = 1;
-  WorkingSet.isActiveIdx[1] = mFixed;
-  WorkingSet.isActiveIdx[2] = 0;
-  WorkingSet.isActiveIdx[3] = 0;
-  WorkingSet.isActiveIdx[4] = mLB;
-  WorkingSet.isActiveIdx[5] = mUB;
-  for (i = 0; i < 5; i++) {
-    signed char i1;
-    signed char i2;
-    i1 = obj_tmp[i];
-    WorkingSet.sizes[i] = i1;
-    WorkingSet.sizesNormal[i] = i1;
-    i2 = b_obj_tmp[i];
-    WorkingSet.sizesPhaseOne[i] = i2;
-    WorkingSet.sizesRegularized[i] = i1;
-    WorkingSet.sizesRegPhaseOne[i] = i2;
-    WorkingSet.isActiveIdx[i + 1] += WorkingSet.isActiveIdx[i];
-  }
-
-  for (b_i = 0; b_i < 6; b_i++) {
-    WorkingSet.isActiveIdxNormal[b_i] = WorkingSet.isActiveIdx[b_i];
-  }
-
-  WorkingSet.isActiveIdxPhaseOne[0] = 1;
-  WorkingSet.isActiveIdxPhaseOne[1] = mFixed;
-  WorkingSet.isActiveIdxPhaseOne[2] = 0;
-  WorkingSet.isActiveIdxPhaseOne[3] = 0;
-  WorkingSet.isActiveIdxPhaseOne[4] = mLB + 1;
-  WorkingSet.isActiveIdxPhaseOne[5] = mUB;
-  for (i = 0; i < 5; i++) {
-    WorkingSet.isActiveIdxPhaseOne[i + 1] += WorkingSet.isActiveIdxPhaseOne[i];
-  }
-
-  for (b_i = 0; b_i < 6; b_i++) {
-    WorkingSet.isActiveIdxRegularized[b_i] = WorkingSet.isActiveIdx[b_i];
-    WorkingSet.isActiveIdxRegPhaseOne[b_i] = WorkingSet.isActiveIdxPhaseOne[b_i];
-  }
-
-  for (colOffsetATw = 0; colOffsetATw < mLB; colOffsetATw++) {
-    b_i = WorkingSet.indexLB[colOffsetATw];
-    TrialState.xstarsqp[b_i - 1] = fmax(TrialState.xstarsqp[b_i - 1], lb[b_i - 1]);
-  }
-
-  for (colOffsetATw = 0; colOffsetATw < mUB; colOffsetATw++) {
-    b_i = WorkingSet.indexUB[colOffsetATw];
-    TrialState.xstarsqp[b_i - 1] = fmin(TrialState.xstarsqp[b_i - 1], ub[b_i - 1]);
-  }
-
-  for (colOffsetATw = 0; colOffsetATw < mFixed; colOffsetATw++) {
-    b_i = WorkingSet.indexFixed[colOffsetATw];
-    TrialState.xstarsqp[b_i - 1] = ub[b_i - 1];
-  }
-
-  TrialState.sqpFval = c_computeObjectiveAndUserGradie(fun_workspace,
-    TrialState.xstarsqp, TrialState.grad, &i);
-  TrialState.FunctionEvaluations = 1;
-  for (colOffsetATw = 0; colOffsetATw < mLB; colOffsetATw++) {
-    WorkingSet.lb[WorkingSet.indexLB[colOffsetATw] - 1] =
-      -lb[WorkingSet.indexLB[colOffsetATw] - 1] +
-      x0[WorkingSet.indexLB[colOffsetATw] - 1];
-  }
-
-  for (colOffsetATw = 0; colOffsetATw < mUB; colOffsetATw++) {
-    WorkingSet.ub[WorkingSet.indexUB[colOffsetATw] - 1] =
-      ub[WorkingSet.indexUB[colOffsetATw] - 1] -
-      x0[WorkingSet.indexUB[colOffsetATw] - 1];
-  }
-
-  for (colOffsetATw = 0; colOffsetATw < mFixed; colOffsetATw++) {
-    y = ub[WorkingSet.indexFixed[colOffsetATw] - 1] -
-      x0[WorkingSet.indexFixed[colOffsetATw] - 1];
-    WorkingSet.ub[WorkingSet.indexFixed[colOffsetATw] - 1] = y;
-    WorkingSet.bwset[colOffsetATw] = y;
-  }
-
-  setProblemType(&WorkingSet, 3);
-  i = WorkingSet.isActiveIdx[2];
-  for (colOffsetATw = i; colOffsetATw < 32; colOffsetATw++) {
-    WorkingSet.isActiveConstr[colOffsetATw - 1] = false;
-  }
-
-  WorkingSet.nWConstr[0] = WorkingSet.sizes[0];
-  WorkingSet.nWConstr[1] = 0;
-  WorkingSet.nWConstr[2] = 0;
-  WorkingSet.nWConstr[3] = 0;
-  WorkingSet.nWConstr[4] = 0;
-  WorkingSet.nActiveConstr = WorkingSet.nWConstr[0];
-  b_i = (unsigned char)WorkingSet.sizes[0];
-  for (i = 0; i < b_i; i++) {
-    WorkingSet.Wid[i] = 1;
-    WorkingSet.Wlocalidx[i] = i + 1;
-    WorkingSet.isActiveConstr[i] = true;
-    colOffsetATw = i << 4;
-    mLB = WorkingSet.indexFixed[i];
-    if (mLB - 2 >= 0) {
-      memset(&WorkingSet.ATwset[colOffsetATw], 0, (unsigned int)(((mLB +
-                colOffsetATw) - colOffsetATw) - 1) * sizeof(double));
+    i = (mLB + mUB) + mFixed;
+    WorkingSet.mConstr = i;
+    WorkingSet.mConstrOrig = i;
+    WorkingSet.mConstrMax = 31;
+    obj_tmp[0] = (signed char)mFixed;
+    obj_tmp[1] = 0;
+    obj_tmp[2] = 0;
+    obj_tmp[3] = (signed char)mLB;
+    obj_tmp[4] = (signed char)mUB;
+    b_obj_tmp[0] = (signed char)mFixed;
+    b_obj_tmp[1] = 0;
+    b_obj_tmp[2] = 0;
+    b_obj_tmp[3] = (signed char)(mLB + 1);
+    b_obj_tmp[4] = (signed char)mUB;
+    WorkingSet.isActiveIdx[0] = 1;
+    WorkingSet.isActiveIdx[1] = mFixed;
+    WorkingSet.isActiveIdx[2] = 0;
+    WorkingSet.isActiveIdx[3] = 0;
+    WorkingSet.isActiveIdx[4] = mLB;
+    WorkingSet.isActiveIdx[5] = mUB;
+    for (i = 0; i < 5; i++) {
+      signed char i1;
+      signed char i2;
+      i1 = obj_tmp[i];
+      WorkingSet.sizes[i] = i1;
+      WorkingSet.sizesNormal[i] = i1;
+      i2 = b_obj_tmp[i];
+      WorkingSet.sizesPhaseOne[i] = i2;
+      WorkingSet.sizesRegularized[i] = i1;
+      WorkingSet.sizesRegPhaseOne[i] = i2;
+      WorkingSet.isActiveIdx[i + 1] += WorkingSet.isActiveIdx[i];
     }
 
-    WorkingSet.ATwset[(WorkingSet.indexFixed[i] + colOffsetATw) - 1] = 1.0;
-    mLB = WorkingSet.indexFixed[i] + 1;
-    mUB = WorkingSet.nVar;
-    if (mLB <= mUB) {
-      memset(&WorkingSet.ATwset[(mLB + colOffsetATw) + -1], 0, (unsigned int)
-             ((((mUB + colOffsetATw) - mLB) - colOffsetATw) + 1) * sizeof(double));
+    for (b_i = 0; b_i < 6; b_i++) {
+      WorkingSet.isActiveIdxNormal[b_i] = WorkingSet.isActiveIdx[b_i];
     }
 
-    WorkingSet.bwset[i] = WorkingSet.ub[WorkingSet.indexFixed[i] - 1];
-  }
-
-  double Hessian[225];
-  MeritFunction.initFval = TrialState.sqpFval;
-  MeritFunction.penaltyParam = 1.0;
-  MeritFunction.threshold = 0.0001;
-  MeritFunction.nPenaltyDecreases = 0;
-  MeritFunction.linearizedConstrViol = 0.0;
-  MeritFunction.initConstrViolationEq = 0.0;
-  MeritFunction.initConstrViolationIneq = 0.0;
-  MeritFunction.phi = 0.0;
-  MeritFunction.phiPrimePlus = 0.0;
-  MeritFunction.phiFullStep = 0.0;
-  MeritFunction.feasRelativeFactor = 0.0;
-  MeritFunction.nlpPrimalFeasError = 0.0;
-  MeritFunction.nlpDualFeasError = 0.0;
-  MeritFunction.nlpComplError = 0.0;
-  MeritFunction.firstOrderOpt = 0.0;
-  MeritFunction.hasObjective = true;
-  r.next.next.next.next.next.next.next.next.value.workspace = *fun_workspace;
-  b_driver(lb, ub, &TrialState, &MeritFunction, &r, &memspace, &WorkingSet,
-           Hessian, &QRManager, &CholManager, &QPObjective);
-  fval = TrialState.sqpFval;
-  *exitflag = TrialState.sqpExitFlag;
-  *output_iterations = TrialState.sqpIterations;
-  *output_funcCount = TrialState.FunctionEvaluations;
-  *output_constrviolation = MeritFunction.nlpPrimalFeasError;
-  y = 0.0;
-  scale = 3.3121686421112381E-170;
-  for (i = 0; i < 15; i++) {
-    double absxk;
-    x[i] = TrialState.xstarsqp[i];
-    absxk = fabs(TrialState.delta_x[i]);
-    if (absxk > scale) {
-      double t;
-      t = scale / absxk;
-      y = y * t * t + 1.0;
-      scale = absxk;
-    } else {
-      double t;
-      t = absxk / scale;
-      y += t * t;
+    WorkingSet.isActiveIdxPhaseOne[0] = 1;
+    WorkingSet.isActiveIdxPhaseOne[1] = mFixed;
+    WorkingSet.isActiveIdxPhaseOne[2] = 0;
+    WorkingSet.isActiveIdxPhaseOne[3] = 0;
+    WorkingSet.isActiveIdxPhaseOne[4] = mLB + 1;
+    WorkingSet.isActiveIdxPhaseOne[5] = mUB;
+    for (i = 0; i < 5; i++) {
+      WorkingSet.isActiveIdxPhaseOne[i + 1] += WorkingSet.isActiveIdxPhaseOne[i];
     }
+
+    for (b_i = 0; b_i < 6; b_i++) {
+      WorkingSet.isActiveIdxRegularized[b_i] = WorkingSet.isActiveIdx[b_i];
+      WorkingSet.isActiveIdxRegPhaseOne[b_i] =
+        WorkingSet.isActiveIdxPhaseOne[b_i];
+    }
+
+    for (idx = 0; idx < mLB; idx++) {
+      b_i = WorkingSet.indexLB[idx];
+      TrialState.xstarsqp[b_i - 1] = fmax(TrialState.xstarsqp[b_i - 1], lb[b_i -
+        1]);
+    }
+
+    for (idx = 0; idx < mUB; idx++) {
+      b_i = WorkingSet.indexUB[idx];
+      TrialState.xstarsqp[b_i - 1] = fmin(TrialState.xstarsqp[b_i - 1], ub[b_i -
+        1]);
+    }
+
+    for (idx = 0; idx < mFixed; idx++) {
+      b_i = WorkingSet.indexFixed[idx];
+      TrialState.xstarsqp[b_i - 1] = ub[b_i - 1];
+    }
+
+    TrialState.sqpFval = c_computeObjectiveAndUserGradie
+      (&c_FcnEvaluator_next_next_next_n, TrialState.xstarsqp, TrialState.grad,
+       &i);
+    TrialState.FunctionEvaluations = 1;
+    for (idx = 0; idx < mLB; idx++) {
+      WorkingSet.lb[WorkingSet.indexLB[idx] - 1] = -lb[WorkingSet.indexLB[idx] -
+        1] + x0[WorkingSet.indexLB[idx] - 1];
+    }
+
+    for (idx = 0; idx < mUB; idx++) {
+      WorkingSet.ub[WorkingSet.indexUB[idx] - 1] = ub[WorkingSet.indexUB[idx] -
+        1] - x0[WorkingSet.indexUB[idx] - 1];
+    }
+
+    for (idx = 0; idx < mFixed; idx++) {
+      y = ub[WorkingSet.indexFixed[idx] - 1] - x0[WorkingSet.indexFixed[idx] - 1];
+      WorkingSet.ub[WorkingSet.indexFixed[idx] - 1] = y;
+      WorkingSet.bwset[idx] = y;
+    }
+
+    setProblemType(&WorkingSet, 3);
+    i = WorkingSet.isActiveIdx[2];
+    for (idx = i; idx < 32; idx++) {
+      WorkingSet.isActiveConstr[idx - 1] = false;
+    }
+
+    WorkingSet.nWConstr[0] = WorkingSet.sizes[0];
+    WorkingSet.nWConstr[1] = 0;
+    WorkingSet.nWConstr[2] = 0;
+    WorkingSet.nWConstr[3] = 0;
+    WorkingSet.nWConstr[4] = 0;
+    WorkingSet.nActiveConstr = WorkingSet.nWConstr[0];
+    b_i = (unsigned char)WorkingSet.sizes[0];
+    for (mUB = 0; mUB < b_i; mUB++) {
+      WorkingSet.Wid[mUB] = 1;
+      WorkingSet.Wlocalidx[mUB] = mUB + 1;
+      WorkingSet.isActiveConstr[mUB] = true;
+      i = mUB << 4;
+      idx = WorkingSet.indexFixed[mUB];
+      if (idx - 2 >= 0) {
+        memset(&WorkingSet.ATwset[i], 0, (unsigned int)(((idx + i) - i) - 1) *
+               sizeof(double));
+      }
+
+      WorkingSet.ATwset[(WorkingSet.indexFixed[mUB] + i) - 1] = 1.0;
+      idx = WorkingSet.indexFixed[mUB] + 1;
+      mLB = WorkingSet.nVar;
+      if (idx <= mLB) {
+        memset(&WorkingSet.ATwset[(idx + i) + -1], 0, (unsigned int)((((mLB + i)
+                  - idx) - i) + 1) * sizeof(double));
+      }
+
+      WorkingSet.bwset[mUB] = WorkingSet.ub[WorkingSet.indexFixed[mUB] - 1];
+    }
+
+    double Hessian[225];
+    MeritFunction.initFval = TrialState.sqpFval;
+    MeritFunction.penaltyParam = 1.0;
+    MeritFunction.threshold = 0.0001;
+    MeritFunction.nPenaltyDecreases = 0;
+    MeritFunction.linearizedConstrViol = 0.0;
+    MeritFunction.initConstrViolationEq = 0.0;
+    MeritFunction.initConstrViolationIneq = 0.0;
+    MeritFunction.phi = 0.0;
+    MeritFunction.phiPrimePlus = 0.0;
+    MeritFunction.phiFullStep = 0.0;
+    MeritFunction.feasRelativeFactor = 0.0;
+    MeritFunction.nlpPrimalFeasError = 0.0;
+    MeritFunction.nlpDualFeasError = 0.0;
+    MeritFunction.nlpComplError = 0.0;
+    MeritFunction.firstOrderOpt = 0.0;
+    MeritFunction.hasObjective = true;
+    r.next.next.next.next.next.next.next.next.value.workspace =
+      c_FcnEvaluator_next_next_next_n;
+    b_driver(lb, ub, &TrialState, &MeritFunction, &r, &memspace, &WorkingSet,
+             Hessian, &QRManager, &CholManager, &QPObjective);
+    fval = TrialState.sqpFval;
+    *exitflag = TrialState.sqpExitFlag;
+    *output_iterations = TrialState.sqpIterations;
+    *output_funcCount = TrialState.FunctionEvaluations;
+    output_algorithm[0] = 's';
+    output_algorithm[1] = 'q';
+    output_algorithm[2] = 'p';
+    *output_constrviolation = MeritFunction.nlpPrimalFeasError;
+    y = 0.0;
+    scale = 3.3121686421112381E-170;
+    for (i = 0; i < 15; i++) {
+      double absxk;
+      x0[i] = TrialState.xstarsqp[i];
+      absxk = fabs(TrialState.delta_x[i]);
+      if (absxk > scale) {
+        double t;
+        t = scale / absxk;
+        y = y * t * t + 1.0;
+        scale = absxk;
+      } else {
+        double t;
+        t = absxk / scale;
+        y += t * t;
+      }
+    }
+
+    *output_stepsize = scale * sqrt(y);
+    *output_lssteplength = TrialState.steplength;
+    *output_firstorderopt = MeritFunction.firstOrderOpt;
   }
 
-  *output_stepsize = scale * sqrt(y);
-  *output_lssteplength = TrialState.steplength;
-  *output_firstorderopt = MeritFunction.firstOrderOpt;
   return fval;
 }
 
@@ -4779,15 +4895,14 @@ static double ft_1(const double ct[254], double gradient_data[], int
   double t455_tmp;
   double t455_tmp_tmp;
   double t456;
-  double t456_tmp;
   double t456_tmp_tmp;
   double t457;
+  double t457_tmp;
   double t457_tmp_tmp;
   double t458;
   double t458_tmp_tmp;
   double t471;
   double t472;
-  double t472_tmp;
   double t473;
   double t473_tmp;
   double t474;
@@ -4879,11 +4994,12 @@ static double ft_1(const double ct[254], double gradient_data[], int
   double t827;
   double t828;
   double t831;
+  double t832;
   double t834;
   double t835;
   double t836;
   double t837;
-  double t839;
+  double t838;
   double t841;
   double t842;
   double t858;
@@ -4918,22 +5034,22 @@ static double ft_1(const double ct[254], double gradient_data[], int
   t455 = t455_tmp * t443 * 3.1415926535897931 / 4.0;
   t456_tmp_tmp = t675 * ct[83] * ct[127];
   t677 = t456_tmp_tmp * ct[149];
-  t456_tmp = t677 * ct[199] * ct[47];
-  t456 = t456_tmp * t444 * 3.1415926535897931 / 4.0;
+  t858 = t677 * ct[199] * ct[47];
+  t456 = t858 * t444 * 3.1415926535897931 / 4.0;
   t457_tmp_tmp = t675 * ct[86] * ct[127];
   t678 = t457_tmp_tmp * ct[149];
-  t858 = t678 * ct[200] * ct[47];
-  t457 = t858 * t445 * 3.1415926535897931 / 4.0;
+  t457_tmp = t678 * ct[200] * ct[47];
+  t457 = t457_tmp * t445 * 3.1415926535897931 / 4.0;
   t458_tmp_tmp = t675 * ct[92] * ct[127];
   t675 = t458_tmp_tmp * ct[149];
   t835 = t675 * ct[203] * ct[47];
   t458 = t835 * t446 * 3.1415926535897931 / 4.0;
   t676 *= ct[184];
-  t839 = t676 * ct[194] * ct[47];
-  t471 = t839 * t443 * 3.1415926535897931 / 4.0;
+  t832 = t676 * ct[194] * ct[47];
+  t471 = t832 * t443 * 3.1415926535897931 / 4.0;
   t677 *= ct[190];
-  t472_tmp = t677 * ct[195] * ct[47];
-  t472 = t472_tmp * t444 * 3.1415926535897931 / 4.0;
+  t838 = t677 * ct[195] * ct[47];
+  t472 = t838 * t444 * 3.1415926535897931 / 4.0;
   t678 *= ct[191];
   t473_tmp = t678 * ct[196] * ct[47];
   t473 = t473_tmp * t445 * 3.1415926535897931 / 4.0;
@@ -5049,16 +5165,16 @@ static double ft_1(const double ct[254], double gradient_data[], int
   t675 = t672_tmp_tmp * ct[31] * ct[32] * ct[43] * ct[44] * ct[148];
   t590 = t675 * ct[199];
   t822 = (((t676 * ct[83] * ct[127] * ct[149] * ct[190] * ct[47] * t444 *
-            3.1415926535897931 / 4.0 + t456_tmp * t580 * 3.1415926535897931 /
-            4.0) + t675 * ct[190] * ct[47] * ct[66] * t576 * 3.1415926535897931 /
-           4.0) - t590 * ct[47] * ct[70] * t576 * 3.1415926535897931 / 4.0) -
-    ct[223];
+            3.1415926535897931 / 4.0 + t858 * t580 * 3.1415926535897931 / 4.0) +
+           t675 * ct[190] * ct[47] * ct[66] * t576 * 3.1415926535897931 / 4.0) -
+          t590 * ct[47] * ct[70] * t576 * 3.1415926535897931 / 4.0) - ct[223];
   t678 = t673_tmp_tmp * ct[31] * ct[32] * ct[43] * ct[44] * ct[148];
   t589 = t678 * ct[200];
   t823 = (((t676 * ct[86] * ct[127] * ct[149] * ct[191] * ct[47] * t445 *
-            3.1415926535897931 / 4.0 + t858 * t581 * 3.1415926535897931 / 4.0) +
-           t678 * ct[191] * ct[47] * ct[67] * t577 * 3.1415926535897931 / 4.0) -
-          t589 * ct[47] * ct[71] * t577 * 3.1415926535897931 / 4.0) - ct[224];
+            3.1415926535897931 / 4.0 + t457_tmp * t581 * 3.1415926535897931 /
+            4.0) + t678 * ct[191] * ct[47] * ct[67] * t577 * 3.1415926535897931 /
+           4.0) - t589 * ct[47] * ct[71] * t577 * 3.1415926535897931 / 4.0) -
+    ct[224];
   t677 = t674_tmp_tmp * ct[31] * ct[32] * ct[43] * ct[44] * ct[148];
   t588 = t677 * ct[203];
   t824 = (((t676 * ct[92] * ct[127] * ct[149] * ct[192] * ct[47] * t446 *
@@ -5068,12 +5184,12 @@ static double ft_1(const double ct[254], double gradient_data[], int
   t836 = ((t759 + t760) + t761) + t762;
   t837 = ((t763 + t764) + t765) + t766;
   t676 = ct[31] * ct[194];
-  t825 = (((t676 * t455 - t839 * t579 * 3.1415926535897931 / 4.0) + t676 * t591)
+  t825 = (((t676 * t455 - t832 * t579 * 3.1415926535897931 / 4.0) + t676 * t591)
           + t587 * ct[194] * ct[198] * ct[47] * ct[65] * t575 *
           3.1415926535897931 / 4.0) - ct[226];
   t676 = ct[31] * ct[195];
-  t826 = (((t676 * t456 - t472_tmp * t580 * 3.1415926535897931 / 4.0) + t676 *
-           t592) + t675 * ct[195] * ct[199] * ct[47] * ct[66] * t576 *
+  t826 = (((t676 * t456 - t838 * t580 * 3.1415926535897931 / 4.0) + t676 * t592)
+          + t675 * ct[195] * ct[199] * ct[47] * ct[66] * t576 *
           3.1415926535897931 / 4.0) - ct[228];
   t676 = ct[31] * ct[196];
   t827 = (((t676 * t457 - t473_tmp * t581 * 3.1415926535897931 / 4.0) + t676 *
@@ -5096,42 +5212,42 @@ static double ft_1(const double ct[254], double gradient_data[], int
           + t589 * ct[221] * ct[47] * ct[67] * t577 * 3.1415926535897931 / 4.0)
     - ct[233];
   t675 = ct[31] * ct[227];
-  t446 = (((t675 * t458 - t478_tmp * t582 * 3.1415926535897931 / 4.0) + t675 *
+  t832 = (((t675 * t458 - t478_tmp * t582 * 3.1415926535897931 / 4.0) + t675 *
            t594) + t588 * ct[227] * ct[47] * ct[68] * t578 * 3.1415926535897931 /
           4.0) - ct[234];
   t675 = ((t745 + t746) + t747) + t748;
-  t592 = ct[159] * t836;
-  t839 = ct[167] * t837;
-  t472_tmp = ct[159] * ct[160];
-  t593 = t472_tmp * t837;
+  t838 = ct[159] * t836;
+  t593 = ct[167] * t837;
   t473_tmp = ct[159] * ct[193];
   t841 = t473_tmp * t837;
   t594 = ct[160] * ct[167];
   t842 = t594 * t836;
   t834 = ct[160] * t675;
   t835 = ct[193] * t675;
-  t591 = ct[23] + ct[236] * ((((((((((ct[51] + ct[171]) + ct[80]) + ct[39] *
+  t591 = ct[167] * ct[193];
+  t446 = -(t591 * t836);
+  t592 = ct[23] + ct[236] * ((((((((((ct[51] + ct[171]) + ct[80]) + ct[39] *
     t745) + ct[39] * t746) + ct[39] * t747) + ct[39] * t748) + ct[38] * t763) +
     ct[38] * t764) - ct[37] * t765) - ct[37] * t766);
-  t445 = ct[20] + ct[251] * (((ct[84] + ct[115]) + t592) + t839);
+  t444 = ct[20] + ct[251] * (((ct[84] + ct[115]) + t838) + t593);
   t858 = ct[22] + ct[235] * (((((((((((ct[52] + ct[176]) + ct[78]) + ct[201]) +
     ct[36] * t763) + ct[36] * t766) + ct[39] * t759) + ct[39] * t760) + ct[39] *
     t761) + ct[39] * t762) - ct[36] * t764) - ct[36] * t765);
+  t445 = ct[159] * ct[160];
+  t457_tmp = t445 * t837;
   t476 = (ct[21] + ct[251] * (((((ct[94] + ct[117]) + ct[120]) + t835) + t842) -
-           t593)) - 9.81;
+           t457_tmp)) - 9.81;
   t477 = ct[24] - ct[237] * (((((((((ct[49] + ct[162]) + ct[36] * t745) + ct[36]
     * t748) - ct[36] * t746) - ct[36] * t747) + ct[37] * t761) + ct[37] * t762)
     - ct[38] * t759) - ct[38] * t760);
-  t478 = ct[167] * ct[193];
-  t587_tmp = t478 * t836;
-  t474 = ct[19] - ct[251] * (((((ct[97] + ct[116]) + ct[118]) + t834) + t841) -
-    t587_tmp);
-  t671_tmp_tmp = ct[17] * ct[246];
-  t676 = ct[7] - t671_tmp_tmp;
-  t672_tmp_tmp = ct[18] * ct[247];
-  t677 = ct[9] - t672_tmp_tmp;
-  t673_tmp_tmp = ct[16] * ct[250];
-  t678 = ct[15] - t673_tmp_tmp;
+  t474 = ct[19] - ct[251] * (((((ct[97] + ct[116]) + ct[118]) + t834) + t841) +
+    t446);
+  t478 = ct[17] * ct[246];
+  t676 = ct[7] - t478;
+  t587_tmp = ct[18] * ct[247];
+  t677 = ct[9] - t587_tmp;
+  t671_tmp_tmp = ct[16] * ct[250];
+  t678 = ct[15] - t671_tmp_tmp;
   t675 = ct[11] + ct[58];
   t589 = ct[12] + ct[58];
   t587 = ct[13] + ct[58];
@@ -5141,27 +5257,28 @@ static double ft_1(const double ct[254], double gradient_data[], int
   t672 = ct[27] + ct[60];
   t673 = ct[28] + ct[60];
   t475 = ct[35] * ct[99];
-  t674_tmp_tmp = ct[35] * ct[122];
-  t443 = ct[35] * ct[124];
-  t455_tmp = ct[35] * ct[98];
-  t444 = ct[35] * ct[96];
-  t456_tmp = ct[35] * ct[125];
-  cost = (((((((((((((((((((ct[119] * (t477 * t477) + ct[110] * (t445 * t445)) +
-    ct[113] * (t591 * t591)) + ct[112] * (t858 * t858)) + ct[100] * (t474 * t474))
+  t672_tmp_tmp = ct[35] * ct[122];
+  t673_tmp_tmp = ct[35] * ct[124];
+  t674_tmp_tmp = ct[35] * ct[98];
+  t443 = ct[35] * ct[96];
+  t455_tmp = ct[35] * ct[125];
+  cost = (((((((((((((((((((ct[119] * (t477 * t477) + ct[110] * (t444 * t444)) +
+    ct[113] * (t592 * t592)) + ct[112] * (t858 * t858)) + ct[100] * (t474 * t474))
                         + ct[111] * (t476 * t476)) + t475 * (t805 * t805)) +
                       t475 * (t806 * t806)) + t475 * (t807 * t807)) + t475 *
-                    (t808 * t808)) + t444 * (t676 * t676)) + t455_tmp * (t677 *
-    t677)) + t456_tmp * (t678 * t678)) + t674_tmp_tmp * (t675 * t675)) +
-               t674_tmp_tmp * (t589 * t589)) + t674_tmp_tmp * (t587 * t587)) +
-             t674_tmp_tmp * (t588 * t588)) + t443 * (t590 * t590)) + t443 *
-           (t671 * t671)) + t443 * (t672 * t672)) + t443 * (t673 * t673);
+                    (t808 * t808)) + t443 * (t676 * t676)) + t674_tmp_tmp *
+                  (t677 * t677)) + t455_tmp * (t678 * t678)) + t672_tmp_tmp *
+                (t675 * t675)) + t672_tmp_tmp * (t589 * t589)) + t672_tmp_tmp *
+              (t587 * t587)) + t672_tmp_tmp * (t588 * t588)) + t673_tmp_tmp *
+            (t590 * t590)) + t673_tmp_tmp * (t671 * t671)) + t673_tmp_tmp *
+          (t672 * t672)) + t673_tmp_tmp * (t673 * t673);
   *gradient_size = 15;
   t674 = ct[41] * ct[144];
   t809_tmp = ct[112] * ct[235] * t858;
   t471 = ct[8] * ct[44] * ct[95] * ct[253];
   t472 = ct[119] * ct[237] * t477;
-  t473 = ct[113] * ct[236] * t591;
-  t673 = ct[110] * ct[251] * t445;
+  t473 = ct[113] * ct[236] * t592;
+  t673 = ct[110] * ct[251] * t444;
   t672 = ct[111] * ct[251] * t476;
   t590 = ct[100] * ct[251] * t474;
   t671 = ct[126] - ct[143];
@@ -5178,8 +5295,8 @@ static double ft_1(const double ct[254], double gradient_data[], int
                     -0.020516396677824081) / 2.0) * 2.0) - t472 * (ct[36] * t809
     - ct[38] * t817) * 2.0) + t473 * (ct[38] * t813 + ct[39] * t809) * 2.0) +
                        t673 * (ct[159] * t817 + ct[167] * t813) * 2.0) + t672 *
-                      ((ct[193] * t809 - t472_tmp * t813) + t594 * t817) * 2.0)
-    - t590 * ((ct[160] * t809 + t473_tmp * t813) - t478 * t817) * 2.0;
+                      ((ct[193] * t809 - t445 * t813) + t594 * t817) * 2.0) -
+    t590 * ((ct[160] * t809 + t473_tmp * t813) - t591 * t817) * 2.0;
   t589 = ct[128] - ct[145];
   gradient_data[1] = (((((t475 * t806 * (t806_tmp * ct[64] * 3.1415926535897931 *
     (((-ct[163] * t589 + ct[132] * (ct[40] * ct[163] * 6.0 - ct[42] * ct[163] *
@@ -5194,8 +5311,8 @@ static double ft_1(const double ct[254], double gradient_data[], int
                     -0.020516396677824081) / 2.0) * 2.0) + t472 * (ct[36] * t810
     + ct[38] * t818) * 2.0) + t473 * (ct[38] * t814 + ct[39] * t810) * 2.0) +
                        t673 * (ct[159] * t818 + ct[167] * t814) * 2.0) + t672 *
-                      ((ct[193] * t810 - t472_tmp * t814) + t594 * t818) * 2.0)
-    - t590 * ((ct[160] * t810 + t473_tmp * t814) - t478 * t818) * 2.0;
+                      ((ct[193] * t810 - t445 * t814) + t594 * t818) * 2.0) -
+    t590 * ((ct[160] * t810 + t473_tmp * t814) - t591 * t818) * 2.0;
   t588 = ct[129] - ct[146];
   gradient_data[2] = (((((t475 * t807 * (t807_tmp * ct[64] * 3.1415926535897931 *
     (((-ct[164] * t588 + ct[133] * (ct[40] * ct[164] * 6.0 - ct[42] * ct[164] *
@@ -5204,8 +5321,8 @@ static double ft_1(const double ct[254], double gradient_data[], int
     3.1415926535897931 * 1.5) * -2.0 + t472 * (ct[36] * t811 - ct[37] * t819) *
     2.0) - t473 * (ct[37] * t815 - ct[39] * t811) * 2.0) - t809_tmp * (ct[36] *
     t815 - ct[39] * t819) * 2.0) + t673 * (ct[159] * t819 + ct[167] * t815) *
-                       2.0) + t672 * ((ct[193] * t811 - t472_tmp * t815) + t594 *
-    t819) * 2.0) - t590 * ((ct[160] * t811 + t473_tmp * t815) - t478 * t819) *
+                       2.0) + t672 * ((ct[193] * t811 - t445 * t815) + t594 *
+    t819) * 2.0) - t590 * ((ct[160] * t811 + t473_tmp * t815) - t591 * t819) *
     2.0;
   t587 = ct[130] - ct[147];
   gradient_data[3] = (((((t475 * t808 * (t808_tmp * ct[64] * 3.1415926535897931 *
@@ -5215,117 +5332,117 @@ static double ft_1(const double ct[254], double gradient_data[], int
     3.1415926535897931 * 1.5) * -2.0 - t472 * (ct[36] * t812 + ct[37] * t820) *
     2.0) - t473 * (ct[37] * t816 - ct[39] * t812) * 2.0) + t809_tmp * (ct[36] *
     t816 + ct[39] * t820) * 2.0) + t673 * (ct[159] * t820 + ct[167] * t816) *
-                       2.0) + t672 * ((ct[193] * t812 - t472_tmp * t816) + t594 *
-    t820) * 2.0) - t590 * ((ct[160] * t812 + t473_tmp * t816) - t478 * t820) *
+                       2.0) + t672 * ((ct[193] * t812 - t445 * t816) + t594 *
+    t820) * 2.0) - t590 * ((ct[160] * t812 + t473_tmp * t816) - t591 * t820) *
     2.0;
   t675 = ct[3] * ct[31];
   t676 = t675 * ct[184];
   t677 = ct[35] * ct[43] * ct[44];
   t678 = ct[31] * ct[95];
-  gradient_data[4] = ((((((t674_tmp_tmp * (ct[11] * 2.0 + ct[59]) - t809_tmp *
+  gradient_data[4] = ((((((t672_tmp_tmp * (ct[11] * 2.0 + ct[59]) - t809_tmp *
     ((ct[36] * t825 + ct[39] * t575) - t471 * ((((t675 * ct[198] *
     -0.01228634392023026 - ct[31] * ct[81] * ct[198] * 0.0075456152077779167) +
     t676 * ct[56] * 0.0046429750925043979) + t675 * ct[95] * ct[198] * ct[249] *
     0.020516396677824081) + t676 * ct[198] * ct[203] * 0.0078699742549041447) /
      2.0) * 2.0) - t472 * (ct[36] * t821 + ct[38] * t575) * 2.0) - t473 * (ct[38]
     * t825 - ct[39] * t821) * 2.0) - t673 * (ct[159] * t575 + ct[167] * t825) *
-                        2.0) + t672 * ((ct[193] * t821 + t472_tmp * t825) - t594
-    * t575) * 2.0) - t590 * ((ct[160] * t821 - t473_tmp * t825) + t478 * t575) *
+                        2.0) + t672 * ((ct[193] * t821 + t445 * t825) - t594 *
+    t575) * 2.0) - t590 * ((ct[160] * t821 - t473_tmp * t825) + t591 * t575) *
                       2.0) + t677 * ct[82] * ct[99] * ct[127] * ct[153] * ct[64]
     * t805 * 3.1415926535897931 * (((ct[166] * t671 - ct[131] * (ct[40] * ct[166]
     * 6.0 - ct[42] * ct[166] * 6.0)) - t674 * ct[166] * 3.0) + t678 * ct[238] *
     ct[248] * ct[46] * ct[47] * ct[62] * ct[65] * ct[69] * 6.0);
   t671 = ct[4] * ct[31];
   t676 = t671 * ct[190];
-  gradient_data[5] = ((((((t674_tmp_tmp * (ct[12] * 2.0 + ct[59]) - t809_tmp *
+  gradient_data[5] = ((((((t672_tmp_tmp * (ct[12] * 2.0 + ct[59]) - t809_tmp *
     ((-ct[36] * t826 + ct[39] * t579) + t471 * ((((t671 * ct[199] *
     -0.01228634392023026 - ct[31] * ct[83] * ct[199] * 0.0075456152077779167) +
     t676 * ct[55] * 0.0046429750925043979) + t671 * ct[95] * ct[199] * ct[249] *
     0.020516396677824081) + t676 * ct[199] * ct[200] * 0.0078699742549041447) /
      2.0) * 2.0) + t472 * (ct[36] * t822 - ct[38] * t579) * 2.0) - t473 * (ct[38]
     * t826 - ct[39] * t822) * 2.0) - t673 * (ct[159] * t579 + ct[167] * t826) *
-                        2.0) + t672 * ((ct[193] * t822 + t472_tmp * t826) - t594
-    * t579) * 2.0) - t590 * ((ct[160] * t822 - t473_tmp * t826) + t478 * t579) *
+                        2.0) + t672 * ((ct[193] * t822 + t445 * t826) - t594 *
+    t579) * 2.0) - t590 * ((ct[160] * t822 - t473_tmp * t826) + t591 * t579) *
                       2.0) + t677 * ct[85] * ct[99] * ct[127] * ct[153] * ct[64]
     * t806 * 3.1415926535897931 * (((ct[168] * t589 - ct[132] * (ct[40] * ct[168]
     * 6.0 - ct[42] * ct[168] * 6.0)) - t674 * ct[168] * 3.0) + t678 * ct[240] *
     ct[248] * ct[46] * ct[47] * ct[62] * ct[66] * ct[70] * 6.0);
   t589 = t671 * ct[191];
-  gradient_data[6] = (t674_tmp_tmp * (ct[13] * 2.0 + ct[59]) + t809_tmp * ((ct
+  gradient_data[6] = (t672_tmp_tmp * (ct[13] * 2.0 + ct[59]) + t809_tmp * ((ct
     [36] * t827 - ct[39] * t831) + t471 * (((t671 * rt_powd_snf(ct[191], 3.0) *
     0.0064381447596962606 - t589 * (ct[200] * ct[200]) * 0.012876289519392519) +
     t589 * ct[54] * 0.0039349871274520724) + t589 * ct[199] * ct[200] *
     0.0092859501850087959) / 2.0) * 2.0) + (((((t472 * (ct[36] * t823 + ct[37] *
     t831) * 2.0 + t473 * (ct[37] * t827 + ct[39] * t823) * 2.0) - t673 * (ct[159]
-    * t831 + ct[167] * t827) * 2.0) + t672 * ((ct[193] * t823 + t472_tmp * t827)
-    - t594 * t831) * 2.0) - t590 * ((ct[160] * t823 - t473_tmp * t827) + t478 *
+    * t831 + ct[167] * t827) * 2.0) + t672 * ((ct[193] * t823 + t445 * t827) -
+    t594 * t831) * 2.0) - t590 * ((ct[160] * t823 - t473_tmp * t827) + t591 *
     t831) * 2.0) + t677 * ct[91] * ct[99] * ct[127] * ct[153] * ct[64] * t807 *
     3.1415926535897931 * (((ct[169] * t588 - ct[133] * (ct[40] * ct[169] * 6.0 -
     ct[42] * ct[169] * 6.0)) - t674 * ct[169] * 3.0) + t678 * ct[242] * ct[248] *
     ct[46] * ct[47] * ct[62] * ct[67] * ct[71] * 6.0));
   t671 = t675 * ct[192];
-  gradient_data[7] = (t674_tmp_tmp * (ct[14] * 2.0 + ct[59]) - t809_tmp * ((ct
-    [36] * t828 + ct[39] * t446) + t471 * (((t675 * rt_powd_snf(ct[192], 3.0) *
+  gradient_data[7] = (t672_tmp_tmp * (ct[14] * 2.0 + ct[59]) - t809_tmp * ((ct
+    [36] * t828 + ct[39] * t832) + t471 * (((t675 * rt_powd_snf(ct[192], 3.0) *
     0.0064381447596962606 - t671 * (ct[203] * ct[203]) * 0.012876289519392519) +
     t671 * ct[53] * 0.0039349871274520724) + t671 * ct[198] * ct[203] *
     0.0092859501850087959) / 2.0) * 2.0) + (((((t472 * (ct[36] * t824 - ct[37] *
-    t446) * -2.0 + t473 * (ct[37] * t828 + ct[39] * t824) * 2.0) - t673 * (ct
-    [159] * t446 + ct[167] * t828) * 2.0) + t672 * ((ct[193] * t824 + t472_tmp *
-    t828) - t594 * t446) * 2.0) - t590 * ((ct[160] * t824 - t473_tmp * t828) +
-    t478 * t446) * 2.0) + t677 * ct[93] * ct[99] * ct[127] * ct[153] * ct[64] *
+    t832) * -2.0 + t473 * (ct[37] * t828 + ct[39] * t824) * 2.0) - t673 * (ct
+    [159] * t832 + ct[167] * t828) * 2.0) + t672 * ((ct[193] * t824 + t445 *
+    t828) - t594 * t832) * 2.0) - t590 * ((ct[160] * t824 - t473_tmp * t828) +
+    t591 * t832) * 2.0) + t677 * ct[93] * ct[99] * ct[127] * ct[153] * ct[64] *
     t808 * 3.1415926535897931 * (((ct[170] * t587 - ct[134] * (ct[40] * ct[170] *
     6.0 - ct[42] * ct[170] * 6.0)) - t674 * ct[170] * 3.0) + t678 * ct[244] *
     ct[248] * ct[46] * ct[47] * ct[62] * ct[68] * ct[72] * 6.0));
   t674 = ct[38] * ct[119] * ct[237];
   t471 = ct[38] * ct[113] * ct[236];
-  gradient_data[8] = (((((t443 * (ct[25] * 2.0 + ct[61]) + t672 * (t594 * t775 +
-    t472_tmp * t787) * 2.0) + t590 * (t478 * t775 + t473_tmp * t787) * 2.0) -
+  gradient_data[8] = (((((t673_tmp_tmp * (ct[25] * 2.0 + ct[61]) + t672 * (t594 *
+    t775 + t445 * t787) * 2.0) + t590 * (t591 * t775 + t473_tmp * t787) * 2.0) -
                         t809_tmp * (ct[36] * t787 - ct[39] * t775) * 2.0) + t673
                        * (ct[159] * t775 - ct[167] * t787) * 2.0) + t674 * t775 *
-                      t477 * 2.0) - t471 * t787 * t591 * 2.0;
-  gradient_data[9] = (((((t443 * (ct[26] * 2.0 + ct[61]) + t672 * (t594 * t776 +
-    t472_tmp * t788) * 2.0) + t590 * (t478 * t776 + t473_tmp * t788) * 2.0) +
+                      t477 * 2.0) - t471 * t787 * t592 * 2.0;
+  gradient_data[9] = (((((t673_tmp_tmp * (ct[26] * 2.0 + ct[61]) + t672 * (t594 *
+    t776 + t445 * t788) * 2.0) + t590 * (t591 * t776 + t473_tmp * t788) * 2.0) +
                         t809_tmp * (ct[36] * t788 + ct[39] * t776) * 2.0) + t673
                        * (ct[159] * t776 - ct[167] * t788) * 2.0) + t674 * t776 *
-                      t477 * 2.0) - t471 * t788 * t591 * 2.0;
+                      t477 * 2.0) - t471 * t788 * t592 * 2.0;
   t674 = ct[37] * ct[119] * ct[237];
   t471 = ct[37] * ct[113] * ct[236];
-  gradient_data[10] = (((((t443 * (ct[27] * 2.0 + ct[61]) + t672 * (t594 * t777
-    + t472_tmp * t789) * 2.0) + t590 * (t478 * t777 + t473_tmp * t789) * 2.0) +
-    t809_tmp * (ct[36] * t789 + ct[39] * t777) * 2.0) + t673 * (ct[159] * t777 -
-    ct[167] * t789) * 2.0) - t674 * t777 * t477 * 2.0) + t471 * t789 * t591 *
+  gradient_data[10] = (((((t673_tmp_tmp * (ct[27] * 2.0 + ct[61]) + t672 * (t594
+    * t777 + t445 * t789) * 2.0) + t590 * (t591 * t777 + t473_tmp * t789) * 2.0)
+    + t809_tmp * (ct[36] * t789 + ct[39] * t777) * 2.0) + t673 * (ct[159] * t777
+    - ct[167] * t789) * 2.0) - t674 * t777 * t477 * 2.0) + t471 * t789 * t592 *
     2.0;
-  gradient_data[11] = (((((t443 * (ct[28] * 2.0 + ct[61]) + t672 * (t594 * t778
-    + t472_tmp * t790) * 2.0) + t590 * (t478 * t778 + t473_tmp * t790) * 2.0) -
-    t809_tmp * (ct[36] * t790 - ct[39] * t778) * 2.0) + t673 * (ct[159] * t778 -
-    ct[167] * t790) * 2.0) - t674 * t778 * t477 * 2.0) + t471 * t790 * t591 *
+  gradient_data[11] = (((((t673_tmp_tmp * (ct[28] * 2.0 + ct[61]) + t672 * (t594
+    * t778 + t445 * t790) * 2.0) + t590 * (t591 * t778 + t473_tmp * t790) * 2.0)
+    - t809_tmp * (ct[36] * t790 - ct[39] * t778) * 2.0) + t673 * (ct[159] * t778
+    - ct[167] * t790) * 2.0) - t674 * t778 * t477 * 2.0) + t471 * t790 * t592 *
     2.0;
   t674 = ct[2] * ct[8] * ct[34] * ct[44] * ct[109] * ct[74] * ct[95];
-  gradient_data[12] = (((t455_tmp * (ct[9] * 2.0 - t672_tmp_tmp * 2.0) + t590 *
+  gradient_data[12] = (((t674_tmp_tmp * (ct[9] * 2.0 - t587_tmp * 2.0) + t590 *
     ((((((((ct[34] * ct[94] + ct[34] * ct[117]) + ct[34] * ct[120]) + ct[34] *
-          t835) + ct[34] * t842) + ct[34] * -t593) + ct[123] * ct[160]) +
+          t835) + ct[34] * t842) + ct[34] * -t457_tmp) + ct[123] * ct[160]) +
       t473_tmp * ct[121]) - t674 * ct[167] * ct[193] * ct[57]) * 2.0) - t673 *
                         (ct[121] * ct[167] + t674 * ct[159] * ct[57]) * 2.0) +
                        t672 * ((((((((ct[34] * ct[116] + ct[34] * ct[118]) + ct
-    [34] * t834) + ct[34] * t841) + ct[34] * -t587_tmp) - ct[123] * ct[193]) +
-    t472_tmp * ct[121]) - ct[8] * ct[34] * ct[44] * ct[109] * ct[95] * ct[167] *
-    ct[193] * ct[79] / 2.0) - t674 * ct[160] * ct[167] * ct[57]) * 2.0) - ct[1] *
-    ct[8] * ct[34] * ct[44] * ct[95] * ct[113] * ct[236] * t591 * ct[252];
+    [34] * t834) + ct[34] * t841) + ct[34] * t446) - ct[123] * ct[193]) + t445 *
+    ct[121]) - ct[8] * ct[34] * ct[44] * ct[109] * ct[95] * ct[167] * ct[193] *
+    ct[79] / 2.0) - t674 * ct[160] * ct[167] * ct[57]) * 2.0) - ct[1] * ct[8] *
+    ct[34] * ct[44] * ct[95] * ct[113] * ct[236] * t592 * ct[252];
   t674 = ct[33] * ct[159];
   t809_tmp = ct[33] * ct[160];
   t471 = ct[33] * ct[193];
-  gradient_data[13] = ((t444 * (ct[7] * 2.0 - t671_tmp_tmp * 2.0) + t673 *
-                        (((t674 * ct[114] + t674 * t837) - ct[33] * ct[167] *
-    t836) - ct[8] * ct[33] * ct[44] * ct[109] * ct[95] * ct[167] * ct[79] / 2.0)
-                        * 2.0) + t672 * (((t809_tmp * ct[84] + t809_tmp * ct[115])
-    + t809_tmp * t592) + t809_tmp * t839) * 2.0) + t590 * (((t471 * ct[84] +
-    t471 * ct[115]) + t471 * t592) + t471 * t839) * 2.0;
-  gradient_data[14] = t456_tmp * (ct[15] * 2.0 - t673_tmp_tmp * 2.0) - ct[0] *
+  gradient_data[13] = ((t443 * (ct[7] * 2.0 - t478 * 2.0) + t673 * (((t674 * ct
+    [114] + t674 * t837) - ct[33] * ct[167] * t836) - ct[8] * ct[33] * ct[44] *
+    ct[109] * ct[95] * ct[167] * ct[79] / 2.0) * 2.0) + t672 * (((t809_tmp * ct
+    [84] + t809_tmp * ct[115]) + t809_tmp * t838) + t809_tmp * t593) * 2.0) +
+    t590 * (((t471 * ct[84] + t471 * ct[115]) + t471 * t838) + t471 * t593) *
+    2.0;
+  gradient_data[14] = t455_tmp * (ct[15] * 2.0 - t671_tmp_tmp * 2.0) - ct[0] *
     ct[8] * ct[29] * ct[44] * ct[95] * ct[112] * ct[235] * t858;
   return cost;
 }
 
-static void fullColLDL2_(f_struct_T *obj, int NColsRemain)
+static void fullColLDL2_(e_struct_T *obj, int NColsRemain)
 {
   int ijA;
   int j;
@@ -5374,9 +5491,9 @@ static void fullColLDL2_(f_struct_T *obj, int NColsRemain)
   }
 }
 
-static void iterate(const double H[225], const double f[16], g_struct_T
-                    *solution, d_struct_T *memspace, h_struct_T *workingset,
-                    e_struct_T *qrmanager, f_struct_T *cholmanager, struct_T
+static void iterate(const double H[225], const double f[16], h_struct_T
+                    *solution, f_struct_T *memspace, i_struct_T *workingset,
+                    d_struct_T *qrmanager, e_struct_T *cholmanager, struct_T
                     *objective, const char options_SolverName[7], double
                     options_StepTolerance, double options_ObjectiveLimit, int
                     runTimeOptions_MaxIterations)
@@ -5782,7 +5899,7 @@ static void linearForm_(bool obj_hasLinear, int obj_nvar, double workspace[496],
   }
 }
 
-static double maxConstraintViolation(const h_struct_T *obj, const double x[496],
+static double maxConstraintViolation(const i_struct_T *obj, const double x[496],
   int ix0)
 {
   double v;
@@ -5875,7 +5992,7 @@ static void qrf(double A[961], int m, int n, int nfxd, double tau[31])
   }
 }
 
-static void removeConstr(h_struct_T *obj, int idx_global)
+static void removeConstr(i_struct_T *obj, int idx_global)
 {
   int TYPE_tmp;
   int i;
@@ -5965,7 +6082,7 @@ static double rt_powd_snf(double u0, double u1)
   return y;
 }
 
-static void setProblemType(h_struct_T *obj, int PROBLEM_TYPE)
+static void setProblemType(i_struct_T *obj, int PROBLEM_TYPE)
 {
   int i;
   int idx;
@@ -6132,14 +6249,14 @@ static void setProblemType(h_struct_T *obj, int PROBLEM_TYPE)
   obj->probType = PROBLEM_TYPE;
 }
 
-static void solve(const f_struct_T *obj, double rhs[16])
+static void solve(const e_struct_T *obj, double rhs[16])
 {
   int i;
   int j;
+  int jA;
   int n_tmp;
   n_tmp = obj->ndims;
   if (obj->ndims != 0) {
-    int jA;
     for (j = 0; j < n_tmp; j++) {
       double temp;
       jA = j * 31;
@@ -6150,7 +6267,9 @@ static void solve(const f_struct_T *obj, double rhs[16])
 
       rhs[j] = temp / obj->FMat[jA + j];
     }
+  }
 
+  if (obj->ndims != 0) {
     for (j = n_tmp; j >= 1; j--) {
       jA = (j + (j - 1) * 31) - 1;
       rhs[j - 1] /= obj->FMat[jA];
@@ -6219,12 +6338,12 @@ static void sortLambdaQP(double lambda[31], int WorkingSet_nActiveConstr, const
 }
 
 static bool step(int *STEP_TYPE, double Hessian[225], const double lb[15], const
-                 double ub[15], g_struct_T *TrialState, b_struct_T
-                 *MeritFunction, d_struct_T *memspace, h_struct_T *WorkingSet,
-                 e_struct_T *QRManager, f_struct_T *CholManager, struct_T
-                 *QPObjective, i_struct_T *qpoptions)
+                 double ub[15], h_struct_T *TrialState, b_struct_T
+                 *MeritFunction, f_struct_T *memspace, i_struct_T *WorkingSet,
+                 d_struct_T *QRManager, e_struct_T *CholManager, struct_T
+                 *QPObjective, j_struct_T *qpoptions)
 {
-  i_struct_T b_qpoptions;
+  j_struct_T b_qpoptions;
   double dv[16];
   double oldDirIdx;
   double s;
@@ -6531,8 +6650,8 @@ static bool step(int *STEP_TYPE, double Hessian[225], const double lb[15], const
   return stepSuccess;
 }
 
-static bool test_exit(b_struct_T *MeritFunction, const h_struct_T *WorkingSet,
-                      g_struct_T *TrialState, const double lb[15], const double
+static bool test_exit(b_struct_T *MeritFunction, const i_struct_T *WorkingSet,
+                      h_struct_T *TrialState, const double lb[15], const double
                       ub[15], bool *Flags_fevalOK, bool *Flags_done, bool
                       *Flags_stepAccepted, bool *Flags_failedLineSearch, int
                       *Flags_stepType)
@@ -6632,7 +6751,7 @@ static bool test_exit(b_struct_T *MeritFunction, const h_struct_T *WorkingSet,
              (unsigned int)i * sizeof(double));
     }
 
-    if (isFeasible && (smax <= 1.0E-9 * s)) {
+    if (isFeasible && (smax <= 1.0E-12 * s)) {
       *Flags_done = true;
       TrialState->sqpExitFlag = 1;
     } else if (isFeasible && (TrialState->sqpFval < -1.0E+20)) {
@@ -6671,6 +6790,11 @@ static void timeKeeper(double newTime_tv_sec, double newTime_tv_nsec)
 
   savedTime.tv_sec = newTime_tv_sec;
   savedTime.tv_nsec = newTime_tv_nsec;
+}
+
+static void timeKeeper_init(void)
+{
+  savedTime_not_empty = false;
 }
 
 static double toc(void)
@@ -7239,8 +7363,9 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   desired_phi_value, double desired_ailerons_value, double k_alt_tilt_constraint,
   double min_alt_tilt_constraint, double lidar_alt_corrected, double
   approach_mode, double verbose, double aoa_protection_speed, double
-  transition_speed, double u_out[15], double residuals[6], double *elapsed_time,
-  double *N_iterations, double *N_evaluation, double *exitflag)
+  transition_speed, double power_Cd_0, double power_Cd_a, double u_out[15],
+  double residuals[6], double *elapsed_time, double *N_iterations, double
+  *N_evaluation, double *exitflag)
 {
   b_captured_var dv_global;
   c_struct_T b_expl_temp;
@@ -7283,6 +7408,8 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   captured_var b_l_z;
   captured_var b_m;
   captured_var b_p;
+  captured_var b_power_Cd_0;
+  captured_var b_power_Cd_a;
   captured_var b_q;
   captured_var b_r;
   captured_var b_rho;
@@ -7295,8 +7422,6 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   captured_var gain_motor;
   captured_var gain_phi;
   captured_var gain_theta;
-  captured_var power_Cd_0;
-  captured_var power_Cd_a;
   captured_var prop_Cd_0;
   captured_var prop_Cd_a;
   captured_var prop_Cl_0;
@@ -7305,9 +7430,7 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   captured_var prop_delta;
   captured_var prop_sigma;
   captured_var prop_theta;
-  double actual_u[15];
   double u_max[15];
-  double u_max_scaled[15];
   double u_min[15];
   double current_accelerations[6];
   double final_accelerations[6];
@@ -7318,6 +7441,7 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   double b_gain_phi;
   double b_gain_theta;
   double b_max_approach;
+  double b_max_tilt_value_approach;
   double b_min_approach;
   double c_CL_aileron;
   double c_Cd_zero;
@@ -7339,7 +7463,6 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   double g_max_approach;
   double g_min_approach;
   double max_theta_protection;
-  double max_tilt_value_approach;
   double min_theta_protection;
   int i;
   char c_expl_temp[3];
@@ -7385,15 +7508,21 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   b_desired_theta_value.contents = desired_theta_value;
   b_desired_phi_value.contents = desired_phi_value;
   b_desired_ailerons_value.contents = desired_ailerons_value;
+  b_power_Cd_0.contents = power_Cd_0;
+  b_power_Cd_a.contents = power_Cd_a;
 
   /*  Create variables necessary for the optimization */
+  b_min_approach = b_V.contents;
+  b_V.contents = fmax(2.0, b_min_approach);
+
+  /*  To prevent oscillations during hover */
   if (b_V.contents > aoa_protection_speed) {
-    max_tilt_value_approach = (max_alpha + b_flight_path_angle.contents) * 180.0
-      / 3.1415926535897931;
-    max_theta_protection = fmin(max_theta, max_tilt_value_approach);
-    max_tilt_value_approach = (min_alpha + b_flight_path_angle.contents) * 180.0
-      / 3.1415926535897931;
-    min_theta_protection = fmax(min_theta, max_tilt_value_approach);
+    b_min_approach = (max_alpha + b_flight_path_angle.contents) * 180.0 /
+      3.1415926535897931;
+    max_theta_protection = fmin(max_theta, b_min_approach);
+    b_min_approach = (min_alpha + b_flight_path_angle.contents) * 180.0 /
+      3.1415926535897931;
+    min_theta_protection = fmax(min_theta, b_min_approach);
   } else {
     max_theta_protection = max_theta;
     min_theta_protection = min_theta;
@@ -7411,21 +7540,17 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   gain_ailerons.contents = (max_delta_ailerons - min_delta_ailerons) *
     3.1415926535897931 / 180.0 / 2.0;
   gain_airspeed.contents = 15.0;
-  actual_u[0] = Omega_1;
-  actual_u[1] = Omega_2;
-  actual_u[2] = Omega_3;
-  actual_u[3] = Omega_4;
-  actual_u[4] = b_1;
-  actual_u[5] = b_2;
-  actual_u[6] = b_3;
-  actual_u[7] = b_4;
-  actual_u[8] = g_1;
-  actual_u[9] = g_2;
-  actual_u[10] = g_3;
-  actual_u[11] = g_4;
-  actual_u[12] = Theta;
-  actual_u[13] = Phi;
-  actual_u[14] = delta_ailerons;
+  u_out[4] = b_1;
+  u_out[5] = b_2;
+  u_out[6] = b_3;
+  u_out[7] = b_4;
+  u_out[8] = g_1;
+  u_out[9] = g_2;
+  u_out[10] = g_3;
+  u_out[11] = g_4;
+  u_out[12] = Theta;
+  u_out[13] = Phi;
+  u_out[14] = delta_ailerons;
 
   /* Build the max and minimum actuator array:  */
   u_max[0] = max_omega;
@@ -7459,27 +7584,27 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   u_min[13] = -max_phi;
   u_min[14] = min_delta_ailerons;
   if (approach_mode != 0.0) {
-    double b_max_tilt_value_approach[2];
-    b_max_tilt_value_approach[0] = 0.0;
-    b_max_tilt_value_approach[1] = k_alt_tilt_constraint * lidar_alt_corrected -
+    double max_tilt_value_approach[2];
+    max_tilt_value_approach[0] = 0.0;
+    max_tilt_value_approach[1] = k_alt_tilt_constraint * lidar_alt_corrected -
       min_alt_tilt_constraint * k_alt_tilt_constraint;
-    max_tilt_value_approach = maximum(b_max_tilt_value_approach);
+    b_max_tilt_value_approach = maximum(max_tilt_value_approach);
 
     /* Elevation angle */
-    b_max_tilt_value_approach[0] = max_tilt_value_approach;
-    b_max_tilt_value_approach[1] = max_b;
-    b_max_approach = minimum(b_max_tilt_value_approach);
-    b_max_tilt_value_approach[0] = -max_tilt_value_approach;
-    b_max_tilt_value_approach[1] = min_b;
-    b_min_approach = maximum(b_max_tilt_value_approach);
+    max_tilt_value_approach[0] = b_max_tilt_value_approach;
+    max_tilt_value_approach[1] = max_b;
+    b_max_approach = minimum(max_tilt_value_approach);
+    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
+    max_tilt_value_approach[1] = min_b;
+    b_min_approach = maximum(max_tilt_value_approach);
 
     /* Azimuth angle */
-    b_max_tilt_value_approach[0] = max_tilt_value_approach;
-    b_max_tilt_value_approach[1] = max_g;
-    g_max_approach = minimum(b_max_tilt_value_approach);
-    b_max_tilt_value_approach[0] = -max_tilt_value_approach;
-    b_max_tilt_value_approach[1] = min_g;
-    g_min_approach = maximum(b_max_tilt_value_approach);
+    max_tilt_value_approach[0] = b_max_tilt_value_approach;
+    max_tilt_value_approach[1] = max_g;
+    g_max_approach = minimum(max_tilt_value_approach);
+    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
+    max_tilt_value_approach[1] = min_g;
+    g_min_approach = maximum(max_tilt_value_approach);
     u_max[4] = b_max_approach;
     u_min[4] = b_min_approach;
     u_max[8] = g_max_approach;
@@ -7498,20 +7623,20 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
     u_min[11] = g_min_approach;
 
     /* Pitch angle  */
-    b_max_tilt_value_approach[0] = max_tilt_value_approach;
-    b_max_tilt_value_approach[1] = max_theta_protection;
-    u_max[12] = minimum(b_max_tilt_value_approach);
-    b_max_tilt_value_approach[0] = -max_tilt_value_approach;
-    b_max_tilt_value_approach[1] = min_theta_protection;
-    u_min[12] = maximum(b_max_tilt_value_approach);
+    max_tilt_value_approach[0] = b_max_tilt_value_approach;
+    max_tilt_value_approach[1] = max_theta_protection;
+    u_max[12] = minimum(max_tilt_value_approach);
+    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
+    max_tilt_value_approach[1] = min_theta_protection;
+    u_min[12] = maximum(max_tilt_value_approach);
 
     /* Roll angle  */
-    b_max_tilt_value_approach[0] = max_tilt_value_approach;
-    b_max_tilt_value_approach[1] = max_phi;
-    u_max[13] = minimum(b_max_tilt_value_approach);
-    b_max_tilt_value_approach[0] = -max_tilt_value_approach;
-    b_max_tilt_value_approach[1] = -max_phi;
-    u_min[13] = maximum(b_max_tilt_value_approach);
+    max_tilt_value_approach[0] = b_max_tilt_value_approach;
+    max_tilt_value_approach[1] = max_phi;
+    u_max[13] = minimum(max_tilt_value_approach);
+    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
+    max_tilt_value_approach[1] = -max_phi;
+    u_min[13] = maximum(max_tilt_value_approach);
   }
 
   for (i = 0; i < 11; i++) {
@@ -7519,84 +7644,54 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
     u_min[i + 4] = u_min[i + 4] * 3.1415926535897931 / 180.0;
   }
 
-  memcpy(&u_max_scaled[0], &u_max[0], 15U * sizeof(double));
-  u_max_scaled[0] = u_max[0] / gain_motor.contents;
-  u_max_scaled[1] = u_max[1] / gain_motor.contents;
-  u_max_scaled[2] = u_max[2] / gain_motor.contents;
-  u_max_scaled[3] = u_max[3] / gain_motor.contents;
-  max_tilt_value_approach = u_min[0] / gain_motor.contents;
-  b_max_approach = u_min[1] / gain_motor.contents;
-  b_min_approach = u_min[2] / gain_motor.contents;
-  g_max_approach = u_min[3] / gain_motor.contents;
-  u_min[0] = max_tilt_value_approach;
-  u_min[1] = b_max_approach;
-  u_min[2] = b_min_approach;
-  u_min[3] = g_max_approach;
-  max_tilt_value_approach = u_max_scaled[4] / gain_el.contents;
-  b_max_approach = u_max_scaled[5] / gain_el.contents;
-  b_min_approach = u_max_scaled[6] / gain_el.contents;
-  g_max_approach = u_max_scaled[7] / gain_el.contents;
-  u_max_scaled[4] = max_tilt_value_approach;
-  u_max_scaled[5] = b_max_approach;
-  u_max_scaled[6] = b_min_approach;
-  u_max_scaled[7] = g_max_approach;
-  max_tilt_value_approach = u_min[4] / gain_el.contents;
-  b_max_approach = u_min[5] / gain_el.contents;
-  b_min_approach = u_min[6] / gain_el.contents;
-  g_max_approach = u_min[7] / gain_el.contents;
-  u_min[4] = max_tilt_value_approach;
-  u_min[5] = b_max_approach;
-  u_min[6] = b_min_approach;
-  u_min[7] = g_max_approach;
-  max_tilt_value_approach = u_max_scaled[8] / gain_az.contents;
-  b_max_approach = u_max_scaled[9] / gain_az.contents;
-  b_min_approach = u_max_scaled[10] / gain_az.contents;
-  g_max_approach = u_max_scaled[11] / gain_az.contents;
-  u_max_scaled[8] = max_tilt_value_approach;
-  u_max_scaled[9] = b_max_approach;
-  u_max_scaled[10] = b_min_approach;
-  u_max_scaled[11] = g_max_approach;
-  max_tilt_value_approach = u_min[8] / gain_az.contents;
-  b_max_approach = u_min[9] / gain_az.contents;
-  b_min_approach = u_min[10] / gain_az.contents;
-  g_max_approach = u_min[11] / gain_az.contents;
-  u_min[8] = max_tilt_value_approach;
-  u_min[9] = b_max_approach;
-  u_min[10] = b_min_approach;
-  u_min[11] = g_max_approach;
-  u_max_scaled[12] /= gain_theta.contents;
-  u_min[12] /= gain_theta.contents;
-  u_max_scaled[13] /= gain_phi.contents;
-  u_min[13] /= gain_phi.contents;
-  u_max_scaled[14] /= gain_ailerons.contents;
-  u_min[14] /= gain_ailerons.contents;
-  memcpy(&u_max[0], &actual_u[0], 15U * sizeof(double));
-  u_max[0] = Omega_1 / gain_motor.contents;
-  u_max[1] = Omega_2 / gain_motor.contents;
-  u_max[2] = Omega_3 / gain_motor.contents;
-  u_max[3] = Omega_4 / gain_motor.contents;
-  max_tilt_value_approach = u_max[4] / gain_el.contents;
-  b_max_approach = u_max[5] / gain_el.contents;
-  b_min_approach = u_max[6] / gain_el.contents;
-  g_max_approach = u_max[7] / gain_el.contents;
-  u_max[4] = max_tilt_value_approach;
-  u_max[5] = b_max_approach;
-  u_max[6] = b_min_approach;
-  u_max[7] = g_max_approach;
-  max_tilt_value_approach = u_max[8] / gain_az.contents;
-  b_max_approach = u_max[9] / gain_az.contents;
-  b_min_approach = u_max[10] / gain_az.contents;
-  g_max_approach = u_max[11] / gain_az.contents;
-  u_max[8] = max_tilt_value_approach;
-  u_max[9] = b_max_approach;
-  u_max[10] = b_min_approach;
-  u_max[11] = g_max_approach;
+  u_max[0] /= gain_motor.contents;
+  u_min[0] /= gain_motor.contents;
+  u_max[4] /= gain_el.contents;
+  u_min[4] /= gain_el.contents;
+  u_max[8] /= gain_az.contents;
+  u_min[8] /= gain_az.contents;
+  u_max[1] /= gain_motor.contents;
+  u_min[1] /= gain_motor.contents;
+  u_max[5] /= gain_el.contents;
+  u_min[5] /= gain_el.contents;
+  u_max[9] /= gain_az.contents;
+  u_min[9] /= gain_az.contents;
+  u_max[2] /= gain_motor.contents;
+  u_min[2] /= gain_motor.contents;
+  u_max[6] /= gain_el.contents;
+  u_min[6] /= gain_el.contents;
+  u_max[10] /= gain_az.contents;
+  u_min[10] /= gain_az.contents;
+  u_max[3] /= gain_motor.contents;
+  u_min[3] /= gain_motor.contents;
+  u_max[7] /= gain_el.contents;
+  u_min[7] /= gain_el.contents;
+  u_max[11] /= gain_az.contents;
+  u_min[11] /= gain_az.contents;
   u_max[12] /= gain_theta.contents;
+  u_min[12] /= gain_theta.contents;
   u_max[13] /= gain_phi.contents;
+  u_min[13] /= gain_phi.contents;
   u_max[14] /= gain_ailerons.contents;
+  u_min[14] /= gain_ailerons.contents;
+  u_out[0] = Omega_1 / gain_motor.contents;
+  u_out[4] /= gain_el.contents;
+  u_out[8] /= gain_az.contents;
+  u_out[1] = Omega_2 / gain_motor.contents;
+  u_out[5] /= gain_el.contents;
+  u_out[9] /= gain_az.contents;
+  u_out[2] = Omega_3 / gain_motor.contents;
+  u_out[6] /= gain_el.contents;
+  u_out[10] /= gain_az.contents;
+  u_out[3] = Omega_4 / gain_motor.contents;
+  u_out[7] /= gain_el.contents;
+  u_out[11] /= gain_az.contents;
+  u_out[12] /= gain_theta.contents;
+  u_out[13] /= gain_phi.contents;
+  u_out[14] /= gain_ailerons.contents;
 
   /*  Apply Nonlinear optimization algorithm: */
-  max_tilt_value_approach = b_p.contents;
+  b_max_tilt_value_approach = b_p.contents;
   b_max_approach = b_q.contents;
   b_min_approach = b_r.contents;
   g_max_approach = b_m.contents;
@@ -7627,11 +7722,8 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   b_gain_phi = gain_phi.contents;
 
   /*  New prop model */
-  /*  Theoretical */
-  /*  Wind tunnel power */
-  /*  Random guess */
-  /*  power_Cd_0 = 0.084; */
-  /*  power_Cd_a = 1.2145; */
+  /*  prop_Cl_0 = 0.075; */
+  /*  prop_Cl_a = 3.46; */
   /*  New aero models */
   compute_acc(Theta - c_flight_path_angle, c_CL_aileron, c_Cd_zero, c_Cl_alpha,
               c_Cm_zero, c_Cm_alpha, g_min_approach, max_theta_protection,
@@ -7642,7 +7734,7 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
               c_flight_path_angle, g_1 / b_gain_az, g_2 / b_gain_az, g_3 /
               b_gain_az, g_4 / b_gain_az, b_gain_el, b_gain_az, b_gain_phi,
               b_gain_theta, b_gain_motor, b_gain_airspeed, c_l_1, c_l_3, c_l_4,
-              c_l_z, g_max_approach, max_tilt_value_approach, b_max_approach,
+              c_l_z, g_max_approach, b_max_tilt_value_approach, b_max_approach,
               b_min_approach, c_rho, c_wing_span, c_wing_chord,
               current_accelerations);
   for (i = 0; i < 6; i++) {
@@ -7652,51 +7744,40 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   /* Pseudo-control hedging:  */
   if (b_V.contents > transition_speed) {
     b_max_approach = b_Cl_alpha.contents * min_alpha;
-    max_tilt_value_approach = b_V.contents;
+    b_max_tilt_value_approach = b_V.contents;
     b_max_approach = b_max_approach * 0.5 * b_rho.contents * b_S.contents *
-      (max_tilt_value_approach * max_tilt_value_approach) * cos
+      (b_max_tilt_value_approach * b_max_tilt_value_approach) * cos
       (min_theta_protection * 3.1415926535897931 / 180.0);
     b_max_approach = 9.81 - b_max_approach / b_m.contents;
-    max_tilt_value_approach = 0.0;
+    b_max_tilt_value_approach = 0.0;
     if (dv_global.contents[2] >= b_max_approach) {
-      max_tilt_value_approach = dv_global.contents[2] - b_max_approach;
+      b_max_tilt_value_approach = dv_global.contents[2] - b_max_approach;
     }
 
-    dv_global.contents[2] -= max_tilt_value_approach;
+    dv_global.contents[2] -= b_max_tilt_value_approach;
   }
 
   /* Compute weights for actuators and make sure they are always positive */
-  max_tilt_value_approach = W_act_motor_const + W_act_motor_speed * b_V.contents;
-  W_act_motor.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach = W_act_tilt_el_const + W_act_tilt_el_speed *
-    b_V.contents;
-  W_act_tilt_el.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach = W_act_tilt_az_const + W_act_tilt_az_speed *
-    b_V.contents;
-  W_act_tilt_az.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach = W_act_theta_const + W_act_theta_speed * b_V.contents;
-  W_act_theta.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach = W_act_phi_const + W_act_phi_speed * b_V.contents;
-  W_act_phi.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach = W_act_ailerons_const + W_act_ailerons_speed *
-    b_V.contents;
-  W_act_ailerons.contents = fmax(0.0, max_tilt_value_approach);
+  b_min_approach = W_act_motor_const + W_act_motor_speed * b_V.contents;
+  W_act_motor.contents = fmax(0.0, b_min_approach);
+  b_min_approach = W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
+  W_act_tilt_el.contents = fmax(0.0, b_min_approach);
+  b_min_approach = W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
+  W_act_tilt_az.contents = fmax(0.0, b_min_approach);
+  b_min_approach = W_act_theta_const + W_act_theta_speed * b_V.contents;
+  W_act_theta.contents = fmax(0.0, b_min_approach);
+  b_min_approach = W_act_phi_const + W_act_phi_speed * b_V.contents;
+  W_act_phi.contents = fmax(0.0, b_min_approach);
+  b_min_approach = W_act_ailerons_const + W_act_ailerons_speed * b_V.contents;
+  W_act_ailerons.contents = fmax(0.0, b_min_approach);
 
   /*  New prop model */
-  prop_Cl_0.contents = 0.075;
-  prop_Cl_a.contents = 3.46;
-
-  /*  Theoretical Cd_0 and Cd_a */
+  /*  prop_Cl_0 = 0.075; */
+  /*  prop_Cl_a = 3.4677; */
+  prop_Cl_0.contents = 0.27;
+  prop_Cl_a.contents = 4.0;
   prop_Cd_0.contents = 0.05;
   prop_Cd_a.contents = 0.36;
-
-  /*  Wind tunnel power estimates for Cd_0 and Cd_a */
-  power_Cd_0.contents = 0.0;
-  power_Cd_a.contents = 3.5;
-
-  /*  Random guess Cd_0 and Cd_a */
-  /*  power_Cd_0 = 0.84; */
-  /*  power_Cd_a = 1.2145; */
   prop_sigma.contents = 0.0551;
   prop_delta.contents = 0.2;
   prop_theta.contents = 0.2188;
@@ -7717,8 +7798,8 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   expl_temp.prop_Cl_0 = &prop_Cl_0;
   expl_temp.prop_Cd_0 = &prop_Cd_0;
   expl_temp.prop_R = &prop_R;
-  expl_temp.power_Cd_a = &power_Cd_a;
-  expl_temp.power_Cd_0 = &power_Cd_0;
+  expl_temp.power_Cd_a = &b_power_Cd_a;
+  expl_temp.power_Cd_0 = &b_power_Cd_0;
   expl_temp.p = &b_p;
   expl_temp.m = &b_m;
   expl_temp.l_z = &b_l_z;
@@ -7766,29 +7847,29 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   expl_temp.flight_path_angle = &b_flight_path_angle;
   expl_temp.gain_theta = &gain_theta;
   b_expl_temp = expl_temp;
-  fmincon(&b_expl_temp, u_max, u_min, u_max_scaled, u_out, exitflag,
-          N_iterations, N_evaluation, c_expl_temp, &b_max_approach,
-          &b_min_approach, &g_max_approach, &g_min_approach);
+  fmincon(&b_expl_temp, u_out, u_min, u_max, exitflag, N_iterations,
+          N_evaluation, c_expl_temp, &b_max_approach, &b_min_approach,
+          &g_max_approach, &g_min_approach);
   *elapsed_time = toc();
-  max_tilt_value_approach = gain_motor.contents;
-  u_out[0] *= max_tilt_value_approach;
-  u_out[1] *= max_tilt_value_approach;
-  u_out[2] *= max_tilt_value_approach;
-  u_out[3] *= max_tilt_value_approach;
-  max_tilt_value_approach = gain_el.contents;
-  u_out[4] *= max_tilt_value_approach;
-  u_out[5] *= max_tilt_value_approach;
-  u_out[6] *= max_tilt_value_approach;
-  u_out[7] *= max_tilt_value_approach;
-  max_tilt_value_approach = gain_az.contents;
-  u_out[8] *= max_tilt_value_approach;
-  u_out[9] *= max_tilt_value_approach;
-  u_out[10] *= max_tilt_value_approach;
-  u_out[11] *= max_tilt_value_approach;
+  b_min_approach = gain_motor.contents;
+  b_max_tilt_value_approach = gain_el.contents;
+  b_max_approach = gain_az.contents;
+  u_out[0] *= b_min_approach;
+  u_out[4] *= b_max_tilt_value_approach;
+  u_out[8] *= b_max_approach;
+  u_out[1] *= b_min_approach;
+  u_out[5] *= b_max_tilt_value_approach;
+  u_out[9] *= b_max_approach;
+  u_out[2] *= b_min_approach;
+  u_out[6] *= b_max_tilt_value_approach;
+  u_out[10] *= b_max_approach;
+  u_out[3] *= b_min_approach;
+  u_out[7] *= b_max_tilt_value_approach;
+  u_out[11] *= b_max_approach;
   u_out[12] *= gain_theta.contents;
   u_out[13] *= gain_phi.contents;
   u_out[14] *= gain_ailerons.contents;
-  max_tilt_value_approach = b_p.contents;
+  b_max_tilt_value_approach = b_p.contents;
   b_max_approach = b_q.contents;
   b_min_approach = b_r.contents;
   g_max_approach = b_m.contents;
@@ -7819,11 +7900,8 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   b_gain_phi = gain_phi.contents;
 
   /*  New prop model */
-  /*  Theoretical */
-  /*  Wind tunnel power */
-  /*  Random guess */
-  /*  power_Cd_0 = 0.084; */
-  /*  power_Cd_a = 1.2145; */
+  /*  prop_Cl_0 = 0.075; */
+  /*  prop_Cl_a = 3.46; */
   /*  New aero models */
   compute_acc(u_out[12] - c_flight_path_angle, c_CL_aileron, c_Cd_zero,
               c_Cl_alpha, c_Cm_zero, c_Cm_alpha, g_min_approach,
@@ -7835,7 +7913,7 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
               c_flight_path_angle, u_out[8] / b_gain_az, u_out[9] / b_gain_az,
               u_out[10] / b_gain_az, u_out[11] / b_gain_az, b_gain_el, b_gain_az,
               b_gain_phi, b_gain_theta, b_gain_motor, b_gain_airspeed, c_l_1,
-              c_l_3, c_l_4, c_l_z, g_max_approach, max_tilt_value_approach,
+              c_l_3, c_l_4, c_l_z, g_max_approach, b_max_tilt_value_approach,
               b_max_approach, b_min_approach, c_rho, c_wing_span, c_wing_chord,
               final_accelerations);
   for (i = 0; i < 6; i++) {
@@ -7908,25 +7986,17 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
     fflush(stdout);
     memcpy(&u_max[0], &u_out[0], 15U * sizeof(double));
     u_max[0] = u_out[0] / gain_motor.contents;
+    u_max[4] /= gain_el.contents;
+    u_max[8] /= gain_az.contents;
     u_max[1] = u_out[1] / gain_motor.contents;
+    u_max[5] /= gain_el.contents;
+    u_max[9] /= gain_az.contents;
     u_max[2] = u_out[2] / gain_motor.contents;
+    u_max[6] /= gain_el.contents;
+    u_max[10] /= gain_az.contents;
     u_max[3] = u_out[3] / gain_motor.contents;
-    max_tilt_value_approach = u_max[4] / gain_el.contents;
-    b_max_approach = u_max[5] / gain_el.contents;
-    b_min_approach = u_max[6] / gain_el.contents;
-    g_max_approach = u_max[7] / gain_el.contents;
-    u_max[4] = max_tilt_value_approach;
-    u_max[5] = b_max_approach;
-    u_max[6] = b_min_approach;
-    u_max[7] = g_max_approach;
-    max_tilt_value_approach = u_max[8] / gain_az.contents;
-    b_max_approach = u_max[9] / gain_az.contents;
-    b_min_approach = u_max[10] / gain_az.contents;
-    g_max_approach = u_max[11] / gain_az.contents;
-    u_max[8] = max_tilt_value_approach;
-    u_max[9] = b_max_approach;
-    u_max[10] = b_min_approach;
-    u_max[11] = g_max_approach;
+    u_max[7] /= gain_el.contents;
+    u_max[11] /= gain_az.contents;
     u_max[12] /= gain_theta.contents;
     u_max[13] /= gain_phi.contents;
     u_max[14] /= gain_ailerons.contents;
@@ -7955,8 +8025,8 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
     printf("\n Requested accelerations =  ");
     fflush(stdout);
     for (i = 0; i < 6; i++) {
-      max_tilt_value_approach = dv_global.contents[i];
-      printf(" %f ", max_tilt_value_approach);
+      b_max_tilt_value_approach = dv_global.contents[i];
+      printf(" %f ", b_max_tilt_value_approach);
       fflush(stdout);
     }
 
@@ -7987,8 +8057,8 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
 
 void Nonlinear_controller_fcn_control_rf_aero_models_initialize(void)
 {
-  savedTime_not_empty = false;
-  freq_not_empty = false;
+  c_CoderTimeAPI_callCoderClockGe();
+  timeKeeper_init();
   isInitialized_Nonlinear_controller_fcn_control_rf_aero_models = true;
 }
 

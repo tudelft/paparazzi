@@ -326,6 +326,8 @@ void* second_thread() //Run the optimization code
     float k_alt_tilt_constraint = extra_data_in_copy[58];
     float min_alt_tilt_constraint = extra_data_in_copy[59];
 
+    float slider_power_cd0 = extra_data_in_copy[60]; 
+    float slider_power_cda = extra_data_in_copy[61];
   
     // Real time variables:
     double Phi = (myam7_data_in_copy.phi_state_int*1e-2 * M_PI/180);
@@ -485,7 +487,7 @@ void* second_thread() //Run the optimization code
                                                     desired_ailerons_value,  k_alt_tilt_constraint,
                                                     min_alt_tilt_constraint,  lidar_alt_corrected,
                                                     approach_mode,  verbose_optimizer,  speed_aoa_protection,
-                                                    transition_speed,  u_out,  residuals,
+                                                    transition_speed, slider_power_cd0, slider_power_cda, u_out,  residuals,
                                                     &elapsed_time,  &N_iterations,  &N_evaluation,
                                                     &exitflag);
 
@@ -564,6 +566,9 @@ void* second_thread() //Run the optimization code
       printf(" min_delta_ailerons = %f \n",(float) min_delta_ailerons);
       printf(" max_delta_ailerons = %f \n",(float) max_delta_ailerons);
       printf(" CL_aileron = %f \n",(float) CL_aileron);
+      printf(" slider_power_cd0 = %f \n",(float) slider_power_cd0);
+      printf(" slider_power_cda = %f \n",(float) slider_power_cda);
+      
 
       printf("\n REAL TIME VARIABLES IN------------------------------------------------------ \n"); 
       printf(" Phi_deg = %f \n",(float) Phi*180/M_PI);
