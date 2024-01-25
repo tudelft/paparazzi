@@ -500,12 +500,12 @@
     <define name="W_ACT_THETA_SPEED" value="0"/>
     <define name="W_ACT_PHI_CONST" value="100"/>
     <define name="W_ACT_PHI_SPEED" value="-15"/> -->
-    <define name="W_ACT_MOTOR_CONST" value="150"/>
+    <define name="W_ACT_MOTOR_CONST" value="1"/>
     <define name="W_ACT_MOTOR_SPEED" value="0"/>
     <define name="W_ACT_EL_CONST" value="0"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
     <define name="W_ACT_AZ_CONST" value="0"/>
-    <define name="W_ACT_AZ_SPEED" value="5"/>
+    <define name="W_ACT_AZ_SPEED" value="2"/>
     <define name="W_ACT_THETA_CONST" value="100"/>
     <define name="W_ACT_THETA_SPEED" value="-15"/>
     <define name="W_ACT_PHI_CONST" value="100"/>
@@ -521,14 +521,14 @@
     <define VALUE="0.02" NAME="W_DV_5"/>
     <define VALUE="0.02" NAME="W_DV_6"/> -->
     
-    <define VALUE="0.1" NAME="W_DV_1"/>
-    <define VALUE="0.1" NAME="W_DV_2"/>
-    <define VALUE="0.25" NAME="W_DV_3"/>
-    <define VALUE="0.5" NAME="W_DV_4"/>
-    <define VALUE="0.5" NAME="W_DV_5"/>
-    <define VALUE="0.5" NAME="W_DV_6"/>
+    <define VALUE="0.01" NAME="W_DV_1"/>
+    <define VALUE="0.01" NAME="W_DV_2"/>
+    <define VALUE="0.02" NAME="W_DV_3"/>
+    <define VALUE="0.05" NAME="W_DV_4"/>
+    <define VALUE="0.05" NAME="W_DV_5"/>
+    <define VALUE="0.05" NAME="W_DV_6"/>
 
-    <define VALUE="0.1e-6" NAME="GAMMA_QUADRATIC_DU"/>
+    <define VALUE="0.5e-5" NAME="GAMMA_QUADRATIC_DU"/>
 
     <!-- FWD flight properties for yaw rate induced by controller and for removal of lateral speed term-->
     <!-- <define name="MIN_SPEED_TRANSITION" value="3.0" unit="m/s"/>
