@@ -32,6 +32,10 @@
 
 #define ANDI_G_SCALING 1000.0f
 
+/** Control types.*/
+#define  CTRL_ANDI 0
+#define  CTRL_INDI 1
+
 extern float act_state_filt_vect_1l[ANDI_NUM_ACT];
 extern float actuator_state_1l[ANDI_NUM_ACT];
 extern float nu[6];
@@ -93,6 +97,7 @@ struct OneloopStabilizationState {
 };
 struct OneloopGeneral {
   bool   half_loop;
+  int    ctrl_type;
   struct OneloopGuidanceRef         gui_ref;     // Guidance References
   struct OneloopGuidanceState       gui_state;   // Guidance State
   struct OneloopStabilizationRef    sta_ref;     // Stabilization References
@@ -137,7 +142,7 @@ extern struct Gains2ndOrder k_head_rm;
 extern struct Gains3rdOrder k_pos_e;
 extern struct Gains3rdOrder k_pos_rm; 
 extern void oneloop_andi_init(void);
-extern void oneloop_andi_enter(bool half_loop_sp);
+extern void oneloop_andi_enter(bool half_loop_sp, int ctrl_type);
 extern void oneloop_andi_set_failsafe_setpoint(void);
 extern void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, int rm_order_v);
 extern void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, int rm_order_v);

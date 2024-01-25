@@ -88,6 +88,9 @@
 #include "modules/nav/nav_rotorcraft_hybrid.h"
 #include "firmwares/rotorcraft/navigation.h"
 #include <stdio.h>
+#if INS_EXT_POSE
+#include "modules/ins/ins_ext_pose.h"
+#endif
 //#include "nps/nps_fdm.h"
 
 // Number of real actuators (e.g. motors, servos)
@@ -289,7 +292,7 @@ float fwd_sideslip_gain = FWD_SIDESLIP_GAIN;
 /*  Define Section of the functions used in this module*/
 void  init_poles(void);
 void  calc_normalization(void);
-void  sum_g1g2_1l(void);
+void  sum_g1g2_1l(int ctrl_type);
 void  get_act_state_oneloop(void);
 void  oneloop_andi_propagate_filters(void);
 void  init_filter(void);
@@ -307,7 +310,7 @@ void  rm_3rd_pos(float dt, float x_ref[], float x_d_ref[], float x_2d_ref[], flo
 void  rm_2nd_pos(float dt, float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_d_des[], float k2_rm[], float k3_rm[], float x_2d_bound, float x_3d_bound, int n);
 void  rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], float k3_rm[], float x_3d_bound, int n);
 void  ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3]);
-void  calc_model(void);
+void  calc_model(int ctrl_type);
 float oneloop_andi_sideslip(void);
 void  chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
 void  chirp_call(bool* chirp_on, bool* chirp_first_call, float* t_0_chirp, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
@@ -396,6 +399,33 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
   struct  FloatRates *body_rates_temp = stateGetBodyRates_f();
   float   rate_vect_temp[3] = {stateGetBodyRates_f()->p, stateGetBodyRates_f()->q, stateGetBodyRates_f()->r};
   debug_vect(trans, dev, "att_rate", rate_vect_temp, 3);
+}
+
+static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *dev)
+{ 
+  struct Int32Quat quat_ext_pose;
+  #ifdef INS_EXT_POSE
+  quat_ext_pose.qi = (int32_t) ins_ext_pos.ev_quat.qi;
+  quat_ext_pose.qx = (int32_t) ins_ext_pos.ev_quat.qx;
+  quat_ext_pose.qy = (int32_t) ins_ext_pos.ev_quat.qy;
+  quat_ext_pose.qz = (int32_t) ins_ext_pos.ev_quat.qz;
+  #else
+  quat_ext_pose.qi = 0; 
+  quat_ext_pose.qx = 0;
+  quat_ext_pose.qy = 0;
+  quat_ext_pose.qz = 0;
+  #endif
+
+  struct Int32Quat *quat = stateGetNedToBodyQuat_i();
+  pprz_msg_send_AHRS_REF_QUAT(trans, dev, AC_ID,
+                              &quat_ext_pose.qi,// In the future also stream setpoint in quat &stab_att_sp_quat.qi,
+                              &quat_ext_pose.qx,// In the future also stream setpoint in quat &stab_att_sp_quat.qx,
+                              &quat_ext_pose.qy,// In the future also stream setpoint in quat &stab_att_sp_quat.qy,
+                              &quat_ext_pose.qz,// In the future also stream setpoint in quat &stab_att_sp_quat.qz,
+                              &(quat->qi),
+                              &(quat->qx),
+                              &(quat->qy),
+                              &(quat->qz));
 }
 
 // static void send_oneloop_nps(struct transport_tx *trans, struct link_device *dev)
@@ -1109,7 +1139,7 @@ void oneloop_andi_propagate_filters(void) {
   update_butterworth_2_low_pass(&filt_veloc_ned[0], veloc->x);
   update_butterworth_2_low_pass(&filt_veloc_ned[1], veloc->y);
   update_butterworth_2_low_pass(&filt_veloc_ned[2], veloc->z); 
-  calc_model();
+  calc_model(oneloop_andi.ctrl_type);
   int8_t i;
 
   for (i = 0; i < 3; i++) {
@@ -1132,6 +1162,7 @@ void oneloop_andi_propagate_filters(void) {
 void oneloop_andi_init(void)
 { 
   oneloop_andi.half_loop = true;
+  oneloop_andi.ctrl_type = CTRL_ANDI;
   init_poles();
   // Make sure that the dynamics are positive and non-zero
   int8_t i;
@@ -1140,7 +1171,7 @@ void oneloop_andi_init(void)
   }
   // Initialize Effectiveness matrix
   calc_normalization();
-  sum_g1g2_1l();
+  sum_g1g2_1l(oneloop_andi.ctrl_type);
   for (i = 0; i < ANDI_OUTPUTS; i++) {
    bwls_1l[i] = g1g2_1l[i];
   }
@@ -1171,6 +1202,7 @@ void oneloop_andi_init(void)
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_G, send_eff_mat_g_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE, send_guidance_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_oneloop_debug);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
     //register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_NPS_SPEED_POS, send_oneloop_nps);
   #endif
 }
@@ -1181,13 +1213,14 @@ void oneloop_andi_init(void)
  * and there are multiple modes that use (the same) stabilization. Resetting the controller
  * is not so nice when you are flying.
  */
-void oneloop_andi_enter(bool half_loop_sp)
+void oneloop_andi_enter(bool half_loop_sp, int ctrl_type)
 {
   oneloop_andi.half_loop     = half_loop_sp;
+  oneloop_andi.ctrl_type     = ctrl_type;
   psi_des_rad   = eulers_zxy.psi; 
   psi_des_deg   = eulers_zxy.psi * 180.0 / M_PI;
   calc_normalization();
-  sum_g1g2_1l();
+  sum_g1g2_1l(oneloop_andi.ctrl_type);
   init_filter();
   init_controller();
   /* Stabilization Reset */
@@ -1333,7 +1366,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   init_controller();
   calc_normalization();
   get_act_state_oneloop();
-  sum_g1g2_1l();
+  sum_g1g2_1l(oneloop_andi.ctrl_type);
   
   // If drone is not on the ground use incremental law
   use_increment = 0.0;
@@ -1377,7 +1410,11 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   // Calculated feedforward signal for yaW CONTROL
   g2_ff = 0.0;
   for (i = 0; i < ANDI_NUM_ACT; i++) {
-    g2_ff += g2_1l[i] * act_dynamics[i] * andi_du[i];
+    if (oneloop_andi.ctrl_type == CTRL_ANDI){
+      g2_ff += g2_1l[i] * act_dynamics[i] * andi_du[i];
+    } else if (oneloop_andi.ctrl_type == CTRL_INDI){
+      g2_ff += g2_1l[i]* andi_du_n[i];
+    }
   }
   //G2 is scaled by ANDI_G_SCALING to make it readable
   g2_ff = g2_ff / ANDI_G_SCALING;
@@ -1388,15 +1425,36 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     nu[0] = 0.0;
     nu[1] = 0.0;
     nu[2] = a_thrust;
-    nu[3] = ec_3rd(oneloop_andi.sta_ref.att[0],   oneloop_andi.sta_ref.att_d[0],  oneloop_andi.sta_ref.att_2d[0], oneloop_andi.sta_ref.att_3d[0],  oneloop_andi.sta_state.att[0],    oneloop_andi.sta_state.att_d[0], oneloop_andi.sta_state.att_2d[0], k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
-    nu[4] = ec_3rd(oneloop_andi.sta_ref.att[1],   oneloop_andi.sta_ref.att_d[1],  oneloop_andi.sta_ref.att_2d[1], oneloop_andi.sta_ref.att_3d[1],  oneloop_andi.sta_state.att[1],    oneloop_andi.sta_state.att_d[1], oneloop_andi.sta_state.att_2d[1], k_att_e.k1[1], k_att_e.k2[1], k_att_e.k3[1]);
-    nu[5] = ec_2rd(oneloop_andi.sta_ref.att_d[2], oneloop_andi.sta_ref.att_2d[2], oneloop_andi.sta_ref.att_3d[2], oneloop_andi.sta_state.att_d[2], oneloop_andi.sta_state.att_2d[2], k_head_e.k2, k_head_e.k3) + g2_ff;
+    if(oneloop_andi.ctrl_type == CTRL_ANDI){
+      nu[3] = ec_3rd(oneloop_andi.sta_ref.att[0],   oneloop_andi.sta_ref.att_d[0],  oneloop_andi.sta_ref.att_2d[0], oneloop_andi.sta_ref.att_3d[0],  oneloop_andi.sta_state.att[0],    oneloop_andi.sta_state.att_d[0], oneloop_andi.sta_state.att_2d[0], k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
+      nu[4] = ec_3rd(oneloop_andi.sta_ref.att[1],   oneloop_andi.sta_ref.att_d[1],  oneloop_andi.sta_ref.att_2d[1], oneloop_andi.sta_ref.att_3d[1],  oneloop_andi.sta_state.att[1],    oneloop_andi.sta_state.att_d[1], oneloop_andi.sta_state.att_2d[1], k_att_e.k1[1], k_att_e.k2[1], k_att_e.k3[1]);
+      nu[5] = ec_2rd(oneloop_andi.sta_ref.att_d[2], oneloop_andi.sta_ref.att_2d[2], oneloop_andi.sta_ref.att_3d[2], oneloop_andi.sta_state.att_d[2], oneloop_andi.sta_state.att_2d[2], k_head_e.k2, k_head_e.k3) + g2_ff;
+    } else if (oneloop_andi.ctrl_type == CTRL_INDI){
+      nu[3] = ec_3rd(oneloop_andi.sta_ref.att[0],   oneloop_andi.sta_ref.att_d[0],  oneloop_andi.sta_ref.att_2d[0], 0.0,  oneloop_andi.sta_state.att[0],    oneloop_andi.sta_state.att_d[0], oneloop_andi.sta_state.att_2d[0], k_att_e.k1[0], k_att_e.k2[0], 1.0);
+      nu[4] = ec_3rd(oneloop_andi.sta_ref.att[1],   oneloop_andi.sta_ref.att_d[1],  oneloop_andi.sta_ref.att_2d[1], 0.0,  oneloop_andi.sta_state.att[1],    oneloop_andi.sta_state.att_d[1], oneloop_andi.sta_state.att_2d[1], k_att_e.k1[1], k_att_e.k2[1], 1.0);
+      nu[5] = ec_2rd(oneloop_andi.sta_ref.att_d[2], oneloop_andi.sta_ref.att_2d[2], 0.0, oneloop_andi.sta_state.att_d[2], oneloop_andi.sta_state.att_2d[2], k_head_e.k2, 1.0) + g2_ff;      
+    }
   }else{
     float y_4d_att[3];
-    ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3);
-    nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], oneloop_andi.gui_ref.jer[0], oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e.k1[0], k_pos_e.k2[0], k_pos_e.k3[0]);
-    nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], oneloop_andi.gui_ref.jer[1], oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e.k1[1], k_pos_e.k2[1], k_pos_e.k3[1]);
-    nu[2] = ec_3rd(oneloop_andi.gui_ref.pos[2], oneloop_andi.gui_ref.vel[2], oneloop_andi.gui_ref.acc[2], oneloop_andi.gui_ref.jer[2], oneloop_andi.gui_state.pos[2], oneloop_andi.gui_state.vel[2], oneloop_andi.gui_state.acc[2], k_pos_e.k1[2], k_pos_e.k2[2], k_pos_e.k3[2]); 
+    if(oneloop_andi.ctrl_type == CTRL_ANDI){
+      ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3);
+      nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], oneloop_andi.gui_ref.jer[0], oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e.k1[0], k_pos_e.k2[0], k_pos_e.k3[0]);
+      nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], oneloop_andi.gui_ref.jer[1], oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e.k1[1], k_pos_e.k2[1], k_pos_e.k3[1]);
+      nu[2] = ec_3rd(oneloop_andi.gui_ref.pos[2], oneloop_andi.gui_ref.vel[2], oneloop_andi.gui_ref.acc[2], oneloop_andi.gui_ref.jer[2], oneloop_andi.gui_state.pos[2], oneloop_andi.gui_state.vel[2], oneloop_andi.gui_state.acc[2], k_pos_e.k1[2], k_pos_e.k2[2], k_pos_e.k3[2]); 
+    } else if (oneloop_andi.ctrl_type == CTRL_INDI){
+      float dummy0[3] = {0.0,0.0,0.0}; // ec_3rd_att wants a [n] vector, therefore create a dummy vector of 0
+      float k3_att_dummy[3] = {1.0,1.0,1.0}; // ec_3rd_att wants a [n] vector, therefore create a dummy vector of 1
+      float k1_att_dummy[3] = {k_att_e.k1[0]/k_att_e.k3[0],k_att_e.k1[1]/k_att_e.k3[1],k_att_e.k1[2]/k_att_e.k3[2]};
+      float k2_att_dummy[3] = {k_att_e.k2[0]/k_att_e.k3[0],k_att_e.k2[1]/k_att_e.k3[1],k_att_e.k2[2]/k_att_e.k3[2]};
+      ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k1_att_dummy, k2_att_dummy, k3_att_dummy);
+      nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], 0.0, oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e.k1[0]/k_pos_e.k3[0], k_pos_e.k2[0]/k_pos_e.k3[0], 1.0);
+      nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], 0.0, oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e.k1[1]/k_pos_e.k3[1], k_pos_e.k2[1]/k_pos_e.k3[1], 1.0);
+      nu[2] = ec_3rd(oneloop_andi.gui_ref.pos[2], oneloop_andi.gui_ref.vel[2], oneloop_andi.gui_ref.acc[2], 0.0, oneloop_andi.gui_state.pos[2], oneloop_andi.gui_state.vel[2], oneloop_andi.gui_state.acc[2], k_pos_e.k1[2]/k_pos_e.k3[2], k_pos_e.k2[2]/k_pos_e.k3[2], 1.0);  
+      //ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3);
+      //nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], 0.0, oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e.k1[0], k_pos_e.k2[0], k_pos_e.k3[0]);
+      //nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], 0.0, oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e.k1[1], k_pos_e.k2[1], k_pos_e.k3[1]);
+      //nu[2] = ec_3rd(oneloop_andi.gui_ref.pos[2], oneloop_andi.gui_ref.vel[2], oneloop_andi.gui_ref.acc[2], 0.0, oneloop_andi.gui_state.pos[2], oneloop_andi.gui_state.vel[2], oneloop_andi.gui_state.acc[2], k_pos_e.k1[2], k_pos_e.k2[2], k_pos_e.k3[2]);;   
+    }
     nu[3] = y_4d_att[0];  
     nu[4] = y_4d_att[1]; 
     nu[5] = y_4d_att[2] + g2_ff; 
@@ -1484,7 +1542,7 @@ void get_act_state_oneloop(void)
  * @brief Function that sums g1 and g2 to obtain the g1_g2 matrix. It also undoes the scaling that was done to make the values readable
  * FIXME: make this function into a for loop to make it more adaptable to different configurations
  */
-void sum_g1g2_1l(void) {
+void sum_g1g2_1l(int ctrl_type) {
   int i = 0;
   //struct FloatEulers *euler = stateGetNedToBodyEulers_f();
   float sphi   = sinf(eulers_zxy.phi);
@@ -1503,11 +1561,15 @@ void sum_g1g2_1l(void) {
   if (ONELOOP_ANDI_AC_HAS_PUSHER){
     P    = actuator_state_1l[ONELOOP_ANDI_PUSHER_IDX] * g1_1l[2][ONELOOP_ANDI_PUSHER_IDX] / ANDI_G_SCALING;
   } 
-  float scaler;
+  float scaler = 1.0;
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     // Effectiveness vector for real actuators (e.g. motors, servos)
     if (i < ANDI_NUM_ACT){
-      scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
+      if(ctrl_type == CTRL_ANDI){
+        scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
+      } else if (ctrl_type == CTRL_INDI){
+        scaler = ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
+      }        
       g1g2_1l[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * g1_1l[2][i] * scaler;
       g1g2_1l[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * g1_1l[2][i] * scaler;
       g1g2_1l[2][i] = (cphi * ctheta                       ) * g1_1l[2][i] * scaler;
@@ -1523,12 +1585,16 @@ void sum_g1g2_1l(void) {
         g1g2_1l[5][i] = 0.0;
       }
     }else{
-      scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i];
+      if(ctrl_type == CTRL_ANDI){
+        scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i];
+      } else if (ctrl_type == CTRL_INDI){
+        scaler = ratio_u_un[i] * ratio_vn_v[i];
+      }
       // Effectiveness vector for Phi (virtual actuator)
       if (i == ONELOOP_ANDI_PHI_IDX){
         g1g2_1l[0][i] = ( cphi * ctheta * spsi * T - cphi * spsi * stheta * P) * scaler;
         g1g2_1l[1][i] = (-cphi * ctheta * cpsi * T + cphi * cpsi * stheta * P) * scaler;
-        g1g2_1l[2][i] = (-sphi * ctheta * T + sphi * stheta * P) * scaler;
+        g1g2_1l[2][i] = (-sphi * ctheta * T + sphi * stheta * P)               * scaler;
         g1g2_1l[3][i] = 0.0;
         g1g2_1l[4][i] = 0.0;
         g1g2_1l[5][i] = 0.0;
@@ -1537,7 +1603,7 @@ void sum_g1g2_1l(void) {
       if (i == ONELOOP_ANDI_THETA_IDX){
         g1g2_1l[0][i] = ((ctheta*cpsi - sphi*stheta*spsi) * T - (cpsi * stheta + ctheta * sphi * spsi) * P) * scaler;
         g1g2_1l[1][i] = ((ctheta*spsi + sphi*stheta*cpsi) * T - (spsi * stheta - cpsi * ctheta * sphi) * P) * scaler;
-        g1g2_1l[2][i] = (-stheta * cphi * T - cphi * ctheta * P) * scaler;
+        g1g2_1l[2][i] = (-stheta * cphi * T - cphi * ctheta * P)                                            * scaler;
         g1g2_1l[3][i] = 0.0;
         g1g2_1l[4][i] = 0.0;
         g1g2_1l[5][i] = 0.0;
@@ -1565,7 +1631,7 @@ void calc_normalization(void){
 }
 
 /** @brief  Function that calculates the model prediction for the complementary filter. */
-void calc_model(void){
+void calc_model(int ctrl_type){
   int8_t i;
   int8_t j;
   // Absolute Model Prediction : 
@@ -1592,7 +1658,11 @@ void calc_model(void){
   for (i = 3; i < ANDI_OUTPUTS; i++){ // For loop for prediction of angular acceleration
     model_pred[i] = 0.0;              // 
     for (j = 0; j < ANDI_NUM_ACT; j++){
-      model_pred[i] = model_pred[i] +  actuator_state_1l[j] * g1g2_1l[i][j] / (act_dynamics[j] * ratio_u_un[j] * ratio_vn_v[j]);
+      if (ctrl_type == CTRL_ANDI){
+        model_pred[i] = model_pred[i] +  actuator_state_1l[j] * g1g2_1l[i][j] / (act_dynamics[j] * ratio_u_un[j] * ratio_vn_v[j]);
+      } else if (ctrl_type == CTRL_INDI){
+        model_pred[i] = model_pred[i] +  actuator_state_1l[j] * g1g2_1l[i][j] / (ratio_u_un[j] * ratio_vn_v[j]);
+      }
     }
   }
 }
@@ -1601,7 +1671,7 @@ void calc_model(void){
 void oneloop_from_nav(bool in_flight)
 {
   if (!in_flight) {
-    oneloop_andi_enter(false);
+    oneloop_andi_enter(false, oneloop_andi.ctrl_type);
   }
   struct FloatVect3 PSA_des;
   PSA_des.x = stateGetPositionNed_f()->x;
@@ -1767,7 +1837,7 @@ void chirp_call(bool *chirp_on, bool *chirp_first_call, float* t_0, float* time_
       *chirp_first_call = true;
       *time_elapsed = 0.0;
       *t_0 = 0.0;
-      oneloop_andi_enter(false);
+      oneloop_andi_enter(false, oneloop_andi.ctrl_type);
     }
   }
 }
