@@ -208,6 +208,7 @@
       <message name="GUIDANCE_INDI_HYBRID"       period="0.005"/>
       <message name="INDI_G"       period="0.005"/>
       <message name="RTOS_MON"       period="0.005"/>
+      <message name="PIVOT"       period="0.005"/>
     </mode>
   </process>
 

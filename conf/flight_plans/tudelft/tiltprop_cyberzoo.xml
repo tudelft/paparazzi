@@ -38,8 +38,14 @@
     </block>
     <block name="Automatic Takeoff">
       <call_once fun="NavResurrect()"/>
-      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <call_once fun="autopilot_set_in_flight(false)"/>
+      <!-- <call_once fun="NavSetWaypointHere(WP_CLIMB)"/> -->
       <call_once fun="take_off_enter()"/>
+      <!-- <stay alt="1.5" wp="CLIMB" until="GetPosHeight() @GT 0.5"/> -->
+    </block>
+    <block name="CLIMB">
+      <while cond="autopilot_in_flight()"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/> 
       <stay alt="1.5" wp="CLIMB" until="GetPosHeight() @GT 0.5"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">

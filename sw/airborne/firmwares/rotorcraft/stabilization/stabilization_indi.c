@@ -46,6 +46,7 @@
 #include "math/wls/wls_alloc.h"
 #include <stdio.h>
 #include "firmwares/rotorcraft/autopilot_static.h"
+#include "autopilot.h"
 #include "modules/sonar/agl_dist.h"
 
 // Factor that the estimated G matrix is allowed to deviate from initial one
@@ -110,9 +111,9 @@ float weight_S = STABILIZATION_INDI_WEIGHT_S;
 float K1 = CTRL_EFF_CALC_K1;
 float K2 = CTRL_EFF_CALC_K2;
 float K3 = CTRL_EFF_CALC_K3;
-
+float theta_d = RadOfDeg(-90.0); 
 float m = CTRL_EFF_CALC_MASS;
-
+int16_t takeoff_stage = 0;
 //define the size of B and W matrix used in takeoff
 #define TYPE_ACT 2  // Type of actuator outputs
 #define NUM_OUT 1  //B is 1x2
@@ -310,6 +311,8 @@ Butterworth2LowPass rates_filt_so[3];
 static struct FirstOrderLowPass rates_filt_fo[3];
 #endif
 
+static struct FirstOrderLowPass rates_filt_takeoff_fo[3];
+
 Butterworth2LowPass qfilt;
 
 struct FloatVect3 body_accel_f;
@@ -326,6 +329,13 @@ static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
                        INDI_NUM_ACT, g1g2[2],
                        INDI_NUM_ACT, g1g2[3],
                        INDI_NUM_ACT, g2_est);
+}
+
+static void send_pivot(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_PIVOT(trans, dev, AC_ID,
+                      &theta_d,
+                      &takeoff_stage);
 }
 
 static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *dev)
@@ -429,6 +439,7 @@ void stabilization_indi_init(void)
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_G, send_indi_g);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_PIVOT, send_pivot);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_INDI, send_att_full_indi);
 #endif
@@ -483,6 +494,14 @@ void init_filters(void)
   init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
   init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
 
+
+ // Init rate filter for feedback in takeoff
+  float takeoff_time_constants[3] = {1.0 / (2 * M_PI * STABILIZATION_INDI_TAKEOFF_CUTOFF_P), 1.0 / (2 * M_PI * STABILIZATION_INDI_TAKEOFF_CUTOFF_Q), 1.0 / (2 * M_PI * STABILIZATION_INDI_TAKEOFF_CUTOFF_R)};
+
+  init_first_order_low_pass(&rates_filt_takeoff_fo[0], takeoff_time_constants[0], sample_time, stateGetBodyRates_f()->p);
+  init_first_order_low_pass(&rates_filt_takeoff_fo[1], takeoff_time_constants[1], sample_time, stateGetBodyRates_f()->q);
+  init_first_order_low_pass(&rates_filt_takeoff_fo[2], takeoff_time_constants[2], sample_time, stateGetBodyRates_f()->r);
+ 
   //tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_2ORDER_QFILT_CUTOFF);
   init_butterworth_2_low_pass(&qfilt, tau_est, sample_time, 0.0);
 }
@@ -892,7 +911,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   struct FloatRates * body_rates = stateGetBodyRates_f();
   float_eulers_of_quat_zxy(&eulers_zxy, statequat);
 
-  int16_t takeoff_stage = take_off_stage(eulers_zxy.theta);
+  takeoff_stage = take_off_stage(eulers_zxy.theta);
   //static bool isFirstEntryToStage2 = true;
   if (takeoff_stage == 0){
     // initialize pivoting by putting motors up
@@ -904,12 +923,26 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     actuators_pprz[4] = 0;
     actuators_pprz[5] = 0;
   } else if (takeoff_stage == 1) {
-    struct FloatRates rates_filt;
-    rates_filt.q = update_first_order_low_pass(&rates_filt_fo[1], body_rates->q);
-    float theta_d = take_off_theta();
+    struct FloatRates rates_filt_takeoff;
+    rates_filt_takeoff.q = update_first_order_low_pass(&rates_filt_takeoff_fo[1], body_rates->q);
+    #define TAKEOFF_MODULE_FREQ 200
+    if(autopilot.mode == AP_MODE_NAV){
+    //theta_d gradually increase for nav mode
+    float theta_d_max = theta_ref / 180.0 * M_PI;
+    float increment = t_scale_to_theta / TAKEOFF_MODULE_FREQ;
+           theta_d += increment;
+       if (theta_d > theta_d_max) {
+        theta_d = theta_d_max;
+    }
+    }
+    else{
     struct FloatEulers euler_sp;
     float_eulers_of_quat_zxy(&euler_sp, &quat_sp_f);
     theta_d = euler_sp.theta;
+    }
+    // struct FloatEulers euler_sp;
+    // float_eulers_of_quat_zxy(&euler_sp, &quat_sp_f);
+    // theta_d = euler_sp.theta;
 
     // Define B as a 1x2 matrix and W as a 2x2 diagonal matrix
         // Calculate B using the provided equation
@@ -922,10 +955,37 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
    
     float integral_theta_error = 0.0f;
     float theta_error = theta_d - eulers_zxy.theta;
+//     // lag compensator
+//     float K_lag = 0.1; //
+//     float T_lag = 0.3; // 
+//     float alpha = 10.0; //alpha greater than 1
+
+//     // Tustin discretization
+//     float a0 = K_lag * (1.0/PERIODIC_FREQUENCY /2 + T_lag);
+//     float a1 = K_lag * (1.0/PERIODIC_FREQUENCY/2 - T_lag);
+//     float b0 = (1.0/PERIODIC_FREQUENCY/2 + alpha * T_lag);
+//     float b1 = (1.0/PERIODIC_FREQUENCY/2 - alpha * T_lag);
+
+//    // State variables for the lag compensator
+//     float input_d1 = 0.0; // input delayed by 1 time step
+//     float output_d1 = 0.0; // output delayed by 1 time step
+
+//     float update_lag_compensator_tustin(float input) {
+//         float output = (a0 * input + a1 * input_d1 - b1 * output_d1) / b0;
+//         // Update the delayed variables for next time step
+//         input_d1 = input;
+//         output_d1 = output;
+
+//     return output;
+// }
+//     // Update the lag compensator with the error
+//     float compensated_error = update_lag_compensator_tustin(theta_error);
+//     integral_theta_error += compensated_error * 1.0/ PERIODIC_FREQUENCY;  
+
     // Update the integrator with the current error
     integral_theta_error += theta_error * 1.0/ PERIODIC_FREQUENCY;
 
-    float du = pivot_gain_theta * theta_error + pivot_gain_i * integral_theta_error - pivot_gain_q * rates_filt.q;
+    float du = pivot_gain_theta * theta_error + pivot_gain_i * integral_theta_error - pivot_gain_q * rates_filt_takeoff.q;
  
     float du_out[TYPE_ACT][1];
     // Multiply B_inv by du

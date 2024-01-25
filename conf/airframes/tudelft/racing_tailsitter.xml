@@ -313,6 +313,10 @@
     <define name="FILT_CUTOFF_Q" value="20.0"/>
     <define name="FILT_CUTOFF_R" value="20.0"/>
 
+    <define name="TAKEOFF_CUTOFF_P" value="4.0"/>
+    <define name="TAKEOFF_CUTOFF_Q" value="4.0"/>
+    <define name="TAKEOFF_CUTOFF_R" value="4.0"/>
+
     <!-- first order actuator dynamics -->
     <define name="ACT_DYN" value="{0.227, 0.227, 0.11, 0.11, 0.227, 0.227}"/> <!-- [0.05 0.05 0.045 0.045] before -->
     <define name="ACT_RATE_LIMIT" value="{250, 250, 9600, 9600, 250, 250}"/>
@@ -334,7 +338,7 @@
 	  <define name="PIVOT_GAIN_THETA" value="0.1"/>
     <define name="PIVOT_SERVOGAIN_Q" value="0.04"/>
     <define name="PIVOT_SERVOGAIN_THETA" value="0.8"/> -->
-    <define name="PIVOT_GAIN_Q" value="0.1"/>
+    <define name="PIVOT_GAIN_Q" value="0.11"/>
     <define name="PIVOT_GAIN_THETA" value="0.5"/>
     <define name="PIVOT_GAIN_I" value="0.01"/>
 

@@ -37,14 +37,13 @@ int16_t stage = 0;
 int16_t counter = 0;
 float theta_ref = TAKEOFF_THETA_REF;
 
-float t_scale_to_theta = 0.0039;
-float theta_d;
+float t_scale_to_theta = 0.9832;
 
 #define TAKEOFF_MODULE_FREQ 200
 
 //int16_t pwm2pprz(float pwm);
 int16_t take_off_stage(float theta);
-float take_off_theta(void);
+// float take_off_theta(void);
 void take_off_enter(void);
 
 void take_off_enter(void){
@@ -52,24 +51,24 @@ void take_off_enter(void){
   counter = 0;
 }
 
-float take_off_theta(void){
+// float take_off_theta(void){
 
-  if(autopilot.mode == AP_MODE_NAV){
-    if (stage == 1) {
-    //theta_d gradually increase for nav mode
-    theta_d = RadOfDeg(-90.0) + counter * t_scale_to_theta;
-      if (theta_d > theta_ref) {//Theta_d finally depends on the theta_ref which can be tuned in settings
-        theta_d = theta_ref;
-    }
-  }
-  }
-  else{
-    struct FloatEulers euler_sp;
-    float_eulers_of_quat_zxy(&euler_sp, &quat_sp_f);
-    theta_d = euler_sp.theta;
-  }
-  return theta_d;
-}
+//   if(autopilot.mode == AP_MODE_NAV){
+//     if (stage == 1) {
+//     //theta_d gradually increase for nav mode
+//     theta_d = RadOfDeg(-90.0) + counter * t_scale_to_theta;
+//       if (theta_d > theta_ref/ 180.0 * M_PI) {//Theta_d finally depends on the theta_ref which can be tuned in settings
+//         theta_d = theta_ref/ 180.0 * M_PI;
+//     }
+//   }
+//   }
+//   else{
+//     struct FloatEulers euler_sp;
+//     float_eulers_of_quat_zxy(&euler_sp, &quat_sp_f);
+//     theta_d = euler_sp.theta;
+//   }
+//   return theta_d;
+// }
 
 int16_t take_off_stage(float theta){
   counter++;
@@ -78,11 +77,11 @@ int16_t take_off_stage(float theta){
       stage = 0;
       counter = 0;
     }
-    else if(stage == 0 && counter/TAKEOFF_MODULE_FREQ > 0.5){
+    else if(stage == 0 && counter/TAKEOFF_MODULE_FREQ > 1.0){
       stage = 1;
       counter = 0;
     }
-    else if(stage == 1 && theta==theta_d && counter/TAKEOFF_MODULE_FREQ > 20.0 ){
+    else if(stage == 1 && fabsf((theta - theta_ref)/(theta_ref +90.0))< 0.06 && counter/TAKEOFF_MODULE_FREQ > 2000.0 ){
       stage = 2;
       counter = 0;
     }
