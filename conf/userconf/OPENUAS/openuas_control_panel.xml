@@ -911,8 +911,9 @@
         <arg flag="--ac_nose" constant="right"/>
         <arg flag="-ac" constant="1"/>
         <arg flag="33"/>
-        <arg flag="-f" constant="10"/>
+        <arg flag="-f" constant="30"/>
       </program>
+      <program name="Attitude Visualizer"/>
     </session>
     <session name="Flight_udp_rw3c">
       <program name="PprzGCS"/>

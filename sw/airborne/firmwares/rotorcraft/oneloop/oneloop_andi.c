@@ -405,10 +405,10 @@ static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *d
 { 
   struct Int32Quat quat_ext_pose;
   #ifdef INS_EXT_POSE
-  quat_ext_pose.qi = (int32_t) ins_ext_pos.ev_quat.qi;
-  quat_ext_pose.qx = (int32_t) ins_ext_pos.ev_quat.qx;
-  quat_ext_pose.qy = (int32_t) ins_ext_pos.ev_quat.qy;
-  quat_ext_pose.qz = (int32_t) ins_ext_pos.ev_quat.qz;
+  quat_ext_pose.qi = ins_ext_pos.ev_quat.qi/0.0000305;//(int32_t) 
+  quat_ext_pose.qx = ins_ext_pos.ev_quat.qx/0.0000305;//(int32_t) 
+  quat_ext_pose.qy = ins_ext_pos.ev_quat.qy/0.0000305;//(int32_t) 
+  quat_ext_pose.qz = ins_ext_pos.ev_quat.qz/0.0000305;//(int32_t) 
   #else
   quat_ext_pose.qi = 0; 
   quat_ext_pose.qx = 0;

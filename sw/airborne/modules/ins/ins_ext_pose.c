@@ -180,8 +180,8 @@ void ins_ext_pose_msg_update(uint8_t *buf)
 
   // Transformation of External Pose. Guess is Optitrack Quat is from NWU to Body (FRD). Optitrack motive 2.X Yup
   orient.qi = quat_i ;// Previous code, I think is wrong: quat_i;
-  orient.qx = quat_x ;// Previous code, I think is wrong: quat_y;   //north
-  orient.qy = -quat_y;// Previous code, I think is wrong: -quat_x;  //east
+  orient.qx = quat_y ;// Previous code, I think is wrong: quat_y;   //north
+  orient.qy = quat_x;// Previous code, I think is wrong: -quat_x;  //east
   orient.qz = -quat_z;// Previous code, I think is wrong: -quat_z;  //down
 
   float_eulers_of_quat(&orient_eulers, &orient);
