@@ -1,0 +1,30 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="guidance_indi_hybrid_fixedwing_soaring" dir="guidance" task="control">
+  <doc>
+    <description>
+      Guidance controller for fixed-wing soaring
+    </description>
+  </doc>
+  <dep>
+    <depends>guidance_indi_hybrid</depends>
+    <conflicts>
+      guidance_indi_hybrid_quadplane,
+      guidance_indi_hybrid_tailsitter
+    </conflicts>
+    <provides>guidance,attitude_command</provides>
+  </dep>
+  <header>
+    <file name="guidance_indi_hybrid_fixedwing_soaring.h"/>
+  </header>
+  <makefile target="ap|nps" firmware="rotorcraft">
+    <define name="GUIDANCE_INDI_HYBRID_USE_WLS" value="1"/>
+
+    <!-- Guidance actuators: (roll, pitch, thrust) for fixed-wing  -->
+    <!-- Yaw is set from navigation / seperated reference -->
+    <define name="GUIDANCE_INDI_HYBRID_U" value="3"/>
+    <!-- Guidance control objectives: ax, ay, ay -->
+    <define name="GUIDANCE_INDI_HYBRID_V" value="3"/>
+    <file name="guidance_indi_hybrid_fixedwing_soaring.c" dir="$(SRC_FIRMWARE)/guidance"/>
+  </makefile>
+</module>

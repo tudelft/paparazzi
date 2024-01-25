@@ -26,6 +26,16 @@
 #ifndef GUIDANCE_INDI_HYBRID_FIXEDWING_SOARING
 #define GUIDANCE_INDI_HYBRID_FIXEDWING_SOARING
 
+
+#ifndef GUIDANCE_INDI_MIN_PITCH
+#define GUIDANCE_INDI_MIN_PITCH -120
+#define GUIDANCE_INDI_MAX_PITCH 25
+#endif
+
+
+//// Old codes
+//// Below here
+
 #ifndef GUIDANCE_INDI_SOARING
 #define GUIDANCE_INDI_SOARING TRUE
 #endif
@@ -121,4 +131,4 @@ extern bool soaring_manual_search;
 
 extern uint16_t reset_stdby_timeout;
 
-#endif /* GUIDANCE_INDI_HYBRID_NLD_SOARING_H */
+#endif // GUIDANCE_INDI_HYBRID_FIXEDWING_SOARING

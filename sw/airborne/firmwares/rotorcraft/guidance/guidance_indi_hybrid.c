@@ -451,6 +451,21 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   thrust_vect.z = euler_cmd.z;
   AbiSendMsgTHRUST(THRUST_INCREMENT_ID, thrust_vect);
 
+  //// NO TURNING OPTION for SOARING
+#if GUIDANCE_INDI_SOARING
+
+//// Heading control
+
+////
+
+    // Set the quaternion setpoint from eulers_zxy
+  struct FloatQuat sp_quat;
+  float_quat_of_eulers_zxy(&sp_quat, &guidance_euler_cmd);
+  float_quat_normalize(&sp_quat);
+
+  return stab_sp_from_quat_f(&sp_quat);
+#endif
+
   // Coordinated turn
   // feedforward estimate angular rotation omega = g*tan(phi)/v
   float omega;
@@ -674,6 +689,13 @@ struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight UNUSED, struc
 {
   struct FloatVect3 pos_err = { 0 };
   struct FloatVect3 accel_sp = { 0 };
+
+  // SOARING MODE
+  if (h_mode == GUIDANCE_INDI_SOARING) {
+      heading_sp = compute_soaring_heading_ref();/
+      accel_sp = compute_accel_soaring();   // compute accel sp
+      return guidance_indi_run(&accel_sp, gh->sp.heading);
+  }
 
   // First check for velocity setpoint from module // FIXME should be called like this
   float dt = get_sys_time_float() - time_of_vel_sp;
