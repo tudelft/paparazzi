@@ -139,7 +139,7 @@
     <mode name="MODULE" shortname="ONE">
       <select cond="RCMode1() && DLModeModule()" exception="HOME"/>
       <on_enter>
-        <call fun="oneloop_andi_enter(false)"/>
+        <call fun="oneloop_andi_enter(false, CTRL_ANDI)"/>
       </on_enter>
       <!-- <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
