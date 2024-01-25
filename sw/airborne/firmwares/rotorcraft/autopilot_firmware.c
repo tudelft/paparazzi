@@ -35,6 +35,7 @@
 #include "modules/energy/electrical.h"
 #include "modules/datalink/telemetry.h"
 #include "modules/radio_control/radio_control.h"
+#include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 
 #if USE_GPS
 #include "modules/gps/gps.h"
