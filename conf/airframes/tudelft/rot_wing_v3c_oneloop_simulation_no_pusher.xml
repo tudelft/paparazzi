@@ -10,7 +10,7 @@
     <description>RotatingWingV3C for simulation</description>
 
     <firmware name="rotorcraft">
-        <autopilot name="rotorcraft_oneloop_with_backup.xml"/>
+        <autopilot name="rotorcraft_oneloop_andi_indi.xml"/>
         <target name="nps" board="pc">
             <configure name="PERIODIC_FREQUENCY"   value="500"/>
             <configure name="NAVIGATION_FREQUENCY" value="500"/>
