@@ -43,30 +43,12 @@
 #define DEBUG_PRINT(...) {}
 #endif
 
+#ifndef INS_EXT_POSE
+#define INS_EXT_POSE TRUE
+#endif
 
 /** Data for telemetry and LTP origin.
  */
-
-
-struct InsExtPose {
-  /* Inputs */
-  struct FloatRates gyros_f;
-  struct FloatVect3 accels_f;
-  bool has_new_gyro;
-  bool has_new_acc;
-
-  struct FloatVect3 ev_pos;
-  struct FloatEulers ev_att;
-  bool has_new_ext_pose;
-
-  /* Origin */
-  struct LtpDef_i  ltp_def;
-
-  /* output LTP NED */
-  struct NedCoor_i ltp_pos;
-  struct NedCoor_i ltp_speed;
-  struct NedCoor_i ltp_accel;
-};
 
 struct InsExtPose ins_ext_pos;
 
@@ -119,6 +101,22 @@ static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
                         &ins_ext_pos.ltp_def.lla.lat, &ins_ext_pos.ltp_def.lla.lon, &ins_ext_pos.ltp_def.lla.alt,
                         &ins_ext_pos.ltp_def.hmsl, (float *)&fake_qfe);
 }
+
+static void send_eternal_pose_optitrack(struct transport_tx *trans, struct link_device *dev)
+{ 
+  pprz_msg_send_EXTERNAL_POSE_2(trans, dev, AC_ID,
+                        &ins_ext_pos.ev_time,
+                        &ins_ext_pos.ev_pos.x, 
+                        &ins_ext_pos.ev_pos.y, 
+                        &ins_ext_pos.ev_pos.z,
+                        &ins_ext_pos.ev_vel.x, 
+                        &ins_ext_pos.ev_vel.y, 
+                        &ins_ext_pos.ev_vel.z, 
+                        &ins_ext_pos.ev_quat.qi, 
+                        &ins_ext_pos.ev_quat.qx, 
+                        &ins_ext_pos.ev_quat.qy, 
+                        &ins_ext_pos.ev_quat.qz);
+}
 #endif
 
 
@@ -163,11 +161,13 @@ static void accel_cb(uint8_t sender_id __attribute__((unused)),
 void ins_ext_pose_msg_update(uint8_t *buf)
 {
   if (DL_EXTERNAL_POSE_ac_id(buf) != AC_ID) { return; } // not for this aircraft
-
-  float enu_x = DL_EXTERNAL_POSE_enu_x(buf);
-  float enu_y = DL_EXTERNAL_POSE_enu_y(buf);
-  float enu_z = DL_EXTERNAL_POSE_enu_z(buf);
-
+  
+  float enu_x  = DL_EXTERNAL_POSE_enu_x(buf);
+  float enu_y  = DL_EXTERNAL_POSE_enu_y(buf);
+  float enu_z  = DL_EXTERNAL_POSE_enu_z(buf);
+  float enu_xd = DL_EXTERNAL_POSE_enu_xd(buf);
+  float enu_yd = DL_EXTERNAL_POSE_enu_yd(buf);              
+  float enu_zd = DL_EXTERNAL_POSE_enu_zd(buf);
   float quat_i = DL_EXTERNAL_POSE_body_qi(buf);
   float quat_x = DL_EXTERNAL_POSE_body_qx(buf);
   float quat_y = DL_EXTERNAL_POSE_body_qy(buf);
@@ -178,20 +178,29 @@ void ins_ext_pose_msg_update(uint8_t *buf)
   struct FloatQuat orient;
   struct FloatEulers orient_eulers;
 
-  orient.qi = quat_i;
-  orient.qx = quat_y;   //north
-  orient.qy = -quat_x;  //east
-  orient.qz = -quat_z;  //down
+  // Transformation of External Pose. Guess is Optitrack Quat is from NWU to Body (FRD). Optitrack motive 2.X Yup
+  orient.qi = quat_i ;// Previous code, I think is wrong: quat_i;
+  orient.qx = quat_x ;// Previous code, I think is wrong: quat_y;   //north
+  orient.qy = -quat_y;// Previous code, I think is wrong: -quat_x;  //east
+  orient.qz = -quat_z;// Previous code, I think is wrong: -quat_z;  //down
 
   float_eulers_of_quat(&orient_eulers, &orient);
-  orient_eulers.theta = -orient_eulers.theta;
+  //orient_eulers.theta = -orient_eulers.theta;
 
-  ins_ext_pos.ev_pos.x = enu_y;
-  ins_ext_pos.ev_pos.y = enu_x;
-  ins_ext_pos.ev_pos.z = -enu_z;
-  ins_ext_pos.ev_att.phi = orient_eulers.phi;
-  ins_ext_pos.ev_att.theta = orient_eulers.theta;
-  ins_ext_pos.ev_att.psi = orient_eulers.psi;
+  ins_ext_pos.ev_time       = get_sys_time_usec(); 
+  ins_ext_pos.ev_pos.x      = enu_y;                
+  ins_ext_pos.ev_pos.y      = enu_x;                
+  ins_ext_pos.ev_pos.z      = -enu_z;  
+  ins_ext_pos.ev_vel.x      = enu_yd;
+  ins_ext_pos.ev_vel.y      = enu_xd;
+  ins_ext_pos.ev_vel.z      = -enu_zd;             
+  ins_ext_pos.ev_att.phi    = orient_eulers.phi;
+  ins_ext_pos.ev_att.theta  = orient_eulers.theta;
+  ins_ext_pos.ev_att.psi    = orient_eulers.psi;
+  ins_ext_pos.ev_quat.qi    = orient.qi;
+  ins_ext_pos.ev_quat.qx    = orient.qx;
+  ins_ext_pos.ev_quat.qy    = orient.qy;
+  ins_ext_pos.ev_quat.qz    = orient.qz;
 
   ins_ext_pos.has_new_ext_pose = true;
 
@@ -235,6 +244,7 @@ void ins_ext_pose_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS, send_ins);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_Z, send_ins_z);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EXTERNAL_POSE_2, send_eternal_pose_optitrack);
 #endif
 
   // Get IMU through ABI
