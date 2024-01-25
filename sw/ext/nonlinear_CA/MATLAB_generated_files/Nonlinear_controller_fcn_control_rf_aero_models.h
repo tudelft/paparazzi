@@ -48,9 +48,10 @@ extern void Nonlinear_controller_fcn_control_rf_aero_models(
     double desired_phi_value, double desired_ailerons_value,
     double k_alt_tilt_constraint, double min_alt_tilt_constraint,
     double lidar_alt_corrected, double approach_mode, double verbose,
-    double aoa_protection_speed, double transition_speed, double u_out[15],
-    double residuals[6], double *elapsed_time, double *N_iterations,
-    double *N_evaluation, double *exitflag);
+    double aoa_protection_speed, double transition_speed, double power_Cd_0,
+    double power_Cd_a, double u_out[15], double residuals[6],
+    double *elapsed_time, double *N_iterations, double *N_evaluation,
+    double *exitflag);
 
 extern void Nonlinear_controller_fcn_control_rf_aero_models_initialize(void);
 
