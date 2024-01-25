@@ -85,8 +85,6 @@ typedef struct {
 #define typedef_c_struct_T
 
 typedef struct {
-  captured_var *gain_theta;
-  captured_var *flight_path_angle;
   b_captured_var *dv_global;
   captured_var *Beta;
   captured_var *CL_aileron;
@@ -118,9 +116,11 @@ typedef struct {
   captured_var *desired_theta_value;
   captured_var *desired_motor_value;
   captured_var *desired_ailerons_value;
+  captured_var *flight_path_angle;
   captured_var *gain_el;
   captured_var *gain_az;
   captured_var *gain_phi;
+  captured_var *gain_theta;
   captured_var *gain_motor;
   captured_var *gain_airspeed;
   captured_var *gain_ailerons;
@@ -468,34 +468,32 @@ static void computeGradLag(double workspace[16], int nVar, const double grad[16]
 static void computeGrad_StoreHx(struct_T *obj, const double H[225], const double
   f[16], const double x[16]);
 static void computeQ_(d_struct_T *obj, int nrows);
-static void compute_acc(double Alpha, double CL_aileron, double Cd_zero, double
-  Cl_alpha, double Cm_zero, double Cm_alpha, double I_xx, double I_yy, double
-  I_zz, double K_Cd, double Omega_1_scaled, double Omega_2_scaled, double
-  Omega_3_scaled, double Omega_4_scaled, double Phi_scaled, double S, double
-  Theta_scaled, double V, double b_1_scaled, double b_2_scaled, double
-  b_3_scaled, double b_4_scaled, double delta_ailerons_scaled, double
-  flight_path_angle, double g_1_scaled, double g_2_scaled, double g_3_scaled,
-  double g_4_scaled, double gain_el, double gain_az, double gain_phi, double
-  gain_theta, double gain_motor, double gain_airspeed, double l_1, double l_3,
-  double l_4, double l_z, double m, double p, double q, double r, double rho,
-  double wing_span, double wing_chord, double computed_acc[6]);
-static double compute_cost_and_gradient(double Alpha, double Beta, double
-  CL_aileron, double Cd_zero, double Cl_alpha, double Cm_zero, double Cm_alpha,
-  double I_xx, double I_yy, double I_zz, double K_Cd, double Omega_1_scaled,
-  double Omega_2_scaled, double Omega_3_scaled, double Omega_4_scaled, double
-  Phi_scaled, double S, double Theta_scaled, double V, double W_act_phi, double
-  W_act_theta, double W_act_motor, double W_dv_1, double W_dv_2, double W_dv_3,
-  double W_dv_4, double W_dv_5, double W_dv_6, double W_act_tilt_el, double
-  W_act_tilt_az, double W_act_ailerons, double b_1_scaled, double b_2_scaled,
-  double b_3_scaled, double b_4_scaled, double delta_ailerons_scaled, double
-  desired_el_value, double desired_az_value, double desired_phi_value, double
-  desired_theta_value, double desired_motor_value, double desired_ailerons_value,
-  double dv_global_1, double dv_global_2, double dv_global_3, double dv_global_4,
-  double dv_global_5, double dv_global_6, double flight_path_angle, double
-  g_1_scaled, double g_2_scaled, double g_3_scaled, double g_4_scaled, double
-  gain_el, double gain_az, double gain_phi, double gain_theta, double gain_motor,
-  double gain_airspeed, double gain_ailerons, double gamma_quadratic_du, double
-  l_1, double l_3, double l_4, double l_z, double m, double p, double power_Cd_0,
+static void compute_acc(double CL_aileron, double Cd_zero, double Cl_alpha,
+  double Cm_zero, double Cm_alpha, double I_xx, double I_yy, double I_zz, double
+  K_Cd, double Omega_1, double Omega_2, double Omega_3, double Omega_4, double
+  Omega_1_scaled, double Omega_2_scaled, double Phi, double S, double Theta,
+  double V, double b_1, double b_2, double b_3, double b_4, double
+  delta_ailerons, double flight_path_angle, double g_1, double g_2, double g_3,
+  double g_4, double gain_airspeed, double l_1, double l_3, double l_4, double
+  l_z, double m, double p, double q, double r, double rho, double wing_span,
+  double wing_chord, double computed_acc[6]);
+static double compute_cost_and_gradient(double Beta, double CL_aileron, double
+  Cd_zero, double Cl_alpha, double Cm_zero, double Cm_alpha, double I_xx, double
+  I_yy, double I_zz, double K_Cd, double Omega_1_scaled, double Omega_2_scaled,
+  double Omega_3_scaled, double Omega_4_scaled, double Phi_scaled, double S,
+  double Theta_scaled, double V, double W_act_phi, double W_act_theta, double
+  W_act_motor, double W_dv_1, double W_dv_2, double W_dv_3, double W_dv_4,
+  double W_dv_5, double W_dv_6, double W_act_tilt_el, double W_act_tilt_az,
+  double W_act_ailerons, double b_1_scaled, double b_2_scaled, double b_3_scaled,
+  double b_4_scaled, double delta_ailerons_scaled, double desired_el_value,
+  double desired_az_value, double desired_phi_value, double desired_theta_value,
+  double desired_motor_value, double desired_ailerons_value, double dv_global_1,
+  double dv_global_2, double dv_global_3, double dv_global_4, double dv_global_5,
+  double dv_global_6, double flight_path_angle, double g_1_scaled, double
+  g_2_scaled, double g_3_scaled, double g_4_scaled, double gain_el, double
+  gain_az, double gain_phi, double gain_theta, double gain_motor, double
+  gain_airspeed, double gain_ailerons, double gamma_quadratic_du, double l_1,
+  double l_3, double l_4, double l_z, double m, double p, double power_Cd_0,
   double power_Cd_a, double prop_R, double prop_Cd_0, double prop_Cl_0, double
   prop_Cd_a, double prop_Cl_a, double prop_delta, double prop_sigma, double
   prop_theta, double q, double r, double rho, double wing_span, double
@@ -530,7 +528,7 @@ static double fmincon(c_struct_T *fun_workspace, double x0[15], const double lb
                       output_algorithm[3], double *output_constrviolation,
                       double *output_stepsize, double *output_lssteplength,
                       double *output_firstorderopt);
-static double ft_1(const double ct[254], double gradient_data[], int
+static double ft_1(const double ct[262], double gradient_data[], int
                    *gradient_size);
 static void fullColLDL2_(e_struct_T *obj, int NColsRemain);
 static void iterate(const double H[225], const double f[16], h_struct_T
@@ -1870,7 +1868,6 @@ static double c_computeObjectiveAndUserGradie(const c_struct_T
   int *status)
 {
   double gradient_data[15];
-  double Alpha;
   double dv_global_1;
   double dv_global_2;
   double dv_global_3;
@@ -1880,15 +1877,13 @@ static double c_computeObjectiveAndUserGradie(const c_struct_T
   double fval;
   int idx_current;
   bool allFinite;
-  Alpha = x[12] * c_obj_next_next_next_next_next_->gain_theta->contents -
-    c_obj_next_next_next_next_next_->flight_path_angle->contents;
   dv_global_1 = c_obj_next_next_next_next_next_->dv_global->contents[0];
   dv_global_2 = c_obj_next_next_next_next_next_->dv_global->contents[1];
   dv_global_3 = c_obj_next_next_next_next_next_->dv_global->contents[2];
   dv_global_4 = c_obj_next_next_next_next_next_->dv_global->contents[3];
   dv_global_5 = c_obj_next_next_next_next_next_->dv_global->contents[4];
   dv_global_6 = c_obj_next_next_next_next_next_->dv_global->contents[5];
-  fval = compute_cost_and_gradient(Alpha, c_obj_next_next_next_next_next_->
+  fval = compute_cost_and_gradient(c_obj_next_next_next_next_next_->
     Beta->contents, c_obj_next_next_next_next_next_->CL_aileron->contents,
     c_obj_next_next_next_next_next_->Cd_zero->contents,
     c_obj_next_next_next_next_next_->Cl_alpha->contents,
@@ -1950,6 +1945,20 @@ static double c_computeObjectiveAndUserGradie(const c_struct_T
     c_obj_next_next_next_next_next_->wing_span->contents,
     c_obj_next_next_next_next_next_->wing_chord->contents, gradient_data,
     &idx_current);
+
+  /*  [cost_primary,gradient_primary] = compute_primary_cost_and_gradient(Beta,CL_aileron,Cd_zero,Cl_alpha,Cm_zero, ... */
+  /*      Cm_alpha,I_xx,I_yy,I_zz,K_Cd,Omega_1_scaled,Omega_2_scaled,Omega_3_scaled,Omega_4_scaled,Phi_scaled,S, ... */
+  /*      Theta_scaled,V,W_dv_1,W_dv_2,W_dv_3,W_dv_4,W_dv_5,W_dv_6,b_1_scaled,b_2_scaled,b_3_scaled,b_4_scaled,delta_ailerons_scaled, ... */
+  /*      dv_global_1,dv_global_2,dv_global_3,dv_global_4,dv_global_5,dv_global_6,flight_path_angle,g_1_scaled,g_2_scaled, ... */
+  /*      g_3_scaled,g_4_scaled,gain_el,gain_az,gain_phi,gain_theta,gain_motor,gain_airspeed,gain_ailerons,l_1,l_3,l_4,l_z,m, ... */
+  /*      p,prop_R,prop_Cd_0,prop_Cl_0,prop_Cd_a,prop_Cl_a,prop_delta,prop_sigma,prop_theta,q,r,rho,wing_span,wing_chord); */
+  /*   */
+  /*  [cost_secondary,gradient_secondary] = compute_secondary_cost_and_gradient(Omega_1_scaled,Omega_2_scaled,Omega_3_scaled, ... */
+  /*      Omega_4_scaled,Phi_scaled,Theta_scaled,V,W_act_phi,W_act_theta,W_act_motor,W_act_tilt_el,W_act_tilt_az,W_act_ailerons, ... */
+  /*      b_1_scaled,b_2_scaled,b_3_scaled,b_4_scaled,delta_ailerons_scaled,desired_el_value,desired_az_value,desired_phi_value, ... */
+  /*      desired_theta_value,desired_motor_value,desired_ailerons_value,flight_path_angle,g_1_scaled,g_2_scaled,g_3_scaled, ... */
+  /*      g_4_scaled,gain_el,gain_az,gain_phi,gain_theta,gain_motor,gain_ailerons,gamma_quadratic_du,power_Cd_0,power_Cd_a, ... */
+  /*      prop_R,prop_Cl_0,prop_Cl_a,prop_delta,prop_sigma,prop_theta,rho); */
   memcpy(&grad_workspace[0], &gradient_data[0], 15U * sizeof(double));
   *status = 1;
   allFinite = rtIsNaN(fval);
@@ -2412,50 +2421,48 @@ static void computeQ_(d_struct_T *obj, int nrows)
   }
 }
 
-static void compute_acc(double Alpha, double CL_aileron, double Cd_zero, double
-  Cl_alpha, double Cm_zero, double Cm_alpha, double I_xx, double I_yy, double
-  I_zz, double K_Cd, double Omega_1_scaled, double Omega_2_scaled, double
-  Omega_3_scaled, double Omega_4_scaled, double Phi_scaled, double S, double
-  Theta_scaled, double V, double b_1_scaled, double b_2_scaled, double
-  b_3_scaled, double b_4_scaled, double delta_ailerons_scaled, double
-  flight_path_angle, double g_1_scaled, double g_2_scaled, double g_3_scaled,
-  double g_4_scaled, double gain_el, double gain_az, double gain_phi, double
-  gain_theta, double gain_motor, double gain_airspeed, double l_1, double l_3,
-  double l_4, double l_z, double m, double p, double q, double r, double rho,
-  double wing_span, double wing_chord, double computed_acc[6])
+static void compute_acc(double CL_aileron, double Cd_zero, double Cl_alpha,
+  double Cm_zero, double Cm_alpha, double I_xx, double I_yy, double I_zz, double
+  K_Cd, double Omega_1, double Omega_2, double Omega_3, double Omega_4, double
+  Omega_1_scaled, double Omega_2_scaled, double Phi, double S, double Theta,
+  double V, double b_1, double b_2, double b_3, double b_4, double
+  delta_ailerons, double flight_path_angle, double g_1, double g_2, double g_3,
+  double g_4, double gain_airspeed, double l_1, double l_3, double l_4, double
+  l_z, double m, double p, double q, double r, double rho, double wing_span,
+  double wing_chord, double computed_acc[6])
 {
   double t10;
-  double t100;
-  double t102;
   double t11;
+  double t117_tmp;
+  double t117_tmp_tmp;
   double t12;
   double t13;
   double t14;
+  double t143;
+  double t15;
   double t16;
-  double t160;
-  double t160_tmp;
-  double t160_tmp_tmp;
-  double t161;
   double t17;
+  double t172;
   double t18;
   double t19;
   double t20;
   double t21;
-  double t234;
-  double t235;
-  double t274;
-  double t275;
+  double t22;
+  double t23;
+  double t237;
+  double t238;
+  double t239;
+  double t240;
+  double t26;
+  double t265;
+  double t268;
+  double t27;
   double t28;
   double t29;
+  double t3;
   double t30;
-  double t31;
-  double t32;
-  double t33;
-  double t34;
   double t35;
   double t36;
-  double t37;
-  double t38;
   double t39;
   double t40;
   double t41;
@@ -2464,367 +2471,354 @@ static void compute_acc(double Alpha, double CL_aileron, double Cd_zero, double
   double t44;
   double t45;
   double t46;
-  double t47;
   double t48;
   double t49;
   double t5;
-  double t50;
-  double t51;
-  double t52;
-  double t53;
-  double t54;
-  double t55;
-  double t56;
-  double t57;
-  double t58;
   double t59;
   double t6;
+  double t60;
+  double t61;
+  double t68;
+  double t69;
   double t7;
   double t70;
   double t71;
-  double t72;
+  double t73;
+  double t74;
+  double t75;
+  double t76;
+  double t77;
+  double t78;
+  double t79;
   double t8;
+  double t80;
+  double t85;
+  double t86;
+  double t87;
   double t88;
   double t89;
   double t9;
-  double t90;
-  double t91;
-  double t92;
+  double t91_tmp;
 
   /* COMPUTE_ACC */
-  /*     COMPUTED_ACC = COMPUTE_ACC(Alpha,Beta,CL_aileron,Cd_zero,Cl_alpha,Cm_zero,Cm_alpha,I_xx,I_yy,I_zz,K_Cd,Omega_1_scaled,Omega_2_scaled,Omega_3_scaled,Omega_4_scaled,Phi_scaled,S,Theta_scaled,V,B_1_SCALED,B_2_SCALED,B_3_SCALED,B_4_SCALED,DELTA_AILERONS_SCALED,FLIGHT_PATH_ANGLE,G_1_SCALED,G_2_SCALED,G_3_SCALED,G_4_SCALED,GAIN_EL,GAIN_AZ,GAIN_PHI,GAIN_THETA,GAIN_MOTOR,GAIN_AIRSPEED,GAIN_AILERONS,L_1,L_3,L_4,L_Z,M,P,prop_R,prop_Cd_0,prop_Cl_0,prop_Cd_a,prop_Cl_a,PROP_DELTA,PROP_SIGMA,PROP_THETA,Q,R,RHO,WING_SPAN,WING_CHORD) */
-  /*     This function was generated by the Symbolic Math Toolbox version 9.3. */
-  /*     16-Jan-2024 16:17:20 */
-  t5 = Phi_scaled * gain_phi;
-  t6 = Theta_scaled * gain_theta;
-  t7 = b_1_scaled * gain_el;
-  t8 = b_2_scaled * gain_el;
-  t9 = b_3_scaled * gain_el;
-  t10 = b_4_scaled * gain_el;
-  t11 = g_1_scaled * gain_az;
-  t12 = g_2_scaled * gain_az;
-  t13 = g_3_scaled * gain_az;
-  t14 = g_4_scaled * gain_az;
-  t16 = Omega_1_scaled * Omega_1_scaled;
-  t17 = Omega_2_scaled * Omega_2_scaled;
-  t18 = Omega_3_scaled * Omega_3_scaled;
-  t19 = Omega_4_scaled * Omega_4_scaled;
-  t20 = V * V;
-  t21 = gain_motor * gain_motor;
-  t48 = 1.0 / Omega_1_scaled;
-  t50 = 1.0 / Omega_2_scaled;
-  t52 = 1.0 / Omega_3_scaled;
-  t54 = 1.0 / Omega_4_scaled;
-  t56 = 1.0 / gain_motor;
-  t58 = 1.0 / (gain_airspeed * gain_airspeed);
-  t59 = 1.0 / m;
-  t28 = cos(t5);
-  t29 = cos(t6);
-  t30 = sin(t5);
-  t31 = cos(t7);
-  t32 = cos(t8);
-  t33 = cos(t9);
-  t34 = cos(t10);
-  t35 = sin(t6);
-  t36 = cos(t11);
-  t37 = cos(t12);
-  t38 = cos(t13);
-  t39 = cos(t14);
-  t40 = sin(t7);
-  t41 = sin(t8);
-  t42 = sin(t9);
-  t43 = sin(t10);
-  t44 = sin(t11);
-  t45 = sin(t12);
-  t46 = sin(t13);
-  t47 = sin(t14);
-  t49 = 1.0 / t16;
-  t51 = 1.0 / t17;
-  t53 = 1.0 / t18;
-  t55 = 1.0 / t19;
-  t57 = 1.0 / t21;
-  t5 = (Alpha + t7) + 1.5707963267948966;
-  t11 = (Alpha + t8) + 1.5707963267948966;
-  t12 = (Alpha + t9) + 1.5707963267948966;
-  t13 = (Alpha + t10) + 1.5707963267948966;
-  t70 = t33 * t33;
-  t71 = t34 * t34;
-  t72 = flight_path_angle - t6;
-  t14 = cos(t5);
-  t7 = cos(t11);
-  t9 = cos(t12);
-  t88 = cos(t13);
-  t89 = sin(t5);
-  t90 = sin(t11);
-  t91 = sin(t12);
-  t92 = sin(t13);
-  t5 = cos(t72);
-  t11 = sin(t72);
-  t8 = t89 * t89;
-  t10 = t90 * t90;
-  t6 = t91 * t91;
-  t100 = t92 * t92;
-  t102 = Cd_zero + K_Cd * (Cl_alpha * Cl_alpha) * (t72 * t72);
-  t12 = Cl_alpha * S * rho * t20 * t72;
-  t160_tmp_tmp = S * rho;
-  t160_tmp = t160_tmp_tmp * t20;
-  t160 = t12 * t5 / 2.0 + t160_tmp * t11 * t102 / 2.0;
-  t161 = t12 * t11 / 2.0 - t160_tmp * t5 * t102 / 2.0;
-  t5 = t20 * t49 * t57 * 62.000124000248007;
-  t12 = V * 4.0 * 0.0551;
-  t14 = (V * t48 * t56 * 7.8740157480314963 * t14 / 2.0 - 0.022040000000000004)
-    + sqrt(((t5 * (t14 * t14) * 16.0 + t12 * t48 * t56 * -0.8 *
-             7.8740157480314963 * t14 * 8.0) + -0.023943607823282111 * t20 * t49
-            * t57 * 62.000124000248007 * t8 * -8.0) - -0.22040000000000004 *
-           (4.0 * (0.2188 * (t5 * t8 * 8.0 + 3.2) + 0.035264000000000011) +
-            0.51840000000000008)) / 8.0;
-  t5 = t20 * t51 * t57 * 62.000124000248007;
-  t13 = (V * t50 * t56 * 7.8740157480314963 * t7 / 2.0 - 0.022040000000000004) +
-    sqrt(((t5 * (t7 * t7) * 16.0 + t12 * t50 * t56 * -0.8 * 7.8740157480314963 *
-           t7 * 8.0) + -0.023943607823282111 * t20 * t51 * t57 *
-          62.000124000248007 * t10 * -8.0) - -0.22040000000000004 * (4.0 *
-          (0.2188 * (t5 * t10 * 8.0 + 3.2) + 0.035264000000000011) +
-          0.51840000000000008)) / 8.0;
-  t5 = t20 * t53 * t57 * 62.000124000248007;
-  t11 = (V * t52 * t56 * 7.8740157480314963 * t9 / 2.0 - 0.022040000000000004) +
-    sqrt(((t5 * (t9 * t9) * 16.0 + t12 * t52 * t56 * -0.8 * 7.8740157480314963 *
-           t9 * 8.0) + -0.023943607823282111 * t20 * t53 * t57 *
-          62.000124000248007 * t6 * -8.0) - -0.22040000000000004 * (4.0 *
-          (0.2188 * (t5 * t6 * 8.0 + 3.2) + 0.035264000000000011) +
-          0.51840000000000008)) / 8.0;
-  t5 = t20 * t55 * t57 * 62.000124000248007;
-  t5 = (V * t54 * t56 * 7.8740157480314963 * t88 / 2.0 - 0.022040000000000004) +
-    sqrt(((t5 * (t88 * t88) * 16.0 + t12 * t54 * t56 * -0.8 * 7.8740157480314963
-           * t88 * 8.0) + -0.023943607823282111 * t20 * t55 * t57 *
-          62.000124000248007 * t100 * -8.0) - -0.22040000000000004 * (4.0 *
-          (0.2188 * (t5 * t100 * 8.0 + 3.2) + 0.035264000000000011) +
-          0.51840000000000008)) / 8.0;
-  t234 = -0.086909647271441431 * t20 * t49 * t57 * 62.000124000248007 * t8 +
-    -0.8 * ((0.8752 * t20 * t49 * t57 * 62.000124000248007 * t8 +
-             0.06480000000000001) - 0.8 * (t14 - 0.2188) * 2.0);
-  t235 = -0.086909647271441431 * t20 * t51 * t57 * 62.000124000248007 * t10 +
-    -0.8 * ((0.8752 * t20 * t51 * t57 * 62.000124000248007 * t10 +
-             0.06480000000000001) - 0.8 * (t13 - 0.2188) * 2.0);
-  t56 = -0.086909647271441431 * t20 * t53 * t57 * 62.000124000248007 * t6 + -0.8
-    * ((0.8752 * t20 * t53 * t57 * 62.000124000248007 * t6 + 0.06480000000000001)
-       - 0.8 * (t11 - 0.2188) * 2.0);
-  t57 = -0.086909647271441431 * t20 * t55 * t57 * 62.000124000248007 * t100 +
-    -0.8 * ((0.8752 * t20 * t55 * t57 * 62.000124000248007 * t100 +
-             0.06480000000000001) - 0.8 * (t5 - 0.2188) * 2.0);
-  t10 = -0.086909647271441431 * t14 + -0.8 * (0.2188 * (t14 * 3.2800000000000002
-    + 0.15753599999999998) + 0.020000000000000004);
-  t49 = -0.086909647271441431 * t13 + -0.8 * (0.2188 * (t13 * 3.2800000000000002
-    + 0.15753599999999998) + 0.020000000000000004);
-  t51 = -0.086909647271441431 * t11 + -0.8 * (0.2188 * (t11 * 3.2800000000000002
-    + 0.15753599999999998) + 0.020000000000000004);
-  t52 = -0.086909647271441431 * t5 + -0.8 * (0.2188 * (t5 * 3.2800000000000002 +
-    0.15753599999999998) + 0.020000000000000004);
-  t5 = 0.0551 * rho * t16 * t21 * 0.000260144641;
-  t8 = Omega_1_scaled * V * gain_motor * 0.0551 * rho * 0.002048383;
-  t274 = t5 * t40 * 5.0 * t234 * 3.1415926535897931 / 4.0 + t8 * t31 * 5.0 * t89
-    * t10 * 3.1415926535897931 / 4.0;
-  t11 = 0.0551 * rho * t17 * t21 * 0.000260144641;
-  t9 = Omega_2_scaled * V * gain_motor * 0.0551 * rho * 0.002048383;
-  t275 = t11 * t41 * 5.0 * t235 * 3.1415926535897931 / 4.0 + t9 * t32 * 5.0 *
-    t90 * t49 * 3.1415926535897931 / 4.0;
-  t12 = 0.0551 * rho * t18 * t21 * 0.000260144641;
-  t48 = Omega_3_scaled * V * gain_motor * 0.0551 * rho * 0.002048383;
-  t54 = t12 * t42 * 5.0 * t56 * 3.1415926535897931 / 4.0 + t48 * t33 * 5.0 * t91
-    * t51 * 3.1415926535897931 / 4.0;
-  t13 = 0.0551 * rho * t19 * t21 * 0.000260144641;
-  t100 = Omega_4_scaled * V * gain_motor * 0.0551 * rho * 0.002048383;
-  t55 = t13 * t43 * 5.0 * t57 * 3.1415926535897931 / 4.0 + t100 * t34 * 5.0 *
-    t92 * t52 * 3.1415926535897931 / 4.0;
-  t7 = t5 * t31;
-  t53 = t7 * t44 * 5.0 * t234 * 3.1415926535897931 / 4.0 - t8 * t40 * t44 * 5.0 *
-    t89 * t10 * 3.1415926535897931 / 4.0;
-  t14 = t11 * t32;
-  t50 = t14 * t45 * 5.0 * t235 * 3.1415926535897931 / 4.0 - t9 * t41 * t45 * 5.0
-    * t90 * t49 * 3.1415926535897931 / 4.0;
-  t11 = t12 * t33;
-  t88 = t11 * t46 * 5.0 * t56 * 3.1415926535897931 / 4.0 - t48 * t42 * t46 * 5.0
-    * t91 * t51 * 3.1415926535897931 / 4.0;
-  t5 = t13 * t34;
-  t6 = t5 * t47 * 5.0 * t57 * 3.1415926535897931 / 4.0 - t100 * t43 * t47 * 5.0 *
-    t92 * t52 * 3.1415926535897931 / 4.0;
-  t10 = t7 * t36 * 5.0 * t234 * 3.1415926535897931 / 4.0 - t8 * t36 * t40 * 5.0 *
-    t89 * t10 * 3.1415926535897931 / 4.0;
-  t9 = t14 * t37 * 5.0 * t235 * 3.1415926535897931 / 4.0 - t9 * t37 * t41 * 5.0 *
-    t90 * t49 * 3.1415926535897931 / 4.0;
-  t8 = t11 * t38 * 5.0 * t56 * 3.1415926535897931 / 4.0 - t48 * t38 * t42 * 5.0 *
-    t91 * t51 * 3.1415926535897931 / 4.0;
-  t11 = t5 * t39 * 5.0 * t57 * 3.1415926535897931 / 4.0 - t100 * t39 * t43 * 5.0
-    * t92 * t52 * 3.1415926535897931 / 4.0;
-  t12 = ((t274 + t275) + t54) + t55;
-  t13 = ((t53 + t50) + t88) + t6;
-  t14 = ((t10 + t9) + t8) + t11;
-  t7 = t28 * t35;
-  t5 = t160_tmp_tmp * 0.0 * t20;
-  computed_acc[0] = t59 * (((((t29 * t161 + t29 * t12) + t7 * t160) + t7 * t14)
-    - t30 * t35 * t13) - t5 * t30 * t35 * t102 / 2.0);
-  computed_acc[1] = -t59 * (((t30 * t160 + t28 * t13) + t30 * t14) + t5 * t28 *
-    t102 / 2.0);
-  t7 = t28 * t29;
-  computed_acc[2] = -t59 * (((((t35 * t161 + t35 * t12) - t7 * t160) - t7 * t14)
-    + t29 * t30 * t13) + t5 * t29 * t30 * t102 / 2.0) + 9.81;
-  computed_acc[3] = -(((((((((((l_1 * t10 - l_1 * t9) - l_1 * t8) + l_1 * t11) +
-    l_z * t53) + l_z * t50) + l_z * t88) + l_z * t6) - I_yy * q * r) + I_zz * q *
-                        r) + t160_tmp * wing_span * ((((((Omega_1_scaled * t31 *
-    0.01228634392023026 - Omega_2_scaled * t32 * 0.01228634392023026) + t16 *
-    t31 * 0.0075456152077779167) - t17 * t32 * 0.0075456152077779167) +
-    Omega_1_scaled * t40 * t71 * 0.0046429750925043979) + (((Omega_2_scaled *
-    t41 * t70 * -0.0046429750925043979 + Omega_2_scaled * t42 * t70 *
-    0.0064381447596962606) - Omega_1_scaled * t43 * t71 * 0.0064381447596962606)
-    - Omega_1_scaled * (t31 * t31) * t43 * 0.0039349871274520724)) +
-    ((Omega_2_scaled * (t32 * t32) * t42 * 0.0039349871274520724 -
-      Omega_1_scaled * t20 * t31 * t58 * 0.020516396677824081) + Omega_2_scaled *
-     t20 * t32 * t58 * 0.020516396677824081)) / 2.0) - CL_aileron * S *
-                      delta_ailerons_scaled * rho * t20 / 2.0) / I_xx;
-  t7 = I_xx * p;
-  computed_acc[4] = -((((((((((l_4 * t10 - l_3 * t8) + l_4 * t9) - l_3 * t11) +
-    l_z * t274) + l_z * t275) + l_z * t54) + l_z * t55) + t7 * r) - I_zz * p * r)
-                      - t160_tmp * wing_chord * (Cm_zero - Cm_alpha * t72) / 2.0)
-    / I_yy;
-  computed_acc[5] = (((((((((l_1 * t274 - l_1 * t275) - l_1 * t54) + l_1 * t55)
-    - l_4 * t53) + l_3 * t88) - l_4 * t50) + l_3 * t6) + t7 * q) - I_yy * p * q)
+  /*     COMPUTED_ACC = COMPUTE_ACC(Beta,CL_aileron,Cd_zero,Cl_alpha,Cm_zero,Cm_alpha,I_xx,I_yy,I_zz,K_Cd,Omega_1,Omega_2,Omega_3,Omega_4,Omega_1_scaled,Omega_2_scaled,Phi,S,Theta,V,B_1,B_2,B_3,B_4,DELTA_AILERONS,FLIGHT_PATH_ANGLE,G_1,G_2,G_3,G_4,GAIN_AIRSPEED,L_1,L_3,L_4,L_Z,M,P,prop_R,prop_Cd_0,prop_Cl_0,prop_Cd_a,prop_Cl_a,PROP_DELTA,PROP_SIGMA,PROP_THETA,Q,R,RHO,WING_SPAN,WING_CHORD) */
+  /*     This function was generated by the Symbolic Math Toolbox version 23.2. */
+  /*     25-Jan-2024 12:06:07 */
+  t3 = cos(Phi);
+  t5 = cos(Theta);
+  t6 = sin(Phi);
+  t7 = cos(b_1);
+  t8 = cos(b_2);
+  t9 = cos(b_3);
+  t10 = cos(b_4);
+  t11 = sin(Theta);
+  t12 = cos(g_1);
+  t13 = cos(g_2);
+  t14 = cos(g_3);
+  t15 = cos(g_4);
+  t16 = sin(b_1);
+  t17 = sin(b_2);
+  t18 = sin(b_3);
+  t19 = sin(b_4);
+  t20 = sin(g_1);
+  t21 = sin(g_2);
+  t22 = sin(g_3);
+  t23 = sin(g_4);
+  t26 = Omega_1 * Omega_1;
+  t27 = Omega_2 * Omega_2;
+  t28 = Omega_3 * Omega_3;
+  t29 = Omega_4 * Omega_4;
+  t30 = V * V;
+  t39 = 1.0 / Omega_1;
+  t41 = 1.0 / Omega_2;
+  t43 = 1.0 / Omega_3;
+  t45 = 1.0 / Omega_4;
+  t48 = 1.0 / (gain_airspeed * gain_airspeed);
+  t49 = 1.0 / m;
+  t35 = t9 * t9;
+  t36 = t10 * t10;
+  t40 = 1.0 / t26;
+  t42 = 1.0 / t27;
+  t44 = 1.0 / t28;
+  t46 = 1.0 / t29;
+  t59 = Theta - flight_path_angle;
+  t60 = cos(t59);
+  t61 = sin(t59);
+  t68 = (b_1 + 1.5707963267948966) + t59;
+  t69 = (b_2 + 1.5707963267948966) + t59;
+  t70 = (b_3 + 1.5707963267948966) + t59;
+  t71 = (b_4 + 1.5707963267948966) + t59;
+  t73 = cos(t68);
+  t74 = cos(t69);
+  t75 = cos(t70);
+  t76 = cos(t71);
+  t77 = sin(t68);
+  t78 = sin(t69);
+  t79 = sin(t70);
+  t80 = sin(t71);
+  t91_tmp = Cl_alpha * S * rho * t30 * t59;
+  t85 = t77 * t77;
+  t86 = t78 * t78;
+  t87 = t79 * t79;
+  t88 = t80 * t80;
+  t89 = Cd_zero + K_Cd * (Cl_alpha * Cl_alpha) * (t59 * t59);
+  t117_tmp_tmp = S * rho;
+  t117_tmp = t117_tmp_tmp * t30;
+  t143 = t91_tmp * t60 / 2.0 + t117_tmp * t61 * t89 / 2.0;
+  t172 = t30 * t40 * 62.000124000248007;
+  t70 = V * 3.46 * 0.0652;
+  t265 = -0.0 * t30 * t40 * 62.000124000248007 * t85;
+  t73 = (V * t39 * 7.8740157480314963 * t73 / 2.0 - 0.0225592) + sqrt(((t172 *
+    (t73 * t73) * 16.0 + t70 * t39 * -0.8 * 7.8740157480314963 * t73 * 8.0) +
+    t265 * -8.0) - -0.2608 * (3.46 * (0.19 * (t172 * t85 * 8.0 + 3.2) +
+    0.03609472))) / 8.0;
+  t172 = t30 * t42 * 62.000124000248007;
+  t268 = -0.0 * t30 * t42 * 62.000124000248007 * t86;
+  t71 = (V * t41 * 7.8740157480314963 * t74 / 2.0 - 0.0225592) + sqrt(((t172 *
+    (t74 * t74) * 16.0 + t70 * t41 * -0.8 * 7.8740157480314963 * t74 * 8.0) +
+    t268 * -8.0) - -0.2608 * (3.46 * (0.19 * (t172 * t86 * 8.0 + 3.2) +
+    0.03609472))) / 8.0;
+  t172 = t30 * t44 * 62.000124000248007;
+  t39 = -0.0 * t30 * t44 * 62.000124000248007 * t87;
+  t68 = (V * t43 * 7.8740157480314963 * t75 / 2.0 - 0.0225592) + sqrt(((t172 *
+    (t75 * t75) * 16.0 + t70 * t43 * -0.8 * 7.8740157480314963 * t75 * 8.0) +
+    t39 * -8.0) - -0.2608 * (3.46 * (0.19 * (t172 * t87 * 8.0 + 3.2) +
+    0.03609472))) / 8.0;
+  t172 = t30 * t46 * 62.000124000248007;
+  t69 = -0.0 * t30 * t46 * 62.000124000248007 * t88;
+  t172 = (V * t45 * 7.8740157480314963 * t76 / 2.0 - 0.0225592) + sqrt(((t172 *
+    (t76 * t76) * 16.0 + t70 * t45 * -0.8 * 7.8740157480314963 * t76 * 8.0) +
+    t69 * -8.0) - -0.2608 * (3.46 * (0.19 * (t172 * t88 * 8.0 + 3.2) +
+    0.03609472))) / 8.0;
+  t237 = -0.0 * t73 + -0.8 * (0.19 * (t73 * 2.74 + 0.1368) +
+    0.020000000000000004);
+  t238 = -0.0 * t71 + -0.8 * (0.19 * (t71 * 2.74 + 0.1368) +
+    0.020000000000000004);
+  t239 = -0.0 * t68 + -0.8 * (0.19 * (t68 * 2.74 + 0.1368) +
+    0.020000000000000004);
+  t240 = -0.0 * t172 + -0.8 * (0.19 * (t172 * 2.74 + 0.1368) +
+    0.020000000000000004);
+  t43 = t265 + -0.8 * (0.6574 * t30 * t40 * 62.000124000248007 * t85 -
+                       0.69200000000000006 * (t73 - 0.19) * 2.0);
+  t74 = t268 + -0.8 * (0.6574 * t30 * t42 * 62.000124000248007 * t86 -
+                       0.69200000000000006 * (t71 - 0.19) * 2.0);
+  t45 = t39 + -0.8 * (0.6574 * t30 * t44 * 62.000124000248007 * t87 -
+                      0.69200000000000006 * (t68 - 0.19) * 2.0);
+  t73 = t69 + -0.8 * (0.6574 * t30 * t46 * 62.000124000248007 * t88 -
+                      0.69200000000000006 * (t172 - 0.19) * 2.0);
+  t41 = Omega_1 * V * 0.0652 * rho;
+  t86 = 0.0652 * rho * t16 * t26 * 0.000260144641 * 5.0 * t43 *
+    3.1415926535897931 / 4.0 + t41 * t7 * 0.002048383 * 5.0 * t77 * t237 *
+    3.1415926535897931 / 4.0;
+  t71 = Omega_2 * V * 0.0652 * rho;
+  t87 = 0.0652 * rho * t17 * t27 * 0.000260144641 * 5.0 * t74 *
+    3.1415926535897931 / 4.0 + t71 * t8 * 0.002048383 * 5.0 * t78 * t238 *
+    3.1415926535897931 / 4.0;
+  t39 = Omega_3 * V * 0.0652 * rho;
+  t88 = 0.0652 * rho * t18 * t28 * 0.000260144641 * 5.0 * t45 *
+    3.1415926535897931 / 4.0 + t39 * t9 * 0.002048383 * 5.0 * t79 * t239 *
+    3.1415926535897931 / 4.0;
+  t75 = Omega_4 * V * 0.0652 * rho;
+  t40 = 0.0652 * rho * t19 * t29 * 0.000260144641 * 5.0 * t73 *
+    3.1415926535897931 / 4.0 + t75 * t10 * 0.002048383 * 5.0 * t80 * t240 *
+    3.1415926535897931 / 4.0;
+  t69 = 0.0652 * rho * t7;
+  t265 = t69 * t12 * t26 * 0.000260144641 * 5.0 * t43 * 3.1415926535897931 / 4.0
+    - t41 * t12 * t16 * 0.002048383 * 5.0 * t77 * t237 * 3.1415926535897931 /
+    4.0;
+  t70 = 0.0652 * rho * t8;
+  t85 = t70 * t13 * t27 * 0.000260144641 * 5.0 * t74 * 3.1415926535897931 / 4.0
+    - t71 * t13 * t17 * 0.002048383 * 5.0 * t78 * t238 * 3.1415926535897931 /
+    4.0;
+  t68 = 0.0652 * rho * t9;
+  t76 = t68 * t14 * t28 * 0.000260144641 * 5.0 * t45 * 3.1415926535897931 / 4.0
+    - t39 * t14 * t18 * 0.002048383 * 5.0 * t79 * t239 * 3.1415926535897931 /
+    4.0;
+  t172 = 0.0652 * rho * t10;
+  t268 = t172 * t15 * t29 * 0.000260144641 * 5.0 * t73 * 3.1415926535897931 /
+    4.0 - t75 * t15 * t19 * 0.002048383 * 5.0 * t80 * t240 * 3.1415926535897931 /
+    4.0;
+  t43 = t69 * t20 * t26 * 0.000260144641 * 5.0 * t43 * 3.1415926535897931 / 4.0
+    - t41 * t16 * t20 * 0.002048383 * 5.0 * t77 * t237 * 3.1415926535897931 /
+    4.0;
+  t74 = t70 * t21 * t27 * 0.000260144641 * 5.0 * t74 * 3.1415926535897931 / 4.0
+    - t71 * t17 * t21 * 0.002048383 * 5.0 * t78 * t238 * 3.1415926535897931 /
+    4.0;
+  t41 = t68 * t22 * t28 * 0.000260144641 * 5.0 * t45 * 3.1415926535897931 / 4.0
+    - t39 * t18 * t22 * 0.002048383 * 5.0 * t79 * t239 * 3.1415926535897931 /
+    4.0;
+  t70 = t172 * t23 * t29 * 0.000260144641 * 5.0 * t73 * 3.1415926535897931 / 4.0
+    - t75 * t19 * t23 * 0.002048383 * 5.0 * t80 * t240 * 3.1415926535897931 /
+    4.0;
+  t71 = ((t86 + t87) + t88) + t40;
+  t172 = ((t43 + t74) + t41) + t70;
+  t39 = ((t265 + t85) + t76) + t268;
+  t73 = t3 * t11;
+  t68 = t91_tmp * t61 / 2.0 - t117_tmp * t60 * t89 / 2.0;
+  t69 = t117_tmp_tmp * 0.0;
+  computed_acc[0] = t49 * (((((t5 * t71 + t5 * t68) - t73 * t143) + t73 * t39) -
+    t6 * t11 * t172) - t69 * t6 * t11 * t30 * t89 / 2.0);
+  computed_acc[1] = -t49 * (((-t6 * t143 + t3 * t172) + t6 * t39) + t117_tmp_tmp
+    * t3 * 0.0 * t30 * t89 / 2.0);
+  t73 = t3 * t5;
+  computed_acc[2] = -t49 * (((((t11 * t71 + t11 * t68) + t73 * t143) - t73 * t39)
+    + t5 * t6 * t172) + t69 * t5 * t6 * t30 * t89 / 2.0) + 9.81;
+  t73 = Omega_1_scaled * t7;
+  t68 = Omega_2_scaled * t8;
+  computed_acc[3] = -(((((((((((l_1 * t265 - l_1 * t85) - l_1 * t76) + l_1 *
+    t268) + l_z * t43) + l_z * t74) + l_z * t41) + l_z * t70) - I_yy * q * r) +
+                        I_zz * q * r) - CL_aileron * S * delta_ailerons * rho *
+                       t30 / 2.0) + t117_tmp * wing_span * ((((((t73 *
+    0.01228634392023026 - t68 * 0.01228634392023026) + Omega_1_scaled *
+    Omega_1_scaled * t7 * 0.0075456152077779167) - Omega_2_scaled *
+    Omega_2_scaled * t8 * 0.0075456152077779167) + Omega_1_scaled * t16 * t36 *
+    0.0046429750925043979) + (((Omega_2_scaled * t17 * t35 *
+    -0.0046429750925043979 + Omega_2_scaled * t18 * t35 * 0.0064381447596962606)
+    - Omega_1_scaled * t19 * t36 * 0.0064381447596962606) - Omega_1_scaled * (t7
+    * t7) * t19 * 0.0039349871274520724)) + ((Omega_2_scaled * (t8 * t8) * t18 *
+    0.0039349871274520724 - t73 * t30 * t48 * 0.020516396677824081) + t68 * t30 *
+    t48 * 0.020516396677824081)) / 2.0) / I_xx;
+  t73 = I_xx * p;
+  computed_acc[4] = -((((((((((l_4 * t265 - l_3 * t76) + l_4 * t85) - l_3 * t268)
+    + l_z * t86) + l_z * t87) + l_z * t88) + l_z * t40) + t73 * r) - I_zz * p *
+                       r) - t117_tmp * wing_chord * (Cm_zero + Cm_alpha * t59) /
+                      2.0) / I_yy;
+  computed_acc[5] = (((((((((l_1 * t86 - l_1 * t87) - l_1 * t88) + l_1 * t40) -
+    l_4 * t43) + l_3 * t41) - l_4 * t74) + l_3 * t70) + t73 * q) - I_yy * p * q)
     / I_zz;
 }
 
-static double compute_cost_and_gradient(double Alpha, double Beta, double
-  CL_aileron, double Cd_zero, double Cl_alpha, double Cm_zero, double Cm_alpha,
-  double I_xx, double I_yy, double I_zz, double K_Cd, double Omega_1_scaled,
-  double Omega_2_scaled, double Omega_3_scaled, double Omega_4_scaled, double
-  Phi_scaled, double S, double Theta_scaled, double V, double W_act_phi, double
-  W_act_theta, double W_act_motor, double W_dv_1, double W_dv_2, double W_dv_3,
-  double W_dv_4, double W_dv_5, double W_dv_6, double W_act_tilt_el, double
-  W_act_tilt_az, double W_act_ailerons, double b_1_scaled, double b_2_scaled,
-  double b_3_scaled, double b_4_scaled, double delta_ailerons_scaled, double
-  desired_el_value, double desired_az_value, double desired_phi_value, double
-  desired_theta_value, double desired_motor_value, double desired_ailerons_value,
-  double dv_global_1, double dv_global_2, double dv_global_3, double dv_global_4,
-  double dv_global_5, double dv_global_6, double flight_path_angle, double
-  g_1_scaled, double g_2_scaled, double g_3_scaled, double g_4_scaled, double
-  gain_el, double gain_az, double gain_phi, double gain_theta, double gain_motor,
-  double gain_airspeed, double gain_ailerons, double gamma_quadratic_du, double
-  l_1, double l_3, double l_4, double l_z, double m, double p, double power_Cd_0,
+static double compute_cost_and_gradient(double Beta, double CL_aileron, double
+  Cd_zero, double Cl_alpha, double Cm_zero, double Cm_alpha, double I_xx, double
+  I_yy, double I_zz, double K_Cd, double Omega_1_scaled, double Omega_2_scaled,
+  double Omega_3_scaled, double Omega_4_scaled, double Phi_scaled, double S,
+  double Theta_scaled, double V, double W_act_phi, double W_act_theta, double
+  W_act_motor, double W_dv_1, double W_dv_2, double W_dv_3, double W_dv_4,
+  double W_dv_5, double W_dv_6, double W_act_tilt_el, double W_act_tilt_az,
+  double W_act_ailerons, double b_1_scaled, double b_2_scaled, double b_3_scaled,
+  double b_4_scaled, double delta_ailerons_scaled, double desired_el_value,
+  double desired_az_value, double desired_phi_value, double desired_theta_value,
+  double desired_motor_value, double desired_ailerons_value, double dv_global_1,
+  double dv_global_2, double dv_global_3, double dv_global_4, double dv_global_5,
+  double dv_global_6, double flight_path_angle, double g_1_scaled, double
+  g_2_scaled, double g_3_scaled, double g_4_scaled, double gain_el, double
+  gain_az, double gain_phi, double gain_theta, double gain_motor, double
+  gain_airspeed, double gain_ailerons, double gamma_quadratic_du, double l_1,
+  double l_3, double l_4, double l_z, double m, double p, double power_Cd_0,
   double power_Cd_a, double prop_R, double prop_Cd_0, double prop_Cl_0, double
   prop_Cd_a, double prop_Cl_a, double prop_delta, double prop_sigma, double
   prop_theta, double q, double r, double rho, double wing_span, double
   wing_chord, double gradient_data[], int *gradient_size)
 {
-  double b_CL_aileron[254];
+  double b_CL_aileron[262];
   double b_gradient_data[15];
   double cost;
   double t10;
-  double t100;
-  double t102;
+  double t101;
   double t103;
   double t104;
-  double t109;
+  double t105;
   double t11;
-  double t111;
+  double t110;
   double t112;
-  double t117;
+  double t113;
   double t118;
   double t119;
   double t12;
   double t120;
-  double t123;
-  double t125;
+  double t121;
+  double t124;
   double t126;
+  double t127;
   double t13;
-  double t133;
+  double t134;
+  double t139;
   double t14;
-  double t143_tmp;
-  double t145;
-  double t146;
-  double t147;
-  double t148;
-  double t149;
+  double t140;
+  double t140_tmp;
   double t150;
   double t151;
   double t152;
+  double t153;
+  double t154;
+  double t155;
   double t156;
   double t157;
   double t158;
   double t159;
+  double t159_tmp;
   double t16;
-  double t160;
   double t161;
   double t162;
+  double t163;
+  double t164;
   double t165;
   double t166;
-  double t166_tmp;
+  double t167;
+  double t168;
   double t17;
   double t18;
+  double t188;
+  double t188_tmp_tmp;
   double t19;
+  double t199;
   double t2;
   double t20;
-  double t207_tmp;
   double t21;
   double t22;
+  double t220;
+  double t220_tmp;
   double t23;
-  double t231_tmp;
-  double t231_tmp_tmp;
-  double t235;
-  double t235_tmp_tmp;
   double t24;
+  double t242;
+  double t242_tmp;
+  double t242_tmp_tmp;
   double t25;
-  double t250;
   double t3;
-  double t333;
-  double t334;
-  double t363_tmp;
-  double t364_tmp;
-  double t365_tmp;
-  double t366_tmp;
-  double t370;
-  double t375;
-  double t376;
-  double t377;
-  double t378;
-  double t379;
+  double t350;
+  double t351;
   double t38;
-  double t380;
-  double t381;
-  double t382;
-  double t387;
-  double t388;
-  double t389;
+  double t388_tmp;
+  double t389_tmp;
   double t39;
-  double t390;
+  double t390_tmp;
+  double t391_tmp;
+  double t393;
+  double t394;
+  double t395;
   double t4;
-  double t41;
+  double t408;
+  double t409;
+  double t410;
+  double t411;
+  double t416;
+  double t417;
+  double t418;
+  double t419;
   double t42;
   double t46;
-  double t47;
   double t48;
   double t49;
-  double t499;
   double t5;
-  double t500;
-  double t501;
-  double t502;
   double t52;
+  double t528;
+  double t529;
+  double t530;
+  double t560;
+  double t561;
+  double t562;
+  double t566;
   double t57;
   double t58;
   double t59;
   double t6;
   double t60;
   double t61;
-  double t62;
-  double t63;
-  double t64;
-  double t65;
   double t66;
   double t67;
   double t68;
   double t69;
   double t7;
-  double t70;
-  double t71;
-  double t72;
-  double t73;
   double t77;
   double t78;
   double t79;
@@ -2839,14 +2833,14 @@ static double compute_cost_and_gradient(double Alpha, double Beta, double
   double t87;
   double t88;
   double t9;
-  double t93;
   double t94;
   double t95;
+  double t96;
 
   /* COMPUTE_COST_AND_GRADIENT */
-  /*     [COST,GRADIENT] = COMPUTE_COST_AND_GRADIENT(Alpha,Beta,CL_aileron,Cd_zero,Cl_alpha,Cm_zero,Cm_alpha,I_xx,I_yy,I_zz,K_Cd,Omega_1_scaled,Omega_2_scaled,Omega_3_scaled,Omega_4_scaled,Phi_scaled,S,Theta_scaled,V,W_act_phi,W_act_theta,W_act_motor,W_dv_1,W_dv_2,W_dv_3,W_dv_4,W_dv_5,W_dv_6,W_act_tilt_el,W_act_tilt_az,W_act_ailerons,B_1_SCALED,B_2_SCALED,B_3_SCALED,B_4_SCALED,DELTA_AILERONS_SCALED,DESIRED_EL_VALUE,DESIRED_AZ_VALUE,DESIRED_PHI_VALUE,DESIRED_THETA_VALUE,DESIRED_MOTOR_VALUE,DESIRED_AILERONS_VALUE,DV_GLOBAL_1,DV_GLOBAL_2,DV_GLOBAL_3,DV_GLOBAL_4,DV_GLOBAL_5,DV_GLOBAL_6,FLIGHT_PATH_ANGLE,G_1_SCALED,G_2_SCALED,G_3_SCALED,G_4_SCALED,GAIN_EL,GAIN_AZ,GAIN_PHI,GAIN_THETA,GAIN_MOTOR,GAIN_AIRSPEED,GAIN_AILERONS,GAMMA_QUADRATIC_DU,L_1,L_3,L_4,L_Z,M,P,power_Cd_0,power_Cd_a,prop_R,prop_Cd_0,prop_Cl_0,prop_Cd_a,prop_Cl_a,PROP_DELTA,PROP_SIGMA,PROP_THETA,Q,R,RHO,WING_SPAN,WING_CHORD) */
-  /*     This function was generated by the Symbolic Math Toolbox version 9.3. */
-  /*     16-Jan-2024 16:18:34 */
+  /*     [COST,GRADIENT] = COMPUTE_COST_AND_GRADIENT(Beta,CL_aileron,Cd_zero,Cl_alpha,Cm_zero,Cm_alpha,I_xx,I_yy,I_zz,K_Cd,Omega_1_scaled,Omega_2_scaled,Omega_3_scaled,Omega_4_scaled,Phi_scaled,S,Theta_scaled,V,W_act_phi,W_act_theta,W_act_motor,W_dv_1,W_dv_2,W_dv_3,W_dv_4,W_dv_5,W_dv_6,W_act_tilt_el,W_act_tilt_az,W_act_ailerons,B_1_SCALED,B_2_SCALED,B_3_SCALED,B_4_SCALED,DELTA_AILERONS_SCALED,DESIRED_EL_VALUE,DESIRED_AZ_VALUE,DESIRED_PHI_VALUE,DESIRED_THETA_VALUE,DESIRED_MOTOR_VALUE,DESIRED_AILERONS_VALUE,DV_GLOBAL_1,DV_GLOBAL_2,DV_GLOBAL_3,DV_GLOBAL_4,DV_GLOBAL_5,DV_GLOBAL_6,FLIGHT_PATH_ANGLE,G_1_SCALED,G_2_SCALED,G_3_SCALED,G_4_SCALED,GAIN_EL,GAIN_AZ,GAIN_PHI,GAIN_THETA,GAIN_MOTOR,GAIN_AIRSPEED,GAIN_AILERONS,GAMMA_QUADRATIC_DU,L_1,L_3,L_4,L_Z,M,P,power_Cd_0,power_Cd_a,prop_R,prop_Cd_0,prop_Cl_0,prop_Cd_a,prop_Cl_a,PROP_DELTA,PROP_SIGMA,PROP_THETA,Q,R,RHO,WING_SPAN,WING_CHORD) */
+  /*     This function was generated by the Symbolic Math Toolbox version 23.2. */
+  /*     25-Jan-2024 12:05:53 */
   t2 = cos(Beta);
   t3 = sin(Beta);
   t4 = log(prop_delta);
@@ -2872,19 +2866,17 @@ static double compute_cost_and_gradient(double Alpha, double Beta, double
   t25 = V * V;
   t38 = gain_motor * gain_motor;
   t39 = prop_Cd_a * 2.0;
-  t41 = rt_powd_snf(prop_R, 3.0);
   t42 = rt_powd_snf(prop_R, 4.0);
   t46 = prop_Cd_0 * prop_delta * 2.0;
   t77 = 1.0 / Omega_1_scaled;
   t79 = 1.0 / Omega_2_scaled;
   t82 = 1.0 / Omega_3_scaled;
   t85 = 1.0 / Omega_4_scaled;
-  t93 = 1.0 / gain_motor;
-  t95 = 1.0 / (gain_airspeed * gain_airspeed);
-  t100 = prop_delta * 16.0;
-  t102 = 1.0 / prop_R;
-  t104 = 1.0 / prop_delta;
-  t47 = prop_theta * t39;
+  t94 = 1.0 / gain_motor;
+  t96 = 1.0 / (gain_airspeed * gain_airspeed);
+  t101 = prop_delta * 16.0;
+  t103 = 1.0 / prop_R;
+  t105 = 1.0 / prop_delta;
   t48 = cos(t5);
   t49 = cos(t6);
   t52 = sin(t5);
@@ -2893,18 +2885,10 @@ static double compute_cost_and_gradient(double Alpha, double Beta, double
   t59 = cos(t9);
   t60 = cos(t10);
   t61 = sin(t6);
-  t62 = cos(t11);
-  t63 = cos(t12);
-  t64 = cos(t13);
-  t65 = cos(t14);
   t66 = sin(t7);
   t67 = sin(t8);
   t68 = sin(t9);
   t69 = sin(t10);
-  t70 = sin(t11);
-  t71 = sin(t12);
-  t72 = sin(t13);
-  t73 = sin(t14);
   t78 = 1.0 / t17;
   t80 = 1.0 / t18;
   t81 = 1.0 / t19;
@@ -2913,144 +2897,160 @@ static double compute_cost_and_gradient(double Alpha, double Beta, double
   t86 = 1.0 / t22;
   t87 = 1.0 / t23;
   t88 = 1.0 / t24;
-  t94 = 1.0 / t38;
-  t103 = t102 * t102;
-  t14 = prop_Cl_0 * prop_delta;
-  t109 = t14 * (prop_delta + 1.0);
-  t111 = desired_el_value * (1.0 / gain_el);
-  t112 = desired_az_value * (1.0 / gain_az);
-  t5 = (Alpha + t7) + 1.5707963267948966;
-  t11 = (Alpha + t8) + 1.5707963267948966;
-  t12 = (Alpha + t9) + 1.5707963267948966;
-  t13 = (Alpha + t10) + 1.5707963267948966;
-  t8 = prop_delta * prop_sigma * -prop_Cl_a * (prop_delta - 1.0);
-  t143_tmp = prop_Cl_a * prop_sigma;
-  t9 = t143_tmp * (prop_delta - 1.0) / 8.0;
-  t117 = t57 * t57;
-  t118 = t58 * t58;
-  t119 = t59 * t59;
-  t120 = t60 * t60;
-  t123 = flight_path_angle - t6;
-  t7 = t109 * 8.0;
-  t133 = power_Cd_0 * prop_delta + power_Cd_a * (prop_theta * prop_theta);
-  t145 = cos(t5);
-  t146 = cos(t11);
-  t147 = cos(t12);
-  t148 = cos(t13);
-  t149 = sin(t5);
-  t150 = sin(t11);
-  t151 = sin(t12);
-  t152 = sin(t13);
-  t125 = cos(t123);
-  t126 = sin(t123);
-  t6 = t145 * t145;
-  t156 = t146 * t146;
-  t157 = t147 * t147;
-  t158 = t148 * t148;
-  t159 = t149 * t149;
-  t160 = t150 * t150;
+  t95 = 1.0 / t38;
+  t104 = t103 * t103;
+  t566 = prop_Cl_0 * prop_delta;
+  t110 = t566 * (prop_delta + 1.0);
+  t112 = desired_el_value * (1.0 / gain_el);
+  t113 = desired_az_value * (1.0 / gain_az);
+  t139 = prop_delta * prop_sigma * -prop_Cl_a * (prop_delta - 1.0);
+  t140_tmp = prop_Cl_a * prop_sigma;
+  t140 = t140_tmp * (prop_delta - 1.0) / 8.0;
+  t5 = ((t6 + t7) - flight_path_angle) + 1.5707963267948966;
+  t7 = ((t6 + t8) - flight_path_angle) + 1.5707963267948966;
+  t8 = ((t6 + t9) - flight_path_angle) + 1.5707963267948966;
+  t9 = ((t6 + t10) - flight_path_angle) + 1.5707963267948966;
+  t118 = t57 * t57;
+  t119 = t58 * t58;
+  t120 = t59 * t59;
+  t121 = t60 * t60;
+  t124 = flight_path_angle - t6;
+  t10 = t110 * 8.0;
+  t134 = power_Cd_0 * prop_delta + power_Cd_a * (prop_theta * prop_theta);
+  t151 = cos(t5);
+  t152 = cos(t7);
+  t153 = cos(t8);
+  t154 = cos(t9);
+  t155 = sin(t5);
+  t156 = sin(t7);
+  t157 = sin(t8);
+  t158 = sin(t9);
+  t126 = cos(t124);
+  t127 = sin(t124);
   t161 = t151 * t151;
   t162 = t152 * t152;
-  t11 = Cl_alpha * S;
-  t166_tmp = t11 * gain_theta * rho * t25;
-  t166 = t166_tmp * t125 / 2.0;
-  t207_tmp = prop_Cl_a * prop_theta * t25;
-  t231_tmp_tmp = t14 * t4;
-  t231_tmp = t231_tmp_tmp * t25;
-  t165 = Cd_zero + K_Cd * t16 * (t123 * t123);
-  t235_tmp_tmp = S * rho;
-  t5 = t235_tmp_tmp * t2 * t25;
-  t235 = t5 * t126 * t165 / 2.0;
-  t250 = t5 * t125 * t165 / 2.0;
-  t5 = t11 * rho * t25 * t123;
-  t333 = t5 * t125 / 2.0 + t235;
-  t334 = t5 * t126 / 2.0 - t250;
-  t363_tmp = t25 * t78 * t94 * t103;
-  t14 = V * prop_Cl_a * prop_sigma;
-  t10 = prop_Cl_0 * prop_sigma * t4 * t25;
-  t5 = prop_sigma * (prop_delta - 1.0) * t104;
-  t11 = sqrt(((t363_tmp * t6 * 16.0 + t14 * t77 * t93 * (prop_delta - 1.0) *
-               t102 * t145 * 8.0) + t10 * t78 * t94 * t103 * t159 * -8.0) - t5 *
-             (t7 + prop_Cl_a * (t8 + prop_theta * (t100 + t363_tmp * t159 * 8.0))));
-  t364_tmp = t25 * t81 * t94 * t103;
-  t12 = sqrt(((t364_tmp * t156 * 16.0 + t14 * t79 * t93 * (prop_delta - 1.0) *
-               t102 * t146 * 8.0) + t10 * t81 * t94 * t103 * t160 * -8.0) - t5 *
-             (t7 + prop_Cl_a * (t8 + prop_theta * (t100 + t364_tmp * t160 * 8.0))));
-  t365_tmp = t25 * t84 * t94 * t103;
-  t13 = sqrt(((t365_tmp * t157 * 16.0 + t14 * t82 * t93 * (prop_delta - 1.0) *
-               t102 * t147 * 8.0) + t10 * t84 * t94 * t103 * t161 * -8.0) - t5 *
-             (t7 + prop_Cl_a * (t8 + prop_theta * (t100 + t365_tmp * t161 * 8.0))));
-  t366_tmp = t25 * t87 * t94 * t103;
-  t5 = sqrt(((t366_tmp * t158 * 16.0 + t14 * t85 * t93 * (prop_delta - 1.0) *
-              t102 * t148 * 8.0) + t10 * t87 * t94 * t103 * t162 * -8.0) - t5 *
-            (t7 + prop_Cl_a * (t8 + prop_theta * (t100 + t366_tmp * t162 * 8.0))));
-  t7 = 1.0 / t11;
-  t8 = 1.0 / t12;
-  t100 = 1.0 / t13;
-  t370 = 1.0 / t5;
-  t375 = (t9 + V * t77 * t93 * t102 * t145 / 2.0) + t11 / 8.0;
-  t376 = (t9 + V * t79 * t93 * t102 * t146 / 2.0) + t12 / 8.0;
-  t377 = (t9 + V * t82 * t93 * t102 * t147 / 2.0) + t13 / 8.0;
-  t378 = (t9 + V * t85 * t93 * t102 * t148 / 2.0) + t5 / 8.0;
-  t379 = prop_Cl_a * t375 * 6.0;
-  t380 = prop_Cl_a * t376 * 6.0;
-  t381 = prop_Cl_a * t377 * 6.0;
-  t382 = prop_Cl_a * t378 * 6.0;
-  t387 = -prop_theta + t375;
-  t388 = -prop_theta + t376;
-  t389 = -prop_theta + t377;
-  t390 = -prop_theta + t378;
-  t5 = t143_tmp * prop_theta * t25;
-  t499 = V * t78 * t93 * t102 * t145 / 2.0 + (((t25 * t80 * t94 * t103 * t6 *
-    32.0 + t14 * t78 * t93 * (prop_delta - 1.0) * t102 * t145 * 8.0) - t10 * t80
-    * t94 * t103 * t159 * 16.0) - t5 * t80 * t94 * (prop_delta - 1.0) * t103 *
-    t104 * t159 * 16.0) * t7 / 16.0;
-  t500 = V * t81 * t93 * t102 * t146 / 2.0 + (((t25 * t83 * t94 * t103 * t156 *
-    32.0 + t14 * t81 * t93 * (prop_delta - 1.0) * t102 * t146 * 8.0) - t10 * t83
-    * t94 * t103 * t160 * 16.0) - t5 * t83 * t94 * (prop_delta - 1.0) * t103 *
-    t104 * t160 * 16.0) * t8 / 16.0;
-  t501 = V * t84 * t93 * t102 * t147 / 2.0 + (((t25 * t86 * t94 * t103 * t157 *
-    32.0 + t14 * t84 * t93 * (prop_delta - 1.0) * t102 * t147 * 8.0) - t10 * t86
-    * t94 * t103 * t161 * 16.0) - t5 * t86 * t94 * (prop_delta - 1.0) * t103 *
-    t104 * t161 * 16.0) * t100 / 16.0;
-  t502 = V * t87 * t93 * t102 * t148 / 2.0 + (((t25 * t88 * t94 * t103 * t158 *
-    32.0 + t14 * t87 * t93 * (prop_delta - 1.0) * t102 * t148 * 8.0) - t10 * t88
-    * t94 * t103 * t162 * 16.0) - t5 * t88 * t94 * (prop_delta - 1.0) * t103 *
-    t104 * t162 * 16.0) * t370 / 16.0;
+  t163 = t153 * t153;
+  t164 = t154 * t154;
+  t165 = t155 * t155;
+  t166 = t156 * t156;
+  t167 = t157 * t157;
+  t168 = t158 * t158;
+  t7 = Cl_alpha * S;
+  t159_tmp = t7 * gain_theta * rho * t25;
+  t159 = t159_tmp * t126 / 2.0;
+  t220_tmp = prop_Cl_a * prop_theta * t25;
+  t220 = t220_tmp * t80 * t95 * t104 * t165 * 2.0;
+  t242_tmp_tmp = t566 * t4;
+  t242_tmp = t242_tmp_tmp * t25;
+  t242 = t242_tmp * t80 * t95 * t104 * t165 * 2.0;
+  t150 = Cd_zero + K_Cd * t16 * (t124 * t124);
+  t188_tmp_tmp = S * rho;
+  t5 = t188_tmp_tmp * t2 * t25;
+  t188 = t5 * t127 * t150 / 2.0;
+  t199 = t5 * t126 * t150 / 2.0;
+  t5 = t7 * rho * t25 * t124;
+  t350 = t5 * t126 / 2.0 + t188;
+  t351 = t5 * t127 / 2.0 - t199;
+  t388_tmp = t25 * t78 * t95 * t104;
+  t6 = V * prop_Cl_a * prop_sigma;
+  t566 = prop_Cl_0 * prop_sigma * t4 * t25;
+  t5 = prop_sigma * (prop_delta - 1.0) * t105;
+  t7 = sqrt(((t388_tmp * t161 * 16.0 + t6 * t77 * t94 * (prop_delta - 1.0) *
+              t103 * t151 * 8.0) + t566 * t78 * t95 * t104 * t165 * -8.0) - t5 *
+            (t10 + prop_Cl_a * (t139 + prop_theta * (t101 + t388_tmp * t165 *
+    8.0))));
+  t389_tmp = t25 * t81 * t95 * t104;
+  t8 = sqrt(((t389_tmp * t162 * 16.0 + t6 * t79 * t94 * (prop_delta - 1.0) *
+              t103 * t152 * 8.0) + t566 * t81 * t95 * t104 * t166 * -8.0) - t5 *
+            (t10 + prop_Cl_a * (t139 + prop_theta * (t101 + t389_tmp * t166 *
+    8.0))));
+  t390_tmp = t25 * t84 * t95 * t104;
+  t9 = sqrt(((t390_tmp * t163 * 16.0 + t6 * t82 * t94 * (prop_delta - 1.0) *
+              t103 * t153 * 8.0) + t566 * t84 * t95 * t104 * t167 * -8.0) - t5 *
+            (t10 + prop_Cl_a * (t139 + prop_theta * (t101 + t390_tmp * t167 *
+    8.0))));
+  t391_tmp = t25 * t87 * t95 * t104;
+  t5 = sqrt(((t391_tmp * t164 * 16.0 + t6 * t85 * t94 * (prop_delta - 1.0) *
+              t103 * t154 * 8.0) + t566 * t87 * t95 * t104 * t168 * -8.0) - t5 *
+            (t10 + prop_Cl_a * (t139 + prop_theta * (t101 + t391_tmp * t168 *
+    8.0))));
+  t139 = 1.0 / t7;
+  t393 = 1.0 / t8;
+  t394 = 1.0 / t9;
+  t395 = 1.0 / t5;
+  t408 = (t140 + V * t77 * t94 * t103 * t151 / 2.0) + t7 / 8.0;
+  t409 = (t140 + V * t79 * t94 * t103 * t152 / 2.0) + t8 / 8.0;
+  t410 = (t140 + V * t82 * t94 * t103 * t153 / 2.0) + t9 / 8.0;
+  t411 = (t140 + V * t85 * t94 * t103 * t154 / 2.0) + t5 / 8.0;
+  t416 = -prop_theta + t408;
+  t417 = -prop_theta + t409;
+  t418 = -prop_theta + t410;
+  t419 = -prop_theta + t411;
+  t5 = t140_tmp * prop_theta * t25;
+  t528 = V * t78 * t94 * t103 * t151 / 2.0 + (((t25 * t80 * t95 * t104 * t161 *
+    32.0 + t6 * t78 * t94 * (prop_delta - 1.0) * t103 * t151 * 8.0) - t566 * t80
+    * t95 * t104 * t165 * 16.0) - t5 * t80 * t95 * (prop_delta - 1.0) * t104 *
+    t105 * t165 * 16.0) * t139 / 16.0;
+  t529 = V * t81 * t94 * t103 * t152 / 2.0 + (((t25 * t83 * t95 * t104 * t162 *
+    32.0 + t6 * t81 * t94 * (prop_delta - 1.0) * t103 * t152 * 8.0) - t566 * t83
+    * t95 * t104 * t166 * 16.0) - t5 * t83 * t95 * (prop_delta - 1.0) * t104 *
+    t105 * t166 * 16.0) * t393 / 16.0;
+  t530 = V * t84 * t94 * t103 * t153 / 2.0 + (((t25 * t86 * t95 * t104 * t163 *
+    32.0 + t6 * t84 * t94 * (prop_delta - 1.0) * t103 * t153 * 8.0) - t566 * t86
+    * t95 * t104 * t167 * 16.0) - t5 * t86 * t95 * (prop_delta - 1.0) * t104 *
+    t105 * t167 * 16.0) * t394 / 16.0;
+  t164 = V * t87 * t94 * t103 * t154 / 2.0 + (((t25 * t88 * t95 * t104 * t164 *
+    32.0 + t6 * t87 * t94 * (prop_delta - 1.0) * t103 * t154 * 8.0) - t566 * t88
+    * t95 * t104 * t168 * 16.0) - t5 * t88 * t95 * (prop_delta - 1.0) * t104 *
+    t105 * t168 * 16.0) * t395 / 16.0;
   t5 = V * gain_el;
-  t11 = t5 * prop_Cl_a * prop_sigma;
-  t12 = gain_el * t25;
-  t6 = gain_el * prop_Cl_0;
-  t13 = t6 * prop_sigma * t4 * t25;
-  t156 = gain_el * prop_Cl_a;
-  t14 = t156 * prop_sigma * prop_theta * t25;
-  t10 = t5 * t77 * t93 * t102 * t149 / 2.0 + (((t11 * t77 * t93 * (prop_delta -
-    1.0) * t102 * t149 * 8.0 + t12 * t78 * t94 * t103 * t145 * t149 * 32.0) +
-    t13 * t78 * t94 * t103 * t145 * t149 * 16.0) + t14 * t78 * t94 * (prop_delta
-    - 1.0) * t103 * t104 * t145 * t149 * 16.0) * t7 / 16.0;
-  t9 = t5 * t79 * t93 * t102 * t150 / 2.0 + (((t11 * t79 * t93 * (prop_delta -
-    1.0) * t102 * t150 * 8.0 + t12 * t81 * t94 * t103 * t146 * t150 * 32.0) +
-    t13 * t81 * t94 * t103 * t146 * t150 * 16.0) + t14 * t81 * t94 * (prop_delta
-    - 1.0) * t103 * t104 * t146 * t150 * 16.0) * t8 / 16.0;
-  t8 = t5 * t82 * t93 * t102 * t151 / 2.0 + (((t11 * t82 * t93 * (prop_delta -
-    1.0) * t102 * t151 * 8.0 + t12 * t84 * t94 * t103 * t147 * t151 * 32.0) +
-    t13 * t84 * t94 * t103 * t147 * t151 * 16.0) + t14 * t84 * t94 * (prop_delta
-    - 1.0) * t103 * t104 * t147 * t151 * 16.0) * t100 / 16.0;
-  t5 = t5 * t85 * t93 * t102 * t152 / 2.0 + (((t11 * t85 * t93 * (prop_delta -
-    1.0) * t102 * t152 * 8.0 + t12 * t87 * t94 * t103 * t148 * t152 * 32.0) +
-    t13 * t87 * t94 * t103 * t148 * t152 * 16.0) + t14 * t87 * t94 * (prop_delta
-    - 1.0) * t103 * t104 * t148 * t152 * 16.0) * t370 / 16.0;
-  t12 = power_Cd_a * t387 * 6.0;
-  t13 = power_Cd_a * t388 * 6.0;
-  t14 = power_Cd_a * t389 * 6.0;
-  t7 = power_Cd_a * t390 * 6.0;
-  t11 = prop_Cl_a * prop_delta;
-  t370 = prop_theta * (prop_delta - 1.0);
-  t143_tmp = prop_Cl_a - t39;
-  t82 = t231_tmp_tmp * t10 + t370 * t10 * t143_tmp;
-  t85 = t231_tmp_tmp * t9 + t370 * t9 * t143_tmp;
-  t102 = t231_tmp_tmp * t8 + t370 * t8 * t143_tmp;
-  t39 = t231_tmp_tmp * t5 + t370 * t5 * t143_tmp;
+  t7 = t5 * prop_Cl_a * prop_sigma;
+  t8 = gain_el * t25;
+  t140 = gain_el * prop_Cl_0;
+  t9 = t140 * prop_sigma * t4 * t25;
+  t140_tmp = gain_el * prop_Cl_a;
+  t10 = t140_tmp * prop_sigma * prop_theta * t25;
+  t560 = t5 * t77 * t94 * t103 * t155 / 2.0 + t139 * (((t7 * t77 * t94 *
+    (prop_delta - 1.0) * t103 * t155 * 8.0 + t8 * t78 * t95 * t104 * t151 * t155
+    * 32.0) + t9 * t78 * t95 * t104 * t151 * t155 * 16.0) + t10 * t78 * t95 *
+    (prop_delta - 1.0) * t104 * t105 * t151 * t155 * 16.0) / 16.0;
+  t561 = t5 * t79 * t94 * t103 * t156 / 2.0 + t393 * (((t7 * t79 * t94 *
+    (prop_delta - 1.0) * t103 * t156 * 8.0 + t8 * t81 * t95 * t104 * t152 * t156
+    * 32.0) + t9 * t81 * t95 * t104 * t152 * t156 * 16.0) + t10 * t81 * t95 *
+    (prop_delta - 1.0) * t104 * t105 * t152 * t156 * 16.0) / 16.0;
+  t562 = t5 * t82 * t94 * t103 * t157 / 2.0 + t394 * (((t7 * t82 * t94 *
+    (prop_delta - 1.0) * t103 * t157 * 8.0 + t8 * t84 * t95 * t104 * t153 * t157
+    * 32.0) + t9 * t84 * t95 * t104 * t153 * t157 * 16.0) + t10 * t84 * t95 *
+    (prop_delta - 1.0) * t104 * t105 * t153 * t157 * 16.0) / 16.0;
+  t162 = t5 * t85 * t94 * t103 * t158 / 2.0 + t395 * (((t7 * t85 * t94 *
+    (prop_delta - 1.0) * t103 * t158 * 8.0 + t8 * t87 * t95 * t104 * t154 * t158
+    * 32.0) + t9 * t87 * t95 * t104 * t154 * t158 * 16.0) + t10 * t87 * t95 *
+    (prop_delta - 1.0) * t104 * t105 * t154 * t158 * 16.0) / 16.0;
+  t5 = V * gain_theta;
+  t7 = t5 * prop_Cl_a * prop_sigma;
+  t8 = gain_theta * t25;
+  t161 = gain_theta * prop_Cl_0;
+  t9 = t161 * prop_sigma * t4 * t25;
+  t163 = gain_theta * prop_Cl_a;
+  t10 = t163 * prop_sigma * prop_theta * t25;
+  t101 = t5 * t77 * t94 * t103 * t155 / 2.0 + t139 * (((t7 * t77 * t94 *
+    (prop_delta - 1.0) * t103 * t155 * 8.0 + t8 * t78 * t95 * t104 * t151 * t155
+    * 32.0) + t9 * t78 * t95 * t104 * t151 * t155 * 16.0) + t10 * t78 * t95 *
+    (prop_delta - 1.0) * t104 * t105 * t151 * t155 * 16.0) / 16.0;
+  t139 = t5 * t79 * t94 * t103 * t156 / 2.0 + t393 * (((t7 * t79 * t94 *
+    (prop_delta - 1.0) * t103 * t156 * 8.0 + t8 * t81 * t95 * t104 * t152 * t156
+    * 32.0) + t9 * t81 * t95 * t104 * t152 * t156 * 16.0) + t10 * t81 * t95 *
+    (prop_delta - 1.0) * t104 * t105 * t152 * t156 * 16.0) / 16.0;
+  t566 = t5 * t82 * t94 * t103 * t157 / 2.0 + t394 * (((t7 * t82 * t94 *
+    (prop_delta - 1.0) * t103 * t157 * 8.0 + t8 * t84 * t95 * t104 * t153 * t157
+    * 32.0) + t9 * t84 * t95 * t104 * t153 * t157 * 16.0) + t10 * t84 * t95 *
+    (prop_delta - 1.0) * t104 * t105 * t153 * t157 * 16.0) / 16.0;
+  t9 = t5 * t85 * t94 * t103 * t158 / 2.0 + t395 * (((t7 * t85 * t94 *
+    (prop_delta - 1.0) * t103 * t158 * 8.0 + t8 * t87 * t95 * t104 * t154 * t158
+    * 32.0) + t9 * t87 * t95 * t104 * t154 * t158 * 16.0) + t10 * t87 * t95 *
+    (prop_delta - 1.0) * t104 * t105 * t154 * t158 * 16.0) / 16.0;
+  t10 = prop_Cl_a * prop_delta;
+  t6 = t10 * t528 * 2.0;
   b_CL_aileron[0] = CL_aileron;
   b_CL_aileron[1] = Cm_alpha;
   b_CL_aileron[2] = K_Cd;
@@ -3095,282 +3095,257 @@ static double compute_cost_and_gradient(double Alpha, double Beta, double
   b_CL_aileron[41] = prop_Cl_0;
   b_CL_aileron[42] = prop_Cl_a;
   b_CL_aileron[43] = prop_sigma;
-  b_CL_aileron[44] = rho;
-  b_CL_aileron[45] = prop_delta - 1.0;
-  b_CL_aileron[46] = t103;
+  b_CL_aileron[44] = prop_theta;
+  b_CL_aileron[45] = rho;
+  b_CL_aileron[46] = prop_delta - 1.0;
   b_CL_aileron[47] = t104;
-  b_CL_aileron[48] = 1.5707963267948966;
-  b_CL_aileron[49] = -(I_yy * p * q);
-  b_CL_aileron[50] = desired_motor_value * t93;
-  b_CL_aileron[51] = -(I_zz * p * r);
-  b_CL_aileron[52] = -(I_yy * q * r);
-  b_CL_aileron[53] = t117;
+  b_CL_aileron[48] = t105;
+  b_CL_aileron[49] = 1.5707963267948966;
+  b_CL_aileron[50] = t110;
+  b_CL_aileron[51] = desired_motor_value * t94;
+  b_CL_aileron[52] = -(I_zz * p * r);
+  b_CL_aileron[53] = -(I_yy * q * r);
   b_CL_aileron[54] = t118;
   b_CL_aileron[55] = t119;
   b_CL_aileron[56] = t120;
-  b_CL_aileron[57] = t123;
-  b_CL_aileron[58] = -t111;
-  b_CL_aileron[59] = -(t111 * 2.0);
-  b_CL_aileron[60] = -t112;
-  b_CL_aileron[61] = -(t112 * 2.0);
-  b_CL_aileron[62] = t133;
-  b_CL_aileron[63] = power_Cd_0 * ((prop_delta + 1.0) + prop_delta * prop_delta)
+  b_CL_aileron[57] = t121;
+  b_CL_aileron[58] = t124;
+  b_CL_aileron[59] = -t112;
+  b_CL_aileron[60] = -(t112 * 2.0);
+  b_CL_aileron[61] = -t113;
+  b_CL_aileron[62] = -(t113 * 2.0);
+  b_CL_aileron[63] = t134;
+  b_CL_aileron[64] = power_Cd_0 * ((prop_delta + 1.0) + prop_delta * prop_delta)
     * 2.0;
-  b_CL_aileron[64] = prop_delta / 6.0 - 0.16666666666666666;
-  b_CL_aileron[65] = t145;
-  b_CL_aileron[66] = t146;
-  b_CL_aileron[67] = t147;
-  b_CL_aileron[68] = t148;
-  b_CL_aileron[69] = t149;
-  b_CL_aileron[70] = t150;
-  b_CL_aileron[71] = t151;
-  b_CL_aileron[72] = t152;
-  b_CL_aileron[73] = t159;
-  b_CL_aileron[74] = t16;
-  b_CL_aileron[75] = t160;
-  b_CL_aileron[76] = t161;
-  b_CL_aileron[77] = t162;
-  b_CL_aileron[78] = -(CL_aileron * S * delta_ailerons_scaled * gain_ailerons *
+  b_CL_aileron[65] = prop_delta / 6.0 - 0.16666666666666666;
+  b_CL_aileron[66] = -(CL_aileron * S * delta_ailerons_scaled * gain_ailerons *
                        rho * t25 / 2.0);
-  b_CL_aileron[79] = t165;
-  t79 = t235_tmp_tmp * t25;
-  b_CL_aileron[80] = -(t79 * (Cm_zero - Cm_alpha * t123) * wing_chord / 2.0);
+  b_CL_aileron[67] = t150;
+  b_CL_aileron[68] = t151;
+  b_CL_aileron[69] = t152;
+  b_CL_aileron[70] = t153;
+  b_CL_aileron[71] = t154;
+  b_CL_aileron[72] = t155;
+  b_CL_aileron[73] = t156;
+  b_CL_aileron[74] = t157;
+  b_CL_aileron[75] = t158;
+  b_CL_aileron[76] = t16;
+  b_CL_aileron[77] = t165;
+  b_CL_aileron[78] = t166;
+  b_CL_aileron[79] = t167;
+  b_CL_aileron[80] = t168;
   b_CL_aileron[81] = t17;
-  b_CL_aileron[82] = t18;
-  b_CL_aileron[83] = t19;
-  t77 = t235_tmp_tmp * t3 * t25;
-  b_CL_aileron[84] = t77 * t48 * t165 / 2.0;
-  b_CL_aileron[85] = t20;
-  b_CL_aileron[86] = t21;
-  b_CL_aileron[87] = t231_tmp * t78 * t94 * t103 * t159;
-  b_CL_aileron[88] = t231_tmp * t81 * t94 * t103 * t160;
-  b_CL_aileron[89] = t231_tmp * t84 * t94 * t103 * t161;
-  b_CL_aileron[90] = t231_tmp * t87 * t94 * t103 * t162;
-  b_CL_aileron[91] = t22;
-  b_CL_aileron[92] = t23;
-  b_CL_aileron[93] = t24;
-  b_CL_aileron[94] = t77 * t49 * t52 * t165 / 2.0;
-  b_CL_aileron[95] = t25;
-  b_CL_aileron[96] = W_act_phi * W_act_phi;
-  b_CL_aileron[97] = -(t77 * t52 * t61 * t165 / 2.0);
-  b_CL_aileron[98] = W_act_theta * W_act_theta;
-  b_CL_aileron[99] = W_act_motor * W_act_motor;
-  b_CL_aileron[100] = W_dv_1 * W_dv_1;
-  b_CL_aileron[101] = t363_tmp * t104 * t133 * t159 * 3.0;
-  b_CL_aileron[102] = t364_tmp * t104 * t133 * t160 * 3.0;
-  b_CL_aileron[103] = t365_tmp * t104 * t133 * t161 * 3.0;
-  b_CL_aileron[104] = t366_tmp * t104 * t133 * t162 * 3.0;
-  t77 = t6 * prop_delta * t4 * t25;
-  b_CL_aileron[105] = t77 * t78 * t94 * t103 * t145 * t149 * 2.0;
-  b_CL_aileron[106] = t77 * t81 * t94 * t103 * t146 * t150 * 2.0;
-  b_CL_aileron[107] = t77 * t84 * t94 * t103 * t147 * t151 * 2.0;
-  b_CL_aileron[108] = t77 * t87 * t94 * t103 * t148 * t152 * 2.0;
-  b_CL_aileron[109] = t3;
-  b_CL_aileron[110] = W_dv_2 * W_dv_2;
-  b_CL_aileron[111] = W_dv_3 * W_dv_3;
-  b_CL_aileron[112] = W_dv_4 * W_dv_4;
-  b_CL_aileron[113] = W_dv_5 * W_dv_5;
-  b_CL_aileron[114] = t333;
-  b_CL_aileron[115] = t52 * t333;
-  b_CL_aileron[116] = t49 * t334;
-  b_CL_aileron[117] = t61 * t334;
-  b_CL_aileron[118] = t48 * t61 * t333;
-  b_CL_aileron[119] = W_dv_6 * W_dv_6;
-  b_CL_aileron[120] = -(t48 * t49 * t333);
-  t77 = K_Cd * S * gain_theta * rho * t2 * t16 * t25 * t123;
-  b_CL_aileron[121] = ((t166 + t166_tmp * t123 * t126 * -0.5) + t77 * t126) +
-    gain_theta * t250;
-  b_CL_aileron[122] = W_act_tilt_el * W_act_tilt_el;
-  b_CL_aileron[123] = ((t166_tmp * t126 / 2.0 + t123 * t166) - t77 * t125) +
-    gain_theta * t235;
-  b_CL_aileron[124] = W_act_tilt_az * W_act_tilt_az;
-  b_CL_aileron[125] = W_act_ailerons * W_act_ailerons;
-  b_CL_aileron[126] = t379;
-  b_CL_aileron[127] = t38;
-  b_CL_aileron[128] = t380;
-  b_CL_aileron[129] = t381;
-  b_CL_aileron[130] = t382;
-  b_CL_aileron[131] = t387;
-  b_CL_aileron[132] = t388;
-  b_CL_aileron[133] = t389;
-  b_CL_aileron[134] = t390;
-  b_CL_aileron[135] = t231_tmp_tmp * t375;
-  b_CL_aileron[136] = t231_tmp_tmp * t376;
-  b_CL_aileron[137] = t231_tmp_tmp * t377;
-  b_CL_aileron[138] = t231_tmp_tmp * t378;
-  t77 = prop_Cl_0 * (prop_delta + 1.0);
-  b_CL_aileron[139] = t77 * t375 * 3.0;
-  b_CL_aileron[140] = t77 * t376 * 3.0;
-  b_CL_aileron[141] = t77 * t377 * 3.0;
-  b_CL_aileron[142] = t77 * t378 * 3.0;
-  b_CL_aileron[143] = t12;
-  b_CL_aileron[144] = prop_delta + 1.0;
-  b_CL_aileron[145] = t13;
-  b_CL_aileron[146] = t14;
-  b_CL_aileron[147] = t7;
-  b_CL_aileron[148] = t41;
-  b_CL_aileron[149] = t42;
-  b_CL_aileron[150] = t46 + prop_theta * (t47 + t375 * t143_tmp);
-  b_CL_aileron[151] = t46 + prop_theta * (t47 + t376 * t143_tmp);
-  b_CL_aileron[152] = t46 + prop_theta * (t47 + t377 * t143_tmp);
-  b_CL_aileron[153] = rt_powd_snf(prop_R, 5.0);
-  b_CL_aileron[154] = t46 + prop_theta * (t47 + t378 * t143_tmp);
-  b_CL_aileron[155] = (t109 + t207_tmp * t78 * t94 * t103 * t159) - t11 * t387 *
+  t8 = t188_tmp_tmp * t25;
+  b_CL_aileron[82] = -(t8 * (Cm_zero - Cm_alpha * t124) * wing_chord / 2.0);
+  t7 = t188_tmp_tmp * t3 * t25;
+  b_CL_aileron[83] = t7 * t48 * t150 / 2.0;
+  b_CL_aileron[84] = t18;
+  b_CL_aileron[85] = t7 * t49 * t52 * t150 / 2.0;
+  b_CL_aileron[86] = t19;
+  b_CL_aileron[87] = t20;
+  b_CL_aileron[88] = -(t7 * t52 * t61 * t150 / 2.0);
+  b_CL_aileron[89] = t220_tmp * t78 * t95 * t104 * t165;
+  b_CL_aileron[90] = t220_tmp * t81 * t95 * t104 * t166;
+  b_CL_aileron[91] = t220_tmp * t84 * t95 * t104 * t167;
+  b_CL_aileron[92] = t220_tmp * t87 * t95 * t104 * t168;
+  b_CL_aileron[93] = t21;
+  b_CL_aileron[94] = t22;
+  b_CL_aileron[95] = t220;
+  b_CL_aileron[96] = t220_tmp * t83 * t95 * t104 * t166 * 2.0;
+  b_CL_aileron[97] = t220_tmp * t86 * t95 * t104 * t167 * 2.0;
+  b_CL_aileron[98] = t220_tmp * t88 * t95 * t104 * t168 * 2.0;
+  b_CL_aileron[99] = t242_tmp * t78 * t95 * t104 * t165;
+  b_CL_aileron[100] = t242_tmp * t81 * t95 * t104 * t166;
+  b_CL_aileron[101] = t242_tmp * t84 * t95 * t104 * t167;
+  b_CL_aileron[102] = t242_tmp * t87 * t95 * t104 * t168;
+  b_CL_aileron[103] = t23;
+  b_CL_aileron[104] = t24;
+  b_CL_aileron[105] = t242;
+  b_CL_aileron[106] = t242_tmp * t83 * t95 * t104 * t166 * 2.0;
+  b_CL_aileron[107] = t242_tmp * t86 * t95 * t104 * t167 * 2.0;
+  b_CL_aileron[108] = t242_tmp * t88 * t95 * t104 * t168 * 2.0;
+  b_CL_aileron[109] = t25;
+  b_CL_aileron[110] = W_act_phi * W_act_phi;
+  b_CL_aileron[111] = W_act_theta * W_act_theta;
+  b_CL_aileron[112] = W_act_motor * W_act_motor;
+  b_CL_aileron[113] = W_dv_1 * W_dv_1;
+  b_CL_aileron[114] = t3;
+  b_CL_aileron[115] = W_dv_2 * W_dv_2;
+  b_CL_aileron[116] = t388_tmp * t105 * t134 * t165 * 3.0;
+  b_CL_aileron[117] = t389_tmp * t105 * t134 * t166 * 3.0;
+  b_CL_aileron[118] = t390_tmp * t105 * t134 * t167 * 3.0;
+  b_CL_aileron[119] = t391_tmp * t105 * t134 * t168 * 3.0;
+  b_CL_aileron[120] = W_dv_3 * W_dv_3;
+  b_CL_aileron[121] = W_dv_4 * W_dv_4;
+  b_CL_aileron[122] = W_dv_5 * W_dv_5;
+  t7 = t140 * prop_delta * t4 * t25;
+  b_CL_aileron[123] = t7 * t78 * t95 * t104 * t151 * t155 * 2.0;
+  b_CL_aileron[124] = t7 * t81 * t95 * t104 * t152 * t156 * 2.0;
+  b_CL_aileron[125] = t7 * t84 * t95 * t104 * t153 * t157 * 2.0;
+  b_CL_aileron[126] = t7 * t87 * t95 * t104 * t154 * t158 * 2.0;
+  t7 = t161 * prop_delta * t4 * t25;
+  b_CL_aileron[127] = t7 * t78 * t95 * t104 * t151 * t155 * 2.0;
+  b_CL_aileron[128] = t7 * t81 * t95 * t104 * t152 * t156 * 2.0;
+  b_CL_aileron[129] = t7 * t84 * t95 * t104 * t153 * t157 * 2.0;
+  b_CL_aileron[130] = t7 * t87 * t95 * t104 * t154 * t158 * 2.0;
+  b_CL_aileron[131] = W_dv_6 * W_dv_6;
+  b_CL_aileron[132] = W_act_tilt_el * W_act_tilt_el;
+  b_CL_aileron[133] = t350;
+  b_CL_aileron[134] = W_act_tilt_az * W_act_tilt_az;
+  b_CL_aileron[135] = t52 * t350;
+  b_CL_aileron[136] = t49 * t351;
+  b_CL_aileron[137] = t61 * t351;
+  b_CL_aileron[138] = t48 * t61 * t350;
+  b_CL_aileron[139] = -(t48 * t49 * t350);
+  b_CL_aileron[140] = W_act_ailerons * W_act_ailerons;
+  t7 = K_Cd * S * gain_theta * rho * t2 * t16 * t25 * t124;
+  b_CL_aileron[141] = ((t159 + t159_tmp * t124 * t127 * -0.5) + t7 * t127) +
+    gain_theta * t199;
+  b_CL_aileron[142] = ((t159_tmp * t127 / 2.0 + t124 * t159) - t7 * t126) +
+    gain_theta * t188;
+  b_CL_aileron[143] = t38;
+  b_CL_aileron[144] = t39;
+  b_CL_aileron[145] = prop_delta + 1.0;
+  b_CL_aileron[146] = rt_powd_snf(prop_R, 3.0);
+  b_CL_aileron[147] = prop_Cl_a * t408 * 6.0;
+  b_CL_aileron[148] = prop_Cl_a * t409 * 6.0;
+  b_CL_aileron[149] = prop_Cl_a * t410 * 6.0;
+  b_CL_aileron[150] = prop_Cl_a * t411 * 6.0;
+  b_CL_aileron[151] = t416;
+  b_CL_aileron[152] = t417;
+  b_CL_aileron[153] = t418;
+  b_CL_aileron[154] = t419;
+  b_CL_aileron[155] = t42;
+  b_CL_aileron[156] = t242_tmp_tmp * t408;
+  b_CL_aileron[157] = t242_tmp_tmp * t409;
+  b_CL_aileron[158] = t242_tmp_tmp * t410;
+  b_CL_aileron[159] = t242_tmp_tmp * t411;
+  t7 = prop_Cl_0 * (prop_delta + 1.0);
+  b_CL_aileron[160] = t7 * t408 * 3.0;
+  b_CL_aileron[161] = t7 * t409 * 3.0;
+  b_CL_aileron[162] = t7 * t410 * 3.0;
+  b_CL_aileron[163] = t7 * t411 * 3.0;
+  b_CL_aileron[164] = rt_powd_snf(prop_R, 5.0);
+  b_CL_aileron[165] = -(power_Cd_a * t416 * 6.0);
+  b_CL_aileron[166] = -(power_Cd_a * t417 * 6.0);
+  b_CL_aileron[167] = -(power_Cd_a * t418 * 6.0);
+  b_CL_aileron[168] = -(power_Cd_a * t419 * 6.0);
+  b_CL_aileron[169] = -(t10 * t416 * 2.0);
+  b_CL_aileron[170] = -(t10 * t417 * 2.0);
+  b_CL_aileron[171] = -(t10 * t418 * 2.0);
+  b_CL_aileron[172] = -(t10 * t419 * 2.0);
+  t7 = prop_Cl_a - t39;
+  t5 = prop_Cd_a * prop_theta * 2.0;
+  b_CL_aileron[173] = t46 + prop_theta * (t408 * t7 + t5);
+  b_CL_aileron[174] = t46 + prop_theta * (t409 * t7 + t5);
+  b_CL_aileron[175] = t46 + prop_theta * (t410 * t7 + t5);
+  b_CL_aileron[176] = t46 + prop_theta * (t411 * t7 + t5);
+  b_CL_aileron[177] = t48;
+  b_CL_aileron[178] = t49;
+  t5 = I_xx * p;
+  b_CL_aileron[179] = t5 * q;
+  b_CL_aileron[180] = I_yy * p * q;
+  b_CL_aileron[181] = t52;
+  b_CL_aileron[182] = t528;
+  b_CL_aileron[183] = t529;
+  b_CL_aileron[184] = t5 * r;
+  b_CL_aileron[185] = t530;
+  b_CL_aileron[186] = t164;
+  b_CL_aileron[187] = t6;
+  b_CL_aileron[188] = t10 * t529 * 2.0;
+  b_CL_aileron[189] = t10 * t530 * 2.0;
+  b_CL_aileron[190] = t10 * t164 * 2.0;
+  b_CL_aileron[191] = t242_tmp_tmp * t528;
+  b_CL_aileron[192] = t242_tmp_tmp * t529;
+  b_CL_aileron[193] = t242_tmp_tmp * t530;
+  b_CL_aileron[194] = t242_tmp_tmp * t164;
+  t5 = prop_theta * (prop_delta - 1.0);
+  b_CL_aileron[195] = t5 * t528 * t7;
+  b_CL_aileron[196] = t5 * t529 * t7;
+  b_CL_aileron[197] = t5 * t530 * t7;
+  b_CL_aileron[198] = t5 * t164 * t7;
+  b_CL_aileron[199] = I_zz * q * r;
+  b_CL_aileron[200] = t560;
+  b_CL_aileron[201] = t561;
+  b_CL_aileron[202] = t562;
+  b_CL_aileron[203] = t162;
+  b_CL_aileron[204] = t101;
+  b_CL_aileron[205] = t139;
+  b_CL_aileron[206] = t566;
+  b_CL_aileron[207] = t9;
+  b_CL_aileron[208] = t57;
+  b_CL_aileron[209] = t58;
+  b_CL_aileron[210] = t242_tmp_tmp * t560;
+  b_CL_aileron[211] = t242_tmp_tmp * t561;
+  b_CL_aileron[212] = t242_tmp_tmp * t562;
+  b_CL_aileron[213] = t242_tmp_tmp * t162;
+  b_CL_aileron[214] = t242_tmp_tmp * t101;
+  b_CL_aileron[215] = t242_tmp_tmp * t139;
+  b_CL_aileron[216] = t242_tmp_tmp * t566;
+  b_CL_aileron[217] = t242_tmp_tmp * t9;
+  b_CL_aileron[218] = t59;
+  b_CL_aileron[219] = t60;
+  b_CL_aileron[220] = t61;
+  t7 = t140_tmp * prop_theta * t25;
+  b_CL_aileron[221] = t7 * t78 * t95 * t104 * t151 * t155 * 2.0 + t10 * t560 *
     2.0;
-  b_CL_aileron[156] = (t109 + t207_tmp * t81 * t94 * t103 * t160) - t11 * t388 *
+  b_CL_aileron[222] = t7 * t81 * t95 * t104 * t152 * t156 * 2.0 + t10 * t561 *
     2.0;
-  b_CL_aileron[157] = (t109 + t207_tmp * t84 * t94 * t103 * t161) - t11 * t389 *
+  b_CL_aileron[223] = t7 * t84 * t95 * t104 * t153 * t157 * 2.0 + t10 * t562 *
     2.0;
-  b_CL_aileron[158] = (t109 + t207_tmp * t87 * t94 * t103 * t162) - t11 * t390 *
+  b_CL_aileron[224] = t7 * t87 * t95 * t104 * t154 * t158 * 2.0 + t10 * t162 *
     2.0;
-  b_CL_aileron[159] = t48;
-  b_CL_aileron[160] = t49;
-  b_CL_aileron[161] = t499;
-  t77 = I_xx * p;
-  b_CL_aileron[162] = t77 * q;
-  b_CL_aileron[163] = t500;
-  b_CL_aileron[164] = t501;
-  b_CL_aileron[165] = t502;
-  b_CL_aileron[166] = t10;
-  b_CL_aileron[167] = t52;
-  b_CL_aileron[168] = t9;
-  b_CL_aileron[169] = t8;
-  b_CL_aileron[170] = t5;
-  b_CL_aileron[171] = t77 * r;
-  t77 = t156 * prop_theta * t25;
-  b_CL_aileron[172] = (prop_delta - 1.0) * (t77 * t78 * t94 * t103 * t145 * t149
-    * 2.0 + t11 * t10 * 2.0);
-  b_CL_aileron[173] = (prop_delta - 1.0) * (t77 * t81 * t94 * t103 * t146 * t150
-    * 2.0 + t11 * t9 * 2.0);
-  b_CL_aileron[174] = (prop_delta - 1.0) * (t77 * t84 * t94 * t103 * t147 * t151
-    * 2.0 + t11 * t8 * 2.0);
-  b_CL_aileron[175] = (prop_delta - 1.0) * (t77 * t87 * t94 * t103 * t148 * t152
-    * 2.0 + t11 * t5 * 2.0);
-  b_CL_aileron[176] = I_zz * q * r;
-  t77 = prop_sigma * rho;
-  t158 = t77 * t17 * t38 * t42;
-  t156 = t231_tmp * t80 * t94 * t103 * t159 * 2.0 + (prop_delta - 1.0) *
-    (t207_tmp * t80 * t94 * t103 * t159 * 2.0 - t11 * t499 * 2.0);
-  b_CL_aileron[177] = t158 * t66 * t104 * 3.1415926535897931 * t156 * -0.25;
-  t157 = t77 * t19 * t38 * t42;
-  t100 = t231_tmp * t83 * t94 * t103 * t160 * 2.0 + (prop_delta - 1.0) *
-    (t207_tmp * t83 * t94 * t103 * t160 * 2.0 - t11 * t500 * 2.0);
-  b_CL_aileron[178] = t157 * t67 * t104 * 3.1415926535897931 * t100 * -0.25;
-  t6 = t77 * t21 * t38 * t42;
-  t10 = t231_tmp * t86 * t94 * t103 * t161 * 2.0 + (prop_delta - 1.0) *
-    (t207_tmp * t86 * t94 * t103 * t161 * 2.0 - t11 * t501 * 2.0);
-  b_CL_aileron[179] = t6 * t68 * t104 * 3.1415926535897931 * t10 * -0.25;
-  t77 = t77 * t23 * t38 * t42;
-  t9 = t231_tmp * t88 * t94 * t103 * t162 * 2.0 + (prop_delta - 1.0) * (t207_tmp
-    * t88 * t94 * t103 * t162 * 2.0 - t11 * t502 * 2.0);
-  b_CL_aileron[180] = t77 * t69 * t104 * 3.1415926535897931 * t9 * -0.25;
-  t158 *= t57;
-  b_CL_aileron[181] = t158 * t62 * t104 * 3.1415926535897931 * t156 * -0.25;
-  t157 *= t58;
-  b_CL_aileron[182] = t157 * t63 * t104 * 3.1415926535897931 * t100 * -0.25;
-  t6 *= t59;
-  b_CL_aileron[183] = t6 * t64 * t104 * 3.1415926535897931 * t10 * -0.25;
-  b_CL_aileron[184] = t57;
-  t77 *= t60;
-  b_CL_aileron[185] = t77 * t65 * t104 * 3.1415926535897931 * t9 * -0.25;
-  b_CL_aileron[186] = t158 * t70 * t104 * 3.1415926535897931 * t156 * -0.25;
-  b_CL_aileron[187] = t157 * t71 * t104 * 3.1415926535897931 * t100 * -0.25;
-  b_CL_aileron[188] = t6 * t72 * t104 * 3.1415926535897931 * t10 * -0.25;
-  b_CL_aileron[189] = t77 * t73 * t104 * 3.1415926535897931 * t9 * -0.25;
-  b_CL_aileron[190] = t58;
-  b_CL_aileron[191] = t59;
-  b_CL_aileron[192] = t60;
-  b_CL_aileron[193] = t61;
-  b_CL_aileron[194] = t62;
-  b_CL_aileron[195] = t63;
-  b_CL_aileron[196] = t64;
-  b_CL_aileron[197] = t65;
-  b_CL_aileron[198] = t66;
-  b_CL_aileron[199] = t67;
-  b_CL_aileron[200] = t68;
-  t77 = Omega_2_scaled * t68;
-  t158 = Omega_1_scaled * t69;
-  b_CL_aileron[201] = t79 * (((((((((((Omega_1_scaled * t57 *
-    0.01228634392023026 - Omega_2_scaled * t58 * 0.01228634392023026) + t17 *
-    t57 * 0.0075456152077779167) - t19 * t58 * 0.0075456152077779167) + t77 *
-    t119 * 0.0064381447596962606) + t77 * t118 * 0.0039349871274520724) +
-    Omega_1_scaled * t66 * t120 * 0.0046429750925043979) + Omega_2_scaled * t25 *
-    t58 * t95 * 0.020516396677824081) - t158 * t120 * 0.0064381447596962606) -
-    t158 * t117 * 0.0039349871274520724) - Omega_2_scaled * t67 * t119 *
-    0.0046429750925043979) - Omega_1_scaled * t25 * t57 * t95 *
-    0.020516396677824081) * wing_span / 2.0;
-  b_CL_aileron[202] = -t387 * (t379 - t12);
-  b_CL_aileron[203] = t69;
-  b_CL_aileron[204] = -t388 * (t380 - t13);
-  b_CL_aileron[205] = -t389 * (t381 - t14);
-  b_CL_aileron[206] = -t390 * (t382 - t7);
-  t79 = Omega_1_scaled * V * gain_motor * prop_sigma * rho * t41;
-  t77 = t231_tmp_tmp * t499 + t370 * t499 * t143_tmp;
-  t158 = t79 * t57 * t104 * t149;
-  b_CL_aileron[207] = t158 * 3.1415926535897931 * t77 * -0.25;
-  t156 = Omega_2_scaled * V * gain_motor * prop_sigma * rho * t41;
-  t157 = t231_tmp_tmp * t500 + t370 * t500 * t143_tmp;
-  t100 = t156 * t58 * t104 * t150;
-  b_CL_aileron[208] = t100 * 3.1415926535897931 * t157 * -0.25;
-  t6 = Omega_3_scaled * V * gain_motor * prop_sigma * rho * t41;
-  t10 = t231_tmp_tmp * t501 + t370 * t501 * t143_tmp;
-  t9 = t6 * t59 * t104 * t151;
-  b_CL_aileron[209] = t9 * 3.1415926535897931 * t10 * -0.25;
-  b_CL_aileron[210] = t70;
-  t8 = Omega_4_scaled * V * gain_motor * prop_sigma * rho * t41;
-  t7 = t231_tmp_tmp * t502 + t370 * t502 * t143_tmp;
-  t14 = t8 * t60 * t104 * t152;
-  b_CL_aileron[211] = t14 * 3.1415926535897931 * t7 * -0.25;
-  t13 = t79 * t62 * t66 * t104 * t149;
-  b_CL_aileron[212] = t13 * 3.1415926535897931 * t77 / 4.0;
-  b_CL_aileron[213] = t71;
-  t12 = t156 * t63 * t67 * t104 * t150;
-  b_CL_aileron[214] = t12 * 3.1415926535897931 * t157 / 4.0;
-  t11 = t6 * t64 * t68 * t104 * t151;
-  b_CL_aileron[215] = t11 * 3.1415926535897931 * t10 / 4.0;
-  t5 = t8 * t65 * t69 * t104 * t152;
-  b_CL_aileron[216] = t5 * 3.1415926535897931 * t7 / 4.0;
-  t79 = t79 * t66 * t70 * t104 * t149;
-  b_CL_aileron[217] = t79 * 3.1415926535897931 * t77 / 4.0;
-  t77 = t156 * t67 * t71 * t104 * t150;
-  b_CL_aileron[218] = t77 * 3.1415926535897931 * t157 / 4.0;
-  t156 = t6 * t68 * t72 * t104 * t151;
-  b_CL_aileron[219] = t156 * 3.1415926535897931 * t10 / 4.0;
-  t157 = t8 * t69 * t73 * t104 * t152;
-  b_CL_aileron[220] = t157 * 3.1415926535897931 * t7 / 4.0;
-  b_CL_aileron[221] = t72;
-  b_CL_aileron[222] = t158 * t82 * 3.1415926535897931 / 4.0;
-  b_CL_aileron[223] = t100 * t85 * 3.1415926535897931 / 4.0;
-  b_CL_aileron[224] = t9 * t102 * 3.1415926535897931 / 4.0;
-  b_CL_aileron[225] = t14 * t39 * 3.1415926535897931 / 4.0;
-  b_CL_aileron[226] = t13 * t82 * 3.1415926535897931 / 4.0;
-  b_CL_aileron[227] = t73;
-  b_CL_aileron[228] = t12 * t85 * 3.1415926535897931 / 4.0;
-  b_CL_aileron[229] = t11 * t102 * 3.1415926535897931 / 4.0;
-  b_CL_aileron[230] = t5 * t39 * 3.1415926535897931 / 4.0;
-  b_CL_aileron[231] = t79 * t82 * 3.1415926535897931 / 4.0;
-  b_CL_aileron[232] = t77 * t85 * 3.1415926535897931 / 4.0;
-  b_CL_aileron[233] = t156 * t102 * 3.1415926535897931 / 4.0;
-  b_CL_aileron[234] = t157 * t39 * 3.1415926535897931 / 4.0;
-  b_CL_aileron[235] = 1.0 / I_xx;
-  b_CL_aileron[236] = 1.0 / I_yy;
-  b_CL_aileron[237] = 1.0 / I_zz;
-  b_CL_aileron[238] = t78;
-  b_CL_aileron[239] = t80;
-  b_CL_aileron[240] = t81;
-  b_CL_aileron[241] = t83;
-  b_CL_aileron[242] = t84;
-  b_CL_aileron[243] = t86;
-  b_CL_aileron[244] = t87;
-  b_CL_aileron[245] = t88;
-  b_CL_aileron[246] = 1.0 / gain_phi;
-  b_CL_aileron[247] = 1.0 / gain_theta;
-  b_CL_aileron[248] = t94;
-  b_CL_aileron[249] = t95;
-  b_CL_aileron[250] = 1.0 / gain_ailerons;
-  b_CL_aileron[251] = 1.0 / m;
-  b_CL_aileron[252] = wing_chord;
-  b_CL_aileron[253] = wing_span;
+  t7 = t163 * prop_theta * t25;
+  b_CL_aileron[225] = t7 * t78 * t95 * t104 * t151 * t155 * 2.0 + t10 * t101 *
+    2.0;
+  b_CL_aileron[226] = t7 * t81 * t95 * t104 * t152 * t156 * 2.0 + t10 * t139 *
+    2.0;
+  b_CL_aileron[227] = t7 * t84 * t95 * t104 * t153 * t157 * 2.0 + t10 * t566 *
+    2.0;
+  b_CL_aileron[228] = t7 * t87 * t95 * t104 * t154 * t158 * 2.0 + t10 * t9 * 2.0;
+  b_CL_aileron[229] = cos(t11);
+  b_CL_aileron[230] = prop_sigma * rho * t17 * t38 * t42 * t66 * t105 *
+    3.1415926535897931 * (t242 + (prop_delta - 1.0) * (t220 - t6)) * -0.25;
+  b_CL_aileron[231] = cos(t12);
+  b_CL_aileron[232] = cos(t13);
+  t7 = Omega_2_scaled * t68;
+  t5 = Omega_1_scaled * t69;
+  b_CL_aileron[233] = t8 * (((((((((((Omega_1_scaled * t57 * 0.01228634392023026
+    - Omega_2_scaled * t58 * 0.01228634392023026) + t17 * t57 *
+    0.0075456152077779167) - t19 * t58 * 0.0075456152077779167) + t7 * t120 *
+    0.0064381447596962606) + t7 * t119 * 0.0039349871274520724) + Omega_1_scaled
+    * t66 * t121 * 0.0046429750925043979) + Omega_2_scaled * t25 * t58 * t96 *
+    0.020516396677824081) - t5 * t121 * 0.0064381447596962606) - t5 * t118 *
+    0.0039349871274520724) - Omega_2_scaled * t67 * t120 * 0.0046429750925043979)
+    - Omega_1_scaled * t25 * t57 * t96 * 0.020516396677824081) * wing_span / 2.0;
+  b_CL_aileron[234] = cos(t14);
+  b_CL_aileron[235] = t66;
+  b_CL_aileron[236] = t67;
+  b_CL_aileron[237] = t68;
+  b_CL_aileron[238] = t69;
+  b_CL_aileron[239] = sin(t11);
+  b_CL_aileron[240] = sin(t12);
+  b_CL_aileron[241] = sin(t13);
+  b_CL_aileron[242] = sin(t14);
+  b_CL_aileron[243] = 1.0 / I_xx;
+  b_CL_aileron[244] = 1.0 / I_yy;
+  b_CL_aileron[245] = 1.0 / I_zz;
+  b_CL_aileron[246] = t78;
+  b_CL_aileron[247] = t80;
+  b_CL_aileron[248] = t81;
+  b_CL_aileron[249] = t83;
+  b_CL_aileron[250] = t84;
+  b_CL_aileron[251] = t86;
+  b_CL_aileron[252] = t87;
+  b_CL_aileron[253] = t88;
+  b_CL_aileron[254] = 1.0 / gain_phi;
+  b_CL_aileron[255] = 1.0 / gain_theta;
+  b_CL_aileron[256] = t95;
+  b_CL_aileron[257] = t96;
+  b_CL_aileron[258] = 1.0 / gain_ailerons;
+  b_CL_aileron[259] = 1.0 / m;
+  b_CL_aileron[260] = wing_chord;
+  b_CL_aileron[261] = wing_span;
   cost = ft_1(b_CL_aileron, b_gradient_data, gradient_size);
   if (*gradient_size - 1 >= 0) {
     memcpy(&gradient_data[0], &b_gradient_data[0], (unsigned int)*gradient_size *
@@ -4076,7 +4051,6 @@ static double evalObjAndConstr(const c_struct_T *c_obj_next_next_next_next_next_
   const double x[15], int *status)
 {
   double gradient_data[15];
-  double Alpha;
   double dv_global_1;
   double dv_global_2;
   double dv_global_3;
@@ -4086,15 +4060,13 @@ static double evalObjAndConstr(const c_struct_T *c_obj_next_next_next_next_next_
   double fval;
   int gradient_size;
   bool b;
-  Alpha = x[12] * c_obj_next_next_next_next_next_->gain_theta->contents -
-    c_obj_next_next_next_next_next_->flight_path_angle->contents;
   dv_global_1 = c_obj_next_next_next_next_next_->dv_global->contents[0];
   dv_global_2 = c_obj_next_next_next_next_next_->dv_global->contents[1];
   dv_global_3 = c_obj_next_next_next_next_next_->dv_global->contents[2];
   dv_global_4 = c_obj_next_next_next_next_next_->dv_global->contents[3];
   dv_global_5 = c_obj_next_next_next_next_next_->dv_global->contents[4];
   dv_global_6 = c_obj_next_next_next_next_next_->dv_global->contents[5];
-  fval = compute_cost_and_gradient(Alpha, c_obj_next_next_next_next_next_->
+  fval = compute_cost_and_gradient(c_obj_next_next_next_next_next_->
     Beta->contents, c_obj_next_next_next_next_next_->CL_aileron->contents,
     c_obj_next_next_next_next_next_->Cd_zero->contents,
     c_obj_next_next_next_next_next_->Cl_alpha->contents,
@@ -4156,6 +4128,20 @@ static double evalObjAndConstr(const c_struct_T *c_obj_next_next_next_next_next_
     c_obj_next_next_next_next_next_->wing_span->contents,
     c_obj_next_next_next_next_next_->wing_chord->contents, gradient_data,
     &gradient_size);
+
+  /*  [cost_primary,gradient_primary] = compute_primary_cost_and_gradient(Beta,CL_aileron,Cd_zero,Cl_alpha,Cm_zero, ... */
+  /*      Cm_alpha,I_xx,I_yy,I_zz,K_Cd,Omega_1_scaled,Omega_2_scaled,Omega_3_scaled,Omega_4_scaled,Phi_scaled,S, ... */
+  /*      Theta_scaled,V,W_dv_1,W_dv_2,W_dv_3,W_dv_4,W_dv_5,W_dv_6,b_1_scaled,b_2_scaled,b_3_scaled,b_4_scaled,delta_ailerons_scaled, ... */
+  /*      dv_global_1,dv_global_2,dv_global_3,dv_global_4,dv_global_5,dv_global_6,flight_path_angle,g_1_scaled,g_2_scaled, ... */
+  /*      g_3_scaled,g_4_scaled,gain_el,gain_az,gain_phi,gain_theta,gain_motor,gain_airspeed,gain_ailerons,l_1,l_3,l_4,l_z,m, ... */
+  /*      p,prop_R,prop_Cd_0,prop_Cl_0,prop_Cd_a,prop_Cl_a,prop_delta,prop_sigma,prop_theta,q,r,rho,wing_span,wing_chord); */
+  /*   */
+  /*  [cost_secondary,gradient_secondary] = compute_secondary_cost_and_gradient(Omega_1_scaled,Omega_2_scaled,Omega_3_scaled, ... */
+  /*      Omega_4_scaled,Phi_scaled,Theta_scaled,V,W_act_phi,W_act_theta,W_act_motor,W_act_tilt_el,W_act_tilt_az,W_act_ailerons, ... */
+  /*      b_1_scaled,b_2_scaled,b_3_scaled,b_4_scaled,delta_ailerons_scaled,desired_el_value,desired_az_value,desired_phi_value, ... */
+  /*      desired_theta_value,desired_motor_value,desired_ailerons_value,flight_path_angle,g_1_scaled,g_2_scaled,g_3_scaled, ... */
+  /*      g_4_scaled,gain_el,gain_az,gain_phi,gain_theta,gain_motor,gain_ailerons,gamma_quadratic_du,power_Cd_0,power_Cd_a, ... */
+  /*      prop_R,prop_Cl_0,prop_Cl_a,prop_delta,prop_sigma,prop_theta,rho); */
   *status = 1;
   b = rtIsNaN(fval);
   if (rtIsInf(fval) || b) {
@@ -4883,562 +4869,755 @@ static double fmincon(c_struct_T *fun_workspace, double x0[15], const double lb
   return fval;
 }
 
-static double ft_1(const double ct[254], double gradient_data[], int
+static double ft_1(const double ct[262], double gradient_data[], int
                    *gradient_size)
 {
+  double b_t708_tmp;
+  double b_t762_tmp;
+  double b_t763_tmp;
+  double b_t764_tmp;
+  double b_t765_tmp;
+  double b_t914_tmp;
   double cost;
-  double t443;
-  double t444;
-  double t445;
-  double t446;
-  double t455;
-  double t455_tmp;
-  double t455_tmp_tmp;
-  double t456;
-  double t456_tmp_tmp;
-  double t457;
-  double t457_tmp;
-  double t457_tmp_tmp;
-  double t458;
-  double t458_tmp_tmp;
-  double t471;
-  double t472;
-  double t473;
-  double t473_tmp;
-  double t474;
-  double t475;
   double t476;
   double t477;
   double t478;
-  double t478_tmp;
-  double t575;
-  double t576;
-  double t577;
-  double t578;
-  double t579;
-  double t580;
-  double t581;
-  double t582;
-  double t587;
-  double t587_tmp;
-  double t588;
-  double t589;
-  double t590;
-  double t591;
-  double t592;
-  double t593;
-  double t594;
+  double t479;
+  double t484;
+  double t484_tmp;
+  double t485;
+  double t485_tmp;
+  double t486;
+  double t486_tmp;
+  double t487;
+  double t504;
+  double t505;
+  double t506;
+  double t507;
+  double t508;
+  double t509;
+  double t510;
+  double t511;
+  double t608;
+  double t609;
+  double t610;
+  double t611;
+  double t640;
+  double t641;
+  double t642;
+  double t643;
+  double t646;
+  double t646_tmp;
+  double t647;
+  double t648;
+  double t649;
+  double t650;
+  double t651;
+  double t652;
+  double t653;
+  double t670;
   double t671;
-  double t671_tmp_tmp;
   double t672;
-  double t672_tmp_tmp;
   double t673;
-  double t673_tmp_tmp;
   double t674;
-  double t674_tmp_tmp;
   double t675;
   double t676;
   double t677;
-  double t678;
-  double t745;
-  double t746;
-  double t747;
-  double t748;
-  double t759;
-  double t760;
-  double t761;
+  double t706;
+  double t706_tmp_tmp;
+  double t707;
+  double t707_tmp;
+  double t707_tmp_tmp;
+  double t708;
+  double t708_tmp;
+  double t709;
+  double t709_tmp;
+  double t710;
+  double t710_tmp;
+  double t711;
+  double t711_tmp;
+  double t712;
+  double t712_tmp;
+  double t713;
+  double t713_tmp;
+  double t722;
+  double t722_tmp;
+  double t723;
+  double t723_tmp;
+  double t724;
+  double t724_tmp;
+  double t725;
+  double t738;
+  double t739;
+  double t740;
+  double t741;
   double t762;
+  double t762_tmp;
+  double t762_tmp_tmp;
+  double t762_tmp_tmp_tmp;
   double t763;
+  double t763_tmp;
+  double t763_tmp_tmp;
+  double t763_tmp_tmp_tmp;
   double t764;
+  double t764_tmp;
+  double t764_tmp_tmp;
+  double t764_tmp_tmp_tmp;
   double t765;
-  double t766;
-  double t775;
-  double t776;
-  double t777;
-  double t778;
-  double t787;
-  double t788;
-  double t789;
-  double t790;
-  double t797;
+  double t765_tmp;
+  double t765_tmp_tmp;
+  double t765_tmp_tmp_tmp;
+  double t770;
+  double t770_tmp;
+  double t771;
+  double t771_tmp;
+  double t772;
+  double t772_tmp;
+  double t773;
+  double t773_tmp;
   double t798;
   double t799;
   double t800;
-  double t805;
-  double t805_tmp;
-  double t806;
-  double t806_tmp;
-  double t807;
-  double t807_tmp;
-  double t808;
-  double t808_tmp;
-  double t809;
-  double t809_tmp;
-  double t810;
-  double t811;
-  double t812;
-  double t813;
-  double t814;
-  double t815;
-  double t816;
-  double t817;
-  double t818;
-  double t819;
-  double t820;
-  double t821;
-  double t822;
-  double t823;
-  double t824;
-  double t825;
+  double t801;
   double t826;
-  double t827;
   double t828;
-  double t831;
-  double t832;
-  double t834;
-  double t835;
-  double t836;
-  double t837;
-  double t838;
+  double t829;
+  double t840;
   double t841;
   double t842;
+  double t843;
+  double t844;
+  double t845;
+  double t846;
+  double t847;
+  double t856;
+  double t857;
   double t858;
-  t797 = ((ct[63] + ct[101]) + ct[139]) + ct[202];
-  t798 = ((ct[63] + ct[102]) + ct[140]) + ct[204];
-  t799 = ((ct[63] + ct[103]) + ct[141]) + ct[205];
-  t800 = ((ct[63] + ct[104]) + ct[142]) + ct[206];
-  t579 = ct[105] + ct[172];
-  t580 = ct[106] + ct[173];
-  t581 = ct[107] + ct[174];
-  t582 = ct[108] + ct[175];
-  t443 = ct[87] + ct[45] * ct[155];
-  t444 = ct[88] + ct[45] * ct[156];
-  t445 = ct[89] + ct[45] * ct[157];
-  t446 = ct[90] + ct[45] * ct[158];
-  t575 = ct[135] + ct[45] * ct[150];
-  t576 = ct[136] + ct[45] * ct[151];
-  t577 = ct[137] + ct[45] * ct[152];
-  t578 = ct[138] + ct[45] * ct[154];
-  t675 = ct[43] * ct[44];
-  t805_tmp = t675 * ct[82] * ct[127] * ct[153];
-  t805 = ct[50] + t805_tmp * ct[48] * ct[64] * t797;
-  t806_tmp = t675 * ct[85] * ct[127] * ct[153];
-  t806 = ct[50] + t806_tmp * ct[48] * ct[64] * t798;
-  t807_tmp = t675 * ct[91] * ct[127] * ct[153];
-  t807 = ct[50] + t807_tmp * ct[48] * ct[64] * t799;
-  t808_tmp = t675 * ct[93] * ct[127] * ct[153];
-  t808 = ct[50] + t808_tmp * ct[48] * ct[64] * t800;
-  t455_tmp_tmp = t675 * ct[81] * ct[127];
-  t676 = t455_tmp_tmp * ct[149];
-  t455_tmp = t676 * ct[198] * ct[47];
-  t455 = t455_tmp * t443 * 3.1415926535897931 / 4.0;
-  t456_tmp_tmp = t675 * ct[83] * ct[127];
-  t677 = t456_tmp_tmp * ct[149];
-  t858 = t677 * ct[199] * ct[47];
-  t456 = t858 * t444 * 3.1415926535897931 / 4.0;
-  t457_tmp_tmp = t675 * ct[86] * ct[127];
-  t678 = t457_tmp_tmp * ct[149];
-  t457_tmp = t678 * ct[200] * ct[47];
-  t457 = t457_tmp * t445 * 3.1415926535897931 / 4.0;
-  t458_tmp_tmp = t675 * ct[92] * ct[127];
-  t675 = t458_tmp_tmp * ct[149];
-  t835 = t675 * ct[203] * ct[47];
-  t458 = t835 * t446 * 3.1415926535897931 / 4.0;
-  t676 *= ct[184];
-  t832 = t676 * ct[194] * ct[47];
-  t471 = t832 * t443 * 3.1415926535897931 / 4.0;
-  t677 *= ct[190];
-  t838 = t677 * ct[195] * ct[47];
-  t472 = t838 * t444 * 3.1415926535897931 / 4.0;
-  t678 *= ct[191];
-  t473_tmp = t678 * ct[196] * ct[47];
-  t473 = t473_tmp * t445 * 3.1415926535897931 / 4.0;
-  t675 *= ct[192];
-  t841 = t675 * ct[197] * ct[47];
-  t474 = t841 * t446 * 3.1415926535897931 / 4.0;
-  t842 = t676 * ct[210] * ct[47];
-  t475 = t842 * t443 * 3.1415926535897931 / 4.0;
-  t834 = t677 * ct[213] * ct[47];
-  t476 = t834 * t444 * 3.1415926535897931 / 4.0;
-  t831 = t678 * ct[221] * ct[47];
-  t477 = t831 * t445 * 3.1415926535897931 / 4.0;
-  t478_tmp = t675 * ct[227] * ct[47];
-  t478 = t478_tmp * t446 * 3.1415926535897931 / 4.0;
-  t587_tmp = ct[10] * ct[32] * ct[43] * ct[44] * ct[148];
-  t587 = t587_tmp * ct[184] * ct[47] * ct[69] * t575 * 3.1415926535897931 / 4.0;
-  t588 = t587_tmp * ct[190] * ct[47] * ct[70] * t576 * 3.1415926535897931 / 4.0;
-  t589 = t587_tmp * ct[191] * ct[47] * ct[71] * t577 * 3.1415926535897931 / 4.0;
-  t590 = t587_tmp * ct[192] * ct[47] * ct[72] * t578 * 3.1415926535897931 / 4.0;
-  t671_tmp_tmp = ct[3] * ct[10];
-  t675 = t671_tmp_tmp * ct[32] * ct[43] * ct[44] * ct[148];
-  t671 = t675 * ct[194] * ct[198] * ct[47] * ct[69] * t575 * 3.1415926535897931 *
+  double t859;
+  double t868;
+  double t869;
+  double t870;
+  double t871;
+  double t902;
+  double t903;
+  double t904;
+  double t905;
+  double t910;
+  double t910_tmp;
+  double t911;
+  double t911_tmp;
+  double t912;
+  double t912_tmp;
+  double t913;
+  double t913_tmp;
+  double t914;
+  double t914_tmp;
+  double t915;
+  double t915_tmp;
+  double t916;
+  double t916_tmp;
+  double t917;
+  double t917_tmp;
+  double t926;
+  double t927;
+  double t928;
+  double t929;
+  double t930;
+  double t931;
+  double t932;
+  double t933;
+  double t934;
+  double t935;
+  double t936;
+  double t937;
+  double t938;
+  double t939;
+  double t940;
+  double t941;
+  double t942;
+  double t942_tmp;
+  double t943;
+  double t950;
+  double t952;
+  double t955;
+  double t958;
+  double t965;
+  double t971;
+  double t975;
+  double t984;
+  t798 = ct[191] + ct[195];
+  t799 = ct[192] + ct[196];
+  t800 = ct[193] + ct[197];
+  t801 = ct[194] + ct[198];
+  t608 = ct[147] + ct[165];
+  t609 = ct[148] + ct[166];
+  t610 = ct[149] + ct[167];
+  t611 = ct[150] + ct[168];
+  t640 = ct[156] + ct[46] * ct[173];
+  t641 = ct[157] + ct[46] * ct[174];
+  t642 = ct[158] + ct[46] * ct[175];
+  t643 = ct[159] + ct[46] * ct[176];
+  t670 = ct[123] + ct[46] * ct[221];
+  t671 = ct[124] + ct[46] * ct[222];
+  t672 = ct[125] + ct[46] * ct[223];
+  t673 = ct[126] + ct[46] * ct[224];
+  t674 = ct[127] + ct[46] * ct[225];
+  t675 = ct[128] + ct[46] * ct[226];
+  t676 = ct[129] + ct[46] * ct[227];
+  t677 = ct[130] + ct[46] * ct[228];
+  t476 = ct[99] + ct[46] * ((ct[50] + ct[89]) + ct[169]);
+  t477 = ct[100] + ct[46] * ((ct[50] + ct[90]) + ct[170]);
+  t478 = ct[101] + ct[46] * ((ct[50] + ct[91]) + ct[171]);
+  t479 = ct[102] + ct[46] * ((ct[50] + ct[92]) + ct[172]);
+  t646_tmp = ct[10] * ct[32] * ct[43] * ct[45] * ct[146];
+  t646 = t646_tmp * ct[208] * ct[48] * ct[72] * t640 * 3.1415926535897931 / 4.0;
+  t647 = t646_tmp * ct[209] * ct[48] * ct[73] * t641 * 3.1415926535897931 / 4.0;
+  t648 = t646_tmp * ct[218] * ct[48] * ct[74] * t642 * 3.1415926535897931 / 4.0;
+  t649 = t646_tmp * ct[219] * ct[48] * ct[75] * t643 * 3.1415926535897931 / 4.0;
+  t706_tmp_tmp = ct[3] * ct[10];
+  t984 = t706_tmp_tmp * ct[32] * ct[43] * ct[45] * ct[146];
+  t943 = t984 * ct[229] * ct[235] * ct[48] * ct[72];
+  t706 = t943 * t640 * 3.1415926535897931 * -0.25;
+  t707_tmp_tmp = ct[4] * ct[10];
+  t971 = t707_tmp_tmp * ct[32] * ct[43] * ct[45] * ct[146];
+  t707_tmp = t971 * ct[231] * ct[236] * ct[48] * ct[73];
+  t707 = t707_tmp * t641 * 3.1415926535897931 * -0.25;
+  t955 = ct[5] * ct[10];
+  t708_tmp = t955 * ct[32] * ct[43] * ct[45] * ct[146];
+  b_t708_tmp = t708_tmp * ct[232] * ct[237] * ct[48] * ct[74];
+  t708 = b_t708_tmp * t642 * 3.1415926535897931 * -0.25;
+  t958 = ct[6] * ct[10];
+  t826 = t958 * ct[32] * ct[43] * ct[45] * ct[146];
+  t709_tmp = t826 * ct[234] * ct[238] * ct[48] * ct[75];
+  t709 = t709_tmp * t643 * 3.1415926535897931 * -0.25;
+  t710_tmp = t984 * ct[235] * ct[239] * ct[48] * ct[72];
+  t710 = t710_tmp * t640 * 3.1415926535897931 * -0.25;
+  t711_tmp = t971 * ct[236] * ct[240] * ct[48] * ct[73];
+  t711 = t711_tmp * t641 * 3.1415926535897931 * -0.25;
+  t712_tmp = t708_tmp * ct[237] * ct[241] * ct[48] * ct[74];
+  t712 = t712_tmp * t642 * 3.1415926535897931 * -0.25;
+  t713_tmp = t826 * ct[238] * ct[242] * ct[48] * ct[75];
+  t713 = t713_tmp * t643 * 3.1415926535897931 * -0.25;
+  t722_tmp = t706_tmp_tmp * ct[34] * ct[32] * ct[43] * ct[45] * ct[146];
+  t722 = t722_tmp * ct[229] * ct[235] * ct[48] * ct[68] * t640 *
+    3.1415926535897931 / 4.0;
+  t723_tmp = t707_tmp_tmp * ct[34] * ct[32] * ct[43] * ct[45] * ct[146];
+  t723 = t723_tmp * ct[231] * ct[236] * ct[48] * ct[69] * t641 *
+    3.1415926535897931 / 4.0;
+  t724_tmp = t955 * ct[34] * ct[32] * ct[43] * ct[45] * ct[146];
+  t724 = t724_tmp * ct[232] * ct[237] * ct[48] * ct[70] * t642 *
+    3.1415926535897931 / 4.0;
+  t828 = t958 * ct[34] * ct[32] * ct[43] * ct[45] * ct[146];
+  t725 = t828 * ct[234] * ct[238] * ct[48] * ct[71] * t643 * 3.1415926535897931 /
+    4.0;
+  t738 = t722_tmp * ct[235] * ct[239] * ct[48] * ct[68] * t640 *
+    3.1415926535897931 / 4.0;
+  t739 = t723_tmp * ct[236] * ct[240] * ct[48] * ct[69] * t641 *
+    3.1415926535897931 / 4.0;
+  t740 = t724_tmp * ct[237] * ct[241] * ct[48] * ct[70] * t642 *
+    3.1415926535897931 / 4.0;
+  t741 = t828 * ct[238] * ct[242] * ct[48] * ct[71] * t643 * 3.1415926535897931 /
+    4.0;
+  t762_tmp = ct[43] * ct[45];
+  t762_tmp_tmp_tmp = t762_tmp * ct[81] * ct[143];
+  t762_tmp_tmp = t762_tmp_tmp_tmp * ct[155];
+  t950 = t762_tmp_tmp * ct[208];
+  b_t762_tmp = t950 * ct[229] * ct[48];
+  t762 = b_t762_tmp * t674 * 3.1415926535897931 / 4.0;
+  t763_tmp_tmp_tmp = t762_tmp * ct[86] * ct[143];
+  t763_tmp_tmp = t763_tmp_tmp_tmp * ct[155];
+  t763_tmp = t763_tmp_tmp * ct[209];
+  b_t763_tmp = t763_tmp * ct[231] * ct[48];
+  t763 = b_t763_tmp * t675 * 3.1415926535897931 / 4.0;
+  t764_tmp_tmp_tmp = t762_tmp * ct[93] * ct[143];
+  t764_tmp_tmp = t764_tmp_tmp_tmp * ct[155];
+  t764_tmp = t764_tmp_tmp * ct[218];
+  b_t764_tmp = t764_tmp * ct[232] * ct[48];
+  t764 = b_t764_tmp * t676 * 3.1415926535897931 / 4.0;
+  t765_tmp_tmp_tmp = t762_tmp * ct[103] * ct[143];
+  t765_tmp_tmp = t765_tmp_tmp_tmp * ct[155];
+  t765_tmp = t765_tmp_tmp * ct[219];
+  b_t765_tmp = t765_tmp * ct[234] * ct[48];
+  t765 = b_t765_tmp * t677 * 3.1415926535897931 / 4.0;
+  t770_tmp = t950 * ct[239] * ct[48];
+  t770 = t770_tmp * t674 * 3.1415926535897931 / 4.0;
+  t771_tmp = t763_tmp * ct[240] * ct[48];
+  t771 = t771_tmp * t675 * 3.1415926535897931 / 4.0;
+  t772_tmp = t764_tmp * ct[241] * ct[48];
+  t772 = t772_tmp * t676 * 3.1415926535897931 / 4.0;
+  t773_tmp = t765_tmp * ct[242] * ct[48];
+  t773 = t773_tmp * t677 * 3.1415926535897931 / 4.0;
+  t484_tmp = t762_tmp_tmp * ct[235] * ct[48];
+  t484 = t484_tmp * t476 * 3.1415926535897931 / 4.0;
+  t485_tmp = t763_tmp_tmp * ct[236] * ct[48];
+  t485 = t485_tmp * t477 * 3.1415926535897931 / 4.0;
+  t486_tmp = t764_tmp_tmp * ct[237] * ct[48];
+  t486 = t486_tmp * t478 * 3.1415926535897931 / 4.0;
+  t952 = t765_tmp_tmp * ct[238] * ct[48];
+  t487 = t952 * t479 * 3.1415926535897931 / 4.0;
+  t504 = b_t762_tmp * t476 * 3.1415926535897931 / 4.0;
+  t505 = b_t763_tmp * t477 * 3.1415926535897931 / 4.0;
+  t506 = b_t764_tmp * t478 * 3.1415926535897931 / 4.0;
+  t507 = b_t765_tmp * t479 * 3.1415926535897931 / 4.0;
+  t508 = t770_tmp * t476 * 3.1415926535897931 / 4.0;
+  t509 = t771_tmp * t477 * 3.1415926535897931 / 4.0;
+  t510 = t772_tmp * t478 * 3.1415926535897931 / 4.0;
+  t511 = t773_tmp * t479 * 3.1415926535897931 / 4.0;
+  t650 = ct[3] * t646;
+  t651 = ct[4] * t647;
+  t652 = ct[5] * t648;
+  t653 = ct[6] * t649;
+  t902 = ((ct[64] + ct[116]) + ct[160]) - ct[151] * t608;
+  t903 = ((ct[64] + ct[117]) + ct[161]) - ct[152] * t609;
+  t904 = ((ct[64] + ct[118]) + ct[162]) - ct[153] * t610;
+  t905 = ((ct[64] + ct[119]) + ct[163]) - ct[154] * t611;
+  t914_tmp = ct[44] * ct[46];
+  t965 = ct[42] - ct[144];
+  t764_tmp = t984 * ct[208] * ct[48] * ct[72];
+  t984 = t764_tmp * 3.1415926535897931;
+  b_t914_tmp = ct[214] + t914_tmp * ct[204] * t965;
+  t914 = (t722_tmp * ct[208] * ct[48] * ct[68] * t640 * 3.1415926535897931 / 4.0
+          + t484_tmp * t674 * 3.1415926535897931 / 4.0) + t984 * b_t914_tmp *
     -0.25;
-  t672_tmp_tmp = ct[4] * ct[10];
-  t676 = t672_tmp_tmp * ct[32] * ct[43] * ct[44] * ct[148];
-  t672 = t676 * ct[195] * ct[199] * ct[47] * ct[70] * t576 * 3.1415926535897931 *
+  t765_tmp = t971 * ct[209] * ct[48] * ct[73];
+  t971 = t765_tmp * 3.1415926535897931;
+  t915_tmp = ct[215] + t914_tmp * ct[205] * t965;
+  t915 = (t723_tmp * ct[209] * ct[48] * ct[69] * t641 * 3.1415926535897931 / 4.0
+          + t485_tmp * t675 * 3.1415926535897931 / 4.0) + t971 * t915_tmp *
     -0.25;
-  t673_tmp_tmp = ct[5] * ct[10];
-  t677 = t673_tmp_tmp * ct[32] * ct[43] * ct[44] * ct[148];
-  t673 = t677 * ct[196] * ct[200] * ct[47] * ct[71] * t577 * 3.1415926535897931 *
+  t762_tmp_tmp = t708_tmp * ct[218] * ct[48] * ct[74];
+  t723_tmp = t762_tmp_tmp * 3.1415926535897931;
+  t916_tmp = ct[216] + t914_tmp * ct[206] * t965;
+  t916 = (t724_tmp * ct[218] * ct[48] * ct[70] * t642 * 3.1415926535897931 / 4.0
+          + t486_tmp * t676 * 3.1415926535897931 / 4.0) + t723_tmp * t916_tmp *
     -0.25;
-  t674_tmp_tmp = ct[6] * ct[10];
-  t678 = t674_tmp_tmp * ct[32] * ct[43] * ct[44] * ct[148];
-  t674 = t678 * ct[197] * ct[203] * ct[47] * ct[72] * t578 * 3.1415926535897931 *
-    -0.25;
-  t675 = t675 * ct[198] * ct[210] * ct[47] * ct[69] * t575 * 3.1415926535897931 *
-    -0.25;
-  t676 = t676 * ct[199] * ct[213] * ct[47] * ct[70] * t576 * 3.1415926535897931 *
-    -0.25;
-  t677 = t677 * ct[200] * ct[221] * ct[47] * ct[71] * t577 * 3.1415926535897931 *
-    -0.25;
-  t678 = t678 * ct[203] * ct[227] * ct[47] * ct[72] * t578 * 3.1415926535897931 *
-    -0.25;
-  t591 = ct[3] * t587;
-  t592 = ct[4] * t588;
-  t593 = ct[5] * t589;
-  t594 = ct[6] * t590;
-  t759 = t475 + t675;
-  t760 = t476 + t676;
-  t761 = t477 + t677;
-  t762 = t478 + t678;
-  t763 = t471 + t671;
-  t764 = t472 + t672;
-  t765 = t473 + t673;
-  t766 = t474 + t674;
-  t809_tmp = ct[3] * ct[43] * ct[44] * ct[127] * ct[149];
-  t809 = ((t809_tmp * ct[198] * ct[47] * ct[48] * t443 + ct[177]) + t587) + ct
-    [207];
-  t587 = ct[4] * ct[43] * ct[44] * ct[127] * ct[149];
-  t810 = ((t587 * ct[199] * ct[47] * ct[48] * t444 + ct[178]) + t588) + ct[208];
-  t588 = ct[5] * ct[43] * ct[44] * ct[127] * ct[149];
-  t811 = ((t588 * ct[200] * ct[47] * ct[48] * t445 + ct[179]) + t589) + ct[209];
-  t589 = ct[6] * ct[43] * ct[44] * ct[127] * ct[149];
-  t812 = ((t589 * ct[203] * ct[47] * ct[48] * t446 + ct[180]) + t590) + ct[211];
-  t745 = t455 + t591;
-  t746 = t456 + t592;
-  t747 = t457 + t593;
-  t748 = t458 + t594;
-  t775 = ct[30] * t471 + ct[30] * t671;
-  t776 = ct[30] * t472 + ct[30] * t672;
-  t777 = ct[30] * t473 + ct[30] * t673;
-  t778 = ct[30] * t474 + ct[30] * t674;
-  t787 = ct[30] * t475 + ct[30] * t675;
-  t788 = ct[30] * t476 + ct[30] * t676;
-  t789 = ct[30] * t477 + ct[30] * t677;
-  t790 = ct[30] * t478 + ct[30] * t678;
-  t676 = t809_tmp * ct[184];
-  t813 = ((t676 * ct[194] * ct[47] * ct[48] * t443 + ct[181]) - t587_tmp * ct
-          [194] * ct[198] * ct[47] * ct[69] * t575 * 3.1415926535897931 / 4.0) +
-    ct[212];
-  t677 = t587 * ct[190];
-  t814 = ((t677 * ct[195] * ct[47] * ct[48] * t444 + ct[182]) - t587_tmp * ct
-          [195] * ct[199] * ct[47] * ct[70] * t576 * 3.1415926535897931 / 4.0) +
-    ct[214];
-  t678 = t588 * ct[191];
-  t815 = ((t678 * ct[196] * ct[47] * ct[48] * t445 + ct[183]) - t587_tmp * ct
-          [196] * ct[200] * ct[47] * ct[71] * t577 * 3.1415926535897931 / 4.0) +
-    ct[215];
-  t675 = t589 * ct[192];
-  t816 = ((t675 * ct[197] * ct[47] * ct[48] * t446 + ct[185]) - t587_tmp * ct
-          [197] * ct[203] * ct[47] * ct[72] * t578 * 3.1415926535897931 / 4.0) +
-    ct[216];
-  t817 = ((t676 * ct[210] * ct[47] * ct[48] * t443 + ct[186]) - t587_tmp * ct
-          [198] * ct[210] * ct[47] * ct[69] * t575 * 3.1415926535897931 / 4.0) +
-    ct[217];
-  t818 = ((t677 * ct[213] * ct[47] * ct[48] * t444 + ct[187]) - t587_tmp * ct
-          [199] * ct[213] * ct[47] * ct[70] * t576 * 3.1415926535897931 / 4.0) +
-    ct[218];
-  t819 = ((t678 * ct[221] * ct[47] * ct[48] * t445 + ct[188]) - t587_tmp * ct
-          [200] * ct[221] * ct[47] * ct[71] * t577 * 3.1415926535897931 / 4.0) +
-    ct[219];
-  t820 = ((t675 * ct[227] * ct[47] * ct[48] * t446 + ct[189]) - t587_tmp * ct
-          [203] * ct[227] * ct[47] * ct[72] * t578 * 3.1415926535897931 / 4.0) +
-    ct[220];
-  t587 = t671_tmp_tmp * ct[31] * ct[32] * ct[43] * ct[44] * ct[148];
-  t676 = ct[31] * ct[43] * ct[44];
-  t671 = t587 * ct[198];
-  t821 = (((t676 * ct[81] * ct[127] * ct[149] * ct[184] * ct[47] * t443 *
-            3.1415926535897931 / 4.0 + t455_tmp * t579 * 3.1415926535897931 /
-            4.0) + t587 * ct[184] * ct[47] * ct[65] * t575 * 3.1415926535897931 /
-           4.0) - t671 * ct[47] * ct[69] * t575 * 3.1415926535897931 / 4.0) -
-    ct[222];
-  t675 = t672_tmp_tmp * ct[31] * ct[32] * ct[43] * ct[44] * ct[148];
-  t590 = t675 * ct[199];
-  t822 = (((t676 * ct[83] * ct[127] * ct[149] * ct[190] * ct[47] * t444 *
-            3.1415926535897931 / 4.0 + t858 * t580 * 3.1415926535897931 / 4.0) +
-           t675 * ct[190] * ct[47] * ct[66] * t576 * 3.1415926535897931 / 4.0) -
-          t590 * ct[47] * ct[70] * t576 * 3.1415926535897931 / 4.0) - ct[223];
-  t678 = t673_tmp_tmp * ct[31] * ct[32] * ct[43] * ct[44] * ct[148];
-  t589 = t678 * ct[200];
-  t823 = (((t676 * ct[86] * ct[127] * ct[149] * ct[191] * ct[47] * t445 *
-            3.1415926535897931 / 4.0 + t457_tmp * t581 * 3.1415926535897931 /
-            4.0) + t678 * ct[191] * ct[47] * ct[67] * t577 * 3.1415926535897931 /
-           4.0) - t589 * ct[47] * ct[71] * t577 * 3.1415926535897931 / 4.0) -
-    ct[224];
-  t677 = t674_tmp_tmp * ct[31] * ct[32] * ct[43] * ct[44] * ct[148];
-  t588 = t677 * ct[203];
-  t824 = (((t676 * ct[92] * ct[127] * ct[149] * ct[192] * ct[47] * t446 *
-            3.1415926535897931 / 4.0 + t835 * t582 * 3.1415926535897931 / 4.0) +
-           t677 * ct[192] * ct[47] * ct[68] * t578 * 3.1415926535897931 / 4.0) -
-          t588 * ct[47] * ct[72] * t578 * 3.1415926535897931 / 4.0) - ct[225];
-  t836 = ((t759 + t760) + t761) + t762;
-  t837 = ((t763 + t764) + t765) + t766;
-  t676 = ct[31] * ct[194];
-  t825 = (((t676 * t455 - t832 * t579 * 3.1415926535897931 / 4.0) + t676 * t591)
-          + t587 * ct[194] * ct[198] * ct[47] * ct[65] * t575 *
-          3.1415926535897931 / 4.0) - ct[226];
-  t676 = ct[31] * ct[195];
-  t826 = (((t676 * t456 - t838 * t580 * 3.1415926535897931 / 4.0) + t676 * t592)
-          + t675 * ct[195] * ct[199] * ct[47] * ct[66] * t576 *
-          3.1415926535897931 / 4.0) - ct[228];
-  t676 = ct[31] * ct[196];
-  t827 = (((t676 * t457 - t473_tmp * t581 * 3.1415926535897931 / 4.0) + t676 *
-           t593) + t678 * ct[196] * ct[200] * ct[47] * ct[67] * t577 *
-          3.1415926535897931 / 4.0) - ct[229];
-  t676 = ct[31] * ct[197];
-  t828 = (((t676 * t458 - t841 * t582 * 3.1415926535897931 / 4.0) + t676 * t594)
-          + t677 * ct[197] * ct[203] * ct[47] * ct[68] * t578 *
-          3.1415926535897931 / 4.0) - ct[230];
-  t676 = ct[31] * ct[210];
-  t575 = (((t676 * t455 - t842 * t579 * 3.1415926535897931 / 4.0) + t676 * t591)
-          + t671 * ct[210] * ct[47] * ct[65] * t575 * 3.1415926535897931 / 4.0)
-    - ct[231];
-  t676 = ct[31] * ct[213];
-  t579 = (((t676 * t456 - t834 * t580 * 3.1415926535897931 / 4.0) + t676 * t592)
-          + t590 * ct[213] * ct[47] * ct[66] * t576 * 3.1415926535897931 / 4.0)
-    - ct[232];
-  t676 = ct[31] * ct[221];
-  t831 = (((t676 * t457 - t831 * t581 * 3.1415926535897931 / 4.0) + t676 * t593)
-          + t589 * ct[221] * ct[47] * ct[67] * t577 * 3.1415926535897931 / 4.0)
-    - ct[233];
-  t675 = ct[31] * ct[227];
-  t832 = (((t675 * t458 - t478_tmp * t582 * 3.1415926535897931 / 4.0) + t675 *
-           t594) + t588 * ct[227] * ct[47] * ct[68] * t578 * 3.1415926535897931 /
-          4.0) - ct[234];
-  t675 = ((t745 + t746) + t747) + t748;
-  t838 = ct[159] * t836;
-  t593 = ct[167] * t837;
-  t473_tmp = ct[159] * ct[193];
-  t841 = t473_tmp * t837;
-  t594 = ct[160] * ct[167];
-  t842 = t594 * t836;
-  t834 = ct[160] * t675;
-  t835 = ct[193] * t675;
-  t591 = ct[167] * ct[193];
-  t446 = -(t591 * t836);
-  t592 = ct[23] + ct[236] * ((((((((((ct[51] + ct[171]) + ct[80]) + ct[39] *
-    t745) + ct[39] * t746) + ct[39] * t747) + ct[39] * t748) + ct[38] * t763) +
-    ct[38] * t764) - ct[37] * t765) - ct[37] * t766);
-  t444 = ct[20] + ct[251] * (((ct[84] + ct[115]) + t838) + t593);
-  t858 = ct[22] + ct[235] * (((((((((((ct[52] + ct[176]) + ct[78]) + ct[201]) +
-    ct[36] * t763) + ct[36] * t766) + ct[39] * t759) + ct[39] * t760) + ct[39] *
-    t761) + ct[39] * t762) - ct[36] * t764) - ct[36] * t765);
-  t445 = ct[159] * ct[160];
-  t457_tmp = t445 * t837;
-  t476 = (ct[21] + ct[251] * (((((ct[94] + ct[117]) + ct[120]) + t835) + t842) -
-           t457_tmp)) - 9.81;
-  t477 = ct[24] - ct[237] * (((((((((ct[49] + ct[162]) + ct[36] * t745) + ct[36]
-    * t748) - ct[36] * t746) - ct[36] * t747) + ct[37] * t761) + ct[37] * t762)
-    - ct[38] * t759) - ct[38] * t760);
-  t474 = ct[19] - ct[251] * (((((ct[97] + ct[116]) + ct[118]) + t834) + t841) +
-    t446);
-  t478 = ct[17] * ct[246];
-  t676 = ct[7] - t478;
-  t587_tmp = ct[18] * ct[247];
-  t677 = ct[9] - t587_tmp;
-  t671_tmp_tmp = ct[16] * ct[250];
-  t678 = ct[15] - t671_tmp_tmp;
-  t675 = ct[11] + ct[58];
-  t589 = ct[12] + ct[58];
-  t587 = ct[13] + ct[58];
-  t588 = ct[14] + ct[58];
-  t590 = ct[25] + ct[60];
-  t671 = ct[26] + ct[60];
-  t672 = ct[27] + ct[60];
-  t673 = ct[28] + ct[60];
-  t475 = ct[35] * ct[99];
-  t672_tmp_tmp = ct[35] * ct[122];
-  t673_tmp_tmp = ct[35] * ct[124];
-  t674_tmp_tmp = ct[35] * ct[98];
-  t443 = ct[35] * ct[96];
-  t455_tmp = ct[35] * ct[125];
-  cost = (((((((((((((((((((ct[119] * (t477 * t477) + ct[110] * (t444 * t444)) +
-    ct[113] * (t592 * t592)) + ct[112] * (t858 * t858)) + ct[100] * (t474 * t474))
-                        + ct[111] * (t476 * t476)) + t475 * (t805 * t805)) +
-                      t475 * (t806 * t806)) + t475 * (t807 * t807)) + t475 *
-                    (t808 * t808)) + t443 * (t676 * t676)) + t674_tmp_tmp *
-                  (t677 * t677)) + t455_tmp * (t678 * t678)) + t672_tmp_tmp *
-                (t675 * t675)) + t672_tmp_tmp * (t589 * t589)) + t672_tmp_tmp *
-              (t587 * t587)) + t672_tmp_tmp * (t588 * t588)) + t673_tmp_tmp *
-            (t590 * t590)) + t673_tmp_tmp * (t671 * t671)) + t673_tmp_tmp *
-          (t672 * t672)) + t673_tmp_tmp * (t673 * t673);
+  t763_tmp_tmp = t826 * ct[219] * ct[48] * ct[75];
+  t708_tmp = t763_tmp_tmp * 3.1415926535897931;
+  t917_tmp = ct[217] + t914_tmp * ct[207] * t965;
+  t917 = (t828 * ct[219] * ct[48] * ct[71] * t643 * 3.1415926535897931 / 4.0 +
+          t952 * t677 * 3.1415926535897931 / 4.0) + t708_tmp * t917_tmp * -0.25;
+  t826 = t484 + t650;
+  t677 = t485 + t651;
+  t828 = t486 + t652;
+  t829 = t487 + t653;
+  t840 = t504 + t706;
+  t841 = t505 + t707;
+  t842 = t506 + t708;
+  t843 = t507 + t709;
+  t844 = t508 + t710;
+  t845 = t509 + t711;
+  t846 = t510 + t712;
+  t847 = t511 + t713;
+  t763_tmp = ct[3] * ct[43] * ct[45] * ct[143] * ct[155];
+  t926 = ((t763_tmp * ct[235] * ct[48] * ct[49] * t476 + ct[230]) + t646) -
+    t764_tmp * t798 * 3.1415926535897931 / 4.0;
+  t764_tmp_tmp = ct[4] * ct[43] * ct[45] * ct[143] * ct[155];
+  t675 = ct[106] + ct[46] * (ct[96] - ct[188]);
+  t927 = ((t764_tmp_tmp * ct[236] * ct[48] * ct[49] * t477 + t485_tmp *
+           3.1415926535897931 * t675 * -0.25) + t647) - t765_tmp * t799 *
+    3.1415926535897931 / 4.0;
+  t765_tmp_tmp = ct[5] * ct[43] * ct[45] * ct[143] * ct[155];
+  t722_tmp = ct[107] + ct[46] * (ct[97] - ct[189]);
+  t928 = ((t765_tmp_tmp * ct[237] * ct[48] * ct[49] * t478 + t486_tmp *
+           3.1415926535897931 * t722_tmp * -0.25) + t648) - t762_tmp_tmp * t800 *
+    3.1415926535897931 / 4.0;
+  t950 = ct[6] * ct[43] * ct[45] * ct[143] * ct[155];
+  t674 = ct[108] + ct[46] * (ct[98] - ct[190]);
+  t929 = ((t950 * ct[238] * ct[48] * ct[49] * t479 + t952 * 3.1415926535897931 *
+           t674 * -0.25) + t649) - t763_tmp_tmp * t801 * 3.1415926535897931 /
+    4.0;
+  t763_tmp *= ct[208];
+  t764_tmp = ct[105] + ct[46] * (ct[95] - ct[187]);
+  t930 = ((t763_tmp * ct[229] * ct[48] * ct[49] * t476 + b_t762_tmp *
+           3.1415926535897931 * t764_tmp * -0.25) - t646_tmp * ct[229] * ct[235]
+          * ct[48] * ct[72] * t640 * 3.1415926535897931 / 4.0) + t943 * t798 *
+    3.1415926535897931 / 4.0;
+  t765_tmp = t764_tmp_tmp * ct[209];
+  t931 = ((t765_tmp * ct[231] * ct[48] * ct[49] * t477 + b_t763_tmp *
+           3.1415926535897931 * t675 * -0.25) - t646_tmp * ct[231] * ct[236] *
+          ct[48] * ct[73] * t641 * 3.1415926535897931 / 4.0) + t707_tmp * t799 *
+    3.1415926535897931 / 4.0;
+  t762_tmp_tmp = t765_tmp_tmp * ct[218];
+  t932 = ((t762_tmp_tmp * ct[232] * ct[48] * ct[49] * t478 + b_t764_tmp *
+           3.1415926535897931 * t722_tmp * -0.25) - t646_tmp * ct[232] * ct[237]
+          * ct[48] * ct[74] * t642 * 3.1415926535897931 / 4.0) + b_t708_tmp *
+    t800 * 3.1415926535897931 / 4.0;
+  t763_tmp_tmp = t950 * ct[219];
+  t933 = ((t763_tmp_tmp * ct[234] * ct[48] * ct[49] * t479 + b_t765_tmp *
+           3.1415926535897931 * t674 * -0.25) - t646_tmp * ct[234] * ct[238] *
+          ct[48] * ct[75] * t643 * 3.1415926535897931 / 4.0) + t709_tmp * t801 *
+    3.1415926535897931 / 4.0;
+  t934 = ((t763_tmp * ct[239] * ct[48] * ct[49] * t476 + t770_tmp *
+           3.1415926535897931 * t764_tmp * -0.25) - t646_tmp * ct[235] * ct[239]
+          * ct[48] * ct[72] * t640 * 3.1415926535897931 / 4.0) + t710_tmp * t798
+    * 3.1415926535897931 / 4.0;
+  t935 = ((t765_tmp * ct[240] * ct[48] * ct[49] * t477 + t771_tmp *
+           3.1415926535897931 * t675 * -0.25) - t646_tmp * ct[236] * ct[240] *
+          ct[48] * ct[73] * t641 * 3.1415926535897931 / 4.0) + t711_tmp * t799 *
+    3.1415926535897931 / 4.0;
+  t936 = ((t762_tmp_tmp * ct[241] * ct[48] * ct[49] * t478 + t772_tmp *
+           3.1415926535897931 * t722_tmp * -0.25) - t646_tmp * ct[237] * ct[241]
+          * ct[48] * ct[74] * t642 * 3.1415926535897931 / 4.0) + t712_tmp * t800
+    * 3.1415926535897931 / 4.0;
+  t937 = ((t763_tmp_tmp * ct[242] * ct[48] * ct[49] * t479 + t773_tmp *
+           3.1415926535897931 * t674 * -0.25) - t646_tmp * ct[238] * ct[242] *
+          ct[48] * ct[75] * t643 * 3.1415926535897931 / 4.0) + t713_tmp * t801 *
+    3.1415926535897931 / 4.0;
+  t763_tmp_tmp = t706_tmp_tmp * ct[31] * ct[32] * ct[43] * ct[45] * ct[146];
+  t763_tmp = ct[31] * ct[43] * ct[45];
+  t676 = ct[210] + t914_tmp * ct[200] * t965;
+  t724_tmp = t763_tmp_tmp * ct[235];
+  t938 = (((t763_tmp * ct[81] * ct[143] * ct[155] * ct[208] * ct[48] * t476 *
+            3.1415926535897931 / 4.0 + t763_tmp_tmp * ct[208] * ct[48] * ct[68] *
+            t640 * 3.1415926535897931 / 4.0) - t724_tmp * ct[48] * ct[72] * t640
+           * 3.1415926535897931 / 4.0) + t484_tmp * t670 * 3.1415926535897931 /
+          4.0) + t984 * t676 * -0.25;
+  t762_tmp_tmp = t707_tmp_tmp * ct[31] * ct[32] * ct[43] * ct[45] * ct[146];
+  t722_tmp = ct[211] + t914_tmp * ct[201] * t965;
+  t675 = t762_tmp_tmp * ct[236];
+  t939 = (((t763_tmp * ct[86] * ct[143] * ct[155] * ct[209] * ct[48] * t477 *
+            3.1415926535897931 / 4.0 + t762_tmp_tmp * ct[209] * ct[48] * ct[69] *
+            t641 * 3.1415926535897931 / 4.0) - t675 * ct[48] * ct[73] * t641 *
+           3.1415926535897931 / 4.0) + t485_tmp * t671 * 3.1415926535897931 /
+          4.0) + t971 * t722_tmp * -0.25;
+  t765_tmp = t955 * ct[31] * ct[32] * ct[43] * ct[45] * ct[146];
+  t950 = ct[212] + t914_tmp * ct[202] * t965;
+  t674 = t765_tmp * ct[237];
+  t940 = (((t763_tmp * ct[93] * ct[143] * ct[155] * ct[218] * ct[48] * t478 *
+            3.1415926535897931 / 4.0 + t765_tmp * ct[218] * ct[48] * ct[70] *
+            t642 * 3.1415926535897931 / 4.0) - t674 * ct[48] * ct[74] * t642 *
+           3.1415926535897931 / 4.0) + t486_tmp * t672 * 3.1415926535897931 /
+          4.0) + t723_tmp * t950 * -0.25;
+  t764_tmp = t958 * ct[31] * ct[32] * ct[43] * ct[45] * ct[146];
+  t764_tmp_tmp = ct[213] + t914_tmp * ct[203] * t965;
+  t765_tmp_tmp = t764_tmp * ct[238];
+  t941 = (((t763_tmp * ct[103] * ct[143] * ct[155] * ct[219] * ct[48] * t479 *
+            3.1415926535897931 / 4.0 + t764_tmp * ct[219] * ct[48] * ct[71] *
+            t643 * 3.1415926535897931 / 4.0) - t765_tmp_tmp * ct[48] * ct[75] *
+           t643 * 3.1415926535897931 / 4.0) + t952 * t673 * 3.1415926535897931 /
+          4.0) + t708_tmp * t764_tmp_tmp * -0.25;
+  t975 = ((t914 + t915) + t916) + t917;
+  t856 = ct[30] * t508 + ct[30] * t710;
+  t857 = ct[30] * t509 + ct[30] * t711;
+  t858 = ct[30] * t510 + ct[30] * t712;
+  t859 = ct[30] * t511 + ct[30] * t713;
+  t868 = ct[30] * t504 + ct[30] * t706;
+  t869 = ct[30] * t505 + ct[30] * t707;
+  t870 = ct[30] * t506 + ct[30] * t708;
+  t871 = ct[30] * t507 + ct[30] * t709;
+  t910_tmp = t762_tmp * ct[84] * ct[143] * ct[164] * ct[49] * ct[65];
+  t910 = ct[51] + t910_tmp * t902;
+  t911_tmp = t762_tmp * ct[87] * ct[143] * ct[164] * ct[49] * ct[65];
+  t911 = ct[51] + t911_tmp * t903;
+  t912_tmp = t762_tmp * ct[94] * ct[143] * ct[164] * ct[49] * ct[65];
+  t912 = ct[51] + t912_tmp * t904;
+  t913_tmp = t762_tmp * ct[104] * ct[143] * ct[164] * ct[49] * ct[65];
+  t913 = ct[51] + t913_tmp * t905;
+  t763_tmp = ct[31] * ct[229];
+  t942_tmp = t943 * 3.1415926535897931;
+  t942 = (((t763_tmp * t484 + t763_tmp_tmp * ct[229] * ct[235] * ct[48] * ct[68]
+            * t640 * 3.1415926535897931 / 4.0) + t763_tmp * t650) - b_t762_tmp *
+          t670 * 3.1415926535897931 / 4.0) + t942_tmp * t676 * -0.25;
+  t763_tmp = ct[31] * ct[231];
+  t707_tmp *= 3.1415926535897931;
+  t943 = (((t763_tmp * t485 + t762_tmp_tmp * ct[231] * ct[236] * ct[48] * ct[69]
+            * t641 * 3.1415926535897931 / 4.0) + t763_tmp * t651) - b_t763_tmp *
+          t671 * 3.1415926535897931 / 4.0) + t707_tmp * t722_tmp * -0.25;
+  t763_tmp = ct[31] * ct[232];
+  b_t762_tmp = b_t708_tmp * 3.1415926535897931;
+  t709 = (((t763_tmp * t486 + t765_tmp * ct[232] * ct[237] * ct[48] * ct[70] *
+            t642 * 3.1415926535897931 / 4.0) + t763_tmp * t652) - b_t764_tmp *
+          t672 * 3.1415926535897931 / 4.0) + b_t762_tmp * t950 * -0.25;
+  t763_tmp = ct[31] * ct[234];
+  t762_tmp = t709_tmp * 3.1415926535897931;
+  t708 = (((t763_tmp * t487 + t764_tmp * ct[234] * ct[238] * ct[48] * ct[71] *
+            t643 * 3.1415926535897931 / 4.0) + t763_tmp * t653) - b_t765_tmp *
+          t673 * 3.1415926535897931 / 4.0) + t762_tmp * t764_tmp_tmp * -0.25;
+  t763_tmp = ct[31] * ct[239];
+  t707 = t710_tmp * 3.1415926535897931;
+  t713 = (((t763_tmp * t484 + t724_tmp * ct[239] * ct[48] * ct[68] * t640 *
+            3.1415926535897931 / 4.0) + t763_tmp * t650) - t770_tmp * t670 *
+          3.1415926535897931 / 4.0) + t707 * t676 * -0.25;
+  t763_tmp = ct[31] * ct[240];
+  t706 = t711_tmp * 3.1415926535897931;
+  t711 = (((t763_tmp * t485 + t675 * ct[240] * ct[48] * ct[69] * t641 *
+            3.1415926535897931 / 4.0) + t763_tmp * t651) - t771_tmp * t671 *
+          3.1415926535897931 / 4.0) + t706 * t722_tmp * -0.25;
+  t763_tmp = ct[31] * ct[241];
+  t712 = t712_tmp * 3.1415926535897931;
+  t710 = (((t763_tmp * t486 + t674 * ct[241] * ct[48] * ct[70] * t642 *
+            3.1415926535897931 / 4.0) + t763_tmp * t652) - t772_tmp * t672 *
+          3.1415926535897931 / 4.0) + t712 * t950 * -0.25;
+  t763_tmp = ct[31] * ct[242];
+  t505 = t713_tmp * 3.1415926535897931;
+  t477 = (((t763_tmp * t487 + t765_tmp_tmp * ct[242] * ct[48] * ct[71] * t643 *
+            3.1415926535897931 / 4.0) + t763_tmp * t653) - t773_tmp * t673 *
+          3.1415926535897931 / 4.0) + t505 * t764_tmp_tmp * -0.25;
+  t950 = ((t826 + t677) + t828) + t829;
+  t479 = ((t844 + t845) + t846) + t847;
+  t506 = ((t840 + t841) + t842) + t843;
+  t507 = ct[220] * t950;
+  t952 = ct[178] * t950;
+  t955 = ct[181] * t506;
+  t508 = ct[177] * t479;
+  t509 = ct[177] * ct[220];
+  t478 = t509 * t506;
+  t510 = ct[178] * ct[181];
+  t958 = t510 * t479;
+  t511 = ct[181] * ct[220];
+  t504 = -(t511 * t479);
+  t965 = ct[24] + -ct[245] * (((((((((ct[179] - ct[180]) + ct[36] * t826) - ct
+    [36] * t677) - ct[36] * t828) + ct[36] * t829) - ct[38] * t844) - ct[38] *
+    t845) + ct[37] * t846) + ct[37] * t847);
+  t800 = ct[23] + ct[244] * ((((((((((ct[52] + ct[184]) + ct[82]) + ct[39] *
+    t826) + ct[39] * t677) + ct[39] * t828) + ct[39] * t829) + ct[38] * t840) +
+    ct[38] * t841) - ct[37] * t842) - ct[37] * t843);
+  t971 = ct[20] + ct[259] * (((ct[83] + ct[135]) + t955) + t508);
+  t801 = ct[22] + ct[243] * (((((((((((ct[53] + ct[199]) + ct[66]) + ct[233]) +
+    ct[39] * t844) + ct[39] * t845) + ct[39] * t846) + ct[39] * t847) + ct[36] *
+    t840) + ct[36] * t843) - ct[36] * t841) - ct[36] * t842);
+  t646_tmp = ct[177] * ct[178];
+  t484_tmp = t646_tmp * t506;
+  t984 = (ct[21] + ct[259] * (((((ct[85] + ct[137]) + ct[139]) + t507) + t958) -
+           t484_tmp)) - 9.81;
+  t674 = ct[19] - ct[259] * (((((ct[88] + ct[136]) + ct[138]) + t952) + t478) +
+    t504);
+  t706_tmp_tmp = ct[17] * ct[254];
+  t763_tmp = ct[7] - t706_tmp_tmp;
+  t485_tmp = ct[18] * ct[255];
+  t764_tmp = ct[9] - t485_tmp;
+  t476 = ct[16] * ct[258];
+  t765_tmp = ct[15] - t476;
+  t762_tmp_tmp = ct[11] + ct[59];
+  t763_tmp_tmp = ct[12] + ct[59];
+  t764_tmp_tmp = ct[13] + ct[59];
+  t765_tmp_tmp = ct[14] + ct[59];
+  t950 = ct[25] + ct[61];
+  t723_tmp = ct[26] + ct[61];
+  t708_tmp = ct[27] + ct[61];
+  t676 = ct[28] + ct[61];
+  t722_tmp = ct[35] * ct[112];
+  t798 = ct[35] * ct[132];
+  t799 = ct[35] * ct[134];
+  t707_tmp_tmp = ct[35] * ct[111];
+  t486_tmp = ct[35] * ct[110];
+  t914_tmp = ct[35] * ct[140];
+  cost = (((((((((((((((((((ct[131] * (t965 * t965) + ct[115] * (t971 * t971)) +
+    ct[122] * (t800 * t800)) + ct[121] * (t801 * t801)) + ct[113] * (t674 * t674))
+                        + ct[120] * (t984 * t984)) + t722_tmp * (t910 * t910)) +
+                      t722_tmp * (t911 * t911)) + t722_tmp * (t912 * t912)) +
+                    t722_tmp * (t913 * t913)) + t486_tmp * (t763_tmp * t763_tmp))
+                  + t707_tmp_tmp * (t764_tmp * t764_tmp)) + t914_tmp * (t765_tmp
+    * t765_tmp)) + t798 * (t762_tmp_tmp * t762_tmp_tmp)) + t798 * (t763_tmp_tmp *
+    t763_tmp_tmp)) + t798 * (t764_tmp_tmp * t764_tmp_tmp)) + t798 *
+             (t765_tmp_tmp * t765_tmp_tmp)) + t799 * (t950 * t950)) + t799 *
+           (t723_tmp * t723_tmp)) + t799 * (t708_tmp * t708_tmp)) + t799 * (t676
+    * t676);
   *gradient_size = 15;
-  t674 = ct[41] * ct[144];
-  t809_tmp = ct[112] * ct[235] * t858;
-  t471 = ct[8] * ct[44] * ct[95] * ct[253];
-  t472 = ct[119] * ct[237] * t477;
-  t473 = ct[113] * ct[236] * t592;
-  t673 = ct[110] * ct[251] * t444;
-  t672 = ct[111] * ct[251] * t476;
-  t590 = ct[100] * ct[251] * t474;
-  t671 = ct[126] - ct[143];
-  gradient_data[0] = (((((t475 * t805 * (t805_tmp * ct[64] * 3.1415926535897931 *
-    (((-ct[161] * t671 + ct[131] * (ct[40] * ct[161] * 6.0 - ct[42] * ct[161] *
-    6.0)) + t674 * ct[161] * 3.0) + ct[95] * ct[239] * ct[248] * ct[46] * ct[47]
-     * ct[62] * ct[73] * 6.0) / 2.0 - t455_tmp_tmp * ct[153] * ct[64] * t797 *
-    3.1415926535897931 * 1.5) * -2.0 + t809_tmp * ((ct[36] * t813 + ct[39] *
-    t817) + t471 * (((((ct[184] * 0.01228634392023026 + ct[3] * ct[184] *
-                        0.01509123041555583) + ct[56] * ct[198] *
-                       0.0046429750925043979) - ct[53] * ct[203] *
-                      0.0039349871274520724) - ct[56] * ct[203] *
-                     0.0064381447596962606) + ct[95] * ct[184] * ct[249] *
-                    -0.020516396677824081) / 2.0) * 2.0) - t472 * (ct[36] * t809
-    - ct[38] * t817) * 2.0) + t473 * (ct[38] * t813 + ct[39] * t809) * 2.0) +
-                       t673 * (ct[159] * t817 + ct[167] * t813) * 2.0) + t672 *
-                      ((ct[193] * t809 - t445 * t813) + t594 * t817) * 2.0) -
-    t590 * ((ct[160] * t809 + t473_tmp * t813) - t591 * t817) * 2.0;
-  t589 = ct[128] - ct[145];
-  gradient_data[1] = (((((t475 * t806 * (t806_tmp * ct[64] * 3.1415926535897931 *
-    (((-ct[163] * t589 + ct[132] * (ct[40] * ct[163] * 6.0 - ct[42] * ct[163] *
-    6.0)) + t674 * ct[163] * 3.0) + ct[95] * ct[241] * ct[248] * ct[46] * ct[47]
-     * ct[62] * ct[75] * 6.0) / 2.0 - t456_tmp_tmp * ct[153] * ct[64] * t798 *
-    3.1415926535897931 * 1.5) * -2.0 - t809_tmp * ((ct[36] * t814 - ct[39] *
-    t818) + t471 * (((((ct[190] * 0.01228634392023026 + ct[4] * ct[190] *
-                        0.01509123041555583) + ct[55] * ct[199] *
-                       0.0046429750925043979) - ct[54] * ct[200] *
-                      0.0039349871274520724) - ct[55] * ct[200] *
-                     0.0064381447596962606) + ct[95] * ct[190] * ct[249] *
-                    -0.020516396677824081) / 2.0) * 2.0) + t472 * (ct[36] * t810
-    + ct[38] * t818) * 2.0) + t473 * (ct[38] * t814 + ct[39] * t810) * 2.0) +
-                       t673 * (ct[159] * t818 + ct[167] * t814) * 2.0) + t672 *
-                      ((ct[193] * t810 - t445 * t814) + t594 * t818) * 2.0) -
-    t590 * ((ct[160] * t810 + t473_tmp * t814) - t591 * t818) * 2.0;
-  t588 = ct[129] - ct[146];
-  gradient_data[2] = (((((t475 * t807 * (t807_tmp * ct[64] * 3.1415926535897931 *
-    (((-ct[164] * t588 + ct[133] * (ct[40] * ct[164] * 6.0 - ct[42] * ct[164] *
-    6.0)) + t674 * ct[164] * 3.0) + ct[95] * ct[243] * ct[248] * ct[46] * ct[47]
-     * ct[62] * ct[76] * 6.0) / 2.0 - t457_tmp_tmp * ct[153] * ct[64] * t799 *
-    3.1415926535897931 * 1.5) * -2.0 + t472 * (ct[36] * t811 - ct[37] * t819) *
-    2.0) - t473 * (ct[37] * t815 - ct[39] * t811) * 2.0) - t809_tmp * (ct[36] *
-    t815 - ct[39] * t819) * 2.0) + t673 * (ct[159] * t819 + ct[167] * t815) *
-                       2.0) + t672 * ((ct[193] * t811 - t445 * t815) + t594 *
-    t819) * 2.0) - t590 * ((ct[160] * t811 + t473_tmp * t815) - t591 * t819) *
+  t828 = ct[41] * ct[145];
+  t646 = ct[121] * ct[243] * t801;
+  t647 = ct[8] * ct[45] * ct[109] * ct[261];
+  t648 = ct[131] * ct[245] * t965;
+  t649 = ct[122] * ct[244] * t800;
+  t677 = ct[115] * ct[259] * t971;
+  t826 = ct[120] * ct[259] * t984;
+  t724_tmp = ct[113] * ct[259] * t674;
+  gradient_data[0] = (((((t722_tmp * t910 * (t910_tmp * (((-ct[182] * t608 + ct
+    [151] * (ct[40] * ct[182] * 6.0 - ct[42] * ct[182] * 6.0)) + t828 * ct[182] *
+    3.0) + ct[109] * ct[247] * ct[256] * ct[47] * ct[48] * ct[63] * ct[77] * 6.0)
+    - t762_tmp_tmp_tmp * ct[164] * ct[65] * t902 * 3.1415926535897931 * 1.5) *
+    -2.0 + t646 * ((ct[36] * t930 + ct[39] * t934) + t647 * (((((ct[208] *
+    0.01228634392023026 + ct[3] * ct[208] * 0.01509123041555583) + ct[57] * ct
+    [235] * 0.0046429750925043979) - ct[54] * ct[238] * 0.0039349871274520724) -
+    ct[57] * ct[238] * 0.0064381447596962606) + ct[109] * ct[208] * ct[257] *
+    -0.020516396677824081) / 2.0) * 2.0) - t648 * (ct[36] * t926 - ct[38] * t934)
+    * 2.0) + t649 * (ct[38] * t930 + ct[39] * t926) * 2.0) + t677 * (ct[177] *
+    t934 + ct[181] * t930) * 2.0) + t826 * ((ct[220] * t926 - t646_tmp * t930) +
+    t510 * t934) * 2.0) - t724_tmp * ((ct[178] * t926 + t509 * t930) - t511 *
+    t934) * 2.0;
+  gradient_data[1] = (((((t722_tmp * t911 * (t911_tmp * (((-ct[183] * t609 + ct
+    [152] * (ct[40] * ct[183] * 6.0 - ct[42] * ct[183] * 6.0)) + t828 * ct[183] *
+    3.0) + ct[109] * ct[249] * ct[256] * ct[47] * ct[48] * ct[63] * ct[78] * 6.0)
+    - t763_tmp_tmp_tmp * ct[164] * ct[65] * t903 * 3.1415926535897931 * 1.5) *
+    -2.0 - t646 * ((ct[36] * t931 - ct[39] * t935) + t647 * (((((ct[209] *
+    0.01228634392023026 + ct[4] * ct[209] * 0.01509123041555583) + ct[56] * ct
+    [236] * 0.0046429750925043979) - ct[55] * ct[237] * 0.0039349871274520724) -
+    ct[56] * ct[237] * 0.0064381447596962606) + ct[109] * ct[209] * ct[257] *
+    -0.020516396677824081) / 2.0) * 2.0) + t648 * (ct[36] * t927 + ct[38] * t935)
+    * 2.0) + t649 * (ct[38] * t931 + ct[39] * t927) * 2.0) + t677 * (ct[177] *
+    t935 + ct[181] * t931) * 2.0) + t826 * ((ct[220] * t927 - t646_tmp * t931) +
+    t510 * t935) * 2.0) - t724_tmp * ((ct[178] * t927 + t509 * t931) - t511 *
+    t935) * 2.0;
+  gradient_data[2] = (((((t722_tmp * t912 * (t912_tmp * (((-ct[185] * t610 + ct
+    [153] * (ct[40] * ct[185] * 6.0 - ct[42] * ct[185] * 6.0)) + t828 * ct[185] *
+    3.0) + ct[109] * ct[251] * ct[256] * ct[47] * ct[48] * ct[63] * ct[79] * 6.0)
+    - t764_tmp_tmp_tmp * ct[164] * ct[65] * t904 * 3.1415926535897931 * 1.5) *
+    -2.0 + t648 * (ct[36] * t928 - ct[37] * t936) * 2.0) - t649 * (ct[37] * t932
+    - ct[39] * t928) * 2.0) - t646 * (ct[36] * t932 - ct[39] * t936) * 2.0) +
+                       t677 * (ct[177] * t936 + ct[181] * t932) * 2.0) + t826 *
+                      ((ct[220] * t928 - t646_tmp * t932) + t510 * t936) * 2.0)
+    - t724_tmp * ((ct[178] * t928 + t509 * t932) - t511 * t936) * 2.0;
+  gradient_data[3] = (((((t722_tmp * t913 * (t913_tmp * (((-ct[186] * t611 + ct
+    [154] * (ct[40] * ct[186] * 6.0 - ct[42] * ct[186] * 6.0)) + t828 * ct[186] *
+    3.0) + ct[109] * ct[253] * ct[256] * ct[47] * ct[48] * ct[63] * ct[80] * 6.0)
+    - t765_tmp_tmp_tmp * ct[164] * ct[65] * t905 * 3.1415926535897931 * 1.5) *
+    -2.0 - t648 * (ct[36] * t929 + ct[37] * t937) * 2.0) - t649 * (ct[37] * t933
+    - ct[39] * t929) * 2.0) + t646 * (ct[36] * t933 + ct[39] * t937) * 2.0) +
+                       t677 * (ct[177] * t937 + ct[181] * t933) * 2.0) + t826 *
+                      ((ct[220] * t929 - t646_tmp * t933) + t510 * t937) * 2.0)
+    - t724_tmp * ((ct[178] * t929 + t509 * t933) - t511 * t937) * 2.0;
+  t723_tmp = ct[3] * ct[31];
+  t708_tmp = t723_tmp * ct[208];
+  t676 = ct[35] * ct[43] * ct[45];
+  t675 = ct[31] * ct[109];
+  t971 = t676 * ct[84] * ct[112] * ct[143] * ct[164] * ct[65] * t910 *
+    3.1415926535897931;
+  gradient_data[4] = ((((((t798 * (ct[11] * 2.0 + ct[60]) - t646 * ((ct[36] *
+    t942 + ct[39] * t713) - t647 * ((((t723_tmp * ct[235] * -0.01228634392023026
+    - ct[31] * ct[81] * ct[235] * 0.0075456152077779167) + t708_tmp * ct[57] *
+    0.0046429750925043979) + t723_tmp * ct[109] * ct[235] * ct[257] *
+    0.020516396677824081) + t708_tmp * ct[235] * ct[238] * 0.0078699742549041447)
+    / 2.0) * 2.0) - t648 * (ct[36] * t938 + ct[38] * t713) * 2.0) - t649 * (ct
+    [38] * t942 - ct[39] * t938) * 2.0) - t677 * (ct[177] * t713 + ct[181] *
+    t942) * 2.0) + t826 * ((ct[220] * t938 + t646_tmp * t942) - t510 * t713) *
+                       2.0) - t724_tmp * ((ct[178] * t938 - t509 * t942) + t511 *
+    t713) * 2.0) + t971 * (((ct[200] * t608 - ct[151] * (ct[40] * ct[200] * 6.0
+    - ct[42] * ct[200] * 6.0)) - t828 * ct[200] * 3.0) + t675 * ct[246] * ct[256]
+    * ct[47] * ct[48] * ct[63] * ct[68] * ct[72] * 6.0);
+  t708_tmp = ct[4] * ct[31];
+  t722_tmp = t708_tmp * ct[209];
+  t674 = t676 * ct[87] * ct[112] * ct[143] * ct[164] * ct[65] * t911 *
+    3.1415926535897931;
+  gradient_data[5] = ((((((t798 * (ct[12] * 2.0 + ct[60]) - t646 * ((-ct[36] *
+    t943 + ct[39] * t711) + t647 * ((((t708_tmp * ct[236] * -0.01228634392023026
+    - ct[31] * ct[86] * ct[236] * 0.0075456152077779167) + t722_tmp * ct[56] *
+    0.0046429750925043979) + t708_tmp * ct[109] * ct[236] * ct[257] *
+    0.020516396677824081) + t722_tmp * ct[236] * ct[237] * 0.0078699742549041447)
+    / 2.0) * 2.0) + t648 * (ct[36] * t939 - ct[38] * t711) * 2.0) - t649 * (ct
+    [38] * t943 - ct[39] * t939) * 2.0) - t677 * (ct[177] * t711 + ct[181] *
+    t943) * 2.0) + t826 * ((ct[220] * t939 + t646_tmp * t943) - t510 * t711) *
+                       2.0) - t724_tmp * ((ct[178] * t939 - t509 * t943) + t511 *
+    t711) * 2.0) + t674 * (((ct[201] * t609 - ct[152] * (ct[40] * ct[201] * 6.0
+    - ct[42] * ct[201] * 6.0)) - t828 * ct[201] * 3.0) + t675 * ct[248] * ct[256]
+    * ct[47] * ct[48] * ct[63] * ct[69] * ct[73] * 6.0);
+  t722_tmp = t708_tmp * ct[218];
+  t984 = t676 * ct[94] * ct[112] * ct[143] * ct[164] * ct[65] * t912 *
+    3.1415926535897931;
+  gradient_data[6] = (t798 * (ct[13] * 2.0 + ct[60]) + t646 * ((ct[36] * t709 -
+    ct[39] * t710) + t647 * (((t708_tmp * rt_powd_snf(ct[218], 3.0) *
+    0.0064381447596962606 - t722_tmp * (ct[237] * ct[237]) *
+    0.012876289519392519) + t722_tmp * ct[55] * 0.0039349871274520724) +
+    t722_tmp * ct[236] * ct[237] * 0.0092859501850087959) / 2.0) * 2.0) +
+    (((((t648 * (ct[36] * t940 + ct[37] * t710) * 2.0 + t649 * (ct[37] * t709 +
+          ct[39] * t940) * 2.0) - t677 * (ct[177] * t710 + ct[181] * t709) * 2.0)
+       + t826 * ((ct[220] * t940 + t646_tmp * t709) - t510 * t710) * 2.0) -
+      t724_tmp * ((ct[178] * t940 - t509 * t709) + t511 * t710) * 2.0) + t984 *
+     (((ct[202] * t610 - ct[153] * (ct[40] * ct[202] * 6.0 - ct[42] * ct[202] *
+         6.0)) - t828 * ct[202] * 3.0) + t675 * ct[250] * ct[256] * ct[47] * ct
+      [48] * ct[63] * ct[70] * ct[74] * 6.0));
+  t708_tmp = t723_tmp * ct[219];
+  t676 = t676 * ct[104] * ct[112] * ct[143] * ct[164] * ct[65] * t913 *
+    3.1415926535897931;
+  gradient_data[7] = (t798 * (ct[14] * 2.0 + ct[60]) - t646 * ((ct[36] * t708 +
+    ct[39] * t477) + t647 * (((t723_tmp * rt_powd_snf(ct[219], 3.0) *
+    0.0064381447596962606 - t708_tmp * (ct[238] * ct[238]) *
+    0.012876289519392519) + t708_tmp * ct[54] * 0.0039349871274520724) +
+    t708_tmp * ct[235] * ct[238] * 0.0092859501850087959) / 2.0) * 2.0) +
+    (((((t648 * (ct[36] * t941 - ct[37] * t477) * -2.0 + t649 * (ct[37] * t708 +
+          ct[39] * t941) * 2.0) - t677 * (ct[177] * t477 + ct[181] * t708) * 2.0)
+       + t826 * ((ct[220] * t941 + t646_tmp * t708) - t510 * t477) * 2.0) -
+      t724_tmp * ((ct[178] * t941 - t509 * t708) + t511 * t477) * 2.0) + t676 *
+     (((ct[203] * t611 - ct[154] * (ct[40] * ct[203] * 6.0 - ct[42] * ct[203] *
+         6.0)) - t828 * ct[203] * 3.0) + t675 * ct[252] * ct[256] * ct[47] * ct
+      [48] * ct[63] * ct[71] * ct[75] * 6.0));
+  t647 = ct[38] * ct[122] * ct[244];
+  t723_tmp = ct[38] * ct[131] * ct[245];
+  gradient_data[8] = (((((t799 * (ct[25] * 2.0 + ct[62]) + t826 * (t646_tmp *
+    t856 + t510 * t868) * 2.0) + t724_tmp * (t509 * t856 + t511 * t868) * 2.0) -
+                        t646 * (ct[36] * t856 - ct[39] * t868) * 2.0) - t677 *
+                       (ct[181] * t856 - ct[177] * t868) * 2.0) - t647 * t856 *
+                      t800 * 2.0) + t723_tmp * t868 * t965 * 2.0;
+  gradient_data[9] = (((((t799 * (ct[26] * 2.0 + ct[62]) + t826 * (t646_tmp *
+    t857 + t510 * t869) * 2.0) + t724_tmp * (t509 * t857 + t511 * t869) * 2.0) +
+                        t646 * (ct[36] * t857 + ct[39] * t869) * 2.0) - t677 *
+                       (ct[181] * t857 - ct[177] * t869) * 2.0) - t647 * t857 *
+                      t800 * 2.0) + t723_tmp * t869 * t965 * 2.0;
+  t647 = ct[37] * ct[122] * ct[244];
+  t723_tmp = ct[37] * ct[131] * ct[245];
+  gradient_data[10] = (((((t799 * (ct[27] * 2.0 + ct[62]) + t826 * (t646_tmp *
+    t858 + t510 * t870) * 2.0) + t724_tmp * (t509 * t858 + t511 * t870) * 2.0) +
+    t646 * (ct[36] * t858 + ct[39] * t870) * 2.0) - t677 * (ct[181] * t858 - ct
+    [177] * t870) * 2.0) + t647 * t858 * t800 * 2.0) - t723_tmp * t870 * t965 *
     2.0;
-  t587 = ct[130] - ct[147];
-  gradient_data[3] = (((((t475 * t808 * (t808_tmp * ct[64] * 3.1415926535897931 *
-    (((-ct[165] * t587 + ct[134] * (ct[40] * ct[165] * 6.0 - ct[42] * ct[165] *
-    6.0)) + t674 * ct[165] * 3.0) + ct[95] * ct[245] * ct[248] * ct[46] * ct[47]
-     * ct[62] * ct[77] * 6.0) / 2.0 - t458_tmp_tmp * ct[153] * ct[64] * t800 *
-    3.1415926535897931 * 1.5) * -2.0 - t472 * (ct[36] * t812 + ct[37] * t820) *
-    2.0) - t473 * (ct[37] * t816 - ct[39] * t812) * 2.0) + t809_tmp * (ct[36] *
-    t816 + ct[39] * t820) * 2.0) + t673 * (ct[159] * t820 + ct[167] * t816) *
-                       2.0) + t672 * ((ct[193] * t812 - t445 * t816) + t594 *
-    t820) * 2.0) - t590 * ((ct[160] * t812 + t473_tmp * t816) - t591 * t820) *
+  gradient_data[11] = (((((t799 * (ct[28] * 2.0 + ct[62]) + t826 * (t646_tmp *
+    t859 + t510 * t871) * 2.0) + t724_tmp * (t509 * t859 + t511 * t871) * 2.0) -
+    t646 * (ct[36] * t859 - ct[39] * t871) * 2.0) - t677 * (ct[181] * t859 - ct
+    [177] * t871) * 2.0) + t647 * t859 * t800 * 2.0) - t723_tmp * t871 * t965 *
     2.0;
-  t675 = ct[3] * ct[31];
-  t676 = t675 * ct[184];
-  t677 = ct[35] * ct[43] * ct[44];
-  t678 = ct[31] * ct[95];
-  gradient_data[4] = ((((((t672_tmp_tmp * (ct[11] * 2.0 + ct[59]) - t809_tmp *
-    ((ct[36] * t825 + ct[39] * t575) - t471 * ((((t675 * ct[198] *
-    -0.01228634392023026 - ct[31] * ct[81] * ct[198] * 0.0075456152077779167) +
-    t676 * ct[56] * 0.0046429750925043979) + t675 * ct[95] * ct[198] * ct[249] *
-    0.020516396677824081) + t676 * ct[198] * ct[203] * 0.0078699742549041447) /
-     2.0) * 2.0) - t472 * (ct[36] * t821 + ct[38] * t575) * 2.0) - t473 * (ct[38]
-    * t825 - ct[39] * t821) * 2.0) - t673 * (ct[159] * t575 + ct[167] * t825) *
-                        2.0) + t672 * ((ct[193] * t821 + t445 * t825) - t594 *
-    t575) * 2.0) - t590 * ((ct[160] * t821 - t473_tmp * t825) + t591 * t575) *
-                      2.0) + t677 * ct[82] * ct[99] * ct[127] * ct[153] * ct[64]
-    * t805 * 3.1415926535897931 * (((ct[166] * t671 - ct[131] * (ct[40] * ct[166]
-    * 6.0 - ct[42] * ct[166] * 6.0)) - t674 * ct[166] * 3.0) + t678 * ct[238] *
-    ct[248] * ct[46] * ct[47] * ct[62] * ct[65] * ct[69] * 6.0);
-  t671 = ct[4] * ct[31];
-  t676 = t671 * ct[190];
-  gradient_data[5] = ((((((t672_tmp_tmp * (ct[12] * 2.0 + ct[59]) - t809_tmp *
-    ((-ct[36] * t826 + ct[39] * t579) + t471 * ((((t671 * ct[199] *
-    -0.01228634392023026 - ct[31] * ct[83] * ct[199] * 0.0075456152077779167) +
-    t676 * ct[55] * 0.0046429750925043979) + t671 * ct[95] * ct[199] * ct[249] *
-    0.020516396677824081) + t676 * ct[199] * ct[200] * 0.0078699742549041447) /
-     2.0) * 2.0) + t472 * (ct[36] * t822 - ct[38] * t579) * 2.0) - t473 * (ct[38]
-    * t826 - ct[39] * t822) * 2.0) - t673 * (ct[159] * t579 + ct[167] * t826) *
-                        2.0) + t672 * ((ct[193] * t822 + t445 * t826) - t594 *
-    t579) * 2.0) - t590 * ((ct[160] * t822 - t473_tmp * t826) + t591 * t579) *
-                      2.0) + t677 * ct[85] * ct[99] * ct[127] * ct[153] * ct[64]
-    * t806 * 3.1415926535897931 * (((ct[168] * t589 - ct[132] * (ct[40] * ct[168]
-    * 6.0 - ct[42] * ct[168] * 6.0)) - t674 * ct[168] * 3.0) + t678 * ct[240] *
-    ct[248] * ct[46] * ct[47] * ct[62] * ct[66] * ct[70] * 6.0);
-  t589 = t671 * ct[191];
-  gradient_data[6] = (t672_tmp_tmp * (ct[13] * 2.0 + ct[59]) + t809_tmp * ((ct
-    [36] * t827 - ct[39] * t831) + t471 * (((t671 * rt_powd_snf(ct[191], 3.0) *
-    0.0064381447596962606 - t589 * (ct[200] * ct[200]) * 0.012876289519392519) +
-    t589 * ct[54] * 0.0039349871274520724) + t589 * ct[199] * ct[200] *
-    0.0092859501850087959) / 2.0) * 2.0) + (((((t472 * (ct[36] * t823 + ct[37] *
-    t831) * 2.0 + t473 * (ct[37] * t827 + ct[39] * t823) * 2.0) - t673 * (ct[159]
-    * t831 + ct[167] * t827) * 2.0) + t672 * ((ct[193] * t823 + t445 * t827) -
-    t594 * t831) * 2.0) - t590 * ((ct[160] * t823 - t473_tmp * t827) + t591 *
-    t831) * 2.0) + t677 * ct[91] * ct[99] * ct[127] * ct[153] * ct[64] * t807 *
-    3.1415926535897931 * (((ct[169] * t588 - ct[133] * (ct[40] * ct[169] * 6.0 -
-    ct[42] * ct[169] * 6.0)) - t674 * ct[169] * 3.0) + t678 * ct[242] * ct[248] *
-    ct[46] * ct[47] * ct[62] * ct[67] * ct[71] * 6.0));
-  t671 = t675 * ct[192];
-  gradient_data[7] = (t672_tmp_tmp * (ct[14] * 2.0 + ct[59]) - t809_tmp * ((ct
-    [36] * t828 + ct[39] * t832) + t471 * (((t675 * rt_powd_snf(ct[192], 3.0) *
-    0.0064381447596962606 - t671 * (ct[203] * ct[203]) * 0.012876289519392519) +
-    t671 * ct[53] * 0.0039349871274520724) + t671 * ct[198] * ct[203] *
-    0.0092859501850087959) / 2.0) * 2.0) + (((((t472 * (ct[36] * t824 - ct[37] *
-    t832) * -2.0 + t473 * (ct[37] * t828 + ct[39] * t824) * 2.0) - t673 * (ct
-    [159] * t832 + ct[167] * t828) * 2.0) + t672 * ((ct[193] * t824 + t445 *
-    t828) - t594 * t832) * 2.0) - t590 * ((ct[160] * t824 - t473_tmp * t828) +
-    t591 * t832) * 2.0) + t677 * ct[93] * ct[99] * ct[127] * ct[153] * ct[64] *
-    t808 * 3.1415926535897931 * (((ct[170] * t587 - ct[134] * (ct[40] * ct[170] *
-    6.0 - ct[42] * ct[170] * 6.0)) - t674 * ct[170] * 3.0) + t678 * ct[244] *
-    ct[248] * ct[46] * ct[47] * ct[62] * ct[68] * ct[72] * 6.0));
-  t674 = ct[38] * ct[119] * ct[237];
-  t471 = ct[38] * ct[113] * ct[236];
-  gradient_data[8] = (((((t673_tmp_tmp * (ct[25] * 2.0 + ct[61]) + t672 * (t594 *
-    t775 + t445 * t787) * 2.0) + t590 * (t591 * t775 + t473_tmp * t787) * 2.0) -
-                        t809_tmp * (ct[36] * t787 - ct[39] * t775) * 2.0) + t673
-                       * (ct[159] * t775 - ct[167] * t787) * 2.0) + t674 * t775 *
-                      t477 * 2.0) - t471 * t787 * t592 * 2.0;
-  gradient_data[9] = (((((t673_tmp_tmp * (ct[26] * 2.0 + ct[61]) + t672 * (t594 *
-    t776 + t445 * t788) * 2.0) + t590 * (t591 * t776 + t473_tmp * t788) * 2.0) +
-                        t809_tmp * (ct[36] * t788 + ct[39] * t776) * 2.0) + t673
-                       * (ct[159] * t776 - ct[167] * t788) * 2.0) + t674 * t776 *
-                      t477 * 2.0) - t471 * t788 * t592 * 2.0;
-  t674 = ct[37] * ct[119] * ct[237];
-  t471 = ct[37] * ct[113] * ct[236];
-  gradient_data[10] = (((((t673_tmp_tmp * (ct[27] * 2.0 + ct[61]) + t672 * (t594
-    * t777 + t445 * t789) * 2.0) + t590 * (t591 * t777 + t473_tmp * t789) * 2.0)
-    + t809_tmp * (ct[36] * t789 + ct[39] * t777) * 2.0) + t673 * (ct[159] * t777
-    - ct[167] * t789) * 2.0) - t674 * t777 * t477 * 2.0) + t471 * t789 * t592 *
-    2.0;
-  gradient_data[11] = (((((t673_tmp_tmp * (ct[28] * 2.0 + ct[61]) + t672 * (t594
-    * t778 + t445 * t790) * 2.0) + t590 * (t591 * t778 + t473_tmp * t790) * 2.0)
-    - t809_tmp * (ct[36] * t790 - ct[39] * t778) * 2.0) + t673 * (ct[159] * t778
-    - ct[167] * t790) * 2.0) - t674 * t778 * t477 * 2.0) + t471 * t790 * t592 *
-    2.0;
-  t674 = ct[2] * ct[8] * ct[34] * ct[44] * ct[109] * ct[74] * ct[95];
-  gradient_data[12] = (((t674_tmp_tmp * (ct[9] * 2.0 - t587_tmp * 2.0) + t590 *
-    ((((((((ct[34] * ct[94] + ct[34] * ct[117]) + ct[34] * ct[120]) + ct[34] *
-          t835) + ct[34] * t842) + ct[34] * -t457_tmp) + ct[123] * ct[160]) +
-      t473_tmp * ct[121]) - t674 * ct[167] * ct[193] * ct[57]) * 2.0) - t673 *
-                        (ct[121] * ct[167] + t674 * ct[159] * ct[57]) * 2.0) +
-                       t672 * ((((((((ct[34] * ct[116] + ct[34] * ct[118]) + ct
-    [34] * t834) + ct[34] * t841) + ct[34] * t446) - ct[123] * ct[193]) + t445 *
-    ct[121]) - ct[8] * ct[34] * ct[44] * ct[109] * ct[95] * ct[167] * ct[193] *
-    ct[79] / 2.0) - t674 * ct[160] * ct[167] * ct[57]) * 2.0) - ct[1] * ct[8] *
-    ct[34] * ct[44] * ct[95] * ct[113] * ct[236] * t592 * ct[252];
-  t674 = ct[33] * ct[159];
-  t809_tmp = ct[33] * ct[160];
-  t471 = ct[33] * ct[193];
-  gradient_data[13] = ((t443 * (ct[7] * 2.0 - t478 * 2.0) + t673 * (((t674 * ct
-    [114] + t674 * t837) - ct[33] * ct[167] * t836) - ct[8] * ct[33] * ct[44] *
-    ct[109] * ct[95] * ct[167] * ct[79] / 2.0) * 2.0) + t672 * (((t809_tmp * ct
-    [84] + t809_tmp * ct[115]) + t809_tmp * t838) + t809_tmp * t593) * 2.0) +
-    t590 * (((t471 * ct[84] + t471 * ct[115]) + t471 * t838) + t471 * t593) *
-    2.0;
-  gradient_data[14] = t455_tmp * (ct[15] * 2.0 - t671_tmp_tmp * 2.0) - ct[0] *
-    ct[8] * ct[29] * ct[44] * ct[95] * ct[112] * ct[235] * t858;
+  t647 = t707 * b_t914_tmp / 4.0;
+  t723_tmp = t706 * t915_tmp / 4.0;
+  t708_tmp = t712 * t916_tmp / 4.0;
+  t675 = t505 * t917_tmp / 4.0;
+  t722_tmp = t942_tmp * b_t914_tmp / 4.0;
+  t765_tmp_tmp = t707_tmp * t915_tmp / 4.0;
+  t764_tmp_tmp = b_t762_tmp * t916_tmp / 4.0;
+  t950 = t762_tmp * t917_tmp / 4.0;
+  t763_tmp = (-t738 + t770) + t647;
+  t764_tmp = (-t739 + t771) + t723_tmp;
+  t765_tmp = (-t740 + t772) + t708_tmp;
+  t762_tmp_tmp = (-t741 + t773) + t675;
+  t763_tmp_tmp = ((((((((((-t722 - t723) - t724) - t725) + t762) + t763) + t764)
+                     + t765) + t722_tmp) + t765_tmp_tmp) + t764_tmp_tmp) + t950;
+  t647 = ((((((((((-t738 - t739) - t740) - t741) + t770) + t771) + t772) + t773)
+            + t647) + t723_tmp) + t708_tmp) + t675;
+  t723_tmp = ct[2] * ct[8] * ct[34] * ct[45] * ct[114] * ct[76] * ct[109];
+  t708_tmp = (-t722 + t762) + t722_tmp;
+  t675 = (-t723 + t763) + t765_tmp_tmp;
+  t722_tmp = (-t724 + t764) + t764_tmp_tmp;
+  t765_tmp_tmp = (-t725 + t765) + t950;
+  t764_tmp_tmp = ct[34] * ct[109];
+  gradient_data[12] = ((((t707_tmp_tmp * (ct[9] * 2.0 - t485_tmp * 2.0) + t826 *
+    ((((((((ct[34] * ct[136] + ct[34] * ct[138]) + ct[34] * t952) + ct[34] *
+          t478) + ct[34] * t504) - ct[142] * ct[220]) + ct[220] * t975) -
+      t646_tmp * t763_tmp_tmp) + (((t510 * t647 + t646_tmp * ct[141]) - ct[8] *
+    ct[34] * ct[45] * ct[114] * ct[109] * ct[181] * ct[220] * ct[67] / 2.0) -
+    t723_tmp * ct[178] * ct[181] * ct[58])) * 2.0) - t648 * (((((((ct[36] * t914
+    - ct[36] * t915) - ct[36] * t916) + ct[36] * t917) - ct[38] * t763_tmp) -
+    ct[38] * t764_tmp) + ct[37] * t765_tmp) + ct[37] * t762_tmp_tmp) * 2.0) +
+                        t646 * (((((ct[36] * t708_tmp - ct[36] * t675) - ct[36] *
+    t722_tmp) + ct[36] * t765_tmp_tmp) + ct[39] * t763_tmp) + ((ct[39] *
+    t764_tmp + ct[39] * t765_tmp) + ct[39] * t762_tmp_tmp)) * 2.0) + ((t724_tmp *
+    (((((((((ct[34] * ct[85] + ct[34] * ct[137]) + ct[34] * ct[139]) + ct[34] *
+           t507) + ct[34] * t958) + ct[34] * -t484_tmp) + ct[142] * ct[178]) -
+       ct[178] * t975) - t509 * t763_tmp_tmp) + ((t511 * t647 + t509 * ct[141])
+    - t723_tmp * ct[181] * ct[220] * ct[58])) * 2.0 - t677 * ((ct[141] * ct[181]
+    - ct[181] * t763_tmp_tmp) + (-ct[177] * t647 + t723_tmp * ct[177] * ct[58]))
+    * 2.0) + t649 * ((((((((ct[39] * t914 + ct[39] * t915) + ct[39] * t916) +
+    ct[39] * t917) + ct[38] * t708_tmp) + ct[38] * t675) - ct[37] * t722_tmp) -
+                      ct[37] * t765_tmp_tmp) - ct[1] * ct[8] * ct[34] * ct[45] *
+                     ct[109] * ct[260] / 2.0) * 2.0)) + (((t971 * (((ct[204] *
+    t608 - ct[151] * (ct[40] * ct[204] * 6.0 - ct[42] * ct[204] * 6.0)) - t828 *
+    ct[204] * 3.0) + t764_tmp_tmp * ct[246] * ct[256] * ct[47] * ct[48] * ct[63]
+    * ct[68] * ct[72] * 6.0) + t674 * (((ct[205] * t609 - ct[152] * (ct[40] *
+    ct[205] * 6.0 - ct[42] * ct[205] * 6.0)) - t828 * ct[205] * 3.0) +
+    t764_tmp_tmp * ct[248] * ct[256] * ct[47] * ct[48] * ct[63] * ct[69] * ct[73]
+    * 6.0)) + t984 * (((ct[206] * t610 - ct[153] * (ct[40] * ct[206] * 6.0 - ct
+    [42] * ct[206] * 6.0)) - t828 * ct[206] * 3.0) + t764_tmp_tmp * ct[250] *
+                      ct[256] * ct[47] * ct[48] * ct[63] * ct[70] * ct[74] * 6.0))
+    + t676 * (((ct[207] * t611 - ct[154] * (ct[40] * ct[207] * 6.0 - ct[42] *
+    ct[207] * 6.0)) - t828 * ct[207] * 3.0) + t764_tmp_tmp * ct[252] * ct[256] *
+              ct[47] * ct[48] * ct[63] * ct[71] * ct[75] * 6.0));
+  t828 = ct[33] * ct[177];
+  t646 = ct[33] * ct[178];
+  t647 = ct[33] * ct[220];
+  gradient_data[13] = ((t486_tmp * (ct[7] * 2.0 - t706_tmp_tmp * 2.0) + t677 *
+                        (((t828 * ct[133] + t828 * t506) - ct[33] * ct[181] *
+    t479) - ct[8] * ct[33] * ct[45] * ct[114] * ct[109] * ct[181] * ct[67] / 2.0)
+                        * 2.0) + t826 * (((t646 * ct[83] + t646 * ct[135]) +
+    t646 * t955) + t646 * t508) * 2.0) + t724_tmp * (((t647 * ct[83] + t647 *
+    ct[135]) + t647 * t955) + t647 * t508) * 2.0;
+  gradient_data[14] = t914_tmp * (ct[15] * 2.0 - t476 * 2.0) - ct[0] * ct[8] *
+    ct[29] * ct[45] * ct[109] * ct[121] * ct[243] * t801;
   return cost;
 }
 
@@ -7435,11 +7614,7 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   double current_accelerations[6];
   double final_accelerations[6];
   double b_gain_airspeed;
-  double b_gain_az;
-  double b_gain_el;
   double b_gain_motor;
-  double b_gain_phi;
-  double b_gain_theta;
   double b_max_approach;
   double b_max_tilt_value_approach;
   double b_min_approach;
@@ -7716,27 +7891,19 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   c_flight_path_angle = b_flight_path_angle.contents;
   b_gain_motor = gain_motor.contents;
   b_gain_airspeed = gain_airspeed.contents;
-  b_gain_el = gain_el.contents;
-  b_gain_theta = gain_theta.contents;
-  b_gain_az = gain_az.contents;
-  b_gain_phi = gain_phi.contents;
 
   /*  New prop model */
   /*  prop_Cl_0 = 0.075; */
   /*  prop_Cl_a = 3.46; */
   /*  New aero models */
-  compute_acc(Theta - c_flight_path_angle, c_CL_aileron, c_Cd_zero, c_Cl_alpha,
-              c_Cm_zero, c_Cm_alpha, g_min_approach, max_theta_protection,
-              c_I_zz, c_K_Cd, Omega_1 / b_gain_motor, Omega_2 / b_gain_motor,
-              Omega_3 / b_gain_motor, Omega_4 / b_gain_motor, Phi / b_gain_phi,
-              c_S, Theta / b_gain_theta, c_V, b_1 / b_gain_el, b_2 / b_gain_el,
-              b_3 / b_gain_el, b_4 / b_gain_el, delta_ailerons,
-              c_flight_path_angle, g_1 / b_gain_az, g_2 / b_gain_az, g_3 /
-              b_gain_az, g_4 / b_gain_az, b_gain_el, b_gain_az, b_gain_phi,
-              b_gain_theta, b_gain_motor, b_gain_airspeed, c_l_1, c_l_3, c_l_4,
-              c_l_z, g_max_approach, b_max_tilt_value_approach, b_max_approach,
-              b_min_approach, c_rho, c_wing_span, c_wing_chord,
-              current_accelerations);
+  compute_acc(c_CL_aileron, c_Cd_zero, c_Cl_alpha, c_Cm_zero, c_Cm_alpha,
+              g_min_approach, max_theta_protection, c_I_zz, c_K_Cd, Omega_1,
+              Omega_2, Omega_3, Omega_4, Omega_1 / b_gain_motor, Omega_2 /
+              b_gain_motor, Phi, c_S, Theta, c_V, b_1, b_2, b_3, b_4,
+              delta_ailerons, c_flight_path_angle, g_1, g_2, g_3, g_4,
+              b_gain_airspeed, c_l_1, c_l_3, c_l_4, c_l_z, g_max_approach,
+              b_max_tilt_value_approach, b_max_approach, b_min_approach, c_rho,
+              c_wing_span, c_wing_chord, current_accelerations);
   for (i = 0; i < 6; i++) {
     dv_global.contents[i] = dv[i] + current_accelerations[i];
   }
@@ -7774,13 +7941,13 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   /*  New prop model */
   /*  prop_Cl_0 = 0.075; */
   /*  prop_Cl_a = 3.4677; */
-  prop_Cl_0.contents = 0.27;
-  prop_Cl_a.contents = 4.0;
+  prop_Cl_0.contents = 0.0;
+  prop_Cl_a.contents = 3.46;
   prop_Cd_0.contents = 0.05;
   prop_Cd_a.contents = 0.36;
-  prop_sigma.contents = 0.0551;
+  prop_sigma.contents = 0.0652;
   prop_delta.contents = 0.2;
-  prop_theta.contents = 0.2188;
+  prop_theta.contents = 0.19;
   prop_R.contents = 0.127;
 
   /* Default values for the optimizer: */
@@ -7810,9 +7977,11 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   expl_temp.gain_ailerons = &gain_ailerons;
   expl_temp.gain_airspeed = &gain_airspeed;
   expl_temp.gain_motor = &gain_motor;
+  expl_temp.gain_theta = &gain_theta;
   expl_temp.gain_phi = &gain_phi;
   expl_temp.gain_az = &gain_az;
   expl_temp.gain_el = &gain_el;
+  expl_temp.flight_path_angle = &b_flight_path_angle;
   expl_temp.desired_ailerons_value = &b_desired_ailerons_value;
   expl_temp.desired_motor_value = &b_desired_motor_value;
   expl_temp.desired_theta_value = &b_desired_theta_value;
@@ -7844,8 +8013,6 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   expl_temp.CL_aileron = &b_CL_aileron;
   expl_temp.Beta = &b_Beta;
   expl_temp.dv_global = &dv_global;
-  expl_temp.flight_path_angle = &b_flight_path_angle;
-  expl_temp.gain_theta = &gain_theta;
   b_expl_temp = expl_temp;
   fmincon(&b_expl_temp, u_out, u_min, u_max, exitflag, N_iterations,
           N_evaluation, c_expl_temp, &b_max_approach, &b_min_approach,
@@ -7894,26 +8061,18 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   c_flight_path_angle = b_flight_path_angle.contents;
   b_gain_motor = gain_motor.contents;
   b_gain_airspeed = gain_airspeed.contents;
-  b_gain_el = gain_el.contents;
-  b_gain_theta = gain_theta.contents;
-  b_gain_az = gain_az.contents;
-  b_gain_phi = gain_phi.contents;
 
   /*  New prop model */
   /*  prop_Cl_0 = 0.075; */
   /*  prop_Cl_a = 3.46; */
   /*  New aero models */
-  compute_acc(u_out[12] - c_flight_path_angle, c_CL_aileron, c_Cd_zero,
-              c_Cl_alpha, c_Cm_zero, c_Cm_alpha, g_min_approach,
-              max_theta_protection, c_I_zz, c_K_Cd, u_out[0] / b_gain_motor,
-              u_out[1] / b_gain_motor, u_out[2] / b_gain_motor, u_out[3] /
-              b_gain_motor, u_out[13] / b_gain_phi, c_S, u_out[12] /
-              b_gain_theta, c_V, u_out[4] / b_gain_el, u_out[5] / b_gain_el,
-              u_out[6] / b_gain_el, u_out[7] / b_gain_el, u_out[14],
-              c_flight_path_angle, u_out[8] / b_gain_az, u_out[9] / b_gain_az,
-              u_out[10] / b_gain_az, u_out[11] / b_gain_az, b_gain_el, b_gain_az,
-              b_gain_phi, b_gain_theta, b_gain_motor, b_gain_airspeed, c_l_1,
-              c_l_3, c_l_4, c_l_z, g_max_approach, b_max_tilt_value_approach,
+  compute_acc(c_CL_aileron, c_Cd_zero, c_Cl_alpha, c_Cm_zero, c_Cm_alpha,
+              g_min_approach, max_theta_protection, c_I_zz, c_K_Cd, u_out[0],
+              u_out[1], u_out[2], u_out[3], u_out[0] / b_gain_motor, u_out[1] /
+              b_gain_motor, u_out[13], c_S, u_out[12], c_V, u_out[4], u_out[5],
+              u_out[6], u_out[7], u_out[14], c_flight_path_angle, u_out[8],
+              u_out[9], u_out[10], u_out[11], b_gain_airspeed, c_l_1, c_l_3,
+              c_l_4, c_l_z, g_max_approach, b_max_tilt_value_approach,
               b_max_approach, b_min_approach, c_rho, c_wing_span, c_wing_chord,
               final_accelerations);
   for (i = 0; i < 6; i++) {
