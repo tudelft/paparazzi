@@ -218,25 +218,27 @@ bool nav_check_wp_time(struct EnuCoor_f *wp, uint16_t stay_time)
   return false;
 }
 
-bool nav_check_wp_time_3d(struct EnuCoor_i *wp, uint16_t stay_time, float arrival_dist)
+bool nav_check_wp_time_3d(struct EnuCoor_f *wp, uint16_t stay_time, float arrival_dist)
 {
     uint16_t time_at_wp;
     float dist_to_point;
     static uint16_t wp_entry_time = 0;
     static bool wp_reached = false;
     static struct EnuCoor_i wp_last = { 0, 0, 0 };
-    struct Int32Vect3 diff;
+    struct EnuCoor_i wp_i;
+    struct FloatVect2 diff;
 
-    if ((wp_last.x != wp->x) || (wp_last.y != wp->y) || (wp_last.z != wp->z)) {
+    ENU_BFP_OF_REAL(wp_i, *wp);
+    if ((wp_last.x != wp_i.x) || (wp_last.y != wp_i.y) || (wp_last.z != wp_i.z)) {
         wp_reached = false;
-        wp_last = *wp;
-        wp_entry_time = autopilot.flight_time;
+        wp_last = wp_i;
+        wp_entry_time = autopilot.flight_time;      // ?
     }
 
-    VECT3_DIFF(diff, *wp, *stateGetPositionEnu_i());
-    struct FloatVect3 diff_f = {POS_FLOAT_OF_BFP(diff.x), POS_FLOAT_OF_BFP(diff.y), POS_FLOAT_OF_BFP(diff.z)};
-    dist_to_point = float_vect3_norm(&diff_f);
-    if (dist_to_point < arrival_dist) {
+    VECT3_DIFF(diff, *wp, *stateGetPositionEnu_f());
+//    struct FloatVect3 diff_f = {POS_FLOAT_OF_BFP(diff.x), POS_FLOAT_OF_BFP(diff.y), POS_FLOAT_OF_BFP(diff.z)};
+    dist_to_point = float_vect2_norm(&diff);
+    if (dist_to_point < arrival_dist) {     // 3d distance
         if (!wp_reached) {
             wp_reached = true;
             wp_entry_time = autopilot.flight_time;
