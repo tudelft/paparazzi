@@ -117,6 +117,20 @@ static void send_eternal_pose_optitrack(struct transport_tx *trans, struct link_
                         &ins_ext_pos.ev_quat.qy, 
                         &ins_ext_pos.ev_quat.qz);
 }
+static void send_ahrs_bias(struct transport_tx *trans, struct link_device *dev)
+{
+  float dummy0 = 0.0;
+  pprz_msg_send_AHRS_BIAS(trans, dev, AC_ID, 
+                &ekf_X[9], 
+                &ekf_X[10], 
+                &ekf_X[11], 
+                &ekf_X[12], 
+                &ekf_X[13], 
+                &ekf_X[14], 
+                &dummy0, 
+                &dummy0, 
+                &dummy0);
+}
 #endif
 
 
@@ -245,6 +259,7 @@ void ins_ext_pose_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_Z, send_ins_z);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EXTERNAL_POSE_2, send_eternal_pose_optitrack);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_BIAS, send_ahrs_bias);
 #endif
 
   // Get IMU through ABI
@@ -325,9 +340,9 @@ static inline void ekf_init(void)
   float Z0[EKF_NUM_OUTPUTS] = {0, 0, 0, 0, 0, 0};
 
   float Pdiag[EKF_NUM_STATES] = {1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.};
-  float Qdiag[EKF_NUM_INPUTS] = {0.5, 0.5, 0.5, 0.01, 0.01, 0.01};
+  float Qdiag[EKF_NUM_INPUTS] = {0.035, 0.35, 0.45, 0.007, 0.0004, 0.0003};
 
-  float Rdiag[EKF_NUM_OUTPUTS] = {0.001, 0.001, 0.001, 0.1, 0.1, 0.1};
+  float Rdiag[EKF_NUM_OUTPUTS] = {0.0001, 0.0001, 0.0001, 0.5, 0.1, 0.1};
 
   MAKE_MATRIX_PTR(ekf_P_, ekf_P, EKF_NUM_STATES);
   MAKE_MATRIX_PTR(ekf_Q_, ekf_Q, EKF_NUM_INPUTS);
