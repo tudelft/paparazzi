@@ -195,7 +195,7 @@ void ins_ext_pose_msg_update(uint8_t *buf)
   // Transformation of External Pose. Guess is Optitrack Quat is from NWU to Body (FRD). Optitrack motive 2.X Yup
   orient.qi = quat_i ;// Previous code, I think is wrong: quat_i;
   orient.qx = quat_y ;// Previous code, I think is wrong: quat_y;   //north
-  orient.qy = quat_x;// Previous code, I think is wrong: -quat_x;  //east
+  orient.qy = quat_x ;// Previous code, I think is wrong: -quat_x;  //east
   orient.qz = -quat_z;// Previous code, I think is wrong: -quat_z;  //down
 
   float_eulers_of_quat(&orient_eulers, &orient);
@@ -340,9 +340,9 @@ static inline void ekf_init(void)
   float Z0[EKF_NUM_OUTPUTS] = {0, 0, 0, 0, 0, 0};
 
   float Pdiag[EKF_NUM_STATES] = {1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.};
-  float Qdiag[EKF_NUM_INPUTS] = {0.035, 0.35, 0.45, 0.007, 0.0004, 0.0003};
+  float Qdiag[EKF_NUM_INPUTS] = {0.0325, 0.4494, 0.5087, 0.0173, 4.878e-4, 3.547e-4};
 
-  float Rdiag[EKF_NUM_OUTPUTS] = {0.0001, 0.0001, 0.0001, 0.5, 0.1, 0.1};
+  float Rdiag[EKF_NUM_OUTPUTS] = {8.372e-6, 3.832e-6, 4.761e-6, 2.830e-4, 8.684e-6, 7.013e-6};
 
   MAKE_MATRIX_PTR(ekf_P_, ekf_P, EKF_NUM_STATES);
   MAKE_MATRIX_PTR(ekf_Q_, ekf_Q, EKF_NUM_INPUTS);
