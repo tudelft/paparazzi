@@ -28,6 +28,7 @@
 #include "firmwares/rotorcraft/autopilot_static.h"
 #include "autopilot.h"
 #include "modules/actuators/actuators.h"
+#include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 
 #ifndef RADIO_PITCH
 #define RADIO_PITCH   0
@@ -37,51 +38,59 @@ int16_t stage = 0;
 int16_t counter = 0;
 float theta_ref = TAKEOFF_THETA_REF;
 
-float t_scale_to_theta = 0.9832;
+float t_scale_to_theta = 0.6;
 
 #define TAKEOFF_MODULE_FREQ 200
 
 //int16_t pwm2pprz(float pwm);
-int16_t take_off_stage(float theta);
-// float take_off_theta(void);
+int16_t take_off_stage(float theta, float rate_q);
+float take_off_theta(void);
 void take_off_enter(void);
 
 void take_off_enter(void){
-  stage = 0;
-  counter = 0;
+  if (takeoff_stage == 3){
+    stage = 3;
+  }
+  else{stage = 0;
+  counter = 0;}
 }
 
-// float take_off_theta(void){
+float take_off_theta(void){
 
-//   if(autopilot.mode == AP_MODE_NAV){
-//     if (stage == 1) {
-//     //theta_d gradually increase for nav mode
-//     theta_d = RadOfDeg(-90.0) + counter * t_scale_to_theta;
-//       if (theta_d > theta_ref/ 180.0 * M_PI) {//Theta_d finally depends on the theta_ref which can be tuned in settings
-//         theta_d = theta_ref/ 180.0 * M_PI;
-//     }
-//   }
-//   }
-//   else{
-//     struct FloatEulers euler_sp;
-//     float_eulers_of_quat_zxy(&euler_sp, &quat_sp_f);
-//     theta_d = euler_sp.theta;
-//   }
-//   return theta_d;
-// }
+  if(autopilot.mode == AP_MODE_NAV){
+    if (takeoff_stage == 1) {
+      theta_d = theta_ref;
+  }
+  else if (takeoff_stage == 3){
+          // theta_d gradually decrease for nav mode
+    float theta_d_min = -90.0 / 180.0 * M_PI;
+    float increment = t_scale_to_theta / TAKEOFF_MODULE_FREQ;
+           theta_d -= increment;
+       if (theta_d < theta_d_min) {
+        theta_d = theta_d_min;
+    }
+  }
+  }
+  else{
+    struct FloatEulers euler_sp;
+    float_eulers_of_quat_zxy(&euler_sp, &quat_sp_f);
+    theta_d = euler_sp.theta;
+  }
+  return theta_d;
+}
 
-int16_t take_off_stage(float theta){
+int16_t take_off_stage(float theta, float rate_q){
   counter++;
   if(autopilot.mode == AP_MODE_NAV){
     if (!autopilot_get_motors_on()) {
       stage = 0;
       counter = 0;
     }
-    else if(stage == 0 && counter/TAKEOFF_MODULE_FREQ > 1.0){
+    else if(stage == 0 && counter/TAKEOFF_MODULE_FREQ > 2.0){
       stage = 1;
       counter = 0;
     }
-    else if(stage == 1 && fabsf((theta - theta_ref)/(theta_ref +90.0))< 0.06 && counter/TAKEOFF_MODULE_FREQ > 2000.0 ){
+    else if(stage == 1 && fabs((theta - theta_ref/ 180.0 * M_PI)/((theta_ref +90.0)/ 180.0 * M_PI))< 0.9 && rate_q < 0.1 && counter/TAKEOFF_MODULE_FREQ > 2.0 ){
       stage = 2;
       counter = 0;
     }
