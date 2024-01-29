@@ -329,6 +329,25 @@ void* second_thread() //Run the optimization code
     float slider_power_cd0 = extra_data_in_copy[60]; 
     float slider_power_cda = extra_data_in_copy[61];
   
+    float prop_cl0 = extra_data_in_copy[62];   
+    float prop_cla = extra_data_in_copy[63]; 
+
+    float prop_cd0 = extra_data_in_copy[64];   
+    float prop_cda = extra_data_in_copy[65];
+
+    float prop_cm0 = extra_data_in_copy[66];   
+    float prop_cma = extra_data_in_copy[67];
+
+    float prop_sigma = extra_data_in_copy[68];   
+    float prop_c_tip = extra_data_in_copy[69];
+
+    float prop_delta = extra_data_in_copy[70];   
+    float prop_theta = extra_data_in_copy[71];
+
+    float prop_radius = extra_data_in_copy[72];   
+
+    max_time_optimizer_ms = extra_data_in_copy[73]*1e-3; 
+
     // Real time variables:
     double Phi = (myam7_data_in_copy.phi_state_int*1e-2 * M_PI/180);
     double Theta = (myam7_data_in_copy.theta_state_int*1e-2 * M_PI/180);

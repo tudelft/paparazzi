@@ -1033,6 +1033,22 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.UAV_NED_pos_y = pos_vect[1];
     am7_data_out_local.UAV_NED_pos_z = pos_vect[2];
 
+    //PROP MODEL CHARACTERISTICS
+    float prop_cl0 = 0.075;
+    float prop_cla =3.46;
+    float prop_cd0 =0.05;
+    float prop_cda =0.36;
+    float prop_cm0 =0.0;
+    float prop_cma =0.0;
+    float prop_sigma =0.0652;
+    float prop_c_tip =0.013;
+    float prop_delta =0.2;
+    float prop_theta =0.2188;
+    float prop_radius =0.1270;
+
+    //OPTIMIZER MAX TIME: 
+    float max_time_optimizer_ms = 5;
+
     #ifdef USE_NEW_THR_ESTIMATION_OPTIMIZATION
     extra_data_out_local[0] = PROP_MODEL_KT_REF;
     #else
@@ -1118,8 +1134,26 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[59] = OVERACTUATED_MIXING_MIN_ALT_TILT_CONSTRAINT;   
 
     extra_data_out_local[60] = slider_power_cd0; 
-    extra_data_out_local[61] = slider_power_cda;    
+    extra_data_out_local[61] = slider_power_cda; 
 
+    extra_data_out_local[62] = prop_cl0;   
+    extra_data_out_local[63] = prop_cla; 
+
+    extra_data_out_local[64] = prop_cd0;   
+    extra_data_out_local[65] = prop_cda;
+
+    extra_data_out_local[66] = prop_cm0;   
+    extra_data_out_local[67] = prop_cma;
+
+    extra_data_out_local[68] = prop_sigma;   
+    extra_data_out_local[69] = prop_c_tip;
+
+    extra_data_out_local[70] = prop_delta;   
+    extra_data_out_local[71] = prop_theta;
+
+    extra_data_out_local[72] = prop_radius;   
+
+    extra_data_out_local[73] = max_time_optimizer_ms; 
 }
 
 /**
