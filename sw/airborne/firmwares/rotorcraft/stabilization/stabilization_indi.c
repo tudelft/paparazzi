@@ -911,8 +911,8 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   struct FloatRates * body_rates = stateGetBodyRates_f();
   float_eulers_of_quat_zxy(&eulers_zxy, statequat);
 
-  takeoff_stage = take_off_stage(eulers_zxy.theta);
-  //static bool isFirstEntryToStage2 = true;
+  takeoff_stage = take_off_stage(eulers_zxy.theta, body_rates->q);
+  theta_d = take_off_theta();
   if (takeoff_stage == 0){
     // initialize pivoting by putting motors up
 	  actuators_pprz[0] = MAX_PPRZ;
@@ -922,27 +922,18 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     // don't use the ailerons for the takeoff
     actuators_pprz[4] = 0;
     actuators_pprz[5] = 0;
-  } else if (takeoff_stage == 1) {
+  } else if (takeoff_stage == 1 || takeoff_stage == 3) {
     struct FloatRates rates_filt_takeoff;
     rates_filt_takeoff.q = update_first_order_low_pass(&rates_filt_takeoff_fo[1], body_rates->q);
-    #define TAKEOFF_MODULE_FREQ 200
+
     if(autopilot.mode == AP_MODE_NAV){
-    //theta_d gradually increase for nav mode
-    float theta_d_max = theta_ref / 180.0 * M_PI;
-    float increment = t_scale_to_theta / TAKEOFF_MODULE_FREQ;
-           theta_d += increment;
-       if (theta_d > theta_d_max) {
-        theta_d = theta_d_max;
-    }
+    theta_d = theta_ref;
     }
     else{
     struct FloatEulers euler_sp;
     float_eulers_of_quat_zxy(&euler_sp, &quat_sp_f);
     theta_d = euler_sp.theta;
     }
-    // struct FloatEulers euler_sp;
-    // float_eulers_of_quat_zxy(&euler_sp, &quat_sp_f);
-    // theta_d = euler_sp.theta;
 
     // Define B as a 1x2 matrix and W as a 2x2 diagonal matrix
         // Calculate B using the provided equation

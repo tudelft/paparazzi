@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="500" name="Rotorcraft Basic (Enac)" security_height="2">
+<flight_plan alt="0.4" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="500" name="Rotorcraft Basic (Enac)" security_height="2">
   <header>
 #include "autopilot.h"
 #include "generated/modules.h"
@@ -39,14 +39,12 @@
     <block name="Automatic Takeoff">
       <call_once fun="NavResurrect()"/>
       <call_once fun="autopilot_set_in_flight(false)"/>
-      <!-- <call_once fun="NavSetWaypointHere(WP_CLIMB)"/> -->
       <call_once fun="take_off_enter()"/>
-      <!-- <stay alt="1.5" wp="CLIMB" until="GetPosHeight() @GT 0.5"/> -->
+      <stay alt="0.0" wp="HOME" until="autopilot.in_flight"/>
     </block>
     <block name="CLIMB">
-      <while cond="autopilot_in_flight()"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/> 
-      <stay alt="1.5" wp="CLIMB" until="GetPosHeight() @GT 0.5"/>
+      <stay alt="0.4" wp="CLIMB" until="GetPosHeight() @GT 0.3"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="false" var="force_forward"/>
@@ -64,7 +62,10 @@
       <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <set value="3" var="takeoff_stage"/>
+      <call_once fun="take_off_enter()"/>
+      <stay alt="0.0" wp="TD"/>
+      <call_once fun="NavKillThrottle()"/>
     </block>
   </blocks>
 </flight_plan>

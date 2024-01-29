@@ -49,6 +49,7 @@ extern float indi_Wu_servo;
 extern float angular_acceleration[3];
 extern float side_slip_gain_rc;
 extern int16_t takeoff_stage;
+extern float theta_d;
 
 
 extern bool indi_use_adaptive;
