@@ -52,8 +52,9 @@ extern void Nonlinear_controller_fcn_control_rf_aero_models(
     double power_Cd_a, double prop_Cl_0, double prop_Cl_a, double prop_Cd_0,
     double prop_Cd_a, double prop_Cm_0, double prop_Cm_a, double prop_sigma,
     double prop_c_tip, double prop_delta, double prop_theta, double prop_R,
-    double u_out[15], double residuals[6], double *elapsed_time,
-    double *N_iterations, double *N_evaluation, double *exitflag);
+    double gain_increase_AoA, double u_out[15], double residuals[6],
+    double *elapsed_time, double *N_iterations, double *N_evaluation,
+    double *exitflag);
 
 extern void Nonlinear_controller_fcn_control_rf_aero_models_initialize(void);
 

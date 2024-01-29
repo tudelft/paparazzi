@@ -7565,8 +7565,9 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   transition_speed, double power_Cd_0, double power_Cd_a, double prop_Cl_0,
   double prop_Cl_a, double prop_Cd_0, double prop_Cd_a, double prop_Cm_0, double
   prop_Cm_a, double prop_sigma, double prop_c_tip, double prop_delta, double
-  prop_theta, double prop_R, double u_out[15], double residuals[6], double
-  *elapsed_time, double *N_iterations, double *N_evaluation, double *exitflag)
+  prop_theta, double prop_R, double gain_increase_AoA, double u_out[15], double
+  residuals[6], double *elapsed_time, double *N_iterations, double *N_evaluation,
+  double *exitflag)
 {
   b_captured_var dv_global;
   c_struct_T b_expl_temp;
@@ -7732,6 +7733,8 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   b_V.contents = fmax(2.0, b_min_approach);
 
   /*  To prevent oscillations during hover */
+  /*  gain_increase_AoA = 5.6568*pi/180; */
+  min_alpha += gain_increase_AoA * fabs(sin(Phi));
   if (b_V.contents > aoa_protection_speed) {
     b_min_approach = (max_alpha + b_flight_path_angle.contents) * 180.0 /
       3.1415926535897931;
@@ -7978,6 +7981,10 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
       (min_theta_protection * 3.1415926535897931 / 180.0);
     b_max_approach = 9.81 - b_max_approach / b_m.contents;
     b_max_tilt_value_approach = 0.0;
+
+    /*  min_vert_acc_abs = 5;  */
+    /*  gain_remove_vert_acc = 8; */
+    /*  max_vert_acc_fwd = max(min_vert_acc_abs,max_vert_acc_fwd - gain_remove_vert_acc*abs( sin(Phi) ) ); */
     if (dv_global.contents[2] >= b_max_approach) {
       b_max_tilt_value_approach = dv_global.contents[2] - b_max_approach;
     }
