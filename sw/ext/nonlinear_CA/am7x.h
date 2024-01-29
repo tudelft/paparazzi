@@ -24,7 +24,7 @@
 
 #define BAUDRATE_TF_MINI 115200 //Baudrate of the TF mini lidar sensor
 
-extern float max_time_optimizer_ms;
+#define max_time_optimizer_s 5e-3
 
 //Communication structures
 struct  __attribute__((__packed__)) am7_data_out {

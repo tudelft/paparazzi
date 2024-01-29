@@ -329,24 +329,22 @@ void* second_thread() //Run the optimization code
     float slider_power_cd0 = extra_data_in_copy[60]; 
     float slider_power_cda = extra_data_in_copy[61];
   
-    float prop_cl0 = extra_data_in_copy[62];   
-    float prop_cla = extra_data_in_copy[63]; 
+    float prop_cl0_input = extra_data_in_copy[62];   
+    float prop_cla_input = extra_data_in_copy[63]; 
 
-    float prop_cd0 = extra_data_in_copy[64];   
-    float prop_cda = extra_data_in_copy[65];
+    float prop_cd0_input = extra_data_in_copy[64];   
+    float prop_cda_input = extra_data_in_copy[65];
 
-    float prop_cm0 = extra_data_in_copy[66];   
-    float prop_cma = extra_data_in_copy[67];
+    float prop_cm0_input = extra_data_in_copy[66];   
+    float prop_cma_input = extra_data_in_copy[67];
 
-    float prop_sigma = extra_data_in_copy[68];   
-    float prop_c_tip = extra_data_in_copy[69];
+    float prop_sigma_input = extra_data_in_copy[68];   
+    float prop_c_tip_input = extra_data_in_copy[69];
 
-    float prop_delta = extra_data_in_copy[70];   
-    float prop_theta = extra_data_in_copy[71];
+    float prop_delta_input = extra_data_in_copy[70];   
+    float prop_theta_input = extra_data_in_copy[71];
 
-    float prop_radius = extra_data_in_copy[72];   
-
-    max_time_optimizer_ms = extra_data_in_copy[73]*1e-3; 
+    float prop_radius_input = extra_data_in_copy[72];   
 
     // Real time variables:
     double Phi = (myam7_data_in_copy.phi_state_int*1e-2 * M_PI/180);
@@ -506,7 +504,9 @@ void* second_thread() //Run the optimization code
                                                     desired_ailerons_value,  k_alt_tilt_constraint,
                                                     min_alt_tilt_constraint,  lidar_alt_corrected,
                                                     approach_mode,  verbose_optimizer,  speed_aoa_protection,
-                                                    transition_speed, slider_power_cd0, slider_power_cda, u_out,  residuals,
+                                                    transition_speed, slider_power_cd0, slider_power_cda, prop_cl0_input, prop_cla_input, prop_cd0_input, 
+                                                    prop_cda_input, prop_cm0_input, prop_cma_input, prop_sigma_input, prop_c_tip_input, prop_delta_input, 
+                                                    prop_theta_input, prop_radius_input, u_out,  residuals,
                                                     &elapsed_time,  &N_iterations,  &N_evaluation,
                                                     &exitflag);
 

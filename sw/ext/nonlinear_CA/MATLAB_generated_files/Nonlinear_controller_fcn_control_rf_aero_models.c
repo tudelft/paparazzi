@@ -475,8 +475,10 @@ static void compute_acc(double CL_aileron, double Cd_zero, double Cl_alpha,
   double V, double b_1, double b_2, double b_3, double b_4, double
   delta_ailerons, double flight_path_angle, double g_1, double g_2, double g_3,
   double g_4, double gain_airspeed, double l_1, double l_3, double l_4, double
-  l_z, double m, double p, double q, double r, double rho, double wing_span,
-  double wing_chord, double computed_acc[6]);
+  l_z, double m, double p, double prop_R, double prop_Cd_0, double prop_Cl_0,
+  double prop_Cd_a, double prop_Cl_a, double prop_delta, double prop_sigma,
+  double prop_theta, double q, double r, double rho, double wing_span, double
+  wing_chord, double computed_acc[6]);
 static double compute_cost_and_gradient(double Beta, double CL_aileron, double
   Cd_zero, double Cl_alpha, double Cm_zero, double Cm_alpha, double I_xx, double
   I_yy, double I_zz, double K_Cd, double Omega_1_scaled, double Omega_2_scaled,
@@ -1238,7 +1240,7 @@ static void b_driver(const double lb[15], const double ub[15], h_struct_T
         int exitg1;
         do {
           exitg1 = 0;
-          if (TrialState->FunctionEvaluations < 1000 && toc() <= 5e-3) {
+          if (TrialState->FunctionEvaluations < 1000 && toc() <= max_time_optimizer_s) {
             if (evalWellDefined && (phi_alpha <= MeritFunction->phi + alpha *
                                     0.0001 * MeritFunction->phiPrimePlus)) {
               exitg1 = 1;
@@ -1736,10 +1738,10 @@ static void b_test_exit(k_struct_T *Flags, f_struct_T *memspace, b_struct_T
         }
 
         if (guard1) {
-          if (TrialState->sqpIterations >= 200 || toc() >= 5e-3) {
+          if (TrialState->sqpIterations >= 300 || toc() >= max_time_optimizer_s) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
-          } else if (TrialState->FunctionEvaluations >= 1000 || toc() >= 5e-3) {
+          } else if (TrialState->FunctionEvaluations >= 1000 || toc() >= max_time_optimizer_s) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
           }
@@ -2428,8 +2430,10 @@ static void compute_acc(double CL_aileron, double Cd_zero, double Cl_alpha,
   double V, double b_1, double b_2, double b_3, double b_4, double
   delta_ailerons, double flight_path_angle, double g_1, double g_2, double g_3,
   double g_4, double gain_airspeed, double l_1, double l_3, double l_4, double
-  l_z, double m, double p, double q, double r, double rho, double wing_span,
-  double wing_chord, double computed_acc[6])
+  l_z, double m, double p, double prop_R, double prop_Cd_0, double prop_Cl_0,
+  double prop_Cd_a, double prop_Cl_a, double prop_delta, double prop_sigma,
+  double prop_theta, double q, double r, double rho, double wing_span, double
+  wing_chord, double computed_acc[6])
 {
   double t10;
   double t11;
@@ -2441,28 +2445,32 @@ static void compute_acc(double CL_aileron, double Cd_zero, double Cl_alpha,
   double t143;
   double t15;
   double t16;
+  double t169;
   double t17;
-  double t172;
+  double t170;
   double t18;
   double t19;
   double t20;
   double t21;
   double t22;
+  double t222;
   double t23;
   double t237;
   double t238;
   double t239;
-  double t240;
+  double t24;
   double t26;
-  double t265;
-  double t268;
   double t27;
+  double t274;
   double t28;
   double t29;
   double t3;
   double t30;
+  double t33;
+  double t34;
   double t35;
   double t36;
+  double t37;
   double t39;
   double t40;
   double t41;
@@ -2474,10 +2482,18 @@ static void compute_acc(double CL_aileron, double Cd_zero, double Cl_alpha,
   double t48;
   double t49;
   double t5;
+  double t52;
+  double t54;
+  double t55;
+  double t56;
+  double t58;
   double t59;
   double t6;
   double t60;
   double t61;
+  double t62;
+  double t66;
+  double t67;
   double t68;
   double t69;
   double t7;
@@ -2524,26 +2540,39 @@ static void compute_acc(double CL_aileron, double Cd_zero, double Cl_alpha,
   t21 = sin(g_2);
   t22 = sin(g_3);
   t23 = sin(g_4);
+  t24 = log(prop_delta);
   t26 = Omega_1 * Omega_1;
   t27 = Omega_2 * Omega_2;
   t28 = Omega_3 * Omega_3;
   t29 = Omega_4 * Omega_4;
   t30 = V * V;
+  t33 = rt_powd_snf(prop_R, 3.0);
+  t34 = rt_powd_snf(prop_R, 4.0);
+  t37 = prop_Cd_0 * prop_delta * 2.0;
   t39 = 1.0 / Omega_1;
   t41 = 1.0 / Omega_2;
   t43 = 1.0 / Omega_3;
   t45 = 1.0 / Omega_4;
   t48 = 1.0 / (gain_airspeed * gain_airspeed);
   t49 = 1.0 / m;
+  t52 = prop_delta * 16.0;
+  t54 = 1.0 / prop_R;
+  t56 = 1.0 / prop_delta;
   t35 = t9 * t9;
   t36 = t10 * t10;
   t40 = 1.0 / t26;
   t42 = 1.0 / t27;
   t44 = 1.0 / t28;
   t46 = 1.0 / t29;
+  t55 = t54 * t54;
+  t222 = prop_Cl_0 * prop_delta;
+  t58 = t222 * (prop_delta + 1.0);
   t59 = Theta - flight_path_angle;
+  t66 = prop_delta * prop_sigma * -prop_Cl_a * (prop_delta - 1.0);
+  t67 = prop_Cl_a * prop_sigma * (prop_delta - 1.0) / 8.0;
   t60 = cos(t59);
   t61 = sin(t59);
+  t62 = t58 * 8.0;
   t68 = (b_1 + 1.5707963267948966) + t59;
   t69 = (b_2 + 1.5707963267948966) + t59;
   t70 = (b_3 + 1.5707963267948966) + t59;
@@ -2565,110 +2594,101 @@ static void compute_acc(double CL_aileron, double Cd_zero, double Cl_alpha,
   t117_tmp_tmp = S * rho;
   t117_tmp = t117_tmp_tmp * t30;
   t143 = t91_tmp * t60 / 2.0 + t117_tmp * t61 * t89 / 2.0;
-  t172 = t30 * t40 * 62.000124000248007;
-  t70 = V * 3.46 * 0.0652;
-  t265 = -0.0 * t30 * t40 * 62.000124000248007 * t85;
-  t73 = (V * t39 * 7.8740157480314963 * t73 / 2.0 - 0.0225592) + sqrt(((t172 *
-    (t73 * t73) * 16.0 + t70 * t39 * -0.8 * 7.8740157480314963 * t73 * 8.0) +
-    t265 * -8.0) - -0.2608 * (3.46 * (0.19 * (t172 * t85 * 8.0 + 3.2) +
-    0.03609472))) / 8.0;
-  t172 = t30 * t42 * 62.000124000248007;
-  t268 = -0.0 * t30 * t42 * 62.000124000248007 * t86;
-  t71 = (V * t41 * 7.8740157480314963 * t74 / 2.0 - 0.0225592) + sqrt(((t172 *
-    (t74 * t74) * 16.0 + t70 * t41 * -0.8 * 7.8740157480314963 * t74 * 8.0) +
-    t268 * -8.0) - -0.2608 * (3.46 * (0.19 * (t172 * t86 * 8.0 + 3.2) +
-    0.03609472))) / 8.0;
-  t172 = t30 * t44 * 62.000124000248007;
-  t39 = -0.0 * t30 * t44 * 62.000124000248007 * t87;
-  t68 = (V * t43 * 7.8740157480314963 * t75 / 2.0 - 0.0225592) + sqrt(((t172 *
-    (t75 * t75) * 16.0 + t70 * t43 * -0.8 * 7.8740157480314963 * t75 * 8.0) +
-    t39 * -8.0) - -0.2608 * (3.46 * (0.19 * (t172 * t87 * 8.0 + 3.2) +
-    0.03609472))) / 8.0;
-  t172 = t30 * t46 * 62.000124000248007;
-  t69 = -0.0 * t30 * t46 * 62.000124000248007 * t88;
-  t172 = (V * t45 * 7.8740157480314963 * t76 / 2.0 - 0.0225592) + sqrt(((t172 *
-    (t76 * t76) * 16.0 + t70 * t45 * -0.8 * 7.8740157480314963 * t76 * 8.0) +
-    t69 * -8.0) - -0.2608 * (3.46 * (0.19 * (t172 * t88 * 8.0 + 3.2) +
-    0.03609472))) / 8.0;
-  t237 = -0.0 * t73 + -0.8 * (0.19 * (t73 * 2.74 + 0.1368) +
-    0.020000000000000004);
-  t238 = -0.0 * t71 + -0.8 * (0.19 * (t71 * 2.74 + 0.1368) +
-    0.020000000000000004);
-  t239 = -0.0 * t68 + -0.8 * (0.19 * (t68 * 2.74 + 0.1368) +
-    0.020000000000000004);
-  t240 = -0.0 * t172 + -0.8 * (0.19 * (t172 * 2.74 + 0.1368) +
-    0.020000000000000004);
-  t43 = t265 + -0.8 * (0.6574 * t30 * t40 * 62.000124000248007 * t85 -
-                       0.69200000000000006 * (t73 - 0.19) * 2.0);
-  t74 = t268 + -0.8 * (0.6574 * t30 * t42 * 62.000124000248007 * t86 -
-                       0.69200000000000006 * (t71 - 0.19) * 2.0);
-  t45 = t39 + -0.8 * (0.6574 * t30 * t44 * 62.000124000248007 * t87 -
-                      0.69200000000000006 * (t68 - 0.19) * 2.0);
-  t73 = t69 + -0.8 * (0.6574 * t30 * t46 * 62.000124000248007 * t88 -
-                      0.69200000000000006 * (t172 - 0.19) * 2.0);
-  t41 = Omega_1 * V * 0.0652 * rho;
-  t86 = 0.0652 * rho * t16 * t26 * 0.000260144641 * 5.0 * t43 *
-    3.1415926535897931 / 4.0 + t41 * t7 * 0.002048383 * 5.0 * t77 * t237 *
-    3.1415926535897931 / 4.0;
-  t71 = Omega_2 * V * 0.0652 * rho;
-  t87 = 0.0652 * rho * t17 * t27 * 0.000260144641 * 5.0 * t74 *
-    3.1415926535897931 / 4.0 + t71 * t8 * 0.002048383 * 5.0 * t78 * t238 *
-    3.1415926535897931 / 4.0;
-  t39 = Omega_3 * V * 0.0652 * rho;
-  t88 = 0.0652 * rho * t18 * t28 * 0.000260144641 * 5.0 * t45 *
-    3.1415926535897931 / 4.0 + t39 * t9 * 0.002048383 * 5.0 * t79 * t239 *
-    3.1415926535897931 / 4.0;
-  t75 = Omega_4 * V * 0.0652 * rho;
-  t40 = 0.0652 * rho * t19 * t29 * 0.000260144641 * 5.0 * t73 *
-    3.1415926535897931 / 4.0 + t75 * t10 * 0.002048383 * 5.0 * t80 * t240 *
-    3.1415926535897931 / 4.0;
-  t69 = 0.0652 * rho * t7;
-  t265 = t69 * t12 * t26 * 0.000260144641 * 5.0 * t43 * 3.1415926535897931 / 4.0
-    - t41 * t12 * t16 * 0.002048383 * 5.0 * t77 * t237 * 3.1415926535897931 /
-    4.0;
-  t70 = 0.0652 * rho * t8;
-  t85 = t70 * t13 * t27 * 0.000260144641 * 5.0 * t74 * 3.1415926535897931 / 4.0
-    - t71 * t13 * t17 * 0.002048383 * 5.0 * t78 * t238 * 3.1415926535897931 /
-    4.0;
-  t68 = 0.0652 * rho * t9;
-  t76 = t68 * t14 * t28 * 0.000260144641 * 5.0 * t45 * 3.1415926535897931 / 4.0
-    - t39 * t14 * t18 * 0.002048383 * 5.0 * t79 * t239 * 3.1415926535897931 /
-    4.0;
-  t172 = 0.0652 * rho * t10;
-  t268 = t172 * t15 * t29 * 0.000260144641 * 5.0 * t73 * 3.1415926535897931 /
-    4.0 - t75 * t15 * t19 * 0.002048383 * 5.0 * t80 * t240 * 3.1415926535897931 /
-    4.0;
-  t43 = t69 * t20 * t26 * 0.000260144641 * 5.0 * t43 * 3.1415926535897931 / 4.0
-    - t41 * t16 * t20 * 0.002048383 * 5.0 * t77 * t237 * 3.1415926535897931 /
-    4.0;
-  t74 = t70 * t21 * t27 * 0.000260144641 * 5.0 * t74 * 3.1415926535897931 / 4.0
-    - t71 * t17 * t21 * 0.002048383 * 5.0 * t78 * t238 * 3.1415926535897931 /
-    4.0;
-  t41 = t68 * t22 * t28 * 0.000260144641 * 5.0 * t45 * 3.1415926535897931 / 4.0
-    - t39 * t18 * t22 * 0.002048383 * 5.0 * t79 * t239 * 3.1415926535897931 /
-    4.0;
-  t70 = t172 * t23 * t29 * 0.000260144641 * 5.0 * t73 * 3.1415926535897931 / 4.0
-    - t75 * t19 * t23 * 0.002048383 * 5.0 * t80 * t240 * 3.1415926535897931 /
-    4.0;
-  t71 = ((t86 + t87) + t88) + t40;
-  t172 = ((t43 + t74) + t41) + t70;
-  t39 = ((t265 + t85) + t76) + t268;
-  t73 = t3 * t11;
+  t274 = t30 * t40 * t55;
+  t68 = V * prop_Cl_a * prop_sigma;
+  t69 = prop_Cl_0 * prop_sigma * t24 * t30;
+  t70 = prop_sigma * (prop_delta - 1.0) * t56;
+  t169 = (t67 + V * t39 * t54 * t73 / 2.0) + sqrt(((t274 * (t73 * t73) * 16.0 +
+    t68 * t39 * (prop_delta - 1.0) * t54 * t73 * 8.0) + t69 * t40 * t55 * t85 *
+    -8.0) - t70 * (t62 + prop_Cl_a * (t66 + prop_theta * (t52 + t274 * t85 * 8.0))))
+    / 8.0;
+  t274 = t30 * t42 * t55;
+  t170 = (t67 + V * t41 * t54 * t74 / 2.0) + sqrt(((t274 * (t74 * t74) * 16.0 +
+    t68 * t41 * (prop_delta - 1.0) * t54 * t74 * 8.0) + t69 * t42 * t55 * t86 *
+    -8.0) - t70 * (t62 + prop_Cl_a * (t66 + prop_theta * (t52 + t274 * t86 * 8.0))))
+    / 8.0;
+  t274 = t30 * t44 * t55;
+  t71 = (t67 + V * t43 * t54 * t75 / 2.0) + sqrt(((t274 * (t75 * t75) * 16.0 +
+    t68 * t43 * (prop_delta - 1.0) * t54 * t75 * 8.0) + t69 * t44 * t55 * t87 *
+    -8.0) - t70 * (t62 + prop_Cl_a * (t66 + prop_theta * (t52 + t274 * t87 * 8.0))))
+    / 8.0;
+  t274 = t30 * t46 * t55;
+  t75 = (t67 + V * t45 * t54 * t76 / 2.0) + sqrt(((t274 * (t76 * t76) * 16.0 +
+    t68 * t45 * (prop_delta - 1.0) * t54 * t76 * 8.0) + t69 * t46 * t55 * t88 *
+    -8.0) - t70 * (t62 + prop_Cl_a * (t66 + prop_theta * (t52 + t274 * t88 * 8.0))))
+    / 8.0;
+  t74 = t222 * t24;
+  t274 = prop_Cl_a - prop_Cd_a * 2.0;
+  t39 = prop_Cd_a * prop_theta * 2.0;
+  t237 = t74 * t169 + (prop_delta - 1.0) * (t37 + prop_theta * (t169 * t274 +
+    t39));
+  t238 = t74 * t170 + (prop_delta - 1.0) * (t37 + prop_theta * (t170 * t274 +
+    t39));
+  t239 = t74 * t71 + (prop_delta - 1.0) * (t37 + prop_theta * (t71 * t274 + t39));
+  t37 = t74 * t75 + (prop_delta - 1.0) * (t37 + prop_theta * (t75 * t274 + t39));
+  t274 = t74 * t30;
+  t39 = prop_Cl_a * prop_theta * t30;
+  t73 = prop_Cl_a * prop_delta;
+  t41 = t274 * t40 * t55 * t85 + (prop_delta - 1.0) * ((t58 + t39 * t40 * t55 *
+    t85) - t73 * (-prop_theta + t169) * 2.0);
+  t222 = t274 * t42 * t55 * t86 + (prop_delta - 1.0) * ((t58 + t39 * t42 * t55 *
+    t86) - t73 * (-prop_theta + t170) * 2.0);
+  t66 = t274 * t44 * t55 * t87 + (prop_delta - 1.0) * ((t58 + t39 * t44 * t55 *
+    t87) - t73 * (-prop_theta + t71) * 2.0);
+  t71 = t274 * t46 * t55 * t88 + (prop_delta - 1.0) * ((t58 + t39 * t46 * t55 *
+    t88) - t73 * (-prop_theta + t75) * 2.0);
+  t274 = prop_sigma * rho;
+  t73 = Omega_1 * V * prop_sigma * rho;
+  t67 = t274 * t16 * t26 * t34 * t56 * t41 * 3.1415926535897931 / 4.0 + t73 * t7
+    * t33 * t56 * t77 * t237 * 3.1415926535897931 / 4.0;
+  t69 = Omega_2 * V * prop_sigma * rho;
+  t62 = t274 * t17 * t27 * t34 * t56 * t222 * 3.1415926535897931 / 4.0 + t69 *
+    t8 * t33 * t56 * t78 * t238 * 3.1415926535897931 / 4.0;
+  t70 = Omega_3 * V * prop_sigma * rho;
+  t76 = t274 * t18 * t28 * t34 * t56 * t66 * 3.1415926535897931 / 4.0 + t70 * t9
+    * t33 * t56 * t79 * t239 * 3.1415926535897931 / 4.0;
+  t74 = Omega_4 * V * prop_sigma * rho;
+  t24 = t274 * t19 * t29 * t34 * t56 * t71 * 3.1415926535897931 / 4.0 + t74 *
+    t10 * t33 * t56 * t80 * t37 * 3.1415926535897931 / 4.0;
+  t75 = t274 * t7;
+  t54 = t75 * t12 * t26 * t34 * t56 * t41 * 3.1415926535897931 / 4.0 - t73 * t12
+    * t16 * t33 * t56 * t77 * t237 * 3.1415926535897931 / 4.0;
+  t68 = t274 * t8;
+  t52 = t68 * t13 * t27 * t34 * t56 * t222 * 3.1415926535897931 / 4.0 - t69 *
+    t13 * t17 * t33 * t56 * t78 * t238 * 3.1415926535897931 / 4.0;
+  t39 = t274 * t9;
+  t45 = t39 * t14 * t28 * t34 * t56 * t66 * 3.1415926535897931 / 4.0 - t70 * t14
+    * t18 * t33 * t56 * t79 * t239 * 3.1415926535897931 / 4.0;
+  t274 *= t10;
+  t43 = t274 * t15 * t29 * t34 * t56 * t71 * 3.1415926535897931 / 4.0 - t74 *
+    t15 * t19 * t33 * t56 * t80 * t37 * 3.1415926535897931 / 4.0;
+  t41 = t75 * t20 * t26 * t34 * t56 * t41 * 3.1415926535897931 / 4.0 - t73 * t16
+    * t20 * t33 * t56 * t77 * t237 * 3.1415926535897931 / 4.0;
+  t75 = t68 * t21 * t27 * t34 * t56 * t222 * 3.1415926535897931 / 4.0 - t69 *
+    t17 * t21 * t33 * t56 * t78 * t238 * 3.1415926535897931 / 4.0;
+  t73 = t39 * t22 * t28 * t34 * t56 * t66 * 3.1415926535897931 / 4.0 - t70 * t18
+    * t22 * t33 * t56 * t79 * t239 * 3.1415926535897931 / 4.0;
+  t70 = t274 * t23 * t29 * t34 * t56 * t71 * 3.1415926535897931 / 4.0 - t74 *
+    t19 * t23 * t33 * t56 * t80 * t37 * 3.1415926535897931 / 4.0;
+  t71 = ((t67 + t62) + t76) + t24;
+  t274 = ((t41 + t75) + t73) + t70;
+  t39 = ((t54 + t52) + t45) + t43;
+  t74 = t3 * t11;
   t68 = t91_tmp * t61 / 2.0 - t117_tmp * t60 * t89 / 2.0;
   t69 = t117_tmp_tmp * 0.0;
-  computed_acc[0] = t49 * (((((t5 * t71 + t5 * t68) - t73 * t143) + t73 * t39) -
-    t6 * t11 * t172) - t69 * t6 * t11 * t30 * t89 / 2.0);
-  computed_acc[1] = -t49 * (((-t6 * t143 + t3 * t172) + t6 * t39) + t117_tmp_tmp
+  computed_acc[0] = t49 * (((((t5 * t71 + t5 * t68) - t74 * t143) + t74 * t39) -
+    t6 * t11 * t274) - t69 * t6 * t11 * t30 * t89 / 2.0);
+  computed_acc[1] = -t49 * (((-t6 * t143 + t3 * t274) + t6 * t39) + t117_tmp_tmp
     * t3 * 0.0 * t30 * t89 / 2.0);
-  t73 = t3 * t5;
-  computed_acc[2] = -t49 * (((((t11 * t71 + t11 * t68) + t73 * t143) - t73 * t39)
-    + t5 * t6 * t172) + t69 * t5 * t6 * t30 * t89 / 2.0) + 9.81;
-  t73 = Omega_1_scaled * t7;
+  t74 = t3 * t5;
+  computed_acc[2] = -t49 * (((((t11 * t71 + t11 * t68) + t74 * t143) - t74 * t39)
+    + t5 * t6 * t274) + t69 * t5 * t6 * t30 * t89 / 2.0) + 9.81;
+  t74 = Omega_1_scaled * t7;
   t68 = Omega_2_scaled * t8;
-  computed_acc[3] = -(((((((((((l_1 * t265 - l_1 * t85) - l_1 * t76) + l_1 *
-    t268) + l_z * t43) + l_z * t74) + l_z * t41) + l_z * t70) - I_yy * q * r) +
-                        I_zz * q * r) - CL_aileron * S * delta_ailerons * rho *
-                       t30 / 2.0) + t117_tmp * wing_span * ((((((t73 *
+  computed_acc[3] = -(((((((((((l_1 * t54 - l_1 * t52) - l_1 * t45) + l_1 * t43)
+    + l_z * t41) + l_z * t75) + l_z * t73) + l_z * t70) - I_yy * q * r) + I_zz *
+                        q * r) - CL_aileron * S * delta_ailerons * rho * t30 /
+                       2.0) + t117_tmp * wing_span * ((((((t74 *
     0.01228634392023026 - t68 * 0.01228634392023026) + Omega_1_scaled *
     Omega_1_scaled * t7 * 0.0075456152077779167) - Omega_2_scaled *
     Omega_2_scaled * t8 * 0.0075456152077779167) + Omega_1_scaled * t16 * t36 *
@@ -2676,15 +2696,15 @@ static void compute_acc(double CL_aileron, double Cd_zero, double Cl_alpha,
     -0.0046429750925043979 + Omega_2_scaled * t18 * t35 * 0.0064381447596962606)
     - Omega_1_scaled * t19 * t36 * 0.0064381447596962606) - Omega_1_scaled * (t7
     * t7) * t19 * 0.0039349871274520724)) + ((Omega_2_scaled * (t8 * t8) * t18 *
-    0.0039349871274520724 - t73 * t30 * t48 * 0.020516396677824081) + t68 * t30 *
+    0.0039349871274520724 - t74 * t30 * t48 * 0.020516396677824081) + t68 * t30 *
     t48 * 0.020516396677824081)) / 2.0) / I_xx;
-  t73 = I_xx * p;
-  computed_acc[4] = -((((((((((l_4 * t265 - l_3 * t76) + l_4 * t85) - l_3 * t268)
-    + l_z * t86) + l_z * t87) + l_z * t88) + l_z * t40) + t73 * r) - I_zz * p *
+  t74 = I_xx * p;
+  computed_acc[4] = -((((((((((l_4 * t54 - l_3 * t45) + l_4 * t52) - l_3 * t43)
+    + l_z * t67) + l_z * t62) + l_z * t76) + l_z * t24) + t74 * r) - I_zz * p *
                        r) - t117_tmp * wing_chord * (Cm_zero + Cm_alpha * t59) /
                       2.0) / I_yy;
-  computed_acc[5] = (((((((((l_1 * t86 - l_1 * t87) - l_1 * t88) + l_1 * t40) -
-    l_4 * t43) + l_3 * t41) - l_4 * t74) + l_3 * t70) + t73 * q) - I_yy * p * q)
+  computed_acc[5] = (((((((((l_1 * t67 - l_1 * t62) - l_1 * t76) + l_1 * t24) -
+    l_4 * t41) + l_3 * t73) - l_4 * t75) + l_3 * t70) + t74 * q) - I_yy * p * q)
     / I_zz;
 }
 
@@ -7542,9 +7562,11 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   desired_phi_value, double desired_ailerons_value, double k_alt_tilt_constraint,
   double min_alt_tilt_constraint, double lidar_alt_corrected, double
   approach_mode, double verbose, double aoa_protection_speed, double
-  transition_speed, double power_Cd_0, double power_Cd_a, double u_out[15],
-  double residuals[6], double *elapsed_time, double *N_iterations, double
-  *N_evaluation, double *exitflag)
+  transition_speed, double power_Cd_0, double power_Cd_a, double prop_Cl_0,
+  double prop_Cl_a, double prop_Cd_0, double prop_Cd_a, double prop_Cm_0, double
+  prop_Cm_a, double prop_sigma, double prop_c_tip, double prop_delta, double
+  prop_theta, double prop_R, double u_out[15], double residuals[6], double
+  *elapsed_time, double *N_iterations, double *N_evaluation, double *exitflag)
 {
   b_captured_var dv_global;
   c_struct_T b_expl_temp;
@@ -7589,6 +7611,14 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   captured_var b_p;
   captured_var b_power_Cd_0;
   captured_var b_power_Cd_a;
+  captured_var b_prop_Cd_0;
+  captured_var b_prop_Cd_a;
+  captured_var b_prop_Cl_0;
+  captured_var b_prop_Cl_a;
+  captured_var b_prop_R;
+  captured_var b_prop_delta;
+  captured_var b_prop_sigma;
+  captured_var b_prop_theta;
   captured_var b_q;
   captured_var b_r;
   captured_var b_rho;
@@ -7601,14 +7631,6 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   captured_var gain_motor;
   captured_var gain_phi;
   captured_var gain_theta;
-  captured_var prop_Cd_0;
-  captured_var prop_Cd_a;
-  captured_var prop_Cl_0;
-  captured_var prop_Cl_a;
-  captured_var prop_R;
-  captured_var prop_delta;
-  captured_var prop_sigma;
-  captured_var prop_theta;
   double u_max[15];
   double u_min[15];
   double current_accelerations[6];
@@ -7632,6 +7654,14 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   double c_l_3;
   double c_l_4;
   double c_l_z;
+  double c_prop_Cd_0;
+  double c_prop_Cd_a;
+  double c_prop_Cl_0;
+  double c_prop_Cl_a;
+  double c_prop_R;
+  double c_prop_delta;
+  double c_prop_sigma;
+  double c_prop_theta;
   double c_rho;
   double c_wing_chord;
   double c_wing_span;
@@ -7642,6 +7672,9 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   int i;
   char c_expl_temp[3];
   (void)l_2;
+  (void)prop_Cm_0;
+  (void)prop_Cm_a;
+  (void)prop_c_tip;
   if (!isInitialized_Nonlinear_controller_fcn_control_rf_aero_models) {
     Nonlinear_controller_fcn_control_rf_aero_models_initialize();
   }
@@ -7685,6 +7718,14 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   b_desired_ailerons_value.contents = desired_ailerons_value;
   b_power_Cd_0.contents = power_Cd_0;
   b_power_Cd_a.contents = power_Cd_a;
+  b_prop_Cl_0.contents = prop_Cl_0;
+  b_prop_Cl_a.contents = prop_Cl_a;
+  b_prop_Cd_0.contents = prop_Cd_0;
+  b_prop_Cd_a.contents = prop_Cd_a;
+  b_prop_sigma.contents = prop_sigma;
+  b_prop_delta.contents = prop_delta;
+  b_prop_theta.contents = prop_theta;
+  b_prop_R.contents = prop_R;
 
   /*  Create variables necessary for the optimization */
   b_min_approach = b_V.contents;
@@ -7891,10 +7932,28 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   c_flight_path_angle = b_flight_path_angle.contents;
   b_gain_motor = gain_motor.contents;
   b_gain_airspeed = gain_airspeed.contents;
+  c_prop_Cl_0 = b_prop_Cl_0.contents;
+  c_prop_Cl_a = b_prop_Cl_a.contents;
+  c_prop_Cd_0 = b_prop_Cd_0.contents;
+  c_prop_Cd_a = b_prop_Cd_a.contents;
+  c_prop_sigma = b_prop_sigma.contents;
+  c_prop_delta = b_prop_delta.contents;
+  c_prop_theta = b_prop_theta.contents;
+  c_prop_R = b_prop_R.contents;
 
-  /*  New prop model */
-  /*  prop_Cl_0 = 0.075; */
-  /*  prop_Cl_a = 3.46; */
+  /*  Omega_3_scaled = Omega_3 / gain_motor; */
+  /*  Omega_4_scaled = Omega_4 / gain_motor; */
+  /*  b_1_scaled = b_1 / gain_el; */
+  /*  b_2_scaled = b_2 / gain_el; */
+  /*  b_3_scaled = b_3 / gain_el; */
+  /*  b_4_scaled = b_4 / gain_el; */
+  /*  g_1_scaled = g_1 / gain_az; */
+  /*  g_2_scaled = g_2 / gain_az; */
+  /*  g_3_scaled = g_3 / gain_az; */
+  /*  g_4_scaled = g_4 / gain_az; */
+  /*  Theta_scaled = Theta / gain_theta; */
+  /*  Phi_scaled = Phi / gain_phi; */
+  /*  gain_ailerons = 1; */
   /*  New aero models */
   compute_acc(c_CL_aileron, c_Cd_zero, c_Cl_alpha, c_Cm_zero, c_Cm_alpha,
               g_min_approach, max_theta_protection, c_I_zz, c_K_Cd, Omega_1,
@@ -7902,8 +7961,10 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
               b_gain_motor, Phi, c_S, Theta, c_V, b_1, b_2, b_3, b_4,
               delta_ailerons, c_flight_path_angle, g_1, g_2, g_3, g_4,
               b_gain_airspeed, c_l_1, c_l_3, c_l_4, c_l_z, g_max_approach,
-              b_max_tilt_value_approach, b_max_approach, b_min_approach, c_rho,
-              c_wing_span, c_wing_chord, current_accelerations);
+              b_max_tilt_value_approach, c_prop_R, c_prop_Cd_0, c_prop_Cl_0,
+              c_prop_Cd_a, c_prop_Cl_a, c_prop_delta, c_prop_sigma, c_prop_theta,
+              b_max_approach, b_min_approach, c_rho, c_wing_span, c_wing_chord,
+              current_accelerations);
   for (i = 0; i < 6; i++) {
     dv_global.contents[i] = dv[i] + current_accelerations[i];
   }
@@ -7938,18 +7999,6 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   b_min_approach = W_act_ailerons_const + W_act_ailerons_speed * b_V.contents;
   W_act_ailerons.contents = fmax(0.0, b_min_approach);
 
-  /*  New prop model */
-  /*  prop_Cl_0 = 0.075; */
-  /*  prop_Cl_a = 3.4677; */
-  prop_Cl_0.contents = 0.0;
-  prop_Cl_a.contents = 3.46;
-  prop_Cd_0.contents = 0.05;
-  prop_Cd_a.contents = 0.36;
-  prop_sigma.contents = 0.0652;
-  prop_delta.contents = 0.2;
-  prop_theta.contents = 0.19;
-  prop_R.contents = 0.127;
-
   /* Default values for the optimizer: */
   tic();
   expl_temp.wing_chord = &b_wing_chord;
@@ -7957,14 +8006,14 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   expl_temp.rho = &b_rho;
   expl_temp.r = &b_r;
   expl_temp.q = &b_q;
-  expl_temp.prop_theta = &prop_theta;
-  expl_temp.prop_sigma = &prop_sigma;
-  expl_temp.prop_delta = &prop_delta;
-  expl_temp.prop_Cl_a = &prop_Cl_a;
-  expl_temp.prop_Cd_a = &prop_Cd_a;
-  expl_temp.prop_Cl_0 = &prop_Cl_0;
-  expl_temp.prop_Cd_0 = &prop_Cd_0;
-  expl_temp.prop_R = &prop_R;
+  expl_temp.prop_theta = &b_prop_theta;
+  expl_temp.prop_sigma = &b_prop_sigma;
+  expl_temp.prop_delta = &b_prop_delta;
+  expl_temp.prop_Cl_a = &b_prop_Cl_a;
+  expl_temp.prop_Cd_a = &b_prop_Cd_a;
+  expl_temp.prop_Cl_0 = &b_prop_Cl_0;
+  expl_temp.prop_Cd_0 = &b_prop_Cd_0;
+  expl_temp.prop_R = &b_prop_R;
   expl_temp.power_Cd_a = &b_power_Cd_a;
   expl_temp.power_Cd_0 = &b_power_Cd_0;
   expl_temp.p = &b_p;
@@ -8061,10 +8110,28 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
   c_flight_path_angle = b_flight_path_angle.contents;
   b_gain_motor = gain_motor.contents;
   b_gain_airspeed = gain_airspeed.contents;
+  c_prop_Cl_0 = b_prop_Cl_0.contents;
+  c_prop_Cl_a = b_prop_Cl_a.contents;
+  c_prop_Cd_0 = b_prop_Cd_0.contents;
+  c_prop_Cd_a = b_prop_Cd_a.contents;
+  c_prop_sigma = b_prop_sigma.contents;
+  c_prop_delta = b_prop_delta.contents;
+  c_prop_theta = b_prop_theta.contents;
+  c_prop_R = b_prop_R.contents;
 
-  /*  New prop model */
-  /*  prop_Cl_0 = 0.075; */
-  /*  prop_Cl_a = 3.46; */
+  /*  Omega_3_scaled = Omega_3 / gain_motor; */
+  /*  Omega_4_scaled = Omega_4 / gain_motor; */
+  /*  b_1_scaled = b_1 / gain_el; */
+  /*  b_2_scaled = b_2 / gain_el; */
+  /*  b_3_scaled = b_3 / gain_el; */
+  /*  b_4_scaled = b_4 / gain_el; */
+  /*  g_1_scaled = g_1 / gain_az; */
+  /*  g_2_scaled = g_2 / gain_az; */
+  /*  g_3_scaled = g_3 / gain_az; */
+  /*  g_4_scaled = g_4 / gain_az; */
+  /*  Theta_scaled = Theta / gain_theta; */
+  /*  Phi_scaled = Phi / gain_phi; */
+  /*  gain_ailerons = 1; */
   /*  New aero models */
   compute_acc(c_CL_aileron, c_Cd_zero, c_Cl_alpha, c_Cm_zero, c_Cm_alpha,
               g_min_approach, max_theta_protection, c_I_zz, c_K_Cd, u_out[0],
@@ -8072,9 +8139,10 @@ void Nonlinear_controller_fcn_control_rf_aero_models(double m, double I_xx,
               b_gain_motor, u_out[13], c_S, u_out[12], c_V, u_out[4], u_out[5],
               u_out[6], u_out[7], u_out[14], c_flight_path_angle, u_out[8],
               u_out[9], u_out[10], u_out[11], b_gain_airspeed, c_l_1, c_l_3,
-              c_l_4, c_l_z, g_max_approach, b_max_tilt_value_approach,
-              b_max_approach, b_min_approach, c_rho, c_wing_span, c_wing_chord,
-              final_accelerations);
+              c_l_4, c_l_z, g_max_approach, b_max_tilt_value_approach, c_prop_R,
+              c_prop_Cd_0, c_prop_Cl_0, c_prop_Cd_a, c_prop_Cl_a, c_prop_delta,
+              c_prop_sigma, c_prop_theta, b_max_approach, b_min_approach, c_rho,
+              c_wing_span, c_wing_chord, final_accelerations);
   for (i = 0; i < 6; i++) {
     residuals[i] = dv_global.contents[i] - final_accelerations[i];
   }
