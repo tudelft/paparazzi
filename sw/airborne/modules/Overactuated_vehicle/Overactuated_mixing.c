@@ -112,8 +112,8 @@ float euler_order[3];
 float psi_order_motor = 0;
 
 
-float slider_power_cd0 = 0.03; 
-float slider_power_cda = 2.0; 
+float slider_power_cd0 = 0.05; 
+float slider_power_cda = 0.36; 
 
 //Rotors test: 
 float des_az_angle_test = 0; 
@@ -260,7 +260,7 @@ int waypoint_mode = 0;
 float x_stb, y_stb, z_stb;
 
 // Variables for the speed to derivative gain slider and thrust coefficient: 
-float K_d_speed = 0.02; 
+float K_d_speed = 0.035; 
 float K_T_airspeed = 0.025;
 
 //Variables for the sysmon file write: 
