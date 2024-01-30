@@ -68,6 +68,8 @@ static void ins_ext_pose_init_from_flightplan(void)
   ltp_def_from_ecef_i(&ins_ext_pos.ltp_def, &ecef_nav0);
   ins_ext_pos.ltp_def.hmsl = NAV_ALT0;
   stateSetLocalOrigin_i(&ins_ext_pos.ltp_def);
+  /* update local ENU coordinates of global waypoints */
+  waypoints_localize_all();
 }
 
 
@@ -127,9 +129,9 @@ static void send_ahrs_bias(struct transport_tx *trans, struct link_device *dev)
                 &ekf_X[12], 
                 &ekf_X[13], 
                 &ekf_X[14], 
-                &dummy0, 
-                &dummy0, 
-                &dummy0);
+                &ekf_U[0], //temporary hack to send accel inputs
+                &ekf_U[1], //temporary hack to send accel inputs
+                &ekf_U[2]);//temporary hack to send accel inputs
 }
 #endif
 
@@ -265,7 +267,6 @@ void ins_ext_pose_init(void)
   // Get IMU through ABI
   AbiBindMsgIMU_ACCEL(INS_EXT_POSE_IMU_ID, &accel_ev, accel_cb);
   AbiBindMsgIMU_GYRO(INS_EXT_POSE_IMU_ID, &gyro_ev, gyro_cb);
-
   // Get External Pose through datalink message: setup in xml
 
   // Initialize EKF
@@ -340,7 +341,7 @@ static inline void ekf_init(void)
   float Z0[EKF_NUM_OUTPUTS] = {0, 0, 0, 0, 0, 0};
 
   float Pdiag[EKF_NUM_STATES] = {1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.};
-  float Qdiag[EKF_NUM_INPUTS] = {0.0325, 0.4494, 0.5087, 0.0173, 4.878e-4, 3.547e-4};
+  float Qdiag[EKF_NUM_INPUTS] = {1.0, 1.0, 1.0, 0.0173, 4.878e-4, 3.547e-4};//{0.0325, 0.4494, 0.5087, 0.0173, 4.878e-4, 3.547e-4};
 
   float Rdiag[EKF_NUM_OUTPUTS] = {8.372e-6, 3.832e-6, 4.761e-6, 2.830e-4, 8.684e-6, 7.013e-6};
 
