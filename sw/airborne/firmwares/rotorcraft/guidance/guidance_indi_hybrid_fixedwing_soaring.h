@@ -48,35 +48,39 @@
 
 extern void guidance_indi_soaring_enter(void);
 extern void guidance_indi_soaring_run(float *heading_sp);
-extern void stabilization_attitude_set_setpoint_rp_quat_f(struct FloatEulers* indi_rp_cmd, bool in_flight, int32_t heading);
+//extern void stabilization_attitude_set_setpoint_rp_quat_f(struct FloatEulers* indi_rp_cmd, bool in_flight, int32_t heading);
 extern void guidance_indi_soaring_init(void);
-extern void guidance_indi_soaring_propagate_filters(void);
+//extern void guidance_indi_soaring_propagate_filters(void);
 extern void guidance_indi_hybrid_soaring_start(void);
 extern void guidance_indi_hybrid_soaring_stop(void);
 extern void guidance_indi_hybrid_soaring_reset(void);
 extern void guidance_indi_soaring_reset_stby_wp(void);
 extern void guidance_indi_soaring_reset_soaring_wp(void);
 
-struct guidance_indi_hybrid_params {
-  float pos_gain;
-  float pos_gainz;
-  float speed_gain;
-  float speed_gainz;
-  float heading_bank_gain;
-};
+extern float compute_soaring_heading_sp(void);
+extern struct FloatVect3 compute_soaring_accel_sp(struct HorizontalGuidance *gh, struct VerticalGuidance *gv);
+extern void run_soaring_search(void);
+
+//struct guidance_indi_hybrid_params {
+//  float pos_gain;
+//  float pos_gainz;
+//  float speed_gain;
+//  float speed_gainz;
+//  float heading_bank_gain;
+//};
 
 struct SoaringPositionMap {
     struct FloatVect3 pos;
     float cost;
 };
 
-extern struct guidance_indi_hybrid_params gih_params;
-extern float guidance_indi_specific_force_gain;
-extern float guidance_indi_max_airspeed;
-extern float nav_max_speed;
-extern bool take_heading_control;
-extern float guidance_indi_max_bank;
-extern float lift_pitch_eff;
+//extern struct guidance_indi_hybrid_params gih_params;
+//extern float guidance_indi_specific_force_gain;
+//extern float guidance_indi_max_airspeed;
+//extern float nav_max_speed;
+//extern bool take_heading_control;
+//extern float guidance_indi_max_bank;
+//extern float lift_pitch_eff;
 
 extern struct FloatVect3 guidance_wind_gradient;
 
@@ -84,10 +88,10 @@ extern float guidance_soaring_max_throttle;
 extern bool speed_sp_from_position;
 extern bool y_position_ctrl;
 extern bool soaring_explore_positions;
-extern float gd_gamma_sq;
-extern float gd_Wv[3];
-extern float gd_Wu[3];
-extern float gd_du_pref[3];
+//extern float gd_gamma_sq;
+//extern float gd_Wv[3];
+//extern float gd_Wu[3];
+//extern float gd_du_pref[3];
 extern bool use_variable_weights;
 
 extern struct FloatVect2 heading_target;

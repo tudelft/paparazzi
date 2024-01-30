@@ -257,7 +257,7 @@ NOTES:
 <!--        &lt;!&ndash;        <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="2500"/>&ndash;&gt;-->
 <!--      </module>-->
 
-      <module name="guidance" type="indi">
+      <module name="guidance" type="indi_hybrid_fixedwing_soaring">
       </module>
 
 

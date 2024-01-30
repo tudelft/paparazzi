@@ -452,19 +452,15 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   AbiSendMsgTHRUST(THRUST_INCREMENT_ID, thrust_vect);
 
   //// NO TURNING OPTION for SOARING
-#if GUIDANCE_INDI_SOARING
-
-//// Heading control
-
-////
-
-    // Set the quaternion setpoint from eulers_zxy
-  struct FloatQuat sp_quat;
-  float_quat_of_eulers_zxy(&sp_quat, &guidance_euler_cmd);
-  float_quat_normalize(&sp_quat);
-
-  return stab_sp_from_quat_f(&sp_quat);
-#endif
+//#if GUIDANCE_INDI_SOARING
+//
+//    // Set the quaternion setpoint from eulers_zxy
+//  struct FloatQuat sp_quat;
+//  float_quat_of_eulers_zxy(&sp_quat, &guidance_euler_cmd);
+//  float_quat_normalize(&sp_quat);
+//
+//  return stab_sp_from_quat_f(&sp_quat);
+//#else
 
   // Coordinated turn
   // feedforward estimate angular rotation omega = g*tan(phi)/v
@@ -562,6 +558,8 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   float_quat_normalize(&sp_quat);
 
   return stab_sp_from_quat_ff_rates_f(&sp_quat, &ff_rates);
+//#endif
+
 }
 
 // compute accel setpoint from speed setpoint (use global variables ! FIXME)
@@ -692,8 +690,9 @@ struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight UNUSED, struc
 
   // SOARING MODE
   if (h_mode == GUIDANCE_INDI_SOARING) {
-      heading_sp = compute_soaring_heading_ref();/
-      accel_sp = compute_accel_soaring();   // compute accel sp
+      float soaring_heading_sp = compute_soaring_heading_sp();
+      gh->sp.heading = soaring_heading_sp;
+      accel_sp = compute_soaring_accel_sp(gh, gv);   // compute accel sp
       return guidance_indi_run(&accel_sp, gh->sp.heading);
   }
 

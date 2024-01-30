@@ -17,6 +17,11 @@
   <header>
     <file name="guidance_indi_hybrid_fixedwing_soaring.h"/>
   </header>
+
+  <init fun="guidance_indi_soaring_init()"/>
+  <init fun="guidance_indi_soaring_enter()"/>
+  <periodic fun="run_soaring_search()" freq="PERIODIC_FREQUENCY" autorun="TRUE"/>
+
   <makefile target="ap|nps" firmware="rotorcraft">
     <define name="GUIDANCE_INDI_HYBRID_USE_WLS" value="1"/>
 
