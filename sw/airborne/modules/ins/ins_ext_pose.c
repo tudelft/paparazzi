@@ -129,9 +129,9 @@ static void send_ahrs_bias(struct transport_tx *trans, struct link_device *dev)
                 &ekf_X[12], 
                 &ekf_X[13], 
                 &ekf_X[14], 
-                &ekf_U[0], //temporary hack to send accel inputs
-                &ekf_U[1], //temporary hack to send accel inputs
-                &ekf_U[2]);//temporary hack to send accel inputs
+                &dummy0, 
+                &dummy0, 
+                &dummy0);
 }
 #endif
 
