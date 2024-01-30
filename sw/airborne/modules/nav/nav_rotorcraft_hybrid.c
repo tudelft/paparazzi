@@ -83,6 +83,9 @@ float nav_hybrid_pos_gain = 1.0f;
 bool force_forward = 0.0f;
 #endif
 
+#ifndef NAV_OPTITRACK
+#define NAV_OPTITRACK FALSE 
+#endif
 /** Implement basic nav function for the hybrid case
  */
 
@@ -120,7 +123,13 @@ static void nav_hybrid_goto(struct EnuCoor_f *wp)
 
   VECT2_COPY(nav.speed, speed_sp);
   nav.horizontal_mode = NAV_HORIZONTAL_MODE_WAYPOINT;
-  nav.setpoint_mode = NAV_SETPOINT_MODE_SPEED;
+
+  // In optitrack tests use position mode for more precise hovering
+  if (NAV_OPTITRACK){
+    nav.setpoint_mode = NAV_SETPOINT_MODE_POS;
+  }else{
+    nav.setpoint_mode = NAV_SETPOINT_MODE_SPEED;
+  }
 }
 
 static void nav_hybrid_route(struct EnuCoor_f *wp_start, struct EnuCoor_f *wp_end)
