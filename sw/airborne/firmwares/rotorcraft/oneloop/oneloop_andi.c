@@ -1682,8 +1682,8 @@ void oneloop_from_nav(bool in_flight)
   // Oneloop controller wants desired targets and handles reference generation internally
   switch (nav.setpoint_mode) {
     case NAV_SETPOINT_MODE_POS:
-      PSA_des.x   = POS_FLOAT_OF_BFP(POS_BFP_OF_REAL(nav.carrot.y));
-      PSA_des.y   = POS_FLOAT_OF_BFP(POS_BFP_OF_REAL(nav.carrot.x));
+      PSA_des.x   = POS_FLOAT_OF_BFP(POS_BFP_OF_REAL(nav.target.y));
+      PSA_des.y   = POS_FLOAT_OF_BFP(POS_BFP_OF_REAL(nav.target.x));
       rm_order_h  = 3;
       break;
     case NAV_SETPOINT_MODE_SPEED:
