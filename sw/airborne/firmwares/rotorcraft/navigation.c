@@ -237,7 +237,7 @@ bool nav_check_wp_time_3d(struct EnuCoor_f *wp, uint16_t stay_time, float arriva
 
     VECT3_DIFF(diff, *wp, *stateGetPositionEnu_f());
 //    struct FloatVect3 diff_f = {POS_FLOAT_OF_BFP(diff.x), POS_FLOAT_OF_BFP(diff.y), POS_FLOAT_OF_BFP(diff.z)};
-    dist_to_point = float_vect2_norm(&diff);
+    dist_to_point = float_vect3_norm(&diff);
     if (dist_to_point < arrival_dist) {     // 3d distance
         if (!wp_reached) {
             wp_reached = true;
