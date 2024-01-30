@@ -253,7 +253,7 @@ static inline void NavResurrect(void)
 bool nav_check_wp_time(struct EnuCoor_f *wp, uint16_t stay_time);
 #define NavCheckWaypointTime(wp, time) nav_check_wp_time(&waypoints[wp].enu_f, time)
 
-bool nav_check_wp_time_3d(struct EnuCoor_i *wp, uint16_t stay_time, float arrival_dist);
+bool nav_check_wp_time_3d(struct EnuCoor_f *wp, uint16_t stay_time, float arrival_dist);
 
 
 /***********************************************************

@@ -226,7 +226,7 @@ bool nav_check_wp_time_3d(struct EnuCoor_f *wp, uint16_t stay_time, float arriva
     static bool wp_reached = false;
     static struct EnuCoor_i wp_last = { 0, 0, 0 };
     struct EnuCoor_i wp_i;
-    struct FloatVect2 diff;
+    struct FloatVect3 diff;
 
     ENU_BFP_OF_REAL(wp_i, *wp);
     if ((wp_last.x != wp_i.x) || (wp_last.y != wp_i.y) || (wp_last.z != wp_i.z)) {
