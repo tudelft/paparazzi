@@ -94,51 +94,104 @@ let convert_value_with_code_unit_coef_of_xml = function xml ->
     with _ -> prerr_endline (sprintf "Error: Unit conversion of parameter %s impossible because '%s' is not a float" (Xml.attrib xml "name") (Xml.attrib xml "value")); flush stderr; exit 1 in
   v *. conv
 
+
+type val_t =
+  | Value of string
+  | XmlFields of Xml.xml list
+
+let get_value_converted = fun x ->
+  (* fail if units conversion is not found and just copy value instead,
+  this is important for integer values, you can't just multiply them with 1.0 *)
+  try string_of_float (convert_value_with_code_unit_coef_of_xml x)
+  with _ -> ExtXml.display_entities (ExtXml.attrib x "value")
+
 let array_sep = Str.regexp "[,;]"
-let rec string_from_type = fun name v t ->
-  let sprint_array = fun v t ->
-    let vs = Str.split array_sep v in
-    let sl = List.map (fun vl -> string_from_type name vl t) vs in
-    "{ "^(String.concat " , " sl)^" }"
-  in
+
+let rec string_from_type = fun name t x ->
+  (* error function *)
+  let error_and_exit = fun e -> prerr_endline e; flush stderr; exit 1 in
+  (* utility function to remove spaces *)
   let rm_leading_trailing_spaces = fun s ->
     let s = Str.global_replace (Str.regexp "^ *") "" s in
     Str.global_replace (Str.regexp " *$") "" s
   in
-  match t with
-  | "float" ->
-      begin
+  (* test valid cases and extract value or fields *)
+  let v = try Some (Xml.attrib x "value") with _ -> None in
+  let c = if List.length (Xml.children x) = 0 then None else Some (Xml.children x) in
+  let _val = match v, c with
+  | None, None -> error_and_exit (sprintf "Define %s requires 'value' attribute or 'field' node" name)
+  | Some _, Some _ -> error_and_exit (sprintf "Define %s can't support both 'value' attribute or 'field' node" name)
+  | Some _v, None -> Value (get_value_converted x)
+  | None, Some _c -> XmlFields _c
+  in
+  (* extract values as string *)
+  let rec value_from_type = fun t _val ->
+    (* printers for array-like and structures *)
+    let sprint_array t = function
+      | Value v ->
+          let vs = Str.split array_sep v in
+          let sl = List.map (fun vl -> value_from_type t (Value vl)) vs in
+          "{ "^(String.concat " , " sl)^" }"
+      | XmlFields xfs ->
+          let sl = List.map (fun x -> value_from_type t (XmlFields (Xml.children x))) xfs in
+          "{ "^(String.concat " , " sl)^" }"
+    in
+    let sprint_matrix = fun l ->
+      let fl = List.map (fun f -> string_from_type name (ExtXml.attrib_or_default f "type" "") f) l in
+      "{ "^(String.concat " , " fl)^" }"
+    in
+    let sprint_struct = fun l ->
+      let fl = List.map (fun f ->
         try
-          string_of_float (float_of_string (rm_leading_trailing_spaces v))
-        with _ -> prerr_endline (sprintf "Define value %s = %s is not compatible with type float" name v); flush stderr; exit 1
+          let n = ExtXml.attrib f "name" in
+          sprintf ".%s = %s" n (string_from_type name (ExtXml.attrib_or_default f "type" "") f)
+        with _ ->
+          sprintf "%s" (string_from_type name (ExtXml.attrib_or_default f "type" "") f)
+      ) l in
+      "{ "^(String.concat " , " fl)^" }"
+    in
+    (* match correct types *)
+    match _val with
+    | XmlFields xfs -> begin
+        match t with
+        | "matrix" | "array" -> sprint_matrix (Xml.children x)
+        | "struct" -> sprint_struct (Xml.children x)
+        | _ -> error_and_exit (sprintf "Unknown define type for fields of %s (specify 'matrix', 'array' or 'struct')" name)
       end
-  | "int" ->
-      begin
-        try
-          string_of_int (int_of_string (rm_leading_trailing_spaces v))
-        with _ -> prerr_endline (sprintf "Define value %s = %s is not compatible with type int" name v); flush stderr; exit 1
-      end
-  | "string" -> "\""^(rm_leading_trailing_spaces v)^"\""
-  | "array" -> sprint_array v ""
-  | "float[]" -> sprint_array v "float"
-  | "int[]" -> sprint_array v "int"
-  | "string[]" -> sprint_array v "string"
-  | _ -> v
+    | Value v -> begin
+      match t with
+      | "float" ->
+          begin
+            try
+              string_of_float (float_of_string (rm_leading_trailing_spaces v))
+            with _ -> error_and_exit (sprintf "Define value %s = %s is not compatible with type float" name v);
+          end
+      | "int" ->
+          begin
+            try
+              string_of_int (int_of_string (rm_leading_trailing_spaces v))
+            with _ -> error_and_exit (sprintf "Define value %s = %s is not compatible with type int" name v);
+          end
+      | "string" -> "\""^(rm_leading_trailing_spaces v)^"\""
+      | "array" -> sprint_array "" (Value v)
+      | "float[]" -> sprint_array "float" (Value v)
+      | "int[]" -> sprint_array "int" (Value v)
+      | "string[]" -> sprint_array "string" (Value v)
+      | "matrix" -> sprint_matrix (Xml.children x)
+      | "struct" -> sprint_struct (Xml.children x)
+      | _ -> v
+    end
+  in
+  value_from_type t _val
 
 
 let parse_element = fun out prefix s ->
   match Xml.tag s with
       "define" -> begin
         try
-          (* fail if units conversion is not found and just copy value instead,
-             this is important for integer values, you can't just multiply them with 1.0 *)
-          let value =
-            try string_of_float (convert_value_with_code_unit_coef_of_xml s)
-            with _ -> ExtXml.display_entities (ExtXml.attrib s "value")
-          in
           let name = (prefix^ExtXml.attrib s "name") in
           let t = ExtXml.attrib_or_default s "type" "" in
-          define_out out name (string_from_type name value t);
+          define_out out name (string_from_type name t s);
           define_integer out name (ExtXml.float_attrib s "value") (ExtXml.int_attrib s "integer");
         with _ -> ();
       end
@@ -151,7 +204,7 @@ let print_reverse_servo_table = fun out driver servos ->
   fprintf out "  switch (_idx) {\n";
   List.iter (fun c ->
     let name = ExtXml.attrib c "name" in
-    fprintf out "    case SERVO_%s: return SERVO_%s_MIN;\n" name name;
+    fprintf out "    case SERVO_%s_DRIVER_NO: return SERVO_%s_MIN;\n" name name;
   ) servos;
   fprintf out "    default: return 0;\n";
   fprintf out "  };\n";
@@ -160,7 +213,16 @@ let print_reverse_servo_table = fun out driver servos ->
   fprintf out "  switch (_idx) {\n";
   List.iter (fun c ->
     let name = ExtXml.attrib c "name" in
-    fprintf out "    case SERVO_%s: return SERVO_%s_MAX;\n" name name;
+    fprintf out "    case SERVO_%s_DRIVER_NO: return SERVO_%s_MAX;\n" name name;
+  ) servos;
+  fprintf out "    default: return 0;\n";
+  fprintf out "  };\n";
+  fprintf out "}\n\n";
+  fprintf out "static inline int get_servo_idx%s(int _idx) {\n" d;
+  fprintf out "  switch (_idx) {\n";
+  List.iter (fun c ->
+    let name = ExtXml.attrib c "name" in
+    fprintf out "    case SERVO_%s_DRIVER_NO: return SERVO_%s_IDX;\n" name name;
   ) servos;
   fprintf out "    default: return 0;\n";
   fprintf out "  };\n";
@@ -170,8 +232,10 @@ let parse_servo = fun out driver c ->
   let shortname = ExtXml.attrib c "name" in
   let name = "SERVO_"^shortname
   and no_servo = int_of_string (ExtXml.attrib c "no") in
+  let global_idx = Hashtbl.length servos_drivers in
 
-  define_out out name (string_of_int no_servo);
+  define_out out (name^"_DRIVER_NO") (string_of_int no_servo);
+  define_out out (name^"_IDX") (string_of_int global_idx);
 
   let s_min = fos (ExtXml.attrib c "min" )
   and neutral = fos (ExtXml.attrib c "neutral")
@@ -194,7 +258,6 @@ let parse_servo = fun out driver c ->
   fprintf out "\n";
 
   (* Memorize the associated driver (if any) and global index (insertion order) *)
-  let global_idx = Hashtbl.length servos_drivers in
   Hashtbl.add servos_drivers shortname (driver, global_idx)
 
 (* Characters checked in Gen_radio.checl_function_name *)
@@ -207,11 +270,10 @@ let preprocess_value = fun s v prefix ->
 
 let print_actuators_idx = fun out ->
   Hashtbl.iter (fun s (d, i) ->
-    fprintf out "#define SERVO_%s_IDX %d\n" s i;
     (* Set servo macro *)
     fprintf out "#define Set_%s_Servo(_v) { \\\n" s;
     fprintf out "  actuators[SERVO_%s_IDX] = Clip(_v, SERVO_%s_MIN, SERVO_%s_MAX); \\\n" s s s;
-    fprintf out "  Actuator%sSet(SERVO_%s, actuators[SERVO_%s_IDX]); \\\n" d s s;
+    fprintf out "  Actuator%sSet(SERVO_%s_DRIVER_NO, actuators[SERVO_%s_IDX]); \\\n" d s s;
     fprintf out "}\n\n"
   ) servos_drivers;
   define_out out "ACTUATORS_NB" (string_of_int (Hashtbl.length servos_drivers));
@@ -315,10 +377,8 @@ let rec parse_section = fun out ac_id s ->
       let driver = ExtXml.attrib_or_default s "driver" "Default" in
       let servos = Xml.children s in
       let nb_servos = List.fold_right (fun s m -> max (int_of_string (ExtXml.attrib s "no")) m) servos min_int + 1 in
-      let servos_offset = Hashtbl.length servos_drivers in
 
       define_out out (sprintf "SERVOS_%s_NB" (String.uppercase_ascii driver)) (string_of_int nb_servos);
-      define_out out (sprintf "SERVOS_%s_OFFSET" (String.uppercase_ascii driver)) (string_of_int servos_offset);
       fprintf out "#include \"modules/actuators/actuators_%s.h\"\n" (String.lowercase_ascii driver);
       fprintf out "\n";
       List.iter (parse_servo out driver) servos;

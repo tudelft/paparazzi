@@ -132,7 +132,7 @@ static void send_status(struct transport_tx *trans, struct link_device *dev)
                                   &radio_control.status, &radio_control.frame_rate,
                                   &fix, &autopilot.mode, &in_flight, &motors_on,
                                   &autopilot.arming_status, &guidance_h.mode, &guidance_v.mode,
-                                  &time_sec, &electrical.vsupply);
+                                  &time_sec, &electrical.vsupply, &electrical.vboard);
 }
 
 static void send_energy(struct transport_tx *trans, struct link_device *dev)
@@ -225,6 +225,7 @@ static void send_rotorcraft_rc(struct transport_tx *trans, struct link_device *d
 }
 #endif
 
+#if defined(COMMAND_ROLL) && defined(COMMAND_PITCH) && defined(COMMAND_YAW)
 static void send_rotorcraft_cmd(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_ROTORCRAFT_CMD(trans, dev, AC_ID,
@@ -233,6 +234,9 @@ static void send_rotorcraft_cmd(struct transport_tx *trans, struct link_device *
                                &stabilization_cmd[COMMAND_YAW],
                                &stabilization_cmd[COMMAND_THRUST]);
 }
+#else
+static void send_rotorcraft_cmd(struct transport_tx *trans UNUSED, struct link_device *dev UNUSED) {}
+#endif
 
 
 void autopilot_firmware_init(void)

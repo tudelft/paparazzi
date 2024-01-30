@@ -163,64 +163,6 @@
     </module>
 
     <module name="motor_mixing"/>
-
-
-    <!--Airspeed estimation using EKF-->
-    <module name="ekf_aw">
-      <define name="EKF_AW_P0_V_BODY"  value="1.E-2f" description="Initial covariance body velocity"/>
-      <define name="EKF_AW_P0_MU"      value="1.E-5f" description="Initial covariance wind"/>
-      <define name="EKF_AW_P0_OFFSET"  value="1.E-10f" description="Initial covariance offset"/>
-
-      <define name="EKF_AW_Q_ACCEL"  value="1.0E-4f" description="Accel process noise"/>
-      <define name="EKF_AW_Q_GYRO"   value="1.0E-9f"  description="Gyro process noise"/>
-      <define name="EKF_AW_Q_MU"     value="1.0E-6f"  description="Wind process noise"/>
-      <define name="EKF_AW_Q_OFFSET" value="1.0E-8f" description="Offset process noise"/>
-
-      <define name="EKF_AW_R_V_GND"        value="1.E-5f" description="GPS Velocity measurement noise"/>
-      <define name="EKF_AW_R_ACCEL_FILT_X" value="1.E-5f" description="Filtered x accel measurement noise"/>
-      <define name="EKF_AW_R_ACCEL_FILT_Y" value="1.E-5f" description="Filtered y accel measurement noise"/>
-      <define name="EKF_AW_R_ACCEL_FILT_Z" value="1.E-5f" description="Filtered z accel measurement noise"/>
-      <define name="EKF_AW_R_V_PITOT"      value="1.E-7f" description="Pitot Tube Velocity measurement noise"/>
-
-      <define name="EKF_AW_AZ_SCHED_GAIN"     value="2" />
-      <define name="EKF_AW_AZ_SCHED_START_DEG"     value="60" />
-      <define name="EKF_AW_AZ_SCHED_END_DEG"     value="70" />
-
-      <define name="EKF_AW_AX_SCHED_GAIN"     value="0" />
-      <define name="EKF_AW_AX_SCHED_START_DEG"     value="45" />
-      <define name="EKF_AW_AX_SCHED_END_DEG"     value="60" />
-
-      <define name="EKF_AW_QUICK_CONVERGENCE"     value="true" />
-      <define name="EKF_AW_QUICK_CONVERGENCE_TIME"     value="15" />
-
-      <define name="EKF_AW_WING_INSTALLED"   value="true" description="Use wing contribution"/>
-      <define name="EKF_AW_USE_MODEL_BASED_X"  value="true" description="Use model based to augment filter"/>
-      <define name="EKF_AW_USE_MODEL_BASED_Y"  value="true" description="Use model based to augment filter"/>
-      <define name="EKF_AW_USE_MODEL_BASED_Z"  value="true" description="Use model based to augment filter"/>
-
-      <define name="EKF_AW_VEHICLE_MASS" value="6.5" description="Mass of the vehicle"/>
-
-      <define name="EKF_AW_K2_FX_FUSELAGE" value="-4E-2f" description="K*u*u"/>
-      <define name="EKF_AW_K3_FX_HOVER" value="-3E-1f" description="K*u"/>
-
-      <define name="EKF_AW_K1_FX_WING" value="-3.21432e-02f" description="Fx2 = (k1*(1+k5*skew)+(k2*alpha+k3*alpha^2))*(sin(skew)^2+k4)*V^2"/>
-      <define name="EKF_AW_K2_FX_WING" value="1.67195e-01f" description="Fx2 = (k1*(1+k5*skew)+(k2*alpha+k3*alpha^2))*(sin(skew)^2+k4)*V^2"/>
-      <define name="EKF_AW_K3_FX_WING" value="5.9441e-01f" description="Fx2 = (k1*(1+k5*skew)+(k2*alpha+k3*alpha^2))*(sin(skew)^2+k4)*V^2"/>
-      <define name="EKF_AW_K4_FX_WING" value="3.9839e-03f" description="Fx2 = (k1*(1+k5*skew)+(k2*alpha+k3*alpha^2))*(sin(skew)^2+k4)*V^2"/>
-      <define name="EKF_AW_K5_FX_WING" value="3.5321e-03f" description="Fx2 = (k1*(1+k5*skew)+(k2*alpha+k3*alpha^2))*(sin(skew)^2+k4)*V^2"/>
-
-      <define name="EKF_AW_K_FY_V"     value="-3.2E-1f" description="Fy beta coefficient"/>
-      <define name="EKF_AW_K1_FY_WING" value="0.0f" description="Fy = K1*cos(skew)*sin(skew)*u^2"/>
-
-      <define name="EKF_AW_K1_FZ_WING" value="-1.0008e-01f" description="Fz1 = ((k1+k2*alpha+k3*alpha^2)*(sin(skew)^2+k4)*V^2"/>
-      <define name="EKF_AW_K2_FZ_WING" value="-8.6965e-01f" description="Fz1 = ((k1+k2*alpha+k3*alpha^2)*(sin(skew)^2+k4)*V^2"/>
-      <define name="EKF_AW_K3_FZ_WING" value="1.45783e-01f" description="Fz1 = ((k1+k2*alpha+k3*alpha^2)*(sin(skew)^2+k4)*V^2"/>
-      <define name="EKF_AW_K4_FZ_WING" value="2.185395e-01f" description="Fz1 = ((k1+k2*alpha+k3*alpha^2)*(sin(skew)^2+k4)*V^2"/>
-
-      <define name="EKF_AW_TELEMETRY_DEBUG"     value="false" description="debug mode to send timing info through telemetry"/>
-    </module>
-
-
   </firmware>
 
   <!-- CAN BUS 1 (Front Wing) -->
@@ -248,6 +190,18 @@
   </servos>
 
   <commands>
+    <axis name="FRONT_LEFT"       failsafe_value="0"/>
+    <axis name="FRONT_RIGHT"      failsafe_value="0"/>
+    <axis name="REAR_LEFT"        failsafe_value="0"/>
+    <axis name="REAR_RIGHT"       failsafe_value="0"/>
+
+    <axis name="FRONT_LEFT_FLAP"  failsafe_value="0"/>
+    <axis name="FRONT_RIGHT_FLAP" failsafe_value="0"/>
+    <axis name="REAR_LEFT_FLAP"   failsafe_value="0"/>
+    <axis name="REAR_RIGHT_FLAP"  failsafe_value="0"/>
+
+    <axis name="TIP_THRUSTERS"    failsafe_value="0"/>
+
     <axis name="ROLL"   failsafe_value="0"/>
     <axis name="PITCH"  failsafe_value="-300"/>
     <axis name="YAW"    failsafe_value="0"/>
@@ -262,7 +216,6 @@
     <define name="ROLL_COEF"   value="{256,  157,   56,  -56, -157, -256,  256,  157,   56,  -56, -157, -256}"/>
     <define name="PITCH_COEF"  value="{256,  256,  256,  256,  256,  256, -256, -256, -256, -256, -256, -256}"/>
     <define name="YAW_COEF"    value="{251, -256,  252, -252,  256, -251, -256,  252, -254,  254, -252,  256}"/>
-    <!--<define name="YAW_COEF"    value="{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}"/>-->
     <define name="THRUST_COEF" value="{256,  256,  256,  256,  256,  256,  256,  256,  256,  256,  256,  256}"/>
   </section>
 
@@ -398,10 +351,10 @@
     <define name="ESTIMATION_FILT_CUTOFF" value="5.0"/>
     <define name="FILT_CUTOFF_P" value="20."/>
     <define name="FILT_CUTOFF_Q" value="20."/>
-    <define name="FILT_CUTOFF_R" value="4."/>
+    <define name="FILT_CUTOFF_R" value="4.0"/>
+
     <!-- first order actuator dynamics -->
-    <!--define name="ACT_DYN" value="{0.009, 0.009, 0.009, 0.009, 0.05, 0.05, 0.05, 0.05}"/-->
-    <define name="ACT_DYN" value="{0.028, 0.028, 0.028, 0.028, 0.05, 0.05, 0.05, 0.05}"/>
+    <define name="ACT_FREQ" value="{14.2, 14.2, 14.2, 14.2, 25.6, 25.6, 25.6, 25.6}"/>
     <define name="ACT_RATE_LIMIT" value="{9600, 9600, 9600, 9600, 170, 170, 170, 170}"/>
     <define name="ACT_IS_SERVO" value="{0, 0, 0, 0, 1, 1, 1, 1}"/>
     <define name="WLS_WU" value="{1.,1.,1.,1.,1.,1.,1.,1.}"/>

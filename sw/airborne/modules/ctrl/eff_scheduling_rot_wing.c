@@ -33,8 +33,8 @@
 #include "modules/actuators/actuators.h"
 #include "modules/core/abi.h"
 
-#ifndef SERVO_ROTATION_MECH
-#error ctrl_eff_sched_rot_wing requires a servo named ROTATION_MECH
+#ifndef SERVO_ROTATION_MECH_IDX
+#error ctrl_eff_sched_rot_wing requires a servo named ROTATION_MECH_IDX
 #endif
 
 #ifndef ROT_WING_EFF_SCHED_IXX_BODY
@@ -172,7 +172,7 @@ static abi_event wing_position_ev;
 static void wing_position_cb(uint8_t sender_id UNUSED, struct act_feedback_t *pos_msg, uint8_t num_act)
 {
   for (int i=0; i<num_act; i++){
-    if (pos_msg[i].set.position && (pos_msg[i].idx == SERVO_ROTATION_MECH))
+    if (pos_msg[i].set.position && (pos_msg[i].idx == SERVO_ROTATION_MECH_IDX))
     {
       // Get wing rotation angle from sensor
       eff_sched_var.wing_rotation_rad = 0.5 * M_PI - pos_msg[i].position;
@@ -257,9 +257,10 @@ void eff_scheduling_rot_wing_update_MMOI(void)
 
 void eff_scheduling_rot_wing_update_cmd(void)
 {
-  eff_sched_var.cmd_elevator = actuators_pprz[SERVO_SERVO_ELEVATOR];
-  eff_sched_var.cmd_pusher_scaled = actuators_pprz[SERVO_MOTOR_PUSH] * 0.000853229; // Scaled with 8181 / 9600 / 1000
-  eff_sched_var.cmd_T_mean_scaled = (actuators_pprz[SERVO_MOTOR_FRONT] + actuators_pprz[SERVO_MOTOR_RIGHT] + actuators_pprz[SERVO_MOTOR_BACK] + actuators_pprz[SERVO_MOTOR_LEFT]) / 4. * 0.000853229; // Scaled with 8181 / 9600 / 1000
+  // These indexes depend on the INDI sequence, not the actuator IDX
+  eff_sched_var.cmd_elevator = actuators_pprz[5];
+  eff_sched_var.cmd_pusher_scaled = actuators_pprz[8] * 0.000853229; // Scaled with 8181 / 9600 / 1000
+  eff_sched_var.cmd_T_mean_scaled = (actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3]) / 4. * 0.000853229; // Scaled with 8181 / 9600 / 1000
 }
 
 void eff_scheduling_rot_wing_update_airspeed(void)

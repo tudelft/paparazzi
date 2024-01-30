@@ -24,10 +24,8 @@
         <configure name="SBUS_PORT" value="UART3"/>
       </module>
 
-      <module name="airspeed" type="ms45xx_i2c">
-        <define name="USE_I2C2"/>
-        <define name="MS45XX_I2C_DEV" value="i2c2"/>
-      </module>
+      <module name="airspeed" type="uavcan"/>
+      <module name="range_sensor" type="uavcan"/>
 
       <module name="scheduling_indi_simple"/>
 
@@ -128,6 +126,7 @@
       <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="0.5"/>
       <define name="GUIDANCE_INDI_LINE_GAIN" value="0.2"/>
       <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>
+      <define name="GUIDANCE_INDI_THRUST_DYNAMICS_FREQ" value="18"/>
     </module>
 
     <module name="motor_mixing"/>
@@ -302,9 +301,9 @@
     <define name="FILT_CUTOFF_R" value="4.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN_P" value="0.0354"/>
-    <define name="ACT_DYN_Q" value="0.0354"/>
-    <define name="ACT_DYN_R" value="0.0354"/>
+    <define name="ACT_FREQ_P" value="18"/>
+    <define name="ACT_FREQ_Q" value="18"/>
+    <define name="ACT_FREQ_R" value="18"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>

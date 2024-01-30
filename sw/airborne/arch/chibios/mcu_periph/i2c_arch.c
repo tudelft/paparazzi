@@ -159,12 +159,12 @@ static void handle_i2c_thd(struct i2c_periph *p)
   } else {
 #if defined(STM32F7XX) || defined(STM32H7XX)
     // we do stupid mem copy because F7 needs a special RAM for DMA operation
-    memcpy(i->dma_buf, (void *)t->buf, (size_t)(t->len_w));
     status = i2cMasterReceiveTimeout(
                (I2CDriver *)p->reg_addr,
                (i2caddr_t)((t->slave_addr) >> 1),
                (uint8_t *)i->dma_buf, (size_t)(t->len_r),
                tmo);
+    cacheBufferInvalidate(i->dma_buf, t->len_r);
     memcpy((void *)t->buf, i->dma_buf, (size_t)(t->len_r));
 #else
     status = i2cMasterReceiveTimeout(
@@ -345,8 +345,14 @@ void i2c3_hw_init(void)
 
 #if USE_I2C4
 PRINT_CONFIG_VAR(I2C4_CLOCK_SPEED)
+
+#if defined(STM32H7XX)
+// Local variables (in DMA safe memory)
+static IN_BDMA_SECTION(struct i2c_init i2c4_init_s) = {
+#else
 // Local variables (in DMA safe memory)
 static IN_DMA_SECTION(struct i2c_init i2c4_init_s) = {
+#endif
   .name = "i2c4",
   .sem = __SEMAPHORE_DATA(i2c4_init_s.sem, 0),
   .cfg = I2C4_CFG_DEF,
