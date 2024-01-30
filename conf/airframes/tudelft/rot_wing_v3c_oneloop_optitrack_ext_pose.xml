@@ -30,14 +30,13 @@
             <define VALUE="RADIO_AUX3"              NAME="RADIO_FBW_MODE"/>
             <define VALUE="RADIO_AUX1"              NAME="RADIO_KILL_SWITCH"/>
             <define VALUE="MAG_RM3100_SENDER_ID"    NAME="INS_EKF2_MAG_ID" />
-            <define VALUE="IMU_CUBE1_ID"            NAME="INS_EKF2_ACCEL_ID"/>
-            <define VALUE="IMU_CUBE1_ID"            NAME="INS_EKF2_GYRO_ID"/>
+            <define VALUE="IMU_CUBE1_ID"            NAME="INS_EXT_POSE_IMU_ID"/> 
             <!--Only send gyro and accel that is being used-->
             <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
             <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
 
             <!-- Log in high speed (Remove for outdoor flights) -->
-            <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/>             -->
+            <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/>-->
             <define name="I2C2_CLOCK_SPEED"     value="100000"/>
         </target>
 
