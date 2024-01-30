@@ -194,15 +194,14 @@ void ins_ext_pose_msg_update(uint8_t *buf)
   struct FloatQuat orient;
   struct FloatEulers orient_eulers;
 
-  // Transformation of External Pose. Guess is Optitrack Quat is from NWU to Body (FRD). Optitrack motive 2.X Yup
-  orient.qi = quat_i ;// Previous code, I think is wrong: quat_i;
-  orient.qx = quat_y ;// Previous code, I think is wrong: quat_y;   //north
-  orient.qy = quat_x ;// Previous code, I think is wrong: -quat_x;  //east
-  orient.qz = -quat_z;// Previous code, I think is wrong: -quat_z;  //down
+  // Transformation of External Pose. Optitrack motive 2.X Yup
+  orient.qi = quat_i ;
+  orient.qx = quat_y ; 
+  orient.qy = quat_x ;                
+  orient.qz = -quat_z;
 
   float_eulers_of_quat(&orient_eulers, &orient);
-  //orient_eulers.theta = -orient_eulers.theta;
-
+  
   ins_ext_pos.ev_time       = get_sys_time_usec(); 
   ins_ext_pos.ev_pos.x      = enu_y;                
   ins_ext_pos.ev_pos.y      = enu_x;                
