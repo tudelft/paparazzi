@@ -39,6 +39,14 @@
 #define ADC_CHANNEL_WING_ROTATION_CONTROLLER_POSITION_NB_SAMPLES 16
 #endif
 
+#ifndef ADC_OFFSET 
+#error "ADC_OFFSET not defined"
+#endif
+
+#ifndef ADC_SCALE
+#error "ADC_SCALE not defined"
+#endif
+
 static struct adc_buf buf_wing_rot_pos;
 
 // Initialization
@@ -52,7 +60,7 @@ void wing_rotation_adc_init(void)
 void wing_rotation_adc_to_deg(void)
 {
   float adc_wing_rotation = buf_wing_rot_pos.sum / buf_wing_rot_pos.av_nb_sample;
-  float wing_angle_deg = 0.00247111 * adc_wing_rotation - 25.635294;
+  float wing_angle_deg = ADC_SCALE * adc_wing_rotation + ADC_OFFSET;
 
 
   // SEND ABI Message to ctr_eff_sched and other modules that want Actuator position feedback
