@@ -104,6 +104,17 @@
 #define ROTWING_STATE_FW_PREF_PITCH 8.0
 #endif
 
+// Make sure the rotmech dynamics are provided if the virtual rotmech is used
+#ifndef USE_ROTMECH_VIRTUAL
+#define USE_ROTMECH_VIRTUAL FALSE
+#endif
+#if !USE_ROTMECH_VIRTUAL
+#define ROTMECH_DYN 1.0
+#endif
+#ifndef ROTMECH_DYN
+#error "Rotmech dynamics are not provided. Please provide them in your airframe file."
+#define ROTMECH_DYN 1.0
+#endif
 /** ABI binding feedback data.
  */
 #ifndef ROTWING_STATE_ACT_FEEDBACK_ID
@@ -579,10 +590,27 @@ void rotwing_state_skew_actuator_periodic(void)
 
 #if USE_NPS
   // Export to the index of the SKEW in the NPS_ACTUATOR_NAMES array
-  actuators_pprz[INDI_NUM_ACT] = (rotwing_state_skewing.servo_pprz_cmd + MAX_PPRZ) / 2.; // Scale to simulation command
+  actuators_pprz[ROT_MECH_IDX] = (rotwing_state_skewing.servo_pprz_cmd + MAX_PPRZ) / 2.; // Scale to simulation command
 
   // Simulate wing angle from command
   rotwing_state_skewing.wing_angle_deg = (float) rotwing_state_skewing.servo_pprz_cmd / MAX_PPRZ * 45. + 45.;
+
+  // SEND ABI Message to ctr_eff_sched and other modules that want Actuator position feedback
+  struct act_feedback_t feedback;
+  feedback.idx =  SERVO_ROTATION_MECH_IDX;
+  feedback.position = 0.5 * M_PI - RadOfDeg(rotwing_state_skewing.wing_angle_deg);
+  feedback.set.position = true;
+
+  // Send ABI message
+  AbiSendMsgACT_FEEDBACK(ACT_FEEDBACK_UAVCAN_ID, &feedback, 1);
+#endif
+
+#if USE_ROTMECH_VIRTUAL
+  // Calculate discrete first order dynamics of rot mech
+  float dyn_dis = 1.0-exp(-ROTMECH_DYN / PERIODIC_FREQUENCY);
+  // Simulate wing angle from command
+  float prev_rotmech_state = rotwing_state_skewing.wing_angle_deg;
+  rotwing_state_skewing.wing_angle_deg = prev_rotmech_state + dyn_dis * (rotwing_state_skewing.wing_angle_deg_sp - prev_rotmech_state);
 
   // SEND ABI Message to ctr_eff_sched and other modules that want Actuator position feedback
   struct act_feedback_t feedback;
