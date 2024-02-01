@@ -459,28 +459,16 @@
     </message>
 
      <message name="GUIDANCE_INDI_HYBRID_SOARING" id="55">
-         <field name="sp_accel_x" type="float"/>
-         <field name="sp_accel_y" type="float"/>
-         <field name="sp_accel_z" type="float"/>
-         <field name="euler_cmd_x" type="float"/>
-         <field name="euler_cmd_y" type="float"/>
-         <field name="euler_cmd_z" type="float"/>
-         <field name="accelned_filt_x" type="float"/>
-         <field name="accelned_filt_y" type="float"/>
-         <field name="accelned_filt_z" type="float"/>
-         <field name="speed_sp_x" type="float"/>
-         <field name="speed_sp_y" type="float"/>
-         <field name="speed_sp_z" type="float"/>
-         <field name="phi_sp" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
-         <field name="theta_sp" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
-         <field name="psi_sp" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
          <field name="pos_err_x" type="float"/>
          <field name="pos_err_y" type="float"/>
          <field name="pos_err_z" type="float"/>
-         <field name="roll_filt" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
-         <field name="theta_filt" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
-         <field name="psi" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
-         <field name="thr_filt" type="float"/>
+         <field name="speed_sp_x" type="float"/>
+         <field name="speed_sp_y" type="float"/>
+         <field name="speed_sp_z" type="float"/>
+         <field name="sp_accel_x" type="float"/>
+         <field name="sp_accel_y" type="float"/>
+         <field name="sp_accel_z" type="float"/>
+         <field name="heading_sp" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
      </message>
 
     <message name="BARO_ETS" id="56">

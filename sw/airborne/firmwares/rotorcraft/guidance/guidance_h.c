@@ -34,17 +34,10 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "firmwares/rotorcraft/navigation.h"
 #include "modules/radio_control/radio_control.h"
-////
-//#if GUIDANCE_INDI_SOARING
-//#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid_nld_soaring.h"
-//#elif GUIDANCE_INDI_NLD
-//#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid_nld.h"
-//#elif GUIDANCE_INDI_HYBRID
-//#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
-//#else
-//#include "firmwares/rotorcraft/guidance/guidance_indi.h"
-//#endif
-////
+
+#ifdef GUIDANCE_INDI_SOARING
+#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid_fixedwing_soaring.h"
+#endif
 
 #include "firmwares/rotorcraft/stabilization/stabilization_none.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_rate.h"
@@ -192,13 +185,11 @@ void guidance_h_mode_changed(uint8_t new_mode)
 
     case GUIDANCE_H_MODE_GUIDED:
     case GUIDANCE_H_MODE_HOVER:
-////
-        //#if GUIDANCE_INDI_SOARING
-//    guidance_indi_soaring_enter();
-//#elif GUIDANCE_INDI
-//      guidance_indi_enter();
-//#endif
-////
+
+#ifdef GUIDANCE_INDI_SOARING
+    guidance_indi_soaring_enter();
+#endif
+
       guidance_h_hover_enter();
 #if NO_ATTITUDE_RESET_ON_MODE_CHANGE
       /* reset attitude stabilization if previous mode was not using it */
@@ -216,14 +207,12 @@ void guidance_h_mode_changed(uint8_t new_mode)
 #endif
 
     case GUIDANCE_H_MODE_NAV:
-////
-        //#if GUIDANCE_INDI_SOARING
-//    guidance_indi_soaring_reset_stby_wp();
-//guidance_indi_soaring_enter();
-//#elif GUIDANCE_INDI
-//      guidance_indi_enter();
-//#endif
-////
+
+#ifdef GUIDANCE_INDI_SOARING
+    guidance_indi_soaring_reset_stby_wp();
+    guidance_indi_soaring_enter();
+#endif
+
       guidance_h_nav_enter();
 #if NO_ATTITUDE_RESET_ON_MODE_CHANGE
       /* reset attitude stabilization if previous mode was not using it */
@@ -524,13 +513,6 @@ void guidance_h_from_nav(bool in_flight)
         guidance_h_set_heading(nav.heading);
         guidance_h_cmd = guidance_h_run_speed(in_flight, &guidance_h);
         break;
-
-            ////
-//#if GUIDANCE_INDI_SOARING
-//    guidance_indi_soaring_run(&guidance_h.sp.heading);
-//#elif GUIDANCE_INDI
-//    guidance_indi_run(&guidance_h.sp.heading);
-////
 
       case NAV_SETPOINT_MODE_ACCEL:
         guidance_h_set_acc(nav.accel.y, nav.accel.x); // nav acc is in ENU frame, convert to NED

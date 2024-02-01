@@ -453,15 +453,27 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   AbiSendMsgTHRUST(THRUST_INCREMENT_ID, thrust_vect);
 
   //// NO TURNING OPTION for SOARING
-//#if GUIDANCE_INDI_SOARING
-//
-//    // Set the quaternion setpoint from eulers_zxy
-//  struct FloatQuat sp_quat;
-//  float_quat_of_eulers_zxy(&sp_quat, &guidance_euler_cmd);
-//  float_quat_normalize(&sp_quat);
-//
-//  return stab_sp_from_quat_f(&sp_quat);
-//#else
+  //// Set heading from NAV
+#ifdef GUIDANCE_INDI_SOARING
+// run only when it is in soaring mode
+if (soaring_mode_running) {
+    // no coordinated turn craps
+  guidance_euler_cmd.psi = heading_sp;
+  guidance_euler_cmd.phi = roll_filt.o[0] + euler_cmd.x;
+  guidance_euler_cmd.theta = pitch_filt.o[0] + euler_cmd.y;
+
+  //Bound euler angles to prevent flipping
+  Bound(guidance_euler_cmd.phi, -guidance_indi_max_bank, guidance_indi_max_bank);
+  Bound(guidance_euler_cmd.theta, RadOfDeg(guidance_indi_min_pitch), RadOfDeg(GUIDANCE_INDI_MAX_PITCH));
+
+// Set the quaternion setpoint from eulers_zxy
+  struct FloatQuat sp_quat;
+  float_quat_of_eulers_zxy(&sp_quat, &guidance_euler_cmd);
+  float_quat_normalize(&sp_quat);
+
+  return stab_sp_from_quat_f(&sp_quat);
+  }
+#endif
 
   // Coordinated turn
   // feedforward estimate angular rotation omega = g*tan(phi)/v
@@ -689,13 +701,16 @@ struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight UNUSED, struc
   struct FloatVect3 pos_err = { 0 };
   struct FloatVect3 accel_sp = { 0 };
 
+#ifdef GUIDANCE_INDI_SOARING
   // SOARING MODE
-  if (h_mode == GUIDANCE_INDI_SOARING) {
+  if (h_mode == GUIDANCE_INDI_HYBRID_H_POS) {
+//      printf("running soaring...\n");
       float soaring_heading_sp = compute_soaring_heading_sp();
       gh->sp.heading = soaring_heading_sp;
       accel_sp = compute_soaring_accel_sp(gh, gv);   // compute accel sp
-      return guidance_indi_run(&accel_sp, gh->sp.heading);
+      return guidance_indi_run(&accel_sp, soaring_heading_sp);
   }
+#endif
 
   // First check for velocity setpoint from module // FIXME should be called like this
   float dt = get_sys_time_float() - time_of_vel_sp;

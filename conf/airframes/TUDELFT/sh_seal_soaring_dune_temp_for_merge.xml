@@ -373,23 +373,6 @@ NOTES:
       <module name="imu" type="nps"/>
       <module name="gps" type="ublox"/>
 
-<!--      <module name="airspeed" type="ms45xx_i2c">-->
-<!--        <define name="USE_I2C4"/>&lt;!&ndash; 4525D5AI 001D &ndash;&gt;-->
-<!--        <define name="MS45XX_I2C_DEV" value="i2c4"/>-->
-<!--        &lt;!&ndash;<define name="MS45XX_PRESSURE_TYPE" value="0"/> &ndash;&gt;&lt;!&ndash;description="Pressure Differential or Gauge, default is Differential">&ndash;&gt;-->
-<!--        <define name="MS45XX_PRESSURE_RANGE" value="1" />&lt;!&ndash; description="pressure range in psi (default: 1)"&ndash;&gt;-->
-<!--        <define name="MS45XX_OUTPUT_TYPE" value="0"/> &lt;!&ndash;description="set to 0 for output type A, to 1 for output type B (default: type A)"/>&ndash;&gt;-->
-<!--        <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> &lt;!&ndash;description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"&ndash;&gt;-->
-<!--&lt;!&ndash;        <define name="MS45XX_PRESSURE_OFFSET" value="8552.5" />&lt;!&ndash; 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)&ndash;&gt;&ndash;&gt;-->
-<!--        <define name="MS45XX_PRESSURE_OFFSET" value="8528.7"/>-->
-<!--        &lt;!&ndash; <define name="MS45XX_AIRSPEED_SCALE" value="1.6327"/>&ndash;&gt; &lt;!&ndash;description="quadratic scale factor to convert differential pressure to airspeed"&ndash;&gt;&ndash;&gt;-->
-<!--        <define name="MS45XX_LOWPASS_TAU" value="0.15"/> &lt;!&ndash;description="Time constant for second order Butterworth low pass filter"&ndash;&gt;-->
-<!--        <define name="USE_AIRSPEED_LOWPASS_FILTER" value="TRUE"/>-->
-<!--        <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> &lt;!&ndash;description="Set airspeed in state interface for this sensor" &ndash;&gt;-->
-<!--        &lt;!&ndash;<define name="AIRSPEED_MS45XX_SYNC_SEND"/>&ndash;&gt;&lt;!&ndash; For debugging and also handy for finding the Pressure Offset in Pa&ndash;&gt;-->
-<!--        &lt;!&ndash;<define name="MS45XX_SYNC_SEND" value="TRUE" />&ndash;&gt; &lt;!&ndash;description="flag to enable sending every new measurement via telemetry (default:FALSE)&ndash;&gt;-->
-<!--      </module>-->
-
       <!--<define name="USE_NPS_AIRSPEED"/>
       <define name="USE_NPS_AOA"/>
       <define name="USE_NPS_SIDESLIP"/>
@@ -432,7 +415,8 @@ NOTES:
         <!--        <configure name="INDI_OUTPUTS" value="4"/>-->
       </module>
 
-      <module name="guidance" type="indi">
+      <module name="guidance" type="indi_hybrid_fixedwing_soaring">
+          <define name="GUIDANCE_INDI_SOARING" value="TRUE"/>
         <!--        <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>-->
         <!--        <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="2500"/>-->
       </module>
@@ -454,13 +438,13 @@ NOTES:
         <!--        scaled (1000)-->
 
         <!--      tune from 1 and 2 -->
-        <define name="CE_PITCH_A" value="0.68"/>
+        <define name="CE_PITCH_A" value="2.68"/>
         <define name="CE_PITCH_B" value="0.04697"/>
         <!--      !!!!!!!!! YAW<->ROLL-->
-        <define name="CE_ROLL_A" value="0.5817310"/>
+        <define name="CE_ROLL_A" value="1.5817310"/>
         <define name="CE_ROLL_B" value="0.02211938"/>
         <!--      <define name="CE_YAW_A" value="0.827970"/>-->
-        <define name="CE_YAW_A" value="1.027970"/>
+        <define name="CE_YAW_A" value="2.027970"/>
         <define name="CE_YAW_B" value="0.0342179"/>
 
         <define name="CTRL_EFFECTIVENESS_SEND_SCHEDULING_MSG" value="1"/>
@@ -495,28 +479,28 @@ NOTES:
     <servo name="S_AILERON_RIGHT" no="4" min="1100" neutral="1500" max="1900"/>
   </servos>
 
-  <section name="ServoPositions">
-    <!--  Just name a few,  value can be used in e.g. flightplan -->
-    <define name="LANDINGGEAR_EXTEND" value="-MAX_PPRZ"/>
-    <define name="LANDINGGEAR_RETRACT" value="MAX_PPRZ"/>
-    <define name="FLAP_FULL" value="-MAX_PPRZ"/>
-    <define name="FLAP_HALF" value="-MAX_PPRZ/2"/>
-    <define name="FLAP_NONE" value="0"/>
-    <define name="BEACON_ROTATE" value="MAX_PPRZ"/>
-    <define name="BEACON_FLASH" value="0"/>
-    <define name="BEACON_OFF" value="-MAX_PPRZ"/>
+<!--  <section name="ServoPositions">-->
+<!--    &lt;!&ndash;  Just name a few,  value can be used in e.g. flightplan &ndash;&gt;-->
+<!--    <define name="LANDINGGEAR_EXTEND" value="-MAX_PPRZ"/>-->
+<!--    <define name="LANDINGGEAR_RETRACT" value="MAX_PPRZ"/>-->
+<!--    <define name="FLAP_FULL" value="-MAX_PPRZ"/>-->
+<!--    <define name="FLAP_HALF" value="-MAX_PPRZ/2"/>-->
+<!--    <define name="FLAP_NONE" value="0"/>-->
+<!--    <define name="BEACON_ROTATE" value="MAX_PPRZ"/>-->
+<!--    <define name="BEACON_FLASH" value="0"/>-->
+<!--    <define name="BEACON_OFF" value="-MAX_PPRZ"/>-->
 
-    <define name="SERVO_BRAKE_FULL" value="-MAX_PPRZ"/>
-    <define name="SERVO_HATCH_OPEN" value="0"/>
-    <define name="SERVO_HATCH_CLOSED" value="-9600"/>
-    <define name="AirbrakesOff()" value="(commands[COMMAND_BRAKE]=0)"/>
-    <define name="AirbrakesOn()" value="(commands[COMMAND_BRAKE]=SERVO_BRAKE_FULL)"/>
-    <!--<define name="Fly()" value="(commands[COMMAND_FORCECRASH]=0)" />-->
-    <!--<define name="ForceCrash()" value="(commands[COMMAND_FORCECRASH]=9600)" />-->
-    <define name="ThrottleHigh()" value="(commands[COMMAND_THROTTLE]>9600/2)"/>
-    <define name="SPOILERON_BRAKE_FULL" value="-MAX_PPRZ"/>
-    <define name="FLAPERON_BRAKE_FULL" value="MAX_PPRZ"/>
-  </section>
+<!--    <define name="SERVO_BRAKE_FULL" value="-MAX_PPRZ"/>-->
+<!--    <define name="SERVO_HATCH_OPEN" value="0"/>-->
+<!--    <define name="SERVO_HATCH_CLOSED" value="-9600"/>-->
+<!--    <define name="AirbrakesOff()" value="(commands[COMMAND_BRAKE]=0)"/>-->
+<!--    <define name="AirbrakesOn()" value="(commands[COMMAND_BRAKE]=SERVO_BRAKE_FULL)"/>-->
+<!--    &lt;!&ndash;<define name="Fly()" value="(commands[COMMAND_FORCECRASH]=0)" />&ndash;&gt;-->
+<!--    &lt;!&ndash;<define name="ForceCrash()" value="(commands[COMMAND_FORCECRASH]=9600)" />&ndash;&gt;-->
+<!--    <define name="ThrottleHigh()" value="(commands[COMMAND_THROTTLE]>9600/2)"/>-->
+<!--    <define name="SPOILERON_BRAKE_FULL" value="-MAX_PPRZ"/>-->
+<!--    <define name="FLAPERON_BRAKE_FULL" value="MAX_PPRZ"/>-->
+<!--  </section>-->
 
   <section name="MIXER">
     <define name="ASSIST_ROLL_WITH_RUDDER" value="0.0"/>
@@ -731,12 +715,12 @@ NOTES:
     <define name="G2" value="{0, 0, 0, 0, 0}"/>
 
     <!-- reference acceleration for attitude control -->
-<!--    <define name="REF_ERR_P" value="30.0"/>-->
-<!--    <define name="REF_ERR_Q" value="30.0"/>-->
-<!--    <define name="REF_ERR_R" value="80.0"/>-->
-      <define name="REF_ERR_P" value="70.0"/>
-      <define name="REF_ERR_Q" value="120.0"/>
-      <define name="REF_ERR_R" value="90.0"/>
+    <define name="REF_ERR_P" value="30.0"/>
+    <define name="REF_ERR_Q" value="30.0"/>
+    <define name="REF_ERR_R" value="80.0"/>
+<!--      <define name="REF_ERR_P" value="70.0"/>-->
+<!--      <define name="REF_ERR_Q" value="120.0"/>-->
+<!--      <define name="REF_ERR_R" value="90.0"/>-->
     <define name="REF_RATE_P" value="16.0"/>
     <define name="REF_RATE_Q" value="16.0"/>
     <define name="REF_RATE_R" value="15.0"/>

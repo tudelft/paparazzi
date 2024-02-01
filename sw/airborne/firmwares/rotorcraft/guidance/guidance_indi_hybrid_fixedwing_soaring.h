@@ -40,11 +40,12 @@
 #define GUIDANCE_INDI_SOARING TRUE
 #endif
 
-
 #include "std.h"
 #include "math/pprz_algebra_int.h"
 #include "math/pprz_algebra_float.h"
 #include "filters/high_pass_filter.h"
+#include "firmwares/rotorcraft/guidance.h"
+#include "firmwares/rotorcraft/stabilization.h"
 
 extern void guidance_indi_soaring_enter(void);
 extern void guidance_indi_soaring_run(float *heading_sp);
@@ -82,12 +83,13 @@ struct SoaringPositionMap {
 //extern float guidance_indi_max_bank;
 //extern float lift_pitch_eff;
 
-extern struct FloatVect3 guidance_wind_gradient;
+//extern struct FloatVect3 guidance_wind_gradient;
 
 extern float guidance_soaring_max_throttle;
 extern bool speed_sp_from_position;
 extern bool y_position_ctrl;
 extern bool soaring_explore_positions;
+extern bool soaring_mode_running;
 //extern float gd_gamma_sq;
 //extern float gd_Wv[3];
 //extern float gd_Wu[3];

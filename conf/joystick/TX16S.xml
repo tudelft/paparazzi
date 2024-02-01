@@ -20,9 +20,9 @@ The basis of steering is the standard signs of aerospace convention
       <field name="yaw" value="yaw"/>
       <field name="mode" value="Fit(mode,-127,126,0,2)"/>
     </message>
-    <message class="ground" name="DL_SETTING" on_event="arm">
-      <field name="index" value="IndexOfSetting('autopilot.kill_throttle')"/>
-      <field name="value" value="Fit(arm,-127,126,0,1)"/>
-    </message>
+<!--    <message class="ground" name="DL_SETTING" on_event="arm">-->
+<!--      <field name="index" value="IndexOfSetting('autopilot.kill_throttle')"/>-->
+<!--      <field name="value" value="Fit(arm,-127,126,0,1)"/>-->
+<!--    </message>-->
   </messages>
 </joystick>
