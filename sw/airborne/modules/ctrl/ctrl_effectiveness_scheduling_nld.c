@@ -121,7 +121,7 @@ void ctrl_eff_scheduling_periodic_a(void)
 void ctrl_eff_scheduling_periodic_b(void)
 {
   float airspeed = stateGetAirspeed_f();
-  struct FloatEulers eulers_zxy;
+//  struct FloatEulers eulers_zxy;
 
 //printf("%f\n", airspeed);
 //  if(airspeed < 6.0) {

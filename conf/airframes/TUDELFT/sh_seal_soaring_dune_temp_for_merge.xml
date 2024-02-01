@@ -748,7 +748,8 @@ NOTES:
     <define name="FILT_CUTOFF" value="5.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN" value="{0.1, 0.1, 0.1, 0.1, 0.045}"/>
+<!--    <define name="ACT_DYN" value="{0.1, 0.1, 0.1, 0.1, 0.045}"/>-->
+    <define name="ACT_FREQ" value="{53.94, 53.94, 53.94, 53.94, 23.57}"/>
     <define name="ACT_RATE_LIMIT" value="{170, 170, 170, 170, 9600}"/>
     <define name="ACT_IS_SERVO" value="{1, 1, 1, 1, 0}"/>
 

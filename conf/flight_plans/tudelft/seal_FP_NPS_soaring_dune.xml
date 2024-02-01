@@ -53,29 +53,29 @@
     <!--    AUTO2, Datalink lost && RC lost, GPS valid;-->
     <!--    <exception cond="autopilot.mode == MODE_AUTO2 && GpsFixValid() && datalink_time > 10 && radio_control.status == RC_REALLY_LOST && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyThrottle"/>-->
   </exceptions>
+
+  <!--                                            -->
+  <!-- USE FORCE_FORWARD for "normal" navigations -->
+  <!--                                            -->
+
   <blocks>
     <block name="Wait GPS">
-      <set value="true" var="force_forward"/>
       <call_once fun="NavKillThrottle()"/>
       <while cond="!GpsFixValid()"/>
     </block>
     <block name="Geo init">
-      <set value="true" var="force_forward"/>
       <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetGroundReferenceHere()"/>
     </block>
     <block name="Holding point">
-      <set value="true" var="force_forward"/>
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="Start Engine">
-      <set value="true" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="Climb">
-      <set value="true" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <go from="HOME" pitch="-70" throttle="1.0" wp="CLIMB"/>
     </block>
@@ -111,7 +111,6 @@
     </block>
     <block name="ReturnStbyThrottle">
       <exception cond="And(!(radio_control.status == RC_REALLY_LOST), And(InsideGeofence(GetPosX(), GetPosY()), And(MoreThan(GetPosAlt(), GetAltRef() + 20), LessThan(GetPosAlt(), GetAltRef() + 70))))" deroute="Standby"/>
-      <set value="true" var="force_forward"/>
       <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
       <go wp="STDBY"/>
       <stay wp="STDBY"/>
@@ -119,18 +118,15 @@
     <block name="ReturnStbyNoThrottle">
       <exception cond="And(!(radio_control.status == RC_REALLY_LOST), And(InsideGeofence(GetPosX(), GetPosY()), And(MoreThan(GetPosAlt(), GetAltRef() + 20), LessThan(GetPosAlt(), GetAltRef() + 70))))" deroute="Standby"/>
       <set value="1" var="autopilot.kill_throttle"/>
-      <set value="true" var="force_forward"/>
       <call_once fun="NavKillThrottle()"/>
       <stay wp="STDBY"/>
     </block>
     <block name="GeoFence">
-      <set value="true" var="force_forward"/>
       <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
       <go wp="STDBY"/>
       <stay wp="STDBY"/>
     </block>
     <block name="StayAndDescend">
-      <set value="true" var="force_forward"/>
       <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
       <call_once fun="waypoint_set_here(WP_STDBY)"/>
       <go wp="STDBY"/>
