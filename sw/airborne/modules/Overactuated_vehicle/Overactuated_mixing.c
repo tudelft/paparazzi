@@ -1046,8 +1046,8 @@ void send_values_to_raspberry_pi(void){
     float prop_theta =0.2188;
     float prop_radius =0.1270;
 
-    //OPTIMIZER MAX TIME: 
-    float max_time_optimizer_ms = 5;
+    //Gain increase AoA
+    float gain_increase_AoA = 5.66;
 
     #ifdef USE_NEW_THR_ESTIMATION_OPTIMIZATION
     extra_data_out_local[0] = PROP_MODEL_KT_REF;
@@ -1153,7 +1153,7 @@ void send_values_to_raspberry_pi(void){
 
     extra_data_out_local[72] = prop_radius;   
 
-    extra_data_out_local[73] = max_time_optimizer_ms; 
+    extra_data_out_local[73] = gain_increase_AoA; 
 }
 
 /**
