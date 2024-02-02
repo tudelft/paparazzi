@@ -37,16 +37,10 @@
             <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
             <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
             <!--Use adc rot sensor-->
-            <!-- <module name="wing_rotation_adc_sensor">
-                <configure name="ADC_OFFSET" value="-25.635294"/>
-                <configure name="ADC_SCALE"  value="0.00247111"/>
-            </module> -->
-            <!--Uncomment to map adc to deg-->
-            <module name="adc_generic">
-                <configure name="ADC_CHANNEL_GENERIC1" value="ADC_4"/>
-                <configure name="ADC_CHANNEL_GENERIC2" value="ADC_5"/>
+            <module name="wing_rotation_adc_sensor">
+                <define name="ADC_OFFSET" value="-49.1731"/>
+                <define name="ADC_SCALE"  value="0.0029986"/>
             </module>
-
             <!-- Log in high speed (Remove for outdoor flights) -->
             <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
             <define name="I2C2_CLOCK_SPEED" value="100000"/>
@@ -140,15 +134,16 @@
         <module name="ground_detect_sensor"/>
         <module name="rotwing_state">
              <define name = "ROT_MECH_IDX"        value = "9"/>
-             <define name = "USE_ROTMECH_VIRTUAL" value = "TRUE"/>
-             <define name = "ROTMECH_DYN"         value = "5.0"/>
+             <define name = "USE_ROTMECH_VIRTUAL" value = "FALSE"/>
+             <define name = "ROTMECH_DYN"         value = "3.0"/>
         </module>
         <module name="agl_dist"/>
     </firmware>
 
     <!-- PWM actuators -->   
     <servos driver="Pwm">
-        <servo no="0" name="ROTATION_MECH"   min="1031" neutral="1330" max="2260"/>
+        <!-- <servo no="0" name="ROTATION_MECH"   min="1330" neutral="1795" max="2260"/> -->
+        <servo no="0" name="ROTATION_MECH"   min="1360" neutral="1586" max="1812"/>
     </servos>
 
     <!-- Can bus 1 actuators -->
