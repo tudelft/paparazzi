@@ -198,7 +198,7 @@
         <set VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : actuators_pprz[5])"                                           SERVO="SERVO_RUDDER"/>
         <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? 0 : actuators_pprz[6]))"  SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($th_hold? -9600 : 0)"                                                                                      SERVO="MOTOR_PUSH"/>
-        <set VALUE="rotwing_state_skewing.servo_pprz_cmd"                                                                       SERVO="ROTATION_MECH"/>
+        <set VALUE=" wing_rotation_controller.servo_pprz_cmd"                                                                   SERVO="ROTATION_MECH"/>
         <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])"                                          SERVO="AIL_LEFT"/>
         <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])"                                          SERVO="AIL_RIGHT"/>
         <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[8])"                                          SERVO="FLAP_LEFT"/>
@@ -241,7 +241,7 @@
         <define name="AGL_DIST_MAX_DISTANCE_CHECK"          value="0.25"/>
         <define name="AGL_DIST_FILTER"                      value="0.07"/>
     </section>
-    
+
     <section name="IMU" prefix="IMU_">
         <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true, .filter=true},.neutral={-12,-9,20}, .scale={{30726,37910,15728},{3133,3871,1611}}, .filter_sample_freq=1134.1, .filter_freq=30}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-9,-30,26}, .scale={{45288,818,33359},{8935,167,6832}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-35,-5,13}, .scale={{26152,56165,62837},{5357,11479,12884}}}}"/>
         <define name="MAG_CALIB"   value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={-14,3,42}, .scale={{17279,2209,36874},{30247,3800,64095}}}}"/>
