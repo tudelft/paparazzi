@@ -167,6 +167,12 @@ float oneloop_andi_filt_cutoff_r = ONELOOP_ANDI_FILT_CUTOFF_R;
 float oneloop_andi_filt_cutoff_r = 20.0;
 #endif
 
+#ifndef MAX_R 
+float max_r = RadOfDeg(120.0);
+#else
+float max_r = RadOfDeg(MAX_R);
+#endif
+
 #ifdef ONELOOP_ANDI_ACT_IS_SERVO
 bool   actuator_is_servo[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_IS_SERVO;
 #else
@@ -394,11 +400,10 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
   float temp_att_des[3];
   temp_att_des[0] = eulers_zxy_des.phi;
   temp_att_des[1] = eulers_zxy_des.theta;
-  temp_att_des[2] = psi_des_rad;
-  //debug_vect(trans, dev, "att_des", temp_att_des, 3);
-  struct  FloatRates *body_rates_temp = stateGetBodyRates_f();
-  float   rate_vect_temp[3] = {stateGetBodyRates_f()->p, stateGetBodyRates_f()->q, stateGetBodyRates_f()->r};
-  debug_vect(trans, dev, "att_rate", rate_vect_temp, 3);
+  temp_att_des[2] = eulers_zxy_des.psi;
+  debug_vect(trans, dev, "att_des", temp_att_des, 3);
+  // float   rate_vect_temp[3] = {stateGetBodyRates_f()->p, stateGetBodyRates_f()->q, stateGetBodyRates_f()->r};
+  // debug_vect(trans, dev, "att_rate", rate_vect_temp, 3);
 }
 
 static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *dev)
@@ -947,10 +952,10 @@ void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[
  * @param k1_e            Error Controller Gain 1st order signal
  * @param k2_e            Error Controller Gain 2nd order signal
  */
-static float ec_2rd(float x_ref, float x_d_ref, float x_2d_ref, float x, float x_d, float k1_e, float k2_e){
-  float y_3d = k1_e*(x_ref-x)+k2_e*(x_d_ref-x_d)+x_2d_ref;
-  return y_3d;
-}
+// static float ec_2rd(float x_ref, float x_d_ref, float x_2d_ref, float x, float x_d, float k1_e, float k2_e){
+//   float y_3d = k1_e*(x_ref-x)+k2_e*(x_d_ref-x_d)+x_2d_ref;
+//   return y_3d;
+// }
 
 
 /**
@@ -1267,8 +1272,14 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     // Set desired attitude with stick input
     eulers_zxy_des.phi   = (float) (radio_control_get(RADIO_ROLL))/MAX_PPRZ*45.0*M_PI/180.0;
     eulers_zxy_des.theta = (float) (radio_control_get(RADIO_PITCH))/MAX_PPRZ*45.0*M_PI/180.0;
-    eulers_zxy_des.psi   = eulers_zxy.psi;
-    psi_des_rad          = eulers_zxy.psi;
+    // Set desired Yaw rate with stick input
+    des_r = (float) (radio_control_get(RADIO_YAW))/MAX_PPRZ*max_r; 
+    BoundAbs(des_r,max_r);
+    psi_des_rad += des_r * dt_1l;
+    NormRadAngle(psi_des_rad);
+    eulers_zxy_des.psi = psi_des_rad;
+    // Register Attitude Setpoints from previous loop
+    float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, eulers_zxy_des.psi};
     // Create commands adhoc to get actuators to the wanted level
     thrust_cmd_1l = (float) radio_control_get(RADIO_THROTTLE);
     Bound(thrust_cmd_1l,0.0,MAX_PPRZ); 
@@ -1276,15 +1287,7 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     for (i = 0; i < ANDI_NUM_ACT; i++) {
      a_thrust +=(thrust_cmd_1l - use_increment*actuator_state_1l[i]) * bwls_1l[2][i] / (ratio_u_un[i] * ratio_vn_v[i]);
     }
-    // Overwrite Yaw Ref with desired Yaw setting (for consistent plotting)
-    oneloop_andi.sta_ref.att[2] = psi_des_rad;
-    // Set desired Yaw rate with stick input
-    des_r = (float) (radio_control_get(RADIO_YAW))/MAX_PPRZ*3.0; 
-    BoundAbs(des_r,3.0);
-    // Generate reference signals
-    rm_3rd(dt_1l, &oneloop_andi.sta_ref.att[0],   &oneloop_andi.sta_ref.att_d[0],  &oneloop_andi.sta_ref.att_2d[0], &oneloop_andi.sta_ref.att_3d[0], eulers_zxy_des.phi,   k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
-    rm_3rd(dt_1l, &oneloop_andi.sta_ref.att[1],   &oneloop_andi.sta_ref.att_d[1],  &oneloop_andi.sta_ref.att_2d[1], &oneloop_andi.sta_ref.att_3d[1], eulers_zxy_des.theta, k_att_rm.k1[1], k_att_rm.k2[1], k_att_rm.k3[1]);
-    rm_2nd(dt_1l, &oneloop_andi.sta_ref.att_d[2], &oneloop_andi.sta_ref.att_2d[2], &oneloop_andi.sta_ref.att_3d[2], des_r, k_head_rm.k2, k_head_rm.k3);
+    rm_3rd_attitude(dt_1l, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, att_des, false, psi_vec, k_att_rm.k1, k_att_rm.k2, k_att_rm.k3);
   }else{
     // Make sure X and Y jerk objectives are active
     Wv_wls[0] = Wv[0];
@@ -1420,45 +1423,38 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   g2_ff = g2_ff / ANDI_G_SCALING;
   // Run the Reference Model (RM)
   oneloop_andi_RM(half_loop, PSA_des, rm_order_h, rm_order_v);
-  // Generate pseudo control for stabilization vector (nu) based on error controller
+
+  // Guidance Pseudo Control Vector (nu) based on error controller
   if(half_loop){
     nu[0] = 0.0;
     nu[1] = 0.0;
     nu[2] = a_thrust;
-    if(oneloop_andi.ctrl_type == CTRL_ANDI){
-      nu[3] = ec_3rd(oneloop_andi.sta_ref.att[0],   oneloop_andi.sta_ref.att_d[0],  oneloop_andi.sta_ref.att_2d[0], oneloop_andi.sta_ref.att_3d[0],  oneloop_andi.sta_state.att[0],    oneloop_andi.sta_state.att_d[0], oneloop_andi.sta_state.att_2d[0], k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
-      nu[4] = ec_3rd(oneloop_andi.sta_ref.att[1],   oneloop_andi.sta_ref.att_d[1],  oneloop_andi.sta_ref.att_2d[1], oneloop_andi.sta_ref.att_3d[1],  oneloop_andi.sta_state.att[1],    oneloop_andi.sta_state.att_d[1], oneloop_andi.sta_state.att_2d[1], k_att_e.k1[1], k_att_e.k2[1], k_att_e.k3[1]);
-      nu[5] = ec_2rd(oneloop_andi.sta_ref.att_d[2], oneloop_andi.sta_ref.att_2d[2], oneloop_andi.sta_ref.att_3d[2], oneloop_andi.sta_state.att_d[2], oneloop_andi.sta_state.att_2d[2], k_head_e.k2, k_head_e.k3) + g2_ff;
-    } else if (oneloop_andi.ctrl_type == CTRL_INDI){
-      nu[3] = ec_3rd(oneloop_andi.sta_ref.att[0],   oneloop_andi.sta_ref.att_d[0],  oneloop_andi.sta_ref.att_2d[0], 0.0,  oneloop_andi.sta_state.att[0],    oneloop_andi.sta_state.att_d[0], oneloop_andi.sta_state.att_2d[0], k_att_e.k1[0], k_att_e.k2[0], 1.0);
-      nu[4] = ec_3rd(oneloop_andi.sta_ref.att[1],   oneloop_andi.sta_ref.att_d[1],  oneloop_andi.sta_ref.att_2d[1], 0.0,  oneloop_andi.sta_state.att[1],    oneloop_andi.sta_state.att_d[1], oneloop_andi.sta_state.att_2d[1], k_att_e.k1[1], k_att_e.k2[1], 1.0);
-      nu[5] = ec_2rd(oneloop_andi.sta_ref.att_d[2], oneloop_andi.sta_ref.att_2d[2], 0.0, oneloop_andi.sta_state.att_d[2], oneloop_andi.sta_state.att_2d[2], k_head_e.k2, 1.0) + g2_ff;      
-    }
   }else{
-    float y_4d_att[3];
     if(oneloop_andi.ctrl_type == CTRL_ANDI){
-      ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3);
       nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], oneloop_andi.gui_ref.jer[0], oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e.k1[0], k_pos_e.k2[0], k_pos_e.k3[0]);
       nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], oneloop_andi.gui_ref.jer[1], oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e.k1[1], k_pos_e.k2[1], k_pos_e.k3[1]);
       nu[2] = ec_3rd(oneloop_andi.gui_ref.pos[2], oneloop_andi.gui_ref.vel[2], oneloop_andi.gui_ref.acc[2], oneloop_andi.gui_ref.jer[2], oneloop_andi.gui_state.pos[2], oneloop_andi.gui_state.vel[2], oneloop_andi.gui_state.acc[2], k_pos_e.k1[2], k_pos_e.k2[2], k_pos_e.k3[2]); 
     } else if (oneloop_andi.ctrl_type == CTRL_INDI){
-      float dummy0[3] = {0.0,0.0,0.0}; // ec_3rd_att wants a [n] vector, therefore create a dummy vector of 0
-      float k3_att_dummy[3] = {1.0,1.0,1.0}; // ec_3rd_att wants a [n] vector, therefore create a dummy vector of 1
-      float k1_att_dummy[3] = {k_att_e.k1[0]/k_att_e.k3[0],k_att_e.k1[1]/k_att_e.k3[1],k_att_e.k1[2]/k_att_e.k3[2]};
-      float k2_att_dummy[3] = {k_att_e.k2[0]/k_att_e.k3[0],k_att_e.k2[1]/k_att_e.k3[1],k_att_e.k2[2]/k_att_e.k3[2]};
-      ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k1_att_dummy, k2_att_dummy, k3_att_dummy);
       nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], 0.0, oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e.k1[0]/k_pos_e.k3[0], k_pos_e.k2[0]/k_pos_e.k3[0], 1.0);
       nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], 0.0, oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e.k1[1]/k_pos_e.k3[1], k_pos_e.k2[1]/k_pos_e.k3[1], 1.0);
       nu[2] = ec_3rd(oneloop_andi.gui_ref.pos[2], oneloop_andi.gui_ref.vel[2], oneloop_andi.gui_ref.acc[2], 0.0, oneloop_andi.gui_state.pos[2], oneloop_andi.gui_state.vel[2], oneloop_andi.gui_state.acc[2], k_pos_e.k1[2]/k_pos_e.k3[2], k_pos_e.k2[2]/k_pos_e.k3[2], 1.0);  
-      //ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3);
-      //nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], 0.0, oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e.k1[0], k_pos_e.k2[0], k_pos_e.k3[0]);
-      //nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], 0.0, oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e.k1[1], k_pos_e.k2[1], k_pos_e.k3[1]);
-      //nu[2] = ec_3rd(oneloop_andi.gui_ref.pos[2], oneloop_andi.gui_ref.vel[2], oneloop_andi.gui_ref.acc[2], 0.0, oneloop_andi.gui_state.pos[2], oneloop_andi.gui_state.vel[2], oneloop_andi.gui_state.acc[2], k_pos_e.k1[2], k_pos_e.k2[2], k_pos_e.k3[2]);;   
     }
-    nu[3] = y_4d_att[0];  
-    nu[4] = y_4d_att[1]; 
-    nu[5] = y_4d_att[2] + g2_ff; 
   }
+
+  // Attitude Pseudo Control Vector (nu) based on error controller
+  float y_4d_att[3];  
+  if(oneloop_andi.ctrl_type == CTRL_ANDI){
+    ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3);
+  } else if (oneloop_andi.ctrl_type == CTRL_INDI){
+    float dummy0[3]       = {0.0,0.0,0.0}; // ec_3rd_att wants a [n] vector, therefore create a dummy vector of 0
+    float k1_att_dummy[3] = {k_att_e.k1[0]/k_att_e.k3[0],k_att_e.k1[1]/k_att_e.k3[1],k_att_e.k1[2]/k_att_e.k3[2]};
+    float k2_att_dummy[3] = {k_att_e.k2[0]/k_att_e.k3[0],k_att_e.k2[1]/k_att_e.k3[1],k_att_e.k2[2]/k_att_e.k3[2]};
+    float k3_att_dummy[3] = {1.0,1.0,1.0}; // ec_3rd_att wants a [n] vector, therefore create a dummy vector of 1
+    ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k1_att_dummy, k2_att_dummy, k3_att_dummy);
+  }
+  nu[3] = y_4d_att[0];  
+  nu[4] = y_4d_att[1]; 
+  nu[5] = y_4d_att[2] + g2_ff; 
 
   // Calculate the min and max increments
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
