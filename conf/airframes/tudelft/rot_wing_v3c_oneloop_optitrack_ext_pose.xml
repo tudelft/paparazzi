@@ -63,7 +63,7 @@
        <!-- Datalink -->
         <module name="telemetry" type="transparent">
             <configure name="MODEM_BAUD" value="B115200"/> <!-- herelink-->
-            <!-- <configure VALUE="B57600" NAME="MODEM_BAUD"/> xBee -->
+            <!-- <configure VALUE="B57600" name="MODEM_BAUD"/> xBee -->
         </module>
 
         <!-- Sensors -->     
@@ -89,11 +89,8 @@
         
         <!-- IMU / INS -->  
         <module name="imu" type="cube"/>  
-        <module name="ins" type="ext_pose">
-            <define name="INS_EXT_POSE" value="TRUE"/>
-        </module>
+        <module name="ins" type="ext_pose"/>
  
-
         <!-- Actuators on dual CAN bus -->
         <module name="actuators" type="uavcan">
             <configure value="TRUE" name="UAVCAN_USE_CAN1"/>
@@ -142,7 +139,6 @@
 
     <!-- PWM actuators -->   
     <servos driver="Pwm">
-        <!-- <servo no="0" name="ROTATION_MECH"   min="1330" neutral="1795" max="2260"/> -->
         <servo no="0" name="ROTATION_MECH"   min="1360" neutral="1586" max="1812"/>
     </servos>
 
@@ -245,6 +241,7 @@
         <define name="AGL_DIST_MAX_DISTANCE_CHECK"          value="0.25"/>
         <define name="AGL_DIST_FILTER"                      value="0.07"/>
     </section>
+    
     <section name="IMU" prefix="IMU_">
         <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true, .filter=true},.neutral={-12,-9,20}, .scale={{30726,37910,15728},{3133,3871,1611}}, .filter_sample_freq=1134.1, .filter_freq=30}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-9,-30,26}, .scale={{45288,818,33359},{8935,167,6832}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-35,-5,13}, .scale={{26152,56165,62837},{5357,11479,12884}}}}"/>
         <define name="MAG_CALIB"   value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={-14,3,42}, .scale={{17279,2209,36874},{30247,3800,64095}}}}"/>
