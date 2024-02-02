@@ -108,12 +108,20 @@
 #ifndef USE_ROTMECH_VIRTUAL
 #define USE_ROTMECH_VIRTUAL FALSE
 #endif
-#if !USE_ROTMECH_VIRTUAL
-#define ROTMECH_DYN 1.0
-#endif
+
+#if USE_ROTMECH_VIRTUAL
 #ifndef ROTMECH_DYN
 #error "Rotmech dynamics are not provided. Please provide them in your airframe file."
-#define ROTMECH_DYN 1.0
+#endif
+#endif
+
+
+// stream ADC data if ADC rotation sensor
+#ifndef ADC_WING_ROTATION
+#define ADC_WING_ROTATION FALSE
+#endif
+#if ADC_WING_ROTATION
+#include "wing_rotation_adc_sensor.h"
 #endif
 /** ABI binding feedback data.
  */
@@ -159,7 +167,11 @@ inline void rotwing_state_skewer(void);
 #include "modules/datalink/telemetry.h"
 static void send_rotating_wing_state(struct transport_tx *trans, struct link_device *dev)
 {
+  #if ADC_WING_ROTATION
+  uint16_t adc_dummy = adc_wing_rotation_extern;
+  #else
   uint16_t adc_dummy = 0;
+  #endif
   pprz_msg_send_ROTATING_WING_STATE(trans, dev, AC_ID,
                                     &rotwing_state.current_state,
                                     &rotwing_state.desired_state,
