@@ -57,7 +57,7 @@
  
         <!-- IMU / INS -->       
         <module name="imu" type="cube"/>
-        <module name="ins" type="ekf2" />      
+        <module name="ins" type="ekf2"/>      
  
         <!-- Actuators on dual CAN bus -->
         <module name="actuators" type="uavcan">
