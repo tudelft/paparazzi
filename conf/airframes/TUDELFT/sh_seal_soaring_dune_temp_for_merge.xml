@@ -198,6 +198,7 @@ NOTES:
         <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>
 <!--        <define name="RADIO_GEAR" value="RADIO_AUX2"/>-->
 <!--        <define name="RADIO_FLAP" value="RADIO_AUX3"/>-->
+
       </module>
 
       <module name="sys_mon"/><!-- Enable if one want to check processor load for higher loop, nav, module etc. frequencies -->
