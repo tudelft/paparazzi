@@ -958,6 +958,8 @@ NOTES:
         <define name="JSBSIM_MODEL" value="eclipson_rotorcraft" type="string"/>
         <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
         <define name="NO_MOTOR_MIXING" value="TRUE"/>
+        <define name="JSBSIM_INIT" value="reset01" type="string"/>
+
   </section>
   <include href="conf/simulator/gazebo/airframes/simple_fixedwing_w_camera.xml"/>
 
