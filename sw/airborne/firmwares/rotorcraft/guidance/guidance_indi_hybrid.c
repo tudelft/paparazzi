@@ -456,7 +456,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   //// Set heading from NAV
 #ifdef GUIDANCE_INDI_SOARING
 // run only when it is in soaring mode
-if (soaring_mode_running) {
+//if (soaring_mode_running) {
     // no coordinated turn craps
   guidance_euler_cmd.psi = heading_sp;
   guidance_euler_cmd.phi = roll_filt.o[0] + euler_cmd.x;
@@ -467,12 +467,14 @@ if (soaring_mode_running) {
   Bound(guidance_euler_cmd.theta, RadOfDeg(guidance_indi_min_pitch), RadOfDeg(GUIDANCE_INDI_MAX_PITCH));
 
 // Set the quaternion setpoint from eulers_zxy
-  struct FloatQuat sp_quat;
-  float_quat_of_eulers_zxy(&sp_quat, &guidance_euler_cmd);
-  float_quat_normalize(&sp_quat);
+  struct FloatQuat sp_quat_soar;
+  float_quat_of_eulers_zxy(&sp_quat_soar, &guidance_euler_cmd);
+  float_quat_normalize(&sp_quat_soar);
 
-  return stab_sp_from_quat_f(&sp_quat);
-  }
+//  printf("guidance: %f, %f, %f\n", guidance_euler_cmd.phi, guidance_euler_cmd.theta, guidance_euler_cmd.psi);
+
+  return stab_sp_from_quat_f(&sp_quat_soar);
+//  }
 #endif
 
   // Coordinated turn

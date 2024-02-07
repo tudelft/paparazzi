@@ -367,7 +367,7 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
 
   float_eulers_of_quat_zxy(&euler_att, stateGetNedToBodyQuat_f());
   QUAT_FLOAT_OF_BFP(q_sp_f, stab_att_sp_quat);
-  float_eulers_of_quat(&euler_att_sp, &q_sp_f);
+  float_eulers_of_quat_zxy(&euler_att_sp, &q_sp_f);
 
   pprz_msg_send_STAB_ATTITUDE(trans, dev, AC_ID,
                                       &euler_att.phi,

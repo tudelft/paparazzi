@@ -116,7 +116,7 @@
 
   <makefile target="ap|nps" firmware="rotorcraft">
     <define name="GUIDANCE_INDI_SOARING" value="TRUE"/>
-    <define name="GUIDANCE_INDI_HYBRID_USE_WLS" value="1"/>
+<!--    <define name="GUIDANCE_INDI_HYBRID_USE_WLS" value="FALSE"/>-->
 
     <!-- Guidance actuators: (roll, pitch, thrust) for fixed-wing  -->
     <!-- Yaw is set from navigation / seperated reference -->

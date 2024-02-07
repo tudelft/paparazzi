@@ -1192,7 +1192,8 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
     float T = cosf(pitch_lift)*-9.81;
 
     // get the derivative of the lift wrt to theta
-    float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
+//    float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
+    float liftd = -24.0;    // FIXME
 
     Gmat[0][0] =  cphi*ctheta*spsi*T + cphi*spsi*lift;
     Gmat[1][0] = -cphi*ctheta*cpsi*T - cphi*cpsi*lift;
