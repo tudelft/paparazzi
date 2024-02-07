@@ -60,13 +60,7 @@
       <field name="theta" type="float" unit="rad" alt_unit="deg"/>
     </message>
 
-    <message name="IR_SENSORS" id="7">
-      <field name="ir1" type="int16"/>
-      <field name="ir2" type="int16"/>
-      <field name="longitudinal" type="int16"/>
-      <field name="lateral" type="int16"/>
-      <field name="vertical" type="int16"/>
-    </message>
+    <!-- 7 is free-->
 
     <message name="GPS" id="8">
       <field name="mode"       type="uint8"  unit="byte_mask"/>
@@ -123,11 +117,7 @@
       <field name="energy"    type="float" unit="Wh">Accumulated consumed energy</field>
     </message>
 
-    <message name="DEBUG_MCU_LINK" id="13">
-      <field name="i2c_nb_err" type="uint8"></field>
-      <field name="i2c_mcu1_nb_err" type="uint8"></field>
-      <field name="ppm_rate" type="uint8"></field>
-    </message>
+    <!-- 13 is free-->
 
     <message name="CALIBRATION" id="14">
       <field name="climb_sum_err" type="float" format="%.1f"/>
@@ -162,14 +152,30 @@
       <field name="val2" type="uint16"/>
     </message>
 
-    <message name="ECU" id="19">
-      <field name="stg_in" type="uint8" unit="bool"/>
-      <field name="stb_in" type="uint8" unit="bool"/>
-      <field name="ain1" type="float" unit="V"/>
-      <field name="ain2" type="float" unit="V"/>
-      <field name="ain3" type="float" unit="V"/>
-      <field name="ain4" type="float" unit="V"/>
-    </message>
+     <message name="SOARING_WP_MAP" id="19">
+         <field name="wp_north"  type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+         <field name="wp_east"  type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+         <field name="wp_up"  type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+         <field name="cost_now" type="float"/>
+         <field name="cost_last_position" type="float"/>
+         <field name="last_movement_number" type="int16"/>
+         <field name="move_north" type="float"/>
+         <field name="move_down" type="float"/>
+         <field name="k_thr" type="float"/>
+         <field name="k_spd_x" type="float"/>
+         <field name="k_spd_z" type="float"/>
+         <field name="k_pitch" type="float"/>
+         <field name="move_cost_threshold" type="float"/>        <!-- cost threshold value -->
+         <field name="wp_arrival_dist" type="float"/>            <!-- 3D distance to check wp arrival in meters -->
+         <field name="wp_arrival_duration" type="float"/>        <!-- count for the arrival check -->
+         <field name="timeout_duration" type="float"/>           <!-- timeout to reset the wp -->
+         <field name="soaring_cnt_steps" type="uint16"/>         <!-- current step count -->
+         <field name="max_exploration_steps" type="uint16"/>     <!-- max exploration step setting -->
+         <field name="min_cost" type="float"/>                   <!-- min cost during the exploration.. so far! -->
+         <field name="min_cost_wp_north" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+         <field name="min_cost_wp_east" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+         <field name="min_cost_wp_up" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+     </message>
 
     <message name="CAM" id="20">
       <field name="pan" type="int16" unit="deg"/>
@@ -394,14 +400,21 @@
       <field name="exponential"         type="uint8" unit="bool">Exponential chirp active</field>
     </message>
 
-    <message name="BARO_WORDS" id="46">
-      <field name="w1"  type="uint16"/>
-      <field name="w2"  type="uint16"/>
-      <field name="w3"  type="uint16"/>
-      <field name="w4"  type="uint16"/>
-    </message>
+     <message name="POTENTIAL_FLOW" id="46">
+         <field name="wind_speed_x" type="float"/>
+         <field name="wind_speed_z" type="float"/>
+         <field name="wind_grad_x" type="float"/>
+         <field name="wind_grad_z" type="float"/>
+         <field name="ltp_pos_vehicle_x" type="float"/>
+         <field name="ltp_pos_vehicle_z" type="float"/>
+         <field name="ltp_pos_relative_x" type="float"/>
+         <field name="ltp_pos_relative_z" type="float"/>
+         <field name="gd_speed_sp_x" type="float"/>
+         <field name="gd_speed_sp_z" type="float"/>
+     </message>
 
-    <message name="WP_MOVED_LLA" id="47">
+
+     <message name="WP_MOVED_LLA" id="47">
       <field name="wp_id" type="uint8"/>
       <field name="lat" type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
       <field name="lon" type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
@@ -458,7 +471,27 @@
       <field name="groundspeed_sp" type="float" unit="m/s"/>
     </message>
 
-     <message name="GUIDANCE_INDI_HYBRID_SOARING" id="55">
+    <message name="METEO_STICK" id="55">
+      <description>
+        Data from the MeteoSitck sensor board
+      </description>
+      <field name="lat"   type="int32"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="lon"   type="int32"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="hmsl"  type="int32"  unit="mm" alt_unit="m">Height above Mean Sea Level (geoid)</field>
+      <field name="itow"  type="uint32" unit="ms">GPS time of week</field>
+      <field name="pressure" type="float" unit="Pa">absolute static pressure</field>
+      <field name="temperature" type="float" unit="deg C">temperature</field>
+      <field name="humidity" type="float" unit="%">relative humidity</field>
+      <field name="airspeed" type="float" unit="m/s">calibrated airspeed</field>
+    </message>
+
+    <message name="BARO_ETS" id="56">
+      <field name="adc" type="uint16"/>
+      <field name="offset" type="uint16"/>
+      <field name="scaled" type="float"/>
+    </message>
+
+     <message name="GUIDANCE_INDI_HYBRID_SOARING" id="57">
          <field name="pos_err_x" type="float"/>
          <field name="pos_err_y" type="float"/>
          <field name="pos_err_z" type="float"/>
@@ -470,18 +503,6 @@
          <field name="sp_accel_z" type="float"/>
          <field name="heading_sp" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
      </message>
-
-    <message name="BARO_ETS" id="56">
-      <field name="adc" type="uint16"/>
-      <field name="offset" type="uint16"/>
-      <field name="scaled" type="float"/>
-    </message>
-
-    <message name="AIRSPEED_ETS" id="57">
-      <field name="adc" type="uint16"/>
-      <field name="offset" type="uint16"/>
-      <field name="scaled" type="float"/>
-    </message>
 
     <message name="VISION_OUTBACK" id="58">
       <field name="status" type="uint8"/>
@@ -523,18 +544,17 @@
       <field name="elevator_sp"  type="int16" unit="pprz"/>
     </message>
 
-     <message name="POTENTIAL_FLOW" id="61">
-         <field name="wind_speed_x" type="float"/>
-         <field name="wind_speed_z" type="float"/>
-         <field name="wind_grad_x" type="float"/>
-         <field name="wind_grad_z" type="float"/>
-         <field name="ltp_pos_vehicle_x" type="float"/>
-         <field name="ltp_pos_vehicle_z" type="float"/>
-         <field name="ltp_pos_relative_x" type="float"/>
-         <field name="ltp_pos_relative_z" type="float"/>
-         <field name="gd_speed_sp_x" type="float"/>
-         <field name="gd_speed_sp_z" type="float"/>
-     </message>
+    <message name="CLOUD_SENSOR" id="61">
+      <description>
+        Geolocalized and timestamped data from the meteo cloud sensor module
+      </description>
+      <field name="lat"   type="int32"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="lon"   type="int32"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="hmsl"  type="int32"  unit="mm" alt_unit="m">Height above Mean Sea Level (geoid)</field>
+      <field name="itow"  type="uint32" unit="ms">GPS time of week</field>
+      <field name="coef"  type="float">Angstrom coefficient computed on board</field>
+      <field name="raw"   type="float[]">Raw values and extra measurements data</field>
+    </message>
 
     <message name="TURB_PRESSURE_VOLTAGE" id="62">
       <field name="ch_1_p" type="float"/>
@@ -888,29 +908,20 @@
       <field name="mode" type="uint8"/>
     </message>
 
-    <message name="SOARING_WP_MAP" id="95">
-        <field name="wp_north"  type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
-        <field name="wp_east"  type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
-        <field name="wp_up"  type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
-        <field name="cost_now" type="float"/>
-        <field name="cost_last_position" type="float"/>
-        <field name="last_movement_number" type="int16"/>
-        <field name="move_north" type="float"/>
-        <field name="move_down" type="float"/>
-        <field name="k_thr" type="float"/>
-        <field name="k_spd_x" type="float"/>
-        <field name="k_spd_z" type="float"/>
-        <field name="k_pitch" type="float"/>
-        <field name="move_cost_threshold" type="float"/>        <!-- cost threshold value -->
-        <field name="wp_arrival_dist" type="float"/>            <!-- 3D distance to check wp arrival in meters -->
-        <field name="wp_arrival_duration" type="float"/>        <!-- count for the arrival check -->
-        <field name="timeout_duration" type="float"/>           <!-- timeout to reset the wp -->
-        <field name="soaring_cnt_steps" type="uint16"/>         <!-- current step count -->
-        <field name="max_exploration_steps" type="uint16"/>     <!-- max exploration step setting -->
-        <field name="min_cost" type="float"/>                   <!-- min cost during the exploration.. so far! -->
-        <field name="min_cost_wp_north" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
-        <field name="min_cost_wp_east" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
-        <field name="min_cost_wp_up" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+    <message name="TARGET_POS_INFO" id="95">
+      <description>
+        Global position, speed and ID of a target for functions like 'Follow Me'
+      </description>
+      <field name="lat" type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="lon" type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="alt" type="int32" unit="mm" alt_unit="m">Height above Mean Sea Level (geoid)</field>
+      <field name="speed" type="float" unit="m/s">Ground speed</field>
+      <field name="climb" type="float" unit="m/s">Climb speed</field>
+      <field name="course" type="float" unit="deg" format="%.1f"/>
+      <field name="heading" type="float" unit="deg" format="%.1f"/>
+      <field name="off_heading" type="float" unit="deg">Offset heading</field>
+      <field name="off_distance" type="float" unit="m">Offset distance</field>
+      <field name="off_height" type="float" unit="m">Offset height</field>
     </message>
 
     <message name="HIH_STATUS" id="96">
@@ -1256,13 +1267,13 @@
       <field name="status" type="uint8" values="UNINIT|RUNNING|LOCKED"/>
     </message>
 
-    <message name="AIRSPEED_MS45XX" id="138">
-      <field name="diffPress" type="float" unit="Pa"/>
-      <field name="temperature" type="int16" unit="0.1 deg_celcius" alt_unit="deg_celcius" alt_unit_coef="0.1"/>
-      <field name="airspeed" type="float" unit="m/s"/>
-    </message>
+<!--    <message name="AIRSPEED_MS45XX" id="138">-->
+<!--      <field name="diffPress" type="float" unit="Pa"/>-->
+<!--      <field name="temperature" type="int16" unit="0.1 deg_celcius" alt_unit="deg_celcius" alt_unit_coef="0.1"/>-->
+<!--      <field name="airspeed" type="float" unit="m/s"/>-->
+<!--    </message>-->
 
-     <message name="AIRSPEED_RAW" id="139">
+     <message name="AIRSPEED_RAW" id="138">
          <field name="sensor_id" type="uint8"/>
          <field name="raw" type="uint16"/>
          <field name="offset"  type="float" unit="Pa"/>
@@ -1270,6 +1281,16 @@
          <field name="temperature" type="float" unit="deg_celcius"/>
          <field name="airspeed" type="float" unit="m/s"/>
      </message>
+
+    <message name="APPROACH_MOVING_TARGET" id="139">
+      <field name="ref_pos_x" type="float" unit="m"/>
+      <field name="ref_pos_y" type="float" unit="m"/>
+      <field name="ref_pos_z" type="float" unit="m"/>
+      <field name="ref_vel_x" type="float" unit="m/s"/>
+      <field name="ref_vel_y" type="float" unit="m/s"/>
+      <field name="ref_vel_z" type="float" unit="m/s"/>
+      <field name="distance" type="float" unit="m"/>
+    </message>
 
     <message name="STAB_ATTITUDE_INT" id="140">
       <field name="est_p"         type="int32" alt_unit="deg/s" alt_unit_coef="0.0139882"/>
@@ -1739,7 +1760,14 @@
       <field name="delay_ns" type="uint32"/>
     </message>
 
-    <!-- 181 is free -->
+    <message name="ROTATING_WING_STATE" id="181">
+      <field name="current_state" type="uint8" values="QUAD|SKEW|FW_THRUST|FW_IDLE|FW|FREE"/>
+      <field name="desired_state" type="uint8" values="QUAD|SKEW|FW_THRUST|FW_IDLE|FW|FREE"/>
+      <field name="wing_angle_deg"      type="float"/>
+      <field name="wing_angle_deg_sp"   type="float"/>
+      <field name="ADC_position"        type="uint16"/>
+      <field name="pprz_cmd"            type="int32"/>
+    </message>
     <!-- 182 is free -->
     <message name="DOUBLET" id="183">
       <field name="active"              type="uint8">Doublet is active</field>
