@@ -434,6 +434,64 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   euler_cmd.y = du_gih[1];
   euler_cmd.z = du_gih[2];
 
+//
+//  // TODO: WLS allocation
+//  // u, v, umin, umax, B, u_guess(initial), W_init,
+//  // Wv, Wu, up(preferred control vector), gamma_sq, imax(max iter)
+//  //
+//  float gd_du_min[3];
+//float gd_du_max[3];
+//float gd_du_pref[3];
+//  // Calculates min & max increments
+//  // min&max phi, theta, thrust
+//  gd_du_min[0] = -guidance_indi_max_bank - roll_filt.o[0];
+//  gd_du_max[0] = guidance_indi_max_bank - roll_filt.o[0];
+//  gd_du_pref[0] = 0.0 - roll_filt.o[0];
+//
+//  gd_du_min[1] = RadOfDeg(GUIDANCE_INDI_MIN_PITCH) - pitch_filt.o[0];
+//  gd_du_max[1] = RadOfDeg(GUIDANCE_INDI_MAX_PITCH) - pitch_filt.o[0];
+//  gd_du_pref[1] = 0.0 - pitch_filt.o[0];
+//
+//  gd_du_min[2] = 0.0 - actuator_state_filt_vect[4];
+//  gd_du_max[2] = MAX_PPRZ - actuator_state_filt_vect[4];
+//  gd_du_pref[2] = 0.0 - actuator_state_filt_vect[4]; // TODO: preferred value
+//
+//float gd_gamma_sq = 1000.;
+//float gd_Wv[3] = {1.0, 1.0, 6.5};         // x y z
+//float gd_Wu[3] = {1.0, 100.0, 1.0};         // roll pitch thrust
+//
+//  float linear_acc_diff[3];
+//
+//    // Control objective TODO: change name
+//    linear_acc_diff[0] = a_diff.x;
+//    linear_acc_diff[1] = a_diff.y;
+//    linear_acc_diff[2] = a_diff.z;
+//float indi_d_euler[3];
+//
+//    int gd_num_iter =
+//            wls_alloc_gd(indi_d_euler, v_gih, du_min_gih, du_max_gih,
+//                               Bwls_gih, 0, 0, Wv_gih, Wu_gih, du_pref_gih, 1000, 10);
+//
+//printf("new,old: %f %f, %f %f, %f %f \n", du_gih[0], indi_d_euler[0], du_gih[1], indi_d_euler[1], du_gih[2], indi_d_euler[2]);
+////printf("new: %f %f %f \n", indi_d_euler[0], indi_d_euler[1], indi_d_euler[2]);
+//
+//  //Calculate roll,pitch and thrust command
+////  MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
+////  AbiSendMsgTHRUST(THRUST_INCREMENT_ID, euler_cmd.z);
+////    float_vect_sum(indi_euler_cmd, euler_state_filt_vect, indi_d_euler, 3);
+////printf("%d, %f, %f, %f, %f, %f\n", gd_num_iter, indi_d_euler[0], indi_d_euler[1], indi_d_euler[2], roll_filt.o[0], pitch_filt.o[0]);
+//
+//// keep the original vars for telemetry// x:roll, y:pitch, z:throttle
+////    euler_cmd.x = indi_d_euler[0];
+////    euler_cmd.y = indi_d_euler[1];
+////    euler_cmd.z = indi_d_euler[2];
+//
+////    guidance_euler_cmd.phi = roll_filt.o[0] + indi_d_euler[0];
+////    guidance_euler_cmd.theta = pitch_filt.o[0] + indi_d_euler[1];
+////    TODO: filter??
+////    AbiSendMsgTHRUST(THRUST_INCREMENT_ID, indi_d_euler[2]);
+
+
 #else
   // compute inverse matrix of Ga
   float Ga_inv[3][3] = {};

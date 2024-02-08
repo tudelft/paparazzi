@@ -42,6 +42,9 @@
   <init fun="guidance_indi_enter()"/>
   <makefile target="ap|nps" firmware="rotorcraft">
     <file name="guidance_indi_hybrid.c" dir="$(SRC_FIRMWARE)/guidance"/>
+    <file name="wls_alloc_gd.c" dir="$(SRC_FIRMWARE)/guidance/wls"/>
+    <file name="qr_solve.c" dir="math/qr_solve"/>
+    <file name="r8lib_min.c" dir="math/qr_solve"/>
     <define name="GUIDANCE_INDI_HYBRID" value="TRUE"/>
     <define name="GUIDANCE_PID_USE_AS_DEFAULT" value="FALSE"/>
     <define name="GUIDANCE_INDI_HYBRID_USE_AS_DEFAULT" value="TRUE"/>

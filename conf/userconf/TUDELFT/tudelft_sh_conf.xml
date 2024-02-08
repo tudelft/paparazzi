@@ -39,8 +39,8 @@
    radio="radios/crossfire_sbus.xml"
    telemetry="telemetry/seal_rotorcraft_merged.xml"
    flight_plan="flight_plans/tudelft/seal_FP_soaring_dune.xml"
-   settings="[settings/rotorcraft_basic.xml]"
-   settings_modules="modules/air_data.xml modules/airspeed_sdp3x.xml modules/ctrl_effectiveness_scheduling_nld.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid_nld_soaring.xml modules/imu_common.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_rotorcraft.xml modules/stabilization_indi.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/air_data.xml modules/airspeed_sdp3x.xml modules/ctrl_effectiveness_scheduling_nld.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid.xml modules/guidance_indi_hybrid_fixedwing_soaring.xml modules/guidance_indi_hybrid_nld_soaring.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_rotorcraft.xml modules/stabilization_indi.xml"
    gui_color="#ffffffffffff"
   />
   <aircraft
@@ -50,8 +50,19 @@
    radio="radios/crossfire_sbus.xml"
    telemetry="telemetry/seal_rotorcraft_merged.xml"
    flight_plan="flight_plans/tudelft/seal_FP_NPS_soaring_dune.xml"
-   settings="[settings/rotorcraft_basic.xml]"
+   settings="settings/rotorcraft_basic.xml"
    settings_modules="modules/air_data.xml modules/airspeed_sdp3x.xml modules/ctrl_effectiveness_scheduling_nld.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid.xml modules/guidance_indi_hybrid_fixedwing_soaring.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_ekf2.xml modules/nav_rotorcraft.xml modules/stabilization_indi.xml"
    gui_color="#ffffffffffff"
+  />
+  <aircraft
+          name="Pixhawk4_Seal_rotorcraft"
+          ac_id="41"
+          airframe="airframes/TUDELFT/sh_seal_soaring_pixhawk4_Feb24.xml"
+          radio="radios/crossfire_sbus.xml"
+          telemetry="telemetry/seal_rotorcraft_merged.xml"
+          flight_plan="flight_plans/tudelft/seal_FP_NPS_soaring_dune.xml"
+          settings="settings/rotorcraft_basic.xml"
+          settings_modules="modules/air_data.xml modules/airspeed_sdp3x.xml modules/ctrl_effectiveness_scheduling_nld.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid.xml modules/guidance_indi_hybrid_fixedwing_soaring.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_ekf2.xml modules/nav_rotorcraft.xml modules/stabilization_indi.xml"
+          gui_color="#ffffffffffff"
   />
 </conf>

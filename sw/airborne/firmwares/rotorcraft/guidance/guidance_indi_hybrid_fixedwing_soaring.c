@@ -1213,20 +1213,24 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
 #if GUIDANCE_INDI_HYBRID_USE_WLS
 void guidance_indi_hybrid_set_wls_settings(float body_v[3] UNUSED, float roll_angle, float pitch_angle)
 {
-  // Set lower limits
-  du_min_gih[0] = -guidance_indi_max_bank - roll_angle; // roll
-  du_min_gih[1] = RadOfDeg(GUIDANCE_INDI_MIN_PITCH) - pitch_angle; // pitch
-  du_min_gih[2] = 0.0 - actuator_state_filt_vect[3];
-
-  // Set upper limits
-  du_max_gih[0] = guidance_indi_max_bank - roll_angle; //roll
-  du_max_gih[1] = RadOfDeg(GUIDANCE_INDI_MAX_PITCH) - pitch_angle; // pitch
-  du_max_gih[2] = MAX_PPRZ - actuator_state_filt_vect[3];
-// TODO:check thrust min/max
-
+  // Set lower limits,
+  // Set upper limits,
   // Set prefered states
-  du_pref_gih[0] = -roll_angle; // prefered delta roll angle
-  du_pref_gih[1] = -pitch_angle; // prefered delta pitch angle
+
+  // roll
+  du_min_gih[0] = -guidance_indi_max_bank - roll_angle; // roll
+  du_max_gih[0] = guidance_indi_max_bank - roll_angle; //roll
+  du_pref_gih[0] = 0.0 - roll_angle; // prefered delta roll angle
+
+  // pitch
+  du_min_gih[1] = RadOfDeg(GUIDANCE_INDI_MIN_PITCH) - pitch_angle; // pitch
+  du_max_gih[1] = RadOfDeg(GUIDANCE_INDI_MAX_PITCH) - pitch_angle; // pitch
+  du_pref_gih[1] = 0.0 - pitch_angle; // prefered delta pitch angle
+
+// TODO:check thrust min/max
+  // thrust
+  du_min_gih[2] = 0.0 - actuator_state_filt_vect[4];
+  du_max_gih[2] = MAX_PPRZ - actuator_state_filt_vect[4];
   du_pref_gih[2] = du_min_gih[2];
 }
 #endif
