@@ -204,13 +204,19 @@ NOTES:
       <module name="sys_mon"/><!-- Enable if one want to check processor load for higher loop, nav, module etc. frequencies -->
 
       <module name="telemetry" type="transparent">
-        <!--<configure name="MODEM_PORT" value="usb_serial"/>--><!--Handy for Desk debugging-->
+<!--          <configure name="MODEM_PORT" value="usb_serial"/>-->
+<!--          <configure name="MODEM_BAUD" value="B57600"/>-->
         <configure name="MODEM_PORT" value="UART2"/><!--Default UART2=Telem1 UART3 = Telem2 -->
-<!--        <configure name="MODEM_BAUD" value="B57600"/>-->
         <configure name="MODEM_BAUD" value="B115200"/>
       </module>
 
-      <!-- Enable for onboard logging -->
+        <!--        UART4 == UART & I2C B  on Pixhawk4  -->
+        <module name="serial_act_t4">
+            <configure name="SERIAL_ACT_T4_PORT" value="UART4"/>
+            <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>
+        </module>
+
+        <!-- Enable for onboard logging -->
       
 <!--      <module name="tlsf"/>-->
 <!--      <module name="pprzlog"/>-->
