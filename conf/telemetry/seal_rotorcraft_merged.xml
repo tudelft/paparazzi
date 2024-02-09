@@ -61,6 +61,8 @@
 
       <message name="SERIAL_ACT_T4_OUT"       period="1.0"/>
       <message name="SERIAL_ACT_T4_IN"       period="1.0"/>
+      <message name="AOA"         period="0.5"/>
+
     </mode>
 
     <mode name="ppm">

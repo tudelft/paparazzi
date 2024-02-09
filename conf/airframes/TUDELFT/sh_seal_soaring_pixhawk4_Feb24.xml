@@ -215,12 +215,6 @@ NOTES:
         <configure name="MODEM_BAUD" value="B115200"/>
       </module>
 
-        <!--        UART4 == UART & I2C B  on Pixhawk4  -->
-        <module name="serial_act_t4">
-            <configure name="SERIAL_ACT_T4_PORT" value="UART3"/>
-            <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>
-        </module>
-
         <!-- Enable for onboard logging -->
       
 <!--      <module name="tlsf"/>-->
@@ -335,6 +329,23 @@ NOTES:
 
 <!--      YAW OFFSET  -->
       <define name="INS_EKF2_GPS_RTK_YAW_OFFSET" value="0"/>
+
+
+        <!--        UART4 == UART & I2C B  on Pixhawk4  -->
+        <module name="serial_act_t4">
+            <configure name="SERIAL_ACT_T4_PORT" value="UART3"/>
+            <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>
+        </module>
+
+        <!--        AOA sensor thru Teensy 4-->
+        <module name="aoa_t4">
+            <define name="AOA_T4_SERVO_ID" value="8"/>
+            <define name="AOA_T4_OFFSET" value="0.0"/>
+<!--            <define name="AOA_T4_SIGN" value="1"/>-->
+            <define name="AOA_T4_USE_LOWPASS_FILTER" value="FALSE"/>
+            <define name="AOA_T4_LOWPASS_TAU" value="0.15"/>
+        </module>
+        <define name="USE_AOA" value="TRUE"/>
 
     </target>
 
@@ -469,6 +480,19 @@ NOTES:
 <!--      <module name="pprzlog"/>-->
 <!--      <module name="logger" type="sd_chibios"/>-->
 
+        <module name="serial_act_t4">
+<!--            <configure name="SERIAL_ACT_T4_PORT" value="UART3"/>-->
+<!--            <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>-->
+        </module>
+
+        <module name="aoa_t4">
+            <define name="AOA_T4_SERVO_ID" value="8"/>
+            <define name="AOA_T4_OFFSET" value="0.0"/>
+<!--            <define name="AOA_T4_SIGN" value="1"/>-->
+            <define name="AOA_T4_USE_LOWPASS_FILTER" value="FALSE"/>
+            <define name="AOA_T4_LOWPASS_TAU" value="0.15"/>
+        </module>
+        <define name="USE_AOA" value="TRUE"/>
     </target>
 
   </firmware>

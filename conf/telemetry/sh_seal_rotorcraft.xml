@@ -74,7 +74,7 @@
 
 <!--      <message name="AIRSPEED_WIND_ESTIMATOR_EKF" period="0.2"/>-->
       <message name="ADC_GENERIC" period="1.0"/>
-
+      <message name="AOA"         period="0.5"/>
     </mode>
 
     <mode name="ppm">
