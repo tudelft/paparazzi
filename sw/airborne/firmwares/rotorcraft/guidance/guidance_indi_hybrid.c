@@ -367,6 +367,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   /* Obtain eulers with zxy rotation order */
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
 
+#ifdef TRANSITION_MAX_OFFSET
   /* Calculate the transition percentage so that the ctrl_effecitveness scheduling works */
 //    transition_percentage = BFP_OF_REAL((eulers_zxy.theta/RadOfDeg(-75.0f))*100,INT32_PERCENTAGE_FRAC);
     transition_percentage = BFP_OF_REAL((eulers_zxy.theta/RadOfDeg(TRANSITION_MAX_OFFSET))*100,INT32_PERCENTAGE_FRAC);
@@ -374,6 +375,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   const int32_t max_offset = ANGLE_BFP_OF_REAL(TRANSITION_MAX_OFFSET);
   transition_theta_offset = INT_MULT_RSHIFT((transition_percentage <<
         (INT32_ANGLE_FRAC - INT32_PERCENTAGE_FRAC)) / 100, max_offset, INT32_ANGLE_FRAC);
+#endif
 
   // filter accel to get rid of noise and filter attitude to synchronize with accel
   guidance_indi_propagate_filters();

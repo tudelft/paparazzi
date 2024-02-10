@@ -730,7 +730,7 @@ NOTES:
     <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
 <!--      Initial effectiveness -->
-    <define name="G1_THRUST" value="{    0,     0, 0, 0, -1.1}"/>
+    <define name="G1_THRUST" value="{    0,     0, 0, 0, 1.1}"/>
     <define name="G1_YAW"   value="{    0,     0,    0, 2.6, 0}"/>
     <define name="G1_PITCH"  value="{0,  0,    4.2, 0, 0}"/>
     <define name="G1_ROLL"    value="{-4.0, 4.0,    0, 0, 0}"/>
@@ -777,13 +777,13 @@ NOTES:
       <define name="SP_PSI_DELTA_LIMIT" value="60" unit="deg"/>
   </section>
 
-  <section name="ctrl_eff_scheduling" prefix="FWD_">
-    <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
-    <define name="G1_YAW"   value="{    0,     0,    0, 2.6, 0}"/>
-    <define name="G1_PITCH"  value="{0,  0,    4.2, 0, 0}"/>
-    <define name="G1_ROLL"    value="{-4.0, 4.0,    0, 0, 0}"/>
-    <define name="G1_THRUST" value="{    0,     0, 0, 0, -1.1}"/>
-  </section>
+<!--  <section name="ctrl_eff_scheduling" prefix="FWD_">-->
+<!--    &lt;!&ndash; control effectiveness, scaled by INDI_G_SCALING (1000)&ndash;&gt;-->
+<!--    <define name="G1_YAW"   value="{    0,     0,    0, 2.6, 0}"/>-->
+<!--    <define name="G1_PITCH"  value="{0,  0,    4.2, 0, 0}"/>-->
+<!--    <define name="G1_ROLL"    value="{-4.0, 4.0,    0, 0, 0}"/>-->
+<!--    <define name="G1_THRUST" value="{    0,     0, 0, 0, -1.1}"/>-->
+<!--  </section>-->
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
     <define name="HOVER_KP"    value="370"/>

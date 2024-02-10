@@ -74,18 +74,6 @@
 #define GUIDANCE_INDI_MAX_PITCH -60
 #endif
 
-#ifndef GUIDANCE_INDI_LIFTD_ASQ
-#define GUIDANCE_INDI_LIFTD_ASQ 0.20
-#endif
-
-/* If lift effectiveness at low airspeed not defined,
- * just make one interpolation segment that connects to
- * the quadratic part from 12 m/s onward
- */
-//#ifndef GUIDANCE_INDI_LIFTD_P50
-//#define GUIDANCE_INDI_LIFTD_P80 (GUIDANCE_INDI_LIFTD_ASQ*12*12)
-//#define GUIDANCE_INDI_LIFTD_P50 (GUIDANCE_INDI_LIFTD_P80/2)
-//#endif
 
 //struct guidance_indi_hybrid_params gih_params = {
 //  .pos_gain = GUIDANCE_INDI_POS_GAIN,
@@ -105,23 +93,16 @@
 //#endif
 //float guidance_indi_max_airspeed = GUIDANCE_INDI_MAX_AIRSPEED;
 
-#ifndef GUIDANCE_INDI_FILTER_CUTOFF
-#ifdef STABILIZATION_INDI_FILT_CUTOFF
-#define GUIDANCE_INDI_FILTER_CUTOFF STABILIZATION_INDI_FILT_CUTOFF
-#else
-#define GUIDANCE_INDI_FILTER_CUTOFF 3.0
-#endif
-#endif
-
-#ifdef GUIDANCE_INDI_LINE_GAIN
-float guidance_indi_line_gain = GUIDANCE_INDI_LINE_GAIN;
-#else
-float guidance_indi_line_gain = 1.0;
-#endif
+//#ifndef GUIDANCE_INDI_FILTER_CUTOFF
+//#ifdef STABILIZATION_INDI_FILT_CUTOFF
+//#define GUIDANCE_INDI_FILTER_CUTOFF STABILIZATION_INDI_FILT_CUTOFF
+//#else
+//#define GUIDANCE_INDI_FILTER_CUTOFF 3.0
+//#endif
+//#endif
 
 //float inv_eff[4];
 
-float lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF;
 
 // Max bank angle in radians
 //float guidance_indi_max_bank = GUIDANCE_H_MAX_BANK;
@@ -146,10 +127,6 @@ float lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF;
 
 //struct FloatEulers guidance_euler_cmd;
 //float thrust_in;
-
-struct FloatVect3 accel_sp = {0.f, 0.f, 0.f};
-struct FloatVect3 speed_sp = {0.f, 0.f, 0.f};
-struct FloatVect3 guidance_wind_gradient = {0.0, 0.0, 0.0};
 
 #ifndef GUIDANCE_INDI_POS_CTRL
 #define GUIDANCE_INDI_POS_CTRL TRUE
@@ -263,6 +240,14 @@ struct FloatVect3 guidance_wind_gradient = {0.0, 0.0, 0.0};
 #define GUIDANCE_INDI_SOARING_MAX_EXPLORATION_STEPS 1000
 #endif
 
+// 90 deg pitch offset
+//#ifndef GUIDANCE_INDI_SOARING_USE_90_OFFSET
+//#define GUIDANCE_INDI_SOARING_USE_90_OFFSET FALSE
+//#endif
+#ifdef GUIDANCE_INDI_SOARING_USE_90_PITCH_OFFSET
+#warning "You are using 90deg pitch offset setting! (0 deg pitch == nose to the sky)"
+#endif
+
 #define SOARING_RESET_STDBY_TIMEOUT 3     // seconds
 
 // 2m/0.1 = 20 data points for one axis
@@ -290,14 +275,13 @@ float gd_du_pref[3];
 float *Bwls_g[3];
 float g_arr[3][3];
 int gd_num_iter = 0;
-//float pos_x_err = 0.;
-//float pos_y_err = 0.;
-//float pos_z_err = 0.;
 
 struct FloatVect3 pos_err = {0., 0., 0.};
+struct FloatVect3 accel_sp = {0.f, 0.f, 0.f};
+struct FloatVect3 speed_sp = {0.f, 0.f, 0.f};
+struct FloatVect3 guidance_wind_gradient = {0.0, 0.0, 0.0};
 
-//struct FloatVect2 heading_target = {50., 0.};
-//struct FloatVect3 soaring_spd_sp = {0., 0., 0.};
+float lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF;
 
 float gd_k_thr = GUIDANCE_INDI_SOARING_WP_W_THROTTLE;
 float gd_k_spd_x = GUIDANCE_INDI_SOARING_WP_W_SPD_X;
@@ -363,13 +347,6 @@ int32_t min_cost_wp_u;
 time_t rand_seed;
 uint16_t stdby_entry_time = 0;
 uint16_t reset_stdby_timeout = SOARING_RESET_STDBY_TIMEOUT;
-
-//void guidance_indi_soaring_propagate_filters(void);
-//static void guidance_indi_calcg_wing(struct FloatMat33 *Gmat);
-//static float guidance_indi_get_liftd(float pitch, float theta);
-//struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_gain);
-//struct FloatVect3 nav_get_speed_sp_from_line(struct FloatVect2 line_v_enu, struct FloatVect2 to_end_v_enu, struct EnuCoor_i target, float pos_gain);
-//struct FloatVect3 nav_get_speed_setpoint(float pos_gain);
 
 void guidance_indi_soaring_move_wp(float cost_avg_val);
 void write_map_position_cost_info(struct FloatVect3 soaring_position, float corres_sum_cost);
@@ -1166,6 +1143,7 @@ struct FloatVect3 compute_soaring_accel_sp(struct HorizontalGuidance *gh, struct
  * @param body_v 3D vector to write the control objective v
  */
 
+#ifdef GUIDANCE_INDI_SOARING_USE_90_PITCH_OFFSET
 void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_HYBRID_U], struct FloatVect3 a_diff, float v_gih[GUIDANCE_INDI_HYBRID_V]) {
     // Get attitude
     struct FloatEulers eulers_zxy;
@@ -1209,6 +1187,67 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
     v_gih[1] = a_diff.y;
     v_gih[2] = a_diff.z;
 }
+#else
+/// without 90 deg rotation
+void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_HYBRID_U], struct FloatVect3 a_diff, float v_gih[GUIDANCE_INDI_HYBRID_V]) {
+    // Get attitude
+    struct FloatEulers eulers_zxy;
+    float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+
+    /*Pre-calculate sines and cosines*/
+    float sphi = sinf(eulers_zxy.phi);
+    float cphi = cosf(eulers_zxy.phi);
+    float stheta = sinf(eulers_zxy.theta);
+    float ctheta = cosf(eulers_zxy.theta);
+    float spsi = sinf(eulers_zxy.psi);
+    float cpsi = cosf(eulers_zxy.psi);
+    //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
+
+#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
+#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
+#endif
+
+    /*Amount of lift produced by the wing*/
+    float pitch_lift = eulers_zxy.theta;
+//    Bound(pitch_lift,-M_PI_2,0);
+    float lift = -cosf(pitch_lift)*9.81;
+    float T = sinf(pitch_lift)*9.81;
+
+    // get the derivative of the lift wrt to theta
+//    float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
+    float liftd = -24.0;    // FIXME
+
+
+    // Calculate Cl, Cd, liftd and dragd
+//    clalpha = getClAlpha(alpha);
+//    cdalpha = getCdAlpha(alpha);
+//    Cld = getCld(alpha);
+//    Cdd = getCdd(alpha);
+//
+//    Ld = -qS*((ctheta-stheta)*clalpha + (ctheta+stheta)*Cld);
+//    Dd = -qS*((stheta-ctheta)*cdalpha + (ctheta+stheta)*Cdd);
+
+    // Gt + Gl
+    Gmat[0][0] = -spsi*cphi*stheta*T + spsi*cphi*lift;
+    Gmat[1][0] = cpsi*cphi*stheta*T - cpsi*cphi*lift;
+    Gmat[2][0] = sphi*stheta*T - sphi*lift;
+    Gmat[0][1] = (-stheta*cpsi-spsi*sphi*ctheta)*T*GUIDANCE_INDI_PITCH_EFF_SCALING + spsi*sphi*liftd;
+    Gmat[1][1] = (-spsi*stheta+cpsi*sphi*ctheta)*T*GUIDANCE_INDI_PITCH_EFF_SCALING - cpsi*sphi*liftd;
+    Gmat[2][1] = -cphi*ctheta*T*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+    Gmat[0][2] = cpsi*ctheta - spsi*sphi*stheta;
+    Gmat[1][2] = spsi*ctheta + cpsi*sphi*stheta;
+    Gmat[2][2] = -cphi*stheta;
+
+    // Gd, just in case
+//    [0][1] = -cpsi*Dd;
+//    [1][1] = -spsi*Dd;
+//    0 for others
+
+    v_gih[0] = a_diff.x;
+    v_gih[1] = a_diff.y;
+    v_gih[2] = a_diff.z;
+}
+#endif
 
 #if GUIDANCE_INDI_HYBRID_USE_WLS
 void guidance_indi_hybrid_set_wls_settings(float body_v[3] UNUSED, float roll_angle, float pitch_angle)

@@ -38,15 +38,15 @@
 #error "You need to define an RC channel to switch between simple and advanced scheduling"
 #endif
 
-static float g1g2_forward[INDI_OUTPUTS][INDI_NUM_ACT] = {FWD_G1_ROLL,
-                                                  FWD_G1_PITCH, FWD_G1_YAW, FWD_G1_THRUST
-                                                 };
-
-static float g1g2_hover[INDI_OUTPUTS][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL,
-                                                STABILIZATION_INDI_G1_PITCH, STABILIZATION_INDI_G1_YAW, STABILIZATION_INDI_G1_THRUST
-                                               };
-
-static float g2_both[INDI_NUM_ACT] = STABILIZATION_INDI_G2; //scaled by INDI_G_SCALING
+//static float g1g2_forward[INDI_OUTPUTS][INDI_NUM_ACT] = {FWD_G1_ROLL,
+//                                                  FWD_G1_PITCH, FWD_G1_YAW, FWD_G1_THRUST
+//                                                 };
+//
+//static float g1g2_hover[INDI_OUTPUTS][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL,
+//                                                STABILIZATION_INDI_G1_PITCH, STABILIZATION_INDI_G1_YAW, STABILIZATION_INDI_G1_THRUST
+//                                               };
+//
+//static float g2_both[INDI_NUM_ACT] = STABILIZATION_INDI_G2; //scaled by INDI_G_SCALING
 
 int32_t use_scheduling = 1;
 
@@ -60,62 +60,42 @@ float ce_yaw_b = CE_YAW_B;
 //Get the specified gains in the gainlibrary
 void ctrl_eff_scheduling_init(void)
 {
-  //sum of G1 and G2
-  int8_t i;
-  int8_t j;
-  for (i = 0; i < INDI_OUTPUTS; i++) {
-    for (j = 0; j < INDI_NUM_ACT; j++) {
-      if (i != 2) {
-        g1g2_hover[i][j] = g1g2_hover[i][j] / INDI_G_SCALING;
-        g1g2_forward[i][j] = g1g2_forward[i][j] / INDI_G_SCALING;
-      } else {
-        g1g2_forward[i][j] = (g1g2_forward[i][j] + g2_both[j]) / INDI_G_SCALING;
-        g1g2_hover[i][j] = (g1g2_hover[i][j] + g2_both[j]) / INDI_G_SCALING;
-      }
-    }
-  }
+//  //sum of G1 and G2
+//  int8_t i;
+//  int8_t j;
+//  for (i = 0; i < INDI_OUTPUTS; i++) {
+//    for (j = 0; j < INDI_NUM_ACT; j++) {
+//      if (i != 2) {
+//        g1g2_hover[i][j] = g1g2_hover[i][j] / INDI_G_SCALING;
+//        g1g2_forward[i][j] = g1g2_forward[i][j] / INDI_G_SCALING;
+//      } else {
+//        g1g2_forward[i][j] = (g1g2_forward[i][j] + g2_both[j]) / INDI_G_SCALING;
+//        g1g2_hover[i][j] = (g1g2_hover[i][j] + g2_both[j]) / INDI_G_SCALING;
+//      }
+//    }
+//  }
 }
 
 void ctrl_eff_scheduling_periodic(void)
 {
-//  if(radio_control.values[INDI_FUNCTIONS_RC_CHANNEL] > 0) {
-//    ctrl_eff_scheduling_periodic_b();
-//  } else {
-//    ctrl_eff_scheduling_periodic_a();
-//  }
-
     if (use_scheduling == 1) {
         ctrl_eff_scheduling_periodic_b();
     }
 
-#ifdef INDI_THRUST_ON_PITCH_EFF
-  //State prioritization {W Roll, W pitch, W yaw, TOTAL THRUST}
-  if(radio_control.values[INDI_FUNCTIONS_RC_CHANNEL] > 0 && (actuator_state_filt_vect[0] < -7000) && (actuator_state_filt_vect[1] > 7000)) {
-    Bwls[1][2] = INDI_THRUST_ON_PITCH_EFF/INDI_G_SCALING;
-    Bwls[1][3] = INDI_THRUST_ON_PITCH_EFF/INDI_G_SCALING;
-  } else if(radio_control.values[INDI_FUNCTIONS_RC_CHANNEL] > 0 && (actuator_state_filt_vect[0] > 7000) && (actuator_state_filt_vect[1] < -7000)) {
-    Bwls[1][2] = -INDI_THRUST_ON_PITCH_EFF/INDI_G_SCALING;
-    Bwls[1][3] = -INDI_THRUST_ON_PITCH_EFF/INDI_G_SCALING;
-  } else {
-    Bwls[1][2] = 0.0;
-    Bwls[1][3] = 0.0;
-  }
-#endif
+//#ifdef INDI_THRUST_ON_PITCH_EFF
+//  //State prioritization {W Roll, W pitch, W yaw, TOTAL THRUST}
+//  if(radio_control.values[INDI_FUNCTIONS_RC_CHANNEL] > 0 && (actuator_state_filt_vect[0] < -7000) && (actuator_state_filt_vect[1] > 7000)) {
+//    Bwls[1][2] = INDI_THRUST_ON_PITCH_EFF/INDI_G_SCALING;
+//    Bwls[1][3] = INDI_THRUST_ON_PITCH_EFF/INDI_G_SCALING;
+//  } else if(radio_control.values[INDI_FUNCTIONS_RC_CHANNEL] > 0 && (actuator_state_filt_vect[0] > 7000) && (actuator_state_filt_vect[1] < -7000)) {
+//    Bwls[1][2] = -INDI_THRUST_ON_PITCH_EFF/INDI_G_SCALING;
+//    Bwls[1][3] = -INDI_THRUST_ON_PITCH_EFF/INDI_G_SCALING;
+//  } else {
+//    Bwls[1][2] = 0.0;
+//    Bwls[1][3] = 0.0;
+//  }
+//#endif
 
-}
-
-void ctrl_eff_scheduling_periodic_a(void)
-{
-  // Go from transition percentage to ratio
-  float ratio = FLOAT_OF_BFP(transition_percentage, INT32_PERCENTAGE_FRAC) / 100;
-
-  int8_t i;
-  int8_t j;
-  for (i = 0; i < INDI_OUTPUTS; i++) {
-    for (j = 0; j < INDI_NUM_ACT; j++) {
-      g1g2[i][j] = g1g2_hover[i][j] * (1.0 - ratio) + g1g2_forward[i][j] * ratio;
-    }
-  }
 }
 
 void ctrl_eff_scheduling_periodic_b(void)
@@ -123,20 +103,6 @@ void ctrl_eff_scheduling_periodic_b(void)
   float airspeed = stateGetAirspeed_f();
 //  struct FloatEulers eulers_zxy;
 
-//printf("%f\n", airspeed);
-//  if(airspeed < 6.0) {
-////    float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-////    float pitch_interp = DegOfRad(eulers_zxy.theta);
-////    Bound(pitch_interp, -60.0, -30.0);
-////    float ratio = (pitch_interp + 30.0)/(-30.);
-////
-////    /*pitch*/
-////    g1g2[1][0] = g1g2_hover[1][0]*(1-ratio) + -PITCH_EFF_AT_60/1000*ratio;
-////    g1g2[1][1] = g1g2_hover[1][1]*(1-ratio) +  PITCH_EFF_AT_60/1000*ratio;
-////    /*yaw*/
-////    g1g2[2][0] = g1g2_hover[2][0]*(1-ratio) + -YAW_EFF_AT_60/1000*ratio;
-////    g1g2[2][1] = g1g2_hover[2][1]*(1-ratio) + -YAW_EFF_AT_60/1000*ratio;
-//
 //    // use fixed value @ 6 m/s
 //      float airspeed2 = 36.0;
 ////      float airspeed2 = airspeed*airspeed;
@@ -154,8 +120,13 @@ void ctrl_eff_scheduling_periodic_b(void)
 ////    g1g2[0][2] = -roll_eff/1000;
 //      g1g2[0][3] = roll_eff/1000;
 //  } else {
+
+#ifdef SOARING_USE_90_PITCH_OFFSET
+    // 90deg pitch offset;
+    // Yaw is roll, Roll is yaw
+
     // calculate squared airspeed
-    Bound(airspeed, 7.0, 20.0);
+    Bound(airspeed, 7.0, 23.0);
     float airspeed2 = airspeed*airspeed;
 
     float pitch_eff = ce_pitch_a + ce_pitch_b*airspeed2;
@@ -172,6 +143,26 @@ void ctrl_eff_scheduling_periodic_b(void)
 //    g1g2[0][2] = -roll_eff/1000;
     g1g2[0][3] = roll_eff/1000;
 //  }
+#else
+// NO 90 degrees pitch offset;
+// Yaw is yaw, Roll is roll
+
+    // calculate squared airspeed
+    Bound(airspeed, 6.0, 23.0);
+    float airspeed2 = airspeed*airspeed;
+
+    float pitch_eff = ce_pitch_a + ce_pitch_b*airspeed2;
+//    g1g2[1][0] = -pitch_eff/1000;
+    g1g2[1][2] =  pitch_eff/1000;
+
+    float roll_eff = ce_roll_a + ce_roll_b*airspeed2;
+    g1g2[2][0] = -roll_eff/1000;
+    g1g2[2][1] = roll_eff/1000;
+
+    float yaw_eff = ce_yaw_a + ce_yaw_b*airspeed2;
+//    g1g2[0][2] = -roll_eff/1000;
+    g1g2[0][3] = yaw_eff/1000;
+#endif
 
 }
 

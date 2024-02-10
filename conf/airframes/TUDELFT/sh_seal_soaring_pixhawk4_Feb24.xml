@@ -480,10 +480,11 @@ NOTES:
 <!--      <module name="pprzlog"/>-->
 <!--      <module name="logger" type="sd_chibios"/>-->
 
-        <module name="serial_act_t4">
-<!--            <configure name="SERIAL_ACT_T4_PORT" value="UART3"/>-->
-<!--            <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>-->
-        </module>
+<!--        Does not work with NPS-->
+<!--        <module name="serial_act_t4">-->
+<!--&lt;!&ndash;            <configure name="SERIAL_ACT_T4_PORT" value="UART3"/>&ndash;&gt;-->
+<!--&lt;!&ndash;            <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>&ndash;&gt;-->
+<!--        </module>-->
 
         <module name="aoa_t4">
             <define name="AOA_T4_SERVO_ID" value="8"/>
@@ -870,6 +871,9 @@ NOTES:
     <define name="SOARING_STDBY_WP_ID" value="2"/>
     <define name="SOARING_SOARING_WP_ID" value="3"/>
     <define name="SOARING_HEADING_WP_ID" value="4"/>
+
+
+      <define name="SOARING_USE_90_PITCH_OFFSET" value="TRUE"/>
   </section>
 
   <section name="BAT">
@@ -994,7 +998,7 @@ NOTES:
         <define name="JSBSIM_MODEL" value="eclipson_rotorcraft" type="string"/>
         <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
         <define name="NO_MOTOR_MIXING" value="TRUE"/>
-        <define name="JSBSIM_INIT" value="reset01" type="string"/>
+<!--        <define name="JSBSIM_INIT" value="reset01" type="string"/>-->
 
   </section>
   <include href="conf/simulator/gazebo/airframes/simple_fixedwing_w_camera.xml"/>
