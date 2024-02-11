@@ -183,6 +183,10 @@ struct FloatVect3 euler_cmd;
 
 #if GUIDANCE_INDI_HYBRID_USE_WLS
 #include "math/wls/wls_alloc.h"
+#ifdef GUIDANCE_INDI_HYBRID_USE_OLD_WLS
+#warning "You are using old WLS for guidance; to use new version, remove: <define name=HYBRID_USE_OLD_WLS.."
+#include "guidance/wls/wls_alloc_gd.h"
+#endif
 float du_min_gih[GUIDANCE_INDI_HYBRID_U];
 float du_max_gih[GUIDANCE_INDI_HYBRID_U];
 float du_pref_gih[GUIDANCE_INDI_HYBRID_U];
@@ -427,10 +431,16 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
 
   float du_gih[GUIDANCE_INDI_HYBRID_U]; // = {0.0f, 0.0f, 0.0f};
 
+#ifdef GUIDANCE_INDI_HYBRID_USE_OLD_WLS
+    int num_iter UNUSED =
+            wls_alloc_gd(du_gih, v_gih, du_min_gih, du_max_gih,
+                               Bwls_gih, 0, 0, Wv_gih, Wu_gih, du_pref_gih, 1000, 10);
+#else
   int num_iter UNUSED = wls_alloc(
       du_gih, v_gih, du_min_gih, du_max_gih,
       Bwls_gih, 0, 0, Wv_gih, Wu_gih, du_pref_gih, 100000, 10,
       GUIDANCE_INDI_HYBRID_U, GUIDANCE_INDI_HYBRID_V);
+#endif
 
   euler_cmd.x = du_gih[0];
   euler_cmd.y = du_gih[1];

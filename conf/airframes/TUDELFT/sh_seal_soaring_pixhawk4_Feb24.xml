@@ -835,7 +835,8 @@ NOTES:
     <define name="MIN_ACC_SP" value="-4.5"/>  <!-- min and max acc sp; MIN is upward, MAX is downward -->
     <define name="MAX_ACC_SP" value="4.0"/>
 
-      <define name="HYBRID_USE_WLS" value="FALSE"/>
+      <define name="HYBRID_USE_WLS" value="TRUE"/>
+      <define name="HYBRID_USE_OLD_WLS" value="TRUE"/>  <!-- define this to use the old version -->
 
 
       <!--    SOARING-->

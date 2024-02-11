@@ -148,7 +148,7 @@ void ctrl_eff_scheduling_periodic_b(void)
 // Yaw is yaw, Roll is roll
 
     // calculate squared airspeed
-    Bound(airspeed, 6.0, 23.0);
+    Bound(airspeed, 7.0, 23.0);
     float airspeed2 = airspeed*airspeed;
 
     float pitch_eff = ce_pitch_a + ce_pitch_b*airspeed2;
