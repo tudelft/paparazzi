@@ -36,7 +36,7 @@
 #include "filters/low_pass_filter.h"
 #include "modules/sensors/serial_act_t4.h"
 
-/// Offset value in degrees
+/// Offset value in radian
 #ifndef AOA_T4_OFFSET
 #define AOA_T4_OFFSET 0
 #endif
@@ -98,9 +98,10 @@ void aoa_t4_init_filters(void){
 
 void aoa_t4_init(void)
 {
-  aoa_t4.offset = RadOfDeg(AOA_T4_OFFSET);
+  aoa_t4.offset = AOA_T4_OFFSET;
   aoa_t4.angle = 0.0;
   aoa_t4.angle_raw = 0.0;
+  aoa_t4.sign = AOA_T4_SIGN;
 
 #if AOA_T4_USE_LOWPASS_FILTER
   aoa_t4_init_filters();
@@ -116,9 +117,9 @@ void aoa_t4_init(void)
 void aoa_t4_update(void)
 {
 #ifdef USE_AIRSPEED_LOWPASS_FILTER
-    aoa_t4.angle = update_butterworth_2_low_pass(&aoa_t4_lowpass_filter, (AOA_T4_SIGN*aoa_t4.angle_raw)+aoa_t4.offset);
+    aoa_t4.angle = update_butterworth_2_low_pass(&aoa_t4_lowpass_filter, (aoa_t4.sign*aoa_t4.angle_raw)+aoa_t4.offset);
 #else
-    aoa_t4.angle = (AOA_T4_SIGN*aoa_t4.angle_raw)+aoa_t4.offset;
+    aoa_t4.angle = (aoa_t4.sign*aoa_t4.angle_raw)+aoa_t4.offset;
 #endif
 
 #ifdef USE_AOA

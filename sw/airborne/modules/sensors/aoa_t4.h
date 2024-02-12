@@ -39,6 +39,9 @@ struct Aoa_T4 {
     float angle;
     /// Angle of attack offset in radians
     float offset;
+    /// sign (cw or ccw);
+    int sign;
+
 //    int16_t timestamp;
 };
 

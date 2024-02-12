@@ -122,7 +122,7 @@ void ctrl_eff_scheduling_periodic_b(void)
 //  } else {
 
 #ifdef SOARING_USE_90_PITCH_OFFSET
-    // 90deg pitch offset;
+    /// 90deg pitch offset;
     // Yaw is roll, Roll is yaw
 
     // calculate squared airspeed
@@ -144,7 +144,7 @@ void ctrl_eff_scheduling_periodic_b(void)
     g1g2[0][3] = roll_eff/1000;
 //  }
 #else
-// NO 90 degrees pitch offset;
+/// NO 90 degrees pitch offset;
 // Yaw is yaw, Roll is roll
 
     // calculate squared airspeed
@@ -156,12 +156,12 @@ void ctrl_eff_scheduling_periodic_b(void)
     g1g2[1][2] =  pitch_eff/1000;
 
     float roll_eff = ce_roll_a + ce_roll_b*airspeed2;
-    g1g2[2][0] = -roll_eff/1000;
-    g1g2[2][1] = roll_eff/1000;
+    g1g2[0][0] = roll_eff/1000;
+    g1g2[0][1] = -roll_eff/1000;
 
     float yaw_eff = ce_yaw_a + ce_yaw_b*airspeed2;
 //    g1g2[0][2] = -roll_eff/1000;
-    g1g2[0][3] = yaw_eff/1000;
+    g1g2[2][3] = yaw_eff/1000;
 #endif
 
 }

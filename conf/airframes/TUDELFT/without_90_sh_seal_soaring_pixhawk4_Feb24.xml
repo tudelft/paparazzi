@@ -324,8 +324,8 @@ NOTES:
         <!--        AOA sensor thru Teensy 4-->
         <module name="aoa_t4">
             <define name="AOA_T4_SERVO_ID" value="8"/>
-            <define name="AOA_T4_OFFSET" value="0.0"/>
-<!--            <define name="AOA_T4_SIGN" value="1"/>-->
+            <define name="AOA_T4_OFFSET" value="-0.66"/>    <!-- in rad -->
+            <define name="AOA_T4_SIGN" value="-1"/>
             <define name="AOA_T4_USE_LOWPASS_FILTER" value="FALSE"/>
             <define name="AOA_T4_LOWPASS_TAU" value="0.15"/>
         </module>
@@ -729,11 +729,12 @@ NOTES:
 
     <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
-<!--      Initial effectiveness -->
-    <define name="G1_THRUST" value="{    0,     0, 0, 0, 1.1}"/>
-    <define name="G1_YAW"   value="{    0,     0,    0, 2.6, 0}"/>
-    <define name="G1_PITCH"  value="{0,  0,    4.2, 0, 0}"/>
-    <define name="G1_ROLL"    value="{-4.0, 4.0,    0, 0, 0}"/>
+    <!--      Initial effectiveness -->
+        <define name="G1_ROLL"        value="{4.0, -4.0,    0,   0,    0}"/>
+        <define name="G1_PITCH"       value="{0,  0,    4.2,     0,     0}"/>
+        <define name="G1_YAW"         value="{    0,     0,    0, 2.6,  0}"/>
+        <define name="G1_THRUST"      value="{    0,     0,  0,   0,   1.1}"/>
+
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{0, 0, 0, 0, 0}"/>
 
