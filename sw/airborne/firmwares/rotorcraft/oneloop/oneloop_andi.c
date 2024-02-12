@@ -267,10 +267,10 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 #endif
 
 #ifndef ONELOOP_THETA_PREF_MAX
-float theta_pref_max = DegOfRad(25.0);
+float theta_pref_max = RadOfDeg(25.0);
 float 
 #else
-float theta_pref_max = DegOfRad(ONELOOP_THETA_PREF_MAX);
+float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
 #endif
 
 #if ANDI_NUM_ACT_TOT != WLS_N_U
@@ -1473,7 +1473,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   nu[5] = y_4d_att[2] + g2_ff; 
   if (!chirp_on){
     pitch_pref = radio_control.values[RADIO_AUX5]; 
-    pitch_pref = pitch_pref / MAX_PPRZ*theta_pref_max;
+    pitch_pref = pitch_pref / MAX_PPRZ * theta_pref_max;
     Bound(pitch_pref,0.0,theta_pref_max);
   }
   u_pref[ONELOOP_ANDI_THETA_IDX] = pitch_pref;
