@@ -136,10 +136,10 @@
         <configure name="INDI_NUM_ACT" value="5"/>
 <!--        <configure name="INDI_OUTPUTS" value="4"/>-->
     </module>
-    <module name="guidance" type="indi_hybrid_nld_soaring">
-<!--        <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>-->
-<!--        <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="2500"/>-->
-    </module>
+<!--    <module name="guidance" type="indi_hybrid_nld_soaring">-->
+<!--&lt;!&ndash;        <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>&ndash;&gt;-->
+<!--&lt;!&ndash;        <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="2500"/>&ndash;&gt;-->
+<!--    </module>-->
 
 <!--      <module name="ins"           type="ekf2" />-->
       <module name="ins"           type="extended" />
@@ -243,7 +243,7 @@
             <module name="logger" type="sd_chibios"/>
             <module name="flight_recorder"/>
 
-      <module name="logger_ins_analyser" />
+<!--      <module name="logger_ins_analyser" />-->
 <!--      <module name="logger_file">-->
 <!--          <define name="FILE_LOGGER_PATH" value=""/>-->
 <!--      </module>-->
