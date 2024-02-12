@@ -267,9 +267,10 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 #endif
 
 #ifndef ONELOOP_THETA_PREF_MAX
-float theta_pref_max = 25.0;
+float theta_pref_max = DegOfRad(25.0);
+float 
 #else
-float theta_pref_max = ONELOOP_THETA_PREF_MAX;
+float theta_pref_max = DegOfRad(ONELOOP_THETA_PREF_MAX);
 #endif
 
 #if ANDI_NUM_ACT_TOT != WLS_N_U
@@ -1470,10 +1471,11 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   nu[3] = y_4d_att[0];  
   nu[4] = y_4d_att[1]; 
   nu[5] = y_4d_att[2] + g2_ff; 
-
-  pitch_pref = radio_control.values[RADIO_AUX5];
-  Bound(pitch_pref,0.0,MAX_PPRZ); 
-  pitch_pref = pitch_pref / MAX_PPRZ*theta_pref_max*M_PI/180.0;
+  if (!chirp_on){
+    pitch_pref = radio_control.values[RADIO_AUX5]; 
+    pitch_pref = pitch_pref / MAX_PPRZ*theta_pref_max;
+    Bound(pitch_pref,0.0,theta_pref_max);
+  }
   u_pref[ONELOOP_ANDI_THETA_IDX] = pitch_pref;
 
   // Calculate the min and max increments
@@ -1818,8 +1820,8 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, i
   if ((f1-f0) < -FLT_EPSILON){
     f1 = f0;
   }
-  // 0 body x, 1 body y, 2 body z
-  if (n > 2){
+  // 0 body x, 1 body y, 2 body z, 3 pitch pref
+  if (n > 3){
     n = 0;
   }
   if (n < 0){
@@ -1845,7 +1847,7 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, i
     mult_0 = -spsi;
     mult_1 = cpsi;
     mult_2 = 0.0;
-  }else{
+  }else if(n==2){
     mult_0 = 0.0;
     mult_1 = 0.0;
     mult_2 = 1.0;
@@ -1856,7 +1858,7 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, i
     v_ref[2] = v_ref_chirp * mult_2;
     a_ref[2] = a_ref_chirp * mult_2;
     j_ref[2] = j_ref_chirp * mult_2;
-  } else{
+  } else if (n < 2){
     p_ref[0] = p_ref_0[0] + p_ref_chirp * mult_0;
     p_ref[1] = p_ref_0[1] + p_ref_chirp * mult_1; 
     v_ref[0] = v_ref_chirp * mult_0;
@@ -1865,6 +1867,10 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, i
     a_ref[1] = a_ref_chirp * mult_1; 
     j_ref[0] = j_ref_chirp * mult_0;
     j_ref[1] = j_ref_chirp * mult_1;
+  } else { //Pitch preferred chirp, for now a little bit hacked in...
+    pitch_pref = p_ref_chirp;
+    pitch_pref = (pitch_pref / A + 1.0) * (theta_pref_max / 2.0);
+    Bound(pitch_pref,0.0,theta_pref_max);
   }
 }
 
