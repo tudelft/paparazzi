@@ -414,10 +414,7 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
   // temp_att_des[2] = eulers_zxy_des.psi;
   // debug_vect(trans, dev, "att_des", temp_att_des, 3);
   // debug_vect(trans, dev, "andi_u", andi_u, ANDI_NUM_ACT);
-  float temp_pref = radio_control.values[RADIO_AUX5];
-  Bound(temp_pref,0.0,MAX_PPRZ); 
-  temp_pref = temp_pref / MAX_PPRZ*theta_pref_max*M_PI/180.0;
-  float temp_pref_vect[1]={temp_pref};
+  float temp_pref_vect[1]={pitch_pref};
   debug_vect(trans, dev, "pitch_pref", temp_pref_vect, 1);
   // float   rate_vect_temp[3] = {stateGetBodyRates_f()->p, stateGetBodyRates_f()->q, stateGetBodyRates_f()->r};
   // debug_vect(trans, dev, "att_rate", rate_vect_temp, 3);
