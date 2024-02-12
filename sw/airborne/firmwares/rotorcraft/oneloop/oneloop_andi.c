@@ -266,6 +266,12 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 #define ONELOOP_ANDI_THETA_IDX  ANDI_NUM_ACT+1
 #endif
 
+#ifndef ONELOOP_THETA_PREF_MAX
+float theta_pref_max = 25.0;
+#else
+float theta_pref_max = ONELOOP_THETA_PREF_MAX;
+#endif
+
 #if ANDI_NUM_ACT_TOT != WLS_N_U
 #error Matrix-WLS_N_U is not equal to the number of actuators: define WLS_N_U == ANDI_NUM_ACT_TOT in airframe file
 #define WLS_N_U == ANDI_NUM_ACT_TOT
@@ -410,7 +416,7 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
   // debug_vect(trans, dev, "andi_u", andi_u, ANDI_NUM_ACT);
   float temp_pref = radio_control.values[RADIO_AUX5];
   Bound(temp_pref,0.0,MAX_PPRZ); 
-  temp_pref = temp_pref / MAX_PPRZ*15.0*M_PI/180.0;
+  temp_pref = temp_pref / MAX_PPRZ*theta_pref_max*M_PI/180.0;
   float temp_pref_vect[1]={temp_pref};
   debug_vect(trans, dev, "pitch_pref", temp_pref_vect, 1);
   // float   rate_vect_temp[3] = {stateGetBodyRates_f()->p, stateGetBodyRates_f()->q, stateGetBodyRates_f()->r};
@@ -1470,7 +1476,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
 
   pitch_pref = radio_control.values[RADIO_AUX5];
   Bound(pitch_pref,0.0,MAX_PPRZ); 
-  pitch_pref = pitch_pref / MAX_PPRZ*25.0*M_PI/180.0;
+  pitch_pref = pitch_pref / MAX_PPRZ*theta_pref_max*M_PI/180.0;
   u_pref[ONELOOP_ANDI_THETA_IDX] = pitch_pref;
 
   // Calculate the min and max increments
