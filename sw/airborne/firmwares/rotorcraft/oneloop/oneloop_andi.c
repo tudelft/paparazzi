@@ -259,12 +259,14 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 #define ONELOOP_ANDI_PHI_IDX  ANDI_NUM_ACT
 #endif
 
-#define ONELOOP_ANDI_MAX_BANK  act_max[ONELOOP_ANDI_PHI_IDX]
-
+#define ONELOOP_ANDI_MAX_BANK  act_max[ONELOOP_ANDI_PHI_IDX] // assuming abs of max and min is the same
+#define ONELOOP_ANDI_MAX_PHI   act_max[ONELOOP_ANDI_PHI_IDX] // assuming abs of max and min is the same
 
 #ifndef ONELOOP_ANDI_THETA_IDX
 #define ONELOOP_ANDI_THETA_IDX  ANDI_NUM_ACT+1
 #endif
+
+#define ONELOOP_ANDI_MAX_THETA   act_max[ONELOOP_ANDI_THETA_IDX] // assuming abs of max and min is the same
 
 #ifndef ONELOOP_THETA_PREF_MAX
 float theta_pref_max = RadOfDeg(25.0);
@@ -1286,8 +1288,8 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     float_vect_copy(oneloop_andi.gui_ref.acc,oneloop_andi.gui_state.acc,3);
     float_vect_zero(oneloop_andi.gui_ref.jer,3);
     // Set desired attitude with stick input
-    eulers_zxy_des.phi   = (float) (radio_control_get(RADIO_ROLL)) /MAX_PPRZ*RadOfDeg(45.0);
-    eulers_zxy_des.theta = (float) (radio_control_get(RADIO_PITCH))/MAX_PPRZ*RadOfDeg(45.0);
+    eulers_zxy_des.phi   = (float) (radio_control_get(RADIO_ROLL)) /MAX_PPRZ * ONELOOP_ANDI_MAX_PHI  ;
+    eulers_zxy_des.theta = (float) (radio_control_get(RADIO_PITCH))/MAX_PPRZ * ONELOOP_ANDI_MAX_THETA;
     // Set desired Yaw rate with stick input
     des_r = (float) (radio_control_get(RADIO_YAW))/MAX_PPRZ*max_r; 
     BoundAbs(des_r,max_r);
@@ -1537,8 +1539,8 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   if (heading_manual){
     psi_des_deg = DegOfRad(psi_des_rad);
   }  
-  stabilization_cmd[COMMAND_ROLL]  = (int16_t) (DegOfRad(eulers_zxy_des.phi  ) * MAX_PPRZ / 45.0);
-  stabilization_cmd[COMMAND_PITCH] = (int16_t) (DegOfRad(eulers_zxy_des.theta) * MAX_PPRZ / 45.0);
+  stabilization_cmd[COMMAND_ROLL]  = (int16_t) (DegOfRad(eulers_zxy_des.phi  ) * MAX_PPRZ / DegOfRad(ONELOOP_ANDI_MAX_PHI  ));
+  stabilization_cmd[COMMAND_PITCH] = (int16_t) (DegOfRad(eulers_zxy_des.theta) * MAX_PPRZ / DegOfRad(ONELOOP_ANDI_MAX_THETA));
   stabilization_cmd[COMMAND_YAW]   = (int16_t) (psi_des_deg * MAX_PPRZ / 180.0);
 }
 
