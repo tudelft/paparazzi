@@ -87,6 +87,7 @@
 #include "math/wls/wls_alloc.h"
 #include "modules/nav/nav_rotorcraft_hybrid.h"
 #include "firmwares/rotorcraft/navigation.h"
+#include "modules/rot_wing_drone/rotwing_state.h"
 #include <stdio.h>
 #if INS_EXT_POSE
 #include "modules/ins/ins_ext_pose.h"
@@ -120,6 +121,10 @@
 float num_thrusters_oneloop = 4.0; // Number of motors used for thrust
 #else
 float num_thrusters_oneloop = ONELOOP_ANDI_NUM_THRUSTERS;
+#endif
+
+#ifndef ONELOOP_ANDI_SCHEDULING
+#define ONELOOP_ANDI_SCHEDULING FALSE
 #endif
 
 #ifdef ONELOOP_ANDI_FILT_CUTOFF
@@ -397,11 +402,17 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
 
 static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
 {
-  float temp_att_des[3];
-  temp_att_des[0] = eulers_zxy_des.phi;
-  temp_att_des[1] = eulers_zxy_des.theta;
-  temp_att_des[2] = eulers_zxy_des.psi;
-  debug_vect(trans, dev, "att_des", temp_att_des, 3);
+  // float temp_att_des[3];
+  // temp_att_des[0] = eulers_zxy_des.phi;
+  // temp_att_des[1] = eulers_zxy_des.theta;
+  // temp_att_des[2] = eulers_zxy_des.psi;
+  // debug_vect(trans, dev, "att_des", temp_att_des, 3);
+  // debug_vect(trans, dev, "andi_u", andi_u, ANDI_NUM_ACT);
+  float temp_pref = radio_control.values[RADIO_AUX5];
+  Bound(temp_pref,0.0,MAX_PPRZ); 
+  temp_pref = temp_pref / MAX_PPRZ*15.0*M_PI/180.0;
+  float temp_pref_vect[1]={temp_pref};
+  debug_vect(trans, dev, "pitch_pref", temp_pref_vect, 1);
   // float   rate_vect_temp[3] = {stateGetBodyRates_f()->p, stateGetBodyRates_f()->q, stateGetBodyRates_f()->r};
   // debug_vect(trans, dev, "att_rate", rate_vect_temp, 3);
 }
@@ -492,6 +503,7 @@ static float gamma_wls = 1000.0;
 static float du_min_1l[ANDI_NUM_ACT_TOT]; 
 static float du_max_1l[ANDI_NUM_ACT_TOT];
 static float du_pref_1l[ANDI_NUM_ACT_TOT];
+static float pitch_pref = 0;
 static int   number_iter = 0;
 
 /*Complementary Filter Variables*/
@@ -1238,7 +1250,7 @@ void oneloop_andi_enter(bool half_loop_sp, int ctrl_type)
   float_vect_zero(nav_target,3);
   eulers_zxy_des.phi   =  0.0;
   eulers_zxy_des.theta =  0.0;
-  eulers_zxy_des.psi   =  0.0;
+  eulers_zxy_des.psi   =  psi_des_rad;
   float_vect_zero(model_pred,ANDI_OUTPUTS);
   /*Guidance Reset*/
 }
@@ -1456,6 +1468,11 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   nu[4] = y_4d_att[1]; 
   nu[5] = y_4d_att[2] + g2_ff; 
 
+  pitch_pref = radio_control.values[RADIO_AUX5];
+  Bound(pitch_pref,0.0,MAX_PPRZ); 
+  pitch_pref = pitch_pref / MAX_PPRZ*25.0*M_PI/180.0;
+  u_pref[ONELOOP_ANDI_THETA_IDX] = pitch_pref;
+
   // Calculate the min and max increments
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     if(i<ANDI_NUM_ACT){
@@ -1468,8 +1485,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
       du_pref_1l[i] = (u_pref[i]  - use_increment * oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
     }
   }
-    // WLS Control Allocator
-    number_iter = wls_alloc(andi_du_n, nu, du_min_1l, du_max_1l, bwls_1l, 0, 0, Wv_wls, Wu, du_pref_1l, gamma_wls, 10, ANDI_NUM_ACT_TOT, ANDI_OUTPUTS);
+ 
+  // WLS Control Allocator
+  number_iter = wls_alloc(andi_du_n, nu, du_min_1l, du_max_1l, bwls_1l, 0, 0, Wv_wls, Wu, du_pref_1l, gamma_wls, 10, ANDI_NUM_ACT_TOT, ANDI_OUTPUTS);
 
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
     andi_du[i] = (float)(andi_du_n[i] * ratio_u_un[i]);
@@ -1540,24 +1558,42 @@ void get_act_state_oneloop(void)
  */
 void sum_g1g2_1l(int ctrl_type) {
   int i = 0;
-  //struct FloatEulers *euler = stateGetNedToBodyEulers_f();
+  
+  // Trig of attitude angles
   float sphi   = sinf(eulers_zxy.phi);
   float cphi   = cosf(eulers_zxy.phi);
   float stheta = sinf(eulers_zxy.theta);
   float ctheta = cosf(eulers_zxy.theta);
   float spsi   = sinf(eulers_zxy.psi);
   float cpsi   = cosf(eulers_zxy.psi);
+  // Trig of skew
+  float skew   = 0.0;
+  if (ONELOOP_ANDI_SCHEDULING){
+    skew   = rotwing_state_skewing.wing_angle_deg;
+  }
+  float sskew  = sinf(skew);
+  float cskew  = cosf(skew);
+  float s2skew = sskew * sskew;
+  float c2skew = cskew * cskew;
+  float s3skew = sskew * s2skew;
+  float c3skew = cskew * c2skew;
+
   // float T      = 0.0;
   // for (i = 0; i < 4; i++){
   //   T += actuator_state_1l[i] * g1_1l[2][i];
   // }
   // T = T / num_thrusters_oneloop;
+
+  // Thrust and Pusher force estimation
   float T      = -g/(cphi*ctheta);//-9.81; //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
   float P      = 0.0;
   if (ONELOOP_ANDI_AC_HAS_PUSHER){
     P    = actuator_state_1l[ONELOOP_ANDI_PUSHER_IDX] * g1_1l[2][ONELOOP_ANDI_PUSHER_IDX] / ANDI_G_SCALING;
   } 
-  float scaler = 1.0;
+  float scaler  = 1.0;
+  float sched_p = 1.0; // Scheduler variable for roll axis 
+  float sched_q = 1.0; // Scheduler variable for pitch axis
+  //float I_com
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     // Effectiveness vector for real actuators (e.g. motors, servos)
     if (i < ANDI_NUM_ACT){
@@ -1565,12 +1601,26 @@ void sum_g1g2_1l(int ctrl_type) {
         scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
       } else if (ctrl_type == CTRL_INDI){
         scaler = ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
-      }        
+      }  
+      // switch (i){
+      //   case 1: 
+      //     sched_p = cskew;
+      //     sched_q = sskew * g1_1l[4][0] / g1_1l[4][1] * 0.9645; // sin(skew)*mF_effctiveness*ratio_of_arms
+      //     break; 
+      //   case 3: 
+      //     sched_p = cskew;
+      //     sched_q = sskew * g1_1l[4][2] / g1_1l[4][3] * 0.9645; // sin(skew)*mF_effctiveness*ratio_of_arms
+      //     break;
+      //   default:
+      //     sched_p = 1.0;
+      //     sched_q = 1.0;
+      //     break;
+      // }
       g1g2_1l[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * g1_1l[2][i] * scaler;
       g1g2_1l[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * g1_1l[2][i] * scaler;
       g1g2_1l[2][i] = (cphi * ctheta                       ) * g1_1l[2][i] * scaler;
-      g1g2_1l[3][i] = (g1_1l[3][i])                                        * scaler;
-      g1g2_1l[4][i] = (g1_1l[4][i])                                        * scaler;
+      g1g2_1l[3][i] = (g1_1l[3][i])                                        * scaler * sched_p;
+      g1g2_1l[4][i] = (g1_1l[4][i])                                        * scaler * sched_q;
       g1g2_1l[5][i] = (g1_1l[5][i] + g2_1l[i])                             * scaler;
       if ((ONELOOP_ANDI_AC_HAS_PUSHER)&&(i==ONELOOP_ANDI_PUSHER_IDX)){
         g1g2_1l[0][i] = (cpsi * ctheta - sphi * spsi * stheta) * g1_1l[2][i] * scaler;
