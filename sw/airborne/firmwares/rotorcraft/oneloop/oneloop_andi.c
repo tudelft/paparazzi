@@ -270,7 +270,6 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 
 #ifndef ONELOOP_THETA_PREF_MAX
 float theta_pref_max = RadOfDeg(25.0);
-float 
 #else
 float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
 #endif
@@ -334,6 +333,100 @@ void  calc_model(int ctrl_type);
 float oneloop_andi_sideslip(void);
 void  chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
 void  chirp_call(bool* chirp_on, bool* chirp_first_call, float* t_0_chirp, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
+
+/*Define general struct of the Oneloop ANDI controller*/
+struct OneloopGeneral oneloop_andi;
+
+/* Oneloop Misc variables*/
+static float use_increment = 0.0;
+static float nav_target[3]; // Can be a position, speed or acceleration depending on the guidance H mode
+static float dt_1l = 1./PERIODIC_FREQUENCY;
+static float g   = 9.81; // [m/s^2] Gravitational Acceleration
+
+/* Oneloop Control Variables*/
+float andi_u[ANDI_NUM_ACT_TOT];
+float andi_du[ANDI_NUM_ACT_TOT];
+static float andi_du_n[ANDI_NUM_ACT_TOT];
+float nu[ANDI_OUTPUTS];
+static float act_dynamics_d[ANDI_NUM_ACT_TOT];
+float actuator_state_1l[ANDI_NUM_ACT];
+static float a_thrust = 0.0;
+static float g2_ff= 0.0;
+
+/*Attitude related variables*/
+struct Int32Eulers stab_att_sp_euler_1l;// here for now to correct warning, can be better eploited in the future 
+struct Int32Quat   stab_att_sp_quat_1l; // here for now to correct warning, can be better eploited in the future
+struct FloatEulers eulers_zxy_des;
+struct FloatEulers eulers_zxy;
+//static float  psi_des_rad = 0.0;
+float  psi_des_rad = 0.0;
+float  psi_des_deg = 0.0;
+static float  psi_vec[4]  = {0.0, 0.0, 0.0, 0.0};
+bool heading_manual = true;
+
+/*WLS Settings*/
+static float gamma_wls = 1000.0;
+static float du_min_1l[ANDI_NUM_ACT_TOT]; 
+static float du_max_1l[ANDI_NUM_ACT_TOT];
+static float du_pref_1l[ANDI_NUM_ACT_TOT];
+static float pitch_pref = 0;
+static int   number_iter = 0;
+
+/*Complementary Filter Variables*/
+static float model_pred[ANDI_OUTPUTS];
+static float ang_acc[3];
+static float lin_acc[3];
+
+/*Chirp test Variables*/
+bool  chirp_on            = false;
+bool  chirp_first_call    = true;
+float time_elapsed_chirp  = 0.0;
+float t_0_chirp           = 0.0;
+float f0_chirp            = 0.8 / (2.0 * M_PI);
+float f1_chirp            = 0.8 / (2.0 * M_PI);
+float t_chirp             = 45.0;
+float A_chirp             = 1.0;
+int8_t chirp_axis         = 0;
+float p_ref_0[3]          = {0.0, 0.0, 0.0};
+
+/*Declaration of Reference Model and Error Controller Gains*/
+struct PolePlacement p_att_e;
+struct PolePlacement p_att_rm;
+/*Position Loop*/
+struct PolePlacement p_pos_e;  
+struct PolePlacement p_pos_rm;
+/*Altitude Loop*/
+struct PolePlacement p_alt_e;   
+struct PolePlacement p_alt_rm; 
+/*Heading Loop*/
+struct PolePlacement p_head_e;
+struct PolePlacement p_head_rm;
+/*Gains of EC and RM*/
+struct Gains3rdOrder k_att_e;
+struct Gains3rdOrder k_att_rm;
+struct Gains2ndOrder k_head_e;
+struct Gains2ndOrder k_head_rm;  
+struct Gains3rdOrder k_pos_e;
+struct Gains3rdOrder k_pos_rm; 
+
+/* Effectiveness Matrix definition */
+float g2_1l[ANDI_NUM_ACT_TOT]               = ONELOOP_ANDI_G2; //scaled by ANDI_G_SCALING
+float g1_1l[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT] = {ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_THRUST, ONELOOP_ANDI_G1_ROLL, ONELOOP_ANDI_G1_PITCH, ONELOOP_ANDI_G1_YAW};  
+float g1g2_1l[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
+float *bwls_1l[ANDI_OUTPUTS];
+float ratio_u_un[ANDI_NUM_ACT_TOT];
+float ratio_vn_v[ANDI_NUM_ACT_TOT];
+
+/*Filters Initialization*/
+static Butterworth2LowPass filt_accel_ned[3];                 // Low pass filter for acceleration NED (1)                       - oneloop_andi_filt_cutoff_a (tau_a)
+static Butterworth2LowPass filt_veloc_ned[3];                 // Low pass filter for velocity NED                      - oneloop_andi_filt_cutoff_a (tau_a)       
+static Butterworth2LowPass rates_filt_bt[3];                  // Low pass filter for angular rates                              - ONELOOP_ANDI_FILT_CUTOFF_P/Q/R
+static Butterworth2LowPass model_pred_la_filt[3];             // Low pass filter for model prediction linear acceleration (1)   - oneloop_andi_filt_cutoff_a (tau_a)
+static Butterworth2LowPass att_dot_meas_lowpass_filters[3];   // Low pass filter for attitude derivative measurements           - oneloop_andi_filt_cutoff (tau)
+static Butterworth2LowPass model_pred_aa_filt[3];             // Low pass filter for model prediction angular acceleration      - oneloop_andi_filt_cutoff (tau)
+static Butterworth2LowPass accely_filt;                       // Low pass filter for acceleration in y direction                - oneloop_andi_filt_cutoff (tau)
+static Butterworth2LowPass airspeed_filt;                     // Low pass filter for airspeed                                   - oneloop_andi_filt_cutoff (tau)
+
 /* Define messages of the module*/
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -473,100 +566,6 @@ static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *d
 //                                         &nps_pos_D);
 // }
 #endif
-
-/*Define general struct of the Oneloop ANDI controller*/
-struct OneloopGeneral oneloop_andi;
-
-/* Oneloop Misc variables*/
-static float use_increment = 0.0;
-static float nav_target[3]; // Can be a position, speed or acceleration depending on the guidance H mode
-static float dt_1l = 1./PERIODIC_FREQUENCY;
-static float g   = 9.81; // [m/s^2] Gravitational Acceleration
-
-/* Oneloop Control Variables*/
-float andi_u[ANDI_NUM_ACT_TOT];
-float andi_du[ANDI_NUM_ACT_TOT];
-static float andi_du_n[ANDI_NUM_ACT_TOT];
-float nu[ANDI_OUTPUTS];
-static float act_dynamics_d[ANDI_NUM_ACT_TOT];
-float actuator_state_1l[ANDI_NUM_ACT];
-static float a_thrust = 0.0;
-static float g2_ff= 0.0;
-
-/*Attitude related variables*/
-struct Int32Eulers stab_att_sp_euler_1l;// here for now to correct warning, can be better eploited in the future 
-struct Int32Quat   stab_att_sp_quat_1l; // here for now to correct warning, can be better eploited in the future
-struct FloatEulers eulers_zxy_des;
-struct FloatEulers eulers_zxy;
-//static float  psi_des_rad = 0.0;
-float  psi_des_rad = 0.0;
-float  psi_des_deg = 0.0;
-static float  psi_vec[4]  = {0.0, 0.0, 0.0, 0.0};
-bool heading_manual = true;
-
-/*WLS Settings*/
-static float gamma_wls = 1000.0;
-static float du_min_1l[ANDI_NUM_ACT_TOT]; 
-static float du_max_1l[ANDI_NUM_ACT_TOT];
-static float du_pref_1l[ANDI_NUM_ACT_TOT];
-static float pitch_pref = 0;
-static int   number_iter = 0;
-
-/*Complementary Filter Variables*/
-static float model_pred[ANDI_OUTPUTS];
-static float ang_acc[3];
-static float lin_acc[3];
-
-/*Chirp test Variables*/
-bool  chirp_on            = false;
-bool  chirp_first_call    = true;
-float time_elapsed_chirp  = 0.0;
-float t_0_chirp           = 0.0;
-float f0_chirp            = 0.8 / (2.0 * M_PI);
-float f1_chirp            = 0.8 / (2.0 * M_PI);
-float t_chirp             = 45.0;
-float A_chirp             = 1.0;
-int8_t chirp_axis         = 0;
-float p_ref_0[3]          = {0.0, 0.0, 0.0};
-
-/*Declaration of Reference Model and Error Controller Gains*/
-struct PolePlacement p_att_e;
-struct PolePlacement p_att_rm;
-/*Position Loop*/
-struct PolePlacement p_pos_e;  
-struct PolePlacement p_pos_rm;
-/*Altitude Loop*/
-struct PolePlacement p_alt_e;   
-struct PolePlacement p_alt_rm; 
-/*Heading Loop*/
-struct PolePlacement p_head_e;
-struct PolePlacement p_head_rm;
-/*Gains of EC and RM*/
-struct Gains3rdOrder k_att_e;
-struct Gains3rdOrder k_att_rm;
-struct Gains2ndOrder k_head_e;
-struct Gains2ndOrder k_head_rm;  
-struct Gains3rdOrder k_pos_e;
-struct Gains3rdOrder k_pos_rm; 
-
-/* Effectiveness Matrix definition */
-float g2_1l[ANDI_NUM_ACT_TOT]               = ONELOOP_ANDI_G2; //scaled by ANDI_G_SCALING
-float g1_1l[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT] = {ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_THRUST, ONELOOP_ANDI_G1_ROLL, ONELOOP_ANDI_G1_PITCH, ONELOOP_ANDI_G1_YAW};  
-float g1g2_1l[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
-float *bwls_1l[ANDI_OUTPUTS];
-float ratio_u_un[ANDI_NUM_ACT_TOT];
-float ratio_vn_v[ANDI_NUM_ACT_TOT];
-
-/*Filters Initialization*/
-static Butterworth2LowPass filt_accel_ned[3];                 // Low pass filter for acceleration NED (1)                       - oneloop_andi_filt_cutoff_a (tau_a)
-static Butterworth2LowPass filt_veloc_ned[3];                 // Low pass filter for velocity NED                      - oneloop_andi_filt_cutoff_a (tau_a)       
-static Butterworth2LowPass rates_filt_bt[3];                  // Low pass filter for angular rates                              - ONELOOP_ANDI_FILT_CUTOFF_P/Q/R
-static Butterworth2LowPass model_pred_la_filt[3];             // Low pass filter for model prediction linear acceleration (1)   - oneloop_andi_filt_cutoff_a (tau_a)
-static Butterworth2LowPass att_dot_meas_lowpass_filters[3];   // Low pass filter for attitude derivative measurements           - oneloop_andi_filt_cutoff (tau)
-static Butterworth2LowPass model_pred_aa_filt[3];             // Low pass filter for model prediction angular acceleration      - oneloop_andi_filt_cutoff (tau)
-static Butterworth2LowPass accely_filt;                       // Low pass filter for acceleration in y direction                - oneloop_andi_filt_cutoff (tau)
-static Butterworth2LowPass airspeed_filt;                     // Low pass filter for airspeed                                   - oneloop_andi_filt_cutoff (tau)
-
 
 /** @brief Function to make sure that inputs are positive non zero vaues*/
 static float positive_non_zero(float input)
