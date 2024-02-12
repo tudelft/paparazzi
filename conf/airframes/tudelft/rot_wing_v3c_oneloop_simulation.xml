@@ -246,7 +246,7 @@
         <define name  = "AC_HAS_PUSHER"             value = "TRUE"/>
         <define name  = "PUSHER_IDX"                value = "4"/>
         <define name  = "WV"                        value = "{1.0f, 1.0f, 1.0f, 1000.0f, 1000.0f, 100.0f}"/>
-        <define name  = "WU"                        value = "{3.0f, 3.0f, 3.0f, 3.0f, 1.0f, 2.0f, 2.0f}"/>
+        <define name  = "WU"                        value = "{0.75f, 0.75f, 0.75f, 0.75f, 1.0f, 2.0f, 2.0f}"/>
         <define name  = "U_PREF"                    value = "{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}"/>
     </section>
 
