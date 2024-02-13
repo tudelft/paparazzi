@@ -509,9 +509,15 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
   // temp_att_des[1] = eulers_zxy_des.theta;
   // temp_att_des[2] = eulers_zxy_des.psi;
   // debug_vect(trans, dev, "att_des", temp_att_des, 3);
+  float temp_debug_vect[ANDI_NUM_ACT_TOT+1];
+  for (int i = 0; i < ANDI_NUM_ACT_TOT; i++) {
+    temp_debug_vect[i] = andi_u[i];
+  }
+  temp_debug_vect[ANDI_NUM_ACT_TOT] = pitch_pref;
+  debug_vect(trans, dev, "andi_u_pitch_pref", temp_debug_vect, ANDI_NUM_ACT_TOT+1);
   // debug_vect(trans, dev, "andi_u", andi_u, ANDI_NUM_ACT);
-  float temp_pref_vect[1]={pitch_pref};
-  debug_vect(trans, dev, "pitch_pref", temp_pref_vect, 1);
+  // float temp_pref_vect[1]={pitch_pref};
+  // debug_vect(trans, dev, "pitch_pref", temp_pref_vect, 1);
   // float   rate_vect_temp[3] = {stateGetBodyRates_f()->p, stateGetBodyRates_f()->q, stateGetBodyRates_f()->r};
   // debug_vect(trans, dev, "att_rate", rate_vect_temp, 3);
 }
