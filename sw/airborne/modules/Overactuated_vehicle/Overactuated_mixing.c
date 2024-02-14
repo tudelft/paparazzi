@@ -161,6 +161,7 @@ float Dynamic_MOTOR_K_T_OMEGASQ;
 float CL_ailerons = VEHICLE_CL_AILERONS;
 float roll_pwm_cmd; 
 
+float Cm_alpha = VEHICLE_CM_ALPHA;
 float extra_lat_gain = 0.8; 
 
 //Variables for the NONLINEAR_CA_DEBUG message: 
@@ -1084,7 +1085,7 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[20] = (OVERACTUATED_MIXING_MIN_AOA_INDI * 180/M_PI);
     extra_data_out_local[21] = (OVERACTUATED_MIXING_MAX_PHI_INDI * 180/M_PI);
     extra_data_out_local[22] = VEHICLE_CM_ZERO;
-    extra_data_out_local[23] = VEHICLE_CM_ALPHA;
+    extra_data_out_local[23] = Cm_alpha;
     extra_data_out_local[24] = VEHICLE_CL_ALPHA;
     extra_data_out_local[25] = VEHICLE_CD_ZERO;
     extra_data_out_local[26] = VEHICLE_K_CD;

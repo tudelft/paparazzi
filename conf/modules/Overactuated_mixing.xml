@@ -43,6 +43,8 @@
 
         <dl_setting var="slider_power_cda"  min="0" step=".01" max="2" shortname="power_cda" />
 
+        <dl_setting var="Cm_alpha"  min="0" step=".01" max="2" module="Overactuated_vehicle/Overactuated_mixing" param="VEHICLE_CM_ALPHA" shortname="Cm_alpha" persistent="true"/>
+
         <dl_setting var="overestimation_coeff"  min="0" step=".01" max="2" shortname="overest_coeff" />
 
         <dl_setting var="K_beta"  min="-5" step=".01" max="5" shortname="K_beta" />
