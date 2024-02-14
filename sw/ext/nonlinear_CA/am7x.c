@@ -346,7 +346,6 @@ void* second_thread() //Run the optimization code
 
     float prop_radius_input = extra_data_in_copy[72];   
 
-    float gain_increase_AoA_input = extra_data_in_copy[73]; 
 
     // Real time variables:
     double Phi = (myam7_data_in_copy.phi_state_int*1e-2 * M_PI/180);
@@ -507,8 +506,11 @@ void* second_thread() //Run the optimization code
      desired_phi_value,  desired_ailerons_value,
      k_alt_tilt_constraint,  min_alt_tilt_constraint,
      lidar_alt_corrected,  approach_mode,  verbose_optimizer,
-     speed_aoa_protection,  transition_speed,  u_out,
-     residuals,  &elapsed_time,  &N_iterations,
+     speed_aoa_protection,  transition_speed,
+     slider_power_cd0,  slider_power_cda,  prop_cl0_input,  prop_cla_input,  prop_cd0_input,
+     prop_cda_input,  prop_cm0_input,  prop_cma_input,  prop_sigma_input,
+     prop_c_tip_input,  prop_delta_input,  prop_theta_input,  prop_radius_input,
+     u_out, residuals,  &elapsed_time,  &N_iterations,
      &N_evaluation,  &exitflag);
 
     //Convert the function output into integer to be transmitted to the pixhawk again: 
