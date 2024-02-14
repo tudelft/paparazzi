@@ -322,7 +322,7 @@ NOTES:
         <!--        AOA sensor thru Teensy 4-->
         <module name="aoa_t4">
             <define name="AOA_T4_SERVO_ID" value="8"/>
-            <define name="AOA_T4_OFFSET" value="-0.66"/>    <!-- in rad -->
+            <define name="AOA_T4_OFFSET" value="-0.7647"/>    <!-- in rad -->
             <define name="AOA_T4_SIGN" value="-1"/>
             <define name="AOA_T4_USE_LOWPASS_FILTER" value="FALSE"/>
             <define name="AOA_T4_LOWPASS_TAU" value="0.15"/>
@@ -927,11 +927,12 @@ NOTES:
 <!--    <define name="INS_EKF2_MAG_FUSION_TYPE" value="0"/> &lt;!&ndash; 5 is NONE  AUTO|HEADING|3D|AUTOFW|INDOOR|NONE &ndash;&gt;-->
 <!--    <define name="INS_EKF2_VDIST_SENSOR_TYPE" value="VDIST_SENSOR_GPS"/>-->
 
-<!--      <define name="INS_EKF2_MAG_FUSION_TYPE" value="4"/>-->
-<!--      <define name="INS_EKF2_FUSION_MODE" value="MASK_USE_GPS | MASK_USE_OF"/>-->
-<!--      <define name="INS_EKF2_VDIST_SENSOR_TYPE" value="VDIST_SENSOR_GPS"/>-->
 <!--      <define name="INS_EKF2_GPS_CHECK_MASK" value="0"/>-->
 <!--      <define name="INS_EKF2_GPS_COURSE_YAW" value="FALSE"/>-->
+<!--      <define name="INS_EKF2_GPS_RTK_YAW" value="TRUE"/>-->
+<!--      &lt;!&ndash;    <define name="INS_EKF2_GPS_RTK_YAW" value="FALSE"/>&ndash;&gt;-->
+<!--      <define name="INS_EKF2_FUSION_MODE" value="MASK_USE_GPS | MASK_USE_GPSYAW"/>-->
+<!--      <define name="INS_EKF2_MAG_FUSION_TYPE" value="0"/>-->
   </section>
 
   <section name="PHOTOGRAMMETRY" prefix="PHOTOGRAMMETRY_">

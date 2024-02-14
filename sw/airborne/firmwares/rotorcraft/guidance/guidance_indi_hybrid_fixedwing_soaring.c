@@ -589,6 +589,11 @@ void guidance_indi_hybrid_soaring_reset(void) {
 void run_soaring_search(void){
     struct NedCoor_f *groundspeed = stateGetSpeedNed_f();
 
+    // save wp info for logging
+    wp_pos_x = waypoints[soar_wp_id].enu_i.y;
+    wp_pos_y = waypoints[soar_wp_id].enu_i.x;
+    wp_pos_z = waypoints[soar_wp_id].enu_i.z;
+
     // if in soaring mode
     if (soaring_explore_positions && soaring_mode_running) {
         // count for timeout
