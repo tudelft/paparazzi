@@ -1153,8 +1153,6 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[71] = prop_theta;
 
     extra_data_out_local[72] = prop_radius;   
-
-    extra_data_out_local[73] = gain_increase_AoA; 
 }
 
 /**
