@@ -162,7 +162,7 @@ float CL_ailerons = VEHICLE_CL_AILERONS;
 float roll_pwm_cmd; 
 
 float Cm_alpha = VEHICLE_CM_ALPHA;
-float extra_lat_gain = 0.8; 
+float extra_lat_gain = 0.55; 
 
 //Variables for the NONLINEAR_CA_DEBUG message: 
 float feed_fwd_term_yaw, feed_back_term_yaw;

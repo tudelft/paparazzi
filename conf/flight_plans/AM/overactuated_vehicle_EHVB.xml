@@ -23,11 +23,11 @@
   <waypoints>
     <waypoint name="HOME" x="12.6" y="-48.7"/>
     <waypoint name="CLIMB" x="62.6" y="-80.4"/>
-    <waypoint lat="52.1682794" lon="4.4139911" name="STDBY"/>
-    <waypoint lat="52.1694940" lon="4.4155585" name="p1"/>
-    <waypoint lat="52.167791" lon="4.416685" name="p2"/>
-    <waypoint lat="52.1671481" lon="4.4141374" name="p3"/>
-    <waypoint lat="52.1689418" lon="4.4132070" name="p4"/>
+    <waypoint lat="52.168344" lon="4.414550" name="STDBY"/>
+    <waypoint lat="52.169438" lon="4.415241" name="p1"/>
+    <waypoint lat="52.167374" lon="4.414239" name="p2"/>
+    <waypoint lat="52.167917" lon="4.416266" name="p3"/>
+    <waypoint lat="52.168942" lon="4.413207" name="p4"/>
     <waypoint lat="52.1681602" lon="4.4127708" name="TD"/>
     <waypoint lat="52.1680902" lon="4.4148029" name="APP"/>
     <waypoint lat="52.1686922" lon="4.4149181" name="FOLLOW"/>
@@ -114,7 +114,7 @@
       <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>
       <call_once fun="NavKillThrottle()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" pre_call="NavKillThrottle()" vmode="throttle"/>
+      <attitude pitch="0" pre_call="NavKillThrottle()" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="Start Engine">
       <set value="1" var="approach_state"/>
@@ -223,9 +223,7 @@
     <block name="flare_low">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
-      <!-- <exception cond="NavDetectGround()" deroute="Holding point"/> -->
       <exception cond="detect_ground_on_landing()" deroute="landed"/>
-      <!-- <call_once fun="NavStartDetectGround()"/> -->
       <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">
