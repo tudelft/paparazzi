@@ -112,7 +112,7 @@
 
   <init fun="guidance_indi_soaring_init()"/>
   <init fun="guidance_indi_soaring_enter()"/>
-  <periodic fun="run_soaring_search()" freq="PERIODIC_FREQUENCY" autorun="TRUE"/>
+  <periodic fun="run_soaring_search()" freq="100" autorun="TRUE"/>
 
   <makefile target="ap|nps" firmware="rotorcraft">
     <define name="GUIDANCE_INDI_SOARING" value="TRUE"/>

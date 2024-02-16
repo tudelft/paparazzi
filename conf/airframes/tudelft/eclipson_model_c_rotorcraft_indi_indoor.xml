@@ -98,7 +98,7 @@
 <!--      <configure name="MODEM_BAUD" value="B57600"/>-->
 <!--    </module>-->
       <module name="telemetry"     type="transparent">
-          <configure name="MODEM_BAUD" value="115200"/>
+          <configure name="MODEM_BAUD" value="230400"/>
           <configure name="MODEM_PORT" value="UART2"/>
       </module>
 

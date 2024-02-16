@@ -282,7 +282,7 @@ NOTES:
         <define name="CE_PITCH_B" value="0.04697"/>
         <define name="CE_YAW_A" value="1.0517310"/>
         <define name="CE_YAW_B" value="0.02811938"/>
-        <define name="CE_ROLL_A" value="1.027970"/>
+        <define name="CE_ROLL_A" value="2.027970"/>
         <define name="CE_ROLL_B" value="0.0342179"/>
 
         <define name="CTRL_EFFECTIVENESS_SEND_SCHEDULING_MSG" value="1"/>
@@ -601,12 +601,12 @@ NOTES:
 <!--      IMU ACCEL CALIB on 201223 (new pixhawk mount)-->
 <!--      <define name="IMU_ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={-411,19,-58}, .scale={{34909,55408,49891},{7605,11335,10345}}}}"/>-->
 
-      <define name="ACCEL_X_NEUTRAL" value="-411"/>
-      <define name="ACCEL_Y_NEUTRAL" value="19"/>
-      <define name="ACCEL_Z_NEUTRAL" value="-58"/>
-      <define name="ACCEL_X_SENS" value="4.590269558543954" integer="16"/>
-      <define name="ACCEL_Y_SENS" value="4.8882223167402445" integer="16"/>
-      <define name="ACCEL_Z_SENS" value="4.822716288246021" integer="16"/>
+<!--      <define name="ACCEL_X_NEUTRAL" value="-411"/>-->
+<!--      <define name="ACCEL_Y_NEUTRAL" value="19"/>-->
+<!--      <define name="ACCEL_Z_NEUTRAL" value="-58"/>-->
+<!--      <define name="ACCEL_X_SENS" value="4.590269558543954" integer="16"/>-->
+<!--      <define name="ACCEL_Y_SENS" value="4.8882223167402445" integer="16"/>-->
+<!--      <define name="ACCEL_Z_SENS" value="4.822716288246021" integer="16"/>-->
 
       <!-- Calibrate Accelometer on 150423 20:40 UTC-->
     <!-- <define name="IMU_ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={-410,19,-56}, .scale={{13420,4554,56119},{2923,931,11629}}}}"/> -->
@@ -627,12 +627,12 @@ NOTES:
     <!-- 21 Jun -->
 <!--    <define name="IMU_ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={-407,18,-49}, .scale={{14713,65147,44283},{3206,13329,9179}}}}"/>-->
 
-<!--    <define name="ACCEL_X_NEUTRAL" value="-407"/>-->
-<!--    <define name="ACCEL_Y_NEUTRAL" value="18"/>-->
-<!--    <define name="ACCEL_Z_NEUTRAL" value="-49"/>-->
-<!--    <define name="ACCEL_X_SENS" value="4.589207743272013" integer="16"/>-->
-<!--    <define name="ACCEL_Y_SENS" value="4.887613475410681" integer="16"/>-->
-<!--    <define name="ACCEL_Z_SENS" value="4.824381742140296" integer="16"/>-->
+    <define name="ACCEL_X_NEUTRAL" value="-407"/>
+    <define name="ACCEL_Y_NEUTRAL" value="18"/>
+    <define name="ACCEL_Z_NEUTRAL" value="-49"/>
+    <define name="ACCEL_X_SENS" value="4.589207743272013" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="4.887613475410681" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="4.824381742140296" integer="16"/>
 
 
     <!--    CAMPUS ON MAY 10 2023-->
@@ -737,9 +737,9 @@ NOTES:
     <define name="G2" value="{0, 0, 0, 0, 0}"/>
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="30.0"/>
-    <define name="REF_ERR_Q" value="30.0"/>
-    <define name="REF_ERR_R" value="30.0"/>
+    <define name="REF_ERR_P" value="80.0"/>
+    <define name="REF_ERR_Q" value="60.0"/>
+    <define name="REF_ERR_R" value="60.0"/>
 <!--      <define name="REF_ERR_P" value="70.0"/>-->
 <!--      <define name="REF_ERR_Q" value="120.0"/>-->
 <!--      <define name="REF_ERR_R" value="90.0"/>-->
@@ -822,7 +822,7 @@ NOTES:
 
       <define name="HYBRID_USE_WLS" value="TRUE"/>
       <define name="HYBRID_USE_OLD_WLS" value="TRUE"/>  <!-- define this to use the old version -->
-      <define name="HYBRID_WLS_PRIORITIES" value="{1.0, 100.0, 1.0}"/>
+      <define name="HYBRID_WLS_PRIORITIES" value="{10.0, 100.0, 1.0}"/>
 <!--      <define name="HYBRID_WU" value="{1.0, 1.0, 6.5}" />-->
 
       <!--    SOARING-->
@@ -836,23 +836,23 @@ NOTES:
     <define name="POS_CTRL" value="TRUE"/>
     <define name="Y_POSITION_CTRL" value="TRUE"/>
 
-    <define name="SOARING_STEP_BIG" value="1.0"/>
-    <define name="SOARING_STEP_MED" value="0.5"/>
-    <define name="SOARING_STEP_SMALL" value="0.3"/>
-    <define name="SOARING_STEP_FINE" value="0.1"/>
+    <define name="SOARING_STEP_BIG" value="0.3"/>
+    <define name="SOARING_STEP_MED" value="0.2"/>
+    <define name="SOARING_STEP_SMALL" value="0.1"/>
+    <define name="SOARING_STEP_FINE" value="0.05"/>
 
     <define name="SOARING_WP_ARRIVAL_DIST" value="3"/>  <!-- in meters, 3d dist-->
     <define name="SOARING_WP_STAY_DURATION" value="10"/> <!-- WP arrival count -->
     <define name="SOARING_WP_WAIT_SEC" value="30"/> <!-- in sec, timeout for unreachable WP -->
-    <define name="SOARING_MIN_ALT" value="5"/> <!-- minimum altitude for moving WP -->
+    <define name="SOARING_MIN_ALT" value="1"/> <!-- minimum altitude for moving WP -->
 
     <define name="SOARING_USE_FIXED_HEADING_WP" value="TRUE" /> <!-- use wp to set heading sp, -->
-    <define name="SOARING_HEADING_GAIN" value="0.05" />
+    <define name="SOARING_HEADING_GAIN" value="0.1" />
 
       <!-- 100 steps * 30 sec = 3000 sec = 50 min (maximum) -->
       <!-- 100 steps * 10 sec = 1000 sec = 16.6 min -->
     <define name="SOARING_MAX_EXPLORATION_STEPS" value="100" /> <!-- max search steps -->
-    <define name="SOARING_WP_COST_THRES" value="70"/>
+    <define name="SOARING_WP_COST_THRES" value="60"/>
 
     <!-- define WP ids -->
     <define name="SOARING_STDBY_WP_ID" value="2"/>
