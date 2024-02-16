@@ -59,20 +59,22 @@
 // they are probably limited by the update rate of your GPS. The default
 // values are tuned for 4 Hz GPS updates. If you have high speed position updates, the
 // gains can be higher, depending on the speed of the inner loop.
-#ifndef GUIDANCE_INDI_SPEED_GAIN
-#define GUIDANCE_INDI_SPEED_GAIN 1.8
-#define GUIDANCE_INDI_SPEED_GAINZ 1.8
-#endif
-
-#ifndef GUIDANCE_INDI_POS_GAIN
-#define GUIDANCE_INDI_POS_GAIN 0.5
-#define GUIDANCE_INDI_POS_GAINZ 0.5
-#endif
-
-#ifndef GUIDANCE_INDI_MIN_PITCH
-#define GUIDANCE_INDI_MIN_PITCH -120
-#define GUIDANCE_INDI_MAX_PITCH -60
-#endif
+//#ifndef GUIDANCE_INDI_SPEED_GAIN
+//#define GUIDANCE_INDI_SPEED_GAIN 1.8
+//#define GUIDANCE_INDI_SPEED_GAINY 1.8
+//#define GUIDANCE_INDI_SPEED_GAINZ 1.8
+//#endif
+//
+//#ifndef GUIDANCE_INDI_POS_GAIN
+//#define GUIDANCE_INDI_POS_GAIN 0.5
+//#define GUIDANCE_INDI_POS_GAINY 0.5
+//#define GUIDANCE_INDI_POS_GAINZ 0.5
+//#endif
+//
+//#ifndef GUIDANCE_INDI_MIN_PITCH
+//#define GUIDANCE_INDI_MIN_PITCH -120
+//#define GUIDANCE_INDI_MAX_PITCH -60
+//#endif
 
 
 //struct guidance_indi_hybrid_params gih_params = {
@@ -240,6 +242,10 @@
 #define GUIDANCE_INDI_SOARING_MAX_EXPLORATION_STEPS 1000
 #endif
 
+#ifndef GUIDANCE_INDI_SOARING_BODY_IS_NED
+#define GUIDANCE_INDI_SOARING_BODY_IS_NED FALSE
+#endif
+
 // 90 deg pitch offset
 //#ifndef GUIDANCE_INDI_SOARING_USE_90_OFFSET
 //#define GUIDANCE_INDI_SOARING_USE_90_OFFSET FALSE
@@ -253,6 +259,7 @@
 // 2m/0.1 = 20 data points for one axis
 #define MAP_MAX_NUM_POINTS 400
 
+bool move_wp_body_is_ned = GUIDANCE_INDI_SOARING_BODY_IS_NED;
 bool speed_sp_from_position = GUIDANCE_INDI_POS_CTRL;
 bool y_position_ctrl = GUIDANCE_INDI_Y_POSITION_CTRL;
 float guidance_soaring_max_throttle = GUIDANCE_INDI_MAX_THROTTLE;
@@ -480,10 +487,17 @@ void guidance_indi_soaring_move_wp(float cost_avg_val){
     float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
     float psi = eulers_zxy.psi;
 
-    // rotate wp body to ned
-    amount_to_move_ned.x = cosf(psi)*amount_to_move_body.x - sinf(psi)*amount_to_move_body.y;
-    amount_to_move_ned.y = sinf(psi)*amount_to_move_body.x + cosf(psi)*amount_to_move_body.y;
-    amount_to_move_ned.z = amount_to_move_body.z;   // z doesn't change
+    if (move_wp_body_is_ned) {
+        // else move the wp in NED (for indoor test)
+        amount_to_move_ned.x = amount_to_move_body.x;
+        amount_to_move_ned.y = amount_to_move_body.y;
+        amount_to_move_ned.z = amount_to_move_body.z;   // z doesn't change
+    } else {
+        // rotate wp body to ned
+        amount_to_move_ned.x = cosf(psi) * amount_to_move_body.x - sinf(psi) * amount_to_move_body.y;
+        amount_to_move_ned.y = sinf(psi) * amount_to_move_body.x + cosf(psi) * amount_to_move_body.y;
+        amount_to_move_ned.z = amount_to_move_body.z;   // z doesn't change
+    }
 
     // move waypoints
     waypoints[soar_wp_id].enu_i.x += POS_BFP_OF_REAL(amount_to_move_ned.y);
@@ -648,12 +662,19 @@ void run_soaring_search(void){
             amount_to_move_body.y = soaring_wp_move_right;
             amount_to_move_body.z = -soaring_wp_move_up;
 
-            // rotate wp body to ned
-            amount_to_move_ned.x = cosf(psi)*amount_to_move_body.x - sinf(psi)*amount_to_move_body.y;
-            amount_to_move_ned.y = sinf(psi)*amount_to_move_body.x + cosf(psi)*amount_to_move_body.y;
-            amount_to_move_ned.z = amount_to_move_body.z;   // z doesn't change
+            if (move_wp_body_is_ned) {
+                // body == ned; (for indoor test)
+                amount_to_move_ned.x = amount_to_move_body.x;
+                amount_to_move_ned.y = amount_to_move_body.y;
+                amount_to_move_ned.z = amount_to_move_body.z;   // z doesn't change
+            } else {
+                // rotate wp body to ned
+                amount_to_move_ned.x = cosf(psi) * amount_to_move_body.x - sinf(psi) * amount_to_move_body.y;
+                amount_to_move_ned.y = sinf(psi) * amount_to_move_body.x + cosf(psi) * amount_to_move_body.y;
+                amount_to_move_ned.z = amount_to_move_body.z;   // z doesn't change
+            }
 
-            // move waypoints
+                // move waypoints
             waypoints[soar_wp_id].enu_i.x += POS_BFP_OF_REAL(amount_to_move_ned.y);
             waypoints[soar_wp_id].enu_i.y += POS_BFP_OF_REAL(amount_to_move_ned.x);
             waypoints[soar_wp_id].enu_i.z += POS_BFP_OF_REAL(-1.0*amount_to_move_ned.z);
@@ -712,7 +733,7 @@ struct FloatVect3 compute_soaring_accel_sp(struct HorizontalGuidance *gh, struct
     pos_err.z = POS_FLOAT_OF_BFP(gv->z_ref) - stateGetPositionNed_f()->z;
 
     speed_sp.x = pos_err.x * gih_params.pos_gain;
-    speed_sp.y = pos_err.y * gih_params.pos_gain;
+    speed_sp.y = pos_err.y * gih_params.pos_gainy;
     speed_sp.z = pos_err.z * gih_params.pos_gainz;
     Bound(speed_sp.z, -nav.climb_vspeed, -nav.descend_vspeed);   // FIXME vspeeds
     // climb >0 descend <0 ???? wtf.. z up?
@@ -721,7 +742,7 @@ struct FloatVect3 compute_soaring_accel_sp(struct HorizontalGuidance *gh, struct
         speed_sp.z = 1.0f;
     }
     accel_sp.x = (speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain;
-    accel_sp.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain;
+    accel_sp.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gainy;
     accel_sp.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
 
 //    FIXME: failsafe

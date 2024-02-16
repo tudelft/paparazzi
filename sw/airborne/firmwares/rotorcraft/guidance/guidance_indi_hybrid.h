@@ -71,8 +71,10 @@ extern struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight, struc
 
 struct guidance_indi_hybrid_params {
   float pos_gain;
+  float pos_gainy;
   float pos_gainz;
   float speed_gain;
+  float speed_gainy;
   float speed_gainz;
   float heading_bank_gain;
   float liftd_asq;

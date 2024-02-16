@@ -61,6 +61,7 @@
           <dl_setting var="stay_wp_duration" min="0" step="0.5" max="20" shortname="wp_arr_count"/>
           <dl_setting var="arrival_check_dist_3d" min="0" step="0.1" max="10" shortname="wp_arrival_dist"/>
 
+          <dl_setting var="move_wp_body_is_ned" min="0" step="1" max="1" shortname="body_is_ned" />
           <!--          <dl_setting var="heading_target.x" min="1.0" step="0.5" max="50" shortname="heading_target_x"/>-->
           <!--          <dl_setting var="heading_target.y" min="-10.0" step="0.5" max="1.0" shortname="heading_target_y"/>-->
         </dl_settings>

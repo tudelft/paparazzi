@@ -20,12 +20,14 @@
         <dl_setting var="gih_params.liftd_p80" min="1.0" step="0.1" max="20.0" shortname="liftd_p80" param="GUIDANCE_INDI_LIFTD_P50" persistent="true"/>
         <dl_setting var="gih_params.liftd_asq" min="0.01" step="0.01" max="1.0" shortname="liftd_asq" param="GUIDANCE_INDI_LIFTD_ASQ" persistent="true"/>
         <dl_setting var="gih_params.pos_gain" min="0" step="0.1" max="10.0" shortname="kp" param="GUIDANCE_INDI_POS_GAIN" persistent="true"/>
+        <dl_setting var="gih_params.pos_gainy" min="0" step="0.1" max="10.0" shortname="kp_y" param="GUIDANCE_INDI_POS_GAINY" persistent="true"/>
         <dl_setting var="gih_params.pos_gainz" min="0" step="0.1" max="10.0" shortname="kp_z" param="GUIDANCE_INDI_POS_GAINZ" persistent="true"/>
         <dl_setting var="gih_params.speed_gain" min="0" step="0.1" max="10.0" shortname="kd" param="GUIDANCE_INDI_SPEED_GAIN" persistent="true"/>
+        <dl_setting var="gih_params.speed_gainy" min="0" step="0.1" max="10.0" shortname="kd_y" param="GUIDANCE_INDI_SPEED_GAINY" persistent="true"/>
         <dl_setting var="gih_params.speed_gainz" min="0" step="0.1" max="10.0" shortname="kd_z" param="GUIDANCE_INDI_SPEED_GAINZ" persistent="true"/>
         <dl_setting var="gih_params.heading_bank_gain" min="0" step="0.1" max="30.0" shortname="bank gain" param="GUIDANCE_INDI_HEADING_BANK_GAIN" persistent="true"/>
         <dl_setting var="guidance_indi_max_airspeed" min="12.0" step="1.0" max="30.0" shortname="cruise_airspeed" param="GUIDANCE_INDI_MAX_AIRSPEED"/>
-        <dl_setting var="guidance_indi_max_bank" min="10.0" step="1.0" max="50.0" shortname="max_bank" param="GUIDANCE_H_MAX_BANK"/>
+        <dl_setting var="guidance_indi_max_bank" min="-2" step="0.05" max="2" shortname="max_bank" param="GUIDANCE_H_MAX_BANK"/>
         <dl_setting var="guidance_indi_min_pitch" min="-130.0" step="1.0" max="-30.0" shortname="min_pitch" param="GUIDANCE_INDI_MIN_PITCH"/>
         <dl_setting var="take_heading_control" min="0" step="1" max="1" values="OFF|ON" shortname="take_heading"/>
       </dl_settings>

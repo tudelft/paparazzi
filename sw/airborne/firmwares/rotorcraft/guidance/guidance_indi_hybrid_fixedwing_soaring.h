@@ -85,6 +85,8 @@ struct SoaringPositionMap {
 
 //extern struct FloatVect3 guidance_wind_gradient;
 
+extern bool move_wp_body_is_ned;
+
 extern float guidance_soaring_max_throttle;
 extern bool speed_sp_from_position;
 extern bool y_position_ctrl;

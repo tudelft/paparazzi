@@ -48,11 +48,13 @@
 #ifndef GUIDANCE_INDI_SPEED_GAIN
 #define GUIDANCE_INDI_SPEED_GAIN 1.8
 #define GUIDANCE_INDI_SPEED_GAINZ 1.8
+#define GUIDANCE_INDI_SPEED_GAINY 1.8
 #endif
 
 #ifndef GUIDANCE_INDI_POS_GAIN
 #define GUIDANCE_INDI_POS_GAIN 0.5
 #define GUIDANCE_INDI_POS_GAINZ 0.5
+#define GUIDANCE_INDI_POS_GAINY 0.5
 #endif
 
 #ifndef GUIDANCE_INDI_LIFTD_ASQ
@@ -70,9 +72,11 @@
 
 struct guidance_indi_hybrid_params gih_params = {
   .pos_gain = GUIDANCE_INDI_POS_GAIN,
+  .pos_gainy = GUIDANCE_INDI_POS_GAINY,
   .pos_gainz = GUIDANCE_INDI_POS_GAINZ,
 
   .speed_gain = GUIDANCE_INDI_SPEED_GAIN,
+  .speed_gainy = GUIDANCE_INDI_SPEED_GAINY,
   .speed_gainz = GUIDANCE_INDI_SPEED_GAINZ,
 
   .heading_bank_gain = GUIDANCE_INDI_HEADING_BANK_GAIN,

@@ -280,10 +280,10 @@ NOTES:
         <!--      tune from 1 and 2 -->
         <define name="CE_PITCH_A" value="0.68"/>
         <define name="CE_PITCH_B" value="0.04697"/>
-        <define name="CE_YAW_A" value="1.0517310"/>
-        <define name="CE_YAW_B" value="0.02811938"/>
-        <define name="CE_ROLL_A" value="2.027970"/>
-        <define name="CE_ROLL_B" value="0.0342179"/>
+        <define name="CE_YAW_A" value="0.517310"/>
+        <define name="CE_YAW_B" value="0.01511938"/>
+        <define name="CE_ROLL_A" value="0.3027970"/>
+        <define name="CE_ROLL_B" value="0.0162179"/>
 
         <define name="CTRL_EFFECTIVENESS_SEND_SCHEDULING_MSG" value="1"/>
       </module>
@@ -802,8 +802,10 @@ NOTES:
 
   <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
       <define name="POS_GAIN" value="0.4"/>
-      <define name="POS_GAINZ" value="0.7"/>
+      <define name="POS_GAINY" value="0.2"/>
+      <define name="POS_GAINZ" value="0.4"/>
       <define name="SPEED_GAIN" value="0.7"/>
+      <define name="SPEED_GAINY" value="0.5"/>
       <define name="SPEED_GAINZ" value="0.8"/>  <!-- 0.2? -->
       <define name="MAX_AIRSPEED" value="12."/>     <!--THIS IS *CRUISE* AISPEED!!! -->
       <define name="ZERO_AIRSPEED" value="FALSE"/>
@@ -859,6 +861,8 @@ NOTES:
     <define name="SOARING_SOARING_WP_ID" value="3"/>
     <define name="SOARING_HEADING_WP_ID" value="4"/>
 
+      <!-- for indoor with opti track; move wp in ned regardless of the current heading -->
+      <define name="SOARING_BODY_IS_NED" value="TRUE"/>
 <!--      define this ONLY when you USE 90 pitch offset -->
 <!--      <define name="SOARING_USE_90_PITCH_OFFSET" value="TRUE"/>-->
   </section>
