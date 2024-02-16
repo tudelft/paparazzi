@@ -11,7 +11,8 @@
     "files.associations": {
         "Makefile.*": "makefile",
         "cmath": "c",
-        "complex": "c"
+        "complex": "c",
+        "gcnet_main.h": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",

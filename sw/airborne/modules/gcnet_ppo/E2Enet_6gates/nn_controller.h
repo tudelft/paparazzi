@@ -10,10 +10,10 @@
 // Include the neural network code
 #include "neural_network.h"
 
-extern const float gate_pos[NUM_GATES][3];
-extern const float gate_yaw[NUM_GATES];
-extern const float start_pos[3];
-extern uint8_t target_gate_index;
+const float gate_pos[NUM_GATES][3];
+const float gate_yaw[NUM_GATES];
+const float start_pos[3];
+uint8_t target_gate_index;
 
 void nn_reset(void);
 void nn_control(const float world_state[16], const float disturbances[4], float rpms[4]);

@@ -41,8 +41,8 @@
 // ppo neural network code
 #include "modules/gcnet_ppo/nn_controller.h"
 
-float control_nn[4];
-bool gcnet_fake_att_mode;
+extern float control_nn[4];
+extern bool gcnet_fake_att_mode;
 
 void gcnet_activate(void);
 

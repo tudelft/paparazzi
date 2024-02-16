@@ -24,6 +24,8 @@
  *
  */
 
+#include "gcnet_main.h"
+
 #include <time.h>
 //#include <stdio.h>
 #include "state.h"
