@@ -739,7 +739,7 @@ NOTES:
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="80.0"/>
     <define name="REF_ERR_Q" value="60.0"/>
-    <define name="REF_ERR_R" value="60.0"/>
+    <define name="REF_ERR_R" value="80.0"/>
 <!--      <define name="REF_ERR_P" value="70.0"/>-->
 <!--      <define name="REF_ERR_Q" value="120.0"/>-->
 <!--      <define name="REF_ERR_R" value="90.0"/>-->
@@ -802,10 +802,10 @@ NOTES:
 
   <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
       <define name="POS_GAIN" value="0.4"/>
-      <define name="POS_GAINY" value="0.2"/>
+      <define name="POS_GAINY" value="0.8"/>
       <define name="POS_GAINZ" value="0.4"/>
       <define name="SPEED_GAIN" value="0.7"/>
-      <define name="SPEED_GAINY" value="0.5"/>
+      <define name="SPEED_GAINY" value="0.8"/>
       <define name="SPEED_GAINZ" value="0.8"/>  <!-- 0.2? -->
       <define name="MAX_AIRSPEED" value="12."/>     <!--THIS IS *CRUISE* AISPEED!!! -->
       <define name="ZERO_AIRSPEED" value="FALSE"/>
@@ -824,7 +824,7 @@ NOTES:
 
       <define name="HYBRID_USE_WLS" value="TRUE"/>
       <define name="HYBRID_USE_OLD_WLS" value="TRUE"/>  <!-- define this to use the old version -->
-      <define name="HYBRID_WLS_PRIORITIES" value="{10.0, 100.0, 1.0}"/>
+      <define name="HYBRID_WLS_PRIORITIES" value="{1.0, 100.0, 1.0}"/>
 <!--      <define name="HYBRID_WU" value="{1.0, 1.0, 6.5}" />-->
 
       <!--    SOARING-->
@@ -863,6 +863,9 @@ NOTES:
 
       <!-- for indoor with opti track; move wp in ned regardless of the current heading -->
       <define name="SOARING_BODY_IS_NED" value="TRUE"/>
+      <define name="SOARING_RESET_STDBY_AFTER_N_SEC" value="FALSE"/>
+      <define name="SOARING_RESET_UNREACHABLE_WP" value="TRUE"/>
+      <define name="SOARING_RESET_UNREACHABLE_WP" value="TRUE"/>
 <!--      define this ONLY when you USE 90 pitch offset -->
 <!--      <define name="SOARING_USE_90_PITCH_OFFSET" value="TRUE"/>-->
   </section>

@@ -121,7 +121,8 @@ void ctrl_eff_scheduling_periodic_b(void)
 //      g1g2[0][3] = roll_eff/1000;
 //  } else {
 
-#ifdef SOARING_USE_90_PITCH_OFFSET
+#ifdef GUIDANCE_INDI_SOARING_USE_90_PITCH_OFFSET
+#warning "schedule_use_90_pitch_offset"
     /// 90deg pitch offset;
     // Yaw is roll, Roll is yaw
 

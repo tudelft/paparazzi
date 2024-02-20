@@ -254,11 +254,24 @@
 #warning "You are using 90deg pitch offset setting! (0 deg pitch == nose to the sky)"
 #endif
 
-#define SOARING_RESET_STDBY_TIMEOUT 3     // seconds
+// Default behavior is setting stdby WP to current position
+// when the mode changes to AUTO2
+// Set TRUE to reset stdby WP again after n sec
+#ifndef GUIDANCE_INDI_SOARING_RESET_STDBY_AFTER_N_SEC
+#define GUIDANCE_INDI_SOARING_RESET_STDBY_AFTER_N_SEC TRUE
+#endif
+#ifndef GUIDANCE_INDI_SOARING_RESET_STDBY_TIMEOUT
+#define GUIDANCE_INDI_SOARING_RESET_STDBY_TIMEOUT 3     // seconds
+#endif
+#ifndef GUIDANCE_INDI_SOARING_RESET_UNREACHABLE_WP
+#define GUIDANCE_INDI_SOARING_RESET_UNREACHABLE_WP TRUE
+#endif
 
 // 2m/0.1 = 20 data points for one axis
 #define MAP_MAX_NUM_POINTS 400
 
+bool reset_unreachable_wp = GUIDANCE_INDI_SOARING_RESET_UNREACHABLE_WP;
+bool reset_stdby_after_timeout = GUIDANCE_INDI_SOARING_RESET_STDBY_AFTER_N_SEC;
 bool move_wp_body_is_ned = GUIDANCE_INDI_SOARING_BODY_IS_NED;
 bool speed_sp_from_position = GUIDANCE_INDI_POS_CTRL;
 bool y_position_ctrl = GUIDANCE_INDI_Y_POSITION_CTRL;
@@ -353,7 +366,7 @@ int32_t min_cost_wp_u;
 
 time_t rand_seed;
 uint16_t stdby_entry_time = 0;
-uint16_t reset_stdby_timeout = SOARING_RESET_STDBY_TIMEOUT;
+uint16_t reset_stdby_timeout = GUIDANCE_INDI_SOARING_RESET_STDBY_TIMEOUT;
 
 void guidance_indi_soaring_move_wp(float cost_avg_val);
 void write_map_position_cost_info(struct FloatVect3 soaring_position, float corres_sum_cost);
@@ -643,8 +656,12 @@ void run_soaring_search(void){
         } else if (move_wp_wait_time > soaring_move_wp_wait_sec) {
             // not arrived && timeout
             // reset wp to current pos (assuming the wp cannot be reached)
-            guidance_indi_soaring_reset_soaring_wp();
-            prev_wp_sum_cost = -1;
+            if (reset_unreachable_wp) {
+                guidance_indi_soaring_reset_soaring_wp();
+                prev_wp_sum_cost = -1;
+            } else {
+                guidance_indi_soaring_move_wp(move_wp_sum_cost);    // explore or go back to the original position
+            }
             move_wp_entry_time = autopilot.flight_time;
             move_wp_sum_cost = 0;
             move_wp_wait_count = 0;
@@ -694,10 +711,12 @@ void run_soaring_search(void){
 
     // to reset standby waypoint after turning on AUTO2
     // quick fix for position overshooting at STDBY
-    if (stdby_entry_time > 0 && (stdby_entry_time+reset_stdby_timeout < autopilot.flight_time)) {
-        waypoint_set_here(stdby_wp_id);
-        guidance_indi_soaring_reset_soaring_wp();
-        stdby_entry_time = 0;
+    if (reset_stdby_after_timeout) {
+        if (stdby_entry_time > 0 && (stdby_entry_time + reset_stdby_timeout < autopilot.flight_time)) {
+            waypoint_set_here(stdby_wp_id);
+            guidance_indi_soaring_reset_soaring_wp();
+            stdby_entry_time = 0;
+        }
     }
 }
 
