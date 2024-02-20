@@ -36,15 +36,15 @@ uint16_t sent_msg_id = 0, received_msg_id = 0;
 int serial_port;
 int serial_port_tf_mini;
 float ca7_message_frequency_RX, ca7_message_frequency_TX;
-struct timeval current_time, last_time, last_sent_msg_time, aruco_time, starting_time_program_execution;
+struct timeval current_time, last_time, last_sent_msg_time, aruco_time, starting_time_program_execution, time_last_opt_run;
 
 
 pthread_mutex_t mutex_am7;
 
 pthread_mutex_t mutex_aruco;
 
-int verbose_connection = 0;
-int verbose_optimizer = 1;
+int verbose_connection = 1;
+int verbose_optimizer = 0;
 int verbose_runtime = 0; 
 int verbose_received_data = 0; 
 int verbose_ivy_bus = 0; 
@@ -134,6 +134,9 @@ void am7_init(){
   for (int i = 0; i < 6; i++) {
     init_butterworth_2_low_pass(&current_accelerations_filtered[i], tau_indi, sample_time, 0.0);
   }
+
+  //init waiting timer: 
+  gettimeofday(&time_last_opt_run, NULL);
 }
 
 void am7_parse_msg_in(){
@@ -167,6 +170,19 @@ void am7_parse_msg_in(){
   float Cy_beta = extra_data_in[47], Cl_beta = extra_data_in[48], wing_span = extra_data_in[49];
 
   float CL_aileron = extra_data_in[55];
+  
+  float input_periodic_frequency_in = extra_data_in[65]; 
+  float filter_cutoff_frequency_in = extra_data_in[66]; 
+
+  //Check that the acceleration filters are properly initialized, if not initialize them again: 
+  if( fabs(INPUT_PERIODIC_FREQUENCY - input_periodic_frequency_in) > 0.1 || fabs(filter_cutoff_frequency - filter_cutoff_frequency_in) > 0.1 ){
+    float tau_indi = 1.0 / (filter_cutoff_frequency_in);
+    float sample_time = 1.0 / (input_periodic_frequency_in);
+    for (int i = 0; i < 6; i++) {
+      init_butterworth_2_low_pass(&current_accelerations_filtered[i], tau_indi, sample_time, 0.0);
+    }
+  }
+
   double u_in[15] = {Omega_1, Omega_2, Omega_3, Omega_4, b_1, b_2, b_3, b_4, g_1, g_2, g_3, g_4, Theta, Phi, delta_ailerons};
 
   c_compute_acc_cascaded_nonlinea(u_in,  p,  q,  r,  K_p_T,
@@ -342,9 +358,13 @@ void* second_thread() //Run the optimization code
 {
 
   while(1){ 
+
+    double current_estimated_accelerations_array_filtered_copy_local[6]; 
+
     pthread_mutex_lock(&mutex_am7);   
     memcpy(&myam7_data_in_copy, &myam7_data_in, sizeof(struct am7_data_in));
     memcpy(&extra_data_in_copy, &extra_data_in, sizeof(extra_data_in));
+    memcpy(&current_estimated_accelerations_array_filtered_copy_local, &current_estimated_accelerations_array_filtered_copy, sizeof(current_estimated_accelerations_array_filtered_copy_local));
     pthread_mutex_unlock(&mutex_am7);
 
     //Do your things with myam7_data_in_copy and extra_data_in_copy as input and myam7_data_out_copy_internal and extra_data_out_copy as outputs
@@ -400,6 +420,10 @@ void* second_thread() //Run the optimization code
     float max_theta_hard = extra_data_in_copy[62];
     float min_phi_hard = extra_data_in_copy[63];
     float max_phi_hard = extra_data_in_copy[64];
+
+    float input_periodic_frequency_in = extra_data_in_copy[65]; 
+    float filter_cutoff_frequency_in = extra_data_in_copy[66];
+
 
     // Real time variables:
     double Phi = (myam7_data_in_copy.phi_state_int*1e-2 * M_PI/180);
@@ -473,17 +497,17 @@ void* second_thread() //Run the optimization code
 
       Beta = 0 * pi/180;
       flight_path_angle = 0 * pi/180;
-      V = 12;
+      V = 10;
       Phi = 0 * pi/180;
-      Theta = 5 * pi/180;
-      Omega_1 = 620;
-      Omega_2 = 620;
-      Omega_3 = 620;
-      Omega_4 = 620;
-      b_1 = -90 * pi/180;
-      b_2 = -90 * pi/180;
-      b_3 = -90 * pi/180;
-      b_4 = -90 * pi/180;
+      Theta = 0 * pi/180;
+      Omega_1 = 600;
+      Omega_2 = 600;
+      Omega_3 = 600;
+      Omega_4 = 600;
+      b_1 = 0 * pi/180;
+      b_2 = 0 * pi/180;
+      b_3 = 0 * pi/180;
+      b_4 = 0 * pi/180;
       g_1 = 0 * pi/180;
       g_2 = 0 * pi/180;
       g_3 = 0 * pi/180;
@@ -495,7 +519,7 @@ void* second_thread() //Run the optimization code
       W_act_tilt_el_const = 0;
       W_act_tilt_el_speed = 0;
       W_act_tilt_az_const = 0; 
-      W_act_tilt_az_speed = 2;
+      W_act_tilt_az_speed = 0;
       W_act_theta_const = 100;
       W_act_theta_speed = -15;
       W_act_phi_const = 100;
@@ -523,12 +547,12 @@ void* second_thread() //Run the optimization code
       max_delta_ailerons = 25;
       min_delta_ailerons = -25; 
 
-      dv[0] = 10;
-      dv[1] = -3;
-      dv[2] = 3;
+      dv[0] = 0;
+      dv[1] = 5;
+      dv[2] = -5;
       dv[3] = 5;
-      dv[4] = 15;
-      dv[5] = -5;
+      dv[4] = 5;
+      dv[5] = 5;
 
       p = 0 * pi/180; 
       q = 0 * pi/180; 
@@ -572,6 +596,17 @@ void* second_thread() //Run the optimization code
       r_body_gain = 2;
       des_psi_dot = 0; 
 
+      m_failure_ID = 0;
+
+      double u_in[15] = {Omega_1, Omega_2, Omega_3, Omega_4, b_1, b_2, b_3, b_4, g_1, g_2, g_3, g_4, Theta, Phi, delta_ailerons};
+
+        c_compute_acc_cascaded_nonlinea(u_in,  p,  q,  r,  K_p_T,
+        K_p_M,  m,  I_xx,  I_yy,  I_zz,  l_1,
+        l_2,  l_3,  l_4,  l_z,  Cl_alpha,
+        Cd_zero,  K_Cd,  Cm_alpha,  Cm_zero,
+        CL_aileron,  rho,  V,  S,  wing_chord,
+        flight_path_angle,  Beta, current_estimated_accelerations_array_filtered_copy_local);
+
     #endif 
 
 Cascaded_nonlinear_TestFlight(m_failure_ID,  K_p_T,  K_p_M,  m,  I_xx,
@@ -606,10 +641,18 @@ Cascaded_nonlinear_TestFlight(m_failure_ID,  K_p_T,  K_p_M,  m,  I_xx,
                               r_body_current,  p_dot_current,  q_dot_current,
                               r_dot_current,  phi_current,  theta_current,
                               theta_gain,  phi_gain,  p_body_gain,  q_body_gain,
-                              r_body_gain,  des_psi_dot,  u_out,
+                              r_body_gain,  des_psi_dot, current_estimated_accelerations_array_filtered_copy_local,  u_out,
                               residuals,  gradient,  &cost,
                               &elapsed_time,  &N_iterations,  &N_evaluation,
                               &exitflag);
+
+    //Wait until time is not at least refresh_time_optimizer
+    while(((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec)) < refresh_time_optimizer*1e6){gettimeofday(&current_time, NULL);}
+
+    // printf(" Elapsed_time_optimization_run_uS = %f \n",(float) ((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec)));
+
+    //Reset waiting timer: 
+    gettimeofday(&time_last_opt_run, NULL);
 
     //Convert the function output into integer to be transmitted to the pixhawk again: 
     myam7_data_out_copy_internal.motor_1_cmd_int = (int16_T) (u_out[0]*1e1) , myam7_data_out_copy_internal.motor_2_cmd_int = (int16_T) (u_out[1]*1e1);
@@ -751,6 +794,12 @@ Cascaded_nonlinear_TestFlight(m_failure_ID,  K_p_T,  K_p_M,  m,  I_xx,
 
       printf(" des_psi_dot_deg_s = %f \n",(float) des_psi_dot*180/M_PI);
 
+      printf(" Filtered modeled accelerations[0] = %f \n",(float) current_estimated_accelerations_array_filtered_copy_local[0]);
+      printf(" Filtered modeled accelerations[1] = %f \n",(float) current_estimated_accelerations_array_filtered_copy_local[1]);
+      printf(" Filtered modeled accelerations[2] = %f \n",(float) current_estimated_accelerations_array_filtered_copy_local[2]);
+      printf(" Filtered modeled accelerations[3] = %f \n",(float) current_estimated_accelerations_array_filtered_copy_local[3]);
+      printf(" Filtered modeled accelerations[4] = %f \n",(float) current_estimated_accelerations_array_filtered_copy_local[4]);
+      printf(" Filtered modeled accelerations[5] = %f \n",(float) current_estimated_accelerations_array_filtered_copy_local[5]);
 
       printf("\n REAL TIME VARIABLES OUT------------------------------------------------------ \n"); 
       printf(" motor_1_cmd_rad_s = %f \n",(float) u_out[0]);

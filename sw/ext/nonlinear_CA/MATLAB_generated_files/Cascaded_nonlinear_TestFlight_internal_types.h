@@ -5,7 +5,7 @@
  * File: Cascaded_nonlinear_TestFlight_internal_types.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 20-Feb-2024 13:21:00
+ * C/C++ source code generated on  : 20-Feb-2024 23:30:20
  */
 
 #ifndef CASCADED_NONLINEAR_TESTFLIGHT_INTERNAL_TYPES_H
@@ -113,15 +113,10 @@ typedef struct {
   captured_var *K_p_T;
   captured_var *S;
   captured_var *V;
-  captured_var *W_act_motor_du;
-  captured_var *W_act_theta_du;
-  captured_var *W_act_tilt_el_du;
-  captured_var *W_act_tilt_az_du;
-  captured_var *W_act_phi_du;
-  captured_var *W_act_ailerons_du;
   captured_var *W_act_phi;
   captured_var *W_act_theta;
   captured_var *W_act_motor;
+  captured_var *W_act_phi_du;
   captured_var *W_dv_1;
   captured_var *W_dv_2;
   captured_var *W_dv_3;
@@ -130,7 +125,12 @@ typedef struct {
   captured_var *W_dv_6;
   captured_var *W_act_tilt_el;
   captured_var *W_act_tilt_az;
+  captured_var *W_act_theta_du;
   captured_var *W_act_ailerons;
+  captured_var *W_act_motor_du;
+  captured_var *W_act_tilt_el_du;
+  captured_var *W_act_tilt_az_du;
+  captured_var *W_act_ailerons_du;
   captured_var *desired_el_value;
   captured_var *desired_az_value;
   captured_var *desired_phi_value;
@@ -146,7 +146,6 @@ typedef struct {
   captured_var *gain_ailerons;
   captured_var *gamma_quadratic_du;
   captured_var *gamma_quadratic_du2;
-  c_captured_var *previous_controls;
   captured_var *l_1;
   captured_var *l_2;
   captured_var *l_3;
@@ -154,6 +153,7 @@ typedef struct {
   captured_var *l_z;
   captured_var *m;
   captured_var *p;
+  c_captured_var *actual_u;
   captured_var *q;
   captured_var *r;
   captured_var *rho;
@@ -181,29 +181,20 @@ typedef struct {
   captured_var *S;
   captured_var *Theta;
   captured_var *V;
-  captured_var *W_act_motor_du;
-  captured_var *W_act_tilt_el_du;
-  captured_var *W_act_tilt_az_du;
-  captured_var *W_act_ailerons_du;
-  captured_var *W_act_motor1;
-  captured_var *W_act_motor2;
-  captured_var *W_act_motor3;
-  captured_var *W_act_motor4;
+  captured_var *W_act_motor;
   captured_var *W_dv_1;
   captured_var *W_dv_2;
   captured_var *W_dv_3;
   captured_var *W_dv_4;
   captured_var *W_dv_5;
   captured_var *W_dv_6;
-  captured_var *W_act_tilt_el1;
-  captured_var *W_act_tilt_el2;
-  captured_var *W_act_tilt_el3;
-  captured_var *W_act_tilt_el4;
-  captured_var *W_act_tilt_az1;
-  captured_var *W_act_tilt_az2;
-  captured_var *W_act_tilt_az3;
-  captured_var *W_act_tilt_az4;
+  captured_var *W_act_tilt_el;
+  captured_var *W_act_tilt_az;
   captured_var *W_act_ailerons;
+  captured_var *W_act_motor_du;
+  captured_var *W_act_tilt_el_du;
+  captured_var *W_act_tilt_az_du;
+  captured_var *W_act_ailerons_du;
   captured_var *desired_el_value;
   captured_var *desired_az_value;
   captured_var *desired_motor_value;
@@ -215,7 +206,6 @@ typedef struct {
   captured_var *gain_ailerons;
   captured_var *gamma_quadratic_du;
   captured_var *gamma_quadratic_du2;
-  c_captured_var *previous_controls;
   captured_var *l_1;
   captured_var *l_2;
   captured_var *l_3;
@@ -223,6 +213,7 @@ typedef struct {
   captured_var *l_z;
   captured_var *m;
   captured_var *p;
+  c_captured_var *actual_u;
   captured_var *q;
   captured_var *r;
   captured_var *rho;

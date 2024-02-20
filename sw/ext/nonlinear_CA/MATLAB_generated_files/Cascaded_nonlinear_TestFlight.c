@@ -5,7 +5,7 @@
  * File: Cascaded_nonlinear_TestFlight.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 20-Feb-2024 13:21:00
+ * C/C++ source code generated on  : 20-Feb-2024 23:30:20
  */
 
 /* Include Files */
@@ -138,6 +138,7 @@
  *                double q_body_gain
  *                double r_body_gain
  *                double des_psi_dot
+ *                const double current_accelerations[6]
  *                double u_out_local[15]
  *                double residuals[6]
  *                double gradient[13]
@@ -181,31 +182,20 @@ void Cascaded_nonlinear_TestFlight(
     double r_body_current, double p_dot_current, double q_dot_current,
     double r_dot_current, double phi_current, double theta_current,
     double theta_gain, double phi_gain, double p_body_gain, double q_body_gain,
-    double r_body_gain, double des_psi_dot, double u_out_local[15],
+    double r_body_gain, double des_psi_dot,
+    const double current_accelerations[6], double u_out_local[15],
     double residuals[6], double gradient[13], double *cost,
     double *elapsed_time, double *N_iterations, double *N_evaluation,
     double *exitflag)
 {
   b_captured_var dv_global;
-  c_captured_var previous_controls;
+  c_captured_var actual_u;
   captured_var W_act_ailerons;
   captured_var W_act_motor;
-  captured_var W_act_motor1;
-  captured_var W_act_motor2;
-  captured_var W_act_motor3;
-  captured_var W_act_motor4;
   captured_var W_act_phi;
   captured_var W_act_theta;
   captured_var W_act_tilt_az;
-  captured_var W_act_tilt_az1;
-  captured_var W_act_tilt_az2;
-  captured_var W_act_tilt_az3;
-  captured_var W_act_tilt_az4;
   captured_var W_act_tilt_el;
-  captured_var W_act_tilt_el1;
-  captured_var W_act_tilt_el2;
-  captured_var W_act_tilt_el3;
-  captured_var W_act_tilt_el4;
   captured_var b_Beta;
   captured_var b_CL_aileron;
   captured_var b_Cd_zero;
@@ -273,7 +263,6 @@ void Cascaded_nonlinear_TestFlight(
   double b_u_min_scaled[13];
   double u_out[13];
   double b_dv[9];
-  double current_accelerations[6];
   double final_accelerations[6];
   double des_body_rates[3];
   double b_max_approach;
@@ -368,28 +357,29 @@ void Cascaded_nonlinear_TestFlight(
   gain_phi.contents = max_phi * 3.1415926535897931 / 180.0;
   gain_ailerons.contents = (max_delta_ailerons - min_delta_ailerons) *
                            3.1415926535897931 / 180.0 / 2.0;
-  previous_controls.contents[0] = Omega_1;
-  previous_controls.contents[1] = Omega_2;
-  previous_controls.contents[2] = Omega_3;
-  previous_controls.contents[3] = Omega_4;
-  previous_controls.contents[4] = b_1;
-  previous_controls.contents[5] = b_2;
-  previous_controls.contents[6] = b_3;
-  previous_controls.contents[7] = b_4;
-  previous_controls.contents[8] = g_1;
-  previous_controls.contents[9] = g_2;
-  previous_controls.contents[10] = g_3;
-  previous_controls.contents[11] = g_4;
-  previous_controls.contents[12] = b_Theta.contents;
-  previous_controls.contents[13] = b_Phi.contents;
-  previous_controls.contents[14] = delta_ailerons;
+  u_max[0] = Omega_1;
+  u_max[1] = Omega_2;
+  u_max[2] = Omega_3;
+  u_max[3] = Omega_4;
+  u_max[4] = b_1;
+  u_max[5] = b_2;
+  u_max[6] = b_3;
+  u_max[7] = b_4;
+  u_max[8] = g_1;
+  u_max[9] = g_2;
+  u_max[10] = g_3;
+  u_max[11] = g_4;
+  u_max[12] = b_Theta.contents;
+  u_max[13] = b_Phi.contents;
+  u_max[14] = delta_ailerons;
+  memcpy(&actual_u.contents[0], &u_max[0], 15U * sizeof(double));
   /* Build the max and minimum actuator array: */
   if (m_failure_ID == 3.0) {
-    /*  u_max = [max_omega, max_omega, 155, max_omega, max_b, max_b, 0, max_b,
-     * max_g, max_g, 0, max_g, max_theta_protection, max_phi,
+    /*  u_max = [max_omega, max_omega, 155, max_omega, max_b, max_b, 1, max_b,
+     * max_g, max_g, 1, max_g, max_theta_protection, max_phi,
      * max_delta_ailerons]; */
-    /*  u_min = [min_omega, min_omega, min_omega, min_omega, min_b, min_b, 0,
-     * min_b, min_g, min_g, 0, min_g, deg2rad(-2), deg2rad(-3),
+    /*  u_min = [min_omega, min_omega, min_omega, min_omega, min_b, min_b, -1,
+     * min_b, min_g, min_g, -1, min_g, deg2rad(-2), deg2rad(-3),
      * min_delta_ailerons]; */
     u_max[0] = max_omega;
     u_max[1] = max_omega;
@@ -397,11 +387,11 @@ void Cascaded_nonlinear_TestFlight(
     u_max[3] = max_omega;
     u_max[4] = max_b;
     u_max[5] = max_b;
-    u_max[6] = 0.0;
+    u_max[6] = 1.0;
     u_max[7] = max_b;
     u_max[8] = max_g;
     u_max[9] = max_g;
-    u_max[10] = 0.0;
+    u_max[10] = 1.0;
     u_max[11] = max_g;
     u_max[12] = max_theta_protection;
     u_max[13] = max_phi;
@@ -412,11 +402,11 @@ void Cascaded_nonlinear_TestFlight(
     u_min[3] = min_omega;
     u_min[4] = min_b;
     u_min[5] = min_b;
-    u_min[6] = 0.0;
+    u_min[6] = -1.0;
     u_min[7] = min_b;
     u_min[8] = min_g;
     u_min[9] = min_g;
-    u_min[10] = 0.0;
+    u_min[10] = -1.0;
     u_min[11] = min_g;
     u_min[12] = min_theta_protection;
     u_min[13] = -max_phi;
@@ -548,32 +538,27 @@ void Cascaded_nonlinear_TestFlight(
   u_min_scaled[13] /= gain_phi.contents;
   u_max_scaled[14] /= gain_ailerons.contents;
   u_min_scaled[14] /= gain_ailerons.contents;
-  memcpy(&u_min[0], &previous_controls.contents[0], 15U * sizeof(double));
-  u_min[0] = previous_controls.contents[0] / gain_motor.contents;
-  u_min[1] = previous_controls.contents[1] / gain_motor.contents;
-  u_min[2] = previous_controls.contents[2] / gain_motor.contents;
-  u_min[3] = previous_controls.contents[3] / gain_motor.contents;
-  u_min[4] /= gain_el.contents;
-  u_min[5] /= gain_el.contents;
-  u_min[6] /= gain_el.contents;
-  u_min[7] /= gain_el.contents;
-  u_min[8] /= gain_az.contents;
-  u_min[9] /= gain_az.contents;
-  u_min[10] /= gain_az.contents;
-  u_min[11] /= gain_az.contents;
-  u_min[12] /= gain_theta.contents;
-  u_min[13] /= gain_phi.contents;
-  u_min[14] /= gain_ailerons.contents;
+  memcpy(&u_max[0], &actual_u.contents[0], 15U * sizeof(double));
+  u_max[0] /= gain_motor.contents;
+  u_max[1] /= gain_motor.contents;
+  u_max[2] /= gain_motor.contents;
+  u_max[3] /= gain_motor.contents;
+  u_max[4] /= gain_el.contents;
+  u_max[5] /= gain_el.contents;
+  u_max[6] /= gain_el.contents;
+  u_max[7] /= gain_el.contents;
+  u_max[8] /= gain_az.contents;
+  u_max[9] /= gain_az.contents;
+  u_max[10] /= gain_az.contents;
+  u_max[11] /= gain_az.contents;
+  u_max[12] /= gain_theta.contents;
+  u_max[13] /= gain_phi.contents;
+  u_max[14] /= gain_ailerons.contents;
   /*  Apply Nonlinear optimization algorithm: */
-  c_compute_acc_cascaded_nonlinea(
-      previous_controls.contents, b_p.contents, b_q.contents, b_r.contents,
-      b_K_p_T.contents, b_K_p_M.contents, b_m.contents, b_I_xx.contents,
-      b_I_yy.contents, b_I_zz.contents, b_l_1.contents, b_l_2.contents,
-      b_l_3.contents, b_l_4.contents, b_l_z.contents, b_Cl_alpha.contents,
-      b_Cd_zero.contents, b_K_Cd.contents, b_Cm_alpha.contents,
-      b_Cm_zero.contents, b_CL_aileron.contents, b_rho.contents, b_V.contents,
-      b_S.contents, b_wing_chord.contents, b_flight_path_angle.contents,
-      b_Beta.contents, current_accelerations);
+  /*  current_accelerations =
+   * compute_acc_cascaded_nonlinear_CA_w_ailerons_internal(actual_u,p,q,r,K_p_T,K_p_M,m,I_xx,I_yy,I_zz,l_1,l_2,l_3,l_4,l_z,Cl_alpha,
+   * Cd_zero, K_Cd, Cm_alpha, Cm_zero, CL_aileron,rho, V, S, wing_chord,
+   * flight_path_angle, Beta); */
   dv[3] = 0.0;
   dv[4] = 0.0;
   dv[5] = 0.0;
@@ -621,43 +606,7 @@ void Cascaded_nonlinear_TestFlight(
   W_act_theta.contents = fmax(0.0, max_tilt_value_approach);
   max_tilt_value_approach = W_act_phi_const + W_act_phi_speed * b_V.contents;
   W_act_phi.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach =
-      W_act_motor_const + W_act_motor_speed * b_V.contents;
-  W_act_motor1.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach =
-      W_act_motor_const + W_act_motor_speed * b_V.contents;
-  W_act_motor2.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach =
-      W_act_motor_const + W_act_motor_speed * b_V.contents;
-  W_act_motor3.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach =
-      W_act_motor_const + W_act_motor_speed * b_V.contents;
-  W_act_motor4.contents = fmax(0.0, max_tilt_value_approach);
   /*  W_act_motor4 = W_MOTOR_FAILURE_WEIGHT; */
-  max_tilt_value_approach =
-      W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
-  W_act_tilt_el1.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach =
-      W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
-  W_act_tilt_az1.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach =
-      W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
-  W_act_tilt_el2.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach =
-      W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
-  W_act_tilt_az2.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach =
-      W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
-  W_act_tilt_el3.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach =
-      W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
-  W_act_tilt_az3.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach =
-      W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
-  W_act_tilt_el4.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach =
-      W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
-  W_act_tilt_az4.contents = fmax(0.0, max_tilt_value_approach);
   /*  W_act_theta = max(0,W_act_theta_const + W_act_theta_speed*V); */
   /*  W_act_phi = max(0,W_act_phi_const + W_act_phi_speed*V); */
   max_tilt_value_approach =
@@ -707,11 +656,12 @@ void Cascaded_nonlinear_TestFlight(
    */
   tic();
   /* First optimization run to identify the pitch and roll angles: */
-  memcpy(&u_max[0], &u_min[0], 15U * sizeof(double));
+  memcpy(&u_min[0], &u_max[0], 15U * sizeof(double));
   expl_temp.wing_chord = &b_wing_chord;
   expl_temp.rho = &b_rho;
   expl_temp.r = &b_r;
   expl_temp.q = &b_q;
+  expl_temp.actual_u = &actual_u;
   expl_temp.p = &b_p;
   expl_temp.m = &b_m;
   expl_temp.l_z = &b_l_z;
@@ -719,7 +669,6 @@ void Cascaded_nonlinear_TestFlight(
   expl_temp.l_3 = &b_l_3;
   expl_temp.l_2 = &b_l_2;
   expl_temp.l_1 = &b_l_1;
-  expl_temp.previous_controls = &previous_controls;
   expl_temp.gamma_quadratic_du2 = &b_gamma_quadratic_du2;
   expl_temp.gamma_quadratic_du = &b_gamma_quadratic_du;
   expl_temp.gain_ailerons = &gain_ailerons;
@@ -735,7 +684,12 @@ void Cascaded_nonlinear_TestFlight(
   expl_temp.desired_phi_value = &b_desired_phi_value;
   expl_temp.desired_az_value = &b_desired_az_value;
   expl_temp.desired_el_value = &b_desired_el_value;
+  expl_temp.W_act_ailerons_du = &b_W_act_ailerons_du;
+  expl_temp.W_act_tilt_az_du = &b_W_act_tilt_az_du;
+  expl_temp.W_act_tilt_el_du = &b_W_act_tilt_el_du;
+  expl_temp.W_act_motor_du = &b_W_act_motor_du;
   expl_temp.W_act_ailerons = &W_act_ailerons;
+  expl_temp.W_act_theta_du = &b_W_act_theta_du;
   expl_temp.W_act_tilt_az = &W_act_tilt_az;
   expl_temp.W_act_tilt_el = &W_act_tilt_el;
   expl_temp.W_dv_6 = &b_W_dv_6;
@@ -744,15 +698,10 @@ void Cascaded_nonlinear_TestFlight(
   expl_temp.W_dv_3 = &b_W_dv_3;
   expl_temp.W_dv_2 = &b_W_dv_2;
   expl_temp.W_dv_1 = &b_W_dv_1;
+  expl_temp.W_act_phi_du = &b_W_act_phi_du;
   expl_temp.W_act_motor = &W_act_motor;
   expl_temp.W_act_theta = &W_act_theta;
   expl_temp.W_act_phi = &W_act_phi;
-  expl_temp.W_act_ailerons_du = &b_W_act_ailerons_du;
-  expl_temp.W_act_phi_du = &b_W_act_phi_du;
-  expl_temp.W_act_tilt_az_du = &b_W_act_tilt_az_du;
-  expl_temp.W_act_tilt_el_du = &b_W_act_tilt_el_du;
-  expl_temp.W_act_theta_du = &b_W_act_theta_du;
-  expl_temp.W_act_motor_du = &b_W_act_motor_du;
   expl_temp.V = &b_V;
   expl_temp.S = &b_S;
   expl_temp.K_p_T = &b_K_p_T;
@@ -770,7 +719,7 @@ void Cascaded_nonlinear_TestFlight(
   expl_temp.dv_global = &dv_global;
   b_expl_temp = expl_temp;
   max_tilt_value_approach = fmincon(
-      &b_expl_temp, u_max, u_min_scaled, u_max_scaled, &b_max_approach,
+      &b_expl_temp, u_min, u_min_scaled, u_max_scaled, &b_max_approach,
       &output_iterations, &output_funcCount, c_expl_temp, &b_min_approach,
       &g_max_approach, &g_min_approach, &max_theta_protection);
   /*   */
@@ -778,8 +727,8 @@ void Cascaded_nonlinear_TestFlight(
   /*  des_theta_first_iteration = deg2rad(20); */
   /*  des_phi_first_iteration   = deg2rad(70); */
   /*  else */
-  des_theta_first_iteration = u_max[12] * gain_theta.contents;
-  des_phi_first_iteration = u_max[13] * gain_phi.contents;
+  des_theta_first_iteration = u_min[12] * gain_theta.contents;
+  des_phi_first_iteration = u_min[13] * gain_phi.contents;
   /*  end */
   /*  if (m_failure_ID==3) */
   /*      des_theta_first_iteration = deg2rad(14); */
@@ -836,12 +785,13 @@ void Cascaded_nonlinear_TestFlight(
   /* before entering the second optimization run, let's remove the extra inputs:
    */
   /* Second optimization run to identify the actuator commands: */
-  memcpy(&u_out[0], &u_min[0], 12U * sizeof(double));
-  u_out[12] = u_min[14];
+  memcpy(&u_out[0], &u_max[0], 12U * sizeof(double));
+  u_out[12] = u_max[14];
   d_expl_temp.wing_chord = &b_wing_chord;
   d_expl_temp.rho = &b_rho;
   d_expl_temp.r = &b_r;
   d_expl_temp.q = &b_q;
+  d_expl_temp.actual_u = &actual_u;
   d_expl_temp.p = &b_p;
   d_expl_temp.m = &b_m;
   d_expl_temp.l_z = &b_l_z;
@@ -849,7 +799,6 @@ void Cascaded_nonlinear_TestFlight(
   d_expl_temp.l_3 = &b_l_3;
   d_expl_temp.l_2 = &b_l_2;
   d_expl_temp.l_1 = &b_l_1;
-  d_expl_temp.previous_controls = &previous_controls;
   d_expl_temp.gamma_quadratic_du2 = &b_gamma_quadratic_du2;
   d_expl_temp.gamma_quadratic_du = &b_gamma_quadratic_du;
   d_expl_temp.gain_ailerons = &gain_ailerons;
@@ -861,29 +810,20 @@ void Cascaded_nonlinear_TestFlight(
   d_expl_temp.desired_motor_value = &b_desired_motor_value;
   d_expl_temp.desired_az_value = &b_desired_az_value;
   d_expl_temp.desired_el_value = &b_desired_el_value;
+  d_expl_temp.W_act_ailerons_du = &b_W_act_ailerons_du;
+  d_expl_temp.W_act_tilt_az_du = &b_W_act_tilt_az_du;
+  d_expl_temp.W_act_tilt_el_du = &b_W_act_tilt_el_du;
+  d_expl_temp.W_act_motor_du = &b_W_act_motor_du;
   d_expl_temp.W_act_ailerons = &W_act_ailerons;
-  d_expl_temp.W_act_tilt_az4 = &W_act_tilt_az4;
-  d_expl_temp.W_act_tilt_az3 = &W_act_tilt_az3;
-  d_expl_temp.W_act_tilt_az2 = &W_act_tilt_az2;
-  d_expl_temp.W_act_tilt_az1 = &W_act_tilt_az1;
-  d_expl_temp.W_act_tilt_el4 = &W_act_tilt_el4;
-  d_expl_temp.W_act_tilt_el3 = &W_act_tilt_el3;
-  d_expl_temp.W_act_tilt_el2 = &W_act_tilt_el2;
-  d_expl_temp.W_act_tilt_el1 = &W_act_tilt_el1;
+  d_expl_temp.W_act_tilt_az = &W_act_tilt_az;
+  d_expl_temp.W_act_tilt_el = &W_act_tilt_el;
   d_expl_temp.W_dv_6 = &b_W_dv_6;
   d_expl_temp.W_dv_5 = &b_W_dv_5;
   d_expl_temp.W_dv_4 = &b_W_dv_4;
   d_expl_temp.W_dv_3 = &b_W_dv_3;
   d_expl_temp.W_dv_2 = &b_W_dv_2;
   d_expl_temp.W_dv_1 = &b_W_dv_1;
-  d_expl_temp.W_act_motor4 = &W_act_motor4;
-  d_expl_temp.W_act_motor3 = &W_act_motor3;
-  d_expl_temp.W_act_motor2 = &W_act_motor2;
-  d_expl_temp.W_act_motor1 = &W_act_motor1;
-  d_expl_temp.W_act_ailerons_du = &b_W_act_ailerons_du;
-  d_expl_temp.W_act_tilt_az_du = &b_W_act_tilt_az_du;
-  d_expl_temp.W_act_tilt_el_du = &b_W_act_tilt_el_du;
-  d_expl_temp.W_act_motor_du = &b_W_act_motor_du;
+  d_expl_temp.W_act_motor = &W_act_motor;
   d_expl_temp.V = &b_V;
   d_expl_temp.Theta = &b_Theta;
   d_expl_temp.S = &b_S;

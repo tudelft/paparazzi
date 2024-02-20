@@ -5,7 +5,7 @@
  * File: compute_cost_and_gradient_first_iteration_v2.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 20-Feb-2024 13:21:00
+ * C/C++ source code generated on  : 20-Feb-2024 23:30:20
  */
 
 /* Include Files */
@@ -17,7 +17,8 @@
 /* Function Definitions */
 /*
  * COMPUTE_COST_AND_GRADIENT_FIRST_ITERATION_V2
- *     [COST,GRADIENT] = COMPUTE_COST_AND_GRADIENT_FIRST_ITERATION_V2(Beta,CL_aileron,Cd_zero,Cl_alpha,Cm_zero,Cm_alpha,I_xx,I_yy,I_zz,K_Cd,K_p_M,K_p_T,Omega_1_scaled,Omega_2_scaled,Omega_3_scaled,Omega_4_scaled,Phi_scaled,S,Theta_scaled,V,W_act_phi,W_act_theta,W_act_motor,W_dv_1,W_dv_2,W_dv_3,W_dv_4,W_dv_5,W_dv_6,W_act_tilt_el,W_act_tilt_az,W_act_ailerons,B_1_SCALED,B_2_SCALED,B_3_SCALED,B_4_SCALED,DELTA_AILERONS_SCALED,DESIRED_EL_VALUE,DESIRED_AZ_VALUE,DESIRED_PHI_VALUE,DESIRED_THETA_VALUE,DESIRED_MOTOR_VALUE,DESIRED_AILERONS_VALUE,DV_GLOBAL_1,DV_GLOBAL_2,DV_GLOBAL_3,DV_GLOBAL_4,DV_GLOBAL_5,DV_GLOBAL_6,FLIGHT_PATH_ANGLE,G_1_SCALED,G_2_SCALED,G_3_SCALED,G_4_SCALED,GAIN_EL,GAIN_AZ,GAIN_PHI,GAIN_THETA,GAIN_MOTOR,GAIN_AILERONS,GAMMA_QUADRATIC_DU,L_1,L_2,L_3,L_4,L_Z,M,P,Q,R,RHO,WING_CHORD)
+ *     [COST,GRADIENT] =
+ * COMPUTE_COST_AND_GRADIENT_FIRST_ITERATION_V2(Beta,CL_aileron,Cd_zero,Cl_alpha,Cm_zero,Cm_alpha,I_xx,I_yy,I_zz,K_Cd,K_p_M,K_p_T,Omega_1_scaled,Omega_2_scaled,Omega_3_scaled,Omega_4_scaled,Phi_scaled,S,Theta_scaled,V,W_act_phi,W_act_theta,W_act_motor,W_act_phi_du,W_dv_1,W_dv_2,W_dv_3,W_dv_4,W_dv_5,W_dv_6,W_act_tilt_el,W_act_tilt_az,W_act_theta_du,W_act_ailerons,W_act_motor_du,W_act_tilt_el_du,W_act_tilt_az_du,W_act_ailerons_du,B_1_SCALED,B_2_SCALED,B_3_SCALED,B_4_SCALED,DELTA_AILERONS_SCALED,DESIRED_EL_VALUE,DESIRED_AZ_VALUE,DESIRED_PHI_VALUE,DESIRED_THETA_VALUE,DESIRED_MOTOR_VALUE,DESIRED_AILERONS_VALUE,DV_GLOBAL_1,DV_GLOBAL_2,DV_GLOBAL_3,DV_GLOBAL_4,DV_GLOBAL_5,DV_GLOBAL_6,FLIGHT_PATH_ANGLE,G_1_SCALED,G_2_SCALED,G_3_SCALED,G_4_SCALED,GAIN_EL,GAIN_AZ,GAIN_PHI,GAIN_THETA,GAIN_MOTOR,GAIN_AILERONS,GAMMA_QUADRATIC_DU,GAMMA_QUADRATIC_DU2,L_1,L_2,L_3,L_4,L_Z,M,P,PREVIOUS_EL_VALUE1,PREVIOUS_EL_VALUE2,PREVIOUS_EL_VALUE3,PREVIOUS_EL_VALUE4,PREVIOUS_AZ_VALUE1,PREVIOUS_AZ_VALUE2,PREVIOUS_AZ_VALUE3,PREVIOUS_AZ_VALUE4,PREVIOUS_PHI_VALUE,PREVIOUS_THETA_VALUE,PREVIOUS_MOTOR_VALUE1,PREVIOUS_MOTOR_VALUE2,PREVIOUS_MOTOR_VALUE3,PREVIOUS_MOTOR_VALUE4,PREVIOUS_AILERONS_VALUE,Q,R,RHO,WING_CHORD)
  *
  * Arguments    : double Beta
  *                double CL_aileron
@@ -39,15 +40,10 @@
  *                double S
  *                double Theta_scaled
  *                double V
- *                double W_act_motor_du
- *                double W_act_theta_du
- *                double W_act_tilt_el_du
- *                double W_act_tilt_az_du
- *                double W_act_phi_du
- *                double W_act_ailerons_du
  *                double W_act_phi
  *                double W_act_theta
  *                double W_act_motor
+ *                double W_act_phi_du
  *                double W_dv_1
  *                double W_dv_2
  *                double W_dv_3
@@ -56,7 +52,12 @@
  *                double W_dv_6
  *                double W_act_tilt_el
  *                double W_act_tilt_az
+ *                double W_act_theta_du
  *                double W_act_ailerons
+ *                double W_act_motor_du
+ *                double W_act_tilt_el_du
+ *                double W_act_tilt_az_du
+ *                double W_act_ailerons_du
  *                double b_1_scaled
  *                double b_2_scaled
  *                double b_3_scaled
@@ -87,7 +88,6 @@
  *                double gain_ailerons
  *                double gamma_quadratic_du
  *                double gamma_quadratic_du2
- *                const double previous_controls[15]
  *                double l_1
  *                double l_2
  *                double l_3
@@ -95,6 +95,21 @@
  *                double l_z
  *                double m
  *                double p
+ *                double previous_el_value1
+ *                double previous_el_value2
+ *                double previous_el_value3
+ *                double previous_el_value4
+ *                double previous_az_value1
+ *                double previous_az_value2
+ *                double previous_az_value3
+ *                double previous_az_value4
+ *                double previous_phi_value
+ *                double previous_theta_value
+ *                double previous_motor_value1
+ *                double previous_motor_value2
+ *                double previous_motor_value3
+ *                double previous_motor_value4
+ *                double previous_ailerons_value
  *                double q
  *                double r
  *                double rho
@@ -102,923 +117,821 @@
  *                double gradient[15]
  * Return Type  : double
  */
-double c_compute_cost_and_gradient_fir(double Beta, double CL_aileron, double
-  Cd_zero, double Cl_alpha, double Cm_zero, double Cm_alpha, double I_xx, double
-  I_yy, double I_zz, double K_Cd, double K_p_M, double K_p_T, double
-  Omega_1_scaled, double Omega_2_scaled, double Omega_3_scaled, double
-  Omega_4_scaled, double Phi_scaled, double S, double Theta_scaled, double V,
-  double W_act_motor_du, double W_act_theta_du, double W_act_tilt_el_du, double
-  W_act_tilt_az_du, double W_act_phi_du, double W_act_ailerons_du, double
-  W_act_phi, double W_act_theta, double W_act_motor, double W_dv_1, double
-  W_dv_2, double W_dv_3, double W_dv_4, double W_dv_5, double W_dv_6, double
-  W_act_tilt_el, double W_act_tilt_az, double W_act_ailerons, double b_1_scaled,
-  double b_2_scaled, double b_3_scaled, double b_4_scaled, double
-  delta_ailerons_scaled, double desired_el_value, double desired_az_value,
-  double desired_phi_value, double desired_theta_value, double
-  desired_motor_value, double desired_ailerons_value, double dv_global_1, double
-  dv_global_2, double dv_global_3, double dv_global_4, double dv_global_5,
-  double dv_global_6, double flight_path_angle, double g_1_scaled, double
-  g_2_scaled, double g_3_scaled, double g_4_scaled, double gain_el, double
-  gain_az, double gain_phi, double gain_theta, double gain_motor, double
-  gain_ailerons, double gamma_quadratic_du, double gamma_quadratic_du2, const
-  double previous_controls[15], double l_1, double l_2, double l_3, double l_4,
-  double l_z, double m, double p, double q, double r, double rho, double
-  wing_chord, double gradient[15])
+double c_compute_cost_and_gradient_fir(
+    double Beta, double CL_aileron, double Cd_zero, double Cl_alpha,
+    double Cm_zero, double Cm_alpha, double I_xx, double I_yy, double I_zz,
+    double K_Cd, double K_p_M, double K_p_T, double Omega_1_scaled,
+    double Omega_2_scaled, double Omega_3_scaled, double Omega_4_scaled,
+    double Phi_scaled, double S, double Theta_scaled, double V,
+    double W_act_phi, double W_act_theta, double W_act_motor,
+    double W_act_phi_du, double W_dv_1, double W_dv_2, double W_dv_3,
+    double W_dv_4, double W_dv_5, double W_dv_6, double W_act_tilt_el,
+    double W_act_tilt_az, double W_act_theta_du, double W_act_ailerons,
+    double W_act_motor_du, double W_act_tilt_el_du, double W_act_tilt_az_du,
+    double W_act_ailerons_du, double b_1_scaled, double b_2_scaled,
+    double b_3_scaled, double b_4_scaled, double delta_ailerons_scaled,
+    double desired_el_value, double desired_az_value, double desired_phi_value,
+    double desired_theta_value, double desired_motor_value,
+    double desired_ailerons_value, double dv_global_1, double dv_global_2,
+    double dv_global_3, double dv_global_4, double dv_global_5,
+    double dv_global_6, double flight_path_angle, double g_1_scaled,
+    double g_2_scaled, double g_3_scaled, double g_4_scaled, double gain_el,
+    double gain_az, double gain_phi, double gain_theta, double gain_motor,
+    double gain_ailerons, double gamma_quadratic_du, double gamma_quadratic_du2,
+    double l_1, double l_2, double l_3, double l_4, double l_z, double m,
+    double p, double previous_el_value1, double previous_el_value2,
+    double previous_el_value3, double previous_el_value4,
+    double previous_az_value1, double previous_az_value2,
+    double previous_az_value3, double previous_az_value4,
+    double previous_phi_value, double previous_theta_value,
+    double previous_motor_value1, double previous_motor_value2,
+    double previous_motor_value3, double previous_motor_value4,
+    double previous_ailerons_value, double q, double r, double rho,
+    double wing_chord, double gradient[15])
 {
   double a;
   double a_tmp;
-  double a_tmp_tmp;
-  double ab_a;
-  double ab_a_tmp;
-  double ab_a_tmp_tmp;
   double b_a;
   double b_a_tmp;
-  double b_a_tmp_tmp;
-  double b_cost_tmp;
-  double b_gradient_tmp;
-  double b_gradient_tmp_tmp;
-  double bb_a;
-  double bb_a_tmp;
-  double bb_a_tmp_tmp;
+  double b_t246_tmp;
   double c_a;
   double c_a_tmp;
-  double c_a_tmp_tmp;
-  double c_cost_tmp;
-  double c_gradient_tmp;
-  double c_gradient_tmp_tmp;
-  double cb_a;
-  double cb_a_tmp;
-  double cb_a_tmp_tmp;
+  double c_t246_tmp;
   double cost;
-  double cost_tmp;
   double d_a;
   double d_a_tmp;
-  double d_a_tmp_tmp;
-  double d_cost_tmp;
-  double d_gradient_tmp;
-  double db_a;
-  double db_a_tmp;
   double e_a;
   double e_a_tmp;
-  double e_a_tmp_tmp;
-  double e_cost_tmp;
-  double eb_a;
-  double eb_a_tmp;
   double f_a;
   double f_a_tmp;
-  double f_a_tmp_tmp;
-  double f_cost_tmp;
-  double fb_a_tmp;
   double g_a;
   double g_a_tmp;
-  double g_a_tmp_tmp;
-  double g_cost_tmp;
-  double gb_a_tmp;
-  double gradient_tmp;
-  double gradient_tmp_tmp;
   double h_a;
   double h_a_tmp;
-  double h_a_tmp_tmp;
-  double h_cost_tmp;
-  double hb_a_tmp;
   double i_a;
   double i_a_tmp;
-  double i_a_tmp_tmp;
-  double i_cost_tmp;
-  double ib_a_tmp;
   double j_a;
   double j_a_tmp;
-  double j_a_tmp_tmp;
-  double j_cost_tmp;
-  double jb_a_tmp;
   double k_a;
   double k_a_tmp;
-  double k_a_tmp_tmp;
-  double k_cost_tmp;
-  double kb_a_tmp;
   double l_a;
   double l_a_tmp;
-  double l_a_tmp_tmp;
-  double l_cost_tmp;
-  double lb_a_tmp;
   double m_a;
   double m_a_tmp;
-  double m_a_tmp_tmp;
-  double m_cost_tmp;
-  double mb_a_tmp;
   double n_a;
   double n_a_tmp;
-  double n_a_tmp_tmp;
-  double n_cost_tmp;
-  double nb_a_tmp;
   double o_a;
   double o_a_tmp;
-  double o_a_tmp_tmp;
-  double o_cost_tmp;
-  double ob_a_tmp;
-  double p_a;
   double p_a_tmp;
-  double p_a_tmp_tmp;
-  double p_cost_tmp;
-  double pb_a_tmp;
-  double q_a;
   double q_a_tmp;
-  double q_a_tmp_tmp;
-  double q_cost_tmp;
-  double qb_a_tmp;
-  double r_a;
-  double r_a_tmp;
-  double r_a_tmp_tmp;
-  double rb_a_tmp;
-  double s_a;
-  double s_a_tmp;
-  double s_a_tmp_tmp;
-  double sb_a_tmp;
-  double t_a;
-  double t_a_tmp;
-  double t_a_tmp_tmp;
-  double tb_a_tmp;
-  double u_a;
-  double u_a_tmp;
-  double u_a_tmp_tmp;
-  double ub_a_tmp;
-  double v_a;
-  double v_a_tmp;
-  double v_a_tmp_tmp;
-  double vb_a_tmp;
-  double w_a;
-  double w_a_tmp;
-  double w_a_tmp_tmp;
-  double wb_a_tmp;
-  double x_a;
-  double x_a_tmp;
-  double x_a_tmp_tmp;
-  double xb_a_tmp;
-  double y_a;
-  double y_a_tmp;
-  double y_a_tmp_tmp;
-  double yb_a_tmp;
-
-  /*     This function was generated by the Symbolic Math Toolbox version 23.2. */
-  /*     30-Nov-2023 18:08:48 */
-  /*  t2 = cos(Beta); */
-  /*  t3 = sin(Beta); */
-  /*  t4 = Phi_scaled.*gain_phi; */
-  /*  t5 = Theta_scaled.*gain_theta; */
-  /*  t6 = b_1_scaled.*gain_el; */
-  /*  t7 = b_2_scaled.*gain_el; */
-  /*  t8 = b_3_scaled.*gain_el; */
-  /*  t9 = b_4_scaled.*gain_el; */
-  /*  t10 = g_1_scaled.*gain_az; */
-  /*  t11 = g_2_scaled.*gain_az; */
-  /*  t12 = g_3_scaled.*gain_az; */
-  /*  t13 = g_4_scaled.*gain_az; */
-  /*  t14 = Cl_alpha.^2; */
-  /*  t15 = Omega_1_scaled.^2; */
-  /*  t16 = Omega_2_scaled.^2; */
-  /*  t17 = Omega_3_scaled.^2; */
-  /*  t18 = Omega_4_scaled.^2; */
-  /*  t19 = V.^2; */
-  /*  t20 = W_act_phi.^2; */
-  /*  t21 = W_act_theta.^2; */
-  /*  t22 = W_act_motor.^2; */
-  /*  t23 = W_dv_1.^2; */
-  /*  t24 = W_dv_2.^2; */
-  /*  t25 = W_dv_3.^2; */
-  /*  t26 = W_dv_4.^2; */
-  /*  t27 = W_dv_5.^2; */
-  /*  t28 = W_dv_6.^2; */
-  /*  t29 = W_act_tilt_el.^2; */
-  /*  t30 = W_act_tilt_az.^2; */
-  /*  t31 = W_act_ailerons.^2; */
-  /*  t32 = gain_motor.^2; */
-  /*  t35 = I_xx.*p.*q; */
-  /*  t36 = I_yy.*p.*q; */
-  /*  t38 = I_xx.*p.*r; */
-  /*  t39 = I_zz.*p.*r; */
-  /*  t40 = I_yy.*q.*r; */
-  /*  t41 = I_zz.*q.*r; */
-  /*  t59 = 1.0./I_xx; */
-  /*  t60 = 1.0./I_yy; */
-  /*  t61 = 1.0./I_zz; */
-  /*  t62 = -dv_global_3; */
-  /*  t63 = 1.0./gain_el; */
-  /*  t64 = 1.0./gain_az; */
-  /*  t65 = 1.0./gain_phi; */
-  /*  t66 = 1.0./gain_theta; */
-  /*  t67 = 1.0./gain_motor; */
-  /*  t68 = 1.0./gain_ailerons; */
-  /*  t69 = 1.0./m; */
-  /*  t33 = cos(t4); */
-  /*  t34 = cos(t5); */
-  /*  t37 = sin(t4); */
-  /*  t42 = cos(t6); */
-  /*  t43 = cos(t7); */
-  /*  t44 = cos(t8); */
-  /*  t45 = cos(t9); */
-  /*  t46 = sin(t5); */
-  /*  t47 = cos(t10); */
-  /*  t48 = cos(t11); */
-  /*  t49 = cos(t12); */
-  /*  t50 = cos(t13); */
-  /*  t51 = sin(t6); */
-  /*  t52 = sin(t7); */
-  /*  t53 = sin(t8); */
-  /*  t54 = sin(t9); */
-  /*  t55 = sin(t10); */
-  /*  t56 = sin(t11); */
-  /*  t57 = sin(t12); */
-  /*  t58 = sin(t13); */
-  /*  t70 = -t5; */
-  /*  t71 = -t36; */
-  /*  t72 = desired_el_value.*t63; */
-  /*  t73 = desired_az_value.*t64; */
-  /*  t74 = desired_motor_value.*t67; */
-  /*  t75 = -t38; */
-  /*  t76 = -t41; */
-  /*  t100 = (CL_aileron.*S.*delta_ailerons_scaled.*gain_ailerons.*rho.*t19)./2.0; */
-  /*  t77 = t72.*2.0; */
-  /*  t78 = t73.*2.0; */
-  /*  t79 = t74.*2.0; */
-  /*  t80 = flight_path_angle+t70; */
-  /*  t83 = -t72; */
-  /*  t85 = -t73; */
-  /*  t87 = -t74; */
-  /*  t92 = K_p_M.*t15.*t32.*t51; */
-  /*  t93 = K_p_M.*t16.*t32.*t52; */
-  /*  t94 = K_p_M.*t17.*t32.*t53; */
-  /*  t95 = K_p_M.*t18.*t32.*t54; */
-  /*  t96 = K_p_T.*t15.*t32.*t51; */
-  /*  t97 = K_p_T.*t16.*t32.*t52; */
-  /*  t98 = K_p_T.*t17.*t32.*t53; */
-  /*  t99 = K_p_T.*t18.*t32.*t54; */
-  /*  t116 = K_p_M.*t15.*t32.*t42.*t47; */
-  /*  t117 = K_p_M.*t16.*t32.*t43.*t48; */
-  /*  t118 = K_p_M.*t17.*t32.*t44.*t49; */
-  /*  t119 = K_p_T.*t15.*t32.*t42.*t47; */
-  /*  t120 = K_p_M.*t18.*t32.*t45.*t50; */
-  /*  t121 = K_p_T.*t16.*t32.*t43.*t48; */
-  /*  t122 = K_p_T.*t17.*t32.*t44.*t49; */
-  /*  t123 = K_p_T.*t18.*t32.*t45.*t50; */
-  /*  t124 = K_p_M.*t15.*t32.*t42.*t55; */
-  /*  t125 = K_p_M.*t16.*t32.*t43.*t56; */
-  /*  t126 = K_p_M.*t17.*t32.*t44.*t57; */
-  /*  t127 = K_p_T.*t15.*t32.*t42.*t55; */
-  /*  t128 = K_p_M.*t18.*t32.*t45.*t58; */
-  /*  t129 = K_p_T.*t16.*t32.*t43.*t56; */
-  /*  t130 = K_p_T.*t17.*t32.*t44.*t57; */
-  /*  t131 = K_p_T.*t18.*t32.*t45.*t58; */
-  /*  t81 = cos(t80); */
-  /*  t82 = sin(t80); */
-  /*  t84 = -t77; */
-  /*  t86 = -t78; */
-  /*  t88 = -t79; */
-  /*  t89 = t80.^2; */
-  /*  t90 = Cm_alpha.*t80; */
-  /*  t102 = l_1.*t96; */
-  /*  t103 = l_1.*t97; */
-  /*  t104 = l_2.*t98; */
-  /*  t105 = l_2.*t99; */
-  /*  t106 = l_z.*t96; */
-  /*  t107 = l_z.*t97; */
-  /*  t108 = l_z.*t98; */
-  /*  t109 = l_z.*t99; */
-  /*  t111 = -t93; */
-  /*  t112 = -t95; */
-  /*  t132 = l_1.*t119; */
-  /*  t133 = l_4.*t119; */
-  /*  t134 = l_1.*t121; */
-  /*  t135 = l_4.*t121; */
-  /*  t136 = l_2.*t122; */
-  /*  t137 = l_3.*t122; */
-  /*  t138 = l_2.*t123; */
-  /*  t139 = l_3.*t123; */
-  /*  t140 = l_4.*t127; */
-  /*  t141 = l_4.*t129; */
-  /*  t142 = l_3.*t130; */
-  /*  t143 = l_3.*t131; */
-  /*  t144 = l_z.*t127; */
-  /*  t145 = l_z.*t129; */
-  /*  t146 = l_z.*t130; */
-  /*  t147 = l_z.*t131; */
-  /*  t148 = -t117; */
-  /*  t149 = -t120; */
-  /*  t150 = -t124; */
-  /*  t151 = -t126; */
-  /*  t179 = t96+t97+t98+t99; */
-  /*  t184 = t119+t121+t122+t123; */
-  /*  t185 = t127+t129+t130+t131; */
-  /*  t91 = -t90; */
-  /*  t110 = K_Cd.*t14.*t89; */
-  /*  t113 = -t102; */
-  /*  t114 = -t105; */
-  /*  t152 = -t134; */
-  /*  t153 = -t136; */
-  /*  t154 = -t137; */
-  /*  t155 = -t139; */
-  /*  t156 = -t142; */
-  /*  t157 = -t143; */
-  /*  t158 = (Cl_alpha.*S.*gain_theta.*rho.*t19.*t81)./2.0; */
-  /*  t159 = (Cl_alpha.*S.*gain_theta.*rho.*t19.*t82)./2.0; */
-  /*  t161 = (Cl_alpha.*S.*rho.*t19.*t80.*t81)./2.0; */
-  /*  t162 = (Cl_alpha.*S.*rho.*t19.*t80.*t82)./2.0; */
-  /*  t165 = Cl_alpha.*S.*gain_theta.*rho.*t19.*t80.*t82.*(-1.0./2.0); */
-  /*  t166 = K_Cd.*S.*gain_theta.*rho.*t2.*t14.*t19.*t80.*t82; */
-  /*  t167 = K_Cd.*S.*gain_theta.*rho.*t2.*t14.*t19.*t80.*t81; */
-  /*  t180 = t34.*t179; */
-  /*  t181 = t46.*t179; */
-  /*  t194 = t37.*t184; */
-  /*  t195 = t33.*t185; */
-  /*  t197 = t34.*t37.*t185; */
-  /*  t198 = t37.*t46.*t185; */
-  /*  t199 = t33.*t34.*t184; */
-  /*  t200 = t33.*t46.*t184; */
-  /*  t101 = Cm_zero+t91; */
-  /*  t115 = Cd_zero+t110; */
-  /*  t163 = t80.*t158; */
-  /*  t168 = -t167; */
-  /*  t201 = -t198; */
-  /*  t205 = t35+t71+t103+t104+t113+t114+t116+t118+t140+t141+t148+t149+t156+t157; */
-  /*  t208 = t40+t76+t92+t94+t100+t111+t112+t132+t138+t144+t145+t146+t147+t152+t153; */
-  /*  t160 = (S.*rho.*t19.*t101.*wing_chord)./2.0; */
-  /*  t169 = (S.*rho.*t3.*t19.*t33.*t115)./2.0; */
-  /*  t171 = (S.*rho.*t2.*t19.*t82.*t115)./2.0; */
-  /*  t172 = (S.*rho.*t3.*t19.*t34.*t37.*t115)./2.0; */
-  /*  t173 = (S.*rho.*t3.*t19.*t37.*t46.*t115)./2.0; */
-  /*  t174 = (S.*rho.*t2.*t19.*t81.*t115)./2.0; */
-  /*  t206 = t61.*t205; */
-  /*  t210 = t59.*t208; */
-  /*  t175 = gain_theta.*t174; */
-  /*  t176 = gain_theta.*t171; */
-  /*  t178 = -t174; */
-  /*  t182 = t161+t171; */
-  /*  t207 = -t206; */
-  /*  t211 = -t210; */
-  /*  t213 = t39+t75+t106+t107+t108+t109+t125+t128+t133+t135+t150+t151+t154+t155+t160; */
-  /*  t183 = t162+t178; */
-  /*  t186 = t37.*t182; */
-  /*  t192 = t33.*t34.*t182; */
-  /*  t193 = t33.*t46.*t182; */
-  /*  t203 = t158+t165+t166+t175; */
-  /*  t204 = t159+t163+t168+t176; */
-  /*  t209 = dv_global_6+t207; */
-  /*  t212 = dv_global_4+t211; */
-  /*  t214 = t60.*t213; */
-  /*  t187 = t34.*t183; */
-  /*  t188 = t46.*t183; */
-  /*  t196 = -t193; */
-  /*  t215 = -t214; */
-  /*  t219 = t69.*(t169+t186-t194-t195); */
-  /*  t190 = -t187; */
-  /*  t216 = dv_global_5+t215; */
-  /*  t220 = dv_global_2+t219; */
-  /*  t223 = -t69.*(t172-t181+t188-t192-t197+t199); */
-  /*  t222 = t173+t180+t190+t196+t200+t201; */
-  /*  t226 = t62+t223+9.81e+2./1.0e+2; */
-  /*  t224 = t69.*t222; */
-  /*  t225 = dv_global_1+t224; */
-  /*  cost = gamma_quadratic_du.*(t20.*(Phi_scaled-desired_phi_value.*t65).^2+t21.*(Theta_scaled-desired_theta_value.*t66).^2+t31.*(delta_ailerons_scaled-desired_ailerons_value.*t68).^2+t22.*(Omega_1_scaled+t87).^2+t22.*(Omega_2_scaled+t87).^2+t22.*(Omega_3_scaled+t87).^2+t22.*(Omega_4_scaled+t87).^2+t29.*(b_1_scaled+t83).^2+t29.*(b_2_scaled+t83).^2+t29.*(b_3_scaled+t83).^2+t29.*(b_4_scaled+t83).^2+t30.*(g_1_scaled+t85).^2+t30.*(g_2_scaled+t85).^2+t30.*(g_3_scaled+t85).^2+t30.*(g_4_scaled+t85).^2)+t28.*t209.^2+t26.*t212.^2+t27.*t216.^2+t24.*t220.^2+t23.*t225.^2+t25.*t226.^2; */
-  /*  if nargout > 1 */
-  /*      mt1 = [gamma_quadratic_du.*t22.*(Omega_1_scaled.*2.0+t88)-t28.*t61.*t209.*(K_p_T.*Omega_1_scaled.*l_1.*t32.*t51.*-2.0+K_p_M.*Omega_1_scaled.*t32.*t42.*t47.*2.0+K_p_T.*Omega_1_scaled.*l_4.*t32.*t42.*t55.*2.0).*2.0-t26.*t59.*t212.*(K_p_M.*Omega_1_scaled.*t32.*t51.*2.0+K_p_T.*Omega_1_scaled.*l_1.*t32.*t42.*t47.*2.0+K_p_T.*Omega_1_scaled.*l_z.*t32.*t42.*t55.*2.0).*2.0-t27.*t60.*t216.*(K_p_T.*Omega_1_scaled.*l_z.*t32.*t51.*2.0-K_p_M.*Omega_1_scaled.*t32.*t42.*t55.*2.0+K_p_T.*Omega_1_scaled.*l_4.*t32.*t42.*t47.*2.0).*2.0-t24.*t69.*t220.*(K_p_T.*Omega_1_scaled.*t32.*t37.*t42.*t47.*2.0+K_p_T.*Omega_1_scaled.*t32.*t33.*t42.*t55.*2.0).*2.0+t25.*t69.*t226.*(K_p_T.*Omega_1_scaled.*t32.*t46.*t51.*2.0-K_p_T.*Omega_1_scaled.*t32.*t33.*t34.*t42.*t47.*2.0+K_p_T.*Omega_1_scaled.*t32.*t34.*t37.*t42.*t55.*2.0).*2.0+t23.*t69.*t225.*(K_p_T.*Omega_1_scaled.*t32.*t34.*t51.*2.0+K_p_T.*Omega_1_scaled.*t32.*t33.*t42.*t46.*t47.*2.0-K_p_T.*Omega_1_scaled.*t32.*t37.*t42.*t46.*t55.*2.0).*2.0]; */
-  /*      mt2 = [gamma_quadratic_du.*t22.*(Omega_2_scaled.*2.0+t88)-t28.*t61.*t209.*(K_p_T.*Omega_2_scaled.*l_1.*t32.*t52.*2.0-K_p_M.*Omega_2_scaled.*t32.*t43.*t48.*2.0+K_p_T.*Omega_2_scaled.*l_4.*t32.*t43.*t56.*2.0).*2.0+t26.*t59.*t212.*(K_p_M.*Omega_2_scaled.*t32.*t52.*2.0+K_p_T.*Omega_2_scaled.*l_1.*t32.*t43.*t48.*2.0-K_p_T.*Omega_2_scaled.*l_z.*t32.*t43.*t56.*2.0).*2.0-t27.*t60.*t216.*(K_p_T.*Omega_2_scaled.*l_z.*t32.*t52.*2.0+K_p_M.*Omega_2_scaled.*t32.*t43.*t56.*2.0+K_p_T.*Omega_2_scaled.*l_4.*t32.*t43.*t48.*2.0).*2.0-t24.*t69.*t220.*(K_p_T.*Omega_2_scaled.*t32.*t37.*t43.*t48.*2.0+K_p_T.*Omega_2_scaled.*t32.*t33.*t43.*t56.*2.0).*2.0+t25.*t69.*t226.*(K_p_T.*Omega_2_scaled.*t32.*t46.*t52.*2.0-K_p_T.*Omega_2_scaled.*t32.*t33.*t34.*t43.*t48.*2.0+K_p_T.*Omega_2_scaled.*t32.*t34.*t37.*t43.*t56.*2.0).*2.0+t23.*t69.*t225.*(K_p_T.*Omega_2_scaled.*t32.*t34.*t52.*2.0+K_p_T.*Omega_2_scaled.*t32.*t33.*t43.*t46.*t48.*2.0-K_p_T.*Omega_2_scaled.*t32.*t37.*t43.*t46.*t56.*2.0).*2.0]; */
-  /*      mt3 = [gamma_quadratic_du.*t22.*(Omega_3_scaled.*2.0+t88)-t28.*t61.*t209.*(K_p_T.*Omega_3_scaled.*l_2.*t32.*t53.*2.0+K_p_M.*Omega_3_scaled.*t32.*t44.*t49.*2.0-K_p_T.*Omega_3_scaled.*l_3.*t32.*t44.*t57.*2.0).*2.0-t26.*t59.*t212.*(K_p_M.*Omega_3_scaled.*t32.*t53.*2.0-K_p_T.*Omega_3_scaled.*l_2.*t32.*t44.*t49.*2.0+K_p_T.*Omega_3_scaled.*l_z.*t32.*t44.*t57.*2.0).*2.0+t27.*t60.*t216.*(K_p_T.*Omega_3_scaled.*l_z.*t32.*t53.*-2.0+K_p_M.*Omega_3_scaled.*t32.*t44.*t57.*2.0+K_p_T.*Omega_3_scaled.*l_3.*t32.*t44.*t49.*2.0).*2.0-t24.*t69.*t220.*(K_p_T.*Omega_3_scaled.*t32.*t37.*t44.*t49.*2.0+K_p_T.*Omega_3_scaled.*t32.*t33.*t44.*t57.*2.0).*2.0+t25.*t69.*t226.*(K_p_T.*Omega_3_scaled.*t32.*t46.*t53.*2.0-K_p_T.*Omega_3_scaled.*t32.*t33.*t34.*t44.*t49.*2.0+K_p_T.*Omega_3_scaled.*t32.*t34.*t37.*t44.*t57.*2.0).*2.0+t23.*t69.*t225.*(K_p_T.*Omega_3_scaled.*t32.*t34.*t53.*2.0+K_p_T.*Omega_3_scaled.*t32.*t33.*t44.*t46.*t49.*2.0-K_p_T.*Omega_3_scaled.*t32.*t37.*t44.*t46.*t57.*2.0).*2.0]; */
-  /*      mt4 = [gamma_quadratic_du.*t22.*(Omega_4_scaled.*2.0+t88)+t28.*t61.*t209.*(K_p_T.*Omega_4_scaled.*l_2.*t32.*t54.*2.0+K_p_M.*Omega_4_scaled.*t32.*t45.*t50.*2.0+K_p_T.*Omega_4_scaled.*l_3.*t32.*t45.*t58.*2.0).*2.0-t26.*t59.*t212.*(K_p_M.*Omega_4_scaled.*t32.*t54.*-2.0+K_p_T.*Omega_4_scaled.*l_2.*t32.*t45.*t50.*2.0+K_p_T.*Omega_4_scaled.*l_z.*t32.*t45.*t58.*2.0).*2.0-t27.*t60.*t216.*(K_p_T.*Omega_4_scaled.*l_z.*t32.*t54.*2.0+K_p_M.*Omega_4_scaled.*t32.*t45.*t58.*2.0-K_p_T.*Omega_4_scaled.*l_3.*t32.*t45.*t50.*2.0).*2.0-t24.*t69.*t220.*(K_p_T.*Omega_4_scaled.*t32.*t37.*t45.*t50.*2.0+K_p_T.*Omega_4_scaled.*t32.*t33.*t45.*t58.*2.0).*2.0+t25.*t69.*t226.*(K_p_T.*Omega_4_scaled.*t32.*t46.*t54.*2.0-K_p_T.*Omega_4_scaled.*t32.*t33.*t34.*t45.*t50.*2.0+K_p_T.*Omega_4_scaled.*t32.*t34.*t37.*t45.*t58.*2.0).*2.0+t23.*t69.*t225.*(K_p_T.*Omega_4_scaled.*t32.*t34.*t54.*2.0+K_p_T.*Omega_4_scaled.*t32.*t33.*t45.*t46.*t50.*2.0-K_p_T.*Omega_4_scaled.*t32.*t37.*t45.*t46.*t58.*2.0).*2.0]; */
-  /*      mt5 = [gamma_quadratic_du.*t29.*(b_1_scaled.*2.0+t84)+t25.*t69.*t226.*(gain_el.*t33.*t34.*t47.*t96-gain_el.*t34.*t37.*t55.*t96+K_p_T.*gain_el.*t15.*t32.*t42.*t46).*2.0+t23.*t69.*t225.*(-gain_el.*t33.*t46.*t47.*t96+gain_el.*t37.*t46.*t55.*t96+K_p_T.*gain_el.*t15.*t32.*t34.*t42).*2.0+t24.*t69.*t220.*(gain_el.*t37.*t47.*t96+gain_el.*t33.*t55.*t96).*2.0+t28.*t61.*t209.*(gain_el.*t47.*t92+gain_el.*l_4.*t55.*t96+K_p_T.*gain_el.*l_1.*t15.*t32.*t42).*2.0-t27.*t60.*t216.*(gain_el.*t55.*t92-gain_el.*l_4.*t47.*t96+K_p_T.*gain_el.*l_z.*t15.*t32.*t42).*2.0+t26.*t59.*t212.*(gain_el.*t47.*t102+gain_el.*t55.*t106-K_p_M.*gain_el.*t15.*t32.*t42).*2.0]; */
-  /*      mt6 = [gamma_quadratic_du.*t29.*(b_2_scaled.*2.0+t84)+t25.*t69.*t226.*(gain_el.*t33.*t34.*t48.*t97-gain_el.*t34.*t37.*t56.*t97+K_p_T.*gain_el.*t16.*t32.*t43.*t46).*2.0+t23.*t69.*t225.*(-gain_el.*t33.*t46.*t48.*t97+gain_el.*t37.*t46.*t56.*t97+K_p_T.*gain_el.*t16.*t32.*t34.*t43).*2.0+t24.*t69.*t220.*(gain_el.*t37.*t48.*t97+gain_el.*t33.*t56.*t97).*2.0-t28.*t61.*t209.*(gain_el.*t48.*t93-gain_el.*l_4.*t56.*t97+K_p_T.*gain_el.*l_1.*t16.*t32.*t43).*2.0+t27.*t60.*t216.*(gain_el.*t56.*t93+gain_el.*l_4.*t48.*t97-K_p_T.*gain_el.*l_z.*t16.*t32.*t43).*2.0+t26.*t59.*t212.*(-gain_el.*t48.*t103+gain_el.*t56.*t107+K_p_M.*gain_el.*t16.*t32.*t43).*2.0]; */
-  /*      mt7 = [gamma_quadratic_du.*t29.*(b_3_scaled.*2.0+t84)+t25.*t69.*t226.*(gain_el.*t33.*t34.*t49.*t98-gain_el.*t34.*t37.*t57.*t98+K_p_T.*gain_el.*t17.*t32.*t44.*t46).*2.0+t23.*t69.*t225.*(-gain_el.*t33.*t46.*t49.*t98+gain_el.*t37.*t46.*t57.*t98+K_p_T.*gain_el.*t17.*t32.*t34.*t44).*2.0+t24.*t69.*t220.*(gain_el.*t37.*t49.*t98+gain_el.*t33.*t57.*t98).*2.0-t28.*t61.*t209.*(-gain_el.*t49.*t94+gain_el.*l_3.*t57.*t98+K_p_T.*gain_el.*l_2.*t17.*t32.*t44).*2.0-t27.*t60.*t216.*(gain_el.*t57.*t94+gain_el.*l_3.*t49.*t98+K_p_T.*gain_el.*l_z.*t17.*t32.*t44).*2.0-t26.*t59.*t212.*(gain_el.*t49.*t104-gain_el.*t57.*t108+K_p_M.*gain_el.*t17.*t32.*t44).*2.0]; */
-  /*      mt8 = [gamma_quadratic_du.*t29.*(b_4_scaled.*2.0+t84)+t25.*t69.*t226.*(gain_el.*t33.*t34.*t50.*t99-gain_el.*t34.*t37.*t58.*t99+K_p_T.*gain_el.*t18.*t32.*t45.*t46).*2.0+t23.*t69.*t225.*(-gain_el.*t33.*t46.*t50.*t99+gain_el.*t37.*t46.*t58.*t99+K_p_T.*gain_el.*t18.*t32.*t34.*t45).*2.0+t24.*t69.*t220.*(gain_el.*t37.*t50.*t99+gain_el.*t33.*t58.*t99).*2.0-t28.*t61.*t209.*(gain_el.*t50.*t95+gain_el.*l_3.*t58.*t99-K_p_T.*gain_el.*l_2.*t18.*t32.*t45).*2.0-t27.*t60.*t216.*(gain_el.*t58.*t112+gain_el.*l_3.*t50.*t99+K_p_T.*gain_el.*l_z.*t18.*t32.*t45).*2.0+t26.*t59.*t212.*(gain_el.*t50.*t105+gain_el.*t58.*t109+K_p_M.*gain_el.*t18.*t32.*t45).*2.0]; */
-  /*      mt9 = [gamma_quadratic_du.*t30.*(g_1_scaled.*2.0+t86)+t25.*t69.*t226.*(gain_az.*t34.*t37.*t119+gain_az.*t33.*t34.*t127).*2.0-t23.*t69.*t225.*(gain_az.*t37.*t46.*t119+gain_az.*t33.*t46.*t127).*2.0+t26.*t59.*t212.*(gain_az.*l_1.*t127-gain_az.*l_z.*t119).*2.0-t24.*t69.*t220.*(gain_az.*t33.*t119-gain_az.*t37.*t127).*2.0+t28.*t61.*t209.*(gain_az.*t124-gain_az.*t133).*2.0+t27.*t60.*t216.*(gain_az.*t116+gain_az.*t140).*2.0]; */
-  /*      mt10 = [gamma_quadratic_du.*t30.*(g_2_scaled.*2.0+t86)+t25.*t69.*t226.*(gain_az.*t34.*t37.*t121+gain_az.*t33.*t34.*t129).*2.0-t23.*t69.*t225.*(gain_az.*t37.*t46.*t121+gain_az.*t33.*t46.*t129).*2.0-t26.*t59.*t212.*(gain_az.*l_1.*t129+gain_az.*l_z.*t121).*2.0-t24.*t69.*t220.*(gain_az.*t33.*t121-gain_az.*t37.*t129).*2.0-t28.*t61.*t209.*(gain_az.*t125+gain_az.*t135).*2.0-t27.*t60.*t216.*(gain_az.*t117-gain_az.*t141).*2.0;gamma_quadratic_du.*t30.*(g_3_scaled.*2.0+t86)+t25.*t69.*t226.*(gain_az.*t34.*t37.*t122+gain_az.*t33.*t34.*t130).*2.0-t23.*t69.*t225.*(gain_az.*t37.*t46.*t122+gain_az.*t33.*t46.*t130).*2.0-t26.*t59.*t212.*(gain_az.*l_2.*t130+gain_az.*l_z.*t122).*2.0-t24.*t69.*t220.*(gain_az.*t33.*t122-gain_az.*t37.*t130).*2.0+t28.*t61.*t209.*(gain_az.*t126+gain_az.*t137).*2.0+t27.*t60.*t216.*(gain_az.*t118+gain_az.*t156).*2.0]; */
-  /*      mt11 = [gamma_quadratic_du.*t30.*(g_4_scaled.*2.0+t86)+t25.*t69.*t226.*(gain_az.*t34.*t37.*t123+gain_az.*t33.*t34.*t131).*2.0-t23.*t69.*t225.*(gain_az.*t37.*t46.*t123+gain_az.*t33.*t46.*t131).*2.0+t26.*t59.*t212.*(gain_az.*l_2.*t131-gain_az.*l_z.*t123).*2.0-t24.*t69.*t220.*(gain_az.*t33.*t123-gain_az.*t37.*t131).*2.0-t27.*t60.*t216.*(gain_az.*t120+gain_az.*t143).*2.0-t28.*t61.*t209.*(gain_az.*t128+gain_az.*t155).*2.0]; */
-  /*      mt12 = [gamma_quadratic_du.*t21.*(Theta_scaled.*2.0-desired_theta_value.*t66.*2.0)+t25.*t69.*t226.*(gain_theta.*t173+gain_theta.*t180+gain_theta.*t190+gain_theta.*t196+gain_theta.*t200+gain_theta.*t201+t46.*t204-t33.*t34.*t203+K_Cd.*S.*gain_theta.*rho.*t3.*t14.*t19.*t34.*t37.*t80).*2.0+t23.*t69.*t225.*(gain_theta.*t172-gain_theta.*t181+gain_theta.*t188-gain_theta.*t192-gain_theta.*t197+gain_theta.*t199+t34.*t204+t33.*t46.*t203-K_Cd.*S.*gain_theta.*rho.*t3.*t14.*t19.*t37.*t46.*t80).*2.0-t24.*t69.*t220.*(t37.*t203+K_Cd.*S.*gain_theta.*rho.*t3.*t14.*t19.*t33.*t80).*2.0-Cm_alpha.*S.*gain_theta.*rho.*t19.*t27.*t60.*t216.*wing_chord]; */
-  /*      mt13 = [gamma_quadratic_du.*t20.*(Phi_scaled.*2.0-desired_phi_value.*t65.*2.0)+t24.*t69.*t220.*(gain_phi.*t33.*t182-gain_phi.*t33.*t184+gain_phi.*t37.*t185-(S.*gain_phi.*rho.*t3.*t19.*t37.*t115)./2.0).*2.0-t25.*t69.*t226.*(gain_phi.*t34.*t169+gain_phi.*t34.*t186-gain_phi.*t34.*t194-gain_phi.*t34.*t195).*2.0+t23.*t69.*t225.*(gain_phi.*t46.*t169+gain_phi.*t46.*t186-gain_phi.*t46.*t194-gain_phi.*t46.*t195).*2.0;gamma_quadratic_du.*t31.*(delta_ailerons_scaled.*2.0-desired_ailerons_value.*t68.*2.0)-CL_aileron.*S.*gain_ailerons.*rho.*t19.*t26.*t59.*t212]; */
-  /*      gradient = [mt1;mt2;mt3;mt4;mt5;mt6;mt7;mt8;mt9;mt10;mt11;mt12;mt13]; */
-  /*  end */
-  /*  cost = (W_dv_3^2*(100*dv_global_3 + (100*(sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) + K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2))/m - 981)^2)/10000 + gamma_quadratic_du*(W_act_motor^2*(Omega_1_scaled - desired_motor_value/gain_motor)^2 + W_act_motor^2*(Omega_2_scaled - desired_motor_value/gain_motor)^2 + W_act_motor^2*(Omega_3_scaled - desired_motor_value/gain_motor)^2 + W_act_motor^2*(Omega_4_scaled - desired_motor_value/gain_motor)^2 + W_act_phi^2*(Phi_scaled - desired_phi_value/gain_phi)^2 + W_act_theta^2*(Theta_scaled - desired_theta_value/gain_theta)^2 + W_act_tilt_el^2*(b_1_scaled - desired_el_value/gain_el)^2 + W_act_tilt_el^2*(b_2_scaled - desired_el_value/gain_el)^2 + W_act_tilt_el^2*(b_3_scaled - desired_el_value/gain_el)^2 + W_act_tilt_el^2*(b_4_scaled - desired_el_value/gain_el)^2 + W_act_ailerons^2*(delta_ailerons_scaled - desired_ailerons_value/gain_ailerons)^2 + W_act_tilt_az^2*(g_1_scaled - desired_az_value/gain_az)^2 + W_act_tilt_az^2*(g_2_scaled - desired_az_value/gain_az)^2 + W_act_tilt_az^2*(g_3_scaled - desired_az_value/gain_az)^2 + W_act_tilt_az^2*(g_4_scaled - desired_az_value/gain_az)^2) + W_dv_2^2*(dv_global_2 + (sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m)^2 + gamma_quadratic_du2*(W_act_phi_du^2*(Phi_scaled - previous_phi_value/gain_phi)^2 + W_act_theta_du^2*(Theta_scaled - previous_theta_value/gain_theta)^2) + W_dv_1^2*(dv_global_1 - (cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m)^2 + (W_dv_5^2*(2*I_zz*p*r - 2*I_xx*p*r - 2*I_yy*dv_global_5 + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*sin(b_1_scaled*gain_el) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*sin(b_2_scaled*gain_el) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*sin(b_3_scaled*gain_el) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*sin(b_4_scaled*gain_el) - 2*K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) - 2*K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + Cm_zero*S*V^2*rho*wing_chord + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) - 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - Cm_alpha*S*V^2*flight_path_angle*rho*wing_chord + Cm_alpha*S*Theta_scaled*V^2*gain_theta*rho*wing_chord)^2)/(4*I_yy^2) + (W_dv_4^2*(2*I_yy*q*r - 2*I_xx*dv_global_4 - 2*I_zz*q*r + 2*K_p_M*Omega_1_scaled^2*gain_motor^2*sin(b_1_scaled*gain_el) - 2*K_p_M*Omega_2_scaled^2*gain_motor^2*sin(b_2_scaled*gain_el) + 2*K_p_M*Omega_3_scaled^2*gain_motor^2*sin(b_3_scaled*gain_el) - 2*K_p_M*Omega_4_scaled^2*gain_motor^2*sin(b_4_scaled*gain_el) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) - 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + CL_aileron*S*V^2*delta_ailerons_scaled*gain_ailerons*rho)^2)/(4*I_xx^2) + (W_dv_6^2*(I_zz*dv_global_6 - I_xx*p*q + I_yy*p*q + K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*sin(b_1_scaled*gain_el) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*sin(b_2_scaled*gain_el) - K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*sin(b_3_scaled*gain_el) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*sin(b_4_scaled*gain_el) - K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az))^2)/I_zz^2; */
-  /*  if nargout > 1  */
-  /*   */
-  /*  gradient =[                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             (2*Omega_1_scaled*W_dv_5^2*gain_motor^2*(K_p_T*l_z*sin(b_1_scaled*gain_el) - K_p_M*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + K_p_T*l_4*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az))*(2*I_zz*p*r - 2*I_xx*p*r - 2*I_yy*dv_global_5 + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*sin(b_1_scaled*gain_el) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*sin(b_2_scaled*gain_el) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*sin(b_3_scaled*gain_el) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*sin(b_4_scaled*gain_el) - 2*K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) - 2*K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + Cm_zero*S*V^2*rho*wing_chord + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) - 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - Cm_alpha*S*V^2*flight_path_angle*rho*wing_chord + Cm_alpha*S*Theta_scaled*V^2*gain_theta*rho*wing_chord))/I_yy^2 - (4*Omega_1_scaled*W_dv_6^2*gain_motor^2*(K_p_M*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) - K_p_T*l_1*sin(b_1_scaled*gain_el) + K_p_T*l_4*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az))*(I_zz*dv_global_6 - I_xx*p*q + I_yy*p*q + K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*sin(b_1_scaled*gain_el) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*sin(b_2_scaled*gain_el) - K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*sin(b_3_scaled*gain_el) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*sin(b_4_scaled*gain_el) - K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)))/I_zz^2 - (2*W_act_motor^2*gamma_quadratic_du*(desired_motor_value - Omega_1_scaled*gain_motor))/gain_motor + (2*Omega_1_scaled*W_dv_4^2*gain_motor^2*(K_p_M*sin(b_1_scaled*gain_el) + K_p_T*l_1*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + K_p_T*l_z*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az))*(2*I_yy*q*r - 2*I_xx*dv_global_4 - 2*I_zz*q*r + 2*K_p_M*Omega_1_scaled^2*gain_motor^2*sin(b_1_scaled*gain_el) - 2*K_p_M*Omega_2_scaled^2*gain_motor^2*sin(b_2_scaled*gain_el) + 2*K_p_M*Omega_3_scaled^2*gain_motor^2*sin(b_3_scaled*gain_el) - 2*K_p_M*Omega_4_scaled^2*gain_motor^2*sin(b_4_scaled*gain_el) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) - 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + CL_aileron*S*V^2*delta_ailerons_scaled*gain_ailerons*rho))/I_xx^2 + (4*K_p_T*Omega_1_scaled*W_dv_1^2*gain_motor^2*(dv_global_1 - (cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m)*(cos(Theta_scaled*gain_theta)*sin(b_1_scaled*gain_el) + cos(Phi_scaled*gain_phi)*cos(b_1_scaled*gain_el)*sin(Theta_scaled*gain_theta)*cos(g_1_scaled*gain_az) - sin(Phi_scaled*gain_phi)*cos(b_1_scaled*gain_el)*sin(Theta_scaled*gain_theta)*sin(g_1_scaled*gain_az)))/m - (K_p_T*Omega_1_scaled*W_dv_3^2*gain_motor^2*(100*dv_global_3 + (100*(sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) + K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2))/m - 981)*(sin(Theta_scaled*gain_theta)*sin(b_1_scaled*gain_el) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)))/(25*m) - (4*K_p_T*Omega_1_scaled*W_dv_2^2*gain_motor^2*sin(Phi_scaled*gain_phi + g_1_scaled*gain_az)*cos(b_1_scaled*gain_el)*(dv_global_2 + (sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m; */
-  /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                (2*Omega_2_scaled*W_dv_5^2*gain_motor^2*(K_p_T*l_z*sin(b_2_scaled*gain_el) + K_p_M*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + K_p_T*l_4*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az))*(2*I_zz*p*r - 2*I_xx*p*r - 2*I_yy*dv_global_5 + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*sin(b_1_scaled*gain_el) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*sin(b_2_scaled*gain_el) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*sin(b_3_scaled*gain_el) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*sin(b_4_scaled*gain_el) - 2*K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) - 2*K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + Cm_zero*S*V^2*rho*wing_chord + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) - 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - Cm_alpha*S*V^2*flight_path_angle*rho*wing_chord + Cm_alpha*S*Theta_scaled*V^2*gain_theta*rho*wing_chord))/I_yy^2 - (4*Omega_2_scaled*W_dv_6^2*gain_motor^2*(K_p_T*l_1*sin(b_2_scaled*gain_el) - K_p_M*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) + K_p_T*l_4*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az))*(I_zz*dv_global_6 - I_xx*p*q + I_yy*p*q + K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*sin(b_1_scaled*gain_el) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*sin(b_2_scaled*gain_el) - K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*sin(b_3_scaled*gain_el) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*sin(b_4_scaled*gain_el) - K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)))/I_zz^2 - (2*W_act_motor^2*gamma_quadratic_du*(desired_motor_value - Omega_2_scaled*gain_motor))/gain_motor - (2*Omega_2_scaled*W_dv_4^2*gain_motor^2*(K_p_M*sin(b_2_scaled*gain_el) + K_p_T*l_1*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - K_p_T*l_z*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az))*(2*I_yy*q*r - 2*I_xx*dv_global_4 - 2*I_zz*q*r + 2*K_p_M*Omega_1_scaled^2*gain_motor^2*sin(b_1_scaled*gain_el) - 2*K_p_M*Omega_2_scaled^2*gain_motor^2*sin(b_2_scaled*gain_el) + 2*K_p_M*Omega_3_scaled^2*gain_motor^2*sin(b_3_scaled*gain_el) - 2*K_p_M*Omega_4_scaled^2*gain_motor^2*sin(b_4_scaled*gain_el) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) - 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + CL_aileron*S*V^2*delta_ailerons_scaled*gain_ailerons*rho))/I_xx^2 + (4*K_p_T*Omega_2_scaled*W_dv_1^2*gain_motor^2*(dv_global_1 - (cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m)*(cos(Theta_scaled*gain_theta)*sin(b_2_scaled*gain_el) + cos(Phi_scaled*gain_phi)*cos(b_2_scaled*gain_el)*sin(Theta_scaled*gain_theta)*cos(g_2_scaled*gain_az) - sin(Phi_scaled*gain_phi)*cos(b_2_scaled*gain_el)*sin(Theta_scaled*gain_theta)*sin(g_2_scaled*gain_az)))/m - (K_p_T*Omega_2_scaled*W_dv_3^2*gain_motor^2*(100*dv_global_3 + (100*(sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) + K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2))/m - 981)*(sin(Theta_scaled*gain_theta)*sin(b_2_scaled*gain_el) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) + cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)))/(25*m) - (4*K_p_T*Omega_2_scaled*W_dv_2^2*gain_motor^2*sin(Phi_scaled*gain_phi + g_2_scaled*gain_az)*cos(b_2_scaled*gain_el)*(dv_global_2 + (sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m; */
-  /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                (2*Omega_3_scaled*W_dv_4^2*gain_motor^2*(K_p_M*sin(b_3_scaled*gain_el) - K_p_T*l_2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + K_p_T*l_z*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az))*(2*I_yy*q*r - 2*I_xx*dv_global_4 - 2*I_zz*q*r + 2*K_p_M*Omega_1_scaled^2*gain_motor^2*sin(b_1_scaled*gain_el) - 2*K_p_M*Omega_2_scaled^2*gain_motor^2*sin(b_2_scaled*gain_el) + 2*K_p_M*Omega_3_scaled^2*gain_motor^2*sin(b_3_scaled*gain_el) - 2*K_p_M*Omega_4_scaled^2*gain_motor^2*sin(b_4_scaled*gain_el) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) - 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + CL_aileron*S*V^2*delta_ailerons_scaled*gain_ailerons*rho))/I_xx^2 - (4*Omega_3_scaled*W_dv_6^2*gain_motor^2*(K_p_T*l_2*sin(b_3_scaled*gain_el) + K_p_M*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) - K_p_T*l_3*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az))*(I_zz*dv_global_6 - I_xx*p*q + I_yy*p*q + K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*sin(b_1_scaled*gain_el) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*sin(b_2_scaled*gain_el) - K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*sin(b_3_scaled*gain_el) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*sin(b_4_scaled*gain_el) - K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)))/I_zz^2 - (2*Omega_3_scaled*W_dv_5^2*gain_motor^2*(K_p_M*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) - K_p_T*l_z*sin(b_3_scaled*gain_el) + K_p_T*l_3*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az))*(2*I_zz*p*r - 2*I_xx*p*r - 2*I_yy*dv_global_5 + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*sin(b_1_scaled*gain_el) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*sin(b_2_scaled*gain_el) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*sin(b_3_scaled*gain_el) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*sin(b_4_scaled*gain_el) - 2*K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) - 2*K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + Cm_zero*S*V^2*rho*wing_chord + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) - 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - Cm_alpha*S*V^2*flight_path_angle*rho*wing_chord + Cm_alpha*S*Theta_scaled*V^2*gain_theta*rho*wing_chord))/I_yy^2 - (2*W_act_motor^2*gamma_quadratic_du*(desired_motor_value - Omega_3_scaled*gain_motor))/gain_motor + (4*K_p_T*Omega_3_scaled*W_dv_1^2*gain_motor^2*(dv_global_1 - (cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m)*(cos(Theta_scaled*gain_theta)*sin(b_3_scaled*gain_el) + cos(Phi_scaled*gain_phi)*cos(b_3_scaled*gain_el)*sin(Theta_scaled*gain_theta)*cos(g_3_scaled*gain_az) - sin(Phi_scaled*gain_phi)*cos(b_3_scaled*gain_el)*sin(Theta_scaled*gain_theta)*sin(g_3_scaled*gain_az)))/m - (K_p_T*Omega_3_scaled*W_dv_3^2*gain_motor^2*(100*dv_global_3 + (100*(sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) + K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2))/m - 981)*(sin(Theta_scaled*gain_theta)*sin(b_3_scaled*gain_el) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)))/(25*m) - (4*K_p_T*Omega_3_scaled*W_dv_2^2*gain_motor^2*sin(Phi_scaled*gain_phi + g_3_scaled*gain_az)*cos(b_3_scaled*gain_el)*(dv_global_2 + (sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m; */
-  /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                (4*Omega_4_scaled*W_dv_6^2*gain_motor^2*(K_p_T*l_2*sin(b_4_scaled*gain_el) + K_p_M*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + K_p_T*l_3*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az))*(I_zz*dv_global_6 - I_xx*p*q + I_yy*p*q + K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*sin(b_1_scaled*gain_el) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*sin(b_2_scaled*gain_el) - K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*sin(b_3_scaled*gain_el) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*sin(b_4_scaled*gain_el) - K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)))/I_zz^2 - (2*W_act_motor^2*gamma_quadratic_du*(desired_motor_value - Omega_4_scaled*gain_motor))/gain_motor + (2*Omega_4_scaled*W_dv_5^2*gain_motor^2*(K_p_T*l_z*sin(b_4_scaled*gain_el) + K_p_M*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) - K_p_T*l_3*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az))*(2*I_zz*p*r - 2*I_xx*p*r - 2*I_yy*dv_global_5 + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*sin(b_1_scaled*gain_el) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*sin(b_2_scaled*gain_el) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*sin(b_3_scaled*gain_el) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*sin(b_4_scaled*gain_el) - 2*K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) - 2*K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + Cm_zero*S*V^2*rho*wing_chord + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) - 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - Cm_alpha*S*V^2*flight_path_angle*rho*wing_chord + Cm_alpha*S*Theta_scaled*V^2*gain_theta*rho*wing_chord))/I_yy^2 + (2*Omega_4_scaled*W_dv_4^2*gain_motor^2*(K_p_T*l_2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - K_p_M*sin(b_4_scaled*gain_el) + K_p_T*l_z*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az))*(2*I_yy*q*r - 2*I_xx*dv_global_4 - 2*I_zz*q*r + 2*K_p_M*Omega_1_scaled^2*gain_motor^2*sin(b_1_scaled*gain_el) - 2*K_p_M*Omega_2_scaled^2*gain_motor^2*sin(b_2_scaled*gain_el) + 2*K_p_M*Omega_3_scaled^2*gain_motor^2*sin(b_3_scaled*gain_el) - 2*K_p_M*Omega_4_scaled^2*gain_motor^2*sin(b_4_scaled*gain_el) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) - 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + CL_aileron*S*V^2*delta_ailerons_scaled*gain_ailerons*rho))/I_xx^2 + (4*K_p_T*Omega_4_scaled*W_dv_1^2*gain_motor^2*(dv_global_1 - (cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m)*(cos(Theta_scaled*gain_theta)*sin(b_4_scaled*gain_el) + cos(Phi_scaled*gain_phi)*cos(b_4_scaled*gain_el)*sin(Theta_scaled*gain_theta)*cos(g_4_scaled*gain_az) - sin(Phi_scaled*gain_phi)*cos(b_4_scaled*gain_el)*sin(Theta_scaled*gain_theta)*sin(g_4_scaled*gain_az)))/m - (K_p_T*Omega_4_scaled*W_dv_3^2*gain_motor^2*(100*dv_global_3 + (100*(sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) + K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2))/m - 981)*(sin(Theta_scaled*gain_theta)*sin(b_4_scaled*gain_el) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)))/(25*m) - (4*K_p_T*Omega_4_scaled*W_dv_2^2*gain_motor^2*sin(Phi_scaled*gain_phi + g_4_scaled*gain_az)*cos(b_4_scaled*gain_el)*(dv_global_2 + (sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m; */
-  /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   (Omega_1_scaled^2*W_dv_5^2*gain_el*gain_motor^2*(K_p_T*l_z*cos(b_1_scaled*gain_el) + K_p_M*sin(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) - K_p_T*l_4*cos(g_1_scaled*gain_az)*sin(b_1_scaled*gain_el))*(2*I_zz*p*r - 2*I_xx*p*r - 2*I_yy*dv_global_5 + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*sin(b_1_scaled*gain_el) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*sin(b_2_scaled*gain_el) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*sin(b_3_scaled*gain_el) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*sin(b_4_scaled*gain_el) - 2*K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) - 2*K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + Cm_zero*S*V^2*rho*wing_chord + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) - 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - Cm_alpha*S*V^2*flight_path_angle*rho*wing_chord + Cm_alpha*S*Theta_scaled*V^2*gain_theta*rho*wing_chord))/I_yy^2 - (2*W_act_tilt_el^2*gamma_quadratic_du*(desired_el_value - b_1_scaled*gain_el))/gain_el - (Omega_1_scaled^2*W_dv_4^2*gain_el*gain_motor^2*(K_p_T*l_1*cos(g_1_scaled*gain_az)*sin(b_1_scaled*gain_el) - K_p_M*cos(b_1_scaled*gain_el) + K_p_T*l_z*sin(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az))*(2*I_yy*q*r - 2*I_xx*dv_global_4 - 2*I_zz*q*r + 2*K_p_M*Omega_1_scaled^2*gain_motor^2*sin(b_1_scaled*gain_el) - 2*K_p_M*Omega_2_scaled^2*gain_motor^2*sin(b_2_scaled*gain_el) + 2*K_p_M*Omega_3_scaled^2*gain_motor^2*sin(b_3_scaled*gain_el) - 2*K_p_M*Omega_4_scaled^2*gain_motor^2*sin(b_4_scaled*gain_el) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) - 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + CL_aileron*S*V^2*delta_ailerons_scaled*gain_ailerons*rho))/I_xx^2 + (2*Omega_1_scaled^2*W_dv_6^2*gain_el*gain_motor^2*(K_p_T*l_1*cos(b_1_scaled*gain_el) + K_p_M*cos(g_1_scaled*gain_az)*sin(b_1_scaled*gain_el) + K_p_T*l_4*sin(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az))*(I_zz*dv_global_6 - I_xx*p*q + I_yy*p*q + K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*sin(b_1_scaled*gain_el) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*sin(b_2_scaled*gain_el) - K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*sin(b_3_scaled*gain_el) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*sin(b_4_scaled*gain_el) - K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)))/I_zz^2 + (2*K_p_T*Omega_1_scaled^2*W_dv_1^2*gain_el*gain_motor^2*(dv_global_1 - (cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m)*(cos(Theta_scaled*gain_theta)*cos(b_1_scaled*gain_el) - cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*cos(g_1_scaled*gain_az)*sin(b_1_scaled*gain_el) + sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)))/m - (K_p_T*Omega_1_scaled^2*W_dv_3^2*gain_el*gain_motor^2*(cos(b_1_scaled*gain_el)*sin(Theta_scaled*gain_theta) + cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*cos(g_1_scaled*gain_az)*sin(b_1_scaled*gain_el) - cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az))*(100*dv_global_3 + (100*(sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) + K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2))/m - 981))/(50*m) + (2*K_p_T*Omega_1_scaled^2*W_dv_2^2*gain_el*gain_motor^2*sin(Phi_scaled*gain_phi + g_1_scaled*gain_az)*sin(b_1_scaled*gain_el)*(dv_global_2 + (sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m; */
-  /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   (2*K_p_T*Omega_2_scaled^2*W_dv_1^2*gain_el*gain_motor^2*(dv_global_1 - (cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m)*(cos(Theta_scaled*gain_theta)*cos(b_2_scaled*gain_el) - cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*cos(g_2_scaled*gain_az)*sin(b_2_scaled*gain_el) + sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)))/m - (Omega_2_scaled^2*W_dv_5^2*gain_el*gain_motor^2*(K_p_M*sin(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) - K_p_T*l_z*cos(b_2_scaled*gain_el) + K_p_T*l_4*cos(g_2_scaled*gain_az)*sin(b_2_scaled*gain_el))*(2*I_zz*p*r - 2*I_xx*p*r - 2*I_yy*dv_global_5 + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*sin(b_1_scaled*gain_el) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*sin(b_2_scaled*gain_el) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*sin(b_3_scaled*gain_el) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*sin(b_4_scaled*gain_el) - 2*K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) - 2*K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + Cm_zero*S*V^2*rho*wing_chord + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) - 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - Cm_alpha*S*V^2*flight_path_angle*rho*wing_chord + Cm_alpha*S*Theta_scaled*V^2*gain_theta*rho*wing_chord))/I_yy^2 - (Omega_2_scaled^2*W_dv_4^2*gain_el*gain_motor^2*(K_p_M*cos(b_2_scaled*gain_el) - K_p_T*l_1*cos(g_2_scaled*gain_az)*sin(b_2_scaled*gain_el) + K_p_T*l_z*sin(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az))*(2*I_yy*q*r - 2*I_xx*dv_global_4 - 2*I_zz*q*r + 2*K_p_M*Omega_1_scaled^2*gain_motor^2*sin(b_1_scaled*gain_el) - 2*K_p_M*Omega_2_scaled^2*gain_motor^2*sin(b_2_scaled*gain_el) + 2*K_p_M*Omega_3_scaled^2*gain_motor^2*sin(b_3_scaled*gain_el) - 2*K_p_M*Omega_4_scaled^2*gain_motor^2*sin(b_4_scaled*gain_el) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) - 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + CL_aileron*S*V^2*delta_ailerons_scaled*gain_ailerons*rho))/I_xx^2 - (2*Omega_2_scaled^2*W_dv_6^2*gain_el*gain_motor^2*(K_p_T*l_1*cos(b_2_scaled*gain_el) + K_p_M*cos(g_2_scaled*gain_az)*sin(b_2_scaled*gain_el) - K_p_T*l_4*sin(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az))*(I_zz*dv_global_6 - I_xx*p*q + I_yy*p*q + K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*sin(b_1_scaled*gain_el) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*sin(b_2_scaled*gain_el) - K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*sin(b_3_scaled*gain_el) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*sin(b_4_scaled*gain_el) - K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)))/I_zz^2 - (2*W_act_tilt_el^2*gamma_quadratic_du*(desired_el_value - b_2_scaled*gain_el))/gain_el - (K_p_T*Omega_2_scaled^2*W_dv_3^2*gain_el*gain_motor^2*(cos(b_2_scaled*gain_el)*sin(Theta_scaled*gain_theta) + cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*cos(g_2_scaled*gain_az)*sin(b_2_scaled*gain_el) - cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az))*(100*dv_global_3 + (100*(sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) + K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2))/m - 981))/(50*m) + (2*K_p_T*Omega_2_scaled^2*W_dv_2^2*gain_el*gain_motor^2*sin(Phi_scaled*gain_phi + g_2_scaled*gain_az)*sin(b_2_scaled*gain_el)*(dv_global_2 + (sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m; */
-  /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   (Omega_3_scaled^2*W_dv_5^2*gain_el*gain_motor^2*(K_p_T*l_z*cos(b_3_scaled*gain_el) + K_p_M*sin(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + K_p_T*l_3*cos(g_3_scaled*gain_az)*sin(b_3_scaled*gain_el))*(2*I_zz*p*r - 2*I_xx*p*r - 2*I_yy*dv_global_5 + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*sin(b_1_scaled*gain_el) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*sin(b_2_scaled*gain_el) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*sin(b_3_scaled*gain_el) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*sin(b_4_scaled*gain_el) - 2*K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) - 2*K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + Cm_zero*S*V^2*rho*wing_chord + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) - 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - Cm_alpha*S*V^2*flight_path_angle*rho*wing_chord + Cm_alpha*S*Theta_scaled*V^2*gain_theta*rho*wing_chord))/I_yy^2 - (2*W_act_tilt_el^2*gamma_quadratic_du*(desired_el_value - b_3_scaled*gain_el))/gain_el + (Omega_3_scaled^2*W_dv_4^2*gain_el*gain_motor^2*(K_p_M*cos(b_3_scaled*gain_el) + K_p_T*l_2*cos(g_3_scaled*gain_az)*sin(b_3_scaled*gain_el) - K_p_T*l_z*sin(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az))*(2*I_yy*q*r - 2*I_xx*dv_global_4 - 2*I_zz*q*r + 2*K_p_M*Omega_1_scaled^2*gain_motor^2*sin(b_1_scaled*gain_el) - 2*K_p_M*Omega_2_scaled^2*gain_motor^2*sin(b_2_scaled*gain_el) + 2*K_p_M*Omega_3_scaled^2*gain_motor^2*sin(b_3_scaled*gain_el) - 2*K_p_M*Omega_4_scaled^2*gain_motor^2*sin(b_4_scaled*gain_el) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) - 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + CL_aileron*S*V^2*delta_ailerons_scaled*gain_ailerons*rho))/I_xx^2 - (2*Omega_3_scaled^2*W_dv_6^2*gain_el*gain_motor^2*(K_p_T*l_2*cos(b_3_scaled*gain_el) - K_p_M*cos(g_3_scaled*gain_az)*sin(b_3_scaled*gain_el) + K_p_T*l_3*sin(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az))*(I_zz*dv_global_6 - I_xx*p*q + I_yy*p*q + K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*sin(b_1_scaled*gain_el) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*sin(b_2_scaled*gain_el) - K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*sin(b_3_scaled*gain_el) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*sin(b_4_scaled*gain_el) - K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)))/I_zz^2 + (2*K_p_T*Omega_3_scaled^2*W_dv_1^2*gain_el*gain_motor^2*(dv_global_1 - (cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m)*(cos(Theta_scaled*gain_theta)*cos(b_3_scaled*gain_el) - cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*cos(g_3_scaled*gain_az)*sin(b_3_scaled*gain_el) + sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)))/m - (K_p_T*Omega_3_scaled^2*W_dv_3^2*gain_el*gain_motor^2*(cos(b_3_scaled*gain_el)*sin(Theta_scaled*gain_theta) + cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*cos(g_3_scaled*gain_az)*sin(b_3_scaled*gain_el) - cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az))*(100*dv_global_3 + (100*(sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) + K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2))/m - 981))/(50*m) + (2*K_p_T*Omega_3_scaled^2*W_dv_2^2*gain_el*gain_motor^2*sin(Phi_scaled*gain_phi + g_3_scaled*gain_az)*sin(b_3_scaled*gain_el)*(dv_global_2 + (sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m; */
-  /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   (Omega_4_scaled^2*W_dv_5^2*gain_el*gain_motor^2*(K_p_T*l_z*cos(b_4_scaled*gain_el) - K_p_M*sin(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + K_p_T*l_3*cos(g_4_scaled*gain_az)*sin(b_4_scaled*gain_el))*(2*I_zz*p*r - 2*I_xx*p*r - 2*I_yy*dv_global_5 + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*sin(b_1_scaled*gain_el) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*sin(b_2_scaled*gain_el) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*sin(b_3_scaled*gain_el) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*sin(b_4_scaled*gain_el) - 2*K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) - 2*K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + Cm_zero*S*V^2*rho*wing_chord + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) - 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - Cm_alpha*S*V^2*flight_path_angle*rho*wing_chord + Cm_alpha*S*Theta_scaled*V^2*gain_theta*rho*wing_chord))/I_yy^2 - (2*W_act_tilt_el^2*gamma_quadratic_du*(desired_el_value - b_4_scaled*gain_el))/gain_el - (Omega_4_scaled^2*W_dv_4^2*gain_el*gain_motor^2*(K_p_M*cos(b_4_scaled*gain_el) + K_p_T*l_2*cos(g_4_scaled*gain_az)*sin(b_4_scaled*gain_el) + K_p_T*l_z*sin(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az))*(2*I_yy*q*r - 2*I_xx*dv_global_4 - 2*I_zz*q*r + 2*K_p_M*Omega_1_scaled^2*gain_motor^2*sin(b_1_scaled*gain_el) - 2*K_p_M*Omega_2_scaled^2*gain_motor^2*sin(b_2_scaled*gain_el) + 2*K_p_M*Omega_3_scaled^2*gain_motor^2*sin(b_3_scaled*gain_el) - 2*K_p_M*Omega_4_scaled^2*gain_motor^2*sin(b_4_scaled*gain_el) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) - 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + CL_aileron*S*V^2*delta_ailerons_scaled*gain_ailerons*rho))/I_xx^2 - (2*Omega_4_scaled^2*W_dv_6^2*gain_el*gain_motor^2*(K_p_M*cos(g_4_scaled*gain_az)*sin(b_4_scaled*gain_el) - K_p_T*l_2*cos(b_4_scaled*gain_el) + K_p_T*l_3*sin(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az))*(I_zz*dv_global_6 - I_xx*p*q + I_yy*p*q + K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*sin(b_1_scaled*gain_el) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*sin(b_2_scaled*gain_el) - K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*sin(b_3_scaled*gain_el) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*sin(b_4_scaled*gain_el) - K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)))/I_zz^2 + (2*K_p_T*Omega_4_scaled^2*W_dv_1^2*gain_el*gain_motor^2*(dv_global_1 - (cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m)*(cos(Theta_scaled*gain_theta)*cos(b_4_scaled*gain_el) - cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*cos(g_4_scaled*gain_az)*sin(b_4_scaled*gain_el) + sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)))/m - (K_p_T*Omega_4_scaled^2*W_dv_3^2*gain_el*gain_motor^2*(cos(b_4_scaled*gain_el)*sin(Theta_scaled*gain_theta) + cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*cos(g_4_scaled*gain_az)*sin(b_4_scaled*gain_el) - cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az))*(100*dv_global_3 + (100*(sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) + K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2))/m - 981))/(50*m) + (2*K_p_T*Omega_4_scaled^2*W_dv_2^2*gain_el*gain_motor^2*sin(Phi_scaled*gain_phi + g_4_scaled*gain_az)*sin(b_4_scaled*gain_el)*(dv_global_2 + (sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m; */
-  /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 (2*Omega_1_scaled^2*W_dv_6^2*gain_az*gain_motor^2*cos(b_1_scaled*gain_el)*(K_p_M*sin(g_1_scaled*gain_az) - K_p_T*l_4*cos(g_1_scaled*gain_az))*(I_zz*dv_global_6 - I_xx*p*q + I_yy*p*q + K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*sin(b_1_scaled*gain_el) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*sin(b_2_scaled*gain_el) - K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*sin(b_3_scaled*gain_el) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*sin(b_4_scaled*gain_el) - K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)))/I_zz^2 - (Omega_1_scaled^2*W_dv_5^2*gain_az*gain_motor^2*cos(b_1_scaled*gain_el)*(K_p_M*cos(g_1_scaled*gain_az) + K_p_T*l_4*sin(g_1_scaled*gain_az))*(2*I_zz*p*r - 2*I_xx*p*r - 2*I_yy*dv_global_5 + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*sin(b_1_scaled*gain_el) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*sin(b_2_scaled*gain_el) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*sin(b_3_scaled*gain_el) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*sin(b_4_scaled*gain_el) - 2*K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) - 2*K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + Cm_zero*S*V^2*rho*wing_chord + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) - 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - Cm_alpha*S*V^2*flight_path_angle*rho*wing_chord + Cm_alpha*S*Theta_scaled*V^2*gain_theta*rho*wing_chord))/I_yy^2 - (2*W_act_tilt_az^2*gamma_quadratic_du*(desired_az_value - g_1_scaled*gain_az))/gain_az - (2*K_p_T*Omega_1_scaled^2*W_dv_2^2*gain_az*gain_motor^2*cos(Phi_scaled*gain_phi + g_1_scaled*gain_az)*cos(b_1_scaled*gain_el)*(dv_global_2 + (sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m + (K_p_T*Omega_1_scaled^2*W_dv_4^2*gain_az*gain_motor^2*cos(b_1_scaled*gain_el)*(l_z*cos(g_1_scaled*gain_az) - l_1*sin(g_1_scaled*gain_az))*(2*I_yy*q*r - 2*I_xx*dv_global_4 - 2*I_zz*q*r + 2*K_p_M*Omega_1_scaled^2*gain_motor^2*sin(b_1_scaled*gain_el) - 2*K_p_M*Omega_2_scaled^2*gain_motor^2*sin(b_2_scaled*gain_el) + 2*K_p_M*Omega_3_scaled^2*gain_motor^2*sin(b_3_scaled*gain_el) - 2*K_p_M*Omega_4_scaled^2*gain_motor^2*sin(b_4_scaled*gain_el) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) - 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + CL_aileron*S*V^2*delta_ailerons_scaled*gain_ailerons*rho))/I_xx^2 - (2*K_p_T*Omega_1_scaled^2*W_dv_1^2*gain_az*gain_motor^2*sin(Phi_scaled*gain_phi + g_1_scaled*gain_az)*cos(b_1_scaled*gain_el)*sin(Theta_scaled*gain_theta)*(dv_global_1 - (cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m - (K_p_T*Omega_1_scaled^2*W_dv_3^2*gain_az*gain_motor^2*sin(Phi_scaled*gain_phi + g_1_scaled*gain_az)*cos(Theta_scaled*gain_theta)*cos(b_1_scaled*gain_el)*(100*dv_global_3 + (100*(sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) + K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2))/m - 981))/(50*m); */
-  /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 (Omega_2_scaled^2*W_dv_5^2*gain_az*gain_motor^2*cos(b_2_scaled*gain_el)*(K_p_M*cos(g_2_scaled*gain_az) - K_p_T*l_4*sin(g_2_scaled*gain_az))*(2*I_zz*p*r - 2*I_xx*p*r - 2*I_yy*dv_global_5 + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*sin(b_1_scaled*gain_el) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*sin(b_2_scaled*gain_el) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*sin(b_3_scaled*gain_el) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*sin(b_4_scaled*gain_el) - 2*K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) - 2*K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + Cm_zero*S*V^2*rho*wing_chord + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) - 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - Cm_alpha*S*V^2*flight_path_angle*rho*wing_chord + Cm_alpha*S*Theta_scaled*V^2*gain_theta*rho*wing_chord))/I_yy^2 - (2*W_act_tilt_az^2*gamma_quadratic_du*(desired_az_value - g_2_scaled*gain_az))/gain_az - (2*Omega_2_scaled^2*W_dv_6^2*gain_az*gain_motor^2*cos(b_2_scaled*gain_el)*(K_p_M*sin(g_2_scaled*gain_az) + K_p_T*l_4*cos(g_2_scaled*gain_az))*(I_zz*dv_global_6 - I_xx*p*q + I_yy*p*q + K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*sin(b_1_scaled*gain_el) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*sin(b_2_scaled*gain_el) - K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*sin(b_3_scaled*gain_el) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*sin(b_4_scaled*gain_el) - K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)))/I_zz^2 - (2*K_p_T*Omega_2_scaled^2*W_dv_2^2*gain_az*gain_motor^2*cos(Phi_scaled*gain_phi + g_2_scaled*gain_az)*cos(b_2_scaled*gain_el)*(dv_global_2 + (sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m + (K_p_T*Omega_2_scaled^2*W_dv_4^2*gain_az*gain_motor^2*cos(b_2_scaled*gain_el)*(l_z*cos(g_2_scaled*gain_az) + l_1*sin(g_2_scaled*gain_az))*(2*I_yy*q*r - 2*I_xx*dv_global_4 - 2*I_zz*q*r + 2*K_p_M*Omega_1_scaled^2*gain_motor^2*sin(b_1_scaled*gain_el) - 2*K_p_M*Omega_2_scaled^2*gain_motor^2*sin(b_2_scaled*gain_el) + 2*K_p_M*Omega_3_scaled^2*gain_motor^2*sin(b_3_scaled*gain_el) - 2*K_p_M*Omega_4_scaled^2*gain_motor^2*sin(b_4_scaled*gain_el) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) - 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + CL_aileron*S*V^2*delta_ailerons_scaled*gain_ailerons*rho))/I_xx^2 - (2*K_p_T*Omega_2_scaled^2*W_dv_1^2*gain_az*gain_motor^2*sin(Phi_scaled*gain_phi + g_2_scaled*gain_az)*cos(b_2_scaled*gain_el)*sin(Theta_scaled*gain_theta)*(dv_global_1 - (cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m - (K_p_T*Omega_2_scaled^2*W_dv_3^2*gain_az*gain_motor^2*sin(Phi_scaled*gain_phi + g_2_scaled*gain_az)*cos(Theta_scaled*gain_theta)*cos(b_2_scaled*gain_el)*(100*dv_global_3 + (100*(sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) + K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2))/m - 981))/(50*m); */
-  /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 (2*Omega_3_scaled^2*W_dv_6^2*gain_az*gain_motor^2*cos(b_3_scaled*gain_el)*(K_p_M*sin(g_3_scaled*gain_az) + K_p_T*l_3*cos(g_3_scaled*gain_az))*(I_zz*dv_global_6 - I_xx*p*q + I_yy*p*q + K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*sin(b_1_scaled*gain_el) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*sin(b_2_scaled*gain_el) - K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*sin(b_3_scaled*gain_el) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*sin(b_4_scaled*gain_el) - K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)))/I_zz^2 - (Omega_3_scaled^2*W_dv_5^2*gain_az*gain_motor^2*cos(b_3_scaled*gain_el)*(K_p_M*cos(g_3_scaled*gain_az) - K_p_T*l_3*sin(g_3_scaled*gain_az))*(2*I_zz*p*r - 2*I_xx*p*r - 2*I_yy*dv_global_5 + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*sin(b_1_scaled*gain_el) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*sin(b_2_scaled*gain_el) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*sin(b_3_scaled*gain_el) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*sin(b_4_scaled*gain_el) - 2*K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) - 2*K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + Cm_zero*S*V^2*rho*wing_chord + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) - 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - Cm_alpha*S*V^2*flight_path_angle*rho*wing_chord + Cm_alpha*S*Theta_scaled*V^2*gain_theta*rho*wing_chord))/I_yy^2 - (2*W_act_tilt_az^2*gamma_quadratic_du*(desired_az_value - g_3_scaled*gain_az))/gain_az - (2*K_p_T*Omega_3_scaled^2*W_dv_2^2*gain_az*gain_motor^2*cos(Phi_scaled*gain_phi + g_3_scaled*gain_az)*cos(b_3_scaled*gain_el)*(dv_global_2 + (sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m + (K_p_T*Omega_3_scaled^2*W_dv_4^2*gain_az*gain_motor^2*cos(b_3_scaled*gain_el)*(l_z*cos(g_3_scaled*gain_az) + l_2*sin(g_3_scaled*gain_az))*(2*I_yy*q*r - 2*I_xx*dv_global_4 - 2*I_zz*q*r + 2*K_p_M*Omega_1_scaled^2*gain_motor^2*sin(b_1_scaled*gain_el) - 2*K_p_M*Omega_2_scaled^2*gain_motor^2*sin(b_2_scaled*gain_el) + 2*K_p_M*Omega_3_scaled^2*gain_motor^2*sin(b_3_scaled*gain_el) - 2*K_p_M*Omega_4_scaled^2*gain_motor^2*sin(b_4_scaled*gain_el) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) - 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + CL_aileron*S*V^2*delta_ailerons_scaled*gain_ailerons*rho))/I_xx^2 - (2*K_p_T*Omega_3_scaled^2*W_dv_1^2*gain_az*gain_motor^2*sin(Phi_scaled*gain_phi + g_3_scaled*gain_az)*cos(b_3_scaled*gain_el)*sin(Theta_scaled*gain_theta)*(dv_global_1 - (cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m - (K_p_T*Omega_3_scaled^2*W_dv_3^2*gain_az*gain_motor^2*sin(Phi_scaled*gain_phi + g_3_scaled*gain_az)*cos(Theta_scaled*gain_theta)*cos(b_3_scaled*gain_el)*(100*dv_global_3 + (100*(sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) + K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2))/m - 981))/(50*m); */
-  /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 (Omega_4_scaled^2*W_dv_5^2*gain_az*gain_motor^2*cos(b_4_scaled*gain_el)*(K_p_M*cos(g_4_scaled*gain_az) + K_p_T*l_3*sin(g_4_scaled*gain_az))*(2*I_zz*p*r - 2*I_xx*p*r - 2*I_yy*dv_global_5 + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*sin(b_1_scaled*gain_el) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*sin(b_2_scaled*gain_el) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*sin(b_3_scaled*gain_el) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*sin(b_4_scaled*gain_el) - 2*K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) - 2*K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + Cm_zero*S*V^2*rho*wing_chord + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) - 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - Cm_alpha*S*V^2*flight_path_angle*rho*wing_chord + Cm_alpha*S*Theta_scaled*V^2*gain_theta*rho*wing_chord))/I_yy^2 - (2*W_act_tilt_az^2*gamma_quadratic_du*(desired_az_value - g_4_scaled*gain_az))/gain_az - (2*Omega_4_scaled^2*W_dv_6^2*gain_az*gain_motor^2*cos(b_4_scaled*gain_el)*(K_p_M*sin(g_4_scaled*gain_az) - K_p_T*l_3*cos(g_4_scaled*gain_az))*(I_zz*dv_global_6 - I_xx*p*q + I_yy*p*q + K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*sin(b_1_scaled*gain_el) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*sin(b_2_scaled*gain_el) - K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*sin(b_3_scaled*gain_el) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*sin(b_4_scaled*gain_el) - K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) - K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)))/I_zz^2 - (2*K_p_T*Omega_4_scaled^2*W_dv_2^2*gain_az*gain_motor^2*cos(Phi_scaled*gain_phi + g_4_scaled*gain_az)*cos(b_4_scaled*gain_el)*(dv_global_2 + (sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m + (K_p_T*Omega_4_scaled^2*W_dv_4^2*gain_az*gain_motor^2*cos(b_4_scaled*gain_el)*(l_z*cos(g_4_scaled*gain_az) - l_2*sin(g_4_scaled*gain_az))*(2*I_yy*q*r - 2*I_xx*dv_global_4 - 2*I_zz*q*r + 2*K_p_M*Omega_1_scaled^2*gain_motor^2*sin(b_1_scaled*gain_el) - 2*K_p_M*Omega_2_scaled^2*gain_motor^2*sin(b_2_scaled*gain_el) + 2*K_p_M*Omega_3_scaled^2*gain_motor^2*sin(b_3_scaled*gain_el) - 2*K_p_M*Omega_4_scaled^2*gain_motor^2*sin(b_4_scaled*gain_el) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) - 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + CL_aileron*S*V^2*delta_ailerons_scaled*gain_ailerons*rho))/I_xx^2 - (2*K_p_T*Omega_4_scaled^2*W_dv_1^2*gain_az*gain_motor^2*sin(Phi_scaled*gain_phi + g_4_scaled*gain_az)*cos(b_4_scaled*gain_el)*sin(Theta_scaled*gain_theta)*(dv_global_1 - (cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m - (K_p_T*Omega_4_scaled^2*W_dv_3^2*gain_az*gain_motor^2*sin(Phi_scaled*gain_phi + g_4_scaled*gain_az)*cos(Theta_scaled*gain_theta)*cos(b_4_scaled*gain_el)*(100*dv_global_3 + (100*(sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) + K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2))/m - 981))/(50*m); */
-  /*  (2*W_dv_1^2*(dv_global_1 - (cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m)*(cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*gain_theta*rho*sin(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*gain_theta*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2 + (Cl_alpha*S*V^2*gain_theta*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - Cl_alpha^2*K_Cd*S*V^2*gain_theta*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(flight_path_angle - Theta_scaled*gain_theta)) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*gain_theta*rho*cos(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*gain_theta*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2 - (Cl_alpha*S*V^2*gain_theta*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + Cl_alpha^2*K_Cd*S*V^2*gain_theta*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(flight_path_angle - Theta_scaled*gain_theta)) + gain_theta*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - gain_theta*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_theta*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_theta*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_theta*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*gain_theta*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2 - Cl_alpha^2*K_Cd*S*V^2*gain_theta*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(flight_path_angle - Theta_scaled*gain_theta)))/m - (2*W_act_theta_du^2*gamma_quadratic_du2*(previous_theta_value - Theta_scaled*gain_theta))/gain_theta - (2*W_act_theta^2*gamma_quadratic_du*(desired_theta_value - Theta_scaled*gain_theta))/gain_theta - (2*W_dv_2^2*(sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*gain_theta*rho*cos(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*gain_theta*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2 - (Cl_alpha*S*V^2*gain_theta*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + Cl_alpha^2*K_Cd*S*V^2*gain_theta*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(flight_path_angle - Theta_scaled*gain_theta)) + Cl_alpha^2*K_Cd*S*V^2*gain_theta*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(flight_path_angle - Theta_scaled*gain_theta))*(dv_global_2 + (sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m))/m - (W_dv_3^2*(100*dv_global_3 + (100*(sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) + K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2))/m - 981)*(sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*gain_theta*rho*sin(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*gain_theta*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2 + (Cl_alpha*S*V^2*gain_theta*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - Cl_alpha^2*K_Cd*S*V^2*gain_theta*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(flight_path_angle - Theta_scaled*gain_theta)) - cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*gain_theta*rho*cos(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*gain_theta*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2 - (Cl_alpha*S*V^2*gain_theta*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + Cl_alpha^2*K_Cd*S*V^2*gain_theta*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(flight_path_angle - Theta_scaled*gain_theta)) - gain_theta*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - gain_theta*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + K_p_T*gain_theta*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_theta*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_theta*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*gain_theta*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2 + Cl_alpha^2*K_Cd*S*V^2*gain_theta*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(flight_path_angle - Theta_scaled*gain_theta)))/(50*m) + (Cm_alpha*S*V^2*W_dv_5^2*gain_theta*rho*wing_chord*(2*I_zz*p*r - 2*I_xx*p*r - 2*I_yy*dv_global_5 + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*sin(b_1_scaled*gain_el) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*sin(b_2_scaled*gain_el) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*sin(b_3_scaled*gain_el) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*sin(b_4_scaled*gain_el) - 2*K_p_M*Omega_1_scaled^2*gain_motor^2*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_M*Omega_2_scaled^2*gain_motor^2*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) - 2*K_p_M*Omega_3_scaled^2*gain_motor^2*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_M*Omega_4_scaled^2*gain_motor^2*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + Cm_zero*S*V^2*rho*wing_chord + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_4*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_4*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_3*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) - 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_3*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) - Cm_alpha*S*V^2*flight_path_angle*rho*wing_chord + Cm_alpha*S*Theta_scaled*V^2*gain_theta*rho*wing_chord))/(2*I_yy^2); */
-  /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            gamma_quadratic_du*(2*Phi_scaled - (2*desired_phi_value)/gain_phi)*W_act_phi^2 + gamma_quadratic_du2*(2*Phi_scaled - (2*previous_phi_value)/gain_phi)*W_act_phi_du^2 + (2*(dv_global_1 - (cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) + cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*rho*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m)*(gain_phi*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_phi*gain_motor^2*sin(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_phi*gain_motor^2*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*gain_phi*rho*cos(Phi_scaled*gain_phi)*sin(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)*W_dv_1^2)/m + (2*(dv_global_2 + (sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*rho*cos(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)/m)*(gain_phi*cos(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_phi*gain_motor^2*cos(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + K_p_T*gain_phi*gain_motor^2*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - (S*V^2*gain_phi*rho*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)*W_dv_2^2)/m + ((100*dv_global_3 + (100*sin(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 - (S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - 100*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - 100*K_p_T*gain_motor^2*sin(Theta_scaled*gain_theta)*(sin(b_1_scaled*gain_el)*Omega_1_scaled^2 + sin(b_2_scaled*gain_el)*Omega_2_scaled^2 + sin(b_3_scaled*gain_el)*Omega_3_scaled^2 + sin(b_4_scaled*gain_el)*Omega_4_scaled^2) + 100*K_p_T*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) - 100*K_p_T*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) + 50*S*V^2*rho*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/m - 981)*(gain_phi*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*((Cl_alpha*S*V^2*rho*cos(flight_path_angle - Theta_scaled*gain_theta)*(flight_path_angle - Theta_scaled*gain_theta))/2 + (S*V^2*rho*sin(flight_path_angle - Theta_scaled*gain_theta)*cos(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2) - K_p_T*gain_phi*gain_motor^2*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*(cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az)*Omega_4_scaled^2) - K_p_T*gain_phi*gain_motor^2*cos(Theta_scaled*gain_theta)*sin(Phi_scaled*gain_phi)*(cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az)*Omega_1_scaled^2 + cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az)*Omega_2_scaled^2 + cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az)*Omega_3_scaled^2 + cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az)*Omega_4_scaled^2) + (S*V^2*gain_phi*rho*cos(Phi_scaled*gain_phi)*cos(Theta_scaled*gain_theta)*sin(Beta)*(K_Cd*Cl_alpha^2*Theta_scaled^2*gain_theta^2 - 2*K_Cd*Cl_alpha^2*Theta_scaled*flight_path_angle*gain_theta + K_Cd*Cl_alpha^2*flight_path_angle^2 + Cd_zero))/2)*W_dv_3^2)/(50*m); */
-  /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  W_act_ailerons^2*gamma_quadratic_du*(2*delta_ailerons_scaled - (2*desired_ailerons_value)/gain_ailerons) + (CL_aileron*S*V^2*W_dv_4^2*gain_ailerons*rho*(2*I_yy*q*r - 2*I_xx*dv_global_4 - 2*I_zz*q*r + 2*K_p_M*Omega_1_scaled^2*gain_motor^2*sin(b_1_scaled*gain_el) - 2*K_p_M*Omega_2_scaled^2*gain_motor^2*sin(b_2_scaled*gain_el) + 2*K_p_M*Omega_3_scaled^2*gain_motor^2*sin(b_3_scaled*gain_el) - 2*K_p_M*Omega_4_scaled^2*gain_motor^2*sin(b_4_scaled*gain_el) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_1*cos(b_1_scaled*gain_el)*cos(g_1_scaled*gain_az) - 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_1*cos(b_2_scaled*gain_el)*cos(g_2_scaled*gain_az) - 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_2*cos(b_3_scaled*gain_el)*cos(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_2*cos(b_4_scaled*gain_el)*cos(g_4_scaled*gain_az) + 2*K_p_T*Omega_1_scaled^2*gain_motor^2*l_z*cos(b_1_scaled*gain_el)*sin(g_1_scaled*gain_az) + 2*K_p_T*Omega_2_scaled^2*gain_motor^2*l_z*cos(b_2_scaled*gain_el)*sin(g_2_scaled*gain_az) + 2*K_p_T*Omega_3_scaled^2*gain_motor^2*l_z*cos(b_3_scaled*gain_el)*sin(g_3_scaled*gain_az) + 2*K_p_T*Omega_4_scaled^2*gain_motor^2*l_z*cos(b_4_scaled*gain_el)*sin(g_4_scaled*gain_az) + CL_aileron*S*V^2*delta_ailerons_scaled*gain_ailerons*rho))/(2*I_xx^2)]; */
-  /*   */
-  /*  end        */
-  a_tmp = Theta_scaled * gain_theta;
-  b_a_tmp = flight_path_angle - a_tmp;
-  c_a_tmp = V * V;
-  d_a_tmp = Cl_alpha * Cl_alpha;
-  e_a_tmp = K_Cd * d_a_tmp;
-  a_tmp_tmp = Cl_alpha * S * c_a_tmp;
-  f_a_tmp = a_tmp_tmp * rho;
-  g_a_tmp = cos(b_a_tmp);
-  b_a_tmp_tmp = S * c_a_tmp;
-  h_a_tmp = b_a_tmp_tmp * rho;
-  i_a_tmp = sin(b_a_tmp);
-  j_a_tmp = cos(Beta);
-  d_a_tmp = ((e_a_tmp * (Theta_scaled * Theta_scaled) * (gain_theta * gain_theta)
-              - 2.0 * K_Cd * d_a_tmp * Theta_scaled * flight_path_angle *
-              gain_theta) + e_a_tmp * (flight_path_angle * flight_path_angle)) +
-    Cd_zero;
-  k_a_tmp = sin(a_tmp);
-  c_a_tmp_tmp = gain_motor * gain_motor;
-  l_a_tmp = K_p_T * c_a_tmp_tmp;
-  d_a_tmp_tmp = Phi_scaled * gain_phi;
-  m_a_tmp = cos(d_a_tmp_tmp);
-  n_a_tmp = cos(a_tmp);
-  o_a_tmp = b_1_scaled * gain_el;
-  p_a_tmp = Omega_1_scaled * Omega_1_scaled;
-  q_a_tmp = b_2_scaled * gain_el;
-  r_a_tmp = Omega_2_scaled * Omega_2_scaled;
-  s_a_tmp = b_3_scaled * gain_el;
-  t_a_tmp = Omega_3_scaled * Omega_3_scaled;
-  u_a_tmp = b_4_scaled * gain_el;
-  v_a_tmp = Omega_4_scaled * Omega_4_scaled;
-  w_a_tmp = cos(o_a_tmp);
-  x_a_tmp = g_1_scaled * gain_az;
-  y_a_tmp = cos(q_a_tmp);
-  ab_a_tmp = g_2_scaled * gain_az;
-  bb_a_tmp = cos(s_a_tmp);
-  cb_a_tmp = g_3_scaled * gain_az;
-  db_a_tmp = cos(u_a_tmp);
-  eb_a_tmp = g_4_scaled * gain_az;
-  fb_a_tmp = sin(d_a_tmp_tmp);
-  gb_a_tmp = f_a_tmp * g_a_tmp * b_a_tmp / 2.0 + h_a_tmp * i_a_tmp * j_a_tmp *
-    d_a_tmp / 2.0;
-  e_a_tmp_tmp = cos(x_a_tmp);
-  f_a_tmp_tmp = cos(ab_a_tmp);
-  g_a_tmp_tmp = cos(cb_a_tmp);
-  h_a_tmp_tmp = cos(eb_a_tmp);
-  hb_a_tmp = ((w_a_tmp * e_a_tmp_tmp * p_a_tmp + y_a_tmp * f_a_tmp_tmp * r_a_tmp)
-              + bb_a_tmp * g_a_tmp_tmp * t_a_tmp) + db_a_tmp * h_a_tmp_tmp *
-    v_a_tmp;
-  ib_a_tmp = l_a_tmp * m_a_tmp;
-  i_a_tmp_tmp = sin(x_a_tmp);
-  j_a_tmp_tmp = sin(ab_a_tmp);
-  k_a_tmp_tmp = sin(cb_a_tmp);
-  l_a_tmp_tmp = sin(eb_a_tmp);
-  jb_a_tmp = ((w_a_tmp * i_a_tmp_tmp * p_a_tmp + y_a_tmp * j_a_tmp_tmp * r_a_tmp)
-              + bb_a_tmp * k_a_tmp_tmp * t_a_tmp) + db_a_tmp * l_a_tmp_tmp *
-    v_a_tmp;
-  kb_a_tmp = sin(Beta);
-  f_a_tmp = f_a_tmp * i_a_tmp * b_a_tmp / 2.0 - h_a_tmp * g_a_tmp * j_a_tmp *
-    d_a_tmp / 2.0;
-  lb_a_tmp = l_a_tmp * n_a_tmp;
-  m_a_tmp_tmp = sin(o_a_tmp);
-  n_a_tmp_tmp = sin(q_a_tmp);
-  o_a_tmp_tmp = sin(s_a_tmp);
-  p_a_tmp_tmp = sin(u_a_tmp);
-  mb_a_tmp = ((m_a_tmp_tmp * p_a_tmp + n_a_tmp_tmp * r_a_tmp) + o_a_tmp_tmp *
-              t_a_tmp) + p_a_tmp_tmp * v_a_tmp;
-  q_a_tmp_tmp = m_a_tmp * n_a_tmp;
-  nb_a_tmp = (100.0 * dv_global_3 + 100.0 * (((((k_a_tmp * f_a_tmp - q_a_tmp_tmp
-    * gb_a_tmp) - l_a_tmp * k_a_tmp * mb_a_tmp) + ib_a_tmp * n_a_tmp * hb_a_tmp)
-    - lb_a_tmp * fb_a_tmp * jb_a_tmp) + h_a_tmp * n_a_tmp * fb_a_tmp * kb_a_tmp *
-    d_a_tmp / 2.0) / m) - 981.0;
-  ob_a_tmp = desired_motor_value / gain_motor;
-  a = Omega_1_scaled - ob_a_tmp;
-  b_a = Omega_2_scaled - ob_a_tmp;
-  c_a = Omega_3_scaled - ob_a_tmp;
-  d_a = Omega_4_scaled - ob_a_tmp;
-  e_a = Phi_scaled - desired_phi_value / gain_phi;
-  f_a = Theta_scaled - desired_theta_value / gain_theta;
-  ob_a_tmp = desired_el_value / gain_el;
-  g_a = b_1_scaled - ob_a_tmp;
-  h_a = b_2_scaled - ob_a_tmp;
-  i_a = b_3_scaled - ob_a_tmp;
-  j_a = b_4_scaled - ob_a_tmp;
-  k_a = delta_ailerons_scaled - desired_ailerons_value / gain_ailerons;
-  ob_a_tmp = desired_az_value / gain_az;
-  l_a = g_1_scaled - ob_a_tmp;
-  m_a = g_2_scaled - ob_a_tmp;
-  n_a = g_3_scaled - ob_a_tmp;
-  o_a = g_4_scaled - ob_a_tmp;
-  l_a_tmp *= fb_a_tmp;
-  ob_a_tmp = dv_global_2 + (((fb_a_tmp * gb_a_tmp - l_a_tmp * hb_a_tmp) -
-    ib_a_tmp * jb_a_tmp) + h_a_tmp * m_a_tmp * kb_a_tmp * d_a_tmp / 2.0) / m;
-  r_a_tmp_tmp = m_a_tmp * k_a_tmp;
-  h_a_tmp = dv_global_1 - (((((n_a_tmp * f_a_tmp + r_a_tmp_tmp * gb_a_tmp) -
-    lb_a_tmp * mb_a_tmp) - ib_a_tmp * k_a_tmp * hb_a_tmp) + l_a_tmp * k_a_tmp *
-    jb_a_tmp) - h_a_tmp * fb_a_tmp * k_a_tmp * kb_a_tmp * d_a_tmp / 2.0) / m;
-  p_a = Omega_1_scaled - previous_controls[0] / gain_motor;
-  q_a = Omega_2_scaled - previous_controls[1] / gain_motor;
-  r_a = Omega_3_scaled - previous_controls[2] / gain_motor;
-  s_a = Omega_4_scaled - previous_controls[3] / gain_motor;
-  t_a = Phi_scaled - previous_controls[13] / gain_phi;
-  u_a = Theta_scaled - previous_controls[12] / gain_theta;
-  v_a = b_1_scaled - previous_controls[4] / gain_el;
-  w_a = b_2_scaled - previous_controls[5] / gain_el;
-  x_a = b_3_scaled - previous_controls[6] / gain_el;
-  y_a = b_4_scaled - previous_controls[7] / gain_el;
-  ab_a = delta_ailerons_scaled - previous_controls[14] / gain_ailerons;
-  bb_a = g_1_scaled - previous_controls[8] / gain_az;
-  cb_a = g_2_scaled - previous_controls[9] / gain_az;
-  db_a = g_3_scaled - previous_controls[10] / gain_az;
-  eb_a = g_4_scaled - previous_controls[11] / gain_az;
-  s_a_tmp_tmp = 2.0 * K_p_T * p_a_tmp;
-  l_a_tmp = s_a_tmp_tmp * c_a_tmp_tmp;
-  t_a_tmp_tmp = 2.0 * K_p_T * r_a_tmp;
-  ib_a_tmp = t_a_tmp_tmp * c_a_tmp_tmp;
-  u_a_tmp_tmp = 2.0 * K_p_T * t_a_tmp;
-  lb_a_tmp = u_a_tmp_tmp * c_a_tmp_tmp;
-  v_a_tmp_tmp = 2.0 * K_p_T * v_a_tmp;
-  pb_a_tmp = v_a_tmp_tmp * c_a_tmp_tmp;
-  qb_a_tmp = Cm_alpha * S;
-  rb_a_tmp = 2.0 * K_p_M * p_a_tmp * c_a_tmp_tmp;
-  sb_a_tmp = 2.0 * K_p_M * r_a_tmp * c_a_tmp_tmp;
-  tb_a_tmp = 2.0 * K_p_M * t_a_tmp * c_a_tmp_tmp;
-  ub_a_tmp = 2.0 * K_p_M * v_a_tmp * c_a_tmp_tmp;
-  vb_a_tmp = l_a_tmp * l_z;
-  wb_a_tmp = ib_a_tmp * l_z;
-  xb_a_tmp = lb_a_tmp * l_z;
-  yb_a_tmp = pb_a_tmp * l_z;
-  w_a_tmp_tmp = qb_a_tmp * c_a_tmp;
-  qb_a_tmp = ((((((((((((((((2.0 * I_zz * p * r - 2.0 * I_xx * p * r) - 2.0 *
-    I_yy * dv_global_5) + vb_a_tmp * m_a_tmp_tmp) + wb_a_tmp * n_a_tmp_tmp) +
-    xb_a_tmp * o_a_tmp_tmp) + yb_a_tmp * p_a_tmp_tmp) - rb_a_tmp * w_a_tmp *
-                       i_a_tmp_tmp) + sb_a_tmp * y_a_tmp * j_a_tmp_tmp) -
-                     tb_a_tmp * bb_a_tmp * k_a_tmp_tmp) + ub_a_tmp * db_a_tmp *
-                    l_a_tmp_tmp) + Cm_zero * S * c_a_tmp * rho * wing_chord) +
-                  l_a_tmp * l_4 * w_a_tmp * e_a_tmp_tmp) + ib_a_tmp * l_4 *
-                 y_a_tmp * f_a_tmp_tmp) - lb_a_tmp * l_3 * bb_a_tmp *
-                g_a_tmp_tmp) - pb_a_tmp * l_3 * db_a_tmp * h_a_tmp_tmp) -
-              w_a_tmp_tmp * flight_path_angle * rho * wing_chord) + qb_a_tmp *
-    Theta_scaled * c_a_tmp * gain_theta * rho * wing_chord;
-  x_a_tmp_tmp = CL_aileron * S * c_a_tmp;
-  l_a_tmp = ((((((((((((((2.0 * I_yy * q * r - 2.0 * I_xx * dv_global_4) - 2.0 *
-    I_zz * q * r) + rb_a_tmp * m_a_tmp_tmp) - sb_a_tmp * n_a_tmp_tmp) + tb_a_tmp
-                      * o_a_tmp_tmp) - ub_a_tmp * p_a_tmp_tmp) + l_a_tmp * l_1 *
-                    w_a_tmp * e_a_tmp_tmp) - ib_a_tmp * l_1 * y_a_tmp *
-                   f_a_tmp_tmp) - lb_a_tmp * l_2 * bb_a_tmp * g_a_tmp_tmp) +
-                 pb_a_tmp * l_2 * db_a_tmp * h_a_tmp_tmp) + vb_a_tmp * w_a_tmp *
-                i_a_tmp_tmp) + wb_a_tmp * y_a_tmp * j_a_tmp_tmp) + xb_a_tmp *
-              bb_a_tmp * k_a_tmp_tmp) + yb_a_tmp * db_a_tmp * l_a_tmp_tmp) +
-    x_a_tmp_tmp * delta_ailerons_scaled * gain_ailerons * rho;
-  y_a_tmp_tmp = K_p_T * p_a_tmp;
-  ib_a_tmp = y_a_tmp_tmp * c_a_tmp_tmp;
-  ab_a_tmp_tmp = K_p_T * r_a_tmp;
-  lb_a_tmp = ab_a_tmp_tmp * c_a_tmp_tmp;
-  bb_a_tmp_tmp = K_p_T * t_a_tmp;
-  pb_a_tmp = bb_a_tmp_tmp * c_a_tmp_tmp;
-  cb_a_tmp_tmp = K_p_T * v_a_tmp;
-  rb_a_tmp = cb_a_tmp_tmp * c_a_tmp_tmp;
-  ib_a_tmp = (((((((((((((I_zz * dv_global_6 - I_xx * p * q) + I_yy * p * q) +
-                        ib_a_tmp * l_1 * m_a_tmp_tmp) - lb_a_tmp * l_1 *
-                       n_a_tmp_tmp) - pb_a_tmp * l_2 * o_a_tmp_tmp) + rb_a_tmp *
-                     l_2 * p_a_tmp_tmp) - K_p_M * p_a_tmp * c_a_tmp_tmp *
-                    w_a_tmp * e_a_tmp_tmp) + K_p_M * r_a_tmp * c_a_tmp_tmp *
-                   y_a_tmp * f_a_tmp_tmp) - K_p_M * t_a_tmp * c_a_tmp_tmp *
-                  bb_a_tmp * g_a_tmp_tmp) + K_p_M * v_a_tmp * c_a_tmp_tmp *
-                 db_a_tmp * h_a_tmp_tmp) - ib_a_tmp * l_4 * w_a_tmp *
-                i_a_tmp_tmp) - lb_a_tmp * l_4 * y_a_tmp * j_a_tmp_tmp) +
-              pb_a_tmp * l_3 * bb_a_tmp * k_a_tmp_tmp) + rb_a_tmp * l_3 *
-    db_a_tmp * l_a_tmp_tmp;
-  tb_a_tmp = W_act_motor * W_act_motor;
-  ub_a_tmp = W_act_tilt_el * W_act_tilt_el;
-  cost_tmp = W_act_tilt_az * W_act_tilt_az;
-  sb_a_tmp = W_act_motor_du * W_act_motor_du;
-  vb_a_tmp = W_act_tilt_el_du * W_act_tilt_el_du;
-  b_cost_tmp = W_act_tilt_az_du * W_act_tilt_az_du;
-  c_cost_tmp = W_dv_5 * W_dv_5;
-  d_cost_tmp = I_yy * I_yy;
-  e_cost_tmp = W_dv_6 * W_dv_6;
-  f_cost_tmp = I_zz * I_zz;
-  g_cost_tmp = W_dv_4 * W_dv_4;
-  h_cost_tmp = I_xx * I_xx;
-  i_cost_tmp = W_dv_1 * W_dv_1;
-  j_cost_tmp = W_dv_3 * W_dv_3;
-  k_cost_tmp = W_dv_2 * W_dv_2;
-  l_cost_tmp = W_act_theta_du * W_act_theta_du;
-  m_cost_tmp = W_act_theta * W_act_theta;
-  n_cost_tmp = W_act_phi * W_act_phi;
-  o_cost_tmp = W_act_phi_du * W_act_phi_du;
-  p_cost_tmp = W_act_ailerons * W_act_ailerons;
-  q_cost_tmp = W_act_ailerons_du * W_act_ailerons_du;
-  cost = ((((((j_cost_tmp * (nb_a_tmp * nb_a_tmp) / 10000.0 + gamma_quadratic_du
-               * ((((((((((((((tb_a_tmp * (a * a) + tb_a_tmp * (b_a * b_a)) +
-    tb_a_tmp * (c_a * c_a)) + tb_a_tmp * (d_a * d_a)) + n_cost_tmp * (e_a * e_a))
-    + m_cost_tmp * (f_a * f_a)) + ub_a_tmp * (g_a * g_a)) + ub_a_tmp * (h_a *
-    h_a)) + ub_a_tmp * (i_a * i_a)) + ub_a_tmp * (j_a * j_a)) + p_cost_tmp *
-                      (k_a * k_a)) + cost_tmp * (l_a * l_a)) + cost_tmp * (m_a *
-    m_a)) + cost_tmp * (n_a * n_a)) + cost_tmp * (o_a * o_a))) + k_cost_tmp *
-              (ob_a_tmp * ob_a_tmp)) + i_cost_tmp * (h_a_tmp * h_a_tmp)) +
-            gamma_quadratic_du2 * ((((((((((((((sb_a_tmp * (p_a * p_a) +
-    sb_a_tmp * (q_a * q_a)) + sb_a_tmp * (r_a * r_a)) + sb_a_tmp * (s_a * s_a))
-    + o_cost_tmp * (t_a * t_a)) + l_cost_tmp * (u_a * u_a)) + vb_a_tmp * (v_a *
-    v_a)) + vb_a_tmp * (w_a * w_a)) + vb_a_tmp * (x_a * x_a)) + vb_a_tmp * (y_a *
-    y_a)) + q_cost_tmp * (ab_a * ab_a)) + b_cost_tmp * (bb_a * bb_a)) +
-    b_cost_tmp * (cb_a * cb_a)) + b_cost_tmp * (db_a * db_a)) + b_cost_tmp *
-             (eb_a * eb_a))) + c_cost_tmp * (qb_a_tmp * qb_a_tmp) / (4.0 *
-            d_cost_tmp)) + g_cost_tmp * (l_a_tmp * l_a_tmp) / (4.0 * h_cost_tmp))
-    + e_cost_tmp * (ib_a_tmp * ib_a_tmp) / f_cost_tmp;
-  gradient_tmp_tmp = d_a_tmp_tmp + x_a_tmp;
-  gradient_tmp = sin(gradient_tmp_tmp);
-  b_gradient_tmp_tmp = d_a_tmp_tmp + ab_a_tmp;
-  b_gradient_tmp = sin(b_gradient_tmp_tmp);
-  c_gradient_tmp_tmp = d_a_tmp_tmp + cb_a_tmp;
-  c_gradient_tmp = sin(c_gradient_tmp_tmp);
-  x_a = d_a_tmp_tmp + eb_a_tmp;
-  y_a = sin(x_a);
-  ab_a = K_p_M * w_a_tmp;
-  bb_a = K_p_T * l_4;
-  cb_a = bb_a * w_a_tmp;
-  db_a = Omega_1_scaled * gain_motor;
-  eb_a = K_p_T * l_1;
-  d_a_tmp_tmp = K_p_T * l_z;
-  d_gradient_tmp = 4.0 * K_p_T * Omega_1_scaled;
-  w_a = 2.0 * sb_a_tmp * gamma_quadratic_du2;
-  a = 2.0 * tb_a_tmp * gamma_quadratic_du;
-  b_a = n_a_tmp * fb_a_tmp;
-  c_a = d_a_tmp_tmp * w_a_tmp;
-  d_a = K_p_M * m_a_tmp_tmp;
-  e_a = d_a_tmp_tmp * m_a_tmp_tmp;
-  f_a = eb_a * w_a_tmp;
-  gradient[0] = ((((((2.0 * Omega_1_scaled * c_cost_tmp * c_a_tmp_tmp * ((e_a -
-    ab_a * i_a_tmp_tmp) + cb_a * e_a_tmp_tmp) * qb_a_tmp / d_cost_tmp - w_a *
-                      (previous_controls[0] - db_a) / gain_motor) - 4.0 *
-                     Omega_1_scaled * e_cost_tmp * c_a_tmp_tmp * ((ab_a *
-    e_a_tmp_tmp - eb_a * m_a_tmp_tmp) + cb_a * i_a_tmp_tmp) * ib_a_tmp /
-                     f_cost_tmp) - a * (desired_motor_value - db_a) / gain_motor)
-                   + 2.0 * Omega_1_scaled * g_cost_tmp * c_a_tmp_tmp * ((d_a +
-    f_a * e_a_tmp_tmp) + c_a * i_a_tmp_tmp) * l_a_tmp / h_cost_tmp) +
-                  d_gradient_tmp * i_cost_tmp * c_a_tmp_tmp * h_a_tmp *
-                  ((n_a_tmp * m_a_tmp_tmp + m_a_tmp * w_a_tmp * k_a_tmp *
-                    e_a_tmp_tmp) - fb_a_tmp * w_a_tmp * k_a_tmp * i_a_tmp_tmp) /
-                  m) - K_p_T * Omega_1_scaled * j_cost_tmp * c_a_tmp_tmp *
-                 nb_a_tmp * ((k_a_tmp * m_a_tmp_tmp - q_a_tmp_tmp * w_a_tmp *
-    e_a_tmp_tmp) + b_a * w_a_tmp * i_a_tmp_tmp) / (25.0 * m)) - d_gradient_tmp *
-    k_cost_tmp * c_a_tmp_tmp * gradient_tmp * w_a_tmp * ob_a_tmp / m;
-  cb_a = K_p_M * y_a_tmp;
-  db_a = bb_a * y_a_tmp;
-  d_gradient_tmp = Omega_2_scaled * gain_motor;
-  g_a = 4.0 * K_p_T * Omega_2_scaled;
-  h_a = K_p_M * n_a_tmp_tmp;
-  i_a = d_a_tmp_tmp * y_a_tmp;
-  j_a = d_a_tmp_tmp * n_a_tmp_tmp;
-  k_a = eb_a * y_a_tmp;
-  gradient[1] = ((((((2.0 * Omega_2_scaled * c_cost_tmp * c_a_tmp_tmp * ((j_a +
-    cb_a * j_a_tmp_tmp) + db_a * f_a_tmp_tmp) * qb_a_tmp / d_cost_tmp - w_a *
-                      (previous_controls[1] - d_gradient_tmp) / gain_motor) -
-                     4.0 * Omega_2_scaled * e_cost_tmp * c_a_tmp_tmp * ((eb_a *
-    n_a_tmp_tmp - cb_a * f_a_tmp_tmp) + db_a * j_a_tmp_tmp) * ib_a_tmp /
-                     f_cost_tmp) - a * (desired_motor_value - d_gradient_tmp) /
-                    gain_motor) - 2.0 * Omega_2_scaled * g_cost_tmp *
-                   c_a_tmp_tmp * ((h_a + k_a * f_a_tmp_tmp) - i_a * j_a_tmp_tmp)
-                   * l_a_tmp / h_cost_tmp) + g_a * i_cost_tmp * c_a_tmp_tmp *
-                  h_a_tmp * ((n_a_tmp * n_a_tmp_tmp + m_a_tmp * y_a_tmp *
-    k_a_tmp * f_a_tmp_tmp) - fb_a_tmp * y_a_tmp * k_a_tmp * j_a_tmp_tmp) / m) -
-                 K_p_T * Omega_2_scaled * j_cost_tmp * c_a_tmp_tmp * nb_a_tmp *
-                 ((k_a_tmp * n_a_tmp_tmp - q_a_tmp_tmp * y_a_tmp * f_a_tmp_tmp)
-                  + b_a * y_a_tmp * j_a_tmp_tmp) / (25.0 * m)) - g_a *
-    k_cost_tmp * c_a_tmp_tmp * b_gradient_tmp * y_a_tmp * ob_a_tmp / m;
-  db_a = K_p_T * l_2;
-  d_gradient_tmp = K_p_M * bb_a_tmp;
-  l_a = K_p_T * l_3;
-  g_a = l_a * bb_a_tmp;
-  m_a = Omega_3_scaled * gain_motor;
-  n_a = 4.0 * K_p_T * Omega_3_scaled;
-  o_a = d_a_tmp_tmp * bb_a_tmp;
-  p_a = K_p_M * o_a_tmp_tmp;
-  q_a = d_a_tmp_tmp * o_a_tmp_tmp;
-  r_a = db_a * bb_a_tmp;
-  gradient[2] = ((((((2.0 * Omega_3_scaled * g_cost_tmp * c_a_tmp_tmp * ((p_a -
-    r_a * g_a_tmp_tmp) + o_a * k_a_tmp_tmp) * l_a_tmp / h_cost_tmp - w_a *
-                      (previous_controls[2] - m_a) / gain_motor) - 4.0 *
-                     Omega_3_scaled * e_cost_tmp * c_a_tmp_tmp * ((db_a *
-    o_a_tmp_tmp + d_gradient_tmp * g_a_tmp_tmp) - g_a * k_a_tmp_tmp) * ib_a_tmp /
-                     f_cost_tmp) - 2.0 * Omega_3_scaled * c_cost_tmp *
-                    c_a_tmp_tmp * ((d_gradient_tmp * k_a_tmp_tmp - q_a) + g_a *
-    g_a_tmp_tmp) * qb_a_tmp / d_cost_tmp) - a * (desired_motor_value - m_a) /
-                   gain_motor) + n_a * i_cost_tmp * c_a_tmp_tmp * h_a_tmp *
-                  ((n_a_tmp * o_a_tmp_tmp + m_a_tmp * bb_a_tmp * k_a_tmp *
-                    g_a_tmp_tmp) - fb_a_tmp * bb_a_tmp * k_a_tmp * k_a_tmp_tmp) /
-                  m) - K_p_T * Omega_3_scaled * j_cost_tmp * c_a_tmp_tmp *
-                 nb_a_tmp * ((k_a_tmp * o_a_tmp_tmp - q_a_tmp_tmp * bb_a_tmp *
-    g_a_tmp_tmp) + b_a * bb_a_tmp * k_a_tmp_tmp) / (25.0 * m)) - n_a *
-    k_cost_tmp * c_a_tmp_tmp * c_gradient_tmp * bb_a_tmp * ob_a_tmp / m;
-  g_a = Omega_4_scaled * gain_motor;
-  m_a = K_p_M * db_a_tmp;
-  n_a = l_a * db_a_tmp;
-  s_a = 4.0 * K_p_T * Omega_4_scaled;
-  t_a = d_a_tmp_tmp * db_a_tmp;
-  u_a = K_p_M * p_a_tmp_tmp;
-  d_a_tmp_tmp *= p_a_tmp_tmp;
-  v_a = db_a * db_a_tmp;
-  gradient[3] = ((((((4.0 * Omega_4_scaled * e_cost_tmp * c_a_tmp_tmp * ((db_a *
-    p_a_tmp_tmp + m_a * h_a_tmp_tmp) + n_a * l_a_tmp_tmp) * ib_a_tmp /
-                      f_cost_tmp - w_a * (previous_controls[3] - g_a) /
-                      gain_motor) - a * (desired_motor_value - g_a) / gain_motor)
-                    + 2.0 * Omega_4_scaled * c_cost_tmp * c_a_tmp_tmp *
-                    ((d_a_tmp_tmp + m_a * l_a_tmp_tmp) - n_a * h_a_tmp_tmp) *
-                    qb_a_tmp / d_cost_tmp) + 2.0 * Omega_4_scaled * g_cost_tmp *
-                   c_a_tmp_tmp * ((v_a * h_a_tmp_tmp - u_a) + t_a * l_a_tmp_tmp)
-                   * l_a_tmp / h_cost_tmp) + s_a * i_cost_tmp * c_a_tmp_tmp *
-                  h_a_tmp * ((n_a_tmp * p_a_tmp_tmp + m_a_tmp * db_a_tmp *
-    k_a_tmp * h_a_tmp_tmp) - fb_a_tmp * db_a_tmp * k_a_tmp * l_a_tmp_tmp) / m) -
-                 K_p_T * Omega_4_scaled * j_cost_tmp * c_a_tmp_tmp * nb_a_tmp *
-                 ((k_a_tmp * p_a_tmp_tmp - q_a_tmp_tmp * db_a_tmp * h_a_tmp_tmp)
-                  + b_a * db_a_tmp * l_a_tmp_tmp) / (25.0 * m)) - s_a *
-    k_cost_tmp * c_a_tmp_tmp * y_a * db_a_tmp * ob_a_tmp / m;
-  w_a = fb_a_tmp * k_a_tmp;
-  a = 2.0 * vb_a_tmp * gamma_quadratic_du2;
-  g_a = 2.0 * ub_a_tmp * gamma_quadratic_du;
-  n_a = 2.0 * p_a_tmp * e_cost_tmp;
-  s_a = bb_a * e_a_tmp_tmp;
-  lb_a_tmp = p_a_tmp * c_cost_tmp;
-  pb_a_tmp = K_p_M * e_a_tmp_tmp;
-  rb_a_tmp = s_a_tmp_tmp * k_cost_tmp;
-  xb_a_tmp = s_a_tmp_tmp * i_cost_tmp;
-  yb_a_tmp = y_a_tmp_tmp * j_cost_tmp;
-  gradient[4] = ((((((lb_a_tmp * gain_el * c_a_tmp_tmp * ((c_a + d_a *
-    i_a_tmp_tmp) - s_a * m_a_tmp_tmp) * qb_a_tmp / d_cost_tmp - a *
-                      (previous_controls[4] - o_a_tmp) / gain_el) - g_a *
-                     (desired_el_value - o_a_tmp) / gain_el) - p_a_tmp *
-                    g_cost_tmp * gain_el * c_a_tmp_tmp * ((eb_a * e_a_tmp_tmp *
-    m_a_tmp_tmp - ab_a) + e_a * i_a_tmp_tmp) * l_a_tmp / h_cost_tmp) + n_a *
-                   gain_el * c_a_tmp_tmp * ((f_a + pb_a_tmp * m_a_tmp_tmp) +
-    bb_a * m_a_tmp_tmp * i_a_tmp_tmp) * ib_a_tmp / f_cost_tmp) + xb_a_tmp *
-                  gain_el * c_a_tmp_tmp * h_a_tmp * ((n_a_tmp * w_a_tmp -
-    r_a_tmp_tmp * e_a_tmp_tmp * m_a_tmp_tmp) + w_a * m_a_tmp_tmp * i_a_tmp_tmp) /
-                  m) - yb_a_tmp * gain_el * c_a_tmp_tmp * ((w_a_tmp * k_a_tmp +
-    q_a_tmp_tmp * e_a_tmp_tmp * m_a_tmp_tmp) - b_a * m_a_tmp_tmp * i_a_tmp_tmp) *
-                 nb_a_tmp / (50.0 * m)) + rb_a_tmp * gain_el * c_a_tmp_tmp *
-    gradient_tmp * m_a_tmp_tmp * ob_a_tmp / m;
-  ab_a = r_a_tmp * c_cost_tmp;
-  c_a = K_p_M * f_a_tmp_tmp;
-  d_a = 2.0 * r_a_tmp * e_cost_tmp;
-  e_a = bb_a * f_a_tmp_tmp;
-  f_a = t_a_tmp_tmp * k_cost_tmp;
-  vb_a_tmp = t_a_tmp_tmp * i_cost_tmp;
-  wb_a_tmp = ab_a_tmp_tmp * j_cost_tmp;
-  gradient[5] = ((((((vb_a_tmp * gain_el * c_a_tmp_tmp * h_a_tmp * ((n_a_tmp *
-    y_a_tmp - r_a_tmp_tmp * f_a_tmp_tmp * n_a_tmp_tmp) + w_a * n_a_tmp_tmp *
-    j_a_tmp_tmp) / m - a * (previous_controls[5] - q_a_tmp) / gain_el) - ab_a *
-                     gain_el * c_a_tmp_tmp * ((h_a * j_a_tmp_tmp - i_a) + e_a *
-    n_a_tmp_tmp) * qb_a_tmp / d_cost_tmp) - r_a_tmp * g_cost_tmp * gain_el *
-                    c_a_tmp_tmp * ((cb_a - eb_a * f_a_tmp_tmp * n_a_tmp_tmp) +
-    j_a * j_a_tmp_tmp) * l_a_tmp / h_cost_tmp) - d_a * gain_el * c_a_tmp_tmp *
-                   ((k_a + c_a * n_a_tmp_tmp) - bb_a * n_a_tmp_tmp * j_a_tmp_tmp)
-                   * ib_a_tmp / f_cost_tmp) - g_a * (desired_el_value - q_a_tmp)
-                  / gain_el) - wb_a_tmp * gain_el * c_a_tmp_tmp * ((y_a_tmp *
-    k_a_tmp + q_a_tmp_tmp * f_a_tmp_tmp * n_a_tmp_tmp) - b_a * n_a_tmp_tmp *
-    j_a_tmp_tmp) * nb_a_tmp / (50.0 * m)) + f_a * gain_el * c_a_tmp_tmp *
-    b_gradient_tmp * n_a_tmp_tmp * ob_a_tmp / m;
-  cb_a = 2.0 * t_a_tmp * e_cost_tmp;
-  eb_a = l_a * g_a_tmp_tmp;
-  h_a = t_a_tmp * c_cost_tmp;
-  i_a = K_p_M * g_a_tmp_tmp;
-  j_a = u_a_tmp_tmp * k_cost_tmp;
-  k_a = u_a_tmp_tmp * i_cost_tmp;
-  ub_a_tmp = bb_a_tmp_tmp * j_cost_tmp;
-  gradient[6] = ((((((h_a * gain_el * c_a_tmp_tmp * ((o_a + p_a * k_a_tmp_tmp) +
-    eb_a * o_a_tmp_tmp) * qb_a_tmp / d_cost_tmp - a * (previous_controls[6] -
-    s_a_tmp) / gain_el) - g_a * (desired_el_value - s_a_tmp) / gain_el) +
-                    t_a_tmp * g_cost_tmp * gain_el * c_a_tmp_tmp *
-                    ((d_gradient_tmp + db_a * g_a_tmp_tmp * o_a_tmp_tmp) - q_a *
-                     k_a_tmp_tmp) * l_a_tmp / h_cost_tmp) - cb_a * gain_el *
-                   c_a_tmp_tmp * ((r_a - i_a * o_a_tmp_tmp) + l_a * o_a_tmp_tmp *
-    k_a_tmp_tmp) * ib_a_tmp / f_cost_tmp) + k_a * gain_el * c_a_tmp_tmp *
-                  h_a_tmp * ((n_a_tmp * bb_a_tmp - r_a_tmp_tmp * g_a_tmp_tmp *
-    o_a_tmp_tmp) + w_a * o_a_tmp_tmp * k_a_tmp_tmp) / m) - ub_a_tmp * gain_el *
-                 c_a_tmp_tmp * ((bb_a_tmp * k_a_tmp + q_a_tmp_tmp * g_a_tmp_tmp *
-    o_a_tmp_tmp) - b_a * o_a_tmp_tmp * k_a_tmp_tmp) * nb_a_tmp / (50.0 * m)) +
-    j_a * gain_el * c_a_tmp_tmp * c_gradient_tmp * o_a_tmp_tmp * ob_a_tmp / m;
-  d_gradient_tmp = v_a_tmp * c_cost_tmp;
-  o_a = K_p_M * h_a_tmp_tmp;
-  p_a = 2.0 * v_a_tmp * e_cost_tmp;
-  q_a = l_a * h_a_tmp_tmp;
-  r_a = v_a_tmp_tmp * k_cost_tmp;
-  sb_a_tmp = v_a_tmp_tmp * i_cost_tmp;
-  tb_a_tmp = cb_a_tmp_tmp * j_cost_tmp;
-  gradient[7] = ((((((d_gradient_tmp * gain_el * c_a_tmp_tmp * ((t_a - u_a *
-    l_a_tmp_tmp) + q_a * p_a_tmp_tmp) * qb_a_tmp / d_cost_tmp - a *
-                      (previous_controls[7] - u_a_tmp) / gain_el) - g_a *
-                     (desired_el_value - u_a_tmp) / gain_el) - v_a_tmp *
-                    g_cost_tmp * gain_el * c_a_tmp_tmp * ((m_a + db_a *
-    h_a_tmp_tmp * p_a_tmp_tmp) + d_a_tmp_tmp * l_a_tmp_tmp) * l_a_tmp /
-                    h_cost_tmp) - p_a * gain_el * c_a_tmp_tmp * ((o_a *
-    p_a_tmp_tmp - v_a) + l_a * p_a_tmp_tmp * l_a_tmp_tmp) * ib_a_tmp /
-                   f_cost_tmp) + sb_a_tmp * gain_el * c_a_tmp_tmp * h_a_tmp *
-                  ((n_a_tmp * db_a_tmp - r_a_tmp_tmp * h_a_tmp_tmp * p_a_tmp_tmp)
-                   + w_a * p_a_tmp_tmp * l_a_tmp_tmp) / m) - tb_a_tmp * gain_el *
-                 c_a_tmp_tmp * ((db_a_tmp * k_a_tmp + q_a_tmp_tmp * h_a_tmp_tmp *
-    p_a_tmp_tmp) - b_a * p_a_tmp_tmp * l_a_tmp_tmp) * nb_a_tmp / (50.0 * m)) +
-    r_a * gain_el * c_a_tmp_tmp * y_a * p_a_tmp_tmp * ob_a_tmp / m;
-  db_a = 2.0 * b_cost_tmp * gamma_quadratic_du2;
-  d_a_tmp_tmp = 2.0 * cost_tmp * gamma_quadratic_du;
-  gradient[8] = ((((((n_a * gain_az * c_a_tmp_tmp * w_a_tmp * (K_p_M *
-    i_a_tmp_tmp - s_a) * ib_a_tmp / f_cost_tmp - db_a * (previous_controls[8] -
-    x_a_tmp) / gain_az) - lb_a_tmp * gain_az * c_a_tmp_tmp * w_a_tmp * (pb_a_tmp
-    + bb_a * i_a_tmp_tmp) * qb_a_tmp / d_cost_tmp) - d_a_tmp_tmp *
-                    (desired_az_value - x_a_tmp) / gain_az) - rb_a_tmp * gain_az
-                   * c_a_tmp_tmp * cos(gradient_tmp_tmp) * w_a_tmp * ob_a_tmp /
-                   m) + y_a_tmp_tmp * g_cost_tmp * gain_az * c_a_tmp_tmp *
-                  w_a_tmp * (l_z * e_a_tmp_tmp - l_1 * i_a_tmp_tmp) * l_a_tmp /
-                  h_cost_tmp) - xb_a_tmp * gain_az * c_a_tmp_tmp * gradient_tmp *
-                 w_a_tmp * k_a_tmp * h_a_tmp / m) - yb_a_tmp * gain_az *
-    c_a_tmp_tmp * gradient_tmp * n_a_tmp * w_a_tmp * nb_a_tmp / (50.0 * m);
-  gradient[9] = ((((((ab_a * gain_az * c_a_tmp_tmp * y_a_tmp * (c_a - bb_a *
-    j_a_tmp_tmp) * qb_a_tmp / d_cost_tmp - db_a * (previous_controls[9] -
-    ab_a_tmp) / gain_az) - d_a_tmp_tmp * (desired_az_value - ab_a_tmp) / gain_az)
-                    - d_a * gain_az * c_a_tmp_tmp * y_a_tmp * (K_p_M *
-    j_a_tmp_tmp + e_a) * ib_a_tmp / f_cost_tmp) - f_a * gain_az * c_a_tmp_tmp *
-                   cos(b_gradient_tmp_tmp) * y_a_tmp * ob_a_tmp / m) +
-                  ab_a_tmp_tmp * g_cost_tmp * gain_az * c_a_tmp_tmp * y_a_tmp *
-                  (l_z * f_a_tmp_tmp + l_1 * j_a_tmp_tmp) * l_a_tmp / h_cost_tmp)
-                 - vb_a_tmp * gain_az * c_a_tmp_tmp * b_gradient_tmp * y_a_tmp *
-                 k_a_tmp * h_a_tmp / m) - wb_a_tmp * gain_az * c_a_tmp_tmp *
-    b_gradient_tmp * n_a_tmp * y_a_tmp * nb_a_tmp / (50.0 * m);
-  gradient[10] = ((((((cb_a * gain_az * c_a_tmp_tmp * bb_a_tmp * (K_p_M *
-    k_a_tmp_tmp + eb_a) * ib_a_tmp / f_cost_tmp - db_a * (previous_controls[10]
-    - cb_a_tmp) / gain_az) - h_a * gain_az * c_a_tmp_tmp * bb_a_tmp * (i_a - l_a
-    * k_a_tmp_tmp) * qb_a_tmp / d_cost_tmp) - d_a_tmp_tmp * (desired_az_value -
-    cb_a_tmp) / gain_az) - j_a * gain_az * c_a_tmp_tmp * cos(c_gradient_tmp_tmp)
-                    * bb_a_tmp * ob_a_tmp / m) + bb_a_tmp_tmp * g_cost_tmp *
-                   gain_az * c_a_tmp_tmp * bb_a_tmp * (l_z * g_a_tmp_tmp + l_2 *
-    k_a_tmp_tmp) * l_a_tmp / h_cost_tmp) - k_a * gain_az * c_a_tmp_tmp *
-                  c_gradient_tmp * bb_a_tmp * k_a_tmp * h_a_tmp / m) - ub_a_tmp *
-    gain_az * c_a_tmp_tmp * c_gradient_tmp * n_a_tmp * bb_a_tmp * nb_a_tmp /
-    (50.0 * m);
-  gradient[11] = ((((((d_gradient_tmp * gain_az * c_a_tmp_tmp * db_a_tmp * (o_a
-    + l_a * l_a_tmp_tmp) * qb_a_tmp / d_cost_tmp - db_a * (previous_controls[11]
-    - eb_a_tmp) / gain_az) - d_a_tmp_tmp * (desired_az_value - eb_a_tmp) /
-                      gain_az) - p_a * gain_az * c_a_tmp_tmp * db_a_tmp * (K_p_M
-    * l_a_tmp_tmp - q_a) * ib_a_tmp / f_cost_tmp) - r_a * gain_az * c_a_tmp_tmp *
-                    cos(x_a) * db_a_tmp * ob_a_tmp / m) + cb_a_tmp_tmp *
-                   g_cost_tmp * gain_az * c_a_tmp_tmp * db_a_tmp * (l_z *
-    h_a_tmp_tmp - l_2 * l_a_tmp_tmp) * l_a_tmp / h_cost_tmp) - sb_a_tmp *
-                  gain_az * c_a_tmp_tmp * y_a * db_a_tmp * k_a_tmp * h_a_tmp / m)
-    - tb_a_tmp * gain_az * c_a_tmp_tmp * y_a * n_a_tmp * db_a_tmp * nb_a_tmp /
-    (50.0 * m);
-  gradient_tmp = a_tmp_tmp * gain_theta * rho;
-  b_gradient_tmp = gradient_tmp * g_a_tmp;
-  c_gradient_tmp = b_a_tmp_tmp * gain_theta * rho;
-  gradient_tmp *= i_a_tmp;
-  y_a = e_a_tmp * S * c_a_tmp * gain_theta * rho;
-  ab_a = K_p_T * gain_theta * c_a_tmp_tmp;
-  cb_a = ((b_gradient_tmp / 2.0 + c_gradient_tmp * g_a_tmp * j_a_tmp * d_a_tmp /
-           2.0) - gradient_tmp * b_a_tmp / 2.0) + y_a * i_a_tmp * j_a_tmp *
-    b_a_tmp;
-  gradient_tmp = ((gradient_tmp / 2.0 + c_gradient_tmp * i_a_tmp * j_a_tmp *
-                   d_a_tmp / 2.0) + b_gradient_tmp * b_a_tmp / 2.0) - y_a *
-    g_a_tmp * j_a_tmp * b_a_tmp;
-  b_gradient_tmp = gain_theta * m_a_tmp;
-  db_a = ab_a * n_a_tmp;
-  eb_a = ab_a * m_a_tmp;
-  gradient[12] = ((((2.0 * i_cost_tmp * h_a_tmp * ((((((((n_a_tmp * gradient_tmp
-    + r_a_tmp_tmp * cb_a) + gain_theta * k_a_tmp * f_a_tmp) - b_gradient_tmp *
-    n_a_tmp * gb_a_tmp) - ab_a * k_a_tmp * mb_a_tmp) - db_a * fb_a_tmp *
-    jb_a_tmp) + eb_a * n_a_tmp * hb_a_tmp) + c_gradient_tmp * n_a_tmp * fb_a_tmp
-    * kb_a_tmp * d_a_tmp / 2.0) - y_a * fb_a_tmp * k_a_tmp * kb_a_tmp * b_a_tmp)
-                     / m - 2.0 * l_cost_tmp * gamma_quadratic_du2 *
-                     (previous_controls[12] - a_tmp) / gain_theta) - 2.0 *
-                    m_cost_tmp * gamma_quadratic_du * (desired_theta_value -
-    a_tmp) / gain_theta) - 2.0 * k_cost_tmp * (fb_a_tmp * cb_a + y_a * m_a_tmp *
-    kb_a_tmp * b_a_tmp) * ob_a_tmp / m) - j_cost_tmp * nb_a_tmp *
-                  ((((((((k_a_tmp * gradient_tmp - q_a_tmp_tmp * cb_a) -
-    gain_theta * n_a_tmp * f_a_tmp) - b_gradient_tmp * k_a_tmp * gb_a_tmp) +
-                       db_a * mb_a_tmp) - ab_a * fb_a_tmp * k_a_tmp * jb_a_tmp)
-                     + eb_a * k_a_tmp * hb_a_tmp) + c_gradient_tmp * fb_a_tmp *
-                    k_a_tmp * kb_a_tmp * d_a_tmp / 2.0) + y_a * n_a_tmp *
-                   fb_a_tmp * kb_a_tmp * b_a_tmp) / (50.0 * m)) + w_a_tmp_tmp *
-    c_cost_tmp * gain_theta * rho * wing_chord * qb_a_tmp / (2.0 * d_cost_tmp);
-  gradient_tmp = K_p_T * gain_phi * c_a_tmp_tmp;
-  b_gradient_tmp = gradient_tmp * m_a_tmp;
-  c_gradient_tmp = gradient_tmp * fb_a_tmp;
-  y_a = b_a_tmp_tmp * gain_phi * rho;
-  ab_a = 100.0 * K_p_T * c_a_tmp_tmp;
-  cb_a = y_a * m_a_tmp;
-  gradient[13] = (((gamma_quadratic_du * (2.0 * Phi_scaled - 2.0 *
-    desired_phi_value / gain_phi) * n_cost_tmp + gamma_quadratic_du2 * (2.0 *
-    Phi_scaled - 2.0 * previous_controls[13] / gain_phi) * o_cost_tmp) + 2.0 *
-                   h_a_tmp * (((gain_phi * fb_a_tmp * k_a_tmp * gb_a_tmp -
-    c_gradient_tmp * k_a_tmp * hb_a_tmp) - b_gradient_tmp * k_a_tmp * jb_a_tmp)
-    + cb_a * k_a_tmp * kb_a_tmp * d_a_tmp / 2.0) * i_cost_tmp / m) + 2.0 *
-                  ob_a_tmp * (((gain_phi * m_a_tmp * gb_a_tmp - b_gradient_tmp *
-    hb_a_tmp) + c_gradient_tmp * jb_a_tmp) - y_a * fb_a_tmp * kb_a_tmp * d_a_tmp
-    / 2.0) * k_cost_tmp / m) + ((100.0 * dv_global_3 + (((((100.0 * k_a_tmp *
-    f_a_tmp - 100.0 * m_a_tmp * n_a_tmp * gb_a_tmp) - ab_a * k_a_tmp * mb_a_tmp)
-    + ab_a * m_a_tmp * n_a_tmp * hb_a_tmp) - ab_a * n_a_tmp * fb_a_tmp *
-    jb_a_tmp) + 50.0 * S * c_a_tmp * rho * n_a_tmp * fb_a_tmp * kb_a_tmp *
-    d_a_tmp) / m) - 981.0) * (((gain_phi * n_a_tmp * fb_a_tmp * gb_a_tmp -
-    b_gradient_tmp * n_a_tmp * jb_a_tmp) - gradient_tmp * n_a_tmp * fb_a_tmp *
-    hb_a_tmp) + cb_a * n_a_tmp * kb_a_tmp * d_a_tmp / 2.0) * j_cost_tmp / (50.0 *
-    m);
-  gradient[14] = (p_cost_tmp * gamma_quadratic_du * (2.0 * delta_ailerons_scaled
-    - 2.0 * desired_ailerons_value / gain_ailerons) + q_cost_tmp *
-                  gamma_quadratic_du2 * (2.0 * delta_ailerons_scaled - 2.0 *
-    previous_controls[14] / gain_ailerons)) + x_a_tmp_tmp * g_cost_tmp *
-    gain_ailerons * rho * l_a_tmp / (2.0 * h_cost_tmp);
+  double t10;
+  double t101;
+  double t105;
+  double t107;
+  double t109;
+  double t11;
+  double t113;
+  double t114;
+  double t115;
+  double t116;
+  double t117;
+  double t118;
+  double t119;
+  double t12;
+  double t120;
+  double t123;
+  double t124;
+  double t125;
+  double t126;
+  double t127;
+  double t128;
+  double t129;
+  double t13;
+  double t130;
+  double t136;
+  double t137;
+  double t138;
+  double t139;
+  double t14;
+  double t140;
+  double t141;
+  double t142;
+  double t143;
+  double t144;
+  double t145;
+  double t146;
+  double t147;
+  double t148;
+  double t149;
+  double t15;
+  double t150;
+  double t151;
+  double t152;
+  double t154;
+  double t156;
+  double t158;
+  double t16;
+  double t161;
+  double t162;
+  double t164;
+  double t17;
+  double t176;
+  double t177;
+  double t18;
+  double t19;
+  double t190;
+  double t193;
+  double t194;
+  double t2;
+  double t20;
+  double t201;
+  double t202;
+  double t203;
+  double t205;
+  double t206;
+  double t207;
+  double t209;
+  double t21;
+  double t213;
+  double t215;
+  double t216;
+  double t218;
+  double t22;
+  double t220;
+  double t220_tmp;
+  double t221;
+  double t221_tmp;
+  double t224;
+  double t224_tmp_tmp;
+  double t225;
+  double t23;
+  double t230;
+  double t233;
+  double t233_tmp;
+  double t237;
+  double t24;
+  double t241;
+  double t246;
+  double t246_tmp;
+  double t247;
+  double t25;
+  double t26;
+  double t27;
+  double t28;
+  double t29;
+  double t3;
+  double t30;
+  double t31;
+  double t32;
+  double t33;
+  double t34;
+  double t35;
+  double t36;
+  double t37;
+  double t38;
+  double t39;
+  double t4;
+  double t40;
+  double t41;
+  double t42;
+  double t43;
+  double t44;
+  double t45;
+  double t46;
+  double t47;
+  double t48;
+  double t49;
+  double t5;
+  double t50;
+  double t51;
+  double t52;
+  double t53;
+  double t54;
+  double t55;
+  double t58;
+  double t6;
+  double t63;
+  double t64;
+  double t65;
+  double t66;
+  double t67;
+  double t68;
+  double t69;
+  double t7;
+  double t70;
+  double t71;
+  double t72;
+  double t73;
+  double t74;
+  double t75;
+  double t76;
+  double t77;
+  double t78;
+  double t79;
+  double t8;
+  double t80;
+  double t81;
+  double t82;
+  double t84;
+  double t85;
+  double t86;
+  double t87;
+  double t88;
+  double t89;
+  double t9;
+  double t90;
+  double t93;
+  double t94;
+  double t95;
+  /*     This function was generated by the Symbolic Math Toolbox version 9.3.
+   */
+  /*     20-Feb-2024 16:03:43 */
+  t2 = cos(Beta);
+  t3 = sin(Beta);
+  t4 = Phi_scaled * gain_phi;
+  t5 = Theta_scaled * gain_theta;
+  t6 = b_1_scaled * gain_el;
+  t7 = b_2_scaled * gain_el;
+  t8 = b_3_scaled * gain_el;
+  t9 = b_4_scaled * gain_el;
+  t10 = g_1_scaled * gain_az;
+  t11 = g_2_scaled * gain_az;
+  t12 = g_3_scaled * gain_az;
+  t13 = g_4_scaled * gain_az;
+  t14 = Cl_alpha * Cl_alpha;
+  t15 = Omega_1_scaled * 2.0;
+  t16 = Omega_2_scaled * 2.0;
+  t17 = Omega_3_scaled * 2.0;
+  t18 = Omega_4_scaled * 2.0;
+  t19 = Omega_1_scaled * Omega_1_scaled;
+  t20 = Omega_2_scaled * Omega_2_scaled;
+  t21 = Omega_3_scaled * Omega_3_scaled;
+  t22 = Omega_4_scaled * Omega_4_scaled;
+  t23 = Phi_scaled * 2.0;
+  t24 = Theta_scaled * 2.0;
+  t25 = V * V;
+  t26 = W_act_phi * W_act_phi;
+  t27 = W_act_theta * W_act_theta;
+  t28 = W_act_motor * W_act_motor;
+  t29 = W_act_phi_du * W_act_phi_du;
+  t30 = W_dv_1 * W_dv_1;
+  t31 = W_dv_2 * W_dv_2;
+  t32 = W_dv_3 * W_dv_3;
+  t33 = W_dv_4 * W_dv_4;
+  t34 = W_dv_5 * W_dv_5;
+  t35 = W_dv_6 * W_dv_6;
+  t36 = W_act_tilt_el * W_act_tilt_el;
+  t37 = W_act_tilt_az * W_act_tilt_az;
+  t38 = W_act_theta_du * W_act_theta_du;
+  t39 = W_act_ailerons * W_act_ailerons;
+  t40 = W_act_motor_du * W_act_motor_du;
+  t41 = W_act_tilt_el_du * W_act_tilt_el_du;
+  t42 = W_act_tilt_az_du * W_act_tilt_az_du;
+  t43 = W_act_ailerons_du * W_act_ailerons_du;
+  t44 = b_1_scaled * 2.0;
+  t45 = b_2_scaled * 2.0;
+  t46 = b_3_scaled * 2.0;
+  t47 = b_4_scaled * 2.0;
+  t48 = delta_ailerons_scaled * 2.0;
+  t49 = g_1_scaled * 2.0;
+  t50 = g_2_scaled * 2.0;
+  t51 = g_3_scaled * 2.0;
+  t52 = g_4_scaled * 2.0;
+  t53 = gain_motor * gain_motor;
+  t80 = 1.0 / I_xx;
+  t81 = 1.0 / I_yy;
+  t82 = 1.0 / I_zz;
+  t84 = 1.0 / gain_el;
+  t85 = 1.0 / gain_az;
+  t86 = 1.0 / gain_phi;
+  t87 = 1.0 / gain_theta;
+  t88 = 1.0 / gain_motor;
+  t89 = 1.0 / gain_ailerons;
+  t90 = 1.0 / m;
+  t54 = cos(t4);
+  t55 = cos(t5);
+  t58 = sin(t4);
+  t63 = cos(t6);
+  t64 = cos(t7);
+  t65 = cos(t8);
+  t66 = cos(t9);
+  t67 = sin(t5);
+  t68 = cos(t10);
+  t69 = cos(t11);
+  t70 = cos(t12);
+  t71 = cos(t13);
+  t72 = sin(t6);
+  t73 = sin(t7);
+  t74 = sin(t8);
+  t75 = sin(t9);
+  t76 = sin(t10);
+  t77 = sin(t11);
+  t78 = sin(t12);
+  t79 = sin(t13);
+  t93 = desired_el_value * t84;
+  t94 = desired_az_value * t85;
+  t95 = desired_motor_value * t88;
+  t101 = flight_path_angle - t5;
+  t4 = K_p_M * t19 * t53;
+  t113 = t4 * t72;
+  t6 = K_p_M * t20 * t53;
+  t114 = t6 * t73;
+  t7 = K_p_M * t21 * t53;
+  t115 = t7 * t74;
+  t9 = K_p_M * t22 * t53;
+  t116 = t9 * t75;
+  t8 = K_p_T * t19 * t53;
+  t117 = t8 * t72;
+  t10 = K_p_T * t20 * t53;
+  t118 = t10 * t73;
+  t11 = K_p_T * t21 * t53;
+  t119 = t11 * t74;
+  t12 = K_p_T * t22 * t53;
+  t120 = t12 * t75;
+  t4 *= t63;
+  t137 = t4 * t68;
+  t6 *= t64;
+  t138 = t6 * t69;
+  t7 *= t65;
+  t139 = t7 * t70;
+  t8 *= t63;
+  t140 = t8 * t68;
+  t9 *= t66;
+  t141 = t9 * t71;
+  t10 *= t64;
+  t142 = t10 * t69;
+  t11 *= t65;
+  t143 = t11 * t70;
+  t12 *= t66;
+  t144 = t12 * t71;
+  t145 = t4 * t76;
+  t146 = t6 * t77;
+  t147 = t7 * t78;
+  t148 = t8 * t76;
+  t149 = t9 * t79;
+  t150 = t10 * t77;
+  t151 = t11 * t78;
+  t152 = t12 * t79;
+  t9 = cos(t101);
+  t10 = sin(t101);
+  t105 = -(t93 * 2.0);
+  t107 = -(t94 * 2.0);
+  t109 = -(t95 * 2.0);
+  t123 = l_1 * t117;
+  t124 = l_1 * t118;
+  t125 = l_2 * t119;
+  t126 = l_2 * t120;
+  t127 = l_z * t117;
+  t128 = l_z * t118;
+  t129 = l_z * t119;
+  t130 = l_z * t120;
+  t154 = l_4 * t140;
+  t156 = l_4 * t142;
+  t158 = l_3 * t143;
+  t161 = l_4 * t148;
+  t162 = l_4 * t150;
+  t164 = l_3 * t152;
+  t4 = ((t117 + t118) + t119) + t120;
+  t205 = ((t140 + t142) + t143) + t144;
+  t206 = ((t148 + t150) + t151) + t152;
+  t176 = -(l_3 * t144);
+  t177 = -(l_3 * t151);
+  t7 = Cl_alpha * S;
+  t11 = t7 * gain_theta * rho * t25;
+  t12 = t11 * t9 / 2.0;
+  t201 = t55 * t4;
+  t202 = t67 * t4;
+  t215 = t58 * t205;
+  t216 = t54 * t206;
+  t218 = t55 * t58 * t206;
+  t220_tmp = t54 * t55;
+  t220 = t220_tmp * t205;
+  t221_tmp = t54 * t67;
+  t221 = t221_tmp * t205;
+  t136 = Cd_zero + K_Cd * t14 * (t101 * t101);
+  t13 = S * rho;
+  t4 = t13 * t3 * t25;
+  t190 = t4 * t54 * t136 / 2.0;
+  t6 = t13 * t2 * t25;
+  t8 = t6 * t10 * t136 / 2.0;
+  t193 = t4 * t55 * t58 * t136 / 2.0;
+  t194 = t4 * t58 * t67 * t136 / 2.0;
+  t6 = t6 * t9 * t136 / 2.0;
+  t4 = t7 * rho * t25 * t101;
+  t203 = t4 * t9 / 2.0 + t8;
+  t7 = t4 * t10 / 2.0 - t6;
+  t207 = t58 * t203;
+  t213 = t220_tmp * t203;
+  t224_tmp_tmp = K_Cd * S * gain_theta * rho;
+  t4 = t224_tmp_tmp * t2 * t14 * t25 * t101;
+  t224 = ((t12 + t11 * t101 * t10 * -0.5) + t4 * t10) + gain_theta * t6;
+  t225 = ((t11 * t10 / 2.0 + t101 * t12) - t4 * t9) + gain_theta * t8;
+  t4 = I_xx * p;
+  t230 =
+      dv_global_6 -
+      t82 *
+          (((((((((((((t4 * q - I_yy * p * q) + t124) + t125) - t123) - t126) +
+                  t137) +
+                 t139) +
+                t161) +
+               t162) -
+              t138) -
+             t141) +
+            t177) -
+           t164);
+  t233_tmp = CL_aileron * S;
+  t233 = dv_global_4 -
+         t80 * ((((((((((((((I_yy * q * r - I_zz * q * r) + t113) + t115) +
+                          t233_tmp * delta_ailerons_scaled * gain_ailerons *
+                              rho * t25 / 2.0) -
+                         t114) -
+                        t116) +
+                       l_1 * t140) +
+                      l_2 * t144) +
+                     l_z * t148) +
+                    l_z * t150) +
+                   l_z * t151) +
+                  l_z * t152) -
+                 l_1 * t142) -
+                l_2 * t143);
+  t209 = t67 * t7;
+  t237 =
+      dv_global_5 -
+      t81 *
+          ((((((((((((((I_zz * p * r - t4 * r) + t127) + t128) + t129) + t130) +
+                   t146) +
+                  t149) +
+                 t154) +
+                t156) -
+               t145) -
+              t147) -
+             t158) +
+            t176) +
+           t13 * t25 * (Cm_zero - Cm_alpha * t101) * wing_chord / 2.0);
+  t241 = dv_global_2 + t90 * (((t190 + t207) - t215) - t216);
+  t247 = (-dv_global_3 +
+          -t90 * (((((t193 - t202) + t209) - t213) - t218) + t220)) +
+         9.81;
+  t246_tmp = t55 * t7;
+  b_t246_tmp = t221_tmp * t203;
+  c_t246_tmp = t58 * t67 * t206;
+  t246 =
+      dv_global_1 +
+      t90 * (((((t194 + t201) - t246_tmp) - b_t246_tmp) + t221) - c_t246_tmp);
+  a_tmp = previous_motor_value1 * t88;
+  a = Omega_1_scaled - a_tmp;
+  b_a_tmp = previous_motor_value2 * t88;
+  b_a = Omega_2_scaled - b_a_tmp;
+  c_a_tmp = previous_motor_value3 * t88;
+  c_a = Omega_3_scaled - c_a_tmp;
+  d_a_tmp = previous_motor_value4 * t88;
+  d_a = Omega_4_scaled - d_a_tmp;
+  e_a_tmp = previous_phi_value * t86;
+  e_a = Phi_scaled - e_a_tmp;
+  f_a_tmp = previous_theta_value * t87;
+  f_a = Theta_scaled - f_a_tmp;
+  g_a_tmp = previous_el_value1 * t84;
+  g_a = b_1_scaled - g_a_tmp;
+  h_a_tmp = previous_el_value2 * t84;
+  h_a = b_2_scaled - h_a_tmp;
+  i_a_tmp = previous_el_value3 * t84;
+  i_a = b_3_scaled - i_a_tmp;
+  j_a_tmp = previous_el_value4 * t84;
+  j_a = b_4_scaled - j_a_tmp;
+  k_a_tmp = previous_ailerons_value * t89;
+  k_a = delta_ailerons_scaled - k_a_tmp;
+  l_a_tmp = previous_az_value1 * t85;
+  l_a = g_1_scaled - l_a_tmp;
+  m_a_tmp = previous_az_value2 * t85;
+  m_a = g_2_scaled - m_a_tmp;
+  n_a_tmp = previous_az_value3 * t85;
+  n_a = g_3_scaled - n_a_tmp;
+  o_a_tmp = previous_az_value4 * t85;
+  o_a = g_4_scaled - o_a_tmp;
+  p_a_tmp = desired_phi_value * t86;
+  t86 = Phi_scaled - p_a_tmp;
+  q_a_tmp = desired_theta_value * t87;
+  t85 = Theta_scaled - q_a_tmp;
+  t87 = desired_ailerons_value * t89;
+  t5 = delta_ailerons_scaled - t87;
+  t2 = Omega_1_scaled - t95;
+  t88 = Omega_2_scaled - t95;
+  t84 = Omega_3_scaled - t95;
+  t10 = Omega_4_scaled - t95;
+  t11 = b_1_scaled - t93;
+  t12 = b_2_scaled - t93;
+  t13 = b_3_scaled - t93;
+  t6 = b_4_scaled - t93;
+  t7 = g_1_scaled - t94;
+  t8 = g_2_scaled - t94;
+  t9 = g_3_scaled - t94;
+  t4 = g_4_scaled - t94;
+  cost =
+      gamma_quadratic_du2 * ((((((((((((((t40 * (a * a) + t40 * (b_a * b_a)) +
+                                         t40 * (c_a * c_a)) +
+                                        t40 * (d_a * d_a)) +
+                                       t29 * (e_a * e_a)) +
+                                      t38 * (f_a * f_a)) +
+                                     t41 * (g_a * g_a)) +
+                                    t41 * (h_a * h_a)) +
+                                   t41 * (i_a * i_a)) +
+                                  t41 * (j_a * j_a)) +
+                                 t43 * (k_a * k_a)) +
+                                t42 * (l_a * l_a)) +
+                               t42 * (m_a * m_a)) +
+                              t42 * (n_a * n_a)) +
+                             t42 * (o_a * o_a)) +
+      ((((((gamma_quadratic_du *
+                ((((((((((((((t26 * (t86 * t86) + t27 * (t85 * t85)) +
+                             t39 * (t5 * t5)) +
+                            t28 * (t2 * t2)) +
+                           t28 * (t88 * t88)) +
+                          t28 * (t84 * t84)) +
+                         t28 * (t10 * t10)) +
+                        t36 * (t11 * t11)) +
+                       t36 * (t12 * t12)) +
+                      t36 * (t13 * t13)) +
+                     t36 * (t6 * t6)) +
+                    t37 * (t7 * t7)) +
+                   t37 * (t8 * t8)) +
+                  t37 * (t9 * t9)) +
+                 t37 * (t4 * t4)) +
+            t35 * (t230 * t230)) +
+           t33 * (t233 * t233)) +
+          t34 * (t237 * t237)) +
+         t31 * (t241 * t241)) +
+        t30 * (t246 * t246)) +
+       t32 * (t247 * t247));
+  t86 = K_p_T * t15 * t53;
+  o_a = t86 * t55;
+  j_a = K_p_T * Omega_1_scaled;
+  k_a = j_a * t53;
+  t4 = K_p_T * l_4;
+  l_a = t4 * t15 * t53 * t63;
+  m_a = K_p_M * t15 * t53;
+  t6 = K_p_T * l_z;
+  n_a = t6 * t15 * t53;
+  d_a = t86 * t54 * t63;
+  t85 = gamma_quadratic_du2 * t40;
+  t84 = gamma_quadratic_du * t28;
+  t88 = t32 * t90 * t247;
+  t2 = t30 * t90 * t246;
+  t11 = t35 * t82 * t230;
+  t12 = K_p_T * l_1;
+  t13 = t33 * t80 * t233;
+  t5 = t34 * t81 * t237;
+  t10 = t31 * t90 * t241;
+  gradient[0] =
+      ((((((t85 * (t15 - a_tmp * 2.0) + t84 * (t15 + t109)) +
+           t88 *
+               ((t86 * t67 * t72 - k_a * t54 * t55 * t63 * t68 * 2.0) +
+                o_a * t58 * t63 * t76) *
+               2.0) +
+          t2 *
+              ((o_a * t72 - k_a * t58 * t63 * t67 * t76 * 2.0) +
+               d_a * t67 * t68) *
+              2.0) -
+         t11 * ((j_a * l_1 * t53 * t72 * -2.0 + m_a * t63 * t68) + l_a * t76) *
+             2.0) -
+        t5 *
+            ((K_p_M * Omega_1_scaled * t53 * t63 * t76 * -2.0 + n_a * t72) +
+             l_a * t68) *
+            2.0) -
+       t13 * ((m_a * t72 + t12 * t15 * t53 * t63 * t68) + n_a * t63 * t76) *
+           2.0) -
+      t10 * (t86 * t58 * t63 * t68 + d_a * t76) * 2.0;
+  t86 = K_p_T * t16 * t53;
+  o_a = t86 * t55;
+  j_a = K_p_T * Omega_2_scaled;
+  k_a = j_a * t53;
+  l_a = t12 * t16 * t53;
+  m_a = K_p_M * t16 * t53;
+  n_a = t4 * t16 * t53 * t64;
+  d_a = t86 * t54 * t64;
+  gradient[1] =
+      ((((((t85 * (t16 - b_a_tmp * 2.0) + t84 * (t16 + t109)) +
+           t88 *
+               ((t86 * t67 * t73 - k_a * t54 * t55 * t64 * t69 * 2.0) +
+                o_a * t58 * t64 * t77) *
+               2.0) +
+          t2 *
+              ((o_a * t73 - k_a * t58 * t64 * t67 * t77 * 2.0) +
+               d_a * t67 * t69) *
+              2.0) -
+         t11 *
+             ((K_p_M * Omega_2_scaled * t53 * t64 * t69 * -2.0 + l_a * t73) +
+              n_a * t77) *
+             2.0) +
+        t13 *
+            ((m_a * t73 - j_a * l_z * t53 * t64 * t77 * 2.0) +
+             l_a * t64 * t69) *
+            2.0) -
+       t5 * ((t6 * t16 * t53 * t73 + m_a * t64 * t77) + n_a * t69) * 2.0) -
+      t10 * (t86 * t58 * t64 * t69 + d_a * t77) * 2.0;
+  t86 = K_p_T * t17 * t53;
+  o_a = t86 * t55;
+  j_a = K_p_T * Omega_3_scaled;
+  k_a = j_a * t53;
+  l_a = K_p_M * t17 * t53;
+  m_a = l_a * t65;
+  n_a = t86 * t54 * t65;
+  d_a = K_p_T * l_2;
+  t12 = K_p_T * l_3;
+  gradient[2] =
+      ((((((t85 * (t17 - c_a_tmp * 2.0) + t84 * (t17 + t109)) +
+           t88 *
+               ((t86 * t67 * t74 - k_a * t54 * t55 * t65 * t70 * 2.0) +
+                o_a * t58 * t65 * t78) *
+               2.0) +
+          t2 *
+              ((o_a * t74 - k_a * t58 * t65 * t67 * t78 * 2.0) +
+               n_a * t67 * t70) *
+              2.0) -
+         t11 *
+             ((d_a * t17 * t53 * t74 + m_a * t70) -
+              j_a * l_3 * t53 * t65 * t78 * 2.0) *
+             2.0) -
+        t13 *
+            ((l_a * t74 - j_a * l_2 * t53 * t65 * t70 * 2.0) +
+             t6 * t17 * t53 * t65 * t78) *
+            2.0) +
+       t5 *
+           ((j_a * l_z * t53 * t74 * -2.0 + m_a * t78) +
+            t12 * t17 * t53 * t65 * t70) *
+           2.0) -
+      t10 * (t86 * t58 * t65 * t70 + n_a * t78) * 2.0;
+  t86 = K_p_T * t18 * t53;
+  o_a = t86 * t55;
+  j_a = K_p_T * Omega_4_scaled;
+  k_a = j_a * t53;
+  l_a = t6 * t18 * t53;
+  m_a = d_a * t18 * t53;
+  n_a = K_p_M * t18 * t53 * t66;
+  d_a = t86 * t54 * t66;
+  gradient[3] =
+      ((((((t85 * (t18 - d_a_tmp * 2.0) + t84 * (t18 + t109)) +
+           t88 *
+               ((t86 * t67 * t75 - k_a * t54 * t55 * t66 * t71 * 2.0) +
+                o_a * t58 * t66 * t79) *
+               2.0) +
+          t2 *
+              ((o_a * t75 - k_a * t58 * t66 * t67 * t79 * 2.0) +
+               d_a * t67 * t71) *
+              2.0) -
+         t13 *
+             ((K_p_M * Omega_4_scaled * t53 * t75 * -2.0 + m_a * t66 * t71) +
+              l_a * t66 * t79) *
+             2.0) -
+        t5 * ((l_a * t75 + n_a * t79) - j_a * l_3 * t53 * t66 * t71 * 2.0) *
+            2.0) +
+       t11 * ((m_a * t75 + n_a * t71) + t12 * t18 * t53 * t66 * t79) * 2.0) -
+      t10 * (t86 * t58 * t66 * t71 + d_a * t79) * 2.0;
+  j_a = K_p_T * gain_el;
+  t86 = j_a * t19 * t53;
+  o_a = gain_el * t58;
+  k_a = gain_el * t54;
+  l_a = gain_el * l_4;
+  m_a = gain_el * t68;
+  n_a = gain_el * t76;
+  d_a = gamma_quadratic_du2 * t41;
+  t85 = gamma_quadratic_du * t36;
+  t84 = k_a * t55;
+  t12 = gain_el * t55 * t58;
+  t4 = -gain_el * t54 * t67;
+  t6 = o_a * t67;
+  t7 = j_a * l_1;
+  t8 = j_a * l_z;
+  t9 = K_p_M * gain_el;
+  gradient[4] =
+      ((((((d_a * (t44 - g_a_tmp * 2.0) + t85 * (t44 + t105)) +
+           t88 * ((t84 * t68 * t117 - t12 * t76 * t117) + t86 * t63 * t67) *
+               2.0) +
+          t2 * ((t4 * t68 * t117 + t6 * t76 * t117) + t86 * t55 * t63) * 2.0) +
+         t10 * (o_a * t68 * t117 + k_a * t76 * t117) * 2.0) +
+        t11 * ((m_a * t113 + l_a * t76 * t117) + t7 * t19 * t53 * t63) * 2.0) -
+       t5 * ((n_a * t113 - l_a * t68 * t117) + t8 * t19 * t53 * t63) * 2.0) +
+      t13 * ((m_a * t123 + n_a * t127) - t9 * t19 * t53 * t63) * 2.0;
+  t86 = j_a * t20 * t53;
+  m_a = gain_el * t77;
+  gradient[5] =
+      ((((((d_a * (t45 - h_a_tmp * 2.0) + t85 * (t45 + t105)) +
+           t88 * ((t84 * t69 * t118 - t12 * t77 * t118) + t86 * t64 * t67) *
+               2.0) +
+          t2 * ((t4 * t69 * t118 + t6 * t77 * t118) + t86 * t55 * t64) * 2.0) +
+         t10 * (o_a * t69 * t118 + k_a * t77 * t118) * 2.0) -
+        t11 *
+            ((gain_el * t69 * t114 - l_a * t77 * t118) + t7 * t20 * t53 * t64) *
+            2.0) +
+       t5 * ((m_a * t114 + l_a * t69 * t118) - t8 * t20 * t53 * t64) * 2.0) +
+      t13 * ((-gain_el * t69 * t124 + m_a * t128) + t9 * t20 * t53 * t64) * 2.0;
+  t86 = j_a * t21 * t53;
+  l_a = gain_el * l_3;
+  m_a = gain_el * t78;
+  n_a = j_a * l_2;
+  gradient[6] =
+      ((((((d_a * (t46 - i_a_tmp * 2.0) + t85 * (t46 + t105)) +
+           t88 * ((t84 * t70 * t119 - t12 * t78 * t119) + t86 * t65 * t67) *
+               2.0) +
+          t2 * ((t4 * t70 * t119 + t6 * t78 * t119) + t86 * t55 * t65) * 2.0) +
+         t10 * (o_a * t70 * t119 + k_a * t78 * t119) * 2.0) -
+        t11 *
+            ((-gain_el * t70 * t115 + l_a * t78 * t119) +
+             n_a * t21 * t53 * t65) *
+            2.0) -
+       t5 * ((m_a * t115 + l_a * t70 * t119) + t8 * t21 * t53 * t65) * 2.0) -
+      t13 * ((gain_el * t70 * t125 - m_a * t129) + t9 * t21 * t53 * t65) * 2.0;
+  t86 = j_a * t22 * t53;
+  m_a = gain_el * t71;
+  t7 = gain_el * t79;
+  gradient[7] =
+      ((((((d_a * (t47 - j_a_tmp * 2.0) + t85 * (t47 + t105)) +
+           t88 * ((t84 * t71 * t120 - t12 * t79 * t120) + t86 * t66 * t67) *
+               2.0) +
+          t2 * ((t4 * t71 * t120 + t6 * t79 * t120) + t86 * t55 * t66) * 2.0) +
+         t10 * (o_a * t71 * t120 + k_a * t79 * t120) * 2.0) -
+        t11 * ((m_a * t116 + l_a * t79 * t120) - n_a * t22 * t53 * t66) * 2.0) -
+       t5 * ((t7 * -t116 + l_a * t71 * t120) + t8 * t22 * t53 * t66) * 2.0) +
+      t13 * ((m_a * t126 + t7 * t130) + t9 * t22 * t53 * t66) * 2.0;
+  t86 = gain_az * t54;
+  o_a = gain_az * t58;
+  k_a = gamma_quadratic_du2 * t42;
+  l_a = gamma_quadratic_du * t37;
+  m_a = gain_az * t55 * t58;
+  n_a = t86 * t55;
+  d_a = o_a * t67;
+  t85 = t86 * t67;
+  t84 = gain_az * l_1;
+  t12 = gain_az * l_z;
+  gradient[8] = ((((((k_a * (t49 - l_a_tmp * 2.0) + l_a * (t49 + t107)) +
+                     t88 * (m_a * t140 + n_a * t148) * 2.0) -
+                    t2 * (d_a * t140 + t85 * t148) * 2.0) +
+                   t13 * (t84 * t148 - t12 * t140) * 2.0) -
+                  t10 * (t86 * t140 - o_a * t148) * 2.0) +
+                 t11 * (gain_az * t145 - gain_az * t154) * 2.0) +
+                t5 * (gain_az * t137 + gain_az * t161) * 2.0;
+  gradient[9] = ((((((k_a * (t50 - m_a_tmp * 2.0) + l_a * (t50 + t107)) +
+                     t88 * (m_a * t142 + n_a * t150) * 2.0) -
+                    t2 * (d_a * t142 + t85 * t150) * 2.0) -
+                   t13 * (t84 * t150 + t12 * t142) * 2.0) -
+                  t10 * (t86 * t142 - o_a * t150) * 2.0) -
+                 t11 * (gain_az * t146 + gain_az * t156) * 2.0) -
+                t5 * (gain_az * t138 - gain_az * t162) * 2.0;
+  t84 = gain_az * l_2;
+  gradient[10] = ((((((k_a * (t51 - n_a_tmp * 2.0) + l_a * (t51 + t107)) +
+                      t88 * (m_a * t143 + n_a * t151) * 2.0) -
+                     t2 * (d_a * t143 + t85 * t151) * 2.0) -
+                    t13 * (t84 * t151 + t12 * t143) * 2.0) -
+                   t10 * (t86 * t143 - o_a * t151) * 2.0) +
+                  t11 * (gain_az * t147 + gain_az * t158) * 2.0) +
+                 t5 * (gain_az * t139 + gain_az * t177) * 2.0;
+  gradient[11] = ((((((k_a * (t52 - o_a_tmp * 2.0) + l_a * (t52 + t107)) +
+                      t88 * (m_a * t144 + n_a * t152) * 2.0) -
+                     t2 * (d_a * t144 + t85 * t152) * 2.0) +
+                    t13 * (t84 * t152 - t12 * t144) * 2.0) -
+                   t10 * (t86 * t144 - o_a * t152) * 2.0) -
+                  t5 * (gain_az * t141 + gain_az * t164) * 2.0) -
+                 t11 * (gain_az * t149 + gain_az * t176) * 2.0;
+  t86 = t224_tmp_tmp * t3 * t14 * t25;
+  gradient[12] =
+      ((((gamma_quadratic_du * t27 * (t24 - q_a_tmp * 2.0) +
+          gamma_quadratic_du2 * t38 * (t24 - f_a_tmp * 2.0)) +
+         t88 *
+             ((((((((gain_theta * t194 + gain_theta * t201) +
+                    gain_theta * -t246_tmp) +
+                   gain_theta * -b_t246_tmp) +
+                  gain_theta * t221) +
+                 gain_theta * -c_t246_tmp) +
+                t67 * t225) -
+               t220_tmp * t224) +
+              t86 * t55 * t58 * t101) *
+             2.0) +
+        t2 *
+            ((((((((gain_theta * t193 - gain_theta * t202) +
+                   gain_theta * t209) -
+                  gain_theta * t213) -
+                 gain_theta * t218) +
+                gain_theta * t220) +
+               t55 * t225) +
+              t221_tmp * t224) -
+             t86 * t58 * t67 * t101) *
+            2.0) -
+       t10 * (t58 * t224 + t86 * t54 * t101) * 2.0) -
+      Cm_alpha * S * gain_theta * rho * t25 * t34 * t81 * t237 * wing_chord;
+  t86 = gain_phi * t54;
+  o_a = gain_phi * t55;
+  k_a = gain_phi * t67;
+  gradient[13] =
+      (((gamma_quadratic_du * t26 * (t23 - p_a_tmp * 2.0) +
+         gamma_quadratic_du2 * t29 * (t23 - e_a_tmp * 2.0)) +
+        t10 *
+            (((t86 * t203 - t86 * t205) + gain_phi * t58 * t206) -
+             S * gain_phi * rho * t3 * t25 * t58 * t136 / 2.0) *
+            2.0) -
+       t88 * (((o_a * t190 + o_a * t207) - o_a * t215) - o_a * t216) * 2.0) +
+      t2 * (((k_a * t190 + k_a * t207) - k_a * t215) - k_a * t216) * 2.0;
+  gradient[14] = (gamma_quadratic_du * t39 * (t48 - t87 * 2.0) +
+                  gamma_quadratic_du2 * t43 * (t48 - k_a_tmp * 2.0)) -
+                 t233_tmp * gain_ailerons * rho * t25 * t33 * t80 * t233;
   return cost;
 }
 

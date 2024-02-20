@@ -5,7 +5,7 @@
  * File: Cascaded_nonlinear_TestFlight.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 20-Feb-2024 13:21:00
+ * C/C++ source code generated on  : 20-Feb-2024 23:30:20
  */
 
 #ifndef CASCADED_NONLINEAR_TESTFLIGHT_H
@@ -54,7 +54,8 @@ extern void Cascaded_nonlinear_TestFlight(
     double r_body_current, double p_dot_current, double q_dot_current,
     double r_dot_current, double phi_current, double theta_current,
     double theta_gain, double phi_gain, double p_body_gain, double q_body_gain,
-    double r_body_gain, double des_psi_dot, double u_out_local[15],
+    double r_body_gain, double des_psi_dot,
+    const double current_accelerations[6], double u_out_local[15],
     double residuals[6], double gradient[13], double *cost,
     double *elapsed_time, double *N_iterations, double *N_evaluation,
     double *exitflag);
