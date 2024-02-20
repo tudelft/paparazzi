@@ -6,6 +6,11 @@
 #include <glib.h>
 #include <Ivy/ivy.h>
 #include <Ivy/ivyglibloop.h>
+#include "filters/low_pass_filter.h"
+
+
+//Variables needed for the filters:
+Butterworth2LowPass measurement_rates_filters[3]; //Filter of pqr
 
 //To test the controller with random variables:
 // #define TEST_CONTROLLER
@@ -34,8 +39,8 @@ pthread_mutex_t mutex_am7;
 
 pthread_mutex_t mutex_aruco;
 
-int verbose_connection = 1;
-int verbose_optimizer = 0;
+int verbose_connection = 0;
+int verbose_optimizer = 1;
 int verbose_runtime = 0; 
 int verbose_received_data = 0; 
 int verbose_ivy_bus = 0; 

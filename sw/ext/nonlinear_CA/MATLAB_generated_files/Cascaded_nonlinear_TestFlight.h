@@ -5,7 +5,7 @@
  * File: Cascaded_nonlinear_TestFlight.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 15-Jan-2024 11:44:34
+ * C/C++ source code generated on  : 20-Feb-2024 13:21:00
  */
 
 #ifndef CASCADED_NONLINEAR_TESTFLIGHT_H
@@ -58,10 +58,6 @@ extern void Cascaded_nonlinear_TestFlight(
     double residuals[6], double gradient[13], double *cost,
     double *elapsed_time, double *N_iterations, double *N_evaluation,
     double *exitflag);
-
-extern void Cascaded_nonlinear_TestFlight_initialize(void);
-
-extern void Cascaded_nonlinear_TestFlight_terminate(void);
 
 #ifdef __cplusplus
 }
