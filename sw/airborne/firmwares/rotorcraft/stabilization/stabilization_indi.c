@@ -202,9 +202,10 @@ float actuator_state_filt_vect[INDI_NUM_ACT];
 struct FloatRates angular_accel_ref = {0., 0., 0.};
 struct FloatRates angular_rate_ref = {0., 0., 0.};
 float angular_acceleration[3] = {0., 0., 0.};
+float angular_acceleration_filt[3] = {0., 0., 0.};
 float actuator_state[INDI_NUM_ACT];
 float indi_u[INDI_NUM_ACT];
-float g2_times_u;
+float rate_vect_prev[3] = {0., 0., 0.};
 
 float q_filt = 0.0;
 float r_filt = 0.0;
@@ -426,6 +427,8 @@ void stabilization_indi_enter(void)
   /* reset psi setpoint to current psi angle */
   stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
 
+  float_vect_zero(rate_vect_prev, 3);
+
   float_vect_zero(du_estimation, INDI_NUM_ACT);
   float_vect_zero(ddu_estimation, INDI_NUM_ACT);
 }
@@ -556,11 +559,12 @@ void stabilization_indi_set_stab_sp(struct StabilizationSetpoint *sp)
 void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 {
   // Use the last actuator state for this computation
-  float g2_times_u = float_vect_dot_product(g2, actuator_state, INDI_NUM_ACT);
+  float g2_times_u = float_vect_dot_product(g2, indi_u, INDI_NUM_ACT)/INDI_G_SCALING;
+  float g2_times_u_act = float_vect_dot_product(g2, actuator_state, INDI_NUM_ACT)/INDI_G_SCALING;
 
   // Propagate actuator filters
   get_actuator_state();
-  for (i = 0; i < INDI_NUM_ACT; i++) {
+  for (int i = 0; i < INDI_NUM_ACT; i++) {
     update_butterworth_2_low_pass(&actuator_lowpass_filters[i], actuator_state[i]);
     update_butterworth_2_low_pass(&estimation_input_lowpass_filters[i], actuator_state[i]);
     actuator_state_filt_vect[i] = actuator_lowpass_filters[i].o[0];
@@ -575,18 +579,21 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   // Predict angular acceleration u*B
   float angular_acc_prediction[INDI_OUTPUTS];
   float_mat_vect_mul(angular_acc_prediction, Bwls, actuator_state, INDI_OUTPUTS, INDI_NUM_ACT);
-  angular_acc_prediction[2] -= g2_times_u;
+  angular_acc_prediction[2] -= g2_times_u_act;
 
   struct FloatRates *body_rates = stateGetBodyRates_f();
   float rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
   //Calculate the angular acceleration via finite difference
-  angular_acceleration[i] = (rate_vect[i].o[0] - rate_vect[i].o[1]) * PERIODIC_FREQUENCY;
+  for (int i=0; i < 3; i++) {
+    angular_acceleration[i] = (rate_vect[i] - rate_vect_prev[i]) * PERIODIC_FREQUENCY;
+    rate_vect_prev[i] = rate_vect[i];
+  }
 
   // TODO: check where angular_acceleration is used, because it used to be filtered.
 
   // subtract u*B from angular acceleration
   float angular_acc_disturbance_estimate[INDI_OUTPUTS];
-  float_vect_diff(angular_acc_disturbance_estimate, angular_acceleration, angular_acc_prediction, INDI_OUTPUTS);
+  float_vect_diff(angular_acc_disturbance_estimate, angular_acceleration, angular_acc_prediction, 3);
 
   /* Propagate the filter on the gyroscopes */
   int8_t i;
@@ -597,7 +604,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     update_butterworth_2_low_pass(&estimation_output_lowpass_filters[i], rate_vect[i]);
 
     //Calculate the angular acceleration via finite difference
-    angular_acceleration_filtered[i] = (measurement_lowpass_filters[i].o[0]
+    angular_acceleration_filt[i] = (measurement_lowpass_filters[i].o[0]
                                - measurement_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY;
 
     // Calculate derivatives for estimation
@@ -644,13 +651,6 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   angular_accel_ref.q = (rate_sp.q - rates_filt.q) * indi_gains.rate.q;
   angular_accel_ref.r = (rate_sp.r - rates_filt.r) * indi_gains.rate.r;
 
-  g2_times_du = 0.0;
-  for (i = 0; i < INDI_NUM_ACT; i++) {
-    g2_times_du += g2[i] * indi_du[i];
-  }
-  //G2 is scaled by INDI_G_SCALING to make it readable
-  g2_times_du = g2_times_du / INDI_G_SCALING;
-
   struct FloatVect3 v_thrust;
   v_thrust.x = 0.0;
   v_thrust.y = 0.0;
@@ -677,12 +677,11 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   } else {
     // incremental thrust
     for (i = 0; i < INDI_NUM_ACT; i++) {
-      v_thrust.z = stabilization_cmd[COMMAND_THRUST];
+      v_thrust.z += stabilization_cmd[COMMAND_THRUST] * Bwls[3][i];
 #if INDI_OUTPUTS == 5
       TODO: no increment?
       stabilization_cmd[COMMAND_THRUST_X] = radio_control.values[RADIO_CONTROL_THRUST_X];
-      v_thrust.x +=
-        (stabilization_cmd[COMMAND_THRUST_X] - use_increment * actuator_state_filt_vect[i]) * Bwls[4][i];
+      v_thrust.x += stabilization_cmd[COMMAND_THRUST_X] * Bwls[4][i];
 #endif
     }
   }
@@ -690,7 +689,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   // The control objective in array format
   indi_v[0] = (angular_accel_ref.p - disturbance_filt[0].o[0]);
   indi_v[1] = (angular_accel_ref.q - disturbance_filt[1].o[0]);
-  indi_v[2] = (angular_accel_ref.r - disturbance_filt[2].o[0]);
+  indi_v[2] = (angular_accel_ref.r - disturbance_filt[2].o[0]) + g2_times_u;
   indi_v[3] = v_thrust.z;
 #if INDI_OUTPUTS == 5
   indi_v[4] = v_thrust.x;
@@ -705,7 +704,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
                  + (g1g2_pseudo_inv[i][3] * indi_v[3]);
   }
 #else
-  stabilization_indi_set_wls_settings(use_increment);
+  stabilization_indi_set_wls_settings();
 
   // WLS Control Allocator
   num_iter =
@@ -745,11 +744,9 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 }
 
 /**
- * @param use_increment
- *
  * Function that sets the du_min, du_max and du_pref if function not elsewhere defined
  */
-void WEAK stabilization_indi_set_wls_settings(float use_increment)
+void WEAK stabilization_indi_set_wls_settings(void)
 {
   // Calculate the min and max increments
   for (uint8_t i = 0; i < INDI_NUM_ACT; i++) {
