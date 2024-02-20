@@ -177,7 +177,8 @@ NOTES:
         <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>      <!-- sdp33 -->
       </module>
 
-<!--        ./natnet2ivy.py &#45;&#45;long_edge near &#45;&#45;x_side right &#45;&#45;ac_nose near &#45;&#45;up_axis z_up -ac 1 42 -gr -f 30-->
+<!--        ./sw/ground_segment/python/natnet3.x/natnet2ivy.py &#45;&#45;long_edge near &#45;&#45;x_side right &#45;&#45;ac_nose far &#45;&#45;up_axis z_up -ac 1 42 -gr -f 30-->
+
         <!--Enable this for CyberZoo tests , disable the uBlox module -->
         <module name="gps" type="optitrack"/>
 
@@ -802,10 +803,10 @@ NOTES:
 
   <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
       <define name="POS_GAIN" value="0.4"/>
-      <define name="POS_GAINY" value="0.8"/>
+      <define name="POS_GAINY" value="1.2"/>
       <define name="POS_GAINZ" value="0.4"/>
       <define name="SPEED_GAIN" value="0.7"/>
-      <define name="SPEED_GAINY" value="0.8"/>
+      <define name="SPEED_GAINY" value="1.0"/>
       <define name="SPEED_GAINZ" value="0.8"/>  <!-- 0.2? -->
       <define name="MAX_AIRSPEED" value="12."/>     <!--THIS IS *CRUISE* AISPEED!!! -->
       <define name="ZERO_AIRSPEED" value="FALSE"/>
@@ -864,8 +865,8 @@ NOTES:
       <!-- for indoor with opti track; move wp in ned regardless of the current heading -->
       <define name="SOARING_BODY_IS_NED" value="TRUE"/>
       <define name="SOARING_RESET_STDBY_AFTER_N_SEC" value="FALSE"/>
-      <define name="SOARING_RESET_UNREACHABLE_WP" value="TRUE"/>
-      <define name="SOARING_RESET_UNREACHABLE_WP" value="TRUE"/>
+      <define name="SOARING_RESET_UNREACHABLE_WP" value="FALSE"/>
+<!--      <define name="SOARING_RESET_UNREACHABLE_WP" value="TRUE"/>-->
 <!--      define this ONLY when you USE 90 pitch offset -->
 <!--      <define name="SOARING_USE_90_PITCH_OFFSET" value="TRUE"/>-->
   </section>

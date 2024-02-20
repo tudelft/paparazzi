@@ -97,7 +97,7 @@
     </block>
     <block name="Soaring" strip_button="Soar" strip_icon="target.png">
       <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
-      <call_once fun="waypoint_set_here(WP_SOAR)"/>
+<!--      <call_once fun="waypoint_set_here(WP_SOAR)"/>-->
       <call_once fun="guidance_indi_hybrid_soaring_start()"/>
       <go wp="SOAR"/>
       <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>

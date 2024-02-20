@@ -368,13 +368,15 @@ time_t rand_seed;
 uint16_t stdby_entry_time = 0;
 uint16_t reset_stdby_timeout = GUIDANCE_INDI_SOARING_RESET_STDBY_TIMEOUT;
 
+struct Waypoint soar_wp;
+
 void guidance_indi_soaring_move_wp(float cost_avg_val);
 void write_map_position_cost_info(struct FloatVect3 soaring_position, float corres_sum_cost);
 void guidance_indi_hybrid_soaring_stop(void);
 void guidance_indi_hybrid_soaring_start(void);
 void guidance_indi_hybrid_soaring_reset(void);
 
-void guidance_indi_soaring_reset_wp(uint8_t wp_id);
+//void guidance_indi_soaring_reset_wp(uint8_t wp_id);
 void guidance_indi_soaring_reset_stby_wp(void);
 void guidance_indi_soaring_reset_soaring_wp(void);
 
@@ -513,29 +515,17 @@ void guidance_indi_soaring_move_wp(float cost_avg_val){
     }
 
     // move waypoints
-    waypoints[soar_wp_id].enu_i.x += POS_BFP_OF_REAL(amount_to_move_ned.y);
-    waypoints[soar_wp_id].enu_i.y += POS_BFP_OF_REAL(amount_to_move_ned.x);
-    waypoints[soar_wp_id].enu_i.z += POS_BFP_OF_REAL(-1.0*amount_to_move_ned.z);
-
-// bound wp maybe??
-
-//    wp_pos_x = waypoints[soar_wp_id].enu_i.y;
-//    wp_pos_y = waypoints[soar_wp_id].enu_i.x;
-//    wp_pos_z = waypoints[soar_wp_id].enu_i.z;
-// FIXME: flight_altitude or nav_altitude?
-    flight_altitude = waypoints[soar_wp_id].enu_i.z; // FIXME: manually set z ref
-
-    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &soar_wp_id,
-                               &(waypoints[soar_wp_id].enu_i.x),
-                               &(waypoints[soar_wp_id].enu_i.y),
-                               &(waypoints[soar_wp_id].enu_i.z));
+    soar_wp.enu_i.x = waypoints[soar_wp_id].enu_i.x + POS_BFP_OF_REAL(amount_to_move_ned.y);
+    soar_wp.enu_i.y = waypoints[soar_wp_id].enu_i.y + POS_BFP_OF_REAL(amount_to_move_ned.x);
+    soar_wp.enu_i.z = waypoints[soar_wp_id].enu_i.z + POS_BFP_OF_REAL(-1.0*amount_to_move_ned.z);
+    waypoint_move_enu_i(soar_wp_id, &soar_wp.enu_i);
 
     soaring_search_cnt_steps ++;
     if (soaring_min_cost > cost_avg_val) {
         soaring_min_cost = cost_avg_val;
-        min_cost_wp_e = waypoints[soar_wp_id].enu_i.x;
-        min_cost_wp_n = waypoints[soar_wp_id].enu_i.y;
-        min_cost_wp_u = waypoints[soar_wp_id].enu_i.z;
+        min_cost_wp_e = soar_wp.enu_i.x;
+        min_cost_wp_n = soar_wp.enu_i.y;
+        min_cost_wp_u = soar_wp.enu_i.z;
     }
     // update threshold
     if (soaring_search_cnt_steps > soaring_max_exploration_steps) {
@@ -546,32 +536,23 @@ void guidance_indi_soaring_move_wp(float cost_avg_val){
 }
 
 // reset wp to current position
-void guidance_indi_soaring_reset_wp(uint8_t wp_id) {
-    waypoints[wp_id].enu_i.x = POS_BFP_OF_REAL(stateGetPositionNed_f()->y);
-    waypoints[wp_id].enu_i.y = POS_BFP_OF_REAL(stateGetPositionNed_f()->x);
-    waypoints[wp_id].enu_i.z = -1.0*stateGetPositionNed_i()->z;
-
-    // x<->y because enu<->ned
-//    wp_pos_x = waypoints[wp_id].enu_i.y;
-//    wp_pos_y = waypoints[wp_id].enu_i.x;
-//    wp_pos_z = waypoints[wp_id].enu_i.z;
-    flight_altitude = waypoints[wp_id].enu_i.z;
-
-    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-                               &(waypoints[wp_id].enu_i.x),
-                               &(waypoints[wp_id].enu_i.y),
-                               &(waypoints[wp_id].enu_i.z));
-}
+//void guidance_indi_soaring_reset_wp(uint8_t wp_id) {
+//    struct Waypoint wp_to_reset;
+//
+//    wp_to_reset.enu_i.x = POS_BFP_OF_REAL(stateGetPositionNed_f()->y);
+//    wp_to_reset.enu_i.y = POS_BFP_OF_REAL(stateGetPositionNed_f()->x);
+//    wp_to_reset.enu_i.z = -1.0*stateGetPositionNed_i()->z;
+//
+//    waypoint_move_enu_i(wp_id, &soar_wp.enu_i);
+//}
 
 // reset soaring wp to current position
 void guidance_indi_soaring_reset_soaring_wp(void) {
-//    guidance_indi_soaring_reset_wp(&soar_wp_id);
     waypoint_set_here(soar_wp_id);
 }
 
 // reset stdby WP to current position
 void guidance_indi_soaring_reset_stby_wp(void) {
-//    guidance_indi_soaring_reset_wp(&stdby_wp_id);
     waypoint_set_here(stdby_wp_id);
 
     // save entry time
@@ -579,9 +560,10 @@ void guidance_indi_soaring_reset_stby_wp(void) {
 }
 
 void guidance_indi_hybrid_soaring_start(void) {
-    if (soaring_mode_running) {
-        guidance_indi_soaring_reset_soaring_wp();   // reset wp to current position
-    }
+    guidance_indi_hybrid_soaring_reset();
+//    if (soaring_mode_running) {
+//        guidance_indi_soaring_reset_soaring_wp();   // reset wp to current position
+//    }
     soaring_mode_running = true;
     soaring_manual_search = false;
 
@@ -595,12 +577,11 @@ void guidance_indi_hybrid_soaring_stop(void) {
 // reset soaring wp to stdby
 void guidance_indi_hybrid_soaring_reset(void) {
 //    soaring_mode_running = false;
-    flight_altitude = waypoints[stdby_wp_id].enu_i.z;
 
-    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &soar_wp_id,
-                               &(waypoints[stdby_wp_id].enu_i.x),
-                               &(waypoints[stdby_wp_id].enu_i.y),
-                               &(waypoints[stdby_wp_id].enu_i.z));
+    soar_wp.enu_i.x = waypoints[stdby_wp_id].enu_i.x;
+    soar_wp.enu_i.y = waypoints[stdby_wp_id].enu_i.y;
+    soar_wp.enu_i.z = waypoints[stdby_wp_id].enu_i.z;
+    waypoint_move_enu_i(soar_wp_id, &soar_wp.enu_i);
 
     prev_wp_sum_cost = -1;
     move_wp_sum_cost = 0;
@@ -691,17 +672,13 @@ void run_soaring_search(void){
                 amount_to_move_ned.z = amount_to_move_body.z;   // z doesn't change
             }
 
-                // move waypoints
-            waypoints[soar_wp_id].enu_i.x += POS_BFP_OF_REAL(amount_to_move_ned.y);
-            waypoints[soar_wp_id].enu_i.y += POS_BFP_OF_REAL(amount_to_move_ned.x);
-            waypoints[soar_wp_id].enu_i.z += POS_BFP_OF_REAL(-1.0*amount_to_move_ned.z);
+            // move soaring wp
+            soar_wp.enu_i.x = waypoints[soar_wp_id].enu_i.x + POS_BFP_OF_REAL(amount_to_move_ned.y);
+            soar_wp.enu_i.y = waypoints[soar_wp_id].enu_i.y + POS_BFP_OF_REAL(amount_to_move_ned.x);
+            soar_wp.enu_i.z = waypoints[soar_wp_id].enu_i.z + POS_BFP_OF_REAL(-1.0*amount_to_move_ned.z);
+            waypoint_move_enu_i(soar_wp_id, &soar_wp.enu_i);
 
-            flight_altitude = waypoints[soar_wp_id].enu_i.z; // FIXME: manually set z ref
-
-            DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &soar_wp_id,
-                                       &(waypoints[soar_wp_id].enu_i.x),
-                                       &(waypoints[soar_wp_id].enu_i.y),
-                                       &(waypoints[soar_wp_id].enu_i.z));
+            move_wp_entry_time = autopilot.flight_time;
 
             soaring_wp_move_forward = 0;
             soaring_wp_move_right = 0;
@@ -779,404 +756,6 @@ struct FloatVect3 compute_soaring_accel_sp(struct HorizontalGuidance *gh, struct
     return accel_sp;
 }
 
-
-/**
- * @param heading_sp the desired heading [rad]
- *
- * main indi guidance function
- */
-//void guidance_indi_soaring_run(float *heading_sp) {
-//    struct NedCoor_f *groundspeed = stateGetSpeedNed_f();
-//
-//    // save wp info for logging
-//    wp_pos_x = waypoints[soar_wp_id].enu_i.y;
-//    wp_pos_y = waypoints[soar_wp_id].enu_i.x;
-//    wp_pos_z = waypoints[soar_wp_id].enu_i.z;
-//
-//  /*Obtain eulers with zxy rotation order*/
-//  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-//
-//    /*Calculate the transition percentage so that the ctrl_effecitveness scheduling works*/
-////    transition_percentage = BFP_OF_REAL((eulers_zxy.theta/RadOfDeg(-75.0))*100,INT32_PERCENTAGE_FRAC);
-//    transition_percentage = BFP_OF_REAL((eulers_zxy.theta/TRANSITION_MAX_OFFSET)*100,INT32_PERCENTAGE_FRAC);
-//    Bound(transition_percentage,0,BFP_OF_REAL(100.0,INT32_PERCENTAGE_FRAC));
-//    const int32_t max_offset = ANGLE_BFP_OF_REAL(TRANSITION_MAX_OFFSET);
-//
-//    transition_theta_offset = INT_MULT_RSHIFT((transition_percentage <<
-//(INT32_ANGLE_FRAC - INT32_PERCENTAGE_FRAC)) / 100, max_offset, INT32_ANGLE_FRAC);
-//
-//
-//  //filter accel to get rid of noise and filter attitude to synchronize with accel
-//  guidance_indi_soaring_propagate_filters();
-//
-//  //// From here...
-//
-//  //Linear controller to find the acceleration setpoint from position and velocity
-//  pos_x_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.x) - stateGetPositionNed_f()->x;
-//  pos_y_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y) - stateGetPositionNed_f()->y;
-//  pos_z_err = POS_FLOAT_OF_BFP(guidance_v_z_ref - stateGetPositionNed_i()->z);
-//
-//  // position ctrl TODO: regulate airspeed?
-//  speed_sp.x = pos_x_err * gih_params.pos_gain;
-//  speed_sp.y = pos_y_err * gih_params.pos_gain;
-//  speed_sp.z = pos_z_err * gih_params.pos_gainz;
-//
-//    float norm_spd_sp = FLOAT_VECT2_NORM(speed_sp);
-//    if (norm_spd_sp > nav_max_speed){
-//        vect_scale(&speed_sp, nav_max_speed);
-//    }
-//    Bound(speed_sp.z, -nav_climb_vspeed, -nav_descend_vspeed);
-//
-//    // y position control to keep it in the wind section
-//    if(!y_position_ctrl){
-//        speed_sp.y = 0;
-//    }
-//
-////    failsafe
-//    if (stab_indi_kill_throttle) {
-//        speed_sp.z = 1.0;
-//    }
-//
-//    //for rc control horizontal, rotate from body axes to NED
-//  float psi = eulers_zxy.psi;
-//
-//  float airspeed = stateGetAirspeed_f();
-//
-//  struct FloatVect2 airspeed_v = {cos(psi)*airspeed, sin(psi)*airspeed};
-//  struct FloatVect2 windspeed;
-//  VECT2_DIFF(windspeed, *groundspeed, airspeed_v);
-//
-//      sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain;
-//      sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain;
-//      sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
-//
-////    FIXME: failsafe
-//    if (stab_indi_kill_throttle) {
-//        sp_accel.z = (1.0 - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
-////        Bound(sp_accel.z, -1.0, 3.0);
-//    }
-//
-//    // Bound the acceleration setpoint
-//  float accelbound = 3.0 + airspeed/guidance_indi_max_airspeed*5.0;
-//  vect_bound_in_2d(&acee, accelbound);
-//  /*BoundAbs(sp_accel.x, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);*/
-//  /*BoundAbs(sp_accel.y, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);*/
-////  BoundAbs(sp_accel.z, 3.0);
-//  Bound(sp_accel.z, min_acc_sp, max_acc_sp);
-//
-//#if GUIDANCE_INDI_RC_DEBUG
-//#warning "GUIDANCE_INDI_RC_DEBUG lets you control the accelerations via RC, but disables autonomous flight!"
-//  //for rc control horizontal, rotate from body axes to NED
-//  float psi = eulers_zxy.psi;
-//  float rc_x = -(radio_control.values[RADIO_PITCH]/9600.0)*8.0;
-//  float rc_y = (radio_control.values[RADIO_ROLL]/9600.0)*8.0;
-//  sp_accel.x = cosf(psi) * rc_x - sinf(psi) * rc_y;
-//  sp_accel.y = sinf(psi) * rc_x + cosf(psi) * rc_y;
-//
-//  //for rc vertical control
-//  sp_accel.z = -(radio_control.values[RADIO_THROTTLE]-4500)*8.0/9600.0;
-//#endif
-//
-//  //Calculate matrix of partial derivatives
-//  // TODO
-//  guidance_indi_calcg_wing(&Ga);
-//  // copy G mat i know it's ugly FIXME
-//  for(int i=0; i<3; i++){
-//      for(int j=0; j<3; j++){
-//          g_arr[i][j] = MAT33_ELMT((Ga),i,j);
-//      }
-//      Bwls_g[i] = g_arr[i];
-//  }
-//  //Invert this matrix
-//  MAT33_INV(Ga_inv, Ga);
-//
-//  struct FloatVect3 accel_filt;
-//  accel_filt.x = filt_accel_ned[0].o[0];
-//  accel_filt.y = filt_accel_ned[1].o[0];
-//  accel_filt.z = filt_accel_ned[2].o[0];
-//
-//  struct FloatVect3 a_diff;
-//  a_diff.x = sp_accel.x - accel_filt.x;
-//  a_diff.y = sp_accel.y - accel_filt.y;
-//  a_diff.z = sp_accel.z - accel_filt.z;
-//
-//  //Bound the acceleration error so that the linearization still holds
-//  Bound(a_diff.x, -6.0, 6.0);
-//  Bound(a_diff.y, -6.0, 6.0);
-//  Bound(a_diff.z, -9.0, 9.0);
-//
-//
-//  // TODO: WLS allocation
-//  // u, v, umin, umax, B, u_guess(initial), W_init,
-//  // Wv, Wu, up(preferred control vector), gamma_sq, imax(max iter)
-//  //
-//  // Calculates min & max increments
-//  // min&max phi, theta, thrust
-//  gd_du_min[0] = -guidance_indi_max_bank*DEG2RAD - roll_filt.o[0];
-//  gd_du_max[0] = guidance_indi_max_bank*DEG2RAD - roll_filt.o[0];
-//  gd_du_pref[0] = 0.0 - roll_filt.o[0];
-//
-//  gd_du_min[1] = GUIDANCE_INDI_MIN_PITCH*DEG2RAD - pitch_filt.o[0];
-//  gd_du_max[1] = GUIDANCE_INDI_MAX_PITCH*DEG2RAD - pitch_filt.o[0];
-//  gd_du_pref[1] = 0.0 - pitch_filt.o[0];
-//
-//  gd_du_min[2] = 0.0 - thrust_filt.o[0];
-//  gd_du_max[2] = guidance_soaring_max_throttle - thrust_filt.o[0];
-//  gd_du_pref[2] = GUIDANCE_INDI_PREF_THROTTLE - thrust_filt.o[0]; // TODO: preferred value
-//
-//    // Control objective TODO: change name
-//    linear_acc_diff[0] = a_diff.x;
-//    linear_acc_diff[1] = a_diff.y;
-//    linear_acc_diff[2] = a_diff.z;
-//
-////    TODO: revise
-//    // assign weights (hor<->ver position ctrl priority)
-//    if (use_variable_weights) {
-//        float h_ratio = fabs(pos_x_err)/(fabs(pos_z_err)+0.00001);
-//        float v_ratio = fabs(pos_z_err)/(fabs(pos_x_err)+0.00001);
-//
-//        // normalize; 0 <= tanh (logistic fn) <= 1;
-//        // ratio 5->logistic fn 0.8320; 10->0.9734
-//        float v_tanh = 0.5+0.5*tanh((v_ratio-1)/5);
-//        float h_tanh = 0.5+0.5*tanh((h_ratio-1)/5);
-//        float w_v_factor = 1 - h_tanh;
-//
-//        if ((v_tanh>h_tanh) || (fabs(pos_z_err)>3)){
-//            w_v_factor = v_tanh;
-//        }
-//
-//        gd_Wv[0] = 0.5 + (1-w_v_factor)*weight_logistic_fn_factor;
-//        gd_Wv[2] = 0.5 + w_v_factor*weight_logistic_fn_factor;
-//    }
-//
-//    gd_num_iter =
-//            wls_alloc_gd(indi_d_euler, linear_acc_diff, gd_du_min, gd_du_max,
-//                               Bwls_g, 0, 0, gd_Wv, gd_Wu, gd_du_pref, gd_gamma_sq, 10);
-//
-//// keep the original vars for telemetry// x:roll, y:pitch, z:throttle
-//    euler_cmd.x = indi_d_euler[0];
-//    euler_cmd.y = indi_d_euler[1];
-//    euler_cmd.z = indi_d_euler[2];
-//
-//    guidance_euler_cmd.phi = roll_filt.o[0] + indi_d_euler[0];
-//    guidance_euler_cmd.theta = pitch_filt.o[0] + indi_d_euler[1];
-////    TODO: filter??
-//    AbiSendMsgTHRUST(THRUST_INCREMENT_ID, indi_d_euler[2]);
-//
-//  //Bound euler angles to prevent flipping
-//  Bound(guidance_euler_cmd.phi, -guidance_indi_max_bank, guidance_indi_max_bank);
-//  Bound(guidance_euler_cmd.theta, RadOfDeg(GUIDANCE_INDI_MIN_PITCH), RadOfDeg(GUIDANCE_INDI_MAX_PITCH));
-//
-//
-//    // Set the quaternion setpoint from eulers_zxy
-//    struct FloatQuat sp_quat;
-//    float_quat_of_eulers_zxy(&sp_quat, &guidance_euler_cmd);
-//    float_quat_normalize(&sp_quat);
-//    QUAT_BFP_OF_REAL(stab_att_sp_quat,sp_quat);
-//
-//
-//
-//    //// To here..
-//  //// can be replaced;
-//
-//  //// and below here..
-//  //// my original code so it cannot be in the hybrid code
-//
-//  //// heading setpoint should go into ..
-//  //// guidance_h   heading reference or something.
-//
-//  //// Heading control
-//
-//// Set heading to a fixed WP
-//if (use_fixed_heading_wp) {
-//    nav_set_heading_towards_waypoint(heading_wp_id);
-//    soaring_heading_sp = ANGLE_FLOAT_OF_BFP(nav.heading);
-////    guidance_euler_cmd.psi = ANGLE_FLOAT_OF_BFP(nav.heading);
-//} else {
-//    float heading_ref_to_add = ((soaring_heading_sp - psi) / PERIODIC_FREQUENCY * soaring_heading_gain);
-//    Bound(heading_ref_to_add, -10.0, 10.0);
-//    soaring_heading_sp -= heading_ref_to_add;
-//}
-//    guidance_euler_cmd.psi = soaring_heading_sp;
-//
-//////
-////// Soaring
-//
-//    // if in soaring mode
-//    if (soaring_explore_positions && soaring_mode_running) {
-//        // count for timeout
-//        move_wp_wait_count++;
-//
-//        // calc cost fn using incremental average
-//        move_wp_sum_cost = move_wp_sum_cost +
-//                           (((gd_k_thr * thrust_filt.o[0]
-//                              + gd_k_spd_x * fabs(groundspeed->x)     // ABS val?
-//                              + gd_k_spd_z * fabs(groundspeed->z)
-//                              + gd_k_pitch * fabs(euler_cmd.y)
-//                              )-move_wp_sum_cost)/move_wp_wait_count);
-//
-//        bool wp_arrived = nav_check_wp_time_3d(&waypoints[soar_wp_id].enu_i, stay_wp_duration, arrival_check_dist_3d);
-//        move_wp_wait_time = autopilot.flight_time - move_wp_entry_time;
-//
-//        // if wp not arrived && timeout, reset wp to the current pos
-//        // if wp arrived, move wp depending on the cost fn val
-//        if (wp_arrived) {
-////            write_map_position_cost_info(wp_soaring_pos, move_wp_sum_cost /
-////                                                         soaring_move_wp_wait_sec);   // save the position and corresponding cost val
-//            // move wp
-//            if (move_wp_sum_cost > soaring_move_wp_cost_threshold) {
-//                guidance_indi_soaring_move_wp(move_wp_sum_cost);    // explore or go back to the original position
-//            } else {
-//                // stay
-//                prev_wp_sum_cost = -2;
-//            }
-//                // reset count & cost
-//            move_wp_entry_time = autopilot.flight_time;
-//            move_wp_sum_cost = 0;
-//            move_wp_wait_count = 0;
-//        } else if (move_wp_wait_time > soaring_move_wp_wait_sec) {
-//            // not arrived && timeout
-//            // reset wp to current pos (assuming the wp cannot be reached)
-//            guidance_indi_soaring_reset_soaring_wp();
-//            prev_wp_sum_cost = -1;
-//            move_wp_entry_time = autopilot.flight_time;
-//            move_wp_sum_cost = 0;
-//            move_wp_wait_count = 0;
-//        }
-//    }
-//
-//    // in soaring mode && manual search
-//    if (soaring_mode_running && soaring_manual_search && (!soaring_explore_positions)) {
-//        if (fabs(soaring_wp_move_forward) > 0.05 || fabs(soaring_wp_move_right) > 0.05 || fabs(soaring_wp_move_up) > 0.05) {
-//            amount_to_move_body.x = soaring_wp_move_forward;
-//            amount_to_move_body.y = soaring_wp_move_right;
-//            amount_to_move_body.z = -soaring_wp_move_up;
-//
-//            // rotate wp body to ned
-//            amount_to_move_ned.x = cosf(psi)*amount_to_move_body.x - sinf(psi)*amount_to_move_body.y;
-//            amount_to_move_ned.y = sinf(psi)*amount_to_move_body.x + cosf(psi)*amount_to_move_body.y;
-//            amount_to_move_ned.z = amount_to_move_body.z;   // z doesn't change
-//
-//            // move waypoints
-//            waypoints[soar_wp_id].enu_i.x += POS_BFP_OF_REAL(amount_to_move_ned.y);
-//            waypoints[soar_wp_id].enu_i.y += POS_BFP_OF_REAL(amount_to_move_ned.x);
-//            waypoints[soar_wp_id].enu_i.z += POS_BFP_OF_REAL(-1.0*amount_to_move_ned.z);
-//
-//            nav_flight_altitude = waypoints[soar_wp_id].enu_i.z; // FIXME: manually set z ref
-//
-//            DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &soar_wp_id,
-//                                       &(waypoints[soar_wp_id].enu_i.x),
-//                                       &(waypoints[soar_wp_id].enu_i.y),
-//                                       &(waypoints[soar_wp_id].enu_i.z));
-//
-//            soaring_wp_move_forward = 0;
-//            soaring_wp_move_right = 0;
-//            soaring_wp_move_up = 0;
-//        }
-//    }
-//
-//    if (stdby_entry_time > 0 && (stdby_entry_time+reset_stdby_timeout < autopilot.flight_time)) {
-//        waypoint_set_here(stdby_wp_id);
-//        guidance_indi_soaring_reset_soaring_wp();
-//        stdby_entry_time = 0;
-//    }
-//}
-
-///**
-// * Calculate the matrix of partial derivatives of the roll, pitch and thrust
-// * w.r.t. the NED accelerations, taking into account the lift of a wing that is
-// * horizontal at -90 degrees pitch
-// *
-// * @param Gmat array to write the matrix to [3x3]
-// */
-//void guidance_indi_calcg_wing(struct FloatMat33 *Gmat) {
-//
-//  /*Pre-calculate sines and cosines*/
-//  float sphi = sinf(eulers_zxy.phi);
-//  float cphi = cosf(eulers_zxy.phi);
-//  float stheta = sinf(eulers_zxy.theta);
-//  float ctheta = cosf(eulers_zxy.theta);
-//  float spsi = sinf(eulers_zxy.psi);
-//  float cpsi = cosf(eulers_zxy.psi);
-//  //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
-//
-//#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
-//#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
-//#endif
-//
-//  /*Amount of lift produced by the wing*/
-//  float pitch_lift = eulers_zxy.theta;
-//  Bound(pitch_lift,-M_PI_2,0);
-//  float lift = sinf(pitch_lift)*9.81;
-//  float T = cosf(pitch_lift)*-9.81;
-//
-//  // get the derivative of the lift wrt to theta
-//  float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
-//
-//  RMAT_ELMT(*Gmat, 0, 0) =  cphi*ctheta*spsi*T + cphi*spsi*lift;
-//  RMAT_ELMT(*Gmat, 1, 0) = -cphi*ctheta*cpsi*T - cphi*cpsi*lift;
-//  RMAT_ELMT(*Gmat, 2, 0) = -sphi*ctheta*T -sphi*lift;
-//  RMAT_ELMT(*Gmat, 0, 1) = (ctheta*cpsi - sphi*stheta*spsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
-//  RMAT_ELMT(*Gmat, 1, 1) = (ctheta*spsi + sphi*stheta*cpsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
-//  RMAT_ELMT(*Gmat, 2, 1) = -cphi*stheta*T*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
-//  RMAT_ELMT(*Gmat, 0, 2) = stheta*cpsi + sphi*ctheta*spsi;
-//  RMAT_ELMT(*Gmat, 1, 2) = stheta*spsi - sphi*ctheta*cpsi;
-//  RMAT_ELMT(*Gmat, 2, 2) = cphi*ctheta;
-//}
-//
-///**
-// * @brief Get the derivative of lift w.r.t. pitch.
-// *
-// * @param airspeed The airspeed says most about the flight condition
-// *
-// * @return The derivative of lift w.r.t. pitch
-// */
-//float guidance_indi_get_liftd(float airspeed, float theta) {
-//  float liftd = 0.0;
-//  if(airspeed < 12) {
-//    float pitch_interp = DegOfRad(theta);
-//    Bound(pitch_interp, -80.0, -40.0);
-//    float ratio = (pitch_interp + 40.0)/(-40.);
-//    liftd = -24.0*ratio*lift_pitch_eff/0.12;
-//  } else {
-//    liftd = -(airspeed - 8.5)*lift_pitch_eff/M_PI*180.0;
-//  }
-//  //TODO: bound liftd
-//  return liftd;
-//}
-
-
-/////// New code below
-
-// TODO: change this...
-//float WEAK guidance_indi_get_liftd(float airspeed, float theta) {
-//    float liftd = 0.0f;
-//
-//    if (airspeed < 12.f) {
-//        /* Assume the airspeed is too low to be measured accurately
-//          * Use scheduling based on pitch angle instead.
-//          * You can define two interpolation segments
-//          */
-//        float pitch_interp = DegOfRad(theta);
-//        const float min_pitch = -80.0f;
-//        const float middle_pitch = -50.0f;
-//        const float max_pitch = -20.0f;
-//
-//        Bound(pitch_interp, min_pitch, max_pitch);
-//        if (pitch_interp > middle_pitch) {
-//            float ratio = (pitch_interp - max_pitch)/(middle_pitch - max_pitch);
-//            liftd = -gih_params.liftd_p50*ratio;
-//        } else {
-//            float ratio = (pitch_interp - middle_pitch)/(min_pitch - middle_pitch);
-//            liftd = -(gih_params.liftd_p80-gih_params.liftd_p50)*ratio - gih_params.liftd_p50;
-//        }
-//    } else {
-//        liftd = -gih_params.liftd_asq*airspeed*airspeed;
-//    }
-//
-//    //TODO: bound liftd
-//    return liftd;
-//}
 
 /**
  * Calculate the matrix of partial derivatives of the roll, pitch and thrust
