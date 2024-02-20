@@ -7,10 +7,13 @@
 #include <Ivy/ivy.h>
 #include <Ivy/ivyglibloop.h>
 #include "filters/low_pass_filter.h"
+#include "MATLAB_generated_files/compute_acc_cascaded_nonlinear_CA_w_ailerons_internal.h"
 
-
-//Variables needed for the filters:
-Butterworth2LowPass measurement_rates_filters[3]; //Filter of pqr
+//Variable for current acceleration filtering:
+Butterworth2LowPass current_accelerations_filtered[6]; //Filter of current accellerations
+float INPUT_PERIODIC_FREQUENCY = 500; 
+float filter_cutoff_frequency = 12; // rad/s
+double current_estimated_accelerations_array_filtered_copy[6]; 
 
 //To test the controller with random variables:
 // #define TEST_CONTROLLER
@@ -20,6 +23,7 @@ struct am7_data_out myam7_data_out_copy;
 struct am7_data_out myam7_data_out_copy_internal;
 struct am7_data_in myam7_data_in;
 struct am7_data_in myam7_data_in_copy;
+struct am7_data_in myam7_data_in_copy_for_filtering;
 float extra_data_in[255], extra_data_in_copy[255];
 float extra_data_out[255], extra_data_out_copy[255];
 uint16_t buffer_in_counter;
@@ -123,12 +127,64 @@ void am7_init(){
     for(int i = 0; i < (sizeof(extra_data_out_copy)/sizeof(float)); i++ ){
     extra_data_out_copy[i] = 0.f;
   }
+
+  //Init filters for current accelerations
+  float tau_indi = 1.0 / (filter_cutoff_frequency);
+  float sample_time = 1.0 / (INPUT_PERIODIC_FREQUENCY);
+  for (int i = 0; i < 6; i++) {
+    init_butterworth_2_low_pass(&current_accelerations_filtered[i], tau_indi, sample_time, 0.0);
+  }
 }
 
 void am7_parse_msg_in(){
+  //Save a copy of the input on the structure: 
+  memcpy(&myam7_data_in_copy_for_filtering, &am7_msg_buf_in[1], sizeof(struct am7_data_in));
+  //Compute current modeled accelerations and filter them: 
+  double current_estimated_accelerations_array[6]; 
+  double current_estimated_accelerations_array_filtered[6];
+
+  double Phi = (myam7_data_in_copy_for_filtering.phi_state_int*1e-2 * M_PI/180);
+  double Theta = (myam7_data_in_copy_for_filtering.theta_state_int*1e-2 * M_PI/180);
+  double delta_ailerons = (myam7_data_in_copy_for_filtering.ailerons_state_int*1e-2 * M_PI/180);
+  double Omega_1 = (myam7_data_in_copy_for_filtering.motor_1_state_int*1e-1), Omega_2 = (myam7_data_in_copy_for_filtering.motor_2_state_int*1e-1);
+  double Omega_3 = (myam7_data_in_copy_for_filtering.motor_3_state_int*1e-1), Omega_4 = (myam7_data_in_copy_for_filtering.motor_4_state_int*1e-1);
+  double b_1 = (myam7_data_in_copy_for_filtering.el_1_state_int*1e-2 * M_PI/180), b_2 = (myam7_data_in_copy_for_filtering.el_2_state_int*1e-2 * M_PI/180);
+  double b_3 = (myam7_data_in_copy_for_filtering.el_3_state_int*1e-2 * M_PI/180), b_4 = (myam7_data_in_copy_for_filtering.el_4_state_int*1e-2 * M_PI/180);
+  double g_1 = (myam7_data_in_copy_for_filtering.az_1_state_int*1e-2 * M_PI/180), g_2 = (myam7_data_in_copy_for_filtering.az_2_state_int*1e-2 * M_PI/180);
+  double g_3 = (myam7_data_in_copy_for_filtering.az_3_state_int*1e-2 * M_PI/180), g_4 = (myam7_data_in_copy_for_filtering.az_4_state_int*1e-2 * M_PI/180);
+  double p = (myam7_data_in_copy_for_filtering.p_state_int*1e-1 * M_PI/180), q = (myam7_data_in_copy_for_filtering.q_state_int*1e-1 * M_PI/180); 
+  double r = (myam7_data_in_copy_for_filtering.r_state_int*1e-1 * M_PI/180), V = (myam7_data_in_copy_for_filtering.airspeed_state_int*1e-2);
+  double flight_path_angle = (myam7_data_in_copy_for_filtering.gamma_state_int*1e-2 * M_PI/180);
+  double Beta = (myam7_data_in_copy_for_filtering.beta_state_int*1e-2 * M_PI/180);
+
+  float K_p_T = extra_data_in[0], K_p_M = extra_data_in[1], m = extra_data_in[2], I_xx = extra_data_in[3];
+  float I_yy = extra_data_in[4], I_zz = extra_data_in[5], l_1 = extra_data_in[6], l_2 = extra_data_in[7];
+  float l_3 = extra_data_in[8], l_4 = extra_data_in[9], l_z = extra_data_in[10];
+
+  float Cm_zero = extra_data_in[22], Cm_alpha = extra_data_in[23], Cl_alpha = extra_data_in[24], Cd_zero = extra_data_in[25];
+  float K_Cd = extra_data_in[26], S = extra_data_in[27], wing_chord = extra_data_in[28], rho = extra_data_in[29];
+
+  float Cy_beta = extra_data_in[47], Cl_beta = extra_data_in[48], wing_span = extra_data_in[49];
+
+  float CL_aileron = extra_data_in[55];
+  double u_in[15] = {Omega_1, Omega_2, Omega_3, Omega_4, b_1, b_2, b_3, b_4, g_1, g_2, g_3, g_4, Theta, Phi, delta_ailerons};
+
+  c_compute_acc_cascaded_nonlinea(u_in,  p,  q,  r,  K_p_T,
+     K_p_M,  m,  I_xx,  I_yy,  I_zz,  l_1,
+     l_2,  l_3,  l_4,  l_z,  Cl_alpha,
+     Cd_zero,  K_Cd,  Cm_alpha,  Cm_zero,
+     CL_aileron,  rho,  V,  S,  wing_chord,
+     flight_path_angle,  Beta, current_estimated_accelerations_array);
+
+  for (int i = 0; i < 6; i++) {
+    update_butterworth_2_low_pass(&current_accelerations_filtered[i], current_estimated_accelerations_array[i]);
+    current_estimated_accelerations_array_filtered[i] = current_accelerations_filtered[i].o[0];
+  }
+
 
   pthread_mutex_lock(&mutex_am7);
   memcpy(&myam7_data_in, &am7_msg_buf_in[1], sizeof(struct am7_data_in));
+  memcpy(&current_estimated_accelerations_array_filtered_copy , &current_estimated_accelerations_array_filtered, sizeof(current_estimated_accelerations_array_filtered));
   received_msg_id = myam7_data_in.rolling_msg_in_id;
   extra_data_in[received_msg_id] = myam7_data_in.rolling_msg_in;
   pthread_mutex_unlock(&mutex_am7); 
