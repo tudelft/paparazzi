@@ -279,6 +279,7 @@ float g2_init[INDI_NUM_ACT];
 Butterworth2LowPass actuator_lowpass_filters[INDI_NUM_ACT];
 Butterworth2LowPass estimation_input_lowpass_filters[INDI_NUM_ACT];
 Butterworth2LowPass measurement_lowpass_filters[3];
+Butterworth2LowPass disturbance_filt[3];
 Butterworth2LowPass estimation_output_lowpass_filters[3];
 Butterworth2LowPass acceleration_lowpass_filter;
 #if STABILIZATION_INDI_FILTER_RATES_SECOND_ORDER
@@ -443,6 +444,7 @@ void init_filters(void)
   int8_t i;
   for (i = 0; i < 3; i++) {
     init_butterworth_2_low_pass(&measurement_lowpass_filters[i], tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&disturbance_filt[i], tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&estimation_output_lowpass_filters[i], tau_est, sample_time, 0.0);
   }
 
@@ -554,16 +556,45 @@ void stabilization_indi_set_stab_sp(struct StabilizationSetpoint *sp)
  */
 void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 {
-  /* Propagate the filter on the gyroscopes */
+  // Propagate actuator filters
+  get_actuator_state();
+  for (i = 0; i < INDI_NUM_ACT; i++) {
+    update_butterworth_2_low_pass(&actuator_lowpass_filters[i], actuator_state[i]);
+    update_butterworth_2_low_pass(&estimation_input_lowpass_filters[i], actuator_state[i]);
+    actuator_state_filt_vect[i] = actuator_lowpass_filters[i].o[0];
+
+    // calculate derivatives for estimation
+    float actuator_state_filt_vectd_prev = actuator_state_filt_vectd[i];
+    actuator_state_filt_vectd[i] = (estimation_input_lowpass_filters[i].o[0] - estimation_input_lowpass_filters[i].o[1]) *
+                                   PERIODIC_FREQUENCY;
+    actuator_state_filt_vectdd[i] = (actuator_state_filt_vectd[i] - actuator_state_filt_vectd_prev) * PERIODIC_FREQUENCY;
+  }
+
+  // Predict angular acceleration u*B
+  float angular_acc_prediction[INDI_OUTPUTS];
+  float_mat_vect_mul(angular_acc_prediction, Bwls, actuator_state, INDI_OUTPUTS, INDI_NUM_ACT);
+
   struct FloatRates *body_rates = stateGetBodyRates_f();
   float rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
+  //Calculate the angular acceleration via finite difference
+  angular_acceleration[i] = (rate_vect[i].o[0] - rate_vect[i].o[1]) * PERIODIC_FREQUENCY;
+
+  // TODO: check where angular_acceleration is used, because it used to be filtered.
+
+  // subtract u*B from angular acceleration
+  float angular_acc_disturbance_estimate[INDI_OUTPUTS];
+  float_vect_diff(angular_acc_disturbance_estimate, angular_acceleration, angular_acc_prediction, INDI_OUTPUTS);
+
+  /* Propagate the filter on the gyroscopes */
   int8_t i;
   for (i = 0; i < 3; i++) {
+    update_butterworth_2_low_pass(&disturbance_filt[i], angular_acc_disturbance_estimate[i]);
+
     update_butterworth_2_low_pass(&measurement_lowpass_filters[i], rate_vect[i]);
     update_butterworth_2_low_pass(&estimation_output_lowpass_filters[i], rate_vect[i]);
 
     //Calculate the angular acceleration via finite difference
-    angular_acceleration[i] = (measurement_lowpass_filters[i].o[0]
+    angular_acceleration_filtered[i] = (measurement_lowpass_filters[i].o[0]
                                - measurement_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY;
 
     // Calculate derivatives for estimation
@@ -704,20 +735,6 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
         indi_u[i] = -MAX_PPRZ;
       }
     }
-  }
-
-  // Propagate actuator filters
-  get_actuator_state();
-  for (i = 0; i < INDI_NUM_ACT; i++) {
-    update_butterworth_2_low_pass(&actuator_lowpass_filters[i], actuator_state[i]);
-    update_butterworth_2_low_pass(&estimation_input_lowpass_filters[i], actuator_state[i]);
-    actuator_state_filt_vect[i] = actuator_lowpass_filters[i].o[0];
-
-    // calculate derivatives for estimation
-    float actuator_state_filt_vectd_prev = actuator_state_filt_vectd[i];
-    actuator_state_filt_vectd[i] = (estimation_input_lowpass_filters[i].o[0] - estimation_input_lowpass_filters[i].o[1]) *
-                                   PERIODIC_FREQUENCY;
-    actuator_state_filt_vectdd[i] = (actuator_state_filt_vectd[i] - actuator_state_filt_vectd_prev) * PERIODIC_FREQUENCY;
   }
 
   // Use online effectiveness estimation only when flying
