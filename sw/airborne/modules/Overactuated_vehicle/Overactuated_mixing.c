@@ -1246,7 +1246,7 @@ void assign_variables(void){
         if(fabs(cosf(euler_vect[1])) > 0.001){
             projected_airspeed_on_x_control = airspeed/cosf(euler_vect[1]);
         }
-        total_V = sqrt(projected_airspeed_on_x_control*projected_airspeed_on_x_control + speed_vect_control_rf[1]*speed_vect_control_rf[1] + speed_vect_control_rf[2]*speed_vect_control_rf[2]);
+        total_V = sqrt(projected_airspeed_on_x_control*projected_airspeed_on_x_control + speed_vect_control_rf[2]*speed_vect_control_rf[2]);
     #else
         total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
     #endif
