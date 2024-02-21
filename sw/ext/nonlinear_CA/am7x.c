@@ -36,7 +36,7 @@ uint16_t sent_msg_id = 0, received_msg_id = 0;
 int serial_port;
 int serial_port_tf_mini;
 float ca7_message_frequency_RX, ca7_message_frequency_TX;
-struct timeval current_time, last_time, last_sent_msg_time, aruco_time, starting_time_program_execution, time_last_opt_run;
+struct timeval current_time, last_time, last_sent_msg_time, aruco_time, starting_time_program_execution, time_last_opt_run, time_last_filt;
 
 
 pthread_mutex_t mutex_am7;
@@ -137,6 +137,7 @@ void am7_init(){
 
   //init waiting timer: 
   gettimeofday(&time_last_opt_run, NULL);
+  gettimeofday(&time_last_filt, NULL);
 }
 
 void am7_parse_msg_in(){
@@ -197,6 +198,9 @@ void am7_parse_msg_in(){
     current_estimated_accelerations_array_filtered[i] = current_accelerations_filtered[i].o[0];
   }
 
+  // gettimeofday(&current_time, NULL);
+  // printf(" Filter sampling_time_effective_us = %f \n",(float) ((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_filt.tv_sec*1e6 + time_last_filt.tv_usec)));
+  // gettimeofday(&time_last_filt, NULL);
 
   pthread_mutex_lock(&mutex_am7);
   memcpy(&myam7_data_in, &am7_msg_buf_in[1], sizeof(struct am7_data_in));
@@ -334,10 +338,6 @@ void send_receive_am7(){
     writing_routine();
     send_states_on_ivy();
   }
-
-  // usleep(1e9/MAX_FREQUENCY_MSG_OUT);
-  // writing_routine();
-
 
   //Print some stats
   if(verbose_connection){
@@ -739,6 +739,9 @@ Cascaded_nonlinear_TestFlight(m_failure_ID,  K_p_T,  K_p_M,  m,  I_xx,
       printf(" max_theta_hard = %f \n",(float) max_theta_hard);
       printf(" min_phi_hard = %f \n",(float) min_phi_hard);
       printf(" max_phi_hard = %f \n",(float) max_phi_hard);
+
+      printf(" input_periodic_frequency_in = %f \n",(float) input_periodic_frequency_in);
+      printf(" filter_cutoff_frequency_in = %f \n",(float) filter_cutoff_frequency_in);
 
       printf("\n REAL TIME VARIABLES IN------------------------------------------------------ \n"); 
       printf(" Phi_deg = %f \n",(float) Phi*180/M_PI);
