@@ -5,7 +5,7 @@
  * File: Cascaded_nonlinear_TestFlight.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 20-Feb-2024 23:30:20
+ * C/C++ source code generated on  : 21-Feb-2024 21:30:21
  */
 
 /* Include Files */
@@ -375,12 +375,6 @@ void Cascaded_nonlinear_TestFlight(
   memcpy(&actual_u.contents[0], &u_max[0], 15U * sizeof(double));
   /* Build the max and minimum actuator array: */
   if (m_failure_ID == 3.0) {
-    /*  u_max = [max_omega, max_omega, 155, max_omega, max_b, max_b, 1, max_b,
-     * max_g, max_g, 1, max_g, max_theta_protection, max_phi,
-     * max_delta_ailerons]; */
-    /*  u_min = [min_omega, min_omega, min_omega, min_omega, min_b, min_b, -1,
-     * min_b, min_g, min_g, -1, min_g, deg2rad(-2), deg2rad(-3),
-     * min_delta_ailerons]; */
     u_max[0] = max_omega;
     u_max[1] = max_omega;
     u_max[2] = 155.0;
@@ -411,13 +405,6 @@ void Cascaded_nonlinear_TestFlight(
     u_min[12] = min_theta_protection;
     u_min[13] = -max_phi;
     u_min[14] = min_delta_ailerons;
-    /*  elseif (m_failure_ID==4) */
-    /*  u_max = [max_omega, max_omega, max_omega, 155, max_b, max_b, max_b, 0,
-     * max_g, max_g, max_g, 0, max_theta_protection, max_phi,
-     * max_delta_ailerons]; */
-    /*  u_min = [min_omega, min_omega, min_omega, min_omega, min_b, min_b,
-     * min_b, 0, min_g, min_g, min_g, 0, min_theta_protection, -max_phi,
-     * min_delta_ailerons]; */
   } else {
     u_max[0] = max_omega;
     u_max[1] = max_omega;
@@ -601,11 +588,16 @@ void Cascaded_nonlinear_TestFlight(
   max_tilt_value_approach =
       W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
   W_act_tilt_az.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach =
-      W_act_theta_const + W_act_theta_speed * b_V.contents;
-  W_act_theta.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach = W_act_phi_const + W_act_phi_speed * b_V.contents;
-  W_act_phi.contents = fmax(0.0, max_tilt_value_approach);
+  if (m_failure_ID == 3.0) {
+    W_act_theta.contents = 0.1;
+    W_act_phi.contents = 0.15;
+  } else {
+    max_tilt_value_approach =
+        W_act_theta_const + W_act_theta_speed * b_V.contents;
+    W_act_theta.contents = fmax(0.0, max_tilt_value_approach);
+    max_tilt_value_approach = W_act_phi_const + W_act_phi_speed * b_V.contents;
+    W_act_phi.contents = fmax(0.0, max_tilt_value_approach);
+  }
   /*  W_act_motor4 = W_MOTOR_FAILURE_WEIGHT; */
   /*  W_act_theta = max(0,W_act_theta_const + W_act_theta_speed*V); */
   /*  W_act_phi = max(0,W_act_phi_const + W_act_phi_speed*V); */
@@ -727,16 +719,14 @@ void Cascaded_nonlinear_TestFlight(
   /*  des_theta_first_iteration = deg2rad(20); */
   /*  des_phi_first_iteration   = deg2rad(70); */
   /*  else */
-  des_theta_first_iteration = u_min[12] * gain_theta.contents;
-  des_phi_first_iteration = u_min[13] * gain_phi.contents;
   /*  end */
-  /*  if (m_failure_ID==3) */
-  /*      des_theta_first_iteration = deg2rad(14); */
-  /*      des_phi_first_iteration = deg2rad(73); */
-  /*  else */
-  /*      des_theta_first_iteration = deg2rad(0); */
-  /*      des_phi_first_iteration = deg2rad(0); */
-  /*  end */
+  if (m_failure_ID == 3.0) {
+    des_theta_first_iteration = 0.3490658503988659;
+    des_phi_first_iteration = 0.87266462599716477;
+  } else {
+    des_theta_first_iteration = 0.0;
+    des_phi_first_iteration = 0.0;
+  }
   /* with the desired theta and phi, let's compute the associated angular */
   /* accelerations through the EC gains and feedbacks:  */
   max_tilt_value_approach = b_Theta.contents;

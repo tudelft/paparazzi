@@ -5,7 +5,7 @@
  * File: test_exit.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 20-Feb-2024 23:30:20
+ * C/C++ source code generated on  : 21-Feb-2024 21:30:21
  */
 
 #ifndef TEST_EXIT_H
