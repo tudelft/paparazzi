@@ -5,7 +5,7 @@
  * File: Cascaded_nonlinear_TestFlight.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 20-Feb-2024 23:30:20
+ * C/C++ source code generated on  : 21-Feb-2024 21:29:34
  */
 
 #ifndef CASCADED_NONLINEAR_TESTFLIGHT_H
@@ -37,7 +37,7 @@ extern void Cascaded_nonlinear_TestFlight(
     double W_dv_4, double W_dv_5, double W_dv_6, double max_omega,
     double min_omega, double max_b, double min_b, double max_g, double min_g,
     double max_theta, double min_theta, double max_phi,
-    double max_delta_ailerons, double min_delta_ailerons, double dv[6],
+    double max_delta_ailerons, double min_delta_ailerons, const double dv[3],
     double p, double q, double r, double Cm_zero, double Cl_alpha,
     double Cd_zero, double K_Cd, double Cm_alpha, double CL_aileron, double rho,
     double V, double W_act_motor_du, double W_act_tilt_el_du,
