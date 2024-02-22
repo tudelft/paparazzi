@@ -371,7 +371,7 @@ void* second_thread() //Run the optimization code
 
     //Init the variables for the function:
     double u_out[15];
-    double dv[6];
+    double dv[3];
     double gradient[13];
     double residuals[6];
     double elapsed_time; 
@@ -448,8 +448,9 @@ void* second_thread() //Run the optimization code
     double lidar_alt_corrected = (myam7_data_in_copy.lidar_alt_corrected_int*1e-2);
 
     dv[0] = (myam7_data_in_copy.pseudo_control_ax_int*1e-2); dv[1] = (myam7_data_in_copy.pseudo_control_ay_int*1e-2);
-    dv[2] = (myam7_data_in_copy.pseudo_control_az_int*1e-2); dv[3] = (myam7_data_in_copy.pseudo_control_p_dot_int*1e-1 * M_PI/180);
-    dv[4] = (myam7_data_in_copy.pseudo_control_q_dot_int*1e-1 * M_PI/180); dv[5] = (myam7_data_in_copy.pseudo_control_r_dot_int*1e-1 * M_PI/180);
+    dv[2] = (myam7_data_in_copy.pseudo_control_az_int*1e-2); 
+    // dv[3] = (myam7_data_in_copy.pseudo_control_p_dot_int*1e-1 * M_PI/180);
+    // dv[4] = (myam7_data_in_copy.pseudo_control_q_dot_int*1e-1 * M_PI/180); dv[5] = (myam7_data_in_copy.pseudo_control_r_dot_int*1e-1 * M_PI/180);
  
     double p_body_current = (myam7_data_in_copy.p_body_current_int*1e-1 * M_PI/180); 
     double q_body_current = (myam7_data_in_copy.q_body_current_int*1e-1 * M_PI/180); 
@@ -550,9 +551,9 @@ void* second_thread() //Run the optimization code
       dv[0] = 0;
       dv[1] = 5;
       dv[2] = -5;
-      dv[3] = 5;
-      dv[4] = 5;
-      dv[5] = 5;
+      // dv[3] = 5;
+      // dv[4] = 5;
+      // dv[5] = 5;
 
       p = 0 * pi/180; 
       q = 0 * pi/180; 
@@ -774,9 +775,9 @@ Cascaded_nonlinear_TestFlight(m_failure_ID,  K_p_T,  K_p_M,  m,  I_xx,
       printf(" dv[0] = %f \n",(float) dv[0]);
       printf(" dv[1] = %f \n",(float) dv[1]);
       printf(" dv[2] = %f \n",(float) dv[2]);
-      printf(" dv[3] = %f \n",(float) dv[3]);
-      printf(" dv[4] = %f \n",(float) dv[4]);
-      printf(" dv[5] = %f \n",(float) dv[5]);
+      // printf(" dv[3] = %f \n",(float) dv[3]);
+      // printf(" dv[4] = %f \n",(float) dv[4]);
+      // printf(" dv[5] = %f \n",(float) dv[5]);
 
       printf(" p_body_current_deg_s = %f \n",(float) p_body_current*180/M_PI);
       printf(" q_body_current_deg_s = %f \n",(float) q_body_current*180/M_PI);
