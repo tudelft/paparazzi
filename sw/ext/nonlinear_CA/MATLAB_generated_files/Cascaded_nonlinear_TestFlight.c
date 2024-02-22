@@ -5,7 +5,7 @@
  * File: Cascaded_nonlinear_TestFlight.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 20-Feb-2024 23:30:20
+ * C/C++ source code generated on  : 21-Feb-2024 21:29:34
  */
 
 /* Include Files */
@@ -87,7 +87,7 @@
  *                double max_phi
  *                double max_delta_ailerons
  *                double min_delta_ailerons
- *                double dv[6]
+ *                const double dv[3]
  *                double p
  *                double q
  *                double r
@@ -165,7 +165,7 @@ void Cascaded_nonlinear_TestFlight(
     double W_dv_4, double W_dv_5, double W_dv_6, double max_omega,
     double min_omega, double max_b, double min_b, double max_g, double min_g,
     double max_theta, double min_theta, double max_phi,
-    double max_delta_ailerons, double min_delta_ailerons, double dv[6],
+    double max_delta_ailerons, double min_delta_ailerons, const double dv[3],
     double p, double q, double r, double Cm_zero, double Cl_alpha,
     double Cd_zero, double K_Cd, double Cm_alpha, double CL_aileron, double rho,
     double V, double W_act_motor_du, double W_act_tilt_el_du,
@@ -375,23 +375,17 @@ void Cascaded_nonlinear_TestFlight(
   memcpy(&actual_u.contents[0], &u_max[0], 15U * sizeof(double));
   /* Build the max and minimum actuator array: */
   if (m_failure_ID == 3.0) {
-    /*  u_max = [max_omega, max_omega, 155, max_omega, max_b, max_b, 1, max_b,
-     * max_g, max_g, 1, max_g, max_theta_protection, max_phi,
-     * max_delta_ailerons]; */
-    /*  u_min = [min_omega, min_omega, min_omega, min_omega, min_b, min_b, -1,
-     * min_b, min_g, min_g, -1, min_g, deg2rad(-2), deg2rad(-3),
-     * min_delta_ailerons]; */
     u_max[0] = max_omega;
     u_max[1] = max_omega;
     u_max[2] = 155.0;
     u_max[3] = max_omega;
     u_max[4] = max_b;
     u_max[5] = max_b;
-    u_max[6] = 1.0;
+    u_max[6] = 0.0;
     u_max[7] = max_b;
     u_max[8] = max_g;
     u_max[9] = max_g;
-    u_max[10] = 1.0;
+    u_max[10] = 0.0;
     u_max[11] = max_g;
     u_max[12] = max_theta_protection;
     u_max[13] = max_phi;
@@ -402,22 +396,15 @@ void Cascaded_nonlinear_TestFlight(
     u_min[3] = min_omega;
     u_min[4] = min_b;
     u_min[5] = min_b;
-    u_min[6] = -1.0;
+    u_min[6] = 0.0;
     u_min[7] = min_b;
     u_min[8] = min_g;
     u_min[9] = min_g;
-    u_min[10] = -1.0;
+    u_min[10] = 0.0;
     u_min[11] = min_g;
     u_min[12] = min_theta_protection;
     u_min[13] = -max_phi;
     u_min[14] = min_delta_ailerons;
-    /*  elseif (m_failure_ID==4) */
-    /*  u_max = [max_omega, max_omega, max_omega, 155, max_b, max_b, max_b, 0,
-     * max_g, max_g, max_g, 0, max_theta_protection, max_phi,
-     * max_delta_ailerons]; */
-    /*  u_min = [min_omega, min_omega, min_omega, min_omega, min_b, min_b,
-     * min_b, 0, min_g, min_g, min_g, 0, min_theta_protection, -max_phi,
-     * min_delta_ailerons]; */
   } else {
     u_max[0] = max_omega;
     u_max[1] = max_omega;
@@ -559,12 +546,13 @@ void Cascaded_nonlinear_TestFlight(
    * compute_acc_cascaded_nonlinear_CA_w_ailerons_internal(actual_u,p,q,r,K_p_T,K_p_M,m,I_xx,I_yy,I_zz,l_1,l_2,l_3,l_4,l_z,Cl_alpha,
    * Cd_zero, K_Cd, Cm_alpha, Cm_zero, CL_aileron,rho, V, S, wing_chord,
    * flight_path_angle, Beta); */
-  dv[3] = 0.0;
-  dv[4] = 0.0;
-  dv[5] = 0.0;
-  for (i = 0; i < 6; i++) {
-    dv_global.contents[i] = dv[i] + current_accelerations[i];
-  }
+  /*  dv(4:6) = 0; */
+  dv_global.contents[0] = dv[0] + current_accelerations[0];
+  dv_global.contents[1] = dv[1] + current_accelerations[1];
+  dv_global.contents[2] = dv[2] + current_accelerations[2];
+  dv_global.contents[3] = current_accelerations[3];
+  dv_global.contents[4] = current_accelerations[4];
+  dv_global.contents[5] = current_accelerations[5];
   /* Pseudo-control hedging:  */
   if (b_V.contents > transition_speed) {
     /*  CL_max =  Cl_alpha * max_alpha;   */
@@ -601,11 +589,16 @@ void Cascaded_nonlinear_TestFlight(
   max_tilt_value_approach =
       W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
   W_act_tilt_az.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach =
-      W_act_theta_const + W_act_theta_speed * b_V.contents;
-  W_act_theta.contents = fmax(0.0, max_tilt_value_approach);
-  max_tilt_value_approach = W_act_phi_const + W_act_phi_speed * b_V.contents;
-  W_act_phi.contents = fmax(0.0, max_tilt_value_approach);
+  if (m_failure_ID == 3.0) {
+    W_act_theta.contents = 0.1;
+    W_act_phi.contents = 0.15;
+  } else {
+    max_tilt_value_approach =
+        W_act_theta_const + W_act_theta_speed * b_V.contents;
+    W_act_theta.contents = fmax(0.0, max_tilt_value_approach);
+    max_tilt_value_approach = W_act_phi_const + W_act_phi_speed * b_V.contents;
+    W_act_phi.contents = fmax(0.0, max_tilt_value_approach);
+  }
   /*  W_act_motor4 = W_MOTOR_FAILURE_WEIGHT; */
   /*  W_act_theta = max(0,W_act_theta_const + W_act_theta_speed*V); */
   /*  W_act_phi = max(0,W_act_phi_const + W_act_phi_speed*V); */
@@ -657,18 +650,9 @@ void Cascaded_nonlinear_TestFlight(
   tic();
   /* First optimization run to identify the pitch and roll angles: */
   memcpy(&u_min[0], &u_max[0], 15U * sizeof(double));
-  expl_temp.wing_chord = &b_wing_chord;
   expl_temp.rho = &b_rho;
-  expl_temp.r = &b_r;
-  expl_temp.q = &b_q;
   expl_temp.actual_u = &actual_u;
-  expl_temp.p = &b_p;
   expl_temp.m = &b_m;
-  expl_temp.l_z = &b_l_z;
-  expl_temp.l_4 = &b_l_4;
-  expl_temp.l_3 = &b_l_3;
-  expl_temp.l_2 = &b_l_2;
-  expl_temp.l_1 = &b_l_1;
   expl_temp.gamma_quadratic_du2 = &b_gamma_quadratic_du2;
   expl_temp.gamma_quadratic_du = &b_gamma_quadratic_du;
   expl_temp.gain_ailerons = &gain_ailerons;
@@ -692,11 +676,6 @@ void Cascaded_nonlinear_TestFlight(
   expl_temp.W_act_theta_du = &b_W_act_theta_du;
   expl_temp.W_act_tilt_az = &W_act_tilt_az;
   expl_temp.W_act_tilt_el = &W_act_tilt_el;
-  expl_temp.W_dv_6 = &b_W_dv_6;
-  expl_temp.W_dv_5 = &b_W_dv_5;
-  expl_temp.W_dv_4 = &b_W_dv_4;
-  expl_temp.W_dv_3 = &b_W_dv_3;
-  expl_temp.W_dv_2 = &b_W_dv_2;
   expl_temp.W_dv_1 = &b_W_dv_1;
   expl_temp.W_act_phi_du = &b_W_act_phi_du;
   expl_temp.W_act_motor = &W_act_motor;
@@ -705,16 +684,9 @@ void Cascaded_nonlinear_TestFlight(
   expl_temp.V = &b_V;
   expl_temp.S = &b_S;
   expl_temp.K_p_T = &b_K_p_T;
-  expl_temp.K_p_M = &b_K_p_M;
   expl_temp.K_Cd = &b_K_Cd;
-  expl_temp.I_zz = &b_I_zz;
-  expl_temp.I_yy = &b_I_yy;
-  expl_temp.I_xx = &b_I_xx;
-  expl_temp.Cm_alpha = &b_Cm_alpha;
-  expl_temp.Cm_zero = &b_Cm_zero;
   expl_temp.Cl_alpha = &b_Cl_alpha;
   expl_temp.Cd_zero = &b_Cd_zero;
-  expl_temp.CL_aileron = &b_CL_aileron;
   expl_temp.Beta = &b_Beta;
   expl_temp.dv_global = &dv_global;
   b_expl_temp = expl_temp;
@@ -962,10 +934,12 @@ void Cascaded_nonlinear_TestFlight(
     fflush(stdout);
     printf("\n desired acc increment =    ");
     fflush(stdout);
-    for (i = 0; i < 6; i++) {
-      printf(" %f ", dv[i]);
-      fflush(stdout);
-    }
+    printf(" %f ", dv[0]);
+    fflush(stdout);
+    printf(" %f ", dv[1]);
+    fflush(stdout);
+    printf(" %f ", dv[2]);
+    fflush(stdout);
     printf("\n");
     fflush(stdout);
     printf("\n Requested accelerations =  ");

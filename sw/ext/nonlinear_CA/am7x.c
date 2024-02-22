@@ -468,7 +468,7 @@ void* second_thread() //Run the optimization code
     double des_psi_dot = (myam7_data_in_copy.des_psi_dot_int*1e-2 * M_PI/180);
 
     //kinda hardcoded values:
-    double gamma_quadratic_du2 = 0.5e-5;
+    double gamma_quadratic_du2 = 0.5e-6;
     double m_failure_ID = (myam7_data_in_copy.beta_state_int*1e-2) ;
 
     double W_act_motor_du = 20; 

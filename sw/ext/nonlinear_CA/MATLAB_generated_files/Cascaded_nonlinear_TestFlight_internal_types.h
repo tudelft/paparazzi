@@ -5,7 +5,7 @@
  * File: Cascaded_nonlinear_TestFlight_internal_types.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 20-Feb-2024 23:30:20
+ * C/C++ source code generated on  : 21-Feb-2024 21:29:34
  */
 
 #ifndef CASCADED_NONLINEAR_TESTFLIGHT_INTERNAL_TYPES_H
@@ -100,16 +100,9 @@ typedef struct {
 typedef struct {
   b_captured_var *dv_global;
   captured_var *Beta;
-  captured_var *CL_aileron;
   captured_var *Cd_zero;
   captured_var *Cl_alpha;
-  captured_var *Cm_zero;
-  captured_var *Cm_alpha;
-  captured_var *I_xx;
-  captured_var *I_yy;
-  captured_var *I_zz;
   captured_var *K_Cd;
-  captured_var *K_p_M;
   captured_var *K_p_T;
   captured_var *S;
   captured_var *V;
@@ -118,11 +111,6 @@ typedef struct {
   captured_var *W_act_motor;
   captured_var *W_act_phi_du;
   captured_var *W_dv_1;
-  captured_var *W_dv_2;
-  captured_var *W_dv_3;
-  captured_var *W_dv_4;
-  captured_var *W_dv_5;
-  captured_var *W_dv_6;
   captured_var *W_act_tilt_el;
   captured_var *W_act_tilt_az;
   captured_var *W_act_theta_du;
@@ -146,18 +134,9 @@ typedef struct {
   captured_var *gain_ailerons;
   captured_var *gamma_quadratic_du;
   captured_var *gamma_quadratic_du2;
-  captured_var *l_1;
-  captured_var *l_2;
-  captured_var *l_3;
-  captured_var *l_4;
-  captured_var *l_z;
   captured_var *m;
-  captured_var *p;
   c_captured_var *actual_u;
-  captured_var *q;
-  captured_var *r;
   captured_var *rho;
-  captured_var *wing_chord;
 } d_struct_T;
 #endif /* typedef_d_struct_T */
 
