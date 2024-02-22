@@ -11,9 +11,6 @@
 
 //Variable for current acceleration filtering:
 Butterworth2LowPass current_accelerations_filtered[6]; //Filter of current accellerations
-float INPUT_PERIODIC_FREQUENCY = 500; 
-float filter_cutoff_frequency = 12; // rad/s
-double current_estimated_accelerations_array_filtered_copy[6]; 
 
 //To test the controller with random variables:
 // #define TEST_CONTROLLER
@@ -49,6 +46,7 @@ int verbose_runtime = 0;
 int verbose_received_data = 0; 
 int verbose_ivy_bus = 0; 
 int verbose_aruco = 0; 
+int verbose_compute_accel = 0; 
 
 int16_t lidar_dist_cm = -1; 
 int16_t lidar_signal_strength = -1; 
@@ -129,10 +127,9 @@ void am7_init(){
   }
 
   //Init filters for current accelerations
-  float tau_indi = 1.0 / (filter_cutoff_frequency);
-  float sample_time = 1.0 / (INPUT_PERIODIC_FREQUENCY);
+  float tau_indi = 1.0f / (filter_cutoff_frequency);
   for (int i = 0; i < 6; i++) {
-    init_butterworth_2_low_pass(&current_accelerations_filtered[i], tau_indi, sample_time, 0.0);
+    init_butterworth_2_low_pass(&current_accelerations_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
   }
 
   //init waiting timer: 
@@ -141,70 +138,9 @@ void am7_init(){
 }
 
 void am7_parse_msg_in(){
-  //Save a copy of the input on the structure: 
-  memcpy(&myam7_data_in_copy_for_filtering, &am7_msg_buf_in[1], sizeof(struct am7_data_in));
-  //Compute current modeled accelerations and filter them: 
-  double current_estimated_accelerations_array[6]; 
-  double current_estimated_accelerations_array_filtered[6];
-
-  double Phi = (myam7_data_in_copy_for_filtering.phi_state_int*1e-2 * M_PI/180);
-  double Theta = (myam7_data_in_copy_for_filtering.theta_state_int*1e-2 * M_PI/180);
-  double delta_ailerons = (myam7_data_in_copy_for_filtering.ailerons_state_int*1e-2 * M_PI/180);
-  double Omega_1 = (myam7_data_in_copy_for_filtering.motor_1_state_int*1e-1), Omega_2 = (myam7_data_in_copy_for_filtering.motor_2_state_int*1e-1);
-  double Omega_3 = (myam7_data_in_copy_for_filtering.motor_3_state_int*1e-1), Omega_4 = (myam7_data_in_copy_for_filtering.motor_4_state_int*1e-1);
-  double b_1 = (myam7_data_in_copy_for_filtering.el_1_state_int*1e-2 * M_PI/180), b_2 = (myam7_data_in_copy_for_filtering.el_2_state_int*1e-2 * M_PI/180);
-  double b_3 = (myam7_data_in_copy_for_filtering.el_3_state_int*1e-2 * M_PI/180), b_4 = (myam7_data_in_copy_for_filtering.el_4_state_int*1e-2 * M_PI/180);
-  double g_1 = (myam7_data_in_copy_for_filtering.az_1_state_int*1e-2 * M_PI/180), g_2 = (myam7_data_in_copy_for_filtering.az_2_state_int*1e-2 * M_PI/180);
-  double g_3 = (myam7_data_in_copy_for_filtering.az_3_state_int*1e-2 * M_PI/180), g_4 = (myam7_data_in_copy_for_filtering.az_4_state_int*1e-2 * M_PI/180);
-  double p = (myam7_data_in_copy_for_filtering.p_state_int*1e-1 * M_PI/180), q = (myam7_data_in_copy_for_filtering.q_state_int*1e-1 * M_PI/180); 
-  double r = (myam7_data_in_copy_for_filtering.r_state_int*1e-1 * M_PI/180), V = (myam7_data_in_copy_for_filtering.airspeed_state_int*1e-2);
-  double flight_path_angle = (myam7_data_in_copy_for_filtering.gamma_state_int*1e-2 * M_PI/180);
-  double Beta = (myam7_data_in_copy_for_filtering.beta_state_int*1e-2 * M_PI/180);
-
-  float K_p_T = extra_data_in[0], K_p_M = extra_data_in[1], m = extra_data_in[2], I_xx = extra_data_in[3];
-  float I_yy = extra_data_in[4], I_zz = extra_data_in[5], l_1 = extra_data_in[6], l_2 = extra_data_in[7];
-  float l_3 = extra_data_in[8], l_4 = extra_data_in[9], l_z = extra_data_in[10];
-
-  float Cm_zero = extra_data_in[22], Cm_alpha = extra_data_in[23], Cl_alpha = extra_data_in[24], Cd_zero = extra_data_in[25];
-  float K_Cd = extra_data_in[26], S = extra_data_in[27], wing_chord = extra_data_in[28], rho = extra_data_in[29];
-
-  float Cy_beta = extra_data_in[47], Cl_beta = extra_data_in[48], wing_span = extra_data_in[49];
-
-  float CL_aileron = extra_data_in[55];
-  
-  float input_periodic_frequency_in = extra_data_in[65]; 
-  float filter_cutoff_frequency_in = extra_data_in[66]; 
-
-  //Check that the acceleration filters are properly initialized, if not initialize them again: 
-  if( fabs(INPUT_PERIODIC_FREQUENCY - input_periodic_frequency_in) > 0.1 || fabs(filter_cutoff_frequency - filter_cutoff_frequency_in) > 0.1 ){
-    float tau_indi = 1.0 / (filter_cutoff_frequency_in);
-    float sample_time = 1.0 / (input_periodic_frequency_in);
-    for (int i = 0; i < 6; i++) {
-      init_butterworth_2_low_pass(&current_accelerations_filtered[i], tau_indi, sample_time, 0.0);
-    }
-  }
-
-  double u_in[15] = {Omega_1, Omega_2, Omega_3, Omega_4, b_1, b_2, b_3, b_4, g_1, g_2, g_3, g_4, Theta, Phi, delta_ailerons};
-
-  c_compute_acc_cascaded_nonlinea(u_in,  p,  q,  r,  K_p_T,
-     K_p_M,  m,  I_xx,  I_yy,  I_zz,  l_1,
-     l_2,  l_3,  l_4,  l_z,  Cl_alpha,
-     Cd_zero,  K_Cd,  Cm_alpha,  Cm_zero,
-     CL_aileron,  rho,  V,  S,  wing_chord,
-     flight_path_angle,  Beta, current_estimated_accelerations_array);
-
-  for (int i = 0; i < 6; i++) {
-    update_butterworth_2_low_pass(&current_accelerations_filtered[i], current_estimated_accelerations_array[i]);
-    current_estimated_accelerations_array_filtered[i] = current_accelerations_filtered[i].o[0];
-  }
-
-  // gettimeofday(&current_time, NULL);
-  // printf(" Filter sampling_time_effective_us = %f \n",(float) ((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_filt.tv_sec*1e6 + time_last_filt.tv_usec)));
-  // gettimeofday(&time_last_filt, NULL);
 
   pthread_mutex_lock(&mutex_am7);
   memcpy(&myam7_data_in, &am7_msg_buf_in[1], sizeof(struct am7_data_in));
-  memcpy(&current_estimated_accelerations_array_filtered_copy , &current_estimated_accelerations_array_filtered, sizeof(current_estimated_accelerations_array_filtered));
   received_msg_id = myam7_data_in.rolling_msg_in_id;
   extra_data_in[received_msg_id] = myam7_data_in.rolling_msg_in;
   pthread_mutex_unlock(&mutex_am7); 
@@ -321,7 +257,7 @@ void print_statistics(){
     printf("Average message RX frequency = %f \n",ca7_message_frequency_RX);
     printf("Average message TX frequency = %f \n",ca7_message_frequency_TX);
     printf("Current lidar distance in cm = %d \n",lidar_dist_cm);
-    printf("Current lidar strength = %d \n",lidar_signal_strength);
+    printf("Current lidar strength = %d \n \n",lidar_signal_strength);
     fflush(stdout);
   }
   ca7_message_frequency_RX = (received_packets*1e6)/((current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time.tv_sec*1e6 + last_time.tv_usec));
@@ -359,12 +295,13 @@ void* second_thread() //Run the optimization code
 
   while(1){ 
 
-    double current_estimated_accelerations_array_filtered_copy_local[6]; 
+    double current_estimated_accelerations_array[6]; 
+
+    double current_estimated_accelerations_input[6]; 
 
     pthread_mutex_lock(&mutex_am7);   
     memcpy(&myam7_data_in_copy, &myam7_data_in, sizeof(struct am7_data_in));
     memcpy(&extra_data_in_copy, &extra_data_in, sizeof(extra_data_in));
-    memcpy(&current_estimated_accelerations_array_filtered_copy_local, &current_estimated_accelerations_array_filtered_copy, sizeof(current_estimated_accelerations_array_filtered_copy_local));
     pthread_mutex_unlock(&mutex_am7);
 
     //Do your things with myam7_data_in_copy and extra_data_in_copy as input and myam7_data_out_copy_internal and extra_data_out_copy as outputs
@@ -420,9 +357,6 @@ void* second_thread() //Run the optimization code
     float max_theta_hard = extra_data_in_copy[62];
     float min_phi_hard = extra_data_in_copy[63];
     float max_phi_hard = extra_data_in_copy[64];
-
-    float input_periodic_frequency_in = extra_data_in_copy[65]; 
-    float filter_cutoff_frequency_in = extra_data_in_copy[66];
 
 
     // Real time variables:
@@ -599,18 +533,34 @@ void* second_thread() //Run the optimization code
 
       m_failure_ID = 0;
 
-      double u_in[15] = {Omega_1, Omega_2, Omega_3, Omega_4, b_1, b_2, b_3, b_4, g_1, g_2, g_3, g_4, Theta, Phi, delta_ailerons};
-
-        c_compute_acc_cascaded_nonlinea(u_in,  p,  q,  r,  K_p_T,
-        K_p_M,  m,  I_xx,  I_yy,  I_zz,  l_1,
-        l_2,  l_3,  l_4,  l_z,  Cl_alpha,
-        Cd_zero,  K_Cd,  Cm_alpha,  Cm_zero,
-        CL_aileron,  rho,  V,  S,  wing_chord,
-        flight_path_angle,  Beta, current_estimated_accelerations_array_filtered_copy_local);
-
     #endif 
 
-Cascaded_nonlinear_TestFlight(m_failure_ID,  K_p_T,  K_p_M,  m,  I_xx,
+    //Compute modeled accelerations:
+    double u_in[15] = {Omega_1, Omega_2, Omega_3, Omega_4, b_1, b_2, b_3, b_4, g_1, g_2, g_3, g_4, Theta, Phi, delta_ailerons};
+
+    c_compute_acc_cascaded_nonlinea(u_in,  p,  q,  r,  K_p_T,
+      K_p_M,  m,  I_xx,  I_yy,  I_zz,  l_1,
+      l_2,  l_3,  l_4,  l_z,  Cl_alpha,
+      Cd_zero,  K_Cd,  Cm_alpha,  Cm_zero,
+      CL_aileron,  rho,  V,  S,  wing_chord,
+      flight_path_angle,  Beta, current_estimated_accelerations_array);
+
+    //Apply filtering to modeled accelerations:
+    for(int i = 0; i < 6; i++){
+
+      update_butterworth_2_low_pass(&current_accelerations_filtered[i], (float) current_estimated_accelerations_array[i]);
+
+
+      if(current_accelerations_filtered[i].o[0] != current_accelerations_filtered[i].o[0]){
+        float tau_indi = 1.0f / (filter_cutoff_frequency);
+        init_butterworth_2_low_pass(&current_accelerations_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
+        printf("WARNING, FILTERS %d REINITIALIZED!!!! \n",i);
+      }
+
+      current_estimated_accelerations_input[i] = (double) current_accelerations_filtered[i].o[0];
+    }
+
+    Cascaded_nonlinear_TestFlight(m_failure_ID,  K_p_T,  K_p_M,  m,  I_xx,
                               I_yy,  I_zz,  l_1,  l_2,  l_3,  l_4,
                               l_z,  Phi,  Theta,  Omega_1,  Omega_2,
                               Omega_3,  Omega_4,  b_1,  b_2,  b_3,
@@ -642,7 +592,7 @@ Cascaded_nonlinear_TestFlight(m_failure_ID,  K_p_T,  K_p_M,  m,  I_xx,
                               r_body_current,  p_dot_current,  q_dot_current,
                               r_dot_current,  phi_current,  theta_current,
                               theta_gain,  phi_gain,  p_body_gain,  q_body_gain,
-                              r_body_gain,  des_psi_dot, current_estimated_accelerations_array_filtered_copy_local,  u_out,
+                              r_body_gain,  des_psi_dot, current_estimated_accelerations_input,  u_out,
                               residuals,  gradient,  &cost,
                               &elapsed_time,  &N_iterations,  &N_evaluation,
                               &exitflag);
@@ -650,7 +600,7 @@ Cascaded_nonlinear_TestFlight(m_failure_ID,  K_p_T,  K_p_M,  m,  I_xx,
     //Wait until time is not at least refresh_time_optimizer
     while(((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec)) < refresh_time_optimizer*1e6){gettimeofday(&current_time, NULL);}
 
-    // printf(" Elapsed_time_optimization_run_uS = %f \n",(float) ((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec)));
+    //  printf(" Elapsed_time_optimization_run_uS = %f \n",(float) ((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec)));
 
     //Reset waiting timer: 
     gettimeofday(&time_last_opt_run, NULL);
@@ -664,9 +614,9 @@ Cascaded_nonlinear_TestFlight(m_failure_ID,  K_p_T,  K_p_M,  m,  I_xx,
     myam7_data_out_copy_internal.az_3_cmd_int = (int16_T) (u_out[10]*1e2*180/M_PI), myam7_data_out_copy_internal.az_4_cmd_int = (int16_T) (u_out[11]*1e2*180/M_PI);
     myam7_data_out_copy_internal.theta_cmd_int = (int16_T) (u_out[12]*1e2*180/M_PI), myam7_data_out_copy_internal.phi_cmd_int = (int16_T) (u_out[13]*1e2*180/M_PI);
     myam7_data_out_copy_internal.ailerons_cmd_int = (int16_T) (u_out[14]*1e2*180/M_PI);
-    myam7_data_out_copy_internal.residual_ax_int = (int16_T) (residuals[0]*1e2), myam7_data_out_copy_internal.residual_ay_int = (int16_T) (residuals[1]*1e2);
-    myam7_data_out_copy_internal.residual_az_int = (int16_T) (residuals[2]*1e2), myam7_data_out_copy_internal.residual_p_dot_int = (int16_T) (residuals[3]*1e1*180/M_PI);
-    myam7_data_out_copy_internal.residual_q_dot_int = (int16_T) (residuals[4]*1e1*180/M_PI), myam7_data_out_copy_internal.residual_r_dot_int = (int16_T) (residuals[5]*1e1*180/M_PI);
+    myam7_data_out_copy_internal.residual_ax_int = (int16_T) (current_accelerations_filtered[0].o[0]*1e2), myam7_data_out_copy_internal.residual_ay_int = (int16_T) (current_accelerations_filtered[1].o[0]*1e2);
+    myam7_data_out_copy_internal.residual_az_int = (int16_T) (current_accelerations_filtered[2].o[0]*1e2), myam7_data_out_copy_internal.residual_p_dot_int = (int16_T) (current_accelerations_filtered[3].o[0]*1e1*180/M_PI);
+    myam7_data_out_copy_internal.residual_q_dot_int = (int16_T) (current_accelerations_filtered[4].o[0]*1e1*180/M_PI), myam7_data_out_copy_internal.residual_r_dot_int = (int16_T) (current_accelerations_filtered[5].o[0]*1e1*180/M_PI);
     myam7_data_out_copy_internal.n_iteration = (uint16_T) (N_iterations), myam7_data_out_copy_internal.exit_flag_optimizer = (int16_T) (exitflag);
     myam7_data_out_copy_internal.elapsed_time_us = (uint16_T) (elapsed_time * 1e6), myam7_data_out_copy_internal.n_evaluation = (uint16_T) (N_evaluation);
 
@@ -741,8 +691,8 @@ Cascaded_nonlinear_TestFlight(m_failure_ID,  K_p_T,  K_p_M,  m,  I_xx,
       printf(" min_phi_hard = %f \n",(float) min_phi_hard);
       printf(" max_phi_hard = %f \n",(float) max_phi_hard);
 
-      printf(" input_periodic_frequency_in = %f \n",(float) input_periodic_frequency_in);
-      printf(" filter_cutoff_frequency_in = %f \n",(float) filter_cutoff_frequency_in);
+      printf(" refresh_time_optimizer = %f \n",(float) refresh_time_optimizer);
+      printf(" filter_cutoff_frequency = %f \n",(float) filter_cutoff_frequency);
 
       printf("\n REAL TIME VARIABLES IN------------------------------------------------------ \n"); 
       printf(" Phi_deg = %f \n",(float) Phi*180/M_PI);
@@ -798,12 +748,12 @@ Cascaded_nonlinear_TestFlight(m_failure_ID,  K_p_T,  K_p_M,  m,  I_xx,
 
       printf(" des_psi_dot_deg_s = %f \n",(float) des_psi_dot*180/M_PI);
 
-      printf(" Filtered modeled accelerations[0] = %f \n",(float) current_estimated_accelerations_array_filtered_copy_local[0]);
-      printf(" Filtered modeled accelerations[1] = %f \n",(float) current_estimated_accelerations_array_filtered_copy_local[1]);
-      printf(" Filtered modeled accelerations[2] = %f \n",(float) current_estimated_accelerations_array_filtered_copy_local[2]);
-      printf(" Filtered modeled accelerations[3] = %f \n",(float) current_estimated_accelerations_array_filtered_copy_local[3]);
-      printf(" Filtered modeled accelerations[4] = %f \n",(float) current_estimated_accelerations_array_filtered_copy_local[4]);
-      printf(" Filtered modeled accelerations[5] = %f \n",(float) current_estimated_accelerations_array_filtered_copy_local[5]);
+      printf(" Filtered modeled accelerations[0] = %f \n",(float) current_accelerations_filtered[0].o[0]);
+      printf(" Filtered modeled accelerations[1] = %f \n",(float) current_accelerations_filtered[1].o[0]);
+      printf(" Filtered modeled accelerations[2] = %f \n",(float) current_accelerations_filtered[2].o[0]);
+      printf(" Filtered modeled accelerations[3] = %f \n",(float) current_accelerations_filtered[3].o[0]);
+      printf(" Filtered modeled accelerations[4] = %f \n",(float) current_accelerations_filtered[4].o[0]);
+      printf(" Filtered modeled accelerations[5] = %f \n",(float) current_accelerations_filtered[5].o[0]);
 
       printf("\n REAL TIME VARIABLES OUT------------------------------------------------------ \n"); 
       printf(" motor_1_cmd_rad_s = %f \n",(float) u_out[0]);
