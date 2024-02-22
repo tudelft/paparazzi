@@ -424,15 +424,15 @@
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
     <!-- ball bearings vehicle -->
-    <define name="SERVO_EL_1_ZERO_VALUE" value="-2.1" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="-12.5" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="2.28" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="-3.33" unit="deg"/>
     <define name="SERVO_EL_3_ZERO_VALUE" value="0.52" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="-0.17" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="16.43" unit="deg"/>
 
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="4.4" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="-5.44" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="-6.06" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="2.02" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="5.71" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="-7.99" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="-7.82" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="0.43" unit="deg"/>
 
     <define name="MAX_THETA_INDI" value="50" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
