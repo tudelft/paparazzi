@@ -492,11 +492,11 @@
     <define VALUE="0.02" NAME="W_DV_5"/>
     <define VALUE="0.02" NAME="W_DV_6"/> -->
     
-    <define VALUE="0.05" NAME="W_DV_1"/>
-    <define VALUE="0.05" NAME="W_DV_2"/>
-    <define VALUE="0.05" NAME="W_DV_3"/>
-    <define VALUE="0.1" NAME="W_DV_4"/>
-    <define VALUE="0.1" NAME="W_DV_5"/>
+    <define VALUE="0.15" NAME="W_DV_1"/>
+    <define VALUE="0.15" NAME="W_DV_2"/>
+    <define VALUE="0.15" NAME="W_DV_3"/>
+    <define VALUE="0.05" NAME="W_DV_4"/>
+    <define VALUE="0.05" NAME="W_DV_5"/>
     <define VALUE="0.05" NAME="W_DV_6"/>
 
     <define VALUE="0.5e-6" NAME="GAMMA_QUADRATIC_DU"/>
