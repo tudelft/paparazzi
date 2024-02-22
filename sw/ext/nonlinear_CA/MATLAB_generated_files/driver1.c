@@ -20,6 +20,7 @@
 #include "test_exit.h"
 #include <math.h>
 #include <string.h>
+#include "toc.h"
 
 /* Function Definitions */
 /*
@@ -234,7 +235,7 @@ void c_driver(const double lb[15], const double ub[15], n_struct_T *TrialState,
         int exitg1;
         do {
           exitg1 = 0;
-          if (TrialState->FunctionEvaluations < 100) {
+          if (TrialState->FunctionEvaluations < 10000 && toc() < first_opt_iter_max_time) {
             if (evalWellDefined &&
                 (phi_alpha <=
                  MeritFunction->phi +
@@ -558,7 +559,7 @@ void d_driver(const double lb[13], const double ub[13], p_struct_T *TrialState,
         int exitg1;
         do {
           exitg1 = 0;
-          if (TrialState->FunctionEvaluations < 90) {
+          if (TrialState->FunctionEvaluations < 10000 && toc() < second_opt_iter_max_time) {
             if (evalWellDefined &&
                 (phi_alpha <=
                  MeritFunction->phi +
