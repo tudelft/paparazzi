@@ -12,7 +12,10 @@
     <waypoint name="SOAR" x="0.0" y="2.3" />
     <waypoint name="H1" x="0.0" y="25.0"/>
     <waypoint name="BACKUP" x="0.0" y="3.0"/>
-    <waypoint alt="3.4" name="S1_WP" x="0.0" y="2.0" />
+    <waypoint alt="3.1" name="S1_WP" x="0.0" y="2.0" />
+    <waypoint alt="2.832067" name="S2_WP" x="0.0" y="1.816429" />
+    <waypoint alt="2.95" name="S3_WP" x="0.0" y="1.82" />
+    <waypoint alt="2.95" name="S4_WP" x="0.0" y="1.72" />
     <waypoint name="CLIMB" x="-3" y="3"/>
     <waypoint name="GF1" x="-5" y="15"/>
     <waypoint name="GF2" x="-5" y="-15"/>
@@ -109,6 +112,27 @@
       <go wp="S1_WP"/>
       <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
       <stay wp="S1_WP"/>
+    </block>
+    <block name="STAY_WP_S2_SOAR">
+      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+      <go wp="S2_WP"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+      <stay wp="S2_WP"/>
+    </block>
+    <block name="STAY_WP_S3_UP">
+      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+      <go wp="S3_WP"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+      <stay wp="S3_WP"/>
+    </block>
+    <block name="STAY_WP_S4_BACK">
+      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+      <go wp="S4_WP"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+      <stay wp="S4_WP"/>
     </block>
     <block name="ReturnStbyThrottle">
       <exception cond="And(!(radio_control.status == RC_REALLY_LOST), And(InsideGeofence(GetPosX(), GetPosY()), And(MoreThan(GetPosAlt(), GetAltRef() + 20), LessThan(GetPosAlt(), GetAltRef() + 70))))" deroute="Standby"/>

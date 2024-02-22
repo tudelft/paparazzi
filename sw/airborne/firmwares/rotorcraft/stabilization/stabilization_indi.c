@@ -272,6 +272,12 @@ float g1[INDI_OUTPUTS][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL,
 #endif
 #endif
 
+#ifdef GUIDANCE_INDI_MIN_THROTTLE
+float guidance_indi_min_throttle = GUIDANCE_INDI_MIN_THROTTLE;
+#else
+float guidance_indi_min_throttle = 0.0;
+#endif
+
 float g1g2[INDI_OUTPUTS][INDI_NUM_ACT];
 float g1_est[INDI_OUTPUTS][INDI_NUM_ACT];
 float g2_est[INDI_NUM_ACT];
@@ -816,9 +822,9 @@ void WEAK stabilization_indi_set_wls_settings(float use_increment)
     if (!act_is_servo[i]) {
       if ((guidance_h.mode == GUIDANCE_H_MODE_HOVER) || (guidance_h.mode == GUIDANCE_H_MODE_NAV)) {
         if (airspeed < STABILIZATION_INDI_THROTTLE_LIMIT_AIRSPEED_FWD) {
-          du_min_stab_indi[i] = GUIDANCE_INDI_MIN_THROTTLE - use_increment * actuator_state_filt_vect[i];
+          du_min_stab_indi[i] = guidance_indi_min_throttle - use_increment * actuator_state_filt_vect[i];
         } else {
-          du_min_stab_indi[i] = GUIDANCE_INDI_MIN_THROTTLE_FWD - use_increment * actuator_state_filt_vect[i];
+          du_min_stab_indi[i] = guidance_indi_min_throttle - use_increment * actuator_state_filt_vect[i];
         }
       }
     }

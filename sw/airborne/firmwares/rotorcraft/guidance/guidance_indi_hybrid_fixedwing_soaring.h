@@ -88,6 +88,9 @@ struct SoaringPositionMap {
 extern bool move_wp_body_is_ned;
 extern bool reset_stdby_after_timeout;
 extern bool reset_unreachable_wp;
+extern bool guidance_indi_soaring_use_aoa;
+extern bool guidance_indi_soaring_use_drag;
+extern float pitch_eff_scale;
 
 extern float guidance_soaring_max_throttle;
 extern bool speed_sp_from_position;

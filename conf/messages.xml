@@ -502,6 +502,10 @@
          <field name="sp_accel_y" type="float"/>
          <field name="sp_accel_z" type="float"/>
          <field name="heading_sp" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
+         <field name="aoa" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
+         <field name="L" type="float" />
+         <field name="Ld" type="float" />
+         <field name="Dd" type="float" />
      </message>
 
     <message name="VISION_OUTBACK" id="58">

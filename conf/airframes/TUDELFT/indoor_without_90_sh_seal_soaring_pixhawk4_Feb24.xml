@@ -279,12 +279,20 @@ NOTES:
         <!--function of the form: A + B*airspeed^2-->
         <!--        scaled (1000)-->
         <!--      tune from 1 and 2 -->
-        <define name="CE_PITCH_A" value="0.68"/>
-        <define name="CE_PITCH_B" value="0.04697"/>
-        <define name="CE_YAW_A" value="0.517310"/>
-        <define name="CE_YAW_B" value="0.01511938"/>
-        <define name="CE_ROLL_A" value="0.3027970"/>
-        <define name="CE_ROLL_B" value="0.0162179"/>
+<!--        <define name="CE_PITCH_A" value="0.68"/>-->
+<!--        <define name="CE_PITCH_B" value="0.04697"/>-->
+<!--        <define name="CE_YAW_A" value="0.517310"/>-->
+<!--        <define name="CE_YAW_B" value="0.01511938"/>-->
+<!--        <define name="CE_ROLL_A" value="0.3027970"/>-->
+<!--        <define name="CE_ROLL_B" value="0.0162179"/>-->
+
+          <!-- tuned OJF with elev extention -->
+          <define name="CE_PITCH_A" value="0.7"/>
+          <define name="CE_PITCH_B" value="0.062"/>
+          <define name="CE_ROLL_A" value="0.3027970"/>
+          <define name="CE_ROLL_B" value="0.018"/>
+          <define name="CE_YAW_A" value="0.517310"/>
+          <define name="CE_YAW_B" value="0.01511938"/>
 
         <define name="CTRL_EFFECTIVENESS_SEND_SCHEDULING_MSG" value="1"/>
       </module>
@@ -325,7 +333,7 @@ NOTES:
             <define name="AOA_T4_SERVO_ID" value="8"/>
             <define name="AOA_T4_OFFSET" value="-0.7647"/>    <!-- in rad -->
             <define name="AOA_T4_SIGN" value="-1"/>
-            <define name="AOA_T4_USE_LOWPASS_FILTER" value="FALSE"/>
+            <define name="AOA_T4_USE_LOWPASS_FILTER" value="TRUE"/>
             <define name="AOA_T4_LOWPASS_TAU" value="0.15"/>
         </module>
         <define name="USE_AOA" value="TRUE"/>
@@ -663,9 +671,9 @@ NOTES:
 <define name="MAG_Y_SENS" value="12.287988831201192" integer="16"/>
 <define name="MAG_Z_SENS" value="12.547961807462235" integer="16"/>-->
 
-    <define name="BODY_TO_IMU_PHI" value="0" unit="deg"/>
-    <define name="BODY_TO_IMU_THETA" value="0" unit="deg"/>
-    <define name="BODY_TO_IMU_PSI" value="0.0" unit="deg"/>
+    <define name="BODY_TO_IMU_PHI" value="0." unit="deg"/>
+    <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
+    <define name="BODY_TO_IMU_PSI" value="0." unit="deg"/>
 
 
     <!-- TODO: Calibrate ASAP as a Mag is in board -->
@@ -732,20 +740,20 @@ NOTES:
         <define name="G1_ROLL"        value="{4.0, -4.0,    0,   0,    0}"/>
         <define name="G1_PITCH"       value="{0,  0,    4.2,     0,     0}"/>
         <define name="G1_YAW"         value="{    0,     0,    0, 2.6,  0}"/>
-        <define name="G1_THRUST"      value="{    0,     0,  0,   0,   1.1}"/>
+        <define name="G1_THRUST"      value="{    0,     0,  0,   0,   2.5}"/>
 
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{0, 0, 0, 0, 0}"/>
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="80.0"/>
-    <define name="REF_ERR_Q" value="60.0"/>
-    <define name="REF_ERR_R" value="80.0"/>
+    <define name="REF_ERR_P" value="85"/>
+    <define name="REF_ERR_Q" value="65"/>
+    <define name="REF_ERR_R" value="80"/>
 <!--      <define name="REF_ERR_P" value="70.0"/>-->
 <!--      <define name="REF_ERR_Q" value="120.0"/>-->
 <!--      <define name="REF_ERR_R" value="90.0"/>-->
-    <define name="REF_RATE_P" value="16.0"/>
-    <define name="REF_RATE_Q" value="16.0"/>
+    <define name="REF_RATE_P" value="16.5"/>
+    <define name="REF_RATE_Q" value="17.5"/>
     <define name="REF_RATE_R" value="15.0"/>
 
     <!--Maxium yaw rate, to avoid instability-->
@@ -764,6 +772,9 @@ NOTES:
     <define name="USE_ADAPTIVE" value="FALSE"/>
     <define name="ADAPTIVE_MU" value="0.0001"/>
       <define name="PUBLISH_ATTITUDE" value="TRUE"/>
+
+<!--    <define name="WLS_PRIORITIES" value="{1.0, 100.0, 1.0}"/>-->
+
   </section>
 
   <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
@@ -802,12 +813,12 @@ NOTES:
   </section>
 
   <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
-      <define name="POS_GAIN" value="0.4"/>
-      <define name="POS_GAINY" value="1.2"/>
+      <define name="POS_GAIN" value="2.0"/>
+      <define name="POS_GAINY" value="1.0"/>
       <define name="POS_GAINZ" value="0.4"/>
-      <define name="SPEED_GAIN" value="0.7"/>
-      <define name="SPEED_GAINY" value="1.0"/>
-      <define name="SPEED_GAINZ" value="0.8"/>  <!-- 0.2? -->
+      <define name="SPEED_GAIN" value="3.2"/>
+      <define name="SPEED_GAINY" value="1.8"/>
+      <define name="SPEED_GAINZ" value="1.2"/>  <!-- 0.2? -->
       <define name="MAX_AIRSPEED" value="12."/>     <!--THIS IS *CRUISE* AISPEED!!! -->
       <define name="ZERO_AIRSPEED" value="FALSE"/>
       <define name="NAV_SPEED_MARGIN" value="8.0"/>
@@ -816,17 +827,18 @@ NOTES:
       <define name="HEADING_BANK_GAIN" value="8."/>
       <!--define name="SPECIFIC_FORCE_GAIN" value="-1300."/-->
       <!--define name="THRUST_DYNAMICS" value="0.04"/-->
-      <define name="MIN_THROTTLE" value="0.0"/>
-      <define name="MIN_THROTTLE_FWD" value="0.0"/>
+      <define name="MIN_THROTTLE" value="288"/>
+      <define name="MIN_THROTTLE_FWD" value="288"/>
       <define name="MIN_PITCH" value="-30."/>
       <define name="MAX_PITCH" value="30."/>
     <define name="MIN_ACC_SP" value="-4.5"/>  <!-- min and max acc sp; MIN is upward, MAX is downward -->
     <define name="MAX_ACC_SP" value="4.0"/>
+      <define name="LIFTD_ASQ" value="0.35"/>
 
       <define name="HYBRID_USE_WLS" value="TRUE"/>
       <define name="HYBRID_USE_OLD_WLS" value="TRUE"/>  <!-- define this to use the old version -->
-      <define name="HYBRID_WLS_PRIORITIES" value="{1.0, 100.0, 1.0}"/>
-<!--      <define name="HYBRID_WU" value="{1.0, 1.0, 6.5}" />-->
+      <define name="HYBRID_WLS_PRIORITIES" value="{3.0, 10.0, 1.0}"/>
+      <define name="HYBRID_WLS_WU" value="{1.0, 50.0, 1.0}" />
 
       <!--    SOARING-->
     <define name="PREF_THROTTLE" value="-0.01"/>
@@ -839,22 +851,22 @@ NOTES:
     <define name="POS_CTRL" value="TRUE"/>
     <define name="Y_POSITION_CTRL" value="TRUE"/>
 
-    <define name="SOARING_STEP_BIG" value="0.3"/>
-    <define name="SOARING_STEP_MED" value="0.2"/>
-    <define name="SOARING_STEP_SMALL" value="0.1"/>
-    <define name="SOARING_STEP_FINE" value="0.05"/>
+    <define name="SOARING_STEP_BIG" value="0.15"/>
+    <define name="SOARING_STEP_MED" value="0.10"/>
+    <define name="SOARING_STEP_SMALL" value="0.06"/>
+    <define name="SOARING_STEP_FINE" value="0.03"/>
 
     <define name="SOARING_WP_ARRIVAL_DIST" value="3"/>  <!-- in meters, 3d dist-->
     <define name="SOARING_WP_STAY_DURATION" value="10"/> <!-- WP arrival count -->
     <define name="SOARING_WP_WAIT_SEC" value="30"/> <!-- in sec, timeout for unreachable WP -->
-    <define name="SOARING_MIN_ALT" value="1"/> <!-- minimum altitude for moving WP -->
+    <define name="SOARING_MIN_ALT" value="2.4"/> <!-- minimum altitude for moving WP -->
 
     <define name="SOARING_USE_FIXED_HEADING_WP" value="TRUE" /> <!-- use wp to set heading sp, -->
     <define name="SOARING_HEADING_GAIN" value="0.1" />
 
       <!-- 100 steps * 30 sec = 3000 sec = 50 min (maximum) -->
       <!-- 100 steps * 10 sec = 1000 sec = 16.6 min -->
-    <define name="SOARING_MAX_EXPLORATION_STEPS" value="100" /> <!-- max search steps -->
+    <define name="SOARING_MAX_EXPLORATION_STEPS" value="200" /> <!-- max search steps -->
     <define name="SOARING_WP_COST_THRES" value="60"/>
 
     <!-- define WP ids -->

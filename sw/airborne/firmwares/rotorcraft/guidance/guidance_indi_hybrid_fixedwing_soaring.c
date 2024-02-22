@@ -267,9 +267,29 @@
 #define GUIDANCE_INDI_SOARING_RESET_UNREACHABLE_WP TRUE
 #endif
 
+// Use AOA to calculate G1
+#ifndef GUIDANCE_INDI_SOARING_USE_AOA
+#define GUIDANCE_INDI_SOARING_USE_AOA FALSE
+#endif
+#ifndef GUIDANCE_INDI_SOARING_USE_DRAG
+#define GUIDANCE_INDI_SOARING_USE_DRAG FALSE
+#endif
+
+#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
+#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
+#endif
+
 // 2m/0.1 = 20 data points for one axis
 #define MAP_MAX_NUM_POINTS 400
 
+//temp vars for logging
+float L;
+float Ld;
+float Dd;
+
+float pitch_eff_scale = GUIDANCE_INDI_PITCH_EFF_SCALING;
+bool guidance_indi_soaring_use_drag = GUIDANCE_INDI_SOARING_USE_DRAG;
+bool guidance_indi_soaring_use_aoa = GUIDANCE_INDI_SOARING_USE_AOA;
 bool reset_unreachable_wp = GUIDANCE_INDI_SOARING_RESET_UNREACHABLE_WP;
 bool reset_stdby_after_timeout = GUIDANCE_INDI_SOARING_RESET_STDBY_AFTER_N_SEC;
 bool move_wp_body_is_ned = GUIDANCE_INDI_SOARING_BODY_IS_NED;
@@ -380,12 +400,18 @@ void guidance_indi_hybrid_soaring_reset(void);
 void guidance_indi_soaring_reset_stby_wp(void);
 void guidance_indi_soaring_reset_soaring_wp(void);
 
+float guidance_indi_soaring_get_lift(float aoa, float airspeed, float Q);
+float guidance_indi_soaring_get_liftd(float aoa, float airspeed, float Q);
+float guidance_indi_soaring_get_drag(float aoa, float airspeed, float Q);
+float guidance_indi_soaring_get_dragd(float aoa, float airspeed, float Q);
+
 #define DEG2RAD 0.017
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
 static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_device *dev)
 {
+    float aoa = stateGetAngleOfAttack_f();
     // publish only additional information (+indi_hybrid)
     // roll/theta/psi, thrust, pos err + spd sp
   pprz_msg_send_GUIDANCE_INDI_HYBRID_SOARING(trans, dev, AC_ID,
@@ -398,7 +424,9 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
                               &accel_sp.x,
                               &accel_sp.y,
                               &accel_sp.z,
-                              &soaring_heading_sp
+                              &soaring_heading_sp,
+                              &aoa,
+                              &L, &Ld, &Dd
                               );
 }
 static void send_soaring_wp_map(struct transport_tx *trans, struct link_device *dev)
@@ -756,6 +784,47 @@ struct FloatVect3 compute_soaring_accel_sp(struct HorizontalGuidance *gh, struct
     return accel_sp;
 }
 
+float guidance_indi_soaring_get_lift(float aoa, float airspeed, float Q) {
+    float c_lift = 0.0;
+    if (aoa < -0.5236) {            // -30 deg;
+        c_lift = 0.85+5.0*aoa;
+    } else if (aoa < 0.1222) {      // 7 deg;   0 at -22 deg
+        c_lift = 0.85+2.1*aoa;
+    } else {
+        c_lift = 1.10662-3.275*aoa;     // 0 at 20 deg
+    }
+
+    return -c_lift*Q*airspeed*airspeed;
+}
+
+float guidance_indi_soaring_get_liftd(float aoa, float airspeed, float Q) {
+    float c_liftd = 0.0;
+    if (aoa < -0.5236) {
+        c_liftd = 5.0;
+    } else if (aoa < 0.1222) {      // 7 deg;
+        c_liftd = 2.1;
+    } else {
+        c_liftd = -3.275;
+    }
+    return -c_liftd*Q*airspeed*airspeed;
+}
+
+float guidance_indi_soaring_get_drag(float aoa, float airspeed, float Q) {
+    float c_drag = 0.0;
+//    2.2077    0.9591    0.0076
+//    if (aoa < -1.57) {
+//    } else if (aoa > 1.57) {
+//    } else {
+        c_drag = 2.2077*aoa*aoa + 0.9591*aoa + 0.0076;
+//    }
+    return -c_drag*Q*airspeed*airspeed;
+}
+
+float guidance_indi_soaring_get_dragd(float aoa, float airspeed, float Q) {
+    float c_dragd = 0.0;
+    c_dragd = 2*2.2077*aoa + 0.9591;
+    return -c_dragd*Q*airspeed*airspeed;
+}
 
 /**
  * Calculate the matrix of partial derivatives of the roll, pitch and thrust
@@ -783,9 +852,9 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
     float cpsi = cosf(eulers_zxy.psi);
     //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
 
-#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
-#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
-#endif
+//#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
+//#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
+//#endif
 
     /*Amount of lift produced by the wing*/
     float pitch_lift = eulers_zxy.theta;
@@ -795,14 +864,15 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
 
     // get the derivative of the lift wrt to theta
 //    float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
-    float liftd = -24.0;    // FIXME
+//    float liftd = -24.0;    // FIXME
+    float liftd = -gih_params.liftd_asq*airspeed*airspeed;
 
     Gmat[0][0] =  cphi*ctheta*spsi*T + cphi*spsi*lift;
     Gmat[1][0] = -cphi*ctheta*cpsi*T - cphi*cpsi*lift;
     Gmat[2][0] = -sphi*ctheta*T -sphi*lift;
-    Gmat[0][1] = (ctheta*cpsi - sphi*stheta*spsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
-    Gmat[1][1] = (ctheta*spsi + sphi*stheta*cpsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
-    Gmat[2][1] = -cphi*stheta*T*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+    Gmat[0][1] = (ctheta*cpsi - sphi*stheta*spsi)*T*pitch_eff_scale + sphi*spsi*liftd;
+    Gmat[1][1] = (ctheta*spsi + sphi*stheta*cpsi)*T*pitch_eff_scale - sphi*cpsi*liftd;
+    Gmat[2][1] = -cphi*stheta*T*pitch_eff_scale + cphi*liftd;
     Gmat[0][2] = stheta*cpsi + sphi*ctheta*spsi;
     Gmat[1][2] = stheta*spsi - sphi*ctheta*cpsi;
     Gmat[2][2] = cphi*ctheta;
@@ -827,45 +897,65 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
     float cpsi = cosf(eulers_zxy.psi);
     //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
 
-#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
-#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
-#endif
+//#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
+//#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
+//#endif
 
     /*Amount of lift produced by the wing*/
     float pitch_lift = eulers_zxy.theta;
 //    Bound(pitch_lift,-M_PI_2,0);
     float lift = -cosf(pitch_lift)*9.81;
     float T = sinf(pitch_lift)*9.81;
+    float drag = -sinf(pitch_lift)*9.81;
+
+    float airspeed = stateGetAirspeed_f();
+    float Q = 0.1574;       // 0.5 rho S
+    float aoa = stateGetAngleOfAttack_f();      // in rad
+    if (airspeed < 7.0) {
+        // AOA sensor only works when airspeed > 7m/s
+        // below that, use pitch
+        aoa = pitch_lift;
+    }
 
     // get the derivative of the lift wrt to theta
 //    float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
-    float liftd = -24.0;    // FIXME
-
+//    float liftd = -24.0;    // FIXME
+    float liftd = -gih_params.liftd_asq*airspeed*airspeed;
+    float dragd = -2*2.2077*pitch_lift*Q*airspeed*airspeed;
 
     // Calculate Cl, Cd, liftd and dragd
-//    clalpha = getClAlpha(alpha);
-//    cdalpha = getCdAlpha(alpha);
-//    Cld = getCld(alpha);
-//    Cdd = getCdd(alpha);
-//
-//    Ld = -qS*((ctheta-stheta)*clalpha + (ctheta+stheta)*Cld);
-//    Dd = -qS*((stheta-ctheta)*cdalpha + (ctheta+stheta)*Cdd);
+    if (guidance_indi_soaring_use_aoa) {
+        lift = guidance_indi_soaring_get_lift(aoa, airspeed, Q);
+        liftd = guidance_indi_soaring_get_liftd(aoa, airspeed, Q);
+
+        drag = guidance_indi_soaring_get_drag(aoa, airspeed, Q);
+        dragd = guidance_indi_soaring_get_dragd(aoa, airspeed, Q);
+    }
+
+    // update vars for logging
+    L = lift;
+    Ld = liftd;
+    Dd = dragd;
 
     // Gt + Gl
     Gmat[0][0] = -spsi*cphi*stheta*T + spsi*cphi*lift;
     Gmat[1][0] = cpsi*cphi*stheta*T - cpsi*cphi*lift;
     Gmat[2][0] = sphi*stheta*T - sphi*lift;
-    Gmat[0][1] = (-stheta*cpsi-spsi*sphi*ctheta)*T*GUIDANCE_INDI_PITCH_EFF_SCALING + spsi*sphi*liftd;
-    Gmat[1][1] = (-spsi*stheta+cpsi*sphi*ctheta)*T*GUIDANCE_INDI_PITCH_EFF_SCALING - cpsi*sphi*liftd;
-    Gmat[2][1] = -cphi*ctheta*T*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+    Gmat[0][1] = (-stheta*cpsi-spsi*sphi*ctheta)*T*pitch_eff_scale + spsi*sphi*liftd;
+    Gmat[1][1] = (-spsi*stheta+cpsi*sphi*ctheta)*T*pitch_eff_scale - cpsi*sphi*liftd;
+    Gmat[2][1] = -cphi*ctheta*T*pitch_eff_scale + cphi*liftd;
     Gmat[0][2] = cpsi*ctheta - spsi*sphi*stheta;
     Gmat[1][2] = spsi*ctheta + cpsi*sphi*stheta;
     Gmat[2][2] = -cphi*stheta;
 
     // Gd, just in case
+    if (guidance_indi_soaring_use_drag) {
+        Gmat[0][1] += -cpsi*dragd;
+        Gmat[1][1] += -spsi*dragd;
 //    [0][1] = -cpsi*Dd;
 //    [1][1] = -spsi*Dd;
 //    0 for others
+    }
 
     v_gih[0] = a_diff.x;
     v_gih[1] = a_diff.y;

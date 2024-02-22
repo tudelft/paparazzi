@@ -116,7 +116,7 @@ void aoa_t4_init(void)
 
 void aoa_t4_update(void)
 {
-#ifdef USE_AIRSPEED_LOWPASS_FILTER
+#if AOA_T4_USE_LOWPASS_FILTER
     aoa_t4.angle = update_butterworth_2_low_pass(&aoa_t4_lowpass_filter, (aoa_t4.sign*aoa_t4.angle_raw)+aoa_t4.offset);
 #else
     aoa_t4.angle = (aoa_t4.sign*aoa_t4.angle_raw)+aoa_t4.offset;
