@@ -21,6 +21,7 @@
 #include "rt_nonfinite.h"
 #include <math.h>
 #include <string.h>
+#include "toc.h"
 
 /* Function Definitions */
 /*
@@ -324,10 +325,10 @@ void b_test_exit(s_struct_T *Flags, h_struct_T *memspace,
           guard1 = true;
         }
         if (guard1) {
-          if (TrialState->sqpIterations >= 40) {
+          if (TrialState->sqpIterations >= 4000 || toc() >= first_opt_iter_max_time) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
-          } else if (TrialState->FunctionEvaluations >= 100) {
+          } else if (TrialState->FunctionEvaluations >= 10000) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
           }
@@ -758,10 +759,10 @@ void d_test_exit(s_struct_T *Flags, k_struct_T *memspace,
           guard1 = true;
         }
         if (guard1) {
-          if (TrialState->sqpIterations >= 35) {
+          if (TrialState->sqpIterations >= 4000 || toc() >= second_opt_iter_max_time) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
-          } else if (TrialState->FunctionEvaluations >= 90) {
+          } else if (TrialState->FunctionEvaluations >= 10000) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
           }

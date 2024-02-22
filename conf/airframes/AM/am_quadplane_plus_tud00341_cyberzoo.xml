@@ -325,9 +325,9 @@
     <define name="INDI_REF_ERR_Z" value="0.25"/>
 
     <!-- INDI derivative gains -->
-    <define name="INDI_REF_RATE_P" value="6"/>
-    <define name="INDI_REF_RATE_Q" value="6"/>
-    <define name="INDI_REF_RATE_R" value="5"/>
+    <define name="INDI_REF_RATE_P" value="3"/>
+    <define name="INDI_REF_RATE_Q" value="3"/>
+    <define name="INDI_REF_RATE_R" value="2"/>
 
     <define name="INDI_REF_RATE_X" value="5"/>
     <define name="INDI_REF_RATE_Y" value="5"/>
@@ -471,15 +471,15 @@
     <define name="W_ACT_PHI_CONST" value="100"/>
     <define name="W_ACT_PHI_SPEED" value="-15"/> -->
 
-    <define name="W_ACT_MOTOR_CONST" value="40"/>
+    <define name="W_ACT_MOTOR_CONST" value="20"/>
     <define name="W_ACT_MOTOR_SPEED" value="0"/>
     <define name="W_ACT_EL_CONST" value="0"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
     <define name="W_ACT_AZ_CONST" value="0"/>
     <define name="W_ACT_AZ_SPEED" value="0"/>
-    <define name="W_ACT_THETA_CONST" value="5"/>
+    <define name="W_ACT_THETA_CONST" value="50"/>
     <define name="W_ACT_THETA_SPEED" value="0"/>
-    <define name="W_ACT_PHI_CONST" value="15"/>
+    <define name="W_ACT_PHI_CONST" value="100"/>
     <define name="W_ACT_PHI_SPEED" value="0"/>
 
     <define name="W_ACT_AILERONS_CONST" value="0"/>
