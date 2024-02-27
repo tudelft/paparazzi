@@ -678,10 +678,17 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   // This term compensates for the spinup torque in the yaw axis
   float g2_times_u = float_vect_dot_product(g2, indi_u, INDI_NUM_ACT)/INDI_G_SCALING;
 
+  if (in_flight) {
+    // TODO: put limits to the commands
+  } else {
+    // Not in flight, so don't estimate disturbance
+    float_vect_zero(angular_acc_disturbance_estimate, INDI_OUTPUTS);
+  }
+
   // The control objective in array format
-  indi_v[0] = (angular_accel_ref.p - angular_acc_prediction_filt[0]);
-  indi_v[1] = (angular_accel_ref.q - angular_acc_prediction_filt[1]);
-  indi_v[2] = (angular_accel_ref.r - angular_acc_prediction_filt[2]) + g2_times_u;
+  indi_v[0] = (angular_accel_ref.p - angular_acc_disturbance_estimate[0]);
+  indi_v[1] = (angular_accel_ref.q - angular_acc_disturbance_estimate[1]);
+  indi_v[2] = (angular_accel_ref.r - angular_acc_disturbance_estimate[2]) + g2_times_u;
   indi_v[3] = v_thrust.z;
 #if INDI_OUTPUTS == 5
   indi_v[4] = v_thrust.x;
@@ -690,10 +697,10 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #if STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
   // Calculate the increment for each actuator
   for (i = 0; i < INDI_NUM_ACT; i++) {
-    indi_du[i] = (g1g2_pseudo_inv[i][0] * indi_v[0])
-                 + (g1g2_pseudo_inv[i][1] * indi_v[1])
-                 + (g1g2_pseudo_inv[i][2] * indi_v[2])
-                 + (g1g2_pseudo_inv[i][3] * indi_v[3]);
+    indi_u[i] = (g1g2_pseudo_inv[i][0] * indi_v[0])
+                + (g1g2_pseudo_inv[i][1] * indi_v[1])
+                + (g1g2_pseudo_inv[i][2] * indi_v[2])
+                + (g1g2_pseudo_inv[i][3] * indi_v[3]);
   }
 #else
   stabilization_indi_set_wls_settings();
@@ -703,13 +710,6 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     wls_alloc(indi_u, indi_v, u_min_stab_indi, u_max_stab_indi, Bwls, 0, 0, Wv, indi_Wu, u_pref_stab_indi, 10000, 10,
               INDI_NUM_ACT, INDI_OUTPUTS);
 #endif
-
-  if (in_flight) {
-    // TODO: put limits to the commands
-  } else {
-    // Not in flight, so don't increment
-    // float_vect_copy(indi_u, indi_du, INDI_NUM_ACT);
-  }
 
   // Bound the inputs to the actuators
   for (i = 0; i < INDI_NUM_ACT; i++) {
