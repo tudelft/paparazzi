@@ -650,17 +650,25 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
     //update thrust command such that the current is correctly estimated
     stabilization_cmd[COMMAND_THRUST] = 0;
+    float current_thrust_filt_z = 0;
     for (i = 0; i < INDI_NUM_ACT; i++) {
       stabilization_cmd[COMMAND_THRUST] += actuator_state[i] * (int32_t) act_is_thruster_z[i];
+      current_thrust_filt_z += Bwls[3][i]* actuator_lowpass_filters[i].o[0] * (int32_t) act_is_thruster_z[i];
     }
     stabilization_cmd[COMMAND_THRUST] /= num_thrusters;
 
+    v_thrust.z = current_thrust_filt_z + indi_thrust_increment.z;
+
 #if INDI_OUTPUTS == 5
     stabilization_cmd[COMMAND_THRUST_X] = 0;
+    float current_thrust_filt_x = 0;
     for (i = 0; i < INDI_NUM_ACT; i++) {
       stabilization_cmd[COMMAND_THRUST_X] += actuator_state[i] * (int32_t) act_is_thruster_x[i];
+      current_thrust_filt_x += Bwls[4][i]* actuator_lowpass_filters[i].o[0] * (int32_t) act_is_thruster_x[i];
     }
     stabilization_cmd[COMMAND_THRUST_X] /= num_thrusters_x;
+
+    v_thrust.x = current_thrust_filt_x + indi_thrust_increment.x;
 #endif
 
   } else {
@@ -668,7 +676,6 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     for (i = 0; i < INDI_NUM_ACT; i++) {
       v_thrust.z += stabilization_cmd[COMMAND_THRUST] * Bwls[3][i];
 #if INDI_OUTPUTS == 5
-     // TODO: no increment?
       stabilization_cmd[COMMAND_THRUST_X] = radio_control.values[RADIO_CONTROL_THRUST_X];
       v_thrust.x += stabilization_cmd[COMMAND_THRUST_X] * Bwls[4][i];
 #endif
