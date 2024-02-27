@@ -668,7 +668,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     for (i = 0; i < INDI_NUM_ACT; i++) {
       v_thrust.z += stabilization_cmd[COMMAND_THRUST] * Bwls[3][i];
 #if INDI_OUTPUTS == 5
-      TODO: no increment?
+     // TODO: no increment?
       stabilization_cmd[COMMAND_THRUST_X] = radio_control.values[RADIO_CONTROL_THRUST_X];
       v_thrust.x += stabilization_cmd[COMMAND_THRUST_X] * Bwls[4][i];
 #endif

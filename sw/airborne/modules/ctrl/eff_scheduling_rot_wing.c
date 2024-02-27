@@ -158,7 +158,7 @@ inline void eff_scheduling_rot_wing_update_pusher_effectiveness(void);
 inline void eff_scheduling_rot_wing_schedule_liftd(void);
 
 inline float guidance_indi_get_liftd(float pitch UNUSED, float theta UNUSED);
-inline void stabilization_indi_set_wls_settings(float use_increment);
+void stabilization_indi_set_wls_settings(void);
 
 
 /** ABI binding wing position data.
@@ -389,39 +389,16 @@ float guidance_indi_get_liftd(float pitch UNUSED, float theta UNUSED) {
   return eff_scheduling_rot_wing_lift_d;
 }
 
-void stabilization_indi_set_wls_settings(float use_increment)
+void stabilization_indi_set_wls_settings(void)
 {
    // Calculate the min and max increments
     for (uint8_t i = 0; i < INDI_NUM_ACT; i++) {
-      du_min_stab_indi[i] = -MAX_PPRZ * act_is_servo[i] - use_increment*actuator_state_filt_vect[i];
-      du_max_stab_indi[i] = MAX_PPRZ - use_increment*actuator_state_filt_vect[i];
-      du_pref_stab_indi[i] = act_pref[i] - use_increment*actuator_state_filt_vect[i];
+      u_min_stab_indi[i] = -MAX_PPRZ * act_is_servo[i];
+      u_max_stab_indi[i] = MAX_PPRZ;
+      u_pref_stab_indi[i] = act_pref[i];
       if (i == 5) {
-        du_pref_stab_indi[i] = 0; // Set change in prefered state to 0 for elevator
-        du_min_stab_indi[i] = - use_increment*actuator_state_filt_vect[i]; // cmd 0 is lowest position for elevator
+        u_pref_stab_indi[i] = actuator_state_filt_vect[i]; // Set change in prefered state to 0 for elevator
+        u_min_stab_indi[i] = 0; // cmd 0 is lowest position for elevator
       }
   }
-
-  #if ROTWING_V3B
-  float min_pprz_cmd_ail = -MAX_PPRZ;
-  if (eff_sched_var.wing_rotation_deg < 15) {
-    min_pprz_cmd_ail = 0;
-  }
-  Bound(min_pprz_cmd_ail, -9600, 0);
-
-  du_min_stab_indi[6] = min_pprz_cmd_ail - use_increment*actuators_pprz[6];
-
-  float min_pprz_cmd_flap_ail = -MAX_PPRZ;
-  if (eff_sched_var.wing_rotation_deg < 38) {
-    min_pprz_cmd_flap_ail = -1000;
-  } if (eff_sched_var.wing_rotation_deg > 50) {
-    min_pprz_cmd_flap_ail = -9600;
-  } else {
-    min_pprz_cmd_flap_ail = -5.596578906693223 * eff_sched_var.wing_rotation_deg * eff_sched_var.wing_rotation_deg * eff_sched_var.wing_rotation_deg + 654.186408367317 * eff_sched_var.wing_rotation_deg * eff_sched_var.wing_rotation_deg - 25577.0135504177 * eff_sched_var.wing_rotation_deg + 333307.855118805;
-  }
-
-  Bound(min_pprz_cmd_flap_ail, -9600, 0);
-
-  du_min_stab_indi[7] = min_pprz_cmd_flap_ail - use_increment*actuators_pprz[7];
-  #endif //ROTWING_V3B
 }
