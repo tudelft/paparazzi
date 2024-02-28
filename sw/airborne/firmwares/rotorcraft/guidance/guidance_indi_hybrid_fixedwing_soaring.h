@@ -91,6 +91,9 @@ extern bool reset_unreachable_wp;
 extern bool guidance_indi_soaring_use_aoa;
 extern bool guidance_indi_soaring_use_drag;
 extern float pitch_eff_scale;
+extern float soaring_critical_aoa;
+extern bool use_aoa_pitch_limit;
+extern bool use_aoa_pitch_pref;
 
 extern float guidance_soaring_max_throttle;
 extern bool speed_sp_from_position;

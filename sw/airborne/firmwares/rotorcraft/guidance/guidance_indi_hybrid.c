@@ -160,6 +160,9 @@ static void guidance_indi_filter_thrust(void);
 #define GUIDANCE_INDI_DESCEND_SPEED_FWD -4.0
 #endif
 
+float thr_eff_coef = 1.0;
+float pitch_sp_eff_coef = 1.0;
+
 float climb_vspeed_fwd = GUIDANCE_INDI_CLIMB_SPEED_FWD;
 float descend_vspeed_fwd = GUIDANCE_INDI_DESCEND_SPEED_FWD;
 
@@ -523,7 +526,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   thrust_vect.x = 0;
 #endif
   thrust_vect.y = 0;
-  thrust_vect.z = euler_cmd.z;
+  thrust_vect.z = euler_cmd.z*thr_eff_coef;
   AbiSendMsgTHRUST(THRUST_INCREMENT_ID, thrust_vect);
 
   //// NO TURNING OPTION for SOARING
@@ -534,7 +537,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
     // no coordinated turn craps
   guidance_euler_cmd.psi = heading_sp;
   guidance_euler_cmd.phi = roll_filt.o[0] + euler_cmd.x;
-  guidance_euler_cmd.theta = pitch_filt.o[0] + euler_cmd.y;
+  guidance_euler_cmd.theta = pitch_filt.o[0] + euler_cmd.y*pitch_sp_eff_coef;
 
   //Bound euler angles to prevent flipping
   Bound(guidance_euler_cmd.phi, -guidance_indi_max_bank, guidance_indi_max_bank);

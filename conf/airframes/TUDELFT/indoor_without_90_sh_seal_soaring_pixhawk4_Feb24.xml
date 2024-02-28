@@ -171,7 +171,7 @@ NOTES:
 <!--        <define name="SDP3X_PRESSURE_SCALE" value="1.0" description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"/>-->
 <!--        <define name="SDP3X_PRESSURE_OFFSET" value="0.0" description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)"/>-->
 <!--        <define name="SDP3X_AIRSPEED_SCALE" value="1.6327" description="quadratic scale factor to convert differential pressure to airspeed"/>-->
-        <define name="SDP3X_LOWPASS_TAU" value="0.15"/>
+        <define name="SDP3X_LOWPASS_TAU" value="0.05"/>
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
         <define name="USE_AIRSPEED" value="TRUE"/>
         <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>      <!-- sdp33 -->
@@ -288,11 +288,11 @@ NOTES:
 
           <!-- tuned OJF with elev extention -->
           <define name="CE_PITCH_A" value="0.7"/>
-          <define name="CE_PITCH_B" value="0.062"/>
+          <define name="CE_PITCH_B" value="0.072"/>
           <define name="CE_ROLL_A" value="0.3027970"/>
           <define name="CE_ROLL_B" value="0.018"/>
-          <define name="CE_YAW_A" value="0.517310"/>
-          <define name="CE_YAW_B" value="0.01511938"/>
+          <define name="CE_YAW_A" value="0.376995"/>
+          <define name="CE_YAW_B" value="0.01711938"/>
 
         <define name="CTRL_EFFECTIVENESS_SEND_SCHEDULING_MSG" value="1"/>
       </module>
@@ -334,7 +334,7 @@ NOTES:
             <define name="AOA_T4_OFFSET" value="-0.7647"/>    <!-- in rad -->
             <define name="AOA_T4_SIGN" value="-1"/>
             <define name="AOA_T4_USE_LOWPASS_FILTER" value="TRUE"/>
-            <define name="AOA_T4_LOWPASS_TAU" value="0.15"/>
+            <define name="AOA_T4_LOWPASS_TAU" value="0.05"/>
         </module>
         <define name="USE_AOA" value="TRUE"/>
 
@@ -485,7 +485,8 @@ NOTES:
             <define name="AOA_T4_OFFSET" value="0.0"/>
 <!--            <define name="AOA_T4_SIGN" value="1"/>-->
             <define name="AOA_T4_USE_LOWPASS_FILTER" value="FALSE"/>
-            <define name="AOA_T4_LOWPASS_TAU" value="0.15"/>
+            <define name="AOA_T4_LOWPASS_TAU" value="0.05"/>
+<!--            0.1~1.5HZ 0.05~3Hz 0.03 ~ 5Hz 0.02~8Hz 0.01~15Hz-->
         </module>
         <define name="USE_AOA" value="TRUE"/>
     </target>
@@ -815,7 +816,7 @@ NOTES:
   <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
       <define name="POS_GAIN" value="2.0"/>
       <define name="POS_GAINY" value="1.0"/>
-      <define name="POS_GAINZ" value="0.4"/>
+      <define name="POS_GAINZ" value="0.7"/>
       <define name="SPEED_GAIN" value="3.2"/>
       <define name="SPEED_GAINY" value="1.8"/>
       <define name="SPEED_GAINZ" value="1.2"/>  <!-- 0.2? -->
@@ -827,17 +828,17 @@ NOTES:
       <define name="HEADING_BANK_GAIN" value="8."/>
       <!--define name="SPECIFIC_FORCE_GAIN" value="-1300."/-->
       <!--define name="THRUST_DYNAMICS" value="0.04"/-->
-      <define name="MIN_THROTTLE" value="288"/>
-      <define name="MIN_THROTTLE_FWD" value="288"/>
+      <define name="MIN_THROTTLE" value="0"/>
+      <define name="MIN_THROTTLE_FWD" value="0"/>
       <define name="MIN_PITCH" value="-30."/>
-      <define name="MAX_PITCH" value="30."/>
+      <define name="MAX_PITCH" value="10."/>
     <define name="MIN_ACC_SP" value="-4.5"/>  <!-- min and max acc sp; MIN is upward, MAX is downward -->
     <define name="MAX_ACC_SP" value="4.0"/>
       <define name="LIFTD_ASQ" value="0.35"/>
 
       <define name="HYBRID_USE_WLS" value="TRUE"/>
       <define name="HYBRID_USE_OLD_WLS" value="TRUE"/>  <!-- define this to use the old version -->
-      <define name="HYBRID_WLS_PRIORITIES" value="{3.0, 10.0, 1.0}"/>
+      <define name="HYBRID_WLS_PRIORITIES" value="{1.0, 10.0, 3.0}"/>
       <define name="HYBRID_WLS_WU" value="{1.0, 50.0, 1.0}" />
 
       <!--    SOARING-->

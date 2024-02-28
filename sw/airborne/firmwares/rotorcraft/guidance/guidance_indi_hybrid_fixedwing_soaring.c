@@ -279,6 +279,11 @@
 #define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
 #endif
 
+// 0.0057 deg == 0.0001 rad
+#ifndef GUIDANCE_INDI_SOARING_CRITICAL_AOA
+#define GUIDANCE_INDI_SOARING_CRITICAL_AOA 0.095
+#endif
+
 // 2m/0.1 = 20 data points for one axis
 #define MAP_MAX_NUM_POINTS 400
 
@@ -287,6 +292,9 @@ float L;
 float Ld;
 float Dd;
 
+bool use_aoa_pitch_pref = false;
+bool use_aoa_pitch_limit = false;
+float soaring_critical_aoa = GUIDANCE_INDI_SOARING_CRITICAL_AOA;
 float pitch_eff_scale = GUIDANCE_INDI_PITCH_EFF_SCALING;
 bool guidance_indi_soaring_use_drag = GUIDANCE_INDI_SOARING_USE_DRAG;
 bool guidance_indi_soaring_use_aoa = GUIDANCE_INDI_SOARING_USE_AOA;
@@ -412,6 +420,8 @@ float guidance_indi_soaring_get_dragd(float aoa, float airspeed, float Q);
 static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_device *dev)
 {
     float aoa = stateGetAngleOfAttack_f();
+    uint8_t use_aoa = guidance_indi_soaring_use_aoa;
+    uint8_t use_drag = guidance_indi_soaring_use_drag;
     // publish only additional information (+indi_hybrid)
     // roll/theta/psi, thrust, pos err + spd sp
   pprz_msg_send_GUIDANCE_INDI_HYBRID_SOARING(trans, dev, AC_ID,
@@ -426,7 +436,10 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
                               &accel_sp.z,
                               &soaring_heading_sp,
                               &aoa,
-                              &L, &Ld, &Dd
+                              &L, &Ld, &Dd,
+                              &use_aoa,
+                              &use_drag,
+                              &soaring_critical_aoa
                               );
 }
 static void send_soaring_wp_map(struct transport_tx *trans, struct link_device *dev)
@@ -788,23 +801,26 @@ float guidance_indi_soaring_get_lift(float aoa, float airspeed, float Q) {
     float c_lift = 0.0;
     if (aoa < -0.5236) {            // -30 deg;
         c_lift = 0.85+5.0*aoa;
-    } else if (aoa < 0.1222) {      // 7 deg;   0 at -22 deg
+    } else if (aoa < soaring_critical_aoa) {      // 0.095 ..; //5.88 deg;   0 at -22 deg
         c_lift = 0.85+2.1*aoa;
     } else {
-        c_lift = 1.10662-3.275*aoa;     // 0 at 20 deg
+//        c_lift = 1.1451-1.006596*aoa;     // 0 at 20 deg
+        c_lift = -7.0*aoa*aoa + 0.92*aoa + 1.0200;
     }
 
+    //    -6.2337    2.2200    1.0600
     return -c_lift*Q*airspeed*airspeed;
 }
 
 float guidance_indi_soaring_get_liftd(float aoa, float airspeed, float Q) {
-    float c_liftd = 0.0;
+    float c_liftd = 2.1;
     if (aoa < -0.5236) {
         c_liftd = 5.0;
-    } else if (aoa < 0.1222) {      // 7 deg;
+    } else if (aoa < soaring_critical_aoa) {      // 5.88 deg;
         c_liftd = 2.1;
     } else {
-        c_liftd = -3.275;
+//        c_liftd = -1.006596;
+        c_liftd = -8.0*2*aoa + 3.6;
     }
     return -c_liftd*Q*airspeed*airspeed;
 }
@@ -911,10 +927,11 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
     float airspeed = stateGetAirspeed_f();
     float Q = 0.1574;       // 0.5 rho S
     float aoa = stateGetAngleOfAttack_f();      // in rad
-    if (airspeed < 7.0) {
+    if (airspeed < 6.3) {
         // AOA sensor only works when airspeed > 7m/s
         // below that, use pitch
         aoa = pitch_lift;
+        airspeed = 6.3;
     }
 
     // get the derivative of the lift wrt to theta
@@ -966,6 +983,9 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
 #if GUIDANCE_INDI_HYBRID_USE_WLS
 void guidance_indi_hybrid_set_wls_settings(float body_v[3] UNUSED, float roll_angle, float pitch_angle)
 {
+    float aoa = stateGetAngleOfAttack_f();      // in rad
+    float airspeed = stateGetAirspeed_f();
+
   // Set lower limits,
   // Set upper limits,
   // Set prefered states
@@ -977,8 +997,16 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3] UNUSED, float roll_an
 
   // pitch
   du_min_gih[1] = RadOfDeg(GUIDANCE_INDI_MIN_PITCH) - pitch_angle; // pitch
-  du_max_gih[1] = RadOfDeg(GUIDANCE_INDI_MAX_PITCH) - pitch_angle; // pitch
+  if (use_aoa_pitch_limit && airspeed > 7.0) {
+    du_max_gih[1] = soaring_critical_aoa - aoa; // pitch
+  } else {
+    du_max_gih[1] = RadOfDeg(GUIDANCE_INDI_MAX_PITCH) - pitch_angle; // pitch
+    }
+  if (use_aoa_pitch_pref && airspeed > 6.5) {
+        du_pref_gih[1] = soaring_critical_aoa - aoa; // prefered delta pitch angle
+  } else {
   du_pref_gih[1] = 0.0 - pitch_angle; // prefered delta pitch angle
+  }
 
 // TODO:check thrust min/max
   // thrust

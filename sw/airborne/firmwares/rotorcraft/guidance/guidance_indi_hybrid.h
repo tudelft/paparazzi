@@ -106,5 +106,7 @@ extern float guidance_indi_max_bank;
 extern float guidance_indi_min_pitch;
 extern bool force_forward;       ///< forward flight for hybrid nav
 
+extern float thr_eff_coef;
+extern float pitch_sp_eff_coef;
 
 #endif /* GUIDANCE_INDI_HYBRID_H */
