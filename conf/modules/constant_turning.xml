@@ -1,0 +1,28 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="constant_turning">
+  <doc>
+    <description>
+    Basic module for turning constantly to the right
+    </description>
+  </doc>
+
+  <!-- What is the purpose of the following block? -->
+    <!-- <settings>
+    <dl_settings>
+      <dl_settings name="ConstantTurning">
+         <dl_setting var="oa_color_count_frac" min="0" step="0.01" max="0.5"/>
+      </dl_settings>
+    </dl_settings>
+  </settings> -->
+  
+
+  <header>
+    <file name="constant_turning.h"/>
+  </header>
+  <init fun="constant_turning_init()"/>
+  <periodic fun="constant_turning_periodic()" freq="4"/>
+  <makefile target="ap|nps">
+    <file name="constant_turning.c"/>
+  </makefile>
+</module>
