@@ -1,12 +1,13 @@
 #include "am7x.h"
 #include <pthread.h>
-#include "MATLAB_generated_files/Nonlinear_controller_fcn_control_rf_w_ailerons.h"
+#include "MATLAB_generated_files/Nonlinear_controller_w_ailerons_rebuttal.h"
 #include "MATLAB_generated_files/rt_nonfinite.h"
 #include <string.h>
 #include "softServo.h"
 #include "filters/low_pass_filter.h"
+#include "MATLAB_generated_files/compute_acc_nonlinear_control_rf_w_ailerons.h"
 
-#define TEST_CONTROLLER
+// #define TEST_CONTROLLER
 
 struct am7_data_out myam7_data_out;
 struct am7_data_out myam7_data_out_copy;
@@ -206,6 +207,11 @@ void* second_thread() //Run the optimization code
 {
 
   while(1){ 
+
+    //Declaration of variables for filtering: 
+    double current_estimated_accelerations_array[6]; 
+    double current_estimated_accelerations_input[6]; 
+
     pthread_mutex_lock(&mutex_am7);   
     memcpy(&myam7_data_in_copy, &myam7_data_in, sizeof(struct am7_data_in));
     memcpy(&extra_data_in_copy, &extra_data_in, sizeof(extra_data_in));
@@ -224,7 +230,7 @@ void* second_thread() //Run the optimization code
 
     //Assign variables coming from the communication and physical system properties
 
-	// Float msg variables
+	  // Float msg variables
     float K_p_T = extra_data_in_copy[0], K_p_M = extra_data_in_copy[1], m = extra_data_in_copy[2], I_xx = extra_data_in_copy[3];
     float I_yy = extra_data_in_copy[4], I_zz = extra_data_in_copy[5], l_1 = extra_data_in_copy[6], l_2 = extra_data_in_copy[7];
     float l_3 = extra_data_in_copy[8], l_4 = extra_data_in_copy[9], l_z = extra_data_in_copy[10];
@@ -250,9 +256,9 @@ void* second_thread() //Run the optimization code
     float W_act_ailerons_const = extra_data_in_copy[51], W_act_ailerons_speed = extra_data_in_copy[52]; 
     float min_delta_ailerons = extra_data_in_copy[53], max_delta_ailerons = extra_data_in_copy[54];
     float CL_aileron = extra_data_in_copy[55];
-
+    float transition_airspeed = extra_data_in_copy[56];
    
-	// Real time variables:
+	  // Real time variables:
     double Phi = (myam7_data_in_copy.phi_state_int*1e-2 * M_PI/180);
     double Theta = (myam7_data_in_copy.theta_state_int*1e-2 * M_PI/180);
     double delta_ailerons = (myam7_data_in_copy.ailerons_state_int*1e-2 * M_PI/180);
@@ -372,17 +378,65 @@ void* second_thread() //Run the optimization code
       desired_phi_value = 0 * pi/180; 
       desired_ailerons_value = 0 * pi/180;
 
+      transition_airspeed = 9; 
+
     #endif 
 
-    Nonlinear_controller_fcn_control_rf_w_ailerons(K_p_T, K_p_M, m, I_xx, I_yy, I_zz, l_1, l_2, l_3, l_4, l_z, 
-                                             Phi, Theta, Omega_1, Omega_2, Omega_3, Omega_4, b_1, b_2, b_3, b_4, g_1, g_2, g_3, g_4, delta_ailerons, 
-                                             W_act_motor_const, W_act_motor_speed, W_act_tilt_el_const, W_act_tilt_el_speed, 
-                                             W_act_tilt_az_const, W_act_tilt_az_speed, W_act_theta_const, W_act_theta_speed, W_act_phi_const, W_act_phi_speed, W_act_ailerons_const, W_act_ailerons_speed,
-                                             W_dv_1, W_dv_2, W_dv_3, W_dv_4, W_dv_5, W_dv_6,
-                                             max_omega, min_omega, max_b, min_b, max_g, min_g, max_theta, min_theta, max_phi, max_delta_ailerons, min_delta_ailerons, dv, p, q, r, Cm_zero, Cl_alpha, Cd_zero, K_Cd,
-                                             Cm_alpha, CL_aileron, rho, V, S, wing_chord, flight_path_angle, max_alpha, min_alpha, Beta, gamma_quadratic,
-                                             desired_motor_value, desired_el_value, desired_az_value, desired_theta_value, desired_phi_value, desired_ailerons_value, verbose_optimizer, speed_aoa_protection,
-                                             u_out, residuals, &elapsed_time, &N_iterations, &N_evaluation, &exitflag);
+    double cost_value;
+
+    //Compute modeled acelerations: 
+    double u_in[15] = {Omega_1, Omega_2, Omega_3, Omega_4, b_1, b_2, b_3, b_4, g_1, g_2, g_3, g_4, Theta, Phi, delta_ailerons};
+
+    c_compute_acc_nonlinear_control( u_in,  p,  q,  r,  K_p_T,
+     K_p_M,  m,  I_xx,  I_yy,  I_zz,  l_1,
+     l_2,  l_3,  l_4,  l_z,  Cl_alpha,
+     Cd_zero,  K_Cd,  Cm_alpha,  Cm_zero,
+     CL_aileron,  rho,  V,  S,  wing_chord,
+     flight_path_angle,  Beta, current_estimated_accelerations_array);
+
+    //Apply filtering to modeled accelerations:
+    for(int i = 0; i < 6; i++){
+
+      update_butterworth_2_low_pass(&current_accelerations_filtered[i], (float) current_estimated_accelerations_array[i]);
+
+
+      if(current_accelerations_filtered[i].o[0] != current_accelerations_filtered[i].o[0]){
+        float tau_indi = 1.0f / (filter_cutoff_frequency);
+        init_butterworth_2_low_pass(&current_accelerations_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
+        printf("WARNING, FILTERS %d REINITIALIZED!!!! \n",i);
+      }
+
+      current_estimated_accelerations_input[i] = (double) current_accelerations_filtered[i].o[0];
+    }
+
+
+    Nonlinear_controller_w_ailerons_rebuttal(
+        K_p_T,  K_p_M,  m,  I_xx,  I_yy,  I_zz,
+        l_1,  l_2,  l_3,  l_4,  l_z,  Phi,
+        Theta,  Omega_1,  Omega_2,  Omega_3,
+        Omega_4,  b_1,  b_2,  b_3,  b_4,  g_1,
+        g_2,  g_3,  g_4,  delta_ailerons,
+        W_act_motor_const,  W_act_motor_speed,
+        W_act_tilt_el_const,  W_act_tilt_el_speed,
+        W_act_tilt_az_const,  W_act_tilt_az_speed,
+        W_act_theta_const,  W_act_theta_speed,  W_act_phi_const,
+        W_act_phi_speed,  W_act_ailerons_const,
+        W_act_ailerons_speed,  W_dv_1,  W_dv_2,  W_dv_3,
+        W_dv_4,  W_dv_5,  W_dv_6,  max_omega,
+        min_omega,  max_b,  min_b,  max_g,  min_g,
+        max_theta,  min_theta,  max_phi,
+        max_delta_ailerons,  min_delta_ailerons, dv,
+        p,  q,  r,  Cm_zero,  Cl_alpha,
+        Cd_zero,  K_Cd,  Cm_alpha,  CL_aileron,  rho,
+        V,  S,  wing_chord,  flight_path_angle,
+        max_alpha,  min_alpha,  Beta,  gamma_quadratic,
+        desired_motor_value,  desired_el_value,
+        desired_az_value,  desired_theta_value,
+        desired_phi_value,  desired_ailerons_value, verbose_optimizer,
+        speed_aoa_protection,  transition_airspeed,
+        current_estimated_accelerations_input,  u_out,  residuals,
+        &elapsed_time,  &N_iterations,  &N_evaluation,
+        &cost_value,  &exitflag);
 
 
     //Convert the function output into integer to be transmitted to the pixhawk again: 
@@ -399,6 +453,14 @@ void* second_thread() //Run the optimization code
     myam7_data_out_copy_internal.residual_q_dot_int = (int16_T) (residuals[4]*1e1*180/M_PI), myam7_data_out_copy_internal.residual_r_dot_int = (int16_T) (residuals[5]*1e1*180/M_PI);
     myam7_data_out_copy_internal.n_iteration = (uint16_T) (N_iterations), myam7_data_out_copy_internal.exit_flag_optimizer = (int16_T) (exitflag);
     myam7_data_out_copy_internal.elapsed_time_us = (uint16_T) (elapsed_time * 1e6), myam7_data_out_copy_internal.n_evaluation = (uint16_T) (N_evaluation);
+    
+    //Wait until time is not at least refresh_time_optimizer
+    while(((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec)) < refresh_time_optimizer*1e6){gettimeofday(&current_time, NULL);}
+
+      // printf(" Elapsed_time_optimization_run_uS = %f \n",(float) ((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec)));
+
+    //Reset waiting timer: 
+    gettimeofday(&time_last_opt_run, NULL);
 
     //Print performances if needed
     if(verbose_runtime){
