@@ -1453,6 +1453,8 @@ void overactuated_mixing_run(void)
         //Do not use ailerons. Put them in neutral position 
         indi_u[14] = 0;
 
+        //Send values to rasperry pi even if
+        send_values_to_raspberry_pi(); 
 
     }
 
