@@ -435,7 +435,7 @@
     <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
-    <define name="SERVO_EL_MIN_ANGLE_OPTIMIZATION" value="-120" unit="deg"/>
+    <define name="SERVO_EL_MIN_ANGLE_OPTIMIZATION" value="-130" unit="deg"/>
 
     <define name="SERVO_EL_1_ZERO_VALUE" value="-54" unit="deg"/>
     <define name="SERVO_EL_2_ZERO_VALUE" value="-57" unit="deg"/>
@@ -451,15 +451,17 @@
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
     <define name="MAX_PHI_INDI" value="40" unit="deg"/>
     <define name="MAX_AOA_INDI" value="15" unit="deg"/>
-    <define name="MIN_AOA_INDI" value="-15" unit="deg"/>
+    <define name="MIN_AOA_INDI" value="1" unit="deg"/>
 
     <define name="MAX_DELTA_AILERONS" value="25" unit="deg"/>
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
 
     <define name="SPEED_AOA_PROTECTION" value="6" unit="m/s"/>
 
+    <define name="TRANSITION_AIRSPEED" value="9" unit="m/s"/>
+
     <!-- Filters properties for INDI -->
-    <define name="FILT_CUTOFF_INDI" value="13" unit="rad/s"/>
+    <define name="FILT_CUTOFF_INDI" value="12" unit="rad/s"/>
 
     <!-- First order filter on rates -->
     <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0488" /><!-- 1-exp(-cutoff_frequency/sampling_frequency) [20 rad/s]--> 
