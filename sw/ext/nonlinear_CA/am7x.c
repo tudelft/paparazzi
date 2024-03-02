@@ -34,6 +34,8 @@ int verbose_optimizer = 0;
 int verbose_servo = 0; 
 int verbose_runtime = 0; 
 
+int verbose_filters = 0; 
+
 float angle_1_pwm = 1000; 
 float angle_2_pwm = 1000; 
 
@@ -403,7 +405,10 @@ void* second_thread() //Run the optimization code
       if(current_accelerations_filtered[i].o[0] != current_accelerations_filtered[i].o[0]){
         float tau_indi = 1.0f / (filter_cutoff_frequency);
         init_butterworth_2_low_pass(&current_accelerations_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
-        printf("WARNING, FILTERS %d REINITIALIZED!!!! \n",i);
+        if(verbose_filters){
+          printf("WARNING, FILTERS %d REINITIALIZED!!!! \n",i);
+        }
+        
       }
 
       current_estimated_accelerations_input[i] = (double) current_accelerations_filtered[i].o[0];
@@ -457,16 +462,15 @@ void* second_thread() //Run the optimization code
     //Wait until time is not at least refresh_time_optimizer
     while(((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec)) < refresh_time_optimizer*1e6){gettimeofday(&current_time, NULL);}
 
-      // printf(" Elapsed_time_optimization_run_uS = %f \n",(float) ((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec)));
+    //Print performances if needed
+    if(verbose_runtime){
+      printf("\n Elapsed time optimizer = %f \n",(float) elapsed_time); 
+      printf("\n Elapsed time filters = %f \n", (float) ((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec))); 
+      fflush(stdout);
+    }
 
     //Reset waiting timer: 
     gettimeofday(&time_last_opt_run, NULL);
-
-    //Print performances if needed
-    if(verbose_runtime){
-      printf("\n Elapsed time = %f \n",(float) elapsed_time); 
-      fflush(stdout);
-    }
 
     //Assign the rolling messages to the appropriate value [dummy]
     extra_data_out_copy[0] = 1.453; 
