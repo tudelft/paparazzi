@@ -457,7 +457,7 @@ void assign_variables(void){
     beta_deg = - aoa_pwm.angle * 180/M_PI;
     beta_rad = beta_deg * M_PI / 180;
 
-    total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
+    total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[2]*speed_vect[2]);
     if(total_V > 7){
         flight_path_angle = asin(-speed_vect[2]/total_V);
         BoundAbs(flight_path_angle, M_PI/2);
