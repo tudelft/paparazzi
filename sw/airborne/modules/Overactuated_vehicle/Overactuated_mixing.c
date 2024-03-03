@@ -101,6 +101,8 @@ int16_t neutral_servo_2_pwm = 1492;
 int servo_right_cmd = 0;
 int servo_left_cmd = 0;
 
+int manoeuvre = 1; 
+
 // Actuators gains:
 float K_ppz_rads_motor = 9.6 / OVERACTUATED_MIXING_MOTOR_K_PWM_OMEGA;
 float K_ppz_angle_el = (9600 * 2) / (OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE);
@@ -539,7 +541,12 @@ void overactuated_mixing_run(void)
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
-            des_theta = 25;
+            if(manoeuvre == 2){
+                des_theta = 25;
+            }
+            else{
+                des_theta = 0;
+            }
             des_psi_dot = 0;  
         }
         else if( get_sys_time_float() - auto_test_time_start >= 2 && get_sys_time_float() - auto_test_time_start < 7){
@@ -547,7 +554,12 @@ void overactuated_mixing_run(void)
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
-            des_theta = 25;
+            if(manoeuvre == 2){
+                des_theta = 25;
+            }
+            else{
+                des_theta = 0;
+            }
             des_psi_dot = 0;  
         }
         else if( get_sys_time_float() - auto_test_time_start >= 7 && get_sys_time_float() - auto_test_time_start < 12){
@@ -555,7 +567,12 @@ void overactuated_mixing_run(void)
             des_Vy = 0;
             des_Vz = -4;
             des_phi = 0;
-            des_theta = 25;
+            if(manoeuvre == 2){
+                des_theta = 25;
+            }
+            else{
+                des_theta = 0;
+            }
             des_psi_dot = 0;  
         }
         else if( get_sys_time_float() - auto_test_time_start >= 12 && get_sys_time_float() - auto_test_time_start < 15){
@@ -563,7 +580,12 @@ void overactuated_mixing_run(void)
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
-            des_theta = 25;
+            if(manoeuvre == 2){
+                des_theta = 25;
+            }
+            else{
+                des_theta = 0;
+            }
             des_psi_dot = 0;  
         }
         else if( get_sys_time_float() - auto_test_time_start >= 15 && get_sys_time_float() - auto_test_time_start < 22){
@@ -571,7 +593,12 @@ void overactuated_mixing_run(void)
             des_Vy = 4;
             des_Vz = 0;
             des_phi = 0;
-            des_theta = 25;
+            if(manoeuvre == 2){
+                des_theta = 25;
+            }
+            else{
+                des_theta = 0;
+            }
             des_psi_dot = 0;   
         }
         else if( get_sys_time_float() - auto_test_time_start >= 22 && get_sys_time_float() - auto_test_time_start < 26){
@@ -579,7 +606,12 @@ void overactuated_mixing_run(void)
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
-            des_theta = 25;
+            if(manoeuvre == 2){
+                des_theta = 25;
+            }
+            else{
+                des_theta = 0;
+            }
             des_psi_dot = 0;   
         }
         else{
@@ -587,7 +619,12 @@ void overactuated_mixing_run(void)
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
-            des_theta = 25;
+            if(manoeuvre == 2){
+                des_theta = 25;
+            }
+            else{
+                des_theta = 0;
+            }
             des_psi_dot = 0;   
         }                
 

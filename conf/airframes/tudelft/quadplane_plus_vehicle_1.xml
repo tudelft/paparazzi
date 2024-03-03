@@ -458,7 +458,7 @@
 
     <define name="SPEED_AOA_PROTECTION" value="6" unit="m/s"/>
 
-    <define name="TRANSITION_AIRSPEED" value="9" unit="m/s"/>
+    <define name="TRANSITION_AIRSPEED" value="5" unit="m/s"/>
 
     <!-- Filters properties for INDI -->
     <define name="FILT_CUTOFF_INDI" value="12" unit="rad/s"/>
