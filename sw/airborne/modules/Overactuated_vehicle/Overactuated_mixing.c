@@ -67,7 +67,6 @@
 // #define USE_NEW_THR_ESTIMATION
 // #define USE_NEW_THR_ESTIMATION_OPTIMIZATION
 #define NEW_AOA_DEFINITION 
-#define FILTER_AIRSPEED
 
 #define NEW_YAWRATE_REFERENCE
 #define OVERESTIMATE_LATERAL_FORCES
@@ -595,11 +594,7 @@ struct BodyCoord_f compute_propeller_thrust_in_body_frame(float propeller_speed,
 float compute_yaw_rate_turn(void){
             //Compute the yaw rate for the coordinate turn:
         float yaw_rate_setpoint_turn = 0;
-        #ifdef FILTER_AIRSPEED
-        float airspeed_turn = airspeed_filt.o[0];
-        #else
         float airspeed_turn = airspeed;
-        #endif
         //We are dividing by the airspeed, so a lower bound is important
         Bound(airspeed_turn,10.0,30.0);
 
@@ -970,37 +965,61 @@ void get_actuator_state_v2(void)
 void send_values_to_raspberry_pi(void){
 
     //Compute and transmit the messages to the AM7 module:
-    am7_data_out_local.motor_1_state_int = (int16_t) (actuator_state_filt[0] * 1e1);
-    am7_data_out_local.motor_2_state_int = (int16_t) (actuator_state_filt[1] * 1e1);
-    am7_data_out_local.motor_3_state_int = (int16_t) (actuator_state_filt[2] * 1e1);
-    am7_data_out_local.motor_4_state_int = (int16_t) (actuator_state_filt[3] * 1e1);
+    // am7_data_out_local.motor_1_state_int = (int16_t) (actuator_state_filt[0] * 1e1);
+    // am7_data_out_local.motor_2_state_int = (int16_t) (actuator_state_filt[1] * 1e1);
+    // am7_data_out_local.motor_3_state_int = (int16_t) (actuator_state_filt[2] * 1e1);
+    // am7_data_out_local.motor_4_state_int = (int16_t) (actuator_state_filt[3] * 1e1);
 
-    am7_data_out_local.el_1_state_int = (int16_t) (actuator_state_filt[4] * 1e2 * 180/M_PI);
-    am7_data_out_local.el_2_state_int = (int16_t) (actuator_state_filt[5] * 1e2 * 180/M_PI);
-    am7_data_out_local.el_3_state_int = (int16_t) (actuator_state_filt[6] * 1e2 * 180/M_PI);
-    am7_data_out_local.el_4_state_int = (int16_t) (actuator_state_filt[7] * 1e2 * 180/M_PI);
+    // am7_data_out_local.el_1_state_int = (int16_t) (actuator_state_filt[4] * 1e2 * 180/M_PI);
+    // am7_data_out_local.el_2_state_int = (int16_t) (actuator_state_filt[5] * 1e2 * 180/M_PI);
+    // am7_data_out_local.el_3_state_int = (int16_t) (actuator_state_filt[6] * 1e2 * 180/M_PI);
+    // am7_data_out_local.el_4_state_int = (int16_t) (actuator_state_filt[7] * 1e2 * 180/M_PI);
 
-    am7_data_out_local.az_1_state_int = (int16_t) (actuator_state_filt[8] * 1e2 * 180/M_PI);
-    am7_data_out_local.az_2_state_int = (int16_t) (actuator_state_filt[9] * 1e2 * 180/M_PI);
-    am7_data_out_local.az_3_state_int = (int16_t) (actuator_state_filt[10] * 1e2 * 180/M_PI);
-    am7_data_out_local.az_4_state_int = (int16_t) (actuator_state_filt[11] * 1e2 * 180/M_PI);
+    // am7_data_out_local.az_1_state_int = (int16_t) (actuator_state_filt[8] * 1e2 * 180/M_PI);
+    // am7_data_out_local.az_2_state_int = (int16_t) (actuator_state_filt[9] * 1e2 * 180/M_PI);
+    // am7_data_out_local.az_3_state_int = (int16_t) (actuator_state_filt[10] * 1e2 * 180/M_PI);
+    // am7_data_out_local.az_4_state_int = (int16_t) (actuator_state_filt[11] * 1e2 * 180/M_PI);
 
-    am7_data_out_local.theta_state_int = (int16_t) (actuator_state_filt[12] * 1e2 * 180/M_PI);
-    am7_data_out_local.phi_state_int = (int16_t) (actuator_state_filt[13] * 1e2 * 180/M_PI);
+    // am7_data_out_local.theta_state_int = (int16_t) (actuator_state_filt[12] * 1e2 * 180/M_PI);
+    // am7_data_out_local.phi_state_int = (int16_t) (actuator_state_filt[13] * 1e2 * 180/M_PI);
+    // am7_data_out_local.psi_state_int = (int16_t) (euler_vect[2] * 1e2 * 180/M_PI);
+    // am7_data_out_local.ailerons_state_int = (int16_t) (actuator_state_filt[14] * 1e2 * 180/M_PI);
+
+    // am7_data_out_local.gamma_state_int = (int16_t) (flight_path_angle_filtered.o[0] * 1e2 * 180/M_PI);
+
+    // am7_data_out_local.p_state_int = (int16_t) (measurement_rates_filters[0].o[0] * 1e1 * 180/M_PI);
+    // am7_data_out_local.q_state_int = (int16_t) (measurement_rates_filters[1].o[0] * 1e1 * 180/M_PI);
+    // am7_data_out_local.r_state_int = (int16_t) (measurement_rates_filters[2].o[0] * 1e1 * 180/M_PI);
+
+    // am7_data_out_local.airspeed_state_int = (int16_t) (airspeed * 1e2);
+
+    am7_data_out_local.motor_1_state_int = (int16_t) (actuator_state[0] * 1e1);
+    am7_data_out_local.motor_2_state_int = (int16_t) (actuator_state[1] * 1e1);
+    am7_data_out_local.motor_3_state_int = (int16_t) (actuator_state[2] * 1e1);
+    am7_data_out_local.motor_4_state_int = (int16_t) (actuator_state[3] * 1e1);
+
+    am7_data_out_local.el_1_state_int = (int16_t) (actuator_state[4] * 1e2 * 180/M_PI);
+    am7_data_out_local.el_2_state_int = (int16_t) (actuator_state[5] * 1e2 * 180/M_PI);
+    am7_data_out_local.el_3_state_int = (int16_t) (actuator_state[6] * 1e2 * 180/M_PI);
+    am7_data_out_local.el_4_state_int = (int16_t) (actuator_state[7] * 1e2 * 180/M_PI);
+
+    am7_data_out_local.az_1_state_int = (int16_t) (actuator_state[8] * 1e2 * 180/M_PI);
+    am7_data_out_local.az_2_state_int = (int16_t) (actuator_state[9] * 1e2 * 180/M_PI);
+    am7_data_out_local.az_3_state_int = (int16_t) (actuator_state[10] * 1e2 * 180/M_PI);
+    am7_data_out_local.az_4_state_int = (int16_t) (actuator_state[11] * 1e2 * 180/M_PI);
+
+    am7_data_out_local.theta_state_int = (int16_t) (actuator_state[12] * 1e2 * 180/M_PI);
+    am7_data_out_local.phi_state_int = (int16_t) (actuator_state[13] * 1e2 * 180/M_PI);
     am7_data_out_local.psi_state_int = (int16_t) (euler_vect[2] * 1e2 * 180/M_PI);
-    am7_data_out_local.ailerons_state_int = (int16_t) (actuator_state_filt[14] * 1e2 * 180/M_PI);
+    am7_data_out_local.ailerons_state_int = (int16_t) (actuator_state[14] * 1e2 * 180/M_PI);
 
-    am7_data_out_local.gamma_state_int = (int16_t) (flight_path_angle_filtered.o[0] * 1e2 * 180/M_PI);
+    am7_data_out_local.gamma_state_int = (int16_t) (flight_path_angle* 1e2 * 180/M_PI);
 
-    am7_data_out_local.p_state_int = (int16_t) (measurement_rates_filters[0].o[0] * 1e1 * 180/M_PI);
-    am7_data_out_local.q_state_int = (int16_t) (measurement_rates_filters[1].o[0] * 1e1 * 180/M_PI);
-    am7_data_out_local.r_state_int = (int16_t) (measurement_rates_filters[2].o[0] * 1e1 * 180/M_PI);
+    am7_data_out_local.p_state_int = (int16_t) (rate_vect[0] * 1e1 * 180/M_PI);
+    am7_data_out_local.q_state_int = (int16_t) (rate_vect[1] * 1e1 * 180/M_PI);
+    am7_data_out_local.r_state_int = (int16_t) (rate_vect[2] * 1e1 * 180/M_PI);
 
-    #ifdef FILTER_AIRSPEED
-    am7_data_out_local.airspeed_state_int = (int16_t) (airspeed_filt.o[0] * 1e2);
-    #else
     am7_data_out_local.airspeed_state_int = (int16_t) (airspeed * 1e2);
-    #endif
 
     float fake_beta = 0;
 
@@ -1248,7 +1267,7 @@ void assign_variables(void){
         }
         total_V = sqrt(projected_airspeed_on_x_control*projected_airspeed_on_x_control + speed_vect_control_rf[2]*speed_vect_control_rf[2]);
     #else
-        total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
+        total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[2]*speed_vect[2]);
     #endif
 
     flight_path_angle = 0.0;
