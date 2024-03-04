@@ -108,6 +108,8 @@ extern int manual_heading_value_rad;
 
 extern int manoeuvre; 
 
+extern float fpa_off_deg; 
+
 /* External used functions */
 extern void overactuated_mixing_init(void);
 extern void overactuated_mixing_run(void);
