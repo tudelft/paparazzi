@@ -1,6 +1,6 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
-<airframe name="bebop_mav_course_ex">
+<airframe name="bebop_avoider">
   <description>MAVLAB Course TUDelft 2023
   </description>
 
