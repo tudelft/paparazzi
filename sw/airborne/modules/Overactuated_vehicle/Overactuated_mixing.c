@@ -1267,11 +1267,11 @@ void assign_variables(void){
         }
         total_V = sqrt(projected_airspeed_on_x_control*projected_airspeed_on_x_control + speed_vect_control_rf[2]*speed_vect_control_rf[2]);
     #else
-        total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[2]*speed_vect[2]);
+        total_V = sqrt(speed_vect_control_rf[0]*speed_vect_control_rf[0] + speed_vect_control_rf[2]*speed_vect_control_rf[2]);
     #endif
 
     flight_path_angle = 0.0;
-    if(total_V > 1.0){
+    if(total_V > 5.0){
         flight_path_angle = asin(-speed_vect[2]/total_V);
         BoundAbs(flight_path_angle, M_PI/2);
     }
