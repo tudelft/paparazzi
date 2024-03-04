@@ -11,7 +11,7 @@
       <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
       <define name="MT9V117_TARGET_FPS" value="20"/>
       
-      <!-- Detect orange --> 
+      <!-- Detect orange -->
       <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="30"/>
       <define name="COLOR_OBJECT_DETECTOR_LUM_MAX1" value="190"/>
       <define name="COLOR_OBJECT_DETECTOR_CB_MIN1" value="70"/>
@@ -51,7 +51,6 @@
     <module name="ins" type="extended"/>
 
     <module name="logger_file"/>
-    <module name =" mav_course_exercise "/ >
 
     <!-- Video/Camera modules -->
     <module name="bebop_cam"/>
