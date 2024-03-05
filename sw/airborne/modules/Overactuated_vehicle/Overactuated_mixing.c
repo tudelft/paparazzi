@@ -103,7 +103,7 @@ int servo_left_cmd = 0;
 
 int manoeuvre = 1; 
 
-float fpa_off_deg = -5; 
+float fpa_off_deg = -3; 
 
 // Actuators gains:
 float K_ppz_rads_motor = 9.6 / OVERACTUATED_MIXING_MOTOR_K_PWM_OMEGA;
@@ -461,7 +461,7 @@ void assign_variables(void){
     beta_deg = - aoa_pwm.angle * 180/M_PI;
     beta_rad = beta_deg * M_PI / 180;
 
-    total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
+    total_V = airspeed;//sqrt(airspeed*airspeed+ speed_vect[2]*speed_vect[2]);
     if(total_V > 5){
         flight_path_angle = asin(-speed_vect[2]/total_V);
         flight_path_angle = flight_path_angle + fpa_off_deg*M_PI/180;
@@ -469,7 +469,7 @@ void assign_variables(void){
         BoundAbs(flight_path_angle, M_PI/2);
     }
     else{
-        flight_path_angle = 0;
+        flight_path_angle = fpa_off_deg*M_PI/180;
     }
 
     for (int i = 0 ; i < 4 ; i++){

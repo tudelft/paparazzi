@@ -343,18 +343,24 @@
     <define name="PID_MAX_AZ_ORDER" value="35" unit="deg"/> <!--max azimuth deflection in PID mode-->
 
     <!-- INDI proportional gains -->
-    <define name="INDI_REF_ERR_P" value="4"/>
+    <!-- <define name="INDI_REF_ERR_P" value="4"/>
     <define name="INDI_REF_ERR_Q" value="4"/>
-    <define name="INDI_REF_ERR_R" value="1.5"/>
+    <define name="INDI_REF_ERR_R" value="1.5"/> -->
+    <define name="INDI_REF_ERR_P" value="2"/>
+    <define name="INDI_REF_ERR_Q" value="2"/>
+    <define name="INDI_REF_ERR_R" value="1"/>
 
     <define name="INDI_REF_ERR_X" value="1"/>
     <define name="INDI_REF_ERR_Y" value="1"/>
     <define name="INDI_REF_ERR_Z" value="1"/>
 
     <!-- INDI derivative gains -->
-    <define name="INDI_REF_RATE_P" value="7"/>
+    <!-- <define name="INDI_REF_RATE_P" value="7"/>
     <define name="INDI_REF_RATE_Q" value="7"/>
-    <define name="INDI_REF_RATE_R" value="5"/>
+    <define name="INDI_REF_RATE_R" value="5"/> -->
+    <define name="INDI_REF_RATE_P" value="4"/>
+    <define name="INDI_REF_RATE_Q" value="4"/>
+    <define name="INDI_REF_RATE_R" value="3"/>
 
     <define name="INDI_REF_RATE_X" value="1"/>
     <define name="INDI_REF_RATE_Y" value="1"/>
@@ -451,7 +457,7 @@
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
     <define name="MAX_PHI_INDI" value="40" unit="deg"/>
     <define name="MAX_AOA_INDI" value="15" unit="deg"/>
-    <define name="MIN_AOA_INDI" value="3" unit="deg"/>
+    <define name="MIN_AOA_INDI" value="2" unit="deg"/>
 
     <define name="MAX_DELTA_AILERONS" value="25" unit="deg"/>
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
@@ -478,8 +484,8 @@
     <define name="W_ACT_PHI_CONST" value="100"/>
     <define name="W_ACT_PHI_SPEED" value="-15"/>
 
-    <define name="W_ACT_AILERONS_CONST" value="10"/>
-    <define name="W_ACT_AILERONS_SPEED" value="-3"/>
+    <define name="W_ACT_AILERONS_CONST" value="1"/>
+    <define name="W_ACT_AILERONS_SPEED" value="0"/>
 
     <define name="W_DV_1" value="0.005"/>
     <define name="W_DV_2" value="0.005"/>
