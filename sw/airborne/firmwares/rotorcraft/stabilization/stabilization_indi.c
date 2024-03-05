@@ -197,6 +197,15 @@ float indi_Wu[INDI_NUM_ACT] = STABILIZATION_INDI_WLS_WU;
 float indi_Wu[INDI_NUM_ACT] = {[0 ... INDI_NUM_ACT - 1] = 1.0};
 #endif
 
+/**
+ * Limit the maximum specific moment that can be compensated (units rad/s^2)
+*/
+#ifdef STABILIZATION_INDI_YAW_DISTURBANCE_LIMIT
+float stablization_indi_yaw_dist_limit = STABILIZATION_INDI_YAW_DISTURBANCE_LIMIT
+#else // Put a rediculously high limit
+float stablization_indi_yaw_dist_limit = 99999.f;
+#endif
+
 // variables needed for control
 float actuator_state_filt_vect[INDI_NUM_ACT];
 struct FloatRates angular_accel_ref = {0., 0., 0.};
@@ -602,6 +611,9 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   // subtract u*B from angular acceleration
   float angular_acc_disturbance_estimate[INDI_OUTPUTS];
   float_vect_diff(angular_acc_disturbance_estimate, angular_acceleration, angular_acc_prediction_filt, 3);
+
+  // Limit the estimated disturbance in yaw for drones that are stable in sideslip, so not to counter that
+  BoundAbs(angular_acc_disturbance_estimate[2], stablization_indi_yaw_dist_limit);
 
   //The rates used for feedback are by default the measured rates.
   //If there is a lot of noise on the gyroscope, it might be good to use the filtered value for feedback.
