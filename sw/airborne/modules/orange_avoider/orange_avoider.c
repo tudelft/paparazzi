@@ -143,7 +143,7 @@ void orange_avoider_periodic(void)
       chooseRandomIncrementAvoidance();
 
       navigation_state = SEARCH_FOR_SAFE_HEADING;
-
+  
       break;
     case SEARCH_FOR_SAFE_HEADING:
       increase_nav_heading(heading_increment);

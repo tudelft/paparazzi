@@ -1,5 +1,5 @@
 #include "modules/constant_turning/constant_turning.h"
-#include "firmwares/rotorcraft/navigation.h"
+//#include "firmwares/rotorcraft/navigation.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
 
 #include "generated/airframe.h"
@@ -14,15 +14,21 @@
 void constant_turning_init(void)
 { 
   srand(time(NULL));
-  printf("turning init...");
+  printf("init...");
+
+  // waypoint_move_here_2d(WP_GOAL);
+  // waypoint_move_here_2d(WP_TRAJECTORY);
   return;
 }
 void constant_turning_periodic(void)
 {
   // constant turning with angular velocity
-  printf("Turning...");
-  guidance_h_set_body_vel(0.5f, 0);
-  guidance_h_set_heading_rate(RadOfDeg(20.f));
+  printf("Turning (guided)...");
+
+  // moveWaypointForward(WP_TRAJECTORY, 1.5f);
+
+  // guidance_h_set_body_vel(1.0f, 0);
+  guidance_h_set_heading_rate(RadOfDeg(15.f));
   return;
 }
 
