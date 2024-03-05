@@ -842,11 +842,18 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 void stabilization_indi_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn)
 {
   struct FloatQuat q_sp;
+  float yaw_rate_rc;
 #if USE_EARTH_BOUND_RC_SETPOINT
-  stabilization_attitude_read_rc_setpoint_quat_earth_bound_f(&q_sp, in_flight, in_carefree, coordinated_turn);
+  yaw_rate_rc = stabilization_attitude_read_rc_setpoint_quat_earth_bound_f(&q_sp, in_flight, in_carefree, coordinated_turn);
 #else
-  stabilization_attitude_read_rc_setpoint_quat_f(&q_sp, in_flight, in_carefree, coordinated_turn);
+  yaw_rate_rc = stabilization_attitude_read_rc_setpoint_quat_f(&q_sp, in_flight, in_carefree, coordinated_turn);
 #endif
+
+  // If free floating heading, do take the feed forward yaw rate from the stick so yaw can be steered
+  if (indi_gains.att.r <= 0.f) {
+    FLOAT_RATES_ZERO(stab_att_ff_rates);
+    stab_att_ff_rates.r = yaw_rate_rc;
+  }
 
   QUAT_BFP_OF_REAL(stab_att_sp_quat, q_sp);
 }
