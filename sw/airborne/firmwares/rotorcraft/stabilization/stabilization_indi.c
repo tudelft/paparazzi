@@ -901,9 +901,6 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 #if RADIO_PIVOT_SWITCH == FALSE
   /* compute the INDI command */
   stabilization_indi_rate_run(rate_sp, in_flight);
-
-  // Reset thrust increment boolean
-  indi_thrust_increment_set = false;
 #else
   int8_t i;
   struct FloatEulers eulers_zxy;
@@ -912,7 +909,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   float_eulers_of_quat_zxy(&eulers_zxy, statequat);
 
   takeoff_stage = take_off_stage(eulers_zxy.theta, body_rates->q);
-  theta_d = take_off_theta();
+  // theta_d = take_off_theta();
   if (takeoff_stage == 0){
     // initialize pivoting by putting motors up
 	  actuators_pprz[0] = MAX_PPRZ;
@@ -925,9 +922,15 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   } else if (takeoff_stage == 1 || takeoff_stage == 3) {
     struct FloatRates rates_filt_takeoff;
     rates_filt_takeoff.q = update_first_order_low_pass(&rates_filt_takeoff_fo[1], body_rates->q);
-
     if(autopilot.mode == AP_MODE_NAV){
-    theta_d = theta_ref;
+    // theta_d = theta_ref;
+    // theta_d gradually decrease for nav mode
+    float theta_d_max = 0.0 / 180.0 * M_PI;
+    float increment = t_scale_to_theta / PERIODIC_FREQUENCY;
+           theta_d += increment;
+       if (theta_d > theta_d_max) {
+        theta_d = theta_d_max;
+    }
     }
     else{
     struct FloatEulers euler_sp;
@@ -945,36 +948,10 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     pseudoinv_B(B, W, B_inv);
    
     float integral_theta_error = 0.0f;
-    float theta_error = theta_d - eulers_zxy.theta;
-//     // lag compensator
-//     float K_lag = 0.1; //
-//     float T_lag = 0.3; // 
-//     float alpha = 10.0; //alpha greater than 1
-
-//     // Tustin discretization
-//     float a0 = K_lag * (1.0/PERIODIC_FREQUENCY /2 + T_lag);
-//     float a1 = K_lag * (1.0/PERIODIC_FREQUENCY/2 - T_lag);
-//     float b0 = (1.0/PERIODIC_FREQUENCY/2 + alpha * T_lag);
-//     float b1 = (1.0/PERIODIC_FREQUENCY/2 - alpha * T_lag);
-
-//    // State variables for the lag compensator
-//     float input_d1 = 0.0; // input delayed by 1 time step
-//     float output_d1 = 0.0; // output delayed by 1 time step
-
-//     float update_lag_compensator_tustin(float input) {
-//         float output = (a0 * input + a1 * input_d1 - b1 * output_d1) / b0;
-//         // Update the delayed variables for next time step
-//         input_d1 = input;
-//         output_d1 = output;
-
-//     return output;
-// }
-//     // Update the lag compensator with the error
-//     float compensated_error = update_lag_compensator_tustin(theta_error);
-//     integral_theta_error += compensated_error * 1.0/ PERIODIC_FREQUENCY;  
+    float theta_error = theta_d - eulers_zxy.theta;//error between desired and actual pitch angle
 
     // Update the integrator with the current error
-    integral_theta_error += theta_error * 1.0/ PERIODIC_FREQUENCY;
+    integral_theta_error += theta_error;
 
     float du = pivot_gain_theta * theta_error + pivot_gain_i * integral_theta_error - pivot_gain_q * rates_filt_takeoff.q;
  
@@ -1014,11 +991,9 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   } else { // not in a takeoff stage, flying
 	  /* compute the INDI command */
 	  stabilization_indi_rate_run(rate_sp, in_flight);
- 
-	  // Reset thrust increment boolean
-	  indi_thrust_increment_set = false;
   }
 #endif
+  indi_thrust_increment_set = false;
 }
 
 // This function reads rc commands

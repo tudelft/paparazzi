@@ -19,7 +19,7 @@ float y_dist = CTRL_EFF_CALC_Y_DIST;
 float z_dist = CTRL_EFF_CALC_Z_DIST;
 float mapping = CTRL_EFF_CALC_MAPPING;
 
-float min_thrust = 3000;				// [pprz] this is mapped to PWM range
+float min_thrust = 3250;				// [pprz] this is mapped to PWM range
 #ifdef CTRL_EFF_CALC_THRUST_LOWER_LIM
 float thrust_lower_lim = CTRL_EFF_CALC_THRUST_LOWER_LIM;
 #else
