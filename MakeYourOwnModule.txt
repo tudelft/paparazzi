@@ -1,4 +1,0 @@
-Merge 2 own module 
-- Changed Airframe (still orange_avoid module): conf/airframes/tudelft/group1_test_bebop.xml
-- Added airframe to conf/userconf/tudelft/course_conf.xml <-- (Needs to have a different airframe id)
-
