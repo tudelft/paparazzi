@@ -114,6 +114,8 @@ float K_ppz_angle_az = (9600 * 2) / (OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE - OV
 int32_t actuator_output[INDI_NUM_ACT], actuator_state_int[INDI_NUM_ACT];
 
 
+// #define USE_RM
+
 //Incremental INDI variables
 float indi_u[INDI_NUM_ACT], indi_u_scaled[INDI_NUM_ACT];
 
@@ -1036,21 +1038,26 @@ void overactuated_mixing_run(void)
         }
 
         //Use reference model to compute speed and accelerations references: 
-        float speed_ref_out_local[3], acc_ref_out_local[3];
-        compute_rm_speed_and_acc_control_rf(speed_setpoint_control_rf, speed_ref_out_local, acc_ref_out_local, euler_vect[2], speed_vect_control_rf[1]);
-
-        //Apply saturation blocks to speed setpoints in control reference frame:
-        // Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
-        // BoundAbs(speed_setpoint_control_rf[1],LIMITS_FWD_MAX_LAT_SPEED);
-        // BoundAbs(speed_setpoint_control_rf[2],LIMITS_FWD_MAX_VERT_SPEED);
+        #ifdef USE_RM
+            float speed_ref_out_local[3], acc_ref_out_local[3];
+            compute_rm_speed_and_acc_control_rf(speed_setpoint_control_rf, speed_ref_out_local, acc_ref_out_local, euler_vect[2], speed_vect_control_rf[1]);
+        #else
+            //Apply saturation blocks to speed setpoints in control reference frame:
+            Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
+            BoundAbs(speed_setpoint_control_rf[1],LIMITS_FWD_MAX_LAT_SPEED);
+            BoundAbs(speed_setpoint_control_rf[2],LIMITS_FWD_MAX_VERT_SPEED);
+        #endif
 
         //Compute the speed error in the control rf:
-        // speed_error_vect_control_rf[0] = speed_setpoint_control_rf[0] - speed_vect_control_rf[0];
-        // speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1] * lat_speed_multiplier;
-        // speed_error_vect_control_rf[2] = speed_setpoint_control_rf[2] - speed_vect_control_rf[2];
-        speed_error_vect_control_rf[0] = speed_ref_out_local[0] - speed_vect_control_rf[0];
-        speed_error_vect_control_rf[1] = speed_ref_out_local[1] - speed_vect_control_rf[1] * lat_speed_multiplier;
-        speed_error_vect_control_rf[2] = speed_ref_out_local[2] - speed_vect_control_rf[2];
+        #ifdef USE_RM
+            speed_error_vect_control_rf[0] = speed_ref_out_local[0] - speed_vect_control_rf[0];
+            speed_error_vect_control_rf[1] = speed_ref_out_local[1] - speed_vect_control_rf[1] * lat_speed_multiplier;
+            speed_error_vect_control_rf[2] = speed_ref_out_local[2] - speed_vect_control_rf[2];
+        #else
+            speed_error_vect_control_rf[0] = speed_setpoint_control_rf[0] - speed_vect_control_rf[0];
+            speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1] * lat_speed_multiplier;
+            speed_error_vect_control_rf[2] = speed_setpoint_control_rf[2] - speed_vect_control_rf[2];
+        #endif
 
         //Compute the acceleration setpoints in the control rf:
         acc_setpoint[0] = speed_error_vect_control_rf[0] * indi_gains_over.d.x;
@@ -1062,9 +1069,11 @@ void overactuated_mixing_run(void)
         BoundAbs(acc_setpoint[1],LIMITS_FWD_MAX_LAT_ACC);
         BoundAbs(acc_setpoint[2],LIMITS_FWD_MAX_VERT_ACC);
 
-        //Sum the acc_ref_out_local components to the acc setpoint: 
-        acc_setpoint[0] = acc_setpoint[0] + acc_ref_out_local[0]; 
-        acc_setpoint[2] = acc_setpoint[2] + acc_ref_out_local[2]; 
+        #ifdef USE_RM
+            //Sum the acc_ref_out_local components to the acc setpoint: 
+            acc_setpoint[0] = acc_setpoint[0] + acc_ref_out_local[0]; 
+            acc_setpoint[2] = acc_setpoint[2] + acc_ref_out_local[2]; 
+        #endif
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
         // LINEAR ACCELERATION IN CONTROL RF
