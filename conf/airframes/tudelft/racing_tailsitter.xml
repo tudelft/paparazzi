@@ -69,8 +69,8 @@
 
     <module name="guidance"      type="indi_hybrid">
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
-      <define name="GUIDANCE_INDI_POS_GAIN" value="0.8"/>
-      <define name="GUIDANCE_INDI_SPEED_GAIN" value="2.0"/>
+      <define name="GUIDANCE_INDI_POS_GAIN" value="0.6"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN" value="2.3"/>
       <define name="GUIDANCE_INDI_POS_GAINZ" value="1.5"/>
       <define name="GUIDANCE_INDI_SPEED_GAINZ" value="2.8"/>
       <define name="GUIDANCE_INDI_PITCH_LIFT_EFF" value="0.12"/>
@@ -152,7 +152,7 @@
       <define name="TAKEOFF_THETA_REF" value="0.0"/>
     </module>
 
-    <module name="agl_dist">
+    <!-- <module name="agl_dist">
       <define name="AGL_DIST_ID" value="AGL_LIDAR_TFMINI_ID"/>
       <define name="AGL_DIST_MAX_RANGE" value="5.0"/>
       <define name="AGL_DIST_MIN_RANGE" value="0.001"/>
@@ -164,16 +164,16 @@
       <configure name="TFMINI_BAUD" value="B115200"/>
       <configure name="USE_TFMINI_AGL" value="TRUE"/>
       <configure name="TFMINI_COMPENSATE_ROTATION" value="TRUE"/>
-    </module>
+    </module> -->
 
   </firmware>
 	  	 
   <servos driver="Pwm">
-    <servo name="TILT_LEFT"  no="0" min="2240" neutral="1490" max="740"/> <!--neutral 1490-->
-    <servo name="TILT_RIGHT" no="1" min="775" neutral="1525" max="2275"/> <!--neutral 1525-->
+    <servo name="TILT_LEFT"  no="0" min="2230" neutral="1480" max="730"/> <!--neutral 1490-->
+    <servo name="TILT_RIGHT" no="1" min="800" neutral="1550" max="2300"/> <!--neutral 1525-->
     <!--<servo name="ELEVON_RIGHT"  no="1" min="820" neutral="1520" max="2220"/>-->
-    <servo name="RM" no="2" min="1000" neutral="1100" max="2000"/>
-    <servo name="LM" no="3" min="1000" neutral="1100" max="2000"/>
+    <servo name="RM" no="2" min="1000" neutral="1100" max="1900"/>
+    <servo name="LM" no="3" min="1000" neutral="1100" max="1900"/>
     <servo name="ELE_LEFT"  no="4" min="690" neutral="1440" max="2190"/> <!--neutral 1440-->
     <servo name="ELE_RIGHT"  no="5" min="700" neutral="1450" max="2200"/> <!--neutral 1450-->
     <!--<servo name="SERVO_TEST" no="4" min="1000" neutral="1500" max="2000"/>-->
@@ -251,8 +251,8 @@
 	<define name="IMU_MPU9250_Z_SIGN" value="-1"/> <!-- was +1 -->
 
 
-    <define name="BODY_TO_IMU_PHI"   value="0" unit="deg"/>
-    <define name="BODY_TO_IMU_THETA" value="-96" unit="deg"/>
+    <define name="BODY_TO_IMU_PHI"   value="3" unit="deg"/>
+    <define name="BODY_TO_IMU_THETA" value="-95" unit="deg"/>
     <define name="BODY_TO_IMU_PSI"   value="180" unit="deg"/>
   </section>
 
@@ -338,12 +338,12 @@
 	  <define name="PIVOT_GAIN_THETA" value="0.1"/>
     <define name="PIVOT_SERVOGAIN_Q" value="0.04"/>
     <define name="PIVOT_SERVOGAIN_THETA" value="0.8"/> -->
-    <define name="PIVOT_GAIN_Q" value="0.11"/>
-    <define name="PIVOT_GAIN_THETA" value="0.5"/>
-    <define name="PIVOT_GAIN_I" value="0.01"/>
+    <define name="PIVOT_GAIN_Q" value="0.16"/> <!--0.11 before -->
+    <define name="PIVOT_GAIN_THETA" value="0.77"/><!--0.5 before -->
+    <define name="PIVOT_GAIN_I" value="0.14"/>
 
-    <define name="L1" value="0.225"/>		<!--force distance from tilt to tail, for pitch pivoting[m]-->
-    <define name="L2" value="0.155"/>	<!--force distance from CG to tail, for pitch pivoting[m]-->
+    <define name="L1" value="0.23"/>		<!--force distance from tilt to tail, for pitch pivoting[m]-->
+    <define name="L2" value="0.16"/>	<!--force distance from CG to tail, for pitch pivoting[m]-->
 
     <define name="WEIGHT_T" value="8.56"/>
     <define name="WEIGHT_S" value="1.0"/>
@@ -358,8 +358,8 @@
     	<define name="MASS" value="0.4561"/>		<!--[kg]-->
     	<define name="I_XX" value="0.00638"/>	<!--[kg m2] 0.00526 -->
     	<!--<define name="I_YY" value="0.04914925"/>-->	<!--[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
-    	<define name="I_YY" value="0.0027"/><!--0.0015 0.0011-->
-    	<define name="I_ZZ" value="0.0038"/>	<!--[kg m2] 0.00403 0.00341 -->
+    	<define name="I_YY" value="0.0036"/><!--0.0032 0.0011-->
+    	<define name="I_ZZ" value="0.011"/>	<!--[kg m2] 0.00403 0.00341 -->
  	    <!--<define name="I_XX" value="0.017897"/>	[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
     	<!--<define name="I_YY" value="0.003390"/>	[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
     	<!--<define name="I_ZZ" value="0.020337"/>	[kg m2] The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
@@ -393,7 +393,7 @@
 
   <section name="NAV">
     <define name="NAV_CLIMB_VSPEED" value="1.0"/>
-    <define name="NAV_DESCEND_VSPEED" value="-0.8"/>
+    <define name="NAV_DESCEND_VSPEED" value="-0.5"/>
   </section>
 
   <!--<section name="AHRS" prefix="AHRS_">-->
@@ -412,6 +412,7 @@
 
   <!-- Gains for horizontal navigation-->
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
+    <define name="USE_REF" value="FALSE"/>
     <define name="PGAIN" value="100"/>
     <define name="DGAIN" value="100"/>
     <define name="IGAIN" value="20"/>

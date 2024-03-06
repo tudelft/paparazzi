@@ -295,7 +295,7 @@ void autopilot_check_in_flight(bool motors_on)
        */
       if (stabilization_cmd[COMMAND_THRUST] > AUTOPILOT_IN_FLIGHT_MIN_THRUST) {
         autopilot_in_flight_counter++;
-        if (autopilot_in_flight_counter == AUTOPILOT_IN_FLIGHT_TIME && takeoff_stage == 2) {
+        if (autopilot_in_flight_counter == AUTOPILOT_IN_FLIGHT_TIME) {
           autopilot.in_flight = true;
         }
       } else { /* currently not in_flight and thrust below threshold, reset counter */

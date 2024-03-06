@@ -38,7 +38,7 @@ int16_t stage = 0;
 int16_t counter = 0;
 float theta_ref = TAKEOFF_THETA_REF;
 
-float t_scale_to_theta = 0.6;
+float t_scale_to_theta = 1.0888;
 
 #define TAKEOFF_MODULE_FREQ 200
 
@@ -90,9 +90,10 @@ int16_t take_off_stage(float theta, float rate_q){
       stage = 1;
       counter = 0;
     }
-    else if(stage == 1 && fabs((theta - theta_ref/ 180.0 * M_PI)/((theta_ref +90.0)/ 180.0 * M_PI))< 0.9 && rate_q < 0.1 && counter/TAKEOFF_MODULE_FREQ > 2.0 ){
+    else if(stage == 1 && fabs((theta - theta_ref/ 180.0 * M_PI)/((theta_ref +90.0)/ 180.0 * M_PI))< 0.09 && rate_q < 0.1 && counter/TAKEOFF_MODULE_FREQ > 1.5 ){
       stage = 2;
       counter = 0;
+      autopilot_set_in_flight(true);
     }
   } else {
     counter = 0;

@@ -19,7 +19,7 @@
   			<dl_setting var="mass_property.mass" min="0.10" step="0.001" max="1.00" shortname="mass" param="MASS"/>
   			<dl_setting var="mass_property.I_xx" min="0.0001" step="0.0001" max="0.01" shortname="I_xx" param="I_XX"/>
   			<dl_setting var="mass_property.I_yy" min="0.0001" step="0.0001" max="0.01" shortname="I_yy" param="I_YY"/>
-  			<dl_setting var="mass_property.I_zz" min="0.0001" step="0.0001" max="0.01" shortname="I_zz" param="I_ZZ"/>
+  			<dl_setting var="mass_property.I_zz" min="0.0001" step="0.0001" max="0.05" shortname="I_zz" param="I_ZZ"/>
   		</dl_settings>
   	</dl_settings>
   </settings>
