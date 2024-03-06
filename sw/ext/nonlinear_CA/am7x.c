@@ -29,7 +29,7 @@ struct timeval current_time, last_time, last_sent_msg_time, time_last_opt_run, t
 
 pthread_mutex_t mutex_am7;
 
-int verbose_connection = 1;
+int verbose_connection = 0;
 int verbose_optimizer = 0;
 int verbose_servo = 0; 
 int verbose_runtime = 0; 
@@ -453,9 +453,16 @@ void* second_thread() //Run the optimization code
     myam7_data_out_copy_internal.az_3_cmd_int = (int16_T) (u_out[10]*1e2*180/M_PI), myam7_data_out_copy_internal.az_4_cmd_int = (int16_T) (u_out[11]*1e2*180/M_PI);
     myam7_data_out_copy_internal.theta_cmd_int = (int16_T) (u_out[12]*1e2*180/M_PI), myam7_data_out_copy_internal.phi_cmd_int = (int16_T) (u_out[13]*1e2*180/M_PI);
     myam7_data_out_copy_internal.ailerons_cmd_int = (int16_T) (u_out[14]*1e2*180/M_PI);
+    #ifdef SEND_MODELED_ACC_ON_RESIDUALS
+    myam7_data_out_copy_internal.residual_ax_int = (int16_T) (current_accelerations_filtered[0].o[0]*1e2), myam7_data_out_copy_internal.residual_ay_int = (int16_T) (current_accelerations_filtered[1].o[0]*1e2);
+    myam7_data_out_copy_internal.residual_az_int = (int16_T) (current_accelerations_filtered[2].o[0]*1e2), myam7_data_out_copy_internal.residual_p_dot_int = (int16_T) (current_accelerations_filtered[3].o[0]*1e1*180/M_PI);
+    myam7_data_out_copy_internal.residual_q_dot_int = (int16_T) (current_accelerations_filtered[4].o[0]*1e1*180/M_PI), myam7_data_out_copy_internal.residual_r_dot_int = (int16_T) (current_accelerations_filtered[5].o[0]*1e1*180/M_PI);
+    #else
     myam7_data_out_copy_internal.residual_ax_int = (int16_T) (residuals[0]*1e2), myam7_data_out_copy_internal.residual_ay_int = (int16_T) (residuals[1]*1e2);
     myam7_data_out_copy_internal.residual_az_int = (int16_T) (residuals[2]*1e2), myam7_data_out_copy_internal.residual_p_dot_int = (int16_T) (residuals[3]*1e1*180/M_PI);
     myam7_data_out_copy_internal.residual_q_dot_int = (int16_T) (residuals[4]*1e1*180/M_PI), myam7_data_out_copy_internal.residual_r_dot_int = (int16_T) (residuals[5]*1e1*180/M_PI);
+    #endif
+
     myam7_data_out_copy_internal.n_iteration = (uint16_T) (N_iterations), myam7_data_out_copy_internal.exit_flag_optimizer = (int16_T) (exitflag);
     myam7_data_out_copy_internal.elapsed_time_us = (uint16_T) (elapsed_time * 1e6), myam7_data_out_copy_internal.n_evaluation = (uint16_T) (N_evaluation);
     

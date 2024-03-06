@@ -25,6 +25,8 @@
 #define BAUDRATE_AM7 460800 //Define the baudrate
 #define MAX_FREQUENCY_MSG_OUT 550 //Define the maximum message output frequency
 
+#define SEND_MODELED_ACC_ON_RESIDUALS
+
 //Communication structures
 struct  __attribute__((__packed__)) am7_data_out {
     //Motor command
