@@ -297,6 +297,11 @@
     <define name="MAX_VERT_ACC" value="4.0" unit="m/s^2"/>
   </section>
 
+  <section name="REF_MODEL" prefix="REF_MODEL_">
+    <define name="P_GAIN" value="2.0" />
+    <define name="D_GAIN" value="6.0" />
+  </section>
+
   <section name="OVERACTUATED_VARIABLES" prefix="OVERACTUATED_MIXING_">
 
     <!-- PID gains wrt the SI units -->
@@ -346,9 +351,9 @@
     <!-- <define name="INDI_REF_ERR_P" value="4"/>
     <define name="INDI_REF_ERR_Q" value="4"/>
     <define name="INDI_REF_ERR_R" value="1.5"/> -->
-    <define name="INDI_REF_ERR_P" value="2"/>
-    <define name="INDI_REF_ERR_Q" value="2"/>
-    <define name="INDI_REF_ERR_R" value="1"/>
+    <define name="INDI_REF_ERR_P" value="3.5"/>
+    <define name="INDI_REF_ERR_Q" value="3.5"/>
+    <define name="INDI_REF_ERR_R" value="1.25"/>
 
     <define name="INDI_REF_ERR_X" value="1"/>
     <define name="INDI_REF_ERR_Y" value="1"/>
@@ -358,9 +363,9 @@
     <!-- <define name="INDI_REF_RATE_P" value="7"/>
     <define name="INDI_REF_RATE_Q" value="7"/>
     <define name="INDI_REF_RATE_R" value="5"/> -->
-    <define name="INDI_REF_RATE_P" value="4"/>
-    <define name="INDI_REF_RATE_Q" value="4"/>
-    <define name="INDI_REF_RATE_R" value="3"/>
+    <define name="INDI_REF_RATE_P" value="6"/>
+    <define name="INDI_REF_RATE_Q" value="6"/>
+    <define name="INDI_REF_RATE_R" value="4"/>
 
     <define name="INDI_REF_RATE_X" value="1"/>
     <define name="INDI_REF_RATE_Y" value="1"/>
@@ -434,7 +439,8 @@
    <define name="MOTOR_K_PWM_OMEGA" value="1.077" unit="(rad/s)/PWM"/>
    <define name="MOTOR_MAX_OMEGA" value="1037" unit="rad/s"/> -->
 
-    <define name="MOTOR_MIN_OMEGA" value="150" unit="rad/s"/><!-- Needed to make the INDI to work-->
+    <!-- <define name="MOTOR_MIN_OMEGA" value="150" unit="rad/s"/> -->
+    <define name="MOTOR_MIN_OMEGA" value="450" unit="rad/s"/><!-- Needed to make the INDI to work-->
     <define name="SERVO_AZ_MIN_ANGLE" value="-45" unit="deg"/><!-- Always remember to update the PWM range as well-->
     <define name="SERVO_AZ_MAX_ANGLE" value="45" unit="deg"/>
 

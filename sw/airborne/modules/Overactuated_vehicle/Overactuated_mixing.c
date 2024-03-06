@@ -51,7 +51,7 @@ struct overactuated_mixing_t overactuated_mixing;
 //General state variables:
 float rate_vect[3], rate_vect_filt[3], rate_vect_filt_dot[3], euler_vect[3], acc_vect[3], acc_vect_filt[3], accel_vect_filt_control_rf[3],accel_vect_control_rf[3], speed_vect_control_rf[3];
 float rate_vect_ned[3], acc_body_real[3], acc_body_real_filt[3];
-float speed_vect[3], pos_vect[3], airspeed = 0, beta_deg = 0, beta_rad = 0, flight_path_angle = 0, total_V = 0;
+float speed_vect[3], pos_vect[3], airspeed = 0, beta_deg = 0, beta_rad = 0, flight_path_angle = 0;
 float actuator_state[INDI_NUM_ACT];
 float actuator_state_filt[INDI_NUM_ACT];
 float euler_error[3];
@@ -219,6 +219,8 @@ struct ActuatorsStruct act_dyn_struct = {
 // Variables needed for the actuators:
 float act_dyn[INDI_NUM_ACT];
 
+float Psi_old = 0.0f, psi_dot_filtered = 0.0f, speed_ref_out_old[3] = {0.0f, 0.0f, 0.0f}, acc_ref_out_old[3] = {0.0f, 0.0f, 0.0f}; 
+
 static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am7_data_in * myam7_data_in_ptr, float * extra_data_in_ptr){
     memcpy(&myam7_data_in_local,myam7_data_in_ptr,sizeof(struct am7_data_in));
     memcpy(&extra_data_in_local,extra_data_in_ptr,255 * sizeof(float));
@@ -323,6 +325,61 @@ void init_filters(void){
         actuator_state_old_old[i] = 0;
         actuator_state_old[i] = 0;
     }
+
+    //Init reference model integrators: 
+    for(int i=0; i<3; i++){
+        speed_ref_out_old[i] = 0.0f;
+        acc_ref_out_old[i] = 0.0f;
+    }
+
+}
+
+void compute_rm_speed_and_acc_control_rf(float * speed_ref_in, float * speed_ref_out, float * acc_ref_out, float Psi, float Vy_control){
+    float desired_internal_acc_rm[3] = {0.0f, 0.0f, 0.0f}, desired_internal_jerk_rm[3] = {0.0f, 0.0f, 0.0f}; 
+    //Compute Psi_dot
+    float Psi_dot = (Psi - Psi_old)*PERIODIC_FREQUENCY; 
+    Psi_old = Psi; 
+    psi_dot_filtered = psi_dot_filtered + OVERACTUATED_MIXING_FIRST_ORDER_FILTER_COEFF_ANG_RATES * (Psi_dot - psi_dot_filtered);
+
+    //Compute speed and acc ref based on the REF_MODEL_GAINS: 
+    //First, bound the speed_ref_in with the max and min values: 
+    Bound(speed_ref_in[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
+    BoundAbs(speed_ref_in[1],LIMITS_FWD_MAX_LAT_SPEED);
+    BoundAbs(speed_ref_in[2],LIMITS_FWD_MAX_VERT_SPEED);
+
+    desired_internal_acc_rm[0] = (speed_ref_in[0] - speed_ref_out_old[0])*REF_MODEL_P_GAIN; 
+    Bound(desired_internal_acc_rm[0],LIMITS_FWD_MIN_FWD_ACC,LIMITS_FWD_MAX_FWD_ACC);
+
+    desired_internal_acc_rm[2] = (speed_ref_in[2] - speed_ref_out_old[2])*REF_MODEL_P_GAIN; 
+    BoundAbs(desired_internal_acc_rm[2],LIMITS_FWD_MAX_VERT_ACC);
+    
+    desired_internal_jerk_rm[0] = (desired_internal_acc_rm[0] - acc_ref_out_old[0])*REF_MODEL_D_GAIN; 
+    desired_internal_jerk_rm[2] = (desired_internal_acc_rm[2] - acc_ref_out_old[2])*REF_MODEL_D_GAIN; 
+
+    //Integrate jerk to get acc_ref_out: 
+    acc_ref_out[0] = acc_ref_out_old[0] + (desired_internal_jerk_rm[0] - acc_ref_out_old[0])/PERIODIC_FREQUENCY;
+    acc_ref_out[2] = acc_ref_out_old[2] + (desired_internal_jerk_rm[2] - acc_ref_out_old[2])/PERIODIC_FREQUENCY;
+
+    //Save acc_ref variables
+    for(int i=0; i<3; i++){
+        acc_ref_out_old[i] = acc_ref_out[i]; 
+    }
+
+    //Add the non-intertial term to the acc_x component: 
+    acc_ref_out[0] = acc_ref_out[0] + psi_dot_filtered * Vy_control;
+
+    //Integrate acc to get speed_ref_out: 
+    speed_ref_out[0] = speed_ref_out_old[0] + (acc_ref_out[0] - speed_ref_out_old[0])/PERIODIC_FREQUENCY;
+    speed_ref_out[2] = speed_ref_out_old[2] + (acc_ref_out[2] - speed_ref_out_old[2])/PERIODIC_FREQUENCY;
+
+    //Save speed_ref variables
+    for(int i=0; i<3; i++){
+        speed_ref_out_old[i] = speed_ref_out[i]; 
+    }
+
+    //Compute reference for lateral speed: 
+    acc_ref_out[1] = 0.0f; 
+    speed_ref_out[1] = speed_ref_in[1]; 
 }
 
 /**
@@ -461,16 +518,19 @@ void assign_variables(void){
     beta_deg = - aoa_pwm.angle * 180/M_PI;
     beta_rad = beta_deg * M_PI / 180;
 
-    total_V = airspeed;//sqrt(airspeed*airspeed+ speed_vect[2]*speed_vect[2]);
-    if(total_V > 5){
-        flight_path_angle = asin(-speed_vect[2]/total_V);
-        flight_path_angle = flight_path_angle + fpa_off_deg*M_PI/180;
+    float smooth_gain_gamma = (airspeed - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION) / (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION);
+    Bound(smooth_gain_gamma , 0, 1); // 0 until min_speed and 1 above ref_speed
 
-        BoundAbs(flight_path_angle, M_PI/2);
+    float flight_path_angle_offset = fpa_off_deg*M_PI/180;
+    float flight_path_angle_airspeed = fpa_off_deg*M_PI/180;
+    if(airspeed > 1){
+        flight_path_angle_airspeed = asin(-speed_vect[2]/airspeed);
+        flight_path_angle_airspeed = flight_path_angle_airspeed + fpa_off_deg*M_PI/180;
+        BoundAbs(flight_path_angle_airspeed, M_PI/2);
     }
-    else{
-        flight_path_angle = fpa_off_deg*M_PI/180;
-    }
+    //Mix the two values: 
+    flight_path_angle = smooth_gain_gamma * flight_path_angle_airspeed + (1-smooth_gain_gamma)*flight_path_angle_offset;
+
 
     for (int i = 0 ; i < 4 ; i++){
         act_dyn[i] = act_dyn_struct.motor;
@@ -803,6 +863,8 @@ void overactuated_mixing_run(void)
             rate_vect_filt[2] = 0;
 
             pos_setpoint[2] = pos_vect[2];
+
+
         }
 
         //Correct the K_T with speed: 
@@ -973,15 +1035,22 @@ void overactuated_mixing_run(void)
             speed_setpoint_control_rf[2] = des_Vz; 
         }
 
+        //Use reference model to compute speed and accelerations references: 
+        float speed_ref_out_local[3], acc_ref_out_local[3];
+        compute_rm_speed_and_acc_control_rf(speed_setpoint_control_rf, speed_ref_out_local, acc_ref_out_local, euler_vect[2], speed_vect_control_rf[1]);
+
         //Apply saturation blocks to speed setpoints in control reference frame:
-        Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
-        BoundAbs(speed_setpoint_control_rf[1],LIMITS_FWD_MAX_LAT_SPEED);
-        BoundAbs(speed_setpoint_control_rf[2],LIMITS_FWD_MAX_VERT_SPEED);
+        // Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
+        // BoundAbs(speed_setpoint_control_rf[1],LIMITS_FWD_MAX_LAT_SPEED);
+        // BoundAbs(speed_setpoint_control_rf[2],LIMITS_FWD_MAX_VERT_SPEED);
 
         //Compute the speed error in the control rf:
-        speed_error_vect_control_rf[0] = speed_setpoint_control_rf[0] - speed_vect_control_rf[0];
-        speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1] * lat_speed_multiplier;
-        speed_error_vect_control_rf[2] = speed_setpoint_control_rf[2] - speed_vect_control_rf[2];
+        // speed_error_vect_control_rf[0] = speed_setpoint_control_rf[0] - speed_vect_control_rf[0];
+        // speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1] * lat_speed_multiplier;
+        // speed_error_vect_control_rf[2] = speed_setpoint_control_rf[2] - speed_vect_control_rf[2];
+        speed_error_vect_control_rf[0] = speed_ref_out_local[0] - speed_vect_control_rf[0];
+        speed_error_vect_control_rf[1] = speed_ref_out_local[1] - speed_vect_control_rf[1] * lat_speed_multiplier;
+        speed_error_vect_control_rf[2] = speed_ref_out_local[2] - speed_vect_control_rf[2];
 
         //Compute the acceleration setpoints in the control rf:
         acc_setpoint[0] = speed_error_vect_control_rf[0] * indi_gains_over.d.x;
@@ -992,6 +1061,10 @@ void overactuated_mixing_run(void)
         Bound(acc_setpoint[0],LIMITS_FWD_MIN_FWD_ACC,LIMITS_FWD_MAX_FWD_ACC);
         BoundAbs(acc_setpoint[1],LIMITS_FWD_MAX_LAT_ACC);
         BoundAbs(acc_setpoint[2],LIMITS_FWD_MAX_VERT_ACC);
+
+        //Sum the acc_ref_out_local components to the acc setpoint: 
+        acc_setpoint[0] = acc_setpoint[0] + acc_ref_out_local[0]; 
+        acc_setpoint[2] = acc_setpoint[2] + acc_ref_out_local[2]; 
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
         // LINEAR ACCELERATION IN CONTROL RF
