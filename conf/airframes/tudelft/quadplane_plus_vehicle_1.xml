@@ -351,8 +351,8 @@
     <!-- <define name="INDI_REF_ERR_P" value="4"/>
     <define name="INDI_REF_ERR_Q" value="4"/>
     <define name="INDI_REF_ERR_R" value="1.5"/> -->
-    <define name="INDI_REF_ERR_P" value="2"/>
-    <define name="INDI_REF_ERR_Q" value="2"/>
+    <define name="INDI_REF_ERR_P" value="3"/>
+    <define name="INDI_REF_ERR_Q" value="3"/>
     <define name="INDI_REF_ERR_R" value="1.5"/>
     <!-- <define name="INDI_REF_ERR_P" value="1.5"/>
     <define name="INDI_REF_ERR_Q" value="1.5"/>
@@ -549,7 +549,7 @@
   </section>
 
   <section name="MISC">
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 19.5 * adc)"/><!-- TODO: verify/calibrate -->
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 18.5 * adc)"/><!-- TODO: verify/calibrate -->
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
 
     <!-- Basic navigation settings -->
