@@ -295,7 +295,8 @@
         <define name="HOVER_ROLL_ROLL_COEF"  value="{-0.0000947144886298017, -0.000053954}"/>
 
         <define name="K_ELEVATOR"            value="{0.4603,-4.81466,-28.8464}"/>
-        <define name="K_RUDDER"              value="{-26.1434,-0.336403,-1.16702}"/>
+        <!-- <define name="K_RUDDER"              value="{-26.1434,-0.336403,-1.16702}"/> -->
+        <define name="K_RUDDER"              value="{-26.1434,-0.336403,-0.102240665}"/>
         <define name="K_AILERON"             value="2.777647188"/>
         <define name="K_FLAPERON"            value="2.0439"/>
         <define name="K_PUSHER"              value="{0.007777,-0.67521}"/>
