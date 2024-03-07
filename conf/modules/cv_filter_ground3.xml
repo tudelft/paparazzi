@@ -1,0 +1,53 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="cv_detect_color_object" dir="computer_vision">
+  <doc>
+    <description>Ground filter of the lower part of the image
+    
+    </description>
+    <define name="FILTER_GROUND3_CAM" value="front_camera|bottom_camera" description="Video device to use"/>
+    <define name="FILTER_GROUND3_FPS" value="0" description="Desired FPS (0: camera rate)"/>
+    <define name="FILTER_GROUND3_LUM_MIN" value="0" description="Filter 1 min luminance"/>
+    <define name="FILTER_GROUND3_LUM_MAX" value="0" description="Filter 1 max luminance"/>
+    <define name="FILTER_GROUND3_CB_MIN" value="0" description="Filter 1 min blue chroma"/>
+    <define name="FILTER_GROUND3_CB_MAX" value="0" description="Filter 1 max blue chroma"/>
+    <define name="FILTER_GROUND3_CR_MIN" value="0" description="Filter 1 min red chroma"/>
+    <define name="FILTER_GROUND3_CR_MAX" value="0" description="Filter 1 max red chroma"/>
+    
+    <define name="FILTER_GROUND3_LOWER_PIX" value="50" description="Lower threshold"/>
+
+    
+    <define name="FILTER_GROUND3_DRAW" value="FALSE|TRUE" description="Whether or not to draw on image"/>
+
+    </doc>
+
+  <settings>
+    <dl_settings>
+      <dl_settings name="ColorObjectDetector">
+         <dl_setting var="cod_lum_min" min="0" step="1" max="255" shortname="y_min"/>
+         <dl_setting var="cod_lum_max" min="0" step="1" max="255" shortname="y_max"/>
+         <dl_setting var="cod_cb_min"   min="0" step="1" max="255" shortname="u_min"/>
+         <dl_setting var="cod_cb_max"   min="0" step="1" max="255" shortname="u_max"/>
+         <dl_setting var="cod_cr_min"   min="0" step="1" max="255" shortname="v_min"/>
+         <dl_setting var="cod_cr_max"   min="0" step="1" max="255" shortname="v_max"/>
+         <dl_setting var="cod_draw"  min="0" step="1" max="1" values="False|True" shortname="draw" />
+         <dl_setting var="lower_pix"   min="0" step="1" max="255" shortname="lower_pix"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <dep>
+    <depends>video_thread</depends>
+  </dep>
+
+  <header>
+    <file name="cv_filter_ground3.h"/>
+  </header>
+
+  <init fun="filter_ground_init()"/>
+  <periodic fun="filter_ground_periodic()" freq="50"/>
+  <makefile target="ap|nps">
+    <file name="cv_filter_ground3.c"/>
+  </makefile>
+</module>
+

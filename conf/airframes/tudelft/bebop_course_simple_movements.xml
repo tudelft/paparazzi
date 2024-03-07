@@ -10,42 +10,35 @@
       <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
       <define name="MT9V117_TARGET_FPS" value="20"/>
       
-      <!-- Detect orange -->
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="30"/>
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX1" value="170"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MIN1" value="70"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MAX1" value="130"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MIN1" value="150"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MAX1" value="190"/>
+      <!-- This is for both i guess -->
       
-      <!-- Detect green -->
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN2" value="60"/>
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX2" value="130"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MIN2" value="75"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MAX2" value="110"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MIN2" value="120"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MAX2" value="140"/>
+      <!-- Detect ground -->
+      <define name="FILTER_GROUND3_LUM_MIN" value="0"/>
+      <define name="FILTER_GROUND3_LUM_MAX" value="0"/>
+      <define name="FILTER_GROUND3_CB_MIN" value="0" />
+      <define name="FILTER_GROUND3_CB_MAX" value="0" />
+      <define name="FILTER_GROUND3_CR_MIN" value="0" />
+      <define name="FILTER_GROUND3_CR_MAX" value="0" />
+      <define name="FILTER_GROUND3_LOWER_PIX" value="50" description="Lower threshold"/>
+
+
     </target>
     <target name="nps" board="pc">
+    <!-- This is only for simulation -->
       <module name="fdm" type="gazebo"/>
       <define name="VIDEO_CAPTURE_PATH" value="/tmp/paparazzi/images"/>
       <define name="LOGGER_FILE_PATH" value="/tmp/paparazzi/log"/>
       
-      <!-- Detect orange -->
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="41"/>
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX1" value="183"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MIN1" value="53"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MAX1" value="121"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MIN1" value="134"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MAX1" value="249"/>
-      
-      <!-- Detect green -->
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN2" value="0"/>
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX2" value="255"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MIN2" value="0"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MAX2" value="110"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MIN2" value="0"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MAX2" value="130"/>
+      <!-- Detect ground -->
+
+      <define name="FILTER_GROUND3_LUM_MIN" value="0"/>
+      <define name="FILTER_GROUND3_LUM_MAX" value="0"/>
+      <define name="FILTER_GROUND3_CB_MIN" value="0" />
+      <define name="FILTER_GROUND3_CB_MAX" value="0" />
+      <define name="FILTER_GROUND3_CR_MIN" value="0" />
+      <define name="FILTER_GROUND3_CR_MAX" value="0" />
+      <define name="FILTER_GROUND3_LOWER_PIX" value="50" description="Lower threshold"/>
+
     </target>
 
   <!-- Subsystem section -->
@@ -93,10 +86,15 @@
       <define name="DETECT_CONTOUR_FPS" value="0"/>
     </module> -->
 
-    <module name="simple_cam_test">
+    <!-- <module name="simple_cam_test">
       <define name="CAM_TEST_CAM" value="front_camera"/>
-    </module>
+    </module> -->
 
+    <module name="cv_filter_ground3">
+      <define name="FILTER_GROUND3_CAM" value="front_camera"/>
+      <define name="FILTER_GROUND3_FPS" value="0"/>
+      <define name="FILTER_GROUND3_DRAW" value="1"/>
+    </module>
     <module name="constant_turning"/>
 
     <module name="video_rtp_stream">
