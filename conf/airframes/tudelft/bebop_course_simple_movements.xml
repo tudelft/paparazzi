@@ -19,7 +19,7 @@
       <define name="FILTER_GROUND3_CB_MAX" value="0" />
       <define name="FILTER_GROUND3_CR_MIN" value="0" />
       <define name="FILTER_GROUND3_CR_MAX" value="0" />
-      <define name="FILTER_GROUND3_LOWER_PIX" value="50" description="Lower threshold"/>
+      <define name="FILTER_GROUND3_LOWER_PIX" value="80" description="Lower threshold"/>
 
 
     </target>
@@ -32,12 +32,12 @@
       <!-- Detect ground -->
 
       <define name="FILTER_GROUND3_LUM_MIN" value="0"/>
-      <define name="FILTER_GROUND3_LUM_MAX" value="0"/>
+      <define name="FILTER_GROUND3_LUM_MAX" value="255"/>
       <define name="FILTER_GROUND3_CB_MIN" value="0" />
-      <define name="FILTER_GROUND3_CB_MAX" value="0" />
+      <define name="FILTER_GROUND3_CB_MAX" value="255" />
       <define name="FILTER_GROUND3_CR_MIN" value="0" />
-      <define name="FILTER_GROUND3_CR_MAX" value="0" />
-      <define name="FILTER_GROUND3_LOWER_PIX" value="50" description="Lower threshold"/>
+      <define name="FILTER_GROUND3_CR_MAX" value="255" />
+      <define name="FILTER_GROUND3_LOWER_PIX" value="80" description="Lower threshold"/>
 
     </target>
 

@@ -41,19 +41,19 @@ struct ground_filter_msg_t {
 
 struct ground_filter_msg_t ground_filter_msg;
 
-void get_pix(uint8_t *buffer,const int w, const int h, const int x, const int y, uint8_t *yp,uint8_t *up, uint8_t *vp) {
+void get_pix(uint8_t **buffer_ptr,const uint16_t x, const uint16_t y, const uint16_t w, const uint16_t h, uint8_t **yp,uint8_t **up, uint8_t **vp) {
     if (x % 2 == 0) {
         // Even x
-        up = &buffer[y * 2 * w + 2 * x];      // U
-        yp = &buffer[y * 2 * w + 2 * x + 1];  // Y1
-        vp = &buffer[y * 2 * w + 2 * x + 2];  // V
+        *up = buffer_ptr[y * 2 * w + 2 * x];      // U
+        *yp = buffer_ptr[y * 2 * w + 2 * x + 1];  // Y1
+        *vp = buffer_ptr[y * 2 * w + 2 * x + 2];  // V
         //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
       } else {
         // Uneven x
-        up = &buffer[y * 2 * w + 2 * x - 2];  // U
+        *up = buffer_ptr[y * 2 * w + 2 * x - 2];  // U
         //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
-        vp = &buffer[y * 2 * w + 2 * x];      // V
-        yp = &buffer[y * 2 * w + 2 * x + 1];  // Y2
+        *vp = buffer_ptr[y * 2 * w + 2 * x];      // V
+        *yp = buffer_ptr[y * 2 * w + 2 * x + 1];  // Y2
       }
 }
 
@@ -68,12 +68,27 @@ static struct image_t *cam_callback(struct image_t *img __attribute__((unused)))
 
   // Go through all the pixels
   uint8_t *yp, *up, *vp;
-  for (uint16_t y = img->h - lower_pix; y < img->h; y++) {
+  PRINT("lower_pix = %d, img->h /3: %d", lower_pix, img->h/3);
+  for (uint16_t x = 0; x < lower_pix; x++) {
     for (uint8_t i = 0; i < 3; i++){
-      for (uint16_t x = i*(img->w/3); x < (i+1) * (img->w/3); x++) {  
+      for (uint16_t y = i*(img->h/3); y < (i+1) * (img->h/3); y++) {  
         
-        get_pix(buffer, x, y,img->w, img->h, yp, up, vp);
-
+        //get_pix(&buffer, x, y,img->w, img->h, &yp, &up, &vp);
+          uint8_t *yp, *up, *vp;
+          // get color YUV
+          if (x % 2 == 0) {
+            // Even x
+            up = &buffer[y * 2 * img->w + 2 * x];      // U
+            yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
+            vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+            //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
+          } else {
+            // Uneven x
+            up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+            //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
+            vp = &buffer[y * 2 * img->w + 2 * x];      // V
+            yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+          }
         if ( (*yp >= cod_lum_min) && (*yp <= cod_lum_max) &&
             (*up >= cod_cb_min ) && (*up <= cod_cb_max ) &&
             (*vp >= cod_cr_min ) && (*vp <= cod_cr_max )) {
@@ -98,19 +113,54 @@ static struct image_t *cam_callback(struct image_t *img __attribute__((unused)))
   }
 
   if (cod_draw) {
-    for (uint16_t y = 0; y < img->h - lower_pix; y++) {
+    PRINT("drawing black");
+    // for (uint16_t y = 0; y < img->h - lower_pix; y++) {
 
-      for (uint16_t x = 0; x < img->w; x ++) {
-        get_pix(buffer, x, y,img->w, img->h, yp, up, vp);
+    //   for (uint16_t x = 0; x < img->w; x ++) {
+    //     PRINT("pix x:%d y:%d, w:%d,h:%d", x,y, img->w, img->h);
+    //     get_pix(&buffer, x, y,img->w, img->h, &yp, &up, &vp);
         
-        // draw dark the ignored area
-        *yp=0;
+    //     // draw dark the ignored area
+    //     *yp = 0;
+    //     // *up = 0;
+    //     // *vp = 0;
+    //   }
+    // }
+    for (uint16_t x = lower_pix; x < img->w; x++) {
+      for (uint16_t y = 0; y < img->h; y++) {
+        // Check if the color is inside the specified values
+        uint8_t *yp, *up, *vp;
+        // get color YUV
+        if (x % 2 == 0) {
+          // Even x
+          up = &buffer[y * 2 * img->w + 2 * x];      // U
+          yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
+          vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+          //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
+        } else {
+          // Uneven x
+          up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+          //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
+          vp = &buffer[y * 2 * img->w + 2 * x];      // V
+          yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+        }
+
+        // set to black
+        *yp = 16;
+        *up = 128;
+        *vp = 128;
       }
     }
   }
 
+  pthread_mutex_lock(&mutex);
+  ground_filter_msg.count_left = cnt_left;
+  ground_filter_msg.count_center = cnt_center;
+  ground_filter_msg.count_right = cnt_right;
   ground_filter_msg.updated = true;
-  PRINT("updated");
+  pthread_mutex_unlock(&mutex);
+
+  PRINT("updated, lower pix is %d", lower_pix);
   return img;
 }
 
@@ -130,6 +180,7 @@ extern void filter_ground_init(void) {
   cod_cr_min = FILTER_GROUND3_CR_MIN;
   cod_cr_max = FILTER_GROUND3_CR_MAX;
   lower_pix = FILTER_GROUND3_LOWER_PIX;
+  cod_draw = FILTER_GROUND3_DRAW;
   #define CALLBACK_ID 0
   // FILTER_GROUND3_CAM will be defined in the xml file
   cv_add_to_device(&FILTER_GROUND3_CAM, cam_callback, FILTER_GROUND3_FPS, 0);

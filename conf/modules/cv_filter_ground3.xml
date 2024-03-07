@@ -14,7 +14,7 @@
     <define name="FILTER_GROUND3_CR_MIN" value="0" description="Filter 1 min red chroma"/>
     <define name="FILTER_GROUND3_CR_MAX" value="0" description="Filter 1 max red chroma"/>
     
-    <define name="FILTER_GROUND3_LOWER_PIX" value="50" description="Lower threshold"/>
+    <define name="FILTER_GROUND3_LOWER_PIX" value="0" description="Lower threshold"/>
 
     
     <define name="FILTER_GROUND3_DRAW" value="FALSE|TRUE" description="Whether or not to draw on image"/>
