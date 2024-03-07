@@ -1,0 +1,29 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="test_receiver">
+  <doc>
+    <description>
+    Test module of the communication between processes
+    </description>
+    <define name="GROUND_FILTER_DETECTION_ID" value="ABI_BROADCAST" description="which GROUND_DETECTION message to recieve to detect the ground."/>
+  </doc>
+    <!-- <settings>
+    <dl_settings>
+      <dl_settings name="OrangeAvoider">
+         <dl_setting var="oa_color_count_frac" min="0" step="0.01" max="0.5"/>
+      </dl_settings>
+    </dl_settings>
+  </settings> -->
+  
+  <dep>
+    <depends>cv_filter_ground3</depends>
+  </dep>
+  <header>
+    <file name="test_receiver.h"/>
+  </header>
+  <init fun="test_receiver_init()"/>
+  <periodic fun="test_receiver_periodic()" freq="1"/>
+  <makefile target="ap|nps">
+    <file name="test_receiver.c"/>
+  </makefile>
+</module>
