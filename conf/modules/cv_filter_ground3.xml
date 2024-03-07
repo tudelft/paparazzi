@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="cv_detect_color_object" dir="computer_vision">
+<module name="cv_filter_ground3" dir="computer_vision">
   <doc>
     <description>Ground filter of the lower part of the image
     
@@ -23,7 +23,7 @@
 
   <settings>
     <dl_settings>
-      <dl_settings name="ColorObjectDetector">
+      <dl_settings name="GroundFilter3">
          <dl_setting var="cod_lum_min" min="0" step="1" max="255" shortname="y_min"/>
          <dl_setting var="cod_lum_max" min="0" step="1" max="255" shortname="y_max"/>
          <dl_setting var="cod_cb_min"   min="0" step="1" max="255" shortname="u_min"/>

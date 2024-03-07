@@ -41,19 +41,19 @@ struct ground_filter_msg_t {
 
 struct ground_filter_msg_t ground_filter_msg;
 
-void get_pix(uint8_t *buffer, const int x, const int y, uint8_t *yp,uint8_t *up, uint8_t *vp) {
+void get_pix(uint8_t *buffer,const int w, const int h, const int x, const int y, uint8_t *yp,uint8_t *up, uint8_t *vp) {
     if (x % 2 == 0) {
         // Even x
-        up = &buffer[y * 2 * img->w + 2 * x];      // U
-        yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
-        vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+        up = &buffer[y * 2 * w + 2 * x];      // U
+        yp = &buffer[y * 2 * w + 2 * x + 1];  // Y1
+        vp = &buffer[y * 2 * w + 2 * x + 2];  // V
         //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
       } else {
         // Uneven x
-        up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+        up = &buffer[y * 2 * w + 2 * x - 2];  // U
         //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
-        vp = &buffer[y * 2 * img->w + 2 * x];      // V
-        yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+        vp = &buffer[y * 2 * w + 2 * x];      // V
+        yp = &buffer[y * 2 * w + 2 * x + 1];  // Y2
       }
 }
 
@@ -72,7 +72,7 @@ static struct image_t *cam_callback(struct image_t *img __attribute__((unused)))
     for (uint8_t i = 0; i < 3; i++){
       for (uint16_t x = i*(img->w/3); x < (i+1) * (img->w/3); x++) {  
         
-        get_pix(buffer, x, y, yp, up, vp);
+        get_pix(buffer, x, y,img->w, img->h, yp, up, vp);
 
         if ( (*yp >= cod_lum_min) && (*yp <= cod_lum_max) &&
             (*up >= cod_cb_min ) && (*up <= cod_cb_max ) &&
@@ -101,7 +101,7 @@ static struct image_t *cam_callback(struct image_t *img __attribute__((unused)))
     for (uint16_t y = 0; y < img->h - lower_pix; y++) {
 
       for (uint16_t x = 0; x < img->w; x ++) {
-        get_pix(buffer, x, y, yp, up, vp);
+        get_pix(buffer, x, y,img->w, img->h, yp, up, vp);
         
         // draw dark the ignored area
         *yp=0;
@@ -144,7 +144,7 @@ void filter_ground_periodic(void)
   pthread_mutex_lock(&mutex);
   memcpy(&local_msg, &ground_filter_msg, sizeof(struct ground_filter_msg_t));
   pthread_mutex_unlock(&mutex);
-
+  PRINT("periodic");
   if (local_msg.updated) {
     // it seems we have to send the plain values
     // AbiSendMsgVISUAL_DETECTION(FILTER_GROUND3_DETECTION,
