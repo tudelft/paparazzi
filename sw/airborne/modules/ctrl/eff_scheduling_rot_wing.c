@@ -334,7 +334,7 @@ void eff_scheduling_rot_wing_update_rudder_effectiveness(void)
   // Convert moment to effectiveness
   float eff_z_rudder = dMzdpprz / eff_sched_p.Izz;
 
-  Bound(eff_z_rudder, 0.00001, 0.1);
+  Bound(eff_z_rudder, 0.000001, 0.1);
 
   g1g2[2][4] = eff_z_rudder;
 }
