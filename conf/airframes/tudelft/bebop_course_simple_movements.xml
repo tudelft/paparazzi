@@ -87,7 +87,15 @@
       <define name="ORANGE_AVOIDER_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION1_ID"/>
       <define name="FLOOR_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION2_ID"/>
     </module> -->
+    
+    <!-- <module name="cv_detect_contour">
+      <define name="DETECT_CONTOUR_CAMERA" value="front_camera"/>
+      <define name="DETECT_CONTOUR_FPS" value="0"/>
+    </module> -->
 
+    <module name="simple_cam_test">
+      <define name="CAM_TEST_CAM" value="front_camera"/>
+    </module>
 
     <module name="constant_turning"/>
 
