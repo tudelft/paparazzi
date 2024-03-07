@@ -223,7 +223,7 @@ struct ActuatorsStruct act_dyn_struct = {
 // Variables needed for the actuators:
 float act_dyn[INDI_NUM_ACT];
 
-float Psi_old = 0.0f, psi_dot_filtered = 0.0f, speed_ref_out_old[3] = {0.0f, 0.0f, 0.0f}, acc_ref_out_old[3] = {0.0f, 0.0f, 0.0f}; 
+float speed_ref_out_old[3] = {0.0f, 0.0f, 0.0f}, acc_ref_out_old[3] = {0.0f, 0.0f, 0.0f}; 
 
 static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am7_data_in * myam7_data_in_ptr, float * extra_data_in_ptr){
     memcpy(&myam7_data_in_local,myam7_data_in_ptr,sizeof(struct am7_data_in));
@@ -338,12 +338,10 @@ void init_filters(void){
 
 }
 
-void compute_rm_speed_and_acc_control_rf(float * speed_ref_in, float * speed_ref_out, float * acc_ref_out, float Psi, float Vy_control){
+void compute_rm_speed_and_acc_control_rf(float * speed_ref_in, float * speed_ref_out, float * acc_ref_out, float * body_rates, float * euler_angles, float Vy_control){
     float desired_internal_acc_rm[3] = {0.0f, 0.0f, 0.0f}, desired_internal_jerk_rm[3] = {0.0f, 0.0f, 0.0f}; 
     //Compute Psi_dot
-    float Psi_dot = (Psi - Psi_old)*PERIODIC_FREQUENCY; 
-    Psi_old = Psi; 
-    psi_dot_filtered = psi_dot_filtered + OVERACTUATED_MIXING_FIRST_ORDER_FILTER_COEFF_ANG_RATES * (Psi_dot - psi_dot_filtered);
+    psi_dot_filtered = body_rates[1] * (sin(euler_angles[0])/cos(euler_angles[1])) + body_rates[2] * (cos(euler_angles[0])/cos(euler_angles[1]));
 
     //Compute speed and acc ref based on the REF_MODEL_GAINS: 
     //First, bound the speed_ref_in with the max and min values: 
@@ -361,8 +359,8 @@ void compute_rm_speed_and_acc_control_rf(float * speed_ref_in, float * speed_ref
     desired_internal_jerk_rm[2] = (desired_internal_acc_rm[2] - acc_ref_out_old[2])*REF_MODEL_D_GAIN; 
 
     //Integrate jerk to get acc_ref_out: 
-    acc_ref_out[0] = acc_ref_out_old[0] + (desired_internal_jerk_rm[0] - acc_ref_out_old[0])/PERIODIC_FREQUENCY;
-    acc_ref_out[2] = acc_ref_out_old[2] + (desired_internal_jerk_rm[2] - acc_ref_out_old[2])/PERIODIC_FREQUENCY;
+    acc_ref_out[0] = acc_ref_out_old[0] + desired_internal_jerk_rm[0]/PERIODIC_FREQUENCY;
+    acc_ref_out[2] = acc_ref_out_old[2] + desired_internal_jerk_rm[2]/PERIODIC_FREQUENCY;
 
     //Save acc_ref variables
     for(int i=0; i<3; i++){
@@ -373,8 +371,8 @@ void compute_rm_speed_and_acc_control_rf(float * speed_ref_in, float * speed_ref
     acc_ref_out[0] = acc_ref_out[0] + psi_dot_filtered * Vy_control;
 
     //Integrate acc to get speed_ref_out: 
-    speed_ref_out[0] = speed_ref_out_old[0] + (acc_ref_out[0] - speed_ref_out_old[0])/PERIODIC_FREQUENCY;
-    speed_ref_out[2] = speed_ref_out_old[2] + (acc_ref_out[2] - speed_ref_out_old[2])/PERIODIC_FREQUENCY;
+    speed_ref_out[0] = speed_ref_out_old[0] + acc_ref_out[0]/PERIODIC_FREQUENCY;
+    speed_ref_out[2] = speed_ref_out_old[2] + acc_ref_out[2]/PERIODIC_FREQUENCY;
 
     //Save speed_ref variables
     for(int i=0; i<3; i++){
@@ -1042,7 +1040,7 @@ void overactuated_mixing_run(void)
         //Use reference model to compute speed and accelerations references: 
         #ifdef USE_RM
             float speed_ref_out_local[3], acc_ref_out_local[3];
-            compute_rm_speed_and_acc_control_rf(speed_setpoint_control_rf, speed_ref_out_local, acc_ref_out_local, euler_vect[2], speed_vect_control_rf[1]);
+            compute_rm_speed_and_acc_control_rf(speed_setpoint_control_rf, speed_ref_out_local, acc_ref_out_local, rate_vect_filt, euler_vect, speed_vect_control_rf[1]);
         #else
             //Apply saturation blocks to speed setpoints in control reference frame:
             Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
