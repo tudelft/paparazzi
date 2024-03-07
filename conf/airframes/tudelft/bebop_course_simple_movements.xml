@@ -97,6 +97,11 @@
     </module>
     <module name="constant_turning"/>
 
+    <module name="test_receiver">
+      <define name="TEST_RECEIVER_GROUND_FILTER_DETECTION_ID" value="GROUND_FILTER_DETECTION_ID"/>
+     
+    </module>
+
     <module name="video_rtp_stream">
       <define name="VIEWVIDEO_CAMERA" value="front_camera"/>
       <define name="VIEWVIDEO_CAMERA2" value="bottom_camera"/>

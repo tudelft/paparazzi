@@ -68,7 +68,7 @@ static struct image_t *cam_callback(struct image_t *img __attribute__((unused)))
 
   // Go through all the pixels
   uint8_t *yp, *up, *vp;
-  PRINT("lower_pix = %d, img->h /3: %d", lower_pix, img->h/3);
+  //PRINT("lower_pix = %d, img->h /3: %d", lower_pix, img->h/3);
   for (uint16_t x = 0; x < lower_pix; x++) {
     for (uint8_t i = 0; i < 3; i++){
       for (uint16_t y = i*(img->h/3); y < (i+1) * (img->h/3); y++) {  
@@ -113,7 +113,7 @@ static struct image_t *cam_callback(struct image_t *img __attribute__((unused)))
   }
 
   if (cod_draw) {
-    PRINT("drawing black");
+    //PRINT("drawing black");
     // for (uint16_t y = 0; y < img->h - lower_pix; y++) {
 
     //   for (uint16_t x = 0; x < img->w; x ++) {
@@ -160,7 +160,7 @@ static struct image_t *cam_callback(struct image_t *img __attribute__((unused)))
   ground_filter_msg.updated = true;
   pthread_mutex_unlock(&mutex);
 
-  PRINT("updated, lower pix is %d", lower_pix);
+  //PRINT("updated, lower pix is %d", lower_pix);
   return img;
 }
 
@@ -195,13 +195,13 @@ void filter_ground_periodic(void)
   pthread_mutex_lock(&mutex);
   memcpy(&local_msg, &ground_filter_msg, sizeof(struct ground_filter_msg_t));
   pthread_mutex_unlock(&mutex);
-  PRINT("periodic");
+  //PRINT("periodic");
   if (local_msg.updated) {
     // it seems we have to send the plain values
-    // AbiSendMsgVISUAL_DETECTION(FILTER_GROUND3_DETECTION,
-    //                             local_msg.count_left,
-    //                             local_msg.count_center,
-    //                             local_msg.count_right, 0);
+    AbiSendMsgGROUND_FILTER_DETECTION(GROUND_FILTER_DETECTION_ID,
+                                local_msg.count_left,
+                                local_msg.count_center,
+                                local_msg.count_right, 0);
 
     PRINT("sending msg %d|%d|%d", local_msg.count_left,
                                 local_msg.count_center,
