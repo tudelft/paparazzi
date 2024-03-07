@@ -93,6 +93,9 @@ static struct image_t *cam_callback(struct image_t *img __attribute__((unused)))
             (*up >= cod_cb_min ) && (*up <= cod_cb_max ) &&
             (*vp >= cod_cr_min ) && (*vp <= cod_cr_max )) {
           
+          if (cod_draw) {
+            *yp = 255; // set bright color to test it
+          }
           switch (i)
           {
           case 0: // add to left
