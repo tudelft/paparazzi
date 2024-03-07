@@ -114,7 +114,7 @@ float K_ppz_angle_az = (9600 * 2) / (OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE - OV
 int32_t actuator_output[INDI_NUM_ACT], actuator_state_int[INDI_NUM_ACT];
 
 
-// #define USE_RM
+#define USE_RM
 
 //Incremental INDI variables
 float indi_u[INDI_NUM_ACT], indi_u_scaled[INDI_NUM_ACT];
@@ -341,7 +341,7 @@ void init_filters(void){
 void compute_rm_speed_and_acc_control_rf(float * speed_ref_in, float * speed_ref_out, float * acc_ref_out, float * body_rates, float * euler_angles, float Vy_control){
     float desired_internal_acc_rm[3] = {0.0f, 0.0f, 0.0f}, desired_internal_jerk_rm[3] = {0.0f, 0.0f, 0.0f}; 
     //Compute Psi_dot
-    psi_dot_filtered = body_rates[1] * (sin(euler_angles[0])/cos(euler_angles[1])) + body_rates[2] * (cos(euler_angles[0])/cos(euler_angles[1]));
+    float psi_dot_local = body_rates[1] * (sin(euler_angles[0])/cos(euler_angles[1])) + body_rates[2] * (cos(euler_angles[0])/cos(euler_angles[1]));
 
     //Compute speed and acc ref based on the REF_MODEL_GAINS: 
     //First, bound the speed_ref_in with the max and min values: 
@@ -368,7 +368,7 @@ void compute_rm_speed_and_acc_control_rf(float * speed_ref_in, float * speed_ref
     }
 
     //Add the non-intertial term to the acc_x component: 
-    acc_ref_out[0] = acc_ref_out[0] + psi_dot_filtered * Vy_control;
+    acc_ref_out[0] = acc_ref_out[0] + psi_dot_local * Vy_control;
 
     //Integrate acc to get speed_ref_out: 
     speed_ref_out[0] = speed_ref_out_old[0] + acc_ref_out[0]/PERIODIC_FREQUENCY;
