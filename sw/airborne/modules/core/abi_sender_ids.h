@@ -572,6 +572,14 @@
 #endif
 
 /*
+ * GROUND_FILTER_DETECTION communication (message 37)
+*/
+#ifndef GROUND_FILTER_DETECTION_ID
+#define GROUND_FILTER_DETECTION_ID 1
+#endif
+
+
+/*
  * JOYSTICK message (used for payload or control, but not as a RC)
  */
 #ifndef JOYSTICK_ID

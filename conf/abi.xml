@@ -248,6 +248,13 @@
       <field name="vel_sp" type="struct FloatVect3 *" unit="m/s"/>
     </message>
 
+    <message name="GROUND_FILTER_DETECTION" id="37">
+      <field name="received_count_left"      type="int16_t">Amount of pixels to the left</field>
+      <field name="received_count_center"      type="int16_t">Amount of pixels to the center</field>
+      <field name="received_count_right"      type="int16_t">Amount of pixels to the right</field>
+      <field name="extra"        type="int16_t">Extra field for options like detector source etc</field>
+    </message>
+
   </msg_class>
 
 </protocol>
