@@ -13,12 +13,12 @@
       <!-- This is for both i guess -->
       
       <!-- Detect ground -->
-      <define name="FILTER_GROUND3_LUM_MIN" value="0"/>
-      <define name="FILTER_GROUND3_LUM_MAX" value="0"/>
+      <define name="FILTER_GROUND3_LUM_MIN" value="80"/>
+      <define name="FILTER_GROUND3_LUM_MAX" value="150"/>
       <define name="FILTER_GROUND3_CB_MIN" value="0" />
-      <define name="FILTER_GROUND3_CB_MAX" value="0" />
+      <define name="FILTER_GROUND3_CB_MAX" value="120" />
       <define name="FILTER_GROUND3_CR_MIN" value="0" />
-      <define name="FILTER_GROUND3_CR_MAX" value="0" />
+      <define name="FILTER_GROUND3_CR_MAX" value="155" />
       <define name="FILTER_GROUND3_LOWER_PIX" value="80" description="Lower threshold"/>
 
 
@@ -31,12 +31,12 @@
       
       <!-- Detect ground -->
 
-      <define name="FILTER_GROUND3_LUM_MIN" value="0"/>
-      <define name="FILTER_GROUND3_LUM_MAX" value="255"/>
+      <define name="FILTER_GROUND3_LUM_MIN" value="80"/>
+      <define name="FILTER_GROUND3_LUM_MAX" value="150"/>
       <define name="FILTER_GROUND3_CB_MIN" value="0" />
-      <define name="FILTER_GROUND3_CB_MAX" value="255" />
+      <define name="FILTER_GROUND3_CB_MAX" value="120" />
       <define name="FILTER_GROUND3_CR_MIN" value="0" />
-      <define name="FILTER_GROUND3_CR_MAX" value="255" />
+      <define name="FILTER_GROUND3_CR_MAX" value="155" />
       <define name="FILTER_GROUND3_LOWER_PIX" value="80" description="Lower threshold"/>
 
     </target>
