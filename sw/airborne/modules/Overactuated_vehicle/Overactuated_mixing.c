@@ -1210,13 +1210,13 @@ void compute_rm_speed_and_acc_control_rf(float * speed_ref_in, float * speed_ref
     acc_ref_out[0] = acc_ref_out_old[0] + desired_internal_jerk_rm[0]/PERIODIC_FREQUENCY;
     acc_ref_out[2] = acc_ref_out_old[2] + desired_internal_jerk_rm[2]/PERIODIC_FREQUENCY;
 
+    //Add the non-intertial term to the acc_x component: 
+    acc_ref_out[0] = acc_ref_out[0] + psi_dot_local * Vy_control;
+
     //Save acc_ref variables
     for(int i=0; i<3; i++){
         acc_ref_out_old[i] = acc_ref_out[i]; 
     }
-
-    //Add the non-intertial term to the acc_x component: 
-    acc_ref_out[0] = acc_ref_out[0] + psi_dot_local * Vy_control;
 
     //Integrate acc to get speed_ref_out: 
     speed_ref_out[0] = speed_ref_out_old[0] + acc_ref_out[0]/PERIODIC_FREQUENCY;
@@ -1764,7 +1764,7 @@ void overactuated_mixing_run(void)
 
         //Compute the speed error in the control rf:
         #ifdef USE_RM
-
+            speed_error_vect_control_rf[0] = speed_ref_out_local[0] - speed_vect_control_rf[0];
             if(waypoint_mode){
                 #ifdef USE_LAT_SPEED_FEEDBACK_IN_WP_MODE
                     speed_error_vect_control_rf[1] = speed_ref_out_local[1] - speed_vect_control_rf[1];
@@ -1776,7 +1776,6 @@ void overactuated_mixing_run(void)
                 speed_error_vect_control_rf[1] = speed_ref_out_local[1] - speed_vect_control_rf[1] * (1 - compute_lat_speed_multiplier(OVERACTUATED_MIXING_MIN_SPEED_TRANSITION,OVERACTUATED_MIXING_REF_SPEED_TRANSITION,airspeed));
             }   
             speed_error_vect_control_rf[2] = speed_ref_out_local[2] - speed_vect_control_rf[2];
-
         #else
             speed_error_vect_control_rf[0] = speed_setpoint_control_rf[0] - speed_vect_control_rf[0];
             if(waypoint_mode){
