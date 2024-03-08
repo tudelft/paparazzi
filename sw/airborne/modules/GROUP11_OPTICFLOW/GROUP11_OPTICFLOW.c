@@ -17,25 +17,13 @@
  * so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTION_ID setting.
  */
 
-#include "GROUP11_OPTICFLOW.h"
+#include "modules/orange_avoider/orange_avoider.h"
 #include "firmwares/rotorcraft/navigation.h"
 #include "generated/airframe.h"
 #include "state.h"
 #include "modules/core/abi.h"
 #include <time.h>
 #include <stdio.h>
-
-// ADDED INCLUDED FROM OPTICALFLOW_MODULE.C
-#include <pthread.h>
-#include "modules/pose_history/pose_history.h"
-
-#include "lib/v4l/v4l2.h"
-#include "lib/encoding/jpeg.h"
-#include "lib/encoding/rtp.h"
-#include "errno.h"
-
-#include "cv.h"
-#include "generated/airframe.h"
 
 #define NAV_C // needed to get the nav functions like Inside...
 #include "generated/flight_plan.h"
@@ -256,4 +244,3 @@ uint8_t chooseRandomIncrementAvoidance(void)
   }
   return false;
 }
-
