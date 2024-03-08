@@ -440,13 +440,13 @@
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
     <define name="MAX_PHI_INDI" value="60" unit="deg"/>
-    <define name="MAX_AOA_INDI" value="18" unit="deg"/>
+    <define name="MAX_AOA_INDI" value="15" unit="deg"/>
     <define name="MIN_AOA_INDI" value="2" unit="deg"/>
 
     <define name="MAX_DELTA_AILERONS" value="25" unit="deg"/>
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
 
-    <define name="SPEED_AOA_PROTECTION" value="2" unit="m/s"/>
+    <define name="SPEED_AOA_PROTECTION" value="-1" unit="m/s"/>
 
     <!-- Tilting angle constraint in the approach and takeoff phase -->
     <define name="K_ALT_TILT_CONSTRAINT" value="50" unit="deg/meters"/>
@@ -496,7 +496,7 @@
     <!-- <define name="MIN_SPEED_TRANSITION" value="3.0" unit="m/s"/>
     <define name="REF_SPEED_TRANSITION" value="5.0" unit="m/s"/> -->
     <define name="MIN_SPEED_TRANSITION" value="5.0" unit="m/s"/>
-    <define name="REF_SPEED_TRANSITION" value="7.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION" value="9.0" unit="m/s"/>
 
   </section>
 

@@ -67,7 +67,7 @@
 // #define USE_NEW_THR_ESTIMATION
 // #define USE_NEW_THR_ESTIMATION_OPTIMIZATION
 
-float fpa_off_deg = 0.0; 
+float fpa_off_deg = -3.0; 
 #define NEW_FPA_DEF
 
 // #define USE_RM
@@ -155,7 +155,7 @@ float desired_angle_servo_9 = 0;
 float desired_angle_servo_10 = 0;
 
 //Sideslip gains
-float K_beta = 0.15;
+float K_beta = 0.1;
 
 float Dynamic_MOTOR_K_T_OMEGASQ;
 
@@ -163,7 +163,7 @@ float Dynamic_MOTOR_K_T_OMEGASQ;
 float CL_ailerons = VEHICLE_CL_AILERONS;
 float roll_pwm_cmd; 
 
-float extra_lat_gain = 0.8; 
+float extra_lat_gain = 0.5; 
 
 //Variables for the NONLINEAR_CA_DEBUG message: 
 float feed_fwd_term_yaw, feed_back_term_yaw;
@@ -1330,9 +1330,12 @@ void assign_variables(void){
 
         float flight_path_angle_offset = fpa_off_deg*M_PI/180;
         float flight_path_angle_airspeed = fpa_off_deg*M_PI/180;
-        if(airspeed > 1){
-            flight_path_angle_airspeed = asin(-speed_vect[2]/airspeed);
-            flight_path_angle_airspeed = flight_path_angle_airspeed + fpa_off_deg*M_PI/180;
+        float projected_airspeed_on_x_control = 0.0;
+        if(fabs(cosf(euler_vect[1])) > 0.001){
+            projected_airspeed_on_x_control = airspeed/cosf(euler_vect[1]);
+        }
+        if(projected_airspeed_on_x_control > 1){
+            flight_path_angle_airspeed = flight_path_angle_airspeed + asin(-speed_vect[2]/projected_airspeed_on_x_control);
             BoundAbs(flight_path_angle_airspeed, M_PI/2);
         }
         //Mix the two values: 
