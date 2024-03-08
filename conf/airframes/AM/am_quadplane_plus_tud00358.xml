@@ -495,9 +495,14 @@
     <!-- FWD flight properties for yaw rate induced by controller and for removal of lateral speed term-->
     <!-- <define name="MIN_SPEED_TRANSITION" value="3.0" unit="m/s"/>
     <define name="REF_SPEED_TRANSITION" value="5.0" unit="m/s"/> -->
-    <define name="MIN_SPEED_TRANSITION" value="8.0" unit="m/s"/>
-    <define name="REF_SPEED_TRANSITION" value="10.0" unit="m/s"/>
+    <define name="MIN_SPEED_TRANSITION" value="5.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION" value="7.0" unit="m/s"/>
 
+  </section>
+
+  <section name="REF_MODEL" prefix="REF_MODEL_">
+    <define name="P_GAIN" value="2.0" />
+    <define name="D_GAIN" value="6.0" />
   </section>
 
   <section name="RPM_CONTROL_FBW" prefix="RPM_CONTROL_FBW_">
@@ -731,7 +736,7 @@
 
   <section name="BAT">
     <!-- Brick on only -->
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.61* adc)"/>
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.57* adc)"/>
     <!-- <define name="MilliAmpereOfAdc(adc)" value="((3.3f/4096.0f) * 39.877f * adc)"/> -->
     <!-- <define name="MAX_BAT_CAPACITY" value="5000" unit="mAh"/> -->
     <!-- <define name="MILLIAMP_AT_IDLE_THROTTLE" value="500" unit="mA"/> -->

@@ -133,6 +133,8 @@ extern float K_beta;
 extern float K_T_airspeed;
 extern float K_d_speed;
 
+extern float fpa_off_deg; 
+
 extern float CL_ailerons;
 
 extern float extra_lat_gain;
