@@ -13,8 +13,12 @@
 #ifndef GROUP11_OPTICFLOW_H
 #define GROUP11_OPTICFLOW_H
 
+// Include opticflow calculator
+#include "opticflow/opticflow_calculator.h"
+
 // settings
 extern float oa_color_count_frac;
+extern struct opticflow_t opticflow[];
 
 // functions
 extern void group11_opticflow_init(void);
