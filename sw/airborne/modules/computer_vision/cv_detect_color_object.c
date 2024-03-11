@@ -67,8 +67,17 @@ uint8_t cod_cb_max2 = 0;
 uint8_t cod_cr_min2 = 0;
 uint8_t cod_cr_max2 = 0;
 
+uint8_t cod_lum_min3 = 0;
+uint8_t cod_lum_max3 = 0;
+uint8_t cod_cb_min3 = 0;
+uint8_t cod_cb_max3 = 0;
+uint8_t cod_cr_min3 = 0;
+uint8_t cod_cr_max3 = 0;
+
 bool cod_draw1 = false;
 bool cod_draw2 = false;
+// Global variable to check if initial ground calibration is done
+static bool ground_calibration_done = false;
 
 // define global variables
 struct color_object_t {
@@ -97,6 +106,21 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   uint8_t cb_min, cb_max;
   uint8_t cr_min, cr_max;
   bool draw;
+
+// Check if we need to perform initial ground calibration
+  if (!ground_calibration_done && filter == 2) { // Assuming filter 2 is used for ground detection
+      calibrate_floor_color(img);
+      ground_calibration_done = true;
+
+      // Apply the new calibration
+      cod_lum_min2 = cod_lum_min3;
+      cod_lum_max2 = cod_lum_max3;
+      cod_cb_min2 = cod_cb_min3;
+      cod_cb_max2 = cod_cb_max3;
+      cod_cr_min2 = cod_cr_min3;
+      cod_cr_max2 = cod_cr_max3;
+  }
+
 
   switch (filter){
     case 1:
@@ -155,6 +179,8 @@ void color_object_detector_init(void)
 {
   memset(global_filters, 0, 2*sizeof(struct color_object_t));
   pthread_mutex_init(&mutex, NULL);
+  ground_calibration_done = false; //
+
 #ifdef COLOR_OBJECT_DETECTOR_CAMERA1
 #ifdef COLOR_OBJECT_DETECTOR_LUM_MIN1
   cod_lum_min1 = COLOR_OBJECT_DETECTOR_LUM_MIN1;
@@ -173,7 +199,7 @@ void color_object_detector_init(void)
 
 #ifdef COLOR_OBJECT_DETECTOR_CAMERA2
 #ifdef COLOR_OBJECT_DETECTOR_LUM_MIN2
-  cod_lum_min2 = COLOR_OBJECT_DETECTOR_LUM_MIN2;
+  cod_lum_min2 = COLOR_OBJECT_DETECTOR_LUM_MIN2; // Initial threshold values for ground detection
   cod_lum_max2 = COLOR_OBJECT_DETECTOR_LUM_MAX2;
   cod_cb_min2 = COLOR_OBJECT_DETECTOR_CB_MIN2;
   cod_cb_max2 = COLOR_OBJECT_DETECTOR_CB_MAX2;
@@ -255,6 +281,67 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   }
   return cnt;
 }
+void calibrate_floor_color(struct image_t *img) {
+    // Define the area of the image considered as 'floor'
+    // Now focusing on the central bottom square of the image.
+    int floor_area_start_y = 3 * img->h / 4; // Start from the bottom quarter vertically.
+    int floor_area_width_start_x = img->w / 4; // Start from one quarter horizontally.
+    int floor_area_width_end_x = 3 * img->w / 4; // End at three quarters horizontally.
+
+    // Initialize sums and count for averaging
+    uint32_t y_sum = 0, cb_sum = 0, cr_sum = 0, count = 0;
+
+    // Buffer for image data
+    uint8_t *buffer = img->buf;
+
+    // Iterate over the defined 'floor' area of the image
+    for (int y = floor_area_start_y; y < img->h; y++) {
+        for (int x = floor_area_width_start_x; x < floor_area_width_end_x; x++) {
+            // Calculate the index in the buffer for YUV422 format
+            int index = y * img->w * 2 + x * 2;
+            uint8_t y_val, cb_val, cr_val;
+
+            // Extract Y, Cb, and Cr values from the image buffer
+            if (x % 2 == 0) { // Even x
+                y_val = buffer[index + 1];
+                cb_val = buffer[index];
+                cr_val = buffer[index + 2];
+            } else { // Odd x
+                y_val = buffer[index + 1];
+                cb_val = buffer[index - 2];
+                cr_val = buffer[index];
+            }
+
+            // Sum up the Y, Cb, and Cr values
+            y_sum += y_val;
+            cb_sum += cb_val;
+            cr_sum += cr_val;
+            count++;
+        }
+    }
+
+    // Calculate average YCbCr values for the floor
+    if (count > 0) {
+        uint8_t avg_y = y_sum / count;
+        uint8_t avg_cb = cb_sum / count;
+        uint8_t avg_cr = cr_sum / count;
+
+        // Define a margin for color detection thresholds
+        const uint8_t Y_MARGIN = 20;  // Adjust based on actual testing and requirements
+        const uint8_t CB_MARGIN = 15; // "
+        const uint8_t CR_MARGIN = 15; // "
+
+        // Set the color detection thresholds based on average values
+        cod_lum_min3 = avg_y > Y_MARGIN ? avg_y - Y_MARGIN : 0;
+        cod_lum_max3 = avg_y + Y_MARGIN;
+        cod_cb_min3 = avg_cb > CB_MARGIN ? avg_cb - CB_MARGIN : 0;
+        cod_cb_max3 = avg_cb + CB_MARGIN;
+        cod_cr_min3 = avg_cr > CR_MARGIN ? avg_cr - CR_MARGIN : 0;
+        cod_cr_max3 = avg_cr + CR_MARGIN;
+    }
+}
+
+
 
 void color_object_detector_periodic(void)
 {

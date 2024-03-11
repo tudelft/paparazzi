@@ -42,6 +42,11 @@
 #define VERBOSE_PRINT(...)
 #endif
 
+// External references to variables from cv_detect_color_object module
+extern uint8_t cod_lum_min2, cod_lum_max2;
+extern uint8_t cod_cb_min2, cod_cb_max2;
+extern uint8_t cod_cr_min2, cod_cr_max2;
+
 uint8_t chooseRandomIncrementAvoidance(void);
 
 enum navigation_state_t {
@@ -130,6 +135,11 @@ void orange_avoider_guided_periodic(void)
   VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
   VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
   VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
+  // Add your debug print statements here
+  VERBOSE_PRINT("Ground Detection Thresholds - Luminance: min=%d, max=%d\n", cod_lum_min2, cod_lum_max2);
+  VERBOSE_PRINT("Ground Detection Thresholds - Chrominance Blue: min=%d, max=%d\n", cod_cb_min2, cod_cb_max2);
+  VERBOSE_PRINT("Ground Detection Thresholds - Chrominance Red: min=%d, max=%d\n", cod_cr_min2, cod_cr_max2);
+
 
   // update our safe confidence using color threshold
   if(color_count < color_count_threshold){
