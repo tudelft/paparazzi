@@ -363,6 +363,7 @@ float  psi_des_rad = 0.0;
 float  psi_des_deg = 0.0;
 static float  psi_vec[4]  = {0.0, 0.0, 0.0, 0.0};
 bool heading_manual = true;
+bool yaw_stick_in_auto = false;
 
 /*WLS Settings*/
 static float gamma_wls = 1000.0;
@@ -509,12 +510,16 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
   // temp_att_des[1] = eulers_zxy_des.theta;
   // temp_att_des[2] = eulers_zxy_des.psi;
   // debug_vect(trans, dev, "att_des", temp_att_des, 3);
-  float temp_debug_vect[ANDI_NUM_ACT_TOT+1];
-  for (int i = 0; i < ANDI_NUM_ACT_TOT; i++) {
-    temp_debug_vect[i] = andi_u[i];
-  }
-  temp_debug_vect[ANDI_NUM_ACT_TOT] = pitch_pref;
-  debug_vect(trans, dev, "andi_u_pitch_pref", temp_debug_vect, ANDI_NUM_ACT_TOT+1);
+  // float temp_debug_vect[ANDI_NUM_ACT_TOT+1];
+  // for (int i = 0; i < ANDI_NUM_ACT_TOT; i++) {
+  //   temp_debug_vect[i] = andi_u[i];
+  // }
+  // temp_debug_vect[ANDI_NUM_ACT_TOT] = pitch_pref;
+  // debug_vect(trans, dev, "andi_u_pitch_pref", temp_debug_vect, ANDI_NUM_ACT_TOT+1);
+  float temp_debug_vect[2];
+  temp_debug_vect[0] = andi_u[ONELOOP_ANDI_THETA_IDX];
+  temp_debug_vect[1] = pitch_pref;
+  debug_vect(trans, dev, "andi_u_pitch_pref", temp_debug_vect, 2);
   // debug_vect(trans, dev, "andi_u", andi_u, ANDI_NUM_ACT);
   // float temp_pref_vect[1]={pitch_pref};
   // debug_vect(trans, dev, "pitch_pref", temp_pref_vect, 1);
@@ -1329,6 +1334,9 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     // Update desired Heading (psi_des_rad) based on previous loop or changed setting
     if (heading_manual){
       psi_des_rad = RadOfDeg(psi_des_deg);
+      if (yaw_stick_in_auto){
+        psi_des_rad += (float) (radio_control_get(RADIO_YAW))/MAX_PPRZ*max_r * dt_1l;
+      }
     } else {
       float ref_mag_vel = float_vect_norm(oneloop_andi.gui_ref.vel,2);
       if (ref_mag_vel > 3.0){
