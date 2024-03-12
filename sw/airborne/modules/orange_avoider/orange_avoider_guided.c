@@ -32,6 +32,7 @@
 #include "modules/core/abi.h"
 #include <stdio.h>
 #include <time.h>
+#include "modules/computer_vision/cv_detect_color_object.h"
 
 #define ORANGE_AVOIDER_VERBOSE TRUE
 
@@ -46,6 +47,7 @@
 extern uint8_t cod_lum_min2, cod_lum_max2;
 extern uint8_t cod_cb_min2, cod_cb_max2;
 extern uint8_t cod_cr_min2, cod_cr_max2;
+extern int frame_counter;
 
 uint8_t chooseRandomIncrementAvoidance(void);
 
@@ -139,6 +141,7 @@ void orange_avoider_guided_periodic(void)
   VERBOSE_PRINT("Ground Detection Thresholds - Luminance: min=%d, max=%d\n", cod_lum_min2, cod_lum_max2);
   VERBOSE_PRINT("Ground Detection Thresholds - Chrominance Blue: min=%d, max=%d\n", cod_cb_min2, cod_cb_max2);
   VERBOSE_PRINT("Ground Detection Thresholds - Chrominance Red: min=%d, max=%d\n", cod_cr_min2, cod_cr_max2);
+  VERBOSE_PRINT("Frame Counter: %d\n", frame_counter);
 
 
   // update our safe confidence using color threshold

@@ -88,11 +88,76 @@ struct color_object_t {
 };
 struct color_object_t global_filters[2];
 
+// Global variable to count frames
+int frame_counter = 0;
+
 // Function
 uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
                               uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max);
+
+void calibrate_floor_color(struct image_t *img) {
+    // Define the area of the image considered as 'floor'
+    // Now focusing on the bottom part of the image, but across most of its width.
+    int floor_area_start_y = img->h * 0; // Start from 90% of the height towards the bottom.
+    int floor_area_end_y = img->h * 0.1; // End at the very bottom of the image.
+
+    int floor_area_start_x = img->w * 0.9; // Start from the very left of the image.
+    int floor_area_end_x = img->w * 1; // End at 90% of the width from the left.
+
+    // Initialize sums and count for averaging
+    uint32_t y_sum = 0, cb_sum = 0, cr_sum = 0, count = 0;
+
+    // Buffer for image data
+    uint8_t *buffer = img->buf;
+
+    // Iterate over the defined 'floor' area of the image
+    for (int y = floor_area_start_y; y < floor_area_end_y; y++) {
+        for (int x = floor_area_start_x; x < floor_area_end_x; x++) {
+            // Calculate the index in the buffer for YUV422 format
+            int index = y * img->w * 2 + x * 2;
+            uint8_t y_val, cb_val, cr_val;
+
+            // Extract Y, Cb, and Cr values from the image buffer
+            if (x % 2 == 0) { // Even x
+                y_val = buffer[index + 1];
+                cb_val = buffer[index];
+                cr_val = buffer[index + 2];
+            } else { // Odd x
+                y_val = buffer[index + 1];
+                cb_val = buffer[index - 2];
+                cr_val = buffer[index];
+            }
+
+            // Sum up the Y, Cb, and Cr values
+            y_sum += y_val;
+            cb_sum += cb_val;
+            cr_sum += cr_val;
+            count++;
+        }
+    }
+
+    // Calculate average YCbCr values for the floor
+    if (count > 0) {
+        uint8_t avg_y = y_sum / count;
+        uint8_t avg_cb = cb_sum / count;
+        uint8_t avg_cr = cr_sum / count;
+
+        // Define a margin for color detection thresholds
+        const uint8_t Y_MARGIN = 0;  // Adjust based on actual testing and requirements
+        const uint8_t CB_MARGIN = 0; // "
+        const uint8_t CR_MARGIN = 0; // "
+
+        // Set the color detection thresholds based on average values
+        cod_lum_min3 = avg_y > Y_MARGIN ? avg_y - Y_MARGIN : 0;
+        cod_lum_max3 = avg_y + Y_MARGIN > 255 ? 255 : avg_y + Y_MARGIN;
+        cod_cb_min3 = avg_cb > CB_MARGIN ? avg_cb - CB_MARGIN : 0;
+        cod_cb_max3 = avg_cb + CB_MARGIN > 255 ? 255 : avg_cb + CB_MARGIN;
+        cod_cr_min3 = avg_cr > CR_MARGIN ? avg_cr - CR_MARGIN : 0;
+        cod_cr_max3 = avg_cr + CR_MARGIN > 255 ? 255 : avg_cr + CR_MARGIN;
+    }
+}
 
 /*
  * object_detector
@@ -107,8 +172,12 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   uint8_t cr_min, cr_max;
   bool draw;
 
+  // Increment frame counter every time a frame is processed
+  frame_counter++;
+
+
 // Check if we need to perform initial ground calibration
-  if (!ground_calibration_done && filter == 2) { // Assuming filter 2 is used for ground detection
+  if (!ground_calibration_done && filter == 2 && frame_counter >= 5) { // Assuming filter 2 is used for ground detection
       calibrate_floor_color(img);
       ground_calibration_done = true;
 
@@ -180,6 +249,7 @@ void color_object_detector_init(void)
   memset(global_filters, 0, 2*sizeof(struct color_object_t));
   pthread_mutex_init(&mutex, NULL);
   ground_calibration_done = false; //
+  frame_counter = 0; // Reset frame counter at initialization
 
 #ifdef COLOR_OBJECT_DETECTOR_CAMERA1
 #ifdef COLOR_OBJECT_DETECTOR_LUM_MIN1
@@ -281,67 +351,6 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   }
   return cnt;
 }
-void calibrate_floor_color(struct image_t *img) {
-    // Define the area of the image considered as 'floor'
-    // Now focusing on the central bottom square of the image.
-    int floor_area_start_y = 3 * img->h / 4; // Start from the bottom quarter vertically.
-    int floor_area_width_start_x = img->w / 4; // Start from one quarter horizontally.
-    int floor_area_width_end_x = 3 * img->w / 4; // End at three quarters horizontally.
-
-    // Initialize sums and count for averaging
-    uint32_t y_sum = 0, cb_sum = 0, cr_sum = 0, count = 0;
-
-    // Buffer for image data
-    uint8_t *buffer = img->buf;
-
-    // Iterate over the defined 'floor' area of the image
-    for (int y = floor_area_start_y; y < img->h; y++) {
-        for (int x = floor_area_width_start_x; x < floor_area_width_end_x; x++) {
-            // Calculate the index in the buffer for YUV422 format
-            int index = y * img->w * 2 + x * 2;
-            uint8_t y_val, cb_val, cr_val;
-
-            // Extract Y, Cb, and Cr values from the image buffer
-            if (x % 2 == 0) { // Even x
-                y_val = buffer[index + 1];
-                cb_val = buffer[index];
-                cr_val = buffer[index + 2];
-            } else { // Odd x
-                y_val = buffer[index + 1];
-                cb_val = buffer[index - 2];
-                cr_val = buffer[index];
-            }
-
-            // Sum up the Y, Cb, and Cr values
-            y_sum += y_val;
-            cb_sum += cb_val;
-            cr_sum += cr_val;
-            count++;
-        }
-    }
-
-    // Calculate average YCbCr values for the floor
-    if (count > 0) {
-        uint8_t avg_y = y_sum / count;
-        uint8_t avg_cb = cb_sum / count;
-        uint8_t avg_cr = cr_sum / count;
-
-        // Define a margin for color detection thresholds
-        const uint8_t Y_MARGIN = 20;  // Adjust based on actual testing and requirements
-        const uint8_t CB_MARGIN = 15; // "
-        const uint8_t CR_MARGIN = 15; // "
-
-        // Set the color detection thresholds based on average values
-        cod_lum_min3 = avg_y > Y_MARGIN ? avg_y - Y_MARGIN : 0;
-        cod_lum_max3 = avg_y + Y_MARGIN;
-        cod_cb_min3 = avg_cb > CB_MARGIN ? avg_cb - CB_MARGIN : 0;
-        cod_cb_max3 = avg_cb + CB_MARGIN;
-        cod_cr_min3 = avg_cr > CR_MARGIN ? avg_cr - CR_MARGIN : 0;
-        cod_cr_max3 = avg_cr + CR_MARGIN;
-    }
-}
-
-
 
 void color_object_detector_periodic(void)
 {
@@ -361,3 +370,4 @@ void color_object_detector_periodic(void)
     local_filters[1].updated = false;
   }
 }
+
