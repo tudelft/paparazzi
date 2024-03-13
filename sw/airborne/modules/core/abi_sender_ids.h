@@ -636,4 +636,12 @@
 #define VEL_SP_FCR_ID 1 // Approach Moving Target
 #endif
 
+/*
+ * IDs of GROUND_SPLIT senders
+ */
+
+#ifndef GROUND_SPLIT_ID
+#define GROUND_SPLIT_ID 1 
+#endif
+
 #endif /* ABI_SENDER_IDS_H */

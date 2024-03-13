@@ -65,7 +65,8 @@ int32_t floor_count = 0;                // green color count from color filter f
 int32_t floor_centroid = 0;             // floor detector centroid in y direction (along the horizon)
 float avoidance_heading_direction = 0;  // heading change direction for avoidance [rad/s]
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
-
+uint8_t max_green = 0;
+float heading_new = 0;
 const int16_t max_trajectory_confidence = 5;  // number of consecutive negative object detections to be sure we are obstacle free
 
 // This call back will be used to receive the color count from the orange detector
@@ -95,7 +96,17 @@ static void floor_detection_cb(uint8_t __attribute__((unused)) sender_id,
   floor_count = quality;
   floor_centroid = pixel_y;
 }
-
+#ifndef GROUND_SPLIT_5_ID
+#define GROUND_SPLIT_5_ID ABI_BROADCAST
+#endif
+static abi_event ground_split_ev;
+static void ground_split_cb(uint8_t __attribute__((unused)) sender_id,
+                               uint8_t max_count,
+                               float current_direction,)
+{
+  max_green = max_count;
+  heading_new = current_direction;
+}
 /*
  * Initialisation function
  */
@@ -108,6 +119,7 @@ void orange_avoider_guided_init(void)
   // bind our colorfilter callbacks to receive the color filter outputs
   AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
   AbiBindMsgVISUAL_DETECTION(FLOOR_VISUAL_DETECTION_ID, &floor_detection_ev, floor_detection_cb);
+  AbiBindMsgGROUND_SPLIT(GROUND_SPLIT_5_ID, &ground_split_ev, ground_split_cb);
 }
 
 /*
