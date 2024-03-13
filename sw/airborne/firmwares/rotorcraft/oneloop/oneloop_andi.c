@@ -1301,9 +1301,14 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     eulers_zxy_des.phi   = (float) (radio_control_get(RADIO_ROLL)) /MAX_PPRZ * ONELOOP_ANDI_MAX_PHI  ;
     eulers_zxy_des.theta = (float) (radio_control_get(RADIO_PITCH))/MAX_PPRZ * ONELOOP_ANDI_MAX_THETA;
     // Set desired Yaw rate with stick input
-    des_r = (float) (radio_control_get(RADIO_YAW))/MAX_PPRZ*max_r; 
-    BoundAbs(des_r,max_r);
-    psi_des_rad += des_r * dt_1l;
+    des_r = (float) (radio_control_get(RADIO_YAW))/MAX_PPRZ*max_r;            // Get yaw rate from stick
+    BoundAbs(des_r,max_r);                                                    // Bound yaw rate
+    float delta_psi_des_rad = des_r * dt_1l;                                  // Integrate desired Yaw rate to get desired change in yaw
+    float delta_psi_rad = NormRadAngle(eulers_zxy_des.psi-eulers_zxy.psi);    // Calculate current yaw difference between des and actual
+    if (fabs(delta_psi_rad) > RadOfDeg(10.0)){                                // If difference is bigger than 10 deg do not further increment desired
+      delta_psi_des_rad = 0.0;
+    }
+    psi_des_rad += delta_psi_des_rad;                                         // Incrementdesired yaw
     NormRadAngle(psi_des_rad);
     eulers_zxy_des.psi = psi_des_rad;
     // Register Attitude Setpoints from previous loop
