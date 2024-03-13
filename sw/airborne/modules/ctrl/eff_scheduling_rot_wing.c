@@ -400,5 +400,8 @@ void stabilization_indi_set_wls_settings(void)
         u_pref_stab_indi[i] = actuator_state_filt_vect[i]; // Set change in prefered state to 0 for elevator
         u_min_stab_indi[i] = 0; // cmd 0 is lowest position for elevator
       }
+      if (i == 4) {
+          u_pref_stab_indi[i] = actuator_state_filt_vect[i]; // Set change in prefered state to 0 for rudder if at higher airspeed
+      }
   }
 }
