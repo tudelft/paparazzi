@@ -453,7 +453,7 @@
     <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
-    <define name="SERVO_EL_MIN_ANGLE_OPTIMIZATION" value="-130" unit="deg"/>
+    <define name="SERVO_EL_MIN_ANGLE_OPTIMIZATION" value="-120" unit="deg"/>
 
     <define name="SERVO_EL_1_ZERO_VALUE" value="-54" unit="deg"/>
     <define name="SERVO_EL_2_ZERO_VALUE" value="-57" unit="deg"/>
