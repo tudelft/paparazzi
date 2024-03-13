@@ -37,6 +37,11 @@
 
             <!-- Range sensor connected to supercan -->
             <module name="range_sensor_uavcan"/>
+            <!--Use adc rot sensor-->
+            <module name="wing_rotation_adc_sensor">
+                <define name="ADC_OFFSET" value="-49.1731"/>
+                <define name="ADC_SCALE"  value="0.0029986"/>
+            </module>
 
             <!-- Log in high speed (Remove for outdoor flights) -->
             <!-- <define name="IMU_LOG_HIGHS PEED"    value="TRUE"/> -->
@@ -257,7 +262,7 @@
         <set VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : pfc_actuators_value(1, actuators_pprz[4]))" SERVO="SERVO_RUDDER"/>
         <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? pfc_actuators_value(0, 0) : actuators_pprz[5]))" SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($th_hold? ($servo_hold? -9600 : pfc_actuators_value(11, -9600)) : actuators_pprz[8])" SERVO="MOTOR_PUSH"/>
-        <set VALUE="pfc_actuators_value(6, rotwing_state_skewing.servo_pprz_cmd)"  SERVO="ROTATION_MECH"/>
+        <set VALUE="rotwing_state_skewing.servo_pprz_cmd"  SERVO="ROTATION_MECH"/>
         <set VALUE="$ail_limit_hit? pfc_actuators_value(2, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])" SERVO="AIL_LEFT"/>
         <set VALUE="$ail_limit_hit? pfc_actuators_value(5, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])" SERVO="AIL_RIGHT"/>
         <set VALUE="$flap_limit_hit? pfc_actuators_value(3, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])" SERVO="FLAP_LEFT"/>
@@ -268,7 +273,6 @@
         <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(8, -9600)) : actuators_pprz[1])" SERVO="BMOTOR_RIGHT"/>
         <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(9, -9600)) : actuators_pprz[2])" SERVO="BMOTOR_BACK"/>
         <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(10, -9600)) : actuators_pprz[3])" SERVO="BMOTOR_LEFT"/>
-        <set VALUE="pfc_actuators_value(6, rotwing_state_skewing.servo_pprz_cmd)"  SERVO="BROTATION_MECH"/>
     </command_laws>
 
     <section PREFIX="SYS_ID_" NAME="SYS_ID">
@@ -318,8 +322,7 @@
         <define name="VBoardOfAdc(adc)" value="((3.3f/65536.0f) * 1.89036 * adc)"/>
 
         <!-- Preflight check actuators (ELE, RUD, AIL_L, FLAP_L, AIL_R, FLAP_R, ROT_M, M_FRONT, M_RIGHT_, M_BACK, M_LEFT, M_PUSH) -->
-        <define name="PFC_ACTUATORS" value="{{.feedback_id=SERVO_SERVO_ELEVATOR_IDX, .feedback_id2=255, .low=-4500, .high=4500, .low_feedback=0.85, .high_feedback=0.3, .timeout=1},{.feedback_id=SERVO_SERVO_RUDDER_IDX, .feedback_id2=255, .low=-4500, .high=4500, .low_feedback=-0.15, .high_feedback=0.15, .timeout=1},{.feedback_id=SERVO_AIL_LEFT_IDX, .feedback_id2=255, .low=-4500, .high=4500, .low_feedback=-0.15, .high_feedback=0.15, .timeout=1},{.feedback_id=SERVO_FLAP_LEFT_IDX, .feedback_id2=255, .low=-4500, .high=4500, .low_feedback=-0.15, .high_feedback=0.15, .timeout=1},{.feedback_id=SERVO_FLAP_RIGHT_IDX, .feedback_id2=255, .low=-4500, .high=4500, .low_feedback=-0.15, .high_feedback=0.15, .timeout=1},{.feedback_id=SERVO_AIL_RIGHT_IDX, .feedback_id2=255, .low=-4500, .high=4500, .low_feedback=-0.15, .high_feedback=0.15, .timeout=1},{.feedback_id=SERVO_ROTATION_MECH_IDX, .feedback_id2=SERVO_BROTATION_MECH_IDX, .low=-9600, .high=9600, .low_feedback=1.57, .high_feedback=0, .timeout=5},{.feedback_id=SERVO_MOTOR_FRONT_IDX, .feedback_id2=SERVO_BMOTOR_FRONT_IDX, .low=-9600, .high=0, .low_feedback=0, .high_feedback=975, .timeout=3},{.feedback_id=SERVO_MOTOR_RIGHT_IDX, .feedback_id2=SERVO_BMOTOR_RIGHT_IDX, .low=-9600, .high=0, .low_feedback=0, .high_feedback=975, .timeout=3},{.feedback_id=SERVO_MOTOR_BACK_IDX, .feedback_id2=SERVO_BMOTOR_BACK_IDX, .low=-9600, .high=0, .low_feedback=0, .high_feedback=975, .timeout=3},{.feedback_id=SERVO_MOTOR_LEFT_IDX, .feedback_id2=SERVO_BMOTOR_LEFT_IDX, .low=-9600, .high=0, .low_feedback=0, .high_feedback=975, .timeout=3},{.feedback_id=SERVO_MOTOR_PUSH_IDX, .feedback_id2=255, .low=-9600, .high=2000, .low_feedback=0, .high_feedback=2200, .timeout=3}}"/>
-
+        <define name="PFC_ACTUATORS" value="{{.feedback_id=SERVO_SERVO_ELEVATOR_IDX, .feedback_id2=255, .low=-4500, .high=4500, .low_feedback=0.85, .high_feedback=0.3, .timeout=1},{.feedback_id=SERVO_SERVO_RUDDER_IDX, .feedback_id2=255, .low=-4500, .high=4500, .low_feedback=-0.15, .high_feedback=0.15, .timeout=1},{.feedback_id=SERVO_AIL_LEFT_IDX, .feedback_id2=255, .low=-4500, .high=4500, .low_feedback=-0.15, .high_feedback=0.15, .timeout=1},{.feedback_id=SERVO_FLAP_LEFT_IDX, .feedback_id2=255, .low=-4500, .high=4500, .low_feedback=-0.15, .high_feedback=0.15, .timeout=1},{.feedback_id=SERVO_FLAP_RIGHT_IDX, .feedback_id2=255, .low=-4500, .high=4500, .low_feedback=-0.15, .high_feedback=0.15, .timeout=1},{.feedback_id=SERVO_AIL_RIGHT_IDX, .feedback_id2=255, .low=-4500, .high=4500, .low_feedback=-0.15, .high_feedback=0.15, .timeout=1},{.feedback_id=SERVO_MOTOR_FRONT_IDX, .feedback_id2=SERVO_BMOTOR_FRONT_IDX, .low=-9600, .high=0, .low_feedback=0, .high_feedback=975, .timeout=3},{.feedback_id=SERVO_MOTOR_RIGHT_IDX, .feedback_id2=SERVO_BMOTOR_RIGHT_IDX, .low=-9600, .high=0, .low_feedback=0, .high_feedback=975, .timeout=3},{.feedback_id=SERVO_MOTOR_BACK_IDX, .feedback_id2=SERVO_BMOTOR_BACK_IDX, .low=-9600, .high=0, .low_feedback=0, .high_feedback=975, .timeout=3},{.feedback_id=SERVO_MOTOR_LEFT_IDX, .feedback_id2=SERVO_BMOTOR_LEFT_IDX, .low=-9600, .high=0, .low_feedback=0, .high_feedback=975, .timeout=3},{.feedback_id=SERVO_MOTOR_PUSH_IDX, .feedback_id2=255, .low=-9600, .high=2000, .low_feedback=0, .high_feedback=2200, .timeout=3}}"/> 
         <!-- Others -->
         <define name="NO_RC_THRUST_LIMIT"                   value="TRUE"/>
         <define name="NAV_CLIMB_VSPEED"                     value="2.0" />
