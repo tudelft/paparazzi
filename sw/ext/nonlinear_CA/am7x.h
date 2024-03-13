@@ -18,7 +18,7 @@
 #define max_time_optimizer 4.9e-3
 
 #define refresh_time_optimizer 5e-3 //Must be equal or bigger than optimizer_max_time
-#define filter_cutoff_frequency 12 //rad/s
+#define filter_cutoff_frequency 13 //rad/s
 
 //Define the baudrate for the module and the starting byte 
 #define START_BYTE 0x9B  //1st start block identifier byte

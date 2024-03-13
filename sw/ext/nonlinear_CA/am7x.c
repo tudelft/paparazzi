@@ -259,7 +259,8 @@ void* second_thread() //Run the optimization code
     float min_delta_ailerons = extra_data_in_copy[53], max_delta_ailerons = extra_data_in_copy[54];
     float CL_aileron = extra_data_in_copy[55];
     float transition_airspeed = extra_data_in_copy[56];
-   
+    float use_acc_filtering = extra_data_in_copy[57];
+
 	  // Real time variables:
     double Phi = (myam7_data_in_copy.phi_state_int*1e-2 * M_PI/180);
     double Theta = (myam7_data_in_copy.theta_state_int*1e-2 * M_PI/180);
@@ -396,23 +397,32 @@ void* second_thread() //Run the optimization code
      CL_aileron,  rho,  V,  S,  wing_chord,
      flight_path_angle,  Beta, current_estimated_accelerations_array);
 
-    //Apply filtering to modeled accelerations:
-    for(int i = 0; i < 6; i++){
+    if(use_acc_filtering >= 0.5f){
+      //Apply filtering to modeled accelerations:
+      for(int i = 0; i < 6; i++){
 
-      update_butterworth_2_low_pass(&current_accelerations_filtered[i], (float) current_estimated_accelerations_array[i]);
+        update_butterworth_2_low_pass(&current_accelerations_filtered[i], (float) current_estimated_accelerations_array[i]);
 
 
-      if(current_accelerations_filtered[i].o[0] != current_accelerations_filtered[i].o[0]){
-        float tau_indi = 1.0f / (filter_cutoff_frequency);
-        init_butterworth_2_low_pass(&current_accelerations_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
-        if(verbose_filters){
-          printf("WARNING, FILTERS %d REINITIALIZED!!!! \n",i);
+        if(current_accelerations_filtered[i].o[0] != current_accelerations_filtered[i].o[0]){
+          float tau_indi = 1.0f / (filter_cutoff_frequency);
+          init_butterworth_2_low_pass(&current_accelerations_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
+          if(verbose_filters){
+            printf("WARNING, FILTERS %d REINITIALIZED!!!! \n",i);
+          }
+          
         }
-        
-      }
 
-      current_estimated_accelerations_input[i] = (double) current_accelerations_filtered[i].o[0];
+        current_estimated_accelerations_input[i] = (double) current_accelerations_filtered[i].o[0];
+      }
     }
+    else{
+      //Don't filter modeled accelerations output:
+      for(int i = 0; i < 6; i++){
+        current_estimated_accelerations_input[i] = (double) current_estimated_accelerations_array[i];
+      }
+    }
+
 
 
     Nonlinear_controller_w_ailerons_rebuttal(
