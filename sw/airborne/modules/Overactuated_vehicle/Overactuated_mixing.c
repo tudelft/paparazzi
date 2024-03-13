@@ -114,7 +114,7 @@ float K_ppz_angle_az = (9600 * 2) / (OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE - OV
 int32_t actuator_output[INDI_NUM_ACT], actuator_state_int[INDI_NUM_ACT];
 
 
-#define USE_RM
+// #define USE_RM
 
 //Incremental INDI variables
 float indi_u[INDI_NUM_ACT], indi_u_scaled[INDI_NUM_ACT];
@@ -171,8 +171,8 @@ uint8_t auto_test_start;
 // Variables for the speed to derivative gain slider and thrust coefficient: 
 // float K_d_speed = 0.03; 
 // float K_T_airspeed = 0.025;
-float K_d_speed = 0.015; 
-float K_T_airspeed = 0.015;
+float K_d_speed = 0.01; 
+float K_T_airspeed = 0.02;
 
 struct PID_over pid_gains_over = {
         .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
@@ -355,7 +355,7 @@ void compute_rm_speed_and_acc_control_rf(float * speed_ref_in, float * speed_ref
     desired_internal_acc_rm[2] = (speed_ref_in[2] - speed_ref_out_old[2])*REF_MODEL_P_GAIN; 
     BoundAbs(desired_internal_acc_rm[2],LIMITS_FWD_MAX_VERT_ACC);
     
-    desired_internal_jerk_rm[0] = (desired_internal_acc_rm[0] - acc_ref_out_old[0])*REF_MODEL_D_GAIN; 
+    desired_internal_jerk_rm[0] = (desired_internal_acc_rm[0] - acc_ref_out_old[0] - psi_dot_local * Vy_control)*REF_MODEL_D_GAIN; 
     desired_internal_jerk_rm[2] = (desired_internal_acc_rm[2] - acc_ref_out_old[2])*REF_MODEL_D_GAIN; 
 
     //Integrate jerk to get acc_ref_out: 

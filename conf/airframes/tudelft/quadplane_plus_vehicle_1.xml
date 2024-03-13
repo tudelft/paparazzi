@@ -366,9 +366,9 @@
     <!-- <define name="INDI_REF_RATE_P" value="7"/>
     <define name="INDI_REF_RATE_Q" value="7"/>
     <define name="INDI_REF_RATE_R" value="5"/> -->
-    <define name="INDI_REF_RATE_P" value="10"/>
-    <define name="INDI_REF_RATE_Q" value="10"/>
-    <define name="INDI_REF_RATE_R" value="5"/>
+    <define name="INDI_REF_RATE_P" value="6.5"/>
+    <define name="INDI_REF_RATE_Q" value="6.5"/>
+    <define name="INDI_REF_RATE_R" value="4"/>
     <!-- <define name="INDI_REF_RATE_P" value="12"/>
     <define name="INDI_REF_RATE_Q" value="12"/>
     <define name="INDI_REF_RATE_R" value="4"/> -->
@@ -445,7 +445,7 @@
    <define name="MOTOR_K_PWM_OMEGA" value="1.077" unit="(rad/s)/PWM"/>
    <define name="MOTOR_MAX_OMEGA" value="1037" unit="rad/s"/> -->
 
-    <define name="MOTOR_MIN_OMEGA" value="150" unit="rad/s"/>
+    <define name="MOTOR_MIN_OMEGA" value="300" unit="rad/s"/>
     <!-- <define name="MOTOR_MIN_OMEGA" value="450" unit="rad/s"/> -->
     <define name="SERVO_AZ_MIN_ANGLE" value="-45" unit="deg"/><!-- Always remember to update the PWM range as well-->
     <define name="SERVO_AZ_MAX_ANGLE" value="45" unit="deg"/>
@@ -496,7 +496,7 @@
     <define name="W_ACT_PHI_CONST" value="100"/>
     <define name="W_ACT_PHI_SPEED" value="-15"/>
 
-    <define name="W_ACT_AILERONS_CONST" value="1"/>
+    <define name="W_ACT_AILERONS_CONST" value="3"/>
     <define name="W_ACT_AILERONS_SPEED" value="0"/>
 
     <define name="W_DV_1" value="0.005"/>
@@ -539,7 +539,7 @@
     <define name="WING_CHORD" value="0.3"/>
     <define name="WING_SPAN" value="1.4"/>
 
-    <define name="CL_AILERONS" value="0.25"/>
+    <define name="CL_AILERONS" value="0.2"/>
   </section>
 
 
