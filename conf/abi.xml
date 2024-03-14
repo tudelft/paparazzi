@@ -249,7 +249,7 @@
     </message>
 
     <message name="GROUND_DETECTION" id="37">
-      <field name="direction" type="float" unit="degree"/>
+      <field name="direction"      type="int16_t">direction</field>
     </message>
   </msg_class>
 

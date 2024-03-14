@@ -7,6 +7,12 @@
     </description>
     <define name="GROUND_DETECTION_CAMERA" value="front_camera|bottom_camera" description="Video device to use"/>
     <define name="GROUND_DETECTION_FPS" value="0" description="Desired FPS (0: camera rate)"/>
+    <define name="COLOR_OBJECT_DETECTOR_LUM_MIN2" value="0" description="Filter 1 min luminance"/>
+    <define name="COLOR_OBJECT_DETECTOR_LUM_MAX2" value="0" description="Filter 2 max luminance"/>
+    <define name="COLOR_OBJECT_DETECTOR_CB_MIN2" value="0" description="Filter 2 min blue chroma"/>
+    <define name="COLOR_OBJECT_DETECTOR_CB_MAX2" value="0" description="Filter 2 max blue chroma"/>
+    <define name="COLOR_OBJECT_DETECTOR_CR_MIN2" value="0" description="Filter 2 min red chroma"/>
+    <define name="COLOR_OBJECT_DETECTOR_CR_MAX2" value="0" description="Filter 2 max red chroma"/>
   </doc>  
   <!-- <dep>
     <depends>ground_detection</depends>

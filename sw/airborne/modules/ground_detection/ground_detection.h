@@ -16,7 +16,7 @@ extern uint8_t ground_v_max;
 extern bool draw_ground_indicator;
 
 // Global variables for navigation direction based on ground detection
-extern int direction;
+extern int16_t direction_new;
 
 // Module functions
 extern void ground_detection_init(void);

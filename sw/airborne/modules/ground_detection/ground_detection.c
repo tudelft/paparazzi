@@ -29,13 +29,13 @@ static pthread_mutex_t mutex;
 #define GROUND_DETECTION_FPS 0 ///< Default FPS (zero means run at camera fps)
 #endif
 
-// Define the YUV color bounds for the color we want to detect
-#define LUM_MIN 60
-#define LUM_MAX 160
-#define CB_MIN 75
-#define CB_MAX 110
-#define CR_MIN 120
-#define CR_MAX 140
+// // Define the YUV color bounds for the color we want to detect
+// #define LUM_MIN 60
+// #define LUM_MAX 160
+// #define CB_MIN 75
+// #define CB_MAX 110
+// #define CR_MIN 120
+// #define CR_MAX 140
 
 // Box dimensions and position
 #define HEIGHT_THRESHOLD 40
@@ -43,27 +43,73 @@ static pthread_mutex_t mutex;
 
 #define HISTORY_LENGTH 5
 
+uint8_t cod_lum_min = 0;
+uint8_t cod_lum_max = 0;
+uint8_t cod_cb_min = 0;
+uint8_t cod_cb_max = 0;
+uint8_t cod_cr_min = 0;
+uint8_t cod_cr_max = 0;
+
+int16_t direction_new = 0;
+
 /////////////////////////   TO DO   ///////////////////////////////////
 //  width en height zijn omgedraaid dus width = 240 en height = 520  //
 ///////////////////////////////////////////////////////////////////////
 
 // Function prototypes
-void ground_detection(struct image_t *img);
+uint32_t ground_detection(struct image_t *img, uint8_t lum_min, uint8_t lum_max,
+                              uint8_t cb_min, uint8_t cb_max,
+                              uint8_t cr_min, uint8_t cr_max);
 int decide_navigation_direction(int green_percentage_history[HISTORY_LENGTH][5]);
-void count_green_pixels(struct image_t *img, int *green_counts);
+void count_green_pixels(struct image_t *img, int *green_counts, uint8_t lum_min, uint8_t lum_max,
+                              uint8_t cb_min, uint8_t cb_max,
+                              uint8_t cr_min, uint8_t cr_max);
 void update_green_history(int green_history[HISTORY_LENGTH][5], int *green_counts);
-bool detect_color(uint8_t y, uint8_t u, uint8_t v);
+bool detect_color(uint8_t y, uint8_t u, uint8_t v, uint8_t lum_min, uint8_t lum_max,
+                              uint8_t cb_min, uint8_t cb_max,
+                              uint8_t cr_min, uint8_t cr_max);
 int get_quintant(int x, int y, int img_width, int img_height);
 void calculate_pixels_per_quintant(struct image_t *img, int *total_pixels_per_quintant);
 
-void ground_detection(struct image_t *img) {
+static struct image_t *object_detector(struct image_t *img)
+{
+  uint8_t lum_min, lum_max;
+  uint8_t cb_min, cb_max;
+  uint8_t cr_min, cr_max;
+
+    lum_min =cod_lum_min;
+    lum_max =cod_lum_max;
+    cb_min = cod_cb_min;
+    cb_max = cod_cb_max;
+    cr_min = cod_cr_min;
+    cr_max = cod_cr_max;
+
+    // Obtain the direction based on ground detection
+    int16_t direction_output = ground_detection(img, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
+
+    // Lock the mutex, update the global direction, and unlock the mutex
+    pthread_mutex_lock(&mutex);
+    direction_new = direction_output;
+    pthread_mutex_unlock(&mutex);
+
+    // Return the original image
+    return img;
+  };
+struct image_t *ground_detection1(struct image_t *img, uint8_t camera_id);
+struct image_t *ground_detection1(struct image_t *img, uint8_t camera_id __attribute__((unused)))
+{
+  return object_detector(img);
+}
+uint32_t ground_detection(struct image_t *img, uint8_t lum_min, uint8_t lum_max,
+                              uint8_t cb_min, uint8_t cb_max,
+                              uint8_t cr_min, uint8_t cr_max) {
     int green_counts[5];
     int total_pixels_per_quintant[5];
     int green_percentage_history[HISTORY_LENGTH][5] = {0}; // Initialize all to 0
 
     // Assuming the frame size is fixed as per your constants (520x240)
-    calculate_pixels_per_quintant(&img, total_pixels_per_quintant);
-    count_green_pixels(&img, green_counts);
+    calculate_pixels_per_quintant(img, total_pixels_per_quintant);
+    count_green_pixels(img, green_counts, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
 
     // Calculate the percentage of green pixels in each quintant
     for (int i = 0; i < 5; i++) {
@@ -77,7 +123,8 @@ void ground_detection(struct image_t *img) {
     // Decide the navigation direction based on the first (and only) entry in green_percentage_history
     int direction = decide_navigation_direction(green_percentage_history);
 
-    printf("Ground detection and navigation image processing complete.\n");
+    // printf("Ground detection and navigation image processing complete.\n");
+    return direction;
 }
 
 int decide_navigation_direction(int green_percentage_history[HISTORY_LENGTH][5]) {
@@ -118,12 +165,14 @@ int get_quintant(int x, int y, int img_width, int img_height) {
     return quintant;
 }
 
-void count_green_pixels(struct image_t *img, int *green_counts) {
+void count_green_pixels(struct image_t *img, int *green_counts, uint8_t lum_min, uint8_t lum_max,
+                              uint8_t cb_min, uint8_t cb_max,
+                              uint8_t cr_min, uint8_t cr_max) {
     uint8_t *buffer = img->buf;
-    int start_x = (img->w / 2) - WIDTH_THRESHOLD;
+    int start_x = (img->h / 2) - WIDTH_THRESHOLD;
     int end_x = start_x + (2 * WIDTH_THRESHOLD);
-    int start_y = img->h - HEIGHT_THRESHOLD;
-    int end_y = img->h;
+    int start_y = img->w - HEIGHT_THRESHOLD;
+    int end_y = img->w;
 
     // Initialize green_counts array
     for (int i = 0; i < 5; i++) {
@@ -134,17 +183,17 @@ void count_green_pixels(struct image_t *img, int *green_counts) {
         for (int x = start_x; x < end_x; x++) {
             uint8_t *yp, *up, *vp;
             if (x % 2 == 0) {
-                up = &buffer[y * 2 * img->w + 2 * x];
-                yp = &buffer[y * 2 * img->w + 2 * x + 1];
-                vp = &buffer[y * 2 * img->w + 2 * x + 2];
+                up = &buffer[y * 2 * img->h + 2 * x];
+                yp = &buffer[y * 2 * img->h + 2 * x + 1];
+                vp = &buffer[y * 2 * img->h + 2 * x + 2];
             } else {
-                up = &buffer[y * 2 * img->w + 2 * x - 2];
-                vp = &buffer[y * 2 * img->w + 2 * x];
-                yp = &buffer[y * 2 * img->w + 2 * x + 1];
+                up = &buffer[y * 2 * img->h + 2 * x - 2];
+                vp = &buffer[y * 2 * img->h + 2 * x];
+                yp = &buffer[y * 2 * img->h + 2 * x + 1];
             }
 
-            if (detect_color(*yp, *up, *vp)) {
-                int quintant = get_quintant(x, y, img->w, img->h);
+            if (detect_color(*yp, *up, *vp, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max)) {
+                int quintant = get_quintant(x, y, img->h, img->w);
                 green_counts[quintant]++;
                 // Optionally mark detected green pixels on the image
                 // Note: This might alter the original image significantly
@@ -169,17 +218,19 @@ void update_green_history(int green_history[HISTORY_LENGTH][5], int *green_count
     current_index = (current_index + 1) % HISTORY_LENGTH;
 }
 
-bool detect_color(uint8_t y, uint8_t u, uint8_t v) {
-    return y >= LUM_MIN && y <= LUM_MAX &&
-           u >= CB_MIN && u <= CB_MAX &&
-           v >= CR_MIN && v <= CR_MAX;
+bool detect_color(uint8_t y, uint8_t u, uint8_t v, uint8_t lum_min, uint8_t lum_max,
+                              uint8_t cb_min, uint8_t cb_max,
+                              uint8_t cr_min, uint8_t cr_max) {
+    return y >= lum_min && y <= lum_max &&
+           u >= cb_min && u <= cb_max &&
+           v >= cr_min && v <= cr_max;
 }
 
 void calculate_pixels_per_quintant(struct image_t *img, int *total_pixels_per_quintant) {
-    int start_x = (img->w / 2) - WIDTH_THRESHOLD;
+    int start_x = (img->h / 2) - WIDTH_THRESHOLD;
     int end_x = start_x + (2 * WIDTH_THRESHOLD);
-    int start_y = img->h - HEIGHT_THRESHOLD;
-    int end_y = img->h;
+    int start_y = img->w - HEIGHT_THRESHOLD;
+    int end_y = img->w;
 
     // Initialize total_pixels_per_quintant array
     for (int i = 0; i < 5; i++) {
@@ -188,7 +239,7 @@ void calculate_pixels_per_quintant(struct image_t *img, int *total_pixels_per_qu
 
     for (int y = start_y; y < end_y; y++) {
         for (int x = start_x; x < end_x; x++) {
-            int quintant = get_quintant(x, y, img->w, img->h);
+            int quintant = get_quintant(x, y, img->h, img->w);
             total_pixels_per_quintant[quintant]++;
         }
     }
@@ -196,6 +247,7 @@ void calculate_pixels_per_quintant(struct image_t *img, int *total_pixels_per_qu
 
 void ground_detection_init(void)
 {
+    pthread_mutex_init(&mutex, NULL);
     // Initialize any required global variables here.
     // Since we're working with predefined constants for color thresholds, 
     // there might not be direct analogs for individual filter settings as in the color object detector.
@@ -204,29 +256,29 @@ void ground_detection_init(void)
     // this is the place to do it. For example, you might have configurable thresholds or frame settings.
 
     // Example:
-    // ground_y_min = COLOR_OBJECT_DETECTOR_LUM_MIN2;
-    // ground_y_max = COLOR_OBJECT_DETECTOR_LUM_MAX2;
-    // ground_u_min = COLOR_OBJECT_DETECTOR_CB_MIN2;
-    // ground_u_max = COLOR_OBJECT_DETECTOR_CB_MAX2;
-    // ground_v_min = COLOR_OBJECT_DETECTOR_CR_MIN2;
-    // ground_v_max = COLOR_OBJECT_DETECTOR_CR_MAX2;
+    cod_lum_min = COLOR_OBJECT_DETECTOR_LUM_MIN2;
+    cod_lum_max = COLOR_OBJECT_DETECTOR_LUM_MAX2;
+    cod_cb_min = COLOR_OBJECT_DETECTOR_CB_MIN2;
+    cod_cb_max = COLOR_OBJECT_DETECTOR_CB_MAX2;
+    cod_cr_min = COLOR_OBJECT_DETECTOR_CR_MIN2;
+    cod_cr_max = COLOR_OBJECT_DETECTOR_CR_MAX2;
 
     // Register the ground detection function with the computer vision system, if applicable.
     // This typically involves adding the ground detection function to a processing pipeline or setting it as a callback.
     // Replace 'GROUND_SPLIT_CAMERA' with the actual camera identifier used in your system and
     // 'ground_detection' with the name of your ground detection function.
     // Example:
-    cv_add_to_device(&GROUND_DETECTION_CAMERA, ground_detection, GROUND_DETECTION_FPS, 0);
+    cv_add_to_device(&GROUND_DETECTION_CAMERA, ground_detection1, GROUND_DETECTION_FPS, 0);
 }
 
-direction = 10;
 void ground_detection_periodic(void) 
-{
-    // static int last_direction = -1; // Store the last direction for comparison
-    pthread_mutex_lock(&mutex); // Assuming you have a similar mutex for thread safety
-    // int current_direction = direction; // Assuming 'direction' is updated by your main detection logic
-    pthread_mutex_unlock(&mutex);
+{   
+    // static struct color_object_t;
+    // pthread_mutex_lock(&mutex);
+    // memcpy(2*sizeof(struct color_object_t));
+    // pthread_mutex_unlock(&mutex);
+
 
     // Send ABI message with the new direction
-    AbiSendMsgGROUND_DETECTION(GROUND_DETECTION_ID, direction);
+    AbiSendMsgGROUND_DETECTION(GROUND_DETECTION_ID, direction_new);
 }

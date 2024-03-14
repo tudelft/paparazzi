@@ -65,7 +65,7 @@ int32_t floor_count = 0;                // green color count from color filter f
 int32_t floor_centroid = 0;             // floor detector centroid in y direction (along the horizon)
 float avoidance_heading_direction = 0;  // heading change direction for avoidance [rad/s]
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
-float heading_new = 0;
+int16_t heading_new = 0;
 const int16_t max_trajectory_confidence = 5;  // number of consecutive negative object detections to be sure we are obstacle free
 
 // This call back will be used to receive the color count from the orange detector
@@ -93,12 +93,13 @@ static void floor_detection_cb(uint8_t __attribute__((unused)) sender_id,
   floor_count = quality;
   floor_centroid = pixel_y;
 }
+
 #ifndef GROUND_SPLIT_ID
 #define GROUND_SPLIT_ID ABI_BROADCAST
 #endif
 static abi_event ground_detection_ev;
 static void ground_detection_cb(uint8_t __attribute__((unused)) sender_id,
-                                float new_direction)
+                                int16_t new_direction)
 {
   heading_new = new_direction;
 }
@@ -134,9 +135,11 @@ void orange_avoider_guided_periodic(void)
   int32_t floor_count_threshold = oag_floor_count_frac * front_camera.output_size.w * front_camera.output_size.h;
   float floor_centroid_frac = floor_centroid / (float)front_camera.output_size.h / 2.f;
 
-  VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
-  VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
-  VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
+  // VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
+  // VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
+  // VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
+  VERBOSE_PRINT("largest green count: %d\n", heading_new);
+
 
   // update our safe confidence using color threshold
   if(color_count < color_count_threshold){
