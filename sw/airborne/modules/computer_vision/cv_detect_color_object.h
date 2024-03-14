@@ -45,6 +45,9 @@ extern uint8_t cod_cb_min2;
 extern uint8_t cod_cb_max2;
 extern uint8_t cod_cr_min2;
 extern uint8_t cod_cr_max2;
+extern uint8_t Y_MARGIN;  // These margins should be determined based on empirical testing
+extern uint8_t CB_MARGIN;
+extern uint8_t CR_MARGIN;
 
 extern bool cod_draw1;
 extern bool cod_draw2;
