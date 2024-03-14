@@ -83,9 +83,9 @@
       <define name="COLOR_OBJECT_DETECTOR_FPS2" value="0"/>
       <define name="COLOR_OBJECT_DETECTOR_DRAW2" value="1"/>
     </module>
-    <module name="ground_split">
-      <define name="GROUND_SPLIT_CAMERA" value="front_camera"/>
-      <define name="GROUND_SPLIT_FPS" value="0"/>
+    <module name="ground_detection">
+      <define name="GROUND_DETECTION_CAMERA" value="front_camera"/>
+      <define name="GROUND_DETECTION_FPS" value="0"/>
     </module>
     <module name="orange_avoider_guided">
       <define name="ORANGE_AVOIDER_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION1_ID"/>

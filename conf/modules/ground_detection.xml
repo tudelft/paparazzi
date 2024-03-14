@@ -1,0 +1,24 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="ground_detection">
+  <doc>
+    <description>ground Detector
+    ground object detector    
+    </description>
+    <define name="GROUND_DETECTION_CAMERA" value="front_camera|bottom_camera" description="Video device to use"/>
+    <define name="GROUND_DETECTION_FPS" value="0" description="Desired FPS (0: camera rate)"/>
+  </doc>  
+  <dep>
+    <depends>ground_detection</depends>
+  </dep>
+  
+  <header>
+    <file name="ground_detection.h"/>
+  </header>
+
+  <init fun="ground_detection_init()"/>
+  <periodic fun="ground_detection_periodic()" freq="50"/>
+  <makefile target="ap|nps">
+    <file name="ground_detection.c"/>
+  </makefile>
+</module>

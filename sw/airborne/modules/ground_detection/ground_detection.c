@@ -4,7 +4,7 @@
 #include "std.h"
 
 // Include the header for the ground split functionality
-#include "modules/ground_split_5/ground_detection.h"
+#include "modules/ground_detection/ground_detection.h"
 
 // Standard C libraries needed for the module
 #include <stdio.h>
