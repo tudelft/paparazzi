@@ -173,8 +173,8 @@ uint8_t auto_test_start;
 // Variables for the speed to derivative gain slider and thrust coefficient: 
 // float K_d_speed = 0.03; 
 // float K_T_airspeed = 0.025;
-float K_d_speed = 0.01; 
-float K_T_airspeed = 0.02;
+float K_d_speed = 0.02; 
+float K_T_airspeed = 0.00;
 
 struct PID_over pid_gains_over = {
         .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
