@@ -50,6 +50,8 @@ extern float angular_acceleration[3];
 extern float side_slip_gain_rc;
 extern int16_t takeoff_stage;
 extern float theta_d;
+extern struct FloatEulers eulers_zxy;
+extern struct FloatRates *body_rates;
 
 
 extern bool indi_use_adaptive;

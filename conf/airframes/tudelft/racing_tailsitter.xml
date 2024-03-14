@@ -152,9 +152,9 @@
       <define name="TAKEOFF_THETA_REF" value="0.0"/>
     </module>
 
-    <!-- <module name="agl_dist">
+    <module name="agl_dist">
       <define name="AGL_DIST_ID" value="AGL_LIDAR_TFMINI_ID"/>
-      <define name="AGL_DIST_MAX_RANGE" value="5.0"/>
+      <define name="AGL_DIST_MAX_RANGE" value="12.0"/>
       <define name="AGL_DIST_MIN_RANGE" value="0.001"/>
       <define name="AGL_DIST_FILTER" value="0.1"/>
     </module>
@@ -164,7 +164,7 @@
       <configure name="TFMINI_BAUD" value="B115200"/>
       <configure name="USE_TFMINI_AGL" value="TRUE"/>
       <configure name="TFMINI_COMPENSATE_ROTATION" value="TRUE"/>
-    </module> -->
+    </module>
 
   </firmware>
 	  	 
@@ -371,6 +371,7 @@
     	<define name="K3" value="0.1486"/>
     	<!--[kg]-->
       <define name="CDE" value="0.02"/>
+      <define name="CDE_OFFSET" value="0.004"/>
 
       <define name="CDA" value="0.02"/>
       <define name="CDA_OFFSET" value="0.0002"/>
@@ -430,6 +431,7 @@
     <define name="GUIDANCE_H_MAX_BANK" value="60" unit="deg"/>
 
     <define name="FWD_SIDESLIP_GAIN_PILOTED" value="0.32"/> <!-- If guidance_hybrid_indi is being used, comment this out -->
+    <define name="FWD_SIDESLIP_GAIN" value="0.32"/>
     <!--<define name="SIDESLIP_YAW_GAIN" value="0.32"/>-->
 
     <!--<define name="EFF_SCHED_USE_FUNCTION" value="TRUE"/>-->
@@ -441,7 +443,7 @@
 
   <section name="SIMULATOR" prefix="NPS_">
     <define name="ACTUATOR_NAMES" value="tilt_left, tilt_right, mot_right, mot_left, ele_left, ele_right" type="string[]"/>
-    <define name="JSBSIM_MODEL" value="tilt_tailsitter" type="string"/>
+    <define name="JSBSIM_MODEL" value="racing_tailsitter" type="string"/>
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
     <define name="NO_MOTOR_MIXING" value="TRUE"/>
   </section>

@@ -29,6 +29,7 @@
 #include "autopilot.h"
 #include "modules/actuators/actuators.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
+#include "modules/sonar/agl_dist.h"
 
 #ifndef RADIO_PITCH
 #define RADIO_PITCH   0
@@ -48,8 +49,8 @@ float take_off_theta(void);
 void take_off_enter(void);
 
 void take_off_enter(void){
-  if (takeoff_stage == 3){
-    stage = 3;
+  if (takeoff_stage == 2){
+    stage = 2;
   }
   else{stage = 0;
   counter = 0;}
@@ -59,7 +60,12 @@ float take_off_theta(void){
 
   if(autopilot.mode == AP_MODE_NAV){
     if (takeoff_stage == 1) {
-      theta_d = theta_ref;
+    float theta_d_max = 0.0 / 180.0 * M_PI;
+    float increment = t_scale_to_theta / TAKEOFF_MODULE_FREQ;
+           theta_d += increment;
+       if (theta_d > theta_d_max) {
+        theta_d = theta_d_max;
+    }
   }
   else if (takeoff_stage == 3){
           // theta_d gradually decrease for nav mode
@@ -90,10 +96,14 @@ int16_t take_off_stage(float theta, float rate_q){
       stage = 1;
       counter = 0;
     }
-    else if(stage == 1 && fabs((theta - theta_ref/ 180.0 * M_PI)/((theta_ref +90.0)/ 180.0 * M_PI))< 0.09 && rate_q < 0.1 && counter/TAKEOFF_MODULE_FREQ > 1.5 ){
+    else if(stage == 1 && fabs((theta - theta_ref/ 180.0 * M_PI)/((theta_ref +90.0)/ 180.0 * M_PI))< 0.035 && rate_q < 0.1 && counter/TAKEOFF_MODULE_FREQ > 1.5 ){
+      autopilot_set_in_flight(true);
       stage = 2;
       counter = 0;
-      autopilot_set_in_flight(true);
+    }
+    else if(stage == 2 && agl_dist_value_filtered< 0.01 && agl_dist_valid){
+      stage = 3;
+      counter = 0;
     }
   } else {
     counter = 0;

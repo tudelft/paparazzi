@@ -38,6 +38,7 @@
       <message name="WIND_INFO_RET"            period="1."/>
       <message name="AHRS_REF_QUAT"            period="0.5"/>
       <message name="RTOS_MON"            period="0.002"/>
+      <message name="PIVOT"       period="0.005"/>
     </mode>
 
     <mode name="ppm">
