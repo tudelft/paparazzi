@@ -78,6 +78,13 @@ uint8_t Y_MARGIN = 0;
 uint8_t CB_MARGIN = 0;
 uint8_t CR_MARGIN = 0;
 
+uint8_t avg_y1 = 0;
+uint8_t avg_cb1 = 0;
+uint8_t avg_cr1 = 0;
+uint8_t avg_y = 0;
+uint8_t avg_cb = 0;
+uint8_t avg_cr = 0;
+
 bool cod_draw1 = false;
 bool cod_draw2 = false;
 // Global variable to check if initial ground calibration is done
@@ -88,6 +95,7 @@ struct color_object_t {
   int32_t x_c;
   int32_t y_c;
   uint32_t color_count;
+  uint32_t color_ground_count;
   bool updated;
 };
 struct color_object_t global_filters[2];
@@ -96,7 +104,14 @@ struct color_object_t global_filters[2];
 int frame_counter = 0;
 
 // Function
+void calibrate_floor_color(struct image_t *img);
+
 uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
+                              uint8_t lum_min, uint8_t lum_max,
+                              uint8_t cb_min, uint8_t cb_max,
+                              uint8_t cr_min, uint8_t cr_max);
+// Function
+uint32_t find_floor_count_central(struct image_t *img,
                               uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max);
@@ -142,22 +157,36 @@ void calibrate_floor_color(struct image_t *img) {
         uint8_t avg_cr = cr_sum / count;
 
         // Example margins for color detection - adjust based on actual requirements
-        const uint8_t Y_MARGIN = 75;  // These margins should be determined based on empirical testing
+        const uint8_t Y_MARGIN = 100;  // These margins should be determined based on empirical testing
         const uint8_t CB_MARGIN = 40;
         const uint8_t CR_MARGIN = 50;
 
         // Updating global variables for color detection thresholds
         // Assuming these are global variables used elsewhere for color-based filtering
-        cod_lum_min3 = avg_y > Y_MARGIN ? avg_y - Y_MARGIN : 0;
-        cod_lum_max3 = avg_y + Y_MARGIN > 255 ? 255 : avg_y + Y_MARGIN;
-        cod_cb_min3 = avg_cb > CB_MARGIN ? avg_cb - CB_MARGIN : 0;
-        cod_cb_max3 = avg_cb + CB_MARGIN > 255 ? 255 : avg_cb + CB_MARGIN;
-        cod_cr_min3 = avg_cr > CR_MARGIN ? avg_cr - CR_MARGIN : 0;
-        cod_cr_max3 = avg_cr + CR_MARGIN > 255 ? 255 : avg_cr + CR_MARGIN;
+        // cod_lum_min3 = avg_y > Y_MARGIN ? avg_y - Y_MARGIN : 0;
+        // cod_lum_max3 = avg_y + Y_MARGIN > 255 ? 255 : avg_y + Y_MARGIN;
+        // cod_cb_min3 = avg_cb > CB_MARGIN ? avg_cb - CB_MARGIN : 0;
+        // cod_cb_max3 = avg_cb + CB_MARGIN > 255 ? 255 : avg_cb + CB_MARGIN;
+        // cod_cr_min3 = avg_cr > CR_MARGIN ? avg_cr - CR_MARGIN : 0;
+        // cod_cr_max3 = avg_cr + CR_MARGIN > 255 ? 255 : avg_cr + CR_MARGIN;
+        cod_lum_min3 = 0;
+        cod_lum_max3 = 255;
+        cod_cb_min3 = 0;
+        cod_cb_max3 = 110;
+        cod_cr_min3 = 0;
+        cod_cr_max3 = 130;
     }
   }
 }
 
+// void update_color_detection_thresholds() {
+//     cod_lum_min2 = avg_y1 > Y_MARGIN ? avg_y1 - Y_MARGIN : 0;
+//     cod_lum_max2 = avg_y1 + Y_MARGIN > 255 ? 255 : avg_y1+ Y_MARGIN;
+//     cod_cb_min2 = avg_cb1> CB_MARGIN ? avg_cb1 - CB_MARGIN : 0;
+//     cod_cb_max2 = avg_cb1 + CB_MARGIN > 255 ? 255 : avg_cb1 + CB_MARGIN;
+//     cod_cr_min2 = avg_cr1 > CR_MARGIN ? avg_cr1 - CR_MARGIN : 0;
+//     cod_cr_max2 = avg_cr1 + CR_MARGIN > 255 ? 255 : avg_cr1 + CR_MARGIN;
+// }
 /*
  * object_detector
  * @param img - input image to process
@@ -189,6 +218,7 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
       cod_cr_max2 = cod_cr_max3;
   }
 
+  // update_color_detection_thresholds();
 
   switch (filter){
     case 1:
@@ -214,7 +244,8 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   };
 
   int32_t x_c, y_c;
-
+  // get amount of green in central part
+  uint32_t floor_count_central = find_floor_count_central(img, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
   // Filter and find centroid
   uint32_t count = find_object_centroid(img, &x_c, &y_c, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
   VERBOSE_PRINT("Color count %d: %u, threshold %u, x_c %d, y_c %d\n", camera, object_count, count_threshold, x_c, y_c);
@@ -223,6 +254,7 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
 
   pthread_mutex_lock(&mutex);
   global_filters[filter-1].color_count = count;
+  global_filters[filter-1].color_ground_count = floor_count_central;
   global_filters[filter-1].x_c = x_c;
   global_filters[filter-1].y_c = y_c;
   global_filters[filter-1].updated = true;
@@ -351,6 +383,56 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   return cnt;
 }
 
+uint32_t find_floor_count_central(struct image_t *img,
+                              uint8_t lum_min, uint8_t lum_max,
+                              uint8_t cb_min, uint8_t cb_max,
+                              uint8_t cr_min, uint8_t cr_max)
+{
+  uint32_t cnt = 0;
+  // uint32_t tot_x = 0;
+  // uint32_t tot_y = 0;
+  uint8_t *buffer = img->buf;
+
+  // Go through all the pixels
+  for (uint16_t y = img->h * 0.4; y < img->h * 0.6; y++) {
+    for (uint16_t x = 0; x < img->w * 0.4; x ++) {
+      // Check if the color is inside the specified values
+      uint8_t *yp, *up, *vp;
+      if (x % 2 == 0) {
+        // Even x
+        up = &buffer[y * 2 * img->w + 2 * x];      // U
+        yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
+        vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+        //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
+      } else {
+        // Uneven x
+        up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+        //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
+        vp = &buffer[y * 2 * img->w + 2 * x];      // V
+        yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+      }
+      if ( (*yp >= lum_min) && (*yp <= lum_max) &&
+           (*up >= cb_min ) && (*up <= cb_max ) &&
+           (*vp >= cr_min ) && (*vp <= cr_max )) {
+        cnt ++;
+        // tot_x += x;
+        // tot_y += y;
+        // if (draw){
+        //   *yp = 255;  // make pixel brighter in image
+        // }
+      }
+    }
+  }
+  // if (cnt > 0) {
+  //   *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
+  //   *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
+  // } else {
+  //   *p_xc = 0;
+  //   *p_yc = 0;
+  // }
+  return cnt;
+}
+
 void color_object_detector_periodic(void)
 {
   static struct color_object_t local_filters[2];
@@ -366,6 +448,8 @@ void color_object_detector_periodic(void)
   if(local_filters[1].updated){
     AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION2_ID, local_filters[1].x_c, local_filters[1].y_c,
         0, 0, local_filters[1].color_count, 1);
+    AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION3_ID, local_filters[1].x_c, local_filters[1].y_c,
+        0, 0, local_filters[1].color_ground_count, 2);
     local_filters[1].updated = false;
   }
 }

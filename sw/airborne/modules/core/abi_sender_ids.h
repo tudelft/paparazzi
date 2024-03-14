@@ -571,6 +571,9 @@
 #define COLOR_OBJECT_DETECTION2_ID 2
 #endif
 
+#ifndef COLOR_OBJECT_DETECTION3_ID
+#define COLOR_OBJECT_DETECTION3_ID 3
+#endif
 /*
  * JOYSTICK message (used for payload or control, but not as a RC)
  */
