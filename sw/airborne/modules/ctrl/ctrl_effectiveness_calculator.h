@@ -29,7 +29,7 @@ struct MotorCoefficients {
 extern float c_delta_a;
 extern float cda_offset;
 
-extern float g14and5;
+extern float cde_offset;
 extern float c_delta_e;
 extern float mapping;
 

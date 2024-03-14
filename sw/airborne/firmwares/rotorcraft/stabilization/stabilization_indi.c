@@ -379,6 +379,8 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
                                    &actuator_state_filt_vect[1],
                                    &actuator_state_filt_vect[2],
                                    &actuator_state_filt_vect[3],
+                                   &actuator_state_filt_vect[4],
+                                   &actuator_state_filt_vect[5],
                                    INDI_NUM_ACT, indi_u);    // out
 }
 #endif
@@ -760,12 +762,20 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   }
 
   //Control allocation Weights as a function of airspeed
+  // Tilt-rotor tailsitter
   float fun_tilt = 0.124875f * airspeed - 0.4985f;
   float fun_elevon = -0.124875f * airspeed + 1.4995f;
   indi_Wu[0] = (fun_tilt > 1.0f) ? 1.0f: ((fun_tilt < 0.001f) ? 0.001f : fun_tilt);
   indi_Wu[1] = indi_Wu[0];
   indi_Wu[4] = (fun_elevon > 1.0f) ? 1.0f: ((fun_elevon < 0.001f) ? 0.001f : fun_elevon);
   indi_Wu[5] = indi_Wu[4];
+  // Flap deflected tailsitter, for comparison of wind disturbance rejection in hovering
+  // float fun_flap = 0.124875f * airspeed - 0.4985f;
+  // float fun_tilt = -0.124875f * airspeed + 1.4995f;
+  // indi_Wu[0] = (fun_tilt > 1.0f) ? 1.0f: ((fun_tilt < 0.001f) ? 0.001f : fun_tilt);
+  // indi_Wu[1] = indi_Wu[0];
+  // indi_Wu[4] = (fun_elevon > 1.0f) ? 1.0f: ((fun_elevon < 0.001f) ? 0.001f : fun_elevon);
+  // indi_Wu[5] = indi_Wu[4];
 
 
   //RunOnceEvery(200, DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 1,indi_counter));
@@ -923,20 +933,29 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     struct FloatRates rates_filt_takeoff;
     rates_filt_takeoff.q = update_first_order_low_pass(&rates_filt_takeoff_fo[1], body_rates->q);
     if(autopilot.mode == AP_MODE_NAV){
-    // theta_d = theta_ref;
-    // theta_d gradually decrease for nav mode
+    if (takeoff_stage == 1) {
     float theta_d_max = 0.0 / 180.0 * M_PI;
     float increment = t_scale_to_theta / PERIODIC_FREQUENCY;
            theta_d += increment;
        if (theta_d > theta_d_max) {
         theta_d = theta_d_max;
     }
+  }
+  else if (takeoff_stage == 3){
+          // theta_d gradually decrease for nav mode
+    float theta_d_min = -90.0 / 180.0 * M_PI;
+    float increment = t_scale_to_theta / PERIODIC_FREQUENCY;
+           theta_d -= increment;
+       if (theta_d < theta_d_min) {
+        theta_d = theta_d_min;
     }
-    else{
+  }
+  }
+  else{
     struct FloatEulers euler_sp;
     float_eulers_of_quat_zxy(&euler_sp, &quat_sp_f);
     theta_d = euler_sp.theta;
-    }
+  }
 
     // Define B as a 1x2 matrix and W as a 2x2 diagonal matrix
         // Calculate B using the provided equation
@@ -988,7 +1007,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     /* reset psi setpoint to current psi angle */
     stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
     update_filters();
-  } else { // not in a takeoff stage, flying
+  } else if (takeoff_stage == 2){ // not in a takeoff stage, flying
 	  /* compute the INDI command */
 	  stabilization_indi_rate_run(rate_sp, in_flight);
   }

@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="40" ground_alt="0" lat0="52.169348" lon0="4.411563" max_dist_from_home="500" name="Rotorcraft Basic (Enac)" security_height="2">
+<flight_plan alt="40" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="500" name="Rotorcraft Basic (Enac)" security_height="2">
   <header>
 #include "autopilot.h"
 #include "generated/modules.h"
@@ -14,7 +14,33 @@
     <waypoint name="p3" x="-72.2" y="-217.0"/>
     <waypoint name="p4" x="-120.9" y="-48.9"/>
     <waypoint name="TD" x="-25.4" y="34.0"/>
+    <waypoint lat="52.169189" lon="4.410820" name="C1"/>
+    <waypoint lat="52.168049" lon="4.406923" name="C2"/>
+    <waypoint lat="52.166515" lon="4.408235" name="C3"/>
+    <waypoint lat="52.163255" lon="4.407668" name="C4"/>
+    <waypoint lat="52.161908" lon="4.410082" name="C5"/>
+    <waypoint lat="52.162641" lon="4.416992" name="C6"/>
+    <waypoint lat="52.164861" lon="4.427268" name="C7"/>
+    <waypoint lat="52.170422" lon="4.427511" name="C8"/>
+    <waypoint lat="52.172276" lon="4.424011" name="C9"/>
   </waypoints>
+  <sectors>
+    <sector color="red" name="Geofence">
+      <corner name="C1"/>
+      <corner name="C2"/>
+      <corner name="C3"/>
+      <corner name="C4"/>
+      <corner name="C5"/>
+      <corner name="C6"/>
+      <corner name="C7"/>
+      <corner name="C8"/>
+      <corner name="C9"/>
+    </sector>
+  </sectors>
+  <exceptions>
+    <exception cond="Or(!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 200) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
+    <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+  </exceptions>
   <blocks>
     <block name="Wait GPS">
       <call_once fun="NavKillThrottle()"/>
@@ -28,18 +54,12 @@
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>   
-    <block name="Pivot Up">
-      <call_once fun="nav_pivot_ramp_init()"/>
-      <call fun="nav_pivot_ramp()"/>
-    </block>
-    <block name="Start Engine">
+    <block name="Automatic Takeoff">
       <call_once fun="NavResurrect()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block>
-    <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="GetPosHeight() @GT 5.0" deroute="Standby"/>
-      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
-      <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
+      <call_once fun="autopilot_set_in_flight(false)"/>
+      <call_once fun="take_off_enter()"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/> 
+      <stay alt="40.0" wp="CLIMB" until="GetPosHeight() @GT 35.0"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="false" var="force_forward"/>
@@ -64,17 +84,24 @@
       </while>
       <deroute block="stay_p1"/>
     </block>
-    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
+     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>
     <block name="land">
       <set value="false" var="force_forward"/>
-      <go wp="TD"/>
+      <go vmode="alt" wp="TD"/>
     </block>
     <block name="flare">
-      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
+      <exception cond="takeoff_stage == 3" deroute="pivot_land"/>
+      <call_once fun="take_off_enter()"/>
+      <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="pivot_land">
+      <stay alt="0.0" wp="TD"/>
+      <exception cond="LessThan(eulers_zxy.theta, RadOfDeg(-89.0))" deroute="landed"/>
     </block>
     <block name="landed">
+      <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
   </blocks>

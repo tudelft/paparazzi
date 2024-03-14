@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="0.8" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="500" name="Rotorcraft Basic (Enac)" security_height="2.0">
+<flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="500" name="Rotorcraft Basic (Enac)" security_height="2.0">
   <header>
 #include "autopilot.h"
 #include "generated/modules.h"
@@ -43,7 +43,7 @@
       <call_once fun="autopilot_set_in_flight(false)"/>
       <call_once fun="take_off_enter()"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/> 
-      <stay alt="1.5" wp="CLIMB" until="GetPosHeight() @GT 1.2"/>
+      <stay alt="2.0" wp="CLIMB" until="GetPosHeight() @GT 1.5"/>
     </block>
     <!-- <block name="CLIMB">
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/> 
@@ -69,15 +69,14 @@
       <go vmode="alt" wp="TD"/>
     </block>
     <block name="flare">
-      <!-- <exception cond="LessThan(agl_dist_value_filtered, 0.15) @AND agl_dist_valid" deroute="landed"/> -->
-      <!-- <exception cond="!nav.in_flight()" deroute="landed"/> -->
+      <exception cond="takeoff_stage == 3" deroute="pivot_land"/>
+      <call_once fun="take_off_enter()"/>
       <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
     </block>
-    <!-- <block name="pivot_land">
-      <set value="3" var="takeoff_stage"/>
-      <call_once fun="take_off_enter()"/>
+    <block name="pivot_land">
       <stay alt="0.0" wp="TD"/>
-    </block> -->
+      <exception cond="LessThan(eulers_zxy.theta, RadOfDeg(-89.0))" deroute="landed"/>
+    </block>
     <block name="landed">
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
