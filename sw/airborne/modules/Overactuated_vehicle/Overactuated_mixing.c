@@ -265,8 +265,8 @@ float x_stb, y_stb, z_stb;
 // float K_d_speed = 0.02; 
 // float K_T_airspeed = 0.025;
 
-float K_d_speed = 0.012; 
-float K_T_airspeed = 0.012;
+float K_d_speed = 0.02; 
+float K_T_airspeed = 0.0;
 
 //Variables for the sysmon file write: 
 // #define PRINT_CPU_LOAD_ON_SD
