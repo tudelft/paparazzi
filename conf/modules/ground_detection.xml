@@ -8,9 +8,9 @@
     <define name="GROUND_DETECTION_CAMERA" value="front_camera|bottom_camera" description="Video device to use"/>
     <define name="GROUND_DETECTION_FPS" value="0" description="Desired FPS (0: camera rate)"/>
   </doc>  
-  <dep>
+  <!-- <dep>
     <depends>ground_detection</depends>
-  </dep>
+  </dep> -->
   
   <header>
     <file name="ground_detection.h"/>

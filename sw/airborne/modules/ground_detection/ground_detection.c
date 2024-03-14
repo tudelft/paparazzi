@@ -160,8 +160,9 @@ void update_green_history(int green_history[HISTORY_LENGTH][5], int *green_count
     static int current_index = 0;
 
     // Calculate green percentages for the current frame and update the history
+    // CHANGE 500!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
     for (int i = 0; i < 5; i++) {
-        green_history[current_index][i] = (green_counts[i] * 100) / ; // Assuming frame_size is the total pixel count in the detection area
+        green_history[current_index][i] = (green_counts[i] * 100) / 500; // Assuming frame_size is the total pixel count in the detection area
     }
 
     // Update the index for the next frame, wrapping around if necessary
@@ -191,4 +192,41 @@ void calculate_pixels_per_quintant(struct image_t *img, int *total_pixels_per_qu
             total_pixels_per_quintant[quintant]++;
         }
     }
+}
+
+void ground_detection_init(void)
+{
+    // Initialize any required global variables here.
+    // Since we're working with predefined constants for color thresholds, 
+    // there might not be direct analogs for individual filter settings as in the color object detector.
+
+    // However, if there are adjustable parameters or settings you wish to initialize from configuration,
+    // this is the place to do it. For example, you might have configurable thresholds or frame settings.
+
+    // Example:
+    // ground_y_min = COLOR_OBJECT_DETECTOR_LUM_MIN2;
+    // ground_y_max = COLOR_OBJECT_DETECTOR_LUM_MAX2;
+    // ground_u_min = COLOR_OBJECT_DETECTOR_CB_MIN2;
+    // ground_u_max = COLOR_OBJECT_DETECTOR_CB_MAX2;
+    // ground_v_min = COLOR_OBJECT_DETECTOR_CR_MIN2;
+    // ground_v_max = COLOR_OBJECT_DETECTOR_CR_MAX2;
+
+    // Register the ground detection function with the computer vision system, if applicable.
+    // This typically involves adding the ground detection function to a processing pipeline or setting it as a callback.
+    // Replace 'GROUND_SPLIT_CAMERA' with the actual camera identifier used in your system and
+    // 'ground_detection' with the name of your ground detection function.
+    // Example:
+    cv_add_to_device(&GROUND_DETECTION_CAMERA, ground_detection, GROUND_DETECTION_FPS, 0);
+}
+
+direction = 10;
+void ground_detection_periodic(void) 
+{
+    // static int last_direction = -1; // Store the last direction for comparison
+    pthread_mutex_lock(&mutex); // Assuming you have a similar mutex for thread safety
+    // int current_direction = direction; // Assuming 'direction' is updated by your main detection logic
+    pthread_mutex_unlock(&mutex);
+
+    // Send ABI message with the new direction
+    AbiSendMsgGROUND_DETECTION(GROUND_DETECTION_ID, direction);
 }

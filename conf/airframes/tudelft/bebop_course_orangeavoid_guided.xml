@@ -90,7 +90,7 @@
     <module name="orange_avoider_guided">
       <define name="ORANGE_AVOIDER_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION1_ID"/>
       <define name="FLOOR_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION2_ID"/>
-      <define name="GROUND_SPLIT_5_ID" value="GROUND_SPLIT_ID"/>
+      <define name="GROUND_SPLIT_ID" value="GROUND_DETECTION_ID"/>
     </module>
     <module name="video_rtp_stream">
       <define name="VIEWVIDEO_CAMERA" value="front_camera"/>
