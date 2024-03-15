@@ -3,7 +3,7 @@
 		* GPS:			Ublox M8N
 -->
 
-<airframe name="racing_tailsitter test">
+<airframe name="racing_tailsitter">
 
 <firmware name="rotorcraft">
     <!-- ****************** Autopilot Target ******************* -->
@@ -67,6 +67,10 @@
 
     <module name="sys_mon"/>
 
+    <module name="nav" type="hybrid">
+      <define name="GUIDANCE_H_USE_REF" value="FALSE"/>
+    </module>
+
     <module name="guidance"      type="indi_hybrid">
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
       <define name="GUIDANCE_INDI_POS_GAIN" value="0.6"/>
@@ -77,8 +81,8 @@
       <define name="GUIDANCE_INDI_PITCH_EFF_SCALING" value="1.0"/>
       <define name="GUIDANCE_H_REF_MAX_SPEED" value="18.0"/> <!--not used-->
       <define name="GUIDANCE_INDI_MIN_THROTTLE" value="3000"/>
-      <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="1000"/>
-      <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="15.0"/>
+      <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="1500"/>
+      <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="20.0"/>
       <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/> <!--heading can not be set by navigation-->
       <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="15.0"/>
       <!--<define name="KNIFE_EDGE_TEST" value="TRUE"/>-->
@@ -393,7 +397,7 @@
   </section>
 
   <section name="NAV">
-    <define name="NAV_CLIMB_VSPEED" value="1.0"/>
+    <define name="NAV_CLIMB_VSPEED" value="5.0"/>
     <define name="NAV_DESCEND_VSPEED" value="-0.5"/>
   </section>
 
@@ -413,9 +417,9 @@
 
   <!-- Gains for horizontal navigation-->
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="USE_REF" value="FALSE"/>
+    <!-- <define name="USE_REF" value="FALSE"/> -->
     <define name="PGAIN" value="100"/>
-    <define name="DGAIN" value="100"/>
+    <define name="DGAIN" value="120"/>
     <define name="IGAIN" value="20"/>
   </section>
 
