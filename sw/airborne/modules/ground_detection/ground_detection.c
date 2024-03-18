@@ -41,7 +41,7 @@ static pthread_mutex_t mutex;
 #define HEIGHT_THRESHOLD 40
 #define WIDTH_THRESHOLD 50
 
-#define HISTORY_LENGTH 5
+#define HISTORY_LENGTH 3
 
 uint8_t cod_lum_min = 0;
 uint8_t cod_lum_max = 0;
@@ -110,6 +110,7 @@ uint32_t ground_detection(struct image_t *img, uint8_t lum_min, uint8_t lum_max,
     // Assuming the frame size is fixed as per your constants (520x240)
     calculate_pixels_per_quintant(img, total_pixels_per_quintant);
     count_green_pixels(img, green_counts, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
+    // get_quintant(220, 200, 240, 520);
 
     // Calculate the percentage of green pixels in each quintant
     for (int i = 0; i < 5; i++) {
@@ -123,7 +124,7 @@ uint32_t ground_detection(struct image_t *img, uint8_t lum_min, uint8_t lum_max,
     // Decide the navigation direction based on the first (and only) entry in green_percentage_history
     int direction = decide_navigation_direction(green_percentage_history);
 
-    // printf("Ground detection and navigation image processing complete.\n");
+    printf("lum_min: %u, lum_max: %u, cb_min: %u, cb_max: %u, cr_min: %u, cr_max: %u.\n", lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
     return direction;
 }
 
@@ -158,10 +159,15 @@ int decide_navigation_direction(int green_percentage_history[HISTORY_LENGTH][5])
 }
 
 int get_quintant(int x, int y, int img_width, int img_height) {
-    int origin_x = img_width / 2;
-    int origin_y = img_height;
-    double angle = atan2(origin_y - y, x - origin_x);
+    // int origin_x = img_width / 2;
+    // int origin_y = img_height;
+    // double angle = atan2(origin_y - y, x - origin_x);
+    // int quintant = (int)(angle / (M_PI/5));
+    int origin_x = 0;
+    int origin_y = img_height / 2;
+    double angle = atan2(x, origin_y - y);
     int quintant = (int)(angle / (M_PI/5));
+    // printf("quintant: %d\n", quintant);
     return quintant;
 }
 
