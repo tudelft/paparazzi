@@ -233,7 +233,7 @@ void b_driver(const double lb[15], const double ub[15], h_struct_T *TrialState,
         int exitg1;
         do {
           exitg1 = 0;
-          if (TrialState->FunctionEvaluations < 400 && toc() < max_time_optimizer) {
+          if (TrialState->FunctionEvaluations < max_feval_optimizer && toc() < max_time_optimizer) {
             if (evalWellDefined &&
                 (phi_alpha <=
                  MeritFunction->phi +

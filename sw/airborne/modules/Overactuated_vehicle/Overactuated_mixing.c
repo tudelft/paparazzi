@@ -173,7 +173,7 @@ uint8_t auto_test_start;
 // Variables for the speed to derivative gain slider and thrust coefficient: 
 // float K_d_speed = 0.03; 
 // float K_T_airspeed = 0.025;
-float K_d_speed = 0.02; 
+float K_d_speed = 0.03; 
 float K_T_airspeed = 0.00;
 
 struct PID_over pid_gains_over = {
@@ -1231,9 +1231,9 @@ void overactuated_mixing_run(void)
         extra_data_out_local[56] = OVERACTUATED_MIXING_TRANSITION_AIRSPEED ;
 
         #ifdef FILTER_MODELED_ACC
-            extra_data_out_local[57] = 1;
+            extra_data_out_local[57] = 1.0f;
         #else
-            extra_data_out_local[57] = 0;
+            extra_data_out_local[57] = 0.0f;
         #endif
 
         indi_u[0] =  (myam7_data_in_local.motor_1_cmd_int * 1e-1);

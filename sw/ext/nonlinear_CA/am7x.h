@@ -15,6 +15,8 @@
 #ifndef AM7_H
 #define AM7_H
 
+#define max_iter_optimizer 50 //was 200
+#define max_feval_optimizer 200 //was 400
 #define max_time_optimizer 4.9e-3
 
 #define refresh_time_optimizer 5e-3 //Must be equal or bigger than optimizer_max_time

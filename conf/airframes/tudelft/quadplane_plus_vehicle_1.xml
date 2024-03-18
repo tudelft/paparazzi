@@ -408,7 +408,8 @@
     <define name="INDI_EL_SECOND_ORD_DEN_2" value="-1.822" />
     <define name="INDI_EL_SECOND_ORD_DEN_3" value="0.8353" />
     <define name="INDI_EL_SECOND_ORD_DELAY" value="0.015" />
-    <define name="INDI_EL_SECOND_ORD_RATE_LIMIT" value="11.34" />
+    <!-- <define name="INDI_EL_SECOND_ORD_RATE_LIMIT" value="11.34" /> -->
+    <define name="INDI_EL_SECOND_ORD_RATE_LIMIT" value="7.34" />
 
     <define name="AILERONS_K_PWM_ANGLE" value="1100" unit="uS/rad"/>
 
@@ -445,7 +446,7 @@
    <define name="MOTOR_K_PWM_OMEGA" value="1.077" unit="(rad/s)/PWM"/>
    <define name="MOTOR_MAX_OMEGA" value="1037" unit="rad/s"/> -->
 
-    <define name="MOTOR_MIN_OMEGA" value="300" unit="rad/s"/>
+    <define name="MOTOR_MIN_OMEGA" value="150" unit="rad/s"/>
     <!-- <define name="MOTOR_MIN_OMEGA" value="450" unit="rad/s"/> -->
     <define name="SERVO_AZ_MIN_ANGLE" value="-45" unit="deg"/><!-- Always remember to update the PWM range as well-->
     <define name="SERVO_AZ_MAX_ANGLE" value="45" unit="deg"/>
