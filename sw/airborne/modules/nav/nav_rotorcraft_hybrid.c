@@ -64,7 +64,7 @@ static void nav_hybrid_goto(struct EnuCoor_f *wp)
   nav_rotorcraft_base.goto_wp.dist2_to_wp = get_dist2_to_point(wp);
   VECT2_COPY(nav.target, *wp);
 
-  printf("nav hybrid goto\n");
+  // printf("nav hybrid goto\n");
 
   // Calculate position error
   struct FloatVect2 pos_error;

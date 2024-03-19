@@ -96,9 +96,9 @@ int16_t take_off_stage(float theta, float rate_q){
       stage = 1;
       counter = 0;
     }
-    else if(stage == 1 && fabs((theta - theta_ref/ 180.0 * M_PI)/((theta_ref +90.0)/ 180.0 * M_PI))< 0.035 && rate_q < 0.1 && counter/TAKEOFF_MODULE_FREQ > 1.5 ){
-      autopilot_set_in_flight(true);
+    else if(stage == 1 && fabs((theta - theta_ref/ 180.0 * M_PI)/((theta_ref +90.0)/ 180.0 * M_PI))< 0.023 && rate_q < 0.1 && counter/TAKEOFF_MODULE_FREQ > 1.5 ){
       stage = 2;
+      autopilot_set_in_flight(true);
       counter = 0;
     }
     else if(stage == 2 && agl_dist_value_filtered< 0.01 && agl_dist_valid){
