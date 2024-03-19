@@ -163,6 +163,12 @@ int decide_navigation_direction(int green_percentage_history[HISTORY_LENGTH][5])
         moving_averages[quintant] = (float)sum / HISTORY_LENGTH;
     }
 
+    // Check if quintant 2's moving average is above the threshold
+    const float percentage_threshold = 70.0;
+    if (moving_averages[2] >= percentage_threshold) {
+        return 2; // Return quintant 2 as the chosen direction if it meets the threshold
+    }
+
     // Logic to choose the quintant with the highest moving average
     int max_index = -1;
     float max_average = 0; // Start with zero, assuming at least one average should be above zero
