@@ -155,7 +155,7 @@ void orange_avoider_guided_periodic(void)
 
   switch (navigation_state){
     case SAFE:
-      VERBOSE_PRINT("Navigation state = SAFE\n")
+      VERBOSE_PRINT("Navigation state = SAFE\n");
       if (floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0){
@@ -166,7 +166,7 @@ void orange_avoider_guided_periodic(void)
 
       break;
     case OBSTACLE_FOUND:
-      VERBOSE_PRINT("Navigation state = OBSTACLE FOUND\n")
+      VERBOSE_PRINT("Navigation state = OBSTACLE FOUND\n");
       // stop
       guidance_h_set_body_vel(0, 0);
 
@@ -177,7 +177,7 @@ void orange_avoider_guided_periodic(void)
 
       break;
     case SEARCH_FOR_SAFE_HEADING:
-      VERBOSE_PRINT("Navigation state = SEARCH FOR SAFE HEADING\n")
+      VERBOSE_PRINT("Navigation state = SEARCH FOR SAFE HEADING\n");
       guidance_h_set_heading_rate(avoidance_heading_direction * oag_heading_rate);
 
       // make sure we have a couple of good readings before declaring the way safe
@@ -187,7 +187,7 @@ void orange_avoider_guided_periodic(void)
       }
       break;
     case OUT_OF_BOUNDS:
-      VERBOSE_PRINT("Navigation state = OUT OF BOUNDS\n")
+      VERBOSE_PRINT("Navigation state = OUT OF BOUNDS\n");
       // stop
       guidance_h_set_body_vel(0, 0);
 
@@ -198,7 +198,7 @@ void orange_avoider_guided_periodic(void)
 
       break;
     case REENTER_ARENA:
-      VERBOSE_PRINT("Navigation state = REENTER ARENA\n")
+      VERBOSE_PRINT("Navigation state = REENTER ARENA\n");
       // force floor center to opposite side of turn to head back into arena
       if (floor_count >= floor_count_threshold && avoidance_heading_direction * floor_centroid_frac >= 0.f){
         // return to heading mode
