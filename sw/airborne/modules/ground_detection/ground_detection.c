@@ -166,9 +166,11 @@ int decide_navigation_direction(int green_percentage_history[HISTORY_LENGTH][NUM
 
     // Check if quintant 2's moving average is above the threshold
     const float percentage_threshold = 70.0;
-    if (moving_averages[2] >= percentage_threshold) {
-        return 2; // Return quintant 2 as the chosen direction if it meets the threshold
+    int mid_index = (int)floor(NUMB_QUINT / 2.0); // Ensure division is floating-point
+    if (moving_averages[mid_index] >= percentage_threshold) {
+        return mid_index; // Return the mid quintant as the chosen direction if it meets the threshold
     }
+
 
     // Logic to choose the quintant with the highest moving average
     int max_index = -1;
@@ -179,9 +181,9 @@ int decide_navigation_direction(int green_percentage_history[HISTORY_LENGTH][NUM
         if (moving_averages[i] > max_average) {
             max_index = i;
             max_average = moving_averages[i];
-            quintant_two_is_max = (i == floor(NUMB_QUINT / 2)); // Check if the new maximum is quintant 2
+            quintant_two_is_max = (i == mid_index); // Check if the new maximum is quintant 2
         } else if (moving_averages[i] == max_average) {
-            if (i == floor(NUMB_QUINT / 2)) {
+            if (i == mid_index) {
                 quintant_two_is_max = true; // Set flag if quintant 2 shares the max
             }
         }
@@ -189,7 +191,7 @@ int decide_navigation_direction(int green_percentage_history[HISTORY_LENGTH][NUM
 
     // If quintant 2 is among the quintants with the maximum average, choose it.
     if (quintant_two_is_max) {
-        max_index = floor(NUMB_QUINT / 2); // Default to quintant 2 if it is one of the maximums
+        max_index = mid_index; // Default to quintant 2 if it is one of the maximums
     }
     // // Debug output
     // printf("Moving averages: ");
