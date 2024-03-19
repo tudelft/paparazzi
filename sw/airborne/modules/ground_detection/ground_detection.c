@@ -42,7 +42,7 @@ static pthread_mutex_t mutex;
 #define WIDTH_THRESHOLD 40
 
 #define HISTORY_LENGTH 3
-#define NUMB_QUINT 5
+#define NUMB_QUINT 3
 
 uint8_t cod_lum_min = 0;
 uint8_t cod_lum_max = 0;
@@ -165,7 +165,7 @@ int decide_navigation_direction(int green_percentage_history[HISTORY_LENGTH][NUM
     }
 
     // Check if quintant 2's moving average is above the threshold
-    const float percentage_threshold = 70.0;
+    const float percentage_threshold = 90.0;
     int mid_index = (int)floor(NUMB_QUINT / 2.0); // Ensure division is floating-point
     if (moving_averages[mid_index] >= percentage_threshold) {
         return mid_index; // Return the mid quintant as the chosen direction if it meets the threshold
@@ -210,8 +210,8 @@ int get_quintant(int x, int y, int img_height) {
     // int quintant = (int)(angle / (M_PI/NUMB_QUINT));
     int origin_y = img_height / 2;
     double angle = atan2(x, origin_y - y);
-    int quintant = (int)(angle / (M_PI/NUMB_QUINT));
-    return quintant;
+    int quintant = (int)(NUMB_QUINT * angle / M_PI);
+    return quintant < 0 ? 0 : (quintant >= NUMB_QUINT ? NUMB_QUINT - 1 : quintant);
 }
 
 void count_green_pixels(struct image_t *img, int *green_counts, uint8_t lum_min, uint8_t lum_max,

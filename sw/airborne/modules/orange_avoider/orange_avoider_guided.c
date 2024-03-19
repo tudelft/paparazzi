@@ -143,7 +143,7 @@ void orange_avoider_guided_periodic(void)
 
 
   // update our safe confidence using color threshold
-  if(color_count < color_count_threshold && heading_new == 2){
+  if(color_count < color_count_threshold && heading_new == 1){
     obstacle_free_confidence++;
   } else {
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
@@ -163,16 +163,10 @@ void orange_avoider_guided_periodic(void)
         navigation_state = OBSTACLE_FOUND;
       } else {
         if(heading_new == 0){
-          left_right = -1.f;
+          left_right = -3.f;
         }
-        else if (heading_new == 1){
-          left_right = -1.f;
-          }
-        else if (heading_new == 3){
-        left_right = 1.f;
-        }
-        else if (heading_new == 4){
-          left_right = 1.f;
+        else if (heading_new == 2){
+          left_right = 3.f;
           }
         else if (heading_new == -1){
           navigation_state = OUT_OF_BOUNDS;
@@ -181,7 +175,7 @@ void orange_avoider_guided_periodic(void)
 
         guidance_h_set_heading_rate(left_right * oag_heading_rate);
         guidance_h_set_body_vel(speed_sp, 0);
-        if (heading_new == 2){
+        if (heading_new == 1){
         guidance_h_set_heading(stateGetNedToBodyEulers_f()->psi);
         navigation_state = SAFE;
         }
