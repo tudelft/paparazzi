@@ -137,14 +137,14 @@ uint32_t ground_detection(struct image_t *img, uint8_t lum_min, uint8_t lum_max,
 
     update_green_history(green_percentage_history, green_counts, total_pixels_per_quintant);
 
-    // After calling update_green_history, before decide_navigation_direction
-    printf("Green percentage history:\n");
-    for (int i = 0; i < HISTORY_LENGTH; i++) {
-        for (int j = 0; j < 5; j++) {
-            printf("%d ", green_percentage_history[i][j]);
-        }
-        printf("\n");
-    }
+    // // After calling update_green_history, before decide_navigation_direction
+    // printf("Green percentage history:\n");
+    // for (int i = 0; i < HISTORY_LENGTH; i++) {
+    //     for (int j = 0; j < 5; j++) {
+    //         printf("%d ", green_percentage_history[i][j]);
+    //     }
+    //     printf("\n");
+    // }
 
     // Decide the navigation direction based on the first (and only) entry in green_percentage_history
     int direction = decide_navigation_direction(green_percentage_history);
@@ -190,12 +190,12 @@ int decide_navigation_direction(int green_percentage_history[HISTORY_LENGTH][5])
     if (quintant_two_is_max) {
         max_index = 2; // Default to quintant 2 if it is one of the maximums
     }
-    // // Debug output
-    // printf("Moving averages: ");
-    // for (int i = 0; i < 5; i++) {
-    //     printf("%.2f ", moving_averages[i]);
-    // }
-    // printf("\nChosen quintant: %d with average %.2f\n", max_index, max_average);
+    // Debug output
+    printf("Moving averages: ");
+    for (int i = 0; i < 5; i++) {
+        printf("%.2f ", moving_averages[i]);
+    }
+    printf("\nChosen quintant: %d with average %.2f\n", max_index, max_average);
 
     return max_index; // Return the index of the chosen quintant
 }
