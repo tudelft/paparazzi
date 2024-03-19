@@ -419,7 +419,7 @@ void* second_thread() //Run the optimization code
     else{
       //Don't filter modeled accelerations output:
       for(int i = 0; i < 6; i++){
-        current_estimated_accelerations_input[i] = (double) current_estimated_accelerations_array[i];
+        current_estimated_accelerations_input[i] = current_estimated_accelerations_array[i];
       }
     }
 
