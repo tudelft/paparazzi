@@ -670,11 +670,11 @@ struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight UNUSED, struc
     //Linear controller to find the acceleration setpoint from position and velocity
     pos_err.x = POS_FLOAT_OF_BFP(gh->ref.pos.x) - stateGetPositionNed_f()->x;
     pos_err.y = POS_FLOAT_OF_BFP(gh->ref.pos.y) - stateGetPositionNed_f()->y;
-      RunOnceEvery(200,{
-  printf("mode: %d\n", h_mode);
-  printf("pos: %f, %f\n", pos_err.x, pos_err.y);
-  printf("speed: %d, %d\n", gh->ref.speed.x, gh->ref.speed.y);
-  });
+  //     RunOnceEvery(200,{
+  // printf("mode: %d\n", h_mode);
+  // printf("pos: %f, %f\n", pos_err.x, pos_err.y);
+  // printf("speed: %d, %d\n", gh->ref.speed.x, gh->ref.speed.y);
+  // });
     gi_speed_sp.x = pos_err.x * gih_params.pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
     gi_speed_sp.y = pos_err.y * gih_params.pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
     if (v_mode == GUIDANCE_INDI_HYBRID_V_POS) {

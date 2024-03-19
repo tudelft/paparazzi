@@ -67,9 +67,9 @@
 
     <module name="sys_mon"/>
 
-    <module name="nav" type="hybrid">
+    <!-- <module name="nav" type="hybrid">
       <define name="GUIDANCE_H_USE_REF" value="FALSE"/>
-    </module>
+    </module> -->
 
     <module name="guidance"      type="indi_hybrid">
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
@@ -397,7 +397,7 @@
   </section>
 
   <section name="NAV">
-    <define name="NAV_CLIMB_VSPEED" value="5.0"/>
+    <define name="NAV_CLIMB_VSPEED" value="1.0"/>
     <define name="NAV_DESCEND_VSPEED" value="-0.5"/>
   </section>
 
@@ -417,7 +417,7 @@
 
   <!-- Gains for horizontal navigation-->
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <!-- <define name="USE_REF" value="FALSE"/> -->
+    <define name="USE_REF" value="FALSE"/>
     <define name="PGAIN" value="100"/>
     <define name="DGAIN" value="120"/>
     <define name="IGAIN" value="20"/>
