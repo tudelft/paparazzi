@@ -72,7 +72,11 @@ float backwing_pitch_eff_scaling = 1.0;
 
 static float g_forward[4][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL_FWD, STABILIZATION_INDI_G1_PITCH_FWD, STABILIZATION_INDI_G1_YAW_FWD, STABILIZATION_INDI_G1_THRUST_FWD};
 
+#ifdef STABILIZATION_INDI_G1
+static float g_hover[4][INDI_NUM_ACT] = STABILIZATION_INDI_G1;
+#else
 static float g_hover[4][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL, STABILIZATION_INDI_G1_PITCH, STABILIZATION_INDI_G1_YAW, STABILIZATION_INDI_G1_THRUST};
+#endif
 
 // Functions to schedule switching on and of of tip props on front wing
 float sched_ratio_tip_props = 1.0;
@@ -184,6 +188,7 @@ void schdule_control_effectiveness(void) {
 #error "ctfl_eff_scheduling_nederdrone is very specific and only works for one Nederdrone configuration!"
 #endif
     if (i>3) {
+      // Increase servo effectiveness depending on the thrust of the propeller of that wing: 0,1,2,3 = motors, 4,5,6,7 = flaps
       float wing_thrust = actuators_pprz[i-4];
       Bound(wing_thrust,3000.0,9600.0);
       wing_thrust_scaling = wing_thrust/9600.0/0.8;

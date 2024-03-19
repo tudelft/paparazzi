@@ -80,13 +80,21 @@ struct FloatVect3 sp_accel = {0.0f, 0.0f, 0.0f};
 float guidance_indi_specific_force_gain = GUIDANCE_INDI_SPECIFIC_FORCE_GAIN;
 static void guidance_indi_filter_thrust(void);
 
-#ifndef GUIDANCE_INDI_THRUST_DYNAMICS
-#ifndef STABILIZATION_INDI_ACT_DYN_P
-#error "You need to define GUIDANCE_INDI_THRUST_DYNAMICS to be able to use indi vertical control"
-#else // assume that the same actuators are used for thrust as for roll (e.g. quadrotor)
-#define GUIDANCE_INDI_THRUST_DYNAMICS STABILIZATION_INDI_ACT_DYN_P
+#ifdef GUIDANCE_INDI_THRUST_DYNAMICS
+#warning GUIDANCE_INDI_THRUST_DYNAMICS is deprecated, use GUIDANCE_INDI_THRUST_DYNAMICS_FREQ instead.
+#warning "The thrust dynamics are now specified in continuous time with the corner frequency of the first order model!"
+#warning "define GUIDANCE_INDI_THRUST_DYNAMICS_FREQ in rad/s"
+#warning "Use -ln(1 - old_number) * PERIODIC_FREQUENCY to compute it from the old value."
 #endif
-#endif //GUIDANCE_INDI_THRUST_DYNAMICS
+
+#ifndef GUIDANCE_INDI_THRUST_DYNAMICS_FREQ
+#ifndef STABILIZATION_INDI_ACT_FREQ_P
+#error "You need to define GUIDANCE_INDI_THRUST_DYNAMICS_FREQ to be able to use indi vertical control"
+#else // assume that the same actuators are used for thrust as for roll (e.g. quadrotor)
+#define GUIDANCE_INDI_THRUST_DYNAMICS_FREQ STABILIZATION_INDI_ACT_FREQ_P
+#endif
+#endif //GUIDANCE_INDI_THRUST_DYNAMICS_FREQ
+
 
 #endif //GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
 
@@ -98,7 +106,8 @@ static void guidance_indi_filter_thrust(void);
 #endif
 #endif
 
-float thrust_act = 0;
+float thrust_dyn = 0.f;
+float thrust_act = 0.f;
 Butterworth2LowPass filt_accel_ned[3];
 Butterworth2LowPass roll_filt;
 Butterworth2LowPass pitch_filt;
@@ -164,6 +173,14 @@ void guidance_indi_enter(void)
 
   thrust_in = stabilization_cmd[COMMAND_THRUST];
   thrust_act = thrust_in;
+
+#ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
+#ifdef GUIDANCE_INDI_THRUST_DYNAMICS
+  thrust_dyn = GUIDANCE_INDI_THRUST_DYNAMICS;
+#else
+  thrust_dyn = 1-exp(-GUIDANCE_INDI_THRUST_DYNAMICS_FREQ/PERIODIC_FREQUENCY);
+#endif //GUIDANCE_INDI_THRUST_DYNAMICS
+#endif //GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
 
   float tau = 1.0 / (2.0 * M_PI * filter_cutoff);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
@@ -299,33 +316,49 @@ struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight UNUSED, struc
   struct FloatVect3 pos_err = { 0 };
   struct FloatVect3 accel_sp = { 0 };
 
-  if (h_mode == GUIDANCE_INDI_H_POS) {
-    pos_err.x = POS_FLOAT_OF_BFP(gh->ref.pos.x) - stateGetPositionNed_f()->x;
-    pos_err.y = POS_FLOAT_OF_BFP(gh->ref.pos.y) - stateGetPositionNed_f()->y;
-    speed_sp.x = pos_err.x * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
-    speed_sp.y = pos_err.y * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
+  struct FloatVect3 speed_fb;
+
+
+  if (h_mode == GUIDANCE_INDI_H_ACCEL) {
+    // Speed feedback is included in the guidance when running in ACCEL mode
+    speed_fb.x = 0.;
+    speed_fb.y = 0.;
   }
-  else if (h_mode == GUIDANCE_INDI_H_SPEED) {
-    speed_sp.x = SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
-    speed_sp.y = SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
-  }
-  else { // H_ACCEL
-    speed_sp.x = 0.f;
-    speed_sp.y = 0.f;
+  else {
+    // Generate speed feedback for acceleration, as it is estimated
+    if (h_mode == GUIDANCE_INDI_H_SPEED) {
+      speed_sp.x = SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
+      speed_sp.y = SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
+    }
+    else { // H_POS
+      pos_err.x = POS_FLOAT_OF_BFP(gh->ref.pos.x) - stateGetPositionNed_f()->x;
+      pos_err.y = POS_FLOAT_OF_BFP(gh->ref.pos.y) - stateGetPositionNed_f()->y;
+      speed_sp.x = pos_err.x * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
+      speed_sp.y = pos_err.y * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
+    }
+    speed_fb.x = (speed_sp.x - stateGetSpeedNed_f()->x) * guidance_indi_speed_gain;
+    speed_fb.y = (speed_sp.y - stateGetSpeedNed_f()->y) * guidance_indi_speed_gain;
   }
 
-  if (v_mode == GUIDANCE_INDI_V_POS) {
-    pos_err.z = POS_FLOAT_OF_BFP(gv->z_ref) - stateGetPositionNed_f()->z;
-    speed_sp.z = pos_err.z * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(gv->zd_ref);
-  } else if (v_mode == GUIDANCE_INDI_V_SPEED) {
-    speed_sp.z = SPEED_FLOAT_OF_BFP(gv->zd_ref);
-  } else { // V_ACCEL
-    speed_sp.z = 0.f;
+  if (v_mode == GUIDANCE_INDI_V_ACCEL)  {
+    // Speed feedback is included in the guidance when running in ACCEL mode
+    speed_fb.z = 0;
+  }
+  else {
+    // Generate speed feedback for acceleration, as it is estimated
+    if (v_mode == GUIDANCE_INDI_V_SPEED) {
+      speed_sp.z = SPEED_FLOAT_OF_BFP(gv->zd_ref);
+    }
+    else { // V_POS
+      pos_err.z = POS_FLOAT_OF_BFP(gv->z_ref) - stateGetPositionNed_f()->z;
+      speed_sp.z = pos_err.z * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(gv->zd_ref);
+    }
+    speed_fb.z = (speed_sp.z - stateGetSpeedNed_f()->z) * guidance_indi_speed_gain;
   }
 
-  accel_sp.x = (speed_sp.x - stateGetSpeedNed_f()->x) * guidance_indi_speed_gain + ACCEL_FLOAT_OF_BFP(gh->ref.accel.x);
-  accel_sp.y = (speed_sp.y - stateGetSpeedNed_f()->y) * guidance_indi_speed_gain + ACCEL_FLOAT_OF_BFP(gh->ref.accel.y);
-  accel_sp.z = (speed_sp.z - stateGetSpeedNed_f()->z) * guidance_indi_speed_gain + ACCEL_FLOAT_OF_BFP(gv->zdd_ref);
+  accel_sp.x = speed_fb.x + ACCEL_FLOAT_OF_BFP(gh->ref.accel.x);
+  accel_sp.y = speed_fb.y + ACCEL_FLOAT_OF_BFP(gh->ref.accel.y);
+  accel_sp.z = speed_fb.z + ACCEL_FLOAT_OF_BFP(gv->zdd_ref);
 
   return guidance_indi_run(&accel_sp, gh->sp.heading);
 }
@@ -337,7 +370,7 @@ struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight UNUSED, struc
 void guidance_indi_filter_thrust(void)
 {
   // Actuator dynamics
-  thrust_act = thrust_act + GUIDANCE_INDI_THRUST_DYNAMICS * (thrust_in - thrust_act);
+  thrust_act = thrust_act + thrust_dyn * (thrust_in - thrust_act);
 
   // same filter as for the acceleration
   update_butterworth_2_low_pass(&thrust_filt, thrust_act);

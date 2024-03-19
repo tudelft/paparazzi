@@ -92,8 +92,13 @@
 #endif
 
 #ifdef SetCommandsFromRC
-#warning SetCommandsFromRC not used: STAB_INDI overwrites actuators
+#warning SetCommandsFromRC not used: STAB_INDI writes actuators directly
 #endif
+
+#ifdef SetAutoCommandsFromRC
+#warning SetAutoCommandsFromRC not used: STAB_INDI writes actuators directly
+#endif
+
 
 #if !STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
 #if INDI_NUM_ACT > WLS_N_U
@@ -191,7 +196,15 @@ float act_pref[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_PREF;
 float act_pref[INDI_NUM_ACT] = {[0 ... INDI_NUM_ACT - 1] = 0.0f};
 #endif
 
-float act_dyn[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_DYN;
+#ifdef STABILIZATION_INDI_ACT_DYN
+#warning STABILIZATION_INDI_ACT_DYN is deprecated, use STABILIZATION_INDI_ACT_FREQ instead.
+#warning You now have to define the continuous time corner frequency in rad/s of the actuators.
+#warning "Use -ln(1 - old_number) * PERIODIC_FREQUENCY to compute it from the old values."
+float act_dyn_discrete[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_DYN;
+#else
+float act_first_order_cutoff[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_FREQ;
+float act_dyn_discrete[INDI_NUM_ACT]; // will be computed from freq at init
+#endif
 
 //-------------------------------------
 float pivot_gain_q = STABILIZATION_INDI_PIVOT_GAIN_Q;
@@ -280,6 +293,9 @@ bool indi_thrust_increment_set = false;
 
 float g1g2_pseudo_inv[INDI_NUM_ACT][INDI_OUTPUTS];
 float g2[INDI_NUM_ACT] = STABILIZATION_INDI_G2; //scaled by INDI_G_SCALING
+#ifdef STABILIZATION_INDI_G1
+float g1[INDI_OUTPUTS][INDI_NUM_ACT] = STABILIZATION_INDI_G1;
+#else // old defines TODO remove
 #if INDI_OUTPUTS == 5
 float g1[INDI_OUTPUTS][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL,
                                         STABILIZATION_INDI_G1_PITCH, STABILIZATION_INDI_G1_YAW,
@@ -289,6 +305,7 @@ float g1[INDI_OUTPUTS][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL,
 float g1[INDI_OUTPUTS][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL,
                                         STABILIZATION_INDI_G1_PITCH, STABILIZATION_INDI_G1_YAW, STABILIZATION_INDI_G1_THRUST
                                        };
+#endif
 #endif
 
 float g1g2[INDI_OUTPUTS][INDI_NUM_ACT];
@@ -322,13 +339,18 @@ void sum_g1_g2(void);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
-static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
+static void send_eff_mat_g_indi(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_INDI_G(trans, dev, AC_ID, INDI_NUM_ACT, g1g2[0],
-                       INDI_NUM_ACT, g1g2[1],
-                       INDI_NUM_ACT, g1g2[2],
-                       INDI_NUM_ACT, g1g2[3],
-                       INDI_NUM_ACT, g2_est);
+  float zero = 0.0;
+  pprz_msg_send_EFF_MAT_G(trans, dev, AC_ID,
+                                   1, &zero,
+                                   1, &zero,
+                                   1, &zero,
+                      INDI_NUM_ACT, g1g2[0],
+                      INDI_NUM_ACT, g1g2[1],
+                      INDI_NUM_ACT, g1g2[2],
+                      INDI_NUM_ACT, g1g2[3],
+                      INDI_NUM_ACT, g2_est);
 }
 
 static void send_pivot(struct transport_tx *trans, struct link_device *dev)
@@ -354,6 +376,7 @@ static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *d
 
 static void send_att_full_indi(struct transport_tx *trans, struct link_device *dev)
 {
+  float zero = 0.0;
   struct FloatRates *body_rates = stateGetBodyRates_f();
   struct Int32Vect3 *body_accel_i = stateGetAccelBody_i();
   struct FloatVect3 body_accel_f_telem;
@@ -394,6 +417,15 @@ void stabilization_indi_init(void)
   init_filters();
   init_filters_rc();
 
+  int8_t i;
+// If the deprecated STABILIZATION_INDI_ACT_DYN is used, convert it to the new FREQUENCY format
+#ifdef STABILIZATION_INDI_ACT_FREQ
+  // Initialize the array of pointers to the rows of g1g2
+  for (i = 0; i < INDI_NUM_ACT; i++) {
+    act_dyn_discrete[i] = 1-exp(-act_first_order_cutoff[i]/PERIODIC_FREQUENCY);
+  }
+#endif
+
 #if STABILIZATION_INDI_RPM_FEEDBACK
   AbiBindMsgACT_FEEDBACK(STABILIZATION_INDI_ACT_FEEDBACK_ID, &act_feedback_ev, act_feedback_cb);
 #endif
@@ -414,7 +446,6 @@ void stabilization_indi_init(void)
   calc_g1g2_pseudo_inv();
 #endif
 
-  int8_t i;
   // Initialize the array of pointers to the rows of g1g2
   for (i = 0; i < INDI_OUTPUTS; i++) {
     Bwls[i] = g1g2[i];
@@ -724,6 +755,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
       v_thrust.z +=
         (stabilization_cmd[COMMAND_THRUST] - use_increment * actuator_state_filt_vect[i]) * Bwls[3][i];
 #if INDI_OUTPUTS == 5
+      stabilization_cmd[COMMAND_THRUST_X] = radio_control.values[RADIO_CONTROL_THRUST_X];
       v_thrust.x +=
         (stabilization_cmd[COMMAND_THRUST_X] - use_increment * actuator_state_filt_vect[i]) * Bwls[4][i];
 #endif
@@ -817,14 +849,6 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   for (i = 0; i < INDI_NUM_ACT; i++) {
     actuators_pprz[i] = (int16_t) indi_u[i];
   }
-
-  // Set the stab_cmd to 42 to indicate that it is not used
-  stabilization_cmd[COMMAND_ROLL] = 42;
-  stabilization_cmd[COMMAND_PITCH] = 42;
-  stabilization_cmd[COMMAND_YAW] = 42;
-
-  //counter indi run to check 500hz
-  indi_counter++;
 }
 
 /**
@@ -1046,7 +1070,7 @@ void get_actuator_state(void)
     prev_actuator_state = actuator_state[i];
 
     actuator_state[i] = actuator_state[i]
-                        + act_dyn[i] * (indi_u[i] - actuator_state[i]);
+                        + act_dyn_discrete[i] * (indi_u[i] - actuator_state[i]);
 
 #ifdef STABILIZATION_INDI_ACT_RATE_LIMIT
     if ((actuator_state[i] - prev_actuator_state) > act_rate_limit[i]) {

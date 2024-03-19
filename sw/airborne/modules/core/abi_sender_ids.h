@@ -197,6 +197,10 @@
 #define AGL_LIDAR_MATEKSYS_3901_L0X_ID 15
 #endif
 
+#ifndef AGL_UAVCAN_ID
+#define AGL_UAVCAN_ID 16
+#endif
+
 /*
  * IDs of magnetometer sensors (including IMUs with mag)
  */
@@ -631,5 +635,14 @@
 #ifndef VEL_SP_FCR_ID
 #define VEL_SP_FCR_ID 1 // Approach Moving Target
 #endif
+
+
+/*
+ * IDs of LIDAR_DATA senders
+ */
+#ifndef LIDAR_DATA_VL53L5CX_ID
+#define LIDAR_DATA_VL53L5CX_ID 1
+#endif
+
 
 #endif /* ABI_SENDER_IDS_H */

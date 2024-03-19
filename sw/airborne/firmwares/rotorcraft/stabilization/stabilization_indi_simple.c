@@ -41,8 +41,14 @@
 #include "modules/radio_control/radio_control.h"
 #include "filters/low_pass_filter.h"
 
-#if !defined(STABILIZATION_INDI_ACT_DYN_P) && !defined(STABILIZATION_INDI_ACT_DYN_Q) && !defined(STABILIZATION_INDI_ACT_DYN_R)
-#error You have to define the first order time constant of the actuator dynamics!
+#if defined(STABILIZATION_INDI_ACT_DYN_P) && !defined(STABILIZATION_INDI_ACT_DYN_Q) && !defined(STABILIZATION_INDI_ACT_DYN_R)
+#warning STABILIZATION_INDI_ACT_DYN is deprecated, use STABILIZATION_INDI_ACT_FREQ instead.
+#warning You now have to define the continuous time corner frequency in rad/s of the actuators.
+#warning "Use -ln(1 - old_number) * PERIODIC_FREQUENCY to compute it from the old values."
+#else
+#if !defined(STABILIZATION_INDI_ACT_FREQ_P) && !defined(STABILIZATION_INDI_ACT_FREQ_Q) && !defined(STABILIZATION_INDI_ACT_FREQ_R)
+#warning You have to define the corner frequency of the first order actuator dynamics model in rad/s!
+#endif
 #endif
 
 // these parameters are used in the filtering of the angular acceleration
@@ -145,29 +151,39 @@ struct IndiVariables indi = {
 
 static void send_att_indi(struct transport_tx *trans, struct link_device *dev)
 {
+  float zero = 0.0;
+  pprz_msg_send_STAB_ATTITUDE(trans, dev, AC_ID,
+                                      &zero, &zero, &zero,         // att
+                                      &zero, &zero, &zero,         // att.ref
+                                      &indi.rate[0].o[0],          // rate
+                                      &indi.rate[1].o[0],
+                                      &indi.rate[2].o[0],
+                                      &zero, &zero, &zero,         // rate.ref
+                                      &indi.rate_d[0],             // ang.acc = rate.diff
+                                      &indi.rate_d[1],
+                                      &indi.rate_d[2],
+                                      &indi.angular_accel_ref.p,   // ang.acc.ref
+                                      &indi.angular_accel_ref.q,
+                                      &indi.angular_accel_ref.r,
+                                      1, &zero,                    // inputs
+                                      1, &zero);                   // outputs
+}
+static void send_eff_mat_g_indi_simple(struct transport_tx *trans, struct link_device *dev)
+{
   //The estimated G values are scaled, so scale them back before sending
   struct FloatRates g1_disp;
   RATES_SMUL(g1_disp, indi.est.g1, INDI_EST_SCALE);
   float g2_disp = indi.est.g2 * INDI_EST_SCALE;
-  float zero = 0;
-
-  pprz_msg_send_STAB_ATTITUDE_INDI(trans, dev, AC_ID,
-                                   &zero, &zero, &zero,         // input lin.acc
-                                   &indi.rate[0].o[0],          // rate
-                                   &indi.rate[1].o[0],
-                                   &indi.rate[2].o[0],
-                                   &zero, &zero, &zero,         // rate.ref
-                                   &indi.rate_d[0],             // ang.acc = rate.diff
-                                   &indi.rate_d[1],
-                                   &indi.rate_d[2],
-                                   &indi.angular_accel_ref.p,   // ang.acc.ref
-                                   &indi.angular_accel_ref.q,
-                                   &indi.angular_accel_ref.r,
-                                   &g1_disp.p,                  // matrix
-                                   &g1_disp.q,
-                                   &g1_disp.r,
-                                   &g2_disp,
-                                   0, &zero);                   // outputs
+  float zero = 0.0;
+  pprz_msg_send_EFF_MAT_G(trans, dev, AC_ID,
+                                    1, &zero,
+                                    1, &zero,
+                                    1, &zero,
+                                    1, &g1_disp.p,
+                                    1, &g1_disp.q,
+                                    1, &g1_disp.r,
+                                    1, &g2_disp,
+                                    1, &zero);
 }
 
 static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *dev)
@@ -190,8 +206,19 @@ void stabilization_indi_init(void)
   // Initialize filters
   indi_init_filters();
 
+#ifdef STABILIZATION_INDI_ACT_FREQ_P
+  indi.act_dyn.p = 1-exp(-STABILIZATION_INDI_ACT_FREQ_P/PERIODIC_FREQUENCY);
+  indi.act_dyn.q = 1-exp(-STABILIZATION_INDI_ACT_FREQ_Q/PERIODIC_FREQUENCY);
+  indi.act_dyn.r = 1-exp(-STABILIZATION_INDI_ACT_FREQ_R/PERIODIC_FREQUENCY);
+#else
+  indi.act_dyn.p = STABILIZATION_INDI_ACT_DYN_P;
+  indi.act_dyn.q = STABILIZATION_INDI_ACT_DYN_Q;
+  indi.act_dyn.r = STABILIZATION_INDI_ACT_DYN_R;
+#endif
+
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_INDI, send_att_indi);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_att_indi);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_G, send_eff_mat_g_indi_simple);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
 #endif
 }
@@ -363,9 +390,9 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight __att
 {
   //Propagate input filters
   //first order actuator dynamics
-  indi.u_act_dyn.p = indi.u_act_dyn.p + STABILIZATION_INDI_ACT_DYN_P * (indi.u_in.p - indi.u_act_dyn.p);
-  indi.u_act_dyn.q = indi.u_act_dyn.q + STABILIZATION_INDI_ACT_DYN_Q * (indi.u_in.q - indi.u_act_dyn.q);
-  indi.u_act_dyn.r = indi.u_act_dyn.r + STABILIZATION_INDI_ACT_DYN_R * (indi.u_in.r - indi.u_act_dyn.r);
+  indi.u_act_dyn.p = indi.u_act_dyn.p + indi.act_dyn.p * (indi.u_in.p - indi.u_act_dyn.p);
+  indi.u_act_dyn.q = indi.u_act_dyn.q + indi.act_dyn.q * (indi.u_in.q - indi.u_act_dyn.q);
+  indi.u_act_dyn.r = indi.u_act_dyn.r + indi.act_dyn.r * (indi.u_in.r - indi.u_act_dyn.r);
 
   // Propagate the filter on the gyroscopes and actuators
   struct FloatRates *body_rates = stateGetBodyRates_f();

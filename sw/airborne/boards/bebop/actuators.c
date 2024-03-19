@@ -87,7 +87,7 @@ void actuators_bebop_commit(void)
   // When detected a suicide
   actuators_bebop.i2c_trans.buf[10] = actuators_bebop.i2c_trans.buf[10] & 0x7;
   if (actuators_bebop.i2c_trans.buf[11] == 2 && actuators_bebop.i2c_trans.buf[10] != 1) {
-    autopilot_set_motors_on(FALSE);
+    autopilot_set_motors_on(false);
   }
 
   // Start the motors
@@ -141,11 +141,7 @@ void actuators_bebop_commit(void)
   // Send ABI message
   struct act_feedback_t feedback[4];
   for (int i=0;i<4;i++) {
-#ifdef SERVOS_BEBOP_OFFSET
-    feedback[i].idx = SERVOS_BEBOP_OFFSET + i;
-#else
-    feedback[i].idx = SERVOS_DEFAULT_OFFSET + i;
-#endif
+    feedback[i].idx = get_servo_idx(i);
     feedback[i].rpm = actuators_bebop.rpm_obs[i];
     feedback[i].set.rpm = true;
   }

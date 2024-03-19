@@ -33,7 +33,13 @@
 #include "firmwares/fixedwing/guidance/guidance_v_n.h"   // gvf_parametric is only compatible with the new pprz controller!
 #endif
 
-void gvf_parametric_low_level_control_2D(float heading_rate)
+#if defined(FIXEDWING_FIRMWARE)
+#define USED_IN_FIXEDWING_ONLY
+#else
+#define USED_IN_FIXEDWING_ONLY UNUSED
+#endif
+
+void gvf_parametric_low_level_control_2D(float heading_rate USED_IN_FIXEDWING_ONLY )
 {
 #if defined(FIXEDWING_FIRMWARE)
   if (autopilot_get_mode() == AP_MODE_AUTO2) {
@@ -47,12 +53,14 @@ void gvf_parametric_low_level_control_2D(float heading_rate)
       -gvf_parametric_control.k_roll * atanf(heading_rate * ground_speed / GVF_PARAMETRIC_GRAVITY / cosf(att->theta));
     BoundAbs(h_ctl_roll_setpoint, h_ctl_roll_max_setpoint); // Setting point for roll angle
   }
+// Allow for rover operation
+#elif defined(ROVER_FIRMWARE)
 #else
 #error gvf_parametric does not support your firmware yet
 #endif
 }
 
-void gvf_parametric_low_level_control_3D(float heading_rate, float climbing_rate)
+void gvf_parametric_low_level_control_3D(float heading_rate USED_IN_FIXEDWING_ONLY, float climbing_rate USED_IN_FIXEDWING_ONLY)
 {
 #if defined(FIXEDWING_FIRMWARE)
   if (autopilot_get_mode() == AP_MODE_AUTO2) {
@@ -72,6 +80,8 @@ void gvf_parametric_low_level_control_3D(float heading_rate, float climbing_rate
       -gvf_parametric_control.k_roll * atanf(heading_rate * ground_speed / GVF_PARAMETRIC_GRAVITY / cosf(att->theta));
     BoundAbs(h_ctl_roll_setpoint, h_ctl_roll_max_setpoint); // Setting point for roll angle
   }
+// Allow for rover operation
+#elif defined(ROVER_FIRMWARE)
 #else
 #error gvf_parametric does not support your firmware yet
 #endif

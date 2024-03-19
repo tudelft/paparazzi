@@ -1,27 +1,5 @@
 <conf>
   <aircraft
-   name="ARDrone2_OF_Hover"
-   ac_id="44"
-   airframe="airframes/tudelft/ardrone2_OF_hover.xml"
-   radio="radios/dummy.xml"
-   telemetry="telemetry/default_rotorcraft.xml"
-   flight_plan="flight_plans/rotorcraft_optitrack.xml"
-   settings="settings/rotorcraft_basic.xml"
-   settings_modules="modules/ahrs_int_cmpl_quat.xml [modules/cv_opticflow.xml] modules/gps.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/nav_basic_rotorcraft.xml modules/optical_flow_hover.xml modules/stabilization_indi_simple.xml"
-   gui_color="red"
-  />
-  <aircraft
-   name="ARDrone2_default"
-   ac_id="10"
-   airframe="airframes/examples/ardrone2.xml"
-   radio="radios/dummy.xml"
-   telemetry="telemetry/default_rotorcraft.xml"
-   flight_plan="flight_plans/rotorcraft_basic.xml"
-   settings="settings/rotorcraft_basic.xml"
-   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/air_data.xml modules/geo_mag.xml modules/gps.xml modules/gps_ubx_ucenter.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_basic_rotorcraft.xml modules/stabilization_int_quat.xml modules/video_rtp_stream.xml"
-   gui_color="#ffffd633d633"
-  />
-  <aircraft
    name="ARDrone2_indi"
    ac_id="13"
    airframe="airframes/tudelft/ardrone2_indi.xml"
@@ -44,17 +22,6 @@
    gui_color="#ffffccc2ccc2"
   />
   <aircraft
-   name="ARDrone2_optitrack"
-   ac_id="11"
-   airframe="airframes/tudelft/ardrone2_optitrack.xml"
-   radio="radios/dummy.xml"
-   telemetry="telemetry/default_rotorcraft.xml"
-   flight_plan="flight_plans/rotorcraft_optitrack.xml"
-   settings="settings/rotorcraft_basic.xml"
-   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/gps.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi_simple.xml"
-   gui_color="#fffff996b847"
-  />
-  <aircraft
    name="BebopMavlink"
    ac_id="9"
    airframe="airframes/tudelft/bebop_mavlink.xml"
@@ -73,7 +40,7 @@
    telemetry="telemetry/default_rotorcraft.xml"
    flight_plan="flight_plans/tudelft/delft_basic.xml"
    settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_speed.xml"
-   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/air_data.xml [modules/geo_mag.xml] modules/gps.xml modules/guidance_indi.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi_simple.xml"
+   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/air_data.xml modules/electrical.xml [modules/geo_mag.xml] modules/gps.xml modules/guidance_indi.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_rotorcraft.xml modules/preflight_checks.xml modules/stabilization_indi_simple.xml"
    gui_color="#ffffcccaccca"
   />
   <aircraft
@@ -95,7 +62,7 @@
    telemetry="telemetry/default_rotorcraft.xml"
    flight_plan="flight_plans/rotorcraft_basic.xml"
    settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_speed.xml"
-   settings_modules="modules/ahrs_float_mlkf.xml modules/air_data.xml modules/bebop_ae_awb.xml modules/bebop_cam.xml modules/geo_mag.xml modules/gps.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_basic_rotorcraft.xml modules/stabilization_int_quat.xml modules/video_rtp_stream.xml"
+   settings_modules="modules/ahrs_float_mlkf.xml modules/air_data.xml modules/bebop_ae_awb.xml modules/bebop_cam.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/guidance_pid_rotorcraft.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_rotorcraft.xml modules/stabilization_int_quat.xml modules/video_rtp_stream.xml"
    gui_color="#ffffbc3bce5b"
   />
   <aircraft
@@ -167,12 +134,12 @@
   <aircraft
    name="Disco"
    ac_id="16"
-   airframe="airframes/ENAC/fixed-wing/disco.xml"
+   airframe="airframes/tudelft/disco.xml"
    radio="radios/T14SG_SBUS.xml"
    telemetry="telemetry/default_fixedwing.xml"
    flight_plan="flight_plans/basic.xml"
    settings="settings/fixedwing_basic.xml"
-   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/gps.xml modules/gps_ubx_ucenter.xml modules/guidance_full_pid_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/stabilization_adaptive_fw.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/gps_ubx_ucenter.xml modules/guidance_full_pid_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/stabilization_adaptive_fw.xml"
    gui_color="blue"
   />
   <aircraft
@@ -594,14 +561,91 @@
    gui_color="red"
   />
   <aircraft
+   name="nav_hybrid_test"
+   ac_id="31"
+   airframe="airframes/tudelft/hybrid_nav_test.xml"
+   radio="radios/crossfire_sbus.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/tudelft/delft_basic.xml"
+   settings=""
+   settings_modules="modules/air_data.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_pid_rotorcraft.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_hybrid.xml modules/nav_rotorcraft.xml modules/stabilization_indi_simple.xml"
+   gui_color="red"
+  />
+  <aircraft
    name="rot_wing_25kg"
    ac_id="29"
    airframe="airframes/tudelft/rot_wing_25kg.xml"
    radio="radios/crossfire_sbus.xml"
    telemetry="telemetry/highspeed_rotorcraft.xml"
-   flight_plan="flight_plans/tudelft/rotating_wing25kg_EHVB.xml"
+   flight_plan="flight_plans/tudelft/rotating_wing_EHVB.xml"
    settings="settings/rotorcraft_basic.xml"
-   settings_modules="modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/ctrl_eff_sched_rot_wing.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/imu_heater.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_hybrid.xml modules/nav_rotorcraft.xml modules/stabilization_indi.xml modules/sys_id_auto_doublets.xml modules/sys_id_doublet.xml"
+   settings_modules="modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/airspeed_uavcan.xml modules/approach_moving_target.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/imu_heater.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_hybrid.xml modules/nav_rotorcraft.xml modules/preflight_checks.xml modules/rot_wing_automation.xml modules/rotwing_state.xml modules/stabilization_indi.xml modules/sys_id_auto_doublets.xml modules/sys_id_doublet.xml modules/target_pos.xml"
+   gui_color="red"
+  />
+  <aircraft
+   name="RotatingWingV3B"
+   ac_id="39"
+   airframe="airframes/tudelft/rot_wing_v3b.xml"
+   radio="radios/crossfire_sbus.xml"
+   telemetry="telemetry/highspeed_rotorcraft.xml"
+   flight_plan="flight_plans/tudelft/rotating_wing_EHVB.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/airspeed_uavcan.xml modules/approach_moving_target.xml modules/ekf_aw.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/imu_heater.xml modules/ins_ekf2.xml modules/lidar_tfmini.xml modules/logger_sd_chibios.xml modules/nav_hybrid.xml modules/nav_rotorcraft.xml modules/pfc_actuators.xml modules/preflight_checks.xml modules/rot_wing_automation.xml modules/rotwing_state.xml modules/stabilization_indi.xml modules/sys_id_auto_doublets.xml modules/sys_id_doublet.xml modules/target_pos.xml"
+   gui_color="red"
+  />
+  <aircraft
+   name="RotatingWingV3D"
+   ac_id="23"
+   airframe="airframes/tudelft/rot_wing_v3d.xml"
+   radio="radios/crossfire_sbus.xml"
+   telemetry="telemetry/highspeed_rotorcraft.xml"
+   flight_plan="flight_plans/tudelft/rotating_wing_EHVB.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/airspeed_uavcan.xml modules/approach_moving_target.xml modules/ekf_aw.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/imu_heater.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_hybrid.xml modules/nav_rotorcraft.xml modules/pfc_actuators.xml modules/preflight_checks.xml modules/rot_wing_automation.xml modules/rotwing_state.xml modules/stabilization_indi.xml modules/sys_id_auto_doublets.xml modules/sys_id_doublet.xml modules/target_pos.xml"
+   gui_color="red"
+  />
+  <aircraft
+   name="RotatingWingV3E"
+   ac_id="30"
+   airframe="airframes/tudelft/rot_wing_v3e.xml"
+   radio="radios/crossfire_sbus.xml"
+   telemetry="telemetry/highspeed_rotorcraft.xml"
+   flight_plan="flight_plans/tudelft/rotating_wing_EHVB.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/airspeed_uavcan.xml modules/approach_moving_target.xml modules/ekf_aw.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/imu_heater.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_hybrid.xml modules/nav_rotorcraft.xml modules/pfc_actuators.xml modules/preflight_checks.xml modules/rot_wing_automation.xml modules/rotwing_state.xml modules/stabilization_indi.xml modules/sys_id_auto_doublets.xml modules/sys_id_doublet.xml modules/target_pos.xml"
+   gui_color="red"
+  />
+  <aircraft
+   name="RotatingWingV3F"
+   ac_id="10"
+   airframe="airframes/tudelft/rot_wing_v3f.xml"
+   radio="radios/crossfire_sbus.xml"
+   telemetry="telemetry/highspeed_rotorcraft.xml"
+   flight_plan="flight_plans/tudelft/rotating_wing_EHVB.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/airspeed_uavcan.xml modules/approach_moving_target.xml modules/ekf_aw.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/imu_heater.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_hybrid.xml modules/nav_rotorcraft.xml modules/pfc_actuators.xml modules/preflight_checks.xml modules/rot_wing_automation.xml modules/rotwing_state.xml modules/stabilization_indi.xml modules/sys_id_auto_doublets.xml modules/sys_id_doublet.xml modules/target_pos.xml"
+   gui_color="red"
+  />
+  <aircraft
+   name="RotatingWingV3G"
+   ac_id="11"
+   airframe="airframes/tudelft/rot_wing_v3g.xml"
+   radio="radios/crossfire_sbus.xml"
+   telemetry="telemetry/highspeed_rotorcraft.xml"
+   flight_plan="flight_plans/tudelft/rotating_wing_EHVB.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/airspeed_uavcan.xml modules/approach_moving_target.xml modules/ekf_aw.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/imu_heater.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_hybrid.xml modules/nav_rotorcraft.xml modules/pfc_actuators.xml modules/preflight_checks.xml modules/rot_wing_automation.xml modules/rotwing_state.xml modules/stabilization_indi.xml modules/sys_id_auto_doublets.xml modules/sys_id_doublet.xml modules/target_pos.xml"
+   gui_color="red"
+  />
+  <aircraft
+   name="RotatingWingV3H"
+   ac_id="33"
+   airframe="airframes/tudelft/rot_wing_v3h.xml"
+   radio="radios/crossfire_sbus.xml"
+   telemetry="telemetry/highspeed_rotorcraft.xml"
+   flight_plan="flight_plans/tudelft/rotating_wing_EHVB.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/airspeed_uavcan.xml modules/approach_moving_target.xml modules/ekf_aw.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/imu_heater.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_hybrid.xml modules/nav_rotorcraft.xml modules/pfc_actuators.xml modules/preflight_checks.xml modules/rot_wing_automation.xml modules/rotwing_state.xml modules/stabilization_indi.xml modules/sys_id_auto_doublets.xml modules/sys_id_doublet.xml modules/target_pos.xml"
    gui_color="red"
   />
 </conf>
