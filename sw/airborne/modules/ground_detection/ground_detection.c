@@ -42,6 +42,7 @@ static pthread_mutex_t mutex;
 #define WIDTH_THRESHOLD 40
 
 #define HISTORY_LENGTH 3
+#define NUMB_QUINT 5
 
 uint8_t cod_lum_min = 0;
 uint8_t cod_lum_max = 0;
@@ -63,11 +64,11 @@ static bool pixels_per_quintant_calculated = false;
 uint32_t ground_detection(struct image_t *img, uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max);
-int decide_navigation_direction(int green_percentage_history[HISTORY_LENGTH][5]);
+int decide_navigation_direction(int green_percentage_history[HISTORY_LENGTH][NUMB_QUINT]);
 void count_green_pixels(struct image_t *img, int *green_counts, uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max);
-void update_green_history(int green_history[HISTORY_LENGTH][5], int *green_counts, int *total_pixels_per_quintant);
+void update_green_history(int green_history[HISTORY_LENGTH][NUMB_QUINT], int *green_counts, int *total_pixels_per_quintant);
 bool detect_color(uint8_t y, uint8_t u, uint8_t v, uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max);
@@ -108,15 +109,15 @@ uint32_t ground_detection(struct image_t *img, uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max) {
 
-    static int total_pixels_per_quintant[5]; // Make this static to retain its value across calls
+    static int total_pixels_per_quintant[NUMB_QUINT]; // Make this static to retain its value across calls
     static int initialization_done = 0; // Add a flag to track the initialization
-    static int green_percentage_history[HISTORY_LENGTH][5] = {{0}}; // Static ensures it retains values between calls
-    int green_counts[5] = {0};
+    static int green_percentage_history[HISTORY_LENGTH][NUMB_QUINT] = {{0}}; // Static ensures it retains values between calls
+    int green_counts[NUMB_QUINT] = {0};
     
 
     if (!initialization_done) {
         // Initialize your arrays only once
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < NUMB_QUINT; i++) {
             green_counts[i] = 0;
             total_pixels_per_quintant[i] = 0; // Now only initialized if not done
         }
@@ -129,7 +130,7 @@ uint32_t ground_detection(struct image_t *img, uint8_t lum_min, uint8_t lum_max,
     
     // // Log the counts
     // printf("Green counts and total pixels per quintant:\n");
-    // for (int i = 0; i < 5; i++) {
+    // for (int i = 0; i < NUMB_QUINT; i++) {
     //     printf("Quintant %d: %d green pixels, %d total pixels\n", i, green_counts[i], total_pixels_per_quintant[i]);
     // }
     // // Right before calling update_green_history
@@ -140,7 +141,7 @@ uint32_t ground_detection(struct image_t *img, uint8_t lum_min, uint8_t lum_max,
     // // After calling update_green_history, before decide_navigation_direction
     // printf("Green percentage history:\n");
     // for (int i = 0; i < HISTORY_LENGTH; i++) {
-    //     for (int j = 0; j < 5; j++) {
+    //     for (int j = 0; j < NUMB_QUINT; j++) {
     //         printf("%d ", green_percentage_history[i][j]);
     //     }
     //     printf("\n");
@@ -153,9 +154,9 @@ uint32_t ground_detection(struct image_t *img, uint8_t lum_min, uint8_t lum_max,
     return direction;
 }
 
-int decide_navigation_direction(int green_percentage_history[HISTORY_LENGTH][5]) {
-    float moving_averages[5] = {0};
-    for (int quintant = 0; quintant < 5; quintant++) {
+int decide_navigation_direction(int green_percentage_history[HISTORY_LENGTH][NUMB_QUINT]) {
+    float moving_averages[NUMB_QUINT] = {0};
+    for (int quintant = 0; quintant < NUMB_QUINT; quintant++) {
         int sum = 0;
         for (int frame = 0; frame < HISTORY_LENGTH; frame++) {
             sum += green_percentage_history[frame][quintant];
@@ -174,13 +175,13 @@ int decide_navigation_direction(int green_percentage_history[HISTORY_LENGTH][5])
     float max_average = 0; // Start with zero, assuming at least one average should be above zero
     bool quintant_two_is_max = false; // Flag to check if quintant 2 is one of the max values
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < NUMB_QUINT; i++) {
         if (moving_averages[i] > max_average) {
             max_index = i;
             max_average = moving_averages[i];
-            quintant_two_is_max = (i == 2); // Check if the new maximum is quintant 2
+            quintant_two_is_max = (i == floor(NUMB_QUINT / 2)); // Check if the new maximum is quintant 2
         } else if (moving_averages[i] == max_average) {
-            if (i == 2) {
+            if (i == floor(NUMB_QUINT / 2)) {
                 quintant_two_is_max = true; // Set flag if quintant 2 shares the max
             }
         }
@@ -188,14 +189,14 @@ int decide_navigation_direction(int green_percentage_history[HISTORY_LENGTH][5])
 
     // If quintant 2 is among the quintants with the maximum average, choose it.
     if (quintant_two_is_max) {
-        max_index = 2; // Default to quintant 2 if it is one of the maximums
+        max_index = floor(NUMB_QUINT / 2); // Default to quintant 2 if it is one of the maximums
     }
-    // Debug output
-    printf("Moving averages: ");
-    for (int i = 0; i < 5; i++) {
-        printf("%.2f ", moving_averages[i]);
-    }
-    printf("\nChosen quintant: %d with average %.2f\n", max_index, max_average);
+    // // Debug output
+    // printf("Moving averages: ");
+    // for (int i = 0; i < NUMB_QUINT; i++) {
+    //     printf("%.2f ", moving_averages[i]);
+    // }
+    // printf("\nChosen quintant: %d with average %.2f\n", max_index, max_average);
 
     return max_index; // Return the index of the chosen quintant
 }
@@ -204,10 +205,10 @@ int get_quintant(int x, int y, int img_height) {
     // int origin_x = img_width / 2;
     // int origin_y = img_height;
     // double angle = atan2(origin_y - y, x - origin_x);
-    // int quintant = (int)(angle / (M_PI/5));
+    // int quintant = (int)(angle / (M_PI/NUMB_QUINT));
     int origin_y = img_height / 2;
     double angle = atan2(x, origin_y - y);
-    int quintant = (int)(angle / (M_PI/5));
+    int quintant = (int)(angle / (M_PI/NUMB_QUINT));
     return quintant;
 }
 
@@ -221,7 +222,7 @@ void count_green_pixels(struct image_t *img, int *green_counts, uint8_t lum_min,
     int end_y = (img->h/2) + HEIGHT_THRESHOLD;
 
     // Initialize green_counts array
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < NUMB_QUINT; i++) {
         green_counts[i] = 0;
     }
 
@@ -252,21 +253,21 @@ void count_green_pixels(struct image_t *img, int *green_counts, uint8_t lum_min,
 
     // // Print out the green pixel counts per quintant after counting
     // printf("Green pixel counts per quintant:\n");
-    // for (int i = 0; i < 5; i++) {
+    // for (int i = 0; i < NUMB_QUINT; i++) {
     //     printf("Quintant %d: %d green pixels\n", i, green_counts[i]);
     // }
 }
 
-void update_green_history(int green_history[HISTORY_LENGTH][5], int *green_counts, int *total_pixels_per_quintant) {
+void update_green_history(int green_history[HISTORY_LENGTH][NUMB_QUINT], int *green_counts, int *total_pixels_per_quintant) {
     // Shift history data to make room for the new data (moving older data up and losing the oldest)
     for (int i = HISTORY_LENGTH - 2; i >= 0; i--) {
-        for (int j = 0; j < 5; j++) {
+        for (int j = 0; j < NUMB_QUINT; j++) {
             green_history[i + 1][j] = green_history[i][j];
         }
     }
 
     // Add new data (percentage of green pixels for each quintant)
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < NUMB_QUINT; i++) {
         green_history[0][i] = (total_pixels_per_quintant[i] > 0) ? ((green_counts[i] * 100) / total_pixels_per_quintant[i]) : 0;
     }
 }
@@ -292,7 +293,7 @@ void calculate_pixels_per_quintant(struct image_t *img, int *total_pixels_per_qu
     int end_y = (img->h / 2) + HEIGHT_THRESHOLD; // End at the middle of the image plus the height threshold
 
     // Initialize total_pixels_per_quintant array
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < NUMB_QUINT; i++) {
         total_pixels_per_quintant[i] = 0;
     }
 
@@ -300,7 +301,7 @@ void calculate_pixels_per_quintant(struct image_t *img, int *total_pixels_per_qu
     for (int y = start_y; y < end_y; y++) {
         for (int x = start_x; x < end_x; x++) {
             int quintant = get_quintant(x, y, img->h);
-            if (quintant >= 0 && quintant < 5) { // Check that the quintant is valid
+            if (quintant >= 0 && quintant < NUMB_QUINT) { // Check that the quintant is valid
                 total_pixels_per_quintant[quintant]++;
             }
         }

@@ -53,7 +53,7 @@ enum navigation_state_t {
 };
 
 // define settings
-float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a fraction of total of image
+float oag_color_count_frac = 0.9f;       // obstacle detection threshold as a fraction of total of image
 float oag_floor_count_frac = 0.05f;       // floor detection threshold as a fraction of total of image
 float oag_max_speed = 0.5f;               // max flight speed [m/s]
 float oag_heading_rate = RadOfDeg(20.f);  // heading change setpoint for avoidance [rad/s]
@@ -66,6 +66,7 @@ int32_t floor_centroid = 0;             // floor detector centroid in y directio
 float avoidance_heading_direction = 0;  // heading change direction for avoidance [rad/s]
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
 int16_t heading_new = 0;
+float left_right = 0;
 const int16_t max_trajectory_confidence = 5;  // number of consecutive negative object detections to be sure we are obstacle free
 
 // This call back will be used to receive the color count from the orange detector
@@ -161,7 +162,29 @@ void orange_avoider_guided_periodic(void)
       } else if (obstacle_free_confidence == 0){
         navigation_state = OBSTACLE_FOUND;
       } else {
+        if(heading_new == 0){
+          left_right = -1.f;
+        }
+        else if (heading_new == 1){
+          left_right = -1.f;
+          }
+        else if (heading_new == 3){
+        left_right = 1.f;
+        }
+        else if (heading_new == 4){
+          left_right = 1.f;
+          }
+        else if (heading_new == -1){
+          navigation_state = OUT_OF_BOUNDS;
+          break;
+          }
+
+        guidance_h_set_heading_rate(left_right * oag_heading_rate);
         guidance_h_set_body_vel(speed_sp, 0);
+        if (heading_new == 2){
+        guidance_h_set_heading(stateGetNedToBodyEulers_f()->psi);
+        navigation_state = SAFE;
+        }
       }
 
       break;
