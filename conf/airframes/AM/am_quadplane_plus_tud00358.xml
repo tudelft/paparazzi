@@ -42,7 +42,7 @@
         <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
         <define name="MS45XX_SYNC_SEND" value="FALSE" /> <!--description="flag to enable sending every new measurement via telemetry (default:FALSE)-->
         <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
-        <define name="MS45XX_PRESSURE_OFFSET" value="8519" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
+        <define name="MS45XX_PRESSURE_OFFSET" value="8077" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
         <define name="MS45XX_LOWPASS_TAU" value="0.25"/> <!--description="Time constant for second order Butterworth low pass filter"-->
         <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
       </module>
@@ -427,15 +427,15 @@
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
     <!-- ball bearings vehicle -->
-    <define name="SERVO_EL_1_ZERO_VALUE" value="-8.43" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="-7.38" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="1.93" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="1.05" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="-3.3" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="0.79" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="2.19" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="15.4" unit="deg"/>
 
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="-7.91" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="-1.05" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="1.31" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="0.43" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="-10.9" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="-3.3" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="-3.77" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="-1.66" unit="deg"/>
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
