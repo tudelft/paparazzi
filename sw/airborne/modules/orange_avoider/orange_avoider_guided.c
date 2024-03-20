@@ -78,6 +78,9 @@ int16_t ground_free_confidence = 0;   // a measure of how certain we are that th
 
 const int16_t max_trajectory_confidence = 5;  // number of consecutive negative object detections to be sure we are obstacle free
 
+// Define a new boolean variable at the global scope of the module
+static bool ground_calibration_started = false;
+
 // This call back will be used to receive the color count from the orange detector
 #ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
 #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
@@ -141,6 +144,7 @@ void orange_avoider_guided_periodic(void)
     navigation_state = SEARCH_FOR_SAFE_HEADING;
     obstacle_free_confidence = 0;
     ground_free_confidence = 0;
+    ground_calibration_started = false;  // Reset this flag if we are not in guided mode
     return;
   }
 
@@ -161,6 +165,13 @@ void orange_avoider_guided_periodic(void)
   VERBOSE_PRINT("Frame Counter: %d\n", frame_counter);
 
   // AbiSendMsgGROUP11_GROUND_DETECTION(GROUP11_GROUND_DETECT_ID, navigation_state, central_floor_count_threshold);
+
+  // Example condition: Start calibration when in SAFE state and calibration has not yet started
+  if (navigation_state == SAFE && !ground_calibration_started) {
+      // Call the function from cv_detect_color_object module to start ground calibration
+      start_ground_calibration();
+      ground_calibration_started = true;  // Prevent this block from running again
+  }
 
   // update our safe confidence using color threshold
   if(color_count < color_count_threshold){
@@ -190,7 +201,7 @@ void orange_avoider_guided_periodic(void)
     case SAFE:
       if (floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
         navigation_state = OUT_OF_BOUNDS;
-      } else if (ground_free_confidence == 0){
+      } else if (obstacle_free_confidence == 0){
         navigation_state = OBSTACLE_FOUND;
       } else {
         guidance_h_set_body_vel(speed_sp, 0);

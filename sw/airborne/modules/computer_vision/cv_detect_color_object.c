@@ -88,7 +88,7 @@ uint8_t avg_cr = 0;
 bool cod_draw1 = false;
 bool cod_draw2 = false;
 // Global variable to check if initial ground calibration is done
-static bool ground_calibration_done = false;
+static bool ground_calibration_done = true;
 
 // define global variables
 struct color_object_t {
@@ -179,6 +179,9 @@ void calibrate_floor_color(struct image_t *img) {
   }
 }
 
+void start_ground_calibration() {
+    ground_calibration_done = false; // This allows calibration to start again
+}
 // void update_color_detection_thresholds() {
 //     cod_lum_min2 = avg_y1 > Y_MARGIN ? avg_y1 - Y_MARGIN : 0;
 //     cod_lum_max2 = avg_y1 + Y_MARGIN > 255 ? 255 : avg_y1+ Y_MARGIN;
@@ -205,17 +208,18 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
 
 
 // Check if we need to perform initial ground calibration
-  if (!ground_calibration_done && filter == 2) { // Assuming filter 2 is used for ground detection
-      calibrate_floor_color(img);
-      ground_calibration_done = true;
-
-      // Apply the new calibration
-      cod_lum_min2 = cod_lum_min3;
-      cod_lum_max2 = cod_lum_max3;
-      cod_cb_min2 = cod_cb_min3;
-      cod_cb_max2 = cod_cb_max3;
-      cod_cr_min2 = cod_cr_min3;
-      cod_cr_max2 = cod_cr_max3;
+  if (!ground_calibration_done && filter == 2) {
+    // Perform the ground calibration
+    calibrate_floor_color(img);
+    ground_calibration_done = true; // Mark calibration as done
+      
+    // Apply the new calibration
+    cod_lum_min2 = cod_lum_min3;
+    cod_lum_max2 = cod_lum_max3;
+    cod_cb_min2 = cod_cb_min3;
+    cod_cb_max2 = cod_cb_max3;
+    cod_cr_min2 = cod_cr_min3;
+    cod_cr_max2 = cod_cr_max3;
   }
 
   // update_color_detection_thresholds();
@@ -279,7 +283,7 @@ void color_object_detector_init(void)
 {
   memset(global_filters, 0, 2*sizeof(struct color_object_t));
   pthread_mutex_init(&mutex, NULL);
-  ground_calibration_done = false; //
+  ground_calibration_done = true; //
   frame_counter = 0; // Reset frame counter at initialization
 
 #ifdef COLOR_OBJECT_DETECTOR_CAMERA1

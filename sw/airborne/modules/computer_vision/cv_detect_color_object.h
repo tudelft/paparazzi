@@ -56,5 +56,6 @@ extern int frame_counter;
 // Module functions
 extern void color_object_detector_init(void);
 extern void color_object_detector_periodic(void);
+extern void start_ground_calibration(void);
 
 #endif /* COLOR_OBJECT_DETECTOR_CV_H */
