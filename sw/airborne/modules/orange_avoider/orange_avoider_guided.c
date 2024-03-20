@@ -160,6 +160,8 @@ void orange_avoider_guided_periodic(void)
   VERBOSE_PRINT("Ground Detection Thresholds - Chrominance Red: min=%d, max=%d\n", cod_cr_min2, cod_cr_max2);
   VERBOSE_PRINT("Frame Counter: %d\n", frame_counter);
 
+  AbiSendMsgGROUP11_GROUND_DETECTION(GROUP11_GROUND_DETECT_ID, navigation_state, central_floor_count_threshold);
+
 
   // update our safe confidence using color threshold
   if(color_count < color_count_threshold){
