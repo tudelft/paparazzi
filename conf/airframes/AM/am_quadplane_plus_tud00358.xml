@@ -476,6 +476,9 @@
     <define name="W_ACT_AILERONS_CONST" value="3"/>
     <define name="W_ACT_AILERONS_SPEED" value="0"/>
 
+    <define name="TRANSITION_SPEED_PSEUDOCTR_HEDGE" value="7"/>
+
+
     <!-- <define VALUE="0.007" NAME="W_DV_1"/>
     <define VALUE="0.007" NAME="W_DV_2"/>
     <define VALUE="0.01" NAME="W_DV_3"/>

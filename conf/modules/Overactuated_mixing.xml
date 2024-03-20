@@ -7,6 +7,30 @@
 
   <settings>
     <dl_settings>
+      <dl_settings NAME="WEIGHTS">
+        <dl_setting var="w_mot_const" min="-100" step=".1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_W_ACT_MOTOR_CONST" shortname="w_mot_const" persistent="true"/>
+        <dl_setting var="w_mot_speed" min="-100" step=".1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_W_ACT_MOTOR_SPEED" shortname="w_mot_speed" persistent="true"/>
+
+        <dl_setting var="w_el_const" min="-100" step=".1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_W_ACT_EL_CONST" shortname="w_el_const" persistent="true"/>
+        <dl_setting var="w_el_speed" min="-100" step=".1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_W_ACT_EL_SPEED" shortname="w_el_speed" persistent="true"/>
+
+        <dl_setting var="w_az_const" min="-100" step=".1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_W_ACT_AZ_CONST" shortname="w_az_const" persistent="true"/>
+        <dl_setting var="w_az_speed" min="-100" step=".1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_W_ACT_AZ_SPEED" shortname="w_az_speed" persistent="true"/>
+        
+        <dl_setting var="w_theta_const" min="-100" step=".1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_W_ACT_THETA_CONST" shortname="w_theta_const" persistent="true"/>
+        <dl_setting var="w_theta_speed" min="-100" step=".1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_W_ACT_THETA_SPEED" shortname="w_theta_speed" persistent="true"/>
+
+        <dl_setting var="w_phi_const" min="-100" step=".1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_W_ACT_PHI_CONST" shortname="w_phi_const" persistent="true"/>
+        <dl_setting var="w_phi_speed" min="-100" step=".1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_W_ACT_PHI_SPEED" shortname="w_phi_speed" persistent="true"/>
+
+        <dl_setting var="w_ail_const" min="-100" step=".1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_W_ACT_AILERONS_CONST" shortname="w_ail_const" persistent="true"/>
+        <dl_setting var="w_ail_speed" min="-100" step=".1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_W_ACT_AILERONS_SPEED" shortname="w_ail_speed" persistent="true"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <settings>
+    <dl_settings>
       <dl_settings NAME="FBW Control">
         <dl_setting var="K_p_rad_s_dshot"  min="0" step=".1" max="20" shortname="K_p_rad_s_dshot" />
         <dl_setting var="K_i_rad_s_dshot"  min="0" step=".001" max="1" shortname="K_i_rad_s_dshot" />
@@ -39,7 +63,8 @@
     <dl_settings>
       <dl_settings NAME="General overact">
 
-        
+        <dl_setting var="tras_speed_pseudo_ctr_hedge" min="0" step=".1" max="50" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_TRANSITION_SPEED_PSEUDOCTR_HEDGE" shortname="trans_speed" persistent="true"/>
+
         <dl_setting var="fpa_off_deg"  min="-10" step=".01" max="10" shortname="fpa_off_deg" />
 
         <dl_setting var="overestimation_coeff"  min="0" step=".01" max="2" shortname="overest_coeff" />

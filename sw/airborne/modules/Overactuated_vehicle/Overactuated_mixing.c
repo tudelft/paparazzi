@@ -182,6 +182,22 @@ int manual_heading_value_rad = 0;
 float des_pos_earth_x = 0;
 float des_pos_earth_y = 0;
 
+//WEIGHTS: 
+float w_mot_const = OVERACTUATED_MIXING_W_ACT_MOTOR_CONST; 
+float w_mot_speed = OVERACTUATED_MIXING_W_ACT_MOTOR_SPEED; 
+float w_el_const = OVERACTUATED_MIXING_W_ACT_EL_CONST; 
+float w_el_speed = OVERACTUATED_MIXING_W_ACT_EL_SPEED; 
+float w_az_const = OVERACTUATED_MIXING_W_ACT_AZ_CONST; 
+float w_az_speed = OVERACTUATED_MIXING_W_ACT_AZ_SPEED;  
+float w_theta_const = OVERACTUATED_MIXING_W_ACT_THETA_CONST; 
+float w_theta_speed = OVERACTUATED_MIXING_W_ACT_THETA_SPEED; 
+float w_phi_const = OVERACTUATED_MIXING_W_ACT_PHI_CONST; 
+float w_phi_speed = OVERACTUATED_MIXING_W_ACT_PHI_SPEED;
+float w_ail_const = OVERACTUATED_MIXING_W_ACT_AILERONS_CONST; 
+float w_ail_speed = OVERACTUATED_MIXING_W_ACT_AILERONS_SPEED; 
+
+float tras_speed_pseudo_ctr_hedge = OVERACTUATED_MIXING_TRANSITION_SPEED_PSEUDOCTR_HEDGE;
+
 // Actuators gains:
 #ifdef RPM_CONTROL
 float K_ppz_rads_motor = 9.6;
@@ -1108,16 +1124,16 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[28] = VEHICLE_WING_CHORD;
     extra_data_out_local[29] = 1.225; //rho value at MSL
 
-    extra_data_out_local[30] = OVERACTUATED_MIXING_W_ACT_MOTOR_CONST;
-    extra_data_out_local[31] = OVERACTUATED_MIXING_W_ACT_MOTOR_SPEED;
-    extra_data_out_local[32] = OVERACTUATED_MIXING_W_ACT_EL_CONST;
-    extra_data_out_local[33] = OVERACTUATED_MIXING_W_ACT_EL_SPEED;
-    extra_data_out_local[34] = OVERACTUATED_MIXING_W_ACT_AZ_CONST;
-    extra_data_out_local[35] = OVERACTUATED_MIXING_W_ACT_AZ_SPEED;
-    extra_data_out_local[36] = OVERACTUATED_MIXING_W_ACT_THETA_CONST;
-    extra_data_out_local[37] = OVERACTUATED_MIXING_W_ACT_THETA_SPEED;
-    extra_data_out_local[38] = OVERACTUATED_MIXING_W_ACT_PHI_CONST;
-    extra_data_out_local[39] = OVERACTUATED_MIXING_W_ACT_PHI_SPEED;
+    extra_data_out_local[30] = w_mot_const;
+    extra_data_out_local[31] = w_mot_speed;
+    extra_data_out_local[32] = w_el_const;
+    extra_data_out_local[33] = w_el_speed;
+    extra_data_out_local[34] = w_az_const;
+    extra_data_out_local[35] = w_az_speed;
+    extra_data_out_local[36] = w_theta_const;
+    extra_data_out_local[37] = w_theta_speed;
+    extra_data_out_local[38] = w_phi_const;
+    extra_data_out_local[39] = w_phi_speed;
 
     extra_data_out_local[40] = OVERACTUATED_MIXING_W_DV_1;
     extra_data_out_local[41] = OVERACTUATED_MIXING_W_DV_2;
@@ -1135,8 +1151,8 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[50] = OVERACTUATED_MIXING_SPEED_AOA_PROTECTION;
 
     //Aileron addon: 
-    extra_data_out_local[51] = OVERACTUATED_MIXING_W_ACT_AILERONS_CONST;
-    extra_data_out_local[52] = OVERACTUATED_MIXING_W_ACT_AILERONS_SPEED;
+    extra_data_out_local[51] = w_ail_const;
+    extra_data_out_local[52] = w_ail_speed;
     extra_data_out_local[53] = (OVERACTUATED_MIXING_MIN_DELTA_AILERONS * 180/M_PI);
     extra_data_out_local[54] = (OVERACTUATED_MIXING_MAX_DELTA_AILERONS * 180/M_PI);
     extra_data_out_local[55] = CL_ailerons ;
@@ -1148,6 +1164,9 @@ void send_values_to_raspberry_pi(void){
     //Approach tilting angle constraint: 
     extra_data_out_local[58] = OVERACTUATED_MIXING_K_ALT_TILT_CONSTRAINT;     
     extra_data_out_local[59] = OVERACTUATED_MIXING_MIN_ALT_TILT_CONSTRAINT;   
+
+    extra_data_out_local[60] = tras_speed_pseudo_ctr_hedge;  
+    
 }
 
 /**

@@ -350,7 +350,8 @@ void* second_thread() //Run the optimization code
     float k_alt_tilt_constraint = extra_data_in_copy[58];
     float min_alt_tilt_constraint = extra_data_in_copy[59];
 
-  
+    float transition_speed = extra_data_in_copy[60];
+
     // Real time variables:
     double Phi = (myam7_data_in_copy.phi_state_int*1e-2 * M_PI/180);
     double Theta = (myam7_data_in_copy.theta_state_int*1e-2 * M_PI/180);
@@ -376,8 +377,6 @@ void* second_thread() //Run the optimization code
     dv[0] = (myam7_data_in_copy.pseudo_control_ax_int*1e-2); dv[1] = (myam7_data_in_copy.pseudo_control_ay_int*1e-2);
     dv[2] = (myam7_data_in_copy.pseudo_control_az_int*1e-2); dv[3] = (myam7_data_in_copy.pseudo_control_p_dot_int*1e-1 * M_PI/180);
     dv[4] = (myam7_data_in_copy.pseudo_control_q_dot_int*1e-1 * M_PI/180); dv[5] = (myam7_data_in_copy.pseudo_control_r_dot_int*1e-1 * M_PI/180);
-
-    double transition_speed = 5; 
 
     #ifdef TEST_CONTROLLER
     #warning "You are using the testing variable, watch out!"
