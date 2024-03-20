@@ -1498,7 +1498,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     Bound(pitch_pref,0.0,theta_pref_max);
   }
   u_pref[ONELOOP_ANDI_THETA_IDX] = pitch_pref;
-
   // Calculate the min and max increments
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     if(i<ANDI_NUM_ACT){
@@ -1893,7 +1892,7 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, i
     pitch_pref = (pitch_pref / A + 1.0) * (theta_pref_max / 2.0);
     float pitch_offset = RadOfDeg(5.0);
     pitch_pref = pitch_pref + pitch_offset;
-    Bound(pitch_pref,0.0,theta_pref_max+pitch_offset);
+    Bound(pitch_pref,0.0,25.0);
   }
 }
 
