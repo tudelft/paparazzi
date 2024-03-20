@@ -333,7 +333,7 @@
     <define name="INDI_REF_RATE_R" value="5"/>
 
     <define name="INDI_REF_RATE_X" value="1"/>
-    <define name="INDI_REF_RATE_Y" value="0.55"/>
+    <define name="INDI_REF_RATE_Y" value="1"/>
     <define name="INDI_REF_RATE_Z" value="3"/>
 
     <!-- Actuator dynamics and mapping-->
