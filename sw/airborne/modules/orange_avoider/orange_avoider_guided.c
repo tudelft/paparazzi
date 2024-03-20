@@ -62,9 +62,9 @@ enum navigation_state_t {
 // define settings
 float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a fraction of total of image
 float oag_floor_count_frac = 0.05f;       // floor detection threshold as a fraction of total of image
-float oag_max_speed = 0.2f;               // max flight speed [m/s]
+float oag_max_speed = 0.5f;               // max flight speed [m/s]
 float oag_heading_rate = RadOfDeg(20.f);  // heading change setpoint for avoidance [rad/s]
-float oag_central_floor_frac = 0.02f;
+float oag_central_floor_frac = 0.32f;
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;   // current state in state machine
@@ -159,10 +159,10 @@ void orange_avoider_guided_periodic(void)
   VERBOSE_PRINT("Floor central count: %d, threshold: %d, state: %d\n", floor_central_count, central_floor_count_threshold, navigation_state);
   // VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
   // Add your debug print statements here
-  VERBOSE_PRINT("Ground Detection Thresholds - Luminance: min=%d, max=%d\n", cod_lum_min2, cod_lum_max2);
-  VERBOSE_PRINT("Ground Detection Thresholds - Chrominance Blue: min=%d, max=%d\n", cod_cb_min2, cod_cb_max2);
-  VERBOSE_PRINT("Ground Detection Thresholds - Chrominance Red: min=%d, max=%d\n", cod_cr_min2, cod_cr_max2);
-  VERBOSE_PRINT("Frame Counter: %d\n", frame_counter);
+  // VERBOSE_PRINT("Ground Detection Thresholds - Luminance: min=%d, max=%d\n", cod_lum_min2, cod_lum_max2);
+  // VERBOSE_PRINT("Ground Detection Thresholds - Chrominance Blue: min=%d, max=%d\n", cod_cb_min2, cod_cb_max2);
+  // VERBOSE_PRINT("Ground Detection Thresholds - Chrominance Red: min=%d, max=%d\n", cod_cr_min2, cod_cr_max2);
+  // VERBOSE_PRINT("Frame Counter: %d\n", frame_counter);
 
   // AbiSendMsgGROUP11_GROUND_DETECTION(GROUP11_GROUND_DETECT_ID, navigation_state, central_floor_count_threshold);
 
@@ -193,15 +193,15 @@ void orange_avoider_guided_periodic(void)
 
   // float speed_sp = fminf(oag_max_speed, 0.2f * obstacle_free_confidence);
   // Adjust speed based on the lower of obstacle and ground confidences
-  // float speed_sp = fminf(oag_max_speed, 0.2f * fminf(obstacle_free_confidence, ground_free_confidence));
-  float speed_sp = fminf(oag_max_speed, 0.2f * ground_free_confidence);
+  float speed_sp = fminf(oag_max_speed, 0.2f * fminf(obstacle_free_confidence, ground_free_confidence));
+  // float speed_sp = fminf(oag_max_speed, 0.2f * ground_free_confidence);
 
   // obstacle_free_confidence == 0 ||
   switch (navigation_state){
     case SAFE:
       if (floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
         navigation_state = OUT_OF_BOUNDS;
-      } else if (obstacle_free_confidence == 0){
+      } else if (obstacle_free_confidence == 0 || ground_free_confidence == 0){
         navigation_state = OBSTACLE_FOUND;
       } else {
         guidance_h_set_body_vel(speed_sp, 0);
@@ -223,7 +223,7 @@ void orange_avoider_guided_periodic(void)
 
       // make sure we have a couple of good readings before declaring the way safe
       // changed to ground_free_confidence
-      if (ground_free_confidence >= 2){
+      if (obstacle_free_confidence >= 2 && ground_free_confidence >=4){
         guidance_h_set_heading(stateGetNedToBodyEulers_f()->psi);
         navigation_state = SAFE;
       }
@@ -245,7 +245,7 @@ void orange_avoider_guided_periodic(void)
         guidance_h_set_heading(stateGetNedToBodyEulers_f()->psi);
 
         // reset safe counter
-        // obstacle_free_confidence = 0;
+        obstacle_free_confidence = 0;
         ground_free_confidence = 0;
         
         // ensure direction is safe before continuing
