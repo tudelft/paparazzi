@@ -522,6 +522,8 @@ void assign_variables(void){
     beta_deg = - aoa_pwm.angle * 180/M_PI;
     beta_rad = beta_deg * M_PI / 180;
 
+    Bound(airspeed , 3, 30);
+
     float smooth_gain_gamma = (airspeed - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION) / (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION);
     Bound(smooth_gain_gamma , 0, 1); // 0 until min_speed and 1 above ref_speed
 
