@@ -269,7 +269,7 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 #define ONELOOP_ANDI_MAX_THETA   act_max[ONELOOP_ANDI_THETA_IDX] // assuming abs of max and min is the same
 
 #ifndef ONELOOP_THETA_PREF_MAX
-float theta_pref_max = RadOfDeg(25.0);
+float theta_pref_max = RadOfDeg(20.0);
 #else
 float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
 #endif
@@ -1614,7 +1614,7 @@ void sum_g1g2_1l(int ctrl_type) {
   float T      = -g/(cphi*ctheta);//-9.81; //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
   float P      = 0.0;
   if (ONELOOP_ANDI_AC_HAS_PUSHER){
-    P    = actuator_state_1l[ONELOOP_ANDI_PUSHER_IDX] * g1_1l[2][ONELOOP_ANDI_PUSHER_IDX] / ANDI_G_SCALING;
+    P    = actuator_state_1l[ONELOOP_ANDI_PUSHER_IDX] * g1_1l[2][ONELOOP_ANDI_PUSHER_IDX] / ANDI_G_SCALING; // DIVIDE BY MASS!!!!!!!
   } 
   float scaler  = 1.0;
   float sched_p = 1.0; // Scheduler variable for roll axis 
@@ -1891,7 +1891,9 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, i
   } else { //Pitch preferred chirp, for now a little bit hacked in...
     pitch_pref = p_ref_chirp;
     pitch_pref = (pitch_pref / A + 1.0) * (theta_pref_max / 2.0);
-    Bound(pitch_pref,0.0,theta_pref_max);
+    float pitch_offset = RadOfDeg(5.0);
+    pitch_pref = pitch_pref + pitch_offset;
+    Bound(pitch_pref,0.0,theta_pref_max+pitch_offset);
   }
 }
 
