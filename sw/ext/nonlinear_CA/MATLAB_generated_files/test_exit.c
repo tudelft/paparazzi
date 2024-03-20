@@ -325,10 +325,10 @@ void b_test_exit(k_struct_T *Flags, f_struct_T *memspace,
           guard1 = true;
         }
         if (guard1) {
-          if (TrialState->sqpIterations >= 4000 || toc() >= max_time_optimizer) {
+          if (TrialState->sqpIterations >= max_iterations || toc() >= max_time_optimizer) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
-          } else if (TrialState->FunctionEvaluations >= 400) {
+          } else if (TrialState->FunctionEvaluations >= max_function_eval) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
           }
