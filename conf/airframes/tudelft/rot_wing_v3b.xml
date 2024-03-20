@@ -298,7 +298,7 @@
         <define name="M"                     value="6.94"/>
 
         <define name="DM_DPPRZ_HOVER_PITCH"  value="0.001734904"/>
-        <define name="DM_DPPRZ_HOVER_ROLL"   value="0.001684595"/>
+        <define name="DM_DPPRZ_HOVER_ROLL"   value="{6.62173084,0.002185012815}"/>
 
         <define name="HOVER_ROLL_PITCH_COEF" value="{0.001600837,-0.000732843248849}"/>
         <define name="HOVER_ROLL_ROLL_COEF"  value="{-0.0000947144886298017, -0.000053954}"/>
@@ -437,7 +437,7 @@
         <define name="FILT_CUTOFF_RDOT"                 value="0.5"/>
 
         <!-- Other -->
-        <define name="WLS_PRIORITIES"   value="{1000, 1000, 1, 100, 100}"/>
+        <define name="WLS_PRIORITIES"   value="{1000, 1000, 10, 100, 100}"/>
         <define name="WLS_WU"           value="{1.3, 1.3, 1.3, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0}"/>
         <define name="USE_ADAPTIVE"     value="FALSE"/>
         <define name="ADAPTIVE_MU"      value="0.001"/>
