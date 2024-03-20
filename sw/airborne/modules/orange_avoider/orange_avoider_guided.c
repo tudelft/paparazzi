@@ -46,6 +46,7 @@ uint8_t chooseRandomIncrementAvoidance(void);
 
 enum navigation_state_t {
   SAFE,
+  TURNING,
   OBSTACLE_FOUND,
   SEARCH_FOR_SAFE_HEADING,
   OUT_OF_BOUNDS,
@@ -66,7 +67,6 @@ int32_t floor_centroid = 0;             // floor detector centroid in y directio
 float avoidance_heading_direction = 0;  // heading change direction for avoidance [rad/s]
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
 int16_t heading_new = 0;
-float left_right = 0;
 const int16_t max_trajectory_confidence = 5;  // number of consecutive negative object detections to be sure we are obstacle free
 
 // This call back will be used to receive the color count from the orange detector
@@ -143,7 +143,7 @@ void orange_avoider_guided_periodic(void)
 
 
   // update our safe confidence using color threshold
-  if(color_count < color_count_threshold && heading_new == 1){
+  if(color_count < color_count_threshold){
     obstacle_free_confidence++;
   } else {
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
@@ -153,35 +153,45 @@ void orange_avoider_guided_periodic(void)
   Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
 
   float speed_sp = fminf(oag_max_speed, 0.2f * obstacle_free_confidence);
+  float steering_bias = 0.f; // Determines turning direction based on ground detection
 
   switch (navigation_state){
     case SAFE:
       VERBOSE_PRINT("Navigation state = SAFE\n");
       if (floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
-        navigation_state = OUT_OF_BOUNDS;
-      } else if (obstacle_free_confidence == 0){
-        navigation_state = OBSTACLE_FOUND;
-      } else {
-        if(heading_new == 0){
-          left_right = -3.f;
-        }
-        else if (heading_new == 2){
-          left_right = 3.f;
-          }
-        else if (heading_new == -1){
           navigation_state = OUT_OF_BOUNDS;
-          break;
+      } else if (obstacle_free_confidence == 0){
+          navigation_state = OBSTACLE_FOUND;
+      } else {
+          // Only set steering bias and change to TURNING state if needed
+          if (heading_new == 0) {
+              steering_bias = -3.f; // Turn left
+              navigation_state = TURNING;
+          } else if (heading_new == 2) {
+              steering_bias = 3.f; // Turn right
+              navigation_state = TURNING;
           }
-
-        guidance_h_set_heading_rate(left_right * oag_heading_rate);
-        guidance_h_set_body_vel(speed_sp, 0);
-        if (heading_new == 1){
-        guidance_h_set_heading(stateGetNedToBodyEulers_f()->psi);
-        navigation_state = SAFE;
-        }
+          // In case of heading_new is 0 or 2, update the heading rate. 
+          // No update is done if heading_new is 1, maintaining straight flight.
+          if (heading_new == 0 || heading_new == 2) {
+              guidance_h_set_heading_rate(steering_bias * oag_heading_rate);
+          }
+          guidance_h_set_body_vel(speed_sp, 0);
       }
-
       break;
+
+    case TURNING:
+      VERBOSE_PRINT("Navigation state = TURNING\n");
+      if (heading_new == 1){
+          guidance_h_set_heading(stateGetNedToBodyEulers_f()->psi);
+          navigation_state = SAFE; // Return to SAFE once realigned
+      } else {
+          // Continue turning as per the previous bias
+          guidance_h_set_heading_rate(steering_bias * oag_heading_rate);
+      }
+      guidance_h_set_body_vel(speed_sp, 0); // Maintain speed during turning
+      break;
+
     case OBSTACLE_FOUND:
       VERBOSE_PRINT("Navigation state = OBSTACLE FOUND\n");
       // stop
@@ -209,7 +219,7 @@ void orange_avoider_guided_periodic(void)
       guidance_h_set_body_vel(0, 0);
 
       // start turn back into arena
-      guidance_h_set_heading_rate(avoidance_heading_direction * RadOfDeg(15));
+      guidance_h_set_heading_rate(avoidance_heading_direction * RadOfDeg(30));
 
       navigation_state = REENTER_ARENA;
 
