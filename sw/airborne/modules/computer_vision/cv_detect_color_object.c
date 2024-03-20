@@ -163,18 +163,29 @@ void calibrate_floor_color(struct image_t *img) {
 
         // Updating global variables for color detection thresholds
         // Assuming these are global variables used elsewhere for color-based filtering
-        cod_lum_min3 = avg_y > Y_MARGIN ? avg_y - Y_MARGIN : 0;
-        cod_lum_max3 = avg_y + Y_MARGIN > 255 ? 255 : avg_y + Y_MARGIN;
-        cod_cb_min3 = avg_cb > CB_MARGIN ? avg_cb - CB_MARGIN : 0;
-        cod_cb_max3 = avg_cb + CB_MARGIN > 255 ? 255 : avg_cb + CB_MARGIN;
-        cod_cr_min3 = avg_cr > CR_MARGIN ? avg_cr - CR_MARGIN : 0;
-        cod_cr_max3 = avg_cr + CR_MARGIN > 255 ? 255 : avg_cr + CR_MARGIN;
-        // cod_lum_min3 = 0;
-        // cod_lum_max3 = 255;
-        // cod_cb_min3 = 0;
+        // cod_lum_min3 = avg_y > Y_MARGIN ? avg_y - Y_MARGIN : 0;
+        // cod_lum_max3 = avg_y + Y_MARGIN > 255 ? 255 : avg_y + Y_MARGIN;
+        // cod_cb_min3 = avg_cb > CB_MARGIN ? avg_cb - CB_MARGIN : 0;
+        // cod_cb_max3 = avg_cb + CB_MARGIN > 255 ? 255 : avg_cb + CB_MARGIN;
+        // cod_cr_min3 = avg_cr > CR_MARGIN ? avg_cr - CR_MARGIN : 0;
+        // cod_cr_max3 = avg_cr + CR_MARGIN > 255 ? 255 : avg_cr + CR_MARGIN;
+
+        // !!!!!!!! for testing below comment and above uncomment to make sure it will use detection
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! other wise change these values to ap values namely
+        // cod_lum_min3 = 60;
+        // cod_lum_max3 = 130;
+        // cod_cb_min3 = 75;
         // cod_cb_max3 = 110;
-        // cod_cr_min3 = 0;
-        // cod_cr_max3 = 130;
+        // cod_cr_min3 = 120;
+        // cod_cr_max3 = 140;
+
+        //simulation values
+        cod_lum_min3 = 0;
+        cod_lum_max3 = 255;
+        cod_cb_min3 = 0;
+        cod_cb_max3 = 110;
+        cod_cr_min3 = 0;
+        cod_cr_max3 = 130;
     }
   }
 }
