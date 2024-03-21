@@ -80,6 +80,7 @@ float avoidance_heading_direction = 0;  // heading change direction for avoidanc
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
 int16_t ground_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
 int16_t plant_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
+int8_t navigation_state_msg = 0;     // nav state msg for logging
 
 int16_t heading_new = 0;
 const int16_t max_trajectory_confidence = 5;  // number of consecutive negative object detections to be sure we are obstacle free
@@ -200,7 +201,7 @@ void orange_avoider_guided_periodic(void)
   VERBOSE_PRINT("largest green count: %d\n", heading_new);
 
 
-  // AbiSendMsgGROUP11_GROUND_DETECTION(GROUP11_GROUND_DETECT_ID, navigation_state, central_floor_count_threshold);
+  AbiSendMsgGROUP11_GROUND_DETECTION(GROUP11_GROUND_DETECT_ID, navigation_state_msg, central_floor_count_threshold);
 
   // Example condition: Start calibration when in SAFE state and calibration has not yet started
   if (navigation_state == SAFE && !ground_calibration_started) {
@@ -247,6 +248,7 @@ void orange_avoider_guided_periodic(void)
   switch (navigation_state){
     case SAFE:
       VERBOSE_PRINT("Navigation state = SAFE\n");
+      navigation_state_msg = 0;
       if (floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0 || ground_free_confidence == 0){
@@ -271,6 +273,7 @@ void orange_avoider_guided_periodic(void)
 
     case TURNING:
       VERBOSE_PRINT("Navigation state = TURNING\n");
+      navigation_state_msg = 1;
       // Include obstacle detection logic even during turning
       if (floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12) {
           navigation_state = OUT_OF_BOUNDS;
@@ -289,6 +292,7 @@ void orange_avoider_guided_periodic(void)
       break;
 
     case OBSTACLE_FOUND:
+      navigation_state_msg = 2;
       VERBOSE_PRINT("Navigation state = OBSTACLE FOUND\n");
       // stop
       guidance_h_set_body_vel(0, 0);
@@ -300,6 +304,7 @@ void orange_avoider_guided_periodic(void)
 
       break;
     case SEARCH_FOR_SAFE_HEADING:
+      navigation_state_msg = 3;
       VERBOSE_PRINT("Navigation state = SEARCH FOR SAFE HEADING\n");
       guidance_h_set_heading_rate(avoidance_heading_direction * oag_heading_rate);
 
@@ -311,6 +316,7 @@ void orange_avoider_guided_periodic(void)
       }
       break;
     case OUT_OF_BOUNDS:
+      navigation_state_msg = 4;
       VERBOSE_PRINT("Navigation state = OUT OF BOUNDS\n");
       // stop
       guidance_h_set_body_vel(0, 0);
@@ -322,6 +328,7 @@ void orange_avoider_guided_periodic(void)
 
       break;
     case REENTER_ARENA:
+      navigation_state_msg = 5;
       VERBOSE_PRINT("Navigation state = REENTER ARENA\n");
       // force floor center to opposite side of turn to head back into arena
       if (floor_count >= floor_count_threshold && avoidance_heading_direction * floor_centroid_frac >= 0.f){
@@ -337,7 +344,8 @@ void orange_avoider_guided_periodic(void)
       }
       break;
     case PLANT_FOUND:
-    VERBOSE_PRINT("Navigation state = PLANT FOUND\n");
+      navigation_state_msg = 6;
+      VERBOSE_PRINT("Navigation state = PLANT FOUND\n");
       // stop
       guidance_h_set_body_vel(0, 0);
 

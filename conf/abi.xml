@@ -98,10 +98,10 @@
       <field name="heading" type="float" unit="rad"/>
     </message>
 
-    <!-- <message name="GROUP11_GROUND_DETECTION" id="37">
-      <field name="navigation_state" type="navigation_state_t"/>
+    <message name="GROUP11_GROUND_DETECTION" id="37">
+      <field name="navigation_state_msg" type="int8_t"/>
       <field name="central_floor_count_threshold" type="int32_t"/>
-    </message> -->
+    </message>
 
     <message name="POSITION_ESTIMATE" id="18">
       <field name="stamp" type="uint32_t" unit="us"/>
