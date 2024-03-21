@@ -33,7 +33,8 @@ extern float oag_color_count_frac;  // obstacle detection threshold as a fractio
 extern float oag_floor_count_frac;  // floor detection threshold as a fraction of total of image
 extern float oag_max_speed;         // max flight speed [m/s]
 extern float oag_heading_rate;      // heading rate setpoint [rad/s]
-extern float oag_central_floor_frac; // central floor detection threshold as a fraction of total of image
+extern float oag_central_floor_frac; // central floor detection threshold as a fraction of area used for central ground detection
+extern float oag_plant_frac;          // plant detection threshold as a fraction of area used for plant detection
 
 extern void orange_avoider_guided_init(void);
 extern void orange_avoider_guided_periodic(void);

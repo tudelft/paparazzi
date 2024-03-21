@@ -56,7 +56,8 @@ enum navigation_state_t {
   OBSTACLE_FOUND,
   SEARCH_FOR_SAFE_HEADING,
   OUT_OF_BOUNDS,
-  REENTER_ARENA
+  REENTER_ARENA,
+  PLANT_FOUND
 };
 
 // define settings
@@ -64,17 +65,20 @@ float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a f
 float oag_floor_count_frac = 0.05f;       // floor detection threshold as a fraction of total of image
 float oag_max_speed = 0.5f;               // max flight speed [m/s]
 float oag_heading_rate = RadOfDeg(20.f);  // heading change setpoint for avoidance [rad/s]
-float oag_central_floor_frac = 0.32f;
+float oag_central_floor_frac = 0.35f;     // central floor threshold to detect object
+float oag_plant_frac = 0.08f;              // plant threshold for plant detection
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;   // current state in state machine
 int32_t color_count = 0;                // orange color count from color filter for obstacle detection
 int32_t floor_count = 0;                // green color count from color filter for floor detection
 int32_t floor_centroid = 0;             // floor detector centroid in y direction (along the horizon)
-int32_t floor_central_count = 0;                // green color count from color filter for floor detection
+int32_t floor_central_count = 0;        // green color count from color filter for floor detection
+int32_t plant_count = 0;                  // green color for plant detection
 float avoidance_heading_direction = 0;  // heading change direction for avoidance [rad/s]
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
 int16_t ground_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
+int16_t plant_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
 
 const int16_t max_trajectory_confidence = 5;  // number of consecutive negative object detections to be sure we are obstacle free
 
@@ -119,6 +123,18 @@ static void ground_central_cb(uint8_t __attribute__((unused)) sender_id,
   floor_central_count = quality;
 }
 
+#ifndef PLANT_VISUAL_DETECTION_ID
+#define PLANT_VISUAL_DETECTION_ID ABI_BROADCAST
+#endif
+static abi_event plant_detection_ev;
+static void plant_count_cb(uint8_t __attribute__((unused)) sender_id,
+                               int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
+                               int16_t __attribute__((unused)) pixel_width, int16_t __attribute__((unused)) pixel_height,
+                               int32_t quality, int16_t __attribute__((unused)) extra)
+{
+  plant_count = quality;
+}
+
 /*
  * Initialisation function
  */
@@ -132,6 +148,7 @@ void orange_avoider_guided_init(void)
   AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
   AbiBindMsgVISUAL_DETECTION(FLOOR_VISUAL_DETECTION_ID, &floor_detection_ev, floor_detection_cb);
   AbiBindMsgVISUAL_DETECTION(GROUND_CENTRAL_VISUAL_DETECTION_ID, &ground_central_detection_ev, ground_central_cb);
+  AbiBindMsgVISUAL_DETECTION(PLANT_VISUAL_DETECTION_ID, &plant_detection_ev, plant_count_cb);
 }
 
 /*
@@ -144,6 +161,7 @@ void orange_avoider_guided_periodic(void)
     navigation_state = SEARCH_FOR_SAFE_HEADING;
     obstacle_free_confidence = 0;
     ground_free_confidence = 0;
+    plant_free_confidence = 0;
     ground_calibration_started = false;  // Reset this flag if we are not in guided mode
     return;
   }
@@ -152,11 +170,13 @@ void orange_avoider_guided_periodic(void)
   int32_t color_count_threshold = oag_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
   int32_t floor_count_threshold = oag_floor_count_frac * front_camera.output_size.w * front_camera.output_size.h;
   int32_t central_floor_count_threshold = oag_central_floor_frac * (front_camera.output_size.w * 0.4) * (front_camera.output_size.h * 0.2); // Adjust based on the central area size
+  int32_t plant_count_threshold = oag_plant_frac * (front_camera.output_size.w * 0.25) * (front_camera.output_size.h * 0.3); // Adjust based on the central area size
   float floor_centroid_frac = floor_centroid / (float)front_camera.output_size.h / 2.f;
 
   // VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
   VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
   VERBOSE_PRINT("Floor central count: %d, threshold: %d, state: %d\n", floor_central_count, central_floor_count_threshold, navigation_state);
+  VERBOSE_PRINT("Plant count: %d, threshold: %d\n", plant_count, plant_count_threshold);
   // VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
   // Add your debug print statements here
   // VERBOSE_PRINT("Ground Detection Thresholds - Luminance: min=%d, max=%d\n", cod_lum_min2, cod_lum_max2);
@@ -187,13 +207,23 @@ void orange_avoider_guided_periodic(void)
     ground_free_confidence++; // Increase confidence if enough ground is detected
   }
 
+  // Update the plant confidence based on the plant count
+  if(plant_count < plant_count_threshold){
+     plant_free_confidence++;
+  } else {
+    plant_free_confidence -= 2;  // be more cautious with positive obstacle detections
+  }
+
   // bound obstacle_free_confidence
   Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
   Bound(ground_free_confidence, 0, max_trajectory_confidence);
+  Bound(plant_free_confidence, 0, max_trajectory_confidence);
 
   // float speed_sp = fminf(oag_max_speed, 0.2f * obstacle_free_confidence);
   // Adjust speed based on the lower of obstacle and ground confidences
-  float speed_sp = fminf(oag_max_speed, 0.2f * fminf(obstacle_free_confidence, ground_free_confidence));
+  // Calculate the minimum confidence among obstacle, ground, and plant detections
+  float min_confidence = fminf(fminf(obstacle_free_confidence, ground_free_confidence), plant_free_confidence);
+  float speed_sp = fminf(oag_max_speed, 0.2f * min_confidence);
   // float speed_sp = fminf(oag_max_speed, 0.2f * ground_free_confidence);
 
   // obstacle_free_confidence == 0 ||
@@ -203,6 +233,8 @@ void orange_avoider_guided_periodic(void)
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0 || ground_free_confidence == 0){
         navigation_state = OBSTACLE_FOUND;
+      } else if (plant_free_confidence == 0){
+        navigation_state = PLANT_FOUND;
       } else {
         guidance_h_set_body_vel(speed_sp, 0);
       }
@@ -223,7 +255,7 @@ void orange_avoider_guided_periodic(void)
 
       // make sure we have a couple of good readings before declaring the way safe
       // changed to ground_free_confidence
-      if (obstacle_free_confidence >= 2 && ground_free_confidence >=4){
+      if (obstacle_free_confidence >= 2 && ground_free_confidence >=3 && plant_free_confidence >=4){
         guidance_h_set_heading(stateGetNedToBodyEulers_f()->psi);
         navigation_state = SAFE;
       }
@@ -247,10 +279,20 @@ void orange_avoider_guided_periodic(void)
         // reset safe counter
         obstacle_free_confidence = 0;
         ground_free_confidence = 0;
-        
+        plant_free_confidence = 0;
         // ensure direction is safe before continuing
         navigation_state = SAFE;
       }
+      break;
+    case PLANT_FOUND:
+      // stop
+      guidance_h_set_body_vel(0, 0);
+
+      // randomly select new search direction
+      chooseRandomIncrementAvoidance();
+
+      navigation_state = SEARCH_FOR_SAFE_HEADING;
+
       break;
     default:
       break;

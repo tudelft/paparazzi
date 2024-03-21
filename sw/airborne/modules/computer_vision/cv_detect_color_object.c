@@ -96,6 +96,7 @@ struct color_object_t {
   int32_t y_c;
   uint32_t color_count;
   uint32_t color_ground_count;
+  uint32_t color_plant_count;
   bool updated;
 };
 struct color_object_t global_filters[2];
@@ -112,6 +113,12 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
                               uint8_t cr_min, uint8_t cr_max);
 // Function
 uint32_t find_floor_count_central(struct image_t *img,
+                              uint8_t lum_min, uint8_t lum_max,
+                              uint8_t cb_min, uint8_t cb_max,
+                              uint8_t cr_min, uint8_t cr_max);
+
+// Function
+uint32_t find_plant_count(struct image_t *img,
                               uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max);
@@ -157,9 +164,9 @@ void calibrate_floor_color(struct image_t *img) {
         uint8_t avg_cr = cr_sum / count;
 
         // Example margins for color detection - adjust based on actual requirements
-        const uint8_t Y_MARGIN = 100;  // These margins should be determined based on empirical testing
-        const uint8_t CB_MARGIN = 40;
-        const uint8_t CR_MARGIN = 50;
+        const uint8_t Y_MARGIN = 35;  // These margins should be determined based on empirical testing
+        const uint8_t CB_MARGIN = 18;
+        const uint8_t CR_MARGIN = 10;
 
         // Updating global variables for color detection thresholds
         // Assuming these are global variables used elsewhere for color-based filtering
@@ -261,6 +268,8 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   int32_t x_c, y_c;
   // get amount of green in central part
   uint32_t floor_count_central = find_floor_count_central(img, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
+  // detect_plant in upper central area
+  uint32_t plant_count = find_plant_count(img, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
   // Filter and find centroid
   uint32_t count = find_object_centroid(img, &x_c, &y_c, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
   VERBOSE_PRINT("Color count %d: %u, threshold %u, x_c %d, y_c %d\n", camera, object_count, count_threshold, x_c, y_c);
@@ -270,6 +279,7 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   pthread_mutex_lock(&mutex);
   global_filters[filter-1].color_count = count;
   global_filters[filter-1].color_ground_count = floor_count_central;
+  global_filters[filter-1].color_plant_count = plant_count;
   global_filters[filter-1].x_c = x_c;
   global_filters[filter-1].y_c = y_c;
   global_filters[filter-1].updated = true;
@@ -404,13 +414,11 @@ uint32_t find_floor_count_central(struct image_t *img,
                               uint8_t cr_min, uint8_t cr_max)
 {
   uint32_t cnt = 0;
-  // uint32_t tot_x = 0;
-  // uint32_t tot_y = 0;
   uint8_t *buffer = img->buf;
 
   // Go through all the pixels
   for (uint16_t y = img->h * 0.4; y < img->h * 0.6; y++) {
-    for (uint16_t x = 0; x < img->w * 0.4; x ++) {
+    for (uint16_t x = 0; x < img->w * 0.3; x ++) {
       // Check if the color is inside the specified values
       uint8_t *yp, *up, *vp;
       if (x % 2 == 0) {
@@ -430,21 +438,45 @@ uint32_t find_floor_count_central(struct image_t *img,
            (*up >= cb_min ) && (*up <= cb_max ) &&
            (*vp >= cr_min ) && (*vp <= cr_max )) {
         cnt ++;
-        // tot_x += x;
-        // tot_y += y;
-        // if (draw){
-        //   *yp = 255;  // make pixel brighter in image
-        // }
       }
     }
   }
-  // if (cnt > 0) {
-  //   *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
-  //   *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
-  // } else {
-  //   *p_xc = 0;
-  //   *p_yc = 0;
-  // }
+  return cnt;
+}
+
+uint32_t find_plant_count(struct image_t *img,
+                              uint8_t lum_min, uint8_t lum_max,
+                              uint8_t cb_min, uint8_t cb_max,
+                              uint8_t cr_min, uint8_t cr_max)
+{
+  uint32_t cnt = 0;
+  uint8_t *buffer = img->buf;
+
+  // Go through all the pixels
+  for (uint16_t y = img->h * 0.3; y < img->h * 0.7; y++) {
+    for (uint16_t x = img->w * 0.65; x < img->w; x ++) {
+      // Check if the color is inside the specified values
+      uint8_t *yp, *up, *vp;
+      if (x % 2 == 0) {
+        // Even x
+        up = &buffer[y * 2 * img->w + 2 * x];      // U
+        yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
+        vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+        //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
+      } else {
+        // Uneven x
+        up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+        //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
+        vp = &buffer[y * 2 * img->w + 2 * x];      // V
+        yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+      }
+      if ( (*yp >= lum_min) && (*yp <= lum_max) &&
+           (*up >= cb_min ) && (*up <= cb_max ) &&
+           (*vp >= cr_min ) && (*vp <= cr_max )) {
+        cnt ++;
+      }
+    }
+  }
   return cnt;
 }
 
@@ -465,6 +497,8 @@ void color_object_detector_periodic(void)
         0, 0, local_filters[1].color_count, 1);
     AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION3_ID, local_filters[1].x_c, local_filters[1].y_c,
         0, 0, local_filters[1].color_ground_count, 2);
+    AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION4_ID, local_filters[1].x_c, local_filters[1].y_c,
+        0, 0, local_filters[1].color_plant_count, 2);
     local_filters[1].updated = false;
   }
 }
