@@ -332,6 +332,7 @@ void orange_avoider_guided_periodic(void)
       }
       break;
     case PLANT_FOUND:
+    VERBOSE_PRINT("Navigation state = PLANT FOUND\n");
       // stop
       guidance_h_set_body_vel(0, 0);
 
