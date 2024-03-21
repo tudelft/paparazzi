@@ -257,23 +257,28 @@ void orange_avoider_guided_periodic(void)
           // Only set steering bias and change to TURNING state if needed
           if (heading_new == 0) {
               steering_bias = -3.f; // Turn left
+              guidance_h_set_heading_rate(steering_bias * oag_heading_rate);
               navigation_state = TURNING;
           } else if (heading_new == 2) {
               steering_bias = 3.f; // Turn right
+              guidance_h_set_heading_rate(steering_bias * oag_heading_rate);
               navigation_state = TURNING;
           }
-          // In case of heading_new is 0 or 2, update the heading rate. 
-          // No update is done if heading_new is 1, maintaining straight flight.
-          if (heading_new == 0 || heading_new == 2) {
-              guidance_h_set_heading_rate(steering_bias * oag_heading_rate);
-          }
+          
           guidance_h_set_body_vel(speed_sp, 0);
       }
       break;
 
     case TURNING:
       VERBOSE_PRINT("Navigation state = TURNING\n");
-      if (heading_new == 1){
+      // Include obstacle detection logic even during turning
+      if (floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12) {
+          navigation_state = OUT_OF_BOUNDS;
+      } else if (obstacle_free_confidence == 0 || ground_free_confidence == 0) {
+          navigation_state = OBSTACLE_FOUND;
+      } else if (plant_free_confidence == 0) {
+          navigation_state = PLANT_FOUND;
+      } else if (heading_new == 1) {
           guidance_h_set_heading(stateGetNedToBodyEulers_f()->psi);
           navigation_state = SAFE; // Return to SAFE once realigned
       } else {
