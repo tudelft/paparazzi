@@ -214,7 +214,7 @@ static void logger_file_write_row(FILE *file) {
 
   // fprintf(file, "%f,", floor_central_count_logger);
   fprintf(file, "%d,", central_floor_count_threshold_logger);      // idem v
-  fprintf(file, "%d,", navigation_state_msg_logger);               // UNSURE ABOUT %d / %f AND ABOUT navigation_state_msg OR navigation_state_msg_logger
+  fprintf(file, "%d,", navigation_state_msg_logger);               // UNSURE ABOUT navigation_state_msg OR navigation_state_msg_logger
 #ifdef BOARD_BEBOP
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_ref[0],actuators_bebop.rpm_ref[1],actuators_bebop.rpm_ref[2],actuators_bebop.rpm_ref[3]);
