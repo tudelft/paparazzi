@@ -83,11 +83,16 @@
       <define name="COLOR_OBJECT_DETECTOR_FPS2" value="0"/>
       <define name="COLOR_OBJECT_DETECTOR_DRAW2" value="1"/>
     </module>
+    <module name="ground_detection">
+      <define name="GROUND_DETECTION_CAMERA" value="front_camera"/>
+      <define name="GROUND_DETECTION_FPS" value="0"/>
+    </module>
     <module name="orange_avoider_guided">
       <define name="ORANGE_AVOIDER_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION1_ID"/>
       <define name="FLOOR_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION2_ID"/>
       <define name="GROUND_CENTRAL_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION3_ID"/>
       <define name="PLANT_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION4_ID"/>
+      <define name="GROUND_SPLIT_ID" value="GROUND_DETECTION_ID"/>
     </module>
     <module name="video_rtp_stream">
       <define name="VIEWVIDEO_CAMERA" value="front_camera"/>

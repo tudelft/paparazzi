@@ -53,6 +53,7 @@ uint8_t chooseRandomIncrementAvoidance(void);
 
 enum navigation_state_t {
   SAFE,
+  TURNING,
   OBSTACLE_FOUND,
   SEARCH_FOR_SAFE_HEADING,
   OUT_OF_BOUNDS,
@@ -61,7 +62,7 @@ enum navigation_state_t {
 };
 
 // define settings
-float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a fraction of total of image
+float oag_color_count_frac = 0.9f;       // obstacle detection threshold as a fraction of total of image
 float oag_floor_count_frac = 0.05f;       // floor detection threshold as a fraction of total of image
 float oag_max_speed = 0.5f;               // max flight speed [m/s]
 float oag_heading_rate = RadOfDeg(20.f);  // heading change setpoint for avoidance [rad/s]
@@ -80,6 +81,7 @@ int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that 
 int16_t ground_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
 int16_t plant_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
 
+int16_t heading_new = 0;
 const int16_t max_trajectory_confidence = 5;  // number of consecutive negative object detections to be sure we are obstacle free
 
 // Define a new boolean variable at the global scope of the module
@@ -135,6 +137,15 @@ static void plant_count_cb(uint8_t __attribute__((unused)) sender_id,
   plant_count = quality;
 }
 
+#ifndef GROUND_SPLIT_ID
+#define GROUND_SPLIT_ID ABI_BROADCAST
+#endif
+static abi_event ground_detection_ev;
+static void ground_detection_cb(uint8_t __attribute__((unused)) sender_id,
+                                int16_t new_direction)
+{
+  heading_new = new_direction;
+}
 /*
  * Initialisation function
  */
@@ -149,6 +160,7 @@ void orange_avoider_guided_init(void)
   AbiBindMsgVISUAL_DETECTION(FLOOR_VISUAL_DETECTION_ID, &floor_detection_ev, floor_detection_cb);
   AbiBindMsgVISUAL_DETECTION(GROUND_CENTRAL_VISUAL_DETECTION_ID, &ground_central_detection_ev, ground_central_cb);
   AbiBindMsgVISUAL_DETECTION(PLANT_VISUAL_DETECTION_ID, &plant_detection_ev, plant_count_cb);
+  AbiBindMsgGROUND_DETECTION(GROUND_SPLIT_ID, &ground_detection_ev, ground_detection_cb);
 }
 
 /*
@@ -183,6 +195,10 @@ void orange_avoider_guided_periodic(void)
   // VERBOSE_PRINT("Ground Detection Thresholds - Chrominance Blue: min=%d, max=%d\n", cod_cb_min2, cod_cb_max2);
   // VERBOSE_PRINT("Ground Detection Thresholds - Chrominance Red: min=%d, max=%d\n", cod_cr_min2, cod_cr_max2);
   // VERBOSE_PRINT("Frame Counter: %d\n", frame_counter);
+  // VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
+  // VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
+  VERBOSE_PRINT("largest green count: %d\n", heading_new);
+
 
   // AbiSendMsgGROUP11_GROUND_DETECTION(GROUP11_GROUND_DETECT_ID, navigation_state, central_floor_count_threshold);
 
@@ -225,10 +241,12 @@ void orange_avoider_guided_periodic(void)
   float min_confidence = fminf(fminf(obstacle_free_confidence, ground_free_confidence), plant_free_confidence);
   float speed_sp = fminf(oag_max_speed, 0.2f * min_confidence);
   // float speed_sp = fminf(oag_max_speed, 0.2f * ground_free_confidence);
+  float steering_bias = 0.f; // Determines turning direction based on ground detection
 
   // obstacle_free_confidence == 0 ||
   switch (navigation_state){
     case SAFE:
+      VERBOSE_PRINT("Navigation state = SAFE\n");
       if (floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0 || ground_free_confidence == 0){
@@ -236,11 +254,37 @@ void orange_avoider_guided_periodic(void)
       } else if (plant_free_confidence == 0){
         navigation_state = PLANT_FOUND;
       } else {
-        guidance_h_set_body_vel(speed_sp, 0);
+          // Only set steering bias and change to TURNING state if needed
+          if (heading_new == 0) {
+              steering_bias = -3.f; // Turn left
+              navigation_state = TURNING;
+          } else if (heading_new == 2) {
+              steering_bias = 3.f; // Turn right
+              navigation_state = TURNING;
+          }
+          // In case of heading_new is 0 or 2, update the heading rate. 
+          // No update is done if heading_new is 1, maintaining straight flight.
+          if (heading_new == 0 || heading_new == 2) {
+              guidance_h_set_heading_rate(steering_bias * oag_heading_rate);
+          }
+          guidance_h_set_body_vel(speed_sp, 0);
       }
-
       break;
+
+    case TURNING:
+      VERBOSE_PRINT("Navigation state = TURNING\n");
+      if (heading_new == 1){
+          guidance_h_set_heading(stateGetNedToBodyEulers_f()->psi);
+          navigation_state = SAFE; // Return to SAFE once realigned
+      } else {
+          // Continue turning as per the previous bias
+          guidance_h_set_heading_rate(steering_bias * oag_heading_rate);
+      }
+      guidance_h_set_body_vel(speed_sp, 0); // Maintain speed during turning
+      break;
+
     case OBSTACLE_FOUND:
+      VERBOSE_PRINT("Navigation state = OBSTACLE FOUND\n");
       // stop
       guidance_h_set_body_vel(0, 0);
 
@@ -251,6 +295,7 @@ void orange_avoider_guided_periodic(void)
 
       break;
     case SEARCH_FOR_SAFE_HEADING:
+      VERBOSE_PRINT("Navigation state = SEARCH FOR SAFE HEADING\n");
       guidance_h_set_heading_rate(avoidance_heading_direction * oag_heading_rate);
 
       // make sure we have a couple of good readings before declaring the way safe
@@ -261,16 +306,18 @@ void orange_avoider_guided_periodic(void)
       }
       break;
     case OUT_OF_BOUNDS:
+      VERBOSE_PRINT("Navigation state = OUT OF BOUNDS\n");
       // stop
       guidance_h_set_body_vel(0, 0);
 
       // start turn back into arena
-      guidance_h_set_heading_rate(avoidance_heading_direction * RadOfDeg(15));
+      guidance_h_set_heading_rate(avoidance_heading_direction * RadOfDeg(30));
 
       navigation_state = REENTER_ARENA;
 
       break;
     case REENTER_ARENA:
+      VERBOSE_PRINT("Navigation state = REENTER ARENA\n");
       // force floor center to opposite side of turn to head back into arena
       if (floor_count >= floor_count_threshold && avoidance_heading_direction * floor_centroid_frac >= 0.f){
         // return to heading mode
