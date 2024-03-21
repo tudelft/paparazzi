@@ -187,11 +187,11 @@
 
     <!-- Can bus 1 actuators -->
     <servos driver="Uavcan1">
-        <servo no="0"  name="MOTOR_FRONT"     min="0"     neutral="1000" max="8191"/>
-        <servo no="1"  name="MOTOR_RIGHT"     min="0"     neutral="1000" max="8191"/>
-        <servo no="2"  name="MOTOR_BACK"      min="0"     neutral="1000" max="8191"/>
-        <servo no="3"  name="MOTOR_LEFT"      min="0"     neutral="1000" max="8191"/>
-        <servo no="4"  name="MOTOR_PUSH"      min="0"     neutral="0"    max="8191"/>
+        <servo no="0"  name="MOTOR_FRONT"     min="0"     neutral="1000" max="7372"/>
+        <servo no="1"  name="MOTOR_RIGHT"     min="0"     neutral="1000" max="7372"/>
+        <servo no="2"  name="MOTOR_BACK"      min="0"     neutral="1000" max="7372"/>
+        <servo no="3"  name="MOTOR_LEFT"      min="0"     neutral="1000" max="7372"/>
+        <servo no="4"  name="MOTOR_PUSH"      min="0"     neutral="0"    max="7372"/>
         <servo no="5"  name="ROTATION_MECH"   min="-3629" neutral="66"   max="3760"/>
     </servos>
 
@@ -203,10 +203,10 @@
 
     <!-- Can bus 2 actuators -->
     <servos driver="Uavcan2">
-        <servo no="0" name="BMOTOR_FRONT"   min="0" neutral="1000" max="8191"/>
-        <servo no="1" name="BMOTOR_RIGHT"   min="0" neutral="1000" max="8191"/>
-        <servo no="2" name="BMOTOR_BACK"    min="0" neutral="1000" max="8191"/>
-        <servo no="3" name="BMOTOR_LEFT"    min="0" neutral="1000" max="8191"/>
+        <servo no="0" name="BMOTOR_FRONT"   min="0" neutral="1000" max="7372"/>
+        <servo no="1" name="BMOTOR_RIGHT"   min="0" neutral="1000" max="7372"/>
+        <servo no="2" name="BMOTOR_BACK"    min="0" neutral="1000" max="7372"/>
+        <servo no="3" name="BMOTOR_LEFT"    min="0" neutral="1000" max="7372"/>
         <servo no="5" name="BROTATION_MECH" min="-3629" neutral="66"  max="3760"/>
     </servos>
 
@@ -288,11 +288,11 @@
         <define name="IYY_WING"              value="0.1949"/>
         <define name="M"                     value="6.67"/>
 
-        <define name="DM_DPPRZ_HOVER_PITCH"  value="0.001734904"/>
-        <define name="DM_DPPRZ_HOVER_ROLL"   value="{6.62173084,0.002185012815}"/>
+        <define name="DM_DPPRZ_HOVER_PITCH"  value="0.001537287553553"/>
+        <define name="DM_DPPRZ_HOVER_ROLL"   value="{5.86747416762564,0.001936126151564}"/>
 
-        <define name="HOVER_ROLL_PITCH_COEF" value="{0.001600837,-0.000732843248849}"/>
-        <define name="HOVER_ROLL_ROLL_COEF"  value="{-0.0000947144886298017, -0.000053954}"/>
+        <define name="HOVER_ROLL_PITCH_COEF" value="{0.001418491625685,-0.000649367806611}"/>
+        <define name="HOVER_ROLL_ROLL_COEF"  value="{-0.0000839259143513,-0.0000478083}"/>
 
         <define name="K_ELEVATOR"            value="{0.4603,-4.81466,-28.8464}"/>
         <define name="K_RUDDER"              value="{-26.1434,-0.336403,-5.9}"/>
@@ -302,7 +302,7 @@
 
         <define name="K_ELEVATOR_DEFLECTION" value="{50.0,-0.0063}"/>
         <define name="D_RUDDER_D_PPRZ"       value="-0.0018"/>
-        <define name="K_RPM_PPRZ_PUSHER"     value="{-131.497033952591,1.32098226269777,-0.0000291178067445214}"/>
+        <define name="K_RPM_PPRZ_PUSHER"     value="{-116.518697071689,1.17051409813432,-0.00002580110593734}"/>
 
         <define name="K_LIFT_WING"           value="{-0.335811392,-0.615611143}"/>
         <define name="K_LIFT_FUSELAGE"       value="-0.050653927"/>
