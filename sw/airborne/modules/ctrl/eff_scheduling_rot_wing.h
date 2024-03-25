@@ -68,6 +68,7 @@ struct rot_wing_eff_sched_var_t {
 
   // commands
   float cmd_elevator;
+  float cmd_pusher;
   float cmd_pusher_scaled;
   float cmd_T_mean_scaled;
 

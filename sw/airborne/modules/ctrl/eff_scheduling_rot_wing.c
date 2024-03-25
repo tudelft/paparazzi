@@ -202,6 +202,7 @@ void eff_scheduling_rot_wing_init(void)
   eff_sched_var.roll_motor_dMdpprz  = (eff_sched_p.DMdpprz_hover_roll[0] + (MAX_PPRZ/2.) * eff_sched_p.DMdpprz_hover_roll[1]) / 10000.; // Dmdpprz hover roll for hover thrust
 
   eff_sched_var.cmd_elevator = 0;
+  eff_sched_var.cmd_pusher = 0;
   eff_sched_var.cmd_pusher_scaled = 0;
   eff_sched_var.cmd_T_mean_scaled = 0;
 
@@ -260,6 +261,7 @@ void eff_scheduling_rot_wing_update_cmd(void)
 {
   // These indexes depend on the INDI sequence, not the actuator IDX
   eff_sched_var.cmd_elevator = actuator_state_filt_vect[5];
+  eff_sched_var.cmd_pusher = actuator_state_filt_vect[8];
   eff_sched_var.cmd_pusher_scaled = actuator_state_filt_vect[8] * 0.000853229; // Scaled with 8181 / 9600 / 1000
   eff_sched_var.cmd_T_mean_scaled = (actuator_state_filt_vect[0] + actuator_state_filt_vect[1] + actuator_state_filt_vect[2] + actuator_state_filt_vect[3]) / 4. * 0.000853229; // Scaled with 8181 / 9600 / 1000
 }
@@ -366,10 +368,10 @@ void eff_scheduling_rot_wing_update_flaperon_effectiveness(void)
 
 void eff_scheduling_rot_wing_update_pusher_effectiveness(void)
 {
-  float rpmP = eff_sched_p.k_rpm_pprz_pusher[0] + eff_sched_p.k_rpm_pprz_pusher[1] * eff_sched_var.cmd_pusher_scaled + eff_sched_p.k_rpm_pprz_pusher[2] * eff_sched_var.cmd_pusher_scaled * eff_sched_var.cmd_pusher_scaled;
+  float rpmP = eff_sched_p.k_rpm_pprz_pusher[0] + eff_sched_p.k_rpm_pprz_pusher[1] * eff_sched_var.cmd_pusher + eff_sched_p.k_rpm_pprz_pusher[2] * eff_sched_var.cmd_pusher * eff_sched_var.cmd_pusher;
 
   float dFxdrpmP = eff_sched_p.k_pusher[0]*rpmP + eff_sched_p.k_pusher[1] * eff_sched_var.airspeed;
-  float drpmPdpprz = eff_sched_p.k_rpm_pprz_pusher[1] + 2. * eff_sched_p.k_rpm_pprz_pusher[2] * eff_sched_var.cmd_pusher_scaled;
+  float drpmPdpprz = eff_sched_p.k_rpm_pprz_pusher[1] + 2. * eff_sched_p.k_rpm_pprz_pusher[2] * eff_sched_var.cmd_pusher;
 
   float eff_pusher = (dFxdrpmP * drpmPdpprz / eff_sched_p.m) / 10000.;
 
