@@ -139,7 +139,7 @@ static void ground_detection_cb(uint8_t __attribute__((unused)) sender_id,
 #define GROUP11_GROUND_DETECT_ID ABI_BROADCAST
 #endif
 static abi_event group11_ground_detect_ev;
-static void ground_central_cb(uint8_t __attribute__((unused)) sender_id,
+static void groep_11_messages(uint8_t __attribute__((unused)) sender_id,
                               int8_t navigation_state_msg, int32_t central_floor_count_threshold
                               ) {
   central_floor_count_threshold_logger = central_floor_count_threshold;
@@ -169,7 +169,6 @@ static void logger_file_write_header(FILE *file) {
   fprintf(file, "floor_count_central,");
   fprintf(file, "plat_count,");
   fprintf(file, "heading,");
-
 
   // fprintf(file, "floor_central_count,");
   fprintf(file, "navigation_state_msg,");
@@ -245,7 +244,7 @@ void logger_file_start(void)
   AbiBindMsgVISUAL_DETECTION(GROUND_CENTRAL_VISUAL_DETECTION_ID, &ground_central_detection_ev, ground_central_cb);
   AbiBindMsgVISUAL_DETECTION(PLANT_VISUAL_DETECTION_ID, &plant_detection_ev, plant_count_cb);
   AbiBindMsgGROUND_DETECTION(GROUND_SPLIT_ID, &ground_detection_ev, ground_detection_cb);
-  AbiBindMsgGROUP11_GROUND_DETECTION(GROUP11_GROUND_DETECT_ID, &group11_ground_detect_ev, ground_central_cb);
+  AbiBindMsgGROUP11_GROUND_DETECTION(GROUP11_GROUND_DETECT_ID, &group11_ground_detect_ev, groep_11_messages);
 
   // Create output folder if necessary
   if (access(STRINGIFY(LOGGER_FILE_PATH), F_OK)) {

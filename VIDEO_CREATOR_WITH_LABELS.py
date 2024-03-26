@@ -7,8 +7,8 @@ import numpy as np
 
 
 # Define the paths to your image folder and CSV file
-image_folder_path = '/tmp/paparazzi/images/20240326-135934'
-csv_file_path = '/tmp/paparazzi/log/20240326-140000.csv'
+image_folder_path = '/tmp/paparazzi/images/20240326-154548'
+csv_file_path = '/tmp/paparazzi/log/20240326-154615.csv'
 
 # Load the CSV file containing the optical flow data
 optical_flow_data = pd.read_csv(csv_file_path)
@@ -51,11 +51,13 @@ for image_filename in sorted(os.listdir(image_folder_path)):
         closest_row = optical_flow_data.iloc[closest_row_index]
 
         # Adjust the coordinates for the text
-        text_1 = f"COLOR COUNT: {closest_row['color_count']}"
-        text_2 = f"FLOOR COUNT: {closest_row['floor_count']}"
-        text_3 = f"FLOOR CENTRAL: {closest_row['floor_count_central']}"
+        text_1 = f"CCount: {closest_row['color_count']}"
+        text_2 = f"FCount: {closest_row['floor_count']}"
+        text_3 = f"FCENTRAL: {closest_row['floor_count_central']}"
         text_4 = f"PLANT: {closest_row['plat_count']}"
         text_5 = f"HEADING: {closest_row['heading']}"
+        text_6 = f"NAV: {closest_row['navigation_state_msg']}"
+        text_7 = f"CFC: {closest_row['central_floor_count_threshold']}"
 
         # Load the image
         img = cv2.imread(image_path)
@@ -84,7 +86,8 @@ for image_filename in sorted(os.listdir(image_folder_path)):
         cv2.putText(img, text_3, (text_x, text_y_spacing * 3), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
         cv2.putText(img, text_4, (text_x, text_y_spacing * 4), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
         cv2.putText(img, text_5, (text_x, text_y_spacing * 5), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
-
+        cv2.putText(img, text_6, (text_x, text_y_spacing * 6), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
+        cv2.putText(img, text_7, (text_x, text_y_spacing * 7), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
 
         # Save or display the image
         cv2.imwrite(os.path.join(image_folder_path, f'modified_{image_filename}'), img)
