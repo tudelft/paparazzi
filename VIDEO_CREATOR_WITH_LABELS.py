@@ -36,7 +36,6 @@ def csv_timestamp_to_seconds(csv_timestamp):
 # Pre-calculate all the CSV timestamps in seconds to speed up processing
 optical_flow_data['timestamp_seconds'] = optical_flow_data['time'].apply(csv_timestamp_to_seconds)
 
-
 # Iterate over the images in the folder
 for image_filename in sorted(os.listdir(image_folder_path)):
     if image_filename.endswith('.jpg'):
