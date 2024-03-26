@@ -32,6 +32,7 @@
 #include <time.h>
 #include <unistd.h>
 #include "std.h"
+#include "modules/core/abi.h"
 
 #include "mcu_periph/sys_time.h"
 #include "state.h"
@@ -45,10 +46,76 @@
 
 #include "generated/modules.h"
 
+int32_t color_count_log = 0;
+int32_t floor_count_log = 0;
+int32_t floor_central_count_log = 0;
+int32_t plant_count_log = 0;
+int16_t heading_log = 0;
+
+
 /** Set the default File logger path to the USB drive */
 #ifndef LOGGER_FILE_PATH
 #define LOGGER_FILE_PATH /data/video/usb
 #endif
+
+// This call back will be used to receive the color count from the orange detector
+#ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
+#define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
+#endif
+static abi_event color_detection_ev;
+static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
+                               int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
+                               int16_t __attribute__((unused)) pixel_width, int16_t __attribute__((unused)) pixel_height,
+                               int32_t quality, int16_t __attribute__((unused)) extra)
+{
+  color_count_log = quality;
+}
+
+#ifndef FLOOR_VISUAL_DETECTION_ID
+#define FLOOR_VISUAL_DETECTION_ID ABI_BROADCAST
+#endif
+static abi_event floor_detection_ev;
+static void floor_detection_cb(uint8_t __attribute__((unused)) sender_id,
+                               int16_t __attribute__((unused)) pixel_x, __attribute__((unused)) int16_t pixel_y,
+                               int16_t __attribute__((unused)) pixel_width, int16_t __attribute__((unused)) pixel_height,
+                               int32_t quality, int16_t __attribute__((unused)) extra)
+{
+  floor_count_log = quality;
+}
+
+#ifndef GROUND_CENTRAL_VISUAL_DETECTION_ID
+#define GROUND_CENTRAL_VISUAL_DETECTION_ID ABI_BROADCAST
+#endif
+static abi_event ground_central_detection_ev;
+static void ground_central_cb(uint8_t __attribute__((unused)) sender_id,
+                               int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
+                               int16_t __attribute__((unused)) pixel_width, int16_t __attribute__((unused)) pixel_height,
+                               int32_t quality, int16_t __attribute__((unused)) extra)
+{
+  floor_central_count_log = quality;
+}
+
+#ifndef PLANT_VISUAL_DETECTION_ID
+#define PLANT_VISUAL_DETECTION_ID ABI_BROADCAST
+#endif
+static abi_event plant_detection_ev;
+static void plant_count_cb(uint8_t __attribute__((unused)) sender_id,
+                               int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
+                               int16_t __attribute__((unused)) pixel_width, int16_t __attribute__((unused)) pixel_height,
+                               int32_t quality, int16_t __attribute__((unused)) extra)
+{
+  plant_count_log = quality;
+}
+
+#ifndef GROUND_SPLIT_ID
+#define GROUND_SPLIT_ID ABI_BROADCAST
+#endif
+static abi_event ground_detection_ev;
+static void ground_detection_cb(uint8_t __attribute__((unused)) sender_id,
+                                int16_t new_direction)
+{
+  heading_log = new_direction;
+}
 
 // int32_t floor_central_count_logger = 0;   
 
@@ -98,6 +165,13 @@ static void logger_file_write_header(FILE *file) {
   fprintf(file, "vel_x,vel_y,vel_z,");
   fprintf(file, "att_phi,att_theta,att_psi,");
   fprintf(file, "rate_p,rate_q,rate_r,");
+  fprintf(file, "color_count,");
+  fprintf(file, "floor_count,");
+  fprintf(file, "floor_count_central,");
+  fprintf(file, "plat_count,");
+  fprintf(file, "heading,");
+
+
   // fprintf(file, "floor_central_count,");
   // fprintf(file, "navigation_state,");
   // fprintf(file, "central_floor_count_threshold,");
@@ -132,6 +206,12 @@ static void logger_file_write_row(FILE *file) {
   fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
   fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
+  fprintf(file, "%d,", color_count_log);
+  fprintf(file, "%d,", floor_count_log);
+  fprintf(file, "%d,", floor_central_count_log);
+  fprintf(file, "%d,", plant_count_log);
+  fprintf(file, "%d,", heading_log);
+
   // fprintf(file, "%f,", floor_central_count_logger);
   // fprintf(file, "%f,", central_floor_count_threshold);
   // fprintf(file, "%f,", navigation_state);
@@ -158,9 +238,11 @@ void logger_file_start(void)
   // Ensure that the module is running when started with this function
   logger_file_logger_file_periodic_status = MODULES_RUN;
 
-  // AbiBindMsgVISUAL_DETECTION(GROUND_CENTRAL_VISUAL_DETECTION_ID, &ground_central_detection_ev, ground_central_cb);
-  
-  // AbiBindMsgGROUP11_GROUND_DETECTION(GROUP11_GROUND_DETECT_ID, &group11_ground_detect_ev, group11_ground_detect_cb);
+  AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
+  AbiBindMsgVISUAL_DETECTION(FLOOR_VISUAL_DETECTION_ID, &floor_detection_ev, floor_detection_cb);
+  AbiBindMsgVISUAL_DETECTION(GROUND_CENTRAL_VISUAL_DETECTION_ID, &ground_central_detection_ev, ground_central_cb);
+  AbiBindMsgVISUAL_DETECTION(PLANT_VISUAL_DETECTION_ID, &plant_detection_ev, plant_count_cb);
+  AbiBindMsgGROUND_DETECTION(GROUND_SPLIT_ID, &ground_detection_ev, ground_detection_cb);
 
   // Create output folder if necessary
   if (access(STRINGIFY(LOGGER_FILE_PATH), F_OK)) {

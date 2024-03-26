@@ -44,10 +44,10 @@
 #endif
 
 // External references to variables from cv_detect_color_object module
-extern uint8_t cod_lum_min2, cod_lum_max2;
-extern uint8_t cod_cb_min2, cod_cb_max2;
-extern uint8_t cod_cr_min2, cod_cr_max2;
-extern int frame_counter;
+// extern uint8_t cod_lum_min2, cod_lum_max2;
+// extern uint8_t cod_cb_min2, cod_cb_max2;
+// extern uint8_t cod_cr_min2, cod_cr_max2;
+// extern int frame_counter;
 
 uint8_t chooseRandomIncrementAvoidance(void);
 
