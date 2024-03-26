@@ -253,7 +253,7 @@
       <field name="vel_sp" type="struct FloatVect3 *" unit="m/s"/>
     </message>
 
-    <message name="GROUND_DETECTION" id="37">
+    <message name="GROUND_DETECTION" id="40">
       <field name="direction"      type="int16_t">direction</field>
     </message>
   </msg_class>
