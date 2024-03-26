@@ -3,7 +3,7 @@
 <module name="ground_detection">
   <doc>
     <description>ground Detector
-    ground object detector    
+    detects where the most ground is and than gives this directino to the run file    
     </description>
     <define name="GROUND_DETECTION_CAMERA" value="front_camera|bottom_camera" description="Video device to use"/>
     <define name="GROUND_DETECTION_FPS" value="0" description="Desired FPS (0: camera rate)"/>
@@ -14,9 +14,10 @@
     <define name="COLOR_OBJECT_DETECTOR_CR_MIN2" value="0" description="Filter 2 min red chroma"/>
     <define name="COLOR_OBJECT_DETECTOR_CR_MAX2" value="0" description="Filter 2 max red chroma"/>
   </doc>  
-  <!-- <dep>
-    <depends>ground_detection</depends>
-  </dep> -->
+ 
+  <dep>
+    <depends>video_thread</depends>
+  </dep>
   
   <header>
     <file name="ground_detection.h"/>

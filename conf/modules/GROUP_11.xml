@@ -1,0 +1,57 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="GROUP_11">
+  <doc>
+    <description>
+      This module, developed by Group 11 for the AE4317 Autonomous Flight of Micro Air Vehicles course at TU Delft, 
+      works in conjunction with a color filter (cv_detect_color_object), ground detection, and the guided mode of the autopilot. 
+      The primary avoidance strategy of this module is to navigate the drone based on the ground visibility, which is determined 
+      by analyzing the percentage of pixels (in three areas left straight and right) identified as ground in the drone's camera feed. 
+      The ground color is initialized once the drone is airborne and in a safe state, based on a predefined area in the lower center 
+      of the camera's view, where the ground is expected to be visible.
+
+      In addition, the module employs a strategy to detect orange obstacles by counting the number of orange (specified as color_count) pixels in the camera's view. 
+      If this count exceeds a certain threshold (specified by color_count_frac), it is assumed that there is an orange pole in the drone's path, 
+      prompting the drone to maneuver away.
+
+      Furthermore, this module monitors the presence of "green" (ground) pixels in the central lower area of the drone's view 
+      (specified by floor_central_count). If the percentage of green pixels falls below a predetermined threshold, the module assumes 
+      there is an obstacle ahead, triggering a turn to avoid collision.
+
+      Additionally, the module includes a sky detection feature, which analyzes the number of green pixels within the sky's section of the 
+      camera feed (quantified by plant_count). If this green pixel count exceeds a specified percentage threshold, it is inferred that there may 
+      be a plant in what should be clear sky. Under such circumstances, the drone is programmed to execute a turn to avoid collision.
+
+      To ensure the drone remains within the cyberzoo, our module measures the total green pixels (floor_count) in the camera's perspective. 
+      When this count surpasses a specific threshold, the drone is considered to be nearing the cyber zoo's perimeter, prompting an automatic 
+      turnaround to stay within boundaries.
+    </description>
+    <define name="ORANGE_AVOIDER_VISUAL_DETECTION_ID" value="ABI_BROADCAST" description="which VISUAL_DETECTION message to recieve for orange pole detection."/>
+    <define name="FLOOR_VISUAL_DETECTION_ID" value="ABI_BROADCAST" description="which VISUAL_DETECTION message to recieve for floor detection."/>
+    <define name="GROUND_CENTRAL_VISUAL_DETECTION_ID" value="ABI_BROADCAST" description="which VISUAL_DETECTION message to recieve for ground central detection."/>
+    <define name="PLANT_VISUAL_DETECTION_ID" value="ABI_BROADCAST" description="which VISUAL_DETECTION message to recieve for plant detection."/>
+  </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings name="GROUP_11">
+         <dl_setting var="oag_color_count_frac" min="0" step="0.01" max="0.5"/>
+         <dl_setting var="oag_floor_count_frac" min="0" step="0.01" max="0.5"/>
+         <dl_setting var="oag_max_speed" min="0" step="0.1" max="1"/>
+         <dl_setting var="oag_heading_rate" min="0" step="5" max="45" unit="rad" alt_unit="deg"/>
+         <dl_setting var="oag_central_floor_frac" min="0" step="0.01" max="0.5"/>
+         <dl_setting var="oag_plant_frac" min="0" step="0.01" max="1"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <dep>
+    <depends>cv_detect_color_object</depends>
+  </dep>
+  <header>
+    <file name="GROUP_11.h"/>
+  </header>
+  <init fun="group_11_init()"/>
+  <periodic fun="group_11_periodic()" freq="4"/>
+  <makefile target="ap|nps">
+    <file name="GROUP_11.c"/>
+  </makefile>
+</module>

@@ -112,16 +112,11 @@ uint32_t ground_detection(struct image_t *img, uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max) {
 
-    // Print out the current threshold values
-    printf("Thresholds: LUM_MIN = %u, LUM_MAX = %u, CB_MIN = %u, CB_MAX = %u, CR_MIN = %u, CR_MAX = %u\n",
-           lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
-
     static int total_pixels_per_quintant[NUMB_QUINT]; // Make this static to retain its value across calls
     static int initialization_done = 0; // Add a flag to track the initialization
     static int green_percentage_history[HISTORY_LENGTH][NUMB_QUINT] = {{0}}; // Static ensures it retains values between calls
     int green_counts[NUMB_QUINT] = {0};
     
-
     if (!initialization_done) {
         // Initialize your arrays only once
         for (int i = 0; i < NUMB_QUINT; i++) {
