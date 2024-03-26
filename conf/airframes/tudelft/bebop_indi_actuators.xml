@@ -37,7 +37,7 @@
       <define name="WLS_N_U" value="4"/>
       <define name="WLS_N_V" value="4"/>
     </module>
-
+    <module name="pn"/>
     <module name="geo_mag"/>
     <module name="air_data"/>
     <!--module name="logger_file">

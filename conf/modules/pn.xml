@@ -1,0 +1,16 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="pn" dir="pn_guidance" task="control">
+  <doc>
+    <description>
+      Guidance controller for rotorcraft using INDI
+    </description>
+  </doc>
+  <header>
+    <file name="pn.h"/>
+  </header>
+  <init fun="pn_init()"/>
+  <makefile target="ap|nps" firmware="modules">
+    <file name="pn.c" dir="$(SRC_FIRMWARE)/pn_guidance"/>
+  </makefile>
+</module>
