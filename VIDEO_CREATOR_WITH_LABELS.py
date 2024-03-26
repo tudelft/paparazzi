@@ -81,13 +81,13 @@ for image_filename in sorted(os.listdir(image_folder_path)):
         text_y_spacing = 30  # Adjust the spacing between each text line
 
         # Overlay each text variable on the image
-        cv2.putText(img, text_1, (text_x, text_y_spacing * 1), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
-        cv2.putText(img, text_2, (text_x, text_y_spacing * 2), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
-        cv2.putText(img, text_3, (text_x, text_y_spacing * 3), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
-        cv2.putText(img, text_4, (text_x, text_y_spacing * 4), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
-        cv2.putText(img, text_5, (text_x, text_y_spacing * 5), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
-        cv2.putText(img, text_6, (text_x, text_y_spacing * 6), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
-        cv2.putText(img, text_7, (text_x, text_y_spacing * 7), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
+        cv2.putText(img, text_1, (text_x, text_y_spacing * 1), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+        cv2.putText(img, text_2, (text_x, text_y_spacing * 2), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+        cv2.putText(img, text_3, (text_x, text_y_spacing * 3), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+        cv2.putText(img, text_4, (text_x, text_y_spacing * 4), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+        cv2.putText(img, text_5, (text_x, text_y_spacing * 5), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+        cv2.putText(img, text_6, (text_x, text_y_spacing * 6), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+        cv2.putText(img, text_7, (text_x, text_y_spacing * 7), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
 
         # Save or display the image
         cv2.imwrite(os.path.join(image_folder_path, f'modified_{image_filename}'), img)
