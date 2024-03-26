@@ -3,6 +3,9 @@
 #include "modules/core/abi.h"
 #include "std.h"
 
+// header for color thresholds
+#include "modules/computer_vision/cv_detect_color_object.h"
+
 // Include the header for the ground split functionality
 #include "modules/ground_detection/ground_detection.h"
 
@@ -44,12 +47,12 @@ static pthread_mutex_t mutex;
 #define HISTORY_LENGTH 3
 #define NUMB_QUINT 3
 
-uint8_t cod_lum_min = 0;
-uint8_t cod_lum_max = 0;
-uint8_t cod_cb_min = 0;
-uint8_t cod_cb_max = 0;
-uint8_t cod_cr_min = 0;
-uint8_t cod_cr_max = 0;
+// uint8_t cod_lum_min = 0;
+// uint8_t cod_lum_max = 0;
+// uint8_t cod_cb_min = 0;
+// uint8_t cod_cb_max = 0;
+// uint8_t cod_cr_min = 0;
+// uint8_t cod_cr_max = 0;
 
 int16_t direction_new = 0;
 
@@ -81,12 +84,12 @@ static struct image_t *object_detector(struct image_t *img)
   uint8_t cb_min, cb_max;
   uint8_t cr_min, cr_max;
 
-    lum_min =cod_lum_min;
-    lum_max =cod_lum_max;
-    cb_min = cod_cb_min;
-    cb_max = cod_cb_max;
-    cr_min = cod_cr_min;
-    cr_max = cod_cr_max;
+    lum_min = cod_lum_min2;
+    lum_max = cod_lum_max2;
+    cb_min = cod_cb_min2;
+    cb_max = cod_cb_max2;
+    cr_min = cod_cr_min2;
+    cr_max = cod_cr_max2;
 
     // Obtain the direction based on ground detection
     int16_t direction_output = ground_detection(img, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
@@ -108,6 +111,10 @@ struct image_t *ground_detection1(struct image_t *img, uint8_t camera_id __attri
 uint32_t ground_detection(struct image_t *img, uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max) {
+
+    // Print out the current threshold values
+    printf("Thresholds: LUM_MIN = %u, LUM_MAX = %u, CB_MIN = %u, CB_MAX = %u, CR_MIN = %u, CR_MAX = %u\n",
+           lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
 
     static int total_pixels_per_quintant[NUMB_QUINT]; // Make this static to retain its value across calls
     static int initialization_done = 0; // Add a flag to track the initialization
@@ -324,12 +331,12 @@ void ground_detection_init(void)
     // this is the place to do it. For example, you might have configurable thresholds or frame settings.
 
     // Example:
-    cod_lum_min = COLOR_OBJECT_DETECTOR_LUM_MIN2;
-    cod_lum_max = COLOR_OBJECT_DETECTOR_LUM_MAX2;
-    cod_cb_min = COLOR_OBJECT_DETECTOR_CB_MIN2;
-    cod_cb_max = COLOR_OBJECT_DETECTOR_CB_MAX2;
-    cod_cr_min = COLOR_OBJECT_DETECTOR_CR_MIN2;
-    cod_cr_max = COLOR_OBJECT_DETECTOR_CR_MAX2;
+    // cod_lum_min = COLOR_OBJECT_DETECTOR_LUM_MIN2;
+    // cod_lum_max = COLOR_OBJECT_DETECTOR_LUM_MAX2;
+    // cod_cb_min = COLOR_OBJECT_DETECTOR_CB_MIN2;
+    // cod_cb_max = COLOR_OBJECT_DETECTOR_CB_MAX2;
+    // cod_cr_min = COLOR_OBJECT_DETECTOR_CR_MIN2;
+    // cod_cr_max = COLOR_OBJECT_DETECTOR_CR_MAX2;
 
     // Register the ground detection function with the computer vision system, if applicable.
     // This typically involves adding the ground detection function to a processing pipeline or setting it as a callback.

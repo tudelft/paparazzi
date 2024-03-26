@@ -200,14 +200,7 @@ void calibrate_floor_color(struct image_t *img) {
 void start_ground_calibration() {
     ground_calibration_done = false; // This allows calibration to start again
 }
-// void update_color_detection_thresholds() {
-//     cod_lum_min2 = avg_y1 > Y_MARGIN ? avg_y1 - Y_MARGIN : 0;
-//     cod_lum_max2 = avg_y1 + Y_MARGIN > 255 ? 255 : avg_y1+ Y_MARGIN;
-//     cod_cb_min2 = avg_cb1> CB_MARGIN ? avg_cb1 - CB_MARGIN : 0;
-//     cod_cb_max2 = avg_cb1 + CB_MARGIN > 255 ? 255 : avg_cb1 + CB_MARGIN;
-//     cod_cr_min2 = avg_cr1 > CR_MARGIN ? avg_cr1 - CR_MARGIN : 0;
-//     cod_cr_max2 = avg_cr1 + CR_MARGIN > 255 ? 255 : avg_cr1 + CR_MARGIN;
-// }
+
 /*
  * object_detector
  * @param img - input image to process
