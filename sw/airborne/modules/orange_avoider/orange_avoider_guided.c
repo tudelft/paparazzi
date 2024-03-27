@@ -62,7 +62,7 @@ enum navigation_state_t {
 };
 
 // define settings
-float oag_color_count_frac = 0.9f;       // obstacle detection threshold as a fraction of total of image
+float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a fraction of total of image
 float oag_floor_count_frac = 0.05f;       // floor detection threshold as a fraction of total of image
 float oag_max_speed = 0.5f;               // max flight speed [m/s]
 float oag_heading_rate = RadOfDeg(20.f);  // heading change setpoint for avoidance [rad/s]
@@ -185,9 +185,9 @@ void orange_avoider_guided_periodic(void)
   int32_t plant_count_threshold = oag_plant_frac * (front_camera.output_size.w * 0.25) * (front_camera.output_size.h * 0.3); // Adjust based on the central area size
   float floor_centroid_frac = floor_centroid / (float)front_camera.output_size.h / 2.f;
 
-  // VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
+  VERBOSE_PRINT("Color_count: %d  threshold: %d\n", color_count, color_count_threshold, navigation_state);
   VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
-  VERBOSE_PRINT("Floor central count: %d, threshold: %d, state: %d\n", floor_central_count, central_floor_count_threshold, navigation_state);
+  VERBOSE_PRINT("Floor central count: %d, threshold: %d\n", floor_central_count, central_floor_count_threshold, navigation_state);
   VERBOSE_PRINT("Plant count: %d, threshold: %d\n", plant_count, plant_count_threshold);
   // VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
   // Add your debug print statements here
