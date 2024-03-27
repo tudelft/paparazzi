@@ -39,57 +39,84 @@ optical_flow_data['timestamp_seconds'] = optical_flow_data['time'].apply(csv_tim
 # Iterate over the images in the folder
 for image_filename in sorted(os.listdir(image_folder_path)):
     if image_filename.endswith('.jpg'):
-        image_path = os.path.join(image_folder_path, image_filename)
-        image_timestamp_seconds = extract_timestamp(image_filename)
+         image_path = os.path.join(image_folder_path, image_filename)
+         image_timestamp_seconds = extract_timestamp(image_filename)
 
 
-        optical_flow_data['time_difference'] = optical_flow_data['timestamp_seconds'].apply(
-            lambda x: abs(x - image_timestamp_seconds))
-        closest_row_index = optical_flow_data['time_difference'].idxmin()
+         optical_flow_data['time_difference'] = optical_flow_data['timestamp_seconds'].apply(
+               lambda x: abs(x - image_timestamp_seconds))
+         closest_row_index = optical_flow_data['time_difference'].idxmin()
 
-        closest_row = optical_flow_data.iloc[closest_row_index]
+         closest_row = optical_flow_data.iloc[closest_row_index]
 
-        # Adjust the coordinates for the text
-        text_1 = f"CCount: {closest_row['color_count']}"
-        text_2 = f"FCount: {closest_row['floor_count']}"
-        text_3 = f"FCENTRAL: {closest_row['floor_count_central']}"
-        text_4 = f"PLANT: {closest_row['plat_count']}"
-        text_5 = f"HEADING: {closest_row['heading']}"
-        text_6 = f"NAV: {closest_row['navigation_state_msg']}"
-        text_7 = f"CFC: {closest_row['central_floor_count_threshold']}"
+         nav_message = ""
 
-        # Load the image
-        img = cv2.imread(image_path)
+         if closest_row['navigation_state_msg'] == 0:
+            nav_message = "SAFE"
+            
+         if closest_row['navigation_state_msg'] == 1:
+            nav_message = "TURNING"
+         
+         if closest_row['navigation_state_msg'] == 2:
+           nav_message = "OBSTACLE_FOUND"
+         
+         if closest_row['navigation_state_msg'] == 3:
+           nav_message = "SEARCH_FOR_SAFE_HEADING"
+         
+         if closest_row['navigation_state_msg'] == 4:
+           nav_message = "OUT_OF_BOUNDS"
+         
+         if closest_row['navigation_state_msg'] == 5:
+           nav_message = "REENTER_ARENA"
+         
+         if closest_row['navigation_state_msg'] == 6:
+           nav_message = "PLANT FOUND"
 
 
-        # Rotate the image by 90 degrees clockwise
-        img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
 
-        # Overlay the optical flow data onto the image
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 0.5  # Smaller font size
-        thickness = 2
-        height, width = img.shape[:2]
 
-        # Calculate text size for proper alignment
-        text_width, _ = cv2.getTextSize(text_1, font, font_scale, thickness)
+         # Adjust the coordinates for the text
+         text_1 = f"CCount: {closest_row['color_count']}"
+         text_2 = f"FCount: {closest_row['floor_count']}"
+         text_3 = f"FCENTRAL: {closest_row['floor_count_central']}"
+         text_4 = f"PLANT: {closest_row['plat_count']}"
+         text_5 = f"HEADING: {closest_row['heading']}"
+         text_6 = f"NAV: {closest_row['navigation_state_msg']}"
+         text_7 = f"CFC: {closest_row['central_floor_count_threshold']}"
 
-        # Adjust the coordinates for the text
-        text_x = 10
-        text_y_spacing = 30  # Adjust the spacing between each text line
+         # Load the image
+         img = cv2.imread(image_path)
 
-        # Overlay each text variable on the image
-        cv2.putText(img, text_1, (text_x, text_y_spacing * 1), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
-        cv2.putText(img, text_2, (text_x, text_y_spacing * 2), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
-        cv2.putText(img, text_3, (text_x, text_y_spacing * 3), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
-        cv2.putText(img, text_4, (text_x, text_y_spacing * 4), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
-        cv2.putText(img, text_5, (text_x, text_y_spacing * 5), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
-        cv2.putText(img, text_6, (text_x, text_y_spacing * 6), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
-        cv2.putText(img, text_7, (text_x, text_y_spacing * 7), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
 
-        # Save or display the image
-        cv2.imwrite(os.path.join(image_folder_path, f'modified_{image_filename}'), img)
+         # Rotate the image by 90 degrees clockwise
+         img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+
+         # Overlay the optical flow data onto the image
+         font = cv2.FONT_HERSHEY_SIMPLEX
+         font_scale = 0.5  # Smaller font size
+         thickness = 2
+         height, width = img.shape[:2]
+
+         # Calculate text size for proper alignment
+         text_width, _ = cv2.getTextSize(text_1, font, font_scale, thickness)
+
+         # Adjust the coordinates for the text
+         text_x = 10
+         text_y_spacing = 30  # Adjust the spacing between each text line
+
+         # Overlay each text variable on the image
+         cv2.putText(img, text_1, (text_x, text_y_spacing * 1), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+         cv2.putText(img, text_2, (text_x, text_y_spacing * 2), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+         cv2.putText(img, text_3, (text_x, text_y_spacing * 3), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+         cv2.putText(img, text_4, (text_x, text_y_spacing * 4), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+         cv2.putText(img, text_5, (text_x, text_y_spacing * 5), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+         cv2.putText(img, text_6, (text_x, text_y_spacing * 6), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+         cv2.putText(img, text_7, (text_x, text_y_spacing * 7), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+
+         # Save or display the image
+         cv2.imwrite(os.path.join(image_folder_path, f'modified_{image_filename}'), img)
 
 
 # VIDEO GENERATION
