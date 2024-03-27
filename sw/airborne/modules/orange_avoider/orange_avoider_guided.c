@@ -186,7 +186,7 @@ void orange_avoider_guided_periodic(void)
   int32_t plant_count_threshold = oag_plant_frac * (front_camera.output_size.w * 0.25) * (front_camera.output_size.h * 0.3); // Adjust based on the central area size
   float floor_centroid_frac = floor_centroid / (float)front_camera.output_size.h / 2.f;
 
-  // VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
+  VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
   VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
   VERBOSE_PRINT("Floor central count: %d, threshold: %d, state: %d\n", floor_central_count, central_floor_count_threshold, navigation_state);
   VERBOSE_PRINT("Plant count: %d, threshold: %d\n", plant_count, plant_count_threshold);
@@ -310,7 +310,7 @@ void orange_avoider_guided_periodic(void)
 
       // make sure we have a couple of good readings before declaring the way safe
       // changed to ground_free_confidence
-      if (obstacle_free_confidence >= 2 && ground_free_confidence >=3 && plant_free_confidence >=4){
+      if (obstacle_free_confidence >= 2 && ground_free_confidence >=2 && plant_free_confidence >=3){
         guidance_h_set_heading(stateGetNedToBodyEulers_f()->psi);
         navigation_state = SAFE;
       }
