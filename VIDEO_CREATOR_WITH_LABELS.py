@@ -7,8 +7,8 @@ import numpy as np
 
 
 # Define the paths to your image folder and CSV file
-image_folder_path = '/tmp/paparazzi/images/20240326-154548'
-csv_file_path = '/tmp/paparazzi/log/20240326-154615.csv'
+image_folder_path = '/home/djjagt/Desktop/images/20240327-141349'
+csv_file_path = '/home/djjagt/Desktop/log/20240327-141359.csv'
 
 # Load the CSV file containing the optical flow data
 optical_flow_data = pd.read_csv(csv_file_path)
@@ -38,7 +38,9 @@ optical_flow_data['timestamp_seconds'] = optical_flow_data['time'].apply(csv_tim
 
 # Iterate over the images in the folder
 for image_filename in sorted(os.listdir(image_folder_path)):
-    if image_filename.endswith('.jpg'):
+      if image_filename.endswith('.jpg'):
+         # if image_filename.startswith('modified_'):
+         #    break
          image_path = os.path.join(image_folder_path, image_filename)
          image_timestamp_seconds = extract_timestamp(image_filename)
 
@@ -82,7 +84,7 @@ for image_filename in sorted(os.listdir(image_folder_path)):
          text_3 = f"FCENTRAL: {closest_row['floor_count_central']}"
          text_4 = f"PLANT: {closest_row['plat_count']}"
          text_5 = f"HEADING: {closest_row['heading']}"
-         text_6 = f"NAV: {closest_row['navigation_state_msg']}"
+         text_6 = f"NAV: {nav_message}"
          text_7 = f"CFC: {closest_row['central_floor_count_threshold']}"
 
          # Load the image
@@ -98,6 +100,7 @@ for image_filename in sorted(os.listdir(image_folder_path)):
          font_scale = 0.5  # Smaller font size
          thickness = 2
          height, width = img.shape[:2]
+         # break
 
          # Calculate text size for proper alignment
          text_width, _ = cv2.getTextSize(text_1, font, font_scale, thickness)
@@ -123,7 +126,7 @@ for image_filename in sorted(os.listdir(image_folder_path)):
 frame_size = (width, height)  # Specify the frame size
 
 images = []
-output_video_path = '/tmp/paparazzi/New_testoutput_video.mp4'
+output_video_path = '/home/djjagt/Desktop/Video_storage/video_3.mp4'
 for image_filename in sorted(os.listdir(image_folder_path)):
    if image_filename.startswith('modified_') and image_filename.endswith('.jpg'):
        image_path = os.path.join(image_folder_path, image_filename)
