@@ -325,10 +325,10 @@ void b_test_exit(s_struct_T *Flags, h_struct_T *memspace,
           guard1 = true;
         }
         if (guard1) {
-          if (TrialState->sqpIterations >= 4000 || toc() >= first_opt_iter_max_time) {
+          if (TrialState->sqpIterations >= max_iter_first || toc() >= first_opt_iter_max_time) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
-          } else if (TrialState->FunctionEvaluations >= 10000) {
+          } else if (TrialState->FunctionEvaluations >= max_feval_first) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
           }
@@ -759,10 +759,10 @@ void d_test_exit(s_struct_T *Flags, k_struct_T *memspace,
           guard1 = true;
         }
         if (guard1) {
-          if (TrialState->sqpIterations >= 4000 || toc() >= second_opt_iter_max_time) {
+          if (TrialState->sqpIterations >= max_iter_second || toc() >= second_opt_iter_max_time) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
-          } else if (TrialState->FunctionEvaluations >= 10000) {
+          } else if (TrialState->FunctionEvaluations >= max_feval_second) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
           }

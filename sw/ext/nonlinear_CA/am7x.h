@@ -18,6 +18,12 @@
 
 #define first_opt_iter_max_time 2.4e-3
 #define second_opt_iter_max_time 4.9e-3
+#define max_feval_first 40
+#define max_feval_second 40
+#define max_iter_first 40
+#define max_iter_second 40
+
+
 
 #define refresh_time_optimizer 5e-3 //Must be equal or bigger than second_opt_iter_max_time
 #define filter_cutoff_frequency 12 //rad/s
