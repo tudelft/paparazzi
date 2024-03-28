@@ -20,7 +20,7 @@
       
       <!-- Detect green -->
       <define name="COLOR_OBJECT_DETECTOR_LUM_MIN2" value="60"/>
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX2" value="130"/>
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX2" value="160"/>
       <define name="COLOR_OBJECT_DETECTOR_CB_MIN2" value="75"/>
       <define name="COLOR_OBJECT_DETECTOR_CB_MAX2" value="110"/>
       <define name="COLOR_OBJECT_DETECTOR_CR_MIN2" value="120"/>

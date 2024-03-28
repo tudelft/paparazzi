@@ -164,14 +164,14 @@ void calibrate_floor_color(struct image_t *img) {
         avg_cr = cr_sum / count;
 
         // Example margins for color detection - adjust based on actual requirements
-        Y_MARGIN = 35;  // These margins should be determined based on empirical testing
-        CB_MARGIN = 18;
-        CR_MARGIN = 10;
+        Y_MARGIN = 45;  // These margins should be determined based on empirical testing
+        CB_MARGIN = 25;
+        CR_MARGIN = 15;
 
         // Updating global variables for color detection thresholds
         // Assuming these are global variables used elsewhere for color-based filtering
         cod_lum_min3 = avg_y > Y_MARGIN ? avg_y - Y_MARGIN : 0;
-        cod_lum_max3 = avg_y + Y_MARGIN > 255 ? 255 : avg_y + Y_MARGIN;
+        cod_lum_max3 = avg_y + 10 + Y_MARGIN > 255 ? 255 : avg_y + Y_MARGIN;
         cod_cb_min3 = avg_cb > CB_MARGIN ? avg_cb - CB_MARGIN : 0;
         cod_cb_max3 = avg_cb + CB_MARGIN > 255 ? 255 : avg_cb + CB_MARGIN;
         cod_cr_min3 = avg_cr > CR_MARGIN ? avg_cr - CR_MARGIN : 0;
