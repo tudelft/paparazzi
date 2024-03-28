@@ -377,15 +377,15 @@ void Cascaded_nonlinear_TestFlight(
   if (m_failure_ID == 3.0) {
     u_max[0] = max_omega;
     u_max[1] = max_omega;
-    u_max[2] = 155.0;
+    u_max[2] = 150.0;
     u_max[3] = max_omega;
     u_max[4] = max_b;
     u_max[5] = max_b;
-    u_max[6] = 1.0;
+    u_max[6] = 0.0;
     u_max[7] = max_b;
     u_max[8] = max_g;
     u_max[9] = max_g;
-    u_max[10] = 1.0;
+    u_max[10] = 0.0;
     u_max[11] = max_g;
     u_max[12] = max_theta_protection;
     u_max[13] = max_phi;
@@ -396,11 +396,11 @@ void Cascaded_nonlinear_TestFlight(
     u_min[3] = min_omega;
     u_min[4] = min_b;
     u_min[5] = min_b;
-    u_min[6] = -1.0;
+    u_min[6] = 0.0;
     u_min[7] = min_b;
     u_min[8] = min_g;
     u_min[9] = min_g;
-    u_min[10] = -1.0;
+    u_min[10] = 0.0;
     u_min[11] = min_g;
     u_min[12] = min_theta_protection;
     u_min[13] = -max_phi;
@@ -579,9 +579,7 @@ void Cascaded_nonlinear_TestFlight(
   /*  optimisation space, but it remains a good option to individually tune the
    */
   /*  acutators. */
-  max_tilt_value_approach =
-      W_act_motor_const + W_act_motor_speed * b_V.contents;
-  W_act_motor.contents = fmax(0.0, max_tilt_value_approach);
+
   max_tilt_value_approach =
       W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
   W_act_tilt_el.contents = fmax(0.0, max_tilt_value_approach);
@@ -591,12 +589,18 @@ void Cascaded_nonlinear_TestFlight(
   if (m_failure_ID == 3.0) {
     W_act_theta.contents = 0.5;
     W_act_phi.contents = 0.15;
+    W_act_motor.contents = 4;
   } else {
     max_tilt_value_approach =
-        W_act_theta_const + W_act_theta_speed * b_V.contents;
+    W_act_theta_const + W_act_theta_speed * b_V.contents;
     W_act_theta.contents = fmax(0.0, max_tilt_value_approach);
+    
     max_tilt_value_approach = W_act_phi_const + W_act_phi_speed * b_V.contents;
     W_act_phi.contents = fmax(0.0, max_tilt_value_approach);
+
+    max_tilt_value_approach =
+    W_act_motor_const + W_act_motor_speed * b_V.contents;
+    W_act_motor.contents = fmax(0.0, max_tilt_value_approach);
   }
   /*  W_act_motor4 = W_MOTOR_FAILURE_WEIGHT; */
   /*  W_act_theta = max(0,W_act_theta_const + W_act_theta_speed*V); */

@@ -302,7 +302,7 @@
     <!-- Maximum orders -->
     <!-- General -->
     <define name="MAX_PHI" value="90" unit="deg"/>
-    <define name="MAX_THETA" value="40" unit="deg"/>
+    <define name="MAX_THETA" value="50" unit="deg"/>
     <define name="MAX_PSI_ERR" value="80" unit="deg"/>
 
     <!-- PID FAILSAFE GAINS-->
@@ -471,7 +471,7 @@
     <define name="W_ACT_PHI_CONST" value="100"/>
     <define name="W_ACT_PHI_SPEED" value="-15"/> -->
 
-    <define name="W_ACT_MOTOR_CONST" value="3"/>
+    <define name="W_ACT_MOTOR_CONST" value="15"/>
     <define name="W_ACT_MOTOR_SPEED" value="0"/>
     <define name="W_ACT_EL_CONST" value="0"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
