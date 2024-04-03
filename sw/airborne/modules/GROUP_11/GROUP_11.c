@@ -165,6 +165,7 @@ void group_11_periodic(void)
     obstacle_free_confidence = 0;
     ground_free_confidence = 0;
     plant_free_confidence = 0;
+    steering_bias = 0;
     ground_calibration_started = false;  // Reset this flag if we are not in guided mode
     return;
   }
@@ -226,7 +227,6 @@ void group_11_periodic(void)
   float min_confidence = fminf(fminf(obstacle_free_confidence, ground_free_confidence), plant_free_confidence);
   // Adjust speed based on the lower of obstacle and ground confidences
   float speed_sp = fminf(oag_max_speed, 0.2f * min_confidence);
-  float steering_bias = 0.f; // Determines turning direction based on ground detection
 
   // obstacle_free_confidence == 0 ||
   switch (navigation_state){
