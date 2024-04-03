@@ -72,7 +72,7 @@ int8_t navigation_state_msg = 0;     // nav state msg for logging
 
 const int16_t max_trajectory_confidence = 5; // Number of consecutive negative detections needed to be sure of obstacle absence
 
-// Boolean variable to track whether ground calibration has started
+// Boolean variable to track whether ground calibration is performed
 static bool ground_calibration_started = false;
 
 // Callback functions for color detection
