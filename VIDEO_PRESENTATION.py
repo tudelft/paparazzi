@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 import imageio
 import numpy as np
 
-
 # Define the paths to your image folder and CSV file
 image_folder_path = '/home/djjagt/Desktop/images/20240327-141349'
 csv_file_path = '/home/djjagt/Desktop/log/20240327-141359.csv'
@@ -75,13 +74,13 @@ for image_filename in sorted(os.listdir(image_folder_path)):
            nav_message = "PLANT FOUND"
 
          # Adjust the coordinates for the text
-         text_1 = f"CCount: {closest_row['color_count']}"
-         text_2 = f"FCount: {closest_row['floor_count']}"
-         text_3 = f"FCENTRAL: {closest_row['floor_count_central']}"
-         text_4 = f"PLANT: {closest_row['plat_count']}"
-         text_5 = f"HEADING: {closest_row['heading']}"
+        #  text_1 = f"CCount: {closest_row['color_count']}"
+        #  text_2 = f"FCount: {closest_row['floor_count']}"
+        #  text_3 = f"FCENTRAL: {closest_row['floor_count_central']}"
+        #  text_4 = f"PLANT: {closest_row['plat_count']}"
+        #  text_5 = f"HEADING: {closest_row['heading']}"
          text_6 = f"NAV: {nav_message}"
-         text_7 = f"CFC: {closest_row['central_floor_count_threshold']}"
+        #  text_7 = f"CFC: {closest_row['central_floor_count_threshold']}"
 
          # Load the image
          img = cv2.imread(image_path)
@@ -106,13 +105,13 @@ for image_filename in sorted(os.listdir(image_folder_path)):
          text_y_spacing = 30  # Adjust the spacing between each text line
 
          # Overlay each text variable on the image
-         cv2.putText(img, text_1, (text_x, text_y_spacing * 1), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
-         cv2.putText(img, text_2, (text_x, text_y_spacing * 2), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
-         cv2.putText(img, text_3, (text_x, text_y_spacing * 3), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
-         cv2.putText(img, text_4, (text_x, text_y_spacing * 4), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
-         cv2.putText(img, text_5, (text_x, text_y_spacing * 5), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
-         cv2.putText(img, text_6, (text_x, text_y_spacing * 6), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
-         cv2.putText(img, text_7, (text_x, text_y_spacing * 7), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+        #  cv2.putText(img, text_1, (text_x, text_y_spacing * 1), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+        #  cv2.putText(img, text_2, (text_x, text_y_spacing * 2), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+        #  cv2.putText(img, text_3, (text_x, text_y_spacing * 3), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+        #  cv2.putText(img, text_4, (text_x, text_y_spacing * 4), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+        #  cv2.putText(img, text_5, (text_x, text_y_spacing * 5), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+         cv2.putText(img, text_6, (text_x, text_y_spacing * 1), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
+        #  cv2.putText(img, text_7, (text_x, text_y_spacing * 7), font, font_scale, (0, 0, 255), thickness, cv2.LINE_AA)
 
          # Save or display the image
          cv2.imwrite(os.path.join(image_folder_path, f'modified_{image_filename}'), img)

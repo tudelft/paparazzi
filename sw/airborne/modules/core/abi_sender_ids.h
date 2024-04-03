@@ -635,9 +635,9 @@
 #define RADIO_CONTROL_INTERMCU_ID 9
 #endif
 
-// #ifndef GROUP11_GROUND_DETECT_ID
-// #define GROUP11_GROUND_DETECT_ID 1
-// #endif
+#ifndef GROUP11_GROUND_DETECT_ID
+#define GROUP11_GROUND_DETECT_ID 1
+#endif
 
 /*
  * IDs of VEL_SP senders

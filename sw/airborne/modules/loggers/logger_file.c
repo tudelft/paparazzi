@@ -26,7 +26,7 @@
  */
 
 #include "logger_file.h"
-
+#include "modules/core/abi.h"
 #include <stdio.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -52,6 +52,9 @@ int32_t floor_central_count_log = 0;
 int32_t plant_count_log = 0;
 int16_t heading_log = 0;
 
+
+int32_t central_floor_count_threshold_logger;
+int8_t navigation_state_msg_logger;
 
 /** Set the default File logger path to the USB drive */
 #ifndef LOGGER_FILE_PATH
@@ -132,20 +135,16 @@ static void ground_detection_cb(uint8_t __attribute__((unused)) sender_id,
 // }
 
 
-// #ifndef GROUP11_GROUND_DETECT_ID
-// #define GROUP11_GROUND_DETECT_ID ABI_BROADCAST
-// #endif
-// static abi_event group11_ground_detect_ev;
-// static void ground_central_cb(uint8_t __attribute__((unused)) sender_id,
-//                                navigation_state_t navigation_state, int32_t central_floor_count_threshold,
-//                                )
-// {
-//   central_floor_count_threshold_logger = central_floor_count_threshold;
-//   navigation_state_logger = navigation_state;
-// }
-
-
-
+#ifndef GROUP11_GROUND_DETECT_ID
+#define GROUP11_GROUND_DETECT_ID ABI_BROADCAST
+#endif
+static abi_event group11_ground_detect_ev;
+static void groep_11_messages(uint8_t __attribute__((unused)) sender_id,
+                              int8_t navigation_state_msg, int32_t central_floor_count_threshold
+                              ) {
+  central_floor_count_threshold_logger = central_floor_count_threshold;
+  navigation_state_msg_logger = navigation_state_msg;
+}
 
 /** The file pointer */
 static FILE *logger_file = NULL;
@@ -171,10 +170,9 @@ static void logger_file_write_header(FILE *file) {
   fprintf(file, "plat_count,");
   fprintf(file, "heading,");
 
-
   // fprintf(file, "floor_central_count,");
-  // fprintf(file, "navigation_state,");
-  // fprintf(file, "central_floor_count_threshold,");
+  fprintf(file, "navigation_state_msg,");
+  fprintf(file, "central_floor_count_threshold,");
 #ifdef BOARD_BEBOP
   fprintf(file, "rpm_obs_1,rpm_obs_2,rpm_obs_3,rpm_obs_4,");
   fprintf(file, "rpm_ref_1,rpm_ref_2,rpm_ref_3,rpm_ref_4,");
@@ -213,8 +211,9 @@ static void logger_file_write_row(FILE *file) {
   fprintf(file, "%d,", heading_log);
 
   // fprintf(file, "%f,", floor_central_count_logger);
-  // fprintf(file, "%f,", central_floor_count_threshold);
-  // fprintf(file, "%f,", navigation_state);
+  fprintf(file, "%d,", navigation_state_msg_logger);
+  fprintf(file, "%d,", central_floor_count_threshold_logger);      // idem v
+                 // UNSURE ABOUT navigation_state_msg OR navigation_state_msg_logger
 #ifdef BOARD_BEBOP
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_ref[0],actuators_bebop.rpm_ref[1],actuators_bebop.rpm_ref[2],actuators_bebop.rpm_ref[3]);
@@ -238,11 +237,14 @@ void logger_file_start(void)
   // Ensure that the module is running when started with this function
   logger_file_logger_file_periodic_status = MODULES_RUN;
 
+  // AbiBindMsgVISUAL_DETECTION(GROUND_CENTRAL_VISUAL_DETECTION_ID, &ground_central_detection_ev, ground_central_cb);
+  
   AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
   AbiBindMsgVISUAL_DETECTION(FLOOR_VISUAL_DETECTION_ID, &floor_detection_ev, floor_detection_cb);
   AbiBindMsgVISUAL_DETECTION(GROUND_CENTRAL_VISUAL_DETECTION_ID, &ground_central_detection_ev, ground_central_cb);
   AbiBindMsgVISUAL_DETECTION(PLANT_VISUAL_DETECTION_ID, &plant_detection_ev, plant_count_cb);
   AbiBindMsgGROUND_DETECTION(GROUND_SPLIT_ID, &ground_detection_ev, ground_detection_cb);
+  AbiBindMsgGROUP11_GROUND_DETECTION(GROUP11_GROUND_DETECT_ID, &group11_ground_detect_ev, groep_11_messages);
 
   // Create output folder if necessary
   if (access(STRINGIFY(LOGGER_FILE_PATH), F_OK)) {

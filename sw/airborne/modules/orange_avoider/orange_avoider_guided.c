@@ -66,8 +66,8 @@ float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a f
 float oag_floor_count_frac = 0.05f;       // floor detection threshold as a fraction of total of image
 float oag_max_speed = 0.5f;               // max flight speed [m/s]
 float oag_heading_rate = RadOfDeg(20.f);  // heading change setpoint for avoidance [rad/s]
-float oag_central_floor_frac = 0.35f;     // central floor threshold to detect object
-float oag_plant_frac = 0.08f;              // plant threshold for plant detection
+float oag_central_floor_frac = 0.30f;     // central floor threshold to detect object
+float oag_plant_frac = 0.90f;              // plant threshold for plant detection
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;   // current state in state machine
@@ -80,6 +80,7 @@ float avoidance_heading_direction = 0;  // heading change direction for avoidanc
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
 int16_t ground_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
 int16_t plant_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
+int8_t navigation_state_msg = 0;     // nav state msg for logging
 
 int16_t heading_new = 0;
 const int16_t max_trajectory_confidence = 5;  // number of consecutive negative object detections to be sure we are obstacle free
@@ -185,9 +186,9 @@ void orange_avoider_guided_periodic(void)
   int32_t plant_count_threshold = oag_plant_frac * (front_camera.output_size.w * 0.25) * (front_camera.output_size.h * 0.3); // Adjust based on the central area size
   float floor_centroid_frac = floor_centroid / (float)front_camera.output_size.h / 2.f;
 
-  VERBOSE_PRINT("Color_count: %d  threshold: %d\n", color_count, color_count_threshold, navigation_state);
+  VERBOSE_PRINT("Color_count: %d  threshold: %d \n", color_count, color_count_threshold);
   VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
-  VERBOSE_PRINT("Floor central count: %d, threshold: %d\n", floor_central_count, central_floor_count_threshold, navigation_state);
+  VERBOSE_PRINT("Floor central count: %d, threshold: %d\n", floor_central_count, central_floor_count_threshold);
   VERBOSE_PRINT("Plant count: %d, threshold: %d\n", plant_count, plant_count_threshold);
   // VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
   // Add your debug print statements here
@@ -200,7 +201,7 @@ void orange_avoider_guided_periodic(void)
   VERBOSE_PRINT("largest green count: %d\n", heading_new);
 
 
-  // AbiSendMsgGROUP11_GROUND_DETECTION(GROUP11_GROUND_DETECT_ID, navigation_state, central_floor_count_threshold);
+  AbiSendMsgGROUP11_GROUND_DETECTION(GROUP11_GROUND_DETECT_ID, navigation_state_msg, central_floor_count_threshold);
 
   // Example condition: Start calibration when in SAFE state and calibration has not yet started
   if (navigation_state == SAFE && !ground_calibration_started) {
@@ -247,6 +248,7 @@ void orange_avoider_guided_periodic(void)
   switch (navigation_state){
     case SAFE:
       VERBOSE_PRINT("Navigation state = SAFE\n");
+      navigation_state_msg = 0;
       if (floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0 || ground_free_confidence == 0){
@@ -271,6 +273,7 @@ void orange_avoider_guided_periodic(void)
 
     case TURNING:
       VERBOSE_PRINT("Navigation state = TURNING\n");
+      navigation_state_msg = 1;
       // Include obstacle detection logic even during turning
       if (floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12) {
           navigation_state = OUT_OF_BOUNDS;
@@ -289,6 +292,7 @@ void orange_avoider_guided_periodic(void)
       break;
 
     case OBSTACLE_FOUND:
+      navigation_state_msg = 2;
       VERBOSE_PRINT("Navigation state = OBSTACLE FOUND\n");
       // stop
       guidance_h_set_body_vel(0, 0);
@@ -300,17 +304,19 @@ void orange_avoider_guided_periodic(void)
 
       break;
     case SEARCH_FOR_SAFE_HEADING:
+      navigation_state_msg = 3;
       VERBOSE_PRINT("Navigation state = SEARCH FOR SAFE HEADING\n");
       guidance_h_set_heading_rate(avoidance_heading_direction * oag_heading_rate);
 
       // make sure we have a couple of good readings before declaring the way safe
       // changed to ground_free_confidence
-      if (obstacle_free_confidence >= 2 && ground_free_confidence >=3 && plant_free_confidence >=4){
+      if (obstacle_free_confidence >= 2 && ground_free_confidence >=2 && plant_free_confidence >=3){
         guidance_h_set_heading(stateGetNedToBodyEulers_f()->psi);
         navigation_state = SAFE;
       }
       break;
     case OUT_OF_BOUNDS:
+      navigation_state_msg = 4;
       VERBOSE_PRINT("Navigation state = OUT OF BOUNDS\n");
       // stop
       guidance_h_set_body_vel(0, 0);
@@ -322,6 +328,7 @@ void orange_avoider_guided_periodic(void)
 
       break;
     case REENTER_ARENA:
+      navigation_state_msg = 5;
       VERBOSE_PRINT("Navigation state = REENTER ARENA\n");
       // force floor center to opposite side of turn to head back into arena
       if (floor_count >= floor_count_threshold && avoidance_heading_direction * floor_centroid_frac >= 0.f){
@@ -337,7 +344,8 @@ void orange_avoider_guided_periodic(void)
       }
       break;
     case PLANT_FOUND:
-    VERBOSE_PRINT("Navigation state = PLANT FOUND\n");
+      navigation_state_msg = 6;
+      VERBOSE_PRINT("Navigation state = PLANT FOUND\n");
       // stop
       guidance_h_set_body_vel(0, 0);
 
