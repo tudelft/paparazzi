@@ -13,7 +13,7 @@ The project utilizes the Paparazzi UAV system, augmented with custom modules for
 ## Usage
 To deploy this project:
 1. Clone the repository into your local Paparazzi UAV environment.
-2. Activate the `GROUP_11`, `cv_detect_color_object`, and `ground_detection` modules within your airframe configuration.
+2. Select aircraft `GROUP_11` 
 
 This project is initially configured for Bebop drones but is adaptable for other UAVs supported by Paparazzi.
 
