@@ -43,12 +43,6 @@
 #define VERBOSE_PRINT(...)
 #endif
 
-// External references to variables from cv_detect_color_object module
-// extern uint8_t cod_lum_min2, cod_lum_max2;
-// extern uint8_t cod_cb_min2, cod_cb_max2;
-// extern uint8_t cod_cr_min2, cod_cr_max2;
-// extern int frame_counter;
-
 uint8_t chooseRandomIncrementAvoidance(void);
 
 enum navigation_state_t {
@@ -66,8 +60,8 @@ float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a f
 float oag_floor_count_frac = 0.05f;       // floor detection threshold as a fraction of total of image
 float oag_max_speed = 0.5f;               // max flight speed [m/s]
 float oag_heading_rate = RadOfDeg(20.f);  // heading change setpoint for avoidance [rad/s]
-float oag_central_floor_frac = 0.30f;     // central floor threshold to detect object
-float oag_plant_frac = 0.90f;              // plant threshold for plant detection
+float oag_central_floor_frac = 0.35f;     // central floor threshold to detect object
+float oag_plant_frac = 0.08f;              // plant threshold for plant detection
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;   // current state in state machine
@@ -186,21 +180,17 @@ void orange_avoider_guided_periodic(void)
   int32_t plant_count_threshold = oag_plant_frac * (front_camera.output_size.w * 0.25) * (front_camera.output_size.h * 0.3); // Adjust based on the central area size
   float floor_centroid_frac = floor_centroid / (float)front_camera.output_size.h / 2.f;
 
+  // Add your debug print statements here
   VERBOSE_PRINT("Color_count: %d  threshold: %d \n", color_count, color_count_threshold);
   VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
   VERBOSE_PRINT("Floor central count: %d, threshold: %d\n", floor_central_count, central_floor_count_threshold);
   VERBOSE_PRINT("Plant count: %d, threshold: %d\n", plant_count, plant_count_threshold);
+  VERBOSE_PRINT("largest green count: %d\n", heading_new);
   // VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
-  // Add your debug print statements here
   // VERBOSE_PRINT("Ground Detection Thresholds - Luminance: min=%d, max=%d\n", cod_lum_min2, cod_lum_max2);
   // VERBOSE_PRINT("Ground Detection Thresholds - Chrominance Blue: min=%d, max=%d\n", cod_cb_min2, cod_cb_max2);
   // VERBOSE_PRINT("Ground Detection Thresholds - Chrominance Red: min=%d, max=%d\n", cod_cr_min2, cod_cr_max2);
-  // VERBOSE_PRINT("Frame Counter: %d\n", frame_counter);
-  // VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
-  // VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
-  VERBOSE_PRINT("largest green count: %d\n", heading_new);
-
-
+  
   AbiSendMsgGROUP11_GROUND_DETECTION(GROUP11_GROUND_DETECT_ID, navigation_state_msg, central_floor_count_threshold);
 
   // Example condition: Start calibration when in SAFE state and calibration has not yet started
@@ -236,12 +226,10 @@ void orange_avoider_guided_periodic(void)
   Bound(ground_free_confidence, 0, max_trajectory_confidence);
   Bound(plant_free_confidence, 0, max_trajectory_confidence);
 
-  // float speed_sp = fminf(oag_max_speed, 0.2f * obstacle_free_confidence);
-  // Adjust speed based on the lower of obstacle and ground confidences
   // Calculate the minimum confidence among obstacle, ground, and plant detections
   float min_confidence = fminf(fminf(obstacle_free_confidence, ground_free_confidence), plant_free_confidence);
+  // Adjust speed based on the lower of obstacle and ground confidences
   float speed_sp = fminf(oag_max_speed, 0.2f * min_confidence);
-  // float speed_sp = fminf(oag_max_speed, 0.2f * ground_free_confidence);
   float steering_bias = 0.f; // Determines turning direction based on ground detection
 
   // obstacle_free_confidence == 0 ||
@@ -290,7 +278,6 @@ void orange_avoider_guided_periodic(void)
       }
       guidance_h_set_body_vel(speed_sp, 0); // Maintain speed during turning
       break;
-
     case OBSTACLE_FOUND:
       navigation_state_msg = 2;
       VERBOSE_PRINT("Navigation state = OBSTACLE FOUND\n");

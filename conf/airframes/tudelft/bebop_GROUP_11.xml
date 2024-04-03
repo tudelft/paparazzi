@@ -87,7 +87,7 @@
       <define name="GROUND_DETECTION_CAMERA" value="front_camera"/>
       <define name="GROUND_DETECTION_FPS" value="0"/>
     </module>
-    <module name="orange_avoider_guided">
+    <module name="GROUP_11">
       <define name="ORANGE_AVOIDER_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION1_ID"/>
       <define name="FLOOR_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION2_ID"/>
       <define name="GROUND_CENTRAL_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION3_ID"/>

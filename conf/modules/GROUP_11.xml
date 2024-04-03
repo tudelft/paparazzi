@@ -44,8 +44,9 @@
     </dl_settings>
   </settings>
   <dep>
-    <depends>cv_detect_color_object</depends>
+    <depends>cv_detect_color_object,ground_detection</depends>
   </dep>
+
   <header>
     <file name="GROUP_11.h"/>
   </header>

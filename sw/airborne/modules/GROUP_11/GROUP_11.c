@@ -1,28 +1,18 @@
 /*
- * Copyright (C) Kirk Scheper <kirkscheper@gmail.com>
+ * This file is part of the paparazzi project, specifically tailored for GROUP 11's custom module.
+ * 
+ * This module, developed for the course AE4317 Autonomous Flight of Micro Air Vehicles at TU Delft, 
+ * demonstrates an advanced obstacle avoidance algorithm using guided mode flight and color detection.
+ * It enhances the orange_avoider_guided module by integrating additional logic for improved 
+ * obstacle, floor, and plant detection, utilizing visual cues from the onboard camera system.
  *
- * This file is part of paparazzi
+ * The module employs color detection for navigation: identifying obstacles (orange), the floor (green),
+ * and specific targets or plants. By calculating the proportion of these colors visible to the camera,
+ * it decides whether to proceed, avoid obstacles, or execute specialized maneuvers. This approach 
+ * allows for nuanced flight behavior in environments with varying elements, aiming for robust 
+ * autonomous navigation within the cyberzoo or similar setups.
  *
- */
-/**
- * @file "modules/orange_avoider/orange_avoider_guided.c"
- * @author Kirk Scheper
- * This module is an example module for the course AE4317 Autonomous Flight of Micro Air Vehicles at the TU Delft.
- * This module is used in combination with a color filter (cv_detect_color_object) and the guided mode of the autopilot.
- * The avoidance strategy is to simply count the total number of orange pixels. When above a certain percentage threshold,
- * (given by color_count_frac) we assume that there is an obstacle and we turn.
- *
- * The color filter settings are set using the cv_detect_color_object. This module can run multiple filters simultaneously
- * so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTION_ID setting.
- * This module differs from the simpler orange_avoider.xml in that this is flown in guided mode. This flight mode is
- * less dependent on a global positioning estimate as witht the navigation mode. This module can be used with a simple
- * speed estimate rather than a global position.
- *
- * Here we also need to use our onboard sensors to stay inside of the cyberzoo and not collide with the nets. For this
- * we employ a simple color detector, similar to the orange poles but for green to detect the floor. When the total amount
- * of green drops below a given threshold (given by floor_count_frac) we assume we are near the edge of the zoo and turn
- * around. The color detection is done by the cv_detect_color_object module, use the FLOOR_VISUAL_DETECTION_ID setting to
- * define which filter to use.
+ * Adaptation and additional functionality were contributed by the students of GROUP 11.
  */
 
 #include "modules/GROUP_11/GROUP_11.h"
@@ -36,15 +26,17 @@
 
 #define GROUP_11_VERBOSE TRUE
 
-#define PRINT(string,...) fprintf(stderr, "[orange_avoider_guided->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
+#define PRINT(string,...) fprintf(stderr, "[GROUP_11->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 #if GROUP_11_VERBOSE
 #define VERBOSE_PRINT PRINT
 #else
 #define VERBOSE_PRINT(...)
 #endif
 
+// Function declaration for choosing random direction for obstacle avoidance
 uint8_t chooseRandomIncrementAvoidance(void);
 
+// Enumeration for various navigation states in the state machine
 enum navigation_state_t {
   SAFE,
   TURNING,
@@ -55,33 +47,35 @@ enum navigation_state_t {
   PLANT_FOUND
 };
 
-// define settings
-float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a fraction of total of image
-float oag_floor_count_frac = 0.05f;       // floor detection threshold as a fraction of total of image
-float oag_max_speed = 0.5f;               // max flight speed [m/s]
-float oag_heading_rate = RadOfDeg(20.f);  // heading change setpoint for avoidance [rad/s]
-float oag_central_floor_frac = 0.35f;     // central floor threshold to detect object
-float oag_plant_frac = 0.08f;              // plant threshold for plant detection
+// Settings for obstacle and floor detection thresholds, flight speed, and heading change rate
+float oag_color_count_frac = 0.18f;       // Obstacle (orange) detection threshold as a fraction of the total image area
+float oag_floor_count_frac = 0.05f;       // Floor (green) detection threshold as a fraction of the total image area
+float oag_max_speed = 0.5f;               // Maximum flight speed in meters per second (m/s)
+float oag_heading_rate = RadOfDeg(20.f);  // Heading change setpoint for avoidance in radians per second (rad/s)
+float oag_central_floor_frac = 0.35f;     // Central floor threshold to detect objects in the middle of the image
+float oag_plant_frac = 0.08f;             // Plant detection threshold as a fraction of a predefined central image area
 
-// define and initialise global variables
-enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;   // current state in state machine
-int32_t color_count = 0;                // orange color count from color filter for obstacle detection
-int32_t floor_count = 0;                // green color count from color filter for floor detection
-int32_t floor_centroid = 0;             // floor detector centroid in y direction (along the horizon)
-int32_t floor_central_count = 0;        // green color count from color filter for floor detection
-int32_t plant_count = 0;                  // green color for plant detection
-float avoidance_heading_direction = 0;  // heading change direction for avoidance [rad/s]
-int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
-int16_t ground_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
-int16_t plant_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
+// Global variables for state machine, color counts, and confidence levels
+enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING; // Current state in the state machine
+int32_t color_count = 0;                  // Orange color count from color filter for obstacle detection
+int32_t floor_count = 0;                  // Green color count from color filter for floor detection
+int32_t floor_centroid = 0;               // Floor detector centroid in the y direction (along the horizon)
+int32_t floor_central_count = 0;          // Green color count from color filter for central floor detection
+int32_t plant_count = 0;                  // Green color count for plant detection
+float avoidance_heading_direction = 0;    // Heading change direction for avoidance (positive for right, negative for left)
+int16_t obstacle_free_confidence = 0;     // Confidence measure of obstacle absence ahead
+int16_t ground_free_confidence = 0;       // Confidence measure of ground presence ahead
+int16_t plant_free_confidence = 0;        // Confidence measure of plant absence ahead
+int16_t heading_new = 0;                  // Direction for turning based on ground detection (0 for left, 2 for right)
+float steering_bias = 0.f;                // Determines turning direction based on ground detection analysis
+int8_t navigation_state_msg = 0;     // nav state msg for logging
 
-int16_t heading_new = 0;              // used to define if to turn left or right based on the amount of green in the defined areas
-const int16_t max_trajectory_confidence = 5;  // number of consecutive negative object detections to be sure we are obstacle free
+const int16_t max_trajectory_confidence = 5; // Number of consecutive negative detections needed to be sure of obstacle absence
 
-// Define a new boolean variable at the global scope of the module
+// Boolean variable to track whether ground calibration has started
 static bool ground_calibration_started = false;
 
-// This call back will be used to receive the color count from the orange detector
+// Callback functions for color detection
 #ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
 #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
@@ -140,8 +134,10 @@ static void ground_detection_cb(uint8_t __attribute__((unused)) sender_id,
 {
   heading_new = new_direction;
 }
+
 /*
- * Initialisation function
+ * Module initialization function
+ * Sets up ABI message bindings and initializes random seed
  */
 void group_11_init(void)
 {
@@ -158,7 +154,8 @@ void group_11_init(void)
 }
 
 /*
- * Function that checks it is safe to move forwards, and then sets a forward velocity setpoint or changes the heading
+ * Periodic update function
+ * Implements the logic for obstacle avoidance and navigation state management
  */
 void group_11_periodic(void)
 {
@@ -179,19 +176,18 @@ void group_11_periodic(void)
   int32_t plant_count_threshold = oag_plant_frac * (front_camera.output_size.w * 0.25) * (front_camera.output_size.h * 0.3); // Adjust based on the central area size
   float floor_centroid_frac = floor_centroid / (float)front_camera.output_size.h / 2.f;
 
-  VERBOSE_PRINT("Color_count: %d  threshold: %d\n", color_count, color_count_threshold);
+  // Add your debug print statements here
+  VERBOSE_PRINT("Color_count: %d  threshold: %d \n", color_count, color_count_threshold);
   VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
   VERBOSE_PRINT("Floor central count: %d, threshold: %d\n", floor_central_count, central_floor_count_threshold);
   VERBOSE_PRINT("Plant count: %d, threshold: %d\n", plant_count, plant_count_threshold);
+  VERBOSE_PRINT("largest green count: %d\n", heading_new);
   // VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
-  // Add your debug print statements here
   // VERBOSE_PRINT("Ground Detection Thresholds - Luminance: min=%d, max=%d\n", cod_lum_min2, cod_lum_max2);
   // VERBOSE_PRINT("Ground Detection Thresholds - Chrominance Blue: min=%d, max=%d\n", cod_cb_min2, cod_cb_max2);
   // VERBOSE_PRINT("Ground Detection Thresholds - Chrominance Red: min=%d, max=%d\n", cod_cr_min2, cod_cr_max2);
-  // VERBOSE_PRINT("Frame Counter: %d\n", frame_counter);
-  // VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
-  // VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
-  VERBOSE_PRINT("largest green count: %d\n", heading_new);
+  
+  AbiSendMsgGROUP11_GROUND_DETECTION(GROUP11_GROUND_DETECT_ID, navigation_state_msg, central_floor_count_threshold);
 
   // Example condition: Start calibration when in SAFE state and calibration has not yet started
   if (navigation_state == SAFE && !ground_calibration_started) {
@@ -226,18 +222,17 @@ void group_11_periodic(void)
   Bound(ground_free_confidence, 0, max_trajectory_confidence);
   Bound(plant_free_confidence, 0, max_trajectory_confidence);
 
-  // float speed_sp = fminf(oag_max_speed, 0.2f * obstacle_free_confidence);
-  // Adjust speed based on the lower of obstacle and ground confidences
   // Calculate the minimum confidence among obstacle, ground, and plant detections
   float min_confidence = fminf(fminf(obstacle_free_confidence, ground_free_confidence), plant_free_confidence);
+  // Adjust speed based on the lower of obstacle and ground confidences
   float speed_sp = fminf(oag_max_speed, 0.2f * min_confidence);
-  // float speed_sp = fminf(oag_max_speed, 0.2f * ground_free_confidence);
   float steering_bias = 0.f; // Determines turning direction based on ground detection
 
   // obstacle_free_confidence == 0 ||
   switch (navigation_state){
     case SAFE:
       VERBOSE_PRINT("Navigation state = SAFE\n");
+      navigation_state_msg = 0;
       if (floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0 || ground_free_confidence == 0){
@@ -262,6 +257,7 @@ void group_11_periodic(void)
 
     case TURNING:
       VERBOSE_PRINT("Navigation state = TURNING\n");
+      navigation_state_msg = 1;
       // Include obstacle detection logic even during turning
       if (floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12) {
           navigation_state = OUT_OF_BOUNDS;
@@ -278,8 +274,8 @@ void group_11_periodic(void)
       }
       guidance_h_set_body_vel(speed_sp, 0); // Maintain speed during turning
       break;
-
     case OBSTACLE_FOUND:
+      navigation_state_msg = 2;
       VERBOSE_PRINT("Navigation state = OBSTACLE FOUND\n");
       // stop
       guidance_h_set_body_vel(0, 0);
@@ -291,17 +287,19 @@ void group_11_periodic(void)
 
       break;
     case SEARCH_FOR_SAFE_HEADING:
+      navigation_state_msg = 3;
       VERBOSE_PRINT("Navigation state = SEARCH FOR SAFE HEADING\n");
       guidance_h_set_heading_rate(avoidance_heading_direction * oag_heading_rate);
 
       // make sure we have a couple of good readings before declaring the way safe
       // changed to ground_free_confidence
-      if (obstacle_free_confidence >= 2 && ground_free_confidence >=3 && plant_free_confidence >=4){
+      if (obstacle_free_confidence >= 2 && ground_free_confidence >=2 && plant_free_confidence >=3){
         guidance_h_set_heading(stateGetNedToBodyEulers_f()->psi);
         navigation_state = SAFE;
       }
       break;
     case OUT_OF_BOUNDS:
+      navigation_state_msg = 4;
       VERBOSE_PRINT("Navigation state = OUT OF BOUNDS\n");
       // stop
       guidance_h_set_body_vel(0, 0);
@@ -313,6 +311,7 @@ void group_11_periodic(void)
 
       break;
     case REENTER_ARENA:
+      navigation_state_msg = 5;
       VERBOSE_PRINT("Navigation state = REENTER ARENA\n");
       // force floor center to opposite side of turn to head back into arena
       if (floor_count >= floor_count_threshold && avoidance_heading_direction * floor_centroid_frac >= 0.f){
@@ -328,7 +327,8 @@ void group_11_periodic(void)
       }
       break;
     case PLANT_FOUND:
-    VERBOSE_PRINT("Navigation state = PLANT FOUND\n");
+      navigation_state_msg = 6;
+      VERBOSE_PRINT("Navigation state = PLANT FOUND\n");
       // stop
       guidance_h_set_body_vel(0, 0);
 
