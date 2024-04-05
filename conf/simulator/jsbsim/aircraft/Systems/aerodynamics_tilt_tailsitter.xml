@@ -1,35 +1,50 @@
 <aerodynamics>
- 	<!--
+ 	
 	<axis name="YAW">
-		<function name="tilt_yaw" frame="BODY" unit="FT*LBS">
+		<function name="ele_yaw" frame="BODY" unit="FT*LBS">
 			<sum>
 				<product>
-					<property>fcs/tilt_left_lag</property>
-					<value> -0.35 </value>
+					<property>fcs/ele_left_lag</property>
+					<value> 1.76 </value>
 				</product>
 				<product>
-					<property>fcs/tilt_right_lag</property>
-					<value> -.35 </value>
+					<property>fcs/ele_right_lag</property>
+					<value> 1.76 </value>
 				</product>
 			</sum>
 		</function>
 	</axis>
 
-	<axis name="PITCH">
-		<function name="tilt_pitch" frame="BODY" unit="FT*LBS">
+   <!-- <axis name="ROLL">
+		<function name="ele_roll" frame="BODY" unit="FT*LBS">
 			<sum>
 				<product>
-					<property>fcs/tilt_left_lag</property>
-					<value> -0.0417 </value>
+					<property>fcs/ele_left_lag</property>
+					<value> 1.2 </value>
 				</product>
 				<product>
-					<property>fcs/tilt_right_lag</property>
-					<value> 0.0417 </value>
+					<property>fcs/ele_right_lag</property>
+					<value> 1.2 </value>
+				</product>
+			</sum>
+		</function>
+	</axis> -->
+
+	<axis name="PITCH">
+		<function name="ele_pitch" frame="BODY" unit="FT*LBS">
+			<sum>
+				<product>
+					<property>fcs/ele_left_lag</property>
+					<value> -1.2 </value>
+				</product>
+				<product>
+					<property>fcs/ele_right_lag</property>
+					<value> 1.2 </value>
 				</product>
 			</sum>
 		</function>
 	</axis>
-	-->
+	
 	
 	<axis name="LIFT">
 		<function name="aero/force/Lift_alpha">

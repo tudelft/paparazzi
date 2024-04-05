@@ -178,12 +178,15 @@ float guidance_indi_min_pitch = GUIDANCE_INDI_MIN_PITCH;
 
 /** state eulers in zxy order */
 struct FloatEulers eulers_zxy;
+struct FloatVect3 accel_filt;
+bool use_vibration_compensation = false;
 
 float thrust_dyn = 0.f;
 float thrust_act = 0;
 Butterworth2LowPass filt_accel_ned[3];
 Butterworth2LowPass roll_filt;
 Butterworth2LowPass pitch_filt;
+Butterworth2LowPass yaw_filt;
 Butterworth2LowPass thrust_filt;
 Butterworth2LowPass accely_filt;
 
@@ -210,6 +213,8 @@ float Wu_gih[GUIDANCE_INDI_HYBRID_U] = { 1.f, 1.f, 1.f };
 #endif
 #endif
 
+
+float norm_des_as = 0.0;
 // The control objective
 float v_gih[3];
 
@@ -319,6 +324,7 @@ void guidance_indi_init(void)
   }
   init_butterworth_2_low_pass(&roll_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
+  init_butterworth_2_low_pass(&yaw_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
 
@@ -358,6 +364,7 @@ void guidance_indi_enter(void) {
 
   init_butterworth_2_low_pass(&roll_filt, tau, sample_time, eulers_zxy.phi);
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, eulers_zxy.theta);
+  init_butterworth_2_low_pass(&yaw_filt, tau, sample_time, eulers_zxy.psi);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, thrust_in);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
 }
@@ -401,7 +408,6 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   sp_accel.z = -(radio_control.values[RADIO_THROTTLE]-4500)*8.0/9600.0;
 #endif
 
-  struct FloatVect3 accel_filt;
   accel_filt.x = filt_accel_ned[0].o[0];
   accel_filt.y = filt_accel_ned[1].o[0];
   accel_filt.z = filt_accel_ned[2].o[0];
@@ -593,7 +599,7 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
   VECT2_DIFF(windspeed, *groundspeed, airspeed_v);
 
   VECT2_DIFF(desired_airspeed, gi_speed_sp, windspeed); // Use 2d part of gi_speed_sp
-  float norm_des_as = FLOAT_VECT2_NORM(desired_airspeed);
+  norm_des_as = FLOAT_VECT2_NORM(desired_airspeed);
 
   // Make turn instead of straight line
   if ((airspeed > TURN_AIRSPEED_TH) && (norm_des_as > (TURN_AIRSPEED_TH+2.0f))) {
@@ -807,6 +813,7 @@ void guidance_indi_propagate_filters(void) {
 
   update_butterworth_2_low_pass(&roll_filt, eulers_zxy.phi);
   update_butterworth_2_low_pass(&pitch_filt, eulers_zxy.theta);
+  update_butterworth_2_low_pass(&yaw_filt, eulers_zxy.psi);
 
   // Propagate filter for sideslip correction
   float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);

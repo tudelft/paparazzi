@@ -70,6 +70,23 @@
 #define STABILIZATION_INDI_FILT_CUTOFF_R 20.0
 #endif
 
+#ifndef RADIO_PIVOT_SWITCH
+#define RADIO_PIVOT_SWITCH FALSE
+#endif
+
+#ifndef STABILIZATION_INDI_TAKEOFF_CUTOFF_P
+#define STABILIZATION_INDI_TAKEOFF_CUTOFF_P 5
+#endif
+
+#ifndef STABILIZATION_INDI_TAKEOFF_CUTOFF_Q
+#define STABILIZATION_INDI_TAKEOFF_CUTOFF_Q 5
+#endif
+
+#ifndef STABILIZATION_INDI_TAKEOFF_CUTOFF_R
+#define STABILIZATION_INDI_TAKEOFF_CUTOFF_R 5
+#endif
+
+
 // Default is WLS
 #ifndef STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
 #define STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE FALSE
@@ -109,21 +126,85 @@
 #endif
 #endif
 
+#ifdef STABILIZATION_INDI_L1
 float L1 = STABILIZATION_INDI_L1;
+#else
+float L1=1.0;
+#endif
+
+#ifdef STABILIZATION_INDI_L2
 float L2 = STABILIZATION_INDI_L2;
+#else
+float L2=1.0;
+#endif
+
+#ifdef STABILIZATION_INDI_WEIGHT_T
 float weight_T = STABILIZATION_INDI_WEIGHT_T;
+#else
+float weight_T=1.0;
+#endif
+
+#ifdef STABILIZATION_INDI_WEIGHT_S
 float weight_S = STABILIZATION_INDI_WEIGHT_S;
+#else
+float weight_S=1.0;
+#endif
+
+#ifdef CTRL_EFF_CALC_K1
 float K1 = CTRL_EFF_CALC_K1;
+#else
+float K1=1.0;
+#endif
+
+#ifdef CTRL_EFF_CALC_K2
 float K2 = CTRL_EFF_CALC_K2;
+#else
+float K2=1.0;
+#endif
+
+#ifdef CTRL_EFF_CALC_K3
 float K3 = CTRL_EFF_CALC_K3;
-float theta_d = RadOfDeg(-90.0); 
+#else
+float  K3=1.0;
+#endif
+
+#ifdef CTRL_EFF_CALC_MASS
 float m = CTRL_EFF_CALC_MASS;
+#else
+float m=1.0;
+#endif
+
+#ifdef CTRL_EFF_CALC_TORQUE
+float torque = CTRL_EFF_CALC_TORQUE;
+#else
+float torque=1.0;
+#endif
+
+#ifdef STABILIZATION_INDI_PIVOT_GAIN_Q
+float pivot_gain_q = STABILIZATION_INDI_PIVOT_GAIN_Q;
+#else
+float pivot_gain_q=1.0;
+#endif
+
+#ifdef STABILIZATION_INDI_PIVOT_GAIN_THETA
+float pivot_gain_theta = STABILIZATION_INDI_PIVOT_GAIN_THETA;
+#else
+float pivot_gain_theta=1.0;
+#endif
+
+#ifdef STABILIZATION_INDI_PIVOT_GAIN_I
+float pivot_gain_i = STABILIZATION_INDI_PIVOT_GAIN_I;
+#else
+float pivot_gain_i=1.0;
+#endif
+
+float theta_d = RadOfDeg(-90.0); 
+// float m = CTRL_EFF_CALC_MASS;
 int16_t takeoff_stage = 0;
 //define the size of B and W matrix used in takeoff
 #define TYPE_ACT 2  // Type of actuator outputs
 #define NUM_OUT 1  //B is 1x2
 //float I_yy = CTRL_EFF_CALC_I_YY;
-float torque = CTRL_EFF_CALC_TORQUE;
 float du_min_stab_indi[INDI_NUM_ACT];
 float du_max_stab_indi[INDI_NUM_ACT];
 float du_pref_stab_indi[INDI_NUM_ACT];
@@ -207,9 +288,6 @@ float act_dyn_discrete[INDI_NUM_ACT]; // will be computed from freq at init
 #endif
 
 //-------------------------------------
-float pivot_gain_q = STABILIZATION_INDI_PIVOT_GAIN_Q;
-float pivot_gain_theta = STABILIZATION_INDI_PIVOT_GAIN_THETA;
-float pivot_gain_i = STABILIZATION_INDI_PIVOT_GAIN_I;
 float pivot_ratio;
 // float pivot_servogain_q= STABILIZATION_INDI_PIVOT_SERVOGAIN_Q;
 // float pivot_servogain_theta= STABILIZATION_INDI_PIVOT_SERVOGAIN_THETA;
@@ -339,18 +417,13 @@ void sum_g1_g2(void);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
-static void send_eff_mat_g_indi(struct transport_tx *trans, struct link_device *dev)
+static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
 {
-  float zero = 0.0;
-  pprz_msg_send_EFF_MAT_G(trans, dev, AC_ID,
-                                   1, &zero,
-                                   1, &zero,
-                                   1, &zero,
-                      INDI_NUM_ACT, g1g2[0],
-                      INDI_NUM_ACT, g1g2[1],
-                      INDI_NUM_ACT, g1g2[2],
-                      INDI_NUM_ACT, g1g2[3],
-                      INDI_NUM_ACT, g2_est);
+  pprz_msg_send_INDI_G(trans, dev, AC_ID, INDI_NUM_ACT, g1g2[0],
+                       INDI_NUM_ACT, g1g2[1],
+                       INDI_NUM_ACT, g1g2[2],
+                       INDI_NUM_ACT, g1g2[3],
+                       INDI_NUM_ACT, g2_est);
 }
 
 static void send_pivot(struct transport_tx *trans, struct link_device *dev)
@@ -376,7 +449,6 @@ static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *d
 
 static void send_att_full_indi(struct transport_tx *trans, struct link_device *dev)
 {
-  float zero = 0.0;
   struct FloatRates *body_rates = stateGetBodyRates_f();
   struct Int32Vect3 *body_accel_i = stateGetAccelBody_i();
   struct FloatVect3 body_accel_f_telem;
@@ -795,12 +867,27 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
   //Control allocation Weights as a function of airspeed
   // Tilt-rotor tailsitter
+  #if USE_PIVOT_SWITCH == TRUE
   float fun_tilt = 0.124875f * airspeed - 0.4985f;
   float fun_elevon = -0.124875f * airspeed + 1.4995f;
   indi_Wu[0] = (fun_tilt > 1.0f) ? 1.0f: ((fun_tilt < 0.001f) ? 0.001f : fun_tilt);
   indi_Wu[1] = indi_Wu[0];
-  indi_Wu[4] = (fun_elevon > 1.0f) ? 1.0f: ((fun_elevon < 0.001f) ? 0.001f : fun_elevon);
+  indi_Wu[4] = (fun_elevon > 1.0f) ? 1.0f: ((fun_elevon < 0.1f) ? 0.1f : fun_elevon);
   indi_Wu[5] = indi_Wu[4];
+
+  // float pitch_preference = 0.5f; // Example value, adjust as needed
+  // float roll_yaw_preference = 0.8f; // Example value, adjust as needed
+  // if (airspeed > 10){
+  //   indi_Wu[0] *= (fabs(indi_v[1]) > 0) ? pitch_preference : 1.0f;
+  //   indi_Wu[1] *= (fabs(indi_v[1]) > 0) ? pitch_preference : 1.0f;
+  //   indi_Wu[4] *= ((fabs(indi_v[0]) > 0) || (fabs(indi_v[2]) > 0)) ? roll_yaw_preference : 1.0f;
+  //   indi_Wu[5] *= ((fabs(indi_v[0]) > 0) || (fabs(indi_v[2]) > 0)) ? roll_yaw_preference : 1.0f;
+
+  // }
+  #endif
+  
+ 
+ 
   // Flap deflected tailsitter, for comparison of wind disturbance rejection in hovering
   // float fun_flap = 0.124875f * airspeed - 0.4985f;
   // float fun_tilt = -0.124875f * airspeed + 1.4995f;

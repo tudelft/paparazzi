@@ -43,7 +43,7 @@
 
 //+++++++++++++++++++++++++++++++++++++++++
 Butterworth2LowPass accely_filt_rc;
-float side_slip_gain_rc = FWD_SIDESLIP_GAIN_PILOTED;
+float side_slip_gain_rc = FWD_SIDESLIP_GAIN;
 
 
 /**

@@ -52,6 +52,7 @@ extern int16_t takeoff_stage;
 extern float theta_d;
 extern struct FloatEulers eulers_zxy;
 extern struct FloatRates *body_rates;
+extern float indi_u[INDI_NUM_ACT];
 
 
 extern bool indi_use_adaptive;

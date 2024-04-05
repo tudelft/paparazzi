@@ -43,6 +43,8 @@
 #include "firmwares/fixedwing/stabilization/stabilization_adaptive.h"
 #endif
 
+#include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
+#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
 #include "generated/modules.h"
 
 /** Set the default File logger path to the USB drive */
@@ -64,10 +66,19 @@ static FILE *logger_file = NULL;
  */
 static void logger_file_write_header(FILE *file) {
   fprintf(file, "time,");
+  fprintf(file, "ACT_1,ACT_2,ACT_3,ACT_4,ACT_5,ACT_6,");
+  fprintf(file, "rate_p,rate_q,rate_r,");
   fprintf(file, "pos_x,pos_y,pos_z,");
   fprintf(file, "vel_x,vel_y,vel_z,");
   fprintf(file, "att_phi,att_theta,att_psi,");
-  fprintf(file, "rate_p,rate_q,rate_r,");
+  fprintf(file, "accel_x,accel_y,accel_z,");
+  fprintf(file, "g1g2[1][4], g1g2[1][5],  g1g2[2][4], g1g2[2][5],");
+  fprintf(file, "airspeed,");
+  fprintf(file, "guidance_cmd.phi, guidance_cmd.theta, guidance_cmd.psi,");
+  fprintf(file, "sp_accel.x, sp_accel.y, sp_accel.z,");
+  fprintf(file, "speed_sp.x, speed_sp.y, speed_sp.z,");
+  fprintf(file, "norm_des_as,");
+
 #ifdef BOARD_BEBOP
   fprintf(file, "rpm_obs_1,rpm_obs_2,rpm_obs_3,rpm_obs_4,");
   fprintf(file, "rpm_ref_1,rpm_ref_2,rpm_ref_3,rpm_ref_4,");
@@ -76,7 +87,7 @@ static void logger_file_write_header(FILE *file) {
   ins_ext_pos_log_header(file);
 #endif
 #ifdef COMMAND_THRUST
-  fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
+  fprintf(file, "cmd_roll,cmd_pitch,cmd_thrust,cmd_psi\n");
 #else
   fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
 #endif
@@ -98,14 +109,22 @@ static void logger_file_write_row(FILE *file) {
   struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
   struct Int32Vect3 *acc = stateGetAccelBody_i();
   struct FloatVect3 acc_f = {ACCEL_FLOAT_OF_BFP(acc->x), ACCEL_FLOAT_OF_BFP(acc->y), ACCEL_FLOAT_OF_BFP(acc->z)};
+  float airspeed = stateGetAirspeed_f();
 
   fprintf(file, "%f,", get_sys_time_float());
-  fprintf(file, "%d,%d,%d,%d,%d,%d,", actuators_pprz[0],actuators_pprz[1],actuators_pprz[2],actuators_pprz[3],actuators_pprz[4],actuators_pprz[5]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", indi_u[0],indi_u[1],indi_u[2],indi_u[3],indi_u[4],indi_u[5]);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
   fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
   fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
-  fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
-  fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
+  fprintf(file, "%f,%f,%f,", eulers_zxy.phi, eulers_zxy.theta, eulers_zxy.psi);
+  fprintf(file, "%f,%f,%f,", accel_filt.x, accel_filt.y, accel_filt.z);
+  fprintf(file, "%f,%f,%f,%f,", g1g2[1][4], g1g2[1][5],  g1g2[2][4], g1g2[2][5]);
+  fprintf(file, "%f,", airspeed);
+  fprintf(file, "%f,%f,%f,", guidance_euler_cmd.phi, guidance_euler_cmd.theta, guidance_euler_cmd.psi);
+  fprintf(file, "%f,%f,%f,", sp_accel.x, sp_accel.y, sp_accel.z);
+  fprintf(file, "%f,%f,%f,", gi_speed_sp.x, gi_speed_sp.y, gi_speed_sp.z);
+  fprintf(file, "%f,", norm_des_as);
+
 #ifdef BOARD_BEBOP
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_ref[0],actuators_bebop.rpm_ref[1],actuators_bebop.rpm_ref[2],actuators_bebop.rpm_ref[3]);
@@ -114,9 +133,10 @@ static void logger_file_write_row(FILE *file) {
   ins_ext_pos_log_data(file);
 #endif
 #ifdef COMMAND_THRUST
-  fprintf(file, "%d,%d,%d,%d\n",
-      stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
-      stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
+  fprintf(file, "%f,%f,%f,%f\n",
+      // stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
+      // stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]
+      euler_cmd.x,euler_cmd.y,euler_cmd.z,guidance_indi_hybrid_heading_sp);
 #else
   fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
 #endif

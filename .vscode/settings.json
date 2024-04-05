@@ -11,7 +11,9 @@
     "files.associations": {
         "*.m": "matlab",
         "Makefile.*": "makefile",
-        "tensor": "c"
+        "tensor": "c",
+        "cmath": "c",
+        "complex": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",

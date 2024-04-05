@@ -81,6 +81,7 @@ struct guidance_indi_hybrid_params {
 };
 
 extern struct FloatVect3 sp_accel;
+extern struct FloatVect3 accel_filt;
 extern struct FloatVect3 gi_speed_sp;
 
 extern float guidance_indi_pitch_pref_deg;
@@ -95,6 +96,7 @@ extern float du_pref_gih[GUIDANCE_INDI_HYBRID_U];
 
 extern float guidance_indi_thrust_z_eff;
 extern float guidance_indi_thrust_x_eff;
+extern float norm_des_as;
 
 extern struct guidance_indi_hybrid_params gih_params;
 extern float guidance_indi_specific_force_gain;
@@ -108,5 +110,8 @@ extern bool use_vibration_compensation;
 extern float d_cg;
 extern float lift_pitch_eff;
 extern float guidance_indi_pitch_eff_scaling;
+extern float guidance_indi_hybrid_heading_sp;
+extern struct FloatVect3 euler_cmd;
+extern struct FloatEulers guidance_euler_cmd;
 
 #endif /* GUIDANCE_INDI_HYBRID_H */

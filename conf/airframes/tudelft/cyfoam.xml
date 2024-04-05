@@ -213,7 +213,7 @@
       <module name="udp"/>
       <module name="radio_control" type="datalink"/>
       <module name="logger_file">
-        <define name="LOGGER_FILE_PATH" value="/home/ewoud/Documents"/>
+        <define name="LOGGER_FILE_PATH" value="/home/ziqingma/paparazzi/data/SIM_logs"/>
       </module>
 
       <!--Switch advanced INDI scheduling functions on or off-->

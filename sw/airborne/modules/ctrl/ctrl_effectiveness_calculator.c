@@ -139,8 +139,8 @@ void ctrl_eff(void)
     g1g2[1][4] = -cde_offset - 0.001f*c_delta_e * airspeed*airspeed;
     g1g2[1][5] = cde_offset + 0.001f*c_delta_e * airspeed*airspeed;
 
-    g1g2[2][4] = -(cda_offset + 0.001f*c_delta_a * airspeed*airspeed);
-    g1g2[2][5] = -(cda_offset + 0.001f*c_delta_a * airspeed*airspeed);
+    g1g2[2][4] = cda_offset + 0.001f*c_delta_a * airspeed*airspeed;
+    g1g2[2][5] = cda_offset + 0.001f*c_delta_a * airspeed*airspeed;
 }
 
 void ctrl_eff_ground_contact(void)
