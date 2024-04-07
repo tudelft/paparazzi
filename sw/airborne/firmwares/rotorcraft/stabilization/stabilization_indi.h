@@ -66,7 +66,6 @@ extern float thrust_bx_eff;
 extern float thrust_bx_act_dyn;
 extern float actuator_thrust_bx_pprz;
 extern float thrust_bx_state_filt;
-extern struct FloatQuat quat_sp_f;
 
 extern float act_pref[INDI_NUM_ACT];
 

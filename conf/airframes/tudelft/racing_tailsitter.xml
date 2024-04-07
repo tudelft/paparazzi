@@ -114,10 +114,10 @@
       <define name="USE_AIRSPEED_AIR_DATA" value="TRUE"/>
     </module>
 
-    <!--<module name="gps" type="ublox">
+    <module name="gps" type="ublox">
       <configure name="GPS_BAUD" value="B57600"/>
-    </module>-->
-    <module name="gps" type="datalink"/>
+    </module>
+    <!-- <module name="gps" type="datalink"/> -->
 
     <module name="stabilization" type="indi">
       <configure name="INDI_NUM_ACT" value="6"/>

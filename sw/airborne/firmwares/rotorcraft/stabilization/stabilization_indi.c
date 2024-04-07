@@ -230,7 +230,7 @@ int16_t calculatePPRZCommand(float K1, float K2, float K3, float thrust);
 static void calc_g1g2_pseudo_inv(void);
 #endif
 static void bound_g_mat(void);
-
+int32_t heading_check;
 int32_t stabilization_att_indi_cmd[COMMANDS_NB];
 struct Indi_gains indi_gains = {
   .att = {
@@ -429,7 +429,8 @@ static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
 static void send_pivot(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_PIVOT(trans, dev, AC_ID,
-                      &theta_d,
+                      &heading_check,
+                      &stab_att_sp_euler.psi,
                       &takeoff_stage);
 }
 
@@ -1116,6 +1117,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     }
 
     /* reset psi setpoint to current psi angle */
+    heading_check = stabilization_attitude_get_heading_i();
     stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
     update_filters();
   } else if (takeoff_stage == 2){ // not in a takeoff stage, flying
