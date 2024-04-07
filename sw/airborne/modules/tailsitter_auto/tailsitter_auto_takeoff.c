@@ -99,7 +99,7 @@ int16_t take_off_stage(float theta, float rate_q){
       stage = 1;
       counter = 0;
     }
-    else if(stage == 1 && fabs((theta - theta_ref/ 180.0 * M_PI)/((theta_ref +90.0)/ 180.0 * M_PI))< 0.06 && rate_q < 0.1 && counter/TAKEOFF_MODULE_FREQ > 1.5 ){
+    else if(stage == 1 && fabs((theta - theta_ref/ 180.0 * M_PI)/((theta_ref +90.0)/ 180.0 * M_PI))< 0.06 && rate_q < 0.1 && counter/TAKEOFF_MODULE_FREQ > 30 ){
       stage = 2;
       autopilot_set_in_flight(true);
       counter = 0;

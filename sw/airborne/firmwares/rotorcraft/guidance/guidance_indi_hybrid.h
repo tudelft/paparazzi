@@ -114,4 +114,8 @@ extern float guidance_indi_hybrid_heading_sp;
 extern struct FloatVect3 euler_cmd;
 extern struct FloatEulers guidance_euler_cmd;
 
+extern float guidance_indi_hybrid_heading_sp;
+extern struct FloatVect3 euler_cmd;
+extern struct FloatEulers guidance_euler_cmd;
+
 #endif /* GUIDANCE_INDI_HYBRID_H */

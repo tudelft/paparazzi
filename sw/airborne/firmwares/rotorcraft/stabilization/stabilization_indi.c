@@ -125,6 +125,7 @@
 #error Matrix-WLS_N_V too small or not defined: define WLS_N_U >= INDI_OUTPUTS in airframe file
 #endif
 #endif
+float use_increment = 0.0;
 
 #ifdef STABILIZATION_INDI_L1
 float L1 = STABILIZATION_INDI_L1;
@@ -795,7 +796,6 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   //G2 is scaled by INDI_G_SCALING to make it readable
   g2_times_du = g2_times_du / INDI_G_SCALING;
 
-  float use_increment = 0.0;
   if (in_flight) {
     use_increment = 1.0;
   }
@@ -976,6 +976,9 @@ void WEAK stabilization_indi_set_wls_settings(float use_increment)
  */
 void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 {
+    if (in_flight) {
+    use_increment = 1.0;
+  }
   /* attitude error                          */
   struct FloatQuat att_err;
   struct FloatQuat *att_quat = stateGetNedToBodyQuat_f();

@@ -34,11 +34,19 @@
 		<function name="ele_pitch" frame="BODY" unit="FT*LBS">
 			<sum>
 				<product>
+<<<<<<< Updated upstream
 					<property>fcs/ele_left_lag</property>
 					<value> -1.2 </value>
 				</product>
 				<product>
 					<property>fcs/ele_right_lag</property>
+=======
+					<property>fcs/tilt_left_lag</property>
+					<value> -1.2 </value>
+				</product>
+				<product>
+					<property>fcs/tilt_right_lag</property>
+>>>>>>> Stashed changes
 					<value> 1.2 </value>
 				</product>
 			</sum>
