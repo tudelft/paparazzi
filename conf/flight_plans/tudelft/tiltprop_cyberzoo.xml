@@ -69,13 +69,14 @@
       <go vmode="alt" wp="TD"/>
     </block>
     <block name="flare">
-      <exception cond="takeoff_stage == 3" deroute="pivot_land"/>
-      <call_once fun="take_off_enter()"/>
+      <exception cond="LessThan(GetPosHeight(), 20)" deroute="pivot_land"/>
       <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="pivot_land">
+      <exception cond="LessThan(eulers_zxy.theta, RadOfDeg(-85.0))" deroute="landed"/>
+      <set value="3" var="takeoff_stage"/>
+      <call_once fun="take_off_enter()"/>
       <stay alt="0.0" wp="TD"/>
-      <exception cond="LessThan(eulers_zxy.theta, RadOfDeg(-89.0))" deroute="landed"/>
     </block>
     <block name="landed">
       <call_once fun="NavKillThrottle()"/>
