@@ -78,7 +78,6 @@ static void logger_file_write_header(FILE *file) {
   fprintf(file, "sp_accel.x, sp_accel.y, sp_accel.z,");
   fprintf(file, "speed_sp.x, speed_sp.y, speed_sp.z,");
   fprintf(file, "use_increment,");
-  fprintf(file, "takeoff_stage,");
 
 #ifdef BOARD_BEBOP
   fprintf(file, "rpm_obs_1,rpm_obs_2,rpm_obs_3,rpm_obs_4,");
@@ -125,7 +124,6 @@ static void logger_file_write_row(FILE *file) {
   fprintf(file, "%f,%f,%f,", sp_accel.x, sp_accel.y, sp_accel.z);
   fprintf(file, "%f,%f,%f,", gi_speed_sp.x, gi_speed_sp.y, gi_speed_sp.z);
   fprintf(file, "%f,", use_increment);
-  fprintf(file, "%f,", takeoff_stage);
 
 #ifdef BOARD_BEBOP
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);

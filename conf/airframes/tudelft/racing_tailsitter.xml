@@ -59,6 +59,7 @@
     <module name="logger" type="sd_chibios"/>
     <module name="flight_recorder"/>
     <define name="SDLOG_AUTO_FLUSH_PERIOD" value="1" unit="s"/>
+    <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
 
     <module name="actuators" type="pwm">
       <define name="SERVO_HZ" value="400"/>
@@ -403,7 +404,7 @@
 
   <section name="NAV">
     <define name="NAV_CLIMB_VSPEED" value="1.0"/>
-    <define name="NAV_DESCEND_VSPEED" value="-0.5"/>
+    <define name="NAV_DESCEND_VSPEED" value="-0.8"/>
   </section>
 
   <!--<section name="AHRS" prefix="AHRS_">-->
@@ -445,7 +446,7 @@
 
     <!--<define name="EFF_SCHED_USE_FUNCTION" value="TRUE"/>-->
 
-    <define name="ARRIVED_AT_WAYPOINT" value="5.0"/>
+    <define name="ARRIVED_AT_WAYPOINT" value="40.0"/>
     <define name="USE_AIRSPEED" value="TRUE"/>
     <define name="USE_PIVOT_SWITCH" value="TRUE"/>
   </section>

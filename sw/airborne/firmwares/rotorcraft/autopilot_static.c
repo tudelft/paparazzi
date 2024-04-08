@@ -406,24 +406,24 @@ void autopilot_failsafe_checks(void)
   }
 #endif
 
-#if USE_GPS
-  if (autopilot_get_mode() == AP_MODE_NAV &&
-      autopilot_get_motors_on() &&
-#if NO_GPS_LOST_WITH_RC_VALID
-      radio_control.status != RC_OK &&
-#endif
-#ifdef NO_GPS_LOST_WITH_DATALINK_TIME
-      datalink_time > NO_GPS_LOST_WITH_DATALINK_TIME &&
-#endif
-      GpsIsLost()) {
-    autopilot_set_mode(AP_MODE_FAILSAFE);
-  }
+// #if USE_GPS
+//   if (autopilot_get_mode() == AP_MODE_NAV &&
+//       autopilot_get_motors_on() &&
+// #if NO_GPS_LOST_WITH_RC_VALID
+//       radio_control.status != RC_OK &&
+// #endif
+// #ifdef NO_GPS_LOST_WITH_DATALINK_TIME
+//       datalink_time > NO_GPS_LOST_WITH_DATALINK_TIME &&
+// #endif
+//       GpsIsLost()) {
+//     autopilot_set_mode(AP_MODE_FAILSAFE);
+//   }
 
-  if (autopilot_get_mode() == AP_MODE_HOME &&
-      autopilot_get_motors_on() && GpsIsLost()) {
-    autopilot_set_mode(AP_MODE_FAILSAFE);
-  }
-#endif
+//   if (autopilot_get_mode() == AP_MODE_HOME &&
+//       autopilot_get_motors_on() && GpsIsLost()) {
+//     autopilot_set_mode(AP_MODE_FAILSAFE);
+//   }
+// #endif
 
 }
 

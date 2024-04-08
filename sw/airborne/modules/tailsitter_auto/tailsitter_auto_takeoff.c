@@ -52,6 +52,12 @@ void take_off_enter(void){
   if (takeoff_stage == 3){
   stage = 3;
  }
+ else if(takeoff_stage == 2){
+  if(agl_dist_value_filtered< 0.01 && agl_dist_valid){
+    stage = 3;
+  }
+  else{stage = 2;}
+ }
   else{
   stage = 0;
   counter = 0;
@@ -98,7 +104,7 @@ int16_t take_off_stage(float theta, float rate_q){
       stage = 1;
       counter = 0;
     }
-    else if(stage == 1 && fabs((theta - theta_ref/ 180.0 * M_PI)/((theta_ref +90.0)/ 180.0 * M_PI))< 0.06 && rate_q < 0.1 && counter/TAKEOFF_MODULE_FREQ > 10 ){
+    else if(stage == 1 && fabs((theta - theta_ref/ 180.0 * M_PI)/((theta_ref +90.0)/ 180.0 * M_PI))< 0.06 && rate_q < 0.1 && counter/TAKEOFF_MODULE_FREQ > 1.5 ){
       stage = 2;
       autopilot_set_in_flight(true);
       counter = 0;

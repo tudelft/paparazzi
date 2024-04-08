@@ -55,6 +55,11 @@
 #define GUIDANCE_INDI_POS_GAINZ 0.5
 #endif
 
+#ifdef FWD_SIDESLIP_GAIN
+  // Add sideslip correction
+float sideslip_gain = FWD_SIDESLIP_GAIN;
+#endif
+
 #ifndef GUIDANCE_INDI_LIFTD_ASQ
 #define GUIDANCE_INDI_LIFTD_ASQ 0.20
 #endif
@@ -509,7 +514,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
 
 #ifdef FWD_SIDESLIP_GAIN
   // Add sideslip correction
-  omega -= accely_filt.o[0]*FWD_SIDESLIP_GAIN;
+  omega -= accely_filt.o[0]*sideslip_gain;
 #endif
 
   // We can pre-compute the required rates to achieve this turn rate:
