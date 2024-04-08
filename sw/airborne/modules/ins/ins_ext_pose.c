@@ -43,13 +43,30 @@
 #define DEBUG_PRINT(...) {}
 #endif
 
-#ifndef INS_EXT_POSE
-#define INS_EXT_POSE TRUE
-#endif
-
 /** Data for telemetry and LTP origin.
  */
+struct InsExtPose {
+  /* Inputs */
+  struct FloatRates gyros_f;
+  struct FloatVect3 accels_f;
+  bool   has_new_gyro;
+  bool   has_new_acc;
 
+  struct FloatVect3 ev_pos;
+  struct FloatVect3 ev_vel;
+  struct FloatEulers ev_att;
+  struct FloatQuat ev_quat;
+  bool   has_new_ext_pose;
+  float  ev_time;
+
+  /* Origin */
+  struct LtpDef_i  ltp_def;
+
+  /* output LTP NED */
+  struct NedCoor_i ltp_pos;
+  struct NedCoor_i ltp_speed;
+  struct NedCoor_i ltp_accel;
+};
 struct InsExtPose ins_ext_pos;
 
 
@@ -104,7 +121,7 @@ static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
                         &ins_ext_pos.ltp_def.hmsl, (float *)&fake_qfe);
 }
 
-static void send_eternal_pose_optitrack(struct transport_tx *trans, struct link_device *dev)
+static void send_external_pose_down(struct transport_tx *trans, struct link_device *dev)
 { 
   pprz_msg_send_EXTERNAL_POSE_DOWN(trans, dev, AC_ID,
                         &ins_ext_pos.ev_time,
@@ -259,7 +276,7 @@ void ins_ext_pose_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS, send_ins);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_Z, send_ins_z);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EXTERNAL_POSE_DOWN, send_eternal_pose_optitrack);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EXTERNAL_POSE_DOWN, send_external_pose_down);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_BIAS, send_ahrs_bias);
 #endif
 
