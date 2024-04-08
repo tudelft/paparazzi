@@ -179,6 +179,8 @@ float guidance_indi_min_pitch = GUIDANCE_INDI_MIN_PITCH;
 /** state eulers in zxy order */
 struct FloatEulers eulers_zxy;
 
+float gamma_sq_gih = 100000;
+
 float thrust_dyn = 0.f;
 float thrust_act = 0;
 Butterworth2LowPass filt_accel_ned[3];
@@ -215,6 +217,8 @@ float Wu_gih[GUIDANCE_INDI_HYBRID_U] = { 1.f, 1.f, 1.f };
 
 // The control objective
 float v_gih[3];
+
+struct FloatVect3 accel_filt;
 
 // Filters
 float filter_cutoff = GUIDANCE_INDI_FILTER_CUTOFF;
@@ -325,7 +329,7 @@ void guidance_indi_init(void)
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
-  
+
   float tau_secondary_airspeed = 1.0/(2.0*M_PI*secondary_airspeed_filt_cutoff);
   init_butterworth_2_low_pass(&secondary_airspeed_filt, tau_secondary_airspeed, sample_time, 0.0);
 
@@ -411,7 +415,6 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   sp_accel.z = -(radio_control.values[RADIO_THROTTLE]-4500)*8.0/9600.0;
 #endif
 
-  struct FloatVect3 accel_filt;
   accel_filt.x = filt_accel_ned[0].o[0];
   accel_filt.y = filt_accel_ned[1].o[0];
   accel_filt.z = filt_accel_ned[2].o[0];
@@ -434,7 +437,6 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
 #endif
 #endif
 
-
   // Calculate matrix of partial derivatives and control objective
   guidance_indi_calcg_wing(Ga, a_diff, v_gih);
 
@@ -443,12 +445,29 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   // Calculate the maximum deflections
   guidance_indi_hybrid_set_wls_settings(v_gih, roll_filt.o[0], pitch_filt.o[0]);
 
-  float du_gih[GUIDANCE_INDI_HYBRID_U]; // = {0.0f, 0.0f, 0.0f};
+
+  // float v_gih_norm[GUIDANCE_INDI_HYBRID_V];
+  // // Normalization step
+  // for(int8_t i=0; i<3; i++) { //u
+  //   du_range[i] = du_max_gih[i] - du_min_gih[i];
+  //   for(int8_t j=0; i<2; i++) { // nu
+  //     float v_range[j] = 2*9.81; //constant nu range
+  //     v_gih_norm[j] = v_gih[j]/v_range[j];
+  //     Ga[j][i] = Ga[j][i]*du_range[i]/nu_range[j];
+  //   }
+  // }
+
+  // normalized du
+  // du_gih_norm[GUIDANCE_INDI_HYBRID_U];
 
   int num_iter UNUSED = wls_alloc(
       du_gih, v_gih, du_min_gih, du_max_gih,
-      Bwls_gih, 0, 0, Wv_gih, Wu_gih, du_pref_gih, 100000, 10,
+      Bwls_gih, 0, 0, Wv_gih, Wu_gih, du_pref_gih, gamma_sq_gih, 30,
       GUIDANCE_INDI_HYBRID_U, GUIDANCE_INDI_HYBRID_V);
+
+  // for(int8_t i=0; i<3; i++) { //u
+  //   du_gih[i] = du_gih_norm[i]*2*du_range[i];
+  // }
 
   euler_cmd.x = du_gih[0];
   euler_cmd.y = du_gih[1];

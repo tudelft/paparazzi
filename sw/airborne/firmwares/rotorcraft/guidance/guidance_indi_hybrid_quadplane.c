@@ -101,10 +101,6 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
   float spsi = sinf(eulers_zxy.psi);
   float cpsi = cosf(eulers_zxy.psi);
 
-#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
-#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
-#endif
-
   /*Amount of lift produced by the wing*/
   float lift_thrust_bz = accel_bodyz_filt.o[0]; // Sum of lift and thrust in boxy z axis (level flight)
 
@@ -115,9 +111,9 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
   Gmat[1][0] = -cphi*lift_thrust_bz;
   Gmat[2][0] = -sphi*ctheta*lift_thrust_bz;
 
-  Gmat[0][1] =  cphi*ctheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING;
-  Gmat[1][1] =  sphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*liftd;
-  Gmat[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+  Gmat[0][1] =  cphi*ctheta*lift_thrust_bz;
+  Gmat[1][1] =  sphi*stheta*lift_thrust_bz - sphi*liftd;
+  Gmat[2][1] = -cphi*stheta*lift_thrust_bz + cphi*liftd;
 
   Gmat[0][2] =  cphi*stheta;
   Gmat[1][2] = -sphi;

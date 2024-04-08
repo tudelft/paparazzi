@@ -80,8 +80,10 @@ static void logger_file_write_header(FILE *file) {
 #else
   fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
 #endif
+  fprintf(file,"\n");
 }
 
+#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
 /** Write CSV row
  * Write values at this timestamp to log file. Make sure that the printf's match
  * the column headers of logger_file_write_header! Don't forget the \n at the
@@ -99,20 +101,17 @@ static void logger_file_write_row(FILE *file) {
   fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
   fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
-#ifdef BOARD_BEBOP
-  fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
-  fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_ref[0],actuators_bebop.rpm_ref[1],actuators_bebop.rpm_ref[2],actuators_bebop.rpm_ref[3]);
-#endif
-#ifdef INS_EXT_POSE_H
-  ins_ext_pos_log_data(file);
-#endif
-#ifdef COMMAND_THRUST
-  fprintf(file, "%d,%d,%d,%d\n",
-      stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
-      stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
-#else
-  fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
-#endif
+  fprintf(file, "%f,%f,%f,%f,", du_gih[0], du_gih[1], du_gih[2], du_gih[3]);
+  fprintf(file, "%f,%f,", guidance_euler_cmd.phi, guidance_euler_cmd.theta);
+  fprintf(file, "%f,%f,%f,", v_gih[0], v_gih[1], v_gih[2]);
+  fprintf(file, "%f,%f,%f,", accel_filt.x, accel_filt.y, accel_filt.z);
+  fprintf(file, "%f,%f,%f,", sp_accel.x, sp_accel.y, sp_accel.z);
+  fprintf(file, "%f,%f,%f,%f,", Ga[0][0], Ga[0][1], Ga[0][2], Ga[0][3]);
+  fprintf(file, "%f,%f,%f,%f,", Ga[1][0], Ga[1][1], Ga[1][2], Ga[1][3]);
+  fprintf(file, "%f,%f,%f,%f,", Ga[2][0], Ga[2][1], Ga[2][2], Ga[2][3]);
+  fprintf(file, "%f,%f,%f,%f,", du_min_gih[0], du_min_gih[1], du_min_gih[2], du_min_gih[3]);
+  fprintf(file, "%f,%f,%f,%f,", du_max_gih[0], du_max_gih[1], du_max_gih[2], du_max_gih[3]);
+  fprintf(file,"\n");
 }
 
 
@@ -121,7 +120,7 @@ void logger_file_start(void)
 {
   // Ensure that the module is running when started with this function
   logger_file_logger_file_periodic_status = MODULES_RUN;
-  
+
   // Create output folder if necessary
   if (access(STRINGIFY(LOGGER_FILE_PATH), F_OK)) {
     char save_dir_cmd[256];

@@ -66,6 +66,8 @@ enum GuidanceIndiHybrid_VMode {
   GUIDANCE_INDI_HYBRID_V_ACCEL
 };
 
+extern float gamma_sq_gih;
+
 extern struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accep_sp, float heading_sp);
 extern struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight, struct HorizontalGuidance *gh, struct VerticalGuidance *gv, enum GuidanceIndiHybrid_HMode h_mode, enum GuidanceIndiHybrid_VMode v_mode);
 
@@ -80,10 +82,19 @@ struct guidance_indi_hybrid_params {
   float liftd_p50;
 };
 
+extern struct FloatVect3 euler_cmd;
+extern struct FloatEulers guidance_euler_cmd;
+// The control objective
+extern float v_gih[3];
+extern float du_gih[GUIDANCE_INDI_HYBRID_U];
+extern struct FloatVect3 accel_filt;
+
 extern struct FloatVect3 sp_accel;
 extern struct FloatVect3 gi_speed_sp;
 
 extern float guidance_indi_pitch_pref_deg;
+
+extern float Ga[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_HYBRID_U];
 
 #if GUIDANCE_INDI_HYBRID_USE_WLS
 extern float Wu_gih[GUIDANCE_INDI_HYBRID_U];
