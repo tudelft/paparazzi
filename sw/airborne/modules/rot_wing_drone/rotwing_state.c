@@ -24,10 +24,8 @@
  */
 
 #include "modules/rot_wing_drone/rotwing_state.h"
-//#include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
-//#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
 #include "firmwares/rotorcraft/autopilot_firmware.h"
-
+#include "modules/core/commands.h"
 #include "modules/actuators/actuators.h"
 #include "modules/core/abi.h"
 
@@ -35,6 +33,7 @@
 #ifndef ROTWING_MIN_SKEW_ANGLE_DEG_QUAD
 #define ROTWING_MIN_SKEW_ANGLE_DEG_QUAD 10.0
 #endif
+
 #ifndef ROTWING_MIN_SKEW_ANGLE_COUNTER
 #define ROTWING_MIN_SKEW_ANGLE_COUNTER 10         // Minimum number of loops the skew angle is below ROTWING_MIN_SKEW_ANGLE_COUNTER
 #endif
@@ -53,9 +52,11 @@
 #ifndef ROTWING_HALF_SKEW_ANGLE_DEG
 #define ROTWING_HALF_SKEW_ANGLE_DEG 55.0
 #endif
+
 #ifndef ROTWING_HALF_SKEW_ANGLE_RANG
 #define ROTWING_HALF_SKEW_ANGLE_HALF_RANGE 10.0
 #endif
+
 #ifndef ROTWING_HALF_SKEW_COUNTER
 #define ROTWING_HALF_SKEW_COUNTER 10              // Minimum number of loops the skew angle is at HALF_SKEW_ANGLE_DEG +/- ROTWING_HALF_SKEW_ANGLE_HALF_RANGE to trigger ROTWING_HALF_SKEW_ANGLE state
 #endif
@@ -64,6 +65,7 @@
 #ifndef ROTWING_MIN_FW_SKEW_ANGLE_DEG
 #define ROTWING_MIN_FW_SKEW_ANGLE_DEG 80.0        // Minimum wing angle to fly in fixed wing state 
 #endif
+
 #ifndef ROTWING_MIN_FW_COUNTER
 #define ROTWING_MIN_FW_COUNTER 10                 // Minimum number of loops the skew angle is above the MIN_FW_SKEW_ANGLE
 #endif
@@ -72,6 +74,7 @@
 #ifndef ROTWING_MIN_THRUST_IDLE
 #define ROTWING_MIN_THRUST_IDLE 100
 #endif
+
 #ifndef ROTWING_MIN_THRUST_IDLE_COUNTER
 #define ROTWING_MIN_THRUST_IDLE_COUNTER 10
 #endif
@@ -80,6 +83,7 @@
 #ifndef ROTWING_HOV_MOT_OFF_RPM_TH
 #define ROTWING_HOV_MOT_OFF_RPM_TH 50
 #endif
+
 #ifndef ROTWING_HOV_MOT_OFF_COUNTER
 #define ROTWING_HOV_MOT_OFF_COUNTER 10
 #endif
@@ -88,18 +92,17 @@
 #define ROTWING_STATE_USE_ROTATION_REF_MODEL FALSE
 #endif
 
-
 // Hover preferred pitch (deg)
 #ifndef ROTWING_STATE_HOVER_PREF_PITCH
 #define ROTWING_STATE_HOVER_PREF_PITCH 0.0
 #endif
 
-// Transition preffered pitch (deg)
+// Transition preferred pitch (deg)
 #ifndef ROTWING_STATE_TRANSITION_PREF_PITCH
 #define ROTWING_STATE_TRANSITION_PREF_PITCH 3.0
 #endif
 
-// Forward preffered pitch (deg)
+// Forward preferred pitch (deg)
 #ifndef ROTWING_STATE_FW_PREF_PITCH
 #define ROTWING_STATE_FW_PREF_PITCH 8.0
 #endif
@@ -115,14 +118,15 @@
 #endif
 #endif
 
-
 // stream ADC data if ADC rotation sensor
 #ifndef ADC_WING_ROTATION
 #define ADC_WING_ROTATION FALSE
 #endif
+
 #if ADC_WING_ROTATION
 #include "wing_rotation_adc_sensor.h"
 #endif
+
 /** ABI binding feedback data.
  */
 #ifndef ROTWING_STATE_ACT_FEEDBACK_ID
@@ -144,10 +148,8 @@ uint8_t rotwing_state_fw_idle_counter = 0;
 uint8_t rotwing_state_fw_m_off_counter = 0;
 
 float rotwing_state_max_hover_speed = 7;
-
 bool hover_motors_active = true;
 bool bool_disable_hover_motors = false;
-
 
 inline void rotwing_check_set_current_state(void);
 inline void rotwing_switch_state(void);
@@ -254,6 +256,7 @@ void rotwing_request_configuration(uint8_t configuration)
 
 void rotwing_check_set_current_state(void)
 {
+  float current_thrust = (commands[COMMAND_MOTOR_FRONT] + commands[COMMAND_MOTOR_RIGHT] + commands[COMMAND_MOTOR_BACK] + commands[COMMAND_MOTOR_LEFT])/4.0;
   // if !in_flight, set state to hover
   if (!autopilot.in_flight) {
     rotwing_state_hover_counter = 0;
@@ -319,7 +322,7 @@ void rotwing_check_set_current_state(void)
       }
 
       // Check if state needs to be set to fixed wing with hover motors idle (If hover thrust below threshold)
-      if (stabilization_cmd[COMMAND_THRUST] < ROTWING_MIN_THRUST_IDLE && rotwing_state.desired_state > ROTWING_STATE_FW) {
+      if (current_thrust < ROTWING_MIN_THRUST_IDLE && rotwing_state.desired_state > ROTWING_STATE_FW) {
         rotwing_state_fw_idle_counter++;
       } else {
         rotwing_state_fw_idle_counter = 0;
@@ -340,7 +343,7 @@ void rotwing_check_set_current_state(void)
 
     case ROTWING_STATE_FW_HOV_MOT_IDLE:
       // Check if state needs to be set to fixed wing with hover motors activated
-      if (stabilization_cmd[COMMAND_THRUST] > ROTWING_MIN_THRUST_IDLE
+      if (current_thrust > ROTWING_MIN_THRUST_IDLE
           || rotwing_state.desired_state < ROTWING_STATE_FW_HOV_MOT_IDLE) {
         rotwing_state_fw_counter++;
       } else {
@@ -599,10 +602,10 @@ void rotwing_state_skew_actuator_periodic(void)
   // Directly controlling the wing rotation
   rotwing_state_skewing.servo_pprz_cmd = servo_pprz_cmd;
 #endif
-
+  
 #if USE_NPS
   // Export to the index of the SKEW in the NPS_ACTUATOR_NAMES array
-  actuators_pprz[ROT_MECH_IDX] = (rotwing_state_skewing.servo_pprz_cmd + MAX_PPRZ) / 2.; // Scale to simulation command
+  commands[COMMAND_ROT_MECH] = (rotwing_state_skewing.servo_pprz_cmd + MAX_PPRZ) / 2.; // Scale to simulation command
 
   // Simulate wing angle from command
   rotwing_state_skewing.wing_angle_deg = (float) rotwing_state_skewing.servo_pprz_cmd / MAX_PPRZ * 45. + 45.;
@@ -615,6 +618,8 @@ void rotwing_state_skew_actuator_periodic(void)
 
   // Send ABI message
   AbiSendMsgACT_FEEDBACK(ACT_FEEDBACK_UAVCAN_ID, &feedback, 1);
+#else
+  commands[COMMAND_ROT_MECH] = rotwing_state_skewing.servo_pprz_cmd;  
 #endif
 
 #if USE_ROTMECH_VIRTUAL

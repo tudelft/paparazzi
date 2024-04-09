@@ -595,7 +595,7 @@
   />
   <aircraft
    name="RW3C_DePonti"
-   ac_id="33"
+   ac_id="35"
    airframe="airframes/tudelft/rot_wing_v3c_oneloop_optitrack_ext_pose.xml"
    radio="radios/crossfire_sbus.xml"
    telemetry="telemetry/highspeed_rotorcraft.xml"
