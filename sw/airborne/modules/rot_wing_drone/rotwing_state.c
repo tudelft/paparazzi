@@ -122,11 +122,9 @@
 #ifndef ADC_WING_ROTATION
 #define ADC_WING_ROTATION FALSE
 #endif
-
 #if ADC_WING_ROTATION
 #include "wing_rotation_adc_sensor.h"
 #endif
-
 /** ABI binding feedback data.
  */
 #ifndef ROTWING_STATE_ACT_FEEDBACK_ID
