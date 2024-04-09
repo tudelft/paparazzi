@@ -1471,10 +1471,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   for (i = 0; i < ANDI_NUM_ACT; i++) {
     //actuators_pprz[i] = (int16_t) andi_u[i];
     commands[i] = (int16_t) andi_u[i];
-    stabilization_cmd[COMMAND_THRUST] += actuator_state_1l[i]; 
   }
-  stabilization_cmd[COMMAND_THRUST] = stabilization_cmd[COMMAND_THRUST]/num_thrusters_oneloop;
-  autopilot.throttle = stabilization_cmd[COMMAND_THRUST];
+  commands[COMMAND_THRUST] = (commands[COMMAND_MOTOR_FRONT] + commands[COMMAND_MOTOR_RIGHT] + commands[COMMAND_MOTOR_BACK] + commands[COMMAND_MOTOR_LEFT])/num_thrusters_oneloop;
+  autopilot.throttle = commands[COMMAND_THRUST];
   if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
     eulers_zxy_des.phi   =  andi_u[ONELOOP_ANDI_PHI_IDX];
     eulers_zxy_des.theta =  andi_u[ONELOOP_ANDI_THETA_IDX];
