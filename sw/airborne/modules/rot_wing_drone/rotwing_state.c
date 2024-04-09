@@ -189,6 +189,8 @@ void init_rotwing_state(void)
   rotwing_state.current_state = ROTWING_STATE_HOVER;
   rotwing_state.desired_state = ROTWING_STATE_HOVER;
 
+  rotwing_state_settings.preferred_pitch_value = 0;
+  
   rotwing_state_skewing.wing_angle_deg_sp     = 0;
   rotwing_state_skewing.wing_angle_deg        = 0;
   rotwing_state_skewing.servo_pprz_cmd        = -MAX_PPRZ;
@@ -241,19 +243,18 @@ void periodic_rotwing_state(void)
   }
 
   // Calculate scheduled pitch angle
-  float scheduled_pitch_angle_deg = 0;
-  float pitch_angle_range = 3.;
-  if (rotwing_state_skewing.wing_angle_deg < 55) {
-    scheduled_pitch_angle_deg = 0;
-  } else {
-    float pitch_progression = (rotwing_state_skewing.wing_angle_deg - 55) / 35.;
-    scheduled_pitch_angle_deg = pitch_angle_range * pitch_progression;
+  switch (rotwing_state_settings.preferred_pitch_setting){
+    case ROTWING_STATE_PITCH_QUAD_SETTING:
+      rotwing_state_settings.preferred_pitch_value = RadOfDeg(ROTWING_STATE_HOVER_PREF_PITCH);
+      break;
+    case ROTWING_STATE_PITCH_TRANSITION_SETTING:
+      float pitch_progression = (rotwing_state_skewing.wing_angle_deg - ROTWING_HALF_SKEW_ANGLE_DEG) / (90.0-ROTWING_HALF_SKEW_ANGLE_DEG);
+      rotwing_state_settings.preferred_pitch_value = RadOfDeg(ROTWING_STATE_TRANSITION_PREF_PITCH * pitch_progression);
+      break;
+    case ROTWING_STATE_PITCH_FW_SETTING:
+      rotwing_state_settings.preferred_pitch_value = RadOfDeg(ROTWING_STATE_FW_PREF_PITCH);
+      break;
   }
-  if (!hover_motors_active) {
-    scheduled_pitch_angle_deg = 8.;
-  }
-  Bound(scheduled_pitch_angle_deg, -5., 8.);
-  float scheduled_pitch_angle_rad = RadOfDeg(scheduled_pitch_angle_deg);
 }
 
 // Function to request a state
@@ -476,15 +477,15 @@ void rotwing_switch_state(void)
 
 void rotwing_state_set_hover_settings(void)
 {
-  rotwing_state_settings.wing_scheduler       = ROTWING_STATE_WING_QUAD_SETTING;
-  rotwing_state_settings.hover_motors_active  = true;
-  rotwing_state_settings.hover_motors_disable = false;
-  rotwing_state_settings.force_forward        = false;
-  rotwing_state_settings.preferred_pitch      = ROTWING_STATE_PITCH_QUAD_SETTING;
-  rotwing_state_settings.stall_protection     = false;
-  rotwing_state_settings.max_v_climb          = 2.0;
-  rotwing_state_settings.max_v_descend        = 1.0;
-  rotwing_state_settings.nav_max_speed        = rotwing_state_max_hover_speed; // Using setting
+  rotwing_state_settings.wing_scheduler          = ROTWING_STATE_WING_QUAD_SETTING;
+  rotwing_state_settings.hover_motors_active     = true;
+  rotwing_state_settings.hover_motors_disable    = false;
+  rotwing_state_settings.force_forward           = false;
+  rotwing_state_settings.preferred_pitch_setting = ROTWING_STATE_PITCH_QUAD_SETTING;
+  rotwing_state_settings.stall_protection        = false;
+  rotwing_state_settings.max_v_climb             = 2.0;
+  rotwing_state_settings.max_v_descend           = 1.0;
+  rotwing_state_settings.nav_max_speed           = rotwing_state_max_hover_speed; // Using setting
   rotwing_state_set_state_settings();
 }
 
@@ -496,56 +497,56 @@ void rotwing_state_set_skewing_settings(void)
   } else {
     rotwing_state_settings.wing_scheduler     = ROTWING_STATE_WING_SCHEDULING_SETTING;
   }
-  rotwing_state_settings.hover_motors_active  = true;
-  rotwing_state_settings.hover_motors_disable = false;
-  rotwing_state_settings.force_forward        = false;
-  rotwing_state_settings.preferred_pitch      = ROTWING_STATE_PITCH_TRANSITION_SETTING;
-  rotwing_state_settings.stall_protection     = false;
-  rotwing_state_settings.max_v_climb          = 2.0;
-  rotwing_state_settings.max_v_descend        = 1.0;
-  rotwing_state_settings.nav_max_speed        = 100; // Big as we use airspeed guidance
+  rotwing_state_settings.hover_motors_active     = true;
+  rotwing_state_settings.hover_motors_disable    = false;
+  rotwing_state_settings.force_forward           = false;
+  rotwing_state_settings.preferred_pitch_setting = ROTWING_STATE_PITCH_TRANSITION_SETTING;
+  rotwing_state_settings.stall_protection        = false;
+  rotwing_state_settings.max_v_climb             = 2.0;
+  rotwing_state_settings.max_v_descend           = 1.0;
+  rotwing_state_settings.nav_max_speed           = 100; // Big as we use airspeed guidance
   rotwing_state_set_state_settings();
 }
 
 void rotwing_state_set_fw_settings(void)
 {
-  rotwing_state_settings.wing_scheduler       = ROTWING_STATE_WING_FW_SETTING;
-  rotwing_state_settings.hover_motors_active  = true;
-  rotwing_state_settings.hover_motors_disable = false;
-  rotwing_state_settings.force_forward        = true;
-  rotwing_state_settings.preferred_pitch      = ROTWING_STATE_PITCH_FW_SETTING;
-  rotwing_state_settings.stall_protection     = false;
-  rotwing_state_settings.max_v_climb          = 4.0;
-  rotwing_state_settings.max_v_descend        = 4.0;
-  rotwing_state_settings.nav_max_speed        = 100; // Big as we use airspeed guidance
+  rotwing_state_settings.wing_scheduler          = ROTWING_STATE_WING_FW_SETTING;
+  rotwing_state_settings.hover_motors_active     = true;
+  rotwing_state_settings.hover_motors_disable    = false;
+  rotwing_state_settings.force_forward           = true;
+  rotwing_state_settings.preferred_pitch_setting = ROTWING_STATE_PITCH_FW_SETTING;
+  rotwing_state_settings.stall_protection        = false;
+  rotwing_state_settings.max_v_climb             = 4.0;
+  rotwing_state_settings.max_v_descend           = 4.0;
+  rotwing_state_settings.nav_max_speed           = 100; // Big as we use airspeed guidance
   rotwing_state_set_state_settings();
 }
 
 void rotwing_state_set_fw_hov_mot_idle_settings(void)
 {
-  rotwing_state_settings.wing_scheduler       = ROTWING_STATE_WING_FW_SETTING;
-  rotwing_state_settings.hover_motors_active  = false;
-  rotwing_state_settings.hover_motors_disable = false;
-  rotwing_state_settings.force_forward        = true;
-  rotwing_state_settings.preferred_pitch      = ROTWING_STATE_PITCH_FW_SETTING;
-  rotwing_state_settings.stall_protection     = true;
-  rotwing_state_settings.max_v_climb          = 4.0;
-  rotwing_state_settings.max_v_descend        = 4.0;
-  rotwing_state_settings.nav_max_speed        = 100; // Big as we use airspeed guidance
+  rotwing_state_settings.wing_scheduler          = ROTWING_STATE_WING_FW_SETTING;
+  rotwing_state_settings.hover_motors_active     = false;
+  rotwing_state_settings.hover_motors_disable    = false;
+  rotwing_state_settings.force_forward           = true;
+  rotwing_state_settings.preferred_pitch_setting = ROTWING_STATE_PITCH_FW_SETTING;
+  rotwing_state_settings.stall_protection        = true;
+  rotwing_state_settings.max_v_climb             = 4.0;
+  rotwing_state_settings.max_v_descend           = 4.0;
+  rotwing_state_settings.nav_max_speed           = 100; // Big as we use airspeed guidance
   rotwing_state_set_state_settings();
 }
 
 void rotwing_state_set_fw_hov_mot_off_settings(void)
 {
-  rotwing_state_settings.wing_scheduler       = ROTWING_STATE_WING_FW_SETTING;
-  rotwing_state_settings.hover_motors_active  = false;
-  rotwing_state_settings.hover_motors_disable = true;
-  rotwing_state_settings.force_forward        = true;
-  rotwing_state_settings.preferred_pitch      = ROTWING_STATE_PITCH_FW_SETTING;
-  rotwing_state_settings.stall_protection     = true;
-  rotwing_state_settings.max_v_climb          = 4.0;
-  rotwing_state_settings.max_v_descend        = 4.0;
-  rotwing_state_settings.nav_max_speed        = 100; // Big as we use airspeed guidance
+  rotwing_state_settings.wing_scheduler          = ROTWING_STATE_WING_FW_SETTING;
+  rotwing_state_settings.hover_motors_active     = false;
+  rotwing_state_settings.hover_motors_disable    = true;
+  rotwing_state_settings.force_forward           = true;
+  rotwing_state_settings.preferred_pitch_setting = ROTWING_STATE_PITCH_FW_SETTING;
+  rotwing_state_settings.stall_protection        = true;
+  rotwing_state_settings.max_v_climb             = 4.0;
+  rotwing_state_settings.max_v_descend           = 4.0;
+  rotwing_state_settings.nav_max_speed           = 100; // Big as we use airspeed guidance
   rotwing_state_set_state_settings();
 }
 
@@ -592,9 +593,9 @@ void rotwing_state_skewer(void)
     if (airspeed < 8) {
       wing_angle_scheduled_sp_deg = 0;
     } else if (airspeed < 10 && (rotwing_state.desired_state > ROTWING_STATE_HOVER)) {
-      wing_angle_scheduled_sp_deg = 55;
+      wing_angle_scheduled_sp_deg = ROTWING_HALF_SKEW_ANGLE_DEG;
     } else if (airspeed > 10) {
-      wing_angle_scheduled_sp_deg = ((airspeed - 10.)) / 4. * 35. + 55.;
+      wing_angle_scheduled_sp_deg = ((airspeed - 10.)) / 4. * (90.-ROTWING_HALF_SKEW_ANGLE_DEG) + ROTWING_HALF_SKEW_ANGLE_DEG;
     } else {
       wing_angle_scheduled_sp_deg = 0;
     }

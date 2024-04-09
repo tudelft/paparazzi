@@ -61,7 +61,8 @@ struct RotWingStateSettings {
   bool hover_motors_active;
   bool hover_motors_disable;
   bool force_forward;
-  uint8_t preferred_pitch;
+  uint8_t preferred_pitch_setting;
+  float preferred_pitch_value;
   bool stall_protection;
   float max_v_climb;
   float max_v_descend;

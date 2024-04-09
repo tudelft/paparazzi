@@ -35,6 +35,7 @@
 #include "modules/energy/electrical.h"
 #include "modules/datalink/telemetry.h"
 #include "modules/radio_control/radio_control.h"
+#include "modules/core/commands.h"
 
 #if USE_GPS
 #include "modules/gps/gps.h"
@@ -76,6 +77,7 @@ static uint32_t autopilot_in_flight_counter;
 #ifndef THRESHOLD_GROUND_DETECT
 #define THRESHOLD_GROUND_DETECT 25.0
 #endif
+
 
 /** Default ground-detection estimation based on accelerometer shock */
 bool WEAK autopilot_ground_detection(void) {
@@ -296,7 +298,13 @@ void autopilot_check_in_flight(bool motors_on)
       /* if thrust above min threshold, assume in_flight.
        * Don't check for velocity and acceleration above threshold here...
        */
-      if (stabilization_cmd[COMMAND_THRUST] > AUTOPILOT_IN_FLIGHT_MIN_THRUST) {
+/** Select the correct available Thrust Setting*/
+#ifdef COMMAND_THRUST
+float thrust_level = commands[COMMAND_THRUST];
+#else
+float thrust_level = stabilization_cmd[COMMAND_THRUST];
+#endif       
+      if (thrust_level > AUTOPILOT_IN_FLIGHT_MIN_THRUST) {
         autopilot_in_flight_counter++;
         if (autopilot_in_flight_counter == AUTOPILOT_IN_FLIGHT_TIME) {
           autopilot.in_flight = true;
