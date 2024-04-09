@@ -38,8 +38,8 @@
             <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
             <!--Use adc rot sensor-->
             <module name="wing_rotation_adc_sensor">
-                <define name="ADC_OFFSET" value="-49.1731"/>
-                <define name="ADC_SCALE"  value="0.0029986"/>
+                <define name="ADC_WING_ROT_ADC_OFFSET" value="-49.1731"/>
+                <define name="ADC_WING_ROT_ADC_SCALE"  value="0.0029986"/>
             </module>
             <!-- Log in high speed (Remove for outdoor flights) -->
             <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
