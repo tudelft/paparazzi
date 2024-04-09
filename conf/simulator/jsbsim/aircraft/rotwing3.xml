@@ -165,6 +165,32 @@
         <output> fcs/flap_lag</output>
       </lag_filter>
 
+      <fcs_function name="de_lag">
+        <function>
+          <sum>
+            <value>50</value> <!--50 degrees down when elevator signal is 0 -->
+            <product>
+              <property>fcs/elevator_lag</property>
+              <value>-60</value>
+            </product>
+          </sum>
+        </function>
+        <output>fcs/de_lag</output>
+      </fcs_function>
+
+      <fcs_function name="airspeed_ms">
+        <function>
+          <sqrt>
+            <product>
+              <property>aero/qbar-psf</property>
+              <value>47.880259</value> <!--to N/m²-->
+              <value>1.6327</value> <!-- 2/rho-->
+            </product>
+          </sqrt>
+        </function>
+        <output>fcs/airspeed_ms</output>
+      </fcs_function>
+
       <fcs_function name="cosskew">
         <function>
           <cos>
@@ -303,6 +329,7 @@
     <property>fcs/rudder_lag</property>
     <property>fcs/elevator</property>
     <property>fcs/elevator_lag</property>
+    <property>fcs/de_lag</property>
     <property>fcs/aileron</property>
     <property>fcs/aileron_lag</property>
     <property>fcs/flap</property>
@@ -314,6 +341,7 @@
     <property>fcs/eff_yy_compensation</property>
     <property>fcs/cosskew</property>
     <property>fcs/sinskew</property>
+    <property>fcs/airspeed_ms</property>
 
     <!-- First the lift forces produced by each propeller -->
 
@@ -895,18 +923,60 @@
 
   <axis name="PITCH">
     <function name="aero/moment/Pitch_elevator" frame="BODY" unit="FT*LBS"> 
+      <product>
+        <sum>
+          <product>
+            <value>-0.00288464</value> <!--constant 1-->
+            <property>fcs/de_lag</property>
+            <property>fcs/airspeed_ms</property>
+            <property>fcs/airspeed_ms</property>
+          </product>
+          <product>
+            <value>-0.00928148</value> <!--constant 2-->
+            <property>fcs/airspeed_ms</property>
+            <property>fcs/airspeed_ms</property>
+          </product>
+          <product>
+            <value>0.000023015</value> <!--constant 3-->
+            <property>fcs/de_lag</property>
+            <property>fcs/de_lag</property>
+            <property>fcs/airspeed_ms</property>
+            <property>fcs/airspeed_ms</property>
+          </product>
+          <product>
+            <value>-0.000481466</value> <!--constant 4-->
+            <property>fcs/de_lag</property>
+            <value>8.191</value> <!--pusher scaling-->
+            <property>fcs/pusher_lag</property>
+            <value>8.191</value> <!--pusher scaling-->
+            <property>fcs/pusher_lag</property>
+          </product>
+        </sum>
+        <property>fcs/eff_yy_compensation</property>
+        <value>0.7376</value> <!--Convert to lbsft-->
+      </product>
+    </function>
+
+    <function name="aero/moment/Pitch_hover_m" frame="BODY" unit="FT*LBS"> 
+      <product>
         <product>
-                <property>aero/qbar-psf</property>
-                <value>47.880259</value> <!--to N/m²-->
-                <value>2.45</value> <!--Get rid of 0.5 rho-->
-                <property>fcs/eff_yy_compensation</property>
-                <sum>
-                <property>fcs/elevator_lag</property> <!--Between 0 and 1-->
-                <value>-0.5</value> <!--Compensation voor 0 moment at about 75 percent of cmd-->
-                </sum>
-                <value>0.7376</value> <!--Convert to lbsft-->
-                <value> 0.173856 </value>     
+          <sum>
+            <property>fcs/front_motor_lag</property>
+            <property>fcs/right_motor_lag</property>
+            <property>fcs/back_motor_lag</property>
+            <property>fcs/left_motor_lag</property>
+          </sum>
+          <value>0.25</value> <!--Normalize thrust by diving by 4-->
+          <sum>
+            <property>fcs/de_lag</property> <!--[50, -10] deg range -->
+            <value>-50</value>
+          </sum>
+          <!-- Make moment 0 for 50 deg down deflection-->
         </product>
+        <property>fcs/eff_yy_compensation</property>
+        <value>0.7376</value> <!--Convert to lbsft-->
+        <value>-0.2</value><!-- moment scaling-->
+      </product>
     </function>
   </axis>
 
