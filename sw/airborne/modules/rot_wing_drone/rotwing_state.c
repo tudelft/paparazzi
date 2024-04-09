@@ -162,8 +162,7 @@ inline void rotwing_state_set_fw_hov_mot_off_settings(void);
 
 inline void rotwing_state_set_state_settings(void);
 inline void rotwing_state_skewer(void);
-
-// inline void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, float pitch_angle);
+inline void guidance_indi_hybrid_set_wls_settings(void);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -673,89 +672,36 @@ static void rotwing_state_feedback_cb(uint8_t __attribute__((unused)) sender_id,
   }
 }
 
-// void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, float pitch_angle)
-// {
-//   float pitch_priority_factor = 11.;
-//   float roll_priority_factor = 10.;
-//   float thrust_priority_factor = 7.;
-//   float pusher_priority_factor = 30.;
+void guidance_indi_hybrid_set_wls_settings(void)
+{
+  struct FloatEulers eulers_zxy;
+  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
 
-//   float horizontal_accel_weight = 10.;
-//   float vertical_accel_weight = 10.;
+  // Evaluate motors_on boolean
+  if (!hover_motors_active) {
+    if (stateGetAirspeed_f() < 15.) {
+      hover_motors_active = true;
+      bool_disable_hover_motors = false;
+    } else if (eulers_zxy.theta > RadOfDeg(15.0)) {
+      hover_motors_active = true;
+      bool_disable_hover_motors = false;
+    }
+  } else {
+    bool_disable_hover_motors = false;
+  }
 
-//   // Set weights
-//   Wu_gih[0] = roll_priority_factor * 10.414;
-//   Wu_gih[1] = pitch_priority_factor * 27.53;
-//   Wu_gih[2] = thrust_priority_factor * 0.626;
-//   Wu_gih[3] = pusher_priority_factor * 1.0;
+  float scheduled_pitch_angle_deg = 0;
+  float pitch_angle_range = 3.;
+  if (rotwing_state_skewing.wing_angle_deg < 55) {
+    scheduled_pitch_angle_deg = 0;
+  } else {
+    float pitch_progression = (rotwing_state_skewing.wing_angle_deg - 55) / 35.;
+    scheduled_pitch_angle_deg = pitch_angle_range * pitch_progression;
+  }
+  if (!hover_motors_active) {
+    scheduled_pitch_angle_deg = 8.;
+  }
+  Bound(scheduled_pitch_angle_deg, -5., 8.);
 
-//   // adjust weights
-//   float thrust_command = (actuator_state_filt_vect[0] + actuator_state_filt_vect[1] + actuator_state_filt_vect[2] + actuator_state_filt_vect[3]) / 4;
-//   Bound(thrust_command, 0, MAX_PPRZ);
-//   float fixed_wing_percentage = !hover_motors_active; // TODO: when hover props go below 40%, ...
-//   Bound(fixed_wing_percentage, 0, 1);
-//   #define AIRSPEED_IMPORTANCE_IN_FORWARD_WEIGHT 16
-
-//   Wv_gih[0] = horizontal_accel_weight * (1.0f + fixed_wing_percentage * AIRSPEED_IMPORTANCE_IN_FORWARD_WEIGHT); // stall n low hover motor_off (weight 16x more important than vertical weight)
-//   Wv_gih[1] = horizontal_accel_weight;
-//   Wv_gih[2] = vertical_accel_weight;
-
-//   struct FloatEulers eulers_zxy;
-//   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-
-//   // Evaluate motors_on boolean
-//   if (!hover_motors_active) {
-//     if (stateGetAirspeed_f() < 15.) {
-//       hover_motors_active = true;
-//       bool_disable_hover_motors = false;
-//     } else if (eulers_zxy.theta > RadOfDeg(15.0)) {
-//       hover_motors_active = true;
-//       bool_disable_hover_motors = false;
-//     }
-//   } else {
-//     bool_disable_hover_motors = false;
-//   }
-
-//   float du_min_thrust_z = ((MAX_PPRZ - actuator_state_filt_vect[0]) * g1g2[3][0] + (MAX_PPRZ - actuator_state_filt_vect[1]) * g1g2[3][1] + (MAX_PPRZ - actuator_state_filt_vect[2]) * g1g2[3][2] + (MAX_PPRZ - actuator_state_filt_vect[3]) * g1g2[3][3]) * hover_motors_active;
-//   Bound(du_min_thrust_z, -50., 0.);
-//   float du_max_thrust_z = -(actuator_state_filt_vect[0]*g1g2[3][0] + actuator_state_filt_vect[1]*g1g2[3][1] + actuator_state_filt_vect[2]*g1g2[3][2] + actuator_state_filt_vect[3]*g1g2[3][3]);
-//   Bound(du_max_thrust_z, 0., 50.);
-
-//   float roll_limit_rad = 2.0; // big roll limit hacked in to overcome wls problems at roll limit
-//   float max_pitch_limit_rad = RadOfDeg(GUIDANCE_INDI_MAX_PITCH);
-//   float min_pitch_limit_rad = RadOfDeg(GUIDANCE_INDI_MIN_PITCH);
-
-//   float scheduled_pitch_angle = 0;
-//   float pitch_angle_range = 3.;
-//   if (rotwing_state_skewing.wing_angle_deg < 55) {
-//     scheduled_pitch_angle = 0;
-//   } else {
-//     float pitch_progression = (rotwing_state_skewing.wing_angle_deg - 55) / 35.;
-//     scheduled_pitch_angle = pitch_angle_range * pitch_progression;
-//   }
-//   if (!hover_motors_active) {
-//     scheduled_pitch_angle = 8.;
-//   }
-//   Bound(scheduled_pitch_angle, -5., 8.);
-//   guidance_indi_pitch_pref_deg = scheduled_pitch_angle;
-
-//   float pitch_pref_rad = RadOfDeg(guidance_indi_pitch_pref_deg);
-
-//   // Set lower limits
-//   du_min_gih[0] = -roll_limit_rad - roll_angle; //roll
-//   du_min_gih[1] = min_pitch_limit_rad - pitch_angle; // pitch
-//   du_min_gih[2] = du_min_thrust_z;
-//   du_min_gih[3] = (-actuator_state_filt_vect[8]*g1g2[4][8]);
-
-//   // Set upper limits limits
-//   du_max_gih[0] = roll_limit_rad - roll_angle; //roll
-//   du_max_gih[1] = max_pitch_limit_rad - pitch_angle; // pitch
-//   du_max_gih[2] = du_max_thrust_z;
-//   du_max_gih[3] = 9.0; // Hacky value to prevent drone from pitching down in transition
-
-//   // Set prefered states
-//   du_pref_gih[0] = 0; // prefered delta roll angle
-//   du_pref_gih[1] = -pitch_angle + pitch_pref_rad;// prefered delta pitch angle
-//   du_pref_gih[2] = du_max_gih[2]; // Low thrust better for efficiency
-//   du_pref_gih[3] = body_v[0]; // solve the body acceleration
-// }
+  float scheduled_pitch_angle_rad = RadOfDeg(scheduled_pitch_angle_deg);
+}
