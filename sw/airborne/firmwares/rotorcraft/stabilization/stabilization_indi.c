@@ -702,7 +702,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
   // The control objective in array format
   indi_v[0] = (angular_accel_ref.p - angular_acc_disturbance_estimate[0]);
-  indi_v[1] = (angular_accel_ref.q - angular_acc_disturbance_estimate[1]);
+  indi_v[1] = (angular_accel_ref.q - angular_acc_disturbance_estimate[1]) - modeled_qdd_compensation;
   indi_v[2] = (angular_accel_ref.r - angular_acc_disturbance_estimate[2]) + g2_times_u;
   indi_v[3] = v_thrust.z;
 #if INDI_OUTPUTS == 5
