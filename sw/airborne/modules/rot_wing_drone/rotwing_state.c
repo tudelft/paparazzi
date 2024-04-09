@@ -162,7 +162,6 @@ inline void rotwing_state_set_fw_hov_mot_off_settings(void);
 
 inline void rotwing_state_set_state_settings(void);
 inline void rotwing_state_skewer(void);
-inline void guidance_indi_hybrid_set_wls_settings(void);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -227,6 +226,36 @@ void periodic_rotwing_state(void)
   } else if (guidance_h.mode == GUIDANCE_H_MODE_FORWARD) {
     bool_disable_hover_motors = false;
   }
+  struct FloatEulers eulers_zxy;
+  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+
+  // Evaluate motors_on boolean
+  if (!hover_motors_active) {
+    if (stateGetAirspeed_f() < 15.) {
+      hover_motors_active = true;
+      bool_disable_hover_motors = false;
+    } else if (eulers_zxy.theta > RadOfDeg(15.0)) {
+      hover_motors_active = true;
+      bool_disable_hover_motors = false;
+    }
+  } else {
+    bool_disable_hover_motors = false;
+  }
+
+  // Calculate scheduled pitch angle
+  float scheduled_pitch_angle_deg = 0;
+  float pitch_angle_range = 3.;
+  if (rotwing_state_skewing.wing_angle_deg < 55) {
+    scheduled_pitch_angle_deg = 0;
+  } else {
+    float pitch_progression = (rotwing_state_skewing.wing_angle_deg - 55) / 35.;
+    scheduled_pitch_angle_deg = pitch_angle_range * pitch_progression;
+  }
+  if (!hover_motors_active) {
+    scheduled_pitch_angle_deg = 8.;
+  }
+  Bound(scheduled_pitch_angle_deg, -5., 8.);
+  float scheduled_pitch_angle_rad = RadOfDeg(scheduled_pitch_angle_deg);
 }
 
 // Function to request a state
@@ -672,36 +701,3 @@ static void rotwing_state_feedback_cb(uint8_t __attribute__((unused)) sender_id,
   }
 }
 
-void guidance_indi_hybrid_set_wls_settings(void)
-{
-  struct FloatEulers eulers_zxy;
-  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-
-  // Evaluate motors_on boolean
-  if (!hover_motors_active) {
-    if (stateGetAirspeed_f() < 15.) {
-      hover_motors_active = true;
-      bool_disable_hover_motors = false;
-    } else if (eulers_zxy.theta > RadOfDeg(15.0)) {
-      hover_motors_active = true;
-      bool_disable_hover_motors = false;
-    }
-  } else {
-    bool_disable_hover_motors = false;
-  }
-
-  float scheduled_pitch_angle_deg = 0;
-  float pitch_angle_range = 3.;
-  if (rotwing_state_skewing.wing_angle_deg < 55) {
-    scheduled_pitch_angle_deg = 0;
-  } else {
-    float pitch_progression = (rotwing_state_skewing.wing_angle_deg - 55) / 35.;
-    scheduled_pitch_angle_deg = pitch_angle_range * pitch_progression;
-  }
-  if (!hover_motors_active) {
-    scheduled_pitch_angle_deg = 8.;
-  }
-  Bound(scheduled_pitch_angle_deg, -5., 8.);
-
-  float scheduled_pitch_angle_rad = RadOfDeg(scheduled_pitch_angle_deg);
-}
