@@ -165,11 +165,8 @@ inline void rotwing_state_skewer(void);
 #include "modules/datalink/telemetry.h"
 static void send_rotating_wing_state(struct transport_tx *trans, struct link_device *dev)
 {
-  #if ADC_WING_ROTATION
-  uint16_t adc_dummy = adc_wing_rotation_extern;
-  #else
   uint16_t adc_dummy = 0;
-  #endif
+
   pprz_msg_send_ROTATING_WING_STATE(trans, dev, AC_ID,
                                     &rotwing_state.current_state,
                                     &rotwing_state.desired_state,
@@ -190,7 +187,7 @@ void init_rotwing_state(void)
   rotwing_state.desired_state = ROTWING_STATE_HOVER;
 
   rotwing_state_settings.preferred_pitch_value = 0;
-  
+
   rotwing_state_skewing.wing_angle_deg_sp     = 0;
   rotwing_state_skewing.wing_angle_deg        = 0;
   rotwing_state_skewing.servo_pprz_cmd        = -MAX_PPRZ;
@@ -241,14 +238,13 @@ void periodic_rotwing_state(void)
   } else {
     bool_disable_hover_motors = false;
   }
-
+  float pitch_progression = (rotwing_state_skewing.wing_angle_deg - ROTWING_HALF_SKEW_ANGLE_DEG) / (90.0-ROTWING_HALF_SKEW_ANGLE_DEG);
   // Calculate scheduled pitch angle
   switch (rotwing_state_settings.preferred_pitch_setting){
     case ROTWING_STATE_PITCH_QUAD_SETTING:
       rotwing_state_settings.preferred_pitch_value = RadOfDeg(ROTWING_STATE_HOVER_PREF_PITCH);
       break;
     case ROTWING_STATE_PITCH_TRANSITION_SETTING:
-      float pitch_progression = (rotwing_state_skewing.wing_angle_deg - ROTWING_HALF_SKEW_ANGLE_DEG) / (90.0-ROTWING_HALF_SKEW_ANGLE_DEG);
       rotwing_state_settings.preferred_pitch_value = RadOfDeg(ROTWING_STATE_TRANSITION_PREF_PITCH * pitch_progression);
       break;
     case ROTWING_STATE_PITCH_FW_SETTING:
