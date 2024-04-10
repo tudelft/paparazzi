@@ -300,6 +300,7 @@ void  float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3]);
 void  err_nd(float err[], float a[], float b[], float k[], int n);
 void  integrate_nd(float dt, float a[], float a_dot[], int n);
 void  vect_bound_nd(float vect[], float bound, int n);
+float bound_v_from_a(float e_x[], float v_bound, float a_bound, int n);
 void  rm_2nd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm);
 void  rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
 void  rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
@@ -616,6 +617,13 @@ void vect_bound_nd(float vect[], float bound, int n) {
   }
 }
 
+/** @brief Calculate velocity limit based on acceleration limit */
+float bound_v_from_a(float e_x[], float v_bound, float a_bound, int n) {
+  float norm = float_vect_norm(e_x,n);
+  float v_bound_a  = sqrtf(fabs(2.0 * a_bound * norm));
+  return fminf(v_bound, v_bound_a);
+}
+
 /** 
  * @brief Reference Model Definition for 3rd order system with attitude conversion functions
  * @param dt              Delta time [s]
@@ -722,7 +730,8 @@ void rm_3rd_pos(float dt, float x_ref[], float x_d_ref[], float x_2d_ref[], floa
   float e_x_d[n];
   float e_x_2d[n];
   err_nd(e_x, x_des, x_ref, k1_rm, n);
-  vect_bound_nd(e_x,x_d_bound, n);
+  float max_x_d = bound_v_from_a(e_x, x_d_bound, x_2d_bound, n);
+  vect_bound_nd(e_x, max_x_d, n);
   err_nd(e_x_d, e_x, x_d_ref, k2_rm, n);
   vect_bound_nd(e_x_d,x_2d_bound, n);
   err_nd(e_x_2d, e_x_d, x_2d_ref, k3_rm, n);
