@@ -4,8 +4,8 @@
  * government, commercial, or other organizational use.
  * File: rtGetNaN.c
  *
- * MATLAB Coder version            : 5.4
- * C/C++ source code generated on  : 16-Nov-2023 01:21:31
+ * MATLAB Coder version            : 23.2
+ * C/C++ source code generated on  : 03-Mar-2024 16:10:36
  */
 
 /*

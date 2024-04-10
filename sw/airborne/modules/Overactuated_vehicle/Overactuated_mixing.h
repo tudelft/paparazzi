@@ -133,6 +133,8 @@ extern float K_beta;
 extern float K_T_airspeed;
 extern float K_d_speed;
 
+extern float fpa_off_deg; 
+
 extern float CL_ailerons;
 
 extern float extra_lat_gain;
@@ -166,6 +168,11 @@ extern int approach_state;
 extern float min_lidar_alt_ground_detect; 
 extern float time_tolerance_land;
 extern float az_tolerance_land;
+
+extern float w_mot_const, w_mot_speed, w_el_const, w_el_speed, w_az_const, w_az_speed; 
+extern float w_theta_const, w_theta_speed, w_phi_const, w_phi_speed, w_ail_const, w_ail_speed; 
+
+extern float tras_speed_pseudo_ctr_hedge; 
 
 /* External used functions */
 extern void overactuated_mixing_init(void);

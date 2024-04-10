@@ -42,7 +42,7 @@
         <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
         <define name="MS45XX_SYNC_SEND" value="FALSE" /> <!--description="flag to enable sending every new measurement via telemetry (default:FALSE)-->
         <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
-        <define name="MS45XX_PRESSURE_OFFSET" value="8519" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
+        <define name="MS45XX_PRESSURE_OFFSET" value="8077" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
         <define name="MS45XX_LOWPASS_TAU" value="0.25"/> <!--description="Time constant for second order Butterworth low pass filter"-->
         <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
       </module>
@@ -223,12 +223,12 @@
     <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/> -->
     <define name="MAX_FWD_SPEED" value="25.0" unit="m/s"/>
     <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> 
-    <define name="MIN_FWD_SPEED" value="-5.0" unit="m/s"/>
-    <define name="MAX_LAT_SPEED" value="13.0" unit="m/s"/>
+    <define name="MIN_FWD_SPEED" value="-4.0" unit="m/s"/>
+    <define name="MAX_LAT_SPEED" value="6.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_FWD_ACC" value="5.0" unit="m/s^2"/>
-    <define name="MIN_FWD_ACC" value="-2" unit="m/s^2"/> 
-    <define name="MAX_LAT_ACC" value="7.0" unit="m/s^2"/>
+    <define name="MIN_FWD_ACC" value="-1.5" unit="m/s^2"/> 
+    <define name="MAX_LAT_ACC" value="6.0" unit="m/s^2"/>
     <define name="MAX_VERT_ACC" value="3.0" unit="m/s^2"/>
   </section>
 
@@ -333,7 +333,7 @@
     <define name="INDI_REF_RATE_R" value="5"/>
 
     <define name="INDI_REF_RATE_X" value="1"/>
-    <define name="INDI_REF_RATE_Y" value="0.55"/>
+    <define name="INDI_REF_RATE_Y" value="1"/>
     <define name="INDI_REF_RATE_Z" value="3"/>
 
     <!-- Actuator dynamics and mapping-->
@@ -427,26 +427,26 @@
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
     <!-- ball bearings vehicle -->
-    <define name="SERVO_EL_1_ZERO_VALUE" value="-8.43" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="-7.38" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="1.93" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="1.05" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="-4.3" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="-4.74" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-7.64" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="7.55" unit="deg"/>
 
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="-7.91" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="-1.05" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="1.31" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="0.43" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="2.19" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="-1.84" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="-3.33" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="-2.1" unit="deg"/>
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
     <define name="MAX_PHI_INDI" value="60" unit="deg"/>
-    <define name="MAX_AOA_INDI" value="18" unit="deg"/>
+    <define name="MAX_AOA_INDI" value="15" unit="deg"/>
     <define name="MIN_AOA_INDI" value="2" unit="deg"/>
 
     <define name="MAX_DELTA_AILERONS" value="25" unit="deg"/>
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
 
-    <define name="SPEED_AOA_PROTECTION" value="2" unit="m/s"/>
+    <define name="SPEED_AOA_PROTECTION" value="-1" unit="m/s"/>
 
     <!-- Tilting angle constraint in the approach and takeoff phase -->
     <define name="K_ALT_TILT_CONSTRAINT" value="50" unit="deg/meters"/>
@@ -468,13 +468,16 @@
     <define name="W_ACT_EL_SPEED" value="0"/>
     <define name="W_ACT_AZ_CONST" value="0"/>
     <define name="W_ACT_AZ_SPEED" value="2"/>
-    <define name="W_ACT_THETA_CONST" value="5"/>
-    <define name="W_ACT_THETA_SPEED" value="0"/>
-    <define name="W_ACT_PHI_CONST" value="90"/>
+    <define name="W_ACT_THETA_CONST" value="100"/>
+    <define name="W_ACT_THETA_SPEED" value="-15"/>
+    <define name="W_ACT_PHI_CONST" value="100"/>
     <define name="W_ACT_PHI_SPEED" value="-15"/>
 
-    <define name="W_ACT_AILERONS_CONST" value="0.5"/>
+    <define name="W_ACT_AILERONS_CONST" value="3"/>
     <define name="W_ACT_AILERONS_SPEED" value="0"/>
+
+    <define name="TRANSITION_SPEED_PSEUDOCTR_HEDGE" value="7"/>
+
 
     <!-- <define VALUE="0.007" NAME="W_DV_1"/>
     <define VALUE="0.007" NAME="W_DV_2"/>
@@ -484,7 +487,7 @@
     <define VALUE="0.02" NAME="W_DV_6"/> -->
     
     <define VALUE="0.015" NAME="W_DV_1"/>
-    <define VALUE="0.012" NAME="W_DV_2"/>
+    <define VALUE="0.015" NAME="W_DV_2"/>
     <define VALUE="0.02" NAME="W_DV_3"/>
     <define VALUE="0.033" NAME="W_DV_4"/>
     <define VALUE="0.033" NAME="W_DV_5"/>
@@ -495,9 +498,14 @@
     <!-- FWD flight properties for yaw rate induced by controller and for removal of lateral speed term-->
     <!-- <define name="MIN_SPEED_TRANSITION" value="3.0" unit="m/s"/>
     <define name="REF_SPEED_TRANSITION" value="5.0" unit="m/s"/> -->
-    <define name="MIN_SPEED_TRANSITION" value="8.0" unit="m/s"/>
-    <define name="REF_SPEED_TRANSITION" value="10.0" unit="m/s"/>
+    <define name="MIN_SPEED_TRANSITION" value="5.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION" value="9.0" unit="m/s"/>
 
+  </section>
+
+  <section name="REF_MODEL" prefix="REF_MODEL_">
+    <define name="P_GAIN" value="2.0" />
+    <define name="D_GAIN" value="6.0" />
   </section>
 
   <section name="RPM_CONTROL_FBW" prefix="RPM_CONTROL_FBW_">
@@ -731,7 +739,7 @@
 
   <section name="BAT">
     <!-- Brick on only -->
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.51* adc)"/>
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.515* adc)"/>
     <!-- <define name="MilliAmpereOfAdc(adc)" value="((3.3f/4096.0f) * 39.877f * adc)"/> -->
     <!-- <define name="MAX_BAT_CAPACITY" value="5000" unit="mAh"/> -->
     <!-- <define name="MILLIAMP_AT_IDLE_THROTTLE" value="500" unit="mA"/> -->

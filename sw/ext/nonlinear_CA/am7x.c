@@ -1,13 +1,19 @@
 #include "am7x.h"
 #include <pthread.h>
-#include "MATLAB_generated_files/Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains.h"
+#include "MATLAB_generated_files/Nonlinear_CA_w_ail_approach_ext_acc.h"
 #include "MATLAB_generated_files/rt_nonfinite.h"
 #include <string.h>
 #include <glib.h>
 #include <Ivy/ivy.h>
 #include <Ivy/ivyglibloop.h>
+#include "filters/low_pass_filter.h"
+#include "MATLAB_generated_files/compute_acc_nonlinear_control_rf_w_ailerons.h"
 
-//Totest the controller with random variables:
+
+//Variable for current acceleration filtering:
+Butterworth2LowPass current_accelerations_filtered[6]; //Filter of current accellerations
+
+//To test the controller with random variables:
 // #define TEST_CONTROLLER
 
 struct am7_data_out myam7_data_out;
@@ -27,7 +33,7 @@ uint16_t sent_msg_id = 0, received_msg_id = 0;
 int serial_port;
 int serial_port_tf_mini;
 float ca7_message_frequency_RX, ca7_message_frequency_TX;
-struct timeval current_time, last_time, last_sent_msg_time, aruco_time, starting_time_program_execution;
+struct timeval current_time, last_time, last_sent_msg_time, aruco_time, starting_time_program_execution, time_last_opt_run, time_last_filt;
 
 
 pthread_mutex_t mutex_am7;
@@ -40,6 +46,8 @@ int verbose_runtime = 0;
 int verbose_received_data = 0; 
 int verbose_ivy_bus = 0; 
 int verbose_aruco = 0; 
+int verbose_compute_accel = 0; 
+int verbose_filters = 0; 
 
 int16_t lidar_dist_cm = -1; 
 int16_t lidar_signal_strength = -1; 
@@ -118,6 +126,17 @@ void am7_init(){
     for(int i = 0; i < (sizeof(extra_data_out_copy)/sizeof(float)); i++ ){
     extra_data_out_copy[i] = 0.f;
   }
+
+  //Init filters for current accelerations
+  float tau_indi = 1.0f / (filter_cutoff_frequency);
+  for (int i = 0; i < 6; i++) {
+    init_butterworth_2_low_pass(&current_accelerations_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
+  }
+
+  //init waiting timer: 
+  gettimeofday(&time_last_opt_run, NULL);
+  gettimeofday(&time_last_filt, NULL);
+
 }
 
 void am7_parse_msg_in(){
@@ -276,6 +295,11 @@ void* second_thread() //Run the optimization code
 {
 
   while(1){ 
+
+    double current_estimated_accelerations_array[6]; 
+
+    double current_estimated_accelerations_input[6]; 
+
     pthread_mutex_lock(&mutex_am7);   
     memcpy(&myam7_data_in_copy, &myam7_data_in, sizeof(struct am7_data_in));
     memcpy(&extra_data_in_copy, &extra_data_in, sizeof(extra_data_in));
@@ -326,7 +350,8 @@ void* second_thread() //Run the optimization code
     float k_alt_tilt_constraint = extra_data_in_copy[58];
     float min_alt_tilt_constraint = extra_data_in_copy[59];
 
-  
+    float transition_speed = extra_data_in_copy[60];
+
     // Real time variables:
     double Phi = (myam7_data_in_copy.phi_state_int*1e-2 * M_PI/180);
     double Theta = (myam7_data_in_copy.theta_state_int*1e-2 * M_PI/180);
@@ -352,8 +377,6 @@ void* second_thread() //Run the optimization code
     dv[0] = (myam7_data_in_copy.pseudo_control_ax_int*1e-2); dv[1] = (myam7_data_in_copy.pseudo_control_ay_int*1e-2);
     dv[2] = (myam7_data_in_copy.pseudo_control_az_int*1e-2); dv[3] = (myam7_data_in_copy.pseudo_control_p_dot_int*1e-1 * M_PI/180);
     dv[4] = (myam7_data_in_copy.pseudo_control_q_dot_int*1e-1 * M_PI/180); dv[5] = (myam7_data_in_copy.pseudo_control_r_dot_int*1e-1 * M_PI/180);
-
-    double transition_speed = 12; 
 
     #ifdef TEST_CONTROLLER
     #warning "You are using the testing variable, watch out!"
@@ -460,7 +483,34 @@ void* second_thread() //Run the optimization code
       transition_speed = 8; 
     #endif 
 
-    Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(  K_p_T,  K_p_M,  m,  I_xx,  I_yy,  I_zz,
+    //Compute modeled accelerations:
+    double u_in[15] = {Omega_1, Omega_2, Omega_3, Omega_4, b_1, b_2, b_3, b_4, g_1, g_2, g_3, g_4, Theta, Phi, delta_ailerons};
+
+    c_compute_acc_nonlinear_control(u_in,  p,  q,  r,  K_p_T,
+      K_p_M,  m,  I_xx,  I_yy,  I_zz,  l_1,
+      l_2,  l_3,  l_4,  l_z,  Cl_alpha,
+      Cd_zero,  K_Cd,  Cm_alpha,  Cm_zero,
+      CL_aileron,  rho,  V,  S,  wing_chord,
+      flight_path_angle,  Beta, current_estimated_accelerations_array);
+
+    //Apply filtering to modeled accelerations:
+    for(int i = 0; i < 6; i++){
+
+      update_butterworth_2_low_pass(&current_accelerations_filtered[i], (float) current_estimated_accelerations_array[i]);
+
+
+      if(current_accelerations_filtered[i].o[0] != current_accelerations_filtered[i].o[0]){
+        float tau_indi = 1.0f / (filter_cutoff_frequency);
+        init_butterworth_2_low_pass(&current_accelerations_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
+        if(verbose_filters){
+          printf("WARNING, FILTERS %d REINITIALIZED!!!! \n",i);
+        }
+      }
+
+      current_estimated_accelerations_input[i] = (double) current_accelerations_filtered[i].o[0];
+    }
+
+    Nonlinear_CA_w_ail_approach_ext_acc(  K_p_T,  K_p_M,  m,  I_xx,  I_yy,  I_zz,
                                                               l_1,  l_2,  l_3,  l_4,  l_z,  Phi,
                                                               Theta,  Omega_1,  Omega_2,  Omega_3,
                                                               Omega_4,  b_1,  b_2,  b_3,  b_4,  g_1,
@@ -484,8 +534,8 @@ void* second_thread() //Run the optimization code
                                                               desired_phi_value,  desired_ailerons_value,
                                                               k_alt_tilt_constraint,  min_alt_tilt_constraint,
                                                               lidar_alt_corrected,  approach_mode,  verbose_optimizer,
-                                                              speed_aoa_protection,  transition_speed,  u_out,
-                                                              residuals,  &elapsed_time,  &N_iterations,
+                                                              speed_aoa_protection,  transition_speed, current_estimated_accelerations_input,
+                                                              u_out, residuals,  &elapsed_time,  &N_iterations,
                                                               &N_evaluation,  &exitflag);
 
     //Convert the function output into integer to be transmitted to the pixhawk again: 
@@ -599,6 +649,13 @@ void* second_thread() //Run the optimization code
       printf(" dv[4] = %f \n",(float) dv[4]);
       printf(" dv[5] = %f \n",(float) dv[5]);
 
+      printf(" Filtered modeled accelerations[0] = %f \n",(float) current_accelerations_filtered[0].o[0]);
+      printf(" Filtered modeled accelerations[1] = %f \n",(float) current_accelerations_filtered[1].o[0]);
+      printf(" Filtered modeled accelerations[2] = %f \n",(float) current_accelerations_filtered[2].o[0]);
+      printf(" Filtered modeled accelerations[3] = %f \n",(float) current_accelerations_filtered[3].o[0]);
+      printf(" Filtered modeled accelerations[4] = %f \n",(float) current_accelerations_filtered[4].o[0]);
+      printf(" Filtered modeled accelerations[5] = %f \n",(float) current_accelerations_filtered[5].o[0]);
+
       printf("\n REAL TIME VARIABLES OUT------------------------------------------------------ \n"); 
       printf(" motor_1_cmd_rad_s = %f \n",(float) u_out[0]);
       printf(" motor_2_cmd_rad_s = %f \n",(float) u_out[1]);
@@ -630,11 +687,18 @@ void* second_thread() //Run the optimization code
       fflush(stdout);
     }
 
+    //Wait until time is not at least refresh_time_optimizer
+    while(((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec)) < refresh_time_optimizer*1e6){gettimeofday(&current_time, NULL);}
+
     //Print performances if needed
     if(verbose_runtime){
       printf("\n Elapsed time = %f \n",(float) elapsed_time); 
+      printf(" Effective refresh_time_filters = %f \n",(float) ((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec)));
       fflush(stdout);
     }
+
+    //Reset waiting timer: 
+    gettimeofday(&time_last_opt_run, NULL);
 
     //Assign the rolling messages to the appropriate value [dummy]
     extra_data_out_copy[0] = 1.453; 

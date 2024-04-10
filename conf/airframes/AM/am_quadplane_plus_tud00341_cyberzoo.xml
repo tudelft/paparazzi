@@ -320,18 +320,18 @@
     <define name="INDI_REF_ERR_Q" value="3"/>
     <define name="INDI_REF_ERR_R" value="1.5"/>
 
-    <define name="INDI_REF_ERR_X" value="0.25"/>
-    <define name="INDI_REF_ERR_Y" value="0.25"/>
-    <define name="INDI_REF_ERR_Z" value="0.25"/>
+    <define name="INDI_REF_ERR_X" value="0.15"/>
+    <define name="INDI_REF_ERR_Y" value="0.15"/>
+    <define name="INDI_REF_ERR_Z" value="0.15"/>
 
     <!-- INDI derivative gains -->
     <define name="INDI_REF_RATE_P" value="6"/>
     <define name="INDI_REF_RATE_Q" value="6"/>
     <define name="INDI_REF_RATE_R" value="5"/>
 
-    <define name="INDI_REF_RATE_X" value="5"/>
-    <define name="INDI_REF_RATE_Y" value="5"/>
-    <define name="INDI_REF_RATE_Z" value="5"/>
+    <define name="INDI_REF_RATE_X" value="3"/>
+    <define name="INDI_REF_RATE_Y" value="3"/>
+    <define name="INDI_REF_RATE_Z" value="3"/>
 
     <!-- Actuator dynamics and mapping-->
     <define name="INDI_ACT_DYN_MOTOR" value="0.038" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
@@ -424,15 +424,15 @@
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
     <!-- ball bearings vehicle -->
-    <define name="SERVO_EL_1_ZERO_VALUE" value="-2.1" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="-12.5" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="2.28" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="-3.33" unit="deg"/>
     <define name="SERVO_EL_3_ZERO_VALUE" value="0.52" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="-0.17" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="16.43" unit="deg"/>
 
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="4.4" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="-5.44" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="-6.06" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="2.02" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="5.71" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="-7.99" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="-7.82" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="0.43" unit="deg"/>
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
@@ -758,6 +758,8 @@
     <!-- <define name="USE_EXT_REF_ATTITUDE" value="TRUE"/> -->
 
     <define name="FULLY_MANUAL_HEADING" value="TRUE"/>
+
+    <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/>
 
     <!-- Basic navigation settings -->
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>

@@ -66,8 +66,13 @@
 
 // #define USE_NEW_THR_ESTIMATION
 // #define USE_NEW_THR_ESTIMATION_OPTIMIZATION
-#define NEW_AOA_DEFINITION 
-#define FILTER_AIRSPEED
+
+float fpa_off_deg = -3.0; 
+#define NEW_FPA_DEF
+
+// #define USE_RM
+//RM variables
+float speed_ref_out_old[3] = {0.0f, 0.0f, 0.0f}, acc_ref_out_old[3] = {0.0f, 0.0f, 0.0f}; 
 
 #define NEW_YAWRATE_REFERENCE
 #define OVERESTIMATE_LATERAL_FORCES
@@ -150,7 +155,7 @@ float desired_angle_servo_9 = 0;
 float desired_angle_servo_10 = 0;
 
 //Sideslip gains
-float K_beta = 0.15;
+float K_beta = 0.1;
 
 float Dynamic_MOTOR_K_T_OMEGASQ;
 
@@ -158,7 +163,7 @@ float Dynamic_MOTOR_K_T_OMEGASQ;
 float CL_ailerons = VEHICLE_CL_AILERONS;
 float roll_pwm_cmd; 
 
-float extra_lat_gain = 0.8; 
+float extra_lat_gain = 0.3; 
 
 //Variables for the NONLINEAR_CA_DEBUG message: 
 float feed_fwd_term_yaw, feed_back_term_yaw;
@@ -176,6 +181,22 @@ int manual_heading_value_rad = 0;
 
 float des_pos_earth_x = 0;
 float des_pos_earth_y = 0;
+
+//WEIGHTS: 
+float w_mot_const = OVERACTUATED_MIXING_W_ACT_MOTOR_CONST; 
+float w_mot_speed = OVERACTUATED_MIXING_W_ACT_MOTOR_SPEED; 
+float w_el_const = OVERACTUATED_MIXING_W_ACT_EL_CONST; 
+float w_el_speed = OVERACTUATED_MIXING_W_ACT_EL_SPEED; 
+float w_az_const = OVERACTUATED_MIXING_W_ACT_AZ_CONST; 
+float w_az_speed = OVERACTUATED_MIXING_W_ACT_AZ_SPEED;  
+float w_theta_const = OVERACTUATED_MIXING_W_ACT_THETA_CONST; 
+float w_theta_speed = OVERACTUATED_MIXING_W_ACT_THETA_SPEED; 
+float w_phi_const = OVERACTUATED_MIXING_W_ACT_PHI_CONST; 
+float w_phi_speed = OVERACTUATED_MIXING_W_ACT_PHI_SPEED;
+float w_ail_const = OVERACTUATED_MIXING_W_ACT_AILERONS_CONST; 
+float w_ail_speed = OVERACTUATED_MIXING_W_ACT_AILERONS_SPEED; 
+
+float tras_speed_pseudo_ctr_hedge = OVERACTUATED_MIXING_TRANSITION_SPEED_PSEUDOCTR_HEDGE;
 
 // Actuators gains:
 #ifdef RPM_CONTROL
@@ -257,8 +278,11 @@ int waypoint_mode = 0;
 float x_stb, y_stb, z_stb;
 
 // Variables for the speed to derivative gain slider and thrust coefficient: 
+// float K_d_speed = 0.02; 
+// float K_T_airspeed = 0.025;
+
 float K_d_speed = 0.02; 
-float K_T_airspeed = 0.025;
+float K_T_airspeed = 0.0;
 
 //Variables for the sysmon file write: 
 // #define PRINT_CPU_LOAD_ON_SD
@@ -595,11 +619,7 @@ struct BodyCoord_f compute_propeller_thrust_in_body_frame(float propeller_speed,
 float compute_yaw_rate_turn(void){
             //Compute the yaw rate for the coordinate turn:
         float yaw_rate_setpoint_turn = 0;
-        #ifdef FILTER_AIRSPEED
-        float airspeed_turn = airspeed_filt.o[0];
-        #else
         float airspeed_turn = airspeed;
-        #endif
         //We are dividing by the airspeed, so a lower bound is important
         Bound(airspeed_turn,10.0,30.0);
 
@@ -823,6 +843,13 @@ void init_filters(void){
             actuator_state_old[i] = 0;
         }
     #endif
+
+    //Init reference model integrators: 
+    for(int i=0; i<3; i++){
+        speed_ref_out_old[i] = 0.0f;
+        acc_ref_out_old[i] = 0.0f;
+    }
+
 }
 
 #ifdef PRINT_CPU_LOAD_ON_SD
@@ -970,37 +997,61 @@ void get_actuator_state_v2(void)
 void send_values_to_raspberry_pi(void){
 
     //Compute and transmit the messages to the AM7 module:
-    am7_data_out_local.motor_1_state_int = (int16_t) (actuator_state_filt[0] * 1e1);
-    am7_data_out_local.motor_2_state_int = (int16_t) (actuator_state_filt[1] * 1e1);
-    am7_data_out_local.motor_3_state_int = (int16_t) (actuator_state_filt[2] * 1e1);
-    am7_data_out_local.motor_4_state_int = (int16_t) (actuator_state_filt[3] * 1e1);
+    // am7_data_out_local.motor_1_state_int = (int16_t) (actuator_state_filt[0] * 1e1);
+    // am7_data_out_local.motor_2_state_int = (int16_t) (actuator_state_filt[1] * 1e1);
+    // am7_data_out_local.motor_3_state_int = (int16_t) (actuator_state_filt[2] * 1e1);
+    // am7_data_out_local.motor_4_state_int = (int16_t) (actuator_state_filt[3] * 1e1);
 
-    am7_data_out_local.el_1_state_int = (int16_t) (actuator_state_filt[4] * 1e2 * 180/M_PI);
-    am7_data_out_local.el_2_state_int = (int16_t) (actuator_state_filt[5] * 1e2 * 180/M_PI);
-    am7_data_out_local.el_3_state_int = (int16_t) (actuator_state_filt[6] * 1e2 * 180/M_PI);
-    am7_data_out_local.el_4_state_int = (int16_t) (actuator_state_filt[7] * 1e2 * 180/M_PI);
+    // am7_data_out_local.el_1_state_int = (int16_t) (actuator_state_filt[4] * 1e2 * 180/M_PI);
+    // am7_data_out_local.el_2_state_int = (int16_t) (actuator_state_filt[5] * 1e2 * 180/M_PI);
+    // am7_data_out_local.el_3_state_int = (int16_t) (actuator_state_filt[6] * 1e2 * 180/M_PI);
+    // am7_data_out_local.el_4_state_int = (int16_t) (actuator_state_filt[7] * 1e2 * 180/M_PI);
 
-    am7_data_out_local.az_1_state_int = (int16_t) (actuator_state_filt[8] * 1e2 * 180/M_PI);
-    am7_data_out_local.az_2_state_int = (int16_t) (actuator_state_filt[9] * 1e2 * 180/M_PI);
-    am7_data_out_local.az_3_state_int = (int16_t) (actuator_state_filt[10] * 1e2 * 180/M_PI);
-    am7_data_out_local.az_4_state_int = (int16_t) (actuator_state_filt[11] * 1e2 * 180/M_PI);
+    // am7_data_out_local.az_1_state_int = (int16_t) (actuator_state_filt[8] * 1e2 * 180/M_PI);
+    // am7_data_out_local.az_2_state_int = (int16_t) (actuator_state_filt[9] * 1e2 * 180/M_PI);
+    // am7_data_out_local.az_3_state_int = (int16_t) (actuator_state_filt[10] * 1e2 * 180/M_PI);
+    // am7_data_out_local.az_4_state_int = (int16_t) (actuator_state_filt[11] * 1e2 * 180/M_PI);
 
-    am7_data_out_local.theta_state_int = (int16_t) (actuator_state_filt[12] * 1e2 * 180/M_PI);
-    am7_data_out_local.phi_state_int = (int16_t) (actuator_state_filt[13] * 1e2 * 180/M_PI);
+    // am7_data_out_local.theta_state_int = (int16_t) (actuator_state_filt[12] * 1e2 * 180/M_PI);
+    // am7_data_out_local.phi_state_int = (int16_t) (actuator_state_filt[13] * 1e2 * 180/M_PI);
+    // am7_data_out_local.psi_state_int = (int16_t) (euler_vect[2] * 1e2 * 180/M_PI);
+    // am7_data_out_local.ailerons_state_int = (int16_t) (actuator_state_filt[14] * 1e2 * 180/M_PI);
+
+    // am7_data_out_local.gamma_state_int = (int16_t) (flight_path_angle_filtered.o[0] * 1e2 * 180/M_PI);
+
+    // am7_data_out_local.p_state_int = (int16_t) (measurement_rates_filters[0].o[0] * 1e1 * 180/M_PI);
+    // am7_data_out_local.q_state_int = (int16_t) (measurement_rates_filters[1].o[0] * 1e1 * 180/M_PI);
+    // am7_data_out_local.r_state_int = (int16_t) (measurement_rates_filters[2].o[0] * 1e1 * 180/M_PI);
+
+    // am7_data_out_local.airspeed_state_int = (int16_t) (airspeed * 1e2);
+
+    am7_data_out_local.motor_1_state_int = (int16_t) (actuator_state[0] * 1e1);
+    am7_data_out_local.motor_2_state_int = (int16_t) (actuator_state[1] * 1e1);
+    am7_data_out_local.motor_3_state_int = (int16_t) (actuator_state[2] * 1e1);
+    am7_data_out_local.motor_4_state_int = (int16_t) (actuator_state[3] * 1e1);
+
+    am7_data_out_local.el_1_state_int = (int16_t) (actuator_state[4] * 1e2 * 180/M_PI);
+    am7_data_out_local.el_2_state_int = (int16_t) (actuator_state[5] * 1e2 * 180/M_PI);
+    am7_data_out_local.el_3_state_int = (int16_t) (actuator_state[6] * 1e2 * 180/M_PI);
+    am7_data_out_local.el_4_state_int = (int16_t) (actuator_state[7] * 1e2 * 180/M_PI);
+
+    am7_data_out_local.az_1_state_int = (int16_t) (actuator_state[8] * 1e2 * 180/M_PI);
+    am7_data_out_local.az_2_state_int = (int16_t) (actuator_state[9] * 1e2 * 180/M_PI);
+    am7_data_out_local.az_3_state_int = (int16_t) (actuator_state[10] * 1e2 * 180/M_PI);
+    am7_data_out_local.az_4_state_int = (int16_t) (actuator_state[11] * 1e2 * 180/M_PI);
+
+    am7_data_out_local.theta_state_int = (int16_t) (actuator_state[12] * 1e2 * 180/M_PI);
+    am7_data_out_local.phi_state_int = (int16_t) (actuator_state[13] * 1e2 * 180/M_PI);
     am7_data_out_local.psi_state_int = (int16_t) (euler_vect[2] * 1e2 * 180/M_PI);
-    am7_data_out_local.ailerons_state_int = (int16_t) (actuator_state_filt[14] * 1e2 * 180/M_PI);
+    am7_data_out_local.ailerons_state_int = (int16_t) (actuator_state[14] * 1e2 * 180/M_PI);
 
-    am7_data_out_local.gamma_state_int = (int16_t) (flight_path_angle_filtered.o[0] * 1e2 * 180/M_PI);
+    am7_data_out_local.gamma_state_int = (int16_t) (flight_path_angle* 1e2 * 180/M_PI);
 
-    am7_data_out_local.p_state_int = (int16_t) (measurement_rates_filters[0].o[0] * 1e1 * 180/M_PI);
-    am7_data_out_local.q_state_int = (int16_t) (measurement_rates_filters[1].o[0] * 1e1 * 180/M_PI);
-    am7_data_out_local.r_state_int = (int16_t) (measurement_rates_filters[2].o[0] * 1e1 * 180/M_PI);
+    am7_data_out_local.p_state_int = (int16_t) (rate_vect[0] * 1e1 * 180/M_PI);
+    am7_data_out_local.q_state_int = (int16_t) (rate_vect[1] * 1e1 * 180/M_PI);
+    am7_data_out_local.r_state_int = (int16_t) (rate_vect[2] * 1e1 * 180/M_PI);
 
-    #ifdef FILTER_AIRSPEED
-    am7_data_out_local.airspeed_state_int = (int16_t) (airspeed_filt.o[0] * 1e2);
-    #else
     am7_data_out_local.airspeed_state_int = (int16_t) (airspeed * 1e2);
-    #endif
 
     float fake_beta = 0;
 
@@ -1073,16 +1124,16 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[28] = VEHICLE_WING_CHORD;
     extra_data_out_local[29] = 1.225; //rho value at MSL
 
-    extra_data_out_local[30] = OVERACTUATED_MIXING_W_ACT_MOTOR_CONST;
-    extra_data_out_local[31] = OVERACTUATED_MIXING_W_ACT_MOTOR_SPEED;
-    extra_data_out_local[32] = OVERACTUATED_MIXING_W_ACT_EL_CONST;
-    extra_data_out_local[33] = OVERACTUATED_MIXING_W_ACT_EL_SPEED;
-    extra_data_out_local[34] = OVERACTUATED_MIXING_W_ACT_AZ_CONST;
-    extra_data_out_local[35] = OVERACTUATED_MIXING_W_ACT_AZ_SPEED;
-    extra_data_out_local[36] = OVERACTUATED_MIXING_W_ACT_THETA_CONST;
-    extra_data_out_local[37] = OVERACTUATED_MIXING_W_ACT_THETA_SPEED;
-    extra_data_out_local[38] = OVERACTUATED_MIXING_W_ACT_PHI_CONST;
-    extra_data_out_local[39] = OVERACTUATED_MIXING_W_ACT_PHI_SPEED;
+    extra_data_out_local[30] = w_mot_const;
+    extra_data_out_local[31] = w_mot_speed;
+    extra_data_out_local[32] = w_el_const;
+    extra_data_out_local[33] = w_el_speed;
+    extra_data_out_local[34] = w_az_const;
+    extra_data_out_local[35] = w_az_speed;
+    extra_data_out_local[36] = w_theta_const;
+    extra_data_out_local[37] = w_theta_speed;
+    extra_data_out_local[38] = w_phi_const;
+    extra_data_out_local[39] = w_phi_speed;
 
     extra_data_out_local[40] = OVERACTUATED_MIXING_W_DV_1;
     extra_data_out_local[41] = OVERACTUATED_MIXING_W_DV_2;
@@ -1100,8 +1151,8 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[50] = OVERACTUATED_MIXING_SPEED_AOA_PROTECTION;
 
     //Aileron addon: 
-    extra_data_out_local[51] = OVERACTUATED_MIXING_W_ACT_AILERONS_CONST;
-    extra_data_out_local[52] = OVERACTUATED_MIXING_W_ACT_AILERONS_SPEED;
+    extra_data_out_local[51] = w_ail_const;
+    extra_data_out_local[52] = w_ail_speed;
     extra_data_out_local[53] = (OVERACTUATED_MIXING_MIN_DELTA_AILERONS * 180/M_PI);
     extra_data_out_local[54] = (OVERACTUATED_MIXING_MAX_DELTA_AILERONS * 180/M_PI);
     extra_data_out_local[55] = CL_ailerons ;
@@ -1113,6 +1164,9 @@ void send_values_to_raspberry_pi(void){
     //Approach tilting angle constraint: 
     extra_data_out_local[58] = OVERACTUATED_MIXING_K_ALT_TILT_CONSTRAINT;     
     extra_data_out_local[59] = OVERACTUATED_MIXING_MIN_ALT_TILT_CONSTRAINT;   
+
+    extra_data_out_local[60] = tras_speed_pseudo_ctr_hedge;  
+    
 }
 
 /**
@@ -1148,6 +1202,53 @@ void overactuated_mixing_init(void) {
     //Init abi for the lidar module: 
     AbiBindMsgAGL(ABI_BROADCAST, &get_agl_corrected_value_ev, get_agl_corrected_value);
 
+}
+
+
+void compute_rm_speed_and_acc_control_rf(float * speed_ref_in, float * speed_ref_out, float * acc_ref_out, float * body_rates, float * euler_angles, float Vy_control){
+    float desired_internal_acc_rm[3] = {0.0f, 0.0f, 0.0f}, desired_internal_jerk_rm[3] = {0.0f, 0.0f, 0.0f}; 
+    //Compute Psi_dot
+    float psi_dot_local = body_rates[1] * (sin(euler_angles[0])/cos(euler_angles[1])) + body_rates[2] * (cos(euler_angles[0])/cos(euler_angles[1]));
+
+    //Compute speed and acc ref based on the REF_MODEL_GAINS: 
+    //First, bound the speed_ref_in with the max and min values: 
+    Bound(speed_ref_in[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
+    BoundAbs(speed_ref_in[1],LIMITS_FWD_MAX_LAT_SPEED);
+    BoundAbs(speed_ref_in[2],LIMITS_FWD_MAX_VERT_SPEED);
+
+    desired_internal_acc_rm[0] = (speed_ref_in[0] - speed_ref_out_old[0])*REF_MODEL_P_GAIN; 
+    Bound(desired_internal_acc_rm[0],LIMITS_FWD_MIN_FWD_ACC,LIMITS_FWD_MAX_FWD_ACC);
+
+    desired_internal_acc_rm[2] = (speed_ref_in[2] - speed_ref_out_old[2])*REF_MODEL_P_GAIN; 
+    BoundAbs(desired_internal_acc_rm[2],LIMITS_FWD_MAX_VERT_ACC);
+    
+    desired_internal_jerk_rm[0] = (desired_internal_acc_rm[0] - acc_ref_out_old[0])*REF_MODEL_D_GAIN; 
+    desired_internal_jerk_rm[2] = (desired_internal_acc_rm[2] - acc_ref_out_old[2])*REF_MODEL_D_GAIN; 
+
+    //Integrate jerk to get acc_ref_out: 
+    acc_ref_out[0] = acc_ref_out_old[0] + desired_internal_jerk_rm[0]/PERIODIC_FREQUENCY;
+    acc_ref_out[2] = acc_ref_out_old[2] + desired_internal_jerk_rm[2]/PERIODIC_FREQUENCY;
+
+    //Add the non-intertial term to the acc_x component: 
+    acc_ref_out[0] = acc_ref_out[0] + psi_dot_local * Vy_control;
+
+    //Save acc_ref variables
+    for(int i=0; i<3; i++){
+        acc_ref_out_old[i] = acc_ref_out[i]; 
+    }
+
+    //Integrate acc to get speed_ref_out: 
+    speed_ref_out[0] = speed_ref_out_old[0] + acc_ref_out[0]/PERIODIC_FREQUENCY;
+    speed_ref_out[2] = speed_ref_out_old[2] + acc_ref_out[2]/PERIODIC_FREQUENCY;
+
+    //Save speed_ref variables
+    for(int i=0; i<3; i++){
+        speed_ref_out_old[i] = speed_ref_out[i]; 
+    }
+
+    //Compute reference for lateral speed: 
+    acc_ref_out[1] = 0.0f; 
+    speed_ref_out[1] = speed_ref_in[1]; 
 }
 
 /**
@@ -1192,8 +1293,13 @@ void assign_variables(void){
         airspeed = 10;
         beta_deg = 0;
     #else
-        airspeed = fmax(0.0,ms45xx.airspeed);
-        beta_deg = - aoa_pwm.angle * 180/M_PI;
+        #ifdef NO_AIRSPEED_NONLINEAR_CA
+            airspeed = 0;
+            beta_deg = 0;
+        #else
+            airspeed = fmax(0.0,ms45xx.airspeed);
+            beta_deg = - aoa_pwm.angle * 180/M_PI;
+        #endif
     #endif
     
     beta_rad = beta_deg * M_PI / 180;
@@ -1235,22 +1341,40 @@ void assign_variables(void){
     //Determination of the speed in the control rf:
     from_earth_to_control( speed_vect_control_rf, speed_vect, euler_vect[2]);
 
-    //Definition of AoA and FPA 
-    #ifdef NEW_AOA_DEFINITION
+
+
+    #ifdef NEW_FPA_DEF
+        float smooth_gain_gamma = (airspeed - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION) / (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION);
+        Bound(smooth_gain_gamma , 0, 1); // 0 until min_speed and 1 above ref_speed
+
+        float flight_path_angle_offset = fpa_off_deg*M_PI/180;
+        float flight_path_angle_airspeed = fpa_off_deg*M_PI/180;
         float projected_airspeed_on_x_control = 0.0;
         if(fabs(cosf(euler_vect[1])) > 0.001){
             projected_airspeed_on_x_control = airspeed/cosf(euler_vect[1]);
         }
-        total_V = sqrt(projected_airspeed_on_x_control*projected_airspeed_on_x_control + speed_vect_control_rf[1]*speed_vect_control_rf[1] + speed_vect_control_rf[2]*speed_vect_control_rf[2]);
+        if(projected_airspeed_on_x_control > 1){
+            flight_path_angle_airspeed = flight_path_angle_airspeed + asin(-speed_vect[2]/projected_airspeed_on_x_control);
+            BoundAbs(flight_path_angle_airspeed, M_PI/2);
+        }
+        //Mix the two values: 
+        flight_path_angle = smooth_gain_gamma * flight_path_angle_airspeed + (1-smooth_gain_gamma)*flight_path_angle_offset;
     #else
-        total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
-    #endif
+        //Definition of AoA and FPA 
 
-    flight_path_angle = 0.0;
-    if(total_V > 1.0){
-        flight_path_angle = asin(-speed_vect[2]/total_V);
-        BoundAbs(flight_path_angle, M_PI/2);
-    }
+        float projected_airspeed_on_x_control = 0.0;
+        if(fabs(cosf(euler_vect[1])) > 0.001){
+            projected_airspeed_on_x_control = airspeed/cosf(euler_vect[1]);
+        }
+        total_V = sqrt(projected_airspeed_on_x_control*projected_airspeed_on_x_control + speed_vect_control_rf[2]*speed_vect_control_rf[2]);
+
+
+        flight_path_angle = 0.0;
+        if(total_V > 5.0){
+            flight_path_angle = asin(-speed_vect[2]/total_V);
+            BoundAbs(flight_path_angle, M_PI/2);
+        }
+    #endif
 
 }
 
@@ -1651,19 +1775,40 @@ void overactuated_mixing_run(void)
         BoundAbs(speed_setpoint_control_rf[1],LIMITS_FWD_MAX_LAT_SPEED);
         BoundAbs(speed_setpoint_control_rf[2],LIMITS_FWD_MAX_VERT_SPEED);
 
+        //Use reference model to compute speed and accelerations references: 
+        #ifdef USE_RM
+            float speed_ref_out_local[3], acc_ref_out_local[3];
+            compute_rm_speed_and_acc_control_rf(speed_setpoint_control_rf, speed_ref_out_local, acc_ref_out_local, rate_vect_filt, euler_vect, speed_vect_control_rf[1]);
+        #endif
+
         //Compute the speed error in the control rf:
-        speed_error_vect_control_rf[0] = speed_setpoint_control_rf[0] - speed_vect_control_rf[0];
-        if(waypoint_mode){
-            #ifdef USE_LAT_SPEED_FEEDBACK_IN_WP_MODE
-                speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1];
-            #else
+        #ifdef USE_RM
+            speed_error_vect_control_rf[0] = speed_ref_out_local[0] - speed_vect_control_rf[0];
+            if(waypoint_mode){
+                #ifdef USE_LAT_SPEED_FEEDBACK_IN_WP_MODE
+                    speed_error_vect_control_rf[1] = speed_ref_out_local[1] - speed_vect_control_rf[1];
+                #else
+                    speed_error_vect_control_rf[1] = speed_ref_out_local[1] - speed_vect_control_rf[1] * (1 - compute_lat_speed_multiplier(OVERACTUATED_MIXING_MIN_SPEED_TRANSITION,OVERACTUATED_MIXING_REF_SPEED_TRANSITION,airspeed));
+                #endif
+            }
+            else{
+                speed_error_vect_control_rf[1] = speed_ref_out_local[1] - speed_vect_control_rf[1] * (1 - compute_lat_speed_multiplier(OVERACTUATED_MIXING_MIN_SPEED_TRANSITION,OVERACTUATED_MIXING_REF_SPEED_TRANSITION,airspeed));
+            }   
+            speed_error_vect_control_rf[2] = speed_ref_out_local[2] - speed_vect_control_rf[2];
+        #else
+            speed_error_vect_control_rf[0] = speed_setpoint_control_rf[0] - speed_vect_control_rf[0];
+            if(waypoint_mode){
+                #ifdef USE_LAT_SPEED_FEEDBACK_IN_WP_MODE
+                    speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1];
+                #else
+                    speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1] * (1 - compute_lat_speed_multiplier(OVERACTUATED_MIXING_MIN_SPEED_TRANSITION,OVERACTUATED_MIXING_REF_SPEED_TRANSITION,airspeed));
+                #endif
+            }
+            else{
                 speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1] * (1 - compute_lat_speed_multiplier(OVERACTUATED_MIXING_MIN_SPEED_TRANSITION,OVERACTUATED_MIXING_REF_SPEED_TRANSITION,airspeed));
-            #endif
-        }
-        else{
-            speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1] * (1 - compute_lat_speed_multiplier(OVERACTUATED_MIXING_MIN_SPEED_TRANSITION,OVERACTUATED_MIXING_REF_SPEED_TRANSITION,airspeed));
-        }   
-        speed_error_vect_control_rf[2] = speed_setpoint_control_rf[2] - speed_vect_control_rf[2];
+            }   
+            speed_error_vect_control_rf[2] = speed_setpoint_control_rf[2] - speed_vect_control_rf[2];
+        #endif
 
         //Compute the acceleration setpoints in the control rf:
         acc_setpoint[0] = speed_error_vect_control_rf[0] * indi_gains_over.d.x;
@@ -1674,6 +1819,12 @@ void overactuated_mixing_run(void)
         Bound(acc_setpoint[0],LIMITS_FWD_MIN_FWD_ACC,LIMITS_FWD_MAX_FWD_ACC);
         BoundAbs(acc_setpoint[1],LIMITS_FWD_MAX_LAT_ACC);
         BoundAbs(acc_setpoint[2],LIMITS_FWD_MAX_VERT_ACC);
+
+        #ifdef USE_RM
+            //Sum the acc_ref_out_local components to the acc setpoint: 
+            acc_setpoint[0] = acc_setpoint[0] + acc_ref_out_local[0]; 
+            acc_setpoint[2] = acc_setpoint[2] + acc_ref_out_local[2]; 
+        #endif
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
         // LINEAR ACCELERATION IN CONTROL RF

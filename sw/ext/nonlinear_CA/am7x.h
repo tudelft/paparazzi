@@ -16,6 +16,12 @@
 #ifndef AM7_H
 #define AM7_H
 
+#define max_time_optimizer 4.9e-3
+#define max_iterations 50
+#define max_function_eval 150
+#define refresh_time_optimizer 5e-3 //Must be equal or bigger than max_time_optimizer
+#define filter_cutoff_frequency 12 //rad/s
+
 //Define the baudrate for the module and the starting byte 
 #define START_BYTE 0x9B  //1st start block identifier byte
 #define BAUDRATE_AM7 921600 //Define the baudrate
