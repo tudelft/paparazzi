@@ -117,7 +117,6 @@
         <servo no="3" name="MOTOR_LEFT"     min="0"     neutral="600"   max="8191"/>
         <servo no="4" name="MOTOR_PUSH"     min="0"     neutral="200"   max="8191"/>
     </servos>
-    
     <!-- CAN BUS 1 command outputs-->
     <servos driver="Uavcan1Cmd">
         <servo no="5" name="SERVO_ELEVATOR" min="3250"  neutral="3250" max="-3250"/>
@@ -142,23 +141,23 @@
 
     <commands>
         <!-- Real actuators commands -->
-        <axis name="MOTOR_FRONT"  failsafe_value="0"/> <!-- IDX 0--> 
-        <axis name="MOTOR_RIGHT"  failsafe_value="0"/> <!-- IDX 1-->
-        <axis name="MOTOR_BACK"   failsafe_value="0"/> <!-- IDX 2-->
-        <axis name="MOTOR_LEFT"   failsafe_value="0"/> <!-- IDX 3-->
-        <axis name="MOTOR_PUSHER" failsafe_value="0"/> <!-- IDX 4-->
-        <axis name="RUDDER"       failsafe_value="0"/> <!-- IDX 5-->
-        <axis name="ELEVATOR"     failsafe_value="0"/> <!-- IDX 6-->
-        <axis name="AILERONS"     failsafe_value="0"/> <!-- IDX 7-->
-        <axis name="FLAPS"        failsafe_value="0"/> <!-- IDX 8-->
+        <axis name="MOTOR_FRONT"  actuator_type ="REAL" failsafe_value="0"/> <!-- IDX 0--> 
+        <axis name="MOTOR_RIGHT"  actuator_type ="REAL" failsafe_value="0"/> <!-- IDX 1-->
+        <axis name="MOTOR_BACK"   actuator_type ="REAL" failsafe_value="0"/> <!-- IDX 2-->
+        <axis name="MOTOR_LEFT"   actuator_type ="REAL" failsafe_value="0"/> <!-- IDX 3-->
+        <axis name="MOTOR_PUSHER" actuator_type ="REAL" failsafe_value="0"/> <!-- IDX 4-->
+        <axis name="RUDDER"       actuator_type ="REAL" failsafe_value="0"/> <!-- IDX 5-->
+        <axis name="ELEVATOR"     actuator_type ="REAL" failsafe_value="0"/> <!-- IDX 6-->
+        <axis name="AILERONS"     actuator_type ="REAL" failsafe_value="0"/> <!-- IDX 7-->
+        <axis name="FLAPS"        actuator_type ="REAL" failsafe_value="0"/> <!-- IDX 8-->
         <!-- Virtual actuators commands -->
-        <axis name="ROLL"         failsafe_value="0"/> <!-- ID X 9-->
-        <axis name="PITCH"        failsafe_value="0"/> <!-- IDX 10-->
+        <axis name="ROLL"         actuator_type ="VIRTUAL" failsafe_value="0"/> <!-- ID X 9-->
+        <axis name="PITCH"        actuator_type ="VIRTUAL" failsafe_value="0"/> <!-- IDX 10-->
         <!-- Passive actuators commands -->
-        <axis name="ROT_MECH"     failsafe_value="0"/> <!-- IDX 11-->
-        <axis name="YAW"          failsafe_value="0"/>
+        <axis name="ROT_MECH"     actuator_type ="PASSIVE" failsafe_value="0"/> <!-- IDX 11-->
         <!-- Legacy commands-->
-        <axis name="THRUST"       failsafe_value="0"/>
+        <axis name="YAW"          actuator_type ="OTHER" failsafe_value="0"/>
+        <axis name="THRUST"       actuator_type ="OTHER" failsafe_value="0"/>
     </commands>
 
     <command_laws>
