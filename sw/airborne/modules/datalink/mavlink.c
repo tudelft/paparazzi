@@ -30,7 +30,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 #pragma GCC diagnostic ignored "-Wswitch-default"
-#include "mavlink/paparazzi/mavlink.h"
+#include "mavlink/ardupilotmega/mavlink.h"
 #pragma GCC diagnostic pop
 
 #if PERIODIC_TELEMETRY
@@ -45,6 +45,7 @@
 #include "generated/airframe.h"
 #include "generated/modules.h"
 #include "generated/settings.h"
+#include "generated/flight_plan.h"
 
 #include "mcu_periph/sys_time.h"
 #include "modules/energy/electrical.h"
@@ -57,11 +58,16 @@
 #include "modules/radio_control/radio_control.h"
 #endif
 
-// Change the autopilot identification code: by default identify as PPZ autopilot: alternatively as MAV_AUTOPILOT_ARDUPILOTMEGA
-#ifndef MAV_AUTOPILOT_ID
-#define MAV_AUTOPILOT_ID MAV_AUTOPILOT_PPZ
+#if USE_MISSION
+#include "modules/mission/mission_common.h"
 #endif
 
+// Change the autopilot identification code: by default identify as PPZ autopilot: alternatively as MAV_AUTOPILOT_ARDUPILOTMEGA
+#ifndef MAV_AUTOPILOT_ID
+// #define MAV_AUTOPILOT_ID MAV_AUTOPILOT_PPZ
+#define MAV_AUTOPILOT_ID MAV_AUTOPILOT_ARDUPILOTMEGA
+#endif
+ 
 #include "modules/datalink/missionlib/mission_manager.h"
 
 // for UINT16_MAX
@@ -95,6 +101,8 @@ static void mavlink_send_battery_status(struct transport_tx *trans, struct link_
 static void mavlink_send_gps_global_origin(struct transport_tx *trans, struct link_device *dev);
 static void mavlink_send_gps_status(struct transport_tx *trans, struct link_device *dev);
 static void mavlink_send_vfr_hud(struct transport_tx *trans, struct link_device *dev);
+static void mavlink_send_mission_current(struct transport_tx *trans, struct link_device *dev);
+static void mavlink_send_extended_sys_state(struct transport_tx *trans, struct link_device *dev);
 
 
 /**
@@ -134,6 +142,8 @@ void mavlink_init(void)
   register_periodic_telemetry(&mavlink_telemetry, MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN, mavlink_send_gps_global_origin);
   register_periodic_telemetry(&mavlink_telemetry, MAVLINK_MSG_ID_GPS_STATUS, mavlink_send_gps_status);
   register_periodic_telemetry(&mavlink_telemetry, MAVLINK_MSG_ID_VFR_HUD, mavlink_send_vfr_hud);
+  register_periodic_telemetry(&mavlink_telemetry, MAVLINK_MSG_ID_MISSION_CURRENT, mavlink_send_mission_current);
+  register_periodic_telemetry(&mavlink_telemetry, MAVLINK_MSG_ID_EXTENDED_SYS_STATE, mavlink_send_extended_sys_state);
 #endif
 }
 
@@ -317,6 +327,20 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
 
 #ifdef ROTORCRAFT_FIRMWARE
     /* only for rotorcraft */
+
+    case MAVLINK_MSG_ID_COMMAND_INT: {
+      
+      mavlink_command_int_t cmd;
+      mavlink_msg_command_int_decode(msg, &cmd);
+      
+      // Check if this message is for this system
+      if ((uint8_t) cmd.target_system == AC_ID) {
+        MAVLINK_DEBUG("COMMAND_INT received with command %i\n", cmd.command);  
+      }
+      break;
+    }
+
+
     case MAVLINK_MSG_ID_COMMAND_LONG: {
       mavlink_command_long_t cmd;
       mavlink_msg_command_long_decode(msg, &cmd);
@@ -353,16 +377,73 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
                 result = MAV_RESULT_ACCEPTED;
             }
             break;
+          
+          case MAV_CMD_DO_SET_MODE:
+            MAVLINK_DEBUG("DO SET_MODE param1 = %f, param2 = %f\n", cmd.param1, cmd.param2);
+            if (cmd.param1 != 1) {
+              MAVLINK_DEBUG("No valid mode set, requested mode was %f\n", cmd.param1);
+              result = MAV_RESULT_UNSUPPORTED;
+              break;
+            }
 
-          default:
-            break;
+            switch ((uint8_t) cmd.param2) {
+              case PLANE_MODE_GUIDED:
+                MAVLINK_DEBUG("PLANE_MODE_GUIDED received");
+                if (nav_block == 3) {
+                  // Switch to mission block
+                  GotoBlock(9);
+                }
+                result = MAV_RESULT_ACCEPTED;
+
+                // Check if mission already running
+                //
+
+                break;
+              case PLANE_MODE_AUTO:
+                MAVLINK_DEBUG("PLANE_MODE_AUTO received");
+                // If Hold Mission
+                if (nav_block == 3) {
+                  // Switch to mission block
+                  GotoBlock(9);
+                }
+                result = MAV_RESULT_ACCEPTED;
+                break;
+                
+              case PLANE_MODE_TAKEOFF:
+                MAVLINK_DEBUG("PLANE_MODE_TAKEOFF received");
+
+                // takeoff if not already in flight
+                if (autopilot_in_flight())
+                {
+                  result = MAV_RESULT_FAILED;
+                  break;
+                }
+
+                // run takeoff 
+
+
+                result = MAV_RESULT_ACCEPTED;
+                break;
+              case PLANE_MODE_QLAND:
+                result = MAV_RESULT_ACCEPTED;
+                break;
+              default:
+                result = MAV_RESULT_UNSUPPORTED;
+                break;
+              }
+              break;
+
+            default:
+              MAVLINK_DEBUG("TEST123 command = %i \n", cmd.command);
+              break;
+            }
+          // confirm command with result
+          mavlink_msg_command_ack_send(MAVLINK_COMM_0, cmd.command, result, 0, UINT8_MAX, msg->sysid, msg->compid);
+          MAVLinkSendMessage();
         }
-        // confirm command with result
-        mavlink_msg_command_ack_send(MAVLINK_COMM_0, cmd.command, result, 0, UINT8_MAX, msg->sysid, msg->compid);
-        MAVLinkSendMessage();
+        break;
       }
-      break;
-    }
+      
 
     case MAVLINK_MSG_ID_SET_MODE: {
       mavlink_set_mode_t mode;
@@ -443,7 +524,8 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
 static void mavlink_send_heartbeat(struct transport_tx *trans, struct link_device *dev)
 {
   uint8_t mav_state = MAV_STATE_CALIBRATING;
-  uint8_t mav_mode = 0;
+  uint8_t mav_mode = MAV_MODE_FLAG_CUSTOM_MODE_ENABLED; // Ardupilot custom mode enabled
+  uint32_t custom_mode = 0;
 #if defined(FIXEDWING_FIRMWARE)
   uint8_t mav_type = MAV_TYPE_FIXED_WING;
   switch (autopilot_get_mode()) {
@@ -463,7 +545,7 @@ static void mavlink_send_heartbeat(struct transport_tx *trans, struct link_devic
       break;
   }
 #elif defined(ROTORCRAFT_FIRMWARE)
-  uint8_t mav_type = MAV_TYPE_QUADROTOR;
+  uint8_t mav_type = MAV_TYPE_VTOL_FIXEDROTOR;
   switch (autopilot_get_mode()) {
     case AP_MODE_HOME:
       mav_mode |= MAV_MODE_FLAG_AUTO_ENABLED;
@@ -486,9 +568,12 @@ static void mavlink_send_heartbeat(struct transport_tx *trans, struct link_devic
       break;
     case AP_MODE_NAV:
       mav_mode |= MAV_MODE_FLAG_AUTO_ENABLED;
+      custom_mode = PLANE_MODE_AUTO;
       break;
     case AP_MODE_GUIDED:
       mav_mode = MAV_MODE_FLAG_GUIDED_ENABLED;
+      custom_mode = PLANE_MODE_GUIDED;
+      break;
     default:
       break;
   }
@@ -507,7 +592,7 @@ static void mavlink_send_heartbeat(struct transport_tx *trans, struct link_devic
                              mav_type,
                              MAV_AUTOPILOT_ID,
                              mav_mode,
-                             0, // custom_mode
+                             custom_mode, // custom_mode
                              mav_state);
   MAVLinkSendMessage();
 }
@@ -642,7 +727,7 @@ static void mavlink_send_autopilot_version(struct transport_tx *trans, struct li
   static uint64_t sha;
   get_pprz_git_version((uint8_t *)&sha);
   mavlink_msg_autopilot_version_send(MAVLINK_COMM_0,
-                                     0, //uint64_t capabilities,
+                                     18446744073709551615, //uint64_t capabilities,
                                      ver, //uint32_t flight_sw_version,
                                      0, //uint32_t middleware_sw_version,
                                      0, //uint32_t os_sw_version,
@@ -838,6 +923,57 @@ static void mavlink_send_vfr_hud(struct transport_tx *trans, struct link_device 
                            stateGetSpeedNed_f()->z); // climb rate
   MAVLinkSendMessage();
 }
+
+/**
+ * Message that announces the sequence number of the current target mission item (that the system will fly towards/execute when the mission is running).
+ */
+static void mavlink_send_mission_current(struct transport_tx *trans, struct link_device *dev)
+{
+  /* Sequence number*/
+  uint16_t seq;
+  #if USE_MISSION
+  seq = mission.elements[mission.current_idx].index;
+  #else
+  seq = mission_mgr_seq;
+  #endif
+  /* Total number of mission items. 0: Not supported, UINT16_MAX if no mission is present on the vehicle.*/
+  uint16_t total = mission_mgr.active_count;
+  /* Mission state machine state. MISSION_STATE_UNKNOWN if state reporting not supported.*/
+  uint8_t mission_state = mission_mgr.mission_state;
+  /* Vehicle is in a mode that can execute mission items or suspended. 0: Unknown, 1: In mission mode, 2: Suspended (not in mission mode).*/
+  uint8_t mission_mode = 0; // TODO: implement
+
+  mavlink_msg_mission_current_send(MAVLINK_COMM_0,
+                                   seq,
+                                   total,
+                                   mission_state,
+                                   mission_mode);
+  MAVLinkSendMessage();
+}
+
+/**
+ * Provides state for additional features
+ */
+static void mavlink_send_extended_sys_state(struct transport_tx *trans, struct link_device *dev)
+{
+  /* The VTOL state if applicable. Is set to MAV_VTOL_STATE_UNDEFINED if UAV is not in VTOL configuration. */
+  uint8_t vtol_state = MAV_VTOL_STATE_UNDEFINED;
+  /* The landed state. Is set to MAV_LANDED_STATE_UNDEFINED if landed state is unknown. */
+  uint8_t landed_state = MAV_LANDED_STATE_UNDEFINED;
+  // On ground if not in flight
+  if (!autopilot_in_flight())
+  {
+    landed_state = MAV_LANDED_STATE_ON_GROUND;
+  } else {
+    landed_state = MAV_LANDED_STATE_IN_AIR;
+  }
+
+  mavlink_msg_extended_sys_state_send(MAVLINK_COMM_0,
+                                      vtol_state,
+                                      landed_state);
+  MAVLinkSendMessage();
+}
+
 
 /* end ignore unused-paramter */
 #pragma GCC diagnostic pop
