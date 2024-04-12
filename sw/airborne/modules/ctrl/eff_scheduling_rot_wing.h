@@ -27,7 +27,18 @@
 #define CTRL_EFF_SCHED_ROT_WING_H
 
 #include "std.h"
+#include "generated/airframe.h"
 
+#ifndef EFF_MAT_ROWS_NB
+#define EFF_MAT_ROWS_NB 6
+#endif
+#ifndef EFF_MAT_COLS_NB
+#define EFF_MAT_COLS_NB (COMMANDS_NB_REAL + COMMANDS_NB_VIRTUAL)
+#endif
+
+extern float EFF_MAT_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB];
+extern float G2_RW[EFF_MAT_COLS_NB]                      ; 
+extern float G1_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB]     ; 
 struct rot_wing_eff_sched_param_t {
   float Ixx_body;                 // body MMOI around roll axis [kgm²]
   float Iyy_body;                 // body MMOI around pitch axis [kgm²]
