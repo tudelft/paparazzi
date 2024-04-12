@@ -278,11 +278,11 @@ int waypoint_mode = 0;
 float x_stb, y_stb, z_stb;
 
 // Variables for the speed to derivative gain slider and thrust coefficient: 
-// float K_d_speed = 0.02; 
-// float K_T_airspeed = 0.025;
-
 float K_d_speed = 0.02; 
-float K_T_airspeed = 0.0;
+float K_T_airspeed = 0.025;
+
+// float K_d_speed = 0.02; 
+// float K_T_airspeed = 0.0;
 
 //Variables for the sysmon file write: 
 // #define PRINT_CPU_LOAD_ON_SD
