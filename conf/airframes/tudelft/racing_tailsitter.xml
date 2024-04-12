@@ -114,12 +114,13 @@
 
     <module name="air_data">
       <define name="USE_AIRSPEED_AIR_DATA" value="TRUE"/>
+      <!-- <define name="CALC_AMSL_BARO" value="TRUE" /> -->
     </module>
 
-    <module name="gps" type="ublox">
+    <!-- <module name="gps" type="ublox">
       <configure name="GPS_BAUD" value="B57600"/>
-    </module>
-    <!-- <module name="gps" type="datalink"/> -->
+    </module> -->
+    <module name="gps" type="datalink"/>
 
     <module name="stabilization" type="indi">
       <configure name="INDI_NUM_ACT" value="6"/>
@@ -127,7 +128,9 @@
       <define name="WLS_N_V" value="4"/>
     </module>
 
-    <!--<module name="ins" type="ekf2"/>-->
+    <!-- <module name="ins"           type="ekf2">
+      <define name="USE_INS_NAV_INIT" value="FALSE"/>
+    </module> -->
     <!-- <module name="ins" type="ekf2">
       <define name="INS_EKF2_OPTITRACK" value="true"/>
     </module> -->
@@ -143,10 +146,18 @@
     </module>
     <module name="ins" type="extended">
       <define name="INS_USE_GPS_ALT" value="1"/>
-      <define name="INS_USE_GPS_ALT_SPEED" value="1"/>
+      <define name="INS_USE_GPS_ALT_SPEED" value="TRUE"/>
       <define name="INS_VFF_R_GPS" value="0.01"/>
     </module>
-
+    <!-- <modules>
+     baro_ms5611_i2c Alternate address
+      <load name="baro_ms5611_i2c.xml">
+      <define name="MS5611_I2C_DEV" value="i2c2" />
+      <define name="MS5611_SLAVE_ADDR=0xEE"/> 
+      <define name="MS5611_SEND_BARO_ALTITUDE"/>
+     <define name="SENSOR_SYNC_SEND"/>
+      </load> 
+    </modules> -->
 
 
     <!-- Control effectiveness calculator that calculates
@@ -164,8 +175,8 @@
 
     <module name="agl_dist">
       <define name="AGL_DIST_ID" value="AGL_LIDAR_TFMINI_ID"/>
-      <define name="AGL_DIST_MAX_RANGE" value="12.0"/>
-      <define name="AGL_DIST_MIN_RANGE" value="0.001"/>
+      <define name="AGL_DIST_MAX_RANGE" value="5.0"/>
+      <define name="AGL_DIST_MIN_RANGE" value="0.01"/>
       <define name="AGL_DIST_FILTER" value="0.1"/>
     </module>
 
@@ -245,13 +256,14 @@
     <!--<define name= "MAG_Y_CURRENT_COEF" value="0.012152"/>-->
     <!--<define name= "MAG_Z_CURRENT_COEF" value="-0.0001088"/>-->
 
+
     <!--Mag of gps-->
-    <define name="MAG_X_NEUTRAL" value="21"/>
-    <define name="MAG_Y_NEUTRAL" value="-206"/>
-    <define name="MAG_Z_NEUTRAL" value="104"/>
-    <define name="MAG_X_SENS" value="3.58153558634" integer="16"/>
-    <define name="MAG_Y_SENS" value="3.58800117886" integer="16"/>
-    <define name="MAG_Z_SENS" value="3.57182532939" integer="16"/>
+  <define name="MAG_X_NEUTRAL" value="280"/>
+  <define name="MAG_Y_NEUTRAL" value="109"/>
+  <define name="MAG_Z_NEUTRAL" value="-25"/>
+  <define name="MAG_X_SENS" value="7.795567726805614" integer="16"/>
+  <define name="MAG_Y_SENS" value="7.573621320161775" integer="16"/>
+  <define name="MAG_Z_SENS" value="7.316229600404968" integer="16"/>
 
 	<define name="IMU_MPU9250_CHAN_X" value="0"/>
 	<define name="IMU_MPU9250_CHAN_Y" value="1"/>
@@ -441,7 +453,7 @@
     <define name="GUIDANCE_H_MAX_BANK" value="60" unit="deg"/>
 
     <!--<define name="FWD_SIDESLIP_GAIN_PILOTED" value="0.32"/>  If guidance_hybrid_indi is being used, comment this out -->
-    <define name="FWD_SIDESLIP_GAIN" value="0.06"/>
+    <define name="FWD_SIDESLIP_GAIN" value="0.1"/>
     <!--<define name="SIDESLIP_YAW_GAIN" value="0.32"/>-->
 
     <!--<define name="EFF_SCHED_USE_FUNCTION" value="TRUE"/>-->

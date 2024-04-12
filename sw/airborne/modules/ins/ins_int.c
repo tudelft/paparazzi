@@ -486,11 +486,18 @@ static void agl_cb(uint8_t __attribute__((unused)) sender_id, __attribute__((unu
     return;
   }
 
+#if USE_TFMINI_AGL
+  if (distance > AGL_DIST_MAX_RANGE || distance < AGL_DIST_MIN_RANGE){
+    return;
+  }
+#endif
+
 #if USE_SONAR
   if (distance > INS_SONAR_MAX_RANGE || distance < INS_SONAR_MIN_RANGE){
     return;
   }
 #endif
+
 #ifdef INS_AGL_THROTTLE_THRESHOLD
    if(stabilization_cmd[COMMAND_THRUST] < INS_AGL_THROTTLE_THRESHOLD){
      return;

@@ -1026,6 +1026,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 #if RADIO_PIVOT_SWITCH == FALSE
   /* compute the INDI command */
   stabilization_indi_rate_run(rate_sp, in_flight);
+  indi_thrust_increment_set = false;
 #else
   int8_t i;
   struct FloatEulers eulers_zxy;
@@ -1036,6 +1037,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   takeoff_stage = take_off_stage(eulers_zxy.theta, body_rates->q);
   // theta_d = take_off_theta();
   if (takeoff_stage == 0){
+    autopilot_set_in_flight(false);
     // initialize pivoting by putting motors up
 	  actuators_pprz[0] = MAX_PPRZ;
 	  actuators_pprz[1] = MAX_PPRZ;
@@ -1045,6 +1047,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     actuators_pprz[4] = 0;
     actuators_pprz[5] = 0;
   } else if (takeoff_stage == 1 || takeoff_stage == 3) {
+    autopilot_set_in_flight(false);
     struct FloatRates rates_filt_takeoff;
     rates_filt_takeoff.q = update_first_order_low_pass(&rates_filt_takeoff_fo[1], body_rates->q);
     if(autopilot.mode == AP_MODE_NAV){

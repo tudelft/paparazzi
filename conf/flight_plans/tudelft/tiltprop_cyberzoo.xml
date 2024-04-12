@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="0.8" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="500" name="Rotorcraft Basic (Enac)" security_height="2.0">
+<flight_plan alt="1.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="500" name="Rotorcraft Basic (Enac)" security_height="2.0">
   <header>
 #include "autopilot.h"
 #include "generated/modules.h"
@@ -43,7 +43,7 @@
       <call_once fun="autopilot_set_in_flight(false)"/>
       <call_once fun="take_off_enter()"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/> 
-      <stay alt="1.0" wp="CLIMB" until="GetPosHeight() @GT 0.6"/>
+      <stay alt="1.0" wp="CLIMB" until="GetPosHeight() @GT 0.8"/>
     </block>
     <!-- <block name="CLIMB">
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/> 
@@ -69,7 +69,7 @@
       <go vmode="alt" wp="TD"/>
     </block>
     <block name="flare">
-      <exception cond="LessThan(GetPosHeight(), 20)" deroute="pivot_land"/>
+      <exception cond="LessThan(agl_dist_value_filtered, 0.1) @AND agl_dist_valid" deroute="pivot_land"/>
       <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="pivot_land">
