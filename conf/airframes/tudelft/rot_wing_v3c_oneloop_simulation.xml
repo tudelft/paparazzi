@@ -162,11 +162,11 @@
     <command_laws>
         <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
         <!-- <let VAR="servo_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/> -->
-        <set VALUE="($th_hold? -9600 : @MOTOR_FRONT)"                                                                   SERVO="MOTOR_FRONT"/>
-        <set VALUE="($th_hold? -9600 : @MOTOR_RIGHT)"                                                                   SERVO="MOTOR_RIGHT"/>
-        <set VALUE="($th_hold? -9600 : @MOTOR_BACK)"                                                                    SERVO="MOTOR_BACK"/>
-        <set VALUE="($th_hold? -9600 : @MOTOR_LEFT)"                                                                    SERVO="MOTOR_LEFT"/>
-        <set VALUE="($th_hold? -9600 : @MOTOR_PUSHER)"                                                                  SERVO="MOTOR_PUSH"/>   
+        <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_FRONT])"                                                                   SERVO="MOTOR_FRONT"/>
+        <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_RIGHT])"                                                                   SERVO="MOTOR_RIGHT"/>
+        <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_BACK] )"                                                                   SERVO="MOTOR_BACK"/>
+        <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_LEFT] )"                                                                   SERVO="MOTOR_LEFT"/>
+        <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_PUSHER])"                                                                  SERVO="MOTOR_PUSH"/>   
         <!-- <set VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : commands[COMMAND_RUDDER])"                                             SERVO="SERVO_RUDDER"/>
         <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? 0 : commands[COMMAND_ELEVATOR]))"  SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : commands[COMMAND_AILERONS])"                                          SERVO="AIL_LEFT"/>
@@ -178,8 +178,8 @@
         <!-- Backup commands -->
         <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_FRONT])" SERVO="BMOTOR_FRONT"/>
         <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_RIGHT])" SERVO="BMOTOR_RIGHT"/>
-        <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_BACK])"  SERVO="BMOTOR_BACK"/>
-        <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_LEFT])"  SERVO="BMOTOR_LEFT"/>
+        <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_BACK] )"  SERVO="BMOTOR_BACK"/>
+        <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_LEFT] )"  SERVO="BMOTOR_LEFT"/>
     </command_laws>
 
     <section NAME="MISC">

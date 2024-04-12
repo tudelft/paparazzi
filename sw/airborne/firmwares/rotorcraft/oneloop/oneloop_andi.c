@@ -1094,7 +1094,6 @@ void oneloop_andi_init(void)
   // Initialize Effectiveness matrix
   calc_normalization();
   G1G2_oneloop(oneloop_andi.ctrl_type);
-  int8_t i;
   for (i = 0; i < ANDI_OUTPUTS; i++) {
     bwls_1l[i] = EFF_MAT_G[i];
   }
@@ -1302,8 +1301,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   for (i = 0; i < ANDI_OUTPUTS; i++) {
     bwls_1l[i] = EFF_MAT_G[i];
   }
-
-
   
   // If drone is not on the ground use incremental law
   use_increment = 0.0;
