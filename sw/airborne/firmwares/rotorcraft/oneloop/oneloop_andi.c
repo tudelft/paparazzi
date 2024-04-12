@@ -1546,7 +1546,7 @@ void calc_model(){
   for (i = 3; i < ANDI_OUTPUTS; i++){ // For loop for prediction of angular acceleration
     model_pred[i] = 0.0;              // 
     for (j = 0; j < ANDI_NUM_ACT; j++){
-      model_pred[i] = model_pred[i] +  actuator_state_1l[j] * EFF_MAT_RW[i][j];
+      model_pred[i] = model_pred[i] +  actuator_state_1l[j] * EFF_MAT_RW[i][j] / ANDI_G_SCALING;
     }
   }
 }
