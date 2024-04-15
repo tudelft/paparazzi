@@ -265,7 +265,7 @@
 
     <!-- First the lift forces produced by each propeller -->
 
-    <force name="MOTOR_FRONT" frame="BODY" unit="LBS">
+    <force name="MOTOR_FRONT" frame="BODY" unit="N">
       <function>
         <product>
           <property>fcs/MOTOR_FRONT_lag</property>
@@ -284,7 +284,7 @@
       </direction>
     </force>
 
-    <force name="MOTOR_RIGHT" frame="BODY" unit="LBS">
+    <force name="MOTOR_RIGHT" frame="BODY" unit="N">
       <function>
         <product>
           <property>fcs/MOTOR_RIGHT_lag</property>
@@ -303,7 +303,7 @@
       </direction>
     </force>
 
-    <force name="MOTOR_BACK" frame="BODY" unit="LBS">
+    <force name="MOTOR_BACK" frame="BODY" unit="N">
       <function>
         <product>
           <property>fcs/MOTOR_BACK_lag</property>
@@ -322,7 +322,7 @@
       </direction>
     </force>
 
-    <force name="MOTOR_LEFT" frame="BODY" unit="LBS">
+    <force name="MOTOR_LEFT" frame="BODY" unit="N">
       <function>
         <product>
           <property>fcs/MOTOR_LEFT_lag</property>
@@ -361,7 +361,7 @@
     </force>
 
     <!-- Now the moment couples -->
-    <moment name="MOTOR_FRONT_couple" frame="BODY" unit="N">
+    <moment name="MOTOR_FRONT_couple" frame="BODY" unit="Nm">
       <function>
         <product>
           <property>fcs/MOTOR_FRONT_lag</property>
@@ -381,7 +381,7 @@
       </direction>
     </moment>
 
-    <moment name="MOTOR_RIGHT_couple" frame="BODY" unit="N">
+    <moment name="MOTOR_RIGHT_couple" frame="BODY" unit="Nm">
       <function>
         <product>
           <property>fcs/MOTOR_RIGHT_lag</property>
@@ -401,7 +401,7 @@
       </direction>
     </moment>
 
-    <moment name="MOTOR_BACK_couple" frame="BODY" unit="N">
+    <moment name="MOTOR_BACK_couple" frame="BODY" unit="Nm">
       <function>
         <product>
           <property>fcs/MOTOR_FRONT_lag</property>
@@ -421,10 +421,10 @@
       </direction>
     </moment>
 
-    <moment name="MOTOR_LEFT_couple" frame="BODY" unit="N">
+    <moment name="MOTOR_LEFT_couple" frame="BODY" unit="Nm">
       <function>
         <product>
-          <property>fcs/MOTOR_RIGHT_lag</property>
+          <property>fcs/MOTOR_LEFT_lag</property>
           <value> 10.0 </value>
           <value> 0.192 </value>
         </product>
@@ -442,7 +442,7 @@
     </moment>
  
     <!-- Now the G2 moment couples -->
-    <moment name="MOTOR_FRONT_couple_G2" frame="BODY" unit="N">
+    <moment name="MOTOR_FRONT_couple_G2" frame="BODY" unit="Nm">
       <function>
         <product>
           <property>fcs/MOTOR_FRONT_d</property>
@@ -462,7 +462,7 @@
       </direction>
     </moment>
 
-    <moment name="MOTOR_RIGHT_couple_G2" frame="BODY" unit="N">
+    <moment name="MOTOR_RIGHT_couple_G2" frame="BODY" unit="Nm">
       <function>
         <product>
           <property>fcs/MOTOR_RIGHT_lag</property>
@@ -482,7 +482,7 @@
       </direction>
     </moment>
 
-    <moment name="MOTOR_BACK_couple_G2" frame="BODY" unit="N">
+    <moment name="MOTOR_BACK_couple_G2" frame="BODY" unit="Nm">
       <function>
         <product>
           <property>fcs/MOTOR_FRONT_lag</property>
@@ -502,7 +502,7 @@
       </direction>
     </moment>
 
-    <moment name="MOTOR_LEFT_couple_G2" frame="BODY" unit="N">
+    <moment name="MOTOR_LEFT_couple_G2" frame="BODY" unit="Nm">
       <function>
         <product>
           <property>fcs/MOTOR_RIGHT_lag</property>
