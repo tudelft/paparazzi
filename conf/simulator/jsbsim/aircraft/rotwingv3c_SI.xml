@@ -233,7 +233,7 @@
         </function>
         <output> fcs/sin3skew </output>
       </fcs_function>
-    </channel>
+    </channel>    
   </flight_control>
 
   <external_reactions>
@@ -255,7 +255,7 @@
     <property>fcs/aileron</property>-->
     <property>fcs/MOTOR_PUSHER</property>
     <property>fcs/MOTOR_PUSHER_lag</property>
-    <property>fcs/ROLL</property>
+     <property>fcs/ROLL</property>
     <property>fcs/PITCH</property>
     <property>fcs/YAW</property>
     <property>fcs/THRUST</property>
@@ -361,310 +361,166 @@
     </force>
 
     <!-- Now the moment couples -->
-    <force name="MOTOR_FRONT_couple1" frame="BODY" unit="N">
+    <moment name="MOTOR_FRONT_couple" frame="BODY" unit="N">
       <function>
         <product>
           <property>fcs/MOTOR_FRONT_lag</property>
           <value> 10.0 </value>
+          <value> 0.192 </value>
+        </product>
+      </function>
+      <location unit="M">
+        <x>-0.423</x>
+        <y>0</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>0</x>
+        <y>0</y>
+        <z>-1</z>
+      </direction>
+    </moment>
+
+    <moment name="MOTOR_RIGHT_couple" frame="BODY" unit="N">
+      <function>
+        <product>
+          <property>fcs/MOTOR_RIGHT_lag</property>
+          <value> 10.0 </value>
+          <value> 0.192 </value>
         </product>
       </function>
       <location unit="M">
         <x>0</x>
-        <y>0.192</y>
+        <y>0.408</y>
         <z>0</z>
       </location>
       <direction>
-        <x>1</x>
+        <x>0</x>
         <y>0</y>
-        <z>0</z>
+        <z>1</z>
       </direction>
-    </force>
+    </moment>
 
-    <force name="MOTOR_FRONT_couple2" frame="BODY" unit="N">
+    <moment name="MOTOR_BACK_couple" frame="BODY" unit="N">
       <function>
         <product>
           <property>fcs/MOTOR_FRONT_lag</property>
           <value> 10.0 </value>
+          <value> 0.192 </value>
         </product>
       </function>
       <location unit="M">
-        <x>0</x>
-        <y>-0.192</y>
+        <x>0.423</x>
+        <y>0</y>
         <z>0</z>
       </location>
       <direction>
-        <x>-1</x>
+        <x>0</x>
         <y>0</y>
-        <z>0</z>
+        <z>-1</z>
       </direction>
-    </force>
+    </moment>
 
-    <force name="MOTOR_RIGHT_couple1" frame="BODY" unit="N">
+    <moment name="MOTOR_LEFT_couple" frame="BODY" unit="N">
       <function>
         <product>
           <property>fcs/MOTOR_RIGHT_lag</property>
           <value> 10.0 </value>
+          <value> 0.192 </value>
         </product>
       </function>
       <location unit="M">
         <x>0</x>
-        <y>-0.192</y>
+        <y>-0.408</y>
         <z>0</z>
       </location>
       <direction>
-        <x>1</x>
-        <y>0</y>
-        <z>0</z>
-      </direction>
-    </force>
-
-    <force name="MOTOR_RIGHT_couple2" frame="BODY" unit="N">
-      <function>
-        <product>
-          <property>fcs/MOTOR_RIGHT_lag</property>
-          <value> 10.0 </value>
-        </product>
-      </function>
-      <location unit="M">
         <x>0</x>
-        <y>0.192</y>
-        <z>0</z>
-      </location>
-      <direction>
-        <x>-1</x>
         <y>0</y>
-        <z>0</z>
+        <z>1</z>
       </direction>
-    </force>
-
-    <force name="MOTOR_BACK_couple1" frame="BODY" unit="N">
-      <function>
-        <product>
-          <property>fcs/MOTOR_BACK_lag</property>
-          <value> 10.0 </value>
-        </product>
-      </function>
-      <location unit="M">
-        <x>0</x>
-        <y>0.192</y>
-        <z>0</z>
-      </location>
-      <direction>
-        <x>1</x>
-        <y>0</y>
-        <z>0</z>
-      </direction>
-    </force>
-
-    <force name="MOTOR_BACK_couple2" frame="BODY" unit="N">
-      <function>
-        <product>
-          <property>fcs/MOTOR_BACK_lag</property>
-          <value> 10.0 </value>
-        </product>
-      </function>
-      <location unit="M">
-        <x>0</x>
-        <y>-0.192</y>
-        <z>0</z>
-      </location>
-      <direction>
-        <x>-1</x>
-        <y>0</y>
-        <z>0</z>
-      </direction>
-    </force>
-
-    <force name="MOTOR_LEFT_couple1" frame="BODY" unit="N">
-      <function>
-        <product>
-          <property>fcs/MOTOR_LEFT_lag</property>
-          <value> 10.0 </value>
-        </product>
-      </function>
-      <location unit="M">
-        <x>0</x>
-        <y>-0.192</y>
-        <z>0</z>
-      </location>
-      <direction>
-        <x>1</x>
-        <y>0</y>
-        <z>0</z>
-      </direction>
-    </force>
-
-    <force name="MOTOR_LEFT_couple2" frame="BODY" unit="N">
-      <function>
-        <product>
-          <property>fcs/MOTOR_LEFT_lag</property>
-          <value> 10.0 </value>
-        </product>
-      </function>
-      <location unit="M">
-        <x>0</x>
-        <y>0.192</y>
-        <z>0</z>
-      </location>
-      <direction>
-        <x>-1</x>
-        <y>0</y>
-        <z>0</z>
-      </direction>
-    </force>
-
+    </moment>
+ 
     <!-- Now the G2 moment couples -->
-    <force name="MOTOR_FRONT_couple3" frame="BODY" unit="N">
+    <moment name="MOTOR_FRONT_couple_G2" frame="BODY" unit="N">
       <function>
         <product>
           <property>fcs/MOTOR_FRONT_d</property>
           <value> 10.0 </value>
+          <value> 0.0096 </value>
         </product>
       </function>
       <location unit="M">
-        <x>0</x>
-        <y>0.0096</y>
+        <x>-0.423</x>
+        <y>0</y>
         <z>0</z>
       </location>
       <direction>
-        <x>1</x>
+        <x>0</x>
         <y>0</y>
-        <z>0</z>
+        <z>-1</z>
       </direction>
-    </force>
+    </moment>
 
-    <force name="MOTOR_FRONT_couple4" frame="BODY" unit="N">
+    <moment name="MOTOR_RIGHT_couple_G2" frame="BODY" unit="N">
       <function>
         <product>
-          <property>fcs/MOTOR_FRONT_d</property>
+          <property>fcs/MOTOR_RIGHT_lag</property>
           <value> 10.0 </value>
+          <value> 0.0096 </value>
         </product>
       </function>
       <location unit="M">
         <x>0</x>
-        <y>-0.0096</y>
+        <y>0.408</y>
         <z>0</z>
       </location>
       <direction>
-        <x>-1</x>
+        <x>0</x>
         <y>0</y>
-        <z>0</z>
+        <z>1</z>
       </direction>
-    </force>
+    </moment>
 
-    <force name="MOTOR_RIGHT_couple3" frame="BODY" unit="N">
+    <moment name="MOTOR_BACK_couple_G2" frame="BODY" unit="N">
       <function>
         <product>
-          <property>fcs/MOTOR_RIGHT_d</property>
+          <property>fcs/MOTOR_FRONT_lag</property>
           <value> 10.0 </value>
+          <value> 0.0096 </value>
         </product>
       </function>
       <location unit="M">
-        <x>0</x>
-        <y>-0.0096</y>
+        <x>0.423</x>
+        <y>0</y>
         <z>0</z>
       </location>
       <direction>
-        <x>1</x>
+        <x>0</x>
         <y>0</y>
-        <z>0</z>
+        <z>-1</z>
       </direction>
-    </force>
+    </moment>
 
-    <force name="MOTOR_RIGHT_couple4" frame="BODY" unit="N">
+    <moment name="MOTOR_LEFT_couple_G2" frame="BODY" unit="N">
       <function>
         <product>
-          <property>fcs/MOTOR_RIGHT_d</property>
+          <property>fcs/MOTOR_RIGHT_lag</property>
           <value> 10.0 </value>
+          <value> 0.0096 </value>
         </product>
       </function>
       <location unit="M">
         <x>0</x>
-        <y>0.0096</y>
+        <y>-0.408</y>
         <z>0</z>
       </location>
       <direction>
-        <x>-1</x>
-        <y>0</y>
-        <z>0</z>
-      </direction>
-    </force>
-
-    <force name="MOTOR_BACK_couple3" frame="BODY" unit="N">
-      <function>
-        <product>
-          <property>fcs/MOTOR_BACK_d</property>
-          <value> 10.0 </value>
-        </product>
-      </function>
-      <location unit="M">
         <x>0</x>
-        <y>0.0096</y>
-        <z>0</z>
-      </location>
-      <direction>
-        <x>1</x>
         <y>0</y>
-        <z>0</z>
+        <z>1</z>
       </direction>
-    </force>
-
-    <force name="MOTOR_BACK_couple4" frame="BODY" unit="N">
-      <function>
-        <product>
-          <property>fcs/MOTOR_BACK_d</property>
-          <value> 10.0 </value>
-        </product>
-      </function>
-      <location unit="M">
-        <x>0</x>
-        <y>-0.0096</y>
-        <z>0</z>
-      </location>
-      <direction>
-        <x>-1</x>
-        <y>0</y>
-        <z>0</z>
-      </direction>
-    </force>
-
-    <force name="MOTOR_LEFT_couple3" frame="BODY" unit="N">
-      <function>
-        <product>
-          <property>fcs/MOTOR_LEFT_d</property>
-          <value> 10.0 </value>
-        </product>
-      </function>
-      <location unit="M">
-        <x>0</x>
-        <y>-0.0096</y>
-        <z>0</z>
-      </location>
-      <direction>
-        <x>1</x>
-        <y>0</y>
-        <z>0</z>
-      </direction>
-    </force>
-
-    <force name="MOTOR_LEFT_couple4" frame="BODY" unit="N">
-      <function>
-        <product>
-          <property>fcs/MOTOR_LEFT_d</property>
-          <value> 10.0 </value>
-        </product>
-      </function>
-      <location unit="M">
-        <x>0</x>
-        <y>0.0096</y>
-        <z>0</z>
-      </location>
-      <direction>
-        <x>-1</x>
-        <y>0</y>
-        <z>0</z>
-      </direction>
-    </force>
+    </moment>
   </external_reactions>
 
   <propulsion/>
