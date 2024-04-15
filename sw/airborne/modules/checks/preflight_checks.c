@@ -44,7 +44,12 @@
 #endif
 
 static struct preflight_check_t *preflight_head = NULL;
+
+#ifdef PREFLIGHT_CHECK_BYPASS
+bool preflight_bypass = PREFLIGHT_CHECK_BYPASS;
+#else
 bool preflight_bypass = FALSE;
+#endif
 
 /**
  * @brief Register a preflight check and add it to the linked list
