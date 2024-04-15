@@ -86,6 +86,11 @@ mavlink_mission_mgr mission_mgr;
 
 void mavlink_common_message_handler(const mavlink_message_t *msg);
 
+struct mavlink_modes_t mavlink_modes;
+
+void mavlink_determine_fp_modes(void);
+void mavlink_set_mode(void); 
+
 static void mavlink_send_heartbeat(struct transport_tx *trans, struct link_device *dev);
 static void mavlink_send_sys_status(struct transport_tx *trans, struct link_device *dev);
 static void mavlink_send_system_time(struct transport_tx *trans, struct link_device *dev);
@@ -126,6 +131,8 @@ void mavlink_init(void)
   get_pprz_git_version(custom_version);
 
   mavlink_mission_init(&mission_mgr);
+
+  mavlink_determine_fp_modes();
 
 #if PERIODIC_TELEMETRY && defined TELEMETRY_MAVLINK_NB_MSG
   register_periodic_telemetry(&mavlink_telemetry, MAVLINK_MSG_ID_HEARTBEAT, mavlink_send_heartbeat);
@@ -188,6 +195,7 @@ void mavlink_periodic(void)
   RunOnceEvery(2, mavlink_send_params(NULL, NULL));
 
   mavlink_mission_periodic();
+  mavlink_set_mode();
 }
 
 static int16_t settings_idx_from_param_id(char *param_id)
@@ -231,6 +239,40 @@ void mavlink_event(void)
     if (mavlink_parse_char(MAVLINK_COMM_0, test, &msg, &status)) {
       mavlink_common_message_handler(&msg);
       mavlink_mission_message_handler(&msg);
+    }
+  }
+}
+
+/**
+ * Set mode from flightplan
+ */
+void mavlink_set_mode(void) 
+{
+  if (mavlink_modes.takeoff_available)
+  {
+    if (nav_block == mavlink_modes.block_takeoff) {
+      mavlink_modes.current_mode = PLANE_MODE_TAKEOFF;
+    }
+  }
+
+  if (mavlink_modes.hover_available)
+  {
+    if (nav_block == mavlink_modes.block_hover) {
+      mavlink_modes.current_mode = PLANE_MODE_QHOVER;
+    }
+  }
+
+  if (mavlink_modes.guided_available)
+  {
+    if (nav_block == mavlink_modes.block_guided) {
+      mavlink_modes.current_mode = PLANE_MODE_GUIDED;
+    }
+  }
+
+  if (mavlink_modes.land_available)
+  {
+    if (nav_block == mavlink_modes.block_land) {
+      mavlink_modes.current_mode = PLANE_MODE_QLAND;
     }
   }
 }
@@ -389,14 +431,31 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
             switch ((uint8_t) cmd.param2) {
               case PLANE_MODE_GUIDED:
                 MAVLINK_DEBUG("PLANE_MODE_GUIDED received");
-                if (nav_block == 3) {
-                  // Switch to mission block
-                  GotoBlock(9);
+                // if not available
+                if (!mavlink_modes.guided_available)
+                {
+                  result = MAV_RESULT_UNSUPPORTED;
+                  break;
                 }
-                result = MAV_RESULT_ACCEPTED;
 
-                // Check if mission already running
-                //
+                // Don't hover if not armed
+                if (!autopilot_get_motors_on())
+                {
+                  result = MAV_RESULT_FAILED;
+                  break;
+                }
+
+                // hover only when in flight
+                if (!autopilot_in_flight())
+                {
+                  result = MAV_RESULT_FAILED;
+                  break;
+                }
+
+                // run hover
+                GotoBlock(mavlink_modes.block_guided);
+                
+                result = MAV_RESULT_ACCEPTED;
 
                 break;
               case PLANE_MODE_AUTO:
@@ -411,6 +470,19 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
                 
               case PLANE_MODE_TAKEOFF:
                 MAVLINK_DEBUG("PLANE_MODE_TAKEOFF received");
+                // if not available
+                if (!mavlink_modes.takeoff_available)
+                {
+                  result = MAV_RESULT_UNSUPPORTED;
+                  break;
+                }
+
+                // Don't takeoff if not armed
+                if (!autopilot_get_motors_on())
+                {
+                  result = MAV_RESULT_FAILED;
+                  break;
+                }
 
                 // takeoff if not already in flight
                 if (autopilot_in_flight())
@@ -420,13 +492,67 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
                 }
 
                 // run takeoff 
-
+                GotoBlock(mavlink_modes.block_takeoff);
 
                 result = MAV_RESULT_ACCEPTED;
                 break;
               case PLANE_MODE_QLAND:
+                MAVLINK_DEBUG("PLANE_MODE_QLAND received");
+                // if not available
+                if (!mavlink_modes.land_available)
+                {
+                  result = MAV_RESULT_UNSUPPORTED;
+                  break;
+                }
+
+                // Don't land if not armed
+                if (!autopilot_get_motors_on())
+                {
+                  result = MAV_RESULT_FAILED;
+                  break;
+                }
+
+                // land only when in flight
+                if (!autopilot_in_flight())
+                {
+                  result = MAV_RESULT_FAILED;
+                  break;
+                }
+
+                // run takeoff 
+                GotoBlock(mavlink_modes.block_land);
+                
                 result = MAV_RESULT_ACCEPTED;
                 break;
+              case PLANE_MODE_QHOVER:
+                MAVLINK_DEBUG("PLANE_MODE_QHOVER received");
+                // if not available
+                if (!mavlink_modes.hover_available)
+                {
+                  result = MAV_RESULT_UNSUPPORTED;
+                  break;
+                }
+
+                // Don't hover if not armed
+                if (!autopilot_get_motors_on())
+                {
+                  result = MAV_RESULT_FAILED;
+                  break;
+                }
+
+                // hover only when in flight
+                if (!autopilot_in_flight())
+                {
+                  result = MAV_RESULT_FAILED;
+                  break;
+                }
+
+                // run hover
+                GotoBlock(mavlink_modes.block_hover);
+                
+                result = MAV_RESULT_ACCEPTED;
+                break;
+
               default:
                 result = MAV_RESULT_UNSUPPORTED;
                 break;
@@ -514,6 +640,57 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
   }
 }
 
+void mavlink_determine_fp_modes(void) {
+  uint8_t i;
+  static const char *blocks[] = FP_BLOCKS;
+  char block_name[50];
+
+  char mavlink_takeoff[]  = "mavlink_takeoff";
+  char mavlink_hover[]    = "mavlink_hover";
+  char mavlink_guided[]   = "mavlink_guided";
+  char mavlink_land[]     = "mavlink_land";
+
+  mavlink_modes.takeoff_available = false;
+  mavlink_modes.hover_available = false;
+  mavlink_modes.guided_available = false;
+  mavlink_modes.land_available = false;
+
+  mavlink_modes.current_mode = 0;
+  
+  for (i = 0; i < NB_BLOCK; i++) {
+    // Check takeoff
+    strncpy(block_name, blocks[i], 49);
+    if (strcmp(mavlink_takeoff, block_name) == 0)
+    {
+      MAVLINK_DEBUG("MAVLINK takeoff found\n");
+      mavlink_modes.takeoff_available = true;
+      mavlink_modes.block_takeoff = i;
+    }
+    // Check hover
+    if (strcmp(mavlink_hover, block_name) == 0)
+    {
+      MAVLINK_DEBUG("MAVLINK hover found\n");
+      mavlink_modes.hover_available = true;
+      mavlink_modes.block_hover = i;
+    }
+    // Check guided
+    if (strcmp(mavlink_guided, block_name) == 0)
+    {
+      MAVLINK_DEBUG("MAVLINK guided found\n");
+      mavlink_modes.guided_available = true;
+      mavlink_modes.block_guided = i;
+    }
+    // Check land
+    if (strcmp(mavlink_land, block_name) == 0)
+    {
+      MAVLINK_DEBUG("MAVLINK land found\n");
+      mavlink_modes.land_available = true;
+      mavlink_modes.block_land = i;
+    }
+  }
+  
+}
+
 /* ignore the unused-parameter warnings */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -568,7 +745,7 @@ static void mavlink_send_heartbeat(struct transport_tx *trans, struct link_devic
       break;
     case AP_MODE_NAV:
       mav_mode |= MAV_MODE_FLAG_AUTO_ENABLED;
-      custom_mode = PLANE_MODE_AUTO;
+      custom_mode = mavlink_modes.current_mode;
       break;
     case AP_MODE_GUIDED:
       mav_mode = MAV_MODE_FLAG_GUIDED_ENABLED;
