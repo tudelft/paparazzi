@@ -619,6 +619,7 @@ void vect_bound_nd(float vect[], float bound, int n) {
 /** @brief Calculate velocity limit based on acceleration limit */
 float bound_v_from_a(float e_x[], float v_bound, float a_bound, int n) {
   float norm = float_vect_norm(e_x,n);
+  norm = fmaxf(norm, 1.0);
   float v_bound_a  = sqrtf(fabs(2.0 * a_bound * norm));
   return fminf(v_bound, v_bound_a);
 }
