@@ -36,6 +36,8 @@
 #define EFF_MAT_COLS_NB (COMMANDS_NB_REAL + COMMANDS_NB_VIRTUAL)
 #endif
 
+#define RW_G_SCALE 1000.0f
+
 extern float EFF_MAT_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB];
 extern float G2_RW[EFF_MAT_COLS_NB]                      ; 
 extern float G1_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB]     ; 
@@ -87,6 +89,32 @@ struct rot_wing_eff_sched_var_t {
   float airspeed;
   float airspeed2;
 };
+
+struct arm{
+  float lx;
+  float ly;
+  float lz;
+};
+struct F_Body{
+  float Fx;
+  float Fy;
+  float Fz;
+  float Mz_G1;
+  float Mz_G2;
+  struct arm arm;
+};
+
+struct RW_Model{
+  struct F_M_Body mF;
+  struct F_M_Body mR;
+  struct F_M_Body mB;
+  struct F_M_Body mL;
+  struct F_M_Body mP;
+  struct F_M_Body ele;
+  struct F_M_Body rud;
+  struct F_M_Body ail;
+  struct F_M_Body flp;
+}
 
 extern float rotation_angle_setpoint_deg;
 extern int16_t rotation_cmd;

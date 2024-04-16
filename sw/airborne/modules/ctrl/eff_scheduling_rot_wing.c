@@ -131,10 +131,11 @@ float actuator_state_filt_vect[EFF_MAT_COLS_NB] = {0};
 #endif
 
 /* Effectiveness Matrix definition */
-float G2_RW[EFF_MAT_COLS_NB]                       = ROT_WING_EFF_SCHED_G2; //scaled by ANDI_G_SCALING
-float G1_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB]      = {ROT_WING_EFF_SCHED_G1_ZERO, ROT_WING_EFF_SCHED_G1_ZERO, ROT_WING_EFF_SCHED_G1_THRUST, ROT_WING_EFF_SCHED_G1_ROLL, ROT_WING_EFF_SCHED_G1_PITCH, ROT_WING_EFF_SCHED_G1_YAW};  
+float G2_RW[EFF_MAT_COLS_NB]                       = ROT_WING_EFF_SCHED_G2; //scaled by RW_G_SCALE
+float G1_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB]      = {ROT_WING_EFF_SCHED_G1_ZERO, ROT_WING_EFF_SCHED_G1_ZERO, ROT_WING_EFF_SCHED_G1_THRUST, ROT_WING_EFF_SCHED_G1_ROLL, ROT_WING_EFF_SCHED_G1_PITCH, ROT_WING_EFF_SCHED_G1_YAW}; //scaled by RW_G_SCALE 
 float EFF_MAT_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB] = {0};
 
+float dFdu[EFF_MAT_COLS_NB] = {ROT_WING_EFF_SCHED_dFdu};
 struct FloatEulers eulers_zxy_RW_EFF;
 
 struct rot_wing_eff_sched_param_t eff_sched_p = {
@@ -162,10 +163,23 @@ struct rot_wing_eff_sched_param_t eff_sched_p = {
 
 struct rot_wing_eff_sched_var_t eff_sched_var;
 
+/* Define Forces and Moments tructs for each actuator*/
+// struct F_M_Body mF_FM;
+// struct F_M_Body mR_FM;
+// struct F_M_Body mL_FM;
+// struct F_M_Body mB_FM;
+// struct F_M_Body mP_FM;
+// struct F_M_Body ele_FM;
+// struct F_M_Body rud_FM;
+// struct F_M_Body ail_FM;
+// struct F_M_Body flp_FM;
+struct RW_Model RW;
+
+
 inline void eff_scheduling_rot_wing_update_wing_angle(void);
 // inline void eff_scheduling_rot_wing_update_MMOI(void);
 // inline void eff_scheduling_rot_wing_update_cmd(void);
-// inline void eff_scheduling_rot_wing_update_airspeed(void);
+inline void eff_scheduling_rot_wing_update_airspeed(void);
 // inline void eff_scheduling_rot_wing_update_hover_motor_effectiveness(void);
 // inline void eff_scheduling_rot_wing_update_elevator_effectiveness(void);
 // inline void eff_scheduling_rot_wing_update_rudder_effectiveness(void);
@@ -175,7 +189,7 @@ inline void eff_scheduling_rot_wing_update_wing_angle(void);
 // inline void eff_scheduling_rot_wing_schedule_liftd(void);
 
 void  sum_EFF_MAT_RW(void);
-
+void  init_RW_Model(void);
 //inline float guidance_indi_get_liftd(float pitch UNUSED, float theta UNUSED);
 //void stabilization_indi_set_wls_settings(void);
 
@@ -201,7 +215,18 @@ static void wing_position_cb(uint8_t sender_id UNUSED, struct act_feedback_t *po
     }
   }
 }
-
+void init_RW_Model(void)
+{
+  // Motor Front
+  RW.mF.Fx     = 0;
+  RW.mF.Fy     = 0;
+  RW.mF.Fz     = 0;
+  RW.mF.Mz_G1  = 0;
+  RW.mF.Mz_G2  = 0;
+  RW.mF.arm.lx = 0;
+  RW.mF.arm.ly = 0;
+  RW.mF.arm.lz = 0;
+}
 void eff_scheduling_rot_wing_init(void)
 {
   // Initialize variables to quad values
@@ -235,6 +260,7 @@ void eff_scheduling_rot_wing_periodic(void)
 {
 #if EFF_MAT_SIMPLE
   eff_scheduling_rot_wing_update_wing_angle();
+  eff_scheduling_rot_wing_update_airspeed();
   sum_EFF_MAT_RW();
 #else
   // your periodic code here.
@@ -272,40 +298,54 @@ void sum_EFF_MAT_RW(void) {
 
   // Thrust and Pusher force estimation
   float T      = -9.81/(cphi*ctheta);//minus gravity is a guesstimate of the thrust force, thrust measurement would be better
-  float P      = actuator_state_1l[COMMAND_MOTOR_PUSHER] * G1_RW[2][COMMAND_MOTOR_PUSHER] / ANDI_G_SCALING;
+  float P      = actuator_state_1l[COMMAND_MOTOR_PUSHER] * G1_RW[2][COMMAND_MOTOR_PUSHER] / RW_G_SCALE;
   int i = 0;
   for (i = 0; i < EFF_MAT_COLS_NB; i++) {
     switch (i) {
     case (COMMAND_MOTOR_FRONT):
     case (COMMAND_MOTOR_BACK):
-      EFF_MAT_RW[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * G1_RW[2][i];
-      EFF_MAT_RW[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * G1_RW[2][i];
-      EFF_MAT_RW[2][i] = (cphi * ctheta                       ) * G1_RW[2][i];
-      EFF_MAT_RW[3][i] = (G1_RW[3][i])                                       ;
-      EFF_MAT_RW[4][i] = (G1_RW[4][i])                                       ;
-      EFF_MAT_RW[5][i] = (G1_RW[5][i] + G2_RW[i])                            ;
+      EFF_MAT_RW[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * G1_RW[2][i] / RW_G_SCALE;
+      EFF_MAT_RW[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * G1_RW[2][i] / RW_G_SCALE;
+      EFF_MAT_RW[2][i] = (cphi * ctheta                       ) * G1_RW[2][i] / RW_G_SCALE;
+      EFF_MAT_RW[3][i] = (G1_RW[3][i])                                        / RW_G_SCALE;
+      EFF_MAT_RW[4][i] = (G1_RW[4][i])                                        / RW_G_SCALE;
+      EFF_MAT_RW[5][i] = (G1_RW[5][i] + G2_RW[i])                             / RW_G_SCALE;
       break;
     case (COMMAND_MOTOR_RIGHT):     
     case (COMMAND_MOTOR_LEFT):
-      EFF_MAT_RW[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * G1_RW[2][i];
-      EFF_MAT_RW[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * G1_RW[2][i];
-      EFF_MAT_RW[2][i] = (cphi * ctheta                       ) * G1_RW[2][i];
-      EFF_MAT_RW[3][i] = (G1_RW[3][i]) * eff_sched_var.cosr                  ;                                      
-      EFF_MAT_RW[4][i] = (G1_RW[4][i]) * eff_sched_var.sinr                  ;                                      
-      EFF_MAT_RW[5][i] = (G1_RW[5][i] + G2_RW[i])                            ;
+      EFF_MAT_RW[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * G1_RW[2][i] / RW_G_SCALE;
+      EFF_MAT_RW[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * G1_RW[2][i] / RW_G_SCALE;
+      EFF_MAT_RW[2][i] = (cphi * ctheta                       ) * G1_RW[2][i] / RW_G_SCALE;
+      EFF_MAT_RW[3][i] = (G1_RW[3][i]) * eff_sched_var.cosr                   / RW_G_SCALE;                                      
+      EFF_MAT_RW[4][i] = (G1_RW[4][i]) * eff_sched_var.sinr                   / RW_G_SCALE;                                      
+      EFF_MAT_RW[5][i] = (G1_RW[5][i] + G2_RW[i])                             / RW_G_SCALE;
       break;      
     case (COMMAND_MOTOR_PUSHER): 
-      EFF_MAT_RW[0][i] = (cpsi * ctheta - sphi * spsi * stheta) * G1_RW[2][i];
-      EFF_MAT_RW[1][i] = (ctheta * spsi + cpsi * sphi * stheta) * G1_RW[2][i];
-      EFF_MAT_RW[2][i] = (- cphi * stheta                     ) * G1_RW[2][i];
+      EFF_MAT_RW[0][i] = (cpsi * ctheta - sphi * spsi * stheta) * G1_RW[2][i] / RW_G_SCALE;
+      EFF_MAT_RW[1][i] = (ctheta * spsi + cpsi * sphi * stheta) * G1_RW[2][i] / RW_G_SCALE;
+      EFF_MAT_RW[2][i] = (- cphi * stheta                     ) * G1_RW[2][i] / RW_G_SCALE;
       EFF_MAT_RW[3][i] = 0.0;
       EFF_MAT_RW[4][i] = 0.0;
       EFF_MAT_RW[5][i] = 0.0;
       break;
     case (COMMAND_ELEVATOR):
-    case (COMMAND_RUDDER): 
+    case (COMMAND_RUDDER):  
+      EFF_MAT_RW[0][i] = 0.0;
+      EFF_MAT_RW[1][i] = 0.0;
+      EFF_MAT_RW[2][i] = 0.0;
+      EFF_MAT_RW[3][i] = G1_RW[3][i];
+      EFF_MAT_RW[4][i] = G1_RW[4][i];
+      EFF_MAT_RW[5][i] = G1_RW[5][i];
+      break;    
     case (COMMAND_AILERONS): 
-    case (COMMAND_FLAPS): 
+      EFF_MAT_RW[0][i] = 0.0;
+      EFF_MAT_RW[1][i] = 0.0;
+      EFF_MAT_RW[2][i] = 0.0;
+      EFF_MAT_RW[3][i] = G1_RW[3][i];
+      EFF_MAT_RW[4][i] = G1_RW[4][i];
+      EFF_MAT_RW[5][i] = G1_RW[5][i];
+      break;    
+    case (COMMAND_FLAPS):   
       EFF_MAT_RW[0][i] = 0.0;
       EFF_MAT_RW[1][i] = 0.0;
       EFF_MAT_RW[2][i] = 0.0;
@@ -371,13 +411,13 @@ void eff_scheduling_rot_wing_update_wing_angle(void)
 //   eff_sched_var.cmd_T_mean_scaled = (actuator_state_filt_vect[0] + actuator_state_filt_vect[1] + actuator_state_filt_vect[2] + actuator_state_filt_vect[3]) / 4. * 0.000853229; // Scaled with 8181 / 9600 / 1000
 // }
 
-// void eff_scheduling_rot_wing_update_airspeed(void)
-// {
-//   eff_sched_var.airspeed = stateGetAirspeed_f();
-//   Bound(eff_sched_var.airspeed, 0. , 30.);
-//   eff_sched_var.airspeed2 = eff_sched_var.airspeed * eff_sched_var.airspeed;
-//   Bound(eff_sched_var.airspeed2, 0. , 900.);
-// }
+void eff_scheduling_rot_wing_update_airspeed(void)
+{
+  eff_sched_var.airspeed = stateGetAirspeed_f();
+  Bound(eff_sched_var.airspeed, 0. , 30.);
+  eff_sched_var.airspeed2 = eff_sched_var.airspeed * eff_sched_var.airspeed;
+  Bound(eff_sched_var.airspeed2, 0. , 900.);
+}
 
 // void eff_scheduling_rot_wing_update_hover_motor_effectiveness(void)
 // {
@@ -455,13 +495,13 @@ void eff_scheduling_rot_wing_update_wing_angle(void)
 //   EFF_MAT_RW[2][4] = eff_z_rudder;
 // }
 
-// void eff_scheduling_rot_wing_update_aileron_effectiveness(void)
-// {
-//   float dMxdpprz = (eff_sched_p.k_aileron * eff_sched_var.airspeed2 * eff_sched_var.sinr3) / 1000000.;
-//   float eff_x_aileron = dMxdpprz / eff_sched_var.Ixx;
-//   Bound(eff_x_aileron, 0, 0.005)
-//   EFF_MAT_RW[0][6] = eff_x_aileron;
-// }
+void eff_scheduling_rot_wing_update_aileron_effectiveness(void)
+{
+  float dMxdpprz = (eff_sched_p.k_aileron * eff_sched_var.airspeed2 * eff_sched_var.sinr3) / (RW_G_SCALE * RW_G_SCALE).;
+  float eff_x_aileron = dMxdpprz / eff_sched_var.Ixx;
+  Bound(eff_x_aileron, 0, 0.005)
+  // EFF_MAT_RW[0][6] = eff_x_aileron;
+}
 
 // void eff_scheduling_rot_wing_update_flaperon_effectiveness(void)
 // {

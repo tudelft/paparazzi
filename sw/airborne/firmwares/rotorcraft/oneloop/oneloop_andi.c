@@ -248,6 +248,13 @@ float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
 #define WLS_N_V == ANDI_OUTPUTS
 #endif
 
+#ifdef RW_G_SCALE
+#if RW_G_SCALE != ANDI_G_SCALING
+#error RW_G_SCALE is not equal to ANDI_G_SCALING: define RW_G_SCALE == ANDI_G_SCALING in airframe file
+#define ANDI_G_SCALING == RW_G_SCALE
+#endif
+#endif
+
 /* Declaration of Navigation Variables*/
 #ifdef NAV_HYBRID_MAX_DECELERATION
 float max_a_nav = NAV_HYBRID_MAX_DECELERATION;
@@ -1471,9 +1478,9 @@ void G1G2_oneloop(int ctrl_type) {
       case (COMMAND_AILERONS):
       case (COMMAND_FLAPS):   
         if(ctrl_type == CTRL_ANDI){
-          scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
+          scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i];
         } else if (ctrl_type == CTRL_INDI){
-          scaler = ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
+          scaler = ratio_u_un[i] * ratio_vn_v[i];
         }
         break;
       case (COMMAND_ROLL):
@@ -1538,7 +1545,7 @@ void calc_model(){
   for (i = 3; i < ANDI_OUTPUTS; i++){ // For loop for prediction of angular acceleration
     model_pred[i] = 0.0;              // 
     for (j = 0; j < ANDI_NUM_ACT; j++){
-      model_pred[i] = model_pred[i] +  actuator_state_1l[j] * EFF_MAT_RW[i][j] / ANDI_G_SCALING;
+      model_pred[i] = model_pred[i] +  actuator_state_1l[j] * EFF_MAT_RW[i][j];
     }
   }
 }
