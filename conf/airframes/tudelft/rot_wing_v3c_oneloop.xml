@@ -252,7 +252,7 @@
 
     <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
         <define name  = "G1_ROLL"                   value = "{ 0.0f,   -13.0f,   0.0f,    13.0f,  0.0f,  0.0f, 0.0f}"/>
-        <define name  = "G1_PITCH"                  value = "{ 1.6f,    0.0f,   -1.6f,    0.0f,   0.0f,  0.0f, 0.0f}"/>  
+        <define name  = "G1_PITCH"                  value = "{ 1.6f,    1.54f,  -1.6f,  -1.54f,   0.0f,  0.0f, 0.0f}"/>  
         <define name  = "G1_YAW"                    value = "{-0.4f,    0.4f,   -0.4f,    0.4f,   0.0f,  0.0f, 0.0f}"/>
         <define name  = "G1_THRUST"                 value = "{-0.575f, -0.575f, -0.575f, -0.575f, 0.55f, 0.0f, 0.0f}"/>  
         <define name  = "G1_ZERO"                   value = "{ 0.0f,    0.0f,    0.0f,    0.0f,   0.0f,  0.0f, 0.0f}"/> 

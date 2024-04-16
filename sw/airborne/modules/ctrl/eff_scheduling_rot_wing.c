@@ -162,7 +162,7 @@ struct rot_wing_eff_sched_param_t eff_sched_p = {
 
 struct rot_wing_eff_sched_var_t eff_sched_var;
 
-// inline void eff_scheduling_rot_wing_update_wing_angle(void);
+inline void eff_scheduling_rot_wing_update_wing_angle(void);
 // inline void eff_scheduling_rot_wing_update_MMOI(void);
 // inline void eff_scheduling_rot_wing_update_cmd(void);
 // inline void eff_scheduling_rot_wing_update_airspeed(void);
@@ -234,6 +234,7 @@ void eff_scheduling_rot_wing_init(void)
 void eff_scheduling_rot_wing_periodic(void)
 {
 #if EFF_MAT_SIMPLE
+  eff_scheduling_rot_wing_update_wing_angle();
   sum_EFF_MAT_RW();
 #else
   // your periodic code here.
@@ -276,9 +277,7 @@ void sum_EFF_MAT_RW(void) {
   for (i = 0; i < EFF_MAT_COLS_NB; i++) {
     switch (i) {
     case (COMMAND_MOTOR_FRONT):
-    case (COMMAND_MOTOR_RIGHT):
     case (COMMAND_MOTOR_BACK):
-    case (COMMAND_MOTOR_LEFT):
       EFF_MAT_RW[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * G1_RW[2][i];
       EFF_MAT_RW[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * G1_RW[2][i];
       EFF_MAT_RW[2][i] = (cphi * ctheta                       ) * G1_RW[2][i];
@@ -286,7 +285,15 @@ void sum_EFF_MAT_RW(void) {
       EFF_MAT_RW[4][i] = (G1_RW[4][i])                                       ;
       EFF_MAT_RW[5][i] = (G1_RW[5][i] + G2_RW[i])                            ;
       break;
-
+    case (COMMAND_MOTOR_RIGHT):     
+    case (COMMAND_MOTOR_LEFT):
+      EFF_MAT_RW[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * G1_RW[2][i];
+      EFF_MAT_RW[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * G1_RW[2][i];
+      EFF_MAT_RW[2][i] = (cphi * ctheta                       ) * G1_RW[2][i];
+      EFF_MAT_RW[3][i] = (G1_RW[3][i]) * eff_sched_var.cosr                  ;                                      
+      EFF_MAT_RW[4][i] = (G1_RW[4][i]) * eff_sched_var.sinr                  ;                                      
+      EFF_MAT_RW[5][i] = (G1_RW[5][i] + G2_RW[i])                            ;
+      break;      
     case (COMMAND_MOTOR_PUSHER): 
       EFF_MAT_RW[0][i] = (cpsi * ctheta - sphi * spsi * stheta) * G1_RW[2][i];
       EFF_MAT_RW[1][i] = (ctheta * spsi + cpsi * sphi * stheta) * G1_RW[2][i];
@@ -320,20 +327,20 @@ void sum_EFF_MAT_RW(void) {
   }
 }
 
-// void eff_scheduling_rot_wing_update_wing_angle(void)
-// {
-//   // Calculate sin and cosines of rotation
-//   eff_sched_var.wing_rotation_deg = eff_sched_var.wing_rotation_rad / M_PI * 180.;
+void eff_scheduling_rot_wing_update_wing_angle(void)
+{
+  // Calculate sin and cosines of rotation
+  eff_sched_var.wing_rotation_deg = eff_sched_var.wing_rotation_rad / M_PI * 180.;
 
-//   eff_sched_var.cosr = cosf(eff_sched_var.wing_rotation_rad);
-//   eff_sched_var.sinr = sinf(eff_sched_var.wing_rotation_rad);
+  eff_sched_var.cosr = cosf(eff_sched_var.wing_rotation_rad);
+  eff_sched_var.sinr = sinf(eff_sched_var.wing_rotation_rad);
 
-//   eff_sched_var.cosr2 = eff_sched_var.cosr * eff_sched_var.cosr;
-//   eff_sched_var.sinr2 = eff_sched_var.sinr * eff_sched_var.sinr;
+  eff_sched_var.cosr2 = eff_sched_var.cosr * eff_sched_var.cosr;
+  eff_sched_var.sinr2 = eff_sched_var.sinr * eff_sched_var.sinr;
 
-//   eff_sched_var.sinr3 = eff_sched_var.sinr2 * eff_sched_var.sinr;
+  eff_sched_var.sinr3 = eff_sched_var.sinr2 * eff_sched_var.sinr;
 
-// }
+}
 
 // void eff_scheduling_rot_wing_update_MMOI(void)
 // {
