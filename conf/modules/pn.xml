@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="pn" dir="pn_guidance" task="control">
+<module name="pn">
   <doc>
     <description>
       Guidance controller for rotorcraft using INDI
@@ -10,7 +10,16 @@
     <file name="pn.h"/>
   </header>
   <init fun="pn_init()"/>
-  <makefile target="ap|nps" firmware="modules">
-    <file name="pn.c" dir="$(SRC_FIRMWARE)/pn_guidance"/>
+  <periodic fun="pn_run()" freq="500" start="pn_start()"
+		    stop="pn_stop()" autorun="FALSE"/>
+  <event fun="pn_event()"/>
+  <datalink message="REMOTE_GPS_LOCAL" fun="pn_parse_REMOTE_GPS_LOCAL(buf)"/>
+  <makefile target="ap|nps">
+    <configure name="MODEM_DEV" default="UDP0" case="upper|lower"/>
+    <file name="pn.c"/>
+    <file name="pprz_transport.c" dir="pprzlink/src"/>
+    <define name="DOWNLINK_DEVICE" value="$(MODEM_DEV_LOWER)"/>
+    
+
   </makefile>
 </module>

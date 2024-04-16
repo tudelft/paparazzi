@@ -44,12 +44,13 @@
 #endif
 
 #include "generated/modules.h"
-
+#include "modules/pn/pn.h"
 /** Set the default File logger path to the USB drive */
 #ifndef LOGGER_FILE_PATH
 #define LOGGER_FILE_PATH /data/video/usb
 #endif
 
+#define PRINT(string,...) fprintf(stderr, "[logger_file->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 /** The file pointer */
 static FILE *logger_file = NULL;
 
@@ -76,10 +77,17 @@ static void logger_file_write_header(FILE *file) {
   ins_ext_pos_log_header(file);
 #endif
 #ifdef COMMAND_THRUST
-  fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
+  fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw,");
 #else
-  fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
+  fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,");
 #endif
+  fprintf(file, "acc_n_x,acc_n_y,acc_n_z,");
+  fprintf(file, "acc_x,acc_y,acc_z,");
+  fprintf(file, "speed_x,speed_y,speed_z,");
+  fprintf(file, "los_x,los_y,los_z,");
+  fprintf(file, "pos_t_x,pos_t_y,pos_t_z,");
+  fprintf(file, "acc_act_x,acc_act_y,acc_act_z,");
+  fprintf(file, "vel_t_x,vel_t_y,vel_t_z\n");
 }
 
 /** Write CSV row
@@ -93,6 +101,7 @@ static void logger_file_write_row(FILE *file) {
   struct NedCoor_f *vel = stateGetSpeedNed_f();
   struct FloatEulers *att = stateGetNedToBodyEulers_f();
   struct FloatRates *rates = stateGetBodyRates_f();
+  struct Proportional_nav *pn_info = pn_info_logger();
 
   fprintf(file, "%f,", get_sys_time_float());
   fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
@@ -107,12 +116,19 @@ static void logger_file_write_row(FILE *file) {
   ins_ext_pos_log_data(file);
 #endif
 #ifdef COMMAND_THRUST
-  fprintf(file, "%d,%d,%d,%d\n",
-      stabilization.cmd[COMMAND_THRUST], stabilization.cmd[COMMAND_ROLL],
-      stabilization.cmd[COMMAND_PITCH], stabilization.cmd[COMMAND_YAW]);
+  fprintf(file, "%d,%d,%d,%d,",
+      stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
+      stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
 #else
-  fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
+  fprintf(file, "%d,%d,", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
 #endif
+  fprintf(file, "%f,%f,%f,", pn_info->accel_des_pn.x, pn_info->accel_des_pn.y, pn_info->accel_des_pn.z);
+  fprintf(file, "%f,%f,%f,", pn_info->accel_des.x, pn_info->accel_des.y, pn_info->accel_des.z);
+  fprintf(file, "%f,%f,%f,", pn_info->speed_des.x, pn_info->speed_des.y, pn_info->speed_des.z);
+  fprintf(file, "%f,%f,%f,", pn_info->los_rate.x, pn_info->los_rate.y, pn_info->los_rate.z);
+  fprintf(file, "%f,%f,%f,", pn_info->pos_target.x, pn_info->pos_target.y, pn_info->pos_target.z); 
+  fprintf(file, "%f,%f,%f,", pn_info->pos_des.x, pn_info->pos_des.y, pn_info->pos_des.z);
+  fprintf(file, "%f,%f,%f\n", pn_info->speed_target.x, pn_info->speed_target.y, pn_info->speed_target.z);     
 }
 
 
@@ -177,5 +193,6 @@ void logger_file_periodic(void)
   if (logger_file == NULL) {
     return;
   }
+
   logger_file_write_row(logger_file);
 }
