@@ -302,7 +302,17 @@ void sum_EFF_MAT_RW(void) {
       EFF_MAT_RW[4][i] = 0.0;
       EFF_MAT_RW[5][i] = 0.0;
       break;
-
+    case (COMMAND_ELEVATOR):
+    case (COMMAND_RUDDER): 
+    case (COMMAND_AILERONS): 
+    case (COMMAND_FLAPS): 
+      EFF_MAT_RW[0][i] = 0.0;
+      EFF_MAT_RW[1][i] = 0.0;
+      EFF_MAT_RW[2][i] = 0.0;
+      EFF_MAT_RW[3][i] = G1_RW[3][i];
+      EFF_MAT_RW[4][i] = G1_RW[4][i];
+      EFF_MAT_RW[5][i] = G1_RW[5][i];
+      break;
     case (COMMAND_ROLL):
       EFF_MAT_RW[0][i] = ( cphi * ctheta * spsi * T - cphi * spsi * stheta * P);
       EFF_MAT_RW[1][i] = (-cphi * ctheta * cpsi * T + cphi * cpsi * stheta * P);

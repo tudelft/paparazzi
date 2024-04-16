@@ -216,22 +216,7 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 #endif
 
 #ifndef ONELOOP_ANDI_DEBUG_MODE
-#error "Debug Mode not defined"
-#define ONELOOP_ANDI_DEBUG_MODE  FALSE;
-#endif
-
-#ifndef ONELOOP_ANDI_AC_HAS_PUSHER
-#error "Did not specify if ac has a pusher"
-#define ONELOOP_ANDI_AC_HAS_PUSHER  FALSE;
-#endif
-
-#if    !ONELOOP_ANDI_AC_HAS_PUSHER
-#define ONELOOP_ANDI_PUSHER_IDX  0
-#endif
-
-#ifndef ONELOOP_ANDI_PUSHER_IDX
-#error "Did not specify pusher index"
-#define ONELOOP_ANDI_PUSHER_IDX  4
+#define ONELOOP_ANDI_DEBUG_MODE  FALSE
 #endif
 
 // Assume phi and theta are the first actuators after the real ones unless otherwise specified
@@ -1416,9 +1401,11 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     andi_u[ONELOOP_ANDI_THETA_IDX] = andi_du[ONELOOP_ANDI_THETA_IDX];
   }
 
-  if ((ONELOOP_ANDI_AC_HAS_PUSHER)&&(half_loop)){
-    andi_u[ONELOOP_ANDI_PUSHER_IDX] = radio_control.values[RADIO_AUX4];
+#ifdef COMMAND_MOTOR_PUSHER
+  if ((half_loop)){
+    andi_u[COMMAND_MOTOR_PUSHER] = radio_control.values[RADIO_AUX4];
   }
+#endif  
   // TODO : USE THE PROVIDED MAX AND MIN and change limits for phi and theta
   // Bound the inputs to the actuators
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
@@ -1479,6 +1466,10 @@ void G1G2_oneloop(int ctrl_type) {
       case (COMMAND_MOTOR_BACK):
       case (COMMAND_MOTOR_LEFT):
       case (COMMAND_MOTOR_PUSHER):
+      case (COMMAND_ELEVATOR):
+      case (COMMAND_RUDDER):  
+      case (COMMAND_AILERONS):
+      case (COMMAND_FLAPS):   
         if(ctrl_type == CTRL_ANDI){
           scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
         } else if (ctrl_type == CTRL_INDI){
@@ -1537,9 +1528,9 @@ void calc_model(){
 
   float T      = -g/(cphi*ctheta); // -9.81;
   float P      = 0.0;
-  if (ONELOOP_ANDI_AC_HAS_PUSHER){  
-   P      = actuator_state_1l[ONELOOP_ANDI_PUSHER_IDX] * G1_RW[2][ONELOOP_ANDI_PUSHER_IDX] / ANDI_G_SCALING;
-  }
+#ifdef COMMAND_MOTOR_PUSHER  
+   P      = actuator_state_1l[COMMAND_MOTOR_PUSHER] * G1_RW[2][COMMAND_MOTOR_PUSHER] / ANDI_G_SCALING;
+#endif
   model_pred[0] = (cpsi * stheta + ctheta * sphi * spsi) * T + (cpsi * ctheta - sphi * spsi * stheta) * P;
   model_pred[1] = (spsi * stheta - cpsi * ctheta * sphi) * T + (ctheta * spsi + cpsi * sphi * stheta) * P;
   model_pred[2] = g + cphi * ctheta * T - cphi * stheta * P;

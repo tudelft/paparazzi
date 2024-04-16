@@ -144,7 +144,26 @@
         <c1> 24.07 </c1>
         <output> fcs/MOTOR_PUSHER_lag</output>
       </lag_filter>
-
+      <lag_filter name="ELEVATOR_lag">
+        <input> fcs/ELEVATOR </input>
+        <c1> 52.7 </c1>
+        <output> fcs/ELEVATOR_lag</output>
+      </lag_filter>
+      <lag_filter name="RUDDER_lag">
+        <input> fcs/RUDDER </input>
+        <c1> 52.7 </c1>
+        <output> fcs/RUDDER_lag</output>
+      </lag_filter>
+      <lag_filter name="AILERONS_lag">
+        <input> fcs/AILERONS </input>
+        <c1> 52.7 </c1>
+        <output> fcs/AILERONS_lag</output>
+      </lag_filter>
+      <lag_filter name="FLAPS_lag">
+        <input> fcs/FLAPS </input>
+        <c1> 52.7 </c1>
+        <output> fcs/FLAPS_lag</output>
+      </lag_filter>
       <!--Derivative of actuator dynamics for spinup torque-->
       <washout_filter name="MOTOR_FRONT_d">
         <input> fcs/MOTOR_FRONT </input>
@@ -250,17 +269,18 @@
     <property>fcs/MOTOR_LEFT</property>
     <property>fcs/MOTOR_LEFT_lag</property>
     <property>fcs/MOTOR_LEFT_d</property>
-    <!-- <property>fcs/rudder</property>
-    <property>fcs/elevator</property>
-    <property>fcs/aileron</property>-->
     <property>fcs/MOTOR_PUSHER</property>
     <property>fcs/MOTOR_PUSHER_lag</property>
-     <property>fcs/ROLL</property>
+    <property>fcs/ELEVATOR</property>
+    <property>fcs/RUDDER</property>
+    <property>fcs/AILERONS</property> 
+    <property>fcs/FLAPS</property>   
+    <property>fcs/ROLL</property>
     <property>fcs/PITCH</property>
     <property>fcs/YAW</property>
     <property>fcs/THRUST</property>
     <property>fcs/ROT_MECH</property>
-     <!-- <property>fcs/flap</property> -->
+    
 
     <!-- Split Forces and moments so that Inertia can be scheduled -->
     
