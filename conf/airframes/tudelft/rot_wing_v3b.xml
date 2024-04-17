@@ -87,6 +87,8 @@
             <module name="mission_rotorcraft">
                 <define name="MISSION_WAIT_TIMEOUT" value="0"/>
             </module>
+
+            <define name="PREFLIGHT_CHECK_BYPASS" value="TRUE"/>
         </target>
 
         <!-- Kongsberg datalink -->
