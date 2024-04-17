@@ -44,6 +44,10 @@
 
 #include "modules/datalink/missionlib/mission_manager.h"
 
+#if PERIODIC_TELEMETRY
+#include "modules/datalink/telemetry.h"
+#endif
+
 uint8_t current_bool = 0;
 
 // Declaration of helper functions to convert mavlink mission items to lla
@@ -406,6 +410,17 @@ extern void mavlink_waypoint_handler(mavlink_mission_item *mission_item)
           }
 
           MAVLINK_DEBUG("mission_insert response %i\n", mission_insert(insert, &me));
+          
+          #if PERIODIC_TELEMETRY
+          DOWNLINK_SEND_MISSION_ITEM(DefaultChannel, DefaultDevice,
+                                      &mission_mgr.count,
+                                      &mission_item->seq,
+                                      &mission_item->cmd,
+                                      &lla.lat,
+                                      &lla.lon,
+                                      &mission_item->z);
+          #endif
+
         } else { 
           return; 
         }
@@ -433,6 +448,16 @@ extern void mavlink_waypoint_handler(mavlink_mission_item *mission_item)
             }
 
             MAVLINK_DEBUG("mission_insert response %i\n", mission_insert(insert, &me));
+
+            #if PERIODIC_TELEMETRY
+            DOWNLINK_SEND_MISSION_ITEM(DefaultChannel, DefaultDevice,
+                                        &mission_mgr.count,
+                                        &mission_item->seq,
+                                        &mission_item->cmd,
+                                        &lla.lat,
+                                        &lla.lon,
+                                        &mission_item->z);
+            #endif
           } else { 
             return; 
           }
