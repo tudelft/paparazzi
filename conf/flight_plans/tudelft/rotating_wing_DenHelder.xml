@@ -3,17 +3,17 @@
   <header/>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
-    <waypoint name="CLIMB" x="-300." y="70"/>
-    <waypoint name="trans" x="-300." y="100."/>
-    <waypoint name="decel" x="-300." y="110."/>
-    <waypoint name="begin_trans" x="-300." y="90."/>
-    <waypoint name="end_trans" x="-300." y="120."/>
-    <waypoint name="STDBY" x="-60" y="0"/>
-    <!-- <waypoint name="p1" x="65" y="75"/>
-    <waypoint name="p2" x="200" y="120"/>
+    <waypoint name="CLIMB" x="-300." y="-70"/>
+    <waypoint name="trans" x="-300." y="-100."/>
+    <waypoint name="decel" x="-300." y="-110."/>
+    <waypoint name="begin_trans" x="-300." y="-90."/>
+    <waypoint name="end_trans" x="-300." y="-120."/>
+    <waypoint name="STDBY" x="-60" y="-30"/>
+    <waypoint name="p1" x="-65" y="-60"/>
+    <!-- <waypoint name="p2" x="200" y="120"/>
     <waypoint name="p3" x="250" y="-30"/>
     <waypoint name="p4" x="120" y="-75"/> -->
-    <waypoint name="circ" x="-160" y="25"/>
+    <waypoint name="circ" x="-160" y="-50"/>
     <waypoint name="TD" x="10" y="-1"/>
     <!-- <waypoint name="APP" x="70" y="-25"/> -->
     <!-- <waypoint name="FOLLOW" x="300" y="80"/> -->
@@ -22,6 +22,10 @@
     <waypoint lat="52.960211" lon="4.795031" name="C2"/>
     <waypoint lat="52.957953" lon="4.788953" name="C3"/>
     <waypoint lat="52.962133" lon="4.785758" name="C4"/>
+    <waypoint lat="52.961481" lon="4.7943" name="S1"/>
+    <waypoint lat="52.960211" lon="4.795031" name="S2"/>
+    <waypoint lat="52.9588905" lon="4.7894791" name="S3"/>
+    <waypoint lat="52.9612369" lon="4.7877731" name="S4"/>
   </waypoints>
   <sectors>
     <sector color="red" name="Flyzone">
@@ -29,6 +33,12 @@
       <corner name="C2"/>
       <corner name="C3"/>
       <corner name="C4"/>
+    </sector>
+    <sector color="yellow" name="Softzone">
+      <corner name="S1"/>
+      <corner name="S2"/>
+      <corner name="S3"/>
+      <corner name="S4"/>
     </sector>
   </sectors>
   <modules>
@@ -38,7 +48,8 @@
   </modules>
   <exceptions>
     <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosHeight() @GT 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
-    <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+    <exception cond="Or(!InsideSoftzone(GetPosX(), GetPosY()), GetPosHeight() @GT 150) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby_fwd'))" deroute="Standby_fwd"/>
+    <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby_fwd'))" deroute="Standby_fwd"/>
   </exceptions>
   <blocks>
    <block name="Wait GPS">
@@ -83,6 +94,14 @@
     <block name="Standby_fwd">
         <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID)"/>
         <stay wp="STDBY" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+    </block>
+    <block name="stay_p1" strip_button="Standby" strip_icon="home.png">
+        <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HOVER)"/>
+        <stay wp="p1"/>
+    </block>
+    <block name="stay_p1_fwd">
+        <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID)"/>
+        <stay wp="p1"/>
     </block>
     <!-- <block name="Approach APP">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HOVER)"/>
