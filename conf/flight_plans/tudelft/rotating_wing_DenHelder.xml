@@ -1,5 +1,5 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-<flight_plan alt="70" ground_alt="0" lat0="52.96106005907302" lon0="4.793545922197193" max_dist_from_home="1070" name="Rotating Wing Den Helder" security_height="2">
+<flight_plan alt="50" ground_alt="0" lat0="52.96106005907302" lon0="4.793545922197193" max_dist_from_home="1070" name="Rotating Wing Den Helder" security_height="2">
   <header/>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
@@ -18,10 +18,10 @@
     <!-- <waypoint name="APP" x="70" y="-25"/> -->
     <!-- <waypoint name="FOLLOW" x="300" y="80"/> -->
     <!-- EHVB -->
-    <waypoint lat="52.961481" lon="4.7943" name="C1"/>
-    <waypoint lat="52.960211" lon="4.795031" name="C2"/>
-    <waypoint lat="52.957953" lon="4.788953" name="C3"/>
-    <waypoint lat="52.962133" lon="4.785758" name="C4"/>
+    <waypoint lat="52.9646070" lon="4.7930559" name="C1"/>
+    <waypoint lat="52.9598749" lon="4.7963609" name="C2"/>
+    <waypoint lat="52.9581590" lon="4.7887558" name="C3"/>
+    <waypoint lat="52.9621329" lon="4.7857580" name="C4"/>
     <waypoint lat="52.961481" lon="4.7943" name="S1"/>
     <waypoint lat="52.960211" lon="4.795031" name="S2"/>
     <waypoint lat="52.9588905" lon="4.7894791" name="S3"/>
