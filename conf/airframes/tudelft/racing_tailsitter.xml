@@ -42,7 +42,7 @@
       <define name="RADIO_PIVOT_SWITCH" value="0"/>
       </module>
       <module name="logger_file">
-        <define name="LOGGER_FILE_PATH" value="/home/ziqingma/paparazzi/data/SIM_logs"/>
+        <define name="LOGGER_FILE_PATH" value="/home/ziqingma/Documents/paparazzi/SIM_logs"/>
       </module>
 
       <!--Switch advanced INDI scheduling functions on or off-->
@@ -73,7 +73,7 @@
     </module>
 
     <module name="guidance"      type="indi_hybrid_tailsitter">
-      <define name="GUIDANCE_INDI_HYBRID_USE_WLS" value="FALSE"/>
+      <define name="GUIDANCE_INDI_HYBRID_USE_WLS" value="TRUE"/>
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
       <define name="GUIDANCE_INDI_POS_GAIN" value="0.6"/>
       <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.0"/>
@@ -147,7 +147,7 @@
     <module name="ins" type="extended">
       <define name="INS_USE_GPS_ALT" value="1"/>
       <define name="INS_USE_GPS_ALT_SPEED" value="TRUE"/>
-      <define name="INS_VFF_R_GPS" value="0.01"/>
+      <define name="INS_VFF_R_GPS" value="0.1"/>
     </module>
     <!-- <modules>
      baro_ms5611_i2c Alternate address
@@ -176,7 +176,7 @@
     <module name="agl_dist">
       <define name="AGL_DIST_ID" value="AGL_LIDAR_TFMINI_ID"/>
       <define name="AGL_DIST_MAX_RANGE" value="5.0"/>
-      <define name="AGL_DIST_MIN_RANGE" value="0.01"/>
+      <define name="AGL_DIST_MIN_RANGE" value="0.0"/>
       <define name="AGL_DIST_FILTER" value="0.1"/>
     </module>
 
@@ -318,7 +318,7 @@
     <define name="TILT_TWIST_CTRL" value="TRUE"/>
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="80"/> <!-- 107 50.0 25.0 20-->
-    <define name="REF_ERR_Q" value="105"/> <!-- was 80-->
+    <define name="REF_ERR_Q" value="105"/> <!-- was 110-->
     <define name="REF_ERR_R" value="80"/> <!-- was 100 200 20.0 65.0 20, increase from 60-->
     <define name="REF_RATE_P" value="9.0"/> <!--was 12 14.0 9.0 10-->
     <define name="REF_RATE_Q" value="9.0"/> <!-- was 12 15.0 14.0 10-->
@@ -380,8 +380,8 @@
     	<define name="MASS" value="0.4561"/>		<!--[kg]-->
     	<define name="I_XX" value="0.00638"/>	<!--[kg m2] 0.00526 -->
     	<!--<define name="I_YY" value="0.04914925"/>-->	<!--[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
-    	<define name="I_YY" value="0.0036"/><!--0.0032 0.0011-->
-    	<define name="I_ZZ" value="0.011"/>	<!--[kg m2] 0.00403 0.00341 -->
+    	<define name="I_YY" value="0.0032"/><!--0.0034 0.0036-->
+    	<define name="I_ZZ" value="0.011"/>	<!--[kg m2] 0.011 0.00341 -->
  	    <!--<define name="I_XX" value="0.017897"/>	[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
     	<!--<define name="I_YY" value="0.003390"/>	[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
     	<!--<define name="I_ZZ" value="0.020337"/>	[kg m2] The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
@@ -415,7 +415,7 @@
   </section>
 
   <section name="NAV">
-    <define name="NAV_CLIMB_VSPEED" value="1.0"/>
+    <define name="NAV_CLIMB_VSPEED" value="1.5"/>
     <define name="NAV_DESCEND_VSPEED" value="-0.8"/>
   </section>
 
@@ -453,7 +453,7 @@
     <define name="GUIDANCE_H_MAX_BANK" value="60" unit="deg"/>
 
     <!--<define name="FWD_SIDESLIP_GAIN_PILOTED" value="0.32"/>  If guidance_hybrid_indi is being used, comment this out -->
-    <define name="FWD_SIDESLIP_GAIN" value="0.1"/>
+    <define name="FWD_SIDESLIP_GAIN" value="0.06"/>
     <!--<define name="SIDESLIP_YAW_GAIN" value="0.32"/>-->
 
     <!--<define name="EFF_SCHED_USE_FUNCTION" value="TRUE"/>-->

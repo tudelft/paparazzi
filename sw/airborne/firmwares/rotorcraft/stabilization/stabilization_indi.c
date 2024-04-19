@@ -1052,7 +1052,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     rates_filt_takeoff.q = update_first_order_low_pass(&rates_filt_takeoff_fo[1], body_rates->q);
     if(autopilot.mode == AP_MODE_NAV){
     if (takeoff_stage == 1) {
-    float theta_d_max = 0.0 / 180.0 * M_PI;
+    float theta_d_max = theta_ref / 180.0 * M_PI;
     float increment = t_scale_to_theta / PERIODIC_FREQUENCY;
            theta_d += increment;
        if (theta_d > theta_d_max) {
@@ -1060,13 +1060,21 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     }
   }
   else if (takeoff_stage == 3){
-          // theta_d gradually decrease for nav mode
-    float theta_d_min = -90.0 / 180.0 * M_PI;
+    if(eulers_zxy.theta < 0.0){          // theta_d gradually decrease for nav mode
+    float theta_d_land = -90.0 / 180.0 * M_PI;
     float increment = t_scale_to_theta / PERIODIC_FREQUENCY;
            theta_d -= increment;
-       if (theta_d < theta_d_min) {
-        theta_d = theta_d_min;
+       if (theta_d < theta_d_land) {
+        theta_d = theta_d_land;
     }
+    }else{
+      float theta_d_land = 90.0 / 180.0 * M_PI;
+      float increment = t_scale_to_theta / PERIODIC_FREQUENCY;
+      theta_d += increment;
+       if (theta_d > theta_d_land) {
+        theta_d = theta_d_land;
+    }
+  }
   }
   }
   else{
@@ -1125,6 +1133,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     /* reset psi setpoint to current psi angle */
     heading_check = stabilization_attitude_get_heading_i();
     stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
+    stab_att_sp_euler.theta = eulers_zxy.theta;
     update_filters();
   } else if (takeoff_stage == 2){ // not in a takeoff stage, flying
 	  /* compute the INDI command */

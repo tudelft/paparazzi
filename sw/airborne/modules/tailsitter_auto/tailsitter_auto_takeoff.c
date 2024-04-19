@@ -100,19 +100,22 @@ int16_t take_off_stage(float theta, float rate_q){
       autopilot_set_in_flight(false);
       stage = 0;
       counter = 0;
+      agl_dist_valid = false;
     }
-    else if(stage == 0 && counter/TAKEOFF_MODULE_FREQ > 2.0){
+    else if(stage == 0 && counter/TAKEOFF_MODULE_FREQ > 1.0){
       stage = 1;
       autopilot_set_in_flight(false);
       counter = 0;
+      agl_dist_valid = false;
     }
-    else if(stage == 1 && fabs((theta - theta_ref/ 180.0 * M_PI)/((theta_ref +90.0)/ 180.0 * M_PI))< 0.06 && rate_q < 0.1 && counter/TAKEOFF_MODULE_FREQ > 1.5 ){
+    else if(stage == 1 && fabs((theta - theta_ref/ 180.0 * M_PI)/((theta_ref +90.0)/ 180.0 * M_PI))< 0.04 && rate_q < 0.1 ){
       stage = 2;
       autopilot_set_in_flight(true);
       counter = 0;
     }
     else if(takeoff_stage == 3 ){
       stage = 3;
+      agl_dist_valid = false;
     }
   } else {
     counter = 0;

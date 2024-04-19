@@ -487,7 +487,7 @@ static void agl_cb(uint8_t __attribute__((unused)) sender_id, __attribute__((unu
   }
 
 #if USE_TFMINI_AGL
-  if (distance > AGL_DIST_MAX_RANGE || distance < AGL_DIST_MIN_RANGE){
+  if (!agl_dist_valid){
     return;
   }
 #endif
