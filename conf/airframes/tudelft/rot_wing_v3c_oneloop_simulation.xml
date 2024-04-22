@@ -101,6 +101,7 @@
              <define name = "ROTMECH_DYN"         value = "3.0"/>
         </module>
         <module name="agl_dist"/>
+        <module name="rot_wing_automation"/>
     </firmware>
 
     <!-- PWM actuators -->   
@@ -248,17 +249,17 @@
 
     <section name="CTRL_EFF_SHED" prefix="ROT_WING_EFF_SCHED_">
         <!--                                          | MF   |   MR   |   MB   |   ML   |   MP   |   ELE  |   RUD  |   AIL  |   FLA  |   PHI  |   THETA | -->
-        <define name  = "G1_ROLL"            value = "{ 0.00f, -13.00f,   0.00f,  13.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>
+        <!-- <define name  = "G1_ROLL"            value = "{ 0.00f, -13.00f,   0.00f,  13.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>
         <define name  = "G1_PITCH"           value = "{ 1.60f,   0.00f,  -1.60f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>  
         <define name  = "G1_YAW"             value = "{-0.40f,   0.40f,  -0.40f,   0.40f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>
         <define name  = "G1_THRUST"          value = "{-0.50f,  -0.50f,  -0.50f,  -0.50f,   0.55f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>  
         <define name  = "G1_ZERO"            value = "{ 0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/> 
-        <define name  = "G2"                 value = "{-0.02f,   0.02f,  -0.02f,   0.02f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>
+        <define name  = "G2"                 value = "{-0.02f,   0.02f,  -0.02f,   0.02f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/> -->
         <!--                                          | MF   |   MR   |   MB   |   ML   |   MP   |   ELE  |   RUD  |   AIL  |   FLA  |   PHI  |   THETA | -->
-        <define name  = "dFdu"               value = "{-0.50f,  -0.50f,  -0.50f,  -0.50f,   0.55f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>  
+        <!-- <define name  = "dFdu"               value = "{-0.50f,  -0.50f,  -0.50f,  -0.50f,   0.55f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>  
         <define name  = "dMzdu"              value = "{-0.40f,   0.40f,  -0.40f,   0.40f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>
         <define name  = "dMzdu_G2"           value = "{-0.02f,   0.02f,  -0.02f,   0.02f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>
-        <define name  = "l"                  value = "{ 0.423f,  0.408f,   0.423f, 0.408f,  0.00f,   1.00f,   1.00f,   1.00f,   1.00f,   0.00f,   0.00f }"/>
+        <define name  = "l"                  value = "{ 0.423f,  0.408f,   0.423f, 0.408f,  0.00f,   1.00f,   1.00f,   1.00f,   1.00f,   0.00f,   0.00f }"/> -->
         <define name="IXX_BODY"              value="0.04780"/>
         <define name="IYY_BODY"              value="0.7546"/>
         <define name="IZZ"                   value="0.9752"/>

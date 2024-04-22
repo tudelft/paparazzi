@@ -32,6 +32,17 @@
 #ifndef EFF_MAT_ROWS_NB
 #define EFF_MAT_ROWS_NB 6
 #endif
+
+#define aX 0
+#define aY 1
+#define aZ 2
+#define aN 0
+#define aE 1
+#define aD 2
+#define ap 3
+#define aq 4
+#define ar 5
+
 #ifndef EFF_MAT_COLS_NB
 #define EFF_MAT_COLS_NB (COMMANDS_NB_REAL + COMMANDS_NB_VIRTUAL)
 #endif
@@ -73,6 +84,7 @@ struct rot_wing_eff_sched_var_t {
   float sinr;                 // sine of wing rotation angle
   float cosr2;                // cosine² of wing rotation angle
   float sinr2;                // sine² of wing rotation angle
+  float cosr3;                // cosine³ of wing rotation angle
   float sinr3;                // sine³ of wing rotation angle
 
   // Set during initialization
@@ -90,21 +102,36 @@ struct rot_wing_eff_sched_var_t {
   float airspeed2;
 };
 
-struct arm{
-  float lx;
-  float ly;
-  float lz;
+// struct arm{
+//   float lx;
+//   float ly;
+//   float lz;
+// };
+struct I{
+  float xx;
+  float yy;
+  float zz;
 };
-struct F_Body{
-  float Fx;
-  float Fy;
-  float Fz;
-  float Mz_G1;
-  float Mz_G2;
-  struct arm arm;
+struct F_M_Body{
+  float dFdu;     // derivative of the force with respect to the control input (e.g. linear coefficient)
+  float dMdu;     // derivative of the reaction trque with respect to the control input (e.g. linear coefficient)
+  float dMdud;    // derivative of the reaction torque with respect to the control input time derivative 
+  float l;        // arm length
 };
 
+struct wing_model{
+  float k0; // Linear coefficient (theta u²)
+  float k1; // Linear coeeficient (theta u² s(Lambda)²)
+  float k2; // linear coefficient with (u² s(Lambda)²)
+  float dLdtheta; // derivative of lift with respect to the pitch angle
+  float L; // Lift
+};
 struct RW_Model{
+  struct I I;     // Inertia matrix
+  float m;        // mass [kg]
+  float T;        // Thrust [N]
+  float P;        // Pusher thrust [N]
+  struct wing_model wing;
   struct F_M_Body mF;
   struct F_M_Body mR;
   struct F_M_Body mB;
@@ -114,8 +141,20 @@ struct RW_Model{
   struct F_M_Body rud;
   struct F_M_Body ail;
   struct F_M_Body flp;
-}
 
+};
+
+struct RW_attitde{
+  float phi;
+  float theta;
+  float psi;
+  float sphi;
+  float cphi;
+  float stheta;
+  float ctheta;
+  float spsi;
+  float cpsi;
+};
 extern float rotation_angle_setpoint_deg;
 extern int16_t rotation_cmd;
 

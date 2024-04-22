@@ -1263,6 +1263,15 @@
         <arg flag="-c" constant="*:telemetry:GUIDANCE:acc_D"/>
       </program>
       <program name="Environment Simulator"/>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="u"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[5]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[6]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[7]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[8]"/>
+      </program>
     </session>
     <session name="Raw Sensors">
       <program name="Data Link">

@@ -35,13 +35,13 @@
   </metrics>
 
   <mass_balance>
-    <ixx unit="KG*M2">  0.126323</ixx>
-    <iyy unit="KG*M2">  1.064109</iyy>
-    <izz unit="KG*M2">  1.00000</izz>
+    <ixx unit="KG*M2">  0.120</ixx>
+    <iyy unit="KG*M2">  1.014</iyy>
+    <izz unit="KG*M2">  0.975</izz>
     <ixy unit="KG*M2">  0.0 </ixy>
     <ixz unit="KG*M2">  0.0 </ixz>
     <iyz unit="KG*M2">  0.0 </iyz>
-    <emptywt unit="KG"> 7.97 </emptywt>
+    <emptywt unit="KG"> 6.670 </emptywt>
     <location name="CG" unit="M">
       <x> 0 </x>
       <y> 0 </y>
@@ -186,6 +186,7 @@
         <output> fcs/MOTOR_LEFT_d</output>
       </washout_filter>
     </channel>
+
     <channel name="skew_control">
       <fcs_function name="cosskew">
         <function>
@@ -252,7 +253,43 @@
         </function>
         <output> fcs/sin3skew </output>
       </fcs_function>
-    </channel>    
+
+      <fcs_function name="coscos3skew">
+        <function>
+          <sum>
+            <property>fcs/cosskew</property>
+            <product>
+              <property>fcs/cos3skew</property>
+              <value>-1</value>
+            </product>
+          </sum>
+        </function>
+        <output> fcs/coscos3skew </output>
+      </fcs_function>
+    </channel> 
+
+    <channel name="misc">
+      <fcs_function name="de_lag">
+        <function>
+          <sum>
+            <value>-0.8267</value> <!-- Convert 0 to 1 scale so that de_lag is 0 when elevator is flat -->
+            <property>fcs/ELEVATOR_lag</property>
+          </sum>
+        </function>
+        <output>fcs/de_lag</output>
+      </fcs_function>
+
+      <fcs_function name="airspeed2_ms">
+        <function>
+          <product>
+            <property>aero/qbar-psf</property>
+            <value>47.880259</value>  <!--Pound Per Square Foot to N/m² (Pascal)-->
+            <value>1.6327</value>     <!-- 2/rho-->
+          </product>
+        </function>
+        <output>fcs/airspeed2_ms</output>
+      </fcs_function>
+    </channel>
   </flight_control>
 
   <external_reactions>
@@ -280,6 +317,8 @@
     <property>fcs/YAW</property>
     <property>fcs/THRUST</property>
     <property>fcs/ROT_MECH</property>
+    <property>fcs/de_lag</property>
+    <property>fcs/airspeed2_ms</property>
     
 
     <!-- Split Forces and moments so that Inertia can be scheduled -->
@@ -289,7 +328,7 @@
       <function>
         <product>
           <property>fcs/MOTOR_FRONT_lag</property>
-          <value> 38.64 </value>
+          <value> 36.82 </value>
           <value> 0.2248</value> <!-- N to LBS -->
         </product>
       </function>
@@ -309,7 +348,7 @@
       <function>
         <product>
           <property>fcs/MOTOR_RIGHT_lag</property>
-          <value> 38.64 </value>
+          <value> 36.82 </value>
           <value> 0.2248</value> <!-- N to LBS -->
         </product>
       </function>
@@ -329,7 +368,7 @@
       <function>
         <product>
           <property>fcs/MOTOR_BACK_lag</property>
-          <value> 38.64 </value>
+          <value> 36.82 </value>
           <value> 0.2248</value> <!-- N to LBS -->
         </product>
       </function>
@@ -349,7 +388,7 @@
       <function>
         <product>
           <property>fcs/MOTOR_LEFT_lag</property>
-          <value> 38.64 </value>
+          <value> 36.82 </value>
           <value> 0.2248</value> <!-- N to LBS -->
         </product>
       </function>
@@ -369,7 +408,7 @@
       <function>
         <product>
           <property>fcs/MOTOR_PUSHER_lag</property>
-          <value> 36.96 </value>
+          <value> 33.30 </value>
           <value> 0.2248</value> <!-- N to LBS -->
         </product>
       </function>
@@ -391,7 +430,7 @@
         <product>
           <property>fcs/MOTOR_RIGHT_lag</property>
           <property>fcs/cosskew</property>
-          <value> 38.64 </value>
+          <value> 36.82 </value>
           <value> 0.408</value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
@@ -413,7 +452,7 @@
         <product>
           <property>fcs/MOTOR_RIGHT_lag</property>
           <property>fcs/sinskew</property>
-          <value> 38.64 </value>
+          <value> 36.82 </value>
           <value> 0.408</value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
@@ -435,7 +474,7 @@
         <product>
           <property>fcs/MOTOR_LEFT_lag</property>
           <property>fcs/cosskew</property>
-          <value> 38.64 </value>
+          <value> 36.82 </value>
           <value> 0.408</value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
@@ -457,7 +496,7 @@
         <product>
           <property>fcs/MOTOR_LEFT_lag</property>
           <property>fcs/sinskew</property>
-          <value> 38.64 </value>
+          <value> 36.82 </value>
           <value> 0.408</value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
@@ -479,7 +518,7 @@
       <function>
         <product>
           <property>fcs/MOTOR_FRONT_lag</property>
-          <value> 3.84 </value>
+          <value> 3.74 </value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
       </function>
@@ -499,7 +538,7 @@
       <function>
         <product>
           <property>fcs/MOTOR_RIGHT_lag</property>
-          <value> 3.84 </value>
+          <value> 3.74 </value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
       </function>
@@ -519,7 +558,7 @@
       <function>
         <product>
           <property>fcs/MOTOR_FRONT_lag</property>
-          <value> 3.84 </value>
+          <value> 3.74 </value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
       </function>
@@ -539,7 +578,7 @@
       <function>
         <product>
           <property>fcs/MOTOR_LEFT_lag</property>
-          <value> 3.84 </value>
+          <value> 3.74 </value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
       </function>
@@ -560,7 +599,7 @@
       <function>
         <product>
           <property>fcs/MOTOR_FRONT_d</property>
-          <value> 0.192 </value>
+          <value> 0.187 </value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
       </function>
@@ -580,7 +619,7 @@
       <function>
         <product>
           <property>fcs/MOTOR_RIGHT_lag</property>
-          <value> 0.192 </value>
+          <value> 0.187 </value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
       </function>
@@ -600,7 +639,7 @@
       <function>
         <product>
           <property>fcs/MOTOR_FRONT_lag</property>
-          <value> 0.192 </value>
+          <value> 0.187 </value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
       </function>
@@ -620,7 +659,7 @@
       <function>
         <product>
           <property>fcs/MOTOR_RIGHT_lag</property>
-          <value> 0.192 </value>
+          <value> 0.187 </value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
       </function>
@@ -647,7 +686,7 @@
         <description>Drag</description>
         <product>
           <property>aero/qbar-psf</property>
-          <value>47.9</value> <!-- Conversion to pascals -->
+          <value>47.88</value> <!-- Conversion to pascals -->
           <value>0.0151</value> <!-- CD x Area (m^2) -->
           <value>0.224808943</value> <!-- N to LBS -->
         </product>
@@ -664,8 +703,112 @@
            <value>-4</value>
        </product>
      </function>
+   </axis>
 
+   <axis name="LIFT">
+    <function name="aero/force/Lift_alpha"> 
+     <product>      
+      <sum>
+        <product>
+          <value> 0.4887 </value>
+          <property>aero/alpha-rad</property> 
+          <property>fcs/airspeed2_ms</property>
+        </product>
+        <product>
+          <value> 0.616 </value>
+          <property>fcs/sin2skew</property>
+          <property>aero/alpha-rad</property> 
+          <property>fcs/airspeed2_ms</property>
+        </product>
+        <product>
+          <value> 0.120 </value>
+          <property>fcs/sin2skew</property> 
+          <property>fcs/airspeed2_ms</property>
+        </product>
+      </sum>
+      <value> 0.2248</value> <!-- N to LBS -->  
+      </product>
+    </function>
+   </axis>
+
+   <axis name="ROLL">
+    <function name="aero/moment/Roll_aileron" frame="BODY" unit="FT*LBS">
+      <product>
+        <property>fcs/AILERONS_lag</property>
+        <property>fcs/sin3skew</property>
+        <property>fcs/airspeed2_ms</property>
+        <value>0.03920</value> <!-- dNdjsbsim-->
+        <value>0.68</value>    <!-- m -->
+        <value> 0.738</value> <!-- Nm to ft-lbs -->
+      </product>
+    </function>
+    <function name="aero/moment/Roll_flaps" frame="BODY" unit="FT*LBS">
+      <product>
+        <property>fcs/airspeed2_ms</property>
+        <property>fcs/FLAPS_lag</property>
+        <property>fcs/sin3skew</property>
+        <value>0.05527</value> <!-- dNdjsbsim-->
+        <value>0.355</value>   <!-- m -->
+        <value> 0.738</value> <!-- Nm to ft-lbs -->
+      </product>
+    </function>
   </axis>
+
+  <axis name="PITCH">
+    <function name="aero/moment/Pitch_elevator" frame="BODY" unit="FT*LBS"> 
+        <product>
+          <property>fcs/airspeed2_ms</property>
+          <property>fcs/de_lag</property>
+          <value>0.23819</value> <!-- dNdjsbsim-->
+          <value>0.850</value>   <!-- m --> 
+          <value> 0.738</value> <!-- Nm to ft-lbs -->
+        </product>
+    </function>
+    <function name="aero/moment/Pitch_aileron" frame="BODY" unit="FT*LBS">
+      <product>
+        <property>fcs/airspeed2_ms</property>
+        <property>fcs/AILERONS_lag</property>
+        <property>fcs/coscos3skew</property>
+        <value>0.03920</value> <!-- dNdjsbsim-->
+        <value>0.68</value>    <!-- m -->
+        <value> 0.738</value> <!-- Nm to ft-lbs -->
+      </product>
+    </function>
+    <function name="aero/moment/Pitch_flaps" frame="BODY" unit="FT*LBS">
+      <product>
+        <property>fcs/airspeed2_ms</property>
+        <property>fcs/FLAPS_lag</property>
+        <property>fcs/coscos3skew</property>
+        <value>0.05527</value> <!-- dNdjsbsim-->
+        <value>0.355</value>   <!-- m -->
+        <value> 0.738</value> <!-- Nm to ft-lbs -->
+      </product>
+    </function>    
+  </axis>
+
+  <axis name="YAW">
+    <function name="aero/moment/Yaw_rudder" frame="BODY" unit="FT*LBS">
+      <product>
+        <property>fcs/airspeed2_ms</property>
+        <property>fcs/RUDDER_lag</property>
+        <value>0.01159</value> <!-- dNdjsbsim-->
+        <value>0.880</value> <!-- m --> 
+        <value> 0.738</value> <!-- Nm to ft-lbs -->
+      </product>
+    </function>
+
+    <function name="aero/moment/Yaw_damp">
+       <description>Yaw moment due to yaw rate</description>
+       <product>
+           <property>aero/qbar-psf</property>
+           <property>metrics/Sw-sqft</property>
+           <property>metrics/bw-ft</property>
+           <property>aero/bi2vel</property>
+           <property>velocities/r-aero-rad_sec</property>
+           <value>-0.15</value>
+       </product>
+    </function>
+  </axis> 
   </aerodynamics>
 
 </fdm_config>

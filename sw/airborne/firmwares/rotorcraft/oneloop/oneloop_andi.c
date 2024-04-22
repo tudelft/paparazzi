@@ -248,12 +248,12 @@ float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
 #define WLS_N_V == ANDI_OUTPUTS
 #endif
 
-#ifdef RW_G_SCALE
-#if RW_G_SCALE != ANDI_G_SCALING
-#error RW_G_SCALE is not equal to ANDI_G_SCALING: define RW_G_SCALE == ANDI_G_SCALING in airframe file
-#define ANDI_G_SCALING == RW_G_SCALE
-#endif
-#endif
+// #ifdef RW_G_SCALE
+// #if RW_G_SCALE != ANDI_G_SCALING
+// #error RW_G_SCALE is not equal to ANDI_G_SCALING: define RW_G_SCALE == ANDI_G_SCALING in airframe file
+// #define ANDI_G_SCALING == RW_G_SCALE
+// #endif
+// #endif
 
 /* Declaration of Navigation Variables*/
 #ifdef NAV_HYBRID_MAX_DECELERATION
@@ -409,11 +409,11 @@ static void send_eff_mat_g_oneloop_andi(struct transport_tx *trans, struct link_
   float zero = 0.0;
   pprz_msg_send_EFF_MAT_G(trans, dev, AC_ID, 
                 ANDI_NUM_ACT_TOT, EFF_MAT_G[0],
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[1],
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[2],
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[3],
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[4],
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[5], 
+                ANDI_NUM_ACT, EFF_MAT_G[1],
+                ANDI_NUM_ACT, EFF_MAT_G[2],
+                ANDI_NUM_ACT, EFF_MAT_G[3],
+                ANDI_NUM_ACT, EFF_MAT_G[4],
+                ANDI_NUM_ACT, EFF_MAT_G[5], 
                                     1, &zero,
                                     1, &zero);
 }
@@ -1340,7 +1340,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     }
   }
   //G2 is scaled by ANDI_G_SCALING to make it readable
-  g2_ff = g2_ff / ANDI_G_SCALING;
+  g2_ff = g2_ff;
   // Run the Reference Model (RM)
   oneloop_andi_RM(half_loop, PSA_des, rm_order_h, rm_order_v);
   // Guidance Pseudo Control Vector (nu) based on error controller
@@ -1497,7 +1497,7 @@ void G1G2_oneloop(int ctrl_type) {
     int j = 0;
     for (j = 0; j < ANDI_OUTPUTS; j++) {
       EFF_MAT_G[j][i] = EFF_MAT_RW[j][i] * scaler;
-      //printf("G1G2_oneloop: %d %d %f\n", j, i, EFF_MAT_RW[j][i]);
+      //printf("G1G2_oneloop: %d %d %f\n", j, i, EFF_MAT_G[j][i]);
       //EFF_MAT_G[j][i] = 1.0;
     }
   }
@@ -1536,7 +1536,7 @@ void calc_model(){
   float T      = -g/(cphi*ctheta); // -9.81;
   float P      = 0.0;
 #ifdef COMMAND_MOTOR_PUSHER  
-   P      = actuator_state_1l[COMMAND_MOTOR_PUSHER] * G1_RW[2][COMMAND_MOTOR_PUSHER] / ANDI_G_SCALING;
+   P      = actuator_state_1l[COMMAND_MOTOR_PUSHER] * G1_RW[aX][COMMAND_MOTOR_PUSHER];
 #endif
   model_pred[0] = (cpsi * stheta + ctheta * sphi * spsi) * T + (cpsi * ctheta - sphi * spsi * stheta) * P;
   model_pred[1] = (spsi * stheta - cpsi * ctheta * sphi) * T + (ctheta * spsi + cpsi * sphi * stheta) * P;
