@@ -455,7 +455,7 @@
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
     <!-- ball bearings vehicle -->
-    <define name="SERVO_EL_1_ZERO_VALUE" value="-1.93" unit="deg"/>
+    <!-- <define name="SERVO_EL_1_ZERO_VALUE" value="-1.93" unit="deg"/>
     <define name="SERVO_EL_2_ZERO_VALUE" value="10.81" unit="deg"/>
     <define name="SERVO_EL_3_ZERO_VALUE" value="-4.5" unit="deg"/>
     <define name="SERVO_EL_4_ZERO_VALUE" value="1.23" unit="deg"/>
@@ -463,7 +463,17 @@
     <define name="SERVO_AZ_1_ZERO_VALUE" value="-7.5" unit="deg"/>
     <define name="SERVO_AZ_2_ZERO_VALUE" value="-7.11" unit="deg"/>
     <define name="SERVO_AZ_3_ZERO_VALUE" value="-1.31" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="-2.37" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="-2.37" unit="deg"/> -->
+
+    <define name="SERVO_EL_1_ZERO_VALUE" value="3.95" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="1.84" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-7.03" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="-12.2" unit="deg"/>
+
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="-2.1" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="-0.43" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="-6.32" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="-0.87" unit="deg"/>
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
@@ -778,7 +788,7 @@
 
   <section name="BAT">
     <!-- Brick on only -->
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.375 * adc)"/>
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.37 * adc)"/>
     <!-- <define name="MAX_BAT_CAPACITY" value="5000" unit="mAh"/> -->
     <!-- <define name="MILLIAMP_AT_IDLE_THROTTLE" value="500" unit="mA"/> -->
     <!-- <define name="MILLIAMP_AT_FULL_THROTTLE" value="30000" unit="mA"/> -->
