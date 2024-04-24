@@ -6,14 +6,12 @@
 
   <firmware name="rotorcraft">
     <target name="ap" board="px4fmu_4.0_chibios">
-      <define name="FLASH_MODE" value="PX4_BOOTLOADER"/>
+      <!--<define name="FLASH_MODE" value="PX4_BOOTLOADER"/>-->
       <configure name="PERIODIC_FREQUENCY" value="512"/> 
 
       <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/><!--  unit="Hz" -->
       <configure name="AHRS_CORRECT_FREQUENCY" value="500"/> <!--  unit="Hz" -->
       <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/><!-- TODO: best value unit="Hz" -->
-
-      <module name="telemetry" type="transparent_usb"/>
 
       <!-- <module name="radio_control" type="datalink"/>-->
       <module name="radio_control" type="sbus">
@@ -22,7 +20,16 @@
         <!--<define name="RADIO_KILL" value="5"/>-->
         <define name="RADIO_PIVOT_SWITCH" value="6"/> 
       </module>
+
+      <!--<module name="telemetry" type="transparent_usb"/>-->
+
+      <module name="telemetry" type="transparent">
+        <configure name="MODEM_PORT" value="usb_serial"/> 
+        
+        <configure name="MODEM_BAUD" value="B57600"/>
+      </module>
     </target>
+
 
     <module name="tlsf"/>
     <module name="pprzlog"/>
@@ -30,7 +37,7 @@
     <module name="flight_recorder"/>
     <define name="SDLOG_AUTO_FLUSH_PERIOD" value="1" unit="s"/>
 
-    <module name="sys_mon"/>
+    <!--<module name="sys_mon"/>-->
     
 
 
@@ -62,10 +69,20 @@
     <module name="stabilization" type="int_quat"/>
 
     <module name="ahrs" type="int_cmpl_quat">
+      <configure name="USE_GPS" value="FALSE"/>
       <configure name="USE_MAGNETOMETER" value="TRUE"/>
       <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
-      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
     </module>
+
+
+    <module name="ins"/>
+
+
+        <module name="gps" type="ublox"><!-- hes no GPS but it is a temp fixfor OSD module expecting GPS-->
+          <configure name="GPS_BAUD" value="B460800"/>
+          <configure name="GPS_PORT" value="UART2"/>
+        </module>
+
   </firmware>
 
 
@@ -194,11 +211,9 @@
   <!--</section>-->
 
   
-    <section name="INS" prefix="INS_">
-        <!-- Use GPS altitude measurments and set the R gain -->
-        <!--<define name="USE_GPS_ALT" value="1"/>
-        <define name="VFF_R_GPS" value="0.01"/>-->
-    </section>
+
+  <section name="INS" prefix="INS_">
+  </section>
 
   <!-- Gains for horizontal navigation-->
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">

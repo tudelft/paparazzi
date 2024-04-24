@@ -363,7 +363,7 @@ static void thd_bat_survey(void *arg)
 */
 static void powerOutageIsr(void)
 {
-  chEvtBroadcastI(&powerOutageSource);
+  //chEvtBroadcastI(&powerOutageSource);
 }
 
 void logger_log_msg_up(uint8_t* buf) {
