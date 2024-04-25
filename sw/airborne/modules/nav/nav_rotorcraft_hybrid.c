@@ -230,7 +230,8 @@ static void nav_hybrid_circle(struct EnuCoor_f *wp_center, float radius)
   float sign_radius = radius > 0.f ? 1.f : -1.f;
   // absolute radius
   float abs_radius = fabsf(radius);
-
+  float min_radius =  nav_max_speed * nav_max_speed / nav_max_deceleration_sp;
+  abs_radius = Max(abs_radius, min_radius);
   if (abs_radius > 0.1f) {
     // store last qdr
     float last_qdr = nav_rotorcraft_base.circle.qdr;
@@ -274,7 +275,7 @@ static void nav_hybrid_circle(struct EnuCoor_f *wp_center, float radius)
   VECT2_SMUL(nav.speed, speed_unit, desired_speed);
 
   nav_rotorcraft_base.circle.center = *wp_center;
-  nav_rotorcraft_base.circle.radius = radius;
+  nav_rotorcraft_base.circle.radius = sign_radius * abs_radius;
   nav.horizontal_mode = NAV_HORIZONTAL_MODE_CIRCLE;
   nav.setpoint_mode = NAV_SETPOINT_MODE_SPEED;
 }

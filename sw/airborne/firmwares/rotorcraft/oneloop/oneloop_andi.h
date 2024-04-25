@@ -57,6 +57,7 @@
 #define  CTRL_ANDI 0
 #define  CTRL_INDI 1
 
+extern bool ctrl_off;
 extern float act_state_filt_vect_1l[ANDI_NUM_ACT];
 extern float actuator_state_1l[ANDI_NUM_ACT];
 extern float nu[6];

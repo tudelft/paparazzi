@@ -6,6 +6,7 @@
   <settings>
    <dl_settings>
      <dl_settings NAME="oneloop">
+       <dl_setting var="ctrl_off"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="ctrl_off"/> 
        <dl_setting var="chirp_on"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="chirp_on"/>  
        <dl_setting var="chirp_axis"         min="0"       step="1"     max="3"     shortname="chirp_axis"/>  
        <dl_setting var="f0_chirp"           min="0.01"    step="0.001" max="10"    shortname="f0_chirp"/> 

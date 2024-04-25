@@ -220,18 +220,10 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 #endif
 
 // Assume phi and theta are the first actuators after the real ones unless otherwise specified
-#ifndef ONELOOP_ANDI_PHI_IDX
-#define ONELOOP_ANDI_PHI_IDX  ANDI_NUM_ACT
-#endif
+#define ONELOOP_ANDI_MAX_BANK  act_max[COMMAND_ROLL] // assuming abs of max and min is the same
+#define ONELOOP_ANDI_MAX_PHI   act_max[COMMAND_ROLL] // assuming abs of max and min is the same
 
-#define ONELOOP_ANDI_MAX_BANK  act_max[ONELOOP_ANDI_PHI_IDX] // assuming abs of max and min is the same
-#define ONELOOP_ANDI_MAX_PHI   act_max[ONELOOP_ANDI_PHI_IDX] // assuming abs of max and min is the same
-
-#ifndef ONELOOP_ANDI_THETA_IDX
-#define ONELOOP_ANDI_THETA_IDX  ANDI_NUM_ACT+1
-#endif
-
-#define ONELOOP_ANDI_MAX_THETA   act_max[ONELOOP_ANDI_THETA_IDX] // assuming abs of max and min is the same
+#define ONELOOP_ANDI_MAX_THETA   act_max[COMMAND_PITCH] // assuming abs of max and min is the same
 
 #ifndef ONELOOP_THETA_PREF_MAX
 float theta_pref_max = RadOfDeg(20.0);
@@ -335,9 +327,9 @@ struct FloatEulers eulers_zxy;
 float  psi_des_rad = 0.0;
 float  psi_des_deg = 0.0;
 static float  psi_vec[4]  = {0.0, 0.0, 0.0, 0.0};
-bool heading_manual = true;
+bool heading_manual = false;
 bool yaw_stick_in_auto = false;
-
+bool ctrl_off = false;
 /*WLS Settings*/
 static float gamma_wls = 1000.0;
 static float du_min_1l[ANDI_NUM_ACT_TOT]; 
@@ -408,9 +400,9 @@ static void send_eff_mat_g_oneloop_andi(struct transport_tx *trans, struct link_
 {
   float zero = 0.0;
   pprz_msg_send_EFF_MAT_G(trans, dev, AC_ID, 
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[0],
+                ANDI_NUM_ACT, EFF_MAT_G[0],
                 ANDI_NUM_ACT, EFF_MAT_G[1],
-                ANDI_NUM_ACT, EFF_MAT_G[2],
+                ANDI_NUM_ACT_TOT, EFF_MAT_G[2],
                 ANDI_NUM_ACT, EFF_MAT_G[3],
                 ANDI_NUM_ACT, EFF_MAT_G[4],
                 ANDI_NUM_ACT, EFF_MAT_G[5], 
@@ -478,7 +470,7 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
 static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
 {
   float temp_debug_vect[2];
-  temp_debug_vect[0] = andi_u[ONELOOP_ANDI_THETA_IDX];
+  temp_debug_vect[0] = andi_u[COMMAND_PITCH];
   temp_debug_vect[1] = pitch_pref;
   debug_vect(trans, dev, "andi_u_pitch_pref", temp_debug_vect, 2);
 }
@@ -892,11 +884,11 @@ void init_poles(void){
   p_head_rm.zeta    = 1.0;
   p_head_rm.p3      = p_head_rm.omega_n * p_head_rm.zeta;
 
-  act_dynamics[ONELOOP_ANDI_PHI_IDX]   = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
-  act_dynamics[ONELOOP_ANDI_THETA_IDX] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
+  act_dynamics[COMMAND_ROLL]   = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
+  act_dynamics[COMMAND_PITCH] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
 
   // Position Controller Poles----------------------------------------------------------
-  slow_pole = act_dynamics[ONELOOP_ANDI_PHI_IDX]; // Pole of the slowest dynamics used in the position controller
+  slow_pole = act_dynamics[COMMAND_ROLL]; // Pole of the slowest dynamics used in the position controller
 
   p_pos_e.omega_n = 1.0;
   p_pos_e.zeta    = 1.0; 
@@ -921,6 +913,7 @@ void init_poles(void){
 void init_controller(void){
   /*Register a variable from nav_hybrid. Should be improved when nav hybrid is final.*/
   max_v_nav = nav_max_speed;
+  max_a_nav = nav_max_deceleration_sp;
   /*Some calculations in case new poles have been specified*/
   p_att_rm.p3  = p_att_rm.omega_n  * p_att_rm.zeta;
   p_pos_rm.p3  = p_pos_rm.omega_n  * p_pos_rm.zeta;
@@ -1006,8 +999,8 @@ void init_controller(void){
    
   //------------------------------------------------------------------------------------------
   /*Approximated Dynamics*/
-  act_dynamics[ONELOOP_ANDI_PHI_IDX]   = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
-  act_dynamics[ONELOOP_ANDI_THETA_IDX] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
+  act_dynamics[COMMAND_ROLL]   = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
+  act_dynamics[COMMAND_PITCH] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
 }
 
 
@@ -1231,7 +1224,8 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
       if (ref_mag_vel > 3.0){
         psi_des_rad = atan2f(oneloop_andi.gui_ref.vel[1],oneloop_andi.gui_ref.vel[0]);
       }
-      psi_des_rad += oneloop_andi_sideslip() * dt_1l;
+      // FIX UNCOMMENT
+      //psi_des_rad += oneloop_andi_sideslip() * dt_1l;
       NormRadAngle(psi_des_rad);
     }
     // Register Attitude Setpoints from previous loop
@@ -1301,7 +1295,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   if(in_flight) {
     use_increment = 1.0;
     in_flight_oneloop       = true;
-  }
+  } 
   if (ONELOOP_ANDI_DEBUG_MODE) {
     in_flight_oneloop = false;
   }
@@ -1375,17 +1369,42 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     pitch_pref = pitch_pref / MAX_PPRZ * theta_pref_max;
     Bound(pitch_pref,0.0,theta_pref_max);
   }
-  u_pref[ONELOOP_ANDI_THETA_IDX] = pitch_pref;
+  u_pref[COMMAND_PITCH] = pitch_pref;
   // Calculate the min and max increments
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
-    if(i<ANDI_NUM_ACT){
-      du_min_1l[i]  = (act_min[i] - use_increment * actuator_state_1l[i])/ratio_u_un[i];
-      du_max_1l[i]  = (act_max[i] - use_increment * actuator_state_1l[i])/ratio_u_un[i];
-      du_pref_1l[i] = (u_pref[i]  - use_increment * actuator_state_1l[i])/ratio_u_un[i];
-    }else{
-      du_min_1l[i]  = (act_min[i] - use_increment * oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
-      du_max_1l[i]  = (act_max[i] - use_increment * oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
-      du_pref_1l[i] = (u_pref[i]  - use_increment * oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+    switch (i) {
+      case COMMAND_MOTOR_FRONT:
+      case COMMAND_MOTOR_RIGHT:
+      case COMMAND_MOTOR_BACK:
+      case COMMAND_MOTOR_LEFT:
+        du_min_1l[i]  = (act_min[i] - use_increment * actuator_state_1l[i])/ratio_u_un[i];
+        du_pref_1l[i] = (u_pref[i]  - use_increment * actuator_state_1l[i])/ratio_u_un[i];
+        du_max_1l[i]  = (act_max[i] - use_increment * actuator_state_1l[i])/ratio_u_un[i];
+        if (!rotwing_state_settings.hover_motors_active){
+          // printf("HOVER MOTORS not ACTIVE\n");
+        }
+        // if (rotwing_state_settings.hover_motors_active){
+        //   du_max_1l[i]  = (act_max[i] - use_increment * actuator_state_1l[i])/ratio_u_un[i];
+        // } else
+        // {
+        //   du_max_1l[i]  = (0.0 - use_increment * actuator_state_1l[i])/ratio_u_un[i];
+        // }
+        break;
+      case COMMAND_MOTOR_PUSHER:
+      case COMMAND_ELEVATOR:
+      case COMMAND_RUDDER:
+      case COMMAND_AILERONS:
+      case COMMAND_FLAPS:
+        du_min_1l[i]  = (act_min[i] - use_increment * actuator_state_1l[i])/ratio_u_un[i];
+        du_max_1l[i]  = (act_max[i] - use_increment * actuator_state_1l[i])/ratio_u_un[i];
+        du_pref_1l[i] = (u_pref[i]  - use_increment * actuator_state_1l[i])/ratio_u_un[i]; 
+        break;
+      case COMMAND_ROLL:
+      case COMMAND_PITCH:
+        du_min_1l[i]  = (act_min[i] - use_increment * oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+        du_max_1l[i]  = (act_max[i] - use_increment * oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+        du_pref_1l[i] = (u_pref[i]  - use_increment * oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+        break;           
     }
   }
 
@@ -1399,13 +1418,13 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   if (in_flight_oneloop) {
     // Add the increments to the actuators
     float_vect_sum(andi_u, actuator_state_1l, andi_du, ANDI_NUM_ACT);
-    andi_u[ONELOOP_ANDI_PHI_IDX]   = andi_du[ONELOOP_ANDI_PHI_IDX]   + oneloop_andi.sta_state.att[0];
-    andi_u[ONELOOP_ANDI_THETA_IDX] = andi_du[ONELOOP_ANDI_THETA_IDX] + oneloop_andi.sta_state.att[1];
+    andi_u[COMMAND_ROLL]  = andi_du[COMMAND_ROLL]   + oneloop_andi.sta_state.att[0];
+    andi_u[COMMAND_PITCH] = andi_du[COMMAND_PITCH] + oneloop_andi.sta_state.att[1];
   } else {
     // Not in flight, so don't increment
     float_vect_copy(andi_u, andi_du, ANDI_NUM_ACT);
-    andi_u[ONELOOP_ANDI_PHI_IDX] = andi_du[ONELOOP_ANDI_PHI_IDX];
-    andi_u[ONELOOP_ANDI_THETA_IDX] = andi_du[ONELOOP_ANDI_THETA_IDX];
+    andi_u[COMMAND_ROLL]  = andi_du[COMMAND_ROLL];
+    andi_u[COMMAND_PITCH] = andi_du[COMMAND_PITCH];
   }
 
 #ifdef COMMAND_MOTOR_PUSHER
@@ -1428,11 +1447,11 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   commands[COMMAND_THRUST] = (commands[COMMAND_MOTOR_FRONT] + commands[COMMAND_MOTOR_RIGHT] + commands[COMMAND_MOTOR_BACK] + commands[COMMAND_MOTOR_LEFT])/num_thrusters_oneloop;
   autopilot.throttle = commands[COMMAND_THRUST];
   if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
-    eulers_zxy_des.phi   =  andi_u[ONELOOP_ANDI_PHI_IDX];
-    eulers_zxy_des.theta =  andi_u[ONELOOP_ANDI_THETA_IDX];
+    eulers_zxy_des.phi   =  andi_u[COMMAND_ROLL];
+    eulers_zxy_des.theta =  andi_u[COMMAND_PITCH];
   } else {
-    eulers_zxy_des.phi   =  andi_u[ONELOOP_ANDI_PHI_IDX];
-    eulers_zxy_des.theta =  andi_u[ONELOOP_ANDI_THETA_IDX];
+    eulers_zxy_des.phi   =  andi_u[COMMAND_ROLL];
+    eulers_zxy_des.theta =  andi_u[COMMAND_PITCH];
   }
   if (heading_manual){
     psi_des_deg = DegOfRad(psi_des_rad);
@@ -1454,7 +1473,7 @@ void get_act_state_oneloop(void)
     if(!autopilot_get_motors_on()){
       actuator_state_1l[i] = 0.0;
     }
-    Bound(actuator_state_1l[i],0,MAX_PPRZ);
+    Bound(actuator_state_1l[i],act_min[i], act_max[i]);
   }
 }
 
@@ -1497,8 +1516,20 @@ void G1G2_oneloop(int ctrl_type) {
     int j = 0;
     for (j = 0; j < ANDI_OUTPUTS; j++) {
       EFF_MAT_G[j][i] = EFF_MAT_RW[j][i] * scaler;
-      //printf("G1G2_oneloop: %d %d %f\n", j, i, EFF_MAT_G[j][i]);
-      //EFF_MAT_G[j][i] = 1.0;
+      if (!rotwing_state_settings.hover_motors_active && i < 4){
+        EFF_MAT_G[j][i] = 0.0;
+      }
+      if (ctrl_off && i < 4  && j == 5){ //hack test
+        EFF_MAT_G[j][i] = 0.0;
+      } 
+      if (ctrl_off && i < 4  && j == 4){ //hack test
+        EFF_MAT_G[j][i] = 0.0;
+      } 
+      if (ctrl_off && i < 4  && j == 3){ //hack test
+        EFF_MAT_G[j][i] = 0.0;
+      } 
+      // printf("G1G2_oneloop: %d %d %f\n", j, i, EFF_MAT_G[j][i]);
+      // printf("G1G2_sched: %d %d %f\n", j, i, EFF_MAT_RW[j][i]);
     }
   }
 }
@@ -1518,6 +1549,9 @@ void calc_normalization(void){
     ratio_denominator = positive_non_zero(ratio_denominator); // make sure denominator is non-zero
     ratio_u_un[i] = ratio_numerator/ratio_denominator;
     ratio_u_un[i] = positive_non_zero(ratio_u_un[i]);// make sure ratio is not zero
+    // printf("ratio_u_un: %d %f\n", i, ratio_u_un[i]);
+    // printf("max and min %d %f %f\n", i, act_max[i], act_min[i]);
+    // printf("max and min norm %d %f %f\n", i, act_max_norm[i], act_min_norm[i]);
   }
 }
 
@@ -1525,23 +1559,25 @@ void calc_normalization(void){
 void calc_model(){
   int8_t i;
   int8_t j;
-  // Absolute Model Prediction : 
-  float sphi   = sinf(eulers_zxy.phi);
-  float cphi   = cosf(eulers_zxy.phi);
-  float stheta = sinf(eulers_zxy.theta);
-  float ctheta = cosf(eulers_zxy.theta);
-  float spsi   = sinf(eulers_zxy.psi);
-  float cpsi   = cosf(eulers_zxy.psi);
+  // // Absolute Model Prediction : 
+  // float sphi   = sinf(eulers_zxy.phi);
+  // float cphi   = cosf(eulers_zxy.phi);
+  // float stheta = sinf(eulers_zxy.theta);
+  // float ctheta = cosf(eulers_zxy.theta);
+  // float spsi   = sinf(eulers_zxy.psi);
+  // float cpsi   = cosf(eulers_zxy.psi);
+  // Thrust and Pusher force estimation
+  float L      = RW.wing.L / RW.m;          // Lift specific force
+  float T      = RW.T / RW.m;             //  Thrust specific force. Minus gravity is a guesstimate.
+  float P      = RW.P / RW.m;               // Pusher specific force
 
-  float T      = -g/(cphi*ctheta); // -9.81;
-  float P      = 0.0;
-#ifdef COMMAND_MOTOR_PUSHER  
-   P      = actuator_state_1l[COMMAND_MOTOR_PUSHER] * G1_RW[aX][COMMAND_MOTOR_PUSHER];
-#endif
-  model_pred[0] = (cpsi * stheta + ctheta * sphi * spsi) * T + (cpsi * ctheta - sphi * spsi * stheta) * P;
-  model_pred[1] = (spsi * stheta - cpsi * ctheta * sphi) * T + (ctheta * spsi + cpsi * sphi * stheta) * P;
-  model_pred[2] = g + cphi * ctheta * T - cphi * stheta * P;
+  // model_pred[0] = (cpsi * stheta + ctheta * sphi * spsi) * T + (cpsi * ctheta - sphi * spsi * stheta) * P;
+  // model_pred[1] = (spsi * stheta - cpsi * ctheta * sphi) * T + (ctheta * spsi + cpsi * sphi * stheta) * P;
+  // model_pred[2] = g + cphi * ctheta * T - cphi * stheta * P;
 
+  model_pred[0] = -(RW.att.cpsi * RW.att.stheta + RW.att.ctheta * RW.att.sphi * RW.att.spsi) * T + (RW.att.cpsi * RW.att.ctheta - RW.att.sphi * RW.att.spsi * RW.att.stheta) * P - RW.att.sphi * RW.att.spsi * L;
+  model_pred[1] = -(RW.att.spsi * RW.att.stheta - RW.att.cpsi * RW.att.ctheta * RW.att.sphi) * T + (RW.att.ctheta * RW.att.spsi + RW.att.cpsi * RW.att.sphi * RW.att.stheta) * P + RW.att.cpsi * RW.att.sphi * L;
+  model_pred[2] = g - RW.att.cphi * RW.att.ctheta * T - RW.att.cphi * RW.att.stheta * P - RW.att.cphi * L;
   for (i = 3; i < ANDI_OUTPUTS; i++){ // For loop for prediction of angular acceleration
     model_pred[i] = 0.0;              // 
     for (j = 0; j < ANDI_NUM_ACT; j++){
@@ -1600,8 +1636,8 @@ float oneloop_andi_sideslip(void)
   // Use the current roll angle to determine the corresponding heading rate of change.
   float coordinated_turn_roll = eulers_zxy.phi;
   // Prevent flipping
-  if( (andi_u[ONELOOP_ANDI_THETA_IDX] > 0.0f) && ( fabs(andi_u[ONELOOP_ANDI_PHI_IDX]) < andi_u[ONELOOP_ANDI_THETA_IDX])) {
-    coordinated_turn_roll = ((andi_u[ONELOOP_ANDI_PHI_IDX] > 0.0f) - (andi_u[ONELOOP_ANDI_PHI_IDX] < 0.0f)) * andi_u[ONELOOP_ANDI_THETA_IDX];
+  if( (andi_u[COMMAND_PITCH] > 0.0f) && ( fabs(andi_u[COMMAND_ROLL]) < andi_u[COMMAND_PITCH])) {
+    coordinated_turn_roll = ((andi_u[COMMAND_ROLL] > 0.0f) - (andi_u[COMMAND_ROLL] < 0.0f)) * andi_u[COMMAND_PITCH];
   }
   BoundAbs(coordinated_turn_roll, max_phi);
   omega = g / airspeed_turn * tanf(coordinated_turn_roll);
@@ -1729,4 +1765,9 @@ void chirp_call(bool *chirp_on, bool *chirp_first_call, float* t_0, float* time_
       oneloop_andi_enter(false, oneloop_andi.ctrl_type);
     }
   }
+}
+
+/** Quadplanes can still be in-flight with COMMAND_THRUST==0 and can even soar not descending in updrafts with all thrust off */
+bool autopilot_in_flight_end_detection(bool motors_on UNUSED) {
+  return ! motors_on;
 }

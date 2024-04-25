@@ -165,7 +165,7 @@ struct rot_wing_eff_sched_var_t eff_sched_var;
 
 /* Define Forces and Moments tructs for each actuator*/
 struct RW_Model RW;
-struct RW_attitde RW_att;
+//struct RW.attitde RW.att;
 
 inline void eff_scheduling_rot_wing_update_wing_angle(void);
 // inline void eff_scheduling_rot_wing_update_MMOI(void);
@@ -269,15 +269,15 @@ void init_RW_Model(void)
 void  update_attitude(void)
 {
   float_eulers_of_quat_zxy(&eulers_zxy_RW_EFF, stateGetNedToBodyQuat_f());
-  RW_att.phi    = eulers_zxy_RW_EFF.phi;
-  RW_att.theta  = eulers_zxy_RW_EFF.theta;
-  RW_att.psi    = eulers_zxy_RW_EFF.psi;
-  RW_att.sphi   = sinf(eulers_zxy_RW_EFF.phi);
-  RW_att.cphi   = cosf(eulers_zxy_RW_EFF.phi);
-  RW_att.stheta = sinf(eulers_zxy_RW_EFF.theta);
-  RW_att.ctheta = cosf(eulers_zxy_RW_EFF.theta);
-  RW_att.spsi   = sinf(eulers_zxy_RW_EFF.psi);
-  RW_att.cpsi   = cosf(eulers_zxy_RW_EFF.psi);
+  RW.att.phi    = eulers_zxy_RW_EFF.phi;
+  RW.att.theta  = eulers_zxy_RW_EFF.theta;
+  RW.att.psi    = eulers_zxy_RW_EFF.psi;
+  RW.att.sphi   = sinf(eulers_zxy_RW_EFF.phi);
+  RW.att.cphi   = cosf(eulers_zxy_RW_EFF.phi);
+  RW.att.stheta = sinf(eulers_zxy_RW_EFF.theta);
+  RW.att.ctheta = cosf(eulers_zxy_RW_EFF.theta);
+  RW.att.spsi   = sinf(eulers_zxy_RW_EFF.psi);
+  RW.att.cpsi   = cosf(eulers_zxy_RW_EFF.psi);
 }
 /* Function to precalculate once some constant effectiveness values to improve efficiency*/
 void calc_G1_G2_RW(void)
@@ -308,21 +308,35 @@ void calc_G1_G2_RW(void)
   G1_RW[aX][COMMAND_MOTOR_PUSHER] =  RW.mP.dFdu / RW.m;
   // Elevator
   G1_RW[aq][COMMAND_ELEVATOR]     =  (RW.ele.dFdu * eff_sched_var.airspeed2 * RW.ele.l) / RW.I.yy;
+  // printf("G1_RW[aq][COMMAND_ELEVATOR] = %f\n", G1_RW[aq][COMMAND_ELEVATOR]);
+  // printf("RW.ele.dFdu = %f\n", RW.ele.dFdu);
+  // printf("eff_sched_var.airspeed2 = %f\n", eff_sched_var.airspeed2);
+  // printf("RW.ele.l = %f\n", RW.ele.l);
+  // printf("RW.I.yy = %f\n", RW.I.yy);
+
   // Rudder
   G1_RW[ar][COMMAND_RUDDER]       =  (RW.rud.dFdu * eff_sched_var.airspeed2 * RW.rud.l) / RW.I.zz ;
   // Aileron
   G1_RW[ap][COMMAND_AILERONS]     =  (RW.ail.dFdu * eff_sched_var.airspeed2 * RW.ail.l * eff_sched_var.sinr3) / RW.I.xx;
   G1_RW[aq][COMMAND_AILERONS]     =  (RW.ail.dFdu * eff_sched_var.airspeed2 * RW.ail.l * (eff_sched_var.cosr-eff_sched_var.cosr3)) / RW.I.yy;
+  
   // Flaperon
   G1_RW[ap][COMMAND_FLAPS]        =  (RW.flp.dFdu * eff_sched_var.airspeed2 * RW.flp.l * eff_sched_var.sinr3) / RW.I.xx;
   G1_RW[aq][COMMAND_FLAPS]        =  (RW.flp.dFdu * eff_sched_var.airspeed2 * RW.flp.l * (eff_sched_var.cosr-eff_sched_var.cosr3)) / RW.I.yy;
   // Lift and thrust
   RW.wing.dLdtheta                =  (RW.wing.k0 + RW.wing.k1 * eff_sched_var.sinr2) * eff_sched_var.airspeed2;
-  Bound(RW.wing.dLdtheta, 0.0, 130.0);
-  RW.wing.L                       =  RW.wing.k0 * RW_att.theta * eff_sched_var.airspeed2 + RW.wing.k1 * RW_att.theta * eff_sched_var.sinr2 * eff_sched_var.airspeed2 + RW.wing.k2 * eff_sched_var.sinr2 * eff_sched_var.airspeed2;
+  printf("RW.wing.dLdtheta = %f\n", RW.wing.dLdtheta);
+  Bound(RW.wing.dLdtheta, 0.0, 1300.0);
+  printf("RW.wing.dLdtheta = %f\n", RW.wing.dLdtheta);
+  RW.wing.L                       =  RW.wing.k0 * RW.att.theta * eff_sched_var.airspeed2 + RW.wing.k1 * RW.att.theta * eff_sched_var.sinr2 * eff_sched_var.airspeed2 + RW.wing.k2 * eff_sched_var.sinr2 * eff_sched_var.airspeed2;
+  printf("RW.wing.L = %f\n", RW.wing.L);
   Bound(RW.wing.L, 0.0, 350.0);
-  RW.T                            =  (RW.m * 9.81 - RW.wing.L)/(RW_att.cphi * RW_att.ctheta);
+  printf("RW.wing.L = %f\n", RW.wing.L);
+  //RW.T                            =  (RW.m * 9.81 - RW.wing.L)/(RW.att.cphi * RW.att.ctheta);
+  RW.T = (actuator_state_1l[COMMAND_MOTOR_FRONT] * G1_RW[aZ][COMMAND_MOTOR_FRONT] + actuator_state_1l[COMMAND_MOTOR_RIGHT] * G1_RW[aZ][COMMAND_MOTOR_RIGHT] + actuator_state_1l[COMMAND_MOTOR_BACK] * G1_RW[aZ][COMMAND_MOTOR_BACK] + actuator_state_1l[COMMAND_MOTOR_LEFT] * G1_RW[aZ][COMMAND_MOTOR_LEFT]) * RW.m;
+  printf("RW.T = %f\n", RW.T);
   Bound(RW.T, 0.0, 140.0);
+  printf("RW.T = %f\n", RW.T);
   RW.P                            = actuator_state_1l[COMMAND_MOTOR_PUSHER] * G1_RW[aX][COMMAND_MOTOR_PUSHER] * RW.m;
 }
 
@@ -340,15 +354,15 @@ void eff_scheduling_rot_wing_init(void)
   eff_sched_var.sinr3             = 0;
 
   // Initialize attitude
-  RW_att.phi    = 0.0;
-  RW_att.theta  = 0.0; 
-  RW_att.psi    = 0.0; 
-  RW_att.sphi   = 0.0; 
-  RW_att.cphi   = 0.0; 
-  RW_att.stheta = 0.0; 
-  RW_att.ctheta = 0.0; 
-  RW_att.spsi   = 0.0; 
-  RW_att.cpsi   = 0.0; 
+  RW.att.phi    = 0.0;
+  RW.att.theta  = 0.0; 
+  RW.att.psi    = 0.0; 
+  RW.att.sphi   = 0.0; 
+  RW.att.cphi   = 0.0; 
+  RW.att.stheta = 0.0; 
+  RW.att.ctheta = 0.0; 
+  RW.att.spsi   = 0.0; 
+  RW.att.cpsi   = 0.0; 
   // Set moment derivative variables
   eff_sched_var.pitch_motor_dMdpprz = ROT_WING_EFF_SCHED_DM_DPPRZ_HOVER_PITCH;
   eff_sched_var.roll_motor_dMdpprz  = (eff_sched_p.DMdpprz_hover_roll[0] + (MAX_PPRZ/2.) * eff_sched_p.DMdpprz_hover_roll[1]) / 10000.; // Dmdpprz hover roll for hover thrust
@@ -369,6 +383,7 @@ void eff_scheduling_rot_wing_init(void)
 
 void eff_scheduling_rot_wing_periodic(void)
 {
+  // printf("I am scheduling\n");
 #if EFF_MAT_SIMPLE
   update_attitude();
   eff_scheduling_rot_wing_update_wing_angle();
@@ -408,33 +423,35 @@ void sum_EFF_MAT_RW(void) {
   float dLdtheta = RW.wing.dLdtheta / RW.m; // Lift specific force derivative with pitch
   float T      = RW.T / RW.m;             //  Thrust specific force. Minus gravity is a guesstimate.
   float P      = RW.P / RW.m;               // Pusher specific force
-  float T_L    = T + L * RW_att.ctheta;     // Thrust and Lift term
-  float P_L    = P + L * RW_att.stheta;     // Pusher and Lift term
+  float T_L    = T + L * RW.att.ctheta;     // Thrust and Lift term
+  float P_L    = P + L * RW.att.stheta;     // Pusher and Lift term
   int i = 0;
   int j = 0;
+  // printf("check\n");
   for (i = 0; i < EFF_MAT_COLS_NB; i++) {
     switch (i) {
     case (COMMAND_MOTOR_FRONT):
     case (COMMAND_MOTOR_BACK):
     case (COMMAND_MOTOR_RIGHT):     
     case (COMMAND_MOTOR_LEFT):
-      EFF_MAT_RW[aN][i] = (RW_att.cpsi * RW_att.stheta + RW_att.ctheta * RW_att.sphi   * RW_att.spsi) * G1_RW[aZ][i];
-      EFF_MAT_RW[aE][i] = (RW_att.spsi * RW_att.stheta - RW_att.cpsi   * RW_att.ctheta * RW_att.sphi) * G1_RW[aZ][i];
-      EFF_MAT_RW[aD][i] = (RW_att.cphi * RW_att.ctheta                                              ) * G1_RW[aZ][i];
+      // printf("check 2\n");
+      EFF_MAT_RW[aN][i] = (RW.att.cpsi * RW.att.stheta + RW.att.ctheta * RW.att.sphi   * RW.att.spsi) * G1_RW[aZ][i];
+      EFF_MAT_RW[aE][i] = (RW.att.spsi * RW.att.stheta - RW.att.cpsi   * RW.att.ctheta * RW.att.sphi) * G1_RW[aZ][i];
+      EFF_MAT_RW[aD][i] = (RW.att.cphi * RW.att.ctheta                                              ) * G1_RW[aZ][i];
       EFF_MAT_RW[ap][i] = (G1_RW[ap][i])                                       ;
       EFF_MAT_RW[aq][i] = (G1_RW[aq][i])                                       ;
       EFF_MAT_RW[ar][i] = (G1_RW[ar][i] + G2_RW[i])                            ;
       break;
     case (COMMAND_MOTOR_PUSHER): 
-      EFF_MAT_RW[aN][i] = (RW_att.cpsi   * RW_att.ctheta - RW_att.sphi * RW_att.spsi * RW_att.stheta) * G1_RW[aX][i];
-      EFF_MAT_RW[aE][i] = (RW_att.ctheta * RW_att.spsi   + RW_att.cpsi * RW_att.sphi * RW_att.stheta) * G1_RW[aX][i];
-      EFF_MAT_RW[aD][i] = (- RW_att.cphi * RW_att.stheta                                            ) * G1_RW[aX][i];
+      EFF_MAT_RW[aN][i] = (RW.att.cpsi   * RW.att.ctheta - RW.att.sphi * RW.att.spsi * RW.att.stheta) * G1_RW[aX][i];
+      EFF_MAT_RW[aE][i] = (RW.att.ctheta * RW.att.spsi   + RW.att.cpsi * RW.att.sphi * RW.att.stheta) * G1_RW[aX][i];
+      EFF_MAT_RW[aD][i] = (- RW.att.cphi * RW.att.stheta                                            ) * G1_RW[aX][i];
       EFF_MAT_RW[ap][i] = 0.0;
       EFF_MAT_RW[aq][i] = 0.0;
       EFF_MAT_RW[ar][i] = 0.0;
       break;
     case (COMMAND_ELEVATOR):
-    case (COMMAND_RUDDER):  
+    case (COMMAND_RUDDER): 
     case (COMMAND_AILERONS):
     case (COMMAND_FLAPS):  
       EFF_MAT_RW[aN][i] = 0.0;
@@ -443,19 +460,22 @@ void sum_EFF_MAT_RW(void) {
       EFF_MAT_RW[ap][i] = G1_RW[ap][i];
       EFF_MAT_RW[aq][i] = G1_RW[aq][i];
       EFF_MAT_RW[ar][i] = G1_RW[ar][i];
-      break;    
+      // printf("G1_RW[ap][%d] = %f\n", i, G1_RW[ap][i]);
+      // printf("G1_RW[aq][%d] = %f\n", i, G1_RW[aq][i]);
+      // printf("G1_RW[ar][%d] = %f\n", i, G1_RW[ar][i]);
+      break;     
     case (COMMAND_ROLL):
-      EFF_MAT_RW[aN][i] = (-RW_att.cphi * RW_att.ctheta * RW_att.spsi * T_L - RW_att.cphi * RW_att.spsi * RW_att.stheta * P_L);
-      EFF_MAT_RW[aE][i] = ( RW_att.cphi * RW_att.ctheta * RW_att.cpsi * T_L + RW_att.cphi * RW_att.cpsi * RW_att.stheta * P_L);
-      EFF_MAT_RW[aD][i] = ( RW_att.sphi * RW_att.ctheta * T_L + RW_att.sphi * RW_att.stheta * P_L);
+      EFF_MAT_RW[aN][i] = (-RW.att.cphi * RW.att.ctheta * RW.att.spsi * T_L - RW.att.cphi * RW.att.spsi * RW.att.stheta * P_L);
+      EFF_MAT_RW[aE][i] = ( RW.att.cphi * RW.att.ctheta * RW.att.cpsi * T_L + RW.att.cphi * RW.att.cpsi * RW.att.stheta * P_L);
+      EFF_MAT_RW[aD][i] = ( RW.att.sphi * RW.att.ctheta * T_L + RW.att.sphi * RW.att.stheta * P_L);
       EFF_MAT_RW[ap][i] = 0.0;
       EFF_MAT_RW[aq][i] = 0.0;
       EFF_MAT_RW[ar][i] = 0.0;  
       break;
     case (COMMAND_PITCH):
-      EFF_MAT_RW[aN][i] = (-(RW_att.ctheta * RW_att.cpsi - RW_att.sphi * RW_att.stheta * RW_att.spsi) * T - (RW_att.cpsi * RW_att.stheta + RW_att.ctheta * RW_att.sphi   * RW_att.spsi) * P - RW_att.sphi * RW_att.spsi * dLdtheta);
-      EFF_MAT_RW[aE][i] = (-(RW_att.ctheta * RW_att.spsi + RW_att.sphi * RW_att.stheta * RW_att.cpsi) * T - (RW_att.spsi * RW_att.stheta - RW_att.cpsi   * RW_att.ctheta * RW_att.sphi) * P + RW_att.sphi * RW_att.cpsi * dLdtheta);
-      EFF_MAT_RW[aD][i] = ( RW_att.stheta * RW_att.cphi * T - RW_att.cphi * RW_att.ctheta * P - RW_att.cphi * dLdtheta)                                           ;
+      EFF_MAT_RW[aN][i] = (-(RW.att.ctheta * RW.att.cpsi - RW.att.sphi * RW.att.stheta * RW.att.spsi) * T - (RW.att.cpsi * RW.att.stheta + RW.att.ctheta * RW.att.sphi   * RW.att.spsi) * P - RW.att.sphi * RW.att.spsi * dLdtheta);
+      EFF_MAT_RW[aE][i] = (-(RW.att.ctheta * RW.att.spsi + RW.att.sphi * RW.att.stheta * RW.att.cpsi) * T - (RW.att.spsi * RW.att.stheta - RW.att.cpsi   * RW.att.ctheta * RW.att.sphi) * P + RW.att.sphi * RW.att.cpsi * dLdtheta);
+      EFF_MAT_RW[aD][i] = ( RW.att.stheta * RW.att.cphi * T - RW.att.cphi * RW.att.ctheta * P - RW.att.cphi * dLdtheta)                                           ;
       EFF_MAT_RW[ap][i] = 0.0;
       EFF_MAT_RW[aq][i] = 0.0;
       EFF_MAT_RW[ar][i] = 0.0;
@@ -538,21 +558,21 @@ void eff_scheduling_rot_wing_update_airspeed(void)
 // }
 
 
-float eff_scheduling_rot_wing_lift_d = 0.0f;
+// float eff_scheduling_rot_wing_lift_d = 0.0f;
 
-void eff_scheduling_rot_wing_schedule_liftd(void)
-{
-  float lift_d_wing = (eff_sched_p.k_lift_wing[0] + eff_sched_p.k_lift_wing[1] * eff_sched_var.sinr2) * eff_sched_var.airspeed2 / eff_sched_p.m;
-  float lift_d_fuselage = eff_sched_p.k_lift_fuselage * eff_sched_var.airspeed2 / eff_sched_p.m;
-  float lift_d_tail = eff_sched_p.k_lift_tail * eff_sched_var.airspeed2 / eff_sched_p.m;
+// void eff_scheduling_rot_wing_schedule_liftd(void)
+// {
+//   float lift_d_wing = (eff_sched_p.k_lift_wing[0] + eff_sched_p.k_lift_wing[1] * eff_sched_var.sinr2) * eff_sched_var.airspeed2 / eff_sched_p.m;
+//   float lift_d_fuselage = eff_sched_p.k_lift_fuselage * eff_sched_var.airspeed2 / eff_sched_p.m;
+//   float lift_d_tail = eff_sched_p.k_lift_tail * eff_sched_var.airspeed2 / eff_sched_p.m;
 
-  float lift_d = lift_d_wing + lift_d_fuselage + lift_d_tail;
-  if (eff_sched_var.wing_rotation_deg < 60.) {
-    lift_d = 0.0;
-  }
-  Bound(lift_d, -130., 0.);
-  eff_scheduling_rot_wing_lift_d = lift_d;
-}
+//   float lift_d = lift_d_wing + lift_d_fuselage + lift_d_tail;
+//   if (eff_sched_var.wing_rotation_deg < 60.) {
+//     lift_d = 0.0;
+//   }
+//   Bound(lift_d, -130., 0.);
+//   eff_scheduling_rot_wing_lift_d = lift_d;
+// }
 
 // // Override standard LIFT_D function
 // float guidance_indi_get_liftd(float pitch UNUSED, float theta UNUSED) {

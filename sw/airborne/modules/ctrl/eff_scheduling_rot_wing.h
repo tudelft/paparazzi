@@ -126,11 +126,24 @@ struct wing_model{
   float dLdtheta; // derivative of lift with respect to the pitch angle
   float L; // Lift
 };
+
+struct RW_attitude{
+  float phi;
+  float theta;
+  float psi;
+  float sphi;
+  float cphi;
+  float stheta;
+  float ctheta;
+  float spsi;
+  float cpsi;
+};
 struct RW_Model{
   struct I I;     // Inertia matrix
   float m;        // mass [kg]
   float T;        // Thrust [N]
   float P;        // Pusher thrust [N]
+  struct RW_attitude att;
   struct wing_model wing;
   struct F_M_Body mF;
   struct F_M_Body mR;
@@ -144,22 +157,12 @@ struct RW_Model{
 
 };
 
-struct RW_attitde{
-  float phi;
-  float theta;
-  float psi;
-  float sphi;
-  float cphi;
-  float stheta;
-  float ctheta;
-  float spsi;
-  float cpsi;
-};
 extern float rotation_angle_setpoint_deg;
 extern int16_t rotation_cmd;
 
 extern void eff_scheduling_rot_wing_init(void);
 extern void eff_scheduling_rot_wing_periodic(void);
 
+extern struct RW_Model RW;
 #endif  // CTRL_EFF_SCHED_ROT_WING_H
 

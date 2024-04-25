@@ -20,7 +20,7 @@
     <waypoint name="p2" x="696.0" y="-148.1"/>
     <waypoint name="p3" x="600.4" y="73.4"/>
     <waypoint name="p4" x="238.6" y="-48.5"/>
-    <waypoint name="circ" x="160" y="25"/>
+    <waypoint name="circ" lat="52.1670024" lon="4.4190740"/>
     <waypoint name="TD" x="10" y="-1"/>
     <waypoint name="FOLLOW" lat="52.16850964562752" lon="4.413635008734417"/>
     <waypoint name="S1" lat="52.1669450" lon="4.4174372"/>
@@ -34,9 +34,9 @@
     <waypoint lat="52.164861"  lon="4.427268"  name="C7"/>
     <waypoint lat="52.170422"  lon="4.427511"  name="C8"/>
     <waypoint lat="52.172276"  lon="4.424011"  name="C9"/>
-    <waypoint lat="52.1663689" lon="4.4131328" name="p5"/>
-    <waypoint lat="52.1674751" lon="4.4179556" name="p6"/>
-    <waypoint lat="52.1697353" lon="4.4166975" name="p7"/>
+    <waypoint lat="52.1627948" lon="4.4148168" name="p5"/>
+    <waypoint lat="52.1650926" lon="4.4257087" name="p6"/>
+    <waypoint lat="52.1709078" lon="4.4220382" name="p7"/>
     <waypoint lat="52.1687299" lon="4.4119042" name="p8"/>
   </waypoints>
   <sectors>
@@ -173,7 +173,11 @@
     </block>
     <block name="Circle_CW">
       <set value="false" var="force_forward"/>
-      <circle radius="100" wp="FOLLOW"/>
+      <circle radius="100" wp="circ"/>
+    </block>
+    <block name="Circle_CCW">
+      <set value="false" var="force_forward"/>
+      <circle radius="-100" wp="circ"/>
     </block>
     <block name="Transition_quad">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID)"/>

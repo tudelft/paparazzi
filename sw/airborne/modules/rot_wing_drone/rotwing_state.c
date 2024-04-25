@@ -146,6 +146,12 @@ uint8_t rotwing_state_fw_idle_counter = 0;
 uint8_t rotwing_state_fw_m_off_counter = 0;
 
 float rotwing_state_max_hover_speed = 7;
+#ifdef NAV_HYBRID_MAX_AIRSPEED
+float rotwing_state_max_fw_speed = NAV_HYBRID_MAX_AIRSPEED;
+#else
+float rotwing_state_max_fw_speed = 20;
+#endif
+
 bool hover_motors_active = true;
 bool bool_disable_hover_motors = false;
 
@@ -211,6 +217,8 @@ void periodic_rotwing_state(void)
     rotwing_state_set_hover_settings();
   } else if (guidance_h.mode == GUIDANCE_H_MODE_FORWARD) {
     rotwing_state_set_fw_settings();
+  } else {
+    rotwing_switch_state();
   }
 
   // Run the wing skewer
@@ -372,7 +380,6 @@ void rotwing_check_set_current_state(void)
       } else {
         rotwing_state_fw_counter = 0;
       }
-
       // Check if state needs to be set to fixed wing with hover motors off (if zero rpm on hover motors)
       if (rotwing_state_hover_rpm[0] == 0
           && rotwing_state_hover_rpm[1] == 0
@@ -444,10 +451,13 @@ void rotwing_switch_state(void)
     case ROTWING_STATE_FW:
       if (rotwing_state.desired_state > ROTWING_STATE_FW) {
         rotwing_state_set_fw_hov_mot_idle_settings();
+        printf("case 1\n");
       } else if (rotwing_state.desired_state < ROTWING_STATE_FW) {
         rotwing_state_set_skewing_settings();
+        printf("case 2\n");
       } else {
         rotwing_state_set_fw_settings();
+        printf("case 3\n");
       }
       break;
 
@@ -500,7 +510,7 @@ void rotwing_state_set_skewing_settings(void)
   rotwing_state_settings.stall_protection        = false;
   rotwing_state_settings.max_v_climb             = 2.0;
   rotwing_state_settings.max_v_descend           = 1.0;
-  rotwing_state_settings.nav_max_speed           = 100; // Big as we use airspeed guidance
+  rotwing_state_settings.nav_max_speed           = rotwing_state_max_fw_speed;// Big as we use airspeed guidance
   rotwing_state_set_state_settings();
 }
 
@@ -514,7 +524,8 @@ void rotwing_state_set_fw_settings(void)
   rotwing_state_settings.stall_protection        = false;
   rotwing_state_settings.max_v_climb             = 4.0;
   rotwing_state_settings.max_v_descend           = 4.0;
-  rotwing_state_settings.nav_max_speed           = 100; // Big as we use airspeed guidance
+  rotwing_state_settings.nav_max_speed           = rotwing_state_max_fw_speed; // Big as we use airspeed guidance
+  //rotwing_state_settings.nav_max_speed           = 100; // Big as we use airspeed guidance
   rotwing_state_set_state_settings();
 }
 
@@ -528,7 +539,7 @@ void rotwing_state_set_fw_hov_mot_idle_settings(void)
   rotwing_state_settings.stall_protection        = true;
   rotwing_state_settings.max_v_climb             = 4.0;
   rotwing_state_settings.max_v_descend           = 4.0;
-  rotwing_state_settings.nav_max_speed           = 100; // Big as we use airspeed guidance
+  rotwing_state_settings.nav_max_speed           = rotwing_state_max_fw_speed; // Big as we use airspeed guidance
   rotwing_state_set_state_settings();
 }
 
@@ -542,13 +553,12 @@ void rotwing_state_set_fw_hov_mot_off_settings(void)
   rotwing_state_settings.stall_protection        = true;
   rotwing_state_settings.max_v_climb             = 4.0;
   rotwing_state_settings.max_v_descend           = 4.0;
-  rotwing_state_settings.nav_max_speed           = 100; // Big as we use airspeed guidance
+  rotwing_state_settings.nav_max_speed           = rotwing_state_max_fw_speed; // Big as we use airspeed guidance
   rotwing_state_set_state_settings();
 }
 
 void rotwing_state_set_state_settings(void)
 {
-
   if (!rotwing_state_skewing.force_rotation_angle) {
     switch (rotwing_state_settings.wing_scheduler) {
       case ROTWING_STATE_WING_QUAD_SETTING:
