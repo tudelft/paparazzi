@@ -318,63 +318,30 @@ void eff_scheduling_rot_wing_update_hover_motor_effectiveness(void)
 
 void eff_scheduling_rot_wing_update_elevator_effectiveness(void)
 {
-  float de = eff_sched_p.k_elevator_deflection[0] + eff_sched_p.k_elevator_deflection[1] * eff_sched_var.cmd_elevator;
-
-  float dMyde = (eff_sched_p.k_elevator[0] * de * eff_sched_var.airspeed2 +
-                 eff_sched_p.k_elevator[1] * eff_sched_var.cmd_pusher_scaled * eff_sched_var.cmd_pusher_scaled * eff_sched_var.airspeed +
-                 eff_sched_p.k_elevator[2] * eff_sched_var.airspeed2) / 10000.;
-
-  float dMydpprz = dMyde * eff_sched_p.k_elevator_deflection[1];
-
-  // Calculate pitch moment due to airspeed change
-  float dMydairspeed = (-28.8464 * 2 * de * eff_sched_var.airspeed +
-                        -92.8148 * 2 * eff_sched_var.airspeed + 
-                        0.23015 * de * de * 2 * eff_sched_var.airspeed +
-                        -4.81466 * de * eff_sched_var.cmd_pusher_scaled * eff_sched_var.cmd_pusher_scaled) / 10000.;
-  float domegadairspeed = dMydairspeed / eff_sched_var.Iyy;
-
-  indi_elevator_domega_dv = domegadairspeed;
-
-  // Convert moment to effectiveness
-  float eff_y_elev = dMydpprz / eff_sched_var.Iyy;
-
+  float eff_y_elev = (24.810 * 0.85 * eff_sched_var.airspeed2)  / (eff_sched_p.Iyy * 1000000.0);
   Bound(eff_y_elev, 0.00001, 0.1);
-
   g1g2[1][5] = eff_y_elev;
 }
 
 void eff_scheduling_rot_wing_update_rudder_effectiveness(void)
 {
-  float dMzdr = (eff_sched_p.k_rudder[0] * eff_sched_var.cmd_pusher_scaled * eff_sched_var.cmd_T_mean_scaled +
-                 eff_sched_p.k_rudder[1] * eff_sched_var.cmd_T_mean_scaled * eff_sched_var.airspeed2 * eff_sched_var.cosr +
-                 eff_sched_p.k_rudder[2] * eff_sched_var.airspeed2) / 10000.;
-
-  // Convert moment to effectiveness
-
-  float dMzdpprz = dMzdr * eff_sched_p.d_rudder_d_pprz;
-
-  // Convert moment to effectiveness
-  float eff_z_rudder = dMzdpprz / eff_sched_p.Izz;
-
+  float eff_z_rudder = (1.207 * 0.88 * eff_sched_var.airspeed2)  / (eff_sched_p.Izz * 1000000.0);
   Bound(eff_z_rudder, 0.000001, 0.1);
-
   g1g2[2][4] = eff_z_rudder;
 }
 
 void eff_scheduling_rot_wing_update_aileron_effectiveness(void)
 {
-  float dMxdpprz = (eff_sched_p.k_aileron * eff_sched_var.airspeed2 * eff_sched_var.sinr3) / 1000000.;
-  float eff_x_aileron = dMxdpprz / eff_sched_var.Ixx;
+  float eff_x_aileron = (4.084 * 0.68 * eff_sched_var.airspeed2 * eff_sched_var.sinr3) / (eff_sched_var.Ixx * 1000000.0);
   Bound(eff_x_aileron, 0, 0.005)
   g1g2[0][6] = eff_x_aileron;
 }
 
 void eff_scheduling_rot_wing_update_flaperon_effectiveness(void)
 {
-  float dMxdpprz = (eff_sched_p.k_flaperon * eff_sched_var.airspeed2 * eff_sched_var.sinr3) / 1000000.;
-  float eff_x_flap_aileron = dMxdpprz / eff_sched_var.Ixx;
-  Bound(eff_x_flap_aileron, 0, 0.005)
-  g1g2[0][7] = eff_x_flap_aileron;
+  float eff_x_flap = (5.758 * 0.36 * eff_sched_var.airspeed2 * eff_sched_var.sinr3) / (eff_sched_var.Ixx * 1000000.0);
+  Bound(eff_x_flap, 0, 0.005)
+  g1g2[0][7] = eff_x_flap;
 }
 
 void eff_scheduling_rot_wing_update_pusher_effectiveness(void)
