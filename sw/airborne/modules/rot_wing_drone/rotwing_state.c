@@ -133,6 +133,7 @@ uint8_t rotwing_state_fw_idle_counter = 0;
 uint8_t rotwing_state_fw_m_off_counter = 0;
 
 float rotwing_state_max_hover_speed = 7;
+float rotwing_state_pitch_angle_range = 3.;
 
 bool hover_motors_active = true;
 bool bool_disable_hover_motors = false;
@@ -203,8 +204,11 @@ void periodic_rotwing_state(void)
     rotwing_switch_state();
   } else if (guidance_h.mode == GUIDANCE_H_MODE_ATTITUDE) {
     rotwing_state_set_hover_settings();
+    rotwing_state_skewing.force_rotation_angle = false; // Switch off force skew
+    guidance_indi_max_airspeed = 19; // Reset safe airspeed
   } else if (guidance_h.mode == GUIDANCE_H_MODE_FORWARD) {
-    rotwing_state_set_fw_settings();
+    rotwing_state_set_fw_settings(); 
+    guidance_indi_max_airspeed = 19; // Reset safe airspeed
   }
 
   // Run the wing skewer
@@ -217,7 +221,6 @@ void periodic_rotwing_state(void)
   } else if (guidance_h.mode == GUIDANCE_H_MODE_FORWARD) {
     bool_disable_hover_motors = false;
   }
-
   
 }
 
@@ -752,12 +755,11 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, fl
   float min_pitch_limit_rad = RadOfDeg(GUIDANCE_INDI_MIN_PITCH);
 
   float scheduled_pitch_angle = 0;
-  float pitch_angle_range = 3.;
   if (rotwing_state_skewing.wing_angle_deg < 55) {
     scheduled_pitch_angle = 0;
   } else {
     float pitch_progression = (rotwing_state_skewing.wing_angle_deg - 55) / 35.;
-    scheduled_pitch_angle = pitch_angle_range * pitch_progression;
+    scheduled_pitch_angle = rotwing_state_pitch_angle_range * pitch_progression;
   }
   if (!hover_motors_active) {
     scheduled_pitch_angle = 8.;

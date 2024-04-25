@@ -83,6 +83,7 @@ extern struct RotWingStateSettings rotwing_state_settings;
 extern struct RotWingStateSkewing rotwing_state_skewing;
 
 extern float rotwing_state_max_hover_speed;
+extern float rotwing_state_pitch_angle_range;
 
 extern bool hover_motors_active;
 extern bool bool_disable_hover_motors;
