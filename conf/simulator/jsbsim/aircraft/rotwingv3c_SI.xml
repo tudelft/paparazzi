@@ -825,9 +825,8 @@
       <function name="aero/coefficient/CD">
         <description>Drag</description>
         <product>
-          <property>aero/qbar-psf</property>
-          <value>47.88</value> <!-- Conversion to pascals -->
-          <value>0.0151</value> <!-- CD x Area (m^2) -->
+          <property>fcs/airspeed2_ms</property>
+          <value>0.0576</value> <!-- CD x Area (m^2) -->
           <value>0.224808943</value> <!-- N to LBS -->
         </product>
       </function>

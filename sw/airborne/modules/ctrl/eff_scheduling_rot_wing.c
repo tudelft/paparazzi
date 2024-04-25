@@ -308,12 +308,6 @@ void calc_G1_G2_RW(void)
   G1_RW[aX][COMMAND_MOTOR_PUSHER] =  RW.mP.dFdu / RW.m;
   // Elevator
   G1_RW[aq][COMMAND_ELEVATOR]     =  (RW.ele.dFdu * eff_sched_var.airspeed2 * RW.ele.l) / RW.I.yy;
-  // printf("G1_RW[aq][COMMAND_ELEVATOR] = %f\n", G1_RW[aq][COMMAND_ELEVATOR]);
-  // printf("RW.ele.dFdu = %f\n", RW.ele.dFdu);
-  // printf("eff_sched_var.airspeed2 = %f\n", eff_sched_var.airspeed2);
-  // printf("RW.ele.l = %f\n", RW.ele.l);
-  // printf("RW.I.yy = %f\n", RW.I.yy);
-
   // Rudder
   G1_RW[ar][COMMAND_RUDDER]       =  (RW.rud.dFdu * eff_sched_var.airspeed2 * RW.rud.l) / RW.I.zz ;
   // Aileron
@@ -333,11 +327,11 @@ void calc_G1_G2_RW(void)
   Bound(RW.wing.L, 0.0, 350.0);
   printf("RW.wing.L = %f\n", RW.wing.L);
   //RW.T                            =  (RW.m * 9.81 - RW.wing.L)/(RW.att.cphi * RW.att.ctheta);
-  RW.T = (actuator_state_1l[COMMAND_MOTOR_FRONT] * G1_RW[aZ][COMMAND_MOTOR_FRONT] + actuator_state_1l[COMMAND_MOTOR_RIGHT] * G1_RW[aZ][COMMAND_MOTOR_RIGHT] + actuator_state_1l[COMMAND_MOTOR_BACK] * G1_RW[aZ][COMMAND_MOTOR_BACK] + actuator_state_1l[COMMAND_MOTOR_LEFT] * G1_RW[aZ][COMMAND_MOTOR_LEFT]) * RW.m;
+  RW.T = actuator_state_1l[COMMAND_MOTOR_FRONT] * RW.mF.dFdu + actuator_state_1l[COMMAND_MOTOR_RIGHT] * RW.mR.dFdu + actuator_state_1l[COMMAND_MOTOR_BACK] * RW.mB.dFdu + actuator_state_1l[COMMAND_MOTOR_LEFT] * RW.mL.dFdu;
   printf("RW.T = %f\n", RW.T);
   Bound(RW.T, 0.0, 140.0);
   printf("RW.T = %f\n", RW.T);
-  RW.P                            = actuator_state_1l[COMMAND_MOTOR_PUSHER] * G1_RW[aX][COMMAND_MOTOR_PUSHER] * RW.m;
+  RW.P                            = actuator_state_1l[COMMAND_MOTOR_PUSHER] * RW.mP.dFdu;
 }
 
 void eff_scheduling_rot_wing_init(void)

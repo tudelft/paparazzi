@@ -898,11 +898,11 @@ void init_poles(void){
   p_pos_rm.zeta    = 1.0;  
   p_pos_rm.p3      = p_pos_rm.omega_n * p_pos_rm.zeta;
 
-  p_alt_e.omega_n = 3.0;
+  p_alt_e.omega_n = 1.0;// 3.0;
   p_alt_e.zeta    = 1.0; 
   p_alt_e.p3      = slow_pole; 
 
-  p_alt_rm.omega_n = 1.93;
+  p_alt_rm.omega_n = 0.93; //1.93;
   p_alt_rm.zeta    = 1.0;
   p_alt_rm.p3      = p_alt_rm.omega_n * p_alt_rm.zeta;
 }
