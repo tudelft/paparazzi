@@ -527,8 +527,8 @@
     </section>
 
     <section name="SIMULATOR" prefix="NPS_">
-        <define name="ACTUATOR_NAMES" value="front_motor, right_motor, back_motor, left_motor, rudder, elevator, aileron, flap, pusher, skew" type="string[]"/>
-        <define name="JSBSIM_MODEL" value="rotwing3" type="string"/>
+        <define name="ACTUATOR_NAMES" value="MOTOR_FRONT, MOTOR_RIGHT, MOTOR_BACK, MOTOR_LEFT, RUDDER, ELEVATOR, AILERONS, FLAPS, MOTOR_PUSHER, ROT_MECH" type="string[]"/>
+        <define name="JSBSIM_MODEL" value="rotwingv3c_SI" type="string"/>
         <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
         <define name="COMMANDS_NB" value="10"/>
         <define name="NO_MOTOR_MIXING" value="TRUE"/>

@@ -121,6 +121,8 @@
 #error "NO ROT_WING_EFF_SCHED_K_LIFT_TAIL defined"
 #endif
 
+static float flt_cut = 1.0e-4;
+
 struct rot_wing_eff_sched_param_t eff_sched_p = {
   .Ixx_body                 = ROT_WING_EFF_SCHED_IXX_BODY,
   .Iyy_body                 = ROT_WING_EFF_SCHED_IYY_BODY,
@@ -318,8 +320,12 @@ void eff_scheduling_rot_wing_update_hover_motor_effectiveness(void)
 
 void eff_scheduling_rot_wing_update_elevator_effectiveness(void)
 {
-  float eff_y_elev = (24.810 * 0.85 * eff_sched_var.airspeed2)  / (eff_sched_p.Iyy * 1000000.0);
+  float eff_y_elev = (24.810 * 0.85 * eff_sched_var.airspeed2)  / (eff_sched_var.Iyy * 1000000.0);
   Bound(eff_y_elev, 0.00001, 0.1);
+  float abs = fabs(eff_y_elev);
+  if (abs < flt_cut) {
+    eff_y_elev = 0.0;
+  }
   g1g2[1][5] = eff_y_elev;
 }
 
@@ -327,6 +333,10 @@ void eff_scheduling_rot_wing_update_rudder_effectiveness(void)
 {
   float eff_z_rudder = (1.207 * 0.88 * eff_sched_var.airspeed2)  / (eff_sched_p.Izz * 1000000.0);
   Bound(eff_z_rudder, 0.000001, 0.1);
+  float abs = fabs(eff_z_rudder);
+  if (abs < flt_cut) {
+    eff_z_rudder = 0.0;
+  }
   g1g2[2][4] = eff_z_rudder;
 }
 
@@ -334,6 +344,10 @@ void eff_scheduling_rot_wing_update_aileron_effectiveness(void)
 {
   float eff_x_aileron = (4.084 * 0.68 * eff_sched_var.airspeed2 * eff_sched_var.sinr3) / (eff_sched_var.Ixx * 1000000.0);
   Bound(eff_x_aileron, 0, 0.005)
+  float abs = fabs(eff_x_aileron);
+  if (abs < flt_cut) {
+    eff_x_aileron = 0.0;
+  }
   g1g2[0][6] = eff_x_aileron;
 }
 
@@ -341,6 +355,10 @@ void eff_scheduling_rot_wing_update_flaperon_effectiveness(void)
 {
   float eff_x_flap = (5.758 * 0.36 * eff_sched_var.airspeed2 * eff_sched_var.sinr3) / (eff_sched_var.Ixx * 1000000.0);
   Bound(eff_x_flap, 0, 0.005)
+  float abs = fabs(eff_x_flap);
+  if (abs < flt_cut) {
+    eff_x_flap = 0.0;
+  }
   g1g2[0][7] = eff_x_flap;
 }
 
