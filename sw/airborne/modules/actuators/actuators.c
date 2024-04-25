@@ -26,7 +26,9 @@
  */
 
 #include "modules/actuators/actuators.h"
+#include "modules/actuators/actuators_pwm.h"
 #include "modules/core/commands.h"
+#include "modules/radio_control/radio_control.h"
 #include "mcu_periph/sys_time.h"
 #ifdef INTERMCU_AP
 #include "modules/intermcu/intermcu_ap.h"
@@ -101,8 +103,10 @@ void actuators_periodic(void)
 #endif /* COMMAND_PITCH */
 
 #ifdef COMMAND_YAW
-  trimmed_commands[COMMAND_YAW] += ClipAbs(command_yaw_trim, MAX_PPRZ);
+  //trimmed_commands[COMMAND_YAW] += ClipAbs(command_yaw_trim, MAX_PPRZ);
 #endif /* COMMAND_YAW */
+
+  ActuatorPwmSet(2, 1500 + 500.0 * (radio_control.values[3] / 9600.0)); 
 
 #if (defined INTERMCU_AP)
   intermcu_send_commands(trimmed_commands, autopilot_get_mode());
