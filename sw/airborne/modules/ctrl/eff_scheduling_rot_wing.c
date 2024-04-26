@@ -146,7 +146,7 @@ struct rot_wing_eff_sched_param_t eff_sched_p = {
   .k_lift_tail              = ROT_WING_EFF_SCHED_K_LIFT_TAIL
 };
 
-float eff_sched_pusher_time = 0.002; 
+float eff_sched_pusher_time = 0.002;
 
 struct rot_wing_eff_sched_var_t eff_sched_var;
 
