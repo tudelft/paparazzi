@@ -206,9 +206,11 @@ void periodic_rotwing_state(void)
     rotwing_state_set_hover_settings();
     rotwing_state_skewing.force_rotation_angle = false; // Switch off force skew
     guidance_indi_max_airspeed = 19; // Reset safe airspeed
+    rotwing_state_pitch_angle_range = 3;
   } else if (guidance_h.mode == GUIDANCE_H_MODE_FORWARD) {
     rotwing_state_set_fw_settings(); 
     guidance_indi_max_airspeed = 19; // Reset safe airspeed
+    rotwing_state_pitch_angle_range = 3;
   }
 
   // Run the wing skewer
