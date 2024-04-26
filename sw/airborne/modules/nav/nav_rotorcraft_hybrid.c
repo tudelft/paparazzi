@@ -102,7 +102,6 @@ static void nav_hybrid_goto(struct EnuCoor_f *wp)
 
   struct FloatVect2 speed_sp;
   VECT2_SMUL(speed_sp, pos_error, nav_hybrid_pos_gain);
-
   // Bound the setpoint velocity vector
   float max_h_speed = nav_max_speed;
   if (!force_forward) {
@@ -114,7 +113,7 @@ static void nav_hybrid_goto(struct EnuCoor_f *wp)
     // The time in which it does this is: T = V / a_max
     // The maximum speed at which to fly to still allow arriving with zero
     // speed at the waypoint given maximum deceleration is: V = sqrt(2 * a_max * d)
-    float max_speed_decel2 = fabsf(2.f * dist_to_wp * nav_max_deceleration_sp); // dist_to_wp can only be positive, but just in case
+    float max_speed_decel2 = fabs(2.f * dist_to_wp * nav_max_deceleration_sp * 0.25); // dist_to_wp can only be positive, but just in case
     float max_speed_decel = sqrtf(max_speed_decel2);
     // Bound the setpoint velocity vector
     max_h_speed = Min(nav_goto_max_speed, max_speed_decel); // use hover max speed

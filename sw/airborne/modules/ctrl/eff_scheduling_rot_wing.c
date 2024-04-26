@@ -319,18 +319,11 @@ void calc_G1_G2_RW(void)
   G1_RW[aq][COMMAND_FLAPS]        =  (RW.flp.dFdu * eff_sched_var.airspeed2 * RW.flp.l * (eff_sched_var.cosr-eff_sched_var.cosr3)) / RW.I.yy;
   // Lift and thrust
   RW.wing.dLdtheta                =  (RW.wing.k0 + RW.wing.k1 * eff_sched_var.sinr2) * eff_sched_var.airspeed2;
-  printf("RW.wing.dLdtheta = %f\n", RW.wing.dLdtheta);
   Bound(RW.wing.dLdtheta, 0.0, 1300.0);
-  printf("RW.wing.dLdtheta = %f\n", RW.wing.dLdtheta);
   RW.wing.L                       =  RW.wing.k0 * RW.att.theta * eff_sched_var.airspeed2 + RW.wing.k1 * RW.att.theta * eff_sched_var.sinr2 * eff_sched_var.airspeed2 + RW.wing.k2 * eff_sched_var.sinr2 * eff_sched_var.airspeed2;
-  printf("RW.wing.L = %f\n", RW.wing.L);
   Bound(RW.wing.L, 0.0, 350.0);
-  printf("RW.wing.L = %f\n", RW.wing.L);
-  //RW.T                            =  (RW.m * 9.81 - RW.wing.L)/(RW.att.cphi * RW.att.ctheta);
   RW.T = actuator_state_1l[COMMAND_MOTOR_FRONT] * RW.mF.dFdu + actuator_state_1l[COMMAND_MOTOR_RIGHT] * RW.mR.dFdu + actuator_state_1l[COMMAND_MOTOR_BACK] * RW.mB.dFdu + actuator_state_1l[COMMAND_MOTOR_LEFT] * RW.mL.dFdu;
-  printf("RW.T = %f\n", RW.T);
   Bound(RW.T, 0.0, 140.0);
-  printf("RW.T = %f\n", RW.T);
   RW.P                            = actuator_state_1l[COMMAND_MOTOR_PUSHER] * RW.mP.dFdu;
 }
 
@@ -377,7 +370,6 @@ void eff_scheduling_rot_wing_init(void)
 
 void eff_scheduling_rot_wing_periodic(void)
 {
-  // printf("I am scheduling\n");
 #if EFF_MAT_SIMPLE
   update_attitude();
   eff_scheduling_rot_wing_update_wing_angle();
@@ -421,14 +413,13 @@ void sum_EFF_MAT_RW(void) {
   float P_L    = P + L * RW.att.stheta;     // Pusher and Lift term
   int i = 0;
   int j = 0;
-  // printf("check\n");
+
   for (i = 0; i < EFF_MAT_COLS_NB; i++) {
     switch (i) {
     case (COMMAND_MOTOR_FRONT):
     case (COMMAND_MOTOR_BACK):
     case (COMMAND_MOTOR_RIGHT):     
     case (COMMAND_MOTOR_LEFT):
-      // printf("check 2\n");
       EFF_MAT_RW[aN][i] = (RW.att.cpsi * RW.att.stheta + RW.att.ctheta * RW.att.sphi   * RW.att.spsi) * G1_RW[aZ][i];
       EFF_MAT_RW[aE][i] = (RW.att.spsi * RW.att.stheta - RW.att.cpsi   * RW.att.ctheta * RW.att.sphi) * G1_RW[aZ][i];
       EFF_MAT_RW[aD][i] = (RW.att.cphi * RW.att.ctheta                                              ) * G1_RW[aZ][i];
@@ -454,9 +445,6 @@ void sum_EFF_MAT_RW(void) {
       EFF_MAT_RW[ap][i] = G1_RW[ap][i];
       EFF_MAT_RW[aq][i] = G1_RW[aq][i];
       EFF_MAT_RW[ar][i] = G1_RW[ar][i];
-      // printf("G1_RW[ap][%d] = %f\n", i, G1_RW[ap][i]);
-      // printf("G1_RW[aq][%d] = %f\n", i, G1_RW[aq][i]);
-      // printf("G1_RW[ar][%d] = %f\n", i, G1_RW[ar][i]);
       break;     
     case (COMMAND_ROLL):
       EFF_MAT_RW[aN][i] = (-RW.att.cphi * RW.att.ctheta * RW.att.spsi * T_L - RW.att.cphi * RW.att.spsi * RW.att.stheta * P_L);
