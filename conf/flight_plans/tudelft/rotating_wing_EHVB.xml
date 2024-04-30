@@ -1,5 +1,5 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-<flight_plan alt="120" ground_alt="0" lat0="52.1681551" lon0="4.4126468" max_dist_from_home="1070" name="Rotating Wing Valkenburg" security_height="2">
+<flight_plan alt="80" ground_alt="0" lat0="52.1681551" lon0="4.4126468" max_dist_from_home="1070" name="Rotating Wing Valkenburg" security_height="2">
   <header/>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
@@ -161,26 +161,28 @@
       <go wp="p1"/>
       <deroute block="small_route"/>
     </block> -->
-    <block name="Circle_CW_fwd" strip_button="CircleRHybrid" strip_icon="circle-right.png">
-      <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID)"/>
-      <circle radius="100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
-    </block>
-    <block name="CircleRNormal">
+    <block name="CircleRNormal" strip_button="CircleRight" strip_icon="circle-right.png">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_EFFICIENT)"/>
       <set var="guidance_indi_max_airspeed" value="19"/>
       <set var="rotwing_state_skewing.force_rotation_angle" value="0"/>
       <set var="rotwing_state_pitch_angle_range" value="3"/>
       <circle radius="100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
     </block>
-    <block name="Circle_CCW_fwd" strip_button="CircleLHybrid" strip_icon="circle-left.png">
+    <block name="CircleRHybrid">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID)"/>
+      <set var="rotwing_state_skewing.force_rotation_angle" value="1"/>
+      <circle radius="100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+    </block>
+    <block name="CircleLNormal" strip_button="CircleLeft" strip_icon="circle-left.png">
+      <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_EFFICIENT)"/>
+      <set var="guidance_indi_max_airspeed" value="19"/>
+      <set var="rotwing_state_skewing.force_rotation_angle" value="0"/>
+      <set var="rotwing_state_pitch_angle_range" value="3"/>
       <circle radius="-100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
     </block>
-    <block name="CircleLNormal">
-      <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_EFFICIENT)"/>
-      <set var="guidance_indi_max_airspeed" value="19"/>
-      <set var="rotwing_state_skewing.force_rotation_angle" value="0"/>
-      <set var="rotwing_state_pitch_angle_range" value="3"/>
+    <block name="CircleLHybrid">
+      <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID)"/>
+      <set var="rotwing_state_skewing.force_rotation_angle" value="1"/>
       <circle radius="-100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
     </block>
     <!-- <block name="big_Circle_CW_fwd">
