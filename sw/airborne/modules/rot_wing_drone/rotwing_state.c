@@ -451,13 +451,10 @@ void rotwing_switch_state(void)
     case ROTWING_STATE_FW:
       if (rotwing_state.desired_state > ROTWING_STATE_FW) {
         rotwing_state_set_fw_hov_mot_idle_settings();
-        printf("case 1\n");
       } else if (rotwing_state.desired_state < ROTWING_STATE_FW) {
         rotwing_state_set_skewing_settings();
-        printf("case 2\n");
       } else {
         rotwing_state_set_fw_settings();
-        printf("case 3\n");
       }
       break;
 
