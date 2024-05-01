@@ -111,6 +111,10 @@ struct I{
   float xx;
   float yy;
   float zz;
+  float w_xx;
+  float w_yy;
+  float b_xx;
+  float b_yy;
 };
 struct F_M_Body{
   float dFdu;     // derivative of the force with respect to the control input (e.g. linear coefficient)

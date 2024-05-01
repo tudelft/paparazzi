@@ -168,7 +168,7 @@ struct RW_Model RW;
 //struct RW.attitde RW.att;
 
 inline void eff_scheduling_rot_wing_update_wing_angle(void);
-// inline void eff_scheduling_rot_wing_update_MMOI(void);
+//inline void eff_scheduling_rot_wing_update_MMOI(void);
 // inline void eff_scheduling_rot_wing_update_cmd(void);
 inline void eff_scheduling_rot_wing_update_airspeed(void);
 // inline void eff_scheduling_rot_wing_update_hover_motor_effectiveness(void);
@@ -210,10 +210,14 @@ static void wing_position_cb(uint8_t sender_id UNUSED, struct act_feedback_t *po
 void init_RW_Model(void)
 {
   // Inertia and mass
-  RW.I.xx = 0.120; // [kgm²]
-  RW.I.yy = 1.014; // [kgm²]
-  RW.I.zz = 0.975; // [kgm²]
-  RW.m    = 6.670; // [kg]
+  RW.I.b_xx = 0.0478; // [kgm²]
+  RW.I.b_yy = 0.7546; // [kgm²]
+  RW.I.w_xx = 0.08099; // [kgm²]
+  RW.I.w_yy = 0.1949; // [kgm²]
+  RW.I.xx   = RW.I.b_xx + RW.I.w_xx; // [kgm²]
+  RW.I.yy   = RW.I.b_yy + RW.I.b_yy; // [kgm²]
+  RW.I.zz   = 0.975; // [kgm²]
+  RW.m      = 6.670; // [kg]
   // Motor Front
   RW.mF.dFdu     = 3.835 / RW_G_SCALE; // [N  / pprz] 
   RW.mF.dMdu     = 0.390 / RW_G_SCALE; // [Nm / pprz]
@@ -325,6 +329,11 @@ void calc_G1_G2_RW(void)
   RW.T = actuator_state_1l[COMMAND_MOTOR_FRONT] * RW.mF.dFdu + actuator_state_1l[COMMAND_MOTOR_RIGHT] * RW.mR.dFdu + actuator_state_1l[COMMAND_MOTOR_BACK] * RW.mB.dFdu + actuator_state_1l[COMMAND_MOTOR_LEFT] * RW.mL.dFdu;
   Bound(RW.T, 0.0, 140.0);
   RW.P                            = actuator_state_1l[COMMAND_MOTOR_PUSHER] * RW.mP.dFdu;
+  // Inertia
+  RW.I.xx = RW.I.b_xx + eff_sched_var.cosr2 * RW.I.w_xx + eff_sched_var.sinr2 * RW.I.w_yy;
+  RW.I.yy = RW.I.b_yy + eff_sched_var.sinr2 * RW.I.w_xx + eff_sched_var.cosr2 * RW.I.w_yy;
+  Bound(RW.I.xx, 0.01, 100.);
+  Bound(RW.I.yy, 0.01, 100.);
 }
 
 void eff_scheduling_rot_wing_init(void)
@@ -374,6 +383,7 @@ void eff_scheduling_rot_wing_periodic(void)
   update_attitude();
   eff_scheduling_rot_wing_update_wing_angle();
   eff_scheduling_rot_wing_update_airspeed();
+  //eff_scheduling_rot_wing_update_MMOI();
   calc_G1_G2_RW();
   sum_EFF_MAT_RW();
 #else
@@ -500,8 +510,6 @@ void eff_scheduling_rot_wing_update_airspeed(void)
   Bound(eff_sched_var.airspeed2, 0. , 900.);
 }
 
-// Implemented ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 // void eff_scheduling_rot_wing_update_MMOI(void)
 // {
 //   eff_sched_var.Ixx = eff_sched_p.Ixx_body + eff_sched_var.cosr2 * eff_sched_p.Ixx_wing + eff_sched_var.sinr2 * eff_sched_p.Iyy_wing;
@@ -511,6 +519,9 @@ void eff_scheduling_rot_wing_update_airspeed(void)
 //   Bound(eff_sched_var.Ixx, 0.01, 100.);
 //   Bound(eff_sched_var.Iyy, 0.01, 100.);
 // }
+
+// Implemented ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 // void eff_scheduling_rot_wing_update_cmd(void)
 // {
