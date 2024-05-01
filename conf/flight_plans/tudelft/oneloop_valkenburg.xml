@@ -34,10 +34,10 @@
     <waypoint lat="52.164861"  lon="4.427268"  name="C7"/>
     <waypoint lat="52.170422"  lon="4.427511"  name="C8"/>
     <waypoint lat="52.172276"  lon="4.424011"  name="C9"/>
-    <waypoint lat="52.1627948" lon="4.4148168" name="p5"/>
+    <waypoint lat="52.1626367" lon="4.4124884" name="p5"/>
     <waypoint lat="52.1650926" lon="4.4257087" name="p6"/>
     <waypoint lat="52.1709078" lon="4.4220382" name="p7"/>
-    <waypoint lat="52.1687299" lon="4.4119042" name="p8"/>
+    <waypoint lat="52.1685456" lon="4.4103268" name="p8"/>
   </waypoints>
   <sectors>
     <sector color="red" name="Hard_Geofence">
@@ -170,6 +170,14 @@
     <block name="Circle_CCW_fwd" strip_button="CircleLeft" strip_icon="circle-left.png">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_EFFICIENT)"/>
       <circle radius="-100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+    </block>
+    <block name="route_fw">
+      <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_EFFICIENT)"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p3"/>
+      <go from="p3" hmode="route" wp="p4"/>
+      <go from="p4" hmode="route" wp="p1"/>
+      <deroute block="route_fw"/>
     </block>
     <block name="Circle_CW">
       <set value="false" var="force_forward"/>
