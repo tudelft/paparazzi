@@ -12,14 +12,14 @@
 
     <target name="ap" board="bebop">
       <define name="VIDEO_CAPTURE_PATH" value="/data/ftp/internal_000/images"/>
-      <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000/log"/>
+      <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
       <define name="TEXTONS_DICTIONARY_PATH" value="/data/ftp/internal_000"/>
     </target>
   
     <target name="nps" board="pc">
       <module name="fdm" type="gazebo"/>
       <define name="VIDEO_CAPTURE_PATH" value="~/paparazzi/images/"/>
-      <define name="FILE_LOGGER_PATH" value="~/paparazzi/log/"/>
+      <define name="LOGGER_FILE_PATH" value="~/paparazzi/log/"/>
       <define name="TEXTONS_DICTIONARY_PATH" value="~/paparazzi/images/"/>
     </target>
 
