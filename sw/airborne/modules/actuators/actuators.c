@@ -125,7 +125,7 @@ void actuators_periodic(void)
   struct serial_act_t4_out test;
   test.servo_arm_int = 1;
 
-  float offset = 600; //deg * 100
+  float offset = 0; //deg * 100
 
 #ifdef SERVO_ELEVON_LEFT_IDX
   test.servo_6_cmd_int = 2.0 * 3000.0 * ( 1.0f * actuators[SERVO_ELEVON_LEFT_IDX] - 1500.0) / 500 - 2.0 * offset;
@@ -140,7 +140,7 @@ void actuators_periodic(void)
   test.servo_3_cmd_int = 45.0/19.0 * 4000.0 * ( 1.0f * actuators[SERVO_ARM_RIGHT_IDX] - 1500.0) / 500 + 45.0/19.0 * offset;
 #endif
 #ifdef SERVO_ELEVATOR_IDX
-  test.servo_5_cmd_int = 39.0/19.0 * 2500.0 * (( 1.0f * actuators[SERVO_ELEVATOR_IDX] - 1500.0) / 500) - 39.0/19.0 * 1500.0 * (radio_control.values[7] / 9600.0);
+  test.servo_5_cmd_int = 39.0/19.0 * 2500.0 * (( 1.0f * actuators[SERVO_ELEVATOR_IDX] - 1500.0) / 500) - 39.0/19.0 * 1500.0 * (radio_control.values[6] / 9600.0);
 #endif
 #ifdef SERVO_SPOILERON_IDX
   test.servo_2_cmd_int = 45.0/19.0 * 3000.0 * ( 1.0f * actuators[SERVO_SPOILERON_IDX] - 1500.0) / 500;
