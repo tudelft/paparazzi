@@ -218,7 +218,7 @@
     <section name="IMU" prefix="IMU_">
         <!-- For some reason accel calibration does not work in JSBSIM. Cannot solve simply in NPS section. -->
         <!-- <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-12,-9,20}, .scale={{30726,37910,15728},{3133,3871,1611}}}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-9,-30,26}, .scale={{45288,818,33359},{8935,167,6832}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-35,-5,13}, .scale={{26152,56165,62837},{5357,11479,12884}}}}"/> -->
-        <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={-14,3,42}, .scale={{17279,2209,36874},{30247,3800,64095}}}}"/>
+        <define name="MAG_CALIB"   value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={1529,-2458,266}, .scale={{1113,22401,26159},{1966,40021,45000}}}}"/>
         <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
         <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
         <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
@@ -249,13 +249,6 @@
     </section>
 
     <section name="CTRL_EFF_SHED" prefix="ROT_WING_EFF_SCHED_">
-        <!--                                          | MF   |   MR   |   MB   |   ML   |   MP   |   ELE  |   RUD  |   AIL  |   FLA  |   PHI  |   THETA | -->
-        <!-- <define name  = "G1_ROLL"            value = "{ 0.00f, -13.00f,   0.00f,  13.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>
-        <define name  = "G1_PITCH"           value = "{ 1.60f,   0.00f,  -1.60f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>  
-        <define name  = "G1_YAW"             value = "{-0.40f,   0.40f,  -0.40f,   0.40f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>
-        <define name  = "G1_THRUST"          value = "{-0.50f,  -0.50f,  -0.50f,  -0.50f,   0.55f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>  
-        <define name  = "G1_ZERO"            value = "{ 0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/> 
-        <define name  = "G2"                 value = "{-0.02f,   0.02f,  -0.02f,   0.02f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/> -->
         <!--                                          | MF   |   MR   |   MB   |   ML   |   MP   |   ELE  |   RUD  |   AIL  |   FLA  |   PHI  |   THETA | -->
         <!-- <define name  = "dFdu"               value = "{-0.50f,  -0.50f,  -0.50f,  -0.50f,   0.55f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>  
         <define name  = "dMzdu"              value = "{-0.40f,   0.40f,  -0.40f,   0.40f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>
