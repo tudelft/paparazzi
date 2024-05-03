@@ -647,7 +647,7 @@ void rotwing_state_skew_actuator_periodic(void)
 
   // SEND ABI Message to ctr_eff_sched and other modules that want Actuator position feedback
   struct act_feedback_t feedback;
-  feedback.idx =  SERVO_ROTATION_MECH_IDX;
+  feedback.idx =  COMMAND_ROT_MECH;
   feedback.position = 0.5 * M_PI - RadOfDeg(rotwing_state_skewing.wing_angle_deg);
   feedback.set.position = true;
 
@@ -666,7 +666,7 @@ void rotwing_state_skew_actuator_periodic(void)
 
   // SEND ABI Message to ctr_eff_sched and other modules that want Actuator position feedback
   struct act_feedback_t feedback;
-  feedback.idx =  SERVO_ROTATION_MECH_IDX;
+  feedback.idx =  COMMAND_ROT_MECH;
   feedback.position = 0.5 * M_PI - RadOfDeg(rotwing_state_skewing.wing_angle_deg);
   feedback.set.position = true;
 
@@ -682,7 +682,7 @@ static void rotwing_state_feedback_cb(uint8_t __attribute__((unused)) sender_id,
 
     for (int i = 0; i < num_act_message; i++) {
       // Check for wing rotation feedback
-      if ((feedback_msg[i].set.position) && (feedback_msg[i].idx == SERVO_ROTATION_MECH_IDX)) {
+      if ((feedback_msg[i].set.position) && (feedback_msg[i].idx == COMMAND_ROT_MECH)) {
         // Get wing rotation angle from sensor
         float wing_angle_rad = 0.5 * M_PI - feedback_msg[i].position;
         rotwing_state_skewing.wing_angle_deg = DegOfRad(wing_angle_rad);
