@@ -102,11 +102,6 @@ struct rot_wing_eff_sched_var_t {
   float airspeed2;
 };
 
-// struct arm{
-//   float lx;
-//   float ly;
-//   float lz;
-// };
 struct I{
   float xx;
   float yy;
@@ -142,11 +137,23 @@ struct RW_attitude{
   float spsi;
   float cpsi;
 };
+
+struct RW_skew{
+  float rad;             // Wing rotation angle in radians: from ABI message
+  float deg;             // Wing rotation angle in degrees: (clone in degrees)
+  float cosr;                 // cosine of wing rotation angle
+  float sinr;                 // sine of wing rotation angle
+  float cosr2;                // cosine² of wing rotation angle
+  float sinr2;                // sine² of wing rotation angle
+  float cosr3;                // cosine³ of wing rotation angle
+  float sinr3;                // sine³ of wing rotation angle
+};
 struct RW_Model{
   struct I I;     // Inertia matrix
   float m;        // mass [kg]
   float T;        // Thrust [N]
   float P;        // Pusher thrust [N]
+  struct RW_skew skew;
   struct RW_attitude att;
   struct wing_model wing;
   struct F_M_Body mF;
@@ -158,6 +165,8 @@ struct RW_Model{
   struct F_M_Body rud;
   struct F_M_Body ail;
   struct F_M_Body flp;
+  float as;  // airspeed [m/s] 
+  float as2; // airspeed squared [m/s²]
 
 };
 
