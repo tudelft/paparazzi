@@ -1351,9 +1351,9 @@ void assign_variables(void){
         float flight_path_angle_airspeed = fpa_off_deg*M_PI/180;
         float projected_airspeed_on_x_control = 0.0;
         if(fabs(cosf(euler_vect[1])) > 0.001){
-            projected_airspeed_on_x_control = airspeed/cosf(euler_vect[1]);
+            projected_airspeed_on_x_control = fabs(airspeed/cosf(euler_vect[1]));
         }
-        if(projected_airspeed_on_x_control > 1){
+        if(projected_airspeed_on_x_control > 1 && projected_airspeed_on_x_control > speed_vect[2]){
             flight_path_angle_airspeed = flight_path_angle_airspeed + asin(-speed_vect[2]/projected_airspeed_on_x_control);
             BoundAbs(flight_path_angle_airspeed, M_PI/2);
         }
@@ -1525,11 +1525,16 @@ void overactuated_mixing_run(void)
         // if(radio_control.values[RADIO_MODE] < 500){
         if(autopilot.mode == AP_MODE_HOVER_DIRECT){    
             waypoint_mode = 0;
+            if (control_mode_ovc_vehicle !=2){
+                control_mode_ovc_vehicle = 2;
+                NavResurrect();
+            }
         }
         // Waypoint reference mode
         // if(radio_control.values[RADIO_MODE] >= 500){
         if(autopilot.mode == AP_MODE_NAV){    
             waypoint_mode = 1;
+            control_mode_ovc_vehicle = 3; 
         }
 
         //INIT AND BOOLEAN RESET
@@ -1561,8 +1566,7 @@ void overactuated_mixing_run(void)
 
             INDI_engaged = 1;
             FAILSAFE_engaged = 0;
-            control_mode_ovc_vehicle = 2;
-
+            
             //Reset actuator states position:
             indi_u[0] = 100;
             indi_u[1] = 100;
