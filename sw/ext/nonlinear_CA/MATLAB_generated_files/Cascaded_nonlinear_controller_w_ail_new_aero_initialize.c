@@ -2,16 +2,16 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: Nonlinear_CA_w_ail_approach_ext_acc_initialize.c
+ * File: Cascaded_nonlinear_controller_w_ail_new_aero_initialize.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 /* Include Files */
-#include "Nonlinear_CA_w_ail_approach_ext_acc_initialize.h"
+#include "Cascaded_nonlinear_controller_w_ail_new_aero_initialize.h"
+#include "Cascaded_nonlinear_controller_w_ail_new_aero_data.h"
 #include "CoderTimeAPI.h"
-#include "Nonlinear_CA_w_ail_approach_ext_acc_data.h"
 #include "rt_nonfinite.h"
 #include "timeKeeper.h"
 #include <string.h>
@@ -21,15 +21,15 @@
  * Arguments    : void
  * Return Type  : void
  */
-void Nonlinear_CA_w_ail_approach_ext_acc_initialize(void)
+void Cascaded_nonlinear_controller_w_ail_new_aero_initialize(void)
 {
   c_CoderTimeAPI_callCoderClockGe();
   timeKeeper_init();
-  isInitialized_Nonlinear_CA_w_ail_approach_ext_acc = true;
+  isInitialized_Cascaded_nonlinear_controller_w_ail_new_aero = true;
 }
 
 /*
- * File trailer for Nonlinear_CA_w_ail_approach_ext_acc_initialize.c
+ * File trailer for Cascaded_nonlinear_controller_w_ail_new_aero_initialize.c
  *
  * [EOF]
  */

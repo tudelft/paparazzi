@@ -2,14 +2,14 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: Nonlinear_CA_w_ail_approach_ext_acc_initialize.h
+ * File: compute_cost_and_gradient_w_Mx_noah_outer.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
-#ifndef NONLINEAR_CA_W_AIL_APPROACH_EXT_ACC_INITIALIZE_H
-#define NONLINEAR_CA_W_AIL_APPROACH_EXT_ACC_INITIALIZE_H
+#ifndef COMPUTE_COST_AND_GRADIENT_W_MX_NOAH_OUTER_H
+#define COMPUTE_COST_AND_GRADIENT_W_MX_NOAH_OUTER_H
 
 /* Include Files */
 #include "rtwtypes.h"
@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-extern void Nonlinear_CA_w_ail_approach_ext_acc_initialize(void);
+double ft_1(const double ct[263], double gradient_data[], int *gradient_size);
 
 #ifdef __cplusplus
 }
@@ -29,7 +29,7 @@ extern void Nonlinear_CA_w_ail_approach_ext_acc_initialize(void);
 
 #endif
 /*
- * File trailer for Nonlinear_CA_w_ail_approach_ext_acc_initialize.h
+ * File trailer for compute_cost_and_gradient_w_Mx_noah_outer.h
  *
  * [EOF]
  */

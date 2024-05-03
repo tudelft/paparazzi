@@ -5,16 +5,104 @@
  * File: xzlarf.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 /* Include Files */
 #include "xzlarf.h"
-#include "Nonlinear_CA_w_ail_approach_ext_acc_rtwutil.h"
+#include "Cascaded_nonlinear_controller_w_ail_new_aero_rtwutil.h"
 #include "rt_nonfinite.h"
 #include <string.h>
 
 /* Function Definitions */
+/*
+ * Arguments    : int m
+ *                int n
+ *                int iv0
+ *                double tau
+ *                double C[729]
+ *                int ic0
+ *                double work[27]
+ * Return Type  : void
+ */
+void b_xzlarf(int m, int n, int iv0, double tau, double C[729], int ic0,
+              double work[27])
+{
+  int i;
+  int ia;
+  int iac;
+  int lastc;
+  int lastv;
+  if (tau != 0.0) {
+    bool exitg2;
+    lastv = m;
+    i = iv0 + m;
+    while ((lastv > 0) && (C[i - 2] == 0.0)) {
+      lastv--;
+      i--;
+    }
+    lastc = n - 1;
+    exitg2 = false;
+    while ((!exitg2) && (lastc + 1 > 0)) {
+      int exitg1;
+      i = ic0 + lastc * 27;
+      ia = i;
+      do {
+        exitg1 = 0;
+        if (ia <= (i + lastv) - 1) {
+          if (C[ia - 1] != 0.0) {
+            exitg1 = 1;
+          } else {
+            ia++;
+          }
+        } else {
+          lastc--;
+          exitg1 = 2;
+        }
+      } while (exitg1 == 0);
+      if (exitg1 == 1) {
+        exitg2 = true;
+      }
+    }
+  } else {
+    lastv = 0;
+    lastc = -1;
+  }
+  if (lastv > 0) {
+    double c;
+    int b_i;
+    if (lastc + 1 != 0) {
+      if (lastc >= 0) {
+        memset(&work[0], 0, (unsigned int)(lastc + 1) * sizeof(double));
+      }
+      b_i = ic0 + 27 * lastc;
+      for (iac = ic0; iac <= b_i; iac += 27) {
+        c = 0.0;
+        i = (iac + lastv) - 1;
+        for (ia = iac; ia <= i; ia++) {
+          c += C[ia - 1] * C[((iv0 + ia) - iac) - 1];
+        }
+        i = div_nde_s32_floor(iac - ic0, 27);
+        work[i] += c;
+      }
+    }
+    if (!(-tau == 0.0)) {
+      i = ic0;
+      for (iac = 0; iac <= lastc; iac++) {
+        c = work[iac];
+        if (c != 0.0) {
+          c *= -tau;
+          b_i = lastv + i;
+          for (ia = i; ia < b_i; ia++) {
+            C[ia - 1] += C[((iv0 + ia) - i) - 1] * c;
+          }
+        }
+        i += 27;
+      }
+    }
+  }
+}
+
 /*
  * Arguments    : int m
  *                int n
@@ -82,7 +170,7 @@ void xzlarf(int m, int n, int iv0, double tau, double C[961], int ic0,
         for (ia = iac; ia <= i; ia++) {
           c += C[ia - 1] * C[((iv0 + ia) - iac) - 1];
         }
-        i = div_nde_s32_floor(iac - ic0);
+        i = div_nde_s32_floor(iac - ic0, 31);
         work[i] += c;
       }
     }

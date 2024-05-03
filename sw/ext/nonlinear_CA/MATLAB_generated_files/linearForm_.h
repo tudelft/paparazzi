@@ -5,7 +5,7 @@
  * File: linearForm_.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 #ifndef LINEARFORM__H
@@ -21,6 +21,9 @@ extern "C" {
 #endif
 
 /* Function Declarations */
+void b_linearForm_(bool obj_hasLinear, int obj_nvar, double workspace[378],
+                   const double H[169], const double f[14], const double x[14]);
+
 void linearForm_(bool obj_hasLinear, int obj_nvar, double workspace[496],
                  const double H[225], const double f[16], const double x[16]);
 

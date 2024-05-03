@@ -5,12 +5,13 @@
  * File: feasibleX0ForWorkingSet.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 /* Include Files */
 #include "feasibleX0ForWorkingSet.h"
-#include "Nonlinear_CA_w_ail_approach_ext_acc_internal_types.h"
+#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
+#include "Cascaded_nonlinear_controller_w_ail_new_aero_rtwutil.h"
 #include "computeQ_.h"
 #include "factorQR.h"
 #include "maxConstraintViolation.h"
@@ -21,15 +22,207 @@
 
 /* Function Definitions */
 /*
+ * Arguments    : double workspace[378]
+ *                double xCurrent[14]
+ *                const o_struct_T *workingset
+ *                i_struct_T *qrmanager
+ * Return Type  : bool
+ */
+bool b_feasibleX0ForWorkingSet(double workspace[378], double xCurrent[14],
+                               const o_struct_T *workingset,
+                               i_struct_T *qrmanager)
+{
+  double B[378];
+  int b_i;
+  int br;
+  int iAcol;
+  int j;
+  int jBcol;
+  int k;
+  int mWConstr;
+  int nVar;
+  bool nonDegenerateWset;
+  mWConstr = workingset->nActiveConstr;
+  nVar = workingset->nVar;
+  nonDegenerateWset = true;
+  if (mWConstr != 0) {
+    double c;
+    int i;
+    int i1;
+    for (iAcol = 0; iAcol < mWConstr; iAcol++) {
+      c = workingset->bwset[iAcol];
+      workspace[iAcol] = c;
+      workspace[iAcol + 27] = c;
+    }
+    if (mWConstr != 0) {
+      i = 14 * (mWConstr - 1) + 1;
+      for (iAcol = 1; iAcol <= i; iAcol += 14) {
+        c = 0.0;
+        i1 = (iAcol + nVar) - 1;
+        for (br = iAcol; br <= i1; br++) {
+          c += workingset->ATwset[br - 1] * xCurrent[br - iAcol];
+        }
+        i1 = div_nde_s32_floor(iAcol - 1, 14);
+        workspace[i1] -= c;
+      }
+    }
+    if (mWConstr >= nVar) {
+      i = (unsigned char)nVar;
+      qrmanager->usedPivoting = false;
+      qrmanager->mrows = mWConstr;
+      qrmanager->ncols = nVar;
+      for (br = 0; br < i; br++) {
+        iAcol = 27 * br;
+        for (jBcol = 0; jBcol < mWConstr; jBcol++) {
+          qrmanager->QR[jBcol + iAcol] = workingset->ATwset[br + 14 * jBcol];
+        }
+        qrmanager->jpvt[br] = br + 1;
+      }
+      if (mWConstr <= nVar) {
+        i = mWConstr;
+      } else {
+        i = nVar;
+      }
+      qrmanager->minRowCol = i;
+      memset(&qrmanager->tau[0], 0, 27U * sizeof(double));
+      if (i >= 1) {
+        b_qrf(qrmanager->QR, mWConstr, nVar, i, qrmanager->tau);
+      }
+      b_computeQ_(qrmanager, mWConstr);
+      memcpy(&B[0], &workspace[0], 378U * sizeof(double));
+      for (b_i = 0; b_i <= 27; b_i += 27) {
+        i = b_i + 1;
+        i1 = b_i + nVar;
+        if (i <= i1) {
+          memset(&workspace[i + -1], 0,
+                 (unsigned int)((i1 - i) + 1) * sizeof(double));
+        }
+      }
+      br = -1;
+      for (b_i = 0; b_i <= 27; b_i += 27) {
+        jBcol = -1;
+        i = b_i + 1;
+        i1 = b_i + nVar;
+        for (k = i; k <= i1; k++) {
+          c = 0.0;
+          for (iAcol = 0; iAcol < mWConstr; iAcol++) {
+            c += qrmanager->Q[(iAcol + jBcol) + 1] * B[(iAcol + br) + 1];
+          }
+          workspace[k - 1] += c;
+          jBcol += 27;
+        }
+        br += 27;
+      }
+      for (j = 0; j < 2; j++) {
+        jBcol = 27 * j - 1;
+        for (k = nVar; k >= 1; k--) {
+          iAcol = 27 * (k - 1) - 1;
+          i = k + jBcol;
+          c = workspace[i];
+          if (c != 0.0) {
+            workspace[i] = c / qrmanager->QR[k + iAcol];
+            i1 = (unsigned char)(k - 1);
+            for (b_i = 0; b_i < i1; b_i++) {
+              int i2;
+              i2 = (b_i + jBcol) + 1;
+              workspace[i2] -= workspace[i] * qrmanager->QR[(b_i + iAcol) + 1];
+            }
+          }
+        }
+      }
+    } else {
+      b_factorQR(qrmanager, workingset->ATwset, nVar, mWConstr);
+      b_computeQ_(qrmanager, qrmanager->minRowCol);
+      for (j = 0; j < 2; j++) {
+        jBcol = 27 * j;
+        for (b_i = 0; b_i < mWConstr; b_i++) {
+          iAcol = 27 * b_i;
+          br = b_i + jBcol;
+          c = workspace[br];
+          i = (unsigned char)b_i;
+          for (k = 0; k < i; k++) {
+            c -= qrmanager->QR[k + iAcol] * workspace[k + jBcol];
+          }
+          workspace[br] = c / qrmanager->QR[b_i + iAcol];
+        }
+      }
+      memcpy(&B[0], &workspace[0], 378U * sizeof(double));
+      for (b_i = 0; b_i <= 27; b_i += 27) {
+        i = b_i + 1;
+        i1 = b_i + nVar;
+        if (i <= i1) {
+          memset(&workspace[i + -1], 0,
+                 (unsigned int)((i1 - i) + 1) * sizeof(double));
+        }
+      }
+      br = 0;
+      for (b_i = 0; b_i <= 27; b_i += 27) {
+        jBcol = -1;
+        i = br + 1;
+        i1 = br + mWConstr;
+        for (j = i; j <= i1; j++) {
+          int i2;
+          i2 = b_i + 1;
+          iAcol = b_i + nVar;
+          for (k = i2; k <= iAcol; k++) {
+            workspace[k - 1] += B[j - 1] * qrmanager->Q[(jBcol + k) - b_i];
+          }
+          jBcol += 27;
+        }
+        br += 27;
+      }
+    }
+    iAcol = 0;
+    int exitg1;
+    do {
+      exitg1 = 0;
+      if (iAcol <= (unsigned char)nVar - 1) {
+        if (rtIsInf(workspace[iAcol]) || rtIsNaN(workspace[iAcol])) {
+          nonDegenerateWset = false;
+          exitg1 = 1;
+        } else {
+          c = workspace[iAcol + 27];
+          if (rtIsInf(c) || rtIsNaN(c)) {
+            nonDegenerateWset = false;
+            exitg1 = 1;
+          } else {
+            iAcol++;
+          }
+        }
+      } else {
+        double constrViolation_basicX;
+        iAcol = nVar - 1;
+        for (k = 0; k <= iAcol; k++) {
+          workspace[k] += xCurrent[k];
+        }
+        c = b_maxConstraintViolation(workingset, workspace, 1);
+        constrViolation_basicX =
+            b_maxConstraintViolation(workingset, workspace, 28);
+        if ((c <= 2.2204460492503131E-16) || (c < constrViolation_basicX)) {
+          i = (unsigned char)nVar;
+          memcpy(&xCurrent[0], &workspace[0], (unsigned int)i * sizeof(double));
+        } else {
+          i = (unsigned char)nVar;
+          memcpy(&xCurrent[0], &workspace[27],
+                 (unsigned int)i * sizeof(double));
+        }
+        exitg1 = 1;
+      }
+    } while (exitg1 == 0);
+  }
+  return nonDegenerateWset;
+}
+
+/*
  * Arguments    : double workspace[496]
  *                double xCurrent[16]
- *                const i_struct_T *workingset
- *                d_struct_T *qrmanager
+ *                const m_struct_T *workingset
+ *                f_struct_T *qrmanager
  * Return Type  : bool
  */
 bool feasibleX0ForWorkingSet(double workspace[496], double xCurrent[16],
-                             const i_struct_T *workingset,
-                             d_struct_T *qrmanager)
+                             const m_struct_T *workingset,
+                             f_struct_T *qrmanager)
 {
   double B[496];
   int b_i;

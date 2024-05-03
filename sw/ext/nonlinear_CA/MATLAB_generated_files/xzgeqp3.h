@@ -5,7 +5,7 @@
  * File: xzgeqp3.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 #ifndef XZGEQP3_H
@@ -21,6 +21,8 @@ extern "C" {
 #endif
 
 /* Function Declarations */
+void b_qrf(double A[729], int m, int n, int nfxd, double tau[27]);
+
 void qrf(double A[961], int m, int n, int nfxd, double tau[31]);
 
 #ifdef __cplusplus

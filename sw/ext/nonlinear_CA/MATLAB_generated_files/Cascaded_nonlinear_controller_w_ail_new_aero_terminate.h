@@ -2,14 +2,14 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: Nonlinear_CA_w_ail_approach_ext_acc_terminate.h
+ * File: Cascaded_nonlinear_controller_w_ail_new_aero_terminate.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
-#ifndef NONLINEAR_CA_W_AIL_APPROACH_EXT_ACC_TERMINATE_H
-#define NONLINEAR_CA_W_AIL_APPROACH_EXT_ACC_TERMINATE_H
+#ifndef CASCADED_NONLINEAR_CONTROLLER_W_AIL_NEW_AERO_TERMINATE_H
+#define CASCADED_NONLINEAR_CONTROLLER_W_AIL_NEW_AERO_TERMINATE_H
 
 /* Include Files */
 #include "rtwtypes.h"
@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-extern void Nonlinear_CA_w_ail_approach_ext_acc_terminate(void);
+extern void Cascaded_nonlinear_controller_w_ail_new_aero_terminate(void);
 
 #ifdef __cplusplus
 }
@@ -29,7 +29,7 @@ extern void Nonlinear_CA_w_ail_approach_ext_acc_terminate(void);
 
 #endif
 /*
- * File trailer for Nonlinear_CA_w_ail_approach_ext_acc_terminate.h
+ * File trailer for Cascaded_nonlinear_controller_w_ail_new_aero_terminate.h
  *
  * [EOF]
  */

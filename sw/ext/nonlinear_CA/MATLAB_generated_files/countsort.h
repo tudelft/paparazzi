@@ -5,7 +5,7 @@
  * File: countsort.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 #ifndef COUNTSORT_H
@@ -21,6 +21,8 @@ extern "C" {
 #endif
 
 /* Function Declarations */
+void b_countsort(int x[27], int xLen, int workspace[27], int xMin, int xMax);
+
 void countsort(int x[31], int xLen, int workspace[31], int xMin, int xMax);
 
 #ifdef __cplusplus

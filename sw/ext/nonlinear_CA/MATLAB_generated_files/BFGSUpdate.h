@@ -5,7 +5,7 @@
  * File: BFGSUpdate.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 #ifndef BFGSUPDATE_H
@@ -23,6 +23,9 @@ extern "C" {
 /* Function Declarations */
 bool BFGSUpdate(int nvar, double Bk[225], const double sk[16], double yk[16],
                 double workspace[496]);
+
+bool b_BFGSUpdate(int nvar, double Bk[169], const double sk[14], double yk[14],
+                  double workspace[378]);
 
 #ifdef __cplusplus
 }

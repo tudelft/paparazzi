@@ -342,15 +342,24 @@ void* second_thread() //Run the optimization code
 
     float W_act_ailerons_const = extra_data_in_copy[51], W_act_ailerons_speed = extra_data_in_copy[52]; 
     float min_delta_ailerons = extra_data_in_copy[53], max_delta_ailerons = extra_data_in_copy[54];
-    float CL_aileron = extra_data_in_copy[55];
+    float CL_aileron = extra_data_in_copy[55];   
 
-    float max_thrust_loss = extra_data_in_copy[56];
-    float C_dr = extra_data_in_copy[57];    
+    float k_alt_tilt_constraint = extra_data_in_copy[56];
+    float min_alt_tilt_constraint = extra_data_in_copy[57];
 
-    float k_alt_tilt_constraint = extra_data_in_copy[58];
-    float min_alt_tilt_constraint = extra_data_in_copy[59];
+    float transition_speed = extra_data_in_copy[58];
 
-    float transition_speed = extra_data_in_copy[60];
+    float desired_motor_value = extra_data_in_copy[59]; 
+    float desired_el_value = extra_data_in_copy[60]; 
+    float desired_az_value = extra_data_in_copy[61]; 
+    float desired_ailerons_value = extra_data_in_copy[62];
+
+    float theta_gain = extra_data_in_copy[63];
+    float phi_gain = extra_data_in_copy[64];
+    float theta_gain = extra_data_in_copy[63];
+    float theta_gain = extra_data_in_copy[63];
+    float theta_gain = extra_data_in_copy[63];
+    float theta_gain = extra_data_in_copy[63];
 
     // Real time variables:
     double Phi = (myam7_data_in_copy.phi_state_int*1e-2 * M_PI/180);
@@ -366,10 +375,11 @@ void* second_thread() //Run the optimization code
     double r = (myam7_data_in_copy.r_state_int*1e-1 * M_PI/180), V = (myam7_data_in_copy.airspeed_state_int*1e-2);
     double flight_path_angle = (myam7_data_in_copy.gamma_state_int*1e-2 * M_PI/180);
     double Beta = (myam7_data_in_copy.beta_state_int*1e-2 * M_PI/180);
-    double desired_motor_value = (myam7_data_in_copy.desired_motor_value_int*1e-1), desired_el_value = (myam7_data_in_copy.desired_el_value_int*1e-2 * M_PI/180);
-    double desired_az_value = (myam7_data_in_copy.desired_az_value_int*1e-2 * M_PI/180), desired_theta_value = (myam7_data_in_copy.desired_theta_value_int*1e-2 * M_PI/180);
+
+    double desired_theta_value = (myam7_data_in_copy.desired_theta_value_int*1e-2 * M_PI/180);
     double desired_phi_value = (myam7_data_in_copy.desired_phi_value_int*1e-2 * M_PI/180);
-    double desired_ailerons_value = (myam7_data_in_copy.desired_ailerons_value_int*1e-2 * M_PI/180);
+
+    double des_psi_dot = (myam7_data_in_copy.desired_phi_value_int*1e-1 * M_PI/180);
 
     double approach_mode = (myam7_data_in_copy.approach_boolean);
     double lidar_alt_corrected = (myam7_data_in_copy.lidar_alt_corrected_int*1e-2);

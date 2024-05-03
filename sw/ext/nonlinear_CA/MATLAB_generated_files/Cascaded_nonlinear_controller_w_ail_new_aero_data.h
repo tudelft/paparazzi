@@ -2,14 +2,14 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: Nonlinear_CA_w_ail_approach_ext_acc_data.h
+ * File: Cascaded_nonlinear_controller_w_ail_new_aero_data.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
-#ifndef NONLINEAR_CA_W_AIL_APPROACH_EXT_ACC_DATA_H
-#define NONLINEAR_CA_W_AIL_APPROACH_EXT_ACC_DATA_H
+#ifndef CASCADED_NONLINEAR_CONTROLLER_W_AIL_NEW_AERO_DATA_H
+#define CASCADED_NONLINEAR_CONTROLLER_W_AIL_NEW_AERO_DATA_H
 
 /* Include Files */
 #include "rtwtypes.h"
@@ -19,11 +19,11 @@
 /* Variable Declarations */
 extern double freq;
 extern bool freq_not_empty;
-extern bool isInitialized_Nonlinear_CA_w_ail_approach_ext_acc;
+extern bool isInitialized_Cascaded_nonlinear_controller_w_ail_new_aero;
 
 #endif
 /*
- * File trailer for Nonlinear_CA_w_ail_approach_ext_acc_data.h
+ * File trailer for Cascaded_nonlinear_controller_w_ail_new_aero_data.h
  *
  * [EOF]
  */

@@ -5,7 +5,7 @@
  * File: xgeqp3.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 #ifndef XGEQP3_H
@@ -21,6 +21,8 @@ extern "C" {
 #endif
 
 /* Function Declarations */
+void b_xgeqp3(double A[729], int m, int n, int jpvt[27], double tau[27]);
+
 void xgeqp3(double A[961], int m, int n, int jpvt[31], double tau[31]);
 
 #ifdef __cplusplus

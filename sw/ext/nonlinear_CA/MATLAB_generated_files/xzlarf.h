@@ -5,7 +5,7 @@
  * File: xzlarf.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 #ifndef XZLARF_H
@@ -21,6 +21,9 @@ extern "C" {
 #endif
 
 /* Function Declarations */
+void b_xzlarf(int m, int n, int iv0, double tau, double C[729], int ic0,
+              double work[27]);
+
 void xzlarf(int m, int n, int iv0, double tau, double C[961], int ic0,
             double work[31]);
 

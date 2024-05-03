@@ -5,16 +5,52 @@
  * File: xgemv.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 /* Include Files */
 #include "xgemv.h"
-#include "Nonlinear_CA_w_ail_approach_ext_acc_rtwutil.h"
+#include "Cascaded_nonlinear_controller_w_ail_new_aero_rtwutil.h"
 #include "rt_nonfinite.h"
 #include <string.h>
 
 /* Function Definitions */
+/*
+ * Arguments    : int m
+ *                int n
+ *                const double A[169]
+ *                int lda
+ *                const double x[14]
+ *                double y[13]
+ * Return Type  : void
+ */
+void b_xgemv(int m, int n, const double A[169], int lda, const double x[14],
+             double y[13])
+{
+  int ia;
+  int iac;
+  if ((m != 0) && (n != 0)) {
+    int i;
+    int ix;
+    i = (unsigned char)m;
+    if (i - 1 >= 0) {
+      memset(&y[0], 0, (unsigned int)i * sizeof(double));
+    }
+    ix = 0;
+    i = lda * (n - 1) + 1;
+    for (iac = 1; lda < 0 ? iac >= i : iac <= i; iac += lda) {
+      int i1;
+      i1 = (iac + m) - 1;
+      for (ia = iac; ia <= i1; ia++) {
+        int i2;
+        i2 = ia - iac;
+        y[i2] += A[ia - 1] * x[ix];
+      }
+      ix++;
+    }
+  }
+}
+
 /*
  * Arguments    : int m
  *                int n
@@ -23,7 +59,7 @@
  *                double y[496]
  * Return Type  : void
  */
-void b_xgemv(int m, int n, const double A[961], const double x[16],
+void c_xgemv(int m, int n, const double A[961], const double x[16],
              double y[496])
 {
   int ia;
@@ -40,7 +76,38 @@ void b_xgemv(int m, int n, const double A[961], const double x[16],
       for (ia = iac; ia <= i1; ia++) {
         c += A[ia - 1] * x[ia - iac];
       }
-      i1 = div_nde_s32_floor(iac - 1);
+      i1 = div_nde_s32_floor(iac - 1, 31);
+      y[i1] += c;
+    }
+  }
+}
+
+/*
+ * Arguments    : int m
+ *                int n
+ *                const double A[729]
+ *                const double x[14]
+ *                double y[378]
+ * Return Type  : void
+ */
+void d_xgemv(int m, int n, const double A[729], const double x[14],
+             double y[378])
+{
+  int ia;
+  int iac;
+  if (m != 0) {
+    int i;
+    memset(&y[0], 0, (unsigned int)n * sizeof(double));
+    i = 27 * (n - 1) + 1;
+    for (iac = 1; iac <= i; iac += 27) {
+      double c;
+      int i1;
+      c = 0.0;
+      i1 = (iac + m) - 1;
+      for (ia = iac; ia <= i1; ia++) {
+        c += A[ia - 1] * x[ia - iac];
+      }
+      i1 = div_nde_s32_floor(iac - 1, 27);
       y[i1] += c;
     }
   }

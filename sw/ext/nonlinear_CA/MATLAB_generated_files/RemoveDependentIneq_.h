@@ -5,14 +5,14 @@
  * File: RemoveDependentIneq_.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 #ifndef REMOVEDEPENDENTINEQ__H
 #define REMOVEDEPENDENTINEQ__H
 
 /* Include Files */
-#include "Nonlinear_CA_w_ail_approach_ext_acc_internal_types.h"
+#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,8 +22,11 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-void RemoveDependentIneq_(i_struct_T *workingset, d_struct_T *qrmanager,
-                          f_struct_T *memspace, double tolfactor);
+void RemoveDependentIneq_(m_struct_T *workingset, f_struct_T *qrmanager,
+                          h_struct_T *memspace, double tolfactor);
+
+void b_RemoveDependentIneq_(o_struct_T *workingset, i_struct_T *qrmanager,
+                            k_struct_T *memspace, double tolfactor);
 
 #ifdef __cplusplus
 }

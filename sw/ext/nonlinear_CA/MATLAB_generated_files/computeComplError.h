@@ -5,7 +5,7 @@
  * File: computeComplError.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 #ifndef COMPUTECOMPLERROR_H
@@ -21,6 +21,11 @@ extern "C" {
 #endif
 
 /* Function Declarations */
+double b_computeComplError(const double xCurrent[13], const int finiteLB[14],
+                           int mLB, const double lb[13], const int finiteUB[14],
+                           int mUB, const double ub[13],
+                           const double lambda[27], int iL0);
+
 double computeComplError(const double xCurrent[15], const int finiteLB[16],
                          int mLB, const double lb[15], const int finiteUB[16],
                          int mUB, const double ub[15], const double lambda[31],

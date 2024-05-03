@@ -5,14 +5,14 @@
  * File: maxConstraintViolation.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 #ifndef MAXCONSTRAINTVIOLATION_H
 #define MAXCONSTRAINTVIOLATION_H
 
 /* Include Files */
-#include "Nonlinear_CA_w_ail_approach_ext_acc_internal_types.h"
+#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,9 +22,14 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-double b_maxConstraintViolation(const i_struct_T *obj, const double x[16]);
+double b_maxConstraintViolation(const o_struct_T *obj, const double x[378],
+                                int ix0);
 
-double maxConstraintViolation(const i_struct_T *obj, const double x[496],
+double c_maxConstraintViolation(const m_struct_T *obj, const double x[16]);
+
+double d_maxConstraintViolation(const o_struct_T *obj, const double x[14]);
+
+double maxConstraintViolation(const m_struct_T *obj, const double x[496],
                               int ix0);
 
 #ifdef __cplusplus

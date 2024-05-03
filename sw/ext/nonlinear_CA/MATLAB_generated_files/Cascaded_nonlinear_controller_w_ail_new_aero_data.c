@@ -2,14 +2,14 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: Nonlinear_CA_w_ail_approach_ext_acc_data.c
+ * File: Cascaded_nonlinear_controller_w_ail_new_aero_data.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 /* Include Files */
-#include "Nonlinear_CA_w_ail_approach_ext_acc_data.h"
+#include "Cascaded_nonlinear_controller_w_ail_new_aero_data.h"
 #include "rt_nonfinite.h"
 #include <string.h>
 
@@ -18,10 +18,10 @@ double freq;
 
 bool freq_not_empty;
 
-bool isInitialized_Nonlinear_CA_w_ail_approach_ext_acc = false;
+bool isInitialized_Cascaded_nonlinear_controller_w_ail_new_aero = false;
 
 /*
- * File trailer for Nonlinear_CA_w_ail_approach_ext_acc_data.c
+ * File trailer for Cascaded_nonlinear_controller_w_ail_new_aero_data.c
  *
  * [EOF]
  */

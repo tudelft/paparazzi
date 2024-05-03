@@ -5,14 +5,14 @@
  * File: feasibleX0ForWorkingSet.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 #ifndef FEASIBLEX0FORWORKINGSET_H
 #define FEASIBLEX0FORWORKINGSET_H
 
 /* Include Files */
-#include "Nonlinear_CA_w_ail_approach_ext_acc_internal_types.h"
+#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,9 +22,13 @@ extern "C" {
 #endif
 
 /* Function Declarations */
+bool b_feasibleX0ForWorkingSet(double workspace[378], double xCurrent[14],
+                               const o_struct_T *workingset,
+                               i_struct_T *qrmanager);
+
 bool feasibleX0ForWorkingSet(double workspace[496], double xCurrent[16],
-                             const i_struct_T *workingset,
-                             d_struct_T *qrmanager);
+                             const m_struct_T *workingset,
+                             f_struct_T *qrmanager);
 
 #ifdef __cplusplus
 }

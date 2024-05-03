@@ -5,7 +5,7 @@
  * File: sortLambdaQP.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-Mar-2024 16:10:36
+ * C/C++ source code generated on  : 03-May-2024 02:28:05
  */
 
 #ifndef SORTLAMBDAQP_H
@@ -21,6 +21,12 @@ extern "C" {
 #endif
 
 /* Function Declarations */
+void b_sortLambdaQP(double lambda[27], int WorkingSet_nActiveConstr,
+                    const int WorkingSet_sizes[5],
+                    const int WorkingSet_isActiveIdx[6],
+                    const int WorkingSet_Wid[27],
+                    const int WorkingSet_Wlocalidx[27], double workspace[378]);
+
 void sortLambdaQP(double lambda[31], int WorkingSet_nActiveConstr,
                   const int WorkingSet_sizes[5],
                   const int WorkingSet_isActiveIdx[6],
