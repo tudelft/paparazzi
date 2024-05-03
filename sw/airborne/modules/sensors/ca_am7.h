@@ -54,10 +54,19 @@ struct __attribute__((__packed__)) am7_data_in {
     int16_t phi_cmd_int;
     int16_t ailerons_cmd_int;
     //Optimization info
-    uint16_t n_iteration;
-    uint16_t n_evaluation;
+    uint16_t n_iteration_outer;
+    uint16_t n_iteration_inner;
+    uint16_t n_evaluation_outer;
+    uint16_t n_evaluation_inner;
     uint16_t elapsed_time_us;
-    int16_t exit_flag_optimizer;
+    int16_t exit_flag_optimizer_inner;
+    //Modeled acc filtered
+    int16_t modeled_ax_int;
+    int16_t modeled_ay_int;
+    int16_t modeled_az_int;
+    int16_t modeled_p_dot_int;
+    int16_t modeled_q_dot_int;
+    int16_t modeled_r_dot_int;
     //Residuals
     int16_t residual_ax_int;
     int16_t residual_ay_int;
@@ -80,7 +89,7 @@ struct __attribute__((__packed__)) am7_data_in {
 };
 
 struct __attribute__((__packed__)) am7_data_out {
-    //Actuator state
+    //Actuator state - unfiltered
     int16_t motor_1_state_int;
     int16_t motor_2_state_int;
     int16_t motor_3_state_int;
@@ -94,7 +103,7 @@ struct __attribute__((__packed__)) am7_data_out {
     int16_t az_3_state_int;
     int16_t az_4_state_int;
     int16_t ailerons_state_int;
-    //Variable states
+    //Variable states - unfiltered 
     int16_t theta_state_int;
     int16_t phi_state_int;
     int16_t psi_state_int;
@@ -107,20 +116,24 @@ struct __attribute__((__packed__)) am7_data_out {
     //Approach boolean and lidar corrected altitude for the rotor constraint application 
     int16_t approach_boolean; 
     int16_t lidar_alt_corrected_int;
-    //Pseudo-control cmd
+    //Pseudo-control cmd - unfiltered
     int16_t pseudo_control_ax_int;
     int16_t pseudo_control_ay_int;
     int16_t pseudo_control_az_int;
-    int16_t pseudo_control_p_dot_int;
-    int16_t pseudo_control_q_dot_int;
-    int16_t pseudo_control_r_dot_int;
-    //Desired actuator value:
-    int16_t desired_motor_value_int;
-    int16_t desired_el_value_int;
-    int16_t desired_az_value_int;
+    int16_t ax_state_int;
+    int16_t ay_state_int;
+    int16_t az_state_int;
+    //Error Controller variables:
+    int16_t psi_dot_cmd_int;
+    int16_t p_dot_state_int;
+    int16_t q_dot_state_int;
+    int16_t r_dot_state_int;
+    int16_t p_state_filt_int;
+    int16_t q_state_filt_int;
+    int16_t r_state_filt_int;
+    //Desired theta and phi value:
     int16_t desired_theta_value_int;
     int16_t desired_phi_value_int;
-    int16_t desired_ailerons_value_int;
     //UAV position NED: 
     float UAV_NED_pos_x;
     float UAV_NED_pos_y;
