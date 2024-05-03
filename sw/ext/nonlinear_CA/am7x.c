@@ -319,10 +319,6 @@ void* second_thread() //Run the optimization code
 
   while(1){ 
 
-    double current_accelerations_double[6], current_accelerations_filtered_double[6]; 
-
-    double current_lin_acc_aero_only_double[6], current_lin_acc_aero_only_filtered_double[6]; 
-
     pthread_mutex_lock(&mutex_am7);   
     memcpy(&myam7_data_in_copy, &myam7_data_in, sizeof(struct am7_data_in));
     memcpy(&extra_data_in_copy, &extra_data_in, sizeof(extra_data_in));
@@ -415,6 +411,14 @@ void* second_thread() //Run the optimization code
     double desired_phi_value = (myam7_data_in_copy.desired_phi_value_int*1e-2 * M_PI/180);
 
     double des_psi_dot = (myam7_data_in_copy.desired_phi_value_int*1e-1 * M_PI/180);
+
+    double p_dot = (myam7_data_in_copy.p_dot_state_int*1e-1 * M_PI/180), q_dot = (myam7_data_in_copy.q_dot_state_int*1e-1 * M_PI/180);
+    double r_dot = (myam7_data_in_copy.r_dot_state_int*1e-1 * M_PI/180);
+
+    double p_ec = (myam7_data_in_copy.p_state_filt_int*1e-1 * M_PI/180), q_ec = (myam7_data_in_copy.q_state_filt_int*1e-1 * M_PI/180); 
+    double r_ec = (myam7_data_in_copy.r_state_filt_int*1e-1 * M_PI/180);
+
+    
 
     double approach_mode = (myam7_data_in_copy.approach_boolean);
     double lidar_alt_corrected = (myam7_data_in_copy.lidar_alt_corrected_int*1e-2);
@@ -530,29 +534,81 @@ void* second_thread() //Run the optimization code
 
     //Compute modeled accelerations:
     double u_in[NUM_ACT_IN_U_IN] = {Omega_1, Omega_2, Omega_3, Omega_4, b_1, b_2, b_3, b_4, g_1, g_2, g_3, g_4, Theta, Phi, delta_ailerons};
+    double u_in_filtered[NUM_ACT_IN_U_IN];
+    double current_accelerations_double[6], current_accelerations_filtered_double[6]; 
+    double current_lin_acc_aero_only_double[3], current_lin_acc_aero_only_filtered_double[3]; 
 
-    c_compute_acc_nonlinear_control(u_in,  p,  q,  r,  K_p_T,
-      K_p_M,  m,  I_xx,  I_yy,  I_zz,  l_1,
-      l_2,  l_3,  l_4,  l_z,  Cl_alpha,
-      Cd_zero,  K_Cd,  Cm_alpha,  Cm_zero,
-      CL_aileron,  rho,  V,  S,  wing_chord,
-      flight_path_angle,  Beta, current_accelerations_double);
+    c_compute_acc_control_rf_w_Mx_n(
+        Beta,  CL_aileron,  Cd_zero,  Cl_alpha,
+        Cm_zero,  Cm_alpha,  I_xx,  I_yy,  I_zz,
+        K_Cd,  Omega_1,  Omega_2,  Omega_3,  Omega_4,
+        Omega_1_scaled,  Omega_2_scaled,  Phi,  S,
+        Theta,  V,  V_scaled,  b_1,  b_2,  b_3,
+        b_4,  delta_ailerons,  flight_path_angle,  g_1,
+        g_2,  g_3,  g_4,  l_1,  l_2,  l_3,
+        l_4,  l_z,  m,  p,  prop_R,  prop_Cd_0,
+        prop_Cl_0,  prop_Cd_a,  prop_Cl_a,  prop_delta,
+        prop_sigma,  prop_theta,  q,  r,  rho,
+        wing_span,  wing_chord,  current_accelerations_double);
 
+    c_compute_lin_acc_control_rf_ae( Beta,  Cd_zero,
+                                          Cl_alpha,  K_Cd,  Phi,
+                                          S,  Theta,  V,
+                                          flight_path_angle,  m,
+                                          rho,  current_lin_acc_aero_only_double)
 
-
-
-  for (int i = 0; i < 6; i++) {
-    init_butterworth_2_low_pass(&current_accelerations_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
-  }
-
+  double body_rates_array[3] = {p,q,r};
+  double body_rates_dot_array[3] = {p_dot,q_dot,r_dot};
   for (int i = 0; i < 3; i++) {
-    init_butterworth_2_low_pass(&current_lin_acc_aero_only_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
-    init_butterworth_2_low_pass(&body_rates_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
-    init_butterworth_2_low_pass(&body_rates_dot_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
+
+                                                                                                                        //Filtered acc aero only
+    update_butterworth_2_low_pass(&current_lin_acc_aero_only_filtered[i], (float) current_lin_acc_aero_only_double[i]);
+    //Check for NaN in filters and reset them: 
+    if(current_lin_acc_aero_only_filtered[i].o[0] != current_lin_acc_aero_only_filtered[i].o[0]){
+      float tau_indi = 1.0f / (filter_cutoff_frequency);
+      init_butterworth_2_low_pass(&current_lin_acc_aero_only_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
+      if(verbose_filters){
+        printf("WARNING, current_lin_acc_aero_only_filtered filter number %d REINITIALIZED!!!! \n",i);
+      }
+    }
+
+                                                                                                                        //Filtered body rates 
+    update_butterworth_2_low_pass(&body_rates_filtered[i], (float) body_rates_array[i]);
+    //Check for NaN in filters and reset them: 
+    if(body_rates_filtered[i].o[0] != body_rates_filtered[i].o[0]){
+      float tau_indi = 1.0f / (filter_cutoff_frequency);
+      init_butterworth_2_low_pass(&body_rates_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
+      if(verbose_filters){
+        printf("WARNING, body_rates_filtered filter number %d REINITIALIZED!!!! \n",i);
+      }
+    }
+
+                                                                                                                        //Filtered acc body rates 
+    update_butterworth_2_low_pass(&body_rates_dot_filtered[i], (float) body_rates_dot_array[i]);
+    //Check for NaN in filters and reset them: 
+    if(body_rates_dot_filtered[i].o[0] != body_rates_dot_filtered[i].o[0]){
+      float tau_indi = 1.0f / (filter_cutoff_frequency);
+      init_butterworth_2_low_pass(&body_rates_dot_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
+      if(verbose_filters){
+        printf("WARNING, body_rates_dot_filtered filter number %d REINITIALIZED!!!! \n",i);
+      }
+    }
+
   }
 
   for (int i = 0; i < NUM_ACT_IN_U_IN; i++) {
-    init_butterworth_2_low_pass(&u_in_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
+
+                                                                                                                        //Filtered u_in
+    update_butterworth_2_low_pass(&u_in_filtered[i], (float) u_in[i]);
+    //Check for NaN in filters and reset them: 
+    if(u_in_filtered[i].o[0] != u_in_filtered[i].o[0]){
+      float tau_indi = 1.0f / (filter_cutoff_frequency);
+      init_butterworth_2_low_pass(&u_in_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
+      if(verbose_filters){
+        printf("WARNING, u_in_filtered filter number %d REINITIALIZED!!!! \n",i);
+      }
+    }
+
   }
 
   init_butterworth_2_low_pass(&airspeed_filtered, tau_indi, refresh_time_optimizer, 0.0);

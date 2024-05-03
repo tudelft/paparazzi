@@ -23,7 +23,7 @@
 #define max_function_eval_outer_loop 200
 #define max_function_eval_inner_loop 200
 #define refresh_time_optimizer 5e-3 //Must be equal or bigger than max_time_optimizer
-#define filter_cutoff_frequency 12 //rad/s
+#define filter_cutoff_frequency_init 12 //rad/s
 
 //Define the baudrate for the module and the starting byte 
 #define START_BYTE 0x9B  //1st start block identifier byte
@@ -34,6 +34,7 @@
 #define BAUDRATE_TF_MINI 115200 //Baudrate of the TF mini lidar sensor
 
 #define NUM_ACT_IN_U_IN 15
+#define NUM_ACT_IN_U_OUT 15
 
 //Communication structures
 struct  __attribute__((__packed__)) am7_data_out {
