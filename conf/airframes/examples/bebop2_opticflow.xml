@@ -10,7 +10,7 @@
 
   <firmware name="rotorcraft">
 
-    <target name="ap" board="bebop">
+    <target name="ap" board="bebop2">
       <define name="VIDEO_CAPTURE_PATH" value="/data/ftp/internal_000/images"/>
       <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
       <define name="TEXTONS_DICTIONARY_PATH" value="/data/ftp/internal_000"/>

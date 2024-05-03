@@ -71,6 +71,8 @@ static void logger_file_write_header(FILE *file) {
 #ifdef BOARD_BEBOP
   fprintf(file, "rpm_obs_1,rpm_obs_2,rpm_obs_3,rpm_obs_4,");
   fprintf(file, "rpm_ref_1,rpm_ref_2,rpm_ref_3,rpm_ref_4,");
+  fprintf(file, "imu_accel_raw_x,imu_accel_raw_y,imu_accel_raw_z,");
+  fprintf(file, "imu_gyro_raw_x,imu_gyro_raw_y,imu_gyro_raw_z,");
 #endif
 #ifdef INS_EXT_POSE_H
   ins_ext_pos_log_header(file);
@@ -102,6 +104,8 @@ static void logger_file_write_row(FILE *file) {
 #ifdef BOARD_BEBOP
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_ref[0],actuators_bebop.rpm_ref[1],actuators_bebop.rpm_ref[2],actuators_bebop.rpm_ref[3]);
+  fprintf(file, "%d,%d,%d,",imu_bebop.mpu.data_accel.vect.x,imu_bebop.mpu.data_accel.vect.y,imu_bebop.mpu.data_accel.vect.z);
+  fprintf(file, "%d,%d,%d,",imu_bebop.mpu.data_rates.rates.p,imu_bebop.mpu.data_rates.rates.q,imu_bebop.mpu.data_rates.rates.r);
 #endif
 #ifdef INS_EXT_POSE_H
   ins_ext_pos_log_data(file);
