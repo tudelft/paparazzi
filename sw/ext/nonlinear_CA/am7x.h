@@ -33,6 +33,8 @@
 
 #define BAUDRATE_TF_MINI 115200 //Baudrate of the TF mini lidar sensor
 
+#define NUM_ACT_IN_U_IN 15
+
 //Communication structures
 struct  __attribute__((__packed__)) am7_data_out {
     //Motor command
