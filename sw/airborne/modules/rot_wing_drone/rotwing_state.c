@@ -183,6 +183,11 @@ static void send_rotating_wing_state(struct transport_tx *trans, struct link_dev
 }
 #endif // PERIODIC_TELEMETRY
 
+void rotwing_state_force_skew_off(void)
+{
+  rotwing_state_skewing.force_rotation_angle = false;
+}
+
 void init_rotwing_state(void)
 {
   // Bind ABI messages
