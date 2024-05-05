@@ -16,8 +16,8 @@
 #ifndef AM7_H
 #define AM7_H
 
-#define max_time_optimizer_outer_loop 2.4e-3
-#define max_time_optimizer_inner_loop 2.4e-3
+#define max_time_optimizer_outer_loop 2.45e-3
+#define max_time_optimizer_inner_loop 2.45e-3
 #define max_iterations_outer_loop 70
 #define max_iterations_inner_loop 70
 #define max_function_eval_outer_loop 200

@@ -5,7 +5,7 @@
  * File: Cascaded_nonlinear_controller_w_ail_new_aero.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-May-2024 02:28:05
+ * C/C++ source code generated on  : 05-May-2024 01:26:38
  */
 
 #ifndef CASCADED_NONLINEAR_CONTROLLER_W_AIL_NEW_AERO_H
@@ -54,14 +54,14 @@ extern void Cascaded_nonlinear_controller_w_ail_new_aero(
     double des_psi_dot, double min_theta_hard, double max_theta_hard,
     double min_phi_hard, double max_phi_hard,
     double c_disable_acc_decrement_inner_l, double vert_acc_margin,
-    const double current_accelerations[6],
-    const double current_lin_acc_aero_only[3], double power_Cd_0,
+    const double current_accelerations_filtered[6],
+    const double c_current_lin_acc_aero_only_fil[3], double power_Cd_0,
     double power_Cd_a, double prop_R, double prop_Cd_0, double prop_Cl_0,
     double prop_Cd_a, double prop_Cl_a, double prop_delta, double prop_sigma,
     double prop_theta, double u_out[15], double residuals[6],
     double *elapsed_time, double *N_iterations_inner_loop,
     double *N_iterations_outer_loop, double *N_evaluations_inner_loop,
-    double *N_evaluations_outer_loop);
+    double *N_evaluations_outer_loop, double *exitflag_inner);
 
 #ifdef __cplusplus
 }

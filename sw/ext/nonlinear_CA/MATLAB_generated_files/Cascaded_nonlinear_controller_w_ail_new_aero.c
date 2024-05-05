@@ -5,7 +5,7 @@
  * File: Cascaded_nonlinear_controller_w_ail_new_aero.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-May-2024 02:28:05
+ * C/C++ source code generated on  : 05-May-2024 01:26:38
  */
 
 /* Include Files */
@@ -137,8 +137,8 @@
  *                double max_phi_hard
  *                double c_disable_acc_decrement_inner_l
  *                double vert_acc_margin
- *                const double current_accelerations[6]
- *                const double current_lin_acc_aero_only[3]
+ *                const double current_accelerations_filtered[6]
+ *                const double c_current_lin_acc_aero_only_fil[3]
  *                double power_Cd_0
  *                double power_Cd_a
  *                double prop_R
@@ -156,6 +156,7 @@
  *                double *N_iterations_outer_loop
  *                double *N_evaluations_inner_loop
  *                double *N_evaluations_outer_loop
+ *                double *exitflag_inner
  * Return Type  : void
  */
 void Cascaded_nonlinear_controller_w_ail_new_aero(
@@ -191,14 +192,14 @@ void Cascaded_nonlinear_controller_w_ail_new_aero(
     double des_psi_dot, double min_theta_hard, double max_theta_hard,
     double min_phi_hard, double max_phi_hard,
     double c_disable_acc_decrement_inner_l, double vert_acc_margin,
-    const double current_accelerations[6],
-    const double current_lin_acc_aero_only[3], double power_Cd_0,
+    const double current_accelerations_filtered[6],
+    const double c_current_lin_acc_aero_only_fil[3], double power_Cd_0,
     double power_Cd_a, double prop_R, double prop_Cd_0, double prop_Cl_0,
     double prop_Cd_a, double prop_Cl_a, double prop_delta, double prop_sigma,
     double prop_theta, double u_out[15], double residuals[6],
     double *elapsed_time, double *N_iterations_inner_loop,
     double *N_iterations_outer_loop, double *N_evaluations_inner_loop,
-    double *N_evaluations_outer_loop)
+    double *N_evaluations_outer_loop, double *exitflag_inner)
 {
   b_captured_var dv_global;
   captured_var V_scaled;
@@ -287,6 +288,7 @@ void Cascaded_nonlinear_controller_w_ail_new_aero(
   double d1;
   double d2;
   double d3;
+  double d4;
   double exitflag_first;
   double g_max_approach;
   double g_min_approach;
@@ -294,7 +296,6 @@ void Cascaded_nonlinear_controller_w_ail_new_aero(
   double max_tilt_value_approach;
   double min_theta_protection;
   double phi_cmd;
-  double theta_cmd;
   double vert_acc_cut;
   int i;
   char c_expl_temp[3];
@@ -418,7 +419,7 @@ void Cascaded_nonlinear_controller_w_ail_new_aero(
   u_min[12] = min_theta_protection;
   u_min[13] = -max_phi;
   u_min[14] = min_delta_ailerons;
-  if (approach_mode != 0.0) {
+  if (approach_mode > 0.5) {
     double b_max_tilt_value_approach[2];
     b_max_tilt_value_approach[0] = 0.0;
     b_max_tilt_value_approach[1] =
@@ -531,7 +532,7 @@ void Cascaded_nonlinear_controller_w_ail_new_aero(
   dv[4] = 0.0;
   dv[5] = 0.0;
   for (i = 0; i < 6; i++) {
-    dv_global.contents[i] = dv[i] + current_accelerations[i];
+    dv_global.contents[i] = dv[i] + current_accelerations_filtered[i];
   }
   /* Pseudo-control hedging: */
   vert_acc_cut = 0.0;
@@ -626,8 +627,8 @@ void Cascaded_nonlinear_controller_w_ail_new_aero(
           &g_min_approach);
   *N_evaluations_outer_loop = d1;
   *N_iterations_outer_loop = d;
-  max_theta_protection = toc();
-  theta_cmd = u_min[12] * gain_theta.contents;
+  min_theta_protection = toc();
+  max_theta_protection = u_min[12] * gain_theta.contents;
   phi_cmd = u_min[13] * gain_phi.contents;
   /* OLD  */
   /*  accelerations_attitude_allocated =
@@ -649,25 +650,25 @@ void Cascaded_nonlinear_controller_w_ail_new_aero(
   /* Remove from dv_global the component of the aerodynamic forces:  */
   g_max_approach = 1.0 / transition_speed * b_V.contents;
   max_tilt_value_approach = fmin(1.0, g_max_approach);
-  if (c_disable_acc_decrement_inner_l != 0.0) {
+  if (c_disable_acc_decrement_inner_l > 0.5) {
     max_tilt_value_approach = 0.0;
   }
   for (i = 0; i < 6; i++) {
     c_delta_accelerations_first_ite[i] = 0.0;
   }
-  c_compute_lin_acc_control_rf_ae(b_Beta.contents, b_Cd_zero.contents,
-                                  b_Cl_alpha.contents, b_K_Cd.contents, phi_cmd,
-                                  b_S.contents, theta_cmd, b_V.contents,
-                                  b_flight_path_angle.contents, b_m.contents,
-                                  b_rho.contents, target_lin_acc_aero_only);
+  c_compute_lin_acc_control_rf_ae(
+      b_Beta.contents, b_Cd_zero.contents, b_Cl_alpha.contents, b_K_Cd.contents,
+      phi_cmd, b_S.contents, max_theta_protection, b_V.contents,
+      b_flight_path_angle.contents, b_m.contents, b_rho.contents,
+      target_lin_acc_aero_only);
   c_delta_accelerations_first_ite[0] =
-      (current_lin_acc_aero_only[0] - target_lin_acc_aero_only[0]) *
+      (c_current_lin_acc_aero_only_fil[0] - target_lin_acc_aero_only[0]) *
       max_tilt_value_approach;
   c_delta_accelerations_first_ite[1] =
-      (current_lin_acc_aero_only[1] - target_lin_acc_aero_only[1]) *
+      (c_current_lin_acc_aero_only_fil[1] - target_lin_acc_aero_only[1]) *
       max_tilt_value_approach;
   c_delta_accelerations_first_ite[2] =
-      (current_lin_acc_aero_only[2] - target_lin_acc_aero_only[2]) *
+      (c_current_lin_acc_aero_only_fil[2] - target_lin_acc_aero_only[2]) *
       max_tilt_value_approach;
   for (i = 0; i < 6; i++) {
     final_accelerations[i] =
@@ -698,7 +699,8 @@ void Cascaded_nonlinear_controller_w_ail_new_aero(
       (fmin(fmax(phi_cmd, min_phi_hard), max_phi_hard) - phi_current) *
       phi_gain;
   b_max_approach =
-      (fmin(fmax(theta_cmd, min_theta_hard), max_theta_hard) - theta_current) *
+      (fmin(fmax(max_theta_protection, min_theta_hard), max_theta_hard) -
+       theta_current) *
       theta_gain;
   for (i = 0; i < 3; i++) {
     target_lin_acc_aero_only[i] =
@@ -797,11 +799,12 @@ void Cascaded_nonlinear_controller_w_ail_new_aero(
   memcpy(&b_u_max_scaled[0], &u_max_scaled[0], 12U * sizeof(double));
   b_u_max_scaled[12] = u_max_scaled[14];
   e_expl_temp = d_expl_temp;
-  b_fmincon(&e_expl_temp, u_out_inner, b_u_min_scaled, b_u_max_scaled,
-            &min_theta_protection, &d2, &d3, c_expl_temp, &b_max_approach,
-            &b_min_approach, &g_max_approach, &g_min_approach);
-  *N_evaluations_inner_loop = d3;
-  *N_iterations_inner_loop = d2;
+  b_fmincon(&e_expl_temp, u_out_inner, b_u_min_scaled, b_u_max_scaled, &d2, &d3,
+            &d4, c_expl_temp, &b_max_approach, &b_min_approach, &g_max_approach,
+            &g_min_approach);
+  *N_evaluations_inner_loop = d4;
+  *N_iterations_inner_loop = d3;
+  *exitflag_inner = d2;
   *elapsed_time = toc();
   g_max_approach = gain_motor.contents;
   u_out[0] = u_out_inner[0] * g_max_approach;
@@ -837,9 +840,9 @@ void Cascaded_nonlinear_controller_w_ail_new_aero(
   for (i = 0; i < 6; i++) {
     residuals[i] = dv_global.contents[i] - final_accelerations[i];
   }
-  u_out[12] = theta_cmd;
+  u_out[12] = max_theta_protection;
   u_out[13] = phi_cmd;
-  if (verbose != 0.0) {
+  if (verbose > 0.5) {
     double pseudo_hedge_cut_acc[6];
     printf("\n Solution : \n");
     fflush(stdout);
@@ -901,7 +904,7 @@ void Cascaded_nonlinear_controller_w_ail_new_aero(
     fflush(stdout);
     printf("[Outer loop] Theta [deg] =  ");
     fflush(stdout);
-    printf(" %f ", theta_cmd * 180.0 / 3.1415926535897931);
+    printf(" %f ", max_theta_protection * 180.0 / 3.1415926535897931);
     fflush(stdout);
     printf("\n");
     fflush(stdout);
@@ -964,7 +967,7 @@ void Cascaded_nonlinear_controller_w_ail_new_aero(
     printf("\n");
     fflush(stdout);
     printf("\n Elapsed time outer loop / inner loop = %f / %f \n",
-           max_theta_protection, *elapsed_time);
+           min_theta_protection, *elapsed_time);
     fflush(stdout);
     printf("\n Number of iterations outer loop / inner loop = %f / %f",
            *N_iterations_outer_loop, *N_iterations_inner_loop);
@@ -973,12 +976,12 @@ void Cascaded_nonlinear_controller_w_ail_new_aero(
            *N_evaluations_outer_loop, *N_evaluations_inner_loop);
     fflush(stdout);
     printf("\n Exit flag optimizer outer loop / inner loop = %f / %f\n",
-           exitflag_first, min_theta_protection);
+           exitflag_first, *exitflag_inner);
     fflush(stdout);
     printf("\n Modeled accelerations current u =   ");
     fflush(stdout);
     for (i = 0; i < 6; i++) {
-      printf(" %f ", current_accelerations[i]);
+      printf(" %f ", current_accelerations_filtered[i]);
       fflush(stdout);
     }
     printf("\n Desired accelerations increment =   ");

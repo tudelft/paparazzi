@@ -5,7 +5,7 @@
  * File: test_exit.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 03-May-2024 02:28:05
+ * C/C++ source code generated on  : 05-May-2024 01:26:38
  */
 
 /* Include Files */
@@ -762,7 +762,7 @@ void d_test_exit(q_struct_T *Flags, k_struct_T *memspace,
           if (TrialState->sqpIterations >= max_iterations_inner_loop || toc() >= max_time_optimizer_inner_loop) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
-          } else if (TrialState->FunctionEvaluations >= 500) {
+          } else if (TrialState->FunctionEvaluations >= max_function_eval_inner_loop) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
           }
