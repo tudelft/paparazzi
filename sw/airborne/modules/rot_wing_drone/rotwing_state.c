@@ -642,37 +642,26 @@ void rotwing_state_skew_actuator_periodic(void)
   // Export to the index of the SKEW in the NPS_ACTUATOR_NAMES array
   commands[COMMAND_ROT_MECH] = (rotwing_state_skewing.servo_pprz_cmd + MAX_PPRZ) / 2.; // Scale to simulation command
 
-  // Simulate wing angle from command
-  rotwing_state_skewing.wing_angle_deg = (float) rotwing_state_skewing.servo_pprz_cmd / MAX_PPRZ * 45. + 45.;
-
-  // SEND ABI Message to ctr_eff_sched and other modules that want Actuator position feedback
-  struct act_feedback_t feedback;
-  feedback.idx =  COMMAND_ROT_MECH;
-  feedback.position = 0.5 * M_PI - RadOfDeg(rotwing_state_skewing.wing_angle_deg);
-  feedback.set.position = true;
-
-  // Send ABI message
-  AbiSendMsgACT_FEEDBACK(ACT_FEEDBACK_UAVCAN_ID, &feedback, 1);
-#else
-  commands[COMMAND_ROT_MECH] = rotwing_state_skewing.servo_pprz_cmd;  
-#endif
-
 #if USE_ROTMECH_VIRTUAL
   // Calculate discrete first order dynamics of rot mech
   float dyn_dis = 1.0-exp(-ROTMECH_DYN / PERIODIC_FREQUENCY);
   // Simulate wing angle from command
   float prev_rotmech_state = rotwing_state_skewing.wing_angle_deg;
   rotwing_state_skewing.wing_angle_deg = prev_rotmech_state + dyn_dis * (rotwing_state_skewing.wing_angle_deg_sp - prev_rotmech_state);
-
+#else
+  // Simulate wing angle from command
+  rotwing_state_skewing.wing_angle_deg = (float) rotwing_state_skewing.servo_pprz_cmd / MAX_PPRZ * 45. + 45.;
+#endif // USE_ROTMECH_VIRTUAL
   // SEND ABI Message to ctr_eff_sched and other modules that want Actuator position feedback
   struct act_feedback_t feedback;
   feedback.idx =  COMMAND_ROT_MECH;
   feedback.position = 0.5 * M_PI - RadOfDeg(rotwing_state_skewing.wing_angle_deg);
   feedback.set.position = true;
-
   // Send ABI message
   AbiSendMsgACT_FEEDBACK(ACT_FEEDBACK_UAVCAN_ID, &feedback, 1);
-#endif
+#else
+  commands[COMMAND_ROT_MECH] = rotwing_state_skewing.servo_pprz_cmd;  
+#endif // USE_NPS
 }
 
 static void rotwing_state_feedback_cb(uint8_t __attribute__((unused)) sender_id,
