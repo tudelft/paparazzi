@@ -96,7 +96,7 @@
 
         <module name="ground_detect_sensor"/>
         <module name="rotwing_state">
-             <define name = "USE_ROTMECH_VIRTUAL" value = "FALSE"/>
+             <define name = "USE_ROTMECH_VIRTUAL" value = "TRUE"/>
              <define name = "ROTMECH_DYN"         value = "3.0"/>
         </module>
         <module name="agl_dist"/>

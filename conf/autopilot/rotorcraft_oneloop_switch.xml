@@ -120,7 +120,6 @@
       <select cond="RCMode0()"/>
       <on_enter>
         <call fun="stabilization_attitude_enter()"/>
-        <call fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HOVER)"/>
       </on_enter>
       <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
@@ -272,13 +271,12 @@
       <select cond="RCMode1()"/>
       <on_enter>
         <call fun="stabilization_attitude_enter()"/>
-        <call fun="rotwing_request_configuration(ROTWING_CONFIGURATION_EFFICIENT)"/>
       </on_enter>
       <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
       </control>
       <control>
-        <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_ATTITUDE)"/>
+        <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_FORWARD)"/>
         <call_block name="attitude_loop"/>
         <call_block name="throttle_direct"/>
         <call_block name="set_commands"/>
