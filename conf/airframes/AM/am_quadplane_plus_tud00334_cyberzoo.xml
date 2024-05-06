@@ -1,5 +1,5 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
-<airframe name="OVERQUAD_TUD00334">
+<airframe name="OVERQUAD_TUD00334_CYBERZOO">
   <description>
     Overactuated vehicle airframe equipped with a Hextronix Cube Orange flightcontroller hardware
   </description>
@@ -51,13 +51,13 @@
         <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
       </module>
 
-      <!--module name="gps" type="datalink"/--><!--Enable this for CyberZoo tests , disable the uBlox module -->
+      <module name="gps" type="datalink"/>
 
       
-      <module name="gps" type="ublox">
-        <configure name="GPS_BAUD" value="B460800"/><!-- UBX message only but rate set to ~?HZ with GPS, GLONASS, BEIDU and GALILEIO at the SAME time is a LOT of GNSS message data-->
+      <!-- <module name="gps" type="ublox">
+        <configure name="GPS_BAUD" value="B460800"/>
         <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
-      </module>
+      </module> -->
 
       <!-- If one want to use a Joystick over connection one can us this instead of sbus-->
       <module name="radio_control" type="ppm">
@@ -161,7 +161,7 @@
         <!-- <define name="INS_EKF2_MAG_ID" value="MAG_IST8310_SENDER_ID"/> -->
         <define name="INS_EKF2_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
         <!-- <define name="INS_EKF2_MAG_ID" value="MAG_LIS3MDL_SENDER_ID"/> -->
-        <!-- <define name="INS_EKF2_OPTITRACK" value="TRUE"/> -->
+        <define name="INS_EKF2_OPTITRACK" value="TRUE"/>
         <define name="INS_EKF2_ACCEL_ID" value="IMU_CUBE2_ID"/>
         <define name="INS_EKF2_GYRO_ID" value="IMU_CUBE2_ID"/>
     </module>

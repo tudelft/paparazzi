@@ -1134,10 +1134,10 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[67] = indi_gains_over.d.psi;
     extra_data_out_local[68] = K_d_speed;
 
-    extra_data_out_local[69] = OVERACTUATED_MIXING_MAX_THETA;
-    extra_data_out_local[70] = -OVERACTUATED_MIXING_MAX_THETA;
-    extra_data_out_local[71] = OVERACTUATED_MIXING_MAX_PHI;
-    extra_data_out_local[72] = -OVERACTUATED_MIXING_MAX_PHI;
+    extra_data_out_local[69] = -OVERACTUATED_MIXING_MAX_THETA;
+    extra_data_out_local[70] = OVERACTUATED_MIXING_MAX_THETA;
+    extra_data_out_local[71] = -OVERACTUATED_MIXING_MAX_PHI;
+    extra_data_out_local[72] = OVERACTUATED_MIXING_MAX_PHI;
 
     extra_data_out_local[73] = disable_acc_decrement_inner_loop;
     extra_data_out_local[74] = OVERACTUATED_MIXING_FILT_CUTOFF_INDI;
@@ -1505,7 +1505,7 @@ void overactuated_mixing_run(void)
         //Do not use ailerons. Put them in neutral position 
         indi_u[14] = 0;
 
-
+        send_values_to_raspberry_pi();
     }
 
     /// Case of INDI control mode with external nonlinear function:
@@ -1630,7 +1630,8 @@ void overactuated_mixing_run(void)
             manual_theta_value = ship_info_receive.theta * M_PI/180;
         #endif
 
-        manual_motor_value = OVERACTUATED_MIXING_MOTOR_MIN_OMEGA;
+        // manual_motor_value = OVERACTUATED_MIXING_MOTOR_MIN_OMEGA;
+        manual_motor_value = 0;
 
         euler_setpoint[0] = indi_u[13];
         euler_setpoint[1] = indi_u[12];
