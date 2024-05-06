@@ -23,7 +23,7 @@ int filter_cutoff_frequency;
 float tau_indi;
 
 //To test the controller with random variables:
-#define TEST_CONTROLLER
+// #define TEST_CONTROLLER
 
 struct am7_data_out myam7_data_out;
 struct am7_data_out myam7_data_out_copy;
@@ -50,13 +50,13 @@ pthread_mutex_t mutex_am7;
 pthread_mutex_t mutex_aruco;
 
 int verbose_connection = 1;
-int verbose_optimizer = 1;
+int verbose_optimizer = 0;
 int verbose_runtime = 0; 
 int verbose_received_data = 0; 
 int verbose_ivy_bus = 0; 
 int verbose_aruco = 0; 
 int verbose_compute_accel = 0; 
-int verbose_filters = 1; 
+int verbose_filters = 0; 
 
 int16_t lidar_dist_cm = -1; 
 int16_t lidar_signal_strength = -1; 
@@ -448,7 +448,7 @@ void* second_thread() //Run the optimization code
     #endif
 
     //Reset filters in case we want a different omega than the one inputted from am7.h
-    if((int)filter_cutoff_frequency_telem != (int)filter_cutoff_frequency_init){
+    if((int)filter_cutoff_frequency_telem != (int)filter_cutoff_frequency){
       filter_cutoff_frequency = (int)filter_cutoff_frequency_telem;
       //Re-init filters: 
       tau_indi = 1.0f / (filter_cutoff_frequency);
@@ -508,6 +508,11 @@ void* second_thread() //Run the optimization code
     double ay_state = (myam7_data_in_copy.ay_state_int*1e-2); 
     double az_state = (myam7_data_in_copy.az_state_int*1e-2); 
 
+    //Bound motor values to be within min and max value to avoid NaN
+    Bound(Omega_1,min_omega,max_omega);
+    Bound(Omega_2,min_omega,max_omega);
+    Bound(Omega_3,min_omega,max_omega);
+    Bound(Omega_4,min_omega,max_omega);
 
     #ifdef TEST_CONTROLLER
     #warning "You are using the testing variable, watch out!"
@@ -529,17 +534,17 @@ void* second_thread() //Run the optimization code
 
       Beta = 0 * pi/180;
       flight_path_angle = 0 * pi/180;
-      V = 15;
+      V = 0;
       Phi = 0 * pi/180;
-      Theta = 5 * pi/180;
-      Omega_1 = 650;
-      Omega_2 = 650;
-      Omega_3 = 650;
-      Omega_4 = 650;
-      b_1 = -90 * pi/180;
-      b_2 = -90 * pi/180;
-      b_3 = -90 * pi/180;
-      b_4 = -90 * pi/180;
+      Theta = 0 * pi/180;
+      Omega_1 = 800;
+      Omega_2 = 600;
+      Omega_3 = 600;
+      Omega_4 = 600;
+      b_1 = 0 * pi/180;
+      b_2 = 0 * pi/180;
+      b_3 = 0 * pi/180;
+      b_4 = 0 * pi/180;
       g_1 = 0 * pi/180;
       g_2 = 0 * pi/180;
       g_3 = 0 * pi/180;
@@ -657,6 +662,153 @@ void* second_thread() //Run the optimization code
       k_d_airspeed = 0.02; 
 
     #endif 
+
+    //Print received data if needed
+    if(verbose_received_data){
+
+      printf("\n ROLLING MESSAGE VARIABLES IN-------------------------------------------------- \n"); 
+      printf("\n K_p_T * 1e-5 = %f \n",(float) K_p_T * 1e5); 
+      printf(" K_p_M * 1e-7 = %f \n",(float) K_p_M * 1e7); 
+      printf(" m = %f \n",(float) m); 
+      printf(" I_xx = %f \n",(float) I_xx); 
+      printf(" I_yy = %f \n",(float) I_yy); 
+      printf(" I_zz = %f \n",(float) I_zz); 
+      printf(" l_1 = %f \n",(float) l_1); 
+      printf(" l_2 = %f \n",(float) l_2); 
+      printf(" l_3 = %f \n",(float) l_3); 
+      printf(" l_4 = %f \n",(float) l_4); 
+      printf(" l_z = %f \n",(float) l_z); 
+      printf(" max_omega = %f \n",(float) max_omega); 
+      printf(" min_omega = %f \n",(float) min_omega); 
+      printf(" max_b = %f \n",(float) max_b); 
+      printf(" min_b = %f \n",(float) min_b); 
+      printf(" max_g = %f \n",(float) max_g); 
+      printf(" min_g = %f \n",(float) min_g); 
+      printf(" max_theta = %f \n",(float) max_theta); 
+      printf(" min_theta = %f \n",(float) min_theta); 
+      printf(" max_alpha = %f \n",(float) max_alpha*180/M_PI); 
+      printf(" min_alpha = %f \n",(float) min_alpha*180/M_PI); 
+      printf(" max_phi = %f \n",(float) max_phi); 
+      printf(" Cm_zero = %f \n",(float) Cm_zero);
+      printf(" Cm_alpha = %f \n",(float) Cm_alpha);
+      printf(" Cl_alpha = %f \n",(float) Cl_alpha);
+      printf(" Cd_zero = %f \n",(float) Cd_zero);
+      printf(" K_Cd = %f \n",(float) K_Cd);
+      printf(" S = %f \n",(float) S);
+      printf(" wing_chord = %f \n",(float) wing_chord);
+      printf(" rho = %f \n",(float) rho);
+      printf(" W_act_motor_const = %f \n",(float) W_act_motor_const);
+      printf(" W_act_motor_speed = %f \n",(float) W_act_motor_speed);
+      printf(" W_act_tilt_el_const = %f \n",(float) W_act_tilt_el_const);
+      printf(" W_act_tilt_el_speed = %f \n",(float) W_act_tilt_el_speed);
+      printf(" W_act_tilt_az_const = %f \n",(float) W_act_tilt_az_const);
+      printf(" W_act_tilt_az_speed = %f \n",(float) W_act_tilt_az_speed);
+      printf(" W_act_theta_const = %f \n",(float) W_act_theta_const);
+      printf(" W_act_theta_speed = %f \n",(float) W_act_theta_speed);
+      printf(" W_act_phi_const = %f \n",(float) W_act_phi_const);
+      printf(" W_act_phi_speed = %f \n",(float) W_act_phi_speed);
+      printf(" W_dv_1 = %f \n",(float) W_dv_1);
+      printf(" W_dv_2 = %f \n",(float) W_dv_2);
+      printf(" W_dv_3 = %f \n",(float) W_dv_3);
+      printf(" W_dv_4 = %f \n",(float) W_dv_4);
+      printf(" W_dv_5 = %f \n",(float) W_dv_5);
+      printf(" W_dv_6 = %f \n",(float) W_dv_6);
+      printf(" gamma_quadratic = %f \n",(float) gamma_quadratic_du);
+      printf(" Cy_beta = %f \n",(float) Cy_beta);
+      printf(" Cl_beta = %f \n",(float) Cl_beta);
+      printf(" wing_span = %f \n",(float) wing_span);
+      printf(" aoa_protection_speed = %f \n",(float) aoa_protection_speed);
+      printf(" W_act_ailerons_const = %f \n",(float) W_act_ailerons_const);
+      printf(" W_act_ailerons_speed = %f \n",(float) W_act_ailerons_speed);
+      printf(" min_delta_ailerons = %f \n",(float) min_delta_ailerons);
+      printf(" max_delta_ailerons = %f \n",(float) max_delta_ailerons);
+      printf(" CL_aileron = %f \n",(float) CL_aileron);
+
+      printf(" k_alt_tilt_constraint = %f \n",(float) k_alt_tilt_constraint);
+      printf(" min_alt_tilt_constraint = %f \n",(float) min_alt_tilt_constraint);
+      printf(" transition_speed = %f \n",(float) transition_speed);
+      printf(" desired_motor_value = %f \n",(float) desired_motor_value);
+      printf(" desired_el_value_deg = %f \n",(float) desired_el_value*180/M_PI);
+      printf(" desired_az_value_deg = %f \n",(float) desired_az_value*180/M_PI);
+
+      printf(" desired_ailerons_value = %f \n",(float) desired_ailerons_value);
+      printf(" theta_gain = %f \n",(float) theta_gain);
+      printf(" phi_gain = %f \n",(float) phi_gain);
+      printf(" p_body_gain = %f \n",(float) p_body_gain);
+      printf(" q_body_gain = %f \n",(float) q_body_gain);
+      printf(" r_body_gain = %f \n",(float) r_body_gain);
+      printf(" k_d_airspeed = %f \n",(float) k_d_airspeed);
+
+      printf(" min_theta_hard = %f \n",(float) min_theta_hard*180/M_PI);
+      printf(" max_theta_hard = %f \n",(float) max_theta_hard*180/M_PI);
+      printf(" min_phi_hard = %f \n",(float) min_phi_hard*180/M_PI);
+      printf(" max_phi_hard = %f \n",(float) max_phi_hard*180/M_PI);
+      printf(" disable_acc_decrement_inner_loop = %f \n",(float) disable_acc_decrement_inner_loop);
+      printf(" filter_cutoff_frequency_telem = %f \n",(float) filter_cutoff_frequency_telem);
+      printf(" max_airspeed = %f \n",(float) max_airspeed);
+      printf(" vert_acc_margin = %f \n",(float) vert_acc_margin);
+
+      printf(" power_Cd_0 = %f \n",(float) power_Cd_0);
+
+      printf(" power_Cd_a = %f \n",(float) power_Cd_a);
+      printf(" prop_R = %f \n",(float) prop_R);
+      printf(" prop_Cd_0 = %f \n",(float) prop_Cd_0);
+      printf(" prop_Cl_0 = %f \n",(float) prop_Cl_0);
+      printf(" prop_Cd_a = %f \n",(float) prop_Cd_a);
+      printf(" prop_Cl_a = %f \n",(float) prop_Cl_a);
+      printf(" prop_delta = %f \n",(float) prop_delta);
+      printf(" prop_sigma = %f \n",(float) prop_sigma);
+      printf(" prop_theta = %f \n",(float) prop_theta);
+
+      printf("\n REAL TIME VARIABLES IN------------------------------------------------------ \n"); 
+
+      printf(" Phi_deg = %f \n",(float) Phi*180/M_PI);
+      printf(" Theta_deg = %f \n",(float) Theta*180/M_PI);
+      printf(" delta_ailerons_deg = %f \n",(float) delta_ailerons*180/M_PI);
+      printf(" Omega_1_rad_s = %f \n",(float) Omega_1);
+      printf(" Omega_2_rad_s = %f \n",(float) Omega_2);
+      printf(" Omega_3_rad_s = %f \n",(float) Omega_3);
+      printf(" Omega_4_rad_s = %f \n",(float) Omega_4);
+      printf(" b_1_deg = %f \n",(float) b_1*180/M_PI);
+      printf(" b_2_deg = %f \n",(float) b_2*180/M_PI);
+      printf(" b_3_deg = %f \n",(float) b_3*180/M_PI);
+      printf(" b_4_deg = %f \n",(float) b_4*180/M_PI);
+      printf(" g_1_deg = %f \n",(float) g_1*180/M_PI);
+      printf(" g_2_deg = %f \n",(float) g_2*180/M_PI);
+      printf(" g_3_deg = %f \n",(float) g_3*180/M_PI);
+      printf(" g_4_deg = %f \n",(float) g_4*180/M_PI);
+      printf(" p_deg_s = %f \n",(float) p*180/M_PI);
+      printf(" q_deg_s = %f \n",(float) q*180/M_PI);
+      printf(" r_deg_s = %f \n",(float) r*180/M_PI);
+      printf(" V_m_s = %f \n",(float) V);
+      printf(" flight_path_angle_deg = %f \n",(float) flight_path_angle*180/M_PI);
+      printf(" Beta_deg = %f \n",(float) Beta*180/M_PI);
+      printf(" desired_theta_value_deg = %f \n",(float) desired_theta_value*180/M_PI);
+      printf(" desired_phi_value_deg = %f \n",(float) desired_phi_value*180/M_PI);
+
+      printf(" desired_psi_dot_deg = %f \n",(float) des_psi_dot*180/M_PI);
+
+      printf(" p_dot_deg_s2 = %f \n",(float) p_dot*180/M_PI);
+      printf(" q_dot_deg_s2 = %f \n",(float) q_dot*180/M_PI);
+      printf(" r_dot_deg_s2 = %f \n",(float) r_dot*180/M_PI);
+
+      printf(" p_ec_deg_s = %f \n",(float) p_ec*180/M_PI);
+      printf(" q_ec_deg_s = %f \n",(float) q_ec*180/M_PI);
+      printf(" r_ec_deg_s = %f \n",(float) r_ec*180/M_PI);
+
+      printf(" approach_mode = %f \n",(float) approach_mode);
+      printf(" lidar_alt_corrected = %f \n",(float) lidar_alt_corrected);
+
+      printf(" pseudo_control_ax = %f \n",(float) pseudo_control_ax);      
+      printf(" pseudo_control_ay = %f \n",(float) pseudo_control_ay);  
+      printf(" pseudo_control_az = %f \n",(float) pseudo_control_az);  
+
+      printf(" ax_state = %f \n",(float) ax_state); 
+      printf(" ay_state = %f \n",(float) ay_state); 
+      printf(" az_state = %f \n",(float) az_state); 
+
+      fflush(stdout);
+    }
 
     //Compute modeled accelerations and filter inputs:
     double phi_current = Phi, theta_current = Theta; //Save theta current and phi current unfiltered for the nonlinear CA; 
@@ -788,10 +940,11 @@ void* second_thread() //Run the optimization code
     flight_path_angle_filtered_double = (double) flight_path_angle_filtered.o[0]; 
 
     //Assign filtered values to u_in inputs:
-    Omega_1 = u_in_filtered_double[0]; 
+    Omega_1 = u_in_filtered_double[0];
     Omega_2 = u_in_filtered_double[1]; 
     Omega_3 = u_in_filtered_double[2]; 
     Omega_4 = u_in_filtered_double[3]; 
+
     b_1 = u_in_filtered_double[4]; 
     b_2 = u_in_filtered_double[5]; 
     b_3 = u_in_filtered_double[6]; 
@@ -876,7 +1029,7 @@ void* second_thread() //Run the optimization code
                                             &N_evaluations_outer_loop,  &exitflag_inner);
 
     //Update elapsed time with the C function: 
-    elapsed_time = (current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec);
+    elapsed_time =(double) ((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec));
 
     //Convert the function output into integer to be transmitted to the pixhawk again: 
     myam7_data_out_copy_internal.motor_1_cmd_int = (int16_T) (u_out[0]*1e1);
@@ -901,7 +1054,7 @@ void* second_thread() //Run the optimization code
     myam7_data_out_copy_internal.residual_q_dot_int = (int16_T) (residuals[4]*1e1*180/M_PI);
     myam7_data_out_copy_internal.residual_r_dot_int = (int16_T) (residuals[5]*1e1*180/M_PI);
     myam7_data_out_copy_internal.exit_flag_optimizer_inner = (int16_T) (exitflag_inner);
-    myam7_data_out_copy_internal.elapsed_time_us = (uint16_T) (elapsed_time * 1e6);
+    myam7_data_out_copy_internal.elapsed_time_us = (uint16_T) (elapsed_time);
     myam7_data_out_copy_internal.n_iteration_inner = (uint16_T) (N_iterations_inner_loop);
     myam7_data_out_copy_internal.n_evaluation_inner = (uint16_T) (N_evaluations_inner_loop);
     myam7_data_out_copy_internal.n_iteration_outer = (uint16_T) (N_iterations_outer_loop);
@@ -916,107 +1069,6 @@ void* second_thread() //Run the optimization code
 
     //Print received data if needed
     if(verbose_received_data){
-
-      printf("\n ROLLING MESSAGE VARIABLES IN-------------------------------------------------- \n"); 
-      printf("\n K_p_T * 1e-5 = %f \n",(float) K_p_T * 1e5); 
-      printf(" K_p_M * 1e-7 = %f \n",(float) K_p_M * 1e7); 
-      printf(" m = %f \n",(float) m); 
-      printf(" I_xx = %f \n",(float) I_xx); 
-      printf(" I_yy = %f \n",(float) I_yy); 
-      printf(" I_zz = %f \n",(float) I_zz); 
-      printf(" l_1 = %f \n",(float) l_1); 
-      printf(" l_2 = %f \n",(float) l_2); 
-      printf(" l_3 = %f \n",(float) l_3); 
-      printf(" l_4 = %f \n",(float) l_4); 
-      printf(" l_z = %f \n",(float) l_z); 
-      printf(" max_omega = %f \n",(float) max_omega); 
-      printf(" min_omega = %f \n",(float) min_omega); 
-      printf(" max_b = %f \n",(float) max_b); 
-      printf(" min_b = %f \n",(float) min_b); 
-      printf(" max_g = %f \n",(float) max_g); 
-      printf(" min_g = %f \n",(float) min_g); 
-      printf(" max_theta = %f \n",(float) max_theta); 
-      printf(" min_theta = %f \n",(float) min_theta); 
-      printf(" max_alpha = %f \n",(float) max_alpha*180/M_PI); 
-      printf(" min_alpha = %f \n",(float) min_alpha*180/M_PI); 
-      printf(" max_phi = %f \n",(float) max_phi); 
-      printf(" Cm_zero = %f \n",(float) Cm_zero);
-      printf(" Cm_alpha = %f \n",(float) Cm_alpha);
-      printf(" Cl_alpha = %f \n",(float) Cl_alpha);
-      printf(" Cd_zero = %f \n",(float) Cd_zero);
-      printf(" K_Cd = %f \n",(float) K_Cd);
-      printf(" S = %f \n",(float) S);
-      printf(" wing_chord = %f \n",(float) wing_chord);
-      printf(" rho = %f \n",(float) rho);
-      printf(" W_act_motor_const = %f \n",(float) W_act_motor_const);
-      printf(" W_act_motor_speed = %f \n",(float) W_act_motor_speed);
-      printf(" W_act_tilt_el_const = %f \n",(float) W_act_tilt_el_const);
-      printf(" W_act_tilt_el_speed = %f \n",(float) W_act_tilt_el_speed);
-      printf(" W_act_tilt_az_const = %f \n",(float) W_act_tilt_az_const);
-      printf(" W_act_tilt_az_speed = %f \n",(float) W_act_tilt_az_speed);
-      printf(" W_act_theta_const = %f \n",(float) W_act_theta_const);
-      printf(" W_act_theta_speed = %f \n",(float) W_act_theta_speed);
-      printf(" W_act_phi_const = %f \n",(float) W_act_phi_const);
-      printf(" W_act_phi_speed = %f \n",(float) W_act_phi_speed);
-      printf(" W_dv_1 = %f \n",(float) W_dv_1);
-      printf(" W_dv_2 = %f \n",(float) W_dv_2);
-      printf(" W_dv_3 = %f \n",(float) W_dv_3);
-      printf(" W_dv_4 = %f \n",(float) W_dv_4);
-      printf(" W_dv_5 = %f \n",(float) W_dv_5);
-      printf(" W_dv_6 = %f \n",(float) W_dv_6);
-      printf(" gamma_quadratic = %f \n",(float) gamma_quadratic_du);
-      printf(" Cy_beta = %f \n",(float) Cy_beta);
-      printf(" Cl_beta = %f \n",(float) Cl_beta);
-      printf(" wing_span = %f \n",(float) wing_span);
-      printf(" aoa_protection_speed = %f \n",(float) aoa_protection_speed);
-      printf(" W_act_ailerons_const = %f \n",(float) W_act_ailerons_const);
-      printf(" W_act_ailerons_speed = %f \n",(float) W_act_ailerons_speed);
-      printf(" min_delta_ailerons = %f \n",(float) min_delta_ailerons);
-      printf(" max_delta_ailerons = %f \n",(float) max_delta_ailerons);
-      printf(" CL_aileron = %f \n",(float) CL_aileron);
-
-      printf("\n REAL TIME VARIABLES IN------------------------------------------------------ \n"); 
-      printf(" Phi_deg = %f \n",(float) Phi*180/M_PI);
-      printf(" Theta_deg = %f \n",(float) Theta*180/M_PI);
-      printf(" delta_ailerons_deg = %f \n",(float) delta_ailerons*180/M_PI);
-      printf(" Omega_1_rad_s = %f \n",(float) Omega_1);
-      printf(" Omega_2_rad_s = %f \n",(float) Omega_2);
-      printf(" Omega_3_rad_s = %f \n",(float) Omega_3);
-      printf(" Omega_4_rad_s = %f \n",(float) Omega_4);
-      printf(" b_1_deg = %f \n",(float) b_1*180/M_PI);
-      printf(" b_2_deg = %f \n",(float) b_2*180/M_PI);
-      printf(" b_3_deg = %f \n",(float) b_3*180/M_PI);
-      printf(" b_4_deg = %f \n",(float) b_4*180/M_PI);
-      printf(" g_1_deg = %f \n",(float) g_1*180/M_PI);
-      printf(" g_2_deg = %f \n",(float) g_2*180/M_PI);
-      printf(" g_3_deg = %f \n",(float) g_3*180/M_PI);
-      printf(" g_4_deg = %f \n",(float) g_4*180/M_PI);
-      printf(" p_deg_s = %f \n",(float) p*180/M_PI);
-      printf(" q_deg_s = %f \n",(float) q*180/M_PI);
-      printf(" r_deg_s = %f \n",(float) r*180/M_PI);
-      printf(" V_m_s = %f \n",(float) V);
-      printf(" flight_path_angle_deg = %f \n",(float) flight_path_angle*180/M_PI);
-      printf(" Beta_deg = %f \n",(float) Beta*180/M_PI);
-      printf(" desired_motor_value_rad_s = %f \n",(float) desired_motor_value);
-      printf(" desired_el_value_deg = %f \n",(float) desired_el_value*180/M_PI);
-      printf(" desired_az_value_deg = %f \n",(float) desired_az_value*180/M_PI);
-      printf(" desired_theta_value_deg = %f \n",(float) desired_theta_value*180/M_PI);
-      printf(" desired_phi_value_deg = %f \n",(float) desired_phi_value*180/M_PI);
-      printf(" desired_ailerons_value_deg = %f \n",(float) desired_ailerons_value*180/M_PI);
-      printf(" dv[0] = %f \n",(float) dv[0]);
-      printf(" dv[1] = %f \n",(float) dv[1]);
-      printf(" dv[2] = %f \n",(float) dv[2]);
-      printf(" dv[3] = %f \n",(float) dv[3]);
-      printf(" dv[4] = %f \n",(float) dv[4]);
-      printf(" dv[5] = %f \n",(float) dv[5]);
-
-      printf(" Filtered modeled accelerations[0] = %f \n",(float) current_accelerations_filtered[0]);
-      printf(" Filtered modeled accelerations[1] = %f \n",(float) current_accelerations_filtered[1]);
-      printf(" Filtered modeled accelerations[2] = %f \n",(float) current_accelerations_filtered[2]);
-      printf(" Filtered modeled accelerations[3] = %f \n",(float) current_accelerations_filtered[3]);
-      printf(" Filtered modeled accelerations[4] = %f \n",(float) current_accelerations_filtered[4]);
-      printf(" Filtered modeled accelerations[5] = %f \n",(float) current_accelerations_filtered[5]);
-
       printf("\n REAL TIME VARIABLES OUT------------------------------------------------------ \n"); 
       printf(" motor_1_cmd_rad_s = %f \n",(float) u_out[0]);
       printf(" motor_2_cmd_rad_s = %f \n",(float) u_out[1]);
@@ -1044,7 +1096,7 @@ void* second_thread() //Run the optimization code
       printf(" N_evaluations_outer_loop = %d \n",(int) N_evaluations_outer_loop);
       printf(" N_evaluations_inner_loop = %d \n",(int) N_evaluations_inner_loop);
       printf(" exit_flag_optimizer = %d \n",(int) exitflag_inner);
-      printf(" elapsed_time_uS = %d \n",(int) (elapsed_time * 1e6));
+      printf(" elapsed_time_uS = %d \n",(int) (elapsed_time));
       printf(" \n\n\n");
 
       fflush(stdout);
