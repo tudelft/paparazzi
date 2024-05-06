@@ -230,6 +230,9 @@
     <define name="MIN_FWD_ACC" value="-1.5" unit="m/s^2"/> 
     <define name="MAX_LAT_ACC" value="6.0" unit="m/s^2"/>
     <define name="MAX_VERT_ACC" value="3.0" unit="m/s^2"/>
+
+    <define name="VERT_ACC_MARGIN" value="2.5" unit="m/s^2"/>
+    
   </section>
 
   <!-- for demos -->
@@ -399,8 +402,7 @@
     <!-- <define name="MOTOR_MAX_OMEGA" value="1400" unit="rad/s"/> -->
 
     <!-- 10x5.5 TMOTOR CF prop -->
-    <define name="MOTOR_K_T_OMEGASQ_P1" value="0" />
-    <define name="MOTOR_K_T_OMEGASQ_P2" value="1.106465e-5" unit="N/(rad/s)^2"/>
+    <define name="MOTOR_K_T_OMEGASQ" value="1.106465e-5" unit="N/(rad/s)^2"/>
     <define name="MOTOR_K_M_OMEGASQ" value="1.835091e-7" unit="N*m/(rad/s)^2"/>
     <define name="MOTOR_K_PWM_OMEGA" value="1" unit="(rad/s)/PWM"/>
     <define name="MOTOR_MAX_OMEGA" value="1000" unit="rad/s"/>
@@ -478,6 +480,7 @@
 
     <define name="TRANSITION_SPEED_PSEUDOCTR_HEDGE" value="7"/>
 
+    <define name="DISABLE_ACC_DECREMENT_INNER_LOOP" value="0"/>
 
     <!-- <define VALUE="0.007" NAME="W_DV_1"/>
     <define VALUE="0.007" NAME="W_DV_2"/>
@@ -563,46 +566,18 @@
     <define name="CL_AILERONS" value="0.2"/>
   </section>
 
-  <!-- Motor-propulsive characteristics with inflow and airspeed dependency -->
+  <!-- Motor-propulsive model noah -->
   <section name="PROP_MODEL" prefix="PROP_MODEL_">
-    
-    <!-- 10x5.5 CF TMOTOR -->
-    <define name="KM_REF" value="1.835091e-7" unit="N*m/(rad/s)^2"/>
-    <define name="KT_REF" value="1.106465e-5" unit="N/(rad/s)^2"/>
-
-    <define name="MAX_THR_LOSS_REAL" value="4" unit="N"/>
-
-    <define name="MAX_THR_LOSS_OPTIMIZER" value="0" unit="N"/>
-
-    <!-- drag coefficient of the rotor -->
-    <define name="C_DR" value="0.005"/>
-
-    <define name="P00_KT" value="1"/>
-    <define name="P10_KT" value="-0.007944"/>
-    <define name="P01_KT" value="-0.01699"/>
-    <define name="P20_KT" value="0.000856"/>
-    <define name="P11_KT" value="-0.01791"/>
-    <define name="P02_KT" value="-0.01149"/>
-    <define name="P30_KT" value="0.0001001"/>
-    <define name="P21_KT" value="0.00368"/>
-    <define name="P12_KT" value="0.0001334"/>
-    <define name="P40_KT" value="-5.416e-06"/>
-    <define name="P31_KT" value="-8.903e-05"/>
-    <define name="P22_KT" value="0.0003558"/>
-
-    <define name="P00_QT" value="-0.00568"/>
-    <define name="P10_QT" value="-0.008563"/>
-    <define name="P01_QT" value="0.004781"/>
-    <define name="P20_QT" value="0.005407"/>
-    <define name="P11_QT" value="0.03948"/>
-    <define name="P02_QT" value="0.007349"/>
-    <define name="P30_QT" value="-0.0005864"/>
-    <define name="P21_QT" value="-0.0001271"/>
-    <define name="P12_QT" value="0.007095"/>
-    <define name="P40_QT" value="1.787e-05"/>
-    <define name="P31_QT" value="6.422e-05"/>
-    <define name="P22_QT" value="0.0004564"/>
-
+    <define name="POWER_CD_0" value="0.05"/>
+    <define name="POWER_CD_A" value="0.36"/>
+    <define name="PROP_R" value="0.1270"/>
+    <define name="PROP_CD_0" value="0.05"/>
+    <define name="PROP_CL_0" value="0.0"/>
+    <define name="PROP_CD_A" value="0.36"/>
+    <define name="PROP_CL_A" value="3.46"/>
+    <define name="PROP_DELTA" value="0.2"/>
+    <define name="PROP_SIGMA" value="0.0652"/>
+    <define name="PROP_THETA" value="0.2188"/>
   </section>
 
   <section name="WP_CONTROL" prefix="WP_CONTROL_">

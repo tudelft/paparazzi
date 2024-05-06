@@ -64,8 +64,6 @@
 
 #define RECTIFY_LAT_AND_FWD_SPEED
 
-// #define USE_NEW_THR_ESTIMATION
-// #define USE_NEW_THR_ESTIMATION_OPTIMIZATION
 
 float fpa_off_deg = -3.0; 
 #define NEW_FPA_DEF
@@ -128,6 +126,18 @@ float K_p_rad_s_dshot = RPM_CONTROL_FBW_K_P_RAD_S_DSHOT;
 float K_i_rad_s_dshot = RPM_CONTROL_FBW_K_I_RAD_S_DSHOT;
 float K_d_rad_s_dshot = RPM_CONTROL_FBW_K_D_RAD_S_DSHOT;
 float motor_rad_s_dot_filtered[4], motor_rad_s_error_integrated[4], motor_rad_s_filtered_old[4];
+
+//Prop model: 
+float power_cd_0 = PROP_MODEL_POWER_CD_0;
+float power_cd_a = PROP_MODEL_POWER_CD_A;
+float prop_r = PROP_MODEL_PROP_R;
+float prop_cd_0 = PROP_MODEL_PROP_CD_0;
+float prop_cl_0 = PROP_MODEL_PROP_CL_0;
+float prop_cd_a = PROP_MODEL_PROP_CD_A;
+float prop_cl_a = PROP_MODEL_PROP_CL_A;
+float prop_delta = PROP_MODEL_PROP_DELTA;
+float prop_sigma = PROP_MODEL_PROP_SIGMA;
+float prop_theta = PROP_MODEL_PROP_THETA;
 
 //Indi RPM controller specific variables:
 float dshot_cmd_ppz[4], dshot_cmd_ppz_filtered[4], dshot_cmd_ppz_filtered_delayed[4][RPM_CONTROL_FBW_MOTOR_DYN_DELAY_TS];
@@ -196,7 +206,11 @@ float w_phi_speed = OVERACTUATED_MIXING_W_ACT_PHI_SPEED;
 float w_ail_const = OVERACTUATED_MIXING_W_ACT_AILERONS_CONST; 
 float w_ail_speed = OVERACTUATED_MIXING_W_ACT_AILERONS_SPEED; 
 
-float tras_speed_pseudo_ctr_hedge = OVERACTUATED_MIXING_TRANSITION_SPEED_PSEUDOCTR_HEDGE;
+float trans_speed = OVERACTUATED_MIXING_TRANSITION_SPEED_PSEUDOCTR_HEDGE;
+
+float disable_acc_decrement_inner_loop = 0; 
+
+float vert_acc_margin = 2.5; 
 
 // Actuators gains:
 #ifdef RPM_CONTROL
@@ -565,53 +579,6 @@ void from_earth_to_control(float * out_array, float * in_array, float Psi){
     }
 }
 
-/**
- * Function which computes the thrust in the body reference frame using the inflow angle 
- * characteristics determined in the wind tunnel:
- */
-struct BodyCoord_f compute_propeller_thrust_in_body_frame(float propeller_speed, float b_angle_rotor, float g_angle_rotor, float omega_prop_rad_s){
-    struct BodyCoord_f myBodyCoord_f;
-
-    float p_kt_0 = (PROP_MODEL_P00_KT + 
-                    PROP_MODEL_P10_KT*propeller_speed + 
-                    PROP_MODEL_P20_KT*propeller_speed*propeller_speed + 
-                    PROP_MODEL_P30_KT*propeller_speed*propeller_speed*propeller_speed + 
-                    PROP_MODEL_P40_KT*propeller_speed*propeller_speed*propeller_speed*propeller_speed)*PROP_MODEL_KT_REF;
-    float p_kt_1 = (PROP_MODEL_P01_KT +
-                    PROP_MODEL_P11_KT*propeller_speed +
-                    PROP_MODEL_P21_KT*propeller_speed*propeller_speed + 
-                    PROP_MODEL_P31_KT*propeller_speed*propeller_speed*propeller_speed)*PROP_MODEL_KT_REF;
-    float p_kt_2 = (PROP_MODEL_P02_KT + 
-                    PROP_MODEL_P12_KT*propeller_speed + 
-                    PROP_MODEL_P22_KT*propeller_speed*propeller_speed)*PROP_MODEL_KT_REF;
-
-    float p_qt_0 = (PROP_MODEL_P00_QT + 
-                    PROP_MODEL_P10_QT*propeller_speed + 
-                    PROP_MODEL_P20_QT*propeller_speed*propeller_speed + 
-                    PROP_MODEL_P30_QT*propeller_speed*propeller_speed*propeller_speed + 
-                    PROP_MODEL_P40_QT*propeller_speed*propeller_speed*propeller_speed*propeller_speed)*PROP_MODEL_MAX_THR_LOSS_REAL;
-    float p_qt_1 = (PROP_MODEL_P01_QT +
-                    PROP_MODEL_P11_QT*propeller_speed +
-                    PROP_MODEL_P21_QT*propeller_speed*propeller_speed + 
-                    PROP_MODEL_P31_QT*propeller_speed*propeller_speed*propeller_speed)*PROP_MODEL_MAX_THR_LOSS_REAL;
-    float p_qt_2 = (PROP_MODEL_P02_QT + 
-                    PROP_MODEL_P12_QT*propeller_speed + 
-                    PROP_MODEL_P22_QT*propeller_speed*propeller_speed)*PROP_MODEL_MAX_THR_LOSS_REAL;
-
-    float thr_value = omega_prop_rad_s * omega_prop_rad_s * (p_kt_0 + p_kt_1 * b_angle_rotor + p_kt_2 * b_angle_rotor * b_angle_rotor) +
-                      (p_qt_0 + p_qt_1 * b_angle_rotor + p_qt_2 * b_angle_rotor * b_angle_rotor);       
-
-    float thr_array_prop_rf[3] = {0 , 0, thr_value};
-    float thr_array_body_rf[3]; 
-
-    from_propeller_to_body(thr_array_body_rf, thr_array_prop_rf, b_angle_rotor, g_angle_rotor);
-
-    //Transpose the thrust value from propeller RF to body RF: 
-    myBodyCoord_f.x = thr_array_body_rf[0];
-    myBodyCoord_f.y = thr_array_body_rf[1];
-    myBodyCoord_f.z = thr_array_body_rf[2];
-    return myBodyCoord_f;
-}
 
 /**
  * Function that computes the yaw rate for the coordinate turn:
@@ -625,35 +592,19 @@ float compute_yaw_rate_turn(void){
 
         float accel_y_filt_corrected = 0;
 
-
-        #ifdef USE_NEW_THR_ESTIMATION   
-            #ifdef OVERESTIMATE_LATERAL_FORCES
-                accel_y_filt_corrected = accel_body_y_filt.o[0] 
-                                - overestimation_coeff * compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[4],actuator_state_filt[8],actuator_state_filt[0]).y/VEHICLE_MASS
-                                - overestimation_coeff * compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[5],actuator_state_filt[9],actuator_state_filt[1]).y/VEHICLE_MASS
-                                - overestimation_coeff * compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[6],actuator_state_filt[10],actuator_state_filt[2]).y/VEHICLE_MASS
-                                - overestimation_coeff * compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[7],actuator_state_filt[11],actuator_state_filt[3]).y/VEHICLE_MASS;
-            #else                     
-                accel_y_filt_corrected = accel_body_y_filt.o[0] 
-                                - compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[4],actuator_state_filt[8],actuator_state_filt[0]).y/VEHICLE_MASS
-                                - compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[5],actuator_state_filt[9],actuator_state_filt[1]).y/VEHICLE_MASS
-                                - compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[6],actuator_state_filt[10],actuator_state_filt[2]).y/VEHICLE_MASS
-                                - compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[7],actuator_state_filt[11],actuator_state_filt[3]).y/VEHICLE_MASS;
-            #endif
-        #else         
-            #ifdef OVERESTIMATE_LATERAL_FORCES                
-                accel_y_filt_corrected = accel_body_y_filt.o[0] 
-                                        - overestimation_coeff * actuator_state_filt[0]*actuator_state_filt[0]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
-                                        - overestimation_coeff * actuator_state_filt[1]*actuator_state_filt[1]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
-                                        - overestimation_coeff * actuator_state_filt[2]*actuator_state_filt[2]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
-                                        - overestimation_coeff * actuator_state_filt[3]*actuator_state_filt[3]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[11])/VEHICLE_MASS;
-            #else               
-                accel_y_filt_corrected = accel_body_y_filt.o[0] 
-                                        - actuator_state_filt[0]*actuator_state_filt[0]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
-                                        - actuator_state_filt[1]*actuator_state_filt[1]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
-                                        - actuator_state_filt[2]*actuator_state_filt[2]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
-                                        - actuator_state_filt[3]*actuator_state_filt[3]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[11])/VEHICLE_MASS;
-            #endif
+    
+        #ifdef OVERESTIMATE_LATERAL_FORCES                
+            accel_y_filt_corrected = accel_body_y_filt.o[0] 
+                                    - overestimation_coeff * actuator_state_filt[0]*actuator_state_filt[0]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
+                                    - overestimation_coeff * actuator_state_filt[1]*actuator_state_filt[1]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
+                                    - overestimation_coeff * actuator_state_filt[2]*actuator_state_filt[2]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
+                                    - overestimation_coeff * actuator_state_filt[3]*actuator_state_filt[3]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[11])/VEHICLE_MASS;
+        #else               
+            accel_y_filt_corrected = accel_body_y_filt.o[0] 
+                                    - actuator_state_filt[0]*actuator_state_filt[0]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
+                                    - actuator_state_filt[1]*actuator_state_filt[1]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
+                                    - actuator_state_filt[2]*actuator_state_filt[2]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
+                                    - actuator_state_filt[3]*actuator_state_filt[3]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[11])/VEHICLE_MASS;
         #endif
         
         #ifdef NEW_YAWRATE_REFERENCE
@@ -1064,9 +1015,7 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.pseudo_control_q_dot_int = (int16_t) (INDI_pseudocontrol[4] * 1e1 * 180/M_PI);
     am7_data_out_local.pseudo_control_r_dot_int = (int16_t) (INDI_pseudocontrol[5] * 1e1 * 180/M_PI);
 
-    am7_data_out_local.desired_motor_value_int = (int16_t) (manual_motor_value * 1e1);
-    am7_data_out_local.desired_el_value_int = (int16_t) (manual_el_value * 1e2 * 180/M_PI);
-    am7_data_out_local.desired_az_value_int = (int16_t) (manual_az_value * 1e2 * 180/M_PI);
+
     am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
     am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
 
@@ -1081,13 +1030,9 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.UAV_NED_pos_y = pos_vect[1];
     am7_data_out_local.UAV_NED_pos_z = pos_vect[2];
 
-    #ifdef USE_NEW_THR_ESTIMATION_OPTIMIZATION
-    extra_data_out_local[0] = PROP_MODEL_KT_REF;
-    #else
     extra_data_out_local[0] = Dynamic_MOTOR_K_T_OMEGASQ;
-    #endif
 
-    extra_data_out_local[1] = PROP_MODEL_KM_REF;
+    extra_data_out_local[1] = OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ;
     extra_data_out_local[2] = VEHICLE_MASS;
     extra_data_out_local[3] = VEHICLE_I_XX;
     extra_data_out_local[4] = VEHICLE_I_YY;
@@ -1157,16 +1102,45 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[54] = (OVERACTUATED_MIXING_MAX_DELTA_AILERONS * 180/M_PI);
     extra_data_out_local[55] = CL_ailerons ;
 
-    //Inflow angle aerodynamic model: 
-    extra_data_out_local[56] = PROP_MODEL_MAX_THR_LOSS_OPTIMIZER;
-    extra_data_out_local[57] = PROP_MODEL_C_DR;
-
     //Approach tilting angle constraint: 
-    extra_data_out_local[58] = OVERACTUATED_MIXING_K_ALT_TILT_CONSTRAINT;     
-    extra_data_out_local[59] = OVERACTUATED_MIXING_MIN_ALT_TILT_CONSTRAINT;   
+    extra_data_out_local[56] = OVERACTUATED_MIXING_K_ALT_TILT_CONSTRAINT;     
+    extra_data_out_local[57] = OVERACTUATED_MIXING_MIN_ALT_TILT_CONSTRAINT;   
 
-    extra_data_out_local[60] = tras_speed_pseudo_ctr_hedge;  
+    extra_data_out_local[58] = trans_speed;  
     
+    extra_data_out_local[59] = manual_motor_value;  
+    extra_data_out_local[60] = manual_el_value;  
+    extra_data_out_local[61] = manual_az_value; 
+    extra_data_out_local[62] = manual_ailerons_value;
+    
+    extra_data_out_local[63] = indi_gains_over.p.theta;
+    extra_data_out_local[64] = indi_gains_over.p.phi;
+    extra_data_out_local[65] = indi_gains_over.d.theta;
+    extra_data_out_local[66] = indi_gains_over.d.phi;
+    extra_data_out_local[67] = indi_gains_over.d.psi;
+    extra_data_out_local[68] = K_d_speed;
+
+    extra_data_out_local[69] = OVERACTUATED_MIXING_MAX_THETA;
+    extra_data_out_local[70] = -OVERACTUATED_MIXING_MAX_THETA;
+    extra_data_out_local[71] = OVERACTUATED_MIXING_MAX_PHI;
+    extra_data_out_local[72] = -OVERACTUATED_MIXING_MAX_PHI;
+
+    extra_data_out_local[73] = disable_acc_decrement_inner_loop;
+    extra_data_out_local[74] = OVERACTUATED_MIXING_FILT_CUTOFF_INDI;
+    extra_data_out_local[75] = LIMITS_FWD_MAX_AIRSPEED;
+    extra_data_out_local[76] = vert_acc_margin;
+
+    extra_data_out_local[77] = power_cd_0;
+    extra_data_out_local[78] = power_cd_a;
+    extra_data_out_local[79] = prop_r;
+    extra_data_out_local[80] = prop_cd_0;
+    extra_data_out_local[81] = prop_cl_0;
+    extra_data_out_local[82] = prop_cd_a;
+    extra_data_out_local[83] = prop_cl_a;
+    extra_data_out_local[84] = prop_delta;
+    extra_data_out_local[85] = prop_sigma;
+    extra_data_out_local[86] = prop_theta;
+
 }
 
 /**
@@ -1624,9 +1598,8 @@ void overactuated_mixing_run(void)
         Bound( local_gain_K_T, 0.1, 1);
 
         //Compute the actual k_motor_omegasq with voltage value: 
-        Dynamic_MOTOR_K_T_OMEGASQ = local_gain_K_T * (electrical.vsupply * OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ_P1 + OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ_P2);
+        Dynamic_MOTOR_K_T_OMEGASQ = local_gain_K_T * OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ;
 
-        // Dynamic_MOTOR_K_T_OMEGASQ = Dynamic_MOTOR_K_T_OMEGASQ * local_gain_K_T;
 
         // Get an estimate of the actuator state using the second order dynamics
         get_actuator_state_v2();
