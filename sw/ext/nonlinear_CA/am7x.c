@@ -483,7 +483,8 @@ void* second_thread() //Run the optimization code
     double g_1 = (myam7_data_in_copy.az_1_state_int*1e-2 * M_PI/180), g_2 = (myam7_data_in_copy.az_2_state_int*1e-2 * M_PI/180);
     double g_3 = (myam7_data_in_copy.az_3_state_int*1e-2 * M_PI/180), g_4 = (myam7_data_in_copy.az_4_state_int*1e-2 * M_PI/180);
     double p = (myam7_data_in_copy.p_state_int*1e-1 * M_PI/180), q = (myam7_data_in_copy.q_state_int*1e-1 * M_PI/180); 
-    double r = (myam7_data_in_copy.r_state_int*1e-1 * M_PI/180), V = (myam7_data_in_copy.airspeed_state_int*1e-2);
+    double r = (myam7_data_in_copy.r_state_int*1e-1 * M_PI/180);
+    double V = (myam7_data_in_copy.airspeed_state_int*1e-2);
     double flight_path_angle = (myam7_data_in_copy.gamma_state_int*1e-2 * M_PI/180);
     double Beta = (myam7_data_in_copy.beta_state_int*1e-2 * M_PI/180);
 
@@ -492,10 +493,12 @@ void* second_thread() //Run the optimization code
 
     double des_psi_dot = (myam7_data_in_copy.psi_dot_cmd_int*1e-1 * M_PI/180);
 
-    double p_dot = (myam7_data_in_copy.p_dot_state_int*1e-1 * M_PI/180), q_dot = (myam7_data_in_copy.q_dot_state_int*1e-1 * M_PI/180);
+    double p_dot = (myam7_data_in_copy.p_dot_state_int*1e-1 * M_PI/180);
+    double q_dot = (myam7_data_in_copy.q_dot_state_int*1e-1 * M_PI/180);
     double r_dot = (myam7_data_in_copy.r_dot_state_int*1e-1 * M_PI/180);
 
-    double p_ec = (myam7_data_in_copy.p_state_filt_int*1e-1 * M_PI/180), q_ec = (myam7_data_in_copy.q_state_filt_int*1e-1 * M_PI/180); 
+    double p_ec = (myam7_data_in_copy.p_state_filt_int*1e-1 * M_PI/180);
+    double q_ec = (myam7_data_in_copy.q_state_filt_int*1e-1 * M_PI/180); 
     double r_ec = (myam7_data_in_copy.r_state_filt_int*1e-1 * M_PI/180);
 
     double approach_mode = (myam7_data_in_copy.approach_boolean);

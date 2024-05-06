@@ -99,8 +99,11 @@ struct overactuated_mixing_t overactuated_mixing;
 
 struct ship_info_msg ship_info_receive;
 
+
 //General state variables:
-float rate_vect[3], rate_vect_filt[3], rate_vect_filt_dot[3], euler_vect[3], acc_vect[3], acc_vect_filt[3], accel_vect_filt_control_rf[3],accel_vect_control_rf[3], speed_vect_control_rf[3];
+float rate_vect[3], rate_vect_filt[3], rate_vect_dot[3], rate_vect_old[3], rate_vect_filt_dot[3];
+float euler_vect[3], acc_vect[3], acc_vect_filt[3], accel_vect_filt_control_rf[3];
+float accel_vect_control_rf[3], speed_vect_control_rf[3];
 float speed_vect[3], pos_vect[3], airspeed = 0, beta_deg = 0, beta_rad = 0, flight_path_angle = 0, total_V = 0;
 float actuator_state[INDI_NUM_ACT];
 float actuator_state_filt[INDI_NUM_ACT];
@@ -1008,18 +1011,29 @@ void send_values_to_raspberry_pi(void){
 
     am7_data_out_local.beta_state_int = (int16_t) (fake_beta * 1e2);
 
-    am7_data_out_local.pseudo_control_ax_int = (int16_t) (INDI_pseudocontrol[0] * 1e2);
-    am7_data_out_local.pseudo_control_ay_int = (int16_t) (INDI_pseudocontrol[1] * 1e2);
-    am7_data_out_local.pseudo_control_az_int = (int16_t) (INDI_pseudocontrol[2] * 1e2);
-    am7_data_out_local.pseudo_control_p_dot_int = (int16_t) (INDI_pseudocontrol[3] * 1e1 * 180/M_PI);
-    am7_data_out_local.pseudo_control_q_dot_int = (int16_t) (INDI_pseudocontrol[4] * 1e1 * 180/M_PI);
-    am7_data_out_local.pseudo_control_r_dot_int = (int16_t) (INDI_pseudocontrol[5] * 1e1 * 180/M_PI);
+    //Linear acceleration setpoints:
+    am7_data_out_local.pseudo_control_ax_int = (int16_t) (acc_setpoint[0] * 1e2);
+    am7_data_out_local.pseudo_control_ay_int = (int16_t) (acc_setpoint[1] * 1e2);
+    am7_data_out_local.pseudo_control_az_int = (int16_t) (acc_setpoint[2] * 1e2);
 
+    //Unfiltered linear accelerations values:
+    am7_data_out_local.ax_state_int = (int16_t) (accel_vect_control_rf[0] * 1e2);
+    am7_data_out_local.ay_state_int = (int16_t) (accel_vect_control_rf[1] * 1e2);
+    am7_data_out_local.az_state_int = (int16_t) (accel_vect_control_rf[2] * 1e2);
 
     am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
     am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
 
-    am7_data_out_local.desired_ailerons_value_int = (int16_t) (manual_ailerons_value * 1e2 * 180/M_PI);
+    am7_data_out_local.psi_dot_cmd_int = (int16_t) (euler_error[2] * 1e1 * 180/M_PI);
+
+    //Unfiltered body rate accelerations:
+    am7_data_out_local.p_dot_state_int = (int16_t) (rate_vect_dot[0] * 1e1 * 180/M_PI);
+    am7_data_out_local.q_dot_state_int = (int16_t) (rate_vect_dot[1] * 1e1 * 180/M_PI);
+    am7_data_out_local.r_dot_state_int = (int16_t) (rate_vect_dot[2] * 1e1 * 180/M_PI);
+
+    am7_data_out_local.p_state_filt_int = (int16_t) (rate_vect_filt[0] * 1e1 * 180/M_PI);
+    am7_data_out_local.q_state_filt_int = (int16_t) (rate_vect_filt[1] * 1e1 * 180/M_PI);
+    am7_data_out_local.r_state_filt_int = (int16_t) (rate_vect_filt[2] * 1e1 * 180/M_PI);
 
     //Adding the corrected message from lidar: 
     am7_data_out_local.approach_boolean = (int16_t) (approach_state);
@@ -1284,7 +1298,10 @@ void assign_variables(void){
         update_butterworth_2_low_pass(&measurement_rates_filters[i], rate_vect[i]);
         update_butterworth_2_low_pass(&measurement_acc_filters[i], acc_vect[i]);
 
+
         //Calculate the angular acceleration via finite difference
+        rate_vect_dot[i] = (rate_vect[i] - rate_vect_old[i]) * PERIODIC_FREQUENCY;
+        rate_vect_old[i] = rate_vect[i];
         rate_vect_filt_dot[i] = (measurement_rates_filters[i].o[0]
                                  - measurement_rates_filters[i].o[1]) * PERIODIC_FREQUENCY;
 
