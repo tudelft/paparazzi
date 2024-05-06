@@ -37,7 +37,6 @@
         <arg flag="hobbyking.xml"/>
       </program>
     </session>
-
     <session name="Bluegiga">
       <program name="Data Link">
         <arg flag="-udp"/>
@@ -69,7 +68,6 @@
         <arg flag="4252"/>
       </program>
     </session>
-
     <session name="EKF Full">
       <program name="Data Link">
         <arg flag="-d" constant="/dev/ttyUSB0"/>
@@ -232,6 +230,22 @@
 	<arg flag="-e udp://192.168.0.11:5242:192.168.0.10:5243"/>
 	<arg flag="-e udp://0.0.0.0:4243:192.168.43.255:4242"/>
       </program>
+      <program name="Joystick">
+        <arg flag="-ac" constant="bebop2_optitrack"/>
+        <arg flag="hobbyking.xml"/>
+        <arg flag="-d 0"/>
+      </program>
+      <program name="NatNet3">
+        <arg flag="-ac" constant="4"/>
+        <arg flag="48"/>
+        <arg flag="-xa" constant="57"/>
+        <arg flag="-an" constant="far"/>
+        <arg flag="-le" constant="far"/>
+      </program>
+      <program name="Simulator">
+        <arg flag="-a" constant="Bebop_pntarget"/>
+        <arg flag="-t" constant="nps"/>
+      </program>
     </session>
 
     <session name="Flight XBeeAPI USB0 @57600">
@@ -247,7 +261,6 @@
       </program>
       <program name="Messages"/>
     </session>
-
     <session name="Flight ttyUSB0 Transparent @57600">
       <program name="Data Link">
         <arg flag="-d" constant="/dev/ttyUSB0"/>
@@ -258,42 +271,36 @@
         <arg flag="-speech"/>
       </program>
     </session>
-
     <session name="Hydrogen">
       <program name="Attitude Visualizer"/>
       <program name="HydrogenStatus"/>
       <program name="NederdroneStatus"/>
       <program name="ATC"/>
     </session>
-
     <session name="Joystick Hobbyking">
       <program name="Joystick">
         <arg flag="-ac" constant="@AIRCRAFT"/>
         <arg flag="hobbyking.xml"/>
       </program>
     </session>
-
     <session name="Joystick X3D Pro">
       <program name="Joystick">
         <arg flag="-ac" constant="@AIRCRAFT"/>
         <arg flag="extreme_3d_pro.xml"/>
       </program>
     </session>
-
     <session name="Messages and Settings">
       <program name="Messages"/>
       <program name="Settings">
         <arg flag="-ac" constant="@AIRCRAFT"/>
       </program>
     </session>
-
     <session name="PythonTools">
       <program name="IridiumDialer"/>
       <program name="PayloadForward"/>
       <program name="SVInfo"/>
       <program name="IridiumDialer"/>
     </session>
-
     <session name="Raw Sensors">
       <program name="Real-time Plotter">
         <arg flag="-g" constant="1000x250-0+0"/>
@@ -327,7 +334,6 @@
         <arg flag="-c" constant="*:telemetry:BARO_RAW:abs"/>
       </program>
     </session>
-
     <session name="Scaled Sensors">
       <program name="Real-time Plotter">
         <arg flag="-g" constant="1000x250-0+0"/>
@@ -401,7 +407,6 @@
         <arg flag="-track_size" constant="200"/>
         <arg flag="-zoom" constant="40."/>
       </program>
-
       <program name="Joystick">
         <arg flag="-ac" constant="@AIRCRAFT"/>
         <arg flag="hobbyking.xml"/>
@@ -409,7 +414,6 @@
       </program>
       <program name="Gazebo"/>
     </session>
-
     <session name="helidd">
       <program name="BluegigaUsbDongle">
         <arg flag="/dev/ttyACM0" constant="00:07:80:2d:d6:d9"/>

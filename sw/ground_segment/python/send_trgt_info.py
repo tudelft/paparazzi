@@ -46,14 +46,14 @@ class PNMessage:
 
     def send_pn_info(self):
 
-        msgw = PprzMessage("datalink", "REMOTE_GPS_LOCAL")
-        msgw["enu_x"] =  float(self.uav.x)*0.0039063
-        msgw["enu_y"] =  float(self.uav.y)*0.0039063
-        msgw["enu_z"] =  float(self.uav.z)*0.0039063
-        msgw["enu_xd"] =  float(self.uav.dx)*0.0000019
-        msgw["enu_yd"] =  float(self.uav.dy)*0.0000019
-        msgw["enu_zd"] =  float(self.uav.dz)*0.0000019
-        msgw["ac_id"] = 24
+        msgw = PprzMessage("datalink", "HITL_IMU")
+        msgw["gp"] =  float(self.uav.x)*0.0039063
+        msgw["gq"] =  float(self.uav.y)*0.0039063
+        msgw["gr"] =  float(self.uav.z)*0.0039063
+        msgw["ax"] =  float(self.uav.dx)*0.0000019
+        msgw["ay"] =  float(self.uav.dy)*0.0000019
+        msgw["az"] =  float(self.uav.dz)*0.0000019
+        msgw["ac_id"] = 48
         self._interface.send(msgw)
 
     def stop(self):

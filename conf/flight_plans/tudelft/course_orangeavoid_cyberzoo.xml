@@ -18,6 +18,7 @@
     <waypoint name="TD" x="0.8" y="-1.7"/>
     <waypoint name="GOAL" x="1.9" y="1.0"/>
     <waypoint name="TRAJECTORY" x="1.9" y="1.0"/>
+    <waypoint name="PS" x="-1.9" y="-1.0"/>
     <waypoint lat="51.9905834" lon="4.3767710" name="_CZ1"/>
     <waypoint lat="51.9906440" lon="4.3767060" name="_CZ2"/>
     <waypoint lat="51.9906860" lon="4.3768080" name="_CZ3"/>
@@ -122,6 +123,9 @@
       <call_once fun="logger_file_stop()"/>
       <call_once fun="pn_stop()"/> 
       <stay wp="STDBY"/>
+    </block>
+    <block name="Stand">
+      <stay wp="PS"/>
     </block>
     <block key="l" name="land here" strip_button="land here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>

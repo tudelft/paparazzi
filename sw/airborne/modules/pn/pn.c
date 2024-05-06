@@ -16,7 +16,7 @@
 #include "pprzlink/pprzlink_device.h"
 #include "pprzlink/intermcu_msg.h"
 
-#define PRINT(string,...) fprintf(stderr, "[pn->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
+//#define PRINT(string,...) fprintf(stderr, "[pn->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 #define PN_PERIODIC_FREQUENCY 500.0
 
 
@@ -49,7 +49,7 @@ struct StabilizationSetpoint quat_des;
 struct Int32Quat q_des;
 struct Proportional_nav pn_log;
 float speed_gain = 1.8;
-float pos_gain = 0.5;
+float pos_gain = 1.3;
 float speed_gainz = 1.1;
 float pos_gainy = 0.7;
 float r_los = 0.0;
@@ -72,16 +72,16 @@ float debug;
 // Initialize a pointer to a FloatVect3 struct and assign the address of 'vector'
 //struct FloatVect3 *acceleration = &accel_des;
 float b = 1.5;
-void pn_init(void);
-void pn_run(void);
+//void pn_init(void);
+//void pn_run(void);
 float eucld(struct FloatVect3 v);
 static void saturate(struct FloatVect3 *vector, int ind); 
-void pn_start(void);
-void pn_stop(void);
-void pn_event(void);
+//void pn_start(void);
+//void pn_stop(void);
+//void pn_event(void);
 void pn_info(struct Proportional_nav *pn_log, struct FloatVect3 *accel_des_pn, struct FloatVect3 *accel_des, struct FloatVect3 *speed_des, struct FloatVect3 *los_rate, struct FloatVect3 *pos_target, struct FloatVect3 *pos_des, struct FloatVect3 *speed_target);
 struct Proportional_nav *pn_info_logger(void);
-void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf);
+//void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -111,7 +111,7 @@ void pn_init(void)
 
 void pn_start(void){
   pn_pn_run_status = MODULES_RUN;
-  PRINT("SSSSSSS");
+  //PRINT("SSSSSSS");
   rel_pos.x = pos_target.x- stateGetPositionNed_f()->x;
   rel_pos.y = pos_target.y- stateGetPositionNed_f()->y;
   rel_pos.z = pos_target.z- stateGetPositionNed_f()->z;
@@ -172,7 +172,7 @@ void pn_run(void){
     r_los = eucld(rel_pos);
     
     if (r_los <= 0.5){
-      PRINT("AAAAA");
+      //("AAAAA");
       interception = true;
       intercept = false;
     }
@@ -268,31 +268,31 @@ float eucld(struct FloatVect3 v){
 
 static void saturate(struct FloatVect3 *vector, int ind) {
   if (ind == 1){
-    vector->x = fmax(-5.0, fmin(5.0, vector->x));
-    vector->y = fmax(-5.0, fmin(5.0, vector->y));
-    vector->z = fmax(-5.0, fmin(5.0, vector->z));
+    vector->x = fmax(-2.0, fmin(2.0, vector->x));
+    vector->y = fmax(-2.0, fmin(2.0, vector->y));
+    vector->z = fmax(-2.0, fmin(2.0, vector->z));
   }
   else if(ind == 2){
-    vector->x = fmax(-10.0, fmin(10.0, vector->x));
-    vector->y = fmax(-10.0, fmin(10.0, vector->y));
-    vector->z = fmax(-10.0, fmin(10.0, vector->z));
+    vector->x = fmax(-3.0, fmin(3.0, vector->x));
+    vector->y = fmax(-3.0, fmin(3.0, vector->y));
+    vector->z = fmax(-3.0, fmin(3.0, vector->z));
   }
   else {
-    vector->x = fmax(-2.5, fmin(2.5, vector->x));
-    vector->y = fmax(-2.5, fmin(2.5, vector->y));
-    vector->z = fmax(-2.5, fmin(2.5, vector->z));    
+    vector->x = fmax(-1.0, fmin(1.0, vector->x));
+    vector->y = fmax(-1.0, fmin(1.0, vector->y));
+    vector->z = fmax(-1.0, fmin(1.0, vector->z));    
   }
 
 }
 
-void pn_info(struct Proportional_nav *pn_log, struct FloatVect3 *accel_des_pn, struct FloatVect3 *accel_des, struct FloatVect3 *speed_des, struct FloatVect3 *los_rate, struct FloatVect3 *pos_target, struct FloatVect3 *pos_des, struct FloatVect3 *speed_target){
-  pn_log->accel_des_pn = *accel_des_pn;
-  pn_log->accel_des = *accel_des;
-  pn_log->speed_des = *speed_des;
-  pn_log->los_rate = *los_rate;
-  pn_log->pos_target = *pos_target;
-  pn_log->pos_des = *pos_des;
-  pn_log->speed_target = *speed_target;
+void pn_info(struct Proportional_nav *log, struct FloatVect3 *pn_accel, struct FloatVect3 *des_acc, struct FloatVect3 *des_vel, struct FloatVect3 *line_of_sight_rate, struct FloatVect3 *target_pos, struct FloatVect3 *des_pos, struct FloatVect3 *vel_target){
+  log->accel_des_pn = *pn_accel;
+  log->accel_des = *des_acc;
+  log->speed_des = *des_vel;
+  log->los_rate = *line_of_sight_rate;
+  log->pos_target = *target_pos;
+  log->pos_des = *des_pos;
+  log->speed_target = *vel_target;
 
 }
 
@@ -300,15 +300,15 @@ struct Proportional_nav *pn_info_logger(void){
   return &pn_log;
 }
 
-void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf)
+void pn_parse_HITL_IMU(uint8_t *buf)
 {
   //if (DL_REMOTE_GPS_LOCAL_ac_id(buf) != AC_ID){return; }
-  pos_target.x = DL_REMOTE_GPS_LOCAL_enu_x(buf);
-  pos_target.y = DL_REMOTE_GPS_LOCAL_enu_y(buf);
-  pos_target.z = DL_REMOTE_GPS_LOCAL_enu_z(buf);
-  speed_target.x = DL_REMOTE_GPS_LOCAL_enu_xd(buf);
-  speed_target.y = DL_REMOTE_GPS_LOCAL_enu_yd(buf);
-  speed_target.z = DL_REMOTE_GPS_LOCAL_enu_zd(buf);
+  pos_target.x = DL_HITL_IMU_gp(buf);
+  pos_target.y = DL_HITL_IMU_gq(buf);
+  pos_target.z = DL_HITL_IMU_gr(buf);
+  speed_target.x = DL_HITL_IMU_ax(buf);
+  speed_target.y = DL_HITL_IMU_ay(buf);
+  speed_target.z = DL_HITL_IMU_az(buf);
   //PRINT("%f", pos_target.x);
 }
 

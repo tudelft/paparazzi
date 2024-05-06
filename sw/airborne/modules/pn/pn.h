@@ -30,7 +30,7 @@ extern void pn_run(void);
 extern void pn_start(void);
 extern void pn_stop(void);
 extern void pn_event(void);
-extern void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf);
+extern void pn_parse_HITL_IMU(uint8_t *buf);
 extern struct Proportional_nav *pn_info_logger(void);
 
 
