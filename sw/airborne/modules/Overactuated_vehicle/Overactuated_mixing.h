@@ -172,7 +172,7 @@ extern float az_tolerance_land;
 extern float w_mot_const, w_mot_speed, w_el_const, w_el_speed, w_az_const, w_az_speed; 
 extern float w_theta_const, w_theta_speed, w_phi_const, w_phi_speed, w_ail_const, w_ail_speed; 
 
-extern float tras_speed_pseudo_ctr_hedge; 
+extern float trans_speed; 
 
 extern float disable_acc_decrement_inner_loop; 
 
