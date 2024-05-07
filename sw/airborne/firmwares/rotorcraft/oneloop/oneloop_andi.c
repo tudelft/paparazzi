@@ -936,8 +936,9 @@ void init_poles(void){
  */
 void init_controller(void){
   /*Register a variable from nav_hybrid. Should be improved when nav hybrid is final.*/
-  max_v_nav = nav_max_speed;
-  max_a_nav = nav_max_deceleration_sp;
+  float max_wind  = 20.0;
+  max_v_nav = nav_max_speed + max_wind;
+  max_a_nav = nav_max_acceleration_sp;
   /*Some calculations in case new poles have been specified*/
   p_att_rm.p3  = p_att_rm.omega_n  * p_att_rm.zeta;
   p_pos_rm.p3  = p_pos_rm.omega_n  * p_pos_rm.zeta;
@@ -1238,6 +1239,20 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
       rm_3rd_pos(dt_1l, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target, k_pos_rm.k1, k_pos_rm.k2, k_pos_rm.k3, max_v_nav, max_a_nav, max_j_nav, 2);    
     } else if (rm_order_h == 2){
       float_vect_copy(oneloop_andi.gui_ref.pos, oneloop_andi.gui_state.pos,2);
+      // Wind compensation
+      float as = airspeed_filt.o[0];
+      float wind[2];
+      if (as > 10.0){
+        wind[0] = oneloop_andi.gui_state.vel[0]-cosf(eulers_zxy.psi)*as;
+        wind[1] = oneloop_andi.gui_state.vel[1]-sinf(eulers_zxy.psi)*as;
+        nav_target[0] = nav_target[0] + wind[0];
+        nav_target[1] = nav_target[1] + wind[1];
+        printf("Wind: %f %f\n",wind[0],wind[1]);
+        printf("Wind norm: %f\n",float_vect_norm(wind,2));
+        printf("Air Speed Norm: %f\n",as);
+        printf("Ground Speed Norm: %f\n",float_vect_norm(oneloop_andi.gui_state.vel,2));
+        printf("Vn, Ve, psi: %f %f %f\n",oneloop_andi.gui_state.vel[0],oneloop_andi.gui_state.vel[1],eulers_zxy.psi);
+      }
       rm_2nd_pos(dt_1l, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target, k_pos_rm.k2, k_pos_rm.k3, max_a_nav, max_j_nav, 2);   
     } else if (rm_order_h == 1){
       float_vect_copy(oneloop_andi.gui_ref.pos, oneloop_andi.gui_state.pos,2);
@@ -1256,7 +1271,7 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
         psi_des_rad = atan2f(oneloop_andi.gui_ref.vel[1],oneloop_andi.gui_ref.vel[0]);
       }
       // FIX UNCOMMENT
-      //psi_des_rad += oneloop_andi_sideslip() * dt_1l;
+      psi_des_rad += oneloop_andi_sideslip() * dt_1l;
       NormRadAngle(psi_des_rad);
     }
     // Register Attitude Setpoints from previous loop
@@ -1663,21 +1678,21 @@ float oneloop_andi_sideslip(void)
 {
   // Coordinated turn
   // feedforward estimate angular rotation omega = g*tan(phi)/v
-  float omega;
-  const float max_phi = RadOfDeg(ONELOOP_ANDI_MAX_BANK);
-  float airspeed_turn = airspeed_filt.o[0];
-  Bound(airspeed_turn, 10.0f, 30.0f);
-  // Use the current roll angle to determine the corresponding heading rate of change.
-  float coordinated_turn_roll = eulers_zxy.phi;
-  // Prevent flipping
-  if( (andi_u[COMMAND_PITCH] > 0.0f) && ( fabs(andi_u[COMMAND_ROLL]) < andi_u[COMMAND_PITCH])) {
-    coordinated_turn_roll = ((andi_u[COMMAND_ROLL] > 0.0f) - (andi_u[COMMAND_ROLL] < 0.0f)) * andi_u[COMMAND_PITCH];
-  }
-  BoundAbs(coordinated_turn_roll, max_phi);
-  omega = g / airspeed_turn * tanf(coordinated_turn_roll);
+  float omega = 0.0;
+  // const float max_phi = RadOfDeg(ONELOOP_ANDI_MAX_BANK);
+  // float airspeed_turn = airspeed_filt.o[0];
+  // Bound(airspeed_turn, 1.0f, 30.0f);
+  // // Use the current roll angle to determine the corresponding heading rate of change.
+  // float coordinated_turn_roll = eulers_zxy.phi;
+  // // Prevent flipping
+  // if( (andi_u[COMMAND_PITCH] > 0.0f) && ( fabs(andi_u[COMMAND_ROLL]) < andi_u[COMMAND_PITCH])) {
+  //   coordinated_turn_roll = ((andi_u[COMMAND_ROLL] > 0.0f) - (andi_u[COMMAND_ROLL] < 0.0f)) * andi_u[COMMAND_PITCH];
+  // }
+  // BoundAbs(coordinated_turn_roll, max_phi);
+  // omega = g / airspeed_turn * tanf(coordinated_turn_roll);
   #ifdef FWD_SIDESLIP_GAIN
   // Add sideslip correction
-  omega -= accely_filt.o[0]*fwd_sideslip_gain;
+  //omega -= accely_filt.o[0]*fwd_sideslip_gain;
   #endif
   return omega;
 }
