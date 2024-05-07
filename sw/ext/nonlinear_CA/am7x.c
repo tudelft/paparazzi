@@ -22,6 +22,8 @@ int filter_cutoff_frequency;
 
 float tau_indi;
 
+double p_old, q_old, r_old; 
+
 //To test the controller with random variables:
 // #define TEST_CONTROLLER
 
@@ -493,9 +495,17 @@ void* second_thread() //Run the optimization code
 
     double des_psi_dot = (myam7_data_in_copy.psi_dot_cmd_int*1e-1 * M_PI/180);
 
-    double p_dot = (myam7_data_in_copy.p_dot_state_int*1e-1 * M_PI/180);
-    double q_dot = (myam7_data_in_copy.q_dot_state_int*1e-1 * M_PI/180);
-    double r_dot = (myam7_data_in_copy.r_dot_state_int*1e-1 * M_PI/180);
+
+    // double p_dot = (myam7_data_in_copy.p_dot_state_int*1e-1 * M_PI/180);
+    // double q_dot = (myam7_data_in_copy.q_dot_state_int*1e-1 * M_PI/180);
+    // double r_dot = (myam7_data_in_copy.r_dot_state_int*1e-1 * M_PI/180);
+
+    double p_dot = (p - p_old)/refresh_time_optimizer;
+    double q_dot = (q - q_old)/refresh_time_optimizer;
+    double r_dot = (r - r_old)/refresh_time_optimizer;
+    p_old = p; 
+    q_old = q; 
+    r_old = r; 
 
     double p_ec = (myam7_data_in_copy.p_state_filt_int*1e-1 * M_PI/180);
     double q_ec = (myam7_data_in_copy.q_state_filt_int*1e-1 * M_PI/180); 
