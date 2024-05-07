@@ -1020,6 +1020,9 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.ax_state_int = (int16_t) (accel_vect_control_rf[0] * 1e2);
     am7_data_out_local.ay_state_int = (int16_t) (accel_vect_control_rf[1] * 1e2);
     am7_data_out_local.az_state_int = (int16_t) (accel_vect_control_rf[2] * 1e2);
+    // am7_data_out_local.ax_state_int = (int16_t) (accel_vect_filt_control_rf[0] * 1e2);
+    // am7_data_out_local.ay_state_int = (int16_t) (accel_vect_filt_control_rf[1] * 1e2);
+    // am7_data_out_local.az_state_int = (int16_t) (accel_vect_filt_control_rf[2] * 1e2);
 
     am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
     am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
@@ -1030,6 +1033,9 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.p_dot_state_int = (int16_t) (rate_vect_dot[0] * 1e1 * 180/M_PI);
     am7_data_out_local.q_dot_state_int = (int16_t) (rate_vect_dot[1] * 1e1 * 180/M_PI);
     am7_data_out_local.r_dot_state_int = (int16_t) (rate_vect_dot[2] * 1e1 * 180/M_PI);
+    // am7_data_out_local.p_dot_state_int = (int16_t) (rate_vect_filt_dot[0] * 1e1 * 180/M_PI);
+    // am7_data_out_local.q_dot_state_int = (int16_t) (rate_vect_filt_dot[1] * 1e1 * 180/M_PI);
+    // am7_data_out_local.r_dot_state_int = (int16_t) (rate_vect_filt_dot[2] * 1e1 * 180/M_PI);
 
     am7_data_out_local.p_state_filt_int = (int16_t) (rate_vect_filt[0] * 1e1 * 180/M_PI);
     am7_data_out_local.q_state_filt_int = (int16_t) (rate_vect_filt[1] * 1e1 * 180/M_PI);
