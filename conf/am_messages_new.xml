@@ -2003,19 +2003,9 @@
          <field name = "pseudo_control_ax" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01">Computed pseudo-control for the x-control acceleration</field>
          <field name = "pseudo_control_ay" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01">Computed pseudo-control for the y-control acceleration</field>
          <field name = "pseudo_control_az" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01">Computed pseudo-control for the z-control acceleration</field>
-         <field name = "ax_state" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01">Unfiltered measurement of the x-control acceleration</field>
-         <field name = "ay_state" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01">Unfiltered measurement of the y-control acceleration</field>
-         <field name = "az_state" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01">Unfiltered measurement of the z-control acceleration</field>
-
-         <field name = "psi_dot_cmd" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1">Psi dot command</field>
-
-         <field name = "p_state_ec" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1">x-axes dody rate filtered for EC</field>
-         <field name = "q_state_ec" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1">y-axes dody rate filtered for EC</field>
-         <field name = "r_state_ec" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1">z-axes dody rate filtered for EC</field>
-
-         <field name = "p_dot_state" type="int16" unit="1e1_deg_s" alt_unit="deg_s2"  alt_unit_coef="0.1">x-axes dody rate derivative unfiltered</field>
-         <field name = "q_dot_state" type="int16" unit="1e1_deg_s" alt_unit="deg_s2"  alt_unit_coef="0.1">y-axes dody rate derivative unfiltered</field>
-         <field name = "r_dot_state" type="int16" unit="1e1_deg_s" alt_unit="deg_s2"  alt_unit_coef="0.1">z-axes dody rate derivative unfiltered</field>
+         <field name = "pseudo_control_p_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1">Unfiltered measurement of p_dot</field>
+         <field name = "pseudo_control_q_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1">Unfiltered measurement of q_dot</field>
+         <field name = "pseudo_control_r_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1">Unfiltered measurement of r_dot</field>
 
          <field name = "desired_theta_value" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Desired theta value</field>
          <field name = "desired_phi_value" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Desired phi value</field>
@@ -2037,13 +2027,11 @@
          <field name = "missed_packets" type="uint32">Missed packets on serial communication</field>
          <field name = "message_frequency" type="uint16">Refresh rate of the incoming messages from companion computer</field>
 
-         <field name = "n_iteration_outer" type="uint16">Number of outer loop iterations of the optimizer</field>
-         <field name = "n_iteration_inner" type="uint16">Number of inner loop iterations of the optimizer</field>
-         <field name = "n_evaluation_outer" type="uint16">Number of outer loop function evaluation of the optimizer</field>
-         <field name = "n_evaluation_inner" type="uint16">Number of inner loop function evaluation of the optimizer</field>
+         <field name = "n_iteration" type="uint16">Number of iterations of the optimizer</field>
+         <field name = "n_evaluation" type="uint16">Number of function evaluation of the optimizer</field>
 
          <field name = "elapsed_time_us" type="uint16">Elapsed time for the determination of the optimal solution</field>
-         <field name = "exit_flag_optimizer_inner" type="int16">Exit flag of the inner loop optimization run. Negative value means a failure of the optimization process</field>
+         <field name = "exit_flag_optimizer" type="int16">Exit flag of the optimization run. Negative value means a failure of the optimization process</field>
          <field name = "residuals_array" type="float[6]">Residual acceleration of the computed optimised solution [m/s^2 or rad/s^2]</field>
 
          <field name = "modeled_acc_array" type="float[6]">Filtered modeled accelerations [m/s^2 or rad/s^2]</field>

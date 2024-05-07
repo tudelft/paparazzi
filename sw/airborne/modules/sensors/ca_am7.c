@@ -67,14 +67,12 @@ static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((alig
 
         float ailerons_cmd_float_telemetry = myam7_data_in.ailerons_cmd_int*0.01f;
 
-        uint16_t n_iteration_inner_telemetry = myam7_data_in.n_iteration_inner;
-        uint16_t n_iteration_outer_telemetry = myam7_data_in.n_iteration_outer;
+        uint16_t n_iteration_telemetry = myam7_data_in.n_iteration;
 
-        uint16_t n_evaluation_inner_telemetry =  myam7_data_in.n_evaluation_inner;
-        uint16_t n_evaluation_outer_telemetry =  myam7_data_in.n_evaluation_outer;
+        uint16_t n_evaluation_telemetry =  myam7_data_in.n_evaluation;
 
         uint16_t elapsed_time_us_telemetry = myam7_data_in.elapsed_time_us;
-        int16_t exit_flag_optimizer_inner_telemetry = myam7_data_in.exit_flag_optimizer_inner;
+        int16_t exit_flag_optimizer_telemetry = myam7_data_in.exit_flag_optimizer;
 
         float residuals_array_float_telemetry[6] = {myam7_data_in.residual_ax_int*0.01f,
                                                     myam7_data_in.residual_ay_int*0.01f,
@@ -106,9 +104,9 @@ static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((alig
                 &theta_cmd_float_telemetry, &phi_cmd_float_telemetry,
                 &ailerons_cmd_float_telemetry,
                 &missed_packets, &ca7_message_frequency_RX,
-                &n_iteration_outer_telemetry, &n_iteration_inner_telemetry,
-                &n_evaluation_outer_telemetry, &n_evaluation_inner_telemetry,
-                &elapsed_time_us_telemetry, &exit_flag_optimizer_inner_telemetry, 
+                &n_iteration_telemetry,
+                &n_evaluation_telemetry,
+                &elapsed_time_us_telemetry, &exit_flag_optimizer_telemetry, 
                 &residuals_array_float_telemetry[0],
                 &modeled_acc_float_telemetry[0],
                 &lidar_altitude_m_float_telemetry, &lidar_strength_telemetry,
@@ -153,19 +151,9 @@ static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((alig
         int16_t pseudo_control_ay_int_telemetry = myam7_data_out.pseudo_control_ay_int;
         int16_t pseudo_control_az_int_telemetry = myam7_data_out.pseudo_control_az_int;
 
-        int16_t ax_state_telemetry = myam7_data_out.ax_state_int;
-        int16_t ay_state_telemetry = myam7_data_out.ay_state_int;
-        int16_t az_state_telemetry = myam7_data_out.az_state_int;
-
-        int16_t psi_dot_cmd_telemetry = myam7_data_out.psi_dot_cmd_int;
-
-        int16_t p_state_ec_telemetry = myam7_data_out.p_state_filt_int;
-        int16_t q_state_ec_telemetry = myam7_data_out.q_state_filt_int;
-        int16_t r_state_ec_telemetry = myam7_data_out.r_state_filt_int;
-
-        int16_t p_dot_state_telemetry = myam7_data_out.p_dot_state_int;
-        int16_t q_dot_state_telemetry = myam7_data_out.q_dot_state_int;
-        int16_t r_dot_state_telemetry = myam7_data_out.r_dot_state_int;
+        int16_t pseudo_control_p_dot_telemetry = myam7_data_out.pseudo_control_p_dot_int;
+        int16_t pseudo_control_q_dot_telemetry = myam7_data_out.pseudo_control_q_dot_int;
+        int16_t pseudo_control_r_dot_telemetry = myam7_data_out.pseudo_control_r_dot_int;
 
         //Desired actuator value:
         int16_t desired_theta_value_int_telemetry = myam7_data_out.desired_theta_value_int;
@@ -188,12 +176,7 @@ static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((alig
 
                 &pseudo_control_ax_int_telemetry, &pseudo_control_ay_int_telemetry, &pseudo_control_az_int_telemetry,
 
-                &ax_state_telemetry,&ay_state_telemetry, &az_state_telemetry,
-
-                &psi_dot_cmd_telemetry,
-
-                &p_state_ec_telemetry, &q_state_ec_telemetry, &r_state_ec_telemetry,
-                &p_dot_state_telemetry, &q_dot_state_telemetry, &r_dot_state_telemetry,
+                &pseudo_control_p_dot_telemetry, &pseudo_control_q_dot_telemetry, &pseudo_control_r_dot_telemetry,
 
                 &desired_theta_value_int_telemetry, &desired_phi_value_int_telemetry,
                 &UAV_NED_pos_x_telemetry, &UAV_NED_pos_y_telemetry, &UAV_NED_pos_z_telemetry,
