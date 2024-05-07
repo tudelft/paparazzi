@@ -1,19 +1,18 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
-<airframe name="OVERQUAD_TUD00334_CYBERZOO">
+<airframe name="OVERQUAD_TUD00358">
   <description>
-    Overactuated vehicle airframe equipped with a Hextronix Cube Orange flightcontroller hardware
+    Overactuated vehicle airframe equipped with a Hextronix Cube Orange flight controller hardware
   </description>
 
 
   <firmware name="rotorcraft">
 
-    <target name="ap" board="cube_orange">
+    <target name="ap" board="cube_orangeplus">
       <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
       <configure name="PERIODIC_FREQUENCY" value="500"/>
 
       <module name="imu" type="cube"/>
 
-      <!-- optionall add extra magneto -->
       <module name="mag" type="rm3100">
         <configure name="MAG_RM3100_I2C_DEV" value="i2c2"/>
         <define name="RM3100_CHAN_X_SIGN" value="+"/>
@@ -25,9 +24,6 @@
         <define name="MODULE_RM3100_SYNC_SEND" value="FALSE"/>
         <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
       </module>
-
-      <!-- TODO: Cube Orange test peripherals/ak8975 if compatible with AK09916 else create Internal MAG driver -->
-      <!-- on the ICM- 20948 there ia an AK09916 mag embedded -->
 
       <module name="actuators" type="dummy">
         <define name="HAL_USE_PWM" value="FALSE"/>
@@ -46,13 +42,12 @@
         <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
         <define name="MS45XX_SYNC_SEND" value="FALSE" /> <!--description="flag to enable sending every new measurement via telemetry (default:FALSE)-->
         <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
-        <define name="MS45XX_PRESSURE_OFFSET" value="8476" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
+        <define name="MS45XX_PRESSURE_OFFSET" value="8077" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
         <define name="MS45XX_LOWPASS_TAU" value="0.25"/> <!--description="Time constant for second order Butterworth low pass filter"-->
         <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
       </module>
 
       <module name="gps" type="datalink"/>
-
       
       <!-- <module name="gps" type="ublox">
         <configure name="GPS_BAUD" value="B460800"/>
@@ -81,17 +76,9 @@
       <module name="pprzlog"/>
       <module name="logger" type="sd_chibios"/>
       <module name="flight_recorder"/>      
-      <!--
-      <module name="shell">
-        <configure name="SHELL_PORT" value="usb_serial_debug"/>
-      </module>
-      -->
 
-<!--<define name="USE_SIDESLIP" value="TRUE"/>-->
- <!-- (2*3.14)/AOA_PWM_PERIOD -->
- <!-- the PPM RC INput used for PWM in -->
+
       <module name="AOA_pwm">
-        <!-- <define name="USE_PWM_INPUT2" value="TRUE"/> -->
         <define name="SEND_SYNC_AOA" value="TRUE"/>
         <define name="AOA_ANGLE_OFFSET" value="3.1415"/>
         <define name="AOA_PWM_PERIOD" value="4096"/>
@@ -115,23 +102,6 @@
 
     </target>
 
-    <!-- <target name="nps" board="pc">
-      <configure name="PERIODIC_FREQUENCY" value="500"/> 
-      <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
-      <module name="fdm" type="jsbsim"/>
-      <module name="radio_control" type="ppm"/>
-      <define name="RADIO_GEAR" value="RADIO_AUX2"/>
-      <define name="RADIO_FLAP" value="RADIO_AUX3"/>
-      <define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>
-      <module name="telemetry"   type="transparent"/>
-      <module name="imu" type="nps"/>
-      <module name="gps" type="ublox"/>
-      <module name="udp"/>
-      <module name="approach_moving_target">
-	      <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/>
-      </module>
-    </target> -->
-
     <define name="USE_AIRSPEED" value="TRUE"/><!-- Use the sensor, not stating use it in flight -->
 
     <!-- <module name="guidance" type="indi"/> -->
@@ -139,9 +109,6 @@
     <module name="nav_hybrid">
       <configure name="NAV_HYBRID_POS_GAIN" value="1"/>
       <configure name="NAV_MAX_SPEED" value="15"/>
-      <configure name="NAV_HYBRID_LINE_GAIN" value="1"/>
-      <configure name="NAV_HYBRID_MAX_AIRSPEED" value="15"/>
-      <configure name="NAV_HYBRID_SPEED_MARGIN" value="10"/>
     </module>
 
     <module name="ahrs" type="float_cmpl_quat">
@@ -151,7 +118,7 @@
       <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
       <define name="AHRS_FC_OUTPUT_ENABLED" value="FALSE"/>
       <define name="AHRS_FC_IS_WITH_EKF2" value="TRUE"/>
-      <define name="AHRS_FC_IMU_ID" value="IMU_CUBE2_ID"/>
+      <define name="AHRS_FC_IMU_ID" value="IMU_CUBE1_ID"/>
       <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>
     </module>
 
@@ -162,8 +129,8 @@
         <define name="INS_EKF2_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
         <!-- <define name="INS_EKF2_MAG_ID" value="MAG_LIS3MDL_SENDER_ID"/> -->
         <define name="INS_EKF2_OPTITRACK" value="TRUE"/>
-        <define name="INS_EKF2_ACCEL_ID" value="IMU_CUBE2_ID"/>
-        <define name="INS_EKF2_GYRO_ID" value="IMU_CUBE2_ID"/>
+        <define name="INS_EKF2_ACCEL_ID" value="IMU_CUBE1_ID"/>
+        <define name="INS_EKF2_GYRO_ID" value="IMU_CUBE1_ID"/>
     </module>
 
     <module name="geo_mag"/>
@@ -215,8 +182,8 @@
 
   <!-- Maximum limits of the sticks -->
   <section name="MANUAL_CONTROL_OPTIONS" prefix="MANUAL_CONTROL_">
-    <define name="MAX_CMD_FWD_SPEED" value="20.0" unit="m/s"/>
-    <define name="MAX_CMD_LAT_SPEED" value="10.0" unit="m/s"/>
+    <define name="MAX_CMD_FWD_SPEED" value="25.0" unit="m/s"/>
+    <define name="MAX_CMD_LAT_SPEED" value="20.0" unit="m/s"/>
     <define name="MAX_CMD_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_CMD_PITCH_ANGLE" value="25.0" unit="deg"/>
     <define name="MAX_CMD_ROLL_ANGLE" value="25.0" unit="deg"/>
@@ -287,16 +254,16 @@
     <define name="AILERONS_FIRST_ORD_NUM" value="0.0198" />
     <define name="AILERONS_FIRST_ORD_DEN" value="-0.9802" />
 
-    <define name="SERVO_9_MIN_PWM" value="2200" />   
-    <define name="SERVO_9_MAX_PWM" value="800" />   
-    <define name="SERVO_9_NEUTRAL_PWM" value="1500" /> 
+    <define name="SERVO_9_MIN_PWM" value="2246" />   
+    <define name="SERVO_9_MAX_PWM" value="843" />   
+    <define name="SERVO_9_NEUTRAL_PWM" value="1481" /> 
     <define name="SERVO_9_MIN_ANGLE_DEG" value="-25" /> 
     <define name="SERVO_9_MAX_ANGLE_DEG" value="25" /> 
     <define name="SERVO_9_DELAY_TS" value="5" /> 
 
-    <define name="SERVO_10_MIN_PWM" value="2200" />   
-    <define name="SERVO_10_MAX_PWM" value="800" />   
-    <define name="SERVO_10_NEUTRAL_PWM" value="1500" /> 
+    <define name="SERVO_10_MIN_PWM" value="2217" />   
+    <define name="SERVO_10_MAX_PWM" value="850" />   
+    <define name="SERVO_10_NEUTRAL_PWM" value="1549" /> 
     <define name="SERVO_10_MIN_ANGLE_DEG" value="-25" /> 
     <define name="SERVO_10_MAX_ANGLE_DEG" value="25" /> 
     <define name="SERVO_10_DELAY_TS" value="5" /> 
@@ -312,7 +279,11 @@
 
     <define name="PID_P_GAIN_THETA" value="300"/>
     <define name="PID_I_GAIN_THETA" value="2"/>
-    <define name="PID_D_GAIN_THETA" value="150"/>
+    <define name="PID_D_GAIN_THETA" value="120"/>
+
+    <!-- <define name="PID_P_GAIN_PSI_AZ" value="1.5"/>
+    <define name="PID_I_GAIN_PSI_AZ" value="0.5"/>
+    <define name="PID_D_GAIN_PSI_AZ" value="0.5"/> -->
 
     <define name="PID_P_GAIN_PSI_AZ" value="1.3"/>
     <define name="PID_I_GAIN_PSI_AZ" value="0.34"/>
@@ -349,13 +320,13 @@
     <define name="PID_MAX_AZ_ORDER" value="35" unit="deg"/> <!--max azimuth deflection in PID mode-->
 
     <!-- INDI proportional gains -->
-    <define name="INDI_REF_ERR_P" value="4"/>
-    <define name="INDI_REF_ERR_Q" value="4"/>
+    <define name="INDI_REF_ERR_P" value="5"/>
+    <define name="INDI_REF_ERR_Q" value="5"/>
     <define name="INDI_REF_ERR_R" value="1.5"/>
 
     <define name="INDI_REF_ERR_X" value="2"/>
     <define name="INDI_REF_ERR_Y" value="2"/>
-    <define name="INDI_REF_ERR_Z" value="1"/>
+    <define name="INDI_REF_ERR_Z" value="2"/>
 
     <!-- INDI derivative gains -->
     <define name="INDI_REF_RATE_P" value="7"/>
@@ -364,7 +335,7 @@
 
     <define name="INDI_REF_RATE_X" value="2"/>
     <define name="INDI_REF_RATE_Y" value="2"/>
-    <define name="INDI_REF_RATE_Z" value="3"/>
+    <define name="INDI_REF_RATE_Z" value="5"/>
 
     <!-- Actuator dynamics and mapping-->
     <define name="INDI_ACT_DYN_MOTOR" value="0.038" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
@@ -456,71 +427,50 @@
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
     <!-- ball bearings vehicle -->
-    <!-- <define name="SERVO_EL_1_ZERO_VALUE" value="-1.93" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="10.81" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="-4.5" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="1.23" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="-4.3" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="-4.74" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-7.64" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="7.55" unit="deg"/>
 
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="-7.5" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="-7.11" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="-1.31" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="-2.37" unit="deg"/> -->
-
-    <define name="SERVO_EL_1_ZERO_VALUE" value="3.95" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="1.84" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="-7.03" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="-12.2" unit="deg"/>
-
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="-2.1" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="-0.43" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="-6.32" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="-0.87" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="2.19" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="-1.84" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="-3.33" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="-2.1" unit="deg"/>
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
     <define name="MAX_PHI_INDI" value="60" unit="deg"/>
-    <define name="MAX_AOA_INDI" value="18" unit="deg"/>
+    <define name="MAX_AOA_INDI" value="15" unit="deg"/>
     <define name="MIN_AOA_INDI" value="2" unit="deg"/>
 
     <define name="MAX_DELTA_AILERONS" value="25" unit="deg"/>
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
 
-    <define name="SPEED_AOA_PROTECTION" value="2" unit="m/s"/>
+    <define name="SPEED_AOA_PROTECTION" value="-1" unit="m/s"/>
 
     <!-- Tilting angle constraint in the approach and takeoff phase -->
     <define name="K_ALT_TILT_CONSTRAINT" value="50" unit="deg/meters"/>
     <define name="MIN_ALT_TILT_CONSTRAINT" value="-0.1" unit="meters"/>
 
     <!-- Filters properties for INDI -->
-    <define name="FILT_CUTOFF_INDI" value="12" unit="rad/s"/>
+    <define name="FILT_CUTOFF_INDI" value="15" unit="rad/s"/>
 
     <!-- First order filter on rates -->
     <!-- 1-exp(-cutoff_frequency/sampling_frequency) [20 rad/s]-->
     <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0488" /> 
 
-    <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES_FAILSAFE" value="0.12" /> 
+  <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES_FAILSAFE" value="0.12" /> 
 
-    <!-- Weighting matrix for the INDI -->
-    <!-- <define name="W_ACT_MOTOR_CONST" value="3"/>
-    <define name="W_ACT_MOTOR_SPEED" value="0.25"/>
-    <define name="W_ACT_EL_CONST" value="0"/>
-    <define name="W_ACT_EL_SPEED" value="0"/>
-    <define name="W_ACT_AZ_CONST" value="0"/>
-    <define name="W_ACT_AZ_SPEED" value="0.7"/>
-    <define name="W_ACT_THETA_CONST" value="5"/>
-    <define name="W_ACT_THETA_SPEED" value="0"/>
-    <define name="W_ACT_PHI_CONST" value="100"/>
-    <define name="W_ACT_PHI_SPEED" value="-15"/> -->
     <define name="W_ACT_MOTOR_CONST" value="100"/>
     <define name="W_ACT_MOTOR_SPEED" value="0"/>
     <define name="W_ACT_EL_CONST" value="0"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
     <define name="W_ACT_AZ_CONST" value="0"/>
     <define name="W_ACT_AZ_SPEED" value="4"/>
-    <define name="W_ACT_THETA_CONST" value="100"/>
-    <define name="W_ACT_THETA_SPEED" value="-10"/>
-    <define name="W_ACT_PHI_CONST" value="100"/>
-    <define name="W_ACT_PHI_SPEED" value="-10"/>
+    <define name="W_ACT_THETA_CONST" value="1000"/>
+    <define name="W_ACT_THETA_SPEED" value="-100"/>
+    <define name="W_ACT_PHI_CONST" value="1000"/>
+    <define name="W_ACT_PHI_SPEED" value="-100"/>
 
     <define name="W_ACT_AILERONS_CONST" value="0.5"/>
     <define name="W_ACT_AILERONS_SPEED" value="0"/>
@@ -546,10 +496,8 @@
     <!-- FWD flight properties for yaw rate induced by controller and for removal of lateral speed term-->
     <!-- <define name="MIN_SPEED_TRANSITION" value="3.0" unit="m/s"/>
     <define name="REF_SPEED_TRANSITION" value="5.0" unit="m/s"/> -->
-    <!-- <define name="MIN_SPEED_TRANSITION" value="0.0" unit="m/s"/>
-    <define name="REF_SPEED_TRANSITION" value="0.5" unit="m/s"/> -->
-    <define name="MIN_SPEED_TRANSITION" value="8.0" unit="m/s"/>
-    <define name="REF_SPEED_TRANSITION" value="10.0" unit="m/s"/>
+    <define name="MIN_SPEED_TRANSITION" value="5.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION" value="9.0" unit="m/s"/>
 
   </section>
 
@@ -648,7 +596,7 @@
 
     <define name="MIN_LAT_SPEED_GAIN_VALUE" value="0.1"/>
 
-    <define name="FWD_SPEED_FORCE_FWD_MODE" value="20"/>
+    <define name="FWD_SPEED_FORCE_FWD_MODE" value="25"/>
     
   </section>
 
@@ -662,14 +610,14 @@
 
   <section name="IMU" prefix="IMU_">
 
-    <!-- Calibrated at mavlab 03-05-2023 -->
-    <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-17,-8,22}, .scale={{11701,50107,46279},{1198,5125,4775}}} , {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-61,-18,-13}, .scale={{9035,17566,62431},{1732,3587,12773}}}}"/>
-
-    <!-- Calibrated at Valkenburg the 22-06-2023-->
-    <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={21,253,27}, .scale={{13265,16225,23969},{22921,29034,43079}}}}"/>
+    <!-- Calibrated at mavlab 02-09-2023 -->
+    <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-4,0,5}, .scale={{8594,5643,20184},{877,577,2057}}} , {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-39,-7,-18}, .scale={{4783,17054,59665},{978,3481,12227}}}}"/>
+    
+    <!-- Calibrated at Valkenburg 05-09-2023 -->
+    <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={-162,214,54}, .scale={{6603,36902,3847},{11528,64275,6710}}}}"/>
 
     <!-- Define axis in hover frame -->
-    <define name="BODY_TO_IMU_PHI" value="177.5" unit="deg"/>
+    <define name="BODY_TO_IMU_PHI" value="180" unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0" unit="deg"/>
     <define name="BODY_TO_IMU_PSI" value="0" unit="deg"/>
   </section>
@@ -761,7 +709,8 @@
 
   <section name="BAT">
     <!-- Brick on only -->
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.37 * adc)"/>
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.515* adc)"/>
+    <!-- <define name="MilliAmpereOfAdc(adc)" value="((3.3f/4096.0f) * 39.877f * adc)"/> -->
     <!-- <define name="MAX_BAT_CAPACITY" value="5000" unit="mAh"/> -->
     <!-- <define name="MILLIAMP_AT_IDLE_THROTTLE" value="500" unit="mA"/> -->
     <!-- <define name="MILLIAMP_AT_FULL_THROTTLE" value="30000" unit="mA"/> -->
@@ -791,6 +740,7 @@
     <!-- <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/> -->
 
     <define name="FAILSAFE_HOME_RADIUS" value="600" unit="m"/>
+
   </section>
 
   <section name="AIR_DATA" prefix="AIR_DATA_">
