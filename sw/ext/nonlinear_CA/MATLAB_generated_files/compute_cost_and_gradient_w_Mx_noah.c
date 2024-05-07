@@ -2,17 +2,22 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: compute_cost_and_gradient_w_Mx_noah_outer.c
+ * File: compute_cost_and_gradient_w_Mx_noah.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 /* Include Files */
-#include "compute_cost_and_gradient_w_Mx_noah_outer.h"
-#include "Cascaded_nonlinear_controller_w_ail_new_aero_rtwutil.h"
+#include "compute_cost_and_gradient_w_Mx_noah.h"
+#include "Nonlinear_controller_w_ail_new_aero_sl_rtwutil.h"
 #include "rt_nonfinite.h"
+#include <math.h>
 #include <string.h>
+
+/* Function Declarations */
+static double ft_1(const double ct[263], double gradient_data[],
+                   int *gradient_size);
 
 /* Function Definitions */
 /*
@@ -21,7 +26,8 @@
  *                int *gradient_size
  * Return Type  : double
  */
-double ft_1(const double ct[263], double gradient_data[], int *gradient_size)
+static double ft_1(const double ct[263], double gradient_data[],
+                   int *gradient_size)
 {
   double b_t707_tmp;
   double b_t708_tmp;
@@ -992,7 +998,823 @@ double ft_1(const double ct[263], double gradient_data[], int *gradient_size)
 }
 
 /*
- * File trailer for compute_cost_and_gradient_w_Mx_noah_outer.c
+ * compute_cost_and_gradient_w_Mx_noah
+ *     [COST,GRADIENT] =
+ * compute_cost_and_gradient_w_Mx_noah(Beta,CL_aileron,Cd_zero,Cl_alpha,Cm_zero,Cm_alpha,I_xx,I_yy,I_zz,K_Cd,Omega_1_scaled,Omega_2_scaled,Omega_3_scaled,Omega_4_scaled,Phi_scaled,S,Theta_scaled,V,V_scaled,W_act_phi,W_act_theta,W_act_motor,W_dv_1,W_dv_2,W_dv_3,W_dv_4,W_dv_5,W_dv_6,W_act_tilt_el,W_act_tilt_az,W_act_ailerons,B_1_SCALED,B_2_SCALED,B_3_SCALED,B_4_SCALED,DELTA_AILERONS_SCALED,DESIRED_EL_VALUE,DESIRED_AZ_VALUE,DESIRED_PHI_VALUE,DESIRED_THETA_VALUE,DESIRED_MOTOR_VALUE,DESIRED_AILERONS_VALUE,DV_GLOBAL_1,DV_GLOBAL_2,DV_GLOBAL_3,DV_GLOBAL_4,DV_GLOBAL_5,DV_GLOBAL_6,FLIGHT_PATH_ANGLE,G_1_SCALED,G_2_SCALED,G_3_SCALED,G_4_SCALED,GAIN_EL,GAIN_AZ,GAIN_PHI,GAIN_THETA,GAIN_MOTOR,GAIN_AILERONS,GAMMA_QUADRATIC_DU,L_1,L_2,L_3,L_4,L_Z,M,P,power_Cd_0,power_Cd_a,prop_R,prop_Cd_0,prop_Cl_0,prop_Cd_a,prop_Cl_a,PROP_DELTA,PROP_SIGMA,PROP_THETA,Q,R,RHO,WING_SPAN,WING_CHORD)
+ *
+ * Arguments    : double Beta
+ *                double CL_aileron
+ *                double Cd_zero
+ *                double Cl_alpha
+ *                double Cm_zero
+ *                double Cm_alpha
+ *                double I_xx
+ *                double I_yy
+ *                double I_zz
+ *                double K_Cd
+ *                double Omega_1_scaled
+ *                double Omega_2_scaled
+ *                double Omega_3_scaled
+ *                double Omega_4_scaled
+ *                double Phi_scaled
+ *                double S
+ *                double Theta_scaled
+ *                double V
+ *                double V_scaled
+ *                double W_act_phi
+ *                double W_act_theta
+ *                double W_act_motor
+ *                double W_dv_1
+ *                double W_dv_2
+ *                double W_dv_3
+ *                double W_dv_4
+ *                double W_dv_5
+ *                double W_dv_6
+ *                double W_act_tilt_el
+ *                double W_act_tilt_az
+ *                double W_act_ailerons
+ *                double b_1_scaled
+ *                double b_2_scaled
+ *                double b_3_scaled
+ *                double b_4_scaled
+ *                double delta_ailerons_scaled
+ *                double desired_el_value
+ *                double desired_az_value
+ *                double desired_phi_value
+ *                double desired_theta_value
+ *                double desired_motor_value
+ *                double desired_ailerons_value
+ *                double dv_global_1
+ *                double dv_global_2
+ *                double dv_global_3
+ *                double dv_global_4
+ *                double dv_global_5
+ *                double dv_global_6
+ *                double flight_path_angle
+ *                double g_1_scaled
+ *                double g_2_scaled
+ *                double g_3_scaled
+ *                double g_4_scaled
+ *                double gain_el
+ *                double gain_az
+ *                double gain_phi
+ *                double gain_theta
+ *                double gain_motor
+ *                double gain_ailerons
+ *                double gamma_quadratic_du
+ *                double l_1
+ *                double l_2
+ *                double l_3
+ *                double l_4
+ *                double l_z
+ *                double m
+ *                double p
+ *                double power_Cd_0
+ *                double power_Cd_a
+ *                double prop_R
+ *                double prop_Cd_0
+ *                double prop_Cl_0
+ *                double prop_Cd_a
+ *                double prop_Cl_a
+ *                double prop_delta
+ *                double prop_sigma
+ *                double prop_theta
+ *                double q
+ *                double r
+ *                double rho
+ *                double wing_span
+ *                double wing_chord
+ *                double gradient_data[]
+ *                int *gradient_size
+ * Return Type  : double
+ */
+double c_compute_cost_and_gradient_w_M(
+    double Beta, double CL_aileron, double Cd_zero, double Cl_alpha,
+    double Cm_zero, double Cm_alpha, double I_xx, double I_yy, double I_zz,
+    double K_Cd, double Omega_1_scaled, double Omega_2_scaled,
+    double Omega_3_scaled, double Omega_4_scaled, double Phi_scaled, double S,
+    double Theta_scaled, double V, double V_scaled, double W_act_phi,
+    double W_act_theta, double W_act_motor, double W_dv_1, double W_dv_2,
+    double W_dv_3, double W_dv_4, double W_dv_5, double W_dv_6,
+    double W_act_tilt_el, double W_act_tilt_az, double W_act_ailerons,
+    double b_1_scaled, double b_2_scaled, double b_3_scaled, double b_4_scaled,
+    double delta_ailerons_scaled, double desired_el_value,
+    double desired_az_value, double desired_phi_value,
+    double desired_theta_value, double desired_motor_value,
+    double desired_ailerons_value, double dv_global_1, double dv_global_2,
+    double dv_global_3, double dv_global_4, double dv_global_5,
+    double dv_global_6, double flight_path_angle, double g_1_scaled,
+    double g_2_scaled, double g_3_scaled, double g_4_scaled, double gain_el,
+    double gain_az, double gain_phi, double gain_theta, double gain_motor,
+    double gain_ailerons, double gamma_quadratic_du, double l_1, double l_2,
+    double l_3, double l_4, double l_z, double m, double p, double power_Cd_0,
+    double power_Cd_a, double prop_R, double prop_Cd_0, double prop_Cl_0,
+    double prop_Cd_a, double prop_Cl_a, double prop_delta, double prop_sigma,
+    double prop_theta, double q, double r, double rho, double wing_span,
+    double wing_chord, double gradient_data[], int *gradient_size)
+{
+  double b_CL_aileron[263];
+  double b_gradient_data[15];
+  double cost;
+  double t10;
+  double t101;
+  double t103;
+  double t104;
+  double t105;
+  double t11;
+  double t110;
+  double t112;
+  double t113;
+  double t118;
+  double t119;
+  double t12;
+  double t120;
+  double t121;
+  double t124;
+  double t126;
+  double t127;
+  double t13;
+  double t134;
+  double t139;
+  double t14;
+  double t140;
+  double t140_tmp;
+  double t150;
+  double t151;
+  double t152;
+  double t153;
+  double t154;
+  double t155;
+  double t156;
+  double t157;
+  double t158;
+  double t159;
+  double t159_tmp;
+  double t16;
+  double t161;
+  double t162;
+  double t163;
+  double t164;
+  double t165;
+  double t166;
+  double t167;
+  double t168;
+  double t17;
+  double t18;
+  double t188;
+  double t188_tmp_tmp;
+  double t19;
+  double t199;
+  double t2;
+  double t20;
+  double t21;
+  double t22;
+  double t220;
+  double t220_tmp;
+  double t23;
+  double t24;
+  double t242;
+  double t242_tmp;
+  double t242_tmp_tmp;
+  double t25;
+  double t26;
+  double t3;
+  double t350;
+  double t351;
+  double t388_tmp;
+  double t389_tmp;
+  double t39;
+  double t390_tmp;
+  double t391_tmp;
+  double t393;
+  double t394;
+  double t395;
+  double t4;
+  double t40;
+  double t408;
+  double t409;
+  double t410;
+  double t411;
+  double t416;
+  double t417;
+  double t418;
+  double t419;
+  double t43;
+  double t47;
+  double t49;
+  double t5;
+  double t50;
+  double t528;
+  double t529;
+  double t53;
+  double t530;
+  double t560;
+  double t561;
+  double t562;
+  double t566;
+  double t58;
+  double t59;
+  double t6;
+  double t60;
+  double t61;
+  double t62;
+  double t67;
+  double t68;
+  double t69;
+  double t7;
+  double t70;
+  double t78;
+  double t79;
+  double t8;
+  double t80;
+  double t81;
+  double t82;
+  double t83;
+  double t84;
+  double t85;
+  double t86;
+  double t87;
+  double t88;
+  double t89;
+  double t9;
+  double t95;
+  double t96;
+  /*     This function was generated by the Symbolic Math Toolbox version 23.2.
+   */
+  /*     23-Apr-2024 13:05:22 */
+  t2 = cos(Beta);
+  t3 = sin(Beta);
+  t4 = log(prop_delta);
+  t5 = Phi_scaled * gain_phi;
+  t6 = Theta_scaled * gain_theta;
+  t7 = b_1_scaled * gain_el;
+  t8 = b_2_scaled * gain_el;
+  t9 = b_3_scaled * gain_el;
+  t10 = b_4_scaled * gain_el;
+  t11 = g_1_scaled * gain_az;
+  t12 = g_2_scaled * gain_az;
+  t13 = g_3_scaled * gain_az;
+  t14 = g_4_scaled * gain_az;
+  t16 = Cl_alpha * Cl_alpha;
+  t17 = Omega_1_scaled * Omega_1_scaled;
+  t18 = rt_powd_snf(Omega_1_scaled, 3.0);
+  t19 = Omega_2_scaled * Omega_2_scaled;
+  t20 = rt_powd_snf(Omega_2_scaled, 3.0);
+  t21 = Omega_3_scaled * Omega_3_scaled;
+  t22 = rt_powd_snf(Omega_3_scaled, 3.0);
+  t23 = Omega_4_scaled * Omega_4_scaled;
+  t24 = rt_powd_snf(Omega_4_scaled, 3.0);
+  t25 = V * V;
+  t26 = V_scaled * V_scaled;
+  t39 = gain_motor * gain_motor;
+  t40 = prop_Cd_a * 2.0;
+  t43 = rt_powd_snf(prop_R, 4.0);
+  t47 = prop_Cd_0 * prop_delta * 2.0;
+  t78 = 1.0 / Omega_1_scaled;
+  t80 = 1.0 / Omega_2_scaled;
+  t83 = 1.0 / Omega_3_scaled;
+  t86 = 1.0 / Omega_4_scaled;
+  t95 = 1.0 / gain_motor;
+  t101 = prop_delta * 16.0;
+  t103 = 1.0 / prop_R;
+  t105 = 1.0 / prop_delta;
+  t49 = cos(t5);
+  t50 = cos(t6);
+  t53 = sin(t5);
+  t58 = cos(t7);
+  t59 = cos(t8);
+  t60 = cos(t9);
+  t61 = cos(t10);
+  t62 = sin(t6);
+  t67 = sin(t7);
+  t68 = sin(t8);
+  t69 = sin(t9);
+  t70 = sin(t10);
+  t79 = 1.0 / t17;
+  t81 = 1.0 / t18;
+  t82 = 1.0 / t19;
+  t84 = 1.0 / t20;
+  t85 = 1.0 / t21;
+  t87 = 1.0 / t22;
+  t88 = 1.0 / t23;
+  t89 = 1.0 / t24;
+  t96 = 1.0 / t39;
+  t104 = t103 * t103;
+  t566 = prop_Cl_0 * prop_delta;
+  t110 = t566 * (prop_delta + 1.0);
+  t112 = desired_el_value * (1.0 / gain_el);
+  t113 = desired_az_value * (1.0 / gain_az);
+  t139 = prop_delta * prop_sigma * -prop_Cl_a * (prop_delta - 1.0);
+  t140_tmp = prop_Cl_a * prop_sigma;
+  t140 = t140_tmp * (prop_delta - 1.0) / 8.0;
+  t5 = ((t6 + t7) - flight_path_angle) + 1.5707963267948966;
+  t7 = ((t6 + t8) - flight_path_angle) + 1.5707963267948966;
+  t8 = ((t6 + t9) - flight_path_angle) + 1.5707963267948966;
+  t9 = ((t6 + t10) - flight_path_angle) + 1.5707963267948966;
+  t118 = t58 * t58;
+  t119 = t59 * t59;
+  t120 = t60 * t60;
+  t121 = t61 * t61;
+  t124 = flight_path_angle - t6;
+  t10 = t110 * 8.0;
+  t134 = power_Cd_0 * prop_delta + power_Cd_a * (prop_theta * prop_theta);
+  t151 = cos(t5);
+  t152 = cos(t7);
+  t153 = cos(t8);
+  t154 = cos(t9);
+  t155 = sin(t5);
+  t156 = sin(t7);
+  t157 = sin(t8);
+  t158 = sin(t9);
+  t126 = cos(t124);
+  t127 = sin(t124);
+  t161 = t151 * t151;
+  t162 = t152 * t152;
+  t163 = t153 * t153;
+  t164 = t154 * t154;
+  t165 = t155 * t155;
+  t166 = t156 * t156;
+  t167 = t157 * t157;
+  t168 = t158 * t158;
+  t7 = Cl_alpha * S;
+  t159_tmp = t7 * gain_theta * rho * t25;
+  t159 = t159_tmp * t126 / 2.0;
+  t220_tmp = prop_Cl_a * prop_theta * t25;
+  t220 = t220_tmp * t81 * t96 * t104 * t165 * 2.0;
+  t242_tmp_tmp = t566 * t4;
+  t242_tmp = t242_tmp_tmp * t25;
+  t242 = t242_tmp * t81 * t96 * t104 * t165 * 2.0;
+  t150 = Cd_zero + K_Cd * t16 * (t124 * t124);
+  t188_tmp_tmp = S * rho;
+  t5 = t188_tmp_tmp * t2 * t25;
+  t188 = t5 * t127 * t150 / 2.0;
+  t199 = t5 * t126 * t150 / 2.0;
+  t5 = t7 * rho * t25 * t124;
+  t350 = t5 * t126 / 2.0 + t188;
+  t351 = t5 * t127 / 2.0 - t199;
+  t388_tmp = t25 * t79 * t96 * t104;
+  t6 = V * prop_Cl_a * prop_sigma;
+  t566 = prop_Cl_0 * prop_sigma * t4 * t25;
+  t5 = prop_sigma * (prop_delta - 1.0) * t105;
+  t7 = sqrt(
+      ((t388_tmp * t161 * 16.0 +
+        t6 * t78 * t95 * (prop_delta - 1.0) * t103 * t151 * 8.0) +
+       t566 * t79 * t96 * t104 * t165 * -8.0) -
+      t5 * (t10 +
+            prop_Cl_a * (t139 + prop_theta * (t101 + t388_tmp * t165 * 8.0))));
+  t389_tmp = t25 * t82 * t96 * t104;
+  t8 = sqrt(
+      ((t389_tmp * t162 * 16.0 +
+        t6 * t80 * t95 * (prop_delta - 1.0) * t103 * t152 * 8.0) +
+       t566 * t82 * t96 * t104 * t166 * -8.0) -
+      t5 * (t10 +
+            prop_Cl_a * (t139 + prop_theta * (t101 + t389_tmp * t166 * 8.0))));
+  t390_tmp = t25 * t85 * t96 * t104;
+  t9 = sqrt(
+      ((t390_tmp * t163 * 16.0 +
+        t6 * t83 * t95 * (prop_delta - 1.0) * t103 * t153 * 8.0) +
+       t566 * t85 * t96 * t104 * t167 * -8.0) -
+      t5 * (t10 +
+            prop_Cl_a * (t139 + prop_theta * (t101 + t390_tmp * t167 * 8.0))));
+  t391_tmp = t25 * t88 * t96 * t104;
+  t5 = sqrt(
+      ((t391_tmp * t164 * 16.0 +
+        t6 * t86 * t95 * (prop_delta - 1.0) * t103 * t154 * 8.0) +
+       t566 * t88 * t96 * t104 * t168 * -8.0) -
+      t5 * (t10 +
+            prop_Cl_a * (t139 + prop_theta * (t101 + t391_tmp * t168 * 8.0))));
+  t139 = 1.0 / t7;
+  t393 = 1.0 / t8;
+  t394 = 1.0 / t9;
+  t395 = 1.0 / t5;
+  t408 = (t140 + V * t78 * t95 * t103 * t151 / 2.0) + t7 / 8.0;
+  t409 = (t140 + V * t80 * t95 * t103 * t152 / 2.0) + t8 / 8.0;
+  t410 = (t140 + V * t83 * t95 * t103 * t153 / 2.0) + t9 / 8.0;
+  t411 = (t140 + V * t86 * t95 * t103 * t154 / 2.0) + t5 / 8.0;
+  t416 = -prop_theta + t408;
+  t417 = -prop_theta + t409;
+  t418 = -prop_theta + t410;
+  t419 = -prop_theta + t411;
+  t5 = t140_tmp * prop_theta * t25;
+  t528 = V * t79 * t95 * t103 * t151 / 2.0 +
+         (((t25 * t81 * t96 * t104 * t161 * 32.0 +
+            t6 * t79 * t95 * (prop_delta - 1.0) * t103 * t151 * 8.0) -
+           t566 * t81 * t96 * t104 * t165 * 16.0) -
+          t5 * t81 * t96 * (prop_delta - 1.0) * t104 * t105 * t165 * 16.0) *
+             t139 / 16.0;
+  t529 = V * t82 * t95 * t103 * t152 / 2.0 +
+         (((t25 * t84 * t96 * t104 * t162 * 32.0 +
+            t6 * t82 * t95 * (prop_delta - 1.0) * t103 * t152 * 8.0) -
+           t566 * t84 * t96 * t104 * t166 * 16.0) -
+          t5 * t84 * t96 * (prop_delta - 1.0) * t104 * t105 * t166 * 16.0) *
+             t393 / 16.0;
+  t530 = V * t85 * t95 * t103 * t153 / 2.0 +
+         (((t25 * t87 * t96 * t104 * t163 * 32.0 +
+            t6 * t85 * t95 * (prop_delta - 1.0) * t103 * t153 * 8.0) -
+           t566 * t87 * t96 * t104 * t167 * 16.0) -
+          t5 * t87 * t96 * (prop_delta - 1.0) * t104 * t105 * t167 * 16.0) *
+             t394 / 16.0;
+  t164 = V * t88 * t95 * t103 * t154 / 2.0 +
+         (((t25 * t89 * t96 * t104 * t164 * 32.0 +
+            t6 * t88 * t95 * (prop_delta - 1.0) * t103 * t154 * 8.0) -
+           t566 * t89 * t96 * t104 * t168 * 16.0) -
+          t5 * t89 * t96 * (prop_delta - 1.0) * t104 * t105 * t168 * 16.0) *
+             t395 / 16.0;
+  t5 = V * gain_el;
+  t7 = t5 * prop_Cl_a * prop_sigma;
+  t8 = gain_el * t25;
+  t140 = gain_el * prop_Cl_0;
+  t9 = t140 * prop_sigma * t4 * t25;
+  t140_tmp = gain_el * prop_Cl_a;
+  t10 = t140_tmp * prop_sigma * prop_theta * t25;
+  t560 = t5 * t78 * t95 * t103 * t155 / 2.0 +
+         t139 *
+             (((t7 * t78 * t95 * (prop_delta - 1.0) * t103 * t155 * 8.0 +
+                t8 * t79 * t96 * t104 * t151 * t155 * 32.0) +
+               t9 * t79 * t96 * t104 * t151 * t155 * 16.0) +
+              t10 * t79 * t96 * (prop_delta - 1.0) * t104 * t105 * t151 * t155 *
+                  16.0) /
+             16.0;
+  t561 = t5 * t80 * t95 * t103 * t156 / 2.0 +
+         t393 *
+             (((t7 * t80 * t95 * (prop_delta - 1.0) * t103 * t156 * 8.0 +
+                t8 * t82 * t96 * t104 * t152 * t156 * 32.0) +
+               t9 * t82 * t96 * t104 * t152 * t156 * 16.0) +
+              t10 * t82 * t96 * (prop_delta - 1.0) * t104 * t105 * t152 * t156 *
+                  16.0) /
+             16.0;
+  t562 = t5 * t83 * t95 * t103 * t157 / 2.0 +
+         t394 *
+             (((t7 * t83 * t95 * (prop_delta - 1.0) * t103 * t157 * 8.0 +
+                t8 * t85 * t96 * t104 * t153 * t157 * 32.0) +
+               t9 * t85 * t96 * t104 * t153 * t157 * 16.0) +
+              t10 * t85 * t96 * (prop_delta - 1.0) * t104 * t105 * t153 * t157 *
+                  16.0) /
+             16.0;
+  t162 = t5 * t86 * t95 * t103 * t158 / 2.0 +
+         t395 *
+             (((t7 * t86 * t95 * (prop_delta - 1.0) * t103 * t158 * 8.0 +
+                t8 * t88 * t96 * t104 * t154 * t158 * 32.0) +
+               t9 * t88 * t96 * t104 * t154 * t158 * 16.0) +
+              t10 * t88 * t96 * (prop_delta - 1.0) * t104 * t105 * t154 * t158 *
+                  16.0) /
+             16.0;
+  t5 = V * gain_theta;
+  t7 = t5 * prop_Cl_a * prop_sigma;
+  t8 = gain_theta * t25;
+  t161 = gain_theta * prop_Cl_0;
+  t9 = t161 * prop_sigma * t4 * t25;
+  t163 = gain_theta * prop_Cl_a;
+  t10 = t163 * prop_sigma * prop_theta * t25;
+  t101 = t5 * t78 * t95 * t103 * t155 / 2.0 +
+         t139 *
+             (((t7 * t78 * t95 * (prop_delta - 1.0) * t103 * t155 * 8.0 +
+                t8 * t79 * t96 * t104 * t151 * t155 * 32.0) +
+               t9 * t79 * t96 * t104 * t151 * t155 * 16.0) +
+              t10 * t79 * t96 * (prop_delta - 1.0) * t104 * t105 * t151 * t155 *
+                  16.0) /
+             16.0;
+  t139 = t5 * t80 * t95 * t103 * t156 / 2.0 +
+         t393 *
+             (((t7 * t80 * t95 * (prop_delta - 1.0) * t103 * t156 * 8.0 +
+                t8 * t82 * t96 * t104 * t152 * t156 * 32.0) +
+               t9 * t82 * t96 * t104 * t152 * t156 * 16.0) +
+              t10 * t82 * t96 * (prop_delta - 1.0) * t104 * t105 * t152 * t156 *
+                  16.0) /
+             16.0;
+  t566 = t5 * t83 * t95 * t103 * t157 / 2.0 +
+         t394 *
+             (((t7 * t83 * t95 * (prop_delta - 1.0) * t103 * t157 * 8.0 +
+                t8 * t85 * t96 * t104 * t153 * t157 * 32.0) +
+               t9 * t85 * t96 * t104 * t153 * t157 * 16.0) +
+              t10 * t85 * t96 * (prop_delta - 1.0) * t104 * t105 * t153 * t157 *
+                  16.0) /
+             16.0;
+  t9 = t5 * t86 * t95 * t103 * t158 / 2.0 +
+       t395 *
+           (((t7 * t86 * t95 * (prop_delta - 1.0) * t103 * t158 * 8.0 +
+              t8 * t88 * t96 * t104 * t154 * t158 * 32.0) +
+             t9 * t88 * t96 * t104 * t154 * t158 * 16.0) +
+            t10 * t88 * t96 * (prop_delta - 1.0) * t104 * t105 * t154 * t158 *
+                16.0) /
+           16.0;
+  t10 = prop_Cl_a * prop_delta;
+  t6 = t10 * t528 * 2.0;
+  b_CL_aileron[0] = CL_aileron;
+  b_CL_aileron[1] = Cm_alpha;
+  b_CL_aileron[2] = K_Cd;
+  b_CL_aileron[3] = Omega_1_scaled;
+  b_CL_aileron[4] = Omega_2_scaled;
+  b_CL_aileron[5] = Omega_3_scaled;
+  b_CL_aileron[6] = Omega_4_scaled;
+  b_CL_aileron[7] = Phi_scaled;
+  b_CL_aileron[8] = S;
+  b_CL_aileron[9] = Theta_scaled;
+  b_CL_aileron[10] = V;
+  b_CL_aileron[11] = b_1_scaled;
+  b_CL_aileron[12] = b_2_scaled;
+  b_CL_aileron[13] = b_3_scaled;
+  b_CL_aileron[14] = b_4_scaled;
+  b_CL_aileron[15] = delta_ailerons_scaled;
+  b_CL_aileron[16] = desired_ailerons_value;
+  b_CL_aileron[17] = desired_phi_value;
+  b_CL_aileron[18] = desired_theta_value;
+  b_CL_aileron[19] = dv_global_1;
+  b_CL_aileron[20] = dv_global_2;
+  b_CL_aileron[21] = dv_global_3;
+  b_CL_aileron[22] = dv_global_4;
+  b_CL_aileron[23] = dv_global_5;
+  b_CL_aileron[24] = dv_global_6;
+  b_CL_aileron[25] = g_1_scaled;
+  b_CL_aileron[26] = g_2_scaled;
+  b_CL_aileron[27] = g_3_scaled;
+  b_CL_aileron[28] = g_4_scaled;
+  b_CL_aileron[29] = gain_ailerons;
+  b_CL_aileron[30] = gain_az;
+  b_CL_aileron[31] = gain_el;
+  b_CL_aileron[32] = gain_motor;
+  b_CL_aileron[33] = gain_phi;
+  b_CL_aileron[34] = gain_theta;
+  b_CL_aileron[35] = gamma_quadratic_du;
+  b_CL_aileron[36] = l_1;
+  b_CL_aileron[37] = l_2;
+  b_CL_aileron[38] = l_3;
+  b_CL_aileron[39] = l_4;
+  b_CL_aileron[40] = l_z;
+  b_CL_aileron[41] = power_Cd_a;
+  b_CL_aileron[42] = prop_Cl_0;
+  b_CL_aileron[43] = prop_Cl_a;
+  b_CL_aileron[44] = prop_sigma;
+  b_CL_aileron[45] = prop_theta;
+  b_CL_aileron[46] = rho;
+  b_CL_aileron[47] = prop_delta - 1.0;
+  b_CL_aileron[48] = t104;
+  b_CL_aileron[49] = t105;
+  b_CL_aileron[50] = 1.5707963267948966;
+  b_CL_aileron[51] = t110;
+  b_CL_aileron[52] = desired_motor_value * t95;
+  b_CL_aileron[53] = -(I_zz * p * r);
+  b_CL_aileron[54] = -(I_yy * q * r);
+  b_CL_aileron[55] = t118;
+  b_CL_aileron[56] = t119;
+  b_CL_aileron[57] = t120;
+  b_CL_aileron[58] = t121;
+  b_CL_aileron[59] = t124;
+  b_CL_aileron[60] = -t112;
+  b_CL_aileron[61] = -(t112 * 2.0);
+  b_CL_aileron[62] = -t113;
+  b_CL_aileron[63] = -(t113 * 2.0);
+  b_CL_aileron[64] = t134;
+  b_CL_aileron[65] =
+      power_Cd_0 * ((prop_delta + 1.0) + prop_delta * prop_delta) * 2.0;
+  b_CL_aileron[66] = prop_delta / 6.0 - 0.16666666666666666;
+  b_CL_aileron[67] = -(CL_aileron * S * delta_ailerons_scaled * gain_ailerons *
+                       rho * t25 / 2.0);
+  b_CL_aileron[68] = t150;
+  b_CL_aileron[69] = t151;
+  b_CL_aileron[70] = t152;
+  b_CL_aileron[71] = t153;
+  b_CL_aileron[72] = t154;
+  b_CL_aileron[73] = t155;
+  b_CL_aileron[74] = t156;
+  b_CL_aileron[75] = t157;
+  b_CL_aileron[76] = t158;
+  b_CL_aileron[77] = t16;
+  b_CL_aileron[78] = t165;
+  b_CL_aileron[79] = t166;
+  b_CL_aileron[80] = t167;
+  b_CL_aileron[81] = t168;
+  b_CL_aileron[82] = t17;
+  t8 = t188_tmp_tmp * t25;
+  b_CL_aileron[83] = -(t8 * (Cm_zero - Cm_alpha * t124) * wing_chord / 2.0);
+  t7 = t188_tmp_tmp * t3 * t25;
+  b_CL_aileron[84] = t7 * t49 * t150 / 2.0;
+  b_CL_aileron[85] = t18;
+  b_CL_aileron[86] = t7 * t50 * t53 * t150 / 2.0;
+  b_CL_aileron[87] = t19;
+  b_CL_aileron[88] = t20;
+  b_CL_aileron[89] = -(t7 * t53 * t62 * t150 / 2.0);
+  b_CL_aileron[90] = t220_tmp * t79 * t96 * t104 * t165;
+  b_CL_aileron[91] = t220_tmp * t82 * t96 * t104 * t166;
+  b_CL_aileron[92] = t220_tmp * t85 * t96 * t104 * t167;
+  b_CL_aileron[93] = t220_tmp * t88 * t96 * t104 * t168;
+  b_CL_aileron[94] = t21;
+  b_CL_aileron[95] = t22;
+  b_CL_aileron[96] = t220;
+  b_CL_aileron[97] = t220_tmp * t84 * t96 * t104 * t166 * 2.0;
+  b_CL_aileron[98] = t220_tmp * t87 * t96 * t104 * t167 * 2.0;
+  b_CL_aileron[99] = t220_tmp * t89 * t96 * t104 * t168 * 2.0;
+  b_CL_aileron[100] = t242_tmp * t79 * t96 * t104 * t165;
+  b_CL_aileron[101] = t242_tmp * t82 * t96 * t104 * t166;
+  b_CL_aileron[102] = t242_tmp * t85 * t96 * t104 * t167;
+  b_CL_aileron[103] = t242_tmp * t88 * t96 * t104 * t168;
+  b_CL_aileron[104] = t23;
+  b_CL_aileron[105] = t24;
+  b_CL_aileron[106] = t242;
+  b_CL_aileron[107] = t242_tmp * t84 * t96 * t104 * t166 * 2.0;
+  b_CL_aileron[108] = t242_tmp * t87 * t96 * t104 * t167 * 2.0;
+  b_CL_aileron[109] = t242_tmp * t89 * t96 * t104 * t168 * 2.0;
+  b_CL_aileron[110] = t25;
+  b_CL_aileron[111] = t26;
+  b_CL_aileron[112] = W_act_phi * W_act_phi;
+  b_CL_aileron[113] = W_act_theta * W_act_theta;
+  b_CL_aileron[114] = W_act_motor * W_act_motor;
+  b_CL_aileron[115] = t3;
+  b_CL_aileron[116] = W_dv_1 * W_dv_1;
+  b_CL_aileron[117] = t388_tmp * t105 * t134 * t165 * 3.0;
+  b_CL_aileron[118] = t389_tmp * t105 * t134 * t166 * 3.0;
+  b_CL_aileron[119] = t390_tmp * t105 * t134 * t167 * 3.0;
+  b_CL_aileron[120] = t391_tmp * t105 * t134 * t168 * 3.0;
+  b_CL_aileron[121] = W_dv_2 * W_dv_2;
+  b_CL_aileron[122] = W_dv_3 * W_dv_3;
+  b_CL_aileron[123] = W_dv_4 * W_dv_4;
+  t7 = t140 * prop_delta * t4 * t25;
+  b_CL_aileron[124] = t7 * t79 * t96 * t104 * t151 * t155 * 2.0;
+  b_CL_aileron[125] = t7 * t82 * t96 * t104 * t152 * t156 * 2.0;
+  b_CL_aileron[126] = t7 * t85 * t96 * t104 * t153 * t157 * 2.0;
+  b_CL_aileron[127] = t7 * t88 * t96 * t104 * t154 * t158 * 2.0;
+  t7 = t161 * prop_delta * t4 * t25;
+  b_CL_aileron[128] = t7 * t79 * t96 * t104 * t151 * t155 * 2.0;
+  b_CL_aileron[129] = t7 * t82 * t96 * t104 * t152 * t156 * 2.0;
+  b_CL_aileron[130] = t7 * t85 * t96 * t104 * t153 * t157 * 2.0;
+  b_CL_aileron[131] = t7 * t88 * t96 * t104 * t154 * t158 * 2.0;
+  b_CL_aileron[132] = W_dv_5 * W_dv_5;
+  b_CL_aileron[133] = W_dv_6 * W_dv_6;
+  b_CL_aileron[134] = t350;
+  b_CL_aileron[135] = W_act_tilt_el * W_act_tilt_el;
+  b_CL_aileron[136] = t53 * t350;
+  b_CL_aileron[137] = t50 * t351;
+  b_CL_aileron[138] = t62 * t351;
+  b_CL_aileron[139] = t49 * t62 * t350;
+  b_CL_aileron[140] = -(t49 * t50 * t350);
+  b_CL_aileron[141] = W_act_tilt_az * W_act_tilt_az;
+  t7 = K_Cd * S * gain_theta * rho * t2 * t16 * t25 * t124;
+  b_CL_aileron[142] =
+      ((t159 + t159_tmp * t124 * t127 * -0.5) + t7 * t127) + gain_theta * t199;
+  b_CL_aileron[143] =
+      ((t159_tmp * t127 / 2.0 + t124 * t159) - t7 * t126) + gain_theta * t188;
+  b_CL_aileron[144] = W_act_ailerons * W_act_ailerons;
+  b_CL_aileron[145] = t39;
+  b_CL_aileron[146] = t40;
+  b_CL_aileron[147] = prop_delta + 1.0;
+  b_CL_aileron[148] = prop_Cl_a * t408 * 6.0;
+  b_CL_aileron[149] = prop_Cl_a * t409 * 6.0;
+  b_CL_aileron[150] = prop_Cl_a * t410 * 6.0;
+  b_CL_aileron[151] = prop_Cl_a * t411 * 6.0;
+  b_CL_aileron[152] = t416;
+  b_CL_aileron[153] = t417;
+  b_CL_aileron[154] = t418;
+  b_CL_aileron[155] = t419;
+  b_CL_aileron[156] = rt_powd_snf(prop_R, 3.0);
+  b_CL_aileron[157] = t242_tmp_tmp * t408;
+  b_CL_aileron[158] = t242_tmp_tmp * t409;
+  b_CL_aileron[159] = t242_tmp_tmp * t410;
+  b_CL_aileron[160] = t242_tmp_tmp * t411;
+  t7 = prop_Cl_0 * (prop_delta + 1.0);
+  b_CL_aileron[161] = t7 * t408 * 3.0;
+  b_CL_aileron[162] = t7 * t409 * 3.0;
+  b_CL_aileron[163] = t7 * t410 * 3.0;
+  b_CL_aileron[164] = t7 * t411 * 3.0;
+  b_CL_aileron[165] = t43;
+  b_CL_aileron[166] = -(power_Cd_a * t416 * 6.0);
+  b_CL_aileron[167] = -(power_Cd_a * t417 * 6.0);
+  b_CL_aileron[168] = -(power_Cd_a * t418 * 6.0);
+  b_CL_aileron[169] = -(power_Cd_a * t419 * 6.0);
+  b_CL_aileron[170] = rt_powd_snf(prop_R, 5.0);
+  b_CL_aileron[171] = -(t10 * t416 * 2.0);
+  b_CL_aileron[172] = -(t10 * t417 * 2.0);
+  b_CL_aileron[173] = -(t10 * t418 * 2.0);
+  b_CL_aileron[174] = -(t10 * t419 * 2.0);
+  t7 = prop_Cl_a - t40;
+  t5 = prop_Cd_a * prop_theta * 2.0;
+  b_CL_aileron[175] = t47 + prop_theta * (t408 * t7 + t5);
+  b_CL_aileron[176] = t47 + prop_theta * (t409 * t7 + t5);
+  b_CL_aileron[177] = t47 + prop_theta * (t410 * t7 + t5);
+  b_CL_aileron[178] = t47 + prop_theta * (t411 * t7 + t5);
+  b_CL_aileron[179] = t49;
+  b_CL_aileron[180] = t50;
+  t5 = I_xx * p;
+  b_CL_aileron[181] = t5 * q;
+  b_CL_aileron[182] = I_yy * p * q;
+  b_CL_aileron[183] = t528;
+  b_CL_aileron[184] = t529;
+  b_CL_aileron[185] = t53;
+  b_CL_aileron[186] = t530;
+  b_CL_aileron[187] = t164;
+  b_CL_aileron[188] = t6;
+  b_CL_aileron[189] = t10 * t529 * 2.0;
+  b_CL_aileron[190] = t10 * t530 * 2.0;
+  b_CL_aileron[191] = t10 * t164 * 2.0;
+  b_CL_aileron[192] = t242_tmp_tmp * t528;
+  b_CL_aileron[193] = t242_tmp_tmp * t529;
+  b_CL_aileron[194] = t242_tmp_tmp * t530;
+  b_CL_aileron[195] = t242_tmp_tmp * t164;
+  b_CL_aileron[196] = t5 * r;
+  t5 = prop_theta * (prop_delta - 1.0);
+  b_CL_aileron[197] = t5 * t528 * t7;
+  b_CL_aileron[198] = t5 * t529 * t7;
+  b_CL_aileron[199] = t5 * t530 * t7;
+  b_CL_aileron[200] = t5 * t164 * t7;
+  b_CL_aileron[201] = t560;
+  b_CL_aileron[202] = t561;
+  b_CL_aileron[203] = t562;
+  b_CL_aileron[204] = t162;
+  b_CL_aileron[205] = t101;
+  b_CL_aileron[206] = t139;
+  b_CL_aileron[207] = t566;
+  b_CL_aileron[208] = t9;
+  b_CL_aileron[209] = I_zz * q * r;
+  b_CL_aileron[210] = t58;
+  b_CL_aileron[211] = t242_tmp_tmp * t560;
+  b_CL_aileron[212] = t242_tmp_tmp * t561;
+  b_CL_aileron[213] = t242_tmp_tmp * t562;
+  b_CL_aileron[214] = t242_tmp_tmp * t162;
+  b_CL_aileron[215] = t242_tmp_tmp * t101;
+  b_CL_aileron[216] = t242_tmp_tmp * t139;
+  b_CL_aileron[217] = t242_tmp_tmp * t566;
+  b_CL_aileron[218] = t242_tmp_tmp * t9;
+  b_CL_aileron[219] = t59;
+  b_CL_aileron[220] = t60;
+  b_CL_aileron[221] = t61;
+  t7 = t140_tmp * prop_theta * t25;
+  b_CL_aileron[222] =
+      t7 * t79 * t96 * t104 * t151 * t155 * 2.0 + t10 * t560 * 2.0;
+  b_CL_aileron[223] =
+      t7 * t82 * t96 * t104 * t152 * t156 * 2.0 + t10 * t561 * 2.0;
+  b_CL_aileron[224] =
+      t7 * t85 * t96 * t104 * t153 * t157 * 2.0 + t10 * t562 * 2.0;
+  b_CL_aileron[225] =
+      t7 * t88 * t96 * t104 * t154 * t158 * 2.0 + t10 * t162 * 2.0;
+  t7 = t163 * prop_theta * t25;
+  b_CL_aileron[226] =
+      t7 * t79 * t96 * t104 * t151 * t155 * 2.0 + t10 * t101 * 2.0;
+  b_CL_aileron[227] =
+      t7 * t82 * t96 * t104 * t152 * t156 * 2.0 + t10 * t139 * 2.0;
+  b_CL_aileron[228] =
+      t7 * t85 * t96 * t104 * t153 * t157 * 2.0 + t10 * t566 * 2.0;
+  b_CL_aileron[229] =
+      t7 * t88 * t96 * t104 * t154 * t158 * 2.0 + t10 * t9 * 2.0;
+  b_CL_aileron[230] = t62;
+  b_CL_aileron[231] = prop_sigma * rho * t17 * t39 * t43 * t67 * t105 *
+                      3.1415926535897931 *
+                      (t242 + (prop_delta - 1.0) * (t220 - t6)) * -0.25;
+  b_CL_aileron[232] = cos(t11);
+  b_CL_aileron[233] = cos(t12);
+  t7 = Omega_2_scaled * t69;
+  t5 = Omega_1_scaled * t70;
+  b_CL_aileron[234] =
+      t8 *
+      (((((((((((Omega_1_scaled * t58 * 0.01228634392023026 -
+                 Omega_2_scaled * t59 * 0.01228634392023026) +
+                t17 * t58 * 0.0075456152077779167) +
+               Omega_2_scaled * t26 * t59 * 0.020516396677824081) -
+              t19 * t59 * 0.0075456152077779167) -
+             Omega_1_scaled * t26 * t58 * 0.020516396677824081) +
+            t7 * t120 * 0.0064381447596962606) +
+           t7 * t119 * 0.0039349871274520724) +
+          Omega_1_scaled * t67 * t121 * 0.0046429750925043979) -
+         t5 * t121 * 0.0064381447596962606) -
+        t5 * t118 * 0.0039349871274520724) -
+       Omega_2_scaled * t68 * t120 * 0.0046429750925043979) *
+      wing_span / 2.0;
+  b_CL_aileron[235] = cos(t13);
+  b_CL_aileron[236] = cos(t14);
+  b_CL_aileron[237] = t67;
+  b_CL_aileron[238] = t68;
+  b_CL_aileron[239] = t69;
+  b_CL_aileron[240] = t70;
+  b_CL_aileron[241] = sin(t11);
+  b_CL_aileron[242] = sin(t12);
+  b_CL_aileron[243] = sin(t13);
+  b_CL_aileron[244] = sin(t14);
+  b_CL_aileron[245] = 1.0 / I_xx;
+  b_CL_aileron[246] = 1.0 / I_yy;
+  b_CL_aileron[247] = 1.0 / I_zz;
+  b_CL_aileron[248] = t79;
+  b_CL_aileron[249] = t81;
+  b_CL_aileron[250] = t82;
+  b_CL_aileron[251] = t84;
+  b_CL_aileron[252] = t85;
+  b_CL_aileron[253] = t87;
+  b_CL_aileron[254] = t88;
+  b_CL_aileron[255] = t89;
+  b_CL_aileron[256] = 1.0 / gain_phi;
+  b_CL_aileron[257] = 1.0 / gain_theta;
+  b_CL_aileron[258] = t96;
+  b_CL_aileron[259] = 1.0 / gain_ailerons;
+  b_CL_aileron[260] = 1.0 / m;
+  b_CL_aileron[261] = wing_chord;
+  b_CL_aileron[262] = wing_span;
+  cost = ft_1(b_CL_aileron, b_gradient_data, gradient_size);
+  if (*gradient_size - 1 >= 0) {
+    memcpy(&gradient_data[0], &b_gradient_data[0],
+           (unsigned int)*gradient_size * sizeof(double));
+  }
+  return cost;
+}
+
+/*
+ * File trailer for compute_cost_and_gradient_w_Mx_noah.c
  *
  * [EOF]
  */

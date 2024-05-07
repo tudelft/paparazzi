@@ -5,14 +5,14 @@
  * File: iterate.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef ITERATE_H
 #define ITERATE_H
 
 /* Include Files */
-#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
+#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,16 +22,9 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-void b_iterate(const double H[169], const double f[14], n_struct_T *solution,
-               k_struct_T *memspace, o_struct_T *workingset,
-               i_struct_T *qrmanager, j_struct_T *cholmanager,
-               c_struct_T *objective, const char options_SolverName[7],
-               double options_StepTolerance, double options_ObjectiveLimit,
-               int runTimeOptions_MaxIterations);
-
-void iterate(const double H[225], const double f[16], l_struct_T *solution,
-             h_struct_T *memspace, m_struct_T *workingset,
-             f_struct_T *qrmanager, g_struct_T *cholmanager,
+void iterate(const double H[225], const double f[16], h_struct_T *solution,
+             f_struct_T *memspace, i_struct_T *workingset,
+             d_struct_T *qrmanager, e_struct_T *cholmanager,
              struct_T *objective, const char options_SolverName[7],
              double options_StepTolerance, double options_ObjectiveLimit,
              int runTimeOptions_MaxIterations);

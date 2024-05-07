@@ -5,7 +5,7 @@
  * File: norm.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 /* Include Files */
@@ -16,10 +16,38 @@
 
 /* Function Definitions */
 /*
+ * Arguments    : const double x[15]
+ * Return Type  : double
+ */
+double b_norm(const double x[15])
+{
+  double scale;
+  double y;
+  int k;
+  y = 0.0;
+  scale = 3.3121686421112381E-170;
+  for (k = 0; k < 15; k++) {
+    double absxk;
+    absxk = fabs(x[k]);
+    if (absxk > scale) {
+      double t;
+      t = scale / absxk;
+      y = y * t * t + 1.0;
+      scale = absxk;
+    } else {
+      double t;
+      t = absxk / scale;
+      y += t * t;
+    }
+  }
+  return scale * sqrt(y);
+}
+
+/*
  * Arguments    : const double x[6]
  * Return Type  : double
  */
-double b_norm(const double x[6])
+double c_norm(const double x[6])
 {
   double scale;
   double y;

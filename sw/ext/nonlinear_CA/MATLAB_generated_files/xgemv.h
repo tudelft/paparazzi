@@ -5,7 +5,7 @@
  * File: xgemv.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef XGEMV_H
@@ -21,14 +21,8 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-void b_xgemv(int m, int n, const double A[169], int lda, const double x[14],
-             double y[13]);
-
-void c_xgemv(int m, int n, const double A[961], const double x[16],
+void b_xgemv(int m, int n, const double A[961], const double x[16],
              double y[496]);
-
-void d_xgemv(int m, int n, const double A[729], const double x[14],
-             double y[378]);
 
 void xgemv(int m, int n, const double A[225], int lda, const double x[16],
            double y[15]);

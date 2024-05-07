@@ -5,14 +5,14 @@
  * File: test_exit.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef TEST_EXIT_H
 #define TEST_EXIT_H
 
 /* Include Files */
-#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
+#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,24 +22,13 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-void b_test_exit(q_struct_T *Flags, h_struct_T *memspace,
-                 b_struct_T *MeritFunction, const m_struct_T *WorkingSet,
-                 l_struct_T *TrialState, f_struct_T *QRManager,
+void b_test_exit(k_struct_T *Flags, f_struct_T *memspace,
+                 b_struct_T *MeritFunction, const i_struct_T *WorkingSet,
+                 h_struct_T *TrialState, d_struct_T *QRManager,
                  const double lb[15], const double ub[15]);
 
-bool c_test_exit(b_struct_T *MeritFunction, const o_struct_T *WorkingSet,
-                 n_struct_T *TrialState, const double lb[13],
-                 const double ub[13], bool *Flags_fevalOK, bool *Flags_done,
-                 bool *Flags_stepAccepted, bool *Flags_failedLineSearch,
-                 int *Flags_stepType);
-
-void d_test_exit(q_struct_T *Flags, k_struct_T *memspace,
-                 b_struct_T *MeritFunction, const o_struct_T *WorkingSet,
-                 n_struct_T *TrialState, i_struct_T *QRManager,
-                 const double lb[13], const double ub[13]);
-
-bool test_exit(b_struct_T *MeritFunction, const m_struct_T *WorkingSet,
-               l_struct_T *TrialState, const double lb[15], const double ub[15],
+bool test_exit(b_struct_T *MeritFunction, const i_struct_T *WorkingSet,
+               h_struct_T *TrialState, const double lb[15], const double ub[15],
                bool *Flags_fevalOK, bool *Flags_done, bool *Flags_stepAccepted,
                bool *Flags_failedLineSearch, int *Flags_stepType);
 

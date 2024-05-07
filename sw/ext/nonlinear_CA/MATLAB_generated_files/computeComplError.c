@@ -5,7 +5,7 @@
  * File: computeComplError.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 /* Include Files */
@@ -15,53 +15,6 @@
 #include <string.h>
 
 /* Function Definitions */
-/*
- * Arguments    : const double xCurrent[13]
- *                const int finiteLB[14]
- *                int mLB
- *                const double lb[13]
- *                const int finiteUB[14]
- *                int mUB
- *                const double ub[13]
- *                const double lambda[27]
- *                int iL0
- * Return Type  : double
- */
-double b_computeComplError(const double xCurrent[13], const int finiteLB[14],
-                           int mLB, const double lb[13], const int finiteUB[14],
-                           int mUB, const double ub[13],
-                           const double lambda[27], int iL0)
-{
-  double nlpComplError;
-  int idx;
-  nlpComplError = 0.0;
-  if (mLB + mUB > 0) {
-    double lbDelta;
-    double lbLambda;
-    int i;
-    int i1;
-    int ubOffset;
-    ubOffset = (iL0 + mLB) - 1;
-    i = (unsigned char)mLB;
-    for (idx = 0; idx < i; idx++) {
-      i1 = finiteLB[idx];
-      lbDelta = xCurrent[i1 - 1] - lb[i1 - 1];
-      lbLambda = lambda[(iL0 + idx) - 1];
-      nlpComplError = fmax(nlpComplError, fmin(fabs(lbDelta * lbLambda),
-                                               fmin(fabs(lbDelta), lbLambda)));
-    }
-    i = (unsigned char)mUB;
-    for (idx = 0; idx < i; idx++) {
-      i1 = finiteUB[idx];
-      lbDelta = ub[i1 - 1] - xCurrent[i1 - 1];
-      lbLambda = lambda[ubOffset + idx];
-      nlpComplError = fmax(nlpComplError, fmin(fabs(lbDelta * lbLambda),
-                                               fmin(fabs(lbDelta), lbLambda)));
-    }
-  }
-  return nlpComplError;
-}
-
 /*
  * Arguments    : const double xCurrent[15]
  *                const int finiteLB[16]

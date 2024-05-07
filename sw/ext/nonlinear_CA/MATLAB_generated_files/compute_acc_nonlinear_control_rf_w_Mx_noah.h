@@ -2,14 +2,14 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: compute_acc_control_rf_w_Mx_noah.h
+ * File: compute_acc_nonlinear_control_rf_w_Mx_noah.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
-#ifndef COMPUTE_ACC_CONTROL_RF_W_MX_NOAH_H
-#define COMPUTE_ACC_CONTROL_RF_W_MX_NOAH_H
+#ifndef COMPUTE_ACC_NONLINEAR_CONTROL_RF_W_MX_NOAH_H
+#define COMPUTE_ACC_NONLINEAR_CONTROL_RF_W_MX_NOAH_H
 
 /* Include Files */
 #include "rtwtypes.h"
@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-void c_compute_acc_control_rf_w_Mx_n(
+void c_compute_acc_nonlinear_control(
     double Beta, double CL_aileron, double Cd_zero, double Cl_alpha,
     double Cm_zero, double Cm_alpha, double I_xx, double I_yy, double I_zz,
     double K_Cd, double Omega_1, double Omega_2, double Omega_3, double Omega_4,
@@ -40,7 +40,7 @@ void c_compute_acc_control_rf_w_Mx_n(
 
 #endif
 /*
- * File trailer for compute_acc_control_rf_w_Mx_noah.h
+ * File trailer for compute_acc_nonlinear_control_rf_w_Mx_noah.h
  *
  * [EOF]
  */

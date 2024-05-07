@@ -5,14 +5,14 @@
  * File: driver1.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef DRIVER1_H
 #define DRIVER1_H
 
 /* Include Files */
-#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
+#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,19 +22,12 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-void c_driver(const double lb[15], const double ub[15], l_struct_T *TrialState,
+void b_driver(const double lb[15], const double ub[15], h_struct_T *TrialState,
               b_struct_T *MeritFunction,
-              i_coder_internal_stickyStruct *FcnEvaluator, h_struct_T *memspace,
-              m_struct_T *WorkingSet, double Hessian[225],
-              f_struct_T *QRManager, g_struct_T *CholManager,
+              i_coder_internal_stickyStruct *FcnEvaluator, f_struct_T *memspace,
+              i_struct_T *WorkingSet, double Hessian[225],
+              d_struct_T *QRManager, e_struct_T *CholManager,
               struct_T *QPObjective);
-
-void d_driver(const double lb[13], const double ub[13], n_struct_T *TrialState,
-              b_struct_T *MeritFunction,
-              r_coder_internal_stickyStruct *FcnEvaluator, k_struct_T *memspace,
-              o_struct_T *WorkingSet, double Hessian[169],
-              i_struct_T *QRManager, j_struct_T *CholManager,
-              c_struct_T *QPObjective);
 
 #ifdef __cplusplus
 }

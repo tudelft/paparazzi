@@ -5,7 +5,7 @@
  * File: xpotrf.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef XPOTRF_H
@@ -21,8 +21,6 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-int b_xpotrf(int n, double A[729]);
-
 int xpotrf(int n, double A[961]);
 
 #ifdef __cplusplus

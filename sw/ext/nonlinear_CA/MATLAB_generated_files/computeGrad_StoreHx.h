@@ -5,14 +5,14 @@
  * File: computeGrad_StoreHx.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef COMPUTEGRAD_STOREHX_H
 #define COMPUTEGRAD_STOREHX_H
 
 /* Include Files */
-#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
+#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,9 +22,6 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-void b_computeGrad_StoreHx(c_struct_T *obj, const double H[169],
-                           const double f[14], const double x[14]);
-
 void computeGrad_StoreHx(struct_T *obj, const double H[225], const double f[16],
                          const double x[16]);
 

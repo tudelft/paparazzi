@@ -5,14 +5,14 @@
  * File: computeFval_ReuseHx.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef COMPUTEFVAL_REUSEHX_H
 #define COMPUTEFVAL_REUSEHX_H
 
 /* Include Files */
-#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
+#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,9 +22,6 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-double b_computeFval_ReuseHx(const c_struct_T *obj, double workspace[378],
-                             const double f[14], const double x[14]);
-
 double computeFval_ReuseHx(const struct_T *obj, double workspace[496],
                            const double f[16], const double x[16]);
 

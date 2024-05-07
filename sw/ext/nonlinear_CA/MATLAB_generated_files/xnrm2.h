@@ -5,7 +5,7 @@
  * File: xnrm2.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef XNRM2_H
@@ -22,10 +22,6 @@ extern "C" {
 
 /* Function Declarations */
 double b_xnrm2(int n, const double x[16]);
-
-double c_xnrm2(int n, const double x[729], int ix0);
-
-double d_xnrm2(int n, const double x[14]);
 
 double xnrm2(int n, const double x[961], int ix0);
 

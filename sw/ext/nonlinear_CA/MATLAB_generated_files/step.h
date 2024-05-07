@@ -5,14 +5,14 @@
  * File: step.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef STEP_H
 #define STEP_H
 
 /* Include Files */
-#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
+#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,19 +22,12 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-bool b_step(int *STEP_TYPE, double Hessian[169], const double lb[13],
-            const double ub[13], n_struct_T *TrialState,
-            b_struct_T *MeritFunction, k_struct_T *memspace,
-            o_struct_T *WorkingSet, i_struct_T *QRManager,
-            j_struct_T *CholManager, c_struct_T *QPObjective,
-            p_struct_T *qpoptions);
-
 bool step(int *STEP_TYPE, double Hessian[225], const double lb[15],
-          const double ub[15], l_struct_T *TrialState,
-          b_struct_T *MeritFunction, h_struct_T *memspace,
-          m_struct_T *WorkingSet, f_struct_T *QRManager,
-          g_struct_T *CholManager, struct_T *QPObjective,
-          p_struct_T *qpoptions);
+          const double ub[15], h_struct_T *TrialState,
+          b_struct_T *MeritFunction, f_struct_T *memspace,
+          i_struct_T *WorkingSet, d_struct_T *QRManager,
+          e_struct_T *CholManager, struct_T *QPObjective,
+          j_struct_T *qpoptions);
 
 #ifdef __cplusplus
 }

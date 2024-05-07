@@ -5,14 +5,14 @@
  * File: addBoundToActiveSetMatrix_.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef ADDBOUNDTOACTIVESETMATRIX__H
 #define ADDBOUNDTOACTIVESETMATRIX__H
 
 /* Include Files */
-#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
+#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,9 +22,7 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-void addBoundToActiveSetMatrix_(m_struct_T *obj, int TYPE, int idx_local);
-
-void b_addBoundToActiveSetMatrix_(o_struct_T *obj, int TYPE, int idx_local);
+void addBoundToActiveSetMatrix_(i_struct_T *obj, int TYPE, int idx_local);
 
 #ifdef __cplusplus
 }

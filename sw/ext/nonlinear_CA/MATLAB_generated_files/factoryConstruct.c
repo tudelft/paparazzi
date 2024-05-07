@@ -5,39 +5,63 @@
  * File: factoryConstruct.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 /* Include Files */
 #include "factoryConstruct.h"
-#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
+#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
+#include "rt_nonfinite.h"
 #include "rt_nonfinite.h"
 #include <string.h>
 
 /* Function Definitions */
 /*
- * Arguments    : double fval
- *                b_struct_T *obj
+ * Arguments    : c_struct_T *objfun_workspace
+ *                const double lb[15]
+ *                const double ub[15]
+ *                g_struct_T *obj
  * Return Type  : void
  */
-void factoryConstruct(double fval, b_struct_T *obj)
+void factoryConstruct(c_struct_T *objfun_workspace, const double lb[15],
+                      const double ub[15], g_struct_T *obj)
 {
-  obj->penaltyParam = 1.0;
-  obj->threshold = 0.0001;
-  obj->nPenaltyDecreases = 0;
-  obj->linearizedConstrViol = 0.0;
-  obj->initFval = fval;
-  obj->initConstrViolationEq = 0.0;
-  obj->initConstrViolationIneq = 0.0;
-  obj->phi = 0.0;
-  obj->phiPrimePlus = 0.0;
-  obj->phiFullStep = 0.0;
-  obj->feasRelativeFactor = 0.0;
-  obj->nlpPrimalFeasError = 0.0;
-  obj->nlpDualFeasError = 0.0;
-  obj->nlpComplError = 0.0;
-  obj->firstOrderOpt = 0.0;
-  obj->hasObjective = true;
+  int i;
+  bool bv[15];
+  bool b;
+  obj->objfun.workspace = *objfun_workspace;
+  obj->f_1 = 0.0;
+  obj->f_2 = 0.0;
+  obj->nVar = 15;
+  obj->mIneq = 0;
+  obj->mEq = 0;
+  obj->numEvals = 0;
+  obj->SpecifyObjectiveGradient = true;
+  obj->SpecifyConstraintGradient = false;
+  obj->isEmptyNonlcon = true;
+  obj->FiniteDifferenceType = 0;
+  for (i = 0; i < 15; i++) {
+    bv[i] = obj->hasUB[i];
+  }
+  b = false;
+  i = 0;
+  while ((!b) && (i + 1 <= 15)) {
+    obj->hasLB[i] = ((!rtIsInf(lb[i])) && (!rtIsNaN(lb[i])));
+    bv[i] = ((!rtIsInf(ub[i])) && (!rtIsNaN(ub[i])));
+    if (obj->hasLB[i] || bv[i]) {
+      b = true;
+    }
+    i++;
+  }
+  while (i + 1 <= 15) {
+    obj->hasLB[i] = ((!rtIsInf(lb[i])) && (!rtIsNaN(lb[i])));
+    bv[i] = ((!rtIsInf(ub[i])) && (!rtIsNaN(ub[i])));
+    i++;
+  }
+  for (i = 0; i < 15; i++) {
+    obj->hasUB[i] = bv[i];
+  }
+  obj->hasBounds = b;
 }
 
 /*

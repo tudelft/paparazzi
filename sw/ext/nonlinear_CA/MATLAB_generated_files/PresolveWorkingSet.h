@@ -5,14 +5,14 @@
  * File: PresolveWorkingSet.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef PRESOLVEWORKINGSET_H
 #define PRESOLVEWORKINGSET_H
 
 /* Include Files */
-#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
+#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,11 +22,8 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-void PresolveWorkingSet(l_struct_T *solution, h_struct_T *memspace,
-                        m_struct_T *workingset, f_struct_T *qrmanager);
-
-void b_PresolveWorkingSet(n_struct_T *solution, k_struct_T *memspace,
-                          o_struct_T *workingset, i_struct_T *qrmanager);
+void PresolveWorkingSet(h_struct_T *solution, f_struct_T *memspace,
+                        i_struct_T *workingset, d_struct_T *qrmanager);
 
 #ifdef __cplusplus
 }

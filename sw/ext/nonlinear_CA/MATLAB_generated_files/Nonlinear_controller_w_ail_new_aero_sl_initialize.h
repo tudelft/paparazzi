@@ -2,14 +2,14 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: compute_cost_and_gradient_w_Mx_noah_inner.h
+ * File: Nonlinear_controller_w_ail_new_aero_sl_initialize.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
-#ifndef COMPUTE_COST_AND_GRADIENT_W_MX_NOAH_INNER_H
-#define COMPUTE_COST_AND_GRADIENT_W_MX_NOAH_INNER_H
+#ifndef NONLINEAR_CONTROLLER_W_AIL_NEW_AERO_SL_INITIALIZE_H
+#define NONLINEAR_CONTROLLER_W_AIL_NEW_AERO_SL_INITIALIZE_H
 
 /* Include Files */
 #include "rtwtypes.h"
@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-double b_ft_1(const double ct[226], double gradient_data[], int *gradient_size);
+extern void Nonlinear_controller_w_ail_new_aero_sl_initialize(void);
 
 #ifdef __cplusplus
 }
@@ -29,7 +29,7 @@ double b_ft_1(const double ct[226], double gradient_data[], int *gradient_size);
 
 #endif
 /*
- * File trailer for compute_cost_and_gradient_w_Mx_noah_inner.h
+ * File trailer for Nonlinear_controller_w_ail_new_aero_sl_initialize.h
  *
  * [EOF]
  */

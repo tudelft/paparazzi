@@ -5,14 +5,14 @@
  * File: factoryConstruct.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef FACTORYCONSTRUCT_H
 #define FACTORYCONSTRUCT_H
 
 /* Include Files */
-#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
+#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,7 +22,8 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-void factoryConstruct(double fval, b_struct_T *obj);
+void factoryConstruct(c_struct_T *objfun_workspace, const double lb[15],
+                      const double ub[15], g_struct_T *obj);
 
 #ifdef __cplusplus
 }

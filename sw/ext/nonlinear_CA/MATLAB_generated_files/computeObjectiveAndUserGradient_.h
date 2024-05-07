@@ -5,14 +5,14 @@
  * File: computeObjectiveAndUserGradient_.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef COMPUTEOBJECTIVEANDUSERGRADIENT__H
 #define COMPUTEOBJECTIVEANDUSERGRADIENT__H
 
 /* Include Files */
-#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
+#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,13 +22,10 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-double c_computeObjectiveAndUserGradie(
-    const d_struct_T *c_obj_next_next_next_next_next_, const double x[15],
-    double grad_workspace[16], int *status);
-
-double d_computeObjectiveAndUserGradie(
-    const e_struct_T *c_obj_next_next_next_next_next_, const double x[13],
-    double grad_workspace[14], int *status);
+double
+c_computeObjectiveAndUserGradie(c_struct_T *c_obj_next_next_next_next_next_,
+                                const double x[15], double grad_workspace[16],
+                                int *status);
 
 #ifdef __cplusplus
 }

@@ -2,14 +2,14 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: Cascaded_nonlinear_controller_w_ail_new_aero_rtwutil.c
+ * File: Nonlinear_controller_w_ail_new_aero_sl_rtwutil.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 /* Include Files */
-#include "Cascaded_nonlinear_controller_w_ail_new_aero_rtwutil.h"
+#include "Nonlinear_controller_w_ail_new_aero_sl_rtwutil.h"
 #include "rt_nonfinite.h"
 #include "rt_nonfinite.h"
 #include <math.h>
@@ -18,19 +18,17 @@
 /* Function Definitions */
 /*
  * Arguments    : int numerator
- *                int denominator
  * Return Type  : int
  */
-int div_nde_s32_floor(int numerator, int denominator)
+int div_nde_s32_floor(int numerator)
 {
   int i;
-  if (((numerator < 0) != (denominator < 0)) &&
-      (numerator % denominator != 0)) {
+  if ((numerator < 0) && (numerator % 31 != 0)) {
     i = -1;
   } else {
     i = 0;
   }
-  return numerator / denominator + i;
+  return numerator / 31 + i;
 }
 
 /*
@@ -84,7 +82,7 @@ double rt_powd_snf(double u0, double u1)
 }
 
 /*
- * File trailer for Cascaded_nonlinear_controller_w_ail_new_aero_rtwutil.c
+ * File trailer for Nonlinear_controller_w_ail_new_aero_sl_rtwutil.c
  *
  * [EOF]
  */

@@ -5,7 +5,7 @@
  * File: xzlarfg.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef XZLARFG_H
@@ -21,8 +21,6 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-double b_xzlarfg(int n, double *alpha1, double x[729], int ix0);
-
 double xzlarfg(int n, double *alpha1, double x[961], int ix0);
 
 #ifdef __cplusplus

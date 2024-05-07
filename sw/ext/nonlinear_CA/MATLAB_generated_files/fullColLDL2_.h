@@ -5,14 +5,14 @@
  * File: fullColLDL2_.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef FULLCOLLDL2__H
 #define FULLCOLLDL2__H
 
 /* Include Files */
-#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
+#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,9 +22,7 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-void b_fullColLDL2_(j_struct_T *obj, int NColsRemain);
-
-void fullColLDL2_(g_struct_T *obj, int NColsRemain);
+void fullColLDL2_(e_struct_T *obj, int NColsRemain);
 
 #ifdef __cplusplus
 }

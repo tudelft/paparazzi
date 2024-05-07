@@ -1,21 +1,20 @@
 #include "am7x.h"
 #include <pthread.h>
-#include "MATLAB_generated_files/Cascaded_nonlinear_controller_w_ail_new_aero.h"
+#include "MATLAB_generated_files/Nonlinear_controller_w_ail_new_aero_sl.h"
 #include "MATLAB_generated_files/rt_nonfinite.h"
 #include <string.h>
 #include <glib.h>
 #include <Ivy/ivy.h>
 #include <Ivy/ivyglibloop.h>
 #include "filters/low_pass_filter.h"
-#include "MATLAB_generated_files/compute_acc_control_rf_w_Mx_noah.h"
-#include "MATLAB_generated_files/compute_lin_acc_control_rf_aero_only.h"
+#include "MATLAB_generated_files/compute_acc_nonlinear_control_rf_w_Mx_noah.h"
 
 
 //Variable for current acceleration filtering:
 Butterworth2LowPass current_modeled_accelerations_filtered[6]; //Filter of current accellerations
 Butterworth2LowPass current_lin_acc_aero_only_filtered[3]; //Filter of current lin accellerations aero only
 
-Butterworth2LowPass body_rates_filtered[3], body_rates_dot_filtered[3], linear_acc_filtered[3], u_in_filtered[NUM_ACT_IN_U_IN]; 
+Butterworth2LowPass body_rates_filtered[3], u_in_filtered[NUM_ACT_IN_U_IN]; 
 Butterworth2LowPass airspeed_filtered, flight_path_angle_filtered; 
 
 int filter_cutoff_frequency;
@@ -144,10 +143,7 @@ void am7_init(){
   }
 
   for (int i = 0; i < 3; i++) {
-    init_butterworth_2_low_pass(&current_lin_acc_aero_only_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
     init_butterworth_2_low_pass(&body_rates_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
-    init_butterworth_2_low_pass(&body_rates_dot_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
-    init_butterworth_2_low_pass(&linear_acc_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
   }
 
   for (int i = 0; i < NUM_ACT_IN_U_IN; i++) {
@@ -336,11 +332,9 @@ void* second_thread() //Run the optimization code
     double dv[6];
     double residuals[6];
     double elapsed_time; 
-    double N_iterations_inner_loop; 
-    double N_iterations_outer_loop; 
-    double N_evaluations_inner_loop;
-    double N_evaluations_outer_loop;
-    double exitflag_inner;
+    double N_iterations; 
+    double N_evaluations; 
+    double exitflag;
 
     //Assign variables coming from the communication and physical system properties
     // Float msg variables
@@ -431,7 +425,6 @@ void* second_thread() //Run the optimization code
     float filter_cutoff_frequency_telem = extra_data_in_copy[74];
     float max_airspeed = extra_data_in_copy[75];
     
-
     float vert_acc_margin = extra_data_in_copy[76];
 
     float power_Cd_0 = extra_data_in_copy[77];
@@ -444,6 +437,7 @@ void* second_thread() //Run the optimization code
     float prop_delta = extra_data_in_copy[84];
     float prop_sigma = extra_data_in_copy[85];
     float prop_theta = extra_data_in_copy[86];
+
 
     #ifdef TEST_CONTROLLER
       filter_cutoff_frequency_telem = 12; 
@@ -460,10 +454,7 @@ void* second_thread() //Run the optimization code
       }
 
       for (int i = 0; i < 3; i++) {
-        init_butterworth_2_low_pass(&current_lin_acc_aero_only_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
         init_butterworth_2_low_pass(&body_rates_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
-        init_butterworth_2_low_pass(&body_rates_dot_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
-        init_butterworth_2_low_pass(&linear_acc_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
       }
 
       for (int i = 0; i < NUM_ACT_IN_U_IN; i++) {
@@ -493,33 +484,15 @@ void* second_thread() //Run the optimization code
     double desired_theta_value = (myam7_data_in_copy.desired_theta_value_int*1e-2 * M_PI/180);
     double desired_phi_value = (myam7_data_in_copy.desired_phi_value_int*1e-2 * M_PI/180);
 
-    double des_psi_dot = (myam7_data_in_copy.psi_dot_cmd_int*1e-1 * M_PI/180);
-
-
-    // double p_dot = (myam7_data_in_copy.p_dot_state_int*1e-1 * M_PI/180);
-    // double q_dot = (myam7_data_in_copy.q_dot_state_int*1e-1 * M_PI/180);
-    // double r_dot = (myam7_data_in_copy.r_dot_state_int*1e-1 * M_PI/180);
-
-    double p_dot = (p - p_old)/refresh_time_optimizer;
-    double q_dot = (q - q_old)/refresh_time_optimizer;
-    double r_dot = (r - r_old)/refresh_time_optimizer;
-    p_old = p; 
-    q_old = q; 
-    r_old = r; 
-
-    double p_ec = (myam7_data_in_copy.p_state_filt_int*1e-1 * M_PI/180);
-    double q_ec = (myam7_data_in_copy.q_state_filt_int*1e-1 * M_PI/180); 
-    double r_ec = (myam7_data_in_copy.r_state_filt_int*1e-1 * M_PI/180);
-
     double approach_mode = (myam7_data_in_copy.approach_boolean);
     double lidar_alt_corrected = (myam7_data_in_copy.lidar_alt_corrected_int*1e-2);
 
-    double pseudo_control_ax = (myam7_data_in_copy.pseudo_control_ax_int*1e-2); 
-    double pseudo_control_ay = (myam7_data_in_copy.pseudo_control_ay_int*1e-2); 
-    double pseudo_control_az = (myam7_data_in_copy.pseudo_control_az_int*1e-2); 
-    double ax_state = (myam7_data_in_copy.ax_state_int*1e-2); 
-    double ay_state = (myam7_data_in_copy.ay_state_int*1e-2); 
-    double az_state = (myam7_data_in_copy.az_state_int*1e-2); 
+    dv[0] = (myam7_data_in_copy.pseudo_control_ax_int*1e-2); 
+    dv[1] = (myam7_data_in_copy.pseudo_control_ay_int*1e-2); 
+    dv[2] = (myam7_data_in_copy.pseudo_control_az_int*1e-2); 
+    dv[3] = (myam7_data_in_copy.pseudo_control_p_dot_int*1e-1 * M_PI/180);
+    dv[4] = (myam7_data_in_copy.pseudo_control_q_dot_int*1e-1 * M_PI/180);
+    dv[5] = (myam7_data_in_copy.pseudo_control_r_dot_int*1e-1 * M_PI/180);
 
     //Bound motor values to be within min and max value to avoid NaN
     Bound(Omega_1,min_omega,max_omega);
@@ -597,16 +570,12 @@ void* second_thread() //Run the optimization code
       max_delta_ailerons = 25;
       min_delta_ailerons = -25; 
 
-      // dv[0] = 0;
-      // dv[1] = 5;
-      // dv[2] = 0;
-      // dv[3] = 0;
-      // dv[4] = 0;
-      // dv[5] = 0;
-
-      pseudo_control_ax = 0; 
-      pseudo_control_ay = 5; 
-      pseudo_control_az = 0; 
+      dv[0] = 0;
+      dv[1] = 5;
+      dv[2] = 0;
+      dv[3] = 0;
+      dv[4] = 0;
+      dv[5] = 0;
 
       p = 0 * pi/180; 
       q = 0 * pi/180; 
@@ -636,20 +605,6 @@ void* second_thread() //Run the optimization code
       lidar_alt_corrected = 1;
       approach_mode = 0; 
 
-      //Cascaded var: 
-      p_ec = 0; 
-      q_ec = 0; 
-      r_ec = 0; 
-      p_dot = 0; 
-      q_dot = 0; 
-      r_dot = 0; 
-      theta_gain = 2; 
-      phi_gain = 2; 
-      p_body_gain = 5; 
-      q_body_gain = 5; 
-      r_body_gain = 5; 
-      des_psi_dot = 0;
-
       max_theta_hard = 45 * pi/180; 
       min_theta_hard = -45 * pi/180; 
       max_phi_hard = 45 * pi/180; 
@@ -669,10 +624,6 @@ void* second_thread() //Run the optimization code
 
       max_airspeed = 15; 
       vert_acc_margin = 2.5; 
-
-      disable_acc_decrement_inner_loop = 0; 
-
-      k_d_airspeed = 0.02; 
 
     #endif 
 
@@ -745,12 +696,6 @@ void* second_thread() //Run the optimization code
       printf(" desired_az_value_deg = %f \n",(float) desired_az_value*180/M_PI);
 
       printf(" desired_ailerons_value = %f \n",(float) desired_ailerons_value);
-      printf(" theta_gain = %f \n",(float) theta_gain);
-      printf(" phi_gain = %f \n",(float) phi_gain);
-      printf(" p_body_gain = %f \n",(float) p_body_gain);
-      printf(" q_body_gain = %f \n",(float) q_body_gain);
-      printf(" r_body_gain = %f \n",(float) r_body_gain);
-      printf(" k_d_airspeed = %f \n",(float) k_d_airspeed);
 
       printf(" min_theta_hard = %f \n",(float) min_theta_hard*180/M_PI);
       printf(" max_theta_hard = %f \n",(float) max_theta_hard*180/M_PI);
@@ -799,26 +744,16 @@ void* second_thread() //Run the optimization code
       printf(" desired_theta_value_deg = %f \n",(float) desired_theta_value*180/M_PI);
       printf(" desired_phi_value_deg = %f \n",(float) desired_phi_value*180/M_PI);
 
-      printf(" desired_psi_dot_deg = %f \n",(float) des_psi_dot*180/M_PI);
-
-      printf(" p_dot_deg_s2 = %f \n",(float) p_dot*180/M_PI);
-      printf(" q_dot_deg_s2 = %f \n",(float) q_dot*180/M_PI);
-      printf(" r_dot_deg_s2 = %f \n",(float) r_dot*180/M_PI);
-
-      printf(" p_ec_deg_s = %f \n",(float) p_ec*180/M_PI);
-      printf(" q_ec_deg_s = %f \n",(float) q_ec*180/M_PI);
-      printf(" r_ec_deg_s = %f \n",(float) r_ec*180/M_PI);
-
       printf(" approach_mode = %f \n",(float) approach_mode);
       printf(" lidar_alt_corrected = %f \n",(float) lidar_alt_corrected);
 
-      printf(" pseudo_control_ax = %f \n",(float) pseudo_control_ax);      
-      printf(" pseudo_control_ay = %f \n",(float) pseudo_control_ay);  
-      printf(" pseudo_control_az = %f \n",(float) pseudo_control_az);  
+      printf(" dv[0] = %f \n",(float) dv[0]);      
+      printf(" dv[1] = %f \n",(float) dv[1]);  
+      printf(" dv[2] = %f \n",(float) dv[2]);  
 
-      printf(" ax_state = %f \n",(float) ax_state); 
-      printf(" ay_state = %f \n",(float) ay_state); 
-      printf(" az_state = %f \n",(float) az_state); 
+      printf(" dv[3] = %f \n",(float) dv[3]); 
+      printf(" dv[4] = %f \n",(float) dv[4]); 
+      printf(" dv[5] = %f \n",(float) dv[5]); 
 
       fflush(stdout);
     }
@@ -828,10 +763,8 @@ void* second_thread() //Run the optimization code
     double u_in[NUM_ACT_IN_U_IN] = {Omega_1, Omega_2, Omega_3, Omega_4, b_1, b_2, b_3, b_4, g_1, g_2, g_3, g_4, Theta, Phi, delta_ailerons};
     double u_in_filtered_double[NUM_ACT_IN_U_IN];
     double current_accelerations_double[6], current_accelerations_filtered_double[6]; 
-    double current_lin_acc_aero_only_double[3], current_lin_acc_aero_only_filtered_double[3]; 
-    double body_rates_array[3] = {p,q,r}, body_rates_dot_array[3] = {p_dot,q_dot,r_dot};
-    double body_rates_array_filtered_double[3], body_rates_dot_array_filtered_double[3]; 
-    double linear_acc_array[3] = {ax_state, ay_state, az_state}, linear_acc_filtered_double[3]; 
+    double body_rates_array[3] = {p,q,r};
+    double body_rates_array_filtered_double[3]; 
     double airspeed_filtered_double, flight_path_angle_filtered_double; 
 
     double gain_motor = (max_omega - min_omega)/2;
@@ -839,24 +772,18 @@ void* second_thread() //Run the optimization code
     double Omega_2_scaled = Omega_2 / gain_motor;
     double V_scaled = V/max_airspeed;
 
-    c_compute_acc_control_rf_w_Mx_n(
-        Beta,  CL_aileron,  Cd_zero,  Cl_alpha,
-        Cm_zero,  Cm_alpha,  I_xx,  I_yy,  I_zz,
-        K_Cd,  Omega_1,  Omega_2,  Omega_3,  Omega_4,
-        Omega_1_scaled,  Omega_2_scaled,  Phi,  S,
-        Theta,  V,  V_scaled,  b_1,  b_2,  b_3,
-        b_4,  delta_ailerons,  flight_path_angle,  g_1,
-        g_2,  g_3,  g_4,  l_1,  l_2,  l_3,
-        l_4,  l_z,  m,  p,  prop_R,  prop_Cd_0,
-        prop_Cl_0,  prop_Cd_a,  prop_Cl_a,  prop_delta,
-        prop_sigma,  prop_theta,  q,  r,  rho,
-        wing_span,  wing_chord,  current_accelerations_double);
-
-    c_compute_lin_acc_control_rf_ae( Beta,  Cd_zero,
-                                          Cl_alpha,  K_Cd,  Phi,
-                                          S,  Theta,  V,
-                                          flight_path_angle,  m,
-                                          rho,  current_lin_acc_aero_only_double);
+    c_compute_acc_nonlinear_control(
+     Beta,  CL_aileron,  Cd_zero,  Cl_alpha,
+     Cm_zero,  Cm_alpha,  I_xx,  I_yy,  I_zz,
+     K_Cd,  Omega_1,  Omega_2,  Omega_3,  Omega_4,
+     Omega_1_scaled,  Omega_2_scaled,  Phi,  S,
+     Theta,  V,  V_scaled,  b_1,  b_2,  b_3,
+     b_4,  delta_ailerons,  flight_path_angle,  g_1,
+     g_2,  g_3,  g_4,  l_1,  l_2,  l_3,
+     l_4,  l_z,  m,  p,  prop_R,  prop_Cd_0,
+     prop_Cl_0,  prop_Cd_a,  prop_Cl_a,  prop_delta,
+     prop_sigma,  prop_theta,  q,  r,  rho,
+     wing_span,  wing_chord,  current_accelerations_double);
 
     //FILTER ALL VALUES:
     for(int i = 0; i < 6; i++){
@@ -873,16 +800,6 @@ void* second_thread() //Run the optimization code
     }
 
     for (int i = 0; i < 3; i++) {
-                                                                                                                          //Filtered current modeled acc aero only
-      update_butterworth_2_low_pass(&current_lin_acc_aero_only_filtered[i], (float) current_lin_acc_aero_only_double[i]);
-      //Check for NaN in filters and reset them: 
-      if(current_lin_acc_aero_only_filtered[i].o[0] != current_lin_acc_aero_only_filtered[i].o[0]){
-        init_butterworth_2_low_pass(&current_lin_acc_aero_only_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
-        if(verbose_filters){
-          printf("WARNING, current_lin_acc_aero_only_filtered filter number %d REINITIALIZED!!!! \n",i);
-        }
-      }
-      current_lin_acc_aero_only_filtered_double[i] = (double)current_lin_acc_aero_only_filtered[i].o[0];
                                                                                                                           //Filtered body rates 
       update_butterworth_2_low_pass(&body_rates_filtered[i], (float) body_rates_array[i]);
       //Check for NaN in filters and reset them: 
@@ -893,28 +810,6 @@ void* second_thread() //Run the optimization code
         }
       }
       body_rates_array_filtered_double[i] = (double) body_rates_filtered[i].o[0]; 
-
-                                                                                                                          //Filtered linear acc 
-      update_butterworth_2_low_pass(&linear_acc_filtered[i], (float) linear_acc_array[i]);
-      //Check for NaN in filters and reset them: 
-      if(linear_acc_filtered[i].o[0] != linear_acc_filtered[i].o[0]){
-        init_butterworth_2_low_pass(&linear_acc_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
-        if(verbose_filters){
-          printf("WARNING, linear_acc_filtered filter number %d REINITIALIZED!!!! \n",i);
-        }
-      }
-      linear_acc_filtered_double[i] = (double) linear_acc_filtered[i].o[0]; 
-
-                                                                                                                          //Filtered acc body rates 
-      update_butterworth_2_low_pass(&body_rates_dot_filtered[i], (float) body_rates_dot_array[i]);
-      //Check for NaN in filters and reset them: 
-      if(body_rates_dot_filtered[i].o[0] != body_rates_dot_filtered[i].o[0]){
-        init_butterworth_2_low_pass(&body_rates_dot_filtered[i], tau_indi, refresh_time_optimizer, 0.0);
-        if(verbose_filters){
-          printf("WARNING, body_rates_dot_filtered filter number %d REINITIALIZED!!!! \n",i);
-        }
-      }
-      body_rates_dot_array_filtered_double[i] = (double) body_rates_dot_filtered[i].o[0]; 
     }
 
     for (int i = 0; i < NUM_ACT_IN_U_IN; i++) {
@@ -977,69 +872,46 @@ void* second_thread() //Run the optimization code
     V = airspeed_filtered_double; 
     flight_path_angle = flight_path_angle_filtered_double;
 
-    double p_body_current = p_ec; 
-    double q_body_current = q_ec; 
-    double r_body_current = r_ec; 
+
     double current_accelerations_filtered[6] = {current_accelerations_filtered_double[0], current_accelerations_filtered_double[1], current_accelerations_filtered_double[2],
                                        current_accelerations_filtered_double[3], current_accelerations_filtered_double[4], current_accelerations_filtered_double[5]}; 
-    double c_current_lin_acc_aero_only_fil[3] = {current_lin_acc_aero_only_filtered_double[0], 
-                                           current_lin_acc_aero_only_filtered_double[1], 
-                                           current_lin_acc_aero_only_filtered_double[2]}; 
 
     double verbose = verbose_optimizer;
-    double p_dot_current = body_rates_dot_array_filtered_double[0]; 
-    double q_dot_current = body_rates_dot_array_filtered_double[1]; 
-    double r_dot_current = body_rates_dot_array_filtered_double[2]; 
 
-    double c_disable_acc_decrement_inner_l = disable_acc_decrement_inner_loop;
-    //Generate dv from received message: 
-    dv[0] = pseudo_control_ax - linear_acc_filtered_double[0];
-    dv[1] = pseudo_control_ay - linear_acc_filtered_double[1];
-    dv[2] = pseudo_control_az - linear_acc_filtered_double[2];
-    dv[3] = 0; 
-    dv[4] = 0; 
-    dv[5] = 0; 
 
-    Cascaded_nonlinear_controller_w_ail_new_aero( m,  I_xx,  I_yy,  I_zz,  l_1,  l_2,
-                                            l_3,  l_4,  l_z,  Phi,  Theta,
-                                            Omega_1,  Omega_2,  Omega_3,  Omega_4,  b_1,
-                                            b_2,  b_3,  b_4,  g_1,  g_2,  g_3,
-                                            g_4,  delta_ailerons,  W_act_motor_const,
-                                            W_act_motor_speed,  W_act_tilt_el_const,
-                                            W_act_tilt_el_speed,  W_act_tilt_az_const,
-                                            W_act_tilt_az_speed,  W_act_theta_const,
-                                            W_act_theta_speed,  W_act_phi_const,  W_act_phi_speed,
-                                            W_act_ailerons_const,  W_act_ailerons_speed,  W_dv_1,
-                                            W_dv_2,  W_dv_3,  W_dv_4,  W_dv_5,  W_dv_6,
-                                            max_omega,  min_omega,  max_b,  min_b,
-                                            max_g,  min_g,  max_theta,  min_theta,
-                                            max_phi,  max_delta_ailerons,  min_delta_ailerons,
-                                            dv,  p,  q,  r,  Cm_zero,  Cl_alpha,
-                                            Cd_zero,  K_Cd,  Cm_alpha,  CL_aileron,  rho,
-                                            V,  S,  wing_chord,  wing_span,
-                                            flight_path_angle,  max_alpha,  min_alpha,
-                                            max_airspeed,  Beta,  gamma_quadratic_du,
-                                            desired_motor_value,  desired_el_value,
-                                            desired_az_value,  desired_theta_value,
-                                            desired_phi_value,  desired_ailerons_value,
-                                            k_alt_tilt_constraint,  min_alt_tilt_constraint,
-                                            lidar_alt_corrected,  approach_mode,  verbose,
-                                            aoa_protection_speed,  transition_speed,  k_d_airspeed,
-                                            p_body_current,  q_body_current,  r_body_current,
-                                            p_dot_current,  q_dot_current,  r_dot_current,
-                                            phi_current,  theta_current,  theta_gain,
-                                            phi_gain,  p_body_gain,  q_body_gain,  r_body_gain,
-                                            des_psi_dot,  min_theta_hard,  max_theta_hard,
-                                            min_phi_hard,  max_phi_hard,
-                                            c_disable_acc_decrement_inner_l,  vert_acc_margin,
-                                            current_accelerations_filtered,
-                                            c_current_lin_acc_aero_only_fil,  power_Cd_0,
-                                            power_Cd_a,  prop_R,  prop_Cd_0,  prop_Cl_0,
-                                            prop_Cd_a,  prop_Cl_a,  prop_delta,  prop_sigma,
-                                            prop_theta,  u_out,  residuals,
-                                            &elapsed_time,  &N_iterations_inner_loop,
-                                            &N_iterations_outer_loop,  &N_evaluations_inner_loop,
-                                            &N_evaluations_outer_loop,  &exitflag_inner);
+    Nonlinear_controller_w_ail_new_aero_sl(
+        m,  I_xx,  I_yy,  I_zz,  l_1,  l_2,
+        l_3,  l_4,  l_z,  Phi,  Theta,
+        Omega_1,  Omega_2,  Omega_3,  Omega_4,  b_1,
+        b_2,  b_3,  b_4,  g_1,  g_2,  g_3,
+        g_4,  delta_ailerons,  W_act_motor_const,
+        W_act_motor_speed,  W_act_tilt_el_const,
+        W_act_tilt_el_speed,  W_act_tilt_az_const,
+        W_act_tilt_az_speed,  W_act_theta_const,
+        W_act_theta_speed,  W_act_phi_const,  W_act_phi_speed,
+        W_act_ailerons_const,  W_act_ailerons_speed,  W_dv_1,
+        W_dv_2,  W_dv_3,  W_dv_4,  W_dv_5,  W_dv_6,
+        max_omega,  min_omega,  max_b,  min_b,
+        max_g,  min_g,  max_theta,  min_theta,
+        max_phi,  max_delta_ailerons,  min_delta_ailerons,
+        dv,  p,  q,  r,  Cm_zero,
+        Cl_alpha,  Cd_zero,  K_Cd,  Cm_alpha,
+        CL_aileron,  rho,  V,  S,  wing_chord,
+        wing_span,  flight_path_angle,  max_alpha,
+        min_alpha,  max_airspeed,  Beta,
+        gamma_quadratic_du,  desired_motor_value,
+        desired_el_value,  desired_az_value,
+        desired_theta_value,  desired_phi_value,
+        desired_ailerons_value,  k_alt_tilt_constraint,
+        min_alt_tilt_constraint,  lidar_alt_corrected,
+        approach_mode,  verbose,  aoa_protection_speed,
+        transition_speed,  vert_acc_margin,
+        current_accelerations_filtered,  power_Cd_0,
+        power_Cd_a,  prop_R,  prop_Cd_0,  prop_Cl_0,
+        prop_Cd_a,  prop_Cl_a,  prop_delta,  prop_sigma,
+        prop_theta,  u_out,  residuals,
+        &elapsed_time,  &N_iterations,  &N_evaluations,
+        &exitflag);
 
     //Update elapsed time with the C function: 
     elapsed_time =(double) ((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec));
@@ -1066,12 +938,10 @@ void* second_thread() //Run the optimization code
     myam7_data_out_copy_internal.residual_p_dot_int = (int16_T) (residuals[3]*1e1*180/M_PI);
     myam7_data_out_copy_internal.residual_q_dot_int = (int16_T) (residuals[4]*1e1*180/M_PI);
     myam7_data_out_copy_internal.residual_r_dot_int = (int16_T) (residuals[5]*1e1*180/M_PI);
-    myam7_data_out_copy_internal.exit_flag_optimizer_inner = (int16_T) (exitflag_inner);
+    myam7_data_out_copy_internal.exit_flag_optimizer = (int16_T) (exitflag);
     myam7_data_out_copy_internal.elapsed_time_us = (uint16_T) (elapsed_time);
-    myam7_data_out_copy_internal.n_iteration_inner = (uint16_T) (N_iterations_inner_loop);
-    myam7_data_out_copy_internal.n_evaluation_inner = (uint16_T) (N_evaluations_inner_loop);
-    myam7_data_out_copy_internal.n_iteration_outer = (uint16_T) (N_iterations_outer_loop);
-    myam7_data_out_copy_internal.n_evaluation_outer = (uint16_T) (N_evaluations_outer_loop);
+    myam7_data_out_copy_internal.n_iteration = (uint16_T) (N_iterations);
+    myam7_data_out_copy_internal.n_evaluation = (uint16_T) (N_evaluations);
 
     myam7_data_out_copy_internal.modeled_ax_int = (int16_T) (current_accelerations_filtered_double[0]*1e2);
     myam7_data_out_copy_internal.modeled_ay_int = (int16_T) (current_accelerations_filtered_double[1]*1e2);
@@ -1104,11 +974,9 @@ void* second_thread() //Run the optimization code
       printf(" residuals_p_dot_deg_s = %f \n",(float) residuals[3]*180/M_PI);
       printf(" residuals_q_dot_deg_s = %f \n",(float) residuals[4]*180/M_PI);
       printf(" residuals_r_dot_deg_s = %f \n",(float) residuals[5]*180/M_PI);
-      printf(" N_iterations_outer_loop = %d \n",(int) N_iterations_outer_loop);
-      printf(" N_iterations_inner_loop = %d \n",(int) N_iterations_inner_loop);
-      printf(" N_evaluations_outer_loop = %d \n",(int) N_evaluations_outer_loop);
-      printf(" N_evaluations_inner_loop = %d \n",(int) N_evaluations_inner_loop);
-      printf(" exit_flag_optimizer = %d \n",(int) exitflag_inner);
+      printf(" N_iterations = %d \n",(int) N_iterations);
+      printf(" N_evaluations = %d \n",(int) N_evaluations);
+      printf(" exit_flag_optimizer = %d \n",(int) exitflag);
       printf(" elapsed_time_uS = %d \n",(int) (elapsed_time));
       printf(" \n\n\n");
 

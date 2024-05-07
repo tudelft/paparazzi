@@ -16,12 +16,9 @@
 #ifndef AM7_H
 #define AM7_H
 
-#define max_time_optimizer_outer_loop 2.45e-3
-#define max_time_optimizer_inner_loop 2.45e-3
-#define max_iterations_outer_loop 70
-#define max_iterations_inner_loop 70
-#define max_function_eval_outer_loop 200
-#define max_function_eval_inner_loop 200
+#define max_time_optimizer 4.9e-3
+#define max_iterations 70
+#define max_function_eval 200
 #define refresh_time_optimizer 5e-3 //Must be equal or bigger than max_time_optimizer
 #define filter_cutoff_frequency_init 12 //rad/s
 
@@ -55,12 +52,10 @@ struct  __attribute__((__packed__)) am7_data_out {
     int16_t phi_cmd_int;
     int16_t ailerons_cmd_int;
     //Optimization info
-    uint16_t n_iteration_outer;
-    uint16_t n_iteration_inner;
-    uint16_t n_evaluation_outer;
-    uint16_t n_evaluation_inner;
+    uint16_t n_iteration;
+    uint16_t n_evaluation;
     uint16_t elapsed_time_us;
-    int16_t exit_flag_optimizer_inner;
+    int16_t exit_flag_optimizer;
     //Modeled acc filtered
     int16_t modeled_ax_int;
     int16_t modeled_ay_int;
@@ -121,17 +116,9 @@ struct  __attribute__((__packed__)) am7_data_in {
     int16_t pseudo_control_ax_int;
     int16_t pseudo_control_ay_int;
     int16_t pseudo_control_az_int;
-    int16_t ax_state_int;
-    int16_t ay_state_int;
-    int16_t az_state_int;
-    //Error Controller variables:
-    int16_t psi_dot_cmd_int;
-    int16_t p_dot_state_int;
-    int16_t q_dot_state_int;
-    int16_t r_dot_state_int;
-    int16_t p_state_filt_int;
-    int16_t q_state_filt_int;
-    int16_t r_state_filt_int;
+    int16_t pseudo_control_p_dot_int;
+    int16_t pseudo_control_q_dot_int;
+    int16_t pseudo_control_r_dot_int;
     //Desired theta and phi value:
     int16_t desired_theta_value_int;
     int16_t desired_phi_value_int;

@@ -5,14 +5,14 @@
  * File: factorQR.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-May-2024 15:18:42
+ * C/C++ source code generated on  : 08-May-2024 00:26:53
  */
 
 #ifndef FACTORQR_H
 #define FACTORQR_H
 
 /* Include Files */
-#include "Cascaded_nonlinear_controller_w_ail_new_aero_internal_types.h"
+#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,9 +22,7 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-void b_factorQR(i_struct_T *obj, const double A[378], int mrows, int ncols);
-
-void factorQR(f_struct_T *obj, const double A[496], int mrows, int ncols);
+void factorQR(d_struct_T *obj, const double A[496], int mrows, int ncols);
 
 #ifdef __cplusplus
 }
