@@ -10,7 +10,7 @@
     <description>RotatingWingV3C for outdoor flight with INS EKF2</description>
 
     <firmware name="rotorcraft">
-     <autopilot name="rotorcraft_oneloop_andi_indi.xml"/>
+     <autopilot name="rotorcraft_oneloop_switch.xml"/>
         <target name="ap" board="cube_orange">
             <configure name="PERIODIC_FREQUENCY"   value="500"/> <!-- Configure the main periodic frequency to 500Hz -->
             <configure name="NAVIGATION_FREQUENCY" value="500"/>
@@ -28,7 +28,7 @@
             <define name="RADIO_TH_HOLD"            value="RADIO_AUX1"/>
             <define name="RADIO_KILL_SWITCH"        value="RADIO_AUX1"/>
             <define name="RADIO_FMODE"              value="RADIO_AUX2"/>
-            <define name="RADIO_FBW_MODE"           value="RADIO_AUX3"/>
+            <define name="AP_MODE_SWITCH"           value="RADIO_AUX3"/>
             <define name="RADIO_CONTROL_THRUST_X"   value="RADIO_AUX4"/>
             <!-- EKF EKF2  configure inputs -->
             <define name="INS_EKF2_MAG_ID"          value="MAG_RM3100_SENDER_ID"/>

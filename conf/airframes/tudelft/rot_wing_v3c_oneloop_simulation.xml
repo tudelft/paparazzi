@@ -20,7 +20,7 @@
             <!--Not dealing with these in the simulation-->
             <define name="RADIO_TH_HOLD"          value="0"/> <!-- Throttle hold in command laws -->
             <define name="RADIO_FMODE"            value="0"/> <!-- Throttle curve select -->
-            <define name="RADIO_FBW_MODE"         value="0"/> <!-- Switch between AP and FBW control -->
+            <define name="AP_MODE_SWITCH"         value="RADIO_AUX7"/> <!-- Switch between AP controllers -->
             <define name="RADIO_KILL_SWITCH"      value="RADIO_AUX1"/> <!-- Kill switch -->
             <define name="RADIO_CONTROL_THRUST_X" value="0"/>
         </target>
@@ -237,7 +237,7 @@
         <define name  = "FILT_CUTOFF_RDOT"          value = "0.5" />
         <define name  = "FILTER_YAW_RATE"           value = "TRUE"/>
         <!--                                                 |   MF   |   MR   |    MB   |    ML   |   MP   |   ELE  |    RUD  |    AIL  |    FLA  |   PHI  |  THETA | -->
-        <define name  = "ACT_DYN"                   value = "{   10.1f,   10.1f,    10.1f,    10.1f,  24.07f,   24.07f,    24.07f,    24.07f,    24.07f,   0.00f,  0.00f }" />
+        <define name  = "ACT_DYN"                   value = "{   10.1f,   10.1f,    10.1f,    10.1f,  24.07f,  24.07f,   24.07f,   24.07f,   24.07f,   0.00f,  0.00f }" />
         <define name  = "ACT_IS_SERVO"              value = "{       0,       0,        0,        0,       0,       1,        1,        1,        1,       0,      0 }" />
         <define name  = "ACT_MAX"                   value = "{ 9600.0f, 9600.0f,  9600.0f,  9600.0f, 9600.0f, 9600.0f,  9600.0f,  9600.0f,  9600.0f,  M_PI_4,  M_PI_4}"/>
         <define name  = "ACT_MIN"                   value = "{    0.0f,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f, -9600.0f, -9600.0f, -9600.0f, -M_PI_4, -M_PI_4}"/>

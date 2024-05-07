@@ -50,6 +50,11 @@
 #ifndef RADIO_KILL_SWITCH
 #define RADIO_KILL_SWITCH RADIO_AUX1
 #endif
+
+#ifndef AP_MODE_SWITCH
+#define AP_MODE_SWITCH RADIO_AUX7
+#endif
+
 extern int8_t rc_dl_values[ RC_DL_NB_CHANNEL ];
 extern volatile bool rc_dl_frame_available;
 
