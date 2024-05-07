@@ -45,7 +45,7 @@
       <call_once fun="autopilot_set_in_flight(false)"/>
       <call_once fun="take_off_enter()"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
-      <stay alt="1.6" until="GetPosHeight() @GT 1.5" wp="CLIMB"/>
+      <stay alt="1.6" until="GetPosHeight() @GT 1.3" wp="CLIMB"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="false" var="force_forward"/>

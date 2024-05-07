@@ -75,9 +75,9 @@
     <module name="guidance"      type="indi_hybrid_tailsitter">
       <define name="GUIDANCE_INDI_HYBRID_USE_WLS" value="TRUE"/>
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
-      <define name="GUIDANCE_INDI_POS_GAIN" value="0.6"/>
+      <define name="GUIDANCE_INDI_POS_GAIN" value="0.3"/>
       <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.0"/>
-      <define name="GUIDANCE_INDI_SPEED_GAIN" value="2.3"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.5"/>
       <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.0"/>
       <define name="GUIDANCE_INDI_POS_GAINZ" value="1.5"/>
       <define name="GUIDANCE_INDI_SPEED_GAINZ" value="2.8"/>
@@ -117,10 +117,10 @@
       <!-- <define name="CALC_AMSL_BARO" value="TRUE" /> -->
     </module>
 
-    <!-- <module name="gps" type="ublox">
+    <module name="gps" type="ublox">
       <configure name="GPS_BAUD" value="B57600"/>
-    </module> -->
-    <module name="gps" type="datalink"/>
+    </module>
+    <!-- <module name="gps" type="datalink"/> -->
 
     <module name="stabilization" type="indi">
       <configure name="INDI_NUM_ACT" value="6"/>
@@ -140,13 +140,13 @@
     </module>-->
 
     <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="FALSE"/>
-      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
+      <configure name="USE_MAGNETOMETER" value="TRUE"/>
+      <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
       <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
     </module>
     <module name="ins" type="extended">
-      <define name="INS_USE_GPS_ALT" value="1"/>
-      <define name="INS_USE_GPS_ALT_SPEED" value="TRUE"/>
+      <define name="INS_USE_GPS_ALT" value="TRUE"/>
+      <!-- <define name="INS_USE_GPS_ALT_SPEED" value="TRUE"/> -->
       <define name="INS_VFF_R_GPS" value="0.1"/>
     </module>
     <!-- <modules>
@@ -380,7 +380,7 @@
     	<define name="MASS" value="0.4561"/>		<!--[kg]-->
     	<define name="I_XX" value="0.00638"/>	<!--[kg m2] 0.00526 -->
     	<!--<define name="I_YY" value="0.04914925"/>-->	<!--[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
-    	<define name="I_YY" value="0.0032"/><!--0.0034 0.0036-->
+    	<define name="I_YY" value="0.0036"/><!--0.0034 0.0036-->
     	<define name="I_ZZ" value="0.011"/>	<!--[kg m2] 0.011 0.00341 -->
  	    <!--<define name="I_XX" value="0.017897"/>	[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
     	<!--<define name="I_YY" value="0.003390"/>	[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->

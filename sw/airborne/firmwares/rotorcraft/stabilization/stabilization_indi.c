@@ -199,6 +199,7 @@ float pivot_gain_i = STABILIZATION_INDI_PIVOT_GAIN_I;
 float pivot_gain_i=1.0;
 #endif
 
+bool use_pitch_Wu = false;
 float theta_d = RadOfDeg(-90.0); 
 // float m = CTRL_EFF_CALC_MASS;
 int16_t takeoff_stage = 0;
@@ -869,12 +870,27 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   //Control allocation Weights as a function of airspeed
   // Tilt-rotor tailsitter
   #if USE_PIVOT_SWITCH == TRUE
+
+  if (use_pitch_Wu) {
+  struct FloatEulers eulers_zxy;
+  struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
+  float_eulers_of_quat_zxy(&eulers_zxy, statequat);
+  float fun_tilt = -2.864789f * eulers_zxy.theta- 1.5f;
+  float fun_elevon = 2.864789f * eulers_zxy.theta + 2.5f;
+  indi_Wu[0] = (fun_tilt > 1.0f) ? 1.0f: ((fun_tilt < 0.001f) ? 0.001f : fun_tilt);
+  indi_Wu[1] = indi_Wu[0];
+  indi_Wu[4] = (fun_elevon > 1.0f) ? 1.0f: ((fun_elevon < 0.1f) ? 0.1f : fun_elevon);
+  indi_Wu[5] = indi_Wu[4];
+  }
+  else{
   float fun_tilt = 0.124875f * airspeed - 0.4985f;
   float fun_elevon = -0.124875f * airspeed + 1.4995f;
   indi_Wu[0] = (fun_tilt > 1.0f) ? 1.0f: ((fun_tilt < 0.001f) ? 0.001f : fun_tilt);
   indi_Wu[1] = indi_Wu[0];
   indi_Wu[4] = (fun_elevon > 1.0f) ? 1.0f: ((fun_elevon < 0.1f) ? 0.1f : fun_elevon);
   indi_Wu[5] = indi_Wu[4];
+  }
+
 
   // float pitch_preference = 0.5f; // Example value, adjust as needed
   // float roll_yaw_preference = 0.8f; // Example value, adjust as needed

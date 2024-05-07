@@ -11,6 +11,7 @@
 #include "generated/airframe.h"
 #include "state.h"
 #include "math/pprz_algebra_float.h"
+#include "generated/airframe.h"
 
 struct MassProperties mass_property = {CTRL_EFF_CALC_MASS, CTRL_EFF_CALC_I_XX, CTRL_EFF_CALC_I_YY, CTRL_EFF_CALC_I_ZZ};
 struct MotorCoefficients mot_coef = {CTRL_EFF_CALC_K1, CTRL_EFF_CALC_K2, CTRL_EFF_CALC_K3};
@@ -135,6 +136,7 @@ void ctrl_eff(void)
     g1g2[3][3] = ctrl_deriv_33;
 
     float airspeed = stateGetAirspeed_f();
+    airspeed = (airspeed < 0) ? 0 : airspeed;
 
     g1g2[1][4] = -cde_offset - 0.001f*c_delta_e * airspeed*airspeed;
     g1g2[1][5] = cde_offset + 0.001f*c_delta_e * airspeed*airspeed;

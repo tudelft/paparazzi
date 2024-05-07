@@ -64,7 +64,8 @@
       <call_once fun="autopilot_set_in_flight(false)"/>
       <call_once fun="take_off_enter()"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/> 
-      <stay alt="10.0" wp="CLIMB" until="GetPosHeight() @GT 8.0"/>
+      <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
+      <exception cond="GetPosHeight() @GT 8.0" deroute="Standby"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="false" var="force_forward"/>
@@ -105,7 +106,7 @@
       <go vmode="alt" wp="TD"/>
     </block>
    <block name="flare">
-      <exception cond="LessThan(agl_dist_value_filtered, 0.1) @AND agl_dist_valid" deroute="pivot_land"/>
+      <exception cond="LessThan(agl_dist_value_filtered, 0.2) @AND agl_dist_valid" deroute="pivot_land"/>
       <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="pivot_land">

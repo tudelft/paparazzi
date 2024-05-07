@@ -487,7 +487,7 @@ static void agl_cb(uint8_t __attribute__((unused)) sender_id, __attribute__((unu
   }
 
 #if USE_TFMINI_AGL
-  if (!agl_dist_valid){
+  if (!agl_dist_valid || takeoff_stage != 2){
     return;
   }
 #endif
