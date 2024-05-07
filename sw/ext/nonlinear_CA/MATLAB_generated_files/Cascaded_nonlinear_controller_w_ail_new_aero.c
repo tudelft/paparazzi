@@ -5,7 +5,7 @@
  * File: Cascaded_nonlinear_controller_w_ail_new_aero.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 05-May-2024 01:26:38
+ * C/C++ source code generated on  : 07-May-2024 15:18:42
  */
 
 /* Include Files */
@@ -720,8 +720,7 @@ void Cascaded_nonlinear_controller_w_ail_new_aero(
           q_body_gain -
       q_dot_current;
   des_body_rates_dot_increment[5] =
-      g_max_approach * (target_lin_acc_aero_only[2] - r_body_current) *
-          r_body_gain -
+      g_max_approach * (des_psi_dot - r_body_current) * r_body_gain -
       r_dot_current;
   for (i = 0; i < 6; i++) {
     final_accelerations[i] =
