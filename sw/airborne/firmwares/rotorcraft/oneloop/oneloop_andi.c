@@ -309,6 +309,7 @@ static float use_increment = 0.0;
 static float nav_target[3]; // Can be a position, speed or acceleration depending on the guidance H mode
 static float dt_1l = 1./PERIODIC_FREQUENCY;
 static float g   = 9.81; // [m/s^2] Gravitational Acceleration
+float k_as = 2.0;
 
 /* Oneloop Control Variables*/
 float andi_u[ANDI_NUM_ACT_TOT];
@@ -1241,18 +1242,42 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
       float_vect_copy(oneloop_andi.gui_ref.pos, oneloop_andi.gui_state.pos,2);
       // Wind compensation
       float as = airspeed_filt.o[0];
-      float wind[2];
+      as = positive_non_zero(as);
+      //float wind[2];
+      float gs = float_vect_norm(oneloop_andi.gui_state.vel,2);
+      gs = positive_non_zero(gs);
+      float nt = float_vect_norm(nav_target,2);
+      nt = positive_non_zero(nt);
+      float gs_des = gs;
+      float des_airspeed = nav_max_speed;
+      //float ratio_des_as = 1.0;
+      //float ratio_as_gs = 1.0; 
+      float ratio_des_gs = 1.0;
+      //float wind = 0.0;
       if (as > 10.0){
-        wind[0] = oneloop_andi.gui_state.vel[0]-cosf(eulers_zxy.psi)*as;
-        wind[1] = oneloop_andi.gui_state.vel[1]-sinf(eulers_zxy.psi)*as;
-        nav_target[0] = nav_target[0] + wind[0];
-        nav_target[1] = nav_target[1] + wind[1];
-        printf("Wind: %f %f\n",wind[0],wind[1]);
-        printf("Wind norm: %f\n",float_vect_norm(wind,2));
-        printf("Air Speed Norm: %f\n",as);
-        printf("Ground Speed Norm: %f\n",float_vect_norm(oneloop_andi.gui_state.vel,2));
-        printf("Vn, Ve, psi: %f %f %f\n",oneloop_andi.gui_state.vel[0],oneloop_andi.gui_state.vel[1],eulers_zxy.psi);
+        //wind[0] = oneloop_andi.gui_state.vel[0]-cosf(eulers_zxy.psi)*as;
+        //wind[1] = oneloop_andi.gui_state.vel[1]-sinf(eulers_zxy.psi)*as;
+        //nav_target[0] = nav_target[0] + wind[0];
+        //nav_target[1] = nav_target[1] + wind[1];
+        //printf("Wind: %f %f\n",wind[0],wind[1]);
+        //printf("Wind norm: %f\n",float_vect_norm(wind,2));
+        //printf("Air Speed Norm: %f\n",as);
+        //printf("Ground Speed Norm: %f\n",float_vect_norm(oneloop_andi.gui_state.vel,2));
+        //printf("Vn, Ve, psi: %f %f %f\n",oneloop_andi.gui_state.vel[0],oneloop_andi.gui_state.vel[1],eulers_zxy.psi);
+        //ratio_as_gs = positive_non_zero(as/gs);
+        gs_des = gs +  k_as * (des_airspeed - as);
+        ratio_des_gs = positive_non_zero(gs_des/nt);
+        //ratio_des_as = positive_non_zero(des_airspeed/as);
+        printf("Ratio: %f\n",ratio_des_gs);
+        printf("Desired Airspeed: %f\n",des_airspeed);
+        printf("Air Speed: %f\n",as);
+        printf("Desired Ground Speed: %f\n",gs_des);
+        printf("Ground Speed: %f\n",gs);
+        nav_target[0] = nav_target[0] * ratio_des_gs;
+        nav_target[1] = nav_target[1] * ratio_des_gs;
+        printf("Nav Target: %f \n", float_vect_norm(nav_target,2));
       }
+
       rm_2nd_pos(dt_1l, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target, k_pos_rm.k2, k_pos_rm.k3, max_a_nav, max_j_nav, 2);   
     } else if (rm_order_h == 1){
       float_vect_copy(oneloop_andi.gui_ref.pos, oneloop_andi.gui_state.pos,2);
