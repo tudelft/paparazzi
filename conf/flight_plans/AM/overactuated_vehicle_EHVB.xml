@@ -209,7 +209,7 @@
     </block>
     <block name="descend">
       <set value="0" var="force_forward"/>
-      <set value="1" var="approach_state"/>
+      <set value="0" var="approach_state"/>
       <exception cond="!(stateGetPositionEnu_f()->z > 12.0)" deroute="flare"/>
       <stay climb="-1.5" vmode="climb" wp="TD"/>
     </block>

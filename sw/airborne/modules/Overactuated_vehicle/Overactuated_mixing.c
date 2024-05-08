@@ -99,6 +99,7 @@ struct overactuated_mixing_t overactuated_mixing;
 
 struct ship_info_msg ship_info_receive;
 
+float aoa_protection_speed = 0; 
 
 //General state variables:
 float rate_vect[3], rate_vect_filt[3], rate_vect_dot[3], rate_vect_old[3], rate_vect_filt_dot[3];
@@ -1126,7 +1127,7 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[48] = VEHICLE_CL_BETA;
     extra_data_out_local[49] = VEHICLE_WING_SPAN;
 
-    extra_data_out_local[50] = OVERACTUATED_MIXING_SPEED_AOA_PROTECTION;
+    extra_data_out_local[50] = aoa_protection_speed;
 
     //Aileron addon: 
     extra_data_out_local[51] = w_ail_const;
@@ -1304,7 +1305,7 @@ void assign_variables(void){
             airspeed = 0;
             beta_deg = 0;
         #else
-            airspeed = fmax(0.0,ms45xx.airspeed);
+            airspeed = fmax(OVERACTUATED_MIXING_MIN_AIRSPEED_READING,ms45xx.airspeed);
             beta_deg = - aoa_pwm.angle * 180/M_PI;
         #endif
     #endif
@@ -1354,6 +1355,8 @@ void assign_variables(void){
     //Assign gains according to the approach state: 
     if(approach_state){
         active_gains = app_gains;
+        airspeed = 0.0;
+        aoa_protection_speed = 2.0;
         LIMITS_ACTIVE_MAX_FWD_SPEED = LIMITS_APP_MAX_FWD_SPEED;
         LIMITS_ACTIVE_MAX_AIRSPEED = LIMITS_APP_MAX_AIRSPEED;
         LIMITS_ACTIVE_MIN_FWD_SPEED = LIMITS_APP_MIN_FWD_SPEED;
@@ -1367,6 +1370,7 @@ void assign_variables(void){
     }
     else{
         active_gains = cruise_gains;
+        aoa_protection_speed = OVERACTUATED_MIXING_SPEED_AOA_PROTECTION;
         LIMITS_ACTIVE_MAX_FWD_SPEED = LIMITS_CRUISE_MAX_FWD_SPEED;
         LIMITS_ACTIVE_MAX_AIRSPEED = LIMITS_CRUISE_MAX_AIRSPEED;
         LIMITS_ACTIVE_MIN_FWD_SPEED = LIMITS_CRUISE_MIN_FWD_SPEED;
