@@ -64,6 +64,7 @@
 
 #define RECTIFY_LAT_AND_FWD_SPEED
 
+#define USE_EXT_REF_ATTITUDE
 
 float fpa_off_deg = -3.0; 
 #define NEW_FPA_DEF
@@ -296,7 +297,7 @@ int waypoint_mode = 0;
 float x_stb, y_stb, z_stb;
 
 // Variables for the speed to derivative gain slider and thrust coefficient: 
-float K_d_speed = 0.02; 
+float K_d_speed = 0.005; 
 float K_T_airspeed = 0.025;
 
 // float K_d_speed = 0.02; 

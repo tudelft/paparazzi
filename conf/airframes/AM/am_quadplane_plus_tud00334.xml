@@ -359,7 +359,7 @@
     <define name="CRUISE_GAIN_R" value="1"/>
 
     <define name="CRUISE_GAIN_X" value="1"/>
-    <define name="CRUISE_GAIN_Y" value="1"/>
+    <define name="CRUISE_GAIN_Y" value="1.5"/>
     <define name="CRUISE_GAIN_Z" value="2"/>
 
     <!-- INDI derivative gains -->
@@ -543,9 +543,9 @@
     <define name="W_ACT_AZ_CONST" value="0"/>
     <define name="W_ACT_AZ_SPEED" value="5"/>
     <define name="W_ACT_THETA_CONST" value="100"/>
-    <define name="W_ACT_THETA_SPEED" value="-15"/>
+    <define name="W_ACT_THETA_SPEED" value="-10"/>
     <define name="W_ACT_PHI_CONST" value="100"/>
-    <define name="W_ACT_PHI_SPEED" value="-15"/>
+    <define name="W_ACT_PHI_SPEED" value="-10"/>
 
     <define name="W_ACT_AILERONS_CONST" value="0.5"/>
     <define name="W_ACT_AILERONS_SPEED" value="0"/>
