@@ -210,18 +210,23 @@
     <!-- </section> -->
 
   <!-- Maximum limits of the vehicle in manual speed control mode. limits are in the control rf -->
-  <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
-    <!-- <define name="MAX_FWD_SPEED" value="20.0" unit="m/s"/>
-    <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> 
-    <define name="MIN_FWD_SPEED" value="-4.0" unit="m/s"/>
-    <define name="MAX_LAT_SPEED" value="7.0" unit="m/s"/>
-    <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
-    <define name="MAX_FWD_ACC" value="4.0" unit="m/s^2"/>
-    <define name="MIN_FWD_ACC" value="-1.8" unit="m/s^2"/>
-    <define name="MAX_LAT_ACC" value="11.0" unit="m/s^2"/>
-    <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/> -->
+  <section name="FWD_LIMITS" prefix="LIMITS_CRUISE_">
     <define name="MAX_FWD_SPEED" value="25.0" unit="m/s"/>
     <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> 
+    <define name="MIN_FWD_SPEED" value="-5.0" unit="m/s"/>
+    <define name="MAX_LAT_SPEED" value="5.0" unit="m/s"/>
+    <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
+    <define name="MAX_FWD_ACC" value="6.0" unit="m/s^2"/>
+    <define name="MIN_FWD_ACC" value="-2.5" unit="m/s^2"/> 
+    <define name="MAX_LAT_ACC" value="8.0" unit="m/s^2"/>
+    <define name="MAX_VERT_ACC" value="3.0" unit="m/s^2"/>
+
+    <define name="VERT_ACC_MARGIN" value="2.5" unit="m/s^2"/>
+  </section>
+
+  <section name="APP_LIMITS" prefix="LIMITS_APP_">
+    <define name="MAX_FWD_SPEED" value="25.0" unit="m/s"/>
+    <define name="MAX_AIRSPEED" value="20.0" unit="m/s"/> 
     <define name="MIN_FWD_SPEED" value="-5.0" unit="m/s"/>
     <define name="MAX_LAT_SPEED" value="8.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
@@ -232,19 +237,6 @@
 
     <define name="VERT_ACC_MARGIN" value="2.5" unit="m/s^2"/>
   </section>
-
-  <!-- for demos -->
-  <!-- <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
-    <define name="MAX_FWD_SPEED" value="25.0" unit="m/s"/>
-    <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> 
-    <define name="MIN_FWD_SPEED" value="-10.0" unit="m/s"/>
-    <define name="MAX_LAT_SPEED" value="15.0" unit="m/s"/>
-    <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
-    <define name="MAX_FWD_ACC" value="15.0" unit="m/s^2"/>
-    <define name="MIN_FWD_ACC" value="-10" unit="m/s^2"/>
-    <define name="MAX_LAT_ACC" value="20" unit="m/s^2"/>
-    <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/>
-  </section> -->
 
   <section name="FBW_EXTRA_DATA_OUT" prefix="FBW_T4_">
     <!-- (N_teeth_gear_servo/N_teeth_gear_tube) -->
@@ -305,7 +297,7 @@
 
     <!-- Maximum orders -->
     <!-- General -->
-    <define name="MAX_PHI" value="35" unit="deg"/>
+    <define name="MAX_PHI" value="40" unit="deg"/>
     <define name="MAX_THETA" value="40" unit="deg"/>
     <define name="MAX_PSI_ERR" value="80" unit="deg"/>
 
@@ -320,22 +312,40 @@
     <define name="PID_MAX_AZ_ORDER" value="35" unit="deg"/> <!--max azimuth deflection in PID mode-->
 
     <!-- INDI proportional gains -->
-    <define name="INDI_REF_ERR_P" value="5"/>
-    <define name="INDI_REF_ERR_Q" value="5"/>
-    <define name="INDI_REF_ERR_R" value="1.5"/>
+    <define name="CRUISE_GAIN_P" value="4"/>
+    <define name="CRUISE_GAIN_Q" value="4"/>
+    <define name="CRUISE_GAIN_R" value="1"/>
 
-    <define name="INDI_REF_ERR_X" value="2"/>
-    <define name="INDI_REF_ERR_Y" value="2"/>
-    <define name="INDI_REF_ERR_Z" value="2"/>
+    <define name="CRUISE_GAIN_X" value="1"/>
+    <define name="CRUISE_GAIN_Y" value="1"/>
+    <define name="CRUISE_GAIN_Z" value="2"/>
 
     <!-- INDI derivative gains -->
-    <define name="INDI_REF_RATE_P" value="7"/>
-    <define name="INDI_REF_RATE_Q" value="7"/>
-    <define name="INDI_REF_RATE_R" value="5"/>
+    <define name="CRUISE_GAIN_P_DOT" value="7"/>
+    <define name="CRUISE_GAIN_Q_DOT" value="7"/>
+    <define name="CRUISE_GAIN_R_DOT" value="5"/>
 
-    <define name="INDI_REF_RATE_X" value="2"/>
-    <define name="INDI_REF_RATE_Y" value="2"/>
-    <define name="INDI_REF_RATE_Z" value="5"/>
+    <define name="CRUISE_GAIN_X_DOT" value="1"/>
+    <define name="CRUISE_GAIN_Y_DOT" value="1"/>
+    <define name="CRUISE_GAIN_Z_DOT" value="5"/>
+
+    <!-- INDI approach gains -->
+    <define name="APP_GAIN_P" value="1.6"/>
+    <define name="APP_GAIN_Q" value="1.6"/>
+    <define name="APP_GAIN_R" value="1.6"/>
+
+    <define name="APP_GAIN_X" value="3.5"/>
+    <define name="APP_GAIN_Y" value="3.5"/>
+    <define name="APP_GAIN_Z" value="5"/>
+
+    <!-- INDI approach gains -->
+    <define name="APP_GAIN_P_DOT" value="12.5"/>
+    <define name="APP_GAIN_Q_DOT" value="12.5"/>
+    <define name="APP_GAIN_R_DOT" value="5"/>
+
+    <define name="APP_GAIN_X_DOT" value="4"/>
+    <define name="APP_GAIN_Y_DOT" value="4"/>
+    <define name="APP_GAIN_Z_DOT" value="5"/>
 
     <!-- Actuator dynamics and mapping-->
     <define name="INDI_ACT_DYN_MOTOR" value="0.038" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->

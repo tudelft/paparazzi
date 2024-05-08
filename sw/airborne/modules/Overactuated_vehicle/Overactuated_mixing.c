@@ -350,22 +350,53 @@ struct PID_over pid_gains_over = {
         OVERACTUATED_MIXING_PID_D_GAIN_POS_Z
     } 
 };
-struct PD_indi_over indi_gains_over = {
-    .p = { OVERACTUATED_MIXING_INDI_REF_ERR_P,
-        OVERACTUATED_MIXING_INDI_REF_ERR_Q,
-        OVERACTUATED_MIXING_INDI_REF_ERR_R,
-        OVERACTUATED_MIXING_INDI_REF_ERR_X,
-        OVERACTUATED_MIXING_INDI_REF_ERR_Y,
-        OVERACTUATED_MIXING_INDI_REF_ERR_Z
+struct PD_indi_over cruise_gains = {
+    .p = { OVERACTUATED_MIXING_CRUISE_GAIN_P,
+        OVERACTUATED_MIXING_CRUISE_GAIN_Q,
+        OVERACTUATED_MIXING_CRUISE_GAIN_R,
+        OVERACTUATED_MIXING_CRUISE_GAIN_X,
+        OVERACTUATED_MIXING_CRUISE_GAIN_Y,
+        OVERACTUATED_MIXING_CRUISE_GAIN_Z
     },
-    .d = { OVERACTUATED_MIXING_INDI_REF_RATE_P,
-        OVERACTUATED_MIXING_INDI_REF_RATE_Q,
-        OVERACTUATED_MIXING_INDI_REF_RATE_R,
-        OVERACTUATED_MIXING_INDI_REF_RATE_X,
-        OVERACTUATED_MIXING_INDI_REF_RATE_Y,
-        OVERACTUATED_MIXING_INDI_REF_RATE_Z
+    .d = { OVERACTUATED_MIXING_CRUISE_GAIN_P_DOT,
+        OVERACTUATED_MIXING_CRUISE_GAIN_Q_DOT,
+        OVERACTUATED_MIXING_CRUISE_GAIN_R_DOT,
+        OVERACTUATED_MIXING_CRUISE_GAIN_X_DOT,
+        OVERACTUATED_MIXING_CRUISE_GAIN_Y_DOT,
+        OVERACTUATED_MIXING_CRUISE_GAIN_Z_DOT
     } 
 };
+
+struct PD_indi_over app_gains = {
+    .p = { OVERACTUATED_MIXING_APP_GAIN_P,
+        OVERACTUATED_MIXING_APP_GAIN_Q,
+        OVERACTUATED_MIXING_APP_GAIN_R,
+        OVERACTUATED_MIXING_APP_GAIN_X,
+        OVERACTUATED_MIXING_APP_GAIN_Y,
+        OVERACTUATED_MIXING_APP_GAIN_Z
+    },
+    .d = { OVERACTUATED_MIXING_APP_GAIN_P_DOT,
+        OVERACTUATED_MIXING_APP_GAIN_Q_DOT,
+        OVERACTUATED_MIXING_APP_GAIN_R_DOT,
+        OVERACTUATED_MIXING_APP_GAIN_X_DOT,
+        OVERACTUATED_MIXING_APP_GAIN_Y_DOT,
+        OVERACTUATED_MIXING_APP_GAIN_Z_DOT
+    } 
+};
+
+float LIMITS_ACTIVE_MAX_FWD_SPEED;
+float LIMITS_ACTIVE_MAX_AIRSPEED;
+float LIMITS_ACTIVE_MIN_FWD_SPEED;
+float LIMITS_ACTIVE_MAX_LAT_SPEED;
+float LIMITS_ACTIVE_MAX_VERT_SPEED;
+float LIMITS_ACTIVE_MAX_FWD_ACC;
+float LIMITS_ACTIVE_MIN_FWD_ACC;
+float LIMITS_ACTIVE_MAX_LAT_ACC;
+float LIMITS_ACTIVE_MAX_VERT_ACC;
+float LIMITS_ACTIVE_VERT_ACC_MARGIN;
+
+struct PD_indi_over active_gains;
+
 struct FloatEulers max_value_error = {
     OVERACTUATED_MIXING_MAX_PHI,
     OVERACTUATED_MIXING_MAX_THETA,
@@ -699,7 +730,7 @@ void compute_speed_ref_from_waypoint(float * speed_reference_control_rf, float *
     speed_reference_control_rf[2] = speed_reference_control_rf[2] * Vz_dyn_gain;
 
     //Apply approach constrain to fwd speed: 
-    Bound(speed_reference_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,max_fwd_speed_approach_wp);
+    Bound(speed_reference_control_rf[0],LIMITS_ACTIVE_MIN_FWD_SPEED,max_fwd_speed_approach_wp);
 
     #ifdef USE_NAV_HYBRID_MODULE
         //Horizontal part:
@@ -1115,11 +1146,11 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[61] = manual_az_value; 
     extra_data_out_local[62] = manual_ailerons_value;
     
-    extra_data_out_local[63] = indi_gains_over.p.theta;
-    extra_data_out_local[64] = indi_gains_over.p.phi;
-    extra_data_out_local[65] = indi_gains_over.d.theta;
-    extra_data_out_local[66] = indi_gains_over.d.phi;
-    extra_data_out_local[67] = indi_gains_over.d.psi;
+    extra_data_out_local[63] = active_gains.p.theta;
+    extra_data_out_local[64] = active_gains.p.phi;
+    extra_data_out_local[65] = active_gains.d.theta;
+    extra_data_out_local[66] = active_gains.d.phi;
+    extra_data_out_local[67] = active_gains.d.psi;
     extra_data_out_local[68] = K_d_speed;
 
     extra_data_out_local[69] = -OVERACTUATED_MIXING_MAX_THETA;
@@ -1129,7 +1160,7 @@ void send_values_to_raspberry_pi(void){
 
     extra_data_out_local[73] = disable_acc_decrement_inner_loop;
     extra_data_out_local[74] = OVERACTUATED_MIXING_FILT_CUTOFF_INDI;
-    extra_data_out_local[75] = LIMITS_FWD_MAX_AIRSPEED;
+    extra_data_out_local[75] = LIMITS_ACTIVE_MAX_AIRSPEED;
     extra_data_out_local[76] = vert_acc_margin;
 
     extra_data_out_local[77] = power_cd_0;
@@ -1188,15 +1219,15 @@ void compute_rm_speed_and_acc_control_rf(float * speed_ref_in, float * speed_ref
 
     //Compute speed and acc ref based on the REF_MODEL_GAINS: 
     //First, bound the speed_ref_in with the max and min values: 
-    Bound(speed_ref_in[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
-    BoundAbs(speed_ref_in[1],LIMITS_FWD_MAX_LAT_SPEED);
-    BoundAbs(speed_ref_in[2],LIMITS_FWD_MAX_VERT_SPEED);
+    Bound(speed_ref_in[0],LIMITS_ACTIVE_MIN_FWD_SPEED,LIMITS_ACTIVE_MAX_FWD_SPEED);
+    BoundAbs(speed_ref_in[1],LIMITS_ACTIVE_MAX_LAT_SPEED);
+    BoundAbs(speed_ref_in[2],LIMITS_ACTIVE_MAX_VERT_SPEED);
 
     desired_internal_acc_rm[0] = (speed_ref_in[0] - speed_ref_out_old[0])*REF_MODEL_P_GAIN; 
-    Bound(desired_internal_acc_rm[0],LIMITS_FWD_MIN_FWD_ACC,LIMITS_FWD_MAX_FWD_ACC);
+    Bound(desired_internal_acc_rm[0],LIMITS_ACTIVE_MIN_FWD_ACC,LIMITS_ACTIVE_MAX_FWD_ACC);
 
     desired_internal_acc_rm[2] = (speed_ref_in[2] - speed_ref_out_old[2])*REF_MODEL_P_GAIN; 
-    BoundAbs(desired_internal_acc_rm[2],LIMITS_FWD_MAX_VERT_ACC);
+    BoundAbs(desired_internal_acc_rm[2],LIMITS_ACTIVE_MAX_VERT_ACC);
     
     desired_internal_jerk_rm[0] = (desired_internal_acc_rm[0] - acc_ref_out_old[0])*REF_MODEL_D_GAIN; 
     desired_internal_jerk_rm[2] = (desired_internal_acc_rm[2] - acc_ref_out_old[2])*REF_MODEL_D_GAIN; 
@@ -1320,7 +1351,33 @@ void assign_variables(void){
     //Determination of the speed in the control rf:
     from_earth_to_control( speed_vect_control_rf, speed_vect, euler_vect[2]);
 
-
+    //Assign gains according to the approach state: 
+    if(approach_state){
+        active_gains = app_gains;
+        LIMITS_ACTIVE_MAX_FWD_SPEED = LIMITS_APP_MAX_FWD_SPEED;
+        LIMITS_ACTIVE_MAX_AIRSPEED = LIMITS_APP_MAX_AIRSPEED;
+        LIMITS_ACTIVE_MIN_FWD_SPEED = LIMITS_APP_MIN_FWD_SPEED;
+        LIMITS_ACTIVE_MAX_LAT_SPEED = LIMITS_APP_MAX_LAT_SPEED;
+        LIMITS_ACTIVE_MAX_VERT_SPEED = LIMITS_APP_MAX_VERT_SPEED;
+        LIMITS_ACTIVE_MAX_FWD_ACC = LIMITS_APP_MAX_FWD_ACC;
+        LIMITS_ACTIVE_MIN_FWD_ACC = LIMITS_APP_MIN_FWD_ACC;
+        LIMITS_ACTIVE_MAX_LAT_ACC = LIMITS_APP_MAX_LAT_ACC;
+        LIMITS_ACTIVE_MAX_VERT_ACC = LIMITS_APP_MAX_VERT_ACC;
+        LIMITS_ACTIVE_VERT_ACC_MARGIN = LIMITS_APP_VERT_ACC_MARGIN;
+    }
+    else{
+        active_gains = cruise_gains;
+        LIMITS_ACTIVE_MAX_FWD_SPEED = LIMITS_CRUISE_MAX_FWD_SPEED;
+        LIMITS_ACTIVE_MAX_AIRSPEED = LIMITS_CRUISE_MAX_AIRSPEED;
+        LIMITS_ACTIVE_MIN_FWD_SPEED = LIMITS_CRUISE_MIN_FWD_SPEED;
+        LIMITS_ACTIVE_MAX_LAT_SPEED = LIMITS_CRUISE_MAX_LAT_SPEED;
+        LIMITS_ACTIVE_MAX_VERT_SPEED = LIMITS_CRUISE_MAX_VERT_SPEED;
+        LIMITS_ACTIVE_MAX_FWD_ACC = LIMITS_CRUISE_MAX_FWD_ACC;
+        LIMITS_ACTIVE_MIN_FWD_ACC = LIMITS_CRUISE_MIN_FWD_ACC;
+        LIMITS_ACTIVE_MAX_LAT_ACC = LIMITS_CRUISE_MAX_LAT_ACC;
+        LIMITS_ACTIVE_MAX_VERT_ACC = LIMITS_CRUISE_MAX_VERT_ACC;
+        LIMITS_ACTIVE_VERT_ACC_MARGIN = LIMITS_CRUISE_VERT_ACC_MARGIN;
+    }
 
     #ifdef NEW_FPA_DEF
         float smooth_gain_gamma = (airspeed - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION) / (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION);
@@ -1648,8 +1705,8 @@ void overactuated_mixing_run(void)
         Bound(gain_to_speed_constant, 0.1, 1);
 
         //Apply euler angle gains: 
-        float phi_dot = euler_error[0]  * indi_gains_over.p.phi * gain_to_speed_constant;
-        float theta_dot = euler_error[1]  * indi_gains_over.p.theta * gain_to_speed_constant;
+        float phi_dot = euler_error[0]  * active_gains.p.phi * gain_to_speed_constant;
+        float theta_dot = euler_error[1]  * active_gains.p.theta * gain_to_speed_constant;
         float psi_dot = euler_error[2];
         float phi_value = euler_vect[0];
         float theta_value = euler_vect[1];
@@ -1664,14 +1721,14 @@ void overactuated_mixing_run(void)
         rate_setpoint[2] = angular_body_error[2] ;
 
         //Compute the angular acceleration setpoint using the filtered rates:
-        acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * indi_gains_over.d.phi * gain_to_speed_constant;
-        acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * indi_gains_over.d.theta * gain_to_speed_constant;
-        acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * indi_gains_over.d.psi * gain_to_speed_constant;
+        acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * active_gains.d.phi * gain_to_speed_constant;
+        acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * active_gains.d.theta * gain_to_speed_constant;
+        acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * active_gains.d.psi * gain_to_speed_constant;
 
         // //Compute the angular acceleration setpoint using the unfiltered rates:
-        // acc_setpoint[3] = (rate_setpoint[0] - rate_vect[0]) * indi_gains_over.d.phi;
-        // acc_setpoint[4] = (rate_setpoint[1] - rate_vect[1]) * indi_gains_over.d.theta;
-        // acc_setpoint[5] = (rate_setpoint[2] - rate_vect[2]) * indi_gains_over.d.psi;
+        // acc_setpoint[3] = (rate_setpoint[0] - rate_vect[0]) * active_gains.d.phi;
+        // acc_setpoint[4] = (rate_setpoint[1] - rate_vect[1]) * active_gains.d.theta;
+        // acc_setpoint[5] = (rate_setpoint[2] - rate_vect[2]) * active_gains.d.psi;
 
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
@@ -1703,7 +1760,7 @@ void overactuated_mixing_run(void)
 
         // If wanted, use the position control for the altitude: 
         if(0){
-            speed_setpoint_control_rf[2] = pos_error[2] * indi_gains_over.p.z;
+            speed_setpoint_control_rf[2] = pos_error[2] * active_gains.p.z;
         }
 
         //Estimate aoa (useful in the next two loops):
@@ -1750,13 +1807,13 @@ void overactuated_mixing_run(void)
         //Apply saturation blocks to speed setpoints in control reference frame:
         #ifdef FLY_WITH_AIRSPEED
             //Try to equalize the maximum fwd speed with the airspeed:
-            float max_Vx_airspeed = max_V_control_from_max_airspeed(airspeed, speed_vect_control_rf[0], aoa_angle_estimation, LIMITS_FWD_MAX_AIRSPEED);
-            Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,Min(LIMITS_FWD_MAX_FWD_SPEED,max_Vx_airspeed));
+            float max_Vx_airspeed = max_V_control_from_max_airspeed(airspeed, speed_vect_control_rf[0], aoa_angle_estimation, LIMITS_ACTIVE_MAX_AIRSPEED);
+            Bound(speed_setpoint_control_rf[0],LIMITS_ACTIVE_MIN_FWD_SPEED,Min(LIMITS_ACTIVE_MAX_FWD_SPEED,max_Vx_airspeed));
         #else
-            Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
+            Bound(speed_setpoint_control_rf[0],LIMITS_ACTIVE_MIN_FWD_SPEED,LIMITS_ACTIVE_MAX_FWD_SPEED);
         #endif
-        BoundAbs(speed_setpoint_control_rf[1],LIMITS_FWD_MAX_LAT_SPEED);
-        BoundAbs(speed_setpoint_control_rf[2],LIMITS_FWD_MAX_VERT_SPEED);
+        BoundAbs(speed_setpoint_control_rf[1],LIMITS_ACTIVE_MAX_LAT_SPEED);
+        BoundAbs(speed_setpoint_control_rf[2],LIMITS_ACTIVE_MAX_VERT_SPEED);
 
         //Use reference model to compute speed and accelerations references: 
         #ifdef USE_RM
@@ -1794,14 +1851,14 @@ void overactuated_mixing_run(void)
         #endif
 
         //Compute the acceleration setpoints in the control rf:
-        acc_setpoint[0] = speed_error_vect_control_rf[0] * indi_gains_over.d.x;
-        acc_setpoint[1] = speed_error_vect_control_rf[1] * indi_gains_over.d.y;
-        acc_setpoint[2] = speed_error_vect_control_rf[2] * indi_gains_over.d.z;
+        acc_setpoint[0] = speed_error_vect_control_rf[0] * active_gains.d.x;
+        acc_setpoint[1] = speed_error_vect_control_rf[1] * active_gains.d.y;
+        acc_setpoint[2] = speed_error_vect_control_rf[2] * active_gains.d.z;
 
         //Apply saturation points for the accelerations in the control rf:
-        Bound(acc_setpoint[0],LIMITS_FWD_MIN_FWD_ACC,LIMITS_FWD_MAX_FWD_ACC);
-        BoundAbs(acc_setpoint[1],LIMITS_FWD_MAX_LAT_ACC);
-        BoundAbs(acc_setpoint[2],LIMITS_FWD_MAX_VERT_ACC);
+        Bound(acc_setpoint[0],LIMITS_ACTIVE_MIN_FWD_ACC,LIMITS_ACTIVE_MAX_FWD_ACC);
+        BoundAbs(acc_setpoint[1],LIMITS_ACTIVE_MAX_LAT_ACC);
+        BoundAbs(acc_setpoint[2],LIMITS_ACTIVE_MAX_VERT_ACC);
 
         #ifdef USE_RM
             //Sum the acc_ref_out_local components to the acc setpoint: 

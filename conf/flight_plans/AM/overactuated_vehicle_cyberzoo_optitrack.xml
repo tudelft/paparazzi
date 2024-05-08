@@ -99,6 +99,11 @@
       <set value="0" var="approach_state"/>
       <stay wp="STDBY"/>
     </block>
+    <block name="Standby_APP">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <stay wp="STDBY"/>
+    </block>
     <block name="go_p5">
       <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>

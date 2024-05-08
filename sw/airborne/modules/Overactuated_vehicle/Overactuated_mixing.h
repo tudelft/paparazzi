@@ -126,7 +126,8 @@ struct overactuated_mixing_t {
 
 extern struct overactuated_mixing_t overactuated_mixing;
 extern struct PID_over pid_gains_over;
-extern struct PD_indi_over indi_gains_over;
+extern struct PD_indi_over cruise_gains;
+extern struct PD_indi_over app_gains;
 
 // Variables for slider
 extern float K_beta;
