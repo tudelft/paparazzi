@@ -30,16 +30,22 @@
             <define name="RADIO_FMODE"              value="RADIO_AUX2"/>
             <define name="RADIO_FBW_MODE"           value="RADIO_AUX3"/>
             <define name="RADIO_CONTROL_THRUST_X"   value="RADIO_AUX4"/>
-            <!-- EKF EXT POSE  configure inputs -->
-            <define name="INS_EXT_POSE_MAG_ID"      value="MAG_RM3100_SENDER_ID"/>
-            <define name="INS_EXT_POSE_IMU_ID"      value="IMU_CUBE1_ID"/> 
+
+            <!-- EKF2 configure inputs -->
+            <define name="INS_EKF2_GYRO_ID"     value="IMU_CUBE1_ID"/>
+            <define name="INS_EKF2_ACCEL_ID"    value="IMU_CUBE1_ID"/>
+            <define name="INS_EKF2_MAG_ID"      value="MAG_RM3100_SENDER_ID"/>
+
             <!--Only send gyro and accel that is being used-->
             <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
             <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
+
             <!-- Range sensor connected to supercan -->
             <module name="range_sensor_uavcan"/>
+
             <!-- Log in high speed (Remove for outdoor flights) -->
             <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
+
             <define name="I2C2_CLOCK_SPEED" value="100000"/>
         </target>
 
@@ -94,15 +100,7 @@
         
         <!-- IMU / INS -->  
         <module name="imu" type="cube"/>  
-
-        <module name="ins" type="ekf2">
-            <!-- <define name="INS_EKF2_MAG_ID" value="MAG_IST8310_SENDER_ID"/> -->
-            <define name="INS_EKF2_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
-            <!-- <define name="INS_EKF2_MAG_ID" value="MAG_LIS3MDL_SENDER_ID"/> -->
-            <!-- <define name="INS_EKF2_OPTITRACK" value="TRUE"/> -->
-            <define name="INS_EKF2_ACCEL_ID" value="IMU_CUBE1_ID"/>
-            <define name="INS_EKF2_GYRO_ID" value="IMU_CUBE1_ID"/>
-        </module>
+        <module name="ins" type="ekf2"/>
  
         <!-- Actuators on dual CAN bus -->
         <module name="actuators" type="uavcan">
