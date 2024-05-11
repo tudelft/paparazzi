@@ -331,7 +331,7 @@
     <define name="CRUISE_GAIN_R" value="1"/>
 
     <define name="CRUISE_GAIN_X" value="1"/>
-    <define name="CRUISE_GAIN_Y" value="1"/>
+    <define name="CRUISE_GAIN_Y" value="1.5"/>
     <define name="CRUISE_GAIN_Z" value="2"/>
 
     <!-- INDI derivative gains -->
@@ -340,7 +340,7 @@
     <define name="CRUISE_GAIN_R_DOT" value="5"/>
 
     <define name="CRUISE_GAIN_X_DOT" value="1"/>
-    <define name="CRUISE_GAIN_Y_DOT" value="1"/>
+    <define name="CRUISE_GAIN_Y_DOT" value="1.75"/>
     <define name="CRUISE_GAIN_Z_DOT" value="5"/>
 
     <!-- INDI approach gains -->
@@ -470,7 +470,9 @@
     <define name="MAX_DELTA_AILERONS" value="25" unit="deg"/>
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
 
-    <define name="SPEED_AOA_PROTECTION" value="-1" unit="m/s"/>
+    <define name="SPEED_AOA_PROTECTION" value="3" unit="m/s"/>
+
+    <define name="MIN_AIRSPEED_READING" value="5.0" unit="m/s"/>
 
     <!-- Tilting angle constraint in the approach and takeoff phase -->
     <define name="K_ALT_TILT_CONSTRAINT" value="50" unit="deg/meters"/>
@@ -486,18 +488,18 @@
   <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES_FAILSAFE" value="0.12" /> 
 
     <!-- Weighting matrix for the INDI -->
-    <define name="W_ACT_MOTOR_CONST" value="3"/>
-    <define name="W_ACT_MOTOR_SPEED" value="0.25"/>
+    <define name="W_ACT_MOTOR_CONST" value="100"/>
+    <define name="W_ACT_MOTOR_SPEED" value="0"/>
     <define name="W_ACT_EL_CONST" value="0"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
     <define name="W_ACT_AZ_CONST" value="0"/>
-    <define name="W_ACT_AZ_SPEED" value="2"/>
+    <define name="W_ACT_AZ_SPEED" value="5"/>
     <define name="W_ACT_THETA_CONST" value="100"/>
-    <define name="W_ACT_THETA_SPEED" value="-15"/>
+    <define name="W_ACT_THETA_SPEED" value="-10"/>
     <define name="W_ACT_PHI_CONST" value="100"/>
-    <define name="W_ACT_PHI_SPEED" value="-15"/>
+    <define name="W_ACT_PHI_SPEED" value="-10"/>
 
-    <define name="W_ACT_AILERONS_CONST" value="3"/>
+    <define name="W_ACT_AILERONS_CONST" value="0.5"/>
     <define name="W_ACT_AILERONS_SPEED" value="0"/>
 
     <define name="TRANSITION_SPEED_PSEUDOCTR_HEDGE" value="7"/>
@@ -511,20 +513,20 @@
     <define VALUE="0.02" NAME="W_DV_5"/>
     <define VALUE="0.02" NAME="W_DV_6"/> -->
     
-    <define VALUE="0.015" NAME="W_DV_1"/>
-    <define VALUE="0.015" NAME="W_DV_2"/>
+    <define VALUE="0.01" NAME="W_DV_1"/>
+    <define VALUE="0.01" NAME="W_DV_2"/>
     <define VALUE="0.02" NAME="W_DV_3"/>
-    <define VALUE="0.033" NAME="W_DV_4"/>
-    <define VALUE="0.033" NAME="W_DV_5"/>
-    <define VALUE="0.033" NAME="W_DV_6"/>
+    <define VALUE="0.05" NAME="W_DV_4"/>
+    <define VALUE="0.05" NAME="W_DV_5"/>
+    <define VALUE="0.05" NAME="W_DV_6"/>
 
-    <define VALUE="0.55e-5" NAME="GAMMA_QUADRATIC_DU"/>
+    <define VALUE="0.5e-7" NAME="GAMMA_QUADRATIC_DU"/>
 
     <!-- FWD flight properties for yaw rate induced by controller and for removal of lateral speed term-->
     <!-- <define name="MIN_SPEED_TRANSITION" value="3.0" unit="m/s"/>
     <define name="REF_SPEED_TRANSITION" value="5.0" unit="m/s"/> -->
-    <define name="MIN_SPEED_TRANSITION" value="5.0" unit="m/s"/>
-    <define name="REF_SPEED_TRANSITION" value="9.0" unit="m/s"/>
+    <define name="MIN_SPEED_TRANSITION" value="8.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION" value="10.0" unit="m/s"/>
 
   </section>
 
@@ -575,10 +577,10 @@
     <define name="LZ" value="0." unit="m"/>
 
     <define name="CL_ALPHA" value="3.5"/>
-    <define name="CM_ZERO" value="0.05"/>
-    <define name="CM_ALPHA" value="-0.1"/>
-    <define name="CD_ZERO" value="0.38"/>
-    <define name="K_CD" value="0.2"/>
+    <define name="CM_ZERO" value="0.0"/>
+    <define name="CM_ALPHA" value="0.0"/>
+    <define name="CD_ZERO" value="0.2"/>
+    <define name="K_CD" value="0.08"/>
     <define name="CY_BETA" value="0"/>
     <define name="CL_BETA" value="0"/>
     <define name="S" value="0.43"/>
