@@ -470,7 +470,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
 #ifdef GUIDANCE_INDI_HYBRID_USE_OLD_WLS
     float thr_saturation =
             wls_alloc_gd(du_gih, v_gih, du_min_gih, du_max_gih,
-                               Bwls_gih, 0, 0, Wv_gih, Wu_gih, du_pref_gih, 1000, 10, 0);
+                               Bwls_gih, 0, 0, Wv_gih, Wu_gih, du_pref_gih, 1000, 10);
 
     #ifdef GUIDANCE_INDI_SOARING_CTRL_SWITCH
         if (thr_saturation < 0) {       // negative saturation
@@ -487,9 +487,9 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
 
             // wls alloc
         float pitch_saturation =
-                wls_alloc_gd(du_gih_reduced, v_gih_reduced, du_min_gih_reduced, du_max_gih_reduced,
+                wls_alloc_gd_reduced(du_gih_reduced, v_gih_reduced, du_min_gih_reduced, du_max_gih_reduced,
                                    Bwls_gih_reduced, 0, 0, Wv_gih_reduced, Wu_gih_reduced, du_pref_gih_reduced,
-                                   1000, 10, 1);
+                                   1000, 10);
 
             euler_cmd.x = du_gih_reduced[0];
             euler_cmd.y = du_gih_reduced[1];
