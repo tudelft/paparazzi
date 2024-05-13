@@ -64,6 +64,7 @@
         <dl_setting var="stablization_indi_yaw_dist_limit" min="0" step=".01" max="10.0" shortname="lim_yaw_spec_moment" param="STABILIZATION_INDI_YAW_DISTURBANCE_LIMIT"/>
         <dl_setting var="Bwls[3][4]" min="-0.03" step="0.0001" max="0.03" shortname="Thr_effectiveness" />
         <dl_setting var="guidance_indi_min_throttle" min="0.0" max="9600" step="1" shortname="Min_Thr"/>
+        <dl_setting var="guidance_indi_min_throttle_fwd" min="0.0" max="9600" step="1" shortname="Min_FWD_Thr"/>
       </dl_settings>
     </dl_settings>
   </settings>

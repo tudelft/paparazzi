@@ -286,6 +286,12 @@ float guidance_indi_min_throttle = GUIDANCE_INDI_MIN_THROTTLE;
 float guidance_indi_min_throttle = 0.0;
 #endif
 
+#ifdef GUIDANCE_INDI_MIN_THROTTLE_FWD
+float guidance_indi_min_throttle_fwd = GUIDANCE_INDI_MIN_THROTTLE_FWD;
+#else
+float guidance_indi_min_throttle_fwd = 0.0;
+#endif
+
 float g1g2[INDI_OUTPUTS][INDI_NUM_ACT];
 float g1_est[INDI_OUTPUTS][INDI_NUM_ACT];
 float g2_est[INDI_NUM_ACT];

@@ -32,6 +32,7 @@
 
 
 extern float guidance_indi_min_throttle;
+extern float guidance_indi_min_throttle_fwd;
 
 extern struct Int32Quat   stab_att_sp_quat;  ///< with #INT32_QUAT_FRAC
 extern struct Int32Eulers stab_att_sp_euler; ///< with #INT32_ANGLE_FRAC
