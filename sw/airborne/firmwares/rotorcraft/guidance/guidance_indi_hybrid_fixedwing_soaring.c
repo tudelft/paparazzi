@@ -978,7 +978,7 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
     v_gih[1] = a_diff.y;
     v_gih[2] = a_diff.z;
 }
-void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED][GUIDANCE_INDI_HYBRID_U_REDUCED], struct FloatVect2 a_diff, float v_gih[GUIDANCE_INDI_HYBRID_V_REDUCED], bool altitude_ctrl) {
+void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED][GUIDANCE_INDI_HYBRID_U_REDUCED], struct FloatVect3 a_diff, float v_gih[GUIDANCE_INDI_HYBRID_V_REDUCED], bool altitude_ctrl) {
     // Get attitude
     struct FloatEulers eulers_zxy;
     float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
@@ -1018,7 +1018,7 @@ void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED]
         lift = guidance_indi_soaring_get_lift(aoa, airspeed, Q);
         liftd = guidance_indi_soaring_get_liftd(aoa, airspeed, Q);
 
-        drag = guidance_indi_soaring_get_drag(aoa, airspeed, Q);
+//        drag = guidance_indi_soaring_get_drag(aoa, airspeed, Q);
         dragd = guidance_indi_soaring_get_dragd(aoa, airspeed, Q);
     }
 
@@ -1045,8 +1045,8 @@ void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED]
             Gmat[1][1] += -spsi*dragd;
         }
 
-        v_gih_reduced[1] = a_diff.y;
-        v_gih_reduced[2] = a_diff.z;
+        v_gih[1] = a_diff.y;
+        v_gih[2] = a_diff.z;
     } else {
 
         // Gl
@@ -1065,8 +1065,8 @@ void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED]
             Gmat[0][1] += -cpsi*dragd;
             Gmat[1][1] += -spsi*dragd;
         }
-        v_gih_reduced[0] = a_diff.x;
-        v_gih_reduced[1] = a_diff.y;
+        v_gih[0] = a_diff.x;
+        v_gih[1] = a_diff.y;
     }
 
 }

@@ -400,21 +400,24 @@
       <field name="exponential"         type="uint8" unit="bool">Exponential chirp active</field>
     </message>
 
-     <message name="POTENTIAL_FLOW" id="46">
-         <field name="wind_speed_x" type="float"/>
-         <field name="wind_speed_z" type="float"/>
-         <field name="wind_grad_x" type="float"/>
-         <field name="wind_grad_z" type="float"/>
-         <field name="ltp_pos_vehicle_x" type="float"/>
-         <field name="ltp_pos_vehicle_z" type="float"/>
-         <field name="ltp_pos_relative_x" type="float"/>
-         <field name="ltp_pos_relative_z" type="float"/>
-         <field name="gd_speed_sp_x" type="float"/>
-         <field name="gd_speed_sp_z" type="float"/>
-     </message>
+    <message name="EXTERNAL_POSE_DOWN" id="46">
+      <description>
+        Position, speed and orientation in local frame from a remote vision system
+      </description>
+      <field name="timestamp" type="float" unit="mus">Timestamp from the measurement</field>
+      <field name="ned_x"     type="float" unit="m">NED x position in vision frame</field>
+      <field name="ned_y"     type="float" unit="m">NED y position in vision frame</field>
+      <field name="ned_z"     type="float" unit="m">NED z position in vision frame</field>
+      <field name="ned_xd"    type="float" unit="m/s">NED x speed in vision frame</field>
+      <field name="ned_yd"    type="float" unit="m/s">NED y speed in vision frame</field>
+      <field name="ned_zd"    type="float" unit="m/s">NED z speed in vision frame</field>
+      <field name="body_qi"   type="float">Body quaternion i in NED to body</field>
+      <field name="body_qx"   type="float">Body quaternion x in NED to body</field>
+      <field name="body_qy"   type="float">Body quaternion y in NED to body</field>
+      <field name="body_qz"   type="float">Body quaternion z in NED to body</field>
+    </message>
 
-
-     <message name="WP_MOVED_LLA" id="47">
+    <message name="WP_MOVED_LLA" id="47">
       <field name="wp_id" type="uint8"/>
       <field name="lat" type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
       <field name="lon" type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
@@ -1884,8 +1887,22 @@
          <field name = "serial_act_t4_rolling_msg_out_id" type="uint8">T4 Rolling message out id</field>
 
      </message>
-    <!-- 188 is free -->
-    <!-- 189 is free -->
+
+
+     <message name="POTENTIAL_FLOW" id="188">
+         <field name="wind_speed_x" type="float"/>
+         <field name="wind_speed_z" type="float"/>
+         <field name="wind_grad_x" type="float"/>
+         <field name="wind_grad_z" type="float"/>
+         <field name="ltp_pos_vehicle_x" type="float"/>
+         <field name="ltp_pos_vehicle_z" type="float"/>
+         <field name="ltp_pos_relative_x" type="float"/>
+         <field name="ltp_pos_relative_z" type="float"/>
+         <field name="gd_speed_sp_x" type="float"/>
+         <field name="gd_speed_sp_z" type="float"/>
+     </message>
+
+     <!-- 189 is free -->
     <!-- 190 is free -->
     <!-- 191 is free -->
     <!-- 192 is free -->

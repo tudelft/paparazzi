@@ -56,6 +56,6 @@ void qr_solve_wrapper_gd(int m, int n, float** A, float* b, float* x);
  *
  * @return Number of iterations, -1 upon failure
  */
-extern int wls_alloc_gd(float* u, float* v, float* umin, float* umax, float** B,
+extern float wls_alloc_gd(float* u, float* v, float* umin, float* umax, float** B,
               float* u_guess, float* W_init, float* Wv, float* Wu,
-              float* ud, float gamma, int imax);
+              float* ud, float gamma, int imax, int use_reduced_model);

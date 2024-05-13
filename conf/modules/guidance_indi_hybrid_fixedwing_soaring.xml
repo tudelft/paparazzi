@@ -130,8 +130,10 @@
     <!-- Guidance actuators: (roll, pitch, thrust) for fixed-wing  -->
     <!-- Yaw is set from navigation / seperated reference -->
     <define name="GUIDANCE_INDI_HYBRID_U" value="3"/>
+    <define name="GUIDANCE_INDI_HYBRID_U_REDUCED" value="2"/>
     <!-- Guidance control objectives: ax, ay, ay -->
     <define name="GUIDANCE_INDI_HYBRID_V" value="3"/>
+    <define name="GUIDANCE_INDI_HYBRID_V_REDUCED" value="2"/>
     <file name="guidance_indi_hybrid_fixedwing_soaring.c" dir="$(SRC_FIRMWARE)/guidance"/>
   </makefile>
 </module>

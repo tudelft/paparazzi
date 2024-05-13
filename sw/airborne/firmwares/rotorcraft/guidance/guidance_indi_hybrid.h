@@ -93,6 +93,12 @@ extern float Wv_gih[GUIDANCE_INDI_HYBRID_V];
 extern float du_min_gih[GUIDANCE_INDI_HYBRID_U];
 extern float du_max_gih[GUIDANCE_INDI_HYBRID_U];
 extern float du_pref_gih[GUIDANCE_INDI_HYBRID_U];
+
+extern float Wu_gih_reduced[GUIDANCE_INDI_HYBRID_U_REDUCED];
+extern float Wv_gih_reduced[GUIDANCE_INDI_HYBRID_V_REDUCED];
+extern float du_min_gih_reduced[GUIDANCE_INDI_HYBRID_U_REDUCED];
+extern float du_max_gih_reduced[GUIDANCE_INDI_HYBRID_U_REDUCED];
+extern float du_pref_gih_reduced[GUIDANCE_INDI_HYBRID_U_REDUCED];
 #endif
 
 extern float guidance_indi_thrust_z_eff;

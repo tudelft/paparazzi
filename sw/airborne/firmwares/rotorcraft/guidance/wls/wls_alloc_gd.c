@@ -113,46 +113,46 @@ void qr_solve_wrapper_gd(int m, int n, float** A, float* b, float* x) {
  * @return pitch saturation if n_u == 2; (reduced model)
  */
 // duplication for guidance TODO merge
-int wls_alloc_gd(float* u, float* v, float* umin, float* umax, float** B,
+float wls_alloc_gd(float* u, float* v, float* umin, float* umax, float** B,
                        float* u_guess, float* W_init, float* Wv, float* Wu, float* up,
-                       float gamma_sq, int imax, bool use_reduced_model) {
+                       float gamma_sq, int imax, int use_reduced_model) {
     // allocate variables, use defaults where parameters are set to 0
     if(!gamma_sq) gamma_sq = 100000;
     if(!imax) imax = 100;
 
-    if (use_reduced_model) {        // 2d model
-        int n_c = G_CA_N_C_REDUCED;
-        int n_u = G_CA_N_U_REDUCED;
-        int n_v = G_CA_N_V_REDUCED;
-
-        float A[G_CA_N_C_REDUCED][G_CA_N_U_REDUCED];
-        float A_free[G_CA_N_C_REDUCED][G_CA_N_U_REDUCED];
-
-        // Create a pointer array to the rows of A_free
-        // such that we can pass it to a function
-        float *A_free_ptr[G_CA_N_C_REDUCED];
-        for (int i = 0; i < n_c; i++)
-            A_free_ptr[i] = A_free[i];
-
-        float b[G_CA_N_C_REDUCED];
-        float d[G_CA_N_C_REDUCED];
-
-        int free_index[G_CA_N_U_REDUCED];
-        int free_index_lookup[G_CA_N_U_REDUCED];
-        int n_free = 0;
-        int free_chk = -1;
-
-        int iter = 0;
-        float p_free[G_CA_N_U_REDUCED];
-        float p[G_CA_N_U_REDUCED];
-        float u_opt[G_CA_N_U_REDUCED];
-        int infeasible_index[G_CA_N_U_REDUCED]
-        UNUSED;
-        int n_infeasible = 0;
-        float lambda[G_CA_N_U_REDUCED];
-        float W[G_CA_N_U_REDUCED];
-
-    } else {        // full model
+//    if (use_reduced_model) {        // 2d model
+//        int n_c = G_CA_N_C_REDUCED;
+//        int n_u = G_CA_N_U_REDUCED;
+//        int n_v = G_CA_N_V_REDUCED;
+//
+//        float A[G_CA_N_C_REDUCED][G_CA_N_U_REDUCED];
+//        float A_free[G_CA_N_C_REDUCED][G_CA_N_U_REDUCED];
+//
+//        // Create a pointer array to the rows of A_free
+//        // such that we can pass it to a function
+//        float *A_free_ptr[G_CA_N_C_REDUCED];
+//        for (int i = 0; i < n_c; i++)
+//            A_free_ptr[i] = A_free[i];
+//
+//        float b[G_CA_N_C_REDUCED];
+//        float d[G_CA_N_C_REDUCED];
+//
+//        int free_index[G_CA_N_U_REDUCED];
+//        int free_index_lookup[G_CA_N_U_REDUCED];
+//        int n_free = 0;
+//        int free_chk = -1;
+//
+//        int iter = 0;
+//        float p_free[G_CA_N_U_REDUCED];
+//        float p[G_CA_N_U_REDUCED];
+//        float u_opt[G_CA_N_U_REDUCED];
+//        int infeasible_index[G_CA_N_U_REDUCED]
+//        UNUSED;
+//        int n_infeasible = 0;
+//        float lambda[G_CA_N_U_REDUCED];
+//        float W[G_CA_N_U_REDUCED];
+//
+//    } else {        // full model
         int n_c = G_CA_N_C;
         int n_u = G_CA_N_U;
         int n_v = G_CA_N_V;
@@ -183,7 +183,7 @@ int wls_alloc_gd(float* u, float* v, float* umin, float* umax, float** B,
         int n_infeasible = 0;
         float lambda[G_CA_N_U];
         float W[G_CA_N_U];
-    }
+//    }
 
     // Initialize u and the working set, if provided from input
     if (!u_guess) {

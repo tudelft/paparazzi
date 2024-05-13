@@ -465,9 +465,10 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   guidance_indi_hybrid_set_wls_settings(v_gih, roll_filt.o[0], pitch_filt.o[0]);
 
   float du_gih[GUIDANCE_INDI_HYBRID_U]; // = {0.0f, 0.0f, 0.0f};
+  float du_gih_reduced[GUIDANCE_INDI_HYBRID_U_REDUCED]; // = {0.0f, 0.0f, 0.0f};
 
 #ifdef GUIDANCE_INDI_HYBRID_USE_OLD_WLS
-    int thr_saturation =
+    float thr_saturation =
             wls_alloc_gd(du_gih, v_gih, du_min_gih, du_max_gih,
                                Bwls_gih, 0, 0, Wv_gih, Wu_gih, du_pref_gih, 1000, 10, 0);
 
@@ -476,7 +477,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
             // Ga, wls_setting, WLS
 
             // altitude control (z ctrl, let go of x)
-            guidance_indi_calcg_reduced(Ga_reduced, a_diff, v_gih_reduced, 0);
+            guidance_indi_calcg_wing_reduced(Ga_reduced, a_diff, v_gih_reduced, 0);
 
             // horizontal control (x ctrl, let go of z)
 //            guidance_indi_calcg_reduced(Ga_reduced, a_diff, v_gih_reduced, 1);
@@ -485,7 +486,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
             guidance_indi_hybrid_set_wls_settings_reduced(v_gih_reduced, roll_filt.o[0], pitch_filt.o[0]);
 
             // wls alloc
-        int pitch_saturation =
+        float pitch_saturation =
                 wls_alloc_gd(du_gih_reduced, v_gih_reduced, du_min_gih_reduced, du_max_gih_reduced,
                                    Bwls_gih_reduced, 0, 0, Wv_gih_reduced, Wu_gih_reduced, du_pref_gih_reduced,
                                    1000, 10, 1);
