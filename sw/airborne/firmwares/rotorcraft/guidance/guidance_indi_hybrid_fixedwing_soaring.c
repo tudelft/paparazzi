@@ -978,6 +978,98 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
     v_gih[1] = a_diff.y;
     v_gih[2] = a_diff.z;
 }
+void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED][GUIDANCE_INDI_HYBRID_U_REDUCED], struct FloatVect2 a_diff, float v_gih[GUIDANCE_INDI_HYBRID_V_REDUCED], bool altitude_ctrl) {
+    // Get attitude
+    struct FloatEulers eulers_zxy;
+    float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+
+    /*Pre-calculate sines and cosines*/
+    float sphi = sinf(eulers_zxy.phi);
+    float cphi = cosf(eulers_zxy.phi);
+    float stheta = sinf(eulers_zxy.theta);
+    float ctheta = cosf(eulers_zxy.theta);
+    float spsi = sinf(eulers_zxy.psi);
+    float cpsi = cosf(eulers_zxy.psi);
+    //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
+
+    /*Amount of lift produced by the wing*/
+    float pitch_lift = eulers_zxy.theta;
+//    Bound(pitch_lift,-M_PI_2,0);
+    float lift = -cosf(pitch_lift)*9.81;
+//    float T = sinf(pitch_lift)*9.81;
+//    float drag = -sinf(pitch_lift)*9.81;
+
+    float airspeed = stateGetAirspeed_f();
+    float Q = 0.1574;       // 0.5 rho S
+    float aoa = stateGetAngleOfAttack_f();      // in rad
+    if (airspeed < 6.3) {
+        // AOA sensor only works when airspeed > 7m/s
+        // below that, use pitch
+        aoa = pitch_lift;
+        airspeed = 6.3;
+    }
+
+    // get the derivative of the lift wrt to theta
+    float liftd = -gih_params.liftd_asq*airspeed*airspeed;
+    float dragd = -2*2.2077*pitch_lift*Q*airspeed*airspeed;
+
+    // Calculate Cl, Cd, liftd and dragd
+    if (guidance_indi_soaring_use_aoa) {
+        lift = guidance_indi_soaring_get_lift(aoa, airspeed, Q);
+        liftd = guidance_indi_soaring_get_liftd(aoa, airspeed, Q);
+
+        drag = guidance_indi_soaring_get_drag(aoa, airspeed, Q);
+        dragd = guidance_indi_soaring_get_dragd(aoa, airspeed, Q);
+    }
+
+    // update vars for logging
+    L = lift;
+    Ld = liftd;
+    Dd = dragd;
+
+    if (altitude_ctrl) {
+        // Gl
+        Gmat[0][0] = spsi*cphi*lift;
+        Gmat[1][0] = -cpsi*cphi*lift;
+        Gmat[2][0] = -sphi*lift;
+        Gmat[0][1] = spsi*sphi*liftd;
+        Gmat[1][1] = -cpsi*sphi*liftd;
+        Gmat[2][1] = cphi*liftd;
+        Gmat[0][2] = - spsi*sphi*stheta;
+        Gmat[1][2] = cpsi*sphi*stheta;
+        Gmat[2][2] = -cphi*stheta;
+
+        // Gd, just in case
+        if (guidance_indi_soaring_use_drag) {
+            Gmat[0][1] += -cpsi*dragd;
+            Gmat[1][1] += -spsi*dragd;
+        }
+
+        v_gih_reduced[1] = a_diff.y;
+        v_gih_reduced[2] = a_diff.z;
+    } else {
+
+        // Gl
+        Gmat[0][0] = spsi*cphi*lift;
+        Gmat[1][0] = -cpsi*cphi*lift;
+        Gmat[2][0] = -sphi*lift;
+        Gmat[0][1] = spsi*sphi*liftd;
+        Gmat[1][1] = -cpsi*sphi*liftd;
+        Gmat[2][1] = cphi*liftd;
+        Gmat[0][2] = - spsi*sphi*stheta;
+        Gmat[1][2] = cpsi*sphi*stheta;
+        Gmat[2][2] = -cphi*stheta;
+
+        // Gd, just in case
+        if (guidance_indi_soaring_use_drag) {
+            Gmat[0][1] += -cpsi*dragd;
+            Gmat[1][1] += -spsi*dragd;
+        }
+        v_gih_reduced[0] = a_diff.x;
+        v_gih_reduced[1] = a_diff.y;
+    }
+
+}
 #endif
 
 #if GUIDANCE_INDI_HYBRID_USE_WLS
@@ -1013,5 +1105,33 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3] UNUSED, float roll_an
   du_min_gih[2] = 0.0 - actuator_state_filt_vect[4];
   du_max_gih[2] = MAX_PPRZ - actuator_state_filt_vect[4];
   du_pref_gih[2] = du_min_gih[2];
+}
+
+void guidance_indi_hybrid_set_wls_settings_reduced(float body_v[2] UNUSED, float roll_angle, float pitch_angle)
+{
+    float aoa = stateGetAngleOfAttack_f();      // in rad
+    float airspeed = stateGetAirspeed_f();
+
+  // Set lower limits,
+  // Set upper limits,
+  // Set prefered states
+
+  // roll
+  du_min_gih_reduced[0] = -guidance_indi_max_bank - roll_angle; // roll
+  du_max_gih_reduced[0] = guidance_indi_max_bank - roll_angle; //roll
+  du_pref_gih_reduced[0] = 0.0 - roll_angle; // prefered delta roll angle
+
+  // pitch
+  du_min_gih_reduced[1] = RadOfDeg(GUIDANCE_INDI_MIN_PITCH) - pitch_angle; // pitch
+  if (use_aoa_pitch_limit && airspeed > 7.0) {
+    du_max_gih_reduced[1] = soaring_critical_aoa - aoa; // pitch
+  } else {
+    du_max_gih_reduced[1] = RadOfDeg(GUIDANCE_INDI_MAX_PITCH) - pitch_angle; // pitch
+    }
+  if (use_aoa_pitch_pref && airspeed > 6.5) {
+        du_pref_gih_reduced[1] = soaring_critical_aoa - aoa; // prefered delta pitch angle
+  } else {
+  du_pref_gih_reduced[1] = 0.0 - pitch_angle; // prefered delta pitch angle
+  }
 }
 #endif

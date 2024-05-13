@@ -186,6 +186,7 @@ Butterworth2LowPass accely_filt;
 struct FloatVect2 desired_airspeed;
 
 float Ga[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_HYBRID_U];
+float Ga_reduced[GUIDANCE_INDI_HYBRID_V-1][GUIDANCE_INDI_HYBRID_U-1];       // for soaring; omit z or x and throttle
 struct FloatVect3 euler_cmd;
 
 #if GUIDANCE_INDI_HYBRID_USE_WLS
@@ -198,6 +199,17 @@ float du_min_gih[GUIDANCE_INDI_HYBRID_U];
 float du_max_gih[GUIDANCE_INDI_HYBRID_U];
 float du_pref_gih[GUIDANCE_INDI_HYBRID_U];
 float *Bwls_gih[GUIDANCE_INDI_HYBRID_V];
+
+// for soaring
+#ifdef GUIDANCE_INDI_SOARING_CTRL_SWITCH
+float du_min_gih_reduced[GUIDANCE_INDI_HYBRID_U-1];
+float du_max_gih_reduced[GUIDANCE_INDI_HYBRID_U-1];
+float du_pref_gih_reduced[GUIDANCE_INDI_HYBRID_U-1];
+float *Bwls_gih_reduced[GUIDANCE_INDI_HYBRID_V-1];
+float Wv_gih_reduced[GUIDANCE_INDI_HYBRID_V-1] = {1.f, 1.f};
+float Wu_gih_reduced[GUIDANCE_INDI_HYBRID_U-1] = {1.f, 1.f};
+#endif
+
 #ifdef GUIDANCE_INDI_HYBRID_WLS_PRIORITIES
 float Wv_gih[GUIDANCE_INDI_HYBRID_V] = GUIDANCE_INDI_HYBRID_WLS_PRIORITIES;
 #else
@@ -212,6 +224,7 @@ float Wu_gih[GUIDANCE_INDI_HYBRID_U] = { 1.f, 1.f, 1.f };
 
 // The control objective
 float v_gih[3];
+float v_gih_reduced[2];     // for soaring;
 
 // Filters
 float filter_cutoff = GUIDANCE_INDI_FILTER_CUTOFF;
@@ -439,77 +452,59 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   float du_gih[GUIDANCE_INDI_HYBRID_U]; // = {0.0f, 0.0f, 0.0f};
 
 #ifdef GUIDANCE_INDI_HYBRID_USE_OLD_WLS
-    int num_iter UNUSED =
+    int thr_saturation =
             wls_alloc_gd(du_gih, v_gih, du_min_gih, du_max_gih,
-                               Bwls_gih, 0, 0, Wv_gih, Wu_gih, du_pref_gih, 1000, 10);
+                               Bwls_gih, 0, 0, Wv_gih, Wu_gih, du_pref_gih, 1000, 10, 0);
+
+    #ifdef GUIDANCE_INDI_SOARING_CTRL_SWITCH
+        if (thr_saturation < 0) {       // negative saturation
+            // Ga, wls_setting, WLS
+
+            // altitude control (z ctrl, let go of x)
+            guidance_indi_calcg_reduced(Ga_reduced, a_diff, v_gih_reduced, 0);
+
+            // horizontal control (x ctrl, let go of z)
+//            guidance_indi_calcg_reduced(Ga_reduced, a_diff, v_gih_reduced, 1);
+
+            // wls settings
+            guidance_indi_hybrid_set_wls_settings_reduced(v_gih_reduced, roll_filt.o[0], pitch_filt.o[0]);
+
+            // wls alloc
+        int pitch_saturation =
+                wls_alloc_gd(du_gih_reduced, v_gih_reduced, du_min_gih_reduced, du_max_gih_reduced,
+                                   Bwls_gih_reduced, 0, 0, Wv_gih_reduced, Wu_gih_reduced, du_pref_gih_reduced,
+                                   1000, 10, 1);
+
+            euler_cmd.x = du_gih_reduced[0];
+            euler_cmd.y = du_gih_reduced[1];
+            euler_cmd.z = -1;
+
+        } else {
+              euler_cmd.x = du_gih[0];
+              euler_cmd.y = du_gih[1];
+              euler_cmd.z = du_gih[2];
+        }
+    #else
+        euler_cmd.x = du_gih[0];
+        euler_cmd.y = du_gih[1];
+        euler_cmd.z = du_gih[2];
+    #endif
+
 #else
   int num_iter UNUSED = wls_alloc(
       du_gih, v_gih, du_min_gih, du_max_gih,
       Bwls_gih, 0, 0, Wv_gih, Wu_gih, du_pref_gih, 100000, 10,
       GUIDANCE_INDI_HYBRID_U, GUIDANCE_INDI_HYBRID_V);
-#endif
 
   euler_cmd.x = du_gih[0];
   euler_cmd.y = du_gih[1];
   euler_cmd.z = du_gih[2];
 
-//
-//  // TODO: WLS allocation
-//  // u, v, umin, umax, B, u_guess(initial), W_init,
-//  // Wv, Wu, up(preferred control vector), gamma_sq, imax(max iter)
-//  //
-//  float gd_du_min[3];
-//float gd_du_max[3];
-//float gd_du_pref[3];
-//  // Calculates min & max increments
-//  // min&max phi, theta, thrust
-//  gd_du_min[0] = -guidance_indi_max_bank - roll_filt.o[0];
-//  gd_du_max[0] = guidance_indi_max_bank - roll_filt.o[0];
-//  gd_du_pref[0] = 0.0 - roll_filt.o[0];
-//
-//  gd_du_min[1] = RadOfDeg(GUIDANCE_INDI_MIN_PITCH) - pitch_filt.o[0];
-//  gd_du_max[1] = RadOfDeg(GUIDANCE_INDI_MAX_PITCH) - pitch_filt.o[0];
-//  gd_du_pref[1] = 0.0 - pitch_filt.o[0];
-//
-//  gd_du_min[2] = 0.0 - actuator_state_filt_vect[4];
-//  gd_du_max[2] = MAX_PPRZ - actuator_state_filt_vect[4];
-//  gd_du_pref[2] = 0.0 - actuator_state_filt_vect[4]; // TODO: preferred value
-//
-//float gd_gamma_sq = 1000.;
-//float gd_Wv[3] = {1.0, 1.0, 6.5};         // x y z
-//float gd_Wu[3] = {1.0, 100.0, 1.0};         // roll pitch thrust
-//
-//  float linear_acc_diff[3];
-//
-//    // Control objective TODO: change name
-//    linear_acc_diff[0] = a_diff.x;
-//    linear_acc_diff[1] = a_diff.y;
-//    linear_acc_diff[2] = a_diff.z;
-//float indi_d_euler[3];
-//
-//    int gd_num_iter =
-//            wls_alloc_gd(indi_d_euler, v_gih, du_min_gih, du_max_gih,
-//                               Bwls_gih, 0, 0, Wv_gih, Wu_gih, du_pref_gih, 1000, 10);
-//
-//printf("new,old: %f %f, %f %f, %f %f \n", du_gih[0], indi_d_euler[0], du_gih[1], indi_d_euler[1], du_gih[2], indi_d_euler[2]);
-////printf("new: %f %f %f \n", indi_d_euler[0], indi_d_euler[1], indi_d_euler[2]);
-//
-//  //Calculate roll,pitch and thrust command
-////  MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
-////  AbiSendMsgTHRUST(THRUST_INCREMENT_ID, euler_cmd.z);
-////    float_vect_sum(indi_euler_cmd, euler_state_filt_vect, indi_d_euler, 3);
-////printf("%d, %f, %f, %f, %f, %f\n", gd_num_iter, indi_d_euler[0], indi_d_euler[1], indi_d_euler[2], roll_filt.o[0], pitch_filt.o[0]);
-//
-//// keep the original vars for telemetry// x:roll, y:pitch, z:throttle
-////    euler_cmd.x = indi_d_euler[0];
-////    euler_cmd.y = indi_d_euler[1];
-////    euler_cmd.z = indi_d_euler[2];
-//
-////    guidance_euler_cmd.phi = roll_filt.o[0] + indi_d_euler[0];
-////    guidance_euler_cmd.theta = pitch_filt.o[0] + indi_d_euler[1];
-////    TODO: filter??
-////    AbiSendMsgTHRUST(THRUST_INCREMENT_ID, indi_d_euler[2]);
+#endif
 
+//  euler_cmd.x = du_gih[0];
+//  euler_cmd.y = du_gih[1];
+//  euler_cmd.z = du_gih[2];
 
 #else
   // compute inverse matrix of Ga
