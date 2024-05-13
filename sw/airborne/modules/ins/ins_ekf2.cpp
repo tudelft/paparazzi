@@ -326,6 +326,7 @@ float settings_yaw_offset = INS_EKF2_GPS_RTK_YAW_OFFSET;
 float _last_gps_rtk_yaw = 0.0;
 uint64_t _time_last_gps_rtk_yaw_valid{0};
 
+static struct extVisionSample sample_ev;          ///< External vision sample
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
 
@@ -400,7 +401,6 @@ static void send_ins_ekf2(struct transport_tx *trans, struct link_device *dev)
   ekf.get_innovation_test_status(innov_test_status, mag, vel, pos, hgt, tas, hagl, beta);
   //ekf.get_flow_innov(&flow);
   ekf.get_mag_decl_deg(&mag_decl);
-  flow = 0;
 
   if (ekf.isTerrainEstimateValid()) {
     terrain_valid = 1;
@@ -505,6 +505,37 @@ static void send_ahrs_quat(struct transport_tx *trans, struct link_device *dev)
                               &ahrs_id);
 }
 
+
+static void send_external_pose_down(struct transport_tx *trans, struct link_device *dev)
+{
+  if(sample_ev.time_us == 0){
+    return;
+  }
+  float sample_temp_ev[11];
+  sample_temp_ev[0]  = (float) sample_ev.time_us;
+  sample_temp_ev[1]  = sample_ev.pos(0) ;
+  sample_temp_ev[2]  = sample_ev.pos(1) ;
+  sample_temp_ev[3]  = sample_ev.pos(2) ;
+  sample_temp_ev[4]  = sample_ev.vel(0) ;
+  sample_temp_ev[5]  = sample_ev.vel(1) ;
+  sample_temp_ev[6]  = sample_ev.vel(2) ;
+  sample_temp_ev[7]  = sample_ev.quat(0);
+  sample_temp_ev[8]  = sample_ev.quat(1);
+  sample_temp_ev[9]  = sample_ev.quat(2);
+  sample_temp_ev[10] = sample_ev.quat(3);
+  pprz_msg_send_EXTERNAL_POSE_DOWN(trans, dev, AC_ID,
+                        &sample_temp_ev[0],
+                        &sample_temp_ev[1],
+                        &sample_temp_ev[2],
+                        &sample_temp_ev[3],
+                        &sample_temp_ev[4],
+                        &sample_temp_ev[5],
+                        &sample_temp_ev[6],
+                        &sample_temp_ev[7],
+                        &sample_temp_ev[8],
+                        &sample_temp_ev[9],
+                        &sample_temp_ev[10] );
+}
 #endif
 
 /* Initialize the EKF */
@@ -572,6 +603,9 @@ void ins_ekf2_init(void)
   /* Initialize the flow sensor limits */
   ekf.set_optical_flow_limits(INS_EKF2_MAX_FLOW_RATE, INS_EKF2_SONAR_MIN_RANGE, INS_EKF2_SONAR_MAX_RANGE);
 
+  // Don't send external vision data by default
+  sample_ev.time_us = 0;
+
   /* Initialize the origin from flight plan */
 #if USE_INS_NAV_INIT
   if(ekf.setEkfGlobalOrigin(NAV_LAT0*1e-7, NAV_LON0*1e-7, (NAV_ALT0)*1e-3)) // EKF2 works HMSL
@@ -603,6 +637,7 @@ void ins_ekf2_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WIND_INFO_RET, send_wind_info_ret);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_BIAS, send_ahrs_bias);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_QUAT_INT, send_ahrs_quat);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EXTERNAL_POSE_DOWN, send_external_pose_down);
 #endif
 
   /*
@@ -727,24 +762,23 @@ void ins_ekf2_remove_gps(int32_t mode)
 void ins_ekf2_parse_EXTERNAL_POSE(uint8_t *buf) {
   if (DL_EXTERNAL_POSE_ac_id(buf) != AC_ID) { return; } // not for this aircraft
 
-  extVisionSample sample;
-  sample.time_us = get_sys_time_usec(); //FIXME
-  sample.pos(0) = DL_EXTERNAL_POSE_enu_y(buf);
-  sample.pos(1) = DL_EXTERNAL_POSE_enu_x(buf);
-  sample.pos(2) = -DL_EXTERNAL_POSE_enu_z(buf);
-  sample.vel(0) = DL_EXTERNAL_POSE_enu_yd(buf);
-  sample.vel(1) = DL_EXTERNAL_POSE_enu_xd(buf);
-  sample.vel(2) = -DL_EXTERNAL_POSE_enu_zd(buf);
-  sample.quat(0) = DL_EXTERNAL_POSE_body_qi(buf);
-  sample.quat(1) = DL_EXTERNAL_POSE_body_qy(buf);
-  sample.quat(2) = DL_EXTERNAL_POSE_body_qx(buf);
-  sample.quat(3) = -DL_EXTERNAL_POSE_body_qz(buf);
-  sample.posVar.setAll(INS_EKF2_EVP_NOISE);
-  sample.velCov = matrix::eye<float, 3>() * INS_EKF2_EVV_NOISE;
-  sample.angVar = INS_EKF2_EVA_NOISE;
-  sample.vel_frame = velocity_frame_t::LOCAL_FRAME_FRD;
+  sample_ev.time_us = get_sys_time_usec(); //FIXME
+  sample_ev.pos(0) = DL_EXTERNAL_POSE_enu_y(buf);
+  sample_ev.pos(1) = DL_EXTERNAL_POSE_enu_x(buf);
+  sample_ev.pos(2) = -DL_EXTERNAL_POSE_enu_z(buf);
+  sample_ev.vel(0) = DL_EXTERNAL_POSE_enu_yd(buf);
+  sample_ev.vel(1) = DL_EXTERNAL_POSE_enu_xd(buf);
+  sample_ev.vel(2) = -DL_EXTERNAL_POSE_enu_zd(buf);
+  sample_ev.quat(0) = DL_EXTERNAL_POSE_body_qi(buf);
+  sample_ev.quat(1) = DL_EXTERNAL_POSE_body_qy(buf);
+  sample_ev.quat(2) = DL_EXTERNAL_POSE_body_qx(buf);
+  sample_ev.quat(3) = -DL_EXTERNAL_POSE_body_qz(buf);
+  sample_ev.posVar.setAll(INS_EKF2_EVP_NOISE);
+  sample_ev.velCov = matrix::eye<float, 3>() * INS_EKF2_EVV_NOISE;
+  sample_ev.angVar = INS_EKF2_EVA_NOISE;
+  sample_ev.vel_frame = velocity_frame_t::LOCAL_FRAME_FRD;
 
-  ekf.setExtVisionData(sample);
+  ekf.setExtVisionData(sample_ev);
 }
 
 void ins_ekf2_parse_EXTERNAL_POSE_SMALL(uint8_t __attribute__((unused)) *buf) {

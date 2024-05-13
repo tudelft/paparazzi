@@ -122,6 +122,9 @@ bool take_heading_control = false;
 
 bool force_forward = false;
 
+bool guidance_indi_airspeed_filtering = false;
+
+
 struct FloatVect3 sp_accel = {0.0,0.0,0.0};
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
 float guidance_indi_specific_force_gain = GUIDANCE_INDI_SPECIFIC_FORCE_GAIN;
@@ -150,6 +153,10 @@ static void guidance_indi_filter_thrust(void);
 #else
 #define GUIDANCE_INDI_FILTER_CUTOFF 3.0
 #endif
+#endif
+
+#ifndef GUIDANCE_INDI_AIRSPEED_FILT_CUTOFF
+#define GUIDANCE_INDI_AIRSPEED_FILT_CUTOFF 0.5
 #endif
 
 #ifndef GUIDANCE_INDI_CLIMB_SPEED_FWD
@@ -182,6 +189,7 @@ Butterworth2LowPass roll_filt;
 Butterworth2LowPass pitch_filt;
 Butterworth2LowPass thrust_filt;
 Butterworth2LowPass accely_filt;
+Butterworth2LowPass guidance_indi_airspeed_filt;
 
 struct FloatVect2 desired_airspeed;
 
@@ -228,6 +236,7 @@ float v_gih_reduced[2];     // for soaring;
 
 // Filters
 float filter_cutoff = GUIDANCE_INDI_FILTER_CUTOFF;
+float guidance_indi_airspeed_filt_cutoff = GUIDANCE_INDI_AIRSPEED_FILT_CUTOFF;
 
 float guidance_indi_hybrid_heading_sp = 0.f;
 struct FloatEulers guidance_euler_cmd;
@@ -334,6 +343,9 @@ void guidance_indi_init(void)
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
+  
+  float tau_guidance_indi_airspeed = 1.0/(2.0*M_PI*guidance_indi_airspeed_filt_cutoff);
+  init_butterworth_2_low_pass(&guidance_indi_airspeed_filt, tau_guidance_indi_airspeed, sample_time, 0.0);
 
 #if GUIDANCE_INDI_HYBRID_USE_WLS
   for (int8_t i = 0; i < GUIDANCE_INDI_HYBRID_V; i++) {
@@ -373,6 +385,9 @@ void guidance_indi_enter(void) {
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, eulers_zxy.theta);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, thrust_in);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
+
+  float tau_guidance_indi_airspeed = 1.0/(2.0*M_PI*guidance_indi_airspeed_filt_cutoff);
+  init_butterworth_2_low_pass(&guidance_indi_airspeed_filt, tau_guidance_indi_airspeed, sample_time, 0.0);
 }
 
 #include "firmwares/rotorcraft/navigation.h"
@@ -571,8 +586,15 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   // Use the current roll angle to determine the corresponding heading rate of change.
   float coordinated_turn_roll = eulers_zxy.phi;
 
-  if( (guidance_euler_cmd.theta > 0.0f) && ( fabs(guidance_euler_cmd.phi) < guidance_euler_cmd.theta)) {
-    coordinated_turn_roll = ((guidance_euler_cmd.phi > 0.0f) - (guidance_euler_cmd.phi < 0.0f)) * guidance_euler_cmd.theta;
+  // When tilting backwards (e.g. waypoint behind the drone), we have to yaw around to face the direction
+  // of flight even when the drone is not rolling much (yet). Determine the shortest direction in which to yaw by
+  // looking at the roll angle.
+  if( (eulers_zxy.theta > 0.0f) && ( fabs(eulers_zxy.phi) < eulers_zxy.theta)) {
+    if (eulers_zxy.phi > 0.0f) {
+      coordinated_turn_roll = eulers_zxy.theta;
+    } else {
+      coordinated_turn_roll = -eulers_zxy.theta;
+    }
   }
 
   if (fabsf(coordinated_turn_roll) < max_phi) {
@@ -668,6 +690,9 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
   float airspeed = 0.f;
 #else
   float airspeed = stateGetAirspeed_f();
+  if (guidance_indi_airspeed_filtering) {
+    airspeed = guidance_indi_airspeed_filt.o[0];
+  }
 #endif
   struct NedCoor_f *groundspeed = stateGetSpeedNed_f();
   struct FloatVect2 airspeed_v = { cpsi * airspeed, spsi * airspeed };
@@ -889,6 +914,9 @@ void guidance_indi_propagate_filters(void) {
   // Propagate filter for sideslip correction
   float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
   update_butterworth_2_low_pass(&accely_filt, accely);
+
+  float airspeed = stateGetAirspeed_f();
+  update_butterworth_2_low_pass(&guidance_indi_airspeed_filt, airspeed);
 }
 
 
