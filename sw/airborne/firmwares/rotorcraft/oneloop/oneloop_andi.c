@@ -267,7 +267,7 @@ float max_v_nav = 5.0;
 #endif
 
 #ifndef FWD_SIDESLIP_GAIN
-float fwd_sideslip_gain = 1.0;
+float fwd_sideslip_gain = 0.2;
 #else
 float fwd_sideslip_gain = FWD_SIDESLIP_GAIN;
 #endif
@@ -310,6 +310,7 @@ static float nav_target[3]; // Can be a position, speed or acceleration dependin
 static float dt_1l = 1./PERIODIC_FREQUENCY;
 static float g   = 9.81; // [m/s^2] Gravitational Acceleration
 float k_as = 2.0;
+float temp_pitch = 0.0;
 
 /* Oneloop Control Variables*/
 float andi_u[ANDI_NUM_ACT_TOT];
@@ -472,10 +473,12 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
 
 static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
 {
-  float temp_debug_vect[2];
-  temp_debug_vect[0] = andi_u[COMMAND_PITCH];
-  temp_debug_vect[1] = pitch_pref;
-  debug_vect(trans, dev, "andi_u_pitch_pref", temp_debug_vect, 2);
+  float temp_debug_vect[1];
+  //temp_debug_vect[0] = andi_u[COMMAND_PITCH];
+  //temp_debug_vect[1] = pitch_pref;
+  temp_debug_vect[0]=temp_pitch;
+  debug_vect(trans, dev, "nu_pitch_ctrl", temp_debug_vect, 1);
+  //debug_vect(trans, dev, "andi_u_pitch_pref", temp_debug_vect, 2);
 }
 #endif
 
@@ -1268,14 +1271,14 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
         gs_des = gs +  k_as * (des_airspeed - as);
         ratio_des_gs = positive_non_zero(gs_des/nt);
         //ratio_des_as = positive_non_zero(des_airspeed/as);
-        printf("Ratio: %f\n",ratio_des_gs);
-        printf("Desired Airspeed: %f\n",des_airspeed);
-        printf("Air Speed: %f\n",as);
-        printf("Desired Ground Speed: %f\n",gs_des);
-        printf("Ground Speed: %f\n",gs);
+        //printf("Ratio: %f\n",ratio_des_gs);
+        //printf("Desired Airspeed: %f\n",des_airspeed);
+        //printf("Air Speed: %f\n",as);
+        //printf("Desired Ground Speed: %f\n",gs_des);
+        //printf("Ground Speed: %f\n",gs);
         nav_target[0] = nav_target[0] * ratio_des_gs;
         nav_target[1] = nav_target[1] * ratio_des_gs;
-        printf("Nav Target: %f \n", float_vect_norm(nav_target,2));
+        //printf("Nav Target: %f \n", float_vect_norm(nav_target,2));
       }
 
       rm_2nd_pos(dt_1l, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target, k_pos_rm.k2, k_pos_rm.k3, max_a_nav, max_j_nav, 2);   
@@ -1293,7 +1296,7 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     } else {
       float ref_mag_vel = float_vect_norm(oneloop_andi.gui_ref.vel,2);
       if (ref_mag_vel > 3.0){
-        psi_des_rad = atan2f(oneloop_andi.gui_ref.vel[1],oneloop_andi.gui_ref.vel[0]);
+        //psi_des_rad = atan2f(oneloop_andi.gui_ref.vel[1],oneloop_andi.gui_ref.vel[0]);
       }
       // FIX UNCOMMENT
       psi_des_rad += oneloop_andi_sideslip() * dt_1l;
@@ -1310,9 +1313,9 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     float single_value_k1_rm[1]      = {k_pos_rm.k1[2]};
     float single_value_k2_rm[1]      = {k_pos_rm.k2[2]};
     float single_value_k3_rm[1]      = {k_pos_rm.k3[2]};
-
+    float max_v_nav_v = 3.0;
     if (rm_order_v == 3){
-      rm_3rd_pos(dt_1l, single_value_ref, single_value_d_ref, single_value_2d_ref, single_value_3d_ref, single_value_nav_target, single_value_k1_rm, single_value_k2_rm, single_value_k3_rm, max_v_nav, max_a_nav, max_j_nav, 1);    
+      rm_3rd_pos(dt_1l, single_value_ref, single_value_d_ref, single_value_2d_ref, single_value_3d_ref, single_value_nav_target, single_value_k1_rm, single_value_k2_rm, single_value_k3_rm, max_v_nav_v, max_a_nav, max_j_nav, 1);    
       oneloop_andi.gui_ref.pos[2] = single_value_ref[0];
       oneloop_andi.gui_ref.vel[2] = single_value_d_ref[0];
       oneloop_andi.gui_ref.acc[2] = single_value_2d_ref[0];
@@ -1461,7 +1464,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
         }
         break;
       case COMMAND_MOTOR_PUSHER:
-      case COMMAND_ELEVATOR:
       case COMMAND_RUDDER:
       case COMMAND_AILERONS:
       case COMMAND_FLAPS:
@@ -1469,6 +1471,11 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
         du_max_1l[i]  = (act_max[i] - use_increment * actuator_state_1l[i])/ratio_u_un[i];
         du_pref_1l[i] = (u_pref[i]  - use_increment * actuator_state_1l[i])/ratio_u_un[i]; 
         break;
+      case COMMAND_ELEVATOR:  
+        du_min_1l[i]  = (act_min[i] - use_increment * actuator_state_1l[i])/ratio_u_un[i];
+        du_max_1l[i]  = (act_max[i] - use_increment * actuator_state_1l[i])/ratio_u_un[i];
+        du_pref_1l[i] = (u_pref[i]  - use_increment * actuator_state_1l[i])/ratio_u_un[i];  
+        break;     
       case COMMAND_ROLL:
       case COMMAND_PITCH:
         du_min_1l[i]  = (act_min[i] - use_increment * oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
@@ -1480,9 +1487,10 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
 
   // WLS Control Allocator
   number_iter = wls_alloc(andi_du_n, nu, du_min_1l, du_max_1l, bwls_1l, 0, 0, Wv_wls, Wu, du_pref_1l, gamma_wls, 10, ANDI_NUM_ACT_TOT, ANDI_OUTPUTS);
-
+  temp_pitch = 0.0;
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
     andi_du[i] = (float)(andi_du_n[i] * ratio_u_un[i]);
+    temp_pitch += andi_du_n[i] * bwls_1l[4][i];
   }
 
   if (in_flight_oneloop) {
@@ -1704,20 +1712,20 @@ float oneloop_andi_sideslip(void)
   // Coordinated turn
   // feedforward estimate angular rotation omega = g*tan(phi)/v
   float omega = 0.0;
-  // const float max_phi = RadOfDeg(ONELOOP_ANDI_MAX_BANK);
-  // float airspeed_turn = airspeed_filt.o[0];
-  // Bound(airspeed_turn, 1.0f, 30.0f);
-  // // Use the current roll angle to determine the corresponding heading rate of change.
-  // float coordinated_turn_roll = eulers_zxy.phi;
-  // // Prevent flipping
-  // if( (andi_u[COMMAND_PITCH] > 0.0f) && ( fabs(andi_u[COMMAND_ROLL]) < andi_u[COMMAND_PITCH])) {
-  //   coordinated_turn_roll = ((andi_u[COMMAND_ROLL] > 0.0f) - (andi_u[COMMAND_ROLL] < 0.0f)) * andi_u[COMMAND_PITCH];
-  // }
-  // BoundAbs(coordinated_turn_roll, max_phi);
-  // omega = g / airspeed_turn * tanf(coordinated_turn_roll);
+  const float max_phi = RadOfDeg(ONELOOP_ANDI_MAX_BANK);
+  float airspeed_turn = airspeed_filt.o[0];
+  Bound(airspeed_turn, 1.0f, 30.0f);
+  // Use the current roll angle to determine the corresponding heading rate of change.
+  float coordinated_turn_roll = eulers_zxy.phi;
+  // Prevent flipping
+  if( (eulers_zxy.theta > 0.0f) && ( fabs(eulers_zxy.phi) < eulers_zxy.theta)) {
+    coordinated_turn_roll = ((eulers_zxy.phi > 0.0f) - (eulers_zxy.phi < 0.0f)) * eulers_zxy.theta;
+  }
+  BoundAbs(coordinated_turn_roll, max_phi);
+  omega = g / airspeed_turn * tanf(coordinated_turn_roll);
   #ifdef FWD_SIDESLIP_GAIN
   // Add sideslip correction
-  //omega -= accely_filt.o[0]*fwd_sideslip_gain;
+  omega -= accely_filt.o[0]*fwd_sideslip_gain;
   #endif
   return omega;
 }
