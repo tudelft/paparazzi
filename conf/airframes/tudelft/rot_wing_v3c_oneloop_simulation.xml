@@ -204,7 +204,7 @@
         <define name="STABILIZATION_ATTITUDE_SP_MAX_THETA"  value="45." unit="deg"  />
         <define name="STABILIZATION_ATTITUDE_SP_MAX_R"      value="90." unit="deg/s"/>
         <define name="STABILIZATION_ATTITUDE_DEADBAND_R"    value="200"             />
-        <define name="FWD_SIDESLIP_GAIN"                    value="2.0"/>
+        <define name="FWD_SIDESLIP_GAIN"                    value="0.01"/> <!-- cyfoam 0.32-->
     </section>
     <section name="GROUND_DETECT">
         <define name="THRESHOLD_GROUND_DETECT"              value="40"/>

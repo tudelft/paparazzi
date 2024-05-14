@@ -58,6 +58,66 @@ static void print_in_and_outputs(int n_c, int n_free, float** A_free_ptr, float*
 
 #define WLS_N_C ((WLS_N_U)+(WLS_N_V))
 
+struct WLS_param WLS_p = {
+  .nu              = WLS_N_U,         
+  .nv              = WLS_N_V,
+  .gamma           = 0.0,
+  .v     = {0.0},
+  .Wv   = {0.0},
+  .Wu   = {0.0},
+  .u_pref = {0.0},
+  .u_min = {0.0},
+  .u_max = {0.0},
+  .PC    = 0.0,
+  .SC              = 0.0
+};
+
+
+static int n_mes = 9;
+/* Define messages of the module*/
+#if PERIODIC_TELEMETRY
+#include "modules/datalink/telemetry.h"
+static void send_wls(struct transport_tx *trans, struct link_device *dev)
+{
+  float zero = 1.0;
+  //int n = 2;
+  float zero_vect[n_mes];
+  for (int i = 0; i < n_mes; i++) {
+    zero_vect[i] = 1.0;
+  }
+    // pprz_msg_send_WLS(trans, dev, AC_ID,
+    //      &zero,
+    //      &zero,
+    //      &zero,
+    //      n_mes, zero_vect,
+    //      n_mes, zero_vect,
+    //      n_mes, zero_vect,
+    //      n_mes, zero_vect,
+    //      n_mes, zero_vect,
+    //      n_mes, zero_vect,
+    //      &zero,
+    //      &zero);   
+  pprz_msg_send_WLS(trans, dev, AC_ID,               
+         &WLS_p.gamma,
+         &WLS_p.PC,
+         &WLS_p.SC,
+         WLS_p.nv, WLS_p.v,
+         WLS_p.nv, WLS_p.Wv,
+         WLS_p.nu, WLS_p.Wu,
+         WLS_p.nu, WLS_p.u_pref,
+         WLS_p.nu, WLS_p.u_min,
+         WLS_p.nu, WLS_p.u_max);                                      
+}
+#endif
+
+/** @brief Init function */
+void wls_init(void)
+{ 
+  // Start telemetry
+  #if PERIODIC_TELEMETRY
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS, send_wls);
+  #endif
+}
 /**
  * @brief Wrapper for qr solve
  *
@@ -111,7 +171,21 @@ int wls_alloc(float* u, float* v, float* umin, float* umax, float** B,
   // allocate variables, use defaults where parameters are set to 0
   if(!gamma_sq) gamma_sq = 100000;
   if(!imax) imax = 100;
+  
+  // Store some values for the message
+  for (int i = 0; i < n_u; i++) {
+    WLS_p.u_min[i] = umin[i];
+    WLS_p.u_max[i] = umax[i];
+    WLS_p.u_pref[i] = up ? up[i] : 0;
+    WLS_p.Wu[i] = Wu ? Wu[i] : 1.0;
+  }
+  for (int i = 0; i < n_v; i++) {
+    WLS_p.v[i] = v[i];
+    WLS_p.Wv[i] = Wv ? Wv[i] : 1.0;
+  }
+  WLS_p.gamma = gamma_sq;
 
+  ///////////////////////////////////
   int n_c = n_u + n_v;
 
   float A[WLS_N_C][WLS_N_U];
