@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG -static-libgcc -lstdc++ -pthread CMakeFiles/heartbeat_manager.dir/heartbeat_manager.cpp.o -o heartbeat_manager   -L/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/../bin/rpi64  -Wl,-rpath,"\$ORIGIN:/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/../bin/rpi64" -lSdsDroneSdk 

@@ -1,0 +1,9 @@
+/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build/CMakeFiles/sixdof_tracking.dir
+/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build/CMakeFiles/relative_beacon_tracking.dir
+/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build/CMakeFiles/relative_angle_tracking.dir
+/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build/CMakeFiles/field_of_view_report.dir
+/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build/CMakeFiles/gyro_calibration.dir
+/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build/CMakeFiles/heartbeat.dir
+/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build/CMakeFiles/heartbeat_manager.dir
+/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build/CMakeFiles/edit_cache.dir
+/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build/CMakeFiles/rebuild_cache.dir

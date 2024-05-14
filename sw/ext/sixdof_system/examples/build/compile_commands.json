@@ -1,0 +1,37 @@
+[
+{
+  "directory": "/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build",
+  "command": "/usr/bin/c++  -I/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/../include -O3 -DNDEBUG -std=gnu++14 -o CMakeFiles/sixdof_tracking.dir/sixdof_tracking.cpp.o -c /home/orangepi/paparazzi/sw/ext/sixdof_system/examples/sixdof_tracking.cpp",
+  "file": "/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/sixdof_tracking.cpp"
+},
+{
+  "directory": "/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build",
+  "command": "/usr/bin/c++  -I/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/../include -O3 -DNDEBUG -std=gnu++14 -o CMakeFiles/relative_beacon_tracking.dir/relative_beacon_tracking.cpp.o -c /home/orangepi/paparazzi/sw/ext/sixdof_system/examples/relative_beacon_tracking.cpp",
+  "file": "/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/relative_beacon_tracking.cpp"
+},
+{
+  "directory": "/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build",
+  "command": "/usr/bin/c++  -I/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/../include -O3 -DNDEBUG -std=gnu++14 -o CMakeFiles/relative_angle_tracking.dir/relative_angle_tracking.cpp.o -c /home/orangepi/paparazzi/sw/ext/sixdof_system/examples/relative_angle_tracking.cpp",
+  "file": "/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/relative_angle_tracking.cpp"
+},
+{
+  "directory": "/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build",
+  "command": "/usr/bin/c++  -I/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/../include -O3 -DNDEBUG -std=gnu++14 -o CMakeFiles/field_of_view_report.dir/field_of_view_report.cpp.o -c /home/orangepi/paparazzi/sw/ext/sixdof_system/examples/field_of_view_report.cpp",
+  "file": "/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/field_of_view_report.cpp"
+},
+{
+  "directory": "/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build",
+  "command": "/usr/bin/c++  -I/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/../include -O3 -DNDEBUG -std=gnu++14 -o CMakeFiles/gyro_calibration.dir/gyro_calibration.cpp.o -c /home/orangepi/paparazzi/sw/ext/sixdof_system/examples/gyro_calibration.cpp",
+  "file": "/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/gyro_calibration.cpp"
+},
+{
+  "directory": "/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build",
+  "command": "/usr/bin/c++  -I/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/../include -O3 -DNDEBUG -std=gnu++14 -o CMakeFiles/heartbeat.dir/heartbeat.cpp.o -c /home/orangepi/paparazzi/sw/ext/sixdof_system/examples/heartbeat.cpp",
+  "file": "/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/heartbeat.cpp"
+},
+{
+  "directory": "/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/build",
+  "command": "/usr/bin/c++  -I/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/../include -O3 -DNDEBUG -std=gnu++14 -o CMakeFiles/heartbeat_manager.dir/heartbeat_manager.cpp.o -c /home/orangepi/paparazzi/sw/ext/sixdof_system/examples/heartbeat_manager.cpp",
+  "file": "/home/orangepi/paparazzi/sw/ext/sixdof_system/examples/heartbeat_manager.cpp"
+}
+]
