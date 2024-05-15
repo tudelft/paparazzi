@@ -26,9 +26,9 @@ message("CMAKE_USERNAME: ${CMAKE_USERNAME}")
 # un-comment the desired platform
 #set(PLATFORM "windows_gcc")
 #set(PLATFORM "windows_msvc")
-#set(PLATFORM "ubuntu")
+set(PLATFORM "ubuntu")
 #set(PLATFORM "rpi32")
-set(PLATFORM "rpi64")
+#set(PLATFORM "rpi64")
 #set(PLATFORM "jetson")
 
 

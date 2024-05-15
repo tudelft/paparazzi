@@ -1,0 +1,36 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../../include/SdsDroneSdk.h
+stdint.h
+-
+map
+-
+vector
+-
+string
+-
+memory
+-
+functional
+-
+
+/home/ppz/paparazzi/sw/ext/sixdof_system/examples/heartbeat.cpp
+iostream
+-
+vector
+-
+memory
+-
+thread
+-
+iomanip
+-
+SdsDroneSdk.h
+/home/ppz/paparazzi/sw/ext/sixdof_system/examples/SdsDroneSdk.h
+

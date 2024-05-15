@@ -1,6 +1,5 @@
 file(REMOVE_RECURSE
   "CMakeFiles/heartbeat_manager.dir/heartbeat_manager.cpp.o"
-  "CMakeFiles/heartbeat_manager.dir/heartbeat_manager.cpp.o.d"
   "heartbeat_manager"
   "heartbeat_manager.pdb"
 )

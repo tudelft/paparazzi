@@ -1,6 +1,5 @@
 file(REMOVE_RECURSE
   "CMakeFiles/field_of_view_report.dir/field_of_view_report.cpp.o"
-  "CMakeFiles/field_of_view_report.dir/field_of_view_report.cpp.o.d"
   "field_of_view_report"
   "field_of_view_report.pdb"
 )

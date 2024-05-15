@@ -1,6 +1,5 @@
 file(REMOVE_RECURSE
   "CMakeFiles/gyro_calibration.dir/gyro_calibration.cpp.o"
-  "CMakeFiles/gyro_calibration.dir/gyro_calibration.cpp.o.d"
   "gyro_calibration"
   "gyro_calibration.pdb"
 )

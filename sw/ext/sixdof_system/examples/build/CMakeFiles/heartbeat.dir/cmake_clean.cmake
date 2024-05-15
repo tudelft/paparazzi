@@ -1,6 +1,5 @@
 file(REMOVE_RECURSE
   "CMakeFiles/heartbeat.dir/heartbeat.cpp.o"
-  "CMakeFiles/heartbeat.dir/heartbeat.cpp.o.d"
   "heartbeat"
   "heartbeat.pdb"
 )
