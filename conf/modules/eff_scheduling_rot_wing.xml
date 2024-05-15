@@ -18,6 +18,14 @@
       <define name="HOVER_ROLL_PITCH_COEF" value="{0,0}" description=""/>
     </section>
   </doc>
+    <settings>
+   <dl_settings>
+     <dl_settings NAME="oneloop">
+       <dl_setting var="airspeed_fake_on"   min="0"       step="1"     max="1"     values="OFF|ON" shortname="bool_airspeed_fake"/> 
+       <dl_setting var="airspeed_fake"      min="0.0"     step="0.001" max="10"    shortname="airspeed_fake"/>     
+     </dl_settings>
+   </dl_settings>
+  </settings>
   <header>
     <file name="eff_scheduling_rot_wing.h"/>
   </header>

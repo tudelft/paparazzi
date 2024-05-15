@@ -1263,6 +1263,15 @@
         <arg flag="-c" constant="*:telemetry:GUIDANCE:acc_D"/>
       </program>
       <program name="Environment Simulator"/>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="u"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[5]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[6]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[7]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[8]"/>
+      </program>
     </session>
     <session name="Raw Sensors">
       <program name="Data Link">
@@ -1391,6 +1400,89 @@
         <arg flag="-d" constant="1"/>
         <arg flag="-ac" constant="Bebop_DePonti"/>
         <arg flag="radiomaster_tx12.xml"/>
+      </program>
+    </session>
+    <session name="sim_rw3c_simple">
+      <program name="PprzGCS"/>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Joystick">
+        <arg flag="-d" constant="1"/>
+        <arg flag="-ac" constant="RW3C_DePonti_Simulation"/>
+        <arg flag="radiomaster_tx12.xml"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="theta"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:theta"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:theta_ref"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="phi"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:phi"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:phi_ref"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="psi"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:psi"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:psi_ref"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="u"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[0]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[1]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[2]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[3]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[4]"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="POS_N"/>
+        <arg flag="-c" constant="*:telemetry:GUIDANCE:pos_N_ref"/>
+        <arg flag="-c" constant="*:telemetry:GUIDANCE:pos_N"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="POS_E"/>
+        <arg flag="-c" constant="*:telemetry:GUIDANCE:pos_E_ref"/>
+        <arg flag="-c" constant="*:telemetry:GUIDANCE:pos_E"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="POS_D"/>
+        <arg flag="-c" constant="*:telemetry:GUIDANCE:pos_D_ref"/>
+        <arg flag="-c" constant="*:telemetry:GUIDANCE:pos_D"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="u"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[5]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[6]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[7]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[8]"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="u"/>
+        <arg flag="-c" constant="*:telemetry:ROTATING_WING_STATE:wing_angle_deg"/>
+        <arg flag="-c" constant="*:telemetry:ROTATING_WING_STATE:wing_angle_deg_sp"/>
       </program>
     </session>
   </section>

@@ -29,13 +29,35 @@
 #include "firmwares/rotorcraft/stabilization.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_common_int.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_ref_quat_int.h"
+#include "generated/airframe.h"
 
+#ifndef ANDI_NUM_ACT
+#define ANDI_NUM_ACT COMMANDS_NB_REAL
+#endif
+
+#ifndef ANDI_NUM_VIRTUAL_ACT
+#define ANDI_NUM_VIRTUAL_ACT COMMANDS_NB_VIRTUAL
+#endif
+
+// Number of virtual actuators (e.g. Phi, Theta). For now 2 and only 2 are supported but in the future this can be further developed. 
+#if ANDI_NUM_VIRTUAL_ACT < 2
+#error "You must specify the number of virtual actuators to be at least 2"
+#define ANDI_NUM_VIRTUAL_ACT 2
+#endif
+
+#define ANDI_NUM_ACT_TOT (ANDI_NUM_ACT + ANDI_NUM_VIRTUAL_ACT)
+
+#ifndef ANDI_OUTPUTS
+#error "You must specify the number of controlled axis (outputs)"
+#define ANDI_OUTPUTS 6
+#endif
 #define ANDI_G_SCALING 1000.0f
 
 /** Control types.*/
 #define  CTRL_ANDI 0
 #define  CTRL_INDI 1
 
+extern bool ctrl_off;
 extern float act_state_filt_vect_1l[ANDI_NUM_ACT];
 extern float actuator_state_1l[ANDI_NUM_ACT];
 extern float nu[6];
@@ -48,6 +70,7 @@ extern bool  yaw_stick_in_auto;
 extern float fwd_sideslip_gain;
 extern struct FloatEulers eulers_zxy_des;
 extern float psi_des_rad;
+extern float k_as;
 
 /*Chirp test Variables*/
 extern bool  chirp_on;
