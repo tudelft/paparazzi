@@ -30,7 +30,7 @@
             <define name="RADIO_FMODE"              value="RADIO_AUX2"/>
             <define name="AP_MODE_SWITCH"           value="RADIO_AUX3"/>
             <define name="RADIO_CONTROL_THRUST_X"   value="RADIO_AUX4"/>
-            <!-- EKF EKF2  configure inputs -->
+            <!-- EKF2 configure inputs -->
             <define name="INS_EKF2_MAG_ID"          value="MAG_RM3100_SENDER_ID"/>
             <define name="INS_EKF2_IMU_ID"          value="IMU_CUBE1_ID"/> 
             <define name="INS_EKF2_GYRO_ID"         value="IMU_CUBE1_ID"/>
