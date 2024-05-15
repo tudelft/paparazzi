@@ -170,6 +170,9 @@ struct RW_Model{
 
 };
 
+extern bool airspeed_fake_on;
+extern float airspeed_fake;
+
 extern float rotation_angle_setpoint_deg;
 extern int16_t rotation_cmd;
 

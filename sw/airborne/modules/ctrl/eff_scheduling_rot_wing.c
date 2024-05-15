@@ -69,6 +69,10 @@ static float flt_cut = 1.0e-4;
 
 struct FloatEulers eulers_zxy_RW_EFF;
 
+/* Temp variables*/
+bool airspeed_fake_on = false;
+float airspeed_fake = 0.0;
+
 /* Define Forces and Moments tructs for each actuator*/
 struct RW_Model RW;
 
@@ -364,4 +368,8 @@ void eff_scheduling_rot_wing_update_airspeed(void)
   Bound(RW.as, 0. , 30.);
   RW.as2 = RW.as * RW.as;
   Bound(RW.as2, 0. , 900.);
+  if(airspeed_fake_on) {
+    RW.as = airspeed_fake;
+    RW.as2 = RW.as * RW.as;
+  }
 }
