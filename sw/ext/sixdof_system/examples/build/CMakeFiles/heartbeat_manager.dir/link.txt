@@ -1,1 +1,0 @@
-/usr/bin/g++  -O3 -DNDEBUG  -static-libgcc -lstdc++ -pthread CMakeFiles/heartbeat_manager.dir/heartbeat_manager.cpp.o  -o heartbeat_manager   -L/home/ppz/paparazzi/sw/ext/sixdof_system/examples/../bin/ubuntu  -Wl,-rpath,"\$ORIGIN:/home/ppz/paparazzi/sw/ext/sixdof_system/examples/../bin/ubuntu" -lSdsDroneSdk 
