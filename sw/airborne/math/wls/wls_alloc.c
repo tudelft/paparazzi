@@ -72,31 +72,11 @@ struct WLS_param WLS_p = {
   .SC              = 0.0
 };
 
-
-static int n_mes = 9;
 /* Define messages of the module*/
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
 static void send_wls(struct transport_tx *trans, struct link_device *dev)
 {
-  float zero = 1.0;
-  //int n = 2;
-  float zero_vect[n_mes];
-  for (int i = 0; i < n_mes; i++) {
-    zero_vect[i] = 1.0;
-  }
-    // pprz_msg_send_WLS(trans, dev, AC_ID,
-    //      &zero,
-    //      &zero,
-    //      &zero,
-    //      n_mes, zero_vect,
-    //      n_mes, zero_vect,
-    //      n_mes, zero_vect,
-    //      n_mes, zero_vect,
-    //      n_mes, zero_vect,
-    //      n_mes, zero_vect,
-    //      &zero,
-    //      &zero);   
   pprz_msg_send_WLS(trans, dev, AC_ID,               
          &WLS_p.gamma,
          &WLS_p.PC,

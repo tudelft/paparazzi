@@ -55,7 +55,8 @@
       <message name="TARGET_POS_INFO"          period="0.1"/>
       <message name="ROTATING_WING_STATE"	     period="0.2"/>
       <message name="ACTUATORS"                period="0.02"/>
-      <message name="EFF_MAT_G"                period="0.02"/>
+      <message name="EFF_MAT_STAB"             period="0.02"/>
+      <message name="EFF_MAT_GUID"             period="0.02"/>
       <message name="GUIDANCE"                 period="0.02"/> 
       <message name="STAB_ATTITUDE"            period="0.02"/>
       <message name="ROTORCRAFT_CMD"           period="0.2"/>
@@ -148,7 +149,8 @@
       <message name="STAB_ATTITUDE_FLOAT"     period=".03"/>
       <message name="STAB_ATTITUDE_REF_FLOAT" period=".03"/>
       <message name="STAB_ATTITUDE"           period=".25"/>
-      <message name="EFF_MAT_G"               period="2.0"/>
+      <message name="EFF_MAT_STAB"            period="2.0"/>
+      <message name="EFF_MAT_GUID"            period="2.0"/>
     </mode>
 
     <mode name="vert_loop" key_press="v">
@@ -257,7 +259,8 @@
       <message name="GPS_RTK"                  period="0.1"/>
       <message name="IMU_HEATER"               period="1.0"/>
       <message name="AIRSPEED_RAW"             period="0.01"/>
-      <message name="EFF_MAT_G"                period="0.002"/>
+      <message name="EFF_MAT_STAB"             period="0.02"/>
+      <message name="EFF_MAT_GUID"             period="0.02"/>
       <message name="GUIDANCE"                 period="0.002"/>
       <message name="EXTERNAL_POSE_DOWN"       period="0.002"/>
       <message name="ROTATING_WING_STATE"      period="0.1"/>

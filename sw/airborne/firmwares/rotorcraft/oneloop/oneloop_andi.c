@@ -400,18 +400,23 @@ static Butterworth2LowPass airspeed_filt;                     // Low pass filter
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
 
-static void send_eff_mat_g_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
+static void send_eff_mat_stab_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
   float zero = 0.0;
-  pprz_msg_send_EFF_MAT_G(trans, dev, AC_ID, 
-                ANDI_NUM_ACT, EFF_MAT_G[0],
-                ANDI_NUM_ACT, EFF_MAT_G[1],
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[2],
-                ANDI_NUM_ACT, EFF_MAT_G[3],
-                ANDI_NUM_ACT, EFF_MAT_G[4],
-                ANDI_NUM_ACT, EFF_MAT_G[5], 
+  pprz_msg_send_EFF_MAT_STAB(trans, dev, AC_ID, 
+                ANDI_NUM_ACT_TOT, EFF_MAT_G[3],
+                ANDI_NUM_ACT_TOT, EFF_MAT_G[4],
+                ANDI_NUM_ACT_TOT, EFF_MAT_G[5], 
                                     1, &zero,
                                     1, &zero);
+}
+
+static void send_eff_mat_guid_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_EFF_MAT_GUID(trans, dev, AC_ID, 
+                ANDI_NUM_ACT_TOT, EFF_MAT_G[0],
+                ANDI_NUM_ACT_TOT, EFF_MAT_G[1],
+                ANDI_NUM_ACT_TOT, EFF_MAT_G[2]);
 }
 static void send_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
@@ -1142,7 +1147,8 @@ void oneloop_andi_init(void)
   // Start telemetry
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_oneloop_andi);
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_G, send_eff_mat_g_oneloop_andi);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_STAB, send_eff_mat_stab_oneloop_andi);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_GUID, send_eff_mat_guid_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE, send_guidance_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_oneloop_debug);
   #endif
