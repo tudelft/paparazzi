@@ -155,7 +155,7 @@
         <servo no="2" name="MOTOR_BACK"     min="0"     neutral="600"   max="8191"/>
         <servo no="3" name="MOTOR_LEFT"     min="0"     neutral="600"   max="8191"/>
         <servo no="4" name="MOTOR_PUSH"     min="0"     neutral="200"   max="8191"/>
-        <servo no="5"  name="ROTATION_MECH"   min="-3629" neutral="66"   max="3760"/>
+        <servo no="5"  name="ROTATION_MECH" min="-2048" neutral="-205"   max="1638"/>
     </servos>
 
     <!-- CAN BUS 1 command outputs-->
@@ -170,7 +170,7 @@
         <servo no="1" name="BMOTOR_RIGHT" min="0" neutral="600" max="8191"/>
         <servo no="2" name="BMOTOR_BACK"  min="0" neutral="600" max="8191"/>
         <servo no="3" name="BMOTOR_LEFT"  min="0" neutral="600" max="8191"/>
-        <servo no="5" name="BROTATION_MECH" min="-3629" neutral="66"  max="3760"/>
+        <servo no="5" name="BROTATION_MECH" min="-2048" neutral="-205"   max="1638"/>
     </servos>
 
     <!-- CAN BUS 2 command outputs-->
@@ -223,6 +223,7 @@
         <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_RIGHT])"  SERVO="BMOTOR_RIGHT"/>
         <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_BACK] )"  SERVO="BMOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_LEFT] )"  SERVO="BMOTOR_LEFT"/>
+        <set VALUE="commands[COMMAND_ROT_MECH]"                         SERVO="BROTATION_MECH"/>
     </command_laws>
 
     <section NAME="MISC">
