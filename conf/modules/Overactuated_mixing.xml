@@ -7,23 +7,6 @@
 
   <settings>
     <dl_settings>
-      <dl_settings NAME="PROP_MDL">
-        <dl_setting var="power_cd_0" min="0" step=".001" max="0.25" module="Overactuated_vehicle/Overactuated_mixing" param="PROP_MODEL_POWER_CD_0" shortname="power_cd_0" persistent="true"/>
-        <dl_setting var="power_cd_a" min="0" step=".001" max="1.8" module="Overactuated_vehicle/Overactuated_mixing" param="PROP_MODEL_POWER_CD_A" shortname="power_cd_a" persistent="true"/>
-        <dl_setting var="prop_r" min="0.1" step=".001" max="0.635" module="Overactuated_vehicle/Overactuated_mixing" param="PROP_MODEL_PROP_R" shortname="prop_r" persistent="true"/>
-        <dl_setting var="prop_cd_0" min="0" step=".001" max="0.25" module="Overactuated_vehicle/Overactuated_mixing" param="PROP_MODEL_PROP_CD_0" shortname="prop_cd_0" persistent="true"/>
-        <dl_setting var="prop_cl_0" min="0" step=".001" max="0" module="Overactuated_vehicle/Overactuated_mixing" param="PROP_MODEL_PROP_CL_0" shortname="prop_cl_0" persistent="true"/>
-        <dl_setting var="prop_cd_a" min="0" step=".001" max="1.8" module="Overactuated_vehicle/Overactuated_mixing" param="PROP_MODEL_PROP_CD_A" shortname="prop_cd_a" persistent="true"/>
-        <dl_setting var="prop_cl_a" min="0" step=".001" max="17.3" module="Overactuated_vehicle/Overactuated_mixing" param="PROP_MODEL_PROP_CL_A" shortname="prop_cl_a" persistent="true"/>
-        <dl_setting var="prop_delta" min="0" step=".001" max="1" module="Overactuated_vehicle/Overactuated_mixing" param="PROP_MODEL_PROP_DELTA" shortname="prop_delta" persistent="true"/>
-        <dl_setting var="prop_sigma" min="0.05" step=".0001" max="0.326" module="Overactuated_vehicle/Overactuated_mixing" param="PROP_MODEL_PROP_SIGMA" shortname="prop_sigma" persistent="true"/>
-        <dl_setting var="prop_theta" min="0.2" step=".001" max="1.094" module="Overactuated_vehicle/Overactuated_mixing" param="PROP_MODEL_PROP_THETA" shortname="prop_theta" persistent="true"/>
-      </dl_settings>
-    </dl_settings>
-  </settings>
-
-  <settings>
-    <dl_settings>
       <dl_settings NAME="FBW Control">
         <dl_setting var="K_p_rad_s_dshot"  min="0" step=".1" max="20" shortname="K_p_rad_s_dshot" />
         <dl_setting var="K_i_rad_s_dshot"  min="0" step=".001" max="1" shortname="K_i_rad_s_dshot" />
@@ -57,8 +40,6 @@
       <dl_settings NAME="General overact">
 
         <dl_setting var="trans_speed" min="0" step=".1" max="50" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_TRANSITION_SPEED_PSEUDOCTR_HEDGE" shortname="trans_speed" persistent="true"/>
-
-        <dl_setting var="disable_acc_decrement_inner_loop" min="0" step="1" max="1" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_DISABLE_ACC_DECREMENT_INNER_LOOP" shortname="dis_acc_decr_il" persistent="true"/>
 
         <dl_setting var="vert_acc_margin" min="0" step=".1" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="LIMITS_FWD_VERT_ACC_MARGIN" shortname="vert_acc_margin" persistent="true"/>
 

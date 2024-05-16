@@ -132,18 +132,6 @@ float K_i_rad_s_dshot = RPM_CONTROL_FBW_K_I_RAD_S_DSHOT;
 float K_d_rad_s_dshot = RPM_CONTROL_FBW_K_D_RAD_S_DSHOT;
 float motor_rad_s_dot_filtered[4], motor_rad_s_error_integrated[4], motor_rad_s_filtered_old[4];
 
-//Prop model: 
-float power_cd_0 = PROP_MODEL_POWER_CD_0;
-float power_cd_a = PROP_MODEL_POWER_CD_A;
-float prop_r = PROP_MODEL_PROP_R;
-float prop_cd_0 = PROP_MODEL_PROP_CD_0;
-float prop_cl_0 = PROP_MODEL_PROP_CL_0;
-float prop_cd_a = PROP_MODEL_PROP_CD_A;
-float prop_cl_a = PROP_MODEL_PROP_CL_A;
-float prop_delta = PROP_MODEL_PROP_DELTA;
-float prop_sigma = PROP_MODEL_PROP_SIGMA;
-float prop_theta = PROP_MODEL_PROP_THETA;
-
 //Indi RPM controller specific variables:
 float dshot_cmd_ppz[4], dshot_cmd_ppz_filtered[4], dshot_cmd_ppz_filtered_delayed[4][RPM_CONTROL_FBW_MOTOR_DYN_DELAY_TS];
 float dshot_cmd_state_filtered[4];
@@ -212,8 +200,6 @@ float w_ail_const = OVERACTUATED_MIXING_W_ACT_AILERONS_CONST;
 float w_ail_speed = OVERACTUATED_MIXING_W_ACT_AILERONS_SPEED; 
 
 float trans_speed = OVERACTUATED_MIXING_TRANSITION_SPEED_PSEUDOCTR_HEDGE;
-
-float disable_acc_decrement_inner_loop = 0; 
 
 float vert_acc_margin = 2.5; 
 
@@ -1147,34 +1133,9 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[60] = manual_el_value;  
     extra_data_out_local[61] = manual_az_value; 
     extra_data_out_local[62] = manual_ailerons_value;
-    
-    extra_data_out_local[63] = active_gains.p.theta;
-    extra_data_out_local[64] = active_gains.p.phi;
-    extra_data_out_local[65] = active_gains.d.theta;
-    extra_data_out_local[66] = active_gains.d.phi;
-    extra_data_out_local[67] = active_gains.d.psi;
-    extra_data_out_local[68] = K_d_speed;
 
-    extra_data_out_local[69] = -OVERACTUATED_MIXING_MAX_THETA;
-    extra_data_out_local[70] = OVERACTUATED_MIXING_MAX_THETA;
-    extra_data_out_local[71] = -OVERACTUATED_MIXING_MAX_PHI;
-    extra_data_out_local[72] = OVERACTUATED_MIXING_MAX_PHI;
-
-    extra_data_out_local[73] = disable_acc_decrement_inner_loop;
-    extra_data_out_local[74] = OVERACTUATED_MIXING_FILT_CUTOFF_INDI;
-    extra_data_out_local[75] = LIMITS_ACTIVE_MAX_AIRSPEED;
-    extra_data_out_local[76] = vert_acc_margin;
-
-    extra_data_out_local[77] = power_cd_0;
-    extra_data_out_local[78] = power_cd_a;
-    extra_data_out_local[79] = prop_r;
-    extra_data_out_local[80] = prop_cd_0;
-    extra_data_out_local[81] = prop_cl_0;
-    extra_data_out_local[82] = prop_cd_a;
-    extra_data_out_local[83] = prop_cl_a;
-    extra_data_out_local[84] = prop_delta;
-    extra_data_out_local[85] = prop_sigma;
-    extra_data_out_local[86] = prop_theta;
+    extra_data_out_local[63] = OVERACTUATED_MIXING_FILT_CUTOFF_INDI;
+    extra_data_out_local[64] = vert_acc_margin;
 
 }
 

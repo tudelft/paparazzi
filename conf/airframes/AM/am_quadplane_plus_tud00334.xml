@@ -630,20 +630,6 @@
     <define name="CL_AILERONS" value="0.2"/>
   </section>
 
-  <!-- Motor-propulsive model noah -->
-  <section name="PROP_MODEL" prefix="PROP_MODEL_">
-    <define name="POWER_CD_0" value="0.05"/>
-    <define name="POWER_CD_A" value="0.36"/>
-    <define name="PROP_R" value="0.1270"/>
-    <define name="PROP_CD_0" value="0.05"/>
-    <define name="PROP_CL_0" value="0.0"/>
-    <define name="PROP_CD_A" value="0.36"/>
-    <define name="PROP_CL_A" value="3.46"/>
-    <define name="PROP_DELTA" value="0.2"/>
-    <define name="PROP_SIGMA" value="0.0652"/>
-    <define name="PROP_THETA" value="0.2188"/>
-  </section>
-
   <section name="WP_CONTROL" prefix="WP_CONTROL_">
 
     <define name="MAX_POS_XY_ERROR" value="60" unit="meters"/>

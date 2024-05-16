@@ -175,21 +175,8 @@ extern float w_theta_const, w_theta_speed, w_phi_const, w_phi_speed, w_ail_const
 
 extern float trans_speed; 
 
-extern float disable_acc_decrement_inner_loop; 
-
 extern float vert_acc_margin; 
 
-//Prop model: 
-extern float power_cd_0;
-extern float power_cd_a;
-extern float prop_r;
-extern float prop_cd_0;
-extern float prop_cl_0;
-extern float prop_cd_a;
-extern float prop_cl_a;
-extern float prop_delta;
-extern float prop_sigma;
-extern float prop_theta;
 
 /* External used functions */
 extern void overactuated_mixing_init(void);
