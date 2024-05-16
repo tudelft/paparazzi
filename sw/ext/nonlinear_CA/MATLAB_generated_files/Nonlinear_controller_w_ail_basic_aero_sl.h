@@ -2,14 +2,14 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: Nonlinear_controller_w_ail_new_aero_sl.h
+ * File: Nonlinear_controller_w_ail_basic_aero_sl.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 08-May-2024 00:26:53
+ * C/C++ source code generated on  : 16-May-2024 19:15:38
  */
 
-#ifndef NONLINEAR_CONTROLLER_W_AIL_NEW_AERO_SL_H
-#define NONLINEAR_CONTROLLER_W_AIL_NEW_AERO_SL_H
+#ifndef NONLINEAR_CONTROLLER_W_AIL_BASIC_AERO_SL_H
+#define NONLINEAR_CONTROLLER_W_AIL_BASIC_AERO_SL_H
 
 /* Include Files */
 #include "rtwtypes.h"
@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-extern void Nonlinear_controller_w_ail_new_aero_sl(
+extern void Nonlinear_controller_w_ail_basic_aero_sl(
     double m, double I_xx, double I_yy, double I_zz, double l_1, double l_2,
     double l_3, double l_4, double l_z, double Phi, double Theta,
     double Omega_1, double Omega_2, double Omega_3, double Omega_4, double b_1,
@@ -39,8 +39,7 @@ extern void Nonlinear_controller_w_ail_new_aero_sl(
     const double dv[6], double p, double q, double r, double Cm_zero,
     double Cl_alpha, double Cd_zero, double K_Cd, double Cm_alpha,
     double CL_aileron, double rho, double V, double S, double wing_chord,
-    double wing_span, double flight_path_angle, double max_alpha,
-    double min_alpha, double max_airspeed, double Beta,
+    double flight_path_angle, double max_alpha, double min_alpha, double Beta,
     double gamma_quadratic_du, double desired_motor_value,
     double desired_el_value, double desired_az_value,
     double desired_theta_value, double desired_phi_value,
@@ -48,12 +47,9 @@ extern void Nonlinear_controller_w_ail_new_aero_sl(
     double min_alt_tilt_constraint, double lidar_alt_corrected,
     double approach_mode, double verbose, double aoa_protection_speed,
     double transition_speed, double vert_acc_margin,
-    const double current_accelerations_filtered[6], double power_Cd_0,
-    double power_Cd_a, double prop_R, double prop_Cd_0, double prop_Cl_0,
-    double prop_Cd_a, double prop_Cl_a, double prop_delta, double prop_sigma,
-    double prop_theta, double u_out[15], double residuals[6],
-    double *elapsed_time, double *N_iterations, double *N_evaluation,
-    double *exitflag);
+    const double current_accelerations_filtered[6], double K_p_T, double K_p_M,
+    double u_out[15], double residuals[6], double *elapsed_time,
+    double *N_iterations, double *N_evaluation, double *exitflag);
 
 #ifdef __cplusplus
 }
@@ -61,7 +57,7 @@ extern void Nonlinear_controller_w_ail_new_aero_sl(
 
 #endif
 /*
- * File trailer for Nonlinear_controller_w_ail_new_aero_sl.h
+ * File trailer for Nonlinear_controller_w_ail_basic_aero_sl.h
  *
  * [EOF]
  */

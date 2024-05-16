@@ -5,14 +5,14 @@
  * File: fmincon.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 08-May-2024 00:26:53
+ * C/C++ source code generated on  : 16-May-2024 19:15:38
  */
 
 /* Include Files */
 #include "fmincon.h"
-#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
-#include "computeObjectiveAndUserGradient_.h"
+#include "Nonlinear_controller_w_ail_basic_aero_sl_internal_types.h"
 #include "driver1.h"
+#include "evalObjAndConstrAndDerivatives.h"
 #include "factoryConstruct.h"
 #include "rt_nonfinite.h"
 #include "setProblemType.h"
@@ -45,7 +45,6 @@ double fmincon(c_struct_T *fun_workspace, double x0[15], const double lb[15],
   b_struct_T MeritFunction;
   c_struct_T b_fun_workspace;
   c_struct_T c_FcnEvaluator_next_next_next_n;
-  c_struct_T d_FcnEvaluator_next_next_next_n;
   d_struct_T QRManager;
   e_struct_T CholManager;
   f_struct_T memspace;
@@ -227,9 +226,8 @@ double fmincon(c_struct_T *fun_workspace, double x0[15], const double lb[15],
       b_i = WorkingSet.indexFixed[idx];
       TrialState.xstarsqp[b_i - 1] = ub[b_i - 1];
     }
-    d_FcnEvaluator_next_next_next_n = c_FcnEvaluator_next_next_next_n;
-    TrialState.sqpFval = c_computeObjectiveAndUserGradie(
-        &d_FcnEvaluator_next_next_next_n, TrialState.xstarsqp, TrialState.grad,
+    TrialState.sqpFval = evalObjAndConstrAndDerivatives(
+        &c_FcnEvaluator_next_next_next_n, TrialState.xstarsqp, TrialState.grad,
         &i);
     TrialState.FunctionEvaluations = 1;
     for (idx = 0; idx < mLB; idx++) {

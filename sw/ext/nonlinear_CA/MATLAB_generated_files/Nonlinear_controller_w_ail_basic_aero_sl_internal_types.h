@@ -2,17 +2,17 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: Nonlinear_controller_w_ail_new_aero_sl_internal_types.h
+ * File: Nonlinear_controller_w_ail_basic_aero_sl_internal_types.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 08-May-2024 00:26:53
+ * C/C++ source code generated on  : 16-May-2024 19:15:38
  */
 
-#ifndef NONLINEAR_CONTROLLER_W_AIL_NEW_AERO_SL_INTERNAL_TYPES_H
-#define NONLINEAR_CONTROLLER_W_AIL_NEW_AERO_SL_INTERNAL_TYPES_H
+#ifndef NONLINEAR_CONTROLLER_W_AIL_BASIC_AERO_SL_INTERNAL_TYPES_H
+#define NONLINEAR_CONTROLLER_W_AIL_BASIC_AERO_SL_INTERNAL_TYPES_H
 
 /* Include Files */
-#include "Nonlinear_controller_w_ail_new_aero_sl_types.h"
+#include "Nonlinear_controller_w_ail_basic_aero_sl_types.h"
 #include "rtwtypes.h"
 
 /* Type Definitions */
@@ -73,8 +73,6 @@ typedef struct {
 #ifndef typedef_c_struct_T
 #define typedef_c_struct_T
 typedef struct {
-  captured_var *Omega_1_scaled;
-  captured_var *Omega_2_scaled;
   b_captured_var *dv_global;
   captured_var *Beta;
   captured_var *CL_aileron;
@@ -86,9 +84,10 @@ typedef struct {
   captured_var *I_yy;
   captured_var *I_zz;
   captured_var *K_Cd;
+  captured_var *K_p_M;
+  captured_var *K_p_T;
   captured_var *S;
   captured_var *V;
-  captured_var *V_scaled;
   captured_var *W_act_phi;
   captured_var *W_act_theta;
   captured_var *W_act_motor;
@@ -122,20 +121,9 @@ typedef struct {
   captured_var *l_z;
   captured_var *m;
   captured_var *p;
-  captured_var *power_Cd_0;
-  captured_var *power_Cd_a;
-  captured_var *prop_R;
-  captured_var *prop_Cd_0;
-  captured_var *prop_Cl_0;
-  captured_var *prop_Cd_a;
-  captured_var *prop_Cl_a;
-  captured_var *prop_delta;
-  captured_var *prop_sigma;
-  captured_var *prop_theta;
   captured_var *q;
   captured_var *r;
   captured_var *rho;
-  captured_var *wing_span;
   captured_var *wing_chord;
 } c_struct_T;
 #endif /* typedef_c_struct_T */
@@ -370,7 +358,7 @@ typedef struct {
 
 #endif
 /*
- * File trailer for Nonlinear_controller_w_ail_new_aero_sl_internal_types.h
+ * File trailer for Nonlinear_controller_w_ail_basic_aero_sl_internal_types.h
  *
  * [EOF]
  */

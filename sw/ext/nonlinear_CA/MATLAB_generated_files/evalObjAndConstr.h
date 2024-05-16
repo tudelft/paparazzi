@@ -5,14 +5,14 @@
  * File: evalObjAndConstr.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 08-May-2024 00:26:53
+ * C/C++ source code generated on  : 16-May-2024 19:15:38
  */
 
 #ifndef EVALOBJANDCONSTR_H
 #define EVALOBJANDCONSTR_H
 
 /* Include Files */
-#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
+#include "Nonlinear_controller_w_ail_basic_aero_sl_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 /* Function Declarations */
-double evalObjAndConstr(c_struct_T *c_obj_next_next_next_next_next_,
+double evalObjAndConstr(const c_struct_T *c_obj_next_next_next_next_next_,
                         const double x[15], int *status);
 
 #ifdef __cplusplus

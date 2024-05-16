@@ -2,31 +2,35 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: CoderTimeAPI.c
+ * File: Nonlinear_controller_w_ail_basic_aero_sl_rtwutil.c
  *
  * MATLAB Coder version            : 23.2
  * C/C++ source code generated on  : 16-May-2024 19:15:38
  */
 
 /* Include Files */
-#include "CoderTimeAPI.h"
-#include "Nonlinear_controller_w_ail_basic_aero_sl_data.h"
+#include "Nonlinear_controller_w_ail_basic_aero_sl_rtwutil.h"
 #include "rt_nonfinite.h"
-#include "coder_posix_time.h"
 #include <string.h>
 
 /* Function Definitions */
 /*
- * Arguments    : void
- * Return Type  : void
+ * Arguments    : int numerator
+ * Return Type  : int
  */
-void c_CoderTimeAPI_callCoderClockGe(void)
+int div_nde_s32_floor(int numerator)
 {
-  freq_not_empty = false;
+  int i;
+  if ((numerator < 0) && (numerator % 31 != 0)) {
+    i = -1;
+  } else {
+    i = 0;
+  }
+  return numerator / 31 + i;
 }
 
 /*
- * File trailer for CoderTimeAPI.c
+ * File trailer for Nonlinear_controller_w_ail_basic_aero_sl_rtwutil.c
  *
  * [EOF]
  */

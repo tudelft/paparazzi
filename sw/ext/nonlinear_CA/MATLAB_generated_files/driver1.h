@@ -5,14 +5,14 @@
  * File: driver1.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 08-May-2024 00:26:53
+ * C/C++ source code generated on  : 16-May-2024 19:15:38
  */
 
 #ifndef DRIVER1_H
 #define DRIVER1_H
 
 /* Include Files */
-#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
+#include "Nonlinear_controller_w_ail_basic_aero_sl_internal_types.h"
 #include "rtwtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -24,8 +24,8 @@ extern "C" {
 /* Function Declarations */
 void b_driver(const double lb[15], const double ub[15], h_struct_T *TrialState,
               b_struct_T *MeritFunction,
-              i_coder_internal_stickyStruct *FcnEvaluator, f_struct_T *memspace,
-              i_struct_T *WorkingSet, double Hessian[225],
+              const i_coder_internal_stickyStruct *FcnEvaluator,
+              f_struct_T *memspace, i_struct_T *WorkingSet, double Hessian[225],
               d_struct_T *QRManager, e_struct_T *CholManager,
               struct_T *QPObjective);
 

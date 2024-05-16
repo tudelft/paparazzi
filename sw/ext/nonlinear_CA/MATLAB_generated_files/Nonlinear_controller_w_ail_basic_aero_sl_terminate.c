@@ -2,18 +2,16 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: tic.c
+ * File: Nonlinear_controller_w_ail_basic_aero_sl_terminate.c
  *
  * MATLAB Coder version            : 23.2
  * C/C++ source code generated on  : 16-May-2024 19:15:38
  */
 
 /* Include Files */
-#include "tic.h"
+#include "Nonlinear_controller_w_ail_basic_aero_sl_terminate.h"
 #include "Nonlinear_controller_w_ail_basic_aero_sl_data.h"
 #include "rt_nonfinite.h"
-#include "timeKeeper.h"
-#include "coder_posix_time.h"
 #include <string.h>
 
 /* Function Definitions */
@@ -21,19 +19,13 @@
  * Arguments    : void
  * Return Type  : void
  */
-void tic(void)
+void Nonlinear_controller_w_ail_basic_aero_sl_terminate(void)
 {
-  coderTimespec b_timespec;
-  if (!freq_not_empty) {
-    freq_not_empty = true;
-    coderInitTimeFunctions(&freq);
-  }
-  coderTimeClockGettimeMonotonic(&b_timespec, freq);
-  timeKeeper(b_timespec.tv_sec, b_timespec.tv_nsec);
+  isInitialized_Nonlinear_controller_w_ail_basic_aero_sl = false;
 }
 
 /*
- * File trailer for tic.c
+ * File trailer for Nonlinear_controller_w_ail_basic_aero_sl_terminate.c
  *
  * [EOF]
  */

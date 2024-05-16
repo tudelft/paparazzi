@@ -2,34 +2,33 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: computeObjectiveAndUserGradient_.c
+ * File: evalObjAndConstrAndDerivatives.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 08-May-2024 00:26:53
+ * C/C++ source code generated on  : 16-May-2024 19:15:38
  */
 
 /* Include Files */
-#include "computeObjectiveAndUserGradient_.h"
-#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
-#include "compute_cost_and_gradient_w_Mx_noah.h"
+#include "evalObjAndConstrAndDerivatives.h"
+#include "Nonlinear_controller_w_ail_basic_aero_sl_internal_types.h"
+#include "compute_cost_and_gradient_basic_sl.h"
 #include "rt_nonfinite.h"
 #include "rt_nonfinite.h"
 #include <string.h>
 
 /* Function Definitions */
 /*
- * Arguments    : c_struct_T *c_obj_next_next_next_next_next_
+ * Arguments    : const c_struct_T *c_obj_next_next_next_next_next_
  *                const double x[15]
  *                double grad_workspace[16]
  *                int *status
  * Return Type  : double
  */
-double
-c_computeObjectiveAndUserGradie(c_struct_T *c_obj_next_next_next_next_next_,
-                                const double x[15], double grad_workspace[16],
-                                int *status)
+double evalObjAndConstrAndDerivatives(
+    const c_struct_T *c_obj_next_next_next_next_next_, const double x[15],
+    double grad_workspace[16], int *status)
 {
-  double gradient_data[15];
+  double gradient[15];
   double dv_global_1;
   double dv_global_2;
   double dv_global_3;
@@ -37,17 +36,14 @@ c_computeObjectiveAndUserGradie(c_struct_T *c_obj_next_next_next_next_next_,
   double dv_global_5;
   double dv_global_6;
   double fval;
-  int idx_current;
   bool allFinite;
-  c_obj_next_next_next_next_next_->Omega_1_scaled->contents = x[0];
-  c_obj_next_next_next_next_next_->Omega_2_scaled->contents = x[1];
   dv_global_1 = c_obj_next_next_next_next_next_->dv_global->contents[0];
   dv_global_2 = c_obj_next_next_next_next_next_->dv_global->contents[1];
   dv_global_3 = c_obj_next_next_next_next_next_->dv_global->contents[2];
   dv_global_4 = c_obj_next_next_next_next_next_->dv_global->contents[3];
   dv_global_5 = c_obj_next_next_next_next_next_->dv_global->contents[4];
   dv_global_6 = c_obj_next_next_next_next_next_->dv_global->contents[5];
-  fval = c_compute_cost_and_gradient_w_M(
+  fval = c_compute_cost_and_gradient_bas(
       c_obj_next_next_next_next_next_->Beta->contents,
       c_obj_next_next_next_next_next_->CL_aileron->contents,
       c_obj_next_next_next_next_next_->Cd_zero->contents,
@@ -58,11 +54,10 @@ c_computeObjectiveAndUserGradie(c_struct_T *c_obj_next_next_next_next_next_,
       c_obj_next_next_next_next_next_->I_yy->contents,
       c_obj_next_next_next_next_next_->I_zz->contents,
       c_obj_next_next_next_next_next_->K_Cd->contents,
-      c_obj_next_next_next_next_next_->Omega_1_scaled->contents,
-      c_obj_next_next_next_next_next_->Omega_2_scaled->contents, x[2], x[3],
+      c_obj_next_next_next_next_next_->K_p_M->contents,
+      c_obj_next_next_next_next_next_->K_p_T->contents, x[0], x[1], x[2], x[3],
       x[13], c_obj_next_next_next_next_next_->S->contents, x[12],
       c_obj_next_next_next_next_next_->V->contents,
-      c_obj_next_next_next_next_next_->V_scaled->contents,
       c_obj_next_next_next_next_next_->W_act_phi->contents,
       c_obj_next_next_next_next_next_->W_act_theta->contents,
       c_obj_next_next_next_next_next_->W_act_motor->contents,
@@ -99,23 +94,11 @@ c_computeObjectiveAndUserGradie(c_struct_T *c_obj_next_next_next_next_next_,
       c_obj_next_next_next_next_next_->l_z->contents,
       c_obj_next_next_next_next_next_->m->contents,
       c_obj_next_next_next_next_next_->p->contents,
-      c_obj_next_next_next_next_next_->power_Cd_0->contents,
-      c_obj_next_next_next_next_next_->power_Cd_a->contents,
-      c_obj_next_next_next_next_next_->prop_R->contents,
-      c_obj_next_next_next_next_next_->prop_Cd_0->contents,
-      c_obj_next_next_next_next_next_->prop_Cl_0->contents,
-      c_obj_next_next_next_next_next_->prop_Cd_a->contents,
-      c_obj_next_next_next_next_next_->prop_Cl_a->contents,
-      c_obj_next_next_next_next_next_->prop_delta->contents,
-      c_obj_next_next_next_next_next_->prop_sigma->contents,
-      c_obj_next_next_next_next_next_->prop_theta->contents,
       c_obj_next_next_next_next_next_->q->contents,
       c_obj_next_next_next_next_next_->r->contents,
       c_obj_next_next_next_next_next_->rho->contents,
-      c_obj_next_next_next_next_next_->wing_span->contents,
-      c_obj_next_next_next_next_next_->wing_chord->contents, gradient_data,
-      &idx_current);
-  memcpy(&grad_workspace[0], &gradient_data[0], 15U * sizeof(double));
+      c_obj_next_next_next_next_next_->wing_chord->contents, gradient);
+  memcpy(&grad_workspace[0], &gradient[0], 15U * sizeof(double));
   *status = 1;
   allFinite = rtIsNaN(fval);
   if (rtIsInf(fval) || allFinite) {
@@ -127,6 +110,7 @@ c_computeObjectiveAndUserGradie(c_struct_T *c_obj_next_next_next_next_next_,
       *status = -2;
     }
   } else {
+    int idx_current;
     allFinite = true;
     idx_current = 0;
     while (allFinite && (idx_current + 1 <= 15)) {
@@ -145,11 +129,14 @@ c_computeObjectiveAndUserGradie(c_struct_T *c_obj_next_next_next_next_next_,
       }
     }
   }
+  if (*status == 1) {
+    *status = 1;
+  }
   return fval;
 }
 
 /*
- * File trailer for computeObjectiveAndUserGradient_.c
+ * File trailer for evalObjAndConstrAndDerivatives.c
  *
  * [EOF]
  */

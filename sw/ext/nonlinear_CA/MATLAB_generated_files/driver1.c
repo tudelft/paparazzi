@@ -5,20 +5,21 @@
  * File: driver1.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 08-May-2024 00:26:53
+ * C/C++ source code generated on  : 16-May-2024 19:15:38
  */
 
 /* Include Files */
 #include "driver1.h"
 #include "BFGSUpdate.h"
-#include "Nonlinear_controller_w_ail_new_aero_sl_internal_types.h"
-#include "computeObjectiveAndUserGradient_.h"
+#include "Nonlinear_controller_w_ail_basic_aero_sl_internal_types.h"
 #include "evalObjAndConstr.h"
+#include "evalObjAndConstrAndDerivatives.h"
 #include "rt_nonfinite.h"
 #include "step.h"
 #include "test_exit.h"
 #include <math.h>
 #include <string.h>
+#include "toc.h"
 
 /* Function Definitions */
 /*
@@ -26,7 +27,7 @@
  *                const double ub[15]
  *                h_struct_T *TrialState
  *                b_struct_T *MeritFunction
- *                i_coder_internal_stickyStruct *FcnEvaluator
+ *                const i_coder_internal_stickyStruct *FcnEvaluator
  *                f_struct_T *memspace
  *                i_struct_T *WorkingSet
  *                double Hessian[225]
@@ -37,8 +38,8 @@
  */
 void b_driver(const double lb[15], const double ub[15], h_struct_T *TrialState,
               b_struct_T *MeritFunction,
-              i_coder_internal_stickyStruct *FcnEvaluator, f_struct_T *memspace,
-              i_struct_T *WorkingSet, double Hessian[225],
+              const i_coder_internal_stickyStruct *FcnEvaluator,
+              f_struct_T *memspace, i_struct_T *WorkingSet, double Hessian[225],
               d_struct_T *QRManager, e_struct_T *CholManager,
               struct_T *QPObjective)
 {
@@ -55,7 +56,6 @@ void b_driver(const double lb[15], const double ub[15], h_struct_T *TrialState,
       0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
   static const char qpoptions_SolverName[7] = {'f', 'm', 'i', 'n',
                                                'c', 'o', 'n'};
-  c_struct_T b_FcnEvaluator;
   j_struct_T b_expl_temp;
   j_struct_T expl_temp;
   k_struct_T Flags;
@@ -193,10 +193,10 @@ void b_driver(const double lb[15], const double ub[15], h_struct_T *TrialState,
         for (ineqStart = 0; ineqStart < i; ineqStart++) {
           TrialState->xstarsqp[ineqStart] += TrialState->delta_x[ineqStart];
         }
-        b_FcnEvaluator = FcnEvaluator->next.next.next.next.next.next.next.next
-                             .value.workspace;
         TrialState->sqpFval =
-            evalObjAndConstr(&b_FcnEvaluator, TrialState->xstarsqp, &ineqStart);
+            evalObjAndConstr(&FcnEvaluator->next.next.next.next.next.next.next
+                                  .next.value.workspace,
+                             TrialState->xstarsqp, &ineqStart);
         Flags.fevalOK = (ineqStart == 1);
         TrialState->FunctionEvaluations++;
         if (Flags.fevalOK) {
@@ -233,7 +233,7 @@ void b_driver(const double lb[15], const double ub[15], h_struct_T *TrialState,
         int exitg1;
         do {
           exitg1 = 0;
-          if (TrialState->FunctionEvaluations < 350) {
+          if (TrialState->FunctionEvaluations < max_function_eval && toc() <= max_time_optimizer) {
             if (evalWellDefined &&
                 (phi_alpha <=
                  MeritFunction->phi +
@@ -278,10 +278,10 @@ void b_driver(const double lb[15], const double ub[15], h_struct_T *TrialState,
                       TrialState->xstarsqp_old[ixlast] +
                       TrialState->delta_x[ixlast];
                 }
-                b_FcnEvaluator = FcnEvaluator->next.next.next.next.next.next
-                                     .next.next.value.workspace;
-                TrialState->sqpFval = evalObjAndConstr(
-                    &b_FcnEvaluator, TrialState->xstarsqp, &ixlast);
+                TrialState->sqpFval =
+                    evalObjAndConstr(&FcnEvaluator->next.next.next.next.next
+                                          .next.next.next.value.workspace,
+                                     TrialState->xstarsqp, &ixlast);
                 TrialState->FunctionEvaluations++;
                 evalWellDefined = (ixlast == 1);
                 if (evalWellDefined) {
@@ -323,13 +323,10 @@ void b_driver(const double lb[15], const double ub[15], h_struct_T *TrialState,
         TrialState->xstarsqp_old[k] = TrialState->xstarsqp[k];
         TrialState->grad_old[k] = TrialState->grad[k];
       }
-      b_FcnEvaluator =
-          FcnEvaluator->next.next.next.next.next.next.next.next.value.workspace;
-      TrialState->sqpFval = c_computeObjectiveAndUserGradie(
-          &b_FcnEvaluator, TrialState->xstarsqp, TrialState->grad, &ineqStart);
-      if (ineqStart == 1) {
-        ineqStart = 1;
-      }
+      TrialState->sqpFval = evalObjAndConstrAndDerivatives(
+          &FcnEvaluator->next.next.next.next.next.next.next.next.value
+               .workspace,
+          TrialState->xstarsqp, TrialState->grad, &ineqStart);
       TrialState->FunctionEvaluations++;
       Flags.fevalOK = (ineqStart == 1);
     } else {
