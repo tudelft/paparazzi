@@ -258,9 +258,9 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
 #if GUIDANCE_INDI_HYBRID_USE_WLS
 static void debug(struct transport_tx *trans, struct link_device *dev, char* name, float* data, int datasize)
 {
-  pprz_msg_send_DEBUG_VECT(trans, dev,AC_ID,
-                              strlen(name), name,
-                              datasize, data);
+  // pprz_msg_send_DEBUG_VECT(trans, dev,AC_ID,
+  //                             strlen(name), name,
+  //                             datasize, data);
 }
 
 static void send_guidance_indi_debug(struct transport_tx *trans, struct link_device *dev)

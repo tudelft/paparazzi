@@ -8,6 +8,7 @@
 #include "modules/air_data/air_data.h"
 #include "modules/meteo/ekf_aw.h"
 #include <stdio.h>
+#include "std.h"
 
 // Global value holders
 struct EKF_AOA_AOS ekf;
@@ -54,6 +55,7 @@ float calc_forces_body_east(struct EKF_AOA_AOS *ekf);
 float calc_forces_body_down(struct EKF_AOA_AOS *ekf);
 static void telemetry_send_aero_angles(struct transport_tx *trans, struct link_device *dev);
 static void telemetry_send_aero_angles_aw(struct transport_tx *trans, struct link_device *dev);
+static void telemetry_send_debug_vect(struct transport_tx *trans, struct link_device *dev);
 void ekf_aoa_aos_update_aircraft_state(struct EKF_AOA_AOS *ekf);
 void wrap_x(struct EKF_AOA_AOS *ekf);
 
@@ -63,8 +65,9 @@ void wrap_x(struct EKF_AOA_AOS *ekf);
 
 void ekf_aoa_aos_init() {
   // Init function for EKF, used in the xml as well
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AERO_ANGLES, telemetry_send_aero_angles);
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AERO_ANGLES_AW, telemetry_send_aero_angles_aw);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, telemetry_send_debug_vect);
+  // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AERO_ANGLES, telemetry_send_aero_angles);
+  // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AERO_ANGLES_AW, telemetry_send_aero_angles_aw);
 
   // Initialize state vector to zero
   ekf.x[0] = 0.0f; //aoa
@@ -331,6 +334,15 @@ static void telemetry_send_aero_angles(struct transport_tx *trans, struct link_d
 static void telemetry_send_aero_angles_aw(struct transport_tx *trans, struct link_device *dev) {
   // Telemetry callback function
   pprz_msg_send_AERO_ANGLES_AW(trans, dev, AC_ID, &ekf_aw_aoa_aos.aoa, &ekf_aw_aoa_aos.aos);
+}
+
+static void telemetry_send_debug_vect(struct transport_tx *trans, struct link_device *dev) {
+  // Telemetry callback function
+  float x[4] = {DegOfRad(ekf.x[0]), DegOfRad(ekf.x[1]), DegOfRad(ekf_aw_aoa_aos.aoa), DegOfRad(ekf_aw_aoa_aos.aos)};
+  //pprz_msg_send_DEBUG_VECT(trans, dev, AC_ID, "aoa/aos/aoa_aw/aos_aw", 4, &x);
+  pprz_msg_send_DEBUG_VECT(trans, dev,AC_ID,
+                              strlen("aoa/aos/aoa_aw/aos_aw"), "aoa/aos/aoa_aw/aos_aw",
+                              4, &x);
 }
 
 void ekf_aoa_aos_update_aircraft_state(struct EKF_AOA_AOS *ekf) {

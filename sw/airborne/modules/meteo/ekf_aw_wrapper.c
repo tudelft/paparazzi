@@ -62,9 +62,9 @@ static void send_airspeed_wind_ekf(struct transport_tx *trans, struct link_devic
 
 static void debug_vect(struct transport_tx *trans, struct link_device *dev, char *name, float *data, int datasize)
 {
-  pprz_msg_send_DEBUG_VECT(trans, dev, AC_ID,
-                           strlen(name), name,
-                           datasize, data);
+  // pprz_msg_send_DEBUG_VECT(trans, dev, AC_ID,
+  //                          strlen(name), name,
+  //                          datasize, data);
 }
 
 
