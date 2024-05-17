@@ -138,12 +138,12 @@
     <block name="transition_CW">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID)"/>
       <stay wp="end_trans"/>
-      <exception cond="RotWingAutomationReadyForForward()" deroute="Circle_CW_fwd"/>
+      <exception cond="RotWingAutomationReadyForForward()" deroute="CircleRHybrid"/>
     </block>
     <block name="transition_CCW">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID)"/>
       <stay wp="end_trans"/>
-      <exception cond="RotWingAutomationReadyForForward()" deroute="Circle_CCW_fwd"/>
+      <exception cond="RotWingAutomationReadyForForward()" deroute="CircleLHybrid"/>
     </block>
     <!-- <block name="route">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_EFFICIENT)"/>
