@@ -56,6 +56,12 @@ struct ekfHealth {
   uint16_t crashes_n;
 };
 
+struct ekfAwAoaAos {
+  float aoa;
+  float aos;
+};
+extern struct ekfAwAoaAos ekf_aw_aoa_aos;
+
 extern struct ekfAwParameters ekf_aw_params;
 
 // Init functions

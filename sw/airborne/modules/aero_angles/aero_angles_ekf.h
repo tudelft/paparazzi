@@ -56,7 +56,11 @@ struct body_forces {
   float F_body_east;
 };
 
+// GCS exposed variables
 extern uint8_t reset_ekf;
+extern uint8_t set_Q_R;
+extern float Q_diag;
+extern float R_diag;
 
 // XML Functions
 extern void ekf_aoa_aos_init();

@@ -376,6 +376,9 @@ Cov Update P=(I-K*G)*P      | 36
 // Parameters
 struct ekfAwParameters ekf_aw_params;
 
+// Global aoa aos
+struct ekfAwAoaAos ekf_aw_aoa_aos;
+
 // Internal structure
 static struct ekfAwPrivate ekf_aw_private;
 // Short name
@@ -694,6 +697,7 @@ void ekf_aw_propagate(struct FloatVect3 *acc, struct FloatRates *gyro, struct Fl
 
   // Calculate Angle of Attack
   float aoa = atan2f(w, fabsf(u) < 1.E-5 ? 1E-5 : u); // Protected alpha calculation
+  ekf_aw_aoa_aos.aoa = aoa;
   float sat_aoa;
   Bound(sat_aoa, deg2rad * EKF_AW_AOA_MIN_ANGLE, deg2rad * EKF_AW_AOA_MAX_ANGLE); // Saturate alpha
   float tan_aoa = tanf(aoa);
@@ -711,6 +715,7 @@ void ekf_aw_propagate(struct FloatVect3 *acc, struct FloatRates *gyro, struct Fl
   if (V_a > 1E-5) {
     beta = asinf(v / V_a < -1.0f ? -1.0f : v / V_a > 1.0f ? 1.0f : v / V_a); // Ratio is kept between -1 and 1
   }
+  ekf_aw_aoa_aos.aos = beta;
 
   float hover_RPM_mean = (eawp.inputs.RPM_hover(0) + eawp.inputs.RPM_hover(1) + eawp.inputs.RPM_hover(
                             2) + eawp.inputs.RPM_hover(3)) / 4.0f;

@@ -12,7 +12,12 @@
 // Global value holders
 struct EKF_AOA_AOS ekf;
 int periodic_counter = 0;
-uint8_t reset_ekf = 0;  // Exposed to GCS
+
+// Exposed to GCS
+uint8_t reset_ekf = 0;
+uint8_t set_Q_R = 0;
+float Q_diag = 0.001f;
+float R_diag = 0.01f;
 
 // Coefficients and other non-changing
 const float k_T_m4 = 0.004030000000000;
@@ -48,6 +53,7 @@ float calc_forces_body_north(struct EKF_AOA_AOS *ekf);
 float calc_forces_body_east(struct EKF_AOA_AOS *ekf);
 float calc_forces_body_down(struct EKF_AOA_AOS *ekf);
 static void telemetry_send_aero_angles(struct transport_tx *trans, struct link_device *dev);
+static void telemetry_send_aero_angles_aw(struct transport_tx *trans, struct link_device *dev);
 void ekf_aoa_aos_update_aircraft_state(struct EKF_AOA_AOS *ekf);
 void wrap_x(struct EKF_AOA_AOS *ekf);
 
@@ -58,6 +64,7 @@ void wrap_x(struct EKF_AOA_AOS *ekf);
 void ekf_aoa_aos_init() {
   // Init function for EKF, used in the xml as well
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AERO_ANGLES, telemetry_send_aero_angles);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AERO_ANGLES_AW, telemetry_send_aero_angles_aw);
 
   // Initialize state vector to zero
   ekf.x[0] = 0.0f; //aoa
@@ -66,9 +73,9 @@ void ekf_aoa_aos_init() {
   // Initialize covariance matrices
   float P_init[4] = {0.1f, 0.0f, 0.0f, 0.1f};  // Small, non-zero, diagonal values
   memcpy(ekf.P, P_init, sizeof(P_init));
-  float Q_init[4] = {0.001f, 0.0f, 0.0f, 0.001f};  // TODO: Make into setting
+  float Q_init[4] = {Q_diag, 0.0f, 0.0f, Q_diag};  // TODO: Make into setting
   memcpy(ekf.Q, Q_init, sizeof(Q_init));
-  float R_init[4] = {0.01f, 0.0f, 0.0f, 0.01f};  // TODO: Make into setting
+  float R_init[4] = {R_diag, 0.0f, 0.0f, R_diag};  // TODO: Make into setting
   memcpy(ekf.R, R_init, sizeof(R_init));
 }
 
@@ -77,6 +84,14 @@ void ekf_aoa_aos_periodic() {
   if (reset_ekf) {
     ekf_aoa_aos_init();
     reset_ekf = 0;
+  }
+  // Check for setting Q and R values
+  if (set_Q_R) {
+    ekf.Q[0] = Q_diag;
+    ekf.Q[3] = Q_diag;
+    ekf.R[0] = R_diag;
+    ekf.R[3] = R_diag;
+    set_Q_R = 0;
   }
   // Periodic function for EKF, used in the xml as well
   periodic_counter++;
@@ -311,6 +326,11 @@ static void telemetry_send_aero_angles(struct transport_tx *trans, struct link_d
   // Telemetry callback function
   float x[2] = {ekf.x[0], ekf.x[1]};
   pprz_msg_send_AERO_ANGLES(trans, dev, AC_ID, &x[0], &x[1]);
+}
+
+static void telemetry_send_aero_angles_aw(struct transport_tx *trans, struct link_device *dev) {
+  // Telemetry callback function
+  pprz_msg_send_AERO_ANGLES_AW(trans, dev, AC_ID, &ekf_aw_aoa_aos.aoa, &ekf_aw_aoa_aos.aos);
 }
 
 void ekf_aoa_aos_update_aircraft_state(struct EKF_AOA_AOS *ekf) {
