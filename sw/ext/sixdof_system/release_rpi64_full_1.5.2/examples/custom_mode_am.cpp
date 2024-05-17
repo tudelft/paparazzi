@@ -23,6 +23,18 @@ int main(int ac, const char *av[]) {
         std::cout << msg.message << std::endl;
     });
 
+    droneManager->registerRelativeAngleCallback([](const RelativeAngleCollection& col){
+        for (const RelativeAngle& ra : col) { 
+            std::cout << "ID: " << ra.id
+                    << std::fixed << std::setprecision(0)
+                    << " XAng: " << std::setw(3) << ra.x_angle * 180.0 / 3.14159
+                    << " ZAng: " << std::setw(3) << ra.z_angle * 180.0 / 3.14159 
+                    << " Intensity: " << std::setw(4) << ra.intensity 
+                    << std::fixed << std::setprecision(2)
+                    << " Width: " << std::setw(5) << ra.width << std::endl;
+        }
+    });
+
     droneManager->registerPoseRelativeBeaconCallback([](const PoseRelativeBeaconCollection& col){
         for (const PoseRelativeBeacon& b : col) {
             std::cout << "ID: " << b.id
@@ -41,9 +53,10 @@ int main(int ac, const char *av[]) {
         return 1;
     }
 
-    ConfigRelativeBeacon config; // use defaults
+    ConfigRelativeBeacon config_rel_beacon; // use defaults
+    ConfigRelativeAngle config_rel_angle; // use defaults
 
-    bool sixdofSuccess = droneManager->initializeRelativeBeacon(config);
+    bool sixdofSuccess = droneManager->initializeRelativeBeacon(config_rel_beacon);
     if (!sixdofSuccess) {
         std::cout << "Drone Manager failed relative beacon setup" << std::endl;
         return 1;
@@ -52,6 +65,16 @@ int main(int ac, const char *av[]) {
     // Start tracking
     std::cout << "TrackingMode RelativeBeacon" << std::endl;
     droneManager->setTrackingMode(TrackingMode::RelativeBeacon);
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+
+    std::cout << "Switching to tracking mode = RelativeAngle" << std::endl;
+    sixdofSuccess = droneManager->initializeRelativeAngle(config_rel_angle);
+    if (!sixdofSuccess) {
+        std::cout << "Drone Manager failed relative angle setup" << std::endl;
+        return 1;
+    }
+    droneManager->setTrackingMode(TrackingMode::RelativeAngle);
 
     std::this_thread::sleep_for(std::chrono::seconds(10));
 
