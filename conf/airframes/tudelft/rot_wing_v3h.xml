@@ -129,6 +129,7 @@
         <module name="pfc_actuators"/>
         <module name="agl_dist"/>
         <module name="approach_moving_target"/>
+        <module name="aero_angles_ekf"/>
 
         <!--Airspeed estimation using EKF-->
         <module name="ekf_aw">
