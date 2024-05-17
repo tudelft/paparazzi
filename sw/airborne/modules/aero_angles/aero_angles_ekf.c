@@ -12,6 +12,7 @@
 // Global value holders
 struct EKF_AOA_AOS ekf;
 int periodic_counter = 0;
+uint8_t reset_ekf = 0;  // Exposed to GCS
 
 // Coefficients and other non-changing
 const float k_T_m4 = 0.004030000000000;
@@ -72,10 +73,14 @@ void ekf_aoa_aos_init() {
 }
 
 void ekf_aoa_aos_periodic() {
+  // Check for ekf reset
+  if (reset_ekf) {
+    ekf_aoa_aos_init();
+    reset_ekf = 0;
+  }
   // Periodic function for EKF, used in the xml as well
   periodic_counter++;
   // Runs at 30Hz
-  // TODO: make freq a define?
   ekf_aoa_aos_update_aircraft_state(&ekf);
   if (ekf.ac_state.V > 2){  // Protect from 0div
     ekf_aoa_aos_predict(&ekf, 0.033333333); // Predict step
@@ -93,8 +98,8 @@ void ekf_aoa_aos_predict(struct EKF_AOA_AOS *ekf, float dt) {
   predict_calc_x(ekf, dt);  // Update state vector
   predict_calc_A(ekf); // Update Jacobian of f
   predict_calc_P(ekf, dt); // Update covariance matrix
-  printf("PREDICT x: %f, %f, P: %f, %f, %f, %f\n", ekf->x[0], ekf->x[1], ekf->P[0], ekf->P[1], ekf->P[2], ekf->P[3]);
-  printf("PREDICT f: %f, %f, A: %f, %f, %f, %f\n", ekf->f[0], ekf->f[1], ekf->A[0], ekf->A[1], ekf->A[2], ekf->A[3]);
+  //printf("PREDICT x: %f, %f, P: %f, %f, %f, %f\n", ekf->x[0], ekf->x[1], ekf->P[0], ekf->P[1], ekf->P[2], ekf->P[3]);
+  //printf("PREDICT f: %f, %f, A: %f, %f, %f, %f\n", ekf->f[0], ekf->f[1], ekf->A[0], ekf->A[1], ekf->A[2], ekf->A[3]);
 }
 
 void ekf_aoa_aos_update(struct EKF_AOA_AOS *ekf) {
@@ -107,7 +112,7 @@ void ekf_aoa_aos_update(struct EKF_AOA_AOS *ekf) {
   update_calc_K(ekf); // Calculate Kalman gain
   update_calc_x(ekf); // Update state vector
   update_calc_P(ekf); // Update covariance matrix
-  printf("UPDATE x: %f, %f, P: %f, %f, %f, %f, K: %f, %f, %f, %f\n", ekf->x[0], ekf->x[1], ekf->P[0], ekf->P[1], ekf->P[2], ekf->P[3], ekf->K[0], ekf->K[1], ekf->K[2], ekf->K[3]);
+  //printf("UPDATE x: %f, %f, P: %f, %f, %f, %f, K: %f, %f, %f, %f\n", ekf->x[0], ekf->x[1], ekf->P[0], ekf->P[1], ekf->P[2], ekf->P[3], ekf->K[0], ekf->K[1], ekf->K[2], ekf->K[3]);
 }
 
 //---------------------------------------------------------------------------------------
@@ -244,7 +249,7 @@ void update_calc_P(struct EKF_AOA_AOS *ekf){
   // Updating P in the update step, after K is recalced
   // P = (I - K*C)*P
   // ⎡p₀⋅(-c₀⋅k₀ - c₂⋅k₁ + 1) + p₂⋅(-c₁⋅k₀ - c₃⋅k₁)  p₁⋅(-c₀⋅k₀ - c₂⋅k₁ + 1) + p₃⋅(-c₁⋅k₀ - c₃⋅k₁)⎤
-  // ⎢                                                                                      ⎥
+  // ⎢                                                                                            ⎥
   // ⎣p₀⋅(-c₀⋅k₂ - c₂⋅k₃) + p₂⋅(-c₁⋅k₂ - c₃⋅k₃ + 1)  p₁⋅(-c₀⋅k₂ - c₂⋅k₃) + p₃⋅(-c₁⋅k₂ - c₃⋅k₃ + 1)⎦
   float P_old[4] = {ekf->P[0], ekf->P[1], ekf->P[2], ekf->P[3]};
   ekf->P[0] = P_old[0]*(-ekf->C[0]*ekf->K[0] - ekf->C[2]*ekf->K[1] + 1) + P_old[2]*(-ekf->C[1]*ekf->K[0] - ekf->C[3]*ekf->K[1]);

@@ -56,6 +56,8 @@ struct body_forces {
   float F_body_east;
 };
 
+extern uint8_t reset_ekf;
+
 // XML Functions
 extern void ekf_aoa_aos_init();
 extern void ekf_aoa_aos_periodic();
