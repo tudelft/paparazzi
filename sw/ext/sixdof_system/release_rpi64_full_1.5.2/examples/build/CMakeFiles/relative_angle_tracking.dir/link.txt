@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG -static-libgcc -lstdc++ -pthread CMakeFiles/relative_angle_tracking.dir/relative_angle_tracking.cpp.o -o relative_angle_tracking   -L/home/orangepi/paparazzi/sw/ext/sixdof_system/release_rpi64_full_1.5.2/examples/../rpi64  -Wl,-rpath,"\$ORIGIN:/home/orangepi/paparazzi/sw/ext/sixdof_system/release_rpi64_full_1.5.2/examples/../rpi64" -lSdsDroneSdk 
