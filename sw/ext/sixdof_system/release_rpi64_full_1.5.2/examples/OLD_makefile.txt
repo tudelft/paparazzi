@@ -1,0 +1,31 @@
+
+
+
+
+
+# Compiler and flags
+CXX = g++
+CXXFLAGS = -std=c++14 -I../include
+
+# Paths and libraries
+LDFLAGS = -L../rpi64/ -lSdsDroneSdk -Wl,-rpath,../rpi64/
+
+# Source files and targets
+SOURCES = custom_mode_am.cpp 
+OBJECTS = $(SOURCES:.cpp=.o)
+TARGETS = custom_mode_am 
+
+# Default target
+all: $(TARGETS)
+
+# Pattern rule for object files
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Rules for each executable
+custom_mode_am: custom_mode_am.o
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+# Clean up
+clean:
+	rm -f $(OBJECTS) $(TARGETS)

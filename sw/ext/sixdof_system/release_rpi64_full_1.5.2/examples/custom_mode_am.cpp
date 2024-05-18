@@ -4,12 +4,34 @@
 #include <thread>
 #include <iomanip>
 #include "SdsDroneSdk.h"
+#include <string>
+#include <sstream>
+#include <glib.h>
+#include <ivy.h>
+#include <ivyglibloop.h>
 
 using namespace Sds::DroneSDK;
 
+ConfigRelativeBeacon config_rel_beacon; // use defaults
+ConfigRelativeAngle config_rel_angle; // use defaults
+
+int verbose = 0; 
 
 /* This is an example of Relative Beacon tracking */
 int main(int ac, const char *av[]) {
+
+    std::cout << "Init ivy bus" << std::endl;
+    Initialize the Ivy bus address based on the operating system
+    const char* ivy_bus;
+    #ifdef __APPLE__
+        ivy_bus = "224.255.255.255";
+    #else
+        ivy_bus = "127.255.255.255";
+    #endif
+
+    // Initialize the GLib main loop
+    GMainLoop *ml = g_main_loop_new(NULL, FALSE);
+
 
     Version version = getVersion();
     std::cout << "Using SdsDroneSdk version: " << version.getString() << std::endl;
@@ -37,12 +59,18 @@ int main(int ac, const char *av[]) {
 
     droneManager->registerPoseRelativeBeaconCallback([](const PoseRelativeBeaconCollection& col){
         for (const PoseRelativeBeacon& b : col) {
+            if(verbose){
             std::cout << "ID: " << b.id
                     << std::fixed << std::setprecision(3)
                     << " X: " << b.x 
                     << " Y: " << b.y 
                     << " Z: " << b.z << std::endl;
+            }
+            //Send values over IVYBUS
+            
         }
+
+    
     });
 
     // Initialize network, this can only be done once
@@ -53,30 +81,30 @@ int main(int ac, const char *av[]) {
         return 1;
     }
 
-    ConfigRelativeBeacon config_rel_beacon; // use defaults
-    ConfigRelativeAngle config_rel_angle; // use defaults
-
+    //Default state
     bool sixdofSuccess = droneManager->initializeRelativeBeacon(config_rel_beacon);
     if (!sixdofSuccess) {
         std::cout << "Drone Manager failed relative beacon setup" << std::endl;
         return 1;
     }
-
     // Start tracking
     std::cout << "TrackingMode RelativeBeacon" << std::endl;
     droneManager->setTrackingMode(TrackingMode::RelativeBeacon);
 
-    std::this_thread::sleep_for(std::chrono::seconds(10));
 
-    std::cout << "Switching to tracking mode = RelativeAngle" << std::endl;
-    sixdofSuccess = droneManager->initializeRelativeAngle(config_rel_angle);
-    if (!sixdofSuccess) {
-        std::cout << "Drone Manager failed relative angle setup" << std::endl;
-        return 1;
-    }
-    droneManager->setTrackingMode(TrackingMode::RelativeAngle);
 
-    std::this_thread::sleep_for(std::chrono::seconds(10));
+    // std::this_thread::sleep_for(std::chrono::seconds(10));
+
+    // std::cout << "Switching to tracking mode = RelativeAngle" << std::endl;
+    // sixdofSuccess = droneManager->initializeRelativeAngle(config_rel_angle);
+    // if (!sixdofSuccess) {
+    //     std::cout << "Drone Manager failed relative angle setup" << std::endl;
+    //     return 1;
+    // }
+    // droneManager->setTrackingMode(TrackingMode::RelativeAngle);
+
+    // std::this_thread::sleep_for(std::chrono::seconds(10));
+
 
     std::cout << "Done" << std::endl;
     return 0;
