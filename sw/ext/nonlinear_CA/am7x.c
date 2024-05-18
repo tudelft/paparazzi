@@ -956,6 +956,25 @@ void* second_thread() //Run the optimization code
   }
 }
 
+
+
+static void sixdof_beacon_pos_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
+{
+  if (argc != 4)
+  {
+    fprintf(stderr,"ERROR: invalid message length DESIRED_SP\n");
+  }
+  else{
+
+    int beacon_id = (int) atof(argv[0]); 
+    float pos_x = atof(argv[1]); 
+    float pos_y = atof(argv[2]); 
+    float pos_z = atof(argv[3]); 
+
+    fprintf(stderr,"Received beacon position : ID = %d Posx = %.3f Posy = %.3f Posz = %.3f \n",beacon_id,pos_x,pos_y,pos_z);
+  }
+}
+
 static void aruco_position_report(IvyClientPtr app, void *user_data, int argc, char *argv[])
 {
   if (argc != 4)
@@ -1002,6 +1021,8 @@ void main() {
   IvyInit ("NonlinearCA", "NonlinearCA READY", NULL, NULL, NULL, NULL);
   IvyStart(ivy_bus);
   IvyBindMsg(aruco_position_report, NULL, "^ground DESIRED_SP %s (\\S*) (\\S*) (\\S*) (\\S*)", "1");
+  IvyBindMsg(sixdof_beacon_pos_callback, NULL, "RELATIVE_BEACON_POS (\\S*) (\\S*) (\\S*) (\\S*)");
+  //IvyBindMsg(sixdof_beacon_angle_callback, NULL, "RELATIVE_BEACON_ANGLE (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
 
   pthread_t thread1, thread2;
 
