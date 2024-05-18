@@ -106,7 +106,7 @@ float aoa_protection_speed = 0;
 float rate_vect[3], rate_vect_filt[3], rate_vect_dot[3], rate_vect_old[3], rate_vect_filt_dot[3];
 float euler_vect[3], acc_vect[3], acc_vect_filt[3], accel_vect_filt_control_rf[3];
 float accel_vect_control_rf[3], speed_vect_control_rf[3];
-float speed_vect[3], pos_vect[3], airspeed = 0, beta_deg = 0, beta_rad = 0, flight_path_angle = 0, total_V = 0;
+float speed_vect[3], pos_vect[3], airspeed = 0, airspeed_am7=0, beta_deg = 0, beta_rad = 0, flight_path_angle = 0, total_V = 0;
 float actuator_state[INDI_NUM_ACT];
 float actuator_state_filt[INDI_NUM_ACT];
 float euler_error[3];
@@ -1024,7 +1024,7 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.q_state_int = (int16_t) (rate_vect[1] * 1e1 * 180/M_PI);
     am7_data_out_local.r_state_int = (int16_t) (rate_vect[2] * 1e1 * 180/M_PI);
 
-    am7_data_out_local.airspeed_state_int = (int16_t) (airspeed * 1e2);
+    am7_data_out_local.airspeed_state_int = (int16_t) (airspeed_am7 * 1e2);
 
     float fake_beta = 0;
 
@@ -1051,8 +1051,7 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.UAV_NED_pos_y = pos_vect[1];
     am7_data_out_local.UAV_NED_pos_z = pos_vect[2];
 
-    extra_data_out_local[0] = Dynamic_MOTOR_K_T_OMEGASQ;
-
+    extra_data_out_local[0] = OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ;
     extra_data_out_local[1] = OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ;
     extra_data_out_local[2] = VEHICLE_MASS;
     extra_data_out_local[3] = VEHICLE_I_XX;
@@ -1136,6 +1135,9 @@ void send_values_to_raspberry_pi(void){
 
     extra_data_out_local[63] = OVERACTUATED_MIXING_FILT_CUTOFF_INDI;
     extra_data_out_local[64] = vert_acc_margin;
+
+    extra_data_out_local[65] = K_T_airspeed;
+    extra_data_out_local[66] = OVERACTUATED_MIXING_MIN_AIRSPEED_READING;
 
 }
 
@@ -1266,7 +1268,9 @@ void assign_variables(void){
         #ifdef NO_AIRSPEED_NONLINEAR_CA
             airspeed = 0;
             beta_deg = 0;
+            airspeed_am7 = 0; 
         #else
+            airspeed_am7 = ms45xx.airspeed;
             airspeed = fmax(OVERACTUATED_MIXING_MIN_AIRSPEED_READING,ms45xx.airspeed);
             beta_deg = - aoa_pwm.angle * 180/M_PI;
         #endif

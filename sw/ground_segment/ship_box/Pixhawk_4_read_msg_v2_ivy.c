@@ -41,74 +41,7 @@
 #include <Ivy/ivyglibloop.h>
 #include "Pixhawk_4_read_msg.h"
 
-
-#define UDP_BUFFER_SIZE   1024
-
-struct timeval current_time, last_time;
-
-double delta_time[MESSAGE_ON_TX_FREQUENCY_CALCULATION];
-float avg_msg_frequency_tx; 
-int delta_time_count; 
-
-/* PPRZ message parser states */
-enum normal_parser_states {
-  SearchingPPRZ_STX,
-  ParsingLength,
-  ParsingSenderId,  //Sidenote: This is called the Source in case of v2
-  ParsingDestination,
-  ParsingClassIdAndComponentId,
-  ParsingMsgId,
-  ParsingMsgPayload,
-  CheckingCRCA,
-  CheckingCRCB
-};
-
-struct normal_parser_t {
-  enum normal_parser_states state;
-  unsigned char length;
-  int counter;
-  unsigned char sender_id; //Note that Source is the official PPRZLink v2 name
-  unsigned char destination;
-  unsigned char class_id; //HiNibble 4 bits
-  unsigned char component_id; //LowNibble 4 bits
-  unsigned char msg_id;
-  unsigned char payload[256];
-  unsigned char crc_a;
-  unsigned char crc_b;
-};
-
-/* Endpoints */
-struct endpoint_udp_t {
-  char server_addr[128];
-  uint16_t server_port;
-  char client_addr[128];
-  uint16_t client_port;
-
-  int fd;
-  pthread_t thread;
-};
-
-struct endpoint_uart_t {
-  char devname[512];
-  int baudrate;
-
-  int fd;
-  pthread_t thread;
-};
-
-enum endpoint_type_t {
-  ENDPOINT_TYPE_NONE,
-  ENDPOINT_TYPE_UDP,
-  ENDPOINT_TYPE_UART
-};
-
-struct endpoint_t {
-  enum endpoint_type_t type;
-  union {
-    struct endpoint_udp_t udp;
-    struct endpoint_uart_t uart;
-  } ep;
-};
+struct timeval current_time, last_time_rx, last_time_tx;
 
 struct __attribute__((__packed__)) payload_ship_info_msg_ground {
   float phi; 
@@ -134,21 +67,24 @@ struct __attribute__((__packed__)) payload_ship_info_msg_ground {
 };
 
 static bool verbose = false;
-static struct endpoint_t ship_box_ep;
 static uint8_t ac_id = 0;
 static uint8_t ship_box_id = 0;
 
-struct normal_parser_t parser;
-
-char outBuffer[256];    //buffer to hold outgoing data
-uint8_t out_idx = 0;
-
 struct payload_ship_info_msg_ground paylod_ship; 
 
+float max_tx_freq = 1500.0; 
 
 void ivy_send_ship_info_msg(void){
-  // if(verbose) printf("Sent received Ship message on ivy bus\n");
-  IvySendMsg("ground SHIP_INFO_MSG %d %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f",
+
+   
+
+  gettimeofday(&current_time, NULL);
+  float delta_time = (current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time_tx.tv_sec*1e6 + last_time_tx.tv_usec);
+  if(delta_time >= (1e6/max_tx_freq))
+  {
+  if(verbose) printf("Message SHIP INFO MSG forwarded through ivyBus on ac ID %d: \n",ac_id); 
+  if(verbose) printf("Freq tx =  %.2f \n",(1e6/delta_time));  
+  IvySendMsg("ground SHIP_INFO_MSG %d  %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f",
           ac_id,
           
           paylod_ship.phi,
@@ -174,13 +110,18 @@ void ivy_send_ship_info_msg(void){
           paylod_ship.x_ddot,
           paylod_ship.y_ddot,
           paylod_ship.z_ddot);
+
+          gettimeofday(&last_time_tx, NULL);
+  }
 }
 
 static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, char *argv[])
 {
-  // Reset Watchdog
-  watchdog = 0;
-
+  gettimeofday(&current_time, NULL);
+  float delta_time = (current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time_rx.tv_sec*1e6 + last_time_rx.tv_usec); 
+  if(verbose) printf("Frequency of incoming SHIP_INFO_MSG : %.2f \n",(1e6/delta_time));
+  gettimeofday(&last_time_rx, NULL);   
+  
   if (argc != 20)
   {
     fprintf(stderr,"ERROR: invalid message length SHIP_INFO_MSG_GROUND\n");
@@ -234,7 +175,7 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
     ivy_send_ship_info_msg();
 
     if(verbose){
-      printf("Valid SHIP_INFO_MSG_GROUND message received from Ship box with ID %d: \n",parser.sender_id);
+      printf("Valid SHIP_INFO_MSG_GROUND message received from Ship box \n");
       printf("Ship roll angle [deg] : %f \n",paylod_ship.phi);
       printf("Ship theta angle [deg] : %f \n",paylod_ship.theta);
       printf("Ship psi angle [deg] : %f \n",paylod_ship.psi);
@@ -254,15 +195,18 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
       printf("Ship speed z [m/s] : %f \n",paylod_ship.z_dot);  
       printf("Ship acc x [m/s^2] : %f \n",paylod_ship.x_ddot);  
       printf("Ship acc y [m/s^2] : %f \n",paylod_ship.y_ddot);  
-      printf("Ship acc z [m/s^2] : %f \n",paylod_ship.z_ddot);                 
+      printf("Ship acc z [m/s^2] : %f \n",paylod_ship.z_ddot);        
     }
-    printf("Message forwarded through ivyBus on ac ID %d: \n",parser.sender_id);
-
+  
   }
 
 }
 
 int main(int argc, char** argv) {
+  //Init timers: 
+  gettimeofday(&last_time_tx, NULL);
+  gettimeofday(&last_time_rx, NULL);
+
   /* Defaults */
   #ifdef __APPLE__
     char* ivy_bus = "224.255.255.255";
@@ -272,14 +216,11 @@ int main(int argc, char** argv) {
 
   GMainLoop *ml =  g_main_loop_new(NULL, FALSE);
 
-  IvyInit ("SHIPINFO2Ivy", "SHIPINFO2Ivy READY", NULL, NULL, NULL, NULL);
-  IvyStart(ivy_bus);
-  IvyBindMsg(on_ShipInfoMsgGround, NULL, "^ground SHIP_INFO_MSG_GROUND %s (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)", ship_box_id);
- 
   /* Arguments options and usage information */
   static struct option long_options[] = {
     {"ac_id", required_argument, NULL, 'i'},
     {"ship_box_id", required_argument, NULL, 'e'},
+    {"max_tx_freq", required_argument, NULL, 'f'},
     {"help", no_argument, NULL, 'h'},
     {"verbose", no_argument, NULL, 'v'},
     {0, 0, 0, 0}
@@ -287,14 +228,15 @@ int main(int argc, char** argv) {
   static const char* usage =
     "Usage: %s [options]\n"
     " Options :\n"
-    "   -i --ac_id [aircraft_id]               Aircraft id\n"
-    "   -s --ship_box_id [ship_box_id]         Ship_box_id\n"
+    "   -i --ac_id [aircraft_id]               Provides Aircraft id\n"
+    "   -s --ship_box_id [ship_box_id]         Provides Ship_box_id\n"
+    "   -f --max_frequency_out [Hz]            Sets max_frequency_out\n"
     "   -h --help                              Display this help\n"
     "   -v --verbose                           Print verbose information\n";
 
   int c;
   int option_index = 0;
-  while((c = getopt_long(argc, argv, "i:e:h:v", long_options, &option_index)) != -1) {
+  while((c = getopt_long(argc, argv, "i:s:f:h:v", long_options, &option_index)) != -1) {
     switch (c) {
       case 'i':
         ac_id = atoi(optarg);
@@ -302,6 +244,10 @@ int main(int argc, char** argv) {
 
       case 's':
         ship_box_id = atoi(optarg);
+        break;
+
+      case 'f':
+        max_tx_freq = atoi(optarg);
         break;
 
       case 'v':
@@ -318,6 +264,12 @@ int main(int argc, char** argv) {
         return 1;
     }
   }
+
+  IvyInit ("SHIPINFO2Ivy", "SHIPINFO2Ivy READY", NULL, NULL, NULL, NULL);
+
+  IvyBindMsg(on_ShipInfoMsgGround, NULL, "%d SHIP_INFO_MSG_GROUND (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)", ship_box_id);
+
+  IvyStart(ivy_bus);
 
   g_main_loop_run(ml);
 
