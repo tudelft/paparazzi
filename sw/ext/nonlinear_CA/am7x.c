@@ -48,7 +48,8 @@ pthread_mutex_t mutex_am7;
 
 pthread_mutex_t mutex_aruco;
 
-int verbose_connection = 1;
+int verbose_sixdof = 1;
+int verbose_connection = 0;
 int verbose_optimizer = 0;
 int verbose_runtime = 0; 
 int verbose_received_data = 0; 
@@ -158,6 +159,7 @@ void am7_init(){
   //init waiting timer: 
   gettimeofday(&time_last_opt_run, NULL);
   gettimeofday(&time_last_filt, NULL);
+  gettimeofday(&starting_time_program_execution, NULL); 
 
 }
 
@@ -310,6 +312,18 @@ void* first_thread() //Receive and send messages to pixhawk
   while(1){ 
     send_receive_am7();
     readLiDAR();
+    gettimeofday(&current_time, NULL);
+
+    if(current_time.tv_sec -starting_time_program_execution.tv_sec > 15 && current_time.tv_sec -starting_time_program_execution.tv_sec < 30){
+      IvySendMsg("SET_SIXDOF_SYS_MODE %d", 2);
+    }
+    if(current_time.tv_sec -starting_time_program_execution.tv_sec > 35 && current_time.tv_sec -starting_time_program_execution.tv_sec < 45){
+      IvySendMsg("SET_SIXDOF_SYS_MODE %d", 3);
+    }
+    if(current_time.tv_sec -starting_time_program_execution.tv_sec > 50 && current_time.tv_sec -starting_time_program_execution.tv_sec < 60){
+      IvySendMsg("SET_SIXDOF_SYS_MODE %d", 1);
+    }
+
   }
 }
 
@@ -960,18 +974,59 @@ void* second_thread() //Run the optimization code
 
 static void sixdof_beacon_pos_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
 {
-  if (argc != 4)
+  if (argc != 5)
   {
-    fprintf(stderr,"ERROR: invalid message length DESIRED_SP\n");
+    fprintf(stderr,"ERROR: invalid message length RELATIVE_BEACON_POS \n");
   }
   else{
+    double timestamp_d = atof(argv[0]); 
+    int beacon_id = (int) atof(argv[1]); 
+    float pos_x = atof(argv[2]); 
+    float pos_y = atof(argv[3]); 
+    float pos_z = atof(argv[4]); 
+    if(verbose_sixdof){
+      fprintf(stderr,"Received beacon position - Timestamp = %.5f, ID = %d; Posx = %.3f Posy = %.3f; Posz = %.3f; \n",timestamp_d,beacon_id,pos_x,pos_y,pos_z);
+    }
+  }
+}
 
-    int beacon_id = (int) atof(argv[0]); 
-    float pos_x = atof(argv[1]); 
-    float pos_y = atof(argv[2]); 
-    float pos_z = atof(argv[3]); 
+static void sixdof_beacon_angle_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
+{
+  if (argc != 6)
+  {
+    fprintf(stderr,"ERROR: invalid message length RELATIVE_BEACON_ANGLE\n");
+  }
+  else{
+    double timestamp_d = atof(argv[0]); 
+    int beacon_id = (int) atof(argv[1]); 
+    float XAngle_deg = atof(argv[2]); 
+    float YAngle_deg = atof(argv[3]); 
+    float Intensity = atof(argv[4]); 
+    float Width = atof(argv[5]); 
+    if(verbose_sixdof){
+      fprintf(stderr,"Received beacon relative angle - Timestamp = %.5f, ID = %d; XAngle_deg = %.3f YAngle_deg = %.3f; Intensity = %.3f; Width = %.3f; \n",timestamp_d,beacon_id,XAngle_deg,YAngle_deg,Intensity,Width);
+    }
+  }
+}
 
-    fprintf(stderr,"Received beacon position : ID = %d Posx = %.3f Posy = %.3f Posz = %.3f \n",beacon_id,pos_x,pos_y,pos_z);
+static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
+{
+  if (argc != 8)
+  {
+    fprintf(stderr,"ERROR: invalid message length SIXDOF_TRACKING\n");
+  }
+  else{
+    double timestamp_d = atof(argv[0]); 
+    float X_pos = atof(argv[1]); 
+    float Y_pos = atof(argv[2]); 
+    float Z_pos = atof(argv[3]); 
+    float Quat_qw = atof(argv[4]); 
+    float Quat_qx = atof(argv[5]); 
+    float Quat_qy = atof(argv[6]); 
+    float Quat_qz = atof(argv[7]); 
+    if(verbose_sixdof){
+      fprintf(stderr,"Received sixdof packet - Timestamp = %.5f, X_pos = %.3f Y_pos = %.3f; Z_pos = %.3f; Quat_qw = %.3f; Quat_qx = %.3f; Quat_qy = %.3f; Quat_qz = %.3f;\n",timestamp_d,X_pos,Y_pos,Z_pos,Quat_qw,Quat_qx,Quat_qy,Quat_qz);
+    }
   }
 }
 
@@ -1006,8 +1061,7 @@ void main() {
 
   //Initialize the serial 
   am7_init();
-  //Initialize timer: 
-  gettimeofday(&starting_time_program_execution, NULL); 
+  
   
   //Init 
   #ifdef __APPLE__
@@ -1021,8 +1075,9 @@ void main() {
   IvyInit ("NonlinearCA", "NonlinearCA READY", NULL, NULL, NULL, NULL);
   IvyStart(ivy_bus);
   IvyBindMsg(aruco_position_report, NULL, "^ground DESIRED_SP %s (\\S*) (\\S*) (\\S*) (\\S*)", "1");
-  IvyBindMsg(sixdof_beacon_pos_callback, NULL, "RELATIVE_BEACON_POS (\\S*) (\\S*) (\\S*) (\\S*)");
-  //IvyBindMsg(sixdof_beacon_angle_callback, NULL, "RELATIVE_BEACON_ANGLE (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
+  IvyBindMsg(sixdof_beacon_pos_callback, NULL, "RELATIVE_BEACON_POS (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
+  IvyBindMsg(sixdof_beacon_angle_callback, NULL, "RELATIVE_BEACON_ANGLE (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
+  IvyBindMsg(sixdof_mode_callback, NULL, "SIXDOF_TRACKING (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
 
   pthread_t thread1, thread2;
 
@@ -1032,9 +1087,9 @@ void main() {
 
   g_main_loop_run(ml);
 
-  while(true){
+  // while(true){
 
-  }
+  // }
 
   //Close the serial and clean the variables 
   fflush (stdout);
