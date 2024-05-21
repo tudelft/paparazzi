@@ -510,6 +510,8 @@
 
     <define name="SPEED_AOA_PROTECTION" value="2" unit="m/s"/>
 
+    <define name="MIN_AIRSPEED_READING" value="5.0" unit="m/s"/>
+    
     <!-- Tilting angle constraint in the approach and takeoff phase -->
     <define name="K_ALT_TILT_CONSTRAINT" value="50" unit="deg/meters"/>
     <define name="MIN_ALT_TILT_CONSTRAINT" value="-0.1" unit="meters"/>

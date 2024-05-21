@@ -1683,10 +1683,10 @@ void overactuated_mixing_run(void)
 
         #ifdef USE_EXT_REF_ATTITUDE
             if(fabs(euler_vect[0]) <= max_value_error.phi){
-                phi_dot += ship_info_receive.phi_dot * M_PI/180
+                phi_dot += ship_info_receive.phi_dot * M_PI/180;
             }
             if(fabs(euler_vect[1]) <= max_value_error.theta){
-                theta_dot += ship_info_receive.theta_dot * M_PI/180
+                theta_dot += ship_info_receive.theta_dot * M_PI/180;
             }
         #endif 
 

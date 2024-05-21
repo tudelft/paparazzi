@@ -36,7 +36,7 @@ Beacon b4 {-0.298, 0.23, -0.005, 1632};
 Beacon b5 {-0.30, -0.222, -0.005, 1633};
 
 // Function to convert quaternion to 3-2-1 Euler angles
-void quaternion_to_euler(float q[4], float euler[3]) {
+static void quaternion_to_euler(float q[4], float euler[3]) {
     // Extract the values from the quaternion
     float qw = q[0];
     float qx = q[1];
@@ -67,8 +67,9 @@ void quaternion_to_euler(float q[4], float euler[3]) {
  * using the provided rotation matrix.
  */
 static void from_body_to_earth(float * out_array, float * in_array, float Phi, float Theta, float Psi){
+
     float R_be_matrix[3][3];
-    
+
     // Compute the elements of the matrix
     R_be_matrix[0][0] = cos(Theta) * cos(Psi);
     R_be_matrix[0][1] = -cos(Phi) * sin(Psi) + sin(Phi) * sin(Theta) * cos(Psi);
@@ -81,10 +82,10 @@ static void from_body_to_earth(float * out_array, float * in_array, float Phi, f
     R_be_matrix[2][2] = cos(Phi) * cos(Theta);
 
     // Do the multiplication between the input array and the rotation matrix:
-    for (int j = 0; j < 3; j++) {
-        out_array[j] = 0.; // Initialize output array element to zero
-        for (int k = 0; k < 3; k++) {
-            out_array[j] += in_array[k] * R_be_matrix[j][k];
+    for (int i = 0; i < 3; i++) {
+        out_array[i] = 0.; // Initialize output array element to zero
+        for (int j = 0; j < 3; j++) {
+            out_array[i] += R_be_matrix[i][j] * in_array[j];
         }
     }
 }
@@ -255,9 +256,28 @@ int main(int ac, const char *av[]) {
                     << " Var_p: " << sd.var_p
                     << " Var_r: " << sd.var_r << std::endl;
         }
-        //Send values over IVYBUS
+        //Calculate the relative pitch and roll of the UAV to align with the ship: 
+        float relative_euler[3], target_roll_UAV, target_pitch_UAV; 
+        float quat_array[4] = {(float) sd.qw ,(float) sd.qx ,(float) sd.qy,(float) sd.qz};
+        quaternion_to_euler(quat_array, relative_euler);
+        target_roll_UAV = relative_euler[0] * cos(relative_euler[2]) + relative_euler[1] * sin(relative_euler[2]); 
+        target_pitch_UAV = -relative_euler[0] * sin(relative_euler[2]) + relative_euler[1] * cos(relative_euler[2]); 
+        //Sum the current vehicle attitude to the relative one: 
+        target_roll_UAV += euler_angles[0]; 
+        target_pitch_UAV += euler_angles[1]; 
+
+        //Now transpose the xyz coordinate of the landing pad from the body refence frame to the earth reference frame:
+        float relative_sixdof_pos_body_rf[3] = {(float) sd.z,(float) sd.x,(float) sd.y}; 
+        float relative_sixdof_pos_earth_rf[3];
+        
+        from_body_to_earth(relative_sixdof_pos_earth_rf, relative_sixdof_pos_body_rf, euler_angles[0], euler_angles[1], euler_angles[2]); 
+        //Sum the current UAV NED position to generate a reference for the target NED position: 
+        float sixdof_target_NED[3] = {relative_sixdof_pos_earth_rf[0] + UAV_ned_pos[0],
+                                                relative_sixdof_pos_earth_rf[1] + UAV_ned_pos[1],
+                                                relative_sixdof_pos_earth_rf[2] + UAV_ned_pos[2]};   
+
         //Transpose quaternions into euler angles and remove the 
-        IvySendMsg("SIXDOF_TRACKING_NED %f %f %f %f %f %f %f %f", current_timestamp, sd.x, sd.y, sd.z, sd.qw, sd.qx, sd.qy, sd.qz);
+        IvySendMsg("SIXDOF_TRACKING_NED %f %f %f %f %f %f", current_timestamp, sixdof_target_NED[0], sixdof_target_NED[1], sixdof_target_NED[2], target_roll_UAV, target_pitch_UAV);
 
         IvySendMsg("SIXDOF_TRACKING %f %f %f %f %f %f %f %f %f %f %f %f %f %f", current_timestamp, sd.x, sd.y, sd.z, sd.qw, sd.qx, sd.qy, sd.qz, sd.var_x, sd.var_y, sd.var_z, sd.var_h, sd.var_p, sd.var_r);
     });
