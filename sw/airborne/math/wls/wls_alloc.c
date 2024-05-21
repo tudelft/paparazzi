@@ -37,7 +37,7 @@
 
 #include "wls_alloc.h"
 #include "std.h"
-
+#include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <float.h>
@@ -75,18 +75,21 @@ struct WLS_param WLS_p = {
 /* Define messages of the module*/
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
-static void send_wls(struct transport_tx *trans, struct link_device *dev)
+static void send_wls_v(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_WLS(trans, dev, AC_ID,               
+  pprz_msg_send_WLS_v(trans, dev, AC_ID,               
          &WLS_p.gamma,
-         &WLS_p.PC,
-         &WLS_p.SC,
          WLS_p.nv, WLS_p.v,
-         WLS_p.nv, WLS_p.Wv,
+         WLS_p.nv, WLS_p.Wv);                                      
+}
+static void send_wls_u(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_WLS_u(trans, dev, AC_ID,               
          WLS_p.nu, WLS_p.Wu,
          WLS_p.nu, WLS_p.u_pref,
          WLS_p.nu, WLS_p.u_min,
-         WLS_p.nu, WLS_p.u_max);                                      
+         WLS_p.nu, WLS_p.u_max,
+         WLS_p.nu, WLS_p.u);                                      
 }
 #endif
 
@@ -95,7 +98,8 @@ void wls_init(void)
 { 
   // Start telemetry
   #if PERIODIC_TELEMETRY
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS, send_wls);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_v, send_wls_v);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_u, send_wls_u);
   #endif
 }
 /**
@@ -314,7 +318,9 @@ int wls_alloc(float* u, float* v, float* umin, float* umax, float** B,
 #if WLS_VERBOSE
         print_final_values(n_u, n_v, u, B, v, umin, umax);
 #endif
-
+        for(int i = 0; i < n_u; i++) {
+          WLS_p.u[i] = u[i];
+        }
         // if solution is found, return number of iterations
         return iter;
       }

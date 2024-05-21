@@ -335,7 +335,7 @@ bool heading_manual = false;
 bool yaw_stick_in_auto = false;
 bool ctrl_off = false;
 /*WLS Settings*/
-static float gamma_wls = 1000.0;
+static float gamma_wls = 50.0;
 static float du_min_1l[ANDI_NUM_ACT_TOT]; 
 static float du_max_1l[ANDI_NUM_ACT_TOT];
 static float du_pref_1l[ANDI_NUM_ACT_TOT];
@@ -404,9 +404,9 @@ static void send_eff_mat_stab_oneloop_andi(struct transport_tx *trans, struct li
 {
   float zero = 0.0;
   pprz_msg_send_EFF_MAT_STAB(trans, dev, AC_ID, 
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[3],
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[4],
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[5], 
+                ANDI_NUM_ACT, EFF_MAT_G[3],
+                ANDI_NUM_ACT, EFF_MAT_G[4],
+                ANDI_NUM_ACT, EFF_MAT_G[5], 
                                     1, &zero,
                                     1, &zero);
 }

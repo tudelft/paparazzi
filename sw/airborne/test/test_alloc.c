@@ -32,11 +32,14 @@
 #include "std.h"
 #include "math/wls/wls_alloc.h"
 
-#define INDI_OUTPUTS 4
+#define INDI_NUM_ACT WLS_N_U
+#define INDI_OUTPUTS WLS_N_V
 
 void test_overdetermined(void);
 void test_overdetermined2(void);
 void calc_nu_out(float** Bwls, float* du, float* nu_out);
+void calc_secondary_cost(float* du, float* du_pref, float* W, float* SC);
+void test_oneloop_rw3c(void);
 
 int main(int argc, char **argv)
 {
@@ -44,11 +47,12 @@ int main(int argc, char **argv)
   // test_overdetermined();
 
   // Make sure to set CA_N_U to 8 in the test makefile!
-  #define INDI_NUM_ACT 8
-  test_overdetermined2();
+  // #define INDI_NUM_ACT 8
+  // test_overdetermined2();
 
 /*#define INDI_NUM_ACT 4*/
   /*test_four_by_four();*/
+  test_oneloop_rw3c();
 }
 
 /*
@@ -89,6 +93,82 @@ void test_four_by_four(void)
   printf("du = %f, %f, %f, %f\n", indi_du[0], indi_du[1], indi_du[2], indi_du[3]);
 }
 
+/* function to test wls for the oneloop controller 6x11 (outputs x inputs) system */
+void test_oneloop_rw3c(void)
+{
+  float gamma = 1000;
+  float du_min[WLS_N_U]  = {-0.508550999999996,-0.542646000000002,-0.462381000000000,-0.557200000000001,0,-0.211591999999993,-1,-1,-1,-1.07320300000000,-0.876025000000001};
+  float du_max[WLS_N_U]  = {0.491449000000004,0.457353999999998,0.537619000000000,0.442799999999999,1,0.788408000000007,1,1,1,0.926796999999996,1.12397500000000};
+  float du_pref[WLS_N_U] = {-0.508550999999996,-0.542646000000002,-0.462381000000000,-0.557200000000001,0,-0.211591999999993,0,0,0,-0.0732030000000035,0.123974999999999};
+  // float du_pref[WLS_N_U] = {0};
+
+  float Wv[WLS_N_V] = {0,0,4,8,8,1};
+  float Wu[WLS_N_U] = {0.75,0.75,0.75,0.75,1,0.75,0.75,0.75,0.75,1.2,1.2};
+  float wls_v[WLS_N_V] = {0,0,-3.01660780000004,-9.54111749999685,-6.94998019999846,1.27897750000035};
+  //float wls_v[WLS_N_V] = {0,0,0,0,0,0};
+  float wls_du[WLS_N_U] = {0};
+  float g1g2[WLS_N_V][WLS_N_U] = {
+      {0, 0, 0, 0, 119.250229000000, 0, 0, 0, 0, -1.08671700000000, -14.0531850000000},
+      {0, 0, 0, 0, 0, 0, 0, 0, 0, 14.0323560000000, -0.971249000000000},
+      {-55.4355620000000, -55.4355620000000, -55.4355620000000, -55.4355620000000, 0, 0, 0, 0, 0, 0.577671000000000, -2.84403400000000},
+      {0, -1177.97473100000, 0, 1177.97473100000, 0, 0, 0, 0, 0, 0, 0},
+      {165.654556000000, 0, -165.654556000000, 0, 0, 83.2264790000000, 0, 0, 0, 0, 0},
+      {-40.7729230000000, 40.7729230000000, -40.7729230000000, 40.7729230000000, 0, 0, 0, 0, 0, 0, 0}
+  };
+
+  // Scale to test numerical errors
+  float scaler = 1; // replace with your desired value
+  gamma *= scaler;
+  for (int i = 0; i < WLS_N_U; i++) {
+      du_min[i]  *= scaler;
+      du_max[i]  *= scaler;
+      du_pref[i] *= scaler;
+  }
+  
+  for (int i = 0; i < WLS_N_V; i++) {
+      for (int j = 0; j < WLS_N_U; j++) {
+          g1g2[i][j] /= scaler;
+      }
+  }
+    // Initialize the array of pointers to the rows of g1g2
+  float *Bwls[WLS_N_V];
+  uint8_t i;
+  for (i = 0; i < WLS_N_V; i++) {
+    Bwls[i] = g1g2[i];
+  }
+  // WLS Control Allocator
+  //int num_iter = wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, 0, u_p, 0, 10, INDI_NUM_ACT, INDI_OUTPUTS);
+  int num_iter = wls_alloc(wls_du, wls_v, du_min, du_max, Bwls, du_pref, 0, Wv, Wu, du_pref, gamma, 10, WLS_N_U, WLS_N_V);
+  float nu_out[WLS_N_V] = {0.0f};
+  calc_nu_out(Bwls, wls_du, nu_out);
+  float SC = 0;
+  calc_secondary_cost(wls_du, du_pref, Wu, &SC);
+  printf("finished in %d iterations\n", num_iter);
+  printf("Input:\n");
+  printf("--------- jN            jE            jD            jp            jq            jr\n");
+  printf("v       = %-13f %-13f %-13f %-13f %-13f %-13f\n", wls_v[0], wls_v[1], wls_v[2], wls_v[3], wls_v[4], wls_v[5]);
+  printf("v_out   = %-13f %-13f %-13f %-13f %-13f %-13f\n", nu_out[0], nu_out[1], nu_out[2], nu_out[3], nu_out[4], nu_out[5]);
+  printf("Wv      = %-13f %-13f %-13f %-13f %-13f %-13f\n", Wv[0], Wv[1], Wv[2], Wv[3], Wv[4], Wv[5]);
+  printf("Control effectiveness matrix g1g2 = \n");
+  printf("--------- mF            mR            mB            mL            mP            ele           rud           ail           flp           phi           theta\n");
+  printf("jN        %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f\n", g1g2[0][0], g1g2[0][1], g1g2[0][2], g1g2[0][3], g1g2[0][4], g1g2[0][5], g1g2[0][6], g1g2[0][7], g1g2[0][8], g1g2[0][9], g1g2[0][10]);
+  printf("jE        %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f\n", g1g2[1][0], g1g2[1][1], g1g2[1][2], g1g2[1][3], g1g2[1][4], g1g2[1][5], g1g2[1][6], g1g2[1][7], g1g2[1][8], g1g2[1][9], g1g2[1][10]);
+  printf("jD        %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f\n", g1g2[2][0], g1g2[2][1], g1g2[2][2], g1g2[2][3], g1g2[2][4], g1g2[2][5], g1g2[2][6], g1g2[2][7], g1g2[2][8], g1g2[2][9], g1g2[2][10]);
+  printf("jp        %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f\n", g1g2[3][0], g1g2[3][1], g1g2[3][2], g1g2[3][3], g1g2[3][4], g1g2[3][5], g1g2[3][6], g1g2[3][7], g1g2[3][8], g1g2[3][9], g1g2[3][10]);
+  printf("jq        %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f\n", g1g2[4][0], g1g2[4][1], g1g2[4][2], g1g2[4][3], g1g2[4][4], g1g2[4][5], g1g2[4][6], g1g2[4][7], g1g2[4][8], g1g2[4][9], g1g2[4][10]);
+  printf("jr        %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f\n", g1g2[5][0], g1g2[5][1], g1g2[5][2], g1g2[5][3], g1g2[5][4], g1g2[5][5], g1g2[5][6], g1g2[5][7], g1g2[5][8], g1g2[5][9], g1g2[5][10]);
+  printf("\n");
+  printf("du_min  = %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f\n", du_min[0], du_min[1], du_min[2], du_min[3], du_min[4], du_min[5], du_min[6], du_min[7], du_min[8], du_min[9], du_min[10]);
+  printf("\n");
+  printf("du_max  = %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f\n", du_max[0], du_max[1], du_max[2], du_max[3], du_max[4], du_max[5], du_max[6], du_max[7], du_max[8], du_max[9], du_max[10]);
+  printf("\n");
+  printf("du_pref = %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f\n", du_pref[0], du_pref[1], du_pref[2], du_pref[3], du_pref[4], du_pref[5], du_pref[6], du_pref[7], du_pref[8], du_pref[9], du_pref[10]);
+  printf("\n");
+  printf("Wu      = %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f\n", Wu[0], Wu[1], Wu[2], Wu[3], Wu[4], Wu[5], Wu[6], Wu[7], Wu[8], Wu[9], Wu[10]);
+  printf("\n");
+  printf("du      = %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f %-13f\n", wls_du[0], wls_du[1], wls_du[2], wls_du[3], wls_du[4], wls_du[5], wls_du[6], wls_du[7], wls_du[8], wls_du[9], wls_du[10]);
+  printf("Secondary cost = %f\n", SC);
+}
 
 /*
  * function to test wls for an overdetermined 4x6 (outputs x inputs) system
@@ -144,7 +224,7 @@ void test_overdetermined(void)
 
   // WLS Control Allocator
   int num_iter =
-    wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, 0, u_p, 0, 10, INDI_NUM_ACT, INDI_OUTPUTS);
+    wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, 0, u_p, 0, 100, INDI_NUM_ACT, INDI_OUTPUTS);
 
   printf("finished in %d iterations\n", num_iter);
 
@@ -164,8 +244,8 @@ void test_overdetermined(void)
  */
 void test_overdetermined2(void)
 {
-  float u_min[INDI_NUM_ACT] = {0};
-  float u_max[INDI_NUM_ACT] = {0};
+  // float u_min[INDI_NUM_ACT] = {0};
+  // float u_max[INDI_NUM_ACT] = {0};
   float du_min[INDI_NUM_ACT] = {1500.0, 1500.0, 1500.0, 1500.0, -9600.0, -9600.0, -9600.0, -9600.0};
   float du_max[INDI_NUM_ACT] = {9600.0, 9600.0, 9600.0, 9600.0, 9600.0, 9600.0, 9600.0, 9600.0};
 
@@ -238,4 +318,13 @@ void calc_nu_out(float** Bwls, float* du, float* nu_out) {
     }
   }
 }
+
+/* Calculate secondary cost*/
+void calc_secondary_cost(float* du, float* du_pref, float* W, float* SC) {
+  *SC = 0;
+  for(int i=0; i<INDI_NUM_ACT; i++) {
+    *SC += pow(W[i] * (du[i] - du_pref[i]),2);
+  }
+}
+
 
