@@ -489,7 +489,7 @@
     <define name="SERVO_AZ_3_ZERO_VALUE" value="-1.31" unit="deg"/>
     <define name="SERVO_AZ_4_ZERO_VALUE" value="-2.37" unit="deg"/> -->
 
-    <define name="SERVO_EL_1_ZERO_VALUE" value="3.95" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="11.5" unit="deg"/>
     <define name="SERVO_EL_2_ZERO_VALUE" value="1.84" unit="deg"/>
     <define name="SERVO_EL_3_ZERO_VALUE" value="-7.03" unit="deg"/>
     <define name="SERVO_EL_4_ZERO_VALUE" value="-12.2" unit="deg"/>
@@ -628,6 +628,20 @@
     <define name="WING_SPAN" value="1.4"/>
 
     <define name="CL_AILERONS" value="0.2"/>
+  </section>
+
+  <!-- Motor-propulsive model noah -->
+  <section name="PROP_MODEL" prefix="PROP_MODEL_">
+    <define name="POWER_CD_0" value="0.05"/>
+    <define name="POWER_CD_A" value="0.36"/>
+    <define name="PROP_R" value="0.1270"/>
+    <define name="PROP_CD_0" value="0.05"/>
+    <define name="PROP_CL_0" value="0.0"/>
+    <define name="PROP_CD_A" value="0.36"/>
+    <define name="PROP_CL_A" value="3.46"/>
+    <define name="PROP_DELTA" value="0.2"/>
+    <define name="PROP_SIGMA" value="0.0652"/>
+    <define name="PROP_THETA" value="0.2188"/>
   </section>
 
   <section name="WP_CONTROL" prefix="WP_CONTROL_">

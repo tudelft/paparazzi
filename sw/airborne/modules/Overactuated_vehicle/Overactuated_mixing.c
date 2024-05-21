@@ -312,7 +312,7 @@ int approach_state = 1;
 uint8_t ground_detected_am = 0;
 float time_of_ground_not_detected; 
 float min_lidar_alt_ground_detect = 0.3; 
-float time_tolerance_land = 1;
+float time_tolerance_land = 0.5;
 float az_tolerance_land = 4; 
 
 struct PID_over pid_gains_over = {
@@ -1680,7 +1680,16 @@ void overactuated_mixing_run(void)
         float psi_dot = euler_error[2];
         float phi_value = euler_vect[0];
         float theta_value = euler_vect[1];
-        
+
+        #ifdef USE_EXT_REF_ATTITUDE
+            if(fabs(euler_vect[0]) <= max_value_error.phi){
+                phi_dot += ship_info_receive.phi_dot * M_PI/180
+            }
+            if(fabs(euler_vect[1]) <= max_value_error.theta){
+                theta_dot += ship_info_receive.theta_dot * M_PI/180
+            }
+        #endif 
+
         //Calculate the body error manually: 
         angular_body_error[0] = phi_dot - sin(theta_value) * psi_dot;
         angular_body_error[1] = cos(phi_value) * theta_dot + sin(phi_value) * cos(theta_value) * psi_dot;
