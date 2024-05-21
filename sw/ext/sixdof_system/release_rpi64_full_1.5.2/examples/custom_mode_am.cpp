@@ -35,6 +35,33 @@ Beacon b3 {0.292, 0.224, -0.005, 1645};
 Beacon b4 {-0.298, 0.23, -0.005, 1632};
 Beacon b5 {-0.30, -0.222, -0.005, 1633};
 
+// Function to convert quaternion to 3-2-1 Euler angles
+void quaternion_to_euler(float q[4], float euler[3]) {
+    // Extract the values from the quaternion
+    float qw = q[0];
+    float qx = q[1];
+    float qy = q[2];
+    float qz = q[3];
+
+    // Calculate the Euler angles from the quaternion
+    float ysqr = qy * qy;
+
+    // Roll (x-axis rotation)
+    float t0 = +2.0 * (qw * qx + qy * qz);
+    float t1 = +1.0 - 2.0 * (qx * qx + ysqr);
+    euler[2] = atan2f(t0, t1); // Roll
+
+    // Pitch (y-axis rotation)
+    float t2 = +2.0 * (qw * qy - qz * qx);
+    t2 = fmaxf(-1.0, fminf(1.0, t2)); // Clamp to prevent NaN
+    euler[1] = asinf(t2); // Pitch
+
+    // Yaw (z-axis rotation)
+    float t3 = +2.0 * (qw * qz + qx * qy);
+    float t4 = +1.0 - 2.0 * (ysqr + qz * qz);
+    euler[0] = atan2f(t3, t4); // Yaw
+}
+
 /**
  * Transpose an array from body reference frame to earth reference frame
  * using the provided rotation matrix.
@@ -192,18 +219,16 @@ int main(int ac, const char *av[]) {
                     << " Z: " << b.z << std::endl;
             }
             //Correct this readings with the AP attitude angle and generate a reading with respect to the UAV earth RF. 
-            float relative_beacon_pos_body_rf = {b.z, b.x, b.y}; 
+            float relative_beacon_pos_body_rf[3] = {(float) b.z,(float) b.x,(float) b.y}; 
             float relative_beacon_pos_earth_rf[3];
             
             from_body_to_earth(relative_beacon_pos_earth_rf, relative_beacon_pos_body_rf, euler_angles[0], euler_angles[1], euler_angles[2]); 
             //Sum UAV NED pos: 
-            float absolute_beacon_pos_earth_rf = {relative_beacon_pos_earth_rf[0] + UAV_ned_pos[0],
+            float absolute_beacon_pos_earth_rf[3] = {relative_beacon_pos_earth_rf[0] + UAV_ned_pos[0],
                                                   relative_beacon_pos_earth_rf[1] + UAV_ned_pos[1],
                                                   relative_beacon_pos_earth_rf[2] + UAV_ned_pos[2]};
-            //Sum the coordinate of the beacon associated to the reading: 
-            if(b.id == b1.id)
     
-            IvySendMsg("ABSOLUTE_NED_RF_POS %f %d %f %f %f ", current_timestamp, b.id, b.x, b.y, b.z);
+            IvySendMsg("ABSOLUTE_NED_RF_POS %f %d %f %f %f ", current_timestamp, b.id, absolute_beacon_pos_earth_rf[0], absolute_beacon_pos_earth_rf[1], absolute_beacon_pos_earth_rf[2]);
 
             //Send values over IVYBUS
             IvySendMsg("RELATIVE_BEACON_POS %f %d %f %f %f ", current_timestamp, b.id, b.x, b.y, b.z);
@@ -222,10 +247,19 @@ int main(int ac, const char *av[]) {
                     << " Qw: " << sd.qw 
                     << " Qx: " << sd.qx 
                     << " Qy: " << sd.qy 
-                    << " Qz: " << sd.qz << std::endl;
+                    << " Qz: " << sd.qz 
+                    << " Var_x: " << sd.var_x 
+                    << " Var_y: " << sd.var_y 
+                    << " Var_z: " << sd.var_z 
+                    << " Var_h: " << sd.var_h
+                    << " Var_p: " << sd.var_p
+                    << " Var_r: " << sd.var_r << std::endl;
         }
         //Send values over IVYBUS
-        IvySendMsg("SIXDOF_TRACKING %f %f %f %f %f %f %f %f", current_timestamp, sd.x, sd.y, sd.z, sd.qw, sd.qx, sd.qy, sd.qz);
+        //Transpose quaternions into euler angles and remove the 
+        IvySendMsg("SIXDOF_TRACKING_NED %f %f %f %f %f %f %f %f", current_timestamp, sd.x, sd.y, sd.z, sd.qw, sd.qx, sd.qy, sd.qz);
+
+        IvySendMsg("SIXDOF_TRACKING %f %f %f %f %f %f %f %f %f %f %f %f %f %f", current_timestamp, sd.x, sd.y, sd.z, sd.qw, sd.qx, sd.qy, sd.qz, sd.var_x, sd.var_y, sd.var_z, sd.var_h, sd.var_p, sd.var_r);
     });
 
     // Initialize network, this can only be done once

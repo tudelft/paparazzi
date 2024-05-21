@@ -1024,8 +1024,15 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
     float Quat_qx = atof(argv[5]); 
     float Quat_qy = atof(argv[6]); 
     float Quat_qz = atof(argv[7]); 
+    float var_x = atof(argv[8]); 
+    float var_y = atof(argv[9]); 
+    float var_z = atof(argv[10]); 
+    float var_h = atof(argv[11]); 
+    float var_p = atof(argv[12]); 
+    float var_y = atof(argv[13]); 
+
     if(verbose_sixdof){
-      fprintf(stderr,"Received sixdof packet - Timestamp = %.5f, X_pos = %.3f Y_pos = %.3f; Z_pos = %.3f; Quat_qw = %.3f; Quat_qx = %.3f; Quat_qy = %.3f; Quat_qz = %.3f;\n",timestamp_d,X_pos,Y_pos,Z_pos,Quat_qw,Quat_qx,Quat_qy,Quat_qz);
+      fprintf(stderr,"Received sixdof packet - Timestamp = %.5f, X_pos = %.3f, Y_pos = %.3f, Z_pos = %.3f, Quat_qw = %.3f, Quat_qx = %.3f, Quat_qy = %.3f, Quat_qz = %.3f, var_x = %.3f, var_y = %.3f, var_z = %.3f, var_h = %.3f, var_p = %.3f, var_y = %.3f;\n",timestamp_d,X_pos,Y_pos,Z_pos,Quat_qw,Quat_qx,Quat_qy,Quat_qz,var_x,var_y,var_z,var_h,var_p,var_y);
     }
   }
 }
@@ -1077,7 +1084,7 @@ void main() {
   IvyBindMsg(aruco_position_report, NULL, "^ground DESIRED_SP %s (\\S*) (\\S*) (\\S*) (\\S*)", "1");
   IvyBindMsg(sixdof_beacon_pos_callback, NULL, "RELATIVE_BEACON_POS (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
   IvyBindMsg(sixdof_beacon_angle_callback, NULL, "RELATIVE_BEACON_ANGLE (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
-  IvyBindMsg(sixdof_mode_callback, NULL, "SIXDOF_TRACKING (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
+  IvyBindMsg(sixdof_mode_callback, NULL, "SIXDOF_TRACKING (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
 
   pthread_t thread1, thread2;
 
