@@ -64,7 +64,7 @@
 
 #define RECTIFY_LAT_AND_FWD_SPEED
 
-#define USE_EXT_REF_ATTITUDE
+// #define USE_EXT_REF_ATTITUDE
 
 float fpa_off_deg = -3.0; 
 #define NEW_FPA_DEF
@@ -1303,7 +1303,7 @@ void assign_variables(void){
         beta_deg = 0;
     #else
         #ifdef NO_AIRSPEED_NONLINEAR_CA
-            airspeed = 0;
+            airspeed = 0.1;
             beta_deg = 0;
         #else
             airspeed = fmax(OVERACTUATED_MIXING_MIN_AIRSPEED_READING,ms45xx.airspeed);

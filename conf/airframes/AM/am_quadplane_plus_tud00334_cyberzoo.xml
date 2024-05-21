@@ -789,7 +789,9 @@
     <define name="RC_LOST_MODE" value="AP_MODE_NAV"/>
 
     <!-- <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/> -->
-
+    <define name="FULLY_MANUAL_HEADING" value="TRUE"/>
+    <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/>
+    
     <define name="FAILSAFE_HOME_RADIUS" value="600" unit="m"/>
   </section>
 
