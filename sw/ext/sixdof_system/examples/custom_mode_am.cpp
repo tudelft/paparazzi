@@ -22,7 +22,8 @@ float euler_angles[3], UAV_ned_pos[3];
 
 std::unique_ptr<DroneTrackingManager> droneManager;
 
-int verbose = 1; 
+int verbose_rx = 0; 
+int verbose_tx = 1; 
 
 int current_sixdof_mode = 1; //1 -->rel beacon pos; 2 -->rel beacon angle; 3-->sixdof mode. Default is 1. 
 
@@ -105,9 +106,13 @@ static void ivy_get_attitude_and_ned_pos(IvyClientPtr app, void *user_data, int 
     euler_angles[1] = (float) atof(argv[7])*0.0139882;
     euler_angles[2] = (float) atof(argv[8])*0.0139882;
 
-    if(verbose){
+    if(verbose_rx){
       fprintf(stderr,"Received ROTORCRAFT_FP packet - Phi_deg = %.2f, Theta_deg = %.2f Psi_deg = %.2f; UAV_x_pos_NED = %.2f; UAV_y_pos_NED = %.2f; UAV_z_pos_NED = %.2f; \n",euler_angles[0]*180/M_PI,euler_angles[1]*180/M_PI,euler_angles[2]*180/M_PI,UAV_ned_pos[0],UAV_ned_pos[1],UAV_ned_pos[2]);
     }
+    gettimeofday(&current_time, NULL);
+    double current_timestamp = (double) (current_time.tv_sec + current_time.tv_usec*1e-6);
+    //Send a current mode status packer everytime we receive a ROTORCRAFT_FP message: 
+    IvySendMsg("SIXDOF_SYSTEM_CURRENT_MODE %f %d", current_timestamp, current_sixdof_mode);
   }
 }
 
@@ -192,7 +197,7 @@ int main(int ac, const char *av[]) {
         for (const RelativeAngle& ra : col) { 
             gettimeofday(&current_time, NULL);
             double current_timestamp = (double) (current_time.tv_sec + current_time.tv_usec*1e-6);
-            if(verbose){
+            if(verbose_tx){
                 std::cout << "ID: " << ra.id
                         << std::fixed << std::setprecision(5)
                         << "Timestamp: " << current_timestamp << std::setprecision(0)
@@ -211,7 +216,7 @@ int main(int ac, const char *av[]) {
         for (const PoseRelativeBeacon& b : col) {
             gettimeofday(&current_time, NULL);
             double current_timestamp = (double) (current_time.tv_sec + current_time.tv_usec*1e-6);
-            if(verbose){
+            if(verbose_tx){
             std::cout << "ID: " << b.id
                     << std::fixed << std::setprecision(3)
                     << "Timestamp: " << current_timestamp
@@ -239,7 +244,7 @@ int main(int ac, const char *av[]) {
     droneManager->registerPose6DofCallback([](const Pose6Dof& sd){
         gettimeofday(&current_time, NULL);
         double current_timestamp = (double) (current_time.tv_sec + current_time.tv_usec*1e-6);
-        if(verbose){
+        if(verbose_tx){
             std::cout << std::fixed << std::setprecision(5)
                     << "Timestamp: " << current_timestamp << std::setprecision(3)
                     << "X: " << sd.x 

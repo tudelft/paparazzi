@@ -46,7 +46,7 @@ struct timeval current_time, last_time, last_sent_msg_time, aruco_time, starting
 
 pthread_mutex_t mutex_am7;
 
-pthread_mutex_t mutex_aruco;
+
 
 int verbose_sixdof = 1;
 int verbose_connection = 0;
@@ -61,7 +61,12 @@ int verbose_filters = 0;
 int16_t lidar_dist_cm = -1; 
 int16_t lidar_signal_strength = -1; 
 
+//COMPUTER VISION 
 struct aruco_detection_t aruco_detection; 
+pthread_mutex_t mutex_aruco;
+
+//SIXDOF VARIABLES: 
+int desired_sixdof_mode = 1; //1 -->rel beacon pos; 2 -->rel beacon angle; 3-->sixdof mode. Default is 1. 
 
 void readLiDAR(){
   // Data Format for Benewake TFmini
@@ -313,17 +318,7 @@ void* first_thread() //Receive and send messages to pixhawk
     send_receive_am7();
     readLiDAR();
     gettimeofday(&current_time, NULL);
-
-    if(current_time.tv_sec -starting_time_program_execution.tv_sec > 15 && current_time.tv_sec -starting_time_program_execution.tv_sec < 30){
-      IvySendMsg("SET_SIXDOF_SYS_MODE %d", 2);
-    }
-    if(current_time.tv_sec -starting_time_program_execution.tv_sec > 35 && current_time.tv_sec -starting_time_program_execution.tv_sec < 45){
-      IvySendMsg("SET_SIXDOF_SYS_MODE %d", 3);
-    }
-    if(current_time.tv_sec -starting_time_program_execution.tv_sec > 50 && current_time.tv_sec -starting_time_program_execution.tv_sec < 60){
-      IvySendMsg("SET_SIXDOF_SYS_MODE %d", 1);
-    }
-
+    desired_sixdof_mode = 3; 
   }
 }
 
@@ -972,6 +967,27 @@ void* second_thread() //Run the optimization code
 
 
 
+
+static void sixdof_current_mode_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
+{
+  if (argc != 2)
+  {
+    fprintf(stderr,"ERROR: invalid message length SIXDOF_SYSTEM_CURRENT_MODE \n");
+  }
+  else{
+    double timestamp_d = atof(argv[0]); 
+    int current_sixdof_mode = (int) atof(argv[1]); 
+    if(verbose_sixdof){
+      fprintf(stderr,"Received SIXDOF_SYSTEM_CURRENT_MODE - Timestamp = %.5f, current_mode = %d; \n",timestamp_d,current_sixdof_mode);
+    }
+    //1 -->rel beacon pos; 2 -->rel beacon angle; 3-->sixdof mode. Default is 1. 
+    if(current_sixdof_mode != desired_sixdof_mode){
+      //Change sixdof mode 
+      IvySendMsg("SET_SIXDOF_SYS_MODE %d", desired_sixdof_mode);
+    }
+  }
+}
+
 static void sixdof_beacon_pos_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
 {
   if (argc != 5)
@@ -1024,7 +1040,7 @@ static void sixdof_ned_callback(IvyClientPtr app, void *user_data, int argc, cha
     float target_pitch_UAV = atof(argv[5]); 
 
     if(verbose_sixdof){
-      fprintf(stderr,"Received sixdof packet - Timestamp = %.5f, X_pos = %.3f, Y_pos = %.3f, Z_pos = %.3f, Quat_qw = %.3f, Quat_qx = %.3f, Quat_qy = %.3f, Quat_qz = %.3f, var_x = %.3f, var_y = %.3f, var_z = %.3f, var_h = %.3f, var_p = %.3f, var_y = %.3f;\n",timestamp_d,X_pos,Y_pos,Z_pos,Quat_qw,Quat_qx,Quat_qy,Quat_qz,var_x,var_y,var_z,var_h,var_p,var_y);
+      fprintf(stderr,"Received SIXDOF_TRACKING_NED packet - Timestamp = %.5f, X_pos_target_NED = %.3f, Y_pos_target_NED = %.3f, Z_pos_target_NED = %.3f, Roll_angle_target_deg = %.3f, Pitch_angle_target_deg = %.3f; \n",timestamp_d,sixdof_target_x_NED,sixdof_target_y_NED,sixdof_target_z_NED,target_roll_UAV*180/M_PI,target_pitch_UAV*180/M_PI);
     }
   }
 }
@@ -1049,10 +1065,10 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
     float var_z = atof(argv[10]); 
     float var_h = atof(argv[11]); 
     float var_p = atof(argv[12]); 
-    float var_y = atof(argv[13]); 
+    float var_r = atof(argv[13]); 
 
     if(verbose_sixdof){
-      fprintf(stderr,"Received sixdof packet - Timestamp = %.5f, X_pos = %.3f, Y_pos = %.3f, Z_pos = %.3f, Quat_qw = %.3f, Quat_qx = %.3f, Quat_qy = %.3f, Quat_qz = %.3f, var_x = %.3f, var_y = %.3f, var_z = %.3f, var_h = %.3f, var_p = %.3f, var_y = %.3f;\n",timestamp_d,X_pos,Y_pos,Z_pos,Quat_qw,Quat_qx,Quat_qy,Quat_qz,var_x,var_y,var_z,var_h,var_p,var_y);
+      fprintf(stderr,"Received sixdof packet - Timestamp = %.5f, X_pos = %.3f, Y_pos = %.3f, Z_pos = %.3f, Quat_qw = %.3f, Quat_qx = %.3f, Quat_qy = %.3f, Quat_qz = %.3f, var_x = %.3f, var_y = %.3f, var_z = %.3f, var_h = %.3f, var_p = %.3f, var_r = %.3f;\n",timestamp_d,X_pos,Y_pos,Z_pos,Quat_qw,Quat_qx,Quat_qy,Quat_qz,var_x,var_y,var_z,var_h,var_p,var_r);
     }
   }
 }
@@ -1106,7 +1122,7 @@ void main() {
   IvyBindMsg(sixdof_beacon_angle_callback, NULL, "RELATIVE_BEACON_ANGLE (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
   IvyBindMsg(sixdof_mode_callback, NULL, "SIXDOF_TRACKING (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
   IvyBindMsg(sixdof_ned_callback, NULL, "SIXDOF_TRACKING_NED (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
-
+  IvyBindMsg(sixdof_current_mode_callback, NULL, "SIXDOF_SYSTEM_CURRENT_MODE (\\S*) (\\S*)");
   
   pthread_t thread1, thread2;
 
@@ -1115,10 +1131,6 @@ void main() {
   pthread_create(&thread2, NULL, second_thread, NULL);
 
   g_main_loop_run(ml);
-
-  // while(true){
-
-  // }
 
   //Close the serial and clean the variables 
   fflush (stdout);
