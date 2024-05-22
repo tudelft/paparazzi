@@ -330,6 +330,7 @@ float andi_u[ANDI_NUM_ACT_TOT];
 float andi_du[ANDI_NUM_ACT_TOT];
 static float andi_du_n[ANDI_NUM_ACT_TOT];
 float nu[ANDI_OUTPUTS];
+float nu_n[ANDI_OUTPUTS];
 static float act_dynamics_d[ANDI_NUM_ACT_TOT];
 float actuator_state_1l[ANDI_NUM_ACT];
 static float a_thrust = 0.0;
@@ -451,11 +452,17 @@ static void send_oneloop_andi(struct transport_tx *trans, struct link_device *de
                                         &oneloop_andi.sta_state.att_2d[2],
                                         &oneloop_andi.sta_ref.att_2d[0],
                                         &oneloop_andi.sta_ref.att_2d[1],
-                                        &oneloop_andi.sta_ref.att_2d[2],                                        
-                                        ANDI_OUTPUTS, nu,
-                                        ANDI_NUM_ACT, actuator_state_1l);                                      
+                                        &oneloop_andi.sta_ref.att_2d[2],
+                                        &oneloop_andi.sta_ref.att_3d[0],
+                                        &oneloop_andi.sta_ref.att_3d[1],
+                                        &oneloop_andi.sta_ref.att_3d[2],                                        
+                                        ANDI_OUTPUTS, nu);                                      
 }
-
+static void send_oneloop_actuator_state(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_ACTUATOR_STATE(trans, dev, AC_ID, 
+                                        ANDI_NUM_ACT, actuator_state_1l);
+}
 static void send_guidance_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_GUIDANCE(trans, dev, AC_ID,
@@ -932,7 +939,7 @@ void init_poles(void){
   p_head_rm.zeta    = 1.0;
   p_head_rm.p3      = p_head_rm.omega_n * p_head_rm.zeta;
 
-  act_dynamics[COMMAND_ROLL]   = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
+  act_dynamics[COMMAND_ROLL]  = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
   act_dynamics[COMMAND_PITCH] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
 
   // Position Controller Poles----------------------------------------------------------
@@ -984,7 +991,9 @@ void init_controller(void){
   k_att_rm.k1[1] = k_att_rm.k1[0];
   k_att_rm.k2[1] = k_att_rm.k2[0];
   k_att_rm.k3[1] = k_att_rm.k3[0];
-
+  
+  //printf("Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
+  //printf("Attitude E Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
   /*Heading Loop NAV*/
   k_att_e.k1[2]  = k_e_1_3_f_v2(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
   k_att_e.k2[2]  = k_e_2_3_f_v2(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
@@ -1152,6 +1161,7 @@ void oneloop_andi_init(void)
   float_vect_zero(oneloop_andi.sta_ref.att_2d,3);
   float_vect_zero(oneloop_andi.sta_ref.att_3d,3);
   float_vect_zero(nu, ANDI_OUTPUTS);
+  float_vect_zero(nu_n, ANDI_OUTPUTS);
   float_vect_zero(ang_acc,3);
   float_vect_zero(lin_acc,3);
   float_vect_zero(nav_target,3);
@@ -1166,6 +1176,7 @@ void oneloop_andi_init(void)
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_STAB, send_eff_mat_stab_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_GUID, send_eff_mat_guid_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE, send_guidance_oneloop_andi);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATOR_STATE, send_oneloop_actuator_state);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_oneloop_debug);
   #endif
 }
@@ -1509,7 +1520,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
 
   // WLS Control Allocator
   normalize_nu();
-  number_iter = wls_alloc(andi_du_n, nu, du_min_1l, du_max_1l, bwls_1l, 0, 0, Wv_wls, Wu, du_pref_1l, gamma_wls, 10, ANDI_NUM_ACT_TOT, ANDI_OUTPUTS);
+  number_iter = wls_alloc(andi_du_n, nu_n, du_min_1l, du_max_1l, bwls_1l, 0, 0, Wv_wls, Wu, du_pref_1l, gamma_wls, 10, ANDI_NUM_ACT_TOT, ANDI_OUTPUTS);
   temp_pitch = 0.0;
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
     andi_du[i] = (float)(andi_du_n[i] * ratio_u_un[i]);
@@ -1677,7 +1688,7 @@ void calc_normalization(void){
 void normalize_nu(void){
   int8_t i;
   for (i = 0; i < ANDI_OUTPUTS; i++){
-    nu[i] = nu[i] * ratio_vn_v[i];
+    nu_n[i] = nu[i] * ratio_vn_v[i];
   }
 }
 
