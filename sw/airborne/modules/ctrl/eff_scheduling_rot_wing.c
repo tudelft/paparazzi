@@ -28,6 +28,7 @@
 #include "state.h"
 #include "modules/actuators/actuators.h"
 #include "modules/core/abi.h"
+#include "filters/low_pass_filter.h"
 
 #define FORCE_ONELOOP
 #ifdef FORCE_ONELOOP
@@ -68,7 +69,7 @@ float EFF_MAT_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB] = {0};
 static float flt_cut = 1.0e-4;
 
 struct FloatEulers eulers_zxy_RW_EFF;
-
+static Butterworth2LowPass airspeed_filt; 
 /* Temp variables*/
 bool airspeed_fake_on = false;
 float airspeed_fake = 0.0;
@@ -107,6 +108,10 @@ void eff_scheduling_rot_wing_init(void)
   init_RW_Model();
   update_attitude();
   AbiBindMsgACT_FEEDBACK(WING_ROTATION_CAN_ROT_WING_ID, &wing_position_ev, wing_position_cb);
+  
+  float tau   = 1.0 / (2.0 * M_PI * 3.0);
+  float sample_time = 1.0 / 10;
+  init_butterworth_2_low_pass(&airspeed_filt, tau, sample_time, 0.0);
 }
 
 void init_RW_Model(void)
@@ -364,7 +369,9 @@ void eff_scheduling_rot_wing_update_wing_angle(void)
 
 void eff_scheduling_rot_wing_update_airspeed(void)
 {
-  RW.as = stateGetAirspeed_f();
+  float airspeed_meas = stateGetAirspeed_f();
+  update_butterworth_2_low_pass(&airspeed_filt, airspeed_meas);
+  RW.as = airspeed_filt.o[0];
   Bound(RW.as, 0. , 30.);
   RW.as2 = RW.as * RW.as;
   Bound(RW.as2, 0. , 900.);

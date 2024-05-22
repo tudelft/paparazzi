@@ -348,7 +348,7 @@ bool heading_manual = false;
 bool yaw_stick_in_auto = false;
 bool ctrl_off = false;
 /*WLS Settings*/
-static float gamma_wls = 50;
+static float gamma_wls = 30; //This is actually sqrt(gamma) in the WLS algorithm
 static float du_min_1l[ANDI_NUM_ACT_TOT]; 
 static float du_max_1l[ANDI_NUM_ACT_TOT];
 static float du_pref_1l[ANDI_NUM_ACT_TOT];
@@ -1119,6 +1119,7 @@ void oneloop_andi_propagate_filters(void) {
   float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
   update_butterworth_2_low_pass(&accely_filt, accely);
   float airspeed_meas = stateGetAirspeed_f();
+  Bound(airspeed_meas, 0.0, 30.0);
   update_butterworth_2_low_pass(&airspeed_filt, airspeed_meas);
 }
 
@@ -1239,7 +1240,7 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     float delta_psi_des_rad = des_r * dt_1l;                                  // Integrate desired Yaw rate to get desired change in yaw
     float delta_psi_rad = eulers_zxy_des.psi-eulers_zxy.psi;                  // Calculate current yaw difference between des and actual
     NormRadAngle(delta_psi_rad);                                              // Normalize the difference
-    if (fabs(delta_psi_rad) > RadOfDeg(10.0)){                                // If difference is bigger than 10 deg do not further increment desired
+    if (fabs(delta_psi_rad) > RadOfDeg(30.0)){                                // If difference is bigger than 10 deg do not further increment desired
       delta_psi_des_rad = 0.0;
     }
     psi_des_rad += delta_psi_des_rad;                                         // Incrementdesired yaw
