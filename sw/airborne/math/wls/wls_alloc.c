@@ -59,17 +59,18 @@ static void print_in_and_outputs(int n_c, int n_free, float** A_free_ptr, float*
 #define WLS_N_C ((WLS_N_U)+(WLS_N_V))
 
 struct WLS_param WLS_p = {
-  .nu              = WLS_N_U,         
-  .nv              = WLS_N_V,
-  .gamma           = 0.0,
-  .v     = {0.0},
-  .Wv   = {0.0},
-  .Wu   = {0.0},
+  .nu     = WLS_N_U,         
+  .nv     = WLS_N_V,
+  .gamma  = 0.0,
+  .v      = {0.0},
+  .Wv     = {0.0},
+  .Wu     = {0.0},
   .u_pref = {0.0},
-  .u_min = {0.0},
-  .u_max = {0.0},
-  .PC    = 0.0,
-  .SC              = 0.0
+  .u_min  = {0.0},
+  .u_max  = {0.0},
+  .PC     = 0.0,
+  .SC     = 0.0,
+  .iter   = 0
 };
 
 /* Define messages of the module*/
@@ -77,8 +78,10 @@ struct WLS_param WLS_p = {
 #include "modules/datalink/telemetry.h"
 static void send_wls_v(struct transport_tx *trans, struct link_device *dev)
 {
+  uint8_t iter_temp = (uint8_t)WLS_p.iter;
   pprz_msg_send_WLS_v(trans, dev, AC_ID,               
          &WLS_p.gamma,
+         &iter_temp,
          WLS_p.nv, WLS_p.v,
          WLS_p.nv, WLS_p.Wv);                                      
 }
@@ -322,6 +325,7 @@ int wls_alloc(float* u, float* v, float* umin, float* umax, float** B,
           WLS_p.u[i] = u[i];
         }
         // if solution is found, return number of iterations
+        WLS_p.iter = iter;
         return iter;
       }
     } else {
@@ -366,6 +370,7 @@ int wls_alloc(float* u, float* v, float* umin, float* umax, float** B,
       free_index_lookup[id_alpha] = -1;
     }
   }
+  WLS_p.iter = iter;
   return iter;
 }
 

@@ -77,6 +77,7 @@ struct WLS_param{
   float u_max[WLS_N_U];  // Maximum control vector
   float PC;              // Primary cost
   float SC;              // Secondary cost
+  int   iter;            // Number of iterations
 };
 
 extern void wls_init(void);
