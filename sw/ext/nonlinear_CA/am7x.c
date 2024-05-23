@@ -44,10 +44,7 @@ int serial_port_tf_mini;
 float ca7_message_frequency_RX, ca7_message_frequency_TX;
 struct timeval current_time, last_time, last_sent_msg_time, aruco_time, starting_time_program_execution, time_last_opt_run, time_last_filt;
 
-
 pthread_mutex_t mutex_am7;
-
-
 
 int verbose_sixdof_com = 0;
 int verbose_sixdof_position = 1;
@@ -72,7 +69,8 @@ int default_desired_sixdof_mode = 1, desired_sixdof_mode; //1 -->rel beacon pos;
 int default_beacon_tracking_id = 1640, beacon_tracking_id; 
 float max_tolerance_variance_sixdof = 1; //meters
 
-// int beacon_tracking_id = 1636; 
+float phi_dot_cmd, theta_dot_cmd, phi_cmd_old, theta_cmd_old, phi_dot_cmd_filt, theta_dot_cmd_filt; 
+float tau_first_order_attitude_cmd_filtering = 0.1175; //1-exp(-cutoff_frequency/sampling_frequency)
 
 // Transpose an array from body reference frame to earth reference frame
 void from_body_to_earth(float * out_array, float * in_array, float Phi, float Theta, float Psi){
@@ -89,19 +87,6 @@ void from_body_to_earth(float * out_array, float * in_array, float Phi, float Th
     R_be_matrix[2][0] = -sin(Theta);
     R_be_matrix[2][1] = sin(Phi) * cos(Theta);
     R_be_matrix[2][2] = cos(Phi) * cos(Theta);
-
-    // Transposed: 
-    // R_be_matrix[0][0] = cos(Theta) * cos(Psi);
-    // R_be_matrix[0][1] = cos(Theta) * sin(Psi);
-    // R_be_matrix[0][2] = -sin(Theta);
-
-    // R_be_matrix[1][0] = -cos(Phi) * sin(Psi) + sin(Phi) * sin(Theta) * cos(Psi);
-    // R_be_matrix[1][1] = cos(Phi) * cos(Psi) + sin(Phi) * sin(Theta) * sin(Psi);
-    // R_be_matrix[1][2] = sin(Phi) * cos(Theta);
-
-    // R_be_matrix[2][0] = sin(Phi) * sin(Psi) + cos(Phi) * sin(Theta) * cos(Psi);
-    // R_be_matrix[2][1] = -sin(Phi) * cos(Psi) + cos(Phi) * sin(Theta) * sin(Psi);
-    // R_be_matrix[2][2] = cos(Phi) * cos(Theta);
 
     // Do the multiplication between the input array and the rotation matrix:
     for (int i = 0; i < 3; i++) {
@@ -466,6 +451,7 @@ void* second_thread() //Run the optimization code
     beacon_tracking_id = (int) extra_data_in_copy[67];
     desired_sixdof_mode = (int) extra_data_in_copy[68];
 
+    //Exceptions: 
     if(beacon_tracking_id == 0){
       beacon_tracking_id = default_beacon_tracking_id;
     }
@@ -983,6 +969,20 @@ void* second_thread() //Run the optimization code
 
     //Wait until time is not at least refresh_time_optimizer
     while(((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec)) < refresh_time_optimizer*1e6){gettimeofday(&current_time, NULL);}
+
+    //Compute phi and theta cmd derivative:
+    theta_dot_cmd = (u_out[12] - theta_cmd_old)/refresh_time_optimizer;
+    phi_dot_cmd = (u_out[13] - phi_cmd_old)/refresh_time_optimizer;
+    theta_cmd_old = u_out[12];
+    phi_cmd_old = u_out[13];
+    
+    //Filter cmd derivatives: 
+    theta_dot_cmd_filt = theta_dot_cmd_filt + tau_first_order_attitude_cmd_filtering * (theta_dot_cmd - theta_dot_cmd_filt);
+    phi_dot_cmd_filt = phi_dot_cmd_filt + tau_first_order_attitude_cmd_filtering * (phi_dot_cmd - phi_dot_cmd_filt);
+
+    //Append to out struct: 
+    myam7_data_out_copy_internal.phi_dot_cmd_int = (int16_T) (phi_dot_cmd_filt*1e1*180/M_PI);
+    myam7_data_out_copy_internal.theta_dot_cmd_int = (int16_T) (theta_dot_cmd_filt*1e1*180/M_PI);
 
     //Print performances if needed
     if(verbose_runtime){
