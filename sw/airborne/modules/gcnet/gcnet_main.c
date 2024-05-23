@@ -121,6 +121,10 @@ float sample_time = 1.0/512.0;
 int count = 0;
 
 
+#if USE_NPS
+float ekf_X[EKF_NUM_STATES];
+#endif
+
 void gcnet_init(void)
 {
 	// keep track of time
@@ -170,6 +174,25 @@ void gcnet_run(void)
 			waypoint_copy(WP_GOAL, WP_WP1);
 		}
 	}
+
+
+#if USE_NPS
+	ekf_X[0] = stateGetPositionNed_f()->x;
+	ekf_X[1] = stateGetPositionNed_f()->y;
+	ekf_X[2] = stateGetPositionNed_f()->z;
+	ekf_X[3] = stateGetSpeedNed_f()->x;
+	ekf_X[4] = stateGetSpeedNed_f()->y;
+	ekf_X[5] = stateGetSpeedNed_f()->z;
+	ekf_X[6] = stateGetNedToBodyEulers_f()->phi;
+	ekf_X[7] = stateGetNedToBodyEulers_f()->theta;
+	ekf_X[8] = stateGetNedToBodyEulers_f()->psi;
+	ekf_X[9] = stateGetAccelNed_f()->x;
+	ekf_X[10] = stateGetAccelNed_f()->y;
+	ekf_X[11] = stateGetAccelNed_f()->z;
+	ekf_X[12] = stateGetBodyRates_f()->p;
+	ekf_X[13] = stateGetBodyRates_f()->q;
+	ekf_X[14] = stateGetBodyRates_f()->r;
+#endif
 
 
 	// only active when in ATT mode
