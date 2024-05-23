@@ -498,11 +498,13 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
 
 static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
 {
-  float temp_debug_vect[1];
+  float temp_debug_vect[3];
   //temp_debug_vect[0] = andi_u[COMMAND_PITCH];
   //temp_debug_vect[1] = pitch_pref;
-  temp_debug_vect[0]=temp_pitch;
-  debug_vect(trans, dev, "nu_pitch_ctrl", temp_debug_vect, 1);
+  temp_debug_vect[0]=eulers_zxy_des.phi;
+  temp_debug_vect[1]=eulers_zxy_des.theta;
+  temp_debug_vect[2]=eulers_zxy_des.psi;
+  debug_vect(trans, dev, "att_des", temp_debug_vect, 3);
   //debug_vect(trans, dev, "andi_u_pitch_pref", temp_debug_vect, 2);
 }
 #endif
@@ -1697,12 +1699,12 @@ void calc_model(void){
   int8_t i;
   int8_t j;
   // // Absolute Model Prediction : 
-  // float sphi   = sinf(eulers_zxy.phi);
-  // float cphi   = cosf(eulers_zxy.phi);
-  // float stheta = sinf(eulers_zxy.theta);
-  // float ctheta = cosf(eulers_zxy.theta);
-  // float spsi   = sinf(eulers_zxy.psi);
-  // float cpsi   = cosf(eulers_zxy.psi);
+  float sphi   = sinf(eulers_zxy.phi);
+  float cphi   = cosf(eulers_zxy.phi);
+  float stheta = sinf(eulers_zxy.theta);
+  float ctheta = cosf(eulers_zxy.theta);
+  float spsi   = sinf(eulers_zxy.psi);
+  float cpsi   = cosf(eulers_zxy.psi);
   // Thrust and Pusher force estimation
   float L      = RW.wing.L / RW.m;          // Lift specific force
   float T      = RW.T / RW.m;             //  Thrust specific force. Minus gravity is a guesstimate.
@@ -1712,9 +1714,9 @@ void calc_model(void){
   // model_pred[1] = (spsi * stheta - cpsi * ctheta * sphi) * T + (ctheta * spsi + cpsi * sphi * stheta) * P;
   // model_pred[2] = g + cphi * ctheta * T - cphi * stheta * P;
 
-  model_pred[0] = -(RW.att.cpsi * RW.att.stheta + RW.att.ctheta * RW.att.sphi * RW.att.spsi) * T + (RW.att.cpsi * RW.att.ctheta - RW.att.sphi * RW.att.spsi * RW.att.stheta) * P - RW.att.sphi * RW.att.spsi * L;
-  model_pred[1] = -(RW.att.spsi * RW.att.stheta - RW.att.cpsi * RW.att.ctheta * RW.att.sphi) * T + (RW.att.ctheta * RW.att.spsi + RW.att.cpsi * RW.att.sphi * RW.att.stheta) * P + RW.att.cpsi * RW.att.sphi * L;
-  model_pred[2] = g - RW.att.cphi * RW.att.ctheta * T - RW.att.cphi * RW.att.stheta * P - RW.att.cphi * L;
+  model_pred[0] = -(cpsi * stheta + ctheta * sphi * spsi) * T + (cpsi * ctheta - sphi * spsi * stheta) * P - sphi * spsi * L;
+  model_pred[1] = -(spsi * stheta - cpsi * ctheta * sphi) * T + (ctheta * spsi + cpsi * sphi * stheta) * P + cpsi * sphi * L;
+  model_pred[2] = g - cphi * ctheta * T - cphi * stheta * P - cphi * L;
   for (i = 3; i < ANDI_OUTPUTS; i++){ // For loop for prediction of angular acceleration
     model_pred[i] = 0.0;              // 
     for (j = 0; j < ANDI_NUM_ACT; j++){
