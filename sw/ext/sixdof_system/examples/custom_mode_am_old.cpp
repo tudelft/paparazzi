@@ -205,6 +205,9 @@ int main(int ac, const char *av[]) {
             }
             //Send values over IVYBUS
             IvySendMsg("RELATIVE_BEACON_ANGLE %f %d %f %f %f %f", current_timestamp, ra.id, ra.x_angle, ra.z_angle, ra.intensity, ra.width);
+            
+            //Send a current mode status packet everytime: 
+            IvySendMsg("SIXDOF_SYSTEM_CURRENT_MODE %f %d", current_timestamp, current_sixdof_mode);   
         }
     });
 
@@ -235,7 +238,7 @@ int main(int ac, const char *av[]) {
             //Send values over IVYBUS
             IvySendMsg("RELATIVE_BEACON_POS %f %d %f %f %f ", current_timestamp, b.id, b.x, b.y, b.z);
 
-            //Send a current mode status packer everytime we receive a ROTORCRAFT_FP message: 
+            //Send a current mode status packet everytime: 
             IvySendMsg("SIXDOF_SYSTEM_CURRENT_MODE %f %d", current_timestamp, current_sixdof_mode);           
         }    
     });
@@ -291,6 +294,9 @@ int main(int ac, const char *av[]) {
         IvySendMsg("SIXDOF_TRACKING_NED %f %f %f %f %f %f", current_timestamp, sixdof_target_NED[0], sixdof_target_NED[1], sixdof_target_NED[2], target_roll_UAV, target_pitch_UAV);
 
         IvySendMsg("SIXDOF_TRACKING %f %f %f %f %f %f %f %f %f %f %f %f %f %f", current_timestamp, sd.x, sd.y, sd.z, sd.qw, sd.qx, sd.qy, sd.qz, sd.var_x, sd.var_y, sd.var_z, sd.var_h, sd.var_p, sd.var_r);
+        
+        //Send a current mode status packet everytime: 
+        IvySendMsg("SIXDOF_SYSTEM_CURRENT_MODE %f %d", current_timestamp, current_sixdof_mode);   
     });
 
     // Initialize network, this can only be done once

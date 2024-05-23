@@ -568,7 +568,7 @@ namespace Sds {
         struct SDS_API ConfigRelativeBeacon {
             ShutterSettings shutter_settings { getShutterSettingsAuto() };
             std::vector<uint16_t> expected_beacon_ids;  ///< expected beacon ids for this mode, typically a large beacon. This information will be used to optimize the shutter for the beacons you are looking for. (Optional)
-            float field_of_view_cutoff_deg { 45.0 };    ///< field of view cutoff for RelativeBeacon mode, in degrees. (Optional)
+            float field_of_view_cutoff_deg { 60.0 };    ///< field of view cutoff for RelativeBeacon mode, in degrees. (Optional)
             std::string rel_lights_dump_path { "" };    ///< full path to file to log data to, default value of empty string will not log data. (Optional)
         };
 
