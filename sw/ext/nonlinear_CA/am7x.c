@@ -68,6 +68,7 @@ pthread_mutex_t mutex_aruco;
 int default_desired_sixdof_mode = 1, desired_sixdof_mode; //1 -->rel beacon pos; 2 -->rel beacon angle; 3-->sixdof mode. Default is 1. 
 int default_beacon_tracking_id = 1640, beacon_tracking_id; 
 float max_tolerance_variance_sixdof = 1; //meters
+int current_sixdof_mode; 
 
 float phi_dot_cmd, theta_dot_cmd, phi_cmd_old, theta_cmd_old, phi_dot_cmd_filt, theta_dot_cmd_filt; 
 float tau_first_order_attitude_cmd_filtering = 0.1175; //1-exp(-cutoff_frequency/sampling_frequency)
@@ -1009,7 +1010,8 @@ void* second_thread() //Run the optimization code
     myam7_data_out_copy_internal.aruco_NED_pos_x = aruco_detection_local.NED_pos_x;
     myam7_data_out_copy_internal.aruco_NED_pos_y = aruco_detection_local.NED_pos_y;
     myam7_data_out_copy_internal.aruco_NED_pos_z = aruco_detection_local.NED_pos_z;
-    
+    myam7_data_out_copy_internal.aruco_system_status = aruco_detection_local.system_status;
+
     //Copy out structure
     pthread_mutex_lock(&mutex_am7);
     memcpy(&myam7_data_out_copy, &myam7_data_out_copy_internal, sizeof(struct am7_data_out));
@@ -1046,6 +1048,7 @@ static void submit_target_point(float * target_rel_body_pos){
       aruco_detection_local.NED_pos_x = beacon_absolute_ned_pos[0]; 
       aruco_detection_local.NED_pos_y = beacon_absolute_ned_pos[1];  
       aruco_detection_local.NED_pos_z  = beacon_absolute_ned_pos[2];  
+      aruco_detection_local.system_status = (int8_t) current_sixdof_mode;
       
       if(verbose_sixdof_position){
         printf("Sixdof timestamp = %f \n", aruco_detection_local.timestamp_detection); 
@@ -1070,7 +1073,7 @@ static void sixdof_current_mode_callback(IvyClientPtr app, void *user_data, int 
   }
   else{
     double timestamp_d = atof(argv[0]); 
-    int current_sixdof_mode = (int) atof(argv[1]); 
+    current_sixdof_mode = (int) atof(argv[1]); 
     if(verbose_sixdof_com){
       fprintf(stderr,"Received SIXDOF_SYSTEM_CURRENT_MODE - Timestamp = %.5f, current_mode = %d; \n",timestamp_d,current_sixdof_mode);
     }

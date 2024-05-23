@@ -140,6 +140,7 @@ struct aruco_detection_t {
     float NED_pos_x; 
     float NED_pos_y;
     float NED_pos_z;
+    int8_t system_status; 
 };
 
 #endif
