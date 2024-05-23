@@ -98,7 +98,7 @@ NOTES:
         <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
 
 
-        <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING"  value="TRUE"/>
+         <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING"  value="TRUE"/>
       </module>
 
       <module name="sys_mon"/><!-- Enable if one want to check processor load for higher loop, nav, module etc. frequencies -->
@@ -253,6 +253,8 @@ NOTES:
     <let var="GAIN1" value="0.0f"/> <!-- Not used yet-->
     <let var="K_rudder_gyro" value="8.0f"/>  <!--gain from yaw rate to rudder or differential motor THROTTLE-->
     <let var="gyro_active" value="(1 > AP_MODE ? 0 : 1)"/>
+    <let var="killed" value="(AP_MODE == 50 ? 0 : 1)"/>
+    
     <let var="gyro_not_active" value="1 "/>
     <let var="gyro_yaw" value="$gyro_active * (stateGetBodyRates_i()->r)"/>
     <!-- <let var="yaw_ctrl_sgl" value="@YAW - 8 * ($gyro_yaw)"/>--><!-- If one has a rudder -->
@@ -260,12 +262,12 @@ NOTES:
       <!-- <set servo="RM" value="(((0 > @THROTTLE - @YAW) ? 0 : (@THROTTLE - @YAW)))"/> --> 
     <let var="yaw_ctrl_sgl" value="@YAW * 0.4 - 0.6 * ($gyro_yaw)"/>
 
-    <set servo="RM" value="@THROTTLE * 0.8 + $yaw_ctrl_sgl"/>
-    <set servo="LM" value="@THROTTLE * 0.8 - $yaw_ctrl_sgl"/><!-- TODO: check sign-->
+    <set servo="RM" value="$killed * (@THROTTLE * 0.8 + $yaw_ctrl_sgl)"/>
+    <set servo="LM" value="$killed * (@THROTTLE * 0.8 - $yaw_ctrl_sgl)"/><!-- TODO: check sign-->
 
-    <set servo="ARM_LEFT" value="-@ROLL * 0.6 - @PITCH * 0.2"/>
+    <set servo="ARM_LEFT" value="-@ROLL * 0.6 + @PITCH * 0.2"/>
     <set servo="SPOILERON" value="0"/>
-    <set servo="ARM_RIGHT" value="-@ROLL * 0.6 + @PITCH * 0.2"/>
+    <set servo="ARM_RIGHT" value="-@ROLL * 0.6 - @PITCH * 0.2"/>
     <set servo="ELEVON_RIGHT" value="@ROLL"/>
     <set servo="ELEVATOR" value="@PITCH"/>
     <set servo="ELEVON_LEFT" value="@ROLL"/>
@@ -276,7 +278,6 @@ NOTES:
     <set command="ROLL" value="@ROLL"/>
     <set command="PITCH" value="@PITCH"/>
     <set command="YAW" value="@YAW"/>
-    <set command="GEAR" value="@AUX1"/>
     <set command="FLAP" value="@AUX2"/>
     <set command="SUPPATHING" value="@AUX2"/>
     <!-- for tuning via RC these ones below, Sadly botched for now since latest master code changes . in settings from TX... -->
@@ -386,7 +387,7 @@ NOTES:
     <define name="PITCH_MAX_SETPOINT" value="40" unit="deg"/>
     <define name="PITCH_MIN_SETPOINT" value="-40" unit="deg"/>
 
-    <define name="PITCH_PGAIN" value="6000"/>
+    <define name="PITCH_PGAIN" value="12000"/>
     <define name="PITCH_DGAIN" value="80"/>
     <define name="PITCH_IGAIN" value="2"/>
     <define name="PITCH_KFFA" value="20."/>
@@ -394,7 +395,7 @@ NOTES:
 
     <define name="ELEVATOR_OF_ROLL" value="1550" unit="PPRZ_MAX"/>
     <define name="ROLL_SLEW" value="0.3"/>
-    <define name="ROLL_ATTITUDE_GAIN" value="9000."/>
+    <define name="ROLL_ATTITUDE_GAIN" value="13000."/>
     <define name="ROLL_RATE_GAIN" value="400."/>
     <define name="ROLL_IGAIN" value="100."/>
     <define name="ROLL_KFFA" value="100"/>

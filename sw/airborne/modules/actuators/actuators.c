@@ -113,8 +113,6 @@ void actuators_periodic(void)
 #elif (defined INTERMCU_FBW)
   SetActuatorsFromCommands(trimmed_commands, autopilot_get_mode());
 #else
-  // default, apply all commands
-  SetActuatorsFromCommands(trimmed_commands, autopilot_get_mode());
 
   //trimmed_commands[COMMAND_ROLL]
   //trimmed_commands[ELEVON_LEFT]
@@ -127,17 +125,24 @@ void actuators_periodic(void)
 
   float offset = 0; //deg * 100
 
+  if (radio_control.values[5] < 1100){
+    SetActuatorsFromCommands(trimmed_commands, 50);
+  }
+  else{
+    SetActuatorsFromCommands(trimmed_commands, autopilot_get_mode());
+  }
+
 #ifdef SERVO_ELEVON_LEFT_IDX
-  test.servo_3_cmd_int = 2.0 * 3000.0 * ( 1.0f * actuators[SERVO_ELEVON_LEFT_IDX] - 1500.0) / 500 - 2.0 * offset;
+  test.servo_3_cmd_int = 2.0 * 2000.0 * ( 1.0f * actuators[SERVO_ELEVON_LEFT_IDX] - 1500.0) / 500 - 2.0 * offset;
 #endif
 #ifdef SERVO_ELEVON_RIGHT_IDX
-  test.servo_4_cmd_int = 2.0 * 3000.0 * ( 1.0f * actuators[SERVO_ELEVON_RIGHT_IDX] - 1500.0) / 500 + 2.0 * offset;
+  test.servo_4_cmd_int = 2.0 * 2000.0 * ( 1.0f * actuators[SERVO_ELEVON_RIGHT_IDX] - 1500.0) / 500 + 2.0 * offset;
 #endif
 #ifdef SERVO_ARM_LEFT_IDX
-  test.servo_1_cmd_int = 45.0/19.0 * 4000.0 * ( 1.0f * actuators[SERVO_ARM_LEFT_IDX] - 1500.0) / 500 - 45.0/19.0 * offset;
+  test.servo_1_cmd_int = 45.0/19.0 * 3000.0 * ( 1.0f * actuators[SERVO_ARM_LEFT_IDX] - 1500.0) / 500 - 45.0/19.0 * offset;
 #endif
 #ifdef SERVO_ARM_RIGHT_IDX
-  test.servo_2_cmd_int = 45.0/19.0 * 4000.0 * ( 1.0f * actuators[SERVO_ARM_RIGHT_IDX] - 1500.0) / 500 + 45.0/19.0 * offset;
+  test.servo_2_cmd_int = 45.0/19.0 * 3000.0 * ( 1.0f * actuators[SERVO_ARM_RIGHT_IDX] - 1500.0) / 500 + 45.0/19.0 * offset;
 #endif
 #ifdef SERVO_ELEVATOR_IDX
   test.servo_5_cmd_int = - 39.0/19.0 * 3000.0 * (( 1.0f * actuators[SERVO_ELEVATOR_IDX] - 1500.0) / 500) - 39.0/19.0 * 1500.0 * (radio_control.values[6] / 9600.0);
