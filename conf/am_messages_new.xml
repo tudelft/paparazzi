@@ -2023,6 +2023,8 @@
          <field name = "tilt_azimuth_cmds_deg" type="float[4]">Command for azimuth tilt [deg]</field>
          <field name = "theta_cmd_deg" type="float">Command for desired theta value [deg]</field>
          <field name = "phi_cmd_deg" type="float">Command for desired phi value [deg]</field>
+         <field name = "theta_dot_cmd_deg" type="float">Command for desired theta value [deg/s]</field>
+         <field name = "phi_dot_cmd_deg" type="float">Command for desired phi value [deg/s]</field>
          <field name = "ailerons_cmd_deg" type="float">Command for ailerons [deg]</field>
          <field name = "missed_packets" type="uint32">Missed packets on serial communication</field>
          <field name = "message_frequency" type="uint16">Refresh rate of the incoming messages from companion computer</field>
@@ -2041,7 +2043,8 @@
          <field name = "timestamp_aruco_detection" type="float">Timestamp of last aruco marker detection</field>
          <field name = "NED_aruco_pos_x" type="float">NED pos_x last aruco marker detection</field>
          <field name = "NED_aruco_pos_y" type="float">NED pos_y last aruco marker detection</field>
-         <field name = "NED_aruco_pos_z" type="float">NED pos_z last aruco marker detection</field>         
+         <field name = "NED_aruco_pos_z" type="float">NED pos_z last aruco marker detection</field>  
+         <field name = "sys_status" type="int8"></field>         
          <field name = "rolling_msg_in" type="float">Rolling message in content</field>
          <field name = "rolling_msg_in_id" type="uint8">Rolling message in id</field>
      </message>
