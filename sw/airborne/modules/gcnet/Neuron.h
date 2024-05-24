@@ -1,5 +1,8 @@
 #pragma onces
 
+#ifndef NEURON_H
+#define NEURON_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -64,3 +67,4 @@ void free_neuron(Neuron *n);
 
 // Forward
 void forward_neuron(Neuron *n);
+#endif

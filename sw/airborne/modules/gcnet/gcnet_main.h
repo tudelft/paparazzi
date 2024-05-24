@@ -40,7 +40,7 @@
 // #include "modules/gcnet/nn_operations.h"
 
 #include "Network.h"
-#include GNC_NET_NN_PARAM_H
+#include "SNN_500_neurons/nn_parameters.h"
 
 // Include child structs
 
@@ -71,9 +71,13 @@ NeuronConf const conf_layer2 = {NUM_NODES, leak_i_layer2, leak_v_layer2,
 NeuronConf const conf_layer3 = {NUM_NODES, leak_i_layer3, leak_v_layer3, 
                                 thresh_layer3, 0.0f};
 
+const float out_scale_min = 3.000000000e+03;
+
+const float out_scale_max = 1.200000000e+04;
+
 // type, decoding_scale, centers, in_size, in_enc_size, hid_size, out_size,
 // inhid, hid, hidout, out
-NetworkConf const conf = {in_norm_min, in_norm_max, out_scale_min, out_scale_max, 
+NetworkConf const qz_conf = {in_norm_min, in_norm_max, out_scale_min, out_scale_max, 
                           NUM_STATES, NUM_HIDDEN_LAYERS, NUM_NODES, NUM_CONTROLS,
                           &conf_inhid, &conf_hid_1, &conf_hid_2, &conf_hidout,
                           &conf_layer1, &conf_layer2, &conf_layer3};

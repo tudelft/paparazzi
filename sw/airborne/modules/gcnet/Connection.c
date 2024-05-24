@@ -1,7 +1,7 @@
-#include "Connection.h"
-
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "Connection.h"
 
 // Build connection
 Connection build_connection(int const post, int const pre) {

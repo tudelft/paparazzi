@@ -120,7 +120,6 @@ float sample_time = 1.0/512.0;
 
 int count = 0;
 
-
 #if USE_NPS
 float ekf_X[EKF_NUM_STATES];
 #endif
@@ -132,8 +131,8 @@ void gcnet_init(void)
 {
 	// keep track of time
 	//t0 = get_sys_time_float();
-	net = build_network(conf.in_size, conf.hid_layer_size, 
-                      conf.hid_neuron_size, conf.out_size);
+	net = build_network(qz_conf.in_size, qz_conf.hid_layer_size, 
+                      qz_conf.hid_neuron_size, qz_conf.out_size);
 
 	// ABI messaging for reading rpm
 	AbiBindMsgRPM(RPM_SENSOR_ID, &rpm_read_ev, rpm_read_cb);
@@ -156,7 +155,7 @@ void gcnet_init(void)
   init_network(&net);
 
 	  // Load network parameters from header file
-  load_network_from_header(&net, &conf);
+  load_network_from_header(&net, &qz_conf);
   reset_network(&net);
 }
 

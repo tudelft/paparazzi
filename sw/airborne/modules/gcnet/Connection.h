@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef CONNECTION_H
+#define CONNECTION_H
+
 // Struct that defines a connection between two layers of neurons
 typedef struct Connection {
   // Connection shape: (post, pre)
@@ -43,3 +46,4 @@ void free_connection(Connection *c);
 void forward_connection_float(Connection *c, float out[], float const in[]);
 
 void forward_connection_int(Connection *c, float out[], int const in[]);
+#endif

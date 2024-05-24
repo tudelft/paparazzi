@@ -1,12 +1,15 @@
 #pragma once
 
-#include "Connection.h"
-#include "Neuron.h"
+#ifndef NETWORK_H
+#define NETWORK_H
 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "Connection.h"
+#include "Neuron.h"
 
 // Struct that defines a network of two spiking layers
 typedef struct Network {
@@ -79,3 +82,4 @@ void postprocess_output(float *output, float *output_decoded, const float output
 // Forward network and call forward functions for children
 // Encoding and decoding inside
 float *forward_network(Network *net);
+#endif
