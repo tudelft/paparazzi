@@ -265,11 +265,11 @@ NOTES:
     <set servo="RM" value="$killed * (@THROTTLE * 0.8 + $yaw_ctrl_sgl)"/>
     <set servo="LM" value="$killed * (@THROTTLE * 0.8 - $yaw_ctrl_sgl)"/><!-- TODO: check sign-->
 
-    <set servo="ARM_LEFT" value="-@ROLL * 0.6 + @PITCH * 0.2"/>
+    <set servo="ARM_LEFT" value="-@ROLL * 0.6 - @PITCH * 0.2"/>
     <set servo="SPOILERON" value="0"/>
-    <set servo="ARM_RIGHT" value="-@ROLL * 0.6 - @PITCH * 0.2"/>
+    <set servo="ARM_RIGHT" value="-@ROLL * 0.6 + @PITCH * 0.2"/>
     <set servo="ELEVON_RIGHT" value="@ROLL"/>
-    <set servo="ELEVATOR" value="@PITCH"/>
+    <set servo="ELEVATOR" value="-@PITCH"/>
     <set servo="ELEVON_LEFT" value="@ROLL"/>
   </command_laws>
 
