@@ -23,7 +23,7 @@
     <file name="Neuron.c"/>
     <file name="Connection.c"/>
     <configure name="NN_PARAMETER_PATH" value="SNN_500_neurons"/>
-    <define name="GNC_NET_NN_PARAM_H" value="$(NN_PARAMETER_PATH)/nn_parameters.c" type="string"/>
-    <!-- <file name="$(NN_PARAMETER_PATH)/nn_parameters.c"/> -->
+    <define name="GNC_NET_NN_PARAM_H" value="$(NN_PARAMETER_PATH)/nn_parameters.h" type="string"/>
+    <file name="$(NN_PARAMETER_PATH)/nn_parameters.c"/>
   </makefile>
 </module>
