@@ -816,6 +816,9 @@
     <!-- <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/> -->
     <define name="FULLY_MANUAL_HEADING" value="TRUE"/>
     <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/>
+    <define name="USE_EXT_REF_ATTITUDE" value="TRUE"/>
+    <define name="USE_EXT_REF_POSITION" value="TRUE"/>
+    
     
     <define name="FAILSAFE_HOME_RADIUS" value="600" unit="m"/>
   </section>

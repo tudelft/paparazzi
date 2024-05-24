@@ -65,6 +65,9 @@ static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((alig
         float theta_cmd_float_telemetry = myam7_data_in.theta_cmd_int*0.01f;
         float phi_cmd_float_telemetry = myam7_data_in.phi_cmd_int*0.01f;
 
+        float theta_dot_cmd_float_telemetry = myam7_data_in.theta_dot_cmd_int*0.1f;
+        float phi_dot_cmd_float_telemetry = myam7_data_in.phi_dot_cmd_int*0.1f;
+
         float ailerons_cmd_float_telemetry = myam7_data_in.ailerons_cmd_int*0.01f;
 
         uint16_t n_iteration_telemetry = myam7_data_in.n_iteration;
@@ -95,13 +98,14 @@ static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((alig
         float NED_aruco_pos_x_telemetry = myam7_data_in.aruco_NED_pos_x; 
         float NED_aruco_pos_y_telemetry = myam7_data_in.aruco_NED_pos_y; 
         float NED_aruco_pos_z_telemetry = myam7_data_in.aruco_NED_pos_z; 
-
+        int8_t aruco_sys_status_telemetry = myam7_data_in.aruco_system_status;
         float rolling_msg_in_telemetry = myam7_data_in.rolling_msg_in;
         uint8_t rolling_msg_in_id_telemetry = myam7_data_in.rolling_msg_in_id;
 
         pprz_msg_send_AM7_IN(trans, dev, AC_ID, &motors_cmd_float_telemetry[0],
                 &elevation_tilt_cmd_float_telemetry[0], &azimuth_tilt_cmd_float_telemetry[0],
                 &theta_cmd_float_telemetry, &phi_cmd_float_telemetry,
+                &theta_dot_cmd_float_telemetry, &phi_dot_cmd_float_telemetry,
                 &ailerons_cmd_float_telemetry,
                 &missed_packets, &ca7_message_frequency_RX,
                 &n_iteration_telemetry,
@@ -111,6 +115,7 @@ static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((alig
                 &modeled_acc_float_telemetry[0],
                 &lidar_altitude_m_float_telemetry, &lidar_strength_telemetry,
                 &aruco_detection_timestamp_telemetry ,&NED_aruco_pos_x_telemetry , &NED_aruco_pos_y_telemetry, &NED_aruco_pos_z_telemetry,
+                &aruco_sys_status_telemetry,
                 &rolling_msg_in_telemetry, &rolling_msg_in_id_telemetry);
     }
     static void am7_uplink(struct transport_tx *trans, struct link_device *dev)

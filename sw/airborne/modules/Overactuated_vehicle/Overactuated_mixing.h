@@ -177,6 +177,9 @@ extern float trans_speed;
 
 extern float vert_acc_margin; 
 
+extern float alt_offset_beacon; 
+extern int selected_beacon;
+extern int sixdof_mode; 
 
 /* External used functions */
 extern void overactuated_mixing_init(void);

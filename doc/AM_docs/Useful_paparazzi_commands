@@ -17,7 +17,7 @@ $ ./paparazzi/sw/misc/link/pprzlink_router_cc -e uart:///dev/ttyS1:460800 -e udp
 - Command to forward the SHIP_INFO_MSG message from a local udp port on the drone's IVY bus: 
 <!-- $ ./paparazzi/sw/ground_segment/ship_box/Pixhawk_4_read_msg -i "drone_id" -e udp://0.0.0.0:4382:192.168.1.255:4383 &
 (where 4282/4283 is the udp port where the RTCM packets are received on the common wireless network) -->
-$ ./paparazzi/sw/ground_segment/ship_box/Pixhawk_4_read_msg_v2_ivy -i "drone_id" -s "ship box id (should be 5)"
+$ ./paparazzi/sw/ground_segment/ship_box/Pixhawk_4_read_msg_v2 -i "drone_id" -s "ship box id (should be 5)"
 
 - Command to forward the GPS RTCM messages from a local udp port on the shared wireless network to the drone's IVY bus: 
 $ ./paparazzi/sw/ground_segment/misc/ublox2ivy -i "drone_id" -e udp://0.0.0.0:4252:192.168.1.255:4253 &

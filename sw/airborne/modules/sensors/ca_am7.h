@@ -52,6 +52,8 @@ struct __attribute__((__packed__)) am7_data_in {
     int16_t az_4_cmd_int;
     int16_t theta_cmd_int;
     int16_t phi_cmd_int;
+    int16_t theta_dot_cmd_int;
+    int16_t phi_dot_cmd_int;
     int16_t ailerons_cmd_int;
     //Optimization info
     uint16_t n_iteration;
@@ -80,6 +82,7 @@ struct __attribute__((__packed__)) am7_data_in {
     float aruco_NED_pos_x;
     float aruco_NED_pos_y;
     float aruco_NED_pos_z;
+    int8_t aruco_system_status;
     //Rolling_msg
     float rolling_msg_in;
     uint8_t rolling_msg_in_id;
