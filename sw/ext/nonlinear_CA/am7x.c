@@ -1129,29 +1129,9 @@ static void sixdof_beacon_angle_callback(IvyClientPtr app, void *user_data, int 
   }
 }
 
-static void sixdof_ned_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
-{
-  if (argc != 6)
-  {
-    fprintf(stderr,"ERROR: invalid message length SIXDOF_TRACKING_NED\n");
-  }
-  else{
-    double timestamp_d = atof(argv[0]); 
-    float sixdof_target_x_NED = atof(argv[1]); 
-    float sixdof_target_y_NED = atof(argv[2]); 
-    float sixdof_target_z_NED = atof(argv[3]); 
-    float target_roll_UAV = atof(argv[4]); 
-    float target_pitch_UAV = atof(argv[5]); 
-
-    if(verbose_sixdof_com){
-      fprintf(stderr,"Received SIXDOF_TRACKING_NED packet - Timestamp = %.5f, X_pos_target_NED = %.3f, Y_pos_target_NED = %.3f, Z_pos_target_NED = %.3f, Roll_angle_target_deg = %.3f, Pitch_angle_target_deg = %.3f; \n",timestamp_d,sixdof_target_x_NED,sixdof_target_y_NED,sixdof_target_z_NED,target_roll_UAV*180/M_PI,target_pitch_UAV*180/M_PI);
-    }
-  }
-}
-
 static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
 {
-  if (argc != 14)
+  if (argc != 13)
   {
     fprintf(stderr,"ERROR: invalid message length SIXDOF_TRACKING\n");
   }
@@ -1160,19 +1140,18 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
     float X_pos = atof(argv[1]); 
     float Y_pos = atof(argv[2]); 
     float Z_pos = atof(argv[3]); 
-    float Quat_qw = atof(argv[4]); 
-    float Quat_qx = atof(argv[5]); 
-    float Quat_qy = atof(argv[6]); 
-    float Quat_qz = atof(argv[7]); 
-    float var_x = atof(argv[8]); 
-    float var_y = atof(argv[9]); 
-    float var_z = atof(argv[10]); 
-    float var_h = atof(argv[11]); 
-    float var_p = atof(argv[12]); 
-    float var_r = atof(argv[13]); 
+    float Phi_rad = atof(argv[4]); 
+    float Theta_rad = atof(argv[5]); 
+    float Psi_rad = atof(argv[6]); 
+    float var_x = atof(argv[7]); 
+    float var_y = atof(argv[8]); 
+    float var_z = atof(argv[9]); 
+    float var_phi = atof(argv[10]); 
+    float var_theta = atof(argv[11]); 
+    float var_psi = atof(argv[12]);  
 
     if(verbose_sixdof_com){
-      fprintf(stderr,"Received sixdof packet - Timestamp = %.5f, X_pos = %.3f, Y_pos = %.3f, Z_pos = %.3f, Quat_qw = %.3f, Quat_qx = %.3f, Quat_qy = %.3f, Quat_qz = %.3f, var_x = %.3f, var_y = %.3f, var_z = %.3f, var_h = %.3f, var_p = %.3f, var_r = %.3f;\n",timestamp_d,X_pos,Y_pos,Z_pos,Quat_qw,Quat_qx,Quat_qy,Quat_qz,var_x,var_y,var_z,var_h,var_p,var_r);
+      fprintf(stderr,"Received sixdof packet - Timestamp = %.5f, X_pos = %.3f, Y_pos = %.3f, Z_pos = %.3f, Phi = %.3f, Theta = %.3f, Psi = %.3f, var_x = %.3f, var_y = %.3f, var_z = %.3f, var_phi = %.3f, var_theta = %.3f, var_psi = %.3f;\n",timestamp_d,X_pos,Y_pos,Z_pos,Phi_rad*180/M_PI,Theta_rad*180/M_PI,Psi_rad*180/M_PI,var_x,var_y,var_z,var_phi,var_theta,var_psi);
     }
 
     if(sqrtf(var_x*var_x + var_y*var_y + var_z*var_z) < max_tolerance_variance_sixdof){
@@ -1269,7 +1248,7 @@ void main() {
   // IvyBindMsg(aruco_position_report, NULL, "^ground DESIRED_SP %s (\\S*) (\\S*) (\\S*) (\\S*)", "1");
   IvyBindMsg(sixdof_beacon_pos_callback, NULL, "RELATIVE_BEACON_POS (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
   IvyBindMsg(sixdof_beacon_angle_callback, NULL, "RELATIVE_BEACON_ANGLE (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
-  IvyBindMsg(sixdof_mode_callback, NULL, "SIXDOF_TRACKING (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
+  IvyBindMsg(sixdof_mode_callback, NULL, "SIXDOF_TRACKING (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
   IvyBindMsg(sixdof_current_mode_callback, NULL, "SIXDOF_SYSTEM_CURRENT_MODE (\\S*) (\\S*)");
   
   pthread_t thread1, thread2;

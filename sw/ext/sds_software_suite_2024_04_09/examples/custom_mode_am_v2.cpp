@@ -24,12 +24,13 @@ float euler_angles[3], UAV_ned_pos[3];
 std::unique_ptr<DroneTrackingManager> droneManager;
 
 int verbose_rx = 0; 
-int verbose_tx = 1; 
+int verbose_tx = 0; 
 int send_values_on_ivy = 1; 
 
 int current_sixdof_mode = 1; //1 -->rel beacon pos; 2 -->rel beacon angle; 3-->sixdof mode. Default is 1. 
 
 struct timeval current_time;
+#define N_BEACON 5
 
 // input map
 Beacon b1 {0.288, -0.222, -0.005, 1640};
@@ -39,34 +40,75 @@ Beacon b4 {-0.298, 0.23, -0.005, 1632};
 Beacon b5 {-0.30, -0.222, -0.005, 1633};
 
 //Sixdof messages: 
-double timestamp_sixdof_pos; 
+struct register_sixdof_packet my_sixdof_packet; 
+int sixdof_msg_available = 0, current_mode_msg_available = 0, beacon_pos_msg_available = 0; 
 
+double timestamp_beacon[N_BEACON];
+int beacon_id[N_BEACON]; 
+float x_body_pos_beacon[N_BEACON];
+float y_body_pos_beacon[N_BEACON];
+float z_body_pos_beacon[N_BEACON];
 
-timestamp_beacon
-available_beacon[5] = 
+pthread_mutex_t mutex_ivy_bus;
+
 // Function to manage the ivy bus communication going out: 
 void ivy_bus_out_handle() {
     while(true){
+
         //Check if new 6dof position message is available and send it to the ivy bus: 
         if(sixdof_msg_available){
-
+            static struct register_sixdof_packet my_sixdof_packet_local; 
+            pthread_mutex_lock(&mutex_ivy_bus);
+            memcpy(&my_sixdof_packet_local, &my_sixdof_packet, sizeof(struct register_sixdof_packet));
             sixdof_msg_available = 0;
+            pthread_mutex_unlock(&mutex_ivy_bus); 
+
+            if(send_values_on_ivy){
+                IvySendMsg("SIXDOF_TRACKING %f %f %f %f %f %f %f %f %f %f %f %f %f", my_sixdof_packet_local.timestamp_position, my_sixdof_packet_local.x_body_pos, my_sixdof_packet_local.y_body_pos, my_sixdof_packet_local.z_body_pos, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var, my_sixdof_packet_local.x_body_pos_var, my_sixdof_packet_local.y_body_pos_var, my_sixdof_packet_local.z_body_pos_var, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var);
+            }
+                
+            if(verbose_tx){
+                printf("SIXDOF_TRACKING %f %f %f %f %f %f %f %f %f %f %f %f %f", my_sixdof_packet_local.timestamp_position, my_sixdof_packet_local.x_body_pos, my_sixdof_packet_local.y_body_pos, my_sixdof_packet_local.z_body_pos, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var, my_sixdof_packet_local.x_body_pos_var, my_sixdof_packet_local.y_body_pos_var, my_sixdof_packet_local.z_body_pos_var, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var);
+                printf("\n");
+            } 
+
         }
 
         //Check if new mode message is available and send it to the ivy bus: 
         if(current_mode_msg_available){
+            gettimeofday(&current_time, NULL);
+            double current_timestamp = (double) (current_time.tv_sec + current_time.tv_usec*1e-6);
 
+            if(send_values_on_ivy){
+                IvySendMsg("SIXDOF_SYSTEM_CURRENT_MODE %f %d", current_timestamp, current_sixdof_mode);  
+            }
+            
+           if(verbose_tx){
+                printf("SIXDOF_SYSTEM_CURRENT_MODE %f %d", current_timestamp, current_sixdof_mode);
+                printf("\n");
+            }
+            pthread_mutex_lock(&mutex_ivy_bus);
             current_mode_msg_available = 0;
+            pthread_mutex_unlock(&mutex_ivy_bus); 
         }       
 
-
-
-
-
-
-
-
-
+        //Check if new beacon position message is available and send it to the ivy bus: 
+        if(beacon_pos_msg_available){
+            for(int i = 0; i < N_BEACON; i++){
+                if(send_values_on_ivy && beacon_id[i] != 0){
+                    //Send values over IVYBUS
+                    IvySendMsg("RELATIVE_BEACON_POS %f %d %f %f %f ", timestamp_beacon[i], beacon_id[i], x_body_pos_beacon[i], y_body_pos_beacon[i], z_body_pos_beacon[i]);
+                }
+                if(verbose_tx){
+                    printf("RELATIVE_BEACON_POS %f %d %f %f %f ", timestamp_beacon[i], beacon_id[i], x_body_pos_beacon[i], y_body_pos_beacon[i], z_body_pos_beacon[i]);
+                    printf("\n");
+                }
+            }
+            pthread_mutex_lock(&mutex_ivy_bus);
+            beacon_pos_msg_available = 0;
+            pthread_mutex_unlock(&mutex_ivy_bus); 
+        }   
+        
         std::this_thread::sleep_for(std::chrono::microseconds(5)); // Sleep for 5 microseconds to avoid overloading the CPU 
     } 
 }
@@ -104,11 +146,17 @@ static void ivy_set_rel_beacon_mode(IvyClientPtr app, void *user_data, int argc,
         bool sixdofSuccess = droneManager->initializeRelativeBeacon(config_rel_beacon);
         if (!sixdofSuccess) {
             std::cout << "Drone Manager failed relative beacon setup" << std::endl;
+            current_sixdof_mode = -1;
+        }
+        else{
+            current_sixdof_mode = 1;
         }
         // Start tracking
         std::cout << "TrackingMode RelativeBeacon" << std::endl;
         droneManager->setTrackingMode(TrackingMode::RelativeBeacon);
-        current_sixdof_mode = 1;
+        pthread_mutex_lock(&mutex_ivy_bus);
+        current_mode_msg_available = 1;
+        pthread_mutex_unlock(&mutex_ivy_bus); 
     }
 }
 
@@ -119,9 +167,16 @@ static void ivy_set_rel_angle_mode(IvyClientPtr app, void *user_data, int argc, 
         bool sixdofSuccess = droneManager->initializeRelativeAngle(config_rel_angle);
         if (!sixdofSuccess) {
             std::cout << "Drone Manager failed relative angle setup" << std::endl;
+            current_sixdof_mode = -1;
+        }
+        else{
+            current_sixdof_mode = 2;
         }
         droneManager->setTrackingMode(TrackingMode::RelativeAngle);
-        current_sixdof_mode = 2;
+        pthread_mutex_lock(&mutex_ivy_bus);
+        current_mode_msg_available = 1;
+        pthread_mutex_unlock(&mutex_ivy_bus); 
+
     }
 }
 
@@ -138,22 +193,19 @@ static void ivy_set_sixdof_mode(IvyClientPtr app, void *user_data, int argc, cha
         bool sixdofSuccess = droneManager->initialize6Dof(config6Dof);
         if (!sixdofSuccess) {
             std::cout << "Drone Manager failed sixdof setup" << std::endl;
+            current_sixdof_mode = -1;
+        }
+        else{
+            current_sixdof_mode = 3;
         }
 
         // Start tracking
         std::cout << "TrackingMode Sixdof" << std::endl;
         droneManager->setTrackingMode(TrackingMode::Sixdof);
-        current_sixdof_mode = 3;
-    }
-}
-
-int trackingModeToInt(Sds::DroneSDK::TrackingMode mode) {
-    switch (mode) {
-        case Sds::DroneSDK::TrackingMode::TrackingOFF: return -1;
-        case Sds::DroneSDK::TrackingMode::RelativeBeacon: return 1;
-        case Sds::DroneSDK::TrackingMode::Sixdof: return 3;
-        case Sds::DroneSDK::TrackingMode::RelativeAngle: return 2;
-        default: return 0;  // Handle unexpected cases
+        
+        pthread_mutex_lock(&mutex_ivy_bus);
+        current_mode_msg_available = 1;
+        pthread_mutex_unlock(&mutex_ivy_bus); 
     }
 }
 
@@ -182,10 +234,13 @@ int main(int ac, const char *av[]) {
 
     // Register callbacks before doing anything else so we can get error messages printed out
     droneManager->registerMessageCallback([](const StatusMessage& msg){
-        std::cout << msg.message << std::endl;
-        gettimeofday(&current_time, NULL);
-        double current_timestamp = (double) (current_time.tv_sec + current_time.tv_usec*1e-6);
-        IvySendMsg("SIXDOF_SYSTEM_CURRENT_MODE %f %d", current_timestamp, current_sixdof_mode); 
+        std::cout << msg.message << std::endl; 
+    });
+
+    droneManager->registerHeartbeatCallback([](const Heartbeat& hb){
+        pthread_mutex_lock(&mutex_ivy_bus);
+        current_mode_msg_available = 1;
+        pthread_mutex_unlock(&mutex_ivy_bus); 
     });
 
     droneManager->registerRelativeAngleCallback([](const RelativeAngleCollection& col){
@@ -202,50 +257,35 @@ int main(int ac, const char *av[]) {
                         << std::fixed << std::setprecision(2)
                         << " Width: " << std::setw(5) << ra.width << std::endl;
             }
-            if(send_values_on_ivy){
-                //Send values over IVYBUS
-                IvySendMsg("RELATIVE_BEACON_ANGLE %f %d %f %f %f %f", current_timestamp, ra.id, ra.x_angle, ra.z_angle, ra.intensity, ra.width);
-            }
+            // if(send_values_on_ivy){
+            //     //Send values over IVYBUS
+            //     IvySendMsg("RELATIVE_BEACON_ANGLE %f %d %f %f %f %f", current_timestamp, ra.id, ra.x_angle, ra.z_angle, ra.intensity, ra.width);
+            // }
         }
-    });
-    
-    droneManager->registerHeartbeatCallback([](const Heartbeat& hb){
-        gettimeofday(&current_time, NULL);
-        double current_timestamp = (double) (current_time.tv_sec + current_time.tv_usec*1e-6);
-        if(verbose_tx){
-        std::cout << std::fixed << std::setprecision(3)
-                << "current_timestamp: " << current_timestamp
-                << " current_tracking_mode: " << trackingModeToInt(hb.current_tracking_mode) << std::endl;
-        }
-
-        timestamp_current_mode = current_timestamp; 
-        current_mode = trackingModeToInt(hb.current_tracking_mode); 
-        //Send a current mode status packet everytime: 
-        IvySendMsg("SIXDOF_SYSTEM_CURRENT_MODE %f %d", current_timestamp, current_sixdof_mode); 
-        // //Send a current mode status packet: 
-        // IvySendMsg("SIXDOF_SYSTEM_CURRENT_MODE %f %d", current_timestamp, (int) trackingModeToInt(hb.current_tracking_mode));  
     });
 
     droneManager->registerPoseRelativeBeaconCallback([](const PoseRelativeBeaconCollection& col){
+        //zeros all the indexes for the ivy comm: 
+        for (int i = 0; i < N_BEACON; i++){
+            beacon_id[i] = 0;
+        }
+        //copy values on structure
+        int j = 0;
         for (const PoseRelativeBeacon& b : col) {
             gettimeofday(&current_time, NULL);
             double current_timestamp = (double) (current_time.tv_sec + current_time.tv_usec*1e-6);
-            if(verbose_tx){
-            std::cout << "ID: " << b.id
-                    << std::fixed << std::setprecision(3)
-                    << "Timestamp: " << current_timestamp
-                    << " X: " << b.x 
-                    << " Y: " << b.y 
-                    << " Z: " << b.z << std::endl;
-            }
-            if(send_values_on_ivy){
-                //Send values over IVYBUS
-                IvySendMsg("RELATIVE_BEACON_POS %f %d %f %f %f ", current_timestamp, b.id, b.z, b.x, b.y);
 
-                //Send a current mode status packet everytime: 
-                IvySendMsg("SIXDOF_SYSTEM_CURRENT_MODE %f %d", current_timestamp, current_sixdof_mode);           
-            }
+            timestamp_beacon[j] = current_timestamp; 
+            beacon_id[j] = (int) b.id; 
+            x_body_pos_beacon[j] = (float) b.z; 
+            y_body_pos_beacon[j] = (float) b.x;
+            z_body_pos_beacon[j] = (float) b.y;
+            j++;
         }    
+        //Update flag:
+        pthread_mutex_lock(&mutex_ivy_bus);
+        beacon_pos_msg_available = 1;
+        pthread_mutex_unlock(&mutex_ivy_bus); 
     });
 
     droneManager->registerPose6DofCallback([](const Pose6Dof& sd){
@@ -255,32 +295,49 @@ int main(int ac, const char *av[]) {
         float quat_array[4] = {(float) sd.qw, (float) sd.qz, (float) sd.qx, (float) sd.qy};
         float euler_angles[3];
         quaternion_to_euler(quat_array, euler_angles);
-        if(verbose_tx){
-            std::cout << std::fixed << std::setprecision(5)
-                    << "Timestamp: " << current_timestamp << std::setprecision(3)
-                    << " X: " << sd.z 
-                    << " Y: " << sd.x 
-                    << " Z: " << sd.y 
-                    << " Phi_rel_deg : " << euler_angles[0]*180/M_PI 
-                    << " Theta_rel_deg: " << euler_angles[1]*180/M_PI 
-                    << " Psi_rel_deg: " << euler_angles[2]*180/M_PI                      
-                    << " Qw: " << sd.qw 
-                    << " Qx: " << sd.qz 
-                    << " Qy: " << sd.qx 
-                    << " Qz: " << sd.qy 
-                    << " Var_x: " << sd.var_x 
-                    << " Var_y: " << sd.var_y 
-                    << " Var_z: " << sd.var_z 
-                    << " Var_h: " << sd.var_h
-                    << " Var_p: " << sd.var_p
-                    << " Var_r: " << sd.var_r << std::endl;
-        }
-        if(send_values_on_ivy){
-            IvySendMsg("SIXDOF_TRACKING %f %f %f %f %f %f %f %f %f %f %f %f %f %f", current_timestamp, sd.z, sd.x, sd.y, sd.qw, sd.qx, sd.qy, sd.qz, sd.var_x, sd.var_y, sd.var_z, sd.var_h, sd.var_p, sd.var_r);
-            
-            //Send a current mode status packet everytime: 
-            IvySendMsg("SIXDOF_SYSTEM_CURRENT_MODE %f %d", current_timestamp, current_sixdof_mode);   
-        }
+
+        static struct register_sixdof_packet my_sixdof_packet_local; 
+
+        my_sixdof_packet_local.timestamp_position = current_timestamp; 
+        my_sixdof_packet_local.x_body_pos = (float) sd.y; 
+        my_sixdof_packet_local.y_body_pos = (float) -sd.x; 
+        my_sixdof_packet_local.z_body_pos = (float) -sd.z; 
+        my_sixdof_packet_local.relative_phi_rad = (float) euler_angles[0];
+        my_sixdof_packet_local.relative_theta_rad = (float) euler_angles[1];
+        my_sixdof_packet_local.relative_psi_rad = (float) euler_angles[2];
+        my_sixdof_packet_local.x_body_pos_var = (float) sd.var_z; 
+        my_sixdof_packet_local.y_body_pos_var = (float) sd.var_x; 
+        my_sixdof_packet_local.z_body_pos_var = (float) sd.var_y; 
+        my_sixdof_packet_local.phi_rad_var = (float) -1;
+        my_sixdof_packet_local.theta_rad_var = (float) -1;
+        my_sixdof_packet_local.psi_rad_var = (float) -1;
+
+        pthread_mutex_lock(&mutex_ivy_bus);
+        memcpy(&my_sixdof_packet, &my_sixdof_packet_local, sizeof(struct register_sixdof_packet));
+        sixdof_msg_available = 1;
+        pthread_mutex_unlock(&mutex_ivy_bus); 
+
+
+        // if(verbose_tx){
+        //     std::cout << std::fixed << std::setprecision(5)
+        //             << "Timestamp: " << current_timestamp << std::setprecision(3)
+        //             << " X: " << sd.z 
+        //             << " Y: " << sd.x 
+        //             << " Z: " << sd.y 
+        //             << " Phi_rel_deg : " << euler_angles[0]*180/M_PI 
+        //             << " Theta_rel_deg: " << euler_angles[1]*180/M_PI 
+        //             << " Psi_rel_deg: " << euler_angles[2]*180/M_PI                      
+        //             << " Qw: " << sd.qw 
+        //             << " Qx: " << sd.qz 
+        //             << " Qy: " << sd.qx 
+        //             << " Qz: " << sd.qy 
+        //             << " Var_x: " << sd.var_x 
+        //             << " Var_y: " << sd.var_y 
+        //             << " Var_z: " << sd.var_z 
+        //             << " Var_h: " << sd.var_h
+        //             << " Var_p: " << sd.var_p
+        //             << " Var_r: " << sd.var_r << std::endl;
+        // }
     });
 
     // Initialize network, this can only be done once
