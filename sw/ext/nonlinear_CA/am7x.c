@@ -449,8 +449,8 @@ void* second_thread() //Run the optimization code
     float K_T_airspeed = extra_data_in_copy[65];
     float min_airspeed_reading = extra_data_in_copy[66];
 
-    beacon_tracking_id = (int) extra_data_in_copy[67];
-    desired_sixdof_mode = (int) extra_data_in_copy[68];
+    beacon_tracking_id = extra_data_in_copy[67];
+    desired_sixdof_mode = extra_data_in_copy[68];
 
     //Exceptions: 
     if(beacon_tracking_id == 0){
@@ -716,6 +716,10 @@ void* second_thread() //Run the optimization code
 
       printf(" K_T_airspeed = %f \n",(float) K_T_airspeed);
       printf(" min_airspeed_reading = %f \n",(float) min_airspeed_reading);
+
+      printf(" beacon_tracking_id = %f \n",(float) beacon_tracking_id);
+
+      printf(" desired_sixdof_mode = %f \n",(float) desired_sixdof_mode); 
 
       printf("\n REAL TIME VARIABLES IN------------------------------------------------------ \n"); 
 
@@ -1021,50 +1025,6 @@ void* second_thread() //Run the optimization code
   }
 }
 
-static void submit_target_point(float * target_rel_body_pos){ 
-        //Get current euler angles and UAV position from serial connection through mutex:     
-      struct am7_data_in myam7_data_in_sixdof_copy;
-      pthread_mutex_lock(&mutex_am7);
-      memcpy(&myam7_data_in_sixdof_copy, &myam7_data_in, sizeof(struct am7_data_in));
-      pthread_mutex_unlock(&mutex_am7); 
-      float UAV_NED_pos[3] = {myam7_data_in_sixdof_copy.UAV_NED_pos_x, myam7_data_in_sixdof_copy.UAV_NED_pos_y, myam7_data_in_sixdof_copy.UAV_NED_pos_z}; 
-      float UAV_euler_angles_rad[3] = {(float) myam7_data_in_sixdof_copy.phi_state_int*1e-2*M_PI/180,
-                                      (float) myam7_data_in_sixdof_copy.theta_state_int*1e-2*M_PI/180,
-                                      (float) myam7_data_in_sixdof_copy.psi_state_int*1e-2*M_PI/180};
-
-      //Transpose relative position to target position for the UAV: 
-      float beacon_absolute_ned_pos[3];
-      from_body_to_earth(&beacon_absolute_ned_pos[0], &target_rel_body_pos[0], UAV_euler_angles_rad[0], UAV_euler_angles_rad[1], UAV_euler_angles_rad[2]);
-      //Sun current UAV position to have the real abs marker value: 
-      for(int i = 0; i < 3; i++){
-        beacon_absolute_ned_pos[i] += UAV_NED_pos[i]; 
-      }
-
-      //Copy absolute position to 
-      struct aruco_detection_t aruco_detection_local; 
-
-      gettimeofday(&aruco_time, NULL); 
-      aruco_detection_local.timestamp_detection = (aruco_time.tv_sec*1e6 - starting_time_program_execution.tv_sec*1e6 + aruco_time.tv_usec - starting_time_program_execution.tv_usec)*1e-6;
-      aruco_detection_local.NED_pos_x = beacon_absolute_ned_pos[0]; 
-      aruco_detection_local.NED_pos_y = beacon_absolute_ned_pos[1];  
-      aruco_detection_local.NED_pos_z  = beacon_absolute_ned_pos[2];  
-      aruco_detection_local.system_status = (int8_t) current_sixdof_mode;
-      
-      if(verbose_sixdof_position){
-        printf("Sixdof timestamp = %f \n", aruco_detection_local.timestamp_detection); 
-        printf("Sixdof NED pos_x = %f \n",(float) aruco_detection_local.NED_pos_x ); 
-        printf("Sixdof NED pos_y = %f \n",(float) aruco_detection_local.NED_pos_y ); 
-        printf("Sixdof NED pos_z  = %f \n",(float) aruco_detection_local.NED_pos_z ); 
-        printf("Sixdof BODY pos_x = %f \n",(float) target_rel_body_pos[0] ); 
-        printf("Sixdof BODY pos_y = %f \n",(float) target_rel_body_pos[1] ); 
-        printf("Sixdof BODY pos_z  = %f \n \n",(float) target_rel_body_pos[2] ); 
-      }
-
-      pthread_mutex_lock(&mutex_aruco);
-      memcpy(&aruco_detection, &aruco_detection_local, sizeof(struct aruco_detection_t));
-      pthread_mutex_unlock(&mutex_aruco); 
-}
-
 static void sixdof_current_mode_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
 {
   if (argc != 2)
@@ -1104,7 +1064,47 @@ static void sixdof_beacon_pos_callback(IvyClientPtr app, void *user_data, int ar
 
     //If beacon number is the one we want to track then transpose the position in NED frame and send it to the UAV: 
     if(beacon_id == beacon_tracking_id){
-      submit_target_point(&beacon_rel_pos[0]);
+      //Get current euler angles and UAV position from serial connection through mutex:     
+      struct am7_data_in myam7_data_in_sixdof_copy;
+      pthread_mutex_lock(&mutex_am7);
+      memcpy(&myam7_data_in_sixdof_copy, &myam7_data_in, sizeof(struct am7_data_in));
+      pthread_mutex_unlock(&mutex_am7); 
+      float UAV_NED_pos[3] = {myam7_data_in_sixdof_copy.UAV_NED_pos_x, myam7_data_in_sixdof_copy.UAV_NED_pos_y, myam7_data_in_sixdof_copy.UAV_NED_pos_z}; 
+      float UAV_euler_angles_rad[3] = {(float) myam7_data_in_sixdof_copy.phi_state_int*1e-2*M_PI/180,
+                                      (float) myam7_data_in_sixdof_copy.theta_state_int*1e-2*M_PI/180,
+                                      (float) myam7_data_in_sixdof_copy.psi_state_int*1e-2*M_PI/180};
+
+      //Transpose relative position to target position for the UAV: 
+      float beacon_absolute_ned_pos[3];
+      from_body_to_earth(&beacon_absolute_ned_pos[0], &beacon_rel_pos[0], UAV_euler_angles_rad[0], UAV_euler_angles_rad[1], UAV_euler_angles_rad[2]);
+      //Sun current UAV position to have the real abs marker value: 
+      for(int i = 0; i < 3; i++){
+        beacon_absolute_ned_pos[i] += UAV_NED_pos[i]; 
+      }
+
+      //Copy absolute position to 
+      struct aruco_detection_t aruco_detection_local; 
+
+      gettimeofday(&aruco_time, NULL); 
+      aruco_detection_local.timestamp_detection = (aruco_time.tv_sec*1e6 - starting_time_program_execution.tv_sec*1e6 + aruco_time.tv_usec - starting_time_program_execution.tv_usec)*1e-6;
+      aruco_detection_local.NED_pos_x = beacon_absolute_ned_pos[0]; 
+      aruco_detection_local.NED_pos_y = beacon_absolute_ned_pos[1];  
+      aruco_detection_local.NED_pos_z  = beacon_absolute_ned_pos[2];  
+      aruco_detection_local.system_status = (int8_t) current_sixdof_mode;
+      
+      if(verbose_sixdof_position){
+        printf("Sixdof timestamp = %f \n", aruco_detection_local.timestamp_detection); 
+        printf("Sixdof NED pos_x = %f \n",(float) aruco_detection_local.NED_pos_x ); 
+        printf("Sixdof NED pos_y = %f \n",(float) aruco_detection_local.NED_pos_y ); 
+        printf("Sixdof NED pos_z  = %f \n",(float) aruco_detection_local.NED_pos_z ); 
+        printf("Sixdof BODY pos_x = %f \n",(float) beacon_rel_pos[0] ); 
+        printf("Sixdof BODY pos_y = %f \n",(float) beacon_rel_pos[1] ); 
+        printf("Sixdof BODY pos_z  = %f \n \n",(float) beacon_rel_pos[2] ); 
+      }
+
+      pthread_mutex_lock(&mutex_aruco);
+      memcpy(&aruco_detection, &aruco_detection_local, sizeof(struct aruco_detection_t));
+      pthread_mutex_unlock(&mutex_aruco); 
     }
 
   }
@@ -1177,7 +1177,47 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
 
     if(sqrtf(var_x*var_x + var_y*var_y + var_z*var_z) < max_tolerance_variance_sixdof){
       float local_pos_target_body_rf[3] = {X_pos, Y_pos, Z_pos}; 
-      submit_target_point(&local_pos_target_body_rf[0]);
+        //Get current euler angles and UAV position from serial connection through mutex:     
+      struct am7_data_in myam7_data_in_sixdof_copy;
+      pthread_mutex_lock(&mutex_am7);
+      memcpy(&myam7_data_in_sixdof_copy, &myam7_data_in, sizeof(struct am7_data_in));
+      pthread_mutex_unlock(&mutex_am7); 
+      float UAV_NED_pos[3] = {myam7_data_in_sixdof_copy.UAV_NED_pos_x, myam7_data_in_sixdof_copy.UAV_NED_pos_y, myam7_data_in_sixdof_copy.UAV_NED_pos_z}; 
+      float UAV_euler_angles_rad[3] = {(float) myam7_data_in_sixdof_copy.phi_state_int*1e-2*M_PI/180,
+                                      (float) myam7_data_in_sixdof_copy.theta_state_int*1e-2*M_PI/180,
+                                      (float) myam7_data_in_sixdof_copy.psi_state_int*1e-2*M_PI/180};
+
+      //Transpose relative position to target position for the UAV: 
+      float beacon_absolute_ned_pos[3];
+      from_body_to_earth(&beacon_absolute_ned_pos[0], &local_pos_target_body_rf[0], UAV_euler_angles_rad[0], UAV_euler_angles_rad[1], UAV_euler_angles_rad[2]);
+      //Sun current UAV position to have the real abs marker value: 
+      for(int i = 0; i < 3; i++){
+        beacon_absolute_ned_pos[i] += UAV_NED_pos[i]; 
+      }
+
+      //Copy absolute position to 
+      struct aruco_detection_t aruco_detection_local; 
+
+      gettimeofday(&aruco_time, NULL); 
+      aruco_detection_local.timestamp_detection = (aruco_time.tv_sec*1e6 - starting_time_program_execution.tv_sec*1e6 + aruco_time.tv_usec - starting_time_program_execution.tv_usec)*1e-6;
+      aruco_detection_local.NED_pos_x = beacon_absolute_ned_pos[0]; 
+      aruco_detection_local.NED_pos_y = beacon_absolute_ned_pos[1];  
+      aruco_detection_local.NED_pos_z  = beacon_absolute_ned_pos[2];  
+      aruco_detection_local.system_status = (int8_t) current_sixdof_mode;
+      
+      if(verbose_sixdof_position){
+        printf("Sixdof timestamp = %f \n", aruco_detection_local.timestamp_detection); 
+        printf("Sixdof NED pos_x = %f \n",(float) aruco_detection_local.NED_pos_x ); 
+        printf("Sixdof NED pos_y = %f \n",(float) aruco_detection_local.NED_pos_y ); 
+        printf("Sixdof NED pos_z  = %f \n",(float) aruco_detection_local.NED_pos_z ); 
+        printf("Sixdof BODY pos_x = %f \n",(float) local_pos_target_body_rf[0] ); 
+        printf("Sixdof BODY pos_y = %f \n",(float) local_pos_target_body_rf[1] ); 
+        printf("Sixdof BODY pos_z  = %f \n \n",(float) local_pos_target_body_rf[2] ); 
+      }
+
+      pthread_mutex_lock(&mutex_aruco);
+      memcpy(&aruco_detection, &aruco_detection_local, sizeof(struct aruco_detection_t));
+      pthread_mutex_unlock(&mutex_aruco); 
     }
   }
 }

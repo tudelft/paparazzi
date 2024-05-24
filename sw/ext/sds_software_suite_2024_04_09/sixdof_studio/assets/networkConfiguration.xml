@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<networkConfig>
+    <sensor_id>92</sensor_id>
+    <sensor_network_name>Ethernet 12</sensor_network_name>
+</networkConfig>
