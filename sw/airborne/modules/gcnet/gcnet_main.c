@@ -125,16 +125,21 @@ int count = 0;
 float ekf_X[EKF_NUM_STATES];
 #endif
 
+// Build network
+Network net;
+
 void gcnet_init(void)
 {
 	// keep track of time
 	//t0 = get_sys_time_float();
+	net = build_network(conf.in_size, conf.hid_layer_size, 
+                      conf.hid_neuron_size, conf.out_size);
 
 	// ABI messaging for reading rpm
 	AbiBindMsgRPM(RPM_SENSOR_ID, &rpm_read_ev, rpm_read_cb);
 
 	// Initialize filters (cutoff frequency=8.0)
-  	float tau_ = 1.0 / (2.0 * M_PI * 8.0);				// tau = 1/(2*pi*cutoff_frequency)
+  float tau_ = 1.0 / (2.0 * M_PI * 8.0);				// tau = 1/(2*pi*cutoff_frequency)
 
 	init_butterworth_2_low_pass(&filter_p, tau_, sample_time, 0.0);
 	init_butterworth_2_low_pass(&filter_q, tau_, sample_time, 0.0);
@@ -146,6 +151,13 @@ void gcnet_init(void)
 	init_butterworth_2_low_pass(&filter_vx, tau_, sample_time, 0.0);
 	init_butterworth_2_low_pass(&filter_vy, tau_, sample_time, 0.0);
 	init_butterworth_2_low_pass(&filter_az, tau_, sample_time, 0.0);
+
+  // Init network
+  init_network(&net);
+
+	  // Load network parameters from header file
+  load_network_from_header(&net, &conf);
+  reset_network(&net);
 }
 
 struct NedCoor_f waypoint_ned;
@@ -419,7 +431,20 @@ void gcnet_run(void)
 	state_nn[18] = Mz_measured - Mz_modeled;
 	
 	// calcuate neural network output
-	nn_control(state_nn, control_nn);
+	// nn_control(state_nn, control_nn);
+
+	for (int i=0; i<net.in_size; i++){
+    net.input[i] = state_nn[i];
+  }
+
+  // Forward network
+  forward_network(&net);
+
+	for (int i=0; i<net.out_size; i++){
+    control_nn[i] = net.output_decoded[i];
+  }
+
+	// TODO: Where do I free the net?
 }
 
 
