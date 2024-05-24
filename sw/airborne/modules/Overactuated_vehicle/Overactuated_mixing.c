@@ -64,8 +64,6 @@
 
 #define RECTIFY_LAT_AND_FWD_SPEED
 
-// #define USE_EXT_REF_ATTITUDE
-
 float fpa_off_deg = -3.0; 
 #define NEW_FPA_DEF
 
@@ -94,6 +92,10 @@ float overestimation_coeff = 1.4;
 // #define TEST_RASMUS_SERVO
 // float time_old = 0; 
 // float test_frequency = 0.5;
+
+float alt_offset_beacon = 2; 
+int selected_beacon = 2; 
+int sixdof_mode = 1; 
 
 //Array which contains all the actuator values (sent to motor and servos)
 struct overactuated_mixing_t overactuated_mixing;
@@ -461,6 +463,18 @@ uint8_t detect_ground_on_landing(void){
 static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am7_data_in * myam7_data_in_ptr, float * extra_data_in_ptr){
     memcpy(&myam7_data_in_local,myam7_data_in_ptr,sizeof(struct am7_data_in));
     memcpy(&extra_data_in_local,extra_data_in_ptr,255 * sizeof(float));
+
+    #ifdef USE_EXT_REF_POSITION
+        struct EnuCoor_f target_pos_sixdof = {myam7_data_in_local.aruco_NED_pos_y, myam7_data_in_local.aruco_NED_pos_x, -myam7_data_in_local.aruco_NED_pos_z + alt_offset_beacon}; 
+        waypoint_set_enu(WP_STDBY, &target_pos_sixdof); 
+         // Send to the GCS that the waypoint has been moved
+        static uint8_t wp_id = WP_STDBY;
+        DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+                                &waypoints[WP_STDBY].enu_i.x,
+                                &waypoints[WP_STDBY].enu_i.y,
+                                &waypoints[WP_STDBY].enu_i.z);
+
+    #endif
 }
 
 /**
@@ -1065,8 +1079,7 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.UAV_NED_pos_y = pos_vect[1];
     am7_data_out_local.UAV_NED_pos_z = pos_vect[2];
 
-    extra_data_out_local[0] = Dynamic_MOTOR_K_T_OMEGASQ;
-
+    extra_data_out_local[0] = OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ;
     extra_data_out_local[1] = OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ;
     extra_data_out_local[2] = VEHICLE_MASS;
     extra_data_out_local[3] = VEHICLE_I_XX;
@@ -1175,6 +1188,24 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[84] = prop_delta;
     extra_data_out_local[85] = prop_sigma;
     extra_data_out_local[86] = prop_theta;
+
+    if(selected_beacon == 1){
+        extra_data_out_local[87] = 1640.0;     
+    }
+    if(selected_beacon == 2){
+        extra_data_out_local[87] = 1636.0;     
+    }
+    if(selected_beacon == 3){
+        extra_data_out_local[87] = 1645.0;     
+    }
+    if(selected_beacon == 4){
+        extra_data_out_local[87] = 1633.0;     
+    }
+    if(selected_beacon == 5){
+        extra_data_out_local[87] = 1632.0;     
+    }
+    
+    extra_data_out_local[88] = sixdof_mode; 
 
 }
 
@@ -1676,8 +1707,10 @@ void overactuated_mixing_run(void)
         manual_theta_value = MANUAL_CONTROL_MAX_CMD_PITCH_ANGLE * radio_control.values[RADIO_MANUAL_PITCH_CMD] / MAX_PPRZ;
 
         #ifdef USE_EXT_REF_ATTITUDE
+            if(approach_state){
             manual_phi_value = ship_info_receive.phi * M_PI/180;
             manual_theta_value = ship_info_receive.theta * M_PI/180;
+            }
         #endif
 
         // manual_motor_value = OVERACTUATED_MIXING_MOTOR_MIN_OMEGA;
@@ -1715,12 +1748,23 @@ void overactuated_mixing_run(void)
         float psi_dot = euler_error[2];
         float phi_value = euler_vect[0];
         float theta_value = euler_vect[1];
+
         #ifdef USE_EXT_REF_ATTITUDE
+            // if(fabs(euler_vect[0]) <= max_value_error.phi){
+            //     phi_dot += ship_info_receive.phi_dot * M_PI/180;
+            // }
+            // if(fabs(euler_vect[1]) <= max_value_error.theta){
+            //     theta_dot += ship_info_receive.theta_dot * M_PI/180;
+            // }
+            if(approach_state){
             if(fabs(euler_vect[0]) <= max_value_error.phi){
-                phi_dot += ship_info_receive.phi_dot * M_PI/180
+                    phi_dot += ship_info_receive.phi_dot * M_PI/180;
             }
             if(fabs(euler_vect[1]) <= max_value_error.theta){
-                theta_dot += ship_info_receive.theta_dot * M_PI/180
+                    theta_dot += ship_info_receive.theta_dot * M_PI/180;
+                }                
+                // phi_dot += myam7_data_in_local.phi_dot_cmd_int * 1e-1 * M_PI/180;
+                // theta_dot += myam7_data_in_local.theta_dot_cmd_int * 1e-1 * M_PI/180;
             }
         #endif 
 

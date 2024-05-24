@@ -31,6 +31,7 @@ struct am7_data_out myam7_data_out_copy;
 struct am7_data_out myam7_data_out_copy_internal;
 struct am7_data_in myam7_data_in;
 struct am7_data_in myam7_data_in_copy;
+struct am7_data_in myam7_data_in_sixdof_copy;
 float extra_data_in[255], extra_data_in_copy[255];
 float extra_data_out[255], extra_data_out_copy[255];
 uint16_t buffer_in_counter;
@@ -45,12 +46,11 @@ int serial_port_tf_mini;
 float ca7_message_frequency_RX, ca7_message_frequency_TX;
 struct timeval current_time, last_time, last_sent_msg_time, aruco_time, starting_time_program_execution, time_last_opt_run, time_last_filt;
 
-
 pthread_mutex_t mutex_am7;
 
-pthread_mutex_t mutex_aruco;
-
-int verbose_connection = 1;
+int verbose_sixdof_com = 0;
+int verbose_sixdof_position = 1;
+int verbose_connection = 0;
 int verbose_optimizer = 0;
 int verbose_runtime = 0; 
 int verbose_received_data = 0; 
@@ -62,7 +62,43 @@ int verbose_filters = 0;
 int16_t lidar_dist_cm = -1; 
 int16_t lidar_signal_strength = -1; 
 
+//COMPUTER VISION 
 struct aruco_detection_t aruco_detection; 
+pthread_mutex_t mutex_aruco;
+
+//SIXDOF VARIABLES: 
+int default_desired_sixdof_mode = 1, desired_sixdof_mode; //1 -->rel beacon pos; 2 -->rel beacon angle; 3-->sixdof mode. Default is 1. 
+int default_beacon_tracking_id = 1640, beacon_tracking_id; 
+float max_tolerance_variance_sixdof = 1; //meters
+int current_sixdof_mode; 
+
+float phi_dot_cmd, theta_dot_cmd, phi_cmd_old, theta_cmd_old, phi_dot_cmd_filt, theta_dot_cmd_filt; 
+float tau_first_order_attitude_cmd_filtering = 0.1175; //1-exp(-cutoff_frequency/sampling_frequency)
+
+// Transpose an array from body reference frame to earth reference frame
+void from_body_to_earth(float * out_array, float * in_array, float Phi, float Theta, float Psi){
+
+    float R_be_matrix[3][3];
+
+    // Compute the elements of the matrix
+    R_be_matrix[0][0] = cos(Theta) * cos(Psi);
+    R_be_matrix[0][1] = -cos(Phi) * sin(Psi) + sin(Phi) * sin(Theta) * cos(Psi);
+    R_be_matrix[0][2] = sin(Phi) * sin(Psi) + cos(Phi) * sin(Theta) * cos(Psi);
+    R_be_matrix[1][0] = cos(Theta) * sin(Psi);
+    R_be_matrix[1][1] = cos(Phi) * cos(Psi) + sin(Phi) * sin(Theta) * sin(Psi);
+    R_be_matrix[1][2] = -sin(Phi) * cos(Psi) + cos(Phi) * sin(Theta) * sin(Psi);
+    R_be_matrix[2][0] = -sin(Theta);
+    R_be_matrix[2][1] = sin(Phi) * cos(Theta);
+    R_be_matrix[2][2] = cos(Phi) * cos(Theta);
+
+    // Do the multiplication between the input array and the rotation matrix:
+    for (int i = 0; i < 3; i++) {
+        out_array[i] = 0.; // Initialize output array element to zero
+        for (int j = 0; j < 3; j++) {
+            out_array[i] += R_be_matrix[i][j] * in_array[j];
+        }
+    }
+}
 
 void readLiDAR(){
   // Data Format for Benewake TFmini
@@ -160,6 +196,7 @@ void am7_init(){
   //init waiting timer: 
   gettimeofday(&time_last_opt_run, NULL);
   gettimeofday(&time_last_filt, NULL);
+  gettimeofday(&starting_time_program_execution, NULL); 
 
 }
 
@@ -438,6 +475,17 @@ void* second_thread() //Run the optimization code
     float prop_sigma = extra_data_in_copy[85];
     float prop_theta = extra_data_in_copy[86];
 
+    beacon_tracking_id = extra_data_in_copy[87];
+    desired_sixdof_mode = extra_data_in_copy[88];
+
+    //Exceptions: 
+    if(beacon_tracking_id == 0){
+      beacon_tracking_id = default_beacon_tracking_id;
+    }
+
+    if(desired_sixdof_mode == 0){
+      desired_sixdof_mode = default_desired_sixdof_mode;
+    }
 
     #ifdef TEST_CONTROLLER
       filter_cutoff_frequency_telem = 12; 
@@ -717,6 +765,8 @@ void* second_thread() //Run the optimization code
       printf(" prop_delta = %f \n",(float) prop_delta);
       printf(" prop_sigma = %f \n",(float) prop_sigma);
       printf(" prop_theta = %f \n",(float) prop_theta);
+      printf(" beacon_tracking_id = %f \n",(float) beacon_tracking_id);
+      printf(" desired_sixdof_mode = %f \n",(float) desired_sixdof_mode); 
 
       printf("\n REAL TIME VARIABLES IN------------------------------------------------------ \n"); 
 
@@ -986,6 +1036,20 @@ void* second_thread() //Run the optimization code
     //Wait until time is not at least refresh_time_optimizer
     while(((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec)) < refresh_time_optimizer*1e6){gettimeofday(&current_time, NULL);}
 
+    //Compute phi and theta cmd derivative:
+    theta_dot_cmd = (u_out[12] - theta_cmd_old)/refresh_time_optimizer;
+    phi_dot_cmd = (u_out[13] - phi_cmd_old)/refresh_time_optimizer;
+    theta_cmd_old = u_out[12];
+    phi_cmd_old = u_out[13];
+    
+    //Filter cmd derivatives: 
+    theta_dot_cmd_filt = theta_dot_cmd_filt + tau_first_order_attitude_cmd_filtering * (theta_dot_cmd - theta_dot_cmd_filt);
+    phi_dot_cmd_filt = phi_dot_cmd_filt + tau_first_order_attitude_cmd_filtering * (phi_dot_cmd - phi_dot_cmd_filt);
+
+    //Append to out struct: 
+    myam7_data_out_copy_internal.phi_dot_cmd_int = (int16_T) (phi_dot_cmd_filt*1e1*180/M_PI);
+    myam7_data_out_copy_internal.theta_dot_cmd_int = (int16_T) (theta_dot_cmd_filt*1e1*180/M_PI);
+
     //Print performances if needed
     if(verbose_runtime){
       printf("\n Elapsed time = %f \n",(float) elapsed_time); 
@@ -1011,6 +1075,7 @@ void* second_thread() //Run the optimization code
     myam7_data_out_copy_internal.aruco_NED_pos_x = aruco_detection_local.NED_pos_x;
     myam7_data_out_copy_internal.aruco_NED_pos_y = aruco_detection_local.NED_pos_y;
     myam7_data_out_copy_internal.aruco_NED_pos_z = aruco_detection_local.NED_pos_z;
+    myam7_data_out_copy_internal.aruco_system_status = aruco_detection_local.system_status;
     
     //Copy out structure
     pthread_mutex_lock(&mutex_am7);
@@ -1018,6 +1083,182 @@ void* second_thread() //Run the optimization code
     memcpy(&extra_data_out, &extra_data_out_copy, sizeof(struct am7_data_out));
     pthread_mutex_unlock(&mutex_am7);   
 
+  }
+}
+
+static void sixdof_current_mode_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
+{
+  if (argc != 2)
+  {
+    fprintf(stderr,"ERROR: invalid message length SIXDOF_SYSTEM_CURRENT_MODE \n");
+  }
+  else{
+    double timestamp_d = atof(argv[0]); 
+    current_sixdof_mode = (int) atof(argv[1]); 
+    if(verbose_sixdof_com){
+      fprintf(stderr,"Received SIXDOF_SYSTEM_CURRENT_MODE - Timestamp = %.5f, current_mode = %d; \n",timestamp_d,current_sixdof_mode);
+    }
+    //1 -->rel beacon pos; 2 -->rel beacon angle; 3-->sixdof mode. Default is 1. 
+    if(current_sixdof_mode != desired_sixdof_mode){
+      //Change sixdof mode 
+      IvySendMsg("SET_SIXDOF_SYS_MODE %d", desired_sixdof_mode);
+    }
+  }
+}
+
+static void sixdof_beacon_pos_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
+{
+  if (argc != 5)
+  {
+    fprintf(stderr,"ERROR: invalid message length RELATIVE_BEACON_POS \n");
+  }
+  else{
+    float beacon_rel_pos[3];
+    double timestamp_d = atof(argv[0]); 
+    int beacon_id = (int) atof(argv[1]); 
+    beacon_rel_pos[0] = (float) atof(argv[2]); 
+    beacon_rel_pos[1] = (float) atof(argv[3]); 
+    beacon_rel_pos[2] = (float) atof(argv[4]); 
+    if(verbose_sixdof_com){
+      fprintf(stderr,"Received beacon position - Timestamp = %.5f, ID = %d; Posx = %.3f Posy = %.3f; Posz = %.3f; \n",timestamp_d,beacon_id,beacon_rel_pos[0],beacon_rel_pos[1],beacon_rel_pos[2]);
+    }
+
+    //If beacon number is the one we want to track then transpose the position in NED frame and send it to the UAV: 
+    if(beacon_id == beacon_tracking_id){
+      //Get current euler angles and UAV position from serial connection through mutex:     
+      struct am7_data_in myam7_data_in_sixdof_copy;
+      pthread_mutex_lock(&mutex_am7);
+      memcpy(&myam7_data_in_sixdof_copy, &myam7_data_in, sizeof(struct am7_data_in));
+      pthread_mutex_unlock(&mutex_am7); 
+      float UAV_NED_pos[3] = {myam7_data_in_sixdof_copy.UAV_NED_pos_x, myam7_data_in_sixdof_copy.UAV_NED_pos_y, myam7_data_in_sixdof_copy.UAV_NED_pos_z}; 
+      float UAV_euler_angles_rad[3] = {(float) myam7_data_in_sixdof_copy.phi_state_int*1e-2*M_PI/180,
+                                      (float) myam7_data_in_sixdof_copy.theta_state_int*1e-2*M_PI/180,
+                                      (float) myam7_data_in_sixdof_copy.psi_state_int*1e-2*M_PI/180};
+
+      //Transpose relative position to target position for the UAV: 
+      float beacon_absolute_ned_pos[3];
+      from_body_to_earth(&beacon_absolute_ned_pos[0], &beacon_rel_pos[0], UAV_euler_angles_rad[0], UAV_euler_angles_rad[1], UAV_euler_angles_rad[2]);
+      //Sun current UAV position to have the real abs marker value: 
+      for(int i = 0; i < 3; i++){
+        beacon_absolute_ned_pos[i] += UAV_NED_pos[i]; 
+      }
+
+      //Copy absolute position to 
+      struct aruco_detection_t aruco_detection_local; 
+
+      gettimeofday(&aruco_time, NULL); 
+      aruco_detection_local.timestamp_detection = (aruco_time.tv_sec*1e6 - starting_time_program_execution.tv_sec*1e6 + aruco_time.tv_usec - starting_time_program_execution.tv_usec)*1e-6;
+      aruco_detection_local.NED_pos_x = beacon_absolute_ned_pos[0]; 
+      aruco_detection_local.NED_pos_y = beacon_absolute_ned_pos[1];  
+      aruco_detection_local.NED_pos_z  = beacon_absolute_ned_pos[2];  
+      aruco_detection_local.system_status = (int8_t) current_sixdof_mode;
+      
+      if(verbose_sixdof_position){
+        printf("Sixdof timestamp = %f \n", aruco_detection_local.timestamp_detection); 
+        printf("Sixdof NED pos_x = %f \n",(float) aruco_detection_local.NED_pos_x ); 
+        printf("Sixdof NED pos_y = %f \n",(float) aruco_detection_local.NED_pos_y ); 
+        printf("Sixdof NED pos_z  = %f \n",(float) aruco_detection_local.NED_pos_z ); 
+        printf("Sixdof BODY pos_x = %f \n",(float) beacon_rel_pos[0] ); 
+        printf("Sixdof BODY pos_y = %f \n",(float) beacon_rel_pos[1] ); 
+        printf("Sixdof BODY pos_z  = %f \n \n",(float) beacon_rel_pos[2] ); 
+      }
+
+      pthread_mutex_lock(&mutex_aruco);
+      memcpy(&aruco_detection, &aruco_detection_local, sizeof(struct aruco_detection_t));
+      pthread_mutex_unlock(&mutex_aruco); 
+    }
+
+  }
+}
+
+static void sixdof_beacon_angle_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
+{
+  if (argc != 6)
+  {
+    fprintf(stderr,"ERROR: invalid message length RELATIVE_BEACON_ANGLE\n");
+  }
+  else{
+    double timestamp_d = atof(argv[0]); 
+    int beacon_id = (int) atof(argv[1]); 
+    float XAngle_deg = atof(argv[2]); 
+    float YAngle_deg = atof(argv[3]); 
+    float Intensity = atof(argv[4]); 
+    float Width = atof(argv[5]); 
+    if(verbose_sixdof_com){
+      fprintf(stderr,"Received beacon relative angle - Timestamp = %.5f, ID = %d; XAngle_deg = %.3f YAngle_deg = %.3f; Intensity = %.3f; Width = %.3f; \n",timestamp_d,beacon_id,XAngle_deg,YAngle_deg,Intensity,Width);
+    }
+  }
+}
+
+static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
+{
+  if (argc != 13)
+  {
+    fprintf(stderr,"ERROR: invalid message length SIXDOF_TRACKING\n");
+  }
+  else{
+    double timestamp_d = atof(argv[0]); 
+    float X_pos = atof(argv[1]); 
+    float Y_pos = atof(argv[2]); 
+    float Z_pos = atof(argv[3]); 
+    float Phi_rad = atof(argv[4]); 
+    float Theta_rad = atof(argv[5]); 
+    float Psi_rad = atof(argv[6]); 
+    float var_x = atof(argv[7]); 
+    float var_y = atof(argv[8]); 
+    float var_z = atof(argv[9]); 
+    float var_phi = atof(argv[10]); 
+    float var_theta = atof(argv[11]); 
+    float var_psi = atof(argv[12]);  
+
+    if(verbose_sixdof_com){
+      fprintf(stderr,"Received sixdof packet - Timestamp = %.5f, X_pos = %.3f, Y_pos = %.3f, Z_pos = %.3f, Phi = %.3f, Theta = %.3f, Psi = %.3f, var_x = %.3f, var_y = %.3f, var_z = %.3f, var_phi = %.3f, var_theta = %.3f, var_psi = %.3f;\n",timestamp_d,X_pos,Y_pos,Z_pos,Phi_rad*180/M_PI,Theta_rad*180/M_PI,Psi_rad*180/M_PI,var_x,var_y,var_z,var_phi,var_theta,var_psi);
+    }
+
+    if(sqrtf(var_x*var_x + var_y*var_y + var_z*var_z) < max_tolerance_variance_sixdof){
+      float local_pos_target_body_rf[3] = {X_pos, Y_pos, Z_pos}; 
+        //Get current euler angles and UAV position from serial connection through mutex:     
+      struct am7_data_in myam7_data_in_sixdof_copy;
+      pthread_mutex_lock(&mutex_am7);
+      memcpy(&myam7_data_in_sixdof_copy, &myam7_data_in, sizeof(struct am7_data_in));
+      pthread_mutex_unlock(&mutex_am7); 
+      float UAV_NED_pos[3] = {myam7_data_in_sixdof_copy.UAV_NED_pos_x, myam7_data_in_sixdof_copy.UAV_NED_pos_y, myam7_data_in_sixdof_copy.UAV_NED_pos_z}; 
+      float UAV_euler_angles_rad[3] = {(float) myam7_data_in_sixdof_copy.phi_state_int*1e-2*M_PI/180,
+                                      (float) myam7_data_in_sixdof_copy.theta_state_int*1e-2*M_PI/180,
+                                      (float) myam7_data_in_sixdof_copy.psi_state_int*1e-2*M_PI/180};
+
+      //Transpose relative position to target position for the UAV: 
+      float beacon_absolute_ned_pos[3];
+      from_body_to_earth(&beacon_absolute_ned_pos[0], &local_pos_target_body_rf[0], UAV_euler_angles_rad[0], UAV_euler_angles_rad[1], UAV_euler_angles_rad[2]);
+      //Sun current UAV position to have the real abs marker value: 
+      for(int i = 0; i < 3; i++){
+        beacon_absolute_ned_pos[i] += UAV_NED_pos[i]; 
+      }
+
+      //Copy absolute position to 
+      struct aruco_detection_t aruco_detection_local; 
+
+      gettimeofday(&aruco_time, NULL); 
+      aruco_detection_local.timestamp_detection = (aruco_time.tv_sec*1e6 - starting_time_program_execution.tv_sec*1e6 + aruco_time.tv_usec - starting_time_program_execution.tv_usec)*1e-6;
+      aruco_detection_local.NED_pos_x = beacon_absolute_ned_pos[0]; 
+      aruco_detection_local.NED_pos_y = beacon_absolute_ned_pos[1];  
+      aruco_detection_local.NED_pos_z  = beacon_absolute_ned_pos[2];  
+      aruco_detection_local.system_status = (int8_t) current_sixdof_mode;
+      
+      if(verbose_sixdof_position){
+        printf("Sixdof timestamp = %f \n", aruco_detection_local.timestamp_detection); 
+        printf("Sixdof NED pos_x = %f \n",(float) aruco_detection_local.NED_pos_x ); 
+        printf("Sixdof NED pos_y = %f \n",(float) aruco_detection_local.NED_pos_y ); 
+        printf("Sixdof NED pos_z  = %f \n",(float) aruco_detection_local.NED_pos_z ); 
+        printf("Sixdof BODY pos_x = %f \n",(float) local_pos_target_body_rf[0] ); 
+        printf("Sixdof BODY pos_y = %f \n",(float) local_pos_target_body_rf[1] ); 
+        printf("Sixdof BODY pos_z  = %f \n \n",(float) local_pos_target_body_rf[2] ); 
+      }
+
+      pthread_mutex_lock(&mutex_aruco);
+      memcpy(&aruco_detection, &aruco_detection_local, sizeof(struct aruco_detection_t));
+      pthread_mutex_unlock(&mutex_aruco); 
+    }
   }
 }
 
@@ -1052,9 +1293,8 @@ void main() {
 
   //Initialize the serial 
   am7_init();
-  //Initialize timer: 
-  gettimeofday(&starting_time_program_execution, NULL); 
-  
+
+
   //Init 
   #ifdef __APPLE__
     char* ivy_bus = "224.255.255.255";
@@ -1066,7 +1306,11 @@ void main() {
 
   IvyInit ("NonlinearCA", "NonlinearCA READY", NULL, NULL, NULL, NULL);
   IvyStart(ivy_bus);
-  IvyBindMsg(aruco_position_report, NULL, "^ground DESIRED_SP %s (\\S*) (\\S*) (\\S*) (\\S*)", "1");
+  // IvyBindMsg(aruco_position_report, NULL, "^ground DESIRED_SP %s (\\S*) (\\S*) (\\S*) (\\S*)", "1");
+  IvyBindMsg(sixdof_beacon_pos_callback, NULL, "RELATIVE_BEACON_POS (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
+  IvyBindMsg(sixdof_beacon_angle_callback, NULL, "RELATIVE_BEACON_ANGLE (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
+  IvyBindMsg(sixdof_mode_callback, NULL, "SIXDOF_TRACKING (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
+  IvyBindMsg(sixdof_current_mode_callback, NULL, "SIXDOF_SYSTEM_CURRENT_MODE (\\S*) (\\S*)");
 
   pthread_t thread1, thread2;
 
@@ -1075,10 +1319,6 @@ void main() {
   pthread_create(&thread2, NULL, second_thread, NULL);
 
   g_main_loop_run(ml);
-
-  while(true){
-
-  }
 
   //Close the serial and clean the variables 
   fflush (stdout);

@@ -191,6 +191,10 @@ extern float prop_delta;
 extern float prop_sigma;
 extern float prop_theta;
 
+extern float alt_offset_beacon; 
+extern int selected_beacon;
+extern int sixdof_mode; 
+
 /* External used functions */
 extern void overactuated_mixing_init(void);
 extern void overactuated_mixing_run(void);

@@ -509,7 +509,9 @@
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
 
     <define name="SPEED_AOA_PROTECTION" value="2" unit="m/s"/>
-
+ 
+     <define name="MIN_AIRSPEED_READING" value="5.0" unit="m/s"/>
+    
     <!-- Tilting angle constraint in the approach and takeoff phase -->
     <define name="K_ALT_TILT_CONSTRAINT" value="50" unit="deg/meters"/>
     <define name="MIN_ALT_TILT_CONSTRAINT" value="-0.1" unit="meters"/>
@@ -814,7 +816,10 @@
     <!-- <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/> -->
     <define name="FULLY_MANUAL_HEADING" value="TRUE"/>
     <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/>
+    <define name="USE_EXT_REF_ATTITUDE" value="TRUE"/>
+    <define name="USE_EXT_REF_POSITION" value="TRUE"/>
     
+        
     <define name="FAILSAFE_HOME_RADIUS" value="600" unit="m"/>
   </section>
 
