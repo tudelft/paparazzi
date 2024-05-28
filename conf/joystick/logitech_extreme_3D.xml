@@ -1,0 +1,55 @@
+<joystick>
+  <input>
+    <axis index="0" name="roll" limit="1.00" trim="0"/>
+    <axis index="1" name="pitch" limit="1.00" trim="0"/>
+    <axis index="2" name="yaw" limit="1.00" trim="0"/>
+    <axis index="3" name="thrust" limit="1.00" trim="0"/>
+    <hat index="0" name="hat"/>
+    <button index="0" name="fire"/>
+    <button index="1" name="stick_side"/>
+    <button index="2" name="stick3"/>
+    <button index="3" name="stick4"/>
+    <button index="4" name="stick5"/>
+    <button index="5" name="stick6"/>
+    <button index="6" name="main1"/>
+    <button index="7" name="main2"/>
+    <button index="8" name="main3"/>
+    <button index="9" name="main4"/>
+    <button index="10" name="main5"/>
+    <button index="11" name="main6"/>
+  </input>
+  
+  <variables>
+    <var name="mode" default="0"/>
+    <set var="mode" value="0" on_event="stick3"/>
+    <set var="mode" value="1" on_event="stick4"/>
+    <set var="mode" value="2" on_event="stick5"/>
+    <set var="mode" value="3" on_event="stick6"/>
+  </variables>
+
+  <messages period="0.01">
+
+    <message class="datalink" name="RC_4CH" send_always="true">
+      <field name="mode"        value="mode"/>
+      <field name="throttle"    value="Fit(0,-127,127,0,127)"/>
+      <field name="roll"        value="roll"/>
+      <field name="yaw"         value="yaw"/>
+      <field name="pitch"       value="pitch"/>
+    </message>
+
+
+    <!-- resurrect throttle on fire button -->
+    <message class="ground" name="DL_SETTING" on_event="fire">
+      <field name="index" value="IndexOfSetting('autopilot.kill_throttle')"/>
+      <field name="value" value="0"/>
+    </message>
+    
+    <!-- kill throttle on far_left button -->
+    <message class="ground" name="DL_SETTING" on_event="stick_side">
+      <field name="index" value="IndexOfSetting('autopilot.kill_throttle')"/>
+      <field name="value" value="1"/>
+    </message>
+
+  </messages>
+
+</joystick>
