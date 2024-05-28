@@ -41,6 +41,9 @@
 
 extern float control_nn[NUM_CONTROLS];
 
+// Implement own loops
+extern void guidance_module_enter(void);
+extern void guidance_module_run(bool in_flight);
 
 //
 extern void gcnet_init(void);
