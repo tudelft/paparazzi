@@ -79,6 +79,7 @@ struct RW_Model RW;
 
 inline void eff_scheduling_rot_wing_update_wing_angle(void);
 inline void eff_scheduling_rot_wing_update_airspeed(void);
+void  ele_pref_sched(void);
 void  update_attitude(void);
 void  sum_EFF_MAT_RW(void);
 void  init_RW_Model(void);
@@ -151,10 +152,11 @@ void init_RW_Model(void)
   RW.mP.dMdud    = 0.000 / RW_G_SCALE; // [Nm / pprz]
   RW.mP.l        = 0.000             ; // [m]        
   // Elevator
-  RW.ele.dFdu    = 24.81 / (RW_G_SCALE * RW_G_SCALE); // [N  / pprz]   
+  RW.ele.dFdu    = 29.70 / (RW_G_SCALE * RW_G_SCALE); // [N  / pprz]   old value: 24.81
   RW.ele.dMdu    = 0;                                 // [Nm / pprz]
   RW.ele.dMdud   = 0;                                 // [Nm / pprz]
-  RW.ele.l       = 0.85;                              // [m]               
+  RW.ele.l       = 0.85;                              // [m]    
+  RW.ele_pref    = 0;           
   // Rudder
   RW.rud.dFdu   = 1.207 / (RW_G_SCALE * RW_G_SCALE); // [N  / pprz] 
   RW.rud.dMdu   = 0;                                 // [Nm / pprz]
@@ -239,7 +241,11 @@ void calc_G1_G2_RW(void)
   // Motor Pusher
   G1_RW[aX][COMMAND_MOTOR_PUSHER] =  RW.mP.dFdu / RW.m;
   // Elevator
-  G1_RW[aq][COMMAND_ELEVATOR]     =  (RW.ele.dFdu * RW.as2 * RW.ele.l) / RW.I.yy;
+  if (RW.as > ELE_MIN_AS){
+    G1_RW[aq][COMMAND_ELEVATOR]     =  (RW.ele.dFdu * RW.as2 * RW.ele.l) / RW.I.yy;
+  } else {
+    G1_RW[aq][COMMAND_ELEVATOR]     =  0.0;
+  }
   // Rudder
   G1_RW[ar][COMMAND_RUDDER]       =  (RW.rud.dFdu * RW.as2 * RW.rud.l) / RW.I.zz ;
   // Aileron
@@ -269,6 +275,7 @@ void eff_scheduling_rot_wing_periodic(void)
   update_attitude();
   eff_scheduling_rot_wing_update_wing_angle();
   eff_scheduling_rot_wing_update_airspeed();
+  ele_pref_sched();
   calc_G1_G2_RW();
   sum_EFF_MAT_RW();
 }
@@ -378,5 +385,15 @@ void eff_scheduling_rot_wing_update_airspeed(void)
   if(airspeed_fake_on) {
     RW.as = airspeed_fake;
     RW.as2 = RW.as * RW.as;
+  }
+}
+
+void ele_pref_sched(void)
+{
+  if (RW.as > ELE_MIN_AS){
+    RW.ele_pref = (ZERO_ELE_PPRZ - 0.0) / (ELE_MAX_AS - ELE_MIN_AS) * (RW.as - ELE_MIN_AS);
+    Bound(RW.ele_pref,0.0,ZERO_ELE_PPRZ);
+  } else {
+    RW.ele_pref = 0.0;
   }
 }
