@@ -45,7 +45,7 @@
             <module name="range_sensor_uavcan"/>
 
             <!-- Log in high speed (Remove for outdoor flights) -->
-            <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
+            <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/>
             <define name="I2C2_CLOCK_SPEED" value="100000"/>
         </target>
 
@@ -237,7 +237,7 @@
         <define name="NAV_CARROT_DIST"                      value="15"/>
         <define name="NAV_LINE_DIST"                        value="100"/>
         <define name="CLOSE_TO_WAYPOINT"                    value="15"/>
-        <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST"       value="500"/>
+        <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST"       value="300"/>
         <define name="ARRIVED_AT_WAYPOINT"                  value="50.0"/> 
         <define name="NO_GPS_LOST_WITH_DATALINK_TIME"       value="20"/>
         <define name="NO_GPS_LOST_WITH_RC_VALID"            value="TRUE"/>
@@ -246,7 +246,7 @@
         <define name="STABILIZATION_ATTITUDE_SP_MAX_THETA"  value="45." unit="deg"  />
         <define name="STABILIZATION_ATTITUDE_SP_MAX_R"      value="90." unit="deg/s"/>
         <define name="STABILIZATION_ATTITUDE_DEADBAND_R"    value="200"             />
-        <define name="FWD_SIDESLIP_GAIN"                    value="0.01"/> <!-- cyfoam 0.32-->
+        <define name="FWD_SIDESLIP_GAIN"                    value="0.25"/> <!-- cyfoam 0.32-->
         <!-- <define name="THRESHOLD_GROUND_DETECT"              value="40"/> -->
         <define name="ROTWING_STATE_USE_ROTATION_REF_MODEL" value="TRUE"/>
     </section>
@@ -282,15 +282,15 @@
         <define name  = "FILT_CUTOFF_RDOT"          value = "0.5" />
         <define name  = "FILTER_YAW_RATE"           value = "TRUE"/>
         <!--                                                 |   MF   |   MR   |    MB   |    ML   |   MP   |   ELE  |    RUD  |    AIL  |    FLA  |   PHI  |  THETA | -->
-        <define name  = "ACT_DYN"                   value = "{   10.1f,   10.1f,    10.1f,    10.1f,  24.07f,  24.07f,   24.07f,   24.07f,   24.07f,   0.00f,  0.00f }" />
+        <define name  = "ACT_DYN"                   value = "{   10.1f,   10.1f,    10.1f,    10.1f,  24.07f,  50.00f,   50.00f,   50.00f,   50.00f,   0.00f,  0.00f }" />
         <define name  = "ACT_IS_SERVO"              value = "{       0,       0,        0,        0,       0,       1,        1,        1,        1,       0,      0 }" />
         <define name  = "ACT_MAX"                   value = "{ 9600.0f, 9600.0f,  9600.0f,  9600.0f, 9600.0f, 9600.0f,  9600.0f,  9600.0f,  9600.0f,  M_PI_4,  M_PI_4}"/>
         <define name  = "ACT_MIN"                   value = "{    0.0f,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f, -9600.0f, -9600.0f, -9600.0f, -M_PI_4, -M_PI_4}"/>
         <define name  = "ACT_MAX_NORM"              value = "{    1.0f,    1.0f,     1.0f,     1.0f,    1.0f,    1.0f,     1.0f,     1.0f,     1.0f,    1.0f,    1.0f}"/>
         <define name  = "ACT_MIN_NORM"              value = "{    0.0f,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f,    -1.0f,    -1.0f,    -1.0f,   -1.0f,   -1.0f}"/>
-        <define name  = "WU"                        value = "{   0.75f,   0.75f,    0.75f,    0.75f,   1.00f,   0.75f,    0.75f,    0.75f,    0.75f,   1.20f,   1.20f}"/>
-        <define name  = "U_PREF"                    value = "{   0.00f,   0.00f,    0.00f,    0.00f,   0.00f,   0.00f,    0.00f,    0.00f,    0.00f,   0.00f,   0.00f}"/>
-        <define name  = "WV"                        value = "{  100.0f,  100.0f,   100.0f,  1000.0f,  1000.0f,  1.00f}"/>   
+        <define name  = "WU"                        value = "{   0.75f,   0.75f,    0.75f,    0.75f,   1.00f,   10.0f,    10.0f,    10.0f,    10.0f,   1.20f,   1.20f}"/>
+        <define name  = "U_PREF"                    value = "{   0.00f,   0.00f,    0.00f,    0.00f,   0.00f, 7936.0f,    0.00f,    0.00f,    0.00f,   0.00f,   0.00f}"/>
+        <define name  = "WV"                        value = "{  4.0f,  4.0f,   4.0f,  8.0f,  8.0f,  1.00f}"/>   
     </section>
 
     <section name="CTRL_EFF_SHED" prefix="ROT_WING_EFF_SCHED_">
