@@ -209,11 +209,14 @@ static float Wv[ANDI_OUTPUTS]     = {1.0};
 static float Wv_wls[ANDI_OUTPUTS] = {1.0};
 #endif
 
+
 #ifdef ONELOOP_ANDI_WU // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}
 static float Wu[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_WU;
 #else
 static float Wu[ANDI_NUM_ACT_TOT] = {1.0};
 #endif
+
+float Wu_ele_temp;// = Wu[COMMAND_ELEVATOR];
 
 #ifdef ONELOOP_ANDI_U_PREF
 static float u_pref[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_U_PREF;
@@ -1135,6 +1138,7 @@ void oneloop_andi_propagate_filters(void) {
 /** @brief Init function of Oneloop ANDI controller  */
 void oneloop_andi_init(void)
 { 
+  Wu_ele_temp = 10.0;
   oneloop_andi.half_loop = true;
   oneloop_andi.ctrl_type = CTRL_ANDI;
   init_poles();
@@ -1237,6 +1241,7 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     // Disregard X and Y jerk objectives
     Wv_wls[0] = 0.0;
     Wv_wls[1] = 0.0;
+    Wu[COMMAND_ELEVATOR] = Wu_ele_temp;
     // Overwrite references with actual signals (for consistent plotting)
     float_vect_copy(oneloop_andi.gui_ref.pos,oneloop_andi.gui_state.pos,3);
     float_vect_copy(oneloop_andi.gui_ref.vel,oneloop_andi.gui_state.vel,3);
