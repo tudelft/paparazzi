@@ -35,8 +35,8 @@
   </metrics>
 
   <mass_balance>
-    <ixx unit="KG*M2">  0.120</ixx>
-    <iyy unit="KG*M2">  1.014</iyy>
+    <ixx unit="KG*M2">  0.129</ixx>
+    <iyy unit="KG*M2">  0.950</iyy>
     <izz unit="KG*M2">  0.975</izz>
     <ixy unit="KG*M2">  0.0 </ixy>
     <ixz unit="KG*M2">  0.0 </ixz>
@@ -146,22 +146,22 @@
       </lag_filter>
       <lag_filter name="ELEVATOR_lag">
         <input> fcs/ELEVATOR </input>
-        <c1> 24.07 </c1>
+        <c1> 50.00 </c1>
         <output> fcs/ELEVATOR_lag</output>
       </lag_filter>
       <lag_filter name="RUDDER_lag">
         <input> fcs/RUDDER </input>
-        <c1> 24.07 </c1>
+        <c1> 50.00 </c1>
         <output> fcs/RUDDER_lag</output>
       </lag_filter>
       <lag_filter name="AILERONS_lag">
         <input> fcs/AILERONS </input>
-        <c1> 24.07 </c1>
+        <c1> 50.00 </c1>
         <output> fcs/AILERONS_lag</output>
       </lag_filter>
       <lag_filter name="FLAPS_lag">
         <input> fcs/FLAPS </input>
-        <c1> 24.07 </c1>
+        <c1> 50.00 </c1>
         <output> fcs/FLAPS_lag</output>
       </lag_filter>
       <!--Derivative of actuator dynamics for spinup torque-->
@@ -289,6 +289,102 @@
         </function>
         <output>fcs/airspeed2_ms</output>
       </fcs_function>
+
+      <fcs_function name="Ixx_quad">
+          <function>
+              <value>0.129</value> 
+          </function>
+          <output>fcs/Ixx_quad</output>
+      </fcs_function>
+
+      <fcs_function name="Iyy_quad">
+          <function>
+              <value>0.950</value> <!-- replace with the actual value -->
+          </function>
+          <output>fcs/Iyy_quad</output>
+      </fcs_function>
+
+      <fcs_function name="Ixx_body">
+        <function>
+          <value>0.0478</value>
+        </function>
+        <output>fcs/Ixx_body</output>
+      </fcs_function>
+
+      <fcs_function name="Iyy_body">
+        <function>
+          <value>0.7546</value>
+        </function>
+        <output>fcs/Iyy_body</output>
+      </fcs_function>
+
+      <fcs_function name="Ixx_wing">
+        <function>
+          <value>0.08099</value>
+        </function>
+        <output>fcs/Ixx_wing</output>
+      </fcs_function>
+
+      <fcs_function name="Iyy_wing">
+        <function>
+          <value>0.1949</value>
+        </function>
+        <output>fcs/Iyy_wing</output>
+      </fcs_function>
+
+      <fcs_function name="Ixx_sched">
+        <function>
+          <sum>
+            <property>fcs/Ixx_body</property>
+            <product>
+              <property>fcs/Ixx_wing</property>
+              <property>fcs/cos2skew</property>
+            </product>
+            <product>
+              <property>fcs/Iyy_wing</property>
+              <property>fcs/sin2skew</property>
+            </product>
+          </sum>
+        </function>
+        <output>fcs/Ixx_sched</output>
+      </fcs_function>
+
+      <fcs_function name="Iyy_sched">
+        <function>
+          <sum>
+            <property>fcs/Iyy_body</property>
+            <product>
+              <property>fcs/Ixx_wing</property>
+              <property>fcs/sin2skew</property>
+            </product>
+            <product>
+              <property>fcs/Iyy_wing</property>
+              <property>fcs/cos2skew</property>
+            </product>
+          </sum>
+        </function>
+        <output>fcs/Iyy_sched</output>
+      </fcs_function>
+
+      <fcs_function name="Ixx_ratio_quad_sched">
+        <function>
+          <quotient>
+            <property>fcs/Ixx_quad</property>
+            <property>fcs/Ixx_sched</property>
+          </quotient>
+        </function>
+        <output>fcs/Ixx_ratio_quad_sched</output>
+      </fcs_function>
+
+      <fcs_function name="Iyy_ratio_quad_sched">
+        <function>
+          <quotient>
+            <property>fcs/Iyy_quad</property>
+            <property>fcs/Iyy_sched</property>
+          </quotient>
+        </function>
+        <output>fcs/Iyy_ratio_quad_sched</output>
+      </fcs_function>
     </channel>
   </flight_control>
 
@@ -337,7 +433,7 @@
         </product>
       </function>
       <location unit="M">
-        <x>-0.423</x>
+        <x>0</x>
         <y>0</y>
         <z>0</z>
       </location>
@@ -377,7 +473,7 @@
         </product>
       </function>
       <location unit="M">
-        <x>0.423</x>
+        <x>0</x>
         <y>0</y>
         <z>0</z>
       </location>
@@ -429,6 +525,50 @@
     </force>
 
     <!-- Control Moments-->
+    <moment name="MOTOR_FRONT_PITCH" frame="BODY" unit="FT*LBS">
+      <function>
+        <product>
+          <property>fcs/MOTOR_FRONT_lag</property>
+          <value> 36.82 </value>
+          <value> 0.423</value>
+          <value> 0.738</value> <!-- Nm to ft-lbs -->
+          <property>fcs/Iyy_ratio_quad_sched</property>
+        </product>
+      </function>
+      <location unit="M">
+        <x>0</x>
+        <y>0</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>0</x>
+        <y>1</y>
+        <z>0</z>
+      </direction>
+    </moment>   
+
+    <moment name="MOTOR_BACK_PITCH" frame="BODY" unit="FT*LBS">
+      <function>
+        <product>
+          <property>fcs/MOTOR_BACK_lag</property>
+          <value> 36.82 </value>
+          <value> 0.423</value>
+          <value> 0.738</value> <!-- Nm to ft-lbs -->
+          <property>fcs/Iyy_ratio_quad_sched</property>
+        </product>
+      </function>
+      <location unit="M">
+        <x>0</x>
+        <y>0</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>0</x>
+        <y>-1</y>
+        <z>0</z>
+      </direction>
+    </moment>       
+
     <moment name="MOTOR_RIGHT_ROLL" frame="BODY" unit="FT*LBS">
       <function>
         <product>
@@ -437,6 +577,7 @@
           <value> 36.82 </value>
           <value> 0.408</value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
+          <property>fcs/Ixx_ratio_quad_sched</property>
         </product>
       </function>
       <location unit="M">
@@ -459,6 +600,7 @@
           <value> 36.82 </value>
           <value> 0.408</value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
+          <property>fcs/Iyy_ratio_quad_sched</property>
         </product>
       </function>
       <location unit="M">
@@ -481,6 +623,7 @@
           <value> 36.82 </value>
           <value> 0.408</value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
+          <property>fcs/Ixx_ratio_quad_sched</property>
         </product>
       </function>
       <location unit="M">
@@ -503,6 +646,7 @@
           <value> 36.82 </value>
           <value> 0.408</value>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
+          <property>fcs/Iyy_ratio_quad_sched</property>
         </product>
       </function>
       <location unit="M">
@@ -525,6 +669,7 @@
           <value>0.23819</value> <!-- dNdjsbsim-->
           <value>0.850</value>   <!-- m --> 
           <value> 0.738</value> <!-- Nm to ft-lbs -->
+          <property>fcs/Iyy_ratio_quad_sched</property>
         </product>
       </function>
       <location unit="M">
@@ -570,6 +715,7 @@
           <value>0.03920</value> <!-- dNdjsbsim-->
           <value>0.68</value>    <!-- m -->
           <value> 0.738</value> <!-- Nm to ft-lbs -->
+          <property>fcs/Ixx_ratio_quad_sched</property>
         </product>
       </function>
       <location unit="M">
@@ -593,6 +739,7 @@
           <value>0.05527</value> <!-- dNdjsbsim-->
           <value>0.355</value>   <!-- m -->
           <value> 0.738</value> <!-- Nm to ft-lbs -->
+          <property>fcs/Ixx_ratio_quad_sched</property>
         </product>
       </function>
       <location unit="M">
@@ -616,6 +763,7 @@
           <value>0.03920</value> <!-- dNdjsbsim-->
           <value>0.68</value>    <!-- m -->
           <value> 0.738</value> <!-- Nm to ft-lbs -->
+          <property>fcs/Iyy_ratio_quad_sched</property>
         </product>
       </function>
       <location unit="M">
@@ -639,6 +787,7 @@
          <value>0.05527</value> <!-- dNdjsbsim-->
          <value>0.355</value>   <!-- m -->
          <value> 0.738</value> <!-- Nm to ft-lbs -->
+         <property>fcs/Iyy_ratio_quad_sched</property>
         </product>
       </function>
       <location unit="M">

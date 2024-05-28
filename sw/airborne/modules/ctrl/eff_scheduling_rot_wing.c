@@ -28,6 +28,7 @@
 #include "state.h"
 #include "modules/actuators/actuators.h"
 #include "modules/core/abi.h"
+#include "filters/low_pass_filter.h"
 
 #define FORCE_ONELOOP
 #ifdef FORCE_ONELOOP
@@ -68,7 +69,7 @@ float EFF_MAT_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB] = {0};
 static float flt_cut = 1.0e-4;
 
 struct FloatEulers eulers_zxy_RW_EFF;
-
+static Butterworth2LowPass airspeed_filt; 
 /* Temp variables*/
 bool airspeed_fake_on = false;
 float airspeed_fake = 0.0;
@@ -78,6 +79,7 @@ struct RW_Model RW;
 
 inline void eff_scheduling_rot_wing_update_wing_angle(void);
 inline void eff_scheduling_rot_wing_update_airspeed(void);
+void  ele_pref_sched(void);
 void  update_attitude(void);
 void  sum_EFF_MAT_RW(void);
 void  init_RW_Model(void);
@@ -107,6 +109,10 @@ void eff_scheduling_rot_wing_init(void)
   init_RW_Model();
   update_attitude();
   AbiBindMsgACT_FEEDBACK(WING_ROTATION_CAN_ROT_WING_ID, &wing_position_ev, wing_position_cb);
+  
+  float tau   = 1.0 / (2.0 * M_PI * 3.0);
+  float sample_time = 1.0 / 10;
+  init_butterworth_2_low_pass(&airspeed_filt, tau, sample_time, 0.0);
 }
 
 void init_RW_Model(void)
@@ -146,10 +152,11 @@ void init_RW_Model(void)
   RW.mP.dMdud    = 0.000 / RW_G_SCALE; // [Nm / pprz]
   RW.mP.l        = 0.000             ; // [m]        
   // Elevator
-  RW.ele.dFdu    = 24.81 / (RW_G_SCALE * RW_G_SCALE); // [N  / pprz]   
+  RW.ele.dFdu    = 29.70 / (RW_G_SCALE * RW_G_SCALE); // [N  / pprz]   old value: 24.81
   RW.ele.dMdu    = 0;                                 // [Nm / pprz]
   RW.ele.dMdud   = 0;                                 // [Nm / pprz]
-  RW.ele.l       = 0.85;                              // [m]               
+  RW.ele.l       = 0.85;                              // [m]    
+  RW.ele_pref    = 0;           
   // Rudder
   RW.rud.dFdu   = 1.207 / (RW_G_SCALE * RW_G_SCALE); // [N  / pprz] 
   RW.rud.dMdu   = 0;                                 // [Nm / pprz]
@@ -234,7 +241,11 @@ void calc_G1_G2_RW(void)
   // Motor Pusher
   G1_RW[aX][COMMAND_MOTOR_PUSHER] =  RW.mP.dFdu / RW.m;
   // Elevator
-  G1_RW[aq][COMMAND_ELEVATOR]     =  (RW.ele.dFdu * RW.as2 * RW.ele.l) / RW.I.yy;
+  if (RW.as > ELE_MIN_AS){
+    G1_RW[aq][COMMAND_ELEVATOR]     =  (RW.ele.dFdu * RW.as2 * RW.ele.l) / RW.I.yy;
+  } else {
+    G1_RW[aq][COMMAND_ELEVATOR]     =  0.0;
+  }
   // Rudder
   G1_RW[ar][COMMAND_RUDDER]       =  (RW.rud.dFdu * RW.as2 * RW.rud.l) / RW.I.zz ;
   // Aileron
@@ -250,7 +261,7 @@ void calc_G1_G2_RW(void)
   RW.wing.L                       =  RW.wing.k0 * RW.att.theta * RW.as2 + RW.wing.k1 * RW.att.theta * RW.skew.sinr2 * RW.as2 + RW.wing.k2 * RW.skew.sinr2 * RW.as2;
   Bound(RW.wing.L, 0.0, 350.0);
   RW.T = actuator_state_1l[COMMAND_MOTOR_FRONT] * RW.mF.dFdu + actuator_state_1l[COMMAND_MOTOR_RIGHT] * RW.mR.dFdu + actuator_state_1l[COMMAND_MOTOR_BACK] * RW.mB.dFdu + actuator_state_1l[COMMAND_MOTOR_LEFT] * RW.mL.dFdu;
-  Bound(RW.T, 0.0, 140.0);
+  Bound(RW.T, 0.0, 180.0);
   RW.P                            = actuator_state_1l[COMMAND_MOTOR_PUSHER] * RW.mP.dFdu;
   // Inertia
   RW.I.xx = RW.I.b_xx + RW.skew.cosr2 * RW.I.w_xx + RW.skew.sinr2 * RW.I.w_yy;
@@ -264,6 +275,7 @@ void eff_scheduling_rot_wing_periodic(void)
   update_attitude();
   eff_scheduling_rot_wing_update_wing_angle();
   eff_scheduling_rot_wing_update_airspeed();
+  ele_pref_sched();
   calc_G1_G2_RW();
   sum_EFF_MAT_RW();
 }
@@ -364,12 +376,24 @@ void eff_scheduling_rot_wing_update_wing_angle(void)
 
 void eff_scheduling_rot_wing_update_airspeed(void)
 {
-  RW.as = stateGetAirspeed_f();
+  float airspeed_meas = stateGetAirspeed_f();
+  update_butterworth_2_low_pass(&airspeed_filt, airspeed_meas);
+  RW.as = airspeed_filt.o[0];
   Bound(RW.as, 0. , 30.);
   RW.as2 = RW.as * RW.as;
   Bound(RW.as2, 0. , 900.);
   if(airspeed_fake_on) {
     RW.as = airspeed_fake;
     RW.as2 = RW.as * RW.as;
+  }
+}
+
+void ele_pref_sched(void)
+{
+  if (RW.as > ELE_MIN_AS){
+    RW.ele_pref = (ZERO_ELE_PPRZ - 0.0) / (ELE_MAX_AS - ELE_MIN_AS) * (RW.as - ELE_MIN_AS);
+    Bound(RW.ele_pref,0.0,ZERO_ELE_PPRZ);
+  } else {
+    RW.ele_pref = 0.0;
   }
 }

@@ -49,6 +49,19 @@
 
 #define RW_G_SCALE 1000.0f
 
+// Elevator ctrl definitions
+#ifndef ZERO_ELE_PPRZ
+#define ZERO_ELE_PPRZ 7936.0
+#endif
+
+#ifndef ELE_MIN_AS
+#define ELE_MIN_AS 8.8
+#endif
+
+#ifndef ELE_MAX_AS // should match the max airspeed
+#define ELE_MAX_AS 16.0
+#endif
+
 extern float EFF_MAT_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB];
 extern float G2_RW[EFF_MAT_COLS_NB]                      ; 
 extern float G1_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB]     ; 
@@ -167,6 +180,7 @@ struct RW_Model{
   struct F_M_Body flp;
   float as;  // airspeed [m/s] 
   float as2; // airspeed squared [m/s²]
+  float ele_pref;
 
 };
 
