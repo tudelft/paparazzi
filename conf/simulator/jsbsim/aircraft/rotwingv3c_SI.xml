@@ -146,22 +146,22 @@
       </lag_filter>
       <lag_filter name="ELEVATOR_lag">
         <input> fcs/ELEVATOR </input>
-        <c1> 24.07 </c1>
+        <c1> 50.00 </c1>
         <output> fcs/ELEVATOR_lag</output>
       </lag_filter>
       <lag_filter name="RUDDER_lag">
         <input> fcs/RUDDER </input>
-        <c1> 24.07 </c1>
+        <c1> 50.00 </c1>
         <output> fcs/RUDDER_lag</output>
       </lag_filter>
       <lag_filter name="AILERONS_lag">
         <input> fcs/AILERONS </input>
-        <c1> 24.07 </c1>
+        <c1> 50.00 </c1>
         <output> fcs/AILERONS_lag</output>
       </lag_filter>
       <lag_filter name="FLAPS_lag">
         <input> fcs/FLAPS </input>
-        <c1> 24.07 </c1>
+        <c1> 50.00 </c1>
         <output> fcs/FLAPS_lag</output>
       </lag_filter>
       <!--Derivative of actuator dynamics for spinup torque-->
