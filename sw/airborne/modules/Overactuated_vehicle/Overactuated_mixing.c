@@ -73,7 +73,7 @@ float speed_ref_out_old[3] = {0.0f, 0.0f, 0.0f}, acc_ref_out_old[3] = {0.0f, 0.0
 
 #define NEW_YAWRATE_REFERENCE
 #define OVERESTIMATE_LATERAL_FORCES
-float overestimation_coeff = 1.4;
+float overestimation_coeff = OVERACTUATED_MIXING_OVERESTIMATION_COEFF_CRUISE;
 
 
 #define FBW_ACTUATORS
@@ -172,7 +172,7 @@ float desired_angle_servo_9 = 0;
 float desired_angle_servo_10 = 0;
 
 //Sideslip gains
-float K_beta = 0.1;
+float K_beta = OVERACTUATED_MIXING_K_BETA;
 
 float Dynamic_MOTOR_K_T_OMEGASQ;
 
@@ -200,24 +200,24 @@ float des_pos_earth_x = 0;
 float des_pos_earth_y = 0;
 
 //WEIGHTS: 
-float w_mot_const = OVERACTUATED_MIXING_W_ACT_MOTOR_CONST; 
-float w_mot_speed = OVERACTUATED_MIXING_W_ACT_MOTOR_SPEED; 
-float w_el_const = OVERACTUATED_MIXING_W_ACT_EL_CONST; 
-float w_el_speed = OVERACTUATED_MIXING_W_ACT_EL_SPEED; 
-float w_az_const = OVERACTUATED_MIXING_W_ACT_AZ_CONST; 
-float w_az_speed = OVERACTUATED_MIXING_W_ACT_AZ_SPEED;  
-float w_theta_const = OVERACTUATED_MIXING_W_ACT_THETA_CONST; 
-float w_theta_speed = OVERACTUATED_MIXING_W_ACT_THETA_SPEED; 
-float w_phi_const = OVERACTUATED_MIXING_W_ACT_PHI_CONST; 
-float w_phi_speed = OVERACTUATED_MIXING_W_ACT_PHI_SPEED;
-float w_ail_const = OVERACTUATED_MIXING_W_ACT_AILERONS_CONST; 
-float w_ail_speed = OVERACTUATED_MIXING_W_ACT_AILERONS_SPEED; 
+float w_mot_const = OVERACTUATED_MIXING_W_ACT_MOTOR_CONST_CRUISE; 
+float w_mot_speed = OVERACTUATED_MIXING_W_ACT_MOTOR_SPEED_CRUISE; 
+float w_el_const = OVERACTUATED_MIXING_W_ACT_EL_CONST_CRUISE; 
+float w_el_speed = OVERACTUATED_MIXING_W_ACT_EL_SPEED_CRUISE; 
+float w_az_const = OVERACTUATED_MIXING_W_ACT_AZ_CONST_CRUISE; 
+float w_az_speed = OVERACTUATED_MIXING_W_ACT_AZ_SPEED_CRUISE;  
+float w_theta_const = OVERACTUATED_MIXING_W_ACT_THETA_CONST_CRUISE; 
+float w_theta_speed = OVERACTUATED_MIXING_W_ACT_THETA_SPEED_CRUISE; 
+float w_phi_const = OVERACTUATED_MIXING_W_ACT_PHI_CONST_CRUISE; 
+float w_phi_speed = OVERACTUATED_MIXING_W_ACT_PHI_SPEED_CRUISE;
+float w_ail_const = OVERACTUATED_MIXING_W_ACT_AILERONS_CONST_CRUISE; 
+float w_ail_speed = OVERACTUATED_MIXING_W_ACT_AILERONS_SPEED_CRUISE; 
 
-float trans_speed = OVERACTUATED_MIXING_TRANSITION_SPEED_PSEUDOCTR_HEDGE;
+float trans_speed = OVERACTUATED_MIXING_TRANSITION_SPEED_PSEUDOCTR_HEDGE_CRUISE;
 
 float disable_acc_decrement_inner_loop = 0; 
 
-float vert_acc_margin = 2.5; 
+float vert_acc_margin = OVERACTUATED_MIXING_VERT_ACC_MARGIN; 
 
 // Actuators gains:
 #ifdef RPM_CONTROL
@@ -299,7 +299,7 @@ int waypoint_mode = 0;
 float x_stb, y_stb, z_stb;
 
 // Variables for the speed to derivative gain slider and thrust coefficient: 
-float K_d_speed = 0.005; 
+float K_d_speed = OVERACTUATED_MIXING_K_GAIN_AIRSPEED_CRUISE; 
 float K_T_airspeed = 0.025;
 
 // float K_d_speed = 0.02; 
@@ -397,7 +397,8 @@ float LIMITS_ACTIVE_MAX_FWD_ACC;
 float LIMITS_ACTIVE_MIN_FWD_ACC;
 float LIMITS_ACTIVE_MAX_LAT_ACC;
 float LIMITS_ACTIVE_MAX_VERT_ACC;
-float LIMITS_ACTIVE_VERT_ACC_MARGIN;
+float OVERACTUATED_MIXING_MIN_SPEED_TRANSITION; 
+float OVERACTUATED_MIXING_REF_SPEED_TRANSITION; 
 
 struct PD_indi_over active_gains;
 
@@ -666,11 +667,6 @@ float compute_yaw_rate_turn(void){
             feed_fwd_term_yaw = accel_vect_filt_control_rf[1]/airspeed_turn;
             feed_back_term_yaw = - K_beta * accel_y_filt_corrected;
             yaw_rate_setpoint_turn = yaw_rate_setpoint_turn * compute_lat_speed_multiplier(OVERACTUATED_MIXING_MIN_SPEED_TRANSITION,OVERACTUATED_MIXING_REF_SPEED_TRANSITION,airspeed);
-
-            // yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accel_y_filt_corrected;
-            // feed_fwd_term_yaw = 9.81*tan(euler_vect[0])/airspeed_turn;
-            // feed_back_term_yaw = - K_beta * accel_y_filt_corrected;    
-            // yaw_rate_setpoint_turn = yaw_rate_setpoint_turn * compute_lat_speed_multiplier(OVERACTUATED_MIXING_MIN_SPEED_TRANSITION,OVERACTUATED_MIXING_REF_SPEED_TRANSITION,airspeed);
         #endif
         
 
@@ -1387,8 +1383,8 @@ void assign_variables(void){
     //Assign gains according to the approach state: 
     if(approach_state){
         active_gains = app_gains;
-        airspeed = 0.0;
-        aoa_protection_speed = 2.0;
+        airspeed = 0.5;
+        aoa_protection_speed = OVERACTUATED_MIXING_SPEED_AOA_PROTECTION_APP;
         LIMITS_ACTIVE_MAX_FWD_SPEED = LIMITS_APP_MAX_FWD_SPEED;
         LIMITS_ACTIVE_MAX_AIRSPEED = LIMITS_APP_MAX_AIRSPEED;
         LIMITS_ACTIVE_MIN_FWD_SPEED = LIMITS_APP_MIN_FWD_SPEED;
@@ -1398,11 +1394,29 @@ void assign_variables(void){
         LIMITS_ACTIVE_MIN_FWD_ACC = LIMITS_APP_MIN_FWD_ACC;
         LIMITS_ACTIVE_MAX_LAT_ACC = LIMITS_APP_MAX_LAT_ACC;
         LIMITS_ACTIVE_MAX_VERT_ACC = LIMITS_APP_MAX_VERT_ACC;
-        LIMITS_ACTIVE_VERT_ACC_MARGIN = LIMITS_APP_VERT_ACC_MARGIN;
+        OVERACTUATED_MIXING_MIN_SPEED_TRANSITION = OVERACTUATED_MIXING_MIN_SPEED_TRANSITION_APP;
+        OVERACTUATED_MIXING_REF_SPEED_TRANSITION = OVERACTUATED_MIXING_REF_SPEED_TRANSITION_APP;
+
+        w_mot_const = OVERACTUATED_MIXING_W_ACT_MOTOR_CONST_APP; 
+        w_mot_speed = OVERACTUATED_MIXING_W_ACT_MOTOR_SPEED_APP; 
+        w_el_const = OVERACTUATED_MIXING_W_ACT_EL_CONST_APP; 
+        w_el_speed = OVERACTUATED_MIXING_W_ACT_EL_SPEED_APP; 
+        w_az_const = OVERACTUATED_MIXING_W_ACT_AZ_CONST_APP; 
+        w_az_speed = OVERACTUATED_MIXING_W_ACT_AZ_SPEED_APP;  
+        w_theta_const = OVERACTUATED_MIXING_W_ACT_THETA_CONST_APP; 
+        w_theta_speed = OVERACTUATED_MIXING_W_ACT_THETA_SPEED_APP; 
+        w_phi_const = OVERACTUATED_MIXING_W_ACT_PHI_CONST_APP; 
+        w_phi_speed = OVERACTUATED_MIXING_W_ACT_PHI_SPEED_APP;
+        w_ail_const = OVERACTUATED_MIXING_W_ACT_AILERONS_CONST_APP; 
+        w_ail_speed = OVERACTUATED_MIXING_W_ACT_AILERONS_SPEED_APP;
+
+        trans_speed = OVERACTUATED_MIXING_TRANSITION_SPEED_PSEUDOCTR_HEDGE_APP;
+        overestimation_coeff = OVERACTUATED_MIXING_OVERESTIMATION_COEFF_APP;
+        K_d_speed = OVERACTUATED_MIXING_K_GAIN_AIRSPEED_APP;
     }
     else{
         active_gains = cruise_gains;
-        aoa_protection_speed = OVERACTUATED_MIXING_SPEED_AOA_PROTECTION;
+        aoa_protection_speed = OVERACTUATED_MIXING_SPEED_AOA_PROTECTION_CRUISE;
         LIMITS_ACTIVE_MAX_FWD_SPEED = LIMITS_CRUISE_MAX_FWD_SPEED;
         LIMITS_ACTIVE_MAX_AIRSPEED = LIMITS_CRUISE_MAX_AIRSPEED;
         LIMITS_ACTIVE_MIN_FWD_SPEED = LIMITS_CRUISE_MIN_FWD_SPEED;
@@ -1412,7 +1426,26 @@ void assign_variables(void){
         LIMITS_ACTIVE_MIN_FWD_ACC = LIMITS_CRUISE_MIN_FWD_ACC;
         LIMITS_ACTIVE_MAX_LAT_ACC = LIMITS_CRUISE_MAX_LAT_ACC;
         LIMITS_ACTIVE_MAX_VERT_ACC = LIMITS_CRUISE_MAX_VERT_ACC;
-        LIMITS_ACTIVE_VERT_ACC_MARGIN = LIMITS_CRUISE_VERT_ACC_MARGIN;
+        OVERACTUATED_MIXING_MIN_SPEED_TRANSITION = OVERACTUATED_MIXING_MIN_SPEED_TRANSITION_CRUISE;
+        OVERACTUATED_MIXING_REF_SPEED_TRANSITION = OVERACTUATED_MIXING_REF_SPEED_TRANSITION_CRUISE;
+
+        w_mot_const = OVERACTUATED_MIXING_W_ACT_MOTOR_CONST_CRUISE; 
+        w_mot_speed = OVERACTUATED_MIXING_W_ACT_MOTOR_SPEED_CRUISE; 
+        w_el_const = OVERACTUATED_MIXING_W_ACT_EL_CONST_CRUISE; 
+        w_el_speed = OVERACTUATED_MIXING_W_ACT_EL_SPEED_CRUISE; 
+        w_az_const = OVERACTUATED_MIXING_W_ACT_AZ_CONST_CRUISE; 
+        w_az_speed = OVERACTUATED_MIXING_W_ACT_AZ_SPEED_CRUISE;  
+        w_theta_const = OVERACTUATED_MIXING_W_ACT_THETA_CONST_CRUISE; 
+        w_theta_speed = OVERACTUATED_MIXING_W_ACT_THETA_SPEED_CRUISE; 
+        w_phi_const = OVERACTUATED_MIXING_W_ACT_PHI_CONST_CRUISE; 
+        w_phi_speed = OVERACTUATED_MIXING_W_ACT_PHI_SPEED_CRUISE;
+        w_ail_const = OVERACTUATED_MIXING_W_ACT_AILERONS_CONST_CRUISE; 
+        w_ail_speed = OVERACTUATED_MIXING_W_ACT_AILERONS_SPEED_CRUISE; 
+
+        trans_speed = OVERACTUATED_MIXING_TRANSITION_SPEED_PSEUDOCTR_HEDGE_CRUISE;
+        
+        overestimation_coeff = OVERACTUATED_MIXING_OVERESTIMATION_COEFF_CRUISE;
+        K_d_speed = OVERACTUATED_MIXING_K_GAIN_AIRSPEED_CRUISE;
     }
 
     #ifdef NEW_FPA_DEF
@@ -1425,7 +1458,7 @@ void assign_variables(void){
         if(fabs(cosf(euler_vect[1])) > 0.001){
             projected_airspeed_on_x_control = fabs(airspeed/cosf(euler_vect[1]));
         }
-        if(projected_airspeed_on_x_control > 1 && projected_airspeed_on_x_control > speed_vect[2]){
+        if(projected_airspeed_on_x_control > 1 && projected_airspeed_on_x_control > fabs(speed_vect[2])){
             flight_path_angle_airspeed = flight_path_angle_airspeed + asin(-speed_vect[2]/projected_airspeed_on_x_control);
             BoundAbs(flight_path_angle_airspeed, M_PI/2);
         }
