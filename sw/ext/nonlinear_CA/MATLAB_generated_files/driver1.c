@@ -5,7 +5,7 @@
  * File: driver1.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 08-May-2024 00:26:53
+ * C/C++ source code generated on  : 28-May-2024 17:44:56
  */
 
 /* Include Files */
@@ -19,6 +19,7 @@
 #include "test_exit.h"
 #include <math.h>
 #include <string.h>
+#include "toc.h"
 
 /* Function Definitions */
 /*
@@ -233,7 +234,7 @@ void b_driver(const double lb[15], const double ub[15], h_struct_T *TrialState,
         int exitg1;
         do {
           exitg1 = 0;
-          if (TrialState->FunctionEvaluations < 350) {
+          if (TrialState->FunctionEvaluations < max_function_eval && toc() <= max_time_optimizer) {
             if (evalWellDefined &&
                 (phi_alpha <=
                  MeritFunction->phi +

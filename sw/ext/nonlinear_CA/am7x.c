@@ -23,6 +23,8 @@ float tau_indi;
 
 double p_old, q_old, r_old; 
 
+double u_init[NUM_ACT_IN_U_IN];
+
 //To test the controller with random variables:
 // #define TEST_CONTROLLER
 
@@ -928,6 +930,12 @@ void* second_thread() //Run the optimization code
 
     double verbose = verbose_optimizer;
 
+    //Check if u_init was not initialized yet:
+    if(u_init[0] < 1){
+      for (int i=0; i< NUM_ACT_IN_U_IN; i++){
+        u_init[i] = u_in_filtered_double[i];
+      }
+    }
 
     Nonlinear_controller_w_ail_new_aero_sl(
         m,  I_xx,  I_yy,  I_zz,  l_1,  l_2,
@@ -959,12 +967,17 @@ void* second_thread() //Run the optimization code
         current_accelerations_filtered,  power_Cd_0,
         power_Cd_a,  prop_R,  prop_Cd_0,  prop_Cl_0,
         prop_Cd_a,  prop_Cl_a,  prop_delta,  prop_sigma,
-        prop_theta,  u_out,  residuals,
+        prop_theta, u_init,  u_out,  residuals,
         &elapsed_time,  &N_iterations,  &N_evaluations,
         &exitflag);
 
     //Update elapsed time with the C function: 
     elapsed_time =(double) ((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_opt_run.tv_sec*1e6 + time_last_opt_run.tv_usec));
+
+    //Set as u_init the u_out for the next iteration: 
+    for (int i=0; i< NUM_ACT_IN_U_IN; i++){
+      u_init[i] = u_out[i];
+    }
 
     //Convert the function output into integer to be transmitted to the pixhawk again: 
     myam7_data_out_copy_internal.motor_1_cmd_int = (int16_T) (u_out[0]*1e1);
