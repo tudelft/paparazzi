@@ -47,7 +47,7 @@ Beacon b5 {-0.30, -0.222, -0.005, 1633};
 
 //Sixdof messages: 
 struct register_sixdof_packet my_sixdof_packet; 
-int sixdof_msg_available = 0, current_mode_msg_available = 0, beacon_pos_msg_available = 0, fov_data_msg_available = 0; 
+int sixdof_msg_available = 0, current_mode_msg_available = 0, beacon_pos_msg_available = 0; 
 
 double timestamp_beacon[N_BEACON];
 int beacon_id[N_BEACON]; 
@@ -64,35 +64,12 @@ int seen_count[N_BEACON]; // Array to store the count of seen beacons
 FILE* log_file = nullptr;
 int msg_id_fov = 1, msg_id_rel_pos = 2;
 
-pthread_mutex_t mutex_ivy_bus = PTHREAD_MUTEX_INITIALIZER, mutex_fov_bus = PTHREAD_MUTEX_INITIALIZER, mutex_logger = PTHREAD_MUTEX_INITIALIZER;
-
-// Function to log FOV data
-void logFovData() {
-    pthread_mutex_lock(&mutex_fov_bus);
-    if (fov_data_msg_available) {
-        if (log_file != nullptr && produce_log_file) {
-            pthread_mutex_lock(&mutex_logger);
-            for (int i = 0; i < N_BEACON; i++) {
-                if (fov_beacon_id[i] != 0) { // Log only if there's valid data
-                    fprintf(log_file, "Msg_id: %d, Timestamp: %f, Beacon ID: %d, Seen Count: %d\n",
-                            msg_id_fov, fov_timestamp_beacon[i], fov_beacon_id[i], seen_count[i]);
-                }
-            }
-            fflush(log_file);
-            pthread_mutex_unlock(&mutex_logger);
-        }
-        fov_data_msg_available = 0;
-    }
-    pthread_mutex_unlock(&mutex_fov_bus);
-}
+pthread_mutex_t mutex_ivy_bus = PTHREAD_MUTEX_INITIALIZER, mutex_logger = PTHREAD_MUTEX_INITIALIZER;
 
 // Function to manage the ivy bus communication going out: 
 void ivy_bus_out_handle() {
     while(true){
-
-        // Log FOV data to file
-        logFovData();
-
+        
         //Check if new 6dof position message is available and send it to the ivy bus: 
         if(sixdof_msg_available){
             static struct register_sixdof_packet my_sixdof_packet_local; 
@@ -332,12 +309,6 @@ int main(int ac, const char *av[]) {
     });
 
     droneManager->registerFieldOfViewReportCallback([](const FieldOfViewReport& report) {
-        pthread_mutex_lock(&mutex_fov_bus);
-        // Initialize or reset variables
-        for (int i = 0; i < N_BEACON; i++) {
-            fov_beacon_id[i] = 0;
-            seen_count[i] = 0; 
-        }
 
         // Process the FieldOfViewReport
         int j = 0;
@@ -348,12 +319,16 @@ int main(int ac, const char *av[]) {
             fov_timestamp_beacon[j] = current_timestamp;
             fov_beacon_id[j] = entry.first;    // Beacon ID
             seen_count[j] = entry.second;      // Number of optical sensors that saw the beacon
+
+            if (log_file != nullptr && produce_log_file) {
+                pthread_mutex_lock(&mutex_logger);
+                fprintf(log_file, "Msg_id: %d, Timestamp: %f, Beacon ID: %d, Seen Count: %d\n",
+                        msg_id_fov, fov_timestamp_beacon[j], fov_beacon_id[j], seen_count[j]);
+                fflush(log_file);
+                pthread_mutex_unlock(&mutex_logger);
+            }
             j++;
         }
-
-        // Update flag and notify
-        fov_data_msg_available = 1;
-        pthread_mutex_unlock(&mutex_fov_bus);
     });
 
     droneManager->registerPoseRelativeBeaconCallback([](const PoseRelativeBeaconCollection& col){
