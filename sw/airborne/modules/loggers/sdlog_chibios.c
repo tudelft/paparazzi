@@ -343,15 +343,15 @@ static void thd_bat_survey(void *arg)
   if (palReadPad(SDLOG_USB_VBUS_PORT, SDLOG_USB_VBUS_PIN) == PAL_LOW) {
     // disable all required periph to save energy and maximize chance to flush files
     // to mass storage and avoid infamous dirty bit on filesystem
-    mcu_energy_save();
+//    mcu_energy_save();
   }
 
   // in case of powerloss, we should go fast and avoid to flush ram buffer
-  sdlog_chibios_finish(false);
+//  sdlog_chibios_finish(false);
 
   // Only put to deep sleep in case there is no power on the USB
   if (palReadPad(SDLOG_USB_VBUS_PORT, SDLOG_USB_VBUS_PIN) == PAL_LOW) {
-    mcu_reboot(MCU_REBOOT_POWEROFF);
+//    mcu_reboot(MCU_REBOOT_POWEROFF);
   }
   chThdExit(0);
   while (true); // never goes here, only to avoid compiler  warning: 'noreturn' function does return
