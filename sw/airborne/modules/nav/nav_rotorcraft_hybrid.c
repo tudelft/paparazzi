@@ -91,11 +91,20 @@ bool force_forward = 0.0f;
 #ifndef NAV_OPTITRACK
 #define NAV_OPTITRACK FALSE 
 #endif
+
+static void update_max_acc(bool full_acc){
+  if (full_acc){
+    nav_max_acceleration_sp = NAV_HYBRID_MAX_ACCELERATION;
+  } else {
+    nav_max_acceleration_sp = NAV_HYBRID_MAX_ACCELERATION / 2;
+  }
+}
 /** Implement basic nav function for the hybrid case
  */
 
 static void nav_hybrid_goto(struct EnuCoor_f *wp)
 {
+  update_max_acc(false);
   nav_rotorcraft_base.goto_wp.to = *wp;
   nav_rotorcraft_base.goto_wp.dist2_to_wp = get_dist2_to_point(wp);
   VECT2_COPY(nav.target, *wp);
@@ -233,7 +242,7 @@ static void nav_hybrid_circle(struct EnuCoor_f *wp_center, float radius)
   float sign_radius = radius > 0.f ? 1.f : -1.f;
   // absolute radius
   float abs_radius = fabsf(radius);
-  float min_radius =  pow(nav_max_speed+nav_hybrid_max_expected_wind,2) / (nav_max_acceleration_sp * 0.8);
+  float min_radius =  pow(nav_max_speed+nav_hybrid_max_expected_wind,2) / (NAV_HYBRID_MAX_ACCELERATION * 0.8);
   abs_radius = Max(abs_radius, min_radius);
   if (abs_radius > 0.1f) {
     // store last qdr
@@ -264,10 +273,12 @@ static void nav_hybrid_circle(struct EnuCoor_f *wp_center, float radius)
     if (radius_diff > NAV_HYBRID_NAV_CIRCLE_DIST) {
       // far from circle, speed proportional to diff
       desired_speed = radius_diff * nav_hybrid_pos_gain;
+      update_max_acc(false);
     } else {
       // close to circle, speed function of radius for a feasible turn
       // 0.8 * MAX_BANK gives some margins for the turns
       desired_speed = sqrtf(PPRZ_ISA_GRAVITY * abs_radius * tanf(0.8f * nav_hybrid_max_bank));
+      update_max_acc(true);
     }
     Bound(desired_speed, 0.0f, nav_max_speed);
   }
