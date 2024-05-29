@@ -78,6 +78,7 @@
         <module name="guidance" type="oneloop"/>
         <module name="nav" type="hybrid">
             <define name="NAV_HYBRID_MAX_AIRSPEED"      value="19.0f"/>
+            <define name="NAV_HYBRID_MAX_SPEED_V"       value="3.0f"/>
             <define name="NAV_HYBRID_SPEED_MARGIN"      value="0.0f"/>
             <define name="NAV_HYBRID_MAX_ACCELERATION"  value="4.0f"/>
             <define name="NAV_HYBRID_MAX_DECELERATION"  value="2.0f"/>
@@ -244,7 +245,7 @@
         <define name  = "ACT_MIN"                   value = "{    0.0f,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f, -9600.0f, -9600.0f, -9600.0f, -M_PI_4, -M_PI_4}"/>
         <define name  = "ACT_MAX_NORM"              value = "{    1.0f,    1.0f,     1.0f,     1.0f,    1.0f,    1.0f,     1.0f,     1.0f,     1.0f,    1.0f,    1.0f}"/>
         <define name  = "ACT_MIN_NORM"              value = "{    0.0f,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f,    -1.0f,    -1.0f,    -1.0f,   -1.0f,   -1.0f}"/>
-        <define name  = "WU"                        value = "{   0.75f,   0.75f,    0.75f,    0.75f,   1.00f,   10.0f,    10.0f,    10.0f,    10.0f,   1.20f,   1.20f}"/>
+        <define name  = "WU"                        value = "{   0.75f,   0.75f,    0.75f,    0.75f,   1.00f,    6.0f,     6.0f,     6.0f,     6.0f,   1.20f,   1.20f}"/>
         <define name  = "U_PREF"                    value = "{   0.00f,   0.00f,    0.00f,    0.00f,   0.00f, 7936.0f,    0.00f,    0.00f,    0.00f,   0.00f,   0.00f}"/>
         <define name  = "WV"                        value = "{  4.0f,  4.0f,   4.0f,  8.0f,  8.0f,  1.00f}"/>   
     </section>
