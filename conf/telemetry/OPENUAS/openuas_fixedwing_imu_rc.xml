@@ -34,6 +34,8 @@
       <message name="FBW_STATUS"          period="1.1"/>
       <message name="AIR_DATA"            period="0.3"/>
       <message name="LOGGER_STATUS"            period="1.0"/>
+      <message name="SERIAL_ACT_T4_IN"    period="0.2"/>
+      <message name="SERIAL_ACT_T4_OUT"   period="0.2"/>
     </mode>
     <mode name="minimal" key_press="m">
       <message name="ALIVE"               period="5.0"/>
@@ -158,6 +160,12 @@
       <message name="DATALINK_REPORT"     period="1.0"/>
       <message name="ESC"                 period="0.1"/>
       <message name="ADC_GENERIC"         period="0.05"/>
+      
+      
+      <message name="AIRSPEED"            period="0.05"/>
+      <message name="AIRSPEED_RAW"        period="0.05"/>
+      <message name="SERIAL_ACT_T4_IN"    period="0.05"/>
+      <message name="SERIAL_ACT_T4_OUT"   period="0.05"/>
     </mode>
     <!--
     <mode name="fast">

@@ -174,7 +174,7 @@
       <field name="segment_north_2" type="float" unit="m"/>
     </message>
 
-         <message name= "SERIAL_ACT_T4_IN" id = "199">
+    <message name= "SERIAL_ACT_T4_IN" id = "199">
          <description>Received message from Serial actuator module in Teensy 4.0</description>
 
          <field name = "serial_act_t4_missed_packets" type="uint32">Missed packets on T4 serial communication</field>
