@@ -31,6 +31,7 @@ std::unique_ptr<DroneTrackingManager> droneManager;
 int verbose_rx = 0; 
 int verbose_tx = 0; 
 int send_values_on_ivy = 1; 
+int produce_log_file = 1; 
 
 int current_sixdof_mode = 1; //1 -->rel beacon pos; 2 -->rel beacon angle; 3-->sixdof mode. Default is 1. 
 
@@ -46,7 +47,7 @@ Beacon b5 {-0.30, -0.222, -0.005, 1633};
 
 //Sixdof messages: 
 struct register_sixdof_packet my_sixdof_packet; 
-int sixdof_msg_available = 0, current_mode_msg_available = 0, beacon_pos_msg_available = 0. fov_data_msg_available = 0; 
+int sixdof_msg_available = 0, current_mode_msg_available = 0, beacon_pos_msg_available = 0, fov_data_msg_available = 0; 
 
 double timestamp_beacon[N_BEACON];
 int beacon_id[N_BEACON]; 
@@ -56,26 +57,29 @@ float z_body_pos_beacon[N_BEACON];
 
 // Arrays to store beacon data for logging
 int fov_beacon_id[N_BEACON]; // Array to store beacon IDs
-double timestamp_beacon[N_BEACON]; // Array to store timestamps
+double fov_timestamp_beacon[N_BEACON]; // Array to store timestamps
 int seen_count[N_BEACON]; // Array to store the count of seen beacons
 
 // File pointer for logging
 FILE* log_file = nullptr;
+int msg_id_fov = 1, msg_id_rel_pos = 2;
 
-pthread_mutex_t mutex_ivy_bus = PTHREAD_MUTEX_INITIALIZER, mutex_fov_bus = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_ivy_bus = PTHREAD_MUTEX_INITIALIZER, mutex_fov_bus = PTHREAD_MUTEX_INITIALIZER, mutex_logger = PTHREAD_MUTEX_INITIALIZER;
 
 // Function to log FOV data
 void logFovData() {
     pthread_mutex_lock(&mutex_fov_bus);
     if (fov_data_msg_available) {
-        if (log_file != nullptr) {
+        if (log_file != nullptr && produce_log_file) {
+            pthread_mutex_lock(&mutex_logger);
             for (int i = 0; i < N_BEACON; i++) {
                 if (fov_beacon_id[i] != 0) { // Log only if there's valid data
-                    fprintf(log_file, "Timestamp: %f, Beacon ID: %d, Seen Count: %d\n",
-                            timestamp_beacon[i], fov_beacon_id[i], seen_count[i]);
+                    fprintf(log_file, "Msg_id: %d, Timestamp: %f, Beacon ID: %d, Seen Count: %d\n",
+                            msg_id_fov, fov_timestamp_beacon[i], fov_beacon_id[i], seen_count[i]);
                 }
             }
             fflush(log_file);
+            pthread_mutex_unlock(&mutex_logger);
         }
         fov_data_msg_available = 0;
     }
@@ -252,7 +256,7 @@ std::string generateLogFileName() {
     time(&rawtime);
     timeinfo = localtime(&rawtime);
 
-    strftime(buffer, sizeof(buffer), "fov_%Y%m%d_%H%M%S.txt", timeinfo);
+    strftime(buffer, sizeof(buffer), "Sixdof_log_%Y%m%d_%H%M%S.txt", timeinfo);
     return std::string(buffer);
 }
 
@@ -341,7 +345,7 @@ int main(int ac, const char *av[]) {
             clock_gettime(CLOCK_BOOTTIME, &ts);
             double current_timestamp = ts.tv_sec + ts.tv_nsec * 1e-9;
 
-            timestamp_beacon[j] = current_timestamp;
+            fov_timestamp_beacon[j] = current_timestamp;
             fov_beacon_id[j] = entry.first;    // Beacon ID
             seen_count[j] = entry.second;      // Number of optical sensors that saw the beacon
             j++;
@@ -369,6 +373,14 @@ int main(int ac, const char *av[]) {
             y_body_pos_beacon[j] = (float) b.x;
             z_body_pos_beacon[j] = (float) b.y;
             j++;
+
+            if (log_file != nullptr && produce_log_file && beacon_id[j] != 0) {
+                pthread_mutex_lock(&mutex_logger);
+                fprintf(log_file, "Msg_id: %d, Timestamp: %f, Beacon ID: %d, x_body_pos_beacon: %f, y_body_pos_beacon: %f, z_body_pos_beacon: %f\n",
+                        msg_id_rel_pos, timestamp_beacon[j], beacon_id[j], x_body_pos_beacon[j], y_body_pos_beacon[j], z_body_pos_beacon[j]);
+                fflush(log_file);
+                pthread_mutex_unlock(&mutex_logger);
+            }
         }    
         //Update flag:
         pthread_mutex_lock(&mutex_ivy_bus);
