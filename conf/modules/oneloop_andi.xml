@@ -6,7 +6,6 @@
   <settings>
    <dl_settings>
      <dl_settings NAME="oneloop">
-       <dl_setting var="Wu_ele_temp"         min="0"       step="0.5"   max="50"  shortname="Wu_ele_temp"/>
        <dl_setting var="temp_pitch"         min="0"       step="1"     max="9600"  shortname="temp_pitch"/>
        <dl_setting var="k_as"               min="1.0"     step="0.001" max="10"    shortname="k_as"/> 
        <dl_setting var="ctrl_off"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="ctrl_off"/> 
