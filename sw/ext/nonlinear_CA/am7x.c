@@ -48,6 +48,7 @@ int serial_port_tf_mini;
 float ca7_message_frequency_RX, ca7_message_frequency_TX;
 struct timeval current_time, last_time, last_sent_msg_time, aruco_time, starting_time_program_execution, time_last_opt_run, time_last_filt;
 
+
 pthread_mutex_t mutex_am7;
 
 int verbose_sixdof_com = 0;
@@ -1160,7 +1161,7 @@ static void sixdof_beacon_pos_callback(IvyClientPtr app, void *user_data, int ar
       struct aruco_detection_t aruco_detection_local; 
 
       gettimeofday(&aruco_time, NULL); 
-      aruco_detection_local.timestamp_detection = (aruco_time.tv_sec*1e6 - starting_time_program_execution.tv_sec*1e6 + aruco_time.tv_usec - starting_time_program_execution.tv_usec)*1e-6;
+      aruco_detection_local.timestamp_detection = (float) timestamp_d;
       aruco_detection_local.NED_pos_x = beacon_absolute_ned_pos[0]; 
       aruco_detection_local.NED_pos_y = beacon_absolute_ned_pos[1];  
       aruco_detection_local.NED_pos_z  = beacon_absolute_ned_pos[2];  
@@ -1248,11 +1249,8 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
         beacon_absolute_ned_pos[i] += UAV_NED_pos[i]; 
       }
 
-      //Copy absolute position to 
-      struct aruco_detection_t aruco_detection_local; 
-
-      gettimeofday(&aruco_time, NULL); 
-      aruco_detection_local.timestamp_detection = (aruco_time.tv_sec*1e6 - starting_time_program_execution.tv_sec*1e6 + aruco_time.tv_usec - starting_time_program_execution.tv_usec)*1e-6;
+      //Copy absolute position to aruco struct
+      aruco_detection_local.timestamp_detection = (float) timestamp_d;
       aruco_detection_local.NED_pos_x = beacon_absolute_ned_pos[0]; 
       aruco_detection_local.NED_pos_y = beacon_absolute_ned_pos[1];  
       aruco_detection_local.NED_pos_z  = beacon_absolute_ned_pos[2];  

@@ -10,8 +10,13 @@
 #include <ivy.h>
 #include <ivyglibloop.h>
 #include <sys/time.h>
+#include <time.h>
 #include <math.h>
 #include "custom_mode_am_v2.h"
+#include <functional>
+#include <stdint.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 using namespace Sds::DroneSDK;
 
@@ -29,7 +34,7 @@ int send_values_on_ivy = 1;
 
 int current_sixdof_mode = 1; //1 -->rel beacon pos; 2 -->rel beacon angle; 3-->sixdof mode. Default is 1. 
 
-struct timeval current_time;
+struct timespec ts;
 #define N_BEACON 5
 
 // input map
@@ -41,7 +46,7 @@ Beacon b5 {-0.30, -0.222, -0.005, 1633};
 
 //Sixdof messages: 
 struct register_sixdof_packet my_sixdof_packet; 
-int sixdof_msg_available = 0, current_mode_msg_available = 0, beacon_pos_msg_available = 0; 
+int sixdof_msg_available = 0, current_mode_msg_available = 0, beacon_pos_msg_available = 0. fov_data_msg_available = 0; 
 
 double timestamp_beacon[N_BEACON];
 int beacon_id[N_BEACON]; 
@@ -49,11 +54,40 @@ float x_body_pos_beacon[N_BEACON];
 float y_body_pos_beacon[N_BEACON];
 float z_body_pos_beacon[N_BEACON];
 
-pthread_mutex_t mutex_ivy_bus;
+// Arrays to store beacon data for logging
+int fov_beacon_id[N_BEACON]; // Array to store beacon IDs
+double timestamp_beacon[N_BEACON]; // Array to store timestamps
+int seen_count[N_BEACON]; // Array to store the count of seen beacons
+
+// File pointer for logging
+FILE* log_file = nullptr;
+
+pthread_mutex_t mutex_ivy_bus = PTHREAD_MUTEX_INITIALIZER, mutex_fov_bus = PTHREAD_MUTEX_INITIALIZER;
+
+// Function to log FOV data
+void logFovData() {
+    pthread_mutex_lock(&mutex_fov_bus);
+    if (fov_data_msg_available) {
+        if (log_file != nullptr) {
+            for (int i = 0; i < N_BEACON; i++) {
+                if (fov_beacon_id[i] != 0) { // Log only if there's valid data
+                    fprintf(log_file, "Timestamp: %f, Beacon ID: %d, Seen Count: %d\n",
+                            timestamp_beacon[i], fov_beacon_id[i], seen_count[i]);
+                }
+            }
+            fflush(log_file);
+        }
+        fov_data_msg_available = 0;
+    }
+    pthread_mutex_unlock(&mutex_fov_bus);
+}
 
 // Function to manage the ivy bus communication going out: 
 void ivy_bus_out_handle() {
     while(true){
+
+        // Log FOV data to file
+        logFovData();
 
         //Check if new 6dof position message is available and send it to the ivy bus: 
         if(sixdof_msg_available){
@@ -76,8 +110,8 @@ void ivy_bus_out_handle() {
 
         //Check if new mode message is available and send it to the ivy bus: 
         if(current_mode_msg_available){
-            gettimeofday(&current_time, NULL);
-            double current_timestamp = (double) (current_time.tv_sec + current_time.tv_usec*1e-6);
+            clock_gettime(CLOCK_BOOTTIME, &ts);
+            double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9; 
 
             if(send_values_on_ivy){
                 IvySendMsg("SIXDOF_SYSTEM_CURRENT_MODE %f %d", current_timestamp, current_sixdof_mode);  
@@ -209,6 +243,32 @@ static void ivy_set_sixdof_mode(IvyClientPtr app, void *user_data, int argc, cha
     }
 }
 
+// Function to generate log file name based on the current time of day
+std::string generateLogFileName() {
+    time_t rawtime;
+    struct tm* timeinfo;
+    char buffer[80];
+
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    strftime(buffer, sizeof(buffer), "fov_%Y%m%d_%H%M%S.txt", timeinfo);
+    return std::string(buffer);
+}
+
+// Initialize the log file in the "logs" subfolder
+void initializeLogFile() {
+    // Create the "logs" subfolder if it doesn't exist
+    const char* folder_name = "logs";
+    mkdir(folder_name, 0777);
+
+    std::string log_file_name = std::string(folder_name) + "/" + generateLogFileName();
+    log_file = fopen(log_file_name.c_str(), "a");
+    if (log_file == nullptr) {
+        perror("Failed to open log file");
+    }
+}
+
 /* This is an example of Relative Beacon tracking */
 int main(int ac, const char *av[]) {
 
@@ -224,6 +284,9 @@ int main(int ac, const char *av[]) {
 
     // Initialize the GLib main loop
     GMainLoop *ml = g_main_loop_new(NULL, FALSE);
+
+    // Initialize log file
+    initializeLogFile();
 
     Version version = getVersion();
     std::cout << "Using SdsDroneSdk version: " << version.getString() << std::endl;
@@ -245,8 +308,8 @@ int main(int ac, const char *av[]) {
 
     droneManager->registerRelativeAngleCallback([](const RelativeAngleCollection& col){
         for (const RelativeAngle& ra : col) { 
-            gettimeofday(&current_time, NULL);
-            double current_timestamp = (double) (current_time.tv_sec + current_time.tv_usec*1e-6);
+            clock_gettime(CLOCK_BOOTTIME, &ts);
+            double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9; 
             if(verbose_tx){
                 std::cout << "ID: " << ra.id
                         << std::fixed << std::setprecision(5)
@@ -264,6 +327,31 @@ int main(int ac, const char *av[]) {
         }
     });
 
+    droneManager->registerFieldOfViewReportCallback([](const FieldOfViewReport& report) {
+        pthread_mutex_lock(&mutex_fov_bus);
+        // Initialize or reset variables
+        for (int i = 0; i < N_BEACON; i++) {
+            fov_beacon_id[i] = 0;
+            seen_count[i] = 0; 
+        }
+
+        // Process the FieldOfViewReport
+        int j = 0;
+        for (const auto& entry : report.seenBeacons) {
+            clock_gettime(CLOCK_BOOTTIME, &ts);
+            double current_timestamp = ts.tv_sec + ts.tv_nsec * 1e-9;
+
+            timestamp_beacon[j] = current_timestamp;
+            fov_beacon_id[j] = entry.first;    // Beacon ID
+            seen_count[j] = entry.second;      // Number of optical sensors that saw the beacon
+            j++;
+        }
+
+        // Update flag and notify
+        fov_data_msg_available = 1;
+        pthread_mutex_unlock(&mutex_fov_bus);
+    });
+
     droneManager->registerPoseRelativeBeaconCallback([](const PoseRelativeBeaconCollection& col){
         //zeros all the indexes for the ivy comm: 
         for (int i = 0; i < N_BEACON; i++){
@@ -272,8 +360,8 @@ int main(int ac, const char *av[]) {
         //copy values on structure
         int j = 0;
         for (const PoseRelativeBeacon& b : col) {
-            gettimeofday(&current_time, NULL);
-            double current_timestamp = (double) (current_time.tv_sec + current_time.tv_usec*1e-6);
+            clock_gettime(CLOCK_BOOTTIME, &ts);
+            double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9; 
 
             timestamp_beacon[j] = current_timestamp; 
             beacon_id[j] = (int) b.id; 
@@ -289,8 +377,8 @@ int main(int ac, const char *av[]) {
     });
 
     droneManager->registerPose6DofCallback([](const Pose6Dof& sd){
-        gettimeofday(&current_time, NULL);
-        double current_timestamp = (double) (current_time.tv_sec + current_time.tv_usec*1e-6);
+        clock_gettime(CLOCK_BOOTTIME, &ts);
+        double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9;
         
         float quat_array[4] = {(float) sd.qw, (float) sd.qz, (float) sd.qx, (float) sd.qy};
         float euler_angles[3];
