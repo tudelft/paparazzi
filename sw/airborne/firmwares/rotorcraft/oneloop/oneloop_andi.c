@@ -246,7 +246,6 @@ float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
 #define WLS_N_V == ANDI_OUTPUTS
 #endif
 
-static bool airspeed_ctrl = false;
 #ifndef ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD
 #define ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD 10.0
 #endif
@@ -276,6 +275,11 @@ float max_v_nav = NAV_HYBRID_MAX_AIRSPEED; // Consider implications of differenc
 float max_v_nav = 5.0;
 #endif
 
+#ifdef NAV_HYBRID_MAX_SPEED_V
+float max_v_nav_v = NAV_HYBRID_MAX_SPEED_V;
+#else
+float max_v_nav_v = 1.0;
+#endif
 #ifndef FWD_SIDESLIP_GAIN
 float fwd_sideslip_gain = 0.2;
 #else
@@ -309,6 +313,7 @@ void  ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref
 void  ec_3rd_pos(float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, int n);
 void  calc_model(void);
 float oneloop_andi_sideslip(void);
+void  reshape_wind(void);
 void  chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
 void  chirp_call(bool* chirp_on, bool* chirp_first_call, float* t_0_chirp, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
 
@@ -347,7 +352,7 @@ bool heading_manual = false;
 bool yaw_stick_in_auto = false;
 bool ctrl_off = false;
 /*WLS Settings*/
-static float gamma_wls = 30; //This is actually sqrt(gamma) in the WLS algorithm
+static float gamma_wls = 100; //30; //This is actually sqrt(gamma) in the WLS algorithm
 static float du_min_1l[ANDI_NUM_ACT_TOT]; 
 static float du_max_1l[ANDI_NUM_ACT_TOT];
 static float du_pref_1l[ANDI_NUM_ACT_TOT];
@@ -1279,41 +1284,7 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
       rm_3rd_pos(dt_1l, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target, k_pos_rm.k1, k_pos_rm.k2, k_pos_rm.k3, max_v_nav, max_a_nav, max_j_nav, 2);    
     } else if (rm_order_h == 2){
       float_vect_copy(oneloop_andi.gui_ref.pos, oneloop_andi.gui_state.pos,2);
-      // Wind compensation
-      float as = airspeed_filt.o[0];
-      as = positive_non_zero(as);
-      //float wind[2];
-      float gs = float_vect_norm(oneloop_andi.gui_state.vel,2);
-      gs = positive_non_zero(gs);
-      float nt = float_vect_norm(nav_target,2);
-      nt = positive_non_zero(nt);
-      float gs_des = gs;
-      float des_airspeed = nt;//nav_max_speed;
-      float ratio_des_gs = 1.0;
-      
-      float upper_bound_as = Min(ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD,nav_max_speed)+2.0; //add time counter as well
-      float lower_bound_as = Min(ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD,nav_max_speed)-2.0;
-      if (!airspeed_ctrl && as > (upper_bound_as)) {
-        airspeed_ctrl = true;
-      } else if (airspeed_ctrl && as < (lower_bound_as)) {
-        airspeed_ctrl = false;
-      }
-      printf("Air Speed Control: %d\n",airspeed_ctrl);
-      printf("Air Speed: %f\n",as);
-      printf("Ground Speed: %f\n",gs);
-      printf("Nav Target: %f\n",nt);
-      if (airspeed_ctrl){
-        gs_des = gs +  k_as * (des_airspeed - as);
-        if (gs_des < 0.0){
-          printf("Wind Warning: Increase desired airspeed\n");
-        }
-        ratio_des_gs = positive_non_zero(gs_des/nt);
-        printf("Ratio: %f\n",ratio_des_gs);
-        printf("Desired Ground Speed: %f\n",gs_des);
-        nav_target[0] = nav_target[0] * ratio_des_gs;
-        nav_target[1] = nav_target[1] * ratio_des_gs;
-      }
-
+      reshape_wind();
       rm_2nd_pos(dt_1l, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target, k_pos_rm.k2, k_pos_rm.k3, max_a_nav, max_j_nav, 2);   
     } else if (rm_order_h == 1){
       float_vect_copy(oneloop_andi.gui_ref.pos, oneloop_andi.gui_state.pos,2);
@@ -1349,7 +1320,6 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     float single_value_k1_rm[1]      = {k_pos_rm.k1[2]};
     float single_value_k2_rm[1]      = {k_pos_rm.k2[2]};
     float single_value_k3_rm[1]      = {k_pos_rm.k3[2]};
-    float max_v_nav_v = 1.0;
     if (rm_order_v == 3){
       rm_3rd_pos(dt_1l, single_value_ref, single_value_d_ref, single_value_2d_ref, single_value_3d_ref, single_value_nav_target, single_value_k1_rm, single_value_k2_rm, single_value_k3_rm, max_v_nav_v, max_a_nav, max_j_nav, 1);    
       oneloop_andi.gui_ref.pos[2] = single_value_ref[0];
@@ -1913,4 +1883,72 @@ void chirp_call(bool *chirp_on, bool *chirp_first_call, float* t_0, float* time_
 /** Quadplanes can still be in-flight with COMMAND_THRUST==0 and can even soar not descending in updrafts with all thrust off */
 bool autopilot_in_flight_end_detection(bool motors_on UNUSED) {
   return ! motors_on;
+}
+
+// compute accel setpoint from speed setpoint (use global variables ! FIXME)
+void reshape_wind(void)
+{
+  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+
+  //for rc control horizontal, rotate from body axes to NED
+  float psi = eulers_zxy.psi;
+  float cpsi = cosf(psi);
+  float spsi = sinf(psi);
+  struct FloatVect2 nav_target_vect = {nav_target[0], nav_target[1]};
+  float speed_sp_b_x =  cpsi * nav_target_vect.x + spsi * nav_target_vect.y;
+  float speed_sp_b_y = -spsi * nav_target_vect.x + cpsi * nav_target_vect.y;
+
+  float airspeed = airspeed_filt.o[0];
+  struct FloatVect2 airspeed_v = { cpsi * airspeed, spsi * airspeed };
+  struct FloatVect2 windspeed;
+  struct FloatVect2 groundspeed = { oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.vel[1] };
+  VECT2_DIFF(windspeed, groundspeed, airspeed_v);
+  struct FloatVect2 desired_airspeed;
+  VECT2_DIFF(desired_airspeed, nav_target_vect, windspeed); // Use 2d part of nav_target_vect
+  float norm_des_as = FLOAT_VECT2_NORM(desired_airspeed);
+
+  // Make turn instead of straight line
+  if ((airspeed > ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD) && (norm_des_as > (ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD+2.0f))) {
+    // Give the wind cancellation priority.
+    if (norm_des_as > nav_max_speed) {
+      float groundspeed_factor = 0.0f;
+      // if the wind is faster than we can fly, just fly in the wind direction
+      if (FLOAT_VECT2_NORM(windspeed) < nav_max_speed) {
+        float av = nav_target_vect.x * nav_target_vect.x + nav_target_vect.y * nav_target_vect.y;
+        float bv = -2.f * (windspeed.x * nav_target_vect.x + windspeed.y * nav_target_vect.y);
+        float cv = windspeed.x * windspeed.x + windspeed.y * windspeed.y - nav_max_speed * nav_max_speed;
+        float dv = bv * bv - 4.0f * av * cv;
+        // dv can only be positive, but just in case
+        if (dv < 0.0f) {
+          dv = fabsf(dv);
+        }
+        float d_sqrt = sqrtf(dv);
+        groundspeed_factor = (-bv + d_sqrt)  / (2.0f * av);
+      }
+      desired_airspeed.x = groundspeed_factor * nav_target_vect.x - windspeed.x;
+      desired_airspeed.y = groundspeed_factor * nav_target_vect.y - windspeed.y;
+      speed_sp_b_x = nav_max_speed;
+    }
+    // desired airspeed can not be larger than max airspeed
+    speed_sp_b_x = Min(norm_des_as, nav_max_speed);
+    if (rotwing_state_settings.force_forward) {
+      speed_sp_b_x = nav_max_speed;
+    }
+    nav_target[0] = cpsi * speed_sp_b_x - spsi * speed_sp_b_y;
+    nav_target[1] = spsi * speed_sp_b_x + cpsi * speed_sp_b_y;
+  }
+  else { // Go somewhere in the shortest way
+    if (airspeed > 10.f) {
+      // Groundspeed vector in body frame
+      float groundspeed_x = cpsi * groundspeed.x + spsi * groundspeed.y;
+      float speed_increment = speed_sp_b_x - groundspeed_x;
+
+      // limit groundspeed setpoint to max_airspeed + (diff gs and airspeed)
+      if ((speed_increment + airspeed) > nav_max_speed) {
+        speed_sp_b_x = nav_max_speed + groundspeed_x - airspeed;
+      }
+    }
+    nav_target[0] = cpsi * speed_sp_b_x - spsi * speed_sp_b_y;
+    nav_target[1] = spsi * speed_sp_b_x + cpsi * speed_sp_b_y;
+  }
 }

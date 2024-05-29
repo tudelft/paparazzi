@@ -92,7 +92,7 @@ struct guidance_indi_hybrid_params {
   float liftd_p50;
 };
 extern struct guidance_indi_hybrid_params gih_params;
-extern bool force_forward; 
+//extern bool force_forward; 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct OneloopGuidanceRef {
   float pos[3];     
