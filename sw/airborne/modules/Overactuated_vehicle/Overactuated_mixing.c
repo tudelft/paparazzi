@@ -470,10 +470,12 @@ static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am
         waypoint_set_enu(WP_STDBY, &target_pos_sixdof); 
          // Send to the GCS that the waypoint has been moved
         static uint8_t wp_id = WP_STDBY;
-        DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-                                &waypoints[WP_STDBY].enu_i.x,
-                                &waypoints[WP_STDBY].enu_i.y,
-                                &waypoints[WP_STDBY].enu_i.z);
+        RunOnceEvery(PERIODIC_FREQUENCY / 2, { //Update STBY waypoint every 0.5 seconds
+            DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+                                    &waypoints[WP_STDBY].enu_i.x,
+                                    &waypoints[WP_STDBY].enu_i.y,
+                                    &waypoints[WP_STDBY].enu_i.z);
+        });
 
     #endif
 }
@@ -1618,8 +1620,6 @@ void overactuated_mixing_run(void)
 
         //Do not use ailerons. Put them in neutral position 
         indi_u[14] = 0;
-
-        send_values_to_raspberry_pi();
     }
 
     /// Case of INDI control mode with external nonlinear function:
@@ -1740,9 +1740,9 @@ void overactuated_mixing_run(void)
         manual_theta_value = MANUAL_CONTROL_MAX_CMD_PITCH_ANGLE * radio_control.values[RADIO_MANUAL_PITCH_CMD] / MAX_PPRZ;
 
         #ifdef USE_EXT_REF_ATTITUDE
-            if(approach_state){
-            manual_phi_value = ship_info_receive.phi * M_PI/180;
-            manual_theta_value = ship_info_receive.theta * M_PI/180;
+            if(approach_state && control_mode_ovc_vehicle == 3){
+                manual_phi_value = ship_info_receive.phi * M_PI/180;
+                manual_theta_value = ship_info_receive.theta * M_PI/180;
             }
         #endif
 
@@ -1789,15 +1789,15 @@ void overactuated_mixing_run(void)
             // if(fabs(euler_vect[1]) <= max_value_error.theta){
             //     theta_dot += ship_info_receive.theta_dot * M_PI/180;
             // }
-            if(approach_state){
-            if(fabs(euler_vect[0]) <= max_value_error.phi){
+            if(approach_state && control_mode_ovc_vehicle == 3){
+                if(fabs(euler_vect[0]) <= max_value_error.phi){
                     phi_dot += ship_info_receive.phi_dot * M_PI/180;
-            }
-            if(fabs(euler_vect[1]) <= max_value_error.theta){
+                }
+                if(fabs(euler_vect[1]) <= max_value_error.theta){
                     theta_dot += ship_info_receive.theta_dot * M_PI/180;
                 }                
-                // phi_dot += myam7_data_in_local.phi_dot_cmd_int * 1e-1 * M_PI/180;
-                // theta_dot += myam7_data_in_local.theta_dot_cmd_int * 1e-1 * M_PI/180;
+                    // phi_dot += myam7_data_in_local.phi_dot_cmd_int * 1e-1 * M_PI/180;
+                    // theta_dot += myam7_data_in_local.theta_dot_cmd_int * 1e-1 * M_PI/180;
             }
         #endif 
 
@@ -1961,9 +1961,6 @@ void overactuated_mixing_run(void)
         INDI_pseudocontrol[0] = acc_setpoint[0] - accel_vect_filt_control_rf[0];
         INDI_pseudocontrol[1] = acc_setpoint[1] - accel_vect_filt_control_rf[1];
         INDI_pseudocontrol[2] = acc_setpoint[2] - accel_vect_filt_control_rf[2];
-
-        //Send desired accelleration increments to the Raspberry pi:
-        send_values_to_raspberry_pi();
 
         //Retrieve actuator commands from the Raspberry Pi and assign them to the indi_u array
         indi_u[0] =  (myam7_data_in_local.motor_1_cmd_int * 1e-1);
@@ -2209,7 +2206,9 @@ void overactuated_mixing_run(void)
 
     }
 
+
     //Send to the raspberry pi the values for the next optimization run.
+    send_values_to_raspberry_pi();
     AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &am7_data_out_local, extra_data_out_local);
 
     #ifdef FBW_ACTUATORS

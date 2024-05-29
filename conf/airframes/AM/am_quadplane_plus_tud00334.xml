@@ -143,6 +143,7 @@
       <define name="NAV_HYBRID_SPEED_MARGIN" value="10"/>
       <define name="NAV_HYBRID_NAV_LINE_DIST" value="50"/>
       <define name="NAV_HYBRID_MAX_DECELERATION" value="WP_CONTROL_MAX_DECEL_WP_APPROACH"/>
+      <define name="NAV_HYBRID_NAV_CIRCLE_DIST" value="40"/>
     </module>
 
     <module name="ahrs" type="float_cmpl_quat">
@@ -768,7 +769,7 @@
   </section>
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="MAX_BANK" value="30" unit="deg"/>
+    <define name="MAX_BANK" value="OVERACTUATED_MIXING_MAX_PHI"/>
     <define name="USE_SPEED_REF" value="TRUE"/>
     <define name="PGAIN" value="60"/>
     <define name="DGAIN" value="100"/>
