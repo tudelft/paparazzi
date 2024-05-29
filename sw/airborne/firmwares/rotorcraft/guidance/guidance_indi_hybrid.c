@@ -208,6 +208,10 @@ float du_max_gih[GUIDANCE_INDI_HYBRID_U];
 float du_pref_gih[GUIDANCE_INDI_HYBRID_U];
 float *Bwls_gih[GUIDANCE_INDI_HYBRID_V];
 
+#ifndef GUIDANCE_INDI_SOARING_CTRL_SWITCH
+#define GUIDANCE_INDI_SOARING_CTRL_SWITCH FALSE
+#endif
+
 // for soaring
 #ifdef GUIDANCE_INDI_SOARING_CTRL_SWITCH
 float du_min_gih_reduced[GUIDANCE_INDI_HYBRID_U-1];
@@ -472,30 +476,37 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
             wls_alloc_gd(du_gih, v_gih, du_min_gih, du_max_gih,
                                Bwls_gih, 0, 0, Wv_gih, Wu_gih, du_pref_gih, 1000, 10);
 
-    #ifdef GUIDANCE_INDI_SOARING_CTRL_SWITCH
+    // TODO: clean up
+    #if GUIDANCE_INDI_SOARING_CTRL_SWITCH
+//    printf("starting ctrl_switch.. %f\n", thr_saturation);
         if (thr_saturation < 0) {       // negative saturation
             // Ga, wls_setting, WLS
 
+//            printf("thr saturated\n");
             // altitude control (z ctrl, let go of x)
             guidance_indi_calcg_wing_reduced(Ga_reduced, a_diff, v_gih_reduced, 0);
 
             // horizontal control (x ctrl, let go of z)
 //            guidance_indi_calcg_reduced(Ga_reduced, a_diff, v_gih_reduced, 1);
 
+//            printf("call wls settings..\n");
             // wls settings
             guidance_indi_hybrid_set_wls_settings_reduced(v_gih_reduced, roll_filt.o[0], pitch_filt.o[0]);
 
+//            printf("calling wls alloc..\n");
             // wls alloc
         float pitch_saturation =
                 wls_alloc_gd_reduced(du_gih_reduced, v_gih_reduced, du_min_gih_reduced, du_max_gih_reduced,
                                    Bwls_gih_reduced, 0, 0, Wv_gih_reduced, Wu_gih_reduced, du_pref_gih_reduced,
                                    1000, 10);
+//            printf("allocation finished..%f\n", pitch_saturation);
 
             euler_cmd.x = du_gih_reduced[0];
             euler_cmd.y = du_gih_reduced[1];
             euler_cmd.z = -1;
 
         } else {
+//            printf("thr not saturated\n");
               euler_cmd.x = du_gih[0];
               euler_cmd.y = du_gih[1];
               euler_cmd.z = du_gih[2];

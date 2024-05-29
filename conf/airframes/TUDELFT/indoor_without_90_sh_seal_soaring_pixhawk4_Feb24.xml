@@ -843,7 +843,7 @@ NOTES:
 
       <!--    SOARING-->
       <!-- switch controller when thr is negatively saturated -->
-      <define name="SOARING_CTRL_SWITCH" value="TRUE"/>
+      <define name="SOARING_CTRL_SWITCH" value="FALSE"/>
 
     <define name="PREF_THROTTLE" value="-0.1"/>
 

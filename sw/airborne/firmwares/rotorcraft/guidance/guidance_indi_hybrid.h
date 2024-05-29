@@ -49,9 +49,11 @@ extern void guidance_indi_init(void);
 extern void guidance_indi_enter(void);
 extern float guidance_indi_get_liftd(float pitch, float theta);
 extern void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_HYBRID_U], struct FloatVect3 a_diff, float v_body[GUIDANCE_INDI_HYBRID_V]);
+extern void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED][GUIDANCE_INDI_HYBRID_U_REDUCED], struct FloatVect3 a_diff, float v_body[GUIDANCE_INDI_HYBRID_V_REDUCED], bool altitude_ctrl);
 
 #if GUIDANCE_INDI_HYBRID_USE_WLS
 extern void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, float pitch_angle);
+extern void guidance_indi_hybrid_set_wls_settings_reduced(float body_v[2], float roll_angle, float pitch_angle);
 #endif
 
 enum GuidanceIndiHybrid_HMode {

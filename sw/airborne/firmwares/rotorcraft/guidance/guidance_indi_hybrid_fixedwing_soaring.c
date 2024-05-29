@@ -413,6 +413,10 @@ float guidance_indi_soaring_get_liftd(float aoa, float airspeed, float Q);
 float guidance_indi_soaring_get_drag(float aoa, float airspeed, float Q);
 float guidance_indi_soaring_get_dragd(float aoa, float airspeed, float Q);
 
+float guidance_indi_soaring_get_lift_spline(float aoa, float airspeed, float Q, float offset_aoa, float scale_aoa, float offset_cl, float scale_cl);
+float guidance_indi_soaring_get_liftd_spline(float aoa, float airspeed, float Q, float offset_aoa, float scale_aoa, float scale_cl);
+float guidance_indi_soaring_get_dragd_spline(float aoa, float airspeed, float Q, float offset_aoa, float scale_aoa, float scale_cl);
+
 #define DEG2RAD 0.017
 
 #if PERIODIC_TELEMETRY
@@ -797,6 +801,105 @@ struct FloatVect3 compute_soaring_accel_sp(struct HorizontalGuidance *gh, struct
     return accel_sp;
 }
 
+float guidance_indi_soaring_get_lift_spline(float aoa, float airspeed, float Q, float offset_aoa, float scale_aoa, float offset_cl, float scale_cl) {
+    aoa = aoa/scale_aoa - offset_aoa;
+
+    float cl = -12 * (aoa) + 4.5078;
+
+    if (aoa < -0.235619) {
+        cl = -1;
+    } else if ((-0.235619 <= aoa) && (aoa < -0.218166)){
+        cl = -247.674812 * (aoa + 0.235619)*(aoa + 0.235619)*(aoa + 0.235619) + 101.948160 * (aoa + 0.235619)*(aoa + 0.235619) - 4.573169 * (aoa + 0.235619) - 0.996307;
+    } else if ((-0.218166 <= aoa) && (aoa < -0.200713)){
+        cl = 193.097364 * (aoa + 0.218166)*(aoa + 0.218166)*(aoa + 0.218166) + 88.979937 * (aoa + 0.218166)*(aoa + 0.218166) - 1.240845 * (aoa + 0.218166) - 1.046385;
+    } else if ((-0.200713 <= aoa) && (aoa < -0.178024)){
+        cl = -991.640866 * (aoa + 0.200713)*(aoa + 0.200713)*(aoa + 0.200713) + 99.090491 * (aoa + 0.200713)*(aoa + 0.200713) + 2.041603 * (aoa + 0.200713) - 1.039911;
+    } else if ((-0.178024 <= aoa) && (aoa < -0.125664)){
+        cl = -254.935748 * (aoa + 0.178024)*(aoa + 0.178024)*(aoa + 0.178024) + 31.591639 * (aoa + 0.178024)*(aoa + 0.178024) + 5.006686 * (aoa + 0.178024) - 0.954159;
+    } else if ((-0.125664 <= aoa) && (aoa < -0.073304)){
+        cl = 67.967026 * (aoa + 0.125664)*(aoa + 0.125664)*(aoa + 0.125664) - 8.453575 * (aoa + 0.125664)*(aoa + 0.125664) + 6.218193 * (aoa + 0.125664) - 0.641994;
+    } else if ((-0.073304 <= aoa) && (aoa < -0.020944)){
+        cl = -16.932355 * (aoa + 0.073304)*(aoa + 0.073304)*(aoa + 0.073304) + 2.222661 * (aoa + 0.073304)*(aoa + 0.073304) + 5.891943 * (aoa + 0.073304) - 0.329830;
+    } else if ((-0.020944 <= aoa) && (aoa < 0.031416)){
+        cl = -0.237607 * (aoa + 0.020944)*(aoa + 0.020944)*(aoa + 0.020944) - 0.437067 * (aoa + 0.020944)*(aoa + 0.020944) + 5.985436 * (aoa + 0.020944) - 0.017666;
+    } else if ((0.031416 <= aoa) && (aoa < 0.083776)){
+        cl = 17.882781 * (aoa - 0.031416)*(aoa - 0.031416)*(aoa - 0.031416) - 0.474391 * (aoa - 0.031416)*(aoa - 0.031416) + 5.937712 * (aoa - 0.031416) + 0.294499;
+    } else if ((0.083776 <= aoa) && (aoa < 0.136136)){
+        cl = -71.293517 * (aoa - 0.083776)*(aoa - 0.083776)*(aoa - 0.083776) + 2.334630 * (aoa - 0.083776)*(aoa - 0.083776) + 6.035114 * (aoa - 0.083776) + 0.606663;
+    } else if ((0.136136 <= aoa) && (aoa < 0.191986)){
+        cl = -57.652565 * (aoa - 0.136136)*(aoa - 0.136136)*(aoa - 0.136136) - 8.864129 * (aoa - 0.136136)*(aoa - 0.136136) + 5.693230 * (aoa - 0.136136) + 0.918827;
+    } else if ((0.191986 <= aoa) && (aoa < 0.205076)){
+        cl = -1344.196915 * (aoa - 0.191986)*(aoa - 0.191986)*(aoa - 0.191986) - 18.523909 * (aoa - 0.191986)*(aoa - 0.191986) + 4.163594 * (aoa - 0.191986) + 1.199104;
+    } else if ((0.205076 <= aoa) && (aoa < 0.218166)){
+        cl = 360.176649 * (aoa - 0.205076)*(aoa - 0.205076)*(aoa - 0.205076) - 71.310399 * (aoa - 0.205076)*(aoa - 0.205076) + 2.987665 * (aoa - 0.205076) + 1.247416;
+    } else if ((0.218166 <= aoa) && (aoa < 0.231256)){
+        cl = -96.509680 * (aoa - 0.218166)*(aoa - 0.218166)*(aoa - 0.218166) - 57.166295 * (aoa - 0.218166)*(aoa - 0.218166) + 1.305910 * (aoa - 0.218166) + 1.275114;
+    } else if ((0.231256 <= aoa) && (aoa < 0.244346)){
+        cl = 25.862071 * (aoa - 0.231256)*(aoa - 0.231256)*(aoa - 0.231256) - 60.956221 * (aoa - 0.231256)*(aoa - 0.231256) - 0.240311 * (aoa - 0.231256) + 1.282196;
+    } else if ((0.244346 <= aoa) && (aoa < 0.257436)){
+        cl = -6.938604 * (aoa - 0.244346)*(aoa - 0.244346)*(aoa - 0.244346) - 59.940620 * (aoa - 0.244346)*(aoa - 0.244346) - 1.822847 * (aoa - 0.244346) + 1.268664;
+    } else if ((0.257436 <= aoa) && (aoa < 0.270526)){
+        cl = 1.892347 * (aoa - 0.257436)*(aoa - 0.257436)*(aoa - 0.257436) - 60.213098 * (aoa - 0.257436)*(aoa - 0.257436) - 3.395655 * (aoa - 0.257436) + 1.234517;
+    } else if ((0.270526 <= aoa) && (aoa < 0.283616)){
+        cl = -0.630782 * (aoa - 0.270526)*(aoa - 0.270526)*(aoa - 0.270526) - 60.138786 * (aoa - 0.270526)*(aoa - 0.270526) - 4.971058 * (aoa - 0.270526) + 1.179754;
+    } else {
+        cl = -12 * (aoa) + 4.5078;
+    }
+
+    return (cl*scale_cl+offset_cl)*Q*airspeed*airspeed;
+}
+float guidance_indi_soaring_get_liftd_spline(float aoa, float airspeed, float Q, float offset_aoa, float scale_aoa, float scale_cld) {
+    aoa = aoa/scale_aoa - offset_aoa;
+    float cld = -12;
+
+    if (aoa < -0.235619){
+        cld = -4.44724;
+    } else if ((-0.235619 <= aoa) && (aoa < -0.218166)){
+        cld = 3 * -247.674812 * (aoa + 0.235619)*(aoa + 0.235619) + 2 * 101.948160 * (aoa + 0.235619) - 4.573169;
+    } else if ((-0.218166 <= aoa) && (aoa < -0.200713)){
+        cld = 3 * 193.097364 * (aoa + 0.218166)*(aoa + 0.218166) + 2 * 88.979937 * (aoa + 0.218166) - 1.240845;
+    } else if ((-0.200713 <= aoa) && (aoa < -0.178024)){
+        cld = 3 * -991.640866 * (aoa + 0.200713)*(aoa + 0.200713) + 2 * 99.090491 * (aoa + 0.200713) + 2.041603;
+    } else if ((-0.178024 <= aoa) && (aoa < -0.125664)){
+        cld = 3 * -254.935748 * (aoa + 0.178024)*(aoa + 0.178024) + 2 * 31.591639 * (aoa + 0.178024) + 5.006686;
+    } else if ((-0.125664 <= aoa) && (aoa < -0.073304)){
+        cld = 3 * 67.967026 * (aoa + 0.125664)*(aoa + 0.125664) + 2 * -8.453575 * (aoa + 0.125664) + 6.218193;
+    } else if ((-0.073304 <= aoa) && (aoa < -0.020944)){
+        cld = 3 * -16.932355 * (aoa + 0.073304)*(aoa + 0.073304) + 2 * 2.222661 * (aoa + 0.073304) + 5.891943;
+    } else if ((-0.020944 <= aoa) && (aoa < 0.031416)){
+        cld = 3 * -0.237607 * (aoa + 0.020944)*(aoa + 0.020944) + 2 * -0.437067 * (aoa + 0.020944) + 5.985436;
+    } else if ((0.031416 <= aoa) && (aoa < 0.083776)){
+        cld = 3 * 17.882781 * (aoa - 0.031416)*(aoa - 0.031416) + 2 * -0.474391 * (aoa - 0.031416) + 5.937712;
+    } else if ((0.083776 <= aoa) && (aoa < 0.136136)){
+        cld = 3 * -71.293517 * (aoa - 0.083776)*(aoa - 0.083776) + 2 * 2.334630 * (aoa - 0.083776) + 6.035114;
+    } else if ((0.136136 <= aoa) && (aoa < 0.191986)){
+        cld = 3 * -57.652565 * (aoa - 0.136136)*(aoa - 0.136136) + 2 * -8.864129 * (aoa - 0.136136) + 5.693230;
+    } else if ((0.191986 <= aoa) && (aoa < 0.205076)){
+        cld = 3 * -1344.196915 * (aoa - 0.191986)*(aoa - 0.191986) + 2 * -18.523909 * (aoa - 0.191986) + 4.163594;
+    } else if ((0.205076 <= aoa) && (aoa < 0.218166)){
+        cld = 3 * 360.176649 * (aoa - 0.205076)*(aoa - 0.205076) + 2 * -71.310399 * (aoa - 0.205076) + 2.987665;
+    } else if ((0.218166 <= aoa) && (aoa < 0.231256)){
+        cld = 3 * -96.509680 * (aoa - 0.218166)*(aoa - 0.218166) + 2 * -57.166295 * (aoa - 0.218166) + 1.305910;
+    } else if ((0.231256 <= aoa) && (aoa < 0.244346)){
+        cld = 3 * 25.862071 * (aoa - 0.231256)*(aoa - 0.231256) + 2 * -60.956221 * (aoa - 0.231256) - 0.240311;
+    } else if ((0.244346 <= aoa) && (aoa < 0.257436)){
+        cld = 3 * -6.938604 * (aoa - 0.244346)*(aoa - 0.244346) + 2 * -59.940620 * (aoa - 0.244346) - 1.822847;
+    } else if ((0.257436 <= aoa) && (aoa < 0.270526)){
+        cld = 3 * 1.892347 * (aoa - 0.257436)*(aoa - 0.257436) + 2 * -60.213098 * (aoa - 0.257436) - 3.395655;
+    } else if ((0.270526 <= aoa) && (aoa < 0.283616)) {
+        cld = 3 * -0.630782 * (aoa - 0.270526)*(aoa - 0.270526) + 2 * -60.138786 * (aoa - 0.270526) - 4.971058;
+    } else {
+        cld = -12;
+    }
+    return (cld*scale_cld/scale_aoa)*Q*airspeed*airspeed;     // TODO: check sign
+}
+
+float guidance_indi_soaring_get_dragd_spline(float aoa, float airspeed, float Q,  float offset_aoa, float scale_aoa, float scale_cl) {
+    float cdd = 0;
+
+    return cdd*Q*airspeed*airspeed;
+}
+
 float guidance_indi_soaring_get_lift(float aoa, float airspeed, float Q) {
     float c_lift = 0.0;
     if (aoa < -0.5236) {            // -30 deg;
@@ -922,7 +1025,7 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
 //    Bound(pitch_lift,-M_PI_2,0);
     float lift = -cosf(pitch_lift)*9.81;
     float T = sinf(pitch_lift)*9.81;
-    float drag = -sinf(pitch_lift)*9.81;
+//    float drag = -sinf(pitch_lift)*9.81;
 
     float airspeed = stateGetAirspeed_f();
     float Q = 0.1574;       // 0.5 rho S
@@ -945,7 +1048,7 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
         lift = guidance_indi_soaring_get_lift(aoa, airspeed, Q);
         liftd = guidance_indi_soaring_get_liftd(aoa, airspeed, Q);
 
-        drag = guidance_indi_soaring_get_drag(aoa, airspeed, Q);
+//        drag = guidance_indi_soaring_get_drag(aoa, airspeed, Q);
         dragd = guidance_indi_soaring_get_dragd(aoa, airspeed, Q);
     }
 
@@ -967,8 +1070,8 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
 
     // Gd, just in case
     if (guidance_indi_soaring_use_drag) {
-        Gmat[0][1] += -cpsi*dragd;
-        Gmat[1][1] += -spsi*dragd;
+        Gmat[0][1] += cpsi*dragd;
+        Gmat[1][1] += spsi*dragd;
 //    [0][1] = -cpsi*Dd;
 //    [1][1] = -spsi*Dd;
 //    0 for others
@@ -1035,14 +1138,14 @@ void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED]
         Gmat[0][1] = spsi*sphi*liftd;
         Gmat[1][1] = -cpsi*sphi*liftd;
         Gmat[2][1] = cphi*liftd;
-        Gmat[0][2] = - spsi*sphi*stheta;
-        Gmat[1][2] = cpsi*sphi*stheta;
-        Gmat[2][2] = -cphi*stheta;
+        Gmat[0][2] = 0;
+        Gmat[1][2] = 0;
+        Gmat[2][2] = 0;
 
-        // Gd, just in case
+        // Gd, just in case; TODO: check sign
         if (guidance_indi_soaring_use_drag) {
-            Gmat[0][1] += -cpsi*dragd;
-            Gmat[1][1] += -spsi*dragd;
+            Gmat[0][1] += cpsi*dragd;
+            Gmat[1][1] += spsi*dragd;
         }
 
         v_gih[1] = a_diff.y;
@@ -1056,14 +1159,14 @@ void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED]
         Gmat[0][1] = spsi*sphi*liftd;
         Gmat[1][1] = -cpsi*sphi*liftd;
         Gmat[2][1] = cphi*liftd;
-        Gmat[0][2] = - spsi*sphi*stheta;
-        Gmat[1][2] = cpsi*sphi*stheta;
-        Gmat[2][2] = -cphi*stheta;
+        Gmat[0][2] = 0;
+        Gmat[1][2] = 0;
+        Gmat[2][2] = 0;
 
         // Gd, just in case
         if (guidance_indi_soaring_use_drag) {
-            Gmat[0][1] += -cpsi*dragd;
-            Gmat[1][1] += -spsi*dragd;
+            Gmat[0][1] += cpsi*dragd;
+            Gmat[1][1] += spsi*dragd;
         }
         v_gih[0] = a_diff.x;
         v_gih[1] = a_diff.y;

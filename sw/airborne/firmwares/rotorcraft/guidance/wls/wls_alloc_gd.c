@@ -312,6 +312,8 @@ float wls_alloc_gd_reduced(float* u, float* v, float* umin, float* umax, float**
     if(!gamma_sq) gamma_sq = 100000;
     if(!imax) imax = 100;
 
+    // TODO: clean up
+//    printf("starting wls reduced..\n");
         int n_c = G_CA_N_C_REDUCED;
         int n_u = G_CA_N_U_REDUCED;
         int n_v = G_CA_N_V_REDUCED;
@@ -342,6 +344,7 @@ float wls_alloc_gd_reduced(float* u, float* v, float* umin, float* umax, float**
         int n_infeasible = 0;
         float lambda[G_CA_N_U_REDUCED];
         float W[G_CA_N_U_REDUCED];
+//    printf("variables defined..\n");
 
     // Initialize u and the working set, if provided from input
     if (!u_guess) {
@@ -353,10 +356,14 @@ float wls_alloc_gd_reduced(float* u, float* v, float* umin, float* umax, float**
             u[i] = u_guess[i];
         }
     }
+//    printf("initialize u..\n");
+
     W_init ? memcpy(W, W_init, n_u * sizeof(float))
            : memset(W, 0, n_u * sizeof(float));
 //    memset(W, 0, n_u * sizeof(float));
     memset(free_index_lookup, -1, n_u * sizeof(float));
+
+//    printf("initialize W..\n");
 
     // find free indices
     for (int i = 0; i < n_u; i++) {
@@ -365,6 +372,8 @@ float wls_alloc_gd_reduced(float* u, float* v, float* umin, float* umax, float**
             free_index[n_free++] = i;
         }
     }
+//    printf("finding free index..\n");
+
     // fill up A, A_free, b and d
     for (int i = 0; i < n_v; i++) {
         // If Wv is a NULL pointer, use Wv = identity
@@ -376,12 +385,15 @@ float wls_alloc_gd_reduced(float* u, float* v, float* umin, float* umax, float**
             d[i] -= A[i][j] * u[j];
         }
     }
+//    printf("fill out A,b..\n");
+
     for (int i = n_v; i < n_c; i++) {
         memset(A[i], 0, n_u * sizeof(float));
         A[i][i - n_v] = Wu ? Wu[i - n_v] : 1.0;
         b[i] = up ? (Wu ? Wu[i-n_v] * up[i-n_v] : up[i-n_v]) : 0;
         d[i] = b[i] - A[i][i - n_v] * u[i - n_v];
     }
+//    printf("Loop starting....\n");
 
     // -------------- Start loop ------------
     while (iter++ < imax) {
@@ -398,6 +410,7 @@ float wls_alloc_gd_reduced(float* u, float* v, float* umin, float* umax, float**
             free_chk = n_free;
         }
 
+//        printf("free n?....\n");
 
         if (n_free) {
             // Still free variables left, calculate corresponding solution
@@ -416,6 +429,8 @@ float wls_alloc_gd_reduced(float* u, float* v, float* umin, float* umax, float**
                 infeasible_index[n_infeasible++] = i;
             }
         }
+//        printf("checking feasibillity....\n");
+
         // Check feasibility of the solution
         if (n_infeasible == 0) {
             // all variables are within limits
@@ -454,6 +469,7 @@ float wls_alloc_gd_reduced(float* u, float* v, float* umin, float* umax, float**
                 return W[n_u-1];
             }
         } else {
+//            printf("what elsee..\n");
             float alpha = INFINITY;
             float alpha_tmp;
             int id_alpha = 0;
