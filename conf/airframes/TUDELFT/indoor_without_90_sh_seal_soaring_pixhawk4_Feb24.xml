@@ -885,6 +885,10 @@ NOTES:
 <!--      <define name="SOARING_RESET_UNREACHABLE_WP" value="TRUE"/>-->
 <!--      define this ONLY when you USE 90 pitch offset -->
 <!--      <define name="SOARING_USE_90_PITCH_OFFSET" value="TRUE"/>-->
+
+      <!-- for the new effectiveness model -->
+<!--      <define name="SOARING_USE_AOA" value="TRUE"/>-->
+<!--      <define name="SOARING_USE_DRAG" value="TRUE"/>-->
   </section>
 
   <section name="BAT">

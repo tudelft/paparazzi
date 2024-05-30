@@ -15,7 +15,7 @@
       <message name="ROTORCRAFT_NAV_STATUS"    period="6.6"/>
       <message name="WP_MOVED"                 period="2.3"/>
       <message name="ROTORCRAFT_CAM"           period="15."/>
-      <message name="GPS_INT"                  period="2.5"/>
+      <message name="GPS_INT"                  period="5.5"/>
       <message name="INS"                      period="5.5"/>
       <message name="I2C_ERRORS"               period="15.1"/>
       <message name="UART_ERRORS"              period="12.1"/>
@@ -34,28 +34,30 @@
 <!--      <message name="DRAGSPEED"                period="15.5"/>-->
       <message name="LOGGER_STATUS"            period="10.1"/>
 <!--      <message name="LIDAR"                    period="1.2"/>-->
-      <message name="INS_EKF2"                 period="2.5"/>
+      <message name="INS_EKF2"                 period="5.1"/>
+
 <!--      <message name="WIND_INFO_RET"            period="3.5"/>-->
       <message name="AHRS_REF_QUAT"            period="1.5"/>
-      <message name="STAB_ATTITUDE"      period=".5"/>
+      <message name="STAB_ATTITUDE"      period="1.5"/>
       <message name="EFF_MAT_G"            period="3.0"/>
 
       <!-- Messages that were not in default from here -->
       <message name="AHRS_BIAS"                period="8.5"/>
       <message name="AIRSPEED_RAW"             period=".5"/>
       <message name="ROTORCRAFT_CMD"           period="3.5"/>
-      <message name="GPS"                  period="3.5"/>
-      <message name="INS_EKF2_EXT"             period="6.0"/>
+      <message name="GPS"                  period="6.5"/>
       <message name="GUIDANCE_INDI_HYBRID"    period="1.5"/>
       <message name="GUIDANCE_INDI_HYBRID_SOARING"    period="1.5"/>
       <message name="SOARING_WP_MAP"          period="1.0"/>
       <message name="ACTUATORS"                 period="5.0"/>
       <message name="ROTORCRAFT_RADIO_CONTROL" period="5.5"/>
-      <message name="ADC_GENERIC" period="9.0"/>
+<!--      <message name="ADC_GENERIC" period="9.0"/>-->
 <!--      <message name="FBW_STATUS"          period="1.0"/>-->
       <message name="INDI_SCHEDULE_G1"          period="2.5"/>
       <message name="GUIDANCE_H_REF_INT"       period="8.0"/>
       <message name="VERT_LOOP"         period="8.0"/>
+      <message name="INS_EKF2_EXT"             period="12.1"/>
+
 <!--      <message name="GPS_RTK"                  period="1"/>-->
 <!--      <message name="INS_FLOW_INFO"            period="16.0"/>-->
 

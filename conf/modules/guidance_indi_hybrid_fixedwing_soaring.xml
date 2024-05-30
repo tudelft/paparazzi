@@ -29,7 +29,7 @@
           <dl_setting var="guidance_indi_soaring_use_aoa" min="0" max="1" step="1" values="OFF|ON" shortname="USE_AOA"/>
           <dl_setting var="guidance_indi_soaring_use_drag" min="0" max="1" step="1" values="OFF|ON" shortname="USE_DRAG"/>
           <dl_setting var="pitch_eff_scale" min="0.0" max="2.0" step="0.01" shortname="pitch_eff_scale" />
-            <dl_setting var="soaring_critical_aoa" min="0.0" max="0.12" step="0.0001" shortname="crit_aoa"/>
+            <dl_setting var="soaring_critical_aoa" min="0.0" max="0.3" step="0.005" shortname="crit_aoa"/>
             <dl_setting var="use_aoa_pitch_limit" min="0" max="1" step="1" values="OFF|ON" shortname="aoa_pitch_limit"/>
             <dl_setting var="use_aoa_pitch_pref" min="0" max="1" step="1" values="OFF|ON" shortname="pitch_pref_on"/>
           <!--        <dl_setting var="soaring_spd_sp.x" min="-1.0" step="0.001" max="1.0" shortname="speed_sp_x"/>-->

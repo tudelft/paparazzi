@@ -74,13 +74,13 @@ NOTES:
         </module>
  
       <!-- No need for spi values since already in default Pixhawk4 board but for cube? unknown-->
-<!--      <module name="baro_ms5611_spi">-->
-<!--        <define name="USE_SPI4"/>-->
-<!--        <define name="USE_SPI_SLAVE4"/>  -->
-<!--        <configure name="MS5611_SPI_DEV" value="spi4"/>-->
-<!--        <configure name="MS5611_SLAVE_IDX" value="SPI_SLAVE4"/>-->
-<!--        &lt;!&ndash;<define name="SENSOR_SYNC_SEND"/>&ndash;&gt;-->
-<!--      </module>-->
+      <module name="baro_ms5611_spi">
+        <define name="USE_SPI4"/>
+        <define name="USE_SPI_SLAVE4"/>
+        <configure name="MS5611_SPI_DEV" value="spi4"/>
+        <configure name="MS5611_SLAVE_IDX" value="SPI_SLAVE4"/>
+        <!--<define name="SENSOR_SYNC_SEND"/>-->
+      </module>
 
       <!-- NO NEED for V/C modules since defaults should be correct -->
 <!--      <configure name="USE_ADC_2" value="TRUE"/>-->
@@ -133,6 +133,9 @@ NOTES:
 <!--        </module>-->
 
 <!--        ./sw/ground_segment/python/natnet3.x/natnet2ivy.py &#45;&#45;long_edge near &#45;&#45;x_side right &#45;&#45;ac_nose far &#45;&#45;up_axis z_up -ac 1 42 -gr -f 30-->
+
+        <!--    300524 below (y_up setting) -->
+<!--        ./sw/ground_segment/python/natnet3.x/natnet2ivy.py &#45;&#45;long_edge right &#45;&#45;x_side right &#45;&#45;ac_nose far &#45;&#45;up_axis y_up -ac 1 47 -gr -f 30-->
 
         <!--Enable this for CyberZoo tests , disable the uBlox module -->
         <module name="gps" type="optitrack"/>
@@ -534,41 +537,22 @@ NOTES:
 <!-- TODO: calibrate -->
 <!--                 -->
 
-<!--      IMU ACCEL CALIB on 201223 (new pixhawk mount)-->
-<!--      <define name="IMU_ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={-411,19,-58}, .scale={{34909,55408,49891},{7605,11335,10345}}}}"/>-->
-
-<!--      <define name="ACCEL_X_NEUTRAL" value="-411"/>-->
-<!--      <define name="ACCEL_Y_NEUTRAL" value="19"/>-->
-<!--      <define name="ACCEL_Z_NEUTRAL" value="-58"/>-->
-<!--      <define name="ACCEL_X_SENS" value="4.590269558543954" integer="16"/>-->
-<!--      <define name="ACCEL_Y_SENS" value="4.8882223167402445" integer="16"/>-->
-<!--      <define name="ACCEL_Z_SENS" value="4.822716288246021" integer="16"/>-->
-
-      <!-- Calibrate Accelometer on 150423 20:40 UTC-->
-    <!-- <define name="IMU_ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={-410,19,-56}, .scale={{13420,4554,56119},{2923,931,11629}}}}"/> -->
-<!--    <define name="ACCEL_X_NEUTRAL" value="-410"/>-->
-<!--    <define name="ACCEL_Y_NEUTRAL" value="19"/>-->
-<!--    <define name="ACCEL_Z_NEUTRAL" value="-56"/>-->
-<!--    <define name="ACCEL_X_SENS" value="4.591173431212081" integer="16"/>-->
-<!--    <define name="ACCEL_Y_SENS" value="4.891514448303641" integer="16"/>-->
-<!--    <define name="ACCEL_Z_SENS" value="4.825780378432305" integer="16"/>-->
-
-    <!--    <define name="MAG_X_NEUTRAL" value="7"/>-->
-    <!--    <define name="MAG_Y_NEUTRAL" value="76"/>-->
-    <!--    <define name="MAG_Z_NEUTRAL" value="133"/>-->
-    <!--    <define name="MAG_X_SENS" value="3.82579687604" integer="16"/>-->
-    <!--    <define name="MAG_Y_SENS" value="3.6213651898" integer="16"/>-->
-    <!--    <define name="MAG_Z_SENS" value="4.01635370187" integer="16"/>-->
-
     <!-- 21 Jun -->
 <!--    <define name="IMU_ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={-407,18,-49}, .scale={{14713,65147,44283},{3206,13329,9179}}}}"/>-->
 
-    <define name="ACCEL_X_NEUTRAL" value="-407"/>
-    <define name="ACCEL_Y_NEUTRAL" value="18"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-49"/>
-    <define name="ACCEL_X_SENS" value="4.589207743272013" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.887613475410681" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.824381742140296" integer="16"/>
+<!--    <define name="ACCEL_X_NEUTRAL" value="-407"/>-->
+<!--    <define name="ACCEL_Y_NEUTRAL" value="18"/>-->
+<!--    <define name="ACCEL_Z_NEUTRAL" value="-49"/>-->
+<!--    <define name="ACCEL_X_SENS" value="4.589207743272013" integer="16"/>-->
+<!--    <define name="ACCEL_Y_SENS" value="4.887613475410681" integer="16"/>-->
+<!--    <define name="ACCEL_Z_SENS" value="4.824381742140296" integer="16"/>-->
+
+    <define name="ACCEL_X_NEUTRAL" value="226"/>
+    <define name="ACCEL_Y_NEUTRAL" value="65"/>
+    <define name="ACCEL_Z_NEUTRAL" value="4"/>
+    <define name="ACCEL_X_SENS" value="4.678282151025365" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="4.894706798903047" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="4.821920048827275" integer="16"/>
 
 <!--    20230616 Valkenburg-->
 <define name="IMU_MAG_CALIB" value="{{.abi_id=4, .calibrated={.neutral=true, .scale=true},.neutral={-39,6,5}, .scale={{18559,43991,10465},{1468,3580,834}}}}"/>
@@ -802,6 +786,11 @@ NOTES:
 <!--      <define name="SOARING_RESET_UNREACHABLE_WP" value="TRUE"/>-->
 <!--      define this ONLY when you USE 90 pitch offset -->
 <!--      <define name="SOARING_USE_90_PITCH_OFFSET" value="TRUE"/>-->
+
+      <!-- for the new effectiveness model -->
+      <!--      <define name="SOARING_USE_AOA" value="TRUE"/>-->
+      <!--      <define name="SOARING_USE_DRAG" value="TRUE"/>-->
+<!--      <define name="SOARING_CRITICAL_AOA" value=""/>-->
   </section>
 
   <section name="BAT">
