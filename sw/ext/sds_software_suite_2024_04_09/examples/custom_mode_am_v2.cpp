@@ -347,7 +347,6 @@ int main(int ac, const char *av[]) {
             x_body_pos_beacon[j] = (float) b.z; 
             y_body_pos_beacon[j] = (float) b.x;
             z_body_pos_beacon[j] = (float) b.y;
-            j++;
 
             if (log_file != nullptr && produce_log_file && beacon_id[j] != 0) {
                 pthread_mutex_lock(&mutex_logger);
@@ -356,6 +355,8 @@ int main(int ac, const char *av[]) {
                 fflush(log_file);
                 pthread_mutex_unlock(&mutex_logger);
             }
+
+            j++;
         }    
         //Update flag:
         pthread_mutex_lock(&mutex_ivy_bus);
