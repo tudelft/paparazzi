@@ -105,6 +105,7 @@ extern float du_pref_gih_reduced[GUIDANCE_INDI_HYBRID_U_REDUCED];
 
 extern float guidance_indi_thrust_z_eff;
 extern float guidance_indi_thrust_x_eff;
+extern float soaring_ctrl_switch;
 
 extern struct guidance_indi_hybrid_params gih_params;
 extern float guidance_indi_specific_force_gain;

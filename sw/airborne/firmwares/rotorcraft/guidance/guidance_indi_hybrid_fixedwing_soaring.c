@@ -1131,37 +1131,31 @@ void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED]
     Dd = dragd;
 
     if (altitude_ctrl) {
+        // GMat = GMat(2:3, 1:2);
         // Gl
-        Gmat[0][0] = spsi*cphi*lift;
-        Gmat[1][0] = -cpsi*cphi*lift;
-        Gmat[2][0] = -sphi*lift;
-        Gmat[0][1] = spsi*sphi*liftd;
-        Gmat[1][1] = -cpsi*sphi*liftd;
-        Gmat[2][1] = cphi*liftd;
-        Gmat[0][2] = 0;
-        Gmat[1][2] = 0;
-        Gmat[2][2] = 0;
+//        Gmat[0][0] = spsi*cphi*lift;
+        Gmat[0][0] = -cpsi*cphi*lift;
+        Gmat[1][0] = -sphi*lift;
+//        Gmat[0][1] = spsi*sphi*liftd;
+        Gmat[0][1] = -cpsi*sphi*liftd;
+        Gmat[1][1] = cphi*liftd;
 
         // Gd, just in case; TODO: check sign
         if (guidance_indi_soaring_use_drag) {
-            Gmat[0][1] += cpsi*dragd;
-            Gmat[1][1] += spsi*dragd;
+//            Gmat[0][1] += cpsi*dragd;
+            Gmat[0][1] += spsi*dragd;
         }
 
-        v_gih[1] = a_diff.y;
-        v_gih[2] = a_diff.z;
+        v_gih[0] = a_diff.y;
+        v_gih[1] = a_diff.z;
     } else {
-
         // Gl
         Gmat[0][0] = spsi*cphi*lift;
         Gmat[1][0] = -cpsi*cphi*lift;
-        Gmat[2][0] = -sphi*lift;
+//        Gmat[2][0] = -sphi*lift;
         Gmat[0][1] = spsi*sphi*liftd;
         Gmat[1][1] = -cpsi*sphi*liftd;
-        Gmat[2][1] = cphi*liftd;
-        Gmat[0][2] = 0;
-        Gmat[1][2] = 0;
-        Gmat[2][2] = 0;
+//        Gmat[2][1] = cphi*liftd;
 
         // Gd, just in case
         if (guidance_indi_soaring_use_drag) {

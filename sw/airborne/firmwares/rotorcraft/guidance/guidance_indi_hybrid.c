@@ -222,6 +222,8 @@ float Wv_gih_reduced[GUIDANCE_INDI_HYBRID_V-1] = {1.f, 1.f};
 float Wu_gih_reduced[GUIDANCE_INDI_HYBRID_U-1] = {1.f, 1.f};
 #endif
 
+float soaring_ctrl_switch = GUIDANCE_INDI_SOARING_CTRL_SWITCH;
+
 #ifdef GUIDANCE_INDI_HYBRID_WLS_PRIORITIES
 float Wv_gih[GUIDANCE_INDI_HYBRID_V] = GUIDANCE_INDI_HYBRID_WLS_PRIORITIES;
 #else
@@ -355,6 +357,11 @@ void guidance_indi_init(void)
   for (int8_t i = 0; i < GUIDANCE_INDI_HYBRID_V; i++) {
     Bwls_gih[i] = Ga[i];
   }
+  #if GUIDANCE_INDI_SOARING
+      for (int8_t i = 0; i < GUIDANCE_INDI_HYBRID_V-1; i++) {
+        Bwls_gih_reduced[i] = Ga_reduced[i];
+      }
+  #endif
 #endif
 
 #if PERIODIC_TELEMETRY
@@ -477,7 +484,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
                                Bwls_gih, 0, 0, Wv_gih, Wu_gih, du_pref_gih, 1000, 10);
 
     // TODO: clean up
-    #if GUIDANCE_INDI_SOARING_CTRL_SWITCH
+    if (soaring_ctrl_switch) {
 //    printf("starting ctrl_switch.. %f\n", thr_saturation);
         if (thr_saturation < 0) {       // negative saturation
             // Ga, wls_setting, WLS
@@ -511,11 +518,11 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
               euler_cmd.y = du_gih[1];
               euler_cmd.z = du_gih[2];
         }
-    #else
+    } else {
         euler_cmd.x = du_gih[0];
         euler_cmd.y = du_gih[1];
         euler_cmd.z = du_gih[2];
-    #endif
+    }
 
 #else
   int num_iter UNUSED = wls_alloc(
