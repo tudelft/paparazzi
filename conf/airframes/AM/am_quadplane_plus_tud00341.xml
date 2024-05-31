@@ -110,6 +110,9 @@
     <module name="nav_hybrid">
       <configure name="NAV_HYBRID_POS_GAIN" value="1"/>
       <configure name="NAV_MAX_SPEED" value="15"/>
+      <configure name="NAV_HYBRID_LINE_GAIN" value="1"/>
+      <configure name="NAV_HYBRID_MAX_AIRSPEED" value="15"/>
+      <configure name="NAV_HYBRID_SPEED_MARGIN" value="10"/>
     </module>
 
     <module name="ahrs" type="float_cmpl_quat">
@@ -211,28 +214,32 @@
     <!-- </section> -->
 
   <!-- Maximum limits of the vehicle in manual speed control mode. limits are in the control rf -->
-  <!-- <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
-    <define name="MAX_FWD_SPEED" value="20.0" unit="m/s"/>
-    <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> 
-    <define name="MIN_FWD_SPEED" value="-4.0" unit="m/s"/>
-    <define name="MAX_LAT_SPEED" value="7.0" unit="m/s"/>
-    <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
-    <define name="MAX_FWD_ACC" value="4.0" unit="m/s^2"/>
-    <define name="MIN_FWD_ACC" value="-1.8" unit="m/s^2"/> 
-    <define name="MAX_LAT_ACC" value="9.0" unit="m/s^2"/>
-    <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/> 
-  </section> -->
-
-  <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
+  <section name="FWD_LIMITS" prefix="LIMITS_CRUISE_">
     <define name="MAX_FWD_SPEED" value="25.0" unit="m/s"/>
     <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> 
     <define name="MIN_FWD_SPEED" value="-5.0" unit="m/s"/>
-    <define name="MAX_LAT_SPEED" value="13.0" unit="m/s"/>
+    <define name="MAX_LAT_SPEED" value="5.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
-    <define name="MAX_FWD_ACC" value="5.0" unit="m/s^2"/>
+    <define name="MAX_FWD_ACC" value="6.0" unit="m/s^2"/>
     <define name="MIN_FWD_ACC" value="-2.5" unit="m/s^2"/> 
-    <define name="MAX_LAT_ACC" value="7.0" unit="m/s^2"/>
-    <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/>   
+    <define name="MAX_LAT_ACC" value="8.0" unit="m/s^2"/>
+    <define name="MAX_VERT_ACC" value="3.0" unit="m/s^2"/>
+
+    <define name="VERT_ACC_MARGIN" value="2.5" unit="m/s^2"/>
+  </section>
+
+  <section name="APP_LIMITS" prefix="LIMITS_APP_">
+    <define name="MAX_FWD_SPEED" value="25.0" unit="m/s"/>
+    <define name="MAX_AIRSPEED" value="20.0" unit="m/s"/> 
+    <define name="MIN_FWD_SPEED" value="-5.0" unit="m/s"/>
+    <define name="MAX_LAT_SPEED" value="8.0" unit="m/s"/>
+    <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
+    <define name="MAX_FWD_ACC" value="8.0" unit="m/s^2"/>
+    <define name="MIN_FWD_ACC" value="-4" unit="m/s^2"/> 
+    <define name="MAX_LAT_ACC" value="8.0" unit="m/s^2"/>
+    <define name="MAX_VERT_ACC" value="3.0" unit="m/s^2"/>
+
+    <define name="VERT_ACC_MARGIN" value="2.5" unit="m/s^2"/>
   </section>
 
   <!-- for demos -->
@@ -281,11 +288,7 @@
 
     <define name="PID_P_GAIN_THETA" value="300"/>
     <define name="PID_I_GAIN_THETA" value="2"/>
-    <define name="PID_D_GAIN_THETA" value="120"/>
-
-    <!-- <define name="PID_P_GAIN_PSI_AZ" value="1.5"/>
-    <define name="PID_I_GAIN_PSI_AZ" value="0.5"/>
-    <define name="PID_D_GAIN_PSI_AZ" value="0.5"/> -->
+    <define name="PID_D_GAIN_THETA" value="150"/>
 
     <define name="PID_P_GAIN_PSI_AZ" value="1.3"/>
     <define name="PID_I_GAIN_PSI_AZ" value="0.34"/>
@@ -307,7 +310,7 @@
 
     <!-- Maximum orders -->
     <!-- General -->
-    <define name="MAX_PHI" value="30" unit="deg"/>
+    <define name="MAX_PHI" value="35" unit="deg"/>
     <define name="MAX_THETA" value="40" unit="deg"/>
     <define name="MAX_PSI_ERR" value="80" unit="deg"/>
 
@@ -322,22 +325,40 @@
     <define name="PID_MAX_AZ_ORDER" value="35" unit="deg"/> <!--max azimuth deflection in PID mode-->
 
     <!-- INDI proportional gains -->
-    <define name="INDI_REF_ERR_P" value="3"/>
-    <define name="INDI_REF_ERR_Q" value="3"/>
-    <define name="INDI_REF_ERR_R" value="1.5"/>
+    <define name="CRUISE_GAIN_P" value="4"/>
+    <define name="CRUISE_GAIN_Q" value="4"/>
+    <define name="CRUISE_GAIN_R" value="1"/>
 
-    <define name="INDI_REF_ERR_X" value="1"/>
-    <define name="INDI_REF_ERR_Y" value="1"/>
-    <define name="INDI_REF_ERR_Z" value="1"/>
+    <define name="CRUISE_GAIN_X" value="1"/>
+    <define name="CRUISE_GAIN_Y" value="1"/>
+    <define name="CRUISE_GAIN_Z" value="2"/>
 
     <!-- INDI derivative gains -->
-    <define name="INDI_REF_RATE_P" value="6"/>
-    <define name="INDI_REF_RATE_Q" value="6"/>
-    <define name="INDI_REF_RATE_R" value="5"/>
+    <define name="CRUISE_GAIN_P_DOT" value="7"/>
+    <define name="CRUISE_GAIN_Q_DOT" value="7"/>
+    <define name="CRUISE_GAIN_R_DOT" value="5"/>
 
-    <define name="INDI_REF_RATE_X" value="1"/>
-    <define name="INDI_REF_RATE_Y" value="0.55"/>
-    <define name="INDI_REF_RATE_Z" value="3"/>
+    <define name="CRUISE_GAIN_X_DOT" value="1"/>
+    <define name="CRUISE_GAIN_Y_DOT" value="1.75"/>
+    <define name="CRUISE_GAIN_Z_DOT" value="5"/>
+
+    <!-- INDI approach gains -->
+    <define name="APP_GAIN_P" value="1.6"/>
+    <define name="APP_GAIN_Q" value="1.6"/>
+    <define name="APP_GAIN_R" value="1.6"/>
+
+    <define name="APP_GAIN_X" value="3.5"/>
+    <define name="APP_GAIN_Y" value="3.5"/>
+    <define name="APP_GAIN_Z" value="5"/>
+
+    <!-- INDI approach gains -->
+    <define name="APP_GAIN_P_DOT" value="12.5"/>
+    <define name="APP_GAIN_Q_DOT" value="12.5"/>
+    <define name="APP_GAIN_R_DOT" value="5"/>
+
+    <define name="APP_GAIN_X_DOT" value="4"/>
+    <define name="APP_GAIN_Y_DOT" value="4"/>
+    <define name="APP_GAIN_Z_DOT" value="5"/>
 
     <!-- Actuator dynamics and mapping-->
     <define name="INDI_ACT_DYN_MOTOR" value="0.038" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
@@ -402,8 +423,7 @@
     <!-- <define name="MOTOR_MAX_OMEGA" value="1400" unit="rad/s"/> -->
 
     <!-- 10x5.5 TMOTOR CF prop -->
-    <define name="MOTOR_K_T_OMEGASQ_P1" value="0" />
-    <define name="MOTOR_K_T_OMEGASQ_P2" value="1.106465e-5" unit="N/(rad/s)^2"/>
+    <define name="MOTOR_K_T_OMEGASQ" value="1.106465e-5" unit="N/(rad/s)^2"/>
     <define name="MOTOR_K_M_OMEGASQ" value="1.835091e-7" unit="N*m/(rad/s)^2"/>
     <define name="MOTOR_K_PWM_OMEGA" value="1" unit="(rad/s)/PWM"/>
     <define name="MOTOR_MAX_OMEGA" value="1000" unit="rad/s"/>
@@ -442,15 +462,16 @@
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
-    <!-- <define name="MAX_PHI_INDI" value="30" unit="deg"/> -->
-     <define name="MAX_PHI_INDI" value="40" unit="deg"/>
+    <define name="MAX_PHI_INDI" value="60" unit="deg"/>
     <define name="MAX_AOA_INDI" value="15" unit="deg"/>
-    <define name="MIN_AOA_INDI" value="-15" unit="deg"/>
+    <define name="MIN_AOA_INDI" value="2" unit="deg"/>
 
     <define name="MAX_DELTA_AILERONS" value="25" unit="deg"/>
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
 
-    <define name="SPEED_AOA_PROTECTION" value="2" unit="m/s"/>
+    <define name="SPEED_AOA_PROTECTION" value="3" unit="m/s"/>
+
+    <define name="MIN_AIRSPEED_READING" value="5.0" unit="m/s"/>
 
     <!-- Tilting angle constraint in the approach and takeoff phase -->
     <define name="K_ALT_TILT_CONSTRAINT" value="50" unit="deg/meters"/>
@@ -476,20 +497,21 @@
     <define name="W_ACT_THETA_SPEED" value="0"/>
     <define name="W_ACT_PHI_CONST" value="100"/>
     <define name="W_ACT_PHI_SPEED" value="-15"/> -->
-
-    <define name="W_ACT_MOTOR_CONST" value="3"/>
-    <define name="W_ACT_MOTOR_SPEED" value="0.25"/>
+    <define name="W_ACT_MOTOR_CONST" value="100"/>
+    <define name="W_ACT_MOTOR_SPEED" value="0"/>
     <define name="W_ACT_EL_CONST" value="0"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
     <define name="W_ACT_AZ_CONST" value="0"/>
-    <define name="W_ACT_AZ_SPEED" value="2"/>
-    <define name="W_ACT_THETA_CONST" value="5"/>
-    <define name="W_ACT_THETA_SPEED" value="0"/>
-    <define name="W_ACT_PHI_CONST" value="90"/>
+    <define name="W_ACT_AZ_SPEED" value="5"/>
+    <define name="W_ACT_THETA_CONST" value="100"/>
+    <define name="W_ACT_THETA_SPEED" value="-15"/>
+    <define name="W_ACT_PHI_CONST" value="100"/>
     <define name="W_ACT_PHI_SPEED" value="-15"/>
 
     <define name="W_ACT_AILERONS_CONST" value="0.5"/>
     <define name="W_ACT_AILERONS_SPEED" value="0"/>
+
+    <define name="TRANSITION_SPEED_PSEUDOCTR_HEDGE" value="7"/>
 
     <!-- <define VALUE="0.007" NAME="W_DV_1"/>
     <define VALUE="0.007" NAME="W_DV_2"/>
@@ -498,21 +520,28 @@
     <define VALUE="0.02" NAME="W_DV_5"/>
     <define VALUE="0.02" NAME="W_DV_6"/> -->
     
-    <define VALUE="0.015" NAME="W_DV_1"/>
-    <define VALUE="0.012" NAME="W_DV_2"/>
+    <define VALUE="0.01" NAME="W_DV_1"/>
+    <define VALUE="0.01" NAME="W_DV_2"/>
     <define VALUE="0.02" NAME="W_DV_3"/>
-    <define VALUE="0.033" NAME="W_DV_4"/>
-    <define VALUE="0.033" NAME="W_DV_5"/>
-    <define VALUE="0.033" NAME="W_DV_6"/>
+    <define VALUE="0.05" NAME="W_DV_4"/>
+    <define VALUE="0.05" NAME="W_DV_5"/>
+    <define VALUE="0.05" NAME="W_DV_6"/>
 
-    <define VALUE="0.55e-5" NAME="GAMMA_QUADRATIC_DU"/>
+    <define VALUE="0.5e-7" NAME="GAMMA_QUADRATIC_DU"/>
 
     <!-- FWD flight properties for yaw rate induced by controller and for removal of lateral speed term-->
     <!-- <define name="MIN_SPEED_TRANSITION" value="3.0" unit="m/s"/>
     <define name="REF_SPEED_TRANSITION" value="5.0" unit="m/s"/> -->
+    <!-- <define name="MIN_SPEED_TRANSITION" value="0.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION" value="0.5" unit="m/s"/> -->
     <define name="MIN_SPEED_TRANSITION" value="8.0" unit="m/s"/>
     <define name="REF_SPEED_TRANSITION" value="10.0" unit="m/s"/>
 
+  </section>
+
+  <section name="REF_MODEL" prefix="REF_MODEL_">
+    <define name="P_GAIN" value="2.0" />
+    <define name="D_GAIN" value="6.0" />
   </section>
 
   <section name="RPM_CONTROL_FBW" prefix="RPM_CONTROL_FBW_">
@@ -557,10 +586,10 @@
     <define name="LZ" value="0." unit="m"/>
 
     <define name="CL_ALPHA" value="3.5"/>
-    <define name="CM_ZERO" value="0.05"/>
-    <define name="CM_ALPHA" value="-0.1"/>
-    <define name="CD_ZERO" value="0.38"/>
-    <define name="K_CD" value="0.2"/>
+    <define name="CM_ZERO" value="0.0"/>
+    <define name="CM_ALPHA" value="0.0"/>
+    <define name="CD_ZERO" value="0.2"/>
+    <define name="K_CD" value="0.08"/>
     <define name="CY_BETA" value="0"/>
     <define name="CL_BETA" value="0"/>
     <define name="S" value="0.43"/>
@@ -570,46 +599,18 @@
     <define name="CL_AILERONS" value="0.2"/>
   </section>
 
-  <!-- Motor-propulsive characteristics with inflow and airspeed dependency -->
+  <!-- Motor-propulsive model noah -->
   <section name="PROP_MODEL" prefix="PROP_MODEL_">
-    
-    <!-- 10x5.5 CF TMOTOR -->
-    <define name="KM_REF" value="1.835091e-7" unit="N*m/(rad/s)^2"/>
-    <define name="KT_REF" value="1.106465e-5" unit="N/(rad/s)^2"/>
-
-    <define name="MAX_THR_LOSS_REAL" value="4" unit="N"/>
-
-    <define name="MAX_THR_LOSS_OPTIMIZER" value="0" unit="N"/>
-
-    <!-- drag coefficient of the rotor -->
-    <define name="C_DR" value="0.005"/>
-
-    <define name="P00_KT" value="1"/>
-    <define name="P10_KT" value="-0.007944"/>
-    <define name="P01_KT" value="-0.01699"/>
-    <define name="P20_KT" value="0.000856"/>
-    <define name="P11_KT" value="-0.01791"/>
-    <define name="P02_KT" value="-0.01149"/>
-    <define name="P30_KT" value="0.0001001"/>
-    <define name="P21_KT" value="0.00368"/>
-    <define name="P12_KT" value="0.0001334"/>
-    <define name="P40_KT" value="-5.416e-06"/>
-    <define name="P31_KT" value="-8.903e-05"/>
-    <define name="P22_KT" value="0.0003558"/>
-
-    <define name="P00_QT" value="-0.00568"/>
-    <define name="P10_QT" value="-0.008563"/>
-    <define name="P01_QT" value="0.004781"/>
-    <define name="P20_QT" value="0.005407"/>
-    <define name="P11_QT" value="0.03948"/>
-    <define name="P02_QT" value="0.007349"/>
-    <define name="P30_QT" value="-0.0005864"/>
-    <define name="P21_QT" value="-0.0001271"/>
-    <define name="P12_QT" value="0.007095"/>
-    <define name="P40_QT" value="1.787e-05"/>
-    <define name="P31_QT" value="6.422e-05"/>
-    <define name="P22_QT" value="0.0004564"/>
-
+    <define name="POWER_CD_0" value="0.05"/>
+    <define name="POWER_CD_A" value="0.36"/>
+    <define name="PROP_R" value="0.1270"/>
+    <define name="PROP_CD_0" value="0.05"/>
+    <define name="PROP_CL_0" value="0.0"/>
+    <define name="PROP_CD_A" value="0.36"/>
+    <define name="PROP_CL_A" value="3.46"/>
+    <define name="PROP_DELTA" value="0.2"/>
+    <define name="PROP_SIGMA" value="0.0652"/>
+    <define name="PROP_THETA" value="0.2188"/>
   </section>
 
   <section name="WP_CONTROL" prefix="WP_CONTROL_">
@@ -777,7 +778,6 @@
     <!-- <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/> -->
 
     <define name="FAILSAFE_HOME_RADIUS" value="600" unit="m"/>
-
   </section>
 
   <section name="AIR_DATA" prefix="AIR_DATA_">
