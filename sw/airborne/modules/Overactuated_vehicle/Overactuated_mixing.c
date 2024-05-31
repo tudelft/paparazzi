@@ -467,14 +467,14 @@ static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am
 
     #ifdef USE_EXT_REF_POSITION
         struct EnuCoor_f target_pos_sixdof = {myam7_data_in_local.aruco_NED_pos_y, myam7_data_in_local.aruco_NED_pos_x, -myam7_data_in_local.aruco_NED_pos_z + alt_offset_beacon}; 
-        waypoint_set_enu(WP_STDBY, &target_pos_sixdof); 
+        waypoint_set_enu(WP_SIXDOF, &target_pos_sixdof); 
          // Send to the GCS that the waypoint has been moved
-        static uint8_t wp_id = WP_STDBY;
-        RunOnceEvery(PERIODIC_FREQUENCY / 2, { //Update STBY waypoint every 0.5 seconds
+        static uint8_t wp_id = WP_SIXDOF;
+        RunOnceEvery(PERIODIC_FREQUENCY / 2, { //Update SIXDOF waypoint every 0.5 seconds
             DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-                                    &waypoints[WP_STDBY].enu_i.x,
-                                    &waypoints[WP_STDBY].enu_i.y,
-                                    &waypoints[WP_STDBY].enu_i.z);
+                                    &waypoints[WP_SIXDOF].enu_i.x,
+                                    &waypoints[WP_SIXDOF].enu_i.y,
+                                    &waypoints[WP_SIXDOF].enu_i.z);
         });
 
     #endif
@@ -1385,7 +1385,7 @@ void assign_variables(void){
     //Assign gains according to the approach state: 
     if(approach_state){
         active_gains = app_gains;
-        airspeed = 0.5;
+        // airspeed = 0.5;
         aoa_protection_speed = OVERACTUATED_MIXING_SPEED_AOA_PROTECTION_APP;
         LIMITS_ACTIVE_MAX_FWD_SPEED = LIMITS_APP_MAX_FWD_SPEED;
         LIMITS_ACTIVE_MAX_AIRSPEED = LIMITS_APP_MAX_AIRSPEED;

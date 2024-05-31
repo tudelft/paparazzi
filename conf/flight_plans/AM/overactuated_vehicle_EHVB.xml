@@ -31,7 +31,7 @@
     <waypoint lat="52.1681602" lon="4.4127708" name="TD"/>
     <waypoint lat="52.1680902" lon="4.4148029" name="APP"/>
     <waypoint lat="52.1686922" lon="4.4149181" name="FOLLOW"/>
-    <waypoint lat="52.169599" lon="4.417198" name="FOLLOW_ARUCO"/>
+    <waypoint lat="52.169599" lon="4.417198" name="SIXDOF"/>
     <waypoint lat="52.169742" lon="4.411045" name="C1"/>
     <waypoint lat="52.168740" lon="4.407411" name="C2"/>
     <waypoint lat="52.166515" lon="4.408235" name="C3"/>
@@ -85,8 +85,8 @@
     <exception cond="(!InsideFlight_area(GetPosX(), GetPosY()) @OR GetPosAlt() @GT GetAltRef() + 120) 
     @AND (nav_block @GT IndexOfBlock('Standby')) @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Wait GPS')) 
     @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="landed"/>
-    <exception cond="electrical.bat_low @AND autopilot_in_flight() @AND (nav_block @GT IndexOfBlock('Standby')) 
-                     @AND (nav_block @LT IndexOfBlock('landed'))" deroute="descend"/>
+    <!-- <exception cond="electrical.bat_low @AND autopilot_in_flight() @AND (nav_block @GT IndexOfBlock('Standby')) 
+                     @AND (nav_block @LT IndexOfBlock('landed'))" deroute="descend"/> -->
     <exception cond="(nav_block @GT IndexOfBlock('Standby') @AND nav_block @LT IndexOfBlock('landed'))
     @AND GpsIsLost() @AND delay_test_rc(RadioControlIsLost(),20)" deroute="landed"/>
     <exception cond="(GpsIsLost() @AND (datalink_time @GT 15) @AND nav_block @GT IndexOfBlock('Standby') 
@@ -135,9 +135,24 @@
       <set value="0" var="force_forward"/>
       <stay wp="STDBY"/>
     </block>
+    <block name="Standby_APP">
+      <set value="1" var="approach_state"/>
+      <set value="0" var="force_forward"/>
+      <stay wp="STDBY"/>
+    </block>  
+    <block name="Sixdof">
+      <set value="0" var="approach_state"/>
+      <set value="0" var="force_forward"/>
+      <stay wp="SIXDOF"/>
+    </block>  
+    <block name="Sixdof_APP">
+      <set value="1" var="approach_state"/>
+      <set value="0" var="force_forward"/>
+      <stay wp="SIXDOF"/>
+    </block>  
     <block name="follow_module">
       <set value="0" var="force_forward"/>
-      <set value="0" var="approach_state"/>
+      <set value="1" var="approach_state"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
     </block>
     <block name="stay_p1">
@@ -209,7 +224,7 @@
     </block>
     <block name="descend">
       <set value="0" var="force_forward"/>
-      <set value="0" var="approach_state"/>
+      <set value="1" var="approach_state"/>
       <exception cond="!(stateGetPositionEnu_f()->z > 12.0)" deroute="flare"/>
       <stay climb="-1.5" vmode="climb" wp="TD"/>
     </block>

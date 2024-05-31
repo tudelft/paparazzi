@@ -11,6 +11,7 @@
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint name="CLIMB" x="0.0" y="55.0"/>
     <waypoint name="STDBY" x="16.0" y="55.0"/>
+    <waypoint name="SIXDOF" x="25.0" y="70.0"/>
     <waypoint name="p1" x="3.6" y="-139"/>
     <waypoint name="p2" x="100" y="100"/>
     <waypoint name="p3" x="100" y="-100"/>
@@ -108,12 +109,36 @@
       <stay wp="STDBY"/>
     </block>
 
+    <block name="Standby_APP" strip_button="Standby">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <stay wp="STDBY"/>
+    </block>
+    
+    <block name="Sixdof">
+      <set value="0" var="force_forward"/>
+      <set value="0" var="approach_state"/>
+      <stay wp="SIXDOF"/>
+    </block>
+    
+    <block name="Sixdof_APP">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <stay wp="SIXDOF"/>
+    </block> 
+    
     <block name="follow_module">
       <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
     </block>
 
+    <block name="follow_module_APP">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
+    </block>
+    
     <block name="stay_p1">
       <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>

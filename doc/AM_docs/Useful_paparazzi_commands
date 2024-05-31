@@ -9,7 +9,7 @@ $ ./paparazzi/sw/misc/link/pprzlink_router_cc -e uart:///dev/ttyS0:460800 -e udp
 (where ttyS0 is the Raspberry pi UART port where the AutoPilot is connected and 4342/4343 and 4382/4383 the udp ports where the telemetry packets are forwarded)
 
 - Command to forward the RTCM message from the ship box GPS to the common wireless network: 
-$ ./paparazzi/sw/misc/link/pprzlink_router_cc -e uart:///dev/ttyS1:460800 -e udp://0.0.0.0:4253:192.168.1.255:4252 &
+$ ./paparazzi/sw/misc/link/pprzlink_router_cc -e uart:///dev/ttyS4:460800 -e udp://0.0.0.0:4253:192.168.1.255:4252 &
 (where ttyS1 is the Raspberry pi UART port where the GPS is connected, 460800 is the baudrate of the UART communication and 4252/4253 is the udp port where the telemetry packets are forwarded)
 
 - Command to forward the SHIP_INFO_MSG message from a local udp port on the drone's IVY bus: 

@@ -352,7 +352,7 @@
     <define name="PID_MAX_AZ_ORDER" value="35" unit="deg"/> <!--max azimuth deflection in PID mode-->
 
     <!-- INDI proportional gains -->
-    <define name="CRUISE_GAIN_P" value="4"/>
+    <define name="CRUISE_GAIN_P" value="2"/>
     <define name="CRUISE_GAIN_Q" value="4"/>
     <define name="CRUISE_GAIN_R" value="1"/>
 
@@ -361,7 +361,7 @@
     <define name="CRUISE_GAIN_Z" value="2"/>
 
     <!-- INDI derivative gains -->
-    <define name="CRUISE_GAIN_P_DOT" value="7"/>
+    <define name="CRUISE_GAIN_P_DOT" value="8"/>
     <define name="CRUISE_GAIN_Q_DOT" value="7"/>
     <define name="CRUISE_GAIN_R_DOT" value="5"/>
 
@@ -380,7 +380,7 @@
 
     <!-- INDI approach gains -->
     <define name="APP_GAIN_P_DOT" value="12.5"/>
-    <define name="APP_GAIN_Q_DOT" value="12.5"/>
+    <define name="APP_GAIN_Q_DOT" value="10"/>
     <define name="APP_GAIN_R_DOT" value="5"/>
 
     <define name="APP_GAIN_X_DOT" value="4"/>
@@ -497,15 +497,15 @@
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
 
     <define name="SPEED_AOA_PROTECTION_CRUISE" value="3" unit="m/s"/>
-    <define name="SPEED_AOA_PROTECTION_APP" value="2" unit="m/s"/>
+    <define name="SPEED_AOA_PROTECTION_APP" value="15" unit="m/s"/>
 
     <define name="K_GAIN_AIRSPEED_CRUISE" value="0.005" />
     <define name="K_GAIN_AIRSPEED_APP" value="0.005" />
 
-    <define name="MIN_AIRSPEED_READING" value="3.0" unit="m/s"/>
+    <define name="MIN_AIRSPEED_READING" value="5.0" unit="m/s"/>
 
-    <define name="OVERESTIMATION_COEFF_APP" value="1.4"/>
-    <define name="OVERESTIMATION_COEFF_CRUISE" value="1.4"/>
+    <define name="OVERESTIMATION_COEFF_APP" value="1.2"/>
+    <define name="OVERESTIMATION_COEFF_CRUISE" value="1.2"/>
 
     <!-- Tilting angle constraint in the approach and takeoff phase -->
     <define name="K_ALT_TILT_CONSTRAINT" value="50" unit="deg/meters"/>
@@ -671,8 +671,6 @@
     <define name="VZ_GAIN_MAX_VAL" value="1"/>
     <define name="VZ_GAIN_MIN_VAL" value="0.6"/>
 
-    <define name="MIN_LAT_SPEED_GAIN_VALUE" value="0.1"/>
-
     <define name="FWD_SPEED_FORCE_FWD_MODE" value="25"/>
     
   </section>
@@ -786,7 +784,7 @@
 
   <section name="BAT">
     <!-- Brick on only -->
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.37 * adc)"/>
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.45 * adc)"/>
     <!-- <define name="MAX_BAT_CAPACITY" value="5000" unit="mAh"/> -->
     <!-- <define name="MILLIAMP_AT_IDLE_THROTTLE" value="500" unit="mA"/> -->
     <!-- <define name="MILLIAMP_AT_FULL_THROTTLE" value="30000" unit="mA"/> -->
@@ -800,6 +798,9 @@
   <section name="MISC">
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     <!--define name="UART7_CR2" value="(USART_CR2_STOP1_BITS | USART_CR2_SWAP_Msk)"/--> <!-- Swap RX/TX since RX doesn't work-->
+
+    <define name="USE_EXT_REF_ATTITUDE" value="TRUE"/>
+    <define name="USE_EXT_REF_POSITION" value="TRUE"/>
 
     <!-- Basic navigation settings -->
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>
