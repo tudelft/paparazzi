@@ -57,6 +57,7 @@ extern float indi_u[INDI_NUM_ACT];
 
 extern bool indi_use_adaptive;
 extern bool use_pitch_Wu;
+extern bool use_flap;
 
 extern float du_min_stab_indi[INDI_NUM_ACT];
 extern float du_max_stab_indi[INDI_NUM_ACT];

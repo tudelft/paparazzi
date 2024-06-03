@@ -68,6 +68,7 @@ static void logger_file_write_header(FILE *file) {
   fprintf(file, "time,");
   fprintf(file, "ACT_1,ACT_2,ACT_3,ACT_4,ACT_5,ACT_6,");
   fprintf(file, "rate_p,rate_q,rate_r,");
+  fprintf(file, "acc_p,acc_q,acc_r,");
   fprintf(file, "pos_x,pos_y,pos_z,");
   fprintf(file, "vel_x,vel_y,vel_z,");
   fprintf(file, "att_phi,att_theta,att_psi,");
@@ -115,6 +116,7 @@ static void logger_file_write_row(FILE *file) {
   fprintf(file, "%f,", get_sys_time_float());
   fprintf(file, "%f,%f,%f,%f,%f,%f,", indi_u[0],indi_u[1],indi_u[2],indi_u[3],indi_u[4],indi_u[5]);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
+  fprintf(file, "%f,%f,%f,", angular_acceleration[0], angular_acceleration[1], angular_acceleration[2]);
   fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
   fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
   fprintf(file, "%f,%f,%f,", eulers_zxy.phi, eulers_zxy.theta, eulers_zxy.psi);

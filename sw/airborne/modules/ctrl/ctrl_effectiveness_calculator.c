@@ -11,7 +11,6 @@
 #include "generated/airframe.h"
 #include "state.h"
 #include "math/pprz_algebra_float.h"
-#include "generated/airframe.h"
 
 struct MassProperties mass_property = {CTRL_EFF_CALC_MASS, CTRL_EFF_CALC_I_XX, CTRL_EFF_CALC_I_YY, CTRL_EFF_CALC_I_ZZ};
 struct MotorCoefficients mot_coef = {CTRL_EFF_CALC_K1, CTRL_EFF_CALC_K2, CTRL_EFF_CALC_K3};
@@ -19,6 +18,8 @@ struct MotorCoefficients mot_coef = {CTRL_EFF_CALC_K1, CTRL_EFF_CALC_K2, CTRL_EF
 float y_dist = CTRL_EFF_CALC_Y_DIST;
 float z_dist = CTRL_EFF_CALC_Z_DIST;
 float mapping = CTRL_EFF_CALC_MAPPING;
+float yaw_eff_at_60 = CTRL_EFF_CALC_YAW_EFF_AT_60;
+float pitch_eff_at_60 = CTRL_EFF_CALC_PITCH_EFF_AT_60;
 
 float min_thrust = 3250;				// [pprz] this is mapped to PWM range
 #ifdef CTRL_EFF_CALC_THRUST_LOWER_LIM
@@ -42,6 +43,17 @@ static float pprz_to_rad_left(float x);
 static float pprz_to_rad_right(float x);
 static float pprz_to_omega(float x);
 static float thrust_correcting_ratio(float x, float delta);
+
+#ifdef STABILIZATION_INDI_G1
+static float g1g2_hover[INDI_OUTPUTS][INDI_NUM_ACT] = STABILIZATION_INDI_G1;
+#else
+static float g1g2_hover[INDI_OUTPUTS][INDI_NUM_ACT] = {
+  STABILIZATION_INDI_G1_ROLL,
+  STABILIZATION_INDI_G1_PITCH,
+  STABILIZATION_INDI_G1_YAW,
+  STABILIZATION_INDI_G1_THRUST
+};
+#endif
 
 #if PERIODIC_TELEMETRY
 // #include "modules/datalink/telemetry.h"
@@ -136,13 +148,37 @@ void ctrl_eff(void)
     g1g2[3][3] = ctrl_deriv_33;
 
     float airspeed = stateGetAirspeed_f();
-    airspeed = (airspeed < 0) ? 0 : airspeed;
+    Bound(airspeed, 0.0, 30.0);
 
+     if (use_pitch_Wu) {
+    g1g2[1][4] = -0.002;
+    g1g2[1][5] = 0.002;
+
+    g1g2[2][4] = -0.005;
+    g1g2[2][5] = -0.005;
+     }else{
+    struct FloatEulers eulers_zxy;
+    if(airspeed < 6.0) {
+    float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+    float pitch_interp = DegOfRad(eulers_zxy.theta);
+    Bound(pitch_interp, -60.0, -30.0);
+    float ratio = (pitch_interp + 30.0)/(-30.);
+
+    /*pitch*/
+    g1g2[1][4] = g1g2_hover[1][4]/1000*(1-ratio) + -pitch_eff_at_60/1000*ratio;
+    g1g2[1][5] = g1g2_hover[1][5]/1000*(1-ratio) +  pitch_eff_at_60/1000*ratio;
+    /*yaw*/
+    g1g2[2][4] = g1g2_hover[2][4]/1000*(1-ratio) + -yaw_eff_at_60/1000*ratio;
+    g1g2[2][5] = g1g2_hover[2][5]/1000*(1-ratio) + -yaw_eff_at_60/1000*ratio;
+    }
+    else {
     g1g2[1][4] = -cde_offset - 0.001f*c_delta_e * airspeed*airspeed;
     g1g2[1][5] = cde_offset + 0.001f*c_delta_e * airspeed*airspeed;
 
-    g1g2[2][4] = cda_offset + 0.001f*c_delta_a * airspeed*airspeed;
-    g1g2[2][5] = cda_offset + 0.001f*c_delta_a * airspeed*airspeed;
+    g1g2[2][4] = - cda_offset - 0.001f*c_delta_a * airspeed*airspeed;
+    g1g2[2][5] = - cda_offset - 0.001f*c_delta_a * airspeed*airspeed;
+    }
+    }
 }
 
 void ctrl_eff_ground_contact(void)

@@ -5,11 +5,11 @@
 			<sum>
 				<product>
 					<property>fcs/ele_left_lag</property>
-					<value> 1.76 </value>
+					<value> -1.76 </value>
 				</product>
 				<product>
 					<property>fcs/ele_right_lag</property>
-					<value> 1.76 </value>
+					<value> -1.76 </value>
 				</product>
 			</sum>
 		</function>

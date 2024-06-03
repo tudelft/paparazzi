@@ -19,18 +19,15 @@
         <define name="RADIO_PIVOT_SWITCH" value="6"/> 
       </module>
 
-        <module name="airspeed" type="ms45xx_i2c">
-        <define name="USE_I2C1" value="TRUE"/><!-- 4525D5AI 001D 2126 010417094 -->
-        <define name="MS45XX_I2C_DEV" value="i2c1"/>
-        <!--<define name="MS45XX_PRESSURE_TYPE" value="0"/> --><!--description="Pressure Differential or Gauge, default is Differential">-->
-        <define name="MS45XX_PRESSURE_RANGE" value="1" /><!-- description="pressure range in psi (default: 1)"-->
-        <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
-        <define name="MS45XX_SYNC_SEND" value="FALSE" /> <!--description="flag to enable sending every new measurement via telemetry (default:FALSE)-->
-        <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
-        <define name="MS45XX_PRESSURE_OFFSET" value="8081.75" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
-<!--        <define name="MS45XX_AIRSPEED_SCALE" value="1.6327"/> &lt;!&ndash;description="quadratic scale factor to convert differential pressure to airspeed"&ndash;&gt;-->
-        <define name="MS45XX_LOWPASS_TAU" value="0.2"/> <!--description="Time constant for second order Butterworth low pass filter"-->
-        <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
+      <module name="airspeed" type="sdp3x">
+        <define name="USE_I2C1"/> 
+        <configure name="SDP3X_I2C_DEV" value="i2c1"/>
+        <!-- <define name="SDP3X_I2C_ADDR" value="0x50"--><!-- slave address default 0x50"/>-->
+        <define name="SDP3X_SYNC_SEND" value="TRUE"/>
+        <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/> <!-- sdp33 -->
+        <define name="SDP3X_LOWPASS_TAU" value="0.15"/>
+        <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
+        <define name="USE_AIRSPEED" value="TRUE"/>
       </module>
     </target>
 
@@ -97,9 +94,10 @@
     <!--    <module name="telemetry" type="transparent"/>				-->
     <!--<module name="motor_mixing"/>-->
     <module name="telemetry" type="transparent">
-      <configure name="MODEM_PORT" value="UART3"/>
+      <configure name="MODEM_PORT" value="UART2"/>
       <configure name="MODEM_BAUD" value="B57600"/>
     </module>
+
 
     <module name="imu" type="mpu9250_spi">
       <configure name="IMU_MPU9250_SPI_DEV" value="spi1"/>
@@ -118,6 +116,7 @@
     </module>
 
     <module name="gps" type="ublox">
+      <configure name="UBX_GPS_PORT" value="UART4"/>
       <configure name="GPS_BAUD" value="B57600"/>
     </module>
     <!-- <module name="gps" type="datalink"/> -->
@@ -141,6 +140,7 @@
 
     <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="TRUE"/>
+      <define name="AHRS_MAG_UPDATE_ALL_AXES" value="TRUE"/> 
       <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
       <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
     </module>
@@ -181,7 +181,7 @@
     </module>
 
     <module name="lidar" type="tfmini">
-      <configure name="TFMINI_PORT" value="UART2"/>
+      <configure name="TFMINI_PORT" value="UART3"/>
       <configure name="TFMINI_BAUD" value="B115200"/>
       <configure name="USE_TFMINI_AGL" value="TRUE"/>
       <configure name="TFMINI_COMPENSATE_ROTATION" value="TRUE"/>
@@ -190,13 +190,13 @@
   </firmware>
 	  	 
   <servos driver="Pwm">
-    <servo name="TILT_LEFT"  no="0" min="2230" neutral="1480" max="730"/> <!--neutral 1490-->
-    <servo name="TILT_RIGHT" no="1" min="800" neutral="1550" max="2300"/> <!--neutral 1525-->
+    <servo name="TILT_LEFT"  no="0" min="2210" neutral="1460" max="710"/> <!--neutral 1490-->
+    <servo name="TILT_RIGHT" no="1" min="700" neutral="1450" max="2200"/> <!--neutral 1525-->
     <!--<servo name="ELEVON_RIGHT"  no="1" min="820" neutral="1520" max="2220"/>-->
     <servo name="RM" no="2" min="1000" neutral="1100" max="1900"/>
     <servo name="LM" no="3" min="1000" neutral="1100" max="1900"/>
-    <servo name="ELE_LEFT"  no="4" min="690" neutral="1440" max="2190"/> <!--neutral 1440-->
-    <servo name="ELE_RIGHT"  no="5" min="700" neutral="1450" max="2200"/> <!--neutral 1450-->
+    <servo name="ELE_LEFT"  no="4" min="770" neutral="1520" max="2270"/> <!--neutral 1440-->
+    <servo name="ELE_RIGHT"  no="5" min="690" neutral="1440" max="2190"/> <!--neutral 1450-->
     <!--<servo name="SERVO_TEST" no="4" min="1000" neutral="1500" max="2000"/>-->
   </servos>
 
@@ -310,8 +310,8 @@
     <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
     <!-- Actuators					 tilt_l tilt_r  m_r  m_l						-->
     <define name="G1_ROLL" value="{0.0, 0.0, -12.7, 12.7, 0.0, 0.0}"/>
-    <define name="G1_PITCH" value="{7.3, 7.3, 0.0, 0.0, -4.0, 4.0}"/>
-    <define name="G1_YAW" value="{-2.9, 2.9, 0.0, 0.0, -2.0, -2.0}"/>
+    <define name="G1_PITCH" value="{7.3, 7.3, 0.0, 0.0, -1.5, 1.5}"/>
+    <define name="G1_YAW" value="{-2.9, 2.9, 0.0, 0.0, -1.8, -1.8}"/>
     <define name="G1_THRUST" value="{0.0, 0.0, -0.8, -0.8, 0.0, 0.0}"/>
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{0, 0, 0, 0, 0, 0}"/>
@@ -373,6 +373,8 @@
 
 <!-- Definitions for control effectiveness calculator module -->
   <section name="CONTROL_EFFECTIVENESS" prefix="CTRL_EFF_CALC_">
+    <define name="PITCH_EFF_AT_60" value="2.0"/>
+    <define name="YAW_EFF_AT_60" value="5.0"/>
   	<define name="GROUND_CONTACT" value="0"/>
     <define name="THRUST_LOWER_LIM" value="1200"/>
   	
@@ -391,12 +393,12 @@
     	<define name="K1" value="0.00000005"/>
     	<define name="K2" value="0.0003"/>
     	<define name="K3" value="0.1486"/>
-    	<!--[kg]-->
-      <define name="CDE" value="0.02"/>
-      <define name="CDE_OFFSET" value="0.004"/>
+  
+      <define name="CDE" value="0.02"/> <!--0.02-->
+      <define name="CDE_OFFSET" value="0.0015"/><!--0.002 0.0004 0.004-->
 
-      <define name="CDA" value="0.02"/>
-      <define name="CDA_OFFSET" value="0.0002"/>
+      <define name="CDA" value="0.05"/>
+      <define name="CDA_OFFSET" value="0.0018"/><!--0.0002-->
 
     	<!-- Location of the Motors w.r.t. the c.g. -->
     	<define name="Y_DIST" value="0.16"/>		<!--[m]-->

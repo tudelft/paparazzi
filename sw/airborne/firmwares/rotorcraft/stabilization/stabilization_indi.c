@@ -200,6 +200,7 @@ float pivot_gain_i=1.0;
 #endif
 
 bool use_pitch_Wu = false;
+bool use_flap = false;
 float theta_d = RadOfDeg(-90.0); 
 // float m = CTRL_EFF_CALC_MASS;
 int16_t takeoff_stage = 0;
@@ -705,6 +706,7 @@ void update_filters(void) {
     estimation_rate_d[i] = (estimation_output_lowpass_filters[i].o[0] - estimation_output_lowpass_filters[i].o[1]) *
                            PERIODIC_FREQUENCY;
     estimation_rate_dd[i] = (estimation_rate_d[i] - estimation_rate_d_prev) * PERIODIC_FREQUENCY;
+  }
 
  // Propagate actuator filters
   get_actuator_state();
@@ -718,7 +720,6 @@ void update_filters(void) {
     actuator_state_filt_vectd[i] = (estimation_input_lowpass_filters[i].o[0] - estimation_input_lowpass_filters[i].o[1]) *
                                    PERIODIC_FREQUENCY;
     actuator_state_filt_vectdd[i] = (actuator_state_filt_vectd[i] - actuator_state_filt_vectd_prev) * PERIODIC_FREQUENCY;
-  }
   }
 }
 
@@ -869,14 +870,25 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
   //Control allocation Weights as a function of airspeed
   // Tilt-rotor tailsitter
-  #if USE_PIVOT_SWITCH == TRUE
 
-  if (use_pitch_Wu) {
+  #if USE_PIVOT_SWITCH == TRUE
+  if(use_flap){
+      // // Flap deflected tailsitter, for comparison of wind disturbance rejection in hovering
+  float fun_elevon = 0;
+  float fun_tilt = 100000;
+  indi_Wu[0] = 100000;
+  indi_Wu[1] = 100000;
+  indi_Wu[4] = 0;
+  indi_Wu[5] = 0;
+  }
+  else{
+  if (airspeed < 6.0) {
   struct FloatEulers eulers_zxy;
   struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
   float_eulers_of_quat_zxy(&eulers_zxy, statequat);
-  float fun_tilt = -2.864789f * eulers_zxy.theta- 1.5f;
-  float fun_elevon = 2.864789f * eulers_zxy.theta + 2.5f;
+  float fun_tilt = -6.0/M_PI * eulers_zxy.theta- 1.0f;
+  float fun_elevon = 6.0/M_PI * eulers_zxy.theta + 2.0f;
+  
   indi_Wu[0] = (fun_tilt > 1.0f) ? 1.0f: ((fun_tilt < 0.001f) ? 0.001f : fun_tilt);
   indi_Wu[1] = indi_Wu[0];
   indi_Wu[4] = (fun_elevon > 1.0f) ? 1.0f: ((fun_elevon < 0.1f) ? 0.1f : fun_elevon);
@@ -898,20 +910,11 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   //   indi_Wu[0] *= (fabs(indi_v[1]) > 0) ? pitch_preference : 1.0f;
   //   indi_Wu[1] *= (fabs(indi_v[1]) > 0) ? pitch_preference : 1.0f;
   //   indi_Wu[4] *= ((fabs(indi_v[0]) > 0) || (fabs(indi_v[2]) > 0)) ? roll_yaw_preference : 1.0f;
-  //   indi_Wu[5] *= ((fabs(indi_v[0]) > 0) || (fabs(indi_v[2]) > 0)) ? roll_yaw_preference : 1.0f;
-
-  // }
+  //   indi_Wu[5] *= ((fabs(indi_v[0]) > 0) || (fabs(indi_v[2]) > 0)) ? roll_yaw_preference : 1.0f;}
+  }
   #endif
   
  
- 
-  // Flap deflected tailsitter, for comparison of wind disturbance rejection in hovering
-  // float fun_flap = 0.124875f * airspeed - 0.4985f;
-  // float fun_tilt = -0.124875f * airspeed + 1.4995f;
-  // indi_Wu[0] = (fun_tilt > 1.0f) ? 1.0f: ((fun_tilt < 0.001f) ? 0.001f : fun_tilt);
-  // indi_Wu[1] = indi_Wu[0];
-  // indi_Wu[4] = (fun_elevon > 1.0f) ? 1.0f: ((fun_elevon < 0.001f) ? 0.001f : fun_elevon);
-  // indi_Wu[5] = indi_Wu[4];
 
 
   //RunOnceEvery(200, DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 1,indi_counter));
@@ -1153,6 +1156,8 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     update_filters();
   } else if (takeoff_stage == 2){ // not in a takeoff stage, flying
 	  /* compute the INDI command */
+    actuators_pprz[0] = 0;
+	  actuators_pprz[1] = 0;
 	  stabilization_indi_rate_run(rate_sp, in_flight);
   }
 #endif

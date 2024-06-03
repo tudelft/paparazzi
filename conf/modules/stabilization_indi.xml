@@ -71,6 +71,7 @@
         <dl_setting var="roll_gain" min="0" step="0.01" max="10" shortname="roll gain"/>
         <dl_setting var="side_slip_gain_rc" min="0" step="0.01" max="10" shortname="sideslip_gain"/>
         <dl_setting var="use_pitch_Wu" min="0" step="1" max="1" values="OFF|ON" shortname="use_pitch_Wu"/>
+        <dl_setting var="use_flap" min="0" step="1" max="1" values="OFF|ON" shortname="use_flap"/>
       </dl_settings>
     </dl_settings>
   </settings>
