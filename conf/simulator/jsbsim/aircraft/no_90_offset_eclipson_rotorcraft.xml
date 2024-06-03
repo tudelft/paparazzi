@@ -91,10 +91,10 @@
             <location unit="M">
                 <x>0.4 </x>
                 <y> 0 </y>
-                <z> 0 </z>
+                <z> 0.0 </z>
             </location>
-            <static_friction>  0.8 </static_friction>
-            <dynamic_friction> 0.5 </dynamic_friction>
+            <static_friction>  0.5 </static_friction>
+            <dynamic_friction> 0.3 </dynamic_friction>
             <spring_coeff unit="N/M"> 500 </spring_coeff>
             <damping_coeff unit="N/M/SEC"> 100 </damping_coeff>
             <damping_coeff_rebound type="SQUARE" unit="N/M2/SEC2"> 1000 </damping_coeff_rebound>
@@ -109,8 +109,8 @@
                 <y> 0   </y>
                 <z> 0 </z>
             </location>
-            <static_friction>  0.8 </static_friction>
-            <dynamic_friction> 0.5 </dynamic_friction>
+            <static_friction>  0.5 </static_friction>
+            <dynamic_friction> 0.3 </dynamic_friction>
             <spring_coeff unit="N/M"> 500 </spring_coeff>
             <damping_coeff unit="N/M/SEC"> 100 </damping_coeff>
             <damping_coeff_rebound type="SQUARE" unit="N/M2/SEC2"> 1000 </damping_coeff_rebound>
@@ -125,8 +125,8 @@
                 <y> 0.3</y>
                 <z> 0 </z>
             </location>
-            <static_friction>  0.8 </static_friction>
-            <dynamic_friction> 0.5 </dynamic_friction>
+            <static_friction>  0.5 </static_friction>
+            <dynamic_friction> 0.3 </dynamic_friction>
             <spring_coeff unit="N/M"> 500 </spring_coeff>
             <damping_coeff unit="N/M/SEC"> 100 </damping_coeff>
             <damping_coeff_rebound type="SQUARE" unit="N/M2/SEC2"> 1000 </damping_coeff_rebound>
@@ -141,8 +141,8 @@
                 <y>-0.3</y>
                 <z> 0 </z>
             </location>
-            <static_friction>  0.8 </static_friction>
-            <dynamic_friction> 0.5 </dynamic_friction>
+            <static_friction>  0.5 </static_friction>
+            <dynamic_friction> 0.3 </dynamic_friction>
             <spring_coeff unit="N/M"> 500 </spring_coeff>
             <damping_coeff unit="N/M/SEC"> 100 </damping_coeff>
             <damping_coeff_rebound type="SQUARE" unit="N/M2/SEC2"> 1000 </damping_coeff_rebound>
@@ -214,11 +214,11 @@
             <function>
                 <product>
                     <property>fcs/mot_lag</property>
-                    <value> 1.55 </value>
+                    <value> 0.55 </value>
                 </product>
             </function>
             <location unit="IN">
-                <x>6</x>
+                <x>-4</x>
                 <y>0</y>
                 <z>0</z>
             </location>

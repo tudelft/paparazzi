@@ -11,28 +11,25 @@
       <dl_settings NAME="guidance_indi_hybrid_nld">
         <dl_settings name="controller">
             <dl_setting var="soaring_ctrl_switch" min="0" step="1" max="1" values="OFF|ON" shortname="switching_ctrl"/>
-<!--          <dl_setting var="gih_params.pos_gain" min="0" step="0.05" max="10.0" shortname="kpos" param="GUIDANCE_INDI_POS_GAIN" persistent="true"/>-->
-<!--          <dl_setting var="gih_params.pos_gainz" min="0" step="0.05" max="10.0" shortname="kpos_z" param="GUIDANCE_INDI_POS_GAINZ" persistent="true"/>-->
-<!--          <dl_setting var="gih_params.speed_gain" min="0" step="0.05" max="10.0" shortname="kspd" param="GUIDANCE_INDI_SPEED_GAIN" persistent="true"/>-->
-<!--          <dl_setting var="gih_params.speed_gainz" min="0" step="0.05" max="10.0" shortname="kspd_z" param="GUIDANCE_INDI_SPEED_GAINZ" persistent="true"/>-->
-<!--          <dl_setting var="gih_params.heading_bank_gain" min="0" step="0.1" max="30.0" shortname="bank gain" param="GUIDANCE_INDI_HEADING_BANK_GAIN" persistent="true"/>-->
-<!--          <dl_setting var="guidance_indi_max_airspeed" min="5.0" step="1.0" max="30.0" shortname="cruise_airspeed"/>-->
-<!--          <dl_setting var="nav_max_speed" min="1.0" step="1.0" max="50.0" shortname="nav_max_speed"/>-->
-<!--          <dl_setting var="guidance_indi_max_bank" min="10.0" step="1.0" max="50.0" shortname="max_bank"/>-->
-<!--          &lt;!&ndash;        <dl_setting var="take_heading_control" min="0" step="1" max="1" values="OFF|ON" shortname="take_heading"/>&ndash;&gt;-->
-<!--          <dl_setting var="lift_pitch_eff" min="0.0" step="0.01" max="1.0" shortname="lift_pitch_eff"/>-->
+          <dl_setting var="soaring_reduced_ctrl_type" min="0" step="1" max="1" values="OFF|ON" shortname="hor_or_alt"/>
+<!--          <dl_setting var="guidance_indi_soaring_use_spline_clcd" min="0" max="1" step="1" values="OFF|ON" shortname="USE_SPLINE"/>-->
 
 <!--          <dl_setting var="guidance_soaring_max_throttle" min="0" step="100" max="9600" shortname="max_throttle"/>-->
+
+          <dl_setting var="guidance_indi_soaring_use_aoa" min="0" max="1" step="1" values="OFF|ON" shortname="USE_AOA"/>
+          <dl_setting var="guidance_indi_soaring_use_drag" min="0" max="1" step="1" values="OFF|ON" shortname="USE_DRAG"/>
+            <dl_setting var="soaring_critical_aoa" min="0.0" max="0.3" step="0.005" shortname="crit_aoa"/>
+          <dl_setting var="guidance_indi_soaring_min_aoa" min="-0.6" max="0.0" step="0.005" shortname="MIN_AOA"/>
+          <dl_setting var="guidance_indi_soaring_max_aoa" min="0.0" max="0.6" step="0.005" shortname="MAX_AOA"/>
+
+            <dl_setting var="use_aoa_pitch_limit" min="0" max="1" step="1" values="OFF|ON" shortname="aoa_pitch_limit"/>
+            <dl_setting var="use_aoa_pitch_pref" min="0" max="1" step="1" values="OFF|ON" shortname="pitch_pref_on"/>
+
+          <dl_setting var="pitch_eff_scale" min="0.0" max="2.0" step="0.01" shortname="pitch_eff_scale" />
 
           <dl_setting var="max_acc_sp" min="0.1" step="0.1" max="10" shortname="max_acc_sp_down"/>
           <dl_setting var="min_acc_sp" min="-10" step="0.1" max="-0.1" shortname="min_acc_sp_up"/>
 
-          <dl_setting var="guidance_indi_soaring_use_aoa" min="0" max="1" step="1" values="OFF|ON" shortname="USE_AOA"/>
-          <dl_setting var="guidance_indi_soaring_use_drag" min="0" max="1" step="1" values="OFF|ON" shortname="USE_DRAG"/>
-          <dl_setting var="pitch_eff_scale" min="0.0" max="2.0" step="0.01" shortname="pitch_eff_scale" />
-            <dl_setting var="soaring_critical_aoa" min="0.0" max="0.3" step="0.005" shortname="crit_aoa"/>
-            <dl_setting var="use_aoa_pitch_limit" min="0" max="1" step="1" values="OFF|ON" shortname="aoa_pitch_limit"/>
-            <dl_setting var="use_aoa_pitch_pref" min="0" max="1" step="1" values="OFF|ON" shortname="pitch_pref_on"/>
           <!--        <dl_setting var="soaring_spd_sp.x" min="-1.0" step="0.001" max="1.0" shortname="speed_sp_x"/>-->
           <!--        <dl_setting var="soaring_spd_sp.y" min="-1.0" step="0.001" max="1.0" shortname="speed_sp_y"/>-->
           <!--        <dl_setting var="soaring_spd_sp.z" min="-1.0" step="0.001" max="1.0" shortname="speed_sp_z"/>-->

@@ -103,6 +103,8 @@ extern float du_max_gih_reduced[GUIDANCE_INDI_HYBRID_U_REDUCED];
 extern float du_pref_gih_reduced[GUIDANCE_INDI_HYBRID_U_REDUCED];
 #endif
 
+extern bool soaring_reduced_ctrl_type;
+
 extern float guidance_indi_thrust_z_eff;
 extern float guidance_indi_thrust_x_eff;
 extern float soaring_ctrl_switch;

@@ -511,6 +511,9 @@
          <field name="Dd" type="float" />
          <field name="AOA_mode_on" type="uint8"/>
          <field name="use_drag" type="uint8"/>
+         <field name="ctrl_switching_on" type="uint8" />
+         <field name="using_reduced_ctrl" type="uint8" />
+         <!-- 0 default (linear w/o aoa), 2 linear w/o aoa w/drag, 11 3d aoa ctrl, 12 alt ctrl, 13 hor ctrl -->
          <field name="critical_aoa" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
      </message>
 

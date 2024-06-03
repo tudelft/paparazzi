@@ -306,7 +306,7 @@ NOTES:
         <!--        AOA sensor thru Teensy 4-->
         <module name="aoa_t4">
             <define name="AOA_T4_SERVO_ID" value="8"/>
-            <define name="AOA_T4_OFFSET" value="2.05"/>    <!-- in rad -->
+            <define name="AOA_T4_OFFSET" value="-1.25"/>    <!-- in rad -->
 <!--            <define name="AOA_T4_SIGN" value="-1"/>-->
             <define name="AOA_T4_USE_LOWPASS_FILTER" value="TRUE"/>
             <define name="AOA_T4_LOWPASS_TAU" value="0.05"/>
@@ -740,7 +740,7 @@ NOTES:
     <define name="MIN_ACC_SP" value="-4.5"/>  <!-- min and max acc sp; MIN is upward, MAX is downward -->
     <define name="MAX_ACC_SP" value="4.0"/>
 <!--      <define name="LIFTD_ASQ" value="0.35"/>       &lt;!&ndash; 0.35 for Seal &ndash;&gt;-->
-      <define name="LIFTD_ASQ" value="0.20"/>           <!-- TODO: calc -->
+      <define name="LIFTD_ASQ" value="0.5515"/>           <!-- TODO: calc -->
 
       <define name="HYBRID_USE_WLS" value="TRUE"/>
       <define name="HYBRID_USE_OLD_WLS" value="TRUE"/>  <!-- define this to use the old version -->
@@ -790,7 +790,13 @@ NOTES:
       <!-- for the new effectiveness model -->
       <!--      <define name="SOARING_USE_AOA" value="TRUE"/>-->
       <!--      <define name="SOARING_USE_DRAG" value="TRUE"/>-->
-<!--      <define name="SOARING_CRITICAL_AOA" value=""/>-->
+      <define name="SOARING_CRITICAL_AOA" value="0.2059"/>
+
+      <define name="SOARING_SPLINE_AOA_OFFSET" value="0" />
+      <define name="SOARING_SPLINE_AOA_SCALE" value="0.9" />
+      <define name="SOARING_SPLINE_CL_OFFSET" value="0.2" />
+      <define name="SOARING_SPLINE_CL_SCALE" value="0.7" />
+      <define name="SOARING_SPLINE_CD_SCALE" value="0.7" />
   </section>
 
   <section name="BAT">

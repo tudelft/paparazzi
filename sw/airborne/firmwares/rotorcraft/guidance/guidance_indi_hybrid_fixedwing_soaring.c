@@ -55,60 +55,6 @@
 #include "firmwares/rotorcraft/navigation.h"
 
 
-// The acceleration reference is calculated with these gains. If you use GPS,
-// they are probably limited by the update rate of your GPS. The default
-// values are tuned for 4 Hz GPS updates. If you have high speed position updates, the
-// gains can be higher, depending on the speed of the inner loop.
-//#ifndef GUIDANCE_INDI_SPEED_GAIN
-//#define GUIDANCE_INDI_SPEED_GAIN 1.8
-//#define GUIDANCE_INDI_SPEED_GAINY 1.8
-//#define GUIDANCE_INDI_SPEED_GAINZ 1.8
-//#endif
-//
-//#ifndef GUIDANCE_INDI_POS_GAIN
-//#define GUIDANCE_INDI_POS_GAIN 0.5
-//#define GUIDANCE_INDI_POS_GAINY 0.5
-//#define GUIDANCE_INDI_POS_GAINZ 0.5
-//#endif
-//
-//#ifndef GUIDANCE_INDI_MIN_PITCH
-//#define GUIDANCE_INDI_MIN_PITCH -120
-//#define GUIDANCE_INDI_MAX_PITCH -60
-//#endif
-
-
-//struct guidance_indi_hybrid_params gih_params = {
-//  .pos_gain = GUIDANCE_INDI_POS_GAIN,
-//  .pos_gainz = GUIDANCE_INDI_POS_GAINZ,
-//
-//  .speed_gain = GUIDANCE_INDI_SPEED_GAIN,
-//  .speed_gainz = GUIDANCE_INDI_SPEED_GAINZ,
-//
-//  .heading_bank_gain = GUIDANCE_INDI_HEADING_BANK_GAIN,
-////        .liftd_asq = GUIDANCE_INDI_LIFTD_ASQ, // coefficient of airspeed squared
-////        .liftd_p80 = GUIDANCE_INDI_LIFTD_P80,
-////        .liftd_p50 = GUIDANCE_INDI_LIFTD_P50,
-//};
-
-//#ifndef GUIDANCE_INDI_MAX_AIRSPEED
-//#error "You must have an airspeed sensor to use this guidance"
-//#endif
-//float guidance_indi_max_airspeed = GUIDANCE_INDI_MAX_AIRSPEED;
-
-//#ifndef GUIDANCE_INDI_FILTER_CUTOFF
-//#ifdef STABILIZATION_INDI_FILT_CUTOFF
-//#define GUIDANCE_INDI_FILTER_CUTOFF STABILIZATION_INDI_FILT_CUTOFF
-//#else
-//#define GUIDANCE_INDI_FILTER_CUTOFF 3.0
-//#endif
-//#endif
-
-//float inv_eff[4];
-
-
-// Max bank angle in radians
-//float guidance_indi_max_bank = GUIDANCE_H_MAX_BANK;
-
 /** state eulers in zxy order */
 //struct FloatEulers eulers_zxy;
 
@@ -284,6 +230,35 @@
 #define GUIDANCE_INDI_SOARING_CRITICAL_AOA 0.095
 #endif
 
+#ifndef GUIDANCE_INDI_SOARING_MAX_AOA
+#define GUIDANCE_INDI_SOARING_MAX_AOA 0.34
+#endif
+#ifndef GUIDANCE_INDI_SOARING_MIN_AOA
+#define GUIDANCE_INDI_SOARING_MIN_AOA -0.51
+#endif
+
+#ifndef GUIDANCE_INDI_SOARING_SPLINE_AOA_OFFSET
+#define GUIDANCE_INDI_SOARING_SPLINE_AOA_OFFSET 0
+#endif
+#ifndef GUIDANCE_INDI_SOARING_SPLINE_AOA_SCALE
+#define GUIDANCE_INDI_SOARING_SPLINE_AOA_SCALE 1.0
+#endif
+
+#ifndef GUIDANCE_INDI_SOARING_SPLINE_CL_OFFSET
+#define GUIDANCE_INDI_SOARING_SPLINE_CL_OFFSET 0
+#endif
+#ifndef GUIDANCE_INDI_SOARING_SPLINE_CL_SCALE
+#define GUIDANCE_INDI_SOARING_SPLINE_CL_SCALE 1.0
+#endif
+
+#ifndef GUIDANCE_INDI_SOARING_SPLINE_CD_SCALE
+#define GUIDANCE_INDI_SOARING_SPLINE_CD_SCALE 1.0
+#endif
+
+//#ifndef GUIDANCE_INDI_SOARING_USE_SPLINE
+//#define GUIDANCE_INDI_SOARING_USE_SPLINE FALSE
+//#endif
+
 // 2m/0.1 = 20 data points for one axis
 #define MAP_MAX_NUM_POINTS 400
 
@@ -292,12 +267,23 @@ float L;
 float Ld;
 float Dd;
 
+//bool guidance_indi_soaring_use_spline_clcd = GUIDANCE_INDI_SOARING_USE_SPLINE;
+bool guidance_indi_soaring_use_drag = GUIDANCE_INDI_SOARING_USE_DRAG;
+bool guidance_indi_soaring_use_aoa = GUIDANCE_INDI_SOARING_USE_AOA;
+
+float guidance_indi_soaring_min_aoa = GUIDANCE_INDI_SOARING_MIN_AOA;
+float guidance_indi_soaring_max_aoa = GUIDANCE_INDI_SOARING_MAX_AOA;
+
+float spline_aoa_scale = GUIDANCE_INDI_SOARING_SPLINE_AOA_SCALE;
+float spline_aoa_offset = GUIDANCE_INDI_SOARING_SPLINE_AOA_OFFSET;
+float spline_cl_offset = GUIDANCE_INDI_SOARING_SPLINE_CL_OFFSET;
+float spline_cl_scale = GUIDANCE_INDI_SOARING_SPLINE_CL_SCALE;
+float spline_cd_scale = GUIDANCE_INDI_SOARING_SPLINE_CD_SCALE;
+
 bool use_aoa_pitch_pref = false;
 bool use_aoa_pitch_limit = false;
 float soaring_critical_aoa = GUIDANCE_INDI_SOARING_CRITICAL_AOA;
 float pitch_eff_scale = GUIDANCE_INDI_PITCH_EFF_SCALING;
-bool guidance_indi_soaring_use_drag = GUIDANCE_INDI_SOARING_USE_DRAG;
-bool guidance_indi_soaring_use_aoa = GUIDANCE_INDI_SOARING_USE_AOA;
 bool reset_unreachable_wp = GUIDANCE_INDI_SOARING_RESET_UNREACHABLE_WP;
 bool reset_stdby_after_timeout = GUIDANCE_INDI_SOARING_RESET_STDBY_AFTER_N_SEC;
 bool move_wp_body_is_ned = GUIDANCE_INDI_SOARING_BODY_IS_NED;
@@ -396,6 +382,8 @@ time_t rand_seed;
 uint16_t stdby_entry_time = 0;
 uint16_t reset_stdby_timeout = GUIDANCE_INDI_SOARING_RESET_STDBY_TIMEOUT;
 
+uint8_t using_reduced_ctrl = 0;
+
 struct Waypoint soar_wp;
 
 void guidance_indi_soaring_move_wp(float cost_avg_val);
@@ -426,6 +414,8 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
     float aoa = stateGetAngleOfAttack_f();
     uint8_t use_aoa = guidance_indi_soaring_use_aoa;
     uint8_t use_drag = guidance_indi_soaring_use_drag;
+    uint8_t ctrl_switching_enabled = soaring_ctrl_switch;
+//    uint8_t using_reduced_ctrl = used_reduced_ctrl;
     // publish only additional information (+indi_hybrid)
     // roll/theta/psi, thrust, pos err + spd sp
   pprz_msg_send_GUIDANCE_INDI_HYBRID_SOARING(trans, dev, AC_ID,
@@ -443,6 +433,8 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
                               &L, &Ld, &Dd,
                               &use_aoa,
                               &use_drag,
+                              &ctrl_switching_enabled,
+                              &using_reduced_ctrl,
                               &soaring_critical_aoa
                               );
 }
@@ -804,7 +796,7 @@ struct FloatVect3 compute_soaring_accel_sp(struct HorizontalGuidance *gh, struct
 float guidance_indi_soaring_get_lift_spline(float aoa, float airspeed, float Q, float offset_aoa, float scale_aoa, float offset_cl, float scale_cl) {
     aoa = aoa/scale_aoa - offset_aoa;
 
-    float cl = -12 * (aoa) + 4.5078;
+    float cl = 0;
 
     if (aoa < -0.235619) {
         cl = -1;
@@ -846,11 +838,12 @@ float guidance_indi_soaring_get_lift_spline(float aoa, float airspeed, float Q, 
         cl = -12 * (aoa) + 4.5078;
     }
 
-    return (cl*scale_cl+offset_cl)*Q*airspeed*airspeed;
+    return -(cl*scale_cl+offset_cl)*Q*airspeed*airspeed;
 }
 float guidance_indi_soaring_get_liftd_spline(float aoa, float airspeed, float Q, float offset_aoa, float scale_aoa, float scale_cld) {
     aoa = aoa/scale_aoa - offset_aoa;
-    float cld = -12;
+
+    float cld = 0;
 
     if (aoa < -0.235619){
         cld = -4.44724;
@@ -891,15 +884,27 @@ float guidance_indi_soaring_get_liftd_spline(float aoa, float airspeed, float Q,
     } else {
         cld = -12;
     }
-    return (cld*scale_cld/scale_aoa)*Q*airspeed*airspeed;     // TODO: check sign
+    return -(cld*scale_cld/scale_aoa)*Q*airspeed*airspeed;     // TODO: check sign
 }
 
-float guidance_indi_soaring_get_dragd_spline(float aoa, float airspeed, float Q,  float offset_aoa, float scale_aoa, float scale_cl) {
-    float cdd = 0;
+//float guidance_indi_soaring_get_drag_spline(float aoa, float airspeed, float Q,  float offset_aoa, float scale_aoa, float offset_cd, float scale_cd) {
+//    aoa = (aoa/scale_aoa) - offset_aoa;
+//
+//    float cd = 0.9171*aoa*aoa - 0.0012*aoa + 0.0014;
+////    0.9171   -0.0012    0.0014
+//
+//    return -(cd*scale_cd+offset_cd)*Q*airspeed*airspeed;
+//}
 
-    return cdd*Q*airspeed*airspeed;
+float guidance_indi_soaring_get_dragd_spline(float aoa, float airspeed, float Q,  float offset_aoa, float scale_aoa, float scale_cd) {
+    aoa = (aoa/scale_aoa) - offset_aoa;
+
+    float cdd = 0.9171*2*aoa - 0.0012;
+
+    return -(cdd*scale_cd/scale_aoa)*Q*airspeed*airspeed;
 }
 
+// for Seal plane
 float guidance_indi_soaring_get_lift(float aoa, float airspeed, float Q) {
     float c_lift = 0.0;
     if (aoa < -0.5236) {            // -30 deg;
@@ -1016,10 +1021,6 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
     float cpsi = cosf(eulers_zxy.psi);
     //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
 
-//#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
-//#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
-//#endif
-
     /*Amount of lift produced by the wing*/
     float pitch_lift = eulers_zxy.theta;
 //    Bound(pitch_lift,-M_PI_2,0);
@@ -1028,8 +1029,16 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
 //    float drag = -sinf(pitch_lift)*9.81;
 
     float airspeed = stateGetAirspeed_f();
-    float Q = 0.1574;       // 0.5 rho S
+//    float Q = 0.1574;       // 0.5 rho S        for Seal
+    float Q = 0.1103;           // Eclipson C       TODO: var
+
     float aoa = stateGetAngleOfAttack_f();      // in rad
+    if (aoa > guidance_indi_soaring_max_aoa) {
+        aoa = guidance_indi_soaring_max_aoa;
+    } else if (aoa < guidance_indi_soaring_min_aoa) {
+        aoa = guidance_indi_soaring_min_aoa;
+    }
+
     if (airspeed < 6.3) {
         // AOA sensor only works when airspeed > 7m/s
         // below that, use pitch
@@ -1041,15 +1050,22 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
 //    float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
 //    float liftd = -24.0;    // FIXME
     float liftd = -gih_params.liftd_asq*airspeed*airspeed;
-    float dragd = -2*2.2077*pitch_lift*Q*airspeed*airspeed;
+//    float dragd = -2*2.2077*pitch_lift*Q*airspeed*airspeed;   // Seal
+    float dragd = -2*0.9171*pitch_lift*Q*airspeed*airspeed;     // Eclipson
 
     // Calculate Cl, Cd, liftd and dragd
     if (guidance_indi_soaring_use_aoa) {
-        lift = guidance_indi_soaring_get_lift(aoa, airspeed, Q);
-        liftd = guidance_indi_soaring_get_liftd(aoa, airspeed, Q);
-
-//        drag = guidance_indi_soaring_get_drag(aoa, airspeed, Q);
-        dragd = guidance_indi_soaring_get_dragd(aoa, airspeed, Q);
+//        if (guidance_indi_soaring_use_spline_clcd) {
+            lift = guidance_indi_soaring_get_lift_spline(aoa, airspeed, Q, spline_aoa_offset, spline_aoa_scale, spline_cl_offset, spline_cl_scale);
+            liftd = guidance_indi_soaring_get_liftd_spline(aoa, airspeed, Q, spline_aoa_offset, spline_aoa_scale, spline_cl_scale);
+            dragd = guidance_indi_soaring_get_dragd_spline(aoa, airspeed, Q, spline_aoa_offset, spline_aoa_scale, spline_cd_scale);
+//        } else {
+//            lift = guidance_indi_soaring_get_lift(aoa, airspeed, Q);
+//            liftd = guidance_indi_soaring_get_liftd(aoa, airspeed, Q);
+//
+////        drag = guidance_indi_soaring_get_drag(aoa, airspeed, Q);
+//            dragd = guidance_indi_soaring_get_dragd(aoa, airspeed, Q);
+//        }
     }
 
     // update vars for logging
@@ -1080,6 +1096,8 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
     v_gih[0] = a_diff.x;
     v_gih[1] = a_diff.y;
     v_gih[2] = a_diff.z;
+
+    using_reduced_ctrl = 0;
 }
 void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED][GUIDANCE_INDI_HYBRID_U_REDUCED], struct FloatVect3 a_diff, float v_gih[GUIDANCE_INDI_HYBRID_V_REDUCED], bool altitude_ctrl) {
     // Get attitude
@@ -1089,8 +1107,8 @@ void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED]
     /*Pre-calculate sines and cosines*/
     float sphi = sinf(eulers_zxy.phi);
     float cphi = cosf(eulers_zxy.phi);
-    float stheta = sinf(eulers_zxy.theta);
-    float ctheta = cosf(eulers_zxy.theta);
+//    float stheta = sinf(eulers_zxy.theta);
+//    float ctheta = cosf(eulers_zxy.theta);
     float spsi = sinf(eulers_zxy.psi);
     float cpsi = cosf(eulers_zxy.psi);
     //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
@@ -1103,8 +1121,16 @@ void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED]
 //    float drag = -sinf(pitch_lift)*9.81;
 
     float airspeed = stateGetAirspeed_f();
-    float Q = 0.1574;       // 0.5 rho S
+//    float Q = 0.1574;       // 0.5 rho S        for Seal
+    float Q = 0.1103;           // Eclipson C       TODO: var
+
     float aoa = stateGetAngleOfAttack_f();      // in rad
+    if (aoa > guidance_indi_soaring_max_aoa) {
+        aoa = guidance_indi_soaring_max_aoa;
+    } else if (aoa < guidance_indi_soaring_min_aoa) {
+        aoa = guidance_indi_soaring_min_aoa;
+    }
+
     if (airspeed < 6.3) {
         // AOA sensor only works when airspeed > 7m/s
         // below that, use pitch
@@ -1114,15 +1140,22 @@ void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED]
 
     // get the derivative of the lift wrt to theta
     float liftd = -gih_params.liftd_asq*airspeed*airspeed;
-    float dragd = -2*2.2077*pitch_lift*Q*airspeed*airspeed;
+//    float dragd = -2*2.2077*pitch_lift*Q*airspeed*airspeed;   // Seal
+    float dragd = -2*0.9171*pitch_lift*Q*airspeed*airspeed;     // Eclipson
 
     // Calculate Cl, Cd, liftd and dragd
     if (guidance_indi_soaring_use_aoa) {
-        lift = guidance_indi_soaring_get_lift(aoa, airspeed, Q);
-        liftd = guidance_indi_soaring_get_liftd(aoa, airspeed, Q);
-
-//        drag = guidance_indi_soaring_get_drag(aoa, airspeed, Q);
-        dragd = guidance_indi_soaring_get_dragd(aoa, airspeed, Q);
+//        if (guidance_indi_soaring_use_spline_clcd) {
+        lift = guidance_indi_soaring_get_lift_spline(aoa, airspeed, Q, spline_aoa_offset, spline_aoa_scale, spline_cl_offset, spline_cl_scale);
+        liftd = guidance_indi_soaring_get_liftd_spline(aoa, airspeed, Q, spline_aoa_offset, spline_aoa_scale, spline_cl_scale);
+        dragd = guidance_indi_soaring_get_dragd_spline(aoa, airspeed, Q, spline_aoa_offset, spline_aoa_scale, spline_cd_scale);
+//        } else {
+//            lift = guidance_indi_soaring_get_lift(aoa, airspeed, Q);
+//            liftd = guidance_indi_soaring_get_liftd(aoa, airspeed, Q);
+//
+////        drag = guidance_indi_soaring_get_drag(aoa, airspeed, Q);
+//            dragd = guidance_indi_soaring_get_dragd(aoa, airspeed, Q);
+//        }
     }
 
     // update vars for logging
@@ -1148,6 +1181,8 @@ void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED]
 
         v_gih[0] = a_diff.y;
         v_gih[1] = a_diff.z;
+
+        using_reduced_ctrl = 1;
     } else {
         // Gl
         Gmat[0][0] = spsi*cphi*lift;
@@ -1164,6 +1199,8 @@ void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED]
         }
         v_gih[0] = a_diff.x;
         v_gih[1] = a_diff.y;
+
+        using_reduced_ctrl = 2;
     }
 
 }

@@ -12,17 +12,18 @@
     <waypoint name="SOAR" x="0.0" y="2.3" />
     <waypoint name="H1" x="0.0" y="25.0"/>
     <waypoint name="BACKUP" x="0.0" y="3.0"/>
-    <waypoint alt="3.1" name="S1_WP" x="0.0" y="2.0" />
-    <waypoint alt="2.832067" name="S2_WP" x="0.0" y="1.816429" />
-    <waypoint alt="2.95" name="S3_WP" x="0.0" y="1.82" />
+
+    <waypoint alt="3.1" name="S1_WP" x="0.0" y="3.0" />
+    <waypoint alt="2.92" name="S2_WP" x="0.0" y="2.36" />
+    <waypoint alt="2.95" name="S3_WP" x="0.0" y="2.36" />
     <waypoint alt="2.95" name="S4_WP" x="0.0" y="1.72" />
     <waypoint alt="2.9" name="S5_WP" x="0.0" y="2.0" />
     <waypoint alt="3.05" name="S6_WP" x="0.0" y="1.82" />
 
-    <waypoint alt="3.0" name="P1" x="0.0" y="2.7" />
-    <waypoint alt="2.7" name="P2" x="0.0" y="3.5" />
-    <waypoint alt="3.4" name="P3" x="0.0" y="1.72" />
-    <waypoint alt="3.4" name="P4" x="0.0" y="2.4" />
+<!--    <waypoint alt="3.0" name="P1" x="0.0" y="2.7" />-->
+<!--    <waypoint alt="2.7" name="P2" x="0.0" y="3.5" />-->
+<!--    <waypoint alt="3.4" name="P3" x="0.0" y="1.72" />-->
+<!--    <waypoint alt="3.4" name="P4" x="0.0" y="2.4" />-->
 
     <waypoint name="CLIMB" x="-3" y="3"/>
     <waypoint name="GF1" x="-5" y="15"/>
@@ -87,10 +88,10 @@
       <call_once fun="NavResurrect()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
-    <block name="Climb">
-      <call_once fun="NavResurrect()"/>
-      <go from="HOME" pitch="20" throttle="1.0" wp="CLIMB"/>
-    </block>
+<!--    <block name="Climb">-->
+<!--      <call_once fun="NavResurrect()"/>-->
+<!--      <go pitch="20" throttle="1.0" wp="CLIMB"/>-->
+<!--    </block>-->
     <block name="SetStbyHere3D">
       <call_once fun="waypoint_set_here(WP_STDBY)"/>
       <deroute block="Standby"/>
@@ -156,34 +157,34 @@
       <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
       <stay wp="S4_WP"/>
     </block>
-    <block name="P1_SAFE">
-      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
-      <go wp="P1"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
-      <stay wp="P1"/>
-    </block>
-    <block name="P2_DOWN_FORWARD">
-      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
-      <go wp="P2"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
-      <stay wp="P2"/>
-    </block>
-    <block name="P3_UP_BACKWARD">
-      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
-      <go wp="P3"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
-      <stay wp="P3"/>
-    </block>
-    <block name="P4_FORWARD">
-      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
-      <go wp="P4"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
-      <stay wp="P4"/>
-    </block>
+<!--    <block name="P1_SAFE">-->
+<!--      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>-->
+<!--      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>-->
+<!--      <go wp="P1"/>-->
+<!--      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>-->
+<!--      <stay wp="P1"/>-->
+<!--    </block>-->
+<!--    <block name="P2_DOWN_FORWARD">-->
+<!--      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>-->
+<!--      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>-->
+<!--      <go wp="P2"/>-->
+<!--      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>-->
+<!--      <stay wp="P2"/>-->
+<!--    </block>-->
+<!--    <block name="P3_UP_BACKWARD">-->
+<!--      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>-->
+<!--      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>-->
+<!--      <go wp="P3"/>-->
+<!--      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>-->
+<!--      <stay wp="P3"/>-->
+<!--    </block>-->
+<!--    <block name="P4_FORWARD">-->
+<!--      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>-->
+<!--      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>-->
+<!--      <go wp="P4"/>-->
+<!--      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>-->
+<!--      <stay wp="P4"/>-->
+<!--    </block>-->
     <block name="ReturnStbyThrottle">
       <exception cond="And(!(radio_control.status == RC_REALLY_LOST), And(InsideGeofence(GetPosX(), GetPosY()), And(MoreThan(GetPosAlt(), GetAltRef() + 20), LessThan(GetPosAlt(), GetAltRef() + 70))))" deroute="Standby"/>
       <call_once fun="guidance_indi_hybrid_soaring_stop()"/>

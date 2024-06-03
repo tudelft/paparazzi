@@ -167,6 +167,13 @@ static void guidance_indi_filter_thrust(void);
 #define GUIDANCE_INDI_DESCEND_SPEED_FWD -4.0
 #endif
 
+// 0 altitude, 1 horizontal
+#ifndef GUIDANCE_INDI_SOARING_REDUCED_CTRL_TYPE
+#define GUIDANCE_INDI_SOARING_REDUCED_CTRL_TYPE 1
+#endif
+
+bool soaring_reduced_ctrl_type = GUIDANCE_INDI_SOARING_REDUCED_CTRL_TYPE;
+
 float thr_eff_coef = 1.0;
 float pitch_sp_eff_coef = 1.0;
 
@@ -491,7 +498,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
 
 //            printf("thr saturated\n");
             // altitude control (z ctrl, let go of x)
-            guidance_indi_calcg_wing_reduced(Ga_reduced, a_diff, v_gih_reduced, 0);
+            guidance_indi_calcg_wing_reduced(Ga_reduced, a_diff, v_gih_reduced, soaring_reduced_ctrl_type);
 
             // horizontal control (x ctrl, let go of z)
 //            guidance_indi_calcg_reduced(Ga_reduced, a_diff, v_gih_reduced, 1);
