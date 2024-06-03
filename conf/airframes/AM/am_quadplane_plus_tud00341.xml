@@ -323,8 +323,8 @@
     <define name="PID_MAX_AZ_ORDER" value="35" unit="deg"/> <!--max azimuth deflection in PID mode-->
 
     <!-- INDI proportional gains -->
-    <define name="CRUISE_GAIN_P" value="1.5"/>
-    <define name="CRUISE_GAIN_Q" value="1.5"/>
+    <define name="CRUISE_GAIN_P" value="1.2"/>
+    <define name="CRUISE_GAIN_Q" value="2.2"/>
     <define name="CRUISE_GAIN_R" value="1"/>
 
     <define name="CRUISE_GAIN_X" value="1"/>
@@ -332,8 +332,8 @@
     <define name="CRUISE_GAIN_Z" value="2"/>
 
     <!-- INDI derivative gains -->
-    <define name="CRUISE_GAIN_P_DOT" value="7"/>
-    <define name="CRUISE_GAIN_Q_DOT" value="7"/>
+    <define name="CRUISE_GAIN_P_DOT" value="9"/>
+    <define name="CRUISE_GAIN_Q_DOT" value="8"/>
     <define name="CRUISE_GAIN_R_DOT" value="5"/>
 
     <define name="CRUISE_GAIN_X_DOT" value="1"/>
@@ -470,7 +470,7 @@
     <define name="SPEED_AOA_PROTECTION_CRUISE" value="0.2" unit="m/s"/>
     <define name="SPEED_AOA_PROTECTION_APP" value="15" unit="m/s"/>
 
-    <define name="K_GAIN_AIRSPEED_CRUISE" value="0.015" />
+    <define name="K_GAIN_AIRSPEED_CRUISE" value="0.005" />
     <define name="K_GAIN_AIRSPEED_APP" value="0.005" />
 
     <define name="MIN_AIRSPEED_READING" value="0.3" unit="m/s"/>
