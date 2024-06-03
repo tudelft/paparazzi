@@ -46,6 +46,8 @@ struct Aoa_T4 {
 };
 
 extern struct Aoa_T4 aoa_t4;
+extern float aoa_t4_a;
+extern float aoa_t4_b;
 
 void aoa_t4_init(void);
 void aoa_t4_update(void);

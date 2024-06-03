@@ -67,9 +67,25 @@ Butterworth2LowPass aoa_t4_lowpass_filter;
 #endif
 #endif
 
+#ifndef AOA_T4_USE_COMPENSATION
+#define AOA_T4_USE_COMPENSATION FALSE
+#endif
+
+// linear fn; aoa += A*theta + B;
+#ifndef AOA_T4_COMP_A
+#define AOA_T4_COMP_A -0.5457
+#endif
+#ifndef AOA_T4_COMP_B
+#define AOA_T4_COMP_B -0.0317
+#endif
+
 struct Aoa_T4 aoa_t4;
 struct serial_act_t4_in myserial_act_t4_in_local;
 static abi_event SERIAL_ACT_T4_IN;
+
+struct FloatEulers eulers_t4;
+float aoa_t4_a = AOA_T4_COMP_A;
+float aoa_t4_b = AOA_T4_COMP_B;
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -78,7 +94,7 @@ static void send_aoa(struct transport_tx *trans, struct link_device *dev)
     // raw value is not used
     uint32_t _raw = 0;
     // angle in rad
-    pprz_msg_send_AOA(trans, dev, AC_ID, &_raw, &aoa_t4.angle);
+    pprz_msg_send_AOA(trans, dev, AC_ID, &_raw, &aoa_t4.angle, &aoa_t4.angle_raw);
 }
 #endif
 
@@ -116,10 +132,18 @@ void aoa_t4_init(void)
 
 void aoa_t4_update(void)
 {
-#if AOA_T4_USE_LOWPASS_FILTER
-    aoa_t4.angle = update_butterworth_2_low_pass(&aoa_t4_lowpass_filter, (aoa_t4.sign*aoa_t4.angle_raw)+aoa_t4.offset);
-#else
     aoa_t4.angle = (aoa_t4.sign*aoa_t4.angle_raw)+aoa_t4.offset;
+
+#if AOA_T4_USE_COMPENSATION
+    float_eulers_of_quat_zxy(&eulers_t4, stateGetNedToBodyQuat_f());
+    // first order fn
+    aoa_t4.angle += aoa_t4_a*eulers_t4.theta + aoa_t4_b;
+#endif
+
+#if AOA_T4_USE_LOWPASS_FILTER
+    aoa_t4.angle = update_butterworth_2_low_pass(&aoa_t4_lowpass_filter, aoa_t4.angle);
+//#else
+//    aoa_t4.angle = (aoa_t4.sign*aoa_t4.angle_raw)+aoa_t4.offset;
 #endif
 
 #ifdef USE_AOA

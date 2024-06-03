@@ -648,6 +648,7 @@
     <message name="AOA" id="69">
       <field name="raw" type="uint32"/>
       <field name="angle" type="float" unit="rad" alt_unit="deg"/>
+        <field name="angle_raw" type="float" unit="rad" alt_unit="deg"/>
     </message>
 
     <message name="XTEND_RSSI" id="70">
