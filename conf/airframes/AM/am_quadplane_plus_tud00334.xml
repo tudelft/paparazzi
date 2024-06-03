@@ -540,7 +540,7 @@
     <define name="W_ACT_EL_CONST_APP" value="0"/>
     <define name="W_ACT_EL_SPEED_APP" value="0"/>
     <define name="W_ACT_AZ_CONST_APP" value="0"/>
-    <define name="W_ACT_AZ_SPEED_APP" value="5"/>
+    <define name="W_ACT_AZ_SPEED_APP" value="1"/>
     <define name="W_ACT_THETA_CONST_APP" value="1000"/>
     <define name="W_ACT_THETA_SPEED_APP" value="-10"/>
     <define name="W_ACT_PHI_CONST_APP" value="1000"/>

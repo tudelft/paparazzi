@@ -84,6 +84,11 @@ float overestimation_coeff = OVERACTUATED_MIXING_OVERESTIMATION_COEFF_CRUISE;
 #define RPM_INDI_CONTROL
 
 
+//Test pitch and roll: 
+int use_slider_attitude = 0;
+float pitch_target_slider = 0; 
+float roll_target_slider = 0;
+
 // #define TEST_PWM_SERVOS
 // #define TEST_RPM_CONTROL
 // #define TEST_DSHOT_CONTROL
@@ -1745,6 +1750,11 @@ void overactuated_mixing_run(void)
                 manual_theta_value = ship_info_receive.theta * M_PI/180;
             }
         #endif
+
+        if(use_slider_attitude){
+            manual_phi_value = roll_target_slider*M_PI/180;
+            manual_theta_value = pitch_target_slider*M_PI/180;
+        }
 
         // manual_motor_value = OVERACTUATED_MIXING_MOTOR_MIN_OMEGA;
         manual_motor_value = 0;

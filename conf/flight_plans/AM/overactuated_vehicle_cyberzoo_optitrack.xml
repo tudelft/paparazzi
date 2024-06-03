@@ -14,6 +14,7 @@
     <waypoint name="STDBY" x="0.5" y="0.3"/>
     <waypoint name="p5" x="0.2" y="0.3"/>
     <waypoint name="TD" x="0.8" y="-1.7"/>
+    <waypoint name="SIXDOF" x="2" y="-1"/>
     <waypoint lat="51.9905979" lon="4.3767279" name="CZ1"/>
     <waypoint lat="51.9906685" lon="4.3767327" name="CZ2"/>
     <waypoint lat="51.9906652" lon="4.3768481" name="CZ3"/>
@@ -104,6 +105,16 @@
       <set value="1" var="approach_state"/>
       <stay wp="STDBY"/>
     </block>
+        <block name="Sixdof">
+      <set value="0" var="approach_state"/>
+      <set value="0" var="force_forward"/>
+      <stay wp="SIXDOF"/>
+    </block>  
+    <block name="Sixdof_APP">
+      <set value="1" var="approach_state"/>
+      <set value="0" var="force_forward"/>
+      <stay wp="SIXDOF"/>
+    </block>  
     <block name="go_p5">
       <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>

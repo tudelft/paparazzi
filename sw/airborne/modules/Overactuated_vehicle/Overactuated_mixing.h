@@ -179,6 +179,11 @@ extern float disable_acc_decrement_inner_loop;
 
 extern float vert_acc_margin; 
 
+//attitude setpoint test: 
+extern int use_slider_attitude; 
+extern float pitch_target_slider; 
+extern float roll_target_slider; 
+
 //Prop model: 
 extern float power_cd_0;
 extern float power_cd_a;
