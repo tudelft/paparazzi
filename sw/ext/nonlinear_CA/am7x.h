@@ -17,8 +17,8 @@
 #define AM7_H
 
 #define max_time_optimizer 4.9e-3
-#define max_iterations 70
-#define max_function_eval 200
+#define max_iterations 100
+#define max_function_eval 300
 #define refresh_time_optimizer 5e-3 //Must be equal or bigger than max_time_optimizer
 #define filter_cutoff_frequency_init 12 //rad/s
 

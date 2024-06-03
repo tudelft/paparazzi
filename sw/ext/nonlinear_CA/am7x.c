@@ -1250,6 +1250,7 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
       }
 
       //Copy absolute position to aruco struct
+      struct aruco_detection_t aruco_detection_local; 
       aruco_detection_local.timestamp_detection = (float) timestamp_d;
       aruco_detection_local.NED_pos_x = beacon_absolute_ned_pos[0]; 
       aruco_detection_local.NED_pos_y = beacon_absolute_ned_pos[1];  
