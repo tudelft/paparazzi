@@ -266,22 +266,21 @@ static void nav_hybrid_circle(struct EnuCoor_f *wp_center, float radius)
     VECT2_COPY(nav.target, *wp_center);
   }
   // compute desired speed
+  float radius_diff = fabsf(float_vect2_norm(&pos_diff) - abs_radius);
+  if (radius_diff > NAV_HYBRID_NAV_CIRCLE_DIST) {
+    // far from circle, speed proportional to diff
+    desired_speed = radius_diff * nav_hybrid_pos_gain;
+    update_max_acc(false);
+  } else {
+    // close to circle, speed function of radius for a feasible turn
+    // 0.8 * MAX_BANK gives some margins for the turns
+    desired_speed = sqrtf(PPRZ_ISA_GRAVITY * abs_radius * tanf(0.8f * nav_hybrid_max_bank));
+    update_max_acc(true);
+  }
   if (force_forward) {
     desired_speed = nav_max_speed;
-  } else {
-    float radius_diff = fabsf(float_vect2_norm(&pos_diff) - abs_radius);
-    if (radius_diff > NAV_HYBRID_NAV_CIRCLE_DIST) {
-      // far from circle, speed proportional to diff
-      desired_speed = radius_diff * nav_hybrid_pos_gain;
-      update_max_acc(false);
-    } else {
-      // close to circle, speed function of radius for a feasible turn
-      // 0.8 * MAX_BANK gives some margins for the turns
-      desired_speed = sqrtf(PPRZ_ISA_GRAVITY * abs_radius * tanf(0.8f * nav_hybrid_max_bank));
-      update_max_acc(true);
-    }
-    Bound(desired_speed, 0.0f, nav_max_speed);
   }
+  Bound(desired_speed, 0.0f, nav_max_speed);
   // compute speed vector from target position
   struct FloatVect2 speed_unit;
   VECT2_DIFF(speed_unit, nav.target, *stateGetPositionEnu_f());
