@@ -78,6 +78,7 @@
         <module name="guidance" type="oneloop"/>
         <module name="nav" type="hybrid">
             <define name="NAV_HYBRID_MAX_AIRSPEED"      value="19.0f"/>
+            <define name="NAV_HYBRID_MAX_SPEED_V"       value="3.0f"/>
             <define name="NAV_HYBRID_SPEED_MARGIN"      value="0.0f"/>
             <define name="NAV_HYBRID_MAX_ACCELERATION"  value="4.0f"/>
             <define name="NAV_HYBRID_MAX_DECELERATION"  value="2.0f"/>
@@ -204,7 +205,7 @@
         <define name="STABILIZATION_ATTITUDE_SP_MAX_THETA"  value="45." unit="deg"  />
         <define name="STABILIZATION_ATTITUDE_SP_MAX_R"      value="90." unit="deg/s"/>
         <define name="STABILIZATION_ATTITUDE_DEADBAND_R"    value="200"             />
-        <define name="FWD_SIDESLIP_GAIN"                    value="0.5"/> <!-- cyfoam 0.32-->
+        <define name="FWD_SIDESLIP_GAIN"                    value="0.1"/> <!-- cyfoam 0.32-->
     </section>
     <section name="GROUND_DETECT">
         <define name="THRESHOLD_GROUND_DETECT"              value="40"/>
@@ -244,7 +245,7 @@
         <define name  = "ACT_MIN"                   value = "{    0.0f,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f, -9600.0f, -9600.0f, -9600.0f, -M_PI_4, -M_PI_4}"/>
         <define name  = "ACT_MAX_NORM"              value = "{    1.0f,    1.0f,     1.0f,     1.0f,    1.0f,    1.0f,     1.0f,     1.0f,     1.0f,    1.0f,    1.0f}"/>
         <define name  = "ACT_MIN_NORM"              value = "{    0.0f,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f,    -1.0f,    -1.0f,    -1.0f,   -1.0f,   -1.0f}"/>
-        <define name  = "WU"                        value = "{   0.75f,   0.75f,    0.75f,    0.75f,   1.00f,   10.0f,    10.0f,    10.0f,    10.0f,   1.20f,   1.20f}"/>
+        <define name  = "WU"                        value = "{   0.75f,   0.75f,    0.75f,    0.75f,   1.00f,    6.0f,     6.0f,     6.0f,     6.0f,   1.20f,   1.20f}"/>
         <define name  = "U_PREF"                    value = "{   0.00f,   0.00f,    0.00f,    0.00f,   0.00f, 7936.0f,    0.00f,    0.00f,    0.00f,   0.00f,   0.00f}"/>
         <define name  = "WV"                        value = "{  4.0f,  4.0f,   4.0f,  8.0f,  8.0f,  1.00f}"/>   
     </section>

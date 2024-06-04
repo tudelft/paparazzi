@@ -664,9 +664,18 @@
     <moment name="ELEVATOR_PITCH" frame="BODY" unit="FT*LBS">
       <function>
         <product>
+          <table>
+            <independentVar>fcs/airspeed2_ms</independentVar>
+            <tableData>
+              0.0   0.0
+              77.44 0.0
+              256   1.0
+            </tableData>
+          </table>
           <property>fcs/airspeed2_ms</property>
           <property>fcs/de_lag</property>
-          <value>0.23819</value> <!-- dNdjsbsim-->
+          <!--<value>0.23819</value>--> <!-- dNdjsbsim-->
+          <value>0.28512</value> <!-- dNdjsbsim-->
           <value>0.850</value>   <!-- m --> 
           <value> 0.738</value> <!-- Nm to ft-lbs -->
           <property>fcs/Iyy_ratio_quad_sched</property>
