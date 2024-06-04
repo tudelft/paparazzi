@@ -335,6 +335,11 @@ NOTES:
             <define name="AOA_T4_SIGN" value="-1"/>
             <define name="AOA_T4_USE_LOWPASS_FILTER" value="TRUE"/>
             <define name="AOA_T4_LOWPASS_TAU" value="0.05"/>
+            <define name="AOA_T4_USE_COMPENSATION" value="TRUE"/>
+<!--            <define name="AOA_T4_COMP_A1" value="-0.462"/>-->
+<!--            <define name="AOA_T4_COMP_B1" value="0.006"/>-->
+            <define name="AOA_T4_COMP_A2" value="0"/>
+            <define name="AOA_T4_COMP_B2" value="0"/>
         </module>
         <define name="USE_AOA" value="TRUE"/>
 
@@ -887,8 +892,15 @@ NOTES:
 <!--      <define name="SOARING_USE_90_PITCH_OFFSET" value="TRUE"/>-->
 
       <!-- for the new effectiveness model -->
-<!--      <define name="SOARING_USE_AOA" value="TRUE"/>-->
-<!--      <define name="SOARING_USE_DRAG" value="TRUE"/>-->
+      <!--      <define name="SOARING_USE_AOA" value="TRUE"/>-->
+      <!--      <define name="SOARING_USE_DRAG" value="TRUE"/>-->
+      <define name="SOARING_CRITICAL_AOA" value="0.1396"/>   <!-- 15 deg -->
+
+      <define name="SOARING_SPLINE_AOA_OFFSET" value="0" />
+      <define name="SOARING_SPLINE_AOA_SCALE" value="0.9" />
+      <define name="SOARING_SPLINE_CL_OFFSET" value="0.2" />
+      <define name="SOARING_SPLINE_CL_SCALE" value="0.7" />
+      <define name="SOARING_SPLINE_CD_SCALE" value="0.7" />
   </section>
 
   <section name="BAT">

@@ -227,7 +227,7 @@
 
 // 0.0057 deg == 0.0001 rad
 #ifndef GUIDANCE_INDI_SOARING_CRITICAL_AOA
-#define GUIDANCE_INDI_SOARING_CRITICAL_AOA 0.095
+#define GUIDANCE_INDI_SOARING_CRITICAL_AOA 0.209
 #endif
 
 #ifndef GUIDANCE_INDI_SOARING_MAX_AOA
@@ -326,7 +326,7 @@ float soaring_move_wp_cost_threshold = GUIDANCE_INDI_SOARING_WP_COST_THRES;
 bool soaring_explore_positions = GUIDANCE_INDI_SOARING_MOVE_WP;
 
 struct SoaringPositionMap soaring_position_map[MAP_MAX_NUM_POINTS];
-struct FloatVect3 preset_move_body[8] = {{1.0, 0., 0.}, {-1.0, 0., -1.0}, {0., 0., -1.0}, {-1.0, 0., 0.}, {1.0, 0., -1.0}, {1.0, 0., 1.0}, {0., 0., 1.0}, {-1.0, 0., 1.0}};
+struct FloatVect3 preset_move_body[8] = {{1.0, 0., 0.}, {-1.0, 0., -1.0}, {0., 0., -1.0}, {1.0, 0., -1.0}, {-1.0, 0., 1.0}, {0., 0., 1.0}, {1.0, 0., 1.0}, {-1.0, 0., 0.}};
 struct FloatVect3 amount_to_move_ned = {0., 0., 0.};
 struct FloatVect3 amount_to_move_body = {0., 0., 0.};
 int soar_map_idx = 0;
@@ -526,13 +526,14 @@ void guidance_indi_soaring_move_wp(float cost_avg_val){
 
     VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], step_size);
 
-    if ((POS_FLOAT_OF_BFP(waypoints[soar_wp_id].enu_i.z) - amount_to_move_body.z) < soaring_min_alt) {
+    if ((POS_FLOAT_OF_BFP(waypoints[soar_wp_id].enu_i.z) + amount_to_move_body.z) < soaring_min_alt) {
         // pick a random neighbour that doesn't go down; default is 5m
-        idx_to_move = abs((int)(stateGetAccelNed_f()->z*100))%5;
+//        idx_to_move = abs((int)(stateGetAccelNed_f()->z*100))%5;
 //        idx_to_move = abs((int)(filt_accel_ned[2].o[0]*100))%5;
-        prev_move_idx = idx_to_move;
-        prev_wp_sum_cost = cost_avg_val;
-        VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], step_size);
+//        prev_move_idx = idx_to_move;
+//        prev_wp_sum_cost = cost_avg_val;
+//        VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], step_size);
+//        amount_to_move_body.z = POS_FLOAT_OF_BFP(waypoints[soar_wp_id].enu_i.z) - soaring_min_alt;
     }
 
     struct FloatEulers eulers_zxy;
@@ -688,7 +689,7 @@ void run_soaring_search(void){
 
     // in soaring mode && manual search
     if (soaring_mode_running && soaring_manual_search && (!soaring_explore_positions)) {
-        if (fabs(soaring_wp_move_forward) > 0.05 || fabs(soaring_wp_move_right) > 0.05 || fabs(soaring_wp_move_up) > 0.05) {
+        if (fabs(soaring_wp_move_forward) > 0.01 || fabs(soaring_wp_move_right) > 0.01 || fabs(soaring_wp_move_up) > 0.01) {
             struct FloatEulers eulers_zxy;
             float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
             float psi = eulers_zxy.psi;

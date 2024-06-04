@@ -13,7 +13,7 @@
     <waypoint name="H1" x="0.0" y="25.0"/>
     <waypoint name="BACKUP" x="0.0" y="3.0"/>
 
-    <waypoint alt="3.1" name="S1_WP" x="0.0" y="3.0" />
+    <waypoint alt="3.06" name="S1_WP" x="0.0" y="1.05" />
     <waypoint alt="2.92" name="S2_WP" x="0.0" y="2.36" />
     <waypoint alt="2.95" name="S3_WP" x="0.0" y="2.36" />
     <waypoint alt="2.95" name="S4_WP" x="0.0" y="1.72" />

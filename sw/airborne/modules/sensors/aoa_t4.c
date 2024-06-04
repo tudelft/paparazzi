@@ -72,11 +72,19 @@ Butterworth2LowPass aoa_t4_lowpass_filter;
 #endif
 
 // linear fn; aoa += A*theta + B;
-#ifndef AOA_T4_COMP_A
-#define AOA_T4_COMP_A -0.5457
+// aoa += A1*theta+B1 when theta >= 0
+// aoa += A2*theta+B2 when theta < 0
+#ifndef AOA_T4_COMP_A1
+#define AOA_T4_COMP_A1 0
 #endif
-#ifndef AOA_T4_COMP_B
-#define AOA_T4_COMP_B -0.0317
+#ifndef AOA_T4_COMP_B1
+#define AOA_T4_COMP_B1 0
+#endif
+#ifndef AOA_T4_COMP_A2
+#define AOA_T4_COMP_A2 -0.5457
+#endif
+#ifndef AOA_T4_COMP_B2
+#define AOA_T4_COMP_B2 0
 #endif
 
 struct Aoa_T4 aoa_t4;
@@ -84,8 +92,10 @@ struct serial_act_t4_in myserial_act_t4_in_local;
 static abi_event SERIAL_ACT_T4_IN;
 
 struct FloatEulers eulers_t4;
-float aoa_t4_a = AOA_T4_COMP_A;
-float aoa_t4_b = AOA_T4_COMP_B;
+float aoa_t4_a1 = AOA_T4_COMP_A1;
+float aoa_t4_b1 = AOA_T4_COMP_B1;
+float aoa_t4_a2 = AOA_T4_COMP_A2;
+float aoa_t4_b2 = AOA_T4_COMP_B2;
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -137,7 +147,11 @@ void aoa_t4_update(void)
 #if AOA_T4_USE_COMPENSATION
     float_eulers_of_quat_zxy(&eulers_t4, stateGetNedToBodyQuat_f());
     // first order fn
-    aoa_t4.angle += aoa_t4_a*eulers_t4.theta + aoa_t4_b;
+    if (eulers_t4.theta >= 0) {
+        aoa_t4.angle += aoa_t4_a1*eulers_t4.theta + aoa_t4_b1;
+    } else {
+        aoa_t4.angle += aoa_t4_a2*eulers_t4.theta + aoa_t4_b2;
+    }
 #endif
 
 #if AOA_T4_USE_LOWPASS_FILTER

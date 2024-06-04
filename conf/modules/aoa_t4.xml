@@ -12,8 +12,10 @@
         <dl_setting var="aoa_t4.offset" min="-3.14" max="3.14" step="0.01" shortname="offset(rad)" />
         <dl_setting var="aoa_t4.sign" min="-1" max="1" step="2" shortname="sign" />
 
-        <dl_setting var="aoa_t4_a" min="-1" max="1" step="0.001" shortname="comp_a" />
-        <dl_setting var="aoa_t4_b" min="-1" max="1" step="0.001" shortname="comp_b" />
+        <dl_setting var="aoa_t4_a1" min="-1" max="1" step="0.001" shortname="comp_a1" />
+        <dl_setting var="aoa_t4_b1" min="-1" max="1" step="0.001" shortname="comp_b1" />
+        <dl_setting var="aoa_t4_a2" min="-1" max="1" step="0.001" shortname="comp_a2" />
+        <dl_setting var="aoa_t4_b2" min="-1" max="1" step="0.001" shortname="comp_b2" />
 
         <!--&lt;!&ndash;        <dl_setting MAX="4" MIN="-4" STEP="0.0001" VAR="aoa_adc.offset" shortname="AOA_offset" module="modules/sensors/aoa_adc" param="AOA_OFFSET"/>&ndash;&gt;-->
 <!--&lt;!&ndash;        <dl_setting MAX="0.95" MIN="0" STEP="0.001" VAR="aoa_adc.filter" shortname="AOA_filter" module="modules/sensors/aoa_adc" param="AOA_FILTER"/>&ndash;&gt;-->

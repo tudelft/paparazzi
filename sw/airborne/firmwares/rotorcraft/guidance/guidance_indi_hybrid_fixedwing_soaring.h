@@ -99,6 +99,12 @@ extern bool use_aoa_pitch_pref;
 extern float guidance_indi_soaring_max_aoa;
 extern float guidance_indi_soaring_min_aoa;
 
+extern float spline_aoa_scale;
+extern float spline_aoa_offset;
+extern float spline_cl_offset;
+extern float spline_cl_scale;
+extern float spline_cd_scale;
+
 extern float guidance_soaring_max_throttle;
 extern bool speed_sp_from_position;
 extern bool y_position_ctrl;

@@ -30,6 +30,12 @@
           <dl_setting var="max_acc_sp" min="0.1" step="0.1" max="10" shortname="max_acc_sp_down"/>
           <dl_setting var="min_acc_sp" min="-10" step="0.1" max="-0.1" shortname="min_acc_sp_up"/>
 
+          <dl_setting var="spline_aoa_scale" min="0" step="0.01" max="2" shortname="spl_aoa_scale"/>
+          <dl_setting var="spline_aoa_offset" min="-1" step="0.01" max="-1" shortname="spl_aoa_offset"/>
+          <dl_setting var="spline_cl_offset" min="-1" step="0.01" max="-1" shortname="spl_cl_offset"/>
+          <dl_setting var="spline_cl_scale" min="0" step="0.01" max="2" shortname="spl_cl_scale"/>
+          <dl_setting var="spline_cd_scale" min="0" step="0.01" max="2" shortname="spl_cd_scale"/>
+
           <!--        <dl_setting var="soaring_spd_sp.x" min="-1.0" step="0.001" max="1.0" shortname="speed_sp_x"/>-->
           <!--        <dl_setting var="soaring_spd_sp.y" min="-1.0" step="0.001" max="1.0" shortname="speed_sp_y"/>-->
           <!--        <dl_setting var="soaring_spd_sp.z" min="-1.0" step="0.001" max="1.0" shortname="speed_sp_z"/>-->
