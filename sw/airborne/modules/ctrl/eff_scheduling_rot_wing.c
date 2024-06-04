@@ -241,11 +241,7 @@ void calc_G1_G2_RW(void)
   // Motor Pusher
   G1_RW[aX][COMMAND_MOTOR_PUSHER] =  RW.mP.dFdu / RW.m;
   // Elevator
-  if (RW.as > ELE_MIN_AS){
-    G1_RW[aq][COMMAND_ELEVATOR]     =  (RW.ele.dFdu * RW.as2 * RW.ele.l) / RW.I.yy;
-  } else {
-    G1_RW[aq][COMMAND_ELEVATOR]     =  0.0;
-  }
+  G1_RW[aq][COMMAND_ELEVATOR]     =  (RW.ele.dFdu * RW.as2 * RW.ele.l) / RW.I.yy;
   // Rudder
   G1_RW[ar][COMMAND_RUDDER]       =  (RW.rud.dFdu * RW.as2 * RW.rud.l) / RW.I.zz ;
   // Aileron
@@ -373,7 +369,7 @@ void eff_scheduling_rot_wing_update_wing_angle(void)
   RW.skew.cosr3 = RW.skew.cosr2 * RW.skew.cosr;
 
 }
-
+float time = 0.0;
 void eff_scheduling_rot_wing_update_airspeed(void)
 {
   float airspeed_meas = stateGetAirspeed_f();
@@ -383,8 +379,13 @@ void eff_scheduling_rot_wing_update_airspeed(void)
   RW.as2 = RW.as * RW.as;
   Bound(RW.as2, 0. , 900.);
   if(airspeed_fake_on) {
-    RW.as = airspeed_fake;
+    float freq = 0.5;
+    float amp = 3.0;
+    time = time + 0.1;
+    RW.as = airspeed_fake + amp * sinf(2.0 * M_PI * freq * time);
     RW.as2 = RW.as * RW.as;
+  } else {
+    time = 0.0;
   }
 }
 
