@@ -246,7 +246,6 @@ float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
 #define WLS_N_V == ANDI_OUTPUTS
 #endif
 
-static bool airspeed_ctrl = false;
 #ifndef ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD
 #define ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD 10.0
 #endif
@@ -275,6 +274,7 @@ float max_v_nav = NAV_HYBRID_MAX_AIRSPEED; // Consider implications of differenc
 #else
 float max_v_nav = 5.0;
 #endif
+float max_as = 15.0f;
 
 #ifdef NAV_HYBRID_MAX_SPEED_V
 float max_v_nav_v = NAV_HYBRID_MAX_SPEED_V;
@@ -302,6 +302,7 @@ void  err_nd(float err[], float a[], float b[], float k[], int n);
 void  err_sum_nd(float err[], float a[], float b[], float k[], float c[], int n);
 void  integrate_nd(float dt, float a[], float a_dot[], int n);
 void  vect_bound_nd(float vect[], float bound, int n);
+void  acc_body_bound(struct FloatVect2 vect, float bound);
 float bound_v_from_a(float e_x[], float v_bound, float a_bound, int n);
 void  rm_2nd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm);
 void  rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
@@ -654,6 +655,21 @@ void vect_bound_nd(float vect[], float bound, int n) {
       vect[i] *= scale;
     }
   }
+}
+
+/** @brief Scale a 3D array to within a 3D bound */
+void acc_body_bound(struct FloatVect2 vect, float bound) {
+  int n = 2;
+  float v[2] = {vect.x, vect.y};
+  float norm = float_vect_norm(v,n);
+  norm = positive_non_zero(norm);
+  if((norm-bound) > FLT_EPSILON) {
+    float acc_b_y_2 = bound*bound - v[0]*v[0];
+    acc_b_y_2 = positive_non_zero(acc_b_y_2);
+    v[1] = sqrtf(acc_b_y_2);
+  }
+  vect.x = v[0];
+  vect.y = v[1];
 }
 
 /** @brief Calculate velocity limit based on acceleration limit */
@@ -1306,12 +1322,10 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
       rm_3rd_pos(dt_1l, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target, k_pos_rm.k1, k_pos_rm.k2, k_pos_rm.k3, max_v_nav, max_a_nav, max_j_nav, 2);    
     } else if (rm_order_h == 2){
       float_vect_copy(oneloop_andi.gui_ref.pos, oneloop_andi.gui_state.pos,2);
-      //printf("Target Ground Speed  N E Norm       : %f %f %f\n", nav_target[0], nav_target[1], float_vect_norm(nav_target,2) );
+      float_vect_copy(oneloop_andi.gui_ref.vel, oneloop_andi.gui_state.vel,2);
       reshape_wind();//returns accel sp as nav target new
-      //float_vect_copy(oneloop_andi.gui_ref.vel, oneloop_andi.gui_state.vel,2);
-      //rm_1st_pos(dt_1l, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target_new, k_pos_rm.k3, max_j_nav, 2); 
-      
-      rm_2nd_pos(dt_1l, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target_new, k_pos_rm.k2, k_pos_rm.k3, max_a_nav, max_j_nav, 2);   
+      rm_1st_pos(dt_1l, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target_new, k_pos_rm.k3, max_j_nav, 2); 
+      // rm_2nd_pos(dt_1l, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target_new, k_pos_rm.k2, k_pos_rm.k3, max_a_nav, max_j_nav, 2);   
     } else if (rm_order_h == 1){
       float_vect_copy(oneloop_andi.gui_ref.pos, oneloop_andi.gui_state.pos,2);
       float_vect_copy(oneloop_andi.gui_ref.vel, oneloop_andi.gui_state.vel,2);
@@ -1325,12 +1339,18 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
       }
     } else {
       float ref_mag_vel = float_vect_norm(oneloop_andi.gui_ref.vel,2);
-      if (ref_mag_vel > 3.0){
-        //psi_des_rad = atan2f(oneloop_andi.gui_ref.vel[1],oneloop_andi.gui_ref.vel[0]);
-      }
-      // FIX UNCOMMENT
       psi_des_rad += oneloop_andi_sideslip() * dt_1l;
       NormRadAngle(psi_des_rad);
+      if (ref_mag_vel > 3.0){
+        float psi_gs = atan2f(oneloop_andi.gui_ref.vel[1],oneloop_andi.gui_ref.vel[0]);
+        float delta_des_gs = psi_gs-psi_des_rad;  // Calculate current yaw difference between des and gs
+        NormRadAngle(delta_des_gs);                            
+        if (fabs(delta_des_gs) > RadOfDeg(60.0)){        // If difference is bigger than 60 deg bound the des psi angle so that it does not deviate too much
+          delta_des_gs *= RadOfDeg(60.0)/fabs(delta_des_gs);
+          psi_des_rad = psi_gs - delta_des_gs;
+          NormRadAngle(psi_des_rad);
+        }
+      }
     }
     // Register Attitude Setpoints from previous loop
     if (!in_flight_oneloop){
@@ -1914,149 +1934,68 @@ void reshape_wind(void)
   float spsi = sinf(psi);
   float airspeed = airspeed_filt.o[0];
   struct FloatVect2 NT_v_NE     = {nav_target[0], nav_target[1]}; // Nav target in North and East frame
-  struct FloatVect2 NT_v_B      = {cpsi * NT_v_NE.x + spsi * NT_v_NE.y, -spsi * NT_v_NE.x + cpsi * NT_v_NE.y}; // Nav target in body frame
+  //struct FloatVect2 NT_v_B      = {0.0, 0.0}; // Nav target in body frame (Overwritten later)
   struct FloatVect2 airspeed_v  = { cpsi * airspeed, spsi * airspeed };
   struct FloatVect2 windspeed;
   struct FloatVect2 groundspeed = { oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.vel[1] };
-  struct FloatVect2 desired_airspeed;
+  struct FloatVect2 des_as_NE;
+  struct FloatVect2 des_as_B;
+  struct FloatVect2 des_acc_B;
   VECT2_DIFF(windspeed, groundspeed, airspeed_v); // Wind speed in North and East frame
-  VECT2_DIFF(desired_airspeed, NT_v_NE, windspeed); // Desired airspeed in North and East frame
-  
-  float norm_des_as = FLOAT_VECT2_NORM(desired_airspeed);
-  float norm_wind   = FLOAT_VECT2_NORM(windspeed);
-  float norm_gs     = FLOAT_VECT2_NORM(groundspeed);
-  float norm_nt     = FLOAT_VECT2_NORM(NT_v_NE);
-
-  struct FloatVect2 sp_accel_b;
-  
+  VECT2_DIFF(des_as_NE, NT_v_NE, windspeed); // Desired airspeed in North and East frame
+  float norm_des_as = FLOAT_VECT2_NORM(des_as_NE);
+  //float norm_wind   = FLOAT_VECT2_NORM(windspeed);
+  //float norm_gs     = FLOAT_VECT2_NORM(groundspeed);
+  //float norm_nt     = FLOAT_VECT2_NORM(NT_v_NE);
   nav_target_new[0] = NT_v_NE.x;
   nav_target_new[1] = NT_v_NE.y;
   // if the desired airspeed is larger than the max airspeed or we are in force forward reshape gs des to cancel wind and fly at max airspeed
-  if ((norm_des_as > nav_max_speed)||(rotwing_state_settings.force_forward)){
-    printf("reshaping wind\n");
+  if ((norm_des_as > max_as)||(rotwing_state_settings.force_forward)){
+    //printf("reshaping wind\n");
     float groundspeed_factor = 0.0f;
-    if (FLOAT_VECT2_NORM(windspeed) < nav_max_speed) {
-      printf("we can achieve wind cancellation\n");
+    if (FLOAT_VECT2_NORM(windspeed) < max_as) {
+      //printf("we can achieve wind cancellation\n");
       float av = NT_v_NE.x * NT_v_NE.x + NT_v_NE.y * NT_v_NE.y; // norm squared of nav target 
       float bv = -2.f * (windspeed.x * NT_v_NE.x + windspeed.y * NT_v_NE.y);
-      float cv = windspeed.x * windspeed.x + windspeed.y * windspeed.y - nav_max_speed * nav_max_speed;
+      float cv = windspeed.x * windspeed.x + windspeed.y * windspeed.y - max_as * max_as;
       float dv = bv * bv - 4.0f * av * cv;
       // dv can only be positive, but just in case
       if (dv < 0.0f) {
         dv = fabsf(dv);
       }
       float d_sqrt = sqrtf(dv);
-      float groundspeed_factor = (-bv + d_sqrt)  / (2.0f * av);
-      desired_airspeed.x = groundspeed_factor * NT_v_NE.x - windspeed.x;
-      desired_airspeed.y = groundspeed_factor * NT_v_NE.y - windspeed.y;
-      NT_v_NE.x  = groundspeed_factor * NT_v_NE.x;
-      NT_v_NE.y  = groundspeed_factor * NT_v_NE.y;  
+      groundspeed_factor = (-bv + d_sqrt)  / (2.0f * av); 
     }
+    des_as_NE.x = groundspeed_factor * NT_v_NE.x - windspeed.x;
+    des_as_NE.y = groundspeed_factor * NT_v_NE.y - windspeed.y;
+    NT_v_NE.x   = groundspeed_factor * NT_v_NE.x;
+    NT_v_NE.y   = groundspeed_factor * NT_v_NE.y; 
   }
-  norm_des_as = FLOAT_VECT2_NORM(desired_airspeed); // Recalculate norm of desired airspeed
+  norm_des_as = FLOAT_VECT2_NORM(des_as_NE); // Recalculate norm of desired airspeed
+  //NT_v_B.x    = cpsi * NT_v_NE.x  + spsi * NT_v_NE.y; // Nav target in body x frame
+  //NT_v_B.y    = -spsi * NT_v_NE.x + cpsi * NT_v_NE.y; // Nav target in body y frame
+  des_as_B.x  = norm_des_as; // Desired airspeed in body x frame
+  des_as_B.y  = 0.0; // Desired airspeed in body y frame
   // If flying fast or if in force forward mode, make turns instead of straight lines
   if (((airspeed > ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD) && (norm_des_as > (ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD+2.0f)))|| (rotwing_state_settings.force_forward)){
-    NT_v_B.x =  cpsi * NT_v_NE.x + spsi * NT_v_NE.y;
-    NT_v_B.y = -spsi * NT_v_NE.x + cpsi * NT_v_NE.y;
-    float delta = 0.0; // keep working here.
-    // 
-    sp_accel_b.y = atan2f(desired_airspeed.y, desired_airspeed.x) - psi;
-    FLOAT_ANGLE_NORMALIZE(sp_accel_b.y);
-    sp_accel_b.y *= 5.0;//gih_params.heading_bank_gain;
-  // Control the airspeed
-  sp_accel_b.x = (speed_sp_b_x - airspeed) * k_pos_rm.k2[0];//gih_params.speed_gain;
-  nav_target_new[0] = cpsi * sp_accel_b.x - spsi * sp_accel_b.y;
-  nav_target_new[1] = spsi * sp_accel_b.x + cpsi * sp_accel_b.y; 
-  // printf("norm_as    : %f, as_x    : %f, as_y    : %f\n", airspeed, airspeed_v.x, airspeed_v.y);
-  // printf("norm_des_as: %f, des_as_x: %f, des_as_y: %f\n", sqrtf(desired_airspeed.x*desired_airspeed.x+desired_airspeed.y*desired_airspeed.y), desired_airspeed.x, desired_airspeed.y);
-  // printf("norm_wind  : %f, wind_x  : %f, wind_y  : %f\n", norm_wind, windspeed.x, windspeed.y);
-  // printf("norm_gs    : %f, gs_x    : %f, gs_y    : %f\n", norm_gs, groundspeed.x, groundspeed.y);
-  // printf("norm_nt    : %f, nt_x    : %f, nt_y    : %f\n", norm_nt, NT_v_NE.x, NT_v_NE.y);
-  // printf("norm_nt_new: %f, nt_new_x: %f, nt_new_y: %f\n", sqrtf(nav_target_new[0]*nav_target_new[0] + nav_target_new[1]*nav_target_new[1]), nav_target_new[0], nav_target_new[1]);
+    float delta_psi = atan2f(des_as_NE.y, des_as_NE.x) - psi; 
+    FLOAT_ANGLE_NORMALIZE(delta_psi);
+    des_acc_B.y = delta_psi * 5.0;//gih_params.heading_bank_gain;
+    des_acc_B.x = (des_as_B.x - airspeed) * k_pos_rm.k2[0];//gih_params.speed_gain;
+    acc_body_bound(des_acc_B, max_a_nav); // Scale down side acceleration if norm is too large
+    nav_target_new[0] = cpsi * des_acc_B.x - spsi * des_acc_B.y;
+    nav_target_new[1] = spsi * des_acc_B.x + cpsi * des_acc_B.y; 
+  } else {
+    nav_target_new[0] = (NT_v_NE.x - groundspeed.x) * k_pos_rm.k2[0];
+    nav_target_new[1] = (NT_v_NE.y - groundspeed.y) * k_pos_rm.k2[1];
+  }
+  vect_bound_nd(nav_target_new, max_a_nav, 2);
+  //printf("norm_as    : %f, as_x    : %f, as_y    : %f\n", airspeed, airspeed_v.x, airspeed_v.y);
+  //printf("norm_des_as: %f, des_as_x: %f, des_as_y: %f\n", sqrtf(des_as_NE.x*des_as_NE.x+des_as_NE.y*des_as_NE.y), des_as_NE.x, des_as_NE.y);
+  //printf("norm_wind  : %f, wind_x  : %f, wind_y  : %f\n", FLOAT_VECT2_NORM(windspeed), windspeed.x, windspeed.y);
+  //printf("norm_gs    : %f, gs_x    : %f, gs_y    : %f\n", FLOAT_VECT2_NORM(groundspeed), groundspeed.x, groundspeed.y);
+  //printf("norm_nt    : %f, nt_x    : %f, nt_y    : %f\n", FLOAT_VECT2_NORM(NT_v_NE), NT_v_NE.x, NT_v_NE.y);
+  //printf("norm_nt_new: %f, nt_new_x: %f, nt_new_y: %f\n", sqrtf(nav_target_new[0]*nav_target_new[0] + nav_target_new[1]*nav_target_new[1]), nav_target_new[0], nav_target_new[1]);
 }
 
-
-// void reshape_wind(void)
-// {
-//   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-
-//   //for rc control horizontal, rotate from body axes to NED
-//   float psi = eulers_zxy.psi;
-//   float cpsi = cosf(psi);
-//   float spsi = sinf(psi);
-//   struct FloatVect2 nav_target_vect = {nav_target[0], nav_target[1]};
-//   float speed_sp_b_x =  cpsi * nav_target_vect.x + spsi * nav_target_vect.y;
-//   float speed_sp_b_y = -spsi * nav_target_vect.x + cpsi * nav_target_vect.y;
-
-//   float airspeed = airspeed_filt.o[0];
-//   struct FloatVect2 airspeed_v = { cpsi * airspeed, spsi * airspeed };
-//   struct FloatVect2 windspeed;
-//   struct FloatVect2 groundspeed = { oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.vel[1] };
-//   VECT2_DIFF(windspeed, groundspeed, airspeed_v);
-//   struct FloatVect2 desired_airspeed;
-//   VECT2_DIFF(desired_airspeed, nav_target_vect, windspeed); // Use 2d part of nav_target_vect
-//   float norm_des_as = FLOAT_VECT2_NORM(desired_airspeed);
-//   struct FloatVect2 sp_accel_b;
-//   // Make turn instead of straight line
-//   if ((airspeed > ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD) && (norm_des_as > (ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD+2.0f))) {
-//     //printf("check 1\n");  
-//     // Give the wind cancellation priority.
-//     if (norm_des_as > nav_max_speed) {
-//       float groundspeed_factor = 0.0f;
-//       // if the wind is faster than we can fly, just fly in the wind direction
-//       if (FLOAT_VECT2_NORM(windspeed) < nav_max_speed) {
-//         float av = nav_target_vect.x * nav_target_vect.x + nav_target_vect.y * nav_target_vect.y;
-//         float bv = -2.f * (windspeed.x * nav_target_vect.x + windspeed.y * nav_target_vect.y);
-//         float cv = windspeed.x * windspeed.x + windspeed.y * windspeed.y - nav_max_speed * nav_max_speed;
-//         float dv = bv * bv - 4.0f * av * cv;
-//         // dv can only be positive, but just in case
-//         if (dv < 0.0f) {
-//           dv = fabsf(dv);
-//         }
-//         float d_sqrt = sqrtf(dv);
-//         groundspeed_factor = (-bv + d_sqrt)  / (2.0f * av);
-//       }
-//       desired_airspeed.x = groundspeed_factor * nav_target_vect.x - windspeed.x;
-//       desired_airspeed.y = groundspeed_factor * nav_target_vect.y - windspeed.y;
-//       speed_sp_b_x = nav_max_speed;
-//     }
-//     // desired airspeed can not be larger than max airspeed
-//     speed_sp_b_x = Min(norm_des_as, nav_max_speed);
-//     if (rotwing_state_settings.force_forward) {
-//       speed_sp_b_x = nav_max_speed;
-//     }
-//     // Calculate accel sp in body axes, because we need to regulate airspeed
-//     // In turn acceleration proportional to heading diff
-//     sp_accel_b.y = atan2f(desired_airspeed.y, desired_airspeed.x) - psi;
-//     FLOAT_ANGLE_NORMALIZE(sp_accel_b.y);
-//     sp_accel_b.y *= 5.0;//gih_params.heading_bank_gain;
-//     // Control the airspeed
-//     sp_accel_b.x = (speed_sp_b_x - airspeed) * k_pos_rm.k2[0];//gih_params.speed_gain;
-//     nav_target_new[0] = cpsi * sp_accel_b.x - spsi * sp_accel_b.y;
-//     nav_target_new[1] = spsi * sp_accel_b.x + cpsi * sp_accel_b.y;
-//   }
-//   else { // Go somewhere in the shortest way
-//     //printf("check 2\n");
-//     if (airspeed > 10.f) {
-//       // Groundspeed vector in body frame
-//       float groundspeed_x = cpsi * groundspeed.x + spsi * groundspeed.y;
-//       float speed_increment = speed_sp_b_x - groundspeed_x;
-
-//       // limit groundspeed setpoint to max_airspeed + (diff gs and airspeed)
-//       if ((speed_increment + airspeed) > nav_max_speed) {
-//         speed_sp_b_x = nav_max_speed + groundspeed_x - airspeed;
-//       }
-//     }
-//     float speed_sp_N = cpsi * speed_sp_b_x - spsi * speed_sp_b_y;
-//     float speed_sp_E = spsi * speed_sp_b_x + cpsi * speed_sp_b_y;
-
-//     nav_target_new[0] = (speed_sp_N - groundspeed.x) * k_pos_rm.k2[0];
-//     nav_target_new[1] = (speed_sp_E - groundspeed.y) * k_pos_rm.k2[0];
-//   }
-//   //printf("Windspeed N E Norm: %f %f %f\n", windspeed.x, windspeed.y, FLOAT_VECT2_NORM(windspeed));
-//   //printf("Airspeed N E Norm: %f %f %f\n", airspeed_v.x, airspeed_v.y, FLOAT_VECT2_NORM(airspeed_v));
-//   //printf("Desired Airspeed N E Norm: %f %f %f\n", desired_airspeed.x, desired_airspeed.y, FLOAT_VECT2_NORM(desired_airspeed));
-//   //printf("Speed sp body x y Norm: %f %f %f\n", speed_sp_b_x, speed_sp_b_y, sqrtf(speed_sp_b_x*speed_sp_b_x + speed_sp_b_y*speed_sp_b_y));
-//   vect_bound_nd(nav_target_new, max_a_nav, 2);
-// }
 

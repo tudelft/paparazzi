@@ -71,6 +71,7 @@ extern float fwd_sideslip_gain;
 extern struct FloatEulers eulers_zxy_des;
 extern float psi_des_rad;
 extern float k_as;
+extern float max_as;
 
 /*Chirp test Variables*/
 extern bool  chirp_on;
