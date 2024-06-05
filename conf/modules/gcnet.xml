@@ -12,7 +12,7 @@
     <file name="gcnet_main.h"/>
   </header>
   <init fun="gcnet_init()"/>
-  <periodic fun="gcnet_run()" freq="512" />
+  <periodic fun="gcnet_run()" freq="50" />
   <!--datalink message="EXTERNAL_VISION" fun="external_vision_update(buf)"/-->
 
   <makefile>
@@ -22,7 +22,7 @@
     <file name="Network.c"/>
     <file name="Neuron.c"/>
     <file name="Connection.c"/>
-    <configure name="NN_PARAMETER_PATH" value="SNN_500_neurons"/>
+    <configure name="NN_PARAMETER_PATH" value="SNN_250_neurons"/>
     <define name="GNC_NET_NN_PARAM_H" value="$(NN_PARAMETER_PATH)/nn_parameters.h" type="string"/>
     <!-- <file name="$(NN_PARAMETER_PATH)/nn_parameters.c"/> -->
   </makefile>

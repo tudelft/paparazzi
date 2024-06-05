@@ -81,5 +81,5 @@ void postprocess_output(float *output, float *output_decoded, const float output
 
 // Forward network and call forward functions for children
 // Encoding and decoding inside
-float *forward_network(Network *net);
+void forward_network(Network *net);
 #endif

@@ -52,8 +52,8 @@ void init_network(Network *net) {
   }
 
   for (int i = 0; i < net->out_size; i++) {
-    net->output[i] = 0.0f;
-    net->output_decoded[i] = 0.0f;
+    net->output[i] = 0.5f;
+    net->output_decoded[i] = 0.5f;
   }
   // Call init functions for children
   init_connection(net->inhid);
@@ -168,7 +168,7 @@ void postprocess_output(float *output, float *output_decoded, const float output
 // Forward network and call forward functions for children
 // Encoding and decoding inside
 // TODO: but we still need to check the size of the array we put in net->in
-float *forward_network(Network *net) {
+void forward_network(Network *net) {
   preprocess_input(net->input, net->input_norm, net->in_norm_min, net->in_norm_max, net->in_size);
 
   // Call forward functions for children
@@ -180,7 +180,10 @@ float *forward_network(Network *net) {
   forward_neuron(net->layer3);
   forward_connection_int(net->hidout, net->output, net->layer3->s);
   // Decode output neuron traces to scalar value
+  for (int i = 0; i < net->out_size; i++) {
+    net->output[i] = 0.6f;
+  }
   postprocess_output(net->output, net->output_decoded, net->output_scale_min, net->output_scale_max, net->out_size);
 
-  return net->output_decoded;
+  // return net->output_decoded;
 }

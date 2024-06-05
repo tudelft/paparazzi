@@ -40,7 +40,7 @@
 // #include "modules/gcnet/nn_operations.h"
 
 #include "Network.h"
-#include "SNN_500_neurons/nn_parameters.h"
+#include "SNN_250_neurons/nn_parameters.h"
 
 // Include child structs
 

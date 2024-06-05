@@ -79,6 +79,7 @@ float az_modeled;
 
 float t0;
 float t1;
+float dt;
 float t0_;
 float t1_;
 
@@ -202,9 +203,9 @@ struct NedCoor_f waypoint_ned;
 void gcnet_run(void)
 {
 	// keep track of time
-	// t1 = get_sys_time_float();
-	// float dt = t1-t0;
-	// t0 = t1;
+	t1 = get_sys_time_float();
+	dt = 1.; //t1-t0;
+	t0 = t1;
 
 	// set goal to next waypoint once activated
 
@@ -474,7 +475,7 @@ void gcnet_run(void)
   }
 
   // Forward network
-  forward_network(&net);
+	forward_network(&net);
 
 	for (int i=0; i<net.out_size; i++){
     control_nn[i] = net.output_decoded[i];
@@ -529,6 +530,7 @@ void external_vision_update(uint8_t *buf)
 // Logging
 extern void gnc_net_log_header(FILE *file) {
   fprintf(file, "autopilot_mode,");
+  fprintf(file, "dt,");	
   fprintf(file, "wp_goal_x,wp_goal_y,wp_goal_z,");
   fprintf(file, "nn_out_1,nn_out_2,nn_out_3,nn_out_4,");
   fprintf(file, "nn_in_1,nn_in_2,nn_in_3,nn_in_4,nn_in_5,nn_in_6,nn_in_7,nn_in_8,nn_in_9,nn_in_10,nn_in_11,nn_in_12,nn_in_13,nn_in_14,nn_in_15,nn_in_16,nn_in_17,nn_in_18,nn_in_19,");
@@ -540,6 +542,7 @@ extern void gnc_net_log_header(FILE *file) {
 extern void gnc_net_log_data(FILE *file) {
   //fprintf(file, "%d,%d,%d,%d,", motor_mixing.commands[0], motor_mixing.commands[1], motor_mixing.commands[2], motor_mixing.commands[3]);
   fprintf(file, "%d,", (autopilot_get_mode()==AP_MODE_ATTITUDE_DIRECT)?(1):(0));
+	fprintf(file, "%f,", dt);
   fprintf(file, "%f,%f,%f,", waypoint_ned.x, waypoint_ned.y, waypoint_ned.z);
   fprintf(file, "%f,%f,%f,%f,",control_nn[0],control_nn[1],control_nn[2],control_nn[3]);
   fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,",state_nn[0], state_nn[1], state_nn[2], state_nn[3], state_nn[4], state_nn[5], state_nn[6], state_nn[7], state_nn[8], state_nn[9], state_nn[10], state_nn[11], state_nn[12], state_nn[13], state_nn[14], state_nn[15], state_nn[16], state_nn[17], state_nn[18]);
