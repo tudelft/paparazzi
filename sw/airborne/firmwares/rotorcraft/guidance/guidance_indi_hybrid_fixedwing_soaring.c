@@ -327,6 +327,7 @@ bool soaring_explore_positions = GUIDANCE_INDI_SOARING_MOVE_WP;
 
 struct SoaringPositionMap soaring_position_map[MAP_MAX_NUM_POINTS];
 struct FloatVect3 preset_move_body[8] = {{1.0, 0., 0.}, {-1.0, 0., -1.0}, {0., 0., -1.0}, {1.0, 0., -1.0}, {-1.0, 0., 1.0}, {0., 0., 1.0}, {1.0, 0., 1.0}, {-1.0, 0., 0.}};
+struct FloatVect3 preset_move_down[1] = {{0., 0., 1}};
 struct FloatVect3 amount_to_move_ned = {0., 0., 0.};
 struct FloatVect3 amount_to_move_body = {0., 0., 0.};
 int soar_map_idx = 0;
@@ -353,6 +354,10 @@ float soaring_step_size_big = GUIDANCE_INDI_SOARING_STEP_BIG;
 float soaring_step_size_mid = GUIDANCE_INDI_SOARING_STEP_MED;
 float soaring_step_size_small = GUIDANCE_INDI_SOARING_STEP_SMALL;
 float soaring_step_size_fine = GUIDANCE_INDI_SOARING_STEP_FINE;
+
+bool only_move_down = 0;
+float only_move_down_step_size = 0.02;
+float soaring_move_wp_cost_threshold_phase2 = GUIDANCE_INDI_SOARING_WP_COST_THRES * 0.5;
 
 float max_acc_sp = GUIDANCE_INDI_MAX_ACC_SP;
 float min_acc_sp = GUIDANCE_INDI_MIN_ACC_SP;
@@ -524,7 +529,11 @@ void guidance_indi_soaring_move_wp(float cost_avg_val){
         step_size = soaring_step_size_fine;
     }
 
-    VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], step_size);
+    if (only_move_down || (cost_avg_val < soaring_move_wp_cost_threshold_phase2)) {
+        VECT3_SMUL(amount_to_move_body, preset_move_down[0], only_move_down_step_size);
+    } else {
+        VECT3_SMUL(amount_to_move_body, preset_move_body[idx_to_move], step_size);
+    }
 
     if ((POS_FLOAT_OF_BFP(waypoints[soar_wp_id].enu_i.z) + amount_to_move_body.z) < soaring_min_alt) {
         // pick a random neighbour that doesn't go down; default is 5m

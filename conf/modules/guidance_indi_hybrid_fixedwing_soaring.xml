@@ -60,6 +60,7 @@
           <dl_setting var="speed_sp_from_position" min="0" step="1" max="1" values="OFF|ON" shortname="sp_position"/>
           <dl_setting var="y_position_ctrl" min="0" step="1" max="1" values="OFF|ON" shortname="y_pos_ctrl"/>
           <dl_setting var="soaring_explore_positions" min="0" step="1" max="1" values="OFF|ON" shortname="moving_wp"/>
+          <dl_setting var="only_move_down" min="0" step="1" max="1" values="OFF|ON" shortname="only_move_down"/>
 
           <dl_setting var="use_fixed_heading_wp" min="0" step="1" max="1" values="OFF|ON" shortname="heading_towards_wp"/>
           <dl_setting var="soaring_heading_gain" min="0.0" step="0.0001" max="1.0" shortname="heading_gain"/>
@@ -79,6 +80,7 @@
         </dl_settings>
         <dl_settings name="costs">
           <dl_setting var="soaring_move_wp_cost_threshold" min="1" step="0.5" max="500" shortname="cost_threshold"/>
+          <dl_setting var="soaring_move_wp_cost_threshold_phase2" min="0" step="0.5" max="100" shortname="cost_th_phase2"/>
 
           <dl_setting var="gd_k_thr" min="0" step="0.001" max="10" shortname="wp_throttle_weight"/>
           <dl_setting var="gd_k_spd_x" min="0" step="0.1" max="100" shortname="wp_spd_x_weight"/>
@@ -90,6 +92,8 @@
 
           <dl_setting var="soaring_use_fixed_step_size" min="0" step="1" max="1" values="OFF|ON" shortname="use_fixed_step_size"/>
           <dl_setting var="soaring_fixed_step_size" min="0" step="0.05" max="10" shortname="fixed_step_size"/>
+
+          <dl_setting var="only_move_down_step_size" min="-0.2" step="0.01" max="0.2" shortname="only_down_step_size"/>
 
           <dl_setting var="soaring_step_size_big" min="0" step="0.05" max="10" shortname="step_size_big"/>
           <dl_setting var="soaring_step_size_mid" min="0" step="0.05" max="5" shortname="step_size_mid"/>

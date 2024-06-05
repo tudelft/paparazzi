@@ -95,6 +95,10 @@ extern float soaring_critical_aoa;
 extern bool use_aoa_pitch_limit;
 extern bool use_aoa_pitch_pref;
 
+extern bool only_move_down;
+extern float only_move_down_step_size;
+extern float soaring_move_wp_cost_threshold_phase2;
+
 //extern bool guidance_indi_soaring_use_spline_clcd;
 extern float guidance_indi_soaring_max_aoa;
 extern float guidance_indi_soaring_min_aoa;
