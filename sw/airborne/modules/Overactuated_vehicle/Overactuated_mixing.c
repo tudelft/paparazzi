@@ -1193,7 +1193,7 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[85] = prop_sigma;
     extra_data_out_local[86] = prop_theta;
 
-    extra_data_out_local[87] = use_u_init_nonlinear_CA;
+    
 
     if(selected_beacon == 1){
         extra_data_out_local[87] = 1640.0;     
@@ -1213,6 +1213,7 @@ void send_values_to_raspberry_pi(void){
     
     extra_data_out_local[88] = sixdof_mode; 
 
+    extra_data_out_local[89] = use_u_init_nonlinear_CA;
 }
 
 /**
