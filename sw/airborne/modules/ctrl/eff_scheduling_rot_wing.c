@@ -73,7 +73,7 @@ static Butterworth2LowPass airspeed_filt;
 /* Temp variables*/
 bool airspeed_fake_on = false;
 float airspeed_fake = 0.0;
-
+float ele_eff = 22.0;
 /* Define Forces and Moments tructs for each actuator*/
 struct RW_Model RW;
 
@@ -152,7 +152,7 @@ void init_RW_Model(void)
   RW.mP.dMdud    = 0.000 / RW_G_SCALE; // [Nm / pprz]
   RW.mP.l        = 0.000             ; // [m]        
   // Elevator
-  RW.ele.dFdu    = 29.70 / (RW_G_SCALE * RW_G_SCALE); // [N  / pprz]   old value: 24.81
+  RW.ele.dFdu    = ele_eff / (RW_G_SCALE * RW_G_SCALE); // [N  / pprz]   old value: 24.81 29.70
   RW.ele.dMdu    = 0;                                 // [Nm / pprz]
   RW.ele.dMdud   = 0;                                 // [Nm / pprz]
   RW.ele.l       = 0.85;                              // [m]    
@@ -241,6 +241,7 @@ void calc_G1_G2_RW(void)
   // Motor Pusher
   G1_RW[aX][COMMAND_MOTOR_PUSHER] =  RW.mP.dFdu / RW.m;
   // Elevator
+  RW.ele.dFdu                     = ele_eff / (RW_G_SCALE * RW_G_SCALE);
   G1_RW[aq][COMMAND_ELEVATOR]     =  (RW.ele.dFdu * RW.as2 * RW.ele.l) / RW.I.yy;
   // Rudder
   G1_RW[ar][COMMAND_RUDDER]       =  (RW.rud.dFdu * RW.as2 * RW.rud.l) / RW.I.zz ;
