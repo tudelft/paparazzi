@@ -272,7 +272,7 @@
       <fcs_function name="de_lag">
         <function>
           <sum>
-            <value>-0.8267</value> <!-- Convert 0 to 1 scale so that de_lag is 0 when elevator is flat -->
+            <value>-0.8333</value> <!-- Convert 0 to 1 scale so that de_lag is 0 when elevator is flat -->
             <property>fcs/ELEVATOR_lag</property>
           </sum>
         </function>
@@ -675,7 +675,8 @@
           <property>fcs/airspeed2_ms</property>
           <property>fcs/de_lag</property>
           <!--<value>0.23819</value>--> <!-- dNdjsbsim-->
-          <value>0.28512</value> <!-- dNdjsbsim-->
+          <!--<value>0.28512</value>--> <!-- dNdjsbsim-->
+          <value>0.2112</value> <!-- dNdjsbsim-->
           <value>0.850</value>   <!-- m --> 
           <value> 0.738</value> <!-- Nm to ft-lbs -->
           <property>fcs/Iyy_ratio_quad_sched</property>
