@@ -219,7 +219,7 @@
     </block>
     <block name="land">
       <set value="0" var="force_forward"/>
-      <set value="1" var="approach_state"/>
+      <set value="0" var="approach_state"/>
       <go wp="TD"/>
     </block>
     <block name="descend">
