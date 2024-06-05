@@ -1951,22 +1951,25 @@ void reshape_wind(void)
       desired_airspeed.y = groundspeed_factor * NT_v_NE.y - windspeed.y;
       NT_v_NE.x  = groundspeed_factor * NT_v_NE.x;
       NT_v_NE.y  = groundspeed_factor * NT_v_NE.y;  
+      nav_target_new[0] = NT_v_NE.x;
+      nav_target_new[1] = NT_v_NE.y;
     }
   }
   norm_des_as = FLOAT_VECT2_NORM(desired_airspeed); // Recalculate norm of desired airspeed
   // If flying fast or if in force forward mode, make turns instead of straight lines
-  if (((airspeed > ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD) && (norm_des_as > (ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD+2.0f)))|| (rotwing_state_settings.force_forward)){
-    NT_v_B.x =  cpsi * NT_v_NE.x + spsi * NT_v_NE.y;
-    NT_v_B.y = -spsi * NT_v_NE.x + cpsi * NT_v_NE.y;
-    float delta = 0.0; // keep working here.
-    // 
-    sp_accel_b.y = atan2f(desired_airspeed.y, desired_airspeed.x) - psi;
-    FLOAT_ANGLE_NORMALIZE(sp_accel_b.y);
-    sp_accel_b.y *= 5.0;//gih_params.heading_bank_gain;
-  // Control the airspeed
-  sp_accel_b.x = (speed_sp_b_x - airspeed) * k_pos_rm.k2[0];//gih_params.speed_gain;
-  nav_target_new[0] = cpsi * sp_accel_b.x - spsi * sp_accel_b.y;
-  nav_target_new[1] = spsi * sp_accel_b.x + cpsi * sp_accel_b.y; 
+  // if (((airspeed > ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD) && (norm_des_as > (ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD+2.0f)))|| (rotwing_state_settings.force_forward)){
+  //   NT_v_B.x =  cpsi * NT_v_NE.x + spsi * NT_v_NE.y;
+  //   NT_v_B.y = -spsi * NT_v_NE.x + cpsi * NT_v_NE.y;
+  //   float delta = 0.0; // keep working here.
+  //   // 
+  //   sp_accel_b.y = atan2f(desired_airspeed.y, desired_airspeed.x) - psi;
+  //   FLOAT_ANGLE_NORMALIZE(sp_accel_b.y);
+  //   sp_accel_b.y *= 5.0;//gih_params.heading_bank_gain;
+  //   // Control the airspeed
+  //   sp_accel_b.x = (speed_sp_b_x - airspeed) * k_pos_rm.k2[0];//gih_params.speed_gain;
+  //   nav_target_new[0] = cpsi * sp_accel_b.x - spsi * sp_accel_b.y;
+  //   nav_target_new[1] = spsi * sp_accel_b.x + cpsi * sp_accel_b.y; 
+  // }
   // printf("norm_as    : %f, as_x    : %f, as_y    : %f\n", airspeed, airspeed_v.x, airspeed_v.y);
   // printf("norm_des_as: %f, des_as_x: %f, des_as_y: %f\n", sqrtf(desired_airspeed.x*desired_airspeed.x+desired_airspeed.y*desired_airspeed.y), desired_airspeed.x, desired_airspeed.y);
   // printf("norm_wind  : %f, wind_x  : %f, wind_y  : %f\n", norm_wind, windspeed.x, windspeed.y);

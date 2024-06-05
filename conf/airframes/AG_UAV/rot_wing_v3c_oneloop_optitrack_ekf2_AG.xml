@@ -160,7 +160,7 @@
 
     <!-- CAN BUS 1 command outputs-->
     <servos driver="Uavcan1Cmd">
-        <servo no="6" name="SERVO_ELEVATOR" min="3980"  neutral="3980" max="-5280"/>
+        <servo no="6" name="SERVO_ELEVATOR" min="3850"  neutral="3850" max="-4096"/>
         <servo no="7" name="SERVO_RUDDER"   min="-5225" neutral="0"    max="5225"/>
     </servos>
     
@@ -288,7 +288,7 @@
         <define name  = "ACT_MIN"                   value = "{    0.0f,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f, -9600.0f, -9600.0f, -9600.0f, -M_PI_4, -M_PI_4}"/>
         <define name  = "ACT_MAX_NORM"              value = "{    1.0f,    1.0f,     1.0f,     1.0f,    1.0f,    1.0f,     1.0f,     1.0f,     1.0f,    1.0f,    1.0f}"/>
         <define name  = "ACT_MIN_NORM"              value = "{    0.0f,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f,    -1.0f,    -1.0f,    -1.0f,   -1.0f,   -1.0f}"/>
-        <define name  = "WU"                        value = "{   0.75f,   0.75f,    0.75f,    0.75f,   1.00f,   10.0f,    10.0f,    10.0f,    10.0f,   1.20f,   1.20f}"/>
+        <define name  = "WU"                        value = "{   0.75f,   0.75f,    0.75f,    0.75f,   1.00f,    6.0f,     6.0f,     6.0f,     6.0f,   1.20f,   1.20f}"/>
         <define name  = "U_PREF"                    value = "{   0.00f,   0.00f,    0.00f,    0.00f,   0.00f, 7936.0f,    0.00f,    0.00f,    0.00f,   0.00f,   0.00f}"/>
         <define name  = "WV"                        value = "{  4.0f,  4.0f,   4.0f,  8.0f,  8.0f,  1.00f}"/>   
     </section>
@@ -305,26 +305,6 @@
         <define name="IXX_WING"              value="0.08099"/>
         <define name="IYY_WING"              value="0.1949"/>
         <define name="M"                     value="6.67"/>
-
-        <define name="DM_DPPRZ_HOVER_PITCH"  value="0.001537287553553"/>
-        <define name="DM_DPPRZ_HOVER_ROLL"   value="{5.86747416762564,0.001936126151564}"/>
-
-        <define name="HOVER_ROLL_PITCH_COEF" value="{0.001418491625685,-0.000649367806611}"/>
-        <define name="HOVER_ROLL_ROLL_COEF"  value="{-0.0000839259143513,-0.0000478083}"/>
-
-        <define name="K_ELEVATOR"            value="{0.4603,-4.81466,-28.8464}"/>
-        <define name="K_RUDDER"              value="{-26.1434,-0.336403,-5.9}"/>
-        <define name="K_AILERON"             value="2.777647188"/>
-        <define name="K_FLAPERON"            value="2.0439"/>
-        <define name="K_PUSHER"              value="{0.007777,-0.67521}"/>
-
-        <define name="K_ELEVATOR_DEFLECTION" value="{50.0,-0.0063}"/>
-        <define name="D_RUDDER_D_PPRZ"       value="-0.0018"/>
-        <define name="K_RPM_PPRZ_PUSHER"     value="{-116.518697071689,1.17051409813432,-0.00002580110593734}"/>
-
-        <define name="K_LIFT_WING"           value="{-0.335811392,-0.615611143}"/>
-        <define name="K_LIFT_FUSELAGE"       value="-0.050653927"/>
-        <define name="K_LIFT_TAIL"           value="-0.101691751"/>
     </section>
 
     <section name="AUTOPILOT">
