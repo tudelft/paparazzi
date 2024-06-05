@@ -41,6 +41,10 @@
       <corner name="C9"/>
     </sector>
   </sectors>
+  <variables>
+    <variable var="circle_v_climb" init="0" min="-10" max="10" step="0.1"/>
+    <variable init="0" max="100" min="0" step="5" var="ell_delta"/>
+  </variables>
   <modules>
     <!--<module name="follow_me">
       <define name="FOLLOW_ME_MOVING_WPS" value="WP_p1,WP_p2,WP_p3,WP_p4,WP_STDBY,WP_circ,WP_APP"/>
@@ -138,12 +142,12 @@
     <block name="transition_CW">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID)"/>
       <stay wp="end_trans"/>
-      <exception cond="RotWingAutomationReadyForForward()" deroute="Circle_CW_fwd"/>
+      <exception cond="RotWingAutomationReadyForForward()"  deroute="CircleRNormal"/><!-- deroute="Circle_CW_fwd"/> -->
     </block>
     <block name="transition_CCW">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID)"/>
       <stay wp="end_trans"/>
-      <exception cond="RotWingAutomationReadyForForward()" deroute="Circle_CCW_fwd"/>
+      <exception cond="RotWingAutomationReadyForForward()" deroute="CircleLNormal"/> <!-- deroute="Circle_CCW_fwd"/> -->
     </block>
     <!-- <block name="route">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_EFFICIENT)"/>
@@ -166,24 +170,25 @@
       <set var="guidance_indi_max_airspeed" value="19"/>
       <set var="rotwing_state_skewing.force_rotation_angle" value="0"/>
       <set var="rotwing_state_pitch_angle_range" value="3"/>
-      <circle radius="100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+      <circle radius="100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)" vmode='climb' climb="circle_v_climb" until="40>GetPosAlt()"/>
+      <deroute block="Standby"/>
     </block>
     <block name="CircleRHybrid">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID)"/>
       <set var="rotwing_state_skewing.force_rotation_angle" value="1"/>
-      <circle radius="100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+      <circle radius="100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)" vmode='climb' climb="circle_v_climb" until="40>GetPosAlt()"/>
     </block>
     <block name="CircleLNormal" strip_button="CircleLeft" strip_icon="circle-left.png">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_EFFICIENT)"/>
       <set var="guidance_indi_max_airspeed" value="19"/>
       <set var="rotwing_state_skewing.force_rotation_angle" value="0"/>
       <set var="rotwing_state_pitch_angle_range" value="3"/>
-      <circle radius="-100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+      <circle radius="-100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)" vmode='climb' climb="circle_v_climb" until="40>GetPosAlt()"/>
     </block>
     <block name="CircleLHybrid">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID)"/>
       <set var="rotwing_state_skewing.force_rotation_angle" value="1"/>
-      <circle radius="-100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+      <circle radius="-100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)" vmode='climb' climb="circle_v_climb" until="40>GetPosAlt()"/>
     </block>
     <!-- <block name="big_Circle_CW_fwd">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_EFFICIENT)"/>
