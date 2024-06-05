@@ -258,7 +258,7 @@ NOTES:
     <let var="gyro_active" value="(1 > AP_MODE ? 0 : 1)"/>
     <let var="killed" value="(AP_MODE == 50 ? 0 : 1)"/>
     
-    <let var="gyro_not_active" value="1 "/>
+    <let var="gyro_not_active" value="1"/>
     <let var="gyro_yaw" value="$gyro_active * (stateGetBodyRates_i()->r)"/>
     <!-- <let var="yaw_ctrl_sgl" value="@YAW - 8 * ($gyro_yaw)"/>--><!-- If one has a rudder -->
     <!-- <set servo="LM" value="(((0 > @THROTTLE + @YAW) ? 0 : (@THROTTLE + @YAW)))"/>--><!-- past stuff from rotorcraft not needed in FW -->

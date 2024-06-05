@@ -113,42 +113,85 @@ void actuators_periodic(void)
 #elif (defined INTERMCU_FBW)
   SetActuatorsFromCommands(trimmed_commands, autopilot_get_mode());
 #else
-
-  //trimmed_commands[COMMAND_ROLL]
-  //trimmed_commands[ELEVON_LEFT]
-  //trimmed_commands[COMMAND_YAW]
-  
-
   float extra = 0;
   struct serial_act_t4_out test;
   test.servo_arm_int = 1;
 
-  float offset = 0; //deg * 100
-
-  if (radio_control.values[5] < 1100){
+  if (radio_control.values[5] < -9000){
     SetActuatorsFromCommands(trimmed_commands, 50);
   }
   else{
     SetActuatorsFromCommands(trimmed_commands, autopilot_get_mode());
   }
 
+  float trim_offsets[5] = {0};  // arm_left, arm_right, elevon_left, elevon_right, elevator
+  float enable_control = 1.0;
+
+
+#define TRIM_MAGNITUDE 1000 // degrees * 100
+
+  // Is the testing mode even enabled?
+  if (radio_control.values[9] > -9000){
+    float test_trim = 0;
+    enable_control = 0;
+
+    // Set the trim direction
+    if (radio_control.values[8] < -2000){
+      // negative
+      test_trim = -1 * TRIM_MAGNITUDE;
+    } else if (radio_control.values[8] > 2000){
+      // positive
+      test_trim = 1 * TRIM_MAGNITUDE;
+    }
+
+    // 
+    if (radio_control.values[7] < -8000){
+      // tail
+      trim_offsets[4] = test_trim;
+    } else if (radio_control.values[7] < -5000){
+      // tail + leg (all up at the same time)
+      trim_offsets[2] = test_trim;
+      trim_offsets[3] = -test_trim;
+      trim_offsets[4] = test_trim;
+    } else if (radio_control.values[7] < 0){
+      // arm
+      trim_offsets[0] = test_trim;
+      trim_offsets[1] = -test_trim;
+    } else if (radio_control.values[7] < 3200){
+      // arm + leg
+      trim_offsets[0] = test_trim;
+      trim_offsets[1] = -test_trim;
+      trim_offsets[2] = test_trim;
+      trim_offsets[3] = -test_trim;
+    }else if (radio_control.values[7] < 8000){
+      // tail + arm
+      trim_offsets[0] = test_trim;
+      trim_offsets[1] = -test_trim;
+      trim_offsets[4] = test_trim;
+    } else{
+      // tail + arm + pitch
+      trim_offsets[0] = test_trim;
+      trim_offsets[1] = -test_trim;
+      trim_offsets[2] = test_trim;
+      trim_offsets[3] = -test_trim;
+      trim_offsets[4] = test_trim;
+    }
+  }
+
 #ifdef SERVO_ELEVON_LEFT_IDX
-  test.servo_3_cmd_int = 2.0 * 2000.0 * ( 1.0f * actuators[SERVO_ELEVON_LEFT_IDX] - 1500.0) / 500 - 2.0 * offset;
+  test.servo_3_cmd_int = 2.5 * (enable_control * 2000.0 * ( 1.0f * actuators[SERVO_ELEVON_LEFT_IDX] - 1500.0) / 500 + trim_offsets[2]);
 #endif
 #ifdef SERVO_ELEVON_RIGHT_IDX
-  test.servo_4_cmd_int = 2.0 * 2000.0 * ( 1.0f * actuators[SERVO_ELEVON_RIGHT_IDX] - 1500.0) / 500 + 2.0 * offset;
+  test.servo_4_cmd_int = 2.5 * (enable_control * 2000.0 * ( 1.0f * actuators[SERVO_ELEVON_RIGHT_IDX] - 1500.0) / 500 + trim_offsets[3]);
 #endif
 #ifdef SERVO_ARM_LEFT_IDX
-  test.servo_1_cmd_int = 45.0/19.0 * 3000.0 * ( 1.0f * actuators[SERVO_ARM_LEFT_IDX] - 1500.0) / 500 - 45.0/19.0 * offset;
+  test.servo_1_cmd_int = 45.0/11.0 * (enable_control * 3000.0 * ( 1.0f * actuators[SERVO_ARM_LEFT_IDX] - 1500.0) / 500 + trim_offsets[0]);
 #endif
 #ifdef SERVO_ARM_RIGHT_IDX
-  test.servo_2_cmd_int = 45.0/19.0 * 3000.0 * ( 1.0f * actuators[SERVO_ARM_RIGHT_IDX] - 1500.0) / 500 + 45.0/19.0 * offset;
+  test.servo_2_cmd_int = 45.0/11.0 * (enable_control * 3000.0 * ( 1.0f * actuators[SERVO_ARM_RIGHT_IDX] - 1500.0) / 500 + trim_offsets[1]);
 #endif
 #ifdef SERVO_ELEVATOR_IDX
-  test.servo_5_cmd_int = - 39.0/19.0 * 3000.0 * (( 1.0f * actuators[SERVO_ELEVATOR_IDX] - 1500.0) / 500) - 39.0/19.0 * 1500.0 * (radio_control.values[6] / 9600.0);
-#endif
-#ifdef SERVO_SPOILERON_IDX
-  test.servo_6_cmd_int = 45.0/19.0 * 3000.0 * ( 1.0f * actuators[SERVO_SPOILERON_IDX] - 1500.0) / 500;
+  test.servo_5_cmd_int = - 39.0/19.0 * (enable_control * 3000.0 * (( 1.0f * actuators[SERVO_ELEVATOR_IDX] - 1500.0) / 500) - 1500.0 * (radio_control.values[6] / 9600.0) + trim_offsets[4]);
 #endif
   
   AbiSendMsgSERIAL_ACT_T4_OUT(ABI_SERIAL_ACT_T4_OUT_ID, &test, &extra);
