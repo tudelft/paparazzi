@@ -126,6 +126,7 @@ float pos_order_earth[3];
 float euler_order[3];
 float psi_order_motor = 0;
 
+int use_u_init_nonlinear_CA = 0; 
 
 //Rotors test: 
 float des_az_angle_test = 0; 
@@ -1191,6 +1192,8 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[84] = prop_delta;
     extra_data_out_local[85] = prop_sigma;
     extra_data_out_local[86] = prop_theta;
+
+    extra_data_out_local[87] = use_u_init_nonlinear_CA;
 
     if(selected_beacon == 1){
         extra_data_out_local[87] = 1640.0;     

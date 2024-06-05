@@ -56,6 +56,8 @@
     <dl_settings>
       <dl_settings NAME="General overact">
       
+        <dl_setting var="use_u_init_nonlinear_CA" min="0" step="1" max="1" shortname="use_u_init" values="FALSE|TRUE"/>
+
         <dl_setting var="alt_offset_beacon" min="0" step=".1" max="40" shortname="alt_off_beacon"/>
 
         <dl_setting var="selected_beacon" min="1" step="1" max="5" shortname="selected_beacon" persistent="true"/>

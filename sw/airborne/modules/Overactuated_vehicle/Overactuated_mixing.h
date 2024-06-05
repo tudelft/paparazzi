@@ -184,6 +184,8 @@ extern int use_slider_attitude;
 extern float pitch_target_slider; 
 extern float roll_target_slider; 
 
+extern int use_u_init_nonlinear_CA; 
+
 //Prop model: 
 extern float power_cd_0;
 extern float power_cd_a;
