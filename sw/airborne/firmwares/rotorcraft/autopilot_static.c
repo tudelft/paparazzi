@@ -39,7 +39,6 @@
 #include "firmwares/rotorcraft/guidance.h"
 
 #include "firmwares/rotorcraft/stabilization.h"
-#include "firmwares/rotorcraft/stabilization/stabilization_none.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 
 #if USE_STABILIZATION_RATE
@@ -158,14 +157,35 @@ void autopilot_static_periodic(void)
    * If in FAILSAFE mode, run normal loops with failsafe attitude and
    * downwards velocity setpoints.
    */
-  if (autopilot.mode == AP_MODE_KILL) {
-    SetCommands(commands_failsafe);
-  } else {
-    guidance_v_run(autopilot_in_flight());
-    guidance_h_run(autopilot_in_flight());
-    SetRotorcraftCommands(stabilization_cmd, autopilot.in_flight, autopilot.motors_on);
+  struct StabilizationSetpoint stab_sp;
+  struct ThrustSetpoint thrust_sp;
+  switch (autopilot.mode) {
+    case AP_MODE_FAILSAFE:
+#ifndef KILL_AS_FAILSAFE
+      thrust_sp = guidance_v_run(autopilot_in_flight());
+      stab_sp = stabilization_get_failsafe_sp();
+      stabilization_run(autopilot_in_flight(), &stab_sp, &thrust_sp, stabilization.cmd);
+      SetRotorcraftCommands(stabilization.cmd, autopilot.in_flight, autopilot.motors_on);
+      break;
+#endif
+    case AP_MODE_KILL:
+      SetCommands(commands_failsafe);
+      break;
+    default:
+      thrust_sp = guidance_v_run(autopilot_in_flight());
+      if (guidance_h.mode != GUIDANCE_H_MODE_NONE) {
+        stab_sp = guidance_h_run(autopilot_in_flight());
+      } else {
+        stab_sp = stabilization.rc_sp;
+      }
+      stabilization_run(autopilot_in_flight(), &stab_sp, &thrust_sp, stabilization.cmd);
+      // TODO maybe add RC limiter here as an option ?
+      SetRotorcraftCommands(stabilization.cmd, autopilot.in_flight, autopilot.motors_on);
+      break;
   }
+#ifdef COMMAND_THRUST
   autopilot.throttle = commands[COMMAND_THRUST];
+#endif
 
 }
 
@@ -180,7 +200,7 @@ void autopilot_static_SetModeHandler(float mode)
     autopilot_static_set_mode(mode);
   } else {
     if (radio_control.status != RC_OK &&
-        (mode == AP_MODE_NAV || mode == AP_MODE_GUIDED || mode == AP_MODE_FLIP || mode == AP_MODE_MODULE)) {
+        (mode == AP_MODE_NAV || mode == AP_MODE_GUIDED)) {
       // without RC, only nav-like modes are accessible
       autopilot_static_set_mode(mode);
     }
@@ -191,33 +211,31 @@ void autopilot_static_SetModeHandler(float mode)
 
 void autopilot_static_set_mode(uint8_t new_autopilot_mode)
 {
-
-  /* force startup mode (default is kill) as long as AHRS is not aligned */
-  if (!ap_ahrs_is_aligned()) {
-    new_autopilot_mode = MODE_STARTUP;
-  }
-
   if (new_autopilot_mode != autopilot.mode) {
     /* horizontal mode */
     switch (new_autopilot_mode) {
       case AP_MODE_FAILSAFE:
 #ifndef KILL_AS_FAILSAFE
-        stabilization_attitude_set_failsafe_setpoint();
-        guidance_h_mode_changed(GUIDANCE_H_MODE_ATTITUDE);
+        guidance_h_mode_changed(GUIDANCE_H_MODE_NONE);
+        stabilization_mode_changed(STABILIZATION_MODE_ATTITUDE,
+            STABILIZATION_ATT_SUBMODE_HEADING);
         break;
 #endif
       case AP_MODE_KILL:
         autopilot_set_in_flight(false);
-        guidance_h_mode_changed(GUIDANCE_H_MODE_KILL);
+        guidance_h_mode_changed(GUIDANCE_H_MODE_NONE);
+        stabilization_mode_changed(STABILIZATION_MODE_NONE, 0);
         break;
       case AP_MODE_RC_DIRECT:
-        guidance_h_mode_changed(GUIDANCE_H_MODE_RC_DIRECT);
+        guidance_h_mode_changed(GUIDANCE_H_MODE_NONE);
+        stabilization_mode_changed(STABILIZATION_MODE_DIRECT, 0);
         break;
       case AP_MODE_RATE_RC_CLIMB:
       case AP_MODE_RATE_DIRECT:
       case AP_MODE_RATE_Z_HOLD:
 #if USE_STABILIZATION_RATE
-        guidance_h_mode_changed(GUIDANCE_H_MODE_RATE);
+        guidance_h_mode_changed(GUIDANCE_H_MODE_NONE);
+        stabilization_mode_changed(STABILIZATION_MODE_RATE, 0);
 #else
         return;
 #endif
@@ -226,33 +244,37 @@ void autopilot_static_set_mode(uint8_t new_autopilot_mode)
       case AP_MODE_ATTITUDE_DIRECT:
       case AP_MODE_ATTITUDE_CLIMB:
       case AP_MODE_ATTITUDE_Z_HOLD:
-        guidance_h_mode_changed(GUIDANCE_H_MODE_ATTITUDE);
+        guidance_h_mode_changed(GUIDANCE_H_MODE_NONE);
+        stabilization_mode_changed(STABILIZATION_MODE_ATTITUDE,
+            STABILIZATION_ATT_SUBMODE_HEADING);
         break;
       case AP_MODE_FORWARD:
-        guidance_h_mode_changed(GUIDANCE_H_MODE_FORWARD);
+        guidance_h_mode_changed(GUIDANCE_H_MODE_NONE);
+        stabilization_mode_changed(STABILIZATION_MODE_ATTITUDE,
+            STABILIZATION_ATT_SUBMODE_FORWARD);
         break;
       case AP_MODE_CARE_FREE_DIRECT:
-        guidance_h_mode_changed(GUIDANCE_H_MODE_CARE_FREE);
+        guidance_h_mode_changed(GUIDANCE_H_MODE_NONE);
+        stabilization_mode_changed(STABILIZATION_MODE_ATTITUDE,
+            STABILIZATION_ATT_SUBMODE_CARE_FREE);
         break;
       case AP_MODE_HOVER_DIRECT:
       case AP_MODE_HOVER_CLIMB:
       case AP_MODE_HOVER_Z_HOLD:
         guidance_h_mode_changed(GUIDANCE_H_MODE_HOVER);
+        stabilization_mode_changed(STABILIZATION_MODE_ATTITUDE,
+            STABILIZATION_ATT_SUBMODE_HEADING);
         break;
       case AP_MODE_HOME:
       case AP_MODE_NAV:
         guidance_h_mode_changed(GUIDANCE_H_MODE_NAV);
-        break;
-      case AP_MODE_MODULE:
-#ifdef GUIDANCE_H_MODE_MODULE_SETTING
-        guidance_h_mode_changed(GUIDANCE_H_MODE_MODULE_SETTING);
-#endif
-        break;
-      case AP_MODE_FLIP:
-        guidance_h_mode_changed(GUIDANCE_H_MODE_FLIP);
+        stabilization_mode_changed(STABILIZATION_MODE_ATTITUDE,
+            STABILIZATION_ATT_SUBMODE_HEADING); // TODO check
         break;
       case AP_MODE_GUIDED:
         guidance_h_mode_changed(GUIDANCE_H_MODE_GUIDED);
+        stabilization_mode_changed(STABILIZATION_MODE_ATTITUDE,
+            STABILIZATION_ATT_SUBMODE_HEADING);
         break;
       default:
         break;
@@ -266,8 +288,10 @@ void autopilot_static_set_mode(uint8_t new_autopilot_mode)
         break;
 #endif
       case AP_MODE_KILL:
-        autopilot_set_motors_on(FALSE);
-        stabilization_cmd[COMMAND_THRUST] = 0;
+        autopilot_set_motors_on(false);
+#ifdef COMMAND_THRUST
+        stabilization.cmd[COMMAND_THRUST] = 0; // FIXME maybe not needed ?
+#endif
         guidance_v_mode_changed(GUIDANCE_V_MODE_KILL);
         break;
       case AP_MODE_RC_DIRECT:
@@ -295,14 +319,6 @@ void autopilot_static_set_mode(uint8_t new_autopilot_mode)
       case AP_MODE_NAV:
         guidance_v_mode_changed(GUIDANCE_V_MODE_NAV);
         break;
-      case AP_MODE_MODULE:
-#ifdef GUIDANCE_V_MODE_MODULE_SETTING
-        guidance_v_mode_changed(GUIDANCE_V_MODE_MODULE_SETTING);
-#endif
-        break;
-      case AP_MODE_FLIP:
-        guidance_v_mode_changed(GUIDANCE_V_MODE_FLIP);
-        break;
       case AP_MODE_GUIDED:
         guidance_v_mode_changed(GUIDANCE_V_MODE_GUIDED);
         break;
@@ -317,7 +333,7 @@ void autopilot_static_set_mode(uint8_t new_autopilot_mode)
 
 void autopilot_static_set_motors_on(bool motors_on)
 {
-  if (autopilot.mode != AP_MODE_KILL && ap_ahrs_is_aligned() && motors_on) {
+  if (autopilot.mode != AP_MODE_KILL && motors_on) {
     autopilot.motors_on = true;
   } else {
     autopilot.motors_on = false;
@@ -362,14 +378,9 @@ void autopilot_static_on_rc_frame(void)
   }
 
   /* an arming sequence is used to start/stop motors.
-   * only allow arming if ahrs is aligned
    */
-  if (ap_ahrs_is_aligned()) {
-    autopilot_arming_check_motors_on();
-    autopilot.kill_throttle = ! autopilot.motors_on;
-  } else {
-    autopilot.arming_status = AP_ARMING_STATUS_AHRS_NOT_ALLIGNED;
-  }
+  autopilot_arming_check_motors_on();
+  autopilot.kill_throttle = ! autopilot.motors_on;
 
   /* if not in FAILSAFE or HOME mode, read RC and set commands accordingly */
   if (autopilot.mode != AP_MODE_FAILSAFE && autopilot.mode != AP_MODE_HOME) {
@@ -385,9 +396,6 @@ void autopilot_static_on_rc_frame(void)
       SetCommandsFromRC(commands, radio_control.values);
     }
 #endif
-
-    guidance_v_read_rc();
-    guidance_h_read_rc(autopilot_in_flight());
   }
 
 }
@@ -404,8 +412,6 @@ void autopilot_failsafe_checks(void)
       autopilot_get_mode() != AP_MODE_HOME &&
       autopilot_get_mode() != AP_MODE_FAILSAFE &&
       autopilot_get_mode() != AP_MODE_NAV &&
-      autopilot_get_mode() != AP_MODE_MODULE &&
-      autopilot_get_mode() != AP_MODE_FLIP &&
       autopilot_get_mode() != AP_MODE_GUIDED) {
     autopilot_set_mode(RC_LOST_MODE);
   }

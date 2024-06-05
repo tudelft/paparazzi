@@ -34,7 +34,7 @@
       <!-- Airspeed sensors -->
       <module name="airspeed" type="ms45xx_i2c">
         <define name="USE_I2C4"/>
-        <define name="MS45XX_I2C_DEV" value="i2c4"/>
+        <configure name="MS45XX_I2C_DEV" value="i2c4"/>
         <define name="I2C4_CLOCK_SPEED" value="100000"/>
       </module>
       <!--module name="airspeed" type="uavcan"/-->
@@ -68,7 +68,7 @@
       <module name="fdm" type="jsbsim"/>
 
       <module name="logger_file">
-        <define name="FILE_LOGGER_PATH" value="/home/ewoud/Documents"/>
+        <define name="FILE_LOGGER_PATH" value="~/"/>
       </module>
 
       <!--Not dealing with these in the simulation-->
@@ -138,7 +138,7 @@
       <define name="GUIDANCE_H_USE_REF" value="FALSE"/>
     </module>
 
-    <module name="guidance" type="indi_hybrid">
+    <module name="guidance" type="indi_hybrid_tailsitter">
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
       <define name="GUIDANCE_INDI_POS_GAIN" value="0.3"/>
       <define name="GUIDANCE_INDI_SPEED_GAIN" value="0.5"/>
@@ -190,6 +190,18 @@
   </servos>
 
   <commands>
+    <axis name="FRONT_LEFT"       failsafe_value="0"/>
+    <axis name="FRONT_RIGHT"      failsafe_value="0"/>
+    <axis name="REAR_LEFT"        failsafe_value="0"/>
+    <axis name="REAR_RIGHT"       failsafe_value="0"/>
+
+    <axis name="FRONT_LEFT_FLAP"  failsafe_value="0"/>
+    <axis name="FRONT_RIGHT_FLAP" failsafe_value="0"/>
+    <axis name="REAR_LEFT_FLAP"   failsafe_value="0"/>
+    <axis name="REAR_RIGHT_FLAP"  failsafe_value="0"/>
+
+    <axis name="TIP_THRUSTERS"    failsafe_value="0"/>
+
     <axis name="ROLL"   failsafe_value="0"/>
     <axis name="PITCH"  failsafe_value="-300"/>
     <axis name="YAW"    failsafe_value="0"/>
@@ -204,7 +216,6 @@
     <define name="ROLL_COEF"   value="{256,  157,   56,  -56, -157, -256,  256,  157,   56,  -56, -157, -256}"/>
     <define name="PITCH_COEF"  value="{256,  256,  256,  256,  256,  256, -256, -256, -256, -256, -256, -256}"/>
     <define name="YAW_COEF"    value="{251, -256,  252, -252,  256, -251, -256,  252, -254,  254, -252,  256}"/>
-    <!--<define name="YAW_COEF"    value="{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}"/>-->
     <define name="THRUST_COEF" value="{256,  256,  256,  256,  256,  256,  256,  256,  256,  256,  256,  256}"/>
   </section>
 
@@ -343,7 +354,7 @@
     <define name="FILT_CUTOFF_R" value="4.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN" value="{0.028, 0.028, 0.028, 0.028, 0.05, 0.05, 0.05, 0.05}"/>
+    <define name="ACT_FREQ" value="{14.2, 14.2, 14.2, 14.2, 25.6, 25.6, 25.6, 25.6}"/>
     <define name="ACT_RATE_LIMIT" value="{9600, 9600, 9600, 9600, 170, 170, 170, 170}"/>
     <define name="ACT_IS_SERVO" value="{0, 0, 0, 0, 1, 1, 1, 1}"/>
     <define name="WLS_WU" value="{1.,1.,1.,1.,1.,1.,1.,1.}"/>

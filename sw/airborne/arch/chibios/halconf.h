@@ -1,5 +1,5 @@
 /*
-    ChibiOS - Copyright (C) 2006..2020 Giovanni Di Sirio
+    ChibiOS - Copyright (C) 2006..2023 Giovanni Di Sirio
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@
 #define HALCONF_H
 
 #define _CHIBIOS_HAL_CONF_
-#define _CHIBIOS_HAL_CONF_VER_8_0_
+#define _CHIBIOS_HAL_CONF_VER_8_4_
 
 #include "mcuconf.h"
 
@@ -91,7 +91,12 @@
  * @brief   Enables the GPT subsystem.
  */
 #if !defined(HAL_USE_GPT) || defined(__DOXYGEN__)
+#if USE_GPT5 || USE_GPT7 || USE_GPT8 || USE_GPT12 || USE_GPT13
+#define HAL_USE_GPT                         TRUE
+#define GPT_DRIVER_EXT_FIELDS void *user_data;
+#else
 #define HAL_USE_GPT                         FALSE
+#endif
 #endif
 
 /**
@@ -371,15 +376,18 @@
 /*===========================================================================*/
 
 /**
- * @brief   Delays insertions.
- * @details If enabled this options inserts delays into the MMC waiting
- *          routines releasing some extra CPU time for the threads with
- *          lower priority, this may slow down the driver a bit however.
- *          This option is recommended also if the SPI driver does not
- *          use a DMA channel and heavily loads the CPU.
+ * @brief   Timeout before assuming a failure while waiting for card idle.
+ * @note    Time is in milliseconds.
  */
-#if !defined(MMC_NICE_WAITING) || defined(__DOXYGEN__)
-#define MMC_NICE_WAITING                    TRUE
+#if !defined(MMC_IDLE_TIMEOUT_MS) || defined(__DOXYGEN__)
+#define MMC_IDLE_TIMEOUT_MS                 1000
+#endif
+
+/**
+ * @brief   Mutual exclusion on the SPI bus.
+ */
+#if !defined(MMC_USE_MUTUAL_EXCLUSION) || defined(__DOXYGEN__)
+#define MMC_USE_MUTUAL_EXCLUSION            TRUE
 #endif
 
 /*===========================================================================*/

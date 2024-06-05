@@ -74,8 +74,8 @@
 
   <section name="SWITCH_SERVO">
     <define name="SWITCH_SERVO_SERVO" value="DROP"/>
-    <define name="SWITCH_SERVO_ON_VALUE" value="SERVO_DROP_MIN"/>
-    <define name="SWITCH_SERVO_OFF_VALUE" value="SERVO_DROP_MAX"/>
+    <define name="SWITCH_SERVO_ON_VALUE" value="MIN_PPRZ"/>
+    <define name="SWITCH_SERVO_OFF_VALUE" value="MAX_PPRZ"/>
     <define name="DropOpen()" value="SwitchServoOn()"/>
     <define name="DropClose()" value="SwitchServoOff()"/>
   </section>
@@ -177,9 +177,9 @@
     <define name="FILT_CUTOFF_RDOT" value="3.2"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN_P" value="0.15"/>
-    <define name="ACT_DYN_Q" value="0.15"/>
-    <define name="ACT_DYN_R" value="0.15"/>
+    <define name="ACT_FREQ_P" value="83.2"/>
+    <define name="ACT_FREQ_Q" value="83.2"/>
+    <define name="ACT_FREQ_R" value="83.2"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>

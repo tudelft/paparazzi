@@ -2,6 +2,8 @@
 
 <airframe name="tudelft_tb_bebop">
   <firmware name="rotorcraft">
+    <autopilot name="rotorcraft_control_loop"/>
+
     <target name="ap" board="bebop"/>
 	<define name="USE_SONAR" value="FALSE" />
 		
@@ -24,7 +26,7 @@
     <module name="ins" type="gps_passthrough"/>
     <!-- module name="guidance" type="indi"/-->
     <!-- <module name="guidance" type="indi"> <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" 
-        value="-500.0"/> <define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.1"/> 
+        value="-500.0"/> <define name="GUIDANCE_INDI_THRUST_DYNAMICS_FREQ" value="53.9"/> 
         <define name="GUIDANCE_INDI_RC_DEBUG" value="TRUE"/> </module> -->
 
 
@@ -175,9 +177,9 @@
     <define name="FILT_CUTOFF" value="8.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN_P" value="0.1"/>
-    <define name="ACT_DYN_Q" value="0.1"/>
-    <define name="ACT_DYN_R" value="0.1"/>
+    <define name="ACT_FREQ_P" value="53.9"/>
+    <define name="ACT_FREQ_Q" value="53.9"/>
+    <define name="ACT_FREQ_R" value="53.9"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
@@ -210,10 +212,10 @@
 	</section>
 
   <section name="AUTOPILOT">
-    <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
+    <!--define name="MODE_STARTUP" value="AP_MODE_NAV"/>
     <define name="MODE_MANUAL" value="AP_MODE_MODULE"/>
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
-    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+    <define name="MODE_AUTO2" value="AP_MODE_NAV"/-->
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>
 

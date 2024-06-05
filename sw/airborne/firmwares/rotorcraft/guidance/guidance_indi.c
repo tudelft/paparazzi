@@ -33,18 +33,14 @@
  */
 #include "generated/airframe.h"
 #include "firmwares/rotorcraft/guidance/guidance_indi.h"
-#include "modules/ins/ins_int.h"
 #include "modules/radio_control/radio_control.h"
-#include "state.h"
-#include "modules/imu/imu.h"
+#include "firmwares/rotorcraft/stabilization.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
 #include "firmwares/rotorcraft/guidance/guidance_v.h"
-#include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 #include "firmwares/rotorcraft/autopilot_rc_helpers.h"
 #include "mcu_periph/sys_time.h"
+#include "state.h"
 #include "autopilot.h"
-#include "stabilization/stabilization_attitude_ref_quat_int.h"
-#include "firmwares/rotorcraft/stabilization.h"
 #include "filters/low_pass_filter.h"
 #include "modules/core/abi.h"
 
@@ -80,13 +76,21 @@ struct FloatVect3 sp_accel = {0.0f, 0.0f, 0.0f};
 float guidance_indi_specific_force_gain = GUIDANCE_INDI_SPECIFIC_FORCE_GAIN;
 static void guidance_indi_filter_thrust(void);
 
-#ifndef GUIDANCE_INDI_THRUST_DYNAMICS
-#ifndef STABILIZATION_INDI_ACT_DYN_P
-#error "You need to define GUIDANCE_INDI_THRUST_DYNAMICS to be able to use indi vertical control"
-#else // assume that the same actuators are used for thrust as for roll (e.g. quadrotor)
-#define GUIDANCE_INDI_THRUST_DYNAMICS STABILIZATION_INDI_ACT_DYN_P
+#ifdef GUIDANCE_INDI_THRUST_DYNAMICS
+#warning GUIDANCE_INDI_THRUST_DYNAMICS is deprecated, use GUIDANCE_INDI_THRUST_DYNAMICS_FREQ instead.
+#warning "The thrust dynamics are now specified in continuous time with the corner frequency of the first order model!"
+#warning "define GUIDANCE_INDI_THRUST_DYNAMICS_FREQ in rad/s"
+#warning "Use -ln(1 - old_number) * PERIODIC_FREQUENCY to compute it from the old value."
 #endif
-#endif //GUIDANCE_INDI_THRUST_DYNAMICS
+
+#ifndef GUIDANCE_INDI_THRUST_DYNAMICS_FREQ
+#ifndef STABILIZATION_INDI_ACT_FREQ_P
+#error "You need to define GUIDANCE_INDI_THRUST_DYNAMICS_FREQ to be able to use indi vertical control"
+#else // assume that the same actuators are used for thrust as for roll (e.g. quadrotor)
+#define GUIDANCE_INDI_THRUST_DYNAMICS_FREQ STABILIZATION_INDI_ACT_FREQ_P
+#endif
+#endif //GUIDANCE_INDI_THRUST_DYNAMICS_FREQ
+
 
 #endif //GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
 
@@ -98,7 +102,8 @@ static void guidance_indi_filter_thrust(void);
 #endif
 #endif
 
-float thrust_act = 0;
+float thrust_dyn = 0.f;
+float thrust_act = 0.f;
 Butterworth2LowPass filt_accel_ned[3];
 Butterworth2LowPass roll_filt;
 Butterworth2LowPass pitch_filt;
@@ -115,6 +120,7 @@ float time_of_accel_sp_2d = 0.0;
 float time_of_accel_sp_3d = 0.0;
 
 struct FloatEulers guidance_euler_cmd;
+struct ThrustSetpoint thrust_sp;
 float thrust_in;
 
 static void guidance_indi_propagate_filters(struct FloatEulers *eulers);
@@ -146,6 +152,8 @@ static void send_indi_guidance(struct transport_tx *trans, struct link_device *d
  */
 void guidance_indi_init(void)
 {
+  FLOAT_EULERS_ZERO(guidance_euler_cmd);
+  THRUST_SP_SET_ZERO(thrust_sp);
   AbiBindMsgACCEL_SP(GUIDANCE_INDI_ACCEL_SP_ID, &accel_sp_ev, accel_sp_cb);
 
 #if PERIODIC_TELEMETRY
@@ -162,8 +170,16 @@ void guidance_indi_enter(void)
   /* set nav_heading to current heading */
   nav.heading = stateGetNedToBodyEulers_f()->psi;
 
-  thrust_in = stabilization_cmd[COMMAND_THRUST];
+  thrust_in = stabilization.cmd[COMMAND_THRUST];
   thrust_act = thrust_in;
+
+#ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
+#ifdef GUIDANCE_INDI_THRUST_DYNAMICS
+  thrust_dyn = GUIDANCE_INDI_THRUST_DYNAMICS;
+#else
+  thrust_dyn = 1-exp(-GUIDANCE_INDI_THRUST_DYNAMICS_FREQ/PERIODIC_FREQUENCY);
+#endif //GUIDANCE_INDI_THRUST_DYNAMICS
+#endif //GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
 
   float tau = 1.0 / (2.0 * M_PI * filter_cutoff);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
@@ -256,31 +272,32 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   //Calculate roll,pitch and thrust command
   MAT33_VECT3_MUL(control_increment, Ga_inv, a_diff);
 
-  struct FloatVect3 thrust_vect;
-  thrust_vect.x = 0.0;  // Fill for quadplanes
-  thrust_vect.y = 0.0;
-  thrust_vect.z = control_increment.z;
-  AbiSendMsgTHRUST(THRUST_INCREMENT_ID, thrust_vect);
-
   guidance_euler_cmd.theta = pitch_filt.o[0] + control_increment.x;
   guidance_euler_cmd.phi = roll_filt.o[0] + control_increment.y;
   guidance_euler_cmd.psi = heading_sp;
 
+  // Compute and store thust setpoint
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
   guidance_indi_filter_thrust();
-
   //Add the increment in specific force * specific_force_to_thrust_gain to the filtered thrust
   thrust_in = thrust_filt.o[0] + control_increment.z * guidance_indi_specific_force_gain;
   Bound(thrust_in, 0, 9600);
-
 #if GUIDANCE_INDI_RC_DEBUG
   if (radio_control.values[RADIO_THROTTLE] < 300) {
     thrust_in = 0;
   }
 #endif
+  // return required thrust
+  thrust_sp = th_sp_from_thrust_i(thrust_in, THRUST_AXIS_Z);
 
-  //Overwrite the thrust command from guidance_v
-  stabilization_cmd[COMMAND_THRUST] = thrust_in;
+#else
+  float thrust_vect[3];
+  thrust_vect[0] = 0.0f;  // Fill for quadplanes
+  thrust_vect[1] = 0.0f;
+  thrust_vect[2] = control_increment.z;
+
+  // specific force not defined, return required increment
+  thrust_sp = th_sp_from_incr_vect_f(thrust_vect);
 #endif
 
   //Bound euler angles to prevent flipping
@@ -299,33 +316,49 @@ struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight UNUSED, struc
   struct FloatVect3 pos_err = { 0 };
   struct FloatVect3 accel_sp = { 0 };
 
-  if (h_mode == GUIDANCE_INDI_H_POS) {
-    pos_err.x = POS_FLOAT_OF_BFP(gh->ref.pos.x) - stateGetPositionNed_f()->x;
-    pos_err.y = POS_FLOAT_OF_BFP(gh->ref.pos.y) - stateGetPositionNed_f()->y;
-    speed_sp.x = pos_err.x * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
-    speed_sp.y = pos_err.y * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
+  struct FloatVect3 speed_fb;
+
+
+  if (h_mode == GUIDANCE_INDI_H_ACCEL) {
+    // Speed feedback is included in the guidance when running in ACCEL mode
+    speed_fb.x = 0.;
+    speed_fb.y = 0.;
   }
-  else if (h_mode == GUIDANCE_INDI_H_SPEED) {
-    speed_sp.x = SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
-    speed_sp.y = SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
-  }
-  else { // H_ACCEL
-    speed_sp.x = 0.f;
-    speed_sp.y = 0.f;
+  else {
+    // Generate speed feedback for acceleration, as it is estimated
+    if (h_mode == GUIDANCE_INDI_H_SPEED) {
+      speed_sp.x = SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
+      speed_sp.y = SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
+    }
+    else { // H_POS
+      pos_err.x = POS_FLOAT_OF_BFP(gh->ref.pos.x) - stateGetPositionNed_f()->x;
+      pos_err.y = POS_FLOAT_OF_BFP(gh->ref.pos.y) - stateGetPositionNed_f()->y;
+      speed_sp.x = pos_err.x * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
+      speed_sp.y = pos_err.y * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
+    }
+    speed_fb.x = (speed_sp.x - stateGetSpeedNed_f()->x) * guidance_indi_speed_gain;
+    speed_fb.y = (speed_sp.y - stateGetSpeedNed_f()->y) * guidance_indi_speed_gain;
   }
 
-  if (v_mode == GUIDANCE_INDI_V_POS) {
-    pos_err.z = POS_FLOAT_OF_BFP(gv->z_ref) - stateGetPositionNed_f()->z;
-    speed_sp.z = pos_err.z * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(gv->zd_ref);
-  } else if (v_mode == GUIDANCE_INDI_V_SPEED) {
-    speed_sp.z = SPEED_FLOAT_OF_BFP(gv->zd_ref);
-  } else { // V_ACCEL
-    speed_sp.z = 0.f;
+  if (v_mode == GUIDANCE_INDI_V_ACCEL)  {
+    // Speed feedback is included in the guidance when running in ACCEL mode
+    speed_fb.z = 0;
+  }
+  else {
+    // Generate speed feedback for acceleration, as it is estimated
+    if (v_mode == GUIDANCE_INDI_V_SPEED) {
+      speed_sp.z = SPEED_FLOAT_OF_BFP(gv->zd_ref);
+    }
+    else { // V_POS
+      pos_err.z = POS_FLOAT_OF_BFP(gv->z_ref) - stateGetPositionNed_f()->z;
+      speed_sp.z = pos_err.z * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(gv->zd_ref);
+    }
+    speed_fb.z = (speed_sp.z - stateGetSpeedNed_f()->z) * guidance_indi_speed_gain;
   }
 
-  accel_sp.x = (speed_sp.x - stateGetSpeedNed_f()->x) * guidance_indi_speed_gain + ACCEL_FLOAT_OF_BFP(gh->ref.accel.x);
-  accel_sp.y = (speed_sp.y - stateGetSpeedNed_f()->y) * guidance_indi_speed_gain + ACCEL_FLOAT_OF_BFP(gh->ref.accel.y);
-  accel_sp.z = (speed_sp.z - stateGetSpeedNed_f()->z) * guidance_indi_speed_gain + ACCEL_FLOAT_OF_BFP(gv->zdd_ref);
+  accel_sp.x = speed_fb.x + ACCEL_FLOAT_OF_BFP(gh->ref.accel.x);
+  accel_sp.y = speed_fb.y + ACCEL_FLOAT_OF_BFP(gh->ref.accel.y);
+  accel_sp.z = speed_fb.z + ACCEL_FLOAT_OF_BFP(gv->zdd_ref);
 
   return guidance_indi_run(&accel_sp, gh->sp.heading);
 }
@@ -337,10 +370,9 @@ struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight UNUSED, struc
 void guidance_indi_filter_thrust(void)
 {
   // Actuator dynamics
-  thrust_act = thrust_act + GUIDANCE_INDI_THRUST_DYNAMICS * (thrust_in - thrust_act);
+  thrust_act = thrust_act + thrust_dyn * (thrust_in - thrust_act);
 
-  // same filter as for the acceleration
-  update_butterworth_2_low_pass(&thrust_filt, thrust_act);
+  // same filter as for the acceleorth_2_low_pass(&thrust_filt, thrust_act);
 }
 #endif
 
@@ -471,25 +503,25 @@ struct StabilizationSetpoint guidance_h_run_accel(bool in_flight, struct Horizon
   return guidance_indi_run_mode(in_flight, gh, _gv, GUIDANCE_INDI_H_ACCEL, _v_mode);
 }
 
-int32_t guidance_v_run_pos(bool in_flight UNUSED, struct VerticalGuidance *gv)
+struct ThrustSetpoint guidance_v_run_pos(bool in_flight UNUSED, struct VerticalGuidance *gv)
 {
   _gv = gv;
   _v_mode = GUIDANCE_INDI_V_POS;
-  return 0; // nothing to do
+  return thrust_sp;
 }
 
-int32_t guidance_v_run_speed(bool in_flight UNUSED, struct VerticalGuidance *gv)
+struct ThrustSetpoint guidance_v_run_speed(bool in_flight UNUSED, struct VerticalGuidance *gv)
 {
   _gv = gv;
   _v_mode = GUIDANCE_INDI_V_SPEED;
-  return 0; // nothing to do
+  return thrust_sp;
 }
 
-int32_t guidance_v_run_accel(bool in_flight UNUSED, struct VerticalGuidance *gv)
+struct ThrustSetpoint guidance_v_run_accel(bool in_flight UNUSED, struct VerticalGuidance *gv)
 {
   _gv = gv;
   _v_mode = GUIDANCE_INDI_V_ACCEL;
-  return 0; // nothing to do
+  return thrust_sp;
 }
 
 #endif

@@ -39,6 +39,11 @@
 #include "modules/datalink/telemetry.h"
 #endif
 
+/* Enable ABI sending */
+#ifndef AIRSPEED_MS45XX_SEND_ABI
+#define AIRSPEED_MS45XX_SEND_ABI true
+#endif
+
 /** Default I2C device
  */
 #ifndef MS45XX_I2C_DEV
@@ -159,6 +164,20 @@ static struct i2c_transaction ms45xx_trans;
 static Butterworth2LowPass ms45xx_filter;
 #endif
 
+#if PREFLIGHT_CHECKS
+/* Preflight checks */
+#include "modules/checks/preflight_checks.h"
+static struct preflight_check_t ms45xx_i2c_pfc;
+
+static void ms45xx_preflight(struct preflight_result_t *result) {
+  if(ms45xx.offset_set) {
+    preflight_success(result, "Airspeed sensor succesfully nulled (MS45XX)");
+  } else {
+    preflight_error(result, "Airspeed sensor not nulled (MS45XX)");
+  }
+}
+#endif // PREFLIGHT_CHECKS
+
 static void ms45xx_downlink(struct transport_tx *trans, struct link_device *dev)
 {
   uint8_t dev_id = MS45XX_SENDER_ID;
@@ -181,6 +200,7 @@ void ms45xx_i2c_init(void)
   ms45xx.pressure_type = MS45XX_PRESSURE_TYPE;
   ms45xx.pressure_scale = MS45XX_PRESSURE_SCALE;
   ms45xx.pressure_offset = MS45XX_PRESSURE_OFFSET;
+  ms45xx.offset_set = false;
 
   ms45xx_trans.status = I2CTransDone;
   // setup low pass filter with time constant and 100Hz sampling freq
@@ -191,6 +211,11 @@ void ms45xx_i2c_init(void)
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AIRSPEED_RAW, ms45xx_downlink);
+#endif
+
+  /* Register preflight checks */
+#if PREFLIGHT_CHECKS
+  preflight_check_register(&ms45xx_i2c_pfc, ms45xx_preflight);
 #endif
 }
 
@@ -241,6 +266,19 @@ void ms45xx_i2c_event(void)
        */
 
       float p_out = (p_raw - ms45xx.pressure_offset) * ms45xx.pressure_scale;
+
+      /* 0 = -50degC, 20147 = 150degC
+       * ms45xx_temperature in 0.1 deg Celcius
+       */
+      ms45xx.temperature = ((uint32_t)temp_raw * 2000) / 2047 - 500;
+      
+      // if(electrical.vboard != 0) {
+      //   float volt_diff = electrical.vboard - 5.0f;
+      //   Bound(volt_diff, -0.7f, 0.5f);
+
+      //   p_out -= 65.0f * volt_diff;
+      //   ms45xx.temperature -= 8.87f * volt_diff;
+      // }
 #ifdef USE_AIRSPEED_LOWPASS_FILTER
       ms45xx.pressure = update_butterworth_2_low_pass(&ms45xx_filter, p_out);
 #else
@@ -256,19 +294,20 @@ void ms45xx_i2c_event(void)
           autoset_offset = 0.f;
           autoset_nb = 0;
           ms45xx.autoset_offset = false;
+          ms45xx.offset_set = true;
         }
       }
 
-      /* 0 = -50degC, 20147 = 150degC
-       * ms45xx_temperature in 0.1 deg Celcius
-       */
-      ms45xx.temperature = ((uint32_t)temp_raw * 2000) / 2047 - 500;
-
       // Send (differential) pressure via ABI
+      #if AIRSPEED_MS45XX_SEND_ABI
       AbiSendMsgBARO_DIFF(MS45XX_SENDER_ID, ms45xx.pressure);
+
       // Send temperature as float in deg Celcius via ABI
       float temp = ms45xx.temperature / 10.0f;
+      
       AbiSendMsgTEMPERATURE(MS45XX_SENDER_ID, temp);
+      #endif
+
       // Compute airspeed
       float sign = 1.0f;
       if (ms45xx.pressure < 0.0f) {

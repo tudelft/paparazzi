@@ -111,7 +111,7 @@
     <define name="FILT_CUTOFF" value="5.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN" value="{0.1, 0.1, 0.045, 0.045}"/>
+    <define name="ACT_FREQ" value="{53., 53., 23., 23.}"/>
     <define name="ACT_RATE_LIMIT" value="{170, 170, 9600, 9600}"/>
     <define name="ACT_IS_SERVO" value="{1, 1, 0, 0}"/>
 
@@ -188,7 +188,7 @@
         <define name="RADIO_KILL_SWITCH" value="5"/>
       </module>
 
-      <module name="ctrl_effectiveness_scheduling">
+      <module name="eff_scheduling_cyfoam">
         <define name="SQUARED_ROLL_EFF" value="0.0018"/>
         <define name="PITCH_EFF_AT_60" value="4.0"/>
         <define name="YAW_EFF_AT_60" value="8.0"/>
@@ -232,7 +232,7 @@
 
     <!--Use an airspeed sensor and get the measured airspeed in the messages-->
     <module name="airspeed" type="ms45xx_i2c">
-      <define name="MS45XX_I2C_DEV" value="i2c1"/>
+      <configure name="MS45XX_I2C_DEV" value="i2c1"/>
       <define name="MS45XX_PRESSURE_SCALE" value="1.546"/> <!-- 2.4 / 1.6327 * 1.0521 -->
     </module>
 
@@ -292,7 +292,7 @@
       <define name="WLS_N_U" value="4" />
       <define name="WLS_N_V" value="4" />
     </module>
-    <module name="guidance"      type="indi_hybrid">
+    <module name="guidance"      type="indi_hybrid_tailsitter">
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
       <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>
       <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
@@ -306,7 +306,7 @@
       <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="16.0"/>
       <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="15.0"/>
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500.0"/>
-      <define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.045"/>
+      <define name="GUIDANCE_INDI_THRUST_DYNAMICS_FREQ" value="23.6"/>
       <!--<define name="KNIFE_EDGE_TEST" value="TRUE"/>-->
       <!--Flap effectiveness on lift-->
       <define name="FE_LIFT_A_PITCH" value="0.00018"/>

@@ -35,20 +35,7 @@
 /** Display descent speed in failsafe mode if needed */
 PRINT_CONFIG_VAR(FAILSAFE_DESCENT_SPEED)
 
-
-// Utility functions
-#ifndef AUTOPILOT_DISABLE_AHRS_KILL
-bool ap_ahrs_is_aligned(void)
-{
-  return stateIsAttitudeValid();
-}
-#else
-PRINT_CONFIG_MSG("Using AUTOPILOT_DISABLE_AHRS_KILL")
-bool ap_ahrs_is_aligned(void)
-{
-  return true;
-}
-#endif
+#if (defined MODE_MANUAL) && (defined MODE_AUTO1)
 
 #if defined RADIO_MODE_2x3
 
@@ -127,6 +114,7 @@ uint8_t ap_mode_of_two_switches(void)
 }
 #endif
 
+#endif // MODE_MANUAL && MODE_AUTO1
 
 /** Set Rotorcraft commands.
  *  Limit thrust and/or yaw depending of the in_flight
@@ -135,7 +123,7 @@ uint8_t ap_mode_of_two_switches(void)
 void WEAK set_rotorcraft_commands(pprz_t *cmd_out, int32_t *cmd_in, bool in_flight __attribute__((unused)), bool motors_on __attribute__((unused)))
 {
 #if !ROTORCRAFT_IS_HELI
-#if !ROTORCRAFT_COMMANDS_YAW_ALWAYS_ENABLED
+#if !ROTORCRAFT_COMMANDS_YAW_ALWAYS_ENABLED && defined(COMMAND_YAW)
   if (!in_flight) {
     cmd_in[COMMAND_YAW] = 0;
   }
@@ -144,9 +132,15 @@ void WEAK set_rotorcraft_commands(pprz_t *cmd_out, int32_t *cmd_in, bool in_flig
     cmd_in[COMMAND_THRUST] = 0;
   }
 #endif
+#ifdef COMMAND_ROLL
   cmd_out[COMMAND_ROLL] = cmd_in[COMMAND_ROLL];
+#endif
+#ifdef COMMAND_PITCH
   cmd_out[COMMAND_PITCH] = cmd_in[COMMAND_PITCH];
+#endif
+#ifdef COMMAND_YAW
   cmd_out[COMMAND_YAW] = cmd_in[COMMAND_YAW];
+#endif
   cmd_out[COMMAND_THRUST] = cmd_in[COMMAND_THRUST];
 }
 

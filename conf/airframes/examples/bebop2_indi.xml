@@ -22,9 +22,7 @@
     <module name="imu" type="bebop"/>
     <module name="gps" type="ublox"/>
     <module name="stabilization" type="indi_simple"/>
-    <module name="ins" type="ekf2">
-      <define name="INS_EKF2_OPTITRACK" value="true"/>
-    </module>
+    <module name="ins" type="ekf2"/>
     
     <module name="air_data"/>
     <module name="gps" type="ubx_ucenter"/>
@@ -130,9 +128,9 @@
     <define name="FILT_CUTOFF" value="3.2"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN_P" value="0.06"/>
-    <define name="ACT_DYN_Q" value="0.06"/>
-    <define name="ACT_DYN_R" value="0.06"/>
+    <define name="ACT_FREQ_P" value="31.7"/>
+    <define name="ACT_FREQ_Q" value="31.7"/>
+    <define name="ACT_FREQ_R" value="31.7"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>

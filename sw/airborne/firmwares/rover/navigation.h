@@ -190,15 +190,13 @@ extern void nav_set_failsafe(void);
 /* switching motors on/off */
 static inline void NavKillThrottle(void)
 {
-  if (autopilot_get_mode() == AP_MODE_NAV) { autopilot_set_motors_on(FALSE); }
+  if (autopilot_get_mode() == AP_MODE_NAV) { autopilot_set_motors_on(false); }
 }
 static inline void NavResurrect(void)
 {
-  if (autopilot_get_mode() == AP_MODE_NAV) { autopilot_set_motors_on(TRUE); }
+  if (autopilot_get_mode() == AP_MODE_NAV) { autopilot_set_motors_on(true); }
 }
 
-
-#define NavSetManual(_roll, _pitch, _yaw) _Pragma("GCC error \"Manual mode in flight plan for fixedwing is not available\"")
 #define NavSetFailsafe nav_set_failsafe
 
 #define NavSetGroundReferenceHere nav_reset_reference

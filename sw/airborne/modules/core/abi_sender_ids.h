@@ -197,6 +197,10 @@
 #define AGL_LIDAR_MATEKSYS_3901_L0X_ID 15
 #endif
 
+#ifndef AGL_UAVCAN_ID
+#define AGL_UAVCAN_ID 16
+#endif
+
 /*
  * IDs of magnetometer sensors (including IMUs with mag)
  */
@@ -290,6 +294,10 @@
 
 #ifndef GPS_DW1000_ID
 #define GPS_DW1000_ID 15
+#endif
+
+#ifndef GPS_UBX2_ID
+#define GPS_UBX2_ID 16
 #endif
 
 /*
@@ -391,6 +399,18 @@
 #define IMU_ICM42688_ID 24
 #endif
 
+#ifndef IMU_PIXHAWK1_ID
+#define IMU_PIXHAWK1_ID 25
+#endif
+
+#ifndef IMU_PIXHAWK2_ID
+#define IMU_PIXHAWK2_ID 26
+#endif
+
+#ifndef IMU_PIXHAWK3_ID
+#define IMU_PIXHAWK3_ID 27
+#endif
+
 // prefiltering with OneEuro filter
 #ifndef IMU_F1E_ID
 #define IMU_F1E_ID 30
@@ -488,10 +508,6 @@
  */
 #ifndef THRUST_INCREMENT_ID
 #define THRUST_INCREMENT_ID 1
-#endif
-
-#ifndef THRUST_BX_INCREMENT_ID
-#define THRUST_BX_INCREMENT_ID 2
 #endif
 
 #ifndef MAG_CALIB_UKF_ID
@@ -636,12 +652,13 @@
 #define VEL_SP_FCR_ID 1 // Approach Moving Target
 #endif
 
-/*
- * IDs of LIFT_D senders
- */
 
-#ifndef LIFT_D_SCHED_ID
-#define LIFT_D_SCHED_ID 1
+/*
+ * IDs of LIDAR_DATA senders
+ */
+#ifndef LIDAR_DATA_VL53L5CX_ID
+#define LIDAR_DATA_VL53L5CX_ID 1
 #endif
+
 
 #endif /* ABI_SENDER_IDS_H */

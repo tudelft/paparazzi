@@ -301,7 +301,7 @@ static void ins_ekf2_publish_attitude(uint32_t stamp);
 static Ekf ekf;                                   ///< EKF class itself
 static parameters *ekf_params;                    ///< The EKF parameters
 struct ekf2_t ekf2;                               ///< Local EKF2 status structure
-
+static struct extVisionSample sample_ev;          ///< External vision sample
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
 
@@ -418,7 +418,7 @@ static void send_filter_status(struct transport_tx *trans, struct link_device *d
   uint8_t mde = 0;
 
   // Check the alignment and if GPS is fused
-  if (control_mode.flags.tilt_align && control_mode.flags.yaw_align && control_mode.flags.gps) {
+  if (control_mode.flags.tilt_align && control_mode.flags.yaw_align && (control_mode.flags.gps || control_mode.flags.ev_pos)) {
     mde = 3;
   } else if (control_mode.flags.tilt_align && control_mode.flags.yaw_align) {
     mde = 4;
@@ -480,6 +480,37 @@ static void send_ahrs_quat(struct transport_tx *trans, struct link_device *dev)
                               &ahrs_id);
 }
 
+
+static void send_external_pose_down(struct transport_tx *trans, struct link_device *dev)
+{
+  if(sample_ev.time_us == 0){
+    return;
+  }
+  float sample_temp_ev[11];
+  sample_temp_ev[0]  = (float) sample_ev.time_us;
+  sample_temp_ev[1]  = sample_ev.pos(0) ;
+  sample_temp_ev[2]  = sample_ev.pos(1) ;
+  sample_temp_ev[3]  = sample_ev.pos(2) ; 
+  sample_temp_ev[4]  = sample_ev.vel(0) ;
+  sample_temp_ev[5]  = sample_ev.vel(1) ;              
+  sample_temp_ev[6]  = sample_ev.vel(2) ; 
+  sample_temp_ev[7]  = sample_ev.quat(0);
+  sample_temp_ev[8]  = sample_ev.quat(1);
+  sample_temp_ev[9]  = sample_ev.quat(2); 
+  sample_temp_ev[10] = sample_ev.quat(3);
+  pprz_msg_send_EXTERNAL_POSE_DOWN(trans, dev, AC_ID,
+                        &sample_temp_ev[0],
+                        &sample_temp_ev[1], 
+                        &sample_temp_ev[2], 
+                        &sample_temp_ev[3],
+                        &sample_temp_ev[4], 
+                        &sample_temp_ev[5], 
+                        &sample_temp_ev[6], 
+                        &sample_temp_ev[7], 
+                        &sample_temp_ev[8], 
+                        &sample_temp_ev[9], 
+                        &sample_temp_ev[10] );
+} 
 #endif
 
 /* Initialize the EKF */
@@ -545,6 +576,9 @@ void ins_ekf2_init(void)
   /* Initialize the flow sensor limits */
   ekf.set_optical_flow_limits(INS_EKF2_MAX_FLOW_RATE, INS_EKF2_SONAR_MIN_RANGE, INS_EKF2_SONAR_MAX_RANGE);
 
+  // Don't send external vision data by default
+  sample_ev.time_us = 0;
+
   /* Initialize the origin from flight plan */
 #if USE_INS_NAV_INIT
   if(ekf.setEkfGlobalOrigin(NAV_LAT0*1e-7, NAV_LON0*1e-7, (NAV_ALT0)*1e-3)) // EKF2 works HMSL
@@ -576,6 +610,7 @@ void ins_ekf2_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WIND_INFO_RET, send_wind_info_ret);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_BIAS, send_ahrs_bias);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_QUAT_INT, send_ahrs_quat);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EXTERNAL_POSE_DOWN, send_external_pose_down);
 #endif
 
   /*
@@ -700,24 +735,23 @@ void ins_ekf2_remove_gps(int32_t mode)
 void ins_ekf2_parse_EXTERNAL_POSE(uint8_t *buf) {
   if (DL_EXTERNAL_POSE_ac_id(buf) != AC_ID) { return; } // not for this aircraft
 
-  extVisionSample sample;
-  sample.time_us = get_sys_time_usec(); //FIXME
-  sample.pos(0) = DL_EXTERNAL_POSE_enu_y(buf);
-  sample.pos(1) = DL_EXTERNAL_POSE_enu_x(buf);
-  sample.pos(2) = -DL_EXTERNAL_POSE_enu_z(buf);
-  sample.vel(0) = DL_EXTERNAL_POSE_enu_yd(buf);
-  sample.vel(1) = DL_EXTERNAL_POSE_enu_xd(buf);
-  sample.vel(2) = -DL_EXTERNAL_POSE_enu_zd(buf);
-  sample.quat(0) = DL_EXTERNAL_POSE_body_qi(buf);
-  sample.quat(1) = DL_EXTERNAL_POSE_body_qy(buf);
-  sample.quat(2) = DL_EXTERNAL_POSE_body_qx(buf);
-  sample.quat(3) = -DL_EXTERNAL_POSE_body_qz(buf);
-  sample.posVar.setAll(INS_EKF2_EVP_NOISE);
-  sample.velCov = matrix::eye<float, 3>() * INS_EKF2_EVV_NOISE;
-  sample.angVar = INS_EKF2_EVA_NOISE;
-  sample.vel_frame = velocity_frame_t::LOCAL_FRAME_FRD;
+  sample_ev.time_us = get_sys_time_usec(); //FIXME
+  sample_ev.pos(0) = DL_EXTERNAL_POSE_enu_y(buf);
+  sample_ev.pos(1) = DL_EXTERNAL_POSE_enu_x(buf);
+  sample_ev.pos(2) = -DL_EXTERNAL_POSE_enu_z(buf);
+  sample_ev.vel(0) = DL_EXTERNAL_POSE_enu_yd(buf);
+  sample_ev.vel(1) = DL_EXTERNAL_POSE_enu_xd(buf);      
+  sample_ev.vel(2) = -DL_EXTERNAL_POSE_enu_zd(buf);
+  sample_ev.quat(0) = DL_EXTERNAL_POSE_body_qi(buf);
+  sample_ev.quat(1) = DL_EXTERNAL_POSE_body_qy(buf);
+  sample_ev.quat(2) = DL_EXTERNAL_POSE_body_qx(buf);
+  sample_ev.quat(3) = -DL_EXTERNAL_POSE_body_qz(buf);
+  sample_ev.posVar.setAll(INS_EKF2_EVP_NOISE);
+  sample_ev.velCov = matrix::eye<float, 3>() * INS_EKF2_EVV_NOISE;
+  sample_ev.angVar = INS_EKF2_EVA_NOISE;
+  sample_ev.vel_frame = velocity_frame_t::LOCAL_FRAME_FRD;
 
-  ekf.setExtVisionData(sample);
+  ekf.setExtVisionData(sample_ev);
 }
 
 void ins_ekf2_parse_EXTERNAL_POSE_SMALL(uint8_t __attribute__((unused)) *buf) {
@@ -755,18 +789,13 @@ static void ins_ekf2_publish_attitude(uint32_t stamp)
     ekf.get_quat_reset(delta_q_reset, &quat_reset_counter);
 
 #ifndef NO_RESET_UPDATE_SETPOINT_HEADING
-
+    // FIXME is this hard reset of control setpoint really needed ? is it the right place ?
     if (ekf2.quat_reset_counter < quat_reset_counter) {
       float psi = matrix::Eulerf(matrix::Quatf(delta_q_reset)).psi();
-#if defined STABILIZATION_ATTITUDE_TYPE_INT
-      stab_att_sp_euler.psi += ANGLE_BFP_OF_REAL(psi);
-#else
-      stab_att_sp_euler.psi += psi;
-#endif
       guidance_h.sp.heading += psi;
-      guidance_h.rc_sp.psi += psi;
+      guidance_h.rc_sp.heading += psi;
       nav.heading += psi;
-      guidance_h_read_rc(autopilot_in_flight());
+      //guidance_h_read_rc(autopilot_in_flight());
       stabilization_attitude_enter();
       ekf2.quat_reset_counter = quat_reset_counter;
     }
@@ -898,6 +927,13 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 #if INS_EKF2_GPS_COURSE_YAW
   gps_msg.yaw = wrap_pi((float)gps_s->course / 1e7);
   gps_msg.yaw_offset = 0;
+#elif defined(INS_EKF2_GPS_YAW_OFFSET)
+  if(ISFINITE(gps_relposned.relPosHeading)) {
+    gps_msg.yaw = wrap_pi(RadOfDeg(gps_relposned.relPosHeading));
+  } else {
+    gps_msg.yaw = NAN;
+  }
+  gps_msg.yaw_offset = INS_EKF2_GPS_YAW_OFFSET;
 #else
   gps_msg.yaw = NAN;
   gps_msg.yaw_offset = NAN;

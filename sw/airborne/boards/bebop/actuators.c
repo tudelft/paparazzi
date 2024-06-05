@@ -39,10 +39,10 @@
 static void send_bebop_actuators(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_BEBOP_ACTUATORS(trans, dev, AC_ID,
-                                &stabilization_cmd[COMMAND_THRUST],
-                                &stabilization_cmd[COMMAND_ROLL],
-                                &stabilization_cmd[COMMAND_PITCH],
-                                &stabilization_cmd[COMMAND_YAW],
+                                &stabilization.cmd[COMMAND_THRUST],
+                                &stabilization.cmd[COMMAND_ROLL],
+                                &stabilization.cmd[COMMAND_PITCH],
+                                &stabilization.cmd[COMMAND_YAW],
                                 &actuators_bebop.rpm_ref[0],
                                 &actuators_bebop.rpm_ref[1],
                                 &actuators_bebop.rpm_ref[2],
@@ -87,7 +87,7 @@ void actuators_bebop_commit(void)
   // When detected a suicide
   actuators_bebop.i2c_trans.buf[10] = actuators_bebop.i2c_trans.buf[10] & 0x7;
   if (actuators_bebop.i2c_trans.buf[11] == 2 && actuators_bebop.i2c_trans.buf[10] != 1) {
-    autopilot_set_motors_on(FALSE);
+    autopilot_set_motors_on(false);
   }
 
   // Start the motors
@@ -141,11 +141,7 @@ void actuators_bebop_commit(void)
   // Send ABI message
   struct act_feedback_t feedback[4];
   for (int i=0;i<4;i++) {
-#ifdef SERVOS_BEBOP_OFFSET
-    feedback[i].idx = SERVOS_BEBOP_OFFSET + i;
-#else
-    feedback[i].idx = SERVOS_DEFAULT_OFFSET + i;
-#endif
+    feedback[i].idx = get_servo_idx(i);
     feedback[i].rpm = actuators_bebop.rpm_obs[i];
     feedback[i].set.rpm = true;
   }

@@ -11,13 +11,13 @@
     <configure name="USE_MAGNETOMETER" value="TRUE"/>
 
     <target name="ap" board="disco">
-      
+
       <module name="radio_control" type="sbus"/>
       <module name="logger_file">
         <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000"/>
       </module>
       <module name="airspeed" type="ms45xx_i2c">
-        <define name="MS45XX_I2C_DEV" value="i2c1"/>
+        <configure name="MS45XX_I2C_DEV" value="i2c1"/>
       </module>
 
       <define name="RADIO_TH_HOLD"     value="RADIO_KILL"/> <!-- Throttle hold in command laws -->
@@ -34,7 +34,7 @@
       <module name="fdm" type="jsbsim"/>
       <module name="udp"/>
       <module name="radio_control" type="datalink"/>
-      
+
 
       <!--Not dealing with these in the simulation-->
       <define name="RADIO_TH_HOLD"     value="0"/> <!-- Throttle hold in command laws -->
@@ -51,7 +51,7 @@
     <module name="gps" type="ublox"/>
     <module name="gps" type="ubx_ucenter"/>
     <module name="ins" type="ekf2"/>
-    
+
     <module name="air_data"/>
     <module name="actuators" type="disco"/>
     <!--<module name="control" type="new"/>-->
@@ -60,11 +60,14 @@
       <define name="WLS_N_V" value="4"/>
      <configure name="INDI_NUM_ACT" value="3"/>
     </module>
-    <module name="guidance" type="indi_hybrid"/>
+    <module name="guidance" type="indi_hybrid_tailsitter"/>
     <!--<module name="sonar_bebop">
       <define name="USE_SONAR"/>
       <define name="SENSOR_SYNC_SEND_SONAR"/>
     </module>-->
+    <module name="nav" type="hybrid">
+      <define name="GUIDANCE_H_USE_REF" value="FALSE"/>
+    </module>
 
     <!--Switch advanced INDI scheduling functions on or off-->
     <define name="INDI_FUNCTIONS_RC_CHANNEL" value="6"/>
@@ -179,7 +182,7 @@
     <define name="FILT_CUTOFF" value="5.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN" value="{0.1, 0.1, 0.045}"/>
+    <define name="ACT_FREQ" value="{53.9, 53.9, 23.6}"/>
     <define name="ACT_RATE_LIMIT" value="{170, 170, 9600}"/>
     <define name="ACT_IS_SERVO" value="{1, 1, 0}"/>
 

@@ -10,7 +10,7 @@
     </description>
   </doc>
   <dep>
-    <depends>spi_master,imu_common,intermcu_iomcu,imu_heater</depends>
+    <depends>spi_master,i2c,imu_common,intermcu_iomcu,imu_heater</depends>
     <provides>imu</provides>
   </dep>
   <header>
@@ -46,7 +46,7 @@
 
      <!-- Configure the heater (ICM20602) -->
     <define name="IMU_HEATER_GYRO_ID" value="IMU_CUBE2_ID"/>
-    <define name="IMU_HEATER_TARGET_TEMP" value="55.0"/>
+    <define name="IMU_HEATER_TARGET_TEMP" value="45.0"/>
     <define name="IMU_HEATER_P_GAIN" value="50.0"/>
     <define name="IMU_HEATER_I_GAIN" value="0.07"/>
 
