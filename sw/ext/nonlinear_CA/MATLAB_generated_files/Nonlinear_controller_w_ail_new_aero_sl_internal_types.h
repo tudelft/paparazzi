@@ -5,7 +5,7 @@
  * File: Nonlinear_controller_w_ail_new_aero_sl_internal_types.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 28-May-2024 17:44:56
+ * C/C++ source code generated on  : 05-Jun-2024 11:13:45
  */
 
 #ifndef NONLINEAR_CONTROLLER_W_AIL_NEW_AERO_SL_INTERNAL_TYPES_H

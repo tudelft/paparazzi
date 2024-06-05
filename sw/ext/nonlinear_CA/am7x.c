@@ -481,6 +481,8 @@ void* second_thread() //Run the optimization code
     beacon_tracking_id = extra_data_in_copy[87];
     desired_sixdof_mode = extra_data_in_copy[88];
 
+    float use_u_init = extra_data_in_copy[89];
+
     //Exceptions: 
     if(beacon_tracking_id == 0){
       beacon_tracking_id = default_beacon_tracking_id;
@@ -676,6 +678,8 @@ void* second_thread() //Run the optimization code
       max_airspeed = 15; 
       vert_acc_margin = 2.5; 
 
+      use_u_init = 0; 
+
     #endif 
 
     //Print received data if needed
@@ -770,6 +774,8 @@ void* second_thread() //Run the optimization code
       printf(" prop_theta = %f \n",(float) prop_theta);
       printf(" beacon_tracking_id = %f \n",(float) beacon_tracking_id);
       printf(" desired_sixdof_mode = %f \n",(float) desired_sixdof_mode); 
+      printf(" use_u_init = %f \n",(float) use_u_init); 
+      
 
       printf("\n REAL TIME VARIABLES IN------------------------------------------------------ \n"); 
 
@@ -968,7 +974,7 @@ void* second_thread() //Run the optimization code
         current_accelerations_filtered,  power_Cd_0,
         power_Cd_a,  prop_R,  prop_Cd_0,  prop_Cl_0,
         prop_Cd_a,  prop_Cl_a,  prop_delta,  prop_sigma,
-        prop_theta, u_init,  u_out,  residuals,
+        prop_theta, u_init, use_u_init,  u_out,  residuals,
         &elapsed_time,  &N_iterations,  &N_evaluations,
         &exitflag);
 

@@ -5,7 +5,7 @@
  * File: Nonlinear_controller_w_ail_new_aero_sl.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 28-May-2024 17:44:56
+ * C/C++ source code generated on  : 05-Jun-2024 11:13:45
  */
 
 /* Include Files */
@@ -128,6 +128,7 @@
  *                double prop_sigma
  *                double prop_theta
  *                const double u_init[15]
+ *                double use_u_init
  *                double u_out[15]
  *                double residuals[6]
  *                double *elapsed_time
@@ -166,9 +167,9 @@ void Nonlinear_controller_w_ail_new_aero_sl(
     const double current_accelerations_filtered[6], double power_Cd_0,
     double power_Cd_a, double prop_R, double prop_Cd_0, double prop_Cl_0,
     double prop_Cd_a, double prop_Cl_a, double prop_delta, double prop_sigma,
-    double prop_theta, const double u_init[15], double u_out[15],
-    double residuals[6], double *elapsed_time, double *N_iterations,
-    double *N_evaluation, double *exitflag)
+    double prop_theta, const double u_init[15], double use_u_init,
+    double u_out[15], double residuals[6], double *elapsed_time,
+    double *N_iterations, double *N_evaluation, double *exitflag)
 {
   b_captured_var dv_global;
   c_struct_T b_expl_temp;
@@ -248,21 +249,6 @@ void Nonlinear_controller_w_ail_new_aero_sl(
   double min_theta_protection;
   int i;
   char c_expl_temp[3];
-  (void)Phi;
-  (void)Theta;
-  (void)Omega_1;
-  (void)Omega_2;
-  (void)Omega_3;
-  (void)Omega_4;
-  (void)b_1;
-  (void)b_2;
-  (void)b_3;
-  (void)b_4;
-  (void)g_1;
-  (void)g_2;
-  (void)g_3;
-  (void)g_4;
-  (void)delta_ailerons;
   if (!isInitialized_Nonlinear_controller_w_ail_new_aero_sl) {
     Nonlinear_controller_w_ail_new_aero_sl_initialize();
   }
@@ -452,27 +438,40 @@ void Nonlinear_controller_w_ail_new_aero_sl(
   u_min[13] /= gain_phi.contents;
   u_max[14] /= gain_ailerons.contents;
   u_min[14] /= gain_ailerons.contents;
-  /*  min_el_angle_opt = deg2rad(-18);  */
-  /*  actual_u_scaled(5) = max(min_el_angle_opt,actual_u_scaled(5)); */
-  /*  actual_u_scaled(6) = max(min_el_angle_opt,actual_u_scaled(6)); */
-  /*  actual_u_scaled(7) = max(min_el_angle_opt,actual_u_scaled(7)); */
-  /*  actual_u_scaled(8) = max(min_el_angle_opt,actual_u_scaled(8)); */
-  memcpy(&u_out[0], &u_init[0], 15U * sizeof(double));
-  u_out[0] = u_init[0] / gain_motor.contents;
-  u_out[4] /= gain_el.contents;
-  u_out[8] /= gain_az.contents;
-  u_out[1] = u_init[1] / gain_motor.contents;
-  u_out[5] /= gain_el.contents;
-  u_out[9] /= gain_az.contents;
-  u_out[2] = u_init[2] / gain_motor.contents;
-  u_out[6] /= gain_el.contents;
-  u_out[10] /= gain_az.contents;
-  u_out[3] = u_init[3] / gain_motor.contents;
-  u_out[7] /= gain_el.contents;
-  u_out[11] /= gain_az.contents;
-  u_out[12] /= gain_theta.contents;
-  u_out[13] /= gain_phi.contents;
-  u_out[14] /= gain_ailerons.contents;
+  if (use_u_init > 0.8) {
+    memcpy(&u_out[0], &u_init[0], 15U * sizeof(double));
+    u_out[0] = u_init[0] / gain_motor.contents;
+    u_out[4] /= gain_el.contents;
+    u_out[8] /= gain_az.contents;
+    u_out[1] = u_init[1] / gain_motor.contents;
+    u_out[5] /= gain_el.contents;
+    u_out[9] /= gain_az.contents;
+    u_out[2] = u_init[2] / gain_motor.contents;
+    u_out[6] /= gain_el.contents;
+    u_out[10] /= gain_az.contents;
+    u_out[3] = u_init[3] / gain_motor.contents;
+    u_out[7] /= gain_el.contents;
+    u_out[11] /= gain_az.contents;
+    u_out[12] /= gain_theta.contents;
+    u_out[13] /= gain_phi.contents;
+    u_out[14] /= gain_ailerons.contents;
+  } else {
+    u_out[0] = Omega_1 / gain_motor.contents;
+    u_out[4] = b_1 / gain_el.contents;
+    u_out[8] = g_1 / gain_az.contents;
+    u_out[1] = Omega_2 / gain_motor.contents;
+    u_out[5] = b_2 / gain_el.contents;
+    u_out[9] = g_2 / gain_az.contents;
+    u_out[2] = Omega_3 / gain_motor.contents;
+    u_out[6] = b_3 / gain_el.contents;
+    u_out[10] = g_3 / gain_az.contents;
+    u_out[3] = Omega_4 / gain_motor.contents;
+    u_out[7] = b_4 / gain_el.contents;
+    u_out[11] = g_4 / gain_az.contents;
+    u_out[12] = Theta / gain_theta.contents;
+    u_out[13] = Phi / gain_phi.contents;
+    u_out[14] = delta_ailerons / gain_ailerons.contents;
+  }
   /*  Apply Nonlinear optimization algorithm: */
   for (i = 0; i < 6; i++) {
     dv_global.contents[i] = dv[i] + current_accelerations_filtered[i];

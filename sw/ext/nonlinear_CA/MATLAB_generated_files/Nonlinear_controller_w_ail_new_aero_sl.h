@@ -5,7 +5,7 @@
  * File: Nonlinear_controller_w_ail_new_aero_sl.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 28-May-2024 17:44:56
+ * C/C++ source code generated on  : 05-Jun-2024 11:13:45
  */
 
 #ifndef NONLINEAR_CONTROLLER_W_AIL_NEW_AERO_SL_H
@@ -51,9 +51,9 @@ extern void Nonlinear_controller_w_ail_new_aero_sl(
     const double current_accelerations_filtered[6], double power_Cd_0,
     double power_Cd_a, double prop_R, double prop_Cd_0, double prop_Cl_0,
     double prop_Cd_a, double prop_Cl_a, double prop_delta, double prop_sigma,
-    double prop_theta, const double u_init[15], double u_out[15],
-    double residuals[6], double *elapsed_time, double *N_iterations,
-    double *N_evaluation, double *exitflag);
+    double prop_theta, const double u_init[15], double use_u_init,
+    double u_out[15], double residuals[6], double *elapsed_time,
+    double *N_iterations, double *N_evaluation, double *exitflag);
 
 #ifdef __cplusplus
 }
