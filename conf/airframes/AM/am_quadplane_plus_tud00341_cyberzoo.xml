@@ -229,14 +229,14 @@
   </section>
 
   <section name="APP_LIMITS" prefix="LIMITS_APP_">
-    <define name="MAX_FWD_SPEED" value="25.0" unit="m/s"/>
-    <define name="MAX_AIRSPEED" value="20.0" unit="m/s"/> 
+    <define name="MAX_FWD_SPEED" value="20.0" unit="m/s"/>
+    <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> 
     <define name="MIN_FWD_SPEED" value="-5.0" unit="m/s"/>
-    <define name="MAX_LAT_SPEED" value="8.0" unit="m/s"/>
+    <define name="MAX_LAT_SPEED" value="5.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_FWD_ACC" value="8.0" unit="m/s^2"/>
     <define name="MIN_FWD_ACC" value="-4" unit="m/s^2"/> 
-    <define name="MAX_LAT_ACC" value="8.0" unit="m/s^2"/>
+    <define name="MAX_LAT_ACC" value="9.0" unit="m/s^2"/>
     <define name="MAX_VERT_ACC" value="3.0" unit="m/s^2"/>
   </section>
 
@@ -323,8 +323,8 @@
     <define name="PID_MAX_AZ_ORDER" value="35" unit="deg"/> <!--max azimuth deflection in PID mode-->
 
     <!-- INDI proportional gains -->
-    <define name="CRUISE_GAIN_P" value="1.5"/>
-    <define name="CRUISE_GAIN_Q" value="1.3"/>
+    <define name="CRUISE_GAIN_P" value="4"/>
+    <define name="CRUISE_GAIN_Q" value="4"/>
     <define name="CRUISE_GAIN_R" value="1"/>
 
     <define name="CRUISE_GAIN_X" value="1"/>
@@ -333,7 +333,7 @@
 
     <!-- INDI derivative gains -->
     <define name="CRUISE_GAIN_P_DOT" value="8"/>
-    <define name="CRUISE_GAIN_Q_DOT" value="7"/>
+    <define name="CRUISE_GAIN_Q_DOT" value="8"/>
     <define name="CRUISE_GAIN_R_DOT" value="5"/>
 
     <define name="CRUISE_GAIN_X_DOT" value="1"/>
@@ -343,16 +343,16 @@
     <!-- INDI approach gains -->
     <define name="APP_GAIN_P" value="1.5"/>
     <define name="APP_GAIN_Q" value="1.3"/>
-    <define name="APP_GAIN_R" value="1.6"/>
+    <define name="APP_GAIN_R" value="1.0"/>
 
     <define name="APP_GAIN_X" value="3.5"/>
     <define name="APP_GAIN_Y" value="3.5"/>
     <define name="APP_GAIN_Z" value="5"/>
 
     <!-- INDI approach gains -->
-    <define name="APP_GAIN_P_DOT" value="8"/>
-    <define name="APP_GAIN_Q_DOT" value="7"/>
-    <define name="APP_GAIN_R_DOT" value="5"/>
+    <define name="APP_GAIN_P_DOT" value="9"/>
+    <define name="APP_GAIN_Q_DOT" value="9"/>
+    <define name="APP_GAIN_R_DOT" value="9"/>
 
     <define name="APP_GAIN_X_DOT" value="4"/>
     <define name="APP_GAIN_Y_DOT" value="4"/>
