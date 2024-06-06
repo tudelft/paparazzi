@@ -40,37 +40,7 @@
 // #include "modules/gcnet/nn_operations.h"
 
 #include "Network.h"
-#include "SNN_250_neurons/nn_parameters.h"
-
-// Include child structs
-
-// post, pre, w
-extern ConnectionConf const conf_inhid;
-
-// post, pre, w
-// const float *ptr_weights_out = &weights_out[0][0];
-extern ConnectionConf const conf_hidout;
-
-// post, pre, w
-// const float *ptr_weights_hid_layers1_2 = &weights_hid_layers1_2[0][0];
-extern ConnectionConf const conf_hid_1;
-
-// post, pre, w
-// const float *ptr_weights_hid_layers2_3 = &weights_hid_layers2_3[0][0];
-extern ConnectionConf const conf_hid_2;
-
-// size, leak_i, leak_v, thresh, v_rest
-extern NeuronConf const conf_layer1;
-
-// size, leak_i, leak_v, thresh, v_rest
-extern NeuronConf const conf_layer2;
-
-// size, leak_i, leak_v, thresh, v_rest
-extern NeuronConf const conf_layer3;
-
-// type, decoding_scale, centers, in_size, in_enc_size, hid_size, out_size,
-// inhid, hid, hidout, out
-extern NetworkConf const qz_conf;
+#include GNC_NET_NN_PARAM_H
 
 extern float control_nn[NUM_CONTROLS];
 
