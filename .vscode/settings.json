@@ -17,7 +17,8 @@
         "cmath": "c",
         "complex": "c",
         "random": "c",
-        "limits": "c"
+        "limits": "c",
+        "stdio.h": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
