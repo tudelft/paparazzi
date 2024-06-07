@@ -31,7 +31,7 @@
     <file name="eff_scheduling_rot_wing.h"/>
   </header>
   <init fun="eff_scheduling_rot_wing_init()"/>
-  <periodic fun="eff_scheduling_rot_wing_periodic()" freq="10.0"/>
+  <periodic fun="eff_scheduling_rot_wing_periodic()"/>
   <makefile>
     <file name="eff_scheduling_rot_wing.c"/>
     <test>
