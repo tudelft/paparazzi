@@ -70,6 +70,7 @@ static float flt_cut = 1.0e-4;
 
 struct FloatEulers eulers_zxy_RW_EFF;
 static Butterworth2LowPass airspeed_filt; 
+static Butterworth2LowPass skew_filt; 
 /* Temp variables*/
 bool airspeed_fake_on = false;
 float airspeed_fake = 0.0;
@@ -93,13 +94,14 @@ void  calc_G1_G2_RW(void);
 PRINT_CONFIG_VAR(WING_ROTATION_CAN_ROT_WING_ID)
 static abi_event wing_position_ev;
 
+float skew_meas = 0.0;
 static void wing_position_cb(uint8_t sender_id UNUSED, struct act_feedback_t *pos_msg, uint8_t num_act)
 {
   for (int i=0; i<num_act; i++){
     if (pos_msg[i].set.position && (pos_msg[i].idx == COMMAND_ROT_MECH))
     {
-      RW.skew.rad = 0.5 * M_PI - pos_msg[i].position;
-      Bound(RW.skew.rad, 0, 0.5 * M_PI);
+      skew_meas = 0.5 * M_PI - pos_msg[i].position;
+      Bound(skew_meas, 0, 0.5 * M_PI);
     }
   }
 }
@@ -111,8 +113,10 @@ void eff_scheduling_rot_wing_init(void)
   AbiBindMsgACT_FEEDBACK(WING_ROTATION_CAN_ROT_WING_ID, &wing_position_ev, wing_position_cb);
   
   float tau   = 1.0 / (2.0 * M_PI * 3.0);
-  float sample_time = 1.0 / 10;
+  float tau_skew = 1.0 / (2.0 * M_PI * 5.0);
+  float sample_time = 1.0 / PERIODIC_FREQUENCY;
   init_butterworth_2_low_pass(&airspeed_filt, tau, sample_time, 0.0);
+  init_butterworth_2_low_pass(&skew_filt, tau_skew, sample_time, 0.0);
 }
 
 void init_RW_Model(void)
@@ -361,9 +365,11 @@ void sum_EFF_MAT_RW(void) {
 void eff_scheduling_rot_wing_update_wing_angle(void)
 {
   // Calculate sin and cosines of rotation
-  RW.skew.deg = RW.skew.rad / M_PI * 180.;
-  RW.skew.cosr = cosf(RW.skew.rad);
-  RW.skew.sinr = sinf(RW.skew.rad);
+  update_butterworth_2_low_pass(&skew_filt, skew_meas);
+  RW.skew.rad   = skew_filt.o[0];
+  RW.skew.deg   = RW.skew.rad / M_PI * 180.;
+  RW.skew.cosr  = cosf(RW.skew.rad);
+  RW.skew.sinr  = sinf(RW.skew.rad);
   RW.skew.cosr2 = RW.skew.cosr * RW.skew.cosr;
   RW.skew.sinr2 = RW.skew.sinr * RW.skew.sinr;
   RW.skew.sinr3 = RW.skew.sinr2 * RW.skew.sinr;
