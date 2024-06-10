@@ -1531,9 +1531,18 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
         du_pref_1l[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i];  
         break;     
       case COMMAND_ROLL:
-      case COMMAND_PITCH:
         du_min_1l[i]  = (act_min[i] - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
         du_max_1l[i]  = (act_max[i] - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+        du_pref_1l[i] = (u_pref[i]  - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+        break;         
+      case COMMAND_PITCH:
+        if (rotwing_state_settings.stall_protection){
+          du_min_1l[i]  = (RadOfDeg(17.0)  - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+          du_max_1l[i]  = (RadOfDeg(-17.0) - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+        } else {
+          du_min_1l[i]  = (act_min[i] - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+          du_max_1l[i]  = (act_max[i] - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+        }
         du_pref_1l[i] = (u_pref[i]  - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
         break;           
     }
