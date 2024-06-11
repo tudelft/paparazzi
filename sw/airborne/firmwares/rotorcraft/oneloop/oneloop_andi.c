@@ -274,12 +274,12 @@ float max_v_nav = NAV_HYBRID_MAX_AIRSPEED; // Consider implications of differenc
 #else
 float max_v_nav = 5.0;
 #endif
-float max_as = 15.0f;
+float max_as = 19.0f;
 
 #ifdef NAV_HYBRID_MAX_SPEED_V
 float max_v_nav_v = NAV_HYBRID_MAX_SPEED_V;
 #else
-float max_v_nav_v = 1.0;
+float max_v_nav_v = 1.5;
 #endif
 #ifndef FWD_SIDESLIP_GAIN
 float fwd_sideslip_gain = 0.2;
@@ -302,7 +302,7 @@ void  err_nd(float err[], float a[], float b[], float k[], int n);
 void  err_sum_nd(float err[], float a[], float b[], float k[], float c[], int n);
 void  integrate_nd(float dt, float a[], float a_dot[], int n);
 void  vect_bound_nd(float vect[], float bound, int n);
-void  acc_body_bound(struct FloatVect2 vect, float bound);
+void  acc_body_bound(struct FloatVect2* vect, float bound);
 float bound_v_from_a(float e_x[], float v_bound, float a_bound, int n);
 void  rm_2nd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm);
 void  rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
@@ -658,18 +658,19 @@ void vect_bound_nd(float vect[], float bound, int n) {
 }
 
 /** @brief Scale a 3D array to within a 3D bound */
-void acc_body_bound(struct FloatVect2 vect, float bound) {
+void acc_body_bound(struct FloatVect2* vect, float bound) {
   int n = 2;
-  float v[2] = {vect.x, vect.y};
+  float v[2] = {vect->x, vect->y};
   float norm = float_vect_norm(v,n);
   norm = positive_non_zero(norm);
   if((norm-bound) > FLT_EPSILON) {
+    v[0] = Min(v[0], bound);
     float acc_b_y_2 = bound*bound - v[0]*v[0];
     acc_b_y_2 = positive_non_zero(acc_b_y_2);
     v[1] = sqrtf(acc_b_y_2);
   }
-  vect.x = v[0];
-  vect.y = v[1];
+  vect->x = v[0];
+  vect->y = v[1];
 }
 
 /** @brief Calculate velocity limit based on acceleration limit */
@@ -1537,8 +1538,8 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
         break;         
       case COMMAND_PITCH:
         if (rotwing_state_settings.stall_protection){
-          du_min_1l[i]  = (RadOfDeg(17.0)  - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
-          du_max_1l[i]  = (RadOfDeg(-17.0) - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+          du_min_1l[i]  = (RadOfDeg(-17.0) - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+          du_max_1l[i]  = (RadOfDeg(17.0)  - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
         } else {
           du_min_1l[i]  = (act_min[i] - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
           du_max_1l[i]  = (act_max[i] - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
@@ -1991,7 +1992,10 @@ void reshape_wind(void)
     FLOAT_ANGLE_NORMALIZE(delta_psi);
     des_acc_B.y = delta_psi * 5.0;//gih_params.heading_bank_gain;
     des_acc_B.x = (des_as_B.x - airspeed) * k_pos_rm.k2[0];//gih_params.speed_gain;
-    acc_body_bound(des_acc_B, max_a_nav); // Scale down side acceleration if norm is too large
+    //printf("des_acc_B: %f, des_acc_B.x: %f, des_acc_B.y: %f\n", sqrtf(des_acc_B.x*des_acc_B.x+des_acc_B.y*des_acc_B.y),des_acc_B.x, des_acc_B.y);
+    //printf("max_a_nav: %f\n", max_a_nav);
+    acc_body_bound(&des_acc_B, max_a_nav); // Scale down side acceleration if norm is too large
+    //printf("bnd_acc_B: %f, des_acc_B.x: %f, des_acc_B.y: %f\n", sqrtf(des_acc_B.x*des_acc_B.x+des_acc_B.y*des_acc_B.y),des_acc_B.x, des_acc_B.y);
     nav_target_new[0] = cpsi * des_acc_B.x - spsi * des_acc_B.y;
     nav_target_new[1] = spsi * des_acc_B.x + cpsi * des_acc_B.y; 
   } else {
