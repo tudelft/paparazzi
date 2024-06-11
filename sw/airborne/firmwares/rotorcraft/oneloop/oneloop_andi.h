@@ -64,6 +64,7 @@ extern float nu[6];
 extern float g1g2_1l[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
 extern float andi_u[ANDI_NUM_ACT_TOT];
 extern float andi_du[ANDI_NUM_ACT_TOT];
+extern float temp_ele;
 extern float psi_des_deg;
 extern bool  heading_manual;
 extern bool  yaw_stick_in_auto;

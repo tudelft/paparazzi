@@ -153,7 +153,7 @@
 
     <!-- CAN BUS 1 command outputs-->
     <servos driver="Uavcan1Cmd">
-        <servo no="6" name="SERVO_ELEVATOR" min="3850"  neutral="3850" max="-4096"/>
+        <servo no="6" name="SERVO_ELEVATOR" min="3767"  neutral="3767" max="-5668"/>
         <servo no="7" name="SERVO_RUDDER"   min="-5225" neutral="0"    max="5225"/>
     </servos>
     
@@ -203,7 +203,7 @@
         <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_BACK] )"                                                                   SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_LEFT] )"                                                                   SERVO="MOTOR_LEFT"/>
         <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_PUSHER])"                                                                  SERVO="MOTOR_PUSH"/> 
-        <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? 0 : commands[COMMAND_ELEVATOR]))"  SERVO="SERVO_ELEVATOR"/>  
+        <set VALUE="($servo_hold? (temp_ele) : (!autopilot_in_flight()? 0 : commands[COMMAND_ELEVATOR]))"  SERVO="SERVO_ELEVATOR"/>  
         <set VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : commands[COMMAND_RUDDER])"                                             SERVO="SERVO_RUDDER"/>
         <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : commands[COMMAND_AILERONS])"                                          SERVO="AIL_LEFT"/>
         <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : commands[COMMAND_AILERONS])"                                          SERVO="AIL_RIGHT"/>

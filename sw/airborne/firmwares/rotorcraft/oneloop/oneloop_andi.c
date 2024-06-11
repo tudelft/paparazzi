@@ -342,6 +342,7 @@ float actuator_state_1l[ANDI_NUM_ACT];
 static float a_thrust = 0.0;
 static float g2_ff= 0.0;
 
+float temp_ele = 5000;
 /*Attitude related variables*/
 struct Int32Eulers stab_att_sp_euler_1l;// here for now to correct warning, can be better eploited in the future 
 struct Int32Quat   stab_att_sp_quat_1l; // here for now to correct warning, can be better eploited in the future
