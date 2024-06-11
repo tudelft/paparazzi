@@ -280,6 +280,7 @@ static void nav_hybrid_circle(struct EnuCoor_f *wp_center, float radius)
   }
   if (force_forward) {
     desired_speed = nav_max_speed;
+    update_max_acc(true);
   }
   Bound(desired_speed, 0.0f, nav_max_speed);
   // compute speed vector from target position
