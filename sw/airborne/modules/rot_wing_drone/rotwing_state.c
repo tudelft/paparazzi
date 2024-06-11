@@ -523,7 +523,7 @@ void rotwing_state_set_fw_settings(void)
   rotwing_state_settings.hover_motors_disable    = false;
   rotwing_state_settings.force_forward           = true;
   rotwing_state_settings.preferred_pitch_setting = ROTWING_STATE_PITCH_FW_SETTING;
-  rotwing_state_settings.stall_protection        = false;
+  rotwing_state_settings.stall_protection        = true;
   rotwing_state_settings.max_v_climb             = 4.0;
   rotwing_state_settings.max_v_descend           = 4.0;
   rotwing_state_settings.nav_max_speed           = rotwing_state_max_fw_speed; // Big as we use airspeed guidance

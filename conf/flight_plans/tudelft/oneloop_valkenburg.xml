@@ -22,6 +22,7 @@
     <waypoint name="p4" x="238.6" y="-48.5"/>
     <waypoint name="circ" lat="52.1670024" lon="4.4190740"/>
     <waypoint name="TD" x="10" y="-1"/>
+    <waypoint alt="20" name="Descend" x="12" y="-2"/>
     <waypoint name="FOLLOW" lat="52.16850964562752" lon="4.413635008734417"/>
     <waypoint name="S1" lat="52.1669450" lon="4.4174372"/>
     <waypoint name="S2" lat="52.1689871" lon="4.4208804"/>
@@ -139,6 +140,11 @@
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID)"/>
       <call_once fun="rotwing_state_force_skew_off()"/>
       <stay wp="STDBY" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+    </block>
+    <block name="Descend" strip_button="Descend" strip_icon="descend.png">
+        <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HOVER)"/>
+        <call_once fun="rotwing_state_force_skew_off()"/>
+        <stay wp="Descend" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
     </block>
     <!-- <block name="stay_begin-trans">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HOVER)"/>

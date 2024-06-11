@@ -51,7 +51,7 @@
 
 // Elevator ctrl definitions
 #ifndef ZERO_ELE_PPRZ
-#define ZERO_ELE_PPRZ 7936.0
+#define ZERO_ELE_PPRZ 8000
 #endif
 
 #ifndef ELE_MIN_AS
@@ -186,6 +186,7 @@ struct RW_Model{
 
 extern bool airspeed_fake_on;
 extern float airspeed_fake;
+extern float ele_eff;
 
 extern float rotation_angle_setpoint_deg;
 extern int16_t rotation_cmd;

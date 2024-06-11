@@ -63,6 +63,7 @@ float nav_goto_max_speed = NAV_HYBRID_GOTO_MAX_SPEED;
 
 float nav_max_deceleration_sp = NAV_HYBRID_MAX_DECELERATION;
 float nav_max_acceleration_sp = NAV_HYBRID_MAX_ACCELERATION;
+
 float nav_hybrid_max_expected_wind = 5.0f;
 #ifdef NAV_HYBRID_LINE_GAIN
 float nav_hybrid_line_gain = NAV_HYBRID_LINE_GAIN;
@@ -279,6 +280,7 @@ static void nav_hybrid_circle(struct EnuCoor_f *wp_center, float radius)
   }
   if (force_forward) {
     desired_speed = nav_max_speed;
+    update_max_acc(true);
   }
   Bound(desired_speed, 0.0f, nav_max_speed);
   // compute speed vector from target position

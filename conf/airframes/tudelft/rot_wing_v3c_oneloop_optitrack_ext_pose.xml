@@ -112,7 +112,7 @@
             <define name="NAV_HYBRID_MAX_AIRSPEED"      value="19.0f"/>
             <define name="NAV_HYBRID_SPEED_MARGIN"      value="0.0f"/>
             <define name="NAV_HYBRID_MAX_ACCELERATION"  value="4.0f"/>
-            <define name="NAV_HYBRID_MAX_DECELERATION"  value="2.0f"/>
+            <define name="NAV_HYBRID_MAX_DECELERATION"  value="1.0f"/>
             <define name="GUIDANCE_H_USE_REF"           value="FALSE"/>
             <define name="NAV_OPTITRACK"                value="TRUE"/>
         </module>
@@ -237,6 +237,7 @@
         <define name="FWD_SIDESLIP_GAIN"                    value="0.25"/> <!-- cyfoam 0.32-->
         <!-- <define name="THRESHOLD_GROUND_DETECT"              value="40"/> -->
         <define name="ROTWING_STATE_USE_ROTATION_REF_MODEL" value="TRUE"/>
+        <define name="INS_EXT_POSE_RW"                      value="TRUE"/>
     </section>
     <section name="GROUND_DETECT">
         <define name="THRESHOLD_GROUND_DETECT"              value="40"/>
@@ -260,7 +261,7 @@
     <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
         <define name  = "MAX_R"                     value = "120.0" unit="deg/s"/>
         <define name  = "FILT_CUTOFF"               value = "3.0" />
-        <define name  = "FILT_CUTOFF_ACC"           value = "5.0"/>
+        <define name  = "FILT_CUTOFF_ACC"           value = "3.0"/>
         <define name  = "FILT_CUTOFF_VEL"           value = "5.0"/>
         <define name  = "FILT_CUTOFF_POS"           value = "10.0"/>
         <define name  = "ESTIMATION_FILT_CUTOFF"    value = "3.2" />
@@ -270,14 +271,14 @@
         <define name  = "FILT_CUTOFF_RDOT"          value = "0.5" />
         <define name  = "FILTER_YAW_RATE"           value = "TRUE"/>
         <!--                                                 |   MF   |   MR   |    MB   |    ML   |   MP   |   ELE  |    RUD  |    AIL  |    FLA  |   PHI  |  THETA | -->
-        <define name  = "ACT_DYN"                   value = "{   10.1f,   10.1f,    10.1f,    10.1f,  24.07f,  50.00f,   50.00f,   50.00f,   50.00f,   0.00f,  0.00f }" />
+        <define name  = "ACT_DYN"                   value = "{   15.1f,   15.1f,    15.1f,    15.1f,  24.07f,  50.00f,   50.00f,   50.00f,   50.00f,   0.00f,  0.00f }" />
         <define name  = "ACT_IS_SERVO"              value = "{       0,       0,        0,        0,       0,       1,        1,        1,        1,       0,      0 }" />
         <define name  = "ACT_MAX"                   value = "{ 9600.0f, 9600.0f,  9600.0f,  9600.0f, 9600.0f, 9600.0f,  9600.0f,  9600.0f,  9600.0f,  M_PI_4,  M_PI_4}"/>
         <define name  = "ACT_MIN"                   value = "{    0.0f,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f, -9600.0f, -9600.0f, -9600.0f, -M_PI_4, -M_PI_4}"/>
         <define name  = "ACT_MAX_NORM"              value = "{    1.0f,    1.0f,     1.0f,     1.0f,    1.0f,    1.0f,     1.0f,     1.0f,     1.0f,    1.0f,    1.0f}"/>
         <define name  = "ACT_MIN_NORM"              value = "{    0.0f,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f,    -1.0f,    -1.0f,    -1.0f,   -1.0f,   -1.0f}"/>
         <define name  = "WU"                        value = "{   0.75f,   0.75f,    0.75f,    0.75f,   1.00f,    6.0f,     6.0f,     6.0f,     6.0f,   1.20f,   1.20f}"/>
-        <define name  = "U_PREF"                    value = "{   0.00f,   0.00f,    0.00f,    0.00f,   0.00f, 7936.0f,    0.00f,    0.00f,    0.00f,   0.00f,   0.00f}"/>
+        <define name  = "U_PREF"                    value = "{   0.00f,   0.00f,    0.00f,    0.00f,   0.00f, 8000.0f,    0.00f,    0.00f,    0.00f,   0.00f,   0.00f}"/>
         <define name  = "WV"                        value = "{  4.0f,  4.0f,   4.0f,  8.0f,  8.0f,  1.00f}"/>   
     </section>
 
