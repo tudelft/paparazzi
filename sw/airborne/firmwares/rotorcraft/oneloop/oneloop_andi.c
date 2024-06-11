@@ -1519,11 +1519,20 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
         break;
       case COMMAND_MOTOR_PUSHER:
       case COMMAND_RUDDER:
-      case COMMAND_AILERONS:
-      case COMMAND_FLAPS:
         du_min_1l[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
         du_max_1l[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
         du_pref_1l[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i]; 
+        break;      
+      case COMMAND_AILERONS:
+      case COMMAND_FLAPS:
+        if(RW.skew.deg > 30.0){
+            du_min_1l[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
+            du_max_1l[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
+          } else {
+            du_min_1l[i]  = (0.0 - actuator_state_1l[i])/ratio_u_un[i];
+            du_max_1l[i]  = (0.0 - actuator_state_1l[i])/ratio_u_un[i];
+          }
+        du_pref_1l[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i];   
         break;
       case COMMAND_ELEVATOR:  
         du_min_1l[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
