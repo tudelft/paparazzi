@@ -255,6 +255,10 @@
 #define GUIDANCE_INDI_SOARING_SPLINE_CD_SCALE 1.0
 #endif
 
+#ifndef GUIDANCE_INDI_SOARING_Q
+#define GUIDANCE_INDI_SOARING_Q 0.1103
+#endif
+
 //#ifndef GUIDANCE_INDI_SOARING_USE_SPLINE
 //#define GUIDANCE_INDI_SOARING_USE_SPLINE FALSE
 //#endif
@@ -773,7 +777,9 @@ float compute_soaring_heading_sp(void) {
 struct FloatVect3 compute_soaring_accel_sp(struct HorizontalGuidance *gh, struct VerticalGuidance *gv) {
     pos_err.x = POS_FLOAT_OF_BFP(gh->ref.pos.x) - stateGetPositionNed_f()->x;
     pos_err.y = POS_FLOAT_OF_BFP(gh->ref.pos.y) - stateGetPositionNed_f()->y;
-    pos_err.z = POS_FLOAT_OF_BFP(gv->z_ref) - stateGetPositionNed_f()->z;
+//    pos_err.z = POS_FLOAT_OF_BFP(gv->z_ref) - stateGetPositionNed_f()->z;
+    pos_err.z = -POS_FLOAT_OF_BFP(waypoints[soar_wp_id].enu_i.z) - stateGetPositionNed_f()->z;
+   // TODO: bugfix
 
     speed_sp.x = pos_err.x * gih_params.pos_gain;
     speed_sp.y = pos_err.y * gih_params.pos_gainy;
@@ -1040,7 +1046,7 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
 
     float airspeed = stateGetAirspeed_f();
 //    float Q = 0.1574;       // 0.5 rho S        for Seal
-    float Q = 0.1103;           // Eclipson C       TODO: var
+    float Q = GUIDANCE_INDI_SOARING_Q;           // Eclipson C
 
     float aoa = stateGetAngleOfAttack_f();      // in rad
     if (aoa > guidance_indi_soaring_max_aoa) {
@@ -1132,7 +1138,7 @@ void guidance_indi_calcg_wing_reduced(float Gmat[GUIDANCE_INDI_HYBRID_V_REDUCED]
 
     float airspeed = stateGetAirspeed_f();
 //    float Q = 0.1574;       // 0.5 rho S        for Seal
-    float Q = 0.1103;           // Eclipson C       TODO: var
+    float Q = GUIDANCE_INDI_SOARING_Q;           // Eclipson C
 
     float aoa = stateGetAngleOfAttack_f();      // in rad
     if (aoa > guidance_indi_soaring_max_aoa) {

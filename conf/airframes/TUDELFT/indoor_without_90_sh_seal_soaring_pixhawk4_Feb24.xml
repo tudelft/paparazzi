@@ -216,7 +216,7 @@ NOTES:
 <!--          <configure name="MODEM_PORT" value="usb_serial"/>-->
 <!--          <configure name="MODEM_BAUD" value="B57600"/>-->
         <configure name="MODEM_PORT" value="UART2"/><!--Default UART2=Telem1 UART3 = Telem2 -->
-        <configure name="MODEM_BAUD" value="B115200"/>
+        <configure name="MODEM_BAUD" value="B230400"/>
       </module>
 
         <!-- Enable for onboard logging -->
@@ -336,9 +336,9 @@ NOTES:
             <define name="AOA_T4_USE_LOWPASS_FILTER" value="TRUE"/>
             <define name="AOA_T4_LOWPASS_TAU" value="0.05"/>
             <define name="AOA_T4_USE_COMPENSATION" value="TRUE"/>
-<!--            <define name="AOA_T4_COMP_A1" value="-0.462"/>-->
-<!--            <define name="AOA_T4_COMP_B1" value="0.006"/>-->
-            <define name="AOA_T4_COMP_A2" value="0"/>
+            <define name="AOA_T4_COMP_A1" value="0"/>
+            <define name="AOA_T4_COMP_B1" value="0.0"/>
+            <define name="AOA_T4_COMP_A2" value="-0.21"/>
             <define name="AOA_T4_COMP_B2" value="0"/>
         </module>
         <define name="USE_AOA" value="TRUE"/>
@@ -746,7 +746,7 @@ NOTES:
         <define name="G1_ROLL"        value="{4.0, -4.0,    0,   0,    0}"/>
         <define name="G1_PITCH"       value="{0,  0,    4.2,     0,     0}"/>
         <define name="G1_YAW"         value="{    0,     0,    0, 2.6,  0}"/>
-        <define name="G1_THRUST"      value="{    0,     0,  0,   0,   2.5}"/>
+        <define name="G1_THRUST"      value="{    0,     0,  0,   0,   4.0}"/>
 
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{0, 0, 0, 0, 0}"/>
@@ -819,12 +819,12 @@ NOTES:
   </section>
 
   <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
-      <define name="POS_GAIN" value="2.0"/>
+      <define name="POS_GAIN" value="1.0"/>
       <define name="POS_GAINY" value="1.0"/>
-      <define name="POS_GAINZ" value="0.7"/>
-      <define name="SPEED_GAIN" value="3.2"/>
-      <define name="SPEED_GAINY" value="1.8"/>
-      <define name="SPEED_GAINZ" value="1.2"/>  <!-- 0.2? -->
+      <define name="POS_GAINZ" value="1.0"/>
+      <define name="SPEED_GAIN" value="1.0"/>
+      <define name="SPEED_GAINY" value="1.0"/>
+      <define name="SPEED_GAINZ" value="1.0"/>  <!-- 0.2? -->
       <define name="MAX_AIRSPEED" value="12."/>     <!--THIS IS *CRUISE* AISPEED!!! -->
       <define name="ZERO_AIRSPEED" value="FALSE"/>
       <define name="NAV_SPEED_MARGIN" value="8.0"/>
@@ -844,7 +844,7 @@ NOTES:
       <define name="HYBRID_USE_WLS" value="TRUE"/>
       <define name="HYBRID_USE_OLD_WLS" value="TRUE"/>  <!-- define this to use the old version -->
       <define name="HYBRID_WLS_PRIORITIES" value="{1.0, 10.0, 3.0}"/>
-      <define name="HYBRID_WLS_WU" value="{1.0, 50.0, 1.0}" />
+      <define name="HYBRID_WLS_WU" value="{1.0, 1.0, 1.0}" />
 
       <!--    SOARING-->
       <!-- switch controller when thr is negatively saturated -->
@@ -860,9 +860,9 @@ NOTES:
     <define name="POS_CTRL" value="TRUE"/>
     <define name="Y_POSITION_CTRL" value="TRUE"/>
 
-    <define name="SOARING_STEP_BIG" value="0.15"/>
-    <define name="SOARING_STEP_MED" value="0.10"/>
-    <define name="SOARING_STEP_SMALL" value="0.06"/>
+    <define name="SOARING_STEP_BIG" value="0.10"/>
+    <define name="SOARING_STEP_MED" value="0.7"/>
+    <define name="SOARING_STEP_SMALL" value="0.05"/>
     <define name="SOARING_STEP_FINE" value="0.03"/>
 
     <define name="SOARING_WP_ARRIVAL_DIST" value="3"/>  <!-- in meters, 3d dist-->
@@ -876,7 +876,7 @@ NOTES:
       <!-- 100 steps * 30 sec = 3000 sec = 50 min (maximum) -->
       <!-- 100 steps * 10 sec = 1000 sec = 16.6 min -->
     <define name="SOARING_MAX_EXPLORATION_STEPS" value="200" /> <!-- max search steps -->
-    <define name="SOARING_WP_COST_THRES" value="60"/>
+    <define name="SOARING_WP_COST_THRES" value="80"/>
 
     <!-- define WP ids -->
     <define name="SOARING_STDBY_WP_ID" value="2"/>
@@ -894,13 +894,16 @@ NOTES:
       <!-- for the new effectiveness model -->
       <!--      <define name="SOARING_USE_AOA" value="TRUE"/>-->
       <!--      <define name="SOARING_USE_DRAG" value="TRUE"/>-->
-      <define name="SOARING_CRITICAL_AOA" value="0.1396"/>   <!-- 15 deg -->
+      <define name="SOARING_CRITICAL_AOA" value="0.1396"/>   <!-- 8 deg -->
+      <define name="SOARING_MAX_AOA" value="0.17"/>     <!-- 10 deg -->
 
       <define name="SOARING_SPLINE_AOA_OFFSET" value="0" />
       <define name="SOARING_SPLINE_AOA_SCALE" value="0.9" />
       <define name="SOARING_SPLINE_CL_OFFSET" value="0.2" />
-      <define name="SOARING_SPLINE_CL_SCALE" value="0.7" />
-      <define name="SOARING_SPLINE_CD_SCALE" value="0.7" />
+      <define name="SOARING_SPLINE_CL_SCALE" value="0.6" />
+      <define name="SOARING_SPLINE_CD_SCALE" value="0.6" />
+
+      <define name="SOARING_Q" value="0.1573"/>
   </section>
 
   <section name="BAT">

@@ -13,12 +13,12 @@
     <waypoint name="H1" x="0.0" y="25.0"/>
     <waypoint name="BACKUP" x="0.0" y="3.0"/>
 
-    <waypoint alt="3.06" name="S1_WP" x="0.0" y="1.05" />
-    <waypoint alt="2.92" name="S2_WP" x="0.0" y="2.36" />
-    <waypoint alt="2.95" name="S3_WP" x="0.0" y="2.36" />
-    <waypoint alt="2.95" name="S4_WP" x="0.0" y="1.72" />
-    <waypoint alt="2.9" name="S5_WP" x="0.0" y="2.0" />
-    <waypoint alt="3.05" name="S6_WP" x="0.0" y="1.82" />
+    <waypoint alt="3.06" name="S1_WP" x="0.0" y="2.1" />
+    <waypoint alt="2.895" name="S2_WP" x="0.0" y="2.086" />
+    <waypoint alt="2.8" name="S3_WP" x="0.0" y="2.086" />
+    <waypoint alt="2.75" name="S4_WP" x="0.0" y="2.086" />
+<!--    <waypoint alt="2.9" name="S5_WP" x="0.0" y="2.0" />-->
+<!--    <waypoint alt="3.05" name="S6_WP" x="0.0" y="1.82" />-->
 
 <!--    <waypoint alt="3.0" name="P1" x="0.0" y="2.7" />-->
 <!--    <waypoint alt="2.7" name="P2" x="0.0" y="3.5" />-->
@@ -122,27 +122,6 @@
       <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
       <stay wp="S1_WP"/>
     </block>
-    <block name="STAY_S5_DOWN">
-      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
-      <go wp="S5_WP"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
-      <stay wp="S5_WP"/>
-    </block>
-    <block name="STAY_S3_BACK">
-      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
-      <go wp="S3_WP"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
-      <stay wp="S3_WP"/>
-    </block>
-    <block name="STAY_S6_UP">
-      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
-      <go wp="S6_WP"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
-      <stay wp="S6_WP"/>
-    </block>
     <block name="STAY_S2_SOAR">
       <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
       <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
@@ -150,7 +129,14 @@
       <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
       <stay wp="S2_WP"/>
     </block>
-    <block name="STAY_S4_BACK">
+    <block name="STAY_S3_DOWN">
+      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+      <go wp="S3_WP"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+      <stay wp="S3_WP"/>
+    </block>
+    <block name="STAY_S4_DOWN">
       <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
       <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
       <go wp="S4_WP"/>
