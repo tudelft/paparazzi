@@ -158,7 +158,7 @@ void ctrl_eff(void)
     g1g2[2][5] = -0.005;
      }else{
     struct FloatEulers eulers_zxy;
-    if(airspeed < 6.0) {
+    if(airspeed < 7.0) {
     float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
     float pitch_interp = DegOfRad(eulers_zxy.theta);
     Bound(pitch_interp, -60.0, -30.0);

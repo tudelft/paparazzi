@@ -9,7 +9,7 @@
     <!-- ****************** Autopilot Target ******************* -->
     <target name="ap" board="px4fmu_4.0_chibios">
       <define name="FLASH_MODE" value="PX4_BOOTLOADER"/>
-      <configure name="PERIODIC_FREQUENCY" value="200"/>
+      <configure name="PERIODIC_FREQUENCY" value="500"/><!-- 200 -->
 
       <!-- <module name="radio_control" type="datalink"/>-->
       <module name="radio_control" type="sbus">
@@ -23,7 +23,7 @@
         <define name="USE_I2C1"/> 
         <configure name="SDP3X_I2C_DEV" value="i2c1"/>
         <!-- <define name="SDP3X_I2C_ADDR" value="0x50"--><!-- slave address default 0x50"/>-->
-        <define name="SDP3X_SYNC_SEND" value="TRUE"/>
+        <!-- <define name="SDP3X_SYNC_SEND" value="TRUE"/> -->
         <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/> <!-- sdp33 -->
         <define name="SDP3X_LOWPASS_TAU" value="0.15"/>
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
@@ -72,9 +72,9 @@
     <module name="guidance"      type="indi_hybrid_tailsitter">
       <define name="GUIDANCE_INDI_HYBRID_USE_WLS" value="TRUE"/>
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
-      <define name="GUIDANCE_INDI_POS_GAIN" value="0.3"/>
+      <define name="GUIDANCE_INDI_POS_GAIN" value="0.6"/> <!--0.3 outdoor-->
       <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.0"/>
-      <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.5"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN" value="2.0"/> <!--1.0 outdoor 1.5 before-->
       <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.0"/>
       <define name="GUIDANCE_INDI_POS_GAINZ" value="1.5"/>
       <define name="GUIDANCE_INDI_SPEED_GAINZ" value="2.8"/>
@@ -108,6 +108,22 @@
       <define name="IMU_MPU9250_SMPLRT_DIV" value="4"/> 
     </module>
 
+    <!-- <module name="mag" type="rm3100">
+        <define name="USE_I2C1"/>
+        <configure name="MAG_RM3100_PERIODIC_FREQUENCY" value="125"/>
+        <configure name="MAG_RM3100_I2C_DEV" value="i2c1"/>
+        
+        <define name="RM3100_CHAN_X" value="1"/>
+        <define name="RM3100_CHAN_Y" value="0"/>
+        <define name="RM3100_CHAN_Z" value="2"/>
+        <define name="RM3100_CHAN_X_SIGN" value="+"/>
+        <define name="RM3100_CHAN_Y_SIGN" value="+"/>
+        <define name="RM3100_CHAN_Z_SIGN" value="+"/>
+
+        <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
+        <configure name="MODULE_RM3100_SYNC_SEND" value="TRUE"/>
+      </module> -->
+
     <!--<module name="servo_tester"/>-->
 
     <module name="air_data">
@@ -115,11 +131,11 @@
       <!-- <define name="CALC_AMSL_BARO" value="TRUE" /> -->
     </module>
 
-    <module name="gps" type="ublox">
+    <!-- <module name="gps" type="ublox">
       <configure name="UBX_GPS_PORT" value="UART4"/>
       <configure name="GPS_BAUD" value="B57600"/>
-    </module>
-    <!-- <module name="gps" type="datalink"/> -->
+    </module> -->
+    <module name="gps" type="datalink"/>
 
     <module name="stabilization" type="indi">
       <configure name="INDI_NUM_ACT" value="6"/>
@@ -139,9 +155,8 @@
     </module>-->
 
     <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="TRUE"/>
-      <define name="AHRS_MAG_UPDATE_ALL_AXES" value="TRUE"/> 
-      <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
+      <configure name="USE_MAGNETOMETER" value="FALSE"/>
+      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
       <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
     </module>
     <module name="ins" type="extended">
@@ -169,6 +184,7 @@
       <define name="TAILSITTER_WIND_TUNNEL_NO_PROP" value="TRUE"/>
     </module>-->
     <module name="geo_mag"/>
+      
     <module name="tailsitter_auto_takeoff">
       <define name="TAKEOFF_THETA_REF" value="0.0"/>
     </module>
@@ -245,12 +261,6 @@
 
   <section name="IMU" prefix="IMU_">
     <!-- IMU calibration, make sure to calibrate the IMU properly before flight, see the wiki for more info-->
-    <!--<define name="MAG_X_NEUTRAL" value="-37"/>-->
-    <!--<define name="MAG_Y_NEUTRAL" value="299"/>-->
-    <!--<define name="MAG_Z_NEUTRAL" value="197"/>-->
-    <!--<define name="MAG_X_SENS" value="7.25691459037" integer="16"/>-->
-    <!--<define name="MAG_Y_SENS" value="7.7018409319" integer="16"/>-->
-    <!--<define name="MAG_Z_SENS" value="8.16601148911" integer="16"/>-->
 
     <!--<define name= "MAG_X_CURRENT_COEF" value="0.001455"/>-->
     <!--<define name= "MAG_Y_CURRENT_COEF" value="0.012152"/>-->
@@ -258,12 +268,20 @@
 
 
     <!--Mag of gps-->
-  <define name="MAG_X_NEUTRAL" value="280"/>
-  <define name="MAG_Y_NEUTRAL" value="109"/>
-  <define name="MAG_Z_NEUTRAL" value="-25"/>
-  <define name="MAG_X_SENS" value="7.795567726805614" integer="16"/>
-  <define name="MAG_Y_SENS" value="7.573621320161775" integer="16"/>
-  <define name="MAG_Z_SENS" value="7.316229600404968" integer="16"/>
+<define name="MAG_X_NEUTRAL" value="3"/>
+<define name="MAG_Y_NEUTRAL" value="91"/>
+<define name="MAG_Z_NEUTRAL" value="46"/>
+<define name="MAG_X_SENS" value="7.927985982124512" integer="16"/>
+<define name="MAG_Y_SENS" value="7.835127581304932" integer="16"/>
+<define name="MAG_Z_SENS" value="7.729551044646723" integer="16"/>
+
+<!-- <define name="MAG_X_NEUTRAL" value="208"/>
+<define name="MAG_Y_NEUTRAL" value="179"/>
+<define name="MAG_Z_NEUTRAL" value="-362"/>
+<define name="MAG_X_SENS" value="0.5732825056361017" integer="16"/>
+<define name="MAG_Y_SENS" value="0.5960817910122532" integer="16"/>
+<define name="MAG_Z_SENS" value="0.6092060707873456" integer="16"/> -->
+
 
 	<define name="IMU_MPU9250_CHAN_X" value="0"/>
 	<define name="IMU_MPU9250_CHAN_Y" value="1"/>
@@ -318,11 +336,11 @@
     <define name="TILT_TWIST_CTRL" value="TRUE"/>
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="80"/> <!-- 107 50.0 25.0 20-->
-    <define name="REF_ERR_Q" value="105"/> <!-- was 110-->
+    <define name="REF_ERR_Q" value="90"/> <!-- was 100 105 110-->
     <define name="REF_ERR_R" value="80"/> <!-- was 100 200 20.0 65.0 20, increase from 60-->
-    <define name="REF_RATE_P" value="9.0"/> <!--was 12 14.0 9.0 10-->
-    <define name="REF_RATE_Q" value="9.0"/> <!-- was 12 15.0 14.0 10-->
-    <define name="REF_RATE_R" value="9.0"/> <!-- was 14 15.0 10.0 10, increase from 12.5--> 
+    <define name="REF_RATE_P" value="8.0"/> <!--was 9.0 12 14.0 9.0 10-->
+    <define name="REF_RATE_Q" value="8.0"/> <!-- was 9.0 12 15.0 14.0 10-->
+    <define name="REF_RATE_R" value="8.0"/> <!-- was 9.0 14 15.0 10.0 10, increase from 12.5--> 
 
     <!--Maxium yaw rate, to avoid instability-->
     <define name="MAX_P" value="100.0" unit="deg/s"/>
@@ -373,8 +391,8 @@
 
 <!-- Definitions for control effectiveness calculator module -->
   <section name="CONTROL_EFFECTIVENESS" prefix="CTRL_EFF_CALC_">
-    <define name="PITCH_EFF_AT_60" value="2.0"/>
-    <define name="YAW_EFF_AT_60" value="5.0"/>
+    <define name="PITCH_EFF_AT_60" value="2.5"/>
+    <define name="YAW_EFF_AT_60" value="3.0"/>
   	<define name="GROUND_CONTACT" value="0"/>
     <define name="THRUST_LOWER_LIM" value="1200"/>
   	
@@ -382,8 +400,8 @@
     	<define name="MASS" value="0.4561"/>		<!--[kg]-->
     	<define name="I_XX" value="0.00638"/>	<!--[kg m2] 0.00526 -->
     	<!--<define name="I_YY" value="0.04914925"/>-->	<!--[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
-    	<define name="I_YY" value="0.0036"/><!--0.0034 0.0036-->
-    	<define name="I_ZZ" value="0.011"/>	<!--[kg m2] 0.011 0.00341 -->
+    	<define name="I_YY" value="0.0026"/><!--0.0036 0.0034-->
+    	<define name="I_ZZ" value="0.00628"/>	<!--[kg m2] 0.011 0.00341 -->
  	    <!--<define name="I_XX" value="0.017897"/>	[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
     	<!--<define name="I_YY" value="0.003390"/>	[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
     	<!--<define name="I_ZZ" value="0.020337"/>	[kg m2] The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
@@ -394,7 +412,7 @@
     	<define name="K2" value="0.0003"/>
     	<define name="K3" value="0.1486"/>
   
-      <define name="CDE" value="0.02"/> <!--0.02-->
+      <define name="CDE" value="0.1"/> <!--0.02-->
       <define name="CDE_OFFSET" value="0.0015"/><!--0.002 0.0004 0.004-->
 
       <define name="CDA" value="0.05"/>

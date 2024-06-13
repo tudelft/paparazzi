@@ -426,7 +426,7 @@ static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
                        INDI_NUM_ACT, g1g2[1],
                        INDI_NUM_ACT, g1g2[2],
                        INDI_NUM_ACT, g1g2[3],
-                       INDI_NUM_ACT, g2_est);
+                       INDI_NUM_ACT, indi_Wu);
 }
 
 static void send_pivot(struct transport_tx *trans, struct link_device *dev)
@@ -882,12 +882,12 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   indi_Wu[5] = 0;
   }
   else{
-  if (airspeed < 6.0) {
+  if (airspeed < 7.0) {
   struct FloatEulers eulers_zxy;
   struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
   float_eulers_of_quat_zxy(&eulers_zxy, statequat);
-  float fun_tilt = -6.0/M_PI * eulers_zxy.theta- 1.0f;
-  float fun_elevon = 6.0/M_PI * eulers_zxy.theta + 2.0f;
+  float fun_tilt = -6.0/M_PI * eulers_zxy.theta- 1.5f;
+  float fun_elevon = 6.0/M_PI * eulers_zxy.theta + 2.5f;
   
   indi_Wu[0] = (fun_tilt > 1.0f) ? 1.0f: ((fun_tilt < 0.001f) ? 0.001f : fun_tilt);
   indi_Wu[1] = indi_Wu[0];
@@ -895,8 +895,8 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   indi_Wu[5] = indi_Wu[4];
   }
   else{
-  float fun_tilt = 0.124875f * airspeed - 0.4985f;
-  float fun_elevon = -0.124875f * airspeed + 1.4995f;
+  float fun_tilt = 0.1667f * airspeed - 0.6668f;
+  float fun_elevon = -0.1667f * airspeed + 1.6668f;
   indi_Wu[0] = (fun_tilt > 1.0f) ? 1.0f: ((fun_tilt < 0.001f) ? 0.001f : fun_tilt);
   indi_Wu[1] = indi_Wu[0];
   indi_Wu[4] = (fun_elevon > 1.0f) ? 1.0f: ((fun_elevon < 0.1f) ? 0.1f : fun_elevon);
@@ -1058,13 +1058,19 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   if (takeoff_stage == 0){
     autopilot_set_in_flight(false);
     // initialize pivoting by putting motors up
-	  actuators_pprz[0] = MAX_PPRZ;
+	  // actuators_pprz[0] = (int16_t)-eulers_zxy.theta*180.0*MAX_PPRZ/(63.0 * M_PI);
+    // Bound(actuators_pprz[0], 0, MAX_PPRZ);
+    // actuators_pprz[1] = actuators_pprz[0];
+    actuators_pprz[0] = MAX_PPRZ;
 	  actuators_pprz[1] = MAX_PPRZ;
 	  actuators_pprz[2] = -MAX_PPRZ;
 	  actuators_pprz[3] = -MAX_PPRZ;
     // don't use the ailerons for the takeoff
     actuators_pprz[4] = 0;
     actuators_pprz[5] = 0;
+    // theta_d = eulers_zxy.theta;
+    theta_d = RadOfDeg(-90.0);
+    // Bound(theta_d, RadOfDeg(-90.0), RadOfDeg(90.0));
   } else if (takeoff_stage == 1 || takeoff_stage == 3) {
     autopilot_set_in_flight(false);
     struct FloatRates rates_filt_takeoff;

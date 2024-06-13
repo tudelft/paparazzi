@@ -183,18 +183,18 @@
       <message name="ENERGY"                   period="2.5"/>
       <message name="DATALINK_REPORT"          period="5.1"/>
       <message name="STATE_FILTER_STATUS"      period="3.2"/>
-      <message name="AIR_DATA"                 period="0.005"/>
+      <message name="AIR_DATA"                 period="0.002"/>
       <message name="SURVEY"                   period="2.5"/>
-      <message name="BODY_RATES_ACCEL"         period=".005"/>
+      <message name="BODY_RATES_ACCEL"         period=".002"/>
       <message name="LIDAR"                    period="0.05"/>
       <!-- <message name="INS_EKF2"                 period=".25"/> -->
       <message name="WIND_INFO_RET"            period="1."/>
       <message name="ESC"                      period="0.05"/>
       <message name="AHRS_REF_QUAT"            period="0.01"/>
-      <message name="STAB_ATTITUDE_INDI"       period="0.005"/>
-      <message name="GUIDANCE_INDI_HYBRID"       period="0.005"/>
-      <message name="INDI_G"       period="0.005"/>
-      <message name="PIVOT"       period="0.005"/>
+      <message name="STAB_ATTITUDE_INDI"       period="0.002"/>
+      <message name="GUIDANCE_INDI_HYBRID"       period="0.002"/>
+      <message name="INDI_G"       period="0.002"/>
+      <message name="PIVOT"       period="0.002"/>
     </mode>
   </process>
 
