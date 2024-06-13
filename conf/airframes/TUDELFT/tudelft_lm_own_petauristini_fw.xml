@@ -252,6 +252,7 @@ NOTES:
 
   </section>-->
 
+  <!-- Mixer -->
   <command_laws>
     <let var="GAIN1" value="0.0f"/> <!-- Not used yet-->
     <let var="K_rudder_gyro" value="8.0f"/>  <!--gain from yaw rate to rudder or differential motor THROTTLE-->
@@ -378,6 +379,7 @@ NOTES:
 
 <!-- ************************* GAINS ************************* -->
 <!-- ************************* H ************************* -->
+<!-- PID -->
   <section name="HORIZONTAL CONTROL" prefix="H_CTL_">
 
     <define name="COURSE_PGAIN" value="0.8"/>
