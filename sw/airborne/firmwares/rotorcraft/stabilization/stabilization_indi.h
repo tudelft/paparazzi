@@ -81,6 +81,7 @@ struct Indi_gains {
 };
 
 extern struct Indi_gains indi_gains;
+extern float stabilization_indi_filter_freq; //for setting handler
 
 extern void stabilization_indi_init(void);
 extern void stabilization_indi_enter(void);
@@ -93,6 +94,7 @@ extern void stabilization_indi_rate_run(struct FloatRates rate_ref, bool in_flig
 extern void stabilization_indi_set_wls_settings(float use_increment);
 extern void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight);
 extern void stabilization_indi_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn);
+extern void stabilization_indi_update_filt_freq(float freq); // setting handler
 
 #endif /* STABILIZATION_INDI */
 
