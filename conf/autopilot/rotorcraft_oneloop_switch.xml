@@ -72,6 +72,9 @@
         <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_KILL)"/>
         <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_KILL)"/>
       </on_enter>
+      <control freq="NAVIGATION_FREQUENCY">
+        <call fun="nav_periodic_task()"/>
+      </control>
       <control>
         <call fun="SetCommands(commands_failsafe)"/>
       </control>
@@ -196,8 +199,11 @@
       <on_enter>
         <call fun="oneloop_andi_enter(false, CTRL_INDI)"/>
       </on_enter>
-      <control>
+      <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
+      </control>
+      <control>
+        <!-- <call fun="nav_periodic_task()"/> -->
         <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NAV)"/>
         <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_NAV)"/>
         <call fun="guidance_h_set_pos(nav.carrot.y, nav.carrot.x)"/>
@@ -228,8 +234,11 @@
       <on_enter>
         <call fun="oneloop_andi_enter(false, CTRL_ANDI)"/>
       </on_enter>
-      <control>
+      <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
+      </control>
+      <control>
+        <!-- <call fun="nav_periodic_task()"/> -->
         <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_MODULE)"/>
         <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_MODULE)"/>
         <call fun="guidance_h_set_pos(nav.carrot.y, nav.carrot.x)"/>
