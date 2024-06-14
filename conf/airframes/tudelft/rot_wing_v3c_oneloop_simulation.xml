@@ -72,7 +72,7 @@
           
         <!-- Control -->      
         <module name="stabilization" type="oneloop" >
-            <configure name="INDI_NUM_ACT" value="8"/>
+            <configure name="INDI_NUM_ACT" value="9"/>
         </module>
 
         <module name="guidance" type="oneloop"/>
@@ -220,7 +220,7 @@
     <section name="IMU" prefix="IMU_">
         <!-- For some reason accel calibration does not work in JSBSIM. Cannot solve simply in NPS section. -->
         <!-- <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-12,-9,20}, .scale={{30726,37910,15728},{3133,3871,1611}}}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-9,-30,26}, .scale={{45288,818,33359},{8935,167,6832}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-35,-5,13}, .scale={{26152,56165,62837},{5357,11479,12884}}}}"/> -->
-        <define name="MAG_CALIB"   value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={1529,-2458,266}, .scale={{1113,22401,26159},{1966,40021,45000}}}}"/>
+        <define name="MAG_CALIB"   value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={785,-2641,40}, .scale={{7727,22807,32483},{13208,38799,54820}}}}"/>
         <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
         <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
         <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
@@ -229,7 +229,7 @@
     <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
         <define name  = "MAX_R"                     value = "120.0" unit="deg/s"/>
         <define name  = "FILT_CUTOFF"               value = "3.0" />
-        <define name  = "FILT_CUTOFF_ACC"           value = "5.0"/>
+        <define name  = "FILT_CUTOFF_ACC"           value = "3.0"/>
         <define name  = "FILT_CUTOFF_VEL"           value = "5.0"/>
         <define name  = "FILT_CUTOFF_POS"           value = "10.0"/>
         <define name  = "ESTIMATION_FILT_CUTOFF"    value = "3.2" />
@@ -239,14 +239,14 @@
         <define name  = "FILT_CUTOFF_RDOT"          value = "0.5" />
         <define name  = "FILTER_YAW_RATE"           value = "TRUE"/>
         <!--                                                 |   MF   |   MR   |    MB   |    ML   |   MP   |   ELE  |    RUD  |    AIL  |    FLA  |   PHI  |  THETA | -->
-        <define name  = "ACT_DYN"                   value = "{   10.1f,   10.1f,    10.1f,    10.1f,  24.07f,  50.00f,   50.00f,   50.00f,   50.00f,   0.00f,  0.00f }" />
+        <define name  = "ACT_DYN"                   value = "{   15.1f,   15.1f,    15.1f,    15.1f,  24.07f,  50.00f,   50.00f,   50.00f,   50.00f,   0.00f,  0.00f }" />
         <define name  = "ACT_IS_SERVO"              value = "{       0,       0,        0,        0,       0,       1,        1,        1,        1,       0,      0 }" />
         <define name  = "ACT_MAX"                   value = "{ 9600.0f, 9600.0f,  9600.0f,  9600.0f, 9600.0f, 9600.0f,  9600.0f,  9600.0f,  9600.0f,  M_PI_4,  M_PI_4}"/>
         <define name  = "ACT_MIN"                   value = "{    0.0f,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f, -9600.0f, -9600.0f, -9600.0f, -M_PI_4, -M_PI_4}"/>
         <define name  = "ACT_MAX_NORM"              value = "{    1.0f,    1.0f,     1.0f,     1.0f,    1.0f,    1.0f,     1.0f,     1.0f,     1.0f,    1.0f,    1.0f}"/>
         <define name  = "ACT_MIN_NORM"              value = "{    0.0f,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f,    -1.0f,    -1.0f,    -1.0f,   -1.0f,   -1.0f}"/>
         <define name  = "WU"                        value = "{   0.75f,   0.75f,    0.75f,    0.75f,   1.00f,    6.0f,     6.0f,     6.0f,     6.0f,   1.20f,   1.20f}"/>
-        <define name  = "U_PREF"                    value = "{   0.00f,   0.00f,    0.00f,    0.00f,   0.00f, 7936.0f,    0.00f,    0.00f,    0.00f,   0.00f,   0.00f}"/>
+        <define name  = "U_PREF"                    value = "{   0.00f,   0.00f,    0.00f,    0.00f,   0.00f, 8000.0f,    0.00f,    0.00f,    0.00f,   0.00f,   0.00f}"/>
         <define name  = "WV"                        value = "{  4.0f,  4.0f,   4.0f,  8.0f,  8.0f,  1.00f}"/>   
     </section>
 
