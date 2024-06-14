@@ -94,6 +94,8 @@
 #if INS_EXT_POSE
 #include "modules/ins/ins_ext_pose.h"
 #endif
+
+#include "modules/gps/gps.h" // DELETE FIX
 //#include "nps/nps_fdm.h"
 
 // Number of real actuators (e.g. motors, servos)
@@ -512,14 +514,14 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
 static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
 {
   float temp_debug_vect[1];
-  //temp_debug_vect[0] = andi_u[COMMAND_PITCH];
-  //temp_debug_vect[1] = pitch_pref;
-  // temp_debug_vect[0]=eulers_zxy_des.phi;
-  // temp_debug_vect[1]=eulers_zxy_des.theta;
-  // temp_debug_vect[2]=eulers_zxy_des.psi;
-  temp_debug_vect[0]= RW.as;
-  debug_vect(trans, dev, "airspeed", temp_debug_vect, 1);
-  //debug_vect(trans, dev, "andi_u_pitch_pref", temp_debug_vect, 2);
+  //temp_debug_vect[0]= RW.as;
+  //debug_vect(trans, dev, "airspeed", temp_debug_vect, 1);
+  if (GpsFixValid()){
+    temp_debug_vect[0]= 1;
+  } else {
+    temp_debug_vect[0]= 0;
+  }
+  debug_vect(trans, dev, "gps_fix_valid", temp_debug_vect, 1);
 }
 #endif
 
@@ -1524,8 +1526,17 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
         du_pref_1l[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i]; 
         break;      
       case COMMAND_AILERONS:
+        if(RW.skew.deg > 25.0){
+            du_min_1l[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
+            du_max_1l[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
+          } else {
+            du_min_1l[i]  = (0.0 - actuator_state_1l[i])/ratio_u_un[i];
+            du_max_1l[i]  = (0.0 - actuator_state_1l[i])/ratio_u_un[i];
+          }
+        du_pref_1l[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i];   
+        break;      
       case COMMAND_FLAPS:
-        if(RW.skew.deg > 30.0){
+        if(RW.skew.deg > 50.0){
             du_min_1l[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
             du_max_1l[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
           } else {
