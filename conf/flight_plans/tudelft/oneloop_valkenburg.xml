@@ -7,6 +7,7 @@
     #include "modules/energy/electrical.h"
     #include "modules/radio_control/radio_control.h"
     #include "modules/ahrs/ahrs.h"
+    #include "modules/gps/gps.h"
 </header>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
