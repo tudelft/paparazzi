@@ -42,12 +42,10 @@
 #define ROTWING_CONFIGURATION_HOVER       0 // UAV is in hover
 #define ROTWING_CONFIGURATION_HYBRID      1 // UAV can fly forward and hover if airspeed low, hover motors on
 #define ROTWING_CONFIGURATION_EFFICIENT   2 // UAV flies efficiently forward  (FW)
-#define ROTWING_CONFIGURATION_FREE        3 // UAV switched between efficient and hybrid dependent on deceleration 
 
 struct RotwingState {
   uint8_t current_state;
   uint8_t desired_state;
-  uint8_t requested_config;
 };
 
 #define ROTWING_STATE_WING_QUAD_SETTING         0 // Wing skew at 0 degrees
@@ -63,7 +61,8 @@ struct RotWingStateSettings {
   bool hover_motors_active;
   bool hover_motors_disable;
   bool force_forward;
-  uint8_t preferred_pitch;
+  uint8_t preferred_pitch_setting;
+  float preferred_pitch_value;
   bool stall_protection;
   float max_v_climb;
   float max_v_descend;
@@ -92,6 +91,6 @@ extern void periodic_rotwing_state(void);
 extern void request_rotwing_state(uint8_t state);
 extern void rotwing_request_configuration(uint8_t configuration);
 extern void rotwing_state_skew_actuator_periodic(void);
-extern bool rotwing_state_hover_motors_running(void);
+extern void rotwing_state_force_skew_off(void);
 
 #endif  // ROTWING_STATE_H

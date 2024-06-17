@@ -9,8 +9,18 @@
         "editor.tabSize": 4,
     },
     "files.associations": {
-        "Makefile.*": "makefile"
+        "Makefile.*": "makefile",
+        "chrono": "c",
+        "matrixfunctions": "c",
+        "bit": "c",
+        "*.tcc": "c",
+        "cmath": "c",
+        "complex": "c",
+        "random": "c",
+        "limits": "c",
+        "stdio.h": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
+    "cmake.configureOnOpen": false,
 }
