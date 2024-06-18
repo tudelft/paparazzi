@@ -68,6 +68,7 @@
         <dl_setting var="L2" min="0" step="0.001" max="1" shortname="l2" param="STABILIZATION_INDI_L2"/>
         <dl_setting var="weight_T" min="0" step="0.01" max="20" shortname="W_T" param="STABILIZATION_INDI_WEIGHT_T"/>
         <dl_setting var="weight_S" min="0" step="0.01" max="10" shortname="W_S" param="STABILIZATION_INDI_WEIGHT_S"/>
+        <dl_setting var="Wu_alpha" min="0" step="0.001" max="1" shortname="Wu_alpha" param="STABILIZATION_INDI_WU_ALPHA"/>
         <dl_setting var="roll_gain" min="0" step="0.01" max="10" shortname="roll gain"/>
         <dl_setting var="side_slip_gain_rc" min="0" step="0.01" max="10" shortname="sideslip_gain"/>
         <dl_setting var="use_pitch_Wu" min="0" step="1" max="1" values="OFF|ON" shortname="use_pitch_Wu"/>

@@ -382,6 +382,8 @@
     <define name="PIVOT_GAIN_THETA" value="0.77"/><!--0.5 before -->
     <define name="PIVOT_GAIN_I" value="0.14"/>
 
+    <define name="WU_ALPHA" value="0.05"/>
+
     <define name="L1" value="0.23"/>		<!--force distance from tilt to tail, for pitch pivoting[m]-->
     <define name="L2" value="0.16"/>	<!--force distance from CG to tail, for pitch pivoting[m]-->
 

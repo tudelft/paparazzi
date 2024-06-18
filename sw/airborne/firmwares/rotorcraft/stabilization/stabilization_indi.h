@@ -43,6 +43,7 @@ extern float L1;
 extern float L2;
 extern float weight_T;
 extern float weight_S;
+extern float Wu_alpha;
 extern float roll_gain;
 extern float indi_Wu_motor;
 extern float indi_Wu_servo;

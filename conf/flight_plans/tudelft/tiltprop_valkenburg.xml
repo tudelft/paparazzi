@@ -60,10 +60,10 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="Automatic Takeoff">
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/> 
       <call_once fun="NavResurrect()"/>
       <call_once fun="autopilot_set_in_flight(false)"/>
       <call_once fun="take_off_enter()"/>
-      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
       <exception cond="GetPosHeight() @GT 8.0" deroute="Standby"/>
     </block>
