@@ -30,7 +30,7 @@
             <define name="INS_EKF2_GYRO_ID"     value="IMU_CUBE1_ID"/>
             <define name="INS_EKF2_ACCEL_ID"    value="IMU_CUBE1_ID"/>
             <define name="INS_EKF2_MAG_ID"      value="MAG_RM3100_SENDER_ID"/>
-            <define name="MULTI_GPS_MODE"       value="GPS_MODE_PRIMARY"/>
+            <!-- <define name="MULTI_GPS_MODE"       value="GPS_MODE_PRIMARY"/> -->
 
             <!--Only send gyro and accel that is being used-->
             <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
@@ -84,15 +84,15 @@
         </module>
         <module name="air_data"/>
 
-        <configure name="PRIMARY_GPS" value="ublox"/>
-        <configure name="SECONDARY_GPS" value="ublox2"/>
+        <!-- <configure name="PRIMARY_GPS" value="ublox"/> -->
+        <!-- <configure name="SECONDARY_GPS" value="ublox2"/> -->
         <module name="gps" type="datalink"/>
 
         <!-- IMU / INS -->
         <module name="imu" type="cube"/>
         <module name="ins" type="ekf2">
-         <define name="INS_EKF2_OPTITRACK" value="true"/>
-         <define name="INS_EKF2_RW" value="true"/>
+         <define name="INS_EKF2_OPTITRACK" value="TRUE"/>
+         <define name="INS_EKF2_RW" value="TRUE"/>
         </module>  
 
         <module name="parachute"/>
@@ -338,8 +338,9 @@
         <define name="USE_AIRSPEED"                         value="TRUE"/>
         <define name="NAV_HYBRID_MAX_DECELERATION"          value="0.5"/>
         <define name="ROTWING_STATE_USE_ROTATION_REF_MODEL" value="TRUE"/>
-        <define name="INS_EKF2_FUSION_MODE"                 value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/>
+        <!-- <define name="INS_EKF2_FUSION_MODE"                 value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/> -->
         <define name="INS_EKF2_GPS_YAW_OFFSET"              value="0"/>
+        <define name="COMMAND_ROT_MECH" value="SERVO_ROTATION_MECH_IDX"/>
     </section>
 
     <section name="GROUND_DETECT">
@@ -354,7 +355,7 @@
 
     <section name="IMU" prefix="IMU_">
         <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true, .filter=true},.neutral={2,11,22}, .scale={{9223,33875,50285},{941,3469,5167}}, .filter_sample_freq=1131.0, .filter_freq=30}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-2,-2,20}, .scale={{9843,7289,11251},{2014,1485,2294}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-31,-13,10}, .scale={{49268,7401,20459},{10091,1513,4191}}} }"/>
-        <define name="MAG_CALIB"   value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={-14,3,42}, .scale={{17279,2209,36874},{30247,3800,64095}}}}"/>
+        <define name="MAG_CALIB"   value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={-6007,-2053,3440}, .scale={{17900,23371,15347},{31081,41326,27076}}}}"/>
         <define name="GYRO_CALIB"  value="{{.abi_id=20, .calibrated={.filter=true}, .filter_sample_freq=1134.1, .filter_freq=30}}"/>                    
         <define name="BODY_TO_IMU_PHI"   value="0."  unit="deg"/>
         <define name="BODY_TO_IMU_THETA" value="0."   unit="deg"/>
