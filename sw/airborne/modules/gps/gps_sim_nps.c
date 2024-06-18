@@ -76,11 +76,11 @@ void gps_feed_value(void)
 #endif
   SetBit(gps_nps.valid_fields, GPS_VALID_COURSE_BIT);
 
-  gps_nps.pacc = 650;
-  gps_nps.hacc = 450;
-  gps_nps.vacc = 200;
-  gps_nps.sacc = 100;
-  gps_nps.pdop = 650;
+  gps_nps.pacc = 1.0;//650; // [cm]
+  gps_nps.hacc = 1.0;//450; // [cm]
+  gps_nps.vacc = 1.0;//200; // [cm]
+  gps_nps.sacc = 5.0;//100; // [cm]
+  gps_nps.pdop = 1.0;//650; // [cm]
 
   if (gps_has_fix) {
     gps_nps.num_sv = 11;

@@ -40,10 +40,16 @@
       <call fun="stabilization_run(autopilot_in_flight(), &stabilization.rc_sp, &thrust_sp, stabilization.cmd)"/>
     </control_block>
 
-    <control_block name="run_guidance_control">
-      <call fun="guidance_v_run(autopilot_in_flight())" store="struct ThrustSetpoint thrust_sp"/>
-      <call fun="guidance_h_run(autopilot_in_flight())" store="struct StabilizationSetpoint stab_sp"/>
-      <call fun="stabilization_run(autopilot_in_flight(), &stab_sp, &thrust_sp, stabilization.cmd)"/>
+    <control_block name="throttle_direct">
+      <call fun="guidance_v_read_rc()"/>
+      <call fun="guidance_v_set_z(stateGetPositionNed_f()->z)"/>
+      <call fun="stabilization_cmd[COMMAND_THRUST] = guidance_v.rc_delta_t"/>
+    </control_block>
+
+    <control_block name="altitude_loop">
+      <call fun="gv_update_ref_from_z_sp(guidance_v.z_sp)"/>
+      <call fun="guidance_v.delta_t = guidance_v_run_pos(autopilot_in_flight(), &guidance_v)"/>
+      <call fun="stabilization_cmd[COMMAND_THRUST] = guidance_v.rc_delta_t"/>
     </control_block>
 
     <exceptions>
@@ -79,7 +85,11 @@
         <call fun="nav_periodic_task()"/>
       </control> -->
       <control>
-        <call_block name="run_guidance_control"/>
+        <call fun="nav_periodic_task()"/>
+        <call fun="guidance_v_read_rc()"/>
+        <call fun="guidance_v_thrust_adapt(autopilot_in_flight())"/>
+        <call fun="guidance_v_from_nav(autopilot_in_flight())"/>
+        <call fun="guidance_h_from_nav(autopilot_in_flight())"/>
         <call_block name="set_commands"/>
       </control>
       <exception cond="GpsIsLost() && autopilot_in_flight()" deroute="FAILSAFE"/>

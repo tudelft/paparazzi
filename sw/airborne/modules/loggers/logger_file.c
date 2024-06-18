@@ -43,11 +43,13 @@
 #include "firmwares/fixedwing/stabilization/stabilization_adaptive.h"
 #endif
 
+#include "firmwares/rotorcraft/oneloop/oneloop_andi.h"
+
 #include "generated/modules.h"
 
 /** Set the default File logger path to the USB drive */
 #ifndef LOGGER_FILE_PATH
-#define LOGGER_FILE_PATH /data/video/usb
+#define LOGGER_FILE_PATH /data/ftp/internal_000
 #endif
 
 /** The file pointer */
@@ -63,25 +65,46 @@ static FILE *logger_file = NULL;
  * @param file Log file pointer
  */
 static void logger_file_write_header(FILE *file) {
-  fprintf(file, "time,");
-  fprintf(file, "pos_x,pos_y,pos_z,");
-  fprintf(file, "vel_x,vel_y,vel_z,");
-  fprintf(file, "att_phi,att_theta,att_psi,");
-  fprintf(file, "rate_p,rate_q,rate_r,");
-#ifdef BOARD_BEBOP
-  fprintf(file, "rpm_obs_1,rpm_obs_2,rpm_obs_3,rpm_obs_4,");
-  fprintf(file, "rpm_ref_1,rpm_ref_2,rpm_ref_3,rpm_ref_4,");
-#endif
-#ifdef INS_EXT_POSE_H
-  ins_ext_pos_log_header(file);
-#endif
-#ifdef COMMAND_THRUST
-  fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
-#else
-  fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
-#endif
-}
+  fprintf(file, "timestamp,");
+  fprintf(file,"ap_mode,ap_in_flight,");
+  fprintf(file,"phi_ref,theta_ref,psi_ref,phi,theta,psi,");
+  fprintf(file,"p_ref,q_ref,r_ref,p,q,r,");
+  fprintf(file,"p_dot_ref,q_dot_ref,r_dot_ref,p_dot,q_dot,r_dot,");
+  fprintf(file,"pos_N_ref,pos_E_ref,pos_D_ref,pos_N,pos_E,pos_D,");
+  fprintf(file,"vel_N_ref,vel_E_ref,vel_D_ref,vel_N,vel_E,vel_D,");
+  fprintf(file,"acc_N_ref,acc_E_ref,acc_D_ref,acc_N,acc_E,acc_D,");
+  fprintf(file,"jerk_N,jerk_E,jerk_D,");
+  fprintf(file,"nu_0,nu_1,nu_2,nu_3,nu_4,nu_5,");
+  fprintf(file,"u_0,u_1,u_2,u_3,");
+  fprintf(file,"G1_aN_0,G1_aN_1,G1_aN_2,G1_aN_3,G1_aN_4,G1_aN_5,");
+  fprintf(file,"G1_aE_0,G1_aE_1,G1_aE_2,G1_aE_3,G1_aE_4,G1_aE_5,");
+  fprintf(file,"G1_aD_0,G1_aD_1,G1_aD_2,G1_aD_3,G1_aD_4,G1_aD_5,");
+  fprintf(file,"G1_roll_0,G1_roll_1,G1_roll_2,G1_roll_3,G1_roll_4,G1_roll_5,");
+  fprintf(file,"G1_pitch_0,G1_pitch_1,G1_pitch_2,G1_pitch_3,G1_pitch_4,G1_pitch_5,");
+  fprintf(file,"G1_yaw_0,G1_yaw_1,G1_yaw_2,G1_yaw_3,G1_yaw_4,G1_yaw_5,");
+  fprintf(file,"andi_u_0,andi_u_1,andi_u_2,andi_u_3,andi_u_4,andi_u_5,");
+  fprintf(file,"andi_du_0,andi_du_1,andi_du_2,andi_du_3,andi_du_4,andi_du_5\n");
 
+  // fprintf(file, "pos_x,pos_y,pos_z,");
+  // fprintf(file, "vel_x,vel_y,vel_z,");
+  // fprintf(file, "att_phi,att_theta,att_psi,");
+  // fprintf(file, "rate_p,rate_q,rate_r,");
+// #ifdef BOARD_BEBOP
+//   fprintf(file, "rpm_obs_1,rpm_obs_2,rpm_obs_3,rpm_obs_4,");
+//   fprintf(file, "rpm_ref_1,rpm_ref_2,rpm_ref_3,rpm_ref_4\n");
+// #endif
+// fprintf(file,"\n");
+
+// #ifdef INS_EXT_POSE_H
+//   ins_ext_pos_log_header(file);
+// #endif
+
+// #ifdef COMMAND_THRUST
+//   fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
+// #else
+//   fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
+// #endif
+}
 /** Write CSV row
  * Write values at this timestamp to log file. Make sure that the printf's match
  * the column headers of logger_file_write_header! Don't forget the \n at the
@@ -89,10 +112,10 @@ static void logger_file_write_header(FILE *file) {
  * @param file Log file pointer
  */
 static void logger_file_write_row(FILE *file) {
-  struct NedCoor_f *pos = stateGetPositionNed_f();
-  struct NedCoor_f *vel = stateGetSpeedNed_f();
-  struct FloatEulers *att = stateGetNedToBodyEulers_f();
-  struct FloatRates *rates = stateGetBodyRates_f();
+  // struct NedCoor_f *pos = stateGetPositionNed_f();
+  // struct NedCoor_f *vel = stateGetSpeedNed_f();
+  // struct FloatEulers *att = stateGetNedToBodyEulers_f();
+  // struct FloatRates *rates = stateGetBodyRates_f();
 
   fprintf(file, "%f,", get_sys_time_float());
   fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
@@ -119,6 +142,7 @@ static void logger_file_write_row(FILE *file) {
 /** Start the file logger and open a new file */
 void logger_file_start(void)
 {
+  printf("STARTED LOGGER\n");
   // Ensure that the module is running when started with this function
   logger_file_logger_file_periodic_status = MODULES_RUN;
   

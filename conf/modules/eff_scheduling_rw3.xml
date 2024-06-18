@@ -2,39 +2,28 @@
 <module name="eff_scheduling_rot_wing" dir="ctrl">
   <doc>
     <description>T
-      he control effectiveness scheduler for the rotating wing quadplane drone type
+      The control effectiveness scheduler for the rotating wing 3 quadplane
      - it requires a servo called ROTATION_MECH
     </description>
-    <section name="ROT_WING" prefix="ROT_WING_EFF_SCHED_">
-      <define name="IXX_BODY" value="0"  description=""/>
-      <define name="IYY_BODY" value="0"  description=""/>
-      <define name="IZZ" value="0"       description=""/>
-      <define name="IXX_WING" value="0"  description=""/>
-      <define name="IYY_WING" value="0"  description=""/>
-      <define name="M" value="0"         description=""/>
-      <define name="ROLL_ARM" value="0"  description=""/>
-      <define name="PITCH_ARM" value="0" description=""/>
-      <define name="HOVER_DF_DPPRZ" value="0" description=""/>
+    <section name="RW3" prefix="RW3_EFF_SCHED_">
+      <define name="IXX_BODY"              value="0"  description=""/>
+      <define name="IYY_BODY"              value="0"  description=""/>
+      <define name="IZZ"                   value="0"  description=""/>
+      <define name="M"                     value="0"  description=""/>
+      <define name="ROLL_ARM"              value="0"  description=""/>
+      <define name="PITCH_ARM"             value="0" description=""/>
+      <define name="HOVER_DF_DPPRZ"        value="0" description=""/>
       <define name="HOVER_ROLL_PITCH_COEF" value="{0,0}" description=""/>
     </section>
   </doc>
-    <settings>
-   <dl_settings>
-     <dl_settings NAME="eff_sched">
-       <dl_setting var="ele_eff"            min="5"       step="0.5" max="50"    shortname="ele_eff"/> 
-       <dl_setting var="airspeed_fake_on"   min="0"       step="1"     max="1"     values="OFF|ON" shortname="bool_airspeed_fake"/> 
-       <dl_setting var="airspeed_fake"      min="0"       step="0.001" max="20"    shortname="airspeed_fake"/>     
-     </dl_settings>
-   </dl_settings>
-  </settings>
   <header>
-    <file name="eff_scheduling_rot_wing.h"/>
+    <file name="eff_scheduling_rw3.h"/>
   </header>
   <init fun="eff_scheduling_rot_wing_init()"/>
-  <periodic fun="eff_scheduling_rot_wing_periodic()"/>
+  <periodic fun="eff_scheduling_rot_wing_periodic()" freq="10.0"/>
   <makefile>
-    <file name="eff_scheduling_rot_wing.c"/>
-    <test firmware="rotorcraft">
+    <file name="eff_scheduling_rw3.c"/>
+    <!-- <test>
       <define name="ACTUATORS_NB" value="10"/>
       <define name="SERVO_ROTATION_MECH_IDX" value="8"/>
       <define name="SERVO_MOTOR_FRONT" value="0"/>
@@ -52,7 +41,7 @@
       <define name="ROT_WING_EFF_SCHED_IYY_WING" value="1"/>
       <define name="ROT_WING_EFF_SCHED_M" value="1"/>
       <define name="ROT_WING_EFF_SCHED_DM_DPPRZ_HOVER_PITCH" value="1"/>
-      <define name="ROT_WING_EFF_SCHED_DM_DPPRZ_HOVER_ROLL" value="{1,1}"/>
+      <define name="ROT_WING_EFF_SCHED_DM_DPPRZ_HOVER_ROLL" value="1"/>
       <define name="ROT_WING_EFF_SCHED_HOVER_ROLL_PITCH_COEF" value="{1,1}"/>
       <define name="ROT_WING_EFF_SCHED_HOVER_ROLL_ROLL_COEF" value="{1,1}"/>
       <define name="ROT_WING_EFF_SCHED_K_ELEVATOR" value="{1,1,1}"/>
@@ -66,6 +55,6 @@
       <define name="ROT_WING_EFF_SCHED_K_LIFT_WING" value="{1,1}"/>
       <define name="ROT_WING_EFF_SCHED_K_LIFT_FUSELAGE" value="1"/>
       <define name="ROT_WING_EFF_SCHED_K_LIFT_TAIL" value="1"/>
-    </test>
+    </test> -->
   </makefile>
 </module>
