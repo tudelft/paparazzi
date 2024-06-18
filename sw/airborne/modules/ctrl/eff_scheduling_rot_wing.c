@@ -386,8 +386,8 @@ void eff_scheduling_rot_wing_update_airspeed(void)
   RW.as2 = RW.as * RW.as;
   Bound(RW.as2, 0. , 900.);
   if(airspeed_fake_on) {
-    float freq = 0.5;
-    float amp = 3.0;
+    //float freq = 0.5;
+    //float amp = 3.0;
     time = time + 0.002;
     RW.as = airspeed_fake ;//+ amp * sinf(2.0 * M_PI * freq * time);
     RW.as2 = RW.as * RW.as;

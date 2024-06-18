@@ -179,23 +179,23 @@
 
     <commands>
         <!-- Real actuators commands -->
-        <axis name="MOTOR_FRONT"  group ="REAL" failsafe_value="0"/> <!-- IDX 0--> 
-        <axis name="MOTOR_RIGHT"  group ="REAL" failsafe_value="0"/> <!-- IDX 1-->
-        <axis name="MOTOR_BACK"   group ="REAL" failsafe_value="0"/> <!-- IDX 2-->
-        <axis name="MOTOR_LEFT"   group ="REAL" failsafe_value="0"/> <!-- IDX 3-->
-        <axis name="MOTOR_PUSHER" group ="REAL" failsafe_value="0"/> <!-- IDX 4-->
-        <axis name="ELEVATOR"     group ="REAL" failsafe_value="0"/> <!-- IDX 5-->
-        <axis name="RUDDER"       group ="REAL" failsafe_value="0"/> <!-- IDX 6-->
-        <axis name="AILERONS"     group ="REAL" failsafe_value="0"/> <!-- IDX 7-->
-        <axis name="FLAPS"        group ="REAL" failsafe_value="0"/> <!-- IDX 8-->
+        <axis name="MOTOR_FRONT"  group ="REAL"    failsafe_value="0"/> <!-- IDX 0--> 
+        <axis name="MOTOR_RIGHT"  group ="REAL"    failsafe_value="0"/> <!-- IDX 1-->
+        <axis name="MOTOR_BACK"   group ="REAL"    failsafe_value="0"/> <!-- IDX 2-->
+        <axis name="MOTOR_LEFT"   group ="REAL"    failsafe_value="0"/> <!-- IDX 3-->
+        <axis name="MOTOR_PUSHER" group ="REAL"    failsafe_value="0"/> <!-- IDX 4-->
+        <axis name="ELEVATOR"     group ="REAL"    failsafe_value="0"/> <!-- IDX 5-->
+        <axis name="RUDDER"       group ="REAL"    failsafe_value="0"/> <!-- IDX 6-->
+        <axis name="AILERONS"     group ="REAL"    failsafe_value="0"/> <!-- IDX 7-->
+        <axis name="FLAPS"        group ="REAL"    failsafe_value="0"/> <!-- IDX 8-->
         <!-- Virtual actuators commands -->
         <axis name="ROLL"         group ="VIRTUAL" failsafe_value="0"/> <!-- ID X 9-->
         <axis name="PITCH"        group ="VIRTUAL" failsafe_value="0"/> <!-- IDX 10-->
         <!-- Passive actuators commands -->
         <axis name="ROT_MECH"     group ="PASSIVE" failsafe_value="0"/> <!-- IDX 11-->
         <!-- Legacy commands-->
-        <axis name="YAW"          group ="OTHER" failsafe_value="0"/>
-        <axis name="THRUST"       group ="OTHER" failsafe_value="0"/>
+        <axis name="YAW"          group ="OTHER"   failsafe_value="0"/>
+        <axis name="THRUST"       group ="OTHER"   failsafe_value="0"/>
     </commands>
 
     <command_laws>
