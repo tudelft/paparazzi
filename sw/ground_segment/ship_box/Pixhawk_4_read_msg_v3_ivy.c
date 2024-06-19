@@ -1,27 +1,3 @@
-/*
- * Paparazzi UBLox to Ivy
- *
- * Copyright (C) 2021 Freek van Tienen <freek.v.tienen@gmail.com>
- *
- * This file is part of paparazzi.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2, or (at your option)
- * any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with paparazzi; see the file COPYING.  If not, write to
- * the Free Software Foundation, 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
- *
- */
-
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/time.h>
@@ -43,6 +19,7 @@
 #include <glib.h>
 #include <Ivy/ivy.h>
 #include <Ivy/ivyglibloop.h>
+#include <arpa/inet.h>
 
 struct timeval current_time, last_time_rx, last_time_tx;
 struct timespec current_timespec;
@@ -53,7 +30,10 @@ static bool verbose = false;
 static uint8_t ac_id = 0;
 static uint8_t ship_box_id = 0;
 
-static bool save_on_log = true;
+static bool save_on_log = false;
+static bool send_data_on_tcp = false;
+static bool send_data_on_udp = true;
+
 //Provide path to save the log file: 
 static char* log_file_path = "/media/sf_Shared_folder_virtual_machine/Exchange_ship_log/ship_box_log.csv";
 #define LOG_FREQUENCY 4 //Hz
@@ -66,6 +46,9 @@ static char* ship_coeffs_path = "/media/sf_Shared_folder_virtual_machine/Exchang
 
 #define BUFFER_SIZE (LOG_FREQUENCY*MAX_LOG_TIME)
 bool show_once = true;
+
+#define SERVER_IP "127.0.0.1" // Using localhost
+#define SERVER_PORT 8080 // Port number for the server
 
 //Structure definition of the ship states to be logged for the lstm prediction: 
 typedef struct {
@@ -133,6 +116,110 @@ void add_data_point_to_log_buffer(ship_state_log_buffer *cb, ship_state_log_data
     }
 }
 
+void send_to_tcp(ship_state_log_buffer *cb) {
+    int sock = 0;
+    struct sockaddr_in serv_addr;
+    char buffer[1024] = {0};
+
+    // Create socket
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("Socket creation error");
+        return;
+    }
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(SERVER_PORT);
+
+    // Convert IP address from text to binary form
+    if (inet_pton(AF_INET, SERVER_IP, &serv_addr.sin_addr) <= 0) {
+        perror("Invalid address or address not supported");
+        close(sock);
+        return;
+    }
+
+    // Connect to the server
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("Connection failed");
+        close(sock);
+        return;
+    }
+
+    // Send data
+    int index = cb->start;
+    for (int i = 0; i < cb->count; i++) {
+        ship_state_log_data *dp = &cb->buffer[index];
+        snprintf(buffer, sizeof(buffer), "%f,%f,%f,%f,%f,%f,%f\n",
+                 dp->timestamp,
+                 dp->speed_x,
+                 dp->speed_y,
+                 dp->speed_z,
+                 dp->phi_dot_deg,
+                 dp->theta_dot_deg,
+                 dp->heading_deg);
+
+        send(sock, buffer, strlen(buffer), 0);
+        index = (index + 1) % BUFFER_SIZE;
+    }
+
+    // Close socket
+    close(sock);
+
+    if (verbose) {
+        printf("Data sent to server\n");
+    }
+
+    if (verbose || (cb->is_full && show_once)) {
+        printf("Buffer full status: %s\n", cb->is_full ? "Full" : "Not Full");
+        show_once = false;
+    }
+}
+
+void send_to_udp(ship_state_log_buffer *cb) {
+    int sock;
+    struct sockaddr_in server_addr;
+    char buffer[1024];
+
+    // Create UDP socket
+    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        perror("Socket creation error");
+        return;
+    }
+
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(SERVER_PORT);
+    server_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
+
+    // Send data
+    int index = cb->start;
+    for (int i = 0; i < cb->count; i++) {
+        ship_state_log_data *dp = &cb->buffer[index];
+        snprintf(buffer, sizeof(buffer), "%f,%f,%f,%f,%f,%f,%f",
+                 dp->timestamp,
+                 dp->speed_x,
+                 dp->speed_y,
+                 dp->speed_z,
+                 dp->phi_dot_deg,
+                 dp->theta_dot_deg,
+                 dp->heading_deg);
+
+        // Send data to server
+        sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
+        index = (index + 1) % BUFFER_SIZE;
+    }
+
+    // Close socket
+    close(sock);
+
+    if (verbose) {
+        printf("Data sent to server\n");
+    }
+
+    if (verbose || (cb->is_full && show_once)) {
+        printf("Buffer full status: %s\n", cb->is_full ? "Full" : "Not Full");
+        show_once = false;
+    }
+}
+
 void write_csv(ship_state_log_buffer *cb, const char *filename) {
     FILE *file = fopen(filename, "w");
     if (file == NULL) {
@@ -167,17 +254,21 @@ void log_ship_state(ship_state_log_data payload_ship_log){
   //If time is above the period of the log frequency, save the values on the circular buffer:
   if(payload_ship_log.timestamp  - last_log_time >= (1/LOG_FREQUENCY)){
     last_log_time = payload_ship_log.timestamp;
+
     //add the data point to the circular buffer:
     add_data_point_to_log_buffer(&cb, payload_ship_log);
-    //Write the values on the log file:
-    write_csv(&cb, log_file_path);
+
+    if(save_on_log) write_csv(&cb, log_file_path);
+    if(send_data_on_tcp) send_to_tcp(&cb);
+    if(send_data_on_udp) send_to_udp(&cb);
+      
   }
 }
 
 void ivy_send_ship_info_msg(struct payload_ship_info_msg_ground payload_ship){
 
   gettimeofday(&current_time, NULL);
-  float delta_time = (current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time_tx.tv_sec*1e6 + last_time_tx.tv_usec);
+  double delta_time = (current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time_tx.tv_sec*1e6 + last_time_tx.tv_usec);
   if(delta_time >= (1e6/max_tx_freq))
   {
     if(verbose) printf("Message SHIP INFO MSG forwarded through ivyBus on ac ID %d: \n",ac_id); 
@@ -216,7 +307,7 @@ void ivy_send_ship_info_msg(struct payload_ship_info_msg_ground payload_ship){
 static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, char *argv[])
 {
   gettimeofday(&current_time, NULL);
-  float delta_time = (current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time_rx.tv_sec*1e6 + last_time_rx.tv_usec); 
+  double delta_time = (current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time_rx.tv_sec*1e6 + last_time_rx.tv_usec); 
   if(verbose) printf("Frequency of incoming SHIP_INFO_MSG : %.2f \n",(1e6/delta_time));
   gettimeofday(&last_time_rx, NULL);   
   
@@ -225,7 +316,7 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
     fprintf(stderr,"ERROR: invalid message length SHIP_INFO_MSG_GROUND\n");
   }
   else{
-    /*
+    /* MESSAGE FROM am_messages_new.xml
     <message name="SHIP_INFO_MSG_GROUND" id="192" >
       <field name="phi" type="float" unit="deg">Roll</field>
       <field name="theta" type="float" unit="deg">Pitch</field>
@@ -297,13 +388,11 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
       printf("Ship acc z [m/s^2] : %f \n",payload_ship.z_ddot);        
     }
     
-    //If we want to save the values on the csv file, proceed saving the values:
-    if(save_on_log){
+    //If we want to save the values on the csv file or send them to the TCP server, proceed:
+    if(save_on_log || send_data_on_tcp || send_data_on_udp){
       clock_gettime(CLOCK_BOOTTIME, &current_timespec);
       double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9; 
       //Create the structure to save the values on the log file:
-
-
       ship_state_log_data paylod_ship_log = {
         .timestamp = current_clock_time,
         .speed_x = payload_ship.x_dot,
@@ -316,9 +405,8 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
       //Call the log function to save the values on the file:
       log_ship_state(paylod_ship_log);
     }
-
+  
   }
-
 }
 
 int main(int argc, char** argv) {
