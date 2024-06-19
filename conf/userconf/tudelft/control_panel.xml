@@ -392,6 +392,19 @@
         <arg flag="-c" constant="*:telemetry:IMU_MAG_SCALED:mz:0.0004883"/>
       </program>
     </session>
+    <session name="Ship">
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Server"/>
+      <program name="Messages"/>
+      <program name="Settings"/>
+      <program name="ATC">
+        <arg flag="-i" constant="11"/>
+        <arg flag="-e" constant="udp://0.0.0.0:12001:10.19.127.1:12000"/>
+        <arg flag="-r"/>
+      </program>
+    </session>
     <session name="Simulation - Gazebo">
       <program name="Simulator">
         <arg flag="-a" constant="@AIRCRAFT"/>
@@ -462,18 +475,13 @@
         <arg flag="hobbyking.xml"/>
       </program>
     </session>
-    <session name="Ship">
+    <session name="Flight_UDP_AG">
       <program name="Data Link">
         <arg flag="-udp"/>
       </program>
       <program name="Server"/>
       <program name="Messages"/>
-      <program name="Settings"/>
-      <program name="ATC">
-        <arg flag="-i" constant="11"/>
-        <arg flag="-e" constant="udp://0.0.0.0:12001:10.19.127.1:12000"/>
-        <arg flag="-r"/>
-      </program>
+      <program name="PprzGCS"/>
     </session>
   </section>
 </control_panel>
