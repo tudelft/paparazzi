@@ -33,11 +33,15 @@ static uint8_t ship_box_id = 0;
 static bool save_on_log = false;
 static bool send_data_on_tcp = false;
 static bool send_data_on_udp = true;
+static bool use_cb_on_tcp = false;
+static bool use_cb_on_udp = false;
+
+#define GENERATE_DUMMY_VALUES
 
 //Provide path to save the log file: 
 static char* log_file_path = "/media/sf_Shared_folder_virtual_machine/Exchange_ship_log/ship_box_log.csv";
-#define LOG_FREQUENCY 4 //Hz
-#define MAX_LOG_TIME 200 //s
+#define LOG_FREQUENCY 8 //Hz, integer
+#define MAX_LOG_TIME 10 //s, integer
 
 float max_tx_freq = 1500.0; 
 
@@ -47,7 +51,7 @@ static char* ship_coeffs_path = "/media/sf_Shared_folder_virtual_machine/Exchang
 #define BUFFER_SIZE (LOG_FREQUENCY*MAX_LOG_TIME)
 bool show_once = true;
 
-#define SERVER_IP "127.0.0.1" // Using localhost
+#define SERVER_IP "192.168.227.1"
 #define SERVER_PORT 8080 // Port number for the server
 
 //Structure definition of the ship states to be logged for the lstm prediction: 
@@ -78,6 +82,7 @@ ship_state_log_buffer cb = {
     .is_full = false
 };
 
+//Define the payload structure for the SHIP_INFO_MSG_GROUND message:
 struct __attribute__((__packed__)) payload_ship_info_msg_ground {
   float phi; 
   float theta; 
@@ -101,6 +106,7 @@ struct __attribute__((__packed__)) payload_ship_info_msg_ground {
   float z_ddot; 
 };
 
+//Function to add a data point to the circular buffer:
 void add_data_point_to_log_buffer(ship_state_log_buffer *cb, ship_state_log_data data) {
     cb->buffer[cb->end] = data;
     
@@ -116,6 +122,7 @@ void add_data_point_to_log_buffer(ship_state_log_buffer *cb, ship_state_log_data
     }
 }
 
+//Function to send the data to the server through TCP/IP:
 void send_to_tcp(ship_state_log_buffer *cb) {
     int sock = 0;
     struct sockaddr_in serv_addr;
@@ -157,15 +164,21 @@ void send_to_tcp(ship_state_log_buffer *cb) {
                  dp->theta_dot_deg,
                  dp->heading_deg);
 
-        send(sock, buffer, strlen(buffer), 0);
+        if(use_cb_on_tcp) send(sock, buffer, strlen(buffer), 0);
+
         index = (index + 1) % BUFFER_SIZE;
     }
+    if(!use_cb_on_tcp) send(sock, buffer, strlen(buffer), 0);
 
     // Close socket
     close(sock);
 
     if (verbose) {
-        printf("Data sent to server\n");
+        printf("Data sent to server through TCP/IP \n");
+        //Show also the last line of data sent:
+        printf("Last data added:");
+        //printf what is in buffer:
+        printf(" %s\n", buffer); 
     }
 
     if (verbose || (cb->is_full && show_once)) {
@@ -174,6 +187,7 @@ void send_to_tcp(ship_state_log_buffer *cb) {
     }
 }
 
+//Function to send the data to the server through UDP/IP:
 void send_to_udp(ship_state_log_buffer *cb) {
     int sock;
     struct sockaddr_in server_addr;
@@ -203,23 +217,30 @@ void send_to_udp(ship_state_log_buffer *cb) {
                  dp->heading_deg);
 
         // Send data to server
-        sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
+        if(use_cb_on_udp) sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
         index = (index + 1) % BUFFER_SIZE;
     }
+
+    if(!use_cb_on_udp) sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
 
     // Close socket
     close(sock);
 
     if (verbose) {
-        printf("Data sent to server\n");
+        printf("Data sent to server through UDP \n");
+        //Show also the last line of data sent:
+        printf("Last data added:");
+        //printf what is in buffer:
+        printf(" %s\n", buffer); 
     }
-
+    
     if (verbose || (cb->is_full && show_once)) {
         printf("Buffer full status: %s\n", cb->is_full ? "Full" : "Not Full");
         show_once = false;
     }
 }
 
+//Function to write the data to a CSV file:
 void write_csv(ship_state_log_buffer *cb, const char *filename) {
     FILE *file = fopen(filename, "w");
     if (file == NULL) {
@@ -242,7 +263,7 @@ void write_csv(ship_state_log_buffer *cb, const char *filename) {
         index = (index + 1) % BUFFER_SIZE;
     }
     fclose(file);
-    if (verbose) printf("Data written to file %s\n", filename);
+    if (verbose) printf("Data written to CSV file %s\n", filename);
 
     if(verbose || (cb->is_full && show_once)){
       printf("Buffer full status: %s\n", cb->is_full ? "Full" : "Not Full");
@@ -250,9 +271,10 @@ void write_csv(ship_state_log_buffer *cb, const char *filename) {
     }
 }
 
+//Function to log the ship states:
 void log_ship_state(ship_state_log_data payload_ship_log){
   //If time is above the period of the log frequency, save the values on the circular buffer:
-  if(payload_ship_log.timestamp  - last_log_time >= (1/LOG_FREQUENCY)){
+  if(payload_ship_log.timestamp  - last_log_time >= (1.0/(float) LOG_FREQUENCY)){
     last_log_time = payload_ship_log.timestamp;
 
     //add the data point to the circular buffer:
@@ -265,6 +287,7 @@ void log_ship_state(ship_state_log_data payload_ship_log){
   }
 }
 
+//Function to log and send the SHIP_INFO_MSG_GROUND message to the drone through the ivyBus:
 void ivy_send_ship_info_msg(struct payload_ship_info_msg_ground payload_ship){
 
   gettimeofday(&current_time, NULL);
@@ -304,6 +327,7 @@ void ivy_send_ship_info_msg(struct payload_ship_info_msg_ground payload_ship){
   }
 }
 
+//Callback function to process the SHIP_INFO_MSG_GROUND message received from the ship box:
 static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, char *argv[])
 {
   gettimeofday(&current_time, NULL);
@@ -316,7 +340,7 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
     fprintf(stderr,"ERROR: invalid message length SHIP_INFO_MSG_GROUND\n");
   }
   else{
-    /* MESSAGE FROM am_messages_new.xml
+    /* MESSAGE INFO FROM am_messages_new.xml
     <message name="SHIP_INFO_MSG_GROUND" id="192" >
       <field name="phi" type="float" unit="deg">Roll</field>
       <field name="theta" type="float" unit="deg">Pitch</field>
@@ -409,6 +433,34 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
   }
 }
 
+//Function to generate dummy values for the ship states:
+void generate_dummy_values(){
+  struct payload_ship_info_msg_ground payload_ship; 
+  while(1){
+    clock_gettime(CLOCK_BOOTTIME, &current_timespec);
+    double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9; 
+    float omega_speed_x = 0.1;
+    float omega_speed_y = 0.2;
+    float omega_speed_z = 0.3;
+    float omega_phi_dot = 0.4;
+    float omega_theta_dot = 0.5;
+    float omega_heading = 0.6;
+    //Create the structure to save the values on the log file:
+    ship_state_log_data paylod_ship_log = {
+      .timestamp = current_clock_time,
+      .speed_x = 1.0*sinf(2*M_PI*omega_speed_x*current_clock_time),
+      .speed_y = 2.0*sinf(2*M_PI*omega_speed_y*current_clock_time),
+      .speed_z = 3.0*sinf(2*M_PI*omega_speed_z*current_clock_time),
+      .phi_dot_deg = 4.0*sinf(2*M_PI*omega_phi_dot*current_clock_time),
+      .theta_dot_deg = 5.0*sinf(2*M_PI*omega_theta_dot*current_clock_time),
+      .heading_deg = 180.0*sinf(2*M_PI*omega_heading*current_clock_time)
+    };
+    //Call the log function to save the values on the file:
+    log_ship_state(paylod_ship_log);
+    usleep(10);
+  }
+}
+
 int main(int argc, char** argv) {
   //Init timers: 
   gettimeofday(&last_time_tx, NULL);
@@ -478,6 +530,12 @@ int main(int argc, char** argv) {
 
   IvyStart(ivy_bus);
 
+  #ifdef GENERATE_DUMMY_VALUES
+    //Open a new thread and submit dummy values on the circular buffer: 
+    pthread_t thread_id;
+    pthread_create(&thread_id, NULL, (void *)generate_dummy_values, NULL);
+  #endif
+  
   g_main_loop_run(ml);
 
   return 0;
