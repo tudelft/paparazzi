@@ -173,8 +173,8 @@ inline float bound_or_zero(float value, float low_lim, float up_lim) {
 float eff_sched_pusher_time = 0.002;
 float roll_eff_scaling = 1.f;
 float scale_roll_roll_coeff = 1.f;
+float fake_airspeed = 0.f;
 bool bool_fake_airspeed = false;
-float fake_airspeed = 1.f;
 
 struct rot_wing_eff_sched_var_t eff_sched_var;
 
