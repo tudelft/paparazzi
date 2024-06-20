@@ -437,13 +437,13 @@
     <define name="SERVO_EL_MIN_ANGLE" value="-89" unit="deg"/>
 
     <!-- ball bearings vehicle -->
-    <define name="SERVO_EL_1_ZERO_VALUE" value="-4.3" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="3.5" unit="deg"/>
     <define name="SERVO_EL_2_ZERO_VALUE" value="-4.74" unit="deg"/>
     <define name="SERVO_EL_3_ZERO_VALUE" value="-7.64" unit="deg"/>
     <define name="SERVO_EL_4_ZERO_VALUE" value="7.55" unit="deg"/>
 
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="2.19" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="-1.84" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="2.37" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="0.61" unit="deg"/>
     <define name="SERVO_AZ_3_ZERO_VALUE" value="-3.33" unit="deg"/>
     <define name="SERVO_AZ_4_ZERO_VALUE" value="-2.1" unit="deg"/>
 
