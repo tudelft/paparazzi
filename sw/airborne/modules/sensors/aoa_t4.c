@@ -112,8 +112,34 @@ static void serial_act_t4_abi_in(uint8_t sender_id __attribute__((unused)), stru
     memcpy(&myserial_act_t4_in_local,myserial_act_t4_in_ptr,sizeof(struct serial_act_t4_in));
 //    memcpy(&serial_act_t4_extra_data_in_local,serial_act_t4_extra_data_in_ptr,255 * sizeof(float));
 
-// TODO: servo ID
-    int16_t angle_int = myserial_act_t4_in_ptr->servo_8_angle_int;
+    int16_t angle_int = 0;
+
+switch (AOA_T4_SERVO_ID) {
+    case 1:
+        angle_int = myserial_act_t4_in_ptr->servo_1_angle_int;
+        break;
+    case 2:
+        angle_int = myserial_act_t4_in_ptr->servo_2_angle_int;
+        break;
+    case 3:
+        angle_int = myserial_act_t4_in_ptr->servo_3_angle_int;
+        break;
+    case 4:
+        angle_int = myserial_act_t4_in_ptr->servo_4_angle_int;
+        break;
+    case 5:
+        angle_int = myserial_act_t4_in_ptr->servo_5_angle_int;
+        break;
+    case 6:
+        angle_int = myserial_act_t4_in_ptr->servo_6_angle_int;
+        break;
+    case 7:
+        angle_int = myserial_act_t4_in_ptr->servo_7_angle_int;
+        break;
+    case 8:
+        angle_int = myserial_act_t4_in_ptr->servo_8_angle_int;
+        break;
+}
     aoa_t4.angle_raw = RadOfDeg(angle_int*0.01);
 }
 
