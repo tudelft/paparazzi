@@ -58,7 +58,9 @@ bool show_once = true;
 typedef struct {
     double timestamp;
     double speed_x; 
+    double speed_x_control;
     double speed_y;
+    double speed_y_control;
     double speed_z;
     double phi_dot_deg; 
     double theta_dot_deg;
@@ -155,10 +157,12 @@ void send_to_tcp(ship_state_log_buffer *cb) {
     int index = cb->start;
     for (int i = 0; i < cb->count; i++) {
         ship_state_log_data *dp = &cb->buffer[index];
-        snprintf(buffer, sizeof(buffer), "%f,%f,%f,%f,%f,%f,%f\n",
+        snprintf(buffer, sizeof(buffer), "%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
                  dp->timestamp,
                  dp->speed_x,
+                 dp->speed_x_control,
                  dp->speed_y,
+                 dp->speed_y_control,
                  dp->speed_z,
                  dp->phi_dot_deg,
                  dp->theta_dot_deg,
@@ -207,10 +211,12 @@ void send_to_udp(ship_state_log_buffer *cb) {
     int index = cb->start;
     for (int i = 0; i < cb->count; i++) {
         ship_state_log_data *dp = &cb->buffer[index];
-        snprintf(buffer, sizeof(buffer), "%f,%f,%f,%f,%f,%f,%f",
+        snprintf(buffer, sizeof(buffer), "%f,%f,%f,%f,%f,%f,%f,%f,%f",
                  dp->timestamp,
                  dp->speed_x,
+                 dp->speed_x_control,
                  dp->speed_y,
+                 dp->speed_y_control,
                  dp->speed_z,
                  dp->phi_dot_deg,
                  dp->theta_dot_deg,
@@ -252,10 +258,12 @@ void write_csv(ship_state_log_buffer *cb, const char *filename) {
     int index = cb->start;
     for (int i = 0; i < cb->count; i++) {
         ship_state_log_data *dp = &cb->buffer[index];
-        fprintf(file, "%f,%f,%f,%f,%f,%f,%f\n", 
+        fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f\n", 
                 dp->timestamp, 
                 dp->speed_x, 
+                dp->speed_x_control, 
                 dp->speed_y, 
+                dp->speed_y_control,
                 dp->speed_z, 
                 dp->phi_dot_deg, 
                 dp->theta_dot_deg,
@@ -420,7 +428,9 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
       ship_state_log_data paylod_ship_log = {
         .timestamp = current_clock_time,
         .speed_x = payload_ship.x_dot,
+        .speed_x_control = payload_ship.x_dot * cosf(payload_ship.heading) + payload_ship.y_dot * sinf(payload_ship.heading),
         .speed_y = payload_ship.y_dot,
+        .speed_y_control = -payload_ship.x_dot * sinf(payload_ship.heading) + payload_ship.y_dot * cosf(payload_ship.heading),
         .speed_z = payload_ship.z_dot,
         .phi_dot_deg = payload_ship.phi_dot*180/M_PI,
         .theta_dot_deg = payload_ship.theta_dot*180/M_PI,
@@ -445,6 +455,7 @@ void generate_dummy_values(){
     float omega_phi_dot = 0.4;
     float omega_theta_dot = 0.5;
     float omega_heading = 0.6;
+
     //Create the structure to save the values on the log file:
     ship_state_log_data paylod_ship_log = {
       .timestamp = current_clock_time,
@@ -453,7 +464,9 @@ void generate_dummy_values(){
       .speed_z = 3.0*sinf(2*M_PI*omega_speed_z*current_clock_time),
       .phi_dot_deg = 4.0*sinf(2*M_PI*omega_phi_dot*current_clock_time),
       .theta_dot_deg = 5.0*sinf(2*M_PI*omega_theta_dot*current_clock_time),
-      .heading_deg = 180.0*sinf(2*M_PI*omega_heading*current_clock_time)
+      .heading_deg = 180.0*sinf(2*M_PI*omega_heading*current_clock_time),
+      .speed_x_control = 1.0*sinf(2*M_PI*omega_speed_x*current_clock_time) * cosf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180) + payload_ship.y_dot * sinf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180),
+      .speed_y_control = -1.0*sinf(2*M_PI*omega_speed_x*current_clock_time) * sinf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180) + payload_ship.y_dot * cosf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180)
     };
     //Call the log function to save the values on the file:
     log_ship_state(paylod_ship_log);
