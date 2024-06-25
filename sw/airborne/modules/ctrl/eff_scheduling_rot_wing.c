@@ -69,7 +69,6 @@ float EFF_MAT_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB] = {0};
 static float flt_cut = 1.0e-4;
 
 struct FloatEulers eulers_zxy_RW_EFF;
-static Butterworth2LowPass airspeed_filt; 
 static Butterworth2LowPass skew_filt; 
 /* Temp variables*/
 bool airspeed_fake_on = false;
@@ -111,11 +110,8 @@ void eff_scheduling_rot_wing_init(void)
   init_RW_Model();
   update_attitude();
   AbiBindMsgACT_FEEDBACK(WING_ROTATION_CAN_ROT_WING_ID, &wing_position_ev, wing_position_cb);
-  
-  float tau   = 1.0 / (2.0 * M_PI * 3.0);
   float tau_skew = 1.0 / (2.0 * M_PI * 5.0);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
-  init_butterworth_2_low_pass(&airspeed_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&skew_filt, tau_skew, sample_time, 0.0);
 }
 
@@ -220,6 +216,11 @@ void  update_attitude(void)
 /* Function to precalculate once some constant effectiveness values to improve efficiency*/
 void calc_G1_G2_RW(void)
 {
+  // Inertia
+  RW.I.xx = RW.I.b_xx + RW.skew.cosr2 * RW.I.w_xx + RW.skew.sinr2 * RW.I.w_yy;
+  RW.I.yy = RW.I.b_yy + RW.skew.sinr2 * RW.I.w_xx + RW.skew.cosr2 * RW.I.w_yy;
+  Bound(RW.I.xx, 0.01, 100.);
+  Bound(RW.I.yy, 0.01, 100.);
   // Motor Front
   G1_RW[aZ][COMMAND_MOTOR_FRONT]  = -RW.mF.dFdu / RW.m;
   G1_RW[aq][COMMAND_MOTOR_FRONT]  =  (RW.mF.dFdu * RW.mF.l) / RW.I.yy;
@@ -264,11 +265,6 @@ void calc_G1_G2_RW(void)
   RW.T = actuator_state_1l[COMMAND_MOTOR_FRONT] * RW.mF.dFdu + actuator_state_1l[COMMAND_MOTOR_RIGHT] * RW.mR.dFdu + actuator_state_1l[COMMAND_MOTOR_BACK] * RW.mB.dFdu + actuator_state_1l[COMMAND_MOTOR_LEFT] * RW.mL.dFdu;
   Bound(RW.T, 0.0, 180.0);
   RW.P                            = actuator_state_1l[COMMAND_MOTOR_PUSHER] * RW.mP.dFdu;
-  // Inertia
-  RW.I.xx = RW.I.b_xx + RW.skew.cosr2 * RW.I.w_xx + RW.skew.sinr2 * RW.I.w_yy;
-  RW.I.yy = RW.I.b_yy + RW.skew.sinr2 * RW.I.w_xx + RW.skew.cosr2 * RW.I.w_yy;
-  Bound(RW.I.xx, 0.01, 100.);
-  Bound(RW.I.yy, 0.01, 100.);
 }
 
 void eff_scheduling_rot_wing_periodic(void)
@@ -379,9 +375,7 @@ void eff_scheduling_rot_wing_update_wing_angle(void)
 float time = 0.0;
 void eff_scheduling_rot_wing_update_airspeed(void)
 {
-  float airspeed_meas = stateGetAirspeed_f();
-  update_butterworth_2_low_pass(&airspeed_filt, airspeed_meas);
-  RW.as = airspeed_filt.o[0];
+  RW.as = stateGetAirspeed_f();
   Bound(RW.as, 0. , 30.);
   RW.as2 = RW.as * RW.as;
   Bound(RW.as2, 0. , 900.);
