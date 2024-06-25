@@ -1233,6 +1233,7 @@ void oneloop_andi_init(void)
  */
 void oneloop_andi_enter(bool half_loop_sp, int ctrl_type)
 {
+  ele_min = 0.0;
   oneloop_andi.half_loop     = half_loop_sp;
   oneloop_andi.ctrl_type     = ctrl_type;
   psi_des_rad   = eulers_zxy.psi; 

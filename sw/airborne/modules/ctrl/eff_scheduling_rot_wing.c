@@ -74,6 +74,7 @@ static Butterworth2LowPass skew_filt;
 bool airspeed_fake_on = false;
 float airspeed_fake = 0.0;
 float ele_eff = 22.0;
+float ele_min = 0.0;
 /* Define Forces and Moments tructs for each actuator*/
 struct RW_Model RW;
 
@@ -393,9 +394,9 @@ void eff_scheduling_rot_wing_update_airspeed(void)
 void ele_pref_sched(void)
 {
   if (RW.as > ELE_MIN_AS){
-    RW.ele_pref = (ZERO_ELE_PPRZ - 0.0) / (ELE_MAX_AS - ELE_MIN_AS) * (RW.as - ELE_MIN_AS);
-    Bound(RW.ele_pref,0.0,ZERO_ELE_PPRZ);
+    RW.ele_pref = (ZERO_ELE_PPRZ - ele_min) / (ELE_MAX_AS - ELE_MIN_AS) * (RW.as - ELE_MIN_AS) + ele_min;
+    Bound(RW.ele_pref,ele_min,ZERO_ELE_PPRZ);
   } else {
-    RW.ele_pref = 0.0;
+    RW.ele_pref = ele_min;
   }
 }
