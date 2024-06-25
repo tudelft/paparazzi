@@ -513,15 +513,15 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
 
 static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
 {
-  float temp_debug_vect[1];
-  //temp_debug_vect[0]= RW.as;
-  //debug_vect(trans, dev, "airspeed", temp_debug_vect, 1);
-  if (GpsFixValid()){
-    temp_debug_vect[0]= 1;
-  } else {
-    temp_debug_vect[0]= 0;
-  }
-  debug_vect(trans, dev, "gps_fix_valid", temp_debug_vect, 1);
+  float temp_debug_vect[7];
+  temp_debug_vect[0] = model_pred[0];
+  temp_debug_vect[1] = model_pred[1];
+  temp_debug_vect[2] = model_pred[2];
+  temp_debug_vect[3] = model_pred[3];
+  temp_debug_vect[4] = model_pred[4];
+  temp_debug_vect[5] = model_pred[5];
+  temp_debug_vect[6] = RW.as;
+  debug_vect(trans, dev, "model_pred_as", temp_debug_vect, 7);
 }
 #endif
 
@@ -958,7 +958,7 @@ static float w_approx(float p1, float p2, float p3, float rm_k){
 void init_poles(void){
 
   // Attitude Controller Poles----------------------------------------------------------
-  float slow_pole = 10.1; // Pole of the slowest dynamics used in the attitude controller
+  float slow_pole = 15.1; // Pole of the slowest dynamics used in the attitude controller
 
   p_att_e.omega_n = 4.50;
   p_att_e.zeta    = 1.0;
