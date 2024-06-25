@@ -25,7 +25,7 @@ struct timeval current_time, last_time_rx, last_time_tx;
 struct timespec current_timespec;
 double last_log_time = 0.0;
 
-
+static bool verbose_coefficients = true; 
 static bool verbose = false;
 static uint8_t ac_id = 0;
 static uint8_t ship_box_id = 0;
@@ -41,7 +41,9 @@ static bool use_cb_on_udp = false;
 //Provide path to save the log file: 
 static char* log_file_path = "/media/sf_Shared_folder_virtual_machine/Exchange_ship_log/ship_box_log.csv";
 #define LOG_FREQUENCY 8 //Hz, integer
-#define MAX_LOG_TIME 10 //s, integer
+#define MAX_LOG_TIME 200 //s, integer
+
+#define POLY_ORDER 7
 
 float max_tx_freq = 1500.0; 
 
@@ -51,8 +53,12 @@ static char* ship_coeffs_path = "/media/sf_Shared_folder_virtual_machine/Exchang
 #define BUFFER_SIZE (LOG_FREQUENCY*MAX_LOG_TIME)
 bool show_once = true;
 
-#define SERVER_IP "192.168.227.1"
-#define SERVER_PORT 8080 // Port number for the server
+#define SERVER_PORT_OUT 8080 // Port number for the server
+
+#define SERVER_PORT_IN 9090 // Port number for the server input 
+
+//init the address of the windows machine:
+static char* ip_address_windows = "127.0.0.1"; 
 
 //Structure definition of the ship states to be logged for the lstm prediction: 
 typedef struct {
@@ -66,6 +72,29 @@ typedef struct {
     double theta_dot_deg;
     double heading_deg;
 } ship_state_log_data;
+
+//Structure definition of the polynomial terms for the ship prediction: 
+typedef struct {
+    float timestamp_prediction;
+    float polynomial_prediction[POLY_ORDER+1];
+} polynomial_struct;
+
+typedef struct {
+    polynomial_struct speed_x_control_poly;
+    polynomial_struct speed_y_control_poly;
+    polynomial_struct speed_z_poly;
+    polynomial_struct phi_dot_poly;
+    polynomial_struct theta_dot_poly;
+} ship_state_polynomial_terms;
+
+typedef struct {
+    float timestamp_offset_prediction;
+    float speed_x_control_poly[POLY_ORDER+1];
+    float speed_y_control_poly[POLY_ORDER+1];
+    float speed_z_poly[POLY_ORDER+1];
+    float phi_dot_poly[POLY_ORDER+1];
+    float theta_dot_poly[POLY_ORDER+1];
+} ship_state_polynomial_send;
 
 //Structure definition of the circular buffer: 
 typedef struct {
@@ -82,6 +111,25 @@ ship_state_log_buffer cb = {
     .end = 0,
     .count = 0,
     .is_full = false
+};
+
+//Initialize the polynomial prediction structure: 
+ship_state_polynomial_terms ship_coeffs = {
+    .speed_x_control_poly = {0},
+    .speed_y_control_poly = {0},
+    .speed_z_poly = {0},
+    .phi_dot_poly = {0},
+    .theta_dot_poly = {0}
+};
+
+//Initialize the polynomial sending structure:
+ship_state_polynomial_send ship_coeffs_send = {
+    .timestamp_offset_prediction = 0.0,
+    .speed_x_control_poly = {0},
+    .speed_y_control_poly = {0},
+    .speed_z_poly = {0},
+    .phi_dot_poly = {0},
+    .theta_dot_poly = {0}
 };
 
 //Define the payload structure for the SHIP_INFO_MSG_GROUND message:
@@ -137,10 +185,10 @@ void send_to_tcp(ship_state_log_buffer *cb) {
     }
 
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(SERVER_PORT);
+    serv_addr.sin_port = htons(SERVER_PORT_OUT);
 
     // Convert IP address from text to binary form
-    if (inet_pton(AF_INET, SERVER_IP, &serv_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, ip_address_windows, &serv_addr.sin_addr) <= 0) {
         perror("Invalid address or address not supported");
         close(sock);
         return;
@@ -204,8 +252,8 @@ void send_to_udp(ship_state_log_buffer *cb) {
     }
 
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(SERVER_PORT);
-    server_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
+    server_addr.sin_port = htons(SERVER_PORT_OUT);
+    server_addr.sin_addr.s_addr = inet_addr(ip_address_windows);
 
     // Send data
     int index = cb->start;
@@ -293,6 +341,132 @@ void log_ship_state(ship_state_log_data payload_ship_log){
     if(send_data_on_udp) send_to_udp(&cb);
       
   }
+}
+
+void udp_listener() {
+    int sockfd;
+    struct sockaddr_in server_addr, client_addr;
+    char buffer[1024];
+    socklen_t addr_len = sizeof(client_addr);
+
+    // Create a UDP socket
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Bind the socket to the port
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(SERVER_PORT_IN);
+
+    if (bind(sockfd, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+        perror("Bind failed");
+        close(sockfd);
+        exit(EXIT_FAILURE);
+    }
+
+    // Listen for incoming data
+    while (true) {
+        int n = recvfrom(sockfd, buffer, sizeof(buffer) - 1, 0, (struct sockaddr *)&client_addr, &addr_len);
+        if (n < 0) {
+            perror("Receive failed");
+            continue;
+        }
+        buffer[n] = '\0'; // Null-terminate the received data
+        
+        // Parse the received polynomial string
+        char channel[50];
+        float coefficients[POLY_ORDER+2];
+        int count = sscanf(buffer, "%[^:]:%f,%f,%f,%f,%f,%f,%f,%f,%f",
+                           channel,
+                           &coefficients[0], &coefficients[1], &coefficients[2],
+                           &coefficients[3], &coefficients[4], &coefficients[5],
+                           &coefficients[6], &coefficients[7], &coefficients[8]);
+        //print channel name: 
+        
+
+        //Compare the string to the channel name received on the UDP message with the struct member ship_state_polynomial_terms:
+        if (strcmp(channel, "speed_x_control") == 0) {
+          ship_coeffs.speed_x_control_poly.timestamp_prediction = (float) coefficients[0];
+          for (int i = 0; i < count - 1; ++i) {
+            ship_coeffs.speed_x_control_poly.polynomial_prediction[i] = (float) coefficients[i+1];
+          }
+        } else if (strcmp(channel, "speed_y_control") == 0) {
+          ship_coeffs.speed_y_control_poly.timestamp_prediction = (float) coefficients[0];
+          for (int i = 0; i < count - 1; ++i) {
+            ship_coeffs.speed_y_control_poly.polynomial_prediction[i] = (float) coefficients[i+1];
+          }
+        } else if (strcmp(channel, "speed_z") == 0) {
+          ship_coeffs.speed_z_poly.timestamp_prediction = (float) coefficients[0];
+          for (int i = 0; i < count - 1; ++i) {
+            ship_coeffs.speed_z_poly.polynomial_prediction[i] = (float) coefficients[i+1];
+          }
+        } else if (strcmp(channel, "phi_dot_deg") == 0) {
+          ship_coeffs.phi_dot_poly.timestamp_prediction = (float) coefficients[0];
+          for (int i = 0; i < count - 1; ++i) {
+            ship_coeffs.phi_dot_poly.polynomial_prediction[i] = (float) coefficients[i+1];
+          }
+        } else if (strcmp(channel, "theta_dot_deg") == 0) {
+          ship_coeffs.theta_dot_poly.timestamp_prediction = (float) coefficients[0];
+          for (int i = 0; i < count - 1; ++i) {
+            ship_coeffs.theta_dot_poly.polynomial_prediction[i] = (float) coefficients[i+1];
+          }
+        }
+
+        //if all the timestamps for the prediction are aligned, put them in the sending stucture and print:
+        if(ship_coeffs.speed_x_control_poly.timestamp_prediction == ship_coeffs.speed_y_control_poly.timestamp_prediction &&
+           ship_coeffs.speed_x_control_poly.timestamp_prediction == ship_coeffs.speed_z_poly.timestamp_prediction &&
+           ship_coeffs.speed_x_control_poly.timestamp_prediction == ship_coeffs.phi_dot_poly.timestamp_prediction &&
+           ship_coeffs.speed_x_control_poly.timestamp_prediction == ship_coeffs.theta_dot_poly.timestamp_prediction && 
+           ship_coeffs.speed_x_control_poly.timestamp_prediction != 0.0){
+          //Calculate the prediction offset based on the timestamp of the prediction and the current time:
+          clock_gettime(CLOCK_BOOTTIME, &current_timespec);
+          double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9;
+          float timestamp_offset_prediction = ((float) current_clock_time) - ship_coeffs.speed_x_control_poly.timestamp_prediction;
+          //fill in the sending structure:
+          ship_coeffs_send.timestamp_offset_prediction = timestamp_offset_prediction;
+          for(int i = 0; i < POLY_ORDER+1; i++){
+            ship_coeffs_send.speed_x_control_poly[i] = ship_coeffs.speed_x_control_poly.polynomial_prediction[i];
+            ship_coeffs_send.speed_y_control_poly[i] = ship_coeffs.speed_y_control_poly.polynomial_prediction[i];
+            ship_coeffs_send.speed_z_poly[i] = ship_coeffs.speed_z_poly.polynomial_prediction[i];
+            ship_coeffs_send.phi_dot_poly[i] = ship_coeffs.phi_dot_poly.polynomial_prediction[i];
+            ship_coeffs_send.theta_dot_poly[i] = ship_coeffs.theta_dot_poly.polynomial_prediction[i];
+          }
+          if(verbose_coefficients){
+            //Print the coefficients:
+            printf("Prediction offset: %f\n", ship_coeffs_send.timestamp_offset_prediction);
+            printf("Speed x control polynomial coeffs: ");
+            for(int i = 0; i < POLY_ORDER+1; i++){
+              printf("%f, ", ship_coeffs_send.speed_x_control_poly[i]);
+            }
+            printf("\n");
+            printf("Speed y control polynomial coeffs: ");
+            for(int i = 0; i < POLY_ORDER+1; i++){
+              printf("%f, ", ship_coeffs_send.speed_y_control_poly[i]);
+            }
+            printf("\n");
+            printf("Speed z polynomial coeffs: ");
+            for(int i = 0; i < POLY_ORDER+1; i++){
+              printf("%f, ", ship_coeffs_send.speed_z_poly[i]);
+            }
+            printf("\n");
+            printf("Phi dot polynomial coeffs: ");
+            for(int i = 0; i < POLY_ORDER+1; i++){
+              printf("%f, ", ship_coeffs_send.phi_dot_poly[i]);
+            }
+            printf("\n");
+            printf("Theta dot polynomial coeffs: ");
+            for(int i = 0; i < POLY_ORDER+1; i++){
+              printf("%f, ", ship_coeffs_send.theta_dot_poly[i]);
+            }
+            printf("\n");
+          }
+        }
+    }
+
+    close(sockfd);
 }
 
 //Function to log and send the SHIP_INFO_MSG_GROUND message to the drone through the ivyBus:
@@ -493,6 +667,7 @@ int main(int argc, char** argv) {
     {"ac_id", required_argument, NULL, 'i'},
     {"ship_box_id", required_argument, NULL, 'e'},
     {"max_tx_freq", required_argument, NULL, 'f'},
+    {"ip_address_windows", required_argument, NULL, 'a'},
     {"help", no_argument, NULL, 'h'},
     {"verbose", no_argument, NULL, 'v'},
     {0, 0, 0, 0}
@@ -503,12 +678,13 @@ int main(int argc, char** argv) {
     "   -i --ac_id [aircraft_id]               Provides Aircraft id\n"
     "   -s --ship_box_id [ship_box_id]         Provides Ship_box_id\n"
     "   -f --max_frequency_out [Hz]            Sets max_frequency_out\n"
+    "   -a --ip_address_windows                IP address windows machine\n"
     "   -h --help                              Display this help\n"
     "   -v --verbose                           Print verbose information\n";
 
   int c;
   int option_index = 0;
-  while((c = getopt_long(argc, argv, "i:s:f:h:v", long_options, &option_index)) != -1) {
+  while((c = getopt_long(argc, argv, "i:s:f:a:h:v", long_options, &option_index)) != -1) {
     switch (c) {
       case 'i':
         ac_id = atoi(optarg);
@@ -520,6 +696,10 @@ int main(int argc, char** argv) {
 
       case 'f':
         max_tx_freq = atoi(optarg);
+        break;
+
+      case 'a':
+        ip_address_windows = optarg;
         break;
 
       case 'v':
@@ -549,6 +729,10 @@ int main(int argc, char** argv) {
     pthread_create(&thread_id, NULL, (void *)generate_dummy_values, NULL);
   #endif
   
+  //Initialize the thread to listen to the UDP messages, containing the prediction polynomials:
+  pthread_t udp_thread;
+  pthread_create(&udp_thread, NULL, (void *)udp_listener, NULL);
+
   g_main_loop_run(ml);
 
   return 0;
