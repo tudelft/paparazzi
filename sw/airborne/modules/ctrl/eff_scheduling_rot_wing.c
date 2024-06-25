@@ -146,6 +146,25 @@ struct rot_wing_eff_sched_param_t eff_sched_p = {
   .k_lift_tail              = ROT_WING_EFF_SCHED_K_LIFT_TAIL
 };
 
+// for negative values, still should be low_lim < up_lim
+inline float bound_or_zero(float value, float low_lim, float up_lim) {
+  float output = value;
+  if (low_lim > 0.f) {
+    if (value < low_lim) {
+      output = 0.f;
+    } else if (value > up_lim) {
+      output = up_lim;
+    }
+  } else {
+    if (value > up_lim) {
+      output = 0.f;
+    } else if (value < low_lim) {
+      output = low_lim;
+    }
+  }
+  return output;
+}
+
 float eff_sched_pusher_time = 0.002;
 
 float roll_eff_scaling = 1.f;
@@ -303,14 +322,14 @@ void eff_scheduling_rot_wing_update_hover_motor_effectiveness(void)
   Bound(dM_dpprz_left,  eff_sched_var.roll_motor_dMdpprz * 0.5, eff_sched_var.roll_motor_dMdpprz * 2.0);
 
   float roll_motor_p_eff_right = -(dM_dpprz_right * eff_sched_var.cosr + eff_sched_p.hover_roll_roll_coef[0] * eff_sched_var.wing_rotation_rad * eff_sched_var.wing_rotation_rad * eff_sched_var.airspeed * eff_sched_var.cosr) / eff_sched_var.Ixx;
-  Bound(roll_motor_p_eff_right, -1, -0.00001);
+  bound_or_zero(roll_motor_p_eff_right, -1.f, -0.00001f);
 
   float roll_motor_p_eff_left = (dM_dpprz_left * eff_sched_var.cosr + eff_sched_p.hover_roll_roll_coef[0] * eff_sched_var.wing_rotation_rad * eff_sched_var.wing_rotation_rad * eff_sched_var.airspeed * eff_sched_var.cosr) / eff_sched_var.Ixx;
   if(autopilot.in_flight) {
     float roll_motor_airspeed_compensation = eff_sched_p.hover_roll_roll_coef[1] * eff_sched_var.airspeed * eff_sched_var.cosr / eff_sched_var.Ixx;
     roll_motor_p_eff_left += roll_motor_airspeed_compensation;
   }
-  Bound(roll_motor_p_eff_left, 0.00001, 1);
+  bound_or_zero(roll_motor_p_eff_left, 0.00001f, 1.f);
 
   float roll_motor_q_eff = (eff_sched_p.hover_roll_pitch_coef[0] * eff_sched_var.wing_rotation_rad + eff_sched_p.hover_roll_pitch_coef[1] * eff_sched_var.wing_rotation_rad * eff_sched_var.wing_rotation_rad * eff_sched_var.sinr) / eff_sched_var.Iyy;
   Bound(roll_motor_q_eff, 0, 1);
