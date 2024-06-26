@@ -21,20 +21,6 @@
  */
 
 /**
-<<<<<<< HEAD:sw/airborne/firmwares/rotorcraft/guidance/wls/wls_alloc.h
- * @brief Wrapper for qr solve
- *
- * Possible to use a different solver if needed.
- * Solves a system of the form Ax = b for x.
- *
- * @param m number of rows
- * @param n number of columns
- */
-void qr_solve_wrapper_guidance(int m, int n, float** A, float* b, float* x);
-
-/**
-=======
->>>>>>> upstream/master:sw/airborne/math/wls/wls_alloc.h
  * @brief active set algorithm for control allocation
  *
  * Takes the control objective and max and min inputs from pprz and calculates
@@ -62,9 +48,6 @@ void qr_solve_wrapper_guidance(int m, int n, float** A, float* b, float* x);
  *
  * @return Number of iterations: (imax+1) means it ran out of iterations
  */
-<<<<<<< HEAD:sw/airborne/firmwares/rotorcraft/guidance/wls/wls_alloc.h
-int wls_alloc_guidance(float* u, float* v, float* umin, float* umax, float** B,
-=======
 
 #ifndef WLS_ALLOC_HEADER
 #define WLS_ALLOC_HEADER
@@ -82,7 +65,6 @@ int wls_alloc_guidance(float* u, float* v, float* umin, float* umax, float** B,
 
 extern int wls_alloc(float* u, float* v,
               float* umin, float* umax, float** B,
->>>>>>> upstream/master:sw/airborne/math/wls/wls_alloc.h
               float* u_guess, float* W_init, float* Wv, float* Wu,
               float* ud, float gamma, int imax, int n_u, int n_v);
 
