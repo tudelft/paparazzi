@@ -27,6 +27,7 @@ double last_log_time = 0.0;
 
 static bool verbose_coefficients = true; 
 static bool verbose = false;
+static bool warning_verbose = true;
 static uint8_t ac_id = 0;
 static uint8_t ship_box_id = 0;
 
@@ -41,7 +42,7 @@ static bool use_cb_on_udp = false;
 //Provide path to save the log file: 
 static char* log_file_path = "/media/sf_Shared_folder_virtual_machine/Exchange_ship_log/ship_box_log.csv";
 #define LOG_FREQUENCY 8 //Hz, integer
-#define MAX_LOG_TIME 200 //s, integer
+#define MAX_LOG_TIME 60 //s, integer
 
 #define POLY_ORDER 7
 
@@ -57,8 +58,17 @@ bool show_once = true;
 
 #define SERVER_PORT_IN 9090 // Port number for the server input 
 
+//PLOT VARIABLES: 
+// Gnuplot pipe
+FILE *gnuplotPipe = NULL;
+bool plot_timeseries = false; 
+
 //init the address of the windows machine:
 static char* ip_address_windows = "127.0.0.1"; 
+
+long int prediction_idx = 0; 
+
+float prediction_time = 7; 
 
 //Structure definition of the ship states to be logged for the lstm prediction: 
 typedef struct {
@@ -72,6 +82,16 @@ typedef struct {
     double theta_dot_deg;
     double heading_deg;
 } ship_state_log_data;
+
+//Structure for the plot of the ship states:
+typedef struct {
+    float timestamp;
+    float speed_x_control;
+    float speed_y_control;
+    float speed_z;
+    float phi_dot_deg; 
+    float theta_dot_deg;
+} ship_state_plot_data;
 
 //Structure definition of the polynomial terms for the ship prediction: 
 typedef struct {
@@ -155,6 +175,84 @@ struct __attribute__((__packed__)) payload_ship_info_msg_ground {
   float y_ddot; 
   float z_ddot; 
 };
+
+//////////////////////////////////////////////////////////////////////////////FUNCTION DECLARATIONS:
+
+// Function to plot data with specified color and time range
+void plot_data(ship_state_log_buffer *cb) {
+    if (gnuplotPipe == NULL) return;
+    // Available colors: "red", "blue", "green", "orange", "purple", "cyan", etc.
+
+    // Set time range for the plot:
+    clock_gettime(CLOCK_BOOTTIME, &current_timespec);
+    double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9;
+    fprintf(gnuplotPipe, "set xrange [%f:%f]\n", (float) current_clock_time - 50.0, (float) current_clock_time + 10.0);
+
+    //Define color: 
+    char color_state[10] = "blue";
+    char color_prediction[10] = "red";
+
+    // Plot data
+    fprintf(gnuplotPipe, "set title 'Speed X Control'\n");
+    //plot with continuous line: 
+    // fprintf(gnuplotPipe, "plot '-' with lines linecolor rgb '%s' title 'Speed X Control'\n", color_state);
+    fprintf(gnuplotPipe, "plot '-' with points pointtype 7 linecolor rgb '%s' title 'Speed X Control'\n", color_state);
+    int index = cb->start;
+    for (int i = 0; i < cb->count; i++) {
+        ship_state_log_data *dp = &cb->buffer[index];
+        //Plot states: 
+        fprintf(gnuplotPipe, "%f %f\n", dp->timestamp, dp->speed_x_control);
+        index = (index + 1) % BUFFER_SIZE;
+    }
+    fprintf(gnuplotPipe, "\n");
+    // fflush(gnuplotPipe);
+    //Plot predictions:
+    if(prediction_idx > 0 && ship_coeffs_send.timestamp_offset_prediction < 5){
+      fprintf(gnuplotPipe, "plot '-' with points pointtype 7 linecolor rgb '%s' title 'Speed X Control'\n", color_prediction);
+      clock_gettime(CLOCK_BOOTTIME, &current_timespec);
+      double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9;
+      for (int i = 0; i < prediction_time*LOG_FREQUENCY; i++) {
+          float time = (1.0/LOG_FREQUENCY)*i;
+          float plot_time = time + (float) current_clock_time - ship_coeffs_send.timestamp_offset_prediction;
+          float prediction_speed_x_control = 0.0;
+          for (int j = 0; j < POLY_ORDER+1; j++) {
+              prediction_speed_x_control += ship_coeffs_send.speed_x_control_poly[j] * powf(time, j);
+          }
+          fprintf(gnuplotPipe, "%f %f\n", plot_time, prediction_speed_x_control);
+      }
+    }
+    // fprintf(gnuplotPipe, "%f %f\n", plot_data_values->timestamp, plot_data_values->speed_x_control);
+    fprintf(gnuplotPipe, "e\n");
+
+    // Plot speed_x_control
+
+
+    // Plot speed_y_control
+    // fprintf(gnuplotPipe, "set title 'Speed Y Control'\n");
+    // fprintf(gnuplotPipe, "plot '-' with points pointtype 7 linecolor rgb '%s' title 'Speed Y Control'\n", color);
+    // fprintf(gnuplotPipe, "%f %f\n", plot_data_values->timestamp, plot_data_values->speed_y_control);
+    // fprintf(gnuplotPipe, "e\n");
+
+    // // Plot speed_z
+    // fprintf(gnuplotPipe, "set title 'Speed Z'\n");
+    // fprintf(gnuplotPipe, "plot '-' with points pointtype 7 linecolor rgb '%s' title 'Speed Z'\n", color);
+    // fprintf(gnuplotPipe, "%f %f\n", plot_data_values->timestamp, plot_data_values->speed_z);
+    // fprintf(gnuplotPipe, "e\n");
+
+    // // Plot phi_dot_deg
+    // fprintf(gnuplotPipe, "set title 'Phi Dot deg'\n");
+    // fprintf(gnuplotPipe, "plot '-' with points pointtype 7 linecolor rgb '%s' title 'Phi Dot'\n", color);
+    // fprintf(gnuplotPipe, "%f %f\n", plot_data_values->timestamp, plot_data_values->phi_dot_deg);
+    // fprintf(gnuplotPipe, "e\n");
+
+    // // Plot theta_dot_deg
+    // fprintf(gnuplotPipe, "set title 'Theta Dot deg'\n");
+    // fprintf(gnuplotPipe, "plot '-' with points pointtype 7 linecolor rgb '%s' title 'Theta Dot'\n", color);
+    // fprintf(gnuplotPipe, "%f %f\n", plot_data_values->timestamp, plot_data_values->theta_dot_deg);
+    // fprintf(gnuplotPipe, "e\n");
+
+    fflush(gnuplotPipe);
+}
 
 //Function to add a data point to the circular buffer:
 void add_data_point_to_log_buffer(ship_state_log_buffer *cb, ship_state_log_data data) {
@@ -339,10 +437,25 @@ void log_ship_state(ship_state_log_data payload_ship_log){
     if(save_on_log) write_csv(&cb, log_file_path);
     if(send_data_on_tcp) send_to_tcp(&cb);
     if(send_data_on_udp) send_to_udp(&cb);
+
+    //Plot the data if the flag is set:
+    if(plot_timeseries){
+      plot_data(&cb);
+      // ship_state_plot_data plot_data_values = {
+      //   .timestamp = payload_ship_log.timestamp,
+      //   .speed_x_control = payload_ship_log.speed_x_control,
+      //   .speed_y_control = payload_ship_log.speed_y_control,
+      //   .speed_z = payload_ship_log.speed_z,
+      //   .phi_dot_deg = payload_ship_log.phi_dot_deg,
+      //   .theta_dot_deg = payload_ship_log.theta_dot_deg
+      // };
+      // plot_data(&plot_data_values, "blue");
+    }
       
   }
 }
 
+//Function to listen to the UDP messages from matlab containing the polynomial coefficients:
 void udp_listener() {
     int sockfd;
     struct sockaddr_in server_addr, client_addr;
@@ -421,6 +534,7 @@ void udp_listener() {
            ship_coeffs.speed_x_control_poly.timestamp_prediction == ship_coeffs.phi_dot_poly.timestamp_prediction &&
            ship_coeffs.speed_x_control_poly.timestamp_prediction == ship_coeffs.theta_dot_poly.timestamp_prediction && 
            ship_coeffs.speed_x_control_poly.timestamp_prediction != 0.0){
+          prediction_idx++;
           //Calculate the prediction offset based on the timestamp of the prediction and the current time:
           clock_gettime(CLOCK_BOOTTIME, &current_timespec);
           double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9;
@@ -433,6 +547,12 @@ void udp_listener() {
             ship_coeffs_send.speed_z_poly[i] = ship_coeffs.speed_z_poly.polynomial_prediction[i];
             ship_coeffs_send.phi_dot_poly[i] = ship_coeffs.phi_dot_poly.polynomial_prediction[i];
             ship_coeffs_send.theta_dot_poly[i] = ship_coeffs.theta_dot_poly.polynomial_prediction[i];
+          }
+          if(warning_verbose){
+            //print a warning if the prediction offset is above 1.5 seconds: 
+            if(timestamp_offset_prediction > 1.5){
+              printf("Warning: Prediction offset is above 1.5 seconds! \n");
+            }
           }
           if(verbose_coefficients){
             //Print the coefficients:
@@ -639,13 +759,27 @@ void generate_dummy_values(){
       .phi_dot_deg = 4.0*sinf(2*M_PI*omega_phi_dot*current_clock_time),
       .theta_dot_deg = 5.0*sinf(2*M_PI*omega_theta_dot*current_clock_time),
       .heading_deg = 180.0*sinf(2*M_PI*omega_heading*current_clock_time),
-      .speed_x_control = 1.0*sinf(2*M_PI*omega_speed_x*current_clock_time) * cosf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180) + payload_ship.y_dot * sinf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180),
-      .speed_y_control = -1.0*sinf(2*M_PI*omega_speed_x*current_clock_time) * sinf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180) + payload_ship.y_dot * cosf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180)
+      .speed_x_control = 1.0*sinf(2*M_PI*omega_speed_x*current_clock_time),
+      .speed_y_control = 2.0*sinf(2*M_PI*omega_speed_y*current_clock_time)
+      //.speed_x_control = 1.0*sinf(2*M_PI*omega_speed_x*current_clock_time) * cosf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180) + payload_ship.y_dot * sinf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180),
+      //.speed_y_control = -1.0*sinf(2*M_PI*omega_speed_x*current_clock_time) * sinf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180) + payload_ship.y_dot * cosf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180)
     };
     //Call the log function to save the values on the file:
     log_ship_state(paylod_ship_log);
     usleep(10);
   }
+}
+
+// Function to initialize gnuplot
+void init_gnuplot() {
+    int num_plots = 5;
+    gnuplotPipe = popen("gnuplot -persistent", "w");
+    if (gnuplotPipe == NULL) {
+        fprintf(stderr, "Error: could not open gnuplot pipe.\n");
+        exit(EXIT_FAILURE);
+    }
+    if(verbose) fprintf(gnuplotPipe, "set multiplot layout %d,1\n", num_plots); // Layout for subplots
+    fflush(gnuplotPipe);
 }
 
 int main(int argc, char** argv) {
@@ -665,11 +799,12 @@ int main(int argc, char** argv) {
   /* Arguments options and usage information */
   static struct option long_options[] = {
     {"ac_id", required_argument, NULL, 'i'},
-    {"ship_box_id", required_argument, NULL, 'e'},
+    {"ship_box_id", required_argument, NULL, 's'},
     {"max_tx_freq", required_argument, NULL, 'f'},
     {"ip_address_windows", required_argument, NULL, 'a'},
     {"help", no_argument, NULL, 'h'},
     {"verbose", no_argument, NULL, 'v'},
+    {"plot_timeseries", no_argument, NULL, 'p'},
     {0, 0, 0, 0}
   };
   static const char* usage =
@@ -679,12 +814,13 @@ int main(int argc, char** argv) {
     "   -s --ship_box_id [ship_box_id]         Provides Ship_box_id\n"
     "   -f --max_frequency_out [Hz]            Sets max_frequency_out\n"
     "   -a --ip_address_windows                IP address windows machine\n"
+    "   -p --plot_timeseries                   Plot timeseries\n"
     "   -h --help                              Display this help\n"
     "   -v --verbose                           Print verbose information\n";
 
   int c;
   int option_index = 0;
-  while((c = getopt_long(argc, argv, "i:s:f:a:h:v", long_options, &option_index)) != -1) {
+  while((c = getopt_long(argc, argv, "i:s:f:a:p:h:v", long_options, &option_index)) != -1) {
     switch (c) {
       case 'i':
         ac_id = atoi(optarg);
@@ -700,6 +836,11 @@ int main(int argc, char** argv) {
 
       case 'a':
         ip_address_windows = optarg;
+        break;
+
+      case 'p':
+        plot_timeseries = true;
+        init_gnuplot();
         break;
 
       case 'v':
