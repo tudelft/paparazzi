@@ -592,6 +592,30 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
       break;
     }
 
+    case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT: {
+      mavlink_set_position_target_global_int_t target;
+      mavlink_msg_set_position_target_global_int_decode(msg, &target);
+
+      // Check if this message is for this system
+      if (target.target_system == AC_ID) {
+        MAVLINK_DEBUG("SET_POSITION_TARGET_GLOBAL_INT, type_mask: %d, frame: %d\n", target.type_mask, target.coordinate_frame);
+        /* if position and yaw bits are not set to ignored, use only position for now */
+        if (!(target.type_mask & 0b1110000000100000) && target.coordinate_frame == MAV_FRAME_GLOBAL) {
+          MAVLINK_DEBUG("set position target, frame MAV_FRAME_GLOBAL\n");
+          struct NedCoor_i ned;
+          struct NedCoor_f ned_f;
+          struct LlaCoor_i lla;
+          lla.lat = target.lat_int;
+          lla.lon = target.lon_int;
+          lla.alt = MM_OF_M(target.alt);
+          ned_of_lla_point_i(&ned, &state.ned_origin_i, &lla);
+          NED_FLOAT_OF_BFP(ned_f, ned);
+          autopilot_guided_goto_ned(ned_f.x, ned_f.y, ned_f.z, target.yaw);
+        }
+      }
+      break;
+    }
+
     case MAVLINK_MSG_ID_SET_POSITION_TARGET_LOCAL_NED: {
       mavlink_set_position_target_local_ned_t target;
       mavlink_msg_set_position_target_local_ned_decode(msg, &target);
@@ -904,7 +928,7 @@ static void mavlink_send_autopilot_version(struct transport_tx *trans, struct li
   static uint64_t sha;
   get_pprz_git_version((uint8_t *)&sha);
   mavlink_msg_autopilot_version_send(MAVLINK_COMM_0,
-                                     18446744073709551615, //uint64_t capabilities,
+                                     18446744073709551615U, //uint64_t capabilities,
                                      ver, //uint32_t flight_sw_version,
                                      0, //uint32_t middleware_sw_version,
                                      0, //uint32_t os_sw_version,
