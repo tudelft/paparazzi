@@ -326,7 +326,7 @@
       <message name="EXTERNAL_POSE_DOWN"       period="0.002"/>
       <message name="ROTATING_WING_STATE"      period="0.1"/>
       <message name="DOUBLET"                  period="0.002"/>
-      <message name="DEBUG_VECT"               period="0.2"/>
+      <message name="DEBUG_VECT"               period="0.002"/>
       <message name="WLS_v"                    period="0.002"/>
       <message name="WLS_u"                    period="0.002"/>
       <message name="ACTUATOR_STATE"           period="0.002"/>
