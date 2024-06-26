@@ -13,7 +13,7 @@
     <configure name="SERIAL_ACT_T4_PORT" default="UART4" case="upper|lower"/>
     <configure name="SERIAL_ACT_T4_BAUD" default="B1500000"/>
     <!-- Enable UART and set baudrate -->
-    <define name="USE_$(SERIAL_ACT_T4_PORT_UPPER)"/>
+    <define name="USE_$(SERIAL_ACT_T4_PORT_UPPER)" value="TRUE"/>
     <define name="USE_$(SERIAL_ACT_T4_PORT_UPPER)_TX" value="TRUE"/>
     <define name="$(SERIAL_ACT_T4_PORT_UPPER)_BAUD" value="$(SERIAL_ACT_T4_BAUD)"/>
     <define name="SERIAL_ACT_T4_PORT" value="$(SERIAL_ACT_T4_PORT_LOWER)"/>
