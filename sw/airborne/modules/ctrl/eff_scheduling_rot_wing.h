@@ -36,6 +36,7 @@ struct rot_wing_eff_sched_param_t {
   float Iyy_wing;                 // wing MMOI around the spanwise direction of the wing [kgm²]
   float m;                        // mass [kg]
   float DMdpprz_hover_roll[2];    // Moment coeficients for roll motors (Scaled by 10000)
+  float DMdpprz_hover_pitch[2];         // Moment coeficients for pitch motors (Scaled by 10000)
   float hover_roll_pitch_coef[2]; // Model coefficients to correct pitch effective for roll motors
   float hover_roll_roll_coef[2];  // Model coefficients to correct roll effectiveness for roll motors
   float k_elevator[3];
@@ -76,8 +77,6 @@ struct rot_wing_eff_sched_var_t {
   float airspeed;
   float airspeed2;
 };
-
-extern float roll_eff_scaling;
 
 extern float rotation_angle_setpoint_deg;
 extern int16_t rotation_cmd;
