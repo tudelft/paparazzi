@@ -140,6 +140,8 @@ uint8_t rotwing_state_fw_counter = 0;
 uint8_t rotwing_state_fw_idle_counter = 0;
 uint8_t rotwing_state_fw_m_off_counter = 0;
 
+float guidance_indi_pitch_pref_deg_quad = -5.0;
+
 float rotwing_state_max_hover_speed = 7;
 
 bool hover_motors_active = true;
@@ -776,13 +778,13 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, fl
   float scheduled_pitch_angle = 0.f;
   float pitch_angle_range = 3.;
   if (rotwing_state_skewing.wing_angle_deg < 55) {
-    scheduled_pitch_angle = 0.f;
+    scheduled_pitch_angle = guidance_indi_pitch_pref_deg_quad;
     Wu_gih[1] = Wu_gih_original[1];
     max_pitch_limit_rad = quad_pitch_limit_rad;
   } else {
     float pitch_progression = (rotwing_state_skewing.wing_angle_deg - 55) / 35.;
     Bound(pitch_progression, 0.f, 1.f);
-    scheduled_pitch_angle = pitch_angle_range * pitch_progression;
+    scheduled_pitch_angle = pitch_angle_range * pitch_progression + guidance_indi_pitch_pref_deg_quad*(1.f-pitch_progression);
     Wu_gih[1] = Wu_gih_original[1] * (1.f - pitch_progression*0.9);
     max_pitch_limit_rad = quad_pitch_limit_rad + (fwd_pitch_limit_rad - quad_pitch_limit_rad) * pitch_progression;
   }
