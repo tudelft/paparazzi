@@ -64,17 +64,33 @@ NOTES:
 <!--            <define name="IST8310_CHAN_Y_SIGN" value="-"/>-->
 <!--            &lt;!&ndash;          <define name="IST8310_CHAN_Z_SIGN" value="-"/>&ndash;&gt;-->
 <!--        </module>-->
-        <module name="mag_ist8310">
-            <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>
-            <configure name="MAG_IST8310_I2C_DEV" value="I2C3"/>
-            <!--        <define name="IST8310_MAG_TO_IMU_PHI" value="0.0" unit="deg"/>-->
-            <!--        <define name="IST8310_MAG_TO_IMU_THETA" value="90.0" unit="deg"/>-->
-            <!--        <define name="IST8310_MAG_TO_IMU_PSI" value="180.0" unit="deg"/>-->
-                <define name="IST8310_CHAN_X_SIGN" value="+"/>
-                <define name="IST8310_CHAN_Z_SIGN" value="+"/>
-        </module>
 
-      <!-- No need for spi values since already in default Pixhawk4 board but for cube? unknown-->
+        <!-- internal mag -->
+<!--        <module name="mag_ist8310">-->
+<!--            <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>-->
+<!--            <configure name="MAG_IST8310_I2C_DEV" value="I2C3"/>-->
+<!--            &lt;!&ndash;        <define name="IST8310_MAG_TO_IMU_PHI" value="0.0" unit="deg"/>&ndash;&gt;-->
+<!--            &lt;!&ndash;        <define name="IST8310_MAG_TO_IMU_THETA" value="90.0" unit="deg"/>&ndash;&gt;-->
+<!--            &lt;!&ndash;        <define name="IST8310_MAG_TO_IMU_PSI" value="180.0" unit="deg"/>&ndash;&gt;-->
+<!--                <define name="IST8310_CHAN_X_SIGN" value="+"/>-->
+<!--                <define name="IST8310_CHAN_Z_SIGN" value="+"/>-->
+<!--        </module>-->
+
+        <module name="mag" type="rm3100">
+            <define name="USE_I2C1"/>
+            <define name="MODULE_RM3100_UPDATE_AHRS"    value="TRUE"/>
+            <configure name="MAG_RM3100_I2C_DEV"        value="i2c1"/>      <!-- GPS1 -->
+
+            <define name="RM3100_CHAN_X_SIGN" value="-"/>
+            <define name="RM3100_CHAN_Y_SIGN" value="-"/>
+            <define name="RM3100_CHAN_Z_SIGN" value="-"/>
+            <define name="RM3100_CHAN_X" value="1"/>
+            <define name="RM3100_CHAN_Y" value="0"/>
+            <define name="RM3100_CHAN_Z" value="2"/>
+        </module>
+        <define name="INS_EKF2_MAG_ID"      value="MAG_RM3100_SENDER_ID"/>
+
+        <!-- No need for spi values since already in default Pixhawk4 board but for cube? unknown-->
       <module name="baro_ms5611_spi">
         <define name="USE_SPI4"/>
         <define name="USE_SPI_SLAVE4"/>
@@ -580,13 +596,25 @@ NOTES:
     <define name="ACCEL_Y_SENS" value="4.894706798903047" integer="16"/>
     <define name="ACCEL_Z_SENS" value="4.821920048827275" integer="16"/>
 
-      <define name="MAG_X_NEUTRAL" value="-463"/>
-      <define name="MAG_Y_NEUTRAL" value="103"/>
-      <define name="MAG_Z_NEUTRAL" value="-280"/>
-      <define name="MAG_X_SENS" value="13.288546079489938" integer="16"/>
-      <define name="MAG_Y_SENS" value="12.379732860717075" integer="16"/>
-      <define name="MAG_Z_SENS" value="11.596170030562938" integer="16"/>
+      <define name="MAG_X_NEUTRAL" value="313"/>
+      <define name="MAG_Y_NEUTRAL" value="-30"/>
+      <define name="MAG_Z_NEUTRAL" value="-34"/>
+      <define name="MAG_X_SENS" value="0.6244817902181204" integer="16"/>
+      <define name="MAG_Y_SENS" value="0.6232979170060664" integer="16"/>
+      <define name="MAG_Z_SENS" value="0.6179616072521195" integer="16"/>
 
+      <!--      <define name="MAG_X_NEUTRAL" value="-463"/>-->
+<!--      <define name="MAG_Y_NEUTRAL" value="103"/>-->
+<!--      <define name="MAG_Z_NEUTRAL" value="-280"/>-->
+<!--      <define name="MAG_X_SENS" value="13.288546079489938" integer="16"/>-->
+<!--      <define name="MAG_Y_SENS" value="12.379732860717075" integer="16"/>-->
+<!--      <define name="MAG_Z_SENS" value="11.596170030562938" integer="16"/>-->
+
+      <!--  CHECK signs with *SCALED* SENSORS  -->
+<!--      Thus in the northern hemisphere:-->
+<!--      When you align your IMU with the direction of north, you should see x>0, y=0, z>0.-->
+<!--      When pitching the IMU down, the magnetic vector is aligning with x, so x should increase and z should decrease to zero.-->
+<!--      If yawing your IMU to the left, the magnetic vector is aligning with y, so y should be positive, x should decrease to zero and z stay positive.-->
 
       <define name="BODY_TO_IMU_PHI" value="0." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
