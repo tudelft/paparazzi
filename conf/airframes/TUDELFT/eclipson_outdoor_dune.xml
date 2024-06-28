@@ -70,7 +70,8 @@ NOTES:
             <!--        <define name="IST8310_MAG_TO_IMU_PHI" value="0.0" unit="deg"/>-->
             <!--        <define name="IST8310_MAG_TO_IMU_THETA" value="90.0" unit="deg"/>-->
             <!--        <define name="IST8310_MAG_TO_IMU_PSI" value="180.0" unit="deg"/>-->
-            <!--    <define name="IST8310_CHAN_X_SIGN" value="-"/>-->
+                <define name="IST8310_CHAN_X_SIGN" value="+"/>
+                <define name="IST8310_CHAN_Z_SIGN" value="+"/>
         </module>
 
       <!-- No need for spi values since already in default Pixhawk4 board but for cube? unknown-->
@@ -579,7 +580,14 @@ NOTES:
     <define name="ACCEL_Y_SENS" value="4.894706798903047" integer="16"/>
     <define name="ACCEL_Z_SENS" value="4.821920048827275" integer="16"/>
 
-<!--    20230616 Valkenburg-->
+      <define name="MAG_X_NEUTRAL" value="-463"/>
+      <define name="MAG_Y_NEUTRAL" value="103"/>
+      <define name="MAG_Z_NEUTRAL" value="-280"/>
+      <define name="MAG_X_SENS" value="13.288546079489938" integer="16"/>
+      <define name="MAG_Y_SENS" value="12.379732860717075" integer="16"/>
+      <define name="MAG_Z_SENS" value="11.596170030562938" integer="16"/>
+
+      <!--    20230616 Valkenburg-->
 <!--<define name="IMU_MAG_CALIB" value="{{.abi_id=4, .calibrated={.neutral=true, .scale=true},.neutral={-39,6,5}, .scale={{18559,43991,10465},{1468,3580,834}}}}"/>-->
 
 <!--<define name="MAG_X_NEUTRAL" value="-39"/>
@@ -602,12 +610,19 @@ NOTES:
 <!--    </define>-->
 
 
-<define name="MAG_X_NEUTRAL" value="-461"/>
-      <define name="MAG_Y_NEUTRAL" value="126"/>
-      <define name="MAG_Z_NEUTRAL" value="-278"/>
-      <define name="MAG_X_SENS" value="15.353753620069238" integer="16"/>
-      <define name="MAG_Y_SENS" value="16.714372900877322" integer="16"/>
-      <define name="MAG_Z_SENS" value="16.02060715303843" integer="16"/>
+<!--<define name="MAG_X_NEUTRAL" value="-461"/>-->
+<!--      <define name="MAG_Y_NEUTRAL" value="126"/>-->
+<!--      <define name="MAG_Z_NEUTRAL" value="-278"/>-->
+<!--      <define name="MAG_X_SENS" value="15.353753620069238" integer="16"/>-->
+<!--      <define name="MAG_Y_SENS" value="16.714372900877322" integer="16"/>-->
+<!--      <define name="MAG_Z_SENS" value="16.02060715303843" integer="16"/>-->
+
+<!--      <define name="MAG_X_NEUTRAL" value="-940"/>-->
+<!--      <define name="MAG_Y_NEUTRAL" value="201"/>-->
+<!--      <define name="MAG_Z_NEUTRAL" value="-479"/>-->
+<!--      <define name="MAG_X_SENS" value="14.09180171143793" integer="16"/>-->
+<!--      <define name="MAG_Y_SENS" value="11.568134995088602" integer="16"/>-->
+<!--      <define name="MAG_Z_SENS" value="12.036491815298861" integer="16"/>-->
 
 
       <define name="BODY_TO_IMU_PHI" value="0." unit="deg"/>
