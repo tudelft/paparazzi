@@ -587,43 +587,6 @@ NOTES:
       <define name="MAG_Y_SENS" value="12.379732860717075" integer="16"/>
       <define name="MAG_Z_SENS" value="11.596170030562938" integer="16"/>
 
-      <!--    20230616 Valkenburg-->
-<!--<define name="IMU_MAG_CALIB" value="{{.abi_id=4, .calibrated={.neutral=true, .scale=true},.neutral={-39,6,5}, .scale={{18559,43991,10465},{1468,3580,834}}}}"/>-->
-
-<!--<define name="MAG_X_NEUTRAL" value="-39"/>
-<define name="MAG_Y_NEUTRAL" value="6"/>
-<define name="MAG_Z_NEUTRAL" value="5"/>
-<define name="MAG_X_SENS" value="12.642370562863434" integer="16"/>
-<define name="MAG_Y_SENS" value="12.287988831201192" integer="16"/>
-<define name="MAG_Z_SENS" value="12.547961807462235" integer="16"/>-->
-
-<!--      <define name="IMU_MAG_CALIB" type="array">-->
-<!--      <field type="struct">-->
-<!--      <field name="abi_id" value="4"/>-->
-<!--      <field name="calibrated" type="struct">-->
-<!--          <field name="neutral" value="true"/>-->
-<!--          <field name="scale" value="true"/>-->
-<!--      </field>-->
-<!--      <field name="neutral" value="-461,126,-278" type="int[]"/>-->
-<!--      <field name="scale" value="{{25564,54773,14771},{1665,3277,922}}"/>-->
-<!--      </field>-->
-<!--    </define>-->
-
-
-<!--<define name="MAG_X_NEUTRAL" value="-461"/>-->
-<!--      <define name="MAG_Y_NEUTRAL" value="126"/>-->
-<!--      <define name="MAG_Z_NEUTRAL" value="-278"/>-->
-<!--      <define name="MAG_X_SENS" value="15.353753620069238" integer="16"/>-->
-<!--      <define name="MAG_Y_SENS" value="16.714372900877322" integer="16"/>-->
-<!--      <define name="MAG_Z_SENS" value="16.02060715303843" integer="16"/>-->
-
-<!--      <define name="MAG_X_NEUTRAL" value="-940"/>-->
-<!--      <define name="MAG_Y_NEUTRAL" value="201"/>-->
-<!--      <define name="MAG_Z_NEUTRAL" value="-479"/>-->
-<!--      <define name="MAG_X_SENS" value="14.09180171143793" integer="16"/>-->
-<!--      <define name="MAG_Y_SENS" value="11.568134995088602" integer="16"/>-->
-<!--      <define name="MAG_Z_SENS" value="12.036491815298861" integer="16"/>-->
-
 
       <define name="BODY_TO_IMU_PHI" value="0." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
