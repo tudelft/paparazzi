@@ -281,6 +281,17 @@
         <arg flag="-speech"/>
       </program>
     </session>
+    <session name="Flight ttyUSB0 Transparent @230400">
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/ttyUSB0"/>
+        <arg flag="-s" constant="230400"/>
+      </program>
+      <program name="Server"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
+      </program>
+      <program name="Messages"/>
+    </session>
     <session name="Flight UDP">
       <program name="Data Link">
         <arg flag="-udp"/>

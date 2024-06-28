@@ -11,7 +11,7 @@
       <dl_settings NAME="guidance_indi_hybrid_nld">
         <dl_settings name="controller">
             <dl_setting var="soaring_ctrl_switch" min="0" step="1" max="1" values="OFF|ON" shortname="switching_ctrl"/>
-          <dl_setting var="soaring_reduced_ctrl_type" min="0" step="1" max="1" values="OFF|ON" shortname="hor_or_alt"/>
+          <dl_setting var="soaring_reduced_ctrl_type" min="0" step="1" max="1" values="HOR|ALT" shortname="hor_or_alt"/>
 <!--          <dl_setting var="guidance_indi_soaring_use_spline_clcd" min="0" max="1" step="1" values="OFF|ON" shortname="USE_SPLINE"/>-->
 
 <!--          <dl_setting var="guidance_soaring_max_throttle" min="0" step="100" max="9600" shortname="max_throttle"/>-->
