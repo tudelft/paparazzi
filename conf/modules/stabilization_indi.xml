@@ -74,6 +74,7 @@
         <dl_setting var="use_pitch_Wu" min="0" step="1" max="1" values="OFF|ON" shortname="use_pitch_Wu"/>
         <dl_setting var="use_flap" min="0" step="1" max="1" values="OFF|ON" shortname="use_flap"/>
         <dl_setting MAX="50." MIN="1." STEP="0.1" VAR="stabilization_indi_filter_freq" shortname="filt_freq" module="stabilization/stabilization_indi" handler="update_filt_freq"/>
+        <dl_setting MAX="50." MIN="1." STEP="0.1" VAR="stabilization_indi_filter_freq_rates" shortname="filt_freq_rates" module="stabilization/stabilization_indi" handler="update_filt_freq_rates"/>
       </dl_settings>
     </dl_settings>
   </settings>
