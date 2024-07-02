@@ -212,10 +212,11 @@ struct FloatRates angular_rate_ref = {0., 0., 0.};
 float angular_acceleration[3] = {0., 0., 0.};
 float actuator_state[INDI_NUM_ACT];
 float indi_u[INDI_NUM_ACT];
-float rate_vect_prev[3] = {0., 0., 0.};
 
 float q_filt = 0.0;
 float r_filt = 0.0;
+
+float stabilization_indi_filter_freq = 20.0; //Hz, for setting handler
 
 // variables needed for estimation
 float g1g2_trans_mult[INDI_OUTPUTS][INDI_OUTPUTS];
@@ -282,6 +283,7 @@ Butterworth2LowPass estimation_input_lowpass_filters[INDI_NUM_ACT];
 Butterworth2LowPass measurement_lowpass_filters[3];
 Butterworth2LowPass estimation_output_lowpass_filters[3];
 Butterworth2LowPass acceleration_lowpass_filter;
+Butterworth2LowPass acceleration_body_x_filter;
 #if STABILIZATION_INDI_FILTER_RATES_SECOND_ORDER
 Butterworth2LowPass rates_filt_so[3];
 #else
@@ -326,13 +328,15 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
 {
   float zero = 0.0;
   struct FloatRates *body_rates = stateGetBodyRates_f();
-  struct FloatEulers att_sp;
-  EULERS_FLOAT_OF_BFP(att_sp, stab_att_sp_euler);
+  struct FloatEulers att, att_sp;
 #if GUIDANCE_INDI_HYBRID
-  struct FloatEulers att;
   float_eulers_of_quat_zxy(&att, stateGetNedToBodyQuat_f());
+  struct FloatQuat stab_att_sp_quat_f;
+  QUAT_FLOAT_OF_BFP(stab_att_sp_quat_f, stab_att_sp_quat);
+  float_eulers_of_quat_zxy(&att_sp, &stab_att_sp_quat_f);
 #else
-  struct FloatEulers att = *stateGetNedToBodyEulers_f();
+  att = *stateGetNedToBodyEulers_f();
+  EULERS_FLOAT_OF_BFP(att_sp, stab_att_sp_euler);
 #endif
   pprz_msg_send_STAB_ATTITUDE(trans, dev, AC_ID,
                                       &att.phi, &att.theta, &att.psi,           // att
@@ -431,13 +435,24 @@ void stabilization_indi_init(void)
  */
 void stabilization_indi_enter(void)
 {
-  /* reset psi setpoint to current psi angle */
-  stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
-
-  float_vect_zero(rate_vect_prev, 3);
-
   float_vect_zero(du_estimation, INDI_NUM_ACT);
   float_vect_zero(ddu_estimation, INDI_NUM_ACT);
+}
+
+void stabilization_indi_update_filt_freq(float freq)
+{
+  stabilization_indi_filter_freq = freq;
+  float tau = 1.0 / (2.0 * M_PI * freq);
+  float sample_time = 1.0 / PERIODIC_FREQUENCY;
+#if STABILIZATION_INDI_FILTER_RATES_SECOND_ORDER
+  init_butterworth_2_low_pass(&rates_filt_so[0], tau, sample_time, stateGetBodyRates_f()->p);
+  init_butterworth_2_low_pass(&rates_filt_so[1], tau, sample_time, stateGetBodyRates_f()->q);
+  init_butterworth_2_low_pass(&rates_filt_so[2], tau, sample_time, stateGetBodyRates_f()->r);
+#else
+  init_first_order_low_pass(&rates_filt_fo[0], tau, sample_time, stateGetBodyRates_f()->p);
+  init_first_order_low_pass(&rates_filt_fo[1], tau, sample_time, stateGetBodyRates_f()->q);
+  init_first_order_low_pass(&rates_filt_fo[2], tau, sample_time, stateGetBodyRates_f()->r);
+#endif
 }
 
 /**
@@ -461,6 +476,9 @@ void init_filters(void)
     init_butterworth_2_low_pass(&actuator_lowpass_filters[i], tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&estimation_input_lowpass_filters[i], tau_est, sample_time, 0.0);
   }
+
+  // Filtering the bodyx acceleration with same cutoff as gyroscope
+  init_butterworth_2_low_pass(&acceleration_body_x_filter, tau, sample_time, 0.0);
 
   // Filtering of the accel body z
   init_butterworth_2_low_pass(&acceleration_lowpass_filter, tau_est, sample_time, 0.0);
@@ -520,10 +538,18 @@ void stabilization_indi_rate_run(bool in_flight, struct StabilizationSetpoint *s
   /* Propagate the filter on the gyroscopes */
   struct FloatRates *body_rates = stateGetBodyRates_f();
   float rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
+
+  // Get the acceleration in body axes
+  struct Int32Vect3 *body_accel_i;
+  body_accel_i = stateGetAccelBody_i();
+  ACCELS_FLOAT_OF_BFP(body_accel_f, *body_accel_i);
+
   int8_t i;
   for (i = 0; i < 3; i++) {
     update_butterworth_2_low_pass(&measurement_lowpass_filters[i], rate_vect[i]);
     update_butterworth_2_low_pass(&estimation_output_lowpass_filters[i], rate_vect[i]);
+
+    update_butterworth_2_low_pass(&acceleration_body_x_filter, body_accel_f.x);
 
     //Calculate the angular acceleration via finite difference
     angular_acceleration[i] = (measurement_lowpass_filters[i].o[0]
@@ -620,6 +646,14 @@ void stabilization_indi_rate_run(bool in_flight, struct StabilizationSetpoint *s
   // This term compensates for the spinup torque in the yaw axis
   float g2_times_u = float_vect_dot_product(g2, indi_u, INDI_NUM_ACT)/INDI_G_SCALING;
 
+  if (in_flight) {
+    // Limit the estimated disturbance in yaw for drones that are stable in sideslip
+    BoundAbs(angular_acc_disturbance_estimate[2], stablization_indi_yaw_dist_limit);
+  } else {
+    // Not in flight, so don't estimate disturbance
+    float_vect_zero(angular_acc_disturbance_estimate, INDI_OUTPUTS);
+  }
+
   // The control objective in array format
   indi_v[0] = (angular_accel_ref.p - angular_acc_disturbance_estimate[0]);
   indi_v[1] = (angular_accel_ref.q - angular_acc_disturbance_estimate[1]);
@@ -672,7 +706,7 @@ void stabilization_indi_rate_run(bool in_flight, struct StabilizationSetpoint *s
   //update thrust command such that the current is correctly estimated
   cmd[COMMAND_THRUST] = 0;
   for (i = 0; i < INDI_NUM_ACT; i++) {
-    cmd[COMMAND_THRUST] += actuator_state[i] * -((int32_t) act_is_servo[i] - 1);
+    cmd[COMMAND_THRUST] += actuator_state[i] * (int32_t) act_is_thruster_z[i];
   }
   cmd[COMMAND_THRUST] /= num_thrusters;
 
