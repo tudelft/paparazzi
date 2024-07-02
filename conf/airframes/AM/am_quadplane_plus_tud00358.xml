@@ -68,7 +68,7 @@
 
       <module name="telemetry" type="transparent">
         <!--Handy for Desk debugging-->
-        <!-- <configure name="MODEM_PORT" value="usb_serial"/> -->
+        <configure name="MODEM_PORT" value="usb_serial"/>
         <configure name="MODEM_BAUD" value="B460800"/>
       </module>
 
@@ -101,6 +101,8 @@
         <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>
       </module>
 
+      <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
+
     </target>
 
     <define name="USE_AIRSPEED" value="TRUE"/><!-- Use the sensor, not stating use it in flight -->
@@ -108,8 +110,13 @@
     <!-- <module name="guidance" type="indi"/> -->
 
     <module name="nav_hybrid">
-      <configure name="NAV_HYBRID_POS_GAIN" value="1"/>
-      <configure name="NAV_MAX_SPEED" value="15"/>
+      <define name="NAV_HYBRID_POS_GAIN" value="1"/>
+      <define name="NAV_HYBRID_LINE_GAIN" value="1"/>
+      <define name="NAV_HYBRID_MAX_AIRSPEED" value="15"/>
+      <define name="NAV_HYBRID_SPEED_MARGIN" value="10"/>
+      <define name="NAV_HYBRID_NAV_LINE_DIST" value="50"/>
+      <define name="NAV_HYBRID_MAX_DECELERATION" value="WP_CONTROL_MAX_DECEL_WP_APPROACH"/>
+      <define name="NAV_HYBRID_NAV_CIRCLE_DIST" value="40"/>
     </module>
 
     <module name="ahrs" type="float_cmpl_quat">
@@ -188,7 +195,7 @@
     <define name="MAX_CMD_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_CMD_PITCH_ANGLE" value="25.0" unit="deg"/>
     <define name="MAX_CMD_ROLL_ANGLE" value="25.0" unit="deg"/>
-    <define name="MAX_CMD_YAW_RATE" value="100.0" unit="deg/s"/>
+    <define name="MAX_CMD_YAW_RATE" value="200.0" unit="deg/s"/>
   </section>
 
   <!-- for demos -->
@@ -221,8 +228,6 @@
     <define name="MIN_FWD_ACC" value="-2.5" unit="m/s^2"/> 
     <define name="MAX_LAT_ACC" value="8.0" unit="m/s^2"/>
     <define name="MAX_VERT_ACC" value="3.0" unit="m/s^2"/>
-
-    <define name="VERT_ACC_MARGIN" value="2.5" unit="m/s^2"/>
   </section>
 
   <section name="APP_LIMITS" prefix="LIMITS_APP_">
@@ -235,8 +240,6 @@
     <define name="MIN_FWD_ACC" value="-4" unit="m/s^2"/> 
     <define name="MAX_LAT_ACC" value="8.0" unit="m/s^2"/>
     <define name="MAX_VERT_ACC" value="3.0" unit="m/s^2"/>
-
-    <define name="VERT_ACC_MARGIN" value="2.5" unit="m/s^2"/>
   </section>
 
   <!-- for demos -->
@@ -326,8 +329,8 @@
     <define name="PID_MAX_AZ_ORDER" value="35" unit="deg"/> <!--max azimuth deflection in PID mode-->
 
     <!-- INDI proportional gains -->
-    <define name="CRUISE_GAIN_P" value="4"/>
-    <define name="CRUISE_GAIN_Q" value="4"/>
+    <define name="CRUISE_GAIN_P" value="1.2"/>
+    <define name="CRUISE_GAIN_Q" value="2.2"/>
     <define name="CRUISE_GAIN_R" value="1"/>
 
     <define name="CRUISE_GAIN_X" value="1"/>
@@ -335,8 +338,8 @@
     <define name="CRUISE_GAIN_Z" value="2"/>
 
     <!-- INDI derivative gains -->
-    <define name="CRUISE_GAIN_P_DOT" value="7"/>
-    <define name="CRUISE_GAIN_Q_DOT" value="7"/>
+    <define name="CRUISE_GAIN_P_DOT" value="9"/>
+    <define name="CRUISE_GAIN_Q_DOT" value="8"/>
     <define name="CRUISE_GAIN_R_DOT" value="5"/>
 
     <define name="CRUISE_GAIN_X_DOT" value="1"/>
@@ -344,8 +347,8 @@
     <define name="CRUISE_GAIN_Z_DOT" value="5"/>
 
     <!-- INDI approach gains -->
-    <define name="APP_GAIN_P" value="1.6"/>
-    <define name="APP_GAIN_Q" value="1.6"/>
+    <define name="APP_GAIN_P" value="1.5"/>
+    <define name="APP_GAIN_Q" value="1.3"/>
     <define name="APP_GAIN_R" value="1.6"/>
 
     <define name="APP_GAIN_X" value="3.5"/>
@@ -353,8 +356,8 @@
     <define name="APP_GAIN_Z" value="5"/>
 
     <!-- INDI approach gains -->
-    <define name="APP_GAIN_P_DOT" value="12.5"/>
-    <define name="APP_GAIN_Q_DOT" value="12.5"/>
+    <define name="APP_GAIN_P_DOT" value="8"/>
+    <define name="APP_GAIN_Q_DOT" value="7"/>
     <define name="APP_GAIN_R_DOT" value="5"/>
 
     <define name="APP_GAIN_X_DOT" value="4"/>
@@ -444,11 +447,11 @@
    <define name="MOTOR_MAX_OMEGA" value="1037" unit="rad/s"/> -->
 
     <define name="MOTOR_MIN_OMEGA" value="150" unit="rad/s"/><!-- Needed to make the INDI to work-->
-    <define name="SERVO_AZ_MIN_ANGLE" value="-40" unit="deg"/><!-- Always remember to update the PWM range as well-->
-    <define name="SERVO_AZ_MAX_ANGLE" value="40" unit="deg"/>
+    <define name="SERVO_AZ_MIN_ANGLE" value="-50" unit="deg"/><!-- Always remember to update the PWM range as well-->
+    <define name="SERVO_AZ_MAX_ANGLE" value="50" unit="deg"/>
 
     <define name="SERVO_EL_MAX_ANGLE" value="22" unit="deg"/>
-    <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
+    <define name="SERVO_EL_MIN_ANGLE" value="-89" unit="deg"/>
 
     <!-- ball bearings vehicle -->
     <define name="SERVO_EL_1_ZERO_VALUE" value="-4.3" unit="deg"/>
@@ -470,9 +473,16 @@
     <define name="MAX_DELTA_AILERONS" value="25" unit="deg"/>
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
 
-    <define name="SPEED_AOA_PROTECTION" value="3" unit="m/s"/>
+    <define name="SPEED_AOA_PROTECTION_CRUISE" value="0.2" unit="m/s"/>
+    <define name="SPEED_AOA_PROTECTION_APP" value="15" unit="m/s"/>
 
-    <define name="MIN_AIRSPEED_READING" value="5.0" unit="m/s"/>
+    <define name="K_GAIN_AIRSPEED_CRUISE" value="0.005" />
+    <define name="K_GAIN_AIRSPEED_APP" value="0.005" />
+
+    <define name="MIN_AIRSPEED_READING" value="0.3" unit="m/s"/>
+
+    <define name="OVERESTIMATION_COEFF_APP" value="1.4"/>
+    <define name="OVERESTIMATION_COEFF_CRUISE" value="1.4"/>
 
     <!-- Tilting angle constraint in the approach and takeoff phase -->
     <define name="K_ALT_TILT_CONSTRAINT" value="50" unit="deg/meters"/>
@@ -488,30 +498,39 @@
   <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES_FAILSAFE" value="0.12" /> 
 
     <!-- Weighting matrix for the INDI -->
-    <define name="W_ACT_MOTOR_CONST" value="100"/>
-    <define name="W_ACT_MOTOR_SPEED" value="0"/>
-    <define name="W_ACT_EL_CONST" value="0"/>
-    <define name="W_ACT_EL_SPEED" value="0"/>
-    <define name="W_ACT_AZ_CONST" value="0"/>
-    <define name="W_ACT_AZ_SPEED" value="5"/>
-    <define name="W_ACT_THETA_CONST" value="100"/>
-    <define name="W_ACT_THETA_SPEED" value="-10"/>
-    <define name="W_ACT_PHI_CONST" value="100"/>
-    <define name="W_ACT_PHI_SPEED" value="-10"/>
+    <!-- CRUISE WEIGHTS -->
+    <define name="W_ACT_MOTOR_CONST_CRUISE" value="100"/>
+    <define name="W_ACT_MOTOR_SPEED_CRUISE" value="0"/>
+    <define name="W_ACT_EL_CONST_CRUISE" value="0"/>
+    <define name="W_ACT_EL_SPEED_CRUISE" value="0"/>
+    <define name="W_ACT_AZ_CONST_CRUISE" value="0"/>
+    <define name="W_ACT_AZ_SPEED_CRUISE" value="5"/>
+    <define name="W_ACT_THETA_CONST_CRUISE" value="100"/>
+    <define name="W_ACT_THETA_SPEED_CRUISE" value="-10"/>
+    <define name="W_ACT_PHI_CONST_CRUISE" value="100"/>
+    <define name="W_ACT_PHI_SPEED_CRUISE" value="-10"/>
+    <define name="W_ACT_AILERONS_CONST_CRUISE" value="0.5"/>
+    <define name="W_ACT_AILERONS_SPEED_CRUISE" value="0"/>
+    <!-- APP WEIGHTS -->
+    <define name="W_ACT_MOTOR_CONST_APP" value="100"/>
+    <define name="W_ACT_MOTOR_SPEED_APP" value="0"/>
+    <define name="W_ACT_EL_CONST_APP" value="0"/>
+    <define name="W_ACT_EL_SPEED_APP" value="0"/>
+    <define name="W_ACT_AZ_CONST_APP" value="0"/>
+    <define name="W_ACT_AZ_SPEED_APP" value="1"/>
+    <define name="W_ACT_THETA_CONST_APP" value="1000"/>
+    <define name="W_ACT_THETA_SPEED_APP" value="-10"/>
+    <define name="W_ACT_PHI_CONST_APP" value="1000"/>
+    <define name="W_ACT_PHI_SPEED_APP" value="-10"/>
+    <define name="W_ACT_AILERONS_CONST_APP" value="0.5"/>
+    <define name="W_ACT_AILERONS_SPEED_APP" value="0"/>
 
-    <define name="W_ACT_AILERONS_CONST" value="0.5"/>
-    <define name="W_ACT_AILERONS_SPEED" value="0"/>
-
-    <define name="TRANSITION_SPEED_PSEUDOCTR_HEDGE" value="7"/>
+    <define name="TRANSITION_SPEED_PSEUDOCTR_HEDGE_CRUISE" value="7"/>
+    <define name="TRANSITION_SPEED_PSEUDOCTR_HEDGE_APP" value="15"/>
 
     <define name="DISABLE_ACC_DECREMENT_INNER_LOOP" value="0"/>
 
-    <!-- <define VALUE="0.007" NAME="W_DV_1"/>
-    <define VALUE="0.007" NAME="W_DV_2"/>
-    <define VALUE="0.01" NAME="W_DV_3"/>
-    <define VALUE="0.02" NAME="W_DV_4"/>
-    <define VALUE="0.02" NAME="W_DV_5"/>
-    <define VALUE="0.02" NAME="W_DV_6"/> -->
+    <define name="VERT_ACC_MARGIN" value="2.5" unit="m/s^2"/>
     
     <define VALUE="0.01" NAME="W_DV_1"/>
     <define VALUE="0.01" NAME="W_DV_2"/>
@@ -525,8 +544,14 @@
     <!-- FWD flight properties for yaw rate induced by controller and for removal of lateral speed term-->
     <!-- <define name="MIN_SPEED_TRANSITION" value="3.0" unit="m/s"/>
     <define name="REF_SPEED_TRANSITION" value="5.0" unit="m/s"/> -->
-    <define name="MIN_SPEED_TRANSITION" value="8.0" unit="m/s"/>
-    <define name="REF_SPEED_TRANSITION" value="10.0" unit="m/s"/>
+    <!-- <define name="MIN_SPEED_TRANSITION" value="0.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION" value="0.5" unit="m/s"/> -->
+    <define name="MIN_SPEED_TRANSITION_CRUISE" value="8.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION_CRUISE" value="10.0" unit="m/s"/>
+    <define name="MIN_SPEED_TRANSITION_APP" value="13.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION_APP" value="15.0" unit="m/s"/>
+
+    <define name="K_BETA" value="0.1"/>
 
   </section>
 
@@ -623,9 +648,7 @@
     <define name="VZ_GAIN_MAX_VAL" value="1"/>
     <define name="VZ_GAIN_MIN_VAL" value="0.6"/>
 
-    <define name="MIN_LAT_SPEED_GAIN_VALUE" value="0.1"/>
-
-    <define name="FWD_SPEED_FORCE_FWD_MODE" value="25"/>
+    <define name="FWD_SPEED_FORCE_FWD_MODE" value="20"/>
     
   </section>
 
@@ -721,7 +744,7 @@
   </section>
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="MAX_BANK" value="30" unit="deg"/>
+    <define name="MAX_BANK" value="OVERACTUATED_MIXING_MAX_PHI"/>
     <define name="USE_SPEED_REF" value="TRUE"/>
     <define name="PGAIN" value="60"/>
     <define name="DGAIN" value="100"/>
