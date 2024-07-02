@@ -25,7 +25,6 @@ struct timeval current_time, last_time_rx, last_time_tx;
 struct timespec current_timespec;
 double last_log_time = 0.0;
 
-static bool verbose_coefficients = true; 
 static bool verbose = false;
 static bool warning_verbose = true;
 static uint8_t ac_id = 0;
@@ -203,7 +202,7 @@ void plot_data(ship_state_log_buffer *cb) {
     fprintf(gnuplotPipe, "set xlabel 'Time [s]'\n");
     fprintf(gnuplotPipe, "set ylabel 'Speed X Control [m/s]'\n");
     //Plot current data and eventually, if available, prediction based on the polynomials:
-    if(prediction_idx > 0 && ship_coeffs_send.timestamp_offset_prediction < 5){
+    if(prediction_idx > 0 && current_clock_time - ship_coeffs.speed_x_control_poly.timestamp_prediction < 5){
       fprintf(gnuplotPipe, "plot '-' with points pointtype 7 linecolor rgb '%s' title 'Speed X Control', '-' with points pointtype 7 linecolor rgb '%s' title 'Speed X Control prediction''\n", color_state,color_prediction);
     }
     else{
@@ -217,7 +216,7 @@ void plot_data(ship_state_log_buffer *cb) {
         index = (index + 1) % BUFFER_SIZE;
     }
     fprintf(gnuplotPipe, "e\n");
-    if(prediction_idx > 0 && ship_coeffs_send.timestamp_offset_prediction < 5){
+    if(prediction_idx > 0 && current_clock_time - ship_coeffs.speed_x_control_poly.timestamp_prediction < 5){
       clock_gettime(CLOCK_BOOTTIME, &current_timespec);
       double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9;
       for (int i = 0; i < prediction_time*LOG_FREQUENCY; i++) {
@@ -237,7 +236,7 @@ void plot_data(ship_state_log_buffer *cb) {
     fprintf(gnuplotPipe, "set xlabel 'Time [s]'\n");
     fprintf(gnuplotPipe, "set ylabel 'Speed Y Control [m/s]'\n");
     //Plot current data and eventually, if available, prediction based on the polynomials:
-    if(prediction_idx > 0 && ship_coeffs_send.timestamp_offset_prediction < 5){
+    if(prediction_idx > 0 && current_clock_time - ship_coeffs.speed_x_control_poly.timestamp_prediction < 5){
       fprintf(gnuplotPipe, "plot '-' with points pointtype 7 linecolor rgb '%s' title 'Speed Y Control', '-' with points pointtype 7 linecolor rgb '%s' title 'Speed Y Control prediction''\n", color_state,color_prediction);
     }
     else{
@@ -251,7 +250,7 @@ void plot_data(ship_state_log_buffer *cb) {
         index = (index + 1) % BUFFER_SIZE;
     }
     fprintf(gnuplotPipe, "e\n");
-    if(prediction_idx > 0 && ship_coeffs_send.timestamp_offset_prediction < 5){
+    if(prediction_idx > 0 && current_clock_time - ship_coeffs.speed_x_control_poly.timestamp_prediction < 5){
       clock_gettime(CLOCK_BOOTTIME, &current_timespec);
       double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9;
       for (int i = 0; i < prediction_time*LOG_FREQUENCY; i++) {
@@ -271,7 +270,7 @@ void plot_data(ship_state_log_buffer *cb) {
     fprintf(gnuplotPipe, "set xlabel 'Time [s]'\n");
     fprintf(gnuplotPipe, "set ylabel 'Speed Z [m/s]'\n");
     //Plot current data and eventually, if available, prediction based on the polynomials:
-    if(prediction_idx > 0 && ship_coeffs_send.timestamp_offset_prediction < 5){
+    if(prediction_idx > 0 && current_clock_time - ship_coeffs.speed_x_control_poly.timestamp_prediction < 5){
       fprintf(gnuplotPipe, "plot '-' with points pointtype 7 linecolor rgb '%s' title 'Speed Z', '-' with points pointtype 7 linecolor rgb '%s' title 'Speed Z prediction''\n", color_state,color_prediction);
     }
     else{
@@ -285,7 +284,7 @@ void plot_data(ship_state_log_buffer *cb) {
         index = (index + 1) % BUFFER_SIZE;
     }
     fprintf(gnuplotPipe, "e\n");
-    if(prediction_idx > 0 && ship_coeffs_send.timestamp_offset_prediction < 5){
+    if(prediction_idx > 0 && current_clock_time - ship_coeffs.speed_x_control_poly.timestamp_prediction < 5){
       clock_gettime(CLOCK_BOOTTIME, &current_timespec);
       double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9;
       for (int i = 0; i < prediction_time*LOG_FREQUENCY; i++) {
@@ -588,13 +587,7 @@ void udp_listener() {
             ship_coeffs_send.phi_dot_poly[i] = ship_coeffs.phi_dot_poly.polynomial_prediction[i];
             ship_coeffs_send.theta_dot_poly[i] = ship_coeffs.theta_dot_poly.polynomial_prediction[i];
           }
-          if(warning_verbose){
-            //print a warning if the prediction offset is above 1.5 seconds: 
-            if(timestamp_offset_prediction > 1.5){
-              printf("Warning: Prediction offset is above 1.5 seconds! \n");
-            }
-          }
-          if(verbose_coefficients){
+          if(verbose){
             //Print the coefficients:
             printf("Prediction offset: %f\n", ship_coeffs_send.timestamp_offset_prediction);
             printf("Speed x control polynomial coeffs: ");
@@ -623,6 +616,15 @@ void udp_listener() {
             }
             printf("\n");
           }
+        }
+        else{
+          clock_gettime(CLOCK_BOOTTIME, &current_timespec);
+          double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9;
+          ship_coeffs_send.timestamp_offset_prediction = ((float) current_clock_time) - ship_coeffs.speed_x_control_poly.timestamp_prediction;
+        }
+        //print a warning if the prediction offset is above 1.5 seconds: 
+        if(ship_coeffs_send.timestamp_offset_prediction > 1.5 && warning_verbose){
+          printf("Warning: Prediction offset is above 1.5 seconds! \n");
         }
     }
 
@@ -785,7 +787,7 @@ void generate_dummy_values(){
     double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9; 
     float omega_speed_x = 0.1;
     float omega_speed_y = 0.2;
-    float omega_speed_z = 0.3;
+    float omega_speed_z = 0.15;
     float omega_phi_dot = 0.4;
     float omega_theta_dot = 0.5;
     float omega_heading = 0.6;
@@ -801,8 +803,14 @@ void generate_dummy_values(){
       .heading_deg = 180.0*sinf(2*M_PI*omega_heading*current_clock_time),
       .speed_x_control = 1.0*sinf(2*M_PI*omega_speed_x*current_clock_time),
       .speed_y_control = 2.0*sinf(2*M_PI*omega_speed_y*current_clock_time)
-      //.speed_x_control = 1.0*sinf(2*M_PI*omega_speed_x*current_clock_time) * cosf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180) + payload_ship.y_dot * sinf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180),
-      //.speed_y_control = -1.0*sinf(2*M_PI*omega_speed_x*current_clock_time) * sinf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180) + payload_ship.y_dot * cosf(180.0*sinf(2*M_PI*omega_heading*current_clock_time)*M_PI/180)
+      // .speed_x = 1.0*sinf(2*M_PI*omega_speed_x*current_clock_time),
+      // .speed_y = 2.0*sinf(2*M_PI*omega_speed_y*current_clock_time),
+      // .speed_z = 3.0*sinf(2*M_PI*omega_speed_z*current_clock_time),
+      // .phi_dot_deg = 4.0*sinf(2*M_PI*omega_phi_dot*current_clock_time),
+      // .theta_dot_deg = 5.0*sinf(2*M_PI*omega_theta_dot*current_clock_time),
+      // .heading_deg = 180.0*sinf(2*M_PI*omega_heading*current_clock_time),
+      // .speed_x_control = 3.0,
+      // .speed_y_control = 0.0
     };
     //Call the log function to save the values on the file:
     log_ship_state(paylod_ship_log);
@@ -812,7 +820,7 @@ void generate_dummy_values(){
 
 // Function to initialize gnuplot
 void init_gnuplot() {
-    gnuplotPipe = popen("gnuplot -persistent", "w");
+    gnuplotPipe = popen("gnuplot -persist > /dev/null 2>&1", "w");
     if (gnuplotPipe == NULL) {
         fprintf(stderr, "Error: could not open gnuplot pipe.\n");
         exit(EXIT_FAILURE);
