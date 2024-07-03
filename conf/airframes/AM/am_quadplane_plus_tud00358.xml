@@ -84,7 +84,7 @@
       <!-- Enable for onboard logging -->
       <module name="flight_recorder"/>      
 
-      <module name="AOA_pwm">
+      <!-- <module name="AOA_pwm">
         <define name="SEND_SYNC_AOA" value="TRUE"/>
         <define name="AOA_ANGLE_OFFSET" value="3.1415"/>
         <define name="AOA_PWM_PERIOD" value="4096"/>
@@ -92,7 +92,7 @@
         <define name="SEND_AOA" value="TRUE"/>
         <define name="LOG_AOA" value="FALSE"/>
         <configure name="AOA_PWM_CHANNEL" value="PWM_INPUT2" />
-      </module>
+      </module> -->
 
       <!--      Module needed for the communication between the raspberry pi and the pixhawk-->
       <module name="ca_am7">

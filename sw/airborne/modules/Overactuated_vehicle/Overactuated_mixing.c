@@ -38,7 +38,7 @@
 #include "modules/sensors/serial_act_t4.h"
 #include "modules/core/abi.h"
 #include "mcu_periph/sys_time.h"
-#include "modules/sensors/aoa_pwm.h"
+// #include "modules/sensors/aoa_pwm.h"
 #include "modules/adcs/adc_generic.h"
 #include "modules/energy/electrical.h"
 #include "modules/core/sys_mon_rtos.h"
@@ -1336,16 +1336,14 @@ void assign_variables(void){
         rate_vect_sec_ahrs[2] = rate_vect[2];
     #endif 
 
+    beta_deg = 0;
     #ifdef SITL
         airspeed = 10;
-        beta_deg = 0;
     #else
         #ifdef NO_AIRSPEED_NONLINEAR_CA
-            airspeed = 0.1;
-            beta_deg = 0;
+            airspeed = 0.1; 
         #else
             airspeed = fmax(OVERACTUATED_MIXING_MIN_AIRSPEED_READING,ms45xx.airspeed);
-            beta_deg = - aoa_pwm.angle * 180/M_PI;
         #endif
     #endif
     
