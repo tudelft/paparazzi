@@ -22,6 +22,10 @@
  *
  */
 
+#include <stdlib.h>
+#include <errno.h>
+#include <sys/time.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -39,7 +43,6 @@
 #include <glib.h>
 #include <Ivy/ivy.h>
 #include <Ivy/ivyglibloop.h>
-#include "Pixhawk_4_read_msg.h"
 
 struct timeval current_time, last_time_rx, last_time_tx;
 
