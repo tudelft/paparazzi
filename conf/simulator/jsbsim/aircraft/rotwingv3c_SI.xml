@@ -301,7 +301,7 @@
               16.0  -0.8333
               25.0  -0.8333
               </tableData>
-              </table>
+            </table>
             <property>fcs/ELEVATOR_lag</property>
           </sum>
         </function>
