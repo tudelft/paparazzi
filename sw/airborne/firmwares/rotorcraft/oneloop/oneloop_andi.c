@@ -1763,7 +1763,7 @@ void calc_model(void){
     model_pred[i] = 0.0;              // 
     for (j = 0; j < ANDI_NUM_ACT; j++){
       if(j == COMMAND_ELEVATOR){
-        model_pred[i] = model_pred[i] +  (actuator_state_1l[j] - ZERO_ELE_PPRZ) * EFF_MAT_RW[i][j];
+        model_pred[i] = model_pred[i] +  (actuator_state_1l[j] - RW.ele_pref) * EFF_MAT_RW[i][j]; // Ele pref is incidence angle
       } else {
         model_pred[i] = model_pred[i] +  actuator_state_1l[j] * EFF_MAT_RW[i][j];
       }
