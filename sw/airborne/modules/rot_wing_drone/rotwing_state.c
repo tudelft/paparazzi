@@ -113,6 +113,10 @@
 #define ROTWING_STATE_FW_SKEW_SPEED 14.0
 #endif
 
+#ifndef ROTWING_STATE_START_SKEW_SPEED
+#define ROTWING_STATE_START_SKEW_SPEED 10.0
+#endif
+
 // stream ADC data if ADC rotation sensor
 #ifndef ADC_WING_ROTATION
 #define ADC_WING_ROTATION FALSE
@@ -575,10 +579,10 @@ void rotwing_state_skewer(void)
     float airspeed = stateGetAirspeed_f();
     if (airspeed < 8) {
       wing_angle_scheduled_sp_deg = 0;
-    } else if (airspeed < 10 && (rotwing_state.desired_state > ROTWING_STATE_HOVER)) {
+    } else if (airspeed < ROTWING_STATE_START_SKEW_SPEED && (rotwing_state.desired_state > ROTWING_STATE_HOVER)) {
       wing_angle_scheduled_sp_deg = 55;
-    } else if (airspeed > 10) {
-      wing_angle_scheduled_sp_deg = ((airspeed - 10.f)) / (ROTWING_STATE_FW_SKEW_SPEED-10.f) * 35. + 55.;
+    } else if (airspeed > ROTWING_STATE_START_SKEW_SPEED) {
+      wing_angle_scheduled_sp_deg = ((airspeed - ROTWING_STATE_START_SKEW_SPEED)) / (ROTWING_STATE_FW_SKEW_SPEED-ROTWING_STATE_START_SKEW_SPEED) * 35. + 55.;
     } else {
       wing_angle_scheduled_sp_deg = 0;
     }
@@ -775,6 +779,8 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, fl
   float fwd_pitch_limit_rad = RadOfDeg(GUIDANCE_INDI_MAX_PITCH);
   float quad_pitch_limit_rad = RadOfDeg(5.0);
 
+  float airspeed = stateGetAirspeed_f();
+
   float scheduled_pitch_angle = 0.f;
   float pitch_angle_range = 3.;
   if (rotwing_state_skewing.wing_angle_deg < 55) {
@@ -782,10 +788,10 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, fl
     Wu_gih[1] = Wu_gih_original[1];
     max_pitch_limit_rad = quad_pitch_limit_rad;
   } else {
-    float pitch_progression = (rotwing_state_skewing.wing_angle_deg - 55) / 35.;
+    float pitch_progression = (airspeed - ROTWING_STATE_FW_SKEW_SPEED) / 2.f;
     Bound(pitch_progression, 0.f, 1.f);
     scheduled_pitch_angle = pitch_angle_range * pitch_progression + guidance_indi_pitch_pref_deg_quad*(1.f-pitch_progression);
-    Wu_gih[1] = Wu_gih_original[1] * (1.f - pitch_progression*0.9);
+    Wu_gih[1] = Wu_gih_original[1] * (1.f - pitch_progression*0.99);
     max_pitch_limit_rad = quad_pitch_limit_rad + (fwd_pitch_limit_rad - quad_pitch_limit_rad) * pitch_progression;
   }
   if (!hover_motors_active) {

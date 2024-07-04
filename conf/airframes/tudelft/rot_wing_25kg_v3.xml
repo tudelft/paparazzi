@@ -138,6 +138,7 @@
         <module name="ground_detect_sensor"/>
         <module name="rotwing_state">
           <define name="ROTWING_STATE_FW_SKEW_SPEED" value="22.0"/>
+          <define name="ROTWING_STATE_START_SKEW_SPEED" value="13.0"/>
         </module>
         <module name="preflight_checks">
             <define name="SDLOG_PREFLIGHT_ERROR" value="TRUE"/>
@@ -493,7 +494,7 @@
         <!--WLS settings-->
         <define name="USE_WLS"              value="TRUE"/>
         <define name="WLS_PRIORITIES"       value="{10., 10., 10.}"/>
-        <define name="WLS_WU"               value="{100., 300., 4., 30.}"/>
+        <define name="WLS_WU"               value="{100., 3000., 4., 30.}"/>
 
         <!-- Gains -->
         <define name="POS_GAIN"             value="0.3"/>

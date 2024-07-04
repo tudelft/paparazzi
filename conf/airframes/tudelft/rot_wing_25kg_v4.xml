@@ -138,6 +138,7 @@
         <module name="ground_detect_sensor"/>
         <module name="rotwing_state">
           <define name="ROTWING_STATE_FW_SKEW_SPEED" value="22.0"/>
+          <define name="ROTWING_STATE_START_SKEW_SPEED" value="13.0"/>
         </module>
         <module name="preflight_checks">
             <define name="SDLOG_PREFLIGHT_ERROR" value="TRUE"/>
