@@ -600,7 +600,7 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
       if (target.target_system == AC_ID) {
         MAVLINK_DEBUG("SET_POSITION_TARGET_GLOBAL_INT, type_mask: %d, frame: %d\n", target.type_mask, target.coordinate_frame);
         /* if position and yaw bits are not set to ignored, use only position for now */
-        if (!(target.type_mask & 0b1110000000100000) && target.coordinate_frame == MAV_FRAME_GLOBAL) {
+        if (!(target.type_mask & 0b0000010000000111) && target.coordinate_frame == MAV_FRAME_GLOBAL) {
           MAVLINK_DEBUG("set position target, frame MAV_FRAME_GLOBAL\n");
           struct NedCoor_i ned;
           struct NedCoor_f ned_f;
@@ -1056,7 +1056,7 @@ static void mavlink_send_rc_channels(struct transport_tx *trans, struct link_dev
                                RC_CHANNELS,
                                PPM_PULSES(0), PPM_PULSES(1), PPM_PULSES(2),
                                PPM_PULSES(3), PPM_PULSES(4), PPM_PULSES(5),
-                               PPM_PULSES(6), PPM_PULSES(7), PPM_PULSES(8),
+                               PPM_PULSES(6), PPM_PULSES(7), PPM_PULSES(2000), // 2000 pilot override uit
                                PPM_PULSES(9), PPM_PULSES(10), PPM_PULSES(11),
                                PPM_PULSES(12), PPM_PULSES(13), PPM_PULSES(14),
                                PPM_PULSES(15), PPM_PULSES(16), PPM_PULSES(17),
