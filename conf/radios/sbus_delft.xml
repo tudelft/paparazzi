@@ -5,6 +5,6 @@
  <channel function="PITCH" min="1000" neutral="1500" max="2000" average="0"/>
  <channel function="YAW" min="1000" neutral="1500" max="2000" average="0"/>
  <channel function="MODE" min="966" neutral="1520" max="2072" average="1" reverse="0"/>
+ <channel function="KILL_SWITCH" min="966" neutral="1520" max="2072" average="0"/>
  <channel function="FMODE" min="966" neutral="1520" max="2072" average="0"/>
- <channel function="AUX2" min="966" neutral="1520" max="2072" average="0"/>
 </radio>
