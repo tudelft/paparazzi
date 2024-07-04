@@ -611,6 +611,7 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
           ned_of_lla_point_i(&ned, &state.ned_origin_i, &lla);
           NED_FLOAT_OF_BFP(ned_f, ned);
           autopilot_guided_goto_ned(ned_f.x, ned_f.y, ned_f.z, target.yaw);
+          waypoint_set_lla(WP_ML_global_target, &lla);
         }
       }
       break;
