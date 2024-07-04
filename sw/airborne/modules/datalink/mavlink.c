@@ -601,7 +601,7 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
         MAVLINK_DEBUG("SET_POSITION_TARGET_GLOBAL_INT, type_mask: %d, frame: %d\n", target.type_mask, target.coordinate_frame);
         /* if position and yaw bits are not set to ignored, use only position for now */
         if (target.coordinate_frame == MAV_FRAME_GLOBAL || target.coordinate_frame == MAV_FRAME_GLOBAL_INT) {
-          MAVLINK_DEBUG("set position target, frame MAV_FRAME_GLOBAL\n");
+          MAVLINK_DEBUG("set position target, frame MAV_FRAME_GLOBAL %f \n", target.alt);
           struct NedCoor_i ned;
           struct NedCoor_f ned_f;
           struct LlaCoor_i lla;
