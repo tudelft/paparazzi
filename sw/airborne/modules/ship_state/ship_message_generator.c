@@ -38,7 +38,7 @@ static void send_ship_info_message(struct transport_tx *trans, struct link_devic
     float theta_telemetry = stateGetNedToBodyEulers_f()->theta * 180/M_PI;
     float psi_telemetry = stateGetNedToBodyEulers_f()->psi * 180/M_PI;
     float heading_state = gps_relposned.heading;
-    float course_state = gps_ubx.state.course;
+    float course_state = gps_relposned.heading;
     float phi_dot_telemetry = phi_dot_state * 180/M_PI;
     float theta_dot_telemetry = theta_dot_state * 180/M_PI;
     float psi_dot_telemetry = psi_dot_state * 180/M_PI;

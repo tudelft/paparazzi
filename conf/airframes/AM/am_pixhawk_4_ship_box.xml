@@ -32,8 +32,8 @@
 
 <!--      Air speed sensor-->
       <module name="airspeed" type="ms45xx_i2c">
-        <define name="USE_I2C4"/><!-- 4525D5AI 001D 2126 010417094-->
-        <define name="MS45XX_I2C_DEV" value="i2c4"/>
+        <define name="USE_I2C4"/>
+        <!-- <define name="MS45XX_I2C_DEV" value="i2c4"/> -->
         <!--<define name="MS45XX_PRESSURE_TYPE" value="0"/> --><!--description="Pressure Differential or Gauge, default is Differential">-->
         <define name="MS45XX_PRESSURE_RANGE" value="1" /><!-- description="pressure range in psi (default: 1)"-->
         <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
@@ -397,7 +397,7 @@
     <define name="MODE_AUTO1" value="AP_MODE_HOVER_DIRECT"/>
     <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_RC_CLIMB"/>
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
-    <define name="RADIO_MODE" value="AP_MODE_NAV"/>
+    <!-- <define name="RADIO_MODE" value="AP_MODE_NAV"/> -->
     
   </section>
 

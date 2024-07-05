@@ -76,6 +76,8 @@
       <define name="INS_EKF2_ACCEL_ID"    value="IMU_CUBE1_ID"/>
       <define name="INS_EKF2_MAG_ID"      value="MAG_RM3100_SENDER_ID"/>
 
+      <define name="INS_EKF2_OPTITRACK" value="TRUE"/>
+
       <!--Only send gyro and accel that is being used-->
       <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
       <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
@@ -141,6 +143,8 @@
     <module name="geo_mag"/>
     <module name="air_data"/>
 
+    <module name="tilt_calibration"/>
+    
     <module name="agl_dist">
       <define name="AGL_DIST_ID" value="AGL_LIDAR_TFMINI_ID"/>
       <define name="AGL_DIST_MAX_RANGE" value="12.0"/>
@@ -438,15 +442,15 @@
     <define name="SERVO_EL_MIN_ANGLE" value="-89" unit="deg"/>
 
     <!-- ball bearings vehicle -->
-    <define name="SERVO_EL_1_ZERO_VALUE" value="-4.3" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="-4.74" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="-7.64" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="7.55" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="3.5" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="-3.5" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-7.54" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="12.03" unit="deg"/>
 
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="2.19" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="-1.84" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="-3.33" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="-2.1" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="5.8" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="0.26" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="-9.66" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="-3.68" unit="deg"/>
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
@@ -764,6 +768,10 @@
     <define name="NAV_DESCEND_VSPEED" value="-0.5"/>
     <define name="ARRIVED_AT_WAYPOINT" value="50.0"/>
 
+    <define name="USE_EXT_REF_ATTITUDE" value="TRUE"/>
+    <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/>
+    <define name="FULLY_MANUAL_HEADING" value="TRUE"/>
+    
     <!-- Avoid GPS loss behavior when having RC or datalink -->
     <define name="NO_GPS_LOST_WITH_DATALINK_TIME" value="20"/>
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
