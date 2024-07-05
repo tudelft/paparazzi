@@ -15,8 +15,8 @@
     <chord unit="IN"> 6.89 </chord>
     <htailarea unit="FT2"> 0 </htailarea>
     <htailarm unit="FT"> 0 </htailarm>
-    <vtailarea unit="FT2"> 0 </vtailarea>
-    <vtailarm unit="FT"> 0 </vtailarm>
+    <vtailarea unit="FT2"> 0.686 </vtailarea>
+    <vtailarm unit="FT"> 1.32 </vtailarm>
     <location name="AERORP" unit="IN">
       <x> 0 </x>
       <y> 0 </y>
@@ -429,6 +429,7 @@
           <value>47.9</value> <!-- Conversion to pascals -->
           <value>0.0151</value> <!-- CD x Area (m^2) -->
           <value>0.224808943</value> <!-- N to LBS -->
+          <value>100.0</value> <!-- some scaling factor -->
         </product>
       </function>
     </axis>
@@ -440,10 +441,20 @@
            <property>aero/qbar-psf</property>
            <property>metrics/Sw-sqft</property>
            <property>aero/beta-rad</property>
-           <value>-8</value>
+           <value>-0</value>
        </product>
     </function>
+  </axis>
 
+  <axis name="YAW">
+    <function name="directional stability" frame="BODY" unit="FT*LBS">
+       <product>
+           <property>aero/qbar-psf</property>
+           <property>metrics/Sv-sqft</property>
+           <property>aero/beta-rad</property>
+           <value>10.0</value>
+       </product>
+    </function>
   </axis>
   </aerodynamics>
 
