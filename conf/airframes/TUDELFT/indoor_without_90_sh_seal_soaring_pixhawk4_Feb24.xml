@@ -216,7 +216,7 @@ NOTES:
 <!--          <configure name="MODEM_PORT" value="usb_serial"/>-->
 <!--          <configure name="MODEM_BAUD" value="B57600"/>-->
         <configure name="MODEM_PORT" value="UART2"/><!--Default UART2=Telem1 UART3 = Telem2 -->
-        <configure name="MODEM_BAUD" value="B230400"/>
+        <configure name="MODEM_BAUD" value="B230400"/> <!-- for the new wifi module -->
       </module>
 
         <!-- Enable for onboard logging -->
