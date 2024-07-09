@@ -40,9 +40,9 @@
   <event fun="sdp3x_event()"/>
 
   <makefile target="ap">
-    <configure name="SDP3X_I2C_DEV" default="i2c2" case="upper|lower"/>
-    <define name="USE_$(SDP3X_I2C_DEV_UPPER)"/>
-    <define name="SDP3X_I2C_DEV" value="$(SDP3X_I2C_DEV_LOWER)"/>
+<!--    <configure name="SDP3X_I2C_DEV" default="i2c2" case="upper|lower"/>-->
+<!--    <define name="USE_$(SDP3X_I2C_DEV_UPPER)"/>-->
+<!--    <define name="SDP3X_I2C_DEV" value="$(SDP3X_I2C_DEV_LOWER)"/>-->
     <file name="airspeed_sdp3x.c"/>
     <test>
       <define name="SDP3X_PERIODIC_PERIOD" value="0.001"/>

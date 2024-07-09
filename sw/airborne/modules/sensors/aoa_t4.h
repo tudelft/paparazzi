@@ -1,5 +1,5 @@
 /*
- *
+ * Copyright (C) 2010 The Paparazzi Team
  *
  * This file is part of paparazzi.
  *
@@ -17,26 +17,43 @@
  * along with paparazzi; see the file COPYING.  If not, write to
  * the Free Software Foundation, 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
+ *
  */
+
 /**
- * @file arch/chibios/modules/actuators/actuators_t4_arch.h
- * Actuator interface for T4 driver
+ * @file modules/sensors/aoa_t4.c
+ * @brief Angle of Attack sensor using Teensy 4.0 + Servo
+ * Autor: Sunyou Hwang
  */
-#ifndef ACTUATORS_T4_ARCH_H
-#define ACTUATORS_T4_ARCH_H
+
+#ifndef AOA_T4_H
+#define AOA_T4_H
 
 #include "std.h"
 
-// servo 1~10(0~10) + esc 1~4 (10~13)
-#ifndef ACTUATORS_T4_NB
-#define ACTUATORS_T4_NB 14
-#endif
+struct Aoa_T4 {
+    /// angle of attack measurement from the sensor in rad;
+    /// before applying sign and offset;
+    float angle_raw;
+    /// Angle of attack in rad; after applying sign and offset
+    float angle;
+    /// Angle of attack offset in radians
+    float offset;
+    /// sign (cw or ccw);
+    int sign;
 
-extern int32_t actuators_t4_values[ACTUATORS_T4_NB];
+//    int16_t timestamp;
+};
 
-extern void actuators_t4_commit(void);
+extern struct Aoa_T4 aoa_t4;
+extern float aoa_t4_a1;
+extern float aoa_t4_b1;
+extern float aoa_t4_a2;
+extern float aoa_t4_b2;
 
-#define ActuatorT4Set(_i, _v) { actuators_t4_values[_i] = _v; }
-#define ActuatorsT4Commit  actuators_t4_commit
+void aoa_t4_init(void);
+void aoa_t4_update(void);
+void aoa_t4_init_filters(void);
 
-#endif /* ACTUATORS_T4_ARCH_H */
+
+#endif /* AOA_T4_H */

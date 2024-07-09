@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Ewoud Smeur <e.j.j.smeur@tudelft.nl>
+ * Copyright (C) Sunyou Hwang <S.Hwang-1@tudelft.nl>
  *
  * This file is part of paparazzi
  *
@@ -18,31 +18,22 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-/** @file "modules/safety/parachute.h"
- * @author Ewoud Smeur <e.j.j.smeur@tudelft.nl>
- * This module triggers automatic deployment of the parachute.
+/** @file "modules/world_env_req_sender/world_env_req_sender.h"
+ * @author Sunyou Hwang <S.Hwang-1@tudelft.nl>
+ * Sending IVY request to import CFD wind data
  */
 
-#ifndef PARACHUTE_H
-#define PARACHUTE_H
+#ifndef CFD_WIND_DATA_IMPORTER_H
+#define CFD_WIND_DATA_IMPORTER_H
 
 #include "std.h"
 
-enum arming_method_t {
-  OFF,     ///< ARMING OVERRIDE OFF
-  AUTO,    ///< AUTOMATIC ARMING
-  ON,      ///< ALWAYS ARMED
-};
+extern int wind_speed;
 
-struct Parachute {
-  enum arming_method_t arming_method;  // arming override
-  bool armed;                          // parachute arming state
-  bool deploy;                         // depoly state
-};
+extern void init_cfd_wind_data_importer(void);
+//extern void init_cfd_wind_data_importer_ivy(void);
+extern void cfd_wind_data_importer_periodic(void);
+extern void cfd_wind_importer_parse_wind_msg(uint8_t *buf);
+extern void cfd_wind_importer_move_waypoint_msg_cb(uint8_t *buf);
 
-extern struct Parachute parachute;
-
-extern void init_parachute(void);
-extern void periodic_parachute(void);
-
-#endif  // PARACHUTE_H
+#endif  // CFD_WIND_DATA_IMPORTER_H
