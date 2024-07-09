@@ -474,7 +474,7 @@
           <value>47.9</value> <!-- Conversion to pascals -->
           <value>0.0151</value> <!-- CD x Area (m^2) -->
           <value>0.224808943</value> <!-- N to LBS -->
-          <value>100.0</value> <!-- some scaling factor -->
+          <value>20.0</value> <!-- some scaling factor -->
         </product>
       </function>
     </axis>

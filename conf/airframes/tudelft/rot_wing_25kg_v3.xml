@@ -139,6 +139,7 @@
         <module name="rotwing_state">
           <define name="ROTWING_STATE_FW_SKEW_SPEED" value="22.0"/>
           <define name="ROTWING_STATE_START_SKEW_SPEED" value="13.0"/>
+          <define name="ROTWING_STATE_QUAD_MAX_SPEED" value="15.0"/>
         </module>
         <module name="preflight_checks">
             <define name="SDLOG_PREFLIGHT_ERROR" value="TRUE"/>
@@ -294,6 +295,8 @@
         <define name="MilliAmpereOfAdc2(adc)"           value="((3.3f/65536.0f) * 50000.f * adc)"/> <!-- Seems te be ok -->
         <define name="VBoardOfAdc(adc)"                 value="((3.3f/65536.0f) * 1.89036 * adc)"/>
         <define name="ADC_CHANNEL_CURRENT2"             value="ADC_4"/>
+
+        <define name="DEFAULT_CIRCLE_RADIUS"            value="300.0"/>
 
         <!-- Others -->
         <define name="NO_RC_THRUST_LIMIT"               value="TRUE"/>

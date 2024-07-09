@@ -117,6 +117,10 @@
 #define ROTWING_STATE_START_SKEW_SPEED 10.0
 #endif
 
+#ifndef ROTWING_STATE_QUAD_MAX_SPEED
+#define ROTWING_STATE_QUAD_MAX_SPEED 7.0
+#endif
+
 // stream ADC data if ADC rotation sensor
 #ifndef ADC_WING_ROTATION
 #define ADC_WING_ROTATION FALSE
@@ -146,7 +150,7 @@ uint8_t rotwing_state_fw_m_off_counter = 0;
 
 float guidance_indi_pitch_pref_deg_quad = -5.0;
 
-float rotwing_state_max_hover_speed = 7;
+float rotwing_state_max_hover_speed = ROTWING_STATE_QUAD_MAX_SPEED;
 
 bool hover_motors_active = true;
 bool bool_disable_hover_motors = false;
