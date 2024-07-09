@@ -152,7 +152,30 @@
       <field name="val2" type="uint16"/>
     </message>
 
-    <!-- 19 is free-->
+     <message name="SOARING_WP_MAP" id="19">
+         <field name="wp_north"  type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+         <field name="wp_east"  type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+         <field name="wp_up"  type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+         <field name="cost_now" type="float"/>
+         <field name="cost_last_position" type="float"/>
+         <field name="last_movement_number" type="int16"/>
+         <field name="move_north" type="float"/>
+         <field name="move_down" type="float"/>
+         <field name="k_thr" type="float"/>
+         <field name="k_spd_x" type="float"/>
+         <field name="k_spd_z" type="float"/>
+         <field name="k_pitch" type="float"/>
+         <field name="move_cost_threshold" type="float"/>        <!-- cost threshold value -->
+         <field name="wp_arrival_dist" type="float"/>            <!-- 3D distance to check wp arrival in meters -->
+         <field name="wp_arrival_duration" type="float"/>        <!-- count for the arrival check -->
+         <field name="timeout_duration" type="float"/>           <!-- timeout to reset the wp -->
+         <field name="soaring_cnt_steps" type="uint16"/>         <!-- current step count -->
+         <field name="max_exploration_steps" type="uint16"/>     <!-- max exploration step setting -->
+         <field name="min_cost" type="float"/>                   <!-- min cost during the exploration.. so far! -->
+         <field name="min_cost_wp_north" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+         <field name="min_cost_wp_east" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+         <field name="min_cost_wp_up" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+     </message>
 
     <message name="CAM" id="20">
       <field name="pan" type="int16" unit="deg"/>
@@ -471,7 +494,28 @@
       <field name="scaled" type="float"/>
     </message>
 
-    <!-- 57 is free-->
+     <message name="GUIDANCE_INDI_HYBRID_SOARING" id="57">
+         <field name="pos_err_x" type="float"/>
+         <field name="pos_err_y" type="float"/>
+         <field name="pos_err_z" type="float"/>
+         <field name="speed_sp_x" type="float"/>
+         <field name="speed_sp_y" type="float"/>
+         <field name="speed_sp_z" type="float"/>
+         <field name="sp_accel_x" type="float"/>
+         <field name="sp_accel_y" type="float"/>
+         <field name="sp_accel_z" type="float"/>
+         <field name="heading_sp" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
+         <field name="aoa" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
+         <field name="L" type="float" />
+         <field name="Ld" type="float" />
+         <field name="Dd" type="float" />
+         <field name="AOA_mode_on" type="uint8"/>
+         <field name="use_drag" type="uint8"/>
+         <field name="ctrl_switching_on" type="uint8" />
+         <field name="using_reduced_ctrl" type="uint8" />
+         <!-- 0 default (linear w/o aoa), 2 linear w/o aoa w/drag, 11 3d aoa ctrl, 12 alt ctrl, 13 hor ctrl -->
+         <field name="critical_aoa" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
+     </message>
 
     <message name="VISION_OUTBACK" id="58">
       <field name="status" type="uint8"/>
@@ -604,6 +648,7 @@
     <message name="AOA" id="69">
       <field name="raw" type="uint32"/>
       <field name="angle" type="float" unit="rad" alt_unit="deg"/>
+        <field name="angle_raw" type="float" unit="rad" alt_unit="deg"/>
     </message>
 
     <message name="XTEND_RSSI" id="70">
@@ -1826,8 +1871,21 @@
          <field name = "serial_act_t4_rolling_msg_out_id" type="uint8">T4 Rolling message out id</field>
      </message>
 
-    <!-- 188 is free -->
-    <!-- 189 is free -->
+
+     <message name="POTENTIAL_FLOW" id="188">
+         <field name="wind_speed_x" type="float"/>
+         <field name="wind_speed_z" type="float"/>
+         <field name="wind_grad_x" type="float"/>
+         <field name="wind_grad_z" type="float"/>
+         <field name="ltp_pos_vehicle_x" type="float"/>
+         <field name="ltp_pos_vehicle_z" type="float"/>
+         <field name="ltp_pos_relative_x" type="float"/>
+         <field name="ltp_pos_relative_z" type="float"/>
+         <field name="gd_speed_sp_x" type="float"/>
+         <field name="gd_speed_sp_z" type="float"/>
+     </message>
+
+     <!-- 189 is free -->
     <!-- 190 is free -->
     <!-- 191 is free -->
     <!-- 192 is free -->
@@ -1990,6 +2048,12 @@
     </message>
 
     <!-- 212 is free -->
+     <message name="INDI_SCHEDULE_G1" id="212">
+         <field name="G1_roll" type="float[]" unit="none"/>
+         <field name="G1_pitch" type="float[]" unit="none"/>
+         <field name="G1_yaw" type="float[]" unit="none"/>
+         <field name="G1_thrust" type="float[]" unit="none"/>
+     </message>
 
     <message name="TUNE_VERT" id="213">
       <field name="z_sp"      type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
@@ -2836,6 +2900,36 @@
       <field name="heading" type="float" unit="deg" format="%.1f">Ground heading</field>
     </message>
 
+  <message name="GROUND_GPS" id="58" link="forwarded">
+      <description>
+          Ground station GPS position for functions like Follow Me
+      </description>
+      <field name="ac_id" type="uint8"/>
+      <field name="lat" type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="lon" type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="alt" type="int32" unit="mm" alt_unit="m">Height above Mean Sea Level (geoid)</field>
+      <field name="timestamp" type="uint32"/>
+  </message>
+
+<!--      <message name="LTP_POSITION" id="59" link="forwarded">-->
+<!--          <description>-->
+<!--              Pprz LTP Position-->
+<!--          </description>-->
+<!--          &lt;!&ndash;          <field name="ac_id" type="uint8"/>&ndash;&gt;-->
+<!--          <field name="ltpp_x"   type="float" unit="m"/>-->
+<!--          <field name="ltpp_y"   type="float" unit="m"/>-->
+<!--          <field name="ltpp_z"   type="float" unit="m"/>-->
+<!--      </message>-->
+      <message name="CFD_WIND_DATA" id="59" link="forwarded">
+          <description>
+              Wind data in ENU (m/s)
+          </description>
+          <field name="ac_id" type="uint8"/>
+          <field name="wind_east" type="float" unit="m/s"/>
+          <field name="wind_north" type="float" unit="m/s"/>
+          <field name="wind_up" type="float" unit="m/s"/>
+      </message>
+
     <message name="SMARTPROBE" id="60" link="forwarded">
       <description>
         Data from SmartProbe 5-hole probe sensor for wind and turbulence measurements
@@ -2858,18 +2952,57 @@
       <field name="t_diff_V_raw" type="float" unit="Celcius">raw temperature for vertical sensor</field>
     </message>
 
-    <message name="HITL_IMU" id="70" link="forwarded">
-      <field name="gp" type="float" unit="rad/s" alt_unit="deg/s"/>
-      <field name="gq" type="float" unit="rad/s" alt_unit="deg/s"/>
-      <field name="gr" type="float" unit="rad/s" alt_unit="deg/s"/>
-      <field name="ax" type="float" unit="m/s-2"/>
-      <field name="ay" type="float" unit="m/s-2"/>
-      <field name="az" type="float" unit="m/s-2"/>
-      <field name="mx" type="float" />
-      <field name="my" type="float" />
-      <field name="mz" type="float" />
-      <field name="ac_id" type="uint8"/>
-    </message>
+
+      <message name="MOVE_WAYPOINT_LTP" id="61" link="forwarded">
+          <description>
+              send info for WP to move in LTP
+          </description>
+          <field name="ac_id" type="uint8"/>
+          <field name="wp_id" type="uint8"/>
+          <field name="ltp_x" type="float" unit="m" />
+          <field name="ltp_y" type="float" unit="m" />
+          <field name="ltp_z" type="float" unit="m" />
+      </message>
+
+
+      <message name="REMOTE_GPS_SMALL" id="62" link="forwarded">
+          <field name="heading"   type="int16"  unit="1e4rad" alt_unit="deg" alt_unit_coef="0.0057296"/>
+          <field name="pos_xyz"  	type="uint32">bits 31-21 east position [cm] : bits 20-10 north position [cm] : bits 9-0 up position [cm]</field>
+          <field name="speed_xyz" type="uint32">bits 31-21 east speed [cm/s] : bits 20-10 north speed [cm/s] : bits 9-0 climb speed [cm/s]</field>
+          <field name="tow"   	type="uint32" unit="ms" alt_unit="s" alt_unit_coef="0.001"/>
+          <field name="ac_id"   	type="uint8"/>
+      </message>
+
+      <message name="REMOTE_GPS" id="63" link="forwarded">
+          <field name="ac_id"   type="uint8"/>
+          <field name="numsv"   type="uint8"/>
+          <field name="ecef_x"  type="int32" unit="cm"   alt_unit="m"/>
+          <field name="ecef_y"  type="int32" unit="cm"   alt_unit="m"/>
+          <field name="ecef_z"  type="int32" unit="cm"   alt_unit="m"/>
+          <field name="lat"     type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+          <field name="lon"     type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+          <field name="alt"     type="int32" unit="mm"   alt_unit="m">Height above WGS84 reference ellipsoid</field>
+          <field name="hmsl"    type="int32" unit="mm"   alt_unit="m">Height above Mean Sea Level (geoid)</field>
+          <field name="ecef_xd" type="int32" unit="cm/s" alt_unit="m/s"/>
+          <field name="ecef_yd" type="int32" unit="cm/s" alt_unit="m/s"/>
+          <field name="ecef_zd" type="int32" unit="cm/s" alt_unit="m/s"/>
+          <field name="tow"     type="uint32"/>
+          <field name="course"  type="int32"  alt_unit="deg" alt_unit_coef="0.0000057296"/>
+      </message>
+
+
+      <message name="HITL_IMU" id="70" link="forwarded">
+          <field name="gp" type="float" unit="rad/s" alt_unit="deg/s"/>
+          <field name="gq" type="float" unit="rad/s" alt_unit="deg/s"/>
+          <field name="gr" type="float" unit="rad/s" alt_unit="deg/s"/>
+          <field name="ax" type="float" unit="m/s-2"/>
+          <field name="ay" type="float" unit="m/s-2"/>
+          <field name="az" type="float" unit="m/s-2"/>
+          <field name="mx" type="float" />
+          <field name="my" type="float" />
+          <field name="mz" type="float" />
+          <field name="ac_id" type="uint8"/>
+      </message>
 
     <message name="HITL_GPS" id="71" link="forwarded">
       <field name="lat" type="float" unit="deg"/>
@@ -3386,7 +3519,24 @@
       <field name="button4" type="uint8" unit="bool">button 4 status</field>
     </message>
 
-    <message name="PLUMES" id="100">
+      <message name="CFD_WIND" id="42">
+<!--          <field name="ac_id" type="string"/>-->
+          <field name="wind_east" type="float" unit="m/s" format="%.1f"/>
+          <field name="wind_north" type="float" unit="m/s" format="%.1f"/>
+          <field name="wind_up" type="float" unit="m/s" format="%.1f"/>
+      </message>
+
+<!--      <message name="CFD_WIND_REQ" id="43">-->
+<!--          <field name="lat"  type="float" unit="deg"/>-->
+<!--          <field name="long" type="float" unit="deg"/>-->
+<!--          <field name="alt"  type="float" unit="m"/>-->
+<!--          <field name="east" type="float" unit="m"/> &lt;!&ndash; local ref. &ndash;&gt;-->
+<!--          <field name="north" type="float" unit="m"/> &lt;!&ndash; local ref. &ndash;&gt;-->
+<!--          <field name="up"   type="float" unit="m"/> &lt;!&ndash; local ref. &ndash;&gt;-->
+<!--      </message>-->
+
+
+      <message name="PLUMES" id="100">
       <field name="ids" type="string" format="csv"/>
       <field name="lats" type="string" format="csv"/>
       <field name="longs" type="string" format="csv"/>

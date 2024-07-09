@@ -526,10 +526,10 @@ NOTES:
         <servo name="S_THROTTLE" no="10" min="100" neutral="100" max="1900"/>
 
         <!--    degress * 100 -->
-        <servo name="S_AILERON_L"  no="0" min="-18000" neutral="0" max="18000"/>
+        <servo name="S_AILERON_LEFT"  no="0" min="-18000" neutral="0" max="18000"/>
         <servo name="S_ELEVATOR" no="1" min="-18000" neutral="0" max="18000"/>
         <servo name="S_RUDDER"   no="2" min="-18000" neutral="0" max="18000"/>
-        <servo name="S_AILERON_R"   no="3" min="-18000" neutral="0" max="18000"/>
+        <servo name="S_AILERON_RIGHT"   no="3" min="-18000" neutral="0" max="18000"/>
      </servos>
 
 <!--  <section name="ServoPositions">-->
