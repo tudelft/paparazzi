@@ -39,7 +39,7 @@ NOTES:
 <!--    <autopilot name="rotorcraft_autopilot_never_landing_drone.xml"/>-->
 
     <target name="ap" board="cube_orangeplus">
-      <configure name="FLASH_MODE" value="SWD"/>
+<!--      <configure name="FLASH_MODE" value="SWD"/>-->
 
       <!--<configure name="CPU_LED" value="1"/>--> <!--No support yet on Cube board-->
       <!--configure name="RTOS_DEBUG" value="TRUE"/-->
@@ -72,26 +72,26 @@ NOTES:
 
       <!--<module name="imu" type="heater"/>--><!-- TODO fix function not found-->
 
-      <module name="mag_ist8310">
-        <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>
-        <configure name="MAG_IST8310_I2C_DEV" value="I2C2"/>
-        <!-- TODO determine correct axis and signs -->
-        <!--
-        <define name="IST8310_CHAN_X" value="0"/>
-        <define name="IST8310_CHAN_Y" value="1"/>
-        <define name="IST8310_CHAN_Z" value="2"/> 
+<!--      <module name="mag_ist8310">-->
+<!--        <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>-->
+<!--        <configure name="MAG_IST8310_I2C_DEV" value="I2C3"/>-->
+<!--        &lt;!&ndash; TODO determine correct axis and signs &ndash;&gt;-->
+<!--        &lt;!&ndash;-->
+<!--        <define name="IST8310_CHAN_X" value="0"/>-->
+<!--        <define name="IST8310_CHAN_Y" value="1"/>-->
+<!--        <define name="IST8310_CHAN_Z" value="2"/> -->
 
-        <define name="IST8310_CHAN_X_SIGN" value="+"/>
-        <define name="IST8310_CHAN_Y_SIGN" value="+"/>
-        <define name="IST8310_CHAN_Z_SIGN" value="-"/>
-        -->
-      </module>
+<!--        <define name="IST8310_CHAN_X_SIGN" value="+"/>-->
+<!--        <define name="IST8310_CHAN_Y_SIGN" value="+"/>-->
+<!--        <define name="IST8310_CHAN_Z_SIGN" value="-"/>-->
+<!--        &ndash;&gt;-->
+<!--      </module>-->
 
-      <!-- optionall add extra magneto
+      <!-- optionall add extra magneto -->
       <module name="mag" type="rm3100">
-        <define name="USE_I2C1"/>
+        <define name="USE_I2C2"/>
         <configure name="MAG_RM3100_PERIODIC_FREQUENCY" value="125"/>
-        <configure name="MAG_RM3100_I2C_DEV" value="i2c1"/>
+        <configure name="MAG_RM3100_I2C_DEV" value="i2c2"/>
         <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
         <define name="RM3100_CHAN_X" value="1"/>
         <define name="RM3100_CHAN_Y" value="0"/>
@@ -100,9 +100,8 @@ NOTES:
         <define name="RM3100_CHAN_Y_SIGN" value="+"/>
         <define name="RM3100_CHAN_Z_SIGN" value="-"/>
 
-        <configure name="MODULE_RM3100_SYNC_SEND" value="TRUE"/>
-      </module> 
-      -->
+<!--        <configure name="MODULE_RM3100_SYNC_SEND" value="TRUE"/>-->
+      </module>
  
       <!-- No need for spi values since already in default Pixhawk4 board but for cube? unknown-->
       <module name="baro_ms5611_spi">
@@ -123,16 +122,16 @@ NOTES:
 <!--      <define name="ADC_CURRENT_DISABLE" value="TRUE"/>-->
 
 <!--        <configure name="USE_ADC_3" value="TRUE"/>-->
-        <configure name="USE_ADC_5" value="TRUE"/>
-        <module name="adc_generic">
-<!--            <define name="ADC_CHANNEL_GENERIC_NB_SAMPLES" value=""/>-->
-<!--        <configure name="USE_ADC_4" value="TRUE"/>-->
-        <configure name="ADC_CHANNEL_GENERIC1" value="ADC_5"/>
-<!--        <configure name="ADC_CHANNEL_GENERIC2" value="ADC_5"/>-->
-        <!--<configure name="ADC_CHANNEL_GENERIC2" value="RSSI_IN"/>-->
-<!--        <configure name="ADC_CHANNEL_GENERIC2" value="ADC_4"/>-->
-            <define name="ADC_GENERIC_PERIODIC_SEND" value="FALSE"/>
-      </module>
+<!--        <configure name="USE_ADC_5" value="TRUE"/>-->
+<!--        <module name="adc_generic">-->
+<!--&lt;!&ndash;            <define name="ADC_CHANNEL_GENERIC_NB_SAMPLES" value=""/>&ndash;&gt;-->
+<!--&lt;!&ndash;        <configure name="USE_ADC_4" value="TRUE"/>&ndash;&gt;-->
+<!--        <configure name="ADC_CHANNEL_GENERIC1" value="ADC_5"/>-->
+<!--&lt;!&ndash;        <configure name="ADC_CHANNEL_GENERIC2" value="ADC_5"/>&ndash;&gt;-->
+<!--        &lt;!&ndash;<configure name="ADC_CHANNEL_GENERIC2" value="RSSI_IN"/>&ndash;&gt;-->
+<!--&lt;!&ndash;        <configure name="ADC_CHANNEL_GENERIC2" value="ADC_4"/>&ndash;&gt;-->
+<!--            <define name="ADC_GENERIC_PERIODIC_SEND" value="FALSE"/>-->
+<!--      </module>-->
 
       <!--
       <module name="sonar_pwm">  
@@ -162,10 +161,10 @@ NOTES:
 
       <!--module name="gps" type="datalink"/--><!--Enable this for CyberZoo tests , disable the uBlox module -->
 
-<!--        UART1 == GPS1-->
+<!--        UART4 == GPS1  OrangeCube     -->
       <!-- The GNSS in the tail -->
       <module name="gps" type="ublox">
-        <configure name="GPS_PORT" value="UART1"/><!-- Uses the default GPS port on FC can be remove if only connected there -->
+        <configure name="GPS_PORT" value="UART4"/><!-- Uses the default GPS port on FC can be remove if only connected there -->
         <configure name="GPS_BAUD" value="B460800"/><!-- UBX message only but rate set to ~?HZ with GPS, GLONASS, BEIDU and GALILEIO at the SAME time is a LOT of GNSS message data-->
         <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
         <define name="GPS_UBX_RTK_REJECT_HEADING_BY_POSLENGTH" value="TRUE"/>
@@ -180,25 +179,34 @@ NOTES:
         <configure name="GPS_BAUD" value="B57600"/>
       </module>-->
 
+<!--        <define name="USE_UART3" value="TRUE"/>-->
 <!--        UART 3 == Telem2-->
       <module name="radio_control" type="sbus">
-        <configure name="SBUS_PORT" value="UART4"/> <!--Telem2 RCIN UART5? -->
+          <configure name="SBUS_PORT" value="UART3"/> <!-- On the TELEM2 port -->
         <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>
 <!--        <define name="RADIO_GEAR" value="RADIO_AUX2"/>-->
 <!--        <define name="RADIO_FLAP" value="RADIO_AUX3"/>-->
-
       </module>
 
       <module name="sys_mon"/><!-- Enable if one want to check processor load for higher loop, nav, module etc. frequencies -->
 
 <!--        UART2 == Telem1-->
-      <module name="telemetry" type="transparent">
-<!--          <configure name="MODEM_PORT" value="usb_serial"/>-->
-<!--          <configure name="MODEM_BAUD" value="B57600"/>-->
-        <configure name="MODEM_PORT" value="UART2"/><!--Default UART2=Telem1 UART3 = Telem2 -->
-        <configure name="MODEM_BAUD" value="B115200"/>  <!-- Herelink -->
-<!--        <configure name="MODEM_BAUD" value="B230400"/> &lt;!&ndash; for the new wifi module &ndash;&gt;-->
-      </module>
+<!--      <module name="telemetry" type="transparent">-->
+<!--&lt;!&ndash;          <configure name="MODEM_PORT" value="usb_serial"/>&ndash;&gt;-->
+<!--&lt;!&ndash;          <configure name="MODEM_BAUD" value="B57600"/>&ndash;&gt;-->
+<!--        <configure name="MODEM_PORT" value="UART2"/>&lt;!&ndash;Default UART2=Telem1 UART3 = Telem2 &ndash;&gt;-->
+<!--        <configure name="MODEM_BAUD" value="B115200"/>  &lt;!&ndash; Herelink &ndash;&gt;-->
+<!--&lt;!&ndash;        <configure name="MODEM_BAUD" value="B230400"/> &lt;!&ndash; for the new wifi module &ndash;&gt;&ndash;&gt;-->
+<!--      </module>-->
+
+        <module name="telemetry" type="transparent">
+                      <configure name="MODEM_PORT" value="usb_serial"/>
+                      <configure name="MODEM_BAUD" value="B57600"/>
+            <!--        UART2 == TELEM1  OrangeCube     -->
+<!--            <configure name="MODEM_PORT" value="UART2"/>&lt;!&ndash;Default UART2=Telem1 UART3 = Telem2 &ndash;&gt;-->
+<!--            <configure name="MODEM_BAUD" value="B115200"/>  &lt;!&ndash; Herelink &ndash;&gt;-->
+            <!--        <configure name="MODEM_BAUD" value="B230400"/> &lt;!&ndash; for the new wifi module &ndash;&gt;-->
+        </module>
 
         <!-- Enable for onboard logging -->
       
@@ -312,8 +320,9 @@ NOTES:
 
 
         <!--        UART4 == UART & I2C B  on Pixhawk4  -->
+        <!--    UART8 == GPS2  on OrangeCube    -->
         <module name="serial_act_t4">
-            <configure name="SERIAL_ACT_T4_PORT" value="UART3"/>
+            <configure name="SERIAL_ACT_T4_PORT" value="UART8"/>
             <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>
         </module>
         <module name="actuators" type="t4"/>
@@ -478,8 +487,9 @@ NOTES:
 
 
         <!--        UART4 == UART & I2C B  on Pixhawk4  -->
+        <!--    UART8 == GPS2 orangecube -->
         <module name="serial_act_t4">
-            <configure name="SERIAL_ACT_T4_PORT" value="UART3"/>
+            <configure name="SERIAL_ACT_T4_PORT" value="UART8"/>
             <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>
         </module>
         <module name="actuators" type="t4"/>
@@ -518,18 +528,21 @@ NOTES:
 
     <servos driver="T4">
         <!-- ref: https://github.com/tudelft/Teensy_actuators_PPZ -->
-        <!-- no="0~9" for servos, no="10~13" for escs -->
+        <!-- no="0~9" for servos, no="10~11" pwm, no="12~15" for escs -->
         <!-- Servo no == (servo_ID - 1) because it starts from ZERO... -->
         <!-- e.g. if you want to use a servo with ID 3 for your elevator -->
         <!-- <servo name="ELEVATOR" no="2" min="20" neutral="50" max="100"/>-->
 
-        <servo name="S_THROTTLE" no="10" min="100" neutral="100" max="1900"/>
+        <servo name="S_THROTTLE" no="12" min="100" neutral="100" max="1900"/>
 
         <!--    degress * 100 -->
         <servo name="S_AILERON_LEFT"  no="0" min="-18000" neutral="0" max="18000"/>
-        <servo name="S_ELEVATOR" no="1" min="-18000" neutral="0" max="18000"/>
-        <servo name="S_RUDDER"   no="2" min="-18000" neutral="0" max="18000"/>
+        <!-- FLAPS left 1, right 2 -->
         <servo name="S_AILERON_RIGHT"   no="3" min="-18000" neutral="0" max="18000"/>
+        <servo name="S_ELEVATOR" no="4" min="-18000" neutral="0" max="18000"/>
+        <servo name="S_RUDDER"   no="5" min="-18000" neutral="0" max="18000"/>
+
+        <servo name="S_ACL_LIGHT"   no="10" min="-18000" neutral="0" max="18000"/>
      </servos>
 
 <!--  <section name="ServoPositions">-->
