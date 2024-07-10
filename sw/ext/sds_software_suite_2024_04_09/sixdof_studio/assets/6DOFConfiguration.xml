@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<map>
+    <beacon>
+        <x>0.28799999999999998</x>
+        <y>-0.222</y>
+        <z>-0.0050000000000000001</z>
+        <id>1640</id>
+    </beacon>
+    <beacon>
+        <x>0.29199999999999998</x>
+        <y>0.224</y>
+        <z>-0.0050000000000000001</z>
+        <id>1645</id>
+    </beacon>
+    <beacon>
+        <x>-0.29799999999999999</x>
+        <y>0.23000000000000001</y>
+        <z>-0.0050000000000000001</z>
+        <id>1632</id>
+    </beacon>
+    <beacon>
+        <x>-0.29999999999999999</x>
+        <y>-0.222</y>
+        <z>-0.0050000000000000001</z>
+        <id>1633</id>
+    </beacon>
+</map>
+<skipGyro>
+    <flag>false</flag>
+</skipGyro>
+<shutterSettings>
+    <mode>AUTO</mode>
+</shutterSettings>
+<dumpPath>
+    <path/>
+</dumpPath>
