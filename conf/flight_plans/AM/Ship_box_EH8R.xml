@@ -1,0 +1,77 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="60" ground_alt="0" lat0="52.965523" lon0="4.474033" max_dist_from_home="600000" name="overactuated vehicle EHR8" security_height="2">
+  <header>
+    #include "autopilot.h"
+    #include "modules/datalink/datalink.h"
+    #include  "modules/Overactuated_vehicle/Overactuated_mixing.h"
+    
+</header>
+  <waypoints>
+    <waypoint name="HOME" x="0.0" y="0.0"/>
+    <waypoint name="CLIMB" x="0.0" y="55.0"/>
+    <waypoint name="STDBY" x="16.0" y="55.0"/>
+    <waypoint name="p1" x="3.6" y="-139"/>
+    <waypoint name="p2" x="100" y="100"/>
+    <waypoint name="p3" x="100" y="-100"/>
+    <waypoint name="p4" x="-100" y="-100"/>
+    <waypoint name="TD" x="55.6" y="-10.9"/>
+    <waypoint name="FOLLOW" x="60.5" y="13.5"/>
+    <waypoint name="APP" x="40.5" y="13.5"/>
+    <!-- EHR8 -->
+    <waypoint name="C1" lat="52.96166667" lon="4.740277778"/>
+    <waypoint name="C2" lat="52.86666667" lon="4.716666667"/>
+    <waypoint name="C3" lat="52.78333333" lon="4.683333333"/>
+    <waypoint name="C4" lat="52.75" lon="4.533333333"/>
+    <waypoint name="C5" lat="52.775" lon="4.433333333"/>
+    <waypoint name="C6" lat="52.81666667" lon="4.35"/>
+    <waypoint name="C7" lat="53.08333333" lon="4.35"/>
+    <waypoint name="C8" lat="53.10277778" lon="4.515555556"/>
+    <waypoint name="C9" lat="53.04972222" lon="4.679444444"/>
+  </waypoints>
+  <sectors>
+    <sector color="orange" name="EHR8">
+      <corner name="C1"/>
+      <corner name="C2"/>
+      <corner name="C3"/>
+      <corner name="C4"/>
+      <corner name="C5"/>
+      <corner name="C6"/>
+      <corner name="C7"/>
+      <corner name="C8"/>
+      <corner name="C9"/>
+    </sector>
+    <!--sector color="red" name="RES">
+      <corner name="R1"/>
+      <corner name="R2"/>
+      <corner name="R3"/>
+      <corner name="R4"/>
+    </sector-->
+  </sectors>
+  <modules>
+    <module name="follow_me">
+      <define name="FOLLOW_ME_MOVING_WPS" value="WP_p1,WP_p2,WP_p3,WP_p4"/>
+    </module>
+  </modules>
+  <exceptions>
+  
+  </exceptions>
+  <blocks>
+
+    <block name="Wait GPS">
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid() || !state.ned_initialized_i"/>
+    </block>
+
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetGroundReferenceHere()"/>
+    </block>
+
+    <block name="Holding point">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" pre_call="NavKillThrottle()" vmode="throttle"/>
+    </block>
+    
+  </blocks>
+</flight_plan>
