@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dennis van Wijngaarden <D.C.vanWijngaarden@tudelft.nl>
+ * Copyright (C) 2023 Tomaso De Ponti <T.M.L.DePonti@tudelft.nl>
  *
  * This file is part of paparazzi
  *
@@ -18,12 +18,12 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-/** @file "modules/ctrl/eff_scheduling_rot_wing.c"
+/** @file "modules/ctrl/eff_scheduling_rot_wing_V2.c"
  * @author Tomaso De Ponti <T.M.L.DePonti@tudelft.nl>
  * The control effectiveness scheduler for the rotating wing drone type
  */
 
-#include "modules/ctrl/eff_scheduling_rot_wing.h"
+#include "modules/ctrl/eff_scheduling_rot_wing_V2.h"
 #include "generated/airframe.h"
 #include "state.h"
 #include "modules/actuators/actuators.h"

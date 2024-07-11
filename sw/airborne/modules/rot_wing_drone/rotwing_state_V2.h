@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dennis van Wijngaarden <D.C.vanWijngaarden@tudelft.nl>
+ * Copyright (C) 2023 Tomaso De Ponti <T.M.L.DePonti@tudelft.nl>
  *
  * This file is part of paparazzi
  *
@@ -18,8 +18,8 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-/** @file "modules/rotwing/rotwing_state.h"
- * @author Dennis van Wijngaarden <D.C.vanWijngaarden@tudelft.nl>
+/** @file "modules/rotwing/rotwing_state_V2.h"
+ * @author Tomaso De Ponti <T.M.L.DePonti@tudelft.nl>
  * This module keeps track of the current state of a rotating wing drone and desired state set by the RC or flightplan. Paramters are being scheduled in each change of a current state and desired state. Functions are defined in this module to call the actual state and desired state and set a desired state.
  */
 

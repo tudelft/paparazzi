@@ -1,5 +1,5 @@
 <!DOCTYPE module SYSTEM "module.dtd">
-<module name="eff_scheduling_rot_wing" dir="ctrl">
+<module name="eff_scheduling_rot_wing_V2" dir="ctrl">
   <doc>
     <description>T
       The control effectiveness scheduler for the rotating wing 3 quadplane

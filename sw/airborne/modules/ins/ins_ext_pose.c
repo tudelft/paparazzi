@@ -39,7 +39,7 @@
 
 float skew_rad = 0.2;
 // #ifdef INS_EXT_POSE_RW
-// #include "modules/ctrl/eff_scheduling_rot_wing.h"
+// #include "modules/ctrl/eff_scheduling_rot_wing_V2.h"
 // #endif
 
 #if 0

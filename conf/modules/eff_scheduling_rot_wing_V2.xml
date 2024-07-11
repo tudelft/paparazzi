@@ -1,5 +1,5 @@
 <!DOCTYPE module SYSTEM "module.dtd">
-<module name="eff_scheduling_rot_wing" dir="ctrl">
+<module name="eff_scheduling_rot_wing_V2" dir="ctrl">
   <doc>
     <description>T
       he control effectiveness scheduler for the rotating wing quadplane drone type
@@ -29,12 +29,12 @@
    </dl_settings>
   </settings>
   <header>
-    <file name="eff_scheduling_rot_wing.h"/>
+    <file name="eff_scheduling_rot_wing_V2.h"/>
   </header>
   <init fun="eff_scheduling_rot_wing_init()"/>
   <periodic fun="eff_scheduling_rot_wing_periodic()"/>
   <makefile>
-    <file name="eff_scheduling_rot_wing.c"/>
+    <file name="eff_scheduling_rot_wing_V2.c"/>
     <test>
       <define name="ACTUATORS_NB" value="10"/>
       <define name="SERVO_ROTATION_MECH_IDX" value="8"/>

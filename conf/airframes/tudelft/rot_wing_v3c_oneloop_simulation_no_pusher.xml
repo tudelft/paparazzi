@@ -96,7 +96,7 @@
         </module>
 
         <module name="ground_detect_sensor"/>
-        <module name="rotwing_state">
+        <module name="rotwing_state_V2">
              <define name = "ROT_MECH_IDX"        value = "9"/>
              <define name = "USE_ROTMECH_VIRTUAL" value = "FALSE"/>
              <define name = "ROTMECH_DYN"         value = "3.0"/>

@@ -121,7 +121,7 @@
             <configure name="ANDI_OUTPUTS" value="6"/>
         </module>
 
-        <module name="eff_scheduling_rot_wing"/>
+        <module name="eff_scheduling_rot_wing_V2"/>
 
         <module name="wls">
             <define name="WLS_N_U" value = "11"/>
@@ -129,9 +129,11 @@
         </module>
 
         <module name="ground_detect_sensor"/>
-        <module name="rotwing_state"/>
+        <module name="rotwing_state_V2"/>
         <module name="agl_dist"/>
-        <module name="rot_wing_automation"/>
+        <module name="rot_wing_automation">
+            <define name="USE_V2" value="TRUE"/>
+        </module>
     </firmware>
 
     <!-- PWM actuators -->   
