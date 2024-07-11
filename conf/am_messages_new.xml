@@ -3066,6 +3066,48 @@
       <field name="p_diff_V_raw" type="float" unit="Pa">raw differential pressure for vertical sensor</field>
       <field name="t_diff_V_raw" type="float" unit="Celcius">raw temperature for vertical sensor</field>
     </message>
+    
+    <message name="HITL_IMU" id="70" link="forwarded">
+      <field name="gp" type="float" unit="rad/s" alt_unit="deg/s"/>
+      <field name="gq" type="float" unit="rad/s" alt_unit="deg/s"/>
+      <field name="gr" type="float" unit="rad/s" alt_unit="deg/s"/>
+      <field name="ax" type="float" unit="m/s-2"/>
+      <field name="ay" type="float" unit="m/s-2"/>
+      <field name="az" type="float" unit="m/s-2"/>
+      <field name="mx" type="float" />
+      <field name="my" type="float" />
+      <field name="mz" type="float" />
+      <field name="ac_id" type="uint8"/>
+    </message>
+
+    <message name="HITL_GPS" id="71" link="forwarded">
+      <field name="lat" type="float" unit="deg"/>
+      <field name="lon" type="float" unit="deg"/>
+      <field name="alt" type="float" unit="m">ellipsoid alt</field>
+      <field name="hmsl" type="float" unit="m">geoid alt</field>
+      <field name="ecef_vel_x" type="float" unit="m/s"/>
+      <field name="ecef_vel_y" type="float" unit="m/s"/>
+      <field name="ecef_vel_z" type="float" unit="m/s"/>
+      <field name="time" type="float" unit="s"/>
+      <field name="fix" type="uint8"/>
+      <field name="ac_id" type="uint8"/>
+    </message>
+
+    <message name="HITL_UBX" id="72" link="forwarded">
+      <field name="class" type="uint8"/>
+      <field name="id" type="uint8"/>
+      <field name="ac_id" type="uint8"/>
+      <field name="ubx_payload" type="uint8[]"/>
+    </message>
+
+    <message name="HITL_AIR_DATA" id="73" link="forwarded">
+      <field name="baro" type="float" unit="Pa"/>
+      <field name="airspeed" type="float" unit="m/s"/>
+      <field name="aoa" type="float" unit="rad"/>
+      <field name="sideslip" type="float" unit="rad"/>
+      <field name="update_flag" type="uint8">bit 0: baro, bit 1: airspeed, bit 2: aoa, bit 3: sideslip</field>
+      <field name="ac_id" type="uint8"/>
+    </message>
 
     <message name="KITE_COMMAND" id="96">
       <field name="POWER"     type="uint16"/>

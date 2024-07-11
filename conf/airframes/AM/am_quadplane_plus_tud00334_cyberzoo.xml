@@ -90,8 +90,7 @@
 <!--<define name="USE_SIDESLIP" value="TRUE"/>-->
  <!-- (2*3.14)/AOA_PWM_PERIOD -->
  <!-- the PPM RC INput used for PWM in -->
-      <module name="AOA_pwm">
-        <!-- <define name="USE_PWM_INPUT2" value="TRUE"/> -->
+      <!-- <module name="AOA_pwm">
         <define name="SEND_SYNC_AOA" value="TRUE"/>
         <define name="AOA_ANGLE_OFFSET" value="3.1415"/>
         <define name="AOA_PWM_PERIOD" value="4096"/>
@@ -99,7 +98,7 @@
         <define name="SEND_AOA" value="TRUE"/>
         <define name="LOG_AOA" value="FALSE"/>
         <configure name="AOA_PWM_CHANNEL" value="PWM_INPUT2" />
-      </module>
+      </module> -->
 
       <!--      Module needed for the communication between the raspberry pi and the pixhawk-->
       <module name="ca_am7">
@@ -178,7 +177,7 @@
     </module>
 
 
-    <module name="Overactuated_mixing"/>
+    <module name="overactuated_mixing"/>
 
     <module name="lidar" type="tfmini_am7">
       <configure name="USE_TFMINI_AGL" value="TRUE"/>
@@ -748,11 +747,9 @@
     <define name="FILT_CUTOFF_R" value="4.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN_P" value="0.047"/>
-    <define name="ACT_DYN_Q" value="0.047"/>
-    <define name="ACT_DYN_R" value="0.047"/>
-    <define name="ACT_DYN_B" value="0.047"/>
-    <define name="ACT_DYN_P" value="0.047"/>
+    <define name="ACT_FREQ_P" value="10"/>
+    <define name="ACT_FREQ_Q" value="10"/>
+    <define name="ACT_FREQ_R" value="10"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>

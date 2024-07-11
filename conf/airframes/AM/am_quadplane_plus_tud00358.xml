@@ -150,7 +150,7 @@
     </module>
 
 
-    <module name="Overactuated_mixing"/>
+    <module name="overactuated_mixing"/>
 
     <module name="lidar" type="tfmini_am7">
       <configure name="USE_TFMINI_AGL" value="TRUE"/>
