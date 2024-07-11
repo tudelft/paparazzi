@@ -1,0 +1,29 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="tilt_calibration" dir="tilt_servo_calibration">
+  <doc>
+    <description>tilt calibration module</description>
+  </doc>
+
+  <settings>
+    <dl_settings>
+      <dl_settings name="Rotors calib">
+        <dl_setting MIN="0" MAX="1" STEP="1" VAR="rotor_1_calibrate" shortname="rotor_1_cal" module="tilt_servo_calibration/tilt_calibration"/>
+        <dl_setting MIN="0" MAX="1" STEP="1" VAR="rotor_2_calibrate" shortname="rotor_2_cal" module="tilt_servo_calibration/tilt_calibration"/>
+        <dl_setting MIN="0" MAX="1" STEP="1" VAR="rotor_3_calibrate" shortname="rotor_3_cal" module="tilt_servo_calibration/tilt_calibration"/>
+        <dl_setting MIN="0" MAX="1" STEP="1" VAR="rotor_4_calibrate" shortname="rotor_4_cal" module="tilt_servo_calibration/tilt_calibration"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <header>
+    <file name="tilt_calibration.h"/>
+  </header>
+   
+   <init fun="tilt_calibration_init()"/>
+   <periodic fun="tilt_calibration_run()" autorun="TRUE" freq="20"/>
+   
+  <makefile>
+    <file name="tilt_calibration.c"/>
+  </makefile>
+</module>

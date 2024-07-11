@@ -1,0 +1,18 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="ship_state_message" dir="ship_state">
+  <doc>
+    <description>
+    This module generate the message SHIP_INFO_MSG_GROUND
+    </description>
+  </doc>
+  <header>
+    <file name="ship_message_generator.h"/>
+  </header>
+  <init fun="ship_message_generator_init()"/>
+  <periodic fun="ship_message_generator_periodic()" freq="500" autorun="TRUE"/>
+  <makefile>
+    <file name="ship_message_generator.c"/>
+  </makefile>
+</module>
+
