@@ -239,26 +239,6 @@ float theta_pref_max = RadOfDeg(20.0);
 float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
 #endif
 
-// Assume phi and theta are the first actuators after the real ones unless otherwise specified
-#ifndef ONELOOP_ANDI_PHI_IDX
-#define ONELOOP_ANDI_PHI_IDX  ANDI_NUM_ACT
-#endif
-
-#define ONELOOP_ANDI_MAX_BANK  act_max[ONELOOP_ANDI_PHI_IDX] // assuming abs of max and min is the same
-#define ONELOOP_ANDI_MAX_PHI   act_max[ONELOOP_ANDI_PHI_IDX] // assuming abs of max and min is the same
-
-#ifndef ONELOOP_ANDI_THETA_IDX
-#define ONELOOP_ANDI_THETA_IDX  ANDI_NUM_ACT+1
-#endif
-
-#define ONELOOP_ANDI_MAX_THETA   act_max[ONELOOP_ANDI_THETA_IDX] // assuming abs of max and min is the same
-
-#ifndef ONELOOP_THETA_PREF_MAX
-float theta_pref_max = RadOfDeg(20.0);
-#else
-float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
-#endif
-
 #if ANDI_NUM_ACT_TOT != WLS_N_U
 #error Matrix-WLS_N_U is not equal to the number of actuators: define WLS_N_U == ANDI_NUM_ACT_TOT in airframe file
 #define WLS_N_U == ANDI_NUM_ACT_TOT
@@ -533,15 +513,15 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
 
 static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
 {
-  float temp_debug_vect[1];
-  //temp_debug_vect[0]= RW.as;
-  //debug_vect(trans, dev, "airspeed", temp_debug_vect, 1);
-  if (GpsFixValid()){
-    temp_debug_vect[0]= 1;
-  } else {
-    temp_debug_vect[0]= 0;
-  }
-  debug_vect(trans, dev, "gps_fix_valid", temp_debug_vect, 1);
+  float temp_debug_vect[7];
+  temp_debug_vect[0] = model_pred[0];
+  temp_debug_vect[1] = model_pred[1];
+  temp_debug_vect[2] = model_pred[2];
+  temp_debug_vect[3] = model_pred[3];
+  temp_debug_vect[4] = model_pred[4];
+  temp_debug_vect[5] = model_pred[5];
+  temp_debug_vect[6] = RW.as;
+  debug_vect(trans, dev, "model_pred_as", temp_debug_vect, 7);
 }
 #endif
 
@@ -978,7 +958,7 @@ static float w_approx(float p1, float p2, float p3, float rm_k){
 void init_poles(void){
 
   // Attitude Controller Poles----------------------------------------------------------
-  float slow_pole = 10.1; // Pole of the slowest dynamics used in the attitude controller
+  float slow_pole = 15.1; // Pole of the slowest dynamics used in the attitude controller
 
   p_att_e.omega_n = 4.50;
   p_att_e.zeta    = 1.0;
@@ -1253,6 +1233,7 @@ void oneloop_andi_init(void)
  */
 void oneloop_andi_enter(bool half_loop_sp, int ctrl_type)
 {
+  ele_min = 0.0;
   oneloop_andi.half_loop     = half_loop_sp;
   oneloop_andi.ctrl_type     = ctrl_type;
   psi_des_rad   = eulers_zxy.psi; 
@@ -1781,7 +1762,7 @@ void calc_model(int ctrl_type){
     model_pred[i] = 0.0;              // 
     for (j = 0; j < ANDI_NUM_ACT; j++){
       if(j == COMMAND_ELEVATOR){
-        model_pred[i] = model_pred[i] +  (actuator_state_1l[j] - ZERO_ELE_PPRZ) * EFF_MAT_RW[i][j];
+        model_pred[i] = model_pred[i] +  (actuator_state_1l[j] - RW.ele_pref) * EFF_MAT_RW[i][j]; // Ele pref is incidence angle
       } else {
         model_pred[i] = model_pred[i] +  actuator_state_1l[j] * EFF_MAT_RW[i][j];
       }
@@ -1850,6 +1831,206 @@ float oneloop_andi_sideslip(void)
   #endif
   return omega;
 }
+
+/** @brief Function to calculate the position reference during the chirp*/
+static float chirp_pos_p_ref(float delta_t, float f0, float k, float A){
+  float p_ref_fun = sinf(delta_t * M_PI * (f0 + k * delta_t) * 2.0);
+  return (A * p_ref_fun);
+}
+/** @brief Function to calculate the velocity reference during the chirp*/
+static float chirp_pos_v_ref(float delta_t, float f0, float k, float A){
+  float v_ref_fun = cosf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * (M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0);
+  return (A * v_ref_fun);
+}
+/** @brief Function to calculate the acceleration reference during the chirp*/
+static float chirp_pos_a_ref(float delta_t, float f0, float k, float A){
+  float a_ref_fun = -sinf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * pow((M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0), 2) + k * M_PI * cosf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * 4.0;
+  return (A * a_ref_fun);
+}
+/** @brief Function to calculate the jerk reference during the chirp*/
+static float chirp_pos_j_ref(float delta_t, float f0, float k, float A){
+  float j_ref_fun = -cosf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * pow((M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0), 3) - k * M_PI * sinf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * (M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0) * 1.2e+1;
+  return (A * j_ref_fun);
+}
+
+/** 
+ * @brief Reference Model Definition for 3rd order system specific to positioning with bounds
+ * @param dt      [s]    time passed since start of the chirp
+ * @param f0      [Hz]   initial frequency of the chirp
+ * @param f1      [Hz]   final frequency of the chirp
+ * @param t_chirp [s]    duration of the chirp
+ * @param p_ref   [m]    position reference
+ * @param v_ref   [m/s]  velocity reference
+ * @param a_ref   [m/s2] acceleration reference
+ * @param j_ref   [m/s3] jerk reference
+ */
+void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]) {
+  f0      = positive_non_zero(f0);
+  f1      = positive_non_zero(f1);
+  t_chirp = positive_non_zero(t_chirp);
+  A       = positive_non_zero(A);
+  if ((f1-f0) < -FLT_EPSILON){
+    f1 = f0;
+  }
+  // 0 body x, 1 body y, 2 body z, 3 pitch pref
+  if (n > 3){
+    n = 0;
+  }
+  if (n < 0){
+    n = 0;
+  }
+  // i think there should not be a problem with f1 being equal to f0
+  float k = (f1 - f0) / t_chirp;
+  float p_ref_chirp = chirp_pos_p_ref(time_elapsed, f0, k, A);
+  float v_ref_chirp = chirp_pos_v_ref(time_elapsed, f0, k, A);
+  float a_ref_chirp = chirp_pos_a_ref(time_elapsed, f0, k, A);
+  float j_ref_chirp = chirp_pos_j_ref(time_elapsed, f0, k, A);
+
+  float spsi   = sinf(psi);
+  float cpsi   = cosf(psi);
+  float mult_0 = 0.0;
+  float mult_1 = 0.0;
+  float mult_2 = 0.0;
+  if (n == 0){
+    mult_0 = cpsi;
+    mult_1 = spsi;
+    mult_2 = 0.0;
+  }else if(n==1){
+    mult_0 = -spsi;
+    mult_1 = cpsi;
+    mult_2 = 0.0;
+  }else if(n==2){
+    mult_0 = 0.0;
+    mult_1 = 0.0;
+    mult_2 = 1.0;
+  }
+  // Do not overwrite the reference if chirp is not on that axis
+  if (n == 2){
+    p_ref[2] = p_ref_0[2] + p_ref_chirp * mult_2;
+    v_ref[2] = v_ref_chirp * mult_2;
+    a_ref[2] = a_ref_chirp * mult_2;
+    j_ref[2] = j_ref_chirp * mult_2;
+  } else if (n < 2){
+    p_ref[0] = p_ref_0[0] + p_ref_chirp * mult_0;
+    p_ref[1] = p_ref_0[1] + p_ref_chirp * mult_1; 
+    v_ref[0] = v_ref_chirp * mult_0;
+    v_ref[1] = v_ref_chirp * mult_1;
+    a_ref[0] = a_ref_chirp * mult_0;
+    a_ref[1] = a_ref_chirp * mult_1; 
+    j_ref[0] = j_ref_chirp * mult_0;
+    j_ref[1] = j_ref_chirp * mult_1;
+  } else { //Pitch preferred chirp, for now a little bit hacked in...
+    pitch_pref = p_ref_chirp;
+    pitch_pref = (pitch_pref / A + 1.0) * (theta_pref_max / 2.0);
+    float pitch_offset = RadOfDeg(5.0);
+    pitch_pref = pitch_pref + pitch_offset;
+    Bound(pitch_pref,0.0,25.0);
+  }
+}
+
+void chirp_call(bool *chirp_on, bool *chirp_first_call, float* t_0, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]){
+  if (*chirp_on){
+    if (*chirp_first_call){
+      *time_elapsed = 0.0;
+      *chirp_first_call = false;
+      *t_0 = get_sys_time_float();
+      p_ref_0[0] = p_ref[0];
+      p_ref_0[1] = p_ref[1];
+      p_ref_0[2] = p_ref[2];
+    }
+    if (*time_elapsed < t_chirp){
+      *time_elapsed = get_sys_time_float() - *t_0;
+      chirp_pos(*time_elapsed, f0, f1, t_chirp, A, n, psi, p_ref, v_ref, a_ref, j_ref, p_ref_0);
+    } else {
+      *chirp_on   = false;
+      *chirp_first_call = true;
+      *time_elapsed = 0.0;
+      *t_0 = 0.0;
+      oneloop_andi_enter(false, oneloop_andi.ctrl_type);
+    }
+  }
+}
+
+/** Quadplanes can still be in-flight with COMMAND_THRUST==0 and can even soar not descending in updrafts with all thrust off */
+bool autopilot_in_flight_end_detection(bool motors_on UNUSED) {
+  return ! motors_on;
+}
+
+
+void reshape_wind(void)
+{
+  float psi = eulers_zxy.psi;
+  float cpsi = cosf(psi);
+  float spsi = sinf(psi);
+  float airspeed = airspeed_filt.o[0];
+  struct FloatVect2 NT_v_NE     = {nav_target[0], nav_target[1]}; // Nav target in North and East frame
+  //struct FloatVect2 NT_v_B      = {0.0, 0.0}; // Nav target in body frame (Overwritten later)
+  struct FloatVect2 airspeed_v  = { cpsi * airspeed, spsi * airspeed };
+  struct FloatVect2 windspeed;
+  struct FloatVect2 groundspeed = { oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.vel[1] };
+  struct FloatVect2 des_as_NE;
+  struct FloatVect2 des_as_B;
+  struct FloatVect2 des_acc_B;
+  VECT2_DIFF(windspeed, groundspeed, airspeed_v); // Wind speed in North and East frame
+  VECT2_DIFF(des_as_NE, NT_v_NE, windspeed); // Desired airspeed in North and East frame
+  float norm_des_as = FLOAT_VECT2_NORM(des_as_NE);
+  //float norm_wind   = FLOAT_VECT2_NORM(windspeed);
+  //float norm_gs     = FLOAT_VECT2_NORM(groundspeed);
+  //float norm_nt     = FLOAT_VECT2_NORM(NT_v_NE);
+  nav_target_new[0] = NT_v_NE.x;
+  nav_target_new[1] = NT_v_NE.y;
+  // if the desired airspeed is larger than the max airspeed or we are in force forward reshape gs des to cancel wind and fly at max airspeed
+  if ((norm_des_as > max_as)||(rotwing_state_settings.force_forward)){
+    //printf("reshaping wind\n");
+    float groundspeed_factor = 0.0f;
+    if (FLOAT_VECT2_NORM(windspeed) < max_as) {
+      //printf("we can achieve wind cancellation\n");
+      float av = NT_v_NE.x * NT_v_NE.x + NT_v_NE.y * NT_v_NE.y; // norm squared of nav target 
+      float bv = -2.f * (windspeed.x * NT_v_NE.x + windspeed.y * NT_v_NE.y);
+      float cv = windspeed.x * windspeed.x + windspeed.y * windspeed.y - max_as * max_as;
+      float dv = bv * bv - 4.0f * av * cv;
+      // dv can only be positive, but just in case
+      if (dv < 0.0f) {
+        dv = fabsf(dv);
+      }
+      float d_sqrt = sqrtf(dv);
+      groundspeed_factor = (-bv + d_sqrt)  / (2.0f * av); 
+    }
+    des_as_NE.x = groundspeed_factor * NT_v_NE.x - windspeed.x;
+    des_as_NE.y = groundspeed_factor * NT_v_NE.y - windspeed.y;
+    NT_v_NE.x   = groundspeed_factor * NT_v_NE.x;
+    NT_v_NE.y   = groundspeed_factor * NT_v_NE.y; 
+  }
+  norm_des_as = FLOAT_VECT2_NORM(des_as_NE); // Recalculate norm of desired airspeed
+  //NT_v_B.x    = cpsi * NT_v_NE.x  + spsi * NT_v_NE.y; // Nav target in body x frame
+  //NT_v_B.y    = -spsi * NT_v_NE.x + cpsi * NT_v_NE.y; // Nav target in body y frame
+  des_as_B.x  = norm_des_as; // Desired airspeed in body x frame
+  des_as_B.y  = 0.0; // Desired airspeed in body y frame
+  // If flying fast or if in force forward mode, make turns instead of straight lines
+  if (((airspeed > ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD) && (norm_des_as > (ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD+2.0f)))|| (rotwing_state_settings.force_forward)){
+    float delta_psi = atan2f(des_as_NE.y, des_as_NE.x) - psi; 
+    FLOAT_ANGLE_NORMALIZE(delta_psi);
+    des_acc_B.y = delta_psi * 5.0;//gih_params.heading_bank_gain;
+    des_acc_B.x = (des_as_B.x - airspeed) * k_pos_rm.k2[0];//gih_params.speed_gain;
+    //printf("des_acc_B: %f, des_acc_B.x: %f, des_acc_B.y: %f\n", sqrtf(des_acc_B.x*des_acc_B.x+des_acc_B.y*des_acc_B.y),des_acc_B.x, des_acc_B.y);
+    //printf("max_a_nav: %f\n", max_a_nav);
+    acc_body_bound(&des_acc_B, max_a_nav); // Scale down side acceleration if norm is too large
+    //printf("bnd_acc_B: %f, des_acc_B.x: %f, des_acc_B.y: %f\n", sqrtf(des_acc_B.x*des_acc_B.x+des_acc_B.y*des_acc_B.y),des_acc_B.x, des_acc_B.y);
+    nav_target_new[0] = cpsi * des_acc_B.x - spsi * des_acc_B.y;
+    nav_target_new[1] = spsi * des_acc_B.x + cpsi * des_acc_B.y; 
+  } else {
+    nav_target_new[0] = (NT_v_NE.x - groundspeed.x) * k_pos_rm.k2[0];
+    nav_target_new[1] = (NT_v_NE.y - groundspeed.y) * k_pos_rm.k2[1];
+  }
+  vect_bound_nd(nav_target_new, max_a_nav, 2);
+  //printf("norm_as    : %f, as_x    : %f, as_y    : %f\n", airspeed, airspeed_v.x, airspeed_v.y);
+  //printf("norm_des_as: %f, des_as_x: %f, des_as_y: %f\n", sqrtf(des_as_NE.x*des_as_NE.x+des_as_NE.y*des_as_NE.y), des_as_NE.x, des_as_NE.y);
+  //printf("norm_wind  : %f, wind_x  : %f, wind_y  : %f\n", FLOAT_VECT2_NORM(windspeed), windspeed.x, windspeed.y);
+  //printf("norm_gs    : %f, gs_x    : %f, gs_y    : %f\n", FLOAT_VECT2_NORM(groundspeed), groundspeed.x, groundspeed.y);
+  //printf("norm_nt    : %f, nt_x    : %f, nt_y    : %f\n", FLOAT_VECT2_NORM(NT_v_NE), NT_v_NE.x, NT_v_NE.y);
+  //printf("norm_nt_new: %f, nt_new_x: %f, nt_new_y: %f\n", sqrtf(nav_target_new[0]*nav_target_new[0] + nav_target_new[1]*nav_target_new[1]), nav_target_new[0], nav_target_new[1]);
+}
+
 
 /** @brief Function to calculate the position reference during the chirp*/
 static float chirp_pos_p_ref(float delta_t, float f0, float k, float A){

@@ -118,24 +118,50 @@ static void logger_file_write_row(FILE *file) {
   // struct FloatRates *rates = stateGetBodyRates_f();
 
   fprintf(file, "%f,", get_sys_time_float());
-  fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
-  fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
-  fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
-  fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
-#ifdef BOARD_BEBOP
-  fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
-  fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_ref[0],actuators_bebop.rpm_ref[1],actuators_bebop.rpm_ref[2],actuators_bebop.rpm_ref[3]);
-#endif
-#ifdef INS_EXT_POSE_H
-  ins_ext_pos_log_data(file);
-#endif
-#ifdef COMMAND_THRUST
-  fprintf(file, "%d,%d,%d,%d\n",
-      stabilization.cmd[COMMAND_THRUST], stabilization.cmd[COMMAND_ROLL],
-      stabilization.cmd[COMMAND_PITCH], stabilization.cmd[COMMAND_YAW]);
-#else
-  fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
-#endif
+  fprintf(file, "%d,%d,", autopilot.mode,autopilot.in_flight);
+  fprintf(file, "%f,%f,%f,", oneloop_andi.sta_ref.att[0],     oneloop_andi.sta_ref.att[1],      oneloop_andi.sta_ref.att[2]);
+  fprintf(file, "%f,%f,%f,", oneloop_andi.sta_state.att[0],   oneloop_andi.sta_state.att[1],    oneloop_andi.sta_state.att[2]);
+  fprintf(file, "%f,%f,%f,", oneloop_andi.sta_ref.att_d[0],   oneloop_andi.sta_ref.att_d[1],    oneloop_andi.sta_ref.att_d[2]);
+  fprintf(file, "%f,%f,%f,", oneloop_andi.sta_state.att_d[0], oneloop_andi.sta_state.att_d[1],  oneloop_andi.sta_state.att_d[2]);
+  fprintf(file, "%f,%f,%f,", oneloop_andi.sta_ref.att_2d[0],  oneloop_andi.sta_ref.att_2d[1],   oneloop_andi.sta_ref.att_2d[2]);
+  fprintf(file, "%f,%f,%f,", oneloop_andi.sta_state.att_2d[0],oneloop_andi.sta_state.att_2d[1], oneloop_andi.sta_state.att_2d[2]);
+  fprintf(file, "%f,%f,%f,", oneloop_andi.gui_ref.pos[0],     oneloop_andi.gui_ref.pos[1],      oneloop_andi.gui_ref.pos[2]);
+  fprintf(file, "%f,%f,%f,", oneloop_andi.gui_state.pos[0],   oneloop_andi.gui_state.pos[1],    oneloop_andi.gui_state.pos[2]);
+  fprintf(file, "%f,%f,%f,", oneloop_andi.gui_ref.vel[0],     oneloop_andi.gui_ref.vel[1],      oneloop_andi.gui_ref.vel[2]);
+  fprintf(file, "%f,%f,%f,", oneloop_andi.gui_state.vel[0],   oneloop_andi.gui_state.vel[1],    oneloop_andi.gui_state.vel[2]);
+  fprintf(file, "%f,%f,%f,", oneloop_andi.gui_ref.acc[0],     oneloop_andi.gui_ref.acc[1],      oneloop_andi.gui_ref.acc[2]);
+  fprintf(file, "%f,%f,%f,", oneloop_andi.gui_state.acc[0],   oneloop_andi.gui_state.acc[1],    oneloop_andi.gui_state.acc[2]);
+  fprintf(file, "%f,%f,%f,", oneloop_andi.gui_ref.jer[0],     oneloop_andi.gui_ref.jer[1],      oneloop_andi.gui_ref.jer[2]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", nu[0], nu[1], nu[2],nu[3],nu[4],nu[5]);
+  fprintf(file, "%f,%f,%f,%f,",actuator_state_1l[0], actuator_state_1l[1], actuator_state_1l[2], actuator_state_1l[3]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", g1g2_1l[0][0], g1g2_1l[0][1], g1g2_1l[0][2], g1g2_1l[0][3], g1g2_1l[0][4], g1g2_1l[0][5]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", g1g2_1l[1][0], g1g2_1l[1][1], g1g2_1l[1][2], g1g2_1l[1][3], g1g2_1l[1][4], g1g2_1l[1][5]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", g1g2_1l[2][0], g1g2_1l[2][1], g1g2_1l[2][2], g1g2_1l[2][3], g1g2_1l[2][4], g1g2_1l[2][5]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", g1g2_1l[3][0], g1g2_1l[3][1], g1g2_1l[3][2], g1g2_1l[3][3], g1g2_1l[3][4], g1g2_1l[3][5]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", g1g2_1l[4][0], g1g2_1l[4][1], g1g2_1l[4][2], g1g2_1l[4][3], g1g2_1l[4][4], g1g2_1l[4][5]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", g1g2_1l[5][0], g1g2_1l[5][1], g1g2_1l[5][2], g1g2_1l[5][3], g1g2_1l[5][4], g1g2_1l[5][5]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", andi_u[0], andi_u[1], andi_u[2], andi_u[3], andi_u[4], andi_u[5]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f\n", andi_du[0], andi_du[1], andi_du[2], andi_du[3], andi_du[4], andi_du[5]);
+  // fprintf(file,"\n");
+
+  // fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
+  // fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
+  // fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
+  // fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
+// #ifdef BOARD_BEBOP
+//   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
+//   fprintf(file, "%d,%d,%d,%d\n",actuators_bebop.rpm_ref[0],actuators_bebop.rpm_ref[1],actuators_bebop.rpm_ref[2],actuators_bebop.rpm_ref[3]);
+// #endif
+// #ifdef INS_EXT_POSE_H
+//   ins_ext_pos_log_data(file);
+// #endif
+// #ifdef COMMAND_THRUST
+//   fprintf(file, "%d,%d,%d,%d\n",
+//       stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
+//       stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
+// #else
+//   fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
+// #endif
 }
 
 

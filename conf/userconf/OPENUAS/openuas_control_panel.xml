@@ -945,11 +945,20 @@
       <program name="Real-time Plotter">
         <arg flag="-m" constant="1000"/>
         <arg flag="-u" constant="0.05"/>
-        <arg flag="-t" constant="u"/>
+        <arg flag="-t" constant="PITCH_CTRL"/>
+        <arg flag="-c" constant="*:telemetry:ACTUATOR_STATE:u[0]"/>
+        <arg flag="-c" constant="*:telemetry:ACTUATOR_STATE:u[2]"/>
+        <arg flag="-c" constant="*:telemetry:ACTUATOR_STATE:u[5]"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="MOTORS"/>
         <arg flag="-c" constant="*:telemetry:ACTUATOR_STATE:u[0]"/>
         <arg flag="-c" constant="*:telemetry:ACTUATOR_STATE:u[1]"/>
         <arg flag="-c" constant="*:telemetry:ACTUATOR_STATE:u[2]"/>
         <arg flag="-c" constant="*:telemetry:ACTUATOR_STATE:u[3]"/>
+        <arg flag="-c" constant="*:telemetry:ACTUATOR_STATE:u[4]"/>
       </program>
       <program name="Real-time Plotter">
         <arg flag=""/>

@@ -269,16 +269,6 @@
     </channel> 
 
     <channel name="misc">
-      <fcs_function name="de_lag">
-        <function>
-          <sum>
-            <value>-0.8333</value> <!-- Convert 0 to 1 scale so that de_lag is 0 when elevator is flat -->
-            <property>fcs/ELEVATOR_lag</property>
-          </sum>
-        </function>
-        <output>fcs/de_lag</output>
-      </fcs_function>
-
       <fcs_function name="airspeed2_ms">
         <function>
           <product>
@@ -288,6 +278,34 @@
           </product>
         </function>
         <output>fcs/airspeed2_ms</output>
+      </fcs_function>
+
+      <fcs_function name="airspeed_ms">
+        <function>
+          <sqrt>
+            <property>fcs/airspeed2_ms</property>
+          </sqrt>
+        </function>
+        <output>fcs/airspeed_ms</output>
+      </fcs_function>
+
+      <fcs_function name="de_lag">
+        <function>
+          <sum>
+            <!--<value>-0.8333</value>--> <!-- Convert 0 to 1 scale so that de_lag is 0 when elevator is flat -->
+            <table>
+              <independentVar>fcs/airspeed_ms</independentVar>
+              <tableData>
+              0.0   0.0
+              8.8   0.0
+              16.0  -0.8333
+              25.0  -0.8333
+              </tableData>
+            </table>
+            <property>fcs/ELEVATOR_lag</property>
+          </sum>
+        </function>
+        <output>fcs/de_lag</output>
       </fcs_function>
 
       <fcs_function name="Ixx_quad">

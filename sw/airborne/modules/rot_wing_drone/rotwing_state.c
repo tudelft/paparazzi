@@ -169,7 +169,6 @@ inline void rotwing_state_set_fw_hov_mot_off_settings(void);
 
 inline void rotwing_state_set_state_settings(void);
 inline void rotwing_state_skewer(void);
-inline void rotwing_state_free_processor(void);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -201,6 +200,8 @@ void init_rotwing_state(void)
   rotwing_state.current_state = ROTWING_STATE_HOVER;
   rotwing_state.desired_state = ROTWING_STATE_HOVER;
   rotwing_state.requested_config = ROTWING_CONFIGURATION_HOVER;
+
+  rotwing_state_settings.preferred_pitch_value = 0;
 
   rotwing_state_settings.preferred_pitch_value = 0;
 
