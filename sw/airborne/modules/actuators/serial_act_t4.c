@@ -54,25 +54,25 @@ static uint8_t serial_act_t4_msg_buf_in[sizeof(struct serial_act_t4_in)*2]__attr
 
     static void serial_act_t4_downlink(struct transport_tx *trans, struct link_device *dev)
     {
-        int16_t motor_1_rpm_int_telemetry = myserial_act_t4_in.motor_1_rpm_int;
-        int16_t motor_2_rpm_int_telemetry = myserial_act_t4_in.motor_2_rpm_int;
-        int16_t motor_3_rpm_int_telemetry = myserial_act_t4_in.motor_3_rpm_int;
-        int16_t motor_4_rpm_int_telemetry = myserial_act_t4_in.motor_4_rpm_int;
+        int16_t esc_1_rpm_int_telemetry = myserial_act_t4_in.esc_1_rpm_int;
+        int16_t esc_2_rpm_int_telemetry = myserial_act_t4_in.esc_2_rpm_int;
+        int16_t esc_3_rpm_int_telemetry = myserial_act_t4_in.esc_3_rpm_int;
+        int16_t esc_4_rpm_int_telemetry = myserial_act_t4_in.esc_4_rpm_int;
 
-        int16_t motor_1_error_code_int_telemetry = myserial_act_t4_in.motor_1_error_code_int;
-        int16_t motor_2_error_code_int_telemetry = myserial_act_t4_in.motor_2_error_code_int;
-        int16_t motor_3_error_code_int_telemetry = myserial_act_t4_in.motor_3_error_code_int;
-        int16_t motor_4_error_code_int_telemetry = myserial_act_t4_in.motor_4_error_code_int;
+        int16_t esc_1_error_code_int_telemetry = myserial_act_t4_in.esc_1_error_code_int;
+        int16_t esc_2_error_code_int_telemetry = myserial_act_t4_in.esc_2_error_code_int;
+        int16_t esc_3_error_code_int_telemetry = myserial_act_t4_in.esc_3_error_code_int;
+        int16_t esc_4_error_code_int_telemetry = myserial_act_t4_in.esc_4_error_code_int;
 
-        int16_t motor_1_current_int_telemetry = myserial_act_t4_in.motor_1_current_int;
-        int16_t motor_2_current_int_telemetry = myserial_act_t4_in.motor_2_current_int;
-        int16_t motor_3_current_int_telemetry = myserial_act_t4_in.motor_3_current_int;
-        int16_t motor_4_current_int_telemetry = myserial_act_t4_in.motor_4_current_int;
+        int16_t esc_1_current_int_telemetry = myserial_act_t4_in.esc_1_current_int;
+        int16_t esc_2_current_int_telemetry = myserial_act_t4_in.esc_2_current_int;
+        int16_t esc_3_current_int_telemetry = myserial_act_t4_in.esc_3_current_int;
+        int16_t esc_4_current_int_telemetry = myserial_act_t4_in.esc_4_current_int;
 
-        int16_t motor_1_voltage_int_telemetry = myserial_act_t4_in.motor_1_voltage_int;
-        int16_t motor_2_voltage_int_telemetry = myserial_act_t4_in.motor_2_voltage_int;
-        int16_t motor_3_voltage_int_telemetry = myserial_act_t4_in.motor_3_voltage_int;
-        int16_t motor_4_voltage_int_telemetry = myserial_act_t4_in.motor_4_voltage_int;
+        int16_t esc_1_voltage_int_telemetry = myserial_act_t4_in.esc_1_voltage_int;
+        int16_t esc_2_voltage_int_telemetry = myserial_act_t4_in.esc_2_voltage_int;
+        int16_t esc_3_voltage_int_telemetry = myserial_act_t4_in.esc_3_voltage_int;
+        int16_t esc_4_voltage_int_telemetry = myserial_act_t4_in.esc_4_voltage_int;
 
         int16_t servo_1_angle_int_telemetry = myserial_act_t4_in.servo_1_angle_int;
         int16_t servo_2_angle_int_telemetry = myserial_act_t4_in.servo_2_angle_int;
@@ -104,30 +104,30 @@ static uint8_t serial_act_t4_msg_buf_in[sizeof(struct serial_act_t4_in)*2]__attr
 
 
         pprz_msg_send_SERIAL_ACT_T4_IN(trans, dev, AC_ID, 
-                &motor_1_rpm_int_telemetry, &motor_2_rpm_int_telemetry, &motor_3_rpm_int_telemetry, &motor_4_rpm_int_telemetry,
+                &esc_1_rpm_int_telemetry, &esc_2_rpm_int_telemetry, &esc_3_rpm_int_telemetry, &esc_4_rpm_int_telemetry,
                 &servo_1_angle_int_telemetry, &servo_2_angle_int_telemetry, &servo_3_angle_int_telemetry, &servo_4_angle_int_telemetry,
                 &servo_5_angle_int_telemetry, &servo_6_angle_int_telemetry, &servo_7_angle_int_telemetry, &servo_8_angle_int_telemetry,
                 &servo_9_angle_int_telemetry, &servo_10_angle_int_telemetry, &servo_11_angle_int_telemetry, &servo_12_angle_int_telemetry,
                 &serial_act_t4_missed_packets_in, &serial_act_t4_message_frequency_in,
                 &rolling_msg_in_telemetry, &rolling_msg_in_id_telemetry,
-                &motor_1_error_code_int_telemetry, &motor_2_error_code_int_telemetry, &motor_3_error_code_int_telemetry, &motor_4_error_code_int_telemetry,
+                &esc_1_error_code_int_telemetry, &esc_2_error_code_int_telemetry, &esc_3_error_code_int_telemetry, &esc_4_error_code_int_telemetry,
                 &servo_1_load_int_telemetry, &servo_2_load_int_telemetry, &servo_3_load_int_telemetry, &servo_4_load_int_telemetry,
                 &servo_5_load_int_telemetry, &servo_6_load_int_telemetry, &servo_7_load_int_telemetry, &servo_8_load_int_telemetry,
                 &servo_9_load_int_telemetry, &servo_10_load_int_telemetry,
                 &bitmask_servo_health_telemetry,
-                &motor_1_current_int_telemetry, &motor_2_current_int_telemetry, &motor_3_current_int_telemetry, &motor_4_current_int_telemetry,
-                &motor_1_voltage_int_telemetry, &motor_2_voltage_int_telemetry, &motor_3_voltage_int_telemetry, &motor_4_voltage_int_telemetry);
+                &esc_1_current_int_telemetry, &esc_2_current_int_telemetry, &esc_3_current_int_telemetry, &esc_4_current_int_telemetry,
+                &esc_1_voltage_int_telemetry, &esc_2_voltage_int_telemetry, &esc_3_voltage_int_telemetry, &esc_4_voltage_int_telemetry);
     }
 
     static void serial_act_t4_uplink(struct transport_tx *trans, struct link_device *dev)
     {
     
-    uint8_t motor_arm_int_telemetry = myserial_act_t4_out.motor_arm_int;
+    uint8_t esc_arm_int_telemetry = myserial_act_t4_out.esc_arm_int;
     uint16_t servo_arm_int_telemetry = myserial_act_t4_out.servo_arm_int;
-    int16_t motor_1_dshot_cmd_int_telemetry = myserial_act_t4_out.motor_1_dshot_cmd_int; 
-    int16_t motor_2_dshot_cmd_int_telemetry = myserial_act_t4_out.motor_2_dshot_cmd_int; 
-    int16_t motor_3_dshot_cmd_int_telemetry = myserial_act_t4_out.motor_3_dshot_cmd_int; 
-    int16_t motor_4_dshot_cmd_int_telemetry = myserial_act_t4_out.motor_4_dshot_cmd_int; 
+    int16_t esc_1_dshot_cmd_int_telemetry = myserial_act_t4_out.esc_1_dshot_cmd_int;
+    int16_t esc_2_dshot_cmd_int_telemetry = myserial_act_t4_out.esc_2_dshot_cmd_int;
+    int16_t esc_3_dshot_cmd_int_telemetry = myserial_act_t4_out.esc_3_dshot_cmd_int;
+    int16_t esc_4_dshot_cmd_int_telemetry = myserial_act_t4_out.esc_4_dshot_cmd_int;
 
     int16_t servo_1_angle_cmd_int_telemetry = myserial_act_t4_out.servo_1_cmd_int;
     int16_t servo_2_angle_cmd_int_telemetry = myserial_act_t4_out.servo_2_cmd_int;
@@ -146,8 +146,8 @@ static uint8_t serial_act_t4_msg_buf_in[sizeof(struct serial_act_t4_in)*2]__attr
     uint8_t rolling_msg_out_id_telemetry = myserial_act_t4_out.rolling_msg_out_id;
 
 	   pprz_msg_send_SERIAL_ACT_T4_OUT(trans, dev, AC_ID, 
-                    &motor_arm_int_telemetry, &servo_arm_int_telemetry,
-                    &motor_1_dshot_cmd_int_telemetry, &motor_2_dshot_cmd_int_telemetry, &motor_3_dshot_cmd_int_telemetry, &motor_4_dshot_cmd_int_telemetry, 
+                    &esc_arm_int_telemetry, &servo_arm_int_telemetry,
+                    &esc_1_dshot_cmd_int_telemetry, &esc_2_dshot_cmd_int_telemetry, &esc_3_dshot_cmd_int_telemetry, &esc_4_dshot_cmd_int_telemetry,
                     &servo_1_angle_cmd_int_telemetry, &servo_2_angle_cmd_int_telemetry, &servo_3_angle_cmd_int_telemetry, &servo_4_angle_cmd_int_telemetry,
                     &servo_5_angle_cmd_int_telemetry, &servo_6_angle_cmd_int_telemetry, &servo_7_angle_cmd_int_telemetry, &servo_8_angle_cmd_int_telemetry,
                     &servo_9_angle_cmd_int_telemetry, &servo_10_angle_cmd_int_telemetry, &servo_11_angle_cmd_int_telemetry, &servo_12_angle_cmd_int_telemetry,

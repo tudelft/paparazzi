@@ -1792,10 +1792,10 @@
 
      <message name= "SERIAL_ACT_T4_IN" id = "186">
          <description>Received message from Serial actuator module in Teensy 4.0</description>
-         <field name = "motor_1_rpm" type="int16" unit="rpm" >Motor 1 RPM telemetry</field>
-         <field name = "motor_2_rpm" type="int16" unit="rpm" >Motor 2 RPM telemetry</field>
-         <field name = "motor_3_rpm" type="int16" unit="rpm" >Motor 3 RPM telemetry</field>
-         <field name = "motor_4_rpm" type="int16" unit="rpm" >Motor 4 RPM telemetry</field>
+         <field name = "esc_1_rpm" type="int16" unit="rpm" >ESC 1 RPM telemetry</field>
+         <field name = "esc_2_rpm" type="int16" unit="rpm" >ESC 2 RPM telemetry</field>
+         <field name = "esc_3_rpm" type="int16" unit="rpm" >ESC 3 RPM telemetry</field>
+         <field name = "esc_4_rpm" type="int16" unit="rpm" >ESC 4 RPM telemetry</field>
 
          <field name = "servo_1_angle" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Servo 1 angle telemetry</field>
          <field name = "servo_2_angle" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Servo 2 angle telemetry</field>
@@ -1815,10 +1815,10 @@
          <field name = "serial_act_t4_rolling_msg_in" type="float">T4 Rolling message in content</field>
          <field name = "serial_act_t4_rolling_msg_in_id" type="uint8">T4 Rolling message in id</field>
 
-         <field name = "motor_1_err_code" type="int16" >Motor 1 error code</field>
-         <field name = "motor_2_err_code" type="int16" >Motor 2 error code</field>
-         <field name = "motor_3_err_code" type="int16" >Motor 3 error code</field>
-         <field name = "motor_4_err_code" type="int16" >Motor 4 error code</field>
+         <field name = "esc_1_err_code" type="int16" >ESC 1 error code</field>
+         <field name = "esc_2_err_code" type="int16" >ESC 2 error code</field>
+         <field name = "esc_3_err_code" type="int16" >ESC 3 error code</field>
+         <field name = "esc_4_err_code" type="int16" >ESC 4 error code</field>
 
          <field name = "servo_1_load_int" type="int16" >servo 1 loads</field>
          <field name = "servo_2_load_int" type="int16" >servo 2 loads</field>
@@ -1833,26 +1833,26 @@
 
          <field name = "bitmask_servo_health" type="uint16">Bitmask of servo health status</field>
 
-         <field name = "motor_1_current_int" type="int16" >Motor 1 current in mA</field>
-         <field name = "motor_2_current_int" type="int16" >Motor 2 current in mA</field>
-         <field name = "motor_3_current_int" type="int16" >Motor 3 current in mA</field>
-         <field name = "motor_4_current_int" type="int16" >Motor 4 current in mA</field>
+         <field name = "esc_1_current_int" type="int16" >ESC 1 current in mA</field>
+         <field name = "esc_2_current_int" type="int16" >ESC 2 current in mA</field>
+         <field name = "esc_3_current_int" type="int16" >ESC 3 current in mA</field>
+         <field name = "esc_4_current_int" type="int16" >ESC 4 current in mA</field>
 
-         <field name = "motor_1_voltage_int" type="int16" >Motor 1 voltagein mV</field>
-         <field name = "motor_2_voltage_int" type="int16" >Motor 2 voltagein mV</field>
-         <field name = "motor_3_voltage_int" type="int16" >Motor 3 voltagein mV</field>
-         <field name = "motor_4_voltage_int" type="int16" >Motor 4 voltagein mV</field>
+         <field name = "esc_1_voltage_int" type="int16" >ESC 1 voltagein mV</field>
+         <field name = "esc_2_voltage_int" type="int16" >ESC 2 voltagein mV</field>
+         <field name = "esc_3_voltage_int" type="int16" >ESC 3 voltagein mV</field>
+         <field name = "esc_4_voltage_int" type="int16" >ESC 4 voltagein mV</field>
      </message>
 
      <message name= "SERIAL_ACT_T4_OUT" id = "187">
          <description>Transmitted message to Serial actuator module Teensy 4.0</description>
-         <field name = "motor_arm" type="uint8" >Motor arm bitmask</field>
+         <field name = "esc_arm" type="uint8" >ESC arm bitmask</field>
          <field name = "servo_arm" type="uint16" >Servo arm bitmask</field>
 
-         <field name = "motor_1_dshot_cmd" type="int16" unit="dshot" >Motor 1 dshot cmd</field>
-         <field name = "motor_2_dshot_cmd" type="int16" unit="dshot" >Motor 2 dshot cmd</field>
-         <field name = "motor_3_dshot_cmd" type="int16" unit="dshot" >Motor 3 dshot cmd</field>
-         <field name = "motor_4_dshot_cmd" type="int16" unit="dshot" >Motor 4 dshot cmd</field>
+         <field name = "esc_1_dshot_cmd" type="int16" unit="dshot" >ESC 1 dshot cmd</field>
+         <field name = "esc_2_dshot_cmd" type="int16" unit="dshot" >ESC 2 dshot cmd</field>
+         <field name = "esc_3_dshot_cmd" type="int16" unit="dshot" >ESC 3 dshot cmd</field>
+         <field name = "esc_4_dshot_cmd" type="int16" unit="dshot" >ESC 4 dshot cmd</field>
 
          <field name = "servo_1_angle_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Servo 1 angle cmd</field>
          <field name = "servo_2_angle_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Servo 2 angle cmd</field>

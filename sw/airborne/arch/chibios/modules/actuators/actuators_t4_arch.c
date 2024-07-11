@@ -26,6 +26,18 @@
 
 #include "modules/core/abi.h"
 
+#ifndef ACTUATORS_T4_REFRESH_FREQUENCY
+#define ACTUATORS_T4_REFRESH_FREQUENCY 200;
+#endif
+
+#ifndef ACTUATORS_T4_NUM_MAX_SERVOS
+#define ACTUATORS_T4_NUM_MAX_SERVOS 12
+#endif
+
+#ifndef ACTUATORS_T4_NUM_MAX_ESCS
+#define ACTUATORS_T4_NUM_MAX_ESCS 4
+#endif
+
 /**
  * Print the configuration variables from the header
  */
@@ -37,17 +49,17 @@ struct serial_act_t4_out myserial_act_t4_out_local;
 float serial_act_t4_extra_data_out_local[255] __attribute__((aligned));
 
 void actuators_t4_arch_init(void) {
-    // ARM motors and servos by default TODO: option to disarm / arm
-    myserial_act_t4_out_local.motor_arm_int = (1 << 4) -1;
-    myserial_act_t4_out_local.servo_arm_int = (1 << 12) - 1;
+    // ARM escs and servos by default TODO: option to disarm / arm
+    myserial_act_t4_out_local.esc_arm_int = (1 << ACTUATORS_T4_NUM_MAX_ESCS) -1;
+    myserial_act_t4_out_local.servo_arm_int = (1 << ACTUATORS_T4_NUM_MAX_SERVOS) - 1;
 
     // comm_refresh_frequency [Hz] TODO: change the default frequency
-    serial_act_t4_extra_data_out_local[0] = 200;
+    serial_act_t4_extra_data_out_local[0] = ACTUATORS_T4_REFRESH_FREQUENCY;
 }
 
 void actuators_t4_commit(void) {
     //// INFO for dev.. (to be deleted later on)
-    // also motor scale (0-1999)
+    // also esc scale (0??-1999)
     // also servo scale (deg*100)
     // 20 - 1000
 
@@ -58,7 +70,7 @@ void actuators_t4_commit(void) {
     // get_servo_idx_MYT4(_idx_driver); returns servo idx
     ////
 
-    //Servos 1~8
+    //Servos 1~10
     myserial_act_t4_out_local.servo_1_cmd_int = (int16_t)(actuators_t4_values[0]);
     myserial_act_t4_out_local.servo_2_cmd_int = (int16_t)(actuators_t4_values[1]);
     myserial_act_t4_out_local.servo_3_cmd_int = (int16_t)(actuators_t4_values[2]);
@@ -67,16 +79,18 @@ void actuators_t4_commit(void) {
     myserial_act_t4_out_local.servo_6_cmd_int = (int16_t)(actuators_t4_values[5]);
     myserial_act_t4_out_local.servo_7_cmd_int = (int16_t)(actuators_t4_values[6]);
     myserial_act_t4_out_local.servo_8_cmd_int = (int16_t)(actuators_t4_values[7]);
-
-    //Servos 9~10
     myserial_act_t4_out_local.servo_9_cmd_int = (int16_t)(actuators_t4_values[8]);
     myserial_act_t4_out_local.servo_10_cmd_int = (int16_t)(actuators_t4_values[9]);
 
-    //Motors
-    myserial_act_t4_out_local.motor_1_dshot_cmd_int =  (int16_t)(actuators_t4_values[10]);
-    myserial_act_t4_out_local.motor_2_dshot_cmd_int =  (int16_t)(actuators_t4_values[11]);
-    myserial_act_t4_out_local.motor_3_dshot_cmd_int =  (int16_t)(actuators_t4_values[12]);
-    myserial_act_t4_out_local.motor_4_dshot_cmd_int =  (int16_t)(actuators_t4_values[13]);
+    //Servos 11~12 (PWM)
+    myserial_act_t4_out_local.servo_11_cmd_int = (int16_t)(actuators_t4_values[10]);
+    myserial_act_t4_out_local.servo_12_cmd_int = (int16_t)(actuators_t4_values[11]);
+
+    //ESCs
+    myserial_act_t4_out_local.esc_1_dshot_cmd_int =  (int16_t)(actuators_t4_values[12]);
+    myserial_act_t4_out_local.esc_2_dshot_cmd_int =  (int16_t)(actuators_t4_values[13]);
+    myserial_act_t4_out_local.esc_3_dshot_cmd_int =  (int16_t)(actuators_t4_values[14]);
+    myserial_act_t4_out_local.esc_4_dshot_cmd_int =  (int16_t)(actuators_t4_values[15]);
 
     // send abi msg
     AbiSendMsgSERIAL_ACT_T4_OUT(ABI_SERIAL_ACT_T4_OUT_ID, &myserial_act_t4_out_local, &serial_act_t4_extra_data_out_local[0]);

@@ -38,22 +38,22 @@
 
 struct __attribute__((__packed__)) serial_act_t4_in {
     //ESC telemetry & error code
-	int16_t motor_1_rpm_int; //RPM motor 1
-	int16_t motor_2_rpm_int; //RPM motor 2
-	int16_t motor_3_rpm_int; //RPM motor 3
-	int16_t motor_4_rpm_int; //RPM motor 4
-    int16_t motor_1_error_code_int; //ESC 1 error code 
-    int16_t motor_2_error_code_int; //ESC 2 error code 
-    int16_t motor_3_error_code_int; //ESC 3 error code 
-    int16_t motor_4_error_code_int; //ESC 4 error code 
-    int16_t motor_1_current_int; //ESC 1 current mA
-    int16_t motor_2_current_int; //ESC 2 current mA
-    int16_t motor_3_current_int; //ESC 3 current mA
-    int16_t motor_4_current_int; //ESC 4 current mA   
-    int16_t motor_1_voltage_int; //ESC 1 voltage mV
-    int16_t motor_2_voltage_int; //ESC 2 voltage mV
-    int16_t motor_3_voltage_int; //ESC 3 voltage mV
-    int16_t motor_4_voltage_int; //ESC 4 voltage mV       
+	int16_t esc_1_rpm_int; //RPM esc 1
+	int16_t esc_2_rpm_int; //RPM esc 2
+	int16_t esc_3_rpm_int; //RPM esc 3
+	int16_t esc_4_rpm_int; //RPM esc 4
+    int16_t esc_1_error_code_int; //ESC 1 error code
+    int16_t esc_2_error_code_int; //ESC 2 error code
+    int16_t esc_3_error_code_int; //ESC 3 error code
+    int16_t esc_4_error_code_int; //ESC 4 error code
+    int16_t esc_1_current_int; //ESC 1 current mA
+    int16_t esc_2_current_int; //ESC 2 current mA
+    int16_t esc_3_current_int; //ESC 3 current mA
+    int16_t esc_4_current_int; //ESC 4 current mA
+    int16_t esc_1_voltage_int; //ESC 1 voltage mV
+    int16_t esc_2_voltage_int; //ESC 2 voltage mV
+    int16_t esc_3_voltage_int; //ESC 3 voltage mV
+    int16_t esc_4_voltage_int; //ESC 4 voltage mV
     //SERVOS telemetry & update rate 
 	int16_t servo_1_angle_int; //Degrees * 100 
 	int16_t servo_2_angle_int; //Degrees * 100 
@@ -87,13 +87,13 @@ struct __attribute__((__packed__)) serial_act_t4_in {
 
 struct __attribute__((__packed__)) serial_act_t4_out {
     //ARM cmd
-    uint8_t motor_arm_int; //Arm motor boolean
+    uint8_t esc_arm_int; //Arm esc boolean
     uint16_t servo_arm_int; //Arm servo boolean
     //ESC cmd
-    int16_t motor_1_dshot_cmd_int; //Motor cmd 0 - 1999
-    int16_t motor_2_dshot_cmd_int; //Motor cmd 0 - 1999
-    int16_t motor_3_dshot_cmd_int; //Motor cmd 0 - 1999
-    int16_t motor_4_dshot_cmd_int; //Motor cmd 0 - 1999
+    int16_t esc_1_dshot_cmd_int; //ESC cmd 0 - 1999
+    int16_t esc_2_dshot_cmd_int; //ESC cmd 0 - 1999
+    int16_t esc_3_dshot_cmd_int; //ESC cmd 0 - 1999
+    int16_t esc_4_dshot_cmd_int; //ESC cmd 0 - 1999
     //Servo cmd
     int16_t servo_1_cmd_int; //Degrees * 100 
     int16_t servo_2_cmd_int; //Degrees * 100 

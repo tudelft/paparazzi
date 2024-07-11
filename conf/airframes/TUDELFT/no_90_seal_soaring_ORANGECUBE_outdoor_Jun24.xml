@@ -210,11 +210,11 @@ NOTES:
 
         <!-- Enable for onboard logging -->
       
-      <module name="tlsf"/>
-      <module name="pprzlog"/>
-      <module name="logger" type="sd_chibios"/>
-      <module name="flight_recorder"/>
-      <define name="SDLOG_AUTO_FLUSH_PERIOD" value="1" unit="s"/>
+<!--      <module name="tlsf"/>-->
+<!--      <module name="pprzlog"/>-->
+<!--      <module name="logger" type="sd_chibios"/>-->
+<!--      <module name="flight_recorder"/>-->
+<!--      <define name="SDLOG_AUTO_FLUSH_PERIOD" value="1" unit="s"/>-->
       <!--
       <module name="shell">
         <configure name="SHELL_PORT" value="usb_serial_debug"/>
@@ -533,7 +533,7 @@ NOTES:
         <!-- e.g. if you want to use a servo with ID 3 for your elevator -->
         <!-- <servo name="ELEVATOR" no="2" min="20" neutral="50" max="100"/>-->
 
-        <servo name="S_THROTTLE" no="12" min="100" neutral="100" max="1900"/>
+        <servo name="S_THROTTLE" no="12" min="0" neutral="0" max="1900"/>
 
         <!--    degress * 100 -->
         <servo name="S_AILERON_LEFT"  no="0" min="-18000" neutral="0" max="18000"/>

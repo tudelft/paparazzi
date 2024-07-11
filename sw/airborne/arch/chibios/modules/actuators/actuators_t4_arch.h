@@ -27,9 +27,9 @@
 
 #include "std.h"
 
-// servo 1~10(0~10) + esc 1~4 (10~13)
+// servo 1~12(0~11) + esc 1~4 (12~15)
 #ifndef ACTUATORS_T4_NB
-#define ACTUATORS_T4_NB 14
+#define ACTUATORS_T4_NB 16
 #endif
 
 extern int32_t actuators_t4_values[ACTUATORS_T4_NB];
