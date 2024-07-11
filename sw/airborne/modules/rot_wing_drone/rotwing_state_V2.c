@@ -227,13 +227,18 @@ void periodic_rotwing_state(void)
       rotwing_state_free_processor();
     }
     rotwing_switch_state();
-  } else if (guidance_h.mode == GUIDANCE_H_MODE_ATTITUDE) {
-    rotwing_state_set_hover_settings();
-  } else if (guidance_h.mode == GUIDANCE_H_MODE_FORWARD) {
-    rotwing_state_set_fw_settings();
-  } else {
-    rotwing_switch_state();
+  } else if (guidance_h.mode == GUIDANCE_H_MODE_NONE) {
+    if (stabilization.mode == STABILIZATION_MODE_ATTITUDE) {
+      if (stabilization.att_submode == STABILIZATION_ATT_SUBMODE_FORWARD) {
+        rotwing_state_set_fw_settings();
+      } else {
+        rotwing_state_set_hover_settings();
+      }
+    }
   }
+  // } else {
+  //   rotwing_switch_state();
+  // }
 
   // Run the wing skewer
   rotwing_state_skewer();
@@ -672,7 +677,7 @@ void rotwing_state_free_processor(void)
   VECT2_ADD(desired_airspeed_v, windspeed_v);
 
   float desired_airspeed = FLOAT_VECT2_NORM(desired_airspeed_v);
-  float airspeed_error = guidance_indi_max_airspeed - airspeed;
+  float airspeed_error = rotwing_state_max_fw_speed - airspeed;
 
     // Request hybrid if we have to decelerate and approaching target
     if (max_speed_decel < current_groundspeed) {

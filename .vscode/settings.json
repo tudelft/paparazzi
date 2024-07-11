@@ -18,7 +18,8 @@
         "complex": "c",
         "random": "c",
         "limits": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "tensor": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
