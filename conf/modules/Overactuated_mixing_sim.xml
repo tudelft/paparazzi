@@ -1,0 +1,15 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="overactuated_mixing_sim" dir="overactuated_vehicle">
+  <doc>
+    <description>Overactuated Vehicle Mixing</description>
+  </doc>
+
+
+  <header>
+    <file name="overactuated_mixing.h"/>
+  </header>
+  <makefile target="nps">
+    <file name="overactuated_mixing_sim.c"/>
+  </makefile>
+</module>

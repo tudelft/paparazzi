@@ -4,7 +4,7 @@
   <header>
 #include "autopilot.h"
 #include "modules/datalink/datalink.h"
-#include  "modules/Overactuated_vehicle/Overactuated_mixing.h"
+#include  "modules/overactuated_vehicle/overactuated_mixing.h"
     
   </header>
   <waypoints>
