@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="70.0" ground_alt="0" lat0="52.1681551" lon0="4.4126468" max_dist_from_home="1070" name="Oneloop Valkenburg" security_height="2">
+<flight_plan alt="70.0" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="1070" name="Oneloop Valkenburg" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -10,36 +10,30 @@
     #include "modules/gps/gps.h"
 </header>
   <waypoints>
-    <waypoint name="HOME"        lat="52.1681551" lon="4.4126468" alt="70.0" />
-    <waypoint name="CLIMB"       lat="52.1687915" lon="4.4153418" alt="70.0" />
-    <waypoint name="trans"       lat="52.1687890" lon="4.4153418" alt="70.0" />
-    <waypoint name="decel"       lat="52.1687875" lon="4.4153418" alt="70.0" />
-    <waypoint name="begin_trans" lat="52.1687905" lon="4.4153418" alt="70.0" />
-    <waypoint name="end_trans"   lat="52.1687880" lon="4.4153418" alt="70.0" />
-    <waypoint name="STDBY"       lat="52.1682138" lon="4.4136350" alt="70.0" />
-    <waypoint name="p1"          lat="52.1661207" lon="4.4153418" alt="70.0" />
-    <waypoint name="p2"          lat="52.1674823" lon="4.4180372" alt="70.0" />
-    <waypoint name="p3"          lat="52.1687917" lon="4.4173814" alt="70.0" />
-    <waypoint name="p4"          lat="52.1679564" lon="4.4149828" alt="70.0" />
-    <waypoint name="circ"        lat="52.1674456" lon="4.4161317" alt="70.0" />
-    <waypoint name="TD"          lat="52.1681531" lon="4.4126768" alt="70.0" />
-    <waypoint name="Descend"     lat="52.1681246" lon="4.4128048" alt="20.0" />
-    <waypoint name="FOLLOW"      lat="52.1685096" lon="4.4136350" alt="70.0" />
-    <waypoint name="S1"          lat="52.1669450" lon="4.4174372" alt="70.0" />
-    <waypoint name="S2"          lat="52.1689871" lon="4.4208804" alt="70.0" />
-    <waypoint name="C1"          lat="52.169189"  lon="4.410820"  alt="70.0" />
-    <waypoint name="C2"          lat="52.168049"  lon="4.406923"  alt="70.0" />
-    <waypoint name="C3"          lat="52.166515"  lon="4.408235"  alt="70.0" />
-    <waypoint name="C4"          lat="52.163255"  lon="4.407668"  alt="70.0" />
-    <waypoint name="C5"          lat="52.161908"  lon="4.410082"  alt="70.0" />
-    <waypoint name="C6"          lat="52.162641"  lon="4.416992"  alt="70.0" />
-    <waypoint name="C7"          lat="52.164861"  lon="4.427268"  alt="70.0" />
-    <waypoint name="C8"          lat="52.170422"  lon="4.427511"  alt="70.0" />
-    <waypoint name="C9"          lat="52.172276"  lon="4.424011"  alt="70.0" />
-    <waypoint name="p5"          lat="52.1626367" lon="4.4124884" alt="70.0" />
-    <waypoint name="p6"          lat="52.1650926" lon="4.4257087" alt="70.0" />
-    <waypoint name="p7"          lat="52.1709078" lon="4.4220382" alt="70.0" />
-    <waypoint name="p8"          lat="52.1685456" lon="4.4103268" alt="70.0" />
+    <waypoint name="HOME" x="12.6" y="-48.7"/>
+    <waypoint name="CLIMB" x="62.6" y="-80.4"/>
+    <waypoint name="STDBY" lat="52.1682655" lon="4.4135103"/>
+    <waypoint name="p1" x="322.0" y="-254.3"/>
+    <waypoint name="p2" x="696.0" y="-148.1"/>
+    <waypoint name="p3" x="600.4" y="73.4"/>
+    <waypoint name="p4" x="238.6" y="-48.5"/>
+    <waypoint name="TD" lat="52.1681602" lon="4.4127708"/>
+    <waypoint name="FOLLOW" lat="52.16850964562752" lon="4.413635008734417"/>
+    <waypoint name="S1" lat="52.1669450" lon="4.4174372"/>
+    <waypoint name="S2" lat="52.1689871" lon="4.4208804"/>
+    <waypoint lat="52.169189"  lon="4.410820"  name="C1"/>
+    <waypoint lat="52.168049"  lon="4.406923"  name="C2"/>
+    <waypoint lat="52.166515"  lon="4.408235"  name="C3"/>
+    <waypoint lat="52.163255"  lon="4.407668"  name="C4"/>
+    <waypoint lat="52.161908"  lon="4.410082"  name="C5"/>
+    <waypoint lat="52.162641"  lon="4.416992"  name="C6"/>
+    <waypoint lat="52.164861"  lon="4.427268"  name="C7"/>
+    <waypoint lat="52.170422"  lon="4.427511"  name="C8"/>
+    <waypoint lat="52.172276"  lon="4.424011"  name="C9"/>
+    <waypoint lat="52.1673931" lon="4.4127541" name="p5"/>
+    <waypoint lat="52.1678569" lon="4.4150577" name="p6"/>
+    <waypoint lat="52.1689993" lon="4.4144979" name="p7"/>
+    <waypoint lat="52.1686045" lon="4.4121999" name="p8"/>
   </waypoints>
   <sectors>
     <sector color="red" name="Hard_Geofence">

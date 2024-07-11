@@ -79,14 +79,18 @@ float nav_hybrid_line_gain = 1.0f;
 #define NAV_HYBRID_NAV_CIRCLE_DIST 40.f
 #endif
 
-#ifdef NAV_HYBRID_POS_GAIN 
-float nav_hybrid_pos_gain = NAV_HYBRID_POS_GAIN; 
+#ifdef NAV_HYBRID_POS_GAIN
+float nav_hybrid_pos_gain = NAV_HYBRID_POS_GAIN;
 #else
 float nav_hybrid_pos_gain = 1.0f; 
 #endif
 
 #ifndef GUIDANCE_INDI_HYBRID
 bool force_forward = 0.0f;
+#endif
+
+#ifndef NAV_HYBRID_GOTO_MODE
+#define NAV_HYBRID_GOTO_MODE NAV_SETPOINT_MODE_SPEED
 #endif
 
 #ifndef NAV_OPTITRACK

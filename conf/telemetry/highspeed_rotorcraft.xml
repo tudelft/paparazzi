@@ -42,7 +42,7 @@
       <message name="AHRS_BIAS"                period="7.5"/>
       <message name="HOVER_LOOP"               period="0.3"/>
       <message name="GUIDANCE_H_REF_INT"       period="0.31"/>
-      <message name="GUIDANCE_INDI_HYBRID"     period="0.4"/>             
+      <message name="GUIDANCE_INDI_HYBRID"     period="0.4"/>
       <message name="HYBRID_GUIDANCE"          period="0.4"/>
       <message name="ESC"                      period="0.5"/>
       <message name="AHRS_REF_QUAT"            period="0.2"/>
@@ -161,6 +161,7 @@
       <message name="BARO_RAW"          period=".1"/>
       <message name="ARDRONE_NAVDATA"   period=".05"/>
       <message name="AIRSPEED_RAW"      period="0.1"/>
+      <message name="ACTUATORS_RAW"     period="0.1"/>
     </mode>
 
     <mode name="scaled_sensors">

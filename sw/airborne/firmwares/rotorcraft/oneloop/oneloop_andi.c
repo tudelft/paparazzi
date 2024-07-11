@@ -239,6 +239,26 @@ float theta_pref_max = RadOfDeg(20.0);
 float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
 #endif
 
+// Assume phi and theta are the first actuators after the real ones unless otherwise specified
+#ifndef ONELOOP_ANDI_PHI_IDX
+#define ONELOOP_ANDI_PHI_IDX  ANDI_NUM_ACT
+#endif
+
+#define ONELOOP_ANDI_MAX_BANK  act_max[ONELOOP_ANDI_PHI_IDX] // assuming abs of max and min is the same
+#define ONELOOP_ANDI_MAX_PHI   act_max[ONELOOP_ANDI_PHI_IDX] // assuming abs of max and min is the same
+
+#ifndef ONELOOP_ANDI_THETA_IDX
+#define ONELOOP_ANDI_THETA_IDX  ANDI_NUM_ACT+1
+#endif
+
+#define ONELOOP_ANDI_MAX_THETA   act_max[ONELOOP_ANDI_THETA_IDX] // assuming abs of max and min is the same
+
+#ifndef ONELOOP_THETA_PREF_MAX
+float theta_pref_max = RadOfDeg(20.0);
+#else
+float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
+#endif
+
 #if ANDI_NUM_ACT_TOT != WLS_N_U
 #error Matrix-WLS_N_U is not equal to the number of actuators: define WLS_N_U == ANDI_NUM_ACT_TOT in airframe file
 #define WLS_N_U == ANDI_NUM_ACT_TOT
@@ -1601,7 +1621,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   }
 
   /*Commit the actuator command*/
-  stabilization_cmd[COMMAND_THRUST] = 0;
+  stabilization.cmd[COMMAND_THRUST] = 0;
   for (i = 0; i < ANDI_NUM_ACT; i++) {
     //actuators_pprz[i] = (int16_t) andi_u[i];
     commands[i] = (int16_t) andi_u[i];
@@ -1618,7 +1638,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   if (heading_manual){
     psi_des_deg = DegOfRad(psi_des_rad);
   }  
-
   stabilization_cmd[COMMAND_ROLL]  = (int16_t) (DegOfRad(eulers_zxy_des.phi  ) * MAX_PPRZ / DegOfRad(ONELOOP_ANDI_MAX_PHI  ));
   stabilization_cmd[COMMAND_PITCH] = (int16_t) (DegOfRad(eulers_zxy_des.theta) * MAX_PPRZ / DegOfRad(ONELOOP_ANDI_MAX_THETA));
   stabilization_cmd[COMMAND_YAW]   = (int16_t) (psi_des_deg * MAX_PPRZ / 180.0);
@@ -1741,7 +1760,7 @@ void normalize_nu(void){
 }
 
 /** @brief  Function that calculates the model prediction for the complementary filter. */
-void calc_model(void){
+void calc_model(int ctrl_type){
   int8_t i;
   int8_t j;
   // // Absolute Model Prediction : 
@@ -2033,3 +2052,121 @@ void reshape_wind(void)
 }
 
 
+/** @brief Function to calculate the position reference during the chirp*/
+static float chirp_pos_p_ref(float delta_t, float f0, float k, float A){
+  float p_ref_fun = sinf(delta_t * M_PI * (f0 + k * delta_t) * 2.0);
+  return (A * p_ref_fun);
+}
+/** @brief Function to calculate the velocity reference during the chirp*/
+static float chirp_pos_v_ref(float delta_t, float f0, float k, float A){
+  float v_ref_fun = cosf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * (M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0);
+  return (A * v_ref_fun);
+}
+/** @brief Function to calculate the acceleration reference during the chirp*/
+static float chirp_pos_a_ref(float delta_t, float f0, float k, float A){
+  float a_ref_fun = -sinf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * pow((M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0), 2) + k * M_PI * cosf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * 4.0;
+  return (A * a_ref_fun);
+}
+/** @brief Function to calculate the jerk reference during the chirp*/
+static float chirp_pos_j_ref(float delta_t, float f0, float k, float A){
+  float j_ref_fun = -cosf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * pow((M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0), 3) - k * M_PI * sinf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * (M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0) * 1.2e+1;
+  return (A * j_ref_fun);
+}
+
+/** 
+ * @brief Function to perform position and attitude chirps
+ * @param dt      [s]    time passed since start of the chirp
+ * @param f0      [Hz]   initial frequency of the chirp
+ * @param f1      [Hz]   final frequency of the chirp
+ * @param t_chirp [s]    duration of the chirp
+ * @param p_ref   [m]    position reference
+ * @param v_ref   [m/s]  velocity reference
+ * @param a_ref   [m/s2] acceleration reference
+ * @param j_ref   [m/s3] jerk reference
+ */
+void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]) {
+  f0      = positive_non_zero(f0);
+  f1      = positive_non_zero(f1);
+  t_chirp = positive_non_zero(t_chirp);
+  A       = positive_non_zero(A);
+  if ((f1-f0) < -FLT_EPSILON){
+    f1 = f0;
+  }
+  // 0 body x, 1 body y, 2 body z, 3 pitch pref
+  if (n > 3){
+    n = 0;
+  }
+  if (n < 0){
+    n = 0;
+  }
+  // i think there should not be a problem with f1 being equal to f0
+  float k = (f1 - f0) / t_chirp;
+  float p_ref_chirp = chirp_pos_p_ref(time_elapsed, f0, k, A);
+  float v_ref_chirp = chirp_pos_v_ref(time_elapsed, f0, k, A);
+  float a_ref_chirp = chirp_pos_a_ref(time_elapsed, f0, k, A);
+  float j_ref_chirp = chirp_pos_j_ref(time_elapsed, f0, k, A);
+
+  float spsi   = sinf(psi);
+  float cpsi   = cosf(psi);
+  float mult_0 = 0.0;
+  float mult_1 = 0.0;
+  float mult_2 = 0.0;
+  if (n == 0){
+    mult_0 = cpsi;
+    mult_1 = spsi;
+    mult_2 = 0.0;
+  }else if(n==1){
+    mult_0 = -spsi;
+    mult_1 = cpsi;
+    mult_2 = 0.0;
+  }else if(n==2){
+    mult_0 = 0.0;
+    mult_1 = 0.0;
+    mult_2 = 1.0;
+  }
+  // Do not overwrite the reference if chirp is not on that axis
+  if (n == 2){
+    p_ref[2] = p_ref_0[2] + p_ref_chirp * mult_2;
+    v_ref[2] = v_ref_chirp * mult_2;
+    a_ref[2] = a_ref_chirp * mult_2;
+    j_ref[2] = j_ref_chirp * mult_2;
+  } else if (n < 2){
+    p_ref[0] = p_ref_0[0] + p_ref_chirp * mult_0;
+    p_ref[1] = p_ref_0[1] + p_ref_chirp * mult_1; 
+    v_ref[0] = v_ref_chirp * mult_0;
+    v_ref[1] = v_ref_chirp * mult_1;
+    a_ref[0] = a_ref_chirp * mult_0;
+    a_ref[1] = a_ref_chirp * mult_1; 
+    j_ref[0] = j_ref_chirp * mult_0;
+    j_ref[1] = j_ref_chirp * mult_1;
+  } else { //Pitch preferred chirp, for now a little bit hacked in...
+    pitch_pref = p_ref_chirp;
+    pitch_pref = (pitch_pref / A + 1.0) * (theta_pref_max / 2.0);
+    float pitch_offset = RadOfDeg(5.0);
+    pitch_pref = pitch_pref + pitch_offset;
+    Bound(pitch_pref,0.0,25.0);
+  }
+}
+
+void chirp_call(bool *chirp_on, bool *chirp_first_call, float* t_0, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]){
+  if (*chirp_on){
+    if (*chirp_first_call){
+      *time_elapsed = 0.0;
+      *chirp_first_call = false;
+      *t_0 = get_sys_time_float();
+      p_ref_0[0] = p_ref[0];
+      p_ref_0[1] = p_ref[1];
+      p_ref_0[2] = p_ref[2];
+    }
+    if (*time_elapsed < t_chirp){
+      *time_elapsed = get_sys_time_float() - *t_0;
+      chirp_pos(*time_elapsed, f0, f1, t_chirp, A, n, psi, p_ref, v_ref, a_ref, j_ref, p_ref_0);
+    } else {
+      *chirp_on   = false;
+      *chirp_first_call = true;
+      *time_elapsed = 0.0;
+      *t_0 = 0.0;
+      oneloop_andi_enter(false, oneloop_andi.ctrl_type);
+    }
+  }
+}

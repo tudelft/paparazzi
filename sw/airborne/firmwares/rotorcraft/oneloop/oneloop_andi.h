@@ -152,11 +152,11 @@ extern int16_t temp_pitch;
 extern struct PolePlacement p_att_e;
 extern struct PolePlacement p_att_rm;
 /*Position Loop*/
-extern struct PolePlacement p_pos_e;  
+extern struct PolePlacement p_pos_e;
 extern struct PolePlacement p_pos_rm;
 /*Altitude Loop*/
-extern struct PolePlacement p_alt_e;   
-extern struct PolePlacement p_alt_rm; 
+extern struct PolePlacement p_alt_e;
+extern struct PolePlacement p_alt_rm;
 /*Heading Loop*/
 extern struct PolePlacement p_head_e;
 extern struct PolePlacement p_head_rm;
@@ -164,9 +164,9 @@ extern struct PolePlacement p_head_rm;
 extern struct Gains3rdOrder k_att_e;
 extern struct Gains3rdOrder k_att_rm;
 extern struct Gains2ndOrder k_head_e;
-extern struct Gains2ndOrder k_head_rm;  
+extern struct Gains2ndOrder k_head_rm;
 extern struct Gains3rdOrder k_pos_e;
-extern struct Gains3rdOrder k_pos_rm; 
+extern struct Gains3rdOrder k_pos_rm;
 extern void oneloop_andi_init(void);
 extern void oneloop_andi_enter(bool half_loop_sp, int ctrl_type);
 extern void oneloop_andi_set_failsafe_setpoint(void);

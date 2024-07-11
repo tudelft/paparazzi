@@ -63,7 +63,7 @@
 
 // FW state identification
 #ifndef ROTWING_MIN_FW_SKEW_ANGLE_DEG
-#define ROTWING_MIN_FW_SKEW_ANGLE_DEG 80.0        // Minimum wing angle to fly in fixed wing state 
+#define ROTWING_MIN_FW_SKEW_ANGLE_DEG 80.0        // Minimum wing angle to fly in fixed wing state
 #endif
 
 #ifndef ROTWING_MIN_FW_COUNTER
@@ -80,6 +80,9 @@
 #endif
 
 // FW hov mot off state identification
+#ifndef ROTWING_HOV_MOT_RUN_RPM_TH
+#define ROTWING_HOV_MOT_RUN_RPM_TH 800
+#endif
 #ifndef ROTWING_HOV_MOT_OFF_RPM_TH
 #define ROTWING_HOV_MOT_OFF_RPM_TH 50
 #endif
@@ -166,6 +169,7 @@ inline void rotwing_state_set_fw_hov_mot_off_settings(void);
 
 inline void rotwing_state_set_state_settings(void);
 inline void rotwing_state_skewer(void);
+inline void rotwing_state_free_processor(void);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -196,6 +200,7 @@ void init_rotwing_state(void)
   // Start the drone in a desired hover state
   rotwing_state.current_state = ROTWING_STATE_HOVER;
   rotwing_state.desired_state = ROTWING_STATE_HOVER;
+  rotwing_state.requested_config = ROTWING_CONFIGURATION_HOVER;
 
   rotwing_state_settings.preferred_pitch_value = 0;
 
@@ -217,6 +222,10 @@ void periodic_rotwing_state(void)
 
   // Check and update desired state
   if (guidance_h.mode == GUIDANCE_H_MODE_NAV) {
+    // Run the free state requester if free configuration requestes
+    if(rotwing_state.requested_config == ROTWING_CONFIGURATION_FREE) {
+      rotwing_state_free_processor();
+    }
     rotwing_switch_state();
   } else if (guidance_h.mode == GUIDANCE_H_MODE_ATTITUDE) {
     rotwing_state_set_hover_settings();
@@ -231,9 +240,7 @@ void periodic_rotwing_state(void)
 
   //TODO: incorparate motor active / disbaling depending on called flight state
   // Switch on motors if flight mode is attitude
-  if (guidance_h.mode == GUIDANCE_H_MODE_ATTITUDE) {
-    bool_disable_hover_motors = false;
-  } else if (guidance_h.mode == GUIDANCE_H_MODE_FORWARD) {
+  if (guidance_h.mode == GUIDANCE_H_MODE_NONE) {
     bool_disable_hover_motors = false;
   }
   struct FloatEulers eulers_zxy;
@@ -280,12 +287,18 @@ void rotwing_request_configuration(uint8_t configuration)
   switch (configuration) {
     case ROTWING_CONFIGURATION_HOVER:
       request_rotwing_state(ROTWING_STATE_HOVER);
+      rotwing_state.requested_config = ROTWING_CONFIGURATION_HOVER;
       break;
     case ROTWING_CONFIGURATION_HYBRID:
       request_rotwing_state(ROTWING_STATE_SKEWING);
+      rotwing_state.requested_config = ROTWING_CONFIGURATION_HYBRID;
       break;
     case ROTWING_CONFIGURATION_EFFICIENT:
       request_rotwing_state(ROTWING_STATE_FW_HOV_MOT_OFF);
+      rotwing_state.requested_config = ROTWING_CONFIGURATION_EFFICIENT;
+      break;
+    case ROTWING_CONFIGURATION_FREE:
+      rotwing_state.requested_config = ROTWING_CONFIGURATION_FREE;
       break;
   }
 }
@@ -585,6 +598,7 @@ void rotwing_state_set_state_settings(void)
   force_forward = rotwing_state_settings.force_forward;
 
   nav_max_speed = rotwing_state_settings.nav_max_speed;
+  nav_goto_max_speed = rotwing_state_settings.nav_max_speed;
 
   // TO DO: pitch angle now hard coded scheduled by wing angle
 
@@ -611,6 +625,61 @@ void rotwing_state_skewer(void)
     Bound(wing_angle_scheduled_sp_deg, 0., 90.)
     rotwing_state_skewing.wing_angle_deg_sp = wing_angle_scheduled_sp_deg;
   }
+}
+
+void rotwing_state_free_processor(void)
+{
+  // Get current speed vector
+  struct EnuCoor_f *groundspeed = stateGetSpeedEnu_f();
+  float current_groundspeed = FLOAT_VECT2_NORM(*groundspeed);
+
+  // Get current airspeed
+  float airspeed = stateGetAirspeed_f();
+
+  // Get windspeed vector
+  struct FloatEulers eulers_zxy;
+  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+
+  float psi = eulers_zxy.psi;
+  float cpsi = cosf(psi);
+  float spsi = sinf(psi);
+  struct FloatVect2 airspeed_v = { spsi * airspeed, cpsi * airspeed };
+  struct FloatVect2 windspeed_v;
+  VECT2_DIFF(windspeed_v, *groundspeed, airspeed_v);
+
+  // Get goto target information
+  struct FloatVect2 pos_error;
+  struct EnuCoor_f *pos = stateGetPositionEnu_f();
+  VECT2_DIFF(pos_error, nav_rotorcraft_base.goto_wp.to, *pos);
+
+  /*
+    Calculations
+  */
+  // speed over pos_error projection
+  struct FloatVect2 pos_error_norm;
+  VECT2_COPY(pos_error_norm, pos_error);
+  float_vect2_normalize(&pos_error_norm);
+  float dist_to_target = sqrtf(nav_rotorcraft_base.goto_wp.dist2_to_wp);
+  float max_speed_decel2 = fabsf(2.f * dist_to_target * nav_max_deceleration_sp); // dist_to_wp can only be positive, but just in case
+  float max_speed_decel = sqrtf(max_speed_decel2);
+
+  // Check if speed setpoint above set airspeed
+  struct FloatVect2 desired_airspeed_v;
+  struct FloatVect2 groundspeed_sp;
+  groundspeed_sp.x = pos_error.x * nav_hybrid_pos_gain;
+  groundspeed_sp.y = pos_error.y * nav_hybrid_pos_gain;
+  VECT2_COPY(desired_airspeed_v, groundspeed_sp);
+  VECT2_ADD(desired_airspeed_v, windspeed_v);
+
+  float desired_airspeed = FLOAT_VECT2_NORM(desired_airspeed_v);
+  float airspeed_error = guidance_indi_max_airspeed - airspeed;
+
+    // Request hybrid if we have to decelerate and approaching target
+    if (max_speed_decel < current_groundspeed) {
+      request_rotwing_state(ROTWING_STATE_SKEWING);
+   } else if ((desired_airspeed > 15) && ((current_groundspeed + airspeed_error) < max_speed_decel)) {
+      request_rotwing_state(ROTWING_STATE_FW_HOV_MOT_OFF);
+    }
 }
 
 void rotwing_state_skew_actuator_periodic(void)

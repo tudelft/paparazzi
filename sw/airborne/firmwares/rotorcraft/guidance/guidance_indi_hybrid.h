@@ -94,7 +94,6 @@ extern float du_pref_gih[GUIDANCE_INDI_HYBRID_U];
 #endif
 
 extern float guidance_indi_thrust_z_eff;
-extern float guidance_indi_thrust_x_eff;
 
 extern struct guidance_indi_hybrid_params gih_params;
 extern float guidance_indi_specific_force_gain;
@@ -103,6 +102,6 @@ extern bool take_heading_control;
 extern float guidance_indi_max_bank;
 extern float guidance_indi_min_pitch;
 extern bool force_forward;       ///< forward flight for hybrid nav
-
+extern bool guidance_indi_airspeed_filtering;
 
 #endif /* GUIDANCE_INDI_HYBRID_H */
