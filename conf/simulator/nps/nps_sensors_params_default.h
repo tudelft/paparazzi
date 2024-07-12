@@ -49,7 +49,7 @@
 #define NPS_GPS_POS_BIAS_RANDOM_WALK_STD_DEV_X 0.
 #define NPS_GPS_POS_BIAS_RANDOM_WALK_STD_DEV_Y 0.
 #define NPS_GPS_POS_BIAS_RANDOM_WALK_STD_DEV_Z 0.
-#define NPS_GPS_POS_LATENCY                    0.110
+#define NPS_GPS_POS_LATENCY                    0.
 
 
 #endif
