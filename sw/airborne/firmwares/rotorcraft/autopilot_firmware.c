@@ -78,7 +78,6 @@ static uint32_t autopilot_in_flight_counter;
 #define THRESHOLD_GROUND_DETECT 25.0
 #endif
 
-
 /** Default ground-detection estimation based on accelerometer shock */
 bool WEAK autopilot_ground_detection(void) {
   struct NedCoor_f *accel = stateGetAccelNed_f();
@@ -98,7 +97,7 @@ bool WEAK autopilot_in_flight_end_detection(bool motors_on UNUSED) {
 #ifdef COMMAND_THRUST
     float thrust_level = commands[COMMAND_THRUST];
 #else
-    float thrust_level = stabilization_cmd[COMMAND_THRUST];
+    float thrust_level = stabilization.cmd[COMMAND_THRUST];
 #endif      
     if ((thrust_level <= AUTOPILOT_IN_FLIGHT_MIN_THRUST) &&
         (fabsf(stateGetSpeedNed_f()->z) < AUTOPILOT_IN_FLIGHT_MIN_SPEED) &&
@@ -317,7 +316,7 @@ void autopilot_check_in_flight(bool motors_on)
 #ifdef COMMAND_THRUST
 float thrust_level = commands[COMMAND_THRUST];
 #else
-float thrust_level = stabilization_cmd[COMMAND_THRUST];
+float thrust_level = stabilization.cmd[COMMAND_THRUST];
 #endif       
       if (thrust_level > AUTOPILOT_IN_FLIGHT_MIN_THRUST) {
         autopilot_in_flight_counter++;
