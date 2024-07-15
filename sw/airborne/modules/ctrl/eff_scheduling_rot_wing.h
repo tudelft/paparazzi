@@ -50,6 +50,7 @@ struct rot_wing_eff_sched_param_t {
   float k_lift_wing[2];
   float k_lift_fuselage;
   float k_lift_tail;
+  float roll_eff_cutoff;
 };
 
 struct rot_wing_eff_sched_var_t {

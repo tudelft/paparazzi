@@ -285,6 +285,8 @@
         <define name="K_LIFT_WING"           value="{-0.335811392,-0.615611143}"/>
         <define name="K_LIFT_FUSELAGE"       value="-0.050653927"/>
         <define name="K_LIFT_TAIL"           value="-0.101691751"/>
+
+        <define name="ROLL_EFF_CUTOFF"       value="0.0005"/> <!-- 0.0005 IS FOR THE SMALL DRONE, NEEDS DISCUSSION -->
     </section>
 
     <section name="MISC">
