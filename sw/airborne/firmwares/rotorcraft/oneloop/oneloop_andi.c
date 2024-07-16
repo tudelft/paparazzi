@@ -87,7 +87,7 @@
 #include "math/wls/wls_alloc.h"
 #include "modules/nav/nav_rotorcraft_hybrid.h"
 #include "firmwares/rotorcraft/navigation.h"
-#include "modules/rot_wing_drone/rotwing_state_V2.h"
+#include "modules/rot_wing_drone/rotwing_state.h"
 #include "modules/core/commands.h"
 #include "modules/ctrl/eff_scheduling_rot_wing_V2.h"
 #include <stdio.h>

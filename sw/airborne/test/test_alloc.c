@@ -32,8 +32,8 @@
 #include "std.h"
 #include "math/wls/wls_alloc.h"
 
-#define INDI_NUM_ACT WLS_N_U
-#define INDI_OUTPUTS WLS_N_V
+#define INDI_NUM_ACT WLS_N_U_MAX
+#define INDI_OUTPUTS WLS_N_V_MAX
 
 void test_overdetermined(void);
 void test_overdetermined2(void);
@@ -97,17 +97,17 @@ void test_four_by_four(void)
 void test_oneloop_rw3c(void)
 {
   float gamma = 20;
-  float du_min[WLS_N_U]  = {0,	0,	0,	0,	-0.999999000000000,	-0.818607651741293,	-0.906420781094527,	-1.00441964179104,	-1.00551747263682,	-0.625892592039801,	-1.38242921393035};
-  float du_max[WLS_N_U]  = {0,	0,	0,	0,	1.00000000000000e-06,	0.181392348258707,	1.09357921890547,	0.995580358208955,	0.994482527363184,	1.37410740796020,	0.617570786069651};
-  float du_pref[WLS_N_U] = {0,	0,	0,	0,	-0.999999000000000,	-0.818607651741293,	0.0935792189054731,	-0.00441964179104483,	-0.00551747263681596,	0.374107407960200,	-0.382429213930349};
+  float du_min[WLS_N_U_MAX]  = {0,	0,	0,	0,	-0.999999000000000,	-0.818607651741293,	-0.906420781094527,	-1.00441964179104,	-1.00551747263682,	-0.625892592039801,	-1.38242921393035};
+  float du_max[WLS_N_U_MAX]  = {0,	0,	0,	0,	1.00000000000000e-06,	0.181392348258707,	1.09357921890547,	0.995580358208955,	0.994482527363184,	1.37410740796020,	0.617570786069651};
+  float du_pref[WLS_N_U_MAX] = {0,	0,	0,	0,	-0.999999000000000,	-0.818607651741293,	0.0935792189054731,	-0.00441964179104483,	-0.00551747263681596,	0.374107407960200,	-0.382429213930349};
  
 
-  float Wv[WLS_N_V] = {4,4,4,8,8,1};
-  float Wu[WLS_N_U] = {0.75,0.75,0.75,0.75,1,0.1,0.1,0.1,0.1,1.2,1.2};
-  float wls_v[WLS_N_V] = {-4.86661635467990,	7.02758381773395,	3.20567040886711,	-1.05634927093606,	-4.53403714285678,	-0.125133236453181};
-  //float wls_v[WLS_N_V] = {0,0,0,0,0,0};
-  float wls_du[WLS_N_U] = {0};
-  float g1g2[WLS_N_V][WLS_N_U] = {
+  float Wv[WLS_N_V_MAX] = {4,4,4,8,8,1};
+  float Wu[WLS_N_U_MAX] = {0.75,0.75,0.75,0.75,1,0.1,0.1,0.1,0.1,1.2,1.2};
+  float wls_v[WLS_N_V_MAX] = {-4.86661635467990,	7.02758381773395,	3.20567040886711,	-1.05634927093606,	-4.53403714285678,	-0.125133236453181};
+  //float wls_v[WLS_N_V_MAX] = {0,0,0,0,0,0};
+  float wls_du[WLS_N_U_MAX] = {0};
+  float g1g2[WLS_N_V_MAX][WLS_N_U_MAX] = {
       {0, 0, 0, 0, -47.9216734146340, 0, 0, 0, 0, -23.2233317560976, 18.3478526585367},
       {0, 0, 0, 0, 104.951841268293, 0, 0, 0, 0, -13.1313056097561, 8.31975553658538},
       {0, 0, 0, 0, -33.4459766585367, 0, 0, 0, 0, -7.95380339024395, -67.3910292682927},
@@ -119,27 +119,27 @@ void test_oneloop_rw3c(void)
   // Scale to test numerical errors
   float scaler = 1; // replace with your desired value
   gamma *= scaler;
-  for (int i = 0; i < WLS_N_U; i++) {
+  for (int i = 0; i < WLS_N_U_MAX; i++) {
       du_min[i]  *= scaler;
       du_max[i]  *= scaler;
       du_pref[i] *= scaler;
   }
   
-  for (int i = 0; i < WLS_N_V; i++) {
-      for (int j = 0; j < WLS_N_U; j++) {
+  for (int i = 0; i < WLS_N_V_MAX; i++) {
+      for (int j = 0; j < WLS_N_U_MAX; j++) {
           g1g2[i][j] /= scaler;
       }
   }
     // Initialize the array of pointers to the rows of g1g2
-  float *Bwls[WLS_N_V];
+  float *Bwls[WLS_N_V_MAX];
   uint8_t i;
-  for (i = 0; i < WLS_N_V; i++) {
+  for (i = 0; i < WLS_N_V_MAX; i++) {
     Bwls[i] = g1g2[i];
   }
   // WLS Control Allocator
   //int num_iter = wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, 0, u_p, 0, 10, INDI_NUM_ACT, INDI_OUTPUTS);
-  int num_iter = wls_alloc(wls_du, wls_v, du_min, du_max, Bwls, du_pref, 0, Wv, Wu, du_pref, gamma, 10, WLS_N_U, WLS_N_V);
-  float nu_out[WLS_N_V] = {0.0f};
+  int num_iter = wls_alloc(wls_du, wls_v, du_min, du_max, Bwls, du_pref, 0, Wv, Wu, du_pref, gamma, 10, WLS_N_U_MAX, WLS_N_V_MAX);
+  float nu_out[WLS_N_V_MAX] = {0.0f};
   calc_nu_out(Bwls, wls_du, nu_out);
   float SC = 0;
   calc_secondary_cost(wls_du, du_pref, Wu, &SC);
