@@ -158,25 +158,25 @@ void ctrl_eff(void)
     g1g2[2][5] = -0.005;
      }else{
     struct FloatEulers eulers_zxy;
-    if(airspeed < 7.0) {
-    float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-    float pitch_interp = DegOfRad(eulers_zxy.theta);
-    Bound(pitch_interp, -60.0, -30.0);
-    float ratio = (pitch_interp + 30.0)/(-30.);
+    if(true) { //airspeed < 7.0) {
+        float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+        float pitch_interp = DegOfRad(eulers_zxy.theta);
+        Bound(pitch_interp, -60.0, -30.0);
+        float ratio = (pitch_interp + 30.0)/(-30.);
 
-    /*pitch*/
-    g1g2[1][4] = g1g2_hover[1][4]/1000*(1-ratio) + -pitch_eff_at_60/1000*ratio;
-    g1g2[1][5] = g1g2_hover[1][5]/1000*(1-ratio) +  pitch_eff_at_60/1000*ratio;
-    /*yaw*/
-    g1g2[2][4] = g1g2_hover[2][4]/1000*(1-ratio) + -yaw_eff_at_60/1000*ratio;
-    g1g2[2][5] = g1g2_hover[2][5]/1000*(1-ratio) + -yaw_eff_at_60/1000*ratio;
+        /*pitch*/
+        g1g2[1][4] = g1g2_hover[1][4]/1000*(1-ratio) + -pitch_eff_at_60/1000*ratio;
+        g1g2[1][5] = g1g2_hover[1][5]/1000*(1-ratio) +  pitch_eff_at_60/1000*ratio;
+        /*yaw*/
+        g1g2[2][4] = g1g2_hover[2][4]/1000*(1-ratio) + -yaw_eff_at_60/1000*ratio;
+        g1g2[2][5] = g1g2_hover[2][5]/1000*(1-ratio) + -yaw_eff_at_60/1000*ratio;
     }
-    else {
-    g1g2[1][4] = -cde_offset - 0.001f*c_delta_e * airspeed*airspeed;
-    g1g2[1][5] = cde_offset + 0.001f*c_delta_e * airspeed*airspeed;
+        else {
+        g1g2[1][4] = -cde_offset - 0.001f*c_delta_e * airspeed*airspeed;
+        g1g2[1][5] = cde_offset + 0.001f*c_delta_e * airspeed*airspeed;
 
-    g1g2[2][4] = - cda_offset - 0.001f*c_delta_a * airspeed*airspeed;
-    g1g2[2][5] = - cda_offset - 0.001f*c_delta_a * airspeed*airspeed;
+        g1g2[2][4] = - cda_offset - 0.001f*c_delta_a * airspeed*airspeed;
+        g1g2[2][5] = - cda_offset - 0.001f*c_delta_a * airspeed*airspeed;
     }
     }
 }

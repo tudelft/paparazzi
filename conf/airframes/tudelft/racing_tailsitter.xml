@@ -131,11 +131,11 @@
       <!-- <define name="CALC_AMSL_BARO" value="TRUE" /> -->
     </module>
 
-    <!-- <module name="gps" type="ublox">
+    <module name="gps" type="ublox">
       <configure name="UBX_GPS_PORT" value="UART4"/>
       <configure name="GPS_BAUD" value="B57600"/>
-    </module> -->
-    <module name="gps" type="datalink"/>
+    </module>
+    <!-- <module name="gps" type="datalink"/> -->
 
     <module name="stabilization" type="indi">
       <configure name="INDI_NUM_ACT" value="6"/>
@@ -155,8 +155,8 @@
     </module>-->
 
     <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="FALSE"/>
-      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
+      <configure name="USE_MAGNETOMETER" value="TRUE"/>
+      <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
       <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
     </module>
     <module name="ins" type="extended">
@@ -317,7 +317,7 @@
     <!-- setpoints -->
     <define name="SP_MAX_PHI"     value="60." unit="deg"/>
     <define name="SP_MAX_THETA"   value="60." unit="deg"/>
-    <define name="SP_MAX_R"       value="90." unit="deg/s"/>
+    <define name="SP_MAX_R"       value="140." unit="deg/s"/>
     <define name="DEADBAND_R"     value="250"/>
     <define name="DEADBAND_A"     value="250"/>
     <define name="SP_PSI_DELTA_LIMIT" value="90" unit="deg"/>
@@ -365,12 +365,10 @@
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
     <define name="ADAPTIVE_MU" value="0.0001"/>
-    <define name="WLS_PRIORITIES" value="{1.0,1.0,1.0,1.0}"/>
+    <define name="WLS_PRIORITIES" value="{10.0,10.0,0.1,1.0}"/>
     <define name="WLS_WU" value="{0.001,0.001,0.001,0.001,1.0,1.0}"/>
 
     <define name="MOMENT_INERTIA_RATIO" value="0.004478"/>	<!-- ratio between MoI of tilt vs. rest of drone [total MoI minus one tilt]. Both measure around axis of servo. -->
-    <define name="GRADIENT" value="0.0001"/>				<!-- gradient in linear relationship between pprz and angle (in rad), must be same as in 'ctrl_effectiveness_calc.c' -->
-
 	  <!-- Maximum servo increment in PPRZ units -->
 	  <define name="MAX_SERVO_INCREMENT" value="4500"/>
 	
@@ -382,7 +380,7 @@
     <define name="PIVOT_GAIN_THETA" value="0.77"/><!--0.5 before -->
     <define name="PIVOT_GAIN_I" value="0.14"/>
 
-    <define name="WU_ALPHA" value="0.05"/>
+    <define name="WU_ALPHA" value="0.005"/>
 
     <define name="L1" value="0.23"/>		<!--force distance from tilt to tail, for pitch pivoting[m]-->
     <define name="L2" value="0.16"/>	<!--force distance from CG to tail, for pitch pivoting[m]-->
@@ -400,10 +398,10 @@
   	
         <!-- Drone specific metrics -->
     	<define name="MASS" value="0.4561"/>		<!--[kg]-->
-    	<define name="I_XX" value="0.00638"/>	<!--[kg m2] 0.00526 -->
+    	<define name="I_XX" value="0.0072"/>	<!--[kg m2] 0.00526 -->
     	<!--<define name="I_YY" value="0.04914925"/>-->	<!--[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
-    	<define name="I_YY" value="0.0026"/><!--0.0036 0.0034-->
-    	<define name="I_ZZ" value="0.00628"/>	<!--[kg m2] 0.011 0.00341 -->
+    	<define name="I_YY" value="0.0031"/><!--0.0028 0.0026 0.0036 0.0034-->
+    	<define name="I_ZZ" value="0.011"/>	<!--[kg m2] 0.00628 0.011 0.00341 -->
  	    <!--<define name="I_XX" value="0.017897"/>	[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
     	<!--<define name="I_YY" value="0.003390"/>	[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
     	<!--<define name="I_ZZ" value="0.020337"/>	[kg m2] The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
@@ -418,7 +416,7 @@
       <define name="CDE_OFFSET" value="0.0015"/><!--0.002 0.0004 0.004-->
 
       <define name="CDA" value="0.05"/>
-      <define name="CDA_OFFSET" value="0.0018"/><!--0.0002-->
+      <define name="CDA_OFFSET" value="0.0026"/><!--0.0018-->
 
     	<!-- Location of the Motors w.r.t. the c.g. -->
     	<define name="Y_DIST" value="0.16"/>		<!--[m]-->

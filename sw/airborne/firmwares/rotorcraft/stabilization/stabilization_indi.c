@@ -312,7 +312,7 @@ static float Wv[INDI_OUTPUTS] = STABILIZATION_INDI_WLS_PRIORITIES;
 #if INDI_OUTPUTS == 5
 static float Wv[INDI_OUTPUTS] = {1000, 1000, 1, 100, 100};
 #else
-static float Wv[INDI_OUTPUTS] = {1000, 1000, 1, 100};
+static float Wv[INDI_OUTPUTS] = {1000, 1000, 1, 100}; 
 #endif
 #endif
 
@@ -338,7 +338,8 @@ float g2_times_du;
 float q_filt = 0.0;
 float r_filt = 0.0;
 
-float stabilization_indi_filter_freq = 20.0; //Hz, for setting handler
+float stabilization_indi_filter_freq = 1.0; //2.0 Hz, for setting handler
+float stabilization_indi_filter_freq_rates = 20.0; //Hz, for setting handler
 
 // variables needed for estimation
 float g1g2_trans_mult[INDI_OUTPUTS][INDI_OUTPUTS];
@@ -582,14 +583,24 @@ void stabilization_indi_enter(void)
   float_vect_zero(ddu_estimation, INDI_NUM_ACT);
 }
 
-void stabilization_indi_update_filt_freq(float freq)
+void stabilization_indi_update_filt_freq_rates(float freq)
 {
-  stabilization_indi_filter_freq = freq;
+  stabilization_indi_filter_freq_rates = freq;
   float tau = 1.0 / (2.0 * M_PI * freq);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
   init_first_order_low_pass(&rates_filt_fo[0], tau, sample_time, stateGetBodyRates_f()->p);
   init_first_order_low_pass(&rates_filt_fo[1], tau, sample_time, stateGetBodyRates_f()->q);
   init_first_order_low_pass(&rates_filt_fo[2], tau, sample_time, stateGetBodyRates_f()->r);
+}
+
+void stabilization_indi_update_filt_freq(float freq)
+{
+  stabilization_indi_filter_freq = freq;
+  float tau = 1.0 / (2.0 * M_PI * freq);
+  float sample_time = 1.0 / PERIODIC_FREQUENCY;
+  init_butterworth_2_low_pass(&measurement_lowpass_filters[0], tau, sample_time, 0.0);
+  init_butterworth_2_low_pass(&measurement_lowpass_filters[1], tau, sample_time, 0.0);
+  init_butterworth_2_low_pass(&measurement_lowpass_filters[2], tau, sample_time, 0.0);
 }
 
 /**
@@ -906,8 +917,10 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   struct FloatEulers eulers_zxy;
   struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
   float_eulers_of_quat_zxy(&eulers_zxy, statequat);
-  float tilt_weight = -6.0/M_PI * eulers_zxy.theta- 1.5f;
-  float elevon_weight = 6.0/M_PI * eulers_zxy.theta + 2.5f;
+  // float tilt_weight = -6.0/M_PI * eulers_zxy.theta- 1.5f;
+  // float elevon_weight = 6.0/M_PI * eulers_zxy.theta + 2.5f;
+  float tilt_weight = cos(3.0*eulers_zxy.theta + 1.25*M_PI);
+  float elevon_weight =  -cos(3.0*eulers_zxy.theta + 1.25*M_PI) + 1;
 
   // Apply low-pass filter
   filtered_tilt_weight = Wu_alpha * tilt_weight + (1.0f - Wu_alpha) * filtered_tilt_weight;
@@ -916,8 +929,8 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   indi_Wu[0] = filtered_tilt_weight;
   indi_Wu[4] = filtered_elevon_weight;
 
-  Bound(indi_Wu[0], 0.0, 1.0);
-  Bound(indi_Wu[4], 0.0, 1.0);
+  Bound(indi_Wu[0], 0.001, 1.0);
+  Bound(indi_Wu[4], 0.001, 1.0);
   indi_Wu[1] = indi_Wu[0];
   indi_Wu[5] = indi_Wu[4];
   
