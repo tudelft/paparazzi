@@ -238,6 +238,10 @@ float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
 #define ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD 10.0
 #endif
 
+#ifndef ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD
+#define ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD 10.0
+#endif
+
 /* Declaration of Navigation Variables*/
 #ifdef NAV_HYBRID_MAX_DECELERATION
 float max_a_nav = NAV_HYBRID_MAX_DECELERATION;
@@ -1591,7 +1595,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   // WLS Control Allocator
   normalize_nu();
   wls_alloc(&WLS_one_p, bwls_1l, 0, 0, 10);
-  //number_iter = wls_alloc(andi_du_n, nu_n, du_min_1l, WLS_one_p.u_max, bwls_1l, 0, 0, Wv_wls, Wu, WLS_one_p.u_pref, WLS_one_p.gamma_sq, 10, ANDI_NUM_ACT_TOT, ANDI_OUTPUTS);
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
     andi_du_n[i] = WLS_one_p.u[i];
     andi_du[i] = (float)(andi_du_n[i] * ratio_u_un[i]);
