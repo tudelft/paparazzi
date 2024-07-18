@@ -337,7 +337,7 @@ void eff_scheduling_rot_wing_update_hover_motor_effectiveness(void)
   float dM_dpprz_left   = dM_dpprz[3];
 
   float roll_motor_p_eff_right = -(dM_dpprz_right * eff_sched_var.cosr + eff_sched_p.hover_roll_roll_coef[0] * eff_sched_var.wing_rotation_rad * eff_sched_var.wing_rotation_rad * eff_sched_var.airspeed * eff_sched_var.cosr) / eff_sched_var.Ixx;
-  bound_or_zero(roll_motor_p_eff_right, -1.f, -ROLL_EFFECTIVENESS_CUTOFF);
+  bound_or_zero(roll_motor_p_eff_right, -1.f, -eff_sched_p.roll_eff_cutoff);
 
   float roll_motor_p_eff_left = (dM_dpprz_left * eff_sched_var.cosr + scale_roll_roll_coeff * eff_sched_p.hover_roll_roll_coef[0] * eff_sched_var.wing_rotation_rad * eff_sched_var.wing_rotation_rad * eff_sched_var.airspeed * eff_sched_var.cosr) / eff_sched_var.Ixx;
   
@@ -346,7 +346,7 @@ void eff_scheduling_rot_wing_update_hover_motor_effectiveness(void)
     roll_motor_p_eff_left += roll_motor_airspeed_compensation;
   }
   
-  bound_or_zero(roll_motor_p_eff_left, ROLL_EFFECTIVENESS_CUTOFF, 1.f);
+  bound_or_zero(roll_motor_p_eff_left, eff_sched_p.roll_eff_cutoff, 1.f);
 
   float roll_motor_q_eff = (eff_sched_p.hover_roll_pitch_coef[0] * eff_sched_var.wing_rotation_rad + eff_sched_p.hover_roll_pitch_coef[1] * eff_sched_var.wing_rotation_rad * eff_sched_var.wing_rotation_rad * eff_sched_var.sinr) / eff_sched_var.Iyy;
   Bound(roll_motor_q_eff, 0, 1);
