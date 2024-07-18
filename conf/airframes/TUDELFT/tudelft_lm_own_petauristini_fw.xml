@@ -322,8 +322,8 @@ NOTES:
   <!-- Do not set MAX_ROLL, MAX_PITCH to small of a value, otherwise one can NOT control the plane very well manually -->
   <!-- If you have dual rate swith it of with same swtch as mode switch thus auto1 means dualrate is switched off also -->
   <section name="AUTO1" prefix="AUTO1_">
-    <define name="MAX_ROLL" value="60" unit="deg"/> <!-- To make sure to have enough autority while testflying for first time -->
-    <define name="MAX_PITCH" value="55" unit="deg"/> <!-- To make sure to have enough autority while testflying for first time -->
+    <define name="MAX_ROLL" value="40" unit="deg"/> <!-- To make sure to have enough autority while testflying for first time -->
+    <define name="MAX_PITCH" value="21" unit="deg"/> <!-- To make sure to have enough autority while testflying for first time -->
   </section>
 
   <!-- <section name="TRIM" prefix="COMMAND_">
