@@ -123,10 +123,6 @@
 #error "NO ROT_WING_EFF_SCHED_K_LIFT_TAIL defined"
 #endif
 
-#ifndef ROLL_EFFECTIVENESS_CUTOFF
-#define ROLL_EFFECTIVENESS_CUTOFF 5e-4f
-#endif
-
 struct rot_wing_eff_sched_param_t eff_sched_p = {
   .Ixx_body                 = ROT_WING_EFF_SCHED_IXX_BODY,
   .Iyy_body                 = ROT_WING_EFF_SCHED_IYY_BODY,
@@ -147,7 +143,8 @@ struct rot_wing_eff_sched_param_t eff_sched_p = {
   .k_rpm_pprz_pusher        = ROT_WING_EFF_SCHED_K_RPM_PPRZ_PUSHER,
   .k_lift_wing              = ROT_WING_EFF_SCHED_K_LIFT_WING,
   .k_lift_fuselage          = ROT_WING_EFF_SCHED_K_LIFT_FUSELAGE,
-  .k_lift_tail              = ROT_WING_EFF_SCHED_K_LIFT_TAIL
+  .k_lift_tail              = ROT_WING_EFF_SCHED_K_LIFT_TAIL,
+  .roll_eff_cutoff          = ROT_WING_EFF_SCHED_ROLL_EFF_CUTOFF
 };
 
 float eff_sched_pusher_time = 0.002;
@@ -310,7 +307,7 @@ void eff_scheduling_rot_wing_update_hover_motor_effectiveness(void)
   float roll_motor_p_eff_right = -(dM_dpprz_right * eff_sched_var.cosr + scale_roll_roll_coeff * eff_sched_p.hover_roll_roll_coef[0] * eff_sched_var.wing_rotation_rad * eff_sched_var.wing_rotation_rad * eff_sched_var.airspeed * eff_sched_var.cosr) / eff_sched_var.Ixx;
 
   // Set the roll effectiveness to zero when below a certain threshold
-  if (roll_motor_p_eff_right >= -ROLL_EFFECTIVENESS_CUTOFF) {
+  if (roll_motor_p_eff_right >= -eff_sched_p.roll_eff_cutoff) {
     roll_motor_p_eff_right = 0;
   } 
 
@@ -320,7 +317,7 @@ void eff_scheduling_rot_wing_update_hover_motor_effectiveness(void)
     float roll_motor_airspeed_compensation = eff_sched_p.hover_roll_roll_coef[1] * eff_sched_var.airspeed * eff_sched_var.cosr / eff_sched_var.Ixx;
     roll_motor_p_eff_left += roll_motor_airspeed_compensation;
   }
-  if (roll_motor_p_eff_left <= ROLL_EFFECTIVENESS_CUTOFF) {
+  if (roll_motor_p_eff_left <= eff_sched_p.roll_eff_cutoff) {
     roll_motor_p_eff_left = 0;
   }
 

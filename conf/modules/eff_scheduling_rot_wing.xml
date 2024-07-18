@@ -66,6 +66,7 @@
       <define name="ROT_WING_EFF_SCHED_K_LIFT_WING" value="{1,1}"/>
       <define name="ROT_WING_EFF_SCHED_K_LIFT_FUSELAGE" value="1"/>
       <define name="ROT_WING_EFF_SCHED_K_LIFT_TAIL" value="1"/>
+      <define name="ROT_WING_EFF_SCHED_ROLL_EFF_CUTOFF" value="1"/>
     </test>
   </makefile>
 </module>
