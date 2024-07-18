@@ -55,31 +55,13 @@ static void print_final_values(struct WLS_t* WLS_p, float **B);
 static void print_in_and_outputs(int n_c, int n_free, float **A_free_ptr, float *d, float *p_free);
 #endif
 
-
-// #define WLS_N_C ((WLS_N_U)+(WLS_N_V))
-
-// struct WLS_t WLS_p = {
-//   .nu     = WLS_N_U,
-//   .nv     = WLS_N_V,
-//   .gamma  = 0.0,
-//   .v      = {0.0},
-//   .Wv     = {0.0},
-//   .Wu     = {0.0},
-//   .u_pref = {0.0},
-//   .u_min  = {0.0},
-//   .u_max  = {0.0},
-//   .PC     = 0.0,
-//   .SC     = 0.0,
-//   .iter   = 0
-// };
-
 /* Define messages of the module*/
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
 void send_wls_v(char *name, struct WLS_t *WLS_p, struct transport_tx *trans, struct link_device *dev)
 {
   uint8_t iter_temp = (uint8_t)WLS_p->iter;
-  pprz_msg_send_WLS_v(trans, dev, AC_ID,
+  pprz_msg_send_WLS_V(trans, dev, AC_ID,
                       strlen(name),name,
                       &WLS_p->gamma_sq,
                       &iter_temp,
@@ -88,7 +70,7 @@ void send_wls_v(char *name, struct WLS_t *WLS_p, struct transport_tx *trans, str
 }
 void send_wls_u(char *name, struct WLS_t *WLS_p, struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_WLS_u(trans, dev, AC_ID,
+  pprz_msg_send_WLS_U(trans, dev, AC_ID,
                       strlen(name),name,
                       WLS_p->nu, WLS_p->Wu,
                       WLS_p->nu, WLS_p->u_pref,
@@ -97,16 +79,6 @@ void send_wls_u(char *name, struct WLS_t *WLS_p, struct transport_tx *trans, str
                       WLS_p->nu, WLS_p->u);
 }
 #endif
-
-/** @brief Init function */
-// void wls_init(void)
-// {
-//   // Start telemetry
-//   #if PERIODIC_TELEMETRY
-//     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_v, send_wls_v);
-//     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_u, send_wls_u);
-//   #endif
-// }
 
 /**
  * @brief Wrapper for qr solve
@@ -136,27 +108,13 @@ static void qr_solve_wrapper(int m, int n, float **A, float *b, float *x) {
  * Takes the control objective and max and min inputs from pprz and calculates
  * the inputs that will satisfy most of the control objective, subject to the
  * weighting matrices Wv and Wu
- *
- * @param u The control output vector
- * @param v The control objective vector
- * @param umin The minimum u vector
- * @param u_max The maximum u vector
+ *  
+ * @param WLS_p Struct that contains most of the WLS parameters
  * @param B The control effectiveness matrix
  * @param u_guess Initial value for u
  * @param W_init Initial working set, if known
- * @param Wv Weighting on different control objectives
- * @param Wu Weighting on different controls
- * @param up Preferred control vector
- * @param gamma_sq Preference of satisfying control objective over desired control vector (sqare root of gamma)
  * @param imax Max number of iterations
- * @param nu Length of u (the number of actuators)
- * @param nv Length of v (the number of control objectives)
- * @param WLS_p Struct that contains most of the WLS parameters
- * @return Number of iterations which is (imax+1) if it ran out of iterations
  */
-// int wls_alloc(float* u, float* v, float* u_min, float* umax, float** B,
-//     float* u_guess, float* W_init, float* Wv, float* Wu, float* up,
-//     float gamma_sq, int imax,  int n_u, int n_v) {
 
 void wls_alloc(struct WLS_t* WLS_p, float **B, float *u_guess, float *W_init, int imax) {
   // allocate variables, use defaults where parameters are set to 0
