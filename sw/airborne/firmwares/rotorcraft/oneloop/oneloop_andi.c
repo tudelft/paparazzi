@@ -1242,8 +1242,8 @@ void oneloop_andi_init(void)
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE, send_guidance_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATOR_STATE, send_oneloop_actuator_state);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_oneloop_debug);
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_v, send_wls_v_oneloop);
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_u, send_wls_u_oneloop);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_V, send_wls_v_oneloop);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_U, send_wls_u_oneloop);
   #endif
 }
 
@@ -1336,7 +1336,7 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     Bound(thrust_cmd_1l,0.0,MAX_PPRZ); 
     int8_t i;
     for (i = 0; i < ANDI_NUM_ACT; i++) {
-     a_thrust +=(thrust_cmd_1l - use_increment*actuator_state_1l[i]) * bwls_1l[2][i] / (ratio_u_un[i] * ratio_vn_v[aD]);
+     a_thrust +=(thrust_cmd_1l - use_increment*actuator_state_1l[i]) * bwls_1l[2][i] / (ratio_u_un[i] * ratio_vn_v[RW_aD]);
     }
     rm_3rd_attitude(dt_1l, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, att_des, false, psi_vec, k_att_rm.k1, k_att_rm.k2, k_att_rm.k3, max_j_ang);
   }else{
@@ -1739,15 +1739,15 @@ void calc_normalization(void){
     float ratio_numerator = positive_non_zero(nu_norm_max);
     float ratio_denominator = 1.0;
     switch (i) {
-      case (aN):
-      case (aE):
-      case (aD):
+      case (RW_aN):
+      case (RW_aE):
+      case (RW_aD):
         ratio_denominator = positive_non_zero(max_j_nav);
         ratio_vn_v[i] = ratio_numerator/ratio_denominator;
         break;
-      case (ap):
-      case (aq):
-      case (ar):
+      case (RW_ap):
+      case (RW_aq):
+      case (RW_ar):
         ratio_denominator = positive_non_zero(max_j_ang);
         ratio_vn_v[i] = ratio_numerator/ratio_denominator;
         break;
