@@ -290,7 +290,7 @@ NOTES:
 
   <section name="TRIM" prefix="COMMAND_">
     <define name="ROLL_TRIM" value="0.0"/>
-    <define name="PITCH_TRIM" value="20.0"/>
+    <define name="PITCH_TRIM" value="5.0"/>
 </section>
 
 <!-- ************************ AUTO RC COMMANDS ***************************** -->
@@ -392,7 +392,7 @@ NOTES:
     <define name="PITCH_MAX_SETPOINT" value="40" unit="deg"/>
     <define name="PITCH_MIN_SETPOINT" value="-40" unit="deg"/>
 
-    <define name="PITCH_PGAIN" value="12000"/>
+    <define name="PITCH_PGAIN" value="20000"/>
     <define name="PITCH_DGAIN" value="80"/>
     <define name="PITCH_IGAIN" value="2"/>
     <define name="PITCH_KFFA" value="20."/>
@@ -401,7 +401,7 @@ NOTES:
     <define name="ELEVATOR_OF_ROLL" value="1550" unit="PPRZ_MAX"/>
     <define name="ROLL_SLEW" value="0.3"/>
     <define name="ROLL_ATTITUDE_GAIN" value="13000."/>
-    <define name="ROLL_RATE_GAIN" value="400."/>
+    <define name="ROLL_RATE_GAIN" value="600."/>
     <define name="ROLL_IGAIN" value="100."/>
     <define name="ROLL_KFFA" value="100"/>
     <define name="ROLL_KFFD" value="10"/>

@@ -117,7 +117,7 @@ void actuators_periodic(void)
   struct serial_act_t4_out test;
   test.servo_arm_int = 1;
 
-  if (radio_control.values[5] < -9000){
+  if (radio_control.values[5] < -9000 || autopilot_get_mode() == AP_MODE_AUTO2){
     SetActuatorsFromCommands(trimmed_commands, 50);
   }
   else{
