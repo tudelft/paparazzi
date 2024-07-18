@@ -765,11 +765,11 @@ NOTES:
   </section>
 
   <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
-      <define name="POS_GAIN" value="1.0"/>
-      <define name="POS_GAINY" value="1.0"/>
-      <define name="POS_GAINZ" value="1.0"/>
-      <define name="SPEED_GAIN" value="1.2"/>
-      <define name="SPEED_GAINY" value="1.5"/>
+      <define name="POS_GAIN" value="0.6"/>
+      <define name="POS_GAINY" value="0.8"/>
+      <define name="POS_GAINZ" value="0.6"/>
+      <define name="SPEED_GAIN" value="0.8"/>
+      <define name="SPEED_GAINY" value="1.0"/>
       <define name="SPEED_GAINZ" value="1.2"/>  <!-- 0.2? -->
 
 <!--      <define name="POS_GAIN" value="0.2"/>-->
@@ -788,16 +788,16 @@ NOTES:
       <define name="MIN_THROTTLE" value="0"/>
       <define name="MIN_THROTTLE_FWD" value="0"/>
       <define name="MIN_PITCH" value="-30."/>
-      <define name="MAX_PITCH" value="30."/>
-    <define name="MIN_ACC_SP" value="-4.5"/>  <!-- min and max acc sp; MIN is upward, MAX is downward -->
-    <define name="MAX_ACC_SP" value="4.0"/>
+      <define name="MAX_PITCH" value="20."/>
+    <define name="MIN_ACC_SP" value="-3.0"/>  <!-- min and max acc sp; MIN is upward, MAX is downward -->
+    <define name="MAX_ACC_SP" value="3.0"/>
 <!--      <define name="LIFTD_ASQ" value="0.35"/>       &lt;!&ndash; 0.35 for Seal &ndash;&gt;-->
       <define name="LIFTD_ASQ" value="0.5515"/>           <!-- TODO: calc -->
 
       <define name="HYBRID_USE_WLS" value="TRUE"/>
       <define name="HYBRID_USE_OLD_WLS" value="TRUE"/>  <!-- define this to use the old version -->
-      <define name="HYBRID_WLS_PRIORITIES" value="{1.0, 1.0, 3.0}"/>
-      <define name="HYBRID_WLS_WU" value="{1.0, 1.0, 1.0}" />
+      <define name="HYBRID_WLS_PRIORITIES" value="{1.0, 1.0, 5.0}"/>
+      <define name="HYBRID_WLS_WU" value="{1.0, 10.0, 1.0}" />
 
       <!--    SOARING-->
       <!-- switch controller when thr is negatively saturated -->
@@ -808,23 +808,23 @@ NOTES:
     <define name="POS_CTRL" value="TRUE"/>
     <define name="Y_POSITION_CTRL" value="TRUE"/>
 
-    <define name="SOARING_STEP_BIG" value="0.15"/>
-    <define name="SOARING_STEP_MED" value="0.10"/>
-    <define name="SOARING_STEP_SMALL" value="0.06"/>
-    <define name="SOARING_STEP_FINE" value="0.03"/>
+    <define name="SOARING_STEP_BIG" value="0.30"/>
+    <define name="SOARING_STEP_MED" value="0.2"/>
+    <define name="SOARING_STEP_SMALL" value="0.10"/>
+    <define name="SOARING_STEP_FINE" value="0.05"/>
 
     <define name="SOARING_WP_ARRIVAL_DIST" value="3"/>  <!-- in meters, 3d dist-->
     <define name="SOARING_WP_STAY_DURATION" value="10"/> <!-- WP arrival count -->
     <define name="SOARING_WP_WAIT_SEC" value="30"/> <!-- in sec, timeout for unreachable WP -->
-    <define name="SOARING_MIN_ALT" value="2.4"/> <!-- minimum altitude for moving WP -->
+    <define name="SOARING_MIN_ALT" value="2.0"/> <!-- minimum altitude for moving WP -->
 
     <define name="SOARING_USE_FIXED_HEADING_WP" value="TRUE" /> <!-- use wp to set heading sp, -->
-    <define name="SOARING_HEADING_GAIN" value="0.05" />
+    <define name="SOARING_HEADING_GAIN" value="0.1" />
 
       <!-- 100 steps * 30 sec = 3000 sec = 50 min (maximum) -->
       <!-- 100 steps * 10 sec = 1000 sec = 16.6 min -->
     <define name="SOARING_MAX_EXPLORATION_STEPS" value="200" /> <!-- max search steps -->
-    <define name="SOARING_WP_COST_THRES" value="70"/>
+    <define name="SOARING_WP_COST_THRES" value="100"/>
 
     <!-- define WP ids -->
     <define name="SOARING_STDBY_WP_ID" value="2"/>
@@ -834,7 +834,7 @@ NOTES:
       <!-- for indoor with opti track; move wp in ned regardless of the current heading -->
       <define name="SOARING_BODY_IS_NED" value="FALSE"/>
       <define name="SOARING_RESET_STDBY_AFTER_N_SEC" value="TRUE"/>
-<!--      <define name="SOARING_RESET_STDBY_TIMEOUT" value="3"/> &lt;!&ndash; 3sec by default &ndash;&gt;-->
+      <define name="SOARING_RESET_STDBY_TIMEOUT" value="1"/> <!-- 3sec by default -->
       <define name="SOARING_RESET_UNREACHABLE_WP" value="FALSE"/>
 <!--      <define name="SOARING_RESET_UNREACHABLE_WP" value="TRUE"/>-->
 <!--      define this ONLY when you USE 90 pitch offset -->
@@ -844,12 +844,15 @@ NOTES:
       <!--      <define name="SOARING_USE_AOA" value="TRUE"/>-->
       <!--      <define name="SOARING_USE_DRAG" value="TRUE"/>-->
       <define name="SOARING_CRITICAL_AOA" value="0.25"/>
+      <define name="SOARING_MAX_AOA" value="0.28"/>
 
       <define name="SOARING_SPLINE_AOA_OFFSET" value="0" />
       <define name="SOARING_SPLINE_AOA_SCALE" value="0.9" />
       <define name="SOARING_SPLINE_CL_OFFSET" value="0.1" />
       <define name="SOARING_SPLINE_CL_SCALE" value="0.6" />
       <define name="SOARING_SPLINE_CD_SCALE" value="0.6" />
+
+      <define name="SOARING_Q" value="0.1103"/>
   </section>
 
   <section name="BAT">
