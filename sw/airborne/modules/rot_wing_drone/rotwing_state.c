@@ -310,7 +310,9 @@ void rotwing_check_set_current_state(void)
       struct NedCoor_f *curr_speed = stateGetSpeedNed_f();
       struct FloatVect3 curr_speed_sp = gi_speed_sp;
 
-      if (fabs(rotwing_state_skewing.wing_angle_deg_sp - rotwing_state_skewing.wing_angle_deg) >= 20.f) {
+      if (rotwing_state_skewing.wing_angle_deg - rotwing_state_skewing.wing_angle_deg_sp >= 20.f
+      && rotwing_state_skewing.wing_angle_deg > 55
+      && stateGetAirspeed_f() > ROTWING_STATE_QUAD_MAX_SPEED) {
       
         // Speed SP in NED
         struct FloatVect3 limited_speed_sp = {.x = (curr_speed->x + curr_speed_sp.x) / 2,
