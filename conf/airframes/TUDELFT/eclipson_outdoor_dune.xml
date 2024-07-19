@@ -472,6 +472,15 @@ NOTES:
 <!--            0.1~1.5HZ 0.05~3Hz 0.03 ~ 5Hz 0.02~8Hz 0.01~15Hz-->
         </module>
         <define name="USE_AOA" value="TRUE"/>
+
+                <module name="potential_flow_simulator">
+<!--                    <define name="PF_SET_GRADIENT" value="TRUE"/>-->
+                    <define name="SIM" value="TRUE"/>
+                    <define name="PF_REF_WIND_SPD" value="-8.4"/>
+                    <define name="PF_OBSTACLE_RADIUS" value="1.0"/>
+                    <define name="PF_OBSTACLE_POSITION_X" value="1.5"/>
+                    <define name="PF_OBSTACLE_POSITION_Z" value="-1.0"/>
+                </module>
     </target>
 
   </firmware>

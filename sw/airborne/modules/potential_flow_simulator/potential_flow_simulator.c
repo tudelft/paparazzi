@@ -38,9 +38,9 @@
 #include "math/pprz_geodetic_float.h"
 #include "math/pprz_geodetic_double.h"
 #include "modules/datalink/telemetry.h"
-#ifdef SIM
+//#ifdef SIM
     #include "nps_atmosphere.h"
-#endif
+//#endif
 //#include "modules/ctrl/follow_me.h"
 //}
 
@@ -90,7 +90,7 @@
 #endif
 // set wind to nps environment?
 #ifndef PF_SET_WIND_NPS_ENV
-#define PF_SET_WIND_NPS_ENV FALSE
+#define PF_SET_WIND_NPS_ENV TRUE
 #endif
 
 #ifndef PF_DEFAULT_HEADING
@@ -361,9 +361,9 @@ void potential_flow_simulator_periodic(void)
     stateSetVerticalWindspeed_f(ver_wind);
 
 //    // set wind speed as environment
-#ifdef SIM
+//#ifdef SIM
     if (PF_SET_WIND_NPS_ENV){
         nps_atmosphere_set_wind_ned((double)wind_vel_v3f.x, (double)wind_vel_v3f.y, (double)ver_wind);
     }
-#endif
+//#endif
 }
