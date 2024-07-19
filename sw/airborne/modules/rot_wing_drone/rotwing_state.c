@@ -273,7 +273,8 @@ void rotwing_request_configuration(uint8_t configuration)
 }
 
 void rotwing_check_set_current_state(void)
-{
+{  
+
   // if !in_flight, set state to hover
   if (!autopilot.in_flight) {
     rotwing_state_hover_counter = 0;
@@ -304,6 +305,21 @@ void rotwing_check_set_current_state(void)
       break;
 
     case ROTWING_STATE_SKEWING:
+
+      // Check if deceleration needs to be limited for the rotation mechanism to catch up to the setpoint
+      struct NedCoor_f *curr_speed = stateGetSpeedNed_f();
+      struct FloatVect3 curr_speed_sp = gi_speed_sp;
+
+      if (rotwing_state_skewing.wing_angle_deg_sp - rotwing_state_skewing.wing_angle_deg >= 20.f) {
+      
+        // Speed SP in NED
+        struct FloatVect3 limited_speed_sp = {.x = (curr_speed->x + curr_speed_sp.x) / 2,
+                          .y = (curr_speed->y + curr_speed_sp.y) / 2,
+                          .z = (curr_speed->z + curr_speed_sp.z) / 2};
+
+        AbiSendMsgVEL_SP(VEL_SP_ROTWING_STATE_ID, &limited_speed_sp);
+      }
+
       // Check if state needs to be set to hover
       if (rotwing_state_skewing.wing_angle_deg < ROTWING_MIN_SKEW_ANGLE_DEG_QUAD) {
         rotwing_state_hover_counter++;
