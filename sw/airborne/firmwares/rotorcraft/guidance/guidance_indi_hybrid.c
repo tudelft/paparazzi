@@ -87,7 +87,13 @@ struct guidance_indi_hybrid_params gih_params = {
 #ifndef GUIDANCE_INDI_MAX_AIRSPEED
 #error "You must have an airspeed sensor to use this guidance"
 #endif
+
+#ifndef GUIDANCE_INDI_MIN_AIRSPEED
+#define GUIDANCE_INDI_MIN_AIRSPEED -999.f
+#endif
+
 float guidance_indi_max_airspeed = GUIDANCE_INDI_MAX_AIRSPEED;
+float guidance_indi_min_airspeed = GUIDANCE_INDI_MIN_AIRSPEED;
 
 // Quadplanes can hover at various pref pitch
 float guidance_indi_pitch_pref_deg = 0;
@@ -256,7 +262,8 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
                               &filt_accel_ned[2].o[0],
                               &gi_speed_sp.x,
                               &gi_speed_sp.y,
-                              &gi_speed_sp.z);
+                              &gi_speed_sp.z,
+                              &guidance_indi_min_airspeed);
 }
 
 #if GUIDANCE_INDI_HYBRID_USE_WLS
@@ -639,8 +646,9 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
       speed_sp_b_x = guidance_indi_max_airspeed;
     }
 
-    // desired airspeed can not be larger than max airspeed
+    // desired airspeed can not be larger than max airspeed or smaller than deceleration limit
     speed_sp_b_x = Min(norm_des_as, guidance_indi_max_airspeed);
+    speed_sp_b_x = Max(norm_des_as, guidance_indi_min_airspeed);
 
     if (force_forward) {
       speed_sp_b_x = guidance_indi_max_airspeed;

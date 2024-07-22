@@ -656,11 +656,6 @@
 #define VEL_SP_FCR_ID 1 // Approach Moving Target
 #endif
 
-#ifndef VEL_SP_ROTWING_STATE_ID
-#define VEL_SP_ROTWING_STATE_ID 2
-#endif
-
-
 /*
  * IDs of LIDAR_DATA senders
  */

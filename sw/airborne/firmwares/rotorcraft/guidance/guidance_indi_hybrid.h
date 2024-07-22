@@ -98,6 +98,7 @@ extern float guidance_indi_thrust_z_eff;
 extern struct guidance_indi_hybrid_params gih_params;
 extern float guidance_indi_specific_force_gain;
 extern float guidance_indi_max_airspeed;
+extern float guidance_indi_min_airspeed;
 extern bool take_heading_control;
 extern float guidance_indi_max_bank;
 extern float guidance_indi_min_pitch;

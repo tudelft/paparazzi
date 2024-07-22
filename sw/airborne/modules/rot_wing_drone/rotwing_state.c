@@ -311,15 +311,10 @@ void rotwing_check_set_current_state(void)
       struct FloatVect3 curr_speed_sp = gi_speed_sp;
 
       if (rotwing_state_skewing.wing_angle_deg - rotwing_state_skewing.wing_angle_deg_sp >= 20.f
-      && rotwing_state_skewing.wing_angle_deg > 55
-      && stateGetAirspeed_f() > ROTWING_STATE_QUAD_MAX_SPEED) {
-      
-        // Speed SP in NED
-        struct FloatVect3 limited_speed_sp = {.x = (curr_speed->x + curr_speed_sp.x) / 2,
-                          .y = (curr_speed->y + curr_speed_sp.y) / 2,
-                          .z = (curr_speed->z + curr_speed_sp.z) / 2};
-
-        AbiSendMsgVEL_SP(VEL_SP_ROTWING_STATE_ID, &limited_speed_sp);
+      && rotwing_state_skewing.wing_angle_deg > 55) {
+        guidance_indi_min_airspeed = ROTWING_STATE_START_SKEW_SPEED;
+      } else {
+        guidance_indi_min_airspeed = -999.f;
       }
 
       // Check if state needs to be set to hover

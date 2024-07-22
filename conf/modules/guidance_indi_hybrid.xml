@@ -11,6 +11,7 @@
       <define name="USE_WLS" value="FALSE|TRUE" description="use WLS allocation instead of matrix inversion (default: FALSE)"/>
       <define name="WLS_PRIORITIES" value="{100., 100., 1.}" description="WLS priorities on control objectives"/>
       <define name="WLS_WU" value="{1., 1., 1.}" description="WLS weighting on outputs"/>
+      <define name="GUIDANCE_INDI_MIN_AIRSPEED" value="-999" description="Minimum airspeed to limit deceleration during transitions"/>
     </section>
   </doc>
   <settings>
