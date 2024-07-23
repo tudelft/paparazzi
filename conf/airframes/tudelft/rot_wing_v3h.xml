@@ -130,8 +130,8 @@
         <module name="rot_wing_automation"/>
         <module name="ground_detect_sensor"/>
         <module name="rotwing_state">
-            <define name="ROTWING_STATE_FW_SKEW_SPEED" value="16.0"/>
-            <define name="ROTWING_STATE_START_SKEW_SPEED" value="12.0"/>
+            <define name="ROTWING_STATE_FW_SKEW_SPEED" value="14.0"/>
+            <define name="ROTWING_STATE_START_SKEW_SPEED" value="10.0"/>
             <define name="ROTWING_STATE_QUAD_MAX_SPEED" value="7.0"/>
         </module>
         <module name="preflight_checks"/>

@@ -262,8 +262,7 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
                               &filt_accel_ned[2].o[0],
                               &gi_speed_sp.x,
                               &gi_speed_sp.y,
-                              &gi_speed_sp.z,
-                              &guidance_indi_min_airspeed);
+                              &gi_speed_sp.z);
 }
 
 #if GUIDANCE_INDI_HYBRID_USE_WLS
@@ -682,6 +681,8 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
         speed_sp_b_x = guidance_indi_max_airspeed + groundspeed_x - airspeed;
       }
     }
+
+    speed_sp_b_x = Max(speed_sp_b_x, guidance_indi_min_airspeed);
 
     gi_speed_sp.x = cpsi * speed_sp_b_x - spsi * speed_sp_b_y;
     gi_speed_sp.y = spsi * speed_sp_b_x + cpsi * speed_sp_b_y;
