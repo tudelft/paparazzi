@@ -369,7 +369,7 @@ NOTES:
     <!-- <define name="USE_INS_MODULE"/> -->
 
     <define name="ROLL_NEUTRAL_DEFAULT" value="0." unit="deg"/>
-    <define name="PITCH_NEUTRAL_DEFAULT" value="0." unit="deg"/><!-- not taken into account -->
+    <define name="PITCH_NEUTRAL_DEFAULT" value="logger0." unit="deg"/><!-- not taken into account -->
     <!-- Use GPS altitude measurments and set the R gain -->
     <define name="USE_GPS_ALT" value="FALSE"/>
     <!--<define name="USE_GPS_ALT_SPEED" value="FALSE"/>-->
