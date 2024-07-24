@@ -264,10 +264,12 @@ NOTES:
     <!-- <let var="yaw_ctrl_sgl" value="@YAW - 8 * ($gyro_yaw)"/>--><!-- If one has a rudder -->
     <!-- <set servo="LM" value="(((0 > @THROTTLE + @YAW) ? 0 : (@THROTTLE + @YAW)))"/>--><!-- past stuff from rotorcraft not needed in FW -->
       <!-- <set servo="RM" value="(((0 > @THROTTLE - @YAW) ? 0 : (@THROTTLE - @YAW)))"/> --> 
-    <let var="yaw_ctrl_sgl" value="@YAW * 0.4 - 0.6 * ($gyro_yaw)"/>
+    <let var="yaw_ctrl_sgl" value="@YAW * 0.6 - 0.4 * ($gyro_yaw)"/>
 
     <set servo="RM" value="$killed * (@THROTTLE * 0.8 + $yaw_ctrl_sgl)"/>
-    <set servo="LM" value="$killed * (@THROTTLE * 0.8 - $yaw_ctrl_sgl)"/><!-- TODO: check sign-->
+    <set servo="LM" value="$killed * (@THROTTLE * 0.8 - $yaw_ctrl_sgl)"/>
+    <!-- <set servo="RM" value="$killed * (@THROTTLE * 1.0)"/> -->
+    <!-- <set servo="LM" value="$killed * (@THROTTLE * 1.0)"/>TODO: check sign -->
 
     <set servo="ARM_LEFT" value="-@ROLL * 0.6 - @PITCH * 0.2"/>
     <set servo="SPOILERON" value="0"/>
@@ -290,12 +292,12 @@ NOTES:
 
   <section name="TRIM" prefix="COMMAND_">
     <define name="ROLL_TRIM" value="0.0"/>
-    <define name="PITCH_TRIM" value="5.0"/>
+    <define name="PITCH_TRIM" value="5.0"/>\
 </section>
 
 <!-- ************************ AUTO RC COMMANDS ***************************** -->
   <auto_rc_commands>
-      <set command="YAW" value="@YAW*0.8"/>  <!-- FIXME: set correct values -->
+      <set command="YAW" value="@YAW*0.4"/>  <!-- FIXME: set correct values -->
     <!-- <set command="GEAR" value="@GEAR"/> --> <!-- Can be Used for logging start/stop -->
     <!-- <set command="FLAP" value="@FLAP"/> -->
 
@@ -322,8 +324,8 @@ NOTES:
   <!-- Do not set MAX_ROLL, MAX_PITCH to small of a value, otherwise one can NOT control the plane very well manually -->
   <!-- If you have dual rate swith it of with same swtch as mode switch thus auto1 means dualrate is switched off also -->
   <section name="AUTO1" prefix="AUTO1_">
-    <define name="MAX_ROLL" value="40" unit="deg"/> <!-- To make sure to have enough autority while testflying for first time -->
-    <define name="MAX_PITCH" value="21" unit="deg"/> <!-- To make sure to have enough autority while testflying for first time -->
+    <define name="MAX_ROLL" value="30" unit="deg"/> <!-- To make sure to have enough autority while testflying for first time -->
+    <define name="MAX_PITCH" value="40" unit="deg"/> <!-- To make sure to have enough autority while testflying for first time -->
   </section>
 
   <!-- <section name="TRIM" prefix="COMMAND_">
@@ -369,7 +371,7 @@ NOTES:
     <!-- <define name="USE_INS_MODULE"/> -->
 
     <define name="ROLL_NEUTRAL_DEFAULT" value="0." unit="deg"/>
-    <define name="PITCH_NEUTRAL_DEFAULT" value="logger0." unit="deg"/><!-- not taken into account -->
+    <define name="PITCH_NEUTRAL_DEFAULT" value="0." unit="deg"/><!-- not taken into account -->
     <!-- Use GPS altitude measurments and set the R gain -->
     <define name="USE_GPS_ALT" value="FALSE"/>
     <!--<define name="USE_GPS_ALT_SPEED" value="FALSE"/>-->
