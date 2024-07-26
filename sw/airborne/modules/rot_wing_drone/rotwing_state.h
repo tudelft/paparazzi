@@ -76,9 +76,6 @@ struct RotWingStateSkewing {
   int32_t servo_pprz_cmd;    // Wing rotation servo pprz cmd
   bool airspeed_scheduling;  // Airspeed scheduling on or off
   bool force_rotation_angle; // Setting to force wing_angle_deg_sp
-};
-
-struct RotWingAirspeedScheduler {
   float time_last_state_change;
   float time_hysteresis_threshold;
   float airspeed_hysteresis_threshold;
