@@ -605,10 +605,10 @@ void rotwing_state_skewer(void)
     float wing_angle_scheduled_sp_deg = 0;
     float airspeed = stateGetAirspeed_f();
     
-    if ((airspeed < ROTWING_STATE_QUAD_MAX_SPEED + airspeed_scheduler.airspeed_hysteresis_threshold
+    if (((airspeed < ROTWING_STATE_QUAD_MAX_SPEED + airspeed_scheduler.airspeed_hysteresis_threshold
     && airspeed > ROTWING_STATE_QUAD_MAX_SPEED) 
     || (get_sys_time_float() - airspeed_scheduler.time_last_state_change < airspeed_scheduler.time_hysteresis_threshold 
-    && airspeed_scheduler.state < 2)) {
+    && airspeed_scheduler.state < 2)) && rotwing_state.desired_state < ROTWING_STATE_FW) {
 
       if (airspeed_scheduler.prev_state == 1) goto QUAD;
       if (airspeed_scheduler.prev_state == 0) goto HYBRID;
