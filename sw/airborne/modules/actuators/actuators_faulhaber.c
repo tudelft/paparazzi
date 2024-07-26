@@ -253,8 +253,8 @@ void actuators_faulhaber_periodic(void)
             last_time = get_sys_time_float();
             faulhaber.state++;
           }
-          // Timeout after 25 seconds
-          else if(get_sys_time_float() - last_time > 25.0) {
+          // Timeout after 40 seconds
+          else if(get_sys_time_float() - last_time > 40.0) {
             faulhaber.mode = FH_MODE_ERROR;
             faulhaber.state = 0;
           }
@@ -319,7 +319,7 @@ void actuators_faulhaber_periodic(void)
         }
         case 2: {
           // Wait for the target to be accepted or timeout
-          if(faulhaber.position_ready || (last_time - get_sys_time_float()) > 0.2) {
+          if(faulhaber.position_ready || (get_sys_time_float() - last_time) > 0.2) {
             static uint8_t data[] = {0x40, 0x60, 0x00, 0x0F, 0x00}; // Set 0x6040.00 to 0x000F: Enable operation
             faulhaber_send_command(faulhaber_dev, 0x02, data, 5);
             faulhaber.state++;
