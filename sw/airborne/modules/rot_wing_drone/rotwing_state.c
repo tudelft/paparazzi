@@ -148,9 +148,20 @@ uint8_t rotwing_state_fw_counter = 0;
 uint8_t rotwing_state_fw_idle_counter = 0;
 uint8_t rotwing_state_fw_m_off_counter = 0;
 
+float time_hysteresis_threshold = 1.f;
+float airspeed_hysteresis_threshold = 2.f;
+
 float guidance_indi_pitch_pref_deg_quad = -5.0;
 
 float rotwing_state_max_hover_speed = ROTWING_STATE_QUAD_MAX_SPEED;
+
+struct RotWingAirspeedScheduler airspeed_scheduler = {
+  .time_last_state_change = 0.f,
+  .time_hysteresis_threshold = 0.f,
+  .airspeed_hysteresis_threshold = 0.f,
+  .state = 0,
+  .prev_state = 0
+};
 
 bool hover_motors_active = true;
 bool bool_disable_hover_motors = false;
@@ -211,6 +222,10 @@ void init_rotwing_state(void)
 
 void periodic_rotwing_state(void)
 {
+
+  airspeed_scheduler.time_hysteresis_threshold = time_hysteresis_threshold;
+  airspeed_scheduler.airspeed_hysteresis_threshold = airspeed_hysteresis_threshold;
+  
   // Check and set the current state
   rotwing_check_set_current_state();
 
@@ -589,14 +604,57 @@ void rotwing_state_skewer(void)
   if (rotwing_state_skewing.airspeed_scheduling) {
     float wing_angle_scheduled_sp_deg = 0;
     float airspeed = stateGetAirspeed_f();
-    if (airspeed < 8) {
+    
+    if ((airspeed < ROTWING_STATE_QUAD_MAX_SPEED + airspeed_scheduler.airspeed_hysteresis_threshold
+    && airspeed > ROTWING_STATE_QUAD_MAX_SPEED) 
+    || (get_sys_time_float() - airspeed_scheduler.time_last_state_change < airspeed_scheduler.time_hysteresis_threshold 
+    && airspeed_scheduler.state < 2)) {
+
+      if (airspeed_scheduler.prev_state == 1) goto QUAD;
+      if (airspeed_scheduler.prev_state == 0) goto HYBRID;
+      
+    } else if (airspeed < ROTWING_STATE_QUAD_MAX_SPEED) {
+      QUAD:
       wing_angle_scheduled_sp_deg = 0;
+
+      if (airspeed_scheduler.state != 0) {
+        
+        airspeed_scheduler.prev_state = airspeed_scheduler.state;
+        airspeed_scheduler.time_last_state_change = get_sys_time_float();
+      }
+
+      airspeed_scheduler.state = 0;
+
     } else if (airspeed < ROTWING_STATE_START_SKEW_SPEED && (rotwing_state.desired_state > ROTWING_STATE_HOVER)) {
+      HYBRID:
       wing_angle_scheduled_sp_deg = 55;
+
+      if (airspeed_scheduler.state != 1) {
+        airspeed_scheduler.prev_state = airspeed_scheduler.state;
+        airspeed_scheduler.time_last_state_change = get_sys_time_float();
+      }
+
+      airspeed_scheduler.state = 1;
+
     } else if (airspeed > ROTWING_STATE_START_SKEW_SPEED) {
       wing_angle_scheduled_sp_deg = ((airspeed - ROTWING_STATE_START_SKEW_SPEED)) / (ROTWING_STATE_FW_SKEW_SPEED-ROTWING_STATE_START_SKEW_SPEED) * 35. + 55.;
+
+      if (airspeed_scheduler.state != 2) {
+        airspeed_scheduler.prev_state = airspeed_scheduler.state;
+        airspeed_scheduler.time_last_state_change = get_sys_time_float();
+      }
+
+      airspeed_scheduler.state = 2;
+    
     } else {
       wing_angle_scheduled_sp_deg = 0;
+
+      if (airspeed_scheduler.state != 0) {
+        airspeed_scheduler.prev_state = airspeed_scheduler.state;
+        airspeed_scheduler.time_last_state_change = get_sys_time_float();
+      }
+
+      airspeed_scheduler.state = 0;
     }
 
     Bound(wing_angle_scheduled_sp_deg, 0., 90.)

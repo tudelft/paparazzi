@@ -78,11 +78,22 @@ struct RotWingStateSkewing {
   bool force_rotation_angle; // Setting to force wing_angle_deg_sp
 };
 
+struct RotWingAirspeedScheduler {
+  float time_last_state_change;
+  float time_hysteresis_threshold;
+  float airspeed_hysteresis_threshold;
+  uint8_t state;
+  uint8_t prev_state;
+};
+
 extern struct RotwingState rotwing_state;
 extern struct RotWingStateSettings rotwing_state_settings;
 extern struct RotWingStateSkewing rotwing_state_skewing;
 
 extern float rotwing_state_max_hover_speed;
+
+extern float time_hysteresis_threshold;
+extern float airspeed_hysteresis_threshold;
 
 extern bool hover_motors_active;
 extern bool bool_disable_hover_motors;

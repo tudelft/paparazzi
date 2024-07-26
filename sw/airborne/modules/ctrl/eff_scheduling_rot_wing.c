@@ -413,7 +413,7 @@ void eff_scheduling_rot_wing_update_aileron_effectiveness(void)
   Bound(eff_x_aileron, 0, 0.005)
   g1g2[0][6] = eff_x_aileron;
 
-  float dMydpprz = -4.0*(eff_sched_p.k_aileron * eff_sched_var.airspeed2 * eff_sched_var.sinr2 * eff_sched_var.cosr) / 1000000.;
+  float dMydpprz = 0.0*(eff_sched_p.k_aileron * eff_sched_var.airspeed2 * eff_sched_var.sinr2 * eff_sched_var.cosr) / 1000000.;
   float eff_y_aileron = dMydpprz / eff_sched_var.Iyy;
   bound_or_zero(eff_y_aileron, -0.005f, -0.00003f);
   g1g2[1][6] = eff_y_aileron;
