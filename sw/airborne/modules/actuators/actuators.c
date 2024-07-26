@@ -179,10 +179,10 @@ void actuators_periodic(void)
   }
 
 #ifdef SERVO_ELEVON_LEFT_IDX
-  test.servo_3_cmd_int = 2.5 * (enable_control * 2000.0 * ( 1.0f * actuators[SERVO_ELEVON_LEFT_IDX] - 1500.0) / 500 + trim_offsets[2]);
+  test.servo_3_cmd_int = 2.5 * (enable_control * 3000.0 * ( 1.0f * actuators[SERVO_ELEVON_LEFT_IDX] - 1500.0) / 500 + trim_offsets[2]);
 #endif
 #ifdef SERVO_ELEVON_RIGHT_IDX
-  test.servo_4_cmd_int = 2.5 * (enable_control * 2000.0 * ( 1.0f * actuators[SERVO_ELEVON_RIGHT_IDX] - 1500.0) / 500 + trim_offsets[3]);
+  test.servo_4_cmd_int = 2.5 * (enable_control * 3000.0 * ( 1.0f * actuators[SERVO_ELEVON_RIGHT_IDX] - 1500.0) / 500 + trim_offsets[3]);
 #endif
 #ifdef SERVO_ARM_LEFT_IDX
   test.servo_1_cmd_int = 45.0/11.0 * (enable_control * 3000.0 * ( 1.0f * actuators[SERVO_ARM_LEFT_IDX] - 1500.0) / 500 + trim_offsets[0]);
