@@ -31,18 +31,20 @@
 
 enum faulhaber_modes_t {
   FH_MODE_INIT,
-  FH_MODE_POSITION,
-  FH_MODE_IDLE,
+  FH_MODE_VELOCITY,
   FH_MODE_ERROR
 };
 
 struct faulhaber_t {
   enum faulhaber_modes_t mode;    ///< Current mode of the controller
   uint8_t state;                  ///< The state of the mode
+  
+  float p_gain;                   ///< The proportional gain of the velocity controller
+  int32_t max_velocity;           ///< The maximum velocity of the controller
 
   int32_t setpoint_position;      ///< The setpoint position controlled from the actuator
-  int32_t target_position;        ///< The target position send to the controller
   int32_t real_position;          ///< The real position from the feedback of the controller
+  int32_t target_velocity;        ///< The target velocity send to the controller
 
   bool homing_completed;      ///< Once the homing is completed
   bool position_ready;        ///< Ready for receiving (new) positions

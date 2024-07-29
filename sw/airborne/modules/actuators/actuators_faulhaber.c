@@ -32,6 +32,16 @@
 #include <stdio.h>
 #include <string.h>
 
+/* Proportional gain on the velocity for the position controller */
+#ifndef FAULHABER_P_GAIN
+#define FAULHABER_P_GAIN 0.07
+#endif
+
+/* Maximum velocity for the position controller */
+#ifndef FAULHABER_MAX_VELOCITY
+#define FAULHABER_MAX_VELOCITY 14000
+#endif
+
 static struct uart_periph *faulhaber_dev = &(FAULHABER_DEV);
 
 /* Faulhaber message parser */
@@ -161,11 +171,12 @@ void actuators_faulhaber_init(void)
   faulhaber.mode = FH_MODE_INIT;
   faulhaber.state = 0;
   faulhaber.setpoint_position = 0;
-  faulhaber.target_position = 0;
   faulhaber.real_position = 0;
   faulhaber.homing_completed = false;
   faulhaber.position_ready = false;
   faulhaber.target_reached = false;
+  faulhaber.p_gain = FAULHABER_P_GAIN;
+  faulhaber.max_velocity = FAULHABER_MAX_VELOCITY;
 }
 
 ///
@@ -266,7 +277,7 @@ void actuators_faulhaber_periodic(void)
             break;
           
           // Set to position mode
-          static uint8_t data[] = { 0x60, 0x60, 0x00, 0x01 }; // Set 0x6060.00 to 0x01:  Position mode
+          static uint8_t data[] = { 0x60, 0x60, 0x00, 0x03 }; // Set 0x6060.00 to 0x03: Velocity mode
           faulhaber_send_command(faulhaber_dev, 0x02, data, 4);
           last_time = get_sys_time_float();
           faulhaber.state++;
@@ -290,64 +301,36 @@ void actuators_faulhaber_periodic(void)
             break;
           
           // Go to position mode
-          faulhaber.mode = FH_MODE_POSITION;
+          faulhaber.mode = FH_MODE_VELOCITY;
           faulhaber.state = 0;
         }
       }
       break;
 
-    /* POSITION MODE */
-    case FH_MODE_POSITION:
+    /* FH_MODE_VELOCITY */
+    case FH_MODE_VELOCITY: {
+      // Request position and set the new velocity target
       switch (faulhaber.state) {
         case 0: {
-          // Set the target position
-          faulhaber.target_position = faulhaber.setpoint_position;
-          faulhaber.position_ready = false;
-          faulhaber.target_reached = false;
-          uint8_t data[] = { 0x7A, 0x60, 0x00, (faulhaber.target_position & 0xFF), ((faulhaber.target_position >> 8) & 0xFF), ((faulhaber.target_position >> 16) & 0xFF), ((faulhaber.target_position >> 24) & 0xFF) }; // Set 0x607A.00 to 0x00000000:  Target position 0
-          faulhaber_send_command(faulhaber_dev, 0x02, data, 7);
+          // Request the position
+          uint8_t data[] = { 0x64, 0x60, 0x00}; // Get 0x6064.00: Get the actual position
+          faulhaber_send_command(faulhaber_dev, 0x01, data, 3);
           faulhaber.state++;
-          break;
-        }
-        case 1: {
-          // Start moving
-          uint8_t data[] = { 0x40, 0x60, 0x00, 0x3F, 0x00}; // Set 0x6040.00 to 0x003F: Start moving
-          faulhaber_send_command(faulhaber_dev, 0x02, data, 5);
-          last_time = get_sys_time_float();
-          faulhaber.state++;
-          break;
-        }
-        case 2: {
-          // Wait for the target to be accepted or timeout
-          if(faulhaber.position_ready || (get_sys_time_float() - last_time) > 0.2) {
-            static uint8_t data[] = {0x40, 0x60, 0x00, 0x0F, 0x00}; // Set 0x6040.00 to 0x000F: Enable operation
-            faulhaber_send_command(faulhaber_dev, 0x02, data, 5);
-            faulhaber.state++;
-          }
           break;
         }
         default: {
-          faulhaber.mode = FH_MODE_IDLE;
+          // Calculate the new velocity target
+          int32_t poss_err = (faulhaber.setpoint_position - faulhaber.real_position);
+          faulhaber.target_velocity = poss_err * faulhaber.p_gain;
+          BoundAbs(faulhaber.target_velocity, faulhaber.max_velocity);
+
+          // Set the new velocity target
+          uint8_t data[] = { 0xFF, 0x60, 0x00, (faulhaber.target_velocity & 0xFF), ((faulhaber.target_velocity >> 8) & 0xFF), ((faulhaber.target_velocity >> 16) & 0xFF), ((faulhaber.target_velocity >> 24) & 0xFF) }; // Set 0x60FF.00 to [velocity]:  Target velocity
+          faulhaber_send_command(faulhaber_dev, 0x02, data, 7);
           faulhaber.state = 0;
           break;
         }
       }
-      break;
-
-    /* FH_MODE_IDLE */
-    case FH_MODE_IDLE: {
-      // Move to the new position
-      if (faulhaber.target_position != faulhaber.setpoint_position) {
-        faulhaber.mode = FH_MODE_POSITION;
-        faulhaber.state = 0;
-        break;
-      }
-
-      // Request the position
-      uint8_t data[] = { 0x64, 0x60, 0x00}; // Get 0x6064.00: Get the actual position
-      faulhaber_send_command(faulhaber_dev, 0x01, data, 3);
-      faulhaber.state = 0;
-      break;
     }
 
     /* Do nothing */
