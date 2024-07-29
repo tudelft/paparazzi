@@ -147,7 +147,7 @@ bool preflight_check(void)
   }
 
   // Send success down
-  int rc = snprintf(error_msg, PREFLIGHT_CHECK_MAX_MSGBUF, "Preflight success [%d]", result.success_cnt);
+  int rc = snprintf(error_msg, PREFLIGHT_CHECK_MAX_MSGBUF, "*Preflight success [%d]*", result.success_cnt);
   if (rc > 0) {
     DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error_msg);
   }
