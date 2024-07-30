@@ -117,6 +117,10 @@
 #define ROTWING_STATE_START_SKEW_SPEED 10.0
 #endif
 
+#ifndef ROTWING_STATE_MIN_FW_SPEED
+#define ROTWING_STATE_MIN_FW_SPEED 12
+#endif
+
 #ifndef ROTWING_STATE_QUAD_MAX_SPEED
 #define ROTWING_STATE_QUAD_MAX_SPEED 7.0
 #endif
@@ -602,6 +606,8 @@ void rotwing_state_skewer(void)
     float wing_angle_scheduled_sp_deg = 0;
     float airspeed = stateGetAirspeed_f();
     
+    // airspeed and/or time hysteresis to prevent setpoint jumping between 0 and 55 degrees when airspeed fluctuates around 
+    // ROTWING_STATE_QUAD_MAX_SPEED
     if (((airspeed < ROTWING_STATE_QUAD_MAX_SPEED + rotwing_state_skewing.airspeed_hysteresis_threshold
     && airspeed > ROTWING_STATE_QUAD_MAX_SPEED) 
     || (get_sys_time_float() - rotwing_state_skewing.time_last_state_change < rotwing_state_skewing.time_hysteresis_threshold 
@@ -610,7 +616,12 @@ void rotwing_state_skewer(void)
       if (rotwing_state_skewing.prev_state == 1) goto QUAD;
       if (rotwing_state_skewing.prev_state == 0) goto HYBRID;
       
-    } else if (airspeed < ROTWING_STATE_QUAD_MAX_SPEED) {
+    } 
+    
+    // Actual skewing logic, 0 degrees if airspeed < ROTWING_STATE_QUAD_MAX_SPEED
+    // 55 degrees if ROTWING_STATE_QUAD_MAX_SPEED < airspeed < ROTWING_STATE_START_SKEW_SPEED
+    // linear scaling between 55 and 90 degrees when airspeed > ROTWING_STATE_START_SKEW_SPEED
+    if (airspeed < ROTWING_STATE_QUAD_MAX_SPEED) {
       QUAD:
       wing_angle_scheduled_sp_deg = 0;
 
@@ -890,11 +901,16 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, fl
 }
 
 inline void rotwing_state_limit_deceleration(void) {
-  // Check if rotation mechanism is caught up to the angle setpoint and if not set a minimum speed
-
+  // Check if rotation mechanism is caught up to the angle setpoint and if not limit how low the speed setpoint can go
   if (rotwing_state_skewing.wing_angle_deg - rotwing_state_skewing.wing_angle_deg_sp >= 20.f
-  && rotwing_state_skewing.wing_angle_deg > 55) {
-    guidance_indi_min_airspeed = ROTWING_STATE_START_SKEW_SPEED;
+  && rotwing_state_skewing.wing_angle_deg > 55.f) {
+
+    if (rotwing_state_skewing.wing_angle_deg > ROTWING_MIN_FW_SKEW_ANGLE_DEG) {
+      guidance_indi_min_airspeed = ROTWING_STATE_MIN_FW_SPEED;
+    } else {
+      guidance_indi_min_airspeed = ROTWING_STATE_START_SKEW_SPEED;
+    }
+    
   } else {
     guidance_indi_min_airspeed = -999.f;
   }
