@@ -1,0 +1,400 @@
+<!DOCTYPE airframe SYSTEM "../airframe.dtd">
+<airframe name="SHIP_BOX_CUBE_ORANGE">
+  <description>
+    SHIP_BOX_CUBE_ORANGE
+  </description>
+
+
+  <firmware name="rotorcraft">
+
+    <target name="ap" board="cube_orange">
+      <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
+      <configure name="PERIODIC_FREQUENCY" value="500"/>
+
+      <module name="imu" type="cube"/>
+
+      <!-- optionall add extra magneto -->
+      <module name="mag" type="rm3100">
+        <configure name="MAG_RM3100_I2C_DEV" value="i2c2"/>
+        <define name="RM3100_CHAN_X_SIGN" value="+"/>
+        <define name="RM3100_CHAN_Y_SIGN" value="-"/>
+        <define name="RM3100_CHAN_Z_SIGN" value="-"/>
+        <define name="RM3100_CHAN_X" value="0"/>
+        <define name="RM3100_CHAN_Y" value="1"/>
+        <define name="RM3100_CHAN_Z" value="2"/>
+        <define name="MODULE_RM3100_SYNC_SEND" value="FALSE"/>
+        <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
+      </module>
+
+      <!-- TODO: Cube Orange test peripherals/ak8975 if compatible with AK09916 else create Internal MAG driver -->
+      <!-- on the ICM- 20948 there ia an AK09916 mag embedded -->
+
+      <module name="actuators" type="dummy">
+        <define name="HAL_USE_PWM" value="FALSE"/>
+        <define name="USE_PWM1" value="FALSE"/>
+        <define name="USE_PWM2" value="FALSE"/>
+        <define name="USE_PWM3" value="FALSE"/>
+        <define name="USE_PWM4" value="FALSE"/>
+        <define name="USE_PWM5" value="FALSE"/>
+        <define name="USE_PWM6" value="FALSE"/>
+      </module>
+
+      <module name="airspeed" type="ms45xx_i2c">
+        <define name="USE_I2C2"/>
+        <define name="MS45XX_I2C_DEV" value="i2c2"/>
+        <define name="MS45XX_PRESSURE_RANGE" value="1" /><!-- description="pressure range in psi (default: 1)"-->
+        <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
+        <define name="MS45XX_SYNC_SEND" value="FALSE" /> <!--description="flag to enable sending every new measurement via telemetry (default:FALSE)-->
+        <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
+        <define name="MS45XX_PRESSURE_OFFSET" value="8476" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
+        <define name="MS45XX_LOWPASS_TAU" value="0.25"/> <!--description="Time constant for second order Butterworth low pass filter"-->
+        <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
+      </module>
+
+      <module name="gps" type="ublox">
+        <configure name="GPS_BAUD" value="B460800"/> 
+        <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
+      </module>
+
+      <!-- If one want to use a Joystick over connection one can us this instead of sbus-->
+      <module name="radio_control" type="ppm">
+        <define name="RADIO_CONTROL_NB_CHANNEL" value="8"/>
+        <define name="RADIO_MODE" value="RADIO_AUX1"/>
+        <define name="RADIO_KILL_SWITCH" value="RADIO_AUX2"/>
+        <define name="RADIO_MANUAL_ROLL_CMD" value="RADIO_AUX3"/>
+        <define name="RADIO_MANUAL_PITCH_CMD" value="RADIO_AUX4"/>
+      </module>
+
+      <module name="sys_mon"/><!-- Enable if one want to check processor load for higher loop, nav, module etc. frequencies -->
+
+      <module name="ship_state_message"/>
+
+      <module name="telemetry" type="transparent">
+        <!--Handy for Desk debugging-->
+        <!-- <configure name="MODEM_PORT" value="usb_serial"/> -->
+        <configure name="MODEM_BAUD" value="B460800"/>
+        <configure name="MODEM_PORT" value="UART3"/>
+      </module>
+
+      <!-- Enable for onboard logging -->
+      <module name="tlsf"/>
+      <module name="pprzlog"/>
+      <module name="logger" type="sd_chibios"/>
+      <module name="flight_recorder"/>      
+      <!--
+      <module name="shell">
+        <configure name="SHELL_PORT" value="usb_serial_debug"/>
+      </module>
+      -->
+
+<!--<define name="USE_SIDESLIP" value="TRUE"/>-->
+ <!-- (2*3.14)/AOA_PWM_PERIOD -->
+ <!-- the PPM RC INput used for PWM in -->
+      <!-- <module name="AOA_pwm">
+        <define name="SEND_SYNC_AOA" value="TRUE"/>
+        <define name="AOA_ANGLE_OFFSET" value="3.1415"/>
+        <define name="AOA_PWM_PERIOD" value="4096"/>
+        <define name="AOA_PWM_OFFSET" value="1"/>
+        <define name="SEND_AOA" value="TRUE"/>
+        <define name="LOG_AOA" value="FALSE"/>
+        <configure name="AOA_PWM_CHANNEL" value="PWM_INPUT2" />
+      </module> -->
+
+      <!--      Module needed for the communication between the raspberry pi and the pixhawk-->
+      <!-- <module name="ca_am7">
+        <configure name="AM7_PORT" value="UART3"/>
+        <configure name="AM7_BAUD" value="B921600"/>
+      </module> -->
+
+      <!-- Module needed for the fly by wire communication between the Teensy T4 and the pixhawk-->
+      <!-- <module name="serial_act_t4">
+        <configure name="SERIAL_ACT_T4_PORT" value="UART8"/>
+        <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>
+      </module> -->
+
+    </target>
+
+    <!-- <target name="nps" board="pc">
+      <configure name="PERIODIC_FREQUENCY" value="500"/> 
+      <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
+      <module name="fdm" type="jsbsim"/>
+      <module name="radio_control" type="ppm"/>
+      <define name="RADIO_GEAR" value="RADIO_AUX2"/>
+      <define name="RADIO_FLAP" value="RADIO_AUX3"/>
+      <define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>
+      <module name="telemetry"   type="transparent"/>
+      <module name="imu" type="nps"/>
+      <module name="gps" type="ublox"/>
+      <module name="udp"/>
+      <module name="approach_moving_target">
+	      <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/>
+      </module>
+    </target> -->
+
+    <define name="USE_AIRSPEED" value="TRUE"/><!-- Use the sensor, not stating use it in flight -->
+
+    <!-- <module name="guidance" type="indi"/> -->
+
+    <module name="nav_hybrid">
+      <define name="NAV_HYBRID_POS_GAIN" value="1"/>
+      <define name="NAV_HYBRID_LINE_GAIN" value="1"/>
+      <define name="NAV_HYBRID_MAX_AIRSPEED" value="15"/>
+      <define name="NAV_HYBRID_SPEED_MARGIN" value="10"/>
+      <define name="NAV_HYBRID_NAV_LINE_DIST" value="50"/>
+      <define name="NAV_HYBRID_MAX_DECELERATION" value="WP_CONTROL_MAX_DECEL_WP_APPROACH"/>
+    </module>
+
+    <module name="ahrs" type="float_cmpl_quat">
+      <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
+      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="1.0"/>
+      <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="0.0"/>
+      <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
+      <define name="AHRS_FC_OUTPUT_ENABLED" value="FALSE"/>
+      <define name="AHRS_FC_IS_WITH_EKF2" value="TRUE"/>
+      <define name="AHRS_FC_IMU_ID" value="IMU_CUBE2_ID"/>
+      <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>
+    </module>
+
+    <module name="stabilization" type="indi_simple"/>
+ 
+    <module name="ins" type="ekf2">
+        <!-- <define name="INS_EKF2_MAG_ID" value="MAG_IST8310_SENDER_ID"/> -->
+        <define name="INS_EKF2_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
+        <!-- <define name="INS_EKF2_MAG_ID" value="MAG_LIS3MDL_SENDER_ID"/> -->
+        <!-- <define name="INS_EKF2_OPTITRACK" value="TRUE"/> -->
+        <define name="INS_EKF2_ACCEL_ID" value="IMU_CUBE2_ID"/>
+        <define name="INS_EKF2_GYRO_ID" value="IMU_CUBE2_ID"/>
+    </module>
+
+    <module name="geo_mag"/>
+    <module name="air_data"/>
+
+    <module name="agl_dist">
+      <define name="AGL_DIST_ID" value="AGL_LIDAR_TFMINI_ID"/>
+      <define name="AGL_DIST_MAX_RANGE" value="12.0"/>
+      <define name="AGL_DIST_MIN_RANGE" value="0.05"/>
+      <define name="AGL_DIST_FILTER" value="0.1"/>
+    </module>
+
+
+    <!-- <module name="overactuated_mixing"/> -->
+
+    <!-- <module name="lidar" type="tfmini_am7">
+      <configure name="USE_TFMINI_AGL" value="TRUE"/>
+      <configure name="USE_TFMINI" value="TRUE"/>
+      <configure name="AHRS_USE_TFMINI_AGL" value="TRUE"/>
+      <configure name="TFMINI_COMPENSATE_ROTATION" value="TRUE"/>
+    </module> -->
+
+    <!-- <module name="approach_moving_target">
+      <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/>
+    </module> -->
+  </firmware>
+
+  <servos>
+  </servos>
+
+  <commands>
+    <axis name="ROLL" failsafe_value="0"/>
+    <axis name="PITCH" failsafe_value="0"/>
+    <axis name="YAW" failsafe_value="0"/>
+    <axis name="THRUST" failsafe_value="0"/>
+    <axis name="RADIO_TH_HOLD" failsafe_value="-9600"/>
+  </commands>
+
+  <rc_commands>
+    <set command="THRUST" value="@THROTTLE"/>
+    <set command="ROLL" value="@YAW"/>
+    <set command="PITCH" value="@PITCH/2"/>
+    <set command="YAW" value="-@ROLL/4"/>
+  </rc_commands>
+
+
+  <command_laws>
+  </command_laws>
+
+
+  <section name="WP_CONTROL" prefix="WP_CONTROL_">
+
+    <define name="MAX_POS_XY_ERROR" value="60" unit="meters"/>
+    <define name="MAX_POS_Z_ERROR" value="5" unit="meters"/>
+
+    <define name="VX_CONTROL_STATIC_GAIN" value="0.3" unit="(m/s)/m"/>
+    <define name="VY_CONTROL_STATIC_GAIN" value="0.2" unit="(m/s)/m"/>
+    <define name="VZ_CONTROL_STATIC_GAIN" value="0.2" unit="(m/s)/m"/>
+
+    <define name="MAX_DECEL_WP_APPROACH" value="1.8" unit="m/s^2"/>
+
+    <define name="VY_AIRSPEED_GAIN_COEFF" value="0.0"/>
+    <define name="VY_GAIN_MAX_VAL" value="1"/>
+    <define name="VY_GAIN_MIN_VAL" value="0.17"/>
+
+    <define name="VZ_AIRSPEED_GAIN_COEFF" value="-0.02"/>
+    <define name="VZ_GAIN_MAX_VAL" value="1"/>
+    <define name="VZ_GAIN_MIN_VAL" value="0.6"/>
+
+    <define name="MIN_LAT_SPEED_GAIN_VALUE" value="0.1"/>
+
+    <define name="FWD_SPEED_FORCE_FWD_MODE" value="25"/>
+    
+  </section>
+
+  <!-- ************************* MAG EXTERNAL ************************* -->
+
+   <!-- ************************* MAG EXTERNAL ************************* -->
+  <section name="MAG_RM3100" prefix="RM3100_">
+    <define name="DATA_RATE" value="RM3100_RATE_600"/>
+    <define name="ADDR" value="RM3100_ADDR0"/>
+  </section>
+
+  <section name="IMU" prefix="IMU_">
+
+    <!-- Calibrated at mavlab 03-05-2023 -->
+    <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-17,-8,22}, .scale={{11701,50107,46279},{1198,5125,4775}}} , {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-61,-18,-13}, .scale={{9035,17566,62431},{1732,3587,12773}}}}"/>
+
+    <!-- Calibrated at Valkenburg the 22-06-2023-->
+    <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={21,253,27}, .scale={{13265,16225,23969},{22921,29034,43079}}}}"/>
+
+    <!-- Define axis in hover frame -->
+    <define name="BODY_TO_IMU_PHI" value="90.0" unit="deg"/>
+    <define name="BODY_TO_IMU_THETA" value="0" unit="deg"/>
+    <define name="BODY_TO_IMU_PSI" value="0" unit="deg"/>
+  </section>
+
+  <section name="AHRS" prefix="AHRS_">
+    <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
+    <!-- Delft -->
+    <define name="H_X" value="0.3892503"/>
+    <define name="H_Y" value="0.0017972"/>
+    <define name="H_Z" value="0.9211303"/>
+  </section>
+
+  <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
+    <!-- setpoints -->
+    <define name="SP_MAX_PHI" value="40." unit="deg"/>
+    <define name="SP_MAX_THETA" value="40." unit="deg"/>
+    <define name="SP_MAX_R" value="150." unit="deg/s"/>
+    <define name="DEADBAND_R" value="200"/>
+    <define name="SP_PSI_DELTA_LIMIT" value="45" unit="deg"/>
+  </section>
+
+  <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
+
+    <!-- control effectiveness (hover) [conventional + yaw tilting] -->
+    <define name="G1_P" value="0.004"/>
+    <define name="G1_Q" value="0.01"/>
+    <define name="G1_R" value="0.001"/>
+    <define name="G2_R" value="0.00015"/>
+
+    <!-- control effectiveness (forward) -->
+    <define name="FORWARD_G1_P" value="0.0020"/>
+    <define name="FORWARD_G1_Q" value="0.0077"/>
+    <define name="FORWARD_G1_R" value="0.004"/>
+    <!-- reference acceleration for attitude control -->
+    <define name="REF_ERR_P" value="60.0"/>
+    <define name="REF_ERR_Q" value="60.0"/>
+    <define name="REF_ERR_R" value="44.0"/>
+    <define name="REF_RATE_P" value="6.5"/>
+    <define name="REF_RATE_Q" value="6.5"/>
+    <define name="REF_RATE_R" value="5.4"/>
+
+    <!--Maxium yaw rate, to avoid instability-->
+    <define name="MAX_R" value="120.0" unit="deg/s"/>
+
+    <!-- Maximum rate setpoint in rate control mode -->
+    <define name="MAX_RATE" value="3.0" unit="rad/s"/>
+
+    <!-- second order filter parameters -->
+    <define name="FILT_CUTOFF" value="1.5"/>
+    <define name="FILT_CUTOFF_RDOT" value="0.5"/>
+    <define name="ESTIMATION_FILT_CUTOFF" value="5.0"/>
+    <define name="FILT_CUTOFF_R" value="4.0"/>
+
+    <!-- first order actuator dynamics -->
+    <define name="ACT_FREQ_P" value="10"/>
+    <define name="ACT_FREQ_Q" value="10"/>
+    <define name="ACT_FREQ_R" value="10"/>
+
+    <!-- Adaptive Learning Rate -->
+    <define name="USE_ADAPTIVE" value="FALSE"/>
+    <define name="ADAPTIVE_MU" value="0.0001"/>
+  </section>
+
+  <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
+    <define name="HOVER_KP" value="310"/>
+    <define name="HOVER_KD" value="130"/>
+    <define name="HOVER_KI" value="10"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value="0.5"/>
+    <define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>
+  </section>
+
+  <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
+    <define name="MAX_BANK" value="30" unit="deg"/>
+    <define name="USE_SPEED_REF" value="TRUE"/>
+    <define name="PGAIN" value="60"/>
+    <define name="DGAIN" value="100"/>
+    <define name="AGAIN" value="0"/>
+    <define name="IGAIN" value="20"/>
+  </section>
+
+  <section name="AUTOPILOT">
+    <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
+    <define name="MODE_AUTO1" value="AP_MODE_HOVER_DIRECT"/>
+    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+    <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
+  </section>
+
+  <section name="BAT">
+    <!-- Brick on only -->
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 5 * adc)"/>
+    <!-- <define name="MAX_BAT_CAPACITY" value="5000" unit="mAh"/> -->
+    <!-- <define name="MILLIAMP_AT_IDLE_THROTTLE" value="500" unit="mA"/> -->
+    <!-- <define name="MILLIAMP_AT_FULL_THROTTLE" value="30000" unit="mA"/> -->
+    <define name="BAT_NB_CELLS" value="4"/>
+    <define name="MAX_BAT_LEVEL" value="16.8" unit="V"/>
+    <define name="LOW_BAT_LEVEL" value="14.5" unit="V"/>
+    <define name="CRITIC_BAT_LEVEL" value="14.0" unit="V"/>
+    <define name="CATASTROPHIC_BAT_LEVEL" value="12.0" unit="V"/>
+  </section>
+
+  <section name="MISC">
+    <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
+    <!--define name="UART7_CR2" value="(USART_CR2_STOP1_BITS | USART_CR2_SWAP_Msk)"/--> <!-- Swap RX/TX since RX doesn't work-->
+
+    <!-- Basic navigation settings -->
+    <define name="NAV_CLIMB_VSPEED" value="3.5"/>
+    <define name="NAV_DESCEND_VSPEED" value="-0.5"/>
+    <define name="ARRIVED_AT_WAYPOINT" value="50.0"/>
+
+    <!-- Avoid GPS loss behavior when having RC or datalink -->
+    <define name="NO_GPS_LOST_WITH_DATALINK_TIME" value="20"/>
+    <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
+
+    <define name="UNLOCKED_HOME_MODE" value="TRUE"/>
+    <define name="RC_LOST_MODE" value="AP_MODE_NAV"/>
+
+    <!-- <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/> -->
+    <define name="FULLY_MANUAL_HEADING" value="TRUE"/>
+    <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/>
+    <define name="USE_EXT_REF_ATTITUDE" value="TRUE"/>
+    <define name="USE_EXT_REF_POSITION" value="TRUE"/>
+    
+        
+    <define name="FAILSAFE_HOME_RADIUS" value="600" unit="m"/>
+  </section>
+
+  <section name="AIR_DATA" prefix="AIR_DATA_">
+    <define name="CALC_AIRSPEED" value="TRUE"/>
+    <define name="CALC_TAS_FACTOR" value="FALSE"/>
+    <define name="CALC_AMSL_BARO" value="TRUE"/>
+  </section>
+
+  <section name="GCS">
+    <define name="SPEECH_NAME" value="OverDone"/>
+    <define name="AC_ICON" value="flyingwing"/>
+    <define name="ALT_SHIFT_PLUS_PLUS" value="2"/>
+    <define name="ALT_SHIFT_PLUS" value="1"/>
+    <define name="ALT_SHIFT_MINUS" value="-1"/>
+  </section>
+
+</airframe>
