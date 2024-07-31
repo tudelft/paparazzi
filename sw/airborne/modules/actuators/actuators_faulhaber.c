@@ -179,10 +179,6 @@ void actuators_faulhaber_init(void)
   faulhaber.max_velocity = FAULHABER_MAX_VELOCITY;
 }
 
-///
-
-
-
 void actuators_faulhaber_periodic(void)
 {
   static float last_time = 0;
@@ -355,6 +351,10 @@ static void faulhaber_parse_msg(struct faulhaber_parser_t *p)
     // Send ABI message
     AbiSendMsgACT_FEEDBACK(ACT_FEEDBACK_FAULHABER_ID, &feedback, 1);
   }
+  // Write requests
+  else if(p->cmd_code == 0x02) {
+    // Do nothing
+  }
   // Parse the statuscode message
   else if(p->cmd_code == 0x05) {
     uint16_t status_code = p->data[0] | (p->data[1] << 8);
@@ -370,6 +370,18 @@ static void faulhaber_parse_msg(struct faulhaber_parser_t *p)
     // Target reached
     if(!faulhaber.target_reached && status_code&0x400)
       faulhaber.target_reached = true;
+  }
+  else {
+    // Unknown message
+    char error_msg[250];
+    int rc = snprintf(error_msg, 200, "[FH]%d ", p->cmd_code);
+    for(int i = 0; i < p->data_length; i++) {
+      rc += snprintf(error_msg + rc, 200 - rc, "%02X", p->data[i]);
+    }
+
+    if (rc > 0) {
+      DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error_msg);
+    }
   }
 }
 
