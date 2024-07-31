@@ -152,7 +152,7 @@ uint8_t rotwing_state_fw_counter = 0;
 uint8_t rotwing_state_fw_idle_counter = 0;
 uint8_t rotwing_state_fw_m_off_counter = 0;
 
-float time_hysteresis_threshold = 1.f;
+float time_hysteresis_threshold = 0.f;
 float airspeed_hysteresis_threshold = 2.f;
 
 float guidance_indi_pitch_pref_deg_quad = -5.0;
