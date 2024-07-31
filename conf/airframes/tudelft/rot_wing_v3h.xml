@@ -71,7 +71,7 @@
         </module>
         <module name="airspeed" type="ms45xx_i2c">
             <configure name="MS45XX_I2C_DEV"            value="i2c2"/>
-            <define name="MS45XX_PRESSURE_SCALE"        value="1.65"/>
+            <define name="MS45XX_PRESSURE_SCALE"        value="1.90"/>
             <define name="USE_AIRSPEED_LOWPASS_FILTER"  value="TRUE"/>
             <define name="MS45XX_LOWPASS_TAU"           value="0.15"/>
             <define name="AIRSPEED_MS45XX_SEND_ABI"     value="1"/>
@@ -131,9 +131,9 @@
         <module name="ground_detect_sensor"/>
         <module name="rotwing_state">
             <define name="ROTWING_STATE_FW_SKEW_SPEED" value="16.0"/>
-            <define name="ROTWING_STATE_MIN_FW_SPEED" value="12.0"/>
+            <define name="ROTWING_STATE_MIN_FW_SPEED" value="14.0"/>
             <define name="ROTWING_STATE_START_SKEW_SPEED" value="12.0"/>
-            <define name="ROTWING_STATE_QUAD_MAX_SPEED" value="8.0"/>
+            <define name="ROTWING_STATE_QUAD_MAX_SPEED" value="9.0"/>
         </module>
         <module name="preflight_checks"/>
         <module name="pfc_actuators"/>
@@ -608,7 +608,7 @@
         <!-- Other -->
         <define name="FILTER_CUTOFF"        value="2.5"/>
         <define name="HEADING_BANK_GAIN"    value="5."/>
-        <define name="MAX_AIRSPEED"         value="19.0"/>
+        <define name="MAX_AIRSPEED"         value="20.5"/>
         <define name="PITCH_LIFT_EFF"       value="0.0"/>
 
         <define name="THRUST_Z_EFF"         value="-0.0023"/>
