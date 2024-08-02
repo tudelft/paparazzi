@@ -39,7 +39,7 @@
 
 /* Maximum velocity for the position controller */
 #ifndef FAULHABER_MAX_VELOCITY
-#define FAULHABER_MAX_VELOCITY 14000
+#define FAULHABER_MAX_VELOCITY 12000
 #endif
 
 static struct uart_periph *faulhaber_dev = &(FAULHABER_DEV);
@@ -272,7 +272,7 @@ void actuators_faulhaber_periodic(void)
           if(get_sys_time_float() - last_time < 0.01)
             break;
           
-          // Set to position mode
+          // Set to velocity mode
           static uint8_t data[] = { 0x60, 0x60, 0x00, 0x03 }; // Set 0x6060.00 to 0x03: Velocity mode
           faulhaber_send_command(faulhaber_dev, 0x02, data, 4);
           last_time = get_sys_time_float();
@@ -327,6 +327,67 @@ void actuators_faulhaber_periodic(void)
           break;
         }
       }
+      break;
+    }
+
+    /* FH_MODE_REQ_ERR */
+    case FH_MODE_REQ_ERR: {
+      switch(faulhaber.state) {
+        case 0: {
+          // Request the status code
+          uint8_t data[] = { 0x20, 0x23, 0x00}; // Get 0x2320.00: Get the error code
+          faulhaber_send_command(faulhaber_dev, 0x01, data, 3);
+          faulhaber.state++;
+          break;
+        }
+        case 1: {
+          // Request the status code
+          uint8_t data[] = { 0x21, 0x23, 0x00}; // Get 0x2321.00: Get the error mask
+          faulhaber_send_command(faulhaber_dev, 0x01, data, 3);
+          faulhaber.state++;
+          break;
+        }
+        case 2: {
+          // Request the status code
+          uint8_t data[] = { 0x01, 0x10, 0x00}; // Get 0x1001.00: Get the error mask
+          faulhaber_send_command(faulhaber_dev, 0x01, data, 3);
+          faulhaber.state++;
+          break;
+          
+        }
+        default: {
+          // Do nothing and stop requesting
+          break;
+        }
+      }
+      break;
+    }
+
+    /* FH_MODE_RESET_ERR */
+    case FH_MODE_RESET_ERR: {
+      switch(faulhaber.state) {
+        case 0: {
+          static uint8_t data[] = { 0x40, 0x60, 0x00, 0x0E, 0x00}; // Set 0x6040.00 to 0x000E: Try to start
+          faulhaber_send_command(faulhaber_dev, 0x02, data, 5);
+          faulhaber.state++;
+          break;
+        }
+        case 1: {
+          static uint8_t data[] = { 0x60, 0x60, 0x00, 0x03 }; // Set 0x6060.00 to 0x03: Velocity mode
+          faulhaber_send_command(faulhaber_dev, 0x02, data, 4);
+          faulhaber.state++;
+          break;
+        }
+        default: {
+          // Enable operation
+          static uint8_t data[] = { 0x40, 0x60, 0x00, 0x0F, 0x00}; // Set 0x6040.00 to 0x000F: Enable operation
+          faulhaber_send_command(faulhaber_dev, 0x02, data, 5);
+          faulhaber.state = 0;
+          faulhaber.mode = FH_MODE_VELOCITY;
+          break;
+        }
+      }
+      break;
     }
 
     /* Do nothing */
@@ -370,6 +431,13 @@ static void faulhaber_parse_msg(struct faulhaber_parser_t *p)
     // Target reached
     if(!faulhaber.target_reached && status_code&0x400)
       faulhaber.target_reached = true;
+    
+    // If the drive got disabled
+    if(!(status_code&0x0001) || !(status_code&0x0002) || !(status_code&0x0004)) {
+      char error_msg[250];
+      int rc = snprintf(error_msg, 200, "[FH]%d %04X", p->cmd_code, status_code);
+      DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error_msg);
+    }
   }
   else {
     // Unknown message
