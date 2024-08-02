@@ -42,7 +42,7 @@
         <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
         <define name="MS45XX_SYNC_SEND" value="FALSE" /> <!--description="flag to enable sending every new measurement via telemetry (default:FALSE)-->
         <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
-        <define name="MS45XX_PRESSURE_OFFSET" value="8519" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
+        <define name="MS45XX_PRESSURE_OFFSET" value="8102" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
         <define name="MS45XX_LOWPASS_TAU" value="0.25"/> <!--description="Time constant for second order Butterworth low pass filter"-->
         <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
       </module>
@@ -151,6 +151,8 @@
 
 
     <module name="overactuated_mixing"/>
+
+    <module name="tilt_calibration"/>
 
     <module name="lidar" type="tfmini_am7">
       <configure name="USE_TFMINI_AGL" value="TRUE"/>
@@ -261,16 +263,16 @@
     <define name="AILERONS_FIRST_ORD_NUM" value="0.0198" />
     <define name="AILERONS_FIRST_ORD_DEN" value="-0.9802" />
 
-    <define name="SERVO_9_MIN_PWM" value="2246" />   
-    <define name="SERVO_9_MAX_PWM" value="843" />   
-    <define name="SERVO_9_NEUTRAL_PWM" value="1514" /> 
+    <define name="SERVO_9_MIN_PWM" value="2200" />   
+    <define name="SERVO_9_MAX_PWM" value="900" />   
+    <define name="SERVO_9_NEUTRAL_PWM" value="1541" /> 
     <define name="SERVO_9_MIN_ANGLE_DEG" value="-25" /> 
     <define name="SERVO_9_MAX_ANGLE_DEG" value="25" /> 
     <define name="SERVO_9_DELAY_TS" value="5" /> 
 
-    <define name="SERVO_10_MIN_PWM" value="2217" />   
-    <define name="SERVO_10_MAX_PWM" value="850" />   
-    <define name="SERVO_10_NEUTRAL_PWM" value="1600" /> 
+    <define name="SERVO_10_MIN_PWM" value="2200" />   
+    <define name="SERVO_10_MAX_PWM" value="900" />   
+    <define name="SERVO_10_NEUTRAL_PWM" value="1415" /> 
     <define name="SERVO_10_MIN_ANGLE_DEG" value="-25" /> 
     <define name="SERVO_10_MAX_ANGLE_DEG" value="25" /> 
     <define name="SERVO_10_DELAY_TS" value="5" /> 
@@ -441,22 +443,22 @@
    <define name="MOTOR_MAX_OMEGA" value="1037" unit="rad/s"/> -->
 
     <define name="MOTOR_MIN_OMEGA" value="150" unit="rad/s"/><!-- Needed to make the INDI to work-->
-    <define name="SERVO_AZ_MIN_ANGLE" value="-40" unit="deg"/><!-- Always remember to update the PWM range as well-->
-    <define name="SERVO_AZ_MAX_ANGLE" value="40" unit="deg"/>
+    <define name="SERVO_AZ_MIN_ANGLE" value="-50" unit="deg"/><!-- Always remember to update the PWM range as well-->
+    <define name="SERVO_AZ_MAX_ANGLE" value="50" unit="deg"/>
 
     <define name="SERVO_EL_MAX_ANGLE" value="22" unit="deg"/>
     <define name="SERVO_EL_MIN_ANGLE" value="-89" unit="deg"/>
 
     <!-- ball bearings vehicle -->
-    <define name="SERVO_EL_1_ZERO_VALUE" value="2.28" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="-3.33" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="0.52" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="16.43" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="-0.61" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="-3.5" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="0.43" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="16.69" unit="deg"/>
 
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="5.71" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="-7.99" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="-7.82" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="0.43" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="2.02" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="-12.12" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="-17.75" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="-11.16" unit="deg"/>
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
@@ -475,8 +477,8 @@
 
     <define name="MIN_AIRSPEED_READING" value="0.3" unit="m/s"/>
 
-    <define name="OVERESTIMATION_COEFF_APP" value="1.2"/>
-    <define name="OVERESTIMATION_COEFF_CRUISE" value="1.2"/>
+    <define name="OVERESTIMATION_COEFF_APP" value="1.4"/>
+    <define name="OVERESTIMATION_COEFF_CRUISE" value="1.4"/>
 
     <!-- Tilting angle constraint in the approach and takeoff phase -->
     <define name="K_ALT_TILT_CONSTRAINT" value="50" unit="deg/meters"/>
@@ -772,6 +774,9 @@
     <define name="USE_EXT_REF_ATTITUDE" value="TRUE"/>
     <define name="USE_EXT_REF_POSITION" value="TRUE"/>
 
+    <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/>
+    <define name="FULLY_MANUAL_HEADING" value="TRUE"/>
+    
     <!-- Basic navigation settings -->
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>
     <define name="NAV_DESCEND_VSPEED" value="-0.5"/>

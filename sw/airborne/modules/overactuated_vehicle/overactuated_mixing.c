@@ -186,7 +186,7 @@ float Dynamic_MOTOR_K_T_OMEGASQ;
 float CL_ailerons = VEHICLE_CL_AILERONS;
 float roll_pwm_cmd; 
 
-float extra_lat_gain = 0.3; 
+float extra_lat_gain = 0.15; 
 
 //Variables for the NONLINEAR_CA_DEBUG message: 
 float feed_fwd_term_yaw, feed_back_term_yaw;
