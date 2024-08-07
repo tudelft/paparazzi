@@ -264,7 +264,7 @@ NOTES:
     <!-- <let var="yaw_ctrl_sgl" value="@YAW - 8 * ($gyro_yaw)"/>--><!-- If one has a rudder -->
     <!-- <set servo="LM" value="(((0 > @THROTTLE + @YAW) ? 0 : (@THROTTLE + @YAW)))"/>--><!-- past stuff from rotorcraft not needed in FW -->
       <!-- <set servo="RM" value="(((0 > @THROTTLE - @YAW) ? 0 : (@THROTTLE - @YAW)))"/> --> 
-    <let var="yaw_ctrl_sgl" value="@YAW * 1 - 0.4 * ($gyro_yaw)"/>
+    <let var="yaw_ctrl_sgl" value="@YAW * 0.66 - 0.4 * ($gyro_yaw)"/>
     <!-- <let var="yaw_ctrl_sgl" value="@YAW"/> -->
 
     <set servo="RM" value="$killed * (@THROTTLE * 0.8 + $yaw_ctrl_sgl)"/>
@@ -272,9 +272,9 @@ NOTES:
     <!-- <set servo="RM" value="$killed * (@THROTTLE * 1.0)"/> -->
     <!-- <set servo="LM" value="$killed * (@THROTTLE * 1.0)"/>TODO: check sign -->
 
-    <set servo="ARM_LEFT" value="-@ROLL * 0.4 - @PITCH * 0.6"/>
+    <set servo="ARM_LEFT" value="-@ROLL * 0.6 - @PITCH * 0.3"/>
     <set servo="SPOILERON" value="0"/>
-    <set servo="ARM_RIGHT" value="-@ROLL * 0.4 + @PITCH * 0.6"/>
+    <set servo="ARM_RIGHT" value="-@ROLL * 0.6 + @PITCH * 0.3"/>
     <set servo="ELEVON_RIGHT" value="@ROLL * 0.6 + @PITCH * 0.4"/>
     <set servo="ELEVATOR" value="-@PITCH"/>
     <set servo="ELEVON_LEFT" value="@ROLL* 0.6 - @PITCH * 0.4"/>
