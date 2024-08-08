@@ -382,8 +382,8 @@
                 <field name="feedback_id2" value="SERVO_BROTATION_MECH_IDX"/>
                 <field name="low" value="-9600"/>
                 <field name="high" value="9600"/>
-                <field name="low_feedback" value="1.57"/>
-                <field name="high_feedback" value="0"/>
+                <field name="low_feedback" value="1.47"/>
+                <field name="high_feedback" value="-0.1"/>
                 <field name="timeout" value="5"/>
             </field>
 
