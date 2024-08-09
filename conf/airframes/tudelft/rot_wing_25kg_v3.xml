@@ -95,7 +95,7 @@
         <module name="imu" type="pixhawk6x"/>
         <module name="ins" type="ekf2">
             <!-- The Cube is mounted 37cm forwards of the CG -->
-            <define name="INS_EKF2_IMU_POS_X" value="0.37"/>
+            <define name="INS_EKF2_IMU_POS_X" value="0.324"/>
             <define name="INS_EKF2_IMU_POS_Y" value="0.0"/>
             <define name="INS_EKF2_IMU_POS_Z" value="0.0"/>
 
@@ -442,10 +442,10 @@
         <define name="MAX_RATE"             value="1.5"/>
 
         <!-- Reference -->
-        <define name="REF_ERR_P"                    value="40.0"/>
+        <define name="REF_ERR_P"                    value="25.0"/>
         <define name="REF_ERR_Q"                    value="25.0"/>
         <define name="REF_ERR_R"                    value="23.0"/>
-        <define name="REF_RATE_P"                   value="5.5"/>
+        <define name="REF_RATE_P"                   value="4.5"/>
         <define name="REF_RATE_Q"                   value="4.5"/>
         <define name="REF_RATE_R"                   value="3.9"/>
 
