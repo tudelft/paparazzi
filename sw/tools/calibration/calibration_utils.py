@@ -194,7 +194,7 @@ def print_xml(p, sensor, sensor_id, res):
 
     print("")
     print('<define name="IMU_'+sensor+'_CALIB" type="array"/>')
-    print('  <field type="struct"/>')
+    print('  <field type="struct">')
     print('    <field name="abi_id" value="'+sensor_id+'"/>')
     print('    <field name="calibrated" type="struct">')
     print('      <field name="neutral" value="true"/>')
