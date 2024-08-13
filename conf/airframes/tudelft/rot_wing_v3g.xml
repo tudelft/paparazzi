@@ -333,7 +333,7 @@
                 <field name="high" value="4500"/>
                 <field name="low_feedback" value="0.56"/>
                 <field name="high_feedback" value="0.09"/>
-                <field name="timeout" value="1"/>
+                <field name="timeout" value="2"/>
             </field>
             <field type="struct">
                 <field name="feedback_id" value="SERVO_SERVO_RUDDER_IDX"/>
@@ -471,17 +471,17 @@
 
     <section name="IMU" prefix="IMU_">
         <define name="MAG_CALIB" type="array">
-        <field type="struct">
-            <field name="abi_id" value="5"/>
-            <field name="calibrated" type="struct">
-            <field name="neutral" value="true"/>
-            <field name="scale" value="true"/>
-            <field name="rotation" value="true"/>
+            <field type="struct">
+                <field name="abi_id" value="5"/>
+                <field name="calibrated" type="struct">
+                    <field name="neutral" value="true"/>
+                    <field name="scale" value="true"/>
+                    <field name="rotation" value="true"/>
+                </field>
+                <field name="neutral" value="1757,3096,1119" type="int[]"/>
+                <field name="scale" value="{{10462,24574,6961},{18175,43831,12532}}"/>
+                <field name="body_to_sensor" value="{{0,16384,0,16384,0,0,0,0,-16384}}"/>
             </field>
-            <field name="neutral" value="1757,3096,1119" type="int[]"/>
-            <field name="scale" value="{{10462,24574,6961},{18175,43831,12532}}"/>
-            <field name="body_to_sensor" value="{{0,16384,0,16384,0,0,0,0,-16384}}"/>
-        </field>
         </define>
 
         <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true, .filter=true},.neutral={-19,0,28}, .scale={{1537,43219,6232},{157,4410,641}}, .filter_sample_freq=1127, .filter_freq=30}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-1,2,33}, .scale={{21914,8531,5489},{4477,1738,1120}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-47,0,3}, .scale={{17288,29444,25808},{3531,6031,5293}}}}"/>
