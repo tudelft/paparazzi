@@ -501,6 +501,16 @@
        </product>
     </function>
   </axis>
+
+  <axis name="ROLL">
+    <function name="ailerons" frame="BODY" unit="FT*LBS">
+       <product>
+           <property>aero/qbar-psf</property>
+           <property>fcs/aileron</property>
+           <value>15</value>
+       </product>
+    </function>
+  </axis>
   </aerodynamics>
 
 </fdm_config>
