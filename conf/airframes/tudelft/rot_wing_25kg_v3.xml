@@ -283,7 +283,7 @@
         <define name="D_RUDDER_D_PPRZ"       value="-0.0018"/>
         <define name="K_RPM_PPRZ_PUSHER"     value="{-131.497033952591,1.32098226269777,-0.0000291178067445214}"/>
 
-        <define name="K_LIFT_WING"           value="{-0.335811392,-0.615611143}"/>
+        <define name="K_LIFT_WING"           value="{-0.7811 -1.4319}"/>
         <define name="K_LIFT_FUSELAGE"       value="-0.050653927"/>
         <define name="K_LIFT_TAIL"           value="-0.101691751"/>
     </section>
