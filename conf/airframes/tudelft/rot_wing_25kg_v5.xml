@@ -221,7 +221,7 @@
         <set servo="AIL_RIGHT"          value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])"/>
         <set servo="FLAP_RIGHT"         value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7] + rw_flap_offset)"/>
         <set servo="AIL_LEFT"           value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])"/>
-        <set servo="FLAP_LEFT"          value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7] + rw_flap_offset)"/>
+        <set servo="FLAP_LEFT"          value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7] - rw_flap_offset)"/>
         <set servo="PARACHUTE"          value="RadioControlValues(RADIO_PARACHUTE)"/>
 
         <!-- Second bus -->
@@ -235,7 +235,7 @@
         <set servo="BAIL_RIGHT"         value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])"/>
         <set servo="BFLAP_RIGHT"        value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7] + rw_flap_offset)"/>
         <set servo="BAIL_LEFT"          value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])"/>
-        <set servo="BFLAP_LEFT"         value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7] + rw_flap_offset)"/>
+        <set servo="BFLAP_LEFT"         value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7] - rw_flap_offset)"/>
         <set servo="BPARACHUTE"         value="RadioControlValues(RADIO_PARACHUTE)"/>
 
         <!-- Rotation mechanism -->
