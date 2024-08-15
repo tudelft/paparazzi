@@ -227,7 +227,7 @@ void ms45xx_i2c_periodic(void)
   }
 }
 
-#define AUTOSET_NB_MAX 20
+#define AUTOSET_NB_MAX 200
 
 void ms45xx_i2c_event(void)
 {
