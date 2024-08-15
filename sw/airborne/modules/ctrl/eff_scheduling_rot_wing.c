@@ -147,6 +147,8 @@ struct rot_wing_eff_sched_param_t eff_sched_p = {
   .k_lift_tail              = ROT_WING_EFF_SCHED_K_LIFT_TAIL
 };
 
+int32_t rw_flap_offset = 0;
+
 // for negative values, still should be low_lim < up_lim
 inline float bound_or_zero(float value, float low_lim, float up_lim) {
   float output = value;
@@ -452,11 +454,18 @@ void stabilization_indi_set_wls_settings(void)
       u_min_stab_indi[i] = -MAX_PPRZ * act_is_servo[i];
       u_max_stab_indi[i] = MAX_PPRZ;
       u_pref_stab_indi[i] = act_pref[i];
-      if (i == 5) {
+      if (i == 5) { // elevator
         u_pref_stab_indi[i] = actuator_state_filt_vect[i]; // Set change in prefered state to 0 for elevator
         u_min_stab_indi[i] = 0; // cmd 0 is lowest position for elevator
       }
-      if (i==8) {
+      if (i == 7) { // flaperons
+        // If an offset is used, limit the max differential command to prevent unilateral saturation.
+        int32_t flap_saturation_limit = MAX_PPRZ - abs(rw_flap_offset);
+        BoundAbs(flap_saturation_limit, MAX_PPRZ);
+        u_min_stab_indi[i] = -flap_saturation_limit;
+        u_max_stab_indi[i] = flap_saturation_limit;
+      }
+      if (i==8) { // pusher
         // dt (min to max) MAX_PPRZ / (dt * f) dt_min == 0.002
         Bound(eff_sched_pusher_time, 0.002, 5.);
         float max_increment = MAX_PPRZ / (eff_sched_pusher_time * 500);

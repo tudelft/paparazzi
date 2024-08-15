@@ -78,6 +78,8 @@ struct rot_wing_eff_sched_var_t {
   float airspeed2;
 };
 
+extern int32_t rw_flap_offset;
+
 extern float rotation_angle_setpoint_deg;
 extern int16_t rotation_cmd;
 
