@@ -276,7 +276,7 @@
         <define name="K_ELEVATOR"            value="{ 1.27655, -6.0, -48.0}"/>
         <define name="K_RUDDER"              value="{-72.5037,  -0.9329, -16.75}"/>
         <define name="K_AILERON"             value="5.0"/>
-        <define name="K_FLAPERON"            value="2.0439"/>
+        <define name="K_FLAPERON"            value="2.35"/>
         <define name="K_PUSHER"              value="{0.027775,-2.41146}"/>
 
         <define name="K_ELEVATOR_DEFLECTION" value="{50.0,-0.0063}"/>
