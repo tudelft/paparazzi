@@ -77,6 +77,7 @@ static void send_rotating_wing_state(struct transport_tx *trans, struct link_dev
 void rotwing_state_init(void)
 {
   // Initialize rotwing state
+  rotwing_state.request_hover = true;
   rotwing_state.meas_wing_angle_deg = 0;
   for (int i = 0; i < 5; i++) {
     rotwing_state.meas_rpm[i] = 0;
@@ -92,9 +93,59 @@ void rotwing_state_init(void)
 
 void rotwing_state_periodic(void)
 {
+  rotwing_state_quad_motors();
+  rotwing_state_skew();
+  rotwing_state_airspeed();
 
+}
 
+static void rotwing_state_quad_motors(void) {
+  if(rotwing_state.request_hover) {
+    rotwing_state.quad_motors_enabled = true;
+  }
+  /*
+  Vair > (Vstall + margin) && Qcmd <= (idle + margin) && wing_angle >= (fw_angle -margin) && Vnav >= (Vstall + margin)
+  else if() {
+    rotwing_state.quad_motors_enabled = false;
+  }*/
+  else {
+    rotwing_state.quad_motors_enabled = true;
+  }
+}
 
+static void rotwing_state_skew(void) {
+  if(!rotwing_state_hover_motors_running()) {
+    rotwing_state.sp_wing_angle_deg = 90;
+  }
+  else if(!rotwing_state_pusher_motor_running()) {
+    rotwing_state.sp_wing_angle_deg = 0;
+  }
+  else if(rotwing_state.request_hover) { //&& Vair <= Vmax_quad
+    rotwing_state.sp_wing_angle_deg = 0;
+  }
+  else {
+    // SKEWING function vased on Vair and maybe Vnav
+  }
+}
+
+static void rotwing_state_airspeed(void) {
+  if(!rotwing_state_hover_motors_running()) {
+    rotwing_state.min_airspeed = 0; // Vstall + margin
+    rotwing_state.max_airspeed = 0; // Max airspeed FW
+  }
+  else if(!rotwing_state_pusher_motor_running()) {
+    rotwing_state.min_airspeed = 0;
+    rotwing_state.max_airspeed = 0; // pusher_fail_v
+  }
+  else{
+    // AIRSPEED function based on wing_angle and Qmrpm
+  }
+
+  // Override failing skewing while fwd
+  /*if(rotwing_state.meas_wing_angle_deg > 70 && rotwing_state_.skewing_failing) {
+    rotwing_state.min_airspeed = 0; // Vstall + margin
+    rotwing_state.max_airspeed = 0; // Max airspeed FW
+  }*/
 }
 
 
@@ -150,10 +201,10 @@ static void rotwing_state_feedback_cb(uint8_t __attribute__((unused)) sender_id,
       if ((feedback_msg[i].set.position) && (feedback_msg[i].idx == SERVO_ROTATION_MECH_IDX)) {
         // Get wing rotation angle from sensor
         float wing_angle_rad = 0.5 * M_PI - feedback_msg[i].position;
-        //rotwing_state_skewing.wing_angle_deg = DegOfRad(wing_angle_rad);
+        rotwing_state.meas_wing_angle_deg = DegOfRad(wing_angle_rad);
 
         // Bound wing rotation angle
-        //Bound(rotwing_state_skewing.wing_angle_deg, 0, 90.);
+        Bound(rotwing_state.meas_wing_angle_deg, 0, 90.);
       }
     }
 
@@ -284,13 +335,9 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, fl
 }
 
 void rotwing_state_request_hover(void) {
-
+  rotwing_state.request_hover = true;
 }
 
 void rotwing_state_request_free(void) {
-
-}
-
-bool rotwing_state_hover_motors_disable(void) {
-  return false;
+  rotwing_state.request_hover = false;
 }

@@ -29,9 +29,15 @@
 #include "std.h"
 
 struct rotwing_state_t {
+  bool request_hover;         // Request to hover
+  bool quad_motors_enabled;   // Quad motors enabled (> idle throttle)
+  float sp_wing_angle_deg;    // Setpoint wing angle in degrees
   float meas_wing_angle_deg;  // Measured wing angle in degrees
-  int32_t meas_rpm[5];        // Measured RPM of the hover and pusher motors
   int16_t skew_cmd;
+
+  float min_airspeed;         // Minimum airspeed for bounding
+  float max_airspeed;         // Maximum airspeed for bounding
+  int32_t meas_rpm[5];        // Measured RPM of the hover and pusher motors
 };
 extern struct rotwing_state_t rotwing_state;
 
@@ -42,6 +48,5 @@ bool rotwing_state_pusher_motor_running(void);
 
 void rotwing_state_request_hover(void);
 void rotwing_state_request_free(void);
-bool rotwing_state_hover_motors_disable(void);
 
 #endif  // ROTWING_STATE_H
