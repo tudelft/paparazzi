@@ -122,7 +122,6 @@ void ground_detect_periodic() {
   }
 
 #ifdef DEBUG_GROUND_DETECT
-  uint8_t test_gd = ground_detected;
   float payload[7];
   payload[0] = vspeed_ned;
   payload[1] = spec_thrust_down;
