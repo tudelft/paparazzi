@@ -28,72 +28,9 @@
 
 #include "std.h"
 
-/** Rotwing States
- */
-#define ROTWING_STATE_HOVER               0 // Wing is skewed in 0 degrees (quad)
-#define ROTWING_STATE_SKEWING             1 // WIng is skewing
-#define ROTWING_STATE_FW                  2 // Wing is skewed at 90 degrees (fixed wing), hover motors have full authority
-#define ROTWING_STATE_FW_HOV_MOT_IDLE     3 // Wing is skewed at 90 degrees (fixed wing), hover motors are forced to idle
-#define ROTWING_STATE_FW_HOV_MOT_OFF      4 // Wing is skewed at 90 degrees (fixed wubg), hover motors are switched off
-#define ROTWING_STATE_FREE                5 // This is a desired state for which the controller has to decide the desired state itself
-
-/** Rotwing Configurations
- */
-#define ROTWING_CONFIGURATION_HOVER       0 // UAV is in hover
-#define ROTWING_CONFIGURATION_HYBRID      1 // UAV can fly forward and hover if airspeed low, hover motors on
-#define ROTWING_CONFIGURATION_EFFICIENT   2 // UAV flies efficiently forward  (FW)
-#define ROTWING_CONFIGURATION_FREE        3 // UAV switched between efficient and hybrid dependent on deceleration
-
-struct RotwingState {
-  uint8_t current_state;
-  uint8_t desired_state;
-  uint8_t requested_config;
-};
-
-#define ROTWING_STATE_WING_QUAD_SETTING         0 // Wing skew at 0 degrees
-#define ROTWING_STATE_WING_SCHEDULING_SETTING   1 // Wing skew handled by airspeed scheduler
-#define ROTWING_STATE_WING_FW_SETTING           2 // Wing skew at 90 degrees
-
-#define ROTWING_STATE_PITCH_QUAD_SETTING        0 // Pitch at prefered hover
-#define ROTWING_STATE_PITCH_TRANSITION_SETTING  1 // Pitch scheduled
-#define ROTWING_STATE_PITCH_FW_SETTING          2 // Pitch at prefered forward
-
-struct RotWingStateSettings {
-  uint8_t wing_scheduler;
-  bool hover_motors_active;
-  bool hover_motors_disable;
-  bool force_forward;
-  uint8_t preferred_pitch;
-  bool stall_protection;
-  float max_v_climb;
-  float max_v_descend;
-  float nav_max_speed;
-};
-
-struct RotWingStateSkewing {
-  float wing_angle_deg_sp;   // Wing angle setpoint in deg
-  float wing_angle_deg;      // Wing angle from sensor in deg
-  int32_t servo_pprz_cmd;    // Wing rotation servo pprz cmd
-  bool airspeed_scheduling;  // Airspeed scheduling on or off
-  bool force_rotation_angle; // Setting to force wing_angle_deg_sp
-};
-
-extern struct RotwingState rotwing_state;
-extern struct RotWingStateSettings rotwing_state_settings;
-extern struct RotWingStateSkewing rotwing_state_skewing;
-
-extern float rotwing_state_max_hover_speed;
-
-extern bool hover_motors_active;
-extern bool bool_disable_hover_motors;
-
-extern float guidance_indi_pitch_pref_deg_quad;
-
-extern void init_rotwing_state(void);
-extern void periodic_rotwing_state(void);
-extern void request_rotwing_state(uint8_t state);
-extern void rotwing_request_configuration(uint8_t configuration);
-extern void rotwing_state_skew_actuator_periodic(void);
-extern bool rotwing_state_hover_motors_running(void);
+void rotwing_state_init(void);
+void rotwing_state_periodic(void);
+bool rotwing_state_hover_motors_running(void);
+bool rotwing_state_pusher_motor_running(void);
 
 #endif  // ROTWING_STATE_H
