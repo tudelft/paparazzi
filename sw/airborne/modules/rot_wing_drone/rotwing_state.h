@@ -28,9 +28,20 @@
 
 #include "std.h"
 
+struct rotwing_state_t {
+  float meas_wing_angle_deg;  // Measured wing angle in degrees
+  int32_t meas_rpm[5];        // Measured RPM of the hover and pusher motors
+  int16_t skew_cmd;
+};
+extern struct rotwing_state_t rotwing_state;
+
 void rotwing_state_init(void);
 void rotwing_state_periodic(void);
 bool rotwing_state_hover_motors_running(void);
 bool rotwing_state_pusher_motor_running(void);
+
+void rotwing_state_request_hover(void);
+void rotwing_state_request_free(void);
+bool rotwing_state_hover_motors_disable(void);
 
 #endif  // ROTWING_STATE_H

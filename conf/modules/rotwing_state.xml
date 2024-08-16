@@ -7,15 +7,15 @@
     </section>
   </doc>
   <settings>
-    <dl_settings>
+    <!--dl_settings>
       <dl_settings NAME="RotWingState">
       </dl_settings>
-    </dl_settings>
+    </dl_settings-->
   </settings>
   <header>
     <file name="rotwing_state.h"/>
   </header>
-    <init fun="roytwing_state_init()"/>
+    <init fun="rotwing_state_init()"/>
     <periodic fun="rotwing_state_periodic()"/>
   <makefile>
     <file name="rotwing_state.c"/>

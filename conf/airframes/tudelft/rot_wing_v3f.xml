@@ -247,7 +247,7 @@
     <command_laws>
         <let var="th_hold" value="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
         <let VAR="servo_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
-        <let VAR="hover_off" VALUE="Or($th_hold, bool_disable_hover_motors)"/>
+        <let VAR="hover_off" VALUE="Or($th_hold, rotwing_state_hover_motors_disable())"/>
         <let var="ail_limit_hit" value="LessThan(rotwing_state_skewing.wing_angle_deg, 20)"/>
         <let var="flap_limit_hit" value="LessThan(rotwing_state_skewing.wing_angle_deg, 50)"/>
 
@@ -260,7 +260,7 @@
         <set VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : pfc_actuators_value(1, actuators_pprz[4]))" SERVO="SERVO_RUDDER"/>
         <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? pfc_actuators_value(0, 0) : actuators_pprz[5]))" SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($th_hold? ($servo_hold? -9600 : pfc_actuators_value(11, -9600)) : actuators_pprz[8])" SERVO="MOTOR_PUSH"/>
-        <set VALUE="pfc_actuators_value(6, rotwing_state_skewing.servo_pprz_cmd)"  SERVO="ROTATION_MECH"/>
+        <set VALUE="pfc_actuators_value(6, rotwing_state.skew_cmd)"  SERVO="ROTATION_MECH"/>
         <set VALUE="$ail_limit_hit? pfc_actuators_value(2, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])" SERVO="AIL_LEFT"/>
         <set VALUE="$ail_limit_hit? pfc_actuators_value(5, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])" SERVO="AIL_RIGHT"/>
         <set VALUE="$flap_limit_hit? pfc_actuators_value(3, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])" SERVO="FLAP_LEFT"/>
@@ -271,7 +271,7 @@
         <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(8, -9600)) : actuators_pprz[1])" SERVO="BMOTOR_RIGHT"/>
         <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(9, -9600)) : actuators_pprz[2])" SERVO="BMOTOR_BACK"/>
         <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(10, -9600)) : actuators_pprz[3])" SERVO="BMOTOR_LEFT"/>
-        <set VALUE="pfc_actuators_value(6, rotwing_state_skewing.servo_pprz_cmd)"  SERVO="BROTATION_MECH"/>
+        <set VALUE="pfc_actuators_value(6, rotwing_state.skew_cmd)"  SERVO="BROTATION_MECH"/>
     </command_laws>
 
     <section PREFIX="SYS_ID_" NAME="SYS_ID">
