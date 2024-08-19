@@ -42,6 +42,9 @@
 #define ROTWING_PUSH_MOT_RUN_RPM_TH 1000
 #endif
 
+#if ROTWING_SKEW_START_AIRSPEED < ROTWING_QUAD_MAX_AIRSPEED
+#error "ROTWING_SKEW_START_AIRSPEED cannot be less than ROTWING_QUAD_MAX_AIRSPEED"
+#endif
 
 /** ABI binding feedback data.
  */
@@ -124,7 +127,28 @@ static void rotwing_state_skew(void) {
     rotwing_state.sp_wing_angle_deg = 0;
   }
   else {
-    // SKEWING function vased on Vair and maybe Vnav
+    // SKEWING function based on Vair and maybe Vnav
+    float wing_angle_scheduled_sp_deg = 0;
+    float airspeed = stateGetAirspeed_f();
+    
+    // Airspeed scheduled skewing logic, 0 degrees if airspeed < ROTWING_STATE_QUAD_MAX_SPEED
+    // 55 degrees if ROTWING_STATE_QUAD_MAX_SPEED < airspeed < ROTWING_SKEW_START_AIRSPEED
+    // linear scaling between 55 and 90 degrees when airspeed > ROTWING_SKEW_START_AIRSPEED
+    if (airspeed < ROTWING_QUAD_MAX_AIRSPEED) {
+      wing_angle_scheduled_sp_deg = 0;
+
+    } else if (airspeed < ROTWING_SKEW_START_AIRSPEED) {
+      wing_angle_scheduled_sp_deg = 55;
+
+    } else if (airspeed > ROTWING_SKEW_START_AIRSPEED) {
+      wing_angle_scheduled_sp_deg = ((airspeed - ROTWING_SKEW_START_AIRSPEED)) / (ROTWING_SKEW_FW_AIRSPEED - ROTWING_SKEW_START_AIRSPEED) * 35. + 55.;
+    
+    } else {
+      wing_angle_scheduled_sp_deg = 0;
+    }
+
+    Bound(wing_angle_scheduled_sp_deg, 0., 90.)
+    rotwing_state.sp_wing_angle_deg = wing_angle_scheduled_sp_deg;
   }
 }
 
