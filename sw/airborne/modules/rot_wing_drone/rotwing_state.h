@@ -33,11 +33,14 @@ struct rotwing_state_t {
   bool quad_motors_enabled;   // Quad motors enabled (> idle throttle)
   float sp_wing_angle_deg;    // Setpoint wing angle in degrees
   float meas_wing_angle_deg;  // Measured wing angle in degrees
+  float meas_wing_angle_time; // Time of the last wing angle measurement
   int16_t skew_cmd;
 
   float min_airspeed;         // Minimum airspeed for bounding
   float max_airspeed;         // Maximum airspeed for bounding
+
   int32_t meas_rpm[5];        // Measured RPM of the hover and pusher motors
+  float meas_rpm_time[5];     // Time of the last RPM measurement
 };
 extern struct rotwing_state_t rotwing_state;
 

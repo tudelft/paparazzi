@@ -32,38 +32,82 @@
 #include "modules/actuators/actuators.h"
 #include "modules/core/abi.h"
 
-/* Minimum RPM to consider the hover motor running */
-#ifndef ROTWING_HOV_MOT_RUN_RPM_TH
-#define ROTWING_HOV_MOT_RUN_RPM_TH 1000
+/* Minimum measured RPM to consider the hover motors running (RPM) */
+#ifndef ROTWING_QUAD_MIN_RPM
+#define ROTWING_QUAD_MIN_RPM 800
 #endif
 
-/* Minimum RPM to consider the pusher motor running */
-#ifndef ROTWING_PUSH_MOT_RUN_RPM_TH
-#define ROTWING_PUSH_MOT_RUN_RPM_TH 1000
+/* Minimum measured RPM to consider the pusher motor running (RPM) */
+#ifndef ROTWING_PUSH_MIN_RPM
+#define ROTWING_PUSH_MIN_RPM 500
 #endif
 
+/* Timeout for the RPM feedback (seconds) */
+#ifndef ROTWING_RPM_TIMEOUT
+#define ROTWING_RPM_TIMEOUT 0.2
+#endif
+
+/* Minimum thrust to consider the hover motors idling (PPRZ) */
+#ifndef ROTWING_QUAD_IDLE_MIN_THRUST
+#define ROTWING_QUAD_IDLE_MIN_THRUST 100
+#endif
+
+/* Minimum time for the hover motors to be considered idling (seconds) */
+#ifndef ROTWING_QUAD_IDLE_TIMEOUT
+#define ROTWING_QUAD_IDLE_TIMEOUT 2.0
+#endif
+
+/* Stall speed of the fixed wing (m/s) */
+//#ifndef ROTWING_STALL_SPEED
+//#define ROTWING_STALL_SPEED 15.0
+//#endif
+
+/* Margin for the stall speed (percentile) */
+#ifndef ROTWING_STALL_MARGIN
+#define ROTWING_STALL_MARGIN 0.2
+#endif
+
+/* Minimum measured skew angle to consider the rotating wing in fixedwing (deg) */
+#ifndef ROTWING_FW_SKEW_ANGLE
+#define ROTWING_FW_SKEW_ANGLE 85.0
+#endif
+
+/* Maximum airspeed which we can fly in quad mode, 0 skew angle (m/s) */
+// #ifndef ROTWING_QUAD_MAX_AIRSPEED
+// #define ROTWING_QUAD_MAX_AIRSPEED 15.0
+// #endif
+
+/* Maximum airspeed which we can fly in fixedwing mode, 90 skew angle (m/s) */
+// #ifndef ROTWING_FW_MAX_AIRSPEED
+// #define ROTWING_FW_MAX_AIRSPEED 25.0
+// #endif
+
+/* Maximum airspeed which we can fly in quad without pusher, 0 skew angle (m/s) */
+// #ifndef ROTWING_QUAD_NOPUSH_AIRSPEED
+// #define ROTWING_QUAD_NOPUSH_AIRSPEED 8.0
+// #endif
+
+/* Sanity checks */
 #if ROTWING_SKEW_START_AIRSPEED > ROTWING_QUAD_MAX_AIRSPEED
 #error "ROTWING_SKEW_START_AIRSPEED cannot be higher than ROTWING_QUAD_MAX_AIRSPEED"
 #endif
 
+/* Sanity checks */
 #if ROTWING_SKEW_FW_AIRSPEED < ROTWING_SKEW_START_AIRSPEED
 #error "ROTWING_SKEW_FW_AIRSPEED cannot be lower than ROTWING_SKEW_START_AIRSPEED"
 #endif
 
-/** ABI binding feedback data.
- */
+/** ABI binding feedback data */
 #ifndef ROTWING_STATE_ACT_FEEDBACK_ID
 #define ROTWING_STATE_ACT_FEEDBACK_ID ABI_BROADCAST
 #endif
 abi_event rotwing_state_feedback_ev;
 static void rotwing_state_feedback_cb(uint8_t sender_id, struct act_feedback_t *feedback_msg, uint8_t num_act);
+
+static bool rotwing_state_hover_motors_idling(void);
 struct rotwing_state_t rotwing_state;
 
-
 inline void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, float pitch_angle);
-static void rotwing_state_quad_motors(void);
-static void rotwing_state_skew(void);
-static void rotwing_state_airspeed(void);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -86,8 +130,10 @@ void rotwing_state_init(void)
   // Initialize rotwing state
   rotwing_state.request_hover = true;
   rotwing_state.meas_wing_angle_deg = 0;
+  rotwing_state.meas_wing_angle_time = 0;
   for (int i = 0; i < 5; i++) {
     rotwing_state.meas_rpm[i] = 0;
+    rotwing_state.meas_rpm_time[i] = 0;
   }
 
   // Bind ABI messages
@@ -98,36 +144,52 @@ void rotwing_state_init(void)
 #endif
 }
 
-void rotwing_state_periodic(void)
-{
-  rotwing_state_quad_motors();
-  rotwing_state_skew();
-  rotwing_state_airspeed();
+/**
+ * @brief Check if hover motors are idling (COMMAND_THRUST < ROTWING_QUAD_IDLE_MIN_THRUST) for ROTWING_QUAD_IDLE_TIMEOUT time
+ * @return true if hover motors are idling, false otherwise
+ */
+static bool rotwing_state_hover_motors_idling(void) {
+  static float last_idle_time = 0;
+  // Check if hover motors are idling and reset timer
+  if(stabilization.cmd[COMMAND_THRUST] > ROTWING_QUAD_IDLE_MIN_THRUST) {
+    last_idle_time = get_sys_time_float();
+  }
 
+  // Check if we exceeded the idle timeout
+  if(get_sys_time_float() - last_idle_time > ROTWING_QUAD_IDLE_TIMEOUT) {
+    return true;
+  }
+  return false;
 }
 
-static void rotwing_state_quad_motors(void) {
+void rotwing_state_periodic(void)
+{
+  float meas_airspeed = stateGetAirspeed_f();
+  const float min_fwd_airspeed = ROTWING_STALL_SPEED * (1 + ROTWING_STALL_MARGIN);
+  
+
+  /* Handle the quad motors on/off state */
   if(rotwing_state.request_hover) {
     rotwing_state.quad_motors_enabled = true;
   }
-  /*
-  Vair > (Vstall + margin) && Qcmd <= (idle + margin) && wing_angle >= (fw_angle -margin) && Vnav >= (Vstall + margin)
-  else if() {
+  
+  //Vair > (Vstall + margin) && Qcmd <= (idle + margin) && wing_angle >= (fw_angle -margin) && Vnav >= (Vstall + margin)
+  else if(meas_airspeed > min_fwd_airspeed && rotwing_state_hover_motors_idling() && rotwing_state.meas_wing_angle_deg >= ROTWING_FW_SKEW_ANGLE) { //  && nav_airspeed >= min_fwd_airspeed
     rotwing_state.quad_motors_enabled = false;
-  }*/
+  }
   else {
     rotwing_state.quad_motors_enabled = true;
   }
-}
 
-static void rotwing_state_skew(void) {
+  /* Handle the skeq angle setpoint */
   if(!rotwing_state_hover_motors_running()) {
+    // TODO: this does not work with takeoff!!
     rotwing_state.sp_wing_angle_deg = 90;
   }
   else if(!rotwing_state_pusher_motor_running()) {
     rotwing_state.sp_wing_angle_deg = 0;
   }
-  else if(rotwing_state.request_hover) { //&& Vair <= Vmax_quad
+  else if(rotwing_state.request_hover && meas_airspeed < ROTWING_QUAD_MAX_AIRSPEED) {
     rotwing_state.sp_wing_angle_deg = 0;
   }
   else {
@@ -154,16 +216,15 @@ static void rotwing_state_skew(void) {
     Bound(wing_angle_scheduled_sp_deg, 0., 90.)
     rotwing_state.sp_wing_angle_deg = wing_angle_scheduled_sp_deg;
   }
-}
 
-static void rotwing_state_airspeed(void) {
+  /* Handle the airspeed bounding */
   if(!rotwing_state_hover_motors_running()) {
-    rotwing_state.min_airspeed = 0; // Vstall + margin
-    rotwing_state.max_airspeed = 0; // Max airspeed FW
+    rotwing_state.min_airspeed = min_fwd_airspeed; // Vstall + margin
+    rotwing_state.max_airspeed = ROTWING_FW_MAX_AIRSPEED; // Max airspeed FW
   }
   else if(!rotwing_state_pusher_motor_running()) {
     rotwing_state.min_airspeed = 0;
-    rotwing_state.max_airspeed = 0; // pusher_fail_v
+    rotwing_state.max_airspeed = ROTWING_QUAD_NOPUSH_AIRSPEED; // pusher_fail_v
   }
   else{
     // AIRSPEED function based on wing_angle and Qmrpm
@@ -231,43 +292,52 @@ static void rotwing_state_feedback_cb(uint8_t __attribute__((unused)) sender_id,
                                       struct act_feedback_t UNUSED *feedback_msg, uint8_t UNUSED num_act_message)
 {
   for (int i = 0; i < num_act_message; i++) {
+    int idx = feedback_msg[i].idx;
 
-    for (int i = 0; i < num_act_message; i++) {
-      // Check for wing rotation feedback
-      if ((feedback_msg[i].set.position) && (feedback_msg[i].idx == SERVO_ROTATION_MECH_IDX)) {
-        // Get wing rotation angle from sensor
-        float wing_angle_rad = 0.5 * M_PI - feedback_msg[i].position;
-        rotwing_state.meas_wing_angle_deg = DegOfRad(wing_angle_rad);
+    // Check for wing rotation feedback
+    if ((feedback_msg[i].set.position) && (idx == SERVO_ROTATION_MECH_IDX)) {
+      // Get wing rotation angle from sensor
+      float wing_angle_rad = 0.5 * M_PI - feedback_msg[i].position;
+      rotwing_state.meas_wing_angle_deg = DegOfRad(wing_angle_rad);
+      rotwing_state.meas_wing_angle_time = get_sys_time_float();
 
-        // Bound wing rotation angle
-        Bound(rotwing_state.meas_wing_angle_deg, 0, 90.);
-      }
+      // Bound wing rotation angle
+      Bound(rotwing_state.meas_wing_angle_deg, 0, 90.);
     }
 
-    // Sanity check that index is valid
-    int idx = feedback_msg[i].idx;
+    // Get the RPM feedbacks of the motors
     if (feedback_msg[i].set.rpm) {
       if ((idx == SERVO_MOTOR_FRONT_IDX) || (idx == SERVO_BMOTOR_FRONT_IDX)) {
         rotwing_state.meas_rpm[0] = feedback_msg->rpm;
+        rotwing_state.meas_rpm_time[0] = get_sys_time_float();
       } else if ((idx == SERVO_MOTOR_RIGHT_IDX) || (idx == SERVO_BMOTOR_RIGHT_IDX)) {
         rotwing_state.meas_rpm[1] = feedback_msg->rpm;
+        rotwing_state.meas_rpm_time[1] = get_sys_time_float();
       } else if ((idx == SERVO_MOTOR_BACK_IDX) || (idx == SERVO_BMOTOR_BACK_IDX)) {
         rotwing_state.meas_rpm[2] = feedback_msg->rpm;
+        rotwing_state.meas_rpm_time[2] = get_sys_time_float();
       } else if ((idx == SERVO_MOTOR_LEFT_IDX) || (idx == SERVO_BMOTOR_LEFT_IDX)) {
         rotwing_state.meas_rpm[3] = feedback_msg->rpm;
+        rotwing_state.meas_rpm_time[3] = get_sys_time_float();
       } else if ((idx == SERVO_MOTOR_PUSH_IDX) || (idx == SERVO_BMOTOR_PUSH_IDX)) {
         rotwing_state.meas_rpm[4] = feedback_msg->rpm;
+        rotwing_state.meas_rpm_time[4] = get_sys_time_float();
       }
     }
   }
 }
 
 bool rotwing_state_hover_motors_running(void) {
+  float current_time = get_sys_time_float();
   // Check if hover motors are running
-  if (rotwing_state.meas_rpm[0] > ROTWING_HOV_MOT_RUN_RPM_TH
-      && rotwing_state.meas_rpm[1] > ROTWING_HOV_MOT_RUN_RPM_TH
-      && rotwing_state.meas_rpm[2] > ROTWING_HOV_MOT_RUN_RPM_TH
-      && rotwing_state.meas_rpm[3] > ROTWING_HOV_MOT_RUN_RPM_TH) {
+  if (rotwing_state.meas_rpm[0] > ROTWING_QUAD_MIN_RPM
+      && rotwing_state.meas_rpm[1] > ROTWING_QUAD_MIN_RPM
+      && rotwing_state.meas_rpm[2] > ROTWING_QUAD_MIN_RPM
+      && rotwing_state.meas_rpm[3] > ROTWING_QUAD_MIN_RPM
+      && (current_time - rotwing_state.meas_rpm_time[0]) < ROTWING_RPM_TIMEOUT
+      && (current_time - rotwing_state.meas_rpm_time[1]) < ROTWING_RPM_TIMEOUT
+      && (current_time - rotwing_state.meas_rpm_time[2]) < ROTWING_RPM_TIMEOUT
+      && (current_time - rotwing_state.meas_rpm_time[3]) < ROTWING_RPM_TIMEOUT) {
     return true;
   } else {
     return false;
@@ -276,7 +346,7 @@ bool rotwing_state_hover_motors_running(void) {
 
 bool rotwing_state_pusher_motor_running(void) {
   // Check if pusher motor is running
-  if (rotwing_state.meas_rpm[4] > ROTWING_PUSH_MOT_RUN_RPM_TH) {
+  if (rotwing_state.meas_rpm[4] > ROTWING_PUSH_MIN_RPM && (get_sys_time_float() - rotwing_state.meas_rpm_time[4]) < ROTWING_RPM_TIMEOUT) {
     return true;
   } else {
     return false;
