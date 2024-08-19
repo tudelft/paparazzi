@@ -42,8 +42,12 @@
 #define ROTWING_PUSH_MOT_RUN_RPM_TH 1000
 #endif
 
-#if ROTWING_SKEW_START_AIRSPEED < ROTWING_QUAD_MAX_AIRSPEED
-#error "ROTWING_SKEW_START_AIRSPEED cannot be less than ROTWING_QUAD_MAX_AIRSPEED"
+#if ROTWING_SKEW_START_AIRSPEED > ROTWING_QUAD_MAX_AIRSPEED
+#error "ROTWING_SKEW_START_AIRSPEED cannot be higher than ROTWING_QUAD_MAX_AIRSPEED"
+#endif
+
+#if ROTWING_SKEW_FW_AIRSPEED < ROTWING_SKEW_START_AIRSPEED
+#error "ROTWING_SKEW_FW_AIRSPEED cannot be lower than ROTWING_SKEW_START_AIRSPEED"
 #endif
 
 /** ABI binding feedback data.
@@ -134,14 +138,14 @@ static void rotwing_state_skew(void) {
     // Airspeed scheduled skewing logic, 0 degrees if airspeed < ROTWING_STATE_QUAD_MAX_SPEED
     // 55 degrees if ROTWING_STATE_QUAD_MAX_SPEED < airspeed < ROTWING_SKEW_START_AIRSPEED
     // linear scaling between 55 and 90 degrees when airspeed > ROTWING_SKEW_START_AIRSPEED
-    if (airspeed < ROTWING_QUAD_MAX_AIRSPEED) {
+    if (airspeed < ROTWING_SKEW_START_AIRSPEED) {
       wing_angle_scheduled_sp_deg = 0;
 
-    } else if (airspeed < ROTWING_SKEW_START_AIRSPEED) {
+    } else if (airspeed < ROTWING_QUAD_MAX_AIRSPEED) {
       wing_angle_scheduled_sp_deg = 55;
 
-    } else if (airspeed > ROTWING_SKEW_START_AIRSPEED) {
-      wing_angle_scheduled_sp_deg = ((airspeed - ROTWING_SKEW_START_AIRSPEED)) / (ROTWING_SKEW_FW_AIRSPEED - ROTWING_SKEW_START_AIRSPEED) * 35. + 55.;
+    } else if (airspeed > ROTWING_QUAD_MAX_AIRSPEED) {
+      wing_angle_scheduled_sp_deg = ((airspeed - ROTWING_QUAD_MAX_AIRSPEED)) / (ROTWING_SKEW_FW_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * 35. + 55.;
     
     } else {
       wing_angle_scheduled_sp_deg = 0;
@@ -163,7 +167,15 @@ static void rotwing_state_airspeed(void) {
   }
   else{
     // AIRSPEED function based on wing_angle and Qmrpm
+    float sinr2 = sinf(RadOfDeg(rotwing_state.meas_wing_angle_deg)) * sinf(RadOfDeg(rotwing_state.meas_wing_angle_deg));
+
+    rotwing_state.min_airspeed = (Vstall + margin) * (rotwing_state.meas_wing_angle_deg - 55.f) / (75.f - 55.f); // Gets bounded later
+    rotwing_state.max_airspeed = Vmax_quad + (Vmax_fw - Vmax_quad) * sinr2; // Start at Vmax quad and increase to max airspeed in FW
+
   }
+
+  Bound(scheduled_min_airspeed, 0, Vstall + margin);
+  Bound(scheduled_max_airspeed, Vmax_quad, Vmax_fw);
 
   // Override failing skewing while fwd
   /*if(rotwing_state.meas_wing_angle_deg > 70 && rotwing_state_.skewing_failing) {
