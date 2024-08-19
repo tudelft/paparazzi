@@ -28,17 +28,30 @@
 
 #include "std.h"
 
+enum rotwing_states_t {
+  ROTWING_STATE_FORCE_HOVER,
+  ROTWING_STATE_REQUEST_HOVER,
+  ROTWING_STATE_REQUEST_FW,
+  ROTWING_STATE_FREE,
+};
+
 struct rotwing_state_t {
-  bool request_hover;         // Request to hover
-  bool quad_motors_enabled;   // Quad motors enabled (> idle throttle)
-  float sp_wing_angle_deg;    // Setpoint wing angle in degrees
-  float meas_wing_angle_deg;  // Measured wing angle in degrees
-  float meas_wing_angle_time; // Time of the last wing angle measurement
+  /* Control */
+  enum rotwing_states_t state;  // Current desired state (requested only by NAV and can be overruled by RC)
+  bool quad_motors_enabled;     // Quad motors enabled (> idle throttle)
+
+  /* Skew */
+  float sp_skew_angle_deg;    // Setpoint skew angle in degrees
+  float meas_skew_angle_deg;  // Measured skew angle in degrees
+  float meas_skew_angle_time; // Time of the last skew angle measurement
   int16_t skew_cmd;
 
+  /* Airspeeds */
+  float cruise_airspeed;      // Airspeed for cruising
   float min_airspeed;         // Minimum airspeed for bounding
   float max_airspeed;         // Maximum airspeed for bounding
 
+  /* RPM measurements*/
   int32_t meas_rpm[5];        // Measured RPM of the hover and pusher motors
   float meas_rpm_time[5];     // Time of the last RPM measurement
 };
@@ -49,7 +62,7 @@ void rotwing_state_periodic(void);
 bool rotwing_state_hover_motors_running(void);
 bool rotwing_state_pusher_motor_running(void);
 
-void rotwing_state_request_hover(void);
+void rotwing_state_request_hover(bool force);
 void rotwing_state_request_free(void);
 
 #endif  // ROTWING_STATE_H
