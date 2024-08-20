@@ -182,6 +182,8 @@ float guidance_indi_min_pitch = GUIDANCE_INDI_MIN_PITCH;
 /** state eulers in zxy order */
 struct FloatEulers eulers_zxy;
 
+float gi_airspeed_sp;
+
 float thrust_dyn = 0.f;
 float thrust_act = 0.f;
 Butterworth2LowPass filt_accel_ned[3];
@@ -609,8 +611,13 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
   VECT2_DIFF(desired_airspeed, gi_speed_sp, windspeed); // Use 2d part of gi_speed_sp
   float norm_des_as = FLOAT_VECT2_NORM(desired_airspeed);
 
-  // Make turn instead of straight line
+  // Set airspeed setpoint to -1 to indicate that it is not used
+  gi_airspeed_sp = -1.f;
+
+  // Make turn instead of straight line, control airspeed
   if ((airspeed > TURN_AIRSPEED_TH) && (norm_des_as > (TURN_AIRSPEED_TH+2.0f))) {
+
+    airspeed_sp = norm_des_as;
 
     // Give the wind cancellation priority.
     if (norm_des_as > guidance_indi_max_airspeed) {
@@ -636,14 +643,11 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
       desired_airspeed.x = groundspeed_factor * gi_speed_sp.x - windspeed.x;
       desired_airspeed.y = groundspeed_factor * gi_speed_sp.y - windspeed.y;
 
-      speed_sp_b_x = guidance_indi_max_airspeed;
+      airspeed_sp = guidance_indi_max_airspeed;
     }
 
-    // desired airspeed can not be larger than max airspeed
-    speed_sp_b_x = Min(norm_des_as, guidance_indi_max_airspeed);
-
     if (force_forward) {
-      speed_sp_b_x = guidance_indi_max_airspeed;
+      airspeed_sp = guidance_indi_max_airspeed;
     }
 
     // Calculate accel sp in body axes, because we need to regulate airspeed
@@ -656,7 +660,7 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
     BoundAbs(sp_accel_b.y, GUIDANCE_INDI_MAX_LAT_ACCEL);
 
     // Control the airspeed
-    sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
+    sp_accel_b.x = (airspeed_sp - airspeed) * gih_params.speed_gain;
 
     accel_sp.x = cpsi * sp_accel_b.x - spsi * sp_accel_b.y;
     accel_sp.y = spsi * sp_accel_b.x + cpsi * sp_accel_b.y;
@@ -673,6 +677,9 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
       if ((speed_increment + airspeed) > guidance_indi_max_airspeed) {
         speed_sp_b_x = guidance_indi_max_airspeed + groundspeed_x - airspeed;
       }
+
+      // For display purposes
+      gi_airspeed_sp = airspeed + speed_increment;
     }
 
     gi_speed_sp.x = cpsi * speed_sp_b_x - spsi * speed_sp_b_y;
