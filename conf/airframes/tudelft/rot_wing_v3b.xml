@@ -261,8 +261,8 @@
         <let var="th_hold" value="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
         <let VAR="servo_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
         <let VAR="hover_off" VALUE="Or($th_hold, !rotwing_state.quad_motors_enabled)"/>
-        <let var="ail_limit_hit" value="LessThan(rotwing_state_skewing.wing_angle_deg, 20)"/>
-        <let var="flap_limit_hit" value="LessThan(rotwing_state_skewing.wing_angle_deg, 50)"/>
+        <let var="ail_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 20)"/>
+        <let var="flap_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 50)"/>
 
         <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
         <call fun="pfc_actuators_run()"/>
@@ -461,7 +461,6 @@
         <define name="NO_GPS_LOST_WITH_RC_VALID"            value="TRUE"/>
         <define name="USE_AIRSPEED"                         value="TRUE"/>
         <define name="NAV_HYBRID_MAX_DECELERATION"          value="0.5"/>
-        <define name="ROTWING_STATE_USE_ROTATION_REF_MODEL" value="TRUE"/>
     </section>
 
     <section name="IMU" prefix="IMU_">
@@ -556,8 +555,6 @@
         <define name="USE_ADAPTIVE"     value="FALSE"/>
         <define name="ADAPTIVE_MU"      value="0.001"/>
         <define name="YAW_DISTURBANCE_LIMIT" value="0.85"/>
-
-        <define name="ROTWING_V3B"      value="1" />
     </section>
 
     <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
@@ -582,6 +579,16 @@
         <define name="DGAIN"            value="100"/>
         <define name="IGAIN"            value="20"/>
         <define name="AGAIN"            value="0"/>
+    </section>
+
+    <section name="ROTWING" prefix="ROTWING_">
+        <define name="STALL_SPEED"          value="15.0"/>
+        <define name="FW_CRUISE_AIRSPEED"   value="17.0"/>
+        <define name="FW_MAX_AIRSPEED"      value="20.0"/>
+        <define name="QUAD_NOPUSH_AIRSPEED" value="10.0"/>
+        <define name="QUAD_MAX_AIRSPEED"    value="19.0"/>
+        <define name="SKEW_START_AIRSPEED"  value="10.0"/>
+        <define name="SKEW_FW_AIRSPEED"     value="15.0"/>
     </section>
 
     <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">

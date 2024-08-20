@@ -57,11 +57,6 @@
 #define ROTWING_QUAD_IDLE_TIMEOUT 2.0
 #endif
 
-/* Stall speed of the fixed wing (m/s) */
-//#ifndef ROTWING_STALL_SPEED
-//#define ROTWING_STALL_SPEED 15.0
-//#endif
-
 /* Margin for the stall speed (percentile) */
 #ifndef ROTWING_STALL_MARGIN
 #define ROTWING_STALL_MARGIN 0.2
@@ -72,21 +67,6 @@
 #define ROTWING_FW_SKEW_ANGLE 85.0
 #endif
 
-/* Maximum airspeed which we can fly in quad mode, 0 skew angle (m/s) */
-// #ifndef ROTWING_QUAD_MAX_AIRSPEED
-// #define ROTWING_QUAD_MAX_AIRSPEED 15.0
-// #endif
-
-/* Maximum airspeed which we can fly in fixedwing mode, 90 skew angle (m/s) */
-// #ifndef ROTWING_FW_MAX_AIRSPEED
-// #define ROTWING_FW_MAX_AIRSPEED 25.0
-// #endif
-
-/* Maximum airspeed which we can fly in quad without pusher, 0 skew angle (m/s) */
-// #ifndef ROTWING_QUAD_NOPUSH_AIRSPEED
-// #define ROTWING_QUAD_NOPUSH_AIRSPEED 8.0
-// #endif
-
 /* Preferred pitch angle for the quad mode (deg) */
 #ifndef ROTWING_QUAD_PREF_PITCH
 #define ROTWING_QUAD_PREF_PITCH -5.0
@@ -96,8 +76,18 @@
 #define ROTWING_FW_MIN_AIRSPEED  (ROTWING_STALL_SPEED * (1 + ROTWING_STALL_MARGIN))
 
 /* Sanity checks */
-#if ROTWING_SKEW_START_AIRSPEED < ROTWING_QUAD_MAX_AIRSPEED
-#error "ROTWING_SKEW_START_AIRSPEED cannot be less than ROTWING_QUAD_MAX_AIRSPEED"
+// #if ROTWING_SKEW_START_AIRSPEED < ROTWING_QUAD_MAX_AIRSPEED
+// #error "ROTWING_SKEW_START_AIRSPEED cannot be less than ROTWING_QUAD_MAX_AIRSPEED"
+// #endif
+
+/* Fix for not having double can busses */
+#ifndef SERVO_BMOTOR_PUSH_IDX
+#define SERVO_BMOTOR_PUSH_IDX SERVO_MOTOR_PUSH_IDX
+#endif
+
+/* Fix for not having double can busses */
+#ifndef SERVO_BROTATION_MECH_IDX
+#define SERVO_BROTATION_MECH_IDX SERVO_ROTATION_MECH_IDX
 #endif
 
 /** ABI binding feedback data */
@@ -196,6 +186,15 @@ void rotwing_state_periodic(void)
     rotwing_state.quad_motors_enabled = true;
   }
 
+
+  /* Calculate min/max airspeed bounds based on skew angle */
+  float sinr = sinf(RadOfDeg(rotwing_state.meas_skew_angle_deg));
+  float skew_min_airspeed = ROTWING_FW_MIN_AIRSPEED * (rotwing_state.meas_skew_angle_deg - 55.f) / (75.f - 55.f);
+  float skew_max_airspeed = ROTWING_QUAD_MAX_AIRSPEED + (ROTWING_FW_MAX_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * sinr * sinr;
+  Bound(skew_min_airspeed, 0, ROTWING_FW_MIN_AIRSPEED);
+  Bound(skew_max_airspeed, ROTWING_QUAD_MAX_AIRSPEED, ROTWING_FW_MAX_AIRSPEED);
+
+
   /* Handle the skew angle setpoint */
   if(desired_state == ROTWING_STATE_FORCE_HOVER) {
     rotwing_state.sp_skew_angle_deg = 0;
@@ -206,33 +205,30 @@ void rotwing_state_periodic(void)
   else if(!rotwing_state_pusher_motor_running()) {
     rotwing_state.sp_skew_angle_deg = 0;
   }
-  else if(desired_state == ROTWING_STATE_REQUEST_HOVER && meas_airspeed < rotwing_fskew_max(rotwing_state.meas_skew_angle_deg)) {
+  else if(desired_state == ROTWING_STATE_REQUEST_HOVER && meas_airspeed < skew_max_airspeed) {
     rotwing_state.sp_skew_angle_deg = 0;
   }
   else {
     // SKEWING function based on Vair and maybe Vnav
-    float wing_angle_scheduled_sp_deg = 0;
-    float airspeed = stateGetAirspeed_f();
     
     // Airspeed scheduled skewing logic, 0 degrees if airspeed < ROTWING_STATE_QUAD_MAX_SPEED
     // 55 degrees if ROTWING_STATE_QUAD_MAX_SPEED < airspeed < ROTWING_SKEW_START_AIRSPEED
     // linear scaling between 55 and 90 degrees when airspeed > ROTWING_SKEW_START_AIRSPEED
-    if (airspeed < ROTWING_SKEW_START_AIRSPEED) {
-      wing_angle_scheduled_sp_deg = 0;
+    if (meas_airspeed < ROTWING_SKEW_START_AIRSPEED) {
+      rotwing_state.sp_skew_angle_deg = 0;
 
-    } else if (airspeed < ROTWING_QUAD_MAX_AIRSPEED) {
-      wing_angle_scheduled_sp_deg = 55;
+    } else if (meas_airspeed < ROTWING_QUAD_MAX_AIRSPEED) {
+      rotwing_state.sp_skew_angle_deg = 55;
 
-    } else if (airspeed > ROTWING_QUAD_MAX_AIRSPEED) {
-      wing_angle_scheduled_sp_deg = ((airspeed - ROTWING_QUAD_MAX_AIRSPEED)) / (ROTWING_SKEW_FW_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * 35. + 55.;
+    } else if (meas_airspeed > ROTWING_QUAD_MAX_AIRSPEED) {
+      rotwing_state.sp_skew_angle_deg = ((meas_airspeed - ROTWING_QUAD_MAX_AIRSPEED)) / (ROTWING_SKEW_FW_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * 35. + 55.;
     
     } else {
-      wing_angle_scheduled_sp_deg = 0;
+      rotwing_state.sp_skew_angle_deg = 0;
     }
-
-    Bound(wing_angle_scheduled_sp_deg, 0., 90.)
-    rotwing_state.sp_wing_angle_deg = wing_angle_scheduled_sp_deg;
   }
+  Bound(rotwing_state.sp_skew_angle_deg, 0., 90.);
+
 
   /* Calculate the skew command */
   float servo_pprz_cmd = MAX_PPRZ * (rotwing_state.sp_skew_angle_deg - 45.) / 45.;
@@ -250,6 +246,7 @@ void rotwing_state_periodic(void)
 #endif
   rotwing_state.skew_cmd = servo_pprz_cmd;
 
+
   /* Handle the airspeed bounding */
   Bound(rotwing_state.cruise_airspeed, ROTWING_FW_MIN_AIRSPEED, ROTWING_FW_MAX_AIRSPEED);
   if(!rotwing_state_hover_motors_running() && desired_state != ROTWING_STATE_FORCE_HOVER) {
@@ -261,24 +258,17 @@ void rotwing_state_periodic(void)
     rotwing_state.max_airspeed = ROTWING_QUAD_NOPUSH_AIRSPEED;
   }
   else if(desired_state == ROTWING_STATE_FORCE_HOVER || desired_state == ROTWING_STATE_REQUEST_HOVER) {
-    rotwing_state.min_airspeed = rotwing_fskew_min(rotwing_state.meas_skew_angle_deg);
-    rotwing_state.max_airspeed = fmax(ROTWING_QUAD_MAX_AIRSPEED, rotwing_fskew_min(rotwing_state.meas_skew_angle_deg));
+    rotwing_state.min_airspeed = skew_min_airspeed;
+    rotwing_state.max_airspeed = fmax(ROTWING_QUAD_MAX_AIRSPEED, skew_min_airspeed);
   }
   else if(desired_state == ROTWING_STATE_REQUEST_FW) {
-    rotwing_state.min_airspeed = fmin(rotwing_state.cruise_airspeed, rotwing_fskew_max(rotwing_state.meas_skew_angle_deg));
+    rotwing_state.min_airspeed = fmin(rotwing_state.cruise_airspeed, skew_max_airspeed);
     rotwing_state.max_airspeed = rotwing_state.cruise_airspeed;
   }
   else{
-    // AIRSPEED function based on wing_angle and Qmrpm
-    float sinr2 = sinf(RadOfDeg(rotwing_state.meas_wing_angle_deg)) * sinf(RadOfDeg(rotwing_state.meas_wing_angle_deg));
-
-    rotwing_state.min_airspeed = (Vstall + margin) * (rotwing_state.meas_wing_angle_deg - 55.f) / (75.f - 55.f); // Gets bounded later
-    rotwing_state.max_airspeed = Vmax_quad + (Vmax_fw - Vmax_quad) * sinr2; // Start at Vmax quad and increase to max airspeed in FW
-
+    rotwing_state.min_airspeed = skew_min_airspeed;
+    rotwing_state.max_airspeed = skew_max_airspeed;
   }
-
-  Bound(scheduled_min_airspeed, 0, Vstall + margin);
-  Bound(scheduled_max_airspeed, Vmax_quad, Vmax_fw);
 
   // Override failing skewing while fwd
   /*if(rotwing_state.meas_skew_angle_deg > 70 && rotwing_state_.skewing_failing) {
@@ -287,13 +277,14 @@ void rotwing_state_periodic(void)
   }*/
 
 
-  /* Add simulation feedback for the skewing */
+  /* Add simulation feedback for the skewing and RPM */
 #if USE_NPS
   // Export to the index of the SKEW in the NPS_ACTUATOR_NAMES array
   actuators_pprz[INDI_NUM_ACT] = (servo_pprz_cmd + MAX_PPRZ) / 2.; // Scale to simulation command
 
   // Simulate wing angle from command
   rotwing_state_skewing.skew_angle_deg = (float) servo_pprz_cmd / MAX_PPRZ * 45. + 45.;
+  rotwing_state.meas_skew_angle_time = get_sys_time_float();
 
   // SEND ABI Message to ctr_eff_sched and other modules that want Actuator position feedback
   struct act_feedback_t feedback;
@@ -303,6 +294,12 @@ void rotwing_state_periodic(void)
 
   // Send ABI message
   AbiSendMsgACT_FEEDBACK(ACT_FEEDBACK_BOARD_ID, &feedback, 1);
+
+  // Simulate to always have RPM
+  for (int i = 0; i < 5; i++) {
+    rotwing_state.meas_rpm[i] = max(ROTWING_QUAD_MIN_RPM, ROTWING_PUSH_MIN_RPM) + 100;
+    rotwing_state.meas_rpm_time[i] = get_sys_time_float();
+  }
 #endif
 }
 
@@ -313,7 +310,7 @@ static void rotwing_state_feedback_cb(uint8_t __attribute__((unused)) sender_id,
     int idx = feedback_msg[i].idx;
 
     // Check for wing rotation feedback
-    if ((feedback_msg[i].set.position) && (idx == SERVO_ROTATION_MECH_IDX)) {
+    if ((feedback_msg[i].set.position) && (idx == SERVO_ROTATION_MECH_IDX || idx == SERVO_BROTATION_MECH_IDX)) {
       // Get wing rotation angle from sensor
       float skew_angle_rad = 0.5 * M_PI - feedback_msg[i].position;
       rotwing_state.meas_skew_angle_deg = DegOfRad(skew_angle_rad);
@@ -411,7 +408,7 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, fl
     Wu_gih[1] = Wu_gih_original[1];
     max_pitch_limit_rad = quad_pitch_limit_rad;
   } else {
-    float pitch_progression = (airspeed - ROTWING_FW_SKEW_AIRSPEED) / 2.f;
+    float pitch_progression = (airspeed - ROTWING_SKEW_FW_AIRSPEED) / 2.f;
     Bound(pitch_progression, 0.f, 1.f);
     scheduled_pitch_angle = pitch_angle_range * pitch_progression + ROTWING_QUAD_PREF_PITCH*(1.f-pitch_progression);
     Wu_gih[1] = Wu_gih_original[1] * (1.f - pitch_progression*0.99);
