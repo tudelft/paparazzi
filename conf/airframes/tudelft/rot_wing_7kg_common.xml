@@ -155,10 +155,10 @@
 
     <section name="ROTWING" prefix="ROTWING_">
         <define name="STALL_SPEED"          value="15.0"/>
-        <define name="FW_CRUISE_AIRSPEED"   value="17.0"/>
-        <define name="FW_MAX_AIRSPEED"      value="20.0"/>
-        <define name="QUAD_NOPUSH_AIRSPEED" value="10.0"/>
-        <define name="QUAD_MAX_AIRSPEED"    value="19.0"/>
+        <define name="FW_CRUISE_AIRSPEED"   value="19.0"/>
+        <define name="FW_MAX_AIRSPEED"      value="22.0"/>
+        <define name="QUAD_NOPUSH_AIRSPEED" value="8.0"/>
+        <define name="QUAD_MAX_AIRSPEED"    value="20.0"/>
         <define name="SKEW_START_AIRSPEED"  value="10.0"/>
         <define name="SKEW_FW_AIRSPEED"     value="15.0"/>
     </section>

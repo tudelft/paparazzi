@@ -226,15 +226,10 @@ void rotwing_state_periodic(void)
     // linear scaling between 55 and 90 degrees when airspeed > ROTWING_SKEW_START_AIRSPEED
     if (meas_airspeed < ROTWING_SKEW_START_AIRSPEED) {
       rotwing_state.sp_skew_angle_deg = 0;
-
     } else if (meas_airspeed < ROTWING_QUAD_MAX_AIRSPEED) {
       rotwing_state.sp_skew_angle_deg = 55;
-
-    } else if (meas_airspeed > ROTWING_QUAD_MAX_AIRSPEED) {
-      rotwing_state.sp_skew_angle_deg = ((meas_airspeed - ROTWING_QUAD_MAX_AIRSPEED)) / (ROTWING_SKEW_FW_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * 35. + 55.;
-
     } else {
-      rotwing_state.sp_skew_angle_deg = 0;
+      rotwing_state.sp_skew_angle_deg = ((meas_airspeed - ROTWING_QUAD_MAX_AIRSPEED)) / (ROTWING_SKEW_FW_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * 35. + 55.;
     }
   }
   Bound(rotwing_state.sp_skew_angle_deg, 0., 90.);
