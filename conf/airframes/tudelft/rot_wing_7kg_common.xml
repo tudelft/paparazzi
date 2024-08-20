@@ -160,7 +160,6 @@
         <define name="QUAD_NOPUSH_AIRSPEED" value="8.0"/>
         <define name="QUAD_MAX_AIRSPEED"    value="15.0"/>
         <define name="SKEW_START_AIRSPEED"  value="10.0"/>
-        <define name="SKEW_FW_AIRSPEED"     value="15.0"/>
         <define name="SKEW_REF_MODEL"       value="TRUE"/>
     </section>
 
