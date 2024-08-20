@@ -307,9 +307,13 @@ void rotwing_state_periodic(void)
   // Send ABI message
   AbiSendMsgACT_FEEDBACK(ACT_FEEDBACK_BOARD_ID, &feedback, 1);
 
-  // Simulate to always have RPM
-  for (int i = 0; i < 5; i++) {
-    rotwing_state.meas_rpm[i] = fmax(ROTWING_QUAD_MIN_RPM, ROTWING_PUSH_MIN_RPM) + 100;
+  // Simulate to always have RPM if on and active feedback
+  rotwing_state.meas_rpm[0] = (actuators[SERVO_MOTOR_FRONT_IDX].pprz_val >= 0)? (ROTWING_QUAD_MIN_RPM + 100) : 0;
+  rotwing_state.meas_rpm[1] = (actuators[SERVO_MOTOR_RIGHT_IDX].pprz_val >= 0)? (ROTWING_QUAD_MIN_RPM + 100) : 0;
+  rotwing_state.meas_rpm[2] = (actuators[SERVO_MOTOR_BACK_IDX].pprz_val >= 0)? (ROTWING_QUAD_MIN_RPM + 100) : 0;
+  rotwing_state.meas_rpm[3] = (actuators[SERVO_MOTOR_LEFT_IDX].pprz_val >= 0)? (ROTWING_QUAD_MIN_RPM + 100) : 0;
+  rotwing_state.meas_rpm[4] = (actuators[SERVO_MOTOR_PUSH_IDX].pprz_val >= 0)? (ROTWING_PUSH_MIN_RPM + 100) : 0;
+  for(uint8_t i = 0; i < 5; i++) {
     rotwing_state.meas_rpm_time[i] = get_sys_time_float();
   }
 #endif
