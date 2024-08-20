@@ -107,7 +107,6 @@ inline void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_an
 #include "modules/datalink/telemetry.h"
 static void send_rotating_wing_state(struct transport_tx *trans, struct link_device *dev)
 {
-  float nav_airspeed = -2; //FIXME
   // Set the status
   union rotwing_bitmask_t status;
   status.skew_angle_valid = (get_sys_time_float() - rotwing_state.meas_skew_angle_time) < ROTWING_RPM_TIMEOUT;
@@ -123,7 +122,7 @@ static void send_rotating_wing_state(struct transport_tx *trans, struct link_dev
                                     &status.value,
                                     &rotwing_state.meas_skew_angle_deg,
                                     &rotwing_state.sp_skew_angle_deg,
-                                    &nav_airspeed,
+                                    &gi_airspeed_sp,
                                     &rotwing_state.min_airspeed,
                                     &rotwing_state.max_airspeed);
 }
@@ -189,8 +188,7 @@ void rotwing_state_periodic(void)
   if(desired_state == ROTWING_STATE_FORCE_HOVER || desired_state == ROTWING_STATE_REQUEST_HOVER) {
     rotwing_state.hover_motors_enabled = true;
   }
-  //Vair > (Vstall + margin) && Qcmd <= (idle + margin) && skew_angle >= (fw_angle -margin) && Vnav >= (Vstall + margin)
-  else if(meas_airspeed > ROTWING_FW_MIN_AIRSPEED && rotwing_state_hover_motors_idling() && rotwing_state.meas_skew_angle_deg >= ROTWING_FW_SKEW_ANGLE) { //  && nav_airspeed >= ROTWING_FW_MIN_AIRSPEED
+  else if(meas_airspeed > ROTWING_FW_MIN_AIRSPEED && rotwing_state_hover_motors_idling() && rotwing_state.meas_skew_angle_deg >= ROTWING_FW_SKEW_ANGLE && gi_airspeed_sp >= ROTWING_FW_MIN_AIRSPEED) {
     rotwing_state.hover_motors_enabled = false;
   }
   else {
@@ -241,23 +239,6 @@ void rotwing_state_periodic(void)
   Bound(rotwing_state.sp_skew_angle_deg, 0., 90.);
 
 
-  /* Calculate the skew command */
-  float servo_pprz_cmd = MAX_PPRZ * (rotwing_state.sp_skew_angle_deg - 45.) / 45.;
-  BoundAbs(servo_pprz_cmd, MAX_PPRZ);
-
-#if ROTWING_SKEW_REF_MODEL
-  // Rotate with second order filter
-  static float rotwing_state_skew_p_cmd = -MAX_PPRZ;
-  static float rotwing_state_skew_d_cmd = 0;
-  float speed_sp  = 0.001 * (servo_pprz_cmd - rotwing_state_skew_p_cmd);
-  rotwing_state_skew_d_cmd += 0.003 * (speed_sp - rotwing_state_skew_d_cmd);
-  rotwing_state_skew_p_cmd += rotwing_state_skew_d_cmd;
-  BoundAbs(rotwing_state_skew_p_cmd, MAX_PPRZ);
-  servo_pprz_cmd = rotwing_state_skew_p_cmd;;
-#endif
-  rotwing_state.skew_cmd = servo_pprz_cmd;
-
-
   /* Handle the airspeed bounding */
   Bound(rotwing_state.cruise_airspeed, ROTWING_FW_MIN_AIRSPEED, ROTWING_FW_MAX_AIRSPEED);
   if((!rotwing_state_hover_motors_running() && desired_state != ROTWING_STATE_FORCE_HOVER) || desired_state == ROTWING_STATE_FORCE_FW) {
@@ -287,6 +268,23 @@ void rotwing_state_periodic(void)
     rotwing_state.max_airspeed = 0; // Max airspeed FW
   }*/
 
+
+  /* Calculate the skew command */
+  float servo_pprz_cmd = MAX_PPRZ * (rotwing_state.sp_skew_angle_deg - 45.) / 45.;
+  BoundAbs(servo_pprz_cmd, MAX_PPRZ);
+
+#if ROTWING_SKEW_REF_MODEL
+  // Rotate with second order filter
+  static float rotwing_state_skew_p_cmd = -MAX_PPRZ;
+  static float rotwing_state_skew_d_cmd = 0;
+  float speed_sp  = 0.001 * (servo_pprz_cmd - rotwing_state_skew_p_cmd);
+  rotwing_state_skew_d_cmd += 0.003 * (speed_sp - rotwing_state_skew_d_cmd);
+  rotwing_state_skew_p_cmd += rotwing_state_skew_d_cmd;
+  BoundAbs(rotwing_state_skew_p_cmd, MAX_PPRZ);
+  servo_pprz_cmd = rotwing_state_skew_p_cmd;;
+#endif
+  rotwing_state.skew_cmd = servo_pprz_cmd;
+  
 
   /* Add simulation feedback for the skewing and RPM */
 #if USE_NPS
