@@ -220,7 +220,7 @@ void rotwing_state_periodic(void)
   }
   else {
     // SKEWING function based on Vair and maybe Vnav
-    
+
     // Airspeed scheduled skewing logic, 0 degrees if airspeed < ROTWING_STATE_QUAD_MAX_SPEED
     // 55 degrees if ROTWING_STATE_QUAD_MAX_SPEED < airspeed < ROTWING_SKEW_START_AIRSPEED
     // linear scaling between 55 and 90 degrees when airspeed > ROTWING_SKEW_START_AIRSPEED
@@ -232,7 +232,7 @@ void rotwing_state_periodic(void)
 
     } else if (meas_airspeed > ROTWING_QUAD_MAX_AIRSPEED) {
       rotwing_state.sp_skew_angle_deg = ((meas_airspeed - ROTWING_QUAD_MAX_AIRSPEED)) / (ROTWING_SKEW_FW_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * 35. + 55.;
-    
+
     } else {
       rotwing_state.sp_skew_angle_deg = 0;
     }
@@ -268,6 +268,8 @@ void rotwing_state_periodic(void)
     rotwing_state.min_airspeed = 0; // Vstall + margin
     rotwing_state.max_airspeed = 0; // Max airspeed FW
   }*/
+
+  guidance_indi_set_min_max_airspeed(rotwing_state.min_airspeed, rotwing_state.max_airspeed);
 
 
   /* Calculate the skew command */
