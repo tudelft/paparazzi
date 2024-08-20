@@ -71,6 +71,14 @@
 #define GUIDANCE_INDI_LIFTD_P50 (GUIDANCE_INDI_LIFTD_P80/2)
 #endif
 
+#ifndef GUIDANCE_INDI_MAX_AIRSPEED
+#error "You must have an airspeed sensor to use this guidance"
+#endif
+
+#ifndef GUIDANCE_INDI_MIN_AIRSPEED
+#define GUIDANCE_INDI_MIN_AIRSPEED -10.f
+#endif
+
 struct guidance_indi_hybrid_params gih_params = {
   .pos_gain = GUIDANCE_INDI_POS_GAIN,
   .pos_gainz = GUIDANCE_INDI_POS_GAINZ,
@@ -82,12 +90,9 @@ struct guidance_indi_hybrid_params gih_params = {
   .liftd_asq = GUIDANCE_INDI_LIFTD_ASQ, // coefficient of airspeed squared
   .liftd_p80 = GUIDANCE_INDI_LIFTD_P80,
   .liftd_p50 = GUIDANCE_INDI_LIFTD_P50,
+  .min_airspeed = GUIDANCE_INDI_MIN_AIRSPEED,
+  .max_airspeed = GUIDANCE_INDI_MAX_AIRSPEED,
 };
-
-#ifndef GUIDANCE_INDI_MAX_AIRSPEED
-#error "You must have an airspeed sensor to use this guidance"
-#endif
-float guidance_indi_max_airspeed = GUIDANCE_INDI_MAX_AIRSPEED;
 
 // Quadplanes can hover at various pref pitch
 float guidance_indi_pitch_pref_deg = 0;
@@ -241,6 +246,7 @@ struct FloatVect3 indi_vel_sp = {0.0, 0.0, 0.0};
 float time_of_vel_sp = 0.0;
 
 void guidance_indi_propagate_filters(void);
+void guidance_indi_set_min_max_airspeed(float min_airspeed, float max_airspeed);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -377,6 +383,11 @@ void guidance_indi_enter(void)
 
   float tau_guidance_indi_airspeed = 1.0/(2.0*M_PI*guidance_indi_airspeed_filt_cutoff);
   init_butterworth_2_low_pass(&guidance_indi_airspeed_filt, tau_guidance_indi_airspeed, sample_time, 0.0);
+}
+
+void guidance_indi_set_min_max_airspeed(float min_airspeed, float max_airspeed) {
+  gih_params.min_airspeed = min_airspeed;
+  gih_params.max_airspeed = max_airspeed;
 }
 
 /**
@@ -611,23 +622,28 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
   VECT2_DIFF(desired_airspeed, gi_speed_sp, windspeed); // Use 2d part of gi_speed_sp
   float norm_des_as = FLOAT_VECT2_NORM(desired_airspeed);
 
-  // Set airspeed setpoint to -1 to indicate that it is not used
+  // Check if some minimum airspeed is desired (e.g. to prevent stall)
+  if (norm_des_as < gih_params.min_airspeed) {
+     norm_des_as = gih_params.min_airspeed;
+  }
+
+  // Set airspeed setpoint to -1 to indicate that it is not used (overwritten if used)
   gi_airspeed_sp = -1.f;
 
   // Make turn instead of straight line, control airspeed
   if ((airspeed > TURN_AIRSPEED_TH) && (norm_des_as > (TURN_AIRSPEED_TH+2.0f))) {
 
-    airspeed_sp = norm_des_as;
+    gi_airspeed_sp = norm_des_as;
 
     // Give the wind cancellation priority.
-    if (norm_des_as > guidance_indi_max_airspeed) {
+    if (norm_des_as > gih_params.max_airspeed) {
       float groundspeed_factor = 0.0f;
 
       // if the wind is faster than we can fly, just fly in the wind direction
-      if (FLOAT_VECT2_NORM(windspeed) < guidance_indi_max_airspeed) {
+      if (FLOAT_VECT2_NORM(windspeed) < gih_params.max_airspeed) {
         float av = gi_speed_sp.x * gi_speed_sp.x + gi_speed_sp.y * gi_speed_sp.y;
         float bv = -2.f * (windspeed.x * gi_speed_sp.x + windspeed.y * gi_speed_sp.y);
-        float cv = windspeed.x * windspeed.x + windspeed.y * windspeed.y - guidance_indi_max_airspeed * guidance_indi_max_airspeed;
+        float cv = windspeed.x * windspeed.x + windspeed.y * windspeed.y - gih_params.max_airspeed * gih_params.max_airspeed;
 
         float dv = bv * bv - 4.0f * av * cv;
 
@@ -643,11 +659,11 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
       desired_airspeed.x = groundspeed_factor * gi_speed_sp.x - windspeed.x;
       desired_airspeed.y = groundspeed_factor * gi_speed_sp.y - windspeed.y;
 
-      airspeed_sp = guidance_indi_max_airspeed;
+      gi_airspeed_sp = gih_params.max_airspeed;
     }
 
     if (force_forward) {
-      airspeed_sp = guidance_indi_max_airspeed;
+      gi_airspeed_sp = gih_params.max_airspeed;
     }
 
     // Calculate accel sp in body axes, because we need to regulate airspeed
@@ -660,7 +676,7 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
     BoundAbs(sp_accel_b.y, GUIDANCE_INDI_MAX_LAT_ACCEL);
 
     // Control the airspeed
-    sp_accel_b.x = (airspeed_sp - airspeed) * gih_params.speed_gain;
+    sp_accel_b.x = (gi_airspeed_sp - airspeed) * gih_params.speed_gain;
 
     accel_sp.x = cpsi * sp_accel_b.x - spsi * sp_accel_b.y;
     accel_sp.y = spsi * sp_accel_b.x + cpsi * sp_accel_b.y;
@@ -674,8 +690,8 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
       float speed_increment = speed_sp_b_x - groundspeed_x;
 
       // limit groundspeed setpoint to max_airspeed + (diff gs and airspeed)
-      if ((speed_increment + airspeed) > guidance_indi_max_airspeed) {
-        speed_sp_b_x = guidance_indi_max_airspeed + groundspeed_x - airspeed;
+      if ((speed_increment + airspeed) > gih_params.max_airspeed) {
+        speed_sp_b_x = gih_params.max_airspeed + groundspeed_x - airspeed;
       }
 
       // For display purposes
@@ -691,10 +707,10 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
   }
 
   // Bound the acceleration setpoint
-  float accelbound = 3.0f + airspeed / guidance_indi_max_airspeed * 5.0f; // FIXME remove hard coded values
+  float accelbound = 3.0f + airspeed / GUIDANCE_INDI_MAX_AIRSPEED * 5.0f; // FIXME remove hard coded values
   float_vect3_bound_in_2d(&accel_sp, accelbound);
-  /*BoundAbs(sp_accel.x, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);*/
-  /*BoundAbs(sp_accel.y, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);*/
+  /*BoundAbs(sp_accel.x, 3.0 + airspeed/GUIDANCE_INDI_MAX_AIRSPEED*6.0);*/
+  /*BoundAbs(sp_accel.y, 3.0 + airspeed/GUIDANCE_INDI_MAX_AIRSPEED*6.0);*/
   BoundAbs(accel_sp.z, 3.0);
 
   return accel_sp;
