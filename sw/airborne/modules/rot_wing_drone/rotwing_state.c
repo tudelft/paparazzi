@@ -109,6 +109,7 @@ static void send_rotating_wing_state(struct transport_tx *trans, struct link_dev
 {
   // Set the status
   union rotwing_bitmask_t status;
+  status.value = 0;
   status.skew_angle_valid = (get_sys_time_float() - rotwing_state.meas_skew_angle_time) < ROTWING_RPM_TIMEOUT;
   status.hover_motors_enabled = rotwing_state.hover_motors_enabled;
   status.hover_motors_idle = rotwing_state_hover_motors_idling();
@@ -284,7 +285,7 @@ void rotwing_state_periodic(void)
   servo_pprz_cmd = rotwing_state_skew_p_cmd;;
 #endif
   rotwing_state.skew_cmd = servo_pprz_cmd;
-  
+
 
   /* Add simulation feedback for the skewing and RPM */
 #if USE_NPS
@@ -451,14 +452,6 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, fl
   du_pref_gih[3] = body_v[0]; // solve the body acceleration
 }
 
-void rotwing_state_request_hover(bool force) {
-  if (force) {
-    rotwing_state.state = ROTWING_STATE_FORCE_HOVER;
-  } else {
-    rotwing_state.state = ROTWING_STATE_REQUEST_HOVER;
-  }
-}
-
-void rotwing_state_request_free(void) {
-  rotwing_state.state = ROTWING_STATE_FREE;
+void rotwing_state_set(enum rotwing_states_t state) {
+  rotwing_state.state = state;
 }
