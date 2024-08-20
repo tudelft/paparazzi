@@ -31,14 +31,26 @@
 enum rotwing_states_t {
   ROTWING_STATE_FORCE_HOVER,
   ROTWING_STATE_REQUEST_HOVER,
+  ROTWING_STATE_FORCE_FW,
   ROTWING_STATE_REQUEST_FW,
   ROTWING_STATE_FREE,
+};
+
+union rotwing_bitmask_t {
+  uint16_t value;
+  struct {
+    bool skew_angle_valid : 1;      // Skew angle didn't timeout
+    bool hover_motors_enabled : 1;  // Hover motors command is enabled
+    bool hover_motors_idle : 1;     // Hover motors are idling (throttle < IDLE_THROTTLE)
+    bool hover_motors_running : 1;  // Hover motors are running (RPM >= MIN_RPM)
+    bool pusher_motor_running : 1;  // Pusher motor is running (RPM >= MIN_RPM)
+  };
 };
 
 struct rotwing_state_t {
   /* Control */
   enum rotwing_states_t state;  // Current desired state (requested only by NAV and can be overruled by RC)
-  bool quad_motors_enabled;     // Quad motors enabled (> idle throttle)
+  bool hover_motors_enabled;    // Hover motors enabled (> idle throttle)
 
   /* Skew */
   float sp_skew_angle_deg;    // Setpoint skew angle in degrees
