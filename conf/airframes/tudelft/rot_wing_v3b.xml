@@ -35,11 +35,6 @@
             <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
             <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
 
-            <module name="lidar_tfmini">
-                <configure name="TFMINI_PORT"     value="UART8"/>
-                <configure name="USE_TFMINI_AGL"  value="TRUE"/>
-            </module>
-
             <module name="wing_rotation_adc_sensor">
                 <define name="ADC_WING_ROT_SCALE"  value="0.00247111"/>
                 <define name="ADC_WING_ROT_OFFSET" value="-25.635294"/>
@@ -98,6 +93,10 @@
         <module name="gps" type="ublox">
             <configure name="UBX_GPS_BAUD" value="B460800"/>
             <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
+        </module>
+        <module name="lidar_tfmini">
+            <configure name="TFMINI_PORT"     value="UART8"/>
+            <configure name="USE_TFMINI_AGL"  value="TRUE"/>
         </module>
 
         <!-- IMU / INS -->
