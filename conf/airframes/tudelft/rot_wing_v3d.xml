@@ -93,6 +93,7 @@
         <module name="ins" type="ekf2"/>
 
         <module name="parachute"/>
+        <module name="ekf_aw"/>
 
         <!-- Actuators on dual CAN bus -->
         <module name="actuators" type="uavcan">

@@ -10,7 +10,7 @@
         <define name="IYY_WING"              value="0.38472811"/>
         <define name="M"                     value="6.94"/>
 
-        <define name="DM_DPPRZ_HOVER_PITCH"  value="0.001537287553553"/>
+        <define name="DM_DPPRZ_HOVER_PITCH"  value="{15.37287553553,0.0}"/>
         <define name="DM_DPPRZ_HOVER_ROLL"   value="{5.86747416762564,0.001936126151564}"/>
 
         <define name="HOVER_ROLL_PITCH_COEF" value="{0.001418491625685,-0.000649367806611}"/>
@@ -248,7 +248,7 @@
     </checklist>
 
     <!--Airspeed estimation using EKF-->
-    <module name="ekf_aw">
+    <section name="EKF_AW">
         <define name="EKF_AW_P0_V_BODY"  value="1.E-2f" description="Initial covariance body velocity"/>
         <define name="EKF_AW_P0_MU"      value="1.E-5f" description="Initial covariance wind"/>
         <define name="EKF_AW_P0_OFFSET"  value="1.E-10f" description="Initial covariance offset"/>
@@ -298,5 +298,5 @@
         <define name="EKF_AW_K2_FZ_WING" value="-8.6965e-01f" description="Fz1 = ((k1+k2*alpha+k3*alpha^2)*(sin(skew)^2+k4)*V^2"/>
         <define name="EKF_AW_K3_FZ_WING" value="1.45783e-01f" description="Fz1 = ((k1+k2*alpha+k3*alpha^2)*(sin(skew)^2+k4)*V^2"/>
         <define name="EKF_AW_K4_FZ_WING" value="2.185395e-01f" description="Fz1 = ((k1+k2*alpha+k3*alpha^2)*(sin(skew)^2+k4)*V^2"/>
-    </module>
+    </section>
 </airframe>
