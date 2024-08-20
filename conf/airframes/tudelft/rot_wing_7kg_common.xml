@@ -158,9 +158,10 @@
         <define name="FW_CRUISE_AIRSPEED"   value="19.0"/>
         <define name="FW_MAX_AIRSPEED"      value="22.0"/>
         <define name="QUAD_NOPUSH_AIRSPEED" value="8.0"/>
-        <define name="QUAD_MAX_AIRSPEED"    value="20.0"/>
+        <define name="QUAD_MAX_AIRSPEED"    value="15.0"/>
         <define name="SKEW_START_AIRSPEED"  value="10.0"/>
         <define name="SKEW_FW_AIRSPEED"     value="15.0"/>
+        <define name="SKEW_REF_MODEL"       value="TRUE"/>
     </section>
 
     <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
