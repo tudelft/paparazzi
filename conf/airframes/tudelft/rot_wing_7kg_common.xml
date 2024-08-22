@@ -158,9 +158,10 @@
         <define name="FW_QUAD_MIN_AIRSPEED" value="15.0"/> <!-- Forward stall airspeed + margin with quad motors on -->
         <define name="FW_CRUISE_AIRSPEED"   value="19.0"/> <!-- Default cruise airspeed -->
         <define name="FW_MAX_AIRSPEED"      value="22.0"/> <!-- Maximum forward airspeed -->
-        <define name="QUAD_NOPUSH_AIRSPEED" value="8.0"/>  <!-- Maximum quadrotor without pusher motor airspeed -->
+        <define name="QUAD_NOPUSH_AIRSPEED" value="5.0"/>  <!-- Maximum quadrotor without pusher motor airspeed -->
         <define name="QUAD_MAX_AIRSPEED"    value="15.0"/> <!-- Maximum quadrotor airspeed (with pusher motor)-->
-        <define name="SKEW_START_AIRSPEED"  value="10.0"/> <!-- Airspeed where the skewing starts -->
+        <define name="SKEW_UP_AIRSPEED"     value="8.0"/>  <!-- Airspeed where the skewing starts when going up in airspeed -->
+        <define name="SKEW_DOWN_AIRSPEED"   value="10.0"/> <!-- Airspeed where the skewing starts when going down in airspeed -->
         <define name="SKEW_REF_MODEL"       value="TRUE"/> <!-- Enable second order reference model for the skewing command -->
     </section>
 
