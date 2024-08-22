@@ -154,13 +154,14 @@
     </section>
 
     <section name="ROTWING" prefix="ROTWING_">
-        <define name="STALL_SPEED"          value="15.0"/>
-        <define name="FW_CRUISE_AIRSPEED"   value="19.0"/>
-        <define name="FW_MAX_AIRSPEED"      value="22.0"/>
-        <define name="QUAD_NOPUSH_AIRSPEED" value="8.0"/>
-        <define name="QUAD_MAX_AIRSPEED"    value="15.0"/>
-        <define name="SKEW_START_AIRSPEED"  value="10.0"/>
-        <define name="SKEW_REF_MODEL"       value="TRUE"/>
+        <define name="FW_MIN_AIRSPEED"      value="17.0"/> <!-- Forward stall airspeed + margin (motors off) -->
+        <define name="FW_QUAD_MIN_AIRSPEED" value="15.0"/> <!-- Forward stall airspeed + margin with quad motors on -->
+        <define name="FW_CRUISE_AIRSPEED"   value="19.0"/> <!-- Default cruise airspeed -->
+        <define name="FW_MAX_AIRSPEED"      value="22.0"/> <!-- Maximum forward airspeed -->
+        <define name="QUAD_NOPUSH_AIRSPEED" value="8.0"/>  <!-- Maximum quadrotor without pusher motor airspeed -->
+        <define name="QUAD_MAX_AIRSPEED"    value="15.0"/> <!-- Maximum quadrotor airspeed (with pusher motor)-->
+        <define name="SKEW_START_AIRSPEED"  value="10.0"/> <!-- Airspeed where the skewing starts -->
+        <define name="SKEW_REF_MODEL"       value="TRUE"/> <!-- Enable second order reference model for the skewing command -->
     </section>
 
     <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">

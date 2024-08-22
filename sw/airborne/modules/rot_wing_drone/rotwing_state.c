@@ -57,11 +57,6 @@
 #define ROTWING_QUAD_IDLE_TIMEOUT 2.0
 #endif
 
-/* Margin for the stall speed (percentile) */
-#ifndef ROTWING_STALL_MARGIN
-#define ROTWING_STALL_MARGIN 0.2
-#endif
-
 /* Minimum measured skew angle to consider the rotating wing in fixedwing (deg) */
 #ifndef ROTWING_FW_SKEW_ANGLE
 #define ROTWING_FW_SKEW_ANGLE 85.0
@@ -71,9 +66,6 @@
 #ifndef ROTWING_QUAD_PREF_PITCH
 #define ROTWING_QUAD_PREF_PITCH -5.0
 #endif
-
-/* Minimum airspeed needed for forward flying with margin added (m/s) */
-#define ROTWING_FW_MIN_AIRSPEED  (ROTWING_STALL_SPEED * (1 + ROTWING_STALL_MARGIN))
 
 /* Sanity checks */
 // #if ROTWING_SKEW_START_AIRSPEED < ROTWING_QUAD_MAX_AIRSPEED
@@ -198,7 +190,7 @@ void rotwing_state_periodic(void)
 
 
   /* Calculate min/max airspeed bounds based on skew angle */
-  float skew_min_airspeed = ROTWING_FW_MIN_AIRSPEED * (rotwing_state.meas_skew_angle_deg - 60.f) / (85.f - 60.f);
+  float skew_min_airspeed = (!rotwing_state_hover_motors_running() || !rotwing_state.hover_motors_enabled)? ROTWING_FW_MIN_AIRSPEED : (ROTWING_FW_QUAD_MIN_AIRSPEED * (rotwing_state.meas_skew_angle_deg - 55.f) / (90.f - 55.f));
   float skew_max_airspeed = ROTWING_QUAD_MAX_AIRSPEED + (ROTWING_FW_MAX_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * rotwing_state.meas_skew_angle_deg / 85.f;
   Bound(skew_min_airspeed, 0, ROTWING_FW_MIN_AIRSPEED);
   Bound(skew_max_airspeed, ROTWING_QUAD_MAX_AIRSPEED, ROTWING_FW_MAX_AIRSPEED);
@@ -206,16 +198,16 @@ void rotwing_state_periodic(void)
 
   /* Handle the skew angle setpoint */
   if(desired_state == ROTWING_STATE_FORCE_HOVER) {
-    rotwing_state.sp_skew_angle_deg = 0;
+    rotwing_state.sp_skew_angle_deg = 0.f;
   }
   else if(!rotwing_state_hover_motors_running() || !rotwing_state.hover_motors_enabled || desired_state == ROTWING_STATE_FORCE_FW) {
-    rotwing_state.sp_skew_angle_deg = 90;
+    rotwing_state.sp_skew_angle_deg = 90.f;
   }
   else if(!rotwing_state_pusher_motor_running()) {
-    rotwing_state.sp_skew_angle_deg = 0;
+    rotwing_state.sp_skew_angle_deg = 0.f;
   }
-  else if(desired_state == ROTWING_STATE_REQUEST_HOVER && meas_airspeed < skew_max_airspeed) {
-    rotwing_state.sp_skew_angle_deg = 0;
+  else if(desired_state == ROTWING_STATE_REQUEST_HOVER && rotwing_state.meas_skew_angle_deg < 55.f) {
+    rotwing_state.sp_skew_angle_deg = 0.f;
   }
   else {
     // SKEWING function based on Vair and maybe Vnav
@@ -224,14 +216,14 @@ void rotwing_state_periodic(void)
     // 55 degrees if ROTWING_STATE_QUAD_MAX_SPEED < airspeed < ROTWING_SKEW_START_AIRSPEED
     // linear scaling between 55 and 90 degrees when airspeed > ROTWING_SKEW_START_AIRSPEED
     if (meas_airspeed < ROTWING_SKEW_START_AIRSPEED) {
-      rotwing_state.sp_skew_angle_deg = 0;
+      rotwing_state.sp_skew_angle_deg = 0.f;
     } else if (meas_airspeed < ROTWING_QUAD_MAX_AIRSPEED) {
-      rotwing_state.sp_skew_angle_deg = 55;
+      rotwing_state.sp_skew_angle_deg = 55.f;
     } else {
-      rotwing_state.sp_skew_angle_deg = ((meas_airspeed - ROTWING_QUAD_MAX_AIRSPEED)) / (ROTWING_FW_MIN_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * 35. + 55.;
+      rotwing_state.sp_skew_angle_deg = ((meas_airspeed - ROTWING_QUAD_MAX_AIRSPEED)) / (ROTWING_FW_MIN_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * 35.f + 55.f;
     }
   }
-  Bound(rotwing_state.sp_skew_angle_deg, 0., 90.);
+  Bound(rotwing_state.sp_skew_angle_deg, 0.f, 90.f);
 
 
   /* Handle the airspeed bounding */
@@ -267,7 +259,7 @@ void rotwing_state_periodic(void)
 
 
   /* Calculate the skew command */
-  float servo_pprz_cmd = MAX_PPRZ * (rotwing_state.sp_skew_angle_deg - 45.) / 45.;
+  float servo_pprz_cmd = MAX_PPRZ * (rotwing_state.sp_skew_angle_deg - 45.f) / 45.f;
   BoundAbs(servo_pprz_cmd, MAX_PPRZ);
 
 #if ROTWING_SKEW_REF_MODEL
@@ -286,16 +278,16 @@ void rotwing_state_periodic(void)
   /* Add simulation feedback for the skewing and RPM */
 #if USE_NPS
   // Export to the index of the SKEW in the NPS_ACTUATOR_NAMES array
-  actuators_pprz[INDI_NUM_ACT] = (servo_pprz_cmd + MAX_PPRZ) / 2.; // Scale to simulation command
+  actuators_pprz[INDI_NUM_ACT] = (servo_pprz_cmd + MAX_PPRZ) / 2.f; // Scale to simulation command
 
   // Simulate wing angle from command
-  rotwing_state.meas_skew_angle_deg  = (float) servo_pprz_cmd / MAX_PPRZ * 45. + 45.;
+  rotwing_state.meas_skew_angle_deg  = (float) servo_pprz_cmd / MAX_PPRZ * 45.f + 45.f;
   rotwing_state.meas_skew_angle_time = get_sys_time_float();
 
   // SEND ABI Message to ctr_eff_sched and other modules that want Actuator position feedback
   struct act_feedback_t feedback;
   feedback.idx =  SERVO_ROTATION_MECH_IDX;
-  feedback.position = 0.5 * M_PI - RadOfDeg(rotwing_state.meas_skew_angle_deg);
+  feedback.position = 0.5f * M_PI - RadOfDeg(rotwing_state.meas_skew_angle_deg);
   feedback.set.position = true;
 
   // Send ABI message

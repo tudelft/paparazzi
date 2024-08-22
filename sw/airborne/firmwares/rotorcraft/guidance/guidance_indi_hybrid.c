@@ -187,7 +187,7 @@ float guidance_indi_min_pitch = GUIDANCE_INDI_MIN_PITCH;
 /** state eulers in zxy order */
 struct FloatEulers eulers_zxy;
 
-float gi_airspeed_sp;
+float gi_airspeed_sp = -1.f;
 
 float thrust_dyn = 0.f;
 float thrust_act = 0.f;
