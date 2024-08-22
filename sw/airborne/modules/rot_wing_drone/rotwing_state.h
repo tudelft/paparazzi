@@ -49,8 +49,9 @@ union rotwing_bitmask_t {
 
 struct rotwing_state_t {
   /* Control */
-  enum rotwing_states_t state;  // Current desired state (requested only by NAV and can be overruled by RC)
-  bool hover_motors_enabled;    // Hover motors enabled (> idle throttle)
+  enum rotwing_states_t state;      // Current state
+  enum rotwing_states_t nav_state;  // Desired navigation state (requested only by NAV and can be overruled by RC)
+  bool hover_motors_enabled;        // Hover motors enabled (> idle throttle)
 
   /* Skew */
   float sp_skew_angle_deg;    // Setpoint skew angle in degrees

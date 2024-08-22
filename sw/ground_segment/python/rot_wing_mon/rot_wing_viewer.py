@@ -126,6 +126,7 @@ class INDIMessage(object):
 class RWStatusMessage(object):
     def __init__(self, msg):
         self.state = int(msg['state'])
+        self.nav_state = int(msg['state'])
         self.status = int(msg['status'])
         self.meas_skew_angle = float(msg['meas_skew_angle'])
         self.sp_skew_angle = float(msg['sp_skew_angle'])
@@ -158,6 +159,10 @@ class RWStatusMessage(object):
     def get_state(self):
         states = ['FORCE_HOVER', 'REQ_HOVER', 'FORCE_FW', 'REQ_FW', 'FREE']
         return states[self.state]
+    
+    def get_nav_state(self):
+        states = ['FORCE_HOVER', 'REQ_HOVER', 'FORCE_FW', 'REQ_FW', 'FREE']
+        return states[self.nav_state]
     
 class AIRDATAMessage(object):
     def __init__(self, msg):
@@ -281,8 +286,8 @@ class RotWingFrame(wx.Frame):
         self.stat = int(0.10*w)
         if hasattr(self, 'rw_status'):
             dc.SetBrush(wx.Brush(wx.Colour(200,200,100))) 
-            dc.DrawRectangle(int(5), int(5),int(0.22*w), int(0.14*h))
-            dc.DrawText("State: " + self.rw_status.get_state(), 10, 10)
+            dc.DrawRectangle(int(5), int(5),int(0.24*w), int(0.14*h))
+            dc.DrawText("State: " + self.rw_status.get_state() + " [NAV: " + self.rw_status.get_nav_state() +"]", 10, 10)
             if self.rw_status.skew_angle_valid:
                 if abs(self.rw_status.meas_skew_angle - self.rw_status.sp_skew_angle) < 10:
                     dc.SetTextForeground(wx.Colour(0, 0, 0))

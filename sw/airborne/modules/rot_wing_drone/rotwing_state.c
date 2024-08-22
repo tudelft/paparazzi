@@ -120,8 +120,10 @@ static void send_rotating_wing_state(struct transport_tx *trans, struct link_dev
 
   // Send the message
   uint8_t state = rotwing_state.state;
+  uint8_t nav_state = rotwing_state.nav_state;
   pprz_msg_send_ROTATING_WING_STATE(trans, dev, AC_ID,
                                     &state,
+                                    &nav_state,
                                     &status.value,
                                     &rotwing_state.meas_skew_angle_deg,
                                     &rotwing_state.sp_skew_angle_deg,
@@ -136,6 +138,7 @@ void rotwing_state_init(void)
 {
   // Initialize rotwing state
   rotwing_state.state = ROTWING_STATE_FORCE_HOVER; // For takeoff
+  rotwing_state.nav_state = ROTWING_STATE_FORCE_HOVER;
   rotwing_state.hover_motors_enabled = true;
   rotwing_state.cruise_airspeed = ROTWING_FW_CRUISE_AIRSPEED;
   rotwing_state.sp_skew_angle_deg = 0;
@@ -178,17 +181,17 @@ void rotwing_state_periodic(void)
   float meas_airspeed = stateGetAirspeed_f();
 
   /* Override modes if flying with RC */
-  enum rotwing_states_t desired_state = rotwing_state.state;
+  rotwing_state.state = rotwing_state.nav_state;
   if(guidance_h.mode == GUIDANCE_H_MODE_NONE) {
     if(stabilization.mode == STABILIZATION_MODE_ATTITUDE) {
-      desired_state = ROTWING_STATE_FORCE_HOVER;
+      rotwing_state.state = ROTWING_STATE_FORCE_HOVER;
     } else {
-      desired_state = ROTWING_STATE_REQUEST_FW;
+      rotwing_state.state = ROTWING_STATE_REQUEST_FW;
     }
   }
 
   /* Handle the quad motors on/off state */
-  if(desired_state == ROTWING_STATE_FORCE_HOVER || desired_state == ROTWING_STATE_REQUEST_HOVER) {
+  if(rotwing_state.state == ROTWING_STATE_FORCE_HOVER || rotwing_state.state == ROTWING_STATE_REQUEST_HOVER) {
     rotwing_state.hover_motors_enabled = true;
   }
   else if(meas_airspeed > ROTWING_FW_MIN_AIRSPEED && rotwing_state_hover_motors_idling() && rotwing_state_pusher_motor_running() && rotwing_state.meas_skew_angle_deg >= ROTWING_FW_SKEW_ANGLE && gi_unbounded_airspeed_sp >= ROTWING_FW_MIN_AIRSPEED) {
@@ -212,16 +215,16 @@ void rotwing_state_periodic(void)
 
 
   /* Handle the skew angle setpoint */
-  if(desired_state == ROTWING_STATE_FORCE_HOVER) {
+  if(rotwing_state.state == ROTWING_STATE_FORCE_HOVER) {
     rotwing_state.sp_skew_angle_deg = 0.f;
   }
-  else if(!rotwing_state_hover_motors_running() || !rotwing_state.hover_motors_enabled || desired_state == ROTWING_STATE_FORCE_FW) {
+  else if(!rotwing_state_hover_motors_running() || !rotwing_state.hover_motors_enabled || rotwing_state.state == ROTWING_STATE_FORCE_FW) {
     rotwing_state.sp_skew_angle_deg = 90.f;
   }
   else if(!rotwing_state_pusher_motor_running()) {
     rotwing_state.sp_skew_angle_deg = 0.f;
   }
-  else if(desired_state == ROTWING_STATE_REQUEST_HOVER && rotwing_state.meas_skew_angle_deg < ROTWING_SKEW_ANGLE_STEP) {
+  else if(rotwing_state.state == ROTWING_STATE_REQUEST_HOVER && rotwing_state.meas_skew_angle_deg < ROTWING_SKEW_ANGLE_STEP) {
     rotwing_state.sp_skew_angle_deg = 0.f;
   }
   else {
@@ -245,7 +248,7 @@ void rotwing_state_periodic(void)
 
   /* Handle the airspeed bounding */
   Bound(rotwing_state.cruise_airspeed, ROTWING_FW_MIN_AIRSPEED, ROTWING_FW_MAX_AIRSPEED);
-  if((!rotwing_state_hover_motors_running() && desired_state != ROTWING_STATE_FORCE_HOVER) || desired_state == ROTWING_STATE_FORCE_FW) {
+  if((!rotwing_state_hover_motors_running() && rotwing_state.state != ROTWING_STATE_FORCE_HOVER) || rotwing_state.state == ROTWING_STATE_FORCE_FW) {
     rotwing_state.min_airspeed = rotwing_state.cruise_airspeed;
     rotwing_state.max_airspeed = rotwing_state.cruise_airspeed;
   }
@@ -253,11 +256,11 @@ void rotwing_state_periodic(void)
     rotwing_state.min_airspeed = 0;
     rotwing_state.max_airspeed = ROTWING_QUAD_NOPUSH_AIRSPEED;
   }
-  else if(desired_state == ROTWING_STATE_FORCE_HOVER || desired_state == ROTWING_STATE_REQUEST_HOVER) {
+  else if(rotwing_state.state == ROTWING_STATE_FORCE_HOVER || rotwing_state.state == ROTWING_STATE_REQUEST_HOVER) {
     rotwing_state.min_airspeed = skew_min_airspeed;
     rotwing_state.max_airspeed = fmax(ROTWING_QUAD_MAX_AIRSPEED, skew_min_airspeed);
   }
-  else if(desired_state == ROTWING_STATE_REQUEST_FW) {
+  else if(rotwing_state.state == ROTWING_STATE_REQUEST_FW) {
     rotwing_state.min_airspeed = fmin(rotwing_state.cruise_airspeed, skew_max_airspeed);
     rotwing_state.max_airspeed = fmin(rotwing_state.cruise_airspeed, skew_max_airspeed);
   }
@@ -462,5 +465,5 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, fl
 }
 
 void rotwing_state_set(enum rotwing_states_t state) {
-  rotwing_state.state = state;
+  rotwing_state.nav_state = state;
 }
