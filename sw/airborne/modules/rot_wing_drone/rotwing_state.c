@@ -190,10 +190,15 @@ void rotwing_state_periodic(void)
 
 
   /* Calculate min/max airspeed bounds based on skew angle */
-  float skew_min_airspeed = (!rotwing_state_hover_motors_running() || !rotwing_state.hover_motors_enabled)? ROTWING_FW_MIN_AIRSPEED : (ROTWING_FW_QUAD_MIN_AIRSPEED * (rotwing_state.meas_skew_angle_deg - 55.f) / (90.f - 55.f));
+  float skew_min_airspeed = ROTWING_FW_QUAD_MIN_AIRSPEED * (rotwing_state.meas_skew_angle_deg - 55.f) / (90.f - 55.f);
   float skew_max_airspeed = ROTWING_QUAD_MAX_AIRSPEED + (ROTWING_FW_MAX_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * rotwing_state.meas_skew_angle_deg / 85.f;
   Bound(skew_min_airspeed, 0, ROTWING_FW_MIN_AIRSPEED);
   Bound(skew_max_airspeed, ROTWING_QUAD_MAX_AIRSPEED, ROTWING_FW_MAX_AIRSPEED);
+
+  if(!rotwing_state_hover_motors_running() || !rotwing_state.hover_motors_enabled) {
+    skew_min_airspeed = ROTWING_FW_MIN_AIRSPEED;
+    skew_max_airspeed = ROTWING_FW_MAX_AIRSPEED;
+  }
 
 
   /* Handle the skew angle setpoint */

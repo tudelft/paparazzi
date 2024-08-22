@@ -43,7 +43,7 @@
         <define name="NO_GPS_LOST_WITH_RC_VALID"            value="TRUE"/>
         <define name="USE_AIRSPEED"                         value="TRUE"/>
         <define name="NAV_HYBRID_MAX_DECELERATION"          value="0.5"/>
-        <define name="DEFAULT_CIRCLE_RADIUS"                value="50.0"/>
+        <define name="DEFAULT_CIRCLE_RADIUS"                value="100.0"/>
     </section>
 
     <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
