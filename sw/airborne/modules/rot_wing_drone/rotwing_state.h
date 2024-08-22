@@ -67,6 +67,11 @@ struct rotwing_state_t {
   /* RPM measurements*/
   int32_t meas_rpm[5];        // Measured RPM of the hover and pusher motors
   float meas_rpm_time[5];     // Time of the last RPM measurement
+
+  /* Sim failures */
+  bool fail_skew_angle;       // Skew angle sensor failure
+  bool fail_hover_motor;      // Hover motor failure
+  bool fail_pusher_motor;     // Pusher motor failure
 };
 extern struct rotwing_state_t rotwing_state;
 

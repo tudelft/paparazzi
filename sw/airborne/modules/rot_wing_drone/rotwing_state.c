@@ -149,6 +149,9 @@ void rotwing_state_init(void)
     rotwing_state.meas_rpm[i] = 0;
     rotwing_state.meas_rpm_time[i] = 0;
   }
+  rotwing_state.fail_skew_angle = false;
+  rotwing_state.fail_hover_motor = false;
+  rotwing_state.fail_pusher_motor = false;
 
   // Bind ABI messages
   AbiBindMsgACT_FEEDBACK(ROTWING_STATE_ACT_FEEDBACK_ID, &rotwing_state_feedback_ev, rotwing_state_feedback_cb);
@@ -282,7 +285,7 @@ void rotwing_state_periodic(void)
   float servo_pprz_cmd = MAX_PPRZ * (rotwing_state.sp_skew_angle_deg - 45.f) / 45.f;
   BoundAbs(servo_pprz_cmd, MAX_PPRZ);
 
-#if ROTWING_SKEW_REF_MODEL
+#if (ROTWING_SKEW_REF_MODEL || USE_NPS)
   // Rotate with second order filter
   static float rotwing_state_skew_p_cmd = -MAX_PPRZ;
   static float rotwing_state_skew_d_cmd = 0;
@@ -301,8 +304,10 @@ void rotwing_state_periodic(void)
   actuators_pprz[INDI_NUM_ACT] = (servo_pprz_cmd + MAX_PPRZ) / 2.f; // Scale to simulation command
 
   // Simulate wing angle from command
-  rotwing_state.meas_skew_angle_deg  = (float) servo_pprz_cmd / MAX_PPRZ * 45.f + 45.f;
-  rotwing_state.meas_skew_angle_time = get_sys_time_float();
+  if(!rotwing_state.fail_skew_angle) {
+    rotwing_state.meas_skew_angle_deg  = (float) servo_pprz_cmd / MAX_PPRZ * 45.f + 45.f;
+    rotwing_state.meas_skew_angle_time = get_sys_time_float();
+  }
 
   // SEND ABI Message to ctr_eff_sched and other modules that want Actuator position feedback
   struct act_feedback_t feedback;
