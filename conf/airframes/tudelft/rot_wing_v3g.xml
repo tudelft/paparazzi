@@ -153,7 +153,7 @@
      <!-- CAN BUS 1 command outputs-->
     <servos driver="Uavcan1Cmd">
         <servo no="6"  name="SERVO_ELEVATOR"  min="5400"  neutral="5400" max="-4349"/>
-        <servo no="7"  name="SERVO_RUDDER"    min="-5225" neutral="0"    max="5225"/>
+        <servo no="7"  name="SERVO_RUDDER"    min="-4750" neutral="0"    max="4750"/>
     </servos>
 
     <!-- Can bus 2 actuators -->
@@ -304,8 +304,8 @@
                 <field name="feedback_id2" value="SERVO_BROTATION_MECH_IDX"/>
                 <field name="low" value="-9600"/>
                 <field name="high" value="9600"/>
-                <field name="low_feedback" value="1.57"/>
-                <field name="high_feedback" value="0"/>
+                <field name="low_feedback" value="1.72"/>
+                <field name="high_feedback" value="0.15"/>
                 <field name="timeout" value="5"/>
             </field>
 
@@ -359,8 +359,21 @@
     </section>
 
     <section name="IMU" prefix="IMU_">
+        <define name="MAG_CALIB" type="array">
+            <field type="struct">
+                <field name="abi_id" value="5"/>
+                <field name="calibrated" type="struct">
+                    <field name="neutral" value="true"/>
+                    <field name="scale" value="true"/>
+                    <field name="rotation" value="true"/>
+                </field>
+                <field name="neutral" value="1757,3096,1119" type="int[]"/>
+                <field name="scale" value="{{10462,24574,6961},{18175,43831,12532}}"/>
+                <field name="body_to_sensor" value="{{0,16384,0,16384,0,0,0,0,-16384}}"/>
+            </field>
+        </define>
+
         <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true, .filter=true},.neutral={-19,0,28}, .scale={{1537,43219,6232},{157,4410,641}}, .filter_sample_freq=1127, .filter_freq=30}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-1,2,33}, .scale={{21914,8531,5489},{4477,1738,1120}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-47,0,3}, .scale={{17288,29444,25808},{3531,6031,5293}}}}"/>
-        <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true, .rotation=true},.neutral={3163,2783,1623}, .scale={{25833,28413,12237},{45868,51206,22472}}, .body_to_sensor={{0,16384,0,16384,0,0,0,0,-16384}}}}"/>
         <define name="GYRO_CALIB"  value="{{.abi_id=20, .calibrated={.filter=true}, .filter_sample_freq=1127, .filter_freq=30}}"/>
 
         <!-- Define axis in hover frame -->
