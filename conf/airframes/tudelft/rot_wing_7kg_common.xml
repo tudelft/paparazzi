@@ -11,7 +11,7 @@
         <define name="M"                     value="6.94"/>
 
         <define name="DM_DPPRZ_HOVER_PITCH"  value="{15.37287553553,0.0}"/>
-        <define name="DM_DPPRZ_HOVER_ROLL"   value="{5.86747416762564,0.001936126151564}"/>
+        <define name="DM_DPPRZ_HOVER_ROLL"   value="{5.86747416762564,0.000968063}"/>
 
         <define name="HOVER_ROLL_PITCH_COEF" value="{0.001418491625685,-0.000649367806611}"/>
         <define name="HOVER_ROLL_ROLL_COEF"  value="{-0.0000839259143513,-0.0000478083}"/>
@@ -37,7 +37,7 @@
         <define name="NAV_DESCEND_VSPEED"                   value="-1.0"/>
         <define name="NAV_CARROT_DIST"                      value="200"/>
         <!-- prevent in-flight in start engine block-->
-        <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST" value="4000"/>
+        <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST"       value="4000"/>
         <define name="ARRIVED_AT_WAYPOINT"                  value="50.0"/>
         <define name="NO_GPS_LOST_WITH_DATALINK_TIME"       value="20"/>
         <define name="NO_GPS_LOST_WITH_RC_VALID"            value="TRUE"/>
