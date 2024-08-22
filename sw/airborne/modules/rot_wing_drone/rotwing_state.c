@@ -303,20 +303,16 @@ void rotwing_state_periodic(void)
   // Export to the index of the SKEW in the NPS_ACTUATOR_NAMES array
   actuators_pprz[INDI_NUM_ACT] = (servo_pprz_cmd + MAX_PPRZ) / 2.f; // Scale to simulation command
 
-  // Simulate wing angle from command
-  if(!rotwing_state.fail_skew_angle) {
-    rotwing_state.meas_skew_angle_deg  = (float) servo_pprz_cmd / MAX_PPRZ * 45.f + 45.f;
-    rotwing_state.meas_skew_angle_time = get_sys_time_float();
-  }
-
-  // SEND ABI Message to ctr_eff_sched and other modules that want Actuator position feedback
+  // SEND ABI Message to ctr_eff_sched, ourself and other modules that want Actuator position feedback
   struct act_feedback_t feedback;
   feedback.idx =  SERVO_ROTATION_MECH_IDX;
-  feedback.position = 0.5f * M_PI - RadOfDeg(rotwing_state.meas_skew_angle_deg);
+  feedback.position = 0.5f * M_PI - RadOfDeg((float) servo_pprz_cmd / MAX_PPRZ * 45.f + 45.f);
   feedback.set.position = true;
 
-  // Send ABI message
-  AbiSendMsgACT_FEEDBACK(ACT_FEEDBACK_BOARD_ID, &feedback, 1);
+  // Send ABI message (or simulate failure)
+  if(!rotwing_state.fail_skew_angle) {
+    AbiSendMsgACT_FEEDBACK(ACT_FEEDBACK_BOARD_ID, &feedback, 1);
+  }
 
   // Simulate to always have RPM if on and active feedback
   rotwing_state.meas_rpm[0] = (actuators[SERVO_MOTOR_FRONT_IDX].pprz_val >= 0)? (ROTWING_QUAD_MIN_RPM + 100) : 0;
