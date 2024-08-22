@@ -62,6 +62,16 @@
 #define ROTWING_FW_SKEW_ANGLE 85.0
 #endif
 
+/* Magnitude skew angle jump away from quad */
+#ifndef ROTWING_SKEW_ANGLE_STEP
+#define ROTWING_SKEW_ANGLE_STEP 55.0
+#endif
+
+/* Skew angle at which the mininum airspeed starts its linear portion */
+#ifndef ROTWING_MIN_AIRSPEED_SLOPE_START_ANGLE
+#define ROTWING_MIN_AIRSPEED_SLOPE_START_ANGLE 30.0
+#endif
+
 /* Preferred pitch angle for the quad mode (deg) */
 #ifndef ROTWING_QUAD_PREF_PITCH
 #define ROTWING_QUAD_PREF_PITCH -5.0
@@ -190,8 +200,8 @@ void rotwing_state_periodic(void)
 
 
   /* Calculate min/max airspeed bounds based on skew angle */
-  float skew_min_airspeed = ROTWING_FW_QUAD_MIN_AIRSPEED * (rotwing_state.meas_skew_angle_deg - 30.f) / (90.f - 30.f);
-  float skew_max_airspeed = ROTWING_QUAD_MAX_AIRSPEED + (ROTWING_FW_MAX_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * rotwing_state.meas_skew_angle_deg / 85.f;
+  float skew_min_airspeed = ROTWING_FW_QUAD_MIN_AIRSPEED * (rotwing_state.meas_skew_angle_deg - ROTWING_MIN_AIRSPEED_SLOPE_START_ANGLE) / (90.f - ROTWING_MIN_AIRSPEED_SLOPE_START_ANGLE);
+  float skew_max_airspeed = ROTWING_QUAD_MAX_AIRSPEED + (ROTWING_FW_MAX_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * rotwing_state.meas_skew_angle_deg / ROTWING_FW_SKEW_ANGLE;
   Bound(skew_min_airspeed, 0, ROTWING_FW_MIN_AIRSPEED);
   Bound(skew_max_airspeed, ROTWING_QUAD_MAX_AIRSPEED, ROTWING_FW_MAX_AIRSPEED);
 
@@ -211,7 +221,7 @@ void rotwing_state_periodic(void)
   else if(!rotwing_state_pusher_motor_running()) {
     rotwing_state.sp_skew_angle_deg = 0.f;
   }
-  else if(desired_state == ROTWING_STATE_REQUEST_HOVER && rotwing_state.meas_skew_angle_deg < 55.f) {
+  else if(desired_state == ROTWING_STATE_REQUEST_HOVER && rotwing_state.meas_skew_angle_deg < ROTWING_SKEW_ANGLE_STEP) {
     rotwing_state.sp_skew_angle_deg = 0.f;
   }
   else {
@@ -223,9 +233,9 @@ void rotwing_state_periodic(void)
     if (meas_airspeed < ROTWING_SKEW_START_AIRSPEED) {
       rotwing_state.sp_skew_angle_deg = 0.f;
     } else if (meas_airspeed < ROTWING_QUAD_MAX_AIRSPEED) {
-      rotwing_state.sp_skew_angle_deg = 55.f;
+      rotwing_state.sp_skew_angle_deg = ROTWING_SKEW_ANGLE_STEP;
     } else {
-      rotwing_state.sp_skew_angle_deg = ((meas_airspeed - ROTWING_QUAD_MAX_AIRSPEED)) / (ROTWING_FW_MIN_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * 35.f + 55.f;
+      rotwing_state.sp_skew_angle_deg = ((meas_airspeed - ROTWING_QUAD_MAX_AIRSPEED)) / (ROTWING_FW_MIN_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * (90.f - ROTWING_SKEW_ANGLE_STEP) + ROTWING_SKEW_ANGLE_STEP;
     }
   }
   Bound(rotwing_state.sp_skew_angle_deg, 0.f, 90.f);
@@ -410,7 +420,7 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, fl
 
   float scheduled_pitch_angle = 0.f;
   float pitch_angle_range = 3.;
-  if (rotwing_state.meas_skew_angle_deg < 55) {
+  if (rotwing_state.meas_skew_angle_deg < ROTWING_SKEW_ANGLE_STEP) {
     scheduled_pitch_angle = ROTWING_QUAD_PREF_PITCH;
     Wu_gih[1] = Wu_gih_original[1];
     max_pitch_limit_rad = quad_pitch_limit_rad;
