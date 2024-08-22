@@ -88,7 +88,7 @@ extern struct FloatVect3 gi_speed_sp;
 
 extern float guidance_indi_pitch_pref_deg;
 
-extern float gi_airspeed_sp;
+extern float gi_unbounded_airspeed_sp;
 
 #if GUIDANCE_INDI_HYBRID_USE_WLS
 extern float Wu_gih[GUIDANCE_INDI_HYBRID_U];

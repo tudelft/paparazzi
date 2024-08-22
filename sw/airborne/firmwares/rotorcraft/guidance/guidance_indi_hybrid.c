@@ -187,8 +187,6 @@ float guidance_indi_min_pitch = GUIDANCE_INDI_MIN_PITCH;
 /** state eulers in zxy order */
 struct FloatEulers eulers_zxy;
 
-float gi_airspeed_sp = -1.f;
-
 float thrust_dyn = 0.f;
 float thrust_act = 0.f;
 Butterworth2LowPass filt_accel_ned[3];
@@ -199,6 +197,7 @@ Butterworth2LowPass accely_filt;
 Butterworth2LowPass guidance_indi_airspeed_filt;
 
 struct FloatVect2 desired_airspeed;
+float gi_unbounded_airspeed_sp = 0.f;
 
 float Ga[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_HYBRID_U];
 struct FloatVect3 euler_cmd;
@@ -610,6 +609,7 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
   float airspeed = 0.f;
 #else
   float airspeed = stateGetAirspeed_f();
+  Bound(airspeed, 0.0f, 100.0f);
   if (guidance_indi_airspeed_filtering) {
     airspeed = guidance_indi_airspeed_filt.o[0];
   }
@@ -622,18 +622,17 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
   VECT2_DIFF(desired_airspeed, gi_speed_sp, windspeed); // Use 2d part of gi_speed_sp
   float norm_des_as = FLOAT_VECT2_NORM(desired_airspeed);
 
+  gi_unbounded_airspeed_sp = norm_des_as;
+
   // Check if some minimum airspeed is desired (e.g. to prevent stall)
   if (norm_des_as < gih_params.min_airspeed) {
      norm_des_as = gih_params.min_airspeed;
   }
 
-  // Set airspeed setpoint to -1 to indicate that it is not used (overwritten if used)
-  gi_airspeed_sp = -1.f;
-
   // Make turn instead of straight line, control airspeed
   if ((airspeed > TURN_AIRSPEED_TH) && (norm_des_as > (TURN_AIRSPEED_TH+2.0f))) {
 
-    gi_airspeed_sp = norm_des_as;
+    float gi_airspeed_sp = norm_des_as;
 
     // Give the wind cancellation priority.
     if (norm_des_as > gih_params.max_airspeed) {
@@ -693,9 +692,6 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
       if ((speed_increment + airspeed) > gih_params.max_airspeed) {
         speed_sp_b_x = gih_params.max_airspeed + groundspeed_x - airspeed;
       }
-
-      // For display purposes
-      gi_airspeed_sp = airspeed + speed_increment;
     }
 
     gi_speed_sp.x = cpsi * speed_sp_b_x - spsi * speed_sp_b_y;
@@ -838,6 +834,7 @@ void guidance_indi_propagate_filters(void)
   update_butterworth_2_low_pass(&accely_filt, accely);
 
   float airspeed = stateGetAirspeed_f();
+  Bound(airspeed, 0.0f, 100.0f);
   update_butterworth_2_low_pass(&guidance_indi_airspeed_filt, airspeed);
 }
 

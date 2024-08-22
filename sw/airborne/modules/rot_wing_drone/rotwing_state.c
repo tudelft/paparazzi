@@ -115,7 +115,7 @@ static void send_rotating_wing_state(struct transport_tx *trans, struct link_dev
                                     &status.value,
                                     &rotwing_state.meas_skew_angle_deg,
                                     &rotwing_state.sp_skew_angle_deg,
-                                    &gi_airspeed_sp,
+                                    &gi_unbounded_airspeed_sp,
                                     &rotwing_state.min_airspeed,
                                     &rotwing_state.max_airspeed);
 }
@@ -181,7 +181,7 @@ void rotwing_state_periodic(void)
   if(desired_state == ROTWING_STATE_FORCE_HOVER || desired_state == ROTWING_STATE_REQUEST_HOVER) {
     rotwing_state.hover_motors_enabled = true;
   }
-  else if(meas_airspeed > ROTWING_FW_MIN_AIRSPEED && rotwing_state_hover_motors_idling() && rotwing_state.meas_skew_angle_deg >= ROTWING_FW_SKEW_ANGLE && gi_airspeed_sp >= ROTWING_FW_MIN_AIRSPEED) {
+  else if(meas_airspeed > ROTWING_FW_MIN_AIRSPEED && rotwing_state_hover_motors_idling() && rotwing_state.meas_skew_angle_deg >= ROTWING_FW_SKEW_ANGLE && gi_unbounded_airspeed_sp >= ROTWING_FW_MIN_AIRSPEED) {
     rotwing_state.hover_motors_enabled = false;
   }
   else {
