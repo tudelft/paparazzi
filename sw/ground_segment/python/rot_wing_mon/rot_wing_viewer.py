@@ -123,6 +123,47 @@ class INDIMessage(object):
         else:
             return 0.5
 
+class RWStatusMessage(object):
+    def __init__(self, msg):
+        self.state = int(msg['state'])
+        self.status = int(msg['status'])
+        self.meas_skew_angle = float(msg['meas_skew_angle'])
+        self.sp_skew_angle = float(msg['sp_skew_angle'])
+        self.nav_airspeed = float(msg['nav_airspeed'])
+        self.min_airspeed = float(msg['min_airspeed'])
+        self.max_airspeed = float(msg['max_airspeed'])
+
+        # Unpack the status bitfields
+        if self.status & (0x1 << 0):
+            self.skew_angle_valid = True
+        else:
+            self.skew_angle_valid = False
+        if self.status & (0x1 << 1):
+            self.hover_motors_enabled = True
+        else:
+            self.hover_motors_enabled = False
+        if self.status & (0x1 << 2):
+            self.hover_motors_idle = True
+        else:
+            self.hover_motors_idle = False
+        if self.status & (0x1 << 3):
+            self.hover_motors_running = True
+        else:
+            self.hover_motors_running = False
+        if self.status & (0x1 << 4):
+            self.pusher_motor_running = True
+        else:
+            self.pusher_motor_running = False
+    
+    def get_state(self):
+        states = ['FORCE_HOVER', 'REQ_HOVER', 'FORCE_FW', 'REQ_FW', 'FREE']
+        return states[self.state]
+    
+class AIRDATAMessage(object):
+    def __init__(self, msg):
+        self.airspeed = float(msg['airspeed'])
+        self.tas = float(msg['tas'])
+
 class MotorList(object):
     def __init__(self):
         self.mot = []
@@ -153,6 +194,14 @@ class RotWingFrame(wx.Frame):
 
         if msg.name == "STAB_ATTITUDE":
             self.indi = INDIMessage(msg)
+            wx.CallAfter(self.update)
+        
+        if msg.name =="ROTATING_WING_STATE":
+            self.rw_status = RWStatusMessage(msg)
+            wx.CallAfter(self.update)
+
+        if msg.name == "AIR_DATA":
+            self.air_data = AIRDATAMessage(msg)
             wx.CallAfter(self.update)
 
     def update(self):
@@ -228,8 +277,63 @@ class RotWingFrame(wx.Frame):
         # Back Wing
         dc.DrawRectangle(int(0.25*w), int(0.65*h),int(0.5*w), int(0.1*h))
 
-        # Motors
+        # Draw rotwing status
         self.stat = int(0.10*w)
+        if hasattr(self, 'rw_status'):
+            dc.SetBrush(wx.Brush(wx.Colour(200,200,100))) 
+            dc.DrawRectangle(int(5), int(5),int(0.22*w), int(0.14*h))
+            dc.DrawText("State: " + self.rw_status.get_state(), 10, 10)
+            if self.rw_status.skew_angle_valid:
+                if abs(self.rw_status.meas_skew_angle - self.rw_status.sp_skew_angle) < 10:
+                    dc.SetTextForeground(wx.Colour(0, 0, 0))
+                else:
+                    dc.SetTextForeground(wx.Colour(139, 64, 0))
+                dc.DrawText("Rotation: " + str(round(self.rw_status.meas_skew_angle, 1)) + " (SP: " + str(round(self.rw_status.sp_skew_angle, 1)) + ")", 10, 30)
+            else:
+                dc.SetTextForeground(wx.Colour(255, 0, 0))
+                dc.DrawText("Rotation: " + str(round(self.rw_status.meas_skew_angle, 1)) + " (SP: " + str(round(self.rw_status.sp_skew_angle, 1)) + ")", 10, 30)
+            
+            dc.SetTextForeground(wx.Colour(0, 0, 0))
+            dc.DrawText("Hover motors: ", 10, 50)
+            lbw = dc.GetTextExtent("Hover Motors: ").width
+            if self.rw_status.hover_motors_running:
+                dc.SetTextForeground(wx.Colour(0, 0, 0))
+                dc.DrawText("running ", 10 + lbw, 50)
+                lbw += dc.GetTextExtent("running ").width
+            else:
+                dc.SetTextForeground(wx.Colour(255, 0, 0))
+                dc.DrawText("stopped ", 10 + lbw, 50)
+                lbw += dc.GetTextExtent("stopped ").width
+
+            if self.rw_status.hover_motors_idle:
+                dc.SetTextForeground(wx.Colour(0, 0, 0))
+                dc.DrawText("idle ", 10 + lbw, 50)
+                lbw += dc.GetTextExtent("idle ").width
+
+            if self.rw_status.hover_motors_enabled:
+                dc.SetTextForeground(wx.Colour(0, 0, 0))
+                dc.DrawText("(Enabled)", 10 + lbw, 50)
+            else:
+                dc.SetTextForeground(wx.Colour(255, 0, 0))
+                dc.DrawText("(Disabled)", 10 + lbw, 50)
+
+            dc.SetTextForeground(wx.Colour(0, 0, 0))
+            dc.DrawText("Pusher motor: ", 10, 70)
+            lbw = dc.GetTextExtent("Pusher motor: ").width
+            if self.rw_status.pusher_motor_running:
+                dc.SetTextForeground(wx.Colour(0, 0, 0))
+                dc.DrawText("running", 10 + lbw, 70)
+            else:
+                dc.SetTextForeground(wx.Colour(255, 0, 0))
+                dc.DrawText("stopped", 10 + lbw, 70)
+            
+            dc.SetTextForeground(wx.Colour(0, 0, 0))
+            dc.DrawText("Nav airspeed: " + str(round(self.rw_status.nav_airspeed,1 )) + " [min: " + str(round(self.rw_status.min_airspeed,1 )) + ", max:" + str(round(self.rw_status.max_airspeed,1 )) + "]", 10, 90)
+            if hasattr(self, 'air_data'):
+                dc.DrawText("Meas airspeed: " + str(round(self.air_data.airspeed,1 )) + " (TAS: " + str(round(self.air_data.tas,1 )) + ")", 10, 110)
+            #self.StatusBox(dc, 5, 5, 0, 0, self.rw_status.get_state(), 1, 1)
+
+        # Motors
         w1 = 0.03
         w2 = 0.18
         w3 = 0.31
