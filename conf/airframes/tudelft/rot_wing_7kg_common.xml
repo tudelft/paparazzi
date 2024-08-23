@@ -44,6 +44,8 @@
         <define name="USE_AIRSPEED"                         value="TRUE"/>
         <define name="NAV_HYBRID_MAX_DECELERATION"          value="0.5"/>
         <define name="DEFAULT_CIRCLE_RADIUS"                value="100.0"/>
+        <define name="INS_EKF2_GPS_YAW_OFFSET"              value="0"/>
+        <define name="INS_EKF2_GPS_ANTENNA_DISTANCE"        value="1.02"/>
     </section>
 
     <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
