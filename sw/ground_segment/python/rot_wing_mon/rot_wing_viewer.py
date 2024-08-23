@@ -106,7 +106,7 @@ class EscMessage(object):
 
 class INDIMessage(object):
     def __init__(self, msg):
-        self.u = np.array(msg['u'], dtype=np.float)
+        self.u = np.array(msg['u'], dtype=float)
     
     def get_u(self, id):
         return str(round(self.u[id], 0)) + " PPRZ"
@@ -155,6 +155,10 @@ class RWStatusMessage(object):
             self.pusher_motor_running = True
         else:
             self.pusher_motor_running = False
+        if self.status & (0x1 << 5):
+            self.skew_forced = True
+        else:
+            self.skew_forced = False
     
     def get_state(self):
         states = ['FORCE_HOVER', 'REQ_HOVER', 'FORCE_FW', 'REQ_FW', 'FREE']
@@ -337,6 +341,15 @@ class RotWingFrame(wx.Frame):
             if hasattr(self, 'air_data'):
                 dc.DrawText("Meas airspeed: " + str(round(self.air_data.airspeed,1 )) + " (TAS: " + str(round(self.air_data.tas,1 )) + ")", 10, 110)
             #self.StatusBox(dc, 5, 5, 0, 0, self.rw_status.get_state(), 1, 1)
+            dc.SetTextForeground(wx.Colour(0, 0, 0))
+            dc.DrawText("Force Skew: ", 10, 130)
+            lbw = dc.GetTextExtent("Force Skew: ").width
+            if self.rw_status.skew_forced:
+                dc.SetTextForeground(wx.Colour(255, 0, 0))
+                dc.DrawText("(Enabled)", 10 + lbw, 130)
+            else:
+                dc.SetTextForeground(wx.Colour(0, 0, 0))
+                dc.DrawText("(Disabled)", 10 + lbw, 130)
 
         # Motors
         w1 = 0.03
