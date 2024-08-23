@@ -15,7 +15,7 @@
         <dl_setting var="rotwing_state.fail_hover_motor" min="0" max="1" step="1" values="OFF|ON" shortname="fail_hover"/>
         <dl_setting var="rotwing_state.fail_pusher_motor" min="0" max="1" step="1" values="OFF|ON" shortname="fail_pusher"/>
         <dl_setting var="rotwing_state.force_skew" min="0" max="1" step="1" values="FALSE|TRUE" shortname="force_skew"/>
-        <dl_setting var="force_skew_angle_deg" min="0" max="90" step = "1" shortname="force_skew_angle"/>
+        <dl_setting var="rotwing_state.sp_skew_angle_deg" min="0" max="90" step="1" shortname="sp_skew_angle"/>
       </dl_settings>
     </dl_settings>
   </settings>

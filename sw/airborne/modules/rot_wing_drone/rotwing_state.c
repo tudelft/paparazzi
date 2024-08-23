@@ -134,8 +134,6 @@ static void send_rotating_wing_state(struct transport_tx *trans, struct link_dev
 }
 #endif // PERIODIC_TELEMETRY
 
-float force_skew_angle_deg = 0.f;
-
 void rotwing_state_init(void)
 {
   // Initialize rotwing state
@@ -221,7 +219,10 @@ void rotwing_state_periodic(void)
 
 
   /* Handle the skew angle setpoint */
-  if(rotwing_state.state == ROTWING_STATE_FORCE_HOVER) {
+  if (rotwing_state.force_skew) {
+    // Do nothing
+  }
+  else if(rotwing_state.state == ROTWING_STATE_FORCE_HOVER) {
     rotwing_state.sp_skew_angle_deg = 0.f;
   }
   else if(!rotwing_state_hover_motors_running() || !rotwing_state.hover_motors_enabled || rotwing_state.state == ROTWING_STATE_FORCE_FW) {
@@ -249,11 +250,6 @@ void rotwing_state_periodic(void)
       going_down = true;
     }
   }
-
-  if (rotwing_state.force_skew) {
-    rotwing_state.sp_skew_angle_deg = force_skew_angle_deg;
-  }
-
   Bound(rotwing_state.sp_skew_angle_deg, 0.f, 90.f);
 
 

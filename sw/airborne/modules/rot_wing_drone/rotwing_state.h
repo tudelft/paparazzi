@@ -58,7 +58,7 @@ struct rotwing_state_t {
   float sp_skew_angle_deg;    // Setpoint skew angle in degrees
   float meas_skew_angle_deg;  // Measured skew angle in degrees
   float meas_skew_angle_time; // Time of the last skew angle measurement
-  bool force_skew;
+  bool force_skew;            // Force skew angle to a certain value by the GCS
   int16_t skew_cmd;
 
   /* Airspeeds */
@@ -76,7 +76,6 @@ struct rotwing_state_t {
   bool fail_pusher_motor;     // Pusher motor failure
 };
 extern struct rotwing_state_t rotwing_state;
-extern float force_skew_angle_deg;
 
 void rotwing_state_init(void);
 void rotwing_state_periodic(void);
