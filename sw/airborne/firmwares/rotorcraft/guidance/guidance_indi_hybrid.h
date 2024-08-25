@@ -81,6 +81,7 @@ struct guidance_indi_hybrid_params {
   float liftd_p50;
   float min_airspeed;
   float max_airspeed;
+  float stall_protect_gain;
 };
 
 extern struct FloatVect3 sp_accel;

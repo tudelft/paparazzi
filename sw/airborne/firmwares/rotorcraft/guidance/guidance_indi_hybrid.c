@@ -92,6 +92,7 @@ struct guidance_indi_hybrid_params gih_params = {
   .liftd_p50 = GUIDANCE_INDI_LIFTD_P50,
   .min_airspeed = GUIDANCE_INDI_MIN_AIRSPEED,
   .max_airspeed = GUIDANCE_INDI_MAX_AIRSPEED,
+  .stall_protect_gain = 1.5, // m/s^2 downward acceleration per m/s airspeed loss
 };
 
 // Quadplanes can hover at various pref pitch
@@ -127,7 +128,6 @@ bool take_heading_control = false;
 bool force_forward = false;
 
 bool guidance_indi_airspeed_filtering = false;
-
 
 struct FloatVect3 sp_accel = {0.0,0.0,0.0};
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
@@ -629,10 +629,10 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
      norm_des_as = gih_params.min_airspeed;
   }
 
+  float gi_airspeed_sp = norm_des_as;
+
   // Make turn instead of straight line, control airspeed
   if ((airspeed > TURN_AIRSPEED_TH) && (norm_des_as > (TURN_AIRSPEED_TH+2.0f))) {
-
-    float gi_airspeed_sp = norm_des_as;
 
     // Give the wind cancellation priority.
     if (norm_des_as > gih_params.max_airspeed) {
@@ -708,6 +708,11 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
   /*BoundAbs(sp_accel.x, 3.0 + airspeed/GUIDANCE_INDI_MAX_AIRSPEED*6.0);*/
   /*BoundAbs(sp_accel.y, 3.0 + airspeed/GUIDANCE_INDI_MAX_AIRSPEED*6.0);*/
   BoundAbs(accel_sp.z, 3.0);
+
+  if (!rotwing_state_pusher_motor_running() && !rotwing_state_hover_motors_running()) {
+    accel_sp.z = gih_params.stall_protect_gain * (gi_airspeed_sp - airspeed);
+    BoundAbs(accel_sp.z, 5.0);
+  }
 
   return accel_sp;
 }

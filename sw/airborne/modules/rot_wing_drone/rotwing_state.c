@@ -327,6 +327,20 @@ void rotwing_state_periodic(void)
   for(uint8_t i = 0; i < 5; i++) {
     rotwing_state.meas_rpm_time[i] = get_sys_time_float();
   }
+
+#ifdef SITL
+  if(rotwing_state.fail_hover_motor) {
+    rotwing_state.meas_rpm[0] =  0;
+    rotwing_state.meas_rpm[1] =  0;
+    rotwing_state.meas_rpm[2] =  0;
+    rotwing_state.meas_rpm[3] =  0;
+  }
+
+  if(rotwing_state.fail_pusher_motor) {
+    rotwing_state.meas_rpm[4] =  0;
+  }
+#endif
+
 #endif
 }
 
@@ -453,14 +467,26 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, fl
   // Set lower limits
   du_min_gih[0] = -roll_limit_rad - roll_angle; //roll
   du_min_gih[1] = min_pitch_limit_rad - pitch_angle; // pitch
-  du_min_gih[2] = du_min_thrust_z;
-  du_min_gih[3] = (-actuator_state_filt_vect[8] * g1g2[4][8]);
 
   // Set upper limits limits
   du_max_gih[0] = roll_limit_rad - roll_angle; //roll
   du_max_gih[1] = max_pitch_limit_rad - pitch_angle; // pitch
-  du_max_gih[2] = du_max_thrust_z;
-  du_max_gih[3] = 9.0; // Hacky value to prevent drone from pitching down in transition
+
+  if(rotwing_state_hover_motors_running()) {
+    du_min_gih[2] = du_min_thrust_z;
+    du_max_gih[2] = du_max_thrust_z;
+  } else {
+    du_min_gih[2] = 0.;
+    du_max_gih[2] = 0.;
+  }
+
+  if(rotwing_state_pusher_motor_running()) {
+    du_min_gih[3] = (-actuator_state_filt_vect[8] * g1g2[4][8]);
+    du_max_gih[3] = 9.0; // Hacky value to prevent drone from pitching down in transition
+  } else {
+    du_min_gih[3] = 0.;
+    du_max_gih[3] = 0.;
+  }
 
   // Set prefered states
   du_pref_gih[0] = 0; // prefered delta roll angle
