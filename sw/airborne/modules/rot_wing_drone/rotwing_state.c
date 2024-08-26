@@ -507,3 +507,41 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, fl
 void rotwing_state_set(enum rotwing_states_t state) {
   rotwing_state.nav_state = state;
 }
+
+bool rotwing_state_choose_circle_direction(uint8_t wp_id) {
+  // Get circle waypoint coordinates in NED
+  struct FloatVect3 circ_ned = {.x = waypoints[wp_id].enu_f.y,
+                                .y = waypoints[wp_id].enu_f.x,
+                                .z = -waypoints[wp_id].enu_f.z};
+
+  // Get drone position coordinates in NED
+  struct FloatVect3 pos_ned = {.x = stateGetPositionNed_f()->x,
+                               .y = stateGetPositionNed_f()->y,
+                               .z = stateGetPositionNed_f()->z};
+
+  // Get vector pointing from drone to waypoint
+  struct FloatVect3 vect_pos_circ;
+  VECT3_DIFF(vect_pos_circ, circ_ned, pos_ned);
+
+  struct FloatVect3 x_axis = {.x = 1, .y = 0, .z = 0};
+  struct FloatVect3 z_axis = {.x = 0, .y = 0, .z = 1};
+  struct FloatVect3 att_NED;
+  struct FloatVect3 cross_att_circ;
+
+  float_rmat_transp_vmult(&att_NED, stateGetNedToBodyRMat_f(), &x_axis);
+
+  VECT3_CROSS_PRODUCT(cross_att_circ, vect_pos_circ, att_NED);
+  float y = VECT3_DOT_PRODUCT(cross_att_circ, z_axis);
+  float x = VECT3_DOT_PRODUCT(vect_pos_circ, att_NED);
+  
+  float body_to_wp_angle_rad = atan2f(y, x);
+  // printf("circ pos: %.2f %.2f %.2f \n", circ_ned.x, circ_ned.y, circ_ned.z);
+  // printf("drone pos: %.2f %.2f %.2f \n", pos_ned.x, pos_ned.y, pos_ned.z);
+  // printf("body_to_wp_angle_deg: %.2f \n", DegOfRad(body_to_wp_angle_rad));
+
+  if (body_to_wp_angle_rad >= 0.f) {
+    return true;
+  } else {
+    return false;
+  }
+}

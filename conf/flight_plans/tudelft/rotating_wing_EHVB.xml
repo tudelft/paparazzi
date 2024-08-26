@@ -1,5 +1,5 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-<flight_plan alt="110" ground_alt="0" lat0="52.1681551" lon0="4.4126468" max_dist_from_home="1070" name="Rotating Wing Valkenburg" security_height="2">
+<flight_plan alt="100" ground_alt="0" lat0="52.1681551" lon0="4.4126468" max_dist_from_home="1070" name="Rotating Wing Valkenburg" security_height="2">
   <header/>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
@@ -154,6 +154,12 @@
     <block name="Circle_CCW_fwd" strip_button="CircleLeft" strip_icon="circle-left.png">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
       <circle radius="-nav.radius" wp="circ"/>
+    </block>
+    <block name="Circle_Auto_fwd" strip_button="CircleAuto" strip_icon="circle-left.png">
+      <!-- <call_once var="circle_direction" fun="rotwing_state_choose_circle_direction(WP_circ)"/> -->
+      <!-- <circle radius="-nav.radius" wp="circ"/> -->
+      <exception cond="!rotwing_state_choose_circle_direction(WP_circ)" deroute="Circle_CW_fwd"/>
+      <exception cond="rotwing_state_choose_circle_direction(WP_circ)" deroute="Circle_CCW_fwd"/>
     </block>
     <block name="Approach APP">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
