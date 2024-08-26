@@ -379,7 +379,9 @@
         <item name="wing tape">Check wings taped and secured</item>
         <item name="inspection">Inspect airframe condition</item>
         <item name="attitude">Check attitude and heading</item>
+        <item name="airspeed">Airspeed sensor calibration</item>
         <item name="takeoff location">Put UAV on take-off location</item>
+        <item name="actuators">Automated actuator check</item>
         <item name="flight plan">Check flight plan</item>
         <item name="flight block">Switch to correct flight block</item>
         <item name="camera">Switch on camera</item>

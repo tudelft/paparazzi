@@ -192,7 +192,7 @@ void rotwing_state_periodic(void)
   if(guidance_h.mode == GUIDANCE_H_MODE_NONE) {
     // Kill mode
     if(stabilization.mode == STABILIZATION_MODE_NONE) {
-      rotwing_state.state = ROTWING_STATE_FREE;
+      rotwing_state.state = ROTWING_STATE_FORCE_HOVER;
     }
     // ATT and ATT_FWD
     else if(stabilization.mode == STABILIZATION_MODE_ATTITUDE) {
