@@ -187,10 +187,17 @@ void rotwing_state_periodic(void)
   /* Override modes if flying with RC */
   rotwing_state.state = rotwing_state.nav_state;
   if(guidance_h.mode == GUIDANCE_H_MODE_NONE) {
-    if(stabilization.mode == STABILIZATION_MODE_ATTITUDE || stabilization.mode == STABILIZATION_MODE_NONE) {
-      rotwing_state.state = ROTWING_STATE_FORCE_HOVER;
-    } else {
-      rotwing_state.state = ROTWING_STATE_REQUEST_FW;
+    // Kill mode
+    if(stabilization.mode == STABILIZATION_MODE_NONE) {
+      rotwing_state.state = ROTWING_STATE_FREE;
+    }
+    // ATT and ATT_FWD
+    else if(stabilization.mode == STABILIZATION_MODE_ATTITUDE) {
+      if (stabilization.att_submode == STABILIZATION_ATT_SUBMODE_FORWARD) {
+        rotwing_state.state = ROTWING_STATE_FORCE_FW;
+      } else {
+        rotwing_state.state = ROTWING_STATE_FORCE_HOVER;
+      }
     }
   }
 
