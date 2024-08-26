@@ -33,7 +33,7 @@
  * Maximum error for the angle of the actuators (rad)
 */
 #ifndef PFC_ACTUATORS_MAX_ANGLE_ERROR
-#define PFC_ACTUATORS_MAX_ANGLE_ERROR 0.1f
+#define PFC_ACTUATORS_MAX_ANGLE_ERROR 0.05f
 #endif
 
 /**
