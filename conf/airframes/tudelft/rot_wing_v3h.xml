@@ -357,7 +357,7 @@
                 <field name="low" value="-9600"/>
                 <field name="high" value="2000"/>
                 <field name="low_feedback" value="0"/>
-                <field name="high_feedback" value="2000"/>
+                <field name="high_feedback" value="3000"/>
                 <field name="timeout" value="3"/>
             </field>
         </define>
