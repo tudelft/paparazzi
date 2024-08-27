@@ -23,24 +23,7 @@
 
         <define name="K_ELEVATOR_DEFLECTION" value="{50.0,-0.0063}"/>
         <define name="D_RUDDER_D_PPRZ"       value="-0.0018"/>
-        <define name="K_RPM_PPRZ_PUSHER"     value="{-131.497033952591,1.32098226269777,-0.0000291178067445214}"/>
-<!-- % Still needs to be adjusted for idle command!
-% put the old coefficients:
-k0 = -116.518697071689;
-k1 = 1.17051409813432;
-k2 = -0.00002580110593734;
-% calculate the idle in pprz units
-min_pprz = 1000/6372*9600;
-c = (9600-min_pprz)/9600;
-%caclulate new coefficients
-k0_new = k0+k1*min_pprz+min_pprz^2*k2;
-k1_new = k1*c + 2*min_pprz*c*k2;
-k2_new = k2*c^2;
-% compare two points:
-k0+k1*9600+k2*9600^2
-k0_new+k1_new*9600+k2_new*9600^2
-k0+k1*min_pprz+k2*min_pprz^2
-k0_new+k1_new*0+k2_new*0^2 -->
+        <define name="K_RPM_PPRZ_PUSHER"     value="{911.246079049875,1.16752352629989,-0.0000244470086063137}"/>
 
         <define name="K_LIFT_WING"           value="{-0.7811 -1.4319}"/>
         <define name="K_LIFT_FUSELAGE"       value="-0.050653927"/>
