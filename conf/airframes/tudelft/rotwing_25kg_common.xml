@@ -23,7 +23,7 @@
 
         <define name="K_ELEVATOR_DEFLECTION" value="{50.0,-0.0063}"/>
         <define name="D_RUDDER_D_PPRZ"       value="-0.0018"/>
-        <define name="K_RPM_PPRZ_PUSHER"     value="{911.246079049875,1.16752352629989,-0.0000244470086063137}"/>
+        <define name="K_RPM_PPRZ_PUSHER"     value="{1264.51356869248,1.11607176184111,-0.0000229206473957927}"/>
 
         <define name="K_LIFT_WING"           value="{-0.7811 -1.4319}"/>
         <define name="K_LIFT_FUSELAGE"       value="-0.050653927"/>

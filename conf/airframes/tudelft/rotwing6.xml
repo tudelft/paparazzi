@@ -152,7 +152,7 @@
         <servo no="1"  name="BMOTOR_RIGHT"     min="0"     neutral="1000"  max="8191"/> <!-- Supercan (1100-1202.56-1940us) -->
         <servo no="2"  name="BMOTOR_BACK"      min="0"     neutral="1000"  max="8191"/> <!-- Supercan (1100-1202.56-1940us) -->
         <servo no="3"  name="MOTOR_LEFT"       min="0"     neutral="1000"  max="8191"/> <!-- T-Motor ESC  is neutral -->
-        <servo no="4"  name="BMOTOR_PUSH"      min="-3276" neutral="-2700" max="3605"/> <!-- Supercan (1100-1940us) -->
+        <servo no="4"  name="BMOTOR_PUSH"      min="-3276" neutral="-2500" max="3605"/> <!-- Supercan (1100-1940us) -->
         <servo no="5"  name="BPARACHUTE"       min="-8191" neutral="0"     max="8191"/>
     </servos>
 
@@ -172,7 +172,7 @@
         <servo no="1"  name="MOTOR_RIGHT"    min="0"     neutral="1000"  max="8191"/> <!-- T-Motor ESC -->
         <servo no="2"  name="MOTOR_BACK"     min="0"     neutral="1000"  max="8191"/> <!-- T-Motor ESC -->
         <servo no="3"  name="BMOTOR_LEFT"    min="0"     neutral="1000"  max="8191"/> <!-- Supercan (1100-1202.56-1940us) -->
-        <servo no="4"  name="MOTOR_PUSH"     min="-3276" neutral="-2700" max="3605"/> <!-- Supercan (1100-1940us) -->
+        <servo no="4"  name="MOTOR_PUSH"     min="-3276" neutral="-2500" max="3605"/> <!-- Supercan (1100-1940us) -->
         <servo no="5"  name="PARACHUTE"      min="-8191" neutral="0"     max="8191"/>
     </servos>
 
