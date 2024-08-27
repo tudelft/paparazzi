@@ -1,13 +1,13 @@
 <!-- This is a Rotating Wing 25kg
-     * Airframe:    TUD00455
+     * Airframe:    ???
      * Autopilot:   Pixhawk 6X
      * Datalink:    Herelink
      * GPS:         UBlox F9P (2x)
      * RC:          SBUS Crossfire (diversity)
 -->
 
-<airframe name="RotatingWing25Kg">
-    <description>RotatingWing25Kg</description>
+<airframe name="RotatingWing5">
+    <description>RotatingWing 5</description>
 
     <firmware name="rotorcraft">
         <target name="ap" board="pixhawk_6x">
@@ -125,7 +125,7 @@
 
         <module name="stabilization" type="rate_indi"/>
 
-        <module name="eff_scheduling_rot_wing"/>
+        <module name="eff_scheduling_rotwing"/>
 
         <module name="guidance" type="indi_hybrid_quadplane"/>
         <module name="nav" type="hybrid">
@@ -135,15 +135,8 @@
         <!-- Other -->
         <module name="sys_id_doublet"/>
         <module name="sys_id_auto_doublets"/>
-        <module name="ground_detect">
-            <define name="GROUND_DETECT_AGL_MIN_VALUE" value="0.24"/>
-            <define name="USE_GROUND_DETECT_AGL_DIST" value="TRUE"/>
-        </module>
-        <module name="rotwing_state">
-          <define name="ROTWING_STATE_FW_SKEW_SPEED" value="22.0"/>
-          <define name="ROTWING_STATE_START_SKEW_SPEED" value="13.0"/>
-          <define name="ROTWING_STATE_QUAD_MAX_SPEED" value="15.0"/>
-        </module>
+        <module name="ground_detect"/>
+        <module name="rotwing_state"/>
         <module name="preflight_checks">
             <define name="SDLOG_PREFLIGHT_ERROR" value="TRUE"/>
         </module>
@@ -317,6 +310,34 @@
         <define name="BODY_TO_IMU_PSI"      value="180." unit="deg"/>
     </section>
 
-    <include href="conf/airframes/tudelft/rot_wing_25kg_common.xml" />
+    <checklist>
+        <item name="pic" type="text">Enter the PIC</item>
+        <item name="pac" type="text">Enter the PAC</item>
+        <item name="gcs" type="text">Enter the GCS op</item>
+        <item name="goal" type="text">Goal of the flight</item>
+        <item name="basic law">Location, airspace and weather</item>
+        <item name="RC Battery">Check the RC battery</item>
+        <item name="wings">Check wings secured (and taped)</item>
+        <item name="rotation">Initialize and check wing rotation</item>
+        <item name="attitude">Check attitude and heading</item>
+        <item name="airspeed">Calibrate airspeed sensor</item>
+        <item name="takeoff location">Put UAV on take-off location</item>
+        <item name="flight plan">Check flight plan</item>
+        <item name="flight block">Switch to correct flight block</item>
+        <item name="camera">Switch on camera</item>
+        <item name="parachute">Arm parachute</item>
+        <item name="announce">Announce flight to other airspace users</item>
+    </checklist>
+
+    <section name="BAT">
+        <define name="CATASTROPHIC_BAT_LEVEL"   value="36.0" unit="V"/>
+        <define name="CRITIC_BAT_LEVEL"         value="37.2" unit="V"/>
+        <define name="LOW_BAT_LEVEL"            value="48.4" unit="V"/>
+        <define name="MAX_BAT_LEVEL"            value="52.2" unit="V"/>
+        <define name="TAKEOFF_BAT_LEVEL"        value="48.4" unit="V"/>
+        <define name="BAT_NB_CELLS"             value="12"/>
+    </section>
+
+    <include href="conf/airframes/tudelft/rotwing_25kg_common.xml" />
 
 </airframe>

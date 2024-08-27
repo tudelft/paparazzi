@@ -1,7 +1,7 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
 <airframe>
-    <section name="CTRL_EFF_SHED" prefix="ROT_WING_EFF_SCHED_">
+    <section name="CTRL_EFF_SHED" prefix="ROTWING_EFF_SCHED_">
         <define name="IXX_BODY"              value="0.3953"/>
         <define name="IYY_BODY"              value="8.472"/>
         <define name="IZZ"                   value="10.18"/>
@@ -70,6 +70,13 @@ k0_new+k1_new*0+k2_new*0^2 -->
         <define name="MULTI_GPS_MODE"                   value="GPS_MODE_PRIMARY"/>
         <define name="INS_EKF2_FUSION_MODE"             value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/>
         <define name="INS_EKF2_GPS_YAW_OFFSET"          value="0"/>
+
+        <!-- Ground detect -->
+        <define name="GROUND_DETECT_AGL_MIN_VALUE"      value="0.24"/>
+        <define name="USE_GROUND_DETECT_AGL_DIST"       value="TRUE"/>
+
+        <!-- AGL distance -->
+        <define name="AGL_DIST_FILTER"                  value="0.07"/>
     </section>
 
         <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
@@ -232,7 +239,7 @@ k0_new+k1_new*0+k2_new*0^2 -->
         <define name="SKEW_REF_MODEL"       value="FALSE"/> <!-- Enable second order reference model for the skewing command -->
     </section>
 
-        <section name="FORWARD">
+    <section name="FORWARD">
         <define name="TURN_AIRSPEED_TH"             value="8.0"/> <!-- This is the pitch angle that the drone will have in forward flight, where 0 degrees is hover-->
         <define name="TRANSITION_MAX_OFFSET"        value="0.0" unit="deg"/>
     </section>
@@ -252,16 +259,7 @@ k0_new+k1_new*0+k2_new*0^2 -->
         <define name="MODE_STARTUP"     value="AP_MODE_NAV"/>
     </section>
 
-    <section name="BAT">
-        <define name="CATASTROPHIC_BAT_LEVEL"   value="36.0" unit="V"/>
-        <define name="CRITIC_BAT_LEVEL"         value="37.2" unit="V"/>
-        <define name="LOW_BAT_LEVEL"            value="48.4" unit="V"/>
-        <define name="MAX_BAT_LEVEL"            value="52.2" unit="V"/>
-        <define name="TAKEOFF_BAT_LEVEL"        value="48.4" unit="V"/>
-        <define name="BAT_NB_CELLS"             value="12"/>
-    </section>
-
-        <section name="SIMULATOR" prefix="NPS_">
+    <section name="SIMULATOR" prefix="NPS_">
         <define name="ACTUATOR_NAMES"   value="front_motor, right_motor, back_motor, left_motor, rudder, elevator, aileron, flaperon, pusher, skew" type="string[]"/>
         <define name="JSBSIM_MODEL"     value="rotwing25" type="string"/>
         <define name="SENSORS_PARAMS"   value="nps_sensors_params_default.h" type="string"/>
@@ -270,22 +268,4 @@ k0_new+k1_new*0+k2_new*0^2 -->
         <define name="JS_AXIS_MODE"     value="4"/>
     </section>
 
-    <checklist>
-        <item name="pic" type="text">Enter the PIC</item>
-        <item name="pac" type="text">Enter the PAC</item>
-        <item name="gcs" type="text">Enter the GCS op</item>
-        <item name="goal" type="text">Goal of the flight</item>
-        <item name="basic law">Location, airspace and weather</item>
-        <item name="RC Battery">Check the RC battery</item>
-        <item name="wings">Check wings secured (and taped)</item>
-        <item name="rotation">Initialize and check wing rotation</item>
-        <item name="attitude">Check attitude and heading</item>
-        <item name="airspeed">Calibrate airspeed sensor</item>
-        <item name="takeoff location">Put UAV on take-off location</item>
-        <item name="flight plan">Check flight plan</item>
-        <item name="flight block">Switch to correct flight block</item>
-        <item name="camera">Switch on camera</item>
-        <item name="parachute">Arm parachute</item>
-        <item name="announce">Announce flight to other airspace users</item>
-    </checklist>
 </airframe>

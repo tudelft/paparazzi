@@ -2,7 +2,7 @@
 
 <airframe>
 
-    <section name="CTRL_EFF_SHED" prefix="ROT_WING_EFF_SCHED_">
+    <section name="CTRL_EFF_SHED" prefix="ROTWING_EFF_SCHED_">
         <define name="IXX_BODY"              value="0.04780"/>
         <define name="IYY_BODY"              value="0.7546"/>
         <define name="IZZ"                   value="0.9752"/>
@@ -46,6 +46,16 @@
         <define name="DEFAULT_CIRCLE_RADIUS"                value="100.0"/>
         <define name="INS_EKF2_GPS_YAW_OFFSET"              value="0"/>
         <define name="INS_EKF2_GPS_ANTENNA_DISTANCE"        value="1.02"/>
+
+        <!-- Ground detect -->
+        <define name="USE_GROUND_DETECT_INDI_THRUST"        value="TRUE"/>
+        <define name="USE_GROUND_DETECT_AGL_DIST"           value="TRUE"/>
+        <define name="GROUND_DETECT_AGL_MIN_VALUE"          value="0.24"/>
+
+        <!-- AGL distance -->
+        <define name="AGL_DIST_MIN_DISTANCE_CHECK"          value="0.18"/>
+        <define name="AGL_DIST_MAX_DISTANCE_CHECK"          value="0.25"/>
+        <define name="AGL_DIST_FILTER"                      value="0.07"/>
     </section>
 
     <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
@@ -217,15 +227,6 @@
         <define name="MODE_STARTUP"     value="AP_MODE_NAV"/>
     </section>
 
-    <section name="BAT">
-        <define name="CATASTROPHIC_BAT_LEVEL"   value="18.0" unit="V"/>
-        <define name="CRITIC_BAT_LEVEL"         value="18.6" unit="V"/>
-        <define name="LOW_BAT_LEVEL"            value="19.2" unit="V"/>
-        <define name="MAX_BAT_LEVEL"            value="25.2" unit="V"/>
-        <define name="TAKEOFF_BAT_LEVEL"        value="24.2" unit="V"/>
-        <define name="BAT_NB_CELLS"             value="6"/>
-    </section>
-
     <section name="SIMULATOR" prefix="NPS_">
         <define name="ACTUATOR_NAMES" value="front_motor, right_motor, back_motor, left_motor, rudder, elevator, aileron, flap, pusher, skew" type="string[]"/>
         <define name="JSBSIM_MODEL" value="rotwing3" type="string"/>
@@ -235,30 +236,8 @@
         <define name="JS_AXIS_MODE" value="4"/>
     </section>
 
-    <!-- <checklist>
-        <item name="pic" type="text">Enter the PIC</item>
-        <item name="pac" type="text">Enter the PAC</item>
-        <item name="gcs" type="text">Enter the GCS op</item>
-        <item name="goal" type="text">Goal of the flight</item>
-        <item name="basic law">Location, airspace and weather</item>
-        <item name="RC Battery">Check the RC battery</item>
-        <item name="tail connection">Check tail connection</item>
-        <item name="wing tape">Check wings taped and secured</item>
-        <item name="inspection">Inspect airframe condition</item>
-        <item name="attitude">Check attitude and heading</item>
-        <item name="airspeed">Airspeed sensor calibration</item>
-        <item name="takeoff location">Put UAV on take-off location</item>
-        <item name="actuators">Automated actuator check</item>
-        <item name="flight plan">Check flight plan</item>
-        <item name="flight block">Switch to correct flight block</item>
-        <item name="camera">Switch on camera</item>
-        <item name="announce">Announce flight to other airspace users</item>
-    </checklist> -->
-
     <!--Airspeed estimation using EKF-->
     <section name="EKF_AW">
-        <define name="EKF_AW_WRAPPER_ROT_WING_TYPE_A"  value="0" description="1 for A, 0 for b"/>
-
         <define name="EKF_AW_P0_V_BODY"  value="1.E-2f" description="Initial covariance body velocity"/>
         <define name="EKF_AW_P0_MU"      value="1.E-5f" description="Initial covariance wind"/>
         <define name="EKF_AW_P0_OFFSET"  value="1.E-10f" description="Initial covariance offset"/>
@@ -308,7 +287,5 @@
         <define name="EKF_AW_K2_FZ_WING" value="-8.6965e-01f" description="Fz1 = ((k1+k2*alpha+k3*alpha^2)*(sin(skew)^2+k4)*V^2"/>
         <define name="EKF_AW_K3_FZ_WING" value="1.45783e-01f" description="Fz1 = ((k1+k2*alpha+k3*alpha^2)*(sin(skew)^2+k4)*V^2"/>
         <define name="EKF_AW_K4_FZ_WING" value="2.185395e-01f" description="Fz1 = ((k1+k2*alpha+k3*alpha^2)*(sin(skew)^2+k4)*V^2"/>
-
-        <define name="EKF_AW_TELEMETRY_DEBUG"     value="false" description="debug mode to send timing info through telemetry"/>
     </section>
 </airframe>

@@ -87,7 +87,7 @@
 #include "math/wls/wls_alloc.h"
 #include "modules/nav/nav_rotorcraft_hybrid.h"
 #include "firmwares/rotorcraft/navigation.h"
-#include "modules/rot_wing_drone/rotwing_state.h"
+#include "modules/rotwing_drone/rotwing_state.h"
 #include <stdio.h>
 #if INS_EXT_POSE
 #include "modules/ins/ins_ext_pose.h"

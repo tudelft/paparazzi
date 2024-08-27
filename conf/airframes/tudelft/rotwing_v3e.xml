@@ -119,7 +119,7 @@
             <define name="WLS_N_V" value="5"/>
         </module>
 
-        <module name="eff_scheduling_rot_wing"/>
+        <module name="eff_scheduling_rotwing"/>
 
         <module name="guidance" type="indi_hybrid_quadplane"/>
         <module name="nav" type="hybrid">
@@ -129,19 +129,11 @@
         <!-- Other -->
         <module name="sys_id_doublet"/>
         <module name="sys_id_auto_doublets"/>
-        <module name="ground_detect">
-            <define name="USE_GROUND_DETECT_INDI_THRUST"        value="TRUE"/>
-            <define name="USE_GROUND_DETECT_AGL_DIST"           value="TRUE"/>
-            <define name="GROUND_DETECT_AGL_MIN_VALUE"          value="0.24"/>
-        </module>
+        <module name="ground_detect"/>
         <module name="rotwing_state"/>
         <module name="preflight_checks"/>
         <module name="pfc_actuators"/>
-        <module name="agl_dist">
-            <define name="AGL_DIST_MIN_DISTANCE_CHECK"          value="0.18"/>
-            <define name="AGL_DIST_MAX_DISTANCE_CHECK"          value="0.25"/>
-            <define name="AGL_DIST_FILTER"                      value="0.07"/>
-        </module>
+        <module name="agl_dist"/>
         <module name="approach_moving_target"/>
     </firmware>
 
@@ -374,5 +366,34 @@
         <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
     </section>
 
-    <include href="conf/airframes/tudelft/rot_wing_7kg_common.xml" />
+    <checklist>
+        <item name="pic" type="text">Enter the PIC</item>
+        <item name="pac" type="text">Enter the PAC</item>
+        <item name="gcs" type="text">Enter the GCS op</item>
+        <item name="goal" type="text">Goal of the flight</item>
+        <item name="basic law">Location, airspace and weather</item>
+        <item name="RC Battery">Check the RC battery</item>
+        <item name="tail connection">Check tail connection</item>
+        <item name="wing tape">Check wings taped and secured</item>
+        <item name="inspection">Inspect airframe condition</item>
+        <item name="attitude">Check attitude and heading</item>
+        <item name="airspeed">Airspeed sensor calibration</item>
+        <item name="takeoff location">Put UAV on take-off location</item>
+        <item name="actuators">Automated actuator check</item>
+        <item name="flight plan">Check flight plan</item>
+        <item name="flight block">Switch to correct flight block</item>
+        <item name="camera">Switch on camera</item>
+        <item name="announce">Announce flight to other airspace users</item>
+    </checklist>
+
+    <section name="BAT">
+        <define name="CATASTROPHIC_BAT_LEVEL"   value="18.0" unit="V"/>
+        <define name="CRITIC_BAT_LEVEL"         value="18.6" unit="V"/>
+        <define name="LOW_BAT_LEVEL"            value="19.2" unit="V"/>
+        <define name="MAX_BAT_LEVEL"            value="25.2" unit="V"/>
+        <define name="TAKEOFF_BAT_LEVEL"        value="24.2" unit="V"/>
+        <define name="BAT_NB_CELLS"             value="6"/>
+    </section>
+
+    <include href="conf/airframes/tudelft/rotwing_7kg_common.xml" />
 </airframe>
