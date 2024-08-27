@@ -241,7 +241,7 @@ void rotwing_state_periodic(void)
   else if(!rotwing_state_pusher_motor_running()) {
     rotwing_state.sp_skew_angle_deg = 0.f;
   }
-  else if(rotwing_state.state == ROTWING_STATE_REQUEST_HOVER && meas_skew_angle < ROTWING_SKEW_ANGLE_STEP) {
+  else if(rotwing_state.state == ROTWING_STATE_REQUEST_HOVER && meas_skew_angle <= (ROTWING_SKEW_ANGLE_STEP + 5.f)) {
     rotwing_state.sp_skew_angle_deg = 0.f;
   }
   else {
