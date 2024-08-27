@@ -30,6 +30,7 @@
             <define name="INS_EKF2_GYRO_ID"     value="IMU_CUBE1_ID"/>
             <define name="INS_EKF2_ACCEL_ID"    value="IMU_CUBE1_ID"/>
             <define name="INS_EKF2_MAG_ID"      value="MAG_RM3100_SENDER_ID"/>
+            <define name="MULTI_GPS_MODE"       value="GPS_MODE_PRIMARY"/>
 
             <!--Only send gyro and accel that is being used-->
             <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
@@ -64,6 +65,7 @@
             <define name="RADIO_CONTROL_THRUST_X" value="0"/>
 
             <define name="PREFLIGHT_CHECK_BYPASS" value="TRUE"/>
+            <define name="USE_SONAR"              value="1"/> <!-- Because uavcan can't handle simulation yet -->
         </target>
 
         <!-- Kongsberg datalink -->
@@ -238,7 +240,6 @@
     </section>
 
     <section name="CALIBRATION">
-
         <!-- Voltage and current measurements -->
         <define name="VoltageOfAdc(adc)" value="((3.3f/65536.0f) * 11.98389 * adc)"/>
         <define name="VBoardOfAdc(adc)" value="((3.3f/65536.0f) * 1.89036 * adc)"/>
@@ -247,7 +248,7 @@
         <define name="PFC_ACTUATORS" type="array">
             <!-- Aerodynamic -->
             <field type="struct">
-                <field name="feedback_id" value="255"/>
+                <field name="feedback_id" value="SERVO_SERVO_ELEVATOR_IDX"/>
                 <field name="feedback_id2" value="255"/>
                 <field name="low" value="-4500"/>
                 <field name="high" value="4500"/>
@@ -256,7 +257,7 @@
                 <field name="timeout" value="1"/>
             </field>
             <field type="struct">
-                <field name="feedback_id" value="255"/>
+                <field name="feedback_id" value="SERVO_SERVO_RUDDER_IDX"/>
                 <field name="feedback_id2" value="255"/>
                 <field name="low" value="-4500"/>
                 <field name="high" value="4500"/>
@@ -402,5 +403,4 @@
     </section>
 
     <include href="conf/airframes/tudelft/rotwing_7kg_common.xml" />
-
 </airframe>
