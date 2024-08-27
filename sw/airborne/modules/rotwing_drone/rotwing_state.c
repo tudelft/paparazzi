@@ -208,7 +208,8 @@ void rotwing_state_periodic(void)
   if(rotwing_state.state == ROTWING_STATE_FORCE_HOVER || rotwing_state.state == ROTWING_STATE_REQUEST_HOVER) {
     rotwing_state.hover_motors_enabled = true;
   }
-  else if(meas_airspeed > ROTWING_FW_MIN_AIRSPEED && rotwing_state_hover_motors_idling() && rotwing_state_pusher_motor_running() && meas_skew_angle >= ROTWING_FW_SKEW_ANGLE && gi_unbounded_airspeed_sp >= ROTWING_FW_MIN_AIRSPEED) {
+  else if(meas_airspeed > ROTWING_FW_MIN_AIRSPEED && rotwing_state_hover_motors_idling() && rotwing_state_pusher_motor_running() && meas_skew_angle >= ROTWING_FW_SKEW_ANGLE 
+        && (gi_unbounded_airspeed_sp >= ROTWING_FW_MIN_AIRSPEED || rotwing_state.state != ROTWING_STATE_FREE)) {
     rotwing_state.hover_motors_enabled = false;
   }
   else {
