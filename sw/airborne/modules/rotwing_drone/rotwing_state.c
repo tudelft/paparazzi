@@ -54,7 +54,7 @@
 
 /* Minimum time for the hover motors to be considered idling (seconds) */
 #ifndef ROTWING_QUAD_IDLE_TIMEOUT
-#define ROTWING_QUAD_IDLE_TIMEOUT 2.0
+#define ROTWING_QUAD_IDLE_TIMEOUT 0.2
 #endif
 
 /* Minimum measured skew angle to consider the rotating wing in fixedwing (deg) */
