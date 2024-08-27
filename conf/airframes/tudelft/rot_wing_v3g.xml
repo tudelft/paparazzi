@@ -387,5 +387,25 @@
         <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
     </section>
 
+    <checklist>
+        <item name="pic" type="text">Enter the PIC</item>
+        <item name="pac" type="text">Enter the PAC</item>
+        <item name="gcs" type="text">Enter the GCS op</item>
+        <item name="goal" type="text">Goal of the flight</item>
+        <item name="basic law">Location, airspace and weather</item>
+        <item name="RC Battery">Check the RC battery</item>
+        <item name="tail connection">Check tail connection</item>
+        <item name="wing tape">Check wings taped and secured</item>
+        <item name="inspection">Inspect airframe condition</item>
+        <item name="attitude">Check attitude and heading</item>
+        <item name="airspeed">Airspeed sensor calibration</item>
+        <item name="takeoff location">Put UAV on take-off location</item>
+        <item name="actuators">Automated actuator check</item>
+        <item name="flight plan">Check flight plan</item>
+        <item name="flight block">Switch to correct flight block</item>
+        <item name="camera">Switch on camera</item>
+        <item name="announce">Announce flight to other airspace users</item>
+    </checklist>
+
     <include href="conf/airframes/tudelft/rot_wing_7kg_common.xml" />
 </airframe>
