@@ -208,7 +208,7 @@
     </section>
 
     <section name="FORWARD">
-        <define name="TURN_AIRSPEED_TH"             value="8.0"/> <!-- This is the pitch angle that the drone will have in forward flight, where 0 degrees is hover-->
+        <define name="TURN_AIRSPEED_TH"             value="8.0"/>
         <define name="TRANSITION_MAX_OFFSET"        value="0.0" unit="deg"/>
     </section>
 
