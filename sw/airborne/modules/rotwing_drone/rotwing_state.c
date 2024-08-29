@@ -44,7 +44,7 @@
 
 /* Timeout for the RPM feedback (seconds) */
 #ifndef ROTWING_RPM_TIMEOUT
-#define ROTWING_RPM_TIMEOUT 0.2
+#define ROTWING_RPM_TIMEOUT 1.0
 #endif
 
 /* Minimum thrust to consider the hover motors idling (PPRZ) */

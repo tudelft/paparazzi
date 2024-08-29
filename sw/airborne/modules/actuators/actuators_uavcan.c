@@ -35,6 +35,16 @@
 #define UAVCAN_ACTUATORS_USE_CURRENT TRUE
 #endif
 
+/* By default run UAVCAN_RAW message at periodic frequency */
+#ifndef ACTUATORS_UAVCAN_RAW_DIV
+#define ACTUATORS_UAVCAN_RAW_DIV 1
+#endif
+
+/* By default run UAVCAN_CMD message at periodic frequency */
+#ifndef ACTUATORS_UAVCAN_CMD_DIV
+#define ACTUATORS_UAVCAN_CMD_DIV 1
+#endif
+
 /* uavcan ESC status telemetry structure */
 struct actuators_uavcan_telem_t {
   bool set;
@@ -439,9 +449,11 @@ void actuators_uavcan_commit(struct uavcan_iface_t *iface, int16_t *values, uint
     offset += 14;
   }
 
-  // Broadcast the raw command message on the interface
-  uavcan_broadcast(iface, UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_SIGNATURE, UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_ID,
-                   CANARD_TRANSFER_PRIORITY_HIGH, buffer, (offset + 7) / 8);
+  RunOnceEvery(ACTUATORS_UAVCAN_RAW_DIV, {
+    // Broadcast the raw command message on the interface
+    uavcan_broadcast(iface, UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_SIGNATURE, UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_ID,
+                    CANARD_TRANSFER_PRIORITY_HIGH, buffer, (offset + 7) / 8);
+  })
 }
 
 /**
@@ -473,7 +485,9 @@ void actuators_uavcan_cmd_commit(struct uavcan_iface_t *iface, int16_t *values, 
     offset += 16;
   }
 
-  // Broadcast the raw command message on the interface
-  uavcan_broadcast(iface, UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_SIGNATURE, UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_ID,
-                   CANARD_TRANSFER_PRIORITY_HIGH, buffer, (offset + 7) / 8);
+  RunOnceEvery(ACTUATORS_UAVCAN_CMD_DIV, {
+    // Broadcast the raw command message on the interface
+    uavcan_broadcast(iface, UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_SIGNATURE, UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_ID,
+                    CANARD_TRANSFER_PRIORITY_HIGH, buffer, (offset + 7) / 8);
+  })
 }
