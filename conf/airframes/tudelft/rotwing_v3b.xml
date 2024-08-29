@@ -389,6 +389,7 @@
         <item name="actuators">Automated actuator check</item>
         <item name="flight plan">Check flight plan</item>
         <item name="flight block">Switch to correct flight block</item>
+        <item name="drone tag">Switch on drone tag</item>
         <item name="camera">Switch on camera</item>
         <item name="announce">Announce flight to other airspace users</item>
     </checklist>

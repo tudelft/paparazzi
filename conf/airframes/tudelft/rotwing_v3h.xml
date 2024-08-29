@@ -72,7 +72,7 @@
         </module>
         <module name="airspeed" type="ms45xx_i2c">
             <configure name="MS45XX_I2C_DEV"            value="i2c2"/>
-            <define name="MS45XX_PRESSURE_SCALE"        value="1.65"/>
+            <define name="MS45XX_PRESSURE_SCALE"        value="1.90"/>
             <define name="USE_AIRSPEED_LOWPASS_FILTER"  value="TRUE"/>
             <define name="MS45XX_LOWPASS_TAU"           value="0.15"/>
             <define name="AIRSPEED_MS45XX_SEND_ABI"     value="1"/>
@@ -382,6 +382,7 @@
         <item name="actuators">Automated actuator check</item>
         <item name="flight plan">Check flight plan</item>
         <item name="flight block">Switch to correct flight block</item>
+        <item name="drone tag">Switch on drone tag</item>
         <item name="camera">Switch on camera</item>
         <item name="announce">Announce flight to other airspace users</item>
     </checklist>

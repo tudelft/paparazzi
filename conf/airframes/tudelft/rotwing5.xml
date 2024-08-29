@@ -324,6 +324,7 @@
         <item name="takeoff location">Put UAV on take-off location</item>
         <item name="flight plan">Check flight plan</item>
         <item name="flight block">Switch to correct flight block</item>
+        <item name="drone tag">Switch on drone tag</item>
         <item name="camera">Switch on camera</item>
         <item name="parachute">Arm parachute</item>
         <item name="announce">Announce flight to other airspace users</item>
