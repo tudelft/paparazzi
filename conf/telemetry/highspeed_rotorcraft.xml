@@ -216,6 +216,7 @@
 
   <process name="FlightRecorder">
     <mode name="default">
+      <message name="ALIVE"                    period="15.1"/>
       <message name="AUTOPILOT_VERSION"        period="11.1"/>
       <message name="GPS"                      period="11.1"/>
       <message name="DL_VALUE"                 period="2.5"/>
