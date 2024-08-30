@@ -34,12 +34,12 @@
 
 /* Minimum measured RPM to consider the hover motors running (RPM) */
 #ifndef ROTWING_QUAD_MIN_RPM
-#define ROTWING_QUAD_MIN_RPM 800
+#define ROTWING_QUAD_MIN_RPM 400
 #endif
 
 /* Minimum measured RPM to consider the pusher motor running (RPM) */
 #ifndef ROTWING_PUSH_MIN_RPM
-#define ROTWING_PUSH_MIN_RPM 500
+#define ROTWING_PUSH_MIN_RPM 300
 #endif
 
 /* Timeout for the RPM feedback (seconds) */
