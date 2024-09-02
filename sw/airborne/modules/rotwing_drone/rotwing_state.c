@@ -77,6 +77,11 @@
 #define ROTWING_QUAD_PREF_PITCH -5.0
 #endif
 
+/* Amoutn of time the airspeed needs to be below the FW_MIN_AIRSPEED */
+#ifndef ROTWING_FW_STALL_TIMEOUT
+#define ROTWING_FW_STALL_TIMEOUT 0.5
+#endif
+
 /* Sanity checks */
 // #if ROTWING_SKEW_START_AIRSPEED < ROTWING_QUAD_MAX_AIRSPEED
 // #error "ROTWING_SKEW_START_AIRSPEED cannot be less than ROTWING_QUAD_MAX_AIRSPEED"
@@ -183,9 +188,13 @@ static bool rotwing_state_hover_motors_idling(void) {
 void rotwing_state_periodic(void)
 {
   /* Get some genericly used variables */
+  static float last_stall_time = 0;
+  float current_time = get_sys_time_float();
   float meas_airspeed = stateGetAirspeed_f();
   float meas_skew_angle = rotwing_state.meas_skew_angle_deg;
   Bound(meas_skew_angle, 0, 90); // Bound to prevent errors
+  if(last_stall_time > ROTWING_FW_MIN_AIRSPEED)
+    last_stall_time = current_time;
 
   /* Override modes if flying with RC */
   rotwing_state.state = rotwing_state.nav_state;
@@ -208,7 +217,7 @@ void rotwing_state_periodic(void)
   if(rotwing_state.state == ROTWING_STATE_FORCE_HOVER || rotwing_state.state == ROTWING_STATE_REQUEST_HOVER) {
     rotwing_state.hover_motors_enabled = true;
   }
-  else if(meas_airspeed > ROTWING_FW_MIN_AIRSPEED && rotwing_state_hover_motors_idling() && rotwing_state_pusher_motor_running() && meas_skew_angle >= ROTWING_FW_SKEW_ANGLE 
+  else if((current_time - last_stall_time) < ROTWING_FW_STALL_TIMEOUT && rotwing_state_hover_motors_idling() && rotwing_state_pusher_motor_running() && meas_skew_angle >= ROTWING_FW_SKEW_ANGLE 
         && (gi_unbounded_airspeed_sp >= ROTWING_FW_MIN_AIRSPEED || rotwing_state.state != ROTWING_STATE_FREE)) {
     rotwing_state.hover_motors_enabled = false;
   }
@@ -332,7 +341,7 @@ void rotwing_state_periodic(void)
   rotwing_state.meas_rpm[3] = (actuators[SERVO_MOTOR_LEFT_IDX].pprz_val >= 0)? (ROTWING_QUAD_MIN_RPM + 100) : 0;
   rotwing_state.meas_rpm[4] = (actuators[SERVO_MOTOR_PUSH_IDX].pprz_val >= 0)? (ROTWING_PUSH_MIN_RPM + 100) : 0;
   for(uint8_t i = 0; i < 5; i++) {
-    rotwing_state.meas_rpm_time[i] = get_sys_time_float();
+    rotwing_state.meas_rpm_time[i] = current_time;
   }
 
 #ifdef SITL
@@ -354,6 +363,7 @@ void rotwing_state_periodic(void)
 static void rotwing_state_feedback_cb(uint8_t __attribute__((unused)) sender_id,
                                       struct act_feedback_t UNUSED *feedback_msg, uint8_t UNUSED num_act_message)
 {
+  float current_time = get_sys_time_float();
   for (int i = 0; i < num_act_message; i++) {
     int idx = feedback_msg[i].idx;
 
@@ -362,26 +372,26 @@ static void rotwing_state_feedback_cb(uint8_t __attribute__((unused)) sender_id,
       // Get wing rotation angle from sensor
       float skew_angle_rad = 0.5 * M_PI - feedback_msg[i].position;
       rotwing_state.meas_skew_angle_deg = DegOfRad(skew_angle_rad);
-      rotwing_state.meas_skew_angle_time = get_sys_time_float();
+      rotwing_state.meas_skew_angle_time = current_time;
     }
 
     // Get the RPM feedbacks of the motors
     if (feedback_msg[i].set.rpm) {
       if ((idx == SERVO_MOTOR_FRONT_IDX) || (idx == SERVO_BMOTOR_FRONT_IDX)) {
         rotwing_state.meas_rpm[0] = feedback_msg->rpm;
-        rotwing_state.meas_rpm_time[0] = get_sys_time_float();
+        rotwing_state.meas_rpm_time[0] = current_time;
       } else if ((idx == SERVO_MOTOR_RIGHT_IDX) || (idx == SERVO_BMOTOR_RIGHT_IDX)) {
         rotwing_state.meas_rpm[1] = feedback_msg->rpm;
-        rotwing_state.meas_rpm_time[1] = get_sys_time_float();
+        rotwing_state.meas_rpm_time[1] = current_time;
       } else if ((idx == SERVO_MOTOR_BACK_IDX) || (idx == SERVO_BMOTOR_BACK_IDX)) {
         rotwing_state.meas_rpm[2] = feedback_msg->rpm;
-        rotwing_state.meas_rpm_time[2] = get_sys_time_float();
+        rotwing_state.meas_rpm_time[2] = current_time;
       } else if ((idx == SERVO_MOTOR_LEFT_IDX) || (idx == SERVO_BMOTOR_LEFT_IDX)) {
         rotwing_state.meas_rpm[3] = feedback_msg->rpm;
-        rotwing_state.meas_rpm_time[3] = get_sys_time_float();
+        rotwing_state.meas_rpm_time[3] = current_time;
       } else if ((idx == SERVO_MOTOR_PUSH_IDX) || (idx == SERVO_BMOTOR_PUSH_IDX)) {
         rotwing_state.meas_rpm[4] = feedback_msg->rpm;
-        rotwing_state.meas_rpm_time[4] = get_sys_time_float();
+        rotwing_state.meas_rpm_time[4] = current_time;
       }
     }
   }
