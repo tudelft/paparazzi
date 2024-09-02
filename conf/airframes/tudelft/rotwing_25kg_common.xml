@@ -221,8 +221,8 @@
         <define name="FW_MAX_AIRSPEED"      value="30"/> <!-- Maximum forward airspeed -->
         <define name="QUAD_NOPUSH_AIRSPEED" value="8"/>  <!-- Maximum quadrotor without pusher motor airspeed -->
         <define name="QUAD_MAX_AIRSPEED"    value="15"/> <!-- Maximum quadrotor airspeed (with pusher motor)-->
-        <define name="SKEW_UP_AIRSPEED"     value="11"/> <!-- Airspeed where the skewing starts when going up in airspeed -->
-        <define name="SKEW_DOWN_AIRSPEED"   value="13"/> <!-- Airspeed where the skewing starts when going down in airspeed -->
+        <define name="SKEW_UP_AIRSPEED"     value="13"/> <!-- Airspeed where the skewing starts when going up in airspeed -->
+        <define name="SKEW_DOWN_AIRSPEED"   value="11"/> <!-- Airspeed where the skewing starts when going down in airspeed -->
         <define name="SKEW_REF_MODEL"       value="FALSE"/> <!-- Enable second order reference model for the skewing command -->
     </section>
 
