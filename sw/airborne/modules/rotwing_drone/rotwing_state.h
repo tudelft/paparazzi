@@ -84,5 +84,7 @@ bool rotwing_state_pusher_motor_running(void);
 
 void rotwing_state_set(enum rotwing_states_t state);
 bool rotwing_state_choose_circle_direction(uint8_t wp_id);
+void rotwing_state_set_transition_wp(uint8_t wp_id);
+void rotwing_state_update_WP_height(uint8_t wp_id, float height);
 
 #endif  // ROTWING_STATE_H

@@ -67,6 +67,11 @@
 #define ROTWING_SKEW_ANGLE_STEP 55.0
 #endif
 
+/* */
+#ifndef ROTWING_SKEW_BACK_MARGIN
+#define ROTWING_SKEW_BACK_MARGIN 5.0
+#endif
+
 /* Skew angle at which the mininum airspeed starts its linear portion */
 #ifndef ROTWING_MIN_AIRSPEED_SLOPE_START_ANGLE
 #define ROTWING_MIN_AIRSPEED_SLOPE_START_ANGLE 30.0
@@ -251,7 +256,7 @@ void rotwing_state_periodic(void)
   else if(!rotwing_state_pusher_motor_running()) {
     rotwing_state.sp_skew_angle_deg = 0.f;
   }
-  else if(rotwing_state.state == ROTWING_STATE_REQUEST_HOVER && meas_skew_angle <= (ROTWING_SKEW_ANGLE_STEP + 5.f)) {
+  else if(rotwing_state.state == ROTWING_STATE_REQUEST_HOVER && meas_skew_angle <= (ROTWING_SKEW_ANGLE_STEP + ROTWING_SKEW_BACK_MARGIN)) {
     rotwing_state.sp_skew_angle_deg = 0.f;
   }
   else {
@@ -551,4 +556,46 @@ bool rotwing_state_choose_circle_direction(uint8_t wp_id) {
   } else {
     return false;
   }
+}
+
+void rotwing_state_set_transition_wp(uint8_t wp_id) {
+
+  // Get drone position coordinates in NED
+  struct EnuCoor_f target_enu = {.x = stateGetPositionNed_f()->y,
+                                  .y = stateGetPositionNed_f()->x,
+                                  .z = -stateGetPositionNed_f()->z};
+
+  struct FloatVect3 x_axis = {.x = 1, .y = 0, .z = 0};
+  struct FloatVect3 x_att_NED;
+
+  float_rmat_transp_vmult(&x_att_NED, stateGetNedToBodyRMat_f(), &x_axis);
+
+  // set the new WP coordinates
+  target_enu.x = 100.f * x_att_NED.y + target_enu.x;
+  target_enu.y = 100.f * x_att_NED.x + target_enu.y;
+
+  waypoint_set_enu(wp_id, &target_enu);
+
+  // Send waypoint update every half second
+  RunOnceEvery(100 / 2, {
+    // Send to the GCS that the waypoint has been moved
+    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+                               &waypoints[wp_id].enu_i.x,
+                               &waypoints[wp_id].enu_i.y,
+                               &waypoints[wp_id].enu_i.z);
+  });
+
+}
+
+void rotwing_state_update_WP_height(uint8_t wp_id, float height) {
+  struct EnuCoor_f target_enu = {.x = waypoints[wp_id].enu_f.x,
+                                 .y = waypoints[wp_id].enu_f.y,
+                                 .z = height};
+  
+  waypoint_set_enu(wp_id, &target_enu);
+
+  DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+                               &waypoints[wp_id].enu_i.x,
+                               &waypoints[wp_id].enu_i.y,
+                               &waypoints[wp_id].enu_i.z);
 }

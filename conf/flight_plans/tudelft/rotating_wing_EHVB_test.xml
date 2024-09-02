@@ -10,9 +10,10 @@
     <waypoint name="p3" x="250" y="-30"/>
     <waypoint name="p4" x="120" y="-75"/>
     <waypoint name="circ" x="160" y="25"/>
-    <waypoint name="TD" x="10" y="-1" alt="40"/>
+    <waypoint name="TD" x="10" y="-1"/>
     <waypoint name="APP" x="70" y="-25"/>
     <waypoint name="FOLLOW" x="300" y="80"/>
+    <waypoint name="TRANS" x="300" y="90"/>
     <!-- EHVB -->
     <waypoint lat="52.169189" lon="4.410820" name="C1"/>
     <waypoint lat="52.168049" lon="4.406923" name="C2"/>
@@ -40,7 +41,12 @@
   <variables>
     <variable var="liftoff_pitch"/>
     <variable var="liftoff_roll"/>
+    <variable var="liftoff_pitch_limit" init="LIFTOFF_PITCH_LIMIT_DEG"/>
+    <variable var="liftoff_roll_limit" init="LIFTOFF_ROLL_LIMIT_DEG"/>
     <variable var="stage_timer_msec"/>
+    <variable var="hybrid_height" init="HYBRID_HEIGHT"/>
+    <variable var="transition_height" init="TRANSITION_HEIGHT"/>
+    <variable var="flare_height" init="FLARE_HEIGHT"/>
   </variables>
   <modules>
     <module name="follow_me">
@@ -78,7 +84,7 @@
     <block name="Wait takeoff">
       <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
       <exception cond="stage_time > 10" deroute="Holding point"/>
-      <attitude pitch="DegOfRad(stateGetNedToBodyEulers_f()->theta)" roll="DegOfRad(stateGetNedToBodyEulers_f()->phi)" throttle="0.2" until="(fabs(DegOfRad(stateGetNedToBodyEulers_f()->theta)) @LT 5.0) @AND (fabs(DegOfRad(stateGetNedToBodyEulers_f()->phi)) @LT 5.0) @AND (stage_time > 2)" vmode="throttle"/>
+      <attitude pitch="DegOfRad(stateGetNedToBodyEulers_f()->theta)" roll="DegOfRad(stateGetNedToBodyEulers_f()->phi)" throttle="0.2" until="(fabs(DegOfRad(stateGetNedToBodyEulers_f()->theta)) @LT liftoff_pitch_limit) @AND (fabs(DegOfRad(stateGetNedToBodyEulers_f()->phi)) @LT liftoff_roll_limit) @AND (stage_time > 2)" vmode="throttle"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
@@ -94,13 +100,13 @@
         <attitude pitch="0" roll="0" throttle="0.75" until="stage_time>3" vmode="throttle"/>
     </block>
     <block name="Climb">
-      <exception cond="GetPosHeight() @GT 20.0" deroute="Climb_Hybrid"/>
+      <exception cond="GetPosHeight() @GT hybrid_height" deroute="Climb_Hybrid"/>
       <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
       <call_once fun="nav_set_heading_current()"/>
       <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
     <block name="Climb_Hybrid">
-      <exception cond="GetPosHeight() @GT 40.0" deroute="Circle_Auto_fwd"/>
+      <exception cond="GetPosHeight() @GT transition_height" deroute="Transition_fw"/>
       <call_once fun="rotwing_state_set(ROTWING_STATE_FREE)"/>
       <call_once fun="nav_set_heading_current()"/>
       <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
@@ -174,31 +180,38 @@
       <go wp="STDBY"/>
       <deroute block="Standby"/>
     </block>
+    <block name="Transition_fw" strip_button="Transition FW" strip_icon="wp_quad.png" pre_call="rotwing_state_set_transition_wp(WP_TRANS)">
+      <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
+      <go wp="TRANS"/>
+      <exception cond="stateGetAirspeed_f() @GT ROTWING_FW_QUAD_MIN_AIRSPEED" deroute="Circle_Auto_fwd"/>
+    </block>
     <block name="land here">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>
-    <block name="land_Hybrid" strip_button="Land Hybrid" strip_icon="land-right.png">
+    <block name="land hybrid" strip_button="Land Hybrid" strip_icon="land-right.png">
         <exception cond="!rotwing_state_choose_circle_direction(WP_circ)" deroute="descend_circ_CW"/>
         <exception cond="rotwing_state_choose_circle_direction(WP_circ)" deroute="descend_circ_CCW"/>
     </block>
     <block name="descend_circ_CW" strip_button="Descend_circ_CW" strip_icon="descend.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
-        <exception cond="GetPosHeight() @LT 40.0" deroute="land"/>
+        <exception cond="GetPosHeight() @LT transition_height" deroute="land"/>
         <circle radius="nav.radius" wp="circ" climb="-nav.climb_vspeed" vmode="climb"/>
     </block>
     <block name="descend_circ_CCW" strip_button="Descend_circ_CCW" strip_icon="descend.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
-        <exception cond="GetPosHeight() @LT 40.0" deroute="land"/>
+        <exception cond="GetPosHeight() @LT transition_height" deroute="land"/>
         <circle radius="-nav.radius" wp="circ" climb="-nav.climb_vspeed" vmode="climb"/>
     </block>
     <block name="land" strip_button="Land" strip_icon="land-right.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_FREE)"/>
-        <go wp="TD"/>
+        <call_once fun="rotwing_state_update_WP_height(WP_TD, transition_height)"/>
+        <stay wp="TD"/>
+        <exception cond="stateGetHorizontalSpeedNorm_f() @LT 2.0" deroute="descend"/>
     </block>
     <block name="descend" strip_button="Descend" strip_icon="descend.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <exception cond="GetPosHeight() @LT 12.0" deroute="flare"/>
+        <exception cond="GetPosHeight() @LT flare_height" deroute="flare"/>
         <stay climb="-1.0" vmode="climb" wp="TD"/>
     </block>
     <block name="flare">
