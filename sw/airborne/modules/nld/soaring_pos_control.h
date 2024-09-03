@@ -3,6 +3,8 @@
  * Soaring pos controller for in air charging of the rotating wing drone
  */
 
+#pragma once
+
 #include "std.h"
 
 // settings

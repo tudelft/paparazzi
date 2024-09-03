@@ -1,20 +1,12 @@
 /*
- * Copyright (C) Roland Meertens
+ * Copyright (C) Simon Cajagi
  *
  * This file is part of paparazzi
  *
  */
 /**
- * @file "modules/orange_avoider/orange_avoider.c"
- * @author Roland Meertens
- * Example on how to use the colours detected to avoid orange pole in the cyberzoo
- * This module is an example module for the course AE4317 Autonomous Flight of Micro Air Vehicles at the TU Delft.
- * This module is used in combination with a color filter (cv_detect_color_object) and the navigation mode of the autopilot.
- * The avoidance strategy is to simply count the total number of orange pixels. When above a certain percentage threshold,
- * (given by color_count_frac) we assume that there is an obstacle and we turn.
- *
- * The color filter settings are set using the cv_detect_color_object. This module can run multiple filters simultaneously
- * so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTION_ID setting.
+ * @file "modules/nld/soaring_pos_control.c"
+ * @author Simon Cajagi
  */
 
 #include "modules/nld/soaring_pos_control.h"
@@ -24,8 +16,6 @@
 #include "modules/core/abi.h"
 #include <time.h>
 #include <stdio.h>
-
-#define NAV_C // needed to get the nav functions like Inside...
 #include "generated/flight_plan.h"
 
 void moveWaypointOnLine(uint8_t waypoint, float altitude);

@@ -53,11 +53,12 @@ struct body_forces calc_body_forces(struct EKF_AOA_AOS *ekf);
 float calc_forces_body_north(struct EKF_AOA_AOS *ekf);
 float calc_forces_body_east(struct EKF_AOA_AOS *ekf);
 float calc_forces_body_down(struct EKF_AOA_AOS *ekf);
-static void telemetry_send_aero_angles(struct transport_tx *trans, struct link_device *dev);
-static void telemetry_send_aero_angles_aw(struct transport_tx *trans, struct link_device *dev);
-static void telemetry_send_debug_vect(struct transport_tx *trans, struct link_device *dev);
 void ekf_aoa_aos_update_aircraft_state(struct EKF_AOA_AOS *ekf);
 void wrap_x(struct EKF_AOA_AOS *ekf);
+// Telemetry function
+// static void telemetry_send_aero_angles(struct transport_tx *trans, struct link_device *dev);
+// static void telemetry_send_aero_angles_aw(struct transport_tx *trans, struct link_device *dev);
+static void telemetry_send_debug_vect(struct transport_tx *trans, struct link_device *dev);
 
 //---------------------------------------------------------------------------------------
 // Main EKF functions
@@ -76,9 +77,9 @@ void ekf_aoa_aos_init() {
   // Initialize covariance matrices
   float P_init[4] = {0.1f, 0.0f, 0.0f, 0.1f};  // Small, non-zero, diagonal values
   memcpy(ekf.P, P_init, sizeof(P_init));
-  float Q_init[4] = {Q_diag, 0.0f, 0.0f, Q_diag};  // TODO: Make into setting
+  float Q_init[4] = {Q_diag, 0.0f, 0.0f, Q_diag};
   memcpy(ekf.Q, Q_init, sizeof(Q_init));
-  float R_init[4] = {R_diag, 0.0f, 0.0f, R_diag};  // TODO: Make into setting
+  float R_init[4] = {R_diag, 0.0f, 0.0f, R_diag};
   memcpy(ekf.R, R_init, sizeof(R_init));
 }
 
@@ -325,16 +326,16 @@ float calc_forces_body_down(struct EKF_AOA_AOS *ekf){
 // Other support functions
 //---------------------------------------------------------------------------------------
 
-static void telemetry_send_aero_angles(struct transport_tx *trans, struct link_device *dev) {
-  // Telemetry callback function
-  float x[2] = {ekf.x[0], ekf.x[1]};
-  pprz_msg_send_AERO_ANGLES(trans, dev, AC_ID, &x[0], &x[1]);
-}
+// static void telemetry_send_aero_angles(struct transport_tx *trans, struct link_device *dev) {
+//   // Telemetry callback function
+//   float x[2] = {ekf.x[0], ekf.x[1]};
+//   pprz_msg_send_AERO_ANGLES(trans, dev, AC_ID, &x[0], &x[1]);
+// }
 
-static void telemetry_send_aero_angles_aw(struct transport_tx *trans, struct link_device *dev) {
-  // Telemetry callback function
-  pprz_msg_send_AERO_ANGLES_AW(trans, dev, AC_ID, &ekf_aw_aoa_aos.aoa, &ekf_aw_aoa_aos.aos);
-}
+// static void telemetry_send_aero_angles_aw(struct transport_tx *trans, struct link_device *dev) {
+//   // Telemetry callback function
+//   pprz_msg_send_AERO_ANGLES_AW(trans, dev, AC_ID, &ekf_aw_aoa_aos.aoa, &ekf_aw_aoa_aos.aos);
+// }
 
 static void telemetry_send_debug_vect(struct transport_tx *trans, struct link_device *dev) {
   // Telemetry callback function

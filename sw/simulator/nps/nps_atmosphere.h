@@ -44,6 +44,7 @@ extern void nps_atmosphere_init(void);
 extern void nps_atmosphere_set_wind_speed(double speed);
 extern void nps_atmosphere_set_wind_dir(double dir);
 extern void nps_atmosphere_set_wind_ned(double wind_north, double wind_east, double wind_down);
+extern void nps_atmosphere_set_turbulence_severity(int turbulence_severity);
 extern void nps_atmosphere_update(double dt);
 
 #endif /* NPS_ATMOSPHERE_H */

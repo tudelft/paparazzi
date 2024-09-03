@@ -95,6 +95,11 @@ void nps_atmosphere_set_wind_ned(double wind_north, double wind_east, double win
   nps_atmosphere.wind_dir = dir;
 }
 
+void nps_atmosphere_set_turbulence_severity(int turbulence_severity)
+{
+  nps_atmosphere.turbulence_severity = turbulence_severity;
+}
+
 void nps_atmosphere_update(double dt)
 {
   static double req_time = 0.;

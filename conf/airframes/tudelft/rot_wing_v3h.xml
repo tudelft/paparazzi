@@ -47,6 +47,7 @@
         <target name="nps" board="pc">
             <module name="radio_control" type="datalink"/>
             <module name="fdm" type="jsbsim"/>
+            <module name="orographic_wind_field"/>
 
             <!--Not dealing with these in the simulation-->
             <define name="RADIO_TH_HOLD"          value="0"/> <!-- Throttle hold in command laws -->
@@ -129,7 +130,9 @@
         <module name="pfc_actuators"/>
         <module name="agl_dist"/>
         <module name="approach_moving_target"/>
-        <module name="aero_angles_ekf"/>
+        <!-- <module name="aero_angles_ekf"/> -->
+        <module name="soaring_pos_control"/>
+        <module name="deviation_from_wp"/>
 
         <!--Airspeed estimation using EKF-->
         <module name="ekf_aw">
@@ -529,7 +532,7 @@
 
     <section name="SIMULATOR" prefix="NPS_">
         <define name="ACTUATOR_NAMES" value="front_motor, right_motor, back_motor, left_motor, rudder, elevator, aileron, flap, pusher, skew" type="string[]"/>
-        <define name="JSBSIM_MODEL" value="rotwing3" type="string"/>
+        <define name="JSBSIM_MODEL" value="rotwing3_simon2" type="string"/>
         <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
         <define name="COMMANDS_NB" value="10"/>
         <define name="NO_MOTOR_MIXING" value="TRUE"/>

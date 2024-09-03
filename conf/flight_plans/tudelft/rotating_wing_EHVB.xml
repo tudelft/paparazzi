@@ -15,8 +15,12 @@
     <waypoint name="p4" x="120" y="-75"/> -->
     <waypoint name="circ" x="160" y="25"/>
     <waypoint name="TD" x="10" y="-1"/>
+    <waypoint name="GOAL" x="0" y="0"/>
+    <waypoint name="HEADING" x="0" y="0"/>
+    <waypoint name="DEVI" x="0" y="0"/>
     <!-- <waypoint name="APP" x="70" y="-25"/> -->
     <!-- <waypoint name="FOLLOW" x="300" y="80"/> -->
+    
     <!-- EHVB -->
     <waypoint lat="52.169189" lon="4.410820" name="C1"/>
     <waypoint lat="52.168049" lon="4.406923" name="C2"/>
@@ -189,6 +193,15 @@
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID)"/>
       <set var="rotwing_state_skewing.force_rotation_angle" value="1"/>
       <circle radius="-100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)" vmode='climb' climb="circle_v_climb" until="circle_min_alt>GetPosAlt()"/>
+    </block>
+    <block name="Soaring follow line">
+      <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_EFFICIENT)"/>
+      <call_once fun="startLineFollowing()"/>
+      <stay wp="GOAL"/>
+    </block>
+    <block name="Measuring deviation">
+      <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_EFFICIENT)"/>
+      <stay wp="DEVI"/>
     </block>
     <!-- <block name="big_Circle_CW_fwd">
       <call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_EFFICIENT)"/>

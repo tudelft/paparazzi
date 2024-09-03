@@ -61,6 +61,10 @@
       <message name="ROTORCRAFT_CMD"           period="0.2"/>
       <message name="DEBUG_VECT"               period="0.2"/>
       <message name="EXTERNAL_POSE_DOWN"       period="0.2"/>
+      <!-- Only for NPS from here -->
+      <message name="IMU_GYRO_SCALED"     period="0.02"/> 
+      <message name="IMU_ACCEL_SCALED"    period="0.02"/>
+      <message name="IMU_ACCEL_RAW"       period="0.02"/>
 
     </mode>
 

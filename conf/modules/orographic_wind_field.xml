@@ -1,0 +1,23 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="orographic_wind_field" dir="orographic_wind_field">
+  <doc>
+    <description>This module sets the NPS wind conditions to mimick flying above a dune.</description>
+  </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="WindField">
+        <dl_setting var="base_wind_speed" min="0" step="0.1" max="20" shortname="base wind speed"/>
+        <dl_setting var="desired_slope_angle" min="0"    max="2"    step="1" values="21.3|23.2|25.2" shortname="slope angle [deg]" type="uint8_t"/>
+        <dl_setting var="desired_turbulence_severity" min="0"    max="7"    step="1" shortname="turbulence severity" type="uint8_t"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <header>
+    <file name="orographic_wind_field.h"/>
+  </header>
+    <init fun="init_orographic_wind_field()"/>
+    <periodic fun="periodic_orographic_wind_field()" freq="500"/>
+  <makefile>
+    <file name="orographic_wind_field.c"/>
+  </makefile>
+</module>

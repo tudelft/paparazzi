@@ -1,0 +1,25 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="deviation_from_wp" dir="deviation_from_wp">
+  <doc>
+    <description>This module logs the distance from a waypoint to help analyse how turbulence affects NAV mode accuracy in different wind fields.</description>
+  </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="DeviationFromWp">
+        <dl_setting var="wp_e" min="-5" max="5"    step="0.1"  shortname="E"/>
+        <dl_setting var="wp_n" min="-5" max="10"   step="0.1"  shortname="N"/>
+        <dl_setting var="wp_u" min="0"  max="10"   step="0.1"  shortname="U"/>
+        <dl_setting min="0" max="1" step="1" values="FALSE|TRUE" var="send_data" type="bool" shortname="Send data"/>
+        <dl_setting min="0" max="1" step="1" values="FALSE|TRUE" var="automated_test" type="bool" shortname="Automated test"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <header>
+    <file name="deviation_from_wp.h"/>
+  </header>
+    <init fun="init_deviation_from_wp()"/>
+    <periodic fun="periodic_deviation_from_wp()" freq="50"/>
+  <makefile>
+    <file name="deviation_from_wp.c"/>
+  </makefile>
+</module>
