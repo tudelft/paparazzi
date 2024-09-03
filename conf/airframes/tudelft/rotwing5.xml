@@ -40,6 +40,13 @@
                 <define name="POWER_UAVCAN_BATTERY_CIRCUITS" value="{{14,0},{6,1}}"/>
             </module>
 
+            <!-- MAVLink Genius communication -->
+            <module name="mavlink">
+                <configure name="MAVLINK_BAUD" value="B57600"/>
+                <configure name="MAVLINK_PORT" value="UART3"/>
+                <define name="MAV_AUTOPILOT_ID" value="MAV_AUTOPILOT_ARDUPILOTMEGA"/>
+            </module>
+
             <!-- Log in high speed (Remove for outdoor flights) -->
             <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
         </target>
@@ -58,6 +65,17 @@
 
             <define name="PREFLIGHT_CHECK_BYPASS" value="TRUE"/>
             <define name="USE_SONAR"              value="1"/> <!-- Because uavcan can't handle simulation yet -->
+
+
+            <!-- MAVLink simulation -->
+            <module name="mavlink">
+                <define name="MAV_AUTOPILOT_ID" value="MAV_AUTOPILOT_ARDUPILOTMEGA"/>
+                <define name="UDP1_PORT_OUT" value="24550"/>
+                <define name="UDP1_PORT_IN" value="14551"/>
+                <define name="UDP1_HOST" value="127.0.0.1"/>
+                <define name="MAVLINK_DEBUG" value="printf"/>
+                <configure name="MAVLINK_PORT" value="UDP1"/>
+            </module>
         </target>
 
         <!-- Herelink datalink -->
