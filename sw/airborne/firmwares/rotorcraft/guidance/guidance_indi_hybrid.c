@@ -364,16 +364,13 @@ void guidance_indi_enter(void)
 
   thrust_in = stabilization.cmd[COMMAND_THRUST];
   thrust_act = thrust_in;
-  guidance_indi_hybrid_heading_sp = stateGetNedToBodyEulers_f()->psi;
+  guidance_indi_hybrid_heading_sp = eulers_zxy.psi;
 
   float tau = 1.0 / (2.0 * M_PI * filter_cutoff);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
   for (int8_t i = 0; i < 3; i++) {
     init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
   }
-
-  /*Obtain eulers with zxy rotation order*/
-  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
 
   init_butterworth_2_low_pass(&roll_filt, tau, sample_time, eulers_zxy.phi);
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, eulers_zxy.theta);
