@@ -314,11 +314,11 @@ void rotwing_state_periodic(void)
   // Rotate with second order filter
   static float rotwing_state_skew_p_cmd = -MAX_PPRZ;
   static float rotwing_state_skew_d_cmd = 0;
-  float speed_sp  = 0.001 * (servo_pprz_cmd - rotwing_state_skew_p_cmd);
+  float speed_sp = 0.001 * (servo_pprz_cmd - rotwing_state_skew_p_cmd);
   rotwing_state_skew_d_cmd += 0.003 * (speed_sp - rotwing_state_skew_d_cmd);
   rotwing_state_skew_p_cmd += rotwing_state_skew_d_cmd;
   BoundAbs(rotwing_state_skew_p_cmd, MAX_PPRZ);
-  servo_pprz_cmd = rotwing_state_skew_p_cmd;;
+  servo_pprz_cmd = rotwing_state_skew_p_cmd;
 #endif
   rotwing_state.skew_cmd = servo_pprz_cmd;
 
