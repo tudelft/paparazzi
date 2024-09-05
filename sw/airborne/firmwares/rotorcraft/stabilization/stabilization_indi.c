@@ -210,7 +210,9 @@ float Wu_alpha=0.1;
 
 bool use_pitch_Wu = false;
 bool use_flap = false;
-float theta_d = RadOfDeg(-90.0); 
+float theta_d = RadOfDeg(-90.0);
+float elevon_weight_pure = STABILIZATION_INDI_ELEVON_WEIGHT_PURE;
+float tilt_weight_pure = STABILIZATION_INDI_TILT_WEIGHT_PURE; 
 // float m = CTRL_EFF_CALC_MASS;
 int16_t takeoff_stage = 0;
 //define the size of B and W matrix used in takeoff
@@ -906,11 +908,9 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   #if USE_PIVOT_SWITCH == TRUE
   if(use_flap){
       // // Flap deflected tailsitter, for comparison of wind disturbance rejection in hovering
-  float elevon_weight = 0.0;
-  float tilt_weight = 100000.0;
-  indi_Wu[0] = tilt_weight;
+  indi_Wu[0] = tilt_weight_pure;
   indi_Wu[1] = indi_Wu[0];
-  indi_Wu[4] = elevon_weight;
+  indi_Wu[4] = elevon_weight_pure;
   indi_Wu[5] = indi_Wu[4];
   }
   else{
@@ -1117,22 +1117,31 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
         theta_d = theta_d_max;
     }
   }
+  // else if (takeoff_stage == 3){
+  //   if(eulers_zxy.theta < 0.0){          // theta_d gradually decrease for nav mode
+  //   float theta_d_land = -90.0 / 180.0 * M_PI;
+  //   float increment = t_scale_to_theta / PERIODIC_FREQUENCY;
+  //          theta_d -= increment;
+  //      if (theta_d < theta_d_land) {
+  //       theta_d = theta_d_land;
+  //   }
+  //   }else{
+  //     float theta_d_land = 90.0 / 180.0 * M_PI;
+  //     float increment = t_scale_to_theta / PERIODIC_FREQUENCY;
+  //     theta_d += increment;
+  //      if (theta_d > theta_d_land) {
+  //       theta_d = theta_d_land;
+  //   }
+  // }
+  // }
+  // }
   else if (takeoff_stage == 3){
-    if(eulers_zxy.theta < 0.0){          // theta_d gradually decrease for nav mode
     float theta_d_land = -90.0 / 180.0 * M_PI;
     float increment = t_scale_to_theta / PERIODIC_FREQUENCY;
            theta_d -= increment;
        if (theta_d < theta_d_land) {
         theta_d = theta_d_land;
     }
-    }else{
-      float theta_d_land = 90.0 / 180.0 * M_PI;
-      float increment = t_scale_to_theta / PERIODIC_FREQUENCY;
-      theta_d += increment;
-       if (theta_d > theta_d_land) {
-        theta_d = theta_d_land;
-    }
-  }
   }
   }
   else{
@@ -1196,10 +1205,11 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   } else if (takeoff_stage == 2){ // not in a takeoff stage, flying
 	  /* compute the INDI command */
 	  stabilization_indi_rate_run(rate_sp, in_flight);
-    if (use_flap){
-          actuators_pprz[0] = 0;
-	        actuators_pprz[1] = 0;
-    }
+    theta_d = eulers_zxy.theta;
+    // if (use_flap){
+    //       actuators_pprz[0] = 0;
+	  //       actuators_pprz[1] = 0;
+    // }
   }
 #endif
   indi_thrust_increment_set = false;

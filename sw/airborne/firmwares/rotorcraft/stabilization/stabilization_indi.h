@@ -54,6 +54,8 @@ extern float theta_d;
 extern struct FloatEulers eulers_zxy;
 extern struct FloatRates *body_rates;
 extern float indi_u[INDI_NUM_ACT];
+extern float tilt_weight_pure;
+extern float elevon_weight_pure;
 
 
 extern bool indi_use_adaptive;

@@ -102,7 +102,9 @@ PRINT_CONFIG_VAR(SDP3X_PRESSURE_OFFSET)
  * default airspeed scale is 2/1.225
  */
 #ifndef SDP3X_AIRSPEED_SCALE
-#define SDP3X_AIRSPEED_SCALE 4.18
+#define SDP3X_AIRSPEED_SCALE 8.753 
+/*4.18
+*/
 #endif
 
 /** Time constant for second order Butterworth low pass filter
