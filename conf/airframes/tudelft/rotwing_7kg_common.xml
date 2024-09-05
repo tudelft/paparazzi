@@ -184,9 +184,9 @@
         <define name="SKEW_UP_AIRSPEED"     value="10.0"/>  <!-- Airspeed where the skewing starts when going up in airspeed -->
         <define name="SKEW_DOWN_AIRSPEED"   value="8.0"/> <!-- Airspeed where the skewing starts when going down in airspeed -->
         <define name="SKEW_REF_MODEL"       value="TRUE"/> <!-- Enable second order reference model for the skewing command -->
-        <define name="REF_MODEL_P_GAIN"     value="0.55"/>
-        <define name="REF_MODEL_D_GAIN"     value="1.5"/>
-        <define name="REF_MODEL_MAX_SPEED"  value="1000"/> <!-- Not relevant for small drone so keep high -->
+        <define name="REF_MODEL_P_GAIN"     value="0.001"/>
+        <define name="REF_MODEL_D_GAIN"     value="0.003"/>
+        <define name="REF_MODEL_MAX_SPEED"  value="20"/> <!-- Not relevant for small drone so keep high -->
     </section>
 
     <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
