@@ -61,6 +61,12 @@ struct rotwing_state_t {
   bool force_skew;            // Force skew angle to a certain value by the GCS
   int16_t skew_cmd;
 
+  /* Reference Model */
+  float skew_model_max_speed;
+  float skew_model_p_gain;
+  float skew_model_d_gain;
+  float skew_model_skew_angle_deg;
+
   /* Airspeeds */
   float cruise_airspeed;      // Airspeed for cruising
   float min_airspeed;         // Minimum airspeed for bounding

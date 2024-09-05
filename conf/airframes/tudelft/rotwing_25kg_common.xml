@@ -225,6 +225,9 @@
         <define name="SKEW_UP_AIRSPEED"     value="13"/> <!-- Airspeed where the skewing starts when going up in airspeed -->
         <define name="SKEW_DOWN_AIRSPEED"   value="11"/> <!-- Airspeed where the skewing starts when going down in airspeed -->
         <define name="SKEW_REF_MODEL"       value="FALSE"/> <!-- Enable second order reference model for the skewing command -->
+        <define name="REF_MODEL_P_GAIN"     value="5"/>
+        <define name="REF_MODEL_D_GAIN"     value="3"/>
+        <define name="REF_MODEL_MAX_SPEED"  value="475"/>
     </section>
 
     <section name="FORWARD">

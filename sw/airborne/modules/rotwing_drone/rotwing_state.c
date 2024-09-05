@@ -163,6 +163,10 @@ void rotwing_state_init(void)
   rotwing_state.fail_skew_angle = false;
   rotwing_state.fail_hover_motor = false;
   rotwing_state.fail_pusher_motor = false;
+  rotwing_state.skew_model_skew_angle_deg = 0;
+  rotwing_state.skew_model_max_speed = ROTWING_REF_MODEL_MAX_SPEED;
+  rotwing_state.skew_model_p_gain = ROTWING_REF_MODEL_P_GAIN;
+  rotwing_state.skew_model_d_gain = ROTWING_REF_MODEL_D_GAIN;
 
   // Bind ABI messages
   AbiBindMsgACT_FEEDBACK(ROTWING_STATE_ACT_FEEDBACK_ID, &rotwing_state_feedback_ev, rotwing_state_feedback_cb);
@@ -314,11 +318,19 @@ void rotwing_state_periodic(void)
   // Rotate with second order filter
   static float rotwing_state_skew_p_cmd = -MAX_PPRZ;
   static float rotwing_state_skew_d_cmd = 0;
-  float speed_sp = 0.001 * (servo_pprz_cmd - rotwing_state_skew_p_cmd);
-  rotwing_state_skew_d_cmd += 0.003 * (speed_sp - rotwing_state_skew_d_cmd);
+  static float dt = 0;
+  static float prev_time = 0;
+
+  dt = get_sys_time_float() - prev_time;
+  float speed_sp = rotwing_state.skew_model_p_gain * dt * (servo_pprz_cmd - rotwing_state_skew_p_cmd);
+  BoundAbs(speed_sp, rotwing_state.skew_model_max_speed);
+  rotwing_state_skew_d_cmd += rotwing_state.skew_model_p_gain * dt * (speed_sp - rotwing_state_skew_d_cmd);
   rotwing_state_skew_p_cmd += rotwing_state_skew_d_cmd;
   BoundAbs(rotwing_state_skew_p_cmd, MAX_PPRZ);
   servo_pprz_cmd = rotwing_state_skew_p_cmd;
+  rotwing_state.skew_model_skew_angle_deg = 45.0 / MAX_PPRZ * rotwing_state_skew_p_cmd + 45.0;
+
+  prev_time = get_sys_time_float();
 #endif
   rotwing_state.skew_cmd = servo_pprz_cmd;
 
