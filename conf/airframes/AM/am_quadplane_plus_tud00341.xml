@@ -773,7 +773,7 @@
     <!--define name="UART7_CR2" value="(USART_CR2_STOP1_BITS | USART_CR2_SWAP_Msk)"/--> <!-- Swap RX/TX since RX doesn't work-->
 
     <define name="USE_EXT_REF_ATTITUDE" value="TRUE"/>
-    <define name="USE_EXT_REF_POSITION" value="TRUE"/>
+    <define name="TRACK_EXT_REF_POSITION" value="TRUE"/>
 
     <!-- Basic navigation settings -->
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>

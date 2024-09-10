@@ -471,7 +471,7 @@ static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am
     memcpy(&myam7_data_in_local,myam7_data_in_ptr,sizeof(struct am7_data_in));
     memcpy(&extra_data_in_local,extra_data_in_ptr,255 * sizeof(float));
 
-    #ifdef USE_EXT_REF_POSITION
+    #ifdef TRACK_EXT_REF_POSITION
         struct EnuCoor_f target_pos_sixdof = {myam7_data_in_local.aruco_NED_pos_y, myam7_data_in_local.aruco_NED_pos_x, -myam7_data_in_local.aruco_NED_pos_z + alt_offset_beacon}; 
         waypoint_set_enu(WP_SIXDOF, &target_pos_sixdof); 
          // Send to the GCS that the waypoint has been moved
