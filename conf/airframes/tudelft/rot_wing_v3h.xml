@@ -43,6 +43,9 @@
             <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
 
             <define name="I2C2_CLOCK_SPEED" value="100000"/>
+
+            <module name="ship_state_message"/>
+
         </target>
 
         <target name="nps" board="pc">

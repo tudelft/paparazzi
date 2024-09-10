@@ -1,0 +1,20 @@
+<!ELEMENT telemetry (process+)>
+<!ELEMENT process (mode+)>
+<!ELEMENT mode (message*)>
+<!ELEMENT message EMPTY>
+
+<!ATTLIST telemetry>
+<!ATTLIST process
+  name CDATA #REQUIRED
+  type CDATA #IMPLIED
+>
+<!ATTLIST mode
+  name CDATA #REQUIRED
+  key_press CDATA #IMPLIED
+>
+<!ATTLIST message
+  name CDATA #REQUIRED
+  period CDATA #IMPLIED
+  freq CDATA #IMPLIED
+  phase CDATA #IMPLIED
+>
