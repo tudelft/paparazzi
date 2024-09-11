@@ -34,7 +34,10 @@
       <message name="WIND_INFO_RET"            period="1."/>
       <message name="AHRS_REF_QUAT"            period="0.5"/>
       <message name="STAB_ATTITUDE"            period=".25"/>
-      <message name="EFF_MAT_STAB"             period="2.0"/>
+      <message name="AM7_IN"        	         period=".5"/>
+      <message name="AM7_OUT"        	         period=".5"/>
+      <message name="SERIAL_ACT_T4_IN"         period=".5"/>
+      <message name="SERIAL_ACT_T4_OUT"        period=".5"/>  
     </mode>
 
     <mode name="ppm">

@@ -1971,7 +1971,6 @@
          <field name = "pseudo_control_p_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1">Unfiltered measurement of p_dot</field>
          <field name = "pseudo_control_q_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1">Unfiltered measurement of q_dot</field>
          <field name = "pseudo_control_r_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1">Unfiltered measurement of r_dot</field>
-
          <field name = "desired_theta_value" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Desired theta value</field>
          <field name = "desired_phi_value" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Desired phi value</field>
          <field name = "NED_UAV_pos_x" type="float">NED current pos_x</field>

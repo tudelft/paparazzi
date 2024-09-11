@@ -1,6 +1,5 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-
-<flight_plan alt="152" ground_alt="147" lat0="43 33 50.83" lon0="1 28 52.61" max_dist_from_home="400" name="IMAV2024_Outdoor_Hybrid" security_height="2">
+<flight_plan alt="35" ground_alt="5" home_mode_height="30" lat0="51.40524049047032" lon0="-2.8191367597325105" max_dist_from_home="640" name="IMAV2024_Outdoor_Hybrid" qfu="250." security_height="10">
   <header>
 #include "autopilot.h"
   </header>
@@ -12,35 +11,96 @@
     <waypoint name="p2" x="27.5" y="-48.2"/>
     <waypoint name="p3" x="16.7" y="-19.6"/>
     <waypoint name="p4" x="13.7" y="-40.7"/>
-    <waypoint name="FLY1" x="200" y="200"/>
-    <waypoint name="FLY2" x="200" y="-200"/>
-    <waypoint name="FLY3" x="-200" y="-200"/>
-    <waypoint name="FLY4" x="-200" y="200"/>
-    <waypoint name="KILL1" x="280" y="280"/>
-    <waypoint name="KILL2" x="280" y="-280"/>
-    <waypoint name="KILL3" x="-280" y="-280"/>
-    <waypoint name="KILL4" x="-280" y="280"/>
-    <waypoint name="ARUCO_HOVER" x="10" y="10"/>
     <waypoint name="CAM" x="-20" y="-50" height="2."/>
     <waypoint name="TD" x="5.6" y="-10.9"/>
+    <waypoint name="ARUCO_HOVER" x="10" y="10"/>
+
+    <waypoint name="LANDX" lat="51.4045109" lon="-2.8193286"/>
+    <waypoint name="TAG" x="47.13" y="-3.824"/>
+    <waypoint name="_TAG_SIM" x="57.13" y="-3.824"/>
+    <waypoint name="_HERE" x="100.545" y="24.169"/>
+    <waypoint name="MAP1" lat="51.40397348780787" lon="-2.820792534133579"/>
+    <waypoint name="MAP2" lat="51.40324827491988" lon="-2.822579075697425"/>
+    <waypoint name="MAP3" lat="51.40216290330571" lon="-2.821736580096323"/>
+    <waypoint name="MAP4" lat="51.40318633735384" lon="-2.820434907050242"/>
+
+    <waypoint name="DROP" lat="51.4045959" lon="-2.8191027"/>
+    <waypoint name="START_IMAGES" lat="51.4041454" lon="-2.8197853"/>
+    <waypoint name="D1" lat="51.4037624" lon="-2.8200670"/>
+    <waypoint name="D2" lat="51.4035808" lon="-2.8202947"/>
+    <waypoint name="D3" lat="51.4037931" lon="-2.8204535"/>
+    <waypoint name="D4" lat="51.4039687" lon="-2.8204949"/>
+
+    <waypoint name="C1" lat="51.40337101177714" lon="-2.81946343972307"/>
+    <waypoint name="C2" lat="51.40269828686684" lon="-2.81854499646789"/>
+    <waypoint name="C3" lat="51.40412401003561" lon="-2.81582776937354"/>
+    <waypoint name="C4" lat="51.40480870184149" lon="-2.81670290546800"/>
+
+    <waypoint name="_F1" lat="51.40379999945021" lon="-2.812356282389418"/>
+    <waypoint name="_F2" lat="51.40685946623258" lon="-2.815004234777355"/>
+    <waypoint name="_F3" lat="51.40579141351461" lon="-2.817678320877347"/>
+    <waypoint name="_F4" lat="51.40508726787956" lon="-2.81840937698165"/>
+    <waypoint name="_F5" lat="51.40444290268980" lon="-2.819998224974223"/>
+    <waypoint name="_F6" lat="51.40453540633804" lon="-2.820990700718431"/>
+    <waypoint name="_F7" lat="51.40291745318346" lon="-2.824989633023005"/>
+    <waypoint name="_F8" lat="51.39994635405159" lon="-2.822079482030429"/>
+
+    <waypoint name="_FLY1" lat="51.40424870902749" lon="-2.820119499603871"/>
+    <waypoint name="_FLY2" lat="51.40364806450683" lon="-2.821602369304292"/>
+    <waypoint name="_FLY3" lat="51.40277234701238" lon="-2.823731664510897"/>
+    <waypoint name="_FLY4" lat="51.40074322069155" lon="-2.821774308525683"/>
+    <waypoint name="_FLY5" lat="51.40400414773781" lon="-2.813566012884135"/>
+    <waypoint name="_FLY6" lat="51.40610220954286" lon="-2.815401874714203"/>
+    <waypoint name="_FLY7" lat="51.40434319438164" lon="-2.819871389267096"/>
+    <waypoint name="_P1" lat="51.40362957556762" lon="-2.819863662028597"/>
+    <waypoint name="_P2" lat="51.40429280586027" lon="-2.820004683319591"/>
+    <waypoint name="_P3" lat="51.40397717175711" lon="-2.820793630630163"/>
+    <waypoint name="_P4" lat="51.40359227287529" lon="-2.820623028420364"/>
+    <waypoint name="_P5" lat="51.40318748775402" lon="-2.820433716921217"/>
   </waypoints>
   <sectors>
-    <sector color="orange" name="Flight_Area">
-      <corner name="FLY1"/>
-      <corner name="FLY2"/>
-      <corner name="FLY3"/>
-      <corner name="FLY4"/>
+    <sector color="red" name="Geofence">
+      <corner name="_F1"/>
+      <corner name="_F2"/>
+      <corner name="_F3"/>
+      <corner name="_F4"/>
+      <corner name="_F5"/>
+      <corner name="_F6"/>
+      <corner name="_F7"/>
+      <corner name="_F8"/>
     </sector>
-    <sector color="red" name="Kill">
-      <corner name="KILL1"/>
-      <corner name="KILL2"/>
-      <corner name="KILL3"/>
-      <corner name="KILL4"/>
+    <sector color="green" name="Permitted_Flight_Area">
+      <corner name="_FLY1"/>
+      <!--corner name="_FLY2"/-->
+      <corner name="_FLY3"/>
+      <corner name="_FLY4"/>
+      <corner name="_FLY5"/>
+      <corner name="_FLY6"/>
+      <!--corner name="_FLY7"/-->
+    </sector>
+    <sector color="yellow" name="Mapping">
+      <corner name="MAP1"/>
+      <corner name="MAP2"/>
+      <corner name="MAP3"/>
+      <corner name="MAP4"/>
+    </sector>
+    <sector color="purple" name="Pics">
+      <corner name="_P1"/>
+      <corner name="_P2"/>
+      <corner name="_P3"/>
+      <corner name="_P4"/>
+      <corner name="_P5"/>
+    </sector>
+    <sector color="blue" name="Performance">
+      <corner name="C1"/>
+      <corner name="C2"/>
+      <corner name="C3"/>
+      <corner name="C4"/>
     </sector>
   </sectors>
   <exceptions>
 	<!-- Check inside Flight Area, then goto Standby -->
-    <exception cond="Or(!InsideFlight_Area(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 50) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+    <exception cond="Or(!InsidePermitted_Flight_Area(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 50) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
   </exceptions>
   <blocks>
     <block name="Wait GPS">
@@ -65,7 +125,7 @@
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay vmode="climb" climb="0.5" wp="CLIMB"/>
     </block>
-    <block name="Standby" strip_button="Standby" strip_icon="home.png" pre_call="if(!InsideKill(GetPosX(), GetPosY())) NavKillThrottle();">
+    <block name="Standby" strip_button="Standby" strip_icon="home.png" pre_call="if(!InsideGeofence(GetPosX(), GetPosY())) NavKillThrottle();">
       <stay wp="STDBY"/>
     </block>
     <block name="stay_p1">
