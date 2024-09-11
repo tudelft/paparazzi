@@ -212,6 +212,53 @@
       <message name="GPS_RTK"                 period="1"/>
     </mode>
 
+    <mode name="Reduced">
+      <message name="DL_VALUE"                 period="0.7"/>
+      <message name="ROTORCRAFT_STATUS"        period="0.4"/>
+      <message name="ROTORCRAFT_FP"            period="0.40"/>
+      <message name="ROTORCRAFT_RADIO_CONTROL" period="0.40"/>
+      <message name="ROTORCRAFT_NAV_STATUS"    period="1.6"/>
+      <message name="ALIVE"                    period="2.1"/>
+      <message name="INS_REF"                  period="5.1"/>
+      <message name="WP_MOVED"                 period="1.3"/>
+      <message name="GPS_INT"                  period="0.7"/>
+      <message name="INS"                      period="0.7"/>
+      <message name="ENERGY"                   period="1.5"/>
+      <message name="DATALINK_REPORT"          period="5.1"/>
+      <message name="AIR_DATA"                 period="0.55"/>
+      <message name="INS_EKF2"                 period="0.55"/>
+      <message name="INS_EKF2_EXT"             period="4.25"/>
+      <message name="GUIDANCE_H_REF_INT"       period="0.9"/>
+      <message name="GUIDANCE_INDI_HYBRID"     period="0.5"/>
+      <message name="ESC"                      period="0.5"/>
+      <message name="AHRS_REF_QUAT"            period="0.2"/>
+      <message name="GPS_RTK"                  period="0.9"/>
+      <message name="APPROACH_MOVING_TARGET"   period="2.1"/>
+      <message name="TARGET_POS_INFO"          period="2.1"/>
+      <message name="ROTATING_WING_STATE"      period="0.2"/>
+      <message name="ACTUATORS"                period="0.2"/>
+      <message name="GUIDANCE"                 period="0.2"/>
+      <message name="STAB_ATTITUDE"            period="0.2"/>
+    </mode>
+
+    <mode name="Minimal">
+      <message name="ACTUATORS"                period="0.4"/>
+      <message name="AHRS_REF_QUAT"            period="0.4"/>
+      <message name="AIR_DATA"                 period="0.5"/>
+      <message name="ALIVE"                    period="2.1"/>
+      <message name="DATALINK_REPORT"          period="11.1"/>
+      <message name="ENERGY"                   period="3.3"/>
+      <message name="ESC"                      period="0.5"/>
+      <message name="ROTATING_WING_STATE"      period="0.4"/>
+      <message name="ROTORCRAFT_FP"            period="1.3"/>
+      <message name="ROTORCRAFT_NAV_STATUS"    period="1.3"/>
+      <message name="ROTORCRAFT_RADIO_CONTROL" period="1.3"/>
+      <message name="ROTORCRAFT_STATUS"        period="1.3"/>
+      <message name="STAB_ATTITUDE"            period="0.4"/>
+      <message name="TARGET_POS_INFO"          period="2.1"/>
+      <message name="WP_MOVED"                 period="2.1"/>
+    </mode>
+
   </process>
 
   <process name="FlightRecorder">
