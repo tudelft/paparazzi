@@ -1,0 +1,18 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="overactuated_mixing" dir="overactuated_vehicle">
+  <doc>
+    <description>Overactuated Vehicle Mixing</description>
+  </doc>
+
+  <header>
+    <file name="overactuated_mixing.h"/>
+  </header>
+   
+   <init fun="overactuated_mixing_init()"/>
+   <periodic fun="overactuated_mixing_run()" autorun="TRUE" freq="500"/>
+   
+  <makefile>
+    <file name="overactuated_mixing.c"/>
+  </makefile>
+</module>
