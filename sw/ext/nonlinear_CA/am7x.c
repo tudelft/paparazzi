@@ -192,11 +192,11 @@ void writing_routine(){
     myam7_data_out.lidar_value_cm = lidar_dist_cm;
     myam7_data_out.lidar_strength = lidar_signal_strength;
 
-    uint8_T *buf_out = (uint8_T *)&myam7_data_out;
+    uint8_t *buf_out = (uint8_t *)&myam7_data_out;
     //Calculating the checksum
-    uint8_T checksum_out_local = 0;
+    uint8_t checksum_out_local = 0;
 
-    for(uint16_T i = 0; i < sizeof(struct am7_data_out) - 1; i++){
+    for(uint16_t i = 0; i < sizeof(struct am7_data_out) - 1; i++){
       checksum_out_local += buf_out[i];
     }
     myam7_data_out.checksum_out = checksum_out_local;
@@ -217,7 +217,7 @@ void writing_routine(){
 }
 
 void reading_routine(){
-    uint8_T am7_byte_in;
+    uint8_t am7_byte_in;
     if(serialDataAvail(serial_port) > 0){
       am7_byte_in = serialGetchar (serial_port);      
       if( (am7_byte_in == START_BYTE) || (buffer_in_counter > 0)){
@@ -226,8 +226,8 @@ void reading_routine(){
       }
       if (buffer_in_counter > sizeof(struct am7_data_in)){
         buffer_in_counter = 0;
-        uint8_T checksum_in_local = 0;
-        for(uint16_T i = 1; i < sizeof(struct am7_data_in) ; i++){
+        uint8_t checksum_in_local = 0;
+        for(uint16_t i = 1; i < sizeof(struct am7_data_in) ; i++){
           checksum_in_local += am7_msg_buf_in[i];
         }
         if(checksum_in_local == am7_msg_buf_in[sizeof(struct am7_data_in)]){
