@@ -47,7 +47,7 @@ int verbose_optimizer = 0;
 int verbose_runtime = 0; 
 int verbose_received_data = 0; 
 int verbose_ivy_bus = 0; 
-int verbose_aruco = 0; 
+int verbose_aruco = 1; 
 int verbose_compute_accel = 0; 
 int verbose_filters = 0; 
 
@@ -257,7 +257,8 @@ void send_states_on_ivy(){
     IvySendMsg("1 ROTORCRAFT_FP  %d %d %d  %d %d %d  %d %d %d  %d %d %d  %d %d %d",
 
             (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_y/0.0039063),
-            (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_x/0.0039063),
+            //(int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_x/0.0039063),
+            (int32_t) (80/0.0039063),
             (int32_t) (-myam7_data_in_copy_for_ivy.UAV_NED_pos_z/0.0039063),
 
             (int32_t) (-1/0.0000019),
@@ -577,11 +578,11 @@ void main() {
 
   IvyInit ("NonlinearCA", "NonlinearCA READY", NULL, NULL, NULL, NULL);
   IvyStart(ivy_bus);
-  // IvyBindMsg(aruco_position_report, NULL, "^ground DESIRED_SP %s (\\S*) (\\S*) (\\S*) (\\S*)", "1");
-  IvyBindMsg(sixdof_beacon_pos_callback, NULL, "RELATIVE_BEACON_POS (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
-  IvyBindMsg(sixdof_beacon_angle_callback, NULL, "RELATIVE_BEACON_ANGLE (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
-  IvyBindMsg(sixdof_mode_callback, NULL, "SIXDOF_TRACKING (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
-  IvyBindMsg(sixdof_current_mode_callback, NULL, "SIXDOF_SYSTEM_CURRENT_MODE (\\S*) (\\S*)");
+  IvyBindMsg(aruco_position_report, NULL, "^ground DESIRED_SP %s (\\S*) (\\S*) (\\S*) (\\S*)", "1");
+  // IvyBindMsg(sixdof_beacon_pos_callback, NULL, "RELATIVE_BEACON_POS (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
+  // IvyBindMsg(sixdof_beacon_angle_callback, NULL, "RELATIVE_BEACON_ANGLE (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
+  // IvyBindMsg(sixdof_mode_callback, NULL, "SIXDOF_TRACKING (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
+  // IvyBindMsg(sixdof_current_mode_callback, NULL, "SIXDOF_SYSTEM_CURRENT_MODE (\\S*) (\\S*)");
 
   pthread_t thread1, thread2;
 
