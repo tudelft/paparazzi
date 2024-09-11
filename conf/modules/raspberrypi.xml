@@ -1,0 +1,23 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="raspberrypi" dir="raspberrypi">
+  <doc>
+    <description>Transfers data from RaspberryPi to Pixhawk and vice versa</description>
+  </doc>
+  <header>
+    <file name="raspberrypi.h"/>
+  </header>
+  <init fun="raspberrypi_init()"/>
+  <periodic fun="raspberrypi_periodic()" autorun="TRUE" freq="2"/>
+  <event fun="raspberrypi_event()"/>
+  <makefile>
+<!--       Configure default UART port and baudrate-->
+    <configure name="RPI_PORT" default="UART2" case="upper|lower"/>
+    <configure name="RPI_BAUD" default="B115200"/>
+    <!-- Enable UART and set baudrate -->
+    <define name="USE_$(RPI_PORT_UPPER)"/>
+    <define name="$(RPI_PORT_UPPER)_BAUD" value="$(RPI_BAUD)"/>
+    <define name="RPI_PORT" value="$(RPI_PORT_LOWER)"/>
+    <file name="raspberrypi.c" dir="modules/raspberrypi"/>
+    <file name="pprz_transport.c" dir="pprzlink/src"/>
+  </makefile>
+</module>

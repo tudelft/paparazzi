@@ -1,0 +1,112 @@
+<flight_plan SECURITY_HEIGHT="2" NAME="Oneloop Valkenburg" MAX_DIST_FROM_HOME="5000" LON0="4.412444" LAT0="52.168595" GROUND_ALT="0" ALT="8.0">
+    <header>    #include &quot;modules/datalink/datalink.h&quot;
+        #include "modules/datalink/datalink.h"
+        #include "modules/energy/electrical.h"
+        #include "modules/radio_control/radio_control.h"
+        #include "modules/ahrs/ahrs.h"
+        #include "modules/loggers/logger_file.h"
+        #define NPS_GAZEBO_WORLD "cyberzoo_orange_poles.world"
+    </header>
+    <waypoints>
+        <waypoint NAME="HOME" LON="4.4134865" LAT="52.1682196"/>
+        <waypoint Y="-80.4" X="62.6" NAME="CLIMB"/>
+        <waypoint Y="-55.1" X="106.0" NAME="STDBY"/>
+        <waypoint Y="-254.3" X="322.0" NAME="p1"/>
+        <waypoint LON="4.4133587" LAT="52.1692773" NAME="p2"/>
+        <waypoint Y="73.4" X="600.4" NAME="p3"/>
+        <waypoint Y="-48.5" X="238.6" NAME="p4"/>
+        <waypoint Y="-23.7" X="-4.1" NAME="TD"/>
+        <waypoint Y="-87.8" X="123.2" NAME="FOLLOW"/>
+        <waypoint NAME="PS" LON="4.4174372" LAT="52.1669450"/>
+        <waypoint NAME="S2" LON="4.4208804" LAT="52.1689871"/>
+        <waypoint NAME="C1" LON="4.410820" LAT="52.169189"/>
+        <waypoint NAME="C2" LON="4.406923" LAT="52.168049"/>
+        <waypoint NAME="C3" LON="4.408235" LAT="52.166515"/>
+        <waypoint NAME="C4" LON="4.407668" LAT="52.163255"/>
+        <waypoint NAME="C5" LON="4.410082" LAT="52.161908"/>
+        <waypoint NAME="C6" LON="4.416992" LAT="52.162641"/>
+        <waypoint NAME="C7" LON="4.427268" LAT="52.164861"/>
+        <waypoint NAME="C8" LON="4.427511" LAT="52.170422"/>
+        <waypoint NAME="C9" LON="4.424011" LAT="52.172276"/>
+        <waypoint NAME="p5" LON="4.4127541" LAT="52.1673931"/>
+        <waypoint NAME="p6" LON="4.4150577" LAT="52.1678569"/>
+        <waypoint NAME="p7" LON="4.4144979" LAT="52.1689993"/>
+        <waypoint NAME="p8" LON="4.4121999" LAT="52.1686045"/>
+    </waypoints>
+    <sectors>
+        <sector NAME="Hard_Geofence" COLOR="red">
+            <corner NAME="C1"/>
+            <corner NAME="C2"/>
+            <corner NAME="C3"/>
+            <corner NAME="C4"/>
+            <corner NAME="C5"/>
+            <corner NAME="C6"/>
+            <corner NAME="C7"/>
+            <corner NAME="C8"/>
+            <corner NAME="C9"/>
+        </sector>
+    </sectors>
+    <!-- <exceptions>
+        <exception DEROUTE="Landed" COND="(Or(!InsideHard_Geofence(GetPosX(), GetPosY()), GetPosAlt() @GT 80.0) @AND
+        !(IndexOfBlock('Holding point') @GT nav_block) @AND
+        !(nav_block >= IndexOfBlock('land here')) @AND
+        (autopilot_in_flight() == true) )"/>
+        <exception DEROUTE="Landed" COND="((datalink_time @GT 5) @AND
+        !(IndexOfBlock('Holding point') @GT nav_block) @AND
+        !(nav_block >= IndexOfBlock('land here')) @AND
+        (autopilot_in_flight() == true) )"/>
+    </exceptions> -->
+    <blocks>
+        <block NAME="Wait GPS">
+            <call_once FUN="NavKillThrottle()"/>
+            <while COND="!GpsFixValid()"/>
+        </block>
+        <block NAME="Geo init">
+            <while COND="LessThan(NavBlockTime(), 2)"/>
+            <call_once FUN="NavSetAltitudeReferenceHere()"/>
+        </block>
+        <block NAME="Holding point">
+            <call_once FUN="NavKillThrottle()"/>
+            <attitude VMODE="throttle" UNTIL="FALSE" THROTTLE="0" ROLL="0" PITCH="0"/>
+        </block>
+        <block NAME="Start Engine" KEY="r">
+            <call_once FUN="NavResurrect()"/>
+            <attitude VMODE="throttle" UNTIL="FALSE" THROTTLE="0" ROLL="0" PITCH="0"/>
+            <call_once FUN="NavResurrect()"/>
+        </block>
+        <block STRIP_ICON="takeoff.png" STRIP_BUTTON="Takeoff" NAME="Takeoff" KEY="t">
+            <exception DEROUTE="Standby" COND="GetPosAlt() @GT 0.8"/>
+            <call_once FUN="NavSetWaypointHere(WP_CLIMB)"/>
+            <stay WP="CLIMB" VMODE="climb" CLIMB="nav.climb_vspeed"/>
+        </block>
+        <block STRIP_ICON="home.png" STRIP_BUTTON="Standby" NAME="Standby" KEY="s">
+            <call_once FUN="NavSetWaypointHere(WP_STDBY)"/>
+            <stay WP="STDBY"/>
+        </block>
+        <block STRIP_ICON="lookfore.png" STRIP_BUTTON="Go" NAME="START" KEY="g">
+            <go WP="p1"/>
+            <go WP="p2" HMODE="route" FROM="p1"/>
+            <stay WP="p2"/>
+        </block>
+        <block NAME="Stand">
+            <stay WP="p1"/>
+        </block>
+        <block STRIP_ICON="land-right.png" STRIP_BUTTON="land here" NAME="land here" KEY="l">
+            <call_once FUN="NavSetWaypointHere(WP_TD)"/>
+            <go WP="TD"/>
+            <deroute BLOCK="Flare"/>
+        </block>
+        <block NAME="Land">
+            <go WP="TD"/>
+            <deroute BLOCK="Flare"/>
+        </block>
+        <block NAME="Flare">
+            <exception DEROUTE="Landed" COND="!nav_is_in_flight()"/>
+            <stay WP="TD" VMODE="climb" CLIMB="nav.descend_vspeed"/>
+        </block>
+        <block NAME="Landed">
+            <call_once FUN="NavKillThrottle()"/>
+            <attitude VMODE="throttle" UNTIL="FALSE" THROTTLE="0" ROLL="0" PITCH="0"/>
+        </block>
+    </blocks>
+</flight_plan>

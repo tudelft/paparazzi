@@ -53,7 +53,7 @@ class PNMessage:
         msgw["ax"] =  float(self.uav.dx)*0.0000019
         msgw["ay"] =  float(self.uav.dy)*0.0000019
         msgw["az"] =  float(self.uav.dz)*0.0000019
-        msgw["ac_id"] = 48
+        msgw["ac_id"] = 22
         self._interface.send(msgw)
 
     def stop(self):

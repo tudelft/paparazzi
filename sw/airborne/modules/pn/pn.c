@@ -32,9 +32,9 @@ uint8_t pn_msg_buf[256] __attribute__((aligned));  ///< The InterMCU message buf
 
 struct FloatVect3 speed_des = {0.0f, 0.0f, 0.0f};
 struct FloatVect3 pos_des = {0.0f, 0.0f, -1.0f};
-struct FloatVect3 speed_target = {6.0f, 6.0f, -4.0f};
+struct FloatVect3 speed_target = {0.0f, 0.0f, 0.0f};
 struct FloatVect3 speed_interceptor = {0.0f, 0.0f, 0.0f};
-struct FloatVect3 pos_target = {85.0f, 20.0f, -30.0f};
+struct FloatVect3 pos_target = {0.0f, 0.0f, -1.0f};
 struct FloatVect3 accel_des = {0.0f, 0.0f, 0.0f};
 struct FloatVect3 accel_des_pn = {0.0f, 0.0f, 0.0f};
 struct FloatVect3 rel_pos = { 0 };
@@ -60,7 +60,7 @@ float speed_mag = 0.0;
 float heading_cmd = 0.0;
 bool in_flight;
 bool interception = false;
-bool stage2 = false;
+bool follow = false;
 bool message = false;
 uint8_t flag = 1;
 bool los_saturate = false;
@@ -71,7 +71,7 @@ float debug;
 
 // Initialize a pointer to a FloatVect3 struct and assign the address of 'vector'
 //struct FloatVect3 *acceleration = &accel_des;
-float b = 1.5;
+float b = 20.0;
 //void pn_init(void);
 //void pn_run(void);
 float eucld(struct FloatVect3 v);
@@ -111,7 +111,7 @@ void pn_init(void)
 
 void pn_start(void){
   pn_pn_run_status = MODULES_RUN;
-  //PRINT("SSSSSSS");
+  
   rel_pos.x = pos_target.x- stateGetPositionNed_f()->x;
   rel_pos.y = pos_target.y- stateGetPositionNed_f()->y;
   rel_pos.z = pos_target.z- stateGetPositionNed_f()->z;
@@ -136,7 +136,7 @@ void pn_run(void){
 
     return;
   }
-
+  nav.heading = atan2(pos_target.y, pos_target.x);
   //PRINT("%d", intercept);
   speed_interceptor.x = stateGetSpeedNed_f()->x;
   speed_interceptor.y = stateGetSpeedNed_f()->y;
@@ -157,15 +157,10 @@ void pn_run(void){
     AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, flag, &accel_des);
 
   }
+  else if(follow){
+    nav.heading = atan2(pos_target.y, pos_target.x);
+  }
   else{
-    //PRINT("%f", pos_target.x);
-    /*
-    if (message==false){
-      pos_target.x = pos_target.x + 1/PN_PERIODIC_FREQUENCY*speed_target.x;
-      pos_target.y = pos_target.y + 1/PN_PERIODIC_FREQUENCY*speed_target.y;
-      pos_target.z = pos_target.z + 1/PN_PERIODIC_FREQUENCY*speed_target.z;
-    }
-    */
     rel_pos.x = pos_target.x- stateGetPositionNed_f()->x;
     rel_pos.y = pos_target.y- stateGetPositionNed_f()->y;
     rel_pos.z = pos_target.z- stateGetPositionNed_f()->z;
@@ -173,7 +168,7 @@ void pn_run(void){
     
     if (r_los <= 0.5){
       //("AAAAA");
-      interception = true;
+      //interception = true;
       intercept = false;
     }
 
@@ -211,7 +206,7 @@ void pn_run(void){
     speed_des.y = speed_des.y + pos_gain*pos_err.y;
     speed_des.z = speed_des.z + pos_gain*pos_err.z;
     */
-    saturate(&speed_des, 3);
+    saturate(&speed_des, 2);
 
     //PRINT("%f", accel_des.x);
     acc_actual.x = stateGetAccelNed_f()->x;
@@ -268,14 +263,14 @@ float eucld(struct FloatVect3 v){
 
 static void saturate(struct FloatVect3 *vector, int ind) {
   if (ind == 1){
-    vector->x = fmax(-2.0, fmin(2.0, vector->x));
-    vector->y = fmax(-2.0, fmin(2.0, vector->y));
-    vector->z = fmax(-2.0, fmin(2.0, vector->z));
+    vector->x = fmax(-5.0, fmin(5.0, vector->x));
+    vector->y = fmax(-5.0, fmin(5.0, vector->y));
+    vector->z = fmax(-5.0, fmin(5.0, vector->z));
   }
   else if(ind == 2){
-    vector->x = fmax(-3.0, fmin(3.0, vector->x));
-    vector->y = fmax(-3.0, fmin(3.0, vector->y));
-    vector->z = fmax(-3.0, fmin(3.0, vector->z));
+    vector->x = fmax(-20.0, fmin(20.0, vector->x));
+    vector->y = fmax(-20.0, fmin(20.0, vector->y));
+    vector->z = fmax(-20.0, fmin(20.0, vector->z));
   }
   else {
     vector->x = fmax(-1.0, fmin(1.0, vector->x));

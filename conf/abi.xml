@@ -257,6 +257,10 @@
       <field name="data" type="uint8_t*">pointer to the data of the matrix</field>
     </message>
 
+    <message name="RASPBERRY_OUT" id="38">
+      <field name="rpi_data_out_ptr" type="struct raspberrypi_data_out"/>
+    </message>
+
   </msg_class>
 
 </protocol>

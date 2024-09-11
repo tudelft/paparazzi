@@ -19,6 +19,7 @@
       </module>
     </target>
 
+    <!-- <define name="UART2" value="/dev/ttyUSB0"/> -->
 	  <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
     <module name="radio_control" type="datalink"/>
@@ -34,8 +35,15 @@
     <module name="gps" type="ublox"/>
     <module name="gps" type="ubx_ucenter"/>
     <module name="stabilization" type="indi_simple"/>
-    <module name="guidance" type="indi_hybrid_tailsitter"/>
-
+    <module name="guidance" type="indi">
+      <!-- <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500.0"/> -->
+      <define name="GUIDANCE_INDI_THRUST_DYNAMICS_FREQ" value="31.7"/>
+      <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
+      <define name="WLS_N_U" value="4"/>
+      <define name="WLS_N_V" value="4"/>
+    </module>
+    <!-- <module name="pn"/> -->
+    <module name="raspberrypi"/>
     <module name="ins" type="ekf2"/>
     <!--<module name="ahrs" type="int_cmpl_quat">-->
       <!--<configure name="USE_MAGNETOMETER" value="FALSE"/>-->
@@ -86,19 +94,19 @@
 
   <section name="IMU" prefix="IMU_">
     <!-- Magneto calibration -->
-    <define name="MAG_X_NEUTRAL" value="43"/>
-    <define name="MAG_Y_NEUTRAL" value="-151"/>
-    <define name="MAG_Z_NEUTRAL" value="-64"/>
-    <define name="MAG_X_SENS" value="7.21201776785" integer="16"/>
-    <define name="MAG_Y_SENS" value="7.20541442846" integer="16"/>
-    <define name="MAG_Z_SENS" value="7.55306977197" integer="16"/>
+    <define name="MAG_X_NEUTRAL" value="80"/>
+    <define name="MAG_Y_NEUTRAL" value="-18"/>
+    <define name="MAG_Z_NEUTRAL" value="11"/>
+    <define name="MAG_X_SENS" value="6.64374573677484" integer="16"/>
+    <define name="MAG_Y_SENS" value="7.6464332192807465" integer="16"/>
+    <define name="MAG_Z_SENS" value="8.025603705506688" integer="16"/>
+    <define name="ACCEL_X_NEUTRAL" value="28"/>
+    <define name="ACCEL_Y_NEUTRAL" value="-21"/>
+    <define name="ACCEL_Z_NEUTRAL" value="93"/>
+    <define name="ACCEL_X_SENS" value="4.879303542974004" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="4.887835956875013" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="4.861727869387999" integer="16"/>
 
-    <define name="ACCEL_X_NEUTRAL" value="-1"/>
-    <define name="ACCEL_Y_NEUTRAL" value="-16"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-102"/>
-    <define name="ACCEL_X_SENS" value="4.90615997669" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.8601827035" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.85967415403" integer="16"/>
   </section>
 
   <section name="INS" prefix="INS_">
@@ -174,7 +182,7 @@
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
     <define name="MAX_BANK" value="35" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="2" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="10" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
     <define name="PGAIN" value="120"/>

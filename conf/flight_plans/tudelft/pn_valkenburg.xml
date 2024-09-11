@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="1.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="350" name="Bebop avoid orange TU Delft Cyberzoo" security_height="0.4">
+<flight_plan SECURITY_HEIGHT="2" NAME="PN Valkenburg" MAX_DIST_FROM_HOME="5000" LON0="4.412444" LAT0="52.168595" GROUND_ALT="0" ALT="8.0">
   <header>
     #include "modules/datalink/datalink.h"
     #include "modules/energy/electrical.h"
@@ -11,37 +11,45 @@
     #include "modules/loggers/logger_file.h"
     #define NPS_GAZEBO_WORLD "cyberzoo_orange_poles.world"
 </header>
-  <waypoints>
-    <waypoint lat="51.990631" lon="4.376796" name="HOME"/>
-    <waypoint name="CLIMB" x="1.9" y="1.0"/>
-    <waypoint name="STDBY" x="1.9" y="1.0"/>
-    <waypoint name="TD" x="0.8" y="-1.7"/>
-    <waypoint name="GOAL" x="1.9" y="1.0"/>
-    <waypoint name="TRAJECTORY" x="1.9" y="1.0"/>
-    <waypoint name="PS" x="-1.9" y="-1.0"/>
-    <waypoint lat="51.9905834" lon="4.3767710" name="_CZ1"/>
-    <waypoint lat="51.9906440" lon="4.3767060" name="_CZ2"/>
-    <waypoint lat="51.9906860" lon="4.3768080" name="_CZ3"/>
-    <waypoint lat="51.9906238" lon="4.3768729" name="_CZ4"/>
-    <waypoint lat="51.9906006" lon="4.3767764" name="_OZ1"/>
-    <waypoint lat="51.9906405" lon="4.3767316" name="_OZ2"/>
-    <waypoint lat="51.9906687" lon="4.3768025" name="_OZ3"/>
-    <waypoint lat="51.9906273" lon="4.3768438" name="_OZ4"/>
-  </waypoints>
-  <sectors>
-    <sector color="red" name="CyberZoo">
-      <corner name="_CZ1"/>
-      <corner name="_CZ2"/>
-      <corner name="_CZ3"/>
-      <corner name="_CZ4"/>
+<waypoints>
+    <waypoint NAME="HOME" LON="4.4134865" LAT="52.1682196"/>
+    <waypoint Y="-80.4" X="62.6" NAME="CLIMB"/>
+    <waypoint Y="-55.1" X="106.0" NAME="STDBY"/>
+    <waypoint LON="4.4124439" LAT="52.1685949" NAME="p1_I"/>
+    <waypoint Y="-148.1" X="696.0" NAME="p2"/>
+    <waypoint Y="73.4" X="600.4" NAME="p3"/>
+    <waypoint Y="-48.5" X="238.6" NAME="p4"/>
+    <waypoint Y="-23.7" X="-4.1" NAME="TD"/>
+    <waypoint Y="-87.8" X="123.2" NAME="FOLLOW"/>
+    <waypoint NAME="PS" LON="4.4174372" LAT="52.1669450"/>
+    <waypoint NAME="S2" LON="4.4208804" LAT="52.1689871"/>
+    <waypoint NAME="C1" LON="4.410820" LAT="52.169189"/>
+    <waypoint NAME="C2" LON="4.406923" LAT="52.168049"/>
+    <waypoint NAME="C3" LON="4.408235" LAT="52.166515"/>
+    <waypoint NAME="C4" LON="4.407668" LAT="52.163255"/>
+    <waypoint NAME="C5" LON="4.410082" LAT="52.161908"/>
+    <waypoint NAME="C6" LON="4.416992" LAT="52.162641"/>
+    <waypoint NAME="C7" LON="4.427268" LAT="52.164861"/>
+    <waypoint NAME="C8" LON="4.427511" LAT="52.170422"/>
+    <waypoint NAME="C9" LON="4.424011" LAT="52.172276"/>
+    <waypoint NAME="p5" LON="4.4127541" LAT="52.1673931"/>
+    <waypoint NAME="p6" LON="4.4150577" LAT="52.1678569"/>
+    <waypoint NAME="p7" LON="4.4144979" LAT="52.1689993"/>
+    <waypoint NAME="p8" LON="4.4121999" LAT="52.1686045"/>
+</waypoints>
+<sectors>
+    <sector NAME="Hard_Geofence" COLOR="red">
+        <corner NAME="C1"/>
+        <corner NAME="C2"/>
+        <corner NAME="C3"/>
+        <corner NAME="C4"/>
+        <corner NAME="C5"/>
+        <corner NAME="C6"/>
+        <corner NAME="C7"/>
+        <corner NAME="C8"/>
+        <corner NAME="C9"/>
     </sector>
-    <sector color="#FF9922" name="ObstacleZone">
-      <corner name="_OZ1"/>
-      <corner name="_OZ2"/>
-      <corner name="_OZ3"/>
-      <corner name="_OZ4"/>
-    </sector>
-  </sectors>
+</sectors>
   <variables>
     <variable var="intercept" init="true" type="bool"/>
   </variables>
@@ -60,19 +68,19 @@
       !(nav_block >= IndexOfBlock('land here')) @AND
       (autopilot_in_flight() == true) )" deroute="land here"/>
     <!-- Geofencing XY -->
-    <!-- <exception cond="(!InsideCyberZoo(GetPosX(), GetPosY()) @AND
+    <exception cond="(!InsideHard_Geofence(GetPosX(), GetPosY()) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('land here')) @AND
-      (autopilot_in_flight() == true) )" deroute="land here"/> -->
+      (autopilot_in_flight() == true) )" deroute="land here"/>
     <!-- Geofencing Z 3.5 -->
     <!--exception cond="((GetPosAlt() @GT 3.5) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('land here')) @AND
       (autopilot_in_flight() == true) )" deroute="land here"/-->
     <!-- Geofencing Z 4.5 (constant RPM descent)-->
-    <!-- <exception cond="((GetPosAlt() @GT 5.0) @AND
+    <exception cond="((GetPosAlt() @GT 100.0) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
-      (autopilot_in_flight() == true) )" deroute="Landed"/> -->
+      (autopilot_in_flight() == true) )" deroute="Landed"/>
     <!-- Bat low -->
     <exception cond="(electrical.bat_low @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
@@ -112,7 +120,7 @@
       <stay wp="STDBY"/>
     </block>
     <block key="g" name="START" strip_button="Go" strip_icon="lookfore.png">
-      <call_once fun="logger_file_start()"/>
+      <!-- <call_once fun="logger_file_start()"/> -->
       <call_once fun="pn_start()"/>
       <exception cond="!intercept" deroute="STOP"/>
       <while>
@@ -120,7 +128,7 @@
       </while>
     </block>
     <block name="STOP">
-      <call_once fun="logger_file_stop()"/>
+      <!-- <call_once fun="logger_file_stop()"/> -->
       <call_once fun="pn_stop()"/> 
       <stay wp="STDBY"/>
     </block>
@@ -137,10 +145,10 @@
       <deroute block="Flare"/>
     </block>
     <block name="Flare">
-      <exception cond="NavDetectGround()" deroute="Holding point"/>
+      <!-- <exception cond="NavDetectGround()" deroute="Holding point"/> -->
       <exception cond="!nav_is_in_flight()" deroute="Landed"/>
-      <exception cond="0.10 @GT GetPosAlt()" deroute="Landed"/>
-      <call_once fun="NavStartDetectGround()"/>
+      <!-- <exception cond="0.10 @GT GetPosAlt()" deroute="Landed"/> -->
+      <!-- <call_once fun="NavStartDetectGround()"/> -->
       <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="Landed">

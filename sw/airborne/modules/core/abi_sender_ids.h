@@ -664,5 +664,8 @@
 #define LIDAR_DATA_VL53L5CX_ID 1
 #endif
 
+#ifndef RASPBERRY_OUT_ID
+#define RASPBERRY_OUT_ID 1
+#endif
 
 #endif /* ABI_SENDER_IDS_H */
