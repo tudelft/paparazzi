@@ -428,13 +428,6 @@
       <field name="cycle_time" type="uint32" unit="ms"/>
     </message>
 
-  <!-- Duplicate of RC_3CH defined in datalink section? -->
-    <message name="RC_3CH_" id="51">
-      <field name="throttle_mode" type="uint8" unit="byte_mask"/>
-      <field name="roll"  type="int8"/>
-      <field name="pitch" type="int8"/>
-    </message>
-
     <message name="MPPT" id="52">
       <field name="values" type="int16[]" alt_unit_coef="1e-3"/>
     </message>
@@ -1714,7 +1707,7 @@
       <field name="ADC_position"        type="uint16"/>
       <field name="pprz_cmd"            type="int32"/>
     </message>
-    <!-- 182 is free -->
+
     <message name="DOUBLET" id="183">
       <field name="active"              type="uint8">Doublet is active</field>
       <field name="axis"                type="uint8">Current doublet axis</field>
@@ -1747,14 +1740,30 @@
       <field name="jerk_D"    type="float"    unit="m/s^3"/>
     </message>
 
-    <message name="WLS_v" id="187">
+    <message name="EFF_MAT_STAB" id="185">
+      <field name="G1_roll"   type="float[]" unit="none"/>
+      <field name="G1_pitch"  type="float[]" unit="none"/>
+      <field name="G1_yaw"    type="float[]" unit="none"/>
+      <field name="G1_thrust" type="float[]" unit="none"/>
+      <field name="G2"        type="float[]" unit="none"/>
+    </message>
+
+    <message name="EFF_MAT_GUID" id="186">
+      <field name="G1_aN"     type="float[]" unit="none"/>
+      <field name="G1_aE"     type="float[]" unit="none"/>
+      <field name="G1_aD"     type="float[]" unit="none"/>
+    </message>
+
+    <message name="WLS_V" id="187">
+      <field name="loop"                type="char[]"/>
       <field name="gamma"               type="float"    />
       <field name="iter"                type="uint8"    />
       <field name="v"                   type="float[]"  />
       <field name="Wv"                  type="float[]"  />
     </message>
 
-    <message name="WLS_u" id="188">
+    <message name="WLS_U" id="188">
+      <field name="loop"                type="char[]"/>
       <field name="Wu"                  type="float[]"  />
       <field name="u_pref"              type="float[]"  />
       <field name="u_min"               type="float[]"  />
@@ -1762,7 +1771,7 @@
       <field name="u"                   type="float[]"  />
     </message>
 
-    <message name="SHIP_INFO_MSG_GROUND" id="192" >
+    <message name="SHIP_INFO_MSG_GROUND" id="189" >
       <field name="phi" type="float" unit="deg">Roll</field>
       <field name="theta" type="float" unit="deg">Pitch</field>
       <field name="psi" type="float" unit="deg">Yaw</field>
@@ -1940,7 +1949,7 @@
       <field name="commands" type="int32[]">Commands send to actuators</field>
     </message>
 
-     <message name= "AM7_OUT" id = "185">
+     <message name= "AM7_OUT" id = "190">
          <field name = "motors_state_rad_s" type="float[4]">Unfiltered motors state [rad/s]</field>
          <field name = "tilt_elevation_state_deg" type="float[4]">Unfiltered tilt elevation state [deg]</field>
          <field name = "tilt_azimuth_state_deg" type="float[4]">Unfiltered tilt elevation state [deg]</field>
@@ -1972,7 +1981,7 @@
          <field name = "rolling_msg_out_id" type="uint8">Rolling message out id</field>
      </message>
 
-     <message name= "AM7_IN" id = "186">
+     <message name= "AM7_IN" id = "191">
          <description>Received message from companion computer</description>
          <field name = "motors_cmd_rad_s" type="float[4]" >Command for mot [rad/s]</field>
          <field name = "tilt_elevation_cmds_deg" type="float[4]">Command for elevator tilt [deg]</field>
@@ -2005,7 +2014,7 @@
          <field name = "rolling_msg_in_id" type="uint8">Rolling message in id</field>
      </message>
 
-     <message name= "SERIAL_ACT_T4_IN" id = "199">
+     <message name= "SERIAL_ACT_T4_IN" id = "192">
          <description>Received message from Serial actuator module in Teensy 4.0</description>
          <field name = "motor_1_rpm" type="int16" unit="rpm" >Motor 1 RPM telemetry</field>
          <field name = "motor_2_rpm" type="int16" unit="rpm" >Motor 2 RPM telemetry</field>
@@ -2081,34 +2090,7 @@
 
      </message>
 
-     <message name="NONLINEAR_CA_DEBUG" id="195">
-         <field name="acc_x_setpoint_earth_rf" type="float" unit="m/s^2"/>
-         <field name="acc_y_setpoint_earth_rf" type="float" unit="m/s^2"/>
-         <field name="acc_z_setpoint_earth_rf" type="float" unit="m/s^2"/>
-         <field name="p_dot_setpoint" type="float" unit="rad/s^2"/>
-         <field name="q_dot_setpoint" type="float" unit="rad/s^2"/>
-         <field name="r_dot_setpoint" type="float" unit="rad/s^2"/>
-
-         <field name="speed_x_setpoint_control_rf" type="float" unit="m/s"/>
-         <field name="speed_y_setpoint_control_rf" type="float" unit="m/s"/>
-         <field name="speed_z_setpoint_control_rf" type="float" unit="m/s"/>
-         <field name="p_setpoint" type="float" unit="rad/s"/>
-         <field name="q_setpoint" type="float" unit="rad/s"/>
-         <field name="r_setpoint" type="float" unit="rad/s"/>
-
-         <field name="pos_x_setpoint_earth_rf" type="float" unit="m"/>
-         <field name="pos_y_setpoint_earth_rf" type="float" unit="m"/>
-         <field name="pos_z_setpoint_earth_rf" type="float" unit="m"/>
-         <field name="phi_setpoint" type="float" unit="rad"/>
-         <field name="theta_setpoint" type="float" unit="rad"/>
-         <field name="psi_setpoint" type="float" unit="rad"/>
-
-         <field name="feed_fwd_term_y" type="float" unit="rad/s"/>
-         <field name="feed_back_term_y" type="float" unit="rad/s"/>      
-
-     </message>
-
-     <message name="ACTUATORS_OUTPUT" id="189">
+     <message name="ACTUATORS_OUTPUT" id="51">
 
         <!-- Commanded value -->
          <field name="Motor_1_cmd" type="int32">Motor 1 command [rad/s]</field>
@@ -2233,26 +2215,15 @@
     </message>
 
     <message name="STAB_ATTITUDE" id="216">
-      <field name="phi"                 type="float"    unit="rad"     alt_unit="deg"    /><!-- attitude tracking -->
-      <field name="theta"               type="float"    unit="rad"     alt_unit="deg"    />
-      <field name="psi"                 type="float"    unit="rad"     alt_unit="deg"    />
-      <field name="phi_ref"             type="float"    unit="rad"     alt_unit="deg"    />
-      <field name="theta_ref"           type="float"    unit="rad"     alt_unit="deg"    />
-      <field name="psi_ref"             type="float"    unit="rad"     alt_unit="deg"    />
-      <field name="angular_rate_p"      type="float"    unit="rad/s"   alt_unit="deg/s"  /><!-- rate tracking -->
-      <field name="angular_rate_q"      type="float"    unit="rad/s"   alt_unit="deg/s"  />
-      <field name="angular_rate_r"      type="float"    unit="rad/s"   alt_unit="deg/s"  />
-      <field name="angular_rate_ref_p"  type="float"    unit="rad/s"   alt_unit="deg/s"  />
-      <field name="angular_rate_ref_q"  type="float"    unit="rad/s"   alt_unit="deg/s"  />
-      <field name="angular_rate_ref_r"  type="float"    unit="rad/s"   alt_unit="deg/s"  />
-      <field name="angular_accel_p"     type="float"    unit="rad/s2"  alt_unit="deg/s2"/><!-- angular acceleration -->
-      <field name="angular_accel_q"     type="float"    unit="rad/s2"  alt_unit="deg/s2"/>
-      <field name="angular_accel_r"     type="float"    unit="rad/s2"  alt_unit="deg/s2"/>
-      <field name="angular_accel_ref_p" type="float"    unit="rad/s2"  alt_unit="deg/s2"/>
-      <field name="angular_accel_ref_q" type="float"    unit="rad/s2"  alt_unit="deg/s2"/>
-      <field name="angular_accel_ref_r" type="float"    unit="rad/s2"  alt_unit="deg/s2"/>
-      <field name="nu"                  type="float[]"  unit="none">Input of control allocation</field>
-      <field name="u"                   type="float[]"  unit="none">Output of control allocation</field>
+      <field name="att_des"             type="float[]" alt_unit_coef="57.29578">attitude setpoint</field>
+      <field name="att"                 type="float[]" alt_unit_coef="57.29578">attitude</field>
+      <field name="att_ref"             type="float[]" alt_unit_coef="57.29578">attitude reference</field>
+      <field name="angular_rate"        type="float[]" alt_unit_coef="57.29578">angular rate</field>
+      <field name="angular_rate_ref"    type="float[]" alt_unit_coef="57.29578">angular rate reference</field>
+      <field name="angular_accel"       type="float[]" alt_unit_coef="57.29578">angular acceleration</field>
+      <field name="angular_accel_ref"   type="float[]" alt_unit_coef="57.29578">angular acceleration reference</field>
+      <field name="angular_jerk_ref"    type="float[]" alt_unit_coef="57.29578">angular jerk reference</field>
+      <field name="u"                   type="float[]" >Reconstructed State of Actuators</field>
     </message>
 
     <message name="ROTORCRAFT_FP_MIN" id="217">
@@ -2383,7 +2354,7 @@
       <field name="ap_in_flight" type="uint8" values="ON_GROUND|IN_FLIGHT"/>
       <field name="ap_motors_on" type="uint8" values="MOTORS_OFF|MOTORS_ON"/>
       <field name="arming_status" type="uint8" values="NO_RC|WAITING|ARMING|ARMED|DISARMING|KILLED|YAW_CENTERED|THROTTLE_DOWN|NOT_MODE_MANUAL|UNARMED_IN_AUTO|THROTTLE_NOT_DOWN|STICKS_NOT_CENTERED|PITCH_NOT_CENTERED|ROLL_NOT_CENTERED|YAW_NOT_CENTERED|AHRS_NOT_ALLIGNED|OUT_OF_GEOFENCE|LOW_BATTERY"/>
-      <field name="ap_h_mode"    type="uint8" values="KILL|RATE|ATTITUDE|HOVER|NAV|RC_DIRECT|CF|FORWARD|MODULE|FLIP|GUIDED"/>
+      <field name="ap_h_mode"    type="uint8" values="NONE|HOVER|NAV|GUIDED"/>
       <field name="ap_v_mode"    type="uint8" values="KILL|RC_DIRECT|RC_CLIMB|CLIMB|HOVER|NAV|MODULE|FLIP|GUIDED"/>
       <field name="cpu_time"     type="uint16" unit="s"/>
       <field name="vsupply"      type="float" unit="V">Main supply voltage</field>
@@ -2565,16 +2536,7 @@
       <field name="Crc1087"      type="uint32"  />
     </message>
 
-    <message name="EFF_MAT_G" id="250">
-      <field name="G1_aN"     type="float[]" unit="none"/>
-      <field name="G1_aE"     type="float[]" unit="none"/>
-      <field name="G1_aZ"     type="float[]" unit="none"/>
-      <field name="G1_roll"   type="float[]" unit="none"/>
-      <field name="G1_pitch"  type="float[]" unit="none"/>
-      <field name="G1_yaw"    type="float[]" unit="none"/>
-      <field name="G1_thrust" type="float[]" unit="none"/>
-      <field name="G2"        type="float[]" unit="none"/>
-    </message>
+    <!-- 250 is free -->
 
     <message name="GPS_RTK" id="251">
       <field name="iTOW"          type="uint32" unit="ms"/>
@@ -2958,30 +2920,7 @@
       <field name="cycle_time" type="uint32" unit="ms"/>
     </message>
 
-    <message name="RC_3CH" id="51" link="broadcasted">
-      <field name="throttle_mode" type="uint8" unit="byte_mask"/>
-      <field name="roll"  type="int8"/>
-      <field name="pitch" type="int8"/>
-    </message>
-
-    <message name="RC_4CH" id="52" link="broadcasted">
-      <field name="ac_id"       type="uint8"/>
-      <field name="mode"        type="uint8"/>
-      <field name="throttle"    type="uint8"/>
-      <field name="roll"        type="int8"/>
-      <field name="pitch"       type="int8"/>
-      <field name="yaw"         type="int8"/>
-    </message>
-
-    <message name="RC_5CH" id="53" link="broadcasted">
-      <field name="ac_id"       type="uint8"/>
-      <field name="throttle"    type="uint8"/>
-      <field name="roll"        type="int8"/>
-      <field name="pitch"       type="int8"/>
-      <field name="yaw"         type="int8"/>
-      <field name="mode"        type="int8"/>
-      <field name="kill"        type="int8"/>
-    </message>
+    <!-- 52 is free -->
 
     <message name="EXTERNAL_POSE" id="54" link="forwarded">
       <description>
@@ -3109,6 +3048,11 @@
       <field name="ac_id" type="uint8"/>
     </message>
 
+    <message name="RC_UP" id="74" link="broadcasted">
+      <field name="ac_id"       type="uint8"/>
+      <field name="channels"    type="int8[]"/>
+    </message>
+
     <message name="KITE_COMMAND" id="96">
       <field name="POWER"     type="uint16"/>
       <field name="TURN"      type="uint16"/>
@@ -3218,7 +3162,7 @@
       <field name="msg" type="char[]"/>
     </message>
     
-    <message name="SHIP_INFO_MSG" id="190" link="forwarded">
+    <message name="SHIP_INFO_MSG" id="53" link="forwarded">
       <field name="ac_id" type="uint8"/>
       <field name="phi" type="float" unit="deg">Roll</field>
       <field name="theta" type="float" unit="deg">Pitch</field>

@@ -20,6 +20,7 @@
     <waypoint name="KILL2" x="280" y="-280"/>
     <waypoint name="KILL3" x="-280" y="-280"/>
     <waypoint name="KILL4" x="-280" y="280"/>
+    <waypoint name="ARUCO_HOVER" x="10" y="10"/>
     <waypoint name="CAM" x="-20" y="-50" height="2."/>
     <waypoint name="TD" x="5.6" y="-10.9"/>
   </waypoints>

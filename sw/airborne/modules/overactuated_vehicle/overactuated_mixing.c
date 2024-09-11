@@ -43,6 +43,7 @@
  
 #define UPDATE_WP_WITH_ARUCO
 
+// #define GOTO_ARUCO_AUTO 
 
 //AM7 variables:
 struct am7_data_out am7_data_out_local;
@@ -58,21 +59,25 @@ static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am
     memcpy(&myam7_data_in_local,myam7_data_in_ptr,sizeof(struct am7_data_in));
     memcpy(&extra_data_in_local,extra_data_in_ptr,255 * sizeof(float));
 
+    
     #ifdef UPDATE_WP_WITH_ARUCO
-        struct EnuCoor_f target_pos_sixdof = {myam7_data_in_local.aruco_NED_pos_y, myam7_data_in_local.aruco_NED_pos_x, -myam7_data_in_local.aruco_NED_pos_z + alt_offset_beacon}; 
-        
-        // Update the waypoint for the goto function:
-        // waypoint_set_enu(WP_SIXDOF, &target_pos_sixdof); 
 
         // Send to the GCS that the waypoint has been moved
-        static uint8_t wp_id = WP_SIXDOF;
-        RunOnceEvery(PERIODIC_FREQUENCY / 2, { //Update SIXDOF waypoint every 0.5 seconds
+        static uint8_t wp_id = WP_ARUCO_HOVER;
+        RunOnceEvery(PERIODIC_FREQUENCY / 2, { //Update ARUCO_HOVER waypoint every 0.5 seconds
             DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-                                    &waypoints[WP_SIXDOF].enu_i.x,
-                                    &waypoints[WP_SIXDOF].enu_i.y,
-                                    &waypoints[WP_SIXDOF].enu_i.z);
+                                    &waypoints[WP_ARUCO_HOVER].enu_i.x,
+                                    &waypoints[WP_ARUCO_HOVER].enu_i.y,
+                                    &waypoints[WP_ARUCO_HOVER].enu_i.z);
         });
+    #endif
 
+    #ifdef GOTO_ARUCO_AUTO
+        float alt_offset_beacon = 15.0f;
+        struct EnuCoor_f target_pos_aruco = {myam7_data_in_local.aruco_NED_pos_y, myam7_data_in_local.aruco_NED_pos_x, -myam7_data_in_local.aruco_NED_pos_z + alt_offset_beacon}; 
+        
+        // Update the waypoint for the goto function:
+        waypoint_set_enu(WP_ARUCO_HOVER, &target_pos_aruco); 
     #endif
 }
 
@@ -88,19 +93,27 @@ void overactuated_mixing_init(void) {
  * Ad each iteration upload global variables
  */
 void assign_variables(void){
-    float rate_vect[3], euler_vect[3], acc_vect[3], speed_vect[3], pos_vect[3];
-    rate_vect[0] = stateGetBodyRates_f()->p;
-    rate_vect[1] = stateGetBodyRates_f()->q;
-    rate_vect[2] = stateGetBodyRates_f()->r;
+    // float rate_vect[3];
+    // rate_vect[0] = stateGetBodyRates_f()->p;
+    // rate_vect[1] = stateGetBodyRates_f()->q;
+    // rate_vect[2] = stateGetBodyRates_f()->r;
+
+    float euler_vect[3]; 
     euler_vect[0] = stateGetNedToBodyEulers_f()->phi;
     euler_vect[1] = stateGetNedToBodyEulers_f()->theta;
     euler_vect[2] = stateGetNedToBodyEulers_f()->psi;
-    acc_vect[0] = stateGetAccelNed_f()->x;
-    acc_vect[1] = stateGetAccelNed_f()->y;
-    acc_vect[2] = stateGetAccelNed_f()->z;
-    speed_vect[0] = stateGetSpeedNed_f()->x;
-    speed_vect[1] = stateGetSpeedNed_f()->y;
-    speed_vect[2] = stateGetSpeedNed_f()->z;
+
+    // float acc_vect[3];
+    // acc_vect[0] = stateGetAccelNed_f()->x;
+    // acc_vect[1] = stateGetAccelNed_f()->y;
+    // acc_vect[2] = stateGetAccelNed_f()->z;
+
+    // float speed_vect[3];
+    // speed_vect[0] = stateGetSpeedNed_f()->x;
+    // speed_vect[1] = stateGetSpeedNed_f()->y;
+    // speed_vect[2] = stateGetSpeedNed_f()->z;
+
+    float pos_vect[3];
     pos_vect[0] = stateGetPositionNed_f()->x;
     pos_vect[1] = stateGetPositionNed_f()->y;
     pos_vect[2] = stateGetPositionNed_f()->z;
