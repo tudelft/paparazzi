@@ -2919,7 +2919,6 @@
       <field name="cycle_time" type="uint32" unit="ms"/>
     </message>
 
-    <!-- 52 is free -->
 
     <message name="EXTERNAL_POSE" id="54" link="forwarded">
       <description>
