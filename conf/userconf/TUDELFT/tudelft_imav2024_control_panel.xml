@@ -64,6 +64,24 @@
         <arg flag="-c" constant="'*:telemetry:IMU_ACCEL:az'"/>
       </program>
     </session>
+    <session name="Benchtest USB ACM0">
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/ttyACM0"/>
+        <arg flag="-s" constant="57600"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="GCS">
+        <arg flag="-speech"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/ttyUSB0"/>
+        <arg flag="-s" constant="115200"/>
+      </program>
+    </session>
     <session name="Debug Graphs">
       <program name="Real-time Plotter">
         <arg flag="-t" constant="phi"/>
@@ -90,19 +108,6 @@
         <arg flag="-c" constant="'*:telemetry:DESIRED:altitude'"/>
       </program>
     </session>
-    <session name="Messages and Settings">
-      <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyUSB0"/>
-        <arg flag="-s" constant="57600"/>
-      </program>
-      <program name="Server">
-        <arg flag="-n"/>
-      </program>
-      <program name="Messages"/>
-      <program name="Settings">
-        <arg flag="-ac" constant="@AIRCRAFT"/>
-      </program>
-    </session>
     <session name="IMAV 2024">
       <program name="GCS">
         <arg flag="-speech"/>
@@ -122,6 +127,35 @@
         <arg flag="-s" constant="57600"/>
       </program>
       <program name="Server"/>
+    </session>
+    <session name="IMAV2024_Simulate_Mission">
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="GCS"/>
+      <program name="Environment Simulator"/>
+      <program name="Messages"/>
+      <program name="Simulator">
+        <arg flag="-a" constant="Cyclone_II"/>
+        <arg flag="-t" constant="nps"/>
+      </program>
+    </session>
+    <session name="Messages and Settings">
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/ttyUSB0"/>
+        <arg flag="-s" constant="57600"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Settings">
+        <arg flag="-ac" constant="@AIRCRAFT"/>
+      </program>
     </session>
     <session name="Raw Sensors">
       <program name="Data Link">
@@ -211,36 +245,6 @@
         <arg flag="-c" constant="*:telemetry:IMU_MAG_SCALED:mx:0.0004883"/>
         <arg flag="-c" constant="*:telemetry:IMU_MAG_SCALED:my:0.0004883"/>
         <arg flag="-c" constant="*:telemetry:IMU_MAG_SCALED:mz:0.0004883"/>
-      </program>
-    </session>
-    <session name="Benchtest USB ACM0">
-      <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyACM0"/>
-        <arg flag="-s" constant="57600"/>
-      </program>
-      <program name="Server">
-        <arg flag="-n"/>
-      </program>
-      <program name="GCS">
-        <arg flag="-speech"/>
-      </program>
-      <program name="Messages"/>
-      <program name="Real-time Plotter"/>
-    </session>
-    <session name="IMAV2024_Simulate_Mission">
-      <program name="Data Link">
-        <arg flag="-udp"/>
-        <arg flag="-udp_broadcast"/>
-      </program>
-      <program name="Server">
-        <arg flag="-n"/>
-      </program>
-      <program name="GCS"/>
-      <program name="Environment Simulator"/>
-      <program name="Messages"/>
-      <program name="Simulator">
-        <arg flag="-a" constant="Cyclone_II"/>
-        <arg flag="-t" constant="nps"/>
       </program>
     </session>
   </section>
