@@ -77,14 +77,14 @@ class EscMessage(object):
     def get_temp(self):
         #if self.temperature < -200:
         #    return "xxx"
-        return str(round(self.temperature ,1)) + "C"
+        return str(round(self.temperature ,0)) + "C"
     def get_temp_perc(self):
         return self.temperature / 120.0
     
     def get_temp_dev(self):
         #if self.temperature_dev < -200:
         #    return "xxx"
-        return str(round(self.temperature_dev, 1)) + "C"
+        return str(round(self.temperature_dev, 0)) + "C"
     def get_temp_dev_perc(self):
         return self.temperature_dev / 120.0
 
@@ -173,6 +173,10 @@ class AIRDATAMessage(object):
         self.airspeed = float(msg['airspeed'])
         self.tas = float(msg['tas'])
 
+class IMUHEATERMessage(object):
+    def __init__(self, msg):
+        self.meas_temp = msg['meas_temp']
+
 class MotorList(object):
     def __init__(self):
         self.mot = []
@@ -211,6 +215,10 @@ class RotWingFrame(wx.Frame):
 
         if msg.name == "AIR_DATA":
             self.air_data = AIRDATAMessage(msg)
+            wx.CallAfter(self.update)
+
+        if msg.name == "IMU_HEATER":
+            self.imu_heater = IMUHEATERMessage(msg)
             wx.CallAfter(self.update)
 
     def update(self):
@@ -290,7 +298,7 @@ class RotWingFrame(wx.Frame):
         self.stat = int(0.10*w)
         if hasattr(self, 'rw_status'):
             dc.SetBrush(wx.Brush(wx.Colour(200,200,100))) 
-            dc.DrawRectangle(int(5), int(5),int(0.24*w), int(0.14*h))
+            dc.DrawRectangle(int(5), int(5),int(0.24*w), int(0.20*h))
             dc.DrawText("State: " + self.rw_status.get_state() + " [NAV: " + self.rw_status.get_nav_state() +"]", 10, 10)
             if self.rw_status.skew_angle_valid:
                 if abs(self.rw_status.meas_skew_angle - self.rw_status.sp_skew_angle) < 10:
@@ -350,6 +358,18 @@ class RotWingFrame(wx.Frame):
             else:
                 dc.SetTextForeground(wx.Colour(0, 0, 0))
                 dc.DrawText("(Disabled)", 10 + lbw, 130)
+            
+            if hasattr(self, 'imu_heater'):
+                imu_temp = float(self.imu_heater.meas_temp)
+                if imu_temp < 65.0:
+                    dc.SetTextForeground(wx.Colour(0, 0, 0))
+                    dc.DrawText("Meas IMU temp: " + str(round(imu_temp, 0)), 10, 150)
+                elif imu_temp < 85.0:
+                    dc.SetTextForeground(wx.Colour(139, 64, 0))
+                    dc.DrawText("Meas IMU temp: " + str(round(imu_temp, 0)), 10, 150)
+                else:
+                    dc.SetTextForeground(wx.Colour(255, 0, 0))
+                    dc.DrawText("Meas IMU temp: " + str(round(imu_temp, 0)), 10, 150)
 
         # Motors
         w1 = 0.03
