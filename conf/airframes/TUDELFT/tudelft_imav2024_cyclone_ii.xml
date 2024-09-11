@@ -515,8 +515,6 @@
 
         <define name="DEFAULT_CIRCLE_RADIUS" value="70.0" unit="m"/>
 
-        <define name="CARROT" value="6.0" unit="s"/>
-
         <define name="UNLOCKED_HOME_MODE" value="TRUE"/>
         <define name="RC_LOST_MODE" value="AP_MODE_NAV"/>
 

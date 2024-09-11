@@ -1,5 +1,5 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-<flight_plan alt="35" ground_alt="5" home_mode_height="30" lat0="51.40524049047032" lon0="-2.8191367597325105" max_dist_from_home="640" name="IMAV2024_Outdoor_Hybrid" qfu="250." security_height="10">
+<flight_plan alt="35" ground_alt="5" home_mode_height="30" lat0="51.4045325" lon0="-2.8191902" max_dist_from_home="640" name="IMAV2024_Outdoor_Hybrid" qfu="250." security_height="10">
   <header>
 #include "autopilot.h"
   </header>
@@ -121,7 +121,7 @@
       <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="GetPosHeight() @GT 2.0" deroute="Standby"/>
+      <exception cond="GetPosHeight() @GT 5.0" deroute="Standby"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay vmode="climb" climb="0.5" wp="CLIMB"/>
     </block>
@@ -129,41 +129,36 @@
       <stay wp="STDBY"/>
     </block>
     <block name="stay_p1">
+      <set value="false" var="force_forward"/>
       <stay wp="p1"/>
     </block>
     <block name="go_p2">
+      <set value="false" var="force_forward"/>
       <go wp="p2"/>
       <deroute block="stay_p1"/>
     </block>
-    <block name="line_p1_p2">
-      <go from="p1" hmode="route" wp="p2"/>
-      <stay wp="p2" until="stage_time>10"/>
-      <go from="p2" hmode="route" wp="p1"/>
-      <deroute block="stay_p1"/>
-    </block>
     <block name="route">
-      <go from="p1" hmode="route" wp="p3"/>
-      <go from="p3" hmode="route" wp="p4"/>
-      <go from="p4" hmode="route" wp="p1"/>
+      <set value="true" var="force_forward"/>
+      <while cond="true">
+        <go from="p1" hmode="route" wp="p2"/>
+        <go from="p2" hmode="route" wp="p3"/>
+        <go from="p3" hmode="route" wp="p4"/>
+        <go from="p4" hmode="route" wp="p1"/>
+      </while>
       <deroute block="stay_p1"/>
-    </block>
-    <block name="circle">
-      <circle radius="nav.radius" wp="p1"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>
     <block name="land">
+      <set value="false" var="force_forward"/>
       <go wp="TD"/>
     </block>
     <block name="flare">
-      <exception cond="NavDetectGround()" deroute="Holding point"/>
-      <exception cond="!nav_is_in_flight()" deroute="landed"/>
-      <call_once fun="NavStartDetectGround()"/>
-      <stay climb="-0.8" vmode="climb" wp="TD"/>
+      <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">
-      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
   </blocks>
 </flight_plan>
