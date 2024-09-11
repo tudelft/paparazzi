@@ -139,6 +139,12 @@
                 <define name="RM3100_MAG_TO_IMU_PSI" value="RadOfDeg\(181.0\)"/>
             </module>
 
+            <module name="ca_am7">
+                <configure name="AM7_PORT" value="UART3"/>
+                <configure name="AM7_BAUD" value="B921600"/>
+            </module>
+
+
             <!-- 
             <module name="pwm_meas">
                 <define name="USE_PWM_INPUT1" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>
@@ -195,6 +201,8 @@
 
         </target>
 
+        <module name="overactuated_mixing"/>
+        
         <!-- * SIM TARGET * -->
         <target name="nps" board="pc">
             <module name="fdm" type="jsbsim"/>
