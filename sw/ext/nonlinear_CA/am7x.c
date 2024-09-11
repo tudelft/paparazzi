@@ -257,8 +257,7 @@ void send_states_on_ivy(){
     IvySendMsg("1 ROTORCRAFT_FP  %d %d %d  %d %d %d  %d %d %d  %d %d %d  %d %d %d",
 
             (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_y/0.0039063),
-            //(int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_x/0.0039063),
-            (int32_t) (80/0.0039063),
+            (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_x/0.0039063),
             (int32_t) (-myam7_data_in_copy_for_ivy.UAV_NED_pos_z/0.0039063),
 
             (int32_t) (-1/0.0000019),
