@@ -11,7 +11,7 @@ from datetime import datetime
 import os
 
 # # --------- Ivybus Specific --------- # 
-sys.path.append("/home/orangepi/paparazzi/sw/ext/pprzlink/lib/v2.0/python/")
+sys.path.append("/home/orangepi/paparazzi/sw/ext/pprzlink/lib/v2.0/python/src/")
 
 from ivy.std_api import *
 import pprzlink.ivy
