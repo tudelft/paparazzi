@@ -36,6 +36,7 @@
 #include "modules/radio_control/radio_control.h"
 #include "modules/actuators/actuators.h"
 #include "modules/sensors/ca_am7.h"
+#include "modules/sensors/serial_act_t4.h"
 /* Include here headers with structure definition you may want to use with ABI
  * Ex: '#include "modules/gps/gps.h"' in order to use the GpsState structure
  */
