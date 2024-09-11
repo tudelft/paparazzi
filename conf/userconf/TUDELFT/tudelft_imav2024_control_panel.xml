@@ -227,5 +227,21 @@
       <program name="Messages"/>
       <program name="Real-time Plotter"/>
     </session>
+    <session name="IMAV2024_Simulate_Mission">
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="GCS"/>
+      <program name="Environment Simulator"/>
+      <program name="Messages"/>
+      <program name="Simulator">
+        <arg flag="-a" constant="Cyclone_II"/>
+        <arg flag="-t" constant="nps"/>
+      </program>
+    </session>
   </section>
 </control_panel>
