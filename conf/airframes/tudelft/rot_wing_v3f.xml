@@ -51,8 +51,8 @@
             <!--Not dealing with these in the simulation-->
             <define name="RADIO_TH_HOLD"          value="0"/> <!-- Throttle hold in command laws -->
             <define name="RADIO_FMODE"            value="0"/> <!-- Throttle curve select -->
-            <define name="RADIO_FBW_MODE"         value="0"/> <!-- Switch between AP and FBW control -->
-            <define name="RADIO_KILL_SWITCH"      value="0"/>
+            <define name="RADIO_FBW_MODE"         value="RADIO_AUX7"/> <!-- Switch between AP and FBW control -->
+            <define name="RADIO_KILL_SWITCH"      value="RADIO_AUX1"/>
             <define name="RADIO_CONTROL_THRUST_X" value="0"/>
 
             <define name="PREFLIGHT_CHECK_BYPASS" value="TRUE"/>
@@ -108,8 +108,8 @@
         <module name="stabilization" type="indi">
             <configure name="INDI_NUM_ACT" value="9"/>
             <configure name="INDI_OUTPUTS" value="5"/>
-            <define name="WLS_N_U" value="9"/>
-            <define name="WLS_N_V" value="5"/>
+            <define name="WLS_N_U_MAX" value="9"/>
+            <define name="WLS_N_V_MAX" value="5"/>
         </module>
 
         <module name="eff_scheduling_rot_wing"/>
@@ -448,6 +448,9 @@
         <define name="USE_AIRSPEED"                         value="TRUE"/>
         <define name="NAV_HYBRID_MAX_DECELERATION"          value="0.5"/>
         <define name="ROTWING_STATE_USE_ROTATION_REF_MODEL" value="TRUE"/>
+        <define name="INS_EKF2_FUSION_MODE"                 value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/>
+        <define name="INS_EKF2_GPS_YAW_OFFSET"              value="0"/>
+        <define name="INS_EKF2_GPS_ANTENNA_DISTANCE"        value="1.02"/>
     </section>
 
     <section name="GROUND_DETECT">
@@ -667,6 +670,7 @@
         <item name="RC Battery">Check the RC battery</item>
         <item name="tail connection">Check tail connection</item>
         <item name="wing tape">Check wings taped and secured</item>
+        <item name="inspection">Inspect airframe condition</item>
         <item name="attitude">Check attitude and heading</item>
         <item name="airspeed">Airspeed sensor calibration</item>
         <item name="takeoff location">Put UAV on take-off location</item>
