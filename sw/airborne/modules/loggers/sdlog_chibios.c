@@ -240,7 +240,7 @@ event_source_t powerOutageSource;
 event_listener_t powerOutageListener;
 
 #define DefaultAdcOfVoltage(voltage) ((uint32_t) (voltage/(DefaultVoltageOfAdc(1))))
-static const uint16_t V_ALERT = DefaultAdcOfVoltage(5.5f);
+static const uint16_t V_ALERT = DefaultAdcOfVoltage(0.5f);
 
 /*
   powerOutageIsr is called within a lock zone from an isr, so no lock/unlock is needed
