@@ -72,6 +72,7 @@
 
             <!-- SBUS out is AETR by default, our transmitter sends TAER to multimodule as per standard so correct in radio file -->
             <module name="radio_control" type="sbus">
+                 <define name="SBUS_PORT" value="UART6"/>
                 <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>
                 <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
                 <!-- Mode set one a BLUE three way switch -->
