@@ -229,6 +229,10 @@
             -->
         <!-- <module name="ins" type="ekf2"/> -->
 
+        <module name="ahrs" type="float_cmpl_quat">
+            <configure name="USE_MAGNETOMETER" value="TRUE"/>
+          </module>
+
         <module name="stabilization" type="indi">
             <define name="INDI_THRUST_ON_PITCH_EFF" value="23.0"/>
             <define name="WLS_N_U_MAX" value="4" />
@@ -263,8 +267,14 @@
             <define name="GUIDANCE_H_USE_REF" value="FALSE"/>
         </module>
 
-        <module name="ahrs" type="float_cmpl_quat">
-          <configure name="USE_MAGNETOMETER" value="TRUE"/>
+        <module name="nav" type="survey_hybrid">
+            <define name="SURVEY_HYBRID_MAX_SWEEP_BACK" value="1"/>
+            <define name="SURVEY_HYBRID_APPROACHING_TIME" value="0"/>
+            <define name="SURVEY_HYBRID_ENTRY_DISTANCE" value="12"/><!--TODO: set survey_private.sweep_distance -->
+            <define name="SURVEY_HYBRID_ENTRY_CIRCLE" value="FALSE"/>
+        </module>
+
+        <module name="nav" type="takeoff_and_landing">
         </module>
 
         <!-- 
