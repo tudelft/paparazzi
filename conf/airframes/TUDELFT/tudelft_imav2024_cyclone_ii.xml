@@ -66,8 +66,8 @@
             </module>
 
             <module name="gps" type="ublox">
-                <configure name="GPS_PORT" value="UART2"/><!-- on FC GPS1 -->
-                <configure name="GPS_BAUD" value="460800"/>
+                <configure name="GPS_PORT" value="UART2"/><!-- on FC GPS1 RX2 TX2 -->
+                <configure name="GPS_BAUD" value="B460800"/>
             </module>
 
             <!-- SBUS out is AETR by default, our transmitter sends TAER to multimodule as per standard so correct in radio file -->
@@ -509,8 +509,7 @@
     <section name="BAT">
         <define name="MAX_BAT_CAPACITY" value="2300" unit="mAh"/>
         <!--<define name="MilliAmpereOfAdc(_adc)" value="(_adc-632)*4.14"/>-->
-        <!-- <define name="VoltageOfAdc(_adc)" value="0.01017793941"/> -->
-        <define name="VoltageOfAdc(adc)" value="((3.3f/65536.0f) * 12.0f * adc)"/><!-- TODO: correct factor -->
+        <define name="VoltageOfAdc(_adc)" value="(0.000556535 * _adc)"/>
         <define name="MILLIAMP_AT_IDLE_THROTTLE" value="280" unit="mA"/>
         <define name="MILLIAMP_AT_FULL_THROTTLE" value="20000" unit="mA"/>
         <define name="MAX_BAT_LEVEL" value="16.8" unit="V"/>
