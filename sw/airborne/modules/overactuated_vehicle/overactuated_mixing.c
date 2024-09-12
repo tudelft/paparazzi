@@ -40,10 +40,10 @@
 /**
  * Variables declaration
  */
- 
+
 #define UPDATE_WP_WITH_ARUCO
 
-// #define GOTO_ARUCO_AUTO 
+// #define GOTO_ARUCO_AUTO
 
 //AM7 variables:
 struct am7_data_out am7_data_out_local;
@@ -52,6 +52,8 @@ static abi_event AM7_in;
 float extra_data_in_local[255] __attribute__((aligned));
 struct am7_data_in myam7_data_in_local;
 
+void assign_variables(void);
+
 /**
  * ABI routine called by the serial_act_t4 ABI event
  */
@@ -59,7 +61,7 @@ static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am
     memcpy(&myam7_data_in_local,myam7_data_in_ptr,sizeof(struct am7_data_in));
     memcpy(&extra_data_in_local,extra_data_in_ptr,255 * sizeof(float));
 
-    
+
     #ifdef UPDATE_WP_WITH_ARUCO
 
         // Send to the GCS that the waypoint has been moved
@@ -74,10 +76,10 @@ static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am
 
     #ifdef GOTO_ARUCO_AUTO
         float alt_offset_beacon = 15.0f;
-        struct EnuCoor_f target_pos_aruco = {myam7_data_in_local.aruco_NED_pos_y, myam7_data_in_local.aruco_NED_pos_x, -myam7_data_in_local.aruco_NED_pos_z + alt_offset_beacon}; 
-        
+        struct EnuCoor_f target_pos_aruco = {myam7_data_in_local.aruco_NED_pos_y, myam7_data_in_local.aruco_NED_pos_x, -myam7_data_in_local.aruco_NED_pos_z + alt_offset_beacon};
+
         // Update the waypoint for the goto function:
-        waypoint_set_enu(WP_ARUCO_HOVER, &target_pos_aruco); 
+        waypoint_set_enu(WP_ARUCO_HOVER, &target_pos_aruco);
     #endif
 }
 
@@ -98,7 +100,7 @@ void assign_variables(void){
     // rate_vect[1] = stateGetBodyRates_f()->q;
     // rate_vect[2] = stateGetBodyRates_f()->r;
 
-    float euler_vect[3]; 
+    float euler_vect[3];
     euler_vect[0] = stateGetNedToBodyEulers_f()->phi;
     euler_vect[1] = stateGetNedToBodyEulers_f()->theta;
     euler_vect[2] = stateGetNedToBodyEulers_f()->psi;
@@ -118,7 +120,7 @@ void assign_variables(void){
     pos_vect[1] = stateGetPositionNed_f()->y;
     pos_vect[2] = stateGetPositionNed_f()->z;
 
-    //Only variables needed by the aruco: 
+    //Only variables needed by the aruco:
     am7_data_out_local.UAV_NED_pos_x = pos_vect[0];
     am7_data_out_local.UAV_NED_pos_y = pos_vect[1];
     am7_data_out_local.UAV_NED_pos_z = pos_vect[2];

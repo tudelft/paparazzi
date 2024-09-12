@@ -11,7 +11,7 @@ from datetime import datetime
 import os
 
 # # --------- Ivybus Specific --------- # 
-sys.path.append("/home/orangepi/paparazzi/sw/ext/pprzlink/lib/v2.0/python/")
+sys.path.append("/home/orangepi/paparazzi/sw/ext/pprzlink/lib/v2.0/python/src")
 
 from ivy.std_api import *
 import pprzlink.ivy
@@ -21,7 +21,7 @@ import pprzlink.message as message
 #-----------------------Parameters--------------------------#
 MARKER_SIZE = 0.147 # meters
 timestep = None
-desired_aruco_dictionary = "DICT_5X5_100"
+desired_aruco_dictionary = "DICT_5X5_1000"
 pathLoad = 'cameraCalibration_mapir_1440p.xml'
 pixel_w = 1920  # Example: 1920 pixels wide
 pixel_h = 1440  # Example: 1440 pixels tall
@@ -148,7 +148,7 @@ def NED_conversion(pitch, roll, yaw, Aruco_position):
 #                                       # Ivybus INITIALISATION #
 # # ------------------------------------------------------------------------------------------------------- #
 # --------- Create Ivy Interface --------- # 
-ivy = pprzlink.ivy.IvyMessagesInterface(agent_name="ArucoMarker", start_ivy=False, ivy_bus="/dev/ttyS5")
+ivy = pprzlink.ivy.IvyMessagesInterface(agent_name="ArucoMarker", start_ivy=False, ivy_bus="127.255.255.255:2010")
 
 # --------- Start Ivy Interface --------- # 
 ivy.start()
@@ -174,7 +174,6 @@ ac_id = input("Enter Aicraft ID: ")
                                               # VIDEO #
 # ------------------------------------------------------------------------------------------------------- #
 def load_cam_para():
-    pathLoad = 'cameraCalibration.xml'
     cv_file = cv2.FileStorage(pathLoad, cv2.FILE_STORAGE_READ)
     camera_Matrix = cv_file.getNode("cM").mat()
     distortion_Coeff = cv_file.getNode("dist").mat()
@@ -182,16 +181,16 @@ def load_cam_para():
     return camera_Matrix, distortion_Coeff
 
 # --------- Load Video --------- #
-cap = cv2.VideoCapture("/dev/video0")
-if not cap.isOpened():
-    raise ValueError(f"Failed to open camera on port {usb_num}. Please check the port number and try again.")
+cap = cv2.VideoCapture(usb_num)
+#if not cap.isOpened():
+#    raise ValueError(f"Failed to open camera on port {usb_num}. Please check the port number and try again.")
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, pixel_w)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, pixel_h)
 
                                     # ARUCO MARKER DETECTION SETUP #
 # ------------------------------------------------------------------------------------------------------- #
-ARUCO_DICT = {"DICT_5X5_100": cv2.aruco.DICT_5X5_100}
+ARUCO_DICT = {"DICT_5X5_1000": cv2.aruco.DICT_5X5_1000}
 camera_Matrix, distortion_Coeff = load_cam_para()
 
 print(f"[INFO] detecting '{desired_aruco_dictionary}' markers...")
@@ -267,6 +266,7 @@ while(cap.isOpened()):
                 X_ARUCO = tvec[0][0][0]
                 Y_ARUCO = tvec[0][0][1]
                 Z_ARUCO = tvec[0][0][2]
+                print(X_ARUCO, Y_ARUCO, Z_ARUCO)
 
             except:
                 print("-------------------------------") 
