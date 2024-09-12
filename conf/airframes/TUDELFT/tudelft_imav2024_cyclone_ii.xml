@@ -141,13 +141,13 @@
 
             <!--      Module needed for the communication between the raspberry pi and the pixhawk-->
             <module name="ca_am7">
-                <configure name="AM7_PORT" value="UART3"/>
+                <configure name="AM7_PORT" value="UART4"/>
                 <configure name="AM7_BAUD" value="B921600"/>
             </module>
 
             <!-- Module needed for the fly by wire communication between the Teensy T4 and the pixhawk-->
             <module name="serial_act_t4">
-                <configure name="SERIAL_ACT_T4_PORT" value="UART8"/>
+                <configure name="SERIAL_ACT_T4_PORT" value="UART3"/>
                 <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>
             </module>
 
