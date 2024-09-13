@@ -11,7 +11,7 @@
    
    <init fun="overactuated_mixing_init()"/>
    <periodic fun="overactuated_mixing_run()" autorun="TRUE" freq="500"/>
-   
+   <periodic fun="assign_and_send_cmds()" autorun="TRUE" freq="500"/>
   <makefile>
     <file name="overactuated_mixing.c"/>
   </makefile>

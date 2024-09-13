@@ -43,7 +43,8 @@
 #include "filters/low_pass_filter.h"
 #include "math/wls/wls_alloc.h"
 #include <stdio.h>
-#include "modules/sensors/serial_act_t4.h"
+
+int16_t actuators_pprz[INDI_NUM_ACT] = {[0 ... INDI_NUM_ACT - 1] = 0};
 
 // Factor that the estimated G matrix is allowed to deviate from initial one
 #define INDI_ALLOWED_G_FACTOR 2.0
@@ -359,7 +360,7 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
                                       3, angular_acceleration,     // ang.acc = rate.diff
                                       3, temp_ang_acc_ref,         // ang.acc.ref
                                       1, &zero,                    // jerk ref
-                                      1, &zero);                   // u
+                                      INDI_NUM_ACT, indi_u);                   // u
 }
 #endif
 
@@ -714,30 +715,6 @@ void stabilization_indi_rate_run(bool in_flight, struct StabilizationSetpoint *s
     actuators_pprz[i] = (int16_t) indi_u[i];
   }
   
-  //Send values to FBW system: 
-  struct serial_act_t4_out myserial_act_t4_out_local;
-  float serial_act_t4_extra_data_out_local[255] __attribute__((aligned));
-  if(autopilot_get_motors_on()) {
-    //Arm motor:
-    myserial_act_t4_out_local.motor_arm_int = 1;
-  }
-  else {
-    //Disarm motor:
-    myserial_act_t4_out_local.motor_arm_int = 0;
-  }
-  myserial_act_t4_out_local.servo_arm_int = 1;
-
-  myserial_act_t4_out_local.motor_1_dshot_cmd_int = (int16_t) ((2*actuators_pprz[0])/9.6);
-  myserial_act_t4_out_local.motor_2_dshot_cmd_int = (int16_t) ((2*actuators_pprz[1])/9.6);
-
-  float max_degrees = 40.0;
-  myserial_act_t4_out_local.servo_1_cmd_int = (int16_t) ((actuators_pprz[2])/9.6)*max_degrees*100;
-  myserial_act_t4_out_local.servo_4_cmd_int = (int16_t) ((actuators_pprz[3])/9.6)*max_degrees*100;
-
-  //SEND MESSAGE:
-  AbiSendMsgSERIAL_ACT_T4_OUT(ABI_SERIAL_ACT_T4_OUT_ID, &myserial_act_t4_out_local, &serial_act_t4_extra_data_out_local[0]);
-
-
   //update thrust command such that the current is correctly estimated
   cmd[COMMAND_THRUST] = 0;
   for (i = 0; i < INDI_NUM_ACT; i++) {

@@ -34,5 +34,6 @@
 /* External used functions */
 extern void overactuated_mixing_init(void);
 extern void overactuated_mixing_run(void);
+extern void assign_and_send_cmds(void);
 
 #endif

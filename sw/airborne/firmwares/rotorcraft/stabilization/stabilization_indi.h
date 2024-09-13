@@ -31,6 +31,8 @@
 // Scaling for the control effectiveness to make it readible
 #define INDI_G_SCALING 1000.0
 
+extern int16_t actuators_pprz[INDI_NUM_ACT];
+
 extern float g1g2[INDI_OUTPUTS][INDI_NUM_ACT];
 extern float actuator_state_filt_vect[INDI_NUM_ACT];
 extern bool act_is_servo[INDI_NUM_ACT];
