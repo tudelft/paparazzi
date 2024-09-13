@@ -196,18 +196,18 @@
     <block name="descend_circ_CW" strip_button="Descend_circ_CW" strip_icon="descend.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
         <exception cond="GetPosHeight() @LT transition_height" deroute="land"/>
-        <circle radius="nav.radius" wp="circ" climb="-nav.climb_vspeed" vmode="climb"/>
+        <circle radius="nav.radius" wp="circ" climb="nav.descend_vspeed" vmode="climb"/>
     </block>
     <block name="descend_circ_CCW" strip_button="Descend_circ_CCW" strip_icon="descend.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
         <exception cond="GetPosHeight() @LT transition_height" deroute="land"/>
-        <circle radius="-nav.radius" wp="circ" climb="-nav.climb_vspeed" vmode="climb"/>
+        <circle radius="-nav.radius" wp="circ" climb="nav.descend_vspeed" vmode="climb"/>
     </block>
     <block name="land" strip_button="Land" strip_icon="land-right.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_FREE)"/>
         <call_once fun="rotwing_state_update_WP_height(WP_TD, transition_height)"/>
         <stay wp="TD"/>
-        <exception cond="stateGetHorizontalSpeedNorm_f() @LT 2.0" deroute="descend"/>
+        <exception cond="stateGetHorizontalSpeedNorm_f() @LT 1.0" deroute="descend"/>
     </block>
     <block name="descend" strip_button="Descend" strip_icon="descend.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
