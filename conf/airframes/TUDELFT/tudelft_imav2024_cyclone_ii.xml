@@ -378,7 +378,7 @@
 
         <!-- TODO: Set correct values -->
         <define name="BODY_TO_IMU_PHI" value="0." unit="deg"/>
-        <define name="BODY_TO_IMU_THETA" value="-90." unit="deg"/>
+        <define name="BODY_TO_IMU_THETA" value="90." unit="deg"/>
         <define name="BODY_TO_IMU_PSI" value="0." unit="deg"/>
         <!-- <define name="BODY_TO_IMU_PSI" value="90." unit="deg"/> --><!-- servo connector to the tail -->
     </section>

@@ -167,15 +167,23 @@ void assign_and_send_cmds(void)
   }
   myserial_act_t4_out_local.servo_arm_int = 1;
 
-  myserial_act_t4_out_local.motor_1_dshot_cmd_int = (int16_t) ((2*actuators_pprz[3])/9.6);
-  myserial_act_t4_out_local.motor_2_dshot_cmd_int = (int16_t) ((2*actuators_pprz[2])/9.6);
-//   Bound(myserial_act_t4_out_local.motor_1_dshot_cmd_int,0,2000);
-//   Bound(myserial_act_t4_out_local.motor_2_dshot_cmd_int,0,2000);
+  myserial_act_t4_out_local.motor_1_dshot_cmd_int = (int16_t) ((2*actuators_pprz[2])/9.6);
+  myserial_act_t4_out_local.motor_2_dshot_cmd_int = (int16_t) ((2*actuators_pprz[3])/9.6);
   myserial_act_t4_out_local.motor_3_dshot_cmd_int = (int16_t) (0);
   myserial_act_t4_out_local.motor_4_dshot_cmd_int = (int16_t) (0);
 
-  myserial_act_t4_out_local.servo_1_cmd_int = (int16_t) ((actuators_pprz[0])/9.6)*MAX_RANGE_SERVOS_DEG*100;
-  myserial_act_t4_out_local.servo_5_cmd_int = (int16_t) ((actuators_pprz[1])/9.6)*MAX_RANGE_SERVOS_DEG*100;
+  if(autopilot_get_motors_on()) {
+    //Arm servos:
+    myserial_act_t4_out_local.servo_1_cmd_int = (int16_t) ((actuators_pprz[0])/9.6)*MAX_RANGE_SERVOS_DEG*100;
+    myserial_act_t4_out_local.servo_5_cmd_int = (int16_t) ((actuators_pprz[1])/9.6)*MAX_RANGE_SERVOS_DEG*100;
+  }
+  else {
+    //Disarm servos:
+    myserial_act_t4_out_local.servo_1_cmd_int = (int16_t) (0);
+    myserial_act_t4_out_local.servo_5_cmd_int = (int16_t) (0);
+  }
+
+
 
   //SEND MESSAGE:
   AbiSendMsgSERIAL_ACT_T4_OUT(ABI_SERIAL_ACT_T4_OUT_ID, &myserial_act_t4_out_local, &serial_act_t4_extra_data_out_local[0]);
