@@ -19,10 +19,10 @@ import pprzlink.messages_xml_map as messages_xml_map
 import pprzlink.message as message          
 
 #-----------------------Parameters--------------------------#
-MARKER_SIZE = 0.147 # meters
+MARKER_SIZE = 0.049 # meters
 timestep = None
-desired_aruco_dictionary = "DICT_5X5_1000"
-pathLoad = 'cameraCalibration_mapir_1440p.xml'
+desired_aruco_dictionary = "DICT_5X5_100"
+pathLoad = '/home/orangepi/paparazzi/sw/ext/aruco_detection/cameraCalibration_mapir_1440p.xml'
 pixel_w = 1920  # Example: 1920 pixels wide
 pixel_h = 1440  # Example: 1440 pixels tall
 usb_num = 1
@@ -169,7 +169,7 @@ def update_aruco_position_NED(ac_id, flag, aruco_NED_pos_x, aruco_NED_pos_y, aru
     msg['uz'] = aruco_NED_pos_z
     ivy.send(msg)
 
-ac_id = input("Enter Aicraft ID: ")
+ac_id = 1 #input("Enter Aicraft ID: ")
 
                                               # VIDEO #
 # ------------------------------------------------------------------------------------------------------- #
@@ -182,15 +182,15 @@ def load_cam_para():
 
 # --------- Load Video --------- #
 cap = cv2.VideoCapture(usb_num)
-#if not cap.isOpened():
-#    raise ValueError(f"Failed to open camera on port {usb_num}. Please check the port number and try again.")
+if not cap.isOpened():
+    raise ValueError(f"Failed to open camera on port {usb_num}. Please check the port number and try again.")
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, pixel_w)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, pixel_h)
 
                                     # ARUCO MARKER DETECTION SETUP #
 # ------------------------------------------------------------------------------------------------------- #
-ARUCO_DICT = {"DICT_5X5_1000": cv2.aruco.DICT_5X5_1000}
+ARUCO_DICT = {"DICT_5X5_100": cv2.aruco.DICT_5X5_100}
 camera_Matrix, distortion_Coeff = load_cam_para()
 
 print(f"[INFO] detecting '{desired_aruco_dictionary}' markers...")
@@ -253,6 +253,8 @@ while(cap.isOpened()):
             NORTH_DRONE = NORTH_DRONE*pprz_NED_conversion
             EAST_DRONE  = EAST_DRONE*pprz_NED_conversion
             UP_DRONE    = UP_DRONE*pprz_NED_conversion 
+
+            print(f'Drone position in NED: ({NORTH_DRONE, EAST_DRONE, UP_DRONE})')
         
         # --------- FLAG -> Aruco Marker Not Detected --------- # 
         DETECTION = 0
@@ -288,10 +290,11 @@ while(cap.isOpened()):
 
             #   # Generate Aruco position row vector
                 ARUCO_POSITION_B = np.array([[X_ARUCO_B], [Y_ARUCO_B], [Z_ARUCO_B]])
+                print(f'Rel position in Drone sys: {ARUCO_POSITION_B}')
 
             #   # --------- Convert Aruco Position in Image Coordinates to NED Coordinates Relative to Drone --------- # 
                 NORTH_REL, EAST_REL, UP_REL = NED_conversion(PITCH_DRONE, ROLL_DRONE, YAW_DRONE, ARUCO_POSITION_B)
-
+            
             #   # --------- NED Aruco Marker Position --------- # 
                 if NORTH_DRONE is not None:
                     # --------- NED Relative and NED Drone Summation --------- # 
@@ -304,7 +307,8 @@ while(cap.isOpened()):
             # # --------- Move Waypoint --------- #
         if  DETECTION == 1 : 
             # # --------- Move Waypoint --------- #
-            update_aruco_position_NED(1, 0, NORTH_ARUCO, EAST_ARUCO, -UP_ARUCO)
+            update_aruco_position_NED(ac_id, 0, NORTH_ARUCO, EAST_ARUCO, -UP_ARUCO)
+            print(f'Drone position in NED: ({NORTH_ARUCO, EAST_ARUCO, UP_ARUCO})')
                 
     # --------- Break While Loop (No Frame Retrieved) --------- # 
     else:

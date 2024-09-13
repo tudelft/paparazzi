@@ -41,8 +41,8 @@ struct timeval current_time, last_time, last_sent_msg_time, aruco_time, starting
 pthread_mutex_t mutex_am7;
 
 int verbose_sixdof_com = 0;
-int verbose_sixdof_position = 1;
-int verbose_connection = 0;
+int verbose_sixdof_position = 0;
+int verbose_connection = 1;
 int verbose_optimizer = 0;
 int verbose_runtime = 0; 
 int verbose_received_data = 0; 
@@ -132,7 +132,7 @@ void readLiDAR(){
 void am7_init(){
 
   //Init serial port for the communication
-  if ((serial_port = serialOpen ("/dev/ttyS2", BAUDRATE_AM7)) < 0){
+  if ((serial_port = serialOpen ("/dev/ttyS5", BAUDRATE_AM7)) < 0){
     fprintf (stderr, "Unable to open serial device: %s\n", strerror (errno)) ;
   }
   if (wiringPiSetup () == -1){
@@ -256,17 +256,17 @@ void send_states_on_ivy(){
     if(verbose_ivy_bus) printf("Sent received message from UAV on ivy bus\n");
     IvySendMsg("1 ROTORCRAFT_FP  %d %d %d  %d %d %d  %d %d %d  %d %d %d  %d %d %d",
 
-            (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_y/0.0039063),
-            (int32_t) (myam7_data_in_copy_for_ivy.UAV_NED_pos_x/0.0039063),
-            (int32_t) (-myam7_data_in_copy_for_ivy.UAV_NED_pos_z/0.0039063),
+            (int32_t) (0/0.0039063), // y
+            (int32_t) (0/0.0039063), // x
+            (int32_t) (0/0.0039063), // z
 
             (int32_t) (-1/0.0000019),
             (int32_t) (-1/0.0000019),
             (int32_t) (-1/0.0000019),
 
-            (int32_t) ( (myam7_data_in_copy_for_ivy.phi_state_int*0.01) /0.0139882),
-            (int32_t) ( (myam7_data_in_copy_for_ivy.theta_state_int*0.01) /0.0139882),
-            (int32_t) ( (myam7_data_in_copy_for_ivy.psi_state_int*0.01) /0.0139882),
+            (int32_t) ( (10*0.01) /0.0139882),
+            (int32_t) ( (10*0.01) /0.0139882),
+            (int32_t) ( (10*0.01) /0.0139882),
 
             (int32_t) (-1/0.0039063),
             (int32_t) (-1/0.0039063),
