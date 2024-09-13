@@ -150,8 +150,8 @@ void overactuated_mixing_run(void)
  * Run the overactuated mixing
  */
 void assign_and_send_cmds(void)
-{   
-  //Send values to FBW system: 
+{
+  //Send values to FBW system:
   struct serial_act_t4_out myserial_act_t4_out_local;
   float serial_act_t4_extra_data_out_local[255] __attribute__((aligned));
   for(int i = 0; i<254; i++){
@@ -174,8 +174,8 @@ void assign_and_send_cmds(void)
 
   if(autopilot_get_motors_on()) {
     //Arm servos:
-    myserial_act_t4_out_local.servo_1_cmd_int = (int16_t) ((actuators_pprz[0])/9.6)*MAX_RANGE_SERVOS_DEG*100;
-    myserial_act_t4_out_local.servo_5_cmd_int = (int16_t) ((actuators_pprz[1])/9.6)*MAX_RANGE_SERVOS_DEG*100;
+    myserial_act_t4_out_local.servo_1_cmd_int = (int16_t) ((actuators_pprz[0])/96.0)*MAX_RANGE_SERVOS_DEG;
+    myserial_act_t4_out_local.servo_5_cmd_int = (int16_t) ((actuators_pprz[1])/96.0)*MAX_RANGE_SERVOS_DEG;
   }
   else {
     //Disarm servos:
