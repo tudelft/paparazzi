@@ -137,25 +137,7 @@
             </module>
             <module name="logger" type="sd_chibios"/>
             -->
-            <!--
             <module name="flight_recorder"/>
-            -->
-            <!-- Below example of what to add to your telemetry_something.xml file
-            <process name="FlightRecorder">
-                <mode name="default">
-                <message name="FBW_STATUS" period="1.2"/>
-                <message name="DL_VALUE" period="0.5"/>
-                <message name="IMU_ACCEL" period="0.05"/>
-                <message name="IMU_GYRO" period="0.05"/>
-                <message name="IMU_MAG" period="0.1"/>
-                <message name="IMU_ACCEL_RAW" period="0.002"/>
-                <message name="IMU_GYRO_RAW" period="0.002"/>
-                <message name="IMU_MAG_RAW" period="0.002"/>
-                <message name="COMMANDS" period=".002"/>
-                </mode>
-            </process>
-            -->
-            <!--<module name="servo_tester"/>-->
 
             <module name="imu" type="cube"/>
 
@@ -204,9 +186,10 @@
             <configure name="MAG_RM3100_I2C_DEV" value="i2c2"/>
             <!-- <configure name="MAG_RM3100_PERIODIC_FREQUENCY" value="125"/> -->
 
+            <!-- 0:X, 1:Y, 2:Z; -->
             <define name="RM3100_CHAN_X" value="1"/>
-            <define name="RM3100_CHAN_Y" value="0"/>
-            <define name="RM3100_CHAN_Z" value="2"/>
+            <define name="RM3100_CHAN_Y" value="2"/>
+            <define name="RM3100_CHAN_Z" value="0"/>
 
             <define name="RM3100_CHAN_X_SIGN" value="-"/>
             <define name="RM3100_CHAN_Y_SIGN" value="+"/>
@@ -226,28 +209,23 @@
         </module>
 
         <module name="geo_mag"/>
-
-        <!-- Whatever INS you fancy.... -->
         <module name="ins" type="ekf2">
-            <!-- <define name="INS_EKF2_MAG_ID" value="MAG_IST8310_SENDER_ID"/> -->
             <define name="INS_EKF2_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
-            <!-- <define name="INS_EKF2_MAG_ID" value="MAG_LIS3MDL_SENDER_ID"/> -->
-            <!-- <define name="INS_EKF2_OPTITRACK" value="TRUE"/> -->
-            <define name="INS_EKF2_ACCEL_ID" value="IMU_CUBE2_ID"/>
-            <define name="INS_EKF2_GYRO_ID" value="IMU_CUBE2_ID"/>
+            <define name="INS_EKF2_ACCEL_ID" value="IMU_CUBE1_ID"/>
+            <define name="INS_EKF2_GYRO_ID" value="IMU_CUBE1_ID"/>
+            <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
+            <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
         </module>
         <!--
         <module name="ins" type="float_invariant">
             <define name="INS_PROPAGATE_FREQUENCY" value="500"/>
         </module
         -->
-        <!-- 
-        <module name="ins" type="alt_float">
-            <define name="INS_PROPAGATE_FREQUENCY" value="500"/>
-            <define name="SONAR_COMPENSATE_ROTATION" value="TRUE"/>
-        </module>
-            -->
-        <!-- <module name="ins" type="ekf2"/> -->
+
+        <!-- <module name="ins" type="extended">
+            <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
+            <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
+        </module> -->
 
         <!-- <module name="ahrs" type="float_cmpl_quat">
             <configure name="USE_MAGNETOMETER" value="TRUE"/>
@@ -255,6 +233,7 @@
 
         <module name="stabilization" type="indi">
             <define name="INDI_THRUST_ON_PITCH_EFF" value="23.0"/>
+            <define name="TILT_TWIST_CTRL" value="TRUE" />
             <define name="WLS_N_U_MAX" value="4" />
             <define name="WLS_N_V_MAX" value="4" />
         </module>
@@ -410,8 +389,8 @@
 
     <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
         <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
-        <define name="G1_ROLL"   value="{   0,    0,  -13.3,  13.3}"/>
-        <define name="G1_PITCH"  value="{-2.1,  2.1,      0,     0}"/>
+        <define name="G1_ROLL"   value="{   0,    0,   -9.5,   9.5}"/>
+        <define name="G1_PITCH"  value="{-1.5,  1.5,      0,     0}"/>
         <define name="G1_YAW"    value="{-2.0, -2.0,    0.0,   0.0}"/>
         <define name="G1_THRUST" value="{   0,    0,   -1.1,  -1.1}"/>
         <!--Counter torque effect of spinning up a rotor-->
@@ -419,11 +398,11 @@
 
         <!-- reference acceleration for attitude control -->
         <define name="REF_ERR_P" value="107.0"/>
-        <define name="REF_ERR_Q" value="200.0"/>
-        <define name="REF_ERR_R" value="200.0"/>
-        <define name="REF_RATE_P" value="14.0"/>
-        <define name="REF_RATE_Q" value="15.0"/>
-        <define name="REF_RATE_R" value="15.0"/>
+        <define name="REF_ERR_Q" value="70.0"/>
+        <define name="REF_ERR_R" value="70.0"/>
+        <define name="REF_RATE_P" value="9.0"/>
+        <define name="REF_RATE_Q" value="9.0"/>
+        <define name="REF_RATE_R" value="9.0"/>
 
         <!--Maxium yaw rate, to avoid instability-->
         <define name="MAX_R" value="100.0" unit="deg/s"/>
@@ -512,29 +491,6 @@
 
         <define name="ARRIVED_AT_WAYPOINT" value="50.0"/>
         <define name="USE_AIRSPEED" value="TRUE"/>
-
-        <define name="MINIMUM_AIRSPEED" value="11.0" unit="m/s"/>
-        <define name="NOMINAL_AIRSPEED" value="17.0" unit="m/s"/>
-        <define name="MAXIMUM_AIRSPEED" value="34.0" unit="m/s"/>
-        <define name="CLIMB_AIRSPEED" value="13.0" unit="m/s"/>
-        <define name="TRACKING_AIRSPEED" value="24.0" unit="m/s"/>
-        <define name="GLIDE_AIRSPEED" value="12.0" unit="m/s"/>
-        <define name="STALL_AIRSPEED" value="10.0" unit="m/s"/>
-        <define name="RACE_AIRSPEED" value="28.0" unit="m/s"/>
-        <define name="MIN_SPEED_FOR_TAKEOFF" value="14.0" unit="m/s"/>
-        <define name="AIRSPEED_SETPOINT_SLEW" value="0.3" unit="m/s/s"/>
-
-        <define name="TAKEOFF_PITCH_ANGLE" value="20" unit="deg"/>
-        <define name="FLARE_PITCH_ANGLE" value="6" unit="deg"/>
-        <define name="NAV_GLIDE_PITCH_TRIM" value="0.0" unit="deg"/>
-
-        <define name="KILL_MODE_DISTANCE" value="MAX_DIST_FROM_HOME*1.3+HOME_RADIUS" unit="m"/>
-        <define name="DEFAULT_CIRCLE_RADIUS" value="70.0" unit="m"/>
-        <define name="HOME_RADIUS" value="DEFAULT_CIRCLE_RADIUS" unit="m"/>
-        <define name="LANDING_CIRCLE_RADIUS" value="60.0" unit="m"/>
-        <define name="MIN_CIRCLE_RADIUS" value="50.0" unit="m"/>
-
-        <define name="CARROT" value="6.0" unit="s"/>
 
         <define name="UNLOCKED_HOME_MODE" value="TRUE"/>
         <define name="RC_LOST_MODE" value="AP_MODE_NAV"/>
