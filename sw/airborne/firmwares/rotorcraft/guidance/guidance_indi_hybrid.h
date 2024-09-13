@@ -82,10 +82,16 @@ struct guidance_indi_hybrid_params {
   float min_airspeed;
   float max_airspeed;
   float stall_protect_gain;
+  float climb_vspeed_fwd;
+  float descend_vspeed_fwd;
+  float climb_vspeed_quad;
+  float descend_vspeed_quad;
+  float fwd_airspeed;
 };
 
 extern struct FloatVect3 sp_accel;
 extern struct FloatVect3 gi_speed_sp;
+extern struct guidance_indi_hybrid_params gih_params;
 
 extern float guidance_indi_pitch_pref_deg;
 

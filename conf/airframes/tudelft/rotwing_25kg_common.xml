@@ -49,7 +49,6 @@
         <define name="NO_GPS_LOST_WITH_DATALINK_TIME"   value="20"/>
         <define name="NO_GPS_LOST_WITH_RC_VALID"        value="TRUE"/>
         <define name="USE_AIRSPEED"                     value="TRUE"/>
-        <define name="NAV_HYBRID_MAX_DECELERATION"      value="0.75"/>
         <define name="NAV_HYBRID_MAX_AIRSPEED"          value="30"/> 
         <define name="MULTI_GPS_MODE"                   value="GPS_MODE_PRIMARY"/>
         <define name="INS_EKF2_FUSION_MODE"             value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/>
@@ -188,7 +187,7 @@
         <define name="WLS_WU"               value="{100., 3000., 4., 30.}"/>
 
         <!-- Gains -->
-        <define name="POS_GAIN"             value="0.4"/>
+        <define name="POS_GAIN"             value="1.0"/>
         <define name="POS_GAINZ"            value="0.5"/>
         <define name="SPEED_GAIN"           value="0.7"/>
         <define name="SPEED_GAINZ"          value="0.6"/>
@@ -206,8 +205,6 @@
 
         <define name="NAV_CIRCLE_DIST"      value="60."/>
         <define name="NAV_LINE_DIST"        value="100"/>
-        <define name="CLIMB_SPEED_FWD"      value="2.0"/>
-        <define name="DESCEND_SPEED_FWD"    value="-3.0"/>
         <define name="PUSHER_INDEX"         value="8"/>
 
         <define name="MAX_PITCH"            value="12"/>
@@ -216,18 +213,24 @@
     </section>
 
     <section name="ROTWING" prefix="ROTWING_">
-        <define name="FW_MIN_AIRSPEED"      value="23"/> <!-- Forward stall airspeed + margin (motors off) -->
-        <define name="FW_QUAD_MIN_AIRSPEED" value="19"/> <!-- Forward stall airspeed + margin with quad motors on -->
-        <define name="FW_CRUISE_AIRSPEED"   value="25"/> <!-- Default cruise airspeed -->
-        <define name="FW_MAX_AIRSPEED"      value="30"/> <!-- Maximum forward airspeed -->
-        <define name="QUAD_NOPUSH_AIRSPEED" value="8"/>  <!-- Maximum quadrotor without pusher motor airspeed -->
-        <define name="QUAD_MAX_AIRSPEED"    value="15"/> <!-- Maximum quadrotor airspeed (with pusher motor)-->
-        <define name="SKEW_UP_AIRSPEED"     value="13"/> <!-- Airspeed where the skewing starts when going up in airspeed -->
-        <define name="SKEW_DOWN_AIRSPEED"   value="11"/> <!-- Airspeed where the skewing starts when going down in airspeed -->
-        <define name="SKEW_REF_MODEL"       value="FALSE"/> <!-- Enable second order reference model for the skewing command -->
-        <define name="REF_MODEL_P_GAIN"     value="0.004"/>
-        <define name="REF_MODEL_D_GAIN"     value="0.007"/>
-        <define name="REF_MODEL_MAX_SPEED"  value="9.6"/>
+        <define name="FW_MIN_AIRSPEED"          value="23"/> <!-- Forward stall airspeed + margin (motors off) -->
+        <define name="FW_QUAD_MIN_AIRSPEED"     value="19"/> <!-- Forward stall airspeed + margin with quad motors on -->
+        <define name="FW_CRUISE_AIRSPEED"       value="25"/> <!-- Default cruise airspeed -->
+        <define name="FW_MAX_AIRSPEED"          value="30"/> <!-- Maximum forward airspeed -->
+        <define name="QUAD_NOPUSH_AIRSPEED"     value="8"/>  <!-- Maximum quadrotor without pusher motor airspeed -->
+        <define name="QUAD_MAX_AIRSPEED"        value="15"/> <!-- Maximum quadrotor airspeed (with pusher motor)-->
+        <define name="SKEW_UP_AIRSPEED"         value="13"/> <!-- Airspeed where the skewing starts when going up in airspeed -->
+        <define name="SKEW_DOWN_AIRSPEED"       value="11"/> <!-- Airspeed where the skewing starts when going down in airspeed -->
+        <define name="MAX_DECELERATION_FW"      value="0.75"/>   <!-- Maximum deceleration in fixed wing mode -->
+        <define name="MAX_DECELERATION_QUAD"    value="0.75"/>   <!-- Maximum deceleration in quad mode -->
+        <define name="MAX_CLIMB_SPEED_FW"       value="2.0"/>   <!-- Maximum climb speed in fwd -->
+        <define name="MAX_CLIMB_SPEED_QUAD"     value="2.0"/>   <!-- Maximum climb speed in quad -->
+        <define name="MAX_DESCEND_SPEED_FW"     value="-3.0"/>  <!-- Maximum descend speed in fwd -->
+        <define name="MAX_DESCEND_SPEED_QUAD"   value="-1.0"/>  <!-- Maximum descend speed in quad -->
+        <define name="SKEW_REF_MODEL"           value="FALSE"/> <!-- Enable second order reference model for the skewing command -->
+        <define name="REF_MODEL_P_GAIN"         value="0.004"/>
+        <define name="REF_MODEL_D_GAIN"         value="0.007"/>
+        <define name="REF_MODEL_MAX_SPEED"      value="9.6"/>
     </section>
 
     <section name="FORWARD">

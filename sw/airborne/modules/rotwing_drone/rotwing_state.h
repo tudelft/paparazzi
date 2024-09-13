@@ -62,10 +62,10 @@ struct rotwing_state_t {
   int16_t skew_cmd;
 
   /* Reference Model */
-  float skew_model_max_speed;
-  float skew_model_p_gain;
-  float skew_model_d_gain;
-  float skew_model_skew_angle_deg;
+  float ref_model_max_speed;
+  float ref_model_p_gain;
+  float ref_model_d_gain;
+  float ref_model_skew_angle_deg;
 
   /* Airspeeds */
   float cruise_airspeed;      // Airspeed for cruising
@@ -87,6 +87,9 @@ void rotwing_state_init(void);
 void rotwing_state_periodic(void);
 bool rotwing_state_hover_motors_running(void);
 bool rotwing_state_pusher_motor_running(void);
+bool rotwing_state_skew_angle_valid(void);
+void rotwing_state_set_nav_settings(void);
+void rotwing_state_set_guidance_settings(void);
 
 void rotwing_state_set(enum rotwing_states_t state);
 bool rotwing_state_choose_circle_direction(uint8_t wp_id);

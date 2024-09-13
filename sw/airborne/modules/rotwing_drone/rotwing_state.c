@@ -82,9 +82,48 @@
 #define ROTWING_QUAD_PREF_PITCH -5.0
 #endif
 
-/* Amoutn of time the airspeed needs to be below the FW_MIN_AIRSPEED */
+/* Amount of time the airspeed needs to be below the FW_MIN_AIRSPEED */
 #ifndef ROTWING_FW_STALL_TIMEOUT
 #define ROTWING_FW_STALL_TIMEOUT 0.5
+#endif
+
+/* Amount of time the measured and modelled skew angle need to differ before the skew angle becomes invalid */
+#ifndef ROTWING_SKEW_ANGLE_MISMATCH_TIMEOUT
+#define ROTWING_SKEW_ANGLE_MISMATCH_TIMEOUT 0.25
+#endif
+
+/* Maximum angle difference between the measured skew and modelled skew for skew failure detection */
+#ifndef ROTWING_REF_MODEL_MAX_ANGLE_DIFFERENCE
+#define ROTWING_REF_MODEL_MAX_ANGLE_DIFFERENCE 15.f
+#endif
+
+/* Maximum deceleration in fixed wing */
+#ifndef ROTWING_MAX_DECELERATION_FW
+#define ROTWING_MAX_DECELERATION_FW 0.5
+#endif
+
+/* Maximum deceleration in quad */
+#ifndef ROTWING_MAX_DECELERATION_QUAD
+#define ROTWING_MAX_DECELERATION_QUAD 0.5
+#endif
+
+/* Maximum climb speed in fixed wing */
+#ifndef ROTWING_MAX_CLIMB_SPEED_FW
+#define ROTWING_MAX_CLIMB_SPEED_FW 2.0
+#endif
+
+/* Maximum climb speed in quad */
+#ifndef ROTWING_MAX_CLIMB_SPEED_QUAD
+#define ROTWING_MAX_CLIMB_SPEED_QUAD 2.0
+#endif
+
+/* Maximum descend speed in fixed wing */
+#ifndef ROTWING_MAX_DESCEND_SPEED_FW
+#define ROTWING_MAX_DESCEND_SPEED_FW -3.0
+#endif
+
+#ifndef ROTWING_MAX_DESCEND_SPEED_QUAD
+#define ROTWING_MAX_DESCEND_SPEED_QUAD -1.0
 #endif
 
 /* Sanity checks */
@@ -122,7 +161,7 @@ static void send_rotating_wing_state(struct transport_tx *trans, struct link_dev
   // Set the status
   union rotwing_bitmask_t status;
   status.value = 0;
-  status.skew_angle_valid = (get_sys_time_float() - rotwing_state.meas_skew_angle_time) < ROTWING_RPM_TIMEOUT;
+  status.skew_angle_valid = rotwing_state_skew_angle_valid();
   status.hover_motors_enabled = rotwing_state.hover_motors_enabled;
   status.hover_motors_idle = rotwing_state_hover_motors_idling();
   status.hover_motors_running = rotwing_state_hover_motors_running();
@@ -163,10 +202,12 @@ void rotwing_state_init(void)
   rotwing_state.fail_skew_angle = false;
   rotwing_state.fail_hover_motor = false;
   rotwing_state.fail_pusher_motor = false;
-  rotwing_state.skew_model_skew_angle_deg = 0;
-  rotwing_state.skew_model_max_speed = ROTWING_REF_MODEL_MAX_SPEED;
-  rotwing_state.skew_model_p_gain = ROTWING_REF_MODEL_P_GAIN;
-  rotwing_state.skew_model_d_gain = ROTWING_REF_MODEL_D_GAIN;
+  rotwing_state.ref_model_skew_angle_deg = 0;
+  rotwing_state.ref_model_max_speed = ROTWING_REF_MODEL_MAX_SPEED;
+  rotwing_state.ref_model_p_gain = ROTWING_REF_MODEL_P_GAIN;
+  rotwing_state.ref_model_d_gain = ROTWING_REF_MODEL_D_GAIN;
+
+  rotwing_state_set_guidance_settings();
 
   // Bind ABI messages
   AbiBindMsgACT_FEEDBACK(ROTWING_STATE_ACT_FEEDBACK_ID, &rotwing_state_feedback_ev, rotwing_state_feedback_cb);
@@ -277,7 +318,6 @@ void rotwing_state_periodic(void)
   }
   Bound(rotwing_state.sp_skew_angle_deg, 0.f, 90.f);
 
-
   /* Handle the airspeed bounding */
   Bound(rotwing_state.cruise_airspeed, ROTWING_FW_MIN_AIRSPEED, ROTWING_FW_MAX_AIRSPEED);
   if((!rotwing_state_hover_motors_running() && rotwing_state.state != ROTWING_STATE_FORCE_HOVER) || rotwing_state.state == ROTWING_STATE_FORCE_FW) {
@@ -308,7 +348,10 @@ void rotwing_state_periodic(void)
   }*/
 
   guidance_indi_set_min_max_airspeed(rotwing_state.min_airspeed, rotwing_state.max_airspeed);
-
+  
+  /* Set guidance and nav parameters based on the current skew angle and airspeed */
+  rotwing_state_set_nav_settings();
+  rotwing_state_set_guidance_settings();
 
   /* Calculate the skew command */
   float servo_pprz_cmd = MAX_PPRZ * (rotwing_state.sp_skew_angle_deg - 45.f) / 45.f;
@@ -319,13 +362,13 @@ void rotwing_state_periodic(void)
   static float rotwing_state_skew_p_cmd = -MAX_PPRZ;
   static float rotwing_state_skew_d_cmd = 0;
 
-  float speed_sp = rotwing_state.skew_model_p_gain * (servo_pprz_cmd - rotwing_state_skew_p_cmd);
-  BoundAbs(speed_sp, rotwing_state.skew_model_max_speed);
-  rotwing_state_skew_d_cmd += rotwing_state.skew_model_d_gain * (speed_sp - rotwing_state_skew_d_cmd);
+  float speed_sp = rotwing_state.ref_model_p_gain * (servo_pprz_cmd - rotwing_state_skew_p_cmd);
+  BoundAbs(speed_sp, rotwing_state.ref_model_max_speed);
+  rotwing_state_skew_d_cmd += rotwing_state.ref_model_d_gain * (speed_sp - rotwing_state_skew_d_cmd);
   rotwing_state_skew_p_cmd += rotwing_state_skew_d_cmd;
   BoundAbs(rotwing_state_skew_p_cmd, MAX_PPRZ);
   servo_pprz_cmd = rotwing_state_skew_p_cmd;
-  rotwing_state.skew_model_skew_angle_deg = 45.0 / MAX_PPRZ * rotwing_state_skew_p_cmd + 45.0;
+  rotwing_state.ref_model_skew_angle_deg = 45.0 / MAX_PPRZ * rotwing_state_skew_p_cmd + 45.0;
 #endif
   rotwing_state.skew_cmd = servo_pprz_cmd;
 
@@ -435,6 +478,49 @@ bool rotwing_state_pusher_motor_running(void) {
   }
 }
 
+bool rotwing_state_skew_angle_valid(void) {
+  // Check if the measured skew angle is timed out
+  bool skew_timeout = (get_sys_time_float() - rotwing_state.meas_skew_angle_time) > ROTWING_RPM_TIMEOUT;
+#if (!ROTWING_SKEW_REF_MODEL)
+  return !skew_timeout;
+#else
+  // If a reference model is used, check if there is a mismatch between measured and modelled skew angle
+  static float time_last_match = 0;
+  bool skew_angle_match = fabs(rotwing_state.meas_skew_angle_deg - rotwing_state.ref_model_skew_angle_deg) < ROTWING_REF_MODEL_MAX_ANGLE_DIFFERENCE;
+  
+  if (skew_angle_match) {
+    time_last_match = get_sys_time_float();
+  }
+
+  if (!skew_timeout && (get_sys_time_float() - time_last_match < ROTWING_SKEW_ANGLE_MISMATCH_TIMEOUT)) {
+    return true;
+  } else {
+    return false;
+  }
+#endif
+}
+
+void rotwing_state_set_nav_settings(void) {
+  nav_max_deceleration_sp = ROTWING_MAX_DECELERATION_FW * (rotwing_state.meas_skew_angle_deg) / 90.f + ROTWING_MAX_DECELERATION_QUAD * (90.f - rotwing_state.meas_skew_angle_deg) / 90.f;
+  
+  if (rotwing_state.meas_skew_angle_deg > ROTWING_FW_SKEW_ANGLE) {
+    nav.climb_vspeed = ROTWING_MAX_CLIMB_SPEED_FW;
+    nav.descend_vspeed = ROTWING_MAX_DESCEND_SPEED_FW;
+  } else {
+    nav.climb_vspeed = ROTWING_MAX_CLIMB_SPEED_QUAD;
+    nav.descend_vspeed = ROTWING_MAX_DESCEND_SPEED_QUAD;
+  }
+}
+
+void rotwing_state_set_guidance_settings(void) {
+  // Potentially add airspeed / skew angle dependence
+  gih_params.fwd_airspeed = ROTWING_FW_MIN_AIRSPEED;
+  gih_params.climb_vspeed_fwd = ROTWING_MAX_CLIMB_SPEED_FW;
+  gih_params.descend_vspeed_fwd = ROTWING_MAX_DESCEND_SPEED_FW;
+  gih_params.climb_vspeed_quad = ROTWING_MAX_CLIMB_SPEED_QUAD;
+  gih_params.descend_vspeed_quad = ROTWING_MAX_DESCEND_SPEED_QUAD;
+}
+
 void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, float pitch_angle)
 {
   // adjust weights
@@ -527,6 +613,8 @@ void rotwing_state_set(enum rotwing_states_t state) {
   rotwing_state.nav_state = state;
 }
 
+
+/* TODO move these rotwing navigation helper functions to an appropriate module/file */
 bool rotwing_state_choose_circle_direction(uint8_t wp_id) {
   // Get circle waypoint coordinates in NED
   struct FloatVect3 circ_ned = {.x = waypoints[wp_id].enu_f.y,
@@ -542,8 +630,8 @@ bool rotwing_state_choose_circle_direction(uint8_t wp_id) {
   struct FloatVect3 vect_pos_circ;
   VECT3_DIFF(vect_pos_circ, circ_ned, pos_ned);
 
-  struct FloatVect3 x_axis = {.x = 1, .y = 0, .z = 0};
-  struct FloatVect3 z_axis = {.x = 0, .y = 0, .z = 1};
+  static struct FloatVect3 x_axis = {.x = 1, .y = 0, .z = 0};
+  static struct FloatVect3 z_axis = {.x = 0, .y = 0, .z = 1};
   struct FloatVect3 att_NED;
   struct FloatVect3 cross_att_circ;
 
@@ -554,14 +642,11 @@ bool rotwing_state_choose_circle_direction(uint8_t wp_id) {
   float x = VECT3_DOT_PRODUCT(vect_pos_circ, att_NED);
   
   float body_to_wp_angle_rad = atan2f(y, x);
-  // printf("circ pos: %.2f %.2f %.2f \n", circ_ned.x, circ_ned.y, circ_ned.z);
-  // printf("drone pos: %.2f %.2f %.2f \n", pos_ned.x, pos_ned.y, pos_ned.z);
-  // printf("body_to_wp_angle_deg: %.2f \n", DegOfRad(body_to_wp_angle_rad));
 
   if (body_to_wp_angle_rad >= 0.f) {
-    return true;
+    return true; // CCW circle
   } else {
-    return false;
+    return false; // CW circle
   }
 }
 
@@ -572,12 +657,12 @@ void rotwing_state_set_transition_wp(uint8_t wp_id) {
                                   .y = stateGetPositionNed_f()->x,
                                   .z = -stateGetPositionNed_f()->z};
 
-  struct FloatVect3 x_axis = {.x = 1, .y = 0, .z = 0};
+  static struct FloatVect3 x_axis = {.x = 1, .y = 0, .z = 0};
   struct FloatVect3 x_att_NED;
 
   float_rmat_transp_vmult(&x_att_NED, stateGetNedToBodyRMat_f(), &x_axis);
 
-  // set the new WP coordinates
+  // set the new transition WP coordinates 100m ahead of the drone
   target_enu.x = 100.f * x_att_NED.y + target_enu.x;
   target_enu.y = 100.f * x_att_NED.x + target_enu.y;
 

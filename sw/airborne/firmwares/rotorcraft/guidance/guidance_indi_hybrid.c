@@ -79,6 +79,26 @@
 #define GUIDANCE_INDI_MIN_AIRSPEED -10.f
 #endif
 
+#ifndef GUIDANCE_INDI_CLIMB_SPEED_FWD
+#define GUIDANCE_INDI_CLIMB_SPEED_FWD 4.0
+#endif
+
+#ifndef GUIDANCE_INDI_DESCEND_SPEED_FWD
+#define GUIDANCE_INDI_DESCEND_SPEED_FWD -4.0
+#endif
+
+#ifndef GUIDANCE_INDI_CLIMB_SPEED_QUAD
+#define GUIDANCE_INDI_CLIMB_SPEED_QUAD 2.0
+#endif
+
+#ifndef GUIDANCE_INDI_DESCEND_SPEED_QUAD
+#define GUIDANCE_INDI_DESCEND_SPEED_QUAD -2.0
+#endif
+
+#ifndef GUIDANCE_INDI_FWD_AIRSPEED
+#define GUIDANCE_INDI_FWD_AIRSPEED 13.0
+#endif
+
 struct guidance_indi_hybrid_params gih_params = {
   .pos_gain = GUIDANCE_INDI_POS_GAIN,
   .pos_gainz = GUIDANCE_INDI_POS_GAINZ,
@@ -93,6 +113,11 @@ struct guidance_indi_hybrid_params gih_params = {
   .min_airspeed = GUIDANCE_INDI_MIN_AIRSPEED,
   .max_airspeed = GUIDANCE_INDI_MAX_AIRSPEED,
   .stall_protect_gain = 1.5, // m/s^2 downward acceleration per m/s airspeed loss
+  .climb_vspeed_fwd = GUIDANCE_INDI_CLIMB_SPEED_FWD,
+  .descend_vspeed_fwd = GUIDANCE_INDI_DESCEND_SPEED_FWD,
+  .climb_vspeed_quad = GUIDANCE_INDI_CLIMB_SPEED_QUAD,
+  .descend_vspeed_quad = GUIDANCE_INDI_DESCEND_SPEED_QUAD,
+  .fwd_airspeed = GUIDANCE_INDI_FWD_AIRSPEED
 };
 
 // Quadplanes can hover at various pref pitch
@@ -163,20 +188,9 @@ static void guidance_indi_filter_thrust(void);
 #define GUIDANCE_INDI_AIRSPEED_FILT_CUTOFF 0.5
 #endif
 
-#ifndef GUIDANCE_INDI_CLIMB_SPEED_FWD
-#define GUIDANCE_INDI_CLIMB_SPEED_FWD 4.0
-#endif
-
-#ifndef GUIDANCE_INDI_DESCEND_SPEED_FWD
-#define GUIDANCE_INDI_DESCEND_SPEED_FWD -4.0
-#endif
-
 #ifndef GUIDANCE_INDI_MAX_LAT_ACCEL
 #define GUIDANCE_INDI_MAX_LAT_ACCEL 9.81
 #endif
-
-float climb_vspeed_fwd = GUIDANCE_INDI_CLIMB_SPEED_FWD;
-float descend_vspeed_fwd = GUIDANCE_INDI_DESCEND_SPEED_FWD;
 
 float inv_eff[4];
 
@@ -717,10 +731,10 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
 static float bound_vz_sp(float vz_sp)
 {
   // Bound vertical speed setpoint
-  if (stateGetAirspeed_f() > 13.f) {
-    Bound(vz_sp, -climb_vspeed_fwd, -descend_vspeed_fwd);
+  if (stateGetAirspeed_f() > gih_params.fwd_airspeed) {
+    Bound(vz_sp, -gih_params.climb_vspeed_fwd, -gih_params.descend_vspeed_fwd);
   } else {
-    Bound(vz_sp, -nav.climb_vspeed, -nav.descend_vspeed); // FIXME don't use nav settings
+    Bound(vz_sp, -gih_params.climb_vspeed_quad, -gih_params.descend_vspeed_quad);
   }
   return vz_sp;
 }
