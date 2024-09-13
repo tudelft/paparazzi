@@ -218,7 +218,7 @@
       <message name="HYBRID_GUIDANCE"          period="0.02"/>
       <message name="ESC"                      period="0.02"/>
       <message name="STAB_ATTITUDE"            period="0.002"/>
-      <message name="ACTUATORS"                period="0.002"/>
+      <message name="SERIAL_ACT_T4_OUT"        period="0.002"/>
       <message name="GPS_RTK"                  period="0.1"/>
       <message name="IMU_HEATER"               period="6.2"/>
       <message name="EFF_MAT_STAB"             period="0.002"/>
