@@ -188,6 +188,7 @@
     <block name="land here">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <call_once fun="NavSetWaypointHere(WP_TD)"/>
+        <deroute block="land"/>
     </block>
     <block name="land hybrid" strip_button="Land Hybrid" strip_icon="land-right.png">
         <exception cond="!rotwing_state_choose_circle_direction(WP_circ)" deroute="descend_circ_CW"/>
