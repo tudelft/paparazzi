@@ -49,6 +49,8 @@ int16_t actuators_pprz[INDI_NUM_ACT] = {[0 ... INDI_NUM_ACT - 1] = 0};
 // Factor that the estimated G matrix is allowed to deviate from initial one
 #define INDI_ALLOWED_G_FACTOR 2.0
 
+#define STABILIZATION_INDI_ACT_BUTTERWORTH_CUTOFF 2.54
+
 #ifdef STABILIZATION_INDI_FILT_CUTOFF_P
 #define STABILIZATION_INDI_FILTER_ROLL_RATE TRUE
 #else
@@ -117,7 +119,7 @@ struct WLS_t wls_stab_p = {
 #else
   .Wv        =  {1000, 1000, 1, 100},
 #endif
-#endif  
+#endif
 #ifdef STABILIZATION_INDI_WLS_WU //Weighting of different actuators in the cost function
   .Wu        = STABILIZATION_INDI_WLS_WU,
 #else
@@ -281,6 +283,7 @@ float g2_est[INDI_NUM_ACT];
 float g1_init[INDI_OUTPUTS][INDI_NUM_ACT];
 float g2_init[INDI_NUM_ACT];
 
+Butterworth2LowPass actuator_dyn_filter[INDI_NUM_ACT];
 Butterworth2LowPass actuator_lowpass_filters[INDI_NUM_ACT];
 Butterworth2LowPass estimation_input_lowpass_filters[INDI_NUM_ACT];
 Butterworth2LowPass measurement_lowpass_filters[3];
@@ -301,11 +304,11 @@ void sum_g1_g2(void);
 #include "modules/datalink/telemetry.h"
 static void send_wls_v_stab(struct transport_tx *trans, struct link_device *dev)
 {
-  send_wls_v("stab", &wls_stab_p, trans, dev); 
+  send_wls_v("stab", &wls_stab_p, trans, dev);
 }
 static void send_wls_u_stab(struct transport_tx *trans, struct link_device *dev)
 {
-  send_wls_u("stab", &wls_stab_p, trans, dev); 
+  send_wls_u("stab", &wls_stab_p, trans, dev);
 }
 
 static void send_eff_mat_g_indi(struct transport_tx *trans, struct link_device *dev)
@@ -469,6 +472,7 @@ void stabilization_indi_update_filt_freq(float freq)
 void init_filters(void)
 {
   // tau = 1/(2*pi*Fc)
+  float tau_actuator = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_ACT_BUTTERWORTH_CUTOFF);
   float tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_FILT_CUTOFF);
   float tau_est = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_ESTIMATION_FILT_CUTOFF);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
@@ -481,6 +485,7 @@ void init_filters(void)
 
   // Filtering of the actuators
   for (i = 0; i < INDI_NUM_ACT; i++) {
+    init_butterworth_2_low_pass(&actuator_dyn_filter[i], tau_actuator, sample_time, 0.0);
     init_butterworth_2_low_pass(&actuator_lowpass_filters[i], tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&estimation_input_lowpass_filters[i], tau_est, sample_time, 0.0);
   }
@@ -714,7 +719,7 @@ void stabilization_indi_rate_run(bool in_flight, struct StabilizationSetpoint *s
   for (i = 0; i < INDI_NUM_ACT; i++) {
     actuators_pprz[i] = (int16_t) indi_u[i];
   }
-  
+
   //update thrust command such that the current is correctly estimated
   cmd[COMMAND_THRUST] = 0;
   for (i = 0; i < INDI_NUM_ACT; i++) {
@@ -817,6 +822,13 @@ void stabilization_indi_attitude_run(bool in_flight, struct StabilizationSetpoin
  */
 void get_actuator_state(void)
 {
+#if USE_SECOND_ORDER_ACTUATOR_FILTER
+  // Propagate actuator filters
+  for (int i = 0; i < INDI_NUM_ACT; i++) {
+    update_butterworth_2_low_pass(&actuator_dyn_filter[i], indi_u[i]);
+    actuator_state[i] = actuator_dyn_filter[i].o[0];
+  }
+#else
 #if STABILIZATION_INDI_RPM_FEEDBACK
   float_vect_copy(actuator_state, act_obs, INDI_NUM_ACT);
 #else
@@ -837,8 +849,8 @@ void get_actuator_state(void)
     }
 #endif
   }
-
-#endif
+#endif // STABILIZATION_INDI_RPM_FEEDBACK
+#endif // USE_SECOND_ORDER_ACTUATOR_FILTER
 }
 
 /**
