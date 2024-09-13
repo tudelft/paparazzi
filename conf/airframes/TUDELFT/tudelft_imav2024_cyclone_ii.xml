@@ -18,8 +18,8 @@
         + PROP:        2 blade thin electric ? x ?
         + BAT:         Li-Po 4S1P 2000mAh 45C 60C Burst
 
-        WARNING: Current PPRZ airspeed sensor driver has a bug, 
-        static and dynamic pressure defaults are swapped, 
+        WARNING: Current PPRZ airspeed sensor driver has a bug,
+        static and dynamic pressure defaults are swapped,
         so the airspeed is negative if you dont change your pitot leads
 
         NOTES:
@@ -45,8 +45,8 @@
         <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
 
             <!-- If we find time to finish the DPS310 driver... -->
-            <!-- 
-            <module name="baro" type="dps310_i2c"/> 
+            <!--
+            <module name="baro" type="dps310_i2c"/>
                <configure name="DPS310_I2C_DEV" value="i2c2"/>
             </module>
             -->
@@ -122,8 +122,8 @@
                 <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>
             </module>
 
-               
-            <!-- 
+
+            <!--
             <module name="pwm_meas">
                 <define name="USE_PWM_INPUT1" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>
                 <define name="USE_PWM_INPUT2" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>
@@ -276,7 +276,7 @@
         <module name="nav" type="takeoff_and_landing">
         </module>
 
-        <!-- 
+        <!--
         <module name="agl_dist">
             <define name="USE_SONAR"/>
         </module>
@@ -411,7 +411,7 @@
         <define name="FILT_CUTOFF" value="5.0"/>
 
         <!-- first order actuator dynamics -->
-        <define name="ACT_FREQ" value="{53., 53., 23., 23.}"/>
+        <define name="ACT_FREQ" value="{30., 30., 23., 23.}"/>
         <define name="ACT_RATE_LIMIT" value="{170, 170, 9600, 9600}"/>
         <define name="ACT_IS_SERVO" value="{1, 1, 0, 0}"/>
 
@@ -444,10 +444,10 @@
     <section name="AHRS" prefix="AHRS_">
     <!-- values used if no GPS fix, on 3D fix is update by geo_mag module if loaded -->
     <!-- Delft -->
-    <!-- 
+    <!--
         <define name="H_X" value="0.3928"/>
         <define name="H_Y" value="-0.0140"/>
-        <define name="H_Z" value="0.9195"/> 
+        <define name="H_Z" value="0.9195"/>
         -->
         <define name="ICQ_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
         <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>
@@ -467,7 +467,7 @@
         <define name="H_Z" value="0.9195"/>
 
         <!-- TODO: for Bristol -->
-        <!-- 
+        <!--
         <define name="H_X" value="0.3928"/>
         <define name="H_Y" value="-0.0140"/>
         <define name="H_Z" value="0.9195"/>
