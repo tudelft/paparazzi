@@ -147,7 +147,7 @@
       <set value="0" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
-      <stay climb="-0.5" vmode="climb" wp="TD"/>
+      <stay climb="-0.5" vmode="climb" wp="TD" until="stage_time @GT 0"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <set value="1" var="approach_state"/>
@@ -165,17 +165,17 @@
       <set value="1" var="approach_state"/>
       <set value="0" var="force_forward"/>
       <stay wp="STDBY"/>
-    </block>  
+    </block>
     <block name="Aruco_hover">
       <set value="0" var="approach_state"/>
       <set value="0" var="force_forward"/>
       <stay wp="ARUCO_HOVER"/>
-    </block>  
+    </block>
     <block name="Aruco_hover_APP">
       <set value="1" var="approach_state"/>
       <set value="0" var="force_forward"/>
       <stay wp="ARUCO_HOVER"/>
-    </block>  
+    </block>
 
     <block name="stay_p1">
       <set value="0" var="approach_state"/>
