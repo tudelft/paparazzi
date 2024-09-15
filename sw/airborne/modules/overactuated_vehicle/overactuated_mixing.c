@@ -473,14 +473,14 @@ static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am
 
     #ifdef MOVE_EXT_REF_POSITION
         struct EnuCoor_f target_pos_sixdof = {myam7_data_in_local.aruco_NED_pos_y, myam7_data_in_local.aruco_NED_pos_x, -myam7_data_in_local.aruco_NED_pos_z + alt_offset_beacon}; 
-        waypoint_set_enu(WP_SIXDOF, &target_pos_sixdof); 
+        waypoint_set_enu(WP_ARUCO_HOVER, &target_pos_sixdof); 
         // Send to the GCS that the waypoint has been moved
-        static uint8_t wp_id = WP_SIXDOF;
-        RunOnceEvery(PERIODIC_FREQUENCY / 2, { //Update SIXDOF waypoint every 0.5 seconds
+        static uint8_t wp_id = WP_ARUCO_HOVER;
+        RunOnceEvery(PERIODIC_FREQUENCY / 2, { //Update ARUCO_HOVER waypoint every 0.5 seconds
             DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-                                    &waypoints[WP_SIXDOF].enu_i.x,
-                                    &waypoints[WP_SIXDOF].enu_i.y,
-                                    &waypoints[WP_SIXDOF].enu_i.z);
+                                    &waypoints[WP_ARUCO_HOVER].enu_i.x,
+                                    &waypoints[WP_ARUCO_HOVER].enu_i.y,
+                                    &waypoints[WP_ARUCO_HOVER].enu_i.z);
         });
 
     #endif
