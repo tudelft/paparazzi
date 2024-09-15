@@ -96,16 +96,6 @@
 #define ROTWING_REF_MODEL_MAX_ANGLE_DIFFERENCE 15.f
 #endif
 
-/* Maximum deceleration in fixed wing */
-#ifndef ROTWING_MAX_DECELERATION_FW
-#define ROTWING_MAX_DECELERATION_FW 0.5
-#endif
-
-/* Maximum deceleration in quad */
-#ifndef ROTWING_MAX_DECELERATION_QUAD
-#define ROTWING_MAX_DECELERATION_QUAD 0.5
-#endif
-
 /* Sanity checks */
 // #if ROTWING_SKEW_START_AIRSPEED < ROTWING_QUAD_MAX_AIRSPEED
 // #error "ROTWING_SKEW_START_AIRSPEED cannot be less than ROTWING_QUAD_MAX_AIRSPEED"
@@ -330,7 +320,7 @@ void rotwing_state_periodic(void)
 
 
   /* Set navigation/guidance settings */
-  nav_max_deceleration_sp = ROTWING_MAX_DECELERATION_FW * (rotwing_state.meas_skew_angle_deg) / 90.f + ROTWING_MAX_DECELERATION_QUAD * (90.f - rotwing_state.meas_skew_angle_deg) / 90.f;
+  nav_max_deceleration_sp = ROTWING_FW_MAX_DECELERATION * meas_skew_angle / 90.f + ROTWING_QUAD_MAX_DECELERATION * (90.f - meas_skew_angle) / 90.f; //TODO: Do we really want to based this on the skew?
 
 
   /* Calculate the skew command */
