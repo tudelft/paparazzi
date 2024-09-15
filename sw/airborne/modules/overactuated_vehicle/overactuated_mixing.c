@@ -98,7 +98,7 @@ float roll_target_slider = 0;
 // float time_old = 0; 
 // float test_frequency = 0.5;
 
-float alt_offset_beacon = 2; 
+float alt_offset_beacon = 4; 
 int selected_beacon = 2; 
 int sixdof_mode = 1; 
 
@@ -471,10 +471,10 @@ static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am
     memcpy(&myam7_data_in_local,myam7_data_in_ptr,sizeof(struct am7_data_in));
     memcpy(&extra_data_in_local,extra_data_in_ptr,255 * sizeof(float));
 
-    #ifdef TRACK_EXT_REF_POSITION
+    #ifdef MOVE_EXT_REF_POSITION
         struct EnuCoor_f target_pos_sixdof = {myam7_data_in_local.aruco_NED_pos_y, myam7_data_in_local.aruco_NED_pos_x, -myam7_data_in_local.aruco_NED_pos_z + alt_offset_beacon}; 
         waypoint_set_enu(WP_SIXDOF, &target_pos_sixdof); 
-         // Send to the GCS that the waypoint has been moved
+        // Send to the GCS that the waypoint has been moved
         static uint8_t wp_id = WP_SIXDOF;
         RunOnceEvery(PERIODIC_FREQUENCY / 2, { //Update SIXDOF waypoint every 0.5 seconds
             DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,

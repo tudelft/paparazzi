@@ -53,6 +53,7 @@
       <module name="gps" type="ublox">
         <configure name="GPS_BAUD" value="B460800"/><!-- UBX message only but rate set to ~?HZ with GPS, GLONASS, BEIDU and GALILEIO at the SAME time is a LOT of GNSS message data-->
         <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
+        <configure name="UBX2_GPS_PORT" value="UART_9"/>
       </module>
 
       <!-- If one want to use a Joystick over connection one can us this instead of sbus-->
@@ -68,7 +69,7 @@
 
       <module name="telemetry" type="transparent">
         <!--Handy for Desk debugging-->
-        <configure name="MODEM_PORT" value="usb_serial"/>
+        <!-- <configure name="MODEM_PORT" value="usb_serial"/> -->
         <configure name="MODEM_BAUD" value="B460800"/>
       </module>
 
@@ -82,7 +83,11 @@
       <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
 
       <!-- Enable for onboard logging -->
+      <module name="tlsf"/>
+      <module name="pprzlog"/>
+      <module name="logger" type="sd_chibios"/>
       <module name="flight_recorder"/>      
+
 
       <!-- <module name="AOA_pwm">
         <define name="SEND_SYNC_AOA" value="TRUE"/>
@@ -137,7 +142,8 @@
 
     <module name="stabilization" type="indi_simple"/>
  
-    <module name="ins" type="ekf2"/>
+    <module name="ins" type="ekf2">
+    </module>
 
     <module name="geo_mag"/>
     <module name="air_data"/>
@@ -151,6 +157,8 @@
 
 
     <module name="overactuated_mixing"/>
+
+    <module name="tilt_calibration"/>
 
     <module name="lidar" type="tfmini_am7">
       <configure name="USE_TFMINI_AGL" value="TRUE"/>
@@ -232,11 +240,11 @@
     <define name="MAX_FWD_SPEED" value="25.0" unit="m/s"/>
     <define name="MAX_AIRSPEED" value="20.0" unit="m/s"/> 
     <define name="MIN_FWD_SPEED" value="-5.0" unit="m/s"/>
-    <define name="MAX_LAT_SPEED" value="8.0" unit="m/s"/>
+    <define name="MAX_LAT_SPEED" value="4.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_FWD_ACC" value="8.0" unit="m/s^2"/>
     <define name="MIN_FWD_ACC" value="-4" unit="m/s^2"/> 
-    <define name="MAX_LAT_ACC" value="8.0" unit="m/s^2"/>
+    <define name="MAX_LAT_ACC" value="6.0" unit="m/s^2"/>
     <define name="MAX_VERT_ACC" value="3.0" unit="m/s^2"/>
   </section>
 
@@ -312,7 +320,7 @@
 
     <!-- Maximum orders -->
     <!-- General -->
-    <define name="MAX_PHI" value="35" unit="deg"/>
+    <define name="MAX_PHI" value="40" unit="deg"/>
     <define name="MAX_THETA" value="40" unit="deg"/>
     <define name="MAX_PSI_ERR" value="80" unit="deg"/>
 
@@ -327,16 +335,16 @@
     <define name="PID_MAX_AZ_ORDER" value="35" unit="deg"/> <!--max azimuth deflection in PID mode-->
 
     <!-- INDI proportional gains -->
-    <define name="CRUISE_GAIN_P" value="1.2"/>
+    <define name="CRUISE_GAIN_P" value="1.8"/>
     <define name="CRUISE_GAIN_Q" value="2.2"/>
     <define name="CRUISE_GAIN_R" value="1"/>
 
     <define name="CRUISE_GAIN_X" value="1"/>
-    <define name="CRUISE_GAIN_Y" value="1.5"/>
+    <define name="CRUISE_GAIN_Y" value="1.85"/>
     <define name="CRUISE_GAIN_Z" value="2"/>
 
     <!-- INDI derivative gains -->
-    <define name="CRUISE_GAIN_P_DOT" value="9"/>
+    <define name="CRUISE_GAIN_P_DOT" value="8.8"/>
     <define name="CRUISE_GAIN_Q_DOT" value="8"/>
     <define name="CRUISE_GAIN_R_DOT" value="5"/>
 
@@ -349,8 +357,8 @@
     <define name="APP_GAIN_Q" value="1.3"/>
     <define name="APP_GAIN_R" value="1.6"/>
 
-    <define name="APP_GAIN_X" value="3.5"/>
-    <define name="APP_GAIN_Y" value="3.5"/>
+    <define name="APP_GAIN_X" value="2.5"/>
+    <define name="APP_GAIN_Y" value="2.5"/>
     <define name="APP_GAIN_Z" value="5"/>
 
     <!-- INDI approach gains -->
@@ -358,8 +366,8 @@
     <define name="APP_GAIN_Q_DOT" value="7"/>
     <define name="APP_GAIN_R_DOT" value="5"/>
 
-    <define name="APP_GAIN_X_DOT" value="4"/>
-    <define name="APP_GAIN_Y_DOT" value="4"/>
+    <define name="APP_GAIN_X_DOT" value="3"/>
+    <define name="APP_GAIN_Y_DOT" value="3"/>
     <define name="APP_GAIN_Z_DOT" value="5"/>
 
     <!-- Actuator dynamics and mapping-->
@@ -528,7 +536,7 @@
 
     <define name="DISABLE_ACC_DECREMENT_INNER_LOOP" value="0"/>
 
-    <define name="VERT_ACC_MARGIN" value="2.5" unit="m/s^2"/>
+    <define name="VERT_ACC_MARGIN" value="0.5" unit="m/s^2"/>
     
     <define VALUE="0.01" NAME="W_DV_1"/>
     <define VALUE="0.01" NAME="W_DV_2"/>
@@ -636,7 +644,7 @@
     <define name="VY_CONTROL_STATIC_GAIN" value="0.2" unit="(m/s)/m"/>
     <define name="VZ_CONTROL_STATIC_GAIN" value="0.2" unit="(m/s)/m"/>
 
-    <define name="MAX_DECEL_WP_APPROACH" value="1.8" unit="m/s^2"/>
+    <define name="MAX_DECEL_WP_APPROACH" value="1.2" unit="m/s^2"/>
 
     <define name="VY_AIRSPEED_GAIN_COEFF" value="0.0"/>
     <define name="VY_GAIN_MAX_VAL" value="1"/>
@@ -659,10 +667,17 @@
   </section>
 
   <section name="IMU" prefix="IMU_">
+
     <!-- calibrated only for id 20 the 02-07-2024 -->
     <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true, .filter=true},.neutral={-26,1,15}, .scale={{25459,1343,9844},{2596,137,1013}}, .filter_sample_freq=1133, .filter_freq=30}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-1,2,33}, .scale={{21914,8531,5489},{4477,1738,1120}}, .filter_sample_freq=3895, .filter_freq=30}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-47,0,3}, .scale={{17288,29444,25808},{3531,6031,5293}}, .filter_sample_freq=1133, .filter_freq=30}}"/>
-    <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true, .rotation=true},.neutral={3163,2783,1623}, .scale={{25833,28413,12237},{45868,51206,22472}}, .body_to_sensor={{0,16384,0,16384,0,0,0,0,-16384}}}}"/>
+    <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true, .rotation=true},.neutral={-363,263,-31}, .scale={{1180,27529,19441},{2107,48925,34731}}}}"/>
     <define name="GYRO_CALIB"  value="{{.abi_id=20, .calibrated={.filter=true}, .filter_sample_freq=1133, .filter_freq=30}}"/>
+
+    <!-- ATTEMPT -->
+    <!-- <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-9,-6,-4}, .scale={{38883,41480,36505},{3968,4241,3726}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-33,-9,11}, .scale={{36893,53565,3365},{7544,10964,689}}}}"/> -->
+
+    <!-- ATTEMPT -->
+    <!-- <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true, .rotation=true},.neutral={-363,263,-31}, .scale={{1180,27529,19441},{2107,48925,34731}}}}"/> -->
 
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI" value="180" unit="deg"/>
@@ -720,11 +735,9 @@
     <define name="FILT_CUTOFF_R" value="4.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN_P" value="0.047"/>
-    <define name="ACT_DYN_Q" value="0.047"/>
-    <define name="ACT_DYN_R" value="0.047"/>
-    <define name="ACT_DYN_B" value="0.047"/>
-    <define name="ACT_DYN_P" value="0.047"/>
+    <define name="ACT_FREQ_P" value="15"/>
+    <define name="ACT_FREQ_Q" value="15"/>
+    <define name="ACT_FREQ_R" value="15"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
@@ -772,6 +785,9 @@
   <section name="MISC">
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     <!--define name="UART7_CR2" value="(USART_CR2_STOP1_BITS | USART_CR2_SWAP_Msk)"/--> <!-- Swap RX/TX since RX doesn't work-->
+
+    <!-- <define name="USE_EXT_REF_ATTITUDE" value="TRUE"/> -->
+    <define name="MOVE_EXT_REF_POSITION" value="TRUE"/>
 
     <!-- Basic navigation settings -->
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>
