@@ -66,9 +66,14 @@
 #define ROTWING_SKEW_ANGLE_STEP 55.0
 #endif
 
-/* */
+/* TODO: Give a name.... */
 #ifndef ROTWING_SKEW_BACK_MARGIN
 #define ROTWING_SKEW_BACK_MARGIN 5.0
+#endif
+
+/* Maximum angle difference between the measured skew and modelled skew for skew failure detection */
+#ifndef ROTWING_SKEW_REF_MODEL_MAX_DIFF
+#define ROTWING_SKEW_REF_MODEL_MAX_DIFF 5.f
 #endif
 
 /* Skew angle at which the mininum airspeed starts its linear portion */
@@ -85,21 +90,6 @@
 #ifndef ROTWING_FW_STALL_TIMEOUT
 #define ROTWING_FW_STALL_TIMEOUT 0.5
 #endif
-
-/* Amount of time the measured and modelled skew angle need to differ before the skew angle becomes invalid */
-#ifndef ROTWING_SKEW_ANGLE_MISMATCH_TIMEOUT
-#define ROTWING_SKEW_ANGLE_MISMATCH_TIMEOUT 0.25
-#endif
-
-/* Maximum angle difference between the measured skew and modelled skew for skew failure detection */
-#ifndef ROTWING_REF_MODEL_MAX_ANGLE_DIFFERENCE
-#define ROTWING_REF_MODEL_MAX_ANGLE_DIFFERENCE 15.f
-#endif
-
-/* Sanity checks */
-// #if ROTWING_SKEW_START_AIRSPEED < ROTWING_QUAD_MAX_AIRSPEED
-// #error "ROTWING_SKEW_START_AIRSPEED cannot be less than ROTWING_QUAD_MAX_AIRSPEED"
-// #endif
 
 /* Fix for not having double can busses */
 #ifndef SERVO_BMOTOR_PUSH_IDX
@@ -173,9 +163,6 @@ void rotwing_state_init(void)
   rotwing_state.fail_hover_motor = false;
   rotwing_state.fail_pusher_motor = false;
   rotwing_state.ref_model_skew_angle_deg = 0;
-  rotwing_state.ref_model_max_speed = ROTWING_REF_MODEL_MAX_SPEED;
-  rotwing_state.ref_model_p_gain = ROTWING_REF_MODEL_P_GAIN;
-  rotwing_state.ref_model_d_gain = ROTWING_REF_MODEL_D_GAIN;
 
   // Bind ABI messages
   AbiBindMsgACT_FEEDBACK(ROTWING_STATE_ACT_FEEDBACK_ID, &rotwing_state_feedback_ev, rotwing_state_feedback_cb);
@@ -327,20 +314,22 @@ void rotwing_state_periodic(void)
   float servo_pprz_cmd = MAX_PPRZ * (rotwing_state.sp_skew_angle_deg - 45.f) / 45.f;
   BoundAbs(servo_pprz_cmd, MAX_PPRZ);
 
-#if (ROTWING_SKEW_REF_MODEL || USE_NPS)
   // Rotate with second order filter
   static float rotwing_state_skew_p_cmd = -MAX_PPRZ;
   static float rotwing_state_skew_d_cmd = 0;
 
-  float speed_sp = rotwing_state.ref_model_p_gain * (servo_pprz_cmd - rotwing_state_skew_p_cmd);
-  BoundAbs(speed_sp, rotwing_state.ref_model_max_speed);
-  rotwing_state_skew_d_cmd += rotwing_state.ref_model_d_gain * (speed_sp - rotwing_state_skew_d_cmd);
+  float speed_sp = ROTWING_SKEW_REF_MODEL_P_GAIN * (servo_pprz_cmd - rotwing_state_skew_p_cmd);
+  BoundAbs(speed_sp, ROTWING_SKEW_REF_MODEL_MAX_SPEED);
+  rotwing_state_skew_d_cmd += ROTWING_SKEW_REF_MODEL_D_GAIN * (speed_sp - rotwing_state_skew_d_cmd);
   rotwing_state_skew_p_cmd += rotwing_state_skew_d_cmd;
   BoundAbs(rotwing_state_skew_p_cmd, MAX_PPRZ);
-  servo_pprz_cmd = rotwing_state_skew_p_cmd;
   rotwing_state.ref_model_skew_angle_deg = 45.0 / MAX_PPRZ * rotwing_state_skew_p_cmd + 45.0;
-#endif
+
+#if (ROTWING_SKEW_REF_MODEL || USE_NPS)
+  rotwing_state.skew_cmd  = rotwing_state_skew_p_cmd;
+#else
   rotwing_state.skew_cmd = servo_pprz_cmd;
+#endif
 
 
   /* Add simulation feedback for the skewing and RPM */
@@ -449,25 +438,11 @@ bool rotwing_state_pusher_motor_running(void) {
 }
 
 bool rotwing_state_skew_angle_valid(void) {
-  // Check if the measured skew angle is timed out
+  // Check if the measured skew angle is timed out and the reference model is matching
   bool skew_timeout = (get_sys_time_float() - rotwing_state.meas_skew_angle_time) > ROTWING_RPM_TIMEOUT;
-#if (!ROTWING_SKEW_REF_MODEL)
-  return !skew_timeout;
-#else
-  // If a reference model is used, check if there is a mismatch between measured and modelled skew angle
-  static float time_last_match = 0;
-  bool skew_angle_match = fabs(rotwing_state.meas_skew_angle_deg - rotwing_state.ref_model_skew_angle_deg) < ROTWING_REF_MODEL_MAX_ANGLE_DIFFERENCE;
+  bool skew_angle_match = fabs(rotwing_state.meas_skew_angle_deg - rotwing_state.ref_model_skew_angle_deg) < ROTWING_SKEW_REF_MODEL_MAX_DIFF;
   
-  if (skew_angle_match) {
-    time_last_match = get_sys_time_float();
-  }
-
-  if (!skew_timeout && (get_sys_time_float() - time_last_match < ROTWING_SKEW_ANGLE_MISMATCH_TIMEOUT)) {
-    return true;
-  } else {
-    return false;
-  }
-#endif
+  return (!skew_timeout && skew_angle_match);
 }
 
 void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, float pitch_angle)

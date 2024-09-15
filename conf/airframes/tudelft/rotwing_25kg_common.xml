@@ -181,21 +181,21 @@
     </section>
 
     <section name="ROTWING" prefix="ROTWING_">
-        <define name="FW_MIN_AIRSPEED"          value="23"/> <!-- Forward stall airspeed + margin (motors off) -->
-        <define name="FW_QUAD_MIN_AIRSPEED"     value="19"/> <!-- Forward stall airspeed + margin with quad motors on -->
-        <define name="FW_CRUISE_AIRSPEED"       value="25"/> <!-- Default cruise airspeed -->
-        <define name="FW_MAX_AIRSPEED"          value="30"/> <!-- Maximum forward airspeed -->
+        <define name="FW_MIN_AIRSPEED"          value="23"/>    <!-- Forward stall airspeed + margin (motors off) -->
+        <define name="FW_QUAD_MIN_AIRSPEED"     value="19"/>    <!-- Forward stall airspeed + margin with quad motors on -->
+        <define name="FW_CRUISE_AIRSPEED"       value="25"/>    <!-- Default cruise airspeed -->
+        <define name="FW_MAX_AIRSPEED"          value="30"/>    <!-- Maximum forward airspeed -->
         <define name="FW_MAX_DECELERATION"      value="0.75"/>  <!-- Maximum horizontal deceleration in fixed wing mode -->
-        <define name="QUAD_NOPUSH_AIRSPEED"     value="8"/>  <!-- Maximum quadrotor without pusher motor airspeed -->
-        <define name="QUAD_MAX_AIRSPEED"        value="15"/> <!-- Maximum quadrotor airspeed (with pusher motor)-->
+        <define name="QUAD_NOPUSH_AIRSPEED"     value="8"/>     <!-- Maximum quadrotor without pusher motor airspeed -->
+        <define name="QUAD_MAX_AIRSPEED"        value="15"/>    <!-- Maximum quadrotor airspeed (with pusher motor)-->
         <define name="QUAD_MAX_DECELERATION"    value="0.75"/>  <!-- Maximum horizontal deceleration in quad mode -->
-        <define name="SKEW_UP_AIRSPEED"         value="13"/> <!-- Airspeed where the skewing starts when going up in airspeed -->
-        <define name="SKEW_DOWN_AIRSPEED"       value="11"/> <!-- Airspeed where the skewing starts when going down in airspeed -->
+        <define name="SKEW_UP_AIRSPEED"         value="13"/>    <!-- Airspeed where the skewing starts when going up in airspeed -->
+        <define name="SKEW_DOWN_AIRSPEED"       value="11"/>    <!-- Airspeed where the skewing starts when going down in airspeed -->
 
         <define name="SKEW_REF_MODEL"           value="FALSE"/> <!-- Enable second order reference model for the skewing command -->
-        <define name="REF_MODEL_P_GAIN"         value="0.004"/>
-        <define name="REF_MODEL_D_GAIN"         value="0.007"/>
-        <define name="REF_MODEL_MAX_SPEED"      value="9.6"/>
+        <define name="SKEW_REF_MODEL_P_GAIN"    value="0.004"/> <!-- Skewing reference model proportional gain -->
+        <define name="SKEW_REF_MODEL_D_GAIN"    value="0.007"/> <!-- Skewing reference model differential gain -->
+        <define name="SKEW_REF_MODEL_MAX_SPEED" value="9.6"/>   <!-- Maximum rotational skewing speed bound for the reference model -->
     </section>
 
     <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">

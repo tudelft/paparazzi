@@ -55,17 +55,12 @@ struct rotwing_state_t {
   bool hover_motors_enabled;        // Hover motors enabled (> idle throttle)
 
   /* Skew */
-  float sp_skew_angle_deg;    // Setpoint skew angle in degrees
-  float meas_skew_angle_deg;  // Measured skew angle in degrees
-  float meas_skew_angle_time; // Time of the last skew angle measurement
-  bool force_skew;            // Force skew angle to a certain value by the GCS
-  int16_t skew_cmd;
-
-  /* Reference Model */
-  float ref_model_max_speed;
-  float ref_model_p_gain;
-  float ref_model_d_gain;
-  float ref_model_skew_angle_deg;
+  float sp_skew_angle_deg;        // Setpoint skew angle in degrees
+  float ref_model_skew_angle_deg; // Reference model skew angle in degrees
+  float meas_skew_angle_deg;      // Measured skew angle in degrees
+  float meas_skew_angle_time;     // Time of the last skew angle measurement
+  bool force_skew;                // Force skew angle to a certain value by the GCS
+  int16_t skew_cmd;               // Skewing command in pprz values
 
   /* Airspeeds */
   float cruise_airspeed;      // Airspeed for cruising
