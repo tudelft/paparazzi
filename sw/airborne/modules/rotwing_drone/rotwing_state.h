@@ -88,8 +88,6 @@ void rotwing_state_periodic(void);
 bool rotwing_state_hover_motors_running(void);
 bool rotwing_state_pusher_motor_running(void);
 bool rotwing_state_skew_angle_valid(void);
-void rotwing_state_set_nav_settings(void);
-void rotwing_state_set_guidance_settings(void);
 
 void rotwing_state_set(enum rotwing_states_t state);
 bool rotwing_state_choose_circle_direction(uint8_t wp_id);

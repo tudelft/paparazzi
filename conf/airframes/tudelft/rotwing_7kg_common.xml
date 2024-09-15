@@ -182,12 +182,9 @@
         <define name="QUAD_MAX_AIRSPEED"        value="12.0"/>  <!-- Maximum quadrotor airspeed (with pusher motor)-->
         <define name="SKEW_UP_AIRSPEED"         value="10.0"/>  <!-- Airspeed where the skewing starts when going up in airspeed -->
         <define name="SKEW_DOWN_AIRSPEED"       value="8.0"/>   <!-- Airspeed where the skewing starts when going down in airspeed -->
-        <define name="MAX_DECELERATION_FW"      value="0.75"/>   <!-- Maximum deceleration in fixed wing mode -->
-        <define name="MAX_DECELERATION_QUAD"    value="0.75"/>   <!-- Maximum deceleration in quad mode -->
-        <define name="MAX_CLIMB_SPEED_FW"       value="2.0"/>   <!-- Maximum climb speed in fwd -->
-        <define name="MAX_CLIMB_SPEED_QUAD"     value="2.0"/>   <!-- Maximum climb speed in quad -->
-        <define name="MAX_DESCEND_SPEED_FW"     value="-3.0"/>  <!-- Maximum descend speed in fwd -->
-        <define name="MAX_DESCEND_SPEED_QUAD"   value="-1.0"/>  <!-- Maximum descend speed in quad -->
+        <define name="MAX_DECELERATION_FW"      value="0.75"/>  <!-- Maximum deceleration in fixed wing mode -->
+        <define name="MAX_DECELERATION_QUAD"    value="0.75"/>  <!-- Maximum deceleration in quad mode -->
+
         <define name="SKEW_REF_MODEL"           value="TRUE"/>  <!-- Enable second order reference model for the skewing command -->
         <define name="REF_MODEL_P_GAIN"         value="0.001"/>
         <define name="REF_MODEL_D_GAIN"         value="0.003"/>
@@ -219,6 +216,12 @@
         <define name="MAX_PITCH"            value="12"/>
         <define name="MIN_PITCH"            value="-20"/>
         <define name="MAX_LAT_ACCEL"        value="5.0"/>
+
+        <!-- Climb and descend speeds -->
+        <define name="FWD_CLIMB_SPEED"      value="2.0"/>
+        <define name="FWD_DESCEND_SPEED"    value="-3.0"/>
+        <define name="QUAD_CLIMB_SPEED"     value="2.0"/>
+        <define name="QUAD_DESCEND_SPEED"   value="-1.0"/>
     </section>
 
     <section name="FORWARD">

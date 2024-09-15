@@ -86,7 +86,6 @@ struct guidance_indi_hybrid_params {
   float descend_vspeed_fwd;
   float climb_vspeed_quad;
   float descend_vspeed_quad;
-  float fwd_airspeed;
 };
 
 extern struct FloatVect3 sp_accel;

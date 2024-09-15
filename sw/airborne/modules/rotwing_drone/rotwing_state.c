@@ -26,7 +26,6 @@
 #include "modules/rotwing_drone/rotwing_state.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
-#include "modules/nav/nav_rotorcraft_hybrid.h"
 #include "firmwares/rotorcraft/autopilot_firmware.h"
 
 #include "modules/actuators/actuators.h"
@@ -105,25 +104,6 @@
 /* Maximum deceleration in quad */
 #ifndef ROTWING_MAX_DECELERATION_QUAD
 #define ROTWING_MAX_DECELERATION_QUAD 0.5
-#endif
-
-/* Maximum climb speed in fixed wing */
-#ifndef ROTWING_MAX_CLIMB_SPEED_FW
-#define ROTWING_MAX_CLIMB_SPEED_FW 2.0
-#endif
-
-/* Maximum climb speed in quad */
-#ifndef ROTWING_MAX_CLIMB_SPEED_QUAD
-#define ROTWING_MAX_CLIMB_SPEED_QUAD 2.0
-#endif
-
-/* Maximum descend speed in fixed wing */
-#ifndef ROTWING_MAX_DESCEND_SPEED_FW
-#define ROTWING_MAX_DESCEND_SPEED_FW -3.0
-#endif
-
-#ifndef ROTWING_MAX_DESCEND_SPEED_QUAD
-#define ROTWING_MAX_DESCEND_SPEED_QUAD -1.0
 #endif
 
 /* Sanity checks */
@@ -206,8 +186,6 @@ void rotwing_state_init(void)
   rotwing_state.ref_model_max_speed = ROTWING_REF_MODEL_MAX_SPEED;
   rotwing_state.ref_model_p_gain = ROTWING_REF_MODEL_P_GAIN;
   rotwing_state.ref_model_d_gain = ROTWING_REF_MODEL_D_GAIN;
-
-  rotwing_state_set_guidance_settings();
 
   // Bind ABI messages
   AbiBindMsgACT_FEEDBACK(ROTWING_STATE_ACT_FEEDBACK_ID, &rotwing_state_feedback_ev, rotwing_state_feedback_cb);
@@ -318,6 +296,7 @@ void rotwing_state_periodic(void)
   }
   Bound(rotwing_state.sp_skew_angle_deg, 0.f, 90.f);
 
+
   /* Handle the airspeed bounding */
   Bound(rotwing_state.cruise_airspeed, ROTWING_FW_MIN_AIRSPEED, ROTWING_FW_MAX_AIRSPEED);
   if((!rotwing_state_hover_motors_running() && rotwing_state.state != ROTWING_STATE_FORCE_HOVER) || rotwing_state.state == ROTWING_STATE_FORCE_FW) {
@@ -348,10 +327,11 @@ void rotwing_state_periodic(void)
   }*/
 
   guidance_indi_set_min_max_airspeed(rotwing_state.min_airspeed, rotwing_state.max_airspeed);
-  
-  /* Set guidance and nav parameters based on the current skew angle and airspeed */
-  rotwing_state_set_nav_settings();
-  rotwing_state_set_guidance_settings();
+
+
+  /* Set navigation/guidance settings */
+  nav_max_deceleration_sp = ROTWING_MAX_DECELERATION_FW * (rotwing_state.meas_skew_angle_deg) / 90.f + ROTWING_MAX_DECELERATION_QUAD * (90.f - rotwing_state.meas_skew_angle_deg) / 90.f;
+
 
   /* Calculate the skew command */
   float servo_pprz_cmd = MAX_PPRZ * (rotwing_state.sp_skew_angle_deg - 45.f) / 45.f;
@@ -498,27 +478,6 @@ bool rotwing_state_skew_angle_valid(void) {
     return false;
   }
 #endif
-}
-
-void rotwing_state_set_nav_settings(void) {
-  nav_max_deceleration_sp = ROTWING_MAX_DECELERATION_FW * (rotwing_state.meas_skew_angle_deg) / 90.f + ROTWING_MAX_DECELERATION_QUAD * (90.f - rotwing_state.meas_skew_angle_deg) / 90.f;
-  
-  if (rotwing_state.meas_skew_angle_deg > ROTWING_FW_SKEW_ANGLE) {
-    nav.climb_vspeed = ROTWING_MAX_CLIMB_SPEED_FW;
-    nav.descend_vspeed = ROTWING_MAX_DESCEND_SPEED_FW;
-  } else {
-    nav.climb_vspeed = ROTWING_MAX_CLIMB_SPEED_QUAD;
-    nav.descend_vspeed = ROTWING_MAX_DESCEND_SPEED_QUAD;
-  }
-}
-
-void rotwing_state_set_guidance_settings(void) {
-  // Potentially add airspeed / skew angle dependence
-  gih_params.fwd_airspeed = ROTWING_FW_MIN_AIRSPEED;
-  gih_params.climb_vspeed_fwd = ROTWING_MAX_CLIMB_SPEED_FW;
-  gih_params.descend_vspeed_fwd = ROTWING_MAX_DESCEND_SPEED_FW;
-  gih_params.climb_vspeed_quad = ROTWING_MAX_CLIMB_SPEED_QUAD;
-  gih_params.descend_vspeed_quad = ROTWING_MAX_DESCEND_SPEED_QUAD;
 }
 
 void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, float pitch_angle)

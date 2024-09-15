@@ -79,24 +79,32 @@
 #define GUIDANCE_INDI_MIN_AIRSPEED -10.f
 #endif
 
-#ifndef GUIDANCE_INDI_CLIMB_SPEED_FWD
-#define GUIDANCE_INDI_CLIMB_SPEED_FWD 4.0
+/**
+ * Climb speed when navigation is making turns instead of direct lines
+ */
+#ifndef GUIDANCE_INDI_FWD_CLIMB_SPEED
+#define GUIDANCE_INDI_FWD_CLIMB_SPEED 4.0
 #endif
 
-#ifndef GUIDANCE_INDI_DESCEND_SPEED_FWD
-#define GUIDANCE_INDI_DESCEND_SPEED_FWD -4.0
+/**
+ * Descend speed when navigation is making turns instead of direct lines
+ */
+#ifndef GUIDANCE_INDI_FWD_DESCEND_SPEED
+#define GUIDANCE_INDI_FWD_DESCEND_SPEED -4.0
 #endif
 
-#ifndef GUIDANCE_INDI_CLIMB_SPEED_QUAD
-#define GUIDANCE_INDI_CLIMB_SPEED_QUAD 2.0
+/**
+ * Climb speed when navigation is doing direct lines
+ */
+#ifndef GUIDANCE_INDI_QUAD_CLIMB_SPEED
+#define GUIDANCE_INDI_QUAD_CLIMB_SPEED 2.0
 #endif
 
-#ifndef GUIDANCE_INDI_DESCEND_SPEED_QUAD
-#define GUIDANCE_INDI_DESCEND_SPEED_QUAD -2.0
-#endif
-
-#ifndef GUIDANCE_INDI_FWD_AIRSPEED
-#define GUIDANCE_INDI_FWD_AIRSPEED 13.0
+/**
+ * Descend speed when navigation is doing direct lines
+ */
+#ifndef GUIDANCE_INDI_QUAD_DESCEND_SPEED
+#define GUIDANCE_INDI_QUAD_DESCEND_SPEED -2.0
 #endif
 
 struct guidance_indi_hybrid_params gih_params = {
@@ -113,11 +121,10 @@ struct guidance_indi_hybrid_params gih_params = {
   .min_airspeed = GUIDANCE_INDI_MIN_AIRSPEED,
   .max_airspeed = GUIDANCE_INDI_MAX_AIRSPEED,
   .stall_protect_gain = 1.5, // m/s^2 downward acceleration per m/s airspeed loss
-  .climb_vspeed_fwd = GUIDANCE_INDI_CLIMB_SPEED_FWD,
-  .descend_vspeed_fwd = GUIDANCE_INDI_DESCEND_SPEED_FWD,
-  .climb_vspeed_quad = GUIDANCE_INDI_CLIMB_SPEED_QUAD,
-  .descend_vspeed_quad = GUIDANCE_INDI_DESCEND_SPEED_QUAD,
-  .fwd_airspeed = GUIDANCE_INDI_FWD_AIRSPEED
+  .climb_vspeed_fwd = GUIDANCE_INDI_FWD_CLIMB_SPEED,
+  .descend_vspeed_fwd = GUIDANCE_INDI_FWD_DESCEND_SPEED,
+  .climb_vspeed_quad = GUIDANCE_INDI_QUAD_CLIMB_SPEED,
+  .descend_vspeed_quad = GUIDANCE_INDI_QUAD_DESCEND_SPEED,
 };
 
 // Quadplanes can hover at various pref pitch
@@ -493,7 +500,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   float airspeed_turn = stateGetAirspeed_f();
 #endif
   // We are dividing by the airspeed, so a lower bound is important
-  Bound(airspeed_turn, 10.0f, 30.0f);
+  Bound(airspeed_turn, 10.0f, 30.0f); //WTF why a max of 30m/s??
 
   guidance_euler_cmd.phi = roll_filt.o[0] + euler_cmd.x;
   guidance_euler_cmd.theta = pitch_filt.o[0] + euler_cmd.y;
@@ -731,7 +738,7 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
 static float bound_vz_sp(float vz_sp)
 {
   // Bound vertical speed setpoint
-  if (stateGetAirspeed_f() > gih_params.fwd_airspeed) {
+  if (stateGetAirspeed_f() > TURN_AIRSPEED_TH) {
     Bound(vz_sp, -gih_params.climb_vspeed_fwd, -gih_params.descend_vspeed_fwd);
   } else {
     Bound(vz_sp, -gih_params.climb_vspeed_quad, -gih_params.descend_vspeed_quad);
