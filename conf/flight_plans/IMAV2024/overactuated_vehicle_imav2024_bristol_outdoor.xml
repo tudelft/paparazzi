@@ -115,7 +115,7 @@
   </sectors>
   <exceptions>
 	<!-- Check inside Flight Area, then goto Standby -->
-    <exception cond="Or(!InsidePermitted_Flight_Area(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 50) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+    <exception cond="Or(!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 220) @AND !(nav_block @LT IndexOfBlock('Start Engine')) @AND !(nav_block @GT IndexOfBlock('land here'))" deroute="Holding point"/>
   </exceptions>
   <blocks>
     <block name="Enter_AP_MODE_RC_DIRECT">
