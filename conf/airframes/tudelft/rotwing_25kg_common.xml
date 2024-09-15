@@ -10,7 +10,7 @@
         <define name="M"                     value="23.66"/>
 
         <define name="DM_DPPRZ_HOVER_PITCH"  value="{0.0, 0.0111}"/>
-        <define name="DM_DPPRZ_HOVER_ROLL"   value="{0.0, 0.00648}"/>
+        <define name="DM_DPPRZ_HOVER_ROLL"   value="{0.0, 0.005}"/>
 
         <define name="HOVER_ROLL_PITCH_COEF" value="{0.01994434, -0.00885004}"/>
         <define name="HOVER_ROLL_ROLL_COEF"  value="{0.0,       -0.0}"/>
