@@ -98,6 +98,13 @@
       <corner name="C4"/>
     </sector>
   </sectors>
+  <variables>
+    <variable init="40." var="mapping_height" min="5." max="120." step="0.1"/>
+    <variable init="25." var="mapping_sweep" min="5." max="20." step="0.1"/>
+    <variable init="7." var="mapping_speed" min="0.5" max="10." step="0.1"/>
+    <variable init="-1." var="mapping_radius" min="-1." max="100." step="1.0"/>
+    <variable init="20." var="mapping_shot_distance" min="5." max="60." step="0.1"/>
+  </variables>
   <exceptions>
 	<!-- Check inside Flight Area, then goto Standby -->
     <exception cond="Or(!InsidePermitted_Flight_Area(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 50) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
@@ -134,8 +141,10 @@
     </block>
     <block name="go_p2">
       <set value="false" var="force_forward"/>
-      <go wp="p2"/>
-      <deroute block="stay_p1"/>
+      <call_once fun="nav_survey_hybrid_setup_towards(WP_p1, WP_p2, 4, mapping_sweep, mapping_radius, mapping_height)"/>
+      <call_once fun="guidance_h_SetMaxSpeed(mapping_speed)"/>
+      <call fun="nav_survey_hybrid_run()"/>
+      <deroute block="Standby"/>
     </block>
     <block name="route">
       <set value="true" var="force_forward"/>

@@ -281,6 +281,10 @@
 
     <!--<module name="servo_tester"/>-->
 
+    <module name="nav_survey_hybrid"/>
+
+    <module name="agl_dist"/>
+
     <module name="air_data">
       <define name="USE_AIRSPEED_AIR_DATA" value="FALSE"/>
     </module>

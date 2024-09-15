@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 <flight_plan alt="35" ground_alt="5" home_mode_height="30" lat0="51.4045325" lon0="-2.8191902" max_dist_from_home="640" name="IMAV2024_Outdoor_Overactuated_Quadplane" qfu="250." security_height="10">
   <header>
@@ -29,6 +30,20 @@
     <waypoint name="TD" x="5.6" y="-10.9"/>
     <waypoint name="ARUCO_HOVER" x="10" y="10"/>
     <waypoint name="ARUCO_APPROX" x="10" y="15"/>
+
+    <waypoint name="LAWN1" lat="51.4021" lon="-2.8218" alt="30"/>
+    <waypoint name="LAWN2" lat="51.4032" lon="-2.82258" alt="30"/>
+    <waypoint name="LAWN3" lat="51.4034" lon="-2.82226" alt="30"/>
+    <waypoint name="LAWN4" lat="51.4024" lon="-2.82143" alt="30"/>
+    <waypoint name="LAWN5" lat="51.4026" lon="-2.82116" alt="30"/>
+    <waypoint name="LAWN6" lat="51.4035" lon="-2.82192" alt="30"/>
+    <waypoint name="LAWN7" lat="51.4037" lon="-2.82158" alt="30"/>
+    <waypoint name="LAWN8" lat="51.4028" lon="-2.82089" alt="30"/>
+    <waypoint name="LAWN9" lat="51.403" lon="-2.82068"  alt="30"/>
+    <waypoint name="LAWN10" lat="51.4038" lon="-2.82123" alt="30"/>
+    <waypoint name="LAWN11" lat="51.4039" lon="-2.82089" alt="30"/>
+    <waypoint name="LAWN12" lat="51.4032" lon="-2.82047" alt="30"/>
+    <waypoint name="LAWN13" lat="51.4032" lon="-2.82001" alt="30"/>
 
     <!-- MAPPING AREA -->
     <waypoint name="MAP1" lat="51.40397348780787" lon="-2.820792534133579"/>
@@ -152,7 +167,7 @@
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <set value="1" var="approach_state"/>
       <set value="0" var="force_forward"/>
-      <exception cond="stateGetPositionEnu_f()->z > 10.0" deroute="Standby"/>
+      <exception cond="GetPosHeight() @GT 10.0" deroute="Standby"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay wp="CLIMB"/>
     </block>
@@ -188,16 +203,32 @@
       <go wp="p1"/>
       <deroute block="stay_p1"/>
     </block>
-    <block name="route">
+    <block name="endurance">
       <set value="1" var="force_forward"/>
       <set value="0" var="approach_state"/>
         <go from="p1" hmode="route" wp="p2"/>
         <go from="p2" hmode="route" wp="p3"/>
         <go from="p3" hmode="route" wp="p4"/>
         <go from="p4" hmode="route" wp="p1"/>
-      <deroute block="route"/>
+      <deroute block="mapping"/>
     </block>
-
+    <block name="mapping">
+      <set value="1" var="force_forward"/>
+      <set value="0" var="approach_state"/>
+        <go from="LAWN1" hmode="route" wp="LAWN2"/>
+        <go from="LAWN2" hmode="route" wp="LAWN3"/>
+        <go from="LAWN3" hmode="route" wp="LAWN4"/>
+        <go from="LAWN4" hmode="route" wp="LAWN5"/>
+        <go from="LAWN5" hmode="route" wp="LAWN6"/>
+        <go from="LAWN6" hmode="route" wp="LAWN7"/>
+        <go from="LAWN7" hmode="route" wp="LAWN8"/>
+        <go from="LAWN8" hmode="route" wp="LAWN9"/>
+        <go from="LAWN9" hmode="route" wp="LAWN10"/>
+        <go from="LAWN10" hmode="route" wp="LAWN11"/>
+        <go from="LAWN11" hmode="route" wp="LAWN12"/>
+        <go from="LAWN12" hmode="route" wp="LAWN13"/>
+      <deroute block="land"/>
+    </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <set value="0" var="approach_state"/>
       <set value="0" var="force_forward"/>
@@ -211,20 +242,20 @@
     <block name="descend">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
-      <exception cond="!(stateGetPositionEnu_f()->z > 12.0)" deroute="flare"/>
+      <exception cond="!(GetPosHeight() @GT 12.0)" deroute="flare"/>
       <stay climb="-1.5" vmode="climb" wp="TD"/>
     </block>
     <block name="flare">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
       <stay climb="-0.8" vmode="climb" wp="TD"/>
-      <exception cond="!(stateGetPositionEnu_f()->z > 1.0)" deroute="flare_low"/>
-      <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.50)" deroute="flare_low"/>
+      <exception cond="!(GetPosHeight() @GT 1.0)" deroute="flare_low"/>
+      <exception cond="agl_dist_valid @AND !(agl_dist_value @GT 0.50)" deroute="flare_low"/>
     </block>
     <block name="flare_low">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
-      <exception cond="detect_ground_on_landing()" deroute="landed"/>
+      <!-- <exception cond="detect_ground_on_landing()" deroute="landed"/> -->
       <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">
