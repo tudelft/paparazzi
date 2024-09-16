@@ -2,22 +2,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 <flight_plan alt="35" ground_alt="5" home_mode_height="30" lat0="51.4045325" lon0="-2.8191902" max_dist_from_home="640" name="IMAV2024_Outdoor_Overactuated_Quadplane" qfu="250." security_height="10">
   <header>
-    #include "autopilot.h"
-    #include "modules/overactuated_vehicle/overactuated_mixing.h"
-    static inline bool delay_test_rc(bool test, int delay) {
-      static int nb = 0;
-        if (test) {
-        nb++;
-        if (nb == delay) {
-          nb = 0;
-          return true;
-        }
-        return false;
-      } else {
-        nb = 0;
-        return false;
-      }
-    }
   </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
@@ -130,24 +114,22 @@
       <corner name="C4"/>
     </sector>
   </sectors>
+  <variables>
+    <variable init="0" type="int" var="approach_state"/>
+  </variables>
   <exceptions>
 	<!-- Check inside Flight Area, then goto Standby -->
     <exception cond="Or(!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 220) @AND !(nav_block @LT IndexOfBlock('Start Engine')) @AND !(nav_block @GT IndexOfBlock('land here'))" deroute="Holding point"/>
-    <exception cond="(nav_block @GT IndexOfBlock('Standby') @AND nav_block @LT IndexOfBlock('landed'))
-    @AND GpsIsLost() @AND delay_test_rc(RadioControlIsLost(),20)" deroute="landed"/>
+    <exception cond="(nav_block @GT IndexOfBlock('Takeoff') @AND nav_block @LT IndexOfBlock('landed'))
+    @AND GpsIsLost() @AND RadioControlIsLost()" deroute="landed"/>
     <exception cond="(GpsIsLost() @AND (datalink_time @GT 15) @AND nav_block @GT IndexOfBlock('Standby')
                      @AND nav_block @LT IndexOfBlock('landed'))" deroute="Enter_AP_MODE_RC_DIRECT"/>
     <exception cond="((datalink_time @GT 15) @AND nav_block @GT IndexOfBlock('Standby')
                      @AND nav_block @LT IndexOfBlock('landed'))" deroute="Standby"/>
-    <exception cond="(delay_test_rc(RadioControlIsLost(),20) @AND nav_block @GT IndexOfBlock('Standby')
-                     @AND nav_block @LT IndexOfBlock('descend'))" deroute="land here"/>
+    <exception cond="(RadioControlIsLost() @AND nav_block @GT IndexOfBlock('Standby')
+                     @AND nav_block @LT IndexOfBlock('landed'))" deroute="Standby"/>
   </exceptions>
   <blocks>
-    <block name="Enter_AP_MODE_RC_DIRECT">
-      <set value="AP_MODE_RC_DIRECT" var="autopilot.mode"/>
-      <set value="0" var="force_forward"/>
-      <set value="0" var="approach_state"/>
-    </block>
     <block name="Wait GPS">
       <set value="0" var="approach_state"/>
       <set value="0" var="force_forward"/>
@@ -172,7 +154,7 @@
       <set value="0" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
-      <stay climb="-0.5" vmode="climb" wp="TD" until="stage_time @GT 0"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <set value="1" var="approach_state"/>
@@ -284,7 +266,7 @@
     <block name="flare_low">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
-      <exception cond="detect_ground_on_landing()" deroute="landed"/>
+      <!-- <exception cond="detect_ground_on_landing()" deroute="landed"/> -->
       <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">
@@ -292,6 +274,11 @@
       <set value="1" var="approach_state"/>
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Enter_AP_MODE_RC_DIRECT">
+      <set value="AP_MODE_RC_DIRECT" var="autopilot.mode"/>
+      <set value="0" var="force_forward"/>
+      <set value="0" var="approach_state"/>
     </block>
   </blocks>
 </flight_plan>
