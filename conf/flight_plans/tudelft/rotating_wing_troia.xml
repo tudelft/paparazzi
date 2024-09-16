@@ -1,5 +1,5 @@
+<?xml version="1.0"?>
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-
 <flight_plan alt="100" ground_alt="0" lat0="38.474472222222225" lon0="-8.871222222222222" max_dist_from_home="80000" name="Rotating wing Troia" security_height="30">
   <waypoints>
     <waypoint lat="38.4874248" lon="-8.8691705" name="1-1"/>
@@ -46,13 +46,18 @@
     <waypoint lat="38.16694444444445" lon="-9.198888888888888" name="6-12"/>
     <waypoint lat="38.000277777777775" lon="-9.200555555555555" name="6-13"/>
     <waypoint lat="38.000277777777775" lon="-9.450277777777778" name="6-14"/>
-    <waypoint name="HOME" x="0" y="0"/>
-    <waypoint name="CLIMB" x="300." y="70"/>
-    <waypoint name="STDBY" lat="38.4741981" lon="-8.8699278"/>
-    <waypoint name="circ" lat="38.4751409" lon="-8.8682670"/>
-    <waypoint name="TD" x="10" y="-1"/>
-    <waypoint name="APP" x="70" y="-25"/>
-    <waypoint name="FOLLOW" x="300" y="80"/>
+    <waypoint name="HOME" x="111.225" y="-35.761"/>
+    <waypoint name="CLIMB" x="137.087" y="156.759"/>
+    <waypoint name="STDBY" lat="38.4746" lon="-8.86917"/>
+    <waypoint name="circ" lat="38.4764" lon="-8.86804"/>
+    <waypoint name="TD" x="111.497" y="-30.473"/>
+    <!-- <waypoint name="APP" x="70" y="-25"/> -->
+    <!-- <waypoint name="FOLLOW" x="300" y="80"/> -->
+    <waypoint name="p1" x="-30.582" y="283.116"/>
+    <waypoint name="p2" x="141.345" y="417.79"/>
+    <waypoint name="p3" x="486.846" y="13.838"/>
+    <waypoint name="p4" x="284.204" y="-135.398"/>
+    <waypoint name="ML_global_target" x="397.8" y="156.359"/>
   </waypoints>
   <sectors>
     <sector color="red" name="A1">
@@ -113,15 +118,11 @@
   </variables>
   <exceptions>
     <!-- Hard geofence (red -> Holding point) -->
-    <exception cond="And( Or(!InsideA1(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 300.0),
-                         Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 300.0))
-                     @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
+    <exception cond="And( Or(!InsideA1(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 300.0),                          Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 300.0))                      @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
     <!-- Soft geofence (orange -> GO Standby) -->
-    <exception cond="And( Or(!InsideA1_soft(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 250.0),
-                         Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 250.0))
-                     @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+    <exception cond="And( Or(!InsideA1_soft(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 250.0),                          Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 250.0))                      @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby_free"/>
     <!-- Datalink loss (25 seconds -> GO STANDBY) -->
-    <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+    <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby_free"/>
   </exceptions>
   <blocks>
    <block name="Wait GPS">
@@ -179,6 +180,10 @@
         <call_once fun="rotwing_state_set(ROTWING_STATE_FREE)"/>
         <stay wp="STDBY"/>
     </block>
+    <block name="mavlink_guided">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
+        <stay wp="ML_global_target"/>
+    </block>
     <!-- <block name="Approach APP">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
@@ -195,14 +200,31 @@
       <go from="p4" hmode="route" wp="p1"/>
       <deroute block="route"/>
     </block> -->
-    <!-- <block name="small_route" strip_button="Route" strip_icon="path.png">
+    <block name="small_route_p1" strip_button="Route_P1" strip_icon="path.png">
+      <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
+      <go wp="p1"/>
+    </block>
+    <block name="small_route_p2" strip_button="Route_P2" strip_icon="path.png">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
       <go wp="p2"/>
+    </block>
+    <block name="small_route_p3" strip_button="Route P3" strip_icon="path.png">
+      <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
       <go wp="p3"/>
+    </block>
+    <block name="small_route_p4" strip_button="Route P4" strip_icon="path.png">
+      <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
       <go wp="p4"/>
-      <go wp="p1"/>
-      <deroute block="small_route"/>
-    </block> -->
+      <deroute block="small_route_p1"/>
+    </block>
+        <block name="stay_p1" strip_button="Stay P1" strip_icon="wp_quad.png">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <stay wp="p1"/>
+    </block>
+    <block name="stay_p2">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <stay wp="p2"/>
+    </block>
     <block name="Circle_CW_fwd" strip_button="CircleRight" strip_icon="circle-right.png">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
       <circle radius="nav.radius" wp="circ"/>
@@ -217,10 +239,10 @@
       <exception cond="!rotwing_state_choose_circle_direction(WP_circ)" deroute="Circle_CW_fwd"/>
       <exception cond="rotwing_state_choose_circle_direction(WP_circ)" deroute="Circle_CCW_fwd"/>
     </block>
-    <block name="Approach APP">
+    <!-- <block name="Approach APP">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
-    </block>
+    </block> -->
     <block name="Transition_quad" strip_button="Transition Quad" strip_icon="wp_quad.png">
       <call_once fun="rotwing_state_set(ROTWING_STATE_FREE)"/>
       <go wp="STDBY"/>
