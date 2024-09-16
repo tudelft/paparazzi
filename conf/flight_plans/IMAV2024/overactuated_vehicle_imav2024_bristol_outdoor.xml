@@ -132,7 +132,7 @@
   </sectors>
   <exceptions>
 	<!-- Check inside Flight Area, then goto Standby -->
-    <exception cond="Or(!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 220) @AND !(nav_block @LT IndexOfBlock('Start Engine')) @AND !(nav_block @GT IndexOfBlock('land here'))" deroute="Holding point"/>
+    <exception cond="Or(!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 120) @AND !(nav_block @LT IndexOfBlock('Start Engine')) @AND !(nav_block @GT IndexOfBlock('land here'))" deroute="Holding point"/>
     <exception cond="(nav_block @GT IndexOfBlock('Standby') @AND nav_block @LT IndexOfBlock('landed'))
     @AND GpsIsLost() @AND delay_test_rc(RadioControlIsLost(),20)" deroute="landed"/>
     <exception cond="(GpsIsLost() @AND (datalink_time @GT 15) @AND nav_block @GT IndexOfBlock('Standby')
@@ -230,7 +230,8 @@
     </block>
     <block name="mapping">
       <set value="0" var="force_forward"/>
-      <set value="0" var="approach_state"/>
+      <set value="1" var="approach_state"/>
+      <stay wp="LAWN1" until="stage_time @GT 5"/>
         <go from="LAWN1" hmode="route" wp="LAWN2"/>
         <go from="LAWN2" hmode="route" wp="LAWN3"/>
         <go from="LAWN3" hmode="route" wp="LAWN4"/>
@@ -243,11 +244,16 @@
         <go from="LAWN10" hmode="route" wp="LAWN11"/>
         <go from="LAWN11" hmode="route" wp="LAWN12"/>
         <go from="LAWN12" hmode="route" wp="LAWN13"/>
-      <deroute block="pictures"/>
+      <deroute block="prepare pictures"/>
+    </block>
+    <block name="prepare pictures">
+      <set value="0" var="force_forward"/>
+      <set value="0" var="approach_state"/>
+      <go wp="D1"/>
     </block>
     <block name="pictures">
       <set value="0" var="force_forward"/>
-      <set value="0" var="approach_state"/>
+      <set value="1" var="approach_state"/>
       <go wp="D1"/>
       <stay wp="D1" until="stage_time @GT 5"/>
       <go wp="D2"/>
