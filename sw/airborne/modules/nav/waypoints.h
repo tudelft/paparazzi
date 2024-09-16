@@ -60,6 +60,12 @@ extern struct Waypoint waypoints[];
 #endif
 #define Height(_h) (_h)
 
+static inline float wp_dist(float p1_e, float p1_n, float p2_e, float p2_n) {
+  float dx = p1_e - p2_e;
+  float dy = p1_n - p2_n;
+  return sqrtf(dx*dx + dy*dy);
+}
+
 extern void waypoints_init(void);
 
 extern bool waypoint_is_global(uint8_t wp_id);

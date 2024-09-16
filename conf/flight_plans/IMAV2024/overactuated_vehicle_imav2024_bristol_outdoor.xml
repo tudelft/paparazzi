@@ -2,6 +2,7 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 <flight_plan alt="35" ground_alt="5" home_mode_height="30" lat0="51.4045325" lon0="-2.8191902" max_dist_from_home="640" name="IMAV2024_Outdoor_Overactuated_Quadplane" qfu="250." security_height="10">
   <header>
+    #include "modules/nav/nav_rotorcraft_hybrid.h"
     #include "autopilot.h"
     #include "modules/overactuated_vehicle/overactuated_mixing.h"
     static inline bool delay_test_rc(bool test, int delay) {
@@ -21,11 +22,12 @@
   </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
-    <waypoint name="CLIMB" x="0.0" y="5.0"/>
-    <waypoint name="STDBY" x="-2.0" y="-5.0"/>
-    <waypoint name="TD" x="5.6" y="-10.9"/>
-    <waypoint name="ARUCO_HOVER" x="10" y="10"/>
-    <waypoint name="ARUCO_APPROX" x="10" y="15"/>
+    <waypoint name="CLIMB" x="16.466" y="-14.312"/>
+
+    <waypoint name="STDBY" lat="51.4039" lon="-2.81935"/>
+    <waypoint name="TD" lat="51.4043" lon="-2.81909"/>
+
+    <waypoint name="ARUCO_HOVER" lat="51.4037" lon="-2.81794"/>
 
     <!-- PERFORMANCE FLIGHT AREA -->
     <waypoint name="p1" lat="51.4034" lon="-2.81971"/>
@@ -45,7 +47,6 @@
     <waypoint name="LAWN10" lat="51.4038" lon="-2.82123" alt="30"/>
     <waypoint name="LAWN11" lat="51.4039" lon="-2.82089" alt="30"/>
     <waypoint name="LAWN12" lat="51.4032" lon="-2.82047" alt="30"/>
-    <waypoint name="LAWN13" lat="51.4032" lon="-2.82001" alt="30"/>
 
     <!-- MAPPING AREA -->
     <waypoint name="MAP1" lat="51.40397348780787" lon="-2.820792534133579"/>
@@ -53,10 +54,10 @@
     <waypoint name="MAP3" lat="51.40216290330571" lon="-2.821736580096323"/>
     <waypoint name="MAP4" lat="51.40318633735384" lon="-2.820434907050242"/>
 
-    <waypoint name="D1" lat="51.4037624" lon="-2.8200670"/>
-    <waypoint name="D2" lat="51.4035808" lon="-2.8202947"/>
-    <waypoint name="D3" lat="51.4037931" lon="-2.8204535"/>
-    <waypoint name="D4" lat="51.4039687" lon="-2.8204949"/>
+    <waypoint name="D1" lat="51.4041" lon="-2.81938"/>
+    <waypoint name="D2" lat="51.4041" lon="-2.81882"/>
+    <waypoint name="D3" lat="51.4037" lon="-2.81922"/>
+    <waypoint name="D4" lat="51.4039" lon="-2.81861"/>
 
     <!-- PERFORMANCE FLIGHT AREA -->
     <waypoint name="C1" lat="51.40337101177714" lon="-2.81946343972307"/>
@@ -130,6 +131,9 @@
       <corner name="C4"/>
     </sector>
   </sectors>
+  <variables>
+    <variable init="false" max="1" min="-0" step="1" type="bool" var="task4"/>
+  </variables>
   <exceptions>
 	<!-- Check inside Flight Area, then goto Standby -->
     <exception cond="Or(!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 120) @AND !(nav_block @LT IndexOfBlock('Start Engine')) @AND !(nav_block @GT IndexOfBlock('land here'))" deroute="Holding point"/>
@@ -171,15 +175,18 @@
       <set value="1" var="approach_state"/>
       <set value="0" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
-      <call_once fun="NavSetWaypointHere(WP_TD)"/>
       <stay climb="-0.5" vmode="climb" wp="TD" until="stage_time @GT 0"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <set value="1" var="approach_state"/>
       <set value="0" var="force_forward"/>
-      <exception cond="GetPosHeight() @GT 25.0" deroute="endurance"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
-      <stay wp="CLIMB"/>
+      <stay wp="CLIMB" until="GetPosHeight() @GT 25.0"/>
+      <set value="0" var="approach_state"/>
+      <set value="0" var="force_forward"/>
+      <go wp="STDBY"/>
+      <exception cond="task4" deroute="Aruco_hover"/>
+      <deroute block="endurance"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="0" var="approach_state"/>
@@ -197,22 +204,19 @@
       <stay wp="ARUCO_HOVER"/>
     </block>
     <block name="Aruco_hover_APP">
+      <set value="0" var="approach_state"/>
+      <set value="0" var="force_forward"/>
+      <go wp="ARUCO_HOVER"/>
       <set value="1" var="approach_state"/>
       <set value="0" var="force_forward"/>
       <stay wp="ARUCO_HOVER"/>
     </block>
-    <block name="stay_p1">
-      <set value="0" var="approach_state"/>
-      <set value="0" var="force_forward"/>
-      <stay wp="p1"/>
-    </block>
-    <block name="go_p1">
-      <set value="0" var="force_forward"/>
-      <set value="0" var="approach_state"/>
-      <go wp="p1"/>
-      <deroute block="stay_p1"/>
-    </block>
     <block name="endurance">
+      <set value="0" var="force_forward"/>
+      <set value="0" var="approach_state"/>
+      <set value="25.0" var="nav_max_speed"/>
+      <set value="25.0" var="nav_goto_max_speed"/>
+      <go wp="p1"/>
       <set value="1" var="force_forward"/>
       <set value="0" var="approach_state"/>
       <for var="i" from="1" to="3">
@@ -231,37 +235,38 @@
     <block name="mapping">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
-      <stay wp="LAWN1" until="stage_time @GT 5"/>
+      <set value="8.0" var="nav_max_speed"/>
+      <set value="8.0" var="nav_goto_max_speed"/>
         <go from="LAWN1" hmode="route" wp="LAWN2"/>
-        <go from="LAWN2" hmode="route" wp="LAWN3"/>
+        <stay wp="LAWN2" until="wp_dist(WaypointX(WP_LAWN2),WaypointY(WP_LAWN2),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
+        <stay wp="LAWN3" until="wp_dist(WaypointX(WP_LAWN3),WaypointY(WP_LAWN3),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
         <go from="LAWN3" hmode="route" wp="LAWN4"/>
-        <go from="LAWN4" hmode="route" wp="LAWN5"/>
+        <stay wp="LAWN4" until="wp_dist(WaypointX(WP_LAWN4),WaypointY(WP_LAWN4),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
+        <stay wp="LAWN5" until="wp_dist(WaypointX(WP_LAWN5),WaypointY(WP_LAWN5),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
         <go from="LAWN5" hmode="route" wp="LAWN6"/>
-        <go from="LAWN6" hmode="route" wp="LAWN7"/>
+        <stay wp="LAWN6" until="wp_dist(WaypointX(WP_LAWN6),WaypointY(WP_LAWN6),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
+        <stay wp="LAWN7" until="wp_dist(WaypointX(WP_LAWN7),WaypointY(WP_LAWN7),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
         <go from="LAWN7" hmode="route" wp="LAWN8"/>
-        <go from="LAWN8" hmode="route" wp="LAWN9"/>
+        <stay wp="LAWN8" until="wp_dist(WaypointX(WP_LAWN8),WaypointY(WP_LAWN8),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
+        <stay wp="LAWN9" until="wp_dist(WaypointX(WP_LAWN9),WaypointY(WP_LAWN9),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
         <go from="LAWN9" hmode="route" wp="LAWN10"/>
-        <go from="LAWN10" hmode="route" wp="LAWN11"/>
+        <stay wp="LAWN10" until="wp_dist(WaypointX(WP_LAWN10),WaypointY(WP_LAWN10),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
+        <stay wp="LAWN11" until="wp_dist(WaypointX(WP_LAWN11),WaypointY(WP_LAWN11),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
         <go from="LAWN11" hmode="route" wp="LAWN12"/>
-        <go from="LAWN12" hmode="route" wp="LAWN13"/>
-      <deroute block="prepare pictures"/>
-    </block>
-    <block name="prepare pictures">
-      <set value="0" var="force_forward"/>
-      <set value="0" var="approach_state"/>
-      <go wp="D1"/>
+      <deroute block="pictures"/>
     </block>
     <block name="pictures">
       <set value="0" var="force_forward"/>
-      <set value="1" var="approach_state"/>
+      <set value="0" var="approach_state"/>
+      <set value="5.0" var="nav_max_speed"/>
+      <set value="5.0" var="nav_goto_max_speed"/>
       <go wp="D1"/>
-      <stay wp="D1" until="stage_time @GT 5"/>
-      <go wp="D2"/>
-      <stay wp="D2" until="stage_time @GT 5"/>
-      <go wp="D3"/>
-      <stay wp="D3" until="stage_time @GT 5"/>
-      <go wp="D4"/>
-      <stay wp="D4" until="stage_time @GT 5"/>
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <stay wp="D1" until="wp_dist(WaypointX(WP_D1),WaypointY(WP_D1),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
+      <stay wp="D2" until="wp_dist(WaypointX(WP_D2),WaypointY(WP_D2),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
+      <stay wp="D3" until="wp_dist(WaypointX(WP_D3),WaypointY(WP_D3),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
+      <stay wp="D4" until="wp_dist(WaypointX(WP_D4),WaypointY(WP_D4),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
       <deroute block="land"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
@@ -272,6 +277,7 @@
     <block name="land">
       <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <go wp="STDBY"/>
       <go wp="TD"/>
     </block>
     <block name="descend">
