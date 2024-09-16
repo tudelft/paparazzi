@@ -1533,5 +1533,42 @@
         <arg flag="-g" constant="1050x300+0+1000"/>
       </program>
     </session>
+    <session name="RW_simulation">
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="PprzGCS"/>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="SKEW"/>
+        <arg flag="-c" constant="0.00"/>
+        <arg flag="-c" constant="*:telemetry:ROTATING_WING_STATE:meas_skew_angle"/>
+        <arg flag="-c" constant="*:telemetry:ROTATING_WING_STATE:sp_skew_angle"/>
+        <arg flag="-g" constant="1000x250-0+0"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="STATE_AIRSPEED"/>
+        <arg flag="-c" constant="0.00"/>
+        <arg flag="-c" constant="*:telemetry:ROTATING_WING_STATE:nav_airspeed"/>
+        <arg flag="-c" constant="*:telemetry:ROTATING_WING_STATE:min_airspeed"/>
+        <arg flag="-c" constant="*:telemetry:ROTATING_WING_STATE:max_airspeed"/>
+        <arg flag="-c" constant="*:telemetry:AIR_DATA:airspeed"/>
+        <arg flag="-g" constant="1000x250-0+250"/>
+      </program>
+      <program name="RotWingStatus"/>
+      <program name="RotWing3D"/>
+      <program name="Messages"/>
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="RotatingWingV3G"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+    </session>
   </section>
 </control_panel>
