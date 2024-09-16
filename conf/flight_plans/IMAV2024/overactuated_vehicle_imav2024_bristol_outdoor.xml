@@ -28,6 +28,7 @@
     <waypoint name="TD" lat="51.4043" lon="-2.81909"/>
 
     <waypoint name="ARUCO_HOVER" lat="51.4037" lon="-2.81794"/>
+    <waypoint name="ARUCO_HOVER_GUESS" lat="51.4038" lon="-2.81794"/>
 
     <!-- PERFORMANCE FLIGHT AREA -->
     <waypoint name="p1" lat="51.4034" lon="-2.81971"/>
@@ -35,18 +36,18 @@
     <waypoint name="p3" lat="51.4042" lon="-2.8154"/>
     <waypoint name="p4" lat="51.405" lon="-2.81644"/>
 
-    <waypoint name="LAWN1" lat="51.4021" lon="-2.8218" alt="30"/>
-    <waypoint name="LAWN2" lat="51.4032" lon="-2.82258" alt="30"/>
-    <waypoint name="LAWN3" lat="51.4034" lon="-2.82226" alt="30"/>
-    <waypoint name="LAWN4" lat="51.4024" lon="-2.82143" alt="30"/>
-    <waypoint name="LAWN5" lat="51.4026" lon="-2.82116" alt="30"/>
-    <waypoint name="LAWN6" lat="51.4035" lon="-2.82192" alt="30"/>
-    <waypoint name="LAWN7" lat="51.4037" lon="-2.82158" alt="30"/>
-    <waypoint name="LAWN8" lat="51.4028" lon="-2.82089" alt="30"/>
-    <waypoint name="LAWN9" lat="51.403" lon="-2.82068" alt="30"/>
-    <waypoint name="LAWN10" lat="51.4038" lon="-2.82123" alt="30"/>
-    <waypoint name="LAWN11" lat="51.4039" lon="-2.82089" alt="30"/>
-    <waypoint name="LAWN12" lat="51.4032" lon="-2.82047" alt="30"/>
+    <waypoint name="LAWN1" lat="51.4021" lon="-2.8218"/>
+    <waypoint name="LAWN2" lat="51.4032" lon="-2.82258"/>
+    <waypoint name="LAWN3" lat="51.4034" lon="-2.82226"/>
+    <waypoint name="LAWN4" lat="51.4024" lon="-2.82143"/>
+    <waypoint name="LAWN5" lat="51.4026" lon="-2.82116"/>
+    <waypoint name="LAWN6" lat="51.4035" lon="-2.82192"/>
+    <waypoint name="LAWN7" lat="51.4037" lon="-2.82158"/>
+    <waypoint name="LAWN8" lat="51.4028" lon="-2.82089"/>
+    <waypoint name="LAWN9" lat="51.403" lon="-2.82068"/>
+    <waypoint name="LAWN10" lat="51.4038" lon="-2.82123"/>
+    <waypoint name="LAWN11" lat="51.4039" lon="-2.82089"/>
+    <waypoint name="LAWN12" lat="51.4032" lon="-2.82047"/>
 
     <!-- MAPPING AREA -->
     <waypoint name="MAP1" lat="51.40397348780787" lon="-2.820792534133579"/>
@@ -201,15 +202,25 @@
     <block name="Aruco_hover">
       <set value="0" var="approach_state"/>
       <set value="0" var="force_forward"/>
-      <stay wp="ARUCO_HOVER"/>
-    </block>
-    <block name="Aruco_hover_APP">
-      <set value="0" var="approach_state"/>
-      <set value="0" var="force_forward"/>
-      <go wp="ARUCO_HOVER"/>
+      <go wp="ARUCO_HOVER_GUESS"/>
       <set value="1" var="approach_state"/>
       <set value="0" var="force_forward"/>
-      <stay wp="ARUCO_HOVER"/>
+      <exception cond="wp_dist(WaypointX(WP_ARUCO_HOVER),WaypointY(WP_ARUCO_HOVER),WaypointX(WP_ARUCO_HOVER_GUESS),WaypointY(WP_ARUCO_HOVER_GUESS)) @LT 40.0" deroute="ARUCO_flare"/>
+      <stay climb="-1.5" vmode="climb" wp="ARUCO_HOVER_GUESS" until="(GetPosHeight() @LT 10.0)"/>
+      <deroute block="Standby"/>
+    </block>
+    <block name="ARUCO_flare">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <stay climb="-0.8" vmode="climb" wp="ARUCO_HOVER"/>
+      <exception cond="!(GetPosHeight() @GT 1.0)" deroute="ARUCO_flare_low"/>
+      <exception cond="agl_dist_valid @AND !(agl_dist_value @GT 0.50)" deroute="ARUCO_flare_low"/>
+    </block>
+    <block name="ARUCO_flare_low">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <exception cond="detect_ground_on_landing()" deroute="landed"/>
+      <stay climb="-0.5" vmode="climb" wp="ARUCO_HOVER"/>
     </block>
     <block name="endurance">
       <set value="0" var="force_forward"/>
