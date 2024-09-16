@@ -183,6 +183,7 @@ ivy.subscribe(NED_callback, message.PprzMessage("telemetry", "ROTORCRAFT_FP"))
 
 
 while True:
+    time.sleep(1)
     try:
 
         #                                       # OpenCV Stuff #
@@ -324,5 +325,4 @@ while True:
                 continue
 
     except Exception:
-        time.sleep(0.1)
         pass
