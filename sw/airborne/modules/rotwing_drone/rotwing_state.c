@@ -139,7 +139,8 @@ static void send_rotating_wing_state(struct transport_tx *trans, struct link_dev
                                     &rotwing_state.sp_skew_angle_deg,
                                     &gi_unbounded_airspeed_sp,
                                     &rotwing_state.min_airspeed,
-                                    &rotwing_state.max_airspeed);
+                                    &rotwing_state.max_airspeed,
+                                    &rotwing_state.ref_model_skew_angle_deg);
 }
 #endif // PERIODIC_TELEMETRY
 
@@ -335,12 +336,12 @@ void rotwing_state_periodic(void)
   /* Add simulation feedback for the skewing and RPM */
 #if USE_NPS
   // Export to the index of the SKEW in the NPS_ACTUATOR_NAMES array
-  actuators_pprz[INDI_NUM_ACT] = (servo_pprz_cmd + MAX_PPRZ) / 2.f; // Scale to simulation command
+  actuators_pprz[INDI_NUM_ACT] = (rotwing_state.skew_cmd + MAX_PPRZ) / 2.f; // Scale to simulation command
 
   // SEND ABI Message to ctr_eff_sched, ourself and other modules that want Actuator position feedback
   struct act_feedback_t feedback;
   feedback.idx =  SERVO_ROTATION_MECH_IDX;
-  feedback.position = 0.5f * M_PI - RadOfDeg((float) servo_pprz_cmd / MAX_PPRZ * 45.f + 45.f);
+  feedback.position = 0.5f * M_PI - RadOfDeg((float) rotwing_state.skew_cmd / MAX_PPRZ * 45.f + 45.f);
   feedback.set.position = true;
 
   // Send ABI message (or simulate failure)
