@@ -139,8 +139,7 @@ static void send_rotating_wing_state(struct transport_tx *trans, struct link_dev
                                     &rotwing_state.sp_skew_angle_deg,
                                     &gi_unbounded_airspeed_sp,
                                     &rotwing_state.min_airspeed,
-                                    &rotwing_state.max_airspeed,
-                                    &rotwing_state.ref_model_skew_angle_deg);
+                                    &rotwing_state.max_airspeed);
 }
 #endif // PERIODIC_TELEMETRY
 
@@ -199,8 +198,9 @@ void rotwing_state_periodic(void)
   float meas_airspeed = stateGetAirspeed_f();
   float meas_skew_angle = rotwing_state.meas_skew_angle_deg;
   Bound(meas_skew_angle, 0, 90); // Bound to prevent errors
-  if(last_stall_time > ROTWING_FW_MIN_AIRSPEED)
+  if(meas_airspeed > ROTWING_FW_MIN_AIRSPEED) {
     last_stall_time = current_time;
+  }
 
   /* Override modes if flying with RC */
   rotwing_state.state = rotwing_state.nav_state;
