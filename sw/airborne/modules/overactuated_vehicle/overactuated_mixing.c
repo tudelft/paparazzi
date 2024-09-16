@@ -64,7 +64,7 @@
 
 #define RECTIFY_LAT_AND_FWD_SPEED
 
-float fpa_off_deg = -3.0; 
+float fpa_off_deg = 0.0; 
 #define NEW_FPA_DEF
 
 // #define USE_RM
@@ -403,6 +403,7 @@ float LIMITS_ACTIVE_MAX_FWD_ACC;
 float LIMITS_ACTIVE_MIN_FWD_ACC;
 float LIMITS_ACTIVE_MAX_LAT_ACC;
 float LIMITS_ACTIVE_MAX_VERT_ACC;
+float LIMITS_ACTIVE_MIN_VERT_ACC;
 float OVERACTUATED_MIXING_MIN_SPEED_TRANSITION; 
 float OVERACTUATED_MIXING_REF_SPEED_TRANSITION; 
 
@@ -1267,7 +1268,7 @@ void compute_rm_speed_and_acc_control_rf(float * speed_ref_in, float * speed_ref
     Bound(desired_internal_acc_rm[0],LIMITS_ACTIVE_MIN_FWD_ACC,LIMITS_ACTIVE_MAX_FWD_ACC);
 
     desired_internal_acc_rm[2] = (speed_ref_in[2] - speed_ref_out_old[2])*REF_MODEL_P_GAIN; 
-    BoundAbs(desired_internal_acc_rm[2],LIMITS_ACTIVE_MAX_VERT_ACC);
+    Bound(desired_internal_acc_rm[2],LIMITS_ACTIVE_MIN_VERT_ACC,LIMITS_ACTIVE_MAX_VERT_ACC);
     
     desired_internal_jerk_rm[0] = (desired_internal_acc_rm[0] - acc_ref_out_old[0])*REF_MODEL_D_GAIN; 
     desired_internal_jerk_rm[2] = (desired_internal_acc_rm[2] - acc_ref_out_old[2])*REF_MODEL_D_GAIN; 
@@ -1403,6 +1404,8 @@ void assign_variables(void){
         LIMITS_ACTIVE_MIN_FWD_ACC = LIMITS_APP_MIN_FWD_ACC;
         LIMITS_ACTIVE_MAX_LAT_ACC = LIMITS_APP_MAX_LAT_ACC;
         LIMITS_ACTIVE_MAX_VERT_ACC = LIMITS_APP_MAX_VERT_ACC;
+        LIMITS_ACTIVE_MIN_VERT_ACC = LIMITS_APP_MIN_VERT_ACC;
+
         OVERACTUATED_MIXING_MIN_SPEED_TRANSITION = OVERACTUATED_MIXING_MIN_SPEED_TRANSITION_APP;
         OVERACTUATED_MIXING_REF_SPEED_TRANSITION = OVERACTUATED_MIXING_REF_SPEED_TRANSITION_APP;
 
@@ -1435,6 +1438,8 @@ void assign_variables(void){
         LIMITS_ACTIVE_MIN_FWD_ACC = LIMITS_CRUISE_MIN_FWD_ACC;
         LIMITS_ACTIVE_MAX_LAT_ACC = LIMITS_CRUISE_MAX_LAT_ACC;
         LIMITS_ACTIVE_MAX_VERT_ACC = LIMITS_CRUISE_MAX_VERT_ACC;
+        LIMITS_ACTIVE_MIN_VERT_ACC = LIMITS_CRUISE_MIN_VERT_ACC;
+
         OVERACTUATED_MIXING_MIN_SPEED_TRANSITION = OVERACTUATED_MIXING_MIN_SPEED_TRANSITION_CRUISE;
         OVERACTUATED_MIXING_REF_SPEED_TRANSITION = OVERACTUATED_MIXING_REF_SPEED_TRANSITION_CRUISE;
 
@@ -1960,7 +1965,7 @@ void overactuated_mixing_run(void)
         //Apply saturation points for the accelerations in the control rf:
         Bound(acc_setpoint[0],LIMITS_ACTIVE_MIN_FWD_ACC,LIMITS_ACTIVE_MAX_FWD_ACC);
         BoundAbs(acc_setpoint[1],LIMITS_ACTIVE_MAX_LAT_ACC);
-        BoundAbs(acc_setpoint[2],LIMITS_ACTIVE_MAX_VERT_ACC);
+        Bound(acc_setpoint[2],LIMITS_ACTIVE_MIN_VERT_ACC,LIMITS_ACTIVE_MAX_VERT_ACC);
 
         #ifdef USE_RM
             //Sum the acc_ref_out_local components to the acc setpoint: 

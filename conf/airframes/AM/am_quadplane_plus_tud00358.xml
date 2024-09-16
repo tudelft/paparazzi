@@ -233,7 +233,8 @@
     <define name="MAX_FWD_ACC" value="6.0" unit="m/s^2"/>
     <define name="MIN_FWD_ACC" value="-2.5" unit="m/s^2"/> 
     <define name="MAX_LAT_ACC" value="8.0" unit="m/s^2"/>
-    <define name="MAX_VERT_ACC" value="3.0" unit="m/s^2"/>
+    <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/>
+    <define name="MIN_VERT_ACC" value="-3.0" unit="m/s^2"/>
   </section>
 
   <section name="APP_LIMITS" prefix="LIMITS_APP_">
@@ -245,7 +246,8 @@
     <define name="MAX_FWD_ACC" value="8.0" unit="m/s^2"/>
     <define name="MIN_FWD_ACC" value="-4" unit="m/s^2"/> 
     <define name="MAX_LAT_ACC" value="6.0" unit="m/s^2"/>
-    <define name="MAX_VERT_ACC" value="3.0" unit="m/s^2"/>
+    <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/>
+    <define name="MIN_VERT_ACC" value="-3.0" unit="m/s^2"/>
   </section>
 
   <!-- for demos -->
@@ -460,15 +462,15 @@
     <define name="SERVO_EL_MIN_ANGLE" value="-89" unit="deg"/>
 
     <!-- ball bearings vehicle -->
-    <define name="SERVO_EL_1_ZERO_VALUE" value="-4.3" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="-4.74" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="-7.64" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="7.55" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="4.650" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="-3.69" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-8.08" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="9.22" unit="deg"/>
 
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="2.19" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="-1.84" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="-3.33" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="-2.1" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="6.94" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="2.10" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="-9.49" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="-3.86" unit="deg"/>
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
@@ -668,22 +670,30 @@
 
   <section name="IMU" prefix="IMU_">
 
-    <!-- calibrated only for id 20 the 02-07-2024 -->
-    <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true, .filter=true},.neutral={-26,1,15}, .scale={{25459,1343,9844},{2596,137,1013}}, .filter_sample_freq=1133, .filter_freq=30}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-1,2,33}, .scale={{21914,8531,5489},{4477,1738,1120}}, .filter_sample_freq=3895, .filter_freq=30}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-47,0,3}, .scale={{17288,29444,25808},{3531,6031,5293}}, .filter_sample_freq=1133, .filter_freq=30}}"/>
-    <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true, .rotation=true},.neutral={-363,263,-31}, .scale={{1180,27529,19441},{2107,48925,34731}}}}"/>
-    <define name="GYRO_CALIB"  value="{{.abi_id=20, .calibrated={.filter=true}, .filter_sample_freq=1133, .filter_freq=30}}"/>
+    <!-- Calibrated at mavlab 15-05-2023 -->
+    <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-9,-6,-4}, .scale={{38883,41480,36505},{3968,4241,3726}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-33,-9,11}, .scale={{36893,53565,3365},{7544,10964,689}}}}"/>
 
-    <!-- ATTEMPT -->
-    <!-- <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-9,-6,-4}, .scale={{38883,41480,36505},{3968,4241,3726}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-33,-9,11}, .scale={{36893,53565,3365},{7544,10964,689}}}}"/> -->
-
-    <!-- ATTEMPT -->
-    <!-- <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true, .rotation=true},.neutral={-363,263,-31}, .scale={{1180,27529,19441},{2107,48925,34731}}}}"/> -->
+    <!-- Calibrated at Valkenburg the 01-08-2024 -->
+    <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={-10,-151,-22}, .scale={{26927,12937,17724},{46654,23427,32717}}}}"/>
 
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI" value="180" unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0" unit="deg"/>
     <define name="BODY_TO_IMU_PSI" value="0" unit="deg"/>
   </section>
+
+  <!-- <section name="IMU" prefix="IMU_"> -->
+
+    <!-- calibrated only for id 20 the 02-07-2024 -->
+    <!-- <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true, .filter=true},.neutral={-26,1,15}, .scale={{25459,1343,9844},{2596,137,1013}}, .filter_sample_freq=1133, .filter_freq=30}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-1,2,33}, .scale={{21914,8531,5489},{4477,1738,1120}}, .filter_sample_freq=3895, .filter_freq=30}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-47,0,3}, .scale={{17288,29444,25808},{3531,6031,5293}}, .filter_sample_freq=1133, .filter_freq=30}}"/> -->
+    <!-- <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true, .rotation=true},.neutral={-363,263,-31}, .scale={{1180,27529,19441},{2107,48925,34731}}}}"/> -->
+    <!-- <define name="GYRO_CALIB"  value="{{.abi_id=20, .calibrated={.filter=true}, .filter_sample_freq=1133, .filter_freq=30}}"/> -->
+
+    <!-- Define axis in hover frame -->
+    <!-- <define name="BODY_TO_IMU_PHI" value="180" unit="deg"/> -->
+    <!-- <define name="BODY_TO_IMU_THETA" value="0" unit="deg"/> -->
+    <!-- <define name="BODY_TO_IMU_PSI" value="0" unit="deg"/> -->
+  <!-- </section> -->
 
   <section name="AHRS" prefix="AHRS_">
     <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
@@ -792,7 +802,7 @@
     <!-- Basic navigation settings -->
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>
     <define name="NAV_DESCEND_VSPEED" value="-0.5"/>
-    <define name="ARRIVED_AT_WAYPOINT" value="50.0"/>
+    <define name="ARRIVED_AT_WAYPOINT" value="20.0"/>
 
     <!-- Avoid GPS loss behavior when having RC or datalink -->
     <define name="NO_GPS_LOST_WITH_DATALINK_TIME" value="20"/>
