@@ -21,7 +21,7 @@ import pprzlink.message as message
 #-----------------------Parameters--------------------------#
 MARKER_SIZE = 0.15 # meters
 timestep = None
-desired_aruco_dictionary = "DICT_5X5_100"
+desired_aruco_dictionary = "DICT_5X5_1000"
 pathLoad = '/home/orangepi/paparazzi/sw/ext/aruco_detection/cameraCalibration_mapir_1440p.xml'
 pixel_w = 1920  # Example: 1920 pixels wide
 pixel_h = 1440  # Example: 1440 pixels tall
@@ -145,18 +145,6 @@ def NED_conversion(pitch, roll, yaw, Aruco_position):
 
     return NORTH, EAST, UP
 
-#                                       # Ivybus INITIALISATION #
-# # ------------------------------------------------------------------------------------------------------- #
-# --------- Create Ivy Interface --------- # 
-ivy = pprzlink.ivy.IvyMessagesInterface(agent_name="ArucoMarker", start_ivy=False, ivy_bus="127.255.255.255:2010")
-
-# --------- Start Ivy Interface --------- # 
-ivy.start()
-
-# --------- Subscribe to Ivy Messages --------- # 
-ivy.subscribe(attitude_callback, message.PprzMessage("telemetry", "ROTORCRAFT_FP"))
-ivy.subscribe(NED_callback, message.PprzMessage("telemetry", "ROTORCRAFT_FP"))
-
 #                                  # FUNCTION -> SEND ARUCO POSITION MESSAGE ON IVY BUS#
 # # ------------------------------------------------------------------------------------------------------- #
 
@@ -180,139 +168,161 @@ def load_cam_para():
     cv_file.release()
     return camera_Matrix, distortion_Coeff
 
-# --------- Load Video --------- #
-cap = cv2.VideoCapture(usb_num)
-if not cap.isOpened():
-    raise ValueError(f"Failed to open camera on port {usb_num}. Please check the port number and try again.")
 
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, pixel_w)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, pixel_h)
+#                                       # Ivybus INITIALISATION #
+# # ------------------------------------------------------------------------------------------------------- #
+# --------- Create Ivy Interface --------- # 
+ivy = pprzlink.ivy.IvyMessagesInterface(agent_name="ArucoMarker", start_ivy=False, ivy_bus="127.255.255.255:2010")
 
-                                    # ARUCO MARKER DETECTION SETUP #
-# ------------------------------------------------------------------------------------------------------- #
-ARUCO_DICT = {"DICT_5X5_100": cv2.aruco.DICT_5X5_100}
-camera_Matrix, distortion_Coeff = load_cam_para()
+# --------- Start Ivy Interface --------- # 
+ivy.start()
 
-print(f"[INFO] detecting '{desired_aruco_dictionary}' markers...")
-this_aruco_dictionary = cv2.aruco.getPredefinedDictionary(ARUCO_DICT[desired_aruco_dictionary])
-this_aruco_parameters = cv2.aruco.DetectorParameters()
-
-# --------- Timer Start --------- # 
-start_time = time.time()
-
-# --------- Set Iteration Counter --------- # 
-C_STEP = 0
-
-                                            # RUN MAIN LOOP #
-# ------------------------------------------------------------------------------------------------------- #
-while(cap.isOpened()): 
-  # --------- Measure and Save Current Time --------- # 
-    live_time = time.time()
-    current_time = live_time - start_time
-    time_m.append(current_time)
-
-    # --------- Update Iteration Counter --------- # 
-    C_STEP = C_STEP + 1
-
-    # --------- Get Attitude Values from Ivybus --------- # 
-    PITCH_DRONE, ROLL_DRONE, YAW_DRONE = get_attitude_values()
-  
-    # --------- Get NED Values from Ivybus --------- # 
-    NORTH_DRONE, EAST_DRONE, UP_DRONE = get_NED_values()
-
-    # --------- Get LAT, LONG, and ALT Values from Ivybus --------- # 
-    LAT_0, LONG_0, ALT_0 = get_ref_lat_long_alt_values()
-
-    # --------- Read Frame-by-Frame --------- # 
-    ret, frame = cap.read()
-    if frame.shape[0] != pixel_h or frame.shape[1] != pixel_w:
-        print(frame.shape)
-        raise ValueError(f'Input and requested frame dims do not agree!')
+# --------- Subscribe to Ivy Messages --------- # 
+ivy.subscribe(attitude_callback, message.PprzMessage("telemetry", "ROTORCRAFT_FP"))
+ivy.subscribe(NED_callback, message.PprzMessage("telemetry", "ROTORCRAFT_FP"))
 
 
-    if ret == True: # If frame read correctly          
-        # Detect ArUco markers in the video frame
-        (corners, ids, rejected) = cv2.aruco.detectMarkers(frame, this_aruco_dictionary, parameters=this_aruco_parameters)
+while True:
+    try:
 
-        # # --------- Save, Print, and Show Drone Attitude --------- # 
-        if PITCH_DRONE is not None:
-            PITCH_DRONE = float(PITCH_DRONE)
-            ROLL_DRONE  = float(ROLL_DRONE)
-            YAW_DRONE   = float(YAW_DRONE)
-            
-            PITCH_DRONE = PITCH_DRONE*pprz_attitude_conversion
-            ROLL_DRONE  = ROLL_DRONE*pprz_attitude_conversion
-            YAW_DRONE   = YAW_DRONE*pprz_attitude_conversion 
+        #                                       # OpenCV Stuff #
+        # # ------------------------------------------------------------------------------------------------------- #
+        # --------- Load Video --------- #
+        cap = cv2.VideoCapture(usb_num)
+        if not cap.isOpened():
+            raise ValueError(f"Failed to open camera on port {usb_num}. Please check the port number and try again.")
 
-        # --------- Save, Print, and Show Drone NORTH, EAST, and UP --------- # 
-        if NORTH_DRONE is not None:
-            NORTH_DRONE = float(NORTH_DRONE)
-            EAST_DRONE  = float(EAST_DRONE)
-            UP_DRONE    = float(UP_DRONE)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, pixel_w)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, pixel_h)
 
-            NORTH_DRONE = NORTH_DRONE*pprz_NED_conversion
-            EAST_DRONE  = EAST_DRONE*pprz_NED_conversion
-            UP_DRONE    = UP_DRONE*pprz_NED_conversion 
+                                            # ARUCO MARKER DETECTION SETUP #
+        # ------------------------------------------------------------------------------------------------------- #
+        ARUCO_DICT = {"DICT_5X5_1000": cv2.aruco.DICT_5X5_1000}
+        camera_Matrix, distortion_Coeff = load_cam_para()
 
-            print(f'Drone position in NED: ({NORTH_DRONE, EAST_DRONE, UP_DRONE})')
+        print(f"[INFO] detecting '{desired_aruco_dictionary}' markers...")
+        this_aruco_dictionary = cv2.aruco.getPredefinedDictionary(ARUCO_DICT[desired_aruco_dictionary])
+        this_aruco_parameters = cv2.aruco.DetectorParameters()
+
+        # --------- Timer Start --------- # 
+        start_time = time.time()
+
+        # --------- Set Iteration Counter --------- # 
+        C_STEP = 0
+
+                                                    # RUN MAIN LOOP #
+        # ------------------------------------------------------------------------------------------------------- #
+        while(cap.isOpened()): 
+        # --------- Measure and Save Current Time --------- # 
+            live_time = time.time()
+            current_time = live_time - start_time
+            time_m.append(current_time)
+
+            # --------- Update Iteration Counter --------- # 
+            C_STEP = C_STEP + 1
+
+            # --------- Get Attitude Values from Ivybus --------- # 
+            PITCH_DRONE, ROLL_DRONE, YAW_DRONE = get_attitude_values()
         
-        # --------- FLAG -> Aruco Marker Not Detected --------- # 
-        DETECTION = 0
+            # --------- Get NED Values from Ivybus --------- # 
+            NORTH_DRONE, EAST_DRONE, UP_DRONE = get_NED_values()
 
-        if len(corners) > 0: # At least one marker detected
-            # --------- Aruco Marker Pose Estimation --------- # 
-            rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corners, MARKER_SIZE, camera_Matrix, distortion_Coeff)
-                
-            # --------- Save and Print X, Y, and Z --------- # 
-            try:
-                X_ARUCO = tvec[0][0][0]
-                Y_ARUCO = tvec[0][0][1]
-                Z_ARUCO = tvec[0][0][2]
-                print(X_ARUCO, Y_ARUCO, Z_ARUCO)
+            # --------- Get LAT, LONG, and ALT Values from Ivybus --------- # 
+            LAT_0, LONG_0, ALT_0 = get_ref_lat_long_alt_values()
 
-            except:
-                print("-------------------------------") 
-                print("Error: rvec/tvec empty")
-                print("-------------------------------")
-                continue 
+            # --------- Read Frame-by-Frame --------- # 
+            ret, frame = cap.read()
+            if frame.shape[0] != pixel_h or frame.shape[1] != pixel_w:
+                print(frame.shape)
+                raise ValueError(f'Input and requested frame dims do not agree!')
 
-        # # --------- NED Conversion and Moving to Relative Position --------- # 
-            if PITCH_DRONE is not None: 
-                PITCH_DRONE = math.radians(PITCH_DRONE)
-                ROLL_DRONE  = math.radians(ROLL_DRONE)
-                YAW_DRONE   = math.radians(YAW_DRONE)
 
-                # --------- Convert Aruco marker Position in Image Coordinates to Body Coordinates --------- #
-                # X (body) = Y (image plane), Y(body) = -X (image plane)
-                # camera pointing ground, top backwards
-                X_ARUCO_B = Y_ARUCO * 1 # bottom of cam is front pos x of drone
-                Y_ARUCO_B = -X_ARUCO * 1 # right of cam is left neg y of drone
-                Z_ARUCO_B = Z_ARUCO
+            if ret == True: # If frame read correctly          
+                # Detect ArUco markers in the video frame
+                (corners, ids, rejected) = cv2.aruco.detectMarkers(frame, this_aruco_dictionary, parameters=this_aruco_parameters)
 
-            #   # Generate Aruco position row vector
-                ARUCO_POSITION_B = np.array([[X_ARUCO_B], [Y_ARUCO_B], [Z_ARUCO_B]])
-                print(f'Rel position in Drone sys: {ARUCO_POSITION_B}')
+                # # --------- Save, Print, and Show Drone Attitude --------- # 
+                if PITCH_DRONE is not None:
+                    PITCH_DRONE = float(PITCH_DRONE)
+                    ROLL_DRONE  = float(ROLL_DRONE)
+                    YAW_DRONE   = float(YAW_DRONE)
+                    
+                    PITCH_DRONE = PITCH_DRONE*pprz_attitude_conversion
+                    ROLL_DRONE  = ROLL_DRONE*pprz_attitude_conversion
+                    YAW_DRONE   = YAW_DRONE*pprz_attitude_conversion 
 
-            #   # --------- Convert Aruco Position in Image Coordinates to NED Coordinates Relative to Drone --------- # 
-                NORTH_REL, EAST_REL, UP_REL = NED_conversion(PITCH_DRONE, ROLL_DRONE, YAW_DRONE, ARUCO_POSITION_B)
-            
-            #   # --------- NED Aruco Marker Position --------- # 
+                # --------- Save, Print, and Show Drone NORTH, EAST, and UP --------- # 
                 if NORTH_DRONE is not None:
-                    # --------- NED Relative and NED Drone Summation --------- # 
-                    NORTH_ARUCO = NORTH_REL + NORTH_DRONE
-                    EAST_ARUCO  = EAST_REL + EAST_DRONE
-                    UP_ARUCO    = UP_DRONE - UP_REL             # Application based decision -> take Aruco relative UP value (Z not relevant)  
+                    NORTH_DRONE = float(NORTH_DRONE)
+                    EAST_DRONE  = float(EAST_DRONE)
+                    UP_DRONE    = float(UP_DRONE)
 
-                    DETECTION = 1
+                    NORTH_DRONE = NORTH_DRONE*pprz_NED_conversion
+                    EAST_DRONE  = EAST_DRONE*pprz_NED_conversion
+                    UP_DRONE    = UP_DRONE*pprz_NED_conversion 
 
-            # # --------- Move Waypoint --------- #
-        if  DETECTION == 1 : 
-            # # --------- Move Waypoint --------- #
-            update_aruco_position_NED(ac_id, 0, NORTH_ARUCO, EAST_ARUCO, -UP_ARUCO)
-            print(f'Drone position in NED: ({NORTH_ARUCO, EAST_ARUCO, UP_ARUCO})')
+                    print(f'Drone position in NED: ({NORTH_DRONE, EAST_DRONE, UP_DRONE})')
                 
-    # --------- Break While Loop (No Frame Retrieved) --------- # 
-    else:
-        print('Error: frame not retrieved')  
-        continue
+                # --------- FLAG -> Aruco Marker Not Detected --------- # 
+                DETECTION = 0
 
+                if len(corners) > 0: # At least one marker detected
+                    # --------- Aruco Marker Pose Estimation --------- # 
+                    rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corners, MARKER_SIZE, camera_Matrix, distortion_Coeff)
+                        
+                    # --------- Save and Print X, Y, and Z --------- # 
+                    try:
+                        X_ARUCO = tvec[0][0][0]
+                        Y_ARUCO = tvec[0][0][1]
+                        Z_ARUCO = tvec[0][0][2]
+                        print(X_ARUCO, Y_ARUCO, Z_ARUCO)
+
+                    except:
+                        print("-------------------------------") 
+                        print("Error: rvec/tvec empty")
+                        print("-------------------------------")
+                        continue 
+
+                # # --------- NED Conversion and Moving to Relative Position --------- # 
+                    if PITCH_DRONE is not None: 
+                        PITCH_DRONE = math.radians(PITCH_DRONE)
+                        ROLL_DRONE  = math.radians(ROLL_DRONE)
+                        YAW_DRONE   = math.radians(YAW_DRONE)
+
+                        # --------- Convert Aruco marker Position in Image Coordinates to Body Coordinates --------- #
+                        # X (body) = Y (image plane), Y(body) = -X (image plane)
+                        # camera pointing ground, top backwards
+                        X_ARUCO_B = Y_ARUCO * 1 # bottom of cam is front pos x of drone
+                        Y_ARUCO_B = -X_ARUCO * 1 # right of cam is left neg y of drone
+                        Z_ARUCO_B = Z_ARUCO
+
+                    #   # Generate Aruco position row vector
+                        ARUCO_POSITION_B = np.array([[X_ARUCO_B], [Y_ARUCO_B], [Z_ARUCO_B]])
+                        print(f'Rel position in Drone sys: {ARUCO_POSITION_B}')
+
+                    #   # --------- Convert Aruco Position in Image Coordinates to NED Coordinates Relative to Drone --------- # 
+                        NORTH_REL, EAST_REL, UP_REL = NED_conversion(PITCH_DRONE, ROLL_DRONE, YAW_DRONE, ARUCO_POSITION_B)
+                    
+                    #   # --------- NED Aruco Marker Position --------- # 
+                        if NORTH_DRONE is not None:
+                            # --------- NED Relative and NED Drone Summation --------- # 
+                            NORTH_ARUCO = NORTH_REL + NORTH_DRONE
+                            EAST_ARUCO  = EAST_REL + EAST_DRONE
+                            UP_ARUCO    = UP_DRONE - UP_REL             # Application based decision -> take Aruco relative UP value (Z not relevant)  
+
+                            DETECTION = 1
+
+                    # # --------- Move Waypoint --------- #
+                if  DETECTION == 1 : 
+                    # # --------- Move Waypoint --------- #
+                    update_aruco_position_NED(ac_id, 0, NORTH_ARUCO, EAST_ARUCO, -UP_ARUCO)
+                    print(f'Drone position in NED: ({NORTH_ARUCO, EAST_ARUCO, UP_ARUCO})')
+                        
+            # --------- Break While Loop (No Frame Retrieved) --------- # 
+            else:
+                print('Error: frame not retrieved')  
+                continue
+
+    except Exception:
+        time.sleep(0.1)
+        pass
