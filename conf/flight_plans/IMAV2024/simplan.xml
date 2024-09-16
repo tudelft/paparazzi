@@ -195,7 +195,7 @@
     <block name="ARUCO_flare_low">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
-      <exception cond="detect_ground_on_landing()" deroute="landed"/>
+      <!-- <exception cond="detect_ground_on_landing()" deroute="landed"/> -->
       <stay climb="-0.5" vmode="climb" wp="ARUCO_HOVER"/>
     </block>
     <block name="endurance">
