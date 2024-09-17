@@ -50,13 +50,16 @@
     <waypoint name="CLIMB" x="137.087" y="156.759"/>
     <waypoint name="STDBY" lat="38.4746" lon="-8.86917"/>
     <waypoint name="circ" lat="38.4764" lon="-8.86804"/>
-    <waypoint name="TD" x="111.497" y="-30.473"/>
+    <waypoint name="TD" x="111.497" y="-30.473"  height="30"/>
     <!-- <waypoint name="APP" x="70" y="-25"/> -->
     <!-- <waypoint name="FOLLOW" x="300" y="80"/> -->
     <waypoint name="p1" x="-30.582" y="283.116"/>
     <waypoint name="p2" x="141.345" y="417.79"/>
     <waypoint name="p3" x="486.846" y="13.838"/>
     <waypoint name="p4" x="284.204" y="-135.398"/>
+    <waypoint name="Downwind" x="170.2" y="209.1" height="50"/>
+    <waypoint name="Base" x="425.6" y="49.6" height="40"/>
+    <waypoint name="Final" x="138.4" y="-163.5" height="30"/>
     <waypoint name="ML_global_target" x="397.8" y="156.359"/>
   </waypoints>
   <sectors>
@@ -247,6 +250,16 @@
       <call_once fun="rotwing_state_set(ROTWING_STATE_FREE)"/>
       <go wp="STDBY"/>
       <deroute block="Standby"/>
+    </block>
+    <block name="Downwind" strip_button="Downwind" strip_icon="land-right.png">
+      <go wp="Downwind"/>
+    </block>
+    <block name="Base">
+      <go wp="Base"/>
+    </block>
+    <block name="Final">
+      <go wp="Final"/>
+      <deroute block="land"/>
     </block>
     <block name="land here">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
