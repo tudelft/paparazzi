@@ -63,6 +63,7 @@ struct rotwing_state_t {
   int16_t skew_cmd;               // Skewing command in pprz values
 
   /* Airspeeds */
+  float fw_min_airspeed;      // Minimum airspeed (stall+margin)
   float cruise_airspeed;      // Airspeed for cruising
   float min_airspeed;         // Minimum airspeed for bounding
   float max_airspeed;         // Maximum airspeed for bounding

@@ -149,6 +149,7 @@ void rotwing_state_init(void)
   rotwing_state.state = ROTWING_STATE_FORCE_HOVER; // For takeoff
   rotwing_state.nav_state = ROTWING_STATE_FORCE_HOVER;
   rotwing_state.hover_motors_enabled = true;
+  rotwing_state.fw_min_airspeed = ROTWING_FW_MIN_AIRSPEED;
   rotwing_state.cruise_airspeed = ROTWING_FW_CRUISE_AIRSPEED;
   rotwing_state.sp_skew_angle_deg = 0;
   rotwing_state.meas_skew_angle_deg = 0;
@@ -198,7 +199,7 @@ void rotwing_state_periodic(void)
   float meas_airspeed = stateGetAirspeed_f();
   float meas_skew_angle = rotwing_state.meas_skew_angle_deg;
   Bound(meas_skew_angle, 0, 90); // Bound to prevent errors
-  if(meas_airspeed > ROTWING_FW_MIN_AIRSPEED) {
+  if(meas_airspeed > rotwing_state.fw_min_airspeed) {
     last_stall_time = current_time;
   }
 
@@ -224,7 +225,7 @@ void rotwing_state_periodic(void)
     rotwing_state.hover_motors_enabled = true;
   }
   else if((current_time - last_stall_time) < ROTWING_FW_STALL_TIMEOUT && rotwing_state_hover_motors_idling() && rotwing_state_pusher_motor_running() && meas_skew_angle >= ROTWING_FW_SKEW_ANGLE 
-        && (gi_unbounded_airspeed_sp >= ROTWING_FW_MIN_AIRSPEED || rotwing_state.state != ROTWING_STATE_FREE)) {
+        && (gi_unbounded_airspeed_sp >= rotwing_state.fw_min_airspeed || rotwing_state.state != ROTWING_STATE_FREE)) {
     rotwing_state.hover_motors_enabled = false;
   }
   else {
@@ -235,11 +236,11 @@ void rotwing_state_periodic(void)
   /* Calculate min/max airspeed bounds based on skew angle */
   float skew_min_airspeed = ROTWING_FW_QUAD_MIN_AIRSPEED * (meas_skew_angle - ROTWING_MIN_AIRSPEED_SLOPE_START_ANGLE) / (90.f - ROTWING_MIN_AIRSPEED_SLOPE_START_ANGLE);
   float skew_max_airspeed = ROTWING_QUAD_MAX_AIRSPEED + (ROTWING_FW_MAX_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * meas_skew_angle / ROTWING_FW_SKEW_ANGLE;
-  Bound(skew_min_airspeed, 0, ROTWING_FW_MIN_AIRSPEED);
+  Bound(skew_min_airspeed, 0, rotwing_state.fw_min_airspeed);
   Bound(skew_max_airspeed, ROTWING_QUAD_MAX_AIRSPEED, ROTWING_FW_MAX_AIRSPEED);
 
   if(!rotwing_state_hover_motors_running() || !rotwing_state.hover_motors_enabled) {
-    skew_min_airspeed = ROTWING_FW_MIN_AIRSPEED;
+    skew_min_airspeed = rotwing_state.fw_min_airspeed;
     skew_max_airspeed = ROTWING_FW_MAX_AIRSPEED;
   }
 
@@ -269,14 +270,14 @@ void rotwing_state_periodic(void)
     } else if (meas_airspeed < ROTWING_QUAD_MAX_AIRSPEED) {
       rotwing_state.sp_skew_angle_deg = ROTWING_SKEW_ANGLE_STEP;
     } else {
-      rotwing_state.sp_skew_angle_deg = ((meas_airspeed - ROTWING_QUAD_MAX_AIRSPEED)) / (ROTWING_FW_MIN_AIRSPEED - ROTWING_QUAD_MAX_AIRSPEED) * (90.f - ROTWING_SKEW_ANGLE_STEP) + ROTWING_SKEW_ANGLE_STEP;
+      rotwing_state.sp_skew_angle_deg = ((meas_airspeed - ROTWING_QUAD_MAX_AIRSPEED)) / (rotwing_state.fw_min_airspeed - ROTWING_QUAD_MAX_AIRSPEED) * (90.f - ROTWING_SKEW_ANGLE_STEP) + ROTWING_SKEW_ANGLE_STEP;
     }
   }
   Bound(rotwing_state.sp_skew_angle_deg, 0.f, 90.f);
 
 
   /* Handle the airspeed bounding */
-  Bound(rotwing_state.cruise_airspeed, ROTWING_FW_MIN_AIRSPEED, ROTWING_FW_MAX_AIRSPEED);
+  Bound(rotwing_state.cruise_airspeed, rotwing_state.fw_min_airspeed, ROTWING_FW_MAX_AIRSPEED);
   if((!rotwing_state_hover_motors_running() && rotwing_state.state != ROTWING_STATE_FORCE_HOVER) || rotwing_state.state == ROTWING_STATE_FORCE_FW) {
     rotwing_state.min_airspeed = rotwing_state.cruise_airspeed;
     rotwing_state.max_airspeed = rotwing_state.cruise_airspeed;
@@ -488,7 +489,7 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, fl
     Wu_gih[1] = Wu_gih_original[1];
     max_pitch_limit_rad = quad_pitch_limit_rad;
   } else {
-    float pitch_progression = (airspeed - ROTWING_FW_MIN_AIRSPEED) / 2.f;
+    float pitch_progression = (airspeed - rotwing_state.fw_min_airspeed) / 2.f;
     Bound(pitch_progression, 0.f, 1.f);
     scheduled_pitch_angle = pitch_angle_range * pitch_progression + ROTWING_QUAD_PREF_PITCH*(1.f-pitch_progression);
     Wu_gih[1] = Wu_gih_original[1] * (1.f - pitch_progression*0.99);
