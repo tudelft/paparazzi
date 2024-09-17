@@ -171,7 +171,7 @@
     </section>
 
     <section name="ROTWING" prefix="ROTWING_">
-        <define name="FW_MIN_AIRSPEED"          value="23"/>    <!-- Forward stall airspeed + margin (motors off) -->
+        <define name="FW_MIN_AIRSPEED"          value="21"/>    <!-- Forward stall airspeed + margin (motors off) -->
         <define name="FW_QUAD_MIN_AIRSPEED"     value="19"/>    <!-- Forward stall airspeed + margin with quad motors on -->
         <define name="FW_CRUISE_AIRSPEED"       value="25"/>    <!-- Default cruise airspeed -->
         <define name="FW_MAX_AIRSPEED"          value="30"/>    <!-- Maximum forward airspeed -->

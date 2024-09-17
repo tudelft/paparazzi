@@ -232,9 +232,9 @@
         <set servo="SERVO_ELEVATOR"     value="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? 0 : actuators_pprz[5]))"/>
         <set servo="SERVO_RUDDER"       value="($servo_hold? RadioControlValues(RADIO_YAW) : (!autopilot_in_flight()? 0 : actuators_pprz[4]))"/>
         <set servo="AIL_RIGHT"          value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])"/>
-        <set servo="FLAP_RIGHT"         value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7] + rw_flap_offset)"/>
+        <set servo="FLAP_RIGHT"         value="($servo_hold? (RadioControlValues(RADIO_ROLL) + rw_flap_offset) : actuators_pprz[7] + rw_flap_offset)"/>
         <set servo="AIL_LEFT"           value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])"/>
-        <set servo="FLAP_LEFT"          value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7] - rw_flap_offset)"/>
+        <set servo="FLAP_LEFT"          value="($servo_hold? (RadioControlValues(RADIO_ROLL) - rw_flap_offset) : actuators_pprz[7] - rw_flap_offset)"/>
         <set servo="PARACHUTE"          value="RadioControlValues(RADIO_PARACHUTE)"/>
 
         <!-- Second bus -->
@@ -246,9 +246,9 @@
         <set servo="BSERVO_ELEVATOR"    value="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? 0 : actuators_pprz[5]))"/>
         <set servo="BSERVO_RUDDER"      value="($servo_hold? RadioControlValues(RADIO_YAW) : (!autopilot_in_flight()? 0 : actuators_pprz[4]))"/>
         <set servo="BAIL_RIGHT"         value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])"/>
-        <set servo="BFLAP_RIGHT"        value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7] + rw_flap_offset)"/>
+        <set servo="BFLAP_RIGHT"        value="($servo_hold? (RadioControlValues(RADIO_ROLL) + rw_flap_offset) : actuators_pprz[7] + rw_flap_offset)"/>
         <set servo="BAIL_LEFT"          value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])"/>
-        <set servo="BFLAP_LEFT"         value="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7] - rw_flap_offset)"/>
+        <set servo="BFLAP_LEFT"         value="($servo_hold? (RadioControlValues(RADIO_ROLL) - rw_flap_offset) : actuators_pprz[7] - rw_flap_offset)"/>
         <set servo="BPARACHUTE"         value="RadioControlValues(RADIO_PARACHUTE)"/>
 
         <!-- Rotation mechanism -->
