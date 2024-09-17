@@ -30,6 +30,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 #pragma GCC diagnostic ignored "-Wswitch-default"
+#pragma GCC diagnostic ignored "-Wuninitialized"
 #include "mavlink/ardupilotmega/mavlink.h"
 #pragma GCC diagnostic pop
 
@@ -69,6 +70,7 @@
 #include <stdint.h>
 
 mavlink_system_t mavlink_system;
+uint16_t mavlink_rc_value = 1000;
 
 static uint8_t mavlink_params_idx = NB_SETTING; /**< Transmitting parameters index */
 /** mavlink parameter names.
@@ -428,7 +430,7 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
         if (target.coordinate_frame == MAV_FRAME_GLOBAL || target.coordinate_frame == MAV_FRAME_GLOBAL_INT) {
           MAVLINK_DEBUG("set position target, frame MAV_FRAME_GLOBAL %f \n", target.alt);
           struct NedCoor_i ned;
-          struct NedCoor_f ned_f;
+          //struct NedCoor_f ned_f;
           struct LlaCoor_i lla;
           lla.lat = target.lat_int;
           lla.lon = target.lon_int;
@@ -864,12 +866,12 @@ static void mavlink_send_rc_channels(struct transport_tx *trans, struct link_dev
   mavlink_msg_rc_channels_send(MAVLINK_COMM_0,
                                get_sys_time_msec(),
                                12,
-                               1000, 1000, 1000,
-                               1000, 1000, 1000,
-                               1000, 1000, 1000,
-                               1000, 1000, 1000,
-                               1000, 1000, 1000,
-                               1000, 1000, 1000,
+                               mavlink_rc_value, mavlink_rc_value, mavlink_rc_value,
+                               mavlink_rc_value, mavlink_rc_value, mavlink_rc_value,
+                               mavlink_rc_value, mavlink_rc_value, mavlink_rc_value,
+                               mavlink_rc_value, mavlink_rc_value, mavlink_rc_value,
+                               mavlink_rc_value, mavlink_rc_value, mavlink_rc_value,
+                               mavlink_rc_value, mavlink_rc_value, mavlink_rc_value,
                                255); // rssi unknown
 #else
   mavlink_msg_rc_channels_send(MAVLINK_COMM_0,
