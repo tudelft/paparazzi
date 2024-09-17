@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-<flight_plan alt="100" ground_alt="0" lat0="38.474472222222225" lon0="-8.871222222222222" max_dist_from_home="80000" name="Rotating wing Troia" security_height="30">
+<flight_plan alt="115" ground_alt="15" lat0="38.474472222222225" lon0="-8.871222222222222" max_dist_from_home="80000" name="Rotating wing Troia" security_height="30">
   <waypoints>
     <waypoint lat="38.4874248" lon="-8.8691705" name="1-1"/>
     <waypoint lat="38.4734375" lon="-8.8541523" name="1-2"/>
@@ -49,17 +49,17 @@
     <waypoint name="HOME" x="111.225" y="-35.761"/>
     <waypoint name="CLIMB" x="137.087" y="156.759"/>
     <waypoint name="STDBY" lat="38.4746" lon="-8.86917"/>
-    <waypoint name="circ" lat="38.4764" lon="-8.86804"/>
-    <waypoint name="TD" x="111.497" y="-30.473"  height="30"/>
+    <waypoint name="circ" lat="38.4751" lon="-8.86715"/>
+    <waypoint name="TD" x="111.497" y="-30.473" height="30"/>
     <!-- <waypoint name="APP" x="70" y="-25"/> -->
     <!-- <waypoint name="FOLLOW" x="300" y="80"/> -->
-    <waypoint name="p1" x="-30.582" y="283.116"/>
-    <waypoint name="p2" x="141.345" y="417.79"/>
-    <waypoint name="p3" x="486.846" y="13.838"/>
-    <waypoint name="p4" x="284.204" y="-135.398"/>
+    <waypoint name="p1" x="171.84" y="83.954"/>
+    <waypoint name="p2" x="419.479" y="282.12"/>
+    <waypoint name="p3" x="641.263" y="14.065"/>
+    <waypoint name="p4" x="385.379" y="-204.223"/>
     <waypoint name="Downwind" x="170.2" y="209.1" height="50"/>
-    <waypoint name="Base" x="425.6" y="49.6" height="40"/>
-    <waypoint name="Final" x="138.4" y="-163.5" height="30"/>
+    <waypoint name="Base" x="534.285" y="-58.323" height="40"/>
+    <waypoint name="Final" x="257.543" y="-180.466" height="30"/>
     <waypoint name="ML_global_target" x="397.8" y="156.359"/>
   </waypoints>
   <sectors>
