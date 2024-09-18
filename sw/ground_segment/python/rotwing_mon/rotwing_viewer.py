@@ -394,91 +394,93 @@ class RotWingFrame(wx.Frame):
         # Draw rotwing status
         self.stat = int(0.10*w)
         if hasattr(self, 'rw_status'):
+            line = int(20.0 / 800.0 * h)
             dc.SetBrush(wx.Brush(wx.Colour(200,200,100))) 
             dc.DrawRectangle(int(5), int(5),int(0.24*w), int(0.20*h))
-            dc.DrawText("State: " + self.rw_status.get_state() + " [NAV: " + self.rw_status.get_nav_state() +"]", 10, 10)
+            dc.DrawText("State: " + self.rw_status.get_state() + " [NAV: " + self.rw_status.get_nav_state() +"]", 10, int(0.5*line))
             if self.rw_status.skew_angle_valid:
                 if abs(self.rw_status.meas_skew_angle - self.rw_status.sp_skew_angle) < 10:
                     dc.SetTextForeground(wx.Colour(0, 0, 0))
                 else:
                     dc.SetTextForeground(wx.Colour(139, 64, 0))
-                dc.DrawText("Rotation: " + str(round(self.rw_status.meas_skew_angle, 1)) + " (SP: " + str(round(self.rw_status.sp_skew_angle, 1)) + ")", 10, 30)
+                dc.DrawText("Rotation: " + str(round(self.rw_status.meas_skew_angle, 1)) + " (SP: " + str(round(self.rw_status.sp_skew_angle, 1)) + ")", 10, int(1.5*line))
             else:
                 dc.SetTextForeground(wx.Colour(255, 0, 0))
-                dc.DrawText("Rotation: " + str(round(self.rw_status.meas_skew_angle, 1)) + " (SP: " + str(round(self.rw_status.sp_skew_angle, 1)) + ")", 10, 30)
+                dc.DrawText("Rotation: " + str(round(self.rw_status.meas_skew_angle, 1)) + " (SP: " + str(round(self.rw_status.sp_skew_angle, 1)) + ")", 10, int(1.5*line))
             
             dc.SetTextForeground(wx.Colour(0, 0, 0))
-            dc.DrawText("Hover motors: ", 10, 50)
+            dc.DrawText("Hover motors: ", 10, int(2.5*line))
             lbw = dc.GetTextExtent("Hover Motors: ").width
             if self.rw_status.hover_motors_running:
                 dc.SetTextForeground(wx.Colour(0, 0, 0))
-                dc.DrawText("running ", 10 + lbw, 50)
+                dc.DrawText("running ", 10 + lbw, int(2.5*line))
                 lbw += dc.GetTextExtent("running ").width
             else:
                 dc.SetTextForeground(wx.Colour(255, 0, 0))
-                dc.DrawText("stopped ", 10 + lbw, 50)
+                dc.DrawText("stopped ", 10 + lbw, int(2.5*line))
                 lbw += dc.GetTextExtent("stopped ").width
 
             if self.rw_status.hover_motors_idle:
                 dc.SetTextForeground(wx.Colour(0, 0, 0))
-                dc.DrawText("idle ", 10 + lbw, 50)
+                dc.DrawText("idle ", 10 + lbw, int(2.5*line))
                 lbw += dc.GetTextExtent("idle ").width
 
             if self.rw_status.hover_motors_enabled:
                 dc.SetTextForeground(wx.Colour(0, 0, 0))
-                dc.DrawText("(Enabled)", 10 + lbw, 50)
+                dc.DrawText("(Enabled)", 10 + lbw, int(2.5*line))
             else:
                 dc.SetTextForeground(wx.Colour(255, 0, 0))
-                dc.DrawText("(Disabled)", 10 + lbw, 50)
+                dc.DrawText("(Disabled)", 10 + lbw, int(2.5*line))
 
             dc.SetTextForeground(wx.Colour(0, 0, 0))
-            dc.DrawText("Pusher motor: ", 10, 70)
+            dc.DrawText("Pusher motor: ", 10, int(3.5*line))
             lbw = dc.GetTextExtent("Pusher motor: ").width
             if self.rw_status.pusher_motor_running:
                 dc.SetTextForeground(wx.Colour(0, 0, 0))
-                dc.DrawText("running", 10 + lbw, 70)
+                dc.DrawText("running", 10 + lbw, int(3.5*line))
             else:
                 dc.SetTextForeground(wx.Colour(255, 0, 0))
-                dc.DrawText("stopped", 10 + lbw, 70)
+                dc.DrawText("stopped", 10 + lbw, int(3.5*line))
             
             dc.SetTextForeground(wx.Colour(0, 0, 0))
-            dc.DrawText("Nav airspeed: " + str(round(self.rw_status.nav_airspeed,1 )) + " [min: " + str(round(self.rw_status.min_airspeed,1 )) + ", max:" + str(round(self.rw_status.max_airspeed,1 )) + "]", 10, 90)
+            dc.DrawText("Nav airspeed: " + str(round(self.rw_status.nav_airspeed,1 )) + " [min: " + str(round(self.rw_status.min_airspeed,1 )) + ", max:" + str(round(self.rw_status.max_airspeed,1 )) + "]", 10, int(4.5*line))
             if hasattr(self, 'air_data'):
-                dc.DrawText("Meas airspeed: " + str(round(self.air_data.airspeed,1 )) + " (TAS: " + str(round(self.air_data.tas,1 )) + ")", 10, 110)
+                dc.DrawText("Meas airspeed: " + str(round(self.air_data.airspeed,1 )) + " (TAS: " + str(round(self.air_data.tas,1 )) + ")", 10, int(5.5*line))
             #self.StatusBox(dc, 5, 5, 0, 0, self.rw_status.get_state(), 1, 1)
             dc.SetTextForeground(wx.Colour(0, 0, 0))
-            dc.DrawText("Force Skew: ", 10, 130)
+            dc.DrawText("Force Skew: ", 10, int(6.5*line))
             lbw = dc.GetTextExtent("Force Skew: ").width
             if self.rw_status.skew_forced:
                 dc.SetTextForeground(wx.Colour(255, 0, 0))
-                dc.DrawText("(Enabled)", 10 + lbw, 130)
+                dc.DrawText("(Enabled)", 10 + lbw, int(6.5*line))
             else:
                 dc.SetTextForeground(wx.Colour(0, 0, 0))
-                dc.DrawText("(Disabled)", 10 + lbw, 130)
+                dc.DrawText("(Disabled)", 10 + lbw, int(6.5*line))
             
             if hasattr(self, 'imu_heater'):
                 imu_temp = float(self.imu_heater.meas_temp)
                 if imu_temp < 65.0:
                     dc.SetTextForeground(wx.Colour(0, 0, 0))
-                    dc.DrawText("Meas IMU temp: " + str(round(imu_temp, 0)), 10, 150)
+                    dc.DrawText("Meas IMU temp: " + str(round(imu_temp, 0)), 10, int(7.5*line))
                 elif imu_temp < 85.0:
                     dc.SetTextForeground(wx.Colour(139, 64, 0))
-                    dc.DrawText("Meas IMU temp: " + str(round(imu_temp, 0)), 10, 150)
+                    dc.DrawText("Meas IMU temp: " + str(round(imu_temp, 0)), 10, int(7.5*line))
                 else:
                     dc.SetTextForeground(wx.Colour(255, 0, 0))
-                    dc.DrawText("Meas IMU temp: " + str(round(imu_temp, 0)), 10, 150)
+                    dc.DrawText("Meas IMU temp: " + str(round(imu_temp, 0)), 10, int(7.5*line))
 
         if hasattr(self, 'fuelcell'):
-            dc.SetBrush(wx.Brush(wx.Colour(200,200,100))) 
-            dc.DrawRectangle(int(0.76*w), int(5),int(0.24*w), int(0.20*h))
-            dc.DrawText("Fuelcell: ["+self.fuelcell.state_str+"] " + self.fuelcell.pressure + "%  Reg="+str(self.fuelcell.press_reg)+"Bar", int(0.76*w+5), 10)
-            dc.DrawText("Output: " + str(self.fuelcell.power_out) + "Watt", int(0.76*w+5), 30)
-            dc.DrawText("SPM: " + str(self.fuelcell.power_cell) + "Watt", int(0.76*w+5), 50)
-            dc.DrawText("Battery: " + str(self.fuelcell.power_batt) + "Watt", int(0.76*w+5), 70)
-            dc.DrawText("Battery: " + str(self.fuelcell.volt_bat) + "Volt", int(0.76*w+5), 90)
-            dc.DrawText("State: ["+str(self.fuelcell.state)+"] " + self.fuelcell.state_str, int(0.76*w+5), 110)
-            dc.DrawText("Error: ["+str(self.fuelcell.error)+"/"+str(self.fuelcell.suberror)+"] " + self.fuelcell.error_str, int(0.76*w+5), 130)
-            dc.DrawText("Suberror: " + self.fuelcell.suberror_str, int(0.76*w+5), 150)
+            dc.SetBrush(wx.Brush(wx.Colour(200,200,100)))
+            line = int(20.0 / 800.0 * h)
+            dc.DrawRectangle(int(0.75*w), int(5),int(0.24*w), int(0.20*h))
+            dc.DrawText("FuelCell state: ["+str(self.fuelcell.state)+"] " + self.fuelcell.state_str, int(0.75*w+5), int(0.5*line))
+            dc.DrawText("Cylinder press: " + self.fuelcell.pressure + "%  Reg="+str(self.fuelcell.press_reg)+"Bar", int(0.75*w+5), int(1.5*line))
+            dc.DrawText("Output: " + str(self.fuelcell.power_out) + "Watt", int(0.75*w+5), int(2.5*line))
+            dc.DrawText("SPM: " + str(self.fuelcell.power_cell) + "Watt", int(0.75*w+5), int(3.5*line))
+            dc.DrawText("Battery: " + str(self.fuelcell.power_batt) + "Watt", int(0.75*w+5), int(4.5*line))
+            dc.DrawText("Battery: " + str(self.fuelcell.volt_bat) + "Volt", int(0.75*w+5), int(5.5*line))
+            dc.DrawText("Error: ["+str(self.fuelcell.error)+"] " + self.fuelcell.error_str, int(0.75*w+5), int(6.5*line))
+            dc.DrawText("Suberror: ["+str(self.fuelcell.suberror)+"]" + self.fuelcell.suberror_str, int(0.75*w+5), int(7.5*line))
 
 
 

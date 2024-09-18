@@ -29,6 +29,7 @@
 
 #include "std.h"
 
+extern void can_fuelcell_init(void);
 extern void can_fuelcell_event(void);
 extern void can_fuelcell_periodic(void);
 
