@@ -47,7 +47,7 @@ void can_fuelcell_event(void) {
   float power_cell = 1234.0;
   float power_batt = -223.0;
   uint8_t state = 3;
-  uint8_t error = 0;
+  uint8_t error = 12;
   uint8_t suberror = 0;
 
 #if NPS

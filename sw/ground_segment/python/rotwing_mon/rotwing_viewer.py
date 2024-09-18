@@ -180,18 +180,94 @@ class IMUHEATERMessage(object):
 class FUELCELLMessage(object):
     def __init__(self, msg):
         self.pressure = msg['pressure']
-        self.press_reg = msg['press_reg']
-        self.volt_bat = msg['volt_bat']
-        self.power_out = msg['power_out']
-        self.power_cell = msg['power_cell']
-        self.power_batt = msg['power_batt']
+        self.press_reg = float(msg['press_reg'])
+        self.volt_bat = float(msg['volt_bat'])
+        self.power_out = float(msg['power_out'])
+        self.power_cell = float(msg['power_cell'])
+        self.power_batt = float(msg['power_batt'])
         self.state = int(msg['state'])
-        self.error = msg['error']   
-        self.suberror = msg['suberror'] 
+        self.error = int(msg['error'])  
+        self.suberror = int(msg['suberror'])
         states = ['FCPM off', 'Starting', 'Running', 'Stopping', 'Go to sleep']
         self.state_str = '?'
         if self.state < len(states):
             self.state_str = states[self.state]
+        if self.error == 0:
+            self.error_str = 'No error'
+        elif self.error == 1:
+            self.error_str = 'Minor internal'
+        elif self.error == 4:
+            self.error_str = 'Reconditioning needed'
+        elif self.error == 6:
+            self.error_str = 'Auto recondition active'
+        elif self.error == 7:
+            self.error_str = 'Reconditioning active'
+        elif self.error == 8:
+            self.error_str = 'Recovery mode active'
+        elif self.error == 12:
+            self.error_str = 'Tank pressure low'
+        elif self.error == 14:
+            self.error_str = 'Battery voltage low'
+        elif self.error == 20:
+            self.error_str = 'Reduced power'
+        elif self.error == 25:
+            self.error_str = 'SPM lost'
+        elif self.error == 30:
+            self.error_str = 'Tank empty'
+        elif self.error == 32:
+            self.error_str = 'Start denied'
+        elif self.error == 34:
+            self.error_str = 'FC off - recovery required'
+        elif self.error == 36:
+            self.error_str = 'FC off - system error'
+        elif self.error == 40:
+            self.error_str = 'Battery critical'
+        else:
+            self.error_str = 'Unknown error'
+
+        if self.suberror == 0:
+            self.suberror_str = 'No context'
+        elif self.suberror == 1:
+            self.suberror_str = 'SPM1'
+        elif self.suberror == 2:
+            self.suberror_str = 'SPM2'
+        elif self.suberror == 3:
+            self.suberror_str = 'SPM1 AND SPM2'
+        elif self.suberror == 4:
+            self.suberror_str = 'ALL SPM LOST'
+        elif self.suberror == 5:
+            self.suberror_str = 'Inlet pressure low'
+        elif self.suberror == 6:
+            self.suberror_str = 'Inlet pressure high'
+        elif self.suberror == 7:
+            self.suberror_str = 'Tank pressure low'
+        elif self.suberror == 8:
+            self.suberror_str = 'Tank pressure high'
+        elif self.suberror == 9:
+            self.suberror_str = 'Stack voltage low'
+        elif self.suberror == 10:
+            self.suberror_str = 'Internal tests (INT ERR)'
+        elif self.suberror == 11:
+            self.suberror_str = 'Stack temperature high (STK HT)'
+        elif self.suberror == 12:
+            self.suberror_str = 'Stack temperature low (STK LT)'
+        elif self.suberror == 13:
+            self.suberror_str = 'Reconditioning active'
+        elif self.suberror == 14:
+            self.suberror_str = 'Reconditioning complete'
+        elif self.suberror == 15:
+            self.suberror_str = 'Thermal management'
+        elif self.suberror == 16:
+            self.suberror_str = 'Start faults'
+        elif self.suberror == 17:
+            self.suberror_str = 'LPI missing'
+        elif self.suberror == 254:
+            self.suberror_str = 'Complete flight - contact support'
+        elif self.suberror == 255:
+            self.suberror_str = 'Stop using unit - contact support'
+        else:
+            self.suberror_str = 'Unknown suberror'
+
 
 
 class MotorList(object):
@@ -394,11 +470,15 @@ class RotWingFrame(wx.Frame):
 
         if hasattr(self, 'fuelcell'):
             dc.SetBrush(wx.Brush(wx.Colour(200,200,100))) 
-            dc.DrawRectangle(int(0.74*w), int(5),int(0.24*w), int(0.20*h))
-            dc.DrawText("Fuelcell: " + self.fuelcell.pressure + "%", int(0.74*w+5), 10)
-            dc.DrawText("Output: " + self.fuelcell.power_out + "Watt", int(0.74*w+5), 30)
-            dc.DrawText("SPM: " + self.fuelcell.power_cell + "Watt", int(0.74*w+5), 50)
-            dc.DrawText("Battery: " + self.fuelcell.power_batt + "Watt", int(0.74*w+5), 70)
+            dc.DrawRectangle(int(0.76*w), int(5),int(0.24*w), int(0.20*h))
+            dc.DrawText("Fuelcell: ["+self.fuelcell.state_str+"] " + self.fuelcell.pressure + "%  Reg="+str(self.fuelcell.press_reg)+"Bar", int(0.76*w+5), 10)
+            dc.DrawText("Output: " + str(self.fuelcell.power_out) + "Watt", int(0.76*w+5), 30)
+            dc.DrawText("SPM: " + str(self.fuelcell.power_cell) + "Watt", int(0.76*w+5), 50)
+            dc.DrawText("Battery: " + str(self.fuelcell.power_batt) + "Watt", int(0.76*w+5), 70)
+            dc.DrawText("Battery: " + str(self.fuelcell.volt_bat) + "Volt", int(0.76*w+5), 90)
+            dc.DrawText("State: ["+str(self.fuelcell.state)+"] " + self.fuelcell.state_str, int(0.76*w+5), 110)
+            dc.DrawText("Error: ["+str(self.fuelcell.error)+"/"+str(self.fuelcell.suberror)+"] " + self.fuelcell.error_str, int(0.76*w+5), 130)
+            dc.DrawText("Suberror: " + self.fuelcell.suberror_str, int(0.76*w+5), 150)
 
 
 
