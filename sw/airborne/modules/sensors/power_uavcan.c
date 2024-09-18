@@ -26,6 +26,7 @@
 #include "power_uavcan.h"
 #include "uavcan/uavcan.h"
 #include "modules/energy/electrical.h"
+#include "math/pprz_random.h"
 
 /* uavcan EQUIPMENT_ESC_STATUS message definition */
 #define UAVCAN_EQUIPMENT_POWER_BATTERYINFO_ID 1092
@@ -97,6 +98,28 @@ struct uavcan_circuit_battery_t {
   uint16_t circuit_id;
 };
 static struct uavcan_circuit_battery_t battery_circuits[] = POWER_UAVCAN_BATTERY_CIRCUITS;
+
+#if PERIODIC_TELEMETRY
+#include "modules/datalink/telemetry.h"
+
+static void power_uavcan_send_power_device(struct transport_tx *trans, struct link_device *dev)
+{
+  static uint8_t idx = 0;
+  // Send the circuit status
+  if(circuits[idx].set) {
+    uint8_t cid = circuits[idx].circuit_id;
+    pprz_msg_send_POWER_DEVICE(trans, dev, AC_ID, &circuits[idx].node_id, &cid, &circuits[idx].current, &circuits[idx].voltage);
+  }
+
+  // Go to the next
+  if (rand_uniform() > 0.02) {
+    idx++;
+  }
+  if(idx >= POWER_UAVCAN_CIRCUITS_MAX || !circuits[idx].set) {
+    idx = 0;
+  }
+}
+#endif /* PERIODIC_TELEMETRY */
 
 
 static void power_uavcan_battery_cb(struct uavcan_iface_t *iface __attribute__((unused)), CanardRxTransfer *transfer)
@@ -194,18 +217,6 @@ static void power_uavcan_circuit_cb(struct uavcan_iface_t *iface __attribute__((
   uint8_t error_flags = 0;
   canardDecodeScalar(transfer, (uint32_t)48, 8, false, (void *)&error_flags);
 
-
-/*
-TODO: freek
-    <message name="POWER_DEVICE" id="19">
-      <field name="node_id" type="uint8"/>
-      <field name="circuit" type="uint8"/>
-      <field name="current" type="float"/>
-      <field name="voltage" type="float"/>
-    </message>
-
-*/
-
   // Search for the circuit or free spot
   uint8_t circuit_idx = POWER_UAVCAN_CIRCUITS_MAX;
   for (uint8_t i = 0; i < POWER_UAVCAN_CIRCUITS_MAX; i++) {
@@ -262,4 +273,12 @@ void power_uavcan_init(void)
   // Bind uavcan CIRCUIT_STATUS message from EQUIPMENT.POWER
   uavcan_bind(UAVCAN_EQUIPMENT_POWER_CIRCUITSTATUS_ID, UAVCAN_EQUIPMENT_POWER_CIRCUITSTATUS_SIGNATURE, &circuit_uavcan_ev,
               &power_uavcan_circuit_cb);
+
+  // Configure telemetry
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_POWER_DEVICE, power_uavcan_send_power_device);
+#endif
+
+  // Initialize Random (for telemetry)
+  init_random();
 }
