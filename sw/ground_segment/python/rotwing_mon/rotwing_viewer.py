@@ -396,7 +396,7 @@ class RotWingFrame(wx.Frame):
         if hasattr(self, 'rw_status'):
             line = int(20.0 / 800.0 * h)
             dc.SetBrush(wx.Brush(wx.Colour(200,200,100))) 
-            dc.DrawRectangle(int(5), int(5),int(0.24*w), int(0.20*h))
+            dc.DrawRectangle(int(5), int(5),int(0.29*w), int(0.20*h))
             dc.DrawText("State: " + self.rw_status.get_state() + " [NAV: " + self.rw_status.get_nav_state() +"]", 10, int(0.5*line))
             if self.rw_status.skew_angle_valid:
                 if abs(self.rw_status.meas_skew_angle - self.rw_status.sp_skew_angle) < 10:
@@ -470,17 +470,17 @@ class RotWingFrame(wx.Frame):
                     dc.DrawText("Meas IMU temp: " + str(round(imu_temp, 0)), 10, int(7.5*line))
 
         if hasattr(self, 'fuelcell'):
-            dc.SetBrush(wx.Brush(wx.Colour(200,200,100)))
+            dc.SetBrush(wx.Brush(wx.Colour(200,200,200)))
             line = int(20.0 / 800.0 * h)
-            dc.DrawRectangle(int(0.75*w), int(5),int(0.24*w), int(0.20*h))
+            dc.SetTextForeground(wx.Colour(0, 0, 0))
+            dc.DrawRoundedRectangle(int(0.7*w), int(5),int(0.29*w), int(0.18*h), int(0.05*h))
             dc.DrawText("FuelCell state: ["+str(self.fuelcell.state)+"] " + self.fuelcell.state_str, int(0.75*w+5), int(0.5*line))
             dc.DrawText("Cylinder press: " + self.fuelcell.pressure + "%  Reg="+str(self.fuelcell.press_reg)+"Bar", int(0.75*w+5), int(1.5*line))
-            dc.DrawText("Output: " + str(self.fuelcell.power_out) + "Watt", int(0.75*w+5), int(2.5*line))
-            dc.DrawText("SPM: " + str(self.fuelcell.power_cell) + "Watt", int(0.75*w+5), int(3.5*line))
-            dc.DrawText("Battery: " + str(self.fuelcell.power_batt) + "Watt", int(0.75*w+5), int(4.5*line))
-            dc.DrawText("Battery: " + str(self.fuelcell.volt_bat) + "Volt", int(0.75*w+5), int(5.5*line))
-            dc.DrawText("Error: ["+str(self.fuelcell.error)+"] " + self.fuelcell.error_str, int(0.75*w+5), int(6.5*line))
-            dc.DrawText("Suberror: ["+str(self.fuelcell.suberror)+"]" + self.fuelcell.suberror_str, int(0.75*w+5), int(7.5*line))
+            dc.DrawText("Output: " + str(self.fuelcell.power_out) + " Watt", int(0.75*w+5), int(2.5*line))
+            dc.DrawText("SPM: " + str(self.fuelcell.power_cell) + " Watt", int(0.75*w+5), int(3.5*line))
+            dc.DrawText("Battery: " + str(self.fuelcell.power_batt) + " Watt, " + str(self.fuelcell.volt_bat) + " Volt", int(0.75*w+5), int(4.5*line))
+            dc.DrawText("Error: ["+str(self.fuelcell.error)+"] " + self.fuelcell.error_str, int(0.75*w+5), int(5.5*line))
+            dc.DrawText("Sub-error: ["+str(self.fuelcell.suberror)+"] " + self.fuelcell.suberror_str, int(0.75*w+5), int(6.5*line))
 
 
 
