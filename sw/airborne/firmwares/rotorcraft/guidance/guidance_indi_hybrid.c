@@ -558,7 +558,6 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
 
 #ifdef FWD_SIDESLIP_GAIN
   // Add sideslip correction
-  bool FWD_IS_ON = true;
   // If drone is in fixed wing add accelerometer term
   if (FWD_IS_ON && coordinated_turn_use_accel) {
     omega -= accely_filt.o[0]*FWD_SIDESLIP_GAIN;
