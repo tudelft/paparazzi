@@ -440,6 +440,13 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
           //autopilot_guided_goto_ned(ned_f.x, ned_f.y, ned_f.z, target.yaw);
           waypoint_set_latlon(WP_ML_global_target, &lla);
           waypoint_set_alt(WP_ML_global_target, target.alt);
+
+          // Downlink the new waypoint
+          uint8_t wp_id = WP_ML_global_target;
+          int32_t hmsl = lla.alt - state.ned_origin_i.lla.alt + state.ned_origin_i.hmsl;
+          DOWNLINK_SEND_WP_MOVED_LLA(DefaultChannel, DefaultDevice, &wp_id,
+                                    &lla.lat, &lla.lon, &hmsl);
+
         }
       //}
       break;
