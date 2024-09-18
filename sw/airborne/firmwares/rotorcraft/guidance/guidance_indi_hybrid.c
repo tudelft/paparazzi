@@ -130,6 +130,8 @@ struct guidance_indi_hybrid_params gih_params = {
 // Quadplanes can hover at various pref pitch
 float guidance_indi_pitch_pref_deg = 0;
 
+float omega_filt = 0.0;
+float yaw_rate_filter_cf = 50.f; //rad/s
 
 // If using WLS, check that the matrix size is sufficient
 #if GUIDANCE_INDI_HYBRID_USE_WLS
@@ -207,12 +209,12 @@ static void guidance_indi_filter_thrust(void);
 #define GUIDANCE_INDI_COORDINATED_TURN_MAX_AIRSPEED 30.0
 #endif
 
-#ifndef GUIDANCE_INDI_COORDINATED_TURN_AIRSPEED_MARGIN 
+#ifndef GUIDANCE_INDI_COORDINATED_TURN_AIRSPEED_MARGIN
 #define GUIDANCE_INDI_COORDINATED_TURN_AIRSPEED_MARGIN 0.0
 #endif
 
 bool QUAD_IS_ON = false;
-bool FWD_IS_ON = false; 
+bool FWD_IS_ON = false;
 bool weather_vaning = false;
 float weather_vaning_dyn = 1.0;
 
@@ -427,6 +429,9 @@ void guidance_indi_enter(void)
 
   float tau_guidance_indi_airspeed = 1.0/(2.0*M_PI*guidance_indi_airspeed_filt_cutoff);
   init_butterworth_2_low_pass(&guidance_indi_airspeed_filt, tau_guidance_indi_airspeed, sample_time, 0.0);
+
+  // reset filter
+  omega_filt = 0.f;
 }
 
 void guidance_indi_set_min_max_airspeed(float min_airspeed, float max_airspeed) {
@@ -563,6 +568,9 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
     omega -= accely_filt.o[0]*FWD_SIDESLIP_GAIN;
   }
 #endif
+
+  float dis_dyn = 1.0-exp(- yaw_rate_filter_cf / PERIODIC_FREQUENCY );
+  omega_filt += dis_dyn * (omega_filt - omega);
 
   if ((QUAD_IS_ON) && (weather_vaning) && (guidance_h.mode != GUIDANCE_H_MODE_NONE)){
     omega = 0;

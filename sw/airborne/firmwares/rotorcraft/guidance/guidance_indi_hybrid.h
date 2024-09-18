@@ -96,6 +96,8 @@ extern float guidance_indi_pitch_pref_deg;
 
 extern float gi_unbounded_airspeed_sp;
 
+extern float yaw_rate_filter_cf;
+
 #if GUIDANCE_INDI_HYBRID_USE_WLS
 extern float Wu_gih[GUIDANCE_INDI_HYBRID_U];
 extern float Wv_gih[GUIDANCE_INDI_HYBRID_V];
