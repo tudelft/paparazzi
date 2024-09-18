@@ -59,7 +59,7 @@ static struct faulhaber_parser_t faulhaber_p;
 struct faulhaber_t faulhaber;
 
 #define Polynom 0xD5
-uint8_t faulhaber_crc8(uint8_t u8Byte, uint8_t u8CRC)
+static uint8_t faulhaber_crc8(uint8_t u8Byte, uint8_t u8CRC)
 {
   uint8_t i;
   u8CRC = u8CRC ^ u8Byte;
