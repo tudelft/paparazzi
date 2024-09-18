@@ -199,15 +199,38 @@ static void guidance_indi_filter_thrust(void);
 #define GUIDANCE_INDI_MAX_LAT_ACCEL 9.81
 #endif
 
+#ifndef GUIDANCE_INDI_COORDINATED_TURN_MIN_AIRSPEED
+#define GUIDANCE_INDI_COORDINATED_TURN_MIN_AIRSPEED 10.0
+#endif
+
+#ifndef GUIDANCE_INDI_COORDINATED_TURN_MAX_AIRSPEED
+#define GUIDANCE_INDI_COORDINATED_TURN_MAX_AIRSPEED 30.0
+#endif
+
+#ifndef GUIDANCE_INDI_COORDINATED_TURN_AIRSPEED_MARGIN 
+#define GUIDANCE_INDI_COORDINATED_TURN_AIRSPEED_MARGIN 0.0
+#endif
+
 bool QUAD_IS_ON = false;
 bool FWD_IS_ON = false; 
 bool weather_vaning = false;
 float weather_vaning_dyn = 1.0;
+
 float inv_eff[4];
 
 // Max bank angle in radians
 float guidance_indi_max_bank = GUIDANCE_H_MAX_BANK;
 float guidance_indi_min_pitch = GUIDANCE_INDI_MIN_PITCH;
+
+#if defined(ROTWING_STATE_FW_MAX_AIRSPEED) && defined(ROTWING_STATE_QUAD_MAX_AIRSPEED)
+  float gih_coordinated_turn_min_airspeed = ROTWING_STATE_QUAD_MAX_AIRSPEED;
+  float gih_coordinated_turn_max_airspeed = ROTWING_STATE_FW_MAX_AIRSPEED + GUIDANCE_INDI_COORDINATED_TURN_AIRSPEED_MARGIN;
+#else
+  float gih_coordinated_turn_min_airspeed = GUIDANCE_INDI_COORDINATED_TURN_MIN_AIRSPEED;
+  float gih_coordinated_turn_max_airspeed = GUIDANCE_INDI_COORDINATED_TURN_MAX_AIRSPEED + GUIDANCE_INDI_COORDINATED_TURN_AIRSPEED_MARGIN;
+#endif
+
+bool coordinated_turn_use_accel = false;
 
 /** state eulers in zxy order */
 struct FloatEulers eulers_zxy;
@@ -504,7 +527,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   float airspeed_turn = stateGetAirspeed_f();
 #endif
   // We are dividing by the airspeed, so a lower bound is important
-  Bound(airspeed_turn, 10.0f, 30.0f); //WTF why a max of 30m/s??
+  Bound(airspeed_turn, gih_coordinated_turn_min_airspeed, gih_coordinated_turn_max_airspeed);
 
   guidance_euler_cmd.phi = roll_filt.o[0] + euler_cmd.x;
   guidance_euler_cmd.theta = pitch_filt.o[0] + euler_cmd.y;
@@ -535,7 +558,11 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
 
 #ifdef FWD_SIDESLIP_GAIN
   // Add sideslip correction
-  omega -= accely_filt.o[0]*FWD_SIDESLIP_GAIN;
+  bool FWD_IS_ON = true;
+  // If drone is in fixed wing add accelerometer term
+  if (FWD_IS_ON && coordinated_turn_use_accel) {
+    omega -= accely_filt.o[0]*FWD_SIDESLIP_GAIN;
+  }
 #endif
 
   if ((QUAD_IS_ON) && (weather_vaning) && (guidance_h.mode != GUIDANCE_H_MODE_NONE)){

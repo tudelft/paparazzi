@@ -113,6 +113,7 @@ extern float guidance_indi_max_bank;
 extern float guidance_indi_min_pitch;
 extern bool force_forward;       ///< forward flight for hybrid nav
 extern bool guidance_indi_airspeed_filtering;
+extern bool coordinated_turn_use_accel;
 
 extern bool QUAD_IS_ON;
 extern bool FWD_IS_ON;

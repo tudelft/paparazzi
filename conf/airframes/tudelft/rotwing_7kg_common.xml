@@ -63,6 +63,7 @@
         <define name="TRANSITION_HEIGHT"                    value="40"/>
         <define name="LIFTOFF_PITCH_LIMIT_DEG"              value="5"/>
         <define name="LIFTOFF_ROLL_LIMIT_DEG"               value="5"/>
+         <define name="FWD_SIDESLIP_GAIN"                    value="0.25"/>
     </section>
 
     <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
@@ -225,6 +226,9 @@
         <define name="FWD_DESCEND_SPEED"    value="-3.0"/>
         <define name="QUAD_CLIMB_SPEED"     value="2.0"/>
         <define name="QUAD_DESCEND_SPEED"   value="-1.0"/>
+
+        <!-- Coordinated turns -->
+        <define name="COORDINATED_TURN_AIRSPEED_MARGIN" value="8.0"/>
     </section>
 
     <section name="FORWARD">
