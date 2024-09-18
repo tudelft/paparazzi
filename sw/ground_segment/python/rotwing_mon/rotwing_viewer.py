@@ -177,6 +177,23 @@ class IMUHEATERMessage(object):
     def __init__(self, msg):
         self.meas_temp = msg['meas_temp']
 
+class FUELCELLMessage(object):
+    def __init__(self, msg):
+        self.pressure = msg['pressure']
+        self.press_reg = msg['press_reg']
+        self.volt_bat = msg['volt_bat']
+        self.power_out = msg['power_out']
+        self.power_cell = msg['power_cell']
+        self.power_batt = msg['power_batt']
+        self.state = int(msg['state'])
+        self.error = msg['error']   
+        self.suberror = msg['suberror'] 
+        states = ['FCPM off', 'Starting', 'Running', 'Stopping', 'Go to sleep']
+        self.state_str = '?'
+        if self.state < len(states):
+            self.state_str = states[self.state]
+
+
 class MotorList(object):
     def __init__(self):
         self.mot = []
@@ -219,6 +236,10 @@ class RotWingFrame(wx.Frame):
 
         if msg.name == "IMU_HEATER":
             self.imu_heater = IMUHEATERMessage(msg)
+            wx.CallAfter(self.update)
+        
+        if msg.name == "FUELCELL":
+            self.fuelcell = FUELCELLMessage(msg)
             wx.CallAfter(self.update)
 
     def update(self):
@@ -370,6 +391,16 @@ class RotWingFrame(wx.Frame):
                 else:
                     dc.SetTextForeground(wx.Colour(255, 0, 0))
                     dc.DrawText("Meas IMU temp: " + str(round(imu_temp, 0)), 10, 150)
+
+        if hasattr(self, 'fuelcell'):
+            dc.SetBrush(wx.Brush(wx.Colour(200,200,100))) 
+            dc.DrawRectangle(int(0.74*w), int(5),int(0.24*w), int(0.20*h))
+            dc.DrawText("Fuelcell: " + self.fuelcell.pressure + "%", int(0.74*w+5), 10)
+            dc.DrawText("Output: " + self.fuelcell.power_out + "Watt", int(0.74*w+5), 30)
+            dc.DrawText("SPM: " + self.fuelcell.power_cell + "Watt", int(0.74*w+5), 50)
+            dc.DrawText("Battery: " + self.fuelcell.power_batt + "Watt", int(0.74*w+5), 70)
+
+
 
         # Motors
         w1 = 0.03
