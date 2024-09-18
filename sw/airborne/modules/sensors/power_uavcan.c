@@ -194,6 +194,18 @@ static void power_uavcan_circuit_cb(struct uavcan_iface_t *iface __attribute__((
   uint8_t error_flags = 0;
   canardDecodeScalar(transfer, (uint32_t)48, 8, false, (void *)&error_flags);
 
+
+/*
+TODO: freek
+    <message name="POWER_DEVICE" id="19">
+      <field name="node_id" type="uint8"/>
+      <field name="circuit" type="uint8"/>
+      <field name="current" type="float"/>
+      <field name="voltage" type="float"/>
+    </message>
+
+*/
+
   // Search for the circuit or free spot
   uint8_t circuit_idx = POWER_UAVCAN_CIRCUITS_MAX;
   for (uint8_t i = 0; i < POWER_UAVCAN_CIRCUITS_MAX; i++) {
