@@ -199,6 +199,18 @@ void rotwing_state_periodic(void)
   float meas_airspeed = stateGetAirspeed_f();
   float meas_skew_angle = rotwing_state.meas_skew_angle_deg;
   Bound(meas_skew_angle, 0, 90); // Bound to prevent errors
+  
+  if(meas_skew_angle < 15.0){
+    QUAD_IS_ON = true;
+    FWD_IS_ON  = false;
+  } else if (meas_skew_angle > ROTWING_FW_SKEW_ANGLE) {
+    QUAD_IS_ON = false;
+    FWD_IS_ON  = true;
+  } else { 
+    QUAD_IS_ON = false;
+    FWD_IS_ON  = false;
+  }
+  
   if(meas_airspeed > rotwing_state.fw_min_airspeed) {
     last_stall_time = current_time;
   }

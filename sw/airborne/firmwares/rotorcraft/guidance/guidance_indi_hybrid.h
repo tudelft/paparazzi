@@ -114,4 +114,7 @@ extern float guidance_indi_min_pitch;
 extern bool force_forward;       ///< forward flight for hybrid nav
 extern bool guidance_indi_airspeed_filtering;
 
+extern bool QUAD_IS_ON;
+extern bool FWD_IS_ON;
+extern bool weather_vaning;
 #endif /* GUIDANCE_INDI_HYBRID_H */

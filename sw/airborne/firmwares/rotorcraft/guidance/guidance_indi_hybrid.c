@@ -199,6 +199,10 @@ static void guidance_indi_filter_thrust(void);
 #define GUIDANCE_INDI_MAX_LAT_ACCEL 9.81
 #endif
 
+bool QUAD_IS_ON = false;
+bool FWD_IS_ON = false; 
+bool weather_vaning = false;
+float weather_vaning_dyn = 1.0;
 float inv_eff[4];
 
 // Max bank angle in radians
@@ -534,6 +538,9 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   omega -= accely_filt.o[0]*FWD_SIDESLIP_GAIN;
 #endif
 
+  if ((QUAD_IS_ON) && (weather_vaning) && (guidance_h.mode != GUIDANCE_H_MODE_NONE)){
+    omega = 0;
+  }
   // We can pre-compute the required rates to achieve this turn rate:
   // NOTE: there *should* not be any problems possible with Euler singularities here
   struct FloatEulers *euler_zyx = stateGetNedToBodyEulers_f();
@@ -551,8 +558,15 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
     guidance_euler_cmd.psi = heading_sp;
   }
   else {
-    // heading is free and controlled by guidance
-    guidance_indi_hybrid_heading_sp += omega / PERIODIC_FREQUENCY;
+    if ((QUAD_IS_ON) && (weather_vaning) && (guidance_h.mode != GUIDANCE_H_MODE_NONE)){
+      // heading is free and controlled by guidance to weather vane and damp yaw rates
+      float dis_dyn = 1.0-exp(- weather_vaning_dyn / PERIODIC_FREQUENCY );
+      guidance_indi_hybrid_heading_sp += dis_dyn * (eulers_zxy.psi - guidance_indi_hybrid_heading_sp);
+    } else {
+      // heading is free and controlled by guidance to do coordinated turns
+      guidance_indi_hybrid_heading_sp += omega / PERIODIC_FREQUENCY;
+    }
+
     FLOAT_ANGLE_NORMALIZE(guidance_indi_hybrid_heading_sp);
     // limit heading setpoint to be within bounds of current heading
 #ifdef STABILIZATION_ATTITUDE_SP_PSI_DELTA_LIMIT
