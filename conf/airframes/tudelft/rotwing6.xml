@@ -66,6 +66,7 @@
             <define name="PREFLIGHT_CHECK_BYPASS" value="TRUE"/>
             <define name="USE_SONAR"              value="1"/> <!-- Because uavcan can't handle simulation yet -->
 
+
             <!-- MAVLink simulation -->
             <module name="mavlink">
                 <define name="MAV_AUTOPILOT_ID" value="MAV_AUTOPILOT_ARDUPILOTMEGA"/>
@@ -159,6 +160,10 @@
         </module>
         <module name="agl_dist"/>
         <module name="approach_moving_target"/>
+
+        <!-- Forward FuelCell data back to the GCS -->
+        <module name="can_fuelcell"/>
+
     </firmware>
 
 
