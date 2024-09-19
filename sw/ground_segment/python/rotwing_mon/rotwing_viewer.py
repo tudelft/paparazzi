@@ -541,7 +541,7 @@ class RotWingFrame(wx.Frame):
             dc.DrawText("FuelCell state: ["+str(self.fuelcell.state)+"] " + self.fuelcell.state_str, int(0.75*w+5), int(0.5*line))
             dc.DrawText("Cylinder press: " + self.fuelcell.pressure + "%  Reg="+str(self.fuelcell.press_reg)+"Bar", int(0.75*w+5), int(1.5*line))
             dc.DrawText("Output: " + str(self.fuelcell.power_out) + " Watt", int(0.75*w+5), int(2.5*line))
-            dc.DrawText("SPM: " + str(self.fuelcell.power_cell) + " Watt", int(0.75*w+5), int(3.5*line))
+            dc.DrawText("SPM: " + str(self.fuelcell.power_cell) + " Watt, p=" + str(round(float(self.fuelcell.pressure)*3.630,1)) + " Bar", int(0.75*w+5), int(3.5*line))
             dc.DrawText("Battery: " + str(self.fuelcell.power_batt) + " Watt, " + str(self.fuelcell.volt_bat) + " Volt", int(0.75*w+5), int(4.5*line))
             dc.DrawText("Error: ["+str(self.fuelcell.error)+"] " + self.fuelcell.error_str, int(0.75*w+5), int(5.5*line))
             dc.DrawText("Sub-error: ["+str(self.fuelcell.suberror)+"] " + self.fuelcell.suberror_str, int(0.75*w+5), int(6.5*line))
