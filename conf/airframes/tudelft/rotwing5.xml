@@ -37,7 +37,7 @@
             <!-- Sensors connected to supercan -->
             <module name="range_sensor_uavcan"/>
             <module name="power_uavcan">
-                <define name="POWER_UAVCAN_BATTERY_CIRCUITS" value="{{14,0},{6,10}}"/>
+                <define name="POWER_UAVCAN_BATTERY_CIRCUITS" value="{{14,0},{6,0}}"/>
             </module>
 
             <!-- MAVLink Genius communication -->
