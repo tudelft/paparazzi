@@ -89,7 +89,7 @@ static void fuelcell_uavcan_cb(struct uavcan_iface_t *iface __attribute__((unuse
   canardDecodeScalar(transfer, bit_ofs, 8, false, &can_fuelcell_data.suberror);
   bit_ofs += 8;
 
-  can_fuelcell_data.timeout = 0;
+  can_fuelcell_data.timeout = 10;
 
 }
 #endif
