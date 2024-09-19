@@ -85,6 +85,7 @@ extern float rotation_angle_setpoint_deg;
 extern int16_t rotation_cmd;
 
 extern float eff_sched_pusher_time;
+extern float roll_eff_slider;
 
 extern void eff_scheduling_rotwing_init(void);
 extern void eff_scheduling_rotwing_periodic(void);
