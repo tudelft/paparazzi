@@ -192,8 +192,8 @@ class PowerList(object):
 
 class POWERDEVICEMessage(object):
     def __init__(self, msg):
-        self.node_id = msg['node_id']
-        self.circuit = msg['circuit']
+        self.node_id = int(msg['node_id'])
+        self.circuit = int(msg['circuit'])
         self.current = float(msg['current'])
         self.voltage = float(msg['voltage'])
 
@@ -291,7 +291,7 @@ class FUELCELLMessage(object):
             self.suberror_str = 'Unknown suberror'
 
 class PowerList(object):
-    def _init_(self):
+    def __init__(self):
         self.power = []
 
     def fill_from_power_msg(self, power):
@@ -305,21 +305,21 @@ class PowerList(object):
             self.power.append(power)
 
     def get_frontbat(self):
-        for p in self.power:
-            if p.node_id == 14 and p.circuit == 0:
-                return p
+        for i in range(len(self.power)):
+            if self.power[i].node_id == 14 and self.power[i].circuit == 0:
+                return self.power[i]
         return None
 
     def get_backbat(self):
-        for p in self.power:
-            if p.node_id == 6 and p.circuit == 0:
-                return p
+        for i in range(len(self.power)):
+            if self.power[i].node_id == 6 and self.power[i].circuit == 0:
+                return self.power[i]
         return None
     
     def get_backmot(self):
-        for p in self.power:
-            if p.node_id == 6 and p.circuit == 1:
-                return p
+        for i in range(len(self.power)):
+            if self.power[i].node_id == 6 and self.power[i].circuit == 1:
+                return self.power[i]
         return None
 
 class MotorList(object):
@@ -527,11 +527,11 @@ class RotWingFrame(wx.Frame):
                     dc.DrawText("Meas IMU temp: " + str(round(imu_temp, 0)), 10, int(7.5*line))
 
             if self.powers.get_backbat() != None:
-                dc.DrawText("Back Bat: " + str(round(self.powers.get_backbat().voltage, 1)) + "V, " + str(round(self.powers.get_backbat().current, 1)) + "A", 10, int(8.5*line))
+                dc.DrawText("Back Bat: " + str(round(self.powers.get_backbat().current*self.powers.get_backbat().voltage, 1)) + "W (" + str(round(self.powers.get_backbat().voltage, 1)) + "V, " + str(round(self.powers.get_backbat().current, 1)) + "A)", 10, int(8.5*line))
             if self.powers.get_frontbat() != None:
-                dc.DrawText("Front Bat: " + str(round(self.powers.get_frontbat().voltage, 1)) + "V, " + str(round(self.powers.get_frontbat().current, 1)) + "A", 10, int(9.5*line))
+                dc.DrawText("Front Bat: " + str(round(self.powers.get_frontbat().current*self.powers.get_frontbat().voltage, 1)) + "W (" + str(round(self.powers.get_frontbat().voltage, 1)) + "V, " + str(round(self.powers.get_frontbat().current, 1)) + "A)", 10, int(9.5*line))
             if self.powers.get_backmot() != None:
-                dc.DrawText("Back Mot: " + str(round(self.powers.get_backmot().voltage, 1)) + "V, " + str(round(self.powers.get_backmot().current, 1)) + "A", 10, int(10.5*line))
+                dc.DrawText("Back Mot: " + str(round(self.powers.get_backmot().current*self.powers.get_backmot().voltage, 1)) + "W (" + str(round(self.powers.get_backmot().voltage, 1)) + "V, " + str(round(self.powers.get_backmot().current, 1)) + "A)", 10, int(10.5*line))
 
         if hasattr(self, 'fuelcell'):
             dc.SetBrush(wx.Brush(wx.Colour(200,200,200)))
@@ -557,10 +557,10 @@ class RotWingFrame(wx.Frame):
         mw = 0.1
         mh = 0.2
 
-        mm = [(0.5-0.5*mw-0.05,w1), (0.5+dw-0.05+0.1,w2), (0.5-0.5*mw-0.05,w3), (0.5-dw-mw-0.05-0.1,w2), # hover CAN1: front right back left
+        mm = [(0.5-0.5*mw-0.05,w1), (0.5+dw+0.05+0.1,w2), (0.5-0.5*mw-0.05,w3), (0.5-dw-mw+0.05-0.1,w2), # hover CAN1: front right back left
             (0.5-0.5*mw-0.05,w4), # pusher CAN1
             (0.5-dw-mw-0.05,w4+0.05), (0.5+dw-0.05,w4+0.05), # tail CAN1
-            (0.5-0.5*mw+0.05,w1), (0.5+dw+0.05+0.1,w2), (0.5-0.5*mw+0.05,w3), (0.5-dw-mw+0.05-0.1,w2), # hover CAN2
+            (0.5-0.5*mw+0.05,w1), (0.5+dw-0.05+0.1,w2), (0.5-0.5*mw+0.05,w3), (0.5-dw-mw-0.05-0.1,w2), # hover CAN2
             (0.5-0.5*mw+0.05,w4), # pusher CAN2
             (0.5-dw-mw+0.05,w4+0.05), (0.5+dw+0.05,w4+0.05), # Tail CAN2
             (0.0, 0.75), (0.1, 0.75), (0.2, 0.75), (0.3, 0.75), (0.4, 0.75), # extra
@@ -637,7 +637,7 @@ class RotWingFrame(wx.Frame):
         #self.SetIcon(ico)
 
         self.motors = MotorList()
-        self.power = PowerList()
+        self.powers = PowerList()
      
         self.interface = IvyMessagesInterface("rotwingframe")
         self.interface.subscribe(self.message_recv)
