@@ -37,7 +37,7 @@
 
 /* Fuel-Cell */
 struct uavcan_equipment_fuelcell {
-  bool can_fuelcell_has_new_data;
+  int timeout;
 
   uint8_t pressure;
   float press_reg;
@@ -49,7 +49,7 @@ struct uavcan_equipment_fuelcell {
   uint8_t error;
   uint8_t suberror;
 };
-static struct uavcan_equipment_fuelcell can_fuelcell_data = {false, 67, 0.78, 45.9, 1457.0, 1234.0, -223.0, 2, 12, 7};
+static struct uavcan_equipment_fuelcell can_fuelcell_data = { 0, 67, 0.78, 45.9, 1457.0, 1234.0, -223.0, 2, 12, 7};
 
 #if !(USE_NPS)
 
@@ -89,7 +89,7 @@ static void fuelcell_uavcan_cb(struct uavcan_iface_t *iface __attribute__((unuse
   canardDecodeScalar(transfer, bit_ofs, 8, false, &can_fuelcell_data.suberror);
   bit_ofs += 8;
 
-  can_fuelcell_data.can_fuelcell_has_new_data = true;
+  can_fuelcell_data.timeout = 0;
 
 }
 #endif
@@ -99,22 +99,29 @@ extern void can_fuelcell_periodic(void)
 {
 #if USE_NPS
     // Simulate data
-    can_fuelcell_data.can_fuelcell_has_new_data = true;
+    can_fuelcell_data.timeout = 10;
 #endif
+  if (can_fuelcell_data.timeout > 0) {
+    can_fuelcell_data.timeout--;
+  }
 }
 
 
-/* Event function to read UART message and forward to downlink */
-void can_fuelcell_event(void) {
 
-  if (can_fuelcell_data.can_fuelcell_has_new_data) {
+#if PERIODIC_TELEMETRY
+#include "modules/datalink/telemetry.h"
+
+static void can_fuelcell_send_telemetry(struct transport_tx *trans, struct link_device *dev)
+{
+  if (can_fuelcell_data.timeout > 0) {
     // Forward
-    can_fuelcell_data.can_fuelcell_has_new_data = false;
-    DOWNLINK_SEND_FUELCELL(DefaultChannel, DefaultDevice, &can_fuelcell_data.pressure, &can_fuelcell_data.press_reg,
+    pprz_msg_send_FUELCELL(trans, dev, AC_ID, &can_fuelcell_data.pressure, &can_fuelcell_data.press_reg,
       &can_fuelcell_data.volt_bat, &can_fuelcell_data.power_out, &can_fuelcell_data.power_cell,
       &can_fuelcell_data.power_batt, &can_fuelcell_data.state, &can_fuelcell_data.error, &can_fuelcell_data.suberror);
   }
 }
+#endif /* PERIODIC_TELEMETRY */
+
 
 
 void can_fuelcell_init(void)
@@ -124,6 +131,13 @@ void can_fuelcell_init(void)
     // Bind uavcan BATTERYINFO message from EQUIPMENT.POWER
   uavcan_bind(UAVCAN_EQUIPMENT_FUELCELL_STATUS_ID, UAVCAN_EQUIPMENT_FUELCELL_STATUS_SIGNATURE, &fuelcell_uavcan_ev,
               &fuelcell_uavcan_cb);
-
 #endif
+
+
+  // Configure telemetry
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FUELCELL, can_fuelcell_send_telemetry);
+#endif
+
+
 }

@@ -30,7 +30,6 @@
 #include "std.h"
 
 extern void can_fuelcell_init(void);
-extern void can_fuelcell_event(void);
-extern void can_fuelcell_periodic(void);
+extern void can_fuelcell_periodic(void); // for simulation
 
 #endif

@@ -9,7 +9,6 @@
   </header>
   <init fun="can_fuelcell_init()"/>
   <periodic fun="can_fuelcell_periodic()" freq="1." autorun="TRUE"/>
-  <event fun="can_fuelcell_event()"/>
   <makefile>
     <!-- Sources -->
     <file name="can_fuelcell.c"/>
