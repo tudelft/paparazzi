@@ -177,6 +177,28 @@ class IMUHEATERMessage(object):
     def __init__(self, msg):
         self.meas_temp = msg['meas_temp']
 
+#    <message name="POWER_DEVICE" id="19">
+#      <field name="node_id" type="uint8"/>
+#      <field name="circuit" type="uint8"/>
+#      <field name="current" type="float"/>
+#      <field name="voltage" type="float"/>
+#    </message>
+
+
+class PowerList(object):
+    def __init__(self):
+        self.power = {}
+    
+
+class POWERDEVICEMessage(object):
+    def __init__(self, msg):
+        self.node_id = msg['node_id']
+        self.circuit = msg['circuit']
+        self.current = float(msg['current'])
+        self.voltage = float(msg['voltage'])
+
+
+
 class FUELCELLMessage(object):
     def __init__(self, msg):
         self.pressure = msg['pressure']
@@ -268,7 +290,37 @@ class FUELCELLMessage(object):
         else:
             self.suberror_str = 'Unknown suberror'
 
+class PowerList(object):
+    def _init_(self):
+        self.power = []
 
+    def fill_from_power_msg(self, power):
+        added = False
+        for i in range(len(self.power)):
+            if self.power[i].node_id == power.node_id and self.power[i].circuit == power.circuit:
+                self.power[i] = power
+                added = True
+                break
+        if not added:
+            self.power.append(power)
+
+    def get_frontbat(self):
+        for p in self.power:
+            if p.node_id == 14 and p.circuit == 0:
+                return p
+        return None
+
+    def get_backbat(self):
+        for p in self.power:
+            if p.node_id == 6 and p.circuit == 0:
+                return p
+        return None
+    
+    def get_backmot(self):
+        for p in self.power:
+            if p.node_id == 6 and p.circuit == 1:
+                return p
+        return None
 
 class MotorList(object):
     def __init__(self):
@@ -316,6 +368,11 @@ class RotWingFrame(wx.Frame):
         
         if msg.name == "FUELCELL":
             self.fuelcell = FUELCELLMessage(msg)
+            wx.CallAfter(self.update)
+
+        if msg.name == "POWER_DEVICE":
+            self.powermessage = POWERDEVICEMessage(msg)
+            self.powers.fill_from_power_msg(self.powermessage)
             wx.CallAfter(self.update)
 
     def update(self):
@@ -469,6 +526,13 @@ class RotWingFrame(wx.Frame):
                     dc.SetTextForeground(wx.Colour(255, 0, 0))
                     dc.DrawText("Meas IMU temp: " + str(round(imu_temp, 0)), 10, int(7.5*line))
 
+            if self.powers.get_backbat() != None:
+                dc.DrawText("Back Bat: " + str(round(self.powers.get_backbat().voltage, 1)) + "V, " + str(round(self.powers.get_backbat().current, 1)) + "A", 10, int(8.5*line))
+            if self.powers.get_frontbat() != None:
+                dc.DrawText("Front Bat: " + str(round(self.powers.get_frontbat().voltage, 1)) + "V, " + str(round(self.powers.get_frontbat().current, 1)) + "A", 10, int(9.5*line))
+            if self.powers.get_backmot() != None:
+                dc.DrawText("Back Mot: " + str(round(self.powers.get_backmot().voltage, 1)) + "V, " + str(round(self.powers.get_backmot().current, 1)) + "A", 10, int(10.5*line))
+
         if hasattr(self, 'fuelcell'):
             dc.SetBrush(wx.Brush(wx.Colour(200,200,200)))
             line = int(20.0 / 800.0 * h)
@@ -573,6 +637,7 @@ class RotWingFrame(wx.Frame):
         #self.SetIcon(ico)
 
         self.motors = MotorList()
+        self.power = PowerList()
      
         self.interface = IvyMessagesInterface("rotwingframe")
         self.interface.subscribe(self.message_recv)
