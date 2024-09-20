@@ -15,7 +15,22 @@
     <waypoint lat="38.4710995" lon="-8.8649587" name="1-3_soft"/>
     <waypoint lat="38.4676940" lon="-8.8708800" name="1-4_soft"/>
     <waypoint lat="38.4767258" lon="-8.8799233" name="1-5_soft"/>
-    <!-- <waypoint lat="38.468493" lon="-8.886115" name="2-1_soft"/>
+    <waypoint lat="38.486388" lon="-8.868333" name="sado_e_1"/>
+    <waypoint lat="38.511111" lon="-8.84444" name="sado_e_2"/>
+    <waypoint lat="38.485" lon="-8.834166" name="sado_e_3"/>
+    <waypoint lat="38.47305555" lon="-8.83027777" name="sado_e_4"/>
+    <waypoint lat="38.47305555" lon="-8.85555555" name="sado_e_5"/>
+    <waypoint lat="38.4863888" lon="-8.8683333" name="sado_e_6"/>
+    <!-- <waypoint lat="38.468493" lon="-8.886115" name="2-1_soft"
+    
+    38.4863888888889	-8.86833333333333
+38.5111111111111	-8.84444444444445
+38.485	-8.83416666666667
+38.4730555555556	-8.83027777777778
+38.4730555555556	-8.85555555555556
+38.4863888888889	-8.86833333333333
+
+    />
     <waypoint lat="38.467498" lon="-8.884860" name="2-2_soft"/>
     <waypoint lat="38.475621" lon="-8.874463" name="2-4_soft"/>
     <waypoint lat="38.468610" lon="-8.877984" name="2-3_soft"/> -->
@@ -96,16 +111,14 @@
       <corner name="6-13"/>
       <corner name="6-14"/>
     </sector>
-    <!-- <sector color="red" name="A2">
-      <corner name="3-1"/>
-      <corner name="3-2"/>
-      <corner name="3-3"/>
-      <corner name="3-4"/>
-      <corner name="3-5"/>
-      <corner name="3-6"/>
-      <corner name="3-7"/>
-      <corner name="3-8"/>
-    </sector>
+    <sector color="blue" name="SADO_EAST">
+      <corner name="sado_e_1"/>
+      <corner name="sado_e_2"/>
+      <corner name="sado_e_3"/>
+      <corner name="sado_e_4"/>
+      <corner name="sado_e_5"/>
+      <corner name="sado_e_6"/>
+    </sector><!-- 
     <sector color="orange" name="A2_soft">
       <corner name="3-1_soft"/>
       <corner name="3-2_soft"/>
