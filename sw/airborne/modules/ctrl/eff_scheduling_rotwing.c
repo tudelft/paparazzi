@@ -18,12 +18,12 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-/** @file "modules/ctrl/eff_scheduling_rot_wing.c"
+/** @file "modules/ctrl/eff_scheduling_rotwing.c"
  * @author Dennis van Wijngaarden <D.C.vanWijngaarden@tudelft.nl>
  * The control effectiveness scheduler for the rotating wing drone type
  */
 
-#include "modules/ctrl/eff_scheduling_rot_wing.h"
+#include "modules/ctrl/eff_scheduling_rotwing.h"
 
 #include "generated/airframe.h"
 #include "state.h"
@@ -36,133 +36,153 @@
 #include "modules/core/abi.h"
 
 #ifndef SERVO_ROTATION_MECH_IDX
-#error ctrl_eff_sched_rot_wing requires a servo named ROTATION_MECH_IDX
+#error ctrl_eff_sched_rotwing requires a servo named ROTATION_MECH_IDX
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_IXX_BODY
-#error "NO ROT_WING_EFF_SCHED_IXX_BODY defined"
+#ifndef ROTWING_EFF_SCHED_IXX_BODY
+#error "NO ROTWING_EFF_SCHED_IXX_BODY defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_IYY_BODY
-#error "NO ROT_WING_EFF_SCHED_IYY_BODY defined"
+#ifndef ROTWING_EFF_SCHED_IYY_BODY
+#error "NO ROTWING_EFF_SCHED_IYY_BODY defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_IZZ
-#error "NO ROT_WING_EFF_SCHED_IZZ defined"
+#ifndef ROTWING_EFF_SCHED_IZZ
+#error "NO ROTWING_EFF_SCHED_IZZ defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_IXX_WING
-#error "NO ROT_WING_EFF_SCHED_IXX_WING defined"
+#ifndef ROTWING_EFF_SCHED_IXX_WING
+#error "NO ROTWING_EFF_SCHED_IXX_WING defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_IYY_WING
-#error "NO ROT_WING_EFF_SCHED_IYY_WING defined"
+#ifndef ROTWING_EFF_SCHED_IYY_WING
+#error "NO ROTWING_EFF_SCHED_IYY_WING defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_M
-#error "NO ROT_WING_EFF_SCHED_M defined"
+#ifndef ROTWING_EFF_SCHED_M
+#error "NO ROTWING_EFF_SCHED_M defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_DM_DPPRZ_HOVER_PITCH
-#error "NO ROT_WING_EFF_SCHED_DM_DPPRZ_HOVER_PITCH defined"
+#ifndef ROTWING_EFF_SCHED_DM_DPPRZ_HOVER_PITCH
+#error "NO ROTWING_EFF_SCHED_DM_DPPRZ_HOVER_PITCH defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_DM_DPPRZ_HOVER_ROLL
-#error "NO ROT_WING_EFF_SCHED_DM_DPPRZ_HOVER_ROLL defined"
+#ifndef ROTWING_EFF_SCHED_DM_DPPRZ_HOVER_ROLL
+#error "NO ROTWING_EFF_SCHED_DM_DPPRZ_HOVER_ROLL defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_HOVER_ROLL_PITCH_COEF
-#error "NO ROT_WING_EFF_SCHED_HOVER_ROLL_PITCH_COEF defined"
+#ifndef ROTWING_EFF_SCHED_HOVER_ROLL_PITCH_COEF
+#error "NO ROTWING_EFF_SCHED_HOVER_ROLL_PITCH_COEF defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_HOVER_ROLL_ROLL_COEF
-#error "NO ROT_WING_EFF_SCHED_HOVER_ROLL_ROLL_COEF defined"
+#ifndef ROTWING_EFF_SCHED_HOVER_ROLL_ROLL_COEF
+#error "NO ROTWING_EFF_SCHED_HOVER_ROLL_ROLL_COEF defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_K_ELEVATOR
-#error "NO ROT_WING_EFF_SCHED_K_ELEVATOR defined"
+#ifndef ROTWING_EFF_SCHED_K_ELEVATOR
+#error "NO ROTWING_EFF_SCHED_K_ELEVATOR defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_K_RUDDER
-#error "NO ROT_WING_EFF_SCHED_K_RUDDER defined"
+#ifndef ROTWING_EFF_SCHED_K_RUDDER
+#error "NO ROTWING_EFF_SCHED_K_RUDDER defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_K_AILERON
-#error "NO ROT_WING_EFF_SCHED_K_AILERON defined"
+#ifndef ROTWING_EFF_SCHED_K_AILERON
+#error "NO ROTWING_EFF_SCHED_K_AILERON defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_K_FLAPERON
-#error "NO ROT_WING_EFF_SCHED_K_FLAPERON defined"
+#ifndef ROTWING_EFF_SCHED_K_FLAPERON
+#error "NO ROTWING_EFF_SCHED_K_FLAPERON defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_K_PUSHER
-#error "NO ROT_WING_EFF_SCHED_K_PUSHER defined"
+#ifndef ROTWING_EFF_SCHED_K_PUSHER
+#error "NO ROTWING_EFF_SCHED_K_PUSHER defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_K_ELEVATOR_DEFLECTION
-#error "NO ROT_WING_EFF_SCHED_K_ELEVATOR_DEFLECTION defined"
+#ifndef ROTWING_EFF_SCHED_K_ELEVATOR_DEFLECTION
+#error "NO ROTWING_EFF_SCHED_K_ELEVATOR_DEFLECTION defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_D_RUDDER_D_PPRZ
-#error "NO ROT_WING_EFF_SCHED_D_RUDDER_D_PPRZ defined"
+#ifndef ROTWING_EFF_SCHED_D_RUDDER_D_PPRZ
+#error "NO ROTWING_EFF_SCHED_D_RUDDER_D_PPRZ defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_K_RPM_PPRZ_PUSHER
-#error "NO ROT_WING_EFF_SCHED_K_RPM_PPRZ_PUSHER defined"
+#ifndef ROTWING_EFF_SCHED_K_RPM_PPRZ_PUSHER
+#error "NO ROTWING_EFF_SCHED_K_RPM_PPRZ_PUSHER defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_K_LIFT_WING
-#error "NO ROT_WING_EFF_SCHED_K_LIFT_WING defined"
+#ifndef ROTWING_EFF_SCHED_K_LIFT_WING
+#error "NO ROTWING_EFF_SCHED_K_LIFT_WING defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_K_LIFT_FUSELAGE
-#error "NO ROT_WING_EFF_SCHED_K_LIFT_FUSELAGE defined"
+#ifndef ROTWING_EFF_SCHED_K_LIFT_FUSELAGE
+#error "NO ROTWING_EFF_SCHED_K_LIFT_FUSELAGE defined"
 #endif
 
-#ifndef ROT_WING_EFF_SCHED_K_LIFT_TAIL
-#error "NO ROT_WING_EFF_SCHED_K_LIFT_TAIL defined"
+#ifndef ROTWING_EFF_SCHED_K_LIFT_TAIL
+#error "NO ROTWING_EFF_SCHED_K_LIFT_TAIL defined"
 #endif
 
-struct rot_wing_eff_sched_param_t eff_sched_p = {
-  .Ixx_body                 = ROT_WING_EFF_SCHED_IXX_BODY,
-  .Iyy_body                 = ROT_WING_EFF_SCHED_IYY_BODY,
-  .Izz                      = ROT_WING_EFF_SCHED_IZZ,
-  .Ixx_wing                 = ROT_WING_EFF_SCHED_IXX_WING,
-  .Iyy_wing                 = ROT_WING_EFF_SCHED_IYY_WING,
-  .m                        = ROT_WING_EFF_SCHED_M,
-  .DMdpprz_hover_roll       = ROT_WING_EFF_SCHED_DM_DPPRZ_HOVER_ROLL,
-  .hover_roll_pitch_coef    = ROT_WING_EFF_SCHED_HOVER_ROLL_PITCH_COEF,
-  .hover_roll_roll_coef     = ROT_WING_EFF_SCHED_HOVER_ROLL_ROLL_COEF,
-  .k_elevator               = ROT_WING_EFF_SCHED_K_ELEVATOR,
-  .k_rudder                 = ROT_WING_EFF_SCHED_K_RUDDER,
-  .k_aileron                = ROT_WING_EFF_SCHED_K_AILERON,
-  .k_flaperon               = ROT_WING_EFF_SCHED_K_FLAPERON,
-  .k_pusher                 = ROT_WING_EFF_SCHED_K_PUSHER,
-  .k_elevator_deflection    = ROT_WING_EFF_SCHED_K_ELEVATOR_DEFLECTION,
-  .d_rudder_d_pprz          = ROT_WING_EFF_SCHED_D_RUDDER_D_PPRZ,
-  .k_rpm_pprz_pusher        = ROT_WING_EFF_SCHED_K_RPM_PPRZ_PUSHER,
-  .k_lift_wing              = ROT_WING_EFF_SCHED_K_LIFT_WING,
-  .k_lift_fuselage          = ROT_WING_EFF_SCHED_K_LIFT_FUSELAGE,
-  .k_lift_tail              = ROT_WING_EFF_SCHED_K_LIFT_TAIL
+struct rotwing_eff_sched_param_t eff_sched_p = {
+  .Ixx_body                 = ROTWING_EFF_SCHED_IXX_BODY,
+  .Iyy_body                 = ROTWING_EFF_SCHED_IYY_BODY,
+  .Izz                      = ROTWING_EFF_SCHED_IZZ,
+  .Ixx_wing                 = ROTWING_EFF_SCHED_IXX_WING,
+  .Iyy_wing                 = ROTWING_EFF_SCHED_IYY_WING,
+  .m                        = ROTWING_EFF_SCHED_M,
+  .DMdpprz_hover_pitch      = ROTWING_EFF_SCHED_DM_DPPRZ_HOVER_PITCH,
+  .DMdpprz_hover_roll       = ROTWING_EFF_SCHED_DM_DPPRZ_HOVER_ROLL,
+  .hover_roll_pitch_coef    = ROTWING_EFF_SCHED_HOVER_ROLL_PITCH_COEF,
+  .hover_roll_roll_coef     = ROTWING_EFF_SCHED_HOVER_ROLL_ROLL_COEF,
+  .k_elevator               = ROTWING_EFF_SCHED_K_ELEVATOR,
+  .k_rudder                 = ROTWING_EFF_SCHED_K_RUDDER,
+  .k_aileron                = ROTWING_EFF_SCHED_K_AILERON,
+  .k_flaperon               = ROTWING_EFF_SCHED_K_FLAPERON,
+  .k_pusher                 = ROTWING_EFF_SCHED_K_PUSHER,
+  .k_elevator_deflection    = ROTWING_EFF_SCHED_K_ELEVATOR_DEFLECTION,
+  .d_rudder_d_pprz          = ROTWING_EFF_SCHED_D_RUDDER_D_PPRZ,
+  .k_rpm_pprz_pusher        = ROTWING_EFF_SCHED_K_RPM_PPRZ_PUSHER,
+  .k_lift_wing              = ROTWING_EFF_SCHED_K_LIFT_WING,
+  .k_lift_fuselage          = ROTWING_EFF_SCHED_K_LIFT_FUSELAGE,
+  .k_lift_tail              = ROTWING_EFF_SCHED_K_LIFT_TAIL
 };
+
+int32_t rw_flap_offset = 0;
+
+// for negative values, still should be low_lim < up_lim
+inline float bound_or_zero(float value, float low_lim, float up_lim) {
+  float output = value;
+  if (low_lim > 0.f) {
+    if (value < low_lim) {
+      output = 0.f;
+    } else if (value > up_lim) {
+      output = up_lim;
+    }
+  } else {
+    if (value > up_lim) {
+      output = 0.f;
+    } else if (value < low_lim) {
+      output = low_lim;
+    }
+  }
+  return output;
+}
 
 float eff_sched_pusher_time = 0.002;
 
-float roll_eff_scaling = 1.f;
+struct rotwing_eff_sched_var_t eff_sched_var;
 
-struct rot_wing_eff_sched_var_t eff_sched_var;
-
-inline void eff_scheduling_rot_wing_update_wing_angle(void);
-inline void eff_scheduling_rot_wing_update_MMOI(void);
-inline void eff_scheduling_rot_wing_update_cmd(void);
-inline void eff_scheduling_rot_wing_update_airspeed(void);
-inline void eff_scheduling_rot_wing_update_hover_motor_effectiveness(void);
-inline void eff_scheduling_rot_wing_update_elevator_effectiveness(void);
-inline void eff_scheduling_rot_wing_update_rudder_effectiveness(void);
-inline void eff_scheduling_rot_wing_update_aileron_effectiveness(void);
-inline void eff_scheduling_rot_wing_update_flaperon_effectiveness(void);
-inline void eff_scheduling_rot_wing_update_pusher_effectiveness(void);
-inline void eff_scheduling_rot_wing_schedule_liftd(void);
+inline void eff_scheduling_rotwing_update_wing_angle(void);
+inline void eff_scheduling_rotwing_update_MMOI(void);
+inline void eff_scheduling_rotwing_update_cmd(void);
+inline void eff_scheduling_rotwing_update_airspeed(void);
+inline void eff_scheduling_rotwing_update_hover_motor_effectiveness(void);
+inline void eff_scheduling_rotwing_update_elevator_effectiveness(void);
+inline void eff_scheduling_rotwing_update_rudder_effectiveness(void);
+inline void eff_scheduling_rotwing_update_aileron_effectiveness(void);
+inline void eff_scheduling_rotwing_update_flaperon_effectiveness(void);
+inline void eff_scheduling_rotwing_update_pusher_effectiveness(void);
+inline void eff_scheduling_rotwing_schedule_liftd(void);
 
 inline float guidance_indi_get_liftd(float pitch UNUSED, float theta UNUSED);
 void stabilization_indi_set_wls_settings(void);
@@ -170,10 +190,10 @@ void stabilization_indi_set_wls_settings(void);
 
 /** ABI binding wing position data.
  */
-#ifndef WING_ROTATION_CAN_ROT_WING_ID
-#define WING_ROTATION_CAN_ROT_WING_ID ABI_BROADCAST
+#ifndef WING_ROTATION_CAN_ROTWING_ID
+#define WING_ROTATION_CAN_ROTWING_ID ABI_BROADCAST
 #endif
-PRINT_CONFIG_VAR(WING_ROTATION_CAN_ROT_WING_ID)
+PRINT_CONFIG_VAR(WING_ROTATION_CAN_ROTWING_ID)
 static abi_event wing_position_ev;
 
 static void wing_position_cb(uint8_t sender_id UNUSED, struct act_feedback_t *pos_msg, uint8_t num_act)
@@ -190,7 +210,7 @@ static void wing_position_cb(uint8_t sender_id UNUSED, struct act_feedback_t *po
   }
 }
 
-void eff_scheduling_rot_wing_init(void)
+void eff_scheduling_rotwing_init(void)
 {
   // Initialize variables to quad values
   eff_sched_var.Ixx               = eff_sched_p.Ixx_body + eff_sched_p.Ixx_wing;
@@ -204,8 +224,9 @@ void eff_scheduling_rot_wing_init(void)
   eff_sched_var.sinr3             = 0;
 
   // Set moment derivative variables
-  eff_sched_var.pitch_motor_dMdpprz = ROT_WING_EFF_SCHED_DM_DPPRZ_HOVER_PITCH;
-  eff_sched_var.roll_motor_dMdpprz  = (eff_sched_p.DMdpprz_hover_roll[0] + (MAX_PPRZ/2.) * eff_sched_p.DMdpprz_hover_roll[1]) / 10000.; // Dmdpprz hover roll for hover thrust
+  float hover_thrust = 6000;
+  eff_sched_var.pitch_motor_dMdpprz = (eff_sched_p.DMdpprz_hover_pitch[0] + 2*hover_thrust * eff_sched_p.DMdpprz_hover_pitch[1]) / 10000.; // Dmdpprz hover pitch for hover thrust
+  eff_sched_var.roll_motor_dMdpprz  = (eff_sched_p.DMdpprz_hover_roll[0] + 2*hover_thrust * eff_sched_p.DMdpprz_hover_roll[1]) / 10000.; // Dmdpprz hover roll for hover thrust
 
   eff_sched_var.cmd_elevator = 0;
   eff_sched_var.cmd_pusher = 0;
@@ -216,29 +237,29 @@ void eff_scheduling_rot_wing_init(void)
   eff_sched_var.airspeed2 = 0;
 
   // Get wing angle
-  AbiBindMsgACT_FEEDBACK(WING_ROTATION_CAN_ROT_WING_ID, &wing_position_ev, wing_position_cb);
+  AbiBindMsgACT_FEEDBACK(WING_ROTATION_CAN_ROTWING_ID, &wing_position_ev, wing_position_cb);
 }
 
-void eff_scheduling_rot_wing_periodic(void)
+void eff_scheduling_rotwing_periodic(void)
 {
   // your periodic code here.
   // freq = 10.0 Hz
-  eff_scheduling_rot_wing_update_wing_angle();
-  eff_scheduling_rot_wing_update_MMOI();
-  eff_scheduling_rot_wing_update_cmd();
-  eff_scheduling_rot_wing_update_airspeed();
+  eff_scheduling_rotwing_update_wing_angle();
+  eff_scheduling_rotwing_update_MMOI();
+  eff_scheduling_rotwing_update_cmd();
+  eff_scheduling_rotwing_update_airspeed();
 
   // Update the effectiveness values
-  eff_scheduling_rot_wing_update_hover_motor_effectiveness();
-  eff_scheduling_rot_wing_update_elevator_effectiveness();
-  eff_scheduling_rot_wing_update_rudder_effectiveness();
-  eff_scheduling_rot_wing_update_aileron_effectiveness();
-  eff_scheduling_rot_wing_update_flaperon_effectiveness();
-  eff_scheduling_rot_wing_update_pusher_effectiveness();
-  eff_scheduling_rot_wing_schedule_liftd();
+  eff_scheduling_rotwing_update_hover_motor_effectiveness();
+  eff_scheduling_rotwing_update_elevator_effectiveness();
+  eff_scheduling_rotwing_update_rudder_effectiveness();
+  eff_scheduling_rotwing_update_aileron_effectiveness();
+  eff_scheduling_rotwing_update_flaperon_effectiveness();
+  eff_scheduling_rotwing_update_pusher_effectiveness();
+  eff_scheduling_rotwing_schedule_liftd();
 }
 
-void eff_scheduling_rot_wing_update_wing_angle(void)
+void eff_scheduling_rotwing_update_wing_angle(void)
 {
   // Calculate sin and cosines of rotation
   eff_sched_var.wing_rotation_deg = eff_sched_var.wing_rotation_rad / M_PI * 180.;
@@ -253,7 +274,7 @@ void eff_scheduling_rot_wing_update_wing_angle(void)
 
 }
 
-void eff_scheduling_rot_wing_update_MMOI(void)
+void eff_scheduling_rotwing_update_MMOI(void)
 {
   eff_sched_var.Ixx = eff_sched_p.Ixx_body + eff_sched_var.cosr2 * eff_sched_p.Ixx_wing + eff_sched_var.sinr2 * eff_sched_p.Iyy_wing;
   eff_sched_var.Iyy = eff_sched_p.Iyy_body + eff_sched_var.sinr2 * eff_sched_p.Ixx_wing + eff_sched_var.cosr2 * eff_sched_p.Iyy_wing;
@@ -263,7 +284,7 @@ void eff_scheduling_rot_wing_update_MMOI(void)
   Bound(eff_sched_var.Iyy, 0.01, 100.);
 }
 
-void eff_scheduling_rot_wing_update_cmd(void)
+void eff_scheduling_rotwing_update_cmd(void)
 {
   // These indexes depend on the INDI sequence, not the actuator IDX
   eff_sched_var.cmd_elevator = actuator_state_filt_vect[5];
@@ -272,7 +293,7 @@ void eff_scheduling_rot_wing_update_cmd(void)
   eff_sched_var.cmd_T_mean_scaled = (actuator_state_filt_vect[0] + actuator_state_filt_vect[1] + actuator_state_filt_vect[2] + actuator_state_filt_vect[3]) / 4. * 0.000853229; // Scaled with 8181 / 9600 / 1000
 }
 
-void eff_scheduling_rot_wing_update_airspeed(void)
+void eff_scheduling_rotwing_update_airspeed(void)
 {
   eff_sched_var.airspeed = stateGetAirspeed_f();
   Bound(eff_sched_var.airspeed, 0. , 30.);
@@ -280,46 +301,47 @@ void eff_scheduling_rot_wing_update_airspeed(void)
   Bound(eff_sched_var.airspeed2, 0. , 900.);
 }
 
-void eff_scheduling_rot_wing_update_hover_motor_effectiveness(void)
+void eff_scheduling_rotwing_update_hover_motor_effectiveness(void)
 {
-  // Pitch motor effectiveness
+  float cmd_quat[4];
+  float dM_dpprz[4];
+  // Quadratic thrust (and therefore moment) model of the hover propellers
+  for (uint8_t i = 0; i < 4; i++) {
+    cmd_quat[i] = actuator_state_filt_vect[i];
+    Bound(cmd_quat[i], 2500, MAX_PPRZ);
 
-  float pitch_motor_q_eff = eff_sched_var.pitch_motor_dMdpprz / eff_sched_var.Iyy;
-
-  float cmd_right = actuator_state_filt_vect[1];
-  float cmd_left = actuator_state_filt_vect[3];
-  Bound(cmd_right, 3500, MAX_PPRZ);
-  Bound(cmd_left, 3500, MAX_PPRZ);
+    if(i==0 || i==2) { // pitch motors
+      dM_dpprz[i] = (eff_sched_p.DMdpprz_hover_pitch[0] + 2*cmd_quat[i] * eff_sched_p.DMdpprz_hover_pitch[1]) / 10000.;
+      // Bound dM_dpprz to half and 2 times the hover effectiveness
+      Bound(dM_dpprz[i], eff_sched_var.pitch_motor_dMdpprz * 0.5, eff_sched_var.pitch_motor_dMdpprz * 2.0);
+    } else { // roll motors
+      dM_dpprz[i] = (eff_sched_p.DMdpprz_hover_roll[0] + 2*cmd_quat[i] * eff_sched_p.DMdpprz_hover_roll[1]) / 10000.;
+      Bound(dM_dpprz[i], eff_sched_var.roll_motor_dMdpprz * 0.5, eff_sched_var.roll_motor_dMdpprz * 2.0);
+    }
+  }
 
   // Roll motor effectiveness
-  float dM_dpprz_right  = (eff_sched_p.DMdpprz_hover_roll[0] + cmd_right * eff_sched_p.DMdpprz_hover_roll[1]) / 10000.;
-  float dM_dpprz_left   = (eff_sched_p.DMdpprz_hover_roll[0] + cmd_left  * eff_sched_p.DMdpprz_hover_roll[1]) / 10000.;
-
-  dM_dpprz_right = dM_dpprz_right * roll_eff_scaling;
-  dM_dpprz_left = dM_dpprz_left * roll_eff_scaling;
-
-  // Bound dM_dpprz to half and 2 times the hover effectiveness
-  Bound(dM_dpprz_right, eff_sched_var.roll_motor_dMdpprz * 0.5, eff_sched_var.roll_motor_dMdpprz * 2.0);
-  Bound(dM_dpprz_left,  eff_sched_var.roll_motor_dMdpprz * 0.5, eff_sched_var.roll_motor_dMdpprz * 2.0);
+  float dM_dpprz_right  = dM_dpprz[1];
+  float dM_dpprz_left   = dM_dpprz[3];;
 
   float roll_motor_p_eff_right = -(dM_dpprz_right * eff_sched_var.cosr + eff_sched_p.hover_roll_roll_coef[0] * eff_sched_var.wing_rotation_rad * eff_sched_var.wing_rotation_rad * eff_sched_var.airspeed * eff_sched_var.cosr) / eff_sched_var.Ixx;
-  Bound(roll_motor_p_eff_right, -1, -0.00001);
+  roll_motor_p_eff_right = bound_or_zero(roll_motor_p_eff_right, -1.f, -0.00001f);
 
   float roll_motor_p_eff_left = (dM_dpprz_left * eff_sched_var.cosr + eff_sched_p.hover_roll_roll_coef[0] * eff_sched_var.wing_rotation_rad * eff_sched_var.wing_rotation_rad * eff_sched_var.airspeed * eff_sched_var.cosr) / eff_sched_var.Ixx;
   if(autopilot.in_flight) {
     float roll_motor_airspeed_compensation = eff_sched_p.hover_roll_roll_coef[1] * eff_sched_var.airspeed * eff_sched_var.cosr / eff_sched_var.Ixx;
     roll_motor_p_eff_left += roll_motor_airspeed_compensation;
   }
-  Bound(roll_motor_p_eff_left, 0.00001, 1);
+  roll_motor_p_eff_left = bound_or_zero(roll_motor_p_eff_left, 0.00001f, 1.f);
 
   float roll_motor_q_eff = (eff_sched_p.hover_roll_pitch_coef[0] * eff_sched_var.wing_rotation_rad + eff_sched_p.hover_roll_pitch_coef[1] * eff_sched_var.wing_rotation_rad * eff_sched_var.wing_rotation_rad * eff_sched_var.sinr) / eff_sched_var.Iyy;
   Bound(roll_motor_q_eff, 0, 1);
 
   // Update front pitch motor q effectiveness
-  g1g2[1][0] = pitch_motor_q_eff;   // pitch effectiveness front motor
+  g1g2[1][0] = dM_dpprz[0] / eff_sched_var.Iyy;   // pitch effectiveness front motor
 
   // Update back motor q effectiveness
-  g1g2[1][2] = -pitch_motor_q_eff;  // pitch effectiveness back motor
+  g1g2[1][2] = - dM_dpprz[2] / eff_sched_var.Iyy;  // pitch effectiveness back motor
 
   // Update right motor p and q effectiveness
   g1g2[0][1] = roll_motor_p_eff_right;   // roll effectiveness right motor (no airspeed compensation)
@@ -330,7 +352,7 @@ void eff_scheduling_rot_wing_update_hover_motor_effectiveness(void)
   g1g2[1][3] = -roll_motor_q_eff;   // pitch effectiveness left motor
 }
 
-void eff_scheduling_rot_wing_update_elevator_effectiveness(void)
+void eff_scheduling_rotwing_update_elevator_effectiveness(void)
 {
   float de = eff_sched_p.k_elevator_deflection[0] + eff_sched_p.k_elevator_deflection[1] * eff_sched_var.cmd_elevator;
 
@@ -352,7 +374,7 @@ void eff_scheduling_rot_wing_update_elevator_effectiveness(void)
   g1g2[1][5] = eff_y_elev;
 }
 
-void eff_scheduling_rot_wing_update_rudder_effectiveness(void)
+void eff_scheduling_rotwing_update_rudder_effectiveness(void)
 {
   float dMzdr = (eff_sched_p.k_rudder[0] * eff_sched_var.cmd_pusher_scaled * eff_sched_var.cmd_T_mean_scaled +
                  eff_sched_p.k_rudder[1] * eff_sched_var.cmd_T_mean_scaled * eff_sched_var.airspeed2 * eff_sched_var.cosr +
@@ -370,15 +392,20 @@ void eff_scheduling_rot_wing_update_rudder_effectiveness(void)
   g1g2[2][4] = eff_z_rudder;
 }
 
-void eff_scheduling_rot_wing_update_aileron_effectiveness(void)
+void eff_scheduling_rotwing_update_aileron_effectiveness(void)
 {
   float dMxdpprz = (eff_sched_p.k_aileron * eff_sched_var.airspeed2 * eff_sched_var.sinr3) / 1000000.;
   float eff_x_aileron = dMxdpprz / eff_sched_var.Ixx;
   Bound(eff_x_aileron, 0, 0.005)
   g1g2[0][6] = eff_x_aileron;
+
+  float dMydpprz = 4.0*(eff_sched_p.k_aileron * eff_sched_var.airspeed2 * eff_sched_var.sinr2 * eff_sched_var.cosr) / 1000000.;
+  float eff_y_aileron = dMydpprz / eff_sched_var.Iyy;
+  eff_y_aileron = bound_or_zero(eff_y_aileron, 0.00003f, 0.005f);
+  g1g2[1][6] = eff_y_aileron;
 }
 
-void eff_scheduling_rot_wing_update_flaperon_effectiveness(void)
+void eff_scheduling_rotwing_update_flaperon_effectiveness(void)
 {
   float dMxdpprz = (eff_sched_p.k_flaperon * eff_sched_var.airspeed2 * eff_sched_var.sinr3) / 1000000.;
   float eff_x_flap_aileron = dMxdpprz / eff_sched_var.Ixx;
@@ -386,7 +413,7 @@ void eff_scheduling_rot_wing_update_flaperon_effectiveness(void)
   g1g2[0][7] = eff_x_flap_aileron;
 }
 
-void eff_scheduling_rot_wing_update_pusher_effectiveness(void)
+void eff_scheduling_rotwing_update_pusher_effectiveness(void)
 {
   float rpmP = eff_sched_p.k_rpm_pprz_pusher[0] + eff_sched_p.k_rpm_pprz_pusher[1] * eff_sched_var.cmd_pusher + eff_sched_p.k_rpm_pprz_pusher[2] * eff_sched_var.cmd_pusher * eff_sched_var.cmd_pusher;
 
@@ -399,9 +426,9 @@ void eff_scheduling_rot_wing_update_pusher_effectiveness(void)
   g1g2[4][8] = eff_pusher;
 }
 
-float eff_scheduling_rot_wing_lift_d = 0.0f;
+float eff_scheduling_rotwing_lift_d = 0.0f;
 
-void eff_scheduling_rot_wing_schedule_liftd(void)
+void eff_scheduling_rotwing_schedule_liftd(void)
 {
   float lift_d_wing = (eff_sched_p.k_lift_wing[0] + eff_sched_p.k_lift_wing[1] * eff_sched_var.sinr2) * eff_sched_var.airspeed2 / eff_sched_p.m;
   float lift_d_fuselage = eff_sched_p.k_lift_fuselage * eff_sched_var.airspeed2 / eff_sched_p.m;
@@ -412,12 +439,12 @@ void eff_scheduling_rot_wing_schedule_liftd(void)
     lift_d = 0.0;
   }
   Bound(lift_d, -130., 0.);
-  eff_scheduling_rot_wing_lift_d = lift_d;
+  eff_scheduling_rotwing_lift_d = lift_d;
 }
 
 // Override standard LIFT_D function
 float guidance_indi_get_liftd(float pitch UNUSED, float theta UNUSED) {
-  return eff_scheduling_rot_wing_lift_d;
+  return eff_scheduling_rotwing_lift_d;
 }
 
 void stabilization_indi_set_wls_settings(void)
@@ -427,11 +454,18 @@ void stabilization_indi_set_wls_settings(void)
       u_min_stab_indi[i] = -MAX_PPRZ * act_is_servo[i];
       u_max_stab_indi[i] = MAX_PPRZ;
       u_pref_stab_indi[i] = act_pref[i];
-      if (i == 5) {
+      if (i == 5) { // elevator
         u_pref_stab_indi[i] = actuator_state_filt_vect[i]; // Set change in prefered state to 0 for elevator
         u_min_stab_indi[i] = 0; // cmd 0 is lowest position for elevator
       }
-      if (i==8) {
+      if (i == 7) { // flaperons
+        // If an offset is used, limit the max differential command to prevent unilateral saturation.
+        int32_t flap_saturation_limit = MAX_PPRZ - abs(rw_flap_offset);
+        BoundAbs(flap_saturation_limit, MAX_PPRZ);
+        u_min_stab_indi[i] = -flap_saturation_limit;
+        u_max_stab_indi[i] = flap_saturation_limit;
+      }
+      if (i==8) { // pusher
         // dt (min to max) MAX_PPRZ / (dt * f) dt_min == 0.002
         Bound(eff_sched_pusher_time, 0.002, 5.);
         float max_increment = MAX_PPRZ / (eff_sched_pusher_time * 500);
