@@ -51,6 +51,7 @@ struct rotwing_eff_sched_param_t {
   float k_lift_fuselage;
   float k_lift_tail;
 };
+extern struct rotwing_eff_sched_param_t eff_sched_p;
 
 struct rotwing_eff_sched_var_t {
   float Ixx;                  // Total MMOI around roll axis [kgm²]
