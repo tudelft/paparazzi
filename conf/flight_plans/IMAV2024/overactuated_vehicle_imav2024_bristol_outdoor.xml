@@ -277,7 +277,6 @@
       <stay wp="D1" until="wp_dist(WaypointX(WP_D1),WaypointY(WP_D1),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
       <stay wp="D2" until="wp_dist(WaypointX(WP_D2),WaypointY(WP_D2),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
       <stay wp="D3" until="wp_dist(WaypointX(WP_D3),WaypointY(WP_D3),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
-      <stay wp="D4" until="wp_dist(WaypointX(WP_D4),WaypointY(WP_D4),stateGetPositionEnu_f()->x,stateGetPositionEnu_f()->y) @LT 5.0"/>
       <deroute block="land"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
