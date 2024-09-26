@@ -197,6 +197,12 @@
         <arg flag="-udp_port" constant="4342"/>
         <arg flag="-udp_uplink_port" constant="4343"/>
       </program>
+      <program name="Herelink PprzLink Router">
+        <arg flag="shell"/>
+        <arg flag="/oem/bin/pprzlink_router_cc"/>
+        <arg flag="-e" constant="udp://192.168.0.11:5242:192.168.0.10:5243"/>
+        <arg flag="-e" constant="udp://0.0.0.0:4243:192.168.43.255:4242"/>
+      </program>
     </session>
     <session name="Herelink ship old GCS">
       <program name="Server">
@@ -326,6 +332,32 @@
         <arg flag="-d 0"/>
       </program>
       <program name="Gazebo"/>
+    </session>
+    <session name="ale_demo">
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Server"/>
+      <program name="Messages"/>
+      <program name="PprzGCS"/>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_port" constant="4342"/>
+        <arg flag="-udp_uplink_port" constant="4343"/>
+      </program>
+      <program name="Herelink PprzLink Router">
+        <arg flag="shell"/>
+        <arg flag="/oem/bin/pprzlink_router_cc"/>
+        <arg flag="-e" constant="udp://192.168.0.11:5242:192.168.0.10:5243"/>
+        <arg flag="-e" constant="udp://0.0.0.0:4243:192.168.43.255:4242"/>
+      </program>
+      <program name="NatNet3">
+        <arg flag="--long_edge" constant="right"/>
+        <arg flag="--x_side" constant="right"/>
+        <arg flag="--ac_nose" constant="right"/>
+        <arg flag="-ac" constant="1"/>
+        <arg flag="8"/>
+      </program>
     </session>
   </section>
 </control_panel>
