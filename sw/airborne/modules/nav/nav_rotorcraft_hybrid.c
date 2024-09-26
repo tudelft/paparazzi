@@ -124,7 +124,7 @@ static void nav_hybrid_goto(struct EnuCoor_f *wp)
 
   VECT2_COPY(nav.speed, speed_sp);
   nav.horizontal_mode = NAV_HORIZONTAL_MODE_WAYPOINT;
-  nav.setpoint_mode = NAV_HYBRID_GOTO_MODE;
+  nav.setpoint_mode = NAV_SETPOINT_MODE_POS; //NAV_HYBRID_GOTO_MODE;
 }
 
 static void nav_hybrid_route(struct EnuCoor_f *wp_start, struct EnuCoor_f *wp_end)

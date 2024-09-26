@@ -1,4 +1,4 @@
-<!-- This is a 7kg Rotating Wing Drone C
+<!-- This is a 7kg Rotating Wing Drone AG
      * Airframe:    TUD00???
      * Autopilot:   Cube orange
      * Datalink:    Herelink
@@ -6,12 +6,12 @@
      * RC:          SBUS Crossfire
 -->
 
-<airframe name="RotatingWingV3C">
-    <description>RotatingWingV3C with optitrack and INS ext pose</description>
+<airframe name="RotatingWing_AG">
+    <description>RotatingWingV3AG with optitrack and INS ext pose</description>
 
     <firmware name="rotorcraft">
      <autopilot name="rotorcraft_oneloop_switch.xml"/>
-        <target name="ap" board="cube_orange">
+        <target name="ap" board="cube_orangeplus">
             <configure name="PERIODIC_FREQUENCY"   value="500"/> <!-- Configure the main periodic frequency to 500Hz -->
             <configure name="NAVIGATION_FREQUENCY" value="500"/>
             <module name="radio_control" type="sbus">
@@ -36,11 +36,8 @@
             <!--Only send gyro and accel that is being used-->
             <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
             <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
-            <!--Use adc rot sensor-->
-            <module name="wing_rotation_adc_sensor">
-                <define name="ADC_WING_ROT_OFFSET" value="-49.1731"/>
-                <define name="ADC_WING_ROT_SCALE"  value="0.0029986"/>
-            </module>
+            <!-- Range sensor connected to supercan -->
+            <module name="range_sensor_uavcan"/>
             <!-- Log in high speed (Remove for outdoor flights) -->
             <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
             <define name="I2C2_CLOCK_SPEED" value="100000"/>
@@ -62,8 +59,12 @@
 
        <!-- Datalink -->
         <module name="telemetry" type="transparent">
-            <configure name="MODEM_BAUD" value="B115200"/> <!-- herelink-->
-            <!-- <configure VALUE="B57600" name="MODEM_BAUD"/> xBee -->
+            <!-- herelink -->
+            <configure name="MODEM_BAUD" value="B460800"/>
+            <!-- usb connection -->
+            <!-- <configure name="MODEM_PORT" value="usb_serial"/> -->
+            <!-- Xbee -->
+            <!-- <configure VALUE="B57600" name="MODEM_BAUD"/> -->
         </module>
 
         <!-- Sensors -->     
@@ -84,8 +85,9 @@
             <define name="AIRSPEED_UAVCAN_LOWPASS_TAU"      value="0.15" />
             <define name="AIRSPEED_UAVCAN_SEND_ABI"         value="0" /> <!-- Read Airspeed for logging but do not use it -->
         </module>                
-        <module name="air_data"/>              
-        <module name="gps" type="datalink"/>   
+        <module name="air_data"/>          
+
+        <module name="gps" type="datalink"/>
         
         <!-- IMU / INS -->  
         <module name="imu" type="cube"/>  
@@ -112,7 +114,7 @@
             <define name="NAV_HYBRID_MAX_AIRSPEED"      value="19.0f"/>
             <define name="NAV_HYBRID_SPEED_MARGIN"      value="0.0f"/>
             <define name="NAV_HYBRID_MAX_ACCELERATION"  value="4.0f"/>
-            <define name="NAV_HYBRID_MAX_DECELERATION"  value="1.0f"/>
+            <define name="NAV_HYBRID_MAX_DECELERATION"  value="2.0f"/>
             <define name="GUIDANCE_H_USE_REF"           value="FALSE"/>
             <define name="NAV_OPTITRACK"                value="TRUE"/>
         </module>
@@ -137,9 +139,9 @@
     </firmware>
 
     <!-- PWM actuators -->   
-    <servos driver="Pwm">
-        <servo no="0" name="ROTATION_MECH"   min="1360" neutral="1586" max="1812"/>
-    </servos>
+    <!-- <servos driver="Pwm">
+        <servo no="0" name="ROTATION_MECH"   min="1240" neutral="1468" max="1696"/>
+    </servos> -->
 
     <!-- Can bus 1 actuators -->
     <servos driver="Uavcan1">
@@ -148,12 +150,13 @@
         <servo no="2" name="MOTOR_BACK"     min="0"     neutral="600"   max="8191"/>
         <servo no="3" name="MOTOR_LEFT"     min="0"     neutral="600"   max="8191"/>
         <servo no="4" name="MOTOR_PUSH"     min="0"     neutral="200"   max="8191"/>
+        <servo no="5"  name="ROTATION_MECH" min="-2048" neutral="-205"   max="1638"/>
     </servos>
 
     <!-- CAN BUS 1 command outputs-->
     <servos driver="Uavcan1Cmd">
-        <servo no="5" name="SERVO_ELEVATOR" min="5737"  neutral="5737" max="-3936"/>
-        <servo no="6" name="SERVO_RUDDER"   min="-5225" neutral="0"    max="5225"/>
+        <servo no="6" name="SERVO_ELEVATOR" min="3767"  neutral="3767" max="-5668"/>
+        <servo no="7" name="SERVO_RUDDER"   min="-5225" neutral="0"    max="5225"/>
     </servos>
     
     <!-- Can bus 2 actuators -->
@@ -162,14 +165,15 @@
         <servo no="1" name="BMOTOR_RIGHT" min="0" neutral="600" max="8191"/>
         <servo no="2" name="BMOTOR_BACK"  min="0" neutral="600" max="8191"/>
         <servo no="3" name="BMOTOR_LEFT"  min="0" neutral="600" max="8191"/>
+        <servo no="5" name="BROTATION_MECH" min="-2048" neutral="-205"   max="1638"/>
     </servos>
 
     <!-- CAN BUS 2 command outputs-->
     <servos driver="Uavcan2Cmd">
-        <servo no="7"  name="AIL_LEFT"   min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
-        <servo no="8"  name="FLAP_LEFT"  min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
-        <servo no="9"  name="FLAP_RIGHT" min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
-        <servo no="10" name="AIL_RIGHT"  min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
+        <servo no="8"  name="AIL_LEFT"   min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
+        <servo no="9"  name="FLAP_LEFT"  min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
+        <servo no="10" name="FLAP_RIGHT" min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
+        <servo no="11" name="AIL_RIGHT"  min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
     </servos>
 
     <commands>
@@ -214,6 +218,7 @@
         <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_RIGHT])"  SERVO="BMOTOR_RIGHT"/>
         <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_BACK] )"  SERVO="BMOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_LEFT] )"  SERVO="BMOTOR_LEFT"/>
+        <set VALUE="commands[COMMAND_ROT_MECH]"                         SERVO="BROTATION_MECH"/>
     </command_laws>
 
     <section NAME="MISC">
@@ -252,8 +257,8 @@
     </section>
 
     <section name="IMU" prefix="IMU_">
-        <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true, .filter=true},.neutral={-12,-9,20}, .scale={{30726,37910,15728},{3133,3871,1611}}, .filter_sample_freq=1134.1, .filter_freq=30}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-9,-30,26}, .scale={{45288,818,33359},{8935,167,6832}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-35,-5,13}, .scale={{26152,56165,62837},{5357,11479,12884}}}}"/>
-        <define name="MAG_CALIB"   value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={785,-2641,40}, .scale={{7727,22807,32483},{13208,38799,54820}}}}"/>
+        <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true, .filter=true},.neutral={2,11,22}, .scale={{9223,33875,50285},{941,3469,5167}}, .filter_sample_freq=1131.0, .filter_freq=30}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-2,-2,20}, .scale={{9843,7289,11251},{2014,1485,2294}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-31,-13,10}, .scale={{49268,7401,20459},{10091,1513,4191}}} }"/>
+        <define name="MAG_CALIB"   value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={-14,3,42}, .scale={{17279,2209,36874},{30247,3800,64095}}}}"/>
         <define name="GYRO_CALIB"  value="{{.abi_id=20, .calibrated={.filter=true}, .filter_sample_freq=1134.1, .filter_freq=30}}"/>                    
         <define name="BODY_TO_IMU_PHI"   value="-4.54"  unit="deg"/>
         <define name="BODY_TO_IMU_THETA" value="1.84"   unit="deg"/>
@@ -261,14 +266,14 @@
     </section>
 
     <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
-        <define name  = "MAX_R"                     value = "120.0" unit="deg/s"/>
+       <define name  = "MAX_R"                     value = "120.0" unit="deg/s"/>
         <define name  = "FILT_CUTOFF"               value = "3.0" />
-        <define name  = "FILT_CUTOFF_ACC"           value = "3.0"/>
+        <define name  = "FILT_CUTOFF_ACC"           value = "2.0"/>
         <define name  = "FILT_CUTOFF_VEL"           value = "5.0"/>
         <define name  = "FILT_CUTOFF_POS"           value = "10.0"/>
         <define name  = "ESTIMATION_FILT_CUTOFF"    value = "3.2" />
-        <define name  = "FILT_CUTOFF_P"             value = "3.0"/>
-        <define name  = "FILT_CUTOFF_Q"             value = "3.0"/>
+        <define name  = "FILT_CUTOFF_P"             value = "2.0"/>
+        <define name  = "FILT_CUTOFF_Q"             value = "2.0"/>
         <define name  = "FILT_CUTOFF_R"             value = "3.0" />
         <define name  = "FILT_CUTOFF_RDOT"          value = "0.5" />
         <define name  = "FILTER_YAW_RATE"           value = "TRUE"/>
@@ -296,7 +301,7 @@
         <define name="IXX_WING"              value="0.08099"/>
         <define name="IYY_WING"              value="0.1949"/>
         <define name="M"                     value="6.67"/>
-    </section>    
+    </section>   
 
     <section name="AUTOPILOT">
         <define name="MODE_MANUAL"      value="AP_MODE_ATTITUDE_DIRECT"/>
