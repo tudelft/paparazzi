@@ -432,8 +432,8 @@
     <property>fcs/FLAPS_lag</property>       
     <property>fcs/ROLL</property>
     <property>fcs/PITCH</property>
-    <property>fcs/YAW</property>
-    <property>fcs/THRUST</property>
+    <!-- <property>fcs/YAW</property> -->
+    <!-- <property>fcs/THRUST</property> -->
     <property>fcs/ROT_MECH</property>
     <property>fcs/de_lag</property>
     <property>fcs/airspeed2_ms</property>
