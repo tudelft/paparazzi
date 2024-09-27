@@ -159,9 +159,9 @@ bool hover_motors_active = true;
 bool bool_disable_hover_motors = false;
 //DEMO Sine skew
 bool demo_skew = false;
-float max_skew_demo = 60;
+float max_skew_demo = 50;
 float min_skew_demo = 0;
-float freq_skew_demo = 0.1;
+float freq_skew_demo = 0.8;
 int time_step_skew_demo = 0;
 
 

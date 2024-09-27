@@ -343,8 +343,8 @@ struct FloatEulers eulers_zxy;
 float  psi_des_rad = 0.0;
 float  psi_des_deg = 0.0;
 static float  psi_vec[4]  = {0.0, 0.0, 0.0, 0.0};
-bool heading_manual = false;
-bool yaw_stick_in_auto = false;
+bool heading_manual = true;
+bool yaw_stick_in_auto = true;
 bool ctrl_off = false;
 /*WLS Settings*/
 
