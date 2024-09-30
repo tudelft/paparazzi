@@ -257,6 +257,12 @@ extern "C" {
     (_vo).z = (_r1).p*(_v2).y - (_r1).q*(_v2).x;    \
   }
 
+#define VECT3_RATES_CROSS_RATES(_vo, _r1, _v2) {    \
+    (_vo).p = (_r1).q*(_v2).r - (_r1).r*(_v2).q;    \
+    (_vo).q = (_r1).r*(_v2).p - (_r1).p*(_v2).r;    \
+    (_vo).r = (_r1).p*(_v2).q - (_r1).q*(_v2).p;    \
+  }
+
 
 //
 //

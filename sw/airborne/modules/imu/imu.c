@@ -604,23 +604,28 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
   // Only integrate if we have gotten a previous measurement and didn't overflow the timer
   if(!isnan(rate) && gyro->last_stamp > 0 && stamp > gyro->last_stamp) {
     struct FloatRates integrated;
+    
+    // Get body to sensor rotation
+    struct FloatRMat body_to_sensor;
+    RMAT_FLOAT_OF_BFP(body_to_sensor, gyro->body_to_sensor);
 
-    // Trapezoidal integration (TODO: coning correction)
-    integrated.p = RATE_FLOAT_OF_BFP(gyro->scaled.p + scaled_rot.p) * 0.5f;
-    integrated.q = RATE_FLOAT_OF_BFP(gyro->scaled.q + scaled_rot.q) * 0.5f;
-    integrated.r = RATE_FLOAT_OF_BFP(gyro->scaled.r + scaled_rot.r) * 0.5f;
+    // Variables for integration
+    struct FloatRates integrated_sensor;
+    struct FloatRates prev_rate;
+    struct FloatRates beta = { 0 };
+    struct FloatRates alpha = { 0 };
+    struct FloatRates delta_alpha = { 0 };
+    struct FloatRates scaled_last_delta_alpha;
+    struct FloatRates lhs;
+    struct FloatRates alpha_cross;
 
     // Only perform multiple integrations in sensor frame if needed
     if(samples > 1) {
-      struct FloatRates integrated_sensor;
-      struct FloatRMat body_to_sensor;
-      // Rotate back to sensor frame
-      RMAT_FLOAT_OF_BFP(body_to_sensor, gyro->body_to_sensor);
-      float_rmat_ratemult(&integrated_sensor, &body_to_sensor, &integrated);
 
-      // Add all the other samples
-      for(uint8_t i = 0; i < samples-1; i++) {
+      // Add all samples
+      for(uint8_t i = 0; i < samples; i++) {
         struct FloatRates f_sample;
+
         f_sample.p = RATE_FLOAT_OF_BFP((data[i].p - gyro->neutral.p) * gyro->scale[0].p / gyro->scale[1].p);
         f_sample.q = RATE_FLOAT_OF_BFP((data[i].q - gyro->neutral.q) * gyro->scale[0].q / gyro->scale[1].q);
         f_sample.r = RATE_FLOAT_OF_BFP((data[i].r - gyro->neutral.r) * gyro->scale[0].r / gyro->scale[1].r);
@@ -629,19 +634,85 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
         pprz_msg_send_IMU_GYRO(&pprzlog_tp.trans_tx, &(IMU_LOG_HIGHSPEED_DEVICE).device, AC_ID, &sender_id, &f_sample.p, &f_sample.q, &f_sample.r);
 #endif
 
-        integrated_sensor.p += f_sample.p;
-        integrated_sensor.q += f_sample.q;
-        integrated_sensor.r += f_sample.r;
+        // Coning correction
+        if (i == 0) {
+          delta_alpha.p = RATE_FLOAT_OF_BFP(gyro->scaled.p + f_sample.p) * 0.5f * (1.f / rate);
+          delta_alpha.q = RATE_FLOAT_OF_BFP(gyro->scaled.q + f_sample.q) * 0.5f * (1.f / rate);
+          delta_alpha.r = RATE_FLOAT_OF_BFP(gyro->scaled.r + f_sample.r) * 0.5f * (1.f / rate);
+        } else if (i == samples-1) {
+          delta_alpha.p = RATE_FLOAT_OF_BFP(scaled.p + f_sample.p) * 0.5f * (1.f / rate);
+          delta_alpha.q = RATE_FLOAT_OF_BFP(scaled.q + f_sample.q) * 0.5f * (1.f / rate);
+          delta_alpha.r = RATE_FLOAT_OF_BFP(scaled.r + f_sample.r) * 0.5f * (1.f / rate);
+        } else {
+          delta_alpha.p = RATE_FLOAT_OF_BFP(prev_rate.p + f_sample.p) * 0.5f * (1.f / rate);
+          delta_alpha.q = RATE_FLOAT_OF_BFP(prev_rate.p + f_sample.p) * 0.5f * (1.f / rate);
+          delta_alpha.r = RATE_FLOAT_OF_BFP(prev_rate.p + f_sample.p) * 0.5f * (1.f / rate);
+        }
+
+        alpha.p += delta_alpha.p;
+        alpha.q += delta_alpha.q;
+        alpha.r += delta_alpha.r;
+
+        prev_rate.p = f_sample.p;
+        prev_rate.q = f_sample.q;
+        prev_rate.r = f_sample.r;
+
+        scaled_last_delta_alpha.p = gyro->last_delta_alpha.p / 6.f;
+        scaled_last_delta_alpha.q = gyro->last_delta_alpha.q / 6.f;
+        scaled_last_delta_alpha.r = gyro->last_delta_alpha.r / 6.f;
+
+        lhs.p = alpha.p + scaled_last_delta_alpha.p;
+        lhs.q = alpha.q + scaled_last_delta_alpha.q;
+        lhs.r = alpha.r + scaled_last_delta_alpha.r;
+
+        VECT3_RATES_CROSS_RATES(alpha_cross, lhs, delta_alpha)
+
+        beta.p += 0.5f * alpha_cross.p;
+        beta.q += 0.5f * alpha_cross.q;
+        beta.r += 0.5f * alpha_cross.r;
+
+        integrated_sensor.p += alpha.p + beta.p;
+        integrated_sensor.q += alpha.q + beta.q;
+        integrated_sensor.r += alpha.r + beta.r;
+
+        gyro->last_delta_alpha.p = alpha.p;
+        gyro->last_delta_alpha.q = alpha.q;
+        gyro->last_delta_alpha.r = alpha.r;
       }
 
       // Rotate to body frame
       float_rmat_transp_ratemult(&integrated, &body_to_sensor, &integrated_sensor);
-    }
+    } else {
+      integrated.p = RATE_FLOAT_OF_BFP(gyro->scaled.p + scaled_rot.p) * 0.5f * (1.f / rate);
+      integrated.q = RATE_FLOAT_OF_BFP(gyro->scaled.q + scaled_rot.q) * 0.5f * (1.f / rate);
+      integrated.r = RATE_FLOAT_OF_BFP(gyro->scaled.r + scaled_rot.r) * 0.5f * (1.f / rate);
 
-    // Divide by the time of the collected samples
-    integrated.p = integrated.p * (1.f / rate);
-    integrated.q = integrated.q * (1.f / rate);
-    integrated.r = integrated.r * (1.f / rate);
+      float_rmat_ratemult(&delta_alpha, &body_to_sensor, &integrated);
+
+      scaled_last_delta_alpha.p = gyro->last_delta_alpha.p / 6.f;
+      scaled_last_delta_alpha.q = gyro->last_delta_alpha.q / 6.f;
+      scaled_last_delta_alpha.r = gyro->last_delta_alpha.r / 6.f;
+
+      lhs.p = alpha.p + scaled_last_delta_alpha.p;
+      lhs.q = alpha.q + scaled_last_delta_alpha.q;
+      lhs.r = alpha.r + scaled_last_delta_alpha.r;
+
+      VECT3_RATES_CROSS_RATES(alpha_cross, lhs, delta_alpha)
+
+      beta.p += 0.5f * alpha_cross.p;
+      beta.q += 0.5f * alpha_cross.q;
+      beta.r += 0.5f * alpha_cross.r;
+
+      integrated_sensor.p += alpha.p + beta.p;
+      integrated_sensor.q += alpha.q + beta.q;
+      integrated_sensor.r += alpha.r + beta.r;
+
+      gyro->last_delta_alpha.p = alpha.p;
+      gyro->last_delta_alpha.q = alpha.q;
+      gyro->last_delta_alpha.r = alpha.r;
+
+      float_rmat_transp_ratemult(&integrated, &body_to_sensor, &integrated_sensor);
+    }
 
     // Send the integrated values
     uint16_t dt = (1e6 / rate) * samples;

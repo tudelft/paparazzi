@@ -56,6 +56,7 @@ struct imu_gyro_t {
   struct Int32Rates neutral;          ///< Neutral values, compensation on unscaled->scaled
   struct Int32Rates scale[2];         ///< Scaling, first is numerator and second denominator
   struct Int32RMat body_to_sensor;    ///< Rotation from body to sensor frame (body to imu combined with imu to sensor)
+  struct FloatRates last_delta_alpha; ///< Intermediate delta angle used in coning
   float filter_freq;                  ///< Filter frequency
   float filter_sample_freq;           ///< Lowpass filter sample frequency (Hz)
   Butterworth2LowPass filter[3];      ///< Lowpass filter optional
