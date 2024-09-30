@@ -614,8 +614,8 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
     struct FloatRates prev_rate;
     struct FloatRates beta = { 0 };
     struct FloatRates alpha = { 0 };
-    struct FloatRates delta_alpha = { 0 };
-    struct FloatRates prev_alpha = { 0 };
+    struct FloatRates last_alpha = { 0 };
+    struct FloatRates delta_alpha;
     struct FloatRates scaled_last_delta_alpha;
     struct FloatRates lhs;
     struct FloatRates alpha_cross;
@@ -657,7 +657,7 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
         RATES_ADD(alpha, delta_alpha);
         RATES_COPY(prev_rate, f_sample);
         RATES_SDIV(scaled_last_delta_alpha, gyro->last_delta_alpha, 6.f);
-        RATES_SUM(lhs, prev_alpha, scaled_last_delta_alpha);
+        RATES_SUM(lhs, last_alpha, scaled_last_delta_alpha);
 
         VECT3_RATES_CROSS_RATES(alpha_cross, lhs, delta_alpha);
         RATES_ADD_SCALED_VECT(beta, alpha_cross, 0.5f);
@@ -665,8 +665,8 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
         RATES_ADD(integrated_sensor, alpha);
         RATES_ADD(integrated_sensor, beta);
 
-        RATES_COPY(prev_alpha, alpha);
-        RATES_COPY(gyro->last_delta_alpha, alpha);
+        RATES_COPY(last_alpha, alpha);
+        RATES_COPY(gyro->last_delta_alpha, delta_alpha);
       }
 
       // Rotate to body frame
@@ -680,7 +680,7 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
 
       RATES_SDIV(scaled_last_delta_alpha, gyro->last_delta_alpha, 6.f);
 
-      // prev_alpha will be zero here, so use scaled_last_delta_alpha directly
+      // last_alpha will be zero here, so use scaled_last_delta_alpha directly
       VECT3_RATES_CROSS_RATES(alpha_cross, scaled_last_delta_alpha, delta_alpha);
       RATES_SMUL(beta, alpha_cross, 0.5f);
 
