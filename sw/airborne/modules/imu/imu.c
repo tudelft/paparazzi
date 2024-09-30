@@ -650,39 +650,19 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
           delta_alpha.r = RATE_FLOAT_OF_BFP(prev_rate.p + f_sample.p) * 0.5f * (1.f / rate);
         }
 
-        alpha.p += delta_alpha.p;
-        alpha.q += delta_alpha.q;
-        alpha.r += delta_alpha.r;
+        RATES_ADD(alpha, delta_alpha);
+        RATES_COPY(prev_rate, f_sample);
+        RATES_SDIV(scaled_last_delta_alpha, gyro->last_delta_alpha, 6.f);
+        RATES_SUM(lhs, prev_alpha, scaled_last_delta_alpha);
 
-        prev_rate.p = f_sample.p;
-        prev_rate.q = f_sample.q;
-        prev_rate.r = f_sample.r;
+        VECT3_RATES_CROSS_RATES(alpha_cross, lhs, delta_alpha);
+        RATES_SUM_SCALED(beta, beta, alpha_cross, 0.5f);
+        
+        RATES_ADD(integrated_sensor, alpha);
+        RATES_ADD(integrated_sensor, beta);
 
-        scaled_last_delta_alpha.p = gyro->last_delta_alpha.p / 6.f;
-        scaled_last_delta_alpha.q = gyro->last_delta_alpha.q / 6.f;
-        scaled_last_delta_alpha.r = gyro->last_delta_alpha.r / 6.f;
-
-        lhs.p = prev_alpha.p + scaled_last_delta_alpha.p;
-        lhs.q = prev_alpha.q + scaled_last_delta_alpha.q;
-        lhs.r = prev_alpha.r + scaled_last_delta_alpha.r;
-
-        VECT3_RATES_CROSS_RATES(alpha_cross, lhs, delta_alpha)
-
-        beta.p += 0.5f * alpha_cross.p;
-        beta.q += 0.5f * alpha_cross.q;
-        beta.r += 0.5f * alpha_cross.r;
-
-        integrated_sensor.p += alpha.p + beta.p;
-        integrated_sensor.q += alpha.q + beta.q;
-        integrated_sensor.r += alpha.r + beta.r;
-
-        prev_alpha.p = alpha.p;
-        prev_alpha.q = alpha.q;
-        prev_alpha.r = alpha.r;
-
-        gyro->last_delta_alpha.p = alpha.p;
-        gyro->last_delta_alpha.q = alpha.q;
-        gyro->last_delta_alpha.r = alpha.r;
+        RATES_COPY(prev_alpha, alpha);
+        RATES_COPY(gyro->last_delta_alpha, alpha);
       }
 
       // Rotate to body frame
@@ -694,25 +674,17 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
 
       float_rmat_ratemult(&delta_alpha, &body_to_sensor, &integrated);
 
-      scaled_last_delta_alpha.p = gyro->last_delta_alpha.p / 6.f;
-      scaled_last_delta_alpha.q = gyro->last_delta_alpha.q / 6.f;
-      scaled_last_delta_alpha.r = gyro->last_delta_alpha.r / 6.f;
+      RATES_SDIV(scaled_last_delta_alpha, gyro->last_delta_alpha, 6.f);
 
       // prev_alpha will be zero here, so use scaled_last_delta_alpha directly
-      VECT3_RATES_CROSS_RATES(alpha_cross, scaled_last_delta_alpha, delta_alpha)
-
-      beta.p += 0.5f * alpha_cross.p;
-      beta.q += 0.5f * alpha_cross.q;
-      beta.r += 0.5f * alpha_cross.r;
+      VECT3_RATES_CROSS_RATES(alpha_cross, scaled_last_delta_alpha, delta_alpha);
+      RATES_SMUL(beta, alpha_cross, 0.5f);
 
       // Since alpha will be zero here, use delta_alpha instead of first doing addition
-      integrated_sensor.p += delta_alpha.p + beta.p;
-      integrated_sensor.q += delta_alpha.q + beta.q;
-      integrated_sensor.r += delta_alpha.r + beta.r;
+      RATES_ADD(integrated_sensor, delta_alpha);
+      RATES_ADD(integrated_sensor, beta);
 
-      gyro->last_delta_alpha.p = delta_alpha.p;
-      gyro->last_delta_alpha.q = delta_alpha.q;
-      gyro->last_delta_alpha.r = delta_alpha.r;
+      RATES_COPY(gyro->last_delta_alpha, delta_alpha);
 
       float_rmat_transp_ratemult(&integrated, &body_to_sensor, &integrated_sensor);
     }
