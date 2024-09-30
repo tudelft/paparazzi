@@ -635,7 +635,7 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
         pprz_msg_send_IMU_GYRO(&pprzlog_tp.trans_tx, &(IMU_LOG_HIGHSPEED_DEVICE).device, AC_ID, &sender_id, &f_sample.p, &f_sample.q, &f_sample.r);
 #endif
 
-        // Coning correction
+        // Trapezoidal integration
         if (i == 0) {
           struct Int32Rates gyro_sensor_frame;
           int32_rmat_ratemult(&gyro_sensor_frame, &gyro->body_to_sensor, &gyro->scaled);
@@ -653,13 +653,14 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
           delta_alpha.r = RATE_FLOAT_OF_BFP(prev_rate.p + f_sample.p) * 0.5f * (1.f / rate);
         }
 
+        // Coning correction
         RATES_ADD(alpha, delta_alpha);
         RATES_COPY(prev_rate, f_sample);
         RATES_SDIV(scaled_last_delta_alpha, gyro->last_delta_alpha, 6.f);
         RATES_SUM(lhs, prev_alpha, scaled_last_delta_alpha);
 
         VECT3_RATES_CROSS_RATES(alpha_cross, lhs, delta_alpha);
-        RATES_SUM_SCALED(beta, beta, alpha_cross, 0.5f);
+        RATES_ADD_SCALED_VECT(beta, alpha_cross, 0.5f);
         
         RATES_ADD(integrated_sensor, alpha);
         RATES_ADD(integrated_sensor, beta);
