@@ -637,9 +637,12 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
 
         // Coning correction
         if (i == 0) {
-          delta_alpha.p = RATE_FLOAT_OF_BFP(gyro->scaled.p + f_sample.p) * 0.5f * (1.f / rate);
-          delta_alpha.q = RATE_FLOAT_OF_BFP(gyro->scaled.q + f_sample.q) * 0.5f * (1.f / rate);
-          delta_alpha.r = RATE_FLOAT_OF_BFP(gyro->scaled.r + f_sample.r) * 0.5f * (1.f / rate);
+          struct Int32Rates gyro_sensor_frame;
+          int32_rmat_ratemult(&gyro_sensor_frame, &gyro->body_to_sensor, &gyro->scaled);
+
+          delta_alpha.p = RATE_FLOAT_OF_BFP(gyro_sensor_frame.p + f_sample.p) * 0.5f * (1.f / rate);
+          delta_alpha.q = RATE_FLOAT_OF_BFP(gyro_sensor_frame.q + f_sample.q) * 0.5f * (1.f / rate);
+          delta_alpha.r = RATE_FLOAT_OF_BFP(gyro_sensor_frame.r + f_sample.r) * 0.5f * (1.f / rate);
         } else if (i == samples-1) {
           delta_alpha.p = RATE_FLOAT_OF_BFP(scaled.p + f_sample.p) * 0.5f * (1.f / rate);
           delta_alpha.q = RATE_FLOAT_OF_BFP(scaled.q + f_sample.q) * 0.5f * (1.f / rate);
