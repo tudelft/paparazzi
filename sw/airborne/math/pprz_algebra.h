@@ -257,10 +257,10 @@ extern "C" {
     (_vo).z = (_r1).p*(_v2).y - (_r1).q*(_v2).x;    \
   }
 
-#define VECT3_RATES_CROSS_RATES(_vo, _r1, _v2) {    \
-    (_vo).p = (_r1).q*(_v2).r - (_r1).r*(_v2).q;    \
-    (_vo).q = (_r1).r*(_v2).p - (_r1).p*(_v2).r;    \
-    (_vo).r = (_r1).p*(_v2).q - (_r1).q*(_v2).p;    \
+#define VECT3_RATES_CROSS_RATES(_vo, _r1, _r2) {    \
+    (_vo).p = (_r1).q*(_r2).r - (_r1).r*(_r2).q;    \
+    (_vo).q = (_r1).r*(_r2).p - (_r1).p*(_r2).r;    \
+    (_vo).r = (_r1).p*(_r2).q - (_r1).q*(_r2).p;    \
   }
 
 
@@ -426,6 +426,12 @@ extern "C" {
     (_ro).p += (_v).x * (_s);                   \
     (_ro).q += (_v).y * (_s);                   \
     (_ro).r += (_v).z * (_s);                   \
+  }
+
+#define RATES_ADD_SCALED_RATES(_ro, _ri, _s) {    \
+    (_ro).p += (_ri).p * (_s);                   \
+    (_ro).q += (_ri).q * (_s);                   \
+    (_ro).r += (_ri).r * (_s);                   \
   }
 
 //

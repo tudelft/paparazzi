@@ -660,7 +660,7 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
         RATES_SUM(lhs, last_alpha, scaled_last_delta_alpha);
 
         VECT3_RATES_CROSS_RATES(alpha_cross, lhs, delta_alpha);
-        RATES_ADD_SCALED_VECT(beta, alpha_cross, 0.5f);
+        RATES_ADD_SCALED_RATES(beta, alpha_cross, 0.5f);
         
         RATES_ADD(integrated_sensor, alpha);
         RATES_ADD(integrated_sensor, beta);
