@@ -42,6 +42,17 @@
             <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
 
             <define name="I2C2_CLOCK_SPEED" value="100000"/>
+
+            <module name="mavlink">
+                <configure name="MAVLINK_BAUD" value="B115200"/>
+                <configure name="MAVLINK_PORT" value="UART8"/>
+                <define name="MAV_AUTOPILOT_ID" value="MAV_AUTOPILOT_ARDUPILOTMEGA"/>
+            </module>
+
+            <module name="mission_rotorcraft">
+                <define name="MISSION_WAIT_TIMEOUT" value="0"/>
+                <define name="MISSION_ELEMENT_NB" value="2000"/>
+            </module>
         </target>
 
         <target name="nps" board="pc">
@@ -54,6 +65,23 @@
             <define name="RADIO_FBW_MODE"         value="0"/> <!-- Switch between AP and FBW control -->
             <define name="RADIO_KILL_SWITCH"      value="0"/>
             <define name="RADIO_CONTROL_THRUST_X" value="0"/>
+
+            <module name="mavlink">
+                <define name="MAV_AUTOPILOT_ID" value="MAV_AUTOPILOT_ARDUPILOTMEGA"/>
+                <define name="UDP1_PORT_OUT" value="24550"/>
+                <define name="UDP1_PORT_IN" value="14551"/>
+                <define name="UDP1_HOST" value="127.0.0.1"/>
+                <define name="MAVLINK_DEBUG" value="printf"/>
+                <define name="GEOFENCE_START_IDX" value="WP_C1"/>
+                <define name="GEOFECNE_WP_COUNT" value="9"/>
+                <configure name="MAVLINK_PORT" value="UDP1"/>
+            </module>
+
+            <module name="mission_rotorcraft">
+                <define name="MISSION_WAIT_TIMEOUT" value="0"/>
+            </module>
+
+            <define name="PREFLIGHT_CHECK_BYPASS" value="TRUE"/>
         </target>
 
         <!-- Herelink datalink -->
@@ -116,6 +144,7 @@
         </module>
 
         <!-- Other -->
+        <module name="nav_rotwing"/>    
         <module name="sys_id_doublet"/>
         <module name="sys_id_auto_doublets"/>
         <module name="rot_wing_automation"/>
