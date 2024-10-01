@@ -27,7 +27,7 @@
 #include "navigation.h"
 #include "firmwares/rotorcraft/autopilot_firmware.h"
 
-#include "modules/rot_wing_drone/rotwing_state.h"
+#include "modules/rotwing_drone/rotwing_state.h"
 
 #include "generated/flight_plan.h" // TODO. Make fp independent
 #include "sonar/agl_dist.h"
@@ -80,7 +80,7 @@ static bool nav_rotwing_takeoff(uint8_t nb __attribute__((unused)), float *param
 static bool nav_rotwing_land(uint8_t nb __attribute__((unused)), float *params __attribute__((unused)), enum MissionRunFlag flag)
 {
   if (flag == MissionInit) {
-    rotwing_request_configuration(ROTWING_CONFIGURATION_HOVER);
+    rotwing_state_set(ROTWING_STATE_REQUEST_HOVER);
     rotwing_landing_status = Descend;
     landing_timer = 0.0f;
     return nav_rotwing_land_run();
@@ -105,7 +105,7 @@ bool nav_rotwing_takeoff_run(void)
 {
   switch (rotwing_takeoff_status) {
     case StartEngine:
-      rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID);
+      rotwing_state_set(ROTWING_STATE_FORCE_HOVER);
       NavResurrect();
       NavAttitude(RadOfDeg(0));
       NavVerticalAutoThrottleMode(RadOfDeg(0));

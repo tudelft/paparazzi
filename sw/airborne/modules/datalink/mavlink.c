@@ -153,7 +153,6 @@ void mavlink_init(void)
   register_periodic_telemetry(&mavlink_telemetry, MAVLINK_MSG_ID_GPS_STATUS, mavlink_send_gps_status);
   register_periodic_telemetry(&mavlink_telemetry, MAVLINK_MSG_ID_VFR_HUD, mavlink_send_vfr_hud);
   register_periodic_telemetry(&mavlink_telemetry, MAVLINK_MSG_ID_MISSION_CURRENT, mavlink_send_mission_current);
-  register_periodic_telemetry(&mavlink_telemetry, MAVLINK_MSG_ID_EXTENDED_SYS_STATE, mavlink_send_extended_sys_state);
 #endif
 }
 
@@ -405,43 +404,6 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
         uint8_t result = MAV_RESULT_UNSUPPORTED;
         switch (cmd.command) {
 
-          case MAV_CMD_SET_MESSAGE_INTERVAL:
-          case MAV_CMD_DO_SET_MODE: {
-            char error_msg[200];
-            int rc = snprintf(error_msg, 200, "Do set %d: %0.0f %0.0f (%d)", cmd.command, cmd.param1, cmd.param2, cmd.target_system);
-            if (rc > 0) {
-              DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error_msg);
-            }
-            result = MAV_RESULT_ACCEPTED;
-            break;
-          }
-
-//           case MAV_CMD_DO_SET_MODE:
-//             MAVLINK_DEBUG("DO SET_MODE param1 = %f, param2 = %f\n", cmd.param1, cmd.param2);
-//             if (cmd.param1 != 1) {
-//               MAVLINK_DEBUG("No valid mode set, requested mode was %f\n", cmd.param1);
-//               result = MAV_RESULT_UNSUPPORTED;
-//               break;
-//             }
-
-//             switch ((uint8_t) cmd.param2) {
-// #ifdef WP_ML_global_target
-//               case PLANE_MODE_GUIDED:
-//                 MAVLINK_DEBUG("PLANE_MODE_GUIDED received");
-
-//                 // Don't hover if not armed or not in flight
-//                 if (autopilot_get_motors_on() && autopilot_in_flight()) {
-//                   // Go to Guided block
-//                   GotoBlock(mavlink_modes.block_guided);
-//                   result = MAV_RESULT_ACCEPTED;
-//                 }
-//                 break;
-// #endif
-//               default:
-//                 break;
-//             }
-//             break;
-
           case MAV_CMD_NAV_GUIDED_ENABLE:
             MAVLINK_DEBUG("got cmd NAV_GUIDED_ENABLE: %f\n", cmd.param1);
             result = MAV_RESULT_FAILED;
@@ -608,55 +570,19 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
               default:
                 result = MAV_RESULT_UNSUPPORTED;
                 break;
-              }
-              break;
-
-            default:
-              MAVLINK_DEBUG("TEST123 command = %i \n", cmd.command);
-              break;
             }
+            break;
+
+          default:
+            MAVLINK_DEBUG("TEST123 command = %i \n", cmd.command);
+            break;
+        }
+
           // confirm command with result
           mavlink_msg_command_ack_send(MAVLINK_COMM_0, cmd.command, result, 0, UINT8_MAX, msg->sysid, msg->compid);
           MAVLinkSendMessage();
-        }
-        break;
-      }
-      
-
-#ifdef WP_ML_global_target
-    case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT: {
-      mavlink_set_position_target_global_int_t target;
-      mavlink_msg_set_position_target_global_int_decode(msg, &target);
-
-      // Check if this message is for this system
-      //if (target.target_system == AC_ID) {
-        MAVLINK_DEBUG("SET_POSITION_TARGET_GLOBAL_INT, type_mask: %d, frame: %d\n", target.type_mask, target.coordinate_frame);
-        /* if position and yaw bits are not set to ignored, use only position for now */
-        if (target.coordinate_frame == MAV_FRAME_GLOBAL || target.coordinate_frame == MAV_FRAME_GLOBAL_INT) {
-          MAVLINK_DEBUG("set position target, frame MAV_FRAME_GLOBAL %f \n", target.alt);
-          struct NedCoor_i ned;
-          //struct NedCoor_f ned_f;
-          struct LlaCoor_i lla;
-          lla.lat = target.lat_int;
-          lla.lon = target.lon_int;
-          lla.alt = MM_OF_M(target.alt);
-          ned_of_lla_point_i(&ned, &state.ned_origin_i, &lla);
-          //NED_FLOAT_OF_BFP(ned_f, ned);
-          //autopilot_guided_goto_ned(ned_f.x, ned_f.y, ned_f.z, target.yaw);
-          waypoint_set_latlon(WP_ML_global_target, &lla);
-          waypoint_set_alt(WP_ML_global_target, target.alt);
-
-          // Downlink the new waypoint
-          uint8_t wp_id = WP_ML_global_target;
-          int32_t hmsl = lla.alt - state.ned_origin_i.lla.alt + state.ned_origin_i.hmsl;
-          DOWNLINK_SEND_WP_MOVED_LLA(DefaultChannel, DefaultDevice, &wp_id,
-                                    &lla.lat, &lla.lon, &hmsl);
-
-        }
-      //}
       break;
     }
-#endif
 
     case MAVLINK_MSG_ID_SET_MODE: {
       mavlink_set_mode_t mode;
@@ -690,7 +616,7 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
         if (target.coordinate_frame == MAV_FRAME_GLOBAL || target.coordinate_frame == MAV_FRAME_GLOBAL_INT) {
           MAVLINK_DEBUG("set position target, frame MAV_FRAME_GLOBAL %f \n", target.alt);
           struct NedCoor_i ned;
-          struct NedCoor_f ned_f;
+          //struct NedCoor_f ned_f;
           struct LlaCoor_i lla;
           lla.lat = target.lat_int;
           lla.lon = target.lon_int;
@@ -889,15 +815,6 @@ static void mavlink_send_heartbeat(struct transport_tx *trans, struct link_devic
                              mav_mode,
                              custom_mode,
                              mav_state);
-  MAVLinkSendMessage();
-}
-
-/*
- * Send extended system state
-*/
-static void mavlink_send_extended_sys_state(struct transport_tx *trans, struct link_device *dev) {
-  uint8_t landed_state = autopilot_in_flight()? MAV_LANDED_STATE_IN_AIR : MAV_LANDED_STATE_ON_GROUND;
-  mavlink_msg_extended_sys_state_send(MAVLINK_COMM_0, MAV_VTOL_STATE_UNDEFINED, landed_state);
   MAVLinkSendMessage();
 }
 
