@@ -264,16 +264,16 @@
     <define name="AILERONS_FIRST_ORD_NUM" value="0.0198" />
     <define name="AILERONS_FIRST_ORD_DEN" value="-0.9802" />
 
-    <define name="SERVO_9_MIN_PWM" value="2200" />   
+    <define name="SERVO_9_MIN_PWM" value="2100" />   
     <define name="SERVO_9_MAX_PWM" value="900" />   
-    <define name="SERVO_9_NEUTRAL_PWM" value="1541" /> 
+    <define name="SERVO_9_NEUTRAL_PWM" value="1500" /> 
     <define name="SERVO_9_MIN_ANGLE_DEG" value="-25" /> 
     <define name="SERVO_9_MAX_ANGLE_DEG" value="25" /> 
     <define name="SERVO_9_DELAY_TS" value="5" /> 
 
-    <define name="SERVO_10_MIN_PWM" value="2200" />   
+    <define name="SERVO_10_MIN_PWM" value="2100" />   
     <define name="SERVO_10_MAX_PWM" value="900" />   
-    <define name="SERVO_10_NEUTRAL_PWM" value="1415" /> 
+    <define name="SERVO_10_NEUTRAL_PWM" value="1500" /> 
     <define name="SERVO_10_MIN_ANGLE_DEG" value="-25" /> 
     <define name="SERVO_10_MAX_ANGLE_DEG" value="25" /> 
     <define name="SERVO_10_DELAY_TS" value="5" /> 
@@ -451,15 +451,15 @@
     <define name="SERVO_EL_MIN_ANGLE" value="-89" unit="deg"/>
 
     <!-- ball bearings vehicle -->
-    <define name="SERVO_EL_1_ZERO_VALUE" value="-0.61" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="-3.5" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="0.43" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="16.69" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="-0.87" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="0.87" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-4.83" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="-3.25" unit="deg"/>
 
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="2.02" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="-12.12" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="-17.75" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="-11.16" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="0.08" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="-0.79" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="-3.33" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="-4.65" unit="deg"/>
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
