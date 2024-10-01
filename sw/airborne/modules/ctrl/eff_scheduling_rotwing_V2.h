@@ -28,7 +28,6 @@
 
 #include "std.h"
 #include "generated/airframe.h"
-#include "modules/ins/ins_ext_pose.h"
 
 #ifndef EFF_MAT_ROWS_NB
 #define EFF_MAT_ROWS_NB 6

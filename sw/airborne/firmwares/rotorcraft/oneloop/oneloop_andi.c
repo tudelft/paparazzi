@@ -343,8 +343,17 @@ struct FloatEulers eulers_zxy;
 float  psi_des_rad = 0.0;
 float  psi_des_deg = 0.0;
 static float  psi_vec[4]  = {0.0, 0.0, 0.0, 0.0};
+
+#if ONELOOP_ANDI_HEADING_MANUAL
 bool heading_manual = true;
+#else
+bool heading_manual = false;
+#endif
+#if ONELOOP_ANDI_YAW_STICK_IN_AUTO
 bool yaw_stick_in_auto = true;
+#else
+bool yaw_stick_in_auto = false;
+#endif
 bool ctrl_off = false;
 /*WLS Settings*/
 
@@ -475,7 +484,7 @@ static void send_oneloop_andi(struct transport_tx *trans, struct link_device *de
                                         3, oneloop_andi.sta_state.att_2d,
                                         3, oneloop_andi.sta_ref.att_2d,
                                         3, oneloop_andi.sta_ref.att_3d,                                       
-                                        ANDI_OUTPUTS, nu);                                      
+                                        ANDI_NUM_ACT, actuator_state_1l);                                      
 }
 // static void send_oneloop_actuator_state(struct transport_tx *trans, struct link_device *dev)
 // {
@@ -1011,7 +1020,7 @@ void init_controller(void){
   /*Register a variable from nav_hybrid. Should be improved when nav hybrid is final.*/
   float max_wind  = 20.0;
   max_v_nav = nav_max_speed + max_wind;
-  max_a_nav = 4.0; // FIXME nav_max_acceleration_sp;
+  max_a_nav = nav_max_acceleration_sp;
   /*Some calculations in case new poles have been specified*/
   p_att_rm.p3  = p_att_rm.omega_n  * p_att_rm.zeta;
   p_pos_rm.p3  = p_pos_rm.omega_n  * p_pos_rm.zeta;
