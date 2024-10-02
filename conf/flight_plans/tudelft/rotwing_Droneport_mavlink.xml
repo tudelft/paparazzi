@@ -87,6 +87,9 @@
       <set var="stabilization.cmd[COMMAND_THRUST_X]" value="0"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
+    <block name="Hold_mission">
+    	<attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
     <block name="Start Engine" strip_button="Start Engines" strip_icon="on.png">
         <exception cond="stage_time > 10" deroute="Holding point"/>
         <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
@@ -121,6 +124,11 @@
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <stay wp="STDBY"/>
+    </block>
+    <block name="Mission" strip_button="Mission">
+      <!--call_once fun="rotwing_request_configuration(ROTWING_CONFIGURATION_HYBRID)"/-->
+      <call fun="mission_run()"/>
+      <deroute block="land"/>
     </block>
     <block name="Standby_free">
         <call_once fun="rotwing_state_set(ROTWING_STATE_FREE)"/>
