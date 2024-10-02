@@ -41,7 +41,8 @@ enum TakeoffStatus {
   Takeoff_init,
   Takeoff,
   Climb_init,
-  Climb
+  Climb,
+  ErrorCase
 };
 
 enum LandingStatus {
@@ -107,31 +108,46 @@ bool nav_rotwing_takeoff_run(void)
     case StartEngine:
       rotwing_state_set(ROTWING_STATE_FORCE_HOVER);
       NavResurrect();
-      NavAttitude(RadOfDeg(0));
-      NavVerticalAutoThrottleMode(RadOfDeg(0));
+      nav_set_heading_current();
+      NavAttitude((stateGetNedToBodyEulers_f())->phi);
+      NavVerticalAutoThrottleMode((stateGetNedToBodyEulers_f())->theta);
       NavVerticalThrottleMode(9600*(0));
       // Switch to next state
-      rotwing_takeoff_status = RunEngine;
+      if (rotwing_state_hover_motors_running()) {
+        takeoff_timer = 0.0f;
+        rotwing_takeoff_status = RunEngine;
+      }
+      // Timeout
+      if (takeoff_timer > 10.0) {
+        rotwing_takeoff_status = ErrorCase;
+      }
       break;
     case RunEngine:
-      if (takeoff_timer > 10.0) {
+      if ((((fabs(DegOfRad((stateGetNedToBodyEulers_f())->theta))<liftoff_pitch_limit) && (fabs(DegOfRad((stateGetNedToBodyEulers_f())->phi))<liftoff_roll_limit)) && (takeoff_timer>2))) {
         rotwing_takeoff_status = Takeoff_init;
       }
       break;
     case Takeoff_init:
+      rotwing_state_set(ROTWING_STATE_FORCE_HOVER);
       autopilot_set_in_flight(true);
       NavSetWaypointHere(WP_CLIMB);
-      NavAttitude(RadOfDeg(0));
-      NavVerticalAutoThrottleMode(RadOfDeg(0));
+      NavAttitude(stateGetNedToBodyEulers_f()->phi);
+      NavVerticalAutoThrottleMode(stateGetNedToBodyEulers_f()->theta);
       NavVerticalThrottleMode(9600*(0.750000));
-      rotwing_takeoff_status = Takeoff;
+      takeoff_timer = 0.0f;
+      rotwing_takeoff_status = Takeoff; 
       break;
     case Takeoff:
-      if (takeoff_timer > 13. || (agl_dist_valid && (agl_dist_value>1.0))) {
+      rotwing_state_set(ROTWING_STATE_FORCE_HOVER);
+      NavSetWaypointHere(WP_CLIMB);
+      NavVerticalAutoThrottleMode(stateGetNedToBodyEulers_f()->theta);
+      NavVerticalThrottleMode(9600*(0.750000));
+      if (takeoff_timer > 0.25) {
         rotwing_takeoff_status = Climb_init;
       }
       break;
     case Climb_init:
+      rotwing_state_set(ROTWING_STATE_FORCE_HOVER);
       nav_set_heading_current();
       NavGotoWaypoint(WP_CLIMB);
       NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
@@ -139,9 +155,23 @@ bool nav_rotwing_takeoff_run(void)
       rotwing_takeoff_status = Climb;
       break;
     case Climb:
-      if (GetPosAlt()>20.000000) {
+      rotwing_state_set(ROTWING_STATE_FORCE_HOVER);
+      NavGotoWaypoint(WP_CLIMB);
+      NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
+      NavVerticalClimbMode(nav.climb_vspeed);
+      if (GetPosAlt()>50.000000) {
+        rotwing_state_set(ROTWING_STATE_REQUEST_FW);
         return false;
       }
+      break;
+    case ErrorCase:
+      rotwing_state_set(ROTWING_STATE_FORCE_HOVER);
+      NavKillThrottle();
+      stabilization.cmd[COMMAND_THRUST_X] = 0;
+      NavAttitude(RadOfDeg(0));
+      NavVerticalAutoThrottleMode(RadOfDeg(0));
+      NavVerticalThrottleMode(9600*(0));
+      // Stay in here forever
       break;
   }
 
@@ -152,5 +182,36 @@ bool nav_rotwing_takeoff_run(void)
 
 bool nav_rotwing_land_run(void)
 {
+  // switch(rotwing_landing_status) {
+  //   case Descend:
+  //     rotwing_state_set(ROTWING_STATE_REQUEST_HOVER);
+  //     NavGotoWaypoint(10);
+  //     NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
+  //     NavVerticalClimbMode(-(1.000000));
+  //     if ((nav_block != 26) && (GetPosHeight()<12.000000)) {
+  //       rotwing_landing_status = Flare;
+  //     }
+  //     break;
+  //   case Flare:
+  //     rotwing_state_set(ROTWING_STATE_FORCE_HOVER);
+  //     NavGotoWaypoint(10);
+  //     NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
+  //     NavVerticalClimbMode(-(0.500000));
+  //     if ((nav_block != 27) && (agl_dist_valid&&(agl_dist_value<0.280000))) {
+  //       rotwing_landing_status = Flarelow;
+  //     }
+  //     break;
+  //   case Flarelow:
+  //     rotwing_state_set(ROTWING_STATE_FORCE_HOVER);
+  //     NavGotoWaypoint(10);
+  //     NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
+  //     NavVerticalClimbMode(-(0.500000));
+  //     if (((nav_block != 2) && !(nav_is_in_flight())) || ((nav_block != 2) && ground_detect())) {
+  //       return false;
+  //     }
+  //     break; 
+  // }
+
+  // landing_timer += dt_navigation;
   return false;
 }
