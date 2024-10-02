@@ -13,15 +13,13 @@
         <target name="ap" board="cube_orangeplus">
             <configure name="PERIODIC_FREQUENCY" value="500"/> <!-- Configure the main periodic frequency to 500Hz -->
 
-            <module name="radio_control" type="sbus">
-                <configure name="SBUS_PORT" value="UART3"/> <!-- On the TELEM2 port -->
-            </module>
+            <module name="radio_control" type="ppm"/>
             <module name="sys_mon"/>
             <module name="flight_recorder"/>
             
             <module name="mavlink">
-                <configure name="MAVLINK_BAUD" value="B115200"/>
-                <configure name="MAVLINK_PORT" value="UART8"/>
+                <configure name="MAVLINK_BAUD" value="B460800"/>
+                <configure name="MAVLINK_PORT" value="UART3"/>
                 <define name="MAV_AUTOPILOT_ID" value="MAV_AUTOPILOT_ARDUPILOTMEGA"/>
             </module>
             
