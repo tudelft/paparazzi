@@ -98,7 +98,7 @@ float roll_target_slider = 0;
 // float time_old = 0; 
 // float test_frequency = 0.5;
 
-float alt_offset_beacon = 4; 
+float alt_offset_beacon = 3; 
 int selected_beacon = 2; 
 int sixdof_mode = 1; 
 

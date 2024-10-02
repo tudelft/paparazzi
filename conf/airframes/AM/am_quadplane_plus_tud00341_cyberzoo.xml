@@ -190,8 +190,8 @@
 
   <!-- Maximum limits of the sticks -->
   <section name="MANUAL_CONTROL_OPTIONS" prefix="MANUAL_CONTROL_">
-    <define name="MAX_CMD_FWD_SPEED" value="20.0" unit="m/s"/>
-    <define name="MAX_CMD_LAT_SPEED" value="10.0" unit="m/s"/>
+    <define name="MAX_CMD_FWD_SPEED" value="25.0" unit="m/s"/>
+    <define name="MAX_CMD_LAT_SPEED" value="20.0" unit="m/s"/>
     <define name="MAX_CMD_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_CMD_PITCH_ANGLE" value="25.0" unit="deg"/>
     <define name="MAX_CMD_ROLL_ANGLE" value="25.0" unit="deg"/>
@@ -288,7 +288,7 @@
 
     <define name="PID_P_GAIN_THETA" value="300"/>
     <define name="PID_I_GAIN_THETA" value="2"/>
-    <define name="PID_D_GAIN_THETA" value="140"/>
+    <define name="PID_D_GAIN_THETA" value="120"/>
 
     <define name="PID_P_GAIN_PSI_AZ" value="1.3"/>
     <define name="PID_I_GAIN_PSI_AZ" value="0.34"/>
@@ -325,26 +325,26 @@
     <define name="PID_MAX_AZ_ORDER" value="35" unit="deg"/> <!--max azimuth deflection in PID mode-->
 
     <!-- INDI proportional gains -->
-    <define name="CRUISE_GAIN_P" value="1.5"/>
-    <define name="CRUISE_GAIN_Q" value="1.3"/>
+    <define name="CRUISE_GAIN_P" value="4"/>
+    <define name="CRUISE_GAIN_Q" value="4"/>
     <define name="CRUISE_GAIN_R" value="1"/>
 
     <define name="CRUISE_GAIN_X" value="1"/>
-    <define name="CRUISE_GAIN_Y" value="1.5"/>
+    <define name="CRUISE_GAIN_Y" value="1"/>
     <define name="CRUISE_GAIN_Z" value="2"/>
 
     <!-- INDI derivative gains -->
-    <define name="CRUISE_GAIN_P_DOT" value="8"/>
+    <define name="CRUISE_GAIN_P_DOT" value="7"/>
     <define name="CRUISE_GAIN_Q_DOT" value="7"/>
     <define name="CRUISE_GAIN_R_DOT" value="5"/>
 
     <define name="CRUISE_GAIN_X_DOT" value="1"/>
-    <define name="CRUISE_GAIN_Y_DOT" value="1.75"/>
+    <define name="CRUISE_GAIN_Y_DOT" value="1"/>
     <define name="CRUISE_GAIN_Z_DOT" value="5"/>
 
     <!-- INDI approach gains -->
-    <define name="APP_GAIN_P" value="1.5"/>
-    <define name="APP_GAIN_Q" value="1.3"/>
+    <define name="APP_GAIN_P" value="4"/>
+    <define name="APP_GAIN_Q" value="4"/>
     <define name="APP_GAIN_R" value="1.6"/>
 
     <define name="APP_GAIN_X" value="3.5"/>
@@ -353,7 +353,7 @@
 
     <!-- INDI approach gains -->
     <define name="APP_GAIN_P_DOT" value="8"/>
-    <define name="APP_GAIN_Q_DOT" value="7"/>
+    <define name="APP_GAIN_Q_DOT" value="8"/>
     <define name="APP_GAIN_R_DOT" value="5"/>
 
     <define name="APP_GAIN_X_DOT" value="4"/>
@@ -526,7 +526,7 @@
 
     <define name="DISABLE_ACC_DECREMENT_INNER_LOOP" value="0"/>
 
-    <define name="VERT_ACC_MARGIN" value="2.5" unit="m/s^2"/>
+    <define name="VERT_ACC_MARGIN" value="0.5" unit="m/s^2"/>
     
     <define VALUE="0.01" NAME="W_DV_1"/>
     <define VALUE="0.01" NAME="W_DV_2"/>
@@ -634,7 +634,7 @@
     <define name="VY_CONTROL_STATIC_GAIN" value="0.2" unit="(m/s)/m"/>
     <define name="VZ_CONTROL_STATIC_GAIN" value="0.2" unit="(m/s)/m"/>
 
-    <define name="MAX_DECEL_WP_APPROACH" value="1.8" unit="m/s^2"/>
+    <define name="MAX_DECEL_WP_APPROACH" value="1.2" unit="m/s^2"/>
 
     <define name="VY_AIRSPEED_GAIN_COEFF" value="0.0"/>
     <define name="VY_GAIN_MAX_VAL" value="1"/>
@@ -644,7 +644,7 @@
     <define name="VZ_GAIN_MAX_VAL" value="1"/>
     <define name="VZ_GAIN_MIN_VAL" value="0.6"/>
 
-    <define name="FWD_SPEED_FORCE_FWD_MODE" value="25"/>
+    <define name="FWD_SPEED_FORCE_FWD_MODE" value="20"/>
     
   </section>
 
@@ -772,7 +772,7 @@
     <!--define name="UART7_CR2" value="(USART_CR2_STOP1_BITS | USART_CR2_SWAP_Msk)"/--> <!-- Swap RX/TX since RX doesn't work-->
 
     <define name="USE_EXT_REF_ATTITUDE" value="TRUE"/>
-    <define name="USE_EXT_REF_POSITION" value="TRUE"/>
+    <define name="MOVE_EXT_REF_POSITION" value="TRUE"/>
 
     <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/>
     <define name="FULLY_MANUAL_HEADING" value="TRUE"/>

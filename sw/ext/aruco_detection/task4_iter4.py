@@ -19,7 +19,7 @@ import pprzlink.messages_xml_map as messages_xml_map
 import pprzlink.message as message          
 
 #-----------------------Parameters--------------------------#
-MARKER_SIZE = 0.41 # meters
+MARKER_SIZE = 0.259 # meters
 timestep = None
 desired_aruco_dictionary = "DICT_5X5_1000"
 pathLoad = '/home/orangepi/paparazzi/sw/ext/aruco_detection/cameraCalibration_mapir_1440p.xml'
