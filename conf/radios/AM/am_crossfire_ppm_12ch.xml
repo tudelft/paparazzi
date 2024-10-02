@@ -1,4 +1,4 @@
-<!-- (c) 2023 Alessandro Mancinelli-->
+<!-- (c) 2024 Alessandro Mancinelli-->
 <!DOCTYPE radio SYSTEM "../radio.dtd">
 <radio name="Crossfire PPM" data_min="900" data_max="2100" sync_min="3500" sync_max="15000" pulse_type="POSITIVE">
  <channel function="THROTTLE" min="1100" neutral="1100" max="1900" average="0"/>
@@ -9,4 +9,8 @@
  <channel function="AUX2" min="1100" neutral="1500" max="1900" average="1"/> <!-- KILL_SWITCH -->
  <channel function="AUX3" min="1100" neutral="1500" max="1900" average="1"/> <!-- MANUAL_ROLL_CMD -->
  <channel function="AUX4" min="1100" neutral="1500" max="1900" average="1"/> <!-- MANUAL_PITCH_CMD -->
+ <channel function="AUX5" min="1100" neutral="1500" max="1900" average="1"/> <!-- EXTRA -->
+ <channel function="AUX6" min="1100" neutral="1500" max="1900" average="1"/> <!-- EXTRA -->
+ <channel function="AUX7" min="1100" neutral="1500" max="1900" average="1"/> <!-- EXTRA -->
+ <channel function="AUX8" min="1100" neutral="1500" max="1900" average="1"/> <!-- EXTRA -->
 </radio>
