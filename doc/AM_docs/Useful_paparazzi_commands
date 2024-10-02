@@ -55,3 +55,23 @@ $ sudo nano /etc/netplan/01-netcfg.yaml
             - 8.8.8.8
             - 8.8.4.4
 $ sudo netplan apply
+
+- Run python script at startup: 
+$ sudo nano /etc/systemd/system/my_script.service
+[Unit]
+Description=Aruco Detection
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/orangepi/paparazzi/sw/ext/aruco_detection/task4_iter4.py
+WorkingDirectory=/home/orangepi/paparazzi/sw/ext/aruco_detection/
+Restart=always
+RestartSec=5
+User=orangepi
+
+[Install]
+WantedBy=multi-user.target
+
+$ sudo systemctl daemon-reload
+$ sudo systemctl enable my_script.service
+
