@@ -167,9 +167,10 @@
       <configure name="TFMINI_COMPENSATE_ROTATION" value="TRUE"/>
     </module>
 
-    <!-- <module name="approach_moving_target"> -->
-      <!-- <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/> -->
-    <!-- </module> -->
+    <module name="approach_moving_target">
+      <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/>
+    </module>
+    
   </firmware>
 
   <servos>
@@ -476,7 +477,10 @@
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
     <define name="MAX_PHI_INDI" value="60" unit="deg"/>
     <define name="MAX_AOA_INDI" value="15" unit="deg"/>
-    <define name="MIN_AOA_INDI" value="2" unit="deg"/>
+    <define name="MIN_AOA_INDI" value="0" unit="deg"/>
+
+    <define name="AOA_ESTIMATION_AIRSPEED" value="4.0" unit="m/s"/>
+    <define name="MIN_AOA_ESTIMATION_AIRSPEED" value="3.0" unit="m/s"/>
 
     <define name="MAX_DELTA_AILERONS" value="25" unit="deg"/>
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>

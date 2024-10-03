@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="55" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="700" name="Overactuated vehicle Valkenburg" security_height="20">
+<flight_plan alt="120" ground_alt="70" lat0="50.793277" lon0="5.205962" max_dist_from_home="1000" name="Overactuated vehicle Droneport" security_height="20">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -23,33 +23,31 @@
   <waypoints>
     <waypoint name="HOME" x="12.6" y="-48.7"/>
     <waypoint name="CLIMB" x="62.6" y="-80.4"/>
-    <waypoint lat="52.1682794" lon="4.4139911" name="STDBY"/>
-    <waypoint lat="52.1694940" lon="4.4155585" name="p1"/>
-    <waypoint lat="52.167791" lon="4.416685" name="p2"/>
-    <waypoint lat="52.1671481" lon="4.4141374" name="p3"/>
-    <waypoint lat="52.1689418" lon="4.4132070" name="p4"/>
-    <waypoint lat="52.1681602" lon="4.4127708" name="TD"/>
-    <waypoint lat="52.1680902" lon="4.4148029" name="APP"/>
-    <waypoint lat="52.1686922" lon="4.4149181" name="FOLLOW"/>
-    <waypoint lat="52.169599" lon="4.417198" name="SIXDOF"/>
-    <waypoint lat="52.169742" lon="4.411045" name="C1"/>
-    <waypoint lat="52.168740" lon="4.407411" name="C2"/>
-    <waypoint lat="52.166515" lon="4.408235" name="C3"/>
-    <waypoint lat="52.164107" lon="4.410072" name="C4"/>
-    <waypoint lat="52.162922" lon="4.412524" name="C5"/>
-    <waypoint lat="52.163563" lon="4.417368" name="C6"/>
-    <waypoint lat="52.166336" lon="4.424451" name="C7"/>
-    <waypoint lat="52.169063" lon="4.423567" name="C8"/>
-    <waypoint lat="52.172299" lon="4.421081" name="C9"/>
-    <waypoint lat="52.170384" lon="4.416553" name="FLY1"/>
-    <waypoint lat="52.169892" lon="4.414011" name="FLY2"/>
-    <waypoint lat="52.169201" lon="4.411394" name="FLY3"/>
-    <waypoint lat="52.166201" lon="4.413254" name="FLY4"/>
-    <waypoint lat="52.165909" lon="4.415910" name="FLY5"/>
-    <waypoint lat="52.166849" lon="4.419219" name="FLY6"/>
-    <waypoint lat="52.167911" lon="4.418455" name="FLY7"/>
-    <waypoint lat="52.168774" lon="4.417835" name="FLY8"/>
-    <waypoint lat="52.169599" lon="4.417198" name="FLY9"/>
+
+    <waypoint name="STDBY" x="60" y="20"/>
+    <waypoint name="p1" x="65" y="75"/>
+    <waypoint name="p2" x="200" y="120"/>
+    <waypoint name="p3" x="250" y="-30"/>
+    <waypoint name="p4" x="120" y="-75"/>
+    <waypoint name="TD" x="10" y="-1"/>
+    <waypoint name="APP" x="70" y="-25"/>
+    <waypoint name="SIXDOF" x="150" y="120"/>
+    <waypoint name="FOLLOW" x="100" y="100"/>
+
+    <!-- Droneport Hard geofence-->
+    <waypoint lat="50.791621" lon="5.193689" name="C1"/>
+    <waypoint lat="50.788376" lon="5.196579" name="C2"/>
+    <waypoint lat="50.793049" lon="5.208995" name="C3"/>
+    <waypoint lat="50.794099" lon="5.209429" name="C4"/>
+    <waypoint lat="50.796087" lon="5.207557" name="C5"/>
+    <waypoint lat="50.796139" lon="5.205680" name="C6"/>
+    <!-- Droneport Soft geofence -->
+    <waypoint lat="50.791472" lon="5.194573" name="FLY1"/>
+    <waypoint lat="50.788950" lon="5.196814" name="FLY2"/>
+    <waypoint lat="50.793310" lon="5.208432" name="FLY3"/>
+    <waypoint lat="50.794035" lon="5.208728" name="FLY4"/>
+    <waypoint lat="50.795680" lon="5.207179" name="FLY5"/>
+    <waypoint lat="50.795718" lon="5.205842" name="FLY6"/>
   </waypoints>
   <sectors>
     <sector color="orange" name="Safe_area">
@@ -59,9 +57,6 @@
       <corner name="FLY4"/>
       <corner name="FLY5"/>
       <corner name="FLY6"/>
-      <corner name="FLY7"/>
-      <corner name="FLY8"/>
-      <corner name="FLY9"/>
     </sector>
     <sector color="red" name="Flight_area">
       <corner name="C1"/>
@@ -70,9 +65,6 @@
       <corner name="C4"/>
       <corner name="C5"/>
       <corner name="C6"/>
-      <corner name="C7"/>
-      <corner name="C8"/>
-      <corner name="C9"/>
     </sector>
   </sectors>
   <modules>
@@ -119,7 +111,7 @@
       <set value="0" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
-      <stay climb="-0.5" vmode="climb" wp="TD"/>
+      <stay climb="-0.5" vmode="climb" wp="TD" until="stage_time @GT 0"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <set value="1" var="approach_state"/>

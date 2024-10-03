@@ -64,7 +64,7 @@
 
 #define RECTIFY_LAT_AND_FWD_SPEED
 
-float fpa_off_deg = -3.0; 
+float fpa_off_deg = 0.0; 
 #define NEW_FPA_DEF
 
 // #define USE_RM
@@ -1458,7 +1458,7 @@ void assign_variables(void){
     }
 
     #ifdef NEW_FPA_DEF
-        float smooth_gain_gamma = (airspeed - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION) / (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION);
+        float smooth_gain_gamma = (airspeed - OVERACTUATED_MIXING_MIN_AOA_ESTIMATION_AIRSPEED) / (OVERACTUATED_MIXING_AOA_ESTIMATION_AIRSPEED - OVERACTUATED_MIXING_MIN_AOA_ESTIMATION_AIRSPEED);
         Bound(smooth_gain_gamma , 0, 1); // 0 until min_speed and 1 above ref_speed
 
         float flight_path_angle_offset = fpa_off_deg*M_PI/180;
