@@ -417,7 +417,7 @@ int main(int ac, const char *av[]) {
     });
 
     // Initialize network, this can only be done once
-    NetworkConfig networkConfiguration { 92, "enx3c8cf8fbb199" };
+    NetworkConfig networkConfiguration { 158, "enx000000000600" };
     bool networkSuccess = droneManager->initializeNetwork(networkConfiguration);
     if (!networkSuccess) {
         std::cout << "Drone Manager failed network setup" << std::endl;
