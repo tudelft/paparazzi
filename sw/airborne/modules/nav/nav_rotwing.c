@@ -65,7 +65,7 @@ static bool nav_rotwing_takeoff(uint8_t nb __attribute__((unused)), float *param
   if (flag == MissionInit) {
     if (!autopilot.in_flight) {
       rotwing_takeoff_status = StartEngine;
-      printf("Start_engine\n");
+      //printf("Start_engine\n");
     } else {
       rotwing_takeoff_status = Climb;
     }

@@ -409,7 +409,9 @@ extern void mavlink_waypoint_handler(mavlink_mission_item *mission_item)
             current_bool = 0;
           }
 
-          MAVLINK_DEBUG("mission_insert response %i\n", mission_insert(insert, &me));
+          int r = mission_insert(insert, &me);
+          MAVLINK_DEBUG("mission_insert response %i\n", r);
+          (void)r;
           
           #if PERIODIC_TELEMETRY
           DOWNLINK_SEND_MISSION_ITEM(DefaultChannel, DefaultDevice,
@@ -447,7 +449,9 @@ extern void mavlink_waypoint_handler(mavlink_mission_item *mission_item)
               current_bool = 0;
             }
 
-            MAVLINK_DEBUG("mission_insert response %i\n", mission_insert(insert, &me));
+            int r = mission_insert(insert, &me);
+            MAVLINK_DEBUG("mission_insert response %i\n", r);
+            (void)r;
 
             #if PERIODIC_TELEMETRY
             DOWNLINK_SEND_MISSION_ITEM(DefaultChannel, DefaultDevice,
@@ -495,7 +499,9 @@ extern void mavlink_waypoint_handler(mavlink_mission_item *mission_item)
 
       enum MissionInsertMode insert = (enum MissionInsertMode)(Append);
 
-      MAVLINK_DEBUG("mission_insert response %i\n", mission_insert(insert, &me));
+      int r = mission_insert(insert, &me);
+      MAVLINK_DEBUG("mission_insert response %i\n", r);
+      (void)r;
       break;
     }
     case MAV_CMD_NAV_VTOL_TAKEOFF: {
@@ -513,7 +519,9 @@ extern void mavlink_waypoint_handler(mavlink_mission_item *mission_item)
 
       enum MissionInsertMode insert = (enum MissionInsertMode)(Append);
 
-      MAVLINK_DEBUG("mission_insert response %i\n", mission_insert(insert, &me));
+      int r = mission_insert(insert, &me);
+      MAVLINK_DEBUG("mission_insert response %i\n", r);
+      (void)r;
       break;
     }
     default: {
