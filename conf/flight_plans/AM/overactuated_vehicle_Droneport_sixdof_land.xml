@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="120" ground_alt="70" lat0="50.793277" lon0="5.205962" max_dist_from_home="1000" name="Overactuated vehicle Droneport" security_height="20">
+<flight_plan alt="120" ground_alt="60" lat0="50.793277" lon0="5.205962" max_dist_from_home="1000" name="Overactuated vehicle Droneport" security_height="20">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -31,7 +31,7 @@
     <waypoint name="p4" x="120" y="-75"/>
     <waypoint name="TD" x="10" y="-1"/>
     <waypoint name="APP" x="70" y="-25"/>
-    <waypoint name="SIXDOF" x="150" y="120"/>
+    <waypoint name="SIXDOF" x="10" y="-1"/>
     <waypoint name="FOLLOW" x="100" y="100"/>
 
     <!-- Droneport Hard geofence-->
@@ -141,8 +141,8 @@
       <stay wp="SIXDOF"/>
     </block>  
     <block name="follow_module">
-      <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
+      <set value="0" var="force_forward"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
     </block>
     <block name="stay_p1">
@@ -151,22 +151,20 @@
       <stay wp="p1"/>
     </block>
     <block name="go_p2">
-      <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>
-      <call_once fun="nav_set_heading_deg(90)"/>
+      <set value="0" var="force_forward"/>
       <go wp="p2"/>
-      <deroute block="stay_p1"/>
     </block>
     <block name="line_p1_p2">
-      <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="0" var="force_forward"/>
       <stay until="stage_time>10" wp="p1"/>
       <go from="p1" hmode="route" wp="p2"/>
       <stay wp="p2"/>
     </block>
     <block name="wp_goto_route">
-      <set value="1" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="1" var="force_forward"/>
       <go wp="p1"/>
       <go wp="p2"/>
       <go wp="p3"/>
@@ -174,8 +172,8 @@
       <deroute block="wp_goto_route"/>
     </block>
     <block name="route">
-      <set value="1" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="1" var="force_forward"/>
       <go from="p1" hmode="route" wp="p2"/>
       <go from="p2" hmode="route" wp="p3"/>
       <go from="p3" hmode="route" wp="p4"/>
@@ -183,25 +181,76 @@
       <deroute block="route"/>
     </block>
     <block name="Oval">
-      <set value="1" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="1" var="force_forward"/>
       <oval p1="p1" p2="p2" radius="100"/>
     </block>
     <block name="Circle_CW">
-      <set value="1" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="1" var="force_forward"/>
       <circle radius="100" wp="p1"/>
     </block>
     <block name="Circle_CCW">
-      <set value="1" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="1" var="force_forward"/>
       <circle radius="-100" wp="p1"/>
     </block>
     <block name="Approach APP">
-      <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
+      <set value="0" var="force_forward"/>
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
     </block>
+
+    <block name="land_sixdof">
+      <set value="0" var="force_forward"/>
+      <set value="0" var="approach_state"/>
+      <go wp="SIXDOF"/>
+    </block>
+    <block name="descend_sixdof">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <exception cond="!(stateGetPositionEnu_f()->z > 12.0)" deroute="flare_sixdof"/>
+      <stay climb="-1.5" vmode="climb" wp="SIXDOF"/>
+    </block>
+    <block name="flare_sixdof">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <stay climb="-0.8" vmode="climb" wp="SIXDOF"/>
+      <exception cond="!(stateGetPositionEnu_f()->z > 1.5)" deroute="flare_low_sixdof"/>
+      <exception cond="agl_dist_valid @AND !(agl_dist_value > 1.0)" deroute="flare_low_sixdof"/>
+    </block>
+    <block name="flare_low_sixdof">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <exception cond="detect_ground_on_landing()" deroute="landed"/>
+      <stay climb="-0.5" vmode="climb" wp="SIXDOF"/>
+    </block>
+
+    <block name="land_gps_bar">
+      <set value="0" var="force_forward"/>
+      <set value="0" var="approach_state"/>
+      <go pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
+    </block>
+    <block name="descend_gps_bar">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <exception cond="!(stateGetPositionEnu_f()->z > 12.0)" deroute="flare_gps_bar"/>
+      <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" climb="-1.5" vmode="climb" wp="FOLLOW"/>
+    </block>
+    <block name="flare_gps_bar">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" climb="-0.8" vmode="climb" wp="FOLLOW"/>
+      <exception cond="!(stateGetPositionEnu_f()->z > 1.0)" deroute="flare_low_gps_bar"/>
+      <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.50)" deroute="flare_low_gps_bar"/>
+    </block>
+    <block name="flare_low_gps_bar">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <exception cond="detect_ground_on_landing()" deroute="landed"/>
+      <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" climb="-0.5" vmode="climb" wp="FOLLOW"/>
+    </block>
+
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <set value="1" var="approach_state"/>
       <set value="0" var="force_forward"/>
@@ -231,6 +280,7 @@
       <exception cond="detect_ground_on_landing()" deroute="landed"/>
       <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
+
     <block name="landed">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>

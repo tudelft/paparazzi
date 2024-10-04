@@ -476,7 +476,7 @@ static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am
         waypoint_set_enu(WP_SIXDOF, &target_pos_sixdof); 
         // Send to the GCS that the waypoint has been moved
         static uint8_t wp_id = WP_SIXDOF;
-        RunOnceEvery(PERIODIC_FREQUENCY / 2, { //Update SIXDOF waypoint every 0.5 seconds
+        RunOnceEvery(PERIODIC_FREQUENCY / 10.0f, { //Update SIXDOF waypoint every 0.1 seconds
             DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
                                     &waypoints[WP_SIXDOF].enu_i.x,
                                     &waypoints[WP_SIXDOF].enu_i.y,

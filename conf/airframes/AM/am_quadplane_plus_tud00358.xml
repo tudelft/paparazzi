@@ -53,7 +53,7 @@
       <module name="gps" type="ublox">
         <configure name="GPS_BAUD" value="B460800"/><!-- UBX message only but rate set to ~?HZ with GPS, GLONASS, BEIDU and GALILEIO at the SAME time is a LOT of GNSS message data-->
         <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
-        <configure name="UBX2_GPS_PORT" value="UART_9"/>
+        <configure name="UBX2_GPS_PORT" value=""/>
       </module>
 
       <!-- If one want to use a Joystick over connection one can us this instead of sbus-->
