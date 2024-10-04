@@ -1,5 +1,5 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-<flight_plan alt="130" ground_alt="70" lat0="50.794199" lon0="5.205923" max_dist_from_home="1070" name="Rotating Wing Droneport" security_height="2">
+<flight_plan alt="120" ground_alt="60" lat0="50.794199" lon0="5.205923" max_dist_from_home="1070" name="Rotating Wing Droneport" security_height="2">
   <header/>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>

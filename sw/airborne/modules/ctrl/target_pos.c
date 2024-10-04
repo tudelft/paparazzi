@@ -236,17 +236,18 @@ bool target_pos_set_current_offset(float unk __attribute__((unused))) {
 void target_set_wp(uint8_t wp_id) {
   struct NedCoor_f pos;
   struct EnuCoor_f pos_enu;
-  target_get_pos(&pos, NULL);
-  ENU_OF_TO_NED(pos_enu, pos);
+  if(target_get_pos(&pos, NULL)) {
+    ENU_OF_TO_NED(pos_enu, pos);
 
-  // Update the waypoint
-  waypoint_set_enu(wp_id, &pos_enu);
+    // Update the waypoint
+    waypoint_set_enu(wp_id, &pos_enu);
 
-  // Send to the GCS that the waypoint has been moved (every second)
-  RunOnceEvery(NAVIGATION_FREQUENCY, {
-    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-                                &waypoints[wp_id].enu_i.x,
-                                &waypoints[wp_id].enu_i.y,
-                                &waypoints[wp_id].enu_i.z);
-  });
+    // Send to the GCS that the waypoint has been moved (every second)
+    RunOnceEvery(NAVIGATION_FREQUENCY, {
+      DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+                                  &waypoints[wp_id].enu_i.x,
+                                  &waypoints[wp_id].enu_i.y,
+                                  &waypoints[wp_id].enu_i.z);
+    });
+  }
 }
