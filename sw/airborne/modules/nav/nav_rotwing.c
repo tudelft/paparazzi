@@ -159,7 +159,7 @@ bool nav_rotwing_takeoff_run(void)
       NavGotoWaypoint(WP_CLIMB);
       NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
       NavVerticalClimbMode(nav.climb_vspeed);
-      if (GetPosAlt()>50.000000) {
+      if (GetPosHeight()>50.000000) {
         rotwing_state_set(ROTWING_STATE_REQUEST_FW);
         return false;
       }
