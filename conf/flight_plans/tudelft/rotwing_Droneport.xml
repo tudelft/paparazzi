@@ -17,6 +17,7 @@
     <waypoint name="Final" x="257.543" y="-180.466" height="30"/>
     <waypoint name="APP" x="70" y="-25"/>
     <waypoint name="FOLLOW" x="300" y="80"/>
+    <waypoint name="TARGET" x="250" y="80"/>
     <waypoint name="ML_global_target" x="300" y="60"/>
     <!-- Droneport Hard geofence-->
     <waypoint lat="50.791621" lon="5.193689" name="C1"/>
@@ -90,7 +91,7 @@
       <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
       <call_once fun="NavKillThrottle()"/>
       <set var="stabilization.cmd[COMMAND_THRUST_X]" value="0"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" pre_call="target_set_wp(WP_TARGET)" vmode="throttle"/>
     </block>
     <block name="Start Engine" strip_button="Start Engines" strip_icon="on.png">
         <exception cond="stage_time > 10" deroute="Holding point"/>
