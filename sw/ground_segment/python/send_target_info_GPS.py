@@ -25,34 +25,34 @@ class UAV:
 
 class PNMessage:
     def __init__(self):
-        self.ids = 69
-        self.uav = UAV(69)
+        self.ids = 4
+        self.uav = UAV(4)
         self._interface = IvyMessagesInterface("PN Interception")
 
-        def ins_cb(ac_id, msg):
+        def gps_int_cb(ac_id, msg):
             #print(msg.name)
-            if ac_id == self.ids and msg.name == "INS":
+            if ac_id == self.ids and msg.name == "GPS_INT":
                 uav = self.uav
-                uav.x = msg['ins_x']
-                uav.y = msg['ins_y']
-                uav.z = msg['ins_z']
-                uav.dx = msg['ins_xd']
-                uav.dy = msg['ins_yd']
-                uav.dz = msg['ins_zd']
+                uav.x = msg['ecef_x']
+                uav.y = msg['ecef_y']
+                uav.z = msg['ecef_z']
+                uav.dx = msg['ecef_xd']
+                uav.dy = msg['ecef_yd']
+                uav.dz = msg['ecef_zd']
                 uav.timeout = 0
                 uav.initialized = True
                 
-        self._interface.subscribe(ins_cb, PprzMessage("telemetry", "INS"))
+        self._interface.subscribe(gps_int_cb, PprzMessage("telemetry", "GPS_INT"))
 
     def send_pn_info(self):
 
         msgw = PprzMessage("datalink", "HITL_IMU")
-        msgw["gp"] =  float(self.uav.x)*0.0039063
-        msgw["gq"] =  float(self.uav.y)*0.0039063
-        msgw["gr"] =  float(self.uav.z)*0.0039063
-        msgw["ax"] =  float(self.uav.dx)*0.0000019
-        msgw["ay"] =  float(self.uav.dy)*0.0000019
-        msgw["az"] =  float(self.uav.dz)*0.0000019
+        msgw["gp"] =  float(self.uav.x)*0.01
+        msgw["gq"] =  float(self.uav.y)*0.01
+        msgw["gr"] =  float(self.uav.z)*0.01
+        msgw["ax"] =  float(self.uav.dx)*0.01
+        msgw["ay"] =  float(self.uav.dy)*0.01
+        msgw["az"] =  float(self.uav.dz)*0.01
         msgw["ac_id"] = 24
         self._interface.send(msgw)
 

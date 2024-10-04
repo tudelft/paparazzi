@@ -7,7 +7,7 @@
     <file name="raspberrypi.h"/>
   </header>
   <init fun="raspberrypi_init()"/>
-  <periodic fun="raspberrypi_periodic()" autorun="TRUE" freq="2"/>
+  <!-- <periodic fun="raspberrypi_periodic()" autorun="TRUE" freq="2"/> -->
   <event fun="raspberrypi_event()"/>
   <makefile>
 <!--       Configure default UART port and baudrate-->

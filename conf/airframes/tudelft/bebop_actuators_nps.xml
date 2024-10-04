@@ -12,7 +12,6 @@
     <target name="nps" board="pc">
       <module name="fdm" type="jsbsim"/>
       <module name="udp"/>
-      <!--define name="LOGGER_FILE_PATH" value="yamac/home/tmp/paparazzi/log"/-->
       <define name="STABILIZATION_INDI_RPM_FEEDBACK" value="FALSE"/>
     </target>
 
@@ -38,10 +37,10 @@
       <define name="WLS_N_U" value="4"/>
       <define name="WLS_N_V" value="4"/>
     </module>
+    <module name="pn"/>
     <module name="geo_mag"/>
     <module name="air_data"/>
-    <module name="pn"/>
-    <!--module name="logger_file"/>
+    <!--module name="logger_file">
       <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000"/>
     </module-->
   </firmware>
@@ -155,7 +154,7 @@
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
     <define name="MAX_BANK" value="20" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="17" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="12" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
     <define name="PGAIN" value="79"/>

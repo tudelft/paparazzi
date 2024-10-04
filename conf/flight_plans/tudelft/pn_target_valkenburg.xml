@@ -1,4 +1,4 @@
-<flight_plan SECURITY_HEIGHT="2" NAME="Oneloop Valkenburg" MAX_DIST_FROM_HOME="5000" LON0="4.412444" LAT0="52.168595" GROUND_ALT="0" ALT="8.0">
+<flight_plan SECURITY_HEIGHT="2" NAME="Oneloop Valkenburg" MAX_DIST_FROM_HOME="5000" LON0="0.0" LAT0="0.0" GROUND_ALT="0" ALT="8.0">
     <header>    #include &quot;modules/datalink/datalink.h&quot;
         #include "modules/datalink/datalink.h"
         #include "modules/energy/electrical.h"
@@ -8,7 +8,7 @@
         #define NPS_GAZEBO_WORLD "cyberzoo_orange_poles.world"
     </header>
     <waypoints>
-        <waypoint NAME="HOME" LON="4.4134865" LAT="52.1682196"/>
+        <waypoint NAME="HOME" X="0.0" Y="0.0"/>
         <waypoint Y="-80.4" X="62.6" NAME="CLIMB"/>
         <waypoint Y="-55.1" X="106.0" NAME="STDBY"/>
         <waypoint Y="-254.3" X="322.0" NAME="p1"/>
@@ -90,6 +90,9 @@
         </block>
         <block NAME="Stand">
             <stay WP="p1"/>
+        </block>
+        <block NAME="Circle">
+            <circle radius="20" wp="STDBY"/>
         </block>
         <block STRIP_ICON="land-right.png" STRIP_BUTTON="land here" NAME="land here" KEY="l">
             <call_once FUN="NavSetWaypointHere(WP_TD)"/>

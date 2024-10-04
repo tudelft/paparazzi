@@ -10,7 +10,7 @@
     <file name="pn.h"/>
   </header>
   <init fun="pn_init()"/>
-  <periodic fun="pn_run()" freq="500" start="pn_start()"
+  <periodic fun="pn_run()" freq="60" start="pn_start()"
 		    stop="pn_stop()" autorun="FALSE"/>
   <event fun="pn_event()"/>
   <datalink message="HITL_IMU" fun="pn_parse_HITL_IMU(buf)"/>

@@ -258,7 +258,11 @@
     </message>
 
     <message name="RASPBERRY_OUT" id="38">
-      <field name="rpi_data_out_ptr" type="struct raspberrypi_data_out"/>
+      <field name="rpi_data_out_ptr" type="struct raspberrypi_data_out *"/>
+    </message>
+
+    <message name="RPI_INFO" id="39">
+      <field name="rpi_data_in_ptr" type="struct raspberrypi_data_in *"/>
     </message>
 
   </msg_class>

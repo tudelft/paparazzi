@@ -1,5 +1,5 @@
-#ifndef AM7_H
-#define AM7_H
+#ifndef RASPBERRYPI_H
+#define RASPBERRYPI_H
 
 #define START_BYTE 0x9B  //1st start block identifier byte
 
@@ -25,11 +25,12 @@ struct __attribute__((__packed__)) raspberrypi_data_in {
 struct __attribute__((__packed__)) raspberrypi_data_out {
     //Actuator state - unfiltered
     int16_t iteration;
+    int16_t check_data;
     uint8_t checksum_out;
 };
 
 extern void raspberrypi_init(void);
-extern void raspberrypi_periodic(void);
+// extern void raspberrypi_periodic(void);
 extern void raspberrypi_event(void);
 
 #endif

@@ -15,8 +15,10 @@
 #include "pprzlink/pprz_transport.h"
 #include "pprzlink/pprzlink_device.h"
 #include "pprzlink/intermcu_msg.h"
+#include "modules/raspberrypi/raspberrypi.h"
+#include "math/pprz_geodetic_float.h"
 
-//#define PRINT(string,...) fprintf(stderr, "[pn->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
+#define PRINT(string,...) fprintf(stderr, "[pn->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 #define PN_PERIODIC_FREQUENCY 500.0
 
 
@@ -48,6 +50,14 @@ struct FloatVect3 acc_actual = {0.0f, 0.0f, 0.0f};
 struct StabilizationSetpoint quat_des;
 struct Int32Quat q_des;
 struct Proportional_nav pn_log;
+struct raspberrypi_data_out rpi_data_exchange;
+struct raspberrypi_data_in rpi_data_recieve;
+struct NedCoor_f ned_pos_target;
+struct NedCoor_f ned_vel_target;
+struct EcefCoor_f ecef_pos_target;
+struct EcefCoor_f ecef_vel_target;
+struct LtpDef_f origin_target;
+struct LlaCoor_f home_origin;
 float speed_gain = 1.8;
 float pos_gain = 1.3;
 float speed_gainz = 1.1;
@@ -60,14 +70,16 @@ float speed_mag = 0.0;
 float heading_cmd = 0.0;
 bool in_flight;
 bool interception = false;
-bool follow = false;
+bool follow = true;
 bool message = false;
 uint8_t flag = 1;
 bool los_saturate = false;
 bool begin = false;
 int counter = 0;
+int counter_mesg = 0;
 float debug;
-
+static abi_event rpi_info_ev;
+bool send_message = true;
 
 // Initialize a pointer to a FloatVect3 struct and assign the address of 'vector'
 //struct FloatVect3 *acceleration = &accel_des;
@@ -87,6 +99,7 @@ struct Proportional_nav *pn_info_logger(void);
 #include "modules/datalink/telemetry.h"
 static void send_target_info(struct transport_tx *trans, struct link_device *dev)
 {
+
   pprz_msg_send_FLIGHT_BENCHMARK(trans, dev, AC_ID,
                               &pos_target.x,
                               &pos_target.y,
@@ -97,12 +110,15 @@ static void send_target_info(struct transport_tx *trans, struct link_device *dev
 }
 #endif
 
-
+static void rpi_info_cb(uint8_t sender_id __attribute__((unused)), struct raspberrypi_data_in *rpi_data_in_auto)
+{
+  rpi_data_recieve = *rpi_data_in_auto;
+}
 void pn_init(void)
 {  
   pprz_transport_init(&pninfo.transport);
-  //guidance_indi_init();
-  //guidance_indi_enter();
+  
+  AbiBindMsgRPI_INFO(ABI_BROADCAST, &rpi_info_ev, rpi_info_cb);
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FLIGHT_BENCHMARK, send_target_info);
   #endif
@@ -124,7 +140,7 @@ void pn_start(void){
   intercept = true;
   interception = false;
   begin = true;
-
+  rpi_data_recieve.yaprak==2000;
 }
 
 void pn_stop(void){
@@ -136,7 +152,7 @@ void pn_run(void){
 
     return;
   }
-  nav.heading = atan2(pos_target.y, pos_target.x);
+  //nav.heading = atan2(pos_target.y, pos_target.x);
   //PRINT("%d", intercept);
   speed_interceptor.x = stateGetSpeedNed_f()->x;
   speed_interceptor.y = stateGetSpeedNed_f()->y;
@@ -147,6 +163,7 @@ void pn_run(void){
   if (interception){
     //PRINT("BBBB");
     //logger_file_stop();
+
     speed_des.x = 0.0;
     speed_des.y = 0.0;
     speed_des.z = 0.0;
@@ -154,11 +171,23 @@ void pn_run(void){
     accel_des.y = speed_gain*(speed_des.y - speed_interceptor.y); 
     accel_des.z = speed_gain*(speed_des.z - speed_interceptor.z); 
     saturate(&accel_des, 1);
+
     AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, flag, &accel_des);
 
   }
   else if(follow){
-    nav.heading = atan2(pos_target.y, pos_target.x);
+    printf("%d", rpi_data_recieve.yaprak);
+    
+    if(rpi_data_recieve.yaprak==2000){
+      printf("BBBBB");
+      rpi_data_exchange.iteration = 1000;
+      rpi_data_exchange.check_data = 1000;
+      AbiSendMsgRASPBERRY_OUT(RASPBERRY_OUT_ID, &rpi_data_exchange);
+      rpi_data_recieve.yaprak=1500;
+    }
+
+
+    //nav.heading = atan2(pos_target.y, pos_target.x);
   }
   else{
     rel_pos.x = pos_target.x- stateGetPositionNed_f()->x;
@@ -217,6 +246,7 @@ void pn_run(void){
     accel_des.x = speed_gain*(speed_des.x - speed_interceptor.x) + accel_des_pn.x;
     accel_des.y = speed_gain*(speed_des.y - speed_interceptor.y) + accel_des_pn.y;
     accel_des.z = speed_gain*(speed_des.z - speed_interceptor.z) + accel_des_pn.z;
+
     saturate(&accel_des, 1);
 
     pn_info(&pn_log, &accel_des_pn, &accel_des, &speed_des, &los_rate, &pos_target, &acc_actual, &speed_target);
@@ -304,7 +334,28 @@ void pn_parse_HITL_IMU(uint8_t *buf)
   speed_target.x = DL_HITL_IMU_ax(buf);
   speed_target.y = DL_HITL_IMU_ay(buf);
   speed_target.z = DL_HITL_IMU_az(buf);
-  //PRINT("%f", pos_target.x);
+
+  home_origin.lat = 52.168595*3.14159/180;
+  home_origin.lon = 4.412444*3.14159/180;
+  home_origin.alt = 0.0;
+  ltp_def_from_lla_f(&origin_target, &home_origin);
+  ecef_pos_target.x = pos_target.x;
+  ecef_pos_target.y = pos_target.y;
+  ecef_pos_target.z = pos_target.z;
+  ecef_vel_target.x = speed_target.x;
+  ecef_vel_target.y = speed_target.y;
+  ecef_vel_target.z = speed_target.z;
+
+  ned_of_ecef_point_f(&ned_pos_target, &origin_target, &ecef_pos_target);
+  ned_of_ecef_vect_f(&ned_vel_target, &origin_target, &ecef_vel_target);
+
+  pos_target.x = ned_pos_target.x;
+  pos_target.y = ned_pos_target.y;
+  pos_target.z = ned_pos_target.z;  
+  speed_target.x = ned_vel_target.x;
+  speed_target.y = ned_vel_target.y;
+  speed_target.z = ned_vel_target.z;
+
 }
 
 

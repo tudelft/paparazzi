@@ -7,9 +7,9 @@
         #include "modules/loggers/logger_file.h"
     </header>
     <waypoints>
-        <waypoint NAME="HOME" LON="4.4134865" LAT="52.1682196"/>
+        <waypoint NAME="HOME" X="0.0" Y="0.0"/>
         <waypoint Y="-80.4" X="62.6" NAME="CLIMB"/>
-        <waypoint Y="-55.1" X="106.0" NAME="STDBY"/>
+        <waypoint Y="20.0" X="20.0" NAME="STDBY"/>
         <!-- <waypoint LON="4.4183449" LAT="52.1642564" NAME="p1"/>
         <waypoint LON="4.4150398" LAT="52.1673403" NAME="p2"/> -->
         <!-- <waypoint Y="73.4" X="600.4" NAME="p3"/>

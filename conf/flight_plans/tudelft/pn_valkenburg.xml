@@ -12,9 +12,9 @@
     #define NPS_GAZEBO_WORLD "cyberzoo_orange_poles.world"
 </header>
 <waypoints>
-    <waypoint NAME="HOME" LON="4.4134865" LAT="52.1682196"/>
+    <waypoint NAME="HOME" X="0.0" Y="0.0"/>
     <waypoint Y="-80.4" X="62.6" NAME="CLIMB"/>
-    <waypoint Y="-55.1" X="106.0" NAME="STDBY"/>
+    <waypoint Y="20.0" X="20.0" NAME="STDBY"/>
     <waypoint LON="4.4124439" LAT="52.1685949" NAME="p1_I"/>
     <waypoint Y="-148.1" X="696.0" NAME="p2"/>
     <waypoint Y="73.4" X="600.4" NAME="p3"/>
@@ -132,7 +132,7 @@
       <call_once fun="pn_stop()"/> 
       <stay wp="STDBY"/>
     </block>
-    <block name="Stand">
+    <block name="Stand" pre_call="nav_set_heading_towards_waypoint(WP_PS)">
       <stay wp="PS"/>
     </block>
     <block key="l" name="land here" strip_button="land here" strip_icon="land-right.png">
