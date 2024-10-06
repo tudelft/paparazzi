@@ -1,13 +1,14 @@
 #include "am7x.h"
 #include <pthread.h>
-#include "MATLAB_generated_files/Nonlinear_controller_w_ail_new_aero_sl.h"
+#include "MATLAB_generated_files/Nonlinear_controller_w_ail_basic_aero_outer_loop.h"
+#include "MATLAB_generated_files/Nonlinear_controller_w_ail_basic_aero_inner_loop.h"
+#include "MATLAB_generated_files/compute_acc_control_rf_basic.h"
 #include "MATLAB_generated_files/rt_nonfinite.h"
 #include <string.h>
 #include <glib.h>
 #include <Ivy/ivy.h>
 #include <Ivy/ivyglibloop.h>
 #include "filters/low_pass_filter.h"
-#include "MATLAB_generated_files/compute_acc_nonlinear_control_rf_w_Mx_noah.h"
 
 
 #define USE_ARUCO
@@ -53,7 +54,7 @@ int verbose_sixdof_position = 1;
 int verbose_connection = 0;
 int verbose_optimizer = 0;
 int verbose_runtime = 0; 
-int verbose_received_data = 0; 
+int verbose_data_in = 0; 
 int verbose_submitted_data = 0; 
 int verbose_ivy_bus = 0; 
 int verbose_aruco = 0; 
@@ -191,7 +192,10 @@ void am7_init(){
   init_butterworth_2_low_pass(&flight_path_angle_filter, tau_indi, refresh_time_filters, 0.0);
 
   ///////////////////////////////////////////////////////////////////////////////////////////// Init watchdogs timers: 
-  gettimeofday(&time_last_opt_run, NULL);
+  gettimeofday(&current_time, NULL);
+  gettimeofday(&last_time_am7_msg_sent, NULL);
+  gettimeofday(&aruco_time, NULL);
+  gettimeofday(&sixdof_time, NULL);
   gettimeofday(&time_last_filt, NULL);
   gettimeofday(&starting_time_program_execution, NULL); 
 
@@ -465,6 +469,8 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     float use_u_init_outer_loop = extra_data_in_copy[89];
     float use_u_init_inner_loop = extra_data_in_copy[90];
 
+    float K_t_airspeed = extra_data_in_copy[91];
+
     //Exceptions: 
     if(beacon_tracking_id < 0.1f){
       beacon_tracking_id = default_beacon_tracking_id;
@@ -534,26 +540,24 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////Compute modeled accellerations:
-    float K_p_T_airspeed_corrected = K_p_T;
-    float K_p_M_airspeed_corrected = K_p_M;
-    double gain_motor = (max_omega - min_omega)/2;
-    double Omega_1_scaled = Omega_1 / gain_motor;
-    double Omega_2_scaled = Omega_2 / gain_motor;
-    double V_scaled = V/max_airspeed;
+    float K_p_T_airspeed_corrected = K_p_T * (1 - V*K_t_airspeed);
+    float K_p_M_airspeed_corrected = K_p_M * (1 - V*K_t_airspeed);
+    // double gain_motor = (max_omega - min_omega)/2;
+    // double Omega_1_scaled = Omega_1 / gain_motor;
+    // double Omega_2_scaled = Omega_2 / gain_motor;
+    // double V_scaled = V/max_airspeed;
     double modeled_accelerations[6];
-    c_compute_acc_nonlinear_control(
-     Beta,  CL_aileron,  Cd_zero,  Cl_alpha,
-     Cm_zero,  Cm_alpha,  I_xx,  I_yy,  I_zz,
-     K_Cd,  Omega_1,  Omega_2,  Omega_3,  Omega_4,
-     Omega_1_scaled,  Omega_2_scaled,  Phi,  S,
-     Theta,  V,  V_scaled,  b_1,  b_2,  b_3,
-     b_4,  delta_ailerons,  flight_path_angle,  g_1,
-     g_2,  g_3,  g_4,  l_1,  l_2,  l_3,
-     l_4,  l_z,  m,  p,  prop_R,  prop_Cd_0,
-     prop_Cl_0,  prop_Cd_a,  prop_Cl_a,  prop_delta,
-     prop_sigma,  prop_theta,  q,  r,  rho,
-     wing_span,  wing_chord,  modeled_accelerations);
 
+    compute_acc_control_rf_basic(
+            Beta, CL_aileron, Cd_zero, Cl_alpha,
+            Cm_zero, Cm_alpha, I_xx, I_yy, I_zz,
+            K_Cd, K_p_M_airspeed_corrected, K_p_T_airspeed_corrected, Omega_1, Omega_2,
+            Omega_3, Omega_4, Phi, S, Theta,
+            V, b_1, b_2, b_3, b_4,
+            delta_ailerons, flight_path_angle, g_1, g_2,
+            g_3, g_4, l_1, l_2, l_3, l_4,
+            l_z, m, p, q, r, rho,
+            wing_chord, modeled_accelerations);
 
     //FILTER VALUES:
     //////////////////////////////////////////////////////////////////////////////////////Filtered current modeled acc
@@ -625,7 +629,7 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     ////////////////////////////////////////////////////////////////////////////////////// ASSIGN TO THE DATA IN STRUCTURE
 
     struct data_in_optimizer mydata_in_optimizer_copy;
-    //Real time: 
+    //Real time filtered: 
     mydata_in_optimizer_copy.motor_1_state_filtered = u_in_filtered[0]; 
     mydata_in_optimizer_copy.motor_2_state_filtered = u_in_filtered[1];
     mydata_in_optimizer_copy.motor_3_state_filtered = u_in_filtered[2];
@@ -657,6 +661,15 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     mydata_in_optimizer_copy.pseudo_control_r_dot = pseudo_control_r_dot;
     mydata_in_optimizer_copy.desired_theta_value = desired_theta_value;
     mydata_in_optimizer_copy.desired_phi_value = desired_phi_value;
+
+    //Modeled accellerations filtered: 
+    mydata_in_optimizer_copy.modeled_ax_filtered = modeled_accelerations_filtered[0]; 
+    mydata_in_optimizer_copy.modeled_ay_filtered = modeled_accelerations_filtered[1]; 
+    mydata_in_optimizer_copy.modeled_az_filtered = modeled_accelerations_filtered[2];
+    mydata_in_optimizer_copy.modeled_p_dot_filtered = modeled_accelerations_filtered[3];
+    mydata_in_optimizer_copy.modeled_q_dot_filtered = modeled_accelerations_filtered[4];
+    mydata_in_optimizer_copy.modeled_r_dot_filtered = modeled_accelerations_filtered[5];
+
     //Non real time: 
     mydata_in_optimizer_copy.K_p_T = K_p_T_airspeed_corrected;
     mydata_in_optimizer_copy.K_p_M = K_p_M_airspeed_corrected;
@@ -749,7 +762,7 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     mydata_in_optimizer_copy.use_u_init_inner_loop = use_u_init_inner_loop;
 
     //Print received data if needed
-    if(verbose_received_data){
+    if(verbose_data_in){
 
       printf("\n ROLLING MESSAGE VARIABLES IN-------------------------------------------------- \n"); 
       printf("\n K_p_T * 1e-5 = %f \n",(float) mydata_in_optimizer_copy.K_p_T * 1e5); 
@@ -808,16 +821,13 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
       printf(" min_delta_ailerons = %f \n",(float) mydata_in_optimizer_copy.min_delta_ailerons);
       printf(" max_delta_ailerons = %f \n",(float) mydata_in_optimizer_copy.max_delta_ailerons);
       printf(" CL_aileron = %f \n",(float) mydata_in_optimizer_copy.CL_aileron);
-
       printf(" k_alt_tilt_constraint = %f \n",(float) mydata_in_optimizer_copy.k_alt_tilt_constraint);
       printf(" min_alt_tilt_constraint = %f \n",(float) mydata_in_optimizer_copy.min_alt_tilt_constraint);
       printf(" transition_speed = %f \n",(float) mydata_in_optimizer_copy.transition_speed);
       printf(" desired_motor_value = %f \n",(float) mydata_in_optimizer_copy.desired_motor_value);
       printf(" desired_el_value_deg = %f \n",(float) mydata_in_optimizer_copy.desired_el_value*180/M_PI);
       printf(" desired_az_value_deg = %f \n",(float) mydata_in_optimizer_copy.desired_az_value*180/M_PI);
-
       printf(" desired_ailerons_value = %f \n",(float) mydata_in_optimizer_copy.desired_ailerons_value);
-
       printf(" min_theta_hard = %f \n",(float) mydata_in_optimizer_copy.min_theta_hard*180/M_PI);
       printf(" max_theta_hard = %f \n",(float) mydata_in_optimizer_copy.max_theta_hard*180/M_PI);
       printf(" min_phi_hard = %f \n",(float) mydata_in_optimizer_copy.min_phi_hard*180/M_PI);
@@ -826,9 +836,7 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
       printf(" filter_cutoff_frequency_telem = %f \n",(float) mydata_in_optimizer_copy.filter_cutoff_frequency_telem);
       printf(" max_airspeed = %f \n",(float) mydata_in_optimizer_copy.max_airspeed);
       printf(" vert_acc_margin = %f \n",(float) mydata_in_optimizer_copy.vert_acc_margin);
-
       printf(" power_Cd_0 = %f \n",(float) mydata_in_optimizer_copy.power_Cd_0);
-
       printf(" power_Cd_a = %f \n",(float) mydata_in_optimizer_copy.power_Cd_a);
       printf(" prop_R = %f \n",(float) mydata_in_optimizer_copy.prop_R);
       printf(" prop_Cd_0 = %f \n",(float) mydata_in_optimizer_copy.prop_Cd_0);
@@ -881,6 +889,15 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
       printf(" pseudo_control_r_dot = %f \n",(float) mydata_in_optimizer_copy.pseudo_control_r_dot);
       printf(" desired_theta_value = %f \n",(float) mydata_in_optimizer_copy.desired_theta_value);
       printf(" desired_phi_value = %f \n",(float) mydata_in_optimizer_copy.desired_phi_value);
+
+      printf("\n MODELED FILTERED ACCELLERATIONS------------------------------------------------------ \n"); 
+
+      printf(" Modeled ax filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_ax_filtered);
+      printf(" Modeled ay filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_ay_filtered);
+      printf(" Modeled az filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_az_filtered);
+      printf(" Modeled p_dot filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_p_dot_filtered);
+      printf(" Modeled q_dot filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_q_dot_filtered);
+      printf(" Modeled r_dot filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_r_dot_filtered);
 
       fflush(stdout);
     }

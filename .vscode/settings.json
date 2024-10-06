@@ -10,7 +10,12 @@
     },
     "files.associations": {
         "Makefile.*": "makefile",
-        "compute_acc_nonlinear_control_rf_w_mx_noah.h": "c"
+        "compute_acc_nonlinear_control_rf_w_mx_noah.h": "c",
+        "rt_nonfinite.h": "c",
+        "nonlinear_controller_w_ail_basic_aero_outer_loop.h": "c",
+        "stdlib.h": "c",
+        "compute_acc_control_rf_basic.h": "c",
+        "random": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
