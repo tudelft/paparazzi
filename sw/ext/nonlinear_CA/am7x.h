@@ -16,22 +16,40 @@
 #ifndef AM7_H
 #define AM7_H
 
-#define max_time_optimizer 4.9e-3
-#define max_iterations 100
-#define max_function_eval 300
-#define refresh_time_optimizer 5e-3 //Must be equal or bigger than max_time_optimizer
+//Outer loop settings
+#define max_time_outer_loop 5e-3
+#define max_iterations_outer_loop 100
+#define max_function_eval_outer_loop 300
+#define refresh_time_outer_loop 5e-3 // It should be higher or equal to max_time_outer_loop
+
+//Inner loop settings
+#define max_time_inner_loop 5e-3
+#define max_iterations_inner_loop 100
+#define max_function_eval_inner_loop 300
+#define refresh_time_inner_loop 5e-3 // It should be higher or equal to max_time_inner_loop
+
+//Filter settings
+#define refresh_time_filters 5e-3 //200 Hz 
 #define filter_cutoff_frequency_init 12 //rad/s
 
 //Define the baudrate for the module and the starting byte 
-#define START_BYTE 0x9B  //1st start block identifier byte
-#define BAUDRATE_AM7 921600 //Define the baudrate
-// #define MAX_FREQUENCY_MSG_OUT 513 //Define the maximum message output frequency
-#define MAX_FREQUENCY_MSG_OUT 550 //Define the maximum message output frequency
+#define START_BYTE 0x9B
+#define BAUDRATE_AM7 921600
 
-#define BAUDRATE_TF_MINI 115200 //Baudrate of the TF mini lidar sensor
+//Define the maximum message output frequency
+#define MAX_FREQUENCY_MSG_OUT 550
 
+// Define the baudrate of the TF mini lidar sensor
+#define BAUDRATE_TF_MINI 115200
+
+//Define the lenght of the U_IN array (outer loop)
 #define NUM_ACT_IN_U_IN 15
-#define NUM_ACT_IN_U_OUT 15
+
+//Define the lenght of the U_IN array (inner loop)
+#define NUM_ACT_IN_U_IN_INNER 13
+
+//Deifne the length of the output array of the inner loop
+#define NUM_ACT_IN_U_OUT 13
 
 //Communication structures
 struct  __attribute__((__packed__)) am7_data_out {
@@ -50,14 +68,16 @@ struct  __attribute__((__packed__)) am7_data_out {
     int16_t az_4_cmd_int;
     int16_t theta_cmd_int;
     int16_t phi_cmd_int;
-    int16_t theta_dot_cmd_int;
-    int16_t phi_dot_cmd_int;
     int16_t ailerons_cmd_int;
     //Optimization info
-    uint16_t n_iteration;
-    uint16_t n_evaluation;
-    uint16_t elapsed_time_us;
-    int16_t exit_flag_optimizer;
+    uint16_t n_iteration_outer;
+    uint16_t n_evaluation_outer;
+    uint16_t elapsed_time_us_outer;
+    int16_t exit_flag_optimizer_outer;
+    uint16_t n_iteration_inner;
+    uint16_t n_evaluation_inner;
+    uint16_t elapsed_time_us_inner;
+    int16_t exit_flag_optimizer_inner;
     //Modeled acc filtered
     int16_t modeled_ax_int;
     int16_t modeled_ay_int;
@@ -81,6 +101,12 @@ struct  __attribute__((__packed__)) am7_data_out {
     float aruco_NED_pos_y;
     float aruco_NED_pos_z;
     int8_t aruco_system_status;
+    //Sixdof infos: 
+    float sixdof_detection_timestamp;
+    float sixdof_NED_pos_x;
+    float sixfod_NED_pos_y;
+    float sixdof_NED_pos_z;
+    int8_t sixdof_system_status;
     //Rolling_msg
     float rolling_msg_out;
     uint8_t rolling_msg_out_id;
@@ -135,7 +161,7 @@ struct  __attribute__((__packed__)) am7_data_in {
 	uint8_t checksum_in;
 };
 
-struct aruco_detection_t {
+struct __attribute__((__packed__)) marker_detection_t {
     float timestamp_detection; 
     float NED_pos_x; 
     float NED_pos_y;
@@ -143,4 +169,165 @@ struct aruco_detection_t {
     int8_t system_status; 
 };
 
+struct __attribute__((__packed__)) outer_loop_output {
+    double Theta_cmd_rad;
+    double Phi_cmd_rad;
+    double p_dot_cmd_rad_s;
+    double q_dot_cmd_rad_s;
+    double r_dot_cmd_rad_s;
+    double residual_ax;
+    double residual_ay;
+    double residual_az;
+    double residual_p_dot;
+    double residual_q_dot;
+    double residual_r_dot;
+    double exit_flag; 
+    double n_iterations;
+    double n_evaluations;
+    double elapsed_time;
+    double acc_decrement_aero_ax; 
+    double acc_decrement_aero_ay;
+    double acc_decrement_aero_az;
+    double acc_decrement_aero_p_dot;
+    double acc_decrement_aero_q_dot;
+    double acc_decrement_aero_r_dot;
+}
+
+struct __attribute__((__packed__)) data_in_optimizer {
+    //Real time data in, filtered with the indi filters: 
+    float motor_1_state_filtered;
+    float motor_2_state_filtered;
+    float motor_3_state_filtered;
+    float motor_4_state_filtered;
+    float el_1_state_filtered;
+    float el_2_state_filtered;
+    float el_3_state_filtered;
+    float el_4_state_filtered;
+    float az_1_state_filtered;
+    float az_2_state_filtered;
+    float az_3_state_filtered;
+    float az_4_state_filtered;
+    float ailerons_state_filtered;
+    float theta_state_filtered;
+    float phi_state_filtered;
+    float psi_state_filtered;
+    float gamma_state_filtered;
+    float p_state_filtered;
+    float q_state_filtered;
+    float r_state_filtered;
+    float airspeed_state_filtered;
+    float beta_state_filtered;
+    float approach_boolean;
+    float lidar_alt_corrected;
+    float pseudo_control_ax;
+    float pseudo_control_ay;
+    float pseudo_control_az;
+    float pseudo_control_p_dot;
+    float pseudo_control_q_dot;
+    float pseudo_control_r_dot;
+    float desired_theta_value;
+    float desired_phi_value;
+
+    //Computed filtered modeled accellerations 
+    float modeled_ax_filtered;
+    float modeled_ay_filtered;
+    float modeled_az_filtered;
+    float modeled_p_dot_filtered;
+    float modeled_q_dot_filtered;
+    float modeled_r_dot_filtered;
+
+    //Non-real-time data:
+    float K_p_T;
+    float K_p_M;
+    float m;
+    float I_xx;
+    float I_yy;
+    float I_zz;
+    float l_1;
+    float l_2;
+    float l_3;
+    float l_4;
+    float l_z;
+    float max_omega;
+    float min_omega;
+    float max_b;
+    float min_b;
+    float max_g;
+    float min_g;
+    float max_theta;
+    float min_theta;
+    float max_alpha;
+    float min_alpha;
+    float max_phi;
+    float Cm_zero;
+    float Cm_alpha;
+    float Cl_alpha;
+    float Cd_zero;
+    float K_Cd;
+    float S;
+    float wing_chord;
+    float rho;
+    float W_act_motor_const;
+    float W_act_motor_speed;
+    float W_act_tilt_el_const;
+    float W_act_tilt_el_speed;
+    float W_act_tilt_az_const;
+    float W_act_tilt_az_speed;
+    float W_act_theta_const;
+    float W_act_theta_speed;
+    float W_act_phi_const;
+    float W_act_phi_speed;
+    float W_dv_1;
+    float W_dv_2;
+    float W_dv_3;
+    float W_dv_4;
+    float W_dv_5;
+    float W_dv_6;
+    float gamma_quadratic_du;
+    float Cy_beta;
+    float Cl_beta;
+    float wing_span;
+    float aoa_protection_speed;
+    float W_act_ailerons_const;
+    float W_act_ailerons_speed;
+    float min_delta_ailerons;
+    float max_delta_ailerons;
+    float CL_aileron;
+    float k_alt_tilt_constraint;
+    float min_alt_tilt_constraint;
+    float transition_speed;
+    float desired_motor_value;
+    float desired_el_value;
+    float desired_az_value;
+    float desired_ailerons_value;
+    float theta_gain;
+    float phi_gain;
+    float p_body_gain;
+    float q_body_gain;
+    float r_body_gain;
+    float k_d_airspeed;
+    float min_theta_hard;
+    float max_theta_hard;
+    float min_phi_hard;
+    float max_phi_hard;
+    float disable_acc_decrement_inner_loop;
+    float filter_cutoff_frequency_telem;
+    float max_airspeed;
+    float vert_acc_margin;
+    float power_Cd_0;
+    float power_Cd_a;
+    float prop_R;
+    float prop_Cd_0;
+    float prop_Cl_0;
+    float prop_Cd_a;
+    float prop_Cl_a;
+    float prop_delta;
+    float prop_sigma;
+    float prop_theta;
+    float beacon_tracking_id;
+    float desired_sixdof_mode;
+    float use_u_init_outer_loop;
+    float use_u_init_inner_loop;
+};
+    
 #endif
