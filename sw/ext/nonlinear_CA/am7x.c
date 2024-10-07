@@ -55,9 +55,9 @@ pthread_mutex_t mutex_am7, mutex_optimizer_input, mutex_outer_loop_output;
 
 int verbose_sixdof_com = 0;
 int verbose_sixdof_position = 0;
-int verbose_connection = 0;
+int verbose_connection = 1;
 int verbose_optimizer = 0;
-int verbose_runtime = 1; 
+int verbose_runtime = 0; 
 int verbose_data_in = 0; 
 int verbose_submitted_data = 0; 
 int verbose_ivy_bus = 0; 
@@ -1534,25 +1534,21 @@ void* fourth_thread() //Run the inner loop of the optimization code
     double W_act_motor_du = (double) 1.0f; 
     double W_act_tilt_el_du = (double) 1.0f;
     double W_act_tilt_az_du = (double) 1.0f;
-    double W_act_theta_du = (double) 1.0f;
-    double W_act_phi_du = (double) 1.0f;
     double W_act_ailerons_du = (double) 1.0f;
     double gamma_quadratic_du2 = (double) 0.0f;
 
     //Assign the failure gains manually: 
-    double W_act_motor_failure = (double) 20.0f; 
+    double W_act_motor_failure = (double) 10.0f; 
     double W_act_tilt_el_failure = (double) 0.0f;
     double W_act_tilt_az_failure = (double) 0.0f;
-    double W_act_theta_failure = (double) 1.0f;
-    double W_act_phi_failure = (double) 1.0f;
     double W_act_ailerons_failure = (double) 0.5f;
 
-    double W_dv_1_failure = (double) 0.1f;
-    double W_dv_2_failure = (double) 0.1f;
-    double W_dv_3_failure = (double) 0.1f;
-    double W_dv_4_failure = (double) 0.01f;
-    double W_dv_5_failure = (double) 0.01f;
-    double W_dv_6_failure = (double) 0.01f;
+    double W_dv_1_failure = (double) 0.01f;
+    double W_dv_2_failure = (double) 0.01f;
+    double W_dv_3_failure = (double) 0.01f;
+    double W_dv_4_failure = (double) 0.1f;
+    double W_dv_5_failure = (double) 0.1f;
+    double W_dv_6_failure = (double) 0.1f;
     double gamma_quadratic_du_failure = (double) 5e-7f;
 
     //Prepare output variables: 
