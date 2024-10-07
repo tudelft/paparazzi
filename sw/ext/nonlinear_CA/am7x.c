@@ -18,6 +18,9 @@
 Butterworth2LowPass modeled_accelerations_filter[6];
 Butterworth2LowPass body_rates_filter[3], u_in_filter[NUM_ACT_IN_U_IN]; 
 Butterworth2LowPass airspeed_filter, flight_path_angle_filter; 
+//1-exp(-cutoff_frequency/sampling_frequency)
+float pqr_first_order_filter_tau = 1.0f - exp(-filter_cutoff_first_order_pqr/refresh_time_filters);
+float p_filtered_ec = 0.0f, q_filtered_ec = 0.0f, r_filtered_ec = 0.0f; 
 
 int filter_cutoff_frequency;
 float tau_indi;
@@ -444,8 +447,8 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     float max_theta_hard = extra_data_in_copy[70];
     float min_phi_hard = extra_data_in_copy[71];
     float max_phi_hard = extra_data_in_copy[72];
-    float disable_acc_decrement_inner_loop = extra_data_in_copy[73];
 
+    float disable_acc_decrement_inner_loop = extra_data_in_copy[73];
 
     float filter_cutoff_frequency_telem = extra_data_in_copy[74];
     float max_airspeed = extra_data_in_copy[75];
@@ -471,6 +474,8 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
 
     float K_t_airspeed = extra_data_in_copy[91];
 
+    float pqr_first_order_filter_omega_telem = extra_data_in_copy[92];
+
     //Exceptions: 
     if(beacon_tracking_id < 0.1f){
       beacon_tracking_id = default_beacon_tracking_id;
@@ -480,6 +485,9 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     }
     if(filter_cutoff_frequency_telem < 0.1f){
       filter_cutoff_frequency_telem = (int)filter_cutoff_frequency_init;
+    }
+    if(pqr_first_order_filter_omega_telem > 0.1f){
+      pqr_first_order_filter_tau = 1.0f - exp(-pqr_first_order_filter_omega_telem/refresh_time_filters);
     }
 
 
@@ -507,9 +515,14 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     float pseudo_control_ax = (myam7_data_in_copy.pseudo_control_ax_int*1e-2);
     float pseudo_control_ay = (myam7_data_in_copy.pseudo_control_ay_int*1e-2);
     float pseudo_control_az = (myam7_data_in_copy.pseudo_control_az_int*1e-2);
-    float pseudo_control_p_dot = (myam7_data_in_copy.pseudo_control_p_dot_int*1e-1 * M_PI/180);
-    float pseudo_control_q_dot = (myam7_data_in_copy.pseudo_control_q_dot_int*1e-1 * M_PI/180);
-    float pseudo_control_r_dot = (myam7_data_in_copy.pseudo_control_r_dot_int*1e-1 * M_PI/180);
+
+    float p_dot_filt_ec = (myam7_data_in_copy.p_dot_filt_int * 1e-1 * M_PI/180);
+    float q_dot_filt_ec = (myam7_data_in_copy.q_dot_filt_int * 1e-1 * M_PI/180);
+    float r_dot_filt_ec = (myam7_data_in_copy.r_dot_filt_int * 1e-1 * M_PI/180); 
+
+    float psi_dot_cmd_ec = (myam7_data_in_copy.psi_dot_cmd_int * 1e-2 * M_PI/180);
+
+    float failure_mode = (float) (myam7_data_in_copy.failure_mode);
 
     //Bound motor values to be within min and max value to avoid NaN
     Bound(Omega_1,min_omega,max_omega);
@@ -559,6 +572,12 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
       init_butterworth_2_low_pass(&airspeed_filter, tau_indi, refresh_time_filters, 0.0);
       init_butterworth_2_low_pass(&flight_path_angle_filter, tau_indi, refresh_time_filters, 0.0);
     }
+
+    //////////////////////////////////////////////////////////////////////Filter body rates for the error controller
+    p_filtered_ec = p_filtered_ec + pqr_first_order_filter_tau * (p - p_filtered_ec);
+    q_filtered_ec = q_filtered_ec + pqr_first_order_filter_tau * (q - q_filtered_ec);
+    r_filtered_ec = r_filtered_ec + pqr_first_order_filter_tau * (r - r_filtered_ec);
+
     //////////////////////////////////////////////////////////////////////////////////////Filter current modeled acc
     float modeled_accelerations_filtered[6];
     for(int i = 0; i < 6; i++){
@@ -655,11 +674,32 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     mydata_in_optimizer_copy.pseudo_control_ax = pseudo_control_ax;
     mydata_in_optimizer_copy.pseudo_control_ay = pseudo_control_ay;
     mydata_in_optimizer_copy.pseudo_control_az = pseudo_control_az;
-    mydata_in_optimizer_copy.pseudo_control_p_dot = pseudo_control_p_dot;
-    mydata_in_optimizer_copy.pseudo_control_q_dot = pseudo_control_q_dot;
-    mydata_in_optimizer_copy.pseudo_control_r_dot = pseudo_control_r_dot;
     mydata_in_optimizer_copy.desired_theta_value = desired_theta_value;
     mydata_in_optimizer_copy.desired_phi_value = desired_phi_value;
+
+    //Values for the error controller: 
+    mydata_in_optimizer_copy.theta_state_ec = Theta; //Unfiltered
+    mydata_in_optimizer_copy.phi_state_ec = Phi; //Unfiltered
+    mydata_in_optimizer_copy.p_state_ec = p_filtered_ec; //Filtered with first order filter (locally)
+    mydata_in_optimizer_copy.q_state_ec = q_filtered_ec; //Filtered with first order filter (locally)
+    mydata_in_optimizer_copy.r_state_ec = r_filtered_ec; //Filtered with first order filter (locally)
+    mydata_in_optimizer_copy.p_dot_state_ec = p_dot_filt_ec; //Filtered with second order butterworth filter (on AP)
+    mydata_in_optimizer_copy.q_dot_state_ec = q_dot_filt_ec; //Filtered with second order butterworth filter (on AP)
+    mydata_in_optimizer_copy.r_dot_state_ec = r_dot_filt_ec; //Filtered with second order butterworth filter (on AP)
+    mydata_in_optimizer_copy.theta_gain = theta_gain;
+    mydata_in_optimizer_copy.phi_gain = phi_gain;
+    mydata_in_optimizer_copy.p_body_gain = p_body_gain;
+    mydata_in_optimizer_copy.q_body_gain = q_body_gain;
+    mydata_in_optimizer_copy.r_body_gain = r_body_gain;
+    mydata_in_optimizer_copy.k_d_airspeed = k_d_airspeed;
+    mydata_in_optimizer_copy.min_theta_hard = min_theta_hard;
+    mydata_in_optimizer_copy.max_theta_hard = max_theta_hard;
+    mydata_in_optimizer_copy.min_phi_hard = min_phi_hard;
+    mydata_in_optimizer_copy.max_phi_hard = max_phi_hard;
+    mydata_in_optimizer_copy.psi_dot_cmd_ec = psi_dot_cmd_ec;
+
+    //Values for the failure: 
+    mydata_in_optimizer_copy.failure_mode = failure_mode;
 
     //Modeled accellerations filtered: 
     mydata_in_optimizer_copy.modeled_ax_filtered = modeled_accelerations_filtered[0]; 
@@ -733,16 +773,6 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     mydata_in_optimizer_copy.desired_el_value = desired_el_value;
     mydata_in_optimizer_copy.desired_az_value = desired_az_value;
     mydata_in_optimizer_copy.desired_ailerons_value = desired_ailerons_value;
-    mydata_in_optimizer_copy.theta_gain = theta_gain;
-    mydata_in_optimizer_copy.phi_gain = phi_gain;
-    mydata_in_optimizer_copy.p_body_gain = p_body_gain;
-    mydata_in_optimizer_copy.q_body_gain = q_body_gain;
-    mydata_in_optimizer_copy.r_body_gain = r_body_gain;
-    mydata_in_optimizer_copy.k_d_airspeed = k_d_airspeed;
-    mydata_in_optimizer_copy.min_theta_hard = min_theta_hard;
-    mydata_in_optimizer_copy.max_theta_hard = max_theta_hard;
-    mydata_in_optimizer_copy.min_phi_hard = min_phi_hard;
-    mydata_in_optimizer_copy.max_phi_hard = max_phi_hard;
     mydata_in_optimizer_copy.disable_acc_decrement_inner_loop = disable_acc_decrement_inner_loop;
     mydata_in_optimizer_copy.vert_acc_margin = vert_acc_margin;
     mydata_in_optimizer_copy.power_Cd_0 = power_Cd_0;
@@ -883,9 +913,7 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
       printf(" pseudo_control_ax = %f \n",(float) mydata_in_optimizer_copy.pseudo_control_ax);
       printf(" pseudo_control_ay = %f \n",(float) mydata_in_optimizer_copy.pseudo_control_ay);
       printf(" pseudo_control_az = %f \n",(float) mydata_in_optimizer_copy.pseudo_control_az);
-      printf(" pseudo_control_p_dot = %f \n",(float) mydata_in_optimizer_copy.pseudo_control_p_dot);
-      printf(" pseudo_control_q_dot = %f \n",(float) mydata_in_optimizer_copy.pseudo_control_q_dot);
-      printf(" pseudo_control_r_dot = %f \n",(float) mydata_in_optimizer_copy.pseudo_control_r_dot);
+
       printf(" desired_theta_value = %f \n",(float) mydata_in_optimizer_copy.desired_theta_value);
       printf(" desired_phi_value = %f \n",(float) mydata_in_optimizer_copy.desired_phi_value);
 
@@ -1074,7 +1102,7 @@ void* third_thread() //Run the outer loop of the optimization code
                       mydata_in_optimizer_copy.theta_state_filtered, mydata_in_optimizer_copy.phi_state_filtered, mydata_in_optimizer_copy.ailerons_state_filtered};
     }
 
-    //Assign variables from data_in_optimizer to the variables used in the controller input: 
+    //Prepare input variables from the mydata_in_optimizer_copy structure: 
     double K_p_T = mydata_in_optimizer_copy.K_p_T;
     double K_p_M = mydata_in_optimizer_copy.K_p_M;
     double m = mydata_in_optimizer_copy.m;
@@ -1130,12 +1158,12 @@ void* third_thread() //Run the outer loop of the optimization code
     double max_phi = mydata_in_optimizer_copy.max_phi;
     double max_delta_ailerons = mydata_in_optimizer_copy.max_delta_ailerons;
     double min_delta_ailerons = mydata_in_optimizer_copy.min_delta_ailerons;
-    double dv[6] = {mydata_in_optimizer_copy.pseudo_control_ax,
-                    mydata_in_optimizer_copy.pseudo_control_ay,
-                    mydata_in_optimizer_copy.pseudo_control_az,
-                    mydata_in_optimizer_copy.pseudo_control_p_dot,
-                    mydata_in_optimizer_copy.pseudo_control_q_dot,
-                    mydata_in_optimizer_copy.pseudo_control_r_dot};
+    double dv[6] = {(double) mydata_in_optimizer_copy.pseudo_control_ax,
+                    (double) mydata_in_optimizer_copy.pseudo_control_ay,
+                    (double) mydata_in_optimizer_copy.pseudo_control_az,
+                    (double) 0.0f,
+                    (double) 0.0f,
+                    (double) 0.0f};
     double p = mydata_in_optimizer_copy.p_state_filtered;
     double q = mydata_in_optimizer_copy.q_state_filtered;
     double r = mydata_in_optimizer_copy.r_state_filtered;
@@ -1146,7 +1174,7 @@ void* third_thread() //Run the outer loop of the optimization code
     double Cm_alpha = mydata_in_optimizer_copy.Cm_alpha;
     double CL_aileron = mydata_in_optimizer_copy.CL_aileron;
     double rho = mydata_in_optimizer_copy.rho;
-    double V = mydata_in_optimizer_copy.V;
+    double V = mydata_in_optimizer_copy.airspeed_state_filtered;
     double S = mydata_in_optimizer_copy.S;
     double wing_chord = mydata_in_optimizer_copy.wing_chord;
     double flight_path_angle = mydata_in_optimizer_copy.gamma_state_filtered;
@@ -1166,7 +1194,56 @@ void* third_thread() //Run the outer loop of the optimization code
     double approach_mode = mydata_in_optimizer_copy.approach_mode;
     double aoa_protection_speed = mydata_in_optimizer_copy.aoa_protection_speed;
     double vert_acc_margin = mydata_in_optimizer_copy.vert_acc_margin;
+    //ERROR CONTROLLER
+    double p_body_current = mydata_in_optimizer_copy.p_filtered_ec;
+    double q_body_current = mydata_in_optimizer_copy.q_filtered_ec;
+    double r_body_current = mydata_in_optimizer_copy.r_filtered_ec;
+    double p_dot_current = mydata_in_optimizer_copy.p_dot_state_ec;
+    double q_dot_current = mydata_in_optimizer_copy.q_dot_state_ec;
+    double r_dot_current = mydata_in_optimizer_copy.r_dot_state_ec;
+    double phi_current = mydata_in_optimizer_copy.phi_state_ec;
+    double theta_current = mydata_in_optimizer_copy.theta_state_ec;
+    double angular_proportional_gains[3] = {(double) mydata_in_optimizer_copy.phi_gain, 
+                                            (double) mydata_in_optimizer_copy.theta_gain, 
+                                            (double) 1.0f};
+    double angular_derivative_gains[3] = {(double) mydata_in_optimizer_copy.p_body_gain, 
+                                          (double) mydata_in_optimizer_copy.q_body_gain, 
+                                          (double) mydata_in_optimizer_copy.r_body_gain};
+    double theta_hard_max = mydata_in_optimizer_copy.max_theta_hard;
+    double theta_hard_min = mydata_in_optimizer_copy.min_theta_hard;
+    double phi_hard_max = mydata_in_optimizer_copy.max_phi_hard;
+    double phi_hard_min = mydata_in_optimizer_copy.min_phi_hard;
+    double k_d_airspeed = mydata_in_optimizer_copy.k_d_airspeed;
+    double des_psi_dot = mydata_in_optimizer_copy.psi_dot_cmd_ec;
+    double current_accelerations[6] = {(double) mydata_in_optimizer_copy.modeled_ax_filtered,
+                                       (double) mydata_in_optimizer_copy.modeled_ay_filtered,
+                                       (double) mydata_in_optimizer_copy.modeled_az_filtered,
+                                       (double) mydata_in_optimizer_copy.modeled_p_dot_filtered,
+                                       (double) mydata_in_optimizer_copy.modeled_q_dot_filtered,
+                                       (double) mydata_in_optimizer_copy.modeled_r_dot_filtered};
+    double induced_failure = mydata_in_optimizer_copy.failure_mode;
 
+
+
+
+
+    //Assign u_init from u_init_outer
+    double u_init[NUM_ACT_IN_U_IN]; 
+    for (int i=0; i< NUM_ACT_IN_U_IN; i++){
+      u_init[i] = u_init_outer[i];
+    }
+    double use_u_init = mydata_in_optimizer_copy.use_u_init_outer_loop;
+
+    //Assign the du values manually: 
+    double W_act_motor_du = 1.0f; 
+    double W_act_tilt_el_du = 1.0f;
+    double W_act_tilt_az_du = 1.0f;
+    double W_act_theta_du = 1.0f;
+    double W_act_phi_du = 1.0f;
+    double W_act_ailerons_du = 1.0f;
+    double gamma_quadratic_du2 = 0.0f;
+
+    //Assign the failure gains manually: 
 
 
 
@@ -1231,7 +1308,7 @@ void* third_thread() //Run the outer loop of the optimization code
 
 
     //Set as u_init_outer the u_out for the next iteration: 
-    for (int i=0; i< NUM_ACT_IN_U_IN_INNER; i++){
+    for (int i=0; i< NUM_ACT_IN_U_IN; i++){
       u_init_outer[i] = u_out[i];
     }
 

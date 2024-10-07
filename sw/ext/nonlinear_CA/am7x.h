@@ -30,7 +30,8 @@
 
 //Filter settings
 #define refresh_time_filters 5e-3 //200 Hz 
-#define filter_cutoff_frequency_init 12 //rad/s
+#define filter_cutoff_frequency_init 12.0 //rad/s
+#define filter_cutoff_first_order_pqr 20.0 //rad/s
 
 //Define the baudrate for the module and the starting byte 
 #define START_BYTE 0x9B
@@ -115,46 +116,51 @@ struct  __attribute__((__packed__)) am7_data_out {
 
 struct  __attribute__((__packed__)) am7_data_in {
     //Actuator state - unfiltered
-    int16_t motor_1_state_int;
-    int16_t motor_2_state_int;
-    int16_t motor_3_state_int;
-    int16_t motor_4_state_int;
-    int16_t el_1_state_int;
-    int16_t el_2_state_int;
-    int16_t el_3_state_int;
-    int16_t el_4_state_int;
-    int16_t az_1_state_int;
-    int16_t az_2_state_int;
-    int16_t az_3_state_int;
-    int16_t az_4_state_int;
-    int16_t ailerons_state_int;
+    int16_t motor_1_state_int; //rad/s * 10
+    int16_t motor_2_state_int; //rad/s * 10
+    int16_t motor_3_state_int; //rad/s * 10
+    int16_t motor_4_state_int; //rad/s * 10
+    int16_t el_1_state_int; //degrees * 100
+    int16_t el_2_state_int; //degrees * 100
+    int16_t el_3_state_int; //degrees * 100
+    int16_t el_4_state_int; //degrees * 100
+    int16_t az_1_state_int; //degrees * 100
+    int16_t az_2_state_int; //degrees * 100
+    int16_t az_3_state_int; //degrees * 100
+    int16_t az_4_state_int; //degrees * 100
+    int16_t ailerons_state_int; //degrees * 100
     //Variable states - unfiltered 
-    int16_t theta_state_int;
-    int16_t phi_state_int;
-    int16_t psi_state_int;
-    int16_t gamma_state_int;
-    int16_t p_state_int;
-    int16_t q_state_int;
-    int16_t r_state_int;
-    int16_t airspeed_state_int;
-    int16_t beta_state_int;
+    int16_t theta_state_int; //degrees * 100
+    int16_t phi_state_int; //degrees * 100
+    int16_t psi_state_int; //degrees * 100
+    int16_t gamma_state_int; //degrees * 100
+    int16_t airspeed_state_int; //m/s * 100
+    int16_t beta_state_int; //degrees * 100
+    //Body rates - unfiltered
+    int16_t p_state_int; //degrees/sec value * 10
+    int16_t q_state_int; //degrees/sec value * 10
+    int16_t r_state_int; //degrees/sec value * 10
+    //pqr_dot filtered
+    int16_t p_dot_filt_int; //degrees/sec^2 value * 10
+    int16_t q_dot_filt_int; //degrees/sec^2 value * 10
+    int16_t r_dot_filt_int; //degrees/sec^2 value * 10
+    int16_t psi_dot_cmd_int; //degrees value * 100 
     //Approach boolean and lidar corrected altitude for the rotor constraint application 
-    int16_t approach_boolean; 
-    int16_t lidar_alt_corrected_int;
-    //Pseudo-control cmd - unfiltered
-    int16_t pseudo_control_ax_int;
-    int16_t pseudo_control_ay_int;
-    int16_t pseudo_control_az_int;
-    int16_t pseudo_control_p_dot_int;
-    int16_t pseudo_control_q_dot_int;
-    int16_t pseudo_control_r_dot_int;
+    int16_t approach_boolean; //Boolean value
+    int16_t lidar_alt_corrected_int; //meters * 100
+    //Pseudo-control increments linear (from filtered accelerations)
+    int16_t pseudo_control_ax_int; //m/s^2 * 100
+    int16_t pseudo_control_ay_int; //m/s^2 * 100
+    int16_t pseudo_control_az_int; //m/s^2 * 100
     //Desired theta and phi value:
-    int16_t desired_theta_value_int;
-    int16_t desired_phi_value_int;
+    int16_t desired_theta_value_int; //degrees * 100
+    int16_t desired_phi_value_int; //degrees * 100
     //UAV position NED: 
-    float UAV_NED_pos_x;
-    float UAV_NED_pos_y;
-    float UAV_NED_pos_z;
+    float UAV_NED_pos_x; //meters
+    float UAV_NED_pos_y; //meters
+    float UAV_NED_pos_z; //meters
+    //Failure info: 
+    uint8_t failure_mode; //0 -> no failure; 1 -> Rotor 1 fail; 2 -> Rotor 2 fail; 3 -> Rotor 3 fail; 4 -> Rotor 4 fail; 
     //Rolling msg
     float rolling_msg_in;
     uint8_t rolling_msg_in_id;  
@@ -215,6 +221,15 @@ struct __attribute__((__packed__)) data_in_optimizer {
     float p_state_filtered;
     float q_state_filtered;
     float r_state_filtered;
+    float theta_state_ec; 
+    float phi_state_ec;
+    float psi_dot_cmd_ec;
+    float p_state_ec;
+    float q_state_ec;
+    float r_state_ec;
+    float p_dot_state_ec;
+    float q_dot_state_ec;
+    float r_dot_state_ec;
     float airspeed_state_filtered;
     float beta_state_filtered;
     float approach_boolean;
@@ -222,11 +237,11 @@ struct __attribute__((__packed__)) data_in_optimizer {
     float pseudo_control_ax;
     float pseudo_control_ay;
     float pseudo_control_az;
-    float pseudo_control_p_dot;
-    float pseudo_control_q_dot;
-    float pseudo_control_r_dot;
     float desired_theta_value;
     float desired_phi_value;
+
+    //Failure: 
+    float failure_mode; 
 
     //Computed filtered modeled accellerations 
     float modeled_ax_filtered;

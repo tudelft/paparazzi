@@ -15,7 +15,8 @@
         "nonlinear_controller_w_ail_basic_aero_outer_loop.h": "c",
         "stdlib.h": "c",
         "compute_acc_control_rf_basic.h": "c",
-        "random": "c"
+        "random": "c",
+        "rtwtypes.h": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
