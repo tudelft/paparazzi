@@ -101,7 +101,7 @@ struct  __attribute__((__packed__)) am7_data_out {
     //Sixdof infos: 
     float sixdof_detection_timestamp;
     float sixdof_NED_pos_x;
-    float sixfod_NED_pos_y;
+    float sixdof_NED_pos_y;
     float sixdof_NED_pos_z;
     int8_t sixdof_system_status;
     //Rolling_msg
@@ -172,8 +172,8 @@ struct __attribute__((__packed__)) marker_detection_t {
 };
 
 struct __attribute__((__packed__)) outer_loop_output {
-    double Theta_cmd_rad;
-    double Phi_cmd_rad;
+    double theta_cmd_rad;
+    double phi_cmd_rad;
     double p_dot_cmd_rad_s;
     double q_dot_cmd_rad_s;
     double r_dot_cmd_rad_s;
@@ -193,7 +193,7 @@ struct __attribute__((__packed__)) outer_loop_output {
     double acc_decrement_aero_p_dot;
     double acc_decrement_aero_q_dot;
     double acc_decrement_aero_r_dot;
-}
+};
 
 struct __attribute__((__packed__)) data_in_optimizer {
     //Real time data in, filtered with the indi filters: 
@@ -335,8 +335,6 @@ struct __attribute__((__packed__)) data_in_optimizer {
     float prop_delta;
     float prop_sigma;
     float prop_theta;
-    float beacon_tracking_id;
-    float desired_sixdof_mode;
     float use_u_init_outer_loop;
     float use_u_init_inner_loop;
 };
