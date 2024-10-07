@@ -17,12 +17,14 @@
 #define AM7_H
 
 //Outer loop settings
+#define NUM_ACT_IN_U_IN 15
 #define max_time_outer_loop 5e-3
 #define max_iterations_outer_loop 100
 #define max_function_eval_outer_loop 300
 #define refresh_time_outer_loop 5e-3 // It should be higher or equal to max_time_outer_loop
 
 //Inner loop settings
+#define NUM_ACT_IN_U_IN_INNER 13
 #define max_time_inner_loop 5e-3
 #define max_iterations_inner_loop 100
 #define max_function_eval_inner_loop 300
@@ -30,8 +32,8 @@
 
 //Filter settings
 #define refresh_time_filters 5e-3 //200 Hz 
-#define filter_cutoff_frequency_init 12.0 //rad/s
-#define filter_cutoff_first_order_pqr 20.0 //rad/s
+#define filter_cutoff_frequency_init 12.0 //rad/s - second order butterworth filter
+#define filter_cutoff_first_order_pqr_init 20.0 //rad/s - first order filter
 
 //Define the baudrate for the module and the starting byte 
 #define START_BYTE 0x9B
@@ -42,12 +44,6 @@
 
 // Define the baudrate of the TF mini lidar sensor
 #define BAUDRATE_TF_MINI 115200
-
-//Define the lenght of the U_IN array (outer loop)
-#define NUM_ACT_IN_U_IN 15
-
-//Define the lenght of the U_IN array (inner loop)
-#define NUM_ACT_IN_U_IN_INNER 13
 
 //Deifne the length of the output array of the inner loop
 #define NUM_ACT_IN_U_OUT 13
