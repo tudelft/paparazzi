@@ -343,7 +343,7 @@ void send_receive_am7(){
 
 }
 
-void* first_thread() //Receive and send messages to pixhawk
+void* first_thread() //Receive and send messages to autopilot and send states to ivy bus
 {
   while(1){ 
     send_receive_am7();
@@ -517,28 +517,6 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     Bound(Omega_3,min_omega,max_omega);
     Bound(Omega_4,min_omega,max_omega);
 
-    /////////////////////////////////////////////////Reset filters in case we want a different omega than the one inputted initially
-    if((int)filter_cutoff_frequency_telem != (int)filter_cutoff_frequency){
-      filter_cutoff_frequency = (int)filter_cutoff_frequency_telem;
-      //Re-init filters: 
-      tau_indi = 1.0f / (filter_cutoff_frequency);
-      
-      for (int i = 0; i < 6; i++) {
-        init_butterworth_2_low_pass(&modeled_accelerations_filter[i], tau_indi, refresh_time_filters, 0.0);
-      }
-
-      for (int i = 0; i < 3; i++) {
-        init_butterworth_2_low_pass(&body_rates_filter[i], tau_indi, refresh_time_filters, 0.0);
-      }
-
-      for (int i = 0; i < NUM_ACT_IN_U_IN; i++) {
-        init_butterworth_2_low_pass(&u_in_filter[i], tau_indi, refresh_time_filters, 0.0);
-      }
-
-      init_butterworth_2_low_pass(&airspeed_filter, tau_indi, refresh_time_filters, 0.0);
-      init_butterworth_2_low_pass(&flight_path_angle_filter, tau_indi, refresh_time_filters, 0.0);
-    }
-
     //////////////////////////////////////////////////////////////////////////////////////////Compute modeled accellerations:
     float K_p_T_airspeed_corrected = K_p_T * (1 - V*K_t_airspeed);
     float K_p_M_airspeed_corrected = K_p_M * (1 - V*K_t_airspeed);
@@ -560,7 +538,28 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
             wing_chord, modeled_accelerations);
 
     //FILTER VALUES:
-    //////////////////////////////////////////////////////////////////////////////////////Filtered current modeled acc
+    ///////////////////////////////////Reset filters in case we want a different omega than the one inputted initially
+    if((int)filter_cutoff_frequency_telem != (int)filter_cutoff_frequency){
+      filter_cutoff_frequency = (int)filter_cutoff_frequency_telem;
+      //Re-init filters: 
+      tau_indi = 1.0f / (filter_cutoff_frequency);
+      
+      for (int i = 0; i < 6; i++) {
+        init_butterworth_2_low_pass(&modeled_accelerations_filter[i], tau_indi, refresh_time_filters, 0.0);
+      }
+
+      for (int i = 0; i < 3; i++) {
+        init_butterworth_2_low_pass(&body_rates_filter[i], tau_indi, refresh_time_filters, 0.0);
+      }
+
+      for (int i = 0; i < NUM_ACT_IN_U_IN; i++) {
+        init_butterworth_2_low_pass(&u_in_filter[i], tau_indi, refresh_time_filters, 0.0);
+      }
+
+      init_butterworth_2_low_pass(&airspeed_filter, tau_indi, refresh_time_filters, 0.0);
+      init_butterworth_2_low_pass(&flight_path_angle_filter, tau_indi, refresh_time_filters, 0.0);
+    }
+    //////////////////////////////////////////////////////////////////////////////////////Filter current modeled acc
     float modeled_accelerations_filtered[6];
     for(int i = 0; i < 6; i++){
       update_butterworth_2_low_pass(&modeled_accelerations_filter[i], (float) modeled_accelerations[i]);
@@ -574,7 +573,7 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
       modeled_accelerations_filtered[i] = (double) modeled_accelerations_filter[i].o[0];
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////Filtered body rates 
+    //////////////////////////////////////////////////////////////////////////////////////////////Filter body rates 
     float body_rates_array_filtered[3];
     float body_rates_array[3] = {p, q, r};
     for (int i = 0; i < 3; i++) {
@@ -586,10 +585,10 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
           printf("WARNING, body_rates_filter filter number %d REINITIALIZED!!!! \n",i);
         }
       }
-      body_rates_array_filtered_double[i] = body_rates_filter[i].o[0]; 
+      body_rates_array_filtered[i] = body_rates_filter[i].o[0]; 
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////Filtered u_in
+    //////////////////////////////////////////////////////////////////////////////////////////////Filter u_in (full)
     float u_in_filtered[NUM_ACT_IN_U_IN];
     float u_in[NUM_ACT_IN_U_IN] = {Omega_1, Omega_2, Omega_3, Omega_4, b_1, b_2, b_3, b_4, g_1, g_2, g_3, g_4, Theta, Phi, delta_ailerons};
     for (int i = 0; i < NUM_ACT_IN_U_IN; i++) {
@@ -604,7 +603,7 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
       u_in_filtered[i] = u_in_filter[i].o[0];
     }
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////Filtered airspeed
+    ///////////////////////////////////////////////////////////////////////////////////////////////////Filter airspeed
     update_butterworth_2_low_pass(&airspeed_filter, (float) V);
     //Check for NaN in filter and reset it: 
     if(airspeed_filter.o[0] != airspeed_filter.o[0]){
@@ -615,7 +614,7 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     }
     float airspeed_filtered = airspeed_filter.o[0]; 
 
-    //////////////////////////////////////////////////////////////////////////////////////// //Filtered flight path angle
+    ///////////////////////////////////////////////////////////////////////////////////////////Filter flight path angle
     update_butterworth_2_low_pass(&flight_path_angle_filter, (float) flight_path_angle);
     //Check for NaN in filter and reset it: 
     if(flight_path_angle_filter.o[0] != flight_path_angle_filter.o[0]){
@@ -1030,6 +1029,15 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
       mydata_in_optimizer_copy.use_u_init_outer_loop = 1;
       mydata_in_optimizer_copy.use_u_init_inner_loop = 1;
 
+      //Modeled accelerations filtered:
+      mydata_in_optimizer_copy.modeled_ax_filtered = 0;
+      mydata_in_optimizer_copy.modeled_ay_filtered = 0;
+      mydata_in_optimizer_copy.modeled_az_filtered = 0;
+      mydata_in_optimizer_copy.modeled_p_dot_filtered = 0;
+      mydata_in_optimizer_copy.modeled_q_dot_filtered = 0;
+      mydata_in_optimizer_copy.modeled_r_dot_filtered = 0;
+
+
     #endif 
 
     pthread_mutex_lock(&mutex_optimizer_input);
@@ -1320,6 +1328,9 @@ void* fourth_thread() //Run the inner loop of the optimization code
     double residuals[6], double *elapsed_time, double *N_iterations,
     double *N_evaluation, double *exitflag);
 
+
+ 
+    
     //Wait until time is not at least refresh_time_optimizer
     gettimeofday(&current_time, NULL);
     while(((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_inner_loop.tv_sec*1e6 + time_last_inner_loop.tv_usec)) < refresh_time_inner_loop*1e6){
