@@ -5,7 +5,7 @@
  * File: Nonlinear_controller_w_ail_basic_aero_outer_loop.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 06-Oct-2024 17:56:40
+ * C/C++ source code generated on  : 07-Oct-2024 11:21:32
  */
 
 #ifndef NONLINEAR_CONTROLLER_W_AIL_BASIC_AERO_OUTER_LOOP_H
@@ -49,8 +49,10 @@ extern void Nonlinear_controller_w_ail_basic_aero_outer_loop(
     double aoa_protection_speed, double vert_acc_margin, double p_body_current,
     double q_body_current, double r_body_current, double p_dot_current,
     double q_dot_current, double r_dot_current, double phi_current,
-    double theta_current, const double angular_proportional_gains[3],
-    const double angular_derivative_gains[3], double des_psi_dot,
+    double theta_current, double angular_proportional_gains[3],
+    double angular_derivative_gains[3], double theta_hard_max,
+    double theta_hard_min, double phi_hard_max, double phi_hard_min,
+    double k_d_airspeed, double des_psi_dot,
     const double current_accelerations[6], const double u_init[15],
     double use_u_init, double W_act_motor_du, double W_act_tilt_el_du,
     double W_act_tilt_az_du, double W_act_theta_du, double W_act_phi_du,

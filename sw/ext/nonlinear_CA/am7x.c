@@ -1066,10 +1066,160 @@ void* third_thread() //Run the outer loop of the optimization code
                       mydata_in_optimizer_copy.theta_state_filtered, mydata_in_optimizer_copy.phi_state_filtered, mydata_in_optimizer_copy.ailerons_state_filtered};
     }
 
+    //Assign variables from data_in_optimizer to the variables used in the controller input: 
+    double K_p_T = mydata_in_optimizer_copy.K_p_T;
+    double K_p_M = mydata_in_optimizer_copy.K_p_M;
+    double m = mydata_in_optimizer_copy.m;
+    double I_xx = mydata_in_optimizer_copy.I_xx;
+    double I_yy = mydata_in_optimizer_copy.I_yy;
+    double I_zz = mydata_in_optimizer_copy.I_zz;
+    double l_1 = mydata_in_optimizer_copy.l_1;
+    double l_2 = mydata_in_optimizer_copy.l_2;
+    double l_3 = mydata_in_optimizer_copy.l_3;
+    double l_4 = mydata_in_optimizer_copy.l_4;
+    double l_z = mydata_in_optimizer_copy.l_z;
+    double Phi = mydata_in_optimizer_copy.phi_state_filtered;
+    double Theta = mydata_in_optimizer_copy.theta_state_filtered;
+    double Omega_1 = mydata_in_optimizer_copy.motor_1_state_filtered;
+    double Omega_2 = mydata_in_optimizer_copy.motor_2_state_filtered;
+    double Omega_3 = mydata_in_optimizer_copy.motor_3_state_filtered;
+    double Omega_4 = mydata_in_optimizer_copy.motor_4_state_filtered;
+    double b_1 = mydata_in_optimizer_copy.el_1_state_filtered;
+    double b_2 = mydata_in_optimizer_copy.el_2_state_filtered;
+    double b_3 = mydata_in_optimizer_copy.el_3_state_filtered;
+    double b_4 = mydata_in_optimizer_copy.el_4_state_filtered;
+    double g_1 = mydata_in_optimizer_copy.az_1_state_filtered;
+    double g_2 = mydata_in_optimizer_copy.az_2_state_filtered;
+    double g_3 = mydata_in_optimizer_copy.az_3_state_filtered;
+    double g_4 = mydata_in_optimizer_copy.az_4_state_filtered;
+    double delta_ailerons = mydata_in_optimizer_copy.ailerons_state_filtered;
+    double W_act_motor_const = mydata_in_optimizer_copy.W_act_motor_const;
+    double W_act_motor_speed = mydata_in_optimizer_copy.W_act_motor_speed;
+    double W_act_tilt_el_const = mydata_in_optimizer_copy.W_act_tilt_el_const;
+    double W_act_tilt_el_speed = mydata_in_optimizer_copy.W_act_tilt_el_speed;
+    double W_act_tilt_az_const = mydata_in_optimizer_copy.W_act_tilt_az_const;
+    double W_act_tilt_az_speed = mydata_in_optimizer_copy.W_act_tilt_az_speed;
+    double W_act_theta_const = mydata_in_optimizer_copy.W_act_theta_const;
+    double W_act_theta_speed = mydata_in_optimizer_copy.W_act_theta_speed;
+    double W_act_phi_const = mydata_in_optimizer_copy.W_act_phi_const;
+    double W_act_phi_speed = mydata_in_optimizer_copy.W_act_phi_speed;
+    double W_act_ailerons_const = mydata_in_optimizer_copy.W_act_ailerons_const;
+    double W_act_ailerons_speed = mydata_in_optimizer_copy.W_act_ailerons_speed;
+    double W_dv_1 = mydata_in_optimizer_copy.W_dv_1;
+    double W_dv_2 = mydata_in_optimizer_copy.W_dv_2;
+    double W_dv_3 = mydata_in_optimizer_copy.W_dv_3;
+    double W_dv_4 = mydata_in_optimizer_copy.W_dv_4;
+    double W_dv_5 = mydata_in_optimizer_copy.W_dv_5;
+    double W_dv_6 = mydata_in_optimizer_copy.W_dv_6;
+    double max_omega = mydata_in_optimizer_copy.max_omega;
+    double min_omega = mydata_in_optimizer_copy.min_omega;
+    double max_b = mydata_in_optimizer_copy.max_b;
+    double min_b = mydata_in_optimizer_copy.min_b;
+    double max_g = mydata_in_optimizer_copy.max_g;
+    double min_g = mydata_in_optimizer_copy.min_g;
+    double max_theta = mydata_in_optimizer_copy.max_theta;
+    double min_theta = mydata_in_optimizer_copy.min_theta;
+    double max_phi = mydata_in_optimizer_copy.max_phi;
+    double max_delta_ailerons = mydata_in_optimizer_copy.max_delta_ailerons;
+    double min_delta_ailerons = mydata_in_optimizer_copy.min_delta_ailerons;
+    double dv[6] = {mydata_in_optimizer_copy.pseudo_control_ax,
+                    mydata_in_optimizer_copy.pseudo_control_ay,
+                    mydata_in_optimizer_copy.pseudo_control_az,
+                    mydata_in_optimizer_copy.pseudo_control_p_dot,
+                    mydata_in_optimizer_copy.pseudo_control_q_dot,
+                    mydata_in_optimizer_copy.pseudo_control_r_dot};
+    double p = mydata_in_optimizer_copy.p_state_filtered;
+    double q = mydata_in_optimizer_copy.q_state_filtered;
+    double r = mydata_in_optimizer_copy.r_state_filtered;
+    double Cm_zero = mydata_in_optimizer_copy.Cm_zero;
+    double Cl_alpha = mydata_in_optimizer_copy.Cl_alpha;
+    double Cd_zero = mydata_in_optimizer_copy.Cd_zero;
+    double K_Cd = mydata_in_optimizer_copy.K_Cd;
+    double Cm_alpha = mydata_in_optimizer_copy.Cm_alpha;
+    double CL_aileron = mydata_in_optimizer_copy.CL_aileron;
+    double rho = mydata_in_optimizer_copy.rho;
+    double V = mydata_in_optimizer_copy.V;
+    double S = mydata_in_optimizer_copy.S;
+    double wing_chord = mydata_in_optimizer_copy.wing_chord;
+    double flight_path_angle = mydata_in_optimizer_copy.gamma_state_filtered;
+    double max_alpha = mydata_in_optimizer_copy.max_alpha;
+    double min_alpha = mydata_in_optimizer_copy.min_alpha;
+    double Beta = mydata_in_optimizer_copy.Beta;
+    double gamma_quadratic_du = mydata_in_optimizer_copy.gamma_quadratic_du;
+    double desired_motor_value = mydata_in_optimizer_copy.desired_motor_value;
+    double desired_el_value = mydata_in_optimizer_copy.desired_el_value;
+    double desired_az_value = mydata_in_optimizer_copy.desired_az_value;
+    double desired_theta_value = mydata_in_optimizer_copy.desired_theta_value;
+    double desired_phi_value = mydata_in_optimizer_copy.desired_phi_value;
+    double desired_ailerons_value = mydata_in_optimizer_copy.desired_ailerons_value;
+    double k_alt_tilt_constraint = mydata_in_optimizer_copy.k_alt_tilt_constraint;
+    double min_alt_tilt_constraint = mydata_in_optimizer_copy.min_alt_tilt_constraint;
+    double lidar_alt_corrected = mydata_in_optimizer_copy.lidar_alt_corrected;
+    double approach_mode = mydata_in_optimizer_copy.approach_mode;
+    double aoa_protection_speed = mydata_in_optimizer_copy.aoa_protection_speed;
+    double vert_acc_margin = mydata_in_optimizer_copy.vert_acc_margin;
 
+
+
+
+    //Prepare output variables: 
+    double u_out[NUM_ACT_IN_U_IN];
+    double dv_pqr_dot_target[3];
+    double theta_cmd_rad;
+    double phi_cmd_rad;
+    double acc_decrement_aero[6];
+    double residuals[6];
+    double elapsed_time;
+    double N_iterations;
+    double N_evaluation;
+    double exitflag;
 
     //RUN MAIN CODE HERE, USING mydata_in_optimizer_copy as input
-
+    Nonlinear_controller_w_ail_basic_aero_outer_loop(
+    K_p_T, K_p_M, m, I_xx, I_yy, I_zz,
+    l_1, l_2, l_3, l_4, l_z, Phi,
+    Theta, Omega_1, Omega_2, Omega_3,
+    Omega_4, b_1, b_2, b_3, b_4, g_1,
+    g_2, g_3, g_4, delta_ailerons,
+    W_act_motor_const, W_act_motor_speed,
+    W_act_tilt_el_const, W_act_tilt_el_speed,
+    W_act_tilt_az_const, W_act_tilt_az_speed,
+    W_act_theta_const, W_act_theta_speed, W_act_phi_const,
+    W_act_phi_speed, W_act_ailerons_const,
+    W_act_ailerons_speed, W_dv_1, W_dv_2, W_dv_3,
+    W_dv_4, W_dv_5, W_dv_6, max_omega,
+    min_omega, max_b, min_b, max_g, min_g,
+    max_theta, min_theta, max_phi,
+    max_delta_ailerons, min_delta_ailerons, dv,
+    p, q, r, Cm_zero, Cl_alpha,
+    Cd_zero, K_Cd, Cm_alpha, CL_aileron, rho,
+    V, S, wing_chord, flight_path_angle,
+    max_alpha, min_alpha, Beta, gamma_quadratic_du,
+    desired_motor_value, desired_el_value,
+    desired_az_value, desired_theta_value,
+    desired_phi_value, desired_ailerons_value,
+    k_alt_tilt_constraint, min_alt_tilt_constraint,
+    lidar_alt_corrected, approach_mode, verbose,
+    aoa_protection_speed, vert_acc_margin, p_body_current,
+    q_body_current, r_body_current, p_dot_current,
+    q_dot_current, r_dot_current, phi_current,
+    theta_current, angular_proportional_gains,
+    angular_derivative_gains, theta_hard_max,
+    theta_hard_min, phi_hard_max, phi_hard_min,
+    k_d_airspeed, des_psi_dot,
+    current_accelerations, u_init,
+    use_u_init, W_act_motor_du, W_act_tilt_el_du,
+    W_act_tilt_az_du, W_act_theta_du, W_act_phi_du,
+    W_act_ailerons_du, gamma_quadratic_du2,
+    induced_failure, W_act_motor_failure,
+    W_act_tilt_el_failure, W_act_tilt_az_failure,
+    W_act_theta_failure, W_act_phi_failure,
+    W_act_ailerons_failure, W_dv_1_failure, W_dv_2_failure,
+    W_dv_3_failure, W_dv_4_failure, W_dv_5_failure,
+    W_dv_6_failure, gamma_quadratic_du_failure, u_out,
+    dv_pqr_dot_target, theta_cmd_rad, phi_cmd_rad,
+    acc_decrement_aero, residuals, elapsed_time,
+    N_iterations, N_evaluation, exitflag);
 
 
     //Set as u_init_outer the u_out for the next iteration: 
@@ -1082,8 +1232,8 @@ void* third_thread() //Run the outer loop of the optimization code
     myouter_loop_output_copy.p_dot_cmd_rad_s = pqr_dot_array_target[0];
     myouter_loop_output_copy.q_dot_cmd_rad_s = pqr_dot_array_target[1];
     myouter_loop_output_copy.r_dot_cmd_rad_s = pqr_dot_array_target[2];
-    myouter_loop_output_copy.theta_cmd_rad = theta_cmd;
-    myouter_loop_output_copy.phi_cmd_rad = phi_cmd;
+    myouter_loop_output_copy.theta_cmd_rad = theta_cmd_rad;
+    myouter_loop_output_copy.phi_cmd_rad = phi_cmd_rad;
 
     //Send the data to the inner loop
     pthread_mutex_lock(&mutex_outer_loop_output);
@@ -1136,10 +1286,40 @@ void* fourth_thread() //Run the inner loop of the optimization code
 
     //Run main code here using mydata_in_optimizer_copy as input and supplying as 
     // output u_out, exitflag, N_iterations, N_evaluations, exitflag and residuals.
+    Nonlinear_controller_w_ail_basic_aero_inner_loop(
+    double K_p_T, double K_p_M, double m, double I_xx, double I_yy, double I_zz,
+    double l_1, double l_2, double l_3, double l_4, double l_z, double Phi,
+    double Theta, double Omega_1, double Omega_2, double Omega_3,
+    double Omega_4, double b_1, double b_2, double b_3, double b_4, double g_1,
+    double g_2, double g_3, double g_4, double delta_ailerons,
+    double W_act_motor_const, double W_act_motor_speed,
+    double W_act_tilt_el_const, double W_act_tilt_el_speed,
+    double W_act_tilt_az_const, double W_act_tilt_az_speed,
+    double W_act_ailerons_const, double W_act_ailerons_speed, double W_dv_1,
+    double W_dv_2, double W_dv_3, double W_dv_4, double W_dv_5, double W_dv_6,
+    double max_omega, double min_omega, double max_b, double min_b,
+    double max_g, double min_g, double max_delta_ailerons,
+    double min_delta_ailerons, double dv[6], double p, double q, double r,
+    double Cm_zero, double Cl_alpha, double Cd_zero, double K_Cd,
+    double Cm_alpha, double CL_aileron, double rho, double V, double S,
+    double wing_chord, double flight_path_angle, double Beta,
+    double gamma_quadratic_du, double desired_motor_value,
+    double desired_el_value, double desired_az_value,
+    double desired_ailerons_value, double k_alt_tilt_constraint,
+    double min_alt_tilt_constraint, double lidar_alt_corrected,
+    double approach_mode, double verbose, double vert_acc_margin,
+    const double current_accelerations[6], const double u_init[13],
+    double use_u_init, const double pqr_dot_outer_loop[3],
+    double W_act_motor_du, double W_act_tilt_el_du, double W_act_tilt_az_du,
+    double W_act_ailerons_du, double gamma_quadratic_du2,
+    double induced_failure, double W_act_motor_failure,
+    double W_act_tilt_el_failure, double W_act_tilt_az_failure,
+    double W_act_ailerons_failure, double W_dv_1_failure, double W_dv_2_failure,
+    double W_dv_3_failure, double W_dv_4_failure, double W_dv_5_failure,
+    double W_dv_6_failure, double gamma_quadratic_du_failure, double u_out[13],
+    double residuals[6], double *elapsed_time, double *N_iterations,
+    double *N_evaluation, double *exitflag);
 
-
- 
-    
     //Wait until time is not at least refresh_time_optimizer
     gettimeofday(&current_time, NULL);
     while(((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_inner_loop.tv_sec*1e6 + time_last_inner_loop.tv_usec)) < refresh_time_inner_loop*1e6){

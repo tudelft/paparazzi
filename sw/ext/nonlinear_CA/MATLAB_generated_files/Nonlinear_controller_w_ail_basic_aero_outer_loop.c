@@ -5,7 +5,7 @@
  * File: Nonlinear_controller_w_ail_basic_aero_outer_loop.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 06-Oct-2024 17:56:40
+ * C/C++ source code generated on  : 07-Oct-2024 11:21:32
  */
 
 /* Include Files */
@@ -7166,8 +7166,13 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double r_dot_current
  *                double phi_current
  *                double theta_current
- *                const double angular_proportional_gains[3]
- *                const double angular_derivative_gains[3]
+ *                double angular_proportional_gains[3]
+ *                double angular_derivative_gains[3]
+ *                double theta_hard_max
+ *                double theta_hard_min
+ *                double phi_hard_max
+ *                double phi_hard_min
+ *                double k_d_airspeed
  *                double des_psi_dot
  *                const double current_accelerations[6]
  *                const double u_init[15]
@@ -7229,20 +7234,21 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   double verbose, double aoa_protection_speed, double vert_acc_margin, double
   p_body_current, double q_body_current, double r_body_current, double
   p_dot_current, double q_dot_current, double r_dot_current, double phi_current,
-  double theta_current, const double angular_proportional_gains[3], const double
-  angular_derivative_gains[3], double des_psi_dot, const double
-  current_accelerations[6], const double u_init[15], double use_u_init, double
-  W_act_motor_du, double W_act_tilt_el_du, double W_act_tilt_az_du, double
-  W_act_theta_du, double W_act_phi_du, double W_act_ailerons_du, double
-  gamma_quadratic_du2, double induced_failure, double W_act_motor_failure,
-  double W_act_tilt_el_failure, double W_act_tilt_az_failure, double
-  W_act_theta_failure, double W_act_phi_failure, double W_act_ailerons_failure,
-  double W_dv_1_failure, double W_dv_2_failure, double W_dv_3_failure, double
-  W_dv_4_failure, double W_dv_5_failure, double W_dv_6_failure, double
-  gamma_quadratic_du_failure, double u_out[15], double dv_pqr_dot_target[3],
-  double *theta_cmd_rad, double *phi_cmd_rad, double acc_decrement_aero[6],
-  double residuals[6], double *elapsed_time, double *N_iterations, double
-  *N_evaluation, double *exitflag)
+  double theta_current, double angular_proportional_gains[3], double
+  angular_derivative_gains[3], double theta_hard_max, double theta_hard_min,
+  double phi_hard_max, double phi_hard_min, double k_d_airspeed, double
+  des_psi_dot, const double current_accelerations[6], const double u_init[15],
+  double use_u_init, double W_act_motor_du, double W_act_tilt_el_du, double
+  W_act_tilt_az_du, double W_act_theta_du, double W_act_phi_du, double
+  W_act_ailerons_du, double gamma_quadratic_du2, double induced_failure, double
+  W_act_motor_failure, double W_act_tilt_el_failure, double
+  W_act_tilt_az_failure, double W_act_theta_failure, double W_act_phi_failure,
+  double W_act_ailerons_failure, double W_dv_1_failure, double W_dv_2_failure,
+  double W_dv_3_failure, double W_dv_4_failure, double W_dv_5_failure, double
+  W_dv_6_failure, double gamma_quadratic_du_failure, double u_out[15], double
+  dv_pqr_dot_target[3], double *theta_cmd_rad, double *phi_cmd_rad, double
+  acc_decrement_aero[6], double residuals[6], double *elapsed_time, double
+  *N_iterations, double *N_evaluation, double *exitflag)
 {
   b_captured_var dv_global;
   c_captured_var actual_u;
@@ -7830,23 +7836,36 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   fmincon(&b_expl_temp, u_out, u_min, u_max_scaled, exitflag, N_iterations,
           N_evaluation, c_expl_temp, &b_max_tilt_value_approach, &b_max_approach,
           &b_min_approach, &g_max_approach);
-  *theta_cmd_rad = u_out[12] * gain_theta.contents;
-  *phi_cmd_rad = u_out[13] * gain_phi.contents;
+  b_max_approach = u_out[12] * gain_theta.contents;
+  min_theta_protection = u_out[13] * gain_phi.contents;
+
+  /* Constrain the commands with hard max and min of theta and phi:  */
+  *theta_cmd_rad = fmax(theta_hard_min, fmin(theta_hard_max, b_max_approach));
+  *phi_cmd_rad = fmax(phi_hard_min, fmin(phi_hard_max, min_theta_protection));
 
   /* with the desired theta and phi, let's compute the associated angular */
   /* accelerations through the EC gains and feedbacks:  */
-  min_theta_protection = sin(Phi);
-  b_max_tilt_value_approach = cos(Phi);
-  b_max_approach = cos(Theta);
+  b_max_tilt_value_approach = sin(Phi);
+  b_max_approach = cos(Phi);
+  b_min_approach = cos(Theta);
+
+  /* Scale gains with airspeed.  */
+  min_theta_protection = 1.0 - b_V.contents * k_d_airspeed;
+  min_theta_protection = fmin(1.0, fmax(min_theta_protection, 0.1));
+  angular_proportional_gains[0] *= min_theta_protection;
+  angular_derivative_gains[0] *= min_theta_protection;
+  angular_proportional_gains[1] *= min_theta_protection;
+  angular_derivative_gains[1] *= min_theta_protection;
+  angular_derivative_gains[2] *= min_theta_protection;
   b_dv[0] = 1.0;
   b_dv[3] = 0.0;
   b_dv[6] = -sin(Theta);
   b_dv[1] = 0.0;
-  b_dv[4] = b_max_tilt_value_approach;
-  b_dv[7] = min_theta_protection * b_max_approach;
+  b_dv[4] = b_max_approach;
+  b_dv[7] = b_max_tilt_value_approach * b_min_approach;
   b_dv[2] = 0.0;
-  b_dv[5] = -min_theta_protection;
-  b_dv[8] = b_max_tilt_value_approach * b_max_approach;
+  b_dv[5] = -b_max_tilt_value_approach;
+  b_dv[8] = b_max_approach * b_min_approach;
   min_theta_protection = (*phi_cmd_rad - phi_current) *
     angular_proportional_gains[0];
   b_max_tilt_value_approach = (*theta_cmd_rad - theta_current) *

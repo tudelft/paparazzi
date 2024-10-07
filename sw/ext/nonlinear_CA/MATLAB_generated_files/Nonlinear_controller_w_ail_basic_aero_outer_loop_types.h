@@ -5,7 +5,7 @@
  * File: Nonlinear_controller_w_ail_basic_aero_outer_loop_types.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 06-Oct-2024 17:56:40
+ * C/C++ source code generated on  : 07-Oct-2024 11:21:32
  */
 
 #ifndef NONLINEAR_CONTROLLER_W_AIL_BASIC_AERO_OUTER_LOOP_TYPES_H
