@@ -182,10 +182,10 @@
         <define name="FW_QUAD_MIN_AIRSPEED"     value="15.0"/>  <!-- Forward stall airspeed + margin with quad motors on -->
         <define name="FW_CRUISE_AIRSPEED"       value="19.0"/>  <!-- Default cruise airspeed -->
         <define name="FW_MAX_AIRSPEED"          value="22.0"/>  <!-- Maximum forward airspeed -->
-        <define name="FW_MAX_DECELERATION"      value="0.5"/>  <!-- Maximum horizontal deceleration in fixed wing mode -->
+        <define name="FW_MAX_DECELERATION"      value="0.75"/>  <!-- Maximum horizontal deceleration in fixed wing mode -->
         <define name="QUAD_NOPUSH_AIRSPEED"     value="5.0"/>   <!-- Maximum quadrotor without pusher motor airspeed -->
         <define name="QUAD_MAX_AIRSPEED"        value="12.0"/>  <!-- Maximum quadrotor airspeed (with pusher motor)-->
-        <define name="QUAD_MAX_DECELERATION"    value="0.5"/>  <!-- Maximum horizontal deceleration in quad mode -->
+        <define name="QUAD_MAX_DECELERATION"    value="0.75"/>  <!-- Maximum horizontal deceleration in quad mode -->
         <define name="SKEW_UP_AIRSPEED"         value="10.0"/>  <!-- Airspeed where the skewing starts when going up in airspeed -->
         <define name="SKEW_DOWN_AIRSPEED"       value="8.0"/>   <!-- Airspeed where the skewing starts when going down in airspeed -->
 
@@ -202,9 +202,9 @@
         <define name="WLS_WU"               value="{100., 300., 4., 30.}"/>
 
         <!-- Gains -->
-        <define name="POS_GAIN"             value="0.5"/>
+        <define name="POS_GAIN"             value="0.3"/>
         <define name="POS_GAINZ"            value="0.5"/>
-        <define name="SPEED_GAIN"           value="2.0"/>
+        <define name="SPEED_GAIN"           value="0.7"/>
         <define name="SPEED_GAINZ"          value="0.6"/>
 
         <!-- Other -->

@@ -159,7 +159,7 @@ bool nav_rotwing_takeoff_run(void)
       NavGotoWaypoint(WP_CLIMB);
       NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
       NavVerticalClimbMode(nav.climb_vspeed);
-      if (GetPosHeight()>50.000000) {
+      if (GetPosHeight() > 75.) {
         rotwing_state_set(ROTWING_STATE_REQUEST_FW);
         return false;
       }
@@ -182,6 +182,7 @@ bool nav_rotwing_takeoff_run(void)
 
 bool nav_rotwing_land_run(void)
 {
+  rotwing_state_set(ROTWING_STATE_REQUEST_HOVER);
   // switch(rotwing_landing_status) {
   //   case Descend:
   //     rotwing_state_set(ROTWING_STATE_REQUEST_HOVER);
