@@ -126,7 +126,7 @@ float pos_order_earth[3];
 float euler_order[3];
 float psi_order_motor = 0;
 
-int use_u_init_nonlinear_CA = 0; 
+int use_u_init_nonlinear_CA = 1; 
 
 int failure_mode = 0; 
 
