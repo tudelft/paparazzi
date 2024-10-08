@@ -56,7 +56,9 @@ pthread_mutex_t mutex_am7, mutex_optimizer_input, mutex_outer_loop_output;
 int verbose_sixdof_com = 0;
 int verbose_sixdof_position = 0;
 int verbose_connection = 1;
-int verbose_optimizer = 0;
+int verbose_outer_loop = 0; 
+int verbose_inner_loop = 0;
+int verbose_outer_loop_output = 0; 
 int verbose_runtime = 0; 
 int verbose_data_in = 0; 
 int verbose_submitted_data = 0; 
@@ -495,7 +497,7 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     if(pqr_first_order_filter_omega_telem > 0.1f){
       filter_cutoff_first_order_pqr = pqr_first_order_filter_omega_telem;
     }
-    pqr_first_order_filter_tau = 1.0f - exp(-filter_cutoff_first_order_pqr/refresh_time_filters);
+    pqr_first_order_filter_tau = 1.0f - exp(-filter_cutoff_first_order_pqr*refresh_time_filters);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////// Define real time variables:
     float Phi = (myam7_data_in_copy.phi_state_int*1e-2 * M_PI/180);
@@ -876,12 +878,8 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
       printf(" desired_el_value_deg = %f \n",(float) mydata_in_optimizer_copy.desired_el_value*180/M_PI);
       printf(" desired_az_value_deg = %f \n",(float) mydata_in_optimizer_copy.desired_az_value*180/M_PI);
       printf(" desired_ailerons_value = %f \n",(float) mydata_in_optimizer_copy.desired_ailerons_value);
-      printf(" min_theta_hard = %f \n",(float) mydata_in_optimizer_copy.min_theta_hard*180/M_PI);
-      printf(" max_theta_hard = %f \n",(float) mydata_in_optimizer_copy.max_theta_hard*180/M_PI);
-      printf(" min_phi_hard = %f \n",(float) mydata_in_optimizer_copy.min_phi_hard*180/M_PI);
-      printf(" max_phi_hard = %f \n",(float) mydata_in_optimizer_copy.max_phi_hard*180/M_PI);
       printf(" disable_acc_decrement_inner_loop = %f \n",(float) mydata_in_optimizer_copy.disable_acc_decrement_inner_loop);
-      printf(" filter_cutoff_frequency_telem = %f \n",(float) mydata_in_optimizer_copy.filter_cutoff_frequency_telem);
+      
       printf(" max_airspeed = %f \n",(float) mydata_in_optimizer_copy.max_airspeed);
       printf(" vert_acc_margin = %f \n",(float) mydata_in_optimizer_copy.vert_acc_margin);
       printf(" power_Cd_0 = %f \n",(float) mydata_in_optimizer_copy.power_Cd_0);
@@ -896,10 +894,38 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
       printf(" prop_theta = %f \n",(float) mydata_in_optimizer_copy.prop_theta);
       printf(" use_u_init_outer_loop = %f \n",(float) mydata_in_optimizer_copy.use_u_init_outer_loop); 
       printf(" use_u_init_inner_loop = %f \n",(float) mydata_in_optimizer_copy.use_u_init_inner_loop); 
+
+      printf("\n ERROR CONTROLLER VARIABLES ------------------------------------------------------ \n");
+
+      printf(" phi_state_ec_deg = %f \n",(float) mydata_in_optimizer_copy.phi_state_ec*180/M_PI);
+      printf(" theta_state_ec_deg = %f \n",(float) mydata_in_optimizer_copy.theta_state_ec*180/M_PI);
+      printf(" psi_state_ec_deg = %f \n",(float) mydata_in_optimizer_copy.psi_state_ec*180/M_PI);
+      printf(" p_state_ec_deg_s = %f \n",(float) mydata_in_optimizer_copy.p_state_ec*180/M_PI);
+      printf(" q_state_ec_deg_s = %f \n",(float) mydata_in_optimizer_copy.q_state_ec*180/M_PI);
+      printf(" r_state_ec_deg_s = %f \n",(float) mydata_in_optimizer_copy.r_state_ec*180/M_PI);
+      printf(" p_dot_state_ec_deg_s = %f \n",(float) mydata_in_optimizer_copy.p_dot_state_ec*180/M_PI);
+      printf(" q_dot_state_ec_deg_s = %f \n",(float) mydata_in_optimizer_copy.q_dot_state_ec*180/M_PI);
+      printf(" r_dot_state_ec_deg_s = %f \n",(float) mydata_in_optimizer_copy.r_dot_state_ec*180/M_PI);
+      printf(" theta_gain = %f \n",(float) mydata_in_optimizer_copy.theta_gain);
+      printf(" phi_gain = %f \n",(float) mydata_in_optimizer_copy.phi_gain);
+      printf(" p_body_gain = %f \n",(float) mydata_in_optimizer_copy.p_body_gain);
+      printf(" q_body_gain = %f \n",(float) mydata_in_optimizer_copy.q_body_gain);
+      printf(" r_body_gain = %f \n",(float) mydata_in_optimizer_copy.r_body_gain);
+      printf(" k_d_airspeed = %f \n",(float) mydata_in_optimizer_copy.k_d_airspeed);
+      printf(" min_theta_hard = %f \n",(float) mydata_in_optimizer_copy.min_theta_hard);
+      printf(" max_theta_hard = %f \n",(float) mydata_in_optimizer_copy.max_theta_hard);
+      printf(" min_phi_hard = %f \n",(float) mydata_in_optimizer_copy.min_phi_hard);
+      printf(" max_phi_hard = %f \n",(float) mydata_in_optimizer_copy.max_phi_hard);
+      printf(" psi_dot_cmd_ec = %f \n",(float) mydata_in_optimizer_copy.psi_dot_cmd_ec);
+
+      printf("\n FILTERING PROPERTIES ------------------------------------------------------ \n"); 
+      printf(" filter_cutoff_frequency_telem = %f \n",(float) filter_cutoff_frequency_telem);
+      printf(" Effective filter_cutoff_frequency = %f \n",(float) filter_cutoff_frequency);
+      printf(" pqr_first_order_filter_omega_telem = %f \n",(float) pqr_first_order_filter_omega_telem);
+      printf(" Effective pqr_first_order_filter_omega = %f \n",(float) filter_cutoff_first_order_pqr);
+      printf(" Effective pqr_first_order_filter_tau = %f \n",(float) pqr_first_order_filter_tau);
       
-
       printf("\n REAL TIME VARIABLES IN------------------------------------------------------ \n"); 
-
       printf(" Phi_deg = %f \n",(float) mydata_in_optimizer_copy.phi_state_filtered*180/M_PI);
       printf(" Theta_deg = %f \n",(float) mydata_in_optimizer_copy.theta_state_filtered*180/M_PI);
       printf(" delta_ailerons_deg = %f \n",(float) mydata_in_optimizer_copy.ailerons_state_filtered*180/M_PI);
@@ -923,26 +949,30 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
       printf(" Beta_deg = %f \n",(float) mydata_in_optimizer_copy.beta_state_filtered*180/M_PI);
       printf(" desired_theta_value_deg = %f \n",(float) mydata_in_optimizer_copy.desired_theta_value*180/M_PI);
       printf(" desired_phi_value_deg = %f \n",(float) mydata_in_optimizer_copy.desired_phi_value*180/M_PI);
-
       printf(" approach_mode = %f \n",(float) mydata_in_optimizer_copy.approach_boolean);
       printf(" lidar_alt_corrected = %f \n",(float) mydata_in_optimizer_copy.lidar_alt_corrected);
-
       printf(" pseudo_control_ax = %f \n",(float) mydata_in_optimizer_copy.pseudo_control_ax);
       printf(" pseudo_control_ay = %f \n",(float) mydata_in_optimizer_copy.pseudo_control_ay);
       printf(" pseudo_control_az = %f \n",(float) mydata_in_optimizer_copy.pseudo_control_az);
-
       printf(" desired_theta_value = %f \n",(float) mydata_in_optimizer_copy.desired_theta_value);
       printf(" desired_phi_value = %f \n",(float) mydata_in_optimizer_copy.desired_phi_value);
 
-      printf("\n MODELED FILTERED ACCELLERATIONS------------------------------------------------------ \n"); 
+      printf(" failure_mode = %f \n",(float) mydata_in_optimizer_copy.failure_mode);
 
+      printf("\n SIXDOF VARIABLES -------------------------------------------------------------------- \n"); 
+      printf(" UAV_NED_pos_x = %f \n",(float) myam7_data_in_copy.UAV_NED_pos_x);
+      printf(" UAV_NED_pos_y = %f \n",(float) myam7_data_in_copy.UAV_NED_pos_y);
+      printf(" UAV_NED_pos_z = %f \n",(float) myam7_data_in_copy.UAV_NED_pos_z);
+      printf(" beacon_tracking_id = %f \n",(float) beacon_tracking_id_local);
+      printf(" desired_sixdof_mode = %f \n",(float) desired_sixdof_mode_local);
+
+      printf("\n MODELED FILTERED ACCELLERATIONS------------------------------------------------------ \n"); 
       printf(" Modeled ax filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_ax_filtered);
       printf(" Modeled ay filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_ay_filtered);
       printf(" Modeled az filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_az_filtered);
       printf(" Modeled p_dot filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_p_dot_filtered);
       printf(" Modeled q_dot filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_q_dot_filtered);
       printf(" Modeled r_dot filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_r_dot_filtered);
-
       fflush(stdout);
     }
 
@@ -1081,8 +1111,6 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
       mydata_in_optimizer_copy.modeled_p_dot_filtered = 0;
       mydata_in_optimizer_copy.modeled_q_dot_filtered = 0;
       mydata_in_optimizer_copy.modeled_r_dot_filtered = 0;
-
-
     #endif 
 
     pthread_mutex_lock(&mutex_optimizer_input);
@@ -1090,9 +1118,10 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     pthread_mutex_unlock(&mutex_optimizer_input);
 
     //Wait until time is not at least refresh_time_filters
+    gettimeofday(&current_time, NULL);
     while(((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_filt.tv_sec*1e6 + time_last_filt.tv_usec)) < refresh_time_filters*1e6){
-      gettimeofday(&current_time, NULL);
       usleep(5);
+      gettimeofday(&current_time, NULL);
     }
     if(verbose_runtime){
       printf("Effective refresh time filters: %f \n", ((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_filt.tv_sec*1e6 + time_last_filt.tv_usec)));
@@ -1112,7 +1141,7 @@ void* third_thread() //Run the outer loop of the optimization code
     memcpy(&mydata_in_optimizer_copy, &mydata_in_optimizer, sizeof(struct data_in_optimizer));
     pthread_mutex_unlock(&mutex_optimizer_input);
 
-    double verbose = verbose_optimizer;
+    double verbose = verbose_outer_loop;
 
     //Check if u_init_outer was not initialized yet:
     if(u_init_outer[0] < 1){
@@ -1377,15 +1406,41 @@ void* third_thread() //Run the outer loop of the optimization code
     myouter_loop_output_copy.acc_decrement_aero_q_dot = acc_decrement_aero[4];
     myouter_loop_output_copy.acc_decrement_aero_r_dot = acc_decrement_aero[5];
 
+    if(verbose_outer_loop_output){
+      printf("Outer loop output: \n");
+      printf("p_dot_cmd_rad_s = %f \n", (float) myouter_loop_output_copy.p_dot_cmd_rad_s);
+      printf("q_dot_cmd_rad_s = %f \n", (float) myouter_loop_output_copy.q_dot_cmd_rad_s);
+      printf("r_dot_cmd_rad_s = %f \n", (float) myouter_loop_output_copy.r_dot_cmd_rad_s);
+      printf("theta_cmd_deg = %f \n", (float) myouter_loop_output_copy.theta_cmd_rad*180/M_PI);
+      printf("phi_cmd_deg = %f \n", (float) myouter_loop_output_copy.phi_cmd_rad*180/M_PI);
+      printf("residual_ax = %f \n", (float) myouter_loop_output_copy.residual_ax);
+      printf("residual_ay = %f \n", (float) myouter_loop_output_copy.residual_ay);
+      printf("residual_az = %f \n", (float) myouter_loop_output_copy.residual_az);
+      printf("residual_p_dot = %f \n", (float) myouter_loop_output_copy.residual_p_dot);
+      printf("residual_q_dot = %f \n", (float) myouter_loop_output_copy.residual_q_dot);
+      printf("residual_r_dot = %f \n", (float) myouter_loop_output_copy.residual_r_dot);
+      printf("exit_flag = %f \n", (float) myouter_loop_output_copy.exit_flag);
+      printf("n_iterations = %f \n", (float) myouter_loop_output_copy.n_iterations);
+      printf("n_evaluations = %f \n", (float) myouter_loop_output_copy.n_evaluations);
+      printf("elapsed_time = %f \n", (float) myouter_loop_output_copy.elapsed_time);
+      printf("acc_decrement_aero_ax = %f \n", (float) myouter_loop_output_copy.acc_decrement_aero_ax);
+      printf("acc_decrement_aero_ay = %f \n", (float) myouter_loop_output_copy.acc_decrement_aero_ay);
+      printf("acc_decrement_aero_az = %f \n", (float) myouter_loop_output_copy.acc_decrement_aero_az);
+      printf("acc_decrement_aero_p_dot = %f \n", (float) myouter_loop_output_copy.acc_decrement_aero_p_dot);
+      printf("acc_decrement_aero_q_dot = %f \n", (float) myouter_loop_output_copy.acc_decrement_aero_q_dot);
+      printf("acc_decrement_aero_r_dot = %f \n", (float) myouter_loop_output_copy.acc_decrement_aero_r_dot);
+    }
+
     //Send the data to the inner loop
     pthread_mutex_lock(&mutex_outer_loop_output);
     memcpy(&myouter_loop_output, &myouter_loop_output_copy, sizeof(struct outer_loop_output));
     pthread_mutex_unlock(&mutex_outer_loop_output);
 
     //Wait until time is not at least refresh_time_outer_loop
+    gettimeofday(&current_time, NULL);
     while(((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_outer_loop.tv_sec*1e6 + time_last_outer_loop.tv_usec)) < refresh_time_outer_loop*1e6){
-      gettimeofday(&current_time, NULL);
       usleep(5);
+      gettimeofday(&current_time, NULL);
     }
     //Print performances if needed
     if(verbose_runtime){
@@ -1416,7 +1471,7 @@ void* fourth_thread() //Run the inner loop of the optimization code
     memcpy(&myouter_loop_output_copy, &myouter_loop_output, sizeof(struct outer_loop_output));
     pthread_mutex_unlock(&mutex_outer_loop_output);
 
-    double verbose = verbose_optimizer;
+    double verbose = verbose_inner_loop;
 
     //Check if u_init_inner was not initialized yet:
     if(u_init_inner[0] < 1){
@@ -1432,9 +1487,7 @@ void* fourth_thread() //Run the inner loop of the optimization code
       u_init_inner[9] = mydata_in_optimizer_copy.az_2_state_filtered;
       u_init_inner[10] = mydata_in_optimizer_copy.az_3_state_filtered;
       u_init_inner[11] = mydata_in_optimizer_copy.az_4_state_filtered;
-      u_init_inner[12] = mydata_in_optimizer_copy.theta_state_filtered;
-      u_init_inner[13] = mydata_in_optimizer_copy.phi_state_filtered;
-      u_init_inner[14] = mydata_in_optimizer_copy.ailerons_state_filtered;
+      u_init_inner[12] = mydata_in_optimizer_copy.ailerons_state_filtered;
     }
 
     //Assign u_init from u_init_inner
@@ -1517,7 +1570,7 @@ void* fourth_thread() //Run the inner loop of the optimization code
     double flight_path_angle =(double) mydata_in_optimizer_copy.gamma_state_filtered;
     double max_alpha =(double) mydata_in_optimizer_copy.max_alpha;
     double min_alpha =(double) mydata_in_optimizer_copy.min_alpha;
-    double Beta =(double) mydata_in_optimizer_copy.beta_state_filtered;
+    double Beta = (double) mydata_in_optimizer_copy.beta_state_filtered;
     double gamma_quadratic_du =(double) mydata_in_optimizer_copy.gamma_quadratic_du;
     double desired_motor_value =(double) mydata_in_optimizer_copy.desired_motor_value;
     double desired_el_value =(double) mydata_in_optimizer_copy.desired_el_value;
@@ -1664,27 +1717,26 @@ void* fourth_thread() //Run the inner loop of the optimization code
       printf(" motor_2_cmd_rad_s = %f \n",(float) myam7_data_out_copy.motor_2_cmd_int*1e-1);
       printf(" motor_3_cmd_rad_s = %f \n",(float) myam7_data_out_copy.motor_3_cmd_int*1e-1);
       printf(" motor_4_cmd_rad_s = %f \n",(float) myam7_data_out_copy.motor_4_cmd_int*1e-1);
-      printf(" el_1_cmd_deg = %f \n",(float) myam7_data_out_copy.el_1_cmd_int*1e-2*180/M_PI);
-      printf(" el_2_cmd_deg = %f \n",(float) myam7_data_out_copy.el_2_cmd_int*1e-2*180/M_PI);
-      printf(" el_3_cmd_deg = %f \n",(float) myam7_data_out_copy.el_3_cmd_int*1e-2*180/M_PI);
-      printf(" el_4_cmd_deg = %f \n",(float) myam7_data_out_copy.el_4_cmd_int*1e-2*180/M_PI);
-      printf(" az_1_cmd_deg = %f \n",(float) myam7_data_out_copy.az_1_cmd_int*1e-2*180/M_PI);
-      printf(" az_2_cmd_deg = %f \n",(float) myam7_data_out_copy.az_2_cmd_int*1e-2*180/M_PI);
-      printf(" az_3_cmd_deg = %f \n",(float) myam7_data_out_copy.az_3_cmd_int*1e-2*180/M_PI);
-      printf(" az_4_cmd_deg = %f \n",(float) myam7_data_out_copy.az_4_cmd_int*1e-2*180/M_PI);
-      printf(" ailerons_cmd_deg = %f \n",(float) myam7_data_out_copy.ailerons_cmd_int*1e-2*180/M_PI);
+      printf(" el_1_cmd_deg = %f \n",(float) myam7_data_out_copy.el_1_cmd_int*1e-2);
+      printf(" el_2_cmd_deg = %f \n",(float) myam7_data_out_copy.el_2_cmd_int*1e-2);
+      printf(" el_3_cmd_deg = %f \n",(float) myam7_data_out_copy.el_3_cmd_int*1e-2);
+      printf(" el_4_cmd_deg = %f \n",(float) myam7_data_out_copy.el_4_cmd_int*1e-2);
+      printf(" az_1_cmd_deg = %f \n",(float) myam7_data_out_copy.az_1_cmd_int*1e-2);
+      printf(" az_2_cmd_deg = %f \n",(float) myam7_data_out_copy.az_2_cmd_int*1e-2);
+      printf(" az_3_cmd_deg = %f \n",(float) myam7_data_out_copy.az_3_cmd_int*1e-2);
+      printf(" az_4_cmd_deg = %f \n",(float) myam7_data_out_copy.az_4_cmd_int*1e-2);
+      printf(" ailerons_cmd_deg = %f \n",(float) myam7_data_out_copy.ailerons_cmd_int*1e-2);
       printf("modeled_ax = %f \n",(float) myam7_data_out_copy.modeled_ax_int*1e-2);
       printf("modeled_ay = %f \n",(float) myam7_data_out_copy.modeled_ay_int*1e-2);
       printf("modeled_az = %f \n",(float) myam7_data_out_copy.modeled_az_int*1e-2);
-      printf("modeled_p_dot = %f \n",(float) myam7_data_out_copy.modeled_p_dot_int*1e-1*180/M_PI);
-      printf("modeled_q_dot = %f \n",(float) myam7_data_out_copy.modeled_q_dot_int*1e-1*180/M_PI);
-      printf("modeled_r_dot = %f \n",(float) myam7_data_out_copy.modeled_r_dot_int*1e-1*180/M_PI);
+      printf("modeled_p_dot = %f \n",(float) myam7_data_out_copy.modeled_p_dot_int*1e-1);
+      printf("modeled_q_dot = %f \n",(float) myam7_data_out_copy.modeled_q_dot_int*1e-1);
+      printf("modeled_r_dot = %f \n",(float) myam7_data_out_copy.modeled_r_dot_int*1e-1);
       printf(" N_iterations = %d \n",(int) N_iterations);
       printf(" N_evaluations = %d \n",(int) N_evaluation);
       printf(" exit_flag_optimizer = %d \n",(int) exitflag);
       printf(" elapsed_time_uS = %d \n",(int) (elapsed_time));
       printf(" \n\n\n");
-
       fflush(stdout);
     }
 
@@ -1727,8 +1779,8 @@ void* fourth_thread() //Run the inner loop of the optimization code
     //Wait until time is not at least refresh_time_optimizer
     gettimeofday(&current_time, NULL);
     while(((current_time.tv_sec*1e6 + current_time.tv_usec) - (time_last_inner_loop.tv_sec*1e6 + time_last_inner_loop.tv_usec)) < refresh_time_inner_loop*1e6){
-      gettimeofday(&current_time, NULL);
       usleep(5);
+      gettimeofday(&current_time, NULL);
     }
     //Print performances if needed
     if(verbose_runtime){

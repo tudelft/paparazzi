@@ -6,7 +6,7 @@ sudo ./custom_mode_am &
 
 sleep 2
 cd /home/orangepi/paparazzi/sw/ext/nonlinear_CA/
-sudo ./Orangepi_PPZ_run &
+sudo nice -n -20 ./Orangepi_PPZ_run &
 
 #sleep 2
 #cd /home/orangepi/paparazzi/sw/ext/aruco_detection/

@@ -19,14 +19,14 @@
 //Outer loop settings
 #define NUM_ACT_IN_U_IN 15
 #define max_time_outer_loop 5e-3
-#define max_iterations_outer_loop 100
+#define max_iterations_outer_loop 150
 #define max_function_eval_outer_loop 300
 #define refresh_time_outer_loop 5e-3 // It should be higher or equal to max_time_outer_loop
 
 //Inner loop settings
 #define NUM_ACT_IN_U_IN_INNER 13
 #define max_time_inner_loop 5e-3
-#define max_iterations_inner_loop 100
+#define max_iterations_inner_loop 150
 #define max_function_eval_inner_loop 300
 #define refresh_time_inner_loop 5e-3 // It should be higher or equal to max_time_inner_loop
 
