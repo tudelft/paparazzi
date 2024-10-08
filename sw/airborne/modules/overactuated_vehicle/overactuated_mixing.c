@@ -1052,6 +1052,9 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
     am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
 
+    //Psi_dot for EC: 
+    am7_data_out_local.psi_dot_cmd_int = (int16_t) (euler_error[2] * 1e2 * 180/M_PI);
+
     //Adding the corrected message from lidar: 
     am7_data_out_local.approach_boolean = (int16_t) (approach_state);
     am7_data_out_local.lidar_alt_corrected_int = (int16_t) (altitude_lidar_agl_meters * 1e2);
