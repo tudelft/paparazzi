@@ -17,7 +17,7 @@
 //Variable for current acceleration filtering:
 Butterworth2LowPass modeled_accelerations_filter[6];
 Butterworth2LowPass body_rates_filter[3], u_in_filter[NUM_ACT_IN_U_IN]; 
-Butterworth2LowPass airspeed_filter, flight_path_angle_filter; 
+Butterworth2LowPass airspeed_filter, flight_path_angle_filter, psi_filter; 
 //1-exp(-cutoff_frequency/sampling_frequency)
 float filter_cutoff_first_order_pqr = filter_cutoff_first_order_pqr_init;
 float pqr_first_order_filter_tau;
@@ -194,6 +194,7 @@ void am7_init(){
 
   init_butterworth_2_low_pass(&airspeed_filter, tau_indi, refresh_time_filters, 0.0);
   init_butterworth_2_low_pass(&flight_path_angle_filter, tau_indi, refresh_time_filters, 0.0);
+  init_butterworth_2_low_pass(&psi_filter, tau_indi, refresh_time_filters, 0.0);
 
   ///////////////////////////////////////////////////////////////////////////////////////////// Init watchdogs timers: 
   gettimeofday(&current_time, NULL);
@@ -499,6 +500,7 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     ///////////////////////////////////////////////////////////////////////////////////////////////// Define real time variables:
     float Phi = (myam7_data_in_copy.phi_state_int*1e-2 * M_PI/180);
     float Theta = (myam7_data_in_copy.theta_state_int*1e-2 * M_PI/180);
+    float Psi = (myam7_data_in_copy.psi_state_int*1e-2 * M_PI/180);
     float delta_ailerons = (myam7_data_in_copy.ailerons_state_int*1e-2 * M_PI/180);
     float Omega_1 = (myam7_data_in_copy.motor_1_state_int*1e-1), Omega_2 = (myam7_data_in_copy.motor_2_state_int*1e-1);
     float Omega_3 = (myam7_data_in_copy.motor_3_state_int*1e-1), Omega_4 = (myam7_data_in_copy.motor_4_state_int*1e-1);
@@ -576,6 +578,7 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
 
       init_butterworth_2_low_pass(&airspeed_filter, tau_indi, refresh_time_filters, 0.0);
       init_butterworth_2_low_pass(&flight_path_angle_filter, tau_indi, refresh_time_filters, 0.0);
+      init_butterworth_2_low_pass(&psi_filter, tau_indi, refresh_time_filters, 0.0);
     }
 
     //////////////////////////////////////////////////////////////////////Filter body rates for the error controller
@@ -649,6 +652,17 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     }
     float flight_path_angle_filtered = flight_path_angle_filter.o[0];
 
+    ///////////////////////////////////////////////////////////////////////////////////////////Filter psi
+    update_butterworth_2_low_pass(&psi_filter, (float) Psi);
+    //Check for NaN in filter and reset it:
+    if(psi_filter.o[0] != psi_filter.o[0]){
+      init_butterworth_2_low_pass(&psi_filter, tau_indi, refresh_time_filters, 0.0);
+      if(verbose_filters){
+        printf("WARNING, psi filter REINITIALIZED!!!! \n");
+      }
+    }
+    float psi_filtered = psi_filter.o[0];
+
     ////////////////////////////////////////////////////////////////////////////////////// ASSIGN TO THE DATA IN STRUCTURE
 
     struct data_in_optimizer mydata_in_optimizer_copy;
@@ -668,6 +682,7 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     mydata_in_optimizer_copy.theta_state_filtered = u_in_filtered[12];
     mydata_in_optimizer_copy.phi_state_filtered = u_in_filtered[13];
     mydata_in_optimizer_copy.ailerons_state_filtered = u_in_filtered[14];
+    mydata_in_optimizer_copy.psi_state_filtered = psi_filtered;
     mydata_in_optimizer_copy.gamma_state_filtered = flight_path_angle_filtered;
     mydata_in_optimizer_copy.p_state_filtered = body_rates_array_filtered[0];
     mydata_in_optimizer_copy.q_state_filtered = body_rates_array_filtered[1];
@@ -682,9 +697,10 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     mydata_in_optimizer_copy.desired_theta_value = desired_theta_value;
     mydata_in_optimizer_copy.desired_phi_value = desired_phi_value;
 
-    //Values for the error controller: 
+    //Values for the error controller:
+    mydata_in_optimizer_copy.phi_state_ec = Phi; //Unfiltered 
     mydata_in_optimizer_copy.theta_state_ec = Theta; //Unfiltered
-    mydata_in_optimizer_copy.phi_state_ec = Phi; //Unfiltered
+    mydata_in_optimizer_copy.psi_state_ec = Psi; //Unfiltered
     mydata_in_optimizer_copy.p_state_ec = p_filtered_ec; //Filtered with first order filter (locally)
     mydata_in_optimizer_copy.q_state_ec = q_filtered_ec; //Filtered with first order filter (locally)
     mydata_in_optimizer_copy.r_state_ec = r_filtered_ec; //Filtered with first order filter (locally)

@@ -51,59 +51,59 @@
 //Communication structures
 struct  __attribute__((__packed__)) am7_data_out {
     //Motor command
-	int16_t motor_1_cmd_int;
-	int16_t motor_2_cmd_int;
-	int16_t motor_3_cmd_int;
-	int16_t motor_4_cmd_int;
-	int16_t el_1_cmd_int;
-	int16_t el_2_cmd_int;
-	int16_t el_3_cmd_int;
-    int16_t el_4_cmd_int;
-    int16_t az_1_cmd_int;
-    int16_t az_2_cmd_int;
-    int16_t az_3_cmd_int;
-    int16_t az_4_cmd_int;
-    int16_t theta_cmd_int;
-    int16_t phi_cmd_int;
-    int16_t ailerons_cmd_int;
+	int16_t motor_1_cmd_int; //rad/s * 10
+	int16_t motor_2_cmd_int; //rad/s * 10
+	int16_t motor_3_cmd_int; //rad/s * 10
+	int16_t motor_4_cmd_int; //rad/s * 10
+	int16_t el_1_cmd_int; //degrees * 100
+	int16_t el_2_cmd_int; //degrees * 100
+	int16_t el_3_cmd_int; //degrees * 100
+    int16_t el_4_cmd_int; //degrees * 100
+    int16_t az_1_cmd_int; //degrees * 100
+    int16_t az_2_cmd_int; //degrees * 100
+    int16_t az_3_cmd_int; //degrees * 100
+    int16_t az_4_cmd_int; //degrees * 100
+    int16_t theta_cmd_int; //degrees * 100
+    int16_t phi_cmd_int; //degrees * 100
+    int16_t ailerons_cmd_int; //degrees * 100
     //Optimization info
-    uint16_t n_iteration_outer;
-    uint16_t n_evaluation_outer;
-    uint16_t elapsed_time_us_outer;
-    int16_t exit_flag_optimizer_outer;
-    uint16_t n_iteration_inner;
-    uint16_t n_evaluation_inner;
-    uint16_t elapsed_time_us_inner;
-    int16_t exit_flag_optimizer_inner;
+    uint16_t n_iteration_outer; //int
+    uint16_t n_evaluation_outer; //int
+    uint16_t elapsed_time_us_outer; //microseconds
+    int16_t exit_flag_optimizer_outer; //int
+    uint16_t n_iteration_inner; //int
+    uint16_t n_evaluation_inner; //int
+    uint16_t elapsed_time_us_inner; //microseconds
+    int16_t exit_flag_optimizer_inner; //int
     //Modeled acc filtered
-    int16_t modeled_ax_int;
-    int16_t modeled_ay_int;
-    int16_t modeled_az_int;
-    int16_t modeled_p_dot_int;
-    int16_t modeled_q_dot_int;
-    int16_t modeled_r_dot_int;
+    int16_t modeled_ax_int; //m/s^2 * 100
+    int16_t modeled_ay_int; //m/s^2 * 100
+    int16_t modeled_az_int; //m/s^2 * 100
+    int16_t modeled_p_dot_int; //rad/s^2 * 10
+    int16_t modeled_q_dot_int; //rad/s^2 * 10
+    int16_t modeled_r_dot_int; //rad/s^2 * 10
     //Residuals
-    int16_t residual_ax_int;
-    int16_t residual_ay_int;
-    int16_t residual_az_int;
-    int16_t residual_p_dot_int;
-    int16_t residual_q_dot_int;
-    int16_t residual_r_dot_int;
+    int16_t residual_ax_int; //m/s^2 * 100
+    int16_t residual_ay_int; //m/s^2 * 100
+    int16_t residual_az_int; //m/s^2 * 100
+    int16_t residual_p_dot_int; //rad/s^2 * 10
+    int16_t residual_q_dot_int; //rad/s^2 * 10
+    int16_t residual_r_dot_int; //rad/s^2 * 10
     //Lidar status
-    int16_t lidar_value_cm; 
-    int16_t lidar_strength; 
+    int16_t lidar_value_cm; //cm
+    int16_t lidar_strength; //unitless
     //Aruco infos: 
-    float aruco_detection_timestamp;
-    float aruco_NED_pos_x;
-    float aruco_NED_pos_y;
-    float aruco_NED_pos_z;
-    int8_t aruco_system_status;
+    float aruco_detection_timestamp; //Detection timestamp
+    float aruco_NED_pos_x; //meters
+    float aruco_NED_pos_y; //meters
+    float aruco_NED_pos_z; //meters
+    int8_t aruco_system_status; //System status
     //Sixdof infos: 
-    float sixdof_detection_timestamp;
-    float sixdof_NED_pos_x;
-    float sixdof_NED_pos_y;
-    float sixdof_NED_pos_z;
-    int8_t sixdof_system_status;
+    float sixdof_detection_timestamp; //Detection timestamp
+    float sixdof_NED_pos_x; //meters
+    float sixdof_NED_pos_y; //meters
+    float sixdof_NED_pos_z; //meters
+    int8_t sixdof_system_status; //System status
     //Rolling_msg
     float rolling_msg_out;
     uint8_t rolling_msg_out_id;
@@ -217,15 +217,6 @@ struct __attribute__((__packed__)) data_in_optimizer {
     float p_state_filtered;
     float q_state_filtered;
     float r_state_filtered;
-    float theta_state_ec; 
-    float phi_state_ec;
-    float psi_dot_cmd_ec;
-    float p_state_ec;
-    float q_state_ec;
-    float r_state_ec;
-    float p_dot_state_ec;
-    float q_dot_state_ec;
-    float r_dot_state_ec;
     float airspeed_state_filtered;
     float beta_state_filtered;
     float approach_boolean;
@@ -236,6 +227,18 @@ struct __attribute__((__packed__)) data_in_optimizer {
     float desired_theta_value;
     float desired_phi_value;
 
+    //Error controller: 
+    float theta_state_ec; 
+    float phi_state_ec;
+    float psi_state_ec;
+    float psi_dot_cmd_ec;
+    float p_state_ec;
+    float q_state_ec;
+    float r_state_ec;
+    float p_dot_state_ec;
+    float q_dot_state_ec;
+    float r_dot_state_ec;
+    
     //Failure: 
     float failure_mode; 
 

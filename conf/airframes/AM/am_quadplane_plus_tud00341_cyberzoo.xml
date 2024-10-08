@@ -68,7 +68,7 @@
 
       <module name="telemetry" type="transparent">
         <!--Handy for Desk debugging-->
-        <!-- <configure name="MODEM_PORT" value="usb_serial"/> -->
+        <configure name="MODEM_PORT" value="usb_serial"/>
         <configure name="MODEM_BAUD" value="B460800"/>
       </module>
 
@@ -493,8 +493,11 @@
     <!-- First order filter on rates -->
     <!-- 1-exp(-cutoff_frequency/sampling_frequency) [20 rad/s]-->
     <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0488" /> 
+    <define name="OMEGA_FIRST_ORDER_FILTER_ANG_RATES" value="20.0" /> 
 
-  <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES_FAILSAFE" value="0.12" /> 
+    <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES_FAILSAFE" value="0.12" /> 
+
+
 
     <!-- Weighting matrix for the INDI -->
     <!-- CRUISE WEIGHTS -->

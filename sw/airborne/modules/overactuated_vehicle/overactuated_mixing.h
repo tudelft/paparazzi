@@ -179,6 +179,8 @@ extern float disable_acc_decrement_inner_loop;
 
 extern float vert_acc_margin; 
 
+extern int failure_mode; 
+
 //attitude setpoint test: 
 extern int use_slider_attitude; 
 extern float pitch_target_slider; 

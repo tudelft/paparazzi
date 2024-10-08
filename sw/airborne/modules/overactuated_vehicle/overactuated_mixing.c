@@ -128,6 +128,8 @@ float psi_order_motor = 0;
 
 int use_u_init_nonlinear_CA = 0; 
 
+int failure_mode = 0; 
+
 //Rotors test: 
 float des_az_angle_test = 0; 
 float des_el_angle_test = 0;
@@ -1000,36 +1002,6 @@ void get_actuator_state_v2(void)
  * Fill up the variables to be sent to the Raspberry pi for the CA computation
  */
 void send_values_to_raspberry_pi(void){
-
-    //Compute and transmit the messages to the AM7 module:
-    // am7_data_out_local.motor_1_state_int = (int16_t) (actuator_state_filt[0] * 1e1);
-    // am7_data_out_local.motor_2_state_int = (int16_t) (actuator_state_filt[1] * 1e1);
-    // am7_data_out_local.motor_3_state_int = (int16_t) (actuator_state_filt[2] * 1e1);
-    // am7_data_out_local.motor_4_state_int = (int16_t) (actuator_state_filt[3] * 1e1);
-
-    // am7_data_out_local.el_1_state_int = (int16_t) (actuator_state_filt[4] * 1e2 * 180/M_PI);
-    // am7_data_out_local.el_2_state_int = (int16_t) (actuator_state_filt[5] * 1e2 * 180/M_PI);
-    // am7_data_out_local.el_3_state_int = (int16_t) (actuator_state_filt[6] * 1e2 * 180/M_PI);
-    // am7_data_out_local.el_4_state_int = (int16_t) (actuator_state_filt[7] * 1e2 * 180/M_PI);
-
-    // am7_data_out_local.az_1_state_int = (int16_t) (actuator_state_filt[8] * 1e2 * 180/M_PI);
-    // am7_data_out_local.az_2_state_int = (int16_t) (actuator_state_filt[9] * 1e2 * 180/M_PI);
-    // am7_data_out_local.az_3_state_int = (int16_t) (actuator_state_filt[10] * 1e2 * 180/M_PI);
-    // am7_data_out_local.az_4_state_int = (int16_t) (actuator_state_filt[11] * 1e2 * 180/M_PI);
-
-    // am7_data_out_local.theta_state_int = (int16_t) (actuator_state_filt[12] * 1e2 * 180/M_PI);
-    // am7_data_out_local.phi_state_int = (int16_t) (actuator_state_filt[13] * 1e2 * 180/M_PI);
-    // am7_data_out_local.psi_state_int = (int16_t) (euler_vect[2] * 1e2 * 180/M_PI);
-    // am7_data_out_local.ailerons_state_int = (int16_t) (actuator_state_filt[14] * 1e2 * 180/M_PI);
-
-    // am7_data_out_local.gamma_state_int = (int16_t) (flight_path_angle_filtered.o[0] * 1e2 * 180/M_PI);
-
-    // am7_data_out_local.p_state_int = (int16_t) (measurement_rates_filters[0].o[0] * 1e1 * 180/M_PI);
-    // am7_data_out_local.q_state_int = (int16_t) (measurement_rates_filters[1].o[0] * 1e1 * 180/M_PI);
-    // am7_data_out_local.r_state_int = (int16_t) (measurement_rates_filters[2].o[0] * 1e1 * 180/M_PI);
-
-    // am7_data_out_local.airspeed_state_int = (int16_t) (airspeed * 1e2);
-
     am7_data_out_local.motor_1_state_int = (int16_t) (actuator_state[0] * 1e1);
     am7_data_out_local.motor_2_state_int = (int16_t) (actuator_state[1] * 1e1);
     am7_data_out_local.motor_3_state_int = (int16_t) (actuator_state[2] * 1e1);
@@ -1056,6 +1028,12 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.q_state_int = (int16_t) (rate_vect[1] * 1e1 * 180/M_PI);
     am7_data_out_local.r_state_int = (int16_t) (rate_vect[2] * 1e1 * 180/M_PI);
 
+    am7_data_out_local.p_dot_filt_int = (int16_t) (rate_vect_filt_dot[0] * 1e1 * 180/M_PI);
+    am7_data_out_local.q_dot_filt_int = (int16_t) (rate_vect_filt_dot[1] * 1e1 * 180/M_PI);
+    am7_data_out_local.r_dot_filt_int = (int16_t) (rate_vect_filt_dot[2] * 1e1 * 180/M_PI);
+
+    am7_data_out_local.failure_mode = (int16_t) (failure_mode);
+
     am7_data_out_local.airspeed_state_int = (int16_t) (airspeed * 1e2);
 
     float fake_beta = 0;
@@ -1066,11 +1044,11 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.pseudo_control_ax_int = (int16_t) (INDI_pseudocontrol[0] * 1e2);
     am7_data_out_local.pseudo_control_ay_int = (int16_t) (INDI_pseudocontrol[1] * 1e2);
     am7_data_out_local.pseudo_control_az_int = (int16_t) (INDI_pseudocontrol[2] * 1e2);
-    am7_data_out_local.pseudo_control_p_dot_int = (int16_t) (INDI_pseudocontrol[3] * 1e1 * 180/M_PI);
-    am7_data_out_local.pseudo_control_q_dot_int = (int16_t) (INDI_pseudocontrol[4] * 1e1 * 180/M_PI);
-    am7_data_out_local.pseudo_control_r_dot_int = (int16_t) (INDI_pseudocontrol[5] * 1e1 * 180/M_PI);
-    //Unfiltered linear accelerations values:
+    // am7_data_out_local.pseudo_control_p_dot_int = (int16_t) (INDI_pseudocontrol[3] * 1e1 * 180/M_PI);
+    // am7_data_out_local.pseudo_control_q_dot_int = (int16_t) (INDI_pseudocontrol[4] * 1e1 * 180/M_PI);
+    // am7_data_out_local.pseudo_control_r_dot_int = (int16_t) (INDI_pseudocontrol[5] * 1e1 * 180/M_PI);
 
+    //Desired theta and phi values:
     am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
     am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
 
@@ -1078,7 +1056,7 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.approach_boolean = (int16_t) (approach_state);
     am7_data_out_local.lidar_alt_corrected_int = (int16_t) (altitude_lidar_agl_meters * 1e2);
 
-    //NED position for aruco: 
+    //NED position of UAV: 
     am7_data_out_local.UAV_NED_pos_x = pos_vect[0];
     am7_data_out_local.UAV_NED_pos_y = pos_vect[1];
     am7_data_out_local.UAV_NED_pos_z = pos_vect[2];
@@ -1100,11 +1078,8 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[11] = OVERACTUATED_MIXING_MOTOR_MAX_OMEGA;
     #endif
     extra_data_out_local[12] = OVERACTUATED_MIXING_MOTOR_MIN_OMEGA;
-
     extra_data_out_local[13] = (OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE * 180/M_PI);
-
     extra_data_out_local[14] = (OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE * 180/M_PI);
-
     extra_data_out_local[15] = (OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE * 180/M_PI);
     extra_data_out_local[16] = (OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE * 180/M_PI);
     extra_data_out_local[17] = (OVERACTUATED_MIXING_MAX_THETA_INDI * 180/M_PI);
@@ -1193,8 +1168,6 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[85] = prop_sigma;
     extra_data_out_local[86] = prop_theta;
 
-    
-
     if(selected_beacon == 1){
         extra_data_out_local[87] = 1640.0;     
     }
@@ -1212,8 +1185,13 @@ void send_values_to_raspberry_pi(void){
     }
     
     extra_data_out_local[88] = sixdof_mode; 
-
     extra_data_out_local[89] = use_u_init_nonlinear_CA;
+    extra_data_out_local[90] = use_u_init_nonlinear_CA;
+
+    extra_data_out_local[91] = K_T_airspeed;
+
+    extra_data_out_local[92] = OVERACTUATED_MIXING_OMEGA_FIRST_ORDER_FILTER_ANG_RATES;
+
 }
 
 /**
