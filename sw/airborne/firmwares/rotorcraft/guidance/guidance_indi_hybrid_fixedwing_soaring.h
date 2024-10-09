@@ -62,6 +62,9 @@ extern float compute_soaring_heading_sp(void);
 extern struct FloatVect3 compute_soaring_accel_sp(struct HorizontalGuidance *gh, struct VerticalGuidance *gv);
 extern void run_soaring_search(void);
 
+extern void guidance_indi_hybrid_soaring_set_all_flags(void);
+extern void guidance_indi_hybrid_soaring_off_all_flags(void);
+
 //struct guidance_indi_hybrid_params {
 //  float pos_gain;
 //  float pos_gainz;

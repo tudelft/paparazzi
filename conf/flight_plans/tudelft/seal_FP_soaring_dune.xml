@@ -124,7 +124,29 @@
       <go wp="STDBY"/>
       <stay wp="STDBY"/>
     </block>
-    <block name="Soaring" strip_button="Soar" strip_icon="target.png">
+    <block name="Soaring_ON_ALL_AT_ONCE_FLOAT_HEADING" strip_button="Soar" strip_icon="target.png">
+      <call_once fun="waypoint_set_here(WP_SOAR)"/>
+      <call_once fun="guidance_indi_hybrid_soaring_start()"/>
+      <call_once fun="guidance_indi_hybrid_soaring_set_all_flags()"/>
+      <go wp="SOAR"/>
+      <stay wp="SOAR"/>
+    </block>
+    <block name="Soaring_ON_ALL_AT_ONCE_FIXED_HEADING" strip_button="Soar" strip_icon="target.png">
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+      <call_once fun="waypoint_set_here(WP_SOAR)"/>
+      <call_once fun="guidance_indi_hybrid_soaring_start()"/>
+      <call_once fun="guidance_indi_hybrid_soaring_set_all_flags()"/>
+      <go wp="SOAR"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+      <stay wp="SOAR"/>
+    </block>
+    <block name="Soaring_FLOAT_HEADING" strip_button="Soar" strip_icon="target.png">
+      <call_once fun="waypoint_set_here(WP_SOAR)"/>
+      <call_once fun="guidance_indi_hybrid_soaring_start()"/>
+      <go wp="SOAR"/>
+      <stay wp="SOAR"/>
+    </block>
+    <block name="Soaring_FIXED_HEADING" strip_button="Soar" strip_icon="target.png">
       <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
       <call_once fun="waypoint_set_here(WP_SOAR)"/>
       <call_once fun="guidance_indi_hybrid_soaring_start()"/>

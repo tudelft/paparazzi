@@ -405,6 +405,10 @@ void guidance_indi_hybrid_soaring_reset(void);
 void guidance_indi_soaring_reset_stby_wp(void);
 void guidance_indi_soaring_reset_soaring_wp(void);
 
+// Turn all the new features ON or OFF;
+void guidance_indi_hybrid_soaring_set_all_flags(void);
+void guidance_indi_hybrid_soaring_off_all_flags(void);
+
 float guidance_indi_soaring_get_lift(float aoa, float airspeed, float Q);
 float guidance_indi_soaring_get_liftd(float aoa, float airspeed, float Q);
 float guidance_indi_soaring_get_drag(float aoa, float airspeed, float Q);
@@ -638,6 +642,22 @@ void guidance_indi_hybrid_soaring_reset(void) {
     move_wp_sum_cost = 0;
     move_wp_wait_count = 0;
     soaring_search_cnt_steps = 0;
+}
+
+// TURN *ON* all the new features: floating heading, AOA, DRAG, NEW EFF MODEL, SWITCHING
+void guidance_indi_hybrid_soaring_set_all_flags(void) {
+    use_aoa_pitch_limit = true;
+    guidance_indi_soaring_use_aoa = true;
+    guidance_indi_soaring_use_drag = true;
+    soaring_ctrl_switch = 1;
+}
+
+// TURN *OFF* all the new features: floating heading, AOA, DRAG, NEW EFF MODEL, SWITCHING
+void guidance_indi_hybrid_soaring_off_all_flags(void) {
+    use_aoa_pitch_limit = false;
+    guidance_indi_soaring_use_aoa = false;
+    guidance_indi_soaring_use_drag = false;
+    soaring_ctrl_switch = 0;
 }
 
 /*
