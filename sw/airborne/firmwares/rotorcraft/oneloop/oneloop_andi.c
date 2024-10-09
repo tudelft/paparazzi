@@ -87,7 +87,7 @@
 #include "math/wls/wls_alloc.h"
 #include "modules/nav/nav_rotorcraft_hybrid.h"
 #include "firmwares/rotorcraft/navigation.h"
-#include "modules/rotwing_drone/rotwing_state_V2.h"
+#include "modules/rotwing_drone/rotwing_state_V3.h"
 #include "modules/core/commands.h"
 #include "modules/ctrl/eff_scheduling_rotwing_V2.h"
 #include <stdio.h>
@@ -238,10 +238,6 @@ float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
 #define ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD 10.0
 #endif
 
-#ifndef ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD
-#define ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD 10.0
-#endif
-
 /* Declaration of Navigation Variables*/
 #ifdef NAV_HYBRID_MAX_DECELERATION
 float max_a_nav = NAV_HYBRID_MAX_DECELERATION;
@@ -267,6 +263,7 @@ float max_v_nav = NAV_HYBRID_MAX_AIRSPEED; // Consider implications of differenc
 float max_v_nav = 5.0;
 #endif
 float max_as = 19.0f;
+float min_as = 0.0f;
 
 #ifdef NAV_HYBRID_MAX_SPEED_V
 float max_v_nav_v = NAV_HYBRID_MAX_SPEED_V;
@@ -322,6 +319,7 @@ static float dt_1l = 1./PERIODIC_FREQUENCY;
 static float g   = 9.81; // [m/s^2] Gravitational Acceleration
 float k_as = 2.0;
 int16_t temp_pitch = 0;
+float gi_unbounded_airspeed_sp = 0.0;
 
 /* Oneloop Control Variables*/
 float andi_u[ANDI_NUM_ACT_TOT];
@@ -1529,7 +1527,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
         WLS_one_p.u_min[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
         WLS_one_p.u_pref[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i];
         WLS_one_p.u_max[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
-        if (rotwing_state_settings.hover_motors_active){
+        if (rotwing_state.hover_motors_enabled){
           WLS_one_p.u_max[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
         } else
         {
@@ -1574,7 +1572,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
         WLS_one_p.u_pref[i] = (u_pref[i]  - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
         break;         
       case COMMAND_PITCH:
-        if (rotwing_state_settings.stall_protection){
+        if (rotwing_state.meas_skew_angle_deg > 85.0){
           WLS_one_p.u_min[i]  = (RadOfDeg(-17.0) - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
           WLS_one_p.u_max[i]  = (RadOfDeg(17.0)  - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
         } else {
@@ -1698,7 +1696,7 @@ void G1G2_oneloop(int ctrl_type) {
       if (airspeed_filt.o[0] < ELE_MIN_AS && i == COMMAND_ELEVATOR){
         EFF_MAT_G[j][i] = 0.0;
       }
-      if (!rotwing_state_settings.hover_motors_active && i < 4){
+      if (rotwing_state.meas_skew_angle_deg > 85.0 && i < 4){
         EFF_MAT_G[j][i] = 0.0;
       }
       if (ctrl_off && i < 4  && j == 5){ //hack test
@@ -1978,6 +1976,11 @@ bool autopilot_in_flight_end_detection(bool motors_on UNUSED) {
 
 void reshape_wind(void)
 {
+  if (rotwing_state.meas_skew_angle_deg > 85.0){
+    force_forward = true;
+  } else {
+    force_forward = false;
+  }
   float psi = eulers_zxy.psi;
   float cpsi = cosf(psi);
   float spsi = sinf(psi);
@@ -1993,10 +1996,17 @@ void reshape_wind(void)
   VECT2_DIFF(windspeed, groundspeed, airspeed_v); // Wind speed in North and East frame
   VECT2_DIFF(des_as_NE, NT_v_NE, windspeed); // Desired airspeed in North and East frame
   float norm_des_as = FLOAT_VECT2_NORM(des_as_NE);
+  gi_unbounded_airspeed_sp = norm_des_as;
+  // Check if some minimum airspeed is desired (e.g. to prevent stall)
+  // if (norm_des_as < min_as) {
+  //    norm_des_as = min_as;
+  // }
   nav_target_new[0] = NT_v_NE.x;
   nav_target_new[1] = NT_v_NE.y;
+  printf("max as: %f\n", max_as);
+  printf("min as: %f\n", min_as);
   // if the desired airspeed is larger than the max airspeed or we are in force forward reshape gs des to cancel wind and fly at max airspeed
-  if ((norm_des_as > max_as)||(rotwing_state_settings.force_forward)){
+  if ((norm_des_as > max_as)||(force_forward)){
     //printf("reshaping wind\n");
     float groundspeed_factor = 0.0f;
     if (FLOAT_VECT2_NORM(windspeed) < max_as) {
@@ -2020,7 +2030,9 @@ void reshape_wind(void)
   norm_des_as = FLOAT_VECT2_NORM(des_as_NE); // Recalculate norm of desired airspeed
   des_as_B.x  = norm_des_as; // Desired airspeed in body x frame
   des_as_B.y  = 0.0; // Desired airspeed in body y frame
-  if (((airspeed > ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD) && (norm_des_as > (ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD+2.0f)))|| (rotwing_state_settings.force_forward)){
+  printf("norm_des_as: %f\n", norm_des_as);
+  printf("des_as_B.x: %f, des_as_B.y: %f\n", des_as_B.x, des_as_B.y);
+  if (((airspeed > ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD) && (norm_des_as > (ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD+2.0f)))|| (force_forward)){
     float delta_psi = atan2f(des_as_NE.y, des_as_NE.x) - psi; 
     FLOAT_ANGLE_NORMALIZE(delta_psi);
     des_acc_B.y = delta_psi * 5.0;//gih_params.heading_bank_gain;
@@ -2033,5 +2045,10 @@ void reshape_wind(void)
     nav_target_new[1] = (NT_v_NE.y - groundspeed.y) * k_pos_rm.k2[1];
   }
   vect_bound_nd(nav_target_new, max_a_nav, 2);
+}
+
+void guidance_set_min_max_airspeed(float min_airspeed, float max_airspeed) {
+  min_as = min_airspeed;
+  max_as = max_airspeed;
 }
 

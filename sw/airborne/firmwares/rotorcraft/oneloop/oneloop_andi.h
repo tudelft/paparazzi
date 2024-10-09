@@ -72,6 +72,7 @@ extern struct FloatEulers eulers_zxy_des;
 extern float psi_des_rad;
 extern float k_as;
 extern float max_as;
+extern float gi_unbounded_airspeed_sp;
 
 /*Chirp test Variables*/
 extern bool  chirp_on;
@@ -174,4 +175,5 @@ extern void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 P
 extern void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, int rm_order_v, bool in_flight_oneloop);
 extern void oneloop_andi_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn);
 extern void oneloop_from_nav(bool in_flight);
+extern void guidance_set_min_max_airspeed(float min_airspeed, float max_airspeed);
 #endif  // ONELOOP_ANDI_H
