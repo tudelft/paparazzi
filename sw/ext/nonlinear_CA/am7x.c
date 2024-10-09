@@ -58,7 +58,6 @@ int verbose_sixdof_position = 0;
 int verbose_connection = 1;
 int verbose_outer_loop = 0; 
 int verbose_inner_loop = 0;
-int verbose_outer_loop_output = 0; 
 int verbose_runtime = 0; 
 int verbose_data_in = 0; 
 int verbose_submitted_data = 0; 
@@ -1329,6 +1328,147 @@ void* third_thread() //Run the outer loop of the optimization code
     double N_evaluation;
     double exitflag;
 
+    //if verbose_outer_loop is set to 1, print the input variables:
+    if(verbose_outer_loop){
+      printf("\n OUTER LOOP INPUTS TO FUNCTION--------------------------------------------------- \n"); 
+      printf("K_p_T = %f \n",(float) K_p_T);
+      printf("K_p_M = %f \n",(float) K_p_M);
+      printf("m = %f \n",(float) m);
+      printf("I_xx = %f \n",(float) I_xx);
+      printf("I_yy = %f \n",(float) I_yy);
+      printf("I_zz = %f \n",(float) I_zz);
+      printf("l_1 = %f \n",(float) l_1);
+      printf("l_2 = %f \n",(float) l_2);
+      printf("l_3 = %f \n",(float) l_3);
+      printf("l_4 = %f \n",(float) l_4);
+      printf("l_z = %f \n",(float) l_z);
+      printf("Phi = %f \n",(float) Phi);
+      printf("Theta = %f \n",(float) Theta);
+      printf("Omega_1 = %f \n",(float) Omega_1);
+      printf("Omega_2 = %f \n",(float) Omega_2);
+      printf("Omega_3 = %f \n",(float) Omega_3);
+      printf("Omega_4 = %f \n",(float) Omega_4);
+      printf("b_1 = %f \n",(float) b_1);
+      printf("b_2 = %f \n",(float) b_2);
+      printf("b_3 = %f \n",(float) b_3);
+      printf("b_4 = %f \n",(float) b_4);
+      printf("g_1 = %f \n",(float) g_1);
+      printf("g_2 = %f \n",(float) g_2);
+      printf("g_3 = %f \n",(float) g_3);
+      printf("g_4 = %f \n",(float) g_4);
+      printf("delta_ailerons = %f \n",(float) delta_ailerons);
+      printf("W_act_motor_const = %f \n",(float) W_act_motor_const);
+      printf("W_act_motor_speed = %f \n",(float) W_act_motor_speed);
+      printf("W_act_tilt_el_const = %f \n",(float) W_act_tilt_el_const);
+      printf("W_act_tilt_el_speed = %f \n",(float) W_act_tilt_el_speed);
+      printf("W_act_tilt_az_const = %f \n",(float) W_act_tilt_az_const);
+      printf("W_act_tilt_az_speed = %f \n",(float) W_act_tilt_az_speed);
+      printf("W_act_theta_const = %f \n",(float) W_act_theta_const);
+      printf("W_act_theta_speed = %f \n",(float) W_act_theta_speed);
+      printf("W_act_phi_const = %f \n",(float) W_act_phi_const);
+      printf("W_act_phi_speed = %f \n",(float) W_act_phi_speed);
+      printf("W_act_ailerons_const = %f \n",(float) W_act_ailerons_const);
+      printf("W_act_ailerons_speed = %f \n",(float) W_act_ailerons_speed);
+      printf("W_dv_1 = %f \n",(float) W_dv_1);
+      printf("W_dv_2 = %f \n",(float) W_dv_2);
+      printf("W_dv_3 = %f \n",(float) W_dv_3);
+      printf("W_dv_4 = %f \n",(float) W_dv_4);
+      printf("W_dv_5 = %f \n",(float) W_dv_5);
+      printf("W_dv_6 = %f \n",(float) W_dv_6);
+      printf("max_omega = %f \n",(float) max_omega);
+      printf("min_omega = %f \n",(float) min_omega);
+      printf("max_b = %f \n",(float) max_b);
+      printf("min_b = %f \n",(float) min_b);
+      printf("max_g = %f \n",(float) max_g);
+      printf("min_g = %f \n",(float) min_g);
+      printf("max_theta = %f \n",(float) max_theta);
+      printf("min_theta = %f \n",(float) min_theta);
+      printf("max_phi = %f \n",(float) max_phi);
+      printf("max_delta_ailerons = %f \n",(float) max_delta_ailerons);
+      printf("min_delta_ailerons = %f \n",(float) min_delta_ailerons);
+      for (int i=0; i<6; i++){
+        printf("dv[%d] = %f \n",i,(float) dv[i]);
+      }
+      printf("p = %f \n",(float) p);
+      printf("q = %f \n",(float) q);
+      printf("r = %f \n",(float) r);
+      printf("Cm_zero = %f \n",(float) Cm_zero);
+      printf("Cl_alpha = %f \n",(float) Cl_alpha);
+      printf("Cd_zero = %f \n",(float) Cd_zero);
+      printf("K_Cd = %f \n",(float) K_Cd);
+      printf("Cm_alpha = %f \n",(float) Cm_alpha);
+      printf("CL_aileron = %f \n",(float) CL_aileron);
+      printf("rho = %f \n",(float) rho);
+      printf("V = %f \n",(float) V);
+      printf("S = %f \n",(float) S);
+      printf("wing_chord = %f \n",(float) wing_chord);
+      printf("flight_path_angle = %f \n",(float) flight_path_angle);
+      printf("max_alpha = %f \n",(float) max_alpha);
+      printf("min_alpha = %f \n",(float) min_alpha);
+      printf("Beta = %f \n",(float) Beta);
+      printf("gamma_quadratic_du = %f \n",(float) gamma_quadratic_du);
+      printf("desired_motor_value = %f \n",(float) desired_motor_value);
+      printf("desired_el_value = %f \n",(float) desired_el_value);
+      printf("desired_az_value = %f \n",(float) desired_az_value);
+      printf("desired_theta_value = %f \n",(float) desired_theta_value);
+      printf("desired_phi_value = %f \n",(float) desired_phi_value);
+      printf("desired_ailerons_value = %f \n",(float) desired_ailerons_value);
+      printf("k_alt_tilt_constraint = %f \n",(float) k_alt_tilt_constraint);
+      printf("min_alt_tilt_constraint = %f \n",(float) min_alt_tilt_constraint);
+      printf("lidar_alt_corrected = %f \n",(float) lidar_alt_corrected);
+      printf("approach_mode = %f \n",(float) approach_mode);
+      printf("aoa_protection_speed = %f \n",(float) aoa_protection_speed);
+      printf("vert_acc_margin = %f \n",(float) vert_acc_margin);
+      printf("p_body_current = %f \n",(float) p_body_current);
+      printf("q_body_current = %f \n",(float) q_body_current);
+      printf("r_body_current = %f \n",(float) r_body_current);
+      printf("p_dot_current = %f \n",(float) p_dot_current);
+      printf("q_dot_current = %f \n",(float) q_dot_current);
+      printf("r_dot_current = %f \n",(float) r_dot_current);
+      printf("phi_current = %f \n",(float) phi_current);
+      printf("theta_current = %f \n",(float) theta_current);
+      for (int i=0; i<3; i++){
+        printf("angular_proportional_gains[%d] = %f \n",i,(float) angular_proportional_gains[i]);
+      }
+      for (int i=0; i<3; i++){
+        printf("angular_derivative_gains[%d] = %f \n",i,(float) angular_derivative_gains[i]);
+      }
+      printf("theta_hard_max = %f \n",(float) theta_hard_max);
+      printf("theta_hard_min = %f \n",(float) theta_hard_min);
+      printf("phi_hard_max = %f \n",(float) phi_hard_max);
+      printf("phi_hard_min = %f \n",(float) phi_hard_min);
+      printf("k_d_airspeed = %f \n",(float) k_d_airspeed);
+      printf("des_psi_dot = %f \n",(float) des_psi_dot);
+      for (int i=0; i<6; i++){
+        printf("current_accelerations[%d] = %f \n",i,(float) current_accelerations[i]);
+      }
+      printf("use_u_init = %f \n",(float) use_u_init);
+      for (int i=0; i<NUM_ACT_IN_U_IN; i++){
+        printf("u_init[%d] = %f \n",i,(float) u_init[i]);
+      }
+      printf("W_act_motor_du = %f \n",(float) W_act_motor_du);
+      printf("W_act_tilt_el_du = %f \n",(float) W_act_tilt_el_du);
+      printf("W_act_tilt_az_du = %f \n",(float) W_act_tilt_az_du);
+      printf("W_act_theta_du = %f \n",(float) W_act_theta_du);
+      printf("W_act_phi_du = %f \n",(float) W_act_phi_du);
+      printf("W_act_ailerons_du = %f \n",(float) W_act_ailerons_du);
+      printf("gamma_quadratic_du2 = %f \n",(float) gamma_quadratic_du2);
+      printf("induced_failure = %f \n",(float) induced_failure);
+      printf("W_act_motor_failure = %f \n",(float) W_act_motor_failure);
+      printf("W_act_tilt_el_failure = %f \n",(float) W_act_tilt_el_failure);
+      printf("W_act_tilt_az_failure = %f \n",(float) W_act_tilt_az_failure);
+      printf("W_act_theta_failure = %f \n",(float) W_act_theta_failure);
+      printf("W_act_phi_failure = %f \n",(float) W_act_phi_failure);
+      printf("W_act_ailerons_failure = %f \n",(float) W_act_ailerons_failure);
+      printf("W_dv_1_failure = %f \n",(float) W_dv_1_failure);
+      printf("W_dv_2_failure = %f \n",(float) W_dv_2_failure);
+      printf("W_dv_3_failure = %f \n",(float) W_dv_3_failure);
+      printf("W_dv_4_failure = %f \n",(float) W_dv_4_failure);
+      printf("W_dv_5_failure = %f \n",(float) W_dv_5_failure);
+      printf("W_dv_6_failure = %f \n",(float) W_dv_6_failure);
+      printf("gamma_quadratic_du_failure = %f \n",(float) gamma_quadratic_du_failure);
+    }
+
     //RUN MAIN CODE HERE, USING mydata_in_optimizer_copy as input
     Nonlinear_controller_w_ail_basic_aero_outer_loop(
         K_p_T, K_p_M, m, I_xx, I_yy, I_zz,
@@ -1406,8 +1546,8 @@ void* third_thread() //Run the outer loop of the optimization code
     myouter_loop_output_copy.acc_decrement_aero_q_dot = acc_decrement_aero[4];
     myouter_loop_output_copy.acc_decrement_aero_r_dot = acc_decrement_aero[5];
 
-    if(verbose_outer_loop_output){
-      printf("Outer loop output: \n");
+    if(verbose_outer_loop){
+      printf("\n OUTER LOOP OUTPUTS ------------------------------------------------------ \n"); 
       printf("p_dot_cmd_rad_s = %f \n", (float) myouter_loop_output_copy.p_dot_cmd_rad_s);
       printf("q_dot_cmd_rad_s = %f \n", (float) myouter_loop_output_copy.q_dot_cmd_rad_s);
       printf("r_dot_cmd_rad_s = %f \n", (float) myouter_loop_output_copy.r_dot_cmd_rad_s);
@@ -1628,6 +1768,124 @@ void* fourth_thread() //Run the inner loop of the optimization code
     double N_evaluation;
     double exitflag;
 
+    //if verbose_inner_loop is activated, print the input variables:
+    if(verbose_inner_loop){
+      printf("\n INNER LOOP INPUTS ------------------------------------------------------ \n"); 
+      printf("K_p_T = %f \n",(float) K_p_T);
+      printf("K_p_M = %f \n",(float) K_p_M);
+      printf("m = %f \n",(float) m);
+      printf("I_xx = %f \n",(float) I_xx);
+      printf("I_yy = %f \n",(float) I_yy);
+      printf("I_zz = %f \n",(float) I_zz);
+      printf("l_1 = %f \n",(float) l_1);
+      printf("l_2 = %f \n",(float) l_2);
+      printf("l_3 = %f \n",(float) l_3);
+      printf("l_4 = %f \n",(float) l_4);
+      printf("l_z = %f \n",(float) l_z);
+      printf("Phi = %f \n",(float) Phi);
+      printf("Theta = %f \n",(float) Theta);
+      printf("Omega_1 = %f \n",(float) Omega_1);
+      printf("Omega_2 = %f \n",(float) Omega_2);
+      printf("Omega_3 = %f \n",(float) Omega_3);
+      printf("Omega_4 = %f \n",(float) Omega_4);
+      printf("b_1 = %f \n",(float) b_1);
+      printf("b_2 = %f \n",(float) b_2);
+      printf("b_3 = %f \n",(float) b_3);
+      printf("b_4 = %f \n",(float) b_4);
+      printf("g_1 = %f \n",(float) g_1);
+      printf("g_2 = %f \n",(float) g_2);
+      printf("g_3 = %f \n",(float) g_3);
+      printf("g_4 = %f \n",(float) g_4);
+      printf("delta_ailerons = %f \n",(float) delta_ailerons);
+      printf("W_act_motor_const = %f \n",(float) W_act_motor_const);
+      printf("W_act_motor_speed = %f \n",(float) W_act_motor_speed);
+      printf("W_act_tilt_el_const = %f \n",(float) W_act_tilt_el_const);
+      printf("W_act_tilt_el_speed = %f \n",(float) W_act_tilt_el_speed);
+      printf("W_act_tilt_az_const = %f \n",(float) W_act_tilt_az_const);
+      printf("W_act_tilt_az_speed = %f \n",(float) W_act_tilt_az_speed);
+      printf("W_act_ailerons_const = %f \n",(float) W_act_ailerons_const);
+      printf("W_act_ailerons_speed = %f \n",(float) W_act_ailerons_speed);
+      printf("W_dv_1 = %f \n",(float) W_dv_1);
+      printf("W_dv_2 = %f \n",(float) W_dv_2);
+      printf("W_dv_3 = %f \n",(float) W_dv_3);
+      printf("W_dv_4 = %f \n",(float) W_dv_4);
+      printf("W_dv_5 = %f \n",(float) W_dv_5);
+      printf("W_dv_6 = %f \n",(float) W_dv_6);
+      printf("max_omega = %f \n",(float) max_omega);
+      printf("min_omega = %f \n",(float) min_omega);
+      printf("max_b = %f \n",(float) max_b);
+      printf("min_b = %f \n",(float) min_b);
+      printf("max_g = %f \n",(float) max_g);
+      printf("min_g = %f \n",(float) min_g);
+      printf("max_theta = %f \n",(float) max_theta);
+      printf("min_theta = %f \n",(float) min_theta);
+      printf("max_phi = %f \n",(float) max_phi);
+      printf("max_delta_ailerons = %f \n",(float) max_delta_ailerons);
+      printf("min_delta_ailerons = %f \n",(float) min_delta_ailerons); 
+      for (int i=0; i<6; i++){
+        printf("dv[%d] = %f \n",i,(float) dv[i]);
+      }
+      printf("p = %f \n",(float) p);
+      printf("q = %f \n",(float) q);
+      printf("r = %f \n",(float) r);
+      printf("Cm_zero = %f \n",(float) Cm_zero);
+      printf("Cl_alpha = %f \n",(float) Cl_alpha);
+      printf("Cd_zero = %f \n",(float) Cd_zero);
+      printf("K_Cd = %f \n",(float) K_Cd);
+      printf("Cm_alpha = %f \n",(float) Cm_alpha);
+      printf("CL_aileron = %f \n",(float) CL_aileron);
+      printf("rho = %f \n",(float) rho);
+      printf("V = %f \n",(float) V);
+      printf("S = %f \n",(float) S);
+      printf("wing_chord = %f \n",(float) wing_chord);
+      printf("flight_path_angle = %f \n",(float) flight_path_angle);
+      printf("max_alpha = %f \n",(float) max_alpha);
+      printf("min_alpha = %f \n",(float) min_alpha);
+      printf("Beta = %f \n",(float) Beta);
+      printf("gamma_quadratic_du = %f \n",(float) gamma_quadratic_du);
+      printf("desired_motor_value = %f \n",(float) desired_motor_value);
+      printf("desired_el_value = %f \n",(float) desired_el_value);
+      printf("desired_az_value = %f \n",(float) desired_az_value);
+      printf("desired_ailerons_value = %f \n",(float) desired_ailerons_value);
+      printf("k_alt_tilt_constraint = %f \n",(float) k_alt_tilt_constraint);
+      printf("min_alt_tilt_constraint = %f \n",(float) min_alt_tilt_constraint);
+      printf("lidar_alt_corrected = %f \n",(float) lidar_alt_corrected);
+      printf("approach_mode = %f \n",(float) approach_mode);
+      printf("verbose = %f \n",(float) verbose);
+      printf("vert_acc_margin = %f \n",(float) vert_acc_margin);
+      for (int i=0; i<6; i++){
+        printf("current_accelerations[%d] = %f \n",i,(float) current_accelerations[i]);
+      }
+      printf("u_init = ");
+      for (int i=0; i< NUM_ACT_IN_U_IN_INNER; i++){
+        printf("%f ",(float) u_init[i]);
+      }
+      printf("\n");
+      printf("use_u_init = %f \n",(float) use_u_init);
+      printf("pqr_dot_outer_loop = ");
+      for (int i=0; i<3; i++){
+        printf("%f ",(float) pqr_dot_outer_loop[i]);
+      }
+      printf("\n");
+      printf("W_act_motor_du = %f \n",(float) W_act_motor_du);
+      printf("W_act_tilt_el_du = %f \n",(float) W_act_tilt_el_du);
+      printf("W_act_tilt_az_du = %f \n",(float) W_act_tilt_az_du);
+      printf("W_act_ailerons_du = %f \n",(float) W_act_ailerons_du);
+      printf("gamma_quadratic_du2 = %f \n",(float) gamma_quadratic_du2);
+      printf("induced_failure = %f \n",(float) induced_failure);
+      printf("W_act_motor_failure = %f \n",(float) W_act_motor_failure);
+      printf("W_act_tilt_el_failure = %f \n",(float) W_act_tilt_el_failure);
+      printf("W_act_tilt_az_failure = %f \n",(float) W_act_tilt_az_failure);
+      printf("W_act_ailerons_failure = %f \n",(float) W_act_ailerons_failure);
+      printf("W_dv_1_failure = %f \n",(float) W_dv_1_failure);
+      printf("W_dv_2_failure = %f \n",(float) W_dv_2_failure);
+      printf("W_dv_3_failure = %f \n",(float) W_dv_3_failure);
+      printf("W_dv_4_failure = %f \n",(float) W_dv_4_failure);
+      printf("W_dv_5_failure = %f \n",(float) W_dv_5_failure);
+      printf("W_dv_6_failure = %f \n",(float) W_dv_6_failure);
+      printf("gamma_quadratic_du_failure = %f \n",(float) gamma_quadratic_du_failure);
+    }
+
     Nonlinear_controller_w_ail_basic_aero_inner_loop(
         K_p_T, K_p_M, m, I_xx, I_yy, I_zz,
         l_1, l_2, l_3, l_4, l_z, Phi,
@@ -1732,10 +1990,22 @@ void* fourth_thread() //Run the inner loop of the optimization code
       printf("modeled_p_dot = %f \n",(float) myam7_data_out_copy.modeled_p_dot_int*1e-1);
       printf("modeled_q_dot = %f \n",(float) myam7_data_out_copy.modeled_q_dot_int*1e-1);
       printf("modeled_r_dot = %f \n",(float) myam7_data_out_copy.modeled_r_dot_int*1e-1);
-      printf(" N_iterations = %d \n",(int) N_iterations);
-      printf(" N_evaluations = %d \n",(int) N_evaluation);
-      printf(" exit_flag_optimizer = %d \n",(int) exitflag);
-      printf(" elapsed_time_uS = %d \n",(int) (elapsed_time));
+      printf("theta_cmd_deg = %f \n",(float) myam7_data_out_copy.theta_cmd_int*1e-2);
+      printf("phi_cmd_deg = %f \n",(float) myam7_data_out_copy.phi_cmd_int*1e-2);
+      printf("residual_ax = %f \n",(float) myam7_data_out_copy.residual_ax_int*1e-2);
+      printf("residual_ay = %f \n",(float) myam7_data_out_copy.residual_ay_int*1e-2);
+      printf("residual_az = %f \n",(float) myam7_data_out_copy.residual_az_int*1e-2);
+      printf("residual_p_dot = %f \n",(float) myam7_data_out_copy.residual_p_dot_int*1e-1);
+      printf("residual_q_dot = %f \n",(float) myam7_data_out_copy.residual_q_dot_int*1e-1);
+      printf("residual_r_dot = %f \n",(float) myam7_data_out_copy.residual_r_dot_int*1e-1);
+      printf("exit_flag_optimizer_outer = %d \n",(int) myam7_data_out_copy.exit_flag_optimizer_outer);
+      printf("elapsed_time_us_outer = %d \n",(int) myam7_data_out_copy.elapsed_time_us_outer);
+      printf("n_iteration_outer = %d \n",(int) myam7_data_out_copy.n_iteration_outer);
+      printf("n_evaluation_outer = %d \n",(int) myam7_data_out_copy.n_evaluation_outer);
+      printf("exit_flag_optimizer_inner = %d \n",(int) myam7_data_out_copy.exit_flag_optimizer_inner);
+      printf("elapsed_time_us_inner = %d \n",(int) myam7_data_out_copy.elapsed_time_us_inner);
+      printf("n_iteration_inner = %d \n",(int) myam7_data_out_copy.n_iteration_inner);
+      printf("n_evaluation_inner = %d \n",(int) myam7_data_out_copy.n_evaluation_inner);
       printf(" \n\n\n");
       fflush(stdout);
     }
