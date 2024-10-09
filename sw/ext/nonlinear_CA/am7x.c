@@ -10,6 +10,7 @@
 #include <Ivy/ivyglibloop.h>
 #include "filters/low_pass_filter.h"
 
+// #define TEST_CONTROLLER
 
 #define USE_ARUCO
 #define USE_SIXDOF
@@ -28,9 +29,6 @@ float tau_indi;
 
 double u_init_outer[NUM_ACT_IN_U_IN];
 double u_init_inner[NUM_ACT_IN_U_IN_INNER];
-
-//To test the controller with random variables:
-// #define TEST_CONTROLLER
 
 struct data_in_optimizer mydata_in_optimizer;
 struct am7_data_out myam7_data_out;
@@ -532,6 +530,143 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
 
     float failure_mode = (float) (myam7_data_in_copy.failure_mode);
 
+    #ifdef TEST_CONTROLLER
+    #warning "You are using the testing variable, watch out!"
+    //Replace variables with dummy values, to test: 
+    float pi = M_PI; 
+    //Real time variables: 
+    Omega_1 = 800;
+    Omega_2 = 800;
+    Omega_3 = 800;
+    Omega_4 = 800;
+    b_1 = 0 * pi/180;
+    b_2 = 0 * pi/180;
+    b_3 = 0 * pi/180;
+    b_4 = 0 * pi/180;
+    g_1 = 0 * pi/180;
+    g_2 = 0 * pi/180;
+    g_3 = 0 * pi/180;
+    g_4 = 0 * pi/180;
+    p = 0 * pi/180;
+    q = 0 * pi/180;
+    r = 0 * pi/180;
+    V = 0;
+    flight_path_angle = 0 * pi/180;
+    Beta = 0 * pi/180;
+    Phi = 0 * pi/180;
+    Theta = 0 * pi/180;
+    Psi = 0 * pi/180;
+    delta_ailerons = 0 * pi/180;
+    desired_theta_value = 0 * pi/180;
+    desired_phi_value = 0 * pi/180;
+    approach_mode = 0;
+    lidar_alt_corrected = 0;
+    pseudo_control_ax = 0;
+    pseudo_control_ay = 0;
+    pseudo_control_az = 0;
+    p_dot_filt_ec = 0 * pi/180;
+    q_dot_filt_ec = 0 * pi/180;
+    r_dot_filt_ec = 0 * pi/180;
+    psi_dot_cmd_ec = 0 * pi/180;
+    failure_mode = 3;
+
+    //Parameters:
+    K_p_T = 1.106465e-5;
+    K_p_M = 1.835091e-7;
+    m = 2.45;
+    I_xx = 0.156548;
+    I_yy = 0.161380;
+    I_zz = 0.258662;
+    l_1 = 0.228;
+    l_2 = 0.228;
+    l_3 = 0.37;
+    l_4 = 0.37;
+    l_z = 0;
+    max_omega = 1000;
+    min_omega = 100;
+    max_b = 25;
+    min_b = -130;
+    max_g = 90;
+    min_g = -90;
+    max_theta = 50;
+    min_theta = -15;
+    max_phi = 80;
+    Cm_zero = 0.05;
+    Cm_alpha = -0.1;
+    Cl_alpha = 3.5;
+    Cd_zero = 0.2;
+    K_Cd = 0.08;
+    S = 0.43;
+    wing_chord = 0.3;
+    rho = 1.225;
+    W_act_motor_const = 10;
+    W_act_motor_speed = 0;
+    W_act_tilt_el_const = 0;
+    W_act_tilt_el_speed = 0;
+    W_act_tilt_az_const = 0;
+    W_act_tilt_az_speed = 10;
+    W_act_theta_const = 100;
+    W_act_theta_speed = -15;
+    W_act_phi_const = 100;
+    W_act_phi_speed = -15;
+    W_act_ailerons_const = .5;
+    W_act_ailerons_speed = 0;
+    W_dv_1 = 0.01;
+    W_dv_2 = 0.01;
+    W_dv_3 = 0.05;
+    W_dv_4 = 0.1;
+    W_dv_5 = 0.1;
+    W_dv_6 = 0.1;
+    gamma_quadratic_du = .5e-7;
+    Cy_beta = 0.1;
+    Cl_beta = 0.1;
+    wing_span = 1.4;
+    aoa_protection_speed = 3;
+    W_act_ailerons_const = 0.5;
+    W_act_ailerons_speed = 0;
+    min_delta_ailerons = -25;
+    max_delta_ailerons = 25;
+    CL_aileron = 0.1;
+    k_alt_tilt_constraint = 55;
+    min_alt_tilt_constraint = 0.2;
+    transition_speed = 7;
+    desired_motor_value = 0;
+    desired_el_value = 0;
+    desired_az_value = 0;
+    desired_ailerons_value = 0;
+    theta_gain = 1;
+    phi_gain = 1;
+    p_body_gain = 1;
+    q_body_gain = 1;
+    r_body_gain = 1;
+    k_d_airspeed = 0.02;
+    min_theta_hard = -30 * pi/180;
+    max_theta_hard = 60 * pi/180;
+    min_phi_hard = -80 * pi/180;
+    max_phi_hard = 80 * pi/180;
+    disable_acc_decrement_inner_loop = 0;
+    filter_cutoff_frequency_telem = 12;
+    max_airspeed = 15;
+    vert_acc_margin = 0.5;
+    power_Cd_0 = 0.05;
+    power_Cd_a = 0.36;
+    prop_R = 0.1270;
+    prop_Cd_0 = 0.05;
+    prop_Cl_0 = 0.0;
+    prop_Cd_a = 0.36;
+    prop_Cl_a = 3.46;
+    prop_delta = 0.2;
+    prop_sigma = 0.0652;
+    prop_theta = 0.2188;
+    beacon_tracking_id_local = 1636;
+    desired_sixdof_mode_local = 1;
+    use_u_init_outer_loop = 1;
+    use_u_init_inner_loop = 1;
+    K_t_airspeed = 0.02;
+    pqr_first_order_filter_omega_telem = 12;
+    
+    #endif
+
     //Bound motor values to be within min and max value to avoid NaN
     Bound(Omega_1,min_omega,max_omega);
     Bound(Omega_2,min_omega,max_omega);
@@ -809,308 +944,6 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     mydata_in_optimizer_copy.prop_theta = prop_theta;
     mydata_in_optimizer_copy.use_u_init_outer_loop = use_u_init_outer_loop;
     mydata_in_optimizer_copy.use_u_init_inner_loop = use_u_init_inner_loop;
-
-    //Print received data if needed
-    if(verbose_data_in){
-
-      printf("\n ROLLING MESSAGE VARIABLES IN-------------------------------------------------- \n"); 
-      printf("\n K_p_T * 1e-5 = %f \n",(float) mydata_in_optimizer_copy.K_p_T * 1e5); 
-      printf(" K_p_M * 1e-7 = %f \n",(float) mydata_in_optimizer_copy.K_p_M * 1e7); 
-      printf(" m = %f \n",(float) mydata_in_optimizer_copy.m); 
-      printf(" I_xx = %f \n",(float) mydata_in_optimizer_copy.I_xx); 
-      printf(" I_yy = %f \n",(float) mydata_in_optimizer_copy.I_yy); 
-      printf(" I_zz = %f \n",(float) mydata_in_optimizer_copy.I_zz); 
-      printf(" l_1 = %f \n",(float) mydata_in_optimizer_copy.l_1); 
-      printf(" l_2 = %f \n",(float) mydata_in_optimizer_copy.l_2); 
-      printf(" l_3 = %f \n",(float) mydata_in_optimizer_copy.l_3); 
-      printf(" l_4 = %f \n",(float) mydata_in_optimizer_copy.l_4); 
-      printf(" l_z = %f \n",(float) mydata_in_optimizer_copy.l_z); 
-      printf(" max_omega = %f \n",(float) mydata_in_optimizer_copy.max_omega); 
-      printf(" min_omega = %f \n",(float) mydata_in_optimizer_copy.min_omega); 
-      printf(" max_b = %f \n",(float) mydata_in_optimizer_copy.max_b); 
-      printf(" min_b = %f \n",(float) mydata_in_optimizer_copy.min_b); 
-      printf(" max_g = %f \n",(float) mydata_in_optimizer_copy.max_g); 
-      printf(" min_g = %f \n",(float) mydata_in_optimizer_copy.min_g); 
-      printf(" max_theta = %f \n",(float) mydata_in_optimizer_copy.max_theta); 
-      printf(" min_theta = %f \n",(float) mydata_in_optimizer_copy.min_theta); 
-      printf(" max_alpha = %f \n",(float) mydata_in_optimizer_copy.max_alpha*180/M_PI); 
-      printf(" min_alpha = %f \n",(float) mydata_in_optimizer_copy.min_alpha*180/M_PI); 
-      printf(" max_phi = %f \n",(float) mydata_in_optimizer_copy.max_phi); 
-      printf(" Cm_zero = %f \n",(float) mydata_in_optimizer_copy.Cm_zero);
-      printf(" Cm_alpha = %f \n",(float) mydata_in_optimizer_copy.Cm_alpha);
-      printf(" Cl_alpha = %f \n",(float) mydata_in_optimizer_copy.Cl_alpha);
-      printf(" Cd_zero = %f \n",(float) mydata_in_optimizer_copy.Cd_zero);
-      printf(" K_Cd = %f \n",(float) mydata_in_optimizer_copy.K_Cd);
-      printf(" S = %f \n",(float) mydata_in_optimizer_copy.S);
-      printf(" wing_chord = %f \n",(float) mydata_in_optimizer_copy.wing_chord);
-      printf(" rho = %f \n",(float) mydata_in_optimizer_copy.rho);
-      printf(" W_act_motor_const = %f \n",(float) mydata_in_optimizer_copy.W_act_motor_const);
-      printf(" W_act_motor_speed = %f \n",(float) mydata_in_optimizer_copy.W_act_motor_speed);
-      printf(" W_act_tilt_el_const = %f \n",(float) mydata_in_optimizer_copy.W_act_tilt_el_const);
-      printf(" W_act_tilt_el_speed = %f \n",(float) mydata_in_optimizer_copy.W_act_tilt_el_speed);
-      printf(" W_act_tilt_az_const = %f \n",(float) mydata_in_optimizer_copy.W_act_tilt_az_const);
-      printf(" W_act_tilt_az_speed = %f \n",(float) mydata_in_optimizer_copy.W_act_tilt_az_speed);
-      printf(" W_act_theta_const = %f \n",(float) mydata_in_optimizer_copy.W_act_theta_const);
-      printf(" W_act_theta_speed = %f \n",(float) mydata_in_optimizer_copy.W_act_theta_speed);
-      printf(" W_act_phi_const = %f \n",(float) mydata_in_optimizer_copy.W_act_phi_const);
-      printf(" W_act_phi_speed = %f \n",(float) mydata_in_optimizer_copy.W_act_phi_speed);
-      printf(" W_dv_1 = %f \n",(float) mydata_in_optimizer_copy.W_dv_1);
-      printf(" W_dv_2 = %f \n",(float) mydata_in_optimizer_copy.W_dv_2);
-      printf(" W_dv_3 = %f \n",(float) mydata_in_optimizer_copy.W_dv_3);
-      printf(" W_dv_4 = %f \n",(float) mydata_in_optimizer_copy.W_dv_4);
-      printf(" W_dv_5 = %f \n",(float) mydata_in_optimizer_copy.W_dv_5);
-      printf(" W_dv_6 = %f \n",(float) mydata_in_optimizer_copy.W_dv_6);
-      printf(" gamma_quadratic = %f \n",(float) mydata_in_optimizer_copy.gamma_quadratic_du);
-      printf(" Cy_beta = %f \n",(float) mydata_in_optimizer_copy.Cy_beta);
-      printf(" Cl_beta = %f \n",(float) mydata_in_optimizer_copy.Cl_beta);
-      printf(" wing_span = %f \n",(float) mydata_in_optimizer_copy.wing_span);
-      printf(" aoa_protection_speed = %f \n",(float) mydata_in_optimizer_copy.aoa_protection_speed);
-      printf(" W_act_ailerons_const = %f \n",(float) mydata_in_optimizer_copy.W_act_ailerons_const);
-      printf(" W_act_ailerons_speed = %f \n",(float) mydata_in_optimizer_copy.W_act_ailerons_speed);
-      printf(" min_delta_ailerons = %f \n",(float) mydata_in_optimizer_copy.min_delta_ailerons);
-      printf(" max_delta_ailerons = %f \n",(float) mydata_in_optimizer_copy.max_delta_ailerons);
-      printf(" CL_aileron = %f \n",(float) mydata_in_optimizer_copy.CL_aileron);
-      printf(" k_alt_tilt_constraint = %f \n",(float) mydata_in_optimizer_copy.k_alt_tilt_constraint);
-      printf(" min_alt_tilt_constraint = %f \n",(float) mydata_in_optimizer_copy.min_alt_tilt_constraint);
-      printf(" transition_speed = %f \n",(float) mydata_in_optimizer_copy.transition_speed);
-      printf(" desired_motor_value = %f \n",(float) mydata_in_optimizer_copy.desired_motor_value);
-      printf(" desired_el_value_deg = %f \n",(float) mydata_in_optimizer_copy.desired_el_value*180/M_PI);
-      printf(" desired_az_value_deg = %f \n",(float) mydata_in_optimizer_copy.desired_az_value*180/M_PI);
-      printf(" desired_ailerons_value = %f \n",(float) mydata_in_optimizer_copy.desired_ailerons_value);
-      printf(" disable_acc_decrement_inner_loop = %f \n",(float) mydata_in_optimizer_copy.disable_acc_decrement_inner_loop);
-      
-      printf(" max_airspeed = %f \n",(float) mydata_in_optimizer_copy.max_airspeed);
-      printf(" vert_acc_margin = %f \n",(float) mydata_in_optimizer_copy.vert_acc_margin);
-      printf(" power_Cd_0 = %f \n",(float) mydata_in_optimizer_copy.power_Cd_0);
-      printf(" power_Cd_a = %f \n",(float) mydata_in_optimizer_copy.power_Cd_a);
-      printf(" prop_R = %f \n",(float) mydata_in_optimizer_copy.prop_R);
-      printf(" prop_Cd_0 = %f \n",(float) mydata_in_optimizer_copy.prop_Cd_0);
-      printf(" prop_Cl_0 = %f \n",(float) mydata_in_optimizer_copy.prop_Cl_0);
-      printf(" prop_Cd_a = %f \n",(float) mydata_in_optimizer_copy.prop_Cd_a);
-      printf(" prop_Cl_a = %f \n",(float) mydata_in_optimizer_copy.prop_Cl_a);
-      printf(" prop_delta = %f \n",(float) mydata_in_optimizer_copy.prop_delta);
-      printf(" prop_sigma = %f \n",(float) mydata_in_optimizer_copy.prop_sigma);
-      printf(" prop_theta = %f \n",(float) mydata_in_optimizer_copy.prop_theta);
-      printf(" use_u_init_outer_loop = %f \n",(float) mydata_in_optimizer_copy.use_u_init_outer_loop); 
-      printf(" use_u_init_inner_loop = %f \n",(float) mydata_in_optimizer_copy.use_u_init_inner_loop); 
-
-      printf("\n ERROR CONTROLLER VARIABLES ------------------------------------------------------ \n");
-
-      printf(" phi_state_ec_deg = %f \n",(float) mydata_in_optimizer_copy.phi_state_ec*180/M_PI);
-      printf(" theta_state_ec_deg = %f \n",(float) mydata_in_optimizer_copy.theta_state_ec*180/M_PI);
-      printf(" psi_state_ec_deg = %f \n",(float) mydata_in_optimizer_copy.psi_state_ec*180/M_PI);
-      printf(" p_state_ec_deg_s = %f \n",(float) mydata_in_optimizer_copy.p_state_ec*180/M_PI);
-      printf(" q_state_ec_deg_s = %f \n",(float) mydata_in_optimizer_copy.q_state_ec*180/M_PI);
-      printf(" r_state_ec_deg_s = %f \n",(float) mydata_in_optimizer_copy.r_state_ec*180/M_PI);
-      printf(" p_dot_state_ec_deg_s = %f \n",(float) mydata_in_optimizer_copy.p_dot_state_ec*180/M_PI);
-      printf(" q_dot_state_ec_deg_s = %f \n",(float) mydata_in_optimizer_copy.q_dot_state_ec*180/M_PI);
-      printf(" r_dot_state_ec_deg_s = %f \n",(float) mydata_in_optimizer_copy.r_dot_state_ec*180/M_PI);
-      printf(" theta_gain = %f \n",(float) mydata_in_optimizer_copy.theta_gain);
-      printf(" phi_gain = %f \n",(float) mydata_in_optimizer_copy.phi_gain);
-      printf(" p_body_gain = %f \n",(float) mydata_in_optimizer_copy.p_body_gain);
-      printf(" q_body_gain = %f \n",(float) mydata_in_optimizer_copy.q_body_gain);
-      printf(" r_body_gain = %f \n",(float) mydata_in_optimizer_copy.r_body_gain);
-      printf(" k_d_airspeed = %f \n",(float) mydata_in_optimizer_copy.k_d_airspeed);
-      printf(" min_theta_hard = %f \n",(float) mydata_in_optimizer_copy.min_theta_hard);
-      printf(" max_theta_hard = %f \n",(float) mydata_in_optimizer_copy.max_theta_hard);
-      printf(" min_phi_hard = %f \n",(float) mydata_in_optimizer_copy.min_phi_hard);
-      printf(" max_phi_hard = %f \n",(float) mydata_in_optimizer_copy.max_phi_hard);
-      printf(" psi_dot_cmd_ec = %f \n",(float) mydata_in_optimizer_copy.psi_dot_cmd_ec);
-
-      printf("\n FILTERING PROPERTIES ------------------------------------------------------ \n"); 
-      printf(" filter_cutoff_frequency_telem = %f \n",(float) filter_cutoff_frequency_telem);
-      printf(" Effective filter_cutoff_frequency = %f \n",(float) filter_cutoff_frequency);
-      printf(" pqr_first_order_filter_omega_telem = %f \n",(float) pqr_first_order_filter_omega_telem);
-      printf(" Effective pqr_first_order_filter_omega = %f \n",(float) filter_cutoff_first_order_pqr);
-      printf(" Effective pqr_first_order_filter_tau = %f \n",(float) pqr_first_order_filter_tau);
-      
-      printf("\n REAL TIME VARIABLES IN------------------------------------------------------ \n"); 
-      printf(" Phi_deg = %f \n",(float) mydata_in_optimizer_copy.phi_state_filtered*180/M_PI);
-      printf(" Theta_deg = %f \n",(float) mydata_in_optimizer_copy.theta_state_filtered*180/M_PI);
-      printf(" delta_ailerons_deg = %f \n",(float) mydata_in_optimizer_copy.ailerons_state_filtered*180/M_PI);
-      printf(" Omega_1_rad_s = %f \n",(float) mydata_in_optimizer_copy.motor_1_state_filtered);
-      printf(" Omega_2_rad_s = %f \n",(float) mydata_in_optimizer_copy.motor_2_state_filtered);
-      printf(" Omega_3_rad_s = %f \n",(float) mydata_in_optimizer_copy.motor_3_state_filtered);
-      printf(" Omega_4_rad_s = %f \n",(float) mydata_in_optimizer_copy.motor_4_state_filtered);
-      printf(" b_1_deg = %f \n",(float) mydata_in_optimizer_copy.el_1_state_filtered*180/M_PI);
-      printf(" b_2_deg = %f \n",(float) mydata_in_optimizer_copy.el_2_state_filtered*180/M_PI);
-      printf(" b_3_deg = %f \n",(float) mydata_in_optimizer_copy.el_3_state_filtered*180/M_PI);
-      printf(" b_4_deg = %f \n",(float) mydata_in_optimizer_copy.el_4_state_filtered*180/M_PI);
-      printf(" g_1_deg = %f \n",(float) mydata_in_optimizer_copy.az_1_state_filtered*180/M_PI);
-      printf(" g_2_deg = %f \n",(float) mydata_in_optimizer_copy.az_2_state_filtered*180/M_PI);
-      printf(" g_3_deg = %f \n",(float) mydata_in_optimizer_copy.az_3_state_filtered*180/M_PI);
-      printf(" g_4_deg = %f \n",(float) mydata_in_optimizer_copy.az_4_state_filtered*180/M_PI);
-      printf(" p_deg_s = %f \n",(float) mydata_in_optimizer_copy.p_state_filtered*180/M_PI);
-      printf(" q_deg_s = %f \n",(float) mydata_in_optimizer_copy.q_state_filtered*180/M_PI);
-      printf(" r_deg_s = %f \n",(float) mydata_in_optimizer_copy.r_state_filtered*180/M_PI);
-      printf(" V = %f \n",(float) mydata_in_optimizer_copy.airspeed_state_filtered);
-      printf(" flight_path_angle_deg = %f \n",(float) mydata_in_optimizer_copy.gamma_state_filtered*180/M_PI);
-      printf(" Beta_deg = %f \n",(float) mydata_in_optimizer_copy.beta_state_filtered*180/M_PI);
-      printf(" desired_theta_value_deg = %f \n",(float) mydata_in_optimizer_copy.desired_theta_value*180/M_PI);
-      printf(" desired_phi_value_deg = %f \n",(float) mydata_in_optimizer_copy.desired_phi_value*180/M_PI);
-      printf(" approach_mode = %f \n",(float) mydata_in_optimizer_copy.approach_boolean);
-      printf(" lidar_alt_corrected = %f \n",(float) mydata_in_optimizer_copy.lidar_alt_corrected);
-      printf(" pseudo_control_ax = %f \n",(float) mydata_in_optimizer_copy.pseudo_control_ax);
-      printf(" pseudo_control_ay = %f \n",(float) mydata_in_optimizer_copy.pseudo_control_ay);
-      printf(" pseudo_control_az = %f \n",(float) mydata_in_optimizer_copy.pseudo_control_az);
-      printf(" desired_theta_value = %f \n",(float) mydata_in_optimizer_copy.desired_theta_value);
-      printf(" desired_phi_value = %f \n",(float) mydata_in_optimizer_copy.desired_phi_value);
-
-      printf(" failure_mode = %f \n",(float) mydata_in_optimizer_copy.failure_mode);
-
-      printf("\n SIXDOF VARIABLES -------------------------------------------------------------------- \n"); 
-      printf(" UAV_NED_pos_x = %f \n",(float) myam7_data_in_copy.UAV_NED_pos_x);
-      printf(" UAV_NED_pos_y = %f \n",(float) myam7_data_in_copy.UAV_NED_pos_y);
-      printf(" UAV_NED_pos_z = %f \n",(float) myam7_data_in_copy.UAV_NED_pos_z);
-      printf(" beacon_tracking_id = %f \n",(float) beacon_tracking_id_local);
-      printf(" desired_sixdof_mode = %f \n",(float) desired_sixdof_mode_local);
-
-      printf("\n MODELED FILTERED ACCELLERATIONS------------------------------------------------------ \n"); 
-      printf(" Modeled ax filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_ax_filtered);
-      printf(" Modeled ay filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_ay_filtered);
-      printf(" Modeled az filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_az_filtered);
-      printf(" Modeled p_dot filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_p_dot_filtered);
-      printf(" Modeled q_dot filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_q_dot_filtered);
-      printf(" Modeled r_dot filtered = %f \n",(float) mydata_in_optimizer_copy.modeled_r_dot_filtered);
-      fflush(stdout);
-    }
-
-    #ifdef TEST_CONTROLLER
-    #warning "You are using the testing variable, watch out!"
-      float pi = M_PI;
-      mydata_in_optimizer_copy.K_p_T = 1.106465e-5;
-      mydata_in_optimizer_copy.K_p_M = 1.835091e-7;
-      mydata_in_optimizer_copy.m = 2.45; 
-      mydata_in_optimizer_copy.I_xx = 0.156548;
-      mydata_in_optimizer_copy.I_yy = 0.161380; 
-      mydata_in_optimizer_copy.I_zz = 0.258662;
-      mydata_in_optimizer_copy.l_1 = 0.228;
-      mydata_in_optimizer_copy.l_2 = 0.228;
-      mydata_in_optimizer_copy.l_3 = 0.37;
-      mydata_in_optimizer_copy.l_4 = 0.37;
-      mydata_in_optimizer_copy.l_z = 0;
-
-      mydata_in_optimizer_copy.aoa_protection_speed = 3;
-      mydata_in_optimizer_copy.transition_speed = 7;
-
-      mydata_in_optimizer_copy.Beta = 0 * pi/180;
-      mydata_in_optimizer_copy.flight_path_angle = 0 * pi/180;
-      mydata_in_optimizer_copy.V = 0;
-      mydata_in_optimizer_copy.Phi = 0 * pi/180;
-      mydata_in_optimizer_copy.Theta = 0 * pi/180;
-      mydata_in_optimizer_copy.Omega_1 = 800;
-      mydata_in_optimizer_copy.Omega_2 = 600;
-      mydata_in_optimizer_copy.Omega_3 = 600;
-      mydata_in_optimizer_copy.Omega_4 = 600;
-      mydata_in_optimizer_copy.b_1 = 0 * pi/180;
-      mydata_in_optimizer_copy.b_2 = 0 * pi/180;
-      mydata_in_optimizer_copy.b_3 = 0 * pi/180;
-      mydata_in_optimizer_copy.b_4 = 0 * pi/180;
-      mydata_in_optimizer_copy.g_1 = 0 * pi/180;
-      mydata_in_optimizer_copy.g_2 = 0 * pi/180;
-      mydata_in_optimizer_copy.g_3 = 0 * pi/180;
-      mydata_in_optimizer_copy.g_4 = 0 * pi/180;
-      mydata_in_optimizer_copy.delta_ailerons = 0 * pi/180;
-
-      mydata_in_optimizer_copy.W_act_motor_const = 10;
-      mydata_in_optimizer_copy.W_act_motor_speed = 0; 
-      mydata_in_optimizer_copy.W_act_tilt_el_const = 0;
-      mydata_in_optimizer_copy.W_act_tilt_el_speed = 0;
-      mydata_in_optimizer_copy.W_act_tilt_az_const = 0; 
-      mydata_in_optimizer_copy.W_act_tilt_az_speed = 10;
-      mydata_in_optimizer_copy.W_act_theta_const = 100;
-      mydata_in_optimizer_copy.W_act_theta_speed = -15;
-      mydata_in_optimizer_copy.W_act_phi_const = 100;
-      mydata_in_optimizer_copy.W_act_phi_speed = -15;
-      mydata_in_optimizer_copy.W_act_ailerons_const = .5;
-      mydata_in_optimizer_copy.W_act_ailerons_speed = 0; 
-
-      mydata_in_optimizer_copy.W_dv_1 = 0.01;
-      mydata_in_optimizer_copy.W_dv_2 = 0.01;
-      mydata_in_optimizer_copy.W_dv_3 = 0.05; 
-      mydata_in_optimizer_copy.W_dv_4 = 0.1; 
-      mydata_in_optimizer_copy.W_dv_5 = 0.1; 
-      mydata_in_optimizer_copy.W_dv_6 = 0.1;
-      mydata_in_optimizer_copy.gamma_quadratic_du = .1e-6; 
-
-      mydata_in_optimizer_copy.max_omega = 1000; 
-      mydata_in_optimizer_copy.min_omega = 100;
-      mydata_in_optimizer_copy.max_b = 25; 
-      mydata_in_optimizer_copy.min_b = -130; 
-      mydata_in_optimizer_copy.max_g = 60; 
-      mydata_in_optimizer_copy.min_g = -60;  
-      mydata_in_optimizer_copy.max_theta = 60;
-      mydata_in_optimizer_copy.min_theta = -15;
-      mydata_in_optimizer_copy.max_phi = 80; 
-      mydata_in_optimizer_copy.max_delta_ailerons = 25;
-      mydata_in_optimizer_copy.min_delta_ailerons = -25; 
-
-      mydata_in_optimizer_copy.pseudo_control_ax = 0;
-      mydata_in_optimizer_copy.pseudo_control_ay = 0;
-      mydata_in_optimizer_copy.pseudo_control_az = 0;
-      mydata_in_optimizer_copy.pseudo_control_p_dot = 0;
-      mydata_in_optimizer_copy.pseudo_control_q_dot = 0;
-      mydata_in_optimizer_copy.pseudo_control_r_dot = 0;
-
-      mydata_in_optimizer_copy.p = 0 * pi/180; 
-      mydata_in_optimizer_copy.q = 0 * pi/180; 
-      mydata_in_optimizer_copy.r = 0 * pi/180; 
-      mydata_in_optimizer_copy.Cm_zero = 0.05; 
-      mydata_in_optimizer_copy.Cl_alpha = 3.5; 
-      mydata_in_optimizer_copy.Cd_zero = 0.2; 
-      mydata_in_optimizer_copy.K_Cd = 0.08;
-      mydata_in_optimizer_copy.Cm_alpha = -0.1; 
-      mydata_in_optimizer_copy.CL_aileron = 0.1; 
-      mydata_in_optimizer_copy.rho = 1.225; 
-      mydata_in_optimizer_copy.S = 0.43;
-      mydata_in_optimizer_copy.wing_chord = 0.3; 
-      mydata_in_optimizer_copy.wing_span = 1.4;
-      mydata_in_optimizer_copy.max_alpha = 15 * pi/180; 
-      mydata_in_optimizer_copy.min_alpha = 2 * pi/180; 
-
-      mydata_in_optimizer_copy.desired_motor_value = 0; 
-      mydata_in_optimizer_copy.desired_el_value = 0 * pi/180;
-      mydata_in_optimizer_copy.desired_az_value = 0 * pi/180;
-      mydata_in_optimizer_copy.desired_theta_value = 0 * pi/180; 
-      mydata_in_optimizer_copy.desired_phi_value = 0 * pi/180; 
-      mydata_in_optimizer_copy.desired_ailerons_value = 0 * pi/180;
-
-      mydata_in_optimizer_copy.k_alt_tilt_constraint = 55;
-      mydata_in_optimizer_copy.min_alt_tilt_constraint = 0.2;
-      mydata_in_optimizer_copy.lidar_alt_corrected = 1;
-      mydata_in_optimizer_copy.approach_mode = 0; 
-
-      mydata_in_optimizer_copy.max_theta_hard = 45 * pi/180; 
-      mydata_in_optimizer_copy.min_theta_hard = -45 * pi/180; 
-      mydata_in_optimizer_copy.max_phi_hard = 45 * pi/180; 
-      mydata_in_optimizer_copy.min_phi_hard = -45 * pi/180; 
-
-      // Aero model: 
-      mydata_in_optimizer_copy.prop_Cl_0 = 0.0;
-      mydata_in_optimizer_copy.prop_Cl_a = 3.46;
-      mydata_in_optimizer_copy.prop_Cd_0 = 0.05;
-      mydata_in_optimizer_copy.prop_Cd_a = 0.36;
-      mydata_in_optimizer_copy.prop_sigma = 0.0652;
-      mydata_in_optimizer_copy.prop_delta = 0.2;
-      mydata_in_optimizer_copy.prop_theta = 0.2188;
-      mydata_in_optimizer_copy.prop_R = 0.1270;
-      mydata_in_optimizer_copy.power_Cd_0 = mydata_in_optimizer_copy.prop_Cd_0;
-      mydata_in_optimizer_copy.power_Cd_a = mydata_in_optimizer_copy.prop_Cd_a;
-
-      mydata_in_optimizer_copy.max_airspeed = 15; 
-      mydata_in_optimizer_copy.vert_acc_margin = 2.5; 
-
-      mydata_in_optimizer_copy.use_u_init_outer_loop = 1;
-      mydata_in_optimizer_copy.use_u_init_inner_loop = 1;
-
-      //Modeled accelerations filtered:
-      mydata_in_optimizer_copy.modeled_ax_filtered = 0;
-      mydata_in_optimizer_copy.modeled_ay_filtered = 0;
-      mydata_in_optimizer_copy.modeled_az_filtered = 0;
-      mydata_in_optimizer_copy.modeled_p_dot_filtered = 0;
-      mydata_in_optimizer_copy.modeled_q_dot_filtered = 0;
-      mydata_in_optimizer_copy.modeled_r_dot_filtered = 0;
-    #endif 
 
     pthread_mutex_lock(&mutex_optimizer_input);
     memcpy(&mydata_in_optimizer, &mydata_in_optimizer_copy, sizeof(struct data_in_optimizer));
