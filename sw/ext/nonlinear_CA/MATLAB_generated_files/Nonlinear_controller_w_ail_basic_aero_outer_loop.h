@@ -5,7 +5,7 @@
  * File: Nonlinear_controller_w_ail_basic_aero_outer_loop.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-Oct-2024 11:21:32
+ * C/C++ source code generated on  : 10-Oct-2024 12:23:54
  */
 
 #ifndef NONLINEAR_CONTROLLER_W_AIL_BASIC_AERO_OUTER_LOOP_H
@@ -36,7 +36,7 @@ extern void Nonlinear_controller_w_ail_basic_aero_outer_loop(
     double W_dv_4, double W_dv_5, double W_dv_6, double max_omega,
     double min_omega, double max_b, double min_b, double max_g, double min_g,
     double max_theta, double min_theta, double max_phi,
-    double max_delta_ailerons, double min_delta_ailerons, double dv[6],
+    double max_delta_ailerons, double min_delta_ailerons, const double dv[6],
     double p, double q, double r, double Cm_zero, double Cl_alpha,
     double Cd_zero, double K_Cd, double Cm_alpha, double CL_aileron, double rho,
     double V, double S, double wing_chord, double flight_path_angle,
@@ -63,9 +63,9 @@ extern void Nonlinear_controller_w_ail_basic_aero_outer_loop(
     double W_act_ailerons_failure, double W_dv_1_failure, double W_dv_2_failure,
     double W_dv_3_failure, double W_dv_4_failure, double W_dv_5_failure,
     double W_dv_6_failure, double gamma_quadratic_du_failure, double u_out[15],
-    double dv_pqr_dot_target[3], double *theta_cmd_rad, double *phi_cmd_rad,
-    double acc_decrement_aero[6], double residuals[6], double *elapsed_time,
-    double *N_iterations, double *N_evaluation, double *exitflag);
+    double dv_pqr_dot_target[3], double acc_decrement_aero[6],
+    double residuals[6], double *elapsed_time, double *N_iterations,
+    double *N_evaluation, double *exitflag);
 
 extern void Nonlinear_controller_w_ail_basic_aero_outer_loop_initialize(void);
 

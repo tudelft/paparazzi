@@ -16,7 +16,8 @@
         "stdlib.h": "c",
         "compute_acc_control_rf_basic.h": "c",
         "random": "c",
-        "rtwtypes.h": "c"
+        "rtwtypes.h": "c",
+        "tensor": "cpp"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",

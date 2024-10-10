@@ -148,6 +148,9 @@ struct  __attribute__((__packed__)) am7_data_in {
     int16_t pseudo_control_ax_int; //m/s^2 * 100
     int16_t pseudo_control_ay_int; //m/s^2 * 100
     int16_t pseudo_control_az_int; //m/s^2 * 100
+    int16_t pseudo_control_p_dot_int; //rad/s^2 * 10
+    int16_t pseudo_control_q_dot_int; //rad/s^2 * 10
+    int16_t pseudo_control_r_dot_int; //rad/s^2 * 10
     //Desired theta and phi value:
     int16_t desired_theta_value_int; //degrees * 100
     int16_t desired_phi_value_int; //degrees * 100
@@ -172,8 +175,21 @@ struct __attribute__((__packed__)) marker_detection_t {
 };
 
 struct __attribute__((__packed__)) outer_loop_output {
+    double motor_1_cmd_rad_s;
+    double motor_2_cmd_rad_s;
+    double motor_3_cmd_rad_s;
+    double motor_4_cmd_rad_s;
+    double el_1_cmd_rad;
+    double el_2_cmd_rad;
+    double el_3_cmd_rad;
+    double el_4_cmd_rad;
+    double az_1_cmd_rad;
+    double az_2_cmd_rad;
+    double az_3_cmd_rad;
+    double az_4_cmd_rad;
     double theta_cmd_rad;
     double phi_cmd_rad;
+    double ailerons_cmd_rad;
     double p_dot_cmd_rad_s;
     double q_dot_cmd_rad_s;
     double r_dot_cmd_rad_s;
@@ -224,6 +240,9 @@ struct __attribute__((__packed__)) data_in_optimizer {
     float pseudo_control_ax;
     float pseudo_control_ay;
     float pseudo_control_az;
+    float pseudo_control_p_dot;
+    float pseudo_control_q_dot;
+    float pseudo_control_r_dot;
     float desired_theta_value;
     float desired_phi_value;
 
@@ -340,6 +359,9 @@ struct __attribute__((__packed__)) data_in_optimizer {
     float prop_theta;
     float use_u_init_outer_loop;
     float use_u_init_inner_loop;
+    float single_loop_controller; 
+    float use_new_aero_model; 
+    float use_received_ang_ref_in_inner_loop; 
 };
     
 #endif

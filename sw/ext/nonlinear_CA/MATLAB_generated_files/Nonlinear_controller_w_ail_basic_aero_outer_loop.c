@@ -5,7 +5,7 @@
  * File: Nonlinear_controller_w_ail_basic_aero_outer_loop.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 07-Oct-2024 11:21:32
+ * C/C++ source code generated on  : 10-Oct-2024 12:23:54
  */
 
 /* Include Files */
@@ -7126,7 +7126,7 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double max_phi
  *                double max_delta_ailerons
  *                double min_delta_ailerons
- *                double dv[6]
+ *                const double dv[6]
  *                double p
  *                double q
  *                double r
@@ -7200,8 +7200,6 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double gamma_quadratic_du_failure
  *                double u_out[15]
  *                double dv_pqr_dot_target[3]
- *                double *theta_cmd_rad
- *                double *phi_cmd_rad
  *                double acc_decrement_aero[6]
  *                double residuals[6]
  *                double *elapsed_time
@@ -7223,8 +7221,8 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   double W_dv_4, double W_dv_5, double W_dv_6, double max_omega, double
   min_omega, double max_b, double min_b, double max_g, double min_g, double
   max_theta, double min_theta, double max_phi, double max_delta_ailerons, double
-  min_delta_ailerons, double dv[6], double p, double q, double r, double Cm_zero,
-  double Cl_alpha, double Cd_zero, double K_Cd, double Cm_alpha, double
+  min_delta_ailerons, const double dv[6], double p, double q, double r, double
+  Cm_zero, double Cl_alpha, double Cd_zero, double K_Cd, double Cm_alpha, double
   CL_aileron, double rho, double V, double S, double wing_chord, double
   flight_path_angle, double max_alpha, double min_alpha, double Beta, double
   gamma_quadratic_du, double desired_motor_value, double desired_el_value,
@@ -7246,9 +7244,9 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   double W_act_ailerons_failure, double W_dv_1_failure, double W_dv_2_failure,
   double W_dv_3_failure, double W_dv_4_failure, double W_dv_5_failure, double
   W_dv_6_failure, double gamma_quadratic_du_failure, double u_out[15], double
-  dv_pqr_dot_target[3], double *theta_cmd_rad, double *phi_cmd_rad, double
-  acc_decrement_aero[6], double residuals[6], double *elapsed_time, double
-  *N_iterations, double *N_evaluation, double *exitflag)
+  dv_pqr_dot_target[3], double acc_decrement_aero[6], double residuals[6],
+  double *elapsed_time, double *N_iterations, double *N_evaluation, double
+  *exitflag)
 {
   b_captured_var dv_global;
   c_captured_var actual_u;
@@ -7323,6 +7321,7 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   double b_max_tilt_value_approach;
   double b_min_approach;
   double g_max_approach;
+  double g_min_approach;
   double max_theta_protection;
   double min_theta_protection;
   int i;
@@ -7378,12 +7377,12 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   b_W_act_ailerons_du.contents = W_act_ailerons_du;
   b_gamma_quadratic_du2.contents = gamma_quadratic_du2;
   if (b_V.contents > aoa_protection_speed) {
-    b_max_approach = (max_alpha + b_flight_path_angle.contents) * 180.0 /
+    g_min_approach = (max_alpha + b_flight_path_angle.contents) * 180.0 /
       3.1415926535897931;
-    max_theta_protection = fmin(max_theta, b_max_approach);
-    b_max_approach = (min_alpha + b_flight_path_angle.contents) * 180.0 /
+    max_theta_protection = fmin(max_theta, g_min_approach);
+    g_min_approach = (min_alpha + b_flight_path_angle.contents) * 180.0 /
       3.1415926535897931;
-    min_theta_protection = fmax(min_theta, b_max_approach);
+    min_theta_protection = fmax(min_theta, g_min_approach);
   } else {
     max_theta_protection = max_theta;
     min_theta_protection = min_theta;
@@ -7580,7 +7579,6 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
 
   if (approach_mode != 0.0) {
     double max_tilt_value_approach[2];
-    double g_min_approach;
     max_tilt_value_approach[0] = 0.0;
     max_tilt_value_approach[1] = k_alt_tilt_constraint * lidar_alt_corrected -
       min_alt_tilt_constraint * k_alt_tilt_constraint;
@@ -7721,9 +7719,6 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
     b_Cm_alpha.contents, b_Cm_zero.contents, b_CL_aileron.contents,
     b_rho.contents, b_V.contents, b_S.contents, b_wing_chord.contents,
     b_flight_path_angle.contents, b_Beta.contents, current_acc_aero_only);
-  dv[3] = 0.0;
-  dv[4] = 0.0;
-  dv[5] = 0.0;
   for (i = 0; i < 6; i++) {
     dv_global.contents[i] = dv[i] + current_accelerations[i];
   }
@@ -7737,18 +7732,18 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   dv_global.contents[2] -= min_theta_protection;
 
   /* Compute weights for individual actuators and make sure they are always positive */
-  b_max_approach = W_act_motor_const + W_act_motor_speed * b_V.contents;
-  W_act_motor.contents = fmax(0.0, b_max_approach);
-  b_max_approach = W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
-  W_act_tilt_el.contents = fmax(0.0, b_max_approach);
-  b_max_approach = W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
-  W_act_tilt_az.contents = fmax(0.0, b_max_approach);
-  b_max_approach = W_act_theta_const + W_act_theta_speed * b_V.contents;
-  W_act_theta.contents = fmax(0.0, b_max_approach);
-  b_max_approach = W_act_phi_const + W_act_phi_speed * b_V.contents;
-  W_act_phi.contents = fmax(0.0, b_max_approach);
-  b_max_approach = W_act_ailerons_const + W_act_ailerons_speed * b_V.contents;
-  W_act_ailerons.contents = fmax(0.0, b_max_approach);
+  g_min_approach = W_act_motor_const + W_act_motor_speed * b_V.contents;
+  W_act_motor.contents = fmax(0.0, g_min_approach);
+  g_min_approach = W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
+  W_act_tilt_el.contents = fmax(0.0, g_min_approach);
+  g_min_approach = W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
+  W_act_tilt_az.contents = fmax(0.0, g_min_approach);
+  g_min_approach = W_act_theta_const + W_act_theta_speed * b_V.contents;
+  W_act_theta.contents = fmax(0.0, g_min_approach);
+  g_min_approach = W_act_phi_const + W_act_phi_speed * b_V.contents;
+  W_act_phi.contents = fmax(0.0, g_min_approach);
+  g_min_approach = W_act_ailerons_const + W_act_ailerons_speed * b_V.contents;
+  W_act_ailerons.contents = fmax(0.0, g_min_approach);
 
   /* Default values for the optimizer: */
   /*  OPRIMIZATION OPTIONS */
@@ -7836,13 +7831,10 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   fmincon(&b_expl_temp, u_out, u_min, u_max_scaled, exitflag, N_iterations,
           N_evaluation, c_expl_temp, &b_max_tilt_value_approach, &b_max_approach,
           &b_min_approach, &g_max_approach);
-  b_max_approach = u_out[12] * gain_theta.contents;
-  min_theta_protection = u_out[13] * gain_phi.contents;
+  g_min_approach = u_out[12] * gain_theta.contents;
+  g_max_approach = u_out[13] * gain_phi.contents;
 
   /* Constrain the commands with hard max and min of theta and phi:  */
-  *theta_cmd_rad = fmax(theta_hard_min, fmin(theta_hard_max, b_max_approach));
-  *phi_cmd_rad = fmax(phi_hard_min, fmin(phi_hard_max, min_theta_protection));
-
   /* with the desired theta and phi, let's compute the associated angular */
   /* accelerations through the EC gains and feedbacks:  */
   b_max_tilt_value_approach = sin(Phi);
@@ -7866,13 +7858,13 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   b_dv[2] = 0.0;
   b_dv[5] = -b_max_tilt_value_approach;
   b_dv[8] = b_max_approach * b_min_approach;
-  min_theta_protection = (*phi_cmd_rad - phi_current) *
-    angular_proportional_gains[0];
-  b_max_tilt_value_approach = (*theta_cmd_rad - theta_current) *
-    angular_proportional_gains[1];
+  b_max_tilt_value_approach = (fmax(phi_hard_min, fmin(phi_hard_max,
+    g_max_approach)) - phi_current) * angular_proportional_gains[0];
+  min_theta_protection = (fmax(theta_hard_min, fmin(theta_hard_max,
+    g_min_approach)) - theta_current) * angular_proportional_gains[1];
   for (i = 0; i < 3; i++) {
-    des_body_rates[i] = (b_dv[i] * min_theta_protection + b_dv[i + 3] *
-                         b_max_tilt_value_approach) + b_dv[i + 6] * des_psi_dot;
+    des_body_rates[i] = (b_dv[i] * b_max_tilt_value_approach + b_dv[i + 3] *
+                         min_theta_protection) + b_dv[i + 6] * des_psi_dot;
   }
 
   min_theta_protection = des_body_rates[0] - p_body_current;
@@ -7885,21 +7877,21 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   dv_pqr_dot_target[2] = b_max_approach * angular_derivative_gains[2] -
     r_dot_current;
   *elapsed_time = toc();
-  b_max_approach = gain_motor.contents;
-  min_theta_protection = gain_el.contents;
-  b_max_tilt_value_approach = gain_az.contents;
-  u_out[0] *= b_max_approach;
-  u_out[4] *= min_theta_protection;
-  u_out[8] *= b_max_tilt_value_approach;
-  u_out[1] *= b_max_approach;
-  u_out[5] *= min_theta_protection;
-  u_out[9] *= b_max_tilt_value_approach;
-  u_out[2] *= b_max_approach;
-  u_out[6] *= min_theta_protection;
-  u_out[10] *= b_max_tilt_value_approach;
-  u_out[3] *= b_max_approach;
-  u_out[7] *= min_theta_protection;
-  u_out[11] *= b_max_tilt_value_approach;
+  g_min_approach = gain_motor.contents;
+  g_max_approach = gain_el.contents;
+  min_theta_protection = gain_az.contents;
+  u_out[0] *= g_min_approach;
+  u_out[4] *= g_max_approach;
+  u_out[8] *= min_theta_protection;
+  u_out[1] *= g_min_approach;
+  u_out[5] *= g_max_approach;
+  u_out[9] *= min_theta_protection;
+  u_out[2] *= g_min_approach;
+  u_out[6] *= g_max_approach;
+  u_out[10] *= min_theta_protection;
+  u_out[3] *= g_min_approach;
+  u_out[7] *= g_max_approach;
+  u_out[11] *= min_theta_protection;
   u_out[12] *= gain_theta.contents;
   u_out[13] *= gain_phi.contents;
   u_out[14] *= gain_ailerons.contents;
@@ -7915,7 +7907,6 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
     residuals[i] = dv_global.contents[i] - final_accelerations[i];
   }
 
-  /*  dv_pqr_dot_target = dv_global(4:6);   */
   memcpy(&u_max[0], &u_out[0], 15U * sizeof(double));
   u_max[0] = 0.0;
   u_max[1] = 0.0;

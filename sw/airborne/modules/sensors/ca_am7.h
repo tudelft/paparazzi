@@ -127,6 +127,7 @@ struct __attribute__((__packed__)) am7_data_out {
     int16_t p_dot_filt_int; //degrees/sec^2 value * 10
     int16_t q_dot_filt_int; //degrees/sec^2 value * 10
     int16_t r_dot_filt_int; //degrees/sec^2 value * 10
+    //Psi dot command
     int16_t psi_dot_cmd_int; //degrees value * 100 
     //Approach boolean and lidar corrected altitude for the rotor constraint application 
     int16_t approach_boolean; //Boolean value
@@ -135,6 +136,9 @@ struct __attribute__((__packed__)) am7_data_out {
     int16_t pseudo_control_ax_int; //m/s^2 * 100
     int16_t pseudo_control_ay_int; //m/s^2 * 100
     int16_t pseudo_control_az_int; //m/s^2 * 100
+    int16_t pseudo_control_p_dot_int; //rad/s^2 * 10
+    int16_t pseudo_control_q_dot_int; //rad/s^2 * 10
+    int16_t pseudo_control_r_dot_int; //rad/s^2 * 10
     //Desired theta and phi value:
     int16_t desired_theta_value_int; //degrees * 100
     int16_t desired_phi_value_int; //degrees * 100
