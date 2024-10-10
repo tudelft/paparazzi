@@ -254,7 +254,7 @@ static void nav_hybrid_circle(struct EnuCoor_f *wp_center, float radius)
 
   VECT2_DIFF(pos_diff, *stateGetPositionEnu_f(), *wp_center);
   // direction of rotation
-  float sign_radius = radius > 0.f ? 1.f : -1.f;
+  float sign_radius = (radius > 0.f) ? 1.f : (radius < 0.f) ? -1.f : 0.f;
   // absolute radius
   float abs_radius = fabsf(radius);
 #if NAV_HYBRID_LIMIT_CIRCLE_RADIUS

@@ -675,7 +675,11 @@ void vect_bound_nd(float vect[], float bound, int n) {
 void acc_body_bound(struct FloatVect2* vect, float bound) {
   int n = 2;
   float v[2] = {vect->x, vect->y};
+  float sign_v0 = (v[0] > 0.f) ? 1.f : (v[0] < 0.f) ? -1.f : 0.f;
+  float sign_v1 = (v[1] > 0.f) ? 1.f : (v[1] < 0.f) ? -1.f : 0.f;
   float norm = float_vect_norm(v,n);
+  v[0] = fabsf(v[0]);
+  v[1] = fabsf(v[1]);
   norm = positive_non_zero(norm);
   if((norm-bound) > FLT_EPSILON) {
     v[0] = Min(v[0], bound);
@@ -683,8 +687,8 @@ void acc_body_bound(struct FloatVect2* vect, float bound) {
     acc_b_y_2 = positive_non_zero(acc_b_y_2);
     v[1] = sqrtf(acc_b_y_2);
   }
-  vect->x = v[0];
-  vect->y = v[1];
+  vect->x = sign_v0*v[0];
+  vect->y = sign_v1*v[1];
 }
 
 /** @brief Calculate velocity limit based on acceleration limit */
@@ -1976,11 +1980,6 @@ bool autopilot_in_flight_end_detection(bool motors_on UNUSED) {
 
 void reshape_wind(void)
 {
-  if (rotwing_state.meas_skew_angle_deg > 85.0){
-    force_forward = true;
-  } else {
-    force_forward = false;
-  }
   float psi = eulers_zxy.psi;
   float cpsi = cosf(psi);
   float spsi = sinf(psi);
@@ -1997,14 +1996,12 @@ void reshape_wind(void)
   VECT2_DIFF(des_as_NE, NT_v_NE, windspeed); // Desired airspeed in North and East frame
   float norm_des_as = FLOAT_VECT2_NORM(des_as_NE);
   gi_unbounded_airspeed_sp = norm_des_as;
-  // Check if some minimum airspeed is desired (e.g. to prevent stall)
-  // if (norm_des_as < min_as) {
-  //    norm_des_as = min_as;
-  // }
+  //Check if some minimum airspeed is desired (e.g. to prevent stall)
+  if (norm_des_as < min_as) {
+     norm_des_as = min_as;
+  }
   nav_target_new[0] = NT_v_NE.x;
   nav_target_new[1] = NT_v_NE.y;
-  printf("max as: %f\n", max_as);
-  printf("min as: %f\n", min_as);
   // if the desired airspeed is larger than the max airspeed or we are in force forward reshape gs des to cancel wind and fly at max airspeed
   if ((norm_des_as > max_as)||(force_forward)){
     //printf("reshaping wind\n");
@@ -2030,8 +2027,6 @@ void reshape_wind(void)
   norm_des_as = FLOAT_VECT2_NORM(des_as_NE); // Recalculate norm of desired airspeed
   des_as_B.x  = norm_des_as; // Desired airspeed in body x frame
   des_as_B.y  = 0.0; // Desired airspeed in body y frame
-  printf("norm_des_as: %f\n", norm_des_as);
-  printf("des_as_B.x: %f, des_as_B.y: %f\n", des_as_B.x, des_as_B.y);
   if (((airspeed > ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD) && (norm_des_as > (ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD+2.0f)))|| (force_forward)){
     float delta_psi = atan2f(des_as_NE.y, des_as_NE.x) - psi; 
     FLOAT_ANGLE_NORMALIZE(delta_psi);
