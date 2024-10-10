@@ -99,7 +99,7 @@ float skew_meas = 0.0;
 static void wing_position_cb(uint8_t sender_id UNUSED, struct act_feedback_t *pos_msg, uint8_t num_act)
 {
   for (int i=0; i<num_act; i++){
-    if (pos_msg[i].set.position && (pos_msg[i].idx == COMMAND_ROT_MECH))
+    if (pos_msg[i].set.position && (pos_msg[i].idx == SERVO_ROTATION_MECH_IDX))
     {
       skew_meas = 0.5 * M_PI - pos_msg[i].position;
       Bound(skew_meas, 0, 0.5 * M_PI);
