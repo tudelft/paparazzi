@@ -430,6 +430,7 @@ int main(int ac, const char *av[]) {
         std::cout << "Falcon Manager failed relative beacon setup" << std::endl;
         return 1;
     }
+    
     // Start tracking
     std::cout << "TrackingMode RelativeBeacon" << std::endl;
     falconManager->setTrackingMode(TrackingMode::RelativeBeacon);

@@ -51,9 +51,8 @@ struct outer_loop_output myouter_loop_output;
 
 pthread_mutex_t mutex_am7, mutex_optimizer_input, mutex_outer_loop_output;
 
-int verbose_sixdof_com = 0;
-int verbose_sixdof_position = 0;
-int verbose_connection = 1;
+int verbose_sixdof = 0;
+int verbose_connection = 0;
 int verbose_outer_loop = 0; 
 int verbose_inner_loop = 0;
 int verbose_runtime = 0; 
@@ -73,12 +72,13 @@ struct marker_detection_t aruco_detection;
 pthread_mutex_t mutex_aruco;
 
 //SIXDOF VARIABLES: [default]
-int desired_sixdof_mode = 1; //1 -->rel beacon pos; 2 -->rel beacon angle; 3-->sixdof mode. Default is 1. 
+int desired_sixdof_mode = 3; //1 -->rel beacon pos; 2 -->rel beacon angle; 3-->sixdof mode. Default is 1. 
 int beacon_tracking_id = 1640; 
 float max_tolerance_variance_sixdof = 1.0f; //meters
 int current_sixdof_mode; 
 struct marker_detection_t sixdof_detection;
 pthread_mutex_t mutex_sixdof;
+double last_ping_time_sixdof = 0.0;
 
 // Transpose an array from body reference frame to earth reference frame
 void from_body_to_earth(float *out_array, const float *in_array, float Phi, float Theta, float Psi){
@@ -1133,9 +1133,9 @@ void* third_thread() //Run the outer loop of the optimization code
     double current_accelerations[6] = {(double) mydata_in_optimizer_copy.modeled_ax_filtered,
                                        (double) mydata_in_optimizer_copy.modeled_ay_filtered,
                                        (double) mydata_in_optimizer_copy.modeled_az_filtered,
-                                       (double) mydata_in_optimizer_copy.modeled_p_dot_filtered,
-                                       (double) mydata_in_optimizer_copy.modeled_q_dot_filtered,
-                                       (double) mydata_in_optimizer_copy.modeled_r_dot_filtered};
+                                       (double) 0.0f,
+                                       (double) 0.0f,
+                                       (double) 0.0f};
 
     double induced_failure =(double) mydata_in_optimizer_copy.failure_mode;
 
@@ -1186,9 +1186,13 @@ void* third_thread() //Run the outer loop of the optimization code
 
     //Replace the values of the pseudo control variables if the single loop controller is active:
     if(mydata_in_optimizer_copy.single_loop_controller > 0.5f){
+      //Assign the angular pseudo control variables and the modeled angular accelerations:
       dv[3] = (double) mydata_in_optimizer_copy.pseudo_control_p_dot;
       dv[4] = (double) mydata_in_optimizer_copy.pseudo_control_q_dot;
       dv[5] = (double) mydata_in_optimizer_copy.pseudo_control_r_dot;
+      current_accelerations[3] = (double) mydata_in_optimizer_copy.modeled_p_dot_filtered;
+      current_accelerations[4] = (double) mydata_in_optimizer_copy.modeled_q_dot_filtered;
+      current_accelerations[5] = (double) mydata_in_optimizer_copy.modeled_r_dot_filtered;
     }   
 
     //if verbose_outer_loop is set to 1, print the input variables:
@@ -1957,7 +1961,20 @@ void* fourth_thread() //Run the inner loop of the optimization code
     struct marker_detection_t sixdof_detection_copy;
     pthread_mutex_lock(&mutex_sixdof);
     memcpy(&sixdof_detection_copy, &sixdof_detection, sizeof(struct marker_detection_t));
+    double last_ping_time_sixdof_local = last_ping_time_sixdof; 
     pthread_mutex_unlock(&mutex_sixdof);
+
+    //Compare the time of the last ping with the current time to check if the system is still alive:
+    struct timespec ts; 
+    clock_gettime(CLOCK_BOOTTIME, &ts);
+    double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9; 
+    if((current_timestamp - last_ping_time_sixdof_local) > 3.0f){
+      //If the system does not communicate anything for more than 3 seconds, set the system status to -1.
+      sixdof_detection_copy.system_status = -1; 
+      if(verbose_sixdof){
+        fprintf(stderr,"Sixdof system is not communicating or it is inoperative. \n");
+      }
+    }
 
     myam7_data_out_copy.sixdof_detection_timestamp = sixdof_detection_copy.timestamp_detection;
     myam7_data_out_copy.sixdof_NED_pos_x = sixdof_detection_copy.NED_pos_x;
@@ -1997,11 +2014,12 @@ static void sixdof_current_mode_callback(IvyClientPtr app, void *user_data, int 
   else{
     double timestamp_d = atof(argv[0]); 
     current_sixdof_mode = (int) atof(argv[1]); 
-    if(verbose_sixdof_com){
+    if(verbose_sixdof){
       fprintf(stderr,"Received SIXDOF_SYSTEM_CURRENT_MODE - Timestamp = %.5f, current_mode = %d; \n",timestamp_d,current_sixdof_mode);
     }
     pthread_mutex_lock(&mutex_sixdof);
-    int desired_sixdof_mode_local = desired_sixdof_mode; 
+    int desired_sixdof_mode_local = desired_sixdof_mode;
+    last_ping_time_sixdof = timestamp_d;  
     pthread_mutex_unlock(&mutex_sixdof);
     //1 -->rel beacon pos; 2 -->rel beacon angle; 3-->sixdof mode. Default is 1. 
     if(current_sixdof_mode != desired_sixdof_mode_local){
@@ -2024,7 +2042,7 @@ static void sixdof_beacon_pos_callback(IvyClientPtr app, void *user_data, int ar
     beacon_rel_pos[0] = (float) atof(argv[2]); 
     beacon_rel_pos[1] = (float) atof(argv[3]); 
     beacon_rel_pos[2] = (float) atof(argv[4]); 
-    if(verbose_sixdof_com){
+    if(verbose_sixdof){
       fprintf(stderr,"Received beacon position - Timestamp = %.5f, ID = %d; Posx = %.3f Posy = %.3f; Posz = %.3f; \n",timestamp_d,beacon_id,beacon_rel_pos[0],beacon_rel_pos[1],beacon_rel_pos[2]);
     }
 
@@ -2055,15 +2073,13 @@ static void sixdof_beacon_pos_callback(IvyClientPtr app, void *user_data, int ar
 
       //Copy absolute position to 
       struct marker_detection_t sixdof_detection_copy; 
-
-      gettimeofday(&sixdof_time, NULL); 
-      sixdof_detection_copy.timestamp_detection = (sixdof_time.tv_sec*1e6 - starting_time_program_execution.tv_sec*1e6 + sixdof_time.tv_usec - starting_time_program_execution.tv_usec)*1e-6;
+      sixdof_detection_copy.timestamp_detection = timestamp_d;
       sixdof_detection_copy.NED_pos_x = beacon_absolute_ned_pos[0]; 
       sixdof_detection_copy.NED_pos_y = beacon_absolute_ned_pos[1];  
       sixdof_detection_copy.NED_pos_z  = beacon_absolute_ned_pos[2];  
       sixdof_detection_copy.system_status = (int8_t) current_sixdof_mode;
       
-      if(verbose_sixdof_position){
+      if(verbose_sixdof){
         printf("Sixdof timestamp = %f \n", sixdof_detection_copy.timestamp_detection); 
         printf("Sixdof NED pos_x = %f \n",(float) sixdof_detection_copy.NED_pos_x ); 
         printf("Sixdof NED pos_y = %f \n",(float) sixdof_detection_copy.NED_pos_y ); 
@@ -2094,7 +2110,7 @@ static void sixdof_beacon_angle_callback(IvyClientPtr app, void *user_data, int 
     float YAngle_deg = atof(argv[3]); 
     float Intensity = atof(argv[4]); 
     float Width = atof(argv[5]); 
-    if(verbose_sixdof_com){
+    if(verbose_sixdof){
       fprintf(stderr,"Received beacon relative angle - Timestamp = %.5f, ID = %d; XAngle_deg = %.3f YAngle_deg = %.3f; Intensity = %.3f; Width = %.3f; \n",timestamp_d,beacon_id,XAngle_deg,YAngle_deg,Intensity,Width);
     }
   }
@@ -2121,7 +2137,7 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
     float var_theta = atof(argv[11]); 
     float var_psi = atof(argv[12]);  
 
-    if(verbose_sixdof_com){
+    if(verbose_sixdof){
       fprintf(stderr,"Received sixdof packet - Timestamp = %.5f, X_pos = %.3f, Y_pos = %.3f, Z_pos = %.3f, Phi = %.3f, Theta = %.3f, Psi = %.3f, var_x = %.3f, var_y = %.3f, var_z = %.3f, var_phi = %.3f, var_theta = %.3f, var_psi = %.3f;\n",timestamp_d,X_pos,Y_pos,Z_pos,Phi_rad*180/M_PI,Theta_rad*180/M_PI,Psi_rad*180/M_PI,var_x,var_y,var_z,var_phi,var_theta,var_psi);
     }
 
@@ -2145,15 +2161,20 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
         beacon_absolute_ned_pos[i] += UAV_NED_pos[i]; 
       }
 
+      //Based on the euler angles, determine the relative euler angles of the target:
+
       //Copy absolute position to sixdof struct
       struct marker_detection_t sixdof_detection_copy; 
       sixdof_detection_copy.timestamp_detection = timestamp_d;
       sixdof_detection_copy.NED_pos_x = beacon_absolute_ned_pos[0]; 
       sixdof_detection_copy.NED_pos_y = beacon_absolute_ned_pos[1];  
-      sixdof_detection_copy.NED_pos_z  = beacon_absolute_ned_pos[2];  
+      sixdof_detection_copy.NED_pos_z  = beacon_absolute_ned_pos[2]; 
+      sixdof_detection_copy.relative_phi_rad = Phi_rad;
+      sixdof_detection_copy.relative_theta_rad = Theta_rad;
+      sixdof_detection_copy.relative_psi_rad = Psi_rad;
       sixdof_detection_copy.system_status = (int8_t) current_sixdof_mode;
       
-      if(verbose_sixdof_position){
+      if(verbose_sixdof){
         printf("Sixdof timestamp = %f \n", sixdof_detection_copy.timestamp_detection); 
         printf("Sixdof NED pos_x = %f \n",(float) sixdof_detection_copy.NED_pos_x ); 
         printf("Sixdof NED pos_y = %f \n",(float) sixdof_detection_copy.NED_pos_y ); 
@@ -2161,6 +2182,10 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
         printf("Sixdof BODY pos_x = %f \n",(float) local_pos_target_body_rf[0] ); 
         printf("Sixdof BODY pos_y = %f \n",(float) local_pos_target_body_rf[1] ); 
         printf("Sixdof BODY pos_z  = %f \n \n",(float) local_pos_target_body_rf[2] ); 
+        //Add relative angles: 
+        printf("Sixdof Phi = %f \n",(float) Phi_rad*180/M_PI );
+        printf("Sixdof Theta = %f \n",(float) Theta_rad*180/M_PI );
+        printf("Sixdof Psi = %f \n",(float) Psi_rad*180/M_PI );
       }
 
       pthread_mutex_lock(&mutex_sixdof);

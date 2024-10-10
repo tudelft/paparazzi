@@ -18,6 +18,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+
+#include <Eigen/Geometry>
+#include <Eigen/Dense>
+#include <cmath>
+
 using namespace Sds::DroneSDK;
 
 ConfigRelativeBeacon config_rel_beacon; // use defaults
@@ -66,6 +71,44 @@ int msg_id_fov = 1, msg_id_rel_pos = 2;
 
 pthread_mutex_t mutex_ivy_bus = PTHREAD_MUTEX_INITIALIZER, mutex_logger = PTHREAD_MUTEX_INITIALIZER;
 
+// Function to convert a quaternion to Euler angles
+static void quaternion_to_euler(float q[4], float euler[3]) {
+    // Extract the values from the quaternion
+    float qw = q[0];
+    float qx = q[1];
+    float qy = q[2];
+    float qz = q[3];
+
+    // Calculate the Euler angles from the quaternion
+    float ysqr = qy * qy;
+
+    // Pitch (x-axis rotation) -> was Roll
+    float t0 = +2.0 * (qw * qx + qy * qz);
+    float t1 = +1.0 - 2.0 * (qx * qx + ysqr);
+    euler[1] = atan2f(t0, t1); // Pitch
+    // Adjust Pitch by subtracting 90 degrees (π/2)
+    euler[1] -= M_PI_2;
+    // Clamp between pi/2 and -pi/2: 
+    euler[1] = fmaxf(-M_PI_2, fminf(M_PI_2, euler[1]));
+
+    // Roll (y-axis rotation) -> was Pitch, with sign swapped
+    float t2 = +2.0 * (qw * qy - qz * qx);
+    t2 = fmaxf(-1.0, fminf(1.0, t2)); // Clamp to prevent NaN
+    euler[0] = -asinf(t2); // Roll with inverted sign
+
+    // Yaw (z-axis rotation) with offset adjustment
+    float t3 = +2.0 * (qw * qz + qx * qy);
+    float t4 = +1.0 - 2.0 * (ysqr + qz * qz);
+    euler[2] = atan2f(t3, t4) - M_PI_2; // Adjust yaw by -90 degrees (π/2)
+
+    // Normalize yaw to the range [-π, π]
+    if (euler[2] < -M_PI) {
+        euler[2] += 2.0 * M_PI;
+    } else if (euler[2] > M_PI) {
+        euler[2] -= 2.0 * M_PI;
+    }
+}
+
 // Function to manage the ivy bus communication going out: 
 void ivy_bus_out_handle() {
     while(true){
@@ -79,7 +122,7 @@ void ivy_bus_out_handle() {
             pthread_mutex_unlock(&mutex_ivy_bus); 
 
             if(send_values_on_ivy){
-                IvySendMsg("SIXDOF_TRACKING %f %f %f %f %f %f %f %f %f %f %f %f %f", my_sixdof_packet_local.timestamp_position, my_sixdof_packet_local.x_body_pos, my_sixdof_packet_local.y_body_pos, my_sixdof_packet_local.z_body_pos, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var, my_sixdof_packet_local.x_body_pos_var, my_sixdof_packet_local.y_body_pos_var, my_sixdof_packet_local.z_body_pos_var, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var);
+                IvySendMsg("SIXDOF_TRACKING %f %f %f %f %f %f %f %f %f %f %f %f %f", my_sixdof_packet_local.timestamp_position, my_sixdof_packet_local.x_body_pos, my_sixdof_packet_local.y_body_pos, my_sixdof_packet_local.z_body_pos, my_sixdof_packet_local.relative_phi_rad, my_sixdof_packet_local.relative_theta_rad, my_sixdof_packet_local.relative_psi_rad, my_sixdof_packet_local.x_body_pos_var, my_sixdof_packet_local.y_body_pos_var, my_sixdof_packet_local.z_body_pos_var, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var);
             }
                 
             if(verbose_tx){
@@ -126,33 +169,6 @@ void ivy_bus_out_handle() {
         
         std::this_thread::sleep_for(std::chrono::microseconds(5)); // Sleep for 5 microseconds to avoid overloading the CPU 
     } 
-}
-
-// Function to convert quaternion to 3-2-1 Euler angles
-static void quaternion_to_euler(float q[4], float euler[3]) {
-    // Extract the values from the quaternion
-    float qw = q[0];
-    float qx = q[1];
-    float qy = q[2];
-    float qz = q[3];
-
-    // Calculate the Euler angles from the quaternion
-    float ysqr = qy * qy;
-
-    // Roll (x-axis rotation)
-    float t0 = +2.0 * (qw * qx + qy * qz);
-    float t1 = +1.0 - 2.0 * (qx * qx + ysqr);
-    euler[2] = atan2f(t0, t1); // Roll
-
-    // Pitch (y-axis rotation)
-    float t2 = +2.0 * (qw * qy - qz * qx);
-    t2 = fmaxf(-1.0, fminf(1.0, t2)); // Clamp to prevent NaN
-    euler[1] = asinf(t2); // Pitch
-
-    // Yaw (z-axis rotation)
-    float t3 = +2.0 * (qw * qz + qx * qy);
-    float t4 = +1.0 - 2.0 * (ysqr + qz * qz);
-    euler[0] = atan2f(t3, t4); // Yaw
 }
 
 static void ivy_set_rel_beacon_mode(IvyClientPtr app, void *user_data, int argc, char *argv[])
@@ -368,21 +384,21 @@ int main(int ac, const char *av[]) {
         clock_gettime(CLOCK_BOOTTIME, &ts);
         double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9;
         
-        float quat_array[4] = {(float) sd.qw, (float) sd.qz, (float) sd.qx, (float) sd.qy};
+        float quat_array[4] = {(float) sd.qw, (float) sd.qx, (float) sd.qy, (float) sd.qz};
         float euler_angles[3];
         quaternion_to_euler(quat_array, euler_angles);
 
         static struct register_sixdof_packet my_sixdof_packet_local; 
 
         my_sixdof_packet_local.timestamp_position = current_timestamp; 
-        my_sixdof_packet_local.x_body_pos = (float) sd.y; 
-        my_sixdof_packet_local.y_body_pos = (float) -sd.x; 
+        my_sixdof_packet_local.x_body_pos = (float) -sd.x; 
+        my_sixdof_packet_local.y_body_pos = (float) -sd.y; 
         my_sixdof_packet_local.z_body_pos = (float) -sd.z; 
         my_sixdof_packet_local.relative_phi_rad = (float) euler_angles[0];
         my_sixdof_packet_local.relative_theta_rad = (float) euler_angles[1];
         my_sixdof_packet_local.relative_psi_rad = (float) euler_angles[2];
-        my_sixdof_packet_local.x_body_pos_var = (float) sd.var_z; 
-        my_sixdof_packet_local.y_body_pos_var = (float) sd.var_x; 
+        my_sixdof_packet_local.x_body_pos_var = (float) sd.var_x; 
+        my_sixdof_packet_local.y_body_pos_var = (float) sd.var_y; 
         my_sixdof_packet_local.z_body_pos_var = (float) sd.var_y; 
         my_sixdof_packet_local.phi_rad_var = (float) -1;
         my_sixdof_packet_local.theta_rad_var = (float) -1;
@@ -392,28 +408,6 @@ int main(int ac, const char *av[]) {
         memcpy(&my_sixdof_packet, &my_sixdof_packet_local, sizeof(struct register_sixdof_packet));
         sixdof_msg_available = 1;
         pthread_mutex_unlock(&mutex_ivy_bus); 
-
-
-        // if(verbose_tx){
-        //     std::cout << std::fixed << std::setprecision(5)
-        //             << "Timestamp: " << current_timestamp << std::setprecision(3)
-        //             << " X: " << sd.z 
-        //             << " Y: " << sd.x 
-        //             << " Z: " << sd.y 
-        //             << " Phi_rel_deg : " << euler_angles[0]*180/M_PI 
-        //             << " Theta_rel_deg: " << euler_angles[1]*180/M_PI 
-        //             << " Psi_rel_deg: " << euler_angles[2]*180/M_PI                      
-        //             << " Qw: " << sd.qw 
-        //             << " Qx: " << sd.qz 
-        //             << " Qy: " << sd.qx 
-        //             << " Qz: " << sd.qy 
-        //             << " Var_x: " << sd.var_x 
-        //             << " Var_y: " << sd.var_y 
-        //             << " Var_z: " << sd.var_z 
-        //             << " Var_h: " << sd.var_h
-        //             << " Var_p: " << sd.var_p
-        //             << " Var_r: " << sd.var_r << std::endl;
-        // }
     });
 
     // Initialize network, this can only be done once

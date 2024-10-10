@@ -35,12 +35,10 @@
 #define filter_cutoff_frequency_init 12.0 //rad/s - second order butterworth filter
 #define filter_cutoff_first_order_pqr_init 20.0 //rad/s - first order filter
 
-//Define the baudrate for the module and the starting byte 
+//Define the baudrate for the module, the starting byte and the maximum frequency of the message output
 #define START_BYTE 0x9B
 #define BAUDRATE_AM7 921600
-
-//Define the maximum message output frequency
-#define MAX_FREQUENCY_MSG_OUT 550
+#define MAX_FREQUENCY_MSG_OUT 450
 
 // Define the baudrate of the TF mini lidar sensor
 #define BAUDRATE_TF_MINI 115200
@@ -97,12 +95,18 @@ struct  __attribute__((__packed__)) am7_data_out {
     float aruco_NED_pos_x; //meters
     float aruco_NED_pos_y; //meters
     float aruco_NED_pos_z; //meters
+    int16_t aruco_relative_phi; //degrees * 100
+    int16_t aruco_relative_theta; //degrees * 100
+    int16_t aruco_relative_psi; //degrees * 100
     int8_t aruco_system_status; //System status
     //Sixdof infos: 
     float sixdof_detection_timestamp; //Detection timestamp
     float sixdof_NED_pos_x; //meters
     float sixdof_NED_pos_y; //meters
     float sixdof_NED_pos_z; //meters
+    int16_t sixdof_relative_phi; //degrees * 100
+    int16_t sixdof_relative_theta; //degrees * 100
+    int16_t sixdof_relative_psi; //degrees * 100
     int8_t sixdof_system_status; //System status
     //Rolling_msg
     float rolling_msg_out;
@@ -171,6 +175,9 @@ struct __attribute__((__packed__)) marker_detection_t {
     float NED_pos_x; 
     float NED_pos_y;
     float NED_pos_z;
+    float relative_phi_rad;
+    float relative_theta_rad;
+    float relative_psi_rad;
     int8_t system_status; 
 };
 
@@ -269,6 +276,18 @@ struct __attribute__((__packed__)) data_in_optimizer {
     float modeled_q_dot_filtered;
     float modeled_r_dot_filtered;
 
+    //Motor prop model: 
+    float power_Cd_0;
+    float power_Cd_a;
+    float prop_R;
+    float prop_Cd_0;
+    float prop_Cl_0;
+    float prop_Cd_a;
+    float prop_Cl_a;
+    float prop_delta;
+    float prop_sigma;
+    float prop_theta;
+
     //Non-real-time data:
     float K_p_T;
     float K_p_M;
@@ -347,21 +366,12 @@ struct __attribute__((__packed__)) data_in_optimizer {
     float filter_cutoff_frequency_telem;
     float max_airspeed;
     float vert_acc_margin;
-    float power_Cd_0;
-    float power_Cd_a;
-    float prop_R;
-    float prop_Cd_0;
-    float prop_Cl_0;
-    float prop_Cd_a;
-    float prop_Cl_a;
-    float prop_delta;
-    float prop_sigma;
-    float prop_theta;
     float use_u_init_outer_loop;
     float use_u_init_inner_loop;
     float single_loop_controller; 
     float use_new_aero_model; 
     float use_received_ang_ref_in_inner_loop; 
+
 };
     
 #endif
