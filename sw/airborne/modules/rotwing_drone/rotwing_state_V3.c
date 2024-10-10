@@ -356,6 +356,7 @@ void rotwing_state_periodic(void)
 #else
   rotwing_state.skew_cmd = servo_pprz_cmd;
 #endif
+  commands[COMMAND_ROT_MECH] = rotwing_state.skew_cmd;
 
 
   /* Add simulation feedback for the skewing and RPM */

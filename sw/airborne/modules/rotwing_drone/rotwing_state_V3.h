@@ -89,7 +89,7 @@ struct rotwing_demo_t {
 extern struct rotwing_demo_t rotwing_demo;
 void rotwing_state_init(void);
 void rotwing_state_periodic(void);
-bool rotwing_state_hover_motors_running(void);
+extern bool rotwing_state_hover_motors_running(void);
 bool rotwing_state_pusher_motor_running(void);
 bool rotwing_state_skew_angle_valid(void);
 extern void rotwing_state_force_skew_off(void);

@@ -1700,7 +1700,7 @@ void G1G2_oneloop(int ctrl_type) {
       if (airspeed_filt.o[0] < ELE_MIN_AS && i == COMMAND_ELEVATOR){
         EFF_MAT_G[j][i] = 0.0;
       }
-      if (rotwing_state.meas_skew_angle_deg > 85.0 && i < 4){
+      if (!rotwing_state_hover_motors_running() && i < 4){
         EFF_MAT_G[j][i] = 0.0;
       }
       if (ctrl_off && i < 4  && j == 5){ //hack test

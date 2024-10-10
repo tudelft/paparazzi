@@ -99,11 +99,7 @@
         </module>
 
         <module name="ground_detect"/>
-        <module name="rotwing_state_V3">
-             <!-- <define name = "USE_ROTMECH_VIRTUAL" value = "TRUE"/>
-             <define name = "ROTMECH_DYN"         value = "3.0"/>
-             <define name = "RW_USE_MODULES_V2"   value="TRUE"/> -->
-        </module>
+        <module name="rotwing_state_V3"/>
         <module name="agl_dist"/>
     </firmware>
 
@@ -202,6 +198,7 @@
         <define name="SKEW_REF_MODEL_P_GAIN"    value="0.001"/> <!-- Skewing reference model proportional gain -->
         <define name="SKEW_REF_MODEL_D_GAIN"    value="0.003"/> <!-- Skewing reference model differential gain -->
         <define name="SKEW_REF_MODEL_MAX_SPEED" value="20"/>    <!-- Maximum rotational skewing speed bound for the reference model -->
+        <define name="ROTWING_FW_SKEW_ANGLE"    value="85"/> 
     </section>
     <section NAME="MISC">
         <!-- Voltage and current measurements -->
@@ -280,26 +277,6 @@
         <define name="IXX_WING"              value="0.08099"/>
         <define name="IYY_WING"              value="0.1949"/>
         <define name="M"                     value="6.67"/>
-
-        <define name="DM_DPPRZ_HOVER_PITCH"  value="0.001537287553553"/>
-        <define name="DM_DPPRZ_HOVER_ROLL"   value="{5.86747416762564,0.001936126151564}"/>
-
-        <define name="HOVER_ROLL_PITCH_COEF" value="{0.001418491625685,-0.000649367806611}"/>
-        <define name="HOVER_ROLL_ROLL_COEF"  value="{-0.0000839259143513,-0.0000478083}"/>
-
-        <define name="K_ELEVATOR"            value="{0.4603,-4.81466,-28.8464}"/>
-        <define name="K_RUDDER"              value="{-26.1434,-0.336403,-5.9}"/>
-        <define name="K_AILERON"             value="2.777647188"/>
-        <define name="K_FLAPERON"            value="2.0439"/>
-        <define name="K_PUSHER"              value="{0.007777,-0.67521}"/>
-
-        <define name="K_ELEVATOR_DEFLECTION" value="{50.0,-0.0063}"/>
-        <define name="D_RUDDER_D_PPRZ"       value="-0.0018"/>
-        <define name="K_RPM_PPRZ_PUSHER"     value="{-116.518697071689,1.17051409813432,-0.00002580110593734}"/>
-
-        <define name="K_LIFT_WING"           value="{-0.335811392,-0.615611143}"/>
-        <define name="K_LIFT_FUSELAGE"       value="-0.050653927"/>
-        <define name="K_LIFT_TAIL"           value="-0.101691751"/>
     </section>
 
     <section name="AUTOPILOT">
