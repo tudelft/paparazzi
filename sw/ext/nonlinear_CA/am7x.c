@@ -1426,7 +1426,6 @@ void* third_thread() //Run the outer loop of the optimization code
 
 }
 
-
 void* fourth_thread() //Run the inner loop of the optimization code 
 {
 
@@ -2055,8 +2054,7 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
 
       //Copy absolute position to sixdof struct
       struct marker_detection_t sixdof_detection_copy; 
-      gettimeofday(&sixdof_time, NULL); 
-      sixdof_detection_copy.timestamp_detection = (sixdof_time.tv_sec*1e6 - starting_time_program_execution.tv_sec*1e6 + sixdof_time.tv_usec - starting_time_program_execution.tv_usec)*1e-6;
+      sixdof_detection_copy.timestamp_detection = timestamp_d;
       sixdof_detection_copy.NED_pos_x = beacon_absolute_ned_pos[0]; 
       sixdof_detection_copy.NED_pos_y = beacon_absolute_ned_pos[1];  
       sixdof_detection_copy.NED_pos_z  = beacon_absolute_ned_pos[2];  
