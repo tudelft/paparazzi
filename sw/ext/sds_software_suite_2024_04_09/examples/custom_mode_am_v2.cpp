@@ -19,10 +19,6 @@
 #include <sys/types.h>
 
 
-#include <Eigen/Geometry>
-#include <Eigen/Dense>
-#include <cmath>
-
 using namespace Sds::DroneSDK;
 
 ConfigRelativeBeacon config_rel_beacon; // use defaults
