@@ -38,7 +38,7 @@
 //Define the baudrate for the module, the starting byte and the maximum frequency of the message output
 #define START_BYTE 0x9B
 #define BAUDRATE_AM7 921600
-#define MAX_FREQUENCY_MSG_OUT 450
+#define MAX_FREQUENCY_MSG_OUT 500
 
 // Define the baudrate of the TF mini lidar sensor
 #define BAUDRATE_TF_MINI 115200
@@ -264,7 +264,17 @@ struct __attribute__((__packed__)) data_in_optimizer {
     float p_dot_state_ec;
     float q_dot_state_ec;
     float r_dot_state_ec;
-    
+    float theta_gain;
+    float phi_gain;
+    float p_body_gain;
+    float q_body_gain;
+    float r_body_gain;
+    float k_d_airspeed;
+    float min_theta_hard;
+    float max_theta_hard;
+    float min_phi_hard;
+    float max_phi_hard;
+
     //Failure: 
     float failure_mode; 
 
@@ -352,16 +362,7 @@ struct __attribute__((__packed__)) data_in_optimizer {
     float desired_el_value;
     float desired_az_value;
     float desired_ailerons_value;
-    float theta_gain;
-    float phi_gain;
-    float p_body_gain;
-    float q_body_gain;
-    float r_body_gain;
-    float k_d_airspeed;
-    float min_theta_hard;
-    float max_theta_hard;
-    float min_phi_hard;
-    float max_phi_hard;
+
     float disable_acc_decrement_inner_loop;
     float filter_cutoff_frequency_telem;
     float max_airspeed;

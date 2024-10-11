@@ -3,6 +3,9 @@
 #include "MATLAB_generated_files/Nonlinear_controller_w_ail_basic_aero_outer_loop.h"
 #include "MATLAB_generated_files/Nonlinear_controller_w_ail_basic_aero_inner_loop.h"
 #include "MATLAB_generated_files/compute_acc_control_rf_basic.h"
+#include "MATLAB_generated_files/compute_acc_nonlinear_control_rf_w_ailerons_v2_new_aero.h"
+#include "MATLAB_generated_files/Nonlinear_controller_w_ail_new_aero_outer_loop.h"
+#include "MATLAB_generated_files/Nonlinear_controller_w_ail_new_aero_inner_loop.h"
 #include "MATLAB_generated_files/rt_nonfinite.h"
 #include <string.h>
 #include <glib.h>
@@ -52,7 +55,7 @@ struct outer_loop_output myouter_loop_output;
 pthread_mutex_t mutex_am7, mutex_optimizer_input, mutex_outer_loop_output;
 
 int verbose_sixdof = 0;
-int verbose_connection = 0;
+int verbose_connection = 1;
 int verbose_outer_loop = 0; 
 int verbose_inner_loop = 0;
 int verbose_runtime = 0; 
@@ -691,22 +694,38 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     //////////////////////////////////////////////////////////////////////////////////////////Compute modeled accellerations:
     float K_p_T_airspeed_corrected = K_p_T * (1 - V*K_t_airspeed);
     float K_p_M_airspeed_corrected = K_p_M * (1 - V*K_t_airspeed);
-    // double gain_motor = (max_omega - min_omega)/2;
-    // double Omega_1_scaled = Omega_1 / gain_motor;
-    // double Omega_2_scaled = Omega_2 / gain_motor;
-    // double V_scaled = V/max_airspeed;
+    double gain_motor = (max_omega - min_omega)/2;
+    double Omega_1_scaled = Omega_1 / gain_motor;
+    double Omega_2_scaled = Omega_2 / gain_motor;
+    double V_scaled = V/max_airspeed;
     double modeled_accelerations[6];
 
-    compute_acc_control_rf_basic(
-            Beta, CL_aileron, Cd_zero, Cl_alpha,
-            Cm_zero, Cm_alpha, I_xx, I_yy, I_zz,
-            K_Cd, K_p_M_airspeed_corrected, K_p_T_airspeed_corrected, Omega_1, Omega_2,
-            Omega_3, Omega_4, Phi, S, Theta,
-            V, b_1, b_2, b_3, b_4,
-            delta_ailerons, flight_path_angle, g_1, g_2,
-            g_3, g_4, l_1, l_2, l_3, l_4,
-            l_z, m, p, q, r, rho,
-            wing_chord, modeled_accelerations);
+    if(use_new_aero_model  > 0.5f)
+      compute_acc_nonlinear_control_rf_w_ailerons_v2_new_aero(
+              Beta, CL_aileron, Cd_zero, Cl_alpha,
+              Cm_zero, Cm_alpha, I_xx, I_yy, I_zz,
+              K_Cd, Omega_1, Omega_2, Omega_3, Omega_4,
+              Omega_1_scaled, Omega_2_scaled, Phi, S,
+              Theta, V, V_scaled, b_1, b_2, b_3,
+              b_4, delta_ailerons, flight_path_angle, g_1,
+              g_2, g_3, g_4, l_1, l_2, l_3,
+              l_4, l_z, m, p, prop_R, prop_Cd_0,
+              prop_Cl_0, prop_Cd_a, prop_Cl_a, prop_delta,
+              prop_sigma, prop_theta, q, r, rho,
+              wing_span, wing_chord, modeled_accelerations);
+    else{
+      compute_acc_control_rf_basic(
+              Beta, CL_aileron, Cd_zero, Cl_alpha,
+              Cm_zero, Cm_alpha, I_xx, I_yy, I_zz,
+              K_Cd, K_p_M_airspeed_corrected, K_p_T_airspeed_corrected, Omega_1, Omega_2,
+              Omega_3, Omega_4, Phi, S, Theta,
+              V, b_1, b_2, b_3, b_4,
+              delta_ailerons, flight_path_angle, g_1, g_2,
+              g_3, g_4, l_1, l_2, l_3, l_4,
+              l_z, m, p, q, r, rho,
+              wing_chord, modeled_accelerations);
+    }
+
 
     //FILTER VALUES:
     ///////////////////////////////////Reset filters in case we want a different omega than the one inputted initially
@@ -960,6 +979,7 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     mydata_in_optimizer_copy.prop_delta = prop_delta;
     mydata_in_optimizer_copy.prop_sigma = prop_sigma;
     mydata_in_optimizer_copy.prop_theta = prop_theta;
+    mydata_in_optimizer_copy.max_airspeed = max_airspeed;
     mydata_in_optimizer_copy.use_u_init_outer_loop = use_u_init_outer_loop;
     mydata_in_optimizer_copy.use_u_init_inner_loop = use_u_init_inner_loop;
 
@@ -1109,6 +1129,21 @@ void* third_thread() //Run the outer loop of the optimization code
     double approach_mode =(double) mydata_in_optimizer_copy.approach_boolean;
     double aoa_protection_speed =(double) mydata_in_optimizer_copy.aoa_protection_speed;
     double vert_acc_margin =(double) mydata_in_optimizer_copy.vert_acc_margin;
+    double max_airspeed = (double) mydata_in_optimizer_copy.max_airspeed;
+    double power_Cd_0 =(double) mydata_in_optimizer_copy.power_Cd_0;
+    double power_Cd_a =(double) mydata_in_optimizer_copy.power_Cd_a;
+    double prop_R =(double) mydata_in_optimizer_copy.prop_R;
+    double prop_Cd_0 =(double) mydata_in_optimizer_copy.prop_Cd_0;
+    double prop_Cl_0 =(double) mydata_in_optimizer_copy.prop_Cl_0;
+    double prop_Cd_a =(double) mydata_in_optimizer_copy.prop_Cd_a;
+    double prop_Cl_a =(double) mydata_in_optimizer_copy.prop_Cl_a;
+    double prop_delta =(double) mydata_in_optimizer_copy.prop_delta;
+    double prop_sigma =(double) mydata_in_optimizer_copy.prop_sigma;
+    double prop_theta =(double) mydata_in_optimizer_copy.prop_theta;
+    double wing_span =(double) mydata_in_optimizer_copy.wing_span;
+
+    double induced_failure =(double) mydata_in_optimizer_copy.failure_mode;
+
     //ERROR CONTROLLER
     double p_body_current =(double) mydata_in_optimizer_copy.p_state_ec;
     double q_body_current =(double) mydata_in_optimizer_copy.q_state_ec;
@@ -1136,8 +1171,6 @@ void* third_thread() //Run the outer loop of the optimization code
                                        (double) 0.0f,
                                        (double) 0.0f,
                                        (double) 0.0f};
-
-    double induced_failure =(double) mydata_in_optimizer_copy.failure_mode;
 
     //Assign u_init from u_init_outer
     double u_init[NUM_ACT_IN_U_IN]; 
@@ -1286,6 +1319,7 @@ void* third_thread() //Run the outer loop of the optimization code
       printf("approach_mode = %f \n",(float) approach_mode);
       printf("aoa_protection_speed = %f \n",(float) aoa_protection_speed);
       printf("vert_acc_margin = %f \n",(float) vert_acc_margin);
+      printf("max_airspeed = %f \n",(float) max_airspeed);
       printf("p_body_current = %f \n",(float) p_body_current);
       printf("q_body_current = %f \n",(float) q_body_current);
       printf("r_body_current = %f \n",(float) r_body_current);
@@ -1334,53 +1368,101 @@ void* third_thread() //Run the outer loop of the optimization code
       printf("W_dv_5_failure = %f \n",(float) W_dv_5_failure);
       printf("W_dv_6_failure = %f \n",(float) W_dv_6_failure);
       printf("gamma_quadratic_du_failure = %f \n",(float) gamma_quadratic_du_failure);
+      printf("use_new_aero_model = %f \n",(float) mydata_in_optimizer_copy.use_new_aero_model);
     }
 
-
-    Nonlinear_controller_w_ail_basic_aero_outer_loop(
-        K_p_T, K_p_M, m, I_xx, I_yy, I_zz,
-        l_1, l_2, l_3, l_4, l_z, Phi,
-        Theta, Omega_1, Omega_2, Omega_3,
-        Omega_4, b_1, b_2, b_3, b_4, g_1,
-        g_2, g_3, g_4, delta_ailerons,
-        W_act_motor_const, W_act_motor_speed,
-        W_act_tilt_el_const, W_act_tilt_el_speed,
-        W_act_tilt_az_const, W_act_tilt_az_speed,
-        W_act_theta_const, W_act_theta_speed, W_act_phi_const,
-        W_act_phi_speed, W_act_ailerons_const,
-        W_act_ailerons_speed, W_dv_1, W_dv_2, W_dv_3,
-        W_dv_4, W_dv_5, W_dv_6, max_omega,
-        min_omega, max_b, min_b, max_g, min_g,
-        max_theta, min_theta, max_phi,
-        max_delta_ailerons, min_delta_ailerons, dv,
-        p, q, r, Cm_zero, Cl_alpha,
-        Cd_zero, K_Cd, Cm_alpha, CL_aileron, rho,
-        V, S, wing_chord, flight_path_angle,
-        max_alpha, min_alpha, Beta, gamma_quadratic_du,
-        desired_motor_value, desired_el_value,
-        desired_az_value, desired_theta_value,
-        desired_phi_value, desired_ailerons_value,
-        k_alt_tilt_constraint, min_alt_tilt_constraint,
-        lidar_alt_corrected, approach_mode, verbose,
-        aoa_protection_speed, vert_acc_margin, p_body_current,
-        q_body_current, r_body_current, p_dot_current,
-        q_dot_current, r_dot_current, phi_current,
-        theta_current, angular_proportional_gains,
-        angular_derivative_gains, theta_hard_max,
-        theta_hard_min, phi_hard_max, phi_hard_min,
-        k_d_airspeed, des_psi_dot,
-        current_accelerations, u_init,
-        use_u_init, W_act_motor_du, W_act_tilt_el_du,
-        W_act_tilt_az_du, W_act_theta_du, W_act_phi_du,
-        W_act_ailerons_du, gamma_quadratic_du2,
-        induced_failure, W_act_motor_failure,
-        W_act_tilt_el_failure, W_act_tilt_az_failure,
-        W_act_theta_failure, W_act_phi_failure,
-        W_act_ailerons_failure, W_dv_1_failure, W_dv_2_failure,
-        W_dv_3_failure, W_dv_4_failure, W_dv_5_failure,
-        W_dv_6_failure, gamma_quadratic_du_failure, u_out,
-        dv_pqr_dot_target, acc_decrement_aero, residuals, &elapsed_time,
-        &N_iterations, &N_evaluation, &exitflag);
+    if(mydata_in_optimizer_copy.use_new_aero_model > 0.5f){
+      Nonlinear_controller_w_ail_new_aero_outer_loop(
+          m, I_xx, I_yy, I_zz, l_1, l_2,
+          l_3, l_4, l_z, Phi, Theta,
+          Omega_1, Omega_2, Omega_3, Omega_4, b_1,
+          b_2, b_3, b_4, g_1, g_2, g_3,
+          g_4, delta_ailerons, W_act_motor_const,
+          W_act_motor_speed, W_act_tilt_el_const,
+          W_act_tilt_el_speed, W_act_tilt_az_const,
+          W_act_tilt_az_speed, W_act_theta_const,
+          W_act_theta_speed, W_act_phi_const, W_act_phi_speed,
+          W_act_ailerons_const, W_act_ailerons_speed, W_dv_1,
+          W_dv_2, W_dv_3, W_dv_4, W_dv_5, W_dv_6,
+          max_omega, min_omega, max_b, min_b,
+          max_g, min_g, max_theta, min_theta,
+          max_phi, max_delta_ailerons, min_delta_ailerons,
+          dv, p, q, r, Cm_zero,
+          Cl_alpha, Cd_zero, K_Cd, Cm_alpha,
+          CL_aileron, rho, V, S, wing_chord,
+          flight_path_angle, max_alpha, min_alpha, Beta,
+          gamma_quadratic_du, desired_motor_value,
+          desired_el_value, desired_az_value,
+          desired_theta_value, desired_phi_value,
+          desired_ailerons_value, k_alt_tilt_constraint,
+          min_alt_tilt_constraint, lidar_alt_corrected,
+          approach_mode, verbose, aoa_protection_speed,
+          vert_acc_margin, p_body_current, q_body_current,
+          r_body_current, p_dot_current, q_dot_current,
+          r_dot_current, phi_current, theta_current,
+          angular_proportional_gains, angular_derivative_gains,
+          theta_hard_max, theta_hard_min, phi_hard_max,
+          phi_hard_min, k_d_airspeed, des_psi_dot,
+          current_accelerations, u_init,
+          use_u_init, induced_failure, W_act_motor_failure,
+          W_act_tilt_el_failure, W_act_tilt_az_failure,
+          W_act_theta_failure, W_act_phi_failure,
+          W_act_ailerons_failure, W_dv_1_failure, W_dv_2_failure,
+          W_dv_3_failure, W_dv_4_failure, W_dv_5_failure,
+          W_dv_6_failure, gamma_quadratic_du_failure, power_Cd_0,
+          power_Cd_a, prop_R, prop_Cd_0, prop_Cl_0,
+          prop_Cd_a, prop_Cl_a, prop_delta, prop_sigma,
+          prop_theta, max_airspeed, wing_span, u_out,
+          dv_pqr_dot_target, acc_decrement_aero,
+          residuals, &elapsed_time, &N_iterations,
+          &N_evaluation, &exitflag);
+    }
+    else{   
+      Nonlinear_controller_w_ail_basic_aero_outer_loop(
+          K_p_T, K_p_M, m, I_xx, I_yy, I_zz,
+          l_1, l_2, l_3, l_4, l_z, Phi,
+          Theta, Omega_1, Omega_2, Omega_3,
+          Omega_4, b_1, b_2, b_3, b_4, g_1,
+          g_2, g_3, g_4, delta_ailerons,
+          W_act_motor_const, W_act_motor_speed,
+          W_act_tilt_el_const, W_act_tilt_el_speed,
+          W_act_tilt_az_const, W_act_tilt_az_speed,
+          W_act_theta_const, W_act_theta_speed, W_act_phi_const,
+          W_act_phi_speed, W_act_ailerons_const,
+          W_act_ailerons_speed, W_dv_1, W_dv_2, W_dv_3,
+          W_dv_4, W_dv_5, W_dv_6, max_omega,
+          min_omega, max_b, min_b, max_g, min_g,
+          max_theta, min_theta, max_phi,
+          max_delta_ailerons, min_delta_ailerons, dv,
+          p, q, r, Cm_zero, Cl_alpha,
+          Cd_zero, K_Cd, Cm_alpha, CL_aileron, rho,
+          V, S, wing_chord, flight_path_angle,
+          max_alpha, min_alpha, Beta, gamma_quadratic_du,
+          desired_motor_value, desired_el_value,
+          desired_az_value, desired_theta_value,
+          desired_phi_value, desired_ailerons_value,
+          k_alt_tilt_constraint, min_alt_tilt_constraint,
+          lidar_alt_corrected, approach_mode, verbose,
+          aoa_protection_speed, vert_acc_margin, p_body_current,
+          q_body_current, r_body_current, p_dot_current,
+          q_dot_current, r_dot_current, phi_current,
+          theta_current, angular_proportional_gains,
+          angular_derivative_gains, theta_hard_max,
+          theta_hard_min, phi_hard_max, phi_hard_min,
+          k_d_airspeed, des_psi_dot,
+          current_accelerations, u_init,
+          use_u_init, W_act_motor_du, W_act_tilt_el_du,
+          W_act_tilt_az_du, W_act_theta_du, W_act_phi_du,
+          W_act_ailerons_du, gamma_quadratic_du2,
+          induced_failure, W_act_motor_failure,
+          W_act_tilt_el_failure, W_act_tilt_az_failure,
+          W_act_theta_failure, W_act_phi_failure,
+          W_act_ailerons_failure, W_dv_1_failure, W_dv_2_failure,
+          W_dv_3_failure, W_dv_4_failure, W_dv_5_failure,
+          W_dv_6_failure, gamma_quadratic_du_failure, u_out,
+          dv_pqr_dot_target, acc_decrement_aero, residuals, &elapsed_time,
+          &N_iterations, &N_evaluation, &exitflag);
+    }
 
 
     //Set as u_init_outer the u_out for the next iteration: 
@@ -1613,6 +1695,20 @@ void* fourth_thread() //Run the inner loop of the optimization code
     double approach_mode =(double) mydata_in_optimizer_copy.approach_boolean;
     double aoa_protection_speed =(double) mydata_in_optimizer_copy.aoa_protection_speed;
     double vert_acc_margin =(double) mydata_in_optimizer_copy.vert_acc_margin;
+    double disable_acc_decrement_inner_loop =(double) mydata_in_optimizer_copy.disable_acc_decrement_inner_loop;
+
+    double max_airspeed = (double) mydata_in_optimizer_copy.max_airspeed;
+    double power_Cd_0 =(double) mydata_in_optimizer_copy.power_Cd_0;
+    double power_Cd_a =(double) mydata_in_optimizer_copy.power_Cd_a;
+    double prop_R =(double) mydata_in_optimizer_copy.prop_R;
+    double prop_Cd_0 =(double) mydata_in_optimizer_copy.prop_Cd_0;
+    double prop_Cl_0 =(double) mydata_in_optimizer_copy.prop_Cl_0;
+    double prop_Cd_a =(double) mydata_in_optimizer_copy.prop_Cd_a;
+    double prop_Cl_a =(double) mydata_in_optimizer_copy.prop_Cl_a;
+    double prop_delta =(double) mydata_in_optimizer_copy.prop_delta;
+    double prop_sigma =(double) mydata_in_optimizer_copy.prop_sigma;
+    double prop_theta =(double) mydata_in_optimizer_copy.prop_theta;
+    double wing_span =(double) mydata_in_optimizer_copy.wing_span;
 
     double current_accelerations[6] = {(double) mydata_in_optimizer_copy.modeled_ax_filtered,
                                        (double) mydata_in_optimizer_copy.modeled_ay_filtered,
@@ -1620,6 +1716,16 @@ void* fourth_thread() //Run the inner loop of the optimization code
                                        (double) mydata_in_optimizer_copy.modeled_p_dot_filtered,
                                        (double) mydata_in_optimizer_copy.modeled_q_dot_filtered,
                                        (double) mydata_in_optimizer_copy.modeled_r_dot_filtered};
+
+    //Remove aerodynamic accelerations if needed:
+    if(disable_acc_decrement_inner_loop < 0.5f){
+      current_accelerations[0] -= myouter_loop_output_copy.acc_decrement_aero_ax;
+      current_accelerations[1] -= myouter_loop_output_copy.acc_decrement_aero_ay;
+      current_accelerations[2] -= myouter_loop_output_copy.acc_decrement_aero_az;
+      current_accelerations[3] -= myouter_loop_output_copy.acc_decrement_aero_p_dot;
+      current_accelerations[4] -= myouter_loop_output_copy.acc_decrement_aero_q_dot;
+      current_accelerations[5] -= myouter_loop_output_copy.acc_decrement_aero_r_dot;
+    }
 
     double induced_failure =(double) mydata_in_optimizer_copy.failure_mode;
 
@@ -1750,6 +1856,7 @@ void* fourth_thread() //Run the inner loop of the optimization code
       printf("approach_mode = %f \n",(float) approach_mode);
       printf("verbose = %f \n",(float) verbose);
       printf("vert_acc_margin = %f \n",(float) vert_acc_margin);
+      printf("Current accelerations, eventually corrected by already achieved aerodynamic accelerations: \n");
       for (int i=0; i<6; i++){
         printf("current_accelerations[%d] = %f \n",i,(float) current_accelerations[i]);
       }
@@ -1781,6 +1888,18 @@ void* fourth_thread() //Run the inner loop of the optimization code
       printf("W_dv_5_failure = %f \n",(float) W_dv_5_failure);
       printf("W_dv_6_failure = %f \n",(float) W_dv_6_failure);
       printf("gamma_quadratic_du_failure = %f \n",(float) gamma_quadratic_du_failure);
+      printf("use_new_aero_model = %f \n",(float) mydata_in_optimizer_copy.use_new_aero_model);
+      printf("power_Cd_0 = %f \n",(float) power_Cd_0);
+      printf("power_Cd_a = %f \n",(float) power_Cd_a);
+      printf("prop_R = %f \n",(float) prop_R);
+      printf("prop_Cd_0 = %f \n",(float) prop_Cd_0);
+      printf("prop_Cl_0 = %f \n",(float) prop_Cl_0);
+      printf("prop_Cd_a = %f \n",(float) prop_Cd_a);
+      printf("prop_Cl_a = %f \n",(float) prop_Cl_a);
+      printf("prop_delta = %f \n",(float) prop_delta);
+      printf("prop_sigma = %f \n",(float) prop_sigma);
+      printf("prop_theta = %f \n",(float) prop_theta);
+      printf("max_airspeed = %f \n",(float) max_airspeed);
     }
 
     // Check if the control allocation is running in single loop mode:
@@ -1814,39 +1933,64 @@ void* fourth_thread() //Run the inner loop of the optimization code
     }
     //If the control allocation is not running in single loop mode, run the inner loop:
     else{   
-      Nonlinear_controller_w_ail_basic_aero_inner_loop(
-          K_p_T, K_p_M, m, I_xx, I_yy, I_zz,
-          l_1, l_2, l_3, l_4, l_z, Phi,
-          Theta, Omega_1, Omega_2, Omega_3,
-          Omega_4, b_1, b_2, b_3, b_4, g_1,
-          g_2, g_3, g_4, delta_ailerons,
-          W_act_motor_const, W_act_motor_speed,
-          W_act_tilt_el_const, W_act_tilt_el_speed,
-          W_act_tilt_az_const, W_act_tilt_az_speed,
-          W_act_ailerons_const, W_act_ailerons_speed, W_dv_1,
-          W_dv_2, W_dv_3, W_dv_4, W_dv_5, W_dv_6,
-          max_omega, min_omega, max_b, min_b,
-          max_g, min_g, max_delta_ailerons,
-          min_delta_ailerons, dv, p, q, r,
-          Cm_zero, Cl_alpha, Cd_zero, K_Cd,
-          Cm_alpha, CL_aileron, rho, V, S,
-          wing_chord, flight_path_angle, Beta,
-          gamma_quadratic_du, desired_motor_value,
-          desired_el_value, desired_az_value,
-          desired_ailerons_value, k_alt_tilt_constraint,
-          min_alt_tilt_constraint, lidar_alt_corrected,
-          approach_mode, verbose, vert_acc_margin,
-          current_accelerations, u_init,
-          use_u_init, pqr_dot_outer_loop,
-          W_act_motor_du, W_act_tilt_el_du, W_act_tilt_az_du,
-          W_act_ailerons_du, gamma_quadratic_du2,
-          induced_failure, W_act_motor_failure,
-          W_act_tilt_el_failure, W_act_tilt_az_failure,
-          W_act_ailerons_failure, W_dv_1_failure, W_dv_2_failure,
-          W_dv_3_failure, W_dv_4_failure, W_dv_5_failure,
-          W_dv_6_failure, gamma_quadratic_du_failure, u_out,
-          residuals, &elapsed_time, &N_iterations,
-          &N_evaluation, &exitflag);
+      if(mydata_in_optimizer_copy.use_new_aero_model > 0.5f){
+        Nonlinear_controller_w_ail_new_aero_inner_loop(
+            m, I_xx, I_yy, I_zz, l_1, l_2, l_3, l_4, l_z, Phi, Theta,
+            Omega_1, Omega_2, Omega_3, Omega_4, b_1, b_2, b_3, b_4, g_1, g_2, g_3,
+            g_4, delta_ailerons, W_act_motor_const, W_act_motor_speed,
+            W_act_tilt_el_const, W_act_tilt_el_speed, W_act_tilt_az_const,
+            W_act_tilt_az_speed, W_act_ailerons_const, W_act_ailerons_speed,
+            W_dv_1, W_dv_2, W_dv_3, W_dv_4, W_dv_5, W_dv_6, max_omega, min_omega,
+            max_b, min_b, max_g, min_g, max_delta_ailerons, min_delta_ailerons,
+            dv, p, q, r, Cm_zero, Cl_alpha, Cd_zero, K_Cd, Cm_alpha, CL_aileron,
+            rho, V, S, wing_chord, flight_path_angle, Beta, gamma_quadratic_du,
+            desired_motor_value, desired_el_value, desired_az_value,
+            desired_ailerons_value, k_alt_tilt_constraint, min_alt_tilt_constraint,
+            lidar_alt_corrected, approach_mode, verbose, vert_acc_margin,
+            current_accelerations, u_init, use_u_init, pqr_dot_outer_loop,
+            induced_failure, W_act_motor_failure, W_act_tilt_el_failure,
+            W_act_tilt_az_failure, W_act_ailerons_failure, W_dv_1_failure,
+            W_dv_2_failure, W_dv_3_failure, W_dv_4_failure, W_dv_5_failure,
+            W_dv_6_failure, gamma_quadratic_du_failure, power_Cd_0, power_Cd_a,
+            prop_R, prop_Cd_0, prop_Cl_0, prop_Cd_a, prop_Cl_a, prop_delta,
+            prop_sigma, prop_theta, max_airspeed, wing_span, u_out, residuals,
+            &elapsed_time, &N_iterations, &N_evaluation, &exitflag);
+      }
+      else{
+        Nonlinear_controller_w_ail_basic_aero_inner_loop(
+            K_p_T, K_p_M, m, I_xx, I_yy, I_zz,
+            l_1, l_2, l_3, l_4, l_z, Phi,
+            Theta, Omega_1, Omega_2, Omega_3,
+            Omega_4, b_1, b_2, b_3, b_4, g_1,
+            g_2, g_3, g_4, delta_ailerons,
+            W_act_motor_const, W_act_motor_speed,
+            W_act_tilt_el_const, W_act_tilt_el_speed,
+            W_act_tilt_az_const, W_act_tilt_az_speed,
+            W_act_ailerons_const, W_act_ailerons_speed, W_dv_1,
+            W_dv_2, W_dv_3, W_dv_4, W_dv_5, W_dv_6,
+            max_omega, min_omega, max_b, min_b,
+            max_g, min_g, max_delta_ailerons,
+            min_delta_ailerons, dv, p, q, r,
+            Cm_zero, Cl_alpha, Cd_zero, K_Cd,
+            Cm_alpha, CL_aileron, rho, V, S,
+            wing_chord, flight_path_angle, Beta,
+            gamma_quadratic_du, desired_motor_value,
+            desired_el_value, desired_az_value,
+            desired_ailerons_value, k_alt_tilt_constraint,
+            min_alt_tilt_constraint, lidar_alt_corrected,
+            approach_mode, verbose, vert_acc_margin,
+            current_accelerations, u_init,
+            use_u_init, pqr_dot_outer_loop,
+            W_act_motor_du, W_act_tilt_el_du, W_act_tilt_az_du,
+            W_act_ailerons_du, gamma_quadratic_du2,
+            induced_failure, W_act_motor_failure,
+            W_act_tilt_el_failure, W_act_tilt_az_failure,
+            W_act_ailerons_failure, W_dv_1_failure, W_dv_2_failure,
+            W_dv_3_failure, W_dv_4_failure, W_dv_5_failure,
+            W_dv_6_failure, gamma_quadratic_du_failure, u_out,
+            residuals, &elapsed_time, &N_iterations,
+            &N_evaluation, &exitflag);
+      }
     }
 
     //Set as u_init_inner the u_out for the next iteration: 
