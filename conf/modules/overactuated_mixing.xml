@@ -58,7 +58,11 @@
 
         <dl_setting var="failure_mode" min="0" step="1" max="4" shortname="failure_mode"/>
 
-        <dl_setting var="use_u_init_nonlinear_CA" min="0" step="1" max="1" shortname="use_u_init" values="FALSE|TRUE"/>
+        <dl_setting var="use_u_init_outer_loop" min="0" step="1" max="1" shortname="use_u_init_outer" values="FALSE|TRUE" persistent="true"/>
+        <dl_setting var="use_u_init_inner_loop" min="0" step="1" max="1" shortname="use_u_init_inner" values="FALSE|TRUE" persistent="true"/>
+        <dl_setting var="single_loop_controller" min="0" step="1" max="1" shortname="single_loop_CA" values="FALSE|TRUE" persistent="true"/>
+        <dl_setting var="use_new_aero_model" min="0" step="1" max="1" shortname="new_aero_model" values="FALSE|TRUE" persistent="true"/>
+        <dl_setting var="use_received_ang_ref_in_inner_loop" min="0" step="1" max="1" shortname="use_ext_ang_ref_inner" values="FALSE|TRUE" persistent="true"/>
 
         <dl_setting var="alt_offset_beacon" min="0" step=".1" max="40" shortname="alt_off_beacon"/>
 

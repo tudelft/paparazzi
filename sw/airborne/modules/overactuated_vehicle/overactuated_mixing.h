@@ -186,7 +186,11 @@ extern int use_slider_attitude;
 extern float pitch_target_slider; 
 extern float roll_target_slider; 
 
-extern int use_u_init_nonlinear_CA; 
+extern int use_u_init_outer_loop;
+extern int use_u_init_inner_loop;
+extern int single_loop_controller;
+extern int use_new_aero_model;
+extern int use_received_ang_ref_in_inner_loop;
 
 //Prop model: 
 extern float power_cd_0;

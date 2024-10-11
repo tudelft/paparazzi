@@ -126,7 +126,12 @@ float pos_order_earth[3];
 float euler_order[3];
 float psi_order_motor = 0;
 
-int use_u_init_nonlinear_CA = 1; 
+int use_u_init_outer_loop = OVERACTUATED_MIXING_USE_U_INIT_OUTER_LOOP; 
+int use_u_init_inner_loop = OVERACTUATED_MIXING_USE_U_INIT_INNER_LOOP;
+int single_loop_controller = OVERACTUATED_MIXING_SINGLE_LOOP_CONTROLLER;   
+int use_new_aero_model = OVERACTUATED_MIXING_USE_NEW_AERO_MODEL;
+int use_received_ang_ref_in_inner_loop = OVERACTUATED_MIXING_USE_RECEIVED_ANG_REF_IN_INNER_LOOP; 
+
 
 int failure_mode = 0; 
 
@@ -308,7 +313,7 @@ float x_stb, y_stb, z_stb;
 
 // Variables for the speed to derivative gain slider and thrust coefficient: 
 float K_d_speed = OVERACTUATED_MIXING_K_GAIN_AIRSPEED_CRUISE; 
-float K_T_airspeed = 0.025;
+float K_T_airspeed = 0.005;
 
 // float K_d_speed = 0.02; 
 // float K_T_airspeed = 0.0;
@@ -1044,9 +1049,9 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.pseudo_control_ax_int = (int16_t) (INDI_pseudocontrol[0] * 1e2);
     am7_data_out_local.pseudo_control_ay_int = (int16_t) (INDI_pseudocontrol[1] * 1e2);
     am7_data_out_local.pseudo_control_az_int = (int16_t) (INDI_pseudocontrol[2] * 1e2);
-    // am7_data_out_local.pseudo_control_p_dot_int = (int16_t) (INDI_pseudocontrol[3] * 1e1 * 180/M_PI);
-    // am7_data_out_local.pseudo_control_q_dot_int = (int16_t) (INDI_pseudocontrol[4] * 1e1 * 180/M_PI);
-    // am7_data_out_local.pseudo_control_r_dot_int = (int16_t) (INDI_pseudocontrol[5] * 1e1 * 180/M_PI);
+    am7_data_out_local.pseudo_control_p_dot_int = (int16_t) (INDI_pseudocontrol[3] * 1e1 * 180/M_PI);
+    am7_data_out_local.pseudo_control_q_dot_int = (int16_t) (INDI_pseudocontrol[4] * 1e1 * 180/M_PI);
+    am7_data_out_local.pseudo_control_r_dot_int = (int16_t) (INDI_pseudocontrol[5] * 1e1 * 180/M_PI);
 
     //Desired theta and phi values:
     am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
@@ -1188,12 +1193,18 @@ void send_values_to_raspberry_pi(void){
     }
     
     extra_data_out_local[88] = sixdof_mode; 
-    extra_data_out_local[89] = use_u_init_nonlinear_CA;
-    extra_data_out_local[90] = use_u_init_nonlinear_CA;
+
+    extra_data_out_local[89] = use_u_init_outer_loop;
+    extra_data_out_local[90] = use_u_init_inner_loop;
 
     extra_data_out_local[91] = K_T_airspeed;
 
     extra_data_out_local[92] = OVERACTUATED_MIXING_OMEGA_FIRST_ORDER_FILTER_ANG_RATES;
+
+    extra_data_out_local[93] = single_loop_controller;
+    extra_data_out_local[94] = use_new_aero_model;
+    extra_data_out_local[95] = use_received_ang_ref_in_inner_loop;
+
 
 }
 

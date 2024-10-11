@@ -492,7 +492,7 @@
     <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0488" /> 
     <define name="OMEGA_FIRST_ORDER_FILTER_ANG_RATES" value="20.0" /> 
 
-  <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES_FAILSAFE" value="0.12" /> 
+    <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES_FAILSAFE" value="0.12" /> 
 
     <!-- Weighting matrix for the INDI -->
     <!-- CRUISE WEIGHTS -->
@@ -525,7 +525,13 @@
     <define name="TRANSITION_SPEED_PSEUDOCTR_HEDGE_CRUISE" value="7"/>
     <define name="TRANSITION_SPEED_PSEUDOCTR_HEDGE_APP" value="15"/>
 
+
     <define name="DISABLE_ACC_DECREMENT_INNER_LOOP" value="0"/>
+    <define name="USE_U_INIT_OUTER_LOOP" value="0"/>
+    <define name="USE_U_INIT_INNER_LOOP" value="0"/>
+    <define name="SINGLE_LOOP_CONTROLLER" value="0"/>
+    <define name="USE_NEW_AERO_MODEL" value="0"/>
+    <define name="USE_RECEIVED_ANG_REF_IN_INNER_LOOP" value="0"/>
 
     <define name="VERT_ACC_MARGIN" value="0.5" unit="m/s^2"/>
     
