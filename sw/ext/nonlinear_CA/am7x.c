@@ -55,7 +55,7 @@ struct outer_loop_output myouter_loop_output;
 pthread_mutex_t mutex_am7, mutex_optimizer_input, mutex_outer_loop_output;
 
 int verbose_sixdof = 0;
-int verbose_connection = 1;
+int verbose_connection = 0;
 int verbose_outer_loop = 0; 
 int verbose_inner_loop = 0;
 int verbose_runtime = 0; 
@@ -2124,8 +2124,11 @@ void* fourth_thread() //Run the inner loop of the optimization code
     myam7_data_out_copy.sixdof_NED_pos_x = sixdof_detection_copy.NED_pos_x;
     myam7_data_out_copy.sixdof_NED_pos_y = sixdof_detection_copy.NED_pos_y;
     myam7_data_out_copy.sixdof_NED_pos_z = sixdof_detection_copy.NED_pos_z;
+    myam7_data_out_copy.sixdof_relative_phi = (int16_t) (sixdof_detection_copy.relative_phi_rad * 180/M_PI * 1e2);
+    myam7_data_out_copy.sixdof_relative_theta = (int16_t) (sixdof_detection_copy.relative_theta_rad * 180/M_PI * 1e2);
+    myam7_data_out_copy.sixdof_relative_psi = (int16_t) (sixdof_detection_copy.relative_psi_rad * 180/M_PI * 1e2);
     myam7_data_out_copy.sixdof_system_status = sixdof_detection_copy.system_status;
-
+ 
     //Copy out structure
     pthread_mutex_lock(&mutex_am7);
     memcpy(&myam7_data_out, &myam7_data_out_copy, sizeof(struct am7_data_out));
@@ -2299,8 +2302,12 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
 
       //Transpose relative position to target position for the UAV: 
       float beacon_absolute_ned_pos[3];
-      from_body_to_earth(&beacon_absolute_ned_pos[0], &local_pos_target_body_rf[0], UAV_euler_angles_rad[0], UAV_euler_angles_rad[1], UAV_euler_angles_rad[2]);
-      //Sun current UAV position to have the real abs marker value: 
+      // from_body_to_earth(&beacon_absolute_ned_pos[0], &local_pos_target_body_rf[0], UAV_euler_angles_rad[0], UAV_euler_angles_rad[1], UAV_euler_angles_rad[2]);
+      // from_body_to_earth(&beacon_absolute_ned_pos[0], &local_pos_target_body_rf[0], 0, 0, 0);
+      // beacon_absolute_ned_pos[0] = local_pos_target_body_rf[1]; 
+      // beacon_absolute_ned_pos[1] = local_pos_target_body_rf[0];
+      // beacon_absolute_ned_pos[2] = local_pos_target_body_rf[2];
+      //Sum current UAV position to have the real abs marker value: 
       for(int i = 0; i < 3; i++){
         beacon_absolute_ned_pos[i] += UAV_NED_pos[i]; 
       }

@@ -13,7 +13,7 @@ GTK_LDFLAGS = $(shell pkg-config gtk+-2.0 --libs) $(shell pkg-config --libs ivy-
 GLIBIVY_CFLAGS = $(shell pkg-config --cflags ivy-glib)
 GLIBIVY_LDFLAGS = $(shell pkg-config --libs ivy-glib) $(shell pcre-config --libs)
 
-LDFLAGS = -L../bin/rpi64/ -lSdsDroneSdk_updated -Wl,-rpath,../bin/rpi64/
+LDFLAGS = -L../bin/rpi64/ -lSdsDroneSdk -Wl,-rpath,../bin/rpi64/
 
 # fallback to ivy-glib pkg-config info if there is no ivy-c.pc
 IVY_INC = $(shell pkg-config --cflags-only-I ivy-c 2> /dev/null)
