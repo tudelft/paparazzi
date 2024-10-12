@@ -18,59 +18,49 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-//Do not include the high power beacon, as suggested in the documentation. 
-#define INCLUDE_HIGH_POW_BEC_IN_SIXDOF_MAP 0
-
+//Library configuration parameters:
 using namespace Sds::DroneSDK;
-
 ConfigRelativeBeacon config_rel_beacon; // use defaults
 ConfigRelativeAngle config_rel_angle; // use defaults
 Config6Dof config6Dof; // use defaults
-
-float euler_angles[3], UAV_ned_pos[3]; 
-
 std::unique_ptr<DroneTrackingManager> droneManager;
 
+// Variables to set and check the behavior of the program:
 int verbose_rx = 0; 
 int verbose_tx = 0; 
 int send_values_on_ivy = 1; 
-int produce_log_file = 1; 
+int produce_log_file = 0; 
 
+//Variable to store the current mode of the system, with default value of 1 (rel beacon pos):
 int current_sixdof_mode = 1; //1 -->rel beacon pos; 2 -->rel beacon angle; 3-->sixdof mode. Default is 1. 
 
-struct timespec ts;
-#define N_BEACON 5
-
-// input map
+//Input map in the reference frame of the landing pad.
 Beacon b1 {0.288, -0.222, -0.005, 1640};
-
-#if INCLUDE_HIGH_POW_BEC_IN_SIXDOF_MAP
-    Beacon b2 {0.265, 0, -0.03, 1636};
-#endif
+Beacon b2 {0.265, 0, -0.03, 1636};
 Beacon b3 {0.292, 0.224, -0.005, 1645};
 Beacon b4 {-0.298, 0.23, -0.005, 1632};
 Beacon b5 {-0.30, -0.222, -0.005, 1633};
 
-//Sixdof messages: 
+//variables for the ivy bus messages: 
+int sixdof_msg_available = 0, current_mode_msg_available = 0, beacon_pos_msg_available = 0, relative_angle_msg_available = 0; 
+pthread_mutex_t mutex_ivy_bus = PTHREAD_MUTEX_INITIALIZER;
+
+//Structure to store the sixdof packet
 struct register_sixdof_packet my_sixdof_packet; 
-int sixdof_msg_available = 0, current_mode_msg_available = 0, beacon_pos_msg_available = 0; 
 
-double timestamp_beacon[N_BEACON];
-int beacon_id[N_BEACON]; 
-float x_body_pos_beacon[N_BEACON];
-float y_body_pos_beacon[N_BEACON];
-float z_body_pos_beacon[N_BEACON];
+//Structure to store beacon data
+struct register_beacon_packet my_beacon_packet;
 
-// Arrays to store beacon data for logging
-int fov_beacon_id[N_BEACON]; // Array to store beacon IDs
-double fov_timestamp_beacon[N_BEACON]; // Array to store timestamps
-int seen_count[N_BEACON]; // Array to store the count of seen beacons
+//Structure to store the Field of View report:
+struct fov_report_packet my_fov_report_packet;
+
+//Structure to store the relative angle data:
+struct register_rel_angle_packet my_rel_angle_packet;
 
 // File pointer for logging
 FILE* log_file = nullptr;
-int msg_id_fov = 1, msg_id_rel_pos = 2;
-
-pthread_mutex_t mutex_ivy_bus = PTHREAD_MUTEX_INITIALIZER, mutex_logger = PTHREAD_MUTEX_INITIALIZER;
+int msg_id_fov = 1, msg_id_rel_pos = 2, msg_id_rel_angle = 3;
+pthread_mutex_t mutex_logger = PTHREAD_MUTEX_INITIALIZER;
 
 // Function to convert a quaternion to Euler angles
 static void quaternion_to_euler(float q[4], float euler[3]) {
@@ -115,13 +105,25 @@ void ivy_bus_out_handle() {
     while(true){
         
         //Check if new 6dof position message is available and send it to the ivy bus: 
-        if(sixdof_msg_available){
+        pthread_mutex_lock(&mutex_ivy_bus);
+        int sixdof_msg_available_local = sixdof_msg_available;
+        int current_mode_msg_available_local = current_mode_msg_available;
+        int beacon_pos_msg_available_local = beacon_pos_msg_available;
+        int relative_angle_msg_available_local = relative_angle_msg_available;
+        sixdof_msg_available = 0;
+        current_mode_msg_available = 0;
+        beacon_pos_msg_available = 0;
+        relative_angle_msg_available = 0;
+        pthread_mutex_unlock(&mutex_ivy_bus);
+
+        if(sixdof_msg_available_local){
+            //Copy the struct values to a local one:
             static struct register_sixdof_packet my_sixdof_packet_local; 
             pthread_mutex_lock(&mutex_ivy_bus);
             memcpy(&my_sixdof_packet_local, &my_sixdof_packet, sizeof(struct register_sixdof_packet));
-            sixdof_msg_available = 0;
             pthread_mutex_unlock(&mutex_ivy_bus); 
 
+            //Process the values and send them to the ivy bus:
             if(send_values_on_ivy){
                 IvySendMsg("SIXDOF_TRACKING %f %f %f %f %f %f %f %f %f %f %f %f %f", my_sixdof_packet_local.timestamp_position, my_sixdof_packet_local.x_body_pos, my_sixdof_packet_local.y_body_pos, my_sixdof_packet_local.z_body_pos, my_sixdof_packet_local.relative_phi_rad, my_sixdof_packet_local.relative_theta_rad, my_sixdof_packet_local.relative_psi_rad, my_sixdof_packet_local.x_body_pos_var, my_sixdof_packet_local.y_body_pos_var, my_sixdof_packet_local.z_body_pos_var, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var);
             }
@@ -134,7 +136,8 @@ void ivy_bus_out_handle() {
         }
 
         //Check if new mode message is available and send it to the ivy bus: 
-        if(current_mode_msg_available){
+        if(current_mode_msg_available_local){
+            struct timespec ts;
             clock_gettime(CLOCK_BOOTTIME, &ts);
             double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9; 
 
@@ -146,28 +149,50 @@ void ivy_bus_out_handle() {
                 printf("SIXDOF_SYSTEM_CURRENT_MODE %f %d", current_timestamp, current_sixdof_mode);
                 printf("\n");
             }
-            pthread_mutex_lock(&mutex_ivy_bus);
-            current_mode_msg_available = 0;
-            pthread_mutex_unlock(&mutex_ivy_bus); 
         }       
 
         //Check if new beacon position message is available and send it to the ivy bus: 
         if(beacon_pos_msg_available){
+            //Copy the struct values to a local one:
+            static struct register_beacon_packet my_beacon_packet_local;
+            pthread_mutex_lock(&mutex_ivy_bus);
+            memcpy(&my_beacon_packet_local, &my_beacon_packet, sizeof(struct register_beacon_packet));
+            pthread_mutex_unlock(&mutex_ivy_bus);
             for(int i = 0; i < N_BEACON; i++){
-                if(send_values_on_ivy && beacon_id[i] != 0){
+                if(send_values_on_ivy && my_beacon_packet_local.beacon_id[i] != 0){
                     //Send values over IVYBUS
-                    IvySendMsg("RELATIVE_BEACON_POS %f %d %f %f %f ", timestamp_beacon[i], beacon_id[i], x_body_pos_beacon[i], y_body_pos_beacon[i], z_body_pos_beacon[i]);
+                    IvySendMsg("RELATIVE_BEACON_POS %f %d %f %f %f ", 
+                    my_beacon_packet_local.timestamp_beacon[i], my_beacon_packet_local.beacon_id[i], 
+                    my_beacon_packet_local.x_body_pos_beacon[i], my_beacon_packet_local.y_body_pos_beacon[i], my_beacon_packet_local.z_body_pos_beacon[i]);
                 }
                 if(verbose_tx){
-                    printf("RELATIVE_BEACON_POS %f %d %f %f %f ", timestamp_beacon[i], beacon_id[i], x_body_pos_beacon[i], y_body_pos_beacon[i], z_body_pos_beacon[i]);
+                    printf("RELATIVE_BEACON_POS %f %d %f %f %f ", my_beacon_packet_local.timestamp_beacon[i], my_beacon_packet_local.beacon_id[i], my_beacon_packet_local.x_body_pos_beacon[i], my_beacon_packet_local.y_body_pos_beacon[i], my_beacon_packet_local.z_body_pos_beacon[i]);
                     printf("\n");
                 }
             }
-            pthread_mutex_lock(&mutex_ivy_bus);
-            beacon_pos_msg_available = 0;
-            pthread_mutex_unlock(&mutex_ivy_bus); 
         }   
         
+        //Check if new relative angle message is available and send it to the ivy bus:
+        if(relative_angle_msg_available_local){
+            //Copy the struct values to a local one:
+            static struct register_rel_angle_packet my_rel_angle_packet_local;
+            pthread_mutex_lock(&mutex_ivy_bus);
+            memcpy(&my_rel_angle_packet_local, &my_rel_angle_packet, sizeof(struct register_rel_angle_packet));
+            pthread_mutex_unlock(&mutex_ivy_bus);
+            for(int i = 0; i < N_BEACON; i++){
+                if(send_values_on_ivy && my_rel_angle_packet_local.beacon_id[i] != 0){
+                    //Send values over IVYBUS
+                    IvySendMsg("RELATIVE_BEACON_ANGLE %f %d %f %f %f %f %f", 
+                    my_rel_angle_packet_local.timestamp_rel_angle[i], my_rel_angle_packet_local.beacon_id[i], 
+                    my_rel_angle_packet_local.x_angle_rad[i], my_rel_angle_packet_local.z_angle_rad[i], my_rel_angle_packet_local.intensity[i], my_rel_angle_packet_local.width[i]);
+                }
+                if(verbose_tx){
+                    printf("RELATIVE_BEACON_ANGLE %f %d %f %f %f %f %f", my_rel_angle_packet_local.timestamp_rel_angle[i], my_rel_angle_packet_local.beacon_id[i], my_rel_angle_packet_local.x_angle_rad[i], my_rel_angle_packet_local.z_angle_rad[i], my_rel_angle_packet_local.intensity[i], my_rel_angle_packet_local.width[i]);
+                    printf("\n");
+                }
+            }
+        }
+
         std::this_thread::sleep_for(std::chrono::microseconds(5)); // Sleep for 5 microseconds to avoid overloading the CPU 
     } 
 }
@@ -301,30 +326,50 @@ int main(int ac, const char *av[]) {
     });
 
     droneManager->registerHeartbeatCallback([](const Heartbeat& hb){
+        //TODO: populate the heartbeat message like mode etc..
         pthread_mutex_lock(&mutex_ivy_bus);
         current_mode_msg_available = 1;
         pthread_mutex_unlock(&mutex_ivy_bus); 
     });
 
     droneManager->registerRelativeAngleCallback([](const RelativeAngleCollection& col){
+        //Prepare the structure to store the relative angle data:
+        struct register_rel_angle_packet my_rel_angle_packet_local;
+        //Zero all the indexes for the ivy comm:
+        for (int i = 0; i < N_BEACON; i++){
+            my_rel_angle_packet_local.beacon_id[i] = 0;
+        }
+        int j = 0;
         for (const RelativeAngle& ra : col) { 
+            struct timespec ts;
             clock_gettime(CLOCK_BOOTTIME, &ts);
             double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9; 
-            if(verbose_tx){
-                std::cout << "ID: " << ra.id
-                        << std::fixed << std::setprecision(5)
-                        << "Timestamp: " << current_timestamp << std::setprecision(0)
-                        << " XAng: " << std::setw(3) << ra.x_angle * 180.0 / 3.14159
-                        << " ZAng: " << std::setw(3) << ra.z_angle * 180.0 / 3.14159 
-                        << " Intensity: " << std::setw(4) << ra.intensity 
-                        << std::fixed << std::setprecision(2)
-                        << " Width: " << std::setw(5) << ra.width << std::endl;
+
+            my_rel_angle_packet_local.timestamp_rel_angle[j] =(float) current_timestamp;
+            my_rel_angle_packet_local.beacon_id[j] = (int) ra.id;
+            my_rel_angle_packet_local.x_angle_rad[j] =(float) ra.x_angle;
+            my_rel_angle_packet_local.z_angle_rad[j] =(float) ra.z_angle;
+            my_rel_angle_packet_local.intensity[j] =(float) ra.intensity;
+            my_rel_angle_packet_local.width[j] =(float) ra.width;
+            
+            //Log the data to the log file if needed:
+            if (log_file != nullptr && produce_log_file && my_rel_angle_packet_local.beacon_id[j] != 0) {
+                pthread_mutex_lock(&mutex_logger);
+                fprintf(log_file, "Msg_id: %d, Timestamp: %f, Beacon ID: %d, x_angle_rad: %f, z_angle_rad: %f, Intensity: %f, Width: %f\n",
+                        msg_id_rel_angle, my_rel_angle_packet_local.timestamp_rel_angle[j], my_rel_angle_packet_local.beacon_id[j], 
+                        my_rel_angle_packet_local.x_angle_rad[j], my_rel_angle_packet_local.z_angle_rad[j], my_rel_angle_packet_local.intensity[j], my_rel_angle_packet_local.width[j]);
+                fflush(log_file);
+                pthread_mutex_unlock(&mutex_logger);
             }
-            // if(send_values_on_ivy){
-            //     //Send values over IVYBUS
-            //     IvySendMsg("RELATIVE_BEACON_ANGLE %f %d %f %f %f %f", current_timestamp, ra.id, ra.x_angle, ra.z_angle, ra.intensity, ra.width);
-            // }
+            
+            j++;
         }
+        
+        //Save the data to the global variable:
+        pthread_mutex_lock(&mutex_ivy_bus);
+        memcpy(&my_rel_angle_packet, &my_rel_angle_packet_local, sizeof(struct register_rel_angle_packet));
+        relative_angle_msg_available = 1;
+        pthread_mutex_unlock(&mutex_ivy_bus);
     });
 
     droneManager->registerFieldOfViewReportCallback([](const FieldOfViewReport& report) {
@@ -332,17 +377,19 @@ int main(int ac, const char *av[]) {
         // Process the FieldOfViewReport
         int j = 0;
         for (const auto& entry : report.seenBeacons) {
+            struct timespec ts;
             clock_gettime(CLOCK_BOOTTIME, &ts);
             double current_timestamp = ts.tv_sec + ts.tv_nsec * 1e-9;
 
-            fov_timestamp_beacon[j] = current_timestamp;
-            fov_beacon_id[j] = entry.first;    // Beacon ID
-            seen_count[j] = entry.second;      // Number of optical sensors that saw the beacon
+            my_fov_report_packet.fov_timestamp_beacon[j] = current_timestamp;
+            my_fov_report_packet.fov_beacon_id[j] = entry.first;    // Beacon ID
+            my_fov_report_packet.sensor_seen_count[j] = entry.second;      // Number of optical sensors that saw the beacon
 
+            // Log the data to the log file if needed:
             if (log_file != nullptr && produce_log_file) {
                 pthread_mutex_lock(&mutex_logger);
                 fprintf(log_file, "Msg_id: %d, Timestamp: %f, Beacon ID: %d, Seen Count: %d\n",
-                        msg_id_fov, fov_timestamp_beacon[j], fov_beacon_id[j], seen_count[j]);
+                        msg_id_fov, my_fov_report_packet.fov_timestamp_beacon[j], my_fov_report_packet.fov_beacon_id[j], my_fov_report_packet.sensor_seen_count[j]);
                 fflush(log_file);
                 pthread_mutex_unlock(&mutex_logger);
             }
@@ -351,66 +398,77 @@ int main(int ac, const char *av[]) {
     });
 
     droneManager->registerPoseRelativeBeaconCallback([](const PoseRelativeBeaconCollection& col){
+        //Prepare the structure to store the beacon data:
+        struct register_beacon_packet my_beacon_packet_local;
+
         //zeros all the indexes for the ivy comm: 
         for (int i = 0; i < N_BEACON; i++){
-            beacon_id[i] = 0;
+            my_beacon_packet_local.beacon_id[i] = 0;
         }
         //copy values on structure
         int j = 0;
         for (const PoseRelativeBeacon& b : col) {
+            struct timespec ts;
             clock_gettime(CLOCK_BOOTTIME, &ts);
             double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9; 
 
-            timestamp_beacon[j] = current_timestamp; 
-            beacon_id[j] = (int) b.id; 
-            x_body_pos_beacon[j] = (float) b.z; 
-            y_body_pos_beacon[j] = (float) b.x;
-            z_body_pos_beacon[j] = (float) b.y;
+            my_beacon_packet_local.timestamp_beacon[j] =(float) current_timestamp; 
+            my_beacon_packet_local.beacon_id[j] = (int) b.id; 
+            my_beacon_packet_local.x_body_pos_beacon[j] = (float) b.z; 
+            my_beacon_packet_local.y_body_pos_beacon[j] = (float) b.x;
+            my_beacon_packet_local.z_body_pos_beacon[j] = (float) b.y;
 
-            if (log_file != nullptr && produce_log_file && beacon_id[j] != 0) {
+            //Log the data to the log file if needed:
+            if (log_file != nullptr && produce_log_file && my_beacon_packet_local.beacon_id[j] != 0) {
                 pthread_mutex_lock(&mutex_logger);
                 fprintf(log_file, "Msg_id: %d, Timestamp: %f, Beacon ID: %d, x_body_pos_beacon: %f, y_body_pos_beacon: %f, z_body_pos_beacon: %f\n",
-                        msg_id_rel_pos, timestamp_beacon[j], beacon_id[j], x_body_pos_beacon[j], y_body_pos_beacon[j], z_body_pos_beacon[j]);
+                        msg_id_rel_pos, my_beacon_packet_local.timestamp_beacon[j], 
+                        my_beacon_packet_local.beacon_id[j], my_beacon_packet_local.x_body_pos_beacon[j],
+                        my_beacon_packet_local.y_body_pos_beacon[j], my_beacon_packet_local.z_body_pos_beacon[j]);
                 fflush(log_file);
                 pthread_mutex_unlock(&mutex_logger);
             }
 
             j++;
         }    
-        //Update flag:
+        //Save the data to the global variable:
         pthread_mutex_lock(&mutex_ivy_bus);
+        memcpy(&my_beacon_packet, &my_beacon_packet_local, sizeof(struct register_beacon_packet));
         beacon_pos_msg_available = 1;
-        pthread_mutex_unlock(&mutex_ivy_bus); 
+        pthread_mutex_unlock(&mutex_ivy_bus);
     });
 
     droneManager->registerPose6DofCallback([](const Pose6Dof& sd){
-        clock_gettime(CLOCK_BOOTTIME, &ts);
-        double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9;
-        
-        float quat_array[4] = {(float) sd.qw, (float) sd.qx, (float) sd.qy, (float) sd.qz}; //should be in the order qw, qz, qx, -qy
-        float euler_angles[3];
-        quaternion_to_euler(quat_array, euler_angles);
+        if(sd.valid){
+            struct timespec ts;
+            clock_gettime(CLOCK_BOOTTIME, &ts);
+            double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9;
+            
+            float quat_array[4] = {(float) sd.qw, (float) sd.qx, (float) sd.qy, (float) sd.qz}; //should be in the order qw, qz, qx, -qy
+            float euler_angles[3];
+            quaternion_to_euler(quat_array, euler_angles);
 
-        static struct register_sixdof_packet my_sixdof_packet_local; 
+            static struct register_sixdof_packet my_sixdof_packet_local; 
 
-        my_sixdof_packet_local.timestamp_position = current_timestamp; 
-        my_sixdof_packet_local.x_body_pos = (float) -sd.x; 
-        my_sixdof_packet_local.y_body_pos = (float) -sd.y; 
-        my_sixdof_packet_local.z_body_pos = (float) -sd.z; 
-        my_sixdof_packet_local.relative_phi_rad = (float) euler_angles[0];
-        my_sixdof_packet_local.relative_theta_rad = (float) euler_angles[1];
-        my_sixdof_packet_local.relative_psi_rad = (float) euler_angles[2];
-        my_sixdof_packet_local.x_body_pos_var = (float) sd.var_x; 
-        my_sixdof_packet_local.y_body_pos_var = (float) sd.var_y; 
-        my_sixdof_packet_local.z_body_pos_var = (float) sd.var_y; 
-        my_sixdof_packet_local.phi_rad_var = (float) -1;
-        my_sixdof_packet_local.theta_rad_var = (float) -1;
-        my_sixdof_packet_local.psi_rad_var = (float) -1;
+            my_sixdof_packet_local.timestamp_position = current_timestamp; 
+            my_sixdof_packet_local.x_body_pos = (float) -sd.x; 
+            my_sixdof_packet_local.y_body_pos = (float) -sd.y; 
+            my_sixdof_packet_local.z_body_pos = (float) -sd.z; 
+            my_sixdof_packet_local.relative_phi_rad = (float) euler_angles[0];
+            my_sixdof_packet_local.relative_theta_rad = (float) euler_angles[1];
+            my_sixdof_packet_local.relative_psi_rad = (float) euler_angles[2];
+            my_sixdof_packet_local.x_body_pos_var = (float) sd.var_x; 
+            my_sixdof_packet_local.y_body_pos_var = (float) sd.var_y; 
+            my_sixdof_packet_local.z_body_pos_var = (float) sd.var_y; 
+            my_sixdof_packet_local.phi_rad_var = (float) sd.var_h;
+            my_sixdof_packet_local.theta_rad_var = (float) sd.var_p;
+            my_sixdof_packet_local.psi_rad_var = (float) sd.var_r;
 
-        pthread_mutex_lock(&mutex_ivy_bus);
-        memcpy(&my_sixdof_packet, &my_sixdof_packet_local, sizeof(struct register_sixdof_packet));
-        sixdof_msg_available = 1;
-        pthread_mutex_unlock(&mutex_ivy_bus); 
+            pthread_mutex_lock(&mutex_ivy_bus);
+            memcpy(&my_sixdof_packet, &my_sixdof_packet_local, sizeof(struct register_sixdof_packet));
+            sixdof_msg_available = 1;
+            pthread_mutex_unlock(&mutex_ivy_bus); 
+        }
     });
 
     // Initialize network, this can only be done once
@@ -431,8 +489,6 @@ int main(int ac, const char *av[]) {
     std::cout << "TrackingMode RelativeBeacon" << std::endl;
     droneManager->setTrackingMode(TrackingMode::RelativeBeacon);
 
-
-
     IvyInit ("SixDofSysSensor", "SixDofSysSensor READY", NULL, NULL, NULL, NULL);
     IvyBindMsg(ivy_set_rel_beacon_mode, NULL, "SET_SIXDOF_SYS_MODE %d",1);
     IvyBindMsg(ivy_set_rel_angle_mode, NULL, "SET_SIXDOF_SYS_MODE %d",2);
@@ -442,9 +498,7 @@ int main(int ac, const char *av[]) {
     // Create a thread that manages the ivybus messages going out: 
     std::thread newThread(ivy_bus_out_handle);
 
-
     g_main_loop_run(ml);
-
 
     std::cout << "Done" << std::endl;
     return 0;
