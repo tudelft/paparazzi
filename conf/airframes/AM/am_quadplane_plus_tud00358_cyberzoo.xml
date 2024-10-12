@@ -340,8 +340,8 @@
     <define name="CRUISE_GAIN_Z_DOT" value="5"/>
 
     <!-- INDI approach gains -->
-    <define name="APP_GAIN_P" value="4"/>
-    <define name="APP_GAIN_Q" value="4"/>
+    <define name="APP_GAIN_P" value="3"/>
+    <define name="APP_GAIN_Q" value="3"/>
     <define name="APP_GAIN_R" value="1.6"/>
 
     <define name="APP_GAIN_X" value="3.5"/>
@@ -778,8 +778,9 @@
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     <!--define name="UART7_CR2" value="(USART_CR2_STOP1_BITS | USART_CR2_SWAP_Msk)"/--> <!-- Swap RX/TX since RX doesn't work-->
 
-    <define name="USE_EXT_REF_ATTITUDE" value="TRUE"/>
-    <define name="MOVE_EXT_REF_POSITION" value="TRUE"/>
+    <define name="USE_SHIP_BOX_EXT_REF_ATTITUDE" value="TRUE"/>
+    <define name="USE_SIXDOF_EXT_REF_ATTITUDE" value="TRUE"/>
+
     <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/>
     <define name="FULLY_MANUAL_HEADING" value="TRUE"/>
 

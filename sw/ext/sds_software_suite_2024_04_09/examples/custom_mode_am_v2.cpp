@@ -18,6 +18,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+//Do not include the high power beacon, as suggested in the documentation. 
+#define INCLUDE_HIGH_POW_BEC_IN_SIXDOF_MAP 0
 
 using namespace Sds::DroneSDK;
 
@@ -41,7 +43,10 @@ struct timespec ts;
 
 // input map
 Beacon b1 {0.288, -0.222, -0.005, 1640};
-Beacon b2 {0.265, 0, -0.03, 1636};
+
+#if INCLUDE_HIGH_POW_BEC_IN_SIXDOF_MAP
+    Beacon b2 {0.265, 0, -0.03, 1636};
+#endif
 Beacon b3 {0.292, 0.224, -0.005, 1645};
 Beacon b4 {-0.298, 0.23, -0.005, 1632};
 Beacon b5 {-0.30, -0.222, -0.005, 1633};
@@ -212,7 +217,9 @@ static void ivy_set_sixdof_mode(IvyClientPtr app, void *user_data, int argc, cha
 
     if(current_sixdof_mode != 3){
         config6Dof.map.push_back(b1);
-        config6Dof.map.push_back(b2);
+        #if INCLUDE_HIGH_POW_BEC_IN_SIXDOF_MAP
+            config6Dof.map.push_back(b2);   
+        #endif
         config6Dof.map.push_back(b3);
         config6Dof.map.push_back(b4);
         config6Dof.map.push_back(b5);
@@ -380,7 +387,7 @@ int main(int ac, const char *av[]) {
         clock_gettime(CLOCK_BOOTTIME, &ts);
         double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9;
         
-        float quat_array[4] = {(float) sd.qw, (float) sd.qx, (float) sd.qy, (float) sd.qz};
+        float quat_array[4] = {(float) sd.qw, (float) sd.qx, (float) sd.qy, (float) sd.qz}; //should be in the order qw, qz, qx, -qy
         float euler_angles[3];
         quaternion_to_euler(quat_array, euler_angles);
 

@@ -476,21 +476,7 @@ uint8_t detect_ground_on_landing(void){
  */
 static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am7_data_in * myam7_data_in_ptr, float * extra_data_in_ptr){
     memcpy(&myam7_data_in_local,myam7_data_in_ptr,sizeof(struct am7_data_in));
-    memcpy(&extra_data_in_local,extra_data_in_ptr,255 * sizeof(float));
-
-    #ifdef MOVE_EXT_REF_POSITION
-        struct EnuCoor_f target_pos_sixdof = {myam7_data_in_local.aruco_NED_pos_y, myam7_data_in_local.aruco_NED_pos_x, -myam7_data_in_local.aruco_NED_pos_z + alt_offset_beacon}; 
-        waypoint_set_enu(WP_SIXDOF, &target_pos_sixdof); 
-        // Send to the GCS that the waypoint has been moved
-        static uint8_t wp_id = WP_SIXDOF;
-        RunOnceEvery(PERIODIC_FREQUENCY / 10.0f, { //Update SIXDOF waypoint every 0.1 seconds
-            DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-                                    &waypoints[WP_SIXDOF].enu_i.x,
-                                    &waypoints[WP_SIXDOF].enu_i.y,
-                                    &waypoints[WP_SIXDOF].enu_i.z);
-        });
-
-    #endif
+    memcpy(&extra_data_in_local,extra_data_in_ptr,255 * sizeof(float));    
 }
 
 /**
@@ -1738,12 +1724,19 @@ void overactuated_mixing_run(void)
         manual_phi_value = MANUAL_CONTROL_MAX_CMD_ROLL_ANGLE * radio_control.values[RADIO_MANUAL_ROLL_CMD] / MAX_PPRZ;
         manual_theta_value = MANUAL_CONTROL_MAX_CMD_PITCH_ANGLE * radio_control.values[RADIO_MANUAL_PITCH_CMD] / MAX_PPRZ;
 
-        #ifdef USE_EXT_REF_ATTITUDE
+        #ifdef USE_SHIP_BOX_EXT_REF_ATTITUDE
             if(approach_state && control_mode_ovc_vehicle == 3){
                 manual_phi_value = ship_info_receive.phi * M_PI/180;
                 manual_theta_value = ship_info_receive.theta * M_PI/180;
             }
         #endif
+
+        #ifdef USE_SIXDOF_EXT_REF_ATTITUDE
+            if(approach_state && control_mode_ovc_vehicle == 3 && myam7_data_in_local.sixdof_system_status == 3){
+                manual_phi_value = - (myam7_data_in_local.sixdof_relative_phi * 0.01f * M_PI/180);
+                manual_theta_value = - (myam7_data_in_local.sixdof_relative_theta * 0.01f * M_PI/180);
+            }
+        #endif        
 
         if(use_slider_attitude){
             manual_phi_value = roll_target_slider*M_PI/180;
@@ -2210,6 +2203,29 @@ void overactuated_mixing_run(void)
 
     }
 
+
+    //Retrieve the position of the beacons and update the waypoints: 
+    struct EnuCoor_f target_pos_sixdof = {myam7_data_in_local.sixdof_NED_pos_x, myam7_data_in_local.sixdof_NED_pos_x, -myam7_data_in_local.sixdof_NED_pos_z + alt_offset_beacon}; 
+    waypoint_set_enu(WP_SIXDOF, &target_pos_sixdof); 
+    // Send to the GCS that the waypoint has been moved
+    static uint8_t wp_id = WP_SIXDOF;
+    RunOnceEvery(PERIODIC_FREQUENCY / 2.0f, { //Update SIXDOF waypoint every 0.5 seconds
+        DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+                                &waypoints[WP_SIXDOF].enu_i.x,
+                                &waypoints[WP_SIXDOF].enu_i.y,
+                                &waypoints[WP_SIXDOF].enu_i.z);
+    });
+
+    //Do the same for the aruco marker: 
+    struct EnuCoor_f target_pos_aruco = {myam7_data_in_local.aruco_NED_pos_y, myam7_data_in_local.aruco_NED_pos_x, -myam7_data_in_local.aruco_NED_pos_z + alt_offset_beacon};
+    waypoint_set_enu(WP_ARUCO, &target_pos_aruco);
+    static uint8_t wp_id_aruco = WP_ARUCO;
+    RunOnceEvery(PERIODIC_FREQUENCY / 2.0f, { //Update ARUCO waypoint every 0.5 seconds
+        DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id_aruco,
+                                &waypoints[WP_ARUCO].enu_i.x,
+                                &waypoints[WP_ARUCO].enu_i.y,
+                                &waypoints[WP_ARUCO].enu_i.z);
+    });
 
     //Send to the raspberry pi the values for the next optimization run.
     send_values_to_raspberry_pi();
