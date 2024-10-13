@@ -125,11 +125,11 @@ void ivy_bus_out_handle() {
 
             //Process the values and send them to the ivy bus:
             if(send_values_on_ivy){
-                IvySendMsg("SIXDOF_TRACKING %f %f %f %f %f %f %f %f %f %f %f %f %f", my_sixdof_packet_local.timestamp_position, my_sixdof_packet_local.x_body_pos, my_sixdof_packet_local.y_body_pos, my_sixdof_packet_local.z_body_pos, my_sixdof_packet_local.relative_phi_rad, my_sixdof_packet_local.relative_theta_rad, my_sixdof_packet_local.relative_psi_rad, my_sixdof_packet_local.x_body_pos_var, my_sixdof_packet_local.y_body_pos_var, my_sixdof_packet_local.z_body_pos_var, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var);
+                IvySendMsg("SIXDOF_TRACKING %f %f %f %f %f %f %f %f %f %f %f %f %f", my_sixdof_packet_local.timestamp_position, my_sixdof_packet_local.x_abs_pos, my_sixdof_packet_local.y_abs_pos, my_sixdof_packet_local.z_abs_pos, my_sixdof_packet_local.relative_phi_rad, my_sixdof_packet_local.relative_theta_rad, my_sixdof_packet_local.relative_psi_rad, my_sixdof_packet_local.x_abs_pos_var, my_sixdof_packet_local.y_abs_pos_var, my_sixdof_packet_local.z_abs_pos_var, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var);
             }
                 
             if(verbose_tx){
-                printf("SIXDOF_TRACKING %f %f %f %f %f %f %f %f %f %f %f %f %f", my_sixdof_packet_local.timestamp_position, my_sixdof_packet_local.x_body_pos, my_sixdof_packet_local.y_body_pos, my_sixdof_packet_local.z_body_pos, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var, my_sixdof_packet_local.x_body_pos_var, my_sixdof_packet_local.y_body_pos_var, my_sixdof_packet_local.z_body_pos_var, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var);
+                printf("SIXDOF_TRACKING %f %f %f %f %f %f %f %f %f %f %f %f %f", my_sixdof_packet_local.timestamp_position, my_sixdof_packet_local.x_abs_pos, my_sixdof_packet_local.y_abs_pos, my_sixdof_packet_local.z_abs_pos, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var, my_sixdof_packet_local.x_abs_pos_var, my_sixdof_packet_local.y_abs_pos_var, my_sixdof_packet_local.z_abs_pos_var, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var);
                 printf("\n");
             } 
 
@@ -152,7 +152,7 @@ void ivy_bus_out_handle() {
         }       
 
         //Check if new beacon position message is available and send it to the ivy bus: 
-        if(beacon_pos_msg_available){
+        if(beacon_pos_msg_available_local){
             //Copy the struct values to a local one:
             static struct register_beacon_packet my_beacon_packet_local;
             pthread_mutex_lock(&mutex_ivy_bus);
@@ -182,12 +182,12 @@ void ivy_bus_out_handle() {
             for(int i = 0; i < N_BEACON; i++){
                 if(send_values_on_ivy && my_rel_angle_packet_local.beacon_id[i] != 0){
                     //Send values over IVYBUS
-                    IvySendMsg("RELATIVE_BEACON_ANGLE %f %d %f %f %f %f %f", 
+                    IvySendMsg("RELATIVE_BEACON_ANGLE %f %d %f %f %f %f", 
                     my_rel_angle_packet_local.timestamp_rel_angle[i], my_rel_angle_packet_local.beacon_id[i], 
                     my_rel_angle_packet_local.x_angle_rad[i], my_rel_angle_packet_local.z_angle_rad[i], my_rel_angle_packet_local.intensity[i], my_rel_angle_packet_local.width[i]);
                 }
                 if(verbose_tx){
-                    printf("RELATIVE_BEACON_ANGLE %f %d %f %f %f %f %f", my_rel_angle_packet_local.timestamp_rel_angle[i], my_rel_angle_packet_local.beacon_id[i], my_rel_angle_packet_local.x_angle_rad[i], my_rel_angle_packet_local.z_angle_rad[i], my_rel_angle_packet_local.intensity[i], my_rel_angle_packet_local.width[i]);
+                    printf("RELATIVE_BEACON_ANGLE %f %d %f %f %f %f", my_rel_angle_packet_local.timestamp_rel_angle[i], my_rel_angle_packet_local.beacon_id[i], my_rel_angle_packet_local.x_angle_rad[i], my_rel_angle_packet_local.z_angle_rad[i], my_rel_angle_packet_local.intensity[i], my_rel_angle_packet_local.width[i]);
                     printf("\n");
                 }
             }
@@ -381,7 +381,7 @@ int main(int ac, const char *av[]) {
             clock_gettime(CLOCK_BOOTTIME, &ts);
             double current_timestamp = ts.tv_sec + ts.tv_nsec * 1e-9;
 
-            my_fov_report_packet.fov_timestamp_beacon[j] = current_timestamp;
+            my_fov_report_packet.timestamp_fov[j] = current_timestamp;
             my_fov_report_packet.fov_beacon_id[j] = entry.first;    // Beacon ID
             my_fov_report_packet.sensor_seen_count[j] = entry.second;      // Number of optical sensors that saw the beacon
 
@@ -389,7 +389,7 @@ int main(int ac, const char *av[]) {
             if (log_file != nullptr && produce_log_file) {
                 pthread_mutex_lock(&mutex_logger);
                 fprintf(log_file, "Msg_id: %d, Timestamp: %f, Beacon ID: %d, Seen Count: %d\n",
-                        msg_id_fov, my_fov_report_packet.fov_timestamp_beacon[j], my_fov_report_packet.fov_beacon_id[j], my_fov_report_packet.sensor_seen_count[j]);
+                        msg_id_fov, my_fov_report_packet.timestamp_fov[j], my_fov_report_packet.fov_beacon_id[j], my_fov_report_packet.sensor_seen_count[j]);
                 fflush(log_file);
                 pthread_mutex_unlock(&mutex_logger);
             }
@@ -451,15 +451,15 @@ int main(int ac, const char *av[]) {
             static struct register_sixdof_packet my_sixdof_packet_local; 
 
             my_sixdof_packet_local.timestamp_position = current_timestamp; 
-            my_sixdof_packet_local.x_body_pos = (float) -sd.x; 
-            my_sixdof_packet_local.y_body_pos = (float) -sd.y; 
-            my_sixdof_packet_local.z_body_pos = (float) -sd.z; 
+            my_sixdof_packet_local.x_abs_pos = (float) -sd.x; 
+            my_sixdof_packet_local.y_abs_pos = (float) -sd.y; 
+            my_sixdof_packet_local.z_abs_pos = (float) -sd.z; 
             my_sixdof_packet_local.relative_phi_rad = (float) euler_angles[0];
             my_sixdof_packet_local.relative_theta_rad = (float) euler_angles[1];
             my_sixdof_packet_local.relative_psi_rad = (float) euler_angles[2];
-            my_sixdof_packet_local.x_body_pos_var = (float) sd.var_x; 
-            my_sixdof_packet_local.y_body_pos_var = (float) sd.var_y; 
-            my_sixdof_packet_local.z_body_pos_var = (float) sd.var_y; 
+            my_sixdof_packet_local.x_abs_pos_var = (float) sd.var_x; 
+            my_sixdof_packet_local.y_abs_pos_var = (float) sd.var_y; 
+            my_sixdof_packet_local.z_abs_pos_var = (float) sd.var_y; 
             my_sixdof_packet_local.phi_rad_var = (float) sd.var_h;
             my_sixdof_packet_local.theta_rad_var = (float) sd.var_p;
             my_sixdof_packet_local.psi_rad_var = (float) sd.var_r;

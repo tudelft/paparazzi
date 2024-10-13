@@ -32,7 +32,7 @@ struct  __attribute__((__packed__)) register_beacon_packet {
 };
 
 struct __attribute__((__packed__)) fov_report_packet {
-    double timestamp_fow[N_BEACON];
+    double timestamp_fov[N_BEACON];
     int fov_beacon_id[N_BEACON];
     int sensor_seen_count[N_BEACON];
 };
