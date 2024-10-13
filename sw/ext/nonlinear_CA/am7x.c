@@ -2330,8 +2330,9 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
     }
 
     if(sqrtf(var_x*var_x + var_y*var_y + var_z*var_z) < max_tolerance_variance_sixdof){
-      float local_pos_target_body_rf[3] = {X_pos, Y_pos, Z_pos}; 
-        //Get current euler angles and UAV position from serial connection through mutex:     
+      //Adjust position WP according to the reference frame in the SIXDOF system:
+      float beacon_pos_sixdof_rf[3] = {Z_pos, X_pos, Y_pos}; 
+      //Get current euler angles and UAV position from serial connection through mutex:     
       struct am7_data_in myam7_data_in_copy;
       pthread_mutex_lock(&mutex_am7);
       memcpy(&myam7_data_in_copy, &myam7_data_in, sizeof(struct am7_data_in));
@@ -2341,20 +2342,16 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
                                       (float) myam7_data_in_copy.theta_state_int*1e-2*M_PI/180,
                                       (float) myam7_data_in_copy.psi_state_int*1e-2*M_PI/180};
 
+      //Define the relative euler angles taking from the SIXDOF inertial RF to the NED UAV RF:
+      float delta_euler_angles[3] = {UAV_euler_angles_rad[0] - Phi_rad, UAV_euler_angles_rad[1] - Theta_rad, UAV_euler_angles_rad[2] - Psi_rad};
       //Transpose relative position to target position for the UAV: 
       float beacon_absolute_ned_pos[3];
       // from_body_to_earth(&beacon_absolute_ned_pos[0], &local_pos_target_body_rf[0], UAV_euler_angles_rad[0], UAV_euler_angles_rad[1], UAV_euler_angles_rad[2]);
-      // from_body_to_earth(&beacon_absolute_ned_pos[0], &local_pos_target_body_rf[0], 0, 0, 0);
-      // beacon_absolute_ned_pos[0] = local_pos_target_body_rf[1]; 
-      // beacon_absolute_ned_pos[1] = local_pos_target_body_rf[0];
-      // beacon_absolute_ned_pos[2] = local_pos_target_body_rf[2];
+      from_body_to_earth(&beacon_absolute_ned_pos[0], &beacon_pos_sixdof_rf[0], delta_euler_angles[0], delta_euler_angles[1], delta_euler_angles[2]);
       //Sum current UAV position to have the real abs marker value: 
       for(int i = 0; i < 3; i++){
         beacon_absolute_ned_pos[i] += UAV_NED_pos[i]; 
       }
-
-      //Based on the euler angles, determine the relative euler angles of the target:
-
 
 
       //Retrieve system status from sixdof through mutex:
@@ -2377,9 +2374,9 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
         printf("Sixdof NED pos_x = %f \n",(float) sixdof_detection_copy.NED_pos_x ); 
         printf("Sixdof NED pos_y = %f \n",(float) sixdof_detection_copy.NED_pos_y ); 
         printf("Sixdof NED pos_z  = %f \n",(float) sixdof_detection_copy.NED_pos_z ); 
-        printf("Sixdof BODY pos_x = %f \n",(float) local_pos_target_body_rf[0] ); 
-        printf("Sixdof BODY pos_y = %f \n",(float) local_pos_target_body_rf[1] ); 
-        printf("Sixdof BODY pos_z  = %f \n \n",(float) local_pos_target_body_rf[2] ); 
+        printf("Sixdof RF pos_x = %f \n",(float) beacon_pos_sixdof_rf[0] ); 
+        printf("Sixdof RF pos_y = %f \n",(float) beacon_pos_sixdof_rf[1] ); 
+        printf("Sixdof RF pos_z  = %f \n \n",(float) beacon_pos_sixdof_rf[2] ); 
         //Add relative angles, variance and system status: 
         printf("Sixdof Phi = %f \n",(float) Phi_rad*180/M_PI );
         printf("Sixdof Theta = %f \n",(float) Theta_rad*180/M_PI );
