@@ -55,14 +55,14 @@ struct outer_loop_output myouter_loop_output;
 pthread_mutex_t mutex_am7, mutex_optimizer_input, mutex_outer_loop_output;
 
 int verbose_sixdof = 0;
-int verbose_connection = 0;
+int verbose_connection = 1;
 int verbose_outer_loop = 0; 
 int verbose_inner_loop = 0;
 int verbose_runtime = 0; 
 int verbose_data_in = 0; 
 int verbose_submitted_data = 0; 
 int verbose_ivy_bus = 0; 
-int verbose_aruco = 1; 
+int verbose_aruco = 0; 
 int verbose_compute_accel = 0; 
 int verbose_filters = 0; 
 
