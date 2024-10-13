@@ -326,7 +326,13 @@ void send_states_on_ivy(){
     if(ts.tv_sec + ts.tv_nsec*1e-9 - time_last_heartbeat_ivy_out > 1.0){
       //Save the current timestamp
       time_last_heartbeat_ivy_out = ts.tv_sec + ts.tv_nsec*1e-9;
-      IvySendMsg("HEARTBEAT_AM7 %f", time_last_heartbeat_ivy_out);
+
+      //Prepare the text message to send
+      char ivy_heartbeat_msg[256];
+      snprintf(ivy_heartbeat_msg, sizeof(ivy_heartbeat_msg), "HEARTBEAT_AM7 %.9f", time_last_heartbeat_ivy_out);
+      
+      IvySendMsg("%s", ivy_heartbeat_msg);
+      if(verbose_ivy_bus) printf("%s\n", ivy_heartbeat_msg);
     }
 
 }
@@ -2198,8 +2204,12 @@ static void sixdof_current_mode_callback(IvyClientPtr app, void *user_data, int 
     pthread_mutex_unlock(&mutex_sixdof);
     //1 -->rel beacon pos; 2 -->rel beacon angle; 3-->sixdof mode. Default is 1. 
     if(current_sixdof_mode_local != desired_sixdof_mode_local){
-      //Change sixdof mode 
-      IvySendMsg("SET_SIXDOF_SYS_MODE %d", desired_sixdof_mode_local);
+      //Prepare the text message to send using snprintf
+      char ivy_msg[256];
+      snprintf(ivy_msg, sizeof(ivy_msg), "SET_SIXDOF_SYS_MODE %d", desired_sixdof_mode_local);
+      //Send message to ivy bus: 
+      IvySendMsg("%s", ivy_msg);
+      if(verbose_ivy_bus) printf("%s\n", ivy_msg);
     }
   }
 }

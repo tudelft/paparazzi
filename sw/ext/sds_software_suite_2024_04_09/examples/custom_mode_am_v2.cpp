@@ -123,15 +123,21 @@ void ivy_bus_out_handle() {
             memcpy(&my_sixdof_packet_local, &my_sixdof_packet, sizeof(struct register_sixdof_packet));
             pthread_mutex_unlock(&mutex_ivy_bus); 
 
-            //Process the values and send them to the ivy bus:
-            if(send_values_on_ivy){
-                IvySendMsg("SIXDOF_TRACKING %f %f %f %f %f %f %f %f %f %f %f %f %f", my_sixdof_packet_local.timestamp_position, my_sixdof_packet_local.x_abs_pos, my_sixdof_packet_local.y_abs_pos, my_sixdof_packet_local.z_abs_pos, my_sixdof_packet_local.relative_phi_rad, my_sixdof_packet_local.relative_theta_rad, my_sixdof_packet_local.relative_psi_rad, my_sixdof_packet_local.x_abs_pos_var, my_sixdof_packet_local.y_abs_pos_var, my_sixdof_packet_local.z_abs_pos_var, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var);
-            }
+            //Prepare message with snprintf: 
+            char msg_ivy[256];
+            snprintf(msg_ivy, sizeof(msg_ivy), "SIXDOF_TRACKING %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f", 
+                my_sixdof_packet_local.timestamp_position,
+                my_sixdof_packet_local.x_abs_pos, my_sixdof_packet_local.y_abs_pos, my_sixdof_packet_local.z_abs_pos,
+                my_sixdof_packet_local.relative_phi_rad, my_sixdof_packet_local.relative_theta_rad,
+                my_sixdof_packet_local.relative_psi_rad, my_sixdof_packet_local.x_abs_pos_var,
+                my_sixdof_packet_local.y_abs_pos_var, my_sixdof_packet_local.z_abs_pos_var,
+                my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var,
+                my_sixdof_packet_local.psi_rad_var);
+
+            //Send vaues to the ivy bus:
+            if(send_values_on_ivy) IvySendMsg("%s",msg_ivy);
                 
-            if(verbose_tx){
-                printf("SIXDOF_TRACKING %f %f %f %f %f %f %f %f %f %f %f %f %f", my_sixdof_packet_local.timestamp_position, my_sixdof_packet_local.x_abs_pos, my_sixdof_packet_local.y_abs_pos, my_sixdof_packet_local.z_abs_pos, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var, my_sixdof_packet_local.x_abs_pos_var, my_sixdof_packet_local.y_abs_pos_var, my_sixdof_packet_local.z_abs_pos_var, my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var, my_sixdof_packet_local.psi_rad_var);
-                printf("\n");
-            } 
+            if(send_values_on_ivy && verbose_tx) printf("%s\n", msg_ivy);
 
         }
 
@@ -141,14 +147,14 @@ void ivy_bus_out_handle() {
             clock_gettime(CLOCK_BOOTTIME, &ts);
             double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9; 
 
-            if(send_values_on_ivy){
-                IvySendMsg("SIXDOF_SYSTEM_CURRENT_MODE %f %d", current_timestamp, current_sixdof_mode);  
-            }
-            
-           if(verbose_tx){
-                printf("SIXDOF_SYSTEM_CURRENT_MODE %f %d", current_timestamp, current_sixdof_mode);
-                printf("\n");
-            }
+            //Prepare message with snprintf:
+            char msg_ivy[256];
+            snprintf(msg_ivy, sizeof(msg_ivy), "SIXDOF_SYSTEM_CURRENT_MODE %.5f %d", current_timestamp, current_sixdof_mode);
+
+            //Send values to the ivy bus:
+            if(send_values_on_ivy) IvySendMsg("%s",msg_ivy);
+
+            if(send_values_on_ivy && verbose_tx) printf("%s\n", msg_ivy);
         }       
 
         //Check if new beacon position message is available and send it to the ivy bus: 
@@ -160,14 +166,18 @@ void ivy_bus_out_handle() {
             pthread_mutex_unlock(&mutex_ivy_bus);
             for(int i = 0; i < N_BEACON; i++){
                 if(send_values_on_ivy && my_beacon_packet_local.beacon_id[i] != 0){
-                    //Send values over IVYBUS
-                    IvySendMsg("RELATIVE_BEACON_POS %f %d %f %f %f ", 
-                    my_beacon_packet_local.timestamp_beacon[i], my_beacon_packet_local.beacon_id[i], 
-                    my_beacon_packet_local.x_body_pos_beacon[i], my_beacon_packet_local.y_body_pos_beacon[i], my_beacon_packet_local.z_body_pos_beacon[i]);
-                }
-                if(verbose_tx){
-                    printf("RELATIVE_BEACON_POS %f %d %f %f %f ", my_beacon_packet_local.timestamp_beacon[i], my_beacon_packet_local.beacon_id[i], my_beacon_packet_local.x_body_pos_beacon[i], my_beacon_packet_local.y_body_pos_beacon[i], my_beacon_packet_local.z_body_pos_beacon[i]);
-                    printf("\n");
+
+                    //Prepare message with snprintf:
+                    char msg_ivy[256];
+                    snprintf(msg_ivy, sizeof(msg_ivy), "RELATIVE_BEACON_POS %.5f %d %.5f %.5f %.5f ", 
+                        my_beacon_packet_local.timestamp_beacon[i], my_beacon_packet_local.beacon_id[i], 
+                        my_beacon_packet_local.x_body_pos_beacon[i], my_beacon_packet_local.y_body_pos_beacon[i], 
+                        my_beacon_packet_local.z_body_pos_beacon[i]);
+
+                    //Send values to the ivy bus:
+                    IvySendMsg("%s",msg_ivy);
+
+                    if(verbose_tx) printf("%s\n", msg_ivy);
                 }
             }
         }   
@@ -181,14 +191,18 @@ void ivy_bus_out_handle() {
             pthread_mutex_unlock(&mutex_ivy_bus);
             for(int i = 0; i < N_BEACON; i++){
                 if(send_values_on_ivy && my_rel_angle_packet_local.beacon_id[i] != 0){
-                    //Send values over IVYBUS
-                    IvySendMsg("RELATIVE_BEACON_ANGLE %f %d %f %f %f %f", 
-                    my_rel_angle_packet_local.timestamp_rel_angle[i], my_rel_angle_packet_local.beacon_id[i], 
-                    my_rel_angle_packet_local.x_angle_rad[i], my_rel_angle_packet_local.z_angle_rad[i], my_rel_angle_packet_local.intensity[i], my_rel_angle_packet_local.width[i]);
-                }
-                if(verbose_tx){
-                    printf("RELATIVE_BEACON_ANGLE %f %d %f %f %f %f", my_rel_angle_packet_local.timestamp_rel_angle[i], my_rel_angle_packet_local.beacon_id[i], my_rel_angle_packet_local.x_angle_rad[i], my_rel_angle_packet_local.z_angle_rad[i], my_rel_angle_packet_local.intensity[i], my_rel_angle_packet_local.width[i]);
-                    printf("\n");
+                    //Prepare message with snprintf:
+                    char msg_ivy[256];
+                    snprintf(msg_ivy, sizeof(msg_ivy), "RELATIVE_BEACON_ANGLE %.5f %d %.5f %.5f %.5f %.5f", 
+                        my_rel_angle_packet_local.timestamp_rel_angle[i], my_rel_angle_packet_local.beacon_id[i], 
+                        my_rel_angle_packet_local.x_angle_rad[i], my_rel_angle_packet_local.z_angle_rad[i], 
+                        my_rel_angle_packet_local.intensity[i], my_rel_angle_packet_local.width[i]);
+                    
+                    //Send values to the ivy bus:
+                    IvySendMsg("%s",msg_ivy);
+
+                    if(verbose_tx) printf("%s\n", msg_ivy);
+
                 }
             }
         }
@@ -285,13 +299,15 @@ std::string generateLogFileName() {
 void initializeLogFile() {
     // Create the "logs" subfolder if it doesn't exist
     const char* folder_name = "logs";
-    mkdir(folder_name, 0777);
-
-    std::string log_file_name = std::string(folder_name) + "/" + generateLogFileName();
-    log_file = fopen(log_file_name.c_str(), "a");
-    if (log_file == nullptr) {
-        perror("Failed to open log file");
+    if(produce_log_file){
+        mkdir(folder_name, 0777);
+        std::string log_file_name = std::string(folder_name) + "/" + generateLogFileName();
+        log_file = fopen(log_file_name.c_str(), "a");
+        if (log_file == nullptr) {
+            perror("Failed to open log file");
+        }
     }
+
 }
 
 /* This is an example of Relative Beacon tracking */
