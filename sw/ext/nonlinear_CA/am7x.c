@@ -62,7 +62,7 @@ int verbose_runtime = 0;
 int verbose_data_in = 0; 
 int verbose_submitted_data = 0; 
 int verbose_ivy_bus = 0; 
-int verbose_aruco = 0; 
+int verbose_aruco = 1; 
 int verbose_compute_accel = 0; 
 int verbose_filters = 0; 
 
@@ -70,8 +70,13 @@ int verbose_filters = 0;
 int16_t lidar_dist_cm = -1; 
 int16_t lidar_signal_strength = -1; 
 
+//IYY BUS COM VARIABLES: 
+double time_last_heartbeat_ivy_out = 0.0;
+
 //COMPUTER VISION 
 struct marker_detection_t aruco_detection;
+int aruco_system_status = 0;
+double last_ping_time_aruco = 0.0;
 pthread_mutex_t mutex_aruco;
 
 //SIXDOF VARIABLES: [default]
@@ -313,6 +318,17 @@ void send_states_on_ivy(){
             (int32_t) (-1/0.0039063),
             (int32_t) (-1/0.0039063),
             (uint16_t) (-1/0.0039063));
+
+    //Send heartbeat message over ivy bus every second:
+    struct timespec ts;
+    clock_gettime(CLOCK_BOOTTIME, &ts);
+    //If time is greater than 1 second, send heartbeat message
+    if(ts.tv_sec + ts.tv_nsec*1e-9 - time_last_heartbeat_ivy_out > 1.0){
+      //Save the current timestamp
+      time_last_heartbeat_ivy_out = ts.tv_sec + ts.tv_nsec*1e-9;
+      IvySendMsg("HEARTBEAT_AM7 %f", time_last_heartbeat_ivy_out);
+    }
+
 }
 
 void send_receive_am7(){
@@ -2093,8 +2109,20 @@ void* fourth_thread() //Run the inner loop of the optimization code
   
     pthread_mutex_lock(&mutex_aruco);
     memcpy(&aruco_detection_copy, &aruco_detection, sizeof(struct marker_detection_t));
+    double last_ping_time_aruco_local = last_ping_time_aruco;
     pthread_mutex_unlock(&mutex_aruco); 
 
+    //Compare the time of the last ping with the current time to check if the system is still alive:
+    struct timespec ts;
+    clock_gettime(CLOCK_BOOTTIME, &ts);
+    double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9;
+    if((current_timestamp - last_ping_time_aruco_local) > 3.0f){
+      //If the system does not communicate anything for more than 3 seconds, set the system status to -1.
+      aruco_detection_copy.system_status = -10;
+      if(verbose_aruco){
+        fprintf(stderr,"Aruco system is not communicating or it is inoperative. \n");
+      }
+    }
     myam7_data_out_copy.aruco_detection_timestamp = aruco_detection_copy.timestamp_detection;
     myam7_data_out_copy.aruco_NED_pos_x = aruco_detection_copy.NED_pos_x;
     myam7_data_out_copy.aruco_NED_pos_y = aruco_detection_copy.NED_pos_y;
@@ -2109,12 +2137,11 @@ void* fourth_thread() //Run the inner loop of the optimization code
     pthread_mutex_unlock(&mutex_sixdof);
 
     //Compare the time of the last ping with the current time to check if the system is still alive:
-    struct timespec ts; 
     clock_gettime(CLOCK_BOOTTIME, &ts);
-    double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9; 
+    current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9; 
     if((current_timestamp - last_ping_time_sixdof_local) > 3.0f){
       //If the system does not communicate anything for more than 3 seconds, set the system status to -1.
-      sixdof_detection_copy.system_status = -1; 
+      sixdof_detection_copy.system_status = -10; 
       if(verbose_sixdof){
         fprintf(stderr,"Sixdof system is not communicating or it is inoperative. \n");
       }
@@ -2160,16 +2187,17 @@ static void sixdof_current_mode_callback(IvyClientPtr app, void *user_data, int 
   }
   else{
     double timestamp_d = atof(argv[0]); 
-    current_sixdof_mode = (int) atof(argv[1]); 
+    int8_t current_sixdof_mode_local = (int) atof(argv[1]); 
     if(verbose_sixdof){
-      fprintf(stderr,"Received SIXDOF_SYSTEM_CURRENT_MODE - Timestamp = %.5f, current_mode = %d; \n",timestamp_d,current_sixdof_mode);
+      fprintf(stderr,"Received SIXDOF_SYSTEM_CURRENT_MODE - Timestamp = %.5f, current_mode = %d; \n",timestamp_d,current_sixdof_mode_local);
     }
     pthread_mutex_lock(&mutex_sixdof);
     int desired_sixdof_mode_local = desired_sixdof_mode;
+    current_sixdof_mode = current_sixdof_mode_local;
     last_ping_time_sixdof = timestamp_d;  
     pthread_mutex_unlock(&mutex_sixdof);
     //1 -->rel beacon pos; 2 -->rel beacon angle; 3-->sixdof mode. Default is 1. 
-    if(current_sixdof_mode != desired_sixdof_mode_local){
+    if(current_sixdof_mode_local != desired_sixdof_mode_local){
       //Change sixdof mode 
       IvySendMsg("SET_SIXDOF_SYS_MODE %d", desired_sixdof_mode_local);
     }
@@ -2195,7 +2223,8 @@ static void sixdof_beacon_pos_callback(IvyClientPtr app, void *user_data, int ar
 
     //use mutex: 
     pthread_mutex_lock(&mutex_sixdof);
-    int beacon_tracking_id_local = beacon_tracking_id; 
+    int beacon_tracking_id_local = beacon_tracking_id;
+    int8_t current_sixdof_mode_local = current_sixdof_mode; 
     pthread_mutex_unlock(&mutex_sixdof);
     
     //If beacon number is the one we want to track then transpose the position in NED frame and send it to the UAV: 
@@ -2224,7 +2253,7 @@ static void sixdof_beacon_pos_callback(IvyClientPtr app, void *user_data, int ar
       sixdof_detection_copy.NED_pos_x = beacon_absolute_ned_pos[0]; 
       sixdof_detection_copy.NED_pos_y = beacon_absolute_ned_pos[1];  
       sixdof_detection_copy.NED_pos_z  = beacon_absolute_ned_pos[2];  
-      sixdof_detection_copy.system_status = (int8_t) current_sixdof_mode;
+      sixdof_detection_copy.system_status = current_sixdof_mode_local;
       
       if(verbose_sixdof){
         printf("Sixdof timestamp = %f \n", sixdof_detection_copy.timestamp_detection); 
@@ -2261,6 +2290,8 @@ static void sixdof_beacon_angle_callback(IvyClientPtr app, void *user_data, int 
       fprintf(stderr,"Received beacon relative angle - Timestamp = %.5f, ID = %d; XAngle_deg = %.3f YAngle_deg = %.3f; Intensity = %.3f; Width = %.3f; \n",timestamp_d,beacon_id,XAngle_deg,YAngle_deg,Intensity,Width);
     }
   }
+
+  //DO something (TODO)
 }
 
 static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
@@ -2314,6 +2345,12 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
 
       //Based on the euler angles, determine the relative euler angles of the target:
 
+
+
+      //Retrieve system status from sixdof through mutex:
+      pthread_mutex_lock(&mutex_sixdof);
+      int8_t current_sixdof_mode_local = current_sixdof_mode;
+      pthread_mutex_unlock(&mutex_sixdof);
       //Copy absolute position to sixdof struct
       struct marker_detection_t sixdof_detection_copy; 
       sixdof_detection_copy.timestamp_detection = timestamp_d;
@@ -2323,7 +2360,7 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
       sixdof_detection_copy.relative_phi_rad = Phi_rad;
       sixdof_detection_copy.relative_theta_rad = Theta_rad;
       sixdof_detection_copy.relative_psi_rad = Psi_rad;
-      sixdof_detection_copy.system_status = (int8_t) current_sixdof_mode;
+      sixdof_detection_copy.system_status = current_sixdof_mode_local;
       
       if(verbose_sixdof){
         printf("Sixdof timestamp = %f \n", sixdof_detection_copy.timestamp_detection); 
@@ -2333,10 +2370,17 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
         printf("Sixdof BODY pos_x = %f \n",(float) local_pos_target_body_rf[0] ); 
         printf("Sixdof BODY pos_y = %f \n",(float) local_pos_target_body_rf[1] ); 
         printf("Sixdof BODY pos_z  = %f \n \n",(float) local_pos_target_body_rf[2] ); 
-        //Add relative angles: 
+        //Add relative angles, variance and system status: 
         printf("Sixdof Phi = %f \n",(float) Phi_rad*180/M_PI );
         printf("Sixdof Theta = %f \n",(float) Theta_rad*180/M_PI );
         printf("Sixdof Psi = %f \n",(float) Psi_rad*180/M_PI );
+        printf("Sixdof var_x = %f \n",(float) var_x ); 
+        printf("Sixdof var_y = %f \n",(float) var_y );
+        printf("Sixdof var_z = %f \n",(float) var_z );
+        printf("Sixdof var_phi = %f \n",(float) var_phi );
+        printf("Sixdof var_theta = %f \n",(float) var_theta );
+        printf("Sixdof var_psi = %f \n",(float) var_psi );
+        printf("Sixdof system status = %d \n", current_sixdof_mode_local);
       }
 
       pthread_mutex_lock(&mutex_sixdof);
@@ -2354,11 +2398,17 @@ static void aruco_position_report(IvyClientPtr app, void *user_data, int argc, c
   }
   struct marker_detection_t aruco_detection_copy; 
 
+  //Retrive and copy system status: 
+  pthread_mutex_lock(&mutex_aruco);
+  int aruco_system_status_local = aruco_detection.system_status;
+  pthread_mutex_unlock(&mutex_aruco);
+
   gettimeofday(&aruco_time, NULL); 
   aruco_detection_copy.timestamp_detection = (aruco_time.tv_sec*1e6 - starting_time_program_execution.tv_sec*1e6 + aruco_time.tv_usec - starting_time_program_execution.tv_usec)*1e-6;
   aruco_detection_copy.NED_pos_x = atof(argv[1]); 
   aruco_detection_copy.NED_pos_y = atof(argv[2]);  
   aruco_detection_copy.NED_pos_z  = atof(argv[3]);  
+  aruco_detection_copy.system_status = aruco_system_status_local;
   
   if(verbose_aruco){
     printf("\n Aruco timestamp = %f \n", aruco_detection_copy.timestamp_detection); 
@@ -2371,6 +2421,89 @@ static void aruco_position_report(IvyClientPtr app, void *user_data, int argc, c
   memcpy(&aruco_detection, &aruco_detection_copy, sizeof(struct marker_detection_t));
   pthread_mutex_unlock(&mutex_aruco); 
 
+}
+
+static void aruco_position_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
+{
+  if (argc != 5)
+  {
+    fprintf(stderr,"ERROR: invalid message length ARUCO_RELATIVE_POS\n");
+  }
+  else{
+    float beacon_rel_pos[3];
+    double timestamp_d = atof(argv[0]);
+    int aruco_marker_id = (int) atof(argv[1]);
+    beacon_rel_pos[0] = (float) atof(argv[2]);
+    beacon_rel_pos[1] = (float) atof(argv[3]);
+    beacon_rel_pos[2] = (float) atof(argv[4]);
+    //Get current euler angles and UAV position from serial connection through mutex:     
+    struct am7_data_in myam7_data_in_copy;
+    pthread_mutex_lock(&mutex_am7);
+    memcpy(&myam7_data_in_copy, &myam7_data_in, sizeof(struct am7_data_in));
+    pthread_mutex_unlock(&mutex_am7); 
+    float UAV_NED_pos[3] = {myam7_data_in_copy.UAV_NED_pos_x, myam7_data_in_copy.UAV_NED_pos_y, myam7_data_in_copy.UAV_NED_pos_z};
+    float UAV_euler_angles_rad[3] = {(float) myam7_data_in_copy.phi_state_int*1e-2*M_PI/180,
+                                    (float) myam7_data_in_copy.theta_state_int*1e-2*M_PI/180,
+                                    (float) myam7_data_in_copy.psi_state_int*1e-2*M_PI/180};
+    
+    //Transpose relative position to target position for the UAV:
+    float beacon_absolute_ned_pos[3];
+    from_body_to_earth(&beacon_absolute_ned_pos[0], &beacon_rel_pos[0], UAV_euler_angles_rad[0], UAV_euler_angles_rad[1], UAV_euler_angles_rad[2]);
+    //Sum current UAV position to have the real abs marker value:
+    for(int i = 0; i < 3; i++){
+      beacon_absolute_ned_pos[i] += UAV_NED_pos[i];
+    }
+
+    //Retrive and copy system status: 
+    pthread_mutex_lock(&mutex_aruco);
+    int aruco_system_status_local = aruco_detection.system_status;
+    pthread_mutex_unlock(&mutex_aruco);
+
+    //Copy absolute position to aruco struct
+    struct marker_detection_t aruco_detection_copy;
+    aruco_detection_copy.timestamp_detection = timestamp_d;
+    aruco_detection_copy.NED_pos_x = beacon_absolute_ned_pos[0];
+    aruco_detection_copy.NED_pos_y = beacon_absolute_ned_pos[1];
+    aruco_detection_copy.NED_pos_z = beacon_absolute_ned_pos[2];
+    aruco_detection_copy.system_status = (int8_t) aruco_system_status_local;
+
+    if(verbose_aruco){
+      printf("Aruco timestamp = %f \n", aruco_detection_copy.timestamp_detection);
+      printf("Aruco index = %d \n", aruco_marker_id);
+      printf("Aruco NED pos_x = %f \n",(float) aruco_detection_copy.NED_pos_x );
+      printf("Aruco NED pos_y = %f \n",(float) aruco_detection_copy.NED_pos_y );
+      printf("Aruco NED pos_z  = %f \n",(float) aruco_detection_copy.NED_pos_z );
+      printf("Aruco BODY pos_x = %f \n",(float) beacon_rel_pos[0] );
+      printf("Aruco BODY pos_y = %f \n",(float) beacon_rel_pos[1] );
+      printf("Aruco BODY pos_z  = %f \n \n",(float) beacon_rel_pos[2] );
+      printf("Aruco system status = %d \n", aruco_system_status_local);
+    }
+
+    pthread_mutex_lock(&mutex_aruco);
+    memcpy(&aruco_detection, &aruco_detection_copy, sizeof(struct marker_detection_t));
+    pthread_mutex_unlock(&mutex_aruco);
+
+  }
+
+}
+
+static void aruco_heartbit_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
+{
+  if (argc != 2)
+  {
+    fprintf(stderr,"ERROR: invalid message length HEARTBEAT_ARUCO\n");
+  }
+  else{
+    double timestamp_d = atof(argv[0]);
+    int aruco_system_status_local = (int) atof(argv[1]);
+    if(verbose_aruco){
+      fprintf(stderr,"Received ARUCO_HEARTBEAT - Timestamp = %.5f, system_status = %d; \n",timestamp_d,aruco_system_status);
+    }
+    pthread_mutex_lock(&mutex_aruco);
+    aruco_system_status = aruco_system_status_local;
+    last_ping_time_aruco = timestamp_d;
+    pthread_mutex_unlock(&mutex_aruco);
+  }
 }
 
 void main() {
@@ -2392,6 +2525,8 @@ void main() {
 
   #ifdef USE_ARUCO
     IvyBindMsg(aruco_position_report, NULL, "^ground DESIRED_SP %s (\\S*) (\\S*) (\\S*) (\\S*)", "1");
+    IvyBindMsg(aruco_position_callback, NULL, "ARUCO_RELATIVE_POS (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
+    IvyBindMsg(aruco_heartbit_callback, NULL, "HEARTBEAT_ARUCO (\\S*) (\\S*)");
   #endif
 
   #ifdef USE_SIXDOF
