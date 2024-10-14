@@ -178,6 +178,8 @@ PRINT_CONFIG_VAR(IMU_MAG_ABI_SEND_ID)
 #define IMU_LOG_HIGHSPEED_DEVICE flightrecorder_sdlog
 #endif
 
+#define USE_CONING TRUE
+#define DEBUG_CONING TRUE
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -382,6 +384,10 @@ void imu_init(void)
     if(!imu.gyros[i].calibrated.rotation) {
       int32_rmat_identity(&imu.gyros[i].body_to_sensor);
     }
+    
+    struct FloatRates RatesZero = { 0 };
+    RATES_COPY(imu.gyros[i].last_delta_alpha, RatesZero);  
+    
     imu.gyros[i].last_stamp = 0;
     int32_rmat_comp(&body_to_sensor, body_to_imu_rmat, &imu.gyros[i].body_to_sensor);
     RMAT_COPY(imu.gyros[i].body_to_sensor, body_to_sensor);
@@ -570,6 +576,7 @@ void imu_set_defaults_mag(uint8_t abi_id, const struct Int32RMat *imu_to_sensor,
   }
 }
 
+#if USE_CONING
 static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates *data, uint8_t samples, float rate, float temp)
 {
   // Find the correct gyro
@@ -610,15 +617,15 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
     RMAT_FLOAT_OF_BFP(body_to_sensor, gyro->body_to_sensor);
 
     // Variables for integration
-    struct FloatRates integrated_sensor;
-    struct FloatRates prev_rate;
+    struct FloatRates integrated_sensor = { 0 };
+    struct FloatRates prev_rate = { 0 };
     struct FloatRates beta = { 0 };
     struct FloatRates alpha = { 0 };
     struct FloatRates last_alpha = { 0 };
-    struct FloatRates delta_alpha;
-    struct FloatRates scaled_last_delta_alpha;
-    struct FloatRates lhs;
-    struct FloatRates alpha_cross;
+    struct FloatRates delta_alpha = { 0 };
+    struct FloatRates scaled_last_delta_alpha = { 0 };
+    struct FloatRates lhs = { 0 };
+    struct FloatRates alpha_cross = { 0 };
 
     // Only perform multiple integrations in sensor frame if needed
     if(samples > 1) {
@@ -667,10 +674,22 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
 
         RATES_COPY(last_alpha, alpha);
         RATES_COPY(gyro->last_delta_alpha, delta_alpha);
+
+      #if DEBUG_CONING
+        float payload[6];
+        payload[0] = integrated_sensor.p;
+        payload[1] = integrated_sensor.q;
+        payload[2] = integrated_sensor.r;
+        payload[3] = beta.p;
+        payload[4] = beta.q;
+        payload[5] = beta.r;
+
+        RunOnceEvery(10, {DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 6, payload);});
+
+      #endif
+
       }
 
-      // Rotate to body frame
-      float_rmat_transp_ratemult(&integrated, &body_to_sensor, &integrated_sensor);
     } else {
       integrated.p = RATE_FLOAT_OF_BFP(gyro->scaled.p + scaled_rot.p) * 0.5f * (1.f / rate);
       integrated.q = RATE_FLOAT_OF_BFP(gyro->scaled.q + scaled_rot.q) * 0.5f * (1.f / rate);
@@ -688,10 +707,121 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
       RATES_ADD(integrated_sensor, delta_alpha);
       RATES_ADD(integrated_sensor, beta);
 
+      #if DEBUG_CONING
+        float payload[6];
+        payload[0] = delta_alpha.p;
+        payload[1] = delta_alpha.q;
+        payload[2] = delta_alpha.r;
+        payload[3] = beta.p;
+        payload[4] = beta.q;
+        payload[5] = beta.r;
+
+        RunOnceEvery(10, {DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 6, payload);});
+
+      #endif
+
       RATES_COPY(gyro->last_delta_alpha, delta_alpha);
 
+    }
+    
+    // Rotate to body frame
+    float_rmat_transp_ratemult(&integrated, &body_to_sensor, &integrated_sensor);
+    
+    // Send the integrated values
+    uint16_t dt = (1e6 / rate) * samples;
+    AbiSendMsgIMU_GYRO_INT(sender_id, stamp, &integrated, dt);
+  }
+#else
+  (void)rate; // Surpress compile warning not used
+#endif
+
+#if IMU_LOG_HIGHSPEED
+  struct FloatRates f_sample;
+  RATES_FLOAT_OF_BFP(f_sample, scaled);
+  pprz_msg_send_IMU_GYRO(&pprzlog_tp.trans_tx, &(IMU_LOG_HIGHSPEED_DEVICE).device, AC_ID, &sender_id, &f_sample.p, &f_sample.q, &f_sample.r);
+#endif
+
+  // Copy and send
+  gyro->temperature = temp;
+  RATES_COPY(gyro->scaled, scaled_rot);
+  AbiSendMsgIMU_GYRO(sender_id, stamp, &gyro->scaled);
+  gyro->last_stamp = stamp;
+}
+
+#else
+
+static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates *data, uint8_t samples, float rate, float temp)
+{
+  // Find the correct gyro
+  struct imu_gyro_t *gyro = imu_get_gyro(sender_id, true);
+  if(gyro == NULL || samples < 1)
+    return;
+
+  // Filter the gyro
+  struct Int32Rates data_filtered[samples];
+  if(gyro->calibrated.filter) {
+    for(uint8_t i = 0; i < samples; i++) {
+      data_filtered[i].p = update_butterworth_2_low_pass(&gyro->filter[0], data[i].p);
+      data_filtered[i].q = update_butterworth_2_low_pass(&gyro->filter[1], data[i].q);
+      data_filtered[i].r = update_butterworth_2_low_pass(&gyro->filter[2], data[i].r);
+    }
+    data = data_filtered;
+  }
+
+  // Copy last sample as unscaled
+  RATES_COPY(gyro->unscaled, data[samples-1]);
+
+  // Scale the gyro
+  struct Int32Rates scaled, scaled_rot;
+  scaled.p = (gyro->unscaled.p - gyro->neutral.p) * gyro->scale[0].p / gyro->scale[1].p;
+  scaled.q = (gyro->unscaled.q - gyro->neutral.q) * gyro->scale[0].q / gyro->scale[1].q;
+  scaled.r = (gyro->unscaled.r - gyro->neutral.r) * gyro->scale[0].r / gyro->scale[1].r;
+
+  // Rotate the sensor
+  int32_rmat_transp_ratemult(&scaled_rot, &gyro->body_to_sensor, &scaled);
+
+#if IMU_INTEGRATION
+  // Only integrate if we have gotten a previous measurement and didn't overflow the timer
+  if(!isnan(rate) && gyro->last_stamp > 0 && stamp > gyro->last_stamp) {
+    struct FloatRates integrated;
+
+    // Trapezoidal integration (TODO: coning correction)
+    integrated.p = RATE_FLOAT_OF_BFP(gyro->scaled.p + scaled_rot.p) * 0.5f;
+    integrated.q = RATE_FLOAT_OF_BFP(gyro->scaled.q + scaled_rot.q) * 0.5f;
+    integrated.r = RATE_FLOAT_OF_BFP(gyro->scaled.r + scaled_rot.r) * 0.5f;
+
+    // Only perform multiple integrations in sensor frame if needed
+    if(samples > 1) {
+      struct FloatRates integrated_sensor;
+      struct FloatRMat body_to_sensor;
+      // Rotate back to sensor frame
+      RMAT_FLOAT_OF_BFP(body_to_sensor, gyro->body_to_sensor);
+      float_rmat_ratemult(&integrated_sensor, &body_to_sensor, &integrated);
+
+      // Add all the other samples
+      for(uint8_t i = 0; i < samples-1; i++) {
+        struct FloatRates f_sample;
+        f_sample.p = RATE_FLOAT_OF_BFP((data[i].p - gyro->neutral.p) * gyro->scale[0].p / gyro->scale[1].p);
+        f_sample.q = RATE_FLOAT_OF_BFP((data[i].q - gyro->neutral.q) * gyro->scale[0].q / gyro->scale[1].q);
+        f_sample.r = RATE_FLOAT_OF_BFP((data[i].r - gyro->neutral.r) * gyro->scale[0].r / gyro->scale[1].r);
+
+#if IMU_LOG_HIGHSPEED
+        pprz_msg_send_IMU_GYRO(&pprzlog_tp.trans_tx, &(IMU_LOG_HIGHSPEED_DEVICE).device, AC_ID, &sender_id, &f_sample.p, &f_sample.q, &f_sample.r);
+#endif
+
+        integrated_sensor.p += f_sample.p;
+        integrated_sensor.q += f_sample.q;
+        integrated_sensor.r += f_sample.r;
+      }
+
+      // Rotate to body frame
       float_rmat_transp_ratemult(&integrated, &body_to_sensor, &integrated_sensor);
     }
+
+    // Divide by the time of the collected samples
+    integrated.p = integrated.p * (1.f / rate);
+    integrated.q = integrated.q * (1.f / rate);
+    integrated.r = integrated.r * (1.f / rate);
 
     // Send the integrated values
     uint16_t dt = (1e6 / rate) * samples;
@@ -713,6 +843,7 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
   AbiSendMsgIMU_GYRO(sender_id, stamp, &gyro->scaled);
   gyro->last_stamp = stamp;
 }
+#endif
 
 static void imu_accel_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Vect3 *data, uint8_t samples, float rate, float temp)
 {
