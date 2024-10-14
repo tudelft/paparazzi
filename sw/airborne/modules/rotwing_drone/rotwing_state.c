@@ -24,8 +24,8 @@
  */
 
 #include "modules/rotwing_drone/rotwing_state.h"
-#include "firmwares/rotorcraft/stabilization/stabilization_indi.h" // remove dependency on stabilization_indi
-#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"    // remove dependency on guidance_indi_hybrid
+#include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
+#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
 #include "firmwares/rotorcraft/autopilot_firmware.h"
 
 #include "modules/actuators/actuators.h"
@@ -112,7 +112,7 @@ static bool rotwing_state_hover_motors_idling(void);
 static const float Wu_gih_original[GUIDANCE_INDI_HYBRID_U] = GUIDANCE_INDI_WLS_WU;
 struct rotwing_state_t rotwing_state;
 
-inline void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, float pitch_angle); // remove dependency on guidance_indi_hybrid
+inline void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, float pitch_angle);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -306,7 +306,7 @@ void rotwing_state_periodic(void)
     rotwing_state.max_airspeed = 0; // Max airspeed FW
   }*/
 
-  guidance_indi_set_min_max_airspeed(rotwing_state.min_airspeed, rotwing_state.max_airspeed); // remove dependency on guidance_indi
+  guidance_indi_set_min_max_airspeed(rotwing_state.min_airspeed, rotwing_state.max_airspeed);
 
 
   /* Set navigation/guidance settings */
@@ -448,7 +448,7 @@ bool rotwing_state_skew_angle_valid(void) {
   return (!skew_timeout && skew_angle_match);
 }
 
-void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, float pitch_angle) // remove dependency on guidance_indi_hybrid
+void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, float pitch_angle)
 {
   // adjust weights
   float fixed_wing_percentile = (rotwing_state_hover_motors_idling())? 1:0; // TODO: when hover props go below 40%, ...
