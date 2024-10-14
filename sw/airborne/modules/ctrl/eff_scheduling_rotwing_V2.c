@@ -74,7 +74,7 @@ static Butterworth2LowPass skew_filt;
 /* Temp variables*/
 bool airspeed_fake_on = false;
 float airspeed_fake = 0.0;
-float ele_eff = 22.0;
+float ele_eff = 19.36; // (0.88*22.0);
 float ele_min = 0.0;
 /* Define Forces and Moments tructs for each actuator*/
 struct RW_Model RW;
@@ -120,10 +120,10 @@ void eff_scheduling_rotwing_init(void)
 void init_RW_Model(void)
 {
   // Inertia and mass
-  RW.I.b_xx = 0.0478; // [kgm²]
-  RW.I.b_yy = 0.7546; // [kgm²]
-  RW.I.w_xx = 0.08099; // [kgm²]
-  RW.I.w_yy = 0.1949; // [kgm²]
+  RW.I.b_xx = 0.12879; // [kgm²] (0.0478 + 0.08099)
+  RW.I.b_yy = 0.94950; // [kgm²] (0.7546 + 0.1949)
+  RW.I.w_xx = 0.0; // [kgm²]
+  RW.I.w_yy = 0.0; // [kgm²]
   RW.I.xx   = RW.I.b_xx + RW.I.w_xx; // [kgm²]
   RW.I.yy   = RW.I.b_yy + RW.I.b_yy; // [kgm²]
   RW.I.zz   = 0.975; // [kgm²]
@@ -165,12 +165,12 @@ void init_RW_Model(void)
   RW.rud.dMdud  = 0;                                 // [Nm / pprz]
   RW.rud.l      = 0.88;                              // [m]        
   // Aileron
-  RW.ail.dFdu   = 4.084 / (RW_G_SCALE * RW_G_SCALE); // [N  / pprz]
+  RW.ail.dFdu   = 7.678 / (RW_G_SCALE * RW_G_SCALE); // [N  / pprz] (1.88 * 4.084)
   RW.ail.dMdu   = 0;                                 // [Nm / pprz]
   RW.ail.dMdud  = 0;                                 // [Nm / pprz]
   RW.ail.l      = 0.68;                              // [m]        
   // Flaperon
-  RW.flp.dFdu   = 5.758 / (RW_G_SCALE * RW_G_SCALE); // [N  / pprz]
+  RW.flp.dFdu   = 10.825 / (RW_G_SCALE * RW_G_SCALE); // [N  / pprz] (1.88 * 5.758)
   RW.flp.dMdu   = 0;                                 // [Nm / pprz]
   RW.flp.dMdud  = 0;                                 // [Nm / pprz]
   RW.flp.l      = 0.36;                              // [m]     

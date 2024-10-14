@@ -30,6 +30,7 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_common_int.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_ref_quat_int.h"
 #include "generated/airframe.h"
+#include "filters/low_pass_filter.h"
 
 #ifndef ANDI_NUM_ACT
 #define ANDI_NUM_ACT COMMANDS_NB_REAL
@@ -148,6 +149,27 @@ struct Gains2ndOrder{
   float k3;
 };
 
+struct CF_t {
+  float tau;
+  float freq;
+  float model;
+  Butterworth2LowPass model_filt;
+  float feedback;
+  Butterworth2LowPass feedback_filt;
+  float out;
+};
+
+struct Oneloop_CF_t {
+  struct CF_t p;
+  struct CF_t q;
+  struct CF_t r;
+  struct CF_t p_dot;
+  struct CF_t q_dot;
+  struct CF_t r_dot;
+  struct CF_t ax;
+  struct CF_t ay;
+  struct CF_t az;
+};
 extern int16_t temp_pitch;
 /*Declaration of Reference Model and Error Controller Gains*/
 extern struct PolePlacement p_att_e;

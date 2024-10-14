@@ -304,7 +304,6 @@ static void nav_hybrid_circle(struct EnuCoor_f *wp_center, float radius)
   VECT2_DIFF(speed_unit, nav.target, *stateGetPositionEnu_f());
   float_vect2_normalize(&speed_unit);
   VECT2_SMUL(nav.speed, speed_unit, desired_speed);
-  printf("nav_hybrid_circle: speed: %f\n", desired_speed);
   nav_rotorcraft_base.circle.center = *wp_center;
   nav_rotorcraft_base.circle.radius = sign_radius * abs_radius;
   nav.horizontal_mode = NAV_HORIZONTAL_MODE_CIRCLE;
