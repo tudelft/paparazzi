@@ -53,3 +53,6 @@
 [submodule "sw/ext/libcanard"]
 	path = sw/ext/libcanard
 	url = https://github.com/UAVCAN/libcanard.git
+[submodule "sw/ext/remote_sensing"]
+	path = sw/ext/remote_sensing
+	url = git@github.com:tudelft/remote_sensing_ppz.git
