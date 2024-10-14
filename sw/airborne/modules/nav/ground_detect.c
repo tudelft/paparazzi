@@ -55,7 +55,7 @@ bool disarm_on_not_in_flight = false;
 int32_t counter = 0;
 bool ground_detected = false;
 
-#define DEBUG_GROUND_DETECT TRUE
+#define DEBUG_GROUND_DETECT FALSE
 
 void ground_detect_init()
 {
