@@ -2,6 +2,8 @@
 
 //Do not include the high power beacon, as suggested in the documentation. 
 #define INCLUDE_HIGH_POW_BEC_IN_SIXDOF_MAP 0
+#define DISABLE_GYRO_SIXDOF 0
+#define CALIBRATE_GYROS 0
 
 //Define the number of beacons
 #define N_BEACON 5
@@ -15,6 +17,10 @@ struct  __attribute__((__packed__)) register_sixdof_packet {
 	float relative_phi_rad;
 	float relative_theta_rad;
     float relative_psi_rad;
+    float quat_w;
+    float quat_x;
+    float quat_y;
+    float quat_z;
     float x_abs_pos_var;
     float y_abs_pos_var;
     float z_abs_pos_var;

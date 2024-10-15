@@ -25,6 +25,10 @@ ConfigRelativeAngle config_rel_angle; // use defaults
 Config6Dof config6Dof; // use defaults
 std::unique_ptr<DroneTrackingManager> droneManager;
 
+#if CALIBRATE_GYROS
+    std::vector<GyroOffset> gyroCalibration;
+#endif
+
 // Variables to set and check the behavior of the program:
 int verbose_rx = 0; 
 int verbose_tx = 0; 
@@ -125,12 +129,13 @@ void ivy_bus_out_handle() {
 
             //Prepare message with snprintf: 
             char msg_ivy[256];
-            snprintf(msg_ivy, sizeof(msg_ivy), "SIXDOF_TRACKING %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f", 
+            snprintf(msg_ivy, sizeof(msg_ivy), "SIXDOF_TRACKING %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f", 
                 my_sixdof_packet_local.timestamp_position,
                 my_sixdof_packet_local.x_abs_pos, my_sixdof_packet_local.y_abs_pos, my_sixdof_packet_local.z_abs_pos,
                 my_sixdof_packet_local.relative_phi_rad, my_sixdof_packet_local.relative_theta_rad,
-                my_sixdof_packet_local.relative_psi_rad, my_sixdof_packet_local.x_abs_pos_var,
-                my_sixdof_packet_local.y_abs_pos_var, my_sixdof_packet_local.z_abs_pos_var,
+                my_sixdof_packet_local.relative_psi_rad, 
+                my_sixdof_packet_local.quat_w, my_sixdof_packet_local.quat_x, my_sixdof_packet_local.quat_y, my_sixdof_packet_local.quat_z,
+                my_sixdof_packet_local.x_abs_pos_var, my_sixdof_packet_local.y_abs_pos_var, my_sixdof_packet_local.z_abs_pos_var,
                 my_sixdof_packet_local.phi_rad_var, my_sixdof_packet_local.theta_rad_var,
                 my_sixdof_packet_local.psi_rad_var);
 
@@ -222,6 +227,23 @@ static void ivy_set_rel_beacon_mode(IvyClientPtr app, void *user_data, int argc,
         else{
             current_sixdof_mode = 1;
         }
+
+        #if CALIBRATE_GYROS
+        ConfigGyroCalibration config;
+        config.duration_seconds = 10;
+        std::cout << "Doing Gyro Calibration, please keep the sensor still" << std::endl;
+        gyroCalibration = droneManager->getGyroCalibration(config);
+        std::cout << "Finished Gyro Calibration, now you can move the sensor" << std::endl;
+        for (const GyroOffset& c : gyroCalibration) {
+            std::cout << std::endl;
+            std::cout  << "sensor_id: " << c.sensorId << std::endl 
+                        << "datetime: " << c.datetime << std::endl 
+                        << "temperature: " << (int)c.temperature << std::endl
+                        << "gyro_bias: " << c.gyro_x << " " << c.gyro_y << " " << c.gyro_z << " " << std::endl
+                        << "std: " <<c.standard_dev << std::endl;
+        }
+        #endif
+
         // Start tracking
         std::cout << "TrackingMode RelativeBeacon" << std::endl;
         droneManager->setTrackingMode(TrackingMode::RelativeBeacon);
@@ -248,6 +270,21 @@ static void ivy_set_rel_angle_mode(IvyClientPtr app, void *user_data, int argc, 
         current_mode_msg_available = 1;
         pthread_mutex_unlock(&mutex_ivy_bus); 
 
+        #if CALIBRATE_GYROS
+        ConfigGyroCalibration config;
+        config.duration_seconds = 10;
+        std::cout << "Doing Gyro Calibration, please keep the sensor still" << std::endl;
+        gyroCalibration = droneManager->getGyroCalibration(config);
+        std::cout << "Finished Gyro Calibration, now you can move the sensor" << std::endl;
+        for (const GyroOffset& c : gyroCalibration) {
+            std::cout << std::endl;
+            std::cout  << "sensor_id: " << c.sensorId << std::endl 
+                        << "datetime: " << c.datetime << std::endl 
+                        << "temperature: " << (int)c.temperature << std::endl
+                        << "gyro_bias: " << c.gyro_x << " " << c.gyro_y << " " << c.gyro_z << " " << std::endl
+                        << "std: " <<c.standard_dev << std::endl;
+        }
+        #endif
     }
 }
 
@@ -262,6 +299,26 @@ static void ivy_set_sixdof_mode(IvyClientPtr app, void *user_data, int argc, cha
         config6Dof.map.push_back(b3);
         config6Dof.map.push_back(b4);
         config6Dof.map.push_back(b5);
+
+        #if DISABLE_GYRO_SIXDOF
+            config6Dof.no_gyro_mode = true;
+        #endif
+
+        #if DISABLE_GYRO_SIXDOF != 1
+            // Manually setting the gyro calibration data based on the values you provided
+            GyroOffset predefinedCalibration;
+            predefinedCalibration.sensorId = 158;
+            predefinedCalibration.datetime = "2024-10-14 12:00:00"; 
+            predefinedCalibration.temperature = 58;  
+            predefinedCalibration.gyro_x = 41;     
+            predefinedCalibration.gyro_y = -29;     
+            predefinedCalibration.gyro_z = -13;   
+            predefinedCalibration.standard_dev = 1;  
+            // Store the calibration in a vector
+            std::vector<GyroOffset> gyroCalibration = { predefinedCalibration };
+            // Initialize the 6DoF configuration with the predefined gyro calibration
+            config6Dof.gyroCalibration = gyroCalibration;  // Assign the manually set calibration data
+        #endif
 
         bool sixdofSuccess = droneManager->initialize6Dof(config6Dof);
         if (!sixdofSuccess) {
@@ -279,6 +336,22 @@ static void ivy_set_sixdof_mode(IvyClientPtr app, void *user_data, int argc, cha
         pthread_mutex_lock(&mutex_ivy_bus);
         current_mode_msg_available = 1;
         pthread_mutex_unlock(&mutex_ivy_bus); 
+
+        #if CALIBRATE_GYROS
+        ConfigGyroCalibration config;
+        config.duration_seconds = 10;
+        std::cout << "Doing Gyro Calibration, please keep the sensor still" << std::endl;
+        gyroCalibration = droneManager->getGyroCalibration(config);
+        std::cout << "Finished Gyro Calibration, now you can move the sensor" << std::endl;
+        for (const GyroOffset& c : gyroCalibration) {
+            std::cout << std::endl;
+            std::cout  << "sensor_id: " << c.sensorId << std::endl 
+                        << "datetime: " << c.datetime << std::endl 
+                        << "temperature: " << (int)c.temperature << std::endl
+                        << "gyro_bias: " << c.gyro_x << " " << c.gyro_y << " " << c.gyro_z << " " << std::endl
+                        << "std: " <<c.standard_dev << std::endl;
+        }
+        #endif
     }
 }
 
@@ -467,12 +540,16 @@ int main(int ac, const char *av[]) {
             static struct register_sixdof_packet my_sixdof_packet_local; 
 
             my_sixdof_packet_local.timestamp_position = current_timestamp; 
-            my_sixdof_packet_local.x_abs_pos = (float) -sd.x; 
-            my_sixdof_packet_local.y_abs_pos = (float) -sd.y; 
-            my_sixdof_packet_local.z_abs_pos = (float) -sd.z; 
+            my_sixdof_packet_local.x_abs_pos = (float) sd.x; 
+            my_sixdof_packet_local.y_abs_pos = (float) sd.y; 
+            my_sixdof_packet_local.z_abs_pos = (float) sd.z; 
             my_sixdof_packet_local.relative_phi_rad = (float) euler_angles[0];
             my_sixdof_packet_local.relative_theta_rad = (float) euler_angles[1];
             my_sixdof_packet_local.relative_psi_rad = (float) euler_angles[2];
+            my_sixdof_packet_local.quat_w = (float) sd.qw;
+            my_sixdof_packet_local.quat_x = (float) sd.qx;
+            my_sixdof_packet_local.quat_y = (float) sd.qy;
+            my_sixdof_packet_local.quat_z = (float) sd.qz;
             my_sixdof_packet_local.x_abs_pos_var = (float) sd.var_x; 
             my_sixdof_packet_local.y_abs_pos_var = (float) sd.var_y; 
             my_sixdof_packet_local.z_abs_pos_var = (float) sd.var_y; 
