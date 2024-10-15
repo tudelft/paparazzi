@@ -59,11 +59,6 @@
 #define ROTWING_FW_SKEW_ANGLE 85.0
 #endif
 
-/* Magnitude skew angle jump away from quad */
-#ifndef ROTWING_SKEW_ANGLE_STEP
-#define ROTWING_SKEW_ANGLE_STEP 55.0
-#endif
-
 /* TODO: Give a name.... */
 #ifndef ROTWING_SKEW_BACK_MARGIN
 #define ROTWING_SKEW_BACK_MARGIN 5.0
@@ -77,11 +72,6 @@
 /* Skew angle at which the mininum airspeed starts its linear portion */
 #ifndef ROTWING_MIN_AIRSPEED_SLOPE_START_ANGLE
 #define ROTWING_MIN_AIRSPEED_SLOPE_START_ANGLE 30.0
-#endif
-
-/* Preferred pitch angle for the quad mode (deg) */
-#ifndef ROTWING_QUAD_PREF_PITCH
-#define ROTWING_QUAD_PREF_PITCH -5.0
 #endif
 
 /* Amount of time the airspeed needs to be below the FW_MIN_AIRSPEED */
@@ -105,7 +95,6 @@
 #endif
 abi_event rotwing_state_feedback_ev;
 static void rotwing_state_feedback_cb(uint8_t sender_id, struct act_feedback_t *feedback_msg, uint8_t num_act);
-static bool rotwing_state_hover_motors_idling(void);
 struct rotwing_state_t rotwing_state;
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -169,7 +158,7 @@ void rotwing_state_init(void)
  * @brief Check if hover motors are idling (COMMAND_THRUST < ROTWING_QUAD_IDLE_MIN_THRUST) for ROTWING_QUAD_IDLE_TIMEOUT time
  * @return true if hover motors are idling, false otherwise
  */
-static bool rotwing_state_hover_motors_idling(void) {
+bool rotwing_state_hover_motors_idling(void) {
   static float last_idle_time = 0;
   // Check if hover motors are idling and reset timer
   if(stabilization.cmd[COMMAND_THRUST] > ROTWING_QUAD_IDLE_MIN_THRUST) {
