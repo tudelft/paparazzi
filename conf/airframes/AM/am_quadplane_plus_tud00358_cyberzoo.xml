@@ -781,6 +781,9 @@
     <define name="USE_SHIP_BOX_EXT_REF_ATTITUDE" value="TRUE"/>
     <define name="USE_SIXDOF_EXT_REF_ATTITUDE" value="TRUE"/>
 
+    <define name="USE_SIXDOF_EXT_HEADING" value="TRUE"/>
+    
+
     <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/>
     <define name="FULLY_MANUAL_HEADING" value="TRUE"/>
 

@@ -1008,8 +1008,8 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.az_3_state_int = (int16_t) (actuator_state[10] * 1e2 * 180/M_PI);
     am7_data_out_local.az_4_state_int = (int16_t) (actuator_state[11] * 1e2 * 180/M_PI);
 
-    am7_data_out_local.theta_state_int = (int16_t) (actuator_state[12] * 1e2 * 180/M_PI);
-    am7_data_out_local.phi_state_int = (int16_t) (actuator_state[13] * 1e2 * 180/M_PI);
+    am7_data_out_local.theta_state_int = (int16_t) (euler_vect[1] * 1e2 * 180/M_PI);
+    am7_data_out_local.phi_state_int = (int16_t) (euler_vect[0] * 1e2 * 180/M_PI);
     am7_data_out_local.psi_state_int = (int16_t) (euler_vect[2] * 1e2 * 180/M_PI);
     am7_data_out_local.ailerons_state_int = (int16_t) (actuator_state[14] * 1e2 * 180/M_PI);
 
@@ -1733,8 +1733,8 @@ void overactuated_mixing_run(void)
 
         #ifdef USE_SIXDOF_EXT_REF_ATTITUDE
             if(approach_state && control_mode_ovc_vehicle == 3 && myam7_data_in_local.sixdof_system_status == 3){
-                manual_phi_value = - (myam7_data_in_local.sixdof_relative_phi * 0.01f * M_PI/180);
-                manual_theta_value = - (myam7_data_in_local.sixdof_relative_theta * 0.01f * M_PI/180);
+                manual_phi_value = - (myam7_data_in_local.sixdof_relative_phi * 0.01f * M_PI/180 - euler_vect[0]);
+                manual_theta_value = - (myam7_data_in_local.sixdof_relative_theta * 0.01f * M_PI/180  - euler_vect[1]);
             }
         #endif        
 
@@ -1762,6 +1762,12 @@ void overactuated_mixing_run(void)
         if(abs(radio_control.values[RADIO_YAW]) >= 100){
             yaw_rate_setpoint_manual = MANUAL_CONTROL_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / MAX_PPRZ;
         }
+
+        #ifdef USE_SIXDOF_EXT_HEADING
+            if(approach_state && control_mode_ovc_vehicle == 3 && myam7_data_in_local.sixdof_system_status == 3){
+                yaw_rate_setpoint_manual = - myam7_data_in_local.sixdof_relative_psi * 0.01f * M_PI/180;
+            }
+        #endif
 
         euler_error[2] = yaw_rate_setpoint_manual + compute_yaw_rate_turn();
 
@@ -2205,7 +2211,7 @@ void overactuated_mixing_run(void)
 
 
     //Retrieve the position of the beacons and update the waypoints: 
-    struct EnuCoor_f target_pos_sixdof = {myam7_data_in_local.sixdof_NED_pos_x, myam7_data_in_local.sixdof_NED_pos_x, -myam7_data_in_local.sixdof_NED_pos_z + alt_offset_beacon}; 
+    struct EnuCoor_f target_pos_sixdof = {myam7_data_in_local.sixdof_NED_pos_y, myam7_data_in_local.sixdof_NED_pos_x, -myam7_data_in_local.sixdof_NED_pos_z + alt_offset_beacon}; 
     waypoint_set_enu(WP_SIXDOF, &target_pos_sixdof); 
     // Send to the GCS that the waypoint has been moved
     static uint8_t wp_id = WP_SIXDOF;
