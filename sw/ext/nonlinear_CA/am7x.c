@@ -75,7 +75,7 @@ double time_last_heartbeat_ivy_out = 0.0;
 
 //COMPUTER VISION 
 struct marker_detection_t aruco_detection;
-int aruco_system_status = 0;
+int aruco_hb_system_status = 0;
 double last_ping_time_aruco = 0.0;
 pthread_mutex_t mutex_aruco;
 
@@ -2185,6 +2185,7 @@ void* fourth_thread() //Run the inner loop of the optimization code
     pthread_mutex_lock(&mutex_aruco);
     memcpy(&aruco_detection_copy, &aruco_detection, sizeof(struct marker_detection_t));
     double last_ping_time_aruco_local = last_ping_time_aruco;
+    int aruco_hb_system_status_local = aruco_hb_system_status;
     pthread_mutex_unlock(&mutex_aruco); 
 
     //Compare the time of the last ping with the current time to check if the system is still alive:
@@ -2196,13 +2197,16 @@ void* fourth_thread() //Run the inner loop of the optimization code
       aruco_detection_copy.system_status = -10;
       if(verbose_aruco){
         fprintf(stderr,"Aruco system is not communicating or it is inoperative. \n");
-      }
+      } 
     }
-    myam7_data_out_copy.aruco_detection_timestamp = aruco_detection_copy.timestamp_detection;
-    myam7_data_out_copy.aruco_NED_pos_x = aruco_detection_copy.NED_pos_x;
-    myam7_data_out_copy.aruco_NED_pos_y = aruco_detection_copy.NED_pos_y;
-    myam7_data_out_copy.aruco_NED_pos_z = aruco_detection_copy.NED_pos_z;
-    myam7_data_out_copy.aruco_system_status = aruco_detection_copy.system_status;
+    if(aruco_hb_system_status_local > 0){ //Update system values only if the system is alive: 
+      myam7_data_out_copy.aruco_detection_timestamp = aruco_detection_copy.timestamp_detection;
+      myam7_data_out_copy.aruco_NED_pos_x = aruco_detection_copy.NED_pos_x;
+      myam7_data_out_copy.aruco_NED_pos_y = aruco_detection_copy.NED_pos_y;
+      myam7_data_out_copy.aruco_NED_pos_z = aruco_detection_copy.NED_pos_z;
+      myam7_data_out_copy.aruco_system_status = aruco_detection_copy.system_status;
+    }
+
     
     //Retrieve detection from sixdof and assign to the output structure
     struct marker_detection_t sixdof_detection_copy;
@@ -2503,7 +2507,7 @@ static void aruco_position_report(IvyClientPtr app, void *user_data, int argc, c
 
   //Retrive and copy system status: 
   pthread_mutex_lock(&mutex_aruco);
-  int aruco_system_status_local = aruco_detection.system_status;
+  int aruco_system_status_local = aruco_hb_system_status;
   pthread_mutex_unlock(&mutex_aruco);
 
   gettimeofday(&aruco_time, NULL); 
@@ -2559,7 +2563,7 @@ static void aruco_position_callback(IvyClientPtr app, void *user_data, int argc,
 
     //Retrive and copy system status: 
     pthread_mutex_lock(&mutex_aruco);
-    int aruco_system_status_local = aruco_detection.system_status;
+    int aruco_system_status_local = aruco_hb_system_status;
     pthread_mutex_unlock(&mutex_aruco);
 
     //Copy absolute position to aruco struct
@@ -2598,12 +2602,12 @@ static void aruco_heartbit_callback(IvyClientPtr app, void *user_data, int argc,
   }
   else{
     double timestamp_d = atof(argv[0]);
-    int aruco_system_status_local = (int) atof(argv[1]);
+    int aruco_hb_system_status_local = (int) atof(argv[1]);
     if(verbose_aruco){
-      fprintf(stderr,"Received ARUCO_HEARTBEAT - Timestamp = %.5f, system_status = %d; \n",timestamp_d,aruco_system_status);
+      fprintf(stderr,"Received ARUCO_HEARTBEAT - Timestamp = %.5f, system_status = %d; \n",timestamp_d,aruco_hb_system_status_local);
     }
     pthread_mutex_lock(&mutex_aruco);
-    aruco_system_status = aruco_system_status_local;
+    aruco_hb_system_status = aruco_hb_system_status_local;
     last_ping_time_aruco = timestamp_d;
     pthread_mutex_unlock(&mutex_aruco);
   }
