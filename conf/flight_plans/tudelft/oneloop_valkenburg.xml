@@ -151,7 +151,6 @@
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="wp_quad.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <call_once fun="rotwing_state_force_skew_off()"/>
         <stay wp="STDBY"/>
     </block>
     <block name="Standby_free">
@@ -160,7 +159,6 @@
     </block>
     <block name="Descend" strip_button="Descend" strip_icon="descend.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <call_once fun="rotwing_state_force_skew_off()"/>
         <stay wp="Descend"/>
     </block>
     <block name="safe" strip_button="Unsafe" strip_icon="alert.png">
@@ -169,22 +167,18 @@
     </block>
     <block name="Circle_CW_fwd" strip_button="CircleCW_Forward" strip_icon="circle_cw_fwd.png">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
-      <call_once fun="rotwing_state_force_skew_off()"/>
       <circle radius="nav.radius" wp="circ"/>
     </block>
     <block name="Circle_CCW_fwd" strip_button="CircleCCW_Forward" strip_icon="circle_ccw_fwd.png">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
-      <call_once fun="rotwing_state_force_skew_off()"/>
       <circle radius="-nav.radius" wp="circ"/>
     </block>
     <block name="Circle_CW_quad" strip_button="CircleCW_Quad" strip_icon="circle_cw_quad.png">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-      <call_once fun="rotwing_state_force_skew_off()"/>
       <circle radius="nav.radius" wp="circ"/>
     </block>
     <block name="Circle_CCW_quad" strip_button="CircleCCW_Quad" strip_icon="circle_ccw_quad.png">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-      <call_once fun="rotwing_state_force_skew_off()"/>
       <circle radius="-nav.radius" wp="circ"/>
     </block>
     <block name="route_fw" strip_button="Route_fwd" strip_icon="path.png">

@@ -87,7 +87,7 @@
 #include "math/wls/wls_alloc.h"
 #include "modules/nav/nav_rotorcraft_hybrid.h"
 #include "firmwares/rotorcraft/navigation.h"
-#include "modules/rotwing_drone/rotwing_state_V3.h"
+#include "modules/rotwing_drone/rotwing_state.h"
 #include "modules/core/commands.h"
 #include "modules/ctrl/eff_scheduling_rotwing_V2.h"
 #include <stdio.h>
@@ -388,11 +388,6 @@ static float Wv_backup[ANDI_OUTPUTS] = {1.0};
 #endif
 /*Complementary Filter Variables*/
 static struct Oneloop_CF_t cf;
-//static float model_pred[ANDI_OUTPUTS];
-//static float model_pred_ar[3];
-//static float ang_acc[3];
-//static float ang_rate[3];
-//static float lin_acc[3];
 
 /*Chirp test Variables*/
 bool  chirp_on            = false;
@@ -434,13 +429,7 @@ float ratio_u_un[ANDI_NUM_ACT_TOT];
 float ratio_vn_v[ANDI_OUTPUTS];
 
 /*Filters Initialization*/
-//static Butterworth2LowPass filt_accel_ned[3];                 // Low pass filter for acceleration NED (1)                       - oneloop_andi_filt_cutoff_a (tau_a)
-static Butterworth2LowPass filt_veloc_ned[3];                 // Low pass filter for velocity NED                      - oneloop_andi_filt_cutoff_a (tau_a)       
-//static Butterworth2LowPass rates_filt_bt[3];                  // Low pass filter for angular rates                              - ONELOOP_ANDI_FILT_CUTOFF_P/Q/R
-//static Butterworth2LowPass model_pred_la_filt[3];             // Low pass filter for model prediction linear acceleration (1)   - oneloop_andi_filt_cutoff_a (tau_a)
-//static Butterworth2LowPass ang_rate_lowpass_filters[3];   // Low pass filter for attitude derivative measurements           - oneloop_andi_filt_cutoff (tau)
-//static Butterworth2LowPass model_pred_aa_filt[3];             // Low pass filter for model prediction angular acceleration      - oneloop_andi_filt_cutoff (tau)
-//static Butterworth2LowPass model_pred_ar_filt[3];             // Low pass filter for model prediction angular rates            - ONELOOP_ANDI_FILT_CUTOFF_P/Q/R
+static Butterworth2LowPass filt_veloc_ned[3];                 // Low pass filter for velocity NED - oneloop_andi_filt_cutoff_a (tau_a)       
 static Butterworth2LowPass accely_filt;                       // Low pass filter for acceleration in y direction                - oneloop_andi_filt_cutoff (tau)
 static Butterworth2LowPass airspeed_filt;                     // Low pass filter for airspeed                                   - oneloop_andi_filt_cutoff (tau)
 
@@ -1210,22 +1199,8 @@ void init_filter(void)
   // Filtering of the Inputs with 3 dimensions (e.g. rates and accelerations)
   int8_t i;
   for (i = 0; i < 3; i++) {
-    //init_butterworth_2_low_pass(&ang_rate_lowpass_filters[i],     tau, sample_time, 0.0);
-    //init_butterworth_2_low_pass(&model_pred_aa_filt[i],           tau, sample_time, 0.0);
-    //init_butterworth_2_low_pass(&filt_accel_ned[i],               tau_a, sample_time, 0.0 );
     init_butterworth_2_low_pass(&filt_veloc_ned[i],               tau_v, sample_time, 0.0 );
-    //init_butterworth_2_low_pass(&model_pred_la_filt[i],           tau_a, sample_time, 0.0); 
   }
-
-  // Init rate filter for feedback
-  //float time_constants[3] = {1.0 / (2 * M_PI * oneloop_andi_filt_cutoff_p), 1.0 / (2 * M_PI * oneloop_andi_filt_cutoff_q), 1.0 / (2 * M_PI * oneloop_andi_filt_cutoff_r)};
-  //init_butterworth_2_low_pass(&rates_filt_bt[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
-  //init_butterworth_2_low_pass(&rates_filt_bt[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
-  //init_butterworth_2_low_pass(&rates_filt_bt[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
-  //init_butterworth_2_low_pass(&model_pred_ar_filt[0], time_constants[0], sample_time, 0.0);
-  //init_butterworth_2_low_pass(&model_pred_ar_filt[1], time_constants[1], sample_time, 0.0);
-  //init_butterworth_2_low_pass(&model_pred_ar_filt[2], time_constants[2], sample_time, 0.0);
-  
   // Some other filters
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&airspeed_filt, tau, sample_time, 0.0);
@@ -1237,7 +1212,6 @@ void oneloop_andi_propagate_filters(void) {
   struct  NedCoor_f *accel = stateGetAccelNed_f();
   struct  NedCoor_f *veloc = stateGetSpeedNed_f();
   struct  FloatRates *body_rates = stateGetBodyRates_f();
-  //float   rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
   // Store Feedbacks in the Complementary Filters
   cf.ax.feedback    = accel->x;
   cf.ay.feedback    = accel->y;
@@ -1289,17 +1263,6 @@ void oneloop_andi_propagate_filters(void) {
   cf.p.out     = cf.p.feedback_filt.o[0]     + cf.p.model     - cf.p.model_filt.o[0];
   cf.q.out     = cf.q.feedback_filt.o[0]     + cf.q.model     - cf.q.model_filt.o[0];
   cf.r.out     = cf.r.feedback_filt.o[0]     + cf.r.model     - cf.r.model_filt.o[0];
-  //int8_t i;
-  //for (i = 0; i < 3; i++) {
-    //update_butterworth_2_low_pass(&model_pred_la_filt[i],   model_pred[i]);
-    //update_butterworth_2_low_pass(&ang_rate_lowpass_filters[i], rate_vect[i]);
-    //update_butterworth_2_low_pass(&rates_filt_bt[i], rate_vect[i]);
-    //lin_acc[i]  = filt_accel_ned[i].o[0] + model_pred[i] - model_pred_la_filt[i].o[0]; 
-    //ang_acc[i]  = (ang_rate_lowpass_filters[i].o[0]- ang_rate_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY + model_pred[3+i] - model_pred_aa_filt[i].o[0];
-    //model_pred_ar[i] = model_pred_ar[i] + ang_acc[i] / PERIODIC_FREQUENCY;
-    //update_butterworth_2_low_pass(&model_pred_ar_filt[i], model_pred_ar[i]);
-    //ang_rate[i] = rates_filt_bt[i].o[0] + model_pred_ar[i] - model_pred_ar_filt[i].o[0];     
-  //}
   // Propagate filter for sideslip correction
   float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
   update_butterworth_2_low_pass(&accely_filt, accely);
@@ -1338,16 +1301,11 @@ void oneloop_andi_init(void)
   float_vect_zero(oneloop_andi.sta_ref.att_3d,3);
   float_vect_zero(nu, ANDI_OUTPUTS);
   float_vect_zero(nu_n, ANDI_OUTPUTS);
-  //float_vect_zero(ang_acc,3);
-  //float_vect_zero(lin_acc,3);
   float_vect_zero(nav_target,3);
   float_vect_zero(nav_target_new,3);
   eulers_zxy_des.phi   =  0.0;
   eulers_zxy_des.theta =  0.0;
   eulers_zxy_des.psi   =  0.0;
-  //float_vect_zero(model_pred,ANDI_OUTPUTS);
-  //float_vect_zero(model_pred_ar,3);
-
   // Start telemetry
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_oneloop_andi);
@@ -1388,15 +1346,11 @@ void oneloop_andi_enter(bool half_loop_sp, int ctrl_type)
   float_vect_zero(oneloop_andi.sta_ref.att_d,3);
   float_vect_zero(oneloop_andi.sta_ref.att_2d,3);
   float_vect_zero(oneloop_andi.sta_ref.att_3d,3);
-  //float_vect_zero(ang_acc,3);
-  //float_vect_zero(lin_acc,3);
   float_vect_zero(nav_target,3);
   float_vect_zero(nav_target_new,3);
   eulers_zxy_des.phi   =  0.0;
   eulers_zxy_des.theta =  0.0;
   eulers_zxy_des.psi   =  psi_des_rad;
-  //float_vect_zero(model_pred,ANDI_OUTPUTS);
-  //float_vect_zero(model_pred_ar,3);
   /*Guidance Reset*/
 }
 
@@ -1574,12 +1528,12 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   oneloop_andi.sta_state.att[1]    = eulers_zxy.theta;
   oneloop_andi.sta_state.att[2]    = eulers_zxy.psi  ;
   oneloop_andi_propagate_filters();   //needs to be after update of attitude vector
-  oneloop_andi.sta_state.att_d[0]  = cf.p.out;//ang_rate[0];//rates_filt_bt[0].o[0];
-  oneloop_andi.sta_state.att_d[1]  = cf.q.out;//ang_rate[1];//rates_filt_bt[1].o[0];
-  oneloop_andi.sta_state.att_d[2]  = cf.r.out;//ang_rate[2];//rates_filt_bt[2].o[0];
-  oneloop_andi.sta_state.att_2d[0] = cf.p_dot.out;//ang_acc[0]           ;
-  oneloop_andi.sta_state.att_2d[1] = cf.q_dot.out;//ang_acc[1]           ;
-  oneloop_andi.sta_state.att_2d[2] = cf.r_dot.out;//ang_acc[2]           ;
+  oneloop_andi.sta_state.att_d[0]  = cf.p.out;
+  oneloop_andi.sta_state.att_d[1]  = cf.q.out;
+  oneloop_andi.sta_state.att_d[2]  = cf.r.out;
+  oneloop_andi.sta_state.att_2d[0] = cf.p_dot.out;
+  oneloop_andi.sta_state.att_2d[1] = cf.q_dot.out;
+  oneloop_andi.sta_state.att_2d[2] = cf.r_dot.out;
   // (2) Position related
   oneloop_andi.gui_state.pos[0] = stateGetPositionNed_f()->x;   
   oneloop_andi.gui_state.pos[1] = stateGetPositionNed_f()->y;   
@@ -1587,10 +1541,10 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   oneloop_andi.gui_state.vel[0] = filt_veloc_ned[0].o[0];      
   oneloop_andi.gui_state.vel[1] = filt_veloc_ned[1].o[0];      
   oneloop_andi.gui_state.vel[2] = filt_veloc_ned[2].o[0];      
-  oneloop_andi.gui_state.acc[0] = cf.ax.out;//lin_acc[0];
-  oneloop_andi.gui_state.acc[1] = cf.ay.out;//lin_acc[1];
-  oneloop_andi.gui_state.acc[2] = cf.az.out;//lin_acc[2];
-  // Calculated feedforward signal for yaW CONTROL
+  oneloop_andi.gui_state.acc[0] = cf.ax.out;
+  oneloop_andi.gui_state.acc[1] = cf.ay.out;
+  oneloop_andi.gui_state.acc[2] = cf.az.out;
+  // Calculated feedforward signal for yaw control
   g2_ff = 0.0;
 
   for (i = 0; i < ANDI_NUM_ACT; i++) {
@@ -1737,7 +1691,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
 
   /*Commit the actuator command*/
   for (i = 0; i < ANDI_NUM_ACT; i++) {
-    //actuators_pprz[i] = (int16_t) andi_u[i];
     commands[i] = (int16_t) andi_u[i];
   }
   if (rotwing_state.fail_pusher_motor){
@@ -2022,7 +1975,7 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, i
   if (n < 0){
     n = 0;
   }
-  // i think there should not be a problem with f1 being equal to f0
+  // I think there should not be a problem with f1 being equal to f0
   float k = (f1 - f0) / t_chirp;
   float p_ref_chirp = chirp_pos_p_ref(time_elapsed, f0, k, A);
   float v_ref_chirp = chirp_pos_v_ref(time_elapsed, f0, k, A);
@@ -2107,7 +2060,6 @@ void reshape_wind(void)
   float spsi = sinf(psi);
   float airspeed = airspeed_filt.o[0];
   struct FloatVect2 NT_v_NE     = {nav_target[0], nav_target[1]}; // Nav target in North and East frame
-  //struct FloatVect2 NT_v_B      = {0.0, 0.0}; // Nav target in body frame (Overwritten later)
   struct FloatVect2 airspeed_v  = { cpsi * airspeed, spsi * airspeed };
   struct FloatVect2 windspeed;
   struct FloatVect2 groundspeed = { oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.vel[1] };
