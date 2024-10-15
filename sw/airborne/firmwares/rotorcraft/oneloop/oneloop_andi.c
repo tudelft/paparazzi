@@ -444,8 +444,8 @@ static void send_cf_oneloop(struct transport_tx *trans, struct link_device *dev)
   float temp_cf_p_dot[5] = {cf.p_dot.model,cf.p_dot.model_filt.o[0],cf.p_dot.feedback,cf.p_dot.feedback_filt.o[0],cf.p_dot.out};
   float temp_cf_q_dot[5] = {cf.q_dot.model,cf.q_dot.model_filt.o[0],cf.q_dot.feedback,cf.q_dot.feedback_filt.o[0],cf.q_dot.out};
   float temp_cf_r_dot[5] = {cf.r_dot.model,cf.r_dot.model_filt.o[0],cf.r_dot.feedback,cf.r_dot.feedback_filt.o[0],cf.r_dot.out};
-  float temp_cf_ax[5] = {cf.ax.model,cf.ax.model_filt.o[0],cf.ax.feedback,cf.ax.feedback_filt.o[0],cf.ax.out};
-  float temp_cf_ay[5] = {cf.ay.model,cf.ay.model_filt.o[0],cf.ay.feedback,cf.ay.feedback_filt.o[0],cf.ay.out};
+  //float temp_cf_ax[5] = {cf.ax.model,cf.ax.model_filt.o[0],cf.ax.feedback,cf.ax.feedback_filt.o[0],cf.ax.out};
+  //float temp_cf_ay[5] = {cf.ay.model,cf.ay.model_filt.o[0],cf.ay.feedback,cf.ay.feedback_filt.o[0],cf.ay.out};
   float temp_cf_az[5] = {cf.az.model,cf.az.model_filt.o[0],cf.az.feedback,cf.az.feedback_filt.o[0],cf.az.out};
   pprz_msg_send_COMPLEMENTARY_FILTER(trans, dev, AC_ID, 
                 5, temp_cf_p,
