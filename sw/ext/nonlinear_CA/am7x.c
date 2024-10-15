@@ -113,6 +113,75 @@ void from_body_to_earth(float *out_array, const float *in_array, float Phi, floa
     }
 }
 
+// Convert Euler angles (roll, pitch, yaw) to quaternion (3-2-1 convention)
+Quaternion euler_to_quaternion(double roll, double pitch, double yaw) {
+    Quaternion q;
+    
+    // Calculate half angles
+    double half_roll = roll / 2.0;
+    double half_pitch = pitch / 2.0;
+    double half_yaw = yaw / 2.0;
+
+    // Precompute trigonometric values
+    double cos_roll = cos(half_roll);
+    double sin_roll = sin(half_roll);
+    double cos_pitch = cos(half_pitch);
+    double sin_pitch = sin(half_pitch);
+    double cos_yaw = cos(half_yaw);
+    double sin_yaw = sin(half_yaw);
+
+    // Convert to quaternion components (3-2-1 Euler convention)
+    q.w = cos_roll * cos_pitch * cos_yaw + sin_roll * sin_pitch * sin_yaw;
+    q.x = sin_roll * cos_pitch * cos_yaw - cos_roll * sin_pitch * sin_yaw;
+    q.y = cos_roll * sin_pitch * cos_yaw + sin_roll * cos_pitch * sin_yaw;
+    q.z = cos_roll * cos_pitch * sin_yaw - sin_roll * sin_pitch * cos_yaw;
+    
+    return q;
+}
+
+// Function to multiply two quaternions
+Quaternion multiply_quaternions(Quaternion q1, Quaternion q2) {
+    Quaternion result;
+    result.w = q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z;
+    result.x = q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y;
+    result.y = q1.w * q2.y - q1.x * q2.z + q1.y * q2.w + q1.z * q2.x;
+    result.z = q1.w * q2.z + q1.x * q2.y - q1.y * q2.x + q1.z * q2.w;
+    return result;
+}
+
+// Function to rotate a vector using a quaternion
+Vector3 rotate_vector(Quaternion q, Vector3 v) {
+    // Convert vector into quaternion (w = 0)
+    Quaternion vector_quat = {0, v.x, v.y, v.z};
+
+    // Apply quaternion rotation: result = q * v * q^-1
+    Quaternion q_inv = (Quaternion){q.w, -q.x, -q.y, -q.z}; // Inverted quaternion
+    Quaternion temp_result = multiply_quaternions(q, vector_quat);
+    Quaternion final_result = multiply_quaternions(temp_result, q_inv);
+
+    // The rotated vector is in the x, y, z part of the resulting quaternion
+    return (Vector3){final_result.x, final_result.y, final_result.z};
+}
+
+// Function to update the NED waypoint using the drone and pad orientation
+Vector3 update_wp_with_sixdof(Vector3 ned_drone_position, Vector3 sixdof_relative_position, 
+                              Quaternion drone_ned_orientation, Quaternion sixdof_rotation_quaternion) {
+
+    // Combine the drone's orientation with the relative pad orientation (to get the pad's orientation in NED)
+    Quaternion pad_ned_orientation = multiply_quaternions(drone_ned_orientation, sixdof_rotation_quaternion);
+    
+    // Rotate the relative position of the pad (in its own frame) to the NED frame using the combined quaternion
+    Vector3 relative_ned_position = rotate_vector(pad_ned_orientation, sixdof_relative_position);
+
+    // Update the NED position (waypoint) by adding the rotated position to the drone's current NED position
+    Vector3 new_wp_ned;
+    new_wp_ned.x = ned_drone_position.x + relative_ned_position.x;
+    new_wp_ned.y = ned_drone_position.y + relative_ned_position.y;
+    new_wp_ned.z = ned_drone_position.z + relative_ned_position.z;
+
+    return new_wp_ned;
+}
+
 void readLiDAR(){
   // Data Format for Benewake TFmini
   // ===============================
@@ -2306,7 +2375,7 @@ static void sixdof_beacon_angle_callback(IvyClientPtr app, void *user_data, int 
 
 static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
 {
-  if (argc != 13)
+  if (argc != 17)
   {
     fprintf(stderr,"ERROR: invalid message length SIXDOF_TRACKING\n");
   }
@@ -2318,41 +2387,56 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
     float Phi_rad = atof(argv[4]); 
     float Theta_rad = atof(argv[5]); 
     float Psi_rad = atof(argv[6]); 
-    float var_x = atof(argv[7]); 
-    float var_y = atof(argv[8]); 
-    float var_z = atof(argv[9]); 
-    float var_phi = atof(argv[10]); 
-    float var_theta = atof(argv[11]); 
-    float var_psi = atof(argv[12]);  
+    float quat_w = atof(argv[7]);
+    float quat_x = atof(argv[8]);
+    float quat_y = atof(argv[9]);
+    float quat_z = atof(argv[10]);
+    float var_x = atof(argv[11]);
+    float var_y = atof(argv[12]);
+    float var_z = atof(argv[13]);
+    float var_phi = atof(argv[14]);
+    float var_theta = atof(argv[15]);
+    float var_psi = atof(argv[16]); 
 
     if(verbose_sixdof){
-      fprintf(stderr,"Received sixdof packet - Timestamp = %.5f, X_pos = %.3f, Y_pos = %.3f, Z_pos = %.3f, Phi = %.3f, Theta = %.3f, Psi = %.3f, var_x = %.3f, var_y = %.3f, var_z = %.3f, var_phi = %.3f, var_theta = %.3f, var_psi = %.3f;\n",timestamp_d,X_pos,Y_pos,Z_pos,Phi_rad*180/M_PI,Theta_rad*180/M_PI,Psi_rad*180/M_PI,var_x,var_y,var_z,var_phi,var_theta,var_psi);
+      fprintf(stderr,"Received sixdof packet - Timestamp = %.5f, X_pos = %.3f, Y_pos = %.3f, Z_pos = %.3f, Phi [deg] = %.3f, Theta [deg] = %.3f, Psi [deg] = %.3f, quat_w = %.3f, quat_x = %.3f, quat_y = %.3f, quat_z = %.3f, var_x = %.3f, var_y = %.3f, var_z = %.3f, var_phi = %.3f, var_theta = %.3f, var_psi = %.3f; \n",timestamp_d,X_pos,Y_pos,Z_pos,Phi_rad*180/M_PI,Theta_rad*180/M_PI,Psi_rad*180/M_PI,quat_w,quat_x,quat_y,quat_z,var_x,var_y,var_z,var_phi,var_theta,var_psi);
     }
 
     if(sqrtf(var_x*var_x + var_y*var_y + var_z*var_z) < max_tolerance_variance_sixdof){
       //Adjust position WP according to the reference frame in the SIXDOF system:
-      float beacon_pos_sixdof_rf[3] = {Z_pos, X_pos, Y_pos}; 
+      float beacon_pos_sixdof_rf[3] = {-X_pos, -Y_pos, -Z_pos}; 
       //Get current euler angles and UAV position from serial connection through mutex:     
       struct am7_data_in myam7_data_in_copy;
       pthread_mutex_lock(&mutex_am7);
       memcpy(&myam7_data_in_copy, &myam7_data_in, sizeof(struct am7_data_in));
       pthread_mutex_unlock(&mutex_am7); 
       float UAV_NED_pos[3] = {myam7_data_in_copy.UAV_NED_pos_x, myam7_data_in_copy.UAV_NED_pos_y, myam7_data_in_copy.UAV_NED_pos_z}; 
-      float UAV_euler_angles_rad[3] = {(float) myam7_data_in_copy.phi_state_int*1e-2*M_PI/180,
-                                      (float) myam7_data_in_copy.theta_state_int*1e-2*M_PI/180,
-                                      (float) myam7_data_in_copy.psi_state_int*1e-2*M_PI/180};
+      float UAV_euler_angles_rad[3] = {(float) (myam7_data_in_copy.phi_state_int*1e-2*M_PI/180),
+                                      (float) (myam7_data_in_copy.theta_state_int*1e-2*M_PI/180),
+                                      (float) (myam7_data_in_copy.psi_state_int*1e-2*M_PI/180)};
 
-      //Define the relative euler angles taking from the SIXDOF inertial RF to the NED UAV RF:
       float delta_euler_angles[3] = {UAV_euler_angles_rad[0] - Phi_rad, UAV_euler_angles_rad[1] - Theta_rad, UAV_euler_angles_rad[2] - Psi_rad};
-      //Transpose relative position to target position for the UAV: 
+      //Transpose relative position to target position for the UAV:
       float beacon_absolute_ned_pos[3];
-      // from_body_to_earth(&beacon_absolute_ned_pos[0], &local_pos_target_body_rf[0], UAV_euler_angles_rad[0], UAV_euler_angles_rad[1], UAV_euler_angles_rad[2]);
       from_body_to_earth(&beacon_absolute_ned_pos[0], &beacon_pos_sixdof_rf[0], delta_euler_angles[0], delta_euler_angles[1], delta_euler_angles[2]);
-      //Sum current UAV position to have the real abs marker value: 
+
+      // float beacon_absolute_ned_pos[3];
+      // Vector3 ned_drone_position = {UAV_NED_pos[0], UAV_NED_pos[1], UAV_NED_pos[2]};
+      // Vector3 sixdof_relative_position = {beacon_pos_sixdof_rf[0], beacon_pos_sixdof_rf[1], beacon_pos_sixdof_rf[2]};
+      // Quaternion sixdof_rotation_quaternion = {quat_w, quat_x, quat_y, quat_z};
+      // Quaternion drone_ned_orientation = euler_to_quaternion(roll, pitch, yaw);
+      // // Update the waypoint in the NED frame using the combined orientation
+      // Vector3 new_wp_position = update_wp_with_sixdof(ned_drone_position, sixdof_relative_position, 
+      //                                               drone_ned_orientation, sixdof_rotation_quaternion);
+      // beacon_absolute_ned_pos[0] = new_wp_position.x; beacon_absolute_ned_pos[1] = new_wp_position.y; beacon_absolute_ned_pos[2] = new_wp_position.z;
+
+
+      // Sum current UAV position to have the real abs marker value: 
       for(int i = 0; i < 3; i++){
         beacon_absolute_ned_pos[i] += UAV_NED_pos[i]; 
       }
 
+      
 
       //Retrieve system status from sixdof through mutex:
       pthread_mutex_lock(&mutex_sixdof);
@@ -2381,6 +2465,18 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
         printf("Sixdof Phi = %f \n",(float) Phi_rad*180/M_PI );
         printf("Sixdof Theta = %f \n",(float) Theta_rad*180/M_PI );
         printf("Sixdof Psi = %f \n",(float) Psi_rad*180/M_PI );
+        //Add received angles from the ground: 
+        printf("UAV Phi = %f \n",(float) UAV_euler_angles_rad[0]*180/M_PI );
+        printf("UAV Theta = %f \n",(float) UAV_euler_angles_rad[1]*180/M_PI );
+        printf("UAV Psi = %f \n",(float) UAV_euler_angles_rad[2]*180/M_PI );
+        printf("Delta euler angles phi = %f \n",(float) delta_euler_angles[0]*180/M_PI );
+        printf("Delta euler angles theta = %f \n",(float) delta_euler_angles[1]*180/M_PI );
+        printf("Delta euler angles psi = %f \n",(float) delta_euler_angles[2]*180/M_PI );
+        //Add quaternion values:
+        printf("Sixdof quat_w = %f \n",(float) quat_w );
+        printf("Sixdof quat_x = %f \n",(float) quat_x );
+        printf("Sixdof quat_y = %f \n",(float) quat_y );
+        printf("Sixdof quat_z = %f \n",(float) quat_z );
         printf("Sixdof var_x = %f \n",(float) var_x ); 
         printf("Sixdof var_y = %f \n",(float) var_y );
         printf("Sixdof var_z = %f \n",(float) var_z );
@@ -2539,7 +2635,7 @@ void main() {
   #ifdef USE_SIXDOF
     IvyBindMsg(sixdof_beacon_pos_callback, NULL, "RELATIVE_BEACON_POS (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
     IvyBindMsg(sixdof_beacon_angle_callback, NULL, "RELATIVE_BEACON_ANGLE (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
-    IvyBindMsg(sixdof_mode_callback, NULL, "SIXDOF_TRACKING (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
+    IvyBindMsg(sixdof_mode_callback, NULL, "SIXDOF_TRACKING (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
     IvyBindMsg(sixdof_current_mode_callback, NULL, "SIXDOF_SYSTEM_CURRENT_MODE (\\S*) (\\S*)");
   #endif
 

@@ -374,5 +374,15 @@ struct __attribute__((__packed__)) data_in_optimizer {
     float use_received_ang_ref_in_inner_loop; 
 
 };
-    
+
+// Structure to represent a quaternion
+typedef struct {
+    double w, x, y, z;
+} Quaternion;
+
+// Structure to represent a 3D vector
+typedef struct {
+    double x, y, z;
+} Vector3;
+
 #endif
