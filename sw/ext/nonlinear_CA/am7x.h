@@ -77,16 +77,16 @@ struct  __attribute__((__packed__)) am7_data_out {
     int16_t modeled_ax_int; //m/s^2 * 100
     int16_t modeled_ay_int; //m/s^2 * 100
     int16_t modeled_az_int; //m/s^2 * 100
-    int16_t modeled_p_dot_int; //rad/s^2 * 10
-    int16_t modeled_q_dot_int; //rad/s^2 * 10
-    int16_t modeled_r_dot_int; //rad/s^2 * 10
+    int16_t modeled_p_dot_int; //deg/s^2 * 10
+    int16_t modeled_q_dot_int; //deg/s^2 * 10
+    int16_t modeled_r_dot_int; //deg/s^2 * 10
     //Residuals
     int16_t residual_ax_int; //m/s^2 * 100
     int16_t residual_ay_int; //m/s^2 * 100
     int16_t residual_az_int; //m/s^2 * 100
-    int16_t residual_p_dot_int; //rad/s^2 * 10
-    int16_t residual_q_dot_int; //rad/s^2 * 10
-    int16_t residual_r_dot_int; //rad/s^2 * 10
+    int16_t residual_p_dot_int; //deg/s^2 * 10
+    int16_t residual_q_dot_int; //deg/s^2 * 10
+    int16_t residual_r_dot_int; //deg/s^2 * 10
     //Lidar status
     int16_t lidar_value_cm; //cm
     int16_t lidar_strength; //unitless
@@ -152,9 +152,9 @@ struct  __attribute__((__packed__)) am7_data_in {
     int16_t pseudo_control_ax_int; //m/s^2 * 100
     int16_t pseudo_control_ay_int; //m/s^2 * 100
     int16_t pseudo_control_az_int; //m/s^2 * 100
-    int16_t pseudo_control_p_dot_int; //rad/s^2 * 10
-    int16_t pseudo_control_q_dot_int; //rad/s^2 * 10
-    int16_t pseudo_control_r_dot_int; //rad/s^2 * 10
+    int16_t pseudo_control_p_dot_int; //deg^2 * 10
+    int16_t pseudo_control_q_dot_int; //deg^2 * 10
+    int16_t pseudo_control_r_dot_int; //deg^2 * 10
     //Desired theta and phi value:
     int16_t desired_theta_value_int; //degrees * 100
     int16_t desired_phi_value_int; //degrees * 100
@@ -285,6 +285,13 @@ struct __attribute__((__packed__)) data_in_optimizer {
     float modeled_p_dot_filtered;
     float modeled_q_dot_filtered;
     float modeled_r_dot_filtered;
+    //Unfiltered modeled accelerations: 
+    float modeled_ax;
+    float modeled_ay;
+    float modeled_az;
+    float modeled_p_dot;
+    float modeled_q_dot;
+    float modeled_r_dot;
 
     //Motor prop model: 
     float power_Cd_0;
@@ -372,6 +379,7 @@ struct __attribute__((__packed__)) data_in_optimizer {
     float single_loop_controller; 
     float use_new_aero_model; 
     float use_received_ang_ref_in_inner_loop; 
+    float dv_contains_modeled_accelerations;
 
 };
 

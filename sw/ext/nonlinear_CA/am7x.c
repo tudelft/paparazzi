@@ -113,32 +113,6 @@ void from_body_to_earth(float *out_array, const float *in_array, float Phi, floa
     }
 }
 
-// Convert Euler angles (roll, pitch, yaw) to quaternion (3-2-1 convention)
-Quaternion euler_to_quaternion(double roll, double pitch, double yaw) {
-    Quaternion q;
-    
-    // Calculate half angles
-    double half_roll = roll / 2.0;
-    double half_pitch = pitch / 2.0;
-    double half_yaw = yaw / 2.0;
-
-    // Precompute trigonometric values
-    double cos_roll = cos(half_roll);
-    double sin_roll = sin(half_roll);
-    double cos_pitch = cos(half_pitch);
-    double sin_pitch = sin(half_pitch);
-    double cos_yaw = cos(half_yaw);
-    double sin_yaw = sin(half_yaw);
-
-    // Convert to quaternion components (3-2-1 Euler convention)
-    q.w = cos_roll * cos_pitch * cos_yaw + sin_roll * sin_pitch * sin_yaw;
-    q.x = sin_roll * cos_pitch * cos_yaw - cos_roll * sin_pitch * sin_yaw;
-    q.y = cos_roll * sin_pitch * cos_yaw + sin_roll * cos_pitch * sin_yaw;
-    q.z = cos_roll * cos_pitch * sin_yaw - sin_roll * sin_pitch * cos_yaw;
-    
-    return q;
-}
-
 // Function to multiply two quaternions
 Quaternion multiply_quaternions(Quaternion q1, Quaternion q2) {
     Quaternion result;
@@ -161,25 +135,6 @@ Vector3 rotate_vector(Quaternion q, Vector3 v) {
 
     // The rotated vector is in the x, y, z part of the resulting quaternion
     return (Vector3){final_result.x, final_result.y, final_result.z};
-}
-
-// Function to update the NED waypoint using the drone and pad orientation
-Vector3 update_wp_with_sixdof(Vector3 ned_drone_position, Vector3 sixdof_relative_position, 
-                              Quaternion drone_ned_orientation, Quaternion sixdof_rotation_quaternion) {
-
-    // Combine the drone's orientation with the relative pad orientation (to get the pad's orientation in NED)
-    Quaternion pad_ned_orientation = multiply_quaternions(drone_ned_orientation, sixdof_rotation_quaternion);
-    
-    // Rotate the relative position of the pad (in its own frame) to the NED frame using the combined quaternion
-    Vector3 relative_ned_position = rotate_vector(pad_ned_orientation, sixdof_relative_position);
-
-    // Update the NED position (waypoint) by adding the rotated position to the drone's current NED position
-    Vector3 new_wp_ned;
-    new_wp_ned.x = ned_drone_position.x + relative_ned_position.x;
-    new_wp_ned.y = ned_drone_position.y + relative_ned_position.y;
-    new_wp_ned.z = ned_drone_position.z + relative_ned_position.z;
-
-    return new_wp_ned;
 }
 
 void readLiDAR(){
@@ -577,6 +532,8 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
 
     float use_received_ang_ref_in_inner_loop = extra_data_in_copy[95];
 
+    float dv_contains_modeled_accelerations = extra_data_in_copy[96]; //In this case, we zero the modeled accelerations and provide as output unfiltered modeled acc
+
     //Exceptions: 
     if(beacon_tracking_id_local > 0.1f){
       pthread_mutex_lock(&mutex_sixdof);
@@ -773,6 +730,8 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     single_loop_controller = 0;
     use_new_aero_model = 0;
     use_received_ang_ref_in_inner_loop = 0;
+
+    dv_contains_modeled_accelerations = 0;
     
     #endif
 
@@ -993,6 +952,13 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     mydata_in_optimizer_copy.modeled_p_dot_filtered = modeled_accelerations_filtered[3];
     mydata_in_optimizer_copy.modeled_q_dot_filtered = modeled_accelerations_filtered[4];
     mydata_in_optimizer_copy.modeled_r_dot_filtered = modeled_accelerations_filtered[5];
+    //Non filtered:
+    mydata_in_optimizer_copy.modeled_ax = (float) modeled_accelerations[0];
+    mydata_in_optimizer_copy.modeled_ay = (float) modeled_accelerations[1];
+    mydata_in_optimizer_copy.modeled_az = (float) modeled_accelerations[2];
+    mydata_in_optimizer_copy.modeled_p_dot = (float) modeled_accelerations[3];
+    mydata_in_optimizer_copy.modeled_q_dot = (float) modeled_accelerations[4];
+    mydata_in_optimizer_copy.modeled_r_dot = (float) modeled_accelerations[5];
 
     //Non real time: 
     mydata_in_optimizer_copy.K_p_T = K_p_T_airspeed_corrected;
@@ -1077,6 +1043,8 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     mydata_in_optimizer_copy.single_loop_controller = single_loop_controller;
     mydata_in_optimizer_copy.use_new_aero_model = use_new_aero_model;
     mydata_in_optimizer_copy.use_received_ang_ref_in_inner_loop = use_received_ang_ref_in_inner_loop;
+
+    mydata_in_optimizer_copy.dv_contains_modeled_accelerations = dv_contains_modeled_accelerations;
     
 
     pthread_mutex_lock(&mutex_optimizer_input);
@@ -1318,6 +1286,12 @@ void* third_thread() //Run the outer loop of the optimization code
       current_accelerations[4] = (double) mydata_in_optimizer_copy.modeled_q_dot_filtered;
       current_accelerations[5] = (double) mydata_in_optimizer_copy.modeled_r_dot_filtered;
     }   
+
+    if(mydata_in_optimizer_copy.dv_contains_modeled_accelerations > 0.5f){
+      for (int i=0; i<6; i++){
+        current_accelerations[i] = 0.0f;
+      }
+    }
 
     //if verbose_outer_loop is set to 1, print the input variables:
     if(verbose_outer_loop){
@@ -1808,6 +1782,12 @@ void* fourth_thread() //Run the inner loop of the optimization code
                                        (double) mydata_in_optimizer_copy.modeled_q_dot_filtered,
                                        (double) mydata_in_optimizer_copy.modeled_r_dot_filtered};
 
+    if(mydata_in_optimizer_copy.dv_contains_modeled_accelerations > 0.5f){
+      for (int i=0; i<6; i++){
+        current_accelerations[i] = 0.0f;
+      }
+    }
+
     //Remove aerodynamic accelerations if needed:
     if(disable_acc_decrement_inner_loop < 0.5f){
       current_accelerations[0] -= myouter_loop_output_copy.acc_decrement_aero_ax;
@@ -2132,6 +2112,16 @@ void* fourth_thread() //Run the inner loop of the optimization code
     myam7_data_out_copy.modeled_q_dot_int = (int16_T) (mydata_in_optimizer_copy.modeled_q_dot_filtered*1e1*180/M_PI);
     myam7_data_out_copy.modeled_r_dot_int = (int16_T) (mydata_in_optimizer_copy.modeled_r_dot_filtered*1e1*180/M_PI);
 
+    //Use unfiltered modeled values if needed:
+    if(mydata_in_optimizer_copy.dv_contains_modeled_accelerations > 0.5f){
+      myam7_data_out_copy.modeled_ax_int = (int16_T) (current_accelerations[0]*1e2);
+      myam7_data_out_copy.modeled_ay_int = (int16_T) (current_accelerations[1]*1e2);
+      myam7_data_out_copy.modeled_az_int = (int16_T) (current_accelerations[2]*1e2);
+      myam7_data_out_copy.modeled_p_dot_int = (int16_T) (current_accelerations[3]*1e1*180/M_PI);
+      myam7_data_out_copy.modeled_q_dot_int = (int16_T) (current_accelerations[4]*1e1*180/M_PI);
+      myam7_data_out_copy.modeled_r_dot_int = (int16_T) (current_accelerations[5]*1e1*180/M_PI);
+    }
+
     //Print submitted data if needed
     if(verbose_submitted_data){
       printf("\n REAL TIME VARIABLES OUT------------------------------------------------------ \n"); 
@@ -2407,8 +2397,6 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
     }
 
     if(sqrtf(var_x*var_x + var_y*var_y + var_z*var_z) < max_tolerance_variance_sixdof){
-      //Adjust position WP according to the reference frame in the SIXDOF system:
-      float beacon_pos_sixdof_rf[3] = {-X_pos, -Y_pos, -Z_pos}; 
       //Get current euler angles and UAV position from serial connection through mutex:     
       struct am7_data_in myam7_data_in_copy;
       pthread_mutex_lock(&mutex_am7);
@@ -2420,28 +2408,22 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
                                       (float) (myam7_data_in_copy.psi_state_int*1e-2*M_PI/180)};
 
       float delta_euler_angles[3] = {UAV_euler_angles_rad[0] - Phi_rad, UAV_euler_angles_rad[1] - Theta_rad, UAV_euler_angles_rad[2] - Psi_rad};
-      //Transpose relative position to target position for the UAV:
+
+      //Transpose sixdof position from the platform refrence frame to the drone reference frame using the provided quaterions:
+      Quaternion sixdof_rotation_quaternion = {quat_w, -quat_x, -quat_y, -quat_z};
+      Vector3 beacon_pos_sixdof_rf = {X_pos, Y_pos, Z_pos}; 
+      Vector3 beacon_rel_pos_body_frame = rotate_vector(sixdof_rotation_quaternion, beacon_pos_sixdof_rf); 
+      //Invert the elements of the vector to have the beacon position in the drone reference frame:
+      float beacon_pos_body[3] = {-beacon_rel_pos_body_frame.z, -beacon_rel_pos_body_frame.x, -beacon_rel_pos_body_frame.y};
+      //Then rotate it to the NED reference frame:
       float beacon_absolute_ned_pos[3];
-      from_body_to_earth(&beacon_absolute_ned_pos[0], &beacon_pos_sixdof_rf[0], delta_euler_angles[0], delta_euler_angles[1], delta_euler_angles[2]);
-
-      // float beacon_absolute_ned_pos[3];
-      // Vector3 ned_drone_position = {UAV_NED_pos[0], UAV_NED_pos[1], UAV_NED_pos[2]};
-      // Vector3 sixdof_relative_position = {beacon_pos_sixdof_rf[0], beacon_pos_sixdof_rf[1], beacon_pos_sixdof_rf[2]};
-      // Quaternion sixdof_rotation_quaternion = {quat_w, quat_x, quat_y, quat_z};
-      // Quaternion drone_ned_orientation = euler_to_quaternion(roll, pitch, yaw);
-      // // Update the waypoint in the NED frame using the combined orientation
-      // Vector3 new_wp_position = update_wp_with_sixdof(ned_drone_position, sixdof_relative_position, 
-      //                                               drone_ned_orientation, sixdof_rotation_quaternion);
-      // beacon_absolute_ned_pos[0] = new_wp_position.x; beacon_absolute_ned_pos[1] = new_wp_position.y; beacon_absolute_ned_pos[2] = new_wp_position.z;
-
-
-      // Sum current UAV position to have the real abs marker value: 
+      from_body_to_earth(&beacon_absolute_ned_pos[0], &beacon_pos_body[0], UAV_euler_angles_rad[0], UAV_euler_angles_rad[1], UAV_euler_angles_rad[2]);
+      //Sun current UAV position to have the real abs marker value:
       for(int i = 0; i < 3; i++){
         beacon_absolute_ned_pos[i] += UAV_NED_pos[i]; 
       }
 
       
-
       //Retrieve system status from sixdof through mutex:
       pthread_mutex_lock(&mutex_sixdof);
       int8_t current_sixdof_mode_local = current_sixdof_mode;
@@ -2462,9 +2444,13 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
         printf("Sixdof NED pos_x = %f \n",(float) sixdof_detection_copy.NED_pos_x ); 
         printf("Sixdof NED pos_y = %f \n",(float) sixdof_detection_copy.NED_pos_y ); 
         printf("Sixdof NED pos_z  = %f \n",(float) sixdof_detection_copy.NED_pos_z ); 
-        printf("Sixdof RF pos_x = %f \n",(float) beacon_pos_sixdof_rf[0] ); 
-        printf("Sixdof RF pos_y = %f \n",(float) beacon_pos_sixdof_rf[1] ); 
-        printf("Sixdof RF pos_z  = %f \n \n",(float) beacon_pos_sixdof_rf[2] ); 
+        printf("Sixdof RF pos_x = %f \n",(float) beacon_pos_sixdof_rf.x); 
+        printf("Sixdof RF pos_y = %f \n",(float) beacon_pos_sixdof_rf.y); 
+        printf("Sixdof RF pos_z  = %f \n \n",(float) beacon_pos_sixdof_rf.x); 
+        //position of the sixdof int he body rf: 
+        printf("Sixdof BODY pos_x = %f \n",(float) beacon_pos_body[0] );
+        printf("Sixdof BODY pos_y = %f \n",(float) beacon_pos_body[1] );
+        printf("Sixdof BODY pos_z  = %f \n",(float) beacon_pos_body[2] );
         //Add relative angles, variance and system status: 
         printf("Sixdof Phi = %f \n",(float) Phi_rad*180/M_PI );
         printf("Sixdof Theta = %f \n",(float) Theta_rad*180/M_PI );
