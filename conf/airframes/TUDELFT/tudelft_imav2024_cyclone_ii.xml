@@ -409,8 +409,8 @@
     <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
         <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
         <define name="G1_ROLL"   value="{   0,    0,   -9.5,   9.5}"/>
-        <define name="G1_PITCH"  value="{-1.5,  1.5,      0,     0}"/>
-        <define name="G1_YAW"    value="{-2.0, -2.0,    0.0,   0.0}"/>
+        <define name="G1_PITCH"  value="{-5.9,  5.9,      0,     0}"/>
+        <define name="G1_YAW"    value="{-2.5, -2.5,    0.0,   0.0}"/>
         <define name="G1_THRUST" value="{   0,    0,   -1.1,  -1.1}"/>
         <!--Counter torque effect of spinning up a rotor-->
         <define name="G2" value="{0, 0, 0, 0}"/>
