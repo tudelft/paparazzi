@@ -7,7 +7,7 @@
 -->
 
 <airframe name="RotatingWingV3G">
-    <description>RotatingWingV3G with optitrack and INS ext pose</description>
+    <description>RotatingWingV3G with optitrack and INS EKF2</description>
 
     <firmware name="rotorcraft">
      <autopilot name="rotorcraft_oneloop_switch.xml"/>
@@ -30,9 +30,14 @@
             <define name="RADIO_FMODE"              value="RADIO_AUX2"/>
             <define name="AP_MODE_SWITCH"           value="RADIO_AUX3"/>
             <define name="RADIO_CONTROL_THRUST_X"   value="RADIO_AUX4"/>
-            <!-- EKF EXT POSE  configure inputs -->
-            <define name="INS_EXT_POSE_MAG_ID"      value="MAG_RM3100_SENDER_ID"/>
-            <define name="INS_EXT_POSE_IMU_ID"      value="IMU_CUBE1_ID"/> 
+            <!-- EKF EKF2  configure inputs -->
+            <define name="INS_EKF2_MAG_ID"          value="MAG_RM3100_SENDER_ID"/>
+            <define name="INS_EKF2_IMU_ID"          value="IMU_CUBE1_ID"/> 
+            <define name="INS_EKF2_GYRO_ID"         value="IMU_CUBE1_ID"/>
+            <define name="INS_EKF2_ACCEL_ID"        value="IMU_CUBE1_ID"/>
+            <!--Only send gyro and accel that is being used-->
+            <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
+            <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
             <!--Only send gyro and accel that is being used-->
             <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
             <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
@@ -60,7 +65,7 @@
 
        <!-- Datalink -->
         <module name="telemetry" type="transparent">
-            <configure name="MODEM_BAUD" value="B460800"/> <!-- herelink-->
+           <configure name="MODEM_BAUD" value="B460800"/> <!-- herelink-->
             <!-- <configure VALUE="B57600" name="MODEM_BAUD"/> xBee -->
         </module>
 
@@ -81,14 +86,16 @@
             <define name="AIRSPEED_UAVCAN_LOWPASS_PERIOD"   value="0.1" />
             <define name="AIRSPEED_UAVCAN_LOWPASS_TAU"      value="0.15" />
             <define name="AIRSPEED_UAVCAN_SEND_ABI"         value="0" /> <!-- Read Airspeed for logging but do not use it -->
-        </module>                
+            </module>           
         <module name="air_data"/>              
-        <module name="gps" type="datalink"/>   
-        
+        <module name="gps" type="datalink"/>  
+
         <!-- IMU / INS -->  
         <module name="imu" type="cube"/>  
-        <module name="ins" type="ext_pose"/>
- 
+        <module name="ins" type="ekf2">
+         <define name="INS_EKF2_OPTITRACK"      value="TRUE"/>
+        </module>  
+
         <!-- Actuators on dual CAN bus -->
         <module name="actuators" type="uavcan">
             <configure value="TRUE" name="UAVCAN_USE_CAN1"/>
@@ -121,7 +128,7 @@
             <configure name="ANDI_OUTPUTS" value="6"/>
         </module>
 
-        <module name="eff_scheduling_rotwing_V2"/>
+        <module name="eff_scheduling_rotwing_V2"/> 
 
         <module name="wls">
             <define name="WLS_N_U_MAX" value = "11"/>
@@ -252,7 +259,7 @@
         <define name="STABILIZATION_ATTITUDE_SP_MAX_R"      value="90." unit="deg/s"/>
         <define name="STABILIZATION_ATTITUDE_DEADBAND_R"    value="200"             />
         <define name="FWD_SIDESLIP_GAIN"                    value="0.25"/> <!-- cyfoam 0.32-->
-    </section>
+   </section>
     <section name="GROUND_DETECT">
         <define name="THRESHOLD_GROUND_DETECT"              value="40"/>
         <define name="USE_GROUND_DETECT_INDI_THRUST"        value="FALSE"/>
@@ -344,7 +351,7 @@
         <define name="IXX_WING"              value="0.08099"/>
         <define name="IYY_WING"              value="0.1949"/>
         <define name="M"                     value="6.67"/>
-    </section>    
+    </section>
 
     <section name="AUTOPILOT">
         <define name="MODE_MANUAL"      value="AP_MODE_ATTITUDE_DIRECT"/>
