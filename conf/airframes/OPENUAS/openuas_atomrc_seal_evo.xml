@@ -387,7 +387,7 @@
      then increase the value until you are sure it is just on max what is possible if given full contol surface deflection-->
 
   <servos driver="T4">
-    <servo name="S_THROTTLE" no="13" min="290" neutral="330" max="1999"/><!-- On T4 Board this is DShot ESC connection 1-->
+    <servo name="S_THROTTLE" no="13" min="230" neutral="250" max="1999"/><!-- On T4 Board this is DShot ESC connection 1-->
     <servo name="S_AILERON_LEFT" no="1" min="-18000" neutral="0" max="18000"/>
     <servo name="S_FLAPPERON_LEFT" no="2" min="-18000" neutral="0" max="18000"/>
     <servo name="S_FLAPPERON_RIGHT" no="3" min="18000" neutral="0" max="-18000"/>
