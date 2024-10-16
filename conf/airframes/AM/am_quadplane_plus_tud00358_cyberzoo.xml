@@ -340,9 +340,9 @@
     <define name="CRUISE_GAIN_Z_DOT" value="5"/>
 
     <!-- INDI approach gains -->
-    <define name="APP_GAIN_P" value="3"/>
-    <define name="APP_GAIN_Q" value="3"/>
-    <define name="APP_GAIN_R" value="1.6"/>
+    <define name="APP_GAIN_P" value="4"/>
+    <define name="APP_GAIN_Q" value="4"/>
+    <define name="APP_GAIN_R" value="2"/>
 
     <define name="APP_GAIN_X" value="3.5"/>
     <define name="APP_GAIN_Y" value="3.5"/>
@@ -527,11 +527,13 @@
 
 
     <define name="DISABLE_ACC_DECREMENT_INNER_LOOP" value="0"/>
-    <define name="USE_U_INIT_OUTER_LOOP" value="0"/>
-    <define name="USE_U_INIT_INNER_LOOP" value="0"/>
+    <define name="USE_U_INIT_OUTER_LOOP" value="1"/>
+    <define name="USE_U_INIT_INNER_LOOP" value="1"/>
     <define name="SINGLE_LOOP_CONTROLLER" value="0"/>
     <define name="USE_NEW_AERO_MODEL" value="0"/>
-    <define name="USE_RECEIVED_ANG_REF_IN_INNER_LOOP" value="0"/>
+    <define name="USE_RECEIVED_ANG_REF_IN_INNER_LOOP" value="1"/>
+    <define name="FILTER_MODELED_ACC_IN_AP" value="0"/>
+    
 
     <define name="VERT_ACC_MARGIN" value="0.5" unit="m/s^2"/>
     
@@ -781,7 +783,7 @@
     <define name="USE_SHIP_BOX_EXT_REF_ATTITUDE" value="TRUE"/>
     <define name="USE_SIXDOF_EXT_REF_ATTITUDE" value="TRUE"/>
 
-    <define name="USE_SIXDOF_EXT_HEADING" value="TRUE"/>
+    <!-- <define name="USE_SIXDOF_EXT_HEADING" value="TRUE"/> -->
     
 
     <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/>

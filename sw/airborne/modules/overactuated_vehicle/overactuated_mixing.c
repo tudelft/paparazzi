@@ -131,7 +131,7 @@ int use_u_init_inner_loop = OVERACTUATED_MIXING_USE_U_INIT_INNER_LOOP;
 int single_loop_controller = OVERACTUATED_MIXING_SINGLE_LOOP_CONTROLLER;   
 int use_new_aero_model = OVERACTUATED_MIXING_USE_NEW_AERO_MODEL;
 int use_received_ang_ref_in_inner_loop = OVERACTUATED_MIXING_USE_RECEIVED_ANG_REF_IN_INNER_LOOP; 
-
+int dv_contains_modeled_accelerations = OVERACTUATED_MIXING_FILTER_MODELED_ACC_IN_AP;
 
 int failure_mode = 0; 
 
@@ -289,11 +289,14 @@ static abi_event SERIAL_ACT_T4_IN;
 float serial_act_t4_extra_data_in_local[255] __attribute__((aligned));
 struct serial_act_t4_in myserial_act_t4_in_local;
 
+float modeled_acc[6], modeled_acc_filt[6];
 
 //Variables needed for the filters:
 Butterworth2LowPass measurement_rates_filters[3]; //Filter of pqr
 Butterworth2LowPass measurement_acc_filters[3];   //Filter of acceleration
 Butterworth2LowPass actuator_state_filters[INDI_NUM_ACT];   //Filter of actuators
+Butterworth2LowPass modeled_acc_filters[6]; //Filter of modeled acceleration 
+
 
 //Filter of lateral acceleration for turn correction
 Butterworth2LowPass accel_body_y_filt;
@@ -825,6 +828,11 @@ void init_filters(void){
         init_butterworth_2_low_pass(&measurement_rates_filters[i], tau_indi, sample_time, 0.0);
         init_butterworth_2_low_pass(&measurement_acc_filters[i], tau_indi, sample_time, 0.0);
     }
+
+    //initialize filter for the modeled accelerations: 
+    for (int i = 0; i < 6; i++) {
+        init_butterworth_2_low_pass(&modeled_acc_filters[i], tau_indi, sample_time, 0.0);
+    }
     
     //Initialize filter for the lateral acceleration to correct the turn and the flight path angle: 
     init_butterworth_2_low_pass(&accel_body_y_filt, tau_indi, sample_time, 0.0);
@@ -1039,6 +1047,16 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.pseudo_control_q_dot_int = (int16_t) (INDI_pseudocontrol[4] * 1e1 * 180/M_PI);
     am7_data_out_local.pseudo_control_r_dot_int = (int16_t) (INDI_pseudocontrol[5] * 1e1 * 180/M_PI);
 
+    //If needed, sum the filtered modeled accelerations to the pseudo control array: 
+    if(dv_contains_modeled_accelerations){
+        am7_data_out_local.pseudo_control_ax_int += (int16_t) (modeled_acc_filt[0] * 1e2);
+        am7_data_out_local.pseudo_control_ay_int += (int16_t) (modeled_acc_filt[1] * 1e2);
+        am7_data_out_local.pseudo_control_az_int += (int16_t) (modeled_acc_filt[2] * 1e2);
+        am7_data_out_local.pseudo_control_p_dot_int += (int16_t) (modeled_acc_filt[3] * 1e1 * 180/M_PI);
+        am7_data_out_local.pseudo_control_q_dot_int += (int16_t) (modeled_acc_filt[4] * 1e1 * 180/M_PI);
+        am7_data_out_local.pseudo_control_r_dot_int += (int16_t) (modeled_acc_filt[5] * 1e1 * 180/M_PI);
+    }
+
     //Desired theta and phi values:
     am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
     am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
@@ -1190,8 +1208,8 @@ void send_values_to_raspberry_pi(void){
     extra_data_out_local[93] = single_loop_controller;
     extra_data_out_local[94] = use_new_aero_model;
     extra_data_out_local[95] = use_received_ang_ref_in_inner_loop;
-
-
+    
+    extra_data_out_local[96] = dv_contains_modeled_accelerations;
 }
 
 /**
@@ -1366,6 +1384,12 @@ void assign_variables(void){
     from_earth_to_control( accel_vect_filt_control_rf, acc_vect_filt, euler_vect[2]);
     //Determination of the speed in the control rf:
     from_earth_to_control( speed_vect_control_rf, speed_vect, euler_vect[2]);
+
+    //Modeled accelerations filter update: 
+    for(int i=0; i<6; i++){
+        update_butterworth_2_low_pass(&modeled_acc_filters[i], modeled_acc[i]);
+        modeled_acc_filt[i] = modeled_acc_filters[i].o[0];
+    }
 
     //Assign gains according to the approach state: 
     if(approach_state){
@@ -2232,6 +2256,14 @@ void overactuated_mixing_run(void)
                                 &waypoints[WP_ARUCO].enu_i.y,
                                 &waypoints[WP_ARUCO].enu_i.z);
     });
+
+    //Copy modeled accelerations locally: 
+    modeled_acc[0] = myam7_data_in_local.modeled_ax_int * 1e-2;
+    modeled_acc[1] = myam7_data_in_local.modeled_ay_int * 1e-2;
+    modeled_acc[2] = myam7_data_in_local.modeled_az_int * 1e-2;
+    modeled_acc[3] = myam7_data_in_local.modeled_p_dot_int * 1e-1 * M_PI/180;
+    modeled_acc[4] = myam7_data_in_local.modeled_q_dot_int * 1e-1 * M_PI/180;
+    modeled_acc[5] = myam7_data_in_local.modeled_r_dot_int * 1e-1 * M_PI/180;
 
     //Send to the raspberry pi the values for the next optimization run.
     send_values_to_raspberry_pi();

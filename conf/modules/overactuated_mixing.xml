@@ -63,6 +63,7 @@
         <dl_setting var="single_loop_controller" min="0" step="1" max="1" shortname="single_loop_CA" values="FALSE|TRUE" persistent="true"/>
         <dl_setting var="use_new_aero_model" min="0" step="1" max="1" shortname="new_aero_model" values="FALSE|TRUE" persistent="true"/>
         <dl_setting var="use_received_ang_ref_in_inner_loop" min="0" step="1" max="1" shortname="use_ext_ang_ref_inner" values="FALSE|TRUE" persistent="true"/>
+        <dl_setting var="dv_contains_modeled_accelerations" min="0" step="1" max="1" shortname="filt_mdl_acc_in_ap" values="FALSE|TRUE" persistent="true"/>
 
         <dl_setting var="alt_offset_beacon" min="0" step=".1" max="40" shortname="alt_off_beacon"/>
 

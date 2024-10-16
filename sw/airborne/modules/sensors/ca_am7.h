@@ -66,16 +66,16 @@ struct __attribute__((__packed__)) am7_data_in {
     int16_t modeled_ax_int; //m/s^2 * 100
     int16_t modeled_ay_int; //m/s^2 * 100
     int16_t modeled_az_int; //m/s^2 * 100
-    int16_t modeled_p_dot_int; //rad/s^2 * 10
-    int16_t modeled_q_dot_int; //rad/s^2 * 10
-    int16_t modeled_r_dot_int; //rad/s^2 * 10
+    int16_t modeled_p_dot_int; //deg/s^2 * 10
+    int16_t modeled_q_dot_int; //deg/s^2 * 10
+    int16_t modeled_r_dot_int; //deg/s^2 * 10
     //Residuals
     int16_t residual_ax_int; //m/s^2 * 100
     int16_t residual_ay_int; //m/s^2 * 100
     int16_t residual_az_int; //m/s^2 * 100
-    int16_t residual_p_dot_int; //rad/s^2 * 10
-    int16_t residual_q_dot_int; //rad/s^2 * 10
-    int16_t residual_r_dot_int; //rad/s^2 * 10
+    int16_t residual_p_dot_int; //deg/s^2 * 10
+    int16_t residual_q_dot_int; //deg/s^2 * 10
+    int16_t residual_r_dot_int; //deg/s^2 * 10
     //Lidar status
     int16_t lidar_value_cm; //cm
     int16_t lidar_strength; //unitless
