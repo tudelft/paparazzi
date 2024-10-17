@@ -245,7 +245,7 @@
     <define name="MAX_FWD_ACC" value="8.0" unit="m/s^2"/>
     <define name="MIN_FWD_ACC" value="-4" unit="m/s^2"/> 
     <define name="MAX_LAT_ACC" value="8.0" unit="m/s^2"/>
-    <define name="MAX_VERT_ACC" value="3.0" unit="m/s^2"/>
+    <define name="MAX_VERT_ACC" value="4.0" unit="m/s^2"/>
   </section>
 
   <section name="FBW_EXTRA_DATA_OUT" prefix="FBW_T4_">
@@ -307,8 +307,8 @@
 
     <!-- Maximum orders -->
     <!-- General -->
-    <define name="MAX_PHI" value="40" unit="deg"/>
-    <define name="MAX_THETA" value="40" unit="deg"/>
+    <define name="MAX_PHI" value="80" unit="deg"/>
+    <define name="MAX_THETA" value="50" unit="deg"/>
     <define name="MAX_PSI_ERR" value="80" unit="deg"/>
 
     <!-- PID FAILSAFE GAINS-->
@@ -340,21 +340,21 @@
     <define name="CRUISE_GAIN_Z_DOT" value="5"/>
 
     <!-- INDI approach gains -->
-    <define name="APP_GAIN_P" value="4"/>
-    <define name="APP_GAIN_Q" value="4"/>
+    <define name="APP_GAIN_P" value="2"/>
+    <define name="APP_GAIN_Q" value="2"/>
     <define name="APP_GAIN_R" value="2"/>
 
-    <define name="APP_GAIN_X" value="3.5"/>
-    <define name="APP_GAIN_Y" value="3.5"/>
+    <define name="APP_GAIN_X" value="1"/>
+    <define name="APP_GAIN_Y" value="1"/>
     <define name="APP_GAIN_Z" value="5"/>
 
     <!-- INDI approach gains -->
-    <define name="APP_GAIN_P_DOT" value="8"/>
-    <define name="APP_GAIN_Q_DOT" value="8"/>
-    <define name="APP_GAIN_R_DOT" value="5"/>
+    <define name="APP_GAIN_P_DOT" value="4"/>
+    <define name="APP_GAIN_Q_DOT" value="4"/>
+    <define name="APP_GAIN_R_DOT" value="2"/>
 
-    <define name="APP_GAIN_X_DOT" value="4"/>
-    <define name="APP_GAIN_Y_DOT" value="4"/>
+    <define name="APP_GAIN_X_DOT" value="1"/>
+    <define name="APP_GAIN_Y_DOT" value="1"/>
     <define name="APP_GAIN_Z_DOT" value="5"/>
 
     <!-- Actuator dynamics and mapping-->
@@ -440,26 +440,26 @@
    <define name="MOTOR_MAX_OMEGA" value="1037" unit="rad/s"/> -->
 
     <define name="MOTOR_MIN_OMEGA" value="150" unit="rad/s"/><!-- Needed to make the INDI to work-->
-    <define name="SERVO_AZ_MIN_ANGLE" value="-50" unit="deg"/><!-- Always remember to update the PWM range as well-->
-    <define name="SERVO_AZ_MAX_ANGLE" value="50" unit="deg"/>
+    <define name="SERVO_AZ_MIN_ANGLE" value="-90" unit="deg"/><!-- Always remember to update the PWM range as well-->
+    <define name="SERVO_AZ_MAX_ANGLE" value="90" unit="deg"/>
 
     <define name="SERVO_EL_MAX_ANGLE" value="22" unit="deg"/>
     <define name="SERVO_EL_MIN_ANGLE" value="-89" unit="deg"/>
 
     <!-- ball bearings vehicle -->
-    <define name="SERVO_EL_1_ZERO_VALUE" value="4.650" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="0.35" unit="deg"/>
     <define name="SERVO_EL_2_ZERO_VALUE" value="-3.69" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="-8.08" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="9.22" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-6.06" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="-5.09" unit="deg"/>
 
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="6.94" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="2.10" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="-9.49" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="-3.86" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="9.14" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="0.26" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="-9.05" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="14.41" unit="deg"/>
 
-    <define name="MAX_THETA_INDI" value="60" unit="deg"/>
+    <define name="MAX_THETA_INDI" value="50" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
-    <define name="MAX_PHI_INDI" value="60" unit="deg"/>
+    <define name="MAX_PHI_INDI" value="70" unit="deg"/>
     <define name="MAX_AOA_INDI" value="15" unit="deg"/>
     <define name="MIN_AOA_INDI" value="0" unit="deg"/>
 
@@ -509,7 +509,7 @@
     <define name="W_ACT_AILERONS_CONST_CRUISE" value="0.5"/>
     <define name="W_ACT_AILERONS_SPEED_CRUISE" value="0"/>
     <!-- APP WEIGHTS -->
-    <define name="W_ACT_MOTOR_CONST_APP" value="100"/>
+    <define name="W_ACT_MOTOR_CONST_APP" value="10"/>
     <define name="W_ACT_MOTOR_SPEED_APP" value="0"/>
     <define name="W_ACT_EL_CONST_APP" value="0"/>
     <define name="W_ACT_EL_SPEED_APP" value="0"/>
@@ -539,10 +539,10 @@
     
     <define VALUE="0.01" NAME="W_DV_1"/>
     <define VALUE="0.01" NAME="W_DV_2"/>
-    <define VALUE="0.02" NAME="W_DV_3"/>
-    <define VALUE="0.05" NAME="W_DV_4"/>
-    <define VALUE="0.05" NAME="W_DV_5"/>
-    <define VALUE="0.05" NAME="W_DV_6"/>
+    <define VALUE="0.05" NAME="W_DV_3"/>
+    <define VALUE="0.1" NAME="W_DV_4"/>
+    <define VALUE="0.1" NAME="W_DV_5"/>
+    <define VALUE="0.01" NAME="W_DV_6"/>
 
     <define VALUE="0.5e-7" NAME="GAMMA_QUADRATIC_DU"/>
 
@@ -781,7 +781,7 @@
     <!--define name="UART7_CR2" value="(USART_CR2_STOP1_BITS | USART_CR2_SWAP_Msk)"/--> <!-- Swap RX/TX since RX doesn't work-->
 
     <define name="USE_SHIP_BOX_EXT_REF_ATTITUDE" value="TRUE"/>
-    <define name="USE_SIXDOF_EXT_REF_ATTITUDE" value="TRUE"/>
+    <!-- <define name="USE_SIXDOF_EXT_REF_ATTITUDE" value="TRUE"/> -->
 
     <!-- <define name="USE_SIXDOF_EXT_HEADING" value="TRUE"/> -->
     

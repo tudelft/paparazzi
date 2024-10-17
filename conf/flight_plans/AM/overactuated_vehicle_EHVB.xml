@@ -32,6 +32,7 @@
     <waypoint lat="52.1680902" lon="4.4148029" name="APP"/>
     <waypoint lat="52.1686922" lon="4.4149181" name="FOLLOW"/>
     <waypoint lat="52.169599" lon="4.417198" name="SIXDOF"/>
+    <waypoint lat="52.169599" lon="4.417198" name="ARUCO"/>
     <waypoint lat="52.169742" lon="4.411045" name="C1"/>
     <waypoint lat="52.168740" lon="4.407411" name="C2"/>
     <waypoint lat="52.166515" lon="4.408235" name="C3"/>

@@ -191,7 +191,7 @@
 
   <!-- Maximum limits of the sticks -->
   <section name="MANUAL_CONTROL_OPTIONS" prefix="MANUAL_CONTROL_">
-    <define name="MAX_CMD_FWD_SPEED" value="20.0" unit="m/s"/>
+    <define name="MAX_CMD_FWD_SPEED" value="25.0" unit="m/s"/>
     <define name="MAX_CMD_LAT_SPEED" value="10.0" unit="m/s"/>
     <define name="MAX_CMD_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_CMD_PITCH_ANGLE" value="25.0" unit="deg"/>
@@ -335,7 +335,7 @@
     <define name="CRUISE_GAIN_Z" value="2"/>
 
     <!-- INDI derivative gains -->
-    <define name="CRUISE_GAIN_P_DOT" value="8.8"/>
+    <define name="CRUISE_GAIN_P_DOT" value="8"/>
     <define name="CRUISE_GAIN_Q_DOT" value="8"/>
     <define name="CRUISE_GAIN_R_DOT" value="5"/>
 
@@ -344,8 +344,8 @@
     <define name="CRUISE_GAIN_Z_DOT" value="5"/>
 
     <!-- INDI approach gains -->
-    <define name="APP_GAIN_P" value="1.5"/>
-    <define name="APP_GAIN_Q" value="1.3"/>
+    <define name="APP_GAIN_P" value="4"/>
+    <define name="APP_GAIN_Q" value="4"/>
     <define name="APP_GAIN_R" value="1.6"/>
 
     <define name="APP_GAIN_X" value="2.5"/>
@@ -354,7 +354,7 @@
 
     <!-- INDI approach gains -->
     <define name="APP_GAIN_P_DOT" value="8"/>
-    <define name="APP_GAIN_Q_DOT" value="7"/>
+    <define name="APP_GAIN_Q_DOT" value="8"/>
     <define name="APP_GAIN_R_DOT" value="5"/>
 
     <define name="APP_GAIN_X_DOT" value="3"/>
@@ -465,7 +465,7 @@
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
     <define name="MAX_PHI_INDI" value="60" unit="deg"/>
     <define name="MAX_AOA_INDI" value="15" unit="deg"/>
-    <define name="MIN_AOA_INDI" value="1" unit="deg"/>
+    <define name="MIN_AOA_INDI" value="0" unit="deg"/>
 
     <define name="AOA_ESTIMATION_AIRSPEED" value="4.0" unit="m/s"/>
     <define name="MIN_AOA_ESTIMATION_AIRSPEED" value="3.0" unit="m/s"/>
@@ -489,11 +489,12 @@
     <define name="MIN_ALT_TILT_CONSTRAINT" value="-0.1" unit="meters"/>
 
     <!-- Filters properties for INDI -->
-    <define name="FILT_CUTOFF_INDI" value="12" unit="rad/s"/>
+    <define name="FILT_CUTOFF_INDI" value="12.0" unit="rad/s"/>
 
     <!-- First order filter on rates -->
     <!-- 1-exp(-cutoff_frequency/sampling_frequency) [20 rad/s]-->
     <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0488" /> 
+    <define name="OMEGA_FIRST_ORDER_FILTER_ANG_RATES" value="20.0" /> 
 
   <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES_FAILSAFE" value="0.12" /> 
 
@@ -528,7 +529,15 @@
     <define name="TRANSITION_SPEED_PSEUDOCTR_HEDGE_CRUISE" value="7"/>
     <define name="TRANSITION_SPEED_PSEUDOCTR_HEDGE_APP" value="15"/>
 
+
     <define name="DISABLE_ACC_DECREMENT_INNER_LOOP" value="0"/>
+    <define name="USE_U_INIT_OUTER_LOOP" value="1"/>
+    <define name="USE_U_INIT_INNER_LOOP" value="1"/>
+    <define name="SINGLE_LOOP_CONTROLLER" value="0"/>
+    <define name="USE_NEW_AERO_MODEL" value="0"/>
+    <define name="USE_RECEIVED_ANG_REF_IN_INNER_LOOP" value="1"/>
+    <define name="FILTER_MODELED_ACC_IN_AP" value="0"/>
+    
 
     <define name="VERT_ACC_MARGIN" value="0.5" unit="m/s^2"/>
     
@@ -546,10 +555,10 @@
     <define name="REF_SPEED_TRANSITION" value="5.0" unit="m/s"/> -->
     <!-- <define name="MIN_SPEED_TRANSITION" value="0.0" unit="m/s"/>
     <define name="REF_SPEED_TRANSITION" value="0.5" unit="m/s"/> -->
-    <define name="MIN_SPEED_TRANSITION_CRUISE" value="8.0" unit="m/s"/>
-    <define name="REF_SPEED_TRANSITION_CRUISE" value="10.0" unit="m/s"/>
-    <define name="MIN_SPEED_TRANSITION_APP" value="13.0" unit="m/s"/>
-    <define name="REF_SPEED_TRANSITION_APP" value="15.0" unit="m/s"/>
+    <define name="MIN_SPEED_TRANSITION_CRUISE" value="2.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION_CRUISE" value="5.0" unit="m/s"/>
+    <define name="MIN_SPEED_TRANSITION_APP" value="4.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION_APP" value="10.0" unit="m/s"/>
 
     <define name="K_BETA" value="0.1"/>
 
@@ -612,7 +621,7 @@
     <define name="WING_CHORD" value="0.3"/>
     <define name="WING_SPAN" value="1.4"/>
 
-    <define name="CL_AILERONS" value="0.2"/>
+    <define name="CL_AILERONS" value="0.35"/>
   </section>
 
   <!-- Motor-propulsive model noah -->
@@ -775,8 +784,11 @@
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     <!--define name="UART7_CR2" value="(USART_CR2_STOP1_BITS | USART_CR2_SWAP_Msk)"/--> <!-- Swap RX/TX since RX doesn't work-->
 
-    <!-- <define name="USE_EXT_REF_ATTITUDE" value="TRUE"/> -->
-    <define name="MOVE_EXT_REF_POSITION" value="TRUE"/>
+    <define name="USE_SHIP_BOX_EXT_REF_ATTITUDE" value="TRUE"/>
+    <define name="USE_SIXDOF_EXT_REF_ATTITUDE" value="TRUE"/>
+    <!-- <define name="USE_SIXDOF_EXT_HEADING" value="TRUE"/> -->
+    <!-- <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/> -->
+    <!-- <define name="FULLY_MANUAL_HEADING" value="TRUE"/> -->
 
     <!-- Basic navigation settings -->
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>

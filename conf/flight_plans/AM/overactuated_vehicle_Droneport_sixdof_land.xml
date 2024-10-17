@@ -32,6 +32,7 @@
     <waypoint name="TD" x="10" y="-1"/>
     <waypoint name="APP" x="70" y="-25"/>
     <waypoint name="SIXDOF" x="10" y="-1"/>
+    <waypoint name="ARUCO" x="10" y="-1"/>
     <waypoint name="FOLLOW" x="100" y="100"/>
 
     <!-- Droneport Hard geofence-->
