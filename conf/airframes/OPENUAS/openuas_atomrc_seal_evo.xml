@@ -388,12 +388,12 @@
 
   <servos driver="T4">
     <servo name="S_THROTTLE" no="13" min="230" neutral="250" max="1999"/><!-- On T4 Board this is DShot ESC connection 1-->
-    <servo name="S_AILERON_LEFT" no="1" min="-18000" neutral="0" max="18000"/>
-    <servo name="S_FLAPPERON_LEFT" no="2" min="-18000" neutral="0" max="18000"/>
-    <servo name="S_FLAPPERON_RIGHT" no="3" min="18000" neutral="0" max="-18000"/>
-    <servo name="S_AILERON_RIGHT" no="4" min="18000" neutral="0" max="-18000"/>
-    <servo name="S_ELEVATOR" no="6" min="-18000" neutral="0" max="18000"/>
-    <servo name="S_RUDDER" no="7" min="3850" neutral="0" max="-3850"/> <!--38.5 deg left to 38.5 deg right-->
+    <servo name="S_AILERON_LEFT" no="1" min="-5700" neutral="0" max="5700"/>
+    <servo name="S_FLAPPERON_LEFT" no="2" min="-8500" neutral="0" max="8500"/>
+    <servo name="S_FLAPPERON_RIGHT" no="3" min="8500" neutral="0" max="-8500"/>
+    <servo name="S_AILERON_RIGHT" no="4" min="5700" neutral="0" max="-5700"/>
+    <servo name="S_ELEVATOR" no="6" min="-6000" neutral="0" max="6000"/>
+    <servo name="S_RUDDER" no="7" min="3550" neutral="0" max="-3550"/> <!--38.5 deg left to 38.5 deg right-->
     <servo name="S_ACL" no="12" min="-18000" neutral="0" max="18000"/><!-- Although PWM the angle is recalculated in those units -->
   </servos>
 
