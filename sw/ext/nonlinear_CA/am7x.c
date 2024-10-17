@@ -595,10 +595,10 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     //Replace variables with dummy values, to test: 
     float pi = M_PI; 
     //Real time variables: 
-    Omega_1 = 800;
-    Omega_2 = 800;
-    Omega_3 = 800;
-    Omega_4 = 800;
+    Omega_1 = 850;
+    Omega_2 = 600;
+    Omega_3 = 900;
+    Omega_4 = 1000;
     b_1 = 0 * pi/180;
     b_2 = 0 * pi/180;
     b_3 = 0 * pi/180;
@@ -619,8 +619,8 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     delta_ailerons = 0 * pi/180;
     desired_theta_value = 0 * pi/180;
     desired_phi_value = 0 * pi/180;
-    approach_mode = 0;
-    lidar_alt_corrected = 0;
+    approach_mode = 1;
+    lidar_alt_corrected = 3;
     pseudo_control_ax = 0;
     pseudo_control_ay = 0;
     pseudo_control_az = 0;
@@ -648,12 +648,12 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     max_omega = 1000;
     min_omega = 100;
     max_b = 25;
-    min_b = -130;
+    min_b = -89;
     max_g = 90;
     min_g = -90;
     max_theta = 50;
     min_theta = -15;
-    max_phi = 80;
+    max_phi = 70;
     Cm_zero = 0.05;
     Cm_alpha = -0.1;
     Cl_alpha = 3.5;
@@ -668,9 +668,9 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     W_act_tilt_el_speed = 0;
     W_act_tilt_az_const = 0;
     W_act_tilt_az_speed = 10;
-    W_act_theta_const = 100;
+    W_act_theta_const = 1000;
     W_act_theta_speed = -15;
-    W_act_phi_const = 100;
+    W_act_phi_const = 1000;
     W_act_phi_speed = -15;
     W_act_ailerons_const = .5;
     W_act_ailerons_speed = 0;
@@ -679,7 +679,7 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     W_dv_3 = 0.05;
     W_dv_4 = 0.1;
     W_dv_5 = 0.1;
-    W_dv_6 = 0.1;
+    W_dv_6 = 0.01;
     gamma_quadratic_du = .5e-7;
     Cy_beta = 0.1;
     Cl_beta = 0.1;
@@ -723,8 +723,8 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     prop_theta = 0.2188;
     beacon_tracking_id_local = 1636;
     desired_sixdof_mode_local = 1;
-    use_u_init_outer_loop = 1;
-    use_u_init_inner_loop = 1;
+    use_u_init_outer_loop = 0;
+    use_u_init_inner_loop = 0;
     K_t_airspeed = 0.02;
     pqr_first_order_filter_omega_telem = 12;
     single_loop_controller = 0;
@@ -1248,7 +1248,7 @@ void* third_thread() //Run the outer loop of the optimization code
     double gamma_quadratic_du2 = (double) 0.0f;
 
     //Assign the failure gains manually: 
-    double W_act_motor_failure = (double) 20.0f; 
+    double W_act_motor_failure = (double) 100.0f; 
     double W_act_tilt_el_failure = (double) 0.0f;
     double W_act_tilt_az_failure = (double) 0.0f;
     double W_act_theta_failure = (double) 1.0f;
@@ -1262,7 +1262,7 @@ void* third_thread() //Run the outer loop of the optimization code
     double W_dv_5_failure = (double) 0.01f;
     double W_dv_6_failure = (double) 0.01f;
 
-    double gamma_quadratic_du_failure = (double) 5e-7f;
+    double gamma_quadratic_du_failure = (double) 0.5e-7f;
 
     //Prepare output variables: 
     double u_out[NUM_ACT_IN_U_IN];
@@ -1828,11 +1828,11 @@ void* fourth_thread() //Run the inner loop of the optimization code
 
     double W_dv_1_failure = (double) 0.01f;
     double W_dv_2_failure = (double) 0.01f;
-    double W_dv_3_failure = (double) 0.01f;
+    double W_dv_3_failure = (double) 0.02f;
     double W_dv_4_failure = (double) 0.1f;
     double W_dv_5_failure = (double) 0.1f;
     double W_dv_6_failure = (double) 0.1f;
-    double gamma_quadratic_du_failure = (double) 5e-7f;
+    double gamma_quadratic_du_failure = (double) .5e-7f;
 
     //Prepare output variables: 
     double u_out[NUM_ACT_IN_U_IN_INNER];
