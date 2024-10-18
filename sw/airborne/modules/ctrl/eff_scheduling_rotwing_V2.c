@@ -67,7 +67,8 @@ float actuator_state_filt_vect[EFF_MAT_COLS_NB] = {0};
 float G2_RW[EFF_MAT_COLS_NB]                       = {0};//ROTWING_EFF_SCHED_G2; //scaled by RW_G_SCALE
 float G1_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB]      = {0};//{ROTWING_EFF_SCHED_G1_ZERO, ROTWING_EFF_SCHED_G1_ZERO, ROTWING_EFF_SCHED_G1_THRUST, ROTWING_EFF_SCHED_G1_ROLL, ROTWING_EFF_SCHED_G1_PITCH, ROTWING_EFF_SCHED_G1_YAW}; //scaled by RW_G_SCALE 
 float EFF_MAT_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB] = {0};
-static float flt_cut = 1.0e-4;
+static float flt_cut_ap = 2.0e-3;
+static float flt_cut    = 1.0e-4;
 
 struct FloatEulers eulers_zxy_RW_EFF;
 static Butterworth2LowPass skew_filt; 
@@ -353,8 +354,21 @@ void sum_EFF_MAT_RW(void) {
   for (i = 0; i < EFF_MAT_ROWS_NB; i++) {
     for(j = 0; j < EFF_MAT_COLS_NB; j++) {
       float abs = fabs(EFF_MAT_RW[i][j]);
-      if (abs < flt_cut) {
-        EFF_MAT_RW[i][j] = 0.0;
+      switch (i) {
+        case (RW_aN):
+        case (RW_aE):
+        case (RW_aD):
+        case (RW_aq):
+        case (RW_ar):
+          if (abs < flt_cut) {
+            EFF_MAT_RW[i][j] = 0.0;
+          }
+          break;
+        case (RW_ap):
+          if (abs < flt_cut_ap) {
+            EFF_MAT_RW[i][j] = 0.0;
+          }
+          break;
       }
     }
   }

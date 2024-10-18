@@ -270,10 +270,17 @@ float max_v_nav_v = NAV_HYBRID_MAX_SPEED_V;
 #else
 float max_v_nav_v = 1.5;
 #endif
+
 #ifndef FWD_SIDESLIP_GAIN
 float fwd_sideslip_gain = 0.2;
 #else
 float fwd_sideslip_gain = FWD_SIDESLIP_GAIN;
+#endif
+
+#ifndef ONELOOP_ANDI_WU_QUAD_MOTORS_FWD
+float Wu_quad_motors_fwd = 6.0;
+#else
+float Wu_quad_motors_fwd = ONELOOP_ANDI_WU_QUAD_MOTORS_FWD;
 #endif
 
 /*  Define Section of the functions used in this module*/
@@ -386,6 +393,13 @@ static float Wv_backup[ANDI_OUTPUTS] = ONELOOP_ANDI_WV;
 #else
 static float Wv_backup[ANDI_OUTPUTS] = {1.0};
 #endif
+
+#ifdef ONELOOP_ANDI_WU // {mF,mR,mB,mL,mP,de,dr,da,df,phi,theta}
+static float Wu_backup[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_WU;
+#else
+static float Wu_backup[ANDI_NUM_ACT_TOT] = {1.0};
+#endif
+
 /*Complementary Filter Variables*/
 static struct Oneloop_CF_t cf;
 
@@ -468,9 +482,9 @@ static void send_eff_mat_stab_oneloop_andi(struct transport_tx *trans, struct li
 {
   float zero = 0.0;
   pprz_msg_send_EFF_MAT_STAB(trans, dev, AC_ID, 
-                ANDI_NUM_ACT, EFF_MAT_G[3],
-                ANDI_NUM_ACT, EFF_MAT_G[4],
-                ANDI_NUM_ACT, EFF_MAT_G[5], 
+                ANDI_NUM_ACT, EFF_MAT_RW[3],
+                ANDI_NUM_ACT, EFF_MAT_RW[4],
+                ANDI_NUM_ACT, EFF_MAT_RW[5], 
                                     1, &zero,
                                     1, &zero);
 }
@@ -478,9 +492,9 @@ static void send_eff_mat_stab_oneloop_andi(struct transport_tx *trans, struct li
 static void send_eff_mat_guid_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_EFF_MAT_GUID(trans, dev, AC_ID, 
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[0],
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[1],
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[2]);
+                ANDI_NUM_ACT_TOT, EFF_MAT_RW[0],
+                ANDI_NUM_ACT_TOT, EFF_MAT_RW[1],
+                ANDI_NUM_ACT_TOT, EFF_MAT_RW[2]);
 }
 static void send_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
@@ -1600,6 +1614,10 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
       case COMMAND_MOTOR_RIGHT:
       case COMMAND_MOTOR_BACK:
       case COMMAND_MOTOR_LEFT:
+        float skew_bound = RW.skew.deg;
+        Bound(skew_bound,70.0,90.0);
+        float Wu_sched   = (Wu_quad_motors_fwd-Wu_backup[i])/(90.0-70.0)*(skew_bound-70)+Wu_backup[i];
+        WLS_one_p.Wu[i]     = Wu_sched;
         WLS_one_p.u_min[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
         WLS_one_p.u_pref[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i];
         WLS_one_p.u_max[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
@@ -1648,7 +1666,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
         WLS_one_p.u_pref[i] = (u_pref[i]  - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
         break;         
       case COMMAND_PITCH:
-        if (rotwing_state.meas_skew_angle_deg > 85.0){
+        if (RW.skew.deg > 70.0){
           WLS_one_p.u_min[i]  = (RadOfDeg(-17.0) - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
           WLS_one_p.u_max[i]  = (RadOfDeg(17.0)  - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
         } else {
@@ -1694,7 +1712,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     commands[i] = (int16_t) andi_u[i];
   }
   if (rotwing_state.fail_pusher_motor){
-    commands[COMMAND_MOTOR_PUSHER] = Min(1000,andi_u[COMMAND_MOTOR_PUSHER]);
+    commands[COMMAND_MOTOR_PUSHER] = 0;//Min(1000,andi_u[COMMAND_MOTOR_PUSHER]);
   }
   commands[COMMAND_THRUST] = (commands[COMMAND_MOTOR_FRONT] + commands[COMMAND_MOTOR_RIGHT] + commands[COMMAND_MOTOR_BACK] + commands[COMMAND_MOTOR_LEFT])/num_thrusters_oneloop;
   autopilot.throttle = commands[COMMAND_THRUST];

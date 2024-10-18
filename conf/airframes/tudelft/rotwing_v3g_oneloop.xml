@@ -19,11 +19,7 @@
             </module>
             <module name="sys_mon"/>
             <module name="flight_recorder"/>
-
-            <module name="lidar_tfmini">
-                <configure name="TFMINI_PORT"    value="UART8"/>
-                <configure name="USE_TFMINI_AGL" value="TRUE"/>
-            </module>        
+      
             <!-- RC switches -->
             <define name="RADIO_TH_HOLD"            value="RADIO_AUX1"/>
             <define name="RADIO_KILL_SWITCH"        value="RADIO_AUX1"/>
@@ -35,7 +31,7 @@
             <define name="INS_EKF2_IMU_ID"          value="IMU_CUBE1_ID"/> 
             <define name="INS_EKF2_GYRO_ID"         value="IMU_CUBE1_ID"/>
             <define name="INS_EKF2_ACCEL_ID"        value="IMU_CUBE1_ID"/>
-            <define name="MULTI_GPS_MODE"       value="GPS_MODE_PRIMARY"/>
+            <define name="MULTI_GPS_MODE"           value="GPS_MODE_PRIMARY"/>
             <!--Only send gyro and accel that is being used-->
             <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
             <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>

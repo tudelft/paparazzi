@@ -38,11 +38,10 @@
             <!--Only send gyro and accel that is being used-->
             <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
             <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
-            <!--Only send gyro and accel that is being used-->
-            <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
-            <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
+
             <!-- Range sensor connected to supercan -->
             <module name="range_sensor_uavcan"/>
+            
             <!-- Log in high speed (Remove for outdoor flights) -->
             <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
             <define name="I2C2_CLOCK_SPEED" value="100000"/>
