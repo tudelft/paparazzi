@@ -285,6 +285,7 @@ float Wu_quad_motors_fwd = ONELOOP_ANDI_WU_QUAD_MOTORS_FWD;
 
 /*  Define Section of the functions used in this module*/
 void  init_poles(void);
+void  init_poles_att(void);
 void  calc_normalization(void);
 void  normalize_nu(void);
 void  G1G2_oneloop(int ctrl_type);
@@ -996,6 +997,31 @@ static float w_approx(float p1, float p2, float p3, float rm_k){
 }
 
 /**
+ * @brief Calculate EC poles given RM poles
+ * @param p_rm      Reference Model Pole (3 coincident poles)
+ * @param slow_pole Pole of the slowest dynamics
+ * @param k         EC / RM ratio
+ * @param omega_n   Natural Frequency
+ */
+static float ec_poles(float p_rm, float slow_pole, float k){
+  p_rm      = positive_non_zero(p_rm);
+  slow_pole = positive_non_zero(slow_pole);
+  k         = positive_non_zero(k);
+  float omega_n = (2*p_rm*slow_pole*k)/(3*slow_pole-p_rm);
+  return omega_n;
+}
+
+/**
+ * @brief Initialize Position of Poles
+ * 
+ */
+void init_poles_att(void){
+  float slow_pole  = 22.0; // Pole of the slowest dynamics used in the attitude controller
+  p_att_e.omega_n  = ec_poles(p_att_rm.omega_n,  slow_pole, 1.28);
+  p_head_e.omega_n = ec_poles(p_head_rm.omega_n, slow_pole, 1.28);
+}
+
+/**
  * @brief Initialize Position of Poles
  * 
  */
@@ -1008,7 +1034,7 @@ void init_poles(void){
   p_att_e.zeta    = 1.0;
   p_att_e.p3      = slow_pole;
 
-  p_att_rm.omega_n = 4.71;
+  p_att_rm.omega_n = 4.71; // 10.0
   p_att_rm.zeta    = 1.0;
   p_att_rm.p3      = p_att_rm.omega_n * p_att_rm.zeta;
 
@@ -1016,7 +1042,7 @@ void init_poles(void){
   p_head_e.zeta    = 1.0;
   p_head_e.p3      = slow_pole;
 
-  p_head_rm.omega_n = 2.56;
+  p_head_rm.omega_n = 2.56; // 7.0
   p_head_rm.zeta    = 1.0;
   p_head_rm.p3      = p_head_rm.omega_n * p_head_rm.zeta;
 
@@ -1042,6 +1068,7 @@ void init_poles(void){
   p_alt_rm.zeta    = 1.0;
   p_alt_rm.p3      = p_alt_rm.omega_n * p_alt_rm.zeta;
 }
+
 /** 
  * @brief Initialize Controller Gains
  * FIXME: Calculate the gains dynamically for transition
@@ -1073,8 +1100,8 @@ void init_controller(void){
   k_att_rm.k2[1] = k_att_rm.k2[0];
   k_att_rm.k3[1] = k_att_rm.k3[0];
   
-  //printf("Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
-  //printf("Attitude E Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
+  printf("Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
+  printf("Attitude E Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
   /*Heading Loop NAV*/
   k_att_e.k1[2]  = k_e_1_3_f_v2(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
   k_att_e.k2[2]  = k_e_2_3_f_v2(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
@@ -1146,7 +1173,7 @@ void init_controller(void){
   //------------------------------------------------------------------------------------------
   /*Approximated Dynamics*/
   act_dynamics[COMMAND_ROLL]   = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
-  act_dynamics[COMMAND_PITCH] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
+  act_dynamics[COMMAND_PITCH]  = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
 }
 
 /** @brief Initialize the Complementary Filters */
@@ -1516,6 +1543,10 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
 {
   // At beginnig of the loop: (1) Register Attitude, (2) Initialize gains of RM and EC, (3) Calculate Normalization of Actuators Signals, (4) Propagate Actuator Model, (5) Update effectiveness matrix
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+  if (half_loop){
+    printf("Calculating Poles\n");
+    init_poles_att();
+  }
   init_controller();
   calc_normalization();
   get_act_state_oneloop();
@@ -1613,7 +1644,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
       case COMMAND_MOTOR_FRONT:
       case COMMAND_MOTOR_RIGHT:
       case COMMAND_MOTOR_BACK:
-      case COMMAND_MOTOR_LEFT:
+      case COMMAND_MOTOR_LEFT: {
         float skew_bound = RW.skew.deg;
         Bound(skew_bound,70.0,90.0);
         float Wu_sched   = (Wu_quad_motors_fwd-Wu_backup[i])/(90.0-70.0)*(skew_bound-70)+Wu_backup[i];
@@ -1628,6 +1659,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
           WLS_one_p.u_max[i]  = (0.0 - actuator_state_1l[i])/ratio_u_un[i];
         }
         break;
+      }
       case COMMAND_MOTOR_PUSHER:
       case COMMAND_RUDDER:
         WLS_one_p.u_min[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];

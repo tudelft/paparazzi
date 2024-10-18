@@ -133,12 +133,12 @@ void init_RW_Model(void)
   RW.mF.dFdu     = 3.835 / RW_G_SCALE; // [N  / pprz] 
   RW.mF.dMdu     = 0.390 / RW_G_SCALE; // [Nm / pprz]
   RW.mF.dMdud    = 0.020 / RW_G_SCALE; // [Nm / pprz]
-  RW.mF.l        = 0.423             ; // [m]                   
+  RW.mF.l        = 0.423             ; // [m]   435                
   // Motor Right
   RW.mR.dFdu     = 3.835 / RW_G_SCALE; // [N  / pprz]
   RW.mR.dMdu     = 0.390 / RW_G_SCALE; // [Nm / pprz]
   RW.mR.dMdud    = 0.020 / RW_G_SCALE; // [Nm / pprz]
-  RW.mR.l        = 0.408             ; // [m]        
+  RW.mR.l        = 0.408             ; // [m]   375     
   // Motor Back
   RW.mB.dFdu     = 3.835 / RW_G_SCALE; // [N  / pprz]
   RW.mB.dMdu     = 0.390 / RW_G_SCALE; // [Nm / pprz]
