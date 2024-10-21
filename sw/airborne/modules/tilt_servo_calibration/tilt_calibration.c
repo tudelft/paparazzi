@@ -27,11 +27,8 @@
 #include "tilt_calibration.h"
 #include "modules/datalink/telemetry.h"
 #include "modules/core/abi.h"
-#include "modules/sensors/serial_act_t4.h"
+#include "modules/sensors/serial_act_t4.c"
 #include <stdio.h>
-
-static abi_event SERIAL_ACT_T4_IN;
-static struct serial_act_t4_in myserial_act_t4_in_local;
 
 /** Maximum combined message size for storing the errors */
 #ifndef TILT_CALIBRATION_MAX_MSGBUF
@@ -43,21 +40,11 @@ bool rotor_2_calibrate = false;
 bool rotor_3_calibrate = false;
 bool rotor_4_calibrate = false;
 
-/**
- * @brief ABI routine called by the serial_act_t4 ABI event
- */
-static void serial_act_t4_abi_in(uint8_t sender_id __attribute__((unused)), struct serial_act_t4_in * myserial_act_t4_in_ptr, float * serial_act_t4_extra_data_in_ptr){
-    memcpy(&myserial_act_t4_in_local,myserial_act_t4_in_ptr,sizeof(struct serial_act_t4_in));
-    serial_act_t4_extra_data_in_ptr = serial_act_t4_extra_data_in_ptr;
-}
-
 
 /**
  * @brief Initialize the tilt calibration module by binding the ABI event to the serial actuator module
  */
 void tilt_calibration_init(void) {
-    //Init abi bind msg to Teensy 4.0:
-    AbiBindMsgSERIAL_ACT_T4_IN(ABI_BROADCAST, &SERIAL_ACT_T4_IN, serial_act_t4_abi_in);
 }
 
 /**
@@ -67,8 +54,8 @@ void tilt_calibration_run(void){
 
   if(rotor_1_calibrate){
     char tilt_calib_msg[TILT_CALIBRATION_MAX_MSGBUF];
-    float az_zero_value_rotor_1 = -(myserial_act_t4_in_local.servo_1_angle_int/100.0);
-    float el_zero_value_rotor_1 = -(myserial_act_t4_in_local.servo_2_angle_int/100.0);
+    float az_zero_value_rotor_1 = -(ActStates.az_1_angle_deg);
+    float el_zero_value_rotor_1 = -(ActStates.el_1_angle_deg);
     int rc = snprintf(tilt_calib_msg, TILT_CALIBRATION_MAX_MSGBUF, "SERVO_EL_1_ZERO_VALUE = %f deg", el_zero_value_rotor_1); 
     if (rc > 0) {
       DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, tilt_calib_msg);
@@ -81,8 +68,8 @@ void tilt_calibration_run(void){
   }
   if(rotor_2_calibrate){
     char tilt_calib_msg[TILT_CALIBRATION_MAX_MSGBUF];
-    float az_zero_value_rotor_2 = -(myserial_act_t4_in_local.servo_5_angle_int/100.0);
-    float el_zero_value_rotor_2 = -(myserial_act_t4_in_local.servo_6_angle_int/100.0);
+    float az_zero_value_rotor_2 = -(ActStates.az_2_angle_deg);
+    float el_zero_value_rotor_2 = -(ActStates.el_2_angle_deg);
     int rc = snprintf(tilt_calib_msg, TILT_CALIBRATION_MAX_MSGBUF, "SERVO_EL_2_ZERO_VALUE = %f deg", el_zero_value_rotor_2); 
     if (rc > 0) {
       DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, tilt_calib_msg);
@@ -96,8 +83,8 @@ void tilt_calibration_run(void){
 
   if(rotor_3_calibrate){
     char tilt_calib_msg[TILT_CALIBRATION_MAX_MSGBUF];
-    float az_zero_value_rotor_3 = (myserial_act_t4_in_local.servo_7_angle_int/100.0);
-    float el_zero_value_rotor_3 = -(myserial_act_t4_in_local.servo_8_angle_int/100.0);
+    float az_zero_value_rotor_3 = (ActStates.az_3_angle_deg);
+    float el_zero_value_rotor_3 = -(ActStates.el_3_angle_deg);
     int rc = snprintf(tilt_calib_msg, TILT_CALIBRATION_MAX_MSGBUF, "SERVO_EL_3_ZERO_VALUE = %f deg", el_zero_value_rotor_3); 
     if (rc > 0) {
       DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, tilt_calib_msg);
@@ -111,8 +98,8 @@ void tilt_calibration_run(void){
 
   if(rotor_4_calibrate){
     char tilt_calib_msg[TILT_CALIBRATION_MAX_MSGBUF];
-    float az_zero_value_rotor_4 = (myserial_act_t4_in_local.servo_3_angle_int/100.0);
-    float el_zero_value_rotor_4 = -(myserial_act_t4_in_local.servo_4_angle_int/100.0);
+    float az_zero_value_rotor_4 = (ActStates.az_4_angle_deg);
+    float el_zero_value_rotor_4 = -(ActStates.el_4_angle_deg);
     int rc = snprintf(tilt_calib_msg, TILT_CALIBRATION_MAX_MSGBUF, "SERVO_EL_4_ZERO_VALUE = %f deg", el_zero_value_rotor_4); 
     if (rc > 0) {
       DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, tilt_calib_msg);

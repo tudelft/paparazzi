@@ -1,17 +1,54 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 <module name="serial_act_t4" dir="sensors">
   <doc>
-    <description>Transfers data from Teensy 4.0 to Pixhawk and vice versa</description>
+    <description>Fly by wire module on Teensy 4.0</description>
   </doc>
+
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="FBW Control">
+        <dl_setting var="K_indi_rad_s_dshot"  min="0" step=".1" max="20" shortname="K_indi_rad_s_dshot" persistent="true"/>
+        <dl_setting var="test_rpm_control" min="0" step="1" max="1" shortname="test_rpm_control" values="FALSE|TRUE" persistent="true"/>
+        <dl_setting var="motor_1_rad_s_slider" min="0" step="1" max="2000" shortname="motor_1_rad_s" persistent="true"/>
+        <dl_setting var="motor_2_rad_s_slider" min="0" step="1" max="2000" shortname="motor_2_rad_s" persistent="true"/>
+        <dl_setting var="motor_3_rad_s_slider" min="0" step="1" max="2000" shortname="motor_3_rad_s" persistent="true"/>
+        <dl_setting var="motor_4_rad_s_slider" min="0" step="1" max="2000" shortname="motor_4_rad_s" persistent="true"/>
+        <dl_setting var="test_dshot_cmd" min="0" step="1" max="1" shortname="test_dshot_cmd" values="FALSE|TRUE" persistent="true"/>
+        <dl_setting var="motor_1_dshot_slider" min="0" step="1" max="2000" shortname="motor_1_dshot" persistent="true"/>
+        <dl_setting var="motor_2_dshot_slider" min="0" step="1" max="2000" shortname="motor_2_dshot" persistent="true"/>
+        <dl_setting var="motor_3_dshot_slider" min="0" step="1" max="2000" shortname="motor_3_dshot" persistent="true"/>
+        <dl_setting var="motor_4_dshot_slider" min="0" step="1" max="2000" shortname="motor_4_dshot" persistent="true"/>
+        <dl_setting var="test_servo_angles" min="0" step="1" max="1" shortname="test_servo_angles" values="FALSE|TRUE" persistent="true"/>
+        <dl_setting var="el_1_angle_deg_slider" min="-180" step="1" max="180" shortname="el_1_angle_deg" persistent="true"/>
+        <dl_setting var="el_2_angle_deg_slider" min="-180" step="1" max="180" shortname="el_2_angle_deg" persistent="true"/>
+        <dl_setting var="el_3_angle_deg_slider" min="-180" step="1" max="180" shortname="el_3_angle_deg" persistent="true"/>
+        <dl_setting var="el_4_angle_deg_slider" min="-180" step="1" max="180" shortname="el_4_angle_deg" persistent="true"/>
+        <dl_setting var="az_1_angle_deg_slider" min="-180" step="1" max="180" shortname="az_1_angle_deg" persistent="true"/>
+        <dl_setting var="az_2_angle_deg_slider" min="-180" step="1" max="180" shortname="az_2_angle_deg" persistent="true"/>
+        <dl_setting var="az_3_angle_deg_slider" min="-180" step="1" max="180" shortname="az_3_angle_deg" persistent="true"/>
+        <dl_setting var="az_4_angle_deg_slider" min="-180" step="1" max="180" shortname="az_4_angle_deg" persistent="true"/>
+        <dl_setting var="flaperon_right_angle_deg_slider" min="-90" step="1" max="90" shortname="flaperon_right_angle_deg" persistent="true"/>
+        <dl_setting var="flaperon_left_angle_deg_slider" min="-90" step="1" max="90" shortname="flaperon_left_angle_deg" persistent="true"/>
+        <dl_setting var="min_pwm_servo_9" min="0" step="1" max="2500" shortname="min_pwm_servo_9" persistent="true"/>
+        <dl_setting var="neutral_pwm_servo_9" min="0" step="1" max="2500" shortname="neutral_pwm_servo_9" persistent="true"/>
+        <dl_setting var="max_pwm_servo_9" min="0" step="1" max="2500" shortname="max_pwm_servo_9" persistent="true"/>
+        <dl_setting var="min_pwm_servo_10" min="0" step="1" max="2500" shortname="min_pwm_servo_10" persistent="true"/>
+        <dl_setting var="neutral_pwm_servo_10" min="0" step="1" max="2500" shortname="neutral_pwm_servo_10" persistent="true"/>
+        <dl_setting var="max_pwm_servo_10" min="0" step="1" max="2500" shortname="max_pwm_servo_10" persistent="true"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
   <header>
     <file name="serial_act_t4.h"/>
   </header>
   <init fun="serial_act_t4_init()"/>
   <event fun="serial_act_t4_event()"/>
+  <periodic fun="serial_act_t4_control()" autorun="TRUE" freq="500"/>
   <makefile>
 <!--       Configure default UART port and baudrate-->
     <configure name="SERIAL_ACT_T4_PORT" default="UART4" case="upper|lower"/>
-    <configure name="SERIAL_ACT_T4_BAUD" default="B1500000"/>
+    <configure name="SERIAL_ACT_T4_BAUD" default="B921600"/>
     <!-- Enable UART and set baudrate -->
     <define name="USE_$(SERIAL_ACT_T4_PORT_UPPER)" value="TRUE"/>
     <define name="USE_$(SERIAL_ACT_T4_PORT_UPPER)_TX" value="TRUE"/>

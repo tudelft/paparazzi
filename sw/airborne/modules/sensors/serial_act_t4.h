@@ -109,8 +109,71 @@ struct __attribute__((__packed__)) serial_act_t4_out {
     uint8_t checksum_out;
 };
 
+struct ActCmd_t {
+    float cmd_timestamp; 
+    uint8_t motor_arm; 
+    uint8_t servo_arm; 
+    uint8_t motor_control_mode; //1 --> dshot command, 2 --> rotation command in rad/s using INDI controller;
+    float motor_1_cmd; //CMD is either in dshot or rotation in rad/s depending on the mode 
+    float motor_2_cmd; //CMD is either in dshot or rotation in rad/s depending on the mode 
+    float motor_3_cmd; //CMD is either in dshot or rotation in rad/s depending on the mode 
+    float motor_4_cmd; //CMD is either in dshot or rotation in rad/s depending on the mode 
+    float servo_el_1_angle_deg;
+    float servo_el_2_angle_deg;
+    float servo_el_3_angle_deg;
+    float servo_el_4_angle_deg;
+    float servo_az_1_angle_deg;
+    float servo_az_2_angle_deg;
+    float servo_az_3_angle_deg;
+    float servo_az_4_angle_deg;
+    float flaperon_right_angle_deg;
+    float flaperon_left_angle_deg;
+};
+
+struct ActStates_t { 
+    float timestamp; 
+    float motor_1_rad_s;
+    float motor_2_rad_s;
+    float motor_3_rad_s;
+    float motor_4_rad_s;
+    float el_1_angle_deg;
+    float el_2_angle_deg;
+    float el_3_angle_deg;
+    float el_4_angle_deg;
+    float az_1_angle_deg;
+    float az_2_angle_deg;
+    float az_3_angle_deg;
+    float az_4_angle_deg;
+    float flaperon_right_angle_deg;
+    float flaperon_left_angle_deg;
+    float el_1_angle_deg_corrected; 
+    float el_2_angle_deg_corrected;
+    float el_3_angle_deg_corrected;
+    float el_4_angle_deg_corrected;
+    float az_1_angle_deg_corrected;
+    float az_2_angle_deg_corrected;
+    float az_3_angle_deg_corrected;
+    float az_4_angle_deg_corrected;
+    float flap_right_angle_deg_corrected;
+    float flap_left_angle_deg_corrected;
+}
+
 extern void serial_act_t4_init(void);
 extern void serial_act_t4_event(void);
+extern void serial_act_t4_control(void);
+
+//Sliders variables
+extern float K_indi_rad_s_dshot; 
+extern int test_rpm_control; 
+extern float motor_1_rad_s_slider, motor_2_rad_s_slider, motor_3_rad_s_slider, motor_4_rad_s_slider;
+extern int test_dshot_cmd;
+extern float motor_1_dshot_slider, motor_2_dshot_slider, motor_3_dshot_slider, motor_4_dshot_slider;
+extern int test_servo_angles;
+extern float el_1_angle_deg_slider, el_2_angle_deg_slider, el_3_angle_deg_slider, el_4_angle_deg_slider;
+extern float az_1_angle_deg_slider, az_2_angle_deg_slider, az_3_angle_deg_slider, az_4_angle_deg_slider;
+extern float flaperon_right_angle_deg_slider, flaperon_left_angle_deg_slider;
+extern float max_pwm_servo_9, neutral_pwm_servo_9, min_pwm_servo_9;
+extern float max_pwm_servo_10, neutral_pwm_servo_10, min_pwm_servo_10;
 
 #endif
 

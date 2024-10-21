@@ -267,14 +267,8 @@
       <field name="extra_data_in_ptr" type="float *">Pointer pointing at the extra_data_in array</field>
     </message>
 
-    <message name="SERIAL_ACT_T4_OUT" id="40">
-      <field name="myserial_act_t4_out_ptr" type="struct serial_act_t4_out *">Pointer pointing at the myserial_act_t4_out struct</field>
-      <field name="serial_act_t4_extra_data_out_ptr" type="float *">Pointer pointing at the serial_act_t4_extra_data_out array</field>
-    </message>
-
-    <message name="SERIAL_ACT_T4_IN" id="41">
-      <field name="myserial_act_t4_in_ptr" type="struct serial_act_t4_in *">Pointer pointing at the myserial_act_t4_in struct</field>
-      <field name="serial_act_t4_extra_data_in_ptr" type="float *">Pointer pointing at the serial_act_t4_extra_data_in array</field>
+    <message name="SERIAL_ACT_T4_CMD" id="40">
+      <field name="ActCmd_ptr" type="struct ActCmd *">Pointer pointing at the ActCmd struct</field>
     </message>
 
   </msg_class>
