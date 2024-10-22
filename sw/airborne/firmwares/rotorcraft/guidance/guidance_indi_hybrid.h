@@ -90,7 +90,6 @@ struct guidance_indi_hybrid_params {
 
 extern struct FloatVect3 sp_accel;
 extern struct FloatVect3 gi_speed_sp;
-extern struct guidance_indi_hybrid_params gih_params;
 
 extern float guidance_indi_pitch_pref_deg;
 
