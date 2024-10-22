@@ -130,6 +130,9 @@
             <define name="INS_EKF2_GPS_POS_X" value="-0.55"/>
             <define name="INS_EKF2_GPS_POS_Y" value="0.0"/>
             <define name="INS_EKF2_GPS_POS_Z" value="0.0"/>
+
+            <define name="INS_EKF2_OPTITRACK" value="true"/>
+            <define name="INS_EKF2_RW" value="true"/>
         </module>
 
         <module name="parachute"/>
