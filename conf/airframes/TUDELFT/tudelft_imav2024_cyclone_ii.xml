@@ -82,34 +82,15 @@
                 <configure name="UBX2_GPS_PORT" value="UART_9"/>
             </module>
 
-            <!-- <module name="radio_control" type="ppm">
 
-                <define name="RADIO_CONTROL_NB_CHANNEL" value="8"/>
-                <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
-
-                <define name="RADIO_GEAR" value="RADIO_AUX2"/>
-                <define name="RADIO_FLAP" value="RADIO_AUX3"/>
-                <define name="RADIO_MANUALRELEASE" value="RADIO_AUX2"/>
-
-                <define name="INDI_FUNCTIONS_RC_CHANNEL" value="RADIO_AUX2"/>
-            </module> -->
-
-            <!-- <module name="radio_control" type="ppm">
-                <define name="RADIO_CONTROL_NB_CHANNEL" value="8"/>
-                <define name="RADIO_MODE" value="RADIO_AUX1"/>
-                <define name="RADIO_KILL_SWITCH" value="RADIO_AUX2"/>
-                <define name="INDI_FUNCTIONS_RC_CHANNEL" value="RADIO_AUX3"/>
-                <define name="RADIO_MANUAL_PITCH_CMD" value="RADIO_AUX4"/>
-            </module> -->
-
-                  <!-- SBUS out is AETR by default, our transmitter sends TAER as per standard so correct in radio file -->
+            <!-- SBUS out is AETR by default, our transmitter sends TAER as per standard so correct in radio file -->
             <module name="radio_control" type="sbus"> <!-- The output type of RX, over the air it can can be all kinds e.g. DSMX, FRSky-->
                     <configure name="SBUS_PORT" value="UART3"/>
                     <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>
-                    <define name="RADIO_MODE" value="RADIO_AUX1"/>
-                    <define name="RADIO_KILL_SWITCH" value="RADIO_AUX2"/>
-                    <define name="INDI_FUNCTIONS_RC_CHANNEL" value="RADIO_AUX3"/>
-                    <define name="RADIO_MANUAL_PITCH_CMD" value="RADIO_AUX4"/>
+                    <!--<define name="RADIO_MODE" value="RADIO_AUX1"/>-->
+                    <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
+                    <define name="INDI_FUNCTIONS_RC_CHANNEL" value="RADIO_AUX2"/>
+                    <define name="RADIO_MANUAL_PITCH_CMD" value="RADIO_AUX3"/>
             </module>
 
             <module name="telemetry" type="transparent">
@@ -336,10 +317,6 @@
         <set servo="S_MOTOR_LEFT" value="autopilot.motors_on ? actuators_pprz[3] : -MAX_PPRZ"/>
     </command_laws> -->
 
-    <command_laws>
-        <call fun="assign_and_send_cmds(autopilot_get_motors_on(), , ciao, actuators_pprz, MAX_RANGE_SERVOS_DEG)"/>
-    </command_laws>
-
     <section name="IMU" prefix="IMU_">
         <!-- <define name="GYRO_P_SIGN" value="1"/>
         <define name="GYRO_Q_SIGN" value="1"/>
@@ -385,6 +362,7 @@
         <!-- <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/> -->
         <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
         <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+        <!-- <define name="MODE_AUTO2" value="AP_MODE_RC_DIRECT"/> -->
         <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
     </section>
 
@@ -408,10 +386,10 @@
 
     <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
         <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
-        <define name="G1_ROLL"   value="{   0,    0,   -9.5,   9.5}"/>
-        <define name="G1_PITCH"  value="{-5.9,  5.9,      0,     0}"/>
+        <define name="G1_ROLL"   value="{   0,    0,   -10,   10}"/>
+        <define name="G1_PITCH"  value="{-5,  5,      0,     0}"/>
         <define name="G1_YAW"    value="{-2.5, -2.5,    0.0,   0.0}"/>
-        <define name="G1_THRUST" value="{   0,    0,   -1.1,  -1.1}"/>
+        <define name="G1_THRUST" value="{   0,    0,   -0.9,  -0.9}"/>
         <!--Counter torque effect of spinning up a rotor-->
         <define name="G2" value="{0, 0, 0, 0}"/>
 
@@ -520,7 +498,7 @@
     </section>
 
     <section name="BAT">
-        <define name="MAX_BAT_CAPACITY" value="3700" unit="mAh"/>
+        <define name="MAX_BAT_CAPACITY" value="2300" unit="mAh"/>
         <!--<define name="MilliAmpereOfAdc(_adc)" value="(_adc-632)*4.14"/>-->
         <define name="VoltageOfAdc(_adc)" value="(0.000556535 * _adc)"/>
         <define name="MILLIAMP_AT_IDLE_THROTTLE" value="280" unit="mA"/>
