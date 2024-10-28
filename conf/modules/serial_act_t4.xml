@@ -44,9 +44,9 @@
   </header>
   <init fun="serial_act_t4_init()"/>
   <event fun="serial_act_t4_event()"/>
-  <periodic fun="serial_act_t4_control()" autorun="TRUE" freq="500"/>
+  <periodic fun="serial_act_t4_control()" autorun="TRUE" freq="SERIAL_ACT_T4_FREQUENCY"/>
   <makefile>
-<!--       Configure default UART port and baudrate-->
+    <!-- Configure default UART port and baudrate-->
     <configure name="SERIAL_ACT_T4_PORT" default="UART4" case="upper|lower"/>
     <configure name="SERIAL_ACT_T4_BAUD" default="B921600"/>
     <!-- Enable UART and set baudrate -->

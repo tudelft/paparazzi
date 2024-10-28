@@ -27,7 +27,7 @@
 #include "tilt_calibration.h"
 #include "modules/datalink/telemetry.h"
 #include "modules/core/abi.h"
-#include "modules/sensors/serial_act_t4.c"
+#include "modules/sensors/serial_act_t4.h"
 #include <stdio.h>
 
 /** Maximum combined message size for storing the errors */
@@ -42,7 +42,7 @@ bool rotor_4_calibrate = false;
 
 
 /**
- * @brief Initialize the tilt calibration module by binding the ABI event to the serial actuator module
+ * @brief Initialize the tilt calibration module
  */
 void tilt_calibration_init(void) {
 }
@@ -54,8 +54,8 @@ void tilt_calibration_run(void){
 
   if(rotor_1_calibrate){
     char tilt_calib_msg[TILT_CALIBRATION_MAX_MSGBUF];
-    float az_zero_value_rotor_1 = -(ActStates.az_1_angle_deg);
-    float el_zero_value_rotor_1 = -(ActStates.el_1_angle_deg);
+    float az_zero_value_rotor_1 = -(get_act_states_T4()->az_1_angle_deg);
+    float el_zero_value_rotor_1 = -(get_act_states_T4()->el_1_angle_deg);
     int rc = snprintf(tilt_calib_msg, TILT_CALIBRATION_MAX_MSGBUF, "SERVO_EL_1_ZERO_VALUE = %f deg", el_zero_value_rotor_1); 
     if (rc > 0) {
       DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, tilt_calib_msg);
@@ -68,8 +68,8 @@ void tilt_calibration_run(void){
   }
   if(rotor_2_calibrate){
     char tilt_calib_msg[TILT_CALIBRATION_MAX_MSGBUF];
-    float az_zero_value_rotor_2 = -(ActStates.az_2_angle_deg);
-    float el_zero_value_rotor_2 = -(ActStates.el_2_angle_deg);
+    float az_zero_value_rotor_2 = -(get_act_states_T4()->az_2_angle_deg);
+    float el_zero_value_rotor_2 = -(get_act_states_T4()->el_2_angle_deg);
     int rc = snprintf(tilt_calib_msg, TILT_CALIBRATION_MAX_MSGBUF, "SERVO_EL_2_ZERO_VALUE = %f deg", el_zero_value_rotor_2); 
     if (rc > 0) {
       DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, tilt_calib_msg);
@@ -83,8 +83,8 @@ void tilt_calibration_run(void){
 
   if(rotor_3_calibrate){
     char tilt_calib_msg[TILT_CALIBRATION_MAX_MSGBUF];
-    float az_zero_value_rotor_3 = (ActStates.az_3_angle_deg);
-    float el_zero_value_rotor_3 = -(ActStates.el_3_angle_deg);
+    float az_zero_value_rotor_3 = (get_act_states_T4()->az_3_angle_deg);
+    float el_zero_value_rotor_3 = -(get_act_states_T4()->el_3_angle_deg);
     int rc = snprintf(tilt_calib_msg, TILT_CALIBRATION_MAX_MSGBUF, "SERVO_EL_3_ZERO_VALUE = %f deg", el_zero_value_rotor_3); 
     if (rc > 0) {
       DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, tilt_calib_msg);
@@ -98,8 +98,8 @@ void tilt_calibration_run(void){
 
   if(rotor_4_calibrate){
     char tilt_calib_msg[TILT_CALIBRATION_MAX_MSGBUF];
-    float az_zero_value_rotor_4 = (ActStates.az_4_angle_deg);
-    float el_zero_value_rotor_4 = -(ActStates.el_4_angle_deg);
+    float az_zero_value_rotor_4 = (get_act_states_T4()->az_4_angle_deg);
+    float el_zero_value_rotor_4 = -(get_act_states_T4()->el_4_angle_deg);
     int rc = snprintf(tilt_calib_msg, TILT_CALIBRATION_MAX_MSGBUF, "SERVO_EL_4_ZERO_VALUE = %f deg", el_zero_value_rotor_4); 
     if (rc > 0) {
       DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, tilt_calib_msg);

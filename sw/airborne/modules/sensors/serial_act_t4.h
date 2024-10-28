@@ -109,7 +109,7 @@ struct __attribute__((__packed__)) serial_act_t4_out {
     uint8_t checksum_out;
 };
 
-struct ActCmd_t {
+struct __attribute__((__packed__)) ActCmd_t {
     float cmd_timestamp; 
     uint8_t motor_arm; 
     uint8_t servo_arm; 
@@ -130,12 +130,16 @@ struct ActCmd_t {
     float flaperon_left_angle_deg;
 };
 
-struct ActStates_t { 
+struct __attribute__((__packed__)) ActStates_t { 
     float timestamp; 
     float motor_1_rad_s;
     float motor_2_rad_s;
     float motor_3_rad_s;
     float motor_4_rad_s;
+    float motor_1_rad_s_filt; 
+    float motor_2_rad_s_filt;
+    float motor_3_rad_s_filt;
+    float motor_4_rad_s_filt;
     float el_1_angle_deg;
     float el_2_angle_deg;
     float el_3_angle_deg;
@@ -161,6 +165,9 @@ struct ActStates_t {
 extern void serial_act_t4_init(void);
 extern void serial_act_t4_event(void);
 extern void serial_act_t4_control(void);
+
+//Variable to request the ActStates: 
+static inline struct ActStates_t * get_act_states_T4(void);
 
 //Sliders variables
 extern float K_indi_rad_s_dshot; 

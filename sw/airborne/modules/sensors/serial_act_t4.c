@@ -68,6 +68,7 @@ struct ActCmd_t act_cmd_default = {
 float dshot_cmd_indi[4], dshot_cmd_indi_filtered[4], dshot_cmd_indi_filtered_delayed[4][FBW_T4_MOTOR_DYN_DELAY_TS];
 float dshot_cmd_indi_state_filtered[4], motors_rad_s_filtered[4];
 float K_indi_rad_s_dshot = FBW_T4_K_INDI_RAD_S_DSHOT;
+float tau_motor_filter; 
 
 //Variables for the communication with the other modules, to receive commands and to send telemetry: 
 struct ActCmd_t ActCmd, received_ActCmd; 
@@ -198,10 +199,10 @@ void indi_motor_controller(float *motors_dshot_cmd_indi, float *motors_des_rot_r
     for (int i = 0; i < 4; i++){
         
         //Filter the motor rotatioal speed and the old dshot command with the same filter: 
-        motors_rad_s_filtered[i] = motors_rad_s_filtered[i] + FBW_T4_FILT_FIRST_ORDER_RPM_COEFF * (motors_current_rot_rad_s[i] - motors_rad_s_filtered[i]);
+        motors_rad_s_filtered[i] = motors_rad_s_filtered[i] + tau_motor_filter * (motors_current_rot_rad_s[i] - motors_rad_s_filtered[i]);
 
         //Apply the same filter on the dshot command:
-        dshot_cmd_indi_filtered[i] = dshot_cmd_indi_filtered[i] + FBW_T4_FILT_FIRST_ORDER_RPM_COEFF * (dshot_cmd_indi[i] - dshot_cmd_indi_filtered[i]);
+        dshot_cmd_indi_filtered[i] = dshot_cmd_indi_filtered[i] + tau_motor_filter * (dshot_cmd_indi[i] - dshot_cmd_indi_filtered[i]);
 
         //Shift the delayed cmd array:
         for (int j = 0; j < FBW_T4_MOTOR_DYN_DELAY_TS - 1; j++){
@@ -284,6 +285,10 @@ void serial_act_t4_init()
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_SERIAL_ACT_T4_IN, serial_act_t4_downlink);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_SERIAL_ACT_T4_OUT, serial_act_t4_uplink);
     #endif
+
+    //Determine the first order filter tau coefficient: 
+    float refresh_time_filters = 1.0f/(float) SERIAL_ACT_T4_FREQUENCY;
+    tau_motor_filter = 1.0f - exp(-FBW_T4_FILT_FIRST_ORDER_RPM_RAD_S*refresh_time_filters);
 }
 
 //Parse message and fill up the ActStates struct so other modules can make use of it: 
@@ -319,6 +324,11 @@ void serial_act_t4_parse_msg_in()
     ActStates.az_4_angle_deg_corrected = ActStates.az_4_angle_deg + FBW_T4_AZ_4_ZERO_VALUE * 180/M_PI;
     ActStates.flaperon_right_angle_deg_corrected = ActStates.flaperon_right_angle_deg;
     ActStates.flaperon_left_angle_deg_corrected = ActStates.flaperon_left_angle_deg;
+}
+
+//Add the act states function callback: 
+static inline struct ActStates_t * get_act_states_T4(void){
+    return &ActStates;
 }
 
 // Event checking if serial packet are available on the bus
@@ -364,22 +374,13 @@ void serial_act_t4_control()
         memcpy(&ActCmd, &received_ActCmd, sizeof(struct ActCmd_t));
     }
 
+    //Filter the motor rotational speed and add it to the ActStates struct:
+    ActStates.motor_1_rad_s_filt = ActStates.motor_1_rad_s_filt + tau_motor_filter * (ActStates.motor_1_rad_s - ActStates.motor_1_rad_s_filt);
+    ActStates.motor_2_rad_s_filt = ActStates.motor_2_rad_s_filt + tau_motor_filter * (ActStates.motor_2_rad_s - ActStates.motor_2_rad_s_filt);
+    ActStates.motor_3_rad_s_filt = ActStates.motor_3_rad_s_filt + tau_motor_filter * (ActStates.motor_3_rad_s - ActStates.motor_3_rad_s_filt);
+    ActStates.motor_4_rad_s_filt = ActStates.motor_4_rad_s_filt + tau_motor_filter * (ActStates.motor_4_rad_s - ActStates.motor_4_rad_s_filt);
+    
     //////////////////////////////////////////////////////////////////////////////////////////////MOTORS COMMAND GENERATION
-    //TESTING VARIABLES: 
-    if(test_rpm_control){
-        ActCmd.motor_control_mode = 2; 
-        ActCmd.motor_1_cmd = motor_1_rad_s_slider;
-        ActCmd.motor_2_cmd = motor_2_rad_s_slider;
-        ActCmd.motor_3_cmd = motor_3_rad_s_slider;
-        ActCmd.motor_4_cmd = motor_4_rad_s_slider;
-    }
-    if(test_dshot_cmd){
-        ActCmd.motor_control_mode = 1; 
-        ActCmd.motor_1_cmd = motor_1_dshot_slider;
-        ActCmd.motor_2_cmd = motor_2_dshot_slider;
-        ActCmd.motor_3_cmd = motor_3_dshot_slider;
-        ActCmd.motor_4_cmd = motor_4_dshot_slider;
-    }
 
     //If motors are armed and the control mode is 2, 
     //produce the dshot command out of the desired RPM: 
@@ -407,7 +408,6 @@ void serial_act_t4_control()
     else if(ActCmd.motor_arm && ActCmd.motor_control_mode == 1){
         //Arm motors: 
         myserial_act_t4_out.motor_arm_int = 1;
-        //If the motors are not armed, then set the dshot command to zero:
         myserial_act_t4_out.motor_1_dshot_cmd_int = (int16_t) ActCmd.motor_1_cmd;
         myserial_act_t4_out.motor_2_dshot_cmd_int = (int16_t) ActCmd.motor_2_cmd;
         myserial_act_t4_out.motor_3_dshot_cmd_int = (int16_t) ActCmd.motor_3_cmd;
@@ -421,6 +421,22 @@ void serial_act_t4_control()
         myserial_act_t4_out.motor_2_dshot_cmd_int = (int16_t) 0;
         myserial_act_t4_out.motor_3_dshot_cmd_int = (int16_t) 0;
         myserial_act_t4_out.motor_4_dshot_cmd_int = (int16_t) 0;
+    }
+
+    //TESTING VARIABLES: 
+    if(test_rpm_control){
+        ActCmd.motor_control_mode = 2; 
+        ActCmd.motor_1_cmd = motor_1_rad_s_slider;
+        ActCmd.motor_2_cmd = motor_2_rad_s_slider;
+        ActCmd.motor_3_cmd = motor_3_rad_s_slider;
+        ActCmd.motor_4_cmd = motor_4_rad_s_slider;
+    }
+    if(test_dshot_cmd){
+        ActCmd.motor_control_mode = 1; 
+        ActCmd.motor_1_cmd = motor_1_dshot_slider;
+        ActCmd.motor_2_cmd = motor_2_dshot_slider;
+        ActCmd.motor_3_cmd = motor_3_dshot_slider;
+        ActCmd.motor_4_cmd = motor_4_dshot_slider;
     }
 
     //Bound motor command to max dshot: 
@@ -460,7 +476,7 @@ void serial_act_t4_control()
     //Copy the servo arm command to the output struct:
     myserial_act_t4_out.servo_arm_int = ActCmd.servo_arm;
 
-    //Assign angles to servos: 
+    //Assign angles to servos, and add zeros to the angles: 
     myserial_act_t4_out.servo_2_cmd_int = (int16_t) (ActCmd.servo_el_1_angle_deg * FBW_T4_K_RATIO_GEAR_EL - FBW_T4_EL_1_ZERO_VALUE * 180/M_PI) * 100;
     myserial_act_t4_out.servo_6_cmd_int = (int16_t) (ActCmd.servo_el_2_angle_deg * FBW_T4_K_RATIO_GEAR_EL - FBW_T4_EL_2_ZERO_VALUE * 180/M_PI) * 100;
     myserial_act_t4_out.servo_8_cmd_int = (int16_t) (ActCmd.servo_el_3_angle_deg * FBW_T4_K_RATIO_GEAR_EL - FBW_T4_EL_3_ZERO_VALUE * 180/M_PI) * 100;
