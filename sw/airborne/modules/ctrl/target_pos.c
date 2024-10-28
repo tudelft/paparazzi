@@ -27,6 +27,7 @@
 #include "target_pos.h"
 #include <math.h>
 
+#include "pprzlink/intermcu_msg.h"
 #include "modules/datalink/telemetry.h"
 #include "modules/core/abi.h"
 
@@ -137,6 +138,50 @@ void target_parse_target_pos(uint8_t *buf)
 }
 
 /**
+ * Parse a Falcon message
+ */
+#include "generated/flight_plan.h"
+void target_pos_parse_falcon(uint8_t *buf)
+{
+  float *pos = pprzlink_get_DL_IMCU_FALCON_pos(buf);
+  float *quat = pprzlink_get_DL_IMCU_FALCON_quat(buf);
+  //float *pos_var = pprzlink_get_DL_IMCU_FALCON_pos_var(buf);
+  //float *quat_var = pprzlink_get_DL_IMCU_FALCON_quat_var(buf);
+  struct FloatQuat q = {quat[0], quat[1], quat[2], quat[3]}; // Rotation of the platform relative to the sensor
+  struct FloatVect3 p = {pos[0], pos[1], pos[2]}; // Position of the drone relative to the platform
+  struct FloatVect3 p_rot, p_inv, p_out;
+  struct FloatQuat body_to_ned;
+
+  // Calculate the position of the platform relative the the UAV
+  float_quat_vmult(&p_rot, &q, &p); // Rotate the position around the platform
+  // Invert position and change from Y-Down to Z-Down reference frame
+  p_inv.x = -p_rot.x; // TODO: Add falcon position offset configuration
+  p_inv.y = p_rot.z;
+  p_inv.z = -p_rot.y + 0.13;
+
+  float_quat_invert(&body_to_ned ,stateGetNedToBodyQuat_f());
+  float_quat_vmult(&p_out, &body_to_ned, &p_inv); // Rotate the position to earth frame NED
+
+  // Update a position in the flight plan for now
+  uint8_t wp_id = WP_FOLLOW;
+  struct EnuCoor_f target_enu;
+  struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
+  ENU_OF_TO_NED(target_enu, p_out);
+  VECT3_ADD(target_enu, *uav_pos);
+  target_enu.z = waypoints[wp_id].enu_f.z;
+  waypoint_set_enu(wp_id, &target_enu);
+
+  // Send waypoint update every half second
+  RunOnceEvery(200 / 2, {
+    // Send to the GCS that the waypoint has been moved
+    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+                               &waypoints[wp_id].enu_i.x,
+                               &waypoints[wp_id].enu_i.y,
+                               &waypoints[wp_id].enu_i.z);
+  });
+}
+
+/**
  * Get the current target position (NED) and heading
  */
 bool target_get_pos(struct NedCoor_f *pos, float *heading) {
@@ -160,8 +205,7 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
     time_diff = (get_sys_time_msec() - target.pos.recv_time) * 0.001; // FIXME: should be based on TOW of ground gps
 
     // Return the heading
-    if(heading != NULL)
-      *heading = target.pos.heading;
+    *heading = target.pos.heading;
 
     // If we have a velocity measurement try to integrate the x-y position when enabled
     struct NedCoor_f vel = {0};
@@ -176,8 +220,8 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
     }
 
     // Offset the target
-    pos->x += target.offset.distance * cosf((target.pos.heading + target.offset.heading)/180.*M_PI);
-    pos->y += target.offset.distance * sinf((target.pos.heading + target.offset.heading)/180.*M_PI);
+    pos->x += target.offset.distance * cosf((*heading + target.offset.heading)/180.*M_PI);
+    pos->y += target.offset.distance * sinf((*heading + target.offset.heading)/180.*M_PI);
     pos->z -= target.offset.height;
 
     return true;
@@ -227,27 +271,4 @@ bool target_pos_set_current_offset(float unk __attribute__((unused))) {
   }
 
   return false;
-}
-
-/*
- * Set a waypoint to the current target position
- */
-#include "navigation.h"
-void target_set_wp(uint8_t wp_id) {
-  struct NedCoor_f pos;
-  struct EnuCoor_f pos_enu;
-  if(target_get_pos(&pos, NULL)) {
-    ENU_OF_TO_NED(pos_enu, pos);
-
-    // Update the waypoint
-    waypoint_set_enu(wp_id, &pos_enu);
-
-    // Send to the GCS that the waypoint has been moved (every second)
-    RunOnceEvery(NAVIGATION_FREQUENCY, {
-      DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-                                  &waypoints[wp_id].enu_i.x,
-                                  &waypoints[wp_id].enu_i.y,
-                                  &waypoints[wp_id].enu_i.z);
-    });
-  }
 }
