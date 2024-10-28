@@ -81,11 +81,11 @@ struct ship_info_msg {
 
 
 /* overactuated mixing structure */
-struct overactuated_mixing_t {
-    int32_t commands[13];      ///< The output commands
-};
+// struct overactuated_mixing_t {
+//     int32_t commands[13];      ///< The output commands
+// };
 
-extern struct overactuated_mixing_t overactuated_mixing;
+// extern struct overactuated_mixing_t overactuated_mixing;
 extern struct PID_over pid_gains_over;
 extern struct PD_indi_over active_gains;
 

@@ -55,9 +55,6 @@
 
 float fpa_off_deg = 0.0; 
 
-//Array which contains all the actuator values (sent to motor and servos)
-struct overactuated_mixing_t overactuated_mixing;
-
 struct ship_info_msg ship_info_receive;
 
 //Filter of lateral acceleration for turn correction
@@ -91,8 +88,6 @@ float stick_gain_yaw = 0.05; //Stick to yaw and throttle gain (for the integral 
 float pos_setpoint[3], speed_setpoint_control_rf[3];
 float speed_error_vect[3], speed_error_vect_control_rf[3];
 float euler_setpoint[3], rate_setpoint[3], acc_setpoint[6];
-float INDI_pseudocontrol[6];
-
 
 // serial_act_t4 variables:
 struct ActCmd_t act_cmd_to_t4;
@@ -311,7 +306,6 @@ static void vel_sp_cb(uint8_t sender_id __attribute__((unused)), struct FloatVec
     time_of_speed_setpoint_approach = get_sys_time_float();
     from_earth_to_control( des_speed_approach_control_rf, des_speed_approach_earth_rf, euler_vect[2]);
 }
-
 
 /**
  * Function that computes the speed reference in the control reference frame, taking as input 
