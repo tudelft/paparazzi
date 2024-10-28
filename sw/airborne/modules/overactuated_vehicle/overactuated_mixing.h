@@ -50,31 +50,20 @@ struct FloatEulersPosition {
     float y;
     float z;
 };
-
-struct BodyCoord_f {
-    float x;
-    float y;
-    float z;
+struct FloatEulers {
+    float phi;
+    float theta;
+    float psi;
 };
-
-
-struct PID_over_simple {
-    float p;
-    float i;
-    float d;
-};
-
 struct PID_over {
-    struct FloatEulersPosition p;
-    struct FloatEulersPosition i;
-    struct FloatEulersPosition d;
+    struct FloatEulers p;
+    struct FloatEulers i;
+    struct FloatEulers d;
 };
-
 struct PD_indi_over {
     struct FloatEulersPosition p;
     struct FloatEulersPosition d;
 };
-
 struct ship_info_msg { 
     float timestamp; 
     float phi; 
@@ -98,27 +87,6 @@ struct ship_info_msg {
 };
 
 
-
-
-struct ESC_status {
-    float ESC_1_rpm;
-    float ESC_1_voltage;
-    float ESC_1_current;
-    float ESC_1_consumption;
-    float ESC_2_rpm;
-    float ESC_2_voltage;
-    float ESC_2_current;
-    float ESC_2_consumption;
-    float ESC_3_rpm;
-    float ESC_3_voltage;
-    float ESC_3_current;
-    float ESC_3_consumption;
-    float ESC_4_rpm;
-    float ESC_4_voltage;
-    float ESC_4_current;
-    float ESC_4_consumption;
-};
-
 /* overactuated mixing structure */
 struct overactuated_mixing_t {
     int32_t commands[N_ACT_REAL];      ///< The output commands
@@ -126,60 +94,25 @@ struct overactuated_mixing_t {
 
 extern struct overactuated_mixing_t overactuated_mixing;
 extern struct PID_over pid_gains_over;
-extern struct PD_indi_over cruise_gains;
-extern struct PD_indi_over app_gains;
+extern struct PD_indi_over active_gains;
+
 
 // Variables for slider
 extern float K_beta;
-extern float K_T_airspeed;
-extern float K_d_speed;
 
 extern float fpa_off_deg; 
 
-extern float CL_ailerons;
-
 extern float extra_lat_gain;
 
-extern float des_pos_earth_x;
-extern float des_pos_earth_y;
-extern float stick_gain_yaw;
-extern float stick_gain_throttle;
-extern bool yaw_with_tilting_PID;
 
-extern bool manual_heading;
-extern int manual_heading_value_rad;
+extern float stick_gain_yaw;
+extern bool yaw_with_tilting_PID;
 
 //Variable for the lateral acceleration and yaw rate control:
 extern float overestimation_coeff;
 
-//Variables for the FBW controller:
-extern float K_indi_rad_s_dshot, Des_RPM_motor_1, Des_dshot_steps_motor_1;
-
-extern float K_p_rad_s_dshot, K_i_rad_s_dshot, K_d_rad_s_dshot;
-
-extern int min_pwm_servo_9, max_pwm_servo_9, neutral_pwm_servo_9, min_pwm_servo_10, max_pwm_servo_10, neutral_pwm_servo_10;
-extern float desired_angle_servo_9, desired_angle_servo_10;
-
-extern float des_az_angle_test, des_el_angle_test;
-
-extern int feed_speed_ref_from_approach_module;
-
 extern int approach_state;
 
-extern float min_lidar_alt_ground_detect; 
-extern float time_tolerance_land;
-extern float az_tolerance_land;
-
-extern float w_mot_const, w_mot_speed, w_el_const, w_el_speed, w_az_const, w_az_speed; 
-extern float w_theta_const, w_theta_speed, w_phi_const, w_phi_speed, w_ail_const, w_ail_speed; 
-
-extern float trans_speed; 
-
-extern float disable_acc_decrement_inner_loop; 
-
-extern float vert_acc_margin; 
-
-extern int failure_mode; 
 
 //attitude setpoint test: 
 extern int use_slider_attitude; 
@@ -193,18 +126,6 @@ extern int use_new_aero_model;
 extern int use_received_ang_ref_in_inner_loop;
 extern int dv_contains_modeled_accelerations; 
 
-//Prop model: 
-extern float power_cd_0;
-extern float power_cd_a;
-extern float prop_r;
-extern float prop_cd_0;
-extern float prop_cl_0;
-extern float prop_cd_a;
-extern float prop_cl_a;
-extern float prop_delta;
-extern float prop_sigma;
-extern float prop_theta;
-
 extern float alt_offset_beacon; 
 extern int selected_beacon;
 extern int sixdof_mode; 
@@ -214,7 +135,5 @@ extern void overactuated_mixing_init(void);
 extern void overactuated_mixing_run(void);
 
 extern void overactuated_mixing_parse_SHIP_INFO_MSG(uint8_t *buf);
-
-extern uint8_t detect_ground_on_landing(void); 
 
 #endif

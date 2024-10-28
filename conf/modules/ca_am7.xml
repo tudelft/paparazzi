@@ -3,11 +3,84 @@
   <doc>
     <description>Transfers data from RaspberryPi to Pixhawk and vice versa</description>
   </doc>
+
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="AM7_settings">
+        
+        <dl_setting var="failure_mode" min="0" step="1" max="4" shortname="failure_mode"/>
+
+        <dl_setting var="disable_acc_decrement_inner_loop" min="0" step="1" max="1" shortname="disable_acc_decrement_inner_loop" values="FALSE|TRUE" persistent="true"/>
+        <dl_setting var="use_u_init_outer_loop" min="0" step="1" max="1" shortname="use_u_init_outer_loop" values="FALSE|TRUE" persistent="true"/>
+        <dl_setting var="use_u_init_inner_loop" min="0" step="1" max="1" shortname="use_u_init_inner_loop" values="FALSE|TRUE" persistent="true"/>
+        <dl_setting var="single_loop_controller" min="0" step="1" max="1" shortname="single_loop_controller" values="FALSE|TRUE" persistent="true"/>
+        <dl_setting var="use_new_aero_model" min="0" step="1" max="1" shortname="use_new_aero_model" values="FALSE|TRUE" persistent="true"/>
+        <dl_setting var="use_received_ang_ref_in_inner_loop" min="0" step="1" max="1" shortname="use_received_ang_ref_in_inner_loop" values="FALSE|TRUE" persistent="true"/>
+
+        <dl_setting var="aoa_protection_speed" min="0" step="0.1" max="20" shortname="aoa_protection_speed"/>
+        <dl_setting var="transition_speed" min="0" step="0.1" max="20" shortname="transition_speed"/>
+        <dl_setting var="min_speed_transition" min="0" step="0.1" max="20" shortname="min_speed_transition"/>
+        <dl_setting var="ref_speed_transition" min="0" step="0.1" max="20" shortname="ref_speed_transition"/>
+        <dl_setting var="k_gain_airspeed" min="0" step="0.001" max="0.1" shortname="k_gain_airspeed"/>
+        <dl_setting var="vert_acc_margin" min="0" step="0.1" max="20" shortname="vert_acc_margin"/>
+        <dl_setting var="K_T_airspeed" min="0" step="0.001" max="0.1" shortname="K_T_airspeed"/>
+
+        <dl_setting var="w_mot_const" min="0" step="0.1" max="200" shortname="w_mot_const"/>
+        <dl_setting var="w_mot_speed" min="0" step="0.1" max="200" shortname="w_mot_speed"/>
+        <dl_setting var="w_el_const" min="0" step="0.1" max="200" shortname="w_el_const"/>
+        <dl_setting var="w_el_speed" min="0" step="0.1" max="200" shortname="w_el_speed"/>
+        <dl_setting var="w_az_const" min="0" step="0.1" max="200" shortname="w_az_const"/>
+        <dl_setting var="w_az_speed" min="0" step="0.1" max="200" shortname="w_az_speed"/>
+        <dl_setting var="w_theta_const" min="0" step="0.1" max="200" shortname="w_theta_const"/>
+        <dl_setting var="w_theta_speed" min="0" step="0.1" max="200" shortname="w_theta_speed"/>
+        <dl_setting var="w_phi_const" min="0" step="0.1" max="200" shortname="w_phi_const"/>
+        <dl_setting var="w_phi_speed" min="0" step="0.1" max="200" shortname="w_phi_speed"/>
+        <dl_setting var="w_ail_const" min="0" step="0.1" max="200" shortname="w_ail_const"/>
+        <dl_setting var="w_ail_speed" min="0" step="0.1" max="200" shortname="w_ail_speed"/>
+        <dl_setting var="w_dv_1" min="0" step="0.001" max="1" shortname="w_dv_1"/>
+        <dl_setting var="w_dv_2" min="0" step="0.001" max="1" shortname="w_dv_2"/>
+        <dl_setting var="w_dv_3" min="0" step="0.001" max="1" shortname="w_dv_3"/>
+        <dl_setting var="w_dv_4" min="0" step="0.001" max="1" shortname="w_dv_4"/>
+        <dl_setting var="w_dv_5" min="0" step="0.001" max="1" shortname="w_dv_5"/>
+        <dl_setting var="w_dv_6" min="0" step="0.001" max="1" shortname="w_dv_6"/>
+        <dl_setting var="gamma_quadratic_du" min="0" step="1e-9" max="1e-8" shortname="gamma_quadratic_du"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="SIXDOF settings">
+        <dl_setting var="sixdof_mode" min="0" step="1" max="3" shortname="sixdof_mode"/>
+        <dl_setting var="selected_beacon" min="0" step="1" max="5" shortname="selected_beacon"/>
+        <dl_setting var="alt_offset_beacon" min="0" step="0.1" max="100" shortname="alt_offset_beacon"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="PROP_MDL">
+        <dl_setting var="power_cd_0" min="0" step=".001" max="0.25" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_POWER_CD_0" shortname="power_cd_0" persistent="true"/>
+        <dl_setting var="power_cd_a" min="0" step=".001" max="1.8" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_POWER_CD_A" shortname="power_cd_a" persistent="true"/>
+        <dl_setting var="prop_r" min="0.1" step=".001" max="0.635" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_R" shortname="prop_r" persistent="true"/>
+        <dl_setting var="prop_cd_0" min="0" step=".001" max="0.25" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_CD_0" shortname="prop_cd_0" persistent="true"/>
+        <dl_setting var="prop_cl_0" min="0" step=".001" max="0" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_CL_0" shortname="prop_cl_0" persistent="true"/>
+        <dl_setting var="prop_cd_a" min="0" step=".001" max="1.8" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_CD_A" shortname="prop_cd_a" persistent="true"/>
+        <dl_setting var="prop_cl_a" min="0" step=".001" max="17.3" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_CL_A" shortname="prop_cl_a" persistent="true"/>
+        <dl_setting var="prop_delta" min="0" step=".001" max="1" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_DELTA" shortname="prop_delta" persistent="true"/>
+        <dl_setting var="prop_sigma" min="0.05" step=".0001" max="0.326" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_SIGMA" shortname="prop_sigma" persistent="true"/>
+        <dl_setting var="prop_theta" min="0.2" step=".001" max="1.094" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_THETA" shortname="prop_theta" persistent="true"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
   <header>
     <file name="ca_am7.h"/>
   </header>
   <init fun="am7_init()"/>
-<!--  <periodic fun="am7_periodic()" autorun="TRUE" freq="500"/>-->
+  <periodic fun="am7_routine()" autorun="TRUE" freq="AM7_FREQUENCY"/>
   <event fun="am7_event()"/>
   <makefile>
 <!--       Configure default UART port and baudrate-->

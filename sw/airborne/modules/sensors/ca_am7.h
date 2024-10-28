@@ -28,13 +28,11 @@
 
 #define START_BYTE 0x9B  //1st start block identifier byte
 
-
 #include "std.h"
 #include <stdbool.h>
 #include <stdlib.h>
 #include "generated/airframe.h"
 #include "pprzlink/pprz_transport.h"
-
 
 struct __attribute__((__packed__)) am7_data_in {
     //Motor command
@@ -167,6 +165,60 @@ struct __attribute__((__packed__)) am7_data_out {
     uint8_t rolling_msg_out_id;
     uint8_t checksum_out;
 };
+
+// Structure containing the nonlinear CA data from the external modules:
+struct __attribute__((__packed__)) am7_data_t {
+    float packet_timestamp; 
+    //Pseudocontrols:
+    float pseudocontrol_ax;
+    float pseudocontrol_ay;
+    float pseudocontrol_az;
+    float pseudocontrol_p_dot;
+    float pseudocontrol_q_dot;
+    float pseudocontrol_r_dot;
+    //Estimated variables:
+    float est_flight_path_angle_rad;
+    float est_airspeed;
+    float est_beta_rad;
+    //Psi dot command:
+    float psi_dot_cmd_rad_s;
+    //Desired variables:
+    float desired_motor_rad_s;
+    float desired_el_rad;
+    float desired_az_rad;
+    float desired_theta_rad; 
+    float desired_phi_rad;
+    float desired_ail_rad;
+};
+
+// Function to retrieve the data received from the other modules:
+static inline struct am7_data_in * get_am7_data_in(void);
+
+// Settings of AM7 module:
+extern float aoa_protection_speed, transition_speed, min_speed_transition, ref_speed_transition, k_gain_airspeed, vert_acc_margin, K_T_airspeed; 
+extern float w_mot_const, w_mot_speed, w_el_const, w_el_speed, w_az_const, w_az_speed, w_theta_const, w_theta_speed, w_phi_const, w_phi_speed, w_ail_const, w_ail_speed;
+extern float w_dv_1, w_dv_2, w_dv_3, w_dv_4, w_dv_5, w_dv_6;
+extern float gamma_quadratic_du;
+extern int disable_acc_decrement_inner_loop, use_u_init_outer_loop, use_u_init_inner_loop; 
+extern int single_loop_controller, use_new_aero_model, use_received_ang_ref_in_inner_loop;
+extern int failure_mode; 
+
+//Sixdof system: 
+extern int sixdof_mode;
+extern int selected_beacon;
+extern float alt_offset_beacon; 
+
+//Propeller model: 
+extern float power_cd_0;
+extern float power_cd_a;
+extern float prop_r;
+extern float prop_cd_0;
+extern float prop_cl_0;
+extern float prop_cd_a;
+extern float prop_cl_a;
+extern float prop_delta;
+extern float prop_sigma;
+extern float prop_theta;
 
 extern void am7_init(void);
 extern void am7_event(void);

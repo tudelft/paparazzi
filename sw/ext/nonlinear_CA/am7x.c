@@ -532,8 +532,6 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
 
     float use_received_ang_ref_in_inner_loop = extra_data_in_copy[95];
 
-    float dv_contains_modeled_accelerations = extra_data_in_copy[96]; //In this case, we zero the modeled accelerations and provide as output unfiltered modeled acc
-
     //Exceptions: 
     if(beacon_tracking_id_local > 0.1f){
       pthread_mutex_lock(&mutex_sixdof);
@@ -731,8 +729,6 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     use_new_aero_model = 0;
     use_received_ang_ref_in_inner_loop = 0;
 
-    dv_contains_modeled_accelerations = 0;
-    
     #endif
 
     //Bound motor values to be within min and max value to avoid NaN
@@ -1044,9 +1040,6 @@ void* second_thread() //Filter variables, compute modeled accelerations and fill
     mydata_in_optimizer_copy.use_new_aero_model = use_new_aero_model;
     mydata_in_optimizer_copy.use_received_ang_ref_in_inner_loop = use_received_ang_ref_in_inner_loop;
 
-    mydata_in_optimizer_copy.dv_contains_modeled_accelerations = dv_contains_modeled_accelerations;
-    
-
     pthread_mutex_lock(&mutex_optimizer_input);
     memcpy(&mydata_in_optimizer, &mydata_in_optimizer_copy, sizeof(struct data_in_optimizer));
     pthread_mutex_unlock(&mutex_optimizer_input);
@@ -1286,12 +1279,6 @@ void* third_thread() //Run the outer loop of the optimization code
       current_accelerations[4] = (double) mydata_in_optimizer_copy.modeled_q_dot_filtered;
       current_accelerations[5] = (double) mydata_in_optimizer_copy.modeled_r_dot_filtered;
     }   
-
-    if(mydata_in_optimizer_copy.dv_contains_modeled_accelerations > 0.5f){
-      for (int i=0; i<6; i++){
-        current_accelerations[i] = 0.0f;
-      }
-    }
 
     //if verbose_outer_loop is set to 1, print the input variables:
     if(verbose_outer_loop){
@@ -1782,12 +1769,6 @@ void* fourth_thread() //Run the inner loop of the optimization code
                                        (double) mydata_in_optimizer_copy.modeled_q_dot_filtered,
                                        (double) mydata_in_optimizer_copy.modeled_r_dot_filtered};
 
-    if(mydata_in_optimizer_copy.dv_contains_modeled_accelerations > 0.5f){
-      for (int i=0; i<6; i++){
-        current_accelerations[i] = 0.0f;
-      }
-    }
-
     //Remove aerodynamic accelerations if needed:
     if(disable_acc_decrement_inner_loop < 0.5f){
       current_accelerations[0] -= myouter_loop_output_copy.acc_decrement_aero_ax;
@@ -2111,16 +2092,6 @@ void* fourth_thread() //Run the inner loop of the optimization code
     myam7_data_out_copy.modeled_p_dot_int = (int16_T) (mydata_in_optimizer_copy.modeled_p_dot_filtered*1e1*180/M_PI);
     myam7_data_out_copy.modeled_q_dot_int = (int16_T) (mydata_in_optimizer_copy.modeled_q_dot_filtered*1e1*180/M_PI);
     myam7_data_out_copy.modeled_r_dot_int = (int16_T) (mydata_in_optimizer_copy.modeled_r_dot_filtered*1e1*180/M_PI);
-
-    //Use unfiltered modeled values if needed:
-    if(mydata_in_optimizer_copy.dv_contains_modeled_accelerations > 0.5f){
-      myam7_data_out_copy.modeled_ax_int = (int16_T) (current_accelerations[0]*1e2);
-      myam7_data_out_copy.modeled_ay_int = (int16_T) (current_accelerations[1]*1e2);
-      myam7_data_out_copy.modeled_az_int = (int16_T) (current_accelerations[2]*1e2);
-      myam7_data_out_copy.modeled_p_dot_int = (int16_T) (current_accelerations[3]*1e1*180/M_PI);
-      myam7_data_out_copy.modeled_q_dot_int = (int16_T) (current_accelerations[4]*1e1*180/M_PI);
-      myam7_data_out_copy.modeled_r_dot_int = (int16_T) (current_accelerations[5]*1e1*180/M_PI);
-    }
 
     //Print submitted data if needed
     if(verbose_submitted_data){

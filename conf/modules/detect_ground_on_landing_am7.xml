@@ -1,0 +1,29 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="detect_ground_on_landing_am7" dir="ground_detect">
+  <doc>
+    <description>
+    Detect gound on landing. 
+    Provides a function to be called in the flight plan module.
+    This module only works together with the AM7 control allocation module. 
+    </description>
+  </doc>
+
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="ground_detect">
+        <dl_setting var="min_lidar_alt_ground_detect" min="0" step="0.1" max="2" shortname="min_lidar_alt"/>
+        <dl_setting var="az_tolerance_land" min="0" step="0.1" max="5" shortname="az_tolerance_land"/>
+        <dl_setting var="time_tolerance_land" min="0" step="0.1" max="2" shortname="time_tolerance_land"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <header>
+    <file name="ground_detect_am7.h"/>
+  </header>
+  <init fun="ground_detect_on_landing_am7_init()"/>
+  <makefile>
+    <file name="ground_detect_am7.c"/>
+  </makefile>
+</module>

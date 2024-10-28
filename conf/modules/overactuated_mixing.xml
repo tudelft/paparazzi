@@ -5,77 +5,13 @@
     <description>Overactuated Vehicle Mixing</description>
   </doc>
 
-  <settings>
-    <dl_settings>
-      <dl_settings NAME="PROP_MDL">
-        <dl_setting var="power_cd_0" min="0" step=".001" max="0.25" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_POWER_CD_0" shortname="power_cd_0" persistent="true"/>
-        <dl_setting var="power_cd_a" min="0" step=".001" max="1.8" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_POWER_CD_A" shortname="power_cd_a" persistent="true"/>
-        <dl_setting var="prop_r" min="0.1" step=".001" max="0.635" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_R" shortname="prop_r" persistent="true"/>
-        <dl_setting var="prop_cd_0" min="0" step=".001" max="0.25" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_CD_0" shortname="prop_cd_0" persistent="true"/>
-        <dl_setting var="prop_cl_0" min="0" step=".001" max="0" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_CL_0" shortname="prop_cl_0" persistent="true"/>
-        <dl_setting var="prop_cd_a" min="0" step=".001" max="1.8" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_CD_A" shortname="prop_cd_a" persistent="true"/>
-        <dl_setting var="prop_cl_a" min="0" step=".001" max="17.3" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_CL_A" shortname="prop_cl_a" persistent="true"/>
-        <dl_setting var="prop_delta" min="0" step=".001" max="1" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_DELTA" shortname="prop_delta" persistent="true"/>
-        <dl_setting var="prop_sigma" min="0.05" step=".0001" max="0.326" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_SIGMA" shortname="prop_sigma" persistent="true"/>
-        <dl_setting var="prop_theta" min="0.2" step=".001" max="1.094" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_THETA" shortname="prop_theta" persistent="true"/>
-      </dl_settings>
-    </dl_settings>
-  </settings>
 
-  <settings>
-    <dl_settings>
-      <dl_settings NAME="FBW Control">
-        <dl_setting var="K_p_rad_s_dshot"  min="0" step=".1" max="20" shortname="K_p_rad_s_dshot" />
-        <dl_setting var="K_i_rad_s_dshot"  min="0" step=".001" max="1" shortname="K_i_rad_s_dshot" />
-        <dl_setting var="K_d_rad_s_dshot"  min="0" step=".1" max="20" shortname="K_d_rad_s_dshot" />
-
-        <dl_setting var="K_indi_rad_s_dshot"  min="0" step=".1" max="200" shortname="K_indi_rad_s_dshot" />
-
-        <dl_setting var="Des_RPM_motor_1"  min="0" step="100" max="20000" shortname="Des_RPM_motor_1" />
-
-        <dl_setting var="Des_dshot_steps_motor_1"  min="0" step="1" max="16" shortname="Des_dshot_steps_motor_1" />
-
-        <dl_setting var="min_pwm_servo_9"  min="0" step="1" max="2500" shortname="min_pwm_servo_9" />
-        <dl_setting var="max_pwm_servo_9"  min="0" step="1" max="2500" shortname="max_pwm_servo_9" />
-        <dl_setting var="neutral_pwm_servo_9"  min="0" step="1" max="2500" shortname="neutral_pwm_servo_9" />
-        <dl_setting var="desired_angle_servo_9"  min="-50" step="1" max="50" shortname="desired_angle_servo_9" />
-
-        <dl_setting var="min_pwm_servo_10"  min="0" step="1" max="2500" shortname="min_pwm_servo_10" />
-        <dl_setting var="max_pwm_servo_10"  min="0" step="1" max="2500" shortname="max_pwm_servo_10" />
-        <dl_setting var="neutral_pwm_servo_10"  min="0" step="1" max="2500" shortname="neutral_pwm_servo_10" />
-        <dl_setting var="desired_angle_servo_10"  min="-50" step="1" max="50" shortname="desired_angle_servo_10" />
-
-        <dl_setting var="des_az_angle_test"  min="-200" step="1" max="200" shortname="des_az_angle_test" />
-        <dl_setting var="des_el_angle_test"  min="-200" step="1" max="200" shortname="des_el_angle_test" />
-
-      </dl_settings>
-    </dl_settings>
-  </settings>
 
   <settings>
     <dl_settings>
       <dl_settings NAME="General overact">
 
         <dl_setting var="failure_mode" min="0" step="1" max="4" shortname="failure_mode"/>
-
-        <dl_setting var="use_u_init_outer_loop" min="0" step="1" max="1" shortname="use_u_init_outer" values="FALSE|TRUE" persistent="true"/>
-        <dl_setting var="use_u_init_inner_loop" min="0" step="1" max="1" shortname="use_u_init_inner" values="FALSE|TRUE" persistent="true"/>
-        <dl_setting var="single_loop_controller" min="0" step="1" max="1" shortname="single_loop_CA" values="FALSE|TRUE" persistent="true"/>
-        <dl_setting var="use_new_aero_model" min="0" step="1" max="1" shortname="new_aero_model" values="FALSE|TRUE" persistent="true"/>
-        <dl_setting var="use_received_ang_ref_in_inner_loop" min="0" step="1" max="1" shortname="use_ext_ang_ref_inner" values="FALSE|TRUE" persistent="true"/>
-        <dl_setting var="dv_contains_modeled_accelerations" min="0" step="1" max="1" shortname="filt_mdl_acc_in_ap" values="FALSE|TRUE" persistent="true"/>
-
-        <dl_setting var="alt_offset_beacon" min="0" step=".1" max="40" shortname="alt_off_beacon"/>
-
-        <dl_setting var="selected_beacon" min="1" step="1" max="5" shortname="selected_beacon" persistent="true"/>
-
-        <dl_setting var="sixdof_mode" min="1" step="1" max="3" shortname="sixdof_mode" persistent="true"/>
-
-        <dl_setting var="trans_speed" min="0" step=".1" max="50" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_TRANSITION_SPEED_PSEUDOCTR_HEDGE" shortname="trans_speed" persistent="true"/>
-
-        <dl_setting var="disable_acc_decrement_inner_loop" min="0" step="1" max="1" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_DISABLE_ACC_DECREMENT_INNER_LOOP" shortname="dis_acc_decr_il" persistent="true"/>
-
-        <dl_setting var="vert_acc_margin" min="0" step=".1" max="5" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_VERT_ACC_MARGIN" shortname="vert_acc_margin" persistent="true"/>
 
         <dl_setting var="fpa_off_deg"  min="-10" step=".01" max="10" shortname="fpa_off_deg" />
 
@@ -94,7 +30,7 @@
         <dl_setting var="yaw_with_tilting_PID" min="0" step="1" max="1" shortname="use_tilt_to_yaw_PID" values="FALSE|TRUE" />
 
         <dl_setting var="stick_gain_yaw"  min="0" step=".01" max="1" shortname="Stick gain yaw" />
-        <dl_setting var="stick_gain_throttle"  min="0" step=".01" max="1" shortname="Stick gain thr" />
+
       </dl_settings>
     </dl_settings>
   </settings>
@@ -177,31 +113,6 @@
         <dl_setting var="pid_gains_over.p.psi" min="0" step=".01" max="40" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_PSI" shortname="PID_kp_yaw" persistent="true"/>
         <dl_setting var="pid_gains_over.i.psi" min="0" step=".01" max="20" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_PSI" shortname="PID_ki_yaw" persistent="true"/>
         <dl_setting var="pid_gains_over.d.psi" min="0" step=".01" max="20" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_PSI" shortname="PID_kd_yaw" persistent="true"/>
-
-        <dl_setting var="pid_gains_over.p.x" min="0" step=".01" max="5" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_POS_X_TILT" shortname="PID_kp_x" persistent="true"/>
-        <dl_setting var="pid_gains_over.i.x" min="0" step=".01" max="5" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_POS_X_TILT" shortname="PID_ki_x" persistent="true"/>
-        <dl_setting var="pid_gains_over.d.x" min="0" step=".01" max="5" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_POS_X_TILT" shortname="PID_kd_x" persistent="true"/>
-
-        <dl_setting var="pid_gains_over.p.y" min="0" step=".01" max="5" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_POS_Y_TILT" shortname="PID_kp_y" persistent="true"/>
-        <dl_setting var="pid_gains_over.i.y" min="0" step=".01" max="5" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_POS_Y_TILT" shortname="PID_ki_y" persistent="true"/>
-        <dl_setting var="pid_gains_over.d.y" min="0" step=".01" max="5" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_POS_Y_TILT" shortname="PID_kd_y" persistent="true"/>
-
-        <dl_setting var="pid_gains_over.p.z" min="0" step="1" max="1500" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_POS_Z" shortname="PID_kp_z" persistent="true"/>
-        <dl_setting var="pid_gains_over.i.z" min="0" step="1" max="500" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_POS_Z" shortname="PID_ki_z" persistent="true"/>
-        <dl_setting var="pid_gains_over.d.z" min="0" step="1" max="1000" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_POS_Z" shortname="PID_kd_z" persistent="true"/>
-
-      </dl_settings>
-    </dl_settings>
-  </settings>
-
-  <settings>
-    <dl_settings>
-      <dl_settings NAME="ground_detect">
-
-        <dl_setting var="min_lidar_alt_ground_detect" min="0" step="0.1" max="2" shortname="min_lidar_alt"/>
-        <dl_setting var="az_tolerance_land" min="0" step="0.1" max="5" shortname="az_tolerance_land"/>
-        <dl_setting var="time_tolerance_land" min="0" step="0.1" max="2" shortname="time_tolerance_land"/>
-
       </dl_settings>
     </dl_settings>
   </settings>
@@ -211,10 +122,7 @@
   </header>
    
    <init fun="overactuated_mixing_init()"/>
-   <periodic fun="overactuated_mixing_run()" autorun="TRUE" freq="500"/>
-   <periodic fun="detect_ground_on_landing()" autorun="TRUE" freq="500"/>
-   <!-- <datalink message="GPS_INJECT" fun="overactuated_mixing_parse_SHIP_INFO_MSG(buf)"/> -->
-   <!-- <datalink message="TARGET_POS" fun="overactuated_mixing_parse_SHIP_INFO_MSG(buf)"/> -->
+   <periodic fun="overactuated_mixing_run()" autorun="TRUE" freq="OVERACTUATED_MIXING_FREQUENCY"/>
    
    <datalink message="SHIP_INFO_MSG" fun="overactuated_mixing_parse_SHIP_INFO_MSG(buf)"/>
    

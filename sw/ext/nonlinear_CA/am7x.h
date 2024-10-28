@@ -379,7 +379,6 @@ struct __attribute__((__packed__)) data_in_optimizer {
     float single_loop_controller; 
     float use_new_aero_model; 
     float use_received_ang_ref_in_inner_loop; 
-    float dv_contains_modeled_accelerations;
 
 };
 
