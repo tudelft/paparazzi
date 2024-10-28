@@ -215,8 +215,8 @@
     <define name="INDI_SECOND_ORDER_CUTOFF_RAD_S" value="12"/>
     <define name="RPM_FIRST_ORDER_CUTOFF_RAD_S" value="60"/>
     <define name="BODY_RATES_FIRST_ORDER_CUTOFF_RAD_S" value="25"/>
-    <define name="BODY_RATES_DOT_SECOND_ORDER_CUTOFF_RAD_S" value="INDI_SECOND_ORDER_CUTOFF_RAD_S"/>
-    <define name="ACCELERATIONS_SECOND_ORDER_CUTOFF_RAD_S" value="INDI_SECOND_ORDER_CUTOFF_RAD_S"/>
+    <define name="BODY_RATES_DOT_SECOND_ORDER_CUTOFF_RAD_S" value="AM7_SETTINGS_INDI_SECOND_ORDER_CUTOFF_RAD_S"/>
+    <define name="ACCELERATIONS_SECOND_ORDER_CUTOFF_RAD_S" value="AM7_SETTINGS_INDI_SECOND_ORDER_CUTOFF_RAD_S"/>
     <define name="BODY_Y_ACC_SECOND_ORDER_CUTOFF_RAD_S" value="25"/>
     <!-- GENERAL VEHICLE PARAMETERS, see documentation for notation -->
     <define name="VEHICLE_MOTOR_K_T_OMEGASQ" value="1.106465e-5" unit="N/(rad/s)^2"/>
@@ -363,7 +363,7 @@
     <define name="PID_MAX_POS_ERR_INTEGRATIVE" value="3" unit="m"/>
     <define name="PID_MAX_ROLL_ORDER_DSHOT" value="1600"/>
     <define name="PID_MAX_PITCH_ORDER_DSHOT" value="1600"/>
-    <define name="PID_MAX_YAW_ORDER_DEG" value="25"/>
+    <define name="PID_MAX_YAW_ORDER_AZ_DEG" value="25"/>
     <define name="PID_MAX_EL_ORDER_DEG" value="35"/> 
     <define name="PID_MAX_AZ_ORDER_DEG" value="35"/> 
     <!-- INDI APP GAINS -->
@@ -532,7 +532,7 @@
   </section>
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="MAX_BANK" value="OVERACTUATED_MIXING_MAX_PHI"/>
+    <define name="MAX_BANK" value="OVERACTUATED_GAINS_MAX_PHI"/>
     <define name="USE_SPEED_REF" value="TRUE"/>
     <define name="PGAIN" value="60"/>
     <define name="DGAIN" value="100"/>

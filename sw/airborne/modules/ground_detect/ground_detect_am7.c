@@ -50,7 +50,7 @@ static void get_agl_corrected_value(uint8_t sender_id __attribute__((unused)), u
     altitude_lidar_agl_meters = distance_lidar_meter;
 }
 
-void ground_detect_on_landing_am7_init(void){
+void detect_ground_on_landing_am7_init(void){
     //Init abi for the lidar module: 
     AbiBindMsgAGL(ABI_BROADCAST, &get_agl_corrected_value_ev, get_agl_corrected_value);
 }

@@ -261,8 +261,8 @@
       <field name="my_am7_data_t" type="struct am7_data_t *">Pointer pointing at the am7_data_t struct</field>
     </message>
 
-    <message name="SERIAL_ACT_T4_CMD" id="40">
-      <field name="ActCmd_ptr" type="struct ActCmd *">Pointer pointing at the ActCmd struct</field>
+    <message name="SERIAL_ACT_T4_CMD" id="39">
+      <field name="my_ActCmd_t" type="struct ActCmd_t *">Pointer pointing at the ActCmd struct</field>
     </message>
 
   </msg_class>

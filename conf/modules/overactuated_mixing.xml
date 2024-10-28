@@ -5,114 +5,52 @@
     <description>Overactuated Vehicle Mixing</description>
   </doc>
 
-
-
   <settings>
     <dl_settings>
-      <dl_settings NAME="General overact">
-
-        <dl_setting var="failure_mode" min="0" step="1" max="4" shortname="failure_mode"/>
-
+      <dl_settings NAME="overactuated vehicle nav settings">
         <dl_setting var="fpa_off_deg"  min="-10" step=".01" max="10" shortname="fpa_off_deg" />
-
         <dl_setting var="overestimation_coeff"  min="0" step=".01" max="2" shortname="overest_coeff" />
-
-        <dl_setting var="K_beta"  min="-5" step=".01" max="5" shortname="K_beta" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_K_BETA" persistent="true"/>
-
+        <dl_setting var="K_beta"  min="-5" step=".01" max="5" shortname="K_beta" persistent="true"/>
         <dl_setting var="extra_lat_gain"  min="-2" step=".01" max="2" shortname="extra_lat_gain" />
-
-        <dl_setting var="K_T_airspeed"  min="0" step=".001" max="1" shortname="K_T_airspeed" />
-
-        <dl_setting var="K_d_speed"  min="0" step=".001" max="1" shortname="K_d_speed" />
-
-        <dl_setting var="CL_ailerons"  min="0" step=".001" max="0.5" shortname="CL_ailerons" />
-
-        <dl_setting var="yaw_with_tilting_PID" min="0" step="1" max="1" shortname="use_tilt_to_yaw_PID" values="FALSE|TRUE" />
-
-        <dl_setting var="stick_gain_yaw"  min="0" step=".01" max="1" shortname="Stick gain yaw" />
-
       </dl_settings>
     </dl_settings>
   </settings>
 
   <settings>
     <dl_settings>
-      <dl_settings NAME="GAINS/WEIGHTS">
+      <dl_settings NAME="overactuated vehicle gains">
 
         <!-- INDI cruise gains -->
-        <dl_setting var="cruise_gains.p.phi" min="0" step=".001" max="50" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_CRUISE_GAIN_P" shortname="CR_P_GAIN" persistent="true"/>
-        <dl_setting var="cruise_gains.d.phi" min="0" step=".001" max="50" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_CRUISE_GAIN_P_DOT" shortname="CR_P_DOT_GAIN" persistent="true"/>
+        <dl_setting var="active_gains.p.phi" min="0" step=".001" max="50" shortname="INDI_ROLL_P_GAIN" persistent="true"/>
+        <dl_setting var="active_gains.d.phi" min="0" step=".001" max="50" shortname="INDI_ROLL_D_GAIN" persistent="true"/>
 
-        <dl_setting var="cruise_gains.p.theta" min="0" step=".001" max="50" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_CRUISE_GAIN_Q" shortname="CR_Q_GAIN" persistent="true"/>
-        <dl_setting var="cruise_gains.d.theta" min="0" step=".001" max="50" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_CRUISE_GAIN_Q_DOT" shortname="CR_Q_DOT_GAIN" persistent="true"/>
+        <dl_setting var="active_gains.p.theta" min="0" step=".001" max="50" shortname="INDI_PITCH_P_GAIN" persistent="true"/>
+        <dl_setting var="active_gains.d.theta" min="0" step=".001" max="50" shortname="INDI_PITCH_D_GAIN" persistent="true"/>
 
-        <dl_setting var="cruise_gains.p.psi" min="0" step=".001" max="50" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_CRUISE_GAIN_R" shortname="CR_R_GAIN" persistent="true"/>
-        <dl_setting var="cruise_gains.d.psi" min="0" step=".001" max="50" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_CRUISE_GAIN_R_DOT" shortname="CR_R_DOT_GAIN" persistent="true"/>
+        <dl_setting var="active_gains.p.psi" min="0" step=".001" max="50" shortname="INDI_YAW_P_GAIN" persistent="true"/>
+        <dl_setting var="active_gains.d.psi" min="0" step=".001" max="50" shortname="INDI_YAW_D_GAIN" persistent="true"/>
 
-        <dl_setting var="cruise_gains.p.x" min="0" step=".001" max="10" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_CRUISE_GAIN_X" shortname="CR_X_GAIN" persistent="true"/>
-        <dl_setting var="cruise_gains.d.x" min="0" step=".001" max="10" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_CRUISE_GAIN_X_DOT" shortname="CR_X_DOT_GAIN" persistent="true"/>
+        <dl_setting var="active_gains.p.x" min="0" step=".001" max="10" shortname="INDI_X_P_GAIN" persistent="true"/>
+        <dl_setting var="active_gains.d.x" min="0" step=".001" max="10" shortname="INDI_X_D_GAIN" persistent="true"/>
 
-        <dl_setting var="cruise_gains.p.y" min="0" step=".001" max="10" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_CRUISE_GAIN_Y" shortname="CR_Y_GAIN" persistent="true"/>
-        <dl_setting var="cruise_gains.d.y" min="0" step=".001" max="10" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_CRUISE_GAIN_Y_DOT" shortname="CR_Y_DOT_GAIN" persistent="true"/>
+        <dl_setting var="active_gains.p.y" min="0" step=".001" max="10" shortname="INDI_Y_P_GAIN" persistent="true"/>
+        <dl_setting var="active_gains.d.y" min="0" step=".001" max="10" shortname="INDI_Y_D_GAIN" persistent="true"/>
 
-        <dl_setting var="cruise_gains.p.z" min="0" step=".001" max="30" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_CRUISE_GAIN_Z" shortname="CR_Z_GAIN" persistent="true"/>
-        <dl_setting var="cruise_gains.d.z" min="0" step=".001" max="30" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_CRUISE_GAIN_Z_DOT" shortname="CR_Z_DOT_GAIN" persistent="true"/>
-        
-        <!-- INDI cruise gains -->
-        <dl_setting var="app_gains.p.phi" min="0" step=".001" max="50" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_APP_GAIN_P" shortname="APP_P_GAIN" persistent="true"/>
-        <dl_setting var="app_gains.d.phi" min="0" step=".001" max="50" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_APP_GAIN_P_DOT" shortname="APP_P_DOT_GAIN" persistent="true"/>
-
-        <dl_setting var="app_gains.p.theta" min="0" step=".001" max="50" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_APP_GAIN_Q" shortname="APP_Q_GAIN" persistent="true"/>
-        <dl_setting var="app_gains.d.theta" min="0" step=".001" max="50" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_APP_GAIN_Q_DOT" shortname="APP_Q_DOT_GAIN" persistent="true"/>
-
-        <dl_setting var="app_gains.p.psi" min="0" step=".001" max="50" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_APP_GAIN_R" shortname="APP_R_GAIN" persistent="true"/>
-        <dl_setting var="app_gains.d.psi" min="0" step=".001" max="50" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_APP_GAIN_R_DOT" shortname="APP_R_DOT_GAIN" persistent="true"/>
-
-        <dl_setting var="app_gains.p.x" min="0" step=".001" max="10" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_APP_GAIN_X" shortname="APP_X_GAIN" persistent="true"/>
-        <dl_setting var="app_gains.d.x" min="0" step=".001" max="10" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_APP_GAIN_X_DOT" shortname="APP_X_DOT_GAIN" persistent="true"/>
-
-        <dl_setting var="app_gains.p.y" min="0" step=".001" max="10" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_APP_GAIN_Y" shortname="APP_Y_GAIN" persistent="true"/>
-        <dl_setting var="app_gains.d.y" min="0" step=".001" max="10" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_APP_GAIN_Y_DOT" shortname="APP_Y_DOT_GAIN" persistent="true"/>
-
-        <dl_setting var="app_gains.p.z" min="0" step=".001" max="30" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_APP_GAIN_Z" shortname="APP_Z_GAIN" persistent="true"/>
-        <dl_setting var="app_gains.d.z" min="0" step=".001" max="30" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_APP_GAIN_Z_DOT" shortname="APP_Z_DOT_GAIN" persistent="true"/>
-
-        <!-- weights -->
-        <dl_setting var="w_mot_const" min="0" step=".1" max="1000" module="overactuated_vehicle/overactuated_mixing" shortname="w_mot_const"/>
-        <dl_setting var="w_mot_speed" min="-100" step=".1" max="100" module="overactuated_vehicle/overactuated_mixing" shortname="w_mot_speed"/>
-
-        <dl_setting var="w_el_const" min="-100" step=".1" max="100" module="overactuated_vehicle/overactuated_mixing" shortname="w_el_const"/>
-        <dl_setting var="w_el_speed" min="-100" step=".1" max="100" module="overactuated_vehicle/overactuated_mixing" shortname="w_el_speed"/>
-
-        <dl_setting var="w_az_const" min="-100" step=".1" max="100" module="overactuated_vehicle/overactuated_mixing" shortname="w_az_const"/>
-        <dl_setting var="w_az_speed" min="-100" step=".1" max="100" module="overactuated_vehicle/overactuated_mixing" shortname="w_az_speed"/>
-        
-        <dl_setting var="w_theta_const" min="0" step=".1" max="2000" module="overactuated_vehicle/overactuated_mixing" shortname="w_theta_const" />
-        <dl_setting var="w_theta_speed" min="-100" step=".1" max="100" module="overactuated_vehicle/overactuated_mixing" shortname="w_theta_speed"/>
-
-        <dl_setting var="w_phi_const" min="0" step=".1" max="2000" module="overactuated_vehicle/overactuated_mixing" shortname="w_phi_const"/>
-        <dl_setting var="w_phi_speed" min="-100" step=".1" max="100" module="overactuated_vehicle/overactuated_mixing" shortname="w_phi_speed"/>
-
-        <dl_setting var="w_ail_const" min="0" step=".1" max="100" module="overactuated_vehicle/overactuated_mixing" shortname="w_ail_const"/>
-        <dl_setting var="w_ail_speed" min="-100" step=".1" max="100" module="overactuated_vehicle/overactuated_mixing" shortname="w_ail_speed"/>
-
-        <!-- ATTITUDE STEP RESPONSE TEST -->
-        <dl_setting var="use_slider_attitude" min="0" step="1" max="1" shortname="use_slider_att" values="FALSE|TRUE" />
-        <dl_setting var="pitch_target_slider" min="-30" step="1" max="90" shortname="pitch_target_slider"/>
-        <dl_setting var="roll_target_slider" min="-90" step="1" max="90" shortname="roll_target_slider"/>
+        <dl_setting var="active_gains.p.z" min="0" step=".001" max="30" shortname="INDI_Z_P_GAIN" persistent="true"/>
+        <dl_setting var="active_gains.d.z" min="0" step=".001" max="30" shortname="INDI_Z_D_GAIN" persistent="true"/>
 
         <!-- PID gains -->
-        <dl_setting var="pid_gains_over.p.phi" min="0" step="1" max="1200" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_PHI" shortname="PID_kp_roll" persistent="true"/>
-        <dl_setting var="pid_gains_over.i.phi" min="0" step=".1" max="5" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_PHI" shortname="PID_ki_roll" persistent="true"/>
-        <dl_setting var="pid_gains_over.d.phi" min="0" step="1" max="300" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_PHI" shortname="PID_kd_roll" persistent="true"/>
+        <dl_setting var="pid_gains_over.p.phi" min="0" step="1" max="1200" shortname="PID_kp_roll" persistent="true"/>
+        <dl_setting var="pid_gains_over.i.phi" min="0" step=".1" max="5" shortname="PID_ki_roll" persistent="true"/>
+        <dl_setting var="pid_gains_over.d.phi" min="0" step="1" max="300" shortname="PID_kd_roll" persistent="true"/>
 
-        <dl_setting var="pid_gains_over.p.theta" min="0" step="1" max="1200"  module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_THETA" shortname="PID_kp_pitch" persistent="true"/>
-        <dl_setting var="pid_gains_over.i.theta" min="0" step=".1" max="50" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_THETA" shortname="PID_ki_pitch" persistent="true"/>
-        <dl_setting var="pid_gains_over.d.theta" min="0" step="1" max="300" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_THETA" shortname="PID_kd_pitch" persistent="true"/>
+        <dl_setting var="pid_gains_over.p.theta" min="0" step="1" max="1200"   shortname="PID_kp_pitch" persistent="true"/>
+        <dl_setting var="pid_gains_over.i.theta" min="0" step=".1" max="50"  shortname="PID_ki_pitch" persistent="true"/>
+        <dl_setting var="pid_gains_over.d.theta" min="0" step="1" max="300"  shortname="PID_kd_pitch" persistent="true"/>
 
-        <dl_setting var="pid_gains_over.p.psi" min="0" step=".01" max="40" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_PSI" shortname="PID_kp_yaw" persistent="true"/>
-        <dl_setting var="pid_gains_over.i.psi" min="0" step=".01" max="20" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_PSI" shortname="PID_ki_yaw" persistent="true"/>
-        <dl_setting var="pid_gains_over.d.psi" min="0" step=".01" max="20" module="overactuated_vehicle/overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_PSI" shortname="PID_kd_yaw" persistent="true"/>
+        <dl_setting var="pid_gains_over.p.psi" min="0" step=".01" max="40" shortname="PID_kp_yaw" persistent="true"/>
+        <dl_setting var="pid_gains_over.i.psi" min="0" step=".01" max="20" shortname="PID_ki_yaw" persistent="true"/>
+        <dl_setting var="pid_gains_over.d.psi" min="0" step=".01" max="20" shortname="PID_kd_yaw" persistent="true"/>
       </dl_settings>
     </dl_settings>
   </settings>

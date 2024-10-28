@@ -44,6 +44,18 @@
         <dl_setting var="w_dv_5" min="0" step="0.001" max="1" shortname="w_dv_5"/>
         <dl_setting var="w_dv_6" min="0" step="0.001" max="1" shortname="w_dv_6"/>
         <dl_setting var="gamma_quadratic_du" min="0" step="1e-9" max="1e-8" shortname="gamma_quadratic_du"/>
+
+        <!-- limits -->
+        <dl_setting var="max_fwd_speed" min="0" step="0.1" max="30" shortname="max_fwd_speed"/>
+        <dl_setting var="max_airspeed_am7" min="0" step="0.1" max="30" shortname="max_airspeed_am7"/>
+        <dl_setting var="min_fwd_speed" min="-30" step="0.1" max="0" shortname="min_fwd_speed"/>
+        <dl_setting var="max_lat_speed" min="0" step="0.1" max="10" shortname="max_lat_speed"/>
+        <dl_setting var="max_vert_speed" min="0" step="0.1" max="10" shortname="max_vert_speed"/>
+        <dl_setting var="max_fwd_acc" min="0" step="0.1" max="10" shortname="max_fwd_acc"/>
+        <dl_setting var="min_fwd_acc" min="-10" step="0.1" max="0" shortname="min_fwd_acc"/>
+        <dl_setting var="max_lat_acc" min="0" step="0.1" max="10" shortname="max_lat_acc"/>
+        <dl_setting var="max_vert_acc" min="0" step="0.1" max="10" shortname="max_vert_acc"/>
+
       </dl_settings>
     </dl_settings>
   </settings>

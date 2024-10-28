@@ -34,5 +34,9 @@
 extern float min_lidar_alt;
 extern float time_tolerance_land;
 extern float az_tolerance_land;
+extern float min_lidar_alt_ground_detect; 
 
 extern uint8_t detect_ground_on_landing(void); 
+extern void detect_ground_on_landing_am7_init(void);
+
+#endif // GROUND_DETECT_AM7_H

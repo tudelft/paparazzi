@@ -29,7 +29,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include "modules/core/abi.h"
-#include "modules/sensors/serial_act_t4.c"
+#include "modules/sensors/serial_act_t4.h"
 #include "generated/flight_plan.h"
 #include "state.h"
 
@@ -46,8 +46,7 @@ float last_ts = 0;
 static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((aligned));   
 
 //Filters variables: 
-float tau_motor_filter, tau_body_rates_filter; 
-float motor_1_rad_s_filtered, motor_2_rad_s_filtered, motor_3_rad_s_filtered, motor_4_rad_s_filtered;
+float tau_body_rates_filter; 
 float p_filtered, q_filtered, r_filtered, p_old, q_old, r_old;
 Butterworth2LowPass body_p_dot_second_order_filter;
 Butterworth2LowPass body_q_dot_second_order_filter;
@@ -55,9 +54,9 @@ Butterworth2LowPass body_r_dot_second_order_filter;
 float p_dot_filtered, q_dot_filtered, r_dot_filtered;
 
 //Struct to store the received data from the other modules:
-am7_data_t received_am7_data, my_am7_data; 
+struct am7_data_t received_am7_data, my_am7_data; 
 //Assign default am7_data_t structure, to use in case no module sends data:
-am7_data_t default_am7_data = {
+struct am7_data_t default_am7_data = {
     .packet_timestamp = 0,
     //Pseudocontrols:
     .pseudocontrol_ax = 0,
@@ -85,10 +84,10 @@ am7_data_t default_am7_data = {
 float w_mot_const, w_mot_speed, w_el_const, w_el_speed, w_az_const, w_az_speed, w_theta_const, w_theta_speed, w_phi_const, w_phi_speed, w_ail_const, w_ail_speed;
 float w_dv_1, w_dv_2, w_dv_3, w_dv_4, w_dv_5, w_dv_6;
 float gamma_quadratic_du;
-bool gains_changed_app = false, gains_changed_cruise = false; 
+static bool gains_changed_app = false, gains_changed_cruise = false; 
 
 //Decision variables and miscellaneous: 
-int failure_mode = 0;
+uint8_t failure_mode = 0;
 float aoa_protection_speed, transition_speed, min_speed_transition, ref_speed_transition, k_gain_airspeed; 
 float vert_acc_margin = AM7_SETTINGS_VERT_ACC_MARGIN;
 float K_T_airspeed = AM7_SETTINGS_VEHICLE_MOTOR_K_T_AIRSPEED; 
@@ -313,7 +312,7 @@ static void get_lidar_alt(uint8_t sender_id __attribute__((unused)), uint32_t ti
 }
 
 /*Assign the data to the struct and prepare extra_data_out array: */
-void assign_am7_data(){ 
+void assign_am7_data(void){ 
 
     //First, retrieve the data from the other modules and assign the values to the myam7_data_out struct:
     //If the command is older than 0.5 seconds, then use the default command:
@@ -339,20 +338,20 @@ void assign_am7_data(){
     myam7_data_out.desired_phi_value_int = (int16_t) (my_am7_data.desired_phi_rad * 1e2 * 180/M_PI);
     
 
-    //Add the data retrived from the FBW module, eventually filtered (RPM): 
-    myam7_data_out.motor_1_state_int = (int16_t) (motor_1_rad_s_filtered * 1e1);
-    myam7_data_out.motor_2_state_int = (int16_t) (motor_2_rad_s_filtered * 1e1);
-    myam7_data_out.motor_3_state_int = (int16_t) (motor_3_rad_s_filtered * 1e1);
-    myam7_data_out.motor_4_state_int = (int16_t) (motor_4_rad_s_filtered * 1e1);
-    myam7_data_out.el_1_state_int = (int16_t) (ActStates.el_1_angle_deg_corrected * 1e2);
-    myam7_data_out.el_2_state_int = (int16_t) (ActStates.el_2_angle_deg_corrected * 1e2);
-    myam7_data_out.el_3_state_int = (int16_t) (ActStates.el_3_angle_deg_corrected * 1e2);
-    myam7_data_out.el_4_state_int = (int16_t) (ActStates.el_4_angle_deg_corrected * 1e2);
-    myam7_data_out.az_1_state_int = (int16_t) (ActStates.az_1_angle_deg_corrected * 1e2);
-    myam7_data_out.az_2_state_int = (int16_t) (ActStates.az_2_angle_deg_corrected * 1e2);
-    myam7_data_out.az_3_state_int = (int16_t) (ActStates.az_3_angle_deg_corrected * 1e2);
-    myam7_data_out.az_4_state_int = (int16_t) (ActStates.az_4_angle_deg_corrected * 1e2);
-    myam7_data_out.ailerons_state_int = (int16_t) ((ActStates.flaperon_left_angle_deg - ActStates.flaperon_right_angle_deg)/2 * 1e2);
+    //Add the data retrived from the FBW module: 
+    myam7_data_out.motor_1_state_int = (int16_t) (get_act_states_T4()->motor_1_rad_s_filt * 1e1);
+    myam7_data_out.motor_2_state_int = (int16_t) (get_act_states_T4()->motor_2_rad_s_filt * 1e1);
+    myam7_data_out.motor_3_state_int = (int16_t) (get_act_states_T4()->motor_3_rad_s_filt * 1e1);
+    myam7_data_out.motor_4_state_int = (int16_t) (get_act_states_T4()->motor_4_rad_s_filt * 1e1);
+    myam7_data_out.el_1_state_int = (int16_t) (get_act_states_T4()->el_1_angle_deg_corrected * 1e2);
+    myam7_data_out.el_2_state_int = (int16_t) (get_act_states_T4()->el_2_angle_deg_corrected * 1e2);
+    myam7_data_out.el_3_state_int = (int16_t) (get_act_states_T4()->el_3_angle_deg_corrected * 1e2);
+    myam7_data_out.el_4_state_int = (int16_t) (get_act_states_T4()->el_4_angle_deg_corrected * 1e2);
+    myam7_data_out.az_1_state_int = (int16_t) (get_act_states_T4()->az_1_angle_deg_corrected * 1e2);
+    myam7_data_out.az_2_state_int = (int16_t) (get_act_states_T4()->az_2_angle_deg_corrected * 1e2);
+    myam7_data_out.az_3_state_int = (int16_t) (get_act_states_T4()->az_3_angle_deg_corrected * 1e2);
+    myam7_data_out.az_4_state_int = (int16_t) (get_act_states_T4()->az_4_angle_deg_corrected * 1e2);
+    myam7_data_out.ailerons_state_int = (int16_t) ((get_act_states_T4()->flaperon_left_angle_deg - get_act_states_T4()->flaperon_right_angle_deg)/2 * 1e2);
 
     //Add states retrieved from autopilot functions or from the filters: 
     myam7_data_out.theta_state_int = (int16_t) (stateGetNedToBodyEulers_f()->theta * 1e2 * 180/M_PI);
@@ -459,7 +458,7 @@ void assign_am7_data(){
 
     extra_data_out[73] = disable_acc_decrement_inner_loop;
     extra_data_out[74] = AM7_SETTINGS_INDI_SECOND_ORDER_CUTOFF_RAD_S;
-    extra_data_out[75] = max_airspeed;
+    extra_data_out[75] = max_airspeed_am7;
     extra_data_out[76] = vert_acc_margin;
 
     extra_data_out[77] = power_cd_0;
@@ -505,12 +504,7 @@ void assign_am7_data(){
 }
 
 /*Update the filters: */
-void update_am7_filters(){
-    //Update RPM filters:
-    motor_1_rad_s_filtered = motor_1_rad_s_filtered + tau_motor_filter*(ActStates.motor_1_state - motor_1_rad_s_filtered);
-    motor_2_rad_s_filtered = motor_2_rad_s_filtered + tau_motor_filter*(ActStates.motor_2_state - motor_2_rad_s_filtered);
-    motor_3_rad_s_filtered = motor_3_rad_s_filtered + tau_motor_filter*(ActStates.motor_3_state - motor_3_rad_s_filtered);
-    motor_4_rad_s_filtered = motor_4_rad_s_filtered + tau_motor_filter*(ActStates.motor_4_state - motor_4_rad_s_filtered);
+void update_am7_filters(void){
     //Update body rates filters:
     p_filtered = p_filtered + tau_body_rates_filter*(stateGetBodyRates_f()->p - p_filtered);
     q_filtered = q_filtered + tau_body_rates_filter*(stateGetBodyRates_f()->q - q_filtered);
@@ -530,7 +524,7 @@ void update_am7_filters(){
 }
 
 /*Send the message over serial to the Raspberry pi: */
-void send_am7_packet_over_serial(){
+void send_am7_packet_over_serial(void){
     //Increase the counter to track the sending messages:
     myam7_data_out.rolling_msg_out = extra_data_out[sending_msg_id];
     myam7_data_out.rolling_msg_out_id = sending_msg_id;
@@ -555,9 +549,8 @@ void send_am7_packet_over_serial(){
 }
 
 /*Update the tfmini lidar through the am7 module: */
-void tfmini_lidar_update(){
+void tfmini_lidar_update(void){
     int16_t raw_value_lidar_cm = myam7_data_in.lidar_value_cm;
-    int16_t raw_value_lidar_strength = myam7_data_in.lidar_strength;
     if(raw_value_lidar_cm >= 0){
         // compensate AGL measurement for body rotation
         float phi = stateGetNedToBodyEulers_f()->phi;
@@ -571,7 +564,7 @@ void tfmini_lidar_update(){
 }
 
 /*Update the gains and weights based on the approach state: */
-void update_gains_weights(){
+void update_gains_weights(void){
     //Assign gains according to the approach state: 
     if(approach_state && gains_changed_app == false){
         //Booleans to avoid changing the gains multiple times, to allow the sliders to be used:
@@ -637,9 +630,9 @@ void update_gains_weights(){
 }
 
 /*Update the external waypoints: from the readings of the SIXDOF and the ARUCO */
-void update_external_WP(){
+void update_external_WP(void){
     //Retrieve the position of the beacons and update the waypoints: 
-    struct EnuCoor_f target_pos_sixdof = {myam7_data_in_local.sixdof_NED_pos_y, myam7_data_in_local.sixdof_NED_pos_x, -myam7_data_in_local.sixdof_NED_pos_z + alt_offset_beacon}; 
+    struct EnuCoor_f target_pos_sixdof = {myam7_data_in.sixdof_NED_pos_y, myam7_data_in.sixdof_NED_pos_x, -myam7_data_in.sixdof_NED_pos_z + alt_offset_beacon}; 
     waypoint_set_enu(WP_SIXDOF, &target_pos_sixdof); 
     // Send to the GCS that the waypoint has been moved
     static uint8_t wp_id = WP_SIXDOF;
@@ -651,7 +644,7 @@ void update_external_WP(){
     });
 
     //Do the same for the aruco marker: 
-    struct EnuCoor_f target_pos_aruco = {myam7_data_in_local.aruco_NED_pos_y, myam7_data_in_local.aruco_NED_pos_x, -myam7_data_in_local.aruco_NED_pos_z + alt_offset_beacon};
+    struct EnuCoor_f target_pos_aruco = {myam7_data_in.aruco_NED_pos_y, myam7_data_in.aruco_NED_pos_x, -myam7_data_in.aruco_NED_pos_z + alt_offset_beacon};
     waypoint_set_enu(WP_ARUCO, &target_pos_aruco);
     static uint8_t wp_id_aruco = WP_ARUCO;
     RunOnceEvery(AM7_FREQUENCY / 2.0f, { //Update ARUCO waypoint every 0.5 seconds
@@ -663,7 +656,7 @@ void update_external_WP(){
 }
 
 /*Routine to be called repetitively: */
-void am7_routine(){ 
+void am7_routine(void){ 
     //Update tfmini lidar though the am7 module:
     #if USE_AM7_TFMINI_LIDAR
     tfmini_lidar_update();
@@ -681,12 +674,12 @@ void am7_routine(){
 }
 
 /*Function call to report the am7 data in to external modules: */
-static inline struct am7_data_in * get_am7_data_in(void){
+inline struct am7_data_in * get_am7_data_in(void){
     return &myam7_data_in;
 }
 
 /*Init the serial communication, filters and the ABI bind message: */
-void am7_init() 
+void am7_init(void) 
 {
     //Init variables for communication:
     buffer_in_counter = 0;
@@ -703,23 +696,18 @@ void am7_init()
     #endif
 
     //Init filters: 
-    motor_1_rad_s_first_order_filtered = 0;
-    motor_2_rad_s_first_order_filtered = 0;
-    motor_3_rad_s_first_order_filtered = 0;
-    motor_4_rad_s_first_order_filtered = 0;
-    body_p_first_order_filtered = 0;
-    body_q_first_order_filtered = 0;
-    body_r_first_order_filtered = 0;
+    p_filtered = 0;
+    q_filtered = 0;
+    r_filtered = 0;
     init_butterworth_2_low_pass(&body_p_dot_second_order_filter, 1.0f /(float) AM7_SETTINGS_BODY_RATES_DOT_SECOND_ORDER_CUTOFF_RAD_S, 1.0f/(float) AM7_FREQUENCY, 0.0);
     init_butterworth_2_low_pass(&body_q_dot_second_order_filter, 1.0f /(float) AM7_SETTINGS_BODY_RATES_DOT_SECOND_ORDER_CUTOFF_RAD_S, 1.0f/(float) AM7_FREQUENCY, 0.0);
     init_butterworth_2_low_pass(&body_r_dot_second_order_filter, 1.0f /(float) AM7_SETTINGS_BODY_RATES_DOT_SECOND_ORDER_CUTOFF_RAD_S, 1.0f/(float) AM7_FREQUENCY, 0.0);
     //Calculate first order filter coefficients from the periodic frequency of the module and the desired cutoff frequency:
-    tau_motor_filter = 1.0f - exp(-AM7_SETTINGS_RPM_FIRST_ORDER_CUTOFF_RAD_S/AM7_FREQUENCY);
     tau_body_rates_filter = 1.0f - exp(-AM7_SETTINGS_BODY_RATES_FIRST_ORDER_CUTOFF_RAD_S/AM7_FREQUENCY); 
 }
 
 /* We need to wait for incoming messages */
-void am7_event()
+void am7_event(void)
 {
     if(fabs(get_sys_time_float() - last_ts) > 5){
         received_packets = 0;

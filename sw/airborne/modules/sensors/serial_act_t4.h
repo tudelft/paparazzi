@@ -158,16 +158,16 @@ struct __attribute__((__packed__)) ActStates_t {
     float az_2_angle_deg_corrected;
     float az_3_angle_deg_corrected;
     float az_4_angle_deg_corrected;
-    float flap_right_angle_deg_corrected;
-    float flap_left_angle_deg_corrected;
-}
+    float flaperon_right_angle_deg_corrected;
+    float flaperon_left_angle_deg_corrected;
+};
 
 extern void serial_act_t4_init(void);
 extern void serial_act_t4_event(void);
 extern void serial_act_t4_control(void);
 
 //Variable to request the ActStates: 
-static inline struct ActStates_t * get_act_states_T4(void);
+struct ActStates_t * get_act_states_T4(void);
 
 //Sliders variables
 extern float K_indi_rad_s_dshot; 

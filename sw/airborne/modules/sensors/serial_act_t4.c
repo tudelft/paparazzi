@@ -51,7 +51,7 @@ struct ActCmd_t act_cmd_default = {
     .motor_1_cmd = 0,
     .motor_2_cmd = 0,
     .motor_3_cmd = 0,
-    .motor_4_cmd = 0
+    .motor_4_cmd = 0,
     .servo_el_1_angle_deg = 0,
     .servo_el_2_angle_deg = 0,
     .servo_el_3_angle_deg = 0,
@@ -75,10 +75,10 @@ struct ActCmd_t ActCmd, received_ActCmd;
 struct ActStates_t ActStates;
 
 //Variables for outbound packet
-static abi_event SERIAL_ACT_T4_CMD;
+static abi_event SERIAL_ACT_T4_CMD_ev;
 uint8_t serial_act_t4_out_msg_id;
 struct serial_act_t4_out myserial_act_t4_out;
-
+float serial_act_t4_extra_data_out[255]__attribute__((aligned));
 
 //Variables for inbound packet
 struct serial_act_t4_in myserial_act_t4_in;
@@ -234,7 +234,7 @@ static void data_serial_act_t4_cmd(uint8_t sender_id __attribute__((unused)), st
 }
 
 //Send the data over serial to the Teensy 4.0:
-void serial_act_t4_data_send()
+void serial_act_t4_data_send(void)
 {
     //Increase the counter to track the sending messages:
     myserial_act_t4_out.rolling_msg_out = serial_act_t4_extra_data_out[serial_act_t4_out_msg_id];
@@ -261,13 +261,13 @@ void serial_act_t4_data_send()
 }
 
 //Init the serial communication, rpm control variables and the ABI bind message:
-void serial_act_t4_init() 
+void serial_act_t4_init(void) 
 {
     serial_act_t4_buf_in_cnt = 0;
     serial_act_t4_out_msg_id = 0;
 
     //Init abi bind msg:
-    AbiBindMsgSERIAL_ACT_T4_CMD(ABI_BROADCAST, &SERIAL_ACT_T4_CMD, data_serial_act_t4_cmd);
+    AbiBindMsgSERIAL_ACT_T4_CMD(ABI_BROADCAST, &SERIAL_ACT_T4_CMD_ev, data_serial_act_t4_cmd);
 
     //Init filters and cmd elements: 
     for(int i = 0; i < 4; i++){
@@ -292,7 +292,7 @@ void serial_act_t4_init()
 }
 
 //Parse message and fill up the ActStates struct so other modules can make use of it: 
-void serial_act_t4_parse_msg_in()
+void serial_act_t4_parse_msg_in(void)
 {
     memcpy(&myserial_act_t4_in, &serial_act_t4_msg_buf_in[1], sizeof(struct serial_act_t4_in)); //Starting from 1 to avoid reading the starting byte
     //Assign the rolling message:
@@ -314,25 +314,25 @@ void serial_act_t4_parse_msg_in()
     ActStates.az_4_angle_deg = (float) -(myserial_act_t4_in.servo_3_angle_int/100.0f)/FBW_T4_K_RATIO_GEAR_AZ;
     ActStates.flaperon_right_angle_deg = (float) -myserial_act_t4_in.servo_9_angle_int/100.0f;
     ActStates.flaperon_left_angle_deg = (float) myserial_act_t4_in.servo_10_angle_int/100.0f;
-    ActStates.el_1_angle_deg_corrected = ActStates.el_1_angle_deg + FBW_T4_EL_1_ZERO_VALUE * 180/M_PI;
-    ActStates.el_2_angle_deg_corrected = ActStates.el_2_angle_deg + FBW_T4_EL_2_ZERO_VALUE * 180/M_PI;
-    ActStates.el_3_angle_deg_corrected = ActStates.el_3_angle_deg + FBW_T4_EL_3_ZERO_VALUE * 180/M_PI;
-    ActStates.el_4_angle_deg_corrected = ActStates.el_4_angle_deg + FBW_T4_EL_4_ZERO_VALUE * 180/M_PI;
-    ActStates.az_1_angle_deg_corrected = ActStates.az_1_angle_deg + FBW_T4_AZ_1_ZERO_VALUE * 180/M_PI;
-    ActStates.az_2_angle_deg_corrected = ActStates.az_2_angle_deg + FBW_T4_AZ_2_ZERO_VALUE * 180/M_PI;
-    ActStates.az_3_angle_deg_corrected = ActStates.az_3_angle_deg + FBW_T4_AZ_3_ZERO_VALUE * 180/M_PI;
-    ActStates.az_4_angle_deg_corrected = ActStates.az_4_angle_deg + FBW_T4_AZ_4_ZERO_VALUE * 180/M_PI;
+    ActStates.el_1_angle_deg_corrected = ActStates.el_1_angle_deg + FBW_T4_SERVO_EL_1_ZERO_VALUE * 180/M_PI;
+    ActStates.el_2_angle_deg_corrected = ActStates.el_2_angle_deg + FBW_T4_SERVO_EL_2_ZERO_VALUE * 180/M_PI;
+    ActStates.el_3_angle_deg_corrected = ActStates.el_3_angle_deg + FBW_T4_SERVO_EL_3_ZERO_VALUE * 180/M_PI;
+    ActStates.el_4_angle_deg_corrected = ActStates.el_4_angle_deg + FBW_T4_SERVO_EL_4_ZERO_VALUE * 180/M_PI;
+    ActStates.az_1_angle_deg_corrected = ActStates.az_1_angle_deg + FBW_T4_SERVO_AZ_1_ZERO_VALUE * 180/M_PI;
+    ActStates.az_2_angle_deg_corrected = ActStates.az_2_angle_deg + FBW_T4_SERVO_AZ_2_ZERO_VALUE * 180/M_PI;
+    ActStates.az_3_angle_deg_corrected = ActStates.az_3_angle_deg + FBW_T4_SERVO_AZ_3_ZERO_VALUE * 180/M_PI;
+    ActStates.az_4_angle_deg_corrected = ActStates.az_4_angle_deg + FBW_T4_SERVO_AZ_4_ZERO_VALUE * 180/M_PI;
     ActStates.flaperon_right_angle_deg_corrected = ActStates.flaperon_right_angle_deg;
     ActStates.flaperon_left_angle_deg_corrected = ActStates.flaperon_left_angle_deg;
 }
 
 //Add the act states function callback: 
-static inline struct ActStates_t * get_act_states_T4(void){
+inline struct ActStates_t * get_act_states_T4(void){
     return &ActStates;
 }
 
 // Event checking if serial packet are available on the bus
-void serial_act_t4_event()
+void serial_act_t4_event(void)
 {
     if(fabs(get_sys_time_float() - serial_act_t4_last_ts) > 5){ //Reset received packets to zero every 5 second to update the statistics
         serial_act_t4_received_packets = 0;
@@ -364,7 +364,7 @@ void serial_act_t4_event()
 }
 
 // Function to implement RPM control and to prepare the structure to send
-void serial_act_t4_control()
+void serial_act_t4_control(void)
 {
     //If the command is older than 0.5 seconds, then use the default command:
     if(get_sys_time_float() - received_ActCmd.cmd_timestamp > 0.5f){
@@ -470,22 +470,22 @@ void serial_act_t4_control()
     Bound(ActCmd.servo_az_2_angle_deg, FBW_T4_SERVO_AZ_MIN_ANGLE_DEG, FBW_T4_SERVO_AZ_MAX_ANGLE_DEG);
     Bound(ActCmd.servo_az_3_angle_deg, FBW_T4_SERVO_AZ_MIN_ANGLE_DEG, FBW_T4_SERVO_AZ_MAX_ANGLE_DEG);
     Bound(ActCmd.servo_az_4_angle_deg, FBW_T4_SERVO_AZ_MIN_ANGLE_DEG, FBW_T4_SERVO_AZ_MAX_ANGLE_DEG);
-    Bound(ActCmd.flaperon_right_angle_deg, FBW_T4_SERVO_FLAPERON_RIGHT_MIN_ANGLE_DEG, FBW_T4_SERVO_FLAPERON_RIGHT_MAX_ANGLE_DEG);
-    Bound(ActCmd.flaperon_left_angle_deg, FBW_T4_SERVO_FLAPERON_LEFT_MIN_ANGLE_DEG, FBW_T4_SERVO_FLAPERON_LEFT_MAX_ANGLE_DEG);
+    Bound(ActCmd.flaperon_right_angle_deg, FBW_T4_FLAPERON_RIGHT_MIN_ANGLE_DEG, FBW_T4_FLAPERON_RIGHT_MAX_ANGLE_DEG);
+    Bound(ActCmd.flaperon_left_angle_deg, FBW_T4_FLAPERON_LEFT_MIN_ANGLE_DEG, FBW_T4_FLAPERON_LEFT_MAX_ANGLE_DEG);
 
     //Copy the servo arm command to the output struct:
     myserial_act_t4_out.servo_arm_int = ActCmd.servo_arm;
 
     //Assign angles to servos, and add zeros to the angles: 
-    myserial_act_t4_out.servo_2_cmd_int = (int16_t) (ActCmd.servo_el_1_angle_deg * FBW_T4_K_RATIO_GEAR_EL - FBW_T4_EL_1_ZERO_VALUE * 180/M_PI) * 100;
-    myserial_act_t4_out.servo_6_cmd_int = (int16_t) (ActCmd.servo_el_2_angle_deg * FBW_T4_K_RATIO_GEAR_EL - FBW_T4_EL_2_ZERO_VALUE * 180/M_PI) * 100;
-    myserial_act_t4_out.servo_8_cmd_int = (int16_t) (ActCmd.servo_el_3_angle_deg * FBW_T4_K_RATIO_GEAR_EL - FBW_T4_EL_3_ZERO_VALUE * 180/M_PI) * 100;
-    myserial_act_t4_out.servo_4_cmd_int = (int16_t) (ActCmd.servo_el_4_angle_deg * FBW_T4_K_RATIO_GEAR_EL - FBW_T4_EL_4_ZERO_VALUE * 180/M_PI) * 100;
+    myserial_act_t4_out.servo_2_cmd_int = (int16_t) (ActCmd.servo_el_1_angle_deg * FBW_T4_K_RATIO_GEAR_EL - FBW_T4_SERVO_EL_1_ZERO_VALUE * 180/M_PI) * 100;
+    myserial_act_t4_out.servo_6_cmd_int = (int16_t) (ActCmd.servo_el_2_angle_deg * FBW_T4_K_RATIO_GEAR_EL - FBW_T4_SERVO_EL_2_ZERO_VALUE * 180/M_PI) * 100;
+    myserial_act_t4_out.servo_8_cmd_int = (int16_t) (ActCmd.servo_el_3_angle_deg * FBW_T4_K_RATIO_GEAR_EL - FBW_T4_SERVO_EL_3_ZERO_VALUE * 180/M_PI) * 100;
+    myserial_act_t4_out.servo_4_cmd_int = (int16_t) (ActCmd.servo_el_4_angle_deg * FBW_T4_K_RATIO_GEAR_EL - FBW_T4_SERVO_EL_4_ZERO_VALUE * 180/M_PI) * 100;
 
-    myserial_act_t4_out.servo_1_cmd_int = (int16_t) (ActCmd.servo_az_1_angle_deg * FBW_T4_K_RATIO_GEAR_AZ - FBW_T4_AZ_1_ZERO_VALUE * 180/M_PI) * 100;
-    myserial_act_t4_out.servo_5_cmd_int = (int16_t) (ActCmd.servo_az_2_angle_deg * FBW_T4_K_RATIO_GEAR_AZ - FBW_T4_AZ_2_ZERO_VALUE * 180/M_PI) * 100;
-    myserial_act_t4_out.servo_7_cmd_int = (int16_t) (ActCmd.servo_az_3_angle_deg * FBW_T4_K_RATIO_GEAR_AZ - FBW_T4_AZ_3_ZERO_VALUE * 180/M_PI) * 100;
-    myserial_act_t4_out.servo_3_cmd_int = (int16_t) (ActCmd.servo_az_4_angle_deg * FBW_T4_K_RATIO_GEAR_AZ - FBW_T4_AZ_4_ZERO_VALUE * 180/M_PI) * 100;
+    myserial_act_t4_out.servo_1_cmd_int = (int16_t) (ActCmd.servo_az_1_angle_deg * FBW_T4_K_RATIO_GEAR_AZ - FBW_T4_SERVO_AZ_1_ZERO_VALUE * 180/M_PI) * 100;
+    myserial_act_t4_out.servo_5_cmd_int = (int16_t) (ActCmd.servo_az_2_angle_deg * FBW_T4_K_RATIO_GEAR_AZ - FBW_T4_SERVO_AZ_2_ZERO_VALUE * 180/M_PI) * 100;
+    myserial_act_t4_out.servo_7_cmd_int = (int16_t) (ActCmd.servo_az_3_angle_deg * FBW_T4_K_RATIO_GEAR_AZ - FBW_T4_SERVO_AZ_3_ZERO_VALUE * 180/M_PI) * 100;
+    myserial_act_t4_out.servo_3_cmd_int = (int16_t) (ActCmd.servo_az_4_angle_deg * FBW_T4_K_RATIO_GEAR_AZ - FBW_T4_SERVO_AZ_4_ZERO_VALUE * 180/M_PI) * 100;
 
     //For the PWM angles, the zeros are handled in the Teensy 4.0 code, so the angles are directly assigned:
     myserial_act_t4_out.servo_9_cmd_int = (int16_t) (ActCmd.flaperon_right_angle_deg) * 100;

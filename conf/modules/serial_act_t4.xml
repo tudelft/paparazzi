@@ -43,8 +43,10 @@
     <file name="serial_act_t4.h"/>
   </header>
   <init fun="serial_act_t4_init()"/>
-  <event fun="serial_act_t4_event()"/>
   <periodic fun="serial_act_t4_control()" autorun="TRUE" freq="SERIAL_ACT_T4_FREQUENCY"/>
+  <event fun="serial_act_t4_event()"/>
+  
+
   <makefile>
     <!-- Configure default UART port and baudrate-->
     <configure name="SERIAL_ACT_T4_PORT" default="UART4" case="upper|lower"/>

@@ -192,7 +192,7 @@ struct __attribute__((__packed__)) am7_data_t {
 };
 
 // Function to retrieve the data received from the other modules:
-static inline struct am7_data_in * get_am7_data_in(void);
+struct am7_data_in * get_am7_data_in(void);
 
 // Settings of AM7 module:
 extern float aoa_protection_speed, transition_speed, min_speed_transition, ref_speed_transition, k_gain_airspeed, vert_acc_margin, K_T_airspeed; 
@@ -201,7 +201,7 @@ extern float w_dv_1, w_dv_2, w_dv_3, w_dv_4, w_dv_5, w_dv_6;
 extern float gamma_quadratic_du;
 extern int disable_acc_decrement_inner_loop, use_u_init_outer_loop, use_u_init_inner_loop; 
 extern int single_loop_controller, use_new_aero_model, use_received_ang_ref_in_inner_loop;
-extern int failure_mode; 
+extern uint8_t failure_mode; 
 
 //Sixdof system: 
 extern int sixdof_mode;
@@ -222,6 +222,7 @@ extern float prop_theta;
 
 extern void am7_init(void);
 extern void am7_event(void);
+extern void am7_routine(void); 
 
 #endif
 

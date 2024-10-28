@@ -24,11 +24,11 @@
  * Control laws for Overactuated Vehicle
  */
 #include "generated/airframe.h"
+#include "state.h"
+#include "paparazzi.h"
 #include "overactuated_mixing.h"
 #include <math.h>
 #include "modules/radio_control/radio_control.h"
-#include "state.h"
-#include "paparazzi.h"
 #include "modules/datalink/telemetry.h"
 #include "modules/nav/waypoints.h"
 #include "generated/flight_plan.h"
@@ -78,6 +78,7 @@ float euler_cmd_PID[3];
 //Sideslip gains
 float K_beta = AM7_SETTINGS_K_BETA;
 float extra_lat_gain = 0.15; 
+float overestimation_coeff; 
 
 //Variables for the NONLINEAR_CA_DEBUG message: 
 float feed_fwd_term_yaw, feed_back_term_yaw;
@@ -116,54 +117,54 @@ float time_of_speed_setpoint_approach = 0;
 //Gains and limits:
 int approach_state = 1; 
 struct PID_over pid_gains_over = {
-    .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
-        OVERACTUATED_MIXING_PID_P_GAIN_THETA,
-        OVERACTUATED_MIXING_PID_P_GAIN_PSI_AZ,
+    .p = { OVERACTUATED_GAINS_PID_P_GAIN_PHI,
+        OVERACTUATED_GAINS_PID_P_GAIN_THETA,
+        OVERACTUATED_GAINS_PID_P_GAIN_PSI_AZ,
     },
-    .i = { OVERACTUATED_MIXING_PID_I_GAIN_PHI,
-        OVERACTUATED_MIXING_PID_I_GAIN_THETA,
-        OVERACTUATED_MIXING_PID_I_GAIN_PSI_AZ,
+    .i = { OVERACTUATED_GAINS_PID_I_GAIN_PHI,
+        OVERACTUATED_GAINS_PID_I_GAIN_THETA,
+        OVERACTUATED_GAINS_PID_I_GAIN_PSI_AZ,
     },
-    .d = { OVERACTUATED_MIXING_PID_D_GAIN_PHI,
-        OVERACTUATED_MIXING_PID_D_GAIN_THETA,
-        OVERACTUATED_MIXING_PID_D_GAIN_PSI_AZ,
+    .d = { OVERACTUATED_GAINS_PID_D_GAIN_PHI,
+        OVERACTUATED_GAINS_PID_D_GAIN_THETA,
+        OVERACTUATED_GAINS_PID_D_GAIN_PSI_AZ,
     } 
 };
 struct PD_indi_over cruise_gains = {
-    .p = { OVERACTUATED_MIXING_CRUISE_GAIN_P,
-        OVERACTUATED_MIXING_CRUISE_GAIN_Q,
-        OVERACTUATED_MIXING_CRUISE_GAIN_R,
-        OVERACTUATED_MIXING_CRUISE_GAIN_X,
-        OVERACTUATED_MIXING_CRUISE_GAIN_Y,
-        OVERACTUATED_MIXING_CRUISE_GAIN_Z
+    .p = { OVERACTUATED_GAINS_CRUISE_GAIN_P,
+        OVERACTUATED_GAINS_CRUISE_GAIN_Q,
+        OVERACTUATED_GAINS_CRUISE_GAIN_R,
+        OVERACTUATED_GAINS_CRUISE_GAIN_X,
+        OVERACTUATED_GAINS_CRUISE_GAIN_Y,
+        OVERACTUATED_GAINS_CRUISE_GAIN_Z
     },
-    .d = { OVERACTUATED_MIXING_CRUISE_GAIN_P_DOT,
-        OVERACTUATED_MIXING_CRUISE_GAIN_Q_DOT,
-        OVERACTUATED_MIXING_CRUISE_GAIN_R_DOT,
-        OVERACTUATED_MIXING_CRUISE_GAIN_X_DOT,
-        OVERACTUATED_MIXING_CRUISE_GAIN_Y_DOT,
-        OVERACTUATED_MIXING_CRUISE_GAIN_Z_DOT
+    .d = { OVERACTUATED_GAINS_CRUISE_GAIN_P_DOT,
+        OVERACTUATED_GAINS_CRUISE_GAIN_Q_DOT,
+        OVERACTUATED_GAINS_CRUISE_GAIN_R_DOT,
+        OVERACTUATED_GAINS_CRUISE_GAIN_X_DOT,
+        OVERACTUATED_GAINS_CRUISE_GAIN_Y_DOT,
+        OVERACTUATED_GAINS_CRUISE_GAIN_Z_DOT
     } 
 };
 struct PD_indi_over app_gains = {
-    .p = { OVERACTUATED_MIXING_APP_GAIN_P,
-        OVERACTUATED_MIXING_APP_GAIN_Q,
-        OVERACTUATED_MIXING_APP_GAIN_R,
-        OVERACTUATED_MIXING_APP_GAIN_X,
-        OVERACTUATED_MIXING_APP_GAIN_Y,
-        OVERACTUATED_MIXING_APP_GAIN_Z
+    .p = { OVERACTUATED_GAINS_APP_GAIN_P,
+        OVERACTUATED_GAINS_APP_GAIN_Q,
+        OVERACTUATED_GAINS_APP_GAIN_R,
+        OVERACTUATED_GAINS_APP_GAIN_X,
+        OVERACTUATED_GAINS_APP_GAIN_Y,
+        OVERACTUATED_GAINS_APP_GAIN_Z
     },
-    .d = { OVERACTUATED_MIXING_APP_GAIN_P_DOT,
-        OVERACTUATED_MIXING_APP_GAIN_Q_DOT,
-        OVERACTUATED_MIXING_APP_GAIN_R_DOT,
-        OVERACTUATED_MIXING_APP_GAIN_X_DOT,
-        OVERACTUATED_MIXING_APP_GAIN_Y_DOT,
-        OVERACTUATED_MIXING_APP_GAIN_Z_DOT
+    .d = { OVERACTUATED_GAINS_APP_GAIN_P_DOT,
+        OVERACTUATED_GAINS_APP_GAIN_Q_DOT,
+        OVERACTUATED_GAINS_APP_GAIN_R_DOT,
+        OVERACTUATED_GAINS_APP_GAIN_X_DOT,
+        OVERACTUATED_GAINS_APP_GAIN_Y_DOT,
+        OVERACTUATED_GAINS_APP_GAIN_Z_DOT
     } 
 };
 struct PD_indi_over active_gains;
-bool gains_changed_app = false, gains_changed_cruise = false;
-float max_fwd_speed, max_airspeed, min_fwd_speed, max_lat_speed, max_vert_speed;
+static bool gains_changed_app = false, gains_changed_cruise = false;
+float max_fwd_speed, max_airspeed_am7, min_fwd_speed, max_lat_speed, max_vert_speed;
 float max_fwd_acc, min_fwd_acc, max_lat_acc, max_vert_acc;
        
 
@@ -216,14 +217,18 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
                                          & ground_detected_am_telemetry,
                                          & beta_deg,
                                          & pos_vect[0], & pos_vect[1], & pos_vect[2],
-                                         & speed_vect[0], & speed_vect[1], & speed_vect[2],
+                                         & speed_vect_control_rf[0], & speed_vect_control_rf[1], & speed_vect_control_rf[2],
                                          & accel_vect_filt_control_rf[0], & accel_vect_filt_control_rf[1], & accel_vect_filt_control_rf[2],
                                          & rate_vect_dot_filt[0], & rate_vect_dot_filt[1], & rate_vect_dot_filt[2],
                                          & rate_vect_filt[0], & rate_vect_filt[1], & rate_vect_filt[2],
                                          & euler_vect[0], & euler_vect[1], & euler_vect[2],
                                          & euler_setpoint[0], & euler_setpoint[1], & euler_setpoint[2],
-                                         & pos_setpoint[0], & pos_setpoint[1], & pos_setpoint[2]);
-
+                                         & rate_setpoint[0], & rate_setpoint[1], & rate_setpoint[2],
+                                         & acc_setpoint[3], & acc_setpoint[4], & acc_setpoint[5],
+                                         & pos_setpoint[0], & pos_setpoint[1], & pos_setpoint[2], 
+                                         & speed_setpoint_control_rf[0], & speed_setpoint_control_rf[1], & speed_setpoint_control_rf[2],
+                                         & acc_setpoint[0], & acc_setpoint[1], & acc_setpoint[2],
+                                         & feed_fwd_term_yaw, & feed_back_term_yaw);
 }
 
 /**
@@ -275,7 +280,7 @@ float compute_yaw_rate_turn(void){
 
         float accel_y_filt_corrected = 0;
 
-        float local_gain_K_T = 1 - airspeed*AM7_SETTINGS_VEHICLE_MOTOR_K_T_AIRSPEED ;
+        float local_gain_K_T = 1 - airspeed*K_T_airspeed ;
         Bound( local_gain_K_T, 0.1, 1);
         float K_T_airspeed_corrected = local_gain_K_T * AM7_SETTINGS_VEHICLE_MOTOR_K_T_OMEGASQ;
 
@@ -495,8 +500,10 @@ void assign_variables(void){
     }
     update_butterworth_2_low_pass(&accel_body_y_filter, ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y));
     //Filter body rates with first order dedicated filter
-    float tau_first_order_body_rates = 1.0f - exp(-AM7_SETTINGS_BODY_RATES_FIRST_ORDER_CUTOFF_RAD_S/OVERACTUATED_MIXING_FREQUENCY); 
-    rate_vect_filt[i] = rate_vect_filt[i] + tau_first_order_body_rates * (rate_vect[i] - rate_vect_filt[i]);
+    float tau_first_order_body_rates = 1.0f - exp(-AM7_SETTINGS_BODY_RATES_FIRST_ORDER_CUTOFF_RAD_S/OVERACTUATED_MIXING_FREQUENCY);
+    for(int i = 0; i < 3; i++){
+        rate_vect_filt[i] = rate_vect_filt[i] + tau_first_order_body_rates * (rate_vect[i] - rate_vect_filt[i]);
+    }
 
     //Assign gains according to the approach state: 
     if(approach_state == 1 && gains_changed_app == false){
@@ -505,7 +512,7 @@ void assign_variables(void){
         gains_changed_cruise = false;
         active_gains = app_gains;
         max_fwd_speed = AM7_SETTINGS_LIMITS_APP_MAX_FWD_SPEED;
-        max_airspeed = AM7_SETTINGS_LIMITS_APP_MAX_AIRSPEED;
+        max_airspeed_am7 = AM7_SETTINGS_LIMITS_APP_MAX_AIRSPEED;
         min_fwd_speed = AM7_SETTINGS_LIMITS_APP_MIN_FWD_SPEED;
         max_lat_speed = AM7_SETTINGS_LIMITS_APP_MAX_LAT_SPEED;
         max_vert_speed = AM7_SETTINGS_LIMITS_APP_MAX_VERT_SPEED;
@@ -521,7 +528,7 @@ void assign_variables(void){
         gains_changed_cruise = true;
         active_gains = cruise_gains;
         max_fwd_speed = AM7_SETTINGS_LIMITS_CRUISE_MAX_FWD_SPEED;
-        max_airspeed = AM7_SETTINGS_LIMITS_CRUISE_MAX_AIRSPEED;
+        max_airspeed_am7 = AM7_SETTINGS_LIMITS_CRUISE_MAX_AIRSPEED;
         min_fwd_speed = AM7_SETTINGS_LIMITS_CRUISE_MIN_FWD_SPEED;
         max_lat_speed = AM7_SETTINGS_LIMITS_CRUISE_MAX_LAT_SPEED;
         max_vert_speed = AM7_SETTINGS_LIMITS_CRUISE_MAX_VERT_SPEED;
@@ -627,22 +634,23 @@ void overactuated_mixing_run(void)
                          pid_gains_over.d.psi * rate_vect_filt[2];
 
         //Bound euler angle orders:
-        BoundAbs(euler_cmd_PID[0], OVERACTUATED_GAINS_MAX_ROLL_ORDER_DSHOT);
-        BoundAbs(euler_cmd_PID[1], OVERACTUATED_GAINS_MAX_PITCH_ORDER_DSHOT);
-        BoundAbs(euler_cmd_PID[2], OVERACTUATED_GAINS_PID_MAX_YAW_ORDER_AZ);
+        BoundAbs(euler_cmd_PID[0], OVERACTUATED_GAINS_PID_MAX_ROLL_ORDER_DSHOT);
+        BoundAbs(euler_cmd_PID[1], OVERACTUATED_GAINS_PID_MAX_PITCH_ORDER_DSHOT);
+        BoundAbs(euler_cmd_PID[2], OVERACTUATED_GAINS_PID_MAX_YAW_ORDER_AZ_DEG);
         
 
         act_cmd_to_t4.cmd_timestamp = get_sys_time_float();
-        if(autopilot.motors_on)
+        if(autopilot.motors_on){
             act_cmd_to_t4.motor_arm = 1;
             act_cmd_to_t4.servo_arm = 1;
+        }
         else{
             act_cmd_to_t4.motor_arm = 0;
             act_cmd_to_t4.servo_arm = 0;
         }
         act_cmd_to_t4.motor_control_mode = 1;
         //Fill the motor commands:
-        float K_ppz_to_dshot = (float) FBW_T4_MAX_DSHOT_VALUE/MAX_PPRZ;
+        float K_ppz_to_dshot = (float) FBW_T4_MAX_DSHOT_CMD/MAX_PPRZ;
         act_cmd_to_t4.motor_1_cmd = (float) (euler_cmd_PID[0] + euler_cmd_PID[1]) + radio_control.values[RADIO_THROTTLE] * K_ppz_to_dshot;
         act_cmd_to_t4.motor_2_cmd = (float) (-euler_cmd_PID[0] + euler_cmd_PID[1]) + radio_control.values[RADIO_THROTTLE] * K_ppz_to_dshot;
         act_cmd_to_t4.motor_3_cmd = (float) (-euler_cmd_PID[0] - euler_cmd_PID[1]) + radio_control.values[RADIO_THROTTLE] * K_ppz_to_dshot;
@@ -666,9 +674,9 @@ void overactuated_mixing_run(void)
         act_cmd_to_t4.flaperon_right_angle_deg = 0;
         act_cmd_to_t4.flaperon_left_angle_deg = 0;
         //Submit the actuator commands to the teensy module: 
-        AbiSendMsgACT_T4_CMD(ABI_ACT_T4_CMD_ID, &act_cmd_to_t4);
+        AbiSendMsgSERIAL_ACT_T4_CMD(ABI_SERIAL_ACT_T4_CMD_ID, &act_cmd_to_t4);
     }
-    // Manual INDI control
+    // Manual INDI nonlinear control
     else if(autopilot.mode == AP_MODE_HOVER_DIRECT){
         if(control_mode_ovc_vehicle != 2){
             //INITIALIZATION OF THE HOVER DIRECT MODE:  
@@ -702,7 +710,7 @@ void overactuated_mixing_run(void)
         data_to_am7_module.psi_dot_cmd_rad_s = euler_error[2];
 
         //Apply euler angle gains: 
-        float gain_to_speed_constant = 1 - airspeed * K_d_speed; 
+        float gain_to_speed_constant = 1 - airspeed * k_gain_airspeed; 
         Bound(gain_to_speed_constant, 0.1, 1);
         float phi_dot = euler_error[0]  * active_gains.p.phi * gain_to_speed_constant;
         float theta_dot = euler_error[1]  * active_gains.p.theta * gain_to_speed_constant;
@@ -735,7 +743,7 @@ void overactuated_mixing_run(void)
         }
         
         //Bound speeds based on the maximum airspeed or maximum ground speed:
-        float max_Vx_airspeed = max_V_control_from_max_airspeed(airspeed, speed_vect_control_rf[0], max_airspeed);
+        float max_Vx_airspeed = max_V_control_from_max_airspeed(airspeed, speed_vect_control_rf[0], max_airspeed_am7);
         Bound(speed_setpoint_control_rf[0],min_fwd_speed,Min(max_fwd_speed,max_Vx_airspeed));
         BoundAbs(speed_setpoint_control_rf[1],max_lat_speed);
         BoundAbs(speed_setpoint_control_rf[2],max_vert_speed);
@@ -762,9 +770,10 @@ void overactuated_mixing_run(void)
 
         //Produce commands based on what the am7 returned: 
         act_cmd_to_t4.cmd_timestamp = get_sys_time_float();
-        if(autopilot.motors_on)
+        if(autopilot.motors_on){
             act_cmd_to_t4.motor_arm = 1;
             act_cmd_to_t4.servo_arm = 1;
+        }
         else{
             act_cmd_to_t4.motor_arm = 0;
             act_cmd_to_t4.servo_arm = 0;
@@ -774,23 +783,23 @@ void overactuated_mixing_run(void)
         act_cmd_to_t4.motor_2_cmd = (float) get_am7_data_in()->motor_2_cmd_int * 0.1f;
         act_cmd_to_t4.motor_3_cmd = (float) get_am7_data_in()->motor_3_cmd_int * 0.1f;
         act_cmd_to_t4.motor_4_cmd = (float) get_am7_data_in()->motor_4_cmd_int * 0.1f;
-        act_cmd_to_t4.servo_el_1_angle_deg = (float) get_am7_data_in()->servo_el_1_cmd_int * 0.01f;
-        act_cmd_to_t4.servo_el_2_angle_deg = (float) get_am7_data_in()->servo_el_2_cmd_int * 0.01f;
-        act_cmd_to_t4.servo_el_3_angle_deg = (float) get_am7_data_in()->servo_el_3_cmd_int * 0.01f;
-        act_cmd_to_t4.servo_el_4_angle_deg = (float) get_am7_data_in()->servo_el_4_cmd_int * 0.01f;
-        act_cmd_to_t4.servo_az_1_angle_deg = (float) get_am7_data_in()->servo_az_1_cmd_int * 0.01f;
-        act_cmd_to_t4.servo_az_2_angle_deg = (float) get_am7_data_in()->servo_az_2_cmd_int * 0.01f;
-        act_cmd_to_t4.servo_az_3_angle_deg = (float) get_am7_data_in()->servo_az_3_cmd_int * 0.01f;
-        act_cmd_to_t4.servo_az_4_angle_deg = (float) get_am7_data_in()->servo_az_4_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_el_1_angle_deg = (float) get_am7_data_in()->el_1_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_el_2_angle_deg = (float) get_am7_data_in()->el_2_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_el_3_angle_deg = (float) get_am7_data_in()->el_3_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_el_4_angle_deg = (float) get_am7_data_in()->el_4_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_az_1_angle_deg = (float) get_am7_data_in()->az_1_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_az_2_angle_deg = (float) get_am7_data_in()->az_2_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_az_3_angle_deg = (float) get_am7_data_in()->az_3_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_az_4_angle_deg = (float) get_am7_data_in()->az_4_cmd_int * 0.01f;
         act_cmd_to_t4.flaperon_right_angle_deg = (float) -get_am7_data_in()->ailerons_cmd_int * 0.01f;
         act_cmd_to_t4.flaperon_left_angle_deg = (float) get_am7_data_in()->ailerons_cmd_int * 0.01f;
         //Submit the actuator commands to the teensy module: 
-        AbiSendMsgACT_T4_CMD(ABI_ACT_T4_CMD_ID, &act_cmd_to_t4);
+        AbiSendMsgSERIAL_ACT_T4_CMD(ABI_SERIAL_ACT_T4_CMD_ID, &act_cmd_to_t4);
         
         //Submit the data to the AM7 module:
         AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &data_to_am7_module);
     }
-    // NAV INDI control
+    // NAV INDI nonlinear control
     else if(autopilot.mode == AP_MODE_NAV){ 
         if(control_mode_ovc_vehicle != 3){
             //INITIALIZATION OF THE NAVIGATION MODE:  
@@ -845,7 +854,7 @@ void overactuated_mixing_run(void)
         data_to_am7_module.psi_dot_cmd_rad_s = euler_error[2];
 
         //Apply euler angle gains: 
-        float gain_to_speed_constant = 1 - airspeed * K_d_speed; 
+        float gain_to_speed_constant = 1 - airspeed * k_gain_airspeed; 
         Bound(gain_to_speed_constant, 0.1, 1);
         float phi_dot = euler_error[0]  * active_gains.p.phi * gain_to_speed_constant;
         float theta_dot = euler_error[1]  * active_gains.p.theta * gain_to_speed_constant;
@@ -904,7 +913,7 @@ void overactuated_mixing_run(void)
             }
         #endif
         //Bound speeds based on the maximum airspeed or maximum ground speed:
-        float max_Vx_airspeed = max_V_control_from_max_airspeed(airspeed, speed_vect_control_rf[0], max_airspeed);
+        float max_Vx_airspeed = max_V_control_from_max_airspeed(airspeed, speed_vect_control_rf[0], max_airspeed_am7);
         Bound(speed_setpoint_control_rf[0],min_fwd_speed,Min(max_fwd_speed,max_Vx_airspeed));
         BoundAbs(speed_setpoint_control_rf[1],max_lat_speed);
         BoundAbs(speed_setpoint_control_rf[2],max_vert_speed);
@@ -931,9 +940,10 @@ void overactuated_mixing_run(void)
 
         //Produce commands based on what the am7 returned: 
         act_cmd_to_t4.cmd_timestamp = get_sys_time_float();
-        if(autopilot.motors_on)
+        if(autopilot.motors_on){
             act_cmd_to_t4.motor_arm = 1;
             act_cmd_to_t4.servo_arm = 1;
+        }
         else{
             act_cmd_to_t4.motor_arm = 0;
             act_cmd_to_t4.servo_arm = 0;
@@ -943,19 +953,19 @@ void overactuated_mixing_run(void)
         act_cmd_to_t4.motor_2_cmd = (float) get_am7_data_in()->motor_2_cmd_int * 0.1f;
         act_cmd_to_t4.motor_3_cmd = (float) get_am7_data_in()->motor_3_cmd_int * 0.1f;
         act_cmd_to_t4.motor_4_cmd = (float) get_am7_data_in()->motor_4_cmd_int * 0.1f;
-        act_cmd_to_t4.servo_el_1_angle_deg = (float) get_am7_data_in()->servo_el_1_cmd_int * 0.01f;
-        act_cmd_to_t4.servo_el_2_angle_deg = (float) get_am7_data_in()->servo_el_2_cmd_int * 0.01f;
-        act_cmd_to_t4.servo_el_3_angle_deg = (float) get_am7_data_in()->servo_el_3_cmd_int * 0.01f;
-        act_cmd_to_t4.servo_el_4_angle_deg = (float) get_am7_data_in()->servo_el_4_cmd_int * 0.01f;
-        act_cmd_to_t4.servo_az_1_angle_deg = (float) get_am7_data_in()->servo_az_1_cmd_int * 0.01f;
-        act_cmd_to_t4.servo_az_2_angle_deg = (float) get_am7_data_in()->servo_az_2_cmd_int * 0.01f;
-        act_cmd_to_t4.servo_az_3_angle_deg = (float) get_am7_data_in()->servo_az_3_cmd_int * 0.01f;
-        act_cmd_to_t4.servo_az_4_angle_deg = (float) get_am7_data_in()->servo_az_4_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_el_1_angle_deg = (float) get_am7_data_in()->el_1_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_el_2_angle_deg = (float) get_am7_data_in()->el_2_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_el_3_angle_deg = (float) get_am7_data_in()->el_3_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_el_4_angle_deg = (float) get_am7_data_in()->el_4_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_az_1_angle_deg = (float) get_am7_data_in()->az_1_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_az_2_angle_deg = (float) get_am7_data_in()->az_2_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_az_3_angle_deg = (float) get_am7_data_in()->az_3_cmd_int * 0.01f;
+        act_cmd_to_t4.servo_az_4_angle_deg = (float) get_am7_data_in()->az_4_cmd_int * 0.01f;
         act_cmd_to_t4.flaperon_right_angle_deg = (float) -get_am7_data_in()->ailerons_cmd_int * 0.01f;
         act_cmd_to_t4.flaperon_left_angle_deg = (float) get_am7_data_in()->ailerons_cmd_int * 0.01f;
         
         //Submit the actuator commands to the teensy module: 
-        AbiSendMsgACT_T4_CMD(ABI_ACT_T4_CMD_ID, &act_cmd_to_t4);
+        AbiSendMsgSERIAL_ACT_T4_CMD(ABI_SERIAL_ACT_T4_CMD_ID, &act_cmd_to_t4);
 
         //Submit the data to the AM7 module:
         AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &data_to_am7_module);
