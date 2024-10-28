@@ -37,7 +37,7 @@
 
 //Define the baudrate for the module, the starting byte and the maximum frequency of the message output
 #define START_BYTE 0x9B
-#define BAUDRATE_AM7 921600
+#define BAUDRATE_AM7 1500000
 #define MAX_FREQUENCY_MSG_OUT 500
 
 // Define the baudrate of the TF mini lidar sensor
