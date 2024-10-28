@@ -3484,6 +3484,13 @@
       <field name="data" type="uint8[]"/>
     </message>
 
+    <message name="IMCU_FALCON" id="117">
+      <field name="pos" type="float[3]" unit="m"/>
+      <field name="quat" type="float[4]"/>
+      <field name="pos_var" type="float[3]" unit="m^2"/>
+      <field name="quat_var" type="float[3]" unit="rad^2"/>
+    </message>
+
   </msg_class>
 
 </protocol>

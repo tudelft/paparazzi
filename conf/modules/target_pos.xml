@@ -33,6 +33,7 @@
   </header>
   <init fun="target_pos_init()"/>
   <datalink message="TARGET_POS" fun="target_parse_target_pos(buf)"/>
+  <datalink class="intermcu" message="IMCU_FALCON" fun="target_pos_parse_falcon(buf)"/>
   <makefile>
     <file name="target_pos.c"/>
   </makefile>

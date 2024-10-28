@@ -64,6 +64,24 @@
 #endif
 #endif
 
+/* Optitrack X offset from CoG position in meters */
+#ifndef INS_EKF2_OPTITRACK_POS_X
+#define INS_EKF2_OPTITRACK_POS_X 0
+#endif
+PRINT_CONFIG_VAR(INS_EKF2_OPTITRACK_POS_X)
+
+/* Optitrack Y offset from CoG position in meters */
+#ifndef INS_EKF2_OPTITRACK_POS_Y
+#define INS_EKF2_OPTITRACK_POS_Y 0
+#endif
+PRINT_CONFIG_VAR(INS_EKF2_OPTITRACK_POS_Y)
+
+/* Optitrack Z offset from CoG position in meters */
+#ifndef INS_EKF2_OPTITRACK_POS_Z
+#define INS_EKF2_OPTITRACK_POS_Z 0
+#endif
+PRINT_CONFIG_VAR(INS_EKF2_OPTITRACK_POS_Z)
+
 /** The EKF2 fusion mode setting */
 #ifndef INS_EKF2_FUSION_MODE
 #define INS_EKF2_FUSION_MODE (MASK_USE_GPS)
@@ -563,6 +581,13 @@ void ins_ekf2_init(void)
     INS_EKF2_FLOW_POS_X,
     INS_EKF2_FLOW_POS_Y,
     INS_EKF2_FLOW_POS_Z
+  };
+
+  /* Set the External Vision (Optitrack) offset from CoG position in xyz (m) */
+  ekf_params->ev_pos_body = {
+    INS_EKF2_OPTITRACK_POS_X,
+    INS_EKF2_OPTITRACK_POS_Y,
+    INS_EKF2_OPTITRACK_POS_Z
   };
 
   /* Set range as default AGL measurement if possible */
