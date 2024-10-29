@@ -163,12 +163,12 @@
     <define name="SERVO_EL_1_ZERO_VALUE" value="0.35" unit="deg"/>
     <define name="SERVO_EL_2_ZERO_VALUE" value="-3.69" unit="deg"/>
     <define name="SERVO_EL_3_ZERO_VALUE" value="-6.06" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="-1.14" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="-2.54" unit="deg"/>
     <!-- Serial bus servos neutral values (azimuth) -->
     <define name="SERVO_AZ_1_ZERO_VALUE" value="9.14" unit="deg"/>
     <define name="SERVO_AZ_2_ZERO_VALUE" value="0.26" unit="deg"/>
     <define name="SERVO_AZ_3_ZERO_VALUE" value="9.05" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="-7.67" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="6.44" unit="deg"/>
     <!-- pwm servo 9 settings-->
     <define name="SERVO_9_MIN_PWM" value="2246" />   
     <define name="SERVO_9_MAX_PWM" value="843" />   
