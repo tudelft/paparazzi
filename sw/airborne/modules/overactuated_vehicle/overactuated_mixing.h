@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/>.
  */
 /**
- * @file "modules/overactuated_vehicle/overactuated_vehicle.h"
+ * @file "modules/overactuated_vehicle/overactuated_mixing.h"
  * @author Alessandro Mancinelli
  * Control laws for Overactuated Vehicle
  */
@@ -89,6 +89,8 @@ struct ship_info_msg {
 extern struct PID_over pid_gains_over;
 extern struct PD_indi_over active_gains;
 
+extern struct ActCmd_t act_cmd_to_t4;
+extern struct am7_data_t data_to_am7_module;
 
 // Variables for slider
 extern float K_beta;

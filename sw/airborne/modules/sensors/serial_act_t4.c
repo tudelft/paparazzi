@@ -320,8 +320,8 @@ void serial_act_t4_parse_msg_in(void)
     ActStates.el_4_angle_deg_corrected = ActStates.el_4_angle_deg + FBW_T4_SERVO_EL_4_ZERO_VALUE * 180/M_PI;
     ActStates.az_1_angle_deg_corrected = ActStates.az_1_angle_deg + FBW_T4_SERVO_AZ_1_ZERO_VALUE * 180/M_PI;
     ActStates.az_2_angle_deg_corrected = ActStates.az_2_angle_deg + FBW_T4_SERVO_AZ_2_ZERO_VALUE * 180/M_PI;
-    ActStates.az_3_angle_deg_corrected = ActStates.az_3_angle_deg + FBW_T4_SERVO_AZ_3_ZERO_VALUE * 180/M_PI;
-    ActStates.az_4_angle_deg_corrected = ActStates.az_4_angle_deg + FBW_T4_SERVO_AZ_4_ZERO_VALUE * 180/M_PI;
+    ActStates.az_3_angle_deg_corrected = ActStates.az_3_angle_deg - FBW_T4_SERVO_AZ_3_ZERO_VALUE * 180/M_PI;
+    ActStates.az_4_angle_deg_corrected = ActStates.az_4_angle_deg - FBW_T4_SERVO_AZ_4_ZERO_VALUE * 180/M_PI;
     ActStates.flaperon_right_angle_deg_corrected = ActStates.flaperon_right_angle_deg;
     ActStates.flaperon_left_angle_deg_corrected = ActStates.flaperon_left_angle_deg;
 }

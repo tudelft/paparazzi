@@ -32,6 +32,7 @@
 #include "modules/sensors/serial_act_t4.h"
 #include "generated/flight_plan.h"
 #include "state.h"
+#include "modules/overactuated_vehicle/overactuated_mixing.h"
 
 static abi_event AM7_receive_from_modules;
 uint8_t sending_msg_id;

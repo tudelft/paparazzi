@@ -697,6 +697,28 @@ void overactuated_mixing_run(void)
         if(abs(radio_control.values[RADIO_YAW]) >= 100){
             yaw_rate_setpoint_manual = AM7_SETTINGS_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / MAX_PPRZ;
         }
+
+        #ifdef HEADING_CONTROL_NONLINEAR_CA
+            if (abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw ) {
+                euler_setpoint[2] = euler_setpoint[2] + (AM7_SETTINGS_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / MAX_PPRZ) / OVERACTUATED_MIXING_FREQUENCY;
+                //Correct the setpoint in order to always be within -pi and pi
+                if (euler_setpoint[2] > M_PI) {
+                    euler_setpoint[2] -= 2 * M_PI;
+                }
+                else if (euler_setpoint[2] < -M_PI) {
+                    euler_setpoint[2] += 2 * M_PI;
+                }
+            }
+            yaw_rate_setpoint_manual = euler_setpoint[2] - euler_vect[2];
+            //Add logic for the psi control:
+            if (yaw_rate_setpoint_manual > M_PI) {
+                yaw_rate_setpoint_manual -= 2 * M_PI;
+            }
+            else if (yaw_rate_setpoint_manual < -M_PI) {
+                yaw_rate_setpoint_manual += 2 * M_PI;
+            }
+        #endif
+
         euler_error[2] = yaw_rate_setpoint_manual;
         #if !FULLY_MANUAL_HEADING
             euler_error[2] += compute_yaw_rate_turn();
@@ -851,6 +873,27 @@ void overactuated_mixing_run(void)
             }
         #endif
 
+        #ifdef HEADING_CONTROL_NONLINEAR_CA
+            if (abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw ) {
+                euler_setpoint[2] = euler_setpoint[2] + (AM7_SETTINGS_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / MAX_PPRZ) / OVERACTUATED_MIXING_FREQUENCY;
+                //Correct the setpoint in order to always be within -pi and pi
+                if (euler_setpoint[2] > M_PI) {
+                    euler_setpoint[2] -= 2 * M_PI;
+                }
+                else if (euler_setpoint[2] < -M_PI) {
+                    euler_setpoint[2] += 2 * M_PI;
+                }
+            }
+            yaw_rate_setpoint_manual = euler_setpoint[2] - euler_vect[2];
+            //Add logic for the psi control:
+            if (yaw_rate_setpoint_manual > M_PI) {
+                yaw_rate_setpoint_manual -= 2 * M_PI;
+            }
+            else if (yaw_rate_setpoint_manual < -M_PI) {
+                yaw_rate_setpoint_manual += 2 * M_PI;
+            }
+        #endif
+
         euler_error[2] = yaw_rate_setpoint_manual;
         #if !FULLY_MANUAL_HEADING
             euler_error[2] += compute_yaw_rate_turn();
@@ -976,6 +1019,7 @@ void overactuated_mixing_run(void)
         //Submit the data to the AM7 module:
         AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &data_to_am7_module);
     }
+    // IN CASE WE ARE IN AN UNEXPECTED MODE, WE KILL THE MOTORS
     else{
         //Prepare the actuator commands to be kill by default: 
         act_cmd_to_t4.cmd_timestamp = get_sys_time_float();

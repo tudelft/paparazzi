@@ -25,7 +25,7 @@
       <define name="INS_EKF2_GYRO_ID"     value="IMU_CUBE1_ID"/>
       <define name="INS_EKF2_ACCEL_ID"    value="IMU_CUBE1_ID"/>
       <define name="INS_EKF2_MAG_ID"      value="MAG_RM3100_SENDER_ID"/>
-      <define name="MULTI_GPS_MODE"       value="GPS_MODE_PRIMARY"/>
+      <!-- <define name="MULTI_GPS_MODE"       value="GPS_MODE_PRIMARY"/> -->
 
       <define name="INS_EKF2_OPTITRACK" value="TRUE"/>
 
@@ -162,13 +162,13 @@
     <!-- Serial bus servos neutral values (elevator) -->
     <define name="SERVO_EL_1_ZERO_VALUE" value="0.35" unit="deg"/>
     <define name="SERVO_EL_2_ZERO_VALUE" value="-3.69" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="-6.06" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="-2.54" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-7.47" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="-1.14" unit="deg"/>
     <!-- Serial bus servos neutral values (azimuth) -->
     <define name="SERVO_AZ_1_ZERO_VALUE" value="9.14" unit="deg"/>
     <define name="SERVO_AZ_2_ZERO_VALUE" value="0.26" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="9.05" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="6.44" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="2.76" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="9.87" unit="deg"/>
     <!-- pwm servo 9 settings-->
     <define name="SERVO_9_MIN_PWM" value="2246" />   
     <define name="SERVO_9_MAX_PWM" value="843" />   
@@ -372,11 +372,11 @@
     <define name="K_GAIN_AIRSPEED_APP" value="0.005" />
     <!-- angular_ref -->
     <define name="APP_GAIN_P" value="2"/>
-    <define name="APP_GAIN_Q" value="2"/>
-    <define name="APP_GAIN_R" value="2"/>
+    <define name="APP_GAIN_Q" value="1"/>
+    <define name="APP_GAIN_R" value="1"/>
     <define name="APP_GAIN_P_DOT" value="4"/>
-    <define name="APP_GAIN_Q_DOT" value="4"/>
-    <define name="APP_GAIN_R_DOT" value="2"/>
+    <define name="APP_GAIN_Q_DOT" value="2"/>
+    <define name="APP_GAIN_R_DOT" value="1"/>
     <!-- linear ref -->
     <define name="APP_GAIN_X" value="1"/>
     <define name="APP_GAIN_Y" value="1"/>
@@ -570,6 +570,7 @@
     <define name="USE_SIXDOF_EXT_HEADING" value="TRUE"/>
     <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/>
     <define name="FULLY_MANUAL_HEADING" value="TRUE"/>
+    <define name="HEADING_CONTROL_NONLINEAR_CA" value="TRUE"/>
 
     <!-- Basic navigation settings -->
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>
