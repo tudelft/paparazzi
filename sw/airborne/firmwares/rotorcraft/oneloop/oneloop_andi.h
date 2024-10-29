@@ -31,6 +31,7 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_ref_quat_int.h"
 #include "generated/airframe.h"
 #include "filters/low_pass_filter.h"
+#include "filters/notch_filter_float.h"
 
 #ifndef ANDI_NUM_ACT
 #define ANDI_NUM_ACT COMMANDS_NB_REAL
@@ -149,9 +150,20 @@ struct Gains2ndOrder{
   float k3;
 };
 
-struct CF_t {
+struct CF4_t {
   float tau;
   float freq;
+  float freq_set;
+  float model;
+  Butterworth4LowPass model_filt;
+  float feedback;
+  Butterworth4LowPass feedback_filt;
+  float out;
+};
+struct CF2_t {
+  float tau;
+  float freq;
+  float freq_set;
   float model;
   Butterworth2LowPass model_filt;
   float feedback;
@@ -160,16 +172,28 @@ struct CF_t {
 };
 
 struct Oneloop_CF_t {
-  struct CF_t p;
-  struct CF_t q;
-  struct CF_t r;
-  struct CF_t p_dot;
-  struct CF_t q_dot;
-  struct CF_t r_dot;
-  struct CF_t ax;
-  struct CF_t ay;
-  struct CF_t az;
+  struct CF2_t p;
+  struct CF2_t q;
+  struct CF2_t r;
+  struct CF4_t p_dot;
+  struct CF4_t q_dot;
+  struct CF2_t r_dot;
+  struct CF2_t ax;
+  struct CF2_t ay;
+  struct CF2_t az;
 };
+extern struct Oneloop_CF_t cf;
+struct notch_axis_t{
+  struct SecondOrderNotchFilter filter;
+  float freq;
+  float bandwidth;
+};
+struct Oneloop_notch_t{
+  struct notch_axis_t roll;
+  struct notch_axis_t pitch;
+  struct notch_axis_t yaw;
+};
+
 extern int16_t temp_pitch;
 /*Declaration of Reference Model and Error Controller Gains*/
 extern struct PolePlacement p_att_e;

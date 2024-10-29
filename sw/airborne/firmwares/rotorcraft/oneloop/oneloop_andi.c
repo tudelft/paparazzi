@@ -84,6 +84,7 @@
 #include "modules/actuators/actuators.h"
 #include "modules/core/abi.h"
 #include "filters/low_pass_filter.h"
+#include "filters/notch_filter_float.h"
 #include "math/wls/wls_alloc.h"
 #include "modules/nav/nav_rotorcraft_hybrid.h"
 #include "firmwares/rotorcraft/navigation.h"
@@ -154,6 +155,10 @@ float oneloop_andi_filt_cutoff_r = ONELOOP_ANDI_FILT_CUTOFF_R;
 float oneloop_andi_filt_cutoff_r = 20.0;
 #endif
 
+PRINT_CONFIG_VAR(ONELOOP_ANDI_FILT_CUTOFF);
+PRINT_CONFIG_VAR(ONELOOP_ANDI_FILT_CUTOFF_Q);
+PRINT_CONFIG_VAR(ONELOOP_ANDI_FILT_CUTOFF_P);
+PRINT_CONFIG_VAR(ONELOOP_ANDI_FILT_CUTOFF_R);
 #ifndef MAX_R 
 float max_r = RadOfDeg(120.0);
 #else
@@ -315,8 +320,12 @@ float oneloop_andi_sideslip(void);
 void  reshape_wind(void);
 void  chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
 void  chirp_call(bool* chirp_on, bool* chirp_first_call, float* t_0_chirp, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
-void  init_cf(struct CF_t *cf);
+void  init_cf2(struct CF2_t *cf, float fc);
+void  init_cf4(struct CF4_t *cf, float fc);
 void  init_all_cf(void);
+void  reinit_cf2(struct CF2_t *cf, bool reinit);
+void  reinit_cf4(struct CF4_t *cf, bool reinit);
+void  reinit_all_cf(bool reinit);
 
 /*Define general struct of the Oneloop ANDI controller*/
 struct OneloopGeneral oneloop_andi;
@@ -402,7 +411,8 @@ static float Wu_backup[ANDI_NUM_ACT_TOT] = {1.0};
 #endif
 
 /*Complementary Filter Variables*/
-static struct Oneloop_CF_t cf;
+struct Oneloop_CF_t cf;
+static struct Oneloop_notch_t oneloop_notch; 
 
 /*Chirp test Variables*/
 bool  chirp_on            = false;
@@ -446,8 +456,7 @@ float ratio_vn_v[ANDI_OUTPUTS];
 /*Filters Initialization*/
 static Butterworth2LowPass filt_veloc_ned[3];                 // Low pass filter for velocity NED - oneloop_andi_filt_cutoff_a (tau_a)       
 static Butterworth2LowPass accely_filt;                       // Low pass filter for acceleration in y direction                - oneloop_andi_filt_cutoff (tau)
-static Butterworth2LowPass airspeed_filt;                     // Low pass filter for airspeed                                   - oneloop_andi_filt_cutoff (tau)
-
+static Butterworth2LowPass airspeed_filt;                     // Low pass filter for airspeed                                - oneloop_andi_filt_cutoff (tau)
 /* Define messages of the module*/
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -456,8 +465,8 @@ static void send_cf_oneloop(struct transport_tx *trans, struct link_device *dev)
   float temp_cf_p[5] = {cf.p.model,cf.p.model_filt.o[0],cf.p.feedback,cf.p.feedback_filt.o[0],cf.p.out};
   float temp_cf_q[5] = {cf.q.model,cf.q.model_filt.o[0],cf.q.feedback,cf.q.feedback_filt.o[0],cf.q.out};
   float temp_cf_r[5] = {cf.r.model,cf.r.model_filt.o[0],cf.r.feedback,cf.r.feedback_filt.o[0],cf.r.out};
-  float temp_cf_p_dot[5] = {cf.p_dot.model,cf.p_dot.model_filt.o[0],cf.p_dot.feedback,cf.p_dot.feedback_filt.o[0],cf.p_dot.out};
-  float temp_cf_q_dot[5] = {cf.q_dot.model,cf.q_dot.model_filt.o[0],cf.q_dot.feedback,cf.q_dot.feedback_filt.o[0],cf.q_dot.out};
+  float temp_cf_p_dot[5] = {cf.p_dot.model,cf.p_dot.model_filt.lp2.o[0],cf.p_dot.feedback,cf.p_dot.feedback_filt.lp2.o[0],cf.p_dot.out};
+  float temp_cf_q_dot[5] = {cf.q_dot.model,cf.q_dot.model_filt.lp2.o[0],cf.q_dot.feedback,cf.q_dot.feedback_filt.lp2.o[0],cf.q_dot.out};
   float temp_cf_r_dot[5] = {cf.r_dot.model,cf.r_dot.model_filt.o[0],cf.r_dot.feedback,cf.r_dot.feedback_filt.o[0],cf.r_dot.out};
   //float temp_cf_ax[5] = {cf.ax.model,cf.ax.model_filt.o[0],cf.ax.feedback,cf.ax.feedback_filt.o[0],cf.ax.out};
   //float temp_cf_ay[5] = {cf.ay.model,cf.ay.model_filt.o[0],cf.ay.feedback,cf.ay.feedback_filt.o[0],cf.ay.out};
@@ -1028,23 +1037,23 @@ void init_poles_att(void){
 void init_poles(void){
 
   // Attitude Controller Poles----------------------------------------------------------
-  float slow_pole = 15.1; // Pole of the slowest dynamics used in the attitude controller
+  float slow_pole = 22.0; // Pole of the slowest dynamics used in the attitude controller
 
-  p_att_e.omega_n = 4.50;
-  p_att_e.zeta    = 1.0;
-  p_att_e.p3      = slow_pole;
-
-  p_att_rm.omega_n = 4.71; // 10.0
+  p_att_rm.omega_n = 10.0; // 10.0 4.71
   p_att_rm.zeta    = 1.0;
   p_att_rm.p3      = p_att_rm.omega_n * p_att_rm.zeta;
 
-  p_head_e.omega_n = 1.80;
-  p_head_e.zeta    = 1.0;
-  p_head_e.p3      = slow_pole;
+  p_att_e.omega_n = ec_poles(p_att_rm.omega_n,  slow_pole, 1.28); //4.50;
+  p_att_e.zeta    = 1.0;
+  p_att_e.p3      = slow_pole;
 
-  p_head_rm.omega_n = 2.56; // 7.0
+  p_head_rm.omega_n = 7.0; // 7.0 2.56
   p_head_rm.zeta    = 1.0;
   p_head_rm.p3      = p_head_rm.omega_n * p_head_rm.zeta;
+
+  p_head_e.omega_n = ec_poles(p_head_rm.omega_n, slow_pole, 1.28); //1.80;
+  p_head_e.zeta    = 1.0;
+  p_head_e.p3      = slow_pole;
 
   act_dynamics[COMMAND_ROLL]  = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
   act_dynamics[COMMAND_PITCH] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
@@ -1079,6 +1088,7 @@ void init_controller(void){
   max_v_nav = nav_max_speed + max_wind;
   max_a_nav = nav_max_acceleration_sp;
   /*Some calculations in case new poles have been specified*/
+  init_poles_att();
   p_att_rm.p3  = p_att_rm.omega_n  * p_att_rm.zeta;
   p_pos_rm.p3  = p_pos_rm.omega_n  * p_pos_rm.zeta;
   p_alt_rm.p3  = p_alt_rm.omega_n  * p_alt_rm.zeta;
@@ -1102,6 +1112,7 @@ void init_controller(void){
   
   printf("Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
   printf("Attitude E Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
+  printf("Heading E Gains: %f %f %f\n", k_att_e.k1[2], k_att_e.k2[2], k_att_e.k3[2]);
   /*Heading Loop NAV*/
   k_att_e.k1[2]  = k_e_1_3_f_v2(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
   k_att_e.k2[2]  = k_e_2_3_f_v2(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
@@ -1175,81 +1186,112 @@ void init_controller(void){
   act_dynamics[COMMAND_ROLL]   = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
   act_dynamics[COMMAND_PITCH]  = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
 }
-
-/** @brief Initialize the Complementary Filters */
-void init_cf(struct CF_t *cf){
-  cf->freq     = 0.0;
+// Complementary Filters Functions -----------------------------------------------------------
+/** @brief Initialize the Complementary Filters 2nd Order Butterworth */
+void init_cf2(struct CF2_t *cf, float fc){
+  cf->freq     = fc;
+  cf->freq_set = fc;
+  cf->tau      = 1/(2*M_PI*cf->freq);
+  init_butterworth_2_low_pass(&cf->model_filt,    cf->tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
+  init_butterworth_2_low_pass(&cf->feedback_filt, cf->tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
   cf->model    = 0.0;
   cf->feedback = 0.0;
   cf->out      = 0.0;
 }
-void init_all_cf(void){
-  init_cf(&cf.ax);
-  init_cf(&cf.ay);
-  init_cf(&cf.az);
-  init_cf(&cf.p_dot);
-  init_cf(&cf.q_dot);
-  init_cf(&cf.r_dot);
-  init_cf(&cf.p);
-  init_cf(&cf.q);
-  init_cf(&cf.r);
+/** @brief  Initialize the Complementary Filters 4th Order Butterworth*/
+void init_cf4(struct CF4_t *cf, float fc){
+  cf->freq     = fc;
+  cf->freq_set = fc;
+  cf->tau      = 1/(2*M_PI*cf->freq);
+  init_butterworth_4_low_pass(&cf->model_filt,    cf->tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
+  init_butterworth_4_low_pass(&cf->feedback_filt, cf->tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
+  cf->model    = 0.0;
+  cf->feedback = 0.0;
+  cf->out      = 0.0;
 }
+/** @brief  Initialize all the Complementary Filters */
+void init_all_cf(void){
+  init_cf2(&cf.ax,    oneloop_andi_filt_cutoff_a);
+  init_cf2(&cf.ay,    oneloop_andi_filt_cutoff_a);
+  init_cf2(&cf.az,    oneloop_andi_filt_cutoff_a);
+  init_cf4(&cf.p_dot, 2.0);
+  init_cf4(&cf.q_dot, 3.5);
+  init_cf2(&cf.r_dot, oneloop_andi_filt_cutoff);
+  init_cf2(&cf.p,     oneloop_andi_filt_cutoff_p);
+  init_cf2(&cf.q,     oneloop_andi_filt_cutoff_q);
+  init_cf2(&cf.r,     oneloop_andi_filt_cutoff_r);
+}
+/** @brief Reinitialize 2nd Order CF if new frequency setting or if forced */
+void reinit_cf2(struct CF2_t *cf, bool reinit){
+  if(cf->freq != cf->freq_set || reinit){
+    cf->freq = cf->freq_set;
+    cf->tau = 1/(2*M_PI*cf->freq);
+    init_butterworth_2_low_pass(&cf->model_filt,    cf->tau, 1.0 / PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&cf->model_filt));
+    init_butterworth_2_low_pass(&cf->feedback_filt, cf->tau, 1.0 / PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&cf->feedback_filt));
+  }
+}
+/** @brief Reinitialize 4th Order CF if new frequency setting or if forced */
+void reinit_cf4(struct CF4_t *cf, bool reinit){
+  if(cf->freq != cf->freq_set || reinit){
+    cf->freq = cf->freq_set;
+    cf->tau = 1/(2*M_PI*cf->freq);
+    init_butterworth_4_low_pass(&cf->model_filt,    cf->tau, 1.0 / PERIODIC_FREQUENCY, get_butterworth_4_low_pass(&cf->model_filt));
+    init_butterworth_4_low_pass(&cf->feedback_filt, cf->tau, 1.0 / PERIODIC_FREQUENCY, get_butterworth_4_low_pass(&cf->feedback_filt));
+  }
+}
+/** @brief Reinitialize all the Complementary Filters */
+void reinit_all_cf(bool reinit){
+  reinit_cf2(&cf.ax,    reinit);
+  reinit_cf2(&cf.ay,    reinit);
+  reinit_cf2(&cf.az,    reinit);
+  reinit_cf4(&cf.p_dot, reinit);
+  reinit_cf4(&cf.q_dot, reinit);
+  reinit_cf2(&cf.r_dot, reinit);
+  reinit_cf2(&cf.p,     reinit);
+  reinit_cf2(&cf.q,     reinit);
+  reinit_cf2(&cf.r,     reinit);
+}
+//------------------------------------------------------------------------------------------
 /** @brief  Initialize the filters */
 void init_filter(void)
 {
-  init_all_cf();
-  // Calculate General Time Constants of the Filters
+  // Store Notch filter values
+#ifdef ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ
+  oneloop_notch.roll.freq = ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ,
+#else
+  oneloop_notch.roll.freq = 8.46,
+#endif
+#ifdef ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ
+  oneloop_notch.pitch.freq = ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ,
+#else
+  oneloop_notch.pitch.freq = 6.44,
+#endif
+#ifdef ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
+  oneloop_notch.yaw.freq = ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ,
+#else
+  oneloop_notch.yaw.freq = 17.90,
+#endif
+  oneloop_notch.roll.bandwidth  = 2.0;
+  oneloop_notch.pitch.bandwidth = 1.0;
+  oneloop_notch.yaw.bandwidth   = 4.0;
+  // Initialize Notch filters
+  notch_filter_init(&oneloop_notch.roll.filter, oneloop_notch.roll.freq, oneloop_notch.roll.bandwidth, PERIODIC_FREQUENCY);
+  notch_filter_init(&oneloop_notch.pitch.filter, oneloop_notch.pitch.freq, oneloop_notch.pitch.bandwidth, PERIODIC_FREQUENCY);
+  notch_filter_init(&oneloop_notch.yaw.filter, oneloop_notch.yaw.freq, oneloop_notch.yaw.bandwidth, PERIODIC_FREQUENCY);
+  // Filtering of the velocities 
   float tau   = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff);
-  float tau_a = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_a);
   float tau_v = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_v);
-  float tau_p = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_p);
-  float tau_q = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_q);
-  float tau_r = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_r);
-  float sample_time = 1.0 / PERIODIC_FREQUENCY;
-  // Store the important Time Constants for the Complementary Filters
-  cf.ax.tau    = tau_a;
-  cf.ay.tau    = tau_a;
-  cf.az.tau    = tau_a;
-  cf.p_dot.tau = tau;
-  cf.q_dot.tau = tau;
-  cf.r_dot.tau = tau;
-  cf.p.tau     = tau_p;
-  cf.q.tau     = tau_q;
-  cf.r.tau     = tau_r;
-  // Initialize the Low Pass Filters in the Complementary Filters
-  // Model Predictions
-  init_butterworth_2_low_pass(&cf.ax.model_filt,    cf.ax.tau,    sample_time, 0.0);
-  init_butterworth_2_low_pass(&cf.ay.model_filt,    cf.ay.tau,    sample_time, 0.0);
-  init_butterworth_2_low_pass(&cf.az.model_filt,    cf.az.tau,    sample_time, 0.0);
-  init_butterworth_2_low_pass(&cf.p_dot.model_filt, cf.p_dot.tau, sample_time, 0.0);
-  init_butterworth_2_low_pass(&cf.q_dot.model_filt, cf.q_dot.tau, sample_time, 0.0);
-  init_butterworth_2_low_pass(&cf.r_dot.model_filt, cf.r_dot.tau, sample_time, 0.0);
-  init_butterworth_2_low_pass(&cf.p.model_filt,     cf.p.tau,     sample_time, 0.0);
-  init_butterworth_2_low_pass(&cf.q.model_filt,     cf.q.tau,     sample_time, 0.0);
-  init_butterworth_2_low_pass(&cf.r.model_filt,     cf.r.tau,     sample_time, 0.0);
-  // Feedback
-  init_butterworth_2_low_pass(&cf.ax.feedback_filt,    cf.ax.tau,    sample_time, 0.0); 
-  init_butterworth_2_low_pass(&cf.ay.feedback_filt,    cf.ay.tau,    sample_time, 0.0);
-  init_butterworth_2_low_pass(&cf.az.feedback_filt,    cf.az.tau,    sample_time, 0.0);
-  init_butterworth_2_low_pass(&cf.p_dot.feedback_filt, cf.p_dot.tau, sample_time, 0.0);
-  init_butterworth_2_low_pass(&cf.q_dot.feedback_filt, cf.q_dot.tau, sample_time, 0.0);
-  init_butterworth_2_low_pass(&cf.r_dot.feedback_filt, cf.r_dot.tau, sample_time, 0.0);
-  init_butterworth_2_low_pass(&cf.p.feedback_filt,     cf.p.tau,     sample_time, 0.0);
-  init_butterworth_2_low_pass(&cf.q.feedback_filt,     cf.q.tau,     sample_time, 0.0);
-  init_butterworth_2_low_pass(&cf.r.feedback_filt,     cf.r.tau,     sample_time, 0.0);
-  // Filtering of the Inputs with 3 dimensions (e.g. rates and accelerations)
-  int8_t i;
-  for (i = 0; i < 3; i++) {
-    init_butterworth_2_low_pass(&filt_veloc_ned[i],               tau_v, sample_time, 0.0 );
-  }
-  // Some other filters
-  init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
-  init_butterworth_2_low_pass(&airspeed_filt, tau, sample_time, 0.0);
+  init_butterworth_2_low_pass(&filt_veloc_ned[0], tau_v, 1 / PERIODIC_FREQUENCY, 0.0);
+  init_butterworth_2_low_pass(&filt_veloc_ned[1], tau_v, 1 / PERIODIC_FREQUENCY, 0.0);
+  init_butterworth_2_low_pass(&filt_veloc_ned[2], tau_v, 1 / PERIODIC_FREQUENCY, 0.0);
+  init_butterworth_2_low_pass(&accely_filt,       tau,   1 / PERIODIC_FREQUENCY, 0.0);
+  init_butterworth_2_low_pass(&airspeed_filt,     tau,   1 / PERIODIC_FREQUENCY, 0.0);
 }
 
 
 /** @brief  Propagate the filters */
 void oneloop_andi_propagate_filters(void) {
+  reinit_all_cf(false);
   struct  NedCoor_f *accel = stateGetAccelNed_f();
   struct  NedCoor_f *veloc = stateGetSpeedNed_f();
   struct  FloatRates *body_rates = stateGetBodyRates_f();
@@ -1257,9 +1299,27 @@ void oneloop_andi_propagate_filters(void) {
   cf.ax.feedback    = accel->x;
   cf.ay.feedback    = accel->y;
   cf.az.feedback    = accel->z;
-  cf.p_dot.feedback = (body_rates->p-cf.p.feedback)*PERIODIC_FREQUENCY;
-  cf.q_dot.feedback = (body_rates->q-cf.q.feedback)*PERIODIC_FREQUENCY;
-  cf.r_dot.feedback = (body_rates->r-cf.r.feedback)*PERIODIC_FREQUENCY;
+//#define USE_ROLL_NOTCH
+//#define USE_PITCH_NOTCH
+#define USE_YAW_NOTCH
+  float temp_p_dot  = (body_rates->p-cf.p.feedback)*PERIODIC_FREQUENCY;
+  float temp_q_dot  = (body_rates->q-cf.q.feedback)*PERIODIC_FREQUENCY;
+  float temp_r_dot  = (body_rates->r-cf.r.feedback)*PERIODIC_FREQUENCY;
+#ifdef USE_ROLL_NOTCH
+  notch_filter_update(&oneloop_notch.roll.filter, &temp_p_dot, &cf.p_dot.feedback);
+#else
+  cf.p_dot.feedback = temp_p_dot;
+#endif
+#ifdef USE_PITCH_NOTCH
+  notch_filter_update(&oneloop_notch.pitch.filter, &temp_q_dot, &cf.q_dot.feedback);
+#else
+  cf.q_dot.feedback = temp_q_dot;
+#endif
+#ifdef USE_YAW_NOTCH
+  notch_filter_update(&oneloop_notch.yaw.filter, &temp_r_dot, &cf.r_dot.feedback);
+#else
+  cf.r_dot.feedback = temp_r_dot;
+#endif
   cf.p.feedback     = body_rates->p;
   cf.q.feedback     = body_rates->q;
   cf.r.feedback     = body_rates->r;
@@ -1267,8 +1327,8 @@ void oneloop_andi_propagate_filters(void) {
   update_butterworth_2_low_pass(&cf.ax.feedback_filt,    cf.ax.feedback);
   update_butterworth_2_low_pass(&cf.ay.feedback_filt,    cf.ay.feedback);
   update_butterworth_2_low_pass(&cf.az.feedback_filt,    cf.az.feedback);
-  update_butterworth_2_low_pass(&cf.p_dot.feedback_filt, cf.p_dot.feedback);
-  update_butterworth_2_low_pass(&cf.q_dot.feedback_filt, cf.q_dot.feedback);
+  update_butterworth_4_low_pass(&cf.p_dot.feedback_filt, cf.p_dot.feedback);
+  update_butterworth_4_low_pass(&cf.q_dot.feedback_filt, cf.q_dot.feedback);
   update_butterworth_2_low_pass(&cf.r_dot.feedback_filt, cf.r_dot.feedback);
   update_butterworth_2_low_pass(&cf.p.feedback_filt,     cf.p.feedback);
   update_butterworth_2_low_pass(&cf.q.feedback_filt,     cf.q.feedback);
@@ -1282,15 +1342,17 @@ void oneloop_andi_propagate_filters(void) {
   update_butterworth_2_low_pass(&cf.ax.model_filt,    cf.ax.model);
   update_butterworth_2_low_pass(&cf.ay.model_filt,    cf.ay.model);
   update_butterworth_2_low_pass(&cf.az.model_filt,    cf.az.model);
-  update_butterworth_2_low_pass(&cf.p_dot.model_filt, cf.p_dot.model);
-  update_butterworth_2_low_pass(&cf.q_dot.model_filt, cf.q_dot.model);
+  update_butterworth_4_low_pass(&cf.p_dot.model_filt, cf.p_dot.model);
+  update_butterworth_4_low_pass(&cf.q_dot.model_filt, cf.q_dot.model);
   update_butterworth_2_low_pass(&cf.r_dot.model_filt, cf.r_dot.model);
   // Calculate Complementary Filter outputs for Linear and Angular Accelerations 
   cf.ax.out    = cf.ax.feedback_filt.o[0]    + cf.ax.model    - cf.ax.model_filt.o[0];
   cf.ay.out    = cf.ay.feedback_filt.o[0]    + cf.ay.model    - cf.ay.model_filt.o[0];
   cf.az.out    = cf.az.feedback_filt.o[0]    + cf.az.model    - cf.az.model_filt.o[0];
-  cf.p_dot.out = cf.p_dot.feedback_filt.o[0] + cf.p_dot.model - cf.p_dot.model_filt.o[0];
-  cf.q_dot.out = cf.q_dot.feedback_filt.o[0] + cf.q_dot.model - cf.q_dot.model_filt.o[0];
+  //cf.p_dot.out = cf.p_dot.feedback_filt.o[0] + cf.p_dot.model - cf.p_dot.model_filt.o[0];
+  cf.p_dot.out = cf.p_dot.feedback_filt.lp2.o[0] + cf.p_dot.model - cf.p_dot.model_filt.lp2.o[0];
+  //cf.q_dot.out = cf.q_dot.feedback_filt.o[0] + cf.q_dot.model - cf.q_dot.model_filt.o[0];
+  cf.q_dot.out = cf.q_dot.feedback_filt.lp2.o[0] + cf.q_dot.model - cf.q_dot.model_filt.lp2.o[0];
   cf.r_dot.out = cf.r_dot.feedback_filt.o[0] + cf.r_dot.model - cf.r_dot.model_filt.o[0];
   // Calculate Model Predictions for Angular Rates Using the output of the angular acceleration Complementary Filter
   cf.p.model   = cf.p.model + cf.p_dot.out / PERIODIC_FREQUENCY;
@@ -1330,6 +1392,7 @@ void oneloop_andi_init(void)
     bwls_1l[i] = EFF_MAT_G[i];
   }
   // Initialize filters and other variables
+  init_all_cf();
   init_filter();
   init_controller();
   float_vect_zero(andi_u, ANDI_NUM_ACT_TOT);
@@ -1380,6 +1443,7 @@ void oneloop_andi_enter(bool half_loop_sp, int ctrl_type)
   for (i = 0; i < ANDI_OUTPUTS; i++) {
     bwls_1l[i] = EFF_MAT_G[i];
   }
+  reinit_all_cf(true);
   init_filter();
   init_controller();
   /* Stabilization Reset */
@@ -1543,10 +1607,10 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
 {
   // At beginnig of the loop: (1) Register Attitude, (2) Initialize gains of RM and EC, (3) Calculate Normalization of Actuators Signals, (4) Propagate Actuator Model, (5) Update effectiveness matrix
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-  if (half_loop){
-    printf("Calculating Poles\n");
-    init_poles_att();
-  }
+  // if (half_loop){
+  //   //printf("Calculating Poles\n");
+  //   init_poles_att();
+  // }
   init_controller();
   calc_normalization();
   get_act_state_oneloop();
@@ -1817,12 +1881,13 @@ void G1G2_oneloop(int ctrl_type) {
         break;        
     }
     int j = 0;
+    bool turn_quad_off = ((!rotwing_state.hover_motors_enabled || !rotwing_state_hover_motors_running()) && rotwing_state.state != ROTWING_STATE_FORCE_HOVER);
     for (j = 0; j < ANDI_OUTPUTS; j++) {
       EFF_MAT_G[j][i] = EFF_MAT_RW[j][i] * scaler * ratio_vn_v[j];
       if (airspeed_filt.o[0] < ELE_MIN_AS && i == COMMAND_ELEVATOR){
         EFF_MAT_G[j][i] = 0.0;
       }
-      if (!rotwing_state_hover_motors_running() && i < 4){
+      if (turn_quad_off && i < 4){
         EFF_MAT_G[j][i] = 0.0;
       }
       if (ctrl_off && i < 4  && j == 5){ //hack test
