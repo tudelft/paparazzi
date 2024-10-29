@@ -27,11 +27,6 @@
                 <configure name="EXTRA_DL_PORT" value="UART3"/>
                 <configure name="EXTRA_DL_BAUD" value="1500000"/>
             </module>
-            
-             <module name="mission_rotorcraft">
-                <define name="MISSION_WAIT_TIMEOUT" value="0"/>
-                <define name="MISSION_ELEMENT_NB" value="2000"/>
-            </module>
 
             <!-- RC switches -->
             <define name="RADIO_TH_HOLD"            value="RADIO_AUX1"/>
