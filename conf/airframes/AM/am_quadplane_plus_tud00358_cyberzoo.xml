@@ -449,13 +449,13 @@
     <!-- ball bearings vehicle -->
     <define name="SERVO_EL_1_ZERO_VALUE" value="0.35" unit="deg"/>
     <define name="SERVO_EL_2_ZERO_VALUE" value="-3.69" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="-6.06" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="-5.09" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-7.75" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="-3.77" unit="deg"/>
 
     <define name="SERVO_AZ_1_ZERO_VALUE" value="9.14" unit="deg"/>
     <define name="SERVO_AZ_2_ZERO_VALUE" value="0.26" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="-9.05" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="14.41" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="-9.93" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="-13.79" unit="deg"/>
 
     <define name="MAX_THETA_INDI" value="50" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
@@ -788,6 +788,7 @@
 
     <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/>
     <define name="FULLY_MANUAL_HEADING" value="TRUE"/>
+    <define name="HEADING_CONTROL_NONLINEAR_CA" value="TRUE"/>
 
     <!-- Basic navigation settings -->
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>

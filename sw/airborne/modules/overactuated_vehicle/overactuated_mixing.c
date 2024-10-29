@@ -1707,7 +1707,8 @@ void overactuated_mixing_run(void)
             rate_vect_filt[2] = 0;
 
             pos_setpoint[2] = pos_vect[2];
-
+            euler_setpoint[2] = euler_vect[2];
+            
             //Init dshot RPM control cmds
             #ifdef RPM_CONTROL
                 for (int i = 0; i < 4; i++){
@@ -1790,6 +1791,30 @@ void overactuated_mixing_run(void)
         #ifdef USE_SIXDOF_EXT_HEADING
             if(approach_state && control_mode_ovc_vehicle == 3 && myam7_data_in_local.sixdof_system_status == 3){
                 yaw_rate_setpoint_manual = - myam7_data_in_local.sixdof_relative_psi * 0.01f * M_PI/180;
+            }
+        #endif
+
+        #ifdef HEADING_CONTROL_NONLINEAR_CA
+            if (abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw ) {
+                euler_setpoint[2] =
+                        euler_setpoint[2] + stick_gain_yaw * radio_control.values[RADIO_YAW] * M_PI / 180 * .001;
+                //Correct the setpoint in order to always be within -pi and pi
+                if (euler_setpoint[2] > M_PI) {
+                    euler_setpoint[2] -= 2 * M_PI;
+                }
+                else if (euler_setpoint[2] < -M_PI) {
+                    euler_setpoint[2] += 2 * M_PI;
+                }
+            }
+
+            yaw_rate_setpoint_manual = euler_setpoint[2] - euler_vect[2];
+
+            //Add logic for the psi control:
+            if (yaw_rate_setpoint_manual > M_PI) {
+                yaw_rate_setpoint_manual -= 2 * M_PI;
+            }
+            else if (yaw_rate_setpoint_manual < -M_PI) {
+                yaw_rate_setpoint_manual += 2 * M_PI;
             }
         #endif
 
