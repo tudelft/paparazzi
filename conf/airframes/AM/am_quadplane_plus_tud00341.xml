@@ -98,7 +98,6 @@
     <!-- Module needed for the communication between the raspberry pi and the pixhawk-->
     <module name="ca_am7">
       <configure name="AM7_PORT" value="UART3"/>
-      <configure name="AM7_BAUD" value="B921600"/>
       <define name="AM7_FREQUENCY" value="500"/>
       <define name="USE_AM7_TFMINI_LIDAR" value="TRUE"/>
     </module>
@@ -562,10 +561,10 @@
 
     <define name="USE_AIRSPEED" value="TRUE"/>
 
-    <define name="USE_SHIP_BOX_EXT_REF_ATTITUDE" value="TRUE"/>
-    <define name="USE_SIXDOF_EXT_REF_ATTITUDE" value="TRUE"/>
-    <!-- <define name="USE_SIXDOF_EXT_HEADING" value="TRUE"/> -->
-    <!-- <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/> -->
+    <define name="USE_SHIP_BOX_EXT_REF_ATTITUDE" value="FALSE"/>
+    <define name="USE_SIXDOF_EXT_REF_ATTITUDE" value="FALSE"/>
+    <define name="USE_SIXDOF_EXT_HEADING" value="FALSE"/>
+    <define name="NO_AIRSPEED_NONLINEAR_CA" value="FALSE"/>
     <define name="FULLY_MANUAL_HEADING" value="FALSE"/>
 
     <!-- Basic navigation settings -->

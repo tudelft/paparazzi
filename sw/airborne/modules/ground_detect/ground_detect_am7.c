@@ -37,7 +37,7 @@ uint8_t ground_detected_am = 0;
 float time_of_ground_not_detected; 
 float min_lidar_alt_ground_detect = 0.3; 
 float time_tolerance_land = 0.5;
-float az_tolerance_land = 2; //Vertical acceleration tolerance for ground detection
+float az_tolerance_land = 4; //Vertical acceleration tolerance for ground detection
 
 
 /**
@@ -62,7 +62,7 @@ void detect_ground_on_landing_am7_init(void){
 uint8_t detect_ground_on_landing(void){
   if(altitude_lidar_agl_meters <= min_lidar_alt_ground_detect &&
       get_am7_data_in()->lidar_strength >= 200 && 
-      get_am7_data_in()->residual_az_int*0.01f > az_tolerance_land && 
+      get_am7_data_in()->modeled_az_int*0.01f > az_tolerance_land && 
       approach_state == 1 ){
 
       if(get_sys_time_float() - time_of_ground_not_detected >= time_tolerance_land){

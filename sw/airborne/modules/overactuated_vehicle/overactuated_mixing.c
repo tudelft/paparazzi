@@ -479,7 +479,7 @@ void assign_variables(void){
     from_earth_to_control(speed_vect_control_rf, speed_vect, euler_vect[2]);
     beta_deg = 0;
 
-    #ifdef NO_AIRSPEED_NONLINEAR_CA
+    #if NO_AIRSPEED_NONLINEAR_CA
         airspeed = 0.1; 
     #else
         airspeed = fmax(AM7_SETTINGS_MIN_AIRSPEED_READING,ms45xx.airspeed);
@@ -494,7 +494,7 @@ void assign_variables(void){
     }
     update_butterworth_2_low_pass(&accel_body_y_filter, ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y));
     //Filter body rates with first order dedicated filter
-    float tau_first_order_body_rates = 1.0f - exp(-AM7_SETTINGS_BODY_RATES_FIRST_ORDER_CUTOFF_RAD_S/OVERACTUATED_MIXING_FREQUENCY);
+    float tau_first_order_body_rates = 1.0f - exp(-AM7_SETTINGS_BODY_RATES_FIRST_ORDER_CUTOFF_RAD_S/(OVERACTUATED_MIXING_FREQUENCY*1.0f));
     for(int i = 0; i < 3; i++){
         rate_vect_filt[i] = rate_vect_filt[i] + tau_first_order_body_rates * (rate_vect[i] - rate_vect_filt[i]);
     }
@@ -634,14 +634,6 @@ void overactuated_mixing_run(void)
         
 
         act_cmd_to_t4.cmd_timestamp = get_sys_time_float();
-        if(autopilot.motors_on){
-            act_cmd_to_t4.motor_arm = 1;
-            act_cmd_to_t4.servo_arm = 1;
-        }
-        else{
-            act_cmd_to_t4.motor_arm = 0;
-            act_cmd_to_t4.servo_arm = 0;
-        }
         act_cmd_to_t4.motor_control_mode = 1;
         //Fill the motor commands:
         float K_ppz_to_dshot = (float) FBW_T4_MAX_DSHOT_CMD/MAX_PPRZ;
@@ -650,15 +642,15 @@ void overactuated_mixing_run(void)
         act_cmd_to_t4.motor_3_cmd = (float) (-euler_cmd_PID[0] - euler_cmd_PID[1]) + radio_control.values[RADIO_THROTTLE] * K_ppz_to_dshot;
         act_cmd_to_t4.motor_4_cmd = (float) (euler_cmd_PID[0] - euler_cmd_PID[1]) + radio_control.values[RADIO_THROTTLE] * K_ppz_to_dshot;
         //FIll the longitudinal servo commands:
-        act_cmd_to_t4.servo_el_1_angle_deg = (radio_control.values[RADIO_PITCH]/MAX_PPRZ) * OVERACTUATED_GAINS_PID_MAX_EL_ORDER_DEG;
-        act_cmd_to_t4.servo_el_2_angle_deg = (radio_control.values[RADIO_PITCH]/MAX_PPRZ) * OVERACTUATED_GAINS_PID_MAX_EL_ORDER_DEG;
-        act_cmd_to_t4.servo_el_3_angle_deg = (radio_control.values[RADIO_PITCH]/MAX_PPRZ) * OVERACTUATED_GAINS_PID_MAX_EL_ORDER_DEG;
-        act_cmd_to_t4.servo_el_4_angle_deg = (radio_control.values[RADIO_PITCH]/MAX_PPRZ) * OVERACTUATED_GAINS_PID_MAX_EL_ORDER_DEG;
+        act_cmd_to_t4.servo_el_1_angle_deg = (radio_control.values[RADIO_PITCH]*1.0f/MAX_PPRZ*1.0f) * OVERACTUATED_GAINS_PID_MAX_EL_ORDER_DEG;
+        act_cmd_to_t4.servo_el_2_angle_deg = (radio_control.values[RADIO_PITCH]*1.0f/MAX_PPRZ*1.0f) * OVERACTUATED_GAINS_PID_MAX_EL_ORDER_DEG;
+        act_cmd_to_t4.servo_el_3_angle_deg = (radio_control.values[RADIO_PITCH]*1.0f/MAX_PPRZ*1.0f) * OVERACTUATED_GAINS_PID_MAX_EL_ORDER_DEG;
+        act_cmd_to_t4.servo_el_4_angle_deg = (radio_control.values[RADIO_PITCH]*1.0f/MAX_PPRZ*1.0f) * OVERACTUATED_GAINS_PID_MAX_EL_ORDER_DEG;
         //Fill the lateral servo commands:
-        act_cmd_to_t4.servo_az_1_angle_deg = (radio_control.values[RADIO_ROLL]/MAX_PPRZ) * OVERACTUATED_GAINS_PID_MAX_AZ_ORDER_DEG;
-        act_cmd_to_t4.servo_az_2_angle_deg = (radio_control.values[RADIO_ROLL]/MAX_PPRZ) * OVERACTUATED_GAINS_PID_MAX_AZ_ORDER_DEG;
-        act_cmd_to_t4.servo_az_3_angle_deg = (radio_control.values[RADIO_ROLL]/MAX_PPRZ) * OVERACTUATED_GAINS_PID_MAX_AZ_ORDER_DEG;
-        act_cmd_to_t4.servo_az_4_angle_deg = (radio_control.values[RADIO_ROLL]/MAX_PPRZ) * OVERACTUATED_GAINS_PID_MAX_AZ_ORDER_DEG;
+        act_cmd_to_t4.servo_az_1_angle_deg = (radio_control.values[RADIO_ROLL]*1.0f/MAX_PPRZ*1.0f) * OVERACTUATED_GAINS_PID_MAX_AZ_ORDER_DEG;
+        act_cmd_to_t4.servo_az_2_angle_deg = (radio_control.values[RADIO_ROLL]*1.0f/MAX_PPRZ*1.0f) * OVERACTUATED_GAINS_PID_MAX_AZ_ORDER_DEG;
+        act_cmd_to_t4.servo_az_3_angle_deg = (radio_control.values[RADIO_ROLL]*1.0f/MAX_PPRZ*1.0f) * OVERACTUATED_GAINS_PID_MAX_AZ_ORDER_DEG;
+        act_cmd_to_t4.servo_az_4_angle_deg = (radio_control.values[RADIO_ROLL]*1.0f/MAX_PPRZ*1.0f) * OVERACTUATED_GAINS_PID_MAX_AZ_ORDER_DEG;
         //Add the yaw commands on top of the azimuth commands:
         act_cmd_to_t4.servo_az_1_angle_deg += euler_cmd_PID[2]; 
         act_cmd_to_t4.servo_az_2_angle_deg += euler_cmd_PID[2];
@@ -667,8 +659,18 @@ void overactuated_mixing_run(void)
         //Fill the flaperon commands:
         act_cmd_to_t4.flaperon_right_angle_deg = 0;
         act_cmd_to_t4.flaperon_left_angle_deg = 0;
-        //Submit the actuator commands to the teensy module: 
-        AbiSendMsgSERIAL_ACT_T4_CMD(ABI_SERIAL_ACT_T4_CMD_ID, &act_cmd_to_t4);
+
+        if(autopilot.motors_on){
+            act_cmd_to_t4.motor_arm = 1;
+            act_cmd_to_t4.servo_arm = 1;
+        }
+        else{
+            act_cmd_to_t4.motor_arm = 0;
+            act_cmd_to_t4.servo_arm = 0;
+            //Kill motors and initialize a spiral mode with the flaperons:
+            act_cmd_to_t4.flaperon_right_angle_deg = 15; 
+            act_cmd_to_t4.flaperon_left_angle_deg = 15;
+        }
     }
     // Manual INDI nonlinear control
     else if(autopilot.mode == AP_MODE_HOVER_DIRECT){
@@ -785,10 +787,20 @@ void overactuated_mixing_run(void)
         act_cmd_to_t4.servo_az_2_angle_deg = (float) get_am7_data_in()->az_2_cmd_int * 0.01f;
         act_cmd_to_t4.servo_az_3_angle_deg = (float) get_am7_data_in()->az_3_cmd_int * 0.01f;
         act_cmd_to_t4.servo_az_4_angle_deg = (float) get_am7_data_in()->az_4_cmd_int * 0.01f;
-        act_cmd_to_t4.flaperon_right_angle_deg = (float) -get_am7_data_in()->ailerons_cmd_int * 0.01f;
+        act_cmd_to_t4.flaperon_right_angle_deg = (float) get_am7_data_in()->ailerons_cmd_int * 0.01f;
         act_cmd_to_t4.flaperon_left_angle_deg = (float) get_am7_data_in()->ailerons_cmd_int * 0.01f;
-        //Submit the actuator commands to the teensy module: 
-        AbiSendMsgSERIAL_ACT_T4_CMD(ABI_SERIAL_ACT_T4_CMD_ID, &act_cmd_to_t4);
+
+        if(autopilot.motors_on){
+            act_cmd_to_t4.motor_arm = 1;
+            act_cmd_to_t4.servo_arm = 1;
+        }
+        else{
+            act_cmd_to_t4.motor_arm = 0;
+            act_cmd_to_t4.servo_arm = 0;
+            //Kill motors and initialize a spiral mode with the flaperons:
+            act_cmd_to_t4.flaperon_right_angle_deg = 15; 
+            act_cmd_to_t4.flaperon_left_angle_deg = 15;
+        }
         
         //Submit the data to the AM7 module:
         AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &data_to_am7_module);
@@ -806,14 +818,14 @@ void overactuated_mixing_run(void)
         data_to_am7_module.desired_motor_rad_s = 0; data_to_am7_module.desired_el_rad = 0; data_to_am7_module.desired_az_rad = 0;
         data_to_am7_module.desired_ail_rad = 0;
 
-        #ifdef USE_SHIP_BOX_EXT_REF_ATTITUDE
+        #if USE_SHIP_BOX_EXT_REF_ATTITUDE
             if(approach_state){
                 data_to_am7_module.desired_phi_rad = ship_info_receive.phi * M_PI/180;
                 data_to_am7_module.desired_theta_rad = ship_info_receive.theta * M_PI/180;
             }
         #endif
 
-        #ifdef USE_SIXDOF_EXT_REF_ATTITUDE
+        #if USE_SIXDOF_EXT_REF_ATTITUDE
             if(approach_state && get_am7_data_in()->sixdof_system_status == 3){
                 data_to_am7_module.desired_phi_rad = - (get_am7_data_in()->sixdof_relative_phi * 0.01f * M_PI/180 - euler_vect[0]);
                 data_to_am7_module.desired_theta_rad = - (get_am7_data_in()->sixdof_relative_theta * 0.01f * M_PI/180  - euler_vect[1]);
@@ -833,7 +845,7 @@ void overactuated_mixing_run(void)
             yaw_rate_setpoint_manual = AM7_SETTINGS_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / MAX_PPRZ;
         }
 
-        #ifdef USE_SIXDOF_EXT_HEADING
+        #if USE_SIXDOF_EXT_HEADING
             if(approach_state && get_am7_data_in()->sixdof_system_status == 3){
                 yaw_rate_setpoint_manual = - get_am7_data_in()->sixdof_relative_psi * 0.01f * M_PI/180;
             }
@@ -934,14 +946,6 @@ void overactuated_mixing_run(void)
 
         //Produce commands based on what the am7 returned: 
         act_cmd_to_t4.cmd_timestamp = get_sys_time_float();
-        if(autopilot.motors_on){
-            act_cmd_to_t4.motor_arm = 1;
-            act_cmd_to_t4.servo_arm = 1;
-        }
-        else{
-            act_cmd_to_t4.motor_arm = 0;
-            act_cmd_to_t4.servo_arm = 0;
-        }
         act_cmd_to_t4.motor_control_mode = 2;
         act_cmd_to_t4.motor_1_cmd = (float) get_am7_data_in()->motor_1_cmd_int * 0.1f; 
         act_cmd_to_t4.motor_2_cmd = (float) get_am7_data_in()->motor_2_cmd_int * 0.1f;
@@ -955,14 +959,31 @@ void overactuated_mixing_run(void)
         act_cmd_to_t4.servo_az_2_angle_deg = (float) get_am7_data_in()->az_2_cmd_int * 0.01f;
         act_cmd_to_t4.servo_az_3_angle_deg = (float) get_am7_data_in()->az_3_cmd_int * 0.01f;
         act_cmd_to_t4.servo_az_4_angle_deg = (float) get_am7_data_in()->az_4_cmd_int * 0.01f;
-        act_cmd_to_t4.flaperon_right_angle_deg = (float) -get_am7_data_in()->ailerons_cmd_int * 0.01f;
+        act_cmd_to_t4.flaperon_right_angle_deg = (float) get_am7_data_in()->ailerons_cmd_int * 0.01f;
         act_cmd_to_t4.flaperon_left_angle_deg = (float) get_am7_data_in()->ailerons_cmd_int * 0.01f;
-        
-        //Submit the actuator commands to the teensy module: 
-        AbiSendMsgSERIAL_ACT_T4_CMD(ABI_SERIAL_ACT_T4_CMD_ID, &act_cmd_to_t4);
+        if(autopilot.motors_on){
+            act_cmd_to_t4.motor_arm = 1;
+            act_cmd_to_t4.servo_arm = 1;
+        }
+        else{
+            act_cmd_to_t4.motor_arm = 0;
+            act_cmd_to_t4.servo_arm = 0;
+            //Kill motors and initialize a spiral mode with the flaperons:
+            act_cmd_to_t4.flaperon_right_angle_deg = 15; 
+            act_cmd_to_t4.flaperon_left_angle_deg = 15;
+        }
 
         //Submit the data to the AM7 module:
         AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &data_to_am7_module);
     }
-    
+    else{
+        //Prepare the actuator commands to be kill by default: 
+        act_cmd_to_t4.cmd_timestamp = get_sys_time_float();
+        act_cmd_to_t4.motor_arm = 0;
+        act_cmd_to_t4.servo_arm = 0;
+        act_cmd_to_t4.flaperon_right_angle_deg = 15; 
+        act_cmd_to_t4.flaperon_left_angle_deg = 15;
+    }
+    //Submit the actuator commands to the teensy module: 
+    AbiSendMsgSERIAL_ACT_T4_CMD(ABI_SERIAL_ACT_T4_CMD_ID, &act_cmd_to_t4);
 }

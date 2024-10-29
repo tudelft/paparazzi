@@ -312,7 +312,7 @@ void serial_act_t4_parse_msg_in(void)
     ActStates.az_2_angle_deg = (float) (myserial_act_t4_in.servo_5_angle_int/100.0f)/FBW_T4_K_RATIO_GEAR_AZ;
     ActStates.az_3_angle_deg = (float) -(myserial_act_t4_in.servo_7_angle_int/100.0f)/FBW_T4_K_RATIO_GEAR_AZ;
     ActStates.az_4_angle_deg = (float) -(myserial_act_t4_in.servo_3_angle_int/100.0f)/FBW_T4_K_RATIO_GEAR_AZ;
-    ActStates.flaperon_right_angle_deg = (float) -myserial_act_t4_in.servo_9_angle_int/100.0f;
+    ActStates.flaperon_right_angle_deg = (float) myserial_act_t4_in.servo_9_angle_int/100.0f;
     ActStates.flaperon_left_angle_deg = (float) myserial_act_t4_in.servo_10_angle_int/100.0f;
     ActStates.el_1_angle_deg_corrected = ActStates.el_1_angle_deg + FBW_T4_SERVO_EL_1_ZERO_VALUE * 180/M_PI;
     ActStates.el_2_angle_deg_corrected = ActStates.el_2_angle_deg + FBW_T4_SERVO_EL_2_ZERO_VALUE * 180/M_PI;
@@ -381,6 +381,21 @@ void serial_act_t4_control(void)
     ActStates.motor_4_rad_s_filt = ActStates.motor_4_rad_s_filt + tau_motor_filter * (ActStates.motor_4_rad_s - ActStates.motor_4_rad_s_filt);
     
     //////////////////////////////////////////////////////////////////////////////////////////////MOTORS COMMAND GENERATION
+    //TESTING VARIABLES: 
+    if(test_rpm_control){
+        ActCmd.motor_control_mode = 2; 
+        ActCmd.motor_1_cmd = motor_1_rad_s_slider;
+        ActCmd.motor_2_cmd = motor_2_rad_s_slider;
+        ActCmd.motor_3_cmd = motor_3_rad_s_slider;
+        ActCmd.motor_4_cmd = motor_4_rad_s_slider;
+    }
+    if(test_dshot_cmd){
+        ActCmd.motor_control_mode = 1; 
+        ActCmd.motor_1_cmd = motor_1_dshot_slider;
+        ActCmd.motor_2_cmd = motor_2_dshot_slider;
+        ActCmd.motor_3_cmd = motor_3_dshot_slider;
+        ActCmd.motor_4_cmd = motor_4_dshot_slider;
+    }
 
     //If motors are armed and the control mode is 2, 
     //produce the dshot command out of the desired RPM: 
@@ -421,22 +436,6 @@ void serial_act_t4_control(void)
         myserial_act_t4_out.motor_2_dshot_cmd_int = (int16_t) 0;
         myserial_act_t4_out.motor_3_dshot_cmd_int = (int16_t) 0;
         myserial_act_t4_out.motor_4_dshot_cmd_int = (int16_t) 0;
-    }
-
-    //TESTING VARIABLES: 
-    if(test_rpm_control){
-        ActCmd.motor_control_mode = 2; 
-        ActCmd.motor_1_cmd = motor_1_rad_s_slider;
-        ActCmd.motor_2_cmd = motor_2_rad_s_slider;
-        ActCmd.motor_3_cmd = motor_3_rad_s_slider;
-        ActCmd.motor_4_cmd = motor_4_rad_s_slider;
-    }
-    if(test_dshot_cmd){
-        ActCmd.motor_control_mode = 1; 
-        ActCmd.motor_1_cmd = motor_1_dshot_slider;
-        ActCmd.motor_2_cmd = motor_2_dshot_slider;
-        ActCmd.motor_3_cmd = motor_3_dshot_slider;
-        ActCmd.motor_4_cmd = motor_4_dshot_slider;
     }
 
     //Bound motor command to max dshot: 
@@ -484,8 +483,8 @@ void serial_act_t4_control(void)
 
     myserial_act_t4_out.servo_1_cmd_int = (int16_t) (ActCmd.servo_az_1_angle_deg * FBW_T4_K_RATIO_GEAR_AZ - FBW_T4_SERVO_AZ_1_ZERO_VALUE * 180/M_PI) * 100;
     myserial_act_t4_out.servo_5_cmd_int = (int16_t) (ActCmd.servo_az_2_angle_deg * FBW_T4_K_RATIO_GEAR_AZ - FBW_T4_SERVO_AZ_2_ZERO_VALUE * 180/M_PI) * 100;
-    myserial_act_t4_out.servo_7_cmd_int = (int16_t) (ActCmd.servo_az_3_angle_deg * FBW_T4_K_RATIO_GEAR_AZ - FBW_T4_SERVO_AZ_3_ZERO_VALUE * 180/M_PI) * 100;
-    myserial_act_t4_out.servo_3_cmd_int = (int16_t) (ActCmd.servo_az_4_angle_deg * FBW_T4_K_RATIO_GEAR_AZ - FBW_T4_SERVO_AZ_4_ZERO_VALUE * 180/M_PI) * 100;
+    myserial_act_t4_out.servo_7_cmd_int = (int16_t) (-ActCmd.servo_az_3_angle_deg * FBW_T4_K_RATIO_GEAR_AZ - FBW_T4_SERVO_AZ_3_ZERO_VALUE * 180/M_PI) * 100;
+    myserial_act_t4_out.servo_3_cmd_int = (int16_t) (-ActCmd.servo_az_4_angle_deg * FBW_T4_K_RATIO_GEAR_AZ - FBW_T4_SERVO_AZ_4_ZERO_VALUE * 180/M_PI) * 100;
 
     //For the PWM angles, the zeros are handled in the Teensy 4.0 code, so the angles are directly assigned:
     myserial_act_t4_out.servo_9_cmd_int = (int16_t) (ActCmd.flaperon_right_angle_deg) * 100;

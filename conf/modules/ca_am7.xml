@@ -43,7 +43,7 @@
         <dl_setting var="w_dv_4" min="0" step="0.001" max="1" shortname="w_dv_4"/>
         <dl_setting var="w_dv_5" min="0" step="0.001" max="1" shortname="w_dv_5"/>
         <dl_setting var="w_dv_6" min="0" step="0.001" max="1" shortname="w_dv_6"/>
-        <dl_setting var="gamma_quadratic_du" min="0" step="1e-9" max="1e-8" shortname="gamma_quadratic_du"/>
+        <dl_setting var="gamma_quadratic_du" min="0" step="1" max="10000" shortname="gamma_quadratic_du_e_minus_8"/>
 
         <!-- limits -->
         <dl_setting var="max_fwd_speed" min="0" step="0.1" max="30" shortname="max_fwd_speed"/>

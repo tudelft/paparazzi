@@ -351,7 +351,7 @@ void assign_am7_data(void){
     myam7_data_out.az_2_state_int = (int16_t) (get_act_states_T4()->az_2_angle_deg_corrected * 1e2);
     myam7_data_out.az_3_state_int = (int16_t) (get_act_states_T4()->az_3_angle_deg_corrected * 1e2);
     myam7_data_out.az_4_state_int = (int16_t) (get_act_states_T4()->az_4_angle_deg_corrected * 1e2);
-    myam7_data_out.ailerons_state_int = (int16_t) ((get_act_states_T4()->flaperon_left_angle_deg - get_act_states_T4()->flaperon_right_angle_deg)/2 * 1e2);
+    myam7_data_out.ailerons_state_int = (int16_t) ((get_act_states_T4()->flaperon_left_angle_deg + get_act_states_T4()->flaperon_right_angle_deg)/2 * 1e2);
 
     //Add states retrieved from autopilot functions or from the filters: 
     myam7_data_out.theta_state_int = (int16_t) (stateGetNedToBodyEulers_f()->theta * 1e2 * 180/M_PI);
@@ -418,7 +418,7 @@ void assign_am7_data(void){
     extra_data_out[43] = w_dv_4;
     extra_data_out[44] = w_dv_5;
     extra_data_out[45] = w_dv_6;
-    extra_data_out[46] = gamma_quadratic_du;
+    extra_data_out[46] = gamma_quadratic_du * 1e-8;
 
     extra_data_out[47] = AM7_SETTINGS_VEHICLE_CY_BETA;
     extra_data_out[48] = AM7_SETTINGS_VEHICLE_CL_BETA;
@@ -505,10 +505,6 @@ void assign_am7_data(void){
 
 /*Update the filters: */
 void update_am7_filters(void){
-    //Update body rates filters:
-    p_filtered = p_filtered + tau_body_rates_filter*(stateGetBodyRates_f()->p - p_filtered);
-    q_filtered = q_filtered + tau_body_rates_filter*(stateGetBodyRates_f()->q - q_filtered);
-    r_filtered = r_filtered + tau_body_rates_filter*(stateGetBodyRates_f()->r - r_filtered);
     //Update body rates dot filters:
     update_butterworth_2_low_pass(&body_p_dot_second_order_filter, (float) ((stateGetBodyRates_f()->p - p_old) * (float) AM7_FREQUENCY));
     update_butterworth_2_low_pass(&body_q_dot_second_order_filter, (float) ((stateGetBodyRates_f()->q - q_old) * (float) AM7_FREQUENCY));
@@ -594,6 +590,7 @@ void update_gains_weights(void){
         w_dv_4 = AM7_SETTINGS_W_DV_4_APP;
         w_dv_5 = AM7_SETTINGS_W_DV_5_APP;
         w_dv_6 = AM7_SETTINGS_W_DV_6_APP;
+        gamma_quadratic_du = AM7_SETTINGS_GAMMA_QUADRATIC_DU_APP_e_minus_8;
         k_gain_airspeed = AM7_SETTINGS_K_GAIN_AIRSPEED_APP;
     }
 
@@ -626,6 +623,7 @@ void update_gains_weights(void){
         w_dv_5 = AM7_SETTINGS_W_DV_5_CRUISE;
         w_dv_6 = AM7_SETTINGS_W_DV_6_CRUISE;
         k_gain_airspeed = AM7_SETTINGS_K_GAIN_AIRSPEED_CRUISE;
+        gamma_quadratic_du = AM7_SETTINGS_GAMMA_QUADRATIC_DU_CRUISE_e_minus_8;
     }
 }
 
@@ -696,14 +694,9 @@ void am7_init(void)
     #endif
 
     //Init filters: 
-    p_filtered = 0;
-    q_filtered = 0;
-    r_filtered = 0;
     init_butterworth_2_low_pass(&body_p_dot_second_order_filter, 1.0f /(float) AM7_SETTINGS_BODY_RATES_DOT_SECOND_ORDER_CUTOFF_RAD_S, 1.0f/(float) AM7_FREQUENCY, 0.0);
     init_butterworth_2_low_pass(&body_q_dot_second_order_filter, 1.0f /(float) AM7_SETTINGS_BODY_RATES_DOT_SECOND_ORDER_CUTOFF_RAD_S, 1.0f/(float) AM7_FREQUENCY, 0.0);
     init_butterworth_2_low_pass(&body_r_dot_second_order_filter, 1.0f /(float) AM7_SETTINGS_BODY_RATES_DOT_SECOND_ORDER_CUTOFF_RAD_S, 1.0f/(float) AM7_FREQUENCY, 0.0);
-    //Calculate first order filter coefficients from the periodic frequency of the module and the desired cutoff frequency:
-    tau_body_rates_filter = 1.0f - exp(-AM7_SETTINGS_BODY_RATES_FIRST_ORDER_CUTOFF_RAD_S/AM7_FREQUENCY); 
 }
 
 /* We need to wait for incoming messages */
