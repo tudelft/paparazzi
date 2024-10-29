@@ -25,6 +25,7 @@
     <waypoint name="STDBY" x="0.5" y="0.3"/>
     <waypoint name="p5" x="0.2" y="0.3"/>
     <waypoint name="TD" x="0.8" y="-1.7"/>
+    <waypoint name="FOLLOW" x="-1" y="5"/>
     <waypoint lat="51.9905979" lon="4.3767279" name="CZ1"/>
     <waypoint lat="51.9906685" lon="4.3767327" name="CZ2"/>
     <waypoint lat="51.9906652" lon="4.3768481" name="CZ3"/>
@@ -120,6 +121,10 @@
     <block name="safe">
       <stay wp="p5"/>
       <exception cond="NavBlockTime() @GT 5" deroute="go_p5"/>
+    </block>
+    <block name="FOLLOW">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <stay wp="FOLLOW"/>
     </block>
     <block key="l" name="land here" strip_button="land here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
