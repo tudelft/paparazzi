@@ -209,7 +209,6 @@
     <command_laws>
         <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
         <let VAR="servo_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
-        <let VAR="hover_off" VALUE="Or($th_hold, !rotwing_state.hover_motors_enabled)"/>
         <let var="ail_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 20)"/>
         <let var="flp_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 50)"/>
 
