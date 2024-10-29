@@ -1732,27 +1732,27 @@
     </message>
 
     <message name="GUIDANCE" id="184">
-      <field name="pos_N_ref" type="float"    unit="m"/>
-      <field name="pos_E_ref" type="float"    unit="m"/>
-      <field name="pos_D_ref" type="float"    unit="m"/>
-      <field name="pos_N"     type="float"    unit="m"/>
-      <field name="pos_E"     type="float"    unit="m"/>
-      <field name="pos_D"     type="float"    unit="m"/>
-      <field name="vel_N_ref" type="float"    unit="m/s"/>
-      <field name="vel_E_ref" type="float"    unit="m/s"/>
-      <field name="vel_D_ref" type="float"    unit="m/s"/>
-      <field name="vel_N"     type="float"    unit="m/s"/>
-      <field name="vel_E"     type="float"    unit="m/s"/>
-      <field name="vel_D"     type="float"    unit="m/s"/>
-      <field name="acc_N_ref" type="float"    unit="m/s^2"/>
-      <field name="acc_E_ref" type="float"    unit="m/s^2"/>
-      <field name="acc_D_ref" type="float"    unit="m/s^2"/>
-      <field name="acc_N"     type="float"    unit="m/s^2"/>
-      <field name="acc_E"     type="float"    unit="m/s^2"/>
-      <field name="acc_D"     type="float"    unit="m/s^2"/>
-      <field name="jerk_N"    type="float"    unit="m/s^3"/>
-      <field name="jerk_E"    type="float"    unit="m/s^3"/>
-      <field name="jerk_D"    type="float"    unit="m/s^3"/>
+      <field name="pos_N_ref"   type="float"    unit="m"/>
+      <field name="pos_E_ref"   type="float"    unit="m"/>
+      <field name="pos_D_ref"   type="float"    unit="m"/>
+      <field name="pos_N"       type="float"    unit="m"/>
+      <field name="pos_E"       type="float"    unit="m"/>
+      <field name="pos_D"       type="float"    unit="m"/>
+      <field name="vel_N_ref"   type="float"    unit="m/s"/>
+      <field name="vel_E_ref"   type="float"    unit="m/s"/>
+      <field name="vel_D_ref"   type="float"    unit="m/s"/>
+      <field name="vel_N"       type="float"    unit="m/s"/>
+      <field name="vel_E"       type="float"    unit="m/s"/>
+      <field name="vel_D"       type="float"    unit="m/s"/>
+      <field name="acc_N_ref"   type="float"    unit="m/s^2"/>
+      <field name="acc_E_ref"   type="float"    unit="m/s^2"/>
+      <field name="acc_D_ref"   type="float"    unit="m/s^2"/>
+      <field name="acc_N"       type="float"    unit="m/s^2"/>
+      <field name="acc_E"       type="float"    unit="m/s^2"/>
+      <field name="acc_D"       type="float"    unit="m/s^2"/>
+      <field name="jerk_N_ref"  type="float"    unit="m/s^3"/>
+      <field name="jerk_E_ref"  type="float"    unit="m/s^3"/>
+      <field name="jerk_D_ref"  type="float"    unit="m/s^3"/>
     </message>
 
     <message name="EFF_MAT_STAB" id="185">

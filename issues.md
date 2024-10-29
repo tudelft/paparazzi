@@ -1,0 +1,187 @@
+=========================
+||      SUMMARY        ||
+=========================
+
+conf/userconf/tudelft/conf.xml:
+------------------------------
+ -  Bebop_opticflow --- nps
+	- [ ] ``` Warning: AIRCRAFT=Bebop_opticflow target=nps compiled sucessfully but had warnings: ```
+	- [ ] ``` modules/computer_vision/opticflow/linear_flow_fit.c:276:30: warning: ‘*n_inliers_pu[0]’ may be used uninitialized [-Wmaybe-uninitialized] ```
+ -  LadybirdMXS --- nps
+	- [ ] ``` Error: The command "make AIRCRAFT=LadybirdMXS clean_ac nps.compile" failed to complete successfully. Exit status: 2 ```
+	- [ ] ``` /home/tomaso/paparazzi//sw/simulator/nps/nps_fdm_gazebo.cpp:35:10: fatal error: gazebo/gazebo.hh: No such file or directory ```
+ -  Logo600 --- ap
+	- [ ] ``` Warning: AIRCRAFT=Logo600 target=ap compiled sucessfully but had warnings: ```
+	- [ ] ``` modules/nav/common_flight_plan.c:85:25: warning: comparison is always false due to limited range of data type [-Wtype-limits] ```
+ -  OrigamiMXS_wifi_indi_stereocam --- nps
+	- [ ] ``` Error: The command "make AIRCRAFT=OrigamiMXS_wifi_indi_stereocam clean_ac nps.compile" failed to complete successfully. Exit status: 2 ```
+	- [ ] ``` /home/tomaso/paparazzi//sw/simulator/nps/nps_fdm_gazebo.cpp:35:10: fatal error: gazebo/gazebo.hh: No such file or directory ```
+ -  RW3C_DePonti --- ap
+	- [ ] ``` Error: The command "make AIRCRAFT=RW3C_DePonti clean_ac ap.compile" failed to complete successfully. Exit status: 2 ```
+	- [ ] ``` firmwares/rotorcraft/oneloop/oneloop_andi.c:90:10: fatal error: modules/rotwing_drone/rotwing_state_V2.h: No such file or directory ```
+ -  RW3C_DePonti --- nps
+	- [ ] ``` Error: The command "make AIRCRAFT=RW3C_DePonti clean_ac nps.compile" failed to complete successfully. Exit status: 2 ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:123:38: error: ‘gi_unbounded_airspeed_sp’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:211:13: error: ‘gi_unbounded_airspeed_sp’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:291:3: warning: implicit declaration of function ‘guidance_set_min_max_airspeed’ [-Wimplicit-function-declaration] ```
+ -  RW3C_DePonti_Simulation --- nps
+	- [ ] ``` Error: The command "make AIRCRAFT=RW3C_DePonti_Simulation clean_ac nps.compile" failed to complete successfully. Exit status: 2 ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:123:38: error: ‘gi_unbounded_airspeed_sp’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:211:13: error: ‘gi_unbounded_airspeed_sp’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:291:3: warning: implicit declaration of function ‘guidance_set_min_max_airspeed’ [-Wimplicit-function-declaration] ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RW3C_DePonti_Simulation/nps/generated/flight_plan.h:333:9: warning: implicit declaration of function ‘rotwing_request_configuration’ [-Wimplicit-function-declaration] ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RW3C_DePonti_Simulation/nps/generated/flight_plan.h:333:39: error: ‘ROTWING_CONFIGURATION_HOVER’ undeclared (first use in this function) ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RW3C_DePonti_Simulation/nps/generated/flight_plan.h:482:9: warning: implicit declaration of function ‘rotwing_state_force_skew_off’ [-Wimplicit-function-declaration] ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RW3C_DePonti_Simulation/nps/generated/flight_plan.h:501:39: error: ‘ROTWING_CONFIGURATION_HYBRID’ undeclared (first use in this function) ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RW3C_DePonti_Simulation/nps/generated/flight_plan.h:564:39: error: ‘ROTWING_CONFIGURATION_EFFICIENT’ undeclared (first use in this function) ```
+ -  RW3_AG --- ap
+	- [ ] ``` Error: The command "make AIRCRAFT=RW3_AG clean_ac ap.compile" failed to complete successfully. Exit status: 2 ```
+	- [ ] ``` firmwares/rotorcraft/oneloop/oneloop_andi.c:90:10: fatal error: modules/rotwing_drone/rotwing_state_V2.h: No such file or directory ```
+ -  RW3_AG --- nps
+	- [ ] ``` Error: The command "make AIRCRAFT=RW3_AG clean_ac nps.compile" failed to complete successfully. Exit status: 2 ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:123:38: error: ‘gi_unbounded_airspeed_sp’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:135:35: error: ‘ROTWING_FW_MIN_AIRSPEED’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:136:35: error: ‘ROTWING_FW_CRUISE_AIRSPEED’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:211:13: error: ‘gi_unbounded_airspeed_sp’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:220:29: error: ‘ROTWING_FW_QUAD_MIN_AIRSPEED’ undeclared (first use in this function); did you mean ‘ROTWING_QUAD_MIN_RPM’? ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:221:29: error: ‘ROTWING_QUAD_MAX_AIRSPEED’ undeclared (first use in this function); did you mean ‘ROTWING_QUAD_MIN_RPM’? ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:221:58: error: ‘ROTWING_FW_MAX_AIRSPEED’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:249:25: error: ‘ROTWING_SKEW_DOWN_AIRSPEED’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:251:32: error: ‘ROTWING_SKEW_UP_AIRSPEED’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:270:34: error: ‘ROTWING_QUAD_NOPUSH_AIRSPEED’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:291:3: warning: implicit declaration of function ‘guidance_set_min_max_airspeed’ [-Wimplicit-function-declaration] ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:293:29: error: ‘ROTWING_FW_MAX_DECELERATION’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:293:84: error: ‘ROTWING_QUAD_MAX_DECELERATION’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:304:20: error: ‘ROTWING_SKEW_REF_MODEL_P_GAIN’ undeclared (first use in this function); did you mean ‘ROTWING_SKEW_REF_MODEL_MAX_DIFF’? ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:305:22: error: ‘ROTWING_SKEW_REF_MODEL_MAX_SPEED’ undeclared (first use in this function); did you mean ‘ROTWING_SKEW_REF_MODEL_MAX_DIFF’? ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:306:31: error: ‘ROTWING_SKEW_REF_MODEL_D_GAIN’ undeclared (first use in this function); did you mean ‘ROTWING_SKEW_REF_MODEL_MAX_DIFF’? ```
+	- [ ] ``` firmwares/rotorcraft/oneloop/oneloop_andi.c:90:10: fatal error: modules/rotwing_drone/rotwing_state_V2.h: No such file or directory ```
+ -  RotatingWingV3B --- ap
+	- [ ] ``` Error: The command "make AIRCRAFT=RotatingWingV3B clean_ac ap.compile" failed to complete successfully. Exit status: 2 ```
+	- [ ] ``` <command-line>: error: 'RADIOUS_AUX5' undeclared (first use in this function); did you mean 'RADIO_AUX5'? ```
+ -  RotatingWingV3B --- nps
+	- [ ] ``` Warning: AIRCRAFT=RotatingWingV3B target=nps compiled sucessfully but had warnings: ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3B/nps/generated/radio.h:14: warning: "RADIO_THROTTLE" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3B/nps/generated/radio.h:19: warning: "RADIO_ROLL" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3B/nps/generated/radio.h:24: warning: "RADIO_PITCH" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3B/nps/generated/radio.h:29: warning: "RADIO_YAW" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3B/nps/generated/radio.h:44: warning: "RADIO_AUX2" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3B/nps/generated/radio.h:69: warning: "RADIO_AUX7" redefined ```
+ -  RotatingWingV3C --- ap
+	- [ ] ``` Error: The command "make AIRCRAFT=RotatingWingV3C clean_ac ap.compile" failed to complete successfully. Exit status: 2 ```
+	- [ ] ``` firmwares/rotorcraft/oneloop/oneloop_andi.c:90:10: fatal error: modules/rotwing_drone/rotwing_state_V2.h: No such file or directory ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3C/ap/generated/flight_plan.h:333:9: warning: implicit declaration of function 'rotwing_request_configuration' [-Wimplicit-function-declaration] ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3C/ap/generated/flight_plan.h:333:39: error: 'ROTWING_CONFIGURATION_HOVER' undeclared (first use in this function) ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3C/ap/generated/flight_plan.h:482:9: warning: implicit declaration of function 'rotwing_state_force_skew_off' [-Wimplicit-function-declaration] ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3C/ap/generated/flight_plan.h:501:39: error: 'ROTWING_CONFIGURATION_HYBRID' undeclared (first use in this function) ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3C/ap/generated/flight_plan.h:564:39: error: 'ROTWING_CONFIGURATION_EFFICIENT' undeclared (first use in this function) ```
+ -  RotatingWingV3C --- nps
+	- [ ] ``` Error: The command "make AIRCRAFT=RotatingWingV3C clean_ac nps.compile" failed to complete successfully. Exit status: 2 ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:123:38: error: ‘gi_unbounded_airspeed_sp’ undeclared (first use in this function) ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3C/nps/generated/flight_plan.h:333:9: warning: implicit declaration of function ‘rotwing_request_configuration’ [-Wimplicit-function-declaration] ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:135:35: error: ‘ROTWING_FW_MIN_AIRSPEED’ undeclared (first use in this function) ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3C/nps/generated/flight_plan.h:333:39: error: ‘ROTWING_CONFIGURATION_HOVER’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:136:35: error: ‘ROTWING_FW_CRUISE_AIRSPEED’ undeclared (first use in this function) ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3C/nps/generated/flight_plan.h:482:9: warning: implicit declaration of function ‘rotwing_state_force_skew_off’ [-Wimplicit-function-declaration] ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:211:13: error: ‘gi_unbounded_airspeed_sp’ undeclared (first use in this function) ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3C/nps/generated/flight_plan.h:501:39: error: ‘ROTWING_CONFIGURATION_HYBRID’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:220:29: error: ‘ROTWING_FW_QUAD_MIN_AIRSPEED’ undeclared (first use in this function); did you mean ‘ROTWING_QUAD_MIN_RPM’? ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3C/nps/generated/flight_plan.h:564:39: error: ‘ROTWING_CONFIGURATION_EFFICIENT’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:221:29: error: ‘ROTWING_QUAD_MAX_AIRSPEED’ undeclared (first use in this function); did you mean ‘ROTWING_QUAD_MIN_RPM’? ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:221:58: error: ‘ROTWING_FW_MAX_AIRSPEED’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:249:25: error: ‘ROTWING_SKEW_DOWN_AIRSPEED’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:251:32: error: ‘ROTWING_SKEW_UP_AIRSPEED’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:270:34: error: ‘ROTWING_QUAD_NOPUSH_AIRSPEED’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:291:3: warning: implicit declaration of function ‘guidance_set_min_max_airspeed’ [-Wimplicit-function-declaration] ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:293:29: error: ‘ROTWING_FW_MAX_DECELERATION’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:293:84: error: ‘ROTWING_QUAD_MAX_DECELERATION’ undeclared (first use in this function) ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:304:20: error: ‘ROTWING_SKEW_REF_MODEL_P_GAIN’ undeclared (first use in this function); did you mean ‘ROTWING_SKEW_REF_MODEL_MAX_DIFF’? ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:305:22: error: ‘ROTWING_SKEW_REF_MODEL_MAX_SPEED’ undeclared (first use in this function); did you mean ‘ROTWING_SKEW_REF_MODEL_MAX_DIFF’? ```
+	- [ ] ``` modules/rotwing_drone/rotwing_state.c:306:31: error: ‘ROTWING_SKEW_REF_MODEL_D_GAIN’ undeclared (first use in this function); did you mean ‘ROTWING_SKEW_REF_MODEL_MAX_DIFF’? ```
+ -  RotatingWingV3D --- nps
+	- [ ] ``` Warning: AIRCRAFT=RotatingWingV3D target=nps compiled sucessfully but had warnings: ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3D/nps/generated/radio.h:14: warning: "RADIO_THROTTLE" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3D/nps/generated/radio.h:19: warning: "RADIO_ROLL" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3D/nps/generated/radio.h:24: warning: "RADIO_PITCH" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3D/nps/generated/radio.h:29: warning: "RADIO_YAW" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3D/nps/generated/radio.h:44: warning: "RADIO_AUX2" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3D/nps/generated/radio.h:69: warning: "RADIO_AUX7" redefined ```
+ -  RotatingWingV3E --- nps
+	- [ ] ``` Warning: AIRCRAFT=RotatingWingV3E target=nps compiled sucessfully but had warnings: ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3E/nps/generated/radio.h:14: warning: "RADIO_THROTTLE" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3E/nps/generated/radio.h:19: warning: "RADIO_ROLL" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3E/nps/generated/radio.h:24: warning: "RADIO_PITCH" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3E/nps/generated/radio.h:29: warning: "RADIO_YAW" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3E/nps/generated/radio.h:44: warning: "RADIO_AUX2" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3E/nps/generated/radio.h:69: warning: "RADIO_AUX7" redefined ```
+ -  RotatingWingV3F --- nps
+	- [ ] ``` Warning: AIRCRAFT=RotatingWingV3F target=nps compiled sucessfully but had warnings: ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3F/nps/generated/radio.h:14: warning: "RADIO_THROTTLE" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3F/nps/generated/radio.h:19: warning: "RADIO_ROLL" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3F/nps/generated/radio.h:24: warning: "RADIO_PITCH" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3F/nps/generated/radio.h:29: warning: "RADIO_YAW" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3F/nps/generated/radio.h:44: warning: "RADIO_AUX2" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3F/nps/generated/radio.h:69: warning: "RADIO_AUX7" redefined ```
+ -  RotatingWingV3G --- nps
+	- [ ] ``` Warning: AIRCRAFT=RotatingWingV3G target=nps compiled sucessfully but had warnings: ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3G/nps/generated/radio.h:14: warning: "RADIO_THROTTLE" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3G/nps/generated/radio.h:19: warning: "RADIO_ROLL" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3G/nps/generated/radio.h:24: warning: "RADIO_PITCH" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3G/nps/generated/radio.h:29: warning: "RADIO_YAW" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3G/nps/generated/radio.h:44: warning: "RADIO_AUX2" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3G/nps/generated/radio.h:69: warning: "RADIO_AUX7" redefined ```
+ -  RotatingWingV3H --- nps
+	- [ ] ``` Warning: AIRCRAFT=RotatingWingV3H target=nps compiled sucessfully but had warnings: ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3H/nps/generated/radio.h:14: warning: "RADIO_THROTTLE" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3H/nps/generated/radio.h:19: warning: "RADIO_ROLL" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3H/nps/generated/radio.h:24: warning: "RADIO_PITCH" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3H/nps/generated/radio.h:29: warning: "RADIO_YAW" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3H/nps/generated/radio.h:44: warning: "RADIO_AUX2" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/RotatingWingV3H/nps/generated/radio.h:69: warning: "RADIO_AUX7" redefined ```
+ -  Rotwing5 --- nps
+	- [ ] ``` Warning: AIRCRAFT=Rotwing5 target=nps compiled sucessfully but had warnings: ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/Rotwing5/nps/generated/radio.h:14: warning: "RADIO_THROTTLE" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/Rotwing5/nps/generated/radio.h:19: warning: "RADIO_ROLL" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/Rotwing5/nps/generated/radio.h:24: warning: "RADIO_PITCH" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/Rotwing5/nps/generated/radio.h:29: warning: "RADIO_YAW" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/Rotwing5/nps/generated/radio.h:44: warning: "RADIO_AUX2" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/Rotwing5/nps/generated/radio.h:69: warning: "RADIO_AUX7" redefined ```
+ -  Rotwing6 --- nps
+	- [ ] ``` Warning: AIRCRAFT=Rotwing6 target=nps compiled sucessfully but had warnings: ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/Rotwing6/nps/generated/radio.h:14: warning: "RADIO_THROTTLE" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/Rotwing6/nps/generated/radio.h:19: warning: "RADIO_ROLL" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/Rotwing6/nps/generated/radio.h:24: warning: "RADIO_PITCH" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/Rotwing6/nps/generated/radio.h:29: warning: "RADIO_YAW" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/Rotwing6/nps/generated/radio.h:44: warning: "RADIO_AUX2" redefined ```
+	- [ ] ``` /home/tomaso/paparazzi//var/aircrafts/Rotwing6/nps/generated/radio.h:69: warning: "RADIO_AUX7" redefined ```
+ -  ardrone2_flightplan_guided_gazebo --- nps
+	- [ ] ``` Error: The command "make AIRCRAFT=ardrone2_flightplan_guided_gazebo clean_ac nps.compile" failed to complete successfully. Exit status: 2 ```
+	- [ ] ``` /home/tomaso/paparazzi//sw/simulator/nps/nps_fdm_gazebo.cpp:35:10: fatal error: gazebo/gazebo.hh: No such file or directory ```
+ -  quadshot --- ap
+	- [ ] ``` tests/aircrafts/01_compile_all_aircrafts.t (Wstat: 2816 Tests: 107 Failed: 11) ```
+
+conf/userconf/tudelft/course_conf.xml:
+-------------------------------------
+ -  bebop_orange_avoid --- ap
+	- [ ] ``` Error: The command "make AIRCRAFT=bebop_orange_avoid clean_ac ap.compile" failed to complete successfully. Exit status: 2 ```
+	- [ ] ``` collect2: error: ld returned 1 exit status ```
+ -  bebop_orange_avoid --- nps
+	- [ ] ``` Error: The command "make AIRCRAFT=bebop_orange_avoid clean_ac nps.compile" failed to complete successfully. Exit status: 2 ```
+	- [ ] ``` /home/tomaso/paparazzi//sw/simulator/nps/nps_fdm_gazebo.cpp:35:10: fatal error: gazebo/gazebo.hh: No such file or directory ```
+ -  bebop_orange_avoid_guided --- nps
+	- [ ] ``` Error: The command "make AIRCRAFT=bebop_orange_avoid_guided clean_ac nps.compile" failed to complete successfully. Exit status: 2 ```
+	- [ ] ``` /home/tomaso/paparazzi//sw/simulator/nps/nps_fdm_gazebo.cpp:35:10: fatal error: gazebo/gazebo.hh: No such file or directory ```
+	- [ ] ``` tests/aircrafts/01_compile_all_aircrafts.t (Wstat: 768 Tests: 6 Failed: 3) ```
+
+conf/userconf/tudelft/guido_conf.xml:
+------------------------------------
+ -  ARDrone2_Guido_optitrack --- nps
+	- [ ] ``` Warning: AIRCRAFT=ARDrone2_Guido_optitrack target=nps compiled sucessfully but had warnings: ```
+	- [ ] ``` modules/computer_vision/opticflow/linear_flow_fit.c:276:30: warning: ‘*n_inliers_pu[0]’ may be used uninitialized [-Wmaybe-uninitialized] ```
+ -  Bebop2_opticflow --- nps
+	- [ ] ``` Error: The command "make AIRCRAFT=Bebop2_opticflow clean_ac nps.compile" failed to complete successfully. Exit status: 2 ```
+	- [ ] ``` /home/tomaso/paparazzi//sw/simulator/nps/nps_fdm_gazebo.cpp:35:10: fatal error: gazebo/gazebo.hh: No such file or directory ```
+ -  Bebop_opticflow --- nps
+	- [ ] ``` Warning: AIRCRAFT=Bebop_opticflow target=nps compiled sucessfully but had warnings: ```
+	- [ ] ``` modules/computer_vision/opticflow/linear_flow_fit.c:276:30: warning: ‘*n_inliers_pu[0]’ may be used uninitialized [-Wmaybe-uninitialized] ```
+	- [ ] ``` tests/aircrafts/01_compile_all_aircrafts.t (Wstat: 256 Tests: 9 Failed: 1) ```
