@@ -914,6 +914,30 @@
         <arg flag="-f" constant="30"/>
       </program>
     </session>
+    <session name="Flight_udp_optitrack">
+      <program name="PprzGCS"/>
+      <program name="Server">
+        <arg flag=""/>
+      </program>
+      <program name="Messages">
+        <arg flag="-c" constant="datalink"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="NatNet3">
+        <arg flag="--long_edge" constant="right"/>
+        <arg flag="--x_side" constant="right"/>
+        <arg flag="--ac_nose" constant="right"/>
+        <arg flag="-ac" constant="44"/>
+        <arg flag="10"/>
+        <arg flag="-f" constant="30"/>
+      </program>
+      <program name="Herelink PprzLink Router">
+        <arg flag="-e udp://192.168.0.11:5242:192.168.0.10:5243"/>
+        <arg flag="-e udp://0.0.0.0:4243:192.168.43.255:4242"/>
+      </program>
+    </session>
     <session name="Flight_udp_rw3c">
       <program name="PprzGCS"/>
       <program name="Server"/>
