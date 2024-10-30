@@ -127,7 +127,7 @@ float  oneloop_andi_filt_cutoff_v = ONELOOP_ANDI_FILT_CUTOFF_VEL;
 #else
 float  oneloop_andi_filt_cutoff_v = 2.0;
 #endif
-
+PRINT_CONFIG_VAR(ONELOOP_ANDI_FILT_CUTOFF_VEL)
 #ifdef ONELOOP_ANDI_FILT_CUTOFF_POS
 float  oneloop_andi_filt_cutoff_pos = ONELOOP_ANDI_FILT_CUTOFF_POS;
 #else
@@ -455,7 +455,9 @@ float ratio_u_un[ANDI_NUM_ACT_TOT];
 float ratio_vn_v[ANDI_OUTPUTS];
 
 /*Filters Initialization*/
-static Butterworth2LowPass filt_veloc_ned[3];                 // Low pass filter for velocity NED - oneloop_andi_filt_cutoff_a (tau_a)       
+static Butterworth2LowPass filt_veloc_N;                 // Low pass filter for velocity NED - oneloop_andi_filt_cutoff_a (tau_a)       
+static Butterworth2LowPass filt_veloc_E;
+static Butterworth2LowPass filt_veloc_D;
 static Butterworth2LowPass accely_filt;                       // Low pass filter for acceleration in y direction                - oneloop_andi_filt_cutoff (tau)
 static Butterworth2LowPass airspeed_filt;                     // Low pass filter for airspeed                                - oneloop_andi_filt_cutoff (tau)
 /* Define messages of the module*/
@@ -1119,9 +1121,9 @@ void init_controller(void){
   k_att_rm.k2[1] = k_att_rm.k2[0];
   k_att_rm.k3[1] = k_att_rm.k3[0];
   
-  printf("Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
-  printf("Attitude E Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
-  printf("Heading E Gains: %f %f %f\n", k_att_e.k1[2], k_att_e.k2[2], k_att_e.k3[2]);
+  //printf("Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
+  //printf("Attitude E Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
+  //printf("Heading E Gains: %f %f %f\n", k_att_e.k1[2], k_att_e.k2[2], k_att_e.k3[2]);
   /*Heading Loop NAV*/
   k_att_e.k1[2]  = k_e_1_3_f_v2(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
   k_att_e.k2[2]  = k_e_2_3_f_v2(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
@@ -1290,11 +1292,13 @@ void init_filter(void)
   // Filtering of the velocities 
   float tau   = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff);
   float tau_v = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_v);
-  init_butterworth_2_low_pass(&filt_veloc_ned[0], tau_v, 1 / PERIODIC_FREQUENCY, 0.0);
-  init_butterworth_2_low_pass(&filt_veloc_ned[1], tau_v, 1 / PERIODIC_FREQUENCY, 0.0);
-  init_butterworth_2_low_pass(&filt_veloc_ned[2], tau_v, 1 / PERIODIC_FREQUENCY, 0.0);
-  init_butterworth_2_low_pass(&accely_filt,       tau,   1 / PERIODIC_FREQUENCY, 0.0);
-  init_butterworth_2_low_pass(&airspeed_filt,     tau,   1 / PERIODIC_FREQUENCY, 0.0);
+  //printf("tau: %f tau_v: %f\n", tau, tau_v);
+  //printf("initializing filters\n");
+  init_butterworth_2_low_pass(&filt_veloc_N,      tau_v, 1.0 / PERIODIC_FREQUENCY, 0.0);
+  init_butterworth_2_low_pass(&filt_veloc_E,      tau_v, 1.0 / PERIODIC_FREQUENCY, 0.0);
+  init_butterworth_2_low_pass(&filt_veloc_D,      tau_v, 1.0 / PERIODIC_FREQUENCY, 0.0);
+  init_butterworth_2_low_pass(&accely_filt,       tau,   1.0 / PERIODIC_FREQUENCY, 0.0);
+  init_butterworth_2_low_pass(&airspeed_filt,     tau,   1.0 / PERIODIC_FREQUENCY, 0.0);
 }
 
 
@@ -1303,6 +1307,7 @@ void oneloop_andi_propagate_filters(void) {
   reinit_all_cf(false);
   struct  NedCoor_f *accel = stateGetAccelNed_f();
   struct  NedCoor_f *veloc = stateGetSpeedNed_f();
+  //printf("veloc: %f %f %f\n", veloc->x, veloc->y, veloc->z);
   struct  FloatRates *body_rates = stateGetBodyRates_f();
   // Store Feedbacks in the Complementary Filters
   cf.ax.feedback    = accel->x;
@@ -1342,9 +1347,11 @@ void oneloop_andi_propagate_filters(void) {
   update_butterworth_2_low_pass(&cf.p.feedback_filt,     cf.p.feedback);
   update_butterworth_2_low_pass(&cf.q.feedback_filt,     cf.q.feedback);
   update_butterworth_2_low_pass(&cf.r.feedback_filt,     cf.r.feedback); 
-  update_butterworth_2_low_pass(&filt_veloc_ned[0],      veloc->x);
-  update_butterworth_2_low_pass(&filt_veloc_ned[1],      veloc->y);
-  update_butterworth_2_low_pass(&filt_veloc_ned[2],      veloc->z); 
+  //printf("veloc: %f %f %f\n", veloc->x, veloc->y, veloc->z);
+  update_butterworth_2_low_pass(&filt_veloc_N,      veloc->x);
+  update_butterworth_2_low_pass(&filt_veloc_E,      veloc->y);
+  update_butterworth_2_low_pass(&filt_veloc_D,      veloc->z); 
+  //printf("veloc_filt: %f %f %f\n", filt_veloc_N.o[0], filt_veloc_E.o[0], filt_veloc_D.o[0]);
   // Calculate Model Predictions for Linear and Angular Accelerations Using the Effectiveness Matrix
   calc_model();
   // Update Filters of Model Predictions for Linear and Angular Accelerations
@@ -1652,9 +1659,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   oneloop_andi.gui_state.pos[0] = stateGetPositionNed_f()->x;   
   oneloop_andi.gui_state.pos[1] = stateGetPositionNed_f()->y;   
   oneloop_andi.gui_state.pos[2] = stateGetPositionNed_f()->z;   
-  oneloop_andi.gui_state.vel[0] = filt_veloc_ned[0].o[0];      
-  oneloop_andi.gui_state.vel[1] = filt_veloc_ned[1].o[0];      
-  oneloop_andi.gui_state.vel[2] = filt_veloc_ned[2].o[0];      
+  oneloop_andi.gui_state.vel[0] = filt_veloc_N.o[0];      
+  oneloop_andi.gui_state.vel[1] = filt_veloc_E.o[0];      
+  oneloop_andi.gui_state.vel[2] = filt_veloc_D.o[0];      
   oneloop_andi.gui_state.acc[0] = cf.ax.out;
   oneloop_andi.gui_state.acc[1] = cf.ay.out;
   oneloop_andi.gui_state.acc[2] = cf.az.out;
