@@ -271,7 +271,7 @@
     <define name="LIMITS_APP_MAX_VERT_ACC" value="4.0" unit="m/s^2"/>
     <!-- LIMITS ON PHYSICAL ACTUATORS AND ATTITUDE -->
     <define name="MOTOR_MAX_OMEGA_RAD_S" value="FBW_T4_MAX_OMEGA_RAD_S"/>
-    <define name="MOTOR_MIN_OMEGA_RAD_S" value="100"/>
+    <define name="MOTOR_MIN_OMEGA_RAD_S" value="120"/>
     <define name="SERVO_EL_MIN_ANGLE_DEG" value="FBW_T4_SERVO_EL_MIN_ANGLE_DEG"/>
     <define name="SERVO_EL_MAX_ANGLE_DEG" value="FBW_T4_SERVO_EL_MAX_ANGLE_DEG"/>
     <define name="SERVO_AZ_MIN_ANGLE_DEG" value="FBW_T4_SERVO_AZ_MIN_ANGLE_DEG"/>

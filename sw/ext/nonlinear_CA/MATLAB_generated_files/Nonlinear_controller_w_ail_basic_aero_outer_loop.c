@@ -5,7 +5,7 @@
  * File: Nonlinear_controller_w_ail_basic_aero_outer_loop.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 17-Oct-2024 19:38:26
+ * C/C++ source code generated on  : 30-Oct-2024 15:44:29
  */
 
 /* Include Files */
@@ -458,7 +458,7 @@ static void b_xgemv(int m, int n, const double A[961], const double x[16],
                     double y[496]);
 static double b_xnrm2(int n, const double x[16]);
 static void c_CoderTimeAPI_callCoderClockGe(void);
-static void c_compute_acc_cascaded_nonlinea(const double u_in[15], double p,
+static void c_compute_acc_nonlinear_CA_inte(const double u_in[15], double p,
   double q, double r, double K_p_T, double K_p_M, double m, double I_xx, double
   I_yy, double I_zz, double l_1, double l_2, double l_3, double l_4, double l_z,
   double Cl_alpha, double Cd_zero, double K_Cd, double Cm_alpha, double Cm_zero,
@@ -1991,7 +1991,7 @@ static void c_CoderTimeAPI_callCoderClockGe(void)
  *                double accelerations_array[6]
  * Return Type  : void
  */
-static void c_compute_acc_cascaded_nonlinea(const double u_in[15], double p,
+static void c_compute_acc_nonlinear_CA_inte(const double u_in[15], double p,
   double q, double r, double K_p_T, double K_p_M, double m, double I_xx, double
   I_yy, double I_zz, double l_1, double l_2, double l_3, double l_4, double l_z,
   double Cl_alpha, double Cd_zero, double K_Cd, double Cm_alpha, double Cm_zero,
@@ -7310,8 +7310,8 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   captured_var gain_motor;
   captured_var gain_phi;
   captured_var gain_theta;
+  double actual_u_no_motor[15];
   double u_max[15];
-  double u_max_scaled[15];
   double u_min[15];
   double b_dv[9];
   double current_acc_aero_only[6];
@@ -7431,21 +7431,22 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   u_max[12] = max_theta_protection;
   u_max[13] = max_phi;
   u_max[14] = max_delta_ailerons;
-  u_min[0] = min_omega;
-  u_min[1] = min_omega;
-  u_min[2] = min_omega;
-  u_min[3] = min_omega;
-  u_min[4] = min_b;
-  u_min[5] = min_b;
-  u_min[6] = min_b;
-  u_min[7] = min_b;
-  u_min[8] = min_g;
-  u_min[9] = min_g;
-  u_min[10] = min_g;
-  u_min[11] = min_g;
-  u_min[12] = min_theta_protection;
-  u_min[13] = -max_phi;
-  u_min[14] = min_delta_ailerons;
+  actual_u_no_motor[0] = min_omega;
+  actual_u_no_motor[1] = min_omega;
+  actual_u_no_motor[2] = min_omega;
+  actual_u_no_motor[3] = min_omega;
+  actual_u_no_motor[4] = min_b;
+  actual_u_no_motor[5] = min_b;
+  actual_u_no_motor[6] = min_b;
+  actual_u_no_motor[7] = min_b;
+  actual_u_no_motor[8] = min_g;
+  actual_u_no_motor[9] = min_g;
+  actual_u_no_motor[10] = min_g;
+  actual_u_no_motor[11] = min_g;
+  actual_u_no_motor[12] = min_theta_protection;
+  actual_u_no_motor[13] = -max_phi;
+  actual_u_no_motor[14] = min_delta_ailerons;
+  memcpy(&u_min[0], &actual_u_no_motor[0], 15U * sizeof(double));
   if (approach_mode != 0.0) {
     double max_tilt_value_approach[2];
     double g_min_approach;
@@ -7506,7 +7507,7 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   /* Build the max and minimum actuator array: */
   if ((induced_failure > 0.5) && (induced_failure < 1.5)) {
     /* Motor 1 */
-    u_max[0] = 0.0;
+    u_max[0] = min_omega;
     u_max[1] = max_omega;
     u_max[2] = max_omega;
     u_max[3] = max_omega;
@@ -7521,7 +7522,7 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
     u_max[12] = max_theta_protection;
     u_max[13] = max_phi;
     u_max[14] = max_delta_ailerons;
-    u_min[0] = 0.0;
+    u_min[0] = min_omega;
     u_min[1] = min_omega;
     u_min[2] = min_omega;
     u_min[3] = min_omega;
@@ -7534,12 +7535,13 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
     u_min[10] = min_g;
     u_min[11] = min_g;
     u_min[12] = min_theta_protection;
-    u_min[13] = -max_phi;
+    u_min[13] = 0.0;
     u_min[14] = min_delta_ailerons;
+    gain_phi.contents = angular_gains_multiplier / 2.0;
   } else if ((induced_failure > 1.5) && (induced_failure < 2.5)) {
     /* Motor 2 */
     u_max[0] = max_omega;
-    u_max[1] = 0.0;
+    u_max[1] = min_omega;
     u_max[2] = max_omega;
     u_max[3] = max_omega;
     u_max[4] = max_b;
@@ -7551,28 +7553,15 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
     u_max[10] = max_g;
     u_max[11] = max_g;
     u_max[12] = max_theta_protection;
-    u_max[13] = max_phi;
+    u_max[13] = 0.0;
     u_max[14] = max_delta_ailerons;
-    u_min[0] = min_omega;
-    u_min[1] = 0.0;
-    u_min[2] = min_omega;
-    u_min[3] = min_omega;
-    u_min[4] = min_b;
-    u_min[5] = min_b;
-    u_min[6] = min_b;
-    u_min[7] = min_b;
-    u_min[8] = min_g;
-    u_min[9] = min_g;
-    u_min[10] = min_g;
-    u_min[11] = min_g;
-    u_min[12] = min_theta_protection;
-    u_min[13] = -max_phi;
-    u_min[14] = min_delta_ailerons;
+    memcpy(&u_min[0], &actual_u_no_motor[0], 15U * sizeof(double));
+    gain_phi.contents = angular_gains_multiplier / 2.0;
   } else if ((induced_failure > 2.5) && (induced_failure < 3.5)) {
     /* Motor 3 */
     u_max[0] = max_omega;
     u_max[1] = max_omega;
-    u_max[2] = 0.0;
+    u_max[2] = min_omega;
     u_max[3] = max_omega;
     u_max[4] = max_b;
     u_max[5] = max_b;
@@ -7587,7 +7576,7 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
     u_max[14] = max_delta_ailerons;
     u_min[0] = min_omega;
     u_min[1] = min_omega;
-    u_min[2] = 0.0;
+    u_min[2] = min_omega;
     u_min[3] = min_omega;
     u_min[4] = min_b;
     u_min[5] = min_b;
@@ -7606,7 +7595,7 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
     u_max[0] = max_omega;
     u_max[1] = max_omega;
     u_max[2] = max_omega;
-    u_max[3] = 0.0;
+    u_max[3] = min_omega;
     u_max[4] = max_b;
     u_max[5] = max_b;
     u_max[6] = max_b;
@@ -7618,21 +7607,7 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
     u_max[12] = max_theta_protection;
     u_max[13] = 0.0;
     u_max[14] = max_delta_ailerons;
-    u_min[0] = min_omega;
-    u_min[1] = min_omega;
-    u_min[2] = min_omega;
-    u_min[3] = 0.0;
-    u_min[4] = min_b;
-    u_min[5] = min_b;
-    u_min[6] = min_b;
-    u_min[7] = min_b;
-    u_min[8] = min_g;
-    u_min[9] = min_g;
-    u_min[10] = min_g;
-    u_min[11] = min_g;
-    u_min[12] = min_theta_protection;
-    u_min[13] = -max_phi;
-    u_min[14] = min_delta_ailerons;
+    memcpy(&u_min[0], &actual_u_no_motor[0], 15U * sizeof(double));
     gain_phi.contents = angular_gains_multiplier / 2.0;
   }
 
@@ -7641,36 +7616,35 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
     u_min[i + 4] = u_min[i + 4] * 3.1415926535897931 / 180.0;
   }
 
-  memcpy(&u_max_scaled[0], &u_max[0], 15U * sizeof(double));
-  u_max_scaled[0] = u_max[0] / gain_motor.contents;
+  u_max[0] /= gain_motor.contents;
   u_min[0] /= gain_motor.contents;
-  u_max_scaled[4] /= gain_el.contents;
+  u_max[4] /= gain_el.contents;
   u_min[4] /= gain_el.contents;
-  u_max_scaled[8] /= gain_az.contents;
+  u_max[8] /= gain_az.contents;
   u_min[8] /= gain_az.contents;
-  u_max_scaled[1] = u_max[1] / gain_motor.contents;
+  u_max[1] /= gain_motor.contents;
   u_min[1] /= gain_motor.contents;
-  u_max_scaled[5] /= gain_el.contents;
+  u_max[5] /= gain_el.contents;
   u_min[5] /= gain_el.contents;
-  u_max_scaled[9] /= gain_az.contents;
+  u_max[9] /= gain_az.contents;
   u_min[9] /= gain_az.contents;
-  u_max_scaled[2] = u_max[2] / gain_motor.contents;
+  u_max[2] /= gain_motor.contents;
   u_min[2] /= gain_motor.contents;
-  u_max_scaled[6] /= gain_el.contents;
+  u_max[6] /= gain_el.contents;
   u_min[6] /= gain_el.contents;
-  u_max_scaled[10] /= gain_az.contents;
+  u_max[10] /= gain_az.contents;
   u_min[10] /= gain_az.contents;
-  u_max_scaled[3] = u_max[3] / gain_motor.contents;
+  u_max[3] /= gain_motor.contents;
   u_min[3] /= gain_motor.contents;
-  u_max_scaled[7] /= gain_el.contents;
+  u_max[7] /= gain_el.contents;
   u_min[7] /= gain_el.contents;
-  u_max_scaled[11] /= gain_az.contents;
+  u_max[11] /= gain_az.contents;
   u_min[11] /= gain_az.contents;
-  u_max_scaled[12] /= gain_theta.contents;
+  u_max[12] /= gain_theta.contents;
   u_min[12] /= gain_theta.contents;
-  u_max_scaled[13] /= gain_phi.contents;
+  u_max[13] /= gain_phi.contents;
   u_min[13] /= gain_phi.contents;
-  u_max_scaled[14] /= gain_ailerons.contents;
+  u_max[14] /= gain_ailerons.contents;
   u_min[14] /= gain_ailerons.contents;
   if (use_u_init > 0.8) {
     memcpy(&u_out[0], &u_init[0], 15U * sizeof(double));
@@ -7709,12 +7683,12 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   }
 
   /*  Apply Nonlinear optimization algorithm: */
-  memcpy(&u_max[0], &actual_u.contents[0], 15U * sizeof(double));
-  u_max[0] = 0.0;
-  u_max[1] = 0.0;
-  u_max[2] = 0.0;
-  u_max[3] = 0.0;
-  c_compute_acc_cascaded_nonlinea(u_max, b_p.contents, b_q.contents,
+  memcpy(&actual_u_no_motor[0], &actual_u.contents[0], 15U * sizeof(double));
+  actual_u_no_motor[0] = 0.0;
+  actual_u_no_motor[1] = 0.0;
+  actual_u_no_motor[2] = 0.0;
+  actual_u_no_motor[3] = 0.0;
+  c_compute_acc_nonlinear_CA_inte(actual_u_no_motor, b_p.contents, b_q.contents,
     b_r.contents, b_K_p_T.contents, b_K_p_M.contents, b_m.contents,
     b_I_xx.contents, b_I_yy.contents, b_I_zz.contents, b_l_1.contents,
     b_l_2.contents, b_l_3.contents, b_l_4.contents, b_l_z.contents,
@@ -7831,7 +7805,7 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   expl_temp.dv_global = &dv_global;
   expl_temp.actual_u = &actual_u;
   b_expl_temp = expl_temp;
-  fmincon(&b_expl_temp, u_out, u_min, u_max_scaled, exitflag, N_iterations,
+  fmincon(&b_expl_temp, u_out, u_min, u_max, exitflag, N_iterations,
           N_evaluation, c_expl_temp, &min_theta_protection,
           &b_max_tilt_value_approach, &b_max_approach, &b_min_approach);
   g_max_approach = u_out[12] * gain_theta.contents;
@@ -7898,7 +7872,7 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
   u_out[12] *= gain_theta.contents;
   u_out[13] *= gain_phi.contents;
   u_out[14] *= gain_ailerons.contents;
-  c_compute_acc_cascaded_nonlinea(u_out, b_p.contents, b_q.contents,
+  c_compute_acc_nonlinear_CA_inte(u_out, b_p.contents, b_q.contents,
     b_r.contents, b_K_p_T.contents, b_K_p_M.contents, b_m.contents,
     b_I_xx.contents, b_I_yy.contents, b_I_zz.contents, b_l_1.contents,
     b_l_2.contents, b_l_3.contents, b_l_4.contents, b_l_z.contents,
@@ -7910,12 +7884,12 @@ void Nonlinear_controller_w_ail_basic_aero_outer_loop(double K_p_T, double K_p_M
     residuals[i] = dv_global.contents[i] - final_accelerations[i];
   }
 
-  memcpy(&u_max[0], &u_out[0], 15U * sizeof(double));
-  u_max[0] = 0.0;
-  u_max[1] = 0.0;
-  u_max[2] = 0.0;
-  u_max[3] = 0.0;
-  c_compute_acc_cascaded_nonlinea(u_max, b_p.contents, b_q.contents,
+  memcpy(&actual_u_no_motor[0], &u_out[0], 15U * sizeof(double));
+  actual_u_no_motor[0] = 0.0;
+  actual_u_no_motor[1] = 0.0;
+  actual_u_no_motor[2] = 0.0;
+  actual_u_no_motor[3] = 0.0;
+  c_compute_acc_nonlinear_CA_inte(actual_u_no_motor, b_p.contents, b_q.contents,
     b_r.contents, b_K_p_T.contents, b_K_p_M.contents, b_m.contents,
     b_I_xx.contents, b_I_yy.contents, b_I_zz.contents, b_l_1.contents,
     b_l_2.contents, b_l_3.contents, b_l_4.contents, b_l_z.contents,
