@@ -1215,7 +1215,7 @@ void init_all_cf(void){
   init_cf2(&cf.ay,    oneloop_andi_filt_cutoff_a);
   init_cf2(&cf.az,    oneloop_andi_filt_cutoff_a);
   init_cf4(&cf.p_dot, 2.0);
-  init_cf4(&cf.q_dot, 3.5);
+  init_cf4(&cf.q_dot, 2.0);
   init_cf2(&cf.r_dot, oneloop_andi_filt_cutoff);
   init_cf2(&cf.p,     oneloop_andi_filt_cutoff_p);
   init_cf2(&cf.q,     oneloop_andi_filt_cutoff_q);
