@@ -76,7 +76,7 @@ static Butterworth2LowPass skew_filt;
 bool airspeed_fake_on = false;
 float airspeed_fake = 0.0;
 float ele_eff = 19.36; // (0.88*22.0);
-float roll_eff = 3.835;
+float roll_eff = 5.5 ;//3.835;
 float yaw_eff  = 0.390;
 float ele_min = 0.0;
 /* Define Forces and Moments tructs for each actuator*/
