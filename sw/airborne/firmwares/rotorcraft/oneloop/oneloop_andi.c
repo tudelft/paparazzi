@@ -291,6 +291,7 @@ float Wu_quad_motors_fwd = ONELOOP_ANDI_WU_QUAD_MOTORS_FWD;
 /*  Define Section of the functions used in this module*/
 void  init_poles(void);
 void  init_poles_att(void);
+void  init_poles_pos(void);
 void  calc_normalization(void);
 void  normalize_nu(void);
 void  G1G2_oneloop(int ctrl_type);
@@ -1029,6 +1030,13 @@ void init_poles_att(void){
   p_att_e.omega_n  = ec_poles(p_att_rm.omega_n,  slow_pole, 1.28);
   p_head_e.omega_n = ec_poles(p_head_rm.omega_n, slow_pole, 1.28);
 }
+void init_poles_pos(void){
+  act_dynamics[COMMAND_ROLL]  = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
+  act_dynamics[COMMAND_PITCH] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
+  float slow_pole = act_dynamics[COMMAND_ROLL]; // Pole of the slowest dynamics used in the position controller
+  p_pos_e.omega_n = ec_poles(p_pos_rm.omega_n,slow_pole,1.28);//1.0;
+  p_alt_e.omega_n = ec_poles(p_alt_rm.omega_n,slow_pole,1.28);//1.0;// 3.0;
+}
 
 /**
  * @brief Initialize Position of Poles
@@ -1061,21 +1069,21 @@ void init_poles(void){
   // Position Controller Poles----------------------------------------------------------
   slow_pole = act_dynamics[COMMAND_ROLL]; // Pole of the slowest dynamics used in the position controller
 
-  p_pos_e.omega_n = 1.0;
-  p_pos_e.zeta    = 1.0; 
-  p_pos_e.p3      = slow_pole; 
-
   p_pos_rm.omega_n = 0.93;
   p_pos_rm.zeta    = 1.0;  
   p_pos_rm.p3      = p_pos_rm.omega_n * p_pos_rm.zeta;
 
-  p_alt_e.omega_n = 1.0;// 3.0;
-  p_alt_e.zeta    = 1.0; 
-  p_alt_e.p3      = slow_pole; 
+  p_pos_e.omega_n = ec_poles(p_pos_rm.omega_n,slow_pole,1.28);//1.0;
+  p_pos_e.zeta    = 1.0; 
+  p_pos_e.p3      = slow_pole; 
 
   p_alt_rm.omega_n = 0.93; //1.93;
   p_alt_rm.zeta    = 1.0;
   p_alt_rm.p3      = p_alt_rm.omega_n * p_alt_rm.zeta;
+
+  p_alt_e.omega_n = ec_poles(p_alt_rm.omega_n,slow_pole,1.28);//1.0;// 3.0;
+  p_alt_e.zeta    = 1.0; 
+  p_alt_e.p3      = slow_pole; 
 }
 
 /** 
@@ -1089,6 +1097,7 @@ void init_controller(void){
   max_a_nav = nav_max_acceleration_sp;
   /*Some calculations in case new poles have been specified*/
   init_poles_att();
+  init_poles_pos();
   p_att_rm.p3  = p_att_rm.omega_n  * p_att_rm.zeta;
   p_pos_rm.p3  = p_pos_rm.omega_n  * p_pos_rm.zeta;
   p_alt_rm.p3  = p_alt_rm.omega_n  * p_alt_rm.zeta;
@@ -1607,10 +1616,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
 {
   // At beginnig of the loop: (1) Register Attitude, (2) Initialize gains of RM and EC, (3) Calculate Normalization of Actuators Signals, (4) Propagate Actuator Model, (5) Update effectiveness matrix
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-  // if (half_loop){
-  //   //printf("Calculating Poles\n");
-  //   init_poles_att();
-  // }
   init_controller();
   calc_normalization();
   get_act_state_oneloop();
