@@ -29,13 +29,13 @@
 #include "state.h"
 
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
-
+#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
+#include "modules/rotwing_drone/rotwing_state.h"
 #include "autopilot.h"
 
 #include "modules/actuators/actuators.h"
 #include "modules/core/abi.h"
 #include "modules/radio_control/radio_control.h"
-#include "generated/radio.h"
 
 #ifndef SERVO_ROTATION_MECH_IDX
 #error ctrl_eff_sched_rotwing requires a servo named ROTATION_MECH_IDX
@@ -249,7 +249,7 @@ void eff_scheduling_rotwing_init(void)
 void eff_scheduling_rotwing_periodic(void)
 {
   // your periodic code here.
-  // freq = 10.0 Hz
+  // freq = 500.0 Hz
   eff_scheduling_rotwing_update_wing_angle();
   eff_scheduling_rotwing_update_MMOI();
   eff_scheduling_rotwing_update_cmd();
