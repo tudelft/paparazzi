@@ -124,8 +124,8 @@
     <define name  = "FILTER_YAW_RATE"         value = "TRUE"/>
     <define name  = "ACT_DYN"                 value = "{50.0f, 50.0f, 50.0f, 50.0f, 0.0f,0.0f}" />
     <define name  = "ACT_IS_SERVO"            value = "{0, 0, 0, 0, 0, 0}" />
-    <define name  = "ACT_MAX"                 value = "{9600.0f, 9600.0f,  9600.0f,  9600.0f,  M_PI_4,  M_PI_6}"/>
-    <define name  = "ACT_MIN"                 value = "{0.0f   ,    0.0f,     0.0f,     0.0f, -M_PI_4, -M_PI_6}"/>
+    <define name  = "ACT_MAX"                 value = "{9600.0f, 9600.0f,  9600.0f,  9600.0f,  M_PI_4,  M_PI_4}"/>
+    <define name  = "ACT_MIN"                 value = "{0.0f   ,    0.0f,     0.0f,     0.0f, -M_PI_4, -M_PI_4}"/>
     <define name  = "ACT_MAX_NORM"            value = "{1.0f   ,    1.0f,     1.0f,     1.0f,    1.0f,    1.0f}"/>
     <define name  = "ACT_MIN_NORM"            value = "{0.0f   ,    0.0f,     0.0f,     0.0f,   -1.0f,   -1.0f}"/>
     <define name  = "DEBUG_MODE"              value = "FALSE"/>
