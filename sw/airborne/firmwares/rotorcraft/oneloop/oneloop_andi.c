@@ -288,6 +288,7 @@ float Wu_quad_motors_fwd = 6.0;
 float Wu_quad_motors_fwd = ONELOOP_ANDI_WU_QUAD_MOTORS_FWD;
 #endif
 
+
 /*  Define Section of the functions used in this module*/
 void  init_poles(void);
 void  init_poles_att(void);
@@ -1070,16 +1071,22 @@ void init_poles(void){
 
   // Position Controller Poles----------------------------------------------------------
   slow_pole = act_dynamics[COMMAND_ROLL]; // Pole of the slowest dynamics used in the position controller
-
-  p_pos_rm.omega_n = 0.93;
+#ifdef ONELOOP_ANDI_POLES_POS_OMEGA_N
+  p_pos_rm.omega_n = ONELOOP_ANDI_POLES_POS_OMEGA_N;
+#else
+  p_pos_rm.omega_n = 0.93; //2.2;
+#endif
   p_pos_rm.zeta    = 1.0;  
   p_pos_rm.p3      = p_pos_rm.omega_n * p_pos_rm.zeta;
 
   p_pos_e.omega_n = ec_poles(p_pos_rm.omega_n,slow_pole,1.28);//1.0;
   p_pos_e.zeta    = 1.0; 
   p_pos_e.p3      = slow_pole; 
-
-  p_alt_rm.omega_n = 0.93; //1.93;
+#ifdef ONELOOP_ANDI_POLES_ALT_OMEGA_N
+  p_alt_rm.omega_n = ONELOOP_ANDI_POLES_ALT_OMEGA_N;
+#else
+  p_alt_rm.omega_n = 0.93; //2.2;
+#endif
   p_alt_rm.zeta    = 1.0;
   p_alt_rm.p3      = p_alt_rm.omega_n * p_alt_rm.zeta;
 
