@@ -66,6 +66,10 @@ struct dronecan_iface_t {
   uint8_t canard_memory_pool[1024 * 2];
 
   bool initialized;
+
+  /* Errors */
+  uint32_t tx_timeout;
+  uint32_t tx_reset;
 };
 
 /** Generic dronecan callback definition */

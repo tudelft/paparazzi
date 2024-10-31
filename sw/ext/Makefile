@@ -129,7 +129,7 @@ clean:
 	$(Q)if [ -f luftboot/src/Makefile ]; then \
 		$(MAKE) -C luftboot/src clean; \
 	fi
-	$(Q)rm -r $(PAPARAZZI_SRC)/var/include/DSDLcode
+	$(Q)rm -rf $(PAPARAZZI_SRC)/var/include/DSDLcode
 
 clean_opencv_bebop:
 	$(Q)if [ -f opencv_bebop/Makefile ]; then \

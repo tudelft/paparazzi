@@ -178,7 +178,9 @@ void dronecan_broadcast(struct dronecan_iface_t *iface, CanardTxTransfer *transf
 {
   if (!iface->initialized) { return; }
 
+  chMtxLock(&iface->mutex);
   canardBroadcastObj(&iface->canard, transfer);
+  chMtxUnlock(&iface->mutex);
   chEvtBroadcast(&iface->tx_request);
 }
 
@@ -189,7 +191,9 @@ void dronecan_request_or_respond(struct dronecan_iface_t *iface, uint8_t destina
 {
   if (!iface->initialized) { return; }
 
+  chMtxLock(&iface->mutex);
   canardRequestOrRespondObj(&iface->canard, destination_node_id, transfer);
+  chMtxUnlock(&iface->mutex);
   chEvtBroadcast(&iface->tx_request);
 }
 
@@ -402,7 +406,6 @@ static THD_FUNCTION(dronecan_tx, p)
 {
   event_listener_t txreq;
   struct dronecan_iface_t *iface = (struct dronecan_iface_t *)p;
-  uint8_t err_cnt = 0;
 
   chRegSetThreadName("dronecan_tx");
   chEvtRegister(&iface->tx_request, &txreq, 0);
@@ -413,20 +416,21 @@ static THD_FUNCTION(dronecan_tx, p)
     for (const CanardCANFrame *txf = NULL; (txf = canardPeekTxQueue(&iface->canard)) != NULL;) {
       CANTxFrame tx_msg;
       tx_msg = canard2chibiTx(txf);
+      chMtxUnlock(&iface->mutex);
       msg_t tx_ok =
         canTransmitTimeout(iface->can_driver, CAN_ANY_MAILBOX, &tx_msg, chTimeMS2I(100));
+      chMtxLock(&iface->mutex);
       switch (tx_ok) {
         case MSG_OK: {
-          err_cnt = 0;
           canardPopTxQueue(&iface->canard);
         break;
         } 
         case MSG_TIMEOUT: {
-          err_cnt++;
+          iface->tx_timeout++;
         break;
         }
         case MSG_RESET: {
-          err_cnt++;
+          iface->tx_reset++;
           canardPopTxQueue(&iface->canard);
         break;
         }
