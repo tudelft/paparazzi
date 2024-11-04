@@ -656,8 +656,8 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
           delta_alpha.r = RATE_FLOAT_OF_BFP(scaled.r + f_sample.r) * 0.5f * (1.f / rate);
         } else {
           delta_alpha.p = RATE_FLOAT_OF_BFP(prev_rate.p + f_sample.p) * 0.5f * (1.f / rate);
-          delta_alpha.q = RATE_FLOAT_OF_BFP(prev_rate.p + f_sample.p) * 0.5f * (1.f / rate);
-          delta_alpha.r = RATE_FLOAT_OF_BFP(prev_rate.p + f_sample.p) * 0.5f * (1.f / rate);
+          delta_alpha.q = RATE_FLOAT_OF_BFP(prev_rate.q + f_sample.q) * 0.5f * (1.f / rate);
+          delta_alpha.r = RATE_FLOAT_OF_BFP(prev_rate.r + f_sample.r) * 0.5f * (1.f / rate);
         }
 
         // Coning correction
