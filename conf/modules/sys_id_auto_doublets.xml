@@ -11,7 +11,9 @@
   <settings>
   <dl_settings NAME="AutoDoublet">
     <dl_settings name="auto_doublet">
-        <dl_setting min="0"    max="1"    step="1" values="Inactive|Active" shortname="activated" var="sys_id_auto_doublets_activated" type="uint8_t" module="system_identification/sys_id_auto_doublets" handler="on_activation"/>
+        <dl_setting min="0"    max="1"       step="1"   values="Inactive|Active" shortname="activated" var="sys_id_auto_doublets_activated" type="uint8_t" module="system_identification/sys_id_auto_doublets" handler="on_activation"/>
+        <dl_setting min="0"    max="9600"    step="100" shortname="amplitude_roll" var="sys_id_auto_doublets_amplitude_roll"/>
+        <dl_setting min="0"    max="9600"    step="100" shortname="amplitude_pitch" var="sys_id_auto_doublets_amplitude_pitch"/>
     </dl_settings>
   </dl_settings>
   </settings>

@@ -91,6 +91,7 @@
 #include "modules/rotwing_drone/rotwing_state.h"
 #include "modules/core/commands.h"
 #include "modules/ctrl/eff_scheduling_rotwing_V2.h"
+#include "modules/system_identification/sys_id_doublet.h"
 #include <stdio.h>
 #if INS_EXT_POSE
 #include "modules/ins/ins_ext_pose.h"
@@ -1801,10 +1802,19 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   }
 
   if (in_flight_oneloop) {
-    // Add the increments to the actuators
-    float_vect_sum(andi_u, actuator_state_1l, andi_du, ANDI_NUM_ACT);
-    andi_u[COMMAND_ROLL]  = andi_du[COMMAND_ROLL]  + oneloop_andi.sta_state.att[0];
-    andi_u[COMMAND_PITCH] = andi_du[COMMAND_PITCH] + oneloop_andi.sta_state.att[1];
+    if (!sys_id_doublet_running()){
+      // Add the increments to the actuators
+      float_vect_sum(andi_u, actuator_state_1l, andi_du, ANDI_NUM_ACT);
+      andi_u[COMMAND_ROLL]  = andi_du[COMMAND_ROLL]  + oneloop_andi.sta_state.att[0];
+      andi_u[COMMAND_PITCH] = andi_du[COMMAND_PITCH] + oneloop_andi.sta_state.att[1];
+    } else {
+      int16_t temp_doublet[4] = {0,0,0,0};
+      sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,temp_doublet);
+      andi_u[COMMAND_MOTOR_FRONT] = actuator_state_1l[COMMAND_MOTOR_FRONT]+temp_doublet[COMMAND_MOTOR_FRONT];
+      andi_u[COMMAND_MOTOR_RIGHT] = actuator_state_1l[COMMAND_MOTOR_RIGHT]+temp_doublet[COMMAND_MOTOR_RIGHT];
+      andi_u[COMMAND_MOTOR_BACK]  = actuator_state_1l[COMMAND_MOTOR_BACK] +temp_doublet[COMMAND_MOTOR_BACK];
+      andi_u[COMMAND_MOTOR_LEFT]  = actuator_state_1l[COMMAND_MOTOR_LEFT] +temp_doublet[COMMAND_MOTOR_LEFT];
+    }
   } else {
     // Not in flight, so don't increment
     float_vect_copy(andi_u, andi_du, ANDI_NUM_ACT);
@@ -1821,7 +1831,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     Bound(andi_u[i], act_min[i], act_max[i]);
   }
-
   /*Commit the actuator command*/
   for (i = 0; i < ANDI_NUM_ACT; i++) {
     commands[i] = (int16_t) andi_u[i];
