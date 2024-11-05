@@ -617,18 +617,19 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
     RMAT_FLOAT_OF_BFP(body_to_sensor, gyro->body_to_sensor);
 
     // Variables for integration
-    struct FloatRates integrated_sensor = { 0 };
-    struct FloatRates prev_rate = { 0 };
     struct FloatRates beta = { 0 };
     struct FloatRates alpha = { 0 };
-    struct FloatRates last_alpha = { 0 };
+    struct FloatRates integrated_sensor = { 0 };
     struct FloatRates delta_alpha = { 0 };
     struct FloatRates scaled_last_delta_alpha = { 0 };
-    struct FloatRates lhs = { 0 };
     struct FloatRates alpha_cross = { 0 };
 
     // Only perform multiple integrations in sensor frame if needed
     if(samples > 1) {
+      
+      struct FloatRates last_alpha = { 0 };
+      struct FloatRates prev_rate = { 0 };
+      struct FloatRates lhs = { 0 };
 
       // Add all samples
       for(uint8_t i = 0; i < samples; i++) {
@@ -668,25 +669,9 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
 
         VECT3_RATES_CROSS_RATES(alpha_cross, lhs, delta_alpha);
         RATES_ADD_SCALED_RATES(beta, alpha_cross, 0.5f);
-        
-        RATES_ADD(integrated_sensor, alpha);
-        RATES_ADD(integrated_sensor, beta);
 
         RATES_COPY(last_alpha, alpha);
         RATES_COPY(gyro->last_delta_alpha, delta_alpha);
-
-      #if DEBUG_CONING
-        float payload[6];
-        payload[0] = integrated_sensor.p;
-        payload[1] = integrated_sensor.q;
-        payload[2] = integrated_sensor.r;
-        payload[3] = beta.p;
-        payload[4] = beta.q;
-        payload[5] = beta.r;
-
-        RunOnceEvery(10, {DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 6, payload);});
-
-      #endif
 
       }
 
@@ -699,30 +684,31 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
 
       RATES_SDIV(scaled_last_delta_alpha, gyro->last_delta_alpha, 6.f);
 
-      // last_alpha will be zero here, so use scaled_last_delta_alpha directly
       VECT3_RATES_CROSS_RATES(alpha_cross, scaled_last_delta_alpha, delta_alpha);
       RATES_SMUL(beta, alpha_cross, 0.5f);
-
-      // Since alpha will be zero here, use delta_alpha instead of first doing addition
-      RATES_ADD(integrated_sensor, delta_alpha);
-      RATES_ADD(integrated_sensor, beta);
-
-      #if DEBUG_CONING
-        float payload[6];
-        payload[0] = delta_alpha.p;
-        payload[1] = delta_alpha.q;
-        payload[2] = delta_alpha.r;
-        payload[3] = beta.p;
-        payload[4] = beta.q;
-        payload[5] = beta.r;
-
-        RunOnceEvery(10, {DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 6, payload);});
-
-      #endif
+      RATES_COPY(alpha, delta_alpha);
 
       RATES_COPY(gyro->last_delta_alpha, delta_alpha);
 
     }
+
+    RATES_SUM(integrated_sensor, alpha, beta);
+
+    #if DEBUG_CONING
+      float payload[9];
+      payload[0] = alpha.p;
+      payload[1] = alpha.q;
+      payload[2] = alpha.r;
+      payload[3] = beta.p;
+      payload[4] = beta.q;
+      payload[5] = beta.r;
+      payload[6] = integrated_sensor.p;
+      payload[7] = integrated_sensor.q;
+      payload[8] = integrated_sensor.r;
+
+      RunOnceEvery(10, {DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 6, payload);});
+
+    #endif
     
     // Rotate to body frame
     float_rmat_transp_ratemult(&integrated, &body_to_sensor, &integrated_sensor);
