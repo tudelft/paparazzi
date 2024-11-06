@@ -12,8 +12,8 @@
     <waypoint name="p4" x="120" y="-75"/>
     <waypoint name="circ" x="160" y="25"/>
     <waypoint name="TD" x="10" y="-1"/>
-    <!-- <waypoint name="APP" x="70" y="-25"/>
-    <waypoint name="FOLLOW" x="300" y="80"/> -->
+    <waypoint name="APP" x="70" y="-25"/>
+    <waypoint name="FOLLOW" x="300" y="80"/>
     <waypoint name="ML_global_target" x="300" y="60"/>
     <waypoint name="Downwind" x="170.2" y="209.1" height="50"/>
     <waypoint name="Base" x="534.285" y="-58.323" height="40"/>
@@ -126,10 +126,10 @@
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
     </block> -->
-    <!-- <block name="follow_module">
-      <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-      <stay pre_call="follow_me_set_wp(WP_p1, 0)" wp="p1"/>
-    </block> -->
+    <block name="FOLLOW">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <stay wp="FOLLOW"/>
+    </block>
     <!-- <block name="route">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
       <go from="p1" hmode="route" wp="p2"/>
