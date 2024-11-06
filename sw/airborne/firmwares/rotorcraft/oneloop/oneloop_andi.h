@@ -194,6 +194,23 @@ struct Oneloop_notch_t{
   struct notch_axis_t yaw;
 };
 
+/* Possible types of Filters */
+enum FilterType {
+  BUTTERWORTH_2,
+  BUTTERWORTH_4,
+  NOTCH
+};
+/* Structural Modes Filtering*/
+struct Oneloop_StructuralModes_t {
+  float freq;
+  float bandwidth;
+  enum FilterType filter_type; // Type of filter used for the structural modes
+  union {
+    Butterworth2LowPass bw2;
+    Butterworth4LowPass bw4;
+    struct SecondOrderNotchFilter notch;
+  } filter;
+};
 extern int16_t temp_pitch;
 /*Declaration of Reference Model and Error Controller Gains*/
 extern struct PolePlacement p_att_e;

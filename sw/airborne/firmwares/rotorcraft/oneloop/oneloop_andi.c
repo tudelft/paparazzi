@@ -135,6 +135,101 @@ float  oneloop_andi_filt_cutoff_pos = ONELOOP_ANDI_FILT_CUTOFF_POS;
 float  oneloop_andi_filt_cutoff_pos = 2.0;
 #endif
 
+// Stabilization Structural Modes Filtering ----------------------------------------
+// Frequencies
+//#define ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ 8.46
+//#define ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ 6.44
+
+//const float ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ = 17.90;
+#define ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
+//#define ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ 17.90
+//#define USE_ROLL_NOTCH
+//#define USE_PITCH_NOTCH
+//#define USE_YAW_NOTCH
+//#define USE_ROLL_LP
+//#define USE_PITCH_LP
+//#define USE_YAW_LP
+#define USE_YAW_LP4
+
+// Roll Structural Mode Filtering
+#ifdef ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ
+#if !defined(USE_ROLL_NOTCH) && !defined(USE_ROLL_LP) && !defined(USE_ROLL_LP4)
+#error "Either USE_ROLL_NOTCH, USE_ROLL_LP4 or USE_ROLL_LP must be defined."
+#elif (defined(USE_ROLL_NOTCH) && defined(USE_ROLL_LP)) || \
+      (defined(USE_ROLL_NOTCH) && defined(USE_ROLL_LP4)) || \
+      (defined(USE_ROLL_LP) && defined(USE_ROLL_LP4))
+#error "Only one of USE_ROLL_NOTCH, USE_ROLL_LP4 or USE_ROLL_LP can be defined."
+#endif
+struct Oneloop_StructuralModes_t roll_structural_mode = {
+#ifdef USE_ROLL_NOTCH
+  .freq = ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ,
+  .bandwidth = 4.0,
+  .filter_type = NOTCH,
+#elif defined(USE_ROLL_LP) 
+  .freq = 11.0 //ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ-3.0, 
+  .bandwidth = 0.0,
+  .filter_type = BUTTERWORTH_2,
+#elif defined(USE_ROLL_LP4)
+  .freq = 11.0 //ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ-3.0,
+  .bandwidth = 0.0,
+  .filter_type = BUTTERWORTH_4,
+#endif
+};
+#endif
+// Pitch Structural Mode Filtering
+#ifdef ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ
+#if !defined(USE_PITCH_NOTCH) && !defined(USE_PITCH_LP) && !defined(USE_PITCH_LP4)
+#error "Either USE_PITCH_NOTCH, USE_PITCH_LP4 or USE_PITCH_LP must be defined."
+#elif (defined(USE_PITCH_NOTCH) && defined(USE_PITCH_LP)) || \
+      (defined(USE_PITCH_NOTCH) && defined(USE_PITCH_LP4)) || \
+      (defined(USE_PITCH_LP) && defined(USE_PITCH_LP4))
+#error "Only one of USE_PITCH_NOTCH, USE_PITCH_LP4 or USE_PITCH_LP can be defined."
+#endif
+struct Oneloop_StructuralModes_t pitch_structural_mode = {
+#ifdef USE_PITCH_NOTCH
+  .freq = ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ,
+  .bandwidth = 4.0,
+  .filter_type = NOTCH,
+#elif defined(USE_PITCH_LP)
+  .freq = ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ-3.0,
+  .bandwidth = 0.0,
+  .filter_type = BUTTERWORTH_2,
+#elif defined(USE_PITCH_LP4)
+  .freq = ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ-3.0,
+  .bandwidth = 0.0,
+  .filter_type = BUTTERWORTH_4,
+#endif
+};
+#endif
+// Yaw Structural Mode Filtering
+#ifdef ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
+#if !defined(USE_YAW_NOTCH) && !defined(USE_YAW_LP) && !defined(USE_YAW_LP4)
+#error "Either USE_YAW_NOTCH, USE_YAW_LP4 or USE_YAW_LP must be defined."
+#elif (defined(USE_YAW_NOTCH) && defined(USE_YAW_LP)) || \
+      (defined(USE_YAW_NOTCH) && defined(USE_YAW_LP4)) || \
+      (defined(USE_YAW_LP) && defined(USE_YAW_LP4))
+#error "Only one of USE_YAW_NOTCH, USE_YAW_LP4 or USE_YAW_LP can be defined."
+#endif
+struct Oneloop_StructuralModes_t yaw_structural_mode = {
+#ifdef USE_YAW_NOTCH
+  .freq = ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ,
+  .bandwidth = 4.0,
+  .filter_type = NOTCH,
+#elif defined(USE_YAW_LP)
+  .freq = 11.0, //ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ-3.0,
+  .bandwidth = 0.0,
+  .filter_type = BUTTERWORTH_2,
+#elif defined(USE_YAW_LP4)
+  .freq = 11.0, //ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ-3.0,
+  .bandwidth = 0.0,
+  .filter_type = BUTTERWORTH_4,
+#endif
+};
+#endif
+
+PRINT_CONFIG_VAR(ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ)
+PRINT_CONFIG_VAR(yaw_structural_mode.freq)
+// ---------------------------------------------------------------------------------
 #ifdef  ONELOOP_ANDI_FILT_CUTOFF_P
 #define ONELOOP_ANDI_FILTER_ROLL_RATE TRUE
 float oneloop_andi_filt_cutoff_p = ONELOOP_ANDI_FILT_CUTOFF_P;
@@ -300,7 +395,8 @@ void  G1G2_oneloop(int ctrl_type);
 void  get_act_state_oneloop(void);
 void  oneloop_andi_propagate_filters(void);
 void  init_filter(void);
-void  init_controller(void);
+void  init_controller_gains(void);
+void  reinit_controller(void);
 void  float_rates_of_euler_dot_vec(float r[3], float e[3], float edot[3]);
 void  float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3]);
 void  err_nd(float err[], float a[], float b[], float k[], int n);
@@ -415,7 +511,6 @@ static float Wu_backup[ANDI_NUM_ACT_TOT] = {1.0};
 
 /*Complementary Filter Variables*/
 struct Oneloop_CF_t cf;
-static struct Oneloop_notch_t oneloop_notch; 
 
 /*Chirp test Variables*/
 bool  chirp_on            = false;
@@ -1100,7 +1195,7 @@ void init_poles(void){
  * @brief Initialize Controller Gains
  * FIXME: Calculate the gains dynamically for transition
  */
-void init_controller(void){
+void init_controller_gains(void){
   /*Register a variable from nav_hybrid. Should be improved when nav hybrid is final.*/
   float max_wind  = 20.0;
   max_v_nav = nav_max_speed + max_wind;
@@ -1271,32 +1366,55 @@ void reinit_all_cf(bool reinit){
   reinit_cf2(&cf.r,     reinit);
 }
 //------------------------------------------------------------------------------------------
+// Normal Filter Functions ----------------------------------------------------------------
+/** @brief Initialize a filter based on its type */
+static inline void init_filter_on_type(struct Oneloop_StructuralModes_t *filter) {
+  switch(filter->filter_type) {
+    case BUTTERWORTH_2:
+      init_butterworth_2_low_pass(&filter->filter.bw2, 1.0 / (2.0 * M_PI * filter->freq), 1.0 / PERIODIC_FREQUENCY, 0.0);
+      break;
+    case BUTTERWORTH_4:
+      init_butterworth_4_low_pass(&filter->filter.bw4, 1.0 / (2.0 * M_PI * filter->freq), 1.0 / PERIODIC_FREQUENCY, 0.0);
+      break;
+    case NOTCH:
+      notch_filter_init(&filter->filter.notch, filter->freq, filter->bandwidth, PERIODIC_FREQUENCY);
+      break;
+    default:
+      // Handle unexpected filter type
+      break;
+  }
+}
+/** @brief Update a filter based on its type */
+static inline float update_filter_on_type(struct Oneloop_StructuralModes_t *filter, float input) {
+  switch(filter->filter_type) {
+    case BUTTERWORTH_2:
+      update_butterworth_2_low_pass(&filter->filter.bw2, input);
+      return filter->filter.bw2.o[0];
+    case BUTTERWORTH_4:
+      update_butterworth_4_low_pass(&filter->filter.bw4, input);
+      return filter->filter.bw4.lp2.o[0];
+    case NOTCH: {
+      float output;
+      notch_filter_update(&filter->filter.notch, &input, &output);
+      return output;
+    }
+    default:
+      // Handle unexpected filter type
+      return 0.0;
+  }
+}
 /** @brief  Initialize the filters */
 void init_filter(void)
 {
-  // Store Notch filter values
 #ifdef ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ
-  oneloop_notch.roll.freq = ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ,
-#else
-  oneloop_notch.roll.freq = 8.46,
+  init_filter_on_type(&roll_structural_mode);
 #endif
 #ifdef ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ
-  oneloop_notch.pitch.freq = ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ,
-#else
-  oneloop_notch.pitch.freq = 6.44,
+  init_filter_on_type(&pitch_structural_mode);
 #endif
 #ifdef ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
-  oneloop_notch.yaw.freq = ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ,
-#else
-  oneloop_notch.yaw.freq = 17.90,
+  init_filter_on_type(&yaw_structural_mode);
 #endif
-  oneloop_notch.roll.bandwidth  = 2.0;
-  oneloop_notch.pitch.bandwidth = 1.0;
-  oneloop_notch.yaw.bandwidth   = 4.0;
-  // Initialize Notch filters
-  notch_filter_init(&oneloop_notch.roll.filter, oneloop_notch.roll.freq, oneloop_notch.roll.bandwidth, PERIODIC_FREQUENCY);
-  notch_filter_init(&oneloop_notch.pitch.filter, oneloop_notch.pitch.freq, oneloop_notch.pitch.bandwidth, PERIODIC_FREQUENCY);
-  notch_filter_init(&oneloop_notch.yaw.filter, oneloop_notch.yaw.freq, oneloop_notch.yaw.bandwidth, PERIODIC_FREQUENCY);
   // Filtering of the velocities 
   float tau   = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff);
   float tau_v = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_v);
@@ -1321,24 +1439,22 @@ void oneloop_andi_propagate_filters(void) {
   cf.ax.feedback    = accel->x;
   cf.ay.feedback    = accel->y;
   cf.az.feedback    = accel->z;
-//#define USE_ROLL_NOTCH
-//#define USE_PITCH_NOTCH
-#define USE_YAW_NOTCH
+
   float temp_p_dot  = (body_rates->p-cf.p.feedback)*PERIODIC_FREQUENCY;
   float temp_q_dot  = (body_rates->q-cf.q.feedback)*PERIODIC_FREQUENCY;
   float temp_r_dot  = (body_rates->r-cf.r.feedback)*PERIODIC_FREQUENCY;
-#ifdef USE_ROLL_NOTCH
-  notch_filter_update(&oneloop_notch.roll.filter, &temp_p_dot, &cf.p_dot.feedback);
+#ifdef ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ
+    cf.p_dot.feedback = update_filter_on_type(&roll_structural_mode, temp_p_dot);
 #else
   cf.p_dot.feedback = temp_p_dot;
 #endif
-#ifdef USE_PITCH_NOTCH
-  notch_filter_update(&oneloop_notch.pitch.filter, &temp_q_dot, &cf.q_dot.feedback);
+#ifdef ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ
+    cf.q_dot.feedback = update_filter_on_type(&pitch_structural_mode, temp_q_dot);
 #else
   cf.q_dot.feedback = temp_q_dot;
 #endif
-#ifdef USE_YAW_NOTCH
-  notch_filter_update(&oneloop_notch.yaw.filter, &temp_r_dot, &cf.r_dot.feedback);
+#ifdef ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
+    cf.r_dot.feedback = update_filter_on_type(&yaw_structural_mode, temp_r_dot);
 #else
   cf.r_dot.feedback = temp_r_dot;
 #endif
@@ -1397,7 +1513,41 @@ void oneloop_andi_propagate_filters(void) {
   Bound(airspeed_meas, 0.0, 30.0);
   update_butterworth_2_low_pass(&airspeed_filt, airspeed_meas);
 }
-
+//------------------------------------------------------------------------------------------
+/** @brief Re-Init function of controller variables */
+void reinit_controller(void)
+{ 
+  // store float version of commands
+  // float commands_float[ANDI_NUM_ACT_TOT];
+  // for (int i = 0; i < ANDI_NUM_ACT; i++) {
+  //   commands_float[i] = (float)commands[i];
+  // }
+  // Actuators
+  //float_vect_copy(andi_u, commands_float, ANDI_NUM_ACT);
+  andi_u[COMMAND_ROLL]  = oneloop_andi.sta_state.att[0];
+  andi_u[COMMAND_PITCH] = oneloop_andi.sta_state.att[1];
+  float_vect_zero(andi_du, ANDI_NUM_ACT_TOT);
+  float_vect_zero(andi_du_n, ANDI_NUM_ACT_TOT);
+  //float_vect_copy(actuator_state_1l, commands_float, ANDI_NUM_ACT);
+  // Stabilization
+  float_vect_copy(oneloop_andi.sta_ref.att, oneloop_andi.sta_state.att, 3);
+  float_vect_copy(oneloop_andi.sta_ref.att_d, oneloop_andi.sta_state.att_d, 3);
+  float_vect_copy(oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_state.att_2d, 3);
+  float_vect_zero(oneloop_andi.sta_ref.att_3d,3);
+  eulers_zxy_des.phi   =  oneloop_andi.sta_state.att[0];
+  eulers_zxy_des.theta =  oneloop_andi.sta_state.att[1];
+  eulers_zxy_des.psi   =  oneloop_andi.sta_state.att[2];
+  // Guidance
+  float_vect_copy(oneloop_andi.gui_ref.pos, oneloop_andi.gui_state.pos, 3);
+  float_vect_copy(oneloop_andi.gui_ref.vel, oneloop_andi.gui_state.vel, 3);
+  float_vect_copy(oneloop_andi.gui_ref.acc, oneloop_andi.gui_state.acc, 3);
+  float_vect_zero(oneloop_andi.gui_ref.jer, 3);
+  // Controller Inputs
+  float_vect_zero(nu, ANDI_OUTPUTS);
+  float_vect_zero(nu_n, ANDI_OUTPUTS);
+  float_vect_zero(nav_target,3);
+  float_vect_zero(nav_target_new,3);
+}
 /** @brief Init function of Oneloop ANDI controller  */
 void oneloop_andi_init(void)
 { 
@@ -1418,7 +1568,7 @@ void oneloop_andi_init(void)
   // Initialize filters and other variables
   init_all_cf();
   init_filter();
-  init_controller();
+  init_controller_gains();
   float_vect_zero(andi_u, ANDI_NUM_ACT_TOT);
   float_vect_zero(andi_du, ANDI_NUM_ACT_TOT);
   float_vect_zero(andi_du_n, ANDI_NUM_ACT_TOT);
@@ -1457,10 +1607,10 @@ void oneloop_andi_init(void)
 void oneloop_andi_enter(bool half_loop_sp, int ctrl_type)
 {
   ele_min = 0.0;
-  oneloop_andi.half_loop     = half_loop_sp;
-  oneloop_andi.ctrl_type     = ctrl_type;
-  psi_des_rad   = eulers_zxy.psi; 
-  psi_des_deg   = DegOfRad(eulers_zxy.psi);
+  oneloop_andi.half_loop      = half_loop_sp;
+  oneloop_andi.ctrl_type      = ctrl_type;
+  psi_des_rad                 = eulers_zxy.psi; 
+  psi_des_deg                 = DegOfRad(eulers_zxy.psi);
   calc_normalization();
   G1G2_oneloop(oneloop_andi.ctrl_type);
   int8_t i;
@@ -1469,18 +1619,10 @@ void oneloop_andi_enter(bool half_loop_sp, int ctrl_type)
   }
   reinit_all_cf(true);
   init_filter();
-  init_controller();
+  init_controller_gains();
   /* Stabilization Reset */
-  float_vect_zero(oneloop_andi.sta_ref.att,2);
-  float_vect_zero(oneloop_andi.sta_ref.att_d,3);
-  float_vect_zero(oneloop_andi.sta_ref.att_2d,3);
-  float_vect_zero(oneloop_andi.sta_ref.att_3d,3);
-  float_vect_zero(nav_target,3);
-  float_vect_zero(nav_target_new,3);
-  eulers_zxy_des.phi   =  0.0;
-  eulers_zxy_des.theta =  0.0;
-  eulers_zxy_des.psi   =  psi_des_rad;
   /*Guidance Reset*/
+  reinit_controller();
 }
 
 /**
@@ -1631,7 +1773,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
 {
   // At beginnig of the loop: (1) Register Attitude, (2) Initialize gains of RM and EC, (3) Calculate Normalization of Actuators Signals, (4) Propagate Actuator Model, (5) Update effectiveness matrix
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-  init_controller();
+  init_controller_gains();
   calc_normalization();
   get_act_state_oneloop();
   G1G2_oneloop(oneloop_andi.ctrl_type);
@@ -1808,12 +1950,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
       andi_u[COMMAND_ROLL]  = andi_du[COMMAND_ROLL]  + oneloop_andi.sta_state.att[0];
       andi_u[COMMAND_PITCH] = andi_du[COMMAND_PITCH] + oneloop_andi.sta_state.att[1];
     } else {
-      int16_t temp_doublet[4] = {0,0,0,0};
-      sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,temp_doublet);
-      andi_u[COMMAND_MOTOR_FRONT] = actuator_state_1l[COMMAND_MOTOR_FRONT]+temp_doublet[COMMAND_MOTOR_FRONT];
-      andi_u[COMMAND_MOTOR_RIGHT] = actuator_state_1l[COMMAND_MOTOR_RIGHT]+temp_doublet[COMMAND_MOTOR_RIGHT];
-      andi_u[COMMAND_MOTOR_BACK]  = actuator_state_1l[COMMAND_MOTOR_BACK] +temp_doublet[COMMAND_MOTOR_BACK];
-      andi_u[COMMAND_MOTOR_LEFT]  = actuator_state_1l[COMMAND_MOTOR_LEFT] +temp_doublet[COMMAND_MOTOR_LEFT];
+      reinit_controller();
     }
   } else {
     // Not in flight, so don't increment
