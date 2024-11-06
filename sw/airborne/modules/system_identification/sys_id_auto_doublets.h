@@ -31,6 +31,7 @@
 extern bool sys_id_auto_doublets_activated;
 extern int16_t sys_id_auto_doublets_amplitude_roll;
 extern int16_t sys_id_auto_doublets_amplitude_pitch;
+extern float sys_id_auto_doublets_time;
 extern void init_sys_id_auto_doublets(void);
 extern void periodic_sys_id_auto_doublets(void);
 extern void sys_id_auto_doublets_on_activation(uint8_t active);
