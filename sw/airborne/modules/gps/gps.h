@@ -134,11 +134,14 @@ struct GpsRelposNED {
   int8_t relPosHPN;
   int8_t relPosHPE;
   int8_t relPosHPD;
+  int8_t relPosHPLength;
   float relPosLength;
   float relPosHeading;
   uint32_t accN;
   uint32_t accE;
   uint32_t accD;
+  uint32_t accLength;
+  uint32_t accHeading;
   uint8_t carrSoln;
   uint8_t relPosValid;
   uint8_t diffSoln;
