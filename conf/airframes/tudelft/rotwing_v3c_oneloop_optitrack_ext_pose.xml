@@ -274,7 +274,7 @@
     </section>
 
     <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
-        <define name  = "POLES_POS_OMEGA_N"         value = "2.2"/>
+        <define name  = "POLES_POS_OMEGA_N"         value = "1.2"/>
         <define name  = "POLES_ALT_OMEGA_N"         value = "2.2"/>
         <define name  = "HEADING_MANUAL"            value = "TRUE"/>
         <define name  = "YAW_STICK_IN_AUTO"         value = "TRUE"/>

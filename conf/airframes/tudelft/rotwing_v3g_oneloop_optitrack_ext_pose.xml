@@ -35,7 +35,7 @@
             <!-- Range sensor connected to supercan -->
             <module name="range_sensor_uavcan"/>
             <!-- Log in high speed (Remove for outdoor flights) -->
-            <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/>
+            <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
             <define name="I2C2_CLOCK_SPEED" value="100000"/>
         </target>
 
@@ -132,10 +132,10 @@
 
     <!-- Can bus 1 actuators -->
     <servos driver="Uavcan1">
-        <servo no="0" name="MOTOR_FRONT"    min="0"     neutral="600"   max="7372"/>
-        <servo no="1" name="MOTOR_RIGHT"    min="0"     neutral="600"   max="7372"/>
-        <servo no="2" name="MOTOR_BACK"     min="0"     neutral="600"   max="7372"/>
-        <servo no="3" name="MOTOR_LEFT"     min="0"     neutral="600"   max="7372"/>
+        <servo no="0" name="MOTOR_FRONT"    min="0"     neutral="1000"   max="7372"/>
+        <servo no="1" name="MOTOR_RIGHT"    min="0"     neutral="1000"   max="7372"/>
+        <servo no="2" name="MOTOR_BACK"     min="0"     neutral="1000"   max="7372"/>
+        <servo no="3" name="MOTOR_LEFT"     min="0"     neutral="1000"   max="7372"/>
         <servo no="4" name="MOTOR_PUSH"     min="0"     neutral="200"   max="7372"/>
         <servo no="5"  name="ROTATION_MECH"   min="-1671" neutral="188"  max="2048"/>
     </servos>
@@ -148,10 +148,10 @@
     
     <!-- Can bus 2 actuators -->
     <servos driver="Uavcan2">
-        <servo no="0" name="BMOTOR_FRONT" min="0" neutral="600" max="7372"/>
-        <servo no="1" name="BMOTOR_RIGHT" min="0" neutral="600" max="7372"/>
-        <servo no="2" name="BMOTOR_BACK"  min="0" neutral="600" max="7372"/>
-        <servo no="3" name="BMOTOR_LEFT"  min="0" neutral="600" max="7372"/>
+        <servo no="0" name="BMOTOR_FRONT" min="0" neutral="1000" max="7372"/>
+        <servo no="1" name="BMOTOR_RIGHT" min="0" neutral="1000" max="7372"/>
+        <servo no="2" name="BMOTOR_BACK"  min="0" neutral="1000" max="7372"/>
+        <servo no="3" name="BMOTOR_LEFT"  min="0" neutral="1000" max="7372"/>
         <servo no="5" name="BROTATION_MECH" min="-1671" neutral="188"  max="2048"/>
     </servos>
 
@@ -190,7 +190,7 @@
         <let VAR="hover_off" VALUE="Or($th_hold, !rotwing_state.hover_motors_enabled)"/>
         <let var="ail_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 20)"/>
         <let var="flp_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 50)"/>
-        <!-- <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,commands)"/> -->
+        <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,commands)"/>
         
         <set VALUE="($hover_off? -9600 : commands[COMMAND_MOTOR_FRONT])"                                                                 SERVO="MOTOR_FRONT"/>
         <set VALUE="($hover_off? -9600 : commands[COMMAND_MOTOR_RIGHT])"                                                                 SERVO="MOTOR_RIGHT"/>
@@ -314,7 +314,7 @@
     </checklist>
 
     <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
-        <define name  = "POLES_POS_OMEGA_N"         value = "2.2"/>
+        <define name  = "POLES_POS_OMEGA_N"         value = "1.2"/>
         <define name  = "POLES_ALT_OMEGA_N"         value = "2.2"/>    
         <define name  = "HEADING_MANUAL"            value = "TRUE"/>
         <define name  = "YAW_STICK_IN_AUTO"         value = "TRUE"/>
