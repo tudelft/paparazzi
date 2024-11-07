@@ -477,43 +477,43 @@ void actuators_dronecan_commit(struct dronecan_iface_t *iface, int16_t *values, 
  */
 void actuators_dronecan_cmd_commit(struct dronecan_iface_t *iface, int16_t *values, uint8_t nb)
 {
-  uint8_t buffer[UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_MAX_SIZE];
-  struct uavcan_equipment_actuator_ArrayCommand array;
+//   uint8_t buffer[UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_MAX_SIZE];
+//   struct uavcan_equipment_actuator_ArrayCommand array;
 
-  if (nb > 15){ return; }
+//   if (nb > 15){ return; }
   
-  struct uavcan_equipment_actuator_Command cmds[nb];
-  uint8_t cmd_type = 0; // 0:UNITLESS, 1:meter or radian, 2:N or Nm, 3:m/s or rad/s
-  for (uint8_t i = 0; i < nb ; i++){
-    cmds[i].actuator_id = i;
-    cmds[i].command_type = cmd_type;
-    cmds[i].command_value = canardConvertFloat16ToNativeFloat(values[i]);
-  }
-  array.commands.len = nb;
-  memcpy(array.commands.data,cmds,sizeof(cmds));
+//   struct uavcan_equipment_actuator_Command cmds[nb];
+//   uint8_t cmd_type = 0; // 0:UNITLESS, 1:meter or radian, 2:N or Nm, 3:m/s or rad/s
+//   for (uint8_t i = 0; i < nb ; i++){
+//     cmds[i].actuator_id = i;
+//     cmds[i].command_type = cmd_type;
+//     cmds[i].command_value = canardConvertFloat16ToNativeFloat(values[i]);
+//   }
+//   array.commands.len = nb;
+//   memcpy(array.commands.data,cmds,sizeof(cmds));
 
-  uint32_t len = uavcan_equipment_actuator_ArrayCommand_encode(&array, buffer
-#if CANARD_ENABLE_CANFD
-    , 0
-#endif
-  );
+//   uint32_t len = uavcan_equipment_actuator_ArrayCommand_encode(&array, buffer
+// #if CANARD_ENABLE_CANFD
+//     , 0
+// #endif
+//   );
 
-  static uint8_t transfer_id;
-  static CanardTxTransfer broadcast;
-  canardInitTxTransfer(&broadcast);
+//   static uint8_t transfer_id;
+//   static CanardTxTransfer broadcast;
+//   canardInitTxTransfer(&broadcast);
 
-  broadcast.transfer_type = CanardTransferTypeBroadcast;
-  broadcast.data_type_signature = UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_SIGNATURE;
-  broadcast.data_type_id = UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_ID;
-  broadcast.inout_transfer_id = &transfer_id;
-  broadcast.priority = CANARD_TRANSFER_PRIORITY_LOW;
-  broadcast.payload = buffer;
-  broadcast.payload_len = len;
-#if CANARD_ENABLE_CANFD
-  broadcast.canfd = 1;
-  broadcast.tao = 0;
-#endif
+//   broadcast.transfer_type = CanardTransferTypeBroadcast;
+//   broadcast.data_type_signature = UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_SIGNATURE;
+//   broadcast.data_type_id = UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_ID;
+//   broadcast.inout_transfer_id = &transfer_id;
+//   broadcast.priority = CANARD_TRANSFER_PRIORITY_LOW;
+//   broadcast.payload = buffer;
+//   broadcast.payload_len = len;
+// #if CANARD_ENABLE_CANFD
+//   broadcast.canfd = 1;
+//   broadcast.tao = 0;
+// #endif
  
-  // Broadcast the raw command message on the interface
-  dronecan_broadcast(iface, &broadcast);
+//   // Broadcast the raw command message on the interface
+//   dronecan_broadcast(iface, &broadcast);
 }

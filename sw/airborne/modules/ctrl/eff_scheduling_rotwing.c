@@ -152,7 +152,8 @@ struct rotwing_eff_sched_param_t eff_sched_p = {
 int32_t rw_flap_offset = 0;
 
 // for negative values, still should be low_lim < up_lim
-inline float bound_or_zero(float value, float low_lim, float up_lim) {
+static inline float bound_or_zero(float value, float low_lim, float up_lim);
+static inline float bound_or_zero(float value, float low_lim, float up_lim) {
   float output = value;
   if (low_lim > 0.f) {
     if (value < low_lim) {

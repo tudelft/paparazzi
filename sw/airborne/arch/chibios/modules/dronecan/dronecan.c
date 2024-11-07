@@ -332,7 +332,7 @@ static void sendNodeStatus(struct dronecan_iface_t *iface) {
   broadcast.data_type_signature = UAVCAN_PROTOCOL_NODESTATUS_SIGNATURE;
   broadcast.data_type_id = UAVCAN_PROTOCOL_NODESTATUS_ID;
   broadcast.inout_transfer_id = &transfer_id;
-  broadcast.priority = CANARD_TRANSFER_PRIORITY_LOW;
+  broadcast.priority = CANARD_TRANSFER_PRIORITY_HIGHEST;
   broadcast.payload = buffer;
   broadcast.payload_len = len;
 #if CANARD_ENABLE_CANFD
@@ -367,8 +367,8 @@ static THD_FUNCTION(dronecan_ns, p)
     chMtxLock(&iface->mutex);
     canardCleanupStaleTransfers(&iface->canard,
                                 (uint64_t)chTimeI2US(chVTGetSystemTime()));
-    sendNodeStatus(iface);
     chMtxUnlock(&iface->mutex);
+    sendNodeStatus(iface);
 
     chThdSleepMilliseconds(1000);
   }
@@ -448,11 +448,13 @@ static void onTransferReceived(CanardInstance *ins, CanardRxTransfer *transfer)
   struct dronecan_iface_t *iface = (struct dronecan_iface_t *)ins->user_reference;
 
   // Go through all registered callbacks and call function callback if found
+  chMtxUnlock(&iface->mutex);
   for (dronecan_event *ev = dronecan_event_hd; ev; ev = ev->next) {
     if ((transfer->transfer_type == ev->transfer_type)&&(transfer->data_type_id == ev->data_type_id)) {
       ev->cb(iface, transfer);
     }
   }
+  chMtxLock(&iface->mutex);
 }
 
 /**
@@ -559,12 +561,12 @@ static void dronecanInitIface(struct dronecan_iface_t *iface)
   canardSetLocalNodeID(&iface->canard, iface->node_id);
 
   static dronecan_event rec_NodeStatus, rec_GetNodeInfoRequest, rec_GetNodeInfoResponse;
-  dronecan_bind(CanardTransferTypeBroadcast,UAVCAN_PROTOCOL_NODESTATUS_ID,
-                UAVCAN_PROTOCOL_NODESTATUS_SIGNATURE,&rec_NodeStatus,&cb_NodeStatus);
-  dronecan_bind(CanardTransferTypeRequest,UAVCAN_PROTOCOL_GETNODEINFO_REQUEST_ID,
-                UAVCAN_PROTOCOL_GETNODEINFO_REQUEST_SIGNATURE,&rec_GetNodeInfoRequest,&cb_GetNodeInfoRequest);
-  dronecan_bind(CanardTransferTypeResponse,UAVCAN_PROTOCOL_GETNODEINFO_RESPONSE_ID,
-                UAVCAN_PROTOCOL_GETNODEINFO_RESPONSE_SIGNATURE,&rec_GetNodeInfoResponse,&cb_GetNodeInfoResponse);
+  // dronecan_bind(CanardTransferTypeBroadcast,UAVCAN_PROTOCOL_NODESTATUS_ID,
+  //               UAVCAN_PROTOCOL_NODESTATUS_SIGNATURE,&rec_NodeStatus,&cb_NodeStatus);
+  // dronecan_bind(CanardTransferTypeRequest,UAVCAN_PROTOCOL_GETNODEINFO_REQUEST_ID,
+  //               UAVCAN_PROTOCOL_GETNODEINFO_REQUEST_SIGNATURE,&rec_GetNodeInfoRequest,&cb_GetNodeInfoRequest);
+  // dronecan_bind(CanardTransferTypeResponse,UAVCAN_PROTOCOL_GETNODEINFO_RESPONSE_ID,
+  //               UAVCAN_PROTOCOL_GETNODEINFO_RESPONSE_SIGNATURE,&rec_GetNodeInfoResponse,&cb_GetNodeInfoResponse);
 
   // Start the can interface
   canStart(iface->can_driver, &iface->can_cfg);
