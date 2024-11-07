@@ -145,10 +145,12 @@ void target_pos_parse_falcon(uint8_t *buf)
 {
   float *pos = pprzlink_get_DL_IMCU_FALCON_pos(buf);
   float *quat = pprzlink_get_DL_IMCU_FALCON_quat(buf);
-  //float *pos_var = pprzlink_get_DL_IMCU_FALCON_pos_var(buf);
-  //float *quat_var = pprzlink_get_DL_IMCU_FALCON_quat_var(buf);
+  float *pos_var = pprzlink_get_DL_IMCU_FALCON_pos_var(buf);
+  float *quat_var = pprzlink_get_DL_IMCU_FALCON_quat_var(buf);
   struct FloatQuat q = {quat[0], quat[1], quat[2], quat[3]}; // Rotation of the platform relative to the sensor
   struct FloatVect3 p = {pos[0], pos[1], pos[2]}; // Position of the drone relative to the platform
+  struct FloatVect3 pos_var = {pos_var[0], pos_var[1], pos_var[2]};
+  struct FloatVect3 quat_var = {quat_var[0], quat_var[1], quat_var[2]};
   struct FloatVect3 p_rot, p_inv, p_out;
   struct FloatQuat body_to_ned;
 
@@ -170,6 +172,14 @@ void target_pos_parse_falcon(uint8_t *buf)
   VECT3_ADD(target_enu, *uav_pos);
   target_enu.z = waypoints[wp_id].enu_f.z;
   waypoint_set_enu(wp_id, &target_enu);
+
+  // Temp invalid measure
+  uint16_t beacon_id = -1;
+  float strength, azimuth, elevation = -1f;
+
+  pprz_msg_send_SIXDOF_FALCON(trans, dev, AC_ID,
+                              &beacon_id, &p_out, &q, &pos_var, &quat_var, 
+                              &strength, &azimuth, &elevation);
 
   // Send waypoint update every half second
   RunOnceEvery(200 / 2, {
