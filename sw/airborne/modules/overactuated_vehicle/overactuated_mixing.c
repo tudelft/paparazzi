@@ -698,7 +698,7 @@ void overactuated_mixing_run(void)
             yaw_rate_setpoint_manual = AM7_SETTINGS_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / MAX_PPRZ;
         }
 
-        #ifdef HEADING_CONTROL_NONLINEAR_CA
+        #if HEADING_CONTROL_NONLINEAR_CA
             if (abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw ) {
                 euler_setpoint[2] = euler_setpoint[2] + (AM7_SETTINGS_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / MAX_PPRZ) / OVERACTUATED_MIXING_FREQUENCY;
                 //Correct the setpoint in order to always be within -pi and pi
@@ -873,7 +873,7 @@ void overactuated_mixing_run(void)
             }
         #endif
 
-        #ifdef HEADING_CONTROL_NONLINEAR_CA
+        #if HEADING_CONTROL_NONLINEAR_CA
             if (abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw ) {
                 euler_setpoint[2] = euler_setpoint[2] + (AM7_SETTINGS_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / MAX_PPRZ) / OVERACTUATED_MIXING_FREQUENCY;
                 //Correct the setpoint in order to always be within -pi and pi

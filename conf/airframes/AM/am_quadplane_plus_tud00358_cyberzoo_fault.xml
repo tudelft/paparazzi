@@ -160,15 +160,15 @@
     <define name="AILERONS_FIRST_ORD_NUM" value="0.0198" />
     <define name="AILERONS_FIRST_ORD_DEN" value="-0.9802" />
     <!-- Serial bus servos neutral values (elevator) -->
-    <define name="SERVO_EL_1_ZERO_VALUE" value="0.35" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="-3.69" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="-7.47" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="-1.14" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="2.9" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="11.42" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-5.7" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="-3.4" unit="deg"/>
     <!-- Serial bus servos neutral values (azimuth) -->
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="9.14" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="0.26" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="2.76" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="9.87" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="-2.76" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="1.21" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="20.07" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="9.62" unit="deg"/>
     <!-- pwm servo 9 settings-->
     <define name="SERVO_9_MIN_PWM" value="2246" />   
     <define name="SERVO_9_MAX_PWM" value="843" />   
@@ -186,8 +186,8 @@
     <!-- max and minimum angle for serial bus servos -->
     <define name="SERVO_EL_MIN_ANGLE_DEG" value="-89"/>
     <define name="SERVO_EL_MAX_ANGLE_DEG" value="25"/>
-    <define name="SERVO_AZ_MIN_ANGLE_DEG" value="-90"/>
-    <define name="SERVO_AZ_MAX_ANGLE_DEG" value="90"/>
+    <define name="SERVO_AZ_MIN_ANGLE_DEG" value="-95"/>
+    <define name="SERVO_AZ_MAX_ANGLE_DEG" value="95"/>
     <!-- max and min angle for pwm servos -->
     <define name="FLAPERON_LEFT_MIN_ANGLE_DEG" value="-25"/>
     <define name="FLAPERON_LEFT_MAX_ANGLE_DEG" value="25"/>
@@ -276,9 +276,9 @@
     <define name="SERVO_EL_MAX_ANGLE_DEG" value="FBW_T4_SERVO_EL_MAX_ANGLE_DEG"/>
     <define name="SERVO_AZ_MIN_ANGLE_DEG" value="FBW_T4_SERVO_AZ_MIN_ANGLE_DEG"/>
     <define name="SERVO_AZ_MAX_ANGLE_DEG" value="FBW_T4_SERVO_AZ_MAX_ANGLE_DEG"/>
-    <define name="MAX_THETA_DEG" value="50"/>
-    <define name="MIN_THETA_DEG" value="-15"/>
-    <define name="MAX_PHI_DEG" value="70"/>
+    <define name="MAX_THETA_DEG" value="45.0"/>
+    <define name="MIN_THETA_DEG" value="0.0"/>
+    <define name="MAX_PHI_DEG" value="65.0"/>
     <define name="MAX_DELTA_AILERONS_DEG" value="25"/>
     <define name="MIN_DELTA_AILERONS_DEG" value="-25"/>
     <!-- ANGLE OF ATTACK PROTECTION PARAMETERS -->
@@ -334,8 +334,8 @@
     <define name="W_DV_3_APP" value="0.05"/>
     <define name="W_DV_4_APP" value="0.1"/>
     <define name="W_DV_5_APP" value="0.1"/>
-    <define name="W_DV_6_APP" value="0.01"/>
-    <define name="GAMMA_QUADRATIC_DU_APP_e_minus_8" value="5.0"/>
+    <define name="W_DV_6_APP" value="0.05"/>
+    <define name="GAMMA_QUADRATIC_DU_APP_e_minus_8" value="30"/>
     <define name="SPEED_AOA_PROTECTION_APP" value="15" unit="m/s"/>
     <define name="OVERESTIMATION_COEFF_APP" value="1.4"/>
     <define name="MIN_SPEED_TRANSITION_APP" value="4.0" unit="m/s"/>
@@ -350,7 +350,7 @@
   <section name="OVERACTUATED VEHICLE GAINS" prefix="OVERACTUATED_GAINS_">
     <!-- MAXIMUM OVERALL ANGLES IN PID OR INDI MODE -->
     <define name="MAX_PHI" value="80" unit="deg"/>
-    <define name="MAX_THETA" value="50" unit="deg"/>
+    <define name="MAX_THETA" value="80" unit="deg"/>
     <!-- PID FAILSAFE GAINS-->
     <define name="PID_P_GAIN_PHI" value="500"/>
     <define name="PID_I_GAIN_PHI" value="4"/>
@@ -371,18 +371,18 @@
     <!-- INDI APP GAINS -->
     <define name="K_GAIN_AIRSPEED_APP" value="0.005" />
     <!-- angular_ref -->
-    <define name="APP_GAIN_P" value="2"/>
-    <define name="APP_GAIN_Q" value="1"/>
-    <define name="APP_GAIN_R" value="1"/>
+    <define name="APP_GAIN_P" value=".5"/>
+    <define name="APP_GAIN_Q" value=".5"/>
+    <define name="APP_GAIN_R" value="2"/>
     <define name="APP_GAIN_P_DOT" value="4"/>
-    <define name="APP_GAIN_Q_DOT" value="2"/>
-    <define name="APP_GAIN_R_DOT" value="1"/>
+    <define name="APP_GAIN_Q_DOT" value="4"/>
+    <define name="APP_GAIN_R_DOT" value="2"/>
     <!-- linear ref -->
     <define name="APP_GAIN_X" value="1"/>
     <define name="APP_GAIN_Y" value="1"/>
     <define name="APP_GAIN_Z" value="5"/>
-    <define name="APP_GAIN_X_DOT" value="1"/>
-    <define name="APP_GAIN_Y_DOT" value="1"/>
+    <define name="APP_GAIN_X_DOT" value="2"/>
+    <define name="APP_GAIN_Y_DOT" value="2"/>
     <define name="APP_GAIN_Z_DOT" value="5"/>
     <!-- INDI CRUISE GAINS -->
     <define name="K_GAIN_AIRSPEED_CRUISE" value="0.005" />
@@ -570,7 +570,7 @@
     <define name="USE_SIXDOF_EXT_HEADING" value="TRUE"/>
     <define name="NO_AIRSPEED_NONLINEAR_CA" value="TRUE"/>
     <define name="FULLY_MANUAL_HEADING" value="TRUE"/>
-    <define name="HEADING_CONTROL_NONLINEAR_CA" value="TRUE"/>
+    <define name="HEADING_CONTROL_NONLINEAR_CA" value="FALSE"/>
 
     <!-- Basic navigation settings -->
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>
