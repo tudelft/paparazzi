@@ -149,8 +149,8 @@ void target_pos_parse_falcon(uint8_t *buf)
   float *quat_var = pprzlink_get_DL_IMCU_FALCON_quat_var(buf);
   struct FloatQuat q = {quat[0], quat[1], quat[2], quat[3]}; // Rotation of the platform relative to the sensor
   struct FloatVect3 p = {pos[0], pos[1], pos[2]}; // Position of the drone relative to the platform
-  struct FloatVect3 pos_var = {pos_var[0], pos_var[1], pos_var[2]};
-  struct FloatVect3 quat_var = {quat_var[0], quat_var[1], quat_var[2]};
+  struct FloatVect3 p_var = {pos_var[0], pos_var[1], pos_var[2]}; // Variance of p
+  struct FloatVect3 q_var = {quat_var[0], quat_var[1], quat_var[2]}; // Variance of q
   struct FloatVect3 p_rot, p_inv, p_out;
   struct FloatQuat body_to_ned;
 
@@ -175,11 +175,11 @@ void target_pos_parse_falcon(uint8_t *buf)
 
   // Temp invalid measure
   uint16_t beacon_id = -1;
-  float strength, azimuth, elevation = -1f;
+  float intensity, width, x_angle, z_angle = -1f;
 
   pprz_msg_send_SIXDOF_FALCON(trans, dev, AC_ID,
-                              &beacon_id, &p_out, &q, &pos_var, &quat_var, 
-                              &strength, &azimuth, &elevation);
+                              &beacon_id, &p_out, &q, &p_var, &q_var, 
+                              &intensity, width, &z_angle, &x_angle);
 
   // Send waypoint update every half second
   RunOnceEvery(200 / 2, {
@@ -247,7 +247,7 @@ bool target_get_vel(struct NedCoor_f *vel) {
 
   /* When we have a valid target_pos message, state ned is initialized and no timeout */
   if(target.pos.valid && state.ned_initialized_i && (target.pos.recv_time+target.target_pos_timeout) > get_sys_time_msec()) {
-    // Calculate baed on ground speed and course
+    // Calculate based on ground speed and course
     vel->x = target.pos.ground_speed * cosf(target.pos.course/180.*M_PI);
     vel->y = target.pos.ground_speed * sinf(target.pos.course/180.*M_PI);
     vel->z = -target.pos.climb;
