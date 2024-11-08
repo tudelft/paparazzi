@@ -133,10 +133,10 @@
     </block>
     <block name="flare_low">
         <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
-        <!-- <exception cond="NavDetectGround()" deroute="Holding point"/> -->
+        <exception cond="NavDetectGround()" deroute="Holding point"/>
         <exception cond="!nav_is_in_flight()" deroute="Holding point"/>
         <exception cond="ground_detect()" deroute="Holding point"/>
-        <!-- <call_once fun="NavStartDetectGround()"/> -->
+        <call_once fun="NavStartDetectGround()"/>
         <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">
