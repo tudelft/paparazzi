@@ -75,6 +75,8 @@ struct target_t target = {
   .integrate_z = TARGET_INTEGRATE_Z
 };
 
+struct sixdof_falcon_t falcon;
+
 /* GPS abi callback */
 static abi_event gps_ev;
 static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
@@ -95,12 +97,32 @@ static void send_target_pos_info(struct transport_tx *trans, struct link_device 
                               &target.offset.distance,
                               &target.offset.height);
 }
+
+static void send_sixdof_falcon(struct transport_tx *trans, struct link_device *dev)
+{
+  float p_out[3] = {falcon.p_out.x, falcon.p_out.y, falcon.p_out.z};
+  float q[4] = {falcon.q.qi, falcon.q.qx, falcon.q.qy, falcon.q.qz};
+  float p_var[3] = {falcon.p_var.x, falcon.p_var.y, falcon.p_var.z};
+  float q_var[3] = {falcon.q_var.x, falcon.q_var.y, falcon.q_var.z};
+  
+  pprz_msg_send_SIXDOF_FALCON(trans, dev, AC_ID,
+                              &falcon.beacon_id, 
+                              p_out, 
+                              q, 
+                              p_var, 
+                              q_var, 
+                              &falcon.intensity, 
+                              &falcon.width, 
+                              &falcon.z_angle, 
+                              &falcon.x_angle);
+}
 #endif
 
 void target_pos_init(void)
 {
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_TARGET_POS_INFO, send_target_pos_info);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_SIXDOF_FALCON, send_sixdof_falcon);
 #endif
 
   AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
@@ -173,13 +195,16 @@ void target_pos_parse_falcon(uint8_t *buf)
   target_enu.z = waypoints[wp_id].enu_f.z;
   waypoint_set_enu(wp_id, &target_enu);
 
-  // Temp invalid measure
-  uint16_t beacon_id = -1;
-  float intensity, width, x_angle, z_angle = -1f;
-
-  pprz_msg_send_SIXDOF_FALCON(trans, dev, AC_ID,
-                              &beacon_id, &p_out, &q, &p_var, &q_var, 
-                              &intensity, width, &z_angle, &x_angle);
+  // Temp invalid measurement
+  falcon.p_out = p_out;
+  falcon.q = q;
+  falcon.p_var = p_var;
+  falcon.q_var = q_var;
+  falcon.beacon_id = -1;
+  falcon.intensity = -1.f;
+  falcon.width = -1.f;
+  falcon.z_angle = -1.f;
+  falcon.x_angle = -1.f;
 
   // Send waypoint update every half second
   RunOnceEvery(200 / 2, {
