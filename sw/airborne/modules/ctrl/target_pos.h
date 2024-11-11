@@ -57,7 +57,8 @@ struct target_t {
   struct LlaCoor_i gps_lla;                 ///< GPS LLA position
 };
 
-struct sixdof_falcon_t {
+struct falcon_sensor_t {
+  bool manual;
   uint8_t mode;
   uint16_t beacon_id;
   struct FloatVect3 p_out;
@@ -69,6 +70,7 @@ struct sixdof_falcon_t {
   float width;
 };
 
+extern struct falcon_sensor_t falcon;
 extern struct target_t target;
 extern void target_pos_init(void);
 extern void target_parse_target_pos(uint8_t *buf);

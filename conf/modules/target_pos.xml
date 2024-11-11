@@ -26,6 +26,10 @@
         <dl_setting var="target.rtk_timeout" min="0" max="30000" step="100" shortname="rtk_timeout"/>
         <dl_setting var="target.offset.heading" min="0." max="360." step="1.0" type="float" shortname ="set_current" module="modules/ctrl/target_pos" handler="set_current_offset"/>
       </dl_settings>
+      <dl_settings NAME="FalconSensor">
+        <dl_setting var="falcon.manual" min="0" max="1" step="1" values="OFF|ON" shortname="manual_mode"/>
+        <dl_setting var="falcon.mode" min="0" max="2" step="1" values="OFF|SIXDOF|RELANGLE" shortname="mode"/>
+      </dl_settings>
     </dl_settings>
   </settings>
   <header>

@@ -75,8 +75,9 @@ struct target_t target = {
   .integrate_z = TARGET_INTEGRATE_Z
 };
 
-struct sixdof_falcon_t falcon = {
-  .mode = 0 // Initialize falcon sensor tracking mode to off
+struct falcon_sensor_t falcon = {
+  .manual = false,  // By default the tracking mode should be determined automatically
+  .mode = 0         // Initialize falcon sensor tracking mode to off
 };
 
 /* GPS abi callback */
