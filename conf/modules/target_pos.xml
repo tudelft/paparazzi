@@ -33,7 +33,9 @@
   </header>
   <init fun="target_pos_init()"/>
   <datalink message="TARGET_POS" fun="target_parse_target_pos(buf)"/>
-  <datalink class="intermcu" message="IMCU_FALCON" fun="target_pos_parse_falcon(buf)"/>
+  <datalink class="intermcu" message="IMCU_FALCON_SIXDOF" fun="target_pos_parse_falcon_sixdof(buf)"/>
+  <datalink class="intermcu" message="IMCU_FALCON_RELANGLE" fun="target_pos_parse_falcon_relangle(buf)"/>
+  <datalink class="intermcu" message="IMCU_FALCON_CMD" fun="target_pos_parse_falcon_cmd(buf)"/>
   <makefile>
     <file name="target_pos.c"/>
   </makefile>

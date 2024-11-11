@@ -58,21 +58,23 @@ struct target_t {
 };
 
 struct sixdof_falcon_t {
+  uint8_t mode;
   uint16_t beacon_id;
   struct FloatVect3 p_out;
   struct FloatQuat q;
   struct FloatVect3 p_var;
   struct FloatVect3 q_var;
+  struct FloatVect2 angles;
   float intensity;
   float width;
-  float z_angle;
-  float x_angle;
 };
 
 extern struct target_t target;
 extern void target_pos_init(void);
 extern void target_parse_target_pos(uint8_t *buf);
-extern void target_pos_parse_falcon(uint8_t *buf);
+extern void target_pos_parse_falcon_sixdof(uint8_t *buf);
+extern void target_pos_parse_falcon_relangle(uint8_t *buf);
+extern void target_pos_parse_falcon_cmd(uint8_t *buf);
 extern bool target_get_pos(struct NedCoor_f *pos, float *heading);
 extern bool target_get_vel(struct NedCoor_f *vel);
 extern bool target_pos_set_current_offset(float unk);
