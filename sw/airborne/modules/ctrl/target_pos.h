@@ -76,7 +76,7 @@ extern void target_pos_init(void);
 extern void target_parse_target_pos(uint8_t *buf);
 extern void target_pos_parse_falcon_sixdof(uint8_t *buf);
 extern void target_pos_parse_falcon_relangle(uint8_t *buf);
-extern void target_pos_parse_falcon_cmd(uint8_t *buf);
+extern void target_pos_send_falcon_cmd(float unk);
 extern bool target_get_pos(struct NedCoor_f *pos, float *heading);
 extern bool target_get_vel(struct NedCoor_f *vel);
 extern bool target_pos_set_current_offset(float unk);

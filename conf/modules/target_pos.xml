@@ -27,8 +27,8 @@
         <dl_setting var="target.offset.heading" min="0." max="360." step="1.0" type="float" shortname ="set_current" module="modules/ctrl/target_pos" handler="set_current_offset"/>
       </dl_settings>
       <dl_settings NAME="FalconSensor">
-        <dl_setting var="falcon.manual" min="0" max="1" step="1" values="OFF|ON" shortname="manual_mode"/>
-        <dl_setting var="falcon.mode" min="0" max="2" step="1" values="OFF|SIXDOF|RELANGLE" shortname="mode"/>
+        <dl_setting var="falcon.manual" min="0" max="1" step="1" values="OFF|ON" shortname="manual_mode"/> <!-- Currently unused -->
+        <dl_setting var="falcon.mode" min="0" max="2" step="1" values="OFF|SIXDOF|RELANGLE" shortname="mode" module="modules/ctrl/target_pos" handler="send_falcon_cmd"/>
       </dl_settings>
     </dl_settings>
   </settings>
@@ -39,7 +39,6 @@
   <datalink message="TARGET_POS" fun="target_parse_target_pos(buf)"/>
   <datalink class="intermcu" message="IMCU_FALCON_SIXDOF" fun="target_pos_parse_falcon_sixdof(buf)"/>
   <datalink class="intermcu" message="IMCU_FALCON_RELANGLE" fun="target_pos_parse_falcon_relangle(buf)"/>
-  <datalink class="intermcu" message="IMCU_FALCON_CMD" fun="target_pos_parse_falcon_cmd(buf)"/>
   <makefile>
     <file name="target_pos.c"/>
   </makefile>

@@ -63,7 +63,7 @@
       <message name="POWER_DEVICE"             period="0.12"/>
       <message name="FUELCELL"                 period="0.5"/>
       <message name="IMU_HEATER"               period="15.1"/>
-      <message name="FALCON_SENSOR"            period="0.5"/>
+      <message name="FALCON_SENSOR"            period="0.1"/>
     </mode>
 
     <mode name="calibration">
@@ -322,7 +322,6 @@
       <message name="POWER_DEVICE"             period="0.02"/>
       <message name="FUELCELL"                 period="0.25"/>
       <message name="DEBUG"                    period="0.02"/> <!-- For the parachute module -->
-      <message name="FALCON_SENSOR"            period="0.005"/>
     </mode>
   </process>
 

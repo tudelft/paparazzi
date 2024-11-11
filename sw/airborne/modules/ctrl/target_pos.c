@@ -75,9 +75,18 @@ struct target_t target = {
   .integrate_z = TARGET_INTEGRATE_Z
 };
 
+/* Initialize falcon sensor structure */
 struct falcon_sensor_t falcon = {
-  .manual = false,  // By default the tracking mode should be determined automatically
-  .mode = 0         // Initialize falcon sensor tracking mode to off
+  .manual = false,    // By default the tracking mode should be determined automatically
+  .mode = 0,          // Initialize falcon sensor tracking mode to off
+  .beacon_id = 0,
+  .p_out = {0},
+  .q = {0},
+  .p_var = {0},
+  .q_var = {0},
+  .angles = {0},
+  .intensity = 0,
+  .width = 0
 };
 
 /* GPS abi callback */
@@ -213,37 +222,16 @@ void target_pos_parse_falcon_sixdof(uint8_t *buf)
   target_enu.z = waypoints[wp_id].enu_f.z;
   waypoint_set_enu(wp_id, &target_enu);
 
-  falcon.p_out = p_out;
-  falcon.q = q;
-  falcon.p_var = p_var;
-  falcon.q_var = q_var;
+  float p_out_arr[3] = {falcon.p_out.x, falcon.p_out.y, falcon.p_out.z};
+  float q_arr[4] = {falcon.q.qi, falcon.q.qx, falcon.q.qy, falcon.q.qz};
+  float p_var_arr[3] = {falcon.p_var.x, falcon.p_var.y, falcon.p_var.z};
+  float q_var_arr[3] = {falcon.q_var.x, falcon.q_var.y, falcon.q_var.z};
   
-  falcon.beacon_id = 0;
-  falcon.intensity = 0;
-  falcon.width = 0;
-  struct FloatVect2 angles = {0};
-  falcon.angles = angles;
-
-// When enabled remove entry from flightrecorder section in highspeed_rotorcraft
-#ifdef LOG_ON_ARRIVAL
-
-  float p_out[3] = {falcon.p_out.x, falcon.p_out.y, falcon.p_out.z};
-  float q[4] = {falcon.q.qi, falcon.q.qx, falcon.q.qy, falcon.q.qz};
-  float p_var[3] = {falcon.p_var.x, falcon.p_var.y, falcon.p_var.z};
-  float q_var[3] = {falcon.q_var.x, falcon.q_var.y, falcon.q_var.z};
-  float angles[2] = {falcon.angles.x, falcon.angles.y};
-  
-  pprz_msg_send_FALCON_SENSOR(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
-                              &falcon.mode,
-                              &falcon.beacon_id, 
-                              p_out, 
-                              q, 
-                              p_var, 
-                              q_var,
-                              &falcon.intensity, 
-                              &falcon.width, 
-                              angles);
-#endif
+  pprz_msg_send_IMCU_FALCON_SIXDOF(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
+                              p_out_arr,
+                              q_arr,
+                              p_var_arr,
+                              q_var_arr);
 
   // Send waypoint update every half second
   RunOnceEvery(200 / 2, {
@@ -253,6 +241,11 @@ void target_pos_parse_falcon_sixdof(uint8_t *buf)
                                &waypoints[wp_id].enu_i.y,
                                &waypoints[wp_id].enu_i.z);
   });
+
+  falcon.p_out = p_out;
+  falcon.q = q;
+  falcon.p_var = p_var;
+  falcon.q_var = q_var;
 }
 
 /**
@@ -266,45 +259,25 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
 
   float *rel_angles = pprzlink_get_DL_IMCU_FALCON_RELANGLE_angles(buf);
   struct FloatVect2 angles = {rel_angles[0], rel_angles[1]};
-  
-  /* Implement some logic */
-
   falcon.angles = angles;
 
-  struct FloatVect3 vect3 = {0};
-  struct FloatQuat quat = {0};
+  pprz_msg_send_IMCU_FALCON_RELANGLE(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
+                              &falcon.beacon_id,
+                              rel_angles,
+                              &falcon.intensity,
+                              &falcon.width);
   
-  falcon.p_out = vect3;
-  falcon.q = quat;
-  falcon.p_var = vect3;
-  falcon.q_var = vect3;
+  /* TODO: Implement some logic */
 
-#ifdef LOG_ON_ARRIVAL
-  float p_out[3] = {falcon.p_out.x, falcon.p_out.y, falcon.p_out.z};
-  float q[4] = {falcon.q.qi, falcon.q.qx, falcon.q.qy, falcon.q.qz};
-  float p_var[3] = {falcon.p_var.x, falcon.p_var.y, falcon.p_var.z};
-  float q_var[3] = {falcon.q_var.x, falcon.q_var.y, falcon.q_var.z};
-  float angles[2] = {falcon.angles.x, falcon.angles.y};
-  
-  pprz_msg_send_FALCON_SENSOR(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
-                              &falcon.mode,
-                              &falcon.beacon_id, 
-                              p_out, 
-                              q, 
-                              p_var, 
-                              q_var,
-                              &falcon.intensity, 
-                              &falcon.width, 
-                              angles);
-#endif
 }
 
 /**
- * Parse a Falcon mode message
+ * Send a falcon cmd message to the sensor
  */
-void target_pos_parse_falcon_cmd(uint8_t *buf) 
+#include "modules/datalink/extra_pprz_dl.h"
+void target_pos_send_falcon_cmd(float unk __attribute__((unused))) 
 {
-  falcon.mode = pprzlink_get_DL_IMCU_FALCON_CMD_mode(buf);
+  pprz_msg_send_IMCU_FALCON_CMD(&extra_pprz_tp.trans_tx, &EXTRA_DOWNLINK_DEVICE.device, AC_ID, &falcon.mode);
 }
 
 /**
