@@ -77,6 +77,7 @@ struct target_t target = {
 
 /* Initialize falcon sensor structure */
 struct falcon_sensor_t falcon = {
+  .valid = false,     // Assume invalid data on start up
   .manual = false,    // By default the tracking mode should be determined automatically
   .mode = 0,          // Initialize falcon sensor tracking mode to off
   .beacon_id = 0,
@@ -119,6 +120,7 @@ static void send_falcon_sensor(struct transport_tx *trans, struct link_device *d
   float angles[2] = {falcon.angles.x, falcon.angles.y};
   
   pprz_msg_send_FALCON_SENSOR(trans, dev, AC_ID,
+                              &falcon.valid,
                               &falcon.mode,
                               &falcon.beacon_id, 
                               p_out, 
@@ -222,16 +224,29 @@ void target_pos_parse_falcon_sixdof(uint8_t *buf)
   target_enu.z = waypoints[wp_id].enu_f.z;
   waypoint_set_enu(wp_id, &target_enu);
 
-  float p_out_arr[3] = {falcon.p_out.x, falcon.p_out.y, falcon.p_out.z};
-  float q_arr[4] = {falcon.q.qi, falcon.q.qx, falcon.q.qy, falcon.q.qz};
-  float p_var_arr[3] = {falcon.p_var.x, falcon.p_var.y, falcon.p_var.z};
-  float q_var_arr[3] = {falcon.q_var.x, falcon.q_var.y, falcon.q_var.z};
+  falcon.p_out = p_out;
+  falcon.q = q;
+  falcon.p_var = p_var;
+  falcon.q_var = q_var;
   
-  pprz_msg_send_IMCU_FALCON_SIXDOF(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
+#if FLIGHTRECORDER_SDLOG
+  float p_out_arr[3] = {falcon.p_out.x, falcon.p_out.y, falcon.p_out.z};
+  float zero_f = 0.f;
+  uint16_t zero_i = 0;
+  float zeros_2[2] = {0.f, 0.f};
+
+  pprz_msg_send_FALCON_SENSOR(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
+                              &falcon.valid,
+                              &falcon.mode,
+                              &zero_i,      // Beacon id (unused in SIXDOF tracking mode)
                               p_out_arr,
-                              q_arr,
-                              p_var_arr,
-                              q_var_arr);
+                              quat,
+                              pos_var,
+                              quat_var,
+                              &zero_f,      // Beam intensity (unused in SIXDOF tracking mode)
+                              &zero_f,      // Beam width (unused in SIXDOF tracking mode)
+                              zeros_2);     // Relative angles (unused in SIXDOF tracking mode)
+#endif
 
   // Send waypoint update every half second
   RunOnceEvery(200 / 2, {
@@ -241,11 +256,6 @@ void target_pos_parse_falcon_sixdof(uint8_t *buf)
                                &waypoints[wp_id].enu_i.y,
                                &waypoints[wp_id].enu_i.z);
   });
-
-  falcon.p_out = p_out;
-  falcon.q = q;
-  falcon.p_var = p_var;
-  falcon.q_var = q_var;
 }
 
 /**
@@ -261,11 +271,22 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
   struct FloatVect2 angles = {rel_angles[0], rel_angles[1]};
   falcon.angles = angles;
 
-  pprz_msg_send_IMCU_FALCON_RELANGLE(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
+#if FLIGHTRECORDER_SDLOG
+  float zeros_3[3] = {0, 0, 0};
+  float zeros_4[4] = {0, 0, 0, 0};
+
+  pprz_msg_send_FALCON_SENSOR(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
+                              &falcon.valid,
+                              &falcon.mode,
                               &falcon.beacon_id,
-                              rel_angles,
+                              zeros_3, // Relative position (unused in relative angle mode)
+                              zeros_4, // Quaternion rotation (unused in relative angle mode)
+                              zeros_3, // Position variance (unused in relative angle mode)
+                              zeros_3, // Quaternion variance (unused in relative angle mode)
                               &falcon.intensity,
-                              &falcon.width);
+                              &falcon.width,
+                              rel_angles);
+#endif
   
   /* TODO: Implement some logic */
 
@@ -275,8 +296,9 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
  * Send a falcon cmd message to the sensor
  */
 #include "modules/datalink/extra_pprz_dl.h"
-void target_pos_send_falcon_cmd(float unk __attribute__((unused))) 
+void target_pos_send_falcon_cmd(float mode) 
 {
+  falcon.mode = mode;
   pprz_msg_send_IMCU_FALCON_CMD(&extra_pprz_tp.trans_tx, &EXTRA_DOWNLINK_DEVICE.device, AC_ID, &falcon.mode);
 }
 
