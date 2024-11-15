@@ -2069,6 +2069,7 @@
       <field name="amsl_baro" type="float" unit="m">barometric altitude above mean sea level</field>
       <field name="airspeed" type="float" unit="m/s">Equivalent Air Speed (or Calibrated Air Speed at low speed/altitude)</field>
       <field name="tas" type="float">True Air Speed (when P, T and P_diff are available)</field>
+      <field name="circle_ratio_2" type="float">Correction ratio of the scaling having completed a circle with constant wind</field>
     </message>
 
     <message name="AMSL" id="223">
