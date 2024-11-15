@@ -130,7 +130,6 @@ struct OneloopGeneral {
   struct OneloopGuidanceState       gui_state;   // Guidance State
   struct OneloopStabilizationRef    sta_ref;     // Stabilization References
   struct OneloopStabilizationState  sta_state;   // Stabilization State
-
 };
 
 extern struct OneloopGeneral oneloop_andi;
@@ -211,6 +210,8 @@ struct Oneloop_StructuralModes_t {
     struct SecondOrderNotchFilter notch;
   } filter;
 };
+
+
 extern int16_t temp_pitch;
 /*Declaration of Reference Model and Error Controller Gains*/
 extern struct PolePlacement p_att_e;

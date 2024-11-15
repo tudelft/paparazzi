@@ -165,7 +165,7 @@ void init_RW_Model(void)
   RW.ele.l       = 0.85;                              // [m]    
   RW.ele_pref    = 0;           
   // Rudder
-  RW.rud.dFdu   = 1.207 / (RW_G_SCALE * RW_G_SCALE); // [N  / pprz] 
+  RW.rud.dFdu   = 1.2015 / (RW_G_SCALE * RW_G_SCALE); // [N  / pprz] 
   RW.rud.dMdu   = 0;                                 // [Nm / pprz]
   RW.rud.dMdud  = 0;                                 // [Nm / pprz]
   RW.rud.l      = 0.88;                              // [m]        

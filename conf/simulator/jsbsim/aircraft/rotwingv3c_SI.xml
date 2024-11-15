@@ -317,7 +317,7 @@
       <!-- Rudder -->   
       <fcs_function name="RUD_dFdu">
           <function>
-              <value>1.207</value> 
+              <value>1.2015</value> 
           </function>
           <output>fcs/RUD_dFdu</output>
       </fcs_function>
