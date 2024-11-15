@@ -295,12 +295,19 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
 /**
  * Send a falcon cmd message to the sensor
  */
+
+#if USE_NPS
+void target_pos_send_falcon_cmd(float mode) {
+  falcon.mode = mode;
+}
+#else
 #include "modules/datalink/extra_pprz_dl.h"
 void target_pos_send_falcon_cmd(float mode) 
 {
   falcon.mode = mode;
   pprz_msg_send_IMCU_FALCON_CMD(&extra_pprz_tp.trans_tx, &EXTRA_DOWNLINK_DEVICE.device, AC_ID, &falcon.mode);
 }
+#endif
 
 /**
  * Get the current target position (NED) and heading

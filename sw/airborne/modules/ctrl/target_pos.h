@@ -58,7 +58,7 @@ struct target_t {
 };
 
 struct falcon_sensor_t {
-  bool valid;
+  uint8_t valid;
   bool manual;
   uint8_t mode;
   uint16_t beacon_id;
