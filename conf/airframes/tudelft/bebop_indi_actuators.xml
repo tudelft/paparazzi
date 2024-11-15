@@ -146,6 +146,7 @@
     <define name="USE_ADAPTIVE" value="FALSE"/>
     <define name="ADAPTIVE_MU" value="0.0001"/>
 
+    <!-- DEMO: change this to FALSE. That will enable WLS -->
     <define name="ALLOCATION_PSEUDO_INVERSE" value="TRUE"/>
     
     <!--Priority for each axis (roll, pitch, yaw and thrust)-->

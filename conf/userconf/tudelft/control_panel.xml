@@ -137,15 +137,16 @@
       </program>
       <program name="Joystick">
         <arg flag="-ac" constant="Bebop_default"/>
-        <arg flag="sm600.xml"/>
+        <arg flag="extreme_3d_pro.xml"/>
         <arg flag="-d" constant="2"/>
       </program>
       <program name="NatNet3">
-        <arg flag="-ac" constant="130"/>
+        <arg flag="-ac" constant="19"/>
         <arg flag="24"/>
         <arg flag="-le" constant="right"/>
         <arg flag="-xs" constant="right"/>
         <arg flag="-an" constant="far"/>
+        <arg flag="-up" constant="z_up"/>
       </program>
       <program name="Messages">
         <arg flag="-c" constant="datalink"/>
@@ -154,6 +155,7 @@
         <arg flag="--help"/>
       </program>
     </session>
+    <session name="DemoTest"/>
     <session name="EKF Full">
       <program name="Data Link">
         <arg flag="-d" constant="/dev/ttyUSB0"/>
@@ -490,6 +492,5 @@
         <arg flag="hobbyking.xml"/>
       </program>
     </session>
-    <session name="DemoTest"/>
   </section>
 </control_panel>
