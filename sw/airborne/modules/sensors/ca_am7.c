@@ -432,7 +432,7 @@ void assign_am7_data(void){
     extra_data_out[52] = w_ail_speed;
     extra_data_out[53] = AM7_SETTINGS_MIN_DELTA_AILERONS_DEG;
     extra_data_out[54] = AM7_SETTINGS_MAX_DELTA_AILERONS_DEG;
-    extra_data_out[55] = AM7_SETTINGS_VEHICLE_CL_AILERONS;
+    extra_data_out[55] = cl_ailerons_slider;
 
     //Approach tilting angle constraint: 
     extra_data_out[56] = AM7_SETTINGS_K_ALT_TILT_CONSTRAINT;     

@@ -30,6 +30,9 @@
 #include <sys/time.h>
 #include "modules/core/abi.h"
 
+float cl_ailerons_slider = AM7_SETTINGS_VEHICLE_CL_AILERONS; 
+float ailerons_first_order_num = FBW_T4_AILERONS_FIRST_ORD_NUM; 
+
 //Sliders control: 
 int test_rpm_control = 0;
 float motor_1_rad_s_slider = 0, motor_2_rad_s_slider = 0, motor_3_rad_s_slider = 0, motor_4_rad_s_slider = 0;
@@ -136,8 +139,19 @@ static uint8_t serial_act_t4_msg_buf_in[sizeof(struct serial_act_t4_in)*2]__attr
         int16_t rotor_3_el_angle_update_time_us_telemetry = myserial_act_t4_in.servo_8_update_time_us;
         int16_t rotor_4_az_angle_update_time_us_telemetry = myserial_act_t4_in.servo_3_update_time_us;
         int16_t rotor_4_el_angle_update_time_us_telemetry = myserial_act_t4_in.servo_4_update_time_us;
+
+        int16_t rotors_az_angle_update_time_us_telemetry[4] = {rotor_1_az_angle_update_time_us_telemetry, 
+                                                               rotor_2_az_angle_update_time_us_telemetry, 
+                                                               rotor_3_az_angle_update_time_us_telemetry, 
+                                                               rotor_4_az_angle_update_time_us_telemetry};
+        int16_t rotors_el_angle_update_time_us_telemetry[4] = {rotor_1_el_angle_update_time_us_telemetry,
+                                                               rotor_2_el_angle_update_time_us_telemetry,
+                                                               rotor_3_el_angle_update_time_us_telemetry,
+                                                               rotor_4_el_angle_update_time_us_telemetry};
+
         int16_t servo_9_update_time_us_telemetry = myserial_act_t4_in.servo_9_update_time_us;
         int16_t servo_10_update_time_us_telemetry = myserial_act_t4_in.servo_10_update_time_us;
+
         float rolling_msg_in_telemetry = myserial_act_t4_in.rolling_msg_in;
         uint8_t rolling_msg_in_id_telemetry = myserial_act_t4_in.rolling_msg_in_id; 
 
@@ -150,8 +164,7 @@ static uint8_t serial_act_t4_msg_buf_in[sizeof(struct serial_act_t4_in)*2]__attr
                 &serial_act_t4_missed_packets_in, &serial_act_t4_message_frequency_in,
                 &rolling_msg_in_telemetry, &rolling_msg_in_id_telemetry,
                 &motor_1_error_code_int_telemetry, &motor_2_error_code_int_telemetry, &motor_3_error_code_int_telemetry, &motor_4_error_code_int_telemetry,
-                &rotor_1_az_angle_update_time_us_telemetry, &rotor_1_el_angle_update_time_us_telemetry, &rotor_2_az_angle_update_time_us_telemetry, &rotor_2_el_angle_update_time_us_telemetry,
-                &rotor_3_az_angle_update_time_us_telemetry, &rotor_3_el_angle_update_time_us_telemetry, &rotor_4_az_angle_update_time_us_telemetry, &rotor_4_el_angle_update_time_us_telemetry,
+                &rotors_az_angle_update_time_us_telemetry[0], &rotors_el_angle_update_time_us_telemetry[0],
                 &servo_9_update_time_us_telemetry, &servo_10_update_time_us_telemetry,
                 &motor_1_current_int_telemetry, &motor_2_current_int_telemetry, &motor_3_current_int_telemetry, &motor_4_current_int_telemetry,
                 &motor_1_voltage_int_telemetry, &motor_2_voltage_int_telemetry, &motor_3_voltage_int_telemetry, &motor_4_voltage_int_telemetry);
@@ -491,8 +504,8 @@ void serial_act_t4_control(void)
     myserial_act_t4_out.servo_10_cmd_int = (int16_t) (ActCmd.flaperon_left_angle_deg) * 100;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////ASSIGN EXTRA DATA OUT
-    serial_act_t4_extra_data_out[0] = FBW_T4_AILERONS_FIRST_ORD_DEN;
-    serial_act_t4_extra_data_out[1] = FBW_T4_AILERONS_FIRST_ORD_NUM;
+    serial_act_t4_extra_data_out[0] = (ailerons_first_order_num - 1.0f);
+    serial_act_t4_extra_data_out[1] = ailerons_first_order_num;
     
     serial_act_t4_extra_data_out[2] = max_pwm_servo_9;
     serial_act_t4_extra_data_out[3] = min_pwm_servo_9;
@@ -501,8 +514,8 @@ void serial_act_t4_control(void)
     serial_act_t4_extra_data_out[6] = FBW_T4_SERVO_9_MAX_ANGLE_DEG;
     serial_act_t4_extra_data_out[7] = FBW_T4_SERVO_9_DELAY_TS;
 
-    serial_act_t4_extra_data_out[8] = FBW_T4_AILERONS_FIRST_ORD_DEN;
-    serial_act_t4_extra_data_out[9] = FBW_T4_AILERONS_FIRST_ORD_NUM;  
+    serial_act_t4_extra_data_out[8] = (ailerons_first_order_num - 1.0f);
+    serial_act_t4_extra_data_out[9] = ailerons_first_order_num;  
     
     serial_act_t4_extra_data_out[10] = max_pwm_servo_10;
     serial_act_t4_extra_data_out[11] = min_pwm_servo_10;

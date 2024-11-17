@@ -7,6 +7,8 @@
   <settings>
     <dl_settings>
       <dl_settings NAME="FBW Control">
+        <dl_setting var="cl_ailerons_slider"  min="0" step=".01" max="0.5" shortname="cl_ailerons_slider" persistent="true"/>
+        <dl_setting var="ailerons_first_order_num"  min="0" step=".01" max="0.5" shortname="ailerons_first_order_num" persistent="true"/>
         <dl_setting var="K_indi_rad_s_dshot"  min="0" step=".1" max="20" shortname="K_indi_rad_s_dshot" persistent="true"/>
         <dl_setting var="test_rpm_control" min="0" step="1" max="1" shortname="test_rpm_control" values="FALSE|TRUE" persistent="true"/>
         <dl_setting var="motor_1_rad_s_slider" min="0" step="1" max="2000" shortname="motor_1_rad_s" persistent="true"/>

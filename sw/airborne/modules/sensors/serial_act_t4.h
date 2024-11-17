@@ -182,5 +182,7 @@ extern float flaperon_right_angle_deg_slider, flaperon_left_angle_deg_slider;
 extern float max_pwm_servo_9, neutral_pwm_servo_9, min_pwm_servo_9;
 extern float max_pwm_servo_10, neutral_pwm_servo_10, min_pwm_servo_10;
 
+extern float cl_ailerons_slider, ailerons_first_order_num; 
+
 #endif
 

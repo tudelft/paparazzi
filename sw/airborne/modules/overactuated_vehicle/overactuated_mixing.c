@@ -46,6 +46,7 @@
 #include "firmwares/rotorcraft/navigation.h"
 #include "modules/ground_detect/ground_detect_am7.h"
 #include "modules/ahrs/ahrs_float_cmpl.h"
+// #include "modules/sensors/aoa_pwm.h"
 
 /**
  * Variables declaration
@@ -206,6 +207,7 @@ static void send_ship_info_msg_ground( struct transport_tx *trans , struct link_
 static void send_overactuated_variables( struct transport_tx *trans , struct link_device * dev ) {
     //Recall the function to detect the ground on landing
     uint8_t ground_detected_am_telemetry = detect_ground_on_landing(); 
+    // beta_deg = - aoa_pwm.angle * 180/M_PI;
     pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID ,
                                          & airspeed, 
                                          & control_mode_ovc_vehicle , 
@@ -757,7 +759,7 @@ void overactuated_mixing_run(void)
         speed_setpoint_control_rf[2] = 0;
         //Compute the vertical speed setpoint using the throttle stick:
         if( abs(radio_control.values[RADIO_THROTTLE] - MAX_PPRZ/2) > deadband_stick_throttle ) {
-            speed_setpoint_control_rf[2] = -AM7_SETTINGS_MAX_CMD_VERT_SPEED * (radio_control.values[RADIO_THROTTLE] - MAX_PPRZ/2) / MAX_PPRZ/2;
+            speed_setpoint_control_rf[2] = -AM7_SETTINGS_MAX_CMD_VERT_SPEED * (radio_control.values[RADIO_THROTTLE] - MAX_PPRZ/2) / (MAX_PPRZ/2);
         }
         
         //Bound speeds based on the maximum airspeed or maximum ground speed:
