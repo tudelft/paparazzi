@@ -82,6 +82,7 @@ struct falcon_sensor_t falcon = {
   .mode = 0,          // Initialize falcon sensor tracking mode to off
   .beacon_id = 0,
   .p_out = {0},
+  .p_in = {0},
   .q = {0},
   .p_var = {0},
   .q_var = {0},
@@ -114,6 +115,7 @@ static void send_target_pos_info(struct transport_tx *trans, struct link_device 
 static void send_falcon_sensor(struct transport_tx *trans, struct link_device *dev)
 {
   float p_out[3] = {falcon.p_out.x, falcon.p_out.y, falcon.p_out.z};
+  float p_in[3] = {falcon.p_in.x, falcon.p_in.y, falcon.p_in.z};
   float q[4] = {falcon.q.qi, falcon.q.qx, falcon.q.qy, falcon.q.qz};
   float p_var[3] = {falcon.p_var.x, falcon.p_var.y, falcon.p_var.z};
   float q_var[3] = {falcon.q_var.x, falcon.q_var.y, falcon.q_var.z};
@@ -123,7 +125,8 @@ static void send_falcon_sensor(struct transport_tx *trans, struct link_device *d
                               &falcon.valid,
                               &falcon.mode,
                               &falcon.beacon_id, 
-                              p_out, 
+                              p_out,
+                              p_in, 
                               q, 
                               p_var, 
                               q_var,
@@ -224,6 +227,7 @@ void target_pos_parse_falcon_sixdof(uint8_t *buf)
   target_enu.z = waypoints[wp_id].enu_f.z;
   waypoint_set_enu(wp_id, &target_enu);
 
+  falcon.p_in = p;
   falcon.p_out = p_out;
   falcon.q = q;
   falcon.p_var = p_var;
@@ -231,6 +235,7 @@ void target_pos_parse_falcon_sixdof(uint8_t *buf)
   
 #if FLIGHTRECORDER_SDLOG
   float p_out_arr[3] = {falcon.p_out.x, falcon.p_out.y, falcon.p_out.z};
+  float p_in_arr[3] = {falcon.p_in.x, falcon.p_in.y, falcon.p_in.z};
   float zero_f = 0.f;
   uint16_t zero_i = 0;
   float zeros_2[2] = {0.f, 0.f};
@@ -240,6 +245,7 @@ void target_pos_parse_falcon_sixdof(uint8_t *buf)
                               &falcon.mode,
                               &zero_i,      // Beacon id (unused in SIXDOF tracking mode)
                               p_out_arr,
+                              p_in_arr,
                               quat,
                               pos_var,
                               quat_var,
@@ -279,7 +285,8 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
                               &falcon.valid,
                               &falcon.mode,
                               &falcon.beacon_id,
-                              zeros_3, // Relative position (unused in relative angle mode)
+                              zeros_3, // Relative position out (unused in relative angle mode)
+                              zeros_3, // Relative position in (unused in relative angle mode)
                               zeros_4, // Quaternion rotation (unused in relative angle mode)
                               zeros_3, // Position variance (unused in relative angle mode)
                               zeros_3, // Quaternion variance (unused in relative angle mode)

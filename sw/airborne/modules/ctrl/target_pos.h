@@ -63,6 +63,7 @@ struct falcon_sensor_t {
   uint8_t mode;
   uint16_t beacon_id;
   struct FloatVect3 p_out;
+  struct FloatVect3 p_in;
   struct FloatQuat q;
   struct FloatVect3 p_var;
   struct FloatVect3 q_var;
