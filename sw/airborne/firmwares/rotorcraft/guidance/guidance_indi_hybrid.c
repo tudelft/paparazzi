@@ -234,6 +234,7 @@ struct FloatEulers eulers_zxy;
 float thrust_dyn = 0.f;
 float thrust_act = 0.f;
 Butterworth2LowPass filt_accel_ned[3];
+Butterworth2LowPass accel_sp_body_x_filt;
 Butterworth2LowPass roll_filt;
 Butterworth2LowPass pitch_filt;
 Butterworth2LowPass thrust_filt;
@@ -242,6 +243,7 @@ Butterworth2LowPass guidance_indi_airspeed_filt;
 
 struct FloatVect2 desired_airspeed;
 float gi_unbounded_airspeed_sp = 0.f;
+float accel_sp_body_x;
 
 float Ga[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_HYBRID_U];
 struct FloatVect3 euler_cmd;
@@ -362,6 +364,7 @@ void guidance_indi_init(void)
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
+  init_butterworth_2_low_pass(&accel_sp_body_x_filt, tau, sample_time, 0.0);
 
   float tau_guidance_indi_airspeed = 1.0/(2.0*M_PI*guidance_indi_airspeed_filt_cutoff);
   init_butterworth_2_low_pass(&guidance_indi_airspeed_filt, tau_guidance_indi_airspeed, sample_time, 0.0);
@@ -406,6 +409,7 @@ void guidance_indi_enter(void)
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, eulers_zxy.theta);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, thrust_in);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
+  init_butterworth_2_low_pass(&accel_sp_body_x_filt, tau, sample_time, 0.0);
 
   float tau_guidance_indi_airspeed = 1.0/(2.0*M_PI*guidance_indi_airspeed_filt_cutoff);
   init_butterworth_2_low_pass(&guidance_indi_airspeed_filt, tau_guidance_indi_airspeed, sample_time, 0.0);
@@ -742,6 +746,8 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
     BoundAbs(accel_sp.z, 5.0);
   }
 #endif
+  
+  accel_sp_body_x = cpsi * accel_sp.x + spsi * accel_sp.y;
 
   return accel_sp;
 }
@@ -756,15 +762,27 @@ static float bound_vz_sp(float vz_sp)
   }
 
   // specific force margin in X direction
-  fxlim = nav_max_deceleration_sp - fxdes;
+  float fxlim = nav_max_deceleration_sp + accel_sp_body_x_filt.o[0];
 
   // note vz positive down (NED frame)
-  float vz_up_lim = fxlim*stateGetAirspeed_f()/9.81f;
-
-  if (vz_sp > vz_low_lim)
-  {
-    vz_sp = vz_low_lim;
+  float vz_down_lim = fxlim*stateGetAirspeed_f()/9.81f;
+  
+  printf("nav_max_deceleration_sp: %f\n", nav_max_deceleration_sp);
+  printf("accel_sp_body_x_filt: %f\n", accel_sp_body_x_filt.o[0]);
+  printf("vz_down_lim: %f\n", vz_down_lim);
+  printf("vz_sp: %f\n", vz_sp);
+  
+  // Only when drone is descending
+  if (vz_sp > 0) {
+    // longitudinal acceleration sp is negative but not larger than max decel
+    if (accel_sp_body_x_filt.o[0] > -nav_max_deceleration_sp && accel_sp_body_x_filt.o[0] < 0) {
+      vz_sp = vz_down_lim;
+    } else if (accel_sp_body_x_filt.o[0] <= -nav_max_deceleration_sp) { // if we request more than the maximum deceleration don't descend
+      vz_sp = 0;
+    }
   }
+
+    printf("vz_sp_lim: %f\n", vz_sp);
 
   return vz_sp;
 }
@@ -878,6 +896,7 @@ void guidance_indi_propagate_filters(void)
   // Propagate filter for sideslip correction
   float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
   update_butterworth_2_low_pass(&accely_filt, accely);
+  update_butterworth_2_low_pass(&accel_sp_body_x_filt, accel_sp_body_x);
 
   float airspeed = stateGetAirspeed_f();
   Bound(airspeed, 0.0f, 100.0f);
