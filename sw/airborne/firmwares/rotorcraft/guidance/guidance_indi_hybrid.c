@@ -260,8 +260,8 @@ struct WLS_t wls_guid_p = {
   .Wv        =  GUIDANCE_INDI_WLS_PRIORITIES,
 #else // X,Y accel, Z accel
   .Wv        =  { 100.f, 100.f, 1.f },
-#endif  
-#ifdef GUIDANCE_INDI_WLS_WU 
+#endif
+#ifdef GUIDANCE_INDI_WLS_WU
   .Wu        = GUIDANCE_INDI_WLS_WU,
 #else
   .Wu        = {[0 ... GUIDANCE_INDI_HYBRID_U - 1] = 1.0},
@@ -302,7 +302,7 @@ void guidance_indi_propagate_filters(void);
 #include "modules/datalink/telemetry.h"
 static void send_eff_mat_guid_indi_hybrid(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_EFF_MAT_GUID(trans, dev, AC_ID, 
+  pprz_msg_send_EFF_MAT_GUID(trans, dev, AC_ID,
                 GUIDANCE_INDI_HYBRID_U, Ga[0],
                 GUIDANCE_INDI_HYBRID_U, Ga[1],
                 GUIDANCE_INDI_HYBRID_U, Ga[2]);
@@ -327,11 +327,11 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
 #if GUIDANCE_INDI_HYBRID_USE_WLS
 static void send_wls_v_guid(struct transport_tx *trans, struct link_device *dev)
 {
-  send_wls_v("guid", &wls_guid_p, trans, dev); 
+  send_wls_v("guid", &wls_guid_p, trans, dev);
 }
 static void send_wls_u_guid(struct transport_tx *trans, struct link_device *dev)
 {
-  send_wls_u("guid", &wls_guid_p, trans, dev); 
+  send_wls_u("guid", &wls_guid_p, trans, dev);
 }
 #endif // GUIDANCE_INDI_HYBRID_USE_WLS
 
@@ -754,6 +754,18 @@ static float bound_vz_sp(float vz_sp)
   } else {
     Bound(vz_sp, -gih_params.climb_vspeed_quad, -gih_params.descend_vspeed_quad);
   }
+
+  // specific force margin in X direction
+  fxlim = nav_max_deceleration_sp - fxdes;
+
+  // note vz positive down (NED frame)
+  float vz_up_lim = fxlim*stateGetAirspeed_f()/9.81f;
+
+  if (vz_sp > vz_low_lim)
+  {
+    vz_sp = vz_low_lim;
+  }
+
   return vz_sp;
 }
 
