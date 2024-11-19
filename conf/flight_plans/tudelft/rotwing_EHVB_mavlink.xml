@@ -197,6 +197,7 @@
     </block>
     <block name="land" strip_button="Land" strip_icon="land-right.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <call_once fun="rotwing_state_update_WP_height(WP_TD, stateGetPositionEnu_f()->z)"/>
         <stay wp="TD"/>
         <exception cond="stateGetHorizontalSpeedNorm_f() @LT 1.0" deroute="descend"/>
     </block>
