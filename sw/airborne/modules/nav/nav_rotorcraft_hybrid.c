@@ -358,12 +358,12 @@ static void nav_hybrid_check_airspeed(void){
     air_data.ratio_circle_2 = pitot_circle.true2meas*pitot_circle.true2meas;
     pitot_circle.gs_max = 0.0f;
     pitot_circle.gs_min = 100.0f;
+#if USE_NPS
+    pitot_circle.new_pitot_scaling = air_data.ratio_circle_2; // Just to see if value is updated in sim
+#else
     pitot_circle.new_pitot_scaling = air_data.ratio_circle_2 * ms45xx.pressure_scale;
+#endif
   }
-  printf("Alpha 0: %f\n",pitot_circle.alpha_0);
-  printf("Circle degs: %f\n",fabs(nav_rotorcraft_base.circle.radians-pitot_circle.alpha_0)*180.0/M_PI);
-  printf("Current count: %f\n",new_count);
-  printf("Pitot circle: %f %f %f %f %f %f\n", pitot_circle.as_true, pitot_circle.as_meas_filt.o[0], pitot_circle.true2meas, pitot_circle.gs_max, pitot_circle.gs_min, pitot_circle.count);
 }
 
 /** Init and register nav functions

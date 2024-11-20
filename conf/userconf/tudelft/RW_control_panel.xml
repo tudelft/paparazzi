@@ -1518,6 +1518,7 @@
       <program name="Real-time Plotter">
         <arg flag="-g" constant="1050x300+0+1000"/>
       </program>
+      <program name="RotWingStatus"/>
     </session>
   </section>
 </control_panel>

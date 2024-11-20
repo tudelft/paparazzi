@@ -172,6 +172,7 @@ class AIRDATAMessage(object):
     def __init__(self, msg):
         self.airspeed = float(msg['airspeed'])
         self.tas = float(msg['tas'])
+        self.ratio_circle_2 = float(msg['circle_ratio_2'])
 
 class IMUHEATERMessage(object):
     def __init__(self, msg):
