@@ -61,6 +61,10 @@
 #define TARGET_INTEGRATE_Z false
 #endif
 
+#ifndef TARGET_POS_RELHEADING_REF_ID
+#define TARGET_POS_RELHEADING_REF_ID 0 
+#endif
+
 /* Initialize the main structure */
 struct target_t target = {
   .pos = {0},
@@ -166,9 +170,6 @@ static void relpos_cb(uint8_t sender_id __attribute__((unused)), uint32_t stamp 
   if(
 #ifdef TARGET_POS_RELHEADING_REF_ID
     relpos->reference_id != TARGET_POS_RELHEADING_REF_ID ||
-#endif
-#ifdef TARGET_POS_RELHEADING_DISTANCE
-    fabs(relpos->distance - INS_EKF2_RELHEADING_DISTANCE) > INS_EKF2_RELHEADING_ERR ||
 #endif
     !isfinite(relpos->heading)
   ) {
