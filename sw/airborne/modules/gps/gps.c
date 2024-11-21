@@ -338,6 +338,7 @@ static void gps_relpos_cb(uint8_t sender_id __attribute__((unused)),
   for(uint8_t i = 0; i < GPS_RELPOS_MAX; i++) {
     // Find our index or a free index
     if(gps_relposned[i].tow == 0 || gps_relposned[i].reference_id == relpos->reference_id)
+    {
       // Copy and save result
       gps_relposned[i] = *relpos;
       break;

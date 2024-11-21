@@ -93,7 +93,9 @@ struct falcon_sensor_t falcon = {
 
 /* GPS abi callback */
 static abi_event gps_ev;
+static abi_event relpos_ev;
 static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
+static void relpos_cb(uint8_t sender_id, uint32_t stamp, struct RelPosNED *relpos);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -144,6 +146,7 @@ void target_pos_init(void)
 #endif
 
   AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
+  AbiBindMsgRELPOS(ABI_BROADCAST, &relpos_ev, relpos_cb);
 }
 
 /* Get the GPS lla position */
@@ -154,6 +157,41 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   target.gps_lla.lat = gps_s->lla_pos.lat;
   target.gps_lla.lon = gps_s->lla_pos.lon;
   target.gps_lla.alt = gps_s->lla_pos.alt;
+}
+
+/* Update the local relative position information */
+static void relpos_cb(uint8_t sender_id __attribute__((unused)), uint32_t stamp __attribute__((unused)), struct RelPosNED *relpos)
+{
+  // Verify if we received a valid heading
+  if(
+#ifdef TARGET_POS_RELHEADING_REF_ID
+    relpos->reference_id != TARGET_POS_RELHEADING_REF_ID ||
+#endif
+#ifdef TARGET_POS_RELHEADING_DISTANCE
+    fabs(relpos->distance - INS_EKF2_RELHEADING_DISTANCE) > INS_EKF2_RELHEADING_ERR ||
+#endif
+    !isfinite(relpos->heading)
+  ) {
+    return;
+  }
+
+/* Do something? */
+
+#if FALCON_LOG_ON_ARRIVAL
+  pprz_msg_send_GPS_RELPOS(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
+                              &relpos->reference_id,
+                              &relpos->tow,               
+                              &relpos->pos.x,
+                              &relpos->pos.y,
+                              &relpos->pos.z,    
+                              &relpos->distance,          
+                              &relpos->heading,           
+                              &relpos->pos_acc.x,
+                              &relpos->pos_acc.y,
+                              &relpos->pos_acc.z,  
+                              &relpos->distance_acc,        
+                              &relpos->heading_acc);          
+#endif
 }
 
 /**
@@ -176,7 +214,7 @@ void target_parse_target_pos(uint8_t *buf)
   target.pos.heading = DL_TARGET_POS_heading(buf);
   target.pos.valid = true;
 
-#ifdef LOG_ON_ARRIVAL
+#ifdef FALCON_LOG_ON_ARRIVAL
   pprz_msg_send_TARGET_POS_INFO(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
                               &target.pos.lla.lat,
                               &target.pos.lla.lon,
@@ -233,7 +271,7 @@ void target_pos_parse_falcon_sixdof(uint8_t *buf)
   falcon.p_var = p_var;
   falcon.q_var = q_var;
   
-#if FLIGHTRECORDER_SDLOG
+#if FALCON_LOG_ON_ARRIVAL
   float p_out_arr[3] = {falcon.p_out.x, falcon.p_out.y, falcon.p_out.z};
   float p_in_arr[3] = {falcon.p_in.x, falcon.p_in.y, falcon.p_in.z};
   float zero_f = 0.f;
