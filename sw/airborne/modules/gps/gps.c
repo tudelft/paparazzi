@@ -170,11 +170,14 @@ static void send_gps_relpos(struct transport_tx *trans, struct link_device *dev)
   static uint8_t idx = 0;
   if(gps_relposned[idx].tow == 0)
     return;
+
+  float null = 0.f;
   
   pprz_msg_send_GPS_RELPOS(trans, dev, AC_ID,
                         &gps_relposned[idx].reference_id,
                         &gps_relposned[idx].tow,
                         &gps_relposned[idx].pos.x, &gps_relposned[idx].pos.y, &gps_relposned[idx].pos.z,
+                        &null, &null, &null,
                         &gps_relposned[idx].distance,
                         &gps_relposned[idx].heading,
                         &gps_relposned[idx].pos_acc.x, &gps_relposned[idx].pos_acc.y, &gps_relposned[idx].pos_acc.z,

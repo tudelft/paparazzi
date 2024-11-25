@@ -176,7 +176,16 @@ static void relpos_cb(uint8_t sender_id __attribute__((unused)), uint32_t stamp 
     return;
   }
 
-/* Do something? */
+  // Compensate for offset gps antenna to c.g.
+  struct FloatVect3 relpos_cg_compensated = {0};
+#if defined(INS_EKF2_GPS_POS_X) && defined(INS_EKF2_GPS_POS_Y) && defined(INS_EKF2_GPS_POS_Z)
+  struct FloatVect3 gps_to_cg_offset = {INS_EKF2_GPS_POS_X, INS_EKF2_GPS_POS_Y, INS_EKF2_GPS_POS_Z};
+  struct FloatRMat *ned_to_body = stateGetNedToBodyRMat_f();
+  struct FloatVect3 relpos_pos = {(float)relpos->pos.x, (float)relpos->pos.y, (float)relpos->pos.z};
+  struct FloatVect3 relpos_cg_compensation;
+  float_rmat_transp_vmult(&relpos_cg_compensation, ned_to_body, &gps_to_cg_offset);
+  VECT3_DIFF(relpos_cg_compensated, relpos_pos, relpos_cg_compensation);
+#endif
 
 #if FALCON_LOG_ON_ARRIVAL
   pprz_msg_send_GPS_RELPOS(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
@@ -184,7 +193,10 @@ static void relpos_cb(uint8_t sender_id __attribute__((unused)), uint32_t stamp 
                               &relpos->tow,               
                               &relpos->pos.x,
                               &relpos->pos.y,
-                              &relpos->pos.z,    
+                              &relpos->pos.z,
+                              &relpos_cg_compensated.x,
+                              &relpos_cg_compensated.y,
+                              &relpos_cg_compensated.z,    
                               &relpos->distance,          
                               &relpos->heading,           
                               &relpos->pos_acc.x,
@@ -254,7 +266,7 @@ void target_pos_parse_falcon_sixdof(uint8_t *buf)
   p_inv.y = p_rot.z;
   p_inv.z = -p_rot.y + 0.13;
 
-  float_quat_invert(&body_to_ned ,stateGetNedToBodyQuat_f());
+  float_quat_invert(&body_to_ned, stateGetNedToBodyQuat_f());
   float_quat_vmult(&p_out, &body_to_ned, &p_inv); // Rotate the position to earth frame NED
 
   // Update a position in the flight plan for now
@@ -316,7 +328,7 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
   struct FloatVect2 angles = {rel_angles[0], rel_angles[1]};
   falcon.angles = angles;
 
-#if FLIGHTRECORDER_SDLOG
+#if FALCON_LOG_ON_ARRIVAL
   float zeros_3[3] = {0, 0, 0};
   float zeros_4[4] = {0, 0, 0, 0};
 
