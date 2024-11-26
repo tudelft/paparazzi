@@ -208,7 +208,12 @@ struct Oneloop_StructuralModes_t {
     Butterworth2LowPass bw2;
     Butterworth4LowPass bw4;
     struct SecondOrderNotchFilter notch;
-  } filter;
+  } feedback_filter;
+    union {
+    Butterworth2LowPass bw2;
+    Butterworth4LowPass bw4;
+    struct SecondOrderNotchFilter notch;
+  } model_filter;
 };
 
 

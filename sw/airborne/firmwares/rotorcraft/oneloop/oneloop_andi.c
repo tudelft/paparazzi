@@ -139,19 +139,10 @@ float  oneloop_andi_filt_cutoff_pos = 2.0;
 #endif
 
 // Stabilization Structural Modes Filtering ----------------------------------------
-// Frequencies
-//#define ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ 8.46
-//#define ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ 6.44
 
 //const float ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ = 17.90;
 #define ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
 //#define ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ 17.90
-//#define USE_ROLL_NOTCH
-//#define USE_PITCH_NOTCH
-//#define USE_YAW_NOTCH
-//#define USE_ROLL_LP
-//#define USE_PITCH_LP
-//#define USE_YAW_LP
 #define USE_YAW_LP4
 
 // Roll Structural Mode Filtering
@@ -1437,13 +1428,16 @@ void reinit_all_cf(bool reinit){
 static inline void init_filter_on_type(struct Oneloop_StructuralModes_t *filter) {
   switch(filter->filter_type) {
     case BUTTERWORTH_2:
-      init_butterworth_2_low_pass(&filter->filter.bw2, 1.0 / (2.0 * M_PI * filter->freq), 1.0 / PERIODIC_FREQUENCY, 0.0);
+      init_butterworth_2_low_pass(&filter->feedback_filter.bw2, 1.0 / (2.0 * M_PI * filter->freq), 1.0 / PERIODIC_FREQUENCY, 0.0);
+      init_butterworth_2_low_pass(&filter->model_filter.bw2,    1.0 / (2.0 * M_PI * filter->freq), 1.0 / PERIODIC_FREQUENCY, 0.0);
       break;
     case BUTTERWORTH_4:
-      init_butterworth_4_low_pass(&filter->filter.bw4, 1.0 / (2.0 * M_PI * filter->freq), 1.0 / PERIODIC_FREQUENCY, 0.0);
+      init_butterworth_4_low_pass(&filter->feedback_filter.bw4, 1.0 / (2.0 * M_PI * filter->freq), 1.0 / PERIODIC_FREQUENCY, 0.0);
+      init_butterworth_4_low_pass(&filter->model_filter.bw4,    1.0 / (2.0 * M_PI * filter->freq), 1.0 / PERIODIC_FREQUENCY, 0.0);
       break;
     case NOTCH:
-      notch_filter_init(&filter->filter.notch, filter->freq, filter->bandwidth, PERIODIC_FREQUENCY);
+      notch_filter_init(&filter->feedback_filter.notch, filter->freq, filter->bandwidth, PERIODIC_FREQUENCY);
+      notch_filter_init(&filter->model_filter.notch,    filter->freq, filter->bandwidth, PERIODIC_FREQUENCY);
       break;
     default:
       // Handle unexpected filter type
@@ -1451,17 +1445,35 @@ static inline void init_filter_on_type(struct Oneloop_StructuralModes_t *filter)
   }
 }
 /** @brief Update a filter based on its type */
-static inline float update_filter_on_type(struct Oneloop_StructuralModes_t *filter, float input) {
+static inline float update_filter_on_type_feedback(struct Oneloop_StructuralModes_t *filter, float input) {
   switch(filter->filter_type) {
     case BUTTERWORTH_2:
-      update_butterworth_2_low_pass(&filter->filter.bw2, input);
-      return filter->filter.bw2.o[0];
+      update_butterworth_2_low_pass(&filter->feedback_filter.bw2, input);
+      return filter->feedback_filter.bw2.o[0];
     case BUTTERWORTH_4:
-      update_butterworth_4_low_pass(&filter->filter.bw4, input);
-      return filter->filter.bw4.lp2.o[0];
+      update_butterworth_4_low_pass(&filter->feedback_filter.bw4, input);
+      return filter->feedback_filter.bw4.lp2.o[0];
     case NOTCH: {
       float output;
-      notch_filter_update(&filter->filter.notch, &input, &output);
+      notch_filter_update(&filter->feedback_filter.notch, &input, &output);
+      return output;
+    }
+    default:
+      // Handle unexpected filter type
+      return 0.0;
+  }
+}
+static inline float update_filter_on_type_model(struct Oneloop_StructuralModes_t *filter, float input) {
+  switch(filter->filter_type) {
+    case BUTTERWORTH_2:
+      update_butterworth_2_low_pass(&filter->model_filter.bw2, input);
+      return filter->model_filter.bw2.o[0];
+    case BUTTERWORTH_4:
+      update_butterworth_4_low_pass(&filter->model_filter.bw4, input);
+      return filter->model_filter.bw4.lp2.o[0];
+    case NOTCH: {
+      float output;
+      notch_filter_update(&filter->model_filter.notch, &input, &output);
       return output;
     }
     default:
@@ -1510,17 +1522,17 @@ void oneloop_andi_propagate_filters(void) {
   float temp_q_dot  = (body_rates->q-cf.q.feedback)*PERIODIC_FREQUENCY;
   float temp_r_dot  = (body_rates->r-cf.r.feedback)*PERIODIC_FREQUENCY;
 #ifdef ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ
-    cf.p_dot.feedback = update_filter_on_type(&roll_structural_mode, temp_p_dot);
+    cf.p_dot.feedback = update_filter_on_type_feedback(&roll_structural_mode, temp_p_dot);
 #else
   cf.p_dot.feedback = temp_p_dot;
 #endif
 #ifdef ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ
-    cf.q_dot.feedback = update_filter_on_type(&pitch_structural_mode, temp_q_dot);
+    cf.q_dot.feedback = update_filter_on_type_feedback(&pitch_structural_mode, temp_q_dot);
 #else
   cf.q_dot.feedback = temp_q_dot;
 #endif
 #ifdef ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
-    cf.r_dot.feedback = update_filter_on_type(&yaw_structural_mode, temp_r_dot);
+    cf.r_dot.feedback = update_filter_on_type_feedback(&yaw_structural_mode, temp_r_dot);
 #else
   cf.r_dot.feedback = temp_r_dot;
 #endif
@@ -1545,6 +1557,15 @@ void oneloop_andi_propagate_filters(void) {
   // Calculate Model Predictions for Linear and Angular Accelerations Using the Effectiveness Matrix
   calc_model();
   // Update Filters of Model Predictions for Linear and Angular Accelerations
+#ifdef ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ
+  cf.p_dot.model = update_filter_on_type_model(&roll_structural_mode, cf.p_dot.model);
+#endif
+#ifdef ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ
+  cf.q_dot.model = update_filter_on_type_model(&pitch_structural_mode, cf.q_dot.model);
+#endif
+#ifdef ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
+  cf.r_dot.model = update_filter_on_type_model(&yaw_structural_mode, cf.r_dot.model);
+#endif
   update_butterworth_2_low_pass(&cf.ax.model_filt,    cf.ax.model);
   update_butterworth_2_low_pass(&cf.ay.model_filt,    cf.ay.model);
   update_butterworth_2_low_pass(&cf.az.model_filt,    cf.az.model);
@@ -1770,19 +1791,8 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
         psi_des_rad += (float) (radio_control_get(RADIO_YAW))/MAX_PPRZ*max_r * dt_1l;
       }
     } else {
-      float ref_mag_vel = float_vect_norm(oneloop_andi.gui_ref.vel,2);
       psi_des_rad += oneloop_andi_sideslip() * dt_1l;
       NormRadAngle(psi_des_rad);
-      // if (ref_mag_vel > 3.0){
-      //   float psi_gs = atan2f(oneloop_andi.gui_ref.vel[1],oneloop_andi.gui_ref.vel[0]);
-      //   float delta_des_gs = psi_gs-psi_des_rad;  // Calculate current yaw difference between des and gs
-      //   NormRadAngle(delta_des_gs);                            
-      //   if (fabs(delta_des_gs) > RadOfDeg(60.0)){        // If difference is bigger than 60 deg bound the des psi angle so that it does not deviate too much
-      //     delta_des_gs *= RadOfDeg(60.0)/fabs(delta_des_gs);
-      //     psi_des_rad = psi_gs - delta_des_gs;
-      //     NormRadAngle(psi_des_rad);
-      //   }
-      // }
     }
     // Register Attitude Setpoints from previous loop
     if (!in_flight_oneloop){
@@ -2470,4 +2480,3 @@ void guidance_set_min_max_airspeed(float min_airspeed, float max_airspeed) {
   min_as = min_airspeed;
   max_as = max_airspeed;
 }
-
