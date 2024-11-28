@@ -32,9 +32,78 @@
 #include "state.h"
 #include "paparazzi.h"
 #include <math.h>
+#include "modules/overactuated_vehicle/overactuated_mixing.h"
 
+//Variables declaration: 
 struct ship_msg ship_state;
 float x_speed_control_coeff_array[10], y_speed_control_coeff_array[10], z_speed_coeff_array[10];
+double average_speed_NED_ship[3] = {0.0, 0.0, 0.0};
+int counter_speed_ship = 0;
+double approach_ship_mode_old = (double) 0.0f;
+
+//Prepare the outputs: 
+double A_err_control_rf[3] = {0.0, 0.0, 0.0};
+double expected_landing_time_relative = 0.0;
+double optimal_coeffs[18]; 
+double A_target_control[3] = {0.0, 0.0, 0.0};
+double V_target_control[3] = {0.0, 0.0, 0.0};
+double exitflag_approach_path = 0.0;
+double V_OOB[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+double A_OOB[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+double UAV_to_SHIP_dist_NED[3] = {0.0, 0.0, 0.0};
+double Desired_phi_rad = 0.0;
+double Desired_theta_rad = 0.0;
+double UAV_to_SHIP_azimuth_angle_rad = 0.0;
+double UAV_to_SHIP_elevation_angle_rad = 0.0;
+double delta_psi = 0.0;
+double psi_UAV_to_ship = 0.0;
+
+//Inputs for the function:
+float sliding_window_seconds = 15.0;
+double v_max_control_rf[3] = {0.0, 0.0, 0.0};
+double v_min_control_rf[3] = {0.0, 0.0, 0.0};
+double a_max_control_rf[3] = {0.0, 0.0, 0.0};
+double a_min_control_rf[3] = {0.0, 0.0, 0.0};
+double max_time_of_landing_seconds = 0.0; 
+double pos_gain_landing = (double) 1.0f; 
+double speed_gain_landing = (double) 4.0f;
+double assume_zero_UAV_acc = (double) 1.0f; 
+double flare_low_distance_m = (double) 0.0f;
+double v_speed_docking_m_s = (double) 0.0f;
+double diag_approach_speed_m_s = (double) 0.0f;
+double c_NED_offset_end_point_diag_lan[3] = {0.0, 0.0, -2.0};
+double pos_tracking_distance_m = (double) 0.0f;
+double approach_heading_ship_rad = (double) 0.0f;
+double dist_line_gain = (double) 0.0f;
+double max_line_gain = (double) 0.0f;
+
+
+    
+
+/**
+ * Transpose an array from control reference frame to earth reference frame
+ */
+void from_control_to_earth(float * out_array, float * in_array, float Psi){
+    float R_cg_matrix[3][3];
+    R_cg_matrix[0][0] = cos(Psi);
+    R_cg_matrix[0][1] = sin(Psi);
+    R_cg_matrix[0][2] = 0;
+    R_cg_matrix[1][0] = -sin(Psi) ;
+    R_cg_matrix[1][1] = cos(Psi) ;
+    R_cg_matrix[1][2] = 0 ;
+    R_cg_matrix[2][0] = 0 ;
+    R_cg_matrix[2][1] = 0 ;
+    R_cg_matrix[2][2] = 1 ;
+
+    //Do the multiplication between the income array and the transposition matrix:
+    for (int j = 0; j < 3; j++) {
+        //Initialize value to zero:
+        out_array[j] = 0.;
+        for (int k = 0; k < 3; k++) {
+            out_array[j] += in_array[k] * R_cg_matrix[k][j];
+        }
+    }
+}
 
 // Ivy callback to collect info about the SHIP_INFO_MSG:
 void nav_approach_ship_parse_SHIP_INFO_MSG(uint8_t *buf) {
@@ -58,9 +127,6 @@ void nav_approach_ship_parse_SHIP_INFO_MSG(uint8_t *buf) {
 void nav_approach_ship_parse_SHIP_PREDICTION_MSG(uint8_t *buf) {
     if(DL_SHIP_INFO_MSG_ac_id(buf) != AC_ID)
     return;
-    // x_speed_control_coeff_array = DL_SHIP_PREDICTION_MSG_speed_x_control_coeffs(buf);
-    // y_speed_control_coeff_array = DL_SHIP_PREDICTION_MSG_speed_y_control_coeffs(buf);
-    // z_speed_coeff_array = DL_SHIP_PREDICTION_MSG_speed_z_control_coeffs(buf);
     memcpy(x_speed_control_coeff_array, DL_SHIP_PREDICTION_MSG_speed_x_control_coeffs(buf), sizeof(x_speed_control_coeff_array));
     memcpy(y_speed_control_coeff_array, DL_SHIP_PREDICTION_MSG_speed_y_control_coeffs(buf), sizeof(y_speed_control_coeff_array));
     memcpy(z_speed_coeff_array, DL_SHIP_PREDICTION_MSG_speed_z_control_coeffs(buf), sizeof(z_speed_coeff_array));
@@ -90,7 +156,71 @@ void nav_approach_ship_init(void){
  * @brief Call the Function to approach the ship
  */
 void nav_approach_ship_run(void){
-    //Call the function to approach the ship
-    // nav_approach_ship();
+    // Retrieve all variables needed for the function:
+    double P0_UAV_NED[3] = {(double) stateGetPositionEnu_f()->x,(double) stateGetPositionEnu_f()->y,(double) stateGetPositionEnu_f()->z};
+    double V0_UAV_NED[3] = {(double)stateGetSpeedNed_f()->x,(double) stateGetSpeedNed_f()->y,(double) stateGetSpeedNed_f()->z};
+    double V0_SHIP_NED[3] = {(double)ship_state.x_dot,(double) ship_state.y_dot,(double) ship_state.z_dot};
+
+    //calculate the average of the speeds of the ship using a sliding window:
+    average_speed_NED_ship[0] = (average_speed_NED_ship[0] * counter_speed_ship + V0_SHIP_NED[0]) / (counter_speed_ship + 1);
+    average_speed_NED_ship[1] = (average_speed_NED_ship[1] * counter_speed_ship + V0_SHIP_NED[1]) / (counter_speed_ship + 1);
+    average_speed_NED_ship[2] = (average_speed_NED_ship[2] * counter_speed_ship + V0_SHIP_NED[2]) / (counter_speed_ship + 1);
+    counter_speed_ship++;
+    if(counter_speed_ship > sliding_window_seconds*PERIODIC_FREQUENCY_NAV_APPROACH_SHIP){
+      counter_speed_ship = 0;
+    }
+
+    double A0_UAV_NED[3] = {(double)stateGetAccelNed_f()->x,(double) stateGetAccelNed_f()->y,(double) stateGetAccelNed_f()->z};
+    float A0_UAV_NED_FILT_float[3]; 
+    from_control_to_earth(A0_UAV_NED_FILT_float, accel_vect_filt_control_rf, stateGetNedToBodyEulers_f()->psi);
+    double psi_rad_UAV = (double) stateGetNedToBodyEulers_f()->psi;
+    double A0_UAV_NED_FILT[3] = {(double) A0_UAV_NED_FILT_float[0],(double) A0_UAV_NED_FILT_float[1],(double) A0_UAV_NED_FILT_float[2]};
+
+    double PhiThetaPsi_SHIP_rad[3] = {(double) ship_state.phi * M_PI/180,(double) ship_state.theta * M_PI/180,(double) ship_state.psi * M_PI/180};
+
+    double coeffs_ship_prediction_speed_7[24] = 
+      {x_speed_control_coeff_array[2], x_speed_control_coeff_array[3], x_speed_control_coeff_array[4], x_speed_control_coeff_array[5], 
+      x_speed_control_coeff_array[6], x_speed_control_coeff_array[7], x_speed_control_coeff_array[8], x_speed_control_coeff_array[9], 
+      y_speed_control_coeff_array[2], y_speed_control_coeff_array[3], y_speed_control_coeff_array[4], y_speed_control_coeff_array[5],
+      y_speed_control_coeff_array[6], y_speed_control_coeff_array[7], y_speed_control_coeff_array[8], y_speed_control_coeff_array[9],
+      z_speed_coeff_array[2], z_speed_coeff_array[3], z_speed_coeff_array[4], z_speed_coeff_array[5],
+      z_speed_coeff_array[6], z_speed_coeff_array[7], z_speed_coeff_array[8], z_speed_coeff_array[9]};
+
+    double P0_SHIP_NED[3];
+    if(state.ned_initialized_i){
+      struct NedCoor_i ship_pos_NED_cm;
+      struct LlaCoor_i ship_lla = {ship_state.lat, ship_state.lon, ship_state.alt};
+      ned_of_lla_point_i(&ship_pos_NED_cm, &state.ned_origin_i, &ship_lla);
+      P0_SHIP_NED[0] = (double) ship_pos_NED_cm.x / 100.;
+      P0_SHIP_NED[1] = (double) ship_pos_NED_cm.y / 100.;
+      P0_SHIP_NED[2] = (double) ship_pos_NED_cm.z / 100.;
+    }
+    else{
+      P0_SHIP_NED[0] = 0;
+      P0_SHIP_NED[1] = 0;
+      P0_SHIP_NED[2] = 0;
+    }
+
+    double t_delay_ship_prediction = ship_state.timestamp - x_speed_control_coeff_array[1];
+    
+    double approach_ship_mode_local; 
+    nav_approach_ship( P0_UAV_NED, V0_UAV_NED, V0_SHIP_NED, A0_UAV_NED, A0_UAV_NED_FILT, PhiThetaPsi_SHIP_rad,
+                       P0_SHIP_NED, psi_rad_UAV,
+                       v_max_control_rf, v_min_control_rf, a_max_control_rf, a_min_control_rf,
+                       coeffs_ship_prediction_speed_7, t_delay_ship_prediction, max_time_of_landing_seconds,
+                       pos_gain_landing, speed_gain_landing, assume_zero_UAV_acc, flare_low_distance_m,
+                       v_speed_docking_m_s, average_speed_NED_ship,
+                       diag_approach_speed_m_s, approach_ship_mode_old, c_NED_offset_end_point_diag_lan,
+                       pos_tracking_distance_m, approach_heading_ship_rad,
+                       dist_line_gain, max_line_gain, A_err_control_rf,
+                       &expected_landing_time_relative, optimal_coeffs,
+                       A_target_control, V_target_control, 
+                       &exitflag_approach_path, &approach_ship_mode_local, V_OOB, A_OOB,
+                       UAV_to_SHIP_dist_NED, &Desired_phi_rad, &Desired_theta_rad,
+                       &UAV_to_SHIP_azimuth_angle_rad, &UAV_to_SHIP_elevation_angle_rad, &delta_psi, &psi_UAV_to_ship);
+
+    //Assign approach_ship_mode_old: 
+    approach_ship_mode_old = approach_ship_mode_local;
+
 }
 

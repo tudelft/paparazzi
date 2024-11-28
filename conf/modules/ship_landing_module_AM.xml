@@ -11,7 +11,7 @@
   </header>
 
    <init fun="nav_approach_ship_init()"/>
-   <periodic fun="nav_approach_ship_run()" autorun="TRUE" freq="200.0"/>
+   <periodic fun="nav_approach_ship_run()" autorun="TRUE" freq="PERIODIC_FREQUENCY_NAV_APPROACH_SHIP"/>
 
    <datalink message="SHIP_INFO_MSG" fun="nav_approach_ship_parse_SHIP_INFO_MSG(buf)"/>
    <datalink message="SHIP_PREDICTION_MSG" fun="nav_approach_ship_parse_SHIP_PREDICTION_MSG(buf)"/>
