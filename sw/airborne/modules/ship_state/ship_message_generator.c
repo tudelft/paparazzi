@@ -34,32 +34,26 @@ float phi_state, phi_dot_state, theta_state, theta_dot_state, psi_state, psi_dot
 
 static void send_ship_info_message(struct transport_tx *trans, struct link_device *dev)
 {
+    float packet_timestamp_telemetry = get_sys_time_float();
     float phi_telemetry = stateGetNedToBodyEulers_f()->phi * 180/M_PI;
     float theta_telemetry = stateGetNedToBodyEulers_f()->theta * 180/M_PI;
     float psi_telemetry = stateGetNedToBodyEulers_f()->psi * 180/M_PI;
-    float heading_state = gps_relposned.relPosHeading;
-    float course_state = gps_relposned.relPosHeading;
     float phi_dot_telemetry = phi_dot_state * 180/M_PI;
     float theta_dot_telemetry = theta_dot_state * 180/M_PI;
-    float psi_dot_telemetry = psi_dot_state * 180/M_PI;
-    float x_telemetry = stateGetPositionNed_f()->x; 
-    float y_telemetry = stateGetPositionNed_f()->y; 
-    float z_telemetry = stateGetPositionNed_f()->z; 
     float x_dot_telemetry = stateGetSpeedNed_f()->x;
     float y_dot_telemetry = stateGetSpeedNed_f()->y;
     float z_dot_telemetry = stateGetSpeedNed_f()->z;
-    float x_ddot_telemetry = stateGetAccelNed_f()->x;
-    float y_ddot_telemetry = stateGetAccelNed_f()->y;
-    float z_ddot_telemetry = stateGetAccelNed_f()->z;  
-    float lat_state_telemetry = stateGetPositionLla_f()->lat*180/M_PI; 
-    float long_state_telemetry = stateGetPositionLla_f()->lon*180/M_PI; 
-    float alt_state_telemetry = stateGetPositionLla_f()->alt;      
-    pprz_msg_send_SHIP_INFO_MSG_GROUND(trans, dev, AC_ID, &phi_telemetry, &theta_telemetry, &psi_telemetry, &heading_state, &course_state,
-                                &phi_dot_telemetry, &theta_dot_telemetry, &psi_dot_telemetry,
-                                &x_telemetry, &y_telemetry, &z_telemetry,
+    int32_t lat_state_telemetry = stateGetPositionLla_i()->lat; //degrees *1e-7
+    int32_t long_state_telemetry = stateGetPositionLla_i()->lon; //degrees *1e-7
+    int32_t alt_state_telemetry = stateGetPositionLla_i()->alt;  //millimeters    
+    //Add the prediction coefficients with zeros: [not used in this message]
+    float speed_empty_coeffs_telemetry[10] = {0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0};
+    pprz_msg_send_SHIP_INFO_MSG_GROUND(trans, dev, AC_ID, &packet_timestamp_telemetry, 
+                                &phi_telemetry, &theta_telemetry, &psi_telemetry,
+                                &phi_dot_telemetry, &theta_dot_telemetry,
                                 &lat_state_telemetry, &long_state_telemetry, &alt_state_telemetry,
                                 &x_dot_telemetry, &y_dot_telemetry, &z_dot_telemetry,
-                                &x_ddot_telemetry, &y_ddot_telemetry, &z_ddot_telemetry);
+                                &speed_empty_coeffs_telemetry[0], &speed_empty_coeffs_telemetry[0], &speed_empty_coeffs_telemetry[0]);
 }
 
 

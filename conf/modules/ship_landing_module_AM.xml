@@ -1,0 +1,17 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="ship_landing_module_AM" dir="ship_landing">
+  <doc>
+    <description>Ship landing module Alessandro Mancinelli</description>
+  </doc>
+
+  <header>
+    <file name="nav_approach_ship.h"/>
+  </header>
+   
+   <datalink message="SHIP_INFO_MSG" fun="overactuated_mixing_parse_SHIP_INFO_MSG(buf)"/>
+   
+  <makefile>
+    <file name="nav_approach_ship.c"/>
+  </makefile>
+</module>

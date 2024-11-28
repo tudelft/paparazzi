@@ -154,26 +154,21 @@ ship_state_polynomial_send ship_coeffs_send = {
 
 //Define the payload structure for the SHIP_INFO_MSG_GROUND message:
 struct __attribute__((__packed__)) payload_ship_info_msg_ground {
+  float timestamp;
   float phi; 
   float theta; 
   float psi; 
-  float heading; 
-  float course; 
   float phi_dot; 
   float theta_dot; 
-  float psi_dot; 
-  float x; 
-  float y; 
-  float z; 
-  float lat; 
-  float lon; 
-  float alt;   
+  int32_t lat; 
+  int32_t lon; 
+  int32_t alt;   
   float x_dot; 
   float y_dot; 
   float z_dot; 
-  float x_ddot; 
-  float y_ddot; 
-  float z_ddot; 
+  float ship_speed_x_coeffs[10]; 
+  float ship_speed_y_coeffs[10]; 
+  float ship_speed_z_coeffs[10]; 
 };
 
 //////////////////////////////////////////////////////////////////////////////FUNCTION DECLARATIONS:
@@ -640,20 +635,17 @@ void ivy_send_ship_info_msg(struct payload_ship_info_msg_ground payload_ship){
   {
     if(verbose) printf("Message SHIP INFO MSG forwarded through ivyBus on ac ID %d: \n",ac_id); 
     if(verbose) printf("Freq tx =  %.2f \n",(1e6/delta_time));  
-    IvySendMsg("ground SHIP_INFO_MSG %d  %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f",
+    IvySendMsg("ground SHIP_INFO_MSG %d  %f  %f %f %f  %f %f  %d %d %d  %f %f %f",
             ac_id,
             
+            payload_ship.timestamp,
+
             payload_ship.phi,
             payload_ship.theta,
             payload_ship.psi,
 
             payload_ship.phi_dot,
             payload_ship.theta_dot,
-            payload_ship.psi_dot,
-
-            payload_ship.x,
-            payload_ship.y,
-            payload_ship.z,
 
             payload_ship.lat,
             payload_ship.lon,
@@ -661,11 +653,7 @@ void ivy_send_ship_info_msg(struct payload_ship_info_msg_ground payload_ship){
 
             payload_ship.x_dot,
             payload_ship.y_dot,
-            payload_ship.z_dot,
-
-            payload_ship.x_ddot,
-            payload_ship.y_ddot,
-            payload_ship.z_ddot);
+            payload_ship.z_dot);
 
             gettimeofday(&last_time_tx, NULL);
   }
@@ -684,51 +672,20 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
     fprintf(stderr,"ERROR: invalid message length SHIP_INFO_MSG_GROUND\n");
   }
   else{
-    /* MESSAGE INFO FROM am_messages_new.xml
-    <message name="SHIP_INFO_MSG_GROUND" id="192" >
-      <field name="phi" type="float" unit="deg">Roll</field>
-      <field name="theta" type="float" unit="deg">Pitch</field>
-      <field name="psi" type="float" unit="deg">Yaw</field>
-      <field name="heading" type="float" unit="deg*1e5">Heading</field>
-      <field name="course" type="float" unit="rad*1e5">Heading</field>
-      <field name="phi_dot" type="float" unit="deg/s">roll rate</field>
-      <field name="theta_dot" type="float" unit="deg/s">pitch rate</field>
-      <field name="psi_dot" type="float" unit="deg/s">yaw rate</field>      
-      <field name="x" type="float" unit="m">position_x</field>
-      <field name="y" type="float" unit="m">position_y</field>
-      <field name="z" type="float" unit="m">position_z</field>
-      <field name="lat_ship" type="float" unit="m">lat_ship</field>
-      <field name="long_ship" type="float" unit="m">long_ship</field>
-      <field name="alt_ship" type="float" unit="m">alt_ship</field>      
-      <field name="x_dot" type="float" unit="m/s">speed_x</field>
-      <field name="y_dot" type="float" unit="m/s">speed_y</field>
-      <field name="z_dot" type="float" unit="m/s">speed_z</field>
-      <field name="x_ddot" type="float" unit="m/s^2">acc_x</field>      
-      <field name="y_ddot" type="float" unit="m/s^2">acc_y</field>      
-      <field name="z_ddot" type="float" unit="m/s^2">acc_z</field>                        
-    </message>
-    */
     struct payload_ship_info_msg_ground payload_ship; 
-    payload_ship.phi = atof(argv[0]);
-    payload_ship.theta = atof(argv[1]);
-    payload_ship.psi = atof(argv[2]);
-    payload_ship.heading = atof(argv[3]);
-    payload_ship.course = atof(argv[4]);
-    payload_ship.phi_dot = atof(argv[5]);
-    payload_ship.theta_dot = atof(argv[6]);
-    payload_ship.psi_dot = atof(argv[7]);
-    payload_ship.x = atof(argv[8]);
-    payload_ship.y = atof(argv[9]);
-    payload_ship.z = atof(argv[10]);
-    payload_ship.lat = atof(argv[11]);
-    payload_ship.lon = atof(argv[12]);
-    payload_ship.alt = atof(argv[13]);
-    payload_ship.x_dot = atof(argv[14]);
-    payload_ship.y_dot = atof(argv[15]);
-    payload_ship.z_dot = atof(argv[16]);
-    payload_ship.x_ddot = atof(argv[17]);
-    payload_ship.y_ddot = atof(argv[18]);
-    payload_ship.z_ddot = atof(argv[19]);
+    payload_ship.timestamp = atof(argv[0]);
+    payload_ship.phi = atof(argv[1]);
+    payload_ship.theta = atof(argv[2]);
+    payload_ship.psi = atof(argv[3]);
+    payload_ship.phi_dot = atof(argv[4]);
+    payload_ship.theta_dot = atof(argv[5]);
+    payload_ship.lat = atof(argv[6]);
+    payload_ship.lon = atof(argv[7]);
+    payload_ship.alt = atof(argv[8]);
+    payload_ship.x_dot = atof(argv[9]);
+    payload_ship.y_dot = atof(argv[10]);
+    payload_ship.z_dot = atof(argv[11]);
+
 
     ivy_send_ship_info_msg(payload_ship);
 
@@ -737,26 +694,17 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
       printf("Ship roll angle [deg] : %f \n",payload_ship.phi);
       printf("Ship theta angle [deg] : %f \n",payload_ship.theta);
       printf("Ship psi angle [deg] : %f \n",payload_ship.psi);
-      printf("Ship heading angle [deg] : %f \n",payload_ship.heading*180/M_PI);
-      printf("Ship course angle [deg] : %f \n",payload_ship.course*180/M_PI);
       printf("Ship roll rate [deg/s] : %f \n",payload_ship.phi_dot);
       printf("Ship pitch rate [deg/s] : %f \n",payload_ship.theta_dot);
-      printf("Ship yaw rate [deg/s] : %f \n",payload_ship.psi_dot);  
-      printf("Ship pos x [m] : %f \n",payload_ship.x);  
-      printf("Ship pos y [m] : %f \n",payload_ship.y);  
-      printf("Ship pos z [m] : %f \n",payload_ship.z);  
-      printf("Ship lat [deg] : %f \n",payload_ship.lat);  
-      printf("Ship pos lon [deg] : %f \n",payload_ship.lon);  
-      printf("Ship pos alt [m] : %f \n",payload_ship.alt);              
+      printf("Ship lat [deg] : %f \n",(payload_ship.lat*1e-7));  
+      printf("Ship pos lon [deg] : %f \n",(payload_ship.lon*1e-7));  
+      printf("Ship pos alt [m] : %f \n",(payload_ship.alt*1e-3));              
       printf("Ship speed x [m/s] : %f \n",payload_ship.x_dot);  
       printf("Ship speed y [m/s] : %f \n",payload_ship.y_dot);  
-      printf("Ship speed z [m/s] : %f \n",payload_ship.z_dot);  
-      printf("Ship acc x [m/s^2] : %f \n",payload_ship.x_ddot);  
-      printf("Ship acc y [m/s^2] : %f \n",payload_ship.y_ddot);  
-      printf("Ship acc z [m/s^2] : %f \n",payload_ship.z_ddot);        
+      printf("Ship speed z [m/s] : %f \n",payload_ship.z_dot);    
     }
     
-    //If we want to save the values on the csv file or send them to the TCP server, proceed:
+    //If we want to save the values on the csv file or send them to the TCP/UDP server, proceed:
     if(save_on_log || send_data_on_tcp || send_data_on_udp){
       clock_gettime(CLOCK_BOOTTIME, &current_timespec);
       double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9; 
@@ -764,13 +712,13 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
       ship_state_log_data paylod_ship_log = {
         .timestamp = current_clock_time,
         .speed_x = payload_ship.x_dot,
-        .speed_x_control = payload_ship.x_dot * cosf(payload_ship.heading) + payload_ship.y_dot * sinf(payload_ship.heading),
+        .speed_x_control = payload_ship.x_dot * cosf(payload_ship.psi) + payload_ship.y_dot * sinf(payload_ship.psi),
         .speed_y = payload_ship.y_dot,
-        .speed_y_control = -payload_ship.x_dot * sinf(payload_ship.heading) + payload_ship.y_dot * cosf(payload_ship.heading),
+        .speed_y_control = -payload_ship.x_dot * sinf(payload_ship.psi) + payload_ship.y_dot * cosf(payload_ship.psi),
         .speed_z = payload_ship.z_dot,
         .phi_dot_deg = payload_ship.phi_dot*180/M_PI,
         .theta_dot_deg = payload_ship.theta_dot*180/M_PI,
-        .heading_deg = payload_ship.heading*180/M_PI
+        .heading_deg = payload_ship.psi*180/M_PI
       };
       //Call the log function to save the values on the file:
       log_ship_state(paylod_ship_log);
