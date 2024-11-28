@@ -62,7 +62,6 @@
    <init fun="overactuated_mixing_init()"/>
    <periodic fun="overactuated_mixing_run()" autorun="TRUE" freq="OVERACTUATED_MIXING_FREQUENCY"/>
    
-   <datalink message="SHIP_INFO_MSG" fun="overactuated_mixing_parse_SHIP_INFO_MSG(buf)"/>
    
   <makefile>
     <file name="overactuated_mixing.c"/>

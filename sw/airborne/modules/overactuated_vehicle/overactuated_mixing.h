@@ -57,33 +57,6 @@ struct PD_indi_over {
     struct FloatEulersPosition p;
     struct FloatEulersPosition d;
 };
-struct ship_info_msg { 
-    float timestamp; 
-    float phi; 
-    float theta; 
-    float psi; 
-    float phi_dot; 
-    float theta_dot; 
-    float psi_dot; 
-    float x; 
-    float y; 
-    float z; 
-    float lat; 
-    float lon; 
-    float alt;     
-    float x_dot; 
-    float y_dot; 
-    float z_dot; 
-    float x_ddot; 
-    float y_ddot; 
-    float z_ddot; 
-};
-
-
-/* overactuated mixing structure */
-// struct overactuated_mixing_t {
-//     int32_t commands[13];      ///< The output commands
-// };
 
 // extern struct overactuated_mixing_t overactuated_mixing;
 extern struct PID_over pid_gains_over;
@@ -108,7 +81,5 @@ extern int approach_state;
 /* External used functions */
 extern void overactuated_mixing_init(void);
 extern void overactuated_mixing_run(void);
-
-extern void overactuated_mixing_parse_SHIP_INFO_MSG(uint8_t *buf);
 
 #endif

@@ -36,7 +36,10 @@ static bool send_data_on_udp = true;
 static bool use_cb_on_tcp = false;
 static bool use_cb_on_udp = false;
 
-#define GENERATE_DUMMY_VALUES
+//declare mutex send_ivy_bus_mutex: 
+pthread_mutex_t send_ivy_bus_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+// #define GENERATE_DUMMY_VALUES
 
 //Provide path to save the log file: 
 static char* log_file_path = "/media/sf_Shared_folder_virtual_machine/Exchange_ship_log/ship_box_log.csv";
@@ -582,6 +585,32 @@ void udp_listener() {
             ship_coeffs_send.phi_dot_poly[i] = ship_coeffs.phi_dot_poly.polynomial_prediction[i];
             ship_coeffs_send.theta_dot_poly[i] = ship_coeffs.theta_dot_poly.polynomial_prediction[i];
           }
+
+          //Send the coefficients to the UAV through the ivyBus:
+          if(verbose) printf("Message SHIP_PREDICTION_MSG forwarded through ivyBus on ac ID %d: \n",ac_id); 
+          pthread_mutex_lock(&send_ivy_bus_mutex);
+          IvySendMsg("ground SHIP_PREDICTION_MSG %d %f,%f,%f,%f,%f,%f,%f,%f,%f,%f %f,%f,%f,%f,%f,%f,%f,%f,%f,%f %f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
+                  ac_id,
+                  //Speed x control polynomial coeffs:
+                  1.0f, ship_coeffs.speed_x_control_poly.timestamp_prediction, ship_coeffs_send.speed_x_control_poly[0], 
+                  ship_coeffs_send.speed_x_control_poly[1], ship_coeffs_send.speed_x_control_poly[2], ship_coeffs_send.speed_x_control_poly[3], 
+                  ship_coeffs_send.speed_x_control_poly[4], ship_coeffs_send.speed_x_control_poly[5], ship_coeffs_send.speed_x_control_poly[6], 
+                  ship_coeffs_send.speed_x_control_poly[7],
+
+                  //Speed y control polynomial coeffs:
+                  2.0f, ship_coeffs.speed_y_control_poly.timestamp_prediction, ship_coeffs_send.speed_y_control_poly[0],
+                  ship_coeffs_send.speed_y_control_poly[1], ship_coeffs_send.speed_y_control_poly[2], ship_coeffs_send.speed_y_control_poly[3],
+                  ship_coeffs_send.speed_y_control_poly[4], ship_coeffs_send.speed_y_control_poly[5], ship_coeffs_send.speed_y_control_poly[6],
+                  ship_coeffs_send.speed_y_control_poly[7],
+
+                  //Speed z polynomial coeffs:
+                  3.0f, ship_coeffs.speed_z_poly.timestamp_prediction, ship_coeffs_send.speed_z_poly[0],
+                  ship_coeffs_send.speed_z_poly[1], ship_coeffs_send.speed_z_poly[2], ship_coeffs_send.speed_z_poly[3],
+                  ship_coeffs_send.speed_z_poly[4], ship_coeffs_send.speed_z_poly[5], ship_coeffs_send.speed_z_poly[6],
+                  ship_coeffs_send.speed_z_poly[7]);
+          //Release mutex: 
+          pthread_mutex_unlock(&send_ivy_bus_mutex);
+
           if(verbose){
             //Print the coefficients:
             printf("Prediction offset: %f\n", ship_coeffs_send.timestamp_offset_prediction);
@@ -612,15 +641,15 @@ void udp_listener() {
             printf("\n");
           }
         }
-        else{
-          clock_gettime(CLOCK_BOOTTIME, &current_timespec);
-          double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9;
-          ship_coeffs_send.timestamp_offset_prediction = ((float) current_clock_time) - ship_coeffs.speed_x_control_poly.timestamp_prediction;
-        }
-        //print a warning if the prediction offset is above 1.5 seconds: 
-        if(ship_coeffs_send.timestamp_offset_prediction > 1.5 && warning_verbose){
-          printf("Warning: Prediction offset is above 1.5 seconds! \n");
-        }
+        // else{
+        //   clock_gettime(CLOCK_BOOTTIME, &current_timespec);
+        //   double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9;
+        //   ship_coeffs_send.timestamp_offset_prediction = ((float) current_clock_time) - ship_coeffs.speed_x_control_poly.timestamp_prediction;
+        // }
+        // //print a warning if the prediction offset is above 1.5 seconds: 
+        // if(ship_coeffs_send.timestamp_offset_prediction > 1.5 && warning_verbose){
+        //   printf("Warning: Prediction offset is above 1.5 seconds! \n");
+        // }
     }
 
     close(sockfd);
@@ -635,6 +664,7 @@ void ivy_send_ship_info_msg(struct payload_ship_info_msg_ground payload_ship){
   {
     if(verbose) printf("Message SHIP INFO MSG forwarded through ivyBus on ac ID %d: \n",ac_id); 
     if(verbose) printf("Freq tx =  %.2f \n",(1e6/delta_time));  
+    pthread_mutex_lock(&send_ivy_bus_mutex);
     IvySendMsg("ground SHIP_INFO_MSG %d  %f  %f %f %f  %f %f  %d %d %d  %f %f %f",
             ac_id,
             
@@ -655,6 +685,8 @@ void ivy_send_ship_info_msg(struct payload_ship_info_msg_ground payload_ship){
             payload_ship.y_dot,
             payload_ship.z_dot);
 
+    pthread_mutex_unlock(&send_ivy_bus_mutex);
+
             gettimeofday(&last_time_tx, NULL);
   }
 }
@@ -667,7 +699,7 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
   if(verbose) printf("Frequency of incoming SHIP_INFO_MSG : %.2f \n",(1e6/delta_time));
   gettimeofday(&last_time_rx, NULL);   
   
-  if (argc != 20)
+  if (argc != 15)
   {
     fprintf(stderr,"ERROR: invalid message length SHIP_INFO_MSG_GROUND\n");
   }
@@ -686,7 +718,6 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
     payload_ship.y_dot = atof(argv[10]);
     payload_ship.z_dot = atof(argv[11]);
 
-
     ivy_send_ship_info_msg(payload_ship);
 
     if(verbose){
@@ -696,12 +727,21 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
       printf("Ship psi angle [deg] : %f \n",payload_ship.psi);
       printf("Ship roll rate [deg/s] : %f \n",payload_ship.phi_dot);
       printf("Ship pitch rate [deg/s] : %f \n",payload_ship.theta_dot);
-      printf("Ship lat [deg] : %f \n",(payload_ship.lat*1e-7));  
-      printf("Ship pos lon [deg] : %f \n",(payload_ship.lon*1e-7));  
+      printf("Ship lat [deg] : %.7f \n",(payload_ship.lat*1e-7));  
+      printf("Ship pos lon [deg] : %.7f \n",(payload_ship.lon*1e-7));  
       printf("Ship pos alt [m] : %f \n",(payload_ship.alt*1e-3));              
       printf("Ship speed x [m/s] : %f \n",payload_ship.x_dot);  
       printf("Ship speed y [m/s] : %f \n",payload_ship.y_dot);  
-      printf("Ship speed z [m/s] : %f \n",payload_ship.z_dot);    
+      printf("Ship speed z [m/s] : %f \n",payload_ship.z_dot); 
+      printf("Extra poly speed x control values: ");
+      printf("%s ", argv[12]);
+      printf("\n");   
+      printf("Extra poly speed y control values: ");
+      printf("%s ", argv[13]);
+      printf("\n");   
+      printf("Extra poly speed x control values: ");
+      printf("%s ", argv[14]);
+      printf("\n");   
     }
     
     //If we want to save the values on the csv file or send them to the TCP/UDP server, proceed:
@@ -710,7 +750,7 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
       double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9; 
       //Create the structure to save the values on the log file:
       ship_state_log_data paylod_ship_log = {
-        .timestamp = current_clock_time,
+        .timestamp = payload_ship.timestamp,
         .speed_x = payload_ship.x_dot,
         .speed_x_control = payload_ship.x_dot * cosf(payload_ship.psi) + payload_ship.y_dot * sinf(payload_ship.psi),
         .speed_y = payload_ship.y_dot,
@@ -855,7 +895,7 @@ int main(int argc, char** argv) {
 
   IvyInit ("SHIPINFO2Ivy", "SHIPINFO2Ivy READY", NULL, NULL, NULL, NULL);
 
-  IvyBindMsg(on_ShipInfoMsgGround, NULL, "%d SHIP_INFO_MSG_GROUND (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)", ship_box_id);
+  IvyBindMsg(on_ShipInfoMsgGround, NULL, "%d SHIP_INFO_MSG_GROUND (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)", ship_box_id);
 
   IvyStart(ivy_bus);
 

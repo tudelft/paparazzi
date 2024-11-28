@@ -56,8 +56,6 @@
 
 float fpa_off_deg = 0.0; 
 
-struct ship_info_msg ship_info_receive;
-
 //Filter of lateral acceleration for turn correction
 Butterworth2LowPass accel_body_y_filter; Butterworth2LowPass accel_control_rf_filters[3]; 
 Butterworth2LowPass body_rates_dot_filters[3];
@@ -163,43 +161,6 @@ static bool gains_changed_app = false, gains_changed_cruise = false;
 float max_fwd_speed, max_airspeed_am7, min_fwd_speed, max_lat_speed, max_vert_speed;
 float max_fwd_acc, min_fwd_acc, max_lat_acc, max_vert_acc;
        
-
-void overactuated_mixing_parse_SHIP_INFO_MSG(uint8_t *buf) {
-    if(DL_SHIP_INFO_MSG_ac_id(buf) != AC_ID)
-    return;
-    ship_info_receive.phi = DL_SHIP_INFO_MSG_phi(buf);  
-    ship_info_receive.theta = DL_SHIP_INFO_MSG_theta(buf);  
-    ship_info_receive.psi = DL_SHIP_INFO_MSG_psi(buf);  
-    ship_info_receive.phi_dot = DL_SHIP_INFO_MSG_phi_dot(buf);  
-    ship_info_receive.theta_dot = DL_SHIP_INFO_MSG_theta_dot(buf);  
-    ship_info_receive.psi_dot = DL_SHIP_INFO_MSG_psi_dot(buf);  
-    ship_info_receive.x = DL_SHIP_INFO_MSG_x(buf);  
-    ship_info_receive.y = DL_SHIP_INFO_MSG_y(buf); 
-    ship_info_receive.z = DL_SHIP_INFO_MSG_z(buf);  
-    ship_info_receive.lat = DL_SHIP_INFO_MSG_lat_ship(buf);  
-    ship_info_receive.lon = DL_SHIP_INFO_MSG_long_ship(buf); 
-    ship_info_receive.alt = DL_SHIP_INFO_MSG_alt_ship(buf);      
-    ship_info_receive.x_dot = DL_SHIP_INFO_MSG_x_dot(buf);  
-    ship_info_receive.y_dot = DL_SHIP_INFO_MSG_y_dot(buf); 
-    ship_info_receive.z_dot = DL_SHIP_INFO_MSG_z_dot(buf);  
-    ship_info_receive.x_ddot = DL_SHIP_INFO_MSG_x_ddot(buf);  
-    ship_info_receive.y_ddot = DL_SHIP_INFO_MSG_y_ddot(buf); 
-    ship_info_receive.z_ddot = DL_SHIP_INFO_MSG_z_ddot(buf); 
-}
-
-/**
- * Function for the message SHIP_INFO_MSG_GROUND
- */
-static void send_ship_info_msg_ground( struct transport_tx *trans , struct link_device * dev ) {
-    // Send telemetry message
-    pprz_msg_send_SHIP_INFO_MSG_GROUND(trans , dev , AC_ID ,
-                & ship_info_receive.phi,& ship_info_receive.theta,& ship_info_receive.psi, & ship_info_receive.psi, & ship_info_receive.psi,
-                & ship_info_receive.phi_dot,& ship_info_receive.theta_dot,& ship_info_receive.psi_dot,
-                & ship_info_receive.x,& ship_info_receive.y,& ship_info_receive.z,
-                & ship_info_receive.lat,& ship_info_receive.lon,& ship_info_receive.alt,
-                & ship_info_receive.x_dot,& ship_info_receive.y_dot,& ship_info_receive.z_dot, 
-                & ship_info_receive.x_ddot,& ship_info_receive.y_ddot,& ship_info_receive.z_ddot);
-}
 
 /**
  * Function for the message OVERACTUATED_VARIABLES
@@ -444,8 +405,7 @@ float max_V_control_from_max_airspeed(float current_airspeed, float current_Vx_c
 void overactuated_mixing_init(void) {
 
     register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_OVERACTUATED_VARIABLES , send_overactuated_variables );
-    register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_SHIP_INFO_MSG_GROUND , send_ship_info_msg_ground );
-    
+
     //Startup the init variables of the INDI
     init_filters();
 

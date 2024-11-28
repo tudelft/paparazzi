@@ -7,11 +7,17 @@
 
   <header>
     <file name="nav_approach_ship.h"/>
+    <file name="core_nav_approach_ship.h"/>
   </header>
-   
-   <datalink message="SHIP_INFO_MSG" fun="overactuated_mixing_parse_SHIP_INFO_MSG(buf)"/>
-   
+
+   <init fun="nav_approach_ship_init()"/>
+   <periodic fun="nav_approach_ship_run()" autorun="TRUE" freq="200.0"/>
+
+   <datalink message="SHIP_INFO_MSG" fun="nav_approach_ship_parse_SHIP_INFO_MSG(buf)"/>
+   <datalink message="SHIP_PREDICTION_MSG" fun="nav_approach_ship_parse_SHIP_PREDICTION_MSG(buf)"/>
+
   <makefile>
     <file name="nav_approach_ship.c"/>
+    <file name="core_nav_approach_ship.c"/>
   </makefile>
 </module>
