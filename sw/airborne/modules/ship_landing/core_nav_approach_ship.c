@@ -146,10 +146,46 @@ static void send_ship_info_msg_ground( struct transport_tx *trans , struct link_
 }
 
 /**
+ * Function for the message NAV_APPROACH_SHIP_MSG
+ */
+static void send_nav_approach_ship_msg( struct transport_tx *trans , struct link_device * dev ) {
+
+  //Prepare variables from function output: 
+  float A_err_control_rf_float_temetery[3] = {(float) A_err_control_rf[0],(float)  A_err_control_rf[1],(float)  A_err_control_rf[2]};
+  float A_target_control_float_temetery[3] = {(float) A_target_control[0],(float)  A_target_control[1],(float)  A_target_control[2]};
+  float V_target_control_float_temetery[3] = {(float) V_target_control[0],(float)  V_target_control[1],(float)  V_target_control[2]};
+  float expected_landing_time_relative_temetetry = (float) expected_landing_time_relative;
+  float UAV_to_SHIP_dist_NED_float_temetery[3] = {(float) UAV_to_SHIP_dist_NED[0],(float)  UAV_to_SHIP_dist_NED[1],(float)  UAV_to_SHIP_dist_NED[2]};
+  float optimal_coeffs_x[6] = {(float) optimal_coeffs[0],(float) optimal_coeffs[1],(float) optimal_coeffs[2],(float) optimal_coeffs[3],(float) optimal_coeffs[4],(float) optimal_coeffs[5]};
+  float optimal_coeffs_y[6] = {(float) optimal_coeffs[6],(float) optimal_coeffs[7],(float) optimal_coeffs[8],(float) optimal_coeffs[9],(float) optimal_coeffs[10],(float) optimal_coeffs[11]};
+  float optimal_coeffs_z[6] = {(float) optimal_coeffs[12],(float) optimal_coeffs[13],(float) optimal_coeffs[14],(float) optimal_coeffs[15],(float) optimal_coeffs[16],(float) optimal_coeffs[17]};
+  float exitflag_approach_path_temetery = (float) exitflag_approach_path;
+  float V_OOB_float_temetery[6] = {(float) V_OOB[0],(float)  V_OOB[1],(float)  V_OOB[2],(float)  V_OOB[3],(float)  V_OOB[4],(float)  V_OOB[5]};
+  float A_OOB_float_temetery[6] = {(float) A_OOB[0],(float)  A_OOB[1],(float)  A_OOB[2],(float)  A_OOB[3],(float)  A_OOB[4],(float)  A_OOB[5]};
+  float Desired_phi_rad_float_temetery = (float) Desired_phi_rad;
+  float Desired_theta_rad_float_temetery = (float) Desired_theta_rad;
+  float UAV_to_SHIP_azimuth_angle_rad_float_temetery = (float) UAV_to_SHIP_azimuth_angle_rad;
+  float UAV_to_SHIP_elevation_angle_rad_float_temetery = (float) UAV_to_SHIP_elevation_angle_rad;
+  float delta_psi_float_temetery = (float) delta_psi;
+  float psi_UAV_to_ship_float_temetery = (float) psi_UAV_to_ship;
+
+    // Send telemetry message
+    pprz_msg_send_NAV_APPROACH_SHIP_MSG(trans , dev , AC_ID ,
+                & A_err_control_rf_float_temetery[0], & A_target_control_float_temetery[0], & V_target_control_float_temetery[0], & expected_landing_time_relative_temetetry,
+                & optimal_coeffs_x[0], & optimal_coeffs_y[0], & optimal_coeffs_z[0], & exitflag_approach_path_temetery,
+                & V_OOB_float_temetery[0], & A_OOB_float_temetery[0], & UAV_to_SHIP_dist_NED_float_temetery[0],
+                & Desired_phi_rad_float_temetery, & Desired_theta_rad_float_temetery, & UAV_to_SHIP_azimuth_angle_rad_float_temetery,
+                & UAV_to_SHIP_elevation_angle_rad_float_temetery, & delta_psi_float_temetery, & psi_UAV_to_ship_float_temetery);
+}
+
+
+
+/**
  * @brief Function to initialize the nav approach ship module
  */
 void nav_approach_ship_init(void){
   register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_SHIP_INFO_MSG_GROUND , send_ship_info_msg_ground );
+  register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_NAV_APPROACH_SHIP_MSG , send_nav_approach_ship_msg );
 }
 
 /**
