@@ -45,9 +45,9 @@ struct target_pos_t {
 };
 
 struct target_offset_t {
-  float heading;            ///< Target offset heading
-  float distance;           ///< Target offset distance
-  float height;             ///< Target offset height
+  float x;              ///< Target offset in x axis in the target body frame [m]
+  float y;              ///< Target offset in y axis in the target body frame [m]
+  float z;              ///< Target offset in z axis in the target body frame [m]
 };
 
 struct target_t {
@@ -78,13 +78,13 @@ struct falcon_sensor_t {
 extern struct falcon_sensor_t falcon;
 extern struct target_t target;
 extern void target_pos_init(void);
+extern void target_pos_periodic(void);
 extern void target_parse_target_pos(uint8_t *buf);
 extern void target_pos_parse_falcon_sixdof(uint8_t *buf);
 extern void target_pos_parse_falcon_relangle(uint8_t *buf);
 extern void target_pos_send_falcon_cmd(float unk);
 extern bool target_get_pos(struct NedCoor_f *pos, float *heading);
 extern bool target_get_vel(struct NedCoor_f *vel);
-extern bool target_pos_set_current_offset(float unk);
 extern void target_set_wp(uint8_t wp_id);
 
 #endif

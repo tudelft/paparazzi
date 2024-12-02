@@ -41,16 +41,16 @@
 #define TARGET_RTK_TIMEOUT 1000
 #endif
 
-#ifndef TARGET_OFFSET_HEADING
-#define TARGET_OFFSET_HEADING 180.0
+#ifndef TARGET_OFFSET_X
+#define TARGET_OFFSET_X 0.0
 #endif
 
-#ifndef TARGET_OFFSET_DISTANCE
-#define TARGET_OFFSET_DISTANCE 12.0
+#ifndef TARGET_OFFSET_Y
+#define TARGET_OFFSET_Y 0.0
 #endif
 
-#ifndef TARGET_OFFSET_HEIGHT
-#define TARGET_OFFSET_HEIGHT -1.2
+#ifndef TARGET_OFFSET_Z
+#define TARGET_OFFSET_Z 0.0
 #endif
 
 #ifndef TARGET_INTEGRATE_XY
@@ -69,9 +69,9 @@
 struct target_t target = {
   .pos = {0},
   .offset = {
-    .heading = TARGET_OFFSET_HEADING,
-    .distance = TARGET_OFFSET_DISTANCE,
-    .height = TARGET_OFFSET_HEIGHT,
+    .x = TARGET_OFFSET_X,
+    .y = TARGET_OFFSET_Y,
+    .z = TARGET_OFFSET_Z,
   },
   .target_pos_timeout = TARGET_POS_TIMEOUT,
   .rtk_timeout = TARGET_RTK_TIMEOUT,
@@ -105,6 +105,31 @@ static void relpos_cb(uint8_t sender_id, uint32_t stamp, struct RelPosNED *relpo
 #include "modules/datalink/telemetry.h"
 static void send_target_pos_info(struct transport_tx *trans, struct link_device *dev)
 {
+#ifdef TARGET_POS_GROUND_STATION
+  // Send the current state of the ground station
+  struct LlaCoor_f *pos = stateGetPositionLla_f();
+  struct NedCoor_f *vel = stateGetSpeedNed_f();
+  struct FloatQuat *quat = stateGetNedToBodyQuat_f();
+  struct FloatRates *rates = stateGetBodyRates_f();
+
+  pprz_msg_send_TARGET_POS_INFO(DefaultChannel, DefaultDevice, AC_ID,
+                              pos->lat,
+                              pos->lon,
+                              pos->alt,
+                              vel->x,
+                              vel->y,
+                              vel->z,
+                              quat->qi,
+                              quat->qx,
+                              quat->qy,
+                              quat->qz,
+                              rates->p,
+                              rates->q,
+                              rates->r,
+                              &target.offset.x,
+                              &target.offset.y,
+                              &target.offset.z);
+#else
   pprz_msg_send_TARGET_POS_INFO(trans, dev, AC_ID,
                               &target.pos.lla.lat,
                               &target.pos.lla.lon,
@@ -119,10 +144,10 @@ static void send_target_pos_info(struct transport_tx *trans, struct link_device 
                               &target.pos.rates.p,
                               &target.pos.rates.q,
                               &target.pos.rates.r,
-                              &target.pos.heading,
-                              &target.offset.heading,
-                              &target.offset.distance,
-                              &target.offset.height);
+                              &target.offset.x,
+                              &target.offset.y,
+                              &target.offset.z);
+#endif
 }
 
 static void send_falcon_sensor(struct transport_tx *trans, struct link_device *dev)
@@ -243,8 +268,6 @@ void target_parse_target_pos(uint8_t *buf)
   target.pos.course = atan2f(target.pos.vel.y, target.pos.vel.x);
   target.pos.ground_speed = sqrtf(target.pos.vel.x * target.pos.vel.x + target.pos.vel.y * target.pos.vel.y);
   target.pos.climb = -target.pos.vel.z;
-  
-  target.pos.heading = DL_TARGET_POS_heading(buf);
   target.pos.valid = true;
 
 #ifdef FALCON_LOG_ON_ARRIVAL
@@ -262,10 +285,9 @@ void target_parse_target_pos(uint8_t *buf)
                               &target.pos.rates.p,
                               &target.pos.rates.q,
                               &target.pos.rates.r,
-                              &target.pos.heading,
-                              &target.offset.heading,
-                              &target.offset.distance,
-                              &target.offset.height);
+                              &target.offset.x,
+                              &target.offset.y,
+                              &target.offset.z);
 #endif
 }
 
@@ -372,15 +394,11 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
                               &falcon.width,
                               rel_angles);
 #endif
-  
-  /* TODO: Implement some logic */
-
 }
 
 /**
  * Send a falcon cmd message to the sensor
  */
-
 #if USE_NPS
 void target_pos_send_falcon_cmd(float mode) {
   falcon.mode = mode;
@@ -397,67 +415,14 @@ void target_pos_send_falcon_cmd(float mode)
 /**
  * Get the current target position (NED) and heading
  */
-bool target_get_pos(struct NedCoor_f *pos, float *heading) {
-  float time_diff = 0;
-
-  /* When we have a valid target_pos message, state ned is initialized and no timeout */
-  if(target.pos.valid && state.ned_initialized_i && (target.pos.recv_time+target.target_pos_timeout) > get_sys_time_msec()) {
-    struct NedCoor_i target_pos_cm, drone_pos_cm;
-
-    // Convert from LLA to NED using origin from the UAV
-    ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &target.pos.lla);
-    // Convert from LLA to NED using origin from the UAV
-    ned_of_lla_point_i(&drone_pos_cm, &state.ned_origin_i, &target.gps_lla);
-
-    // Convert to floating point (cm to meters)
-    pos->x = (target_pos_cm.x - drone_pos_cm.x) * 0.01;
-    pos->y = (target_pos_cm.y - drone_pos_cm.y) * 0.01;
-    pos->z = (target_pos_cm.z - drone_pos_cm.z) * 0.01;
-
-    // In seconds, overflow uint32_t in 49,7 days
-    time_diff = (gps_tow_from_sys_ticks(sys_time.nb_tick) - target.pos.tow) * 0.001;
-
-    // Return the heading
-    *heading = target.pos.heading;
-
-    // If we have a velocity measurement try to integrate the x-y position when enabled
-    struct NedCoor_f vel = {0};
-    bool got_vel = target_get_vel(&vel);
-    if(target.integrate_xy && got_vel) {
-      pos->x = pos->x + vel.x * time_diff;
-      pos->y = pos->y + vel.y * time_diff;
-    }
-
-    if(target.integrate_z && got_vel) {
-      pos->z = pos->z + vel.z * time_diff;
-    }
-
-    // Offset the target
-    pos->x += target.offset.distance * cosf((*heading + target.offset.heading)/180.*M_PI);
-    pos->y += target.offset.distance * sinf((*heading + target.offset.heading)/180.*M_PI);
-    pos->z -= target.offset.height;
-
-    return true;
-  }
-
+bool target_get_pos(struct NedCoor_f *pos __attribute__((unused)), float *heading __attribute__((unused))) {
   return false;
 }
 
 /**
  * Get the current target velocity (NED)
  */
-bool target_get_vel(struct NedCoor_f *vel) {
-
-  /* When we have a valid target_pos message, state ned is initialized and no timeout */
-  if(target.pos.valid && state.ned_initialized_i && (target.pos.recv_time+target.target_pos_timeout) > get_sys_time_msec()) {
-    // Calculate based on ground speed and course
-    vel->x = target.pos.ground_speed * cosf(target.pos.course/180.*M_PI);
-    vel->y = target.pos.ground_speed * sinf(target.pos.course/180.*M_PI);
-    vel->z = -target.pos.climb;
-
-    return true;
-  }
-
+bool target_get_vel(struct NedCoor_f *vel __attribute__((unused))) {
   return false;
 }
 
@@ -465,23 +430,5 @@ bool target_get_vel(struct NedCoor_f *vel) {
  * Set the current measured distance and heading as offset
  */
 bool target_pos_set_current_offset(float unk __attribute__((unused))) {
-  if(target.pos.valid && state.ned_initialized_i && (target.pos.recv_time+target.target_pos_timeout) > get_sys_time_msec()) {
-    struct NedCoor_i target_pos_cm;
-    struct NedCoor_f uav_pos = *stateGetPositionNed_f();
-
-    // Convert from LLA to NED using origin from the UAV
-    ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &target.pos.lla);
-
-    // Convert to floating point (cm to meters)
-    struct NedCoor_f pos;
-    pos.x = target_pos_cm.x * 0.01;
-    pos.y = target_pos_cm.y * 0.01;
-    pos.z = target_pos_cm.z * 0.01;
-
-    target.offset.distance = sqrtf(powf(uav_pos.x - pos.x, 2) + powf(uav_pos.y - pos.y, 2));
-    target.offset.height = -(uav_pos.z - pos.z);
-    target.offset.heading = atan2f((uav_pos.y - pos.y), (uav_pos.x - pos.x))*180.0/M_PI - target.pos.heading;
-  }
-
   return false;
 }
