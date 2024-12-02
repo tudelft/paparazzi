@@ -250,10 +250,10 @@
   <section name="IMU" prefix="IMU_">
 
     <!-- Calibrated at mavlab 03-05-2023 -->
-    <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-17,-8,22}, .scale={{11701,50107,46279},{1198,5125,4775}}} , {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-61,-18,-13}, .scale={{9035,17566,62431},{1732,3587,12773}}}}"/>
+    <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-58,-18,-9}, .scale={{42853,60837,26077},{4385,6229,2690}}} , {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-61,-18,-13}, .scale={{34347,11304,35030},{6578,2311,7169}}} , {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-34,-20,7}, .scale={{29064,56322,39378},{5933,11513,8077}}}}"/>
 
     <!-- Calibrated at Valkenburg the 22-06-2023-->
-    <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={21,253,27}, .scale={{13265,16225,23969},{22921,29034,43079}}}}"/>
+    <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={-110,51,177}, .scale={{37799,16337,7637},{64945,30048,13687}}}}"/>
 
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI" value="90.0" unit="deg"/>
@@ -391,7 +391,7 @@
 
   <section name="GCS">
     <define name="SPEECH_NAME" value="OverDone"/>
-    <define name="AC_ICON" value="flyingwing"/>
+    <define name="AC_ICON" value="rover"/>
     <define name="ALT_SHIFT_PLUS_PLUS" value="2"/>
     <define name="ALT_SHIFT_PLUS" value="1"/>
     <define name="ALT_SHIFT_MINUS" value="-1"/>

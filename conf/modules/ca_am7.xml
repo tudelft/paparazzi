@@ -71,7 +71,7 @@
   </settings>
 
 
-  <settings>
+  <!-- <settings>
     <dl_settings>
       <dl_settings NAME="PROP_MDL">
         <dl_setting var="power_cd_0" min="0" step=".001" max="0.25" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_POWER_CD_0" shortname="power_cd_0" persistent="true"/>
@@ -86,7 +86,7 @@
         <dl_setting var="prop_theta" min="0.2" step=".001" max="1.094" module="overactuated_vehicle/overactuated_mixing" param="PROP_MODEL_PROP_THETA" shortname="prop_theta" persistent="true"/>
       </dl_settings>
     </dl_settings>
-  </settings>
+  </settings> -->
 
   <header>
     <file name="ca_am7.h"/>

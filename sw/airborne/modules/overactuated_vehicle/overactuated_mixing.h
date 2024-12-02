@@ -78,9 +78,6 @@ extern float max_fwd_acc, min_fwd_acc, max_lat_acc, max_vert_acc;
 // Variable for the gain and weight change:
 extern int approach_state;
 
-//Variables to be picked from other modules: 
-extern float accel_vect_filt_control_rf[3]; 
-
 /* External used functions */
 extern void overactuated_mixing_init(void);
 extern void overactuated_mixing_run(void);

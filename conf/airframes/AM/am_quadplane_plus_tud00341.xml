@@ -118,7 +118,7 @@
     </module>
 
     <module name="ship_landing_module_AM">
-      <define name="PERIODIC_FREQUENCY_NAV_APPROACH_SHIP" value="200.0"/>
+      <define name="PERIODIC_FREQUENCY_NAV_APPROACH_SHIP" value="10.0"/>
     </module> 
 
     <module name="overactuated_mixing">
@@ -164,13 +164,13 @@
     <define name="AILERONS_FIRST_ORD_NUM" value="0.09" />
     <!-- Serial bus servos neutral values (elevator) -->
     <define name="SERVO_EL_1_ZERO_VALUE" value="-7.64" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="-0.61" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="-9.84" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="-1.58" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-10.1" unit="deg"/>
     <define name="SERVO_EL_4_ZERO_VALUE" value="-1.75" unit="deg"/>
     <!-- Serial bus servos neutral values (azimuth) -->
     <define name="SERVO_AZ_1_ZERO_VALUE" value="0.16" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="-1.95" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="0.48" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="-1.21" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="-3.5" unit="deg"/>
     <define name="SERVO_AZ_4_ZERO_VALUE" value="4.57" unit="deg"/>
     <!-- pwm servo 9 settings-->
     <define name="SERVO_9_MIN_PWM" value="2100" />   
@@ -244,7 +244,7 @@
     <define name="VEHICLE_S" value="0.43"/>
     <define name="VEHICLE_WING_CHORD" value="0.3"/>
     <define name="VEHICLE_WING_SPAN" value="1.4"/>
-    <define name="VEHICLE_CL_AILERONS" value="0.27"/>
+    <define name="VEHICLE_CL_AILERONS" value="0.2"/>
     <!-- MANUAL STICK LIMITS -->
     <define name="MAX_CMD_FWD_SPEED" value="25.0" unit="m/s"/>
     <define name="MAX_CMD_LAT_SPEED" value="10.0" unit="m/s"/>
@@ -261,7 +261,7 @@
     <define name="LIMITS_CRUISE_MAX_FWD_ACC" value="6.0" unit="m/s^2"/>
     <define name="LIMITS_CRUISE_MIN_FWD_ACC" value="-2.5" unit="m/s^2"/> 
     <define name="LIMITS_CRUISE_MAX_LAT_ACC" value="8.0" unit="m/s^2"/>
-    <define name="LIMITS_CRUISE_MAX_VERT_ACC" value="3.0" unit="m/s^2"/>
+    <define name="LIMITS_CRUISE_MAX_VERT_ACC" value="5.0" unit="m/s^2"/>
     <!-- MAXIMUM LIMITS IN APPROACH MODE -->
     <define name="LIMITS_APP_MAX_FWD_SPEED" value="25.0" unit="m/s"/>
     <define name="LIMITS_APP_MAX_AIRSPEED" value="15.0" unit="m/s"/> 
@@ -304,8 +304,8 @@
     <define name="W_ACT_THETA_SPEED_CRUISE" value="-10"/>
     <define name="W_ACT_PHI_CONST_CRUISE" value="100"/>
     <define name="W_ACT_PHI_SPEED_CRUISE" value="-10"/>
-    <define name="W_ACT_AILERONS_CONST_CRUISE" value="0.5"/>
-    <define name="W_ACT_AILERONS_SPEED_CRUISE" value="0"/>
+    <define name="W_ACT_AILERONS_CONST_CRUISE" value="12"/>
+    <define name="W_ACT_AILERONS_SPEED_CRUISE" value="-2.5"/>
     <define name="W_DV_1_CRUISE" value="0.01"/>
     <define name="W_DV_2_CRUISE" value="0.01"/>
     <define name="W_DV_3_CRUISE" value="0.02"/>
@@ -327,11 +327,11 @@
     <define name="W_ACT_AZ_CONST_APP" value="0"/>
     <define name="W_ACT_AZ_SPEED_APP" value="5"/>
     <define name="W_ACT_THETA_CONST_APP" value="1000"/>
-    <define name="W_ACT_THETA_SPEED_APP" value="-100"/>
+    <define name="W_ACT_THETA_SPEED_APP" value="-50"/>
     <define name="W_ACT_PHI_CONST_APP" value="1000"/>
-    <define name="W_ACT_PHI_SPEED_APP" value="-100"/>
-    <define name="W_ACT_AILERONS_CONST_APP" value="0.5"/>
-    <define name="W_ACT_AILERONS_SPEED_APP" value="0"/>
+    <define name="W_ACT_PHI_SPEED_APP" value="-50"/>
+    <define name="W_ACT_AILERONS_CONST_APP" value="16"/>
+    <define name="W_ACT_AILERONS_SPEED_APP" value="2"/>
     <define name="W_DV_1_APP" value="0.01"/>
     <define name="W_DV_2_APP" value="0.01"/>
     <define name="W_DV_3_APP" value="0.03"/>

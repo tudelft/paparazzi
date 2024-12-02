@@ -46,6 +46,7 @@
 #include "firmwares/rotorcraft/navigation.h"
 #include "modules/ground_detect/ground_detect_am7.h"
 #include "modules/ahrs/ahrs_float_cmpl.h"
+#include "modules/ship_landing/core_nav_approach_ship.h"
 // #include "modules/sensors/aoa_pwm.h"
 
 /**
@@ -816,6 +817,12 @@ void overactuated_mixing_run(void)
             }
         #endif     
 
+        //If we are in the approach ship mode, override the desired attitude setpoints with the ones coming from the ship approach module:
+        if (approach_ship_engaged){
+            data_to_am7_module.desired_phi_rad = Desired_phi_rad_ship_approach;
+            data_to_am7_module.desired_theta_rad = Desired_theta_rad_ship_approach;
+        }
+        
         //Generate the pseudocontrol array: 
         euler_setpoint[0] = get_am7_data_in()->phi_cmd_int * 0.01f * M_PI/180;
         euler_setpoint[1] = get_am7_data_in()->theta_cmd_int * 0.01f * M_PI/180;
@@ -923,6 +930,14 @@ void overactuated_mixing_run(void)
                 speed_setpoint_control_rf[0] = WP_CONTROL_FWD_SPEED_FORCE_FWD_MODE;
             }
         #endif
+
+        //If we are in the approach ship mode, override the speed setpoints with the ones from the ship approach module:
+        if (approach_ship_engaged){
+            speed_setpoint_control_rf[0] = V_target_control_ship_approach[0];
+            speed_setpoint_control_rf[1] = V_target_control_ship_approach[1];
+            speed_setpoint_control_rf[2] = V_target_control_ship_approach[2];
+        }
+
         //Bound speeds based on the maximum airspeed or maximum ground speed:
         float max_Vx_airspeed = max_V_control_from_max_airspeed(airspeed, speed_vect_control_rf[0], max_airspeed_am7);
         Bound(speed_setpoint_control_rf[0],min_fwd_speed,Min(max_fwd_speed,max_Vx_airspeed));
@@ -931,7 +946,13 @@ void overactuated_mixing_run(void)
 
         //Compute the speed error in the control rf:
         speed_error_vect_control_rf[0] = speed_setpoint_control_rf[0] - speed_vect_control_rf[0];
-        speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1] * (1 - compute_lat_speed_multiplier(min_speed_transition,ref_speed_transition,airspeed));
+        //If we are in the approach ship mode, do not apply the lateral speed multiplier:
+        if (approach_ship_engaged){
+            speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1];
+        }
+        else{
+            speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1] * (1 - compute_lat_speed_multiplier(min_speed_transition,ref_speed_transition,airspeed));
+        }
         speed_error_vect_control_rf[2] = speed_setpoint_control_rf[2] - speed_vect_control_rf[2];
 
         //Compute the acceleration setpoints in the control rf:

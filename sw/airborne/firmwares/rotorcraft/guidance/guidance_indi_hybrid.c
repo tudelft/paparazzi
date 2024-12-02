@@ -389,6 +389,10 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   // set global accel sp variable FIXME clean this
   sp_accel = *accel_sp;
 
+  if(use_ship_approach_nav){
+    return guidance_indi_run_ship_approach();
+  }
+  
   /* Obtain eulers with zxy rotation order */
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
 

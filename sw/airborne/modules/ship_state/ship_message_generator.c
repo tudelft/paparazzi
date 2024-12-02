@@ -34,6 +34,7 @@ float phi_state, phi_dot_state, theta_state, theta_dot_state, psi_state, psi_dot
 
 static void send_ship_info_message(struct transport_tx *trans, struct link_device *dev)
 {
+    uint32_t itow_ship_gps = gps.tow;
     float packet_timestamp_telemetry = get_sys_time_float();
     float phi_telemetry = stateGetNedToBodyEulers_f()->phi * 180/M_PI;
     float theta_telemetry = stateGetNedToBodyEulers_f()->theta * 180/M_PI;
@@ -48,7 +49,8 @@ static void send_ship_info_message(struct transport_tx *trans, struct link_devic
     int32_t alt_state_telemetry = stateGetPositionLla_i()->alt;  //millimeters    
     //Add the prediction coefficients with zeros: [not used in this message]
     float speed_empty_coeffs_telemetry[10] = {0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0};
-    pprz_msg_send_SHIP_INFO_MSG_GROUND(trans, dev, AC_ID, &packet_timestamp_telemetry, 
+    pprz_msg_send_SHIP_INFO_MSG_GROUND(trans, dev, AC_ID, 
+                                &itow_ship_gps, &packet_timestamp_telemetry, 
                                 &phi_telemetry, &theta_telemetry, &psi_telemetry,
                                 &phi_dot_telemetry, &theta_dot_telemetry,
                                 &lat_state_telemetry, &long_state_telemetry, &alt_state_telemetry,

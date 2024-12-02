@@ -34,6 +34,12 @@ typedef struct {
     double heading_deg;
 } ship_state_log_data;
 
+int offset_ship_position = 1; 
+float shift_pos_x_control_rf = -5.0f; 
+float shift_pos_y_control_rf = 0.0f; 
+float shift_pos_z_control_rf = 1.0f;
+
+
 struct timeval current_time, last_time_rx, last_time_tx;
 struct timespec current_timespec;
 double last_log_time = 0.0;
@@ -160,6 +166,7 @@ ship_state_polynomial_send ship_coeffs_send = {
 
 //Define the payload structure for the SHIP_INFO_MSG_GROUND message:
 struct __attribute__((__packed__)) payload_ship_info_msg_ground {
+  uint32_t itow_ship;
   float timestamp;
   float phi; 
   float theta; 
@@ -181,7 +188,15 @@ struct __attribute__((__packed__)) payload_ship_info_msg_ground {
 
 // Function to plot data with specified color and time range
 void plot_data(ship_state_log_buffer *cb) {
-    if (gnuplotPipe == NULL) return;
+    if (gnuplotPipe == NULL) {
+        fprintf(stderr, "Gnuplot pipe not initialized.\n");
+        return;
+    }
+
+    if (cb->count <= 0) {
+        fprintf(stderr, "No data to plot.\n");
+        return;
+    }
     // Available colors: "red", "blue", "green", "orange", "purple", "cyan", etc.
 
     // Clear previous plots
@@ -668,9 +683,11 @@ void ivy_send_ship_info_msg(struct payload_ship_info_msg_ground payload_ship){
     if(verbose) printf("Message SHIP INFO MSG forwarded through ivyBus on ac ID %d: \n",ac_id); 
     if(verbose) printf("Freq tx =  %.2f \n",(1e6/delta_time));  
     pthread_mutex_lock(&send_ivy_bus_mutex);
-    IvySendMsg("ground SHIP_INFO_MSG %d  %f  %f %f %f  %f %f  %d %d %d  %f %f %f",
+    IvySendMsg("ground SHIP_INFO_MSG %d  %d  %f  %f %f %f  %f %f  %d %d %d  %f %f %f",
             ac_id,
             
+            payload_ship.itow_ship,
+
             payload_ship.timestamp,
 
             payload_ship.phi,
@@ -702,29 +719,65 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
   if(verbose) printf("Frequency of incoming SHIP_INFO_MSG : %.2f \n",(1e6/delta_time));
   gettimeofday(&last_time_rx, NULL);   
   
-  if (argc != 15)
+  if (argc != 16)
   {
     fprintf(stderr,"ERROR: invalid message length SHIP_INFO_MSG_GROUND\n");
   }
   else{
     struct payload_ship_info_msg_ground payload_ship; 
-    payload_ship.timestamp = atof(argv[0]);
-    payload_ship.phi = atof(argv[1]);
-    payload_ship.theta = atof(argv[2]);
-    payload_ship.psi = atof(argv[3]);
-    payload_ship.phi_dot = atof(argv[4]);
-    payload_ship.theta_dot = atof(argv[5]);
-    payload_ship.lat = atof(argv[6]);
-    payload_ship.lon = atof(argv[7]);
-    payload_ship.alt = atof(argv[8]);
-    payload_ship.x_dot = atof(argv[9]);
-    payload_ship.y_dot = atof(argv[10]);
-    payload_ship.z_dot = atof(argv[11]);
+    payload_ship.itow_ship = atoi(argv[0]);
+    payload_ship.timestamp = atof(argv[1]);
+    payload_ship.phi = atof(argv[2]);
+    payload_ship.theta = atof(argv[3]);
+    payload_ship.psi = atof(argv[4]);
+    payload_ship.phi_dot = atof(argv[5]);
+    payload_ship.theta_dot = atof(argv[6]);
+    payload_ship.lat = atof(argv[7]);
+    payload_ship.lon = atof(argv[8]);
+    payload_ship.alt = atof(argv[9]);
+    payload_ship.x_dot = atof(argv[10]);
+    payload_ship.y_dot = atof(argv[11]);
+    payload_ship.z_dot = atof(argv[12]);
+
+    if (offset_ship_position){
+      float x_NED_to_lat = 8.99e-6; 
+      float y_NED_to_lon = 1.44e-5;
+      float shift_pos_x_NED = shift_pos_x_control_rf * cosf(payload_ship.psi*M_PI/180) - shift_pos_y_control_rf * sinf(payload_ship.psi*M_PI/180);
+      float shift_pos_y_NED = shift_pos_x_control_rf * sinf(payload_ship.psi*M_PI/180) + shift_pos_y_control_rf * cosf(payload_ship.psi*M_PI/180);
+      payload_ship.lat = (int32_t) (payload_ship.lat + (int32_t) ((shift_pos_x_NED*x_NED_to_lat)*1e7) );
+      payload_ship.lon = (int32_t) (payload_ship.lon + (int32_t) ((shift_pos_y_NED*y_NED_to_lon)*1e7) );
+      payload_ship.alt = (int32_t) (payload_ship.alt + (int32_t) (-shift_pos_z_control_rf*1e3) );
+    }
+
+    //update position target on gcs every half second: 
+    clock_gettime(CLOCK_BOOTTIME, &current_timespec);
+    double current_clock_time = current_timespec.tv_sec + current_timespec.tv_nsec*1e-9; 
+    if(current_clock_time - last_target_update_time > .5){
+      pthread_mutex_lock(&send_ivy_bus_mutex);
+      IvySendMsg("ground FLIGHT_PARAM GCS %f %f %f %f %f %f %f %f %f %f %f %d %f",
+        0.0, // roll,
+        0.0, // pitch,
+        0.0, // heading
+        payload_ship.lat*1e-7,
+        payload_ship.lon*1e-7,
+        0.0,
+        0.0, // course
+        0.0,
+        0.0,
+        0.0, // agl
+        0.0,
+        0, // itow
+        0.0); // airspeed
+      pthread_mutex_unlock(&send_ivy_bus_mutex);
+      last_target_update_time = current_clock_time;
+    }
 
     ivy_send_ship_info_msg(payload_ship);
 
     if(verbose){
       printf("Valid SHIP_INFO_MSG_GROUND message received from Ship box \n");
+      printf("Ship itow : %d \n",payload_ship.itow_ship);
+      printf("Ship timestamp : %f \n",payload_ship.timestamp);
       printf("Ship roll angle [deg] : %f \n",payload_ship.phi);
       printf("Ship theta angle [deg] : %f \n",payload_ship.theta);
       printf("Ship psi angle [deg] : %f \n",payload_ship.psi);
@@ -737,13 +790,13 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
       printf("Ship speed y [m/s] : %f \n",payload_ship.y_dot);  
       printf("Ship speed z [m/s] : %f \n",payload_ship.z_dot); 
       printf("Extra poly speed x control values: ");
-      printf("%s ", argv[12]);
-      printf("\n");   
-      printf("Extra poly speed y control values: ");
       printf("%s ", argv[13]);
       printf("\n");   
-      printf("Extra poly speed x control values: ");
+      printf("Extra poly speed y control values: ");
       printf("%s ", argv[14]);
+      printf("\n");   
+      printf("Extra poly speed x control values: ");
+      printf("%s ", argv[15]);
       printf("\n");   
     }
     
@@ -755,13 +808,13 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
       ship_state_log_data paylod_ship_log = {
         .timestamp = payload_ship.timestamp,
         .speed_x = payload_ship.x_dot,
-        .speed_x_control = payload_ship.x_dot * cosf(payload_ship.psi) + payload_ship.y_dot * sinf(payload_ship.psi),
+        .speed_x_control = payload_ship.x_dot * cosf(payload_ship.psi*M_PI/180) + payload_ship.y_dot * sinf(payload_ship.psi*M_PI/180),
         .speed_y = payload_ship.y_dot,
-        .speed_y_control = -payload_ship.x_dot * sinf(payload_ship.psi) + payload_ship.y_dot * cosf(payload_ship.psi),
+        .speed_y_control = -payload_ship.x_dot * sinf(payload_ship.psi*M_PI/180) + payload_ship.y_dot * cosf(payload_ship.psi*M_PI/180),
         .speed_z = payload_ship.z_dot,
-        .phi_dot_deg = payload_ship.phi_dot*180/M_PI,
-        .theta_dot_deg = payload_ship.theta_dot*180/M_PI,
-        .heading_deg = payload_ship.psi*180/M_PI
+        .phi_dot_deg = payload_ship.phi_dot,
+        .theta_dot_deg = payload_ship.theta_dot,
+        .heading_deg = payload_ship.psi
       };
       //Call the log function to save the values on the file:
       log_ship_state(paylod_ship_log);
@@ -780,7 +833,10 @@ void generate_dummy_values(){
     if(current_clock_time - last_dummy_time > 120){
       payload_ship_dummy_to_UAV.lat = (int32_t) (52.1682483*1e7);
       payload_ship_dummy_to_UAV.lon = (int32_t) (4.4130814*1e7);
-      payload_ship_dummy_to_UAV.alt = (int32_t) (20.0*1000);
+      payload_ship_dummy_to_UAV.alt = (int32_t) (55.0*1000);
+      // payload_ship_dummy_to_UAV.lat = (int32_t) (51.990246*1e7);
+      // payload_ship_dummy_to_UAV.lon = (int32_t) (4.375436*1e7);
+      // payload_ship_dummy_to_UAV.alt = (int32_t) (100.0*1000);
       last_dummy_time = current_clock_time;
       last_time_integration = current_clock_time;
     }
@@ -802,7 +858,7 @@ void generate_dummy_values(){
     //Determine the NED values fromt he one in the control RF: 
     payload_ship_dummy_to_simulink.speed_x = payload_ship_dummy_to_simulink.speed_x_control*cosf(payload_ship_dummy_to_simulink.heading_deg*M_PI/180) - payload_ship_dummy_to_simulink.speed_y_control*sinf(payload_ship_dummy_to_simulink.heading_deg*M_PI/180),
     payload_ship_dummy_to_simulink.speed_y = payload_ship_dummy_to_simulink.speed_x_control*sinf(payload_ship_dummy_to_simulink.heading_deg*M_PI/180) + payload_ship_dummy_to_simulink.speed_y_control*cosf(payload_ship_dummy_to_simulink.heading_deg*M_PI/180),
-
+    
     //Call the log function to save the values on the file:
     log_ship_state(payload_ship_dummy_to_simulink);
 
@@ -824,14 +880,16 @@ void generate_dummy_values(){
     float y_NED_to_lon = 1.44e-5;
      
     payload_ship_dummy_to_UAV.timestamp = current_clock_time;
+    payload_ship_dummy_to_UAV.itow_ship = 0;
     //integrate the phi_dot and theta_dot to get the phi and theta angles:
     payload_ship_dummy_to_UAV.phi = payload_ship_dummy_to_UAV.phi + payload_ship_dummy_to_simulink.phi_dot_deg*(current_clock_time-last_time_integration);
     payload_ship_dummy_to_UAV.theta = payload_ship_dummy_to_UAV.theta + payload_ship_dummy_to_simulink.theta_dot_deg*(current_clock_time-last_time_integration);
     //Do the same for the lat and lon:
     payload_ship_dummy_to_UAV.lat = payload_ship_dummy_to_UAV.lat + (int32_t) (payload_ship_dummy_to_simulink.speed_x*x_NED_to_lat*(current_clock_time-last_time_integration)*1e7);
     payload_ship_dummy_to_UAV.lon = payload_ship_dummy_to_UAV.lon + (int32_t) (payload_ship_dummy_to_simulink.speed_y*y_NED_to_lon*(current_clock_time-last_time_integration)*1e7);
-    //for the alt, integrate the speed in z:
+    // //for the alt, integrate the speed in z:
     payload_ship_dummy_to_UAV.alt = payload_ship_dummy_to_UAV.alt + (int32_t) (payload_ship_dummy_to_simulink.speed_z*(current_clock_time-last_time_integration)*1000);
+
 
     payload_ship_dummy_to_UAV.psi = payload_ship_dummy_to_simulink.heading_deg;
     payload_ship_dummy_to_UAV.phi_dot = payload_ship_dummy_to_simulink.phi_dot_deg;
@@ -841,12 +899,23 @@ void generate_dummy_values(){
     payload_ship_dummy_to_UAV.y_dot = payload_ship_dummy_to_simulink.speed_y;
     payload_ship_dummy_to_UAV.z_dot = payload_ship_dummy_to_simulink.speed_z;
 
+    if(offset_ship_position){
+      float x_NED_to_lat = 8.99e-6; 
+      float y_NED_to_lon = 1.44e-5;
+      float shift_pos_x_NED = shift_pos_x_control_rf * cosf(payload_ship_dummy_to_UAV.psi*M_PI/180) - shift_pos_y_control_rf * sinf(payload_ship_dummy_to_UAV.psi*M_PI/180);
+      float shift_pos_y_NED = shift_pos_x_control_rf * sinf(payload_ship_dummy_to_UAV.psi*M_PI/180) + shift_pos_y_control_rf * cosf(payload_ship_dummy_to_UAV.psi*M_PI/180);
+      payload_ship_dummy_to_UAV.lat = payload_ship_dummy_to_UAV.lat + (shift_pos_x_NED*x_NED_to_lat) ;
+      payload_ship_dummy_to_UAV.lon = payload_ship_dummy_to_UAV.lon + (shift_pos_y_NED*y_NED_to_lon) ;
+    }
+
     ivy_send_ship_info_msg(payload_ship_dummy_to_UAV);
     last_time_integration = current_clock_time;
 
     if(verbose)
     {
       printf("Dummy values sent to the drone through the ivyBus: \n");
+      printf("Ship itow : %d \n",payload_ship_dummy_to_UAV.itow_ship);
+      printf("Ship timestamp : %f \n",payload_ship_dummy_to_UAV.timestamp);
       printf("Ship roll angle [deg] : %f \n",payload_ship_dummy_to_UAV.phi);
       printf("Ship theta angle [deg] : %f \n",payload_ship_dummy_to_UAV.theta);
       printf("Ship psi angle [deg] : %f \n",payload_ship_dummy_to_UAV.psi);
@@ -860,8 +929,9 @@ void generate_dummy_values(){
       printf("Ship speed z [m/s] : %f \n",payload_ship_dummy_to_UAV.z_dot); 
     }
 
-    //update position target on gcs every second: 
-    if(current_clock_time - last_target_update_time > 1){
+    //update position target on gcs every half second: 
+    if(current_clock_time - last_target_update_time > .5){
+      pthread_mutex_lock(&send_ivy_bus_mutex);
       IvySendMsg("ground FLIGHT_PARAM GCS %f %f %f %f %f %f %f %f %f %f %f %d %f",
         0.0, // roll,
         0.0, // pitch,
@@ -876,6 +946,7 @@ void generate_dummy_values(){
         0.0,
         0, // itow
         0.0); // airspeed
+      pthread_mutex_unlock(&send_ivy_bus_mutex);
       last_target_update_time = current_clock_time;
     }
 
@@ -932,7 +1003,7 @@ int main(int argc, char** argv) {
 
   int c;
   int option_index = 0;
-  while((c = getopt_long(argc, argv, "i:s:f:a:p:h:v", long_options, &option_index)) != -1) {
+  while((c = getopt_long(argc, argv, "i:s:f:a:phv", long_options, &option_index)) != -1) {
     switch (c) {
       case 'i':
         ac_id = atoi(optarg);
@@ -972,7 +1043,7 @@ int main(int argc, char** argv) {
 
   IvyInit ("SHIPINFO2Ivy", "SHIPINFO2Ivy READY", NULL, NULL, NULL, NULL);
 
-  IvyBindMsg(on_ShipInfoMsgGround, NULL, "%d SHIP_INFO_MSG_GROUND (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)", ship_box_id);
+  IvyBindMsg(on_ShipInfoMsgGround, NULL, "%d SHIP_INFO_MSG_GROUND (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)", ship_box_id);
 
   IvyStart(ivy_bus);
 
