@@ -109,9 +109,16 @@ static void send_target_pos_info(struct transport_tx *trans, struct link_device 
                               &target.pos.lla.lat,
                               &target.pos.lla.lon,
                               &target.pos.lla.alt,
-                              &target.pos.ground_speed,
-                              &target.pos.climb,
-                              &target.pos.course,
+                              &target.pos.vel.x,
+                              &target.pos.vel.y,
+                              &target.pos.vel.z,
+                              &target.pos.quat.qi,
+                              &target.pos.quat.qx,
+                              &target.pos.quat.qy,
+                              &target.pos.quat.qz,
+                              &target.pos.rates.p,
+                              &target.pos.rates.q,
+                              &target.pos.rates.r,
                               &target.pos.heading,
                               &target.offset.heading,
                               &target.offset.distance,
@@ -217,13 +224,26 @@ void target_parse_target_pos(uint8_t *buf)
 
   // Save the received values
   target.pos.recv_time = get_sys_time_msec();
-  target.pos.tow = gps_tow_from_sys_ticks(sys_time.nb_tick); // FIXME: need to get from the real GPS
+  target.pos.tow = DL_TARGET_POS_tow(buf);
   target.pos.lla.lat = DL_TARGET_POS_lat(buf);
   target.pos.lla.lon = DL_TARGET_POS_lon(buf);
   target.pos.lla.alt = DL_TARGET_POS_alt(buf);
-  target.pos.ground_speed = DL_TARGET_POS_speed(buf);
-  target.pos.climb = DL_TARGET_POS_climb(buf);
-  target.pos.course = DL_TARGET_POS_course(buf);
+  target.pos.vel.x = DL_TARGET_POS_vnorth(buf);
+  target.pos.vel.y = DL_TARGET_POS_veast(buf);
+  target.pos.vel.z = DL_TARGET_POS_vdown(buf);
+  target.pos.quat.qi = DL_TARGET_POS_body_qi(buf);
+  target.pos.quat.qx = DL_TARGET_POS_body_qx(buf);
+  target.pos.quat.qy = DL_TARGET_POS_body_qy(buf);
+  target.pos.quat.qi = DL_TARGET_POS_body_qz(buf);
+  target.pos.rates.p = DL_TARGET_POS_p(buf);
+  target.pos.rates.q = DL_TARGET_POS_q(buf);
+  target.pos.rates.r = DL_TARGET_POS_r(buf);
+
+  // Calculate old properties for now to keep code compatible
+  target.pos.course = atan2f(target.pos.vel.y, target.pos.vel.x);
+  target.pos.ground_speed = sqrtf(target.pos.vel.x * target.pos.vel.x + target.pos.vel.y * target.pos.vel.y);
+  target.pos.climb = -target.pos.vel.z;
+  
   target.pos.heading = DL_TARGET_POS_heading(buf);
   target.pos.valid = true;
 
@@ -232,9 +252,16 @@ void target_parse_target_pos(uint8_t *buf)
                               &target.pos.lla.lat,
                               &target.pos.lla.lon,
                               &target.pos.lla.alt,
-                              &target.pos.ground_speed,
-                              &target.pos.climb,
-                              &target.pos.course,
+                              &target.pos.vel.x,
+                              &target.pos.vel.y,
+                              &target.pos.vel.z,
+                              &target.pos.quat.qi,
+                              &target.pos.quat.qx,
+                              &target.pos.quat.qy,
+                              &target.pos.quat.qz,
+                              &target.pos.rates.p,
+                              &target.pos.rates.q,
+                              &target.pos.rates.r,
                               &target.pos.heading,
                               &target.offset.heading,
                               &target.offset.distance,
@@ -388,7 +415,7 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
     pos->z = (target_pos_cm.z - drone_pos_cm.z) * 0.01;
 
     // In seconds, overflow uint32_t in 49,7 days
-    time_diff = (get_sys_time_msec() - target.pos.recv_time) * 0.001; // FIXME: should be based on TOW of ground gps
+    time_diff = (gps_tow_from_sys_ticks(sys_time.nb_tick) - target.pos.tow) * 0.001;
 
     // Return the heading
     *heading = target.pos.heading;

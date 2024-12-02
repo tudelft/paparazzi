@@ -35,6 +35,9 @@ struct target_pos_t {
   uint32_t recv_time;       ///< Time of when the target position message was received [msec]
   uint32_t tow;             ///< Time of week of the target position measurement
   struct LlaCoor_i lla;     ///< Lat, lon and altitude position of the target
+  struct NedCoor_f vel;     ///< Speed of target in target local NED frame [m/s]
+  struct FloatQuat quat;    ///< Attitude quaternion of the target body to target local NED frame
+  struct FloatRates rates;  ///< Body rates of the target in [rad/s]
   float ground_speed;       ///< Ground speed of the target [m/s]
   float course;             ///< Ground course of the target [deg]
   float heading;            ///< Heading of the target [deg]
