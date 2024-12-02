@@ -176,7 +176,7 @@ struct Oneloop_CF_t {
   struct CF2_t r;
   struct CF4_t p_dot;
   struct CF4_t q_dot;
-  struct CF2_t r_dot;
+  struct CF4_t r_dot;
   struct CF2_t ax;
   struct CF2_t ay;
   struct CF2_t az;

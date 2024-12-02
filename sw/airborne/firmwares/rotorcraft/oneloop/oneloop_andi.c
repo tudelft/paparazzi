@@ -141,9 +141,9 @@ float  oneloop_andi_filt_cutoff_pos = 2.0;
 // Stabilization Structural Modes Filtering ----------------------------------------
 
 //const float ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ = 17.90;
-#define ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
+//#define ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
 //#define ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ 17.90
-#define USE_YAW_LP4
+//#define USE_YAW_LP4
 
 // Roll Structural Mode Filtering
 #ifdef ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ
@@ -457,6 +457,7 @@ void  init_all_cf(void);
 void  reinit_cf2(struct CF2_t *cf, bool reinit);
 void  reinit_cf4(struct CF4_t *cf, bool reinit);
 void  reinit_all_cf(bool reinit);
+void  oneloop_axis_effectiveness_calc(void);
 
 /* Oneloop Misc variables*/
 static float use_increment = 0.0;
@@ -577,6 +578,11 @@ struct Gains3rdOrder k_pos_e_indi;
 /* Effectiveness Matrix definition */
 float *bwls_1l[ANDI_OUTPUTS];
 float EFF_MAT_G[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
+float EFF_MAT_AXIS[ANDI_OUTPUTS];
+float n_array[ANDI_OUTPUTS];
+float m_array[ANDI_NUM_ACT_TOT];
+float coupling_factor[ANDI_OUTPUTS];
+float SF_BOUND_NU[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
 float ratio_u_un[ANDI_NUM_ACT_TOT];
 float ratio_vn_v[ANDI_OUTPUTS];
 
@@ -596,7 +602,7 @@ static void send_cf_oneloop(struct transport_tx *trans, struct link_device *dev)
   float temp_cf_r[5] = {cf.r.model,cf.r.model_filt.o[0],cf.r.feedback,cf.r.feedback_filt.o[0],cf.r.out};
   float temp_cf_p_dot[5] = {cf.p_dot.model,cf.p_dot.model_filt.lp2.o[0],cf.p_dot.feedback,cf.p_dot.feedback_filt.lp2.o[0],cf.p_dot.out};
   float temp_cf_q_dot[5] = {cf.q_dot.model,cf.q_dot.model_filt.lp2.o[0],cf.q_dot.feedback,cf.q_dot.feedback_filt.lp2.o[0],cf.q_dot.out};
-  float temp_cf_r_dot[5] = {cf.r_dot.model,cf.r_dot.model_filt.o[0],cf.r_dot.feedback,cf.r_dot.feedback_filt.o[0],cf.r_dot.out};
+  float temp_cf_r_dot[5] = {cf.r_dot.model,cf.r_dot.model_filt.lp2.o[0],cf.r_dot.feedback,cf.r_dot.feedback_filt.lp2.o[0],cf.r_dot.out};
   //float temp_cf_ax[5] = {cf.ax.model,cf.ax.model_filt.o[0],cf.ax.feedback,cf.ax.feedback_filt.o[0],cf.ax.out};
   //float temp_cf_ay[5] = {cf.ay.model,cf.ay.model_filt.o[0],cf.ay.feedback,cf.ay.feedback_filt.o[0],cf.ay.out};
   float temp_cf_az[5] = {cf.az.model,cf.az.model_filt.o[0],cf.az.feedback,cf.az.feedback_filt.o[0],cf.az.out};
@@ -1387,7 +1393,7 @@ void init_all_cf(void){
   init_cf2(&cf.az,    oneloop_andi_filt_cutoff_a);
   init_cf4(&cf.p_dot, 2.0);
   init_cf4(&cf.q_dot, 2.0);
-  init_cf2(&cf.r_dot, oneloop_andi_filt_cutoff);
+  init_cf4(&cf.r_dot, 2.0);
   init_cf2(&cf.p,     oneloop_andi_filt_cutoff_p);
   init_cf2(&cf.q,     oneloop_andi_filt_cutoff_q);
   init_cf2(&cf.r,     oneloop_andi_filt_cutoff_r);
@@ -1417,7 +1423,7 @@ void reinit_all_cf(bool reinit){
   reinit_cf2(&cf.az,    reinit);
   reinit_cf4(&cf.p_dot, reinit);
   reinit_cf4(&cf.q_dot, reinit);
-  reinit_cf2(&cf.r_dot, reinit);
+  reinit_cf4(&cf.r_dot, reinit);
   reinit_cf2(&cf.p,     reinit);
   reinit_cf2(&cf.q,     reinit);
   reinit_cf2(&cf.r,     reinit);
@@ -1545,7 +1551,7 @@ void oneloop_andi_propagate_filters(void) {
   update_butterworth_2_low_pass(&cf.az.feedback_filt,    cf.az.feedback);
   update_butterworth_4_low_pass(&cf.p_dot.feedback_filt, cf.p_dot.feedback);
   update_butterworth_4_low_pass(&cf.q_dot.feedback_filt, cf.q_dot.feedback);
-  update_butterworth_2_low_pass(&cf.r_dot.feedback_filt, cf.r_dot.feedback);
+  update_butterworth_4_low_pass(&cf.r_dot.feedback_filt, cf.r_dot.feedback);
   update_butterworth_2_low_pass(&cf.p.feedback_filt,     cf.p.feedback);
   update_butterworth_2_low_pass(&cf.q.feedback_filt,     cf.q.feedback);
   update_butterworth_2_low_pass(&cf.r.feedback_filt,     cf.r.feedback); 
@@ -1571,7 +1577,7 @@ void oneloop_andi_propagate_filters(void) {
   update_butterworth_2_low_pass(&cf.az.model_filt,    cf.az.model);
   update_butterworth_4_low_pass(&cf.p_dot.model_filt, cf.p_dot.model);
   update_butterworth_4_low_pass(&cf.q_dot.model_filt, cf.q_dot.model);
-  update_butterworth_2_low_pass(&cf.r_dot.model_filt, cf.r_dot.model);
+  update_butterworth_4_low_pass(&cf.r_dot.model_filt, cf.r_dot.model);
   // Calculate Complementary Filter outputs for Linear and Angular Accelerations 
   cf.ax.out    = cf.ax.feedback_filt.o[0]    + cf.ax.model    - cf.ax.model_filt.o[0];
   cf.ay.out    = cf.ay.feedback_filt.o[0]    + cf.ay.model    - cf.ay.model_filt.o[0];
@@ -1580,7 +1586,7 @@ void oneloop_andi_propagate_filters(void) {
   cf.p_dot.out = cf.p_dot.feedback_filt.lp2.o[0] + cf.p_dot.model - cf.p_dot.model_filt.lp2.o[0];
   //cf.q_dot.out = cf.q_dot.feedback_filt.o[0] + cf.q_dot.model - cf.q_dot.model_filt.o[0];
   cf.q_dot.out = cf.q_dot.feedback_filt.lp2.o[0] + cf.q_dot.model - cf.q_dot.model_filt.lp2.o[0];
-  cf.r_dot.out = cf.r_dot.feedback_filt.o[0] + cf.r_dot.model - cf.r_dot.model_filt.o[0];
+  cf.r_dot.out = cf.r_dot.feedback_filt.lp2.o[0] + cf.r_dot.model - cf.r_dot.model_filt.lp2.o[0];
   // Calculate Model Predictions for Angular Rates Using the output of the angular acceleration Complementary Filter
   cf.p.model   = cf.p.model + cf.p_dot.out / PERIODIC_FREQUENCY;
   cf.q.model   = cf.q.model + cf.q_dot.out / PERIODIC_FREQUENCY;
@@ -2142,6 +2148,7 @@ void G1G2_oneloop(int ctrl_type) {
       } 
     }
   }
+  oneloop_axis_effectiveness_calc();
 }
 
 /** @brief  Calculate Normalization of actuators and discrete actuator dynamics  */
@@ -2480,3 +2487,28 @@ void guidance_set_min_max_airspeed(float min_airspeed, float max_airspeed) {
   min_as = min_airspeed;
   max_as = max_airspeed;
 }
+
+void oneloop_axis_effectiveness_calc(void){
+  // Reset the effectiveness matrix
+  memset(n_array, 0, sizeof(n_array));
+  memset(coupling_factor, 0, sizeof(coupling_factor));
+  memset(m_array, 0, sizeof(m_array));
+
+  for (int i = 0; i < ANDI_OUTPUTS; i++){
+    for (int j = 0; j < ANDI_NUM_ACT_TOT; j++){
+      float eff = positive_non_zero(fabsf(EFF_MAT_G[i][j]));
+      n_array[i] += eff;
+      m_array[j] += eff; 
+    }
+  }
+  for (int i = 0; i < ANDI_OUTPUTS; i++){
+    for (int j = 0; j < ANDI_NUM_ACT_TOT; j++){
+      float eff = positive_non_zero(fabsf(EFF_MAT_G[i][j]));
+      float eff2 = eff * eff;
+      coupling_factor[i] += eff2 / (n_array[i] * m_array[j]);
+    }
+  }
+  printf("Coupling factor: %f %f %f %f %f %f \n", coupling_factor[0], coupling_factor[1], coupling_factor[2], coupling_factor[3], coupling_factor[4], coupling_factor[5]);
+  printf("Axis effectiven: %f %f %f %f %f %f \n", n_array[0], n_array[1], n_array[2], n_array[3], n_array[4], n_array[5]);
+}
+
