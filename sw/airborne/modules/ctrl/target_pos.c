@@ -30,6 +30,11 @@
 #include "pprzlink/intermcu_msg.h"
 #include "modules/datalink/telemetry.h"
 #include "modules/core/abi.h"
+#include "modules/datalink/downlink.h"
+
+#ifndef TARGET_POS_GROUND_STATION
+#define TARGET_POS_GROUND_STATION false
+#endif
 
 // The timeout when receiving GPS messages from the ground in ms
 #ifndef TARGET_POS_TIMEOUT
@@ -105,28 +110,28 @@ static void relpos_cb(uint8_t sender_id, uint32_t stamp, struct RelPosNED *relpo
 #include "modules/datalink/telemetry.h"
 static void send_target_pos_info(struct transport_tx *trans, struct link_device *dev)
 {
-#ifdef TARGET_POS_GROUND_STATION
+#if TARGET_POS_GROUND_STATION
   // Send the current state of the ground station
-  struct LlaCoor_f *pos = stateGetPositionLla_f();
+  struct LlaCoor_i *pos = stateGetPositionLla_i();
   struct NedCoor_f *vel = stateGetSpeedNed_f();
   struct FloatQuat *quat = stateGetNedToBodyQuat_f();
   struct FloatRates *rates = stateGetBodyRates_f();
 
-  pprz_msg_send_TARGET_POS_INFO(DefaultChannel, DefaultDevice, AC_ID,
+  DOWNLINK_SEND_TARGET_POS_INFO(DefaultChannel, DefaultDevice,
                               &target.pos.tow, // FIX ME make tow estimate
-                              pos->lat,
-                              pos->lon,
-                              pos->alt,
-                              vel->x,
-                              vel->y,
-                              vel->z,
-                              quat->qi,
-                              quat->qx,
-                              quat->qy,
-                              quat->qz,
-                              rates->p,
-                              rates->q,
-                              rates->r,
+                              &pos->lat,
+                              &pos->lon,
+                              &pos->alt,
+                              &vel->x,
+                              &vel->y,
+                              &vel->z,
+                              &quat->qi,
+                              &quat->qx,
+                              &quat->qy,
+                              &quat->qz,
+                              &rates->p,
+                              &rates->q,
+                              &rates->r,
                               &target.offset.x,
                               &target.offset.y,
                               &target.offset.z);
@@ -180,7 +185,9 @@ void target_pos_init(void)
 {
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_TARGET_POS_INFO, send_target_pos_info);
+#if !TARGET_POS_GROUND_STATION
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FALCON_SENSOR, send_falcon_sensor);
+#endif
 #endif
 
   AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
@@ -298,6 +305,9 @@ void target_parse_target_pos(uint8_t *buf)
  * Parse a Falcon sixdof message
  */
 #include "generated/flight_plan.h"
+#if TARGET_POS_GROUND_STATION
+void target_pos_parse_falcon_sixdof(uint8_t *buf) {} // required for dummy flightplan
+#else
 void target_pos_parse_falcon_sixdof(uint8_t *buf)
 {
   float *pos = pprzlink_get_DL_IMCU_FALCON_SIXDOF_pos(buf);
@@ -366,6 +376,7 @@ void target_pos_parse_falcon_sixdof(uint8_t *buf)
                                &waypoints[wp_id].enu_i.z);
   });
 }
+#endif
 
 /**
  * Parse a Falcon relative angle message
@@ -402,7 +413,7 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
 /**
  * Send a falcon cmd message to the sensor
  */
-#if USE_NPS
+#if USE_NPS || TARGET_POS_GROUND_STATION
 void target_pos_send_falcon_cmd(float mode) {
   falcon.mode = mode;
 }

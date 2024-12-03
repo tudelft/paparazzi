@@ -51,9 +51,9 @@ class MovingBase(object):
         self.msg['body_qx'] = float(msg_in['body_qx'])
         self.msg['body_qy'] = float(msg_in['body_qy'])
         self.msg['body_qz'] = float(msg_in['body_qz'])
-        self.msg['body_p'] = float(msg_in['body_p'])
-        self.msg['body_q'] = float(msg_in['body_q'])
-        self.msg['body_r'] = float(msg_in['body_r'])
+        self.msg['p'] = float(msg_in['p'])
+        self.msg['q'] = float(msg_in['q'])
+        self.msg['r'] = float(msg_in['r'])
 
     def insert_ids(self, target_id, ac_id):
         self.msg['target_id'] = target_id
