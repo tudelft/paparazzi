@@ -118,7 +118,7 @@
     </module>
 
     <module name="ship_landing_module_AM">
-      <define name="PERIODIC_FREQUENCY_NAV_APPROACH_SHIP" value="10.0"/>
+      <define name="PERIODIC_FREQUENCY_NAV_APPROACH_SHIP" value="80.0"/>
     </module> 
 
     <module name="overactuated_mixing">

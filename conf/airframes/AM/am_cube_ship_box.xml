@@ -51,10 +51,20 @@
         <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
       </module>
 
-      <module name="gps" type="ublox">
+      <!-- <module name="gps" type="ublox">
         <configure name="GPS_BAUD" value="B460800"/> 
         <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
-      </module>
+      </module> -->
+
+
+    <module name="gps" type="ublox">
+        <configure name="UBX_GPS_BAUD" value="B460800"/>
+        <configure name="UBX2_GPS_BAUD" value="B460800"/>
+        <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
+        <configure name="UBX2_GPS_PORT" value="UART8"/>
+        <configure name="PRIMARY_GPS" value="ublox"/>
+        <configure name="SECONDARY_GPS" value="ublox2"/>
+    </module>
 
       <!-- If one want to use a Joystick over connection one can us this instead of sbus-->
       <module name="radio_control" type="ppm">
@@ -258,7 +268,7 @@
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI" value="90.0" unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0" unit="deg"/>
-    <define name="BODY_TO_IMU_PSI" value="0" unit="deg"/>
+    <define name="BODY_TO_IMU_PSI" value="-90.0" unit="deg"/>
   </section>
 
   <section name="AHRS" prefix="AHRS_">
@@ -381,6 +391,9 @@
     
         
     <define name="FAILSAFE_HOME_RADIUS" value="600" unit="m"/>
+    <define name="INS_EKF2_GPS_YAW_OFFSET"              value="0"/>
+    <define name="INS_EKF2_FUSION_MODE"             value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/>
+    <define name="MULTI_GPS_MODE"       value="GPS_MODE_PRIMARY"/>
   </section>
 
   <section name="AIR_DATA" prefix="AIR_DATA_">

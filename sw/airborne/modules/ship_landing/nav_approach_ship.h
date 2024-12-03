@@ -5,7 +5,7 @@
  * File: nav_approach_ship.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 02-Dec-2024 14:21:21
+ * C/C++ source code generated on  : 02-Dec-2024 22:15:36
  */
 
 #ifndef NAV_APPROACH_SHIP_H
@@ -22,26 +22,26 @@ extern "C" {
 
 /* Function Declarations */
 extern void nav_approach_ship(
-    const double P0_UAV_NED[3], const double V0_UAV_NED[3],
-    const double V0_SHIP_NED[3], const double PhiThetaPsi_SHIP_rad[3],
-    const double P0_SHIP_NED[3], double psi_rad_UAV,
-    const double v_max_control_rf[3], const double v_min_control_rf[3],
-    const double a_max_control_rf[3], const double a_min_control_rf[3],
-    const double coeffs_ship_prediction_speed_7[24],
-    double t_delay_ship_prediction, double max_time_of_landing_seconds,
-    const double pos_gain_landing_array[3], double flare_low_distance_m,
-    double v_speed_docking_m_s, const double average_speed_NED_ship[3],
-    double diag_approach_speed_m_s, double approach_ship_mode_old,
-    const double c_NED_offset_end_point_diag_lan[3],
-    double pos_tracking_distance_m, double approach_heading_ship_rad,
-    double dist_line_gain, double max_line_gain,
-    double *expected_landing_time_relative, double optimal_coeffs[18],
-    double V_target_control[3], double *exitflag_approach_path,
-    double *approach_ship_mode, double V_OOB[6], double A_OOB[6],
-    double UAV_to_SHIP_dist_NED[3], double *Desired_phi_rad,
-    double *Desired_theta_rad, double *UAV_to_SHIP_azimuth_angle_rad,
-    double *UAV_to_SHIP_elevation_angle_rad, double *delta_psi,
-    double *psi_UAV_to_ship);
+    const float P0_UAV_NED[3], const float V0_UAV_NED[3],
+    const float V0_SHIP_NED[3], const float PhiThetaPsi_SHIP_rad[3],
+    const float P0_SHIP_NED[3], float psi_rad_UAV,
+    const float v_max_control_rf[3], const float v_min_control_rf[3],
+    const float a_max_control_rf[3], const float a_min_control_rf[3],
+    const float coeffs_ship_prediction_speed_7[24],
+    float t_delay_ship_prediction, float max_time_of_landing_seconds,
+    const float pos_gain_landing_array[3], float flare_low_distance_m,
+    float v_speed_docking_m_s, const float average_speed_NED_ship[3],
+    float diag_approach_speed_m_s, float approach_ship_mode_old,
+    const float c_NED_offset_end_point_diag_lan[3],
+    float pos_tracking_distance_m, float approach_heading_ship_rad,
+    float dist_line_gain, float max_line_gain,
+    float *expected_landing_time_relative, float optimal_coeffs[18],
+    float V_target_control[3], float *exitflag_approach_path,
+    float *approach_ship_mode, float V_OOB[6], float A_OOB[6],
+    float UAV_to_SHIP_dist_NED[3], float *Desired_phi_rad,
+    float *Desired_theta_rad, float *UAV_to_SHIP_azimuth_angle_rad,
+    float *UAV_to_SHIP_elevation_angle_rad, float *delta_psi,
+    float *psi_UAV_to_ship);
 
 extern void nav_approach_ship_initialize(void);
 
