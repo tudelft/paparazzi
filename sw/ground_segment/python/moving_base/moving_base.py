@@ -26,6 +26,9 @@ Moving base simulator
 
 # too many things here
 from __future__ import print_function
+import json
+import time
+import math as m
 import sys
 from os import path, getenv
 
@@ -35,64 +38,69 @@ from pprzlink.ivy import IvyMessagesInterface
 from pprzlink.message import PprzMessage
 
 class MovingBase(object):
-    def __init__(self, msg):
-        self.tow = int(msg['tow'])
-        self.lat = int(msg['lat'])
-        self.lon = int(msg['lon'])
-        self.alt = int(msg['alt'])
-        self.vnorth = float(msg['vnorth'])
-        self.veast = float(msg['veast'])
-        self.vdown = float(msg['vdown'])
-        self.body_qi = float(msg['body_qi'])
-        self.body_qx = float(msg['body_qx'])
-        self.body_qy = float(msg['body_qy'])
-        self.body_qz = float(msg['body_qz'])
-        self.body_p = float(msg['body_p'])
-        self.body_q = float(msg['body_q'])
-        self.body_r = float(msg['body_r'])
+    def __init__(self, msg_in):
+        self.msg = PprzMessage("datalink", "TARGET_POS")
+        self.msg['tow'] = int(msg_in['tow'])
+        self.msg['lat'] = int(msg_in['lat'])
+        self.msg['lon'] = int(msg_in['lon'])
+        self.msg['alt'] = int(msg_in['alt'])
+        self.msg['vnorth'] = float(msg_in['vnorth'])
+        self.msg['veast'] = float(msg_in['veast'])
+        self.msg['vdown'] = float(msg_in['vdown'])
+        self.msg['body_qi'] = float(msg_in['body_qi'])
+        self.msg['body_qx'] = float(msg_in['body_qx'])
+        self.msg['body_qy'] = float(msg_in['body_qy'])
+        self.msg['body_qz'] = float(msg_in['body_qz'])
+        self.msg['body_p'] = float(msg_in['body_p'])
+        self.msg['body_q'] = float(msg_in['body_q'])
+        self.msg['body_r'] = float(msg_in['body_r'])
+
+    def insert_ids(self, target_id, ac_id):
+        self.msg['target_id'] = target_id
+        self.msg['ac_id'] = ac_id
 
 
 class Base:
-    def __init__(self, AC_ID_moving_base: int, AC_ID: list):
+    def __init__(self, moving_base_id: int, ac_ids: list):
         # Start IVY interface
-        self.moving_base_ID = AC_ID_moving_base
-        self.uavs = AC_ID
+        self.moving_base_id = moving_base_id
+        self.uavs = ac_ids
         self._interface = IvyMessagesInterface("Moving Base")
         self._interface.subscribe(self.message_recv)
 
     # Receive a TARGET_POS_INFO message from the moving base
     def message_recv(self, ac_id, msg):
-        if msg.name == "TARGET_POS_INFO" and ac_id == self.moving_base_ID:
-            self.moving_base = MovingBase(msg)
+        if msg.name == "TARGET_POS_INFO" and int(ac_id) == self.moving_base_id:
+            self.moving_base_info = MovingBase(msg)
 
             for ac in self.uavs:
-                self.message_send(self.moving_base, ac)
+                self.message_send(self.moving_base_info, ac)
 
     # Send a TARGET_POS message to the UAVs
-    def message_send(self, moving_base, AC_ID):
-        msg = PprzMessage("datalink", "TARGET_POS")
-        msg['ac_id'] = AC_ID
-        msg['target_id'] = self.moving_base_ID
-        msg['tow'] = moving_base.tow
-        msg['lat'] = moving_base.lat
-        msg['lon'] = moving_base.lon
-        msg['alt'] = moving_base.alt
-        msg['vnorth'] = moving_base.vnorth
-        msg['veast'] = moving_base.veast
-        msg['vdown'] = moving_base.vdown
-        msg['body_qi'] = moving_base.body_qi
-        msg['body_qx'] = moving_base.body_qx
-        msg['body_qy'] = moving_base.body_qy
-        msg['body_qz'] = moving_base.body_qz
-        msg['body_p'] = moving_base.body_p
-        msg['body_q'] = moving_base.body_q
-        msg['body_r'] = moving_base.body_r
-        
-        self._interface.send(msg)
+    def message_send(self, moving_base_info, ac_id):
+        moving_base_info.insert_ids(self.moving_base_id, ac_id)
+        self._interface.send(moving_base_info.msg)
 
     def OnClose(self, event):
         self._interface.shutdown()
         self.Destroy()
 
+    def run(self):
+        try:
+            # The main loop
+            while True:
+                pass
+
+        except KeyboardInterrupt:
+            self.Close()
+
 if __name__ == '__main__':
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Moving base HITL")
+    parser.add_argument('-base', '--base_ID', dest='moving_base_id', type=int, help="moving base id to receive messages from", required=True)
+    parser.add_argument('-ac', '--ac_ids', dest='ac_ids', nargs="+", type=int, help="list of aircraft ids to forward message to", required=True)
+    args = parser.parse_args()
+
+    base = Base(moving_base_id=args.moving_base_id, ac_ids=args.ac_ids)
+    base.run()
