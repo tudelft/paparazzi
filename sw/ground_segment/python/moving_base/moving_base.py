@@ -27,189 +27,72 @@ Moving base simulator
 # too many things here
 from __future__ import print_function
 import sys
-import numpy as np
-import json
-from time import sleep
 from os import path, getenv
-import time
-import pymap3d as pm
-import math as m
 
 PPRZ_HOME = getenv("PAPARAZZI_HOME", path.normpath(path.join(path.dirname(path.abspath(__file__)), '../../../../')))
 sys.path.append(PPRZ_HOME + "/var/lib/python/")
 from pprzlink.ivy import IvyMessagesInterface
 from pprzlink.message import PprzMessage
 
-from scipy import linalg as la
+class MovingBase(object):
+    def __init__(self, msg):
+        self.tow = int(msg['tow'])
+        self.lat = int(msg['lat'])
+        self.lon = int(msg['lon'])
+        self.alt = int(msg['alt'])
+        self.vnorth = float(msg['vnorth'])
+        self.veast = float(msg['veast'])
+        self.vdown = float(msg['vdown'])
+        self.body_qi = float(msg['body_qi'])
+        self.body_qx = float(msg['body_qx'])
+        self.body_qy = float(msg['body_qy'])
+        self.body_qz = float(msg['body_qz'])
+        self.body_p = float(msg['body_p'])
+        self.body_q = float(msg['body_q'])
+        self.body_r = float(msg['body_r'])
 
-class UAV:
-    def __init__(self, ac_id):
-        self.initialized = False
-        self.id = ac_id
-        self.lat = 0
-        self.lon = 0
-        self.alt = 0
-        self.timeout = 0
 
 class Base:
-    def __init__(self, freq=10., use_ground_ref=False, verbose=False, speed=0, heading=0, turn_rate=0, id=[]):
-        self.step = 1. / freq
-        self.use_ground_ref = use_ground_ref
-        self.enabled = True # run sim by default
-        self.verbose = verbose
-        self.ids = []
-        self.uavs = [UAV(i) for i in self.ids]
-        self.time = time.mktime(time.gmtime())
-        self.speed = speed # m/s
-        self.course = -90 # deg
-        self.heading = heading # deg
-        self.turn_rate = turn_rate #deg/s
-        # self.lat = 38.08000040764657 #deg
-        # self.lon = -9.1 #deg
-        self.lat = 52.926 #deg
-        self.lon = 4.499 #deg
-        self.altitude = 2.0 # starts from 1 m high
-
+    def __init__(self, AC_ID_moving_base: int, AC_ID: list):
         # Start IVY interface
+        self.moving_base_ID = AC_ID_moving_base
+        self.uavs = AC_ID
         self._interface = IvyMessagesInterface("Moving Base")
+        self._interface.subscribe(self.message_recv)
 
-        # bind to GPS_INT message
-        def ins_cb(ac_id, msg):
-            if ac_id not in self.ids:
-                self.ids.append(ac_id)
-                self.uavs.append(UAV(ac_id))
-            if ac_id in self.ids and msg.name == "GPS_INT":
-                uav = self.uavs[self.ids.index(ac_id)]
-                i2p = 1. / 2**8     # integer to position
-                i2v = 1. / 2**19    # integer to velocity
-                uav.lat[0] = float(msg['lat']) / 1e7
-                uav.lon[1] = float(msg['lon']) / 1e7
-                uav.alt[2] = float(msg['alt']) / 100
-                uav.timeout = 0
-                uav.initialized = True
-        if not self.use_ground_ref:
-            self._interface.subscribe(ins_cb, PprzMessage("telemetry", "INS"))
+    # Receive a TARGET_POS_INFO message from the moving base
+    def message_recv(self, ac_id, msg):
+        if msg.name == "TARGET_POS_INFO" and ac_id == self.moving_base_ID:
+            self.moving_base = MovingBase(msg)
 
-        # bind to GROUND_REF message
-        def ground_ref_cb(ground_id, msg):
-            ac_id = int(msg['ac_id'])
-            if ac_id in self.ids:
-                uav = self.uavs[self.ids.index(ac_id)]
-                # X and V in NED
-                uav.X[0] = float(msg['pos'][1])
-                uav.X[1] = float(msg['pos'][0])
-                uav.X[2] = -float(msg['pos'][2])
-                uav.V[0] = float(msg['speed'][1])
-                uav.V[1] = float(msg['speed'][0])
-                uav.V[2] = -float(msg['speed'][2])
-                uav.timeout = 0
-                uav.initialized = True
-        if self.use_ground_ref:
-            self._interface.subscribe(ground_ref_cb, PprzMessage("ground", "GROUND_REF"))
+            for ac in self.uavs:
+                self.message_send(self.moving_base, ac)
 
-    def __del__(self):
-        self.stop()
+    # Send a TARGET_POS message to the UAVs
+    def message_send(self, moving_base, AC_ID):
+        msg = PprzMessage("datalink", "TARGET_POS")
+        msg['ac_id'] = AC_ID
+        msg['target_id'] = self.moving_base_ID
+        msg['tow'] = moving_base.tow
+        msg['lat'] = moving_base.lat
+        msg['lon'] = moving_base.lon
+        msg['alt'] = moving_base.alt
+        msg['vnorth'] = moving_base.vnorth
+        msg['veast'] = moving_base.veast
+        msg['vdown'] = moving_base.vdown
+        msg['body_qi'] = moving_base.body_qi
+        msg['body_qx'] = moving_base.body_qx
+        msg['body_qy'] = moving_base.body_qy
+        msg['body_qz'] = moving_base.body_qz
+        msg['body_p'] = moving_base.body_p
+        msg['body_q'] = moving_base.body_q
+        msg['body_r'] = moving_base.body_r
+        
+        self._interface.send(msg)
 
-    def stop(self):
-        # Stop IVY interface
-        if self._interface is not None:
-            self._interface.shutdown()
-
-    def move_base(self, north, east):
-
-        out = pm.ned2geodetic(north, east, 0, self.lat, self.lon, self.altitude)
-        self.lat = out[0]
-        self.lon = out[1]
-
-    def send_pos(self):
-        '''
-        Send position of base sation
-        '''
-        ready = True
-        for uav in self.uavs:
-            if not uav.initialized:
-                if self.verbose:
-                    print("Waiting for state of rotorcraft ", uav.id)
-                    sys.stdout.flush()
-                ready = False
-            if uav.timeout > 0.5:
-                if self.verbose:
-                    print("The state msg of rotorcraft ", uav.id, " stopped")
-                    sys.stdout.flush()
-                ready = False
-
-        # if not ready:
-        #     return
-
-
-        if self.verbose:
-            print("Error distances: " + str(E).replace('[','').replace(']',''))
-            sys.stdout.flush()
-
-        for ac in self.uavs:
-            msg = PprzMessage("datalink", "TARGET_POS")
-            msg['ac_id'] = ac.id
-            msg['target_id'] = ac.id
-            msg['lat'] = int(self.lat * 1e7)
-            msg['lon'] = int(self.lon * 1e7)
-            msg['alt'] = int(self.altitude *1000)
-            msg['speed'] = self.speed
-            msg['climb'] = 0
-            msg['course'] = self.course
-            msg['heading'] = self.heading
-            self._interface.send(msg)
-
-            msg2 = PprzMessage("ground", "FLIGHT_PARAM")
-            msg2['ac_id'] = "GCS"
-            msg2['roll'] = 0.0
-            msg2['pitch'] = 0.0
-            msg2['heading'] = self.heading
-            msg2['lat'] = self.lat
-            msg2['long'] = self.lon
-            msg2['speed'] = self.speed
-            msg2['course'] = self.course
-            msg2['alt'] = 0.0
-            msg2['climb'] = 0.0
-            msg2['agl'] = 0.0
-            msg2['unix_time'] = 0.0
-            msg2['itow'] = 0
-            msg2['airspeed'] = self.speed
-            self._interface.send(msg2)
-
-    def run(self):
-        try:
-            # The main loop
-            while True:
-                # TODO: make better frequency managing
-                sleep(self.step)
-
-                for uav in self.uavs:
-                    uav.timeout = uav.timeout + self.step
-
-                # Send base position
-                if self.enabled:
-                    #integrate derivatives
-                    self.heading += self.step*self.turn_rate
-                    self.course = self.heading
-                    dn = self.speed*m.cos(self.course/180.0*m.pi)
-                    de = self.speed*m.sin(self.course/180.0*m.pi)
-                    self.move_base(self.step*dn,self.step*de)
-                    self.send_pos()
-
-        except KeyboardInterrupt:
-            self.stop()
-
+    def OnClose(self, event):
+        self._interface.shutdown()
+        self.Destroy()
 
 if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Moving base simulator")
-    parser.add_argument('-s', '--speed', dest='speed', default=1, type=float, help="Speed of the ship (m/s).")
-    parser.add_argument('-he', '--heading', dest='heading', default=0, type=float, help="Heading of the ship (deg).")
-    parser.add_argument('-t', '--turn_rate', dest='turn_rate', default=0, type=float, help="Turn rate of the ship (deg/s).")
-    parser.add_argument('-i', '--id', dest='id', default=0, type=float, help="Aircraft ID.")
-    args = parser.parse_args()
-
-    base = Base(speed=args.speed, heading=args.heading, turn_rate=args.turn_rate, id=args.id)
-    base.run()
-
+    main()

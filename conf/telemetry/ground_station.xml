@@ -9,7 +9,7 @@
       <message name="AUTOPILOT_VERSION"        period="11.1"/>
       <message name="DL_VALUE"                 period="0.7"/>
       <message name="ROTORCRAFT_STATUS"        period="0.4"/>
-      <message name="ROTORCRAFT_FP"            period="0.01"/> <!-- Highspeed for landing pad EKF -->
+      <message name="ROTORCRAFT_FP"            period="0.05"/>
       <message name="ROTORCRAFT_RADIO_CONTROL" period="0.20"/>
       <message name="ALIVE"                    period="2.1"/>
       <message name="INS_REF"                  period="5.1"/>
@@ -18,18 +18,14 @@
       <message name="INS"                      period=".2"/>
       <message name="ENERGY"                   period="0.5"/>
       <message name="DATALINK_REPORT"          period="5.1"/>
-      <message name="STATE_FILTER_STATUS"      period="3.2"/>
-      <message name="AIR_DATA"                 period="0.05"/>
       <message name="LOGGER_STATUS"            period="5.1"/>
       <message name="INS_EKF2"                 period=".25"/>
       <message name="INS_EKF2_EXT"             period="4.25"/>
-      <message name="FBW_STATUS"               period="2.1"/>
-      <message name="WIND_INFO_RET"            period="9.2"/>
       <message name="AHRS_BIAS"                period="7.5"/>
       <message name="GPS_RELPOS"               period="0.1"/>
-      <message name="TARGET_POS"               period="0.05"/> <!-- Highspeed for landing pad EKF -->
+      <message name="TARGET_POS_INFO"          period="0.01"/> <!-- Highspeed for landing pad EKF -->
       <message name="ROTORCRAFT_CMD"           period="0.2"/>
-      <message name="POWER_DEVICE"             period="0.12"/>
+      <message name="POWER_DEVICE"             period="0.5"/>
       <message name="IMU_HEATER"               period="15.1"/>
     </mode>
 

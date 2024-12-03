@@ -71,7 +71,7 @@ class Base:
         self.altitude = 2.0 # starts from 1 m high
 
         # Start IVY interface
-        self._interface = IvyMessagesInterface("Moving Base")
+        self._interface = IvyMessagesInterface("Moving Base Sim")
 
         # bind to GPS_INT message
         def ins_cb(ac_id, msg):
@@ -153,10 +153,16 @@ class Base:
             msg['lat'] = int(self.lat * 1e7)
             msg['lon'] = int(self.lon * 1e7)
             msg['alt'] = int(self.altitude *1000)
-            msg['speed'] = self.speed
-            msg['climb'] = 0
-            msg['course'] = self.course
-            msg['heading'] = self.heading
+            msg['vnorth'] = self.speed*m.cos(self.course/180.0*m.pi)
+            msg['veast'] = self.speed*m.sin(self.course/180.0*m.pi)
+            msg['vdown'] = 0
+            msg['body_qi'] = 1
+            msg['body_qx'] = 0
+            msg['body_qy'] = 0
+            msg['body_qz'] = 0
+            msg['body_p'] = 0
+            msg['body_q'] = 0
+            msg['body_r'] = 0
             self._interface.send(msg)
 
             msg2 = PprzMessage("ground", "FLIGHT_PARAM")

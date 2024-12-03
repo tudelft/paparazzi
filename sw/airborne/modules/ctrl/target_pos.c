@@ -113,6 +113,7 @@ static void send_target_pos_info(struct transport_tx *trans, struct link_device 
   struct FloatRates *rates = stateGetBodyRates_f();
 
   pprz_msg_send_TARGET_POS_INFO(DefaultChannel, DefaultDevice, AC_ID,
+                              &target.pos.tow, // FIX ME make tow estimate
                               pos->lat,
                               pos->lon,
                               pos->alt,
@@ -131,6 +132,7 @@ static void send_target_pos_info(struct transport_tx *trans, struct link_device 
                               &target.offset.z);
 #else
   pprz_msg_send_TARGET_POS_INFO(trans, dev, AC_ID,
+                              &target.pos.tow,
                               &target.pos.lla.lat,
                               &target.pos.lla.lon,
                               &target.pos.lla.alt,
@@ -272,6 +274,7 @@ void target_parse_target_pos(uint8_t *buf)
 
 #ifdef FALCON_LOG_ON_ARRIVAL
   pprz_msg_send_TARGET_POS_INFO(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
+                              &target.pos.tow,
                               &target.pos.lla.lat,
                               &target.pos.lla.lon,
                               &target.pos.lla.alt,
