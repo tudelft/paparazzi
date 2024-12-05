@@ -79,6 +79,7 @@ struct endpoint_t {
 };
 
 static bool verbose = false;
+static bool target_pos_forward = false;
 static bool rtcm_forward = true;
 static struct endpoint_t gps_ep;
 static struct gps_ubx_t gps_ubx;
@@ -615,16 +616,18 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
                 iTOW, // itow
                 0.0); // airspeed
 
-            IvySendMsg("ground TARGET_POS %d %d %d %d %d %f %f %f %f",
-                ac_id,
-                ac_id,
-                (int)(lat * 1e7),
-                (int)(lon * 1e7),
-                (int)(alt * 1000),
-                gSpeed,
-                -velD,
-                headMot,
-                ground_heading);
+            if (target_pos_forward) {
+              IvySendMsg("ground TARGET_POS %d %d %d %d %d %f %f %f %f",
+                  ac_id,
+                  ac_id,
+                  (int)(lat * 1e7),
+                  (int)(lon * 1e7),
+                  (int)(alt * 1000),
+                  gSpeed,
+                  -velD,
+                  headMot,
+                  ground_heading);
+            }
           break;
         }
         case UBX_NAV_RELPOSNED_ID: {
@@ -690,6 +693,7 @@ int main(int argc, char** argv) {
   static struct option long_options[] = {
     {"ac_id", required_argument, NULL, 'i'},
     {"endpoint", required_argument, NULL, 'e'},
+    {"target_pos_enable", required_argument, NULL, 't'},
     {"rtcm_disable", no_argument, NULL, 'r'},
     {"help", no_argument, NULL, 'h'},
     {"verbose", no_argument, NULL, 'v'},
@@ -700,6 +704,7 @@ int main(int argc, char** argv) {
     " Options :\n"
     "   -i --ac_id [aircraft_id]               Aircraft id\n"
     "   -e --endpoint [endpoint_str]           Endpoint address of the GPS\n"
+    "   -t --target_pos_enable                 Enable forwarding of the target pos message\n"
     "   -r --rtcm_disable                      Disables RTCM forwarding"
     "   -h --help                              Display this help\n"
     "   -v --verbose                           Print verbose information\n";
@@ -738,6 +743,9 @@ int main(int argc, char** argv) {
           return 2;
         }
         break;
+
+      case 't':
+        target_pos_forward = true;
 
       case 'r':
         rtcm_forward = false;

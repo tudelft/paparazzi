@@ -1,8 +1,5 @@
 <control_panel name="paparazzi control panel">
   <section name="programs">
-    <program name="GCS" command="sw/ground_segment/cockpit/gcs">
-      <arg flag="-layout" constant="bottom_settings.xml"/>
-    </program>
     <program name="Plot Meteo Profile" command="sw/logalizer/plotprofile"/>
   </section>
   <section name="sessions">
@@ -190,6 +187,27 @@
       <program name="Herelink PprzLink Router">
         <arg flag="-e udp://192.168.0.11:5242:192.168.0.10:5243"/>
         <arg flag="-e udp://0.0.0.0:4243:192.168.43.255:4242"/>
+      </program>
+    </session>
+        <session name="Flight UDP + Ground Station">
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Server"/>
+      <program name="Messages">
+        <arg flag="-c" constant="datalink"/>
+      </program>
+      <program name="PprzGCS"/>
+      <program name="Herelink PprzLink Router">
+        <arg flag="-e udp://192.168.0.11:5242:192.168.0.10:5243"/>
+        <arg flag="-e udp://0.0.0.0:4243:192.168.43.255:4242"/>
+      </program>
+      <program name="Moving Base">
+        <arg flag="-base" constant="29"/>
+        <arg flag="-ac" constant="@AC_ID"/>
+      </program>
+      <program name="ublox2ivy">
+        <arg flag="-e" constant="udp://0.0.0.0:12001:10.19.127.1:12000"/>
       </program>
     </session>
     <session name="Flight UDP Optitrack + Joystick">
