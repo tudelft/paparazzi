@@ -31,6 +31,7 @@
 #include "modules/datalink/telemetry.h"
 #include "modules/core/abi.h"
 #include "modules/datalink/downlink.h"
+#include "filters/simple_kinematic_kalman.h"
 
 #ifndef TARGET_POS_GROUND_STATION
 #define TARGET_POS_GROUND_STATION false
@@ -41,7 +42,7 @@
 #define TARGET_POS_TIMEOUT 5000
 #endif
 
-// The timeout when recceiving an RTK gps message from the GPS
+// The timeout when receiving an RTK gps message from the GPS
 #ifndef TARGET_RTK_TIMEOUT
 #define TARGET_RTK_TIMEOUT 1000
 #endif
@@ -58,12 +59,34 @@
 #define TARGET_OFFSET_Z 0.0
 #endif
 
-#ifndef TARGET_INTEGRATE_XY
-#define TARGET_INTEGRATE_XY true
+// Still need to find suitable initial values
+#ifndef TARGET_POS_KALMAN_P0_POS
+#define TARGET_POS_KALMAN_P0_POS 1.0
 #endif
 
-#ifndef TARGET_INTEGRATE_Z
-#define TARGET_INTEGRATE_Z false
+#ifndef TARGET_POS_KALMAN_P0_SPEED
+#define TARGET_POS_KALMAN_P0_SPEED 1.0
+#endif
+
+#ifndef TARGET_POS_KALMAN_Q_SIGMA2
+#define TARGET_POS_KALMAN_Q_SIGMA2 1.0
+#endif
+
+#ifndef TARGET_POS_KALMAN_R
+#define TARGET_POS_KALMAN_R 1.0
+#endif
+
+/* Body to sensor angle offsets, usually 0 except for Y angle */
+#ifndef FALCON_X_ANGLE 
+#define FALCON_X_ANGLE 0
+#endif
+
+#ifndef FALCON_Y_ANGLE
+#define FALCON_Y_ANGLE 0
+#endif
+
+#ifndef FALCON_Z_ANGLE
+#define FALCON_Z_ANGLE 0
 #endif
 
 #ifndef TARGET_POS_RELHEADING_REF_ID
@@ -80,8 +103,6 @@ struct target_t target = {
   },
   .target_pos_timeout = TARGET_POS_TIMEOUT,
   .rtk_timeout = TARGET_RTK_TIMEOUT,
-  .integrate_xy = TARGET_INTEGRATE_XY,
-  .integrate_z = TARGET_INTEGRATE_Z
 };
 
 /* Initialize falcon sensor structure */
@@ -90,6 +111,11 @@ struct falcon_sensor_t falcon = {
   .manual = false,    // By default the tracking mode should be determined automatically
   .mode = 0,          // Initialize falcon sensor tracking mode to off
   .beacon_id = 0,
+  .body_offset = {
+    .phi = FALCON_X_ANGLE,
+    .theta = FALCON_Y_ANGLE,
+    .psi = FALCON_Z_ANGLE,
+  },
   .p_out = {0},
   .p_in = {0},
   .q = {0},
@@ -99,6 +125,10 @@ struct falcon_sensor_t falcon = {
   .intensity = 0,
   .width = 0
 };
+
+/* Initialize the linear kalman filter struct */
+struct SimpleKinematicKalman target_pos_kalman;
+wstruct FloatRMat body_to_falcon_sensor;
 
 /* GPS abi callback */
 static abi_event gps_ev;
@@ -119,7 +149,7 @@ static void send_target_pos_info(struct transport_tx *trans, struct link_device 
   uint32_t tow = get_sys_time_tow();
 
   DOWNLINK_SEND_TARGET_POS_INFO(DefaultChannel, DefaultDevice,
-                              &tow, // FIX ME make tow estimate
+                              &tow,
                               &pos->lat,
                               &pos->lon,
                               &pos->alt,
@@ -165,7 +195,7 @@ static void send_falcon_sensor(struct transport_tx *trans, struct link_device *d
   float q[4] = {falcon.q.qi, falcon.q.qx, falcon.q.qy, falcon.q.qz};
   float p_var[3] = {falcon.p_var.x, falcon.p_var.y, falcon.p_var.z};
   float q_var[3] = {falcon.q_var.x, falcon.q_var.y, falcon.q_var.z};
-  float angles[2] = {falcon.angles.x, falcon.angles.y};
+  float angles[2] = {falcon.angles.phi, falcon.angles.psi};
   
   pprz_msg_send_FALCON_SENSOR(trans, dev, AC_ID,
                               &falcon.valid,
@@ -193,6 +223,13 @@ void target_pos_init(void)
 
   AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
   AbiBindMsgRELPOS(ABI_BROADCAST, &relpos_ev, relpos_cb);
+
+  /* Initialize the linear Kalman filter */
+  simple_kinematic_kalman_init(&target_pos_kalman, TARGET_POS_KALMAN_P0_POS, TARGET_POS_KALMAN_P0_SPEED, 
+                                TARGET_POS_KALMAN_Q_SIGMA2, TARGET_POS_KALMAN_R, 1/TARGET_POS_PERIODIC_FREQ);
+
+  float_rmat_of_eulers_321(&body_to_falcon_sensor, &falcon.body_offset);
+
 }
 
 /* Get the GPS lla position */
@@ -282,6 +319,16 @@ void target_parse_target_pos(uint8_t *buf)
 
   // To test time between messages
   target.offset.z = target.pos.recv_time - target.pos.tow;
+  
+  struct NedCoor_i target_pos_cm;
+  struct FloatVect3 pos;
+  ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &target.pos.lla);
+  pos.x = target_pos_cm.x / 100.;
+  pos.y = target_pos_cm.y / 100.;
+  pos.z = target_pos_cm.z / 100.;
+
+  simple_kinematic_kalman_update_pos(&target_pos_kalman, pos);
+  simple_kinematic_kalman_update_speed(&target_pos_kalman, target.pos.vel, SIMPLE_KINEMATIC_KALMAN_SPEED_3D);
 
 #ifdef FALCON_LOG_ON_ARRIVAL
   pprz_msg_send_TARGET_POS_INFO(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
@@ -349,6 +396,8 @@ void target_pos_parse_falcon_sixdof(uint8_t *buf)
   falcon.q = q;
   falcon.p_var = p_var;
   falcon.q_var = q_var;
+
+  simple_kinematic_kalman_update_pos(&target_pos_kalman, p_out);
   
 #if FALCON_LOG_ON_ARRIVAL
   float p_out_arr[3] = {falcon.p_out.x, falcon.p_out.y, falcon.p_out.z};
@@ -392,8 +441,29 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
   falcon.width = pprzlink_get_DL_IMCU_FALCON_RELANGLE_width(buf);
 
   float *rel_angles = pprzlink_get_DL_IMCU_FALCON_RELANGLE_angles(buf);
-  struct FloatVect2 angles = {rel_angles[0], rel_angles[1]};
+  struct FloatEulers angles = {rel_angles[0], 0.f, rel_angles[1]};
   falcon.angles = angles;
+  
+  /* Implement logic to go from distance and x/z angles to a relative position */
+  // Temp relation for distance and intensity, depends on environment
+  float distance = 5.4165 + 75.5979 / falcon.intensity - 80.3343 / (falcon.intensity*falcon.intensity);
+
+  // Adjust for rotation between sensor and NED
+  struct FloatRMat *ned_to_body = stateGetNedToBodyRMat_f();
+  struct FloatRMat ned_to_falcon_sensor;
+  float_rmat_comp(&ned_to_falcon_sensor, ned_to_body, &body_to_falcon_sensor);
+
+  struct FloatEulers angles_ned;
+  float_rmat_transp_mult(&angles_ned, &ned_to_falcon_sensor, &angles);
+
+  struct FloatRMat falcon_rmat;
+  float_rmat_of_eulers_321(&falcon_rmat, &angles_ned);
+  
+  // Obtain the relative position in sensor frame
+  struct FloatVect3 p_out;
+  float_rmat_vmult(&p_out, &falcon_rmat, &(struct FloatVect3){0, 0, distance});
+  
+  simple_kinematic_kalman_update_pos(&target_pos_kalman, p_out);
 
 #if FALCON_LOG_ON_ARRIVAL
   float zeros_3[3] = {0, 0, 0};
@@ -449,4 +519,8 @@ bool target_get_vel(struct NedCoor_f *vel __attribute__((unused))) {
  */
 bool target_pos_set_current_offset(float unk __attribute__((unused))) {
   return false;
+}
+
+void target_pos_periodic(void) {
+  simple_kinematic_kalman_predict(&target_pos_kalman);
 }

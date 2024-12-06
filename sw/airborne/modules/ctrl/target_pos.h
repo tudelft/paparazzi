@@ -35,7 +35,7 @@ struct target_pos_t {
   uint32_t recv_time;       ///< Time of when the target position message was received [msec]
   uint32_t tow;             ///< Time of week of the target position measurement
   struct LlaCoor_i lla;     ///< Lat, lon and altitude position of the target
-  struct NedCoor_f vel;     ///< Speed of target in target local NED frame [m/s]
+  struct FloatVect3 vel;     ///< Speed of target in target local NED frame [m/s]
   struct FloatQuat quat;    ///< Attitude quaternion of the target body to target local NED frame
   struct FloatRates rates;  ///< Body rates of the target in [rad/s]
   float ground_speed;       ///< Ground speed of the target [m/s]
@@ -55,8 +55,6 @@ struct target_t {
   struct target_offset_t offset;            ///< The target offset relative to ground heading
   uint32_t target_pos_timeout;              ///< Ground target position message timeout [msec]
   uint32_t rtk_timeout;                     ///< RTK message timeout [msec]
-  bool integrate_xy;                        ///< Enable integration of the position in X-Y (North/East) frame
-  bool integrate_z;                         ///< Enable integration of the position in Z (Up) frame
   struct LlaCoor_i gps_lla;                 ///< GPS LLA position
 };
 
@@ -65,12 +63,13 @@ struct falcon_sensor_t {
   bool manual;
   uint8_t mode;
   uint16_t beacon_id;
+  struct FloatEulers body_offset;
   struct FloatVect3 p_out;
   struct FloatVect3 p_in;
   struct FloatQuat q;
   struct FloatVect3 p_var;
   struct FloatVect3 q_var;
-  struct FloatVect2 angles;
+  struct FloatEulers angles;
   float intensity;
   float width;
 };
