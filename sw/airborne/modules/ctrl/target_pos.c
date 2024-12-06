@@ -116,9 +116,10 @@ static void send_target_pos_info(struct transport_tx *trans, struct link_device 
   struct NedCoor_f *vel = stateGetSpeedNed_f();
   struct FloatQuat *quat = stateGetNedToBodyQuat_f();
   struct FloatRates *rates = stateGetBodyRates_f();
+  uint32_t tow = get_sys_time_tow();
 
   DOWNLINK_SEND_TARGET_POS_INFO(DefaultChannel, DefaultDevice,
-                              &target.pos.tow, // FIX ME make tow estimate
+                              &tow, // FIX ME make tow estimate
                               &pos->lat,
                               &pos->lon,
                               &pos->alt,
@@ -257,7 +258,7 @@ void target_parse_target_pos(uint8_t *buf)
     return;
 
   // Save the received values
-  target.pos.recv_time = get_sys_time_msec();
+  target.pos.recv_time = get_sys_time_tow();
   target.pos.tow = DL_TARGET_POS_tow(buf);
   target.pos.lla.lat = DL_TARGET_POS_lat(buf);
   target.pos.lla.lon = DL_TARGET_POS_lon(buf);
@@ -268,7 +269,7 @@ void target_parse_target_pos(uint8_t *buf)
   target.pos.quat.qi = DL_TARGET_POS_body_qi(buf);
   target.pos.quat.qx = DL_TARGET_POS_body_qx(buf);
   target.pos.quat.qy = DL_TARGET_POS_body_qy(buf);
-  target.pos.quat.qi = DL_TARGET_POS_body_qz(buf);
+  target.pos.quat.qz = DL_TARGET_POS_body_qz(buf);
   target.pos.rates.p = DL_TARGET_POS_p(buf);
   target.pos.rates.q = DL_TARGET_POS_q(buf);
   target.pos.rates.r = DL_TARGET_POS_r(buf);
@@ -278,6 +279,9 @@ void target_parse_target_pos(uint8_t *buf)
   target.pos.ground_speed = sqrtf(target.pos.vel.x * target.pos.vel.x + target.pos.vel.y * target.pos.vel.y);
   target.pos.climb = -target.pos.vel.z;
   target.pos.valid = true;
+
+  // To test time between messages
+  target.offset.z = target.pos.recv_time - target.pos.tow;
 
 #ifdef FALCON_LOG_ON_ARRIVAL
   pprz_msg_send_TARGET_POS_INFO(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
