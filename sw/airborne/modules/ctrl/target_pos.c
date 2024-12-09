@@ -539,8 +539,8 @@ void target_pos_periodic(void) {
                                   &speed.x, &speed.y, &speed.z);
   RunOnceEvery(100, {
   DOWNLINK_SEND_TARGET_POS_KALMAN(DefaultChannel, DefaultDevice,
-                                  pos.x, pos.y, pos.z,
-                                  speed.x, speed.y, speed.z);
+                                  &pos.x, &pos.y, &pos.z,
+                                  &speed.x, &speed.y, &speed.z);
   });
 #else
   return;
