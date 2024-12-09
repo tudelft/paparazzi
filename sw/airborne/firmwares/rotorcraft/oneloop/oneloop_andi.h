@@ -75,7 +75,7 @@ extern float psi_des_rad;
 extern float k_as;
 extern float max_as;
 extern float gi_unbounded_airspeed_sp;
-
+extern float temp_k;
 /*Chirp test Variables*/
 extern bool  chirp_on;
 extern float f0_chirp;

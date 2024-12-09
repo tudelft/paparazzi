@@ -255,6 +255,12 @@ float max_r = RadOfDeg(120.0);
 float max_r = RadOfDeg(MAX_R);
 #endif
 
+#ifdef ONELOOP_ANDI_YAW_DISTURBANCE_LIMIT
+float oneloop_andi_yaw_dist_limit = ONELOOP_ANDI_YAW_DISTURBANCE_LIMIT;
+#else // Put a high limit
+float oneloop_andi_yaw_dist_limit = 99999.f;
+#endif
+
 #ifdef ONELOOP_ANDI_ACT_IS_SERVO
 bool   actuator_is_servo[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_IS_SERVO;
 #else
@@ -444,8 +450,8 @@ void  rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref
 void  rm_3rd_pos(float dt, float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_des[], float k1_rm[], float k2_rm[], float k3_rm[], float x_d_bound, float x_2d_bound, float x_3d_bound, int n);
 void  rm_2nd_pos(float dt, float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_d_des[], float k2_rm[], float k3_rm[], float x_2d_bound, float x_3d_bound, int n);
 void  rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], float k3_rm[], float x_3d_bound, int n);
-void  ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], float max_ang_jerk);
-void  ec_3rd_pos(float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, int n);
+void  ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], float max_ang_jerk, float fb[3]);
+void  ec_3rd_pos(float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, float fb[], int n);
 void  calc_model(void);
 float oneloop_andi_sideslip(void);
 void  reshape_wind(void);
@@ -458,6 +464,8 @@ void  reinit_cf2(struct CF2_t *cf, bool reinit);
 void  reinit_cf4(struct CF4_t *cf, bool reinit);
 void  reinit_all_cf(bool reinit);
 void  oneloop_axis_effectiveness_calc(void);
+void  oneloop_andi_bound_disturbance(void);
+void  oneloop_calc_model_disturbance(bool in_flight);
 
 /* Oneloop Misc variables*/
 static float use_increment = 0.0;
@@ -472,7 +480,7 @@ float gi_unbounded_airspeed_sp = 0.0;
 /* Oneloop Control Variables*/
 float andi_u[ANDI_NUM_ACT_TOT];
 float andi_du[ANDI_NUM_ACT_TOT];
-static float andi_du_n[ANDI_NUM_ACT_TOT];
+static float andi_u_n[ANDI_NUM_ACT_TOT];
 float nu[ANDI_OUTPUTS];
 float nu_n[ANDI_OUTPUTS];
 static float act_dynamics_d[ANDI_NUM_ACT_TOT];
@@ -582,9 +590,13 @@ float EFF_MAT_AXIS[ANDI_OUTPUTS];
 float n_array[ANDI_OUTPUTS];
 float m_array[ANDI_NUM_ACT_TOT];
 float coupling_factor[ANDI_OUTPUTS];
+float oneloop_andi_model[ANDI_OUTPUTS];
+float oneloop_andi_dist_bound[ANDI_OUTPUTS];
 float SF_BOUND_NU[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
 float ratio_u_un[ANDI_NUM_ACT_TOT];
 float ratio_vn_v[ANDI_OUTPUTS];
+
+float temp_k = 300;
 
 /*Filters Initialization*/
 static Butterworth2LowPass filt_veloc_N;                 // Low pass filter for velocity NED - oneloop_andi_filt_cutoff_a (tau_a)       
@@ -731,26 +743,6 @@ static float k_e_2_2_f_v2(float omega, float zeta) {
     omega = positive_non_zero(omega);
     zeta  = positive_non_zero(zeta);
     return (2* zeta * omega);
-}
-
-static float k_e_1_3_f_v2(float omega_n, UNUSED float zeta, float p1) {
-    omega_n = positive_non_zero(omega_n);
-    p1      = positive_non_zero(p1);
-    return (omega_n * omega_n * p1);
-}
-
-static float k_e_2_3_f_v2(float omega_n, float zeta, float p1) {
-    omega_n = positive_non_zero(omega_n);
-    zeta    = positive_non_zero(zeta);
-    p1      = positive_non_zero(p1);
-    return (omega_n * omega_n + 2 * zeta * omega_n * p1);
-}
-
-static float k_e_3_3_f_v2(float omega_n, float zeta, float p1) {
-    omega_n = positive_non_zero(omega_n);
-    zeta    = positive_non_zero(zeta);
-    p1      = positive_non_zero(p1);
-    return (2 * zeta * omega_n + p1);
 }
 
 /** @brief Reference Model Gain Design */
@@ -1100,7 +1092,7 @@ static float ec_3rd(float x_ref, float x_d_ref, float x_2d_ref, float x_3d_ref, 
   float y_4d = k1_e*(x_ref-x)+k2_e*(x_d_ref-x_d)+k3_e*(x_2d_ref-x_2d)+x_3d_ref;
   return y_4d;
 }
-void ec_3rd_pos( float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, int n){
+void ec_3rd_pos( float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, float fb[], int n){
   float e_x_d[n];
   float e_x_2d[n];
 
@@ -1110,9 +1102,14 @@ void ec_3rd_pos( float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[],
   err_sum_nd(e_x_2d, e_x_d, x_d, k2_e, x_2d_ref, n);
   vect_bound_nd(e_x_2d,x_2d_bound, n);
 
-  err_sum_nd(y_4d, e_x_2d, x_2d, k3_e, x_3d_ref, n);
-  vect_bound_nd(y_4d, x_3d_bound, n);
+  // Calculate and bound distrubance --------------------
+  float dist[3];
+  float_vect_diff(dist, x_2d, fb, 3);
+  //BoundAbs(dist[2], oneloop_andi_yaw_dist_limit); Bound to be decided
+  err_sum_nd(y_4d, e_x_2d, dist, k3_e, x_3d_ref, n);
+  //vect_bound_nd(y_4d, x_3d_bound, n); This bound does not work anymore in this format
 }
+
 /** 
  * @brief Error Controller Definition for 3rd order system specific to attitude
  * @param dt              Delta time [s]
@@ -1128,22 +1125,26 @@ void ec_3rd_pos( float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[],
  * @param k2_e            Error Controller Gain 2nd order signal
  * @param k3_e            Error Controller Gain 3rd order signal
  */
-void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], float max_ang_jerk){
-  float y_4d_1[3];
-  float y_4d_2[3];
-  float y_4d_3[3];
-  err_nd(y_4d_1, x_ref, x, k1_e, 3);
+void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], float max_ang_jerk, float fb[3]){
+  float e_x[3];    // (x-x_ref)*k1_e
+  float x_d_f[3];  // x_d_ref + e_x
+  float x_2d_f[3]; // x_2d_ref + e_x_d
+
+  // Attitude Error and Heading conversion
+  err_nd(e_x, x_ref, x, k1_e, 3);
   float temp_diff = x_ref[2] - x[2];
   NormRadAngle(temp_diff);
-  float e_x = temp_diff;
-  y_4d_1[2] = k1_e[2] * e_x; // Correction for Heading error +-Pi
-  err_nd(y_4d_2, x_d_ref, x_d, k2_e, 3);
-  err_nd(y_4d_3, x_2d_ref, x_2d, k3_e, 3);
-  float_vect_copy(y_4d,x_3d_ref,3);
-  float_vect_sum(y_4d, y_4d, y_4d_1, 3);
-  float_vect_sum(y_4d, y_4d, y_4d_2, 3);
-  float_vect_sum(y_4d, y_4d, y_4d_3, 3);
-  vect_bound_nd(y_4d, max_ang_jerk, 3);
+  e_x[2] = k1_e[2] * temp_diff; // Correction for Heading error +-Pi
+  // Angular Rate Error
+  float_vect_sum(x_d_f, x_d_ref, e_x, 3);
+  err_sum_nd(x_2d_f, x_d_f,  x_d,  k2_e, x_2d_ref, 3);
+  // Calculate and bound distrubance --------------------
+  float dist[3];
+  float_vect_diff(dist, x_2d, fb, 3);
+  BoundAbs(dist[2], oneloop_andi_yaw_dist_limit);
+  // Angular Acceleration Error
+  err_sum_nd(y_4d, x_2d_f, dist, k3_e, x_3d_ref, 3);
+  //vect_bound_nd(y_4d, max_ang_jerk, 3);
 }
 
 /**
@@ -1174,7 +1175,8 @@ static float ec_poles(float p_rm, float slow_pole, float k){
   p_rm      = positive_non_zero(p_rm);
   slow_pole = positive_non_zero(slow_pole);
   k         = positive_non_zero(k);
-  float omega_n = (2*p_rm*slow_pole*k)/(3*slow_pole-p_rm);
+  //float omega_n = (2*p_rm*slow_pole*k)/(3*slow_pole-p_rm);
+  float omega_n = (2*k*p_rm*slow_pole)/(3*slow_pole-k*p_rm);
   return omega_n;
 }
 
@@ -1184,15 +1186,15 @@ static float ec_poles(float p_rm, float slow_pole, float k){
  */
 void init_poles_att(void){
   float slow_pole  = 22.0; // Pole of the slowest dynamics used in the attitude controller
-  p_att_e.omega_n  = ec_poles(p_att_rm.omega_n,  slow_pole, 1.28);
-  p_head_e.omega_n = ec_poles(p_head_rm.omega_n, slow_pole, 1.28);
+  p_att_e.omega_n  = ec_poles(p_att_rm.omega_n,  slow_pole, 1.28); // k = 1.28;
+  p_head_e.omega_n = ec_poles(p_head_rm.omega_n, slow_pole, 1.28); // k = 1.28;
 }
 void init_poles_pos(void){
   act_dynamics[COMMAND_ROLL]  = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
   act_dynamics[COMMAND_PITCH] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
   float slow_pole = act_dynamics[COMMAND_ROLL]; // Pole of the slowest dynamics used in the position controller
-  p_pos_e.omega_n = ec_poles(p_pos_rm.omega_n,slow_pole,1.28);//1.0;
-  p_alt_e.omega_n = ec_poles(p_alt_rm.omega_n,slow_pole,1.28);//1.0;// 3.0;
+  p_pos_e.omega_n = ec_poles(p_pos_rm.omega_n,slow_pole,1.28);// k = 1.28; 1.0;
+  p_alt_e.omega_n = ec_poles(p_alt_rm.omega_n,slow_pole,1.28);// k = 1.28; 1.0;// 3.0
 }
 
 /**
@@ -1269,9 +1271,9 @@ void init_controller_gains(void){
 
   //--ANDI Controller gains --------------------------------------------------------------------------------
   /*Attitude Loop*/
-  k_att_e.k1[0]  = k_e_1_3_f_v2(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
-  k_att_e.k2[0]  = k_e_2_3_f_v2(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
-  k_att_e.k3[0]  = k_e_3_3_f_v2(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
+  k_att_e.k1[0]  = k_rm_1_3_f(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
+  k_att_e.k2[0]  = k_rm_2_3_f(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
+  k_att_e.k3[0]  = k_rm_3_3_f(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
   k_att_e.k1[1]  = k_att_e.k1[0]; 
   k_att_e.k2[1]  = k_att_e.k2[0]; 
   k_att_e.k3[1]  = k_att_e.k3[0]; 
@@ -1284,21 +1286,22 @@ void init_controller_gains(void){
   k_att_rm.k3[1] = k_att_rm.k3[0];
   
   /*Heading Loop NAV*/
-  k_att_e.k1[2]  = k_e_1_3_f_v2(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
-  k_att_e.k2[2]  = k_e_2_3_f_v2(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
-  k_att_e.k3[2]  = k_e_3_3_f_v2(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
+  k_att_e.k1[2]  = k_rm_1_3_f(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
+  k_att_e.k2[2]  = k_rm_2_3_f(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
+  k_att_e.k3[2]  = k_rm_3_3_f(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
 
   k_att_rm.k1[2] = k_rm_1_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
   k_att_rm.k2[2] = k_rm_2_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
   k_att_rm.k3[2] = k_rm_3_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
+
   //printf("Attitude RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
   //printf("Attitude EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
-  //printf("Heading RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
-  //printf("Heading EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
+  //printf("Heading  RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
+  //printf("Heading  EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
   //printf("Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
-  //printf("Attitude E Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
-  //printf("Heading RM Gains: %f %f %f\n", k_att_rm.k1[2], k_att_rm.k2[2], k_att_rm.k3[2]);
-  //printf("Heading E Gains: %f %f %f\n", k_att_e.k1[2], k_att_e.k2[2], k_att_e.k3[2]);
+  //printf("Attitude EC Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
+  //printf("Heading  RM Gains: %f %f %f\n", k_att_rm.k1[2], k_att_rm.k2[2], k_att_rm.k3[2]);
+  //printf("Heading  EC Gains: %f %f %f\n", k_att_e.k1[2], k_att_e.k2[2], k_att_e.k3[2]);
   /*Position Loop*/
   // k_pos_e.k1[0]  = k_e_1_3_f_v2(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
   // k_pos_e.k2[0]  = k_e_2_3_f_v2(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
@@ -1620,7 +1623,7 @@ void reinit_controller(void)
   andi_u[COMMAND_ROLL]  = oneloop_andi.sta_state.att[0];
   andi_u[COMMAND_PITCH] = oneloop_andi.sta_state.att[1];
   float_vect_zero(andi_du, ANDI_NUM_ACT_TOT);
-  float_vect_zero(andi_du_n, ANDI_NUM_ACT_TOT);
+  float_vect_zero(andi_u_n, ANDI_NUM_ACT_TOT);
   //float_vect_copy(actuator_state_1l, commands_float, ANDI_NUM_ACT);
   // Stabilization
   float_vect_copy(oneloop_andi.sta_ref.att, oneloop_andi.sta_state.att, 3);
@@ -1664,7 +1667,7 @@ void oneloop_andi_init(void)
   init_controller_gains();
   float_vect_zero(andi_u, ANDI_NUM_ACT_TOT);
   float_vect_zero(andi_du, ANDI_NUM_ACT_TOT);
-  float_vect_zero(andi_du_n, ANDI_NUM_ACT_TOT);
+  float_vect_zero(andi_u_n, ANDI_NUM_ACT_TOT);
   float_vect_zero(actuator_state_1l,ANDI_NUM_ACT);
   float_vect_zero(oneloop_andi.sta_ref.att,3);
   float_vect_zero(oneloop_andi.sta_ref.att_d,3);
@@ -1768,9 +1771,12 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     thrust_cmd_1l = (float) radio_control_get(RADIO_THROTTLE);
     Bound(thrust_cmd_1l,0.0,MAX_PPRZ); 
     int8_t i;
+    // To calculate the nu corrsponding to the Thrust command, plug it in the control law.
     for (i = 0; i < ANDI_NUM_ACT; i++) {
-     a_thrust +=(thrust_cmd_1l - use_increment*actuator_state_1l[i]) * bwls_1l[2][i] / (ratio_u_un[i] * ratio_vn_v[RW_aD]);
+      a_thrust +=(thrust_cmd_1l) * EFF_MAT_RW[RW_aD][i] * act_dynamics[i];
     }
+    a_thrust = a_thrust - oneloop_andi_model[RW_aD]; 
+
     rm_3rd_attitude(dt_1l, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, att_des, false, psi_vec, k_att_rm.k1, k_att_rm.k2, k_att_rm.k3, sta_bounds);
   }else{
     // Make sure X and Y jerk objectives are active
@@ -1866,15 +1872,15 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   
   // If drone is not on the ground use incremental law
   use_increment = 0.0;
-  bool  in_flight_oneloop       = false;
+  bool  in_flight_oneloop = false;
   if(in_flight) {
     use_increment = 1.0;
-    in_flight_oneloop       = true;
+    in_flight_oneloop = true;
   } 
   if (ONELOOP_ANDI_DEBUG_MODE) {
     in_flight_oneloop = false;
   }
-  
+  oneloop_calc_model_disturbance(in_flight);
   // Register the state of the drone in the variables used in RM and EC
   // (1) Attitude related
   oneloop_andi.sta_state.att[0]    = eulers_zxy.phi  ;
@@ -1904,13 +1910,15 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     if (oneloop_andi.ctrl_type == CTRL_ANDI){
       g2_ff += G2_RW[i] * act_dynamics[i] * andi_du[i];
     } else if (oneloop_andi.ctrl_type == CTRL_INDI){
-      g2_ff += G2_RW[i]* andi_du_n[i];
+      g2_ff += G2_RW[i]* andi_u_n[i];
     }
   }
   //G2 is scaled by ANDI_G_SCALING to make it readable
   g2_ff = g2_ff;
   // Run the Reference Model (RM)
   oneloop_andi_RM(half_loop, PSA_des, rm_order_h, rm_order_v, in_flight_oneloop);
+  // Run Distrubance Bounder
+  oneloop_andi_bound_disturbance();
   // Guidance Pseudo Control Vector (nu) based on error controller
   if(half_loop){
     nu[0] = 0.0;
@@ -1919,10 +1927,11 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     ctrl_off = false;
   }else{
     if(oneloop_andi.ctrl_type == CTRL_ANDI){
-      ec_3rd_pos(nu, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e.k1, k_pos_e.k2, k_pos_e.k3, max_v_nav, max_a_nav, max_j_lin, 3);
-      // nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], oneloop_andi.gui_ref.jer[0], oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e.k1[0], k_pos_e.k2[0], k_pos_e.k3[0]);
-      // nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], oneloop_andi.gui_ref.jer[1], oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e.k1[1], k_pos_e.k2[1], k_pos_e.k3[1]);
-      // nu[2] = ec_3rd(oneloop_andi.gui_ref.pos[2], oneloop_andi.gui_ref.vel[2], oneloop_andi.gui_ref.acc[2], oneloop_andi.gui_ref.jer[2], oneloop_andi.gui_state.pos[2], oneloop_andi.gui_state.vel[2], oneloop_andi.gui_state.acc[2], k_pos_e.k1[2], k_pos_e.k2[2], k_pos_e.k3[2]); 
+      //float temp_dist_bound_gui[3] = {oneloop_andi_dist_bound[0], oneloop_andi_dist_bound[1], oneloop_andi_dist_bound[2]};
+      float temp_dist_bound_gui[3] = {oneloop_andi_model[0], oneloop_andi_model[1], oneloop_andi_model[2]};
+      ec_3rd_pos(nu, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e.k1, k_pos_e.k2, k_pos_e.k3, max_v_nav, max_a_nav, max_j_lin,temp_dist_bound_gui,3);
+      //ec_3rd_pos(nu, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e.k1, k_pos_e.k2, k_pos_e.k3, max_v_nav, max_a_nav, max_j_lin, 3);
+      //ec_3rd_pos(nu, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, temp_dist_bound_gui, k_pos_e.k1, k_pos_e.k2, k_pos_e.k3, max_v_nav, max_a_nav, max_j_lin, 3);
     } else if (oneloop_andi.ctrl_type == CTRL_INDI){
       nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], 0.0, oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e_indi.k1[0], k_pos_e_indi.k2[0], k_pos_e_indi.k3[0]);
       nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], 0.0, oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e_indi.k1[1], k_pos_e_indi.k2[1], k_pos_e_indi.k3[1]);
@@ -1932,14 +1941,30 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   // Attitude Pseudo Control Vector (nu) based on error controller
   float y_4d_att[3];  
   if(oneloop_andi.ctrl_type == CTRL_ANDI){
-    ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds.att_3d[0]);
+    //float temp_dist_bound_sta[3] = {oneloop_andi_dist_bound[3], oneloop_andi_dist_bound[4], oneloop_andi_dist_bound[5]};
+    //float temp_dist_bound_sta[3] = {0.0, 0.0, 0.0};
+    float temp_dist_bound_sta[3] = {oneloop_andi_model[3], oneloop_andi_model[4], oneloop_andi_model[5]};
+    ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds.att_3d[0],temp_dist_bound_sta);
+
+    //ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, temp_dist_bound_sta, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds.att_3d[0]);
   } else if (oneloop_andi.ctrl_type == CTRL_INDI){
     float dummy0[3] = {0.0, 0.0, 0.0};
-    ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e_indi.k1, k_att_e_indi.k2, k_att_e_indi.k3, sta_bounds.att_3d[0]);
+    //ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e_indi.k1, k_att_e_indi.k2, k_att_e_indi.k3, sta_bounds.att_3d[0]);
   }
   nu[3] = y_4d_att[0];  
   nu[4] = y_4d_att[1]; 
-  nu[5] = y_4d_att[2] + g2_ff; 
+  nu[5] = y_4d_att[2] + g2_ff;
+
+  // temp restructuring------------------
+  //nu[0] = nu[0] + oneloop_andi_model[0];
+  //nu[1] = nu[1] + oneloop_andi_model[1];
+  //nu[2] = nu[2] + oneloop_andi_model[2];
+  //nu[3] = nu[3] + oneloop_andi_model[3];
+  //nu[4] = nu[4] + oneloop_andi_model[4];
+  //nu[5] = nu[5] + oneloop_andi_model[5];
+  nu[5] = oneloop_andi_model[5] - temp_k * oneloop_andi.sta_ref.att_d[2]; //Interesting idea to weather vane the drone
+  //------------------------------------
+
   if (!chirp_on){
     pitch_pref = radio_control.values[RADIO_AUX5]; 
     pitch_pref = pitch_pref / MAX_PPRZ * theta_pref_max;
@@ -1957,88 +1982,77 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
         Bound(skew_bound,70.0,90.0);
         float Wu_sched   = (Wu_quad_motors_fwd-Wu_backup[i])/(90.0-70.0)*(skew_bound-70)+Wu_backup[i];
         WLS_one_p.Wu[i]     = Wu_sched;
-        WLS_one_p.u_min[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
-        WLS_one_p.u_pref[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i];
-        WLS_one_p.u_max[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
+        WLS_one_p.u_min[i]  = (act_min[i])/ratio_u_un[i];
+        WLS_one_p.u_pref[i] = (u_pref[i] )/ratio_u_un[i];
+        WLS_one_p.u_max[i]  = (act_max[i])/ratio_u_un[i];
         if (rotwing_state.hover_motors_enabled){
-          WLS_one_p.u_max[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
+          WLS_one_p.u_max[i]  = (act_max[i])/ratio_u_un[i];
         } else
         {
-          WLS_one_p.u_max[i]  = (0.0 - actuator_state_1l[i])/ratio_u_un[i];
+          WLS_one_p.u_max[i]  = (0.0)/ratio_u_un[i];
         }
         break;
       }
       case COMMAND_MOTOR_PUSHER:
       case COMMAND_RUDDER:
-        WLS_one_p.u_min[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
-        WLS_one_p.u_max[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
-        WLS_one_p.u_pref[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i]; 
+        WLS_one_p.u_min[i]  = (act_min[i])/ratio_u_un[i];
+        WLS_one_p.u_max[i]  = (act_max[i])/ratio_u_un[i];
+        WLS_one_p.u_pref[i] = (u_pref[i] )/ratio_u_un[i]; 
         break;      
       case COMMAND_AILERONS:
         if(RW.skew.deg > 25.0){
-            WLS_one_p.u_min[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
-            WLS_one_p.u_max[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
+            WLS_one_p.u_min[i]  = (act_min[i])/ratio_u_un[i];
+            WLS_one_p.u_max[i]  = (act_max[i])/ratio_u_un[i];
           } else {
-            WLS_one_p.u_min[i]  = (0.0 - actuator_state_1l[i])/ratio_u_un[i];
-            WLS_one_p.u_max[i]  = (0.0 - actuator_state_1l[i])/ratio_u_un[i];
+            WLS_one_p.u_min[i]  = (0.0)/ratio_u_un[i];
+            WLS_one_p.u_max[i]  = (0.0)/ratio_u_un[i];
           }
-        WLS_one_p.u_pref[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i];   
+        WLS_one_p.u_pref[i] = (u_pref[i])/ratio_u_un[i];   
         break;      
       case COMMAND_FLAPS:
         if(RW.skew.deg > 50.0){
-            WLS_one_p.u_min[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
-            WLS_one_p.u_max[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
+            WLS_one_p.u_min[i]  = (act_min[i])/ratio_u_un[i];
+            WLS_one_p.u_max[i]  = (act_max[i])/ratio_u_un[i];
           } else {
-            WLS_one_p.u_min[i]  = (0.0 - actuator_state_1l[i])/ratio_u_un[i];
-            WLS_one_p.u_max[i]  = (0.0 - actuator_state_1l[i])/ratio_u_un[i];
+            WLS_one_p.u_min[i]  = (0.0)/ratio_u_un[i];
+            WLS_one_p.u_max[i]  = (0.0)/ratio_u_un[i];
           }
-        WLS_one_p.u_pref[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i];   
+        WLS_one_p.u_pref[i] = (u_pref[i])/ratio_u_un[i];   
         break;
       case COMMAND_ELEVATOR:  
-        WLS_one_p.u_min[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
-        WLS_one_p.u_max[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
+        WLS_one_p.u_min[i]  = (act_min[i])/ratio_u_un[i];
+        WLS_one_p.u_max[i]  = (act_max[i])/ratio_u_un[i];
         u_pref[i]           = RW.ele_pref;
-        WLS_one_p.u_pref[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i];  
+        WLS_one_p.u_pref[i] = (u_pref[i])/ratio_u_un[i];  
         break;     
       case COMMAND_ROLL:
-        WLS_one_p.u_min[i]  = (act_min[i] - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
-        WLS_one_p.u_max[i]  = (act_max[i] - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
-        WLS_one_p.u_pref[i] = (u_pref[i]  - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+        WLS_one_p.u_min[i]  = (act_min[i])/ratio_u_un[i];
+        WLS_one_p.u_max[i]  = (act_max[i])/ratio_u_un[i];
+        WLS_one_p.u_pref[i] = (u_pref[i] )/ratio_u_un[i];
         break;         
       case COMMAND_PITCH:
-        if (RW.skew.deg > 70.0){
-          WLS_one_p.u_min[i]  = (RadOfDeg(-17.0) - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
-          WLS_one_p.u_max[i]  = (RadOfDeg(17.0)  - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+        if (RW.skew.deg > 50.0){
+          WLS_one_p.u_min[i]  = (RadOfDeg(-17.0))/ratio_u_un[i];
+          WLS_one_p.u_max[i]  = (RadOfDeg(17.0) )/ratio_u_un[i];
         } else {
-          WLS_one_p.u_min[i]  = (act_min[i] - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
-          WLS_one_p.u_max[i]  = (act_max[i] - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+          WLS_one_p.u_min[i]  = (act_min[i])/ratio_u_un[i];
+          WLS_one_p.u_max[i]  = (act_max[i])/ratio_u_un[i];
         }
-        WLS_one_p.u_pref[i] = (u_pref[i]  - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
+        WLS_one_p.u_pref[i] = (u_pref[i])/ratio_u_un[i];
         break;           
     }
   }
   // WLS Control Allocator
   normalize_nu();
   wls_alloc(&WLS_one_p, bwls_1l, 0, 0, 10);
-  for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
-    andi_du_n[i] = WLS_one_p.u[i];
-    andi_du[i] = (float)(andi_du_n[i] * ratio_u_un[i]);
-  }
 
-  if (in_flight_oneloop) {
-    if (!sys_id_doublet_running()){
-      // Add the increments to the actuators
-      float_vect_sum(andi_u, actuator_state_1l, andi_du, ANDI_NUM_ACT);
-      andi_u[COMMAND_ROLL]  = andi_du[COMMAND_ROLL]  + oneloop_andi.sta_state.att[0];
-      andi_u[COMMAND_PITCH] = andi_du[COMMAND_PITCH] + oneloop_andi.sta_state.att[1];
-    } else {
-      reinit_controller();
+  if (!sys_id_doublet_running()){   
+    for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
+      andi_u_n[i] = WLS_one_p.u[i];
+      andi_u[i]   = (float)(andi_u_n[i] * ratio_u_un[i]);
     }
   } else {
-    // Not in flight, so don't increment
-    float_vect_copy(andi_u, andi_du, ANDI_NUM_ACT);
-    andi_u[COMMAND_ROLL]  = andi_du[COMMAND_ROLL];
-    andi_u[COMMAND_PITCH] = andi_du[COMMAND_PITCH];
+    reinit_controller();
   }
 #ifdef COMMAND_MOTOR_PUSHER
   if ((half_loop)){
@@ -2508,7 +2522,66 @@ void oneloop_axis_effectiveness_calc(void){
       coupling_factor[i] += eff2 / (n_array[i] * m_array[j]);
     }
   }
-  printf("Coupling factor: %f %f %f %f %f %f \n", coupling_factor[0], coupling_factor[1], coupling_factor[2], coupling_factor[3], coupling_factor[4], coupling_factor[5]);
-  printf("Axis effectiven: %f %f %f %f %f %f \n", n_array[0], n_array[1], n_array[2], n_array[3], n_array[4], n_array[5]);
+  //printf("Coupling factor: %f %f %f %f %f %f \n", coupling_factor[0], coupling_factor[1], coupling_factor[2], coupling_factor[3], coupling_factor[4], coupling_factor[5]);
+  //printf("Axis effectiven: %f %f %f %f %f %f \n", n_array[0], n_array[1], n_array[2], n_array[3], n_array[4], n_array[5]);
 }
 
+void oneloop_calc_model_disturbance(bool in_flight){
+  int8_t i;
+  int8_t j;
+  // Store the distrubance 
+  float k3;
+  if(in_flight){
+    for (i = 0; i < ANDI_OUTPUTS; i++){ // For loop for prediction of acceleration 
+      oneloop_andi_model[i] = 0.0;
+      switch (i){
+        case (RW_aN):
+          k3 = k_pos_e.k3[0];
+          break;
+        case (RW_aE):
+          k3 = k_pos_e.k3[1];
+          break;
+        case (RW_aD):
+          k3 = k_pos_e.k3[2];
+          break;
+        case (RW_ap):
+          k3 = k_att_e.k3[0];
+          break;            
+        case (RW_aq):
+          k3 = k_att_e.k3[1];
+          break;      
+        case (RW_ar):
+          k3 = k_att_e.k3[2];
+          break;      
+      }
+      k3 = positive_non_zero(k3);
+      
+      for (j = 0; j < ANDI_NUM_ACT_TOT; j++){
+        float den = positive_non_zero(ratio_u_un[j]*ratio_vn_v[i]);
+        if (j < ANDI_NUM_ACT){
+          oneloop_andi_model[i] += actuator_state_1l[j] * EFF_MAT_G[i][j] / den; //EFF_MAT_RW[i][j] * act_dynamics[j]; //
+        } else {
+          oneloop_andi_model[i] += oneloop_andi.sta_state.att[j-ANDI_NUM_ACT] * EFF_MAT_G[i][j] / den; //EFF_MAT_RW[i][j] * act_dynamics[j]; // 
+        }
+      }
+      oneloop_andi_model[i] = oneloop_andi_model[i] / k3;
+    } 
+  }else {
+    float_vect_zero(oneloop_andi_model, ANDI_OUTPUTS);
+  }
+} 
+void oneloop_andi_bound_disturbance(void){
+    oneloop_andi_dist_bound[RW_aN] = oneloop_andi.gui_state.acc[0] - oneloop_andi_model[RW_aN];
+    BoundAbs(oneloop_andi_dist_bound[RW_aN], 99999.f); // Large value to not bound
+    oneloop_andi_dist_bound[RW_aE] = oneloop_andi.gui_state.acc[1] - oneloop_andi_model[RW_aE];
+    BoundAbs(oneloop_andi_dist_bound[RW_aE], 99999.f); // Large value to not bound
+    oneloop_andi_dist_bound[RW_aD] = oneloop_andi.gui_state.acc[2] - oneloop_andi_model[RW_aD];
+    BoundAbs(oneloop_andi_dist_bound[RW_aD], 99999.f); // Large value to not bound
+    oneloop_andi_dist_bound[RW_ap] = oneloop_andi.sta_state.att_2d[0] - oneloop_andi_model[RW_ap];
+    BoundAbs(oneloop_andi_dist_bound[RW_ap], 99999.f); // Large value to not bound
+    oneloop_andi_dist_bound[RW_aq] = oneloop_andi.sta_state.att_2d[1] - oneloop_andi_model[RW_aq];
+    BoundAbs(oneloop_andi_dist_bound[RW_aq], 99999.f); // Large value to not bound
+    oneloop_andi_dist_bound[RW_ar] = oneloop_andi.sta_state.att_2d[2] - oneloop_andi_model[RW_ar];
+    BoundAbs(oneloop_andi_dist_bound[RW_ar], 99999.f); // Large value to not bound
+    //BoundAbs(oneloop_andi_dist_bound[RW_ar], oneloop_andi_yaw_dist_limit); // Bound from INDI controller
+}
