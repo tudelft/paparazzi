@@ -1130,6 +1130,7 @@
       </function>
     </axis>
 
+
    <axis name="LIFT">
     <function name="aero/force/Lift_alpha"> 
      <product>      
@@ -1155,8 +1156,28 @@
       </product>
     </function>
    </axis>
-
-
+  <axis name="YAW">
+   <function name="aero/moment/Yaw_beta" frame="BODY" unit="FT*LBS">
+      <product>
+        <value> 1.0 </value>
+        <value> 0.5 </value>
+        <value> 1.225 </value> <!-- rho kg/m^3 -->
+        <property>fcs/airspeed2_ms</property>
+        <value>0.039</value> <!--Aerea vertical tail-->
+        <value>6.28</value>  <!-- Flat plate CL = 2PI-->
+        <property>aero/beta-rad</property> 
+        <value> 1.0 </value> <!-- Moment arm [m]-->
+         <value>0.7376</value> <!--Convert to lbsft-->
+      </product>
+    </function>
+    <function name="aero/moment/Yaw_damp">
+       <description>Yaw moment due to yaw rate as estimated in Inertia test</description>
+       <product>
+           <property>velocities/r-aero-rad_sec</property>
+           <value>-0.1069</value>
+       </product>
+    </function>
+  </axis>
   </aerodynamics>
 
 </fdm_config>
