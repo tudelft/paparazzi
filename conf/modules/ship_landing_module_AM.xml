@@ -45,7 +45,11 @@
 
   <header>
     <file name="nav_approach_ship.h"/>
+    <file name="nav_approach_ship_1D.h"/>
     <file name="core_nav_approach_ship.h"/>
+    <file name="rtGetNaN.h"/>
+    <file name="rtGetInf.h"/>
+    <file name="rt_nonfinite.h"/>
   </header>
 
    <init fun="nav_approach_ship_init()"/>
@@ -56,6 +60,10 @@
 
   <makefile>
     <file name="nav_approach_ship.c"/>
+    <file name="nav_approach_ship_1D.c"/>
     <file name="core_nav_approach_ship.c"/>
+    <file name="rtGetNaN.c"/>
+    <file name="rtGetInf.c"/>
+    <file name="rt_nonfinite.c"/>
   </makefile>
 </module>

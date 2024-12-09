@@ -230,7 +230,7 @@ void nav_approach_ship_run(void){
     float dist_line_gain = (float) dist_line_gain_float;
     float max_line_gain = (float) max_line_gain_float;
 
-    nav_approach_ship( P0_UAV_NED, V0_UAV_NED, 
+    nav_approach_ship_1D( P0_UAV_NED, V0_UAV_NED, 
                        V0_SHIP_NED, PhiThetaPsi_SHIP_rad,
                        P0_SHIP_NED, psi_rad_UAV,
                        v_max_control_rf, v_min_control_rf, 

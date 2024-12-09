@@ -96,28 +96,33 @@
       <set value="AP_MODE_RC_DIRECT" var="autopilot.mode"/>
       <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
     </block>
     <block name="Wait GPS">
       <set value="0" var="approach_state"/>
       <set value="0" var="force_forward"/>
+      <set value="0" var="approach_ship_engaged"/>
       <call_once fun="NavKillThrottle()"/>
       <while cond="!GpsFixValid() || !state.ned_initialized_i"/>
     </block>
     <block name="Geo init">
       <set value="0" var="approach_state"/>
       <set value="0" var="force_forward"/>
+      <set value="0" var="approach_ship_engaged"/>
       <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetAltitudeReferenceHere()"/>
     </block>
     <block name="Holding point">
       <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" pre_call="NavKillThrottle()" vmode="throttle"/>
     </block>
     <block name="Start Engine">
       <set value="1" var="approach_state"/>
       <set value="0" var="force_forward"/>
+      <set value="0" var="approach_ship_engaged"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
       <stay climb="-0.5" vmode="climb" wp="TD"/>
@@ -125,6 +130,7 @@
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <set value="1" var="approach_state"/>
       <set value="0" var="force_forward"/>
+      <set value="0" var="approach_ship_engaged"/>
       <exception cond="stateGetPositionEnu_f()->z > 10.0" deroute="Standby"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay wp="CLIMB"/>
@@ -132,36 +138,43 @@
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="0" var="approach_state"/>
       <set value="0" var="force_forward"/>
+      <set value="0" var="approach_ship_engaged"/>
       <stay wp="STDBY"/>
     </block>
     <block name="Standby_APP">
       <set value="1" var="approach_state"/>
       <set value="0" var="force_forward"/>
+      <set value="0" var="approach_ship_engaged"/>
       <stay wp="STDBY"/>
     </block>  
     <block name="Sixdof">
       <set value="0" var="approach_state"/>
       <set value="0" var="force_forward"/>
+      <set value="0" var="approach_ship_engaged"/>
       <stay wp="SIXDOF"/>
     </block>  
     <block name="Sixdof_APP">
       <set value="1" var="approach_state"/>
       <set value="0" var="force_forward"/>
+      <set value="0" var="approach_ship_engaged"/>
       <stay wp="SIXDOF"/>
     </block>  
     <block name="follow_module">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
     </block>
     <block name="stay_p1">
       <set value="0" var="approach_state"/>
       <set value="0" var="force_forward"/>
+      <set value="0" var="approach_ship_engaged"/>
       <stay wp="p1"/>
     </block>
     <block name="go_p2">
       <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
       <call_once fun="nav_set_heading_deg(90)"/>
       <go wp="p2"/>
       <deroute block="stay_p1"/>
@@ -169,6 +182,7 @@
     <block name="line_p1_p2">
       <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
       <stay until="stage_time>10" wp="p1"/>
       <go from="p1" hmode="route" wp="p2"/>
       <stay wp="p2"/>
@@ -176,6 +190,7 @@
     <block name="wp_goto_route">
       <set value="1" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
       <go wp="p1"/>
       <go wp="p2"/>
       <go wp="p3"/>
@@ -185,6 +200,7 @@
     <block name="route">
       <set value="1" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
       <go from="p1" hmode="route" wp="p2"/>
       <go from="p2" hmode="route" wp="p3"/>
       <go from="p3" hmode="route" wp="p4"/>
@@ -194,42 +210,56 @@
     <block name="Oval">
       <set value="1" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
       <oval p1="p1" p2="p2" radius="100"/>
     </block>
     <block name="Circle_CW">
       <set value="1" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
       <circle radius="100" wp="p1"/>
     </block>
     <block name="Circle_CCW">
       <set value="1" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
       <circle radius="-100" wp="p1"/>
+    </block>
+    <block name="Approach_SHIP_AM">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <set value="1" var="approach_ship_engaged"/>
+      <stay wp="STDBY"/>
     </block>
     <block name="Approach APP">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <set value="1" var="approach_state"/>
       <set value="0" var="force_forward"/>
+      <set value="0" var="approach_ship_engaged"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>
     <block name="land">
       <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
       <go wp="TD"/>
     </block>
     <block name="descend">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
       <exception cond="!(stateGetPositionEnu_f()->z > 12.0)" deroute="flare"/>
       <stay climb="-1.5" vmode="climb" wp="TD"/>
     </block>
     <block name="flare">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
       <stay climb="-0.8" vmode="climb" wp="TD"/>
       <exception cond="!(stateGetPositionEnu_f()->z > 1.0)" deroute="flare_low"/>
       <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.50)" deroute="flare_low"/>
@@ -237,6 +267,7 @@
     <block name="flare_low">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
       <!-- <exception cond="NavDetectGround()" deroute="Holding point"/> -->
       <exception cond="detect_ground_on_landing()" deroute="landed"/>
       <!-- <call_once fun="NavStartDetectGround()"/> -->
@@ -245,6 +276,7 @@
     <block name="landed">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
