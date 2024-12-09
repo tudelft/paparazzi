@@ -128,7 +128,7 @@ struct falcon_sensor_t falcon = {
 
 /* Initialize the linear kalman filter struct */
 struct SimpleKinematicKalman target_pos_kalman;
-wstruct FloatRMat body_to_falcon_sensor;
+struct FloatRMat body_to_falcon_sensor;
 
 /* GPS abi callback */
 static abi_event gps_ev;
@@ -225,8 +225,7 @@ void target_pos_init(void)
   AbiBindMsgRELPOS(ABI_BROADCAST, &relpos_ev, relpos_cb);
 
   /* Initialize the linear Kalman filter */
-  simple_kinematic_kalman_init(&target_pos_kalman, TARGET_POS_KALMAN_P0_POS, TARGET_POS_KALMAN_P0_SPEED, 
-                                TARGET_POS_KALMAN_Q_SIGMA2, TARGET_POS_KALMAN_R, 1/TARGET_POS_PERIODIC_FREQ);
+  target_pos_kalman_filter_init(TARGET_POS_KALMAN_R);
 
   float_rmat_of_eulers_321(&body_to_falcon_sensor, &falcon.body_offset);
 
@@ -521,6 +520,32 @@ bool target_pos_set_current_offset(float unk __attribute__((unused))) {
   return false;
 }
 
+void target_pos_kalman_filter_init(float r __attribute__((unused))) {
+  simple_kinematic_kalman_init(&target_pos_kalman, TARGET_POS_KALMAN_P0_POS, TARGET_POS_KALMAN_P0_SPEED, 
+                                TARGET_POS_KALMAN_Q_SIGMA2, TARGET_POS_KALMAN_R, 1/TARGET_POS_PERIODIC_FREQ);
+}
+
 void target_pos_periodic(void) {
+#if !TARTGET_POS_GROUND_STATION
   simple_kinematic_kalman_predict(&target_pos_kalman);
+  pprz_msg_send_TARGET_POS_KALMAN(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
+                                  &target_pos_kalman.state[0],
+                                  &target_pos_kalman.state[2],
+                                  &target_pos_kalman.state[4],
+                                  &target_pos_kalman.state[1],
+                                  &target_pos_kalman.state[3],
+                                  &target_pos_kalman.state[5]);
+  RunOnceEvery(100, {
+  DOWNLINK_SEND_TARGET_POS_KALMAN(DefaultChannel, DefaultDevice,
+                                  &target_pos_kalman.state[0],
+                                  &target_pos_kalman.state[2],
+                                  &target_pos_kalman.state[4],
+                                  &target_pos_kalman.state[1],
+                                  &target_pos_kalman.state[3],
+                                  &target_pos_kalman.state[5]);
+  });
+#else
+  return;
+#endif
+
 }

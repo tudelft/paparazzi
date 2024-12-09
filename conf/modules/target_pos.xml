@@ -20,6 +20,7 @@
         <dl_setting var="target.offset.z" min="-100.0" max="100." step="0.1" shortname="z_offset"/>
         <dl_setting var="target.target_pos_timeout" min="0" max="30000" step="100" shortname="target_pos_timeout"/>
         <dl_setting var="target.rtk_timeout" min="0" max="30000" step="100" shortname="rtk_timeout"/>
+        <dl_setting var="target_pos_kalman.r" min="0" max="0" values="INIT" shortname="kalman_reinit" module="modules/ctrl/target_pos" handler="kalman_filter_init" type="fun"/>
       </dl_settings>
       <dl_settings NAME="FalconSensor">
         <dl_setting var="falcon.manual" min="0" max="1" step="1" values="OFF|ON" shortname="manual_mode"/> <!-- Currently unused -->

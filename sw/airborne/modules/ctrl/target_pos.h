@@ -85,5 +85,6 @@ extern void target_pos_send_falcon_cmd(float unk);
 extern bool target_get_pos(struct NedCoor_f *pos, float *heading);
 extern bool target_get_vel(struct NedCoor_f *vel);
 extern void target_set_wp(uint8_t wp_id);
+extern void target_pos_kalman_filter_init(float r);
 
 #endif
