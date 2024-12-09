@@ -526,23 +526,21 @@ void target_pos_kalman_filter_init(float r __attribute__((unused))) {
 }
 
 void target_pos_periodic(void) {
-#if !TARTGET_POS_GROUND_STATION
+#if !TARTGET_POS_GROUND_STATION && !USE_NPS
   simple_kinematic_kalman_predict(&target_pos_kalman);
+
+  // Get Kalman state
+  struct FloatVect3 pos;
+  struct FloatVect3 speed;
+  simple_kinematic_kalman_get_state(&target_pos_kalman, &pos, &speed);
+
   pprz_msg_send_TARGET_POS_KALMAN(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
-                                  &target_pos_kalman.state[0],
-                                  &target_pos_kalman.state[2],
-                                  &target_pos_kalman.state[4],
-                                  &target_pos_kalman.state[1],
-                                  &target_pos_kalman.state[3],
-                                  &target_pos_kalman.state[5]);
+                                  &pos.x, &pos.y, &pos.z,
+                                  &speed.x, &speed.y, &speed.z);
   RunOnceEvery(100, {
   DOWNLINK_SEND_TARGET_POS_KALMAN(DefaultChannel, DefaultDevice,
-                                  &target_pos_kalman.state[0],
-                                  &target_pos_kalman.state[2],
-                                  &target_pos_kalman.state[4],
-                                  &target_pos_kalman.state[1],
-                                  &target_pos_kalman.state[3],
-                                  &target_pos_kalman.state[5]);
+                                  pos.x, pos.y, pos.z,
+                                  speed.x, speed.y, speed.z);
   });
 #else
   return;
