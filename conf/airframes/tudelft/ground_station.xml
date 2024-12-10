@@ -69,14 +69,16 @@
         <module name="target_pos"/>
 
         <module name="ins" type="ekf2">
-            <define name="INS_EKF2_IMU_POS_X" value="0.0"/>
-            <define name="INS_EKF2_IMU_POS_Y" value="0.0"/>
+            <define name="INS_EKF2_IMU_POS_X" value="0.085"/>
+            <define name="INS_EKF2_IMU_POS_Y" value="0.040"/>
             <define name="INS_EKF2_IMU_POS_Z" value="0.0"/>
 
             <!-- The main GPS is mounted 0.55m behind of c.g.-->
-            <define name="INS_EKF2_GPS_POS_X" value="0.0"/>
-            <define name="INS_EKF2_GPS_POS_Y" value="0.0"/>
+            <define name="INS_EKF2_GPS_POS_X" value="0.120"/>
+            <define name="INS_EKF2_GPS_POS_Y" value="0.085"/>
             <define name="INS_EKF2_GPS_POS_Z" value="0.0"/>
+
+            <define name="INS_EKF2_GPS_YAW_OFFSET" value="35.3"/> <!-- in degrees -->
 
             <define name="INS_EKF2_RELHEADING_REF_ID" value="0"/>
         </module>
