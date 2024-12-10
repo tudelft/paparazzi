@@ -72,7 +72,6 @@ class Base:
     # Receive a TARGET_POS_INFO message from the moving base
     def message_recv(self, ac_id, msg):
         if msg.name == "TARGET_POS_INFO" and int(ac_id) == self.moving_base_id:
-            print(msg['body_qx'])
             for ac in self.uavs:
                 self.message_send(msg, ac)
 
