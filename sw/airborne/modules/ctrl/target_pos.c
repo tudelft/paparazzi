@@ -196,6 +196,7 @@ static void send_falcon_sensor(struct transport_tx *trans, struct link_device *d
   float p_var[3] = {falcon.p_var.x, falcon.p_var.y, falcon.p_var.z};
   float q_var[3] = {falcon.q_var.x, falcon.q_var.y, falcon.q_var.z};
   float angles[2] = {falcon.angles.phi, falcon.angles.psi};
+  float distance = 0.f;
   
   pprz_msg_send_FALCON_SENSOR(trans, dev, AC_ID,
                               &falcon.valid,
@@ -208,7 +209,8 @@ static void send_falcon_sensor(struct transport_tx *trans, struct link_device *d
                               q_var,
                               &falcon.intensity, 
                               &falcon.width, 
-                              angles);
+                              angles,
+                              &distance);
 }
 #endif
 
@@ -326,6 +328,11 @@ void target_parse_target_pos(uint8_t *buf)
   pos.y = target_pos_cm.y / 100.;
   pos.z = target_pos_cm.z / 100.;
 
+  // Add the target offset manually for now
+  pos.x += target.offset.x;
+  pos.y += target.offset.y;
+  pos.z += target.offset.z;
+
   simple_kinematic_kalman_update_pos(&target_pos_kalman, pos);
   simple_kinematic_kalman_update_speed(&target_pos_kalman, target.pos.vel, SIMPLE_KINEMATIC_KALMAN_SPEED_3D);
 
@@ -416,7 +423,8 @@ void target_pos_parse_falcon_sixdof(uint8_t *buf)
                               quat_var,
                               &zero_f,      // Beam intensity (unused in SIXDOF tracking mode)
                               &zero_f,      // Beam width (unused in SIXDOF tracking mode)
-                              zeros_2);     // Relative angles (unused in SIXDOF tracking mode)
+                              zeros_2,      // Relative angles (unused in SIXDOF tracking mode)
+                              &zero_f);     // Distance in relangle mode (unused in SIXDOF tracking mode)
 #endif
 
   // Send waypoint update every half second
@@ -479,8 +487,26 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
                               zeros_3, // Quaternion variance (unused in relative angle mode)
                               &falcon.intensity,
                               &falcon.width,
-                              rel_angles);
+                              rel_angles,
+                              &distance);
 #endif
+
+  uint8_t wp_id = WP_RELANGLE;
+  struct EnuCoor_f target_enu;
+  struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
+  ENU_OF_TO_NED(target_enu, p_out);
+  VECT3_ADD(target_enu, *uav_pos);
+  target_enu.z = waypoints[wp_id].enu_f.z;
+  waypoint_set_enu(wp_id, &target_enu);
+
+  // Send waypoint update every half second
+  RunOnceEvery(200 / 2, {
+    // Send to the GCS that the waypoint has been moved
+    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+                               &waypoints[wp_id].enu_i.x,
+                               &waypoints[wp_id].enu_i.y,
+                               &waypoints[wp_id].enu_i.z);
+  });
 }
 
 /**

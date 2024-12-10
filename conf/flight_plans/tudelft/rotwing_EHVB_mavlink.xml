@@ -14,6 +14,7 @@
     <waypoint name="TD" x="10" y="-1"/>
     <waypoint name="APP" x="70" y="-25"/>
     <waypoint name="FOLLOW" x="300" y="80"/>
+    <waypoint name="RELANGLE" x="320" y="80"/>
     <waypoint name="ML_global_target" x="300" y="60"/>
     <waypoint name="Downwind" x="170.2" y="209.1" height="50"/>
     <waypoint name="Base" x="534.285" y="-58.323" height="40"/>
