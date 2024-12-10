@@ -441,6 +441,9 @@ void target_pos_parse_falcon_sixdof(uint8_t *buf)
 /**
  * Parse a Falcon relative angle message
  */
+#if TARGET_POS_GROUND_STATION
+void target_pos_parse_falcon_relangle(uint8_t *buf) {} // required for dummy flightplan
+#else
 void target_pos_parse_falcon_relangle(uint8_t *buf) 
 {
   falcon.beacon_id = pprzlink_get_DL_IMCU_FALCON_RELANGLE_id(buf);
@@ -508,6 +511,7 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
                                &waypoints[wp_id].enu_i.z);
   });
 }
+#endif
 
 /**
  * Send a falcon cmd message to the sensor
