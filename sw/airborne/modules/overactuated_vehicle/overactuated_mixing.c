@@ -923,7 +923,13 @@ void overactuated_mixing_run(void)
             float first_term_lateral_speed = (airspeed / cosf(aoa_angle_estimation)) * alpha_speed * lat_speed_weight * extra_lat_gain;
             float second_term_lateral_speed = speed_setpoint_control_rf[1] * (1-lat_speed_weight);
             //Conpute the lateral speed desired
-            speed_setpoint_control_rf[1] = first_term_lateral_speed + second_term_lateral_speed;
+            if(approach_state){
+                speed_setpoint_control_rf[1] = speed_setpoint_control_rf[1];
+            }
+            else{
+                speed_setpoint_control_rf[1] = first_term_lateral_speed + second_term_lateral_speed;
+            }
+            
 
             //Apply full fwd speed if requested:
             if(force_forward){
@@ -947,7 +953,7 @@ void overactuated_mixing_run(void)
         //Compute the speed error in the control rf:
         speed_error_vect_control_rf[0] = speed_setpoint_control_rf[0] - speed_vect_control_rf[0];
         //If we are in the approach ship mode, do not apply the lateral speed multiplier:
-        if (approach_ship_engaged){
+        if (approach_ship_engaged || approach_state){
             speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1];
         }
         else{

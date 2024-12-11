@@ -37,7 +37,7 @@ typedef struct {
 int offset_ship_position = 1; 
 float shift_pos_x_control_rf = -4.0f; 
 float shift_pos_y_control_rf = 0.0f; 
-float shift_pos_z_control_rf = -10.0f;
+float shift_pos_z_control_rf = 0.0f;
 
 
 struct timeval current_time, last_time_rx, last_time_tx;

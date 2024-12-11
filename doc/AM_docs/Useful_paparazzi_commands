@@ -33,6 +33,8 @@ $ adb shell /oem/bin/pprzlink_router_cc -e udp://192.168.0.11:5242:192.168.0.10:
 - Command for Herelink to forward udp telemetry packets from the UAV to the USB local thetering:  
 $ adb shell /oem/bin/pprzlink_router_cc -e udp://192.168.0.11:5242:192.168.0.10:5243 -e udp://0.0.0.0:4243:192.168.42.255:4242 & 
 
+./Pixhawk_4_read_msg_v3 -i 2 -s 5 -f 50 -a 192.168.1.105 -v
+
 - Install dependencies needed for the Aruco detection algorithm in sw/ext/aruco_detection: 
 $ pip3 install opencv-python opencv-contrib-python pymap3d pyserial
 $ pip3 install numpy --upgrade
