@@ -319,7 +319,7 @@ void target_parse_target_pos(uint8_t *buf)
   target.pos.valid = true;
 
   // To test time between messages
-  target.offset.z = target.pos.recv_time - target.pos.tow;
+  target.pos.rates.p = (float)target.pos.recv_time - (float)target.pos.tow;
   
   struct NedCoor_i target_pos_cm;
   struct FloatVect3 pos;
@@ -544,9 +544,27 @@ bool target_get_vel(struct NedCoor_f *vel __attribute__((unused))) {
 }
 
 /**
- * Set the current measured distance and heading as offset
+ * Set the current measured distances as offset (not constant in NED! needs fix)
  */
 bool target_pos_set_current_offset(float unk __attribute__((unused))) {
+    if(target.pos.valid && state.ned_initialized_i) { // && (get_sys_time_tow() - target.pos.tow) < TARGET_RTK_TIMEOUT) // not working atm
+    struct NedCoor_i target_pos_cm;
+    struct NedCoor_f uav_pos = *stateGetPositionNed_f();
+
+    // Convert from LLA to NED using origin from the UAV
+    ned_of_lla_point_i(&target_pos_cm, stateGetNedOrigin_i(), &target.pos.lla);
+
+    // Convert to floating point (cm to meters)
+    struct NedCoor_f pos;
+    pos.x = target_pos_cm.x * 0.01;
+    pos.y = target_pos_cm.y * 0.01;
+    pos.z = target_pos_cm.z * 0.01;
+
+    target.offset.x -= pos.x;
+    target.offset.y -= pos.y;
+    target.offset.z -= pos.z;
+  }
+
   return false;
 }
 
