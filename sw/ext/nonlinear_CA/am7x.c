@@ -2350,14 +2350,16 @@ static void sixdof_beacon_angle_callback(IvyClientPtr app, void *user_data, int 
     if(verbose_sixdof){
       fprintf(stderr,"Received beacon relative angle - Timestamp = %.5f, ID = %d; XAngle_deg = %.3f YAngle_deg = %.3f; Intensity = %.3f; Width = %.3f; \n",timestamp_d,beacon_id,XAngle_deg,YAngle_deg,Intensity,Width);
     }
+    struct timespec ts;
+    clock_gettime(CLOCK_BOOTTIME, &ts);
+    double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9;
+    // timestamp_d = (double) myam7_data_in_copy.packet_timestamp + (current_timestamp - timestamp_d);
+
+    //DO something (TODO)
+
   }
 
-  struct timespec ts;
-  clock_gettime(CLOCK_BOOTTIME, &ts);
-  double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9;
-  timestamp_d = (double) myam7_data_in_copy.packet_timestamp + (current_timestamp - timestamp_d);
 
-  //DO something (TODO)
 }
 
 static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, char *argv[])
