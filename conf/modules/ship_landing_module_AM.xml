@@ -8,7 +8,7 @@
   <settings>
     <dl_settings>
       <dl_settings NAME="ship approach module">
-        <dl_setting var="approach_ship_engaged" min="0" step="1" max="1" shortname="approach_ship_engaged" values="FALSE|TRUE" persistent="true"/>
+        <dl_setting var="approach_ship_engaged" min="0" step="1" max="1" shortname="approach_ship_engaged" values="FALSE|TRUE" />
         <dl_setting var="approach_heading_ship_deg"  min="-90" step="1" max="90" shortname="approach_heading_ship_deg" persistent="true"/>
         <dl_setting var="diag_approach_speed_m_s_float"  min="0" step=".01" max="2" shortname="diag_approach_speed" persistent="true"/>
         <dl_setting var="dist_line_gain_float"  min="0" step=".01" max="10" shortname="dist_line_gain" persistent="true"/>
@@ -47,9 +47,6 @@
     <file name="nav_approach_ship.h"/>
     <file name="nav_approach_ship_1D.h"/>
     <file name="core_nav_approach_ship.h"/>
-    <file name="rtGetNaN.h"/>
-    <file name="rtGetInf.h"/>
-    <file name="rt_nonfinite.h"/>
   </header>
 
    <init fun="nav_approach_ship_init()"/>
@@ -62,8 +59,5 @@
     <file name="nav_approach_ship.c"/>
     <file name="nav_approach_ship_1D.c"/>
     <file name="core_nav_approach_ship.c"/>
-    <file name="rtGetNaN.c"/>
-    <file name="rtGetInf.c"/>
-    <file name="rt_nonfinite.c"/>
   </makefile>
 </module>

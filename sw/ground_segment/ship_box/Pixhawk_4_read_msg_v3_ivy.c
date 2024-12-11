@@ -34,10 +34,10 @@ typedef struct {
     double heading_deg;
 } ship_state_log_data;
 
-int offset_ship_position = 0; 
-float shift_pos_x_control_rf = -5.0f; 
+int offset_ship_position = 1; 
+float shift_pos_x_control_rf = -4.0f; 
 float shift_pos_y_control_rf = 0.0f; 
-float shift_pos_z_control_rf = 0.0f;
+float shift_pos_z_control_rf = -10.0f;
 
 
 struct timeval current_time, last_time_rx, last_time_tx;
@@ -58,7 +58,7 @@ static bool use_cb_on_udp = false;
 //declare mutex send_ivy_bus_mutex: 
 pthread_mutex_t send_ivy_bus_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-#define GENERATE_DUMMY_VALUES
+// #define GENERATE_DUMMY_VALUES
 struct payload_ship_info_msg_ground payload_ship_dummy_to_UAV;
 ship_state_log_data payload_ship_dummy_to_simulink; 
 double last_dummy_time, last_time_integration, last_target_update_time; 

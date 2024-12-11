@@ -5,7 +5,7 @@
  * File: nav_approach_ship_1D_types.h
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 04-Dec-2024 16:29:25
+ * C/C++ source code generated on  : 10-Dec-2024 00:47:19
  */
 
 #ifndef NAV_APPROACH_SHIP_1D_TYPES_H

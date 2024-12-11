@@ -72,6 +72,7 @@ int16_t lidar_signal_strength = -1;
 
 //IYY BUS COM VARIABLES: 
 double time_last_heartbeat_ivy_out = 0.0;
+pthread_mutex_t mutex_ivy_bus; 
 
 //COMPUTER VISION 
 struct marker_detection_t aruco_detection;
@@ -321,6 +322,8 @@ void send_states_on_ivy(){
 
     //Send messages over ivy bus for the python thread: 
     if(verbose_ivy_bus) printf("Sent received message from UAV on ivy bus\n");
+
+    pthread_mutex_lock(&mutex_ivy_bus);
     IvySendMsg("1 ROTORCRAFT_FP  %d %d %d  %d %d %d  %d %d %d  %d %d %d  %d %d %d",
 
             (int32_t) (myam7_data_in_copy.UAV_NED_pos_y/0.0039063),
@@ -342,6 +345,7 @@ void send_states_on_ivy(){
             (int32_t) (-1/0.0039063),
             (int32_t) (-1/0.0039063),
             (uint16_t) (-1/0.0039063));
+    pthread_mutex_unlock(&mutex_ivy_bus);
 
     //Send heartbeat message over ivy bus every second:
     struct timespec ts;
@@ -354,8 +358,11 @@ void send_states_on_ivy(){
       //Prepare the text message to send
       char ivy_heartbeat_msg[256];
       snprintf(ivy_heartbeat_msg, sizeof(ivy_heartbeat_msg), "HEARTBEAT_AM7 %.9f", time_last_heartbeat_ivy_out);
-      
+
+      pthread_mutex_lock(&mutex_ivy_bus);
       IvySendMsg("%s", ivy_heartbeat_msg);
+      pthread_mutex_unlock(&mutex_ivy_bus);
+
       if(verbose_ivy_bus) printf("%s\n", ivy_heartbeat_msg);
     }
 
@@ -2241,8 +2248,12 @@ static void sixdof_current_mode_callback(IvyClientPtr app, void *user_data, int 
       //Prepare the text message to send using snprintf
       char ivy_msg[256];
       snprintf(ivy_msg, sizeof(ivy_msg), "SET_SIXDOF_SYS_MODE %d", desired_sixdof_mode_local);
+
       //Send message to ivy bus: 
+      pthread_mutex_lock(&mutex_ivy_bus);
       IvySendMsg("%s", ivy_msg);
+      pthread_mutex_unlock(&mutex_ivy_bus);
+
       if(verbose_ivy_bus) printf("%s\n", ivy_msg);
     }
   }
@@ -2278,6 +2289,12 @@ static void sixdof_beacon_pos_callback(IvyClientPtr app, void *user_data, int ar
       pthread_mutex_lock(&mutex_am7);
       memcpy(&myam7_data_in_copy, &myam7_data_in, sizeof(struct am7_data_in));
       pthread_mutex_unlock(&mutex_am7); 
+
+      struct timespec ts;
+      clock_gettime(CLOCK_BOOTTIME, &ts);
+      double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9;
+      timestamp_d = (double) myam7_data_in_copy.packet_timestamp + (current_timestamp - timestamp_d);
+
       float UAV_NED_pos[3] = {myam7_data_in_copy.UAV_NED_pos_x, myam7_data_in_copy.UAV_NED_pos_y, myam7_data_in_copy.UAV_NED_pos_z}; 
       float UAV_euler_angles_rad[3] = {(float) myam7_data_in_copy.phi_state_int*1e-2*M_PI/180,
                                       (float) myam7_data_in_copy.theta_state_int*1e-2*M_PI/180,
@@ -2334,6 +2351,11 @@ static void sixdof_beacon_angle_callback(IvyClientPtr app, void *user_data, int 
       fprintf(stderr,"Received beacon relative angle - Timestamp = %.5f, ID = %d; XAngle_deg = %.3f YAngle_deg = %.3f; Intensity = %.3f; Width = %.3f; \n",timestamp_d,beacon_id,XAngle_deg,YAngle_deg,Intensity,Width);
     }
   }
+
+  struct timespec ts;
+  clock_gettime(CLOCK_BOOTTIME, &ts);
+  double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9;
+  timestamp_d = (double) myam7_data_in_copy.packet_timestamp + (current_timestamp - timestamp_d);
 
   //DO something (TODO)
 }
@@ -2399,6 +2421,12 @@ static void sixdof_mode_callback(IvyClientPtr app, void *user_data, int argc, ch
       pthread_mutex_lock(&mutex_sixdof);
       int8_t current_sixdof_mode_local = current_sixdof_mode;
       pthread_mutex_unlock(&mutex_sixdof);
+
+      struct timespec ts;
+      clock_gettime(CLOCK_BOOTTIME, &ts);
+      double current_timestamp = ts.tv_sec + ts.tv_nsec*1e-9;
+      timestamp_d = (double) myam7_data_in_copy.packet_timestamp + (current_timestamp - timestamp_d);
+
       //Copy absolute position to sixdof struct
       struct marker_detection_t sixdof_detection_copy; 
       sixdof_detection_copy.timestamp_detection = timestamp_d;

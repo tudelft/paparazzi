@@ -102,6 +102,7 @@ struct __attribute__((__packed__)) am7_data_in {
 };
 
 struct __attribute__((__packed__)) am7_data_out {
+    float packet_timestamp;
     //Actuator state - unfiltered
     int16_t motor_1_state_int; //rad/s * 10
     int16_t motor_2_state_int; //rad/s * 10

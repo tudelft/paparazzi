@@ -225,12 +225,23 @@
       <set value="0" var="approach_ship_engaged"/>
       <circle radius="-100" wp="p1"/>
     </block>
+    
     <block name="Approach_SHIP_AM">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
       <set value="1" var="approach_ship_engaged"/>
+      <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.50)" deroute="flare_low_Approach_SHIP_AM"/>
       <stay wp="STDBY"/>
     </block>
+
+    <block name="flare_low_Approach_SHIP_AM">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <set value="1" var="approach_ship_engaged"/>
+      <exception cond="detect_ground_on_landing()" deroute="landed"/>
+      <stay wp="STDBY"/>
+    </block>    
+
     <block name="Approach APP">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
@@ -243,6 +254,37 @@
       <set value="0" var="approach_ship_engaged"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>
+
+
+    <block name="land_SIXDOF">
+      <set value="0" var="force_forward"/>
+      <set value="0" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
+      <go wp="SIXDOF"/>
+    </block>
+    <block name="descend_SIXDOF">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
+      <exception cond="!(stateGetPositionEnu_f()->z > 12.0)" deroute="flare_SIXDOF"/>
+      <stay climb="-1.5" vmode="climb" wp="SIXDOF"/>
+    </block>
+    <block name="flare_SIXDOF">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
+      <stay climb="-0.8" vmode="climb" wp="SIXDOF"/>
+      <exception cond="!(stateGetPositionEnu_f()->z > 1.0)" deroute="flare_low_SIXDOF"/>
+      <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.50)" deroute="flare_low_SIXDOF"/>
+    </block>
+    <block name="flare_low_SIXDOF">
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <set value="0" var="approach_ship_engaged"/>
+      <exception cond="detect_ground_on_landing()" deroute="landed"/>
+      <stay climb="-0.5" vmode="climb" wp="SIXDOF"/>
+    </block>
+
     <block name="land">
       <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>
@@ -268,9 +310,7 @@
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
       <set value="0" var="approach_ship_engaged"/>
-      <!-- <exception cond="NavDetectGround()" deroute="Holding point"/> -->
       <exception cond="detect_ground_on_landing()" deroute="landed"/>
-      <!-- <call_once fun="NavStartDetectGround()"/> -->
       <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">

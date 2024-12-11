@@ -79,10 +79,10 @@ float Vz_max_control = 3.0, Vz_min_control = -3.0;
 float Ax_max_control = 10.0, Ax_min_control = -4.0;
 float Ay_max_control = 10.0, Ay_min_control = -10.0;
 float Az_max_control = 5.0, Az_min_control = -5.0;
-float max_time_valid_prediction = 7.0;
+float max_time_valid_prediction = 1.0;
 float Px_gain = 1.0, Py_gain = 1.0, Pz_gain = 1.0;
 float flare_low_distance_m_float = 0.5;
-float v_speed_docking_m_s_float = 0.1;
+float v_speed_docking_m_s_float = 0.5;
 float pos_tracking_distance_m_float = 6.0;
 float diag_approach_speed_m_s_float = 3.0;
 float Px_APP_point_offset = 0.0, Py_APP_point_offset = 0.0, Pz_APP_point_offset = -2.0;
@@ -155,7 +155,7 @@ static void send_nav_approach_ship_outputs( struct transport_tx *trans , struct 
 static void send_nav_approach_ship_inputs( struct transport_tx *trans , struct link_device * dev ) {
     // Send telemetry message
     pprz_msg_send_NAV_APPROACH_SHIP_INPUTS(trans , dev , AC_ID ,
-                & approach_ship_mode_int_8, & P0_UAV_NED_float[0], 
+                & approach_ship_engaged, & P0_UAV_NED_float[0], 
                 & V0_UAV_NED_float[0], & P0_SHIP_NED_float[0], 
                 & V0_SHIP_NED_float[0], & average_speed_NED_ship_float[0], & PhiThetaPsi_rad_SHIP_float[0]);
 }

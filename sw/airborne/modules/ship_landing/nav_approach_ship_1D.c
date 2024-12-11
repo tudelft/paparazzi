@@ -5,14 +5,11 @@
  * File: nav_approach_ship_1D.c
  *
  * MATLAB Coder version            : 23.2
- * C/C++ source code generated on  : 04-Dec-2024 16:29:25
+ * C/C++ source code generated on  : 10-Dec-2024 00:47:19
  */
 
 /* Include Files */
 #include "nav_approach_ship_1D.h"
-#include "rt_nonfinite.h"
-#include "rt_defines.h"
-#include "rt_nonfinite.h"
 #include <math.h>
 #include <string.h>
 
@@ -29,10 +26,6 @@ static float c_optimal_linear_coeff_fcn_calc(
     const float a_max_control_rf[3], const float a_min_control_rf[3],
     float max_time_of_landing_seconds, float t_delay_ship_prediction,
     float optimal_coeffs[6], float *exitflag, float V_OOB[6], float A_OOB[6]);
-
-static float rt_atan2f_snf(float u0, float u1);
-
-static float rt_powf_snf(float u0, float u1);
 
 /* Function Definitions */
 /*
@@ -101,13 +94,11 @@ c_evaluate_UAV_path_from_coeffs(const float coeffs[6], float landing_time,
     float f8;
     float f9;
     f6 = t_array[k];
-    f7 = rt_powf_snf(f6, 4.0F);
-    f8 = rt_powf_snf(f6, 3.0F);
+    f7 = powf(f6, 4.0F);
+    f8 = powf(f6, 3.0F);
     f9 = f6 * f6;
     UAV_path[k] =
-        ((((f * rt_powf_snf(f6, 5.0F) + f1 * f7) + f2 * f8) + f3 * f9) +
-         f4 * f6) +
-        f5;
+        ((((f * powf(f6, 5.0F) + f1 * f7) + f2 * f8) + f3 * f9) + f4 * f6) + f5;
     f7 = (((a * f7 + b_a * f8) + c_a * f9) + delta1 * f6) + f4;
     UAV_path_speed[k] = f7;
     f8 = ((d_a * f8 + e_a * f9) + f_a * f6) + delta1;
@@ -213,7 +204,6 @@ static float c_optimal_linear_coeff_fcn_calc(
     float t8;
     float t9;
     float t_et2_tmp;
-    float u_et2_tmp;
     signed char b_x[12];
     bool x[10];
     bool Vz_max_OOB;
@@ -228,136 +218,132 @@ static float c_optimal_linear_coeff_fcn_calc(
      * version 23.2. */
     /*     03-Dec-2024 08:50:47 */
     t2 = t_delay_ship_prediction * t_delay_ship_prediction;
-    t3 = rt_powf_snf(t_delay_ship_prediction, 3.0F);
-    t5 = rt_powf_snf(t_delay_ship_prediction, 5.0F);
+    t3 = powf(t_delay_ship_prediction, 3.0F);
+    t5 = powf(t_delay_ship_prediction, 5.0F);
     t8 = landing_time * landing_time;
-    t9 = rt_powf_snf(landing_time, 3.0F);
-    t11 = rt_powf_snf(landing_time, 5.0F);
-    t13 = rt_powf_snf(landing_time, 7.0F);
+    t9 = powf(landing_time, 3.0F);
+    t11 = powf(landing_time, 5.0F);
+    t13 = powf(landing_time, 7.0F);
     t4 = t2 * t2;
-    t6 = rt_powf_snf(t2, 3.0F);
+    t6 = powf(t2, 3.0F);
     t10 = t8 * t8;
-    t12 = rt_powf_snf(t8, 3.0F);
-    et2_tmp = 0.0F * t8;
-    b_et2_tmp = P0_SHIP_NED[2] * 840.0F - Z_0_UAV * 840.0F;
-    c_et2_tmp = Vz_0_UAV * landing_time;
-    d_et2_tmp = coeff_1_ship_prediction * (t10 * t10);
-    e_et2_tmp = coeff_2_ship_prediction * t13;
-    f_et2_tmp = coeff_3_ship_prediction * t12;
-    g_et2_tmp = coeff_7_ship_prediction * t8;
-    h_et2_tmp = coeffs_ship_prediction[7] * landing_time;
-    i_et2_tmp = coeff_1_ship_prediction * t6 * t8;
-    j_et2_tmp = coeff_2_ship_prediction * t5 * t8;
-    k_et2_tmp = coeff_3_ship_prediction * t4 * t8;
-    l_et2_tmp = coeff_4_ship_prediction * t3 * t8;
-    m_et2_tmp = coeff_1_ship_prediction * t13 * t_delay_ship_prediction;
-    n_et2_tmp = coeff_2_ship_prediction * t12 * t_delay_ship_prediction;
-    o_et2_tmp = coeff_6_ship_prediction * t8 * t_delay_ship_prediction;
-    p_et2_tmp = coeff_1_ship_prediction *
-                rt_powf_snf(t_delay_ship_prediction, 7.0F) * landing_time;
-    q_et2_tmp = coeff_2_ship_prediction * t6 * landing_time;
-    r_et2_tmp = coeff_3_ship_prediction * t5 * landing_time;
-    s_et2_tmp = coeff_4_ship_prediction * t4 * landing_time;
-    t_et2_tmp = coeff_5_ship_prediction * t3 * landing_time;
-    u_et2_tmp =
+    t12 = powf(t8, 3.0F);
+    et2_tmp = P0_SHIP_NED[2] * 840.0F - Z_0_UAV * 840.0F;
+    b_et2_tmp = Vz_0_UAV * landing_time;
+    c_et2_tmp = coeff_1_ship_prediction * (t10 * t10);
+    d_et2_tmp = coeff_2_ship_prediction * t13;
+    e_et2_tmp = coeff_3_ship_prediction * t12;
+    f_et2_tmp = coeff_7_ship_prediction * t8;
+    g_et2_tmp = coeffs_ship_prediction[7] * landing_time;
+    h_et2_tmp = coeff_1_ship_prediction * t6 * t8;
+    i_et2_tmp = coeff_2_ship_prediction * t5 * t8;
+    j_et2_tmp = coeff_3_ship_prediction * t4 * t8;
+    k_et2_tmp = coeff_4_ship_prediction * t3 * t8;
+    l_et2_tmp = coeff_1_ship_prediction * t13 * t_delay_ship_prediction;
+    m_et2_tmp = coeff_2_ship_prediction * t12 * t_delay_ship_prediction;
+    n_et2_tmp = coeff_6_ship_prediction * t8 * t_delay_ship_prediction;
+    o_et2_tmp = coeff_1_ship_prediction * powf(t_delay_ship_prediction, 7.0F) *
+                landing_time;
+    p_et2_tmp = coeff_2_ship_prediction * t6 * landing_time;
+    q_et2_tmp = coeff_3_ship_prediction * t5 * landing_time;
+    r_et2_tmp = coeff_4_ship_prediction * t4 * landing_time;
+    s_et2_tmp = coeff_5_ship_prediction * t3 * landing_time;
+    t_et2_tmp =
         coeff_7_ship_prediction * t_delay_ship_prediction * landing_time;
     t12 *= coeff_1_ship_prediction * t2;
     t13 = coeff_5_ship_prediction * t2 * t8;
     t6 = coeff_6_ship_prediction * t2 * landing_time;
     optimal_coeffs[0] =
-        (((((((((((((((((((((((((((b_et2_tmp - et2_tmp * 70.0F) -
-                                  c_et2_tmp * 420.0F) +
-                                 d_et2_tmp * 175.0F) +
-                                e_et2_tmp * 120.0F) +
-                               f_et2_tmp * 70.0F) +
+        ((((((((((((((((((((((((((et2_tmp - b_et2_tmp * 420.0F) +
+                                 c_et2_tmp * 175.0F) +
+                                d_et2_tmp * 120.0F) +
+                               e_et2_tmp * 70.0F) +
                               coeff_4_ship_prediction * t11 * 28.0F) +
-                             g_et2_tmp * 70.0F) +
-                            h_et2_tmp * 420.0F) +
+                             f_et2_tmp * 70.0F) +
+                            g_et2_tmp * 420.0F) +
                            t12 * 1470.0F) +
                           coeff_1_ship_prediction * t3 * t11 * 980.0F) +
-                         i_et2_tmp * 490.0F) +
+                         h_et2_tmp * 490.0F) +
                         coeff_2_ship_prediction * t2 * t11 * 420.0F) +
-                       j_et2_tmp * 420.0F) +
-                      k_et2_tmp * 350.0F) +
-                     l_et2_tmp * 280.0F) +
+                       i_et2_tmp * 420.0F) +
+                      j_et2_tmp * 350.0F) +
+                     k_et2_tmp * 280.0F) +
                     t13 * 210.0F) +
-                   m_et2_tmp * 840.0F) +
-                  n_et2_tmp * 420.0F) +
+                   l_et2_tmp * 840.0F) +
+                  m_et2_tmp * 420.0F) +
                  coeff_3_ship_prediction * t11 * t_delay_ship_prediction *
                      140.0F) +
-                o_et2_tmp * 140.0F) +
-               p_et2_tmp * 420.0F) +
-              q_et2_tmp * 420.0F) +
-             r_et2_tmp * 420.0F) +
-            s_et2_tmp * 420.0F) +
-           t_et2_tmp * 420.0F) +
+                n_et2_tmp * 140.0F) +
+               o_et2_tmp * 420.0F) +
+              p_et2_tmp * 420.0F) +
+             q_et2_tmp * 420.0F) +
+            r_et2_tmp * 420.0F) +
+           s_et2_tmp * 420.0F) +
           t6 * 420.0F) +
-         u_et2_tmp * 420.0F) /
+         t_et2_tmp * 420.0F) /
         (t11 * 140.0F);
     optimal_coeffs[1] =
         1.0F / t10 *
-        ((((((((((((((((((((((((((((b_et2_tmp - et2_tmp * 84.0F) -
-                                   c_et2_tmp * 448.0F) +
-                                  d_et2_tmp * 105.0F) +
-                                 e_et2_tmp * 64.0F) +
-                                f_et2_tmp * 28.0F) -
+        (((((((((((((((((((((((((((et2_tmp - b_et2_tmp * 448.0F) +
+                                  c_et2_tmp * 105.0F) +
+                                 d_et2_tmp * 64.0F) +
+                                e_et2_tmp * 28.0F) -
                                coeff_5_ship_prediction * t10 * 14.0F) +
-                              g_et2_tmp * 84.0F) +
-                             h_et2_tmp * 448.0F) +
+                              f_et2_tmp * 84.0F) +
+                             g_et2_tmp * 448.0F) +
                             t12 * 588.0F) -
                            coeff_1_ship_prediction * t4 * t10 * 490.0F) +
-                          i_et2_tmp * 588.0F) -
+                          h_et2_tmp * 588.0F) -
                          coeff_2_ship_prediction * t3 * t10 * 280.0F) +
-                        j_et2_tmp * 504.0F) -
+                        i_et2_tmp * 504.0F) -
                        coeff_3_ship_prediction * t2 * t10 * 140.0F) +
-                      k_et2_tmp * 420.0F) +
-                     l_et2_tmp * 336.0F) +
+                      j_et2_tmp * 420.0F) +
+                     k_et2_tmp * 336.0F) +
                     t13 * 252.0F) +
-                   m_et2_tmp * 448.0F) +
-                  n_et2_tmp * 168.0F) -
+                   l_et2_tmp * 448.0F) +
+                  m_et2_tmp * 168.0F) -
                  coeff_4_ship_prediction * t10 * t_delay_ship_prediction *
                      56.0F) +
-                o_et2_tmp * 168.0F) +
-               p_et2_tmp * 448.0F) +
-              q_et2_tmp * 448.0F) +
-             r_et2_tmp * 448.0F) +
-            s_et2_tmp * 448.0F) +
-           t_et2_tmp * 448.0F) +
+                n_et2_tmp * 168.0F) +
+               o_et2_tmp * 448.0F) +
+              p_et2_tmp * 448.0F) +
+             q_et2_tmp * 448.0F) +
+            r_et2_tmp * 448.0F) +
+           s_et2_tmp * 448.0F) +
           t6 * 448.0F) +
-         u_et2_tmp * 448.0F) *
+         t_et2_tmp * 448.0F) *
         -0.0178571437F;
     optimal_coeffs[2] =
         1.0F / t9 *
-        (((((((((((((((((((((((((((((b_et2_tmp - et2_tmp * 126.0F) -
-                                    c_et2_tmp * 504.0F) +
-                                   d_et2_tmp * 63.0F) +
-                                  e_et2_tmp * 36.0F) +
-                                 f_et2_tmp * 14.0F) +
+        ((((((((((((((((((((((((((((et2_tmp - b_et2_tmp * 504.0F) +
+                                   c_et2_tmp * 63.0F) +
+                                  d_et2_tmp * 36.0F) +
+                                 e_et2_tmp * 14.0F) +
                                 coeff_6_ship_prediction * t9 * 28.0F) +
-                               g_et2_tmp * 126.0F) +
-                              h_et2_tmp * 504.0F) +
+                               f_et2_tmp * 126.0F) +
+                              g_et2_tmp * 504.0F) +
                              t12 * 294.0F) +
                             coeff_1_ship_prediction * t5 * t9 * 588.0F) +
-                           i_et2_tmp * 882.0F) +
+                           h_et2_tmp * 882.0F) +
                           coeff_2_ship_prediction * t4 * t9 * 420.0F) +
-                         j_et2_tmp * 756.0F) +
+                         i_et2_tmp * 756.0F) +
                         coeff_3_ship_prediction * t3 * t9 * 280.0F) +
-                       k_et2_tmp * 630.0F) +
+                       j_et2_tmp * 630.0F) +
                       coeff_4_ship_prediction * t2 * t9 * 168.0F) +
-                     l_et2_tmp * 504.0F) +
+                     k_et2_tmp * 504.0F) +
                     t13 * 378.0F) +
-                   m_et2_tmp * 252.0F) +
-                  n_et2_tmp * 84.0F) +
+                   l_et2_tmp * 252.0F) +
+                  m_et2_tmp * 84.0F) +
                  coeff_5_ship_prediction * t9 * t_delay_ship_prediction *
                      84.0F) +
-                o_et2_tmp * 252.0F) +
-               p_et2_tmp * 504.0F) +
-              q_et2_tmp * 504.0F) +
-             r_et2_tmp * 504.0F) +
-            s_et2_tmp * 504.0F) +
-           t_et2_tmp * 504.0F) +
+                n_et2_tmp * 252.0F) +
+               o_et2_tmp * 504.0F) +
+              p_et2_tmp * 504.0F) +
+             q_et2_tmp * 504.0F) +
+            r_et2_tmp * 504.0F) +
+           s_et2_tmp * 504.0F) +
           t6 * 504.0F) +
-         u_et2_tmp * 504.0F) *
+         t_et2_tmp * 504.0F) *
         0.0119047621F;
     optimal_coeffs[3] = 0.0F;
     optimal_coeffs[4] = Vz_0_UAV;
@@ -468,94 +454,6 @@ static float c_optimal_linear_coeff_fcn_calc(
 }
 
 /*
- * Arguments    : float u0
- *                float u1
- * Return Type  : float
- */
-static float rt_atan2f_snf(float u0, float u1)
-{
-  float y;
-  if (rtIsNaNF(u0) || rtIsNaNF(u1)) {
-    y = rtNaNF;
-  } else if (rtIsInfF(u0) && rtIsInfF(u1)) {
-    int i;
-    int i1;
-    if (u0 > 0.0F) {
-      i = 1;
-    } else {
-      i = -1;
-    }
-    if (u1 > 0.0F) {
-      i1 = 1;
-    } else {
-      i1 = -1;
-    }
-    y = atan2f((float)i, (float)i1);
-  } else if (u1 == 0.0F) {
-    if (u0 > 0.0F) {
-      y = RT_PIF / 2.0F;
-    } else if (u0 < 0.0F) {
-      y = -(RT_PIF / 2.0F);
-    } else {
-      y = 0.0F;
-    }
-  } else {
-    y = atan2f(u0, u1);
-  }
-  return y;
-}
-
-/*
- * Arguments    : float u0
- *                float u1
- * Return Type  : float
- */
-static float rt_powf_snf(float u0, float u1)
-{
-  float y;
-  if (rtIsNaNF(u0) || rtIsNaNF(u1)) {
-    y = rtNaNF;
-  } else {
-    float f;
-    float f1;
-    f = fabsf(u0);
-    f1 = fabsf(u1);
-    if (rtIsInfF(u1)) {
-      if (f == 1.0F) {
-        y = 1.0F;
-      } else if (f > 1.0F) {
-        if (u1 > 0.0F) {
-          y = rtInfF;
-        } else {
-          y = 0.0F;
-        }
-      } else if (u1 > 0.0F) {
-        y = 0.0F;
-      } else {
-        y = rtInfF;
-      }
-    } else if (f1 == 0.0F) {
-      y = 1.0F;
-    } else if (f1 == 1.0F) {
-      if (u1 > 0.0F) {
-        y = u0;
-      } else {
-        y = 1.0F / u0;
-      }
-    } else if (u1 == 2.0F) {
-      y = u0 * u0;
-    } else if ((u1 == 0.5F) && (u0 >= 0.0F)) {
-      y = sqrtf(u0);
-    } else if ((u0 < 0.0F) && (u1 > floorf(u1))) {
-      y = rtNaNF;
-    } else {
-      y = powf(u0, u1);
-    }
-  }
-  return y;
-}
-
-/*
  * Based on the ship coefficents, generate the landing path coefficients in the
  * NED reference frame:
  *
@@ -630,15 +528,16 @@ void nav_approach_ship_1D(
   float P0_SHIP_NED_w_offset_idx_1;
   float R_EC_tmp;
   float UAV_to_SHIP_dist_norm;
+  float V_target_NED_idx_0;
   float absxk;
   float absxk_tmp;
   float b_R_EC_tmp;
+  float b_absxk_tmp;
   float b_scale;
   float c_UAV_to_SHIP_dist_NED_w_offset;
   float d_UAV_to_SHIP_dist_NED_w_offset;
   float f;
   float landing_time;
-  float out;
   float scale;
   float t;
   float y;
@@ -703,9 +602,9 @@ void nav_approach_ship_1D(
   }
   f = P0_SHIP_NED[0] + c_NED_offset_end_point_diag_lan[0];
   P0_SHIP_NED_w_offset_idx_0 = f;
-  out = P0_UAV_NED[0] - f;
-  c_UAV_to_SHIP_dist_NED_w_offset = out;
-  absxk_tmp = fabsf(out);
+  V_target_NED_idx_0 = P0_UAV_NED[0] - f;
+  c_UAV_to_SHIP_dist_NED_w_offset = V_target_NED_idx_0;
+  absxk_tmp = fabsf(V_target_NED_idx_0);
   if (absxk_tmp > 1.29246971E-26F) {
     y = 1.0F;
     b_scale = absxk_tmp;
@@ -726,15 +625,15 @@ void nav_approach_ship_1D(
   }
   f = P0_SHIP_NED[1] + c_NED_offset_end_point_diag_lan[1];
   P0_SHIP_NED_w_offset_idx_1 = f;
-  out = P0_UAV_NED[1] - f;
-  d_UAV_to_SHIP_dist_NED_w_offset = out;
-  absxk = fabsf(out);
-  if (absxk > b_scale) {
-    t = b_scale / absxk;
+  V_target_NED_idx_0 = P0_UAV_NED[1] - f;
+  d_UAV_to_SHIP_dist_NED_w_offset = V_target_NED_idx_0;
+  b_absxk_tmp = fabsf(V_target_NED_idx_0);
+  if (b_absxk_tmp > b_scale) {
+    t = b_scale / b_absxk_tmp;
     y = y * t * t + 1.0F;
-    b_scale = absxk;
+    b_scale = b_absxk_tmp;
   } else {
-    t = absxk / b_scale;
+    t = b_absxk_tmp / b_scale;
     y += t * t;
   }
   f = P0_UAV_NED[2] - P0_SHIP_NED[2];
@@ -749,8 +648,8 @@ void nav_approach_ship_1D(
     UAV_to_SHIP_dist_norm += t * t;
   }
   f = P0_SHIP_NED[2] + c_NED_offset_end_point_diag_lan[2];
-  out = P0_UAV_NED[2] - f;
-  absxk = fabsf(out);
+  V_target_NED_idx_0 = P0_UAV_NED[2] - f;
+  absxk = fabsf(V_target_NED_idx_0);
   if (absxk > b_scale) {
     t = b_scale / absxk;
     y = y * t * t + 1.0F;
@@ -762,14 +661,15 @@ void nav_approach_ship_1D(
   UAV_to_SHIP_dist_norm = scale * sqrtf(UAV_to_SHIP_dist_norm);
   y = b_scale * sqrtf(y);
   if ((y > 0.1F) && (absxk_tmp > 0.0F)) {
-    *UAV_to_SHIP_azimuth_angle_rad = rt_atan2f_snf(
-        c_UAV_to_SHIP_dist_NED_w_offset, d_UAV_to_SHIP_dist_NED_w_offset);
-    *UAV_to_SHIP_elevation_angle_rad = asinf(out / y);
+    *UAV_to_SHIP_azimuth_angle_rad = atan2f(c_UAV_to_SHIP_dist_NED_w_offset,
+                                            d_UAV_to_SHIP_dist_NED_w_offset);
+    *UAV_to_SHIP_elevation_angle_rad = asinf(V_target_NED_idx_0 / y);
   }
   /* Generate references for being on the diagonal line:  */
-  t = -diag_approach_speed_m_s * cosf(*UAV_to_SHIP_elevation_angle_rad);
-  absxk = sinf(*UAV_to_SHIP_azimuth_angle_rad);
-  out = cosf(*UAV_to_SHIP_azimuth_angle_rad);
+  c_UAV_to_SHIP_dist_NED_w_offset =
+      -diag_approach_speed_m_s * cosf(*UAV_to_SHIP_elevation_angle_rad);
+  V_target_NED_idx_0 = sinf(*UAV_to_SHIP_azimuth_angle_rad);
+  d_UAV_to_SHIP_dist_NED_w_offset = cosf(*UAV_to_SHIP_azimuth_angle_rad);
   /* Now add 90 degrees to the azimuth as it is in a different rf (conventional
    */
   /* atan2 rf, we want it to be in the back of the ship and positive as the
@@ -777,40 +677,42 @@ void nav_approach_ship_1D(
   *UAV_to_SHIP_azimuth_angle_rad =
       -(*UAV_to_SHIP_azimuth_angle_rad + 1.57079637F);
   /* Add the component to stay on the desired line:  */
-  c_UAV_to_SHIP_dist_NED_w_offset =
-      PhiThetaPsi_SHIP_rad[2] + approach_heading_ship_rad;
+  scale = PhiThetaPsi_SHIP_rad[2] + approach_heading_ship_rad;
   /*  Calculate wp_diff and pos_diff */
-  d_UAV_to_SHIP_dist_NED_w_offset = P0_SHIP_NED_w_offset_idx_0 - P0_UAV_NED[0];
-  b_scale = d_UAV_to_SHIP_dist_NED_w_offset;
+  t = P0_SHIP_NED_w_offset_idx_0 - P0_UAV_NED[0];
+  absxk = t;
   /* Calculate the heading of the UAV to ship line:  */
-  if (fabsf(d_UAV_to_SHIP_dist_NED_w_offset) < 0.1) {
-    b_scale = 0.1F;
+  if (fabsf(t) < 0.1) {
+    absxk = 0.1F;
   }
-  absxk_tmp = P0_SHIP_NED_w_offset_idx_1 - P0_UAV_NED[1];
-  *psi_UAV_to_ship = rt_atan2f_snf(absxk_tmp, b_scale);
+  P0_SHIP_NED_w_offset_idx_0 = P0_SHIP_NED_w_offset_idx_1 - P0_UAV_NED[1];
+  *psi_UAV_to_ship = atan2f(P0_SHIP_NED_w_offset_idx_0, absxk);
   /* Calculate the error between the angles:  */
-  *delta_psi = c_UAV_to_SHIP_dist_NED_w_offset - *psi_UAV_to_ship;
-  scale = fminf(max_line_gain, dist_line_gain / y) * UAV_to_SHIP_dist_norm *
-          sinf(*delta_psi);
-  P0_SHIP_NED_w_offset_idx_0 =
-      (t * absxk + average_speed_NED_ship[0]) +
-      scale * cosf(c_UAV_to_SHIP_dist_NED_w_offset - 1.57079637F);
-  absxk = (t * out + average_speed_NED_ship[1]) +
-          scale * sinf(c_UAV_to_SHIP_dist_NED_w_offset - 1.57079637F);
-  t = -diag_approach_speed_m_s * sinf(*UAV_to_SHIP_elevation_angle_rad) +
+  *delta_psi = scale - *psi_UAV_to_ship;
+  b_scale = fminf(max_line_gain, dist_line_gain / y) * UAV_to_SHIP_dist_norm *
+            sinf(*delta_psi);
+  V_target_NED_idx_0 = (c_UAV_to_SHIP_dist_NED_w_offset * V_target_NED_idx_0 +
+                        average_speed_NED_ship[0]) +
+                       b_scale * cosf(scale - 1.57079637F);
+  c_UAV_to_SHIP_dist_NED_w_offset =
+      (c_UAV_to_SHIP_dist_NED_w_offset * d_UAV_to_SHIP_dist_NED_w_offset +
+       average_speed_NED_ship[1]) +
+      b_scale * sinf(scale - 1.57079637F);
+  d_UAV_to_SHIP_dist_NED_w_offset =
+      -diag_approach_speed_m_s * sinf(*UAV_to_SHIP_elevation_angle_rad) +
       average_speed_NED_ship[2];
   /* If we are close enough, switch from line follow to landing pad position
    * tracking:  */
-  if ((UAV_to_SHIP_dist_norm <= pos_tracking_distance_m) ||
+  if ((y <= pos_tracking_distance_m) ||
       ((approach_ship_mode_old == 1.0F) &&
-       (UAV_to_SHIP_dist_norm <= 2.0F * pos_tracking_distance_m))) {
+       (y <= 2.0F * pos_tracking_distance_m))) {
     *approach_ship_mode = 1.0F;
     /* Track ship position and speed of the landing pad:  */
-    P0_SHIP_NED_w_offset_idx_0 =
-        d_UAV_to_SHIP_dist_NED_w_offset * pos_gain_landing_array[0] +
-        V0_SHIP_NED[0];
-    absxk = absxk_tmp * pos_gain_landing_array[1] + V0_SHIP_NED[1];
-    t = (f - P0_UAV_NED[2]) * pos_gain_landing_array[2] + V0_SHIP_NED[2];
+    V_target_NED_idx_0 = t * pos_gain_landing_array[0] + V0_SHIP_NED[0];
+    c_UAV_to_SHIP_dist_NED_w_offset =
+        P0_SHIP_NED_w_offset_idx_0 * pos_gain_landing_array[1] + V0_SHIP_NED[1];
+    d_UAV_to_SHIP_dist_NED_w_offset =
+        (f - P0_UAV_NED[2]) * pos_gain_landing_array[2] + V0_SHIP_NED[2];
   }
   /* If a landing time is available, then feed the path provided by the
    * polynomio: */
@@ -822,13 +724,44 @@ void nav_approach_ship_1D(
     *approach_ship_mode = 2.0F;
     /* Generate the errors accounting for the references and the linear EC, only
      * for the vertical component:  */
-    P0_SHIP_NED_w_offset_idx_0 =
+    V_target_NED_idx_0 =
         (P0_SHIP_NED[0] - P0_UAV_NED[0]) * pos_gain_landing_array[0] +
         V0_SHIP_NED[0];
-    absxk = (P0_SHIP_NED[1] - P0_UAV_NED[1]) * pos_gain_landing_array[1] +
-            V0_SHIP_NED[1];
-    t = UAV_path_speed_NED[1] +
+    c_UAV_to_SHIP_dist_NED_w_offset =
+        (P0_SHIP_NED[1] - P0_UAV_NED[1]) * pos_gain_landing_array[1] +
+        V0_SHIP_NED[1];
+    d_UAV_to_SHIP_dist_NED_w_offset =
+        UAV_path_speed_NED[1] +
         (UAV_path_NED[1] - P0_UAV_NED[2]) * pos_gain_landing_array[2];
+    /* If we are arrived at the holding point, but we don't trigger the auto
+     * land */
+    /* mode, keep descending very slowly: */
+  } else {
+    scale = 1.29246971E-26F;
+    if (absxk_tmp > 1.29246971E-26F) {
+      absxk = 1.0F;
+      scale = absxk_tmp;
+    } else {
+      t = absxk_tmp / 1.29246971E-26F;
+      absxk = t * t;
+    }
+    if (b_absxk_tmp > scale) {
+      t = scale / b_absxk_tmp;
+      absxk = absxk * t * t + 1.0F;
+      scale = b_absxk_tmp;
+    } else {
+      t = b_absxk_tmp / scale;
+      absxk += t * t;
+    }
+    if (scale * sqrtf(absxk) < 0.4F) {
+      V_target_NED_idx_0 =
+          (P0_SHIP_NED[0] - P0_UAV_NED[0]) * pos_gain_landing_array[0] +
+          V0_SHIP_NED[0];
+      c_UAV_to_SHIP_dist_NED_w_offset =
+          (P0_SHIP_NED[1] - P0_UAV_NED[1]) * pos_gain_landing_array[1] +
+          V0_SHIP_NED[1];
+      d_UAV_to_SHIP_dist_NED_w_offset = V0_SHIP_NED[2] + 0.5F;
+    }
   }
   /* If we are close enough to the landing pad, then enter the flare low mode:
    */
@@ -840,20 +773,20 @@ void nav_approach_ship_1D(
     /*  V_err_NED = P_err_NED.*pos_gain_landing + V0_SHIP_NED + [0; 0;
      * v_speed_docking_m_s] - V0_UAV_NED ; */
     /*  A_err_NED = V_err_NED.*speed_gain_landing - A0_UAV_NED_FILT; */
-    P0_SHIP_NED_w_offset_idx_0 =
+    V_target_NED_idx_0 =
         (P0_SHIP_NED[0] - P0_UAV_NED[0]) * pos_gain_landing_array[0] +
         V0_SHIP_NED[0];
-    absxk = (P0_SHIP_NED[1] - P0_UAV_NED[1]) * pos_gain_landing_array[1] +
-            V0_SHIP_NED[1];
-    t = (0.0F * pos_gain_landing_array[2] + V0_SHIP_NED[2]) +
-        v_speed_docking_m_s;
-    b_scale = psi_rad_UAV - PhiThetaPsi_SHIP_rad[2];
-    scale = sinf(b_scale);
-    b_scale = cosf(b_scale);
+    c_UAV_to_SHIP_dist_NED_w_offset =
+        (P0_SHIP_NED[1] - P0_UAV_NED[1]) * pos_gain_landing_array[1] +
+        V0_SHIP_NED[1];
+    d_UAV_to_SHIP_dist_NED_w_offset = V0_SHIP_NED[2] + v_speed_docking_m_s;
+    absxk = psi_rad_UAV - PhiThetaPsi_SHIP_rad[2];
+    b_scale = sinf(absxk);
+    absxk = cosf(absxk);
     *Desired_phi_rad =
-        PhiThetaPsi_SHIP_rad[0] * b_scale + PhiThetaPsi_SHIP_rad[1] * scale;
+        PhiThetaPsi_SHIP_rad[0] * absxk + PhiThetaPsi_SHIP_rad[1] * b_scale;
     *Desired_theta_rad =
-        -PhiThetaPsi_SHIP_rad[0] * scale + PhiThetaPsi_SHIP_rad[1] * b_scale;
+        -PhiThetaPsi_SHIP_rad[0] * b_scale + PhiThetaPsi_SHIP_rad[1] * absxk;
   }
   /*  V_target_control = R_EC * (V_err_NED + V0_UAV_NED); */
   /*  A_target_control = R_EC * (A_err_NED + A0_UAV_NED_FILT); */
@@ -870,9 +803,10 @@ void nav_approach_ship_1D(
   c_R_EC_tmp[5] = 0.0F;
   c_R_EC_tmp[8] = 1.0F;
   for (i = 0; i < 3; i++) {
-    V_target_control[i] = (c_R_EC_tmp[i] * P0_SHIP_NED_w_offset_idx_0 +
-                           c_R_EC_tmp[i + 3] * absxk) +
-                          c_R_EC_tmp[i + 6] * t;
+    V_target_control[i] =
+        (c_R_EC_tmp[i] * V_target_NED_idx_0 +
+         c_R_EC_tmp[i + 3] * c_UAV_to_SHIP_dist_NED_w_offset) +
+        c_R_EC_tmp[i + 6] * d_UAV_to_SHIP_dist_NED_w_offset;
   }
 }
 

@@ -325,6 +325,7 @@ void assign_am7_data(void){
     }
 
     //Start filling the myam7_data_out struct with the data from the other modules:
+    myam7_data_out.packet_timestamp = get_sys_time_float();
     myam7_data_out.pseudo_control_ax_int = (int16_t) (my_am7_data.pseudocontrol_ax * 1e2);
     myam7_data_out.pseudo_control_ay_int = (int16_t) (my_am7_data.pseudocontrol_ay * 1e2);
     myam7_data_out.pseudo_control_az_int = (int16_t) (my_am7_data.pseudocontrol_az * 1e2);
