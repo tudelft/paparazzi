@@ -20,10 +20,12 @@
 	<message name="LOGGER_STATUS"            period="0.5"/>
 	<message name="INS"                      period=".25"/>
 	<message name="GPS_INT"                  period=".25"/>
+	<message name="GPS_RELPOS"               period=".25"/>
 	<message name="INS_EKF2"                 period=".25"/>
 	<message name="INS_EKF2_EXT"             period=".25"/>
 	<message name="INS_REF"                  period="5.1"/>
 	<message name="TARGET_POS"               period="0.1"/>  
+
     </mode>
 
     <mode name="default" key_press="d">
@@ -193,6 +195,7 @@
     <mode name="RTCM3" >
       <message name="GPS_RXMRTCM"               period="1"/>
       <message name="GPS_INT"                period=".25"/>
+      <message name="GPS_RELPOS"               period=".25"/>
     </mode>
 
   </process>
@@ -201,6 +204,7 @@
      <mode name="default">         
 	<message name="SHIP_INFO_MSG_GROUND"     period="0.005"/> 
 	<message name="GPS_INT"                  period="0.005"/>
+	<message name="GPS_RELPOS"               period=".02"/>
 	<message name="ALIVE"                    period="2.1"/>
 	<message name="IMU_GYRO_SCALED"          period=".005"/>
 	<message name="IMU_ACCEL_SCALED"         period=".005"/>
@@ -211,7 +215,6 @@
 	<message name="ROTORCRAFT_FP"            period="0.05"/>
 	<message name="ALIVE"                    period="2.1"/>
 	<message name="DATALINK_REPORT"          period="5.1"/>
-	<message name="LOGGER_STATUS"            period="1.0"/>
 	<message name="TARGET_POS"               period="0.1"/>  
     </mode>
   </process>
