@@ -69,6 +69,11 @@
 #define SURVEY_HYBRID_ENTRY_DISTANCE (survey_private.sweep_distance / 2.f)
 #endif
 
+// make a circle at entry point if radius is not 0
+#ifndef SURVEY_HYBRID_ENTRY_CIRCLE
+#define SURVEY_HYBRID_ENTRY_CIRCLE TRUE
+#endif
+
 struct Line {float m; float b; float x;};
 enum SurveyStatus { Init, Entry, Sweep, Turn };
 
@@ -158,10 +163,10 @@ static bool nav_survey_hybrid_mission_global(uint8_t nb, float *params, enum Mis
         struct LlaCoor_f lla = {
           .lat = RadOfDeg(params[4+2*i]),
           .lon = RadOfDeg(params[4+2*i+1]),
-          .alt = state.ned_origin_f.lla.alt + height
+          .alt = stateGetLlaOrigin_f().alt + height
         };
         struct EnuCoor_f corner;
-        enu_of_lla_point_f(&corner, &state.ned_origin_f, &lla);
+        enu_of_lla_point_f(&corner, stateGetNedOrigin_f(), &lla);
         survey_private.corners[i] = corner;
       }
       nav_survey_hybrid_setup(orientation, sweep, radius, height);
@@ -417,7 +422,7 @@ bool nav_survey_hybrid_run(void)
       RotateAndTranslateToWorld(&C, 0.f, &survey_private.smallest_corner);
       RotateAndTranslateToWorld(&C, survey_private.orientation, &zero);
 
-      if (survey_private.circle_turns) {
+      if (survey_private.circle_turns && SURVEY_HYBRID_ENTRY_CIRCLE) {
         // align segment at entry point with a circle
         survey_private.circle.x = C.x - (cosf(survey_private.orientation + M_PI_2) * survey_private.radius);
         survey_private.circle.y = C.y - (sinf(survey_private.orientation + M_PI_2) * survey_private.radius);

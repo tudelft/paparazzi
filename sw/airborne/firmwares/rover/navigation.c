@@ -79,9 +79,7 @@ static void send_wp_moved(struct transport_tx *trans, struct link_device *dev)
 void nav_init(void)
 {
   waypoints_init();
-
-  nav_block = 0;
-  nav_stage = 0;
+  common_flight_plan_init();
 
   nav.mode = NAV_MODE_WAYPOINT;
 
@@ -128,8 +126,8 @@ void nav_parse_MOVE_WP(uint8_t *buf)
     /* WP_alt from message is alt above MSL in mm
      * lla.alt is above ellipsoid in mm
      */
-    lla.alt = DL_MOVE_WP_alt(buf) - state.ned_origin_i.hmsl +
-      state.ned_origin_i.lla.alt;
+    lla.alt = DL_MOVE_WP_alt(buf) - stateGetHmslOrigin_i() +
+      stateGetLlaOrigin_i().alt;
     waypoint_move_lla(wp_id, &lla);
   }
 }
@@ -177,14 +175,14 @@ bool nav_check_wp_time(struct EnuCoor_f *wp, float stay_time)
 /** Reset the geographic reference to the current GPS fix */
 void nav_reset_reference(void)
 {
-  ins_reset_local_origin();
+  AbiSendMsgINS_RESET(0, INS_RESET_REF);
   /* update local ENU coordinates of global waypoints */
   waypoints_localize_all();
 }
 
 void nav_reset_alt(void)
 {
-  ins_reset_altitude_ref();
+  AbiSendMsgINS_RESET(0, INS_RESET_VERTICAL_REF);
   waypoints_localize_all();
 }
 

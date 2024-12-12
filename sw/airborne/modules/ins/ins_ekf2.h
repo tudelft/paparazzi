@@ -45,6 +45,8 @@ struct ekf2_t {
   bool gyro_valid;                ///< If we received a gyroscope measurement
   bool accel_valid;               ///< If we received a acceleration measurement
   uint32_t flow_stamp;            ///< Optic flow last abi message timestamp
+  float rel_heading;              ///< Relative heading from RTK gps (rad)
+  bool rel_heading_valid;         ///< If we received a valid relative heading
 
   float temp;                     ///< Latest temperature measurement in degrees celcius
   float qnh;                      ///< QNH value in hPa
@@ -64,6 +66,10 @@ extern void ins_ekf2_remove_gps(int32_t mode);
 extern void ins_ekf2_parse_EXTERNAL_POSE(uint8_t *buf);
 extern void ins_ekf2_parse_EXTERNAL_POSE_SMALL(uint8_t *buf);
 extern struct ekf2_t ekf2;
+
+#ifdef INS_EXT_VISION_ROTATION
+extern struct FloatQuat ins_ext_vision_rot;
+#endif
 
 #ifdef __cplusplus
 }

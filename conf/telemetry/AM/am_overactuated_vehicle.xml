@@ -208,7 +208,6 @@
     <mode name="RTCM3" >
       <message name="GPS_RXMRTCM"               period="1"/>
       <message name="GPS_INT"                period=".25"/>
-      <message name="GPS_RTK"               period="1"/>
     </mode>
 
   </process>

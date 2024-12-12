@@ -216,8 +216,13 @@ static void actuators_uavcan_esc_status_cb(struct uavcan_iface_t *iface, CanardR
   canardDecodeScalar(transfer, 48, 16, true, (void *)&tmp_float);
   telem[esc_idx].current = canardConvertFloat16ToNativeFloat(tmp_float);
   canardDecodeScalar(transfer, 64, 16, true, (void *)&tmp_float);
-  telem[esc_idx].temperature = canardConvertFloat16ToNativeFloat(tmp_float) - 273.15;
+  telem[esc_idx].temperature = canardConvertFloat16ToNativeFloat(tmp_float);
   canardDecodeScalar(transfer, 80, 18, true, (void *)&telem[esc_idx].rpm);
+
+  /* Specification says Kelvin, but some are transmitting in Celsius */
+  if (telem[esc_idx].temperature > 230.f) {
+    telem[esc_idx].temperature -= 273.15;
+  }
 
 #if UAVCAN_ACTUATORS_USE_CURRENT
   // Update total current
@@ -441,7 +446,7 @@ void actuators_uavcan_commit(struct uavcan_iface_t *iface, int16_t *values, uint
 
   // Broadcast the raw command message on the interface
   uavcan_broadcast(iface, UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_SIGNATURE, UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_ID,
-                   CANARD_TRANSFER_PRIORITY_HIGH, buffer, (offset + 7) / 8);
+                    CANARD_TRANSFER_PRIORITY_HIGH, buffer, (offset + 7) / 8);
 }
 
 /**
@@ -475,5 +480,5 @@ void actuators_uavcan_cmd_commit(struct uavcan_iface_t *iface, int16_t *values, 
 
   // Broadcast the raw command message on the interface
   uavcan_broadcast(iface, UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_SIGNATURE, UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_ID,
-                   CANARD_TRANSFER_PRIORITY_HIGH, buffer, (offset + 7) / 8);
+                    CANARD_TRANSFER_PRIORITY_HIGH, buffer, (offset + 7) / 8);
 }

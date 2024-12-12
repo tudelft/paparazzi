@@ -154,7 +154,7 @@
       <define name="NAV_HYBRID_MAX_DECELERATION" value="WP_CONTROL_MAX_DECEL_WP_APPROACH"/>
     </module>
 
-    <module name="ahrs" type="float_cmpl_quat">
+    <!-- <module name="ahrs" type="float_cmpl_quat">
       <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
       <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="1.0"/>
       <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="0.0"/>
@@ -163,7 +163,7 @@
       <define name="AHRS_FC_IS_WITH_EKF2" value="TRUE"/>
       <define name="AHRS_FC_IMU_ID" value="IMU_CUBE2_ID"/>
       <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>
-    </module>
+    </module> -->
 
     <module name="stabilization" type="indi_simple"/>
  
