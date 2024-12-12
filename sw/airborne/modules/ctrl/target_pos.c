@@ -549,10 +549,9 @@ bool target_get_vel(struct NedCoor_f *vel __attribute__((unused))) {
 bool target_pos_set_current_offset(float unk __attribute__((unused))) {
     if(target.pos.valid && state.ned_initialized_i) { // && (get_sys_time_tow() - target.pos.tow) < TARGET_RTK_TIMEOUT) // not working atm
     struct NedCoor_i target_pos_cm;
-    struct NedCoor_f uav_pos = *stateGetPositionNed_f();
 
     // Convert from LLA to NED using origin from the UAV
-    ned_of_lla_point_i(&target_pos_cm, stateGetNedOrigin_i(), &target.pos.lla);
+    ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &target.pos.lla);
 
     // Convert to floating point (cm to meters)
     struct NedCoor_f pos;
