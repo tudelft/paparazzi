@@ -1141,7 +1141,7 @@ void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[
   // Calculate and bound distrubance --------------------
   float dist[3];
   float_vect_diff(dist, x_2d, fb, 3);
-  BoundAbs(dist[2], oneloop_andi_yaw_dist_limit);
+  //BoundAbs(dist[2], oneloop_andi_yaw_dist_limit);
   // Angular Acceleration Error
   err_sum_nd(y_4d, x_2d_f, dist, k3_e, x_3d_ref, 3);
   //vect_bound_nd(y_4d, max_ang_jerk, 3);
@@ -1927,11 +1927,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     ctrl_off = false;
   }else{
     if(oneloop_andi.ctrl_type == CTRL_ANDI){
-      //float temp_dist_bound_gui[3] = {oneloop_andi_dist_bound[0], oneloop_andi_dist_bound[1], oneloop_andi_dist_bound[2]};
-      float temp_dist_bound_gui[3] = {oneloop_andi_model[0], oneloop_andi_model[1], oneloop_andi_model[2]};
+      //float temp_dist_bound_gui[3] = {oneloop_andi_model[0], oneloop_andi_model[1], oneloop_andi_model[2]};
+      float temp_dist_bound_gui[3] = {0.0, 0.0, 0.0};
       ec_3rd_pos(nu, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e.k1, k_pos_e.k2, k_pos_e.k3, max_v_nav, max_a_nav, max_j_lin,temp_dist_bound_gui,3);
-      //ec_3rd_pos(nu, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e.k1, k_pos_e.k2, k_pos_e.k3, max_v_nav, max_a_nav, max_j_lin, 3);
-      //ec_3rd_pos(nu, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, temp_dist_bound_gui, k_pos_e.k1, k_pos_e.k2, k_pos_e.k3, max_v_nav, max_a_nav, max_j_lin, 3);
     } else if (oneloop_andi.ctrl_type == CTRL_INDI){
       nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], 0.0, oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e_indi.k1[0], k_pos_e_indi.k2[0], k_pos_e_indi.k3[0]);
       nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], 0.0, oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e_indi.k1[1], k_pos_e_indi.k2[1], k_pos_e_indi.k3[1]);
@@ -1941,28 +1939,28 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   // Attitude Pseudo Control Vector (nu) based on error controller
   float y_4d_att[3];  
   if(oneloop_andi.ctrl_type == CTRL_ANDI){
-    //float temp_dist_bound_sta[3] = {oneloop_andi_dist_bound[3], oneloop_andi_dist_bound[4], oneloop_andi_dist_bound[5]};
-    //float temp_dist_bound_sta[3] = {0.0, 0.0, 0.0};
-    float temp_dist_bound_sta[3] = {oneloop_andi_model[3], oneloop_andi_model[4], oneloop_andi_model[5]};
+    //float temp_dist_bound_sta[3] = {oneloop_andi_model[3], oneloop_andi_model[4], oneloop_andi_model[5]};
+    float temp_dist_bound_sta[3] = {0.0, 0.0, 0.0};
     ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds.att_3d[0],temp_dist_bound_sta);
-
-    //ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, temp_dist_bound_sta, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds.att_3d[0]);
-  } else if (oneloop_andi.ctrl_type == CTRL_INDI){
+} else if (oneloop_andi.ctrl_type == CTRL_INDI){
     float dummy0[3] = {0.0, 0.0, 0.0};
-    //ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e_indi.k1, k_att_e_indi.k2, k_att_e_indi.k3, sta_bounds.att_3d[0]);
+    //FIXME ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e_indi.k1, k_att_e_indi.k2, k_att_e_indi.k3, sta_bounds.att_3d[0]);
   }
   nu[3] = y_4d_att[0];  
   nu[4] = y_4d_att[1]; 
   nu[5] = y_4d_att[2] + g2_ff;
 
   // temp restructuring------------------
-  //nu[0] = nu[0] + oneloop_andi_model[0];
-  //nu[1] = nu[1] + oneloop_andi_model[1];
-  //nu[2] = nu[2] + oneloop_andi_model[2];
-  //nu[3] = nu[3] + oneloop_andi_model[3];
-  //nu[4] = nu[4] + oneloop_andi_model[4];
-  //nu[5] = nu[5] + oneloop_andi_model[5];
-  nu[5] = oneloop_andi_model[5] - temp_k * oneloop_andi.sta_ref.att_d[2]; //Interesting idea to weather vane the drone
+  nu[0] = nu[0] + oneloop_andi_model[0];
+  nu[1] = nu[1] + oneloop_andi_model[1];
+  nu[2] = nu[2] + oneloop_andi_model[2];
+  nu[3] = nu[3] + oneloop_andi_model[3];
+  nu[4] = nu[4] + oneloop_andi_model[4];
+  nu[5] = nu[5] + oneloop_andi_model[5];
+  Bound(coupling_factor[5],0.2,0.8);
+  BoundAbs(nu[5], n_array[5]*coupling_factor[5]);
+  // weather vaning ---------------------
+  //nu[5] = oneloop_andi_model[5] - temp_k * oneloop_andi.sta_ref.att_d[2]; //Interesting idea to weather vane the drone
   //------------------------------------
 
   if (!chirp_on){
@@ -2290,23 +2288,30 @@ void oneloop_from_nav(bool in_flight)
 /** @brief Function to calculate corrections for sideslip*/
 float oneloop_andi_sideslip(void)
 {
+  //printf("Calculating the sideslip correction\n");
   // Coordinated turn
   // feedforward estimate angular rotation omega = g*tan(phi)/v
   float omega = 0.0;
-  const float max_phi = RadOfDeg(ONELOOP_ANDI_MAX_BANK);
+  const float max_phi = ONELOOP_ANDI_MAX_BANK;//RadOfDeg(ONELOOP_ANDI_MAX_BANK);
   float airspeed_turn = airspeed_filt.o[0];
   Bound(airspeed_turn, 1.0f, 30.0f);
   // Use the current roll angle to determine the corresponding heading rate of change.
   float coordinated_turn_roll = eulers_zxy.phi;
   // Prevent flipping
   if( (eulers_zxy.theta > 0.0f) && ( fabs(eulers_zxy.phi) < eulers_zxy.theta)) {
+    //printf("Preventing flipping\n");
     coordinated_turn_roll = ((eulers_zxy.phi > 0.0f) - (eulers_zxy.phi < 0.0f)) * eulers_zxy.theta;
   }
   BoundAbs(coordinated_turn_roll, max_phi);
   omega = g / airspeed_turn * tanf(coordinated_turn_roll);
+  //printf("Omega: %f\n", omega);
+  //printf("Coordinated turn roll: %f\n", DegOfRad(coordinated_turn_roll));
+  //printf("phi: %f\n", DegOfRad(eulers_zxy.phi));
+  //printf("Airspeed: %f\n", airspeed_turn);
   #ifdef FWD_SIDESLIP_GAIN
   // Add sideslip correction
   omega -= accely_filt.o[0]*fwd_sideslip_gain;
+  //printf("Omega ay: %f\n", omega);
   #endif
   return omega;
 }
@@ -2507,10 +2512,26 @@ void oneloop_axis_effectiveness_calc(void){
   memset(n_array, 0, sizeof(n_array));
   memset(coupling_factor, 0, sizeof(coupling_factor));
   memset(m_array, 0, sizeof(m_array));
+  float u_trim[ANDI_NUM_ACT_TOT];
+  u_trim[COMMAND_MOTOR_FRONT]  = 4800.0;
+  u_trim[COMMAND_MOTOR_RIGHT]  = 4800.0;
+  u_trim[COMMAND_MOTOR_BACK]   = 4800.0;
+  u_trim[COMMAND_MOTOR_LEFT]   = 4800.0;
+  u_trim[COMMAND_MOTOR_PUSHER] = 0.0;
+  u_trim[COMMAND_ELEVATOR]     = RW.ele_pref;
+  u_trim[COMMAND_RUDDER]       = 0.0;
+  u_trim[COMMAND_AILERONS]     = 0.0;
+  u_trim[COMMAND_FLAPS]        = 0.0;
+  u_trim[COMMAND_ROLL]         = 0.0;
+  u_trim[COMMAND_PITCH]        = 0.0;
+
 
   for (int i = 0; i < ANDI_OUTPUTS; i++){
     for (int j = 0; j < ANDI_NUM_ACT_TOT; j++){
       float eff = positive_non_zero(fabsf(EFF_MAT_G[i][j]));
+      float den = positive_non_zero(ratio_u_un[j]*ratio_vn_v[i]);
+      float u_range = MAX_PPRZ - u_trim[j];
+      eff = (eff / den) * u_range;
       n_array[i] += eff;
       m_array[j] += eff; 
     }
@@ -2518,6 +2539,9 @@ void oneloop_axis_effectiveness_calc(void){
   for (int i = 0; i < ANDI_OUTPUTS; i++){
     for (int j = 0; j < ANDI_NUM_ACT_TOT; j++){
       float eff = positive_non_zero(fabsf(EFF_MAT_G[i][j]));
+      float den = positive_non_zero(ratio_u_un[j]*ratio_vn_v[i]);
+      float u_range = MAX_PPRZ - u_trim[j];
+      eff = (eff / den) * u_range;
       float eff2 = eff * eff;
       coupling_factor[i] += eff2 / (n_array[i] * m_array[j]);
     }
@@ -2536,22 +2560,22 @@ void oneloop_calc_model_disturbance(bool in_flight){
       oneloop_andi_model[i] = 0.0;
       switch (i){
         case (RW_aN):
-          k3 = k_pos_e.k3[0];
+          k3 = 1.0;//k_pos_e.k3[0];
           break;
         case (RW_aE):
-          k3 = k_pos_e.k3[1];
+          k3 = 1.0;//k_pos_e.k3[1];
           break;
         case (RW_aD):
-          k3 = k_pos_e.k3[2];
+          k3 = 1.0;//k_pos_e.k3[2];
           break;
         case (RW_ap):
-          k3 = k_att_e.k3[0];
+          k3 = 1.0;// k_att_e.k3[0];
           break;            
         case (RW_aq):
-          k3 = k_att_e.k3[1];
+          k3 = 1.0;// k_att_e.k3[1];
           break;      
         case (RW_ar):
-          k3 = k_att_e.k3[2];
+          k3 = 1.0;// k_att_e.k3[2];
           break;      
       }
       k3 = positive_non_zero(k3);
