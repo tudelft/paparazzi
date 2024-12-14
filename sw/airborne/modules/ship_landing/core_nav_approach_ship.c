@@ -102,6 +102,7 @@ void nav_approach_ship_parse_SHIP_INFO_MSG(uint8_t *buf) {
     ship_state.psi = DL_SHIP_INFO_MSG_psi(buf);  
     ship_state.phi_dot = DL_SHIP_INFO_MSG_phi_dot(buf);  
     ship_state.theta_dot = DL_SHIP_INFO_MSG_theta_dot(buf); 
+    ship_state.psi_dot = DL_SHIP_INFO_MSG_psi_dot(buf);
     ship_state.lat = DL_SHIP_INFO_MSG_lat(buf);  
     ship_state.lon = DL_SHIP_INFO_MSG_lon(buf); 
     ship_state.alt = DL_SHIP_INFO_MSG_alt(buf);      
@@ -123,11 +124,13 @@ void nav_approach_ship_parse_SHIP_PREDICTION_MSG(uint8_t *buf) {
  * Function for the message SHIP_INFO_MSG_GROUND
  */
 static void send_ship_info_msg_ground( struct transport_tx *trans , struct link_device * dev ) {
+    uint32_t msg_delay_mS = get_sys_time_tow() - ship_state.tow_ship;
+    z_speed_coeff_array[1] = (float) msg_delay_mS + 1000*(ship_state.timestamp - x_speed_control_coeff_array[1]);
     // Send telemetry message
     pprz_msg_send_SHIP_INFO_MSG_GROUND(trans , dev , AC_ID ,
-                & ship_state.tow_ship,
+                & msg_delay_mS,
                 & ship_state.timestamp, & ship_state.phi,& ship_state.theta,& ship_state.psi,
-                & ship_state.phi_dot,& ship_state.theta_dot,
+                & ship_state.phi_dot,& ship_state.theta_dot, & ship_state.psi_dot,
                 & ship_state.lat,& ship_state.lon,& ship_state.alt,
                 & ship_state.x_dot,& ship_state.y_dot,& ship_state.z_dot, 
                 & x_speed_control_coeff_array[0], & y_speed_control_coeff_array[0], & z_speed_coeff_array[0]);

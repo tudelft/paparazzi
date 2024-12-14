@@ -173,6 +173,7 @@ struct __attribute__((__packed__)) payload_ship_info_msg_ground {
   float psi; 
   float phi_dot; 
   float theta_dot; 
+  float psi_dot;
   int32_t lat; 
   int32_t lon; 
   int32_t alt;   
@@ -683,7 +684,7 @@ void ivy_send_ship_info_msg(struct payload_ship_info_msg_ground payload_ship){
     if(verbose) printf("Message SHIP INFO MSG forwarded through ivyBus on ac ID %d: \n",ac_id); 
     if(verbose) printf("Freq tx =  %.2f \n",(1e6/delta_time));  
     pthread_mutex_lock(&send_ivy_bus_mutex);
-    IvySendMsg("ground SHIP_INFO_MSG %d  %d  %f  %f %f %f  %f %f  %d %d %d  %f %f %f",
+    IvySendMsg("ground SHIP_INFO_MSG %d  %d  %f  %f %f %f  %f %f %f  %d %d %d  %f %f %f",
             ac_id,
             
             payload_ship.itow_ship,
@@ -696,6 +697,7 @@ void ivy_send_ship_info_msg(struct payload_ship_info_msg_ground payload_ship){
 
             payload_ship.phi_dot,
             payload_ship.theta_dot,
+            payload_ship.psi_dot,
 
             payload_ship.lat,
             payload_ship.lon,
@@ -719,7 +721,7 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
   if(verbose) printf("Frequency of incoming SHIP_INFO_MSG : %.2f \n",(1e6/delta_time));
   gettimeofday(&last_time_rx, NULL);   
   
-  if (argc != 16)
+  if (argc != 17)
   {
     fprintf(stderr,"ERROR: invalid message length SHIP_INFO_MSG_GROUND\n");
   }
@@ -732,12 +734,13 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
     payload_ship.psi = atof(argv[4]);
     payload_ship.phi_dot = atof(argv[5]);
     payload_ship.theta_dot = atof(argv[6]);
-    payload_ship.lat = atof(argv[7]);
-    payload_ship.lon = atof(argv[8]);
-    payload_ship.alt = atof(argv[9]);
-    payload_ship.x_dot = atof(argv[10]);
-    payload_ship.y_dot = atof(argv[11]);
-    payload_ship.z_dot = atof(argv[12]);
+    payload_ship.psi_dot = atof(argv[7]);
+    payload_ship.lat = atof(argv[8]);
+    payload_ship.lon = atof(argv[9]);
+    payload_ship.alt = atof(argv[10]);
+    payload_ship.x_dot = atof(argv[11]);
+    payload_ship.y_dot = atof(argv[12]);
+    payload_ship.z_dot = atof(argv[13]);
 
     if (offset_ship_position){
       float x_NED_to_lat = 8.99e-6; 
@@ -783,6 +786,7 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
       printf("Ship psi angle [deg] : %f \n",payload_ship.psi);
       printf("Ship roll rate [deg/s] : %f \n",payload_ship.phi_dot);
       printf("Ship pitch rate [deg/s] : %f \n",payload_ship.theta_dot);
+      printf("Ship yaw rate [deg/s] : %f \n",payload_ship.psi_dot);
       printf("Ship lat [deg] : %.7f \n",(payload_ship.lat*1e-7));  
       printf("Ship pos lon [deg] : %.7f \n",(payload_ship.lon*1e-7));  
       printf("Ship pos alt [m] : %f \n",(payload_ship.alt*1e-3));              
@@ -790,13 +794,13 @@ static void on_ShipInfoMsgGround(IvyClientPtr app, void *user_data, int argc, ch
       printf("Ship speed y [m/s] : %f \n",payload_ship.y_dot);  
       printf("Ship speed z [m/s] : %f \n",payload_ship.z_dot); 
       printf("Extra poly speed x control values: ");
-      printf("%s ", argv[13]);
-      printf("\n");   
-      printf("Extra poly speed y control values: ");
       printf("%s ", argv[14]);
       printf("\n");   
-      printf("Extra poly speed x control values: ");
+      printf("Extra poly speed y control values: ");
       printf("%s ", argv[15]);
+      printf("\n");   
+      printf("Extra poly speed x control values: ");
+      printf("%s ", argv[16]);
       printf("\n");   
     }
     
@@ -921,6 +925,7 @@ void generate_dummy_values(){
       printf("Ship psi angle [deg] : %f \n",payload_ship_dummy_to_UAV.psi);
       printf("Ship roll rate [deg/s] : %f \n",payload_ship_dummy_to_UAV.phi_dot);
       printf("Ship pitch rate [deg/s] : %f \n",payload_ship_dummy_to_UAV.theta_dot);
+      printf("Ship yaw rate [deg/s] : %f \n",payload_ship_dummy_to_UAV.psi_dot);
       printf("Ship lat [deg] : %.7f \n",(payload_ship_dummy_to_UAV.lat*1e-7));  
       printf("Ship pos lon [deg] : %.7f \n",(payload_ship_dummy_to_UAV.lon*1e-7));  
       printf("Ship pos alt [m] : %f \n",(payload_ship_dummy_to_UAV.alt*1e-3));              
@@ -1043,7 +1048,7 @@ int main(int argc, char** argv) {
 
   IvyInit ("SHIPINFO2Ivy", "SHIPINFO2Ivy READY", NULL, NULL, NULL, NULL);
 
-  IvyBindMsg(on_ShipInfoMsgGround, NULL, "%d SHIP_INFO_MSG_GROUND (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)", ship_box_id);
+  IvyBindMsg(on_ShipInfoMsgGround, NULL, "%d SHIP_INFO_MSG_GROUND (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)", ship_box_id);
 
   IvyStart(ivy_bus);
 

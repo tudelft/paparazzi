@@ -33,7 +33,6 @@
 
 
 extern void ship_message_generator_init(void);
-extern void ship_message_generator_periodic(void);
 
 #endif
 

@@ -10,7 +10,6 @@
     <file name="ship_message_generator.h"/>
   </header>
   <init fun="ship_message_generator_init()"/>
-  <periodic fun="ship_message_generator_periodic()" freq="500" autorun="TRUE"/>
   <makefile>
     <file name="ship_message_generator.c"/>
   </makefile>

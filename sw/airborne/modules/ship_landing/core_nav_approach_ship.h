@@ -39,6 +39,7 @@ struct ship_msg {
     float psi; 
     float phi_dot; 
     float theta_dot; 
+    float psi_dot;
     int32_t lat; 
     int32_t lon; 
     int32_t alt;     
