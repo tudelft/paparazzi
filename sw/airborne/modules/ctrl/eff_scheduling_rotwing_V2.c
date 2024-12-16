@@ -67,6 +67,7 @@ float actuator_state_filt_vect[EFF_MAT_COLS_NB] = {0};
 float G2_RW[EFF_MAT_COLS_NB]                       = {0};//ROTWING_EFF_SCHED_G2; //scaled by RW_G_SCALE
 float G1_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB]      = {0};//{ROTWING_EFF_SCHED_G1_ZERO, ROTWING_EFF_SCHED_G1_ZERO, ROTWING_EFF_SCHED_G1_THRUST, ROTWING_EFF_SCHED_G1_ROLL, ROTWING_EFF_SCHED_G1_PITCH, ROTWING_EFF_SCHED_G1_YAW}; //scaled by RW_G_SCALE 
 float EFF_MAT_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB] = {0};
+float I_inv[3][3]                                  = {0};
 static float flt_cut_ap = 2.0e-3;
 static float flt_cut    = 1.0e-4;
 
@@ -125,34 +126,34 @@ void eff_scheduling_rotwing_init(void)
 void init_RW_Model(void)
 {
   // Inertia and mass
-  RW.I.b_xx = 0.12879; // [kgm²] (0.0478 + 0.08099)
-  RW.I.b_yy = 0.94950; // [kgm²] (0.7546 + 0.1949)
-  RW.I.w_xx = 0.0; // [kgm²]
-  RW.I.w_yy = 0.0; // [kgm²]
+  RW.I.b_xx = 0.0535; // [kgm²] (0.0478 + 0.08099)
+  RW.I.b_yy = 0.9851; // [kgm²] (0.7546 + 0.1949)
+  RW.I.w_xx = 0.0621; // [kgm²]
+  RW.I.w_yy = 0.2788; // [kgm²]
   RW.I.xx   = RW.I.b_xx + RW.I.w_xx; // [kgm²]
   RW.I.yy   = RW.I.b_yy + RW.I.b_yy; // [kgm²]
-  RW.I.zz   = 0.975; // [kgm²]
-  RW.m      = 6.670; // [kg]
+  RW.I.zz   = 1.2842; // [kgm²]
+  RW.m      = 7.200; // [kg]
   // Motor Front
   RW.mF.dFdu     = 3.835 / RW_G_SCALE; // [N  / pprz] 
   RW.mF.dMdu     = yaw_eff / RW_G_SCALE; // [Nm / pprz]
   RW.mF.dMdud    = 0.020 / RW_G_SCALE; // [Nm / pprz]
-  RW.mF.l        = 0.423             ; // [m]   435                
+  RW.mF.l        = 0.440             ; // [m]   435                
   // Motor Right
   RW.mR.dFdu     = roll_eff / RW_G_SCALE; // [N  / pprz]
   RW.mR.dMdu     = yaw_eff / RW_G_SCALE; // [Nm / pprz]
   RW.mR.dMdud    = 0.020 / RW_G_SCALE; // [Nm / pprz]
-  RW.mR.l        = 0.408             ; // [m]   375     
+  RW.mR.l        = 0.380             ; // [m]   375     
   // Motor Back
   RW.mB.dFdu     = 3.835 / RW_G_SCALE; // [N  / pprz]
   RW.mB.dMdu     = yaw_eff / RW_G_SCALE; // [Nm / pprz]
   RW.mB.dMdud    = 0.020 / RW_G_SCALE; // [Nm / pprz]
-  RW.mB.l        = 0.423             ; // [m]        
+  RW.mB.l        = 0.440             ; // [m]        
   // Motor Left
   RW.mL.dFdu     = roll_eff / RW_G_SCALE; // [N  / pprz]
   RW.mL.dMdu     = yaw_eff / RW_G_SCALE; // [Nm / pprz]
   RW.mL.dMdud    = 0.020 / RW_G_SCALE; // [Nm / pprz]
-  RW.mL.l        = 0.408             ; // [m]        
+  RW.mL.l        = 0.380             ; // [m]        
   // Motor Pusher
   RW.mP.dFdu     = 3.468 / RW_G_SCALE; // [N  / pprz]
   RW.mP.dMdu     = 0.000 / RW_G_SCALE; // [Nm / pprz]
@@ -224,46 +225,70 @@ void  update_attitude(void)
 void calc_G1_G2_RW(void)
 {
   // Inertia
-  RW.I.xx = RW.I.b_xx + RW.skew.cosr2 * RW.I.w_xx + RW.skew.sinr2 * RW.I.w_yy;
-  RW.I.yy = RW.I.b_yy + RW.skew.sinr2 * RW.I.w_xx + RW.skew.cosr2 * RW.I.w_yy;
-  Bound(RW.I.xx, 0.01, 100.);
-  Bound(RW.I.yy, 0.01, 100.);
+  int x = 0;
+  int y = 1;
+  int z = 2;
+  float sigma = (RW.I.b_xx*RW.I.b_yy + RW.I.b_xx*RW.I.w_yy*RW.skew.cosr2 + RW.I.b_yy*RW.I.w_xx*RW.skew.cosr2 + RW.I.w_xx*RW.I.w_yy*RW.skew.cosr4 + RW.I.b_xx*RW.I.w_xx*RW.skew.sinr2 + RW.I.b_yy*RW.I.w_yy*RW.skew.sinr2 + RW.I.w_xx*RW.I.w_yy*RW.skew.sinr4 + 2*RW.I.w_xx*RW.I.w_yy*RW.skew.cosr2*RW.skew.sinr2);
+  I_inv[x][x] = (RW.I.w_yy*RW.skew.cosr2 + RW.I.w_xx*RW.skew.sinr2 + RW.I.b_yy)/sigma;
+  I_inv[x][y] = (RW.skew.cosr*RW.skew.sinr*(RW.I.w_xx - RW.I.w_yy))/sigma;
+  I_inv[x][z] = 0.0;
+  I_inv[y][x] = I_inv[x][y];
+  I_inv[y][y] = (RW.I.w_xx*RW.skew.cosr2 + RW.I.w_yy*RW.skew.sinr2 + RW.I.b_xx)/sigma;
+  I_inv[y][z] = 0.0;
+  I_inv[z][x] = 0.0;
+  I_inv[z][y] = 0.0;
+  I_inv[z][z] = 1/RW.I.zz;
+
+  float sigma1 = I_inv[y][y]*RW.skew.sinr - I_inv[x][y]*RW.skew.cosr;
+  float sigma2 = I_inv[x][x]*RW.skew.cosr - I_inv[x][y]*RW.skew.sinr;
+
+  //RW.I.xx = RW.I.b_xx + RW.skew.cosr2 * RW.I.w_xx + RW.skew.sinr2 * RW.I.w_yy;
+  //RW.I.yy = RW.I.b_yy + RW.skew.sinr2 * RW.I.w_xx + RW.skew.cosr2 * RW.I.w_yy;
+  //Bound(RW.I.xx, 0.01, 100.);
+  //Bound(RW.I.yy, 0.01, 100.);
+
   // Motor Front
   G1_RW[RW_aZ][COMMAND_MOTOR_FRONT]  = -RW.mF.dFdu / RW.m;
-  G1_RW[RW_aq][COMMAND_MOTOR_FRONT]  =  (RW.mF.dFdu * RW.mF.l) / RW.I.yy;
-  G1_RW[RW_ar][COMMAND_MOTOR_FRONT]  = -RW.mF.dMdu  / RW.I.zz;
-  G2_RW[COMMAND_MOTOR_FRONT]      = -RW.mF.dMdud / RW.I.zz;
+  G1_RW[RW_ap][COMMAND_MOTOR_FRONT]  =  (RW.mF.dFdu * RW.mF.l) * I_inv[x][y];
+  G1_RW[RW_aq][COMMAND_MOTOR_FRONT]  =  (RW.mF.dFdu * RW.mF.l) * I_inv[y][y];
+  G1_RW[RW_ar][COMMAND_MOTOR_FRONT]  = -RW.mF.dMdu  * I_inv[z][z];
+  G2_RW[COMMAND_MOTOR_FRONT]         = -RW.mF.dMdud * I_inv[z][z];
   // Motor Right
   G1_RW[RW_aZ][COMMAND_MOTOR_RIGHT]  = -RW.mR.dFdu / RW.m;
-  G1_RW[RW_ap][COMMAND_MOTOR_RIGHT]  = -(RW.mR.dFdu * RW.mR.l * RW.skew.cosr) / RW.I.xx;
-  G1_RW[RW_aq][COMMAND_MOTOR_RIGHT]  =  (RW.mR.dFdu * RW.mR.l * RW.skew.sinr) / RW.I.yy;
-  G1_RW[RW_ar][COMMAND_MOTOR_RIGHT]  =  RW.mR.dMdu  / RW.I.zz;
-  G2_RW[COMMAND_MOTOR_RIGHT]      =  RW.mR.dMdud / RW.I.zz;
+  G1_RW[RW_ap][COMMAND_MOTOR_RIGHT]  = -RW.mR.dFdu * RW.mR.l * sigma2;
+  G1_RW[RW_aq][COMMAND_MOTOR_RIGHT]  =  RW.mR.dFdu * RW.mR.l * sigma1;
+  G1_RW[RW_ar][COMMAND_MOTOR_RIGHT]  =  RW.mR.dMdu  * I_inv[z][z];
+  G2_RW[COMMAND_MOTOR_RIGHT]         =  RW.mR.dMdud * I_inv[z][z];
   // Motor Back
   G1_RW[RW_aZ][COMMAND_MOTOR_BACK]   = -RW.mB.dFdu / RW.m;
-  G1_RW[RW_aq][COMMAND_MOTOR_BACK]   = -(RW.mB.dFdu * RW.mB.l) / RW.I.yy;
-  G1_RW[RW_ar][COMMAND_MOTOR_BACK]   = -RW.mB.dMdu  / RW.I.zz;
-  G2_RW[COMMAND_MOTOR_BACK]       = -RW.mB.dMdud / RW.I.zz;
+  G1_RW[RW_ap][COMMAND_MOTOR_BACK]   = -(RW.mB.dFdu * RW.mB.l) * I_inv[x][y];
+  G1_RW[RW_aq][COMMAND_MOTOR_BACK]   = -(RW.mB.dFdu * RW.mB.l) * I_inv[y][y];
+  G1_RW[RW_ar][COMMAND_MOTOR_BACK]   = -RW.mB.dMdu  * I_inv[z][z];
+  G2_RW[COMMAND_MOTOR_BACK]          = -RW.mB.dMdud * I_inv[z][z];
   // Motor Left
   G1_RW[RW_aZ][COMMAND_MOTOR_LEFT]   = -RW.mL.dFdu / RW.m;
-  G1_RW[RW_ap][COMMAND_MOTOR_LEFT]   =  (RW.mL.dFdu * RW.mL.l * RW.skew.cosr) / RW.I.xx;
-  G1_RW[RW_aq][COMMAND_MOTOR_LEFT]   = -(RW.mL.dFdu * RW.mL.l * RW.skew.sinr) / RW.I.yy;
-  G1_RW[RW_ar][COMMAND_MOTOR_LEFT]   =  RW.mL.dMdu  / RW.I.zz;
-  G2_RW[COMMAND_MOTOR_LEFT]       =  RW.mL.dMdud / RW.I.zz;
+  G1_RW[RW_ap][COMMAND_MOTOR_LEFT]   =  RW.mL.dFdu * RW.mL.l * sigma2;
+  G1_RW[RW_aq][COMMAND_MOTOR_LEFT]   = -RW.mL.dFdu * RW.mL.l * sigma1;
+  G1_RW[RW_ar][COMMAND_MOTOR_LEFT]   =  RW.mL.dMdu  * I_inv[z][z];
+  G2_RW[COMMAND_MOTOR_LEFT]          =  RW.mL.dMdud * I_inv[z][z];
   // Motor Pusher
   G1_RW[RW_aX][COMMAND_MOTOR_PUSHER] =  RW.mP.dFdu / RW.m;
   // Elevator
-  RW.ele.dFdu                     = ele_eff / (RW_G_SCALE * RW_G_SCALE);
-  G1_RW[RW_aq][COMMAND_ELEVATOR]     =  (RW.ele.dFdu * RW.as2 * RW.ele.l) / RW.I.yy;
+  RW.ele.dFdu                        =  ele_eff / (RW_G_SCALE * RW_G_SCALE);
+  G1_RW[RW_ap][COMMAND_ELEVATOR]     =  (RW.ele.dFdu * RW.as2 * RW.ele.l) * I_inv[x][y];
+  G1_RW[RW_aq][COMMAND_ELEVATOR]     =  (RW.ele.dFdu * RW.as2 * RW.ele.l) * I_inv[y][y];
   // Rudder
-  G1_RW[RW_ar][COMMAND_RUDDER]       =  (RW.rud.dFdu * RW.as2 * RW.rud.l) / RW.I.zz ;
+  G1_RW[RW_ar][COMMAND_RUDDER]       =  (RW.rud.dFdu * RW.as2 * RW.rud.l) * I_inv[z][z];
   // Aileron
-  G1_RW[RW_ap][COMMAND_AILERONS]     =  (RW.ail.dFdu * RW.as2 * RW.ail.l * RW.skew.sinr3) / RW.I.xx;
-  G1_RW[RW_aq][COMMAND_AILERONS]     =  (RW.ail.dFdu * RW.as2 * RW.ail.l * (RW.skew.cosr-RW.skew.cosr3)) / RW.I.yy;
-  
+  float Mx_a = RW.ail.dFdu * RW.as2 * RW.ail.l * RW.skew.sinr3;
+  float My_a = RW.ail.dFdu * RW.as2 * RW.ail.l * (RW.skew.cosr-RW.skew.cosr3);
+  G1_RW[RW_ap][COMMAND_AILERONS]     =  Mx_a * I_inv[x][x] + My_a * I_inv[x][y];
+  G1_RW[RW_aq][COMMAND_AILERONS]     =  Mx_a * I_inv[x][y] + My_a * I_inv[y][y];
   // Flaperon
-  G1_RW[RW_ap][COMMAND_FLAPS]        =  (RW.flp.dFdu * RW.as2 * RW.flp.l * RW.skew.sinr3) / RW.I.xx;
-  G1_RW[RW_aq][COMMAND_FLAPS]        =  (RW.flp.dFdu * RW.as2 * RW.flp.l * (RW.skew.cosr-RW.skew.cosr3)) / RW.I.yy;
+  float Mx_f = RW.flp.dFdu * RW.as2 * RW.flp.l * RW.skew.sinr3;
+  float My_f = RW.flp.dFdu * RW.as2 * RW.flp.l * (RW.skew.cosr-RW.skew.cosr3);
+  G1_RW[RW_ap][COMMAND_FLAPS]        =  Mx_f * I_inv[x][x] + My_f * I_inv[x][y];
+  G1_RW[RW_aq][COMMAND_FLAPS]        =  Mx_f * I_inv[x][y] + My_f * I_inv[y][y];
   // Lift and thrust
   RW.wing.dLdtheta                =  (RW.wing.k0 + RW.wing.k1 * RW.skew.sinr2) * RW.as2;
   Bound(RW.wing.dLdtheta, 0.0, 1300.0);
@@ -390,6 +415,8 @@ void eff_scheduling_rotwing_update_wing_angle(void)
   RW.skew.sinr2 = RW.skew.sinr * RW.skew.sinr;
   RW.skew.sinr3 = RW.skew.sinr2 * RW.skew.sinr;
   RW.skew.cosr3 = RW.skew.cosr2 * RW.skew.cosr;
+  RW.skew.cosr4 = RW.skew.cosr2 * RW.skew.cosr2;
+  RW.skew.sinr4 = RW.skew.sinr2 * RW.skew.sinr2;
 #ifdef INS_EXT_VISION_ROTATION
   // Define an INS external pose quaternion rotation from the wing rotation angle
   struct FloatEulers rot_e = {0, 0, RW.skew.rad};

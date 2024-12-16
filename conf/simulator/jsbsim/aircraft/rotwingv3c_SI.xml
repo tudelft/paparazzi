@@ -375,46 +375,53 @@
         </function>
         <output>fcs/de_lag</output>
       </fcs_function>
-      <fcs_function name="Ixx_quad">
-          <function>
-              <value>0.1288</value> 
-          </function>
-          <output>fcs/Ixx_quad</output>
-      </fcs_function>
-
-      <fcs_function name="Iyy_quad">
-          <function>
-              <value>0.9495</value> 
-          </function>
-          <output>fcs/Iyy_quad</output>
-      </fcs_function>
 
       <fcs_function name="Ixx_body">
         <function>
-          <value>0.1288</value>
+          <value>0.0535</value>
         </function>
         <output>fcs/Ixx_body</output>
       </fcs_function>
 
       <fcs_function name="Iyy_body">
         <function>
-          <value>0.9495</value>
+          <value>0.9851</value>
         </function>
         <output>fcs/Iyy_body</output>
       </fcs_function>
 
       <fcs_function name="Ixx_wing">
         <function>
-          <value>0.0</value>
+          <value>0.0621</value>
         </function>
         <output>fcs/Ixx_wing</output>
       </fcs_function>
 
       <fcs_function name="Iyy_wing">
         <function>
-          <value>0.0</value>
+          <value>0.2788</value>
         </function>
         <output>fcs/Iyy_wing</output>
+      </fcs_function>
+
+      <fcs_function name="Ixx_quad">
+          <function>
+            <sum>
+              <property>fcs/Ixx_body</property>
+              <property>fcs/Ixx_wing</property>
+            </sum>
+          </function>
+          <output>fcs/Ixx_quad</output>
+      </fcs_function>
+
+      <fcs_function name="Iyy_quad">
+          <function>
+            <sum>
+              <property>fcs/Iyy_body</property>
+              <property>fcs/Iyy_wing</property>
+            </sum>
+          </function>
+          <output>fcs/Iyy_quad</output>
       </fcs_function>
 
       <fcs_function name="Ixx_sched">

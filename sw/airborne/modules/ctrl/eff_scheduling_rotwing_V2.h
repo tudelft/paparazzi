@@ -160,6 +160,8 @@ struct RW_skew{
   float sinr2;                // sine² of wing rotation angle
   float cosr3;                // cosine³ of wing rotation angle
   float sinr3;                // sine³ of wing rotation angle
+  float cosr4;                // cosine⁴ of wing rotation angle
+  float sinr4;                // sine⁴ of wing rotation angle
 };
 struct RW_Model{
   struct I I;     // Inertia matrix
