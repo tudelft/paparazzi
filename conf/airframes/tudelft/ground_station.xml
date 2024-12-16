@@ -89,7 +89,7 @@
         <define name="TARGET_POS_GROUND_STATION"            value="TRUE"/>
         <define name="INS_EKF2_FUSION_MODE"                 value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/>
         <define name="INS_EKF2_GPS_YAW_OFFSET"              value="35.3"/> <!-- in degrees -->
-        <define name="INS_EKF2_GPS_ANTENNA_DISTANCE"        value="0.3"/>
+        <define name="INS_EKF2_RELHEADING_DISTANCE"        value="0.3"/>
     </section>
 
     <commands>

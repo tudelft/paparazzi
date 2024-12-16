@@ -76,7 +76,7 @@
 #define TARGET_POS_KALMAN_R 1.0
 #endif
 
-/* Body to sensor angle offsets, usually 0 except for Y angle */
+/* Body to sensor angle offsets */
 #ifndef FALCON_X_ANGLE 
 #define FALCON_X_ANGLE 0
 #endif
@@ -328,13 +328,17 @@ void target_parse_target_pos(uint8_t *buf)
   pos.y = target_pos_cm.y / 100.;
   pos.z = target_pos_cm.z / 100.;
 
-  // Add the target offset manually for now
-  pos.x += target.offset.x;
-  pos.y += target.offset.y;
-  pos.z += target.offset.z;
+  // Get the target position relative to the drone
+  VECT3_ADD(pos, target.offset);
+  struct NedCoor_f *uav_pos = stateGetPositionNed_f();
+  VECT3_DIFF(pos, *uav_pos);
+
+  struct FloatVect3 speed = {target.pos.vel.x, target.pos.vel.y, target.pos.vel.z};
+  struct NedCoor_f *uav_speed = stateGetSpeedNed_f();
+  VECT3_DIFF(speed, *uav_speed);
 
   simple_kinematic_kalman_update_pos(&target_pos_kalman, pos);
-  simple_kinematic_kalman_update_speed(&target_pos_kalman, target.pos.vel, SIMPLE_KINEMATIC_KALMAN_SPEED_3D);
+  simple_kinematic_kalman_update_speed(&target_pos_kalman, vel, SIMPLE_KINEMATIC_KALMAN_SPEED_3D);
 
 #ifdef FALCON_LOG_ON_ARRIVAL
   pprz_msg_send_TARGET_POS_INFO(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
@@ -455,7 +459,7 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
   falcon.angles = angles;
   
   /* Implement logic to go from distance and x/z angles to a relative position */
-  // Temp relation for distance and intensity, depends on environment
+  // Temp relation for distance and intensity, depends on environment and beacon
   float distance = 5.4165 + 75.5979 / falcon.intensity - 80.3343 / (falcon.intensity*falcon.intensity);
 
   // Adjust for rotation between sensor and NED
@@ -466,12 +470,12 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
   struct FloatEulers angles_ned;
   float_rmat_transp_mult(&angles_ned, &ned_to_falcon_sensor, &angles);
 
-  struct FloatRMat falcon_rmat;
-  float_rmat_of_eulers_321(&falcon_rmat, &angles_ned);
+  struct FloatRMat falcon_angles_rmat;
+  float_rmat_of_eulers_321(&falcon_angles_rmat, &angles_ned);
   
-  // Obtain the relative position in sensor frame
+  // Obtain the relative position in NED frame
   struct FloatVect3 p_out;
-  float_rmat_vmult(&p_out, &falcon_rmat, &(struct FloatVect3){0, 0, distance});
+  float_rmat_vmult(&p_out, &falcon_angles_rmat, &(struct FloatVect3){0, 0, distance});
   
   simple_kinematic_kalman_update_pos(&target_pos_kalman, p_out);
 
@@ -499,7 +503,7 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
   struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
   ENU_OF_TO_NED(target_enu, p_out);
   VECT3_ADD(target_enu, *uav_pos);
-  target_enu.z = waypoints[wp_id].enu_f.z;
+  // target_enu.z = waypoints[wp_id].enu_f.z;
   waypoint_set_enu(wp_id, &target_enu);
 
   // Send waypoint update every half second

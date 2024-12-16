@@ -9,6 +9,7 @@
     <waypoint name="TD" x="-3" y="5"/>
     <waypoint name="APP" x="-2" y="5"/>
     <waypoint name="FOLLOW" x="-1" y="5"/>
+    <waypoint name="RELANGLE" x="-1" y="7"/>
     <waypoint lat="51.9905979" lon="4.3767279" name="CZ1"/>
     <waypoint lat="51.9906685" lon="4.3767327" name="CZ2"/>
     <waypoint lat="51.9906652" lon="4.3768481" name="CZ3"/>

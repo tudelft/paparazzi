@@ -46,7 +46,7 @@
         <define name="DEFAULT_CIRCLE_RADIUS"                value="100.0"/>
         <define name="INS_EKF2_FUSION_MODE"                 value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/>
         <define name="INS_EKF2_GPS_YAW_OFFSET"              value="0"/>
-        <define name="INS_EKF2_GPS_ANTENNA_DISTANCE"        value="1.02"/>
+        <define name="INS_EKF2_RELHEADING_DISTANCE"        value="1.02"/>
         <define name="INS_EKF2_RELHEADING_REF_ID"           value="1"/>
 
         <!-- Ground detect -->
@@ -185,8 +185,8 @@
         <define name="FW_CRUISE_AIRSPEED"       value="19.0"/>  <!-- Default cruise airspeed -->
         <define name="FW_MAX_AIRSPEED"          value="22.0"/>  <!-- Maximum forward airspeed -->
         <define name="FW_MAX_DECELERATION"      value="0.75"/>  <!-- Maximum horizontal deceleration in fixed wing mode -->
-        <define name="QUAD_NOPUSH_AIRSPEED"     value="5.0"/>   <!-- Maximum quadrotor without pusher motor airspeed -->
-        <define name="QUAD_MAX_AIRSPEED"        value="12.0"/>  <!-- Maximum quadrotor airspeed (with pusher motor)-->
+        <define name="QUAD_NOPUSH_AIRSPEED"     value="5.0"/>   <!-- Maximum quadrotor airspeed without pusher motor -->
+        <define name="QUAD_MAX_AIRSPEED"        value="15.0"/>  <!-- Maximum quadrotor airspeed with pusher motor-->
         <define name="QUAD_MAX_DECELERATION"    value="0.75"/>  <!-- Maximum horizontal deceleration in quad mode -->
         <define name="SKEW_UP_AIRSPEED"         value="10.0"/>  <!-- Airspeed where the skewing starts when going up in airspeed -->
         <define name="SKEW_DOWN_AIRSPEED"       value="8.0"/>   <!-- Airspeed where the skewing starts when going down in airspeed -->
@@ -195,6 +195,12 @@
         <define name="SKEW_REF_MODEL_P_GAIN"    value="0.001"/> <!-- Skewing reference model proportional gain -->
         <define name="SKEW_REF_MODEL_D_GAIN"    value="0.003"/> <!-- Skewing reference model differential gain -->
         <define name="SKEW_REF_MODEL_MAX_SPEED" value="20"/>    <!-- Maximum rotational skewing speed bound for the reference model -->
+    </section>
+
+    <section name="FALCON" prefix="FALCON"> <!-- Body to sensor rotations, 3-2-1 -->
+        <define name="X_ANGLE"            value="90.0"/>
+        <define name="Y_ANGLE"            value="0.0"/>
+        <define name="Z_ANGLE"            value="180.0"/>
     </section>
 
     <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">

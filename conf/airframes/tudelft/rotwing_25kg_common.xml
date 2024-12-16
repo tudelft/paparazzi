@@ -47,6 +47,7 @@
         <define name="MULTI_GPS_MODE"                   value="GPS_MODE_PRIMARY"/>
         <define name="INS_EKF2_FUSION_MODE"             value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/>
         <define name="INS_EKF2_GPS_YAW_OFFSET"          value="0"/>
+        <define name="INS_EKF2_RELHEADING_DISTANCE"     value="2.4"/>
 
         <!-- Ground detect -->
         <define name="GROUND_DETECT_AGL_MIN_VALUE"      value="0.24"/>
