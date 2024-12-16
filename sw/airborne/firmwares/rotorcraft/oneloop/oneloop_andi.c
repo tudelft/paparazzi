@@ -357,28 +357,28 @@ struct OneloopStabilizationRef sta_bounds = {
   .att_3d[0] = ONELOOP_ANDI_MAX_ANGULAR_JERK,
   .att_3d[1] = ONELOOP_ANDI_MAX_ANGULAR_JERK,
   #else
-  .att_3d[0] = 500,
-  .att_3d[1] = 500,
+  .att_3d[0] = RadOfDeg(4000.0),
+  .att_3d[1] = RadOfDeg(3000.0),
   #endif
 
   #ifdef ONELOOP_ANDI_MAX_ANGULAR_JERK_YAW
   .att_3d[2] = ONELOOP_ANDI_MAX_ANGULAR_JERK_YAW,
   #else
-  .att_3d[2] = 200,
+  .att_3d[2] = RadOfDeg(1520.0),
   #endif
 
   #ifdef ONELOOP_ANDI_MAX_ANGULAR_ACCEL
   .att_2d[0] = ONELOOP_ANDI_MAX_ANGULAR_ACCEL,
   .att_2d[1] = ONELOOP_ANDI_MAX_ANGULAR_ACCEL,
   #else
-  .att_2d[0] = 600,
-  .att_2d[1] = 600,
+  .att_2d[0] = RadOfDeg(230.0),
+  .att_2d[1] = RadOfDeg(330.0),
   #endif
 
   #ifdef ONELOOP_ANDI_MAX_ANGULAR_ACCEL_YAW
   .att_2d[2] = ONELOOP_ANDI_MAX_ANGULAR_ACCEL_YAW,
   #else
-  .att_2d[2] = 150,
+  .att_2d[2] = RadOfDeg(130.0),
   #endif
 
   #ifdef ONELOOP_ANDI_MAX_ANGULAR_VEL
@@ -450,7 +450,7 @@ void  rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref
 void  rm_3rd_pos(float dt, float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_des[], float k1_rm[], float k2_rm[], float k3_rm[], float x_d_bound, float x_2d_bound, float x_3d_bound, int n);
 void  rm_2nd_pos(float dt, float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_d_des[], float k2_rm[], float k3_rm[], float x_2d_bound, float x_3d_bound, int n);
 void  rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], float k3_rm[], float x_3d_bound, int n);
-void  ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], float max_ang_jerk, float fb[3]);
+void  ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], struct OneloopStabilizationRef bounds, float fb[3]);
 void  ec_3rd_pos(float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, float fb[], int n);
 void  calc_model(void);
 float oneloop_andi_sideslip(void);
@@ -893,30 +893,39 @@ void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[
   NormRadAngle(temp_diff);
   e_x[2] = k1_rm[2] * temp_diff; // Correction for Heading error +-Pi
   float_rates_of_euler_dot_vec(e_x_rates, x_ref, e_x);
+  BoundAbs(e_x_rates[0], bounds.att_d[0]);
+  BoundAbs(e_x_rates[1], bounds.att_d[1]);
+  BoundAbs(e_x_rates[2], bounds.att_d[2]);
   // Angular Rate error -------------------------------------------------
   err_nd(e_x_d, e_x_rates, x_d_ref, k2_rm, 3);
+  BoundAbs(e_x_d[0], bounds.att_2d[0]);
+  BoundAbs(e_x_d[1], bounds.att_2d[1]);
+  BoundAbs(e_x_d[2], bounds.att_2d[2]);
   // Angular Acceleration error -----------------------------------------
   err_nd(e_x_2d, e_x_d, x_2d_ref, k3_rm, 3);
+  BoundAbs(e_x_2d[0], bounds.att_3d[0]);
+  BoundAbs(e_x_2d[1], bounds.att_3d[1]);
+  BoundAbs(e_x_2d[2], bounds.att_3d[2]);
   // Angular Jerk Reference ---------------------------------------------
   float_vect_copy(x_3d_ref,e_x_2d,3);
-  BoundAbs(x_3d_ref[0], bounds.att_3d[0]);
-  BoundAbs(x_3d_ref[1], bounds.att_3d[1]);
-  BoundAbs(x_3d_ref[2], bounds.att_3d[2]);
+  //BoundAbs(x_3d_ref[0], bounds.att_3d[0]);
+  //BoundAbs(x_3d_ref[1], bounds.att_3d[1]);
+  //BoundAbs(x_3d_ref[2], bounds.att_3d[2]);
   //vect_bound_nd(x_3d_ref, max_ang_jerk, 3);
   if(ow_psi){x_3d_ref[2] = psi_overwrite[3];}
   // Angular Acceleration Reference -------------------------------------
   integrate_nd(dt, x_2d_ref, x_3d_ref, 3);
   float_vect_copy(x_2d_ref_ubd,x_2d_ref,3);
-  BoundAbs(x_2d_ref[0], bounds.att_2d[0]);
-  BoundAbs(x_2d_ref[1], bounds.att_2d[1]);
-  BoundAbs(x_2d_ref[2], bounds.att_2d[2]);
+  //BoundAbs(x_2d_ref[0], bounds.att_2d[0]);
+  //BoundAbs(x_2d_ref[1], bounds.att_2d[1]);
+  //BoundAbs(x_2d_ref[2], bounds.att_2d[2]);
   if(ow_psi){x_2d_ref[2] = psi_overwrite[2];}
   // Angular Rate Reference ---------------------------------------------
   integrate_nd(dt, x_d_ref, x_2d_ref, 3);
   float_vect_copy(x_d_ref_ubd,x_d_ref,3);
-  BoundAbs(x_d_ref[0], bounds.att_d[0]);
-  BoundAbs(x_d_ref[1], bounds.att_d[1]);
-  BoundAbs(x_d_ref[2], bounds.att_d[2]);
+  //BoundAbs(x_d_ref[0], bounds.att_d[0]);
+  //BoundAbs(x_d_ref[1], bounds.att_d[1]);
+  //BoundAbs(x_d_ref[2], bounds.att_d[2]);
   if(ow_psi){x_d_ref[2] = psi_overwrite[1];}
   // Attitude Reference ------------------------------------------------
   float_euler_dot_of_rates_vec(x_d_ref, x_ref, x_d_eul_ref);
@@ -924,10 +933,10 @@ void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[
   if(ow_psi){x_ref[2] = psi_overwrite[0];}
   NormRadAngle(x_ref[2]);
   // Anti-windup Correction ---------------------------------------------
-  for (int i = 0; i < 3; i++) {
-    x_3d_ref[i] = x_3d_ref[i] + (x_2d_ref[i]-x_2d_ref_ubd[i])/(dt) + (x_d_ref[i]-x_d_ref_ubd[i])/(dt*dt);
-    x_2d_ref[i] = x_2d_ref[i] + (x_d_ref[i]-x_d_ref_ubd[i])/(dt);
-  }
+  // for (int i = 0; i < 3; i++) {
+  //   x_3d_ref[i] = x_3d_ref[i] + (x_2d_ref[i]-x_2d_ref_ubd[i])/(dt) + (x_d_ref[i]-x_d_ref_ubd[i])/(dt*dt);
+  //   x_2d_ref[i] = x_2d_ref[i] + (x_d_ref[i]-x_d_ref_ubd[i])/(dt);
+  // }
 }
 
 /** 
@@ -1125,26 +1134,33 @@ void ec_3rd_pos( float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[],
  * @param k2_e            Error Controller Gain 2nd order signal
  * @param k3_e            Error Controller Gain 3rd order signal
  */
-void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], float max_ang_jerk, float fb[3]){
+void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], struct OneloopStabilizationRef bounds, float fb[3]){
   float e_x[3];    // (x-x_ref)*k1_e
+  float e_x_rates[3]; // (x_ref-x)*k1_e
   float x_d_f[3];  // x_d_ref + e_x
   float x_2d_f[3]; // x_2d_ref + e_x_d
 
-  // Attitude Error and Heading conversion
+  // Attitude Error and Heading conversion --------------------------------
   err_nd(e_x, x_ref, x, k1_e, 3);
   float temp_diff = x_ref[2] - x[2];
   NormRadAngle(temp_diff);
   e_x[2] = k1_e[2] * temp_diff; // Correction for Heading error +-Pi
-  // Angular Rate Error
-  float_vect_sum(x_d_f, x_d_ref, e_x, 3);
+  float_rates_of_euler_dot_vec(e_x_rates, x, e_x);
+  float_vect_sum(x_d_f, x_d_ref, e_x_rates, 3);
+  BoundAbs(x_d_f[0], bounds.att_d[0]);
+  BoundAbs(x_d_f[1], bounds.att_d[1]);
+  BoundAbs(x_d_f[2], bounds.att_d[2]);
+  // Angular Rate Error ---------------------------------------------------
   err_sum_nd(x_2d_f, x_d_f,  x_d,  k2_e, x_2d_ref, 3);
-  // Calculate and bound distrubance --------------------
+  BoundAbs(x_d_f[0], bounds.att_2d[0]);
+  BoundAbs(x_d_f[1], bounds.att_2d[1]);
+  BoundAbs(x_d_f[2], bounds.att_2d[2]);
+  // Calculate and bound distrubance --------------------------------------
   float dist[3];
   float_vect_diff(dist, x_2d, fb, 3);
-  //BoundAbs(dist[2], oneloop_andi_yaw_dist_limit);
-  // Angular Acceleration Error
+  BoundAbs(dist[2], oneloop_andi_yaw_dist_limit);
+  // Angular Acceleration Error -------------------------------------------
   err_sum_nd(y_4d, x_2d_f, dist, k3_e, x_3d_ref, 3);
-  //vect_bound_nd(y_4d, max_ang_jerk, 3);
 }
 
 /**
@@ -1939,9 +1955,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   // Attitude Pseudo Control Vector (nu) based on error controller
   float y_4d_att[3];  
   if(oneloop_andi.ctrl_type == CTRL_ANDI){
-    //float temp_dist_bound_sta[3] = {oneloop_andi_model[3], oneloop_andi_model[4], oneloop_andi_model[5]};
-    float temp_dist_bound_sta[3] = {0.0, 0.0, 0.0};
-    ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds.att_3d[0],temp_dist_bound_sta);
+    float temp_dist_bound_sta[3] = {oneloop_andi_model[3], oneloop_andi_model[4], oneloop_andi_model[5]};
+    //float temp_dist_bound_sta[3] = {0.0, 0.0, 0.0};
+    ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds,temp_dist_bound_sta);
 } else if (oneloop_andi.ctrl_type == CTRL_INDI){
     float dummy0[3] = {0.0, 0.0, 0.0};
     //FIXME ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e_indi.k1, k_att_e_indi.k2, k_att_e_indi.k3, sta_bounds.att_3d[0]);
@@ -1954,9 +1970,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   nu[0] = nu[0] + oneloop_andi_model[0];
   nu[1] = nu[1] + oneloop_andi_model[1];
   nu[2] = nu[2] + oneloop_andi_model[2];
-  nu[3] = nu[3] + oneloop_andi_model[3];
-  nu[4] = nu[4] + oneloop_andi_model[4];
-  nu[5] = nu[5] + oneloop_andi_model[5];
+  //nu[3] = nu[3] + oneloop_andi_model[3];
+  //nu[4] = nu[4] + oneloop_andi_model[4];
+  //nu[5] = nu[5] + oneloop_andi_model[5];
   Bound(coupling_factor[5],0.2,0.8);
   BoundAbs(nu[5], n_array[5]*coupling_factor[5]);
   // weather vaning ---------------------
@@ -2569,13 +2585,13 @@ void oneloop_calc_model_disturbance(bool in_flight){
           k3 = 1.0;//k_pos_e.k3[2];
           break;
         case (RW_ap):
-          k3 = 1.0;// k_att_e.k3[0];
+          k3 = k_att_e.k3[0];
           break;            
         case (RW_aq):
-          k3 = 1.0;// k_att_e.k3[1];
+          k3 = k_att_e.k3[1];
           break;      
         case (RW_ar):
-          k3 = 1.0;// k_att_e.k3[2];
+          k3 = k_att_e.k3[2];
           break;      
       }
       k3 = positive_non_zero(k3);
