@@ -746,7 +746,7 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
     BoundAbs(accel_sp.z, 5.0);
   }
 #endif
-  
+
   accel_sp_body_x = cpsi * accel_sp.x + spsi * accel_sp.y;
 
   return accel_sp;
@@ -757,32 +757,23 @@ static float bound_vz_sp(float vz_sp)
   // Bound vertical speed setpoint
   if (stateGetAirspeed_f() > TURN_AIRSPEED_TH) {
     Bound(vz_sp, -gih_params.climb_vspeed_fwd, -gih_params.descend_vspeed_fwd);
+
+    // specific force margin in X direction
+    float fxlim = nav_max_deceleration_sp + accel_sp_body_x_filt.o[0];
+    if (fxlim < 0.0f) {
+      fxlim = 0.0f;
+    }
+
+    // gravity component in body X axis when descending (assuming small AoA): -g sin(gamma) \approx g Vz/Vx (note vz positive down in NED frame)
+    float vz_down_lim = fxlim*stateGetAirspeed_f()/9.81f;
+
+    // longitudinal acceleration sp is negative but not larger than max decel
+    if (vz_sp > vz_down_lim) {
+      vz_sp = vz_down_lim;
+    }
   } else {
     Bound(vz_sp, -gih_params.climb_vspeed_quad, -gih_params.descend_vspeed_quad);
   }
-
-  // specific force margin in X direction
-  float fxlim = nav_max_deceleration_sp + accel_sp_body_x_filt.o[0];
-
-  // note vz positive down (NED frame)
-  float vz_down_lim = fxlim*stateGetAirspeed_f()/9.81f;
-  
-  printf("nav_max_deceleration_sp: %f\n", nav_max_deceleration_sp);
-  printf("accel_sp_body_x_filt: %f\n", accel_sp_body_x_filt.o[0]);
-  printf("vz_down_lim: %f\n", vz_down_lim);
-  printf("vz_sp: %f\n", vz_sp);
-  
-  // Only when drone is descending
-  if (vz_sp > 0) {
-    // longitudinal acceleration sp is negative but not larger than max decel
-    if (accel_sp_body_x_filt.o[0] > -nav_max_deceleration_sp && accel_sp_body_x_filt.o[0] < 0) {
-      vz_sp = vz_down_lim;
-    } else if (accel_sp_body_x_filt.o[0] <= -nav_max_deceleration_sp) { // if we request more than the maximum deceleration don't descend
-      vz_sp = 0;
-    }
-  }
-
-    printf("vz_sp_lim: %f\n", vz_sp);
 
   return vz_sp;
 }
