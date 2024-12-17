@@ -67,8 +67,47 @@
       <call_once fun="autopilot_set_in_flight(false)"/>
       <call_once fun="take_off_enter()"/>
       <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
-      <exception cond="GetPosHeight() @GT 10.0" deroute="land here"/>
+      <exception cond="GetPosHeight() @GT 18.0" deroute="Descent1"/>
     </block>
+    <block name="Descent1">
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="CLIMB_flap">
+      <exception cond="GetPosHeight() @GT 12.0" deroute="Descent1"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
+    </block>
+
+    <!-- <block name="Descent0.8">
+      <exception cond="LessThan(GetPosHeight(), 0.5)" deroute="CLIMB1"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="CLIMB1.5">
+      <exception cond="GetPosHeight() @GT 12.0" deroute="Descent1"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <set value="1.5" var="nav.climb_vspeed"/>
+      <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
+    </block>
+    <block name="Descent1">
+      <exception cond="LessThan(GetPosHeight(), 0.5)" deroute="CLIMB2"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <set value="1.0" var="nav.descend_vspeed"/>
+      <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+        <block name="CLIMB2">
+      <exception cond="GetPosHeight() @GT 12.0" deroute="Descent1.5"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <set value="2.0" var="nav.climb_vspeed"/>
+      <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
+    </block>
+    <block name="Descent1.5">
+      <exception cond="LessThan(GetPosHeight(), 0.5)" deroute="flare"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <set value="1.5" var="nav.descend_vspeed"/>
+      <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
+    </block> -->
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="false" var="force_forward"/>
       <stay wp="STDBY"/>

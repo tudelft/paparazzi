@@ -1117,33 +1117,24 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
         theta_d = theta_d_max;
     }
   }
-  // else if (takeoff_stage == 3){
-  //   if(eulers_zxy.theta < 0.0){          // theta_d gradually decrease for nav mode
-  //   float theta_d_land = -90.0 / 180.0 * M_PI;
-  //   float increment = t_scale_to_theta / PERIODIC_FREQUENCY;
-  //          theta_d -= increment;
-  //      if (theta_d < theta_d_land) {
-  //       theta_d = theta_d_land;
-  //   }
-  //   }else{
-  //     float theta_d_land = 90.0 / 180.0 * M_PI;
-  //     float increment = t_scale_to_theta / PERIODIC_FREQUENCY;
-  //     theta_d += increment;
-  //      if (theta_d > theta_d_land) {
-  //       theta_d = theta_d_land;
-  //   }
-  // }
-  // }
-  // }
   else if (takeoff_stage == 3){
-    float theta_d_land = -90.0 / 180.0 * M_PI;
-    float increment = t_scale_to_theta / PERIODIC_FREQUENCY;
-           theta_d -= increment;
-       if (theta_d < theta_d_land) {
-        theta_d = theta_d_land;
-    }
-  }
-  }
+     if(eulers_zxy.theta < 0.0){          // theta_d gradually decrease for nav mode
+     float theta_d_land = -90.0 / 180.0 * M_PI;
+     float increment = t_scale_to_theta / PERIODIC_FREQUENCY;
+            theta_d -= increment;
+        if (theta_d < theta_d_land) {
+         theta_d = theta_d_land;
+     }
+     }else{
+       float theta_d_land = -90.0 / 180.0 * M_PI;
+       float increment = t_scale_to_theta / PERIODIC_FREQUENCY;
+       theta_d -= increment;
+        if (theta_d < theta_d_land) {
+         theta_d = theta_d_land;
+     }
+   }
+   }
+   }
   else{
     struct FloatEulers euler_sp;
     float_eulers_of_quat_zxy(&euler_sp, &quat_sp_f);
@@ -1180,8 +1171,8 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     actuators_pprz[1] = servo_command;
     if (autopilot_get_motors_on()) {
     int16_t motor_command = calculatePPRZCommand(K1, K2, K3, takeoff_thrust);
-    actuators_pprz[2] = motor_command - angular_accel_ref.p * roll_gain;
-    actuators_pprz[3] = motor_command + angular_accel_ref.p * roll_gain;
+    actuators_pprz[2] = motor_command - angular_acceleration[0] * roll_gain;
+    actuators_pprz[3] = motor_command + angular_acceleration[0] * roll_gain;
     } else {
       for (i = 2; i < INDI_NUM_ACT; i++) {
         actuators_pprz[i] = -9600;
