@@ -78,7 +78,7 @@ bool airspeed_fake_on = false;
 float airspeed_fake = 0.0;
 float ele_eff = 19.36; // (0.88*22.0);
 float roll_eff = 3.835;//3.835;5.5
-float yaw_eff  = 0.390;
+float yaw_eff  = 0.514; // 1.3171*0.390=0.514 or 0.659 and 0.812 (pitch - roll)
 float ele_min = 0.0;
 /* Define Forces and Moments tructs for each actuator*/
 struct RW_Model RW;
@@ -90,6 +90,10 @@ void  update_attitude(void);
 void  sum_EFF_MAT_RW(void);
 void  init_RW_Model(void);
 void  calc_G1_G2_RW(void);  
+float calc_thrust_curve(float k1, float k2, float k3, float u);
+float calc_thrust_curve_d(float k1, float k2, float u);
+void calc_all_thrust_curve(void);
+void init_all_thrust_curve(void);
 
 /** ABI binding wing position data.
  */
@@ -134,23 +138,26 @@ void init_RW_Model(void)
   RW.I.yy   = RW.I.b_yy + RW.I.b_yy; // [kgm²]
   RW.I.zz   = 1.2842; // [kgm²]
   RW.m      = 7.200; // [kg]
+
+  // Init the thrust curves
+  init_all_thrust_curve();
   // Motor Front
-  RW.mF.dFdu     = 3.835 / RW_G_SCALE; // [N  / pprz] 
+  //RW.mF.dFdu     = 3.835 / RW_G_SCALE; // [N  / pprz] 
   RW.mF.dMdu     = yaw_eff / RW_G_SCALE; // [Nm / pprz]
   RW.mF.dMdud    = 0.020 / RW_G_SCALE; // [Nm / pprz]
   RW.mF.l        = 0.440             ; // [m]   435                
   // Motor Right
-  RW.mR.dFdu     = roll_eff / RW_G_SCALE; // [N  / pprz]
+  //RW.mR.dFdu     = roll_eff / RW_G_SCALE; // [N  / pprz]
   RW.mR.dMdu     = yaw_eff / RW_G_SCALE; // [Nm / pprz]
   RW.mR.dMdud    = 0.020 / RW_G_SCALE; // [Nm / pprz]
   RW.mR.l        = 0.380             ; // [m]   375     
   // Motor Back
-  RW.mB.dFdu     = 3.835 / RW_G_SCALE; // [N  / pprz]
+  //RW.mB.dFdu     = 3.835 / RW_G_SCALE; // [N  / pprz]
   RW.mB.dMdu     = yaw_eff / RW_G_SCALE; // [Nm / pprz]
   RW.mB.dMdud    = 0.020 / RW_G_SCALE; // [Nm / pprz]
   RW.mB.l        = 0.440             ; // [m]        
   // Motor Left
-  RW.mL.dFdu     = roll_eff / RW_G_SCALE; // [N  / pprz]
+  //RW.mL.dFdu     = roll_eff / RW_G_SCALE; // [N  / pprz]
   RW.mL.dMdu     = yaw_eff / RW_G_SCALE; // [Nm / pprz]
   RW.mL.dMdud    = 0.020 / RW_G_SCALE; // [Nm / pprz]
   RW.mL.l        = 0.380             ; // [m]        
@@ -238,15 +245,15 @@ void calc_G1_G2_RW(void)
   I_inv[z][x] = 0.0;
   I_inv[z][y] = 0.0;
   I_inv[z][z] = 1/RW.I.zz;
+  //printf("I_inv_x: %f %f %f\n", I_inv[x][x], I_inv[x][y], I_inv[x][z]);
+  //printf("I_inv_y: %f %f %f\n", I_inv[y][x], I_inv[y][y], I_inv[y][z]);
+  //printf("I_inv_z: %f %f %f\n", I_inv[z][x], I_inv[z][y], I_inv[z][z]);
+  //printf("Control - I: %f %f %f\n", 1.0/I_inv[x][x], 1.0/I_inv[y][y], 1.0/I_inv[z][z]);
+  // Calc motor and control effectiveness
+  calc_all_thrust_curve();
 
   float sigma1 = I_inv[y][y]*RW.skew.sinr - I_inv[x][y]*RW.skew.cosr;
   float sigma2 = I_inv[x][x]*RW.skew.cosr - I_inv[x][y]*RW.skew.sinr;
-
-  //RW.I.xx = RW.I.b_xx + RW.skew.cosr2 * RW.I.w_xx + RW.skew.sinr2 * RW.I.w_yy;
-  //RW.I.yy = RW.I.b_yy + RW.skew.sinr2 * RW.I.w_xx + RW.skew.cosr2 * RW.I.w_yy;
-  //Bound(RW.I.xx, 0.01, 100.);
-  //Bound(RW.I.yy, 0.01, 100.);
-
   // Motor Front
   G1_RW[RW_aZ][COMMAND_MOTOR_FRONT]  = -RW.mF.dFdu / RW.m;
   G1_RW[RW_ap][COMMAND_MOTOR_FRONT]  =  (RW.mF.dFdu * RW.mF.l) * I_inv[x][y];
@@ -294,8 +301,6 @@ void calc_G1_G2_RW(void)
   Bound(RW.wing.dLdtheta, 0.0, 1300.0);
   RW.wing.L                       =  RW.wing.k0 * RW.att.theta * RW.as2 + RW.wing.k1 * RW.att.theta * RW.skew.sinr2 * RW.as2 + RW.wing.k2 * RW.skew.sinr2 * RW.as2;
   Bound(RW.wing.L, 0.0, 350.0);
-  RW.T = actuator_state_1l[COMMAND_MOTOR_FRONT] * RW.mF.dFdu + actuator_state_1l[COMMAND_MOTOR_RIGHT] * RW.mR.dFdu + actuator_state_1l[COMMAND_MOTOR_BACK] * RW.mB.dFdu + actuator_state_1l[COMMAND_MOTOR_LEFT] * RW.mL.dFdu;
-  Bound(RW.T, 0.0, 180.0);
   RW.P                            = actuator_state_1l[COMMAND_MOTOR_PUSHER] * RW.mP.dFdu;
 }
 
@@ -450,4 +455,53 @@ void ele_pref_sched(void)
   } else {
     RW.ele_pref = ele_min;
   }
+}
+
+float calc_thrust_curve(float k1, float k2, float k3, float u){
+  return k1*u*u + k2*u + k3;
+}
+
+float calc_thrust_curve_d(float k1, float k2, float u){
+  float out= 2.0*k1*u + k2;
+  Bound(out, 1.0e-3, 1.0e-2);
+  return out;
+}
+
+void calc_all_thrust_curve(void){
+  // dTdu    = 2*k1*u + k2--------|k1     | k2     | u
+  // RW.mF.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, actuator_state_1l[COMMAND_MOTOR_FRONT]);
+  // RW.mR.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, actuator_state_1l[COMMAND_MOTOR_RIGHT]);
+  // RW.mB.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, actuator_state_1l[COMMAND_MOTOR_BACK]);
+  // RW.mL.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, actuator_state_1l[COMMAND_MOTOR_LEFT]);
+  RW.mF.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);
+  RW.mR.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, 4800.0);
+  RW.mB.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);
+  RW.mL.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, 4800.0);
+  //printf("dFdu: %f %f %f %f\n", RW.mF.dFdu, RW.mR.dFdu, RW.mB.dFdu, RW.mL.dFdu);
+  // T = k1*u^2 + k2*u + k3-------|k1     | k2     | k3  | u
+  float T_mF = calc_thrust_curve(5.00e-7, 2.05e-4, 1.43, actuator_state_1l[COMMAND_MOTOR_FRONT]);
+  float T_mR = calc_thrust_curve(5.37e-7, 2.20e-4, 1.53, actuator_state_1l[COMMAND_MOTOR_RIGHT]);
+  float T_mB = calc_thrust_curve(5.00e-7, 2.05e-4, 1.43, actuator_state_1l[COMMAND_MOTOR_BACK]);
+  float T_mL = calc_thrust_curve(5.37e-7, 2.20e-4, 1.53, actuator_state_1l[COMMAND_MOTOR_LEFT]);
+  //printf("Control - Quad thrusts: %f %f %f %f\n", T_mF, T_mR, T_mB, T_mL);
+  RW.T = T_mF + T_mR + T_mB + T_mL;
+  Bound(RW.T, 0.0, 180.0);
+  //printf("T: %f\n", RW.T);
+}
+
+void init_all_thrust_curve(void){
+  // dTdu    = 2*k1*u + k2--------|k1     | k2     | u
+  RW.mF.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);
+  RW.mR.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, 4800.0);
+  RW.mB.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);
+  RW.mL.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, 4800.0);
+  //printf("dFdu: %f %f %f %f\n", RW.mF.dFdu, RW.mR.dFdu, RW.mB.dFdu, RW.mL.dFdu);
+  // T = k1*u^2 + k2*u + k3-------|k1     | k2     | k3  | u
+  float T_mF = calc_thrust_curve(5.00e-7, 2.05e-4, 1.43, 4800.0);
+  float T_mR = calc_thrust_curve(5.37e-7, 2.20e-4, 1.53, 4800.0);
+  float T_mB = calc_thrust_curve(5.00e-7, 2.05e-4, 1.43, 4800.0);
+  float T_mL = calc_thrust_curve(5.37e-7, 2.20e-4, 1.53, 4800.0);
+  //printf("Control - Quad thrusts: %f %f %f %f\n", T_mF, T_mR, T_mB, T_mL);
+  RW.T = T_mF + T_mR + T_mB + T_mL;
+  Bound(RW.T, 0.0, 180.0);
 }
