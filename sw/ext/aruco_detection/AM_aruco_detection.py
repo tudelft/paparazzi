@@ -17,12 +17,16 @@ import pprzlink.ivy
 
 
 #-----------------------Parameters--------------------------#
-MARKER_SIZE = 0.259 # meters
+verbose_detection = 0; 
+verbose_fps = 1; 
+verbose_ivy_bus = 0; 
+# MARKER_SIZE = 0.259 # meters
+MARKER_SIZE = 0.035 # meters
 desired_aruco_dictionary = "DICT_5X5_1000"
 pathLoad = '/home/orangepi/paparazzi/sw/ext/aruco_detection/cameraCalibration_mapir_1440p.xml'
 pixel_w = 1920  # Example: 1920 pixels wide
 pixel_h = 1440  # Example: 1440 pixels tall
-usb_num = '/dev/mapir'
+usb_num = '/dev/video0'  # Example: '/dev/video0'
 #-----------------------------------------------------------#
 
 #                                   # FUNCTIONS -> IVYBUS MESSAGES #
@@ -30,8 +34,9 @@ usb_num = '/dev/mapir'
 time_last_heartbeat = 0
 # --------- Bind to main program message --------- # 
 def on_am7_hearbeat(agent, *args):
-    print("Received heartbeat from main program, main program time is:", args[0])
-    print("Current program time is:", time.monotonic())
+    if verbose_ivy_bus:
+        print("Received heartbeat from main program, main program time is:", args[0])
+        print("Current program time is:", time.monotonic())
 
 
                                               # VIDEO #
@@ -88,6 +93,10 @@ while True:
         # --------- Set Iteration Counter --------- # 
         C_STEP = 0
 
+        # --------- Add FPS Measurement --------- #
+        frame_counter = 0
+        fps_start_time = time.time()
+        
                                                     # RUN MAIN LOOP #
         # ------------------------------------------------------------------------------------------------------- #
         while(cap.isOpened()): 
@@ -118,7 +127,8 @@ while True:
                         X_ARUCO = tvec[0][0][0]
                         Y_ARUCO = tvec[0][0][1]
                         Z_ARUCO = tvec[0][0][2]
-                        print(X_ARUCO, Y_ARUCO, Z_ARUCO)
+                        if verbose_detection:
+                            print(X_ARUCO, Y_ARUCO, Z_ARUCO)
 
                     except:
                         print("-------------------------------") 
@@ -136,9 +146,19 @@ while True:
                     # # --------- Send update on ivy bus with timestamp --------- #
                     msg = "ARUCO_RELATIVE_POS " + str(time.monotonic()) + " " + str(ids) + " " + str(X_ARUCO_B) + " " + str(Y_ARUCO_B) + " " + str(Z_ARUCO_B)
                     IvySendMsg(msg)
-                    print(f'ARUCO position in BODY: ({X_ARUCO_B, Y_ARUCO_B, Z_ARUCO_B})')
+                    if verbose_detection:
+                        print(f'ARUCO position in BODY: ({X_ARUCO_B, Y_ARUCO_B, Z_ARUCO_B})')
+                
+                # --------- FPS Calculation --------- #
+                frame_counter += 1
+                elapsed_time = time.time() - fps_start_time
+                if elapsed_time >= 1.0:  # Update FPS every second
+                    fps = frame_counter / elapsed_time
+                    if verbose_fps:
+                        print(f"FPS: {fps:.2f}")
+                    frame_counter = 0
+                    fps_start_time = time.time()
                         
-            # --------- Break While Loop (No Frame Retrieved) --------- # 
             else:
                 print('Error: frame not retrieved')  
                 continue
