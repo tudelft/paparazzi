@@ -331,11 +331,11 @@ void target_parse_target_pos(uint8_t *buf)
   // Get the target position relative to the drone
   VECT3_ADD(pos, target.offset);
   struct NedCoor_f *uav_pos = stateGetPositionNed_f();
-  VECT3_DIFF(pos, *uav_pos);
+  VECT3_SUB(pos, *uav_pos);
 
-  struct FloatVect3 speed = {target.pos.vel.x, target.pos.vel.y, target.pos.vel.z};
+  struct FloatVect3 vel = {target.pos.vel.x, target.pos.vel.y, target.pos.vel.z};
   struct NedCoor_f *uav_speed = stateGetSpeedNed_f();
-  VECT3_DIFF(speed, *uav_speed);
+  VECT3_SUB(vel, *uav_speed);
 
   simple_kinematic_kalman_update_pos(&target_pos_kalman, pos);
   simple_kinematic_kalman_update_speed(&target_pos_kalman, vel, SIMPLE_KINEMATIC_KALMAN_SPEED_3D);
