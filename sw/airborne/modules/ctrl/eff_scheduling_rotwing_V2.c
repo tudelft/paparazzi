@@ -83,6 +83,8 @@ float ele_min = 0.0;
 /* Define Forces and Moments tructs for each actuator*/
 struct RW_Model RW;
 
+int thrust_curve = 1.0;
+float temp_mQ_k = 5.0;
 inline void eff_scheduling_rotwing_update_wing_angle(void);
 inline void eff_scheduling_rotwing_update_airspeed(void);
 void  ele_pref_sched(void);
@@ -468,15 +470,28 @@ float calc_thrust_curve_d(float k1, float k2, float u){
 }
 
 void calc_all_thrust_curve(void){
+  switch(thrust_curve){
+    case(0):
+      RW.mF.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, actuator_state_1l[COMMAND_MOTOR_FRONT]);
+      RW.mR.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, actuator_state_1l[COMMAND_MOTOR_RIGHT]);
+      RW.mB.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, actuator_state_1l[COMMAND_MOTOR_BACK]);
+      RW.mL.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, actuator_state_1l[COMMAND_MOTOR_LEFT]);
+      break;
+    case(1):
+      RW.mF.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);
+      RW.mR.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, 4800.0);
+      RW.mB.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);
+      RW.mL.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, 4800.0);
+      break;
+    case(2):
+      RW.mF.dFdu = temp_mQ_k/RW_G_SCALE;
+      RW.mR.dFdu = temp_mQ_k/RW_G_SCALE;
+      RW.mB.dFdu = temp_mQ_k/RW_G_SCALE;
+      RW.mL.dFdu = temp_mQ_k/RW_G_SCALE;
+      break;
+  }
+  
   // dTdu    = 2*k1*u + k2--------|k1     | k2     | u
-  // RW.mF.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, actuator_state_1l[COMMAND_MOTOR_FRONT]);
-  // RW.mR.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, actuator_state_1l[COMMAND_MOTOR_RIGHT]);
-  // RW.mB.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, actuator_state_1l[COMMAND_MOTOR_BACK]);
-  // RW.mL.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, actuator_state_1l[COMMAND_MOTOR_LEFT]);
-  RW.mF.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);
-  RW.mR.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, 4800.0);
-  RW.mB.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);
-  RW.mL.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, 4800.0);
   //printf("dFdu: %f %f %f %f\n", RW.mF.dFdu, RW.mR.dFdu, RW.mB.dFdu, RW.mL.dFdu);
   // T = k1*u^2 + k2*u + k3-------|k1     | k2     | k3  | u
   float T_mF = calc_thrust_curve(5.00e-7, 2.05e-4, 1.43, actuator_state_1l[COMMAND_MOTOR_FRONT]);

@@ -186,6 +186,9 @@ struct RW_Model{
 
 };
 
+extern int thrust_curve; 
+extern float temp_mQ_k;
+
 extern bool airspeed_fake_on;
 extern float airspeed_fake;
 extern float ele_eff;
