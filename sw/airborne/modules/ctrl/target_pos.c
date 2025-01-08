@@ -520,7 +520,7 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
 /**
  * Send a falcon cmd message to the sensor
  */
-#if USE_NPS || TARGET_POS_GROUND_STATION
+#if USE_NPS || TARGET_POS_GROUND_STATION || !defined(EXTRA_DOWNLINK_DEVICE)
 void target_pos_send_falcon_cmd(float mode) {
   falcon.mode = mode;
 }
