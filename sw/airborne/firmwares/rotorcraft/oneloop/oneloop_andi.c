@@ -457,12 +457,11 @@ float oneloop_andi_sideslip(void);
 void  reshape_wind(void);
 void  chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
 void  chirp_call(bool* chirp_on, bool* chirp_first_call, float* t_0_chirp, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
-void  init_cf2(struct CF2_t *cf, float fc);
-void  init_cf4(struct CF4_t *cf, float fc);
-void  init_all_cf(void);
-void  reinit_cf2(struct CF2_t *cf, bool reinit);
-void  reinit_cf4(struct CF4_t *cf, bool reinit);
-void  reinit_all_cf(bool reinit);
+void  init_LP(struct LP_t *LP, float fc);
+void  init_all_LP(void);
+void  reinit_LP_synchronous(struct LP_t *LP, struct CustomFilter *f, float rho_new, bool reinit);
+void  reinit_LP(struct LP_t *LP, bool reinit);
+void  reinit_all_LP(bool reinit);
 void  oneloop_axis_effectiveness_calc(void);
 void  oneloop_andi_bound_disturbance(void);
 void  oneloop_calc_model_disturbance(bool in_flight);
@@ -548,7 +547,7 @@ static float Wu_backup[ANDI_NUM_ACT_TOT] = {1.0};
 #endif
 
 /*Complementary Filter Variables*/
-struct Oneloop_CF_t cf;
+struct Oneloop_LP_t LP;
 
 /*Chirp test Variables*/
 bool  chirp_on            = false;
@@ -604,29 +603,11 @@ static Butterworth2LowPass filt_veloc_E;
 static Butterworth2LowPass filt_veloc_D;
 static Butterworth2LowPass accely_filt;                       // Low pass filter for acceleration in y direction                - oneloop_andi_filt_cutoff (tau)
 static Butterworth2LowPass airspeed_filt;                     // Low pass filter for airspeed                                - oneloop_andi_filt_cutoff (tau)
+static struct Oneloop_CustomFilter_t oneloop_andi_model_filt;;
 /* Define messages of the module*/
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
-static void send_cf_oneloop(struct transport_tx *trans, struct link_device *dev)
-{
-  float temp_cf_p[5] = {cf.p.model,cf.p.model_filt.o[0],cf.p.feedback,cf.p.feedback_filt.o[0],cf.p.out};
-  float temp_cf_q[5] = {cf.q.model,cf.q.model_filt.o[0],cf.q.feedback,cf.q.feedback_filt.o[0],cf.q.out};
-  float temp_cf_r[5] = {cf.r.model,cf.r.model_filt.o[0],cf.r.feedback,cf.r.feedback_filt.o[0],cf.r.out};
-  float temp_cf_p_dot[5] = {cf.p_dot.model,cf.p_dot.model_filt.lp2.o[0],cf.p_dot.feedback,cf.p_dot.feedback_filt.lp2.o[0],cf.p_dot.out};
-  float temp_cf_q_dot[5] = {cf.q_dot.model,cf.q_dot.model_filt.lp2.o[0],cf.q_dot.feedback,cf.q_dot.feedback_filt.lp2.o[0],cf.q_dot.out};
-  float temp_cf_r_dot[5] = {cf.r_dot.model,cf.r_dot.model_filt.lp2.o[0],cf.r_dot.feedback,cf.r_dot.feedback_filt.lp2.o[0],cf.r_dot.out};
-  //float temp_cf_ax[5] = {cf.ax.model,cf.ax.model_filt.o[0],cf.ax.feedback,cf.ax.feedback_filt.o[0],cf.ax.out};
-  //float temp_cf_ay[5] = {cf.ay.model,cf.ay.model_filt.o[0],cf.ay.feedback,cf.ay.feedback_filt.o[0],cf.ay.out};
-  float temp_cf_az[5] = {cf.az.model,cf.az.model_filt.o[0],cf.az.feedback,cf.az.feedback_filt.o[0],cf.az.out};
-  pprz_msg_send_COMPLEMENTARY_FILTER(trans, dev, AC_ID, 
-                5, temp_cf_p,
-                5, temp_cf_q,
-                5, temp_cf_r,
-                5, temp_cf_p_dot,
-                5, temp_cf_q_dot,
-                5, temp_cf_r_dot,
-                5, temp_cf_az);
-}
+
 static void send_wls_v_oneloop(struct transport_tx *trans, struct link_device *dev)
 {
   send_wls_v("one", &WLS_one_p, trans, dev); 
@@ -706,20 +687,20 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
                            datasize, data);
 }
 
-static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
-{
-  float temp_debug_vect[9];
-  temp_debug_vect[0] = cf.ax.model;
-  temp_debug_vect[1] = cf.ay.model;
-  temp_debug_vect[2] = cf.az.model;
-  temp_debug_vect[3] = cf.p_dot.model;
-  temp_debug_vect[4] = cf.q_dot.model;
-  temp_debug_vect[5] = cf.r_dot.model;
-  temp_debug_vect[6] = cf.p.model;
-  temp_debug_vect[7] = cf.q.model;
-  temp_debug_vect[8] = cf.r.model;
-  debug_vect(trans, dev, "model_cf", temp_debug_vect, 9);
-}
+// static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
+// {
+//   float temp_debug_vect[9];
+//   temp_debug_vect[0] = cf.ax.model;
+//   temp_debug_vect[1] = cf.ay.model;
+//   temp_debug_vect[2] = cf.az.model;
+//   temp_debug_vect[3] = cf.p_dot.model;
+//   temp_debug_vect[4] = cf.q_dot.model;
+//   temp_debug_vect[5] = cf.r_dot.model;
+//   temp_debug_vect[6] = cf.p.model;
+//   temp_debug_vect[7] = cf.q.model;
+//   temp_debug_vect[8] = cf.r.model;
+//   debug_vect(trans, dev, "model_cf", temp_debug_vect, 9);
+// }
 #endif
 
 /** @brief Function to make sure that inputs are positive non zero vaues*/
@@ -1310,14 +1291,14 @@ void init_controller_gains(void){
   k_att_rm.k2[2] = k_rm_2_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
   k_att_rm.k3[2] = k_rm_3_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
 
-  printf("Attitude RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
-  printf("Attitude EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
-  printf("Heading  RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
-  printf("Heading  EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
-  printf("Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
-  printf("Attitude EC Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
-  printf("Heading  RM Gains: %f %f %f\n", k_att_rm.k1[2], k_att_rm.k2[2], k_att_rm.k3[2]);
-  printf("Heading  EC Gains: %f %f %f\n", k_att_e.k1[2], k_att_e.k2[2], k_att_e.k3[2]);
+  //printf("Attitude RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
+  //printf("Attitude EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
+  //printf("Heading  RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
+  //printf("Heading  EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
+  //printf("Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
+  //printf("Attitude EC Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
+  //printf("Heading  RM Gains: %f %f %f\n", k_att_rm.k1[2], k_att_rm.k2[2], k_att_rm.k3[2]);
+  //printf("Heading  EC Gains: %f %f %f\n", k_att_e.k1[2], k_att_e.k2[2], k_att_e.k3[2]);
   /*Position Loop*/
   // k_pos_e.k1[0]  = k_e_1_3_f_v2(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
   // k_pos_e.k2[0]  = k_e_2_3_f_v2(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
@@ -1383,69 +1364,63 @@ void init_controller_gains(void){
   act_dynamics[COMMAND_PITCH]  = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
 }
 // Complementary Filters Functions -----------------------------------------------------------
-/** @brief Initialize the Complementary Filters 2nd Order Butterworth */
-void init_cf2(struct CF2_t *cf, float fc){
-  cf->freq     = fc;
-  cf->freq_set = fc;
-  cf->tau      = 1/(2*M_PI*cf->freq);
-  init_butterworth_2_low_pass(&cf->model_filt,    cf->tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
-  init_butterworth_2_low_pass(&cf->feedback_filt, cf->tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
-  cf->model    = 0.0;
-  cf->feedback = 0.0;
-  cf->out      = 0.0;
+/** @brief Initialize the Low Pass Filter of the first order */
+void init_LP(struct LP_t *LP, float fc){
+  LP->freq     = fc;
+  LP->freq_set = fc;
+  LP->tau      = 1/(2*M_PI*LP->freq);
+  init_first_order_low_pass(&LP->meas_filt, LP->tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
+  LP->meas     = 0.0;
+  LP->meas_prev= 0.0;
 }
-/** @brief  Initialize the Complementary Filters 4th Order Butterworth*/
-void init_cf4(struct CF4_t *cf, float fc){
-  cf->freq     = fc;
-  cf->freq_set = fc;
-  cf->tau      = 1/(2*M_PI*cf->freq);
-  init_butterworth_4_low_pass(&cf->model_filt,    cf->tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
-  init_butterworth_4_low_pass(&cf->feedback_filt, cf->tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
-  cf->model    = 0.0;
-  cf->feedback = 0.0;
-  cf->out      = 0.0;
+
+/** @brief  Initialize all Low Pass Filters */
+void init_all_LP(void){
+  init_LP(&LP.ax,    oneloop_andi_filt_cutoff_a); 
+  init_LP(&LP.ay,    oneloop_andi_filt_cutoff_a); 
+  init_LP(&LP.az,    oneloop_andi_filt_cutoff_a); 
+  init_LP(&LP.p_dot, 2.0);
+  init_LP(&LP.q_dot, 2.0);
+  init_LP(&LP.r_dot, 2.0);
+  init_LP(&LP.p,    15.0); //oneloop_andi_filt_cutoff_p
+  init_LP(&LP.q,    15.0); //oneloop_andi_filt_cutoff_q
+  init_LP(&LP.r,    15.0); //oneloop_andi_filt_cutoff_r
+  
+  init_custom_filter(&oneloop_andi_model_filt.ax, oneloop_andi_filt_cutoff_a, 1.0 / PERIODIC_FREQUENCY,k_pos_e.k3[0]/positive_non_zero(p_pos_e.p3), 0.0);
+  init_custom_filter(&oneloop_andi_model_filt.ay, oneloop_andi_filt_cutoff_a, 1.0 / PERIODIC_FREQUENCY,k_pos_e.k3[1]/positive_non_zero(p_pos_e.p3), 0.0);
+  init_custom_filter(&oneloop_andi_model_filt.az, oneloop_andi_filt_cutoff_a, 1.0 / PERIODIC_FREQUENCY,k_pos_e.k3[2]/positive_non_zero(p_alt_e.p3), 0.0);
+  init_custom_filter(&oneloop_andi_model_filt.p_dot, 2.0, 1.0 / PERIODIC_FREQUENCY,k_att_e.k3[0]/positive_non_zero(p_att_e.p3), 0.0);
+  init_custom_filter(&oneloop_andi_model_filt.q_dot, 2.0, 1.0 / PERIODIC_FREQUENCY,k_att_e.k3[1]/positive_non_zero(p_att_e.p3), 0.0);
+  init_custom_filter(&oneloop_andi_model_filt.r_dot, 2.0, 1.0 / PERIODIC_FREQUENCY,k_att_e.k3[2]/positive_non_zero(p_head_e.p3), 0.0);
+
 }
-/** @brief  Initialize all the Complementary Filters */
-void init_all_cf(void){
-  init_cf2(&cf.ax,    oneloop_andi_filt_cutoff_a);
-  init_cf2(&cf.ay,    oneloop_andi_filt_cutoff_a);
-  init_cf2(&cf.az,    oneloop_andi_filt_cutoff_a);
-  init_cf4(&cf.p_dot, 2.0);
-  init_cf4(&cf.q_dot, 2.0);
-  init_cf4(&cf.r_dot, 2.0);
-  init_cf2(&cf.p,     oneloop_andi_filt_cutoff_p);
-  init_cf2(&cf.q,     oneloop_andi_filt_cutoff_q);
-  init_cf2(&cf.r,     oneloop_andi_filt_cutoff_r);
-}
-/** @brief Reinitialize 2nd Order CF if new frequency setting or if forced */
-void reinit_cf2(struct CF2_t *cf, bool reinit){
-  if(cf->freq != cf->freq_set || reinit){
-    cf->freq = cf->freq_set;
-    cf->tau = 1/(2*M_PI*cf->freq);
-    init_butterworth_2_low_pass(&cf->model_filt,    cf->tau, 1.0 / PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&cf->model_filt));
-    init_butterworth_2_low_pass(&cf->feedback_filt, cf->tau, 1.0 / PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&cf->feedback_filt));
+/** @brief Reinitialize Low Pass filter if new frequency setting or if forced */
+void reinit_LP_synchronous(struct LP_t *LP, struct CustomFilter *f, float rho_new, bool reinit){
+  if(LP->freq != LP->freq_set || f->rho != rho_new || reinit){
+    LP->freq = LP->freq_set;
+    LP->tau = 1/(2*M_PI*LP->freq);
+    init_first_order_low_pass(&LP->meas_filt, LP->tau, 1.0 / PERIODIC_FREQUENCY, get_first_order_low_pass(&LP->meas_filt));
+    init_custom_filter(f, LP->freq, 1.0 / PERIODIC_FREQUENCY, rho_new, f->yk1); //FIXME: rho can mutate if the poles are changed
   }
 }
-/** @brief Reinitialize 4th Order CF if new frequency setting or if forced */
-void reinit_cf4(struct CF4_t *cf, bool reinit){
-  if(cf->freq != cf->freq_set || reinit){
-    cf->freq = cf->freq_set;
-    cf->tau = 1/(2*M_PI*cf->freq);
-    init_butterworth_4_low_pass(&cf->model_filt,    cf->tau, 1.0 / PERIODIC_FREQUENCY, get_butterworth_4_low_pass(&cf->model_filt));
-    init_butterworth_4_low_pass(&cf->feedback_filt, cf->tau, 1.0 / PERIODIC_FREQUENCY, get_butterworth_4_low_pass(&cf->feedback_filt));
+void reinit_LP(struct LP_t *LP, bool reinit){
+  if(LP->freq != LP->freq_set || reinit){
+    LP->freq = LP->freq_set;
+    LP->tau = 1/(2*M_PI*LP->freq);
+    init_first_order_low_pass(&LP->meas_filt, LP->tau, 1.0 / PERIODIC_FREQUENCY, get_first_order_low_pass(&LP->meas_filt));
   }
 }
-/** @brief Reinitialize all the Complementary Filters */
-void reinit_all_cf(bool reinit){
-  reinit_cf2(&cf.ax,    reinit);
-  reinit_cf2(&cf.ay,    reinit);
-  reinit_cf2(&cf.az,    reinit);
-  reinit_cf4(&cf.p_dot, reinit);
-  reinit_cf4(&cf.q_dot, reinit);
-  reinit_cf4(&cf.r_dot, reinit);
-  reinit_cf2(&cf.p,     reinit);
-  reinit_cf2(&cf.q,     reinit);
-  reinit_cf2(&cf.r,     reinit);
+/** @brief Reinitialize all the Low Pass Filters */
+void reinit_all_LP(bool reinit){
+  reinit_LP_synchronous(&LP.ax,    &oneloop_andi_model_filt.ax    ,k_pos_e.k3[0]/positive_non_zero(p_pos_e.p3) ,reinit);
+  reinit_LP_synchronous(&LP.ay,    &oneloop_andi_model_filt.ay    ,k_pos_e.k3[1]/positive_non_zero(p_pos_e.p3) ,reinit);
+  reinit_LP_synchronous(&LP.az,    &oneloop_andi_model_filt.az    ,k_pos_e.k3[2]/positive_non_zero(p_alt_e.p3) ,reinit);
+  reinit_LP_synchronous(&LP.p_dot, &oneloop_andi_model_filt.p_dot ,k_att_e.k3[0]/positive_non_zero(p_att_e.p3) ,reinit);
+  reinit_LP_synchronous(&LP.q_dot, &oneloop_andi_model_filt.q_dot ,k_att_e.k3[1]/positive_non_zero(p_att_e.p3) ,reinit);
+  reinit_LP_synchronous(&LP.r_dot, &oneloop_andi_model_filt.r_dot ,k_att_e.k3[2]/positive_non_zero(p_head_e.p3),reinit);
+  reinit_LP(&LP.p, reinit);
+  reinit_LP(&LP.q, reinit);
+  reinit_LP(&LP.r, reinit);
 }
 //------------------------------------------------------------------------------------------
 // Normal Filter Functions ----------------------------------------------------------------
@@ -1533,91 +1508,58 @@ void init_filter(void)
 
 /** @brief  Propagate the filters */
 void oneloop_andi_propagate_filters(void) {
-  reinit_all_cf(false);
+  reinit_all_LP(false);
   struct  NedCoor_f *accel = stateGetAccelNed_f();
   struct  NedCoor_f *veloc = stateGetSpeedNed_f();
   //printf("veloc: %f %f %f\n", veloc->x, veloc->y, veloc->z);
   struct  FloatRates *body_rates = stateGetBodyRates_f();
   // Store Feedbacks in the Complementary Filters
-  cf.ax.feedback    = accel->x;
-  cf.ay.feedback    = accel->y;
-  cf.az.feedback    = accel->z;
-
-  float temp_p_dot  = (body_rates->p-cf.p.feedback)*PERIODIC_FREQUENCY;
-  float temp_q_dot  = (body_rates->q-cf.q.feedback)*PERIODIC_FREQUENCY;
-  float temp_r_dot  = (body_rates->r-cf.r.feedback)*PERIODIC_FREQUENCY;
+  LP.ax.meas        = accel->x;
+  LP.ay.meas        = accel->y;
+  LP.az.meas        = accel->z;
+  LP.p.meas_prev    = LP.p.meas;
+  LP.q.meas_prev    = LP.q.meas;
+  LP.r.meas_prev    = LP.r.meas;
+  LP.p.meas         = body_rates->p;
+  LP.q.meas         = body_rates->q;
+  LP.r.meas         = body_rates->r;
+  float temp_p_dot  = (LP.p.meas-LP.p.meas_prev)*PERIODIC_FREQUENCY;
+  float temp_q_dot  = (LP.q.meas-LP.q.meas_prev)*PERIODIC_FREQUENCY;
+  float temp_r_dot  = (LP.r.meas-LP.r.meas_prev)*PERIODIC_FREQUENCY;
 #ifdef ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ
-    cf.p_dot.feedback = update_filter_on_type_feedback(&roll_structural_mode, temp_p_dot);
+    LP.p_dot.meas = update_filter_on_type_feedback(&roll_structural_mode, temp_p_dot);
 #else
-  cf.p_dot.feedback = temp_p_dot;
+  LP.p_dot.meas = temp_p_dot;
 #endif
 #ifdef ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ
-    cf.q_dot.feedback = update_filter_on_type_feedback(&pitch_structural_mode, temp_q_dot);
+    LP.q_dot.meas = update_filter_on_type_feedback(&pitch_structural_mode, temp_q_dot);
 #else
-  cf.q_dot.feedback = temp_q_dot;
+  LP.q_dot.meas = temp_q_dot;
 #endif
 #ifdef ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
-    cf.r_dot.feedback = update_filter_on_type_feedback(&yaw_structural_mode, temp_r_dot);
+    LP.r_dot.meas = update_filter_on_type_feedback(&yaw_structural_mode, temp_r_dot);
 #else
-  cf.r_dot.feedback = temp_r_dot;
+  LP.r_dot.meas = temp_r_dot;
 #endif
-  cf.p.feedback     = body_rates->p;
-  cf.q.feedback     = body_rates->q;
-  cf.r.feedback     = body_rates->r;
+
   // Update Filters of Feedbacks
-  update_butterworth_2_low_pass(&cf.ax.feedback_filt,    cf.ax.feedback);
-  update_butterworth_2_low_pass(&cf.ay.feedback_filt,    cf.ay.feedback);
-  update_butterworth_2_low_pass(&cf.az.feedback_filt,    cf.az.feedback);
-  update_butterworth_4_low_pass(&cf.p_dot.feedback_filt, cf.p_dot.feedback);
-  update_butterworth_4_low_pass(&cf.q_dot.feedback_filt, cf.q_dot.feedback);
-  update_butterworth_4_low_pass(&cf.r_dot.feedback_filt, cf.r_dot.feedback);
-  update_butterworth_2_low_pass(&cf.p.feedback_filt,     cf.p.feedback);
-  update_butterworth_2_low_pass(&cf.q.feedback_filt,     cf.q.feedback);
-  update_butterworth_2_low_pass(&cf.r.feedback_filt,     cf.r.feedback); 
-  //printf("veloc: %f %f %f\n", veloc->x, veloc->y, veloc->z);
+  update_first_order_low_pass(&LP.ax.meas_filt,    LP.ax.meas);
+  update_first_order_low_pass(&LP.ay.meas_filt,    LP.ay.meas);
+  update_first_order_low_pass(&LP.az.meas_filt,    LP.az.meas);
+  update_first_order_low_pass(&LP.p_dot.meas_filt, LP.p_dot.meas);
+  update_first_order_low_pass(&LP.q_dot.meas_filt, LP.q_dot.meas);
+  update_first_order_low_pass(&LP.r_dot.meas_filt, LP.r_dot.meas);
+  update_first_order_low_pass(&LP.p.meas_filt,     LP.p.meas);
+  update_first_order_low_pass(&LP.q.meas_filt,     LP.q.meas);
+  update_first_order_low_pass(&LP.r.meas_filt,     LP.r.meas); 
+
   update_butterworth_2_low_pass(&filt_veloc_N,      veloc->x);
   update_butterworth_2_low_pass(&filt_veloc_E,      veloc->y);
   update_butterworth_2_low_pass(&filt_veloc_D,      veloc->z); 
-  //printf("veloc_filt: %f %f %f\n", filt_veloc_N.o[0], filt_veloc_E.o[0], filt_veloc_D.o[0]);
+ 
   // Calculate Model Predictions for Linear and Angular Accelerations Using the Effectiveness Matrix
-  calc_model();
-  // Update Filters of Model Predictions for Linear and Angular Accelerations
-#ifdef ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ
-  cf.p_dot.model = update_filter_on_type_model(&roll_structural_mode, cf.p_dot.model);
-#endif
-#ifdef ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ
-  cf.q_dot.model = update_filter_on_type_model(&pitch_structural_mode, cf.q_dot.model);
-#endif
-#ifdef ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
-  cf.r_dot.model = update_filter_on_type_model(&yaw_structural_mode, cf.r_dot.model);
-#endif
-  update_butterworth_2_low_pass(&cf.ax.model_filt,    cf.ax.model);
-  update_butterworth_2_low_pass(&cf.ay.model_filt,    cf.ay.model);
-  update_butterworth_2_low_pass(&cf.az.model_filt,    cf.az.model);
-  update_butterworth_4_low_pass(&cf.p_dot.model_filt, cf.p_dot.model);
-  update_butterworth_4_low_pass(&cf.q_dot.model_filt, cf.q_dot.model);
-  update_butterworth_4_low_pass(&cf.r_dot.model_filt, cf.r_dot.model);
-  // Calculate Complementary Filter outputs for Linear and Angular Accelerations 
-  cf.ax.out    = cf.ax.feedback_filt.o[0]    + cf.ax.model    - cf.ax.model_filt.o[0];
-  cf.ay.out    = cf.ay.feedback_filt.o[0]    + cf.ay.model    - cf.ay.model_filt.o[0];
-  cf.az.out    = cf.az.feedback_filt.o[0]    + cf.az.model    - cf.az.model_filt.o[0];
-  //cf.p_dot.out = cf.p_dot.feedback_filt.o[0] + cf.p_dot.model - cf.p_dot.model_filt.o[0];
-  cf.p_dot.out = cf.p_dot.feedback_filt.lp2.o[0] + cf.p_dot.model - cf.p_dot.model_filt.lp2.o[0];
-  //cf.q_dot.out = cf.q_dot.feedback_filt.o[0] + cf.q_dot.model - cf.q_dot.model_filt.o[0];
-  cf.q_dot.out = cf.q_dot.feedback_filt.lp2.o[0] + cf.q_dot.model - cf.q_dot.model_filt.lp2.o[0];
-  cf.r_dot.out = cf.r_dot.feedback_filt.lp2.o[0] + cf.r_dot.model - cf.r_dot.model_filt.lp2.o[0];
-  // Calculate Model Predictions for Angular Rates Using the output of the angular acceleration Complementary Filter
-  cf.p.model   = cf.p.model + cf.p_dot.out / PERIODIC_FREQUENCY;
-  cf.q.model   = cf.q.model + cf.q_dot.out / PERIODIC_FREQUENCY;
-  cf.r.model   = cf.r.model + cf.r_dot.out / PERIODIC_FREQUENCY;
-  // Update Filters of Model Predictions for Angular Rates
-  update_butterworth_2_low_pass(&cf.p.model_filt,     cf.p.model);
-  update_butterworth_2_low_pass(&cf.q.model_filt,     cf.q.model);
-  update_butterworth_2_low_pass(&cf.r.model_filt,     cf.r.model);
-  // Calculate Complementary Filter outputs for Angular Rates
-  cf.p.out     = cf.p.feedback_filt.o[0]     + cf.p.model     - cf.p.model_filt.o[0];
-  cf.q.out     = cf.q.feedback_filt.o[0]     + cf.q.model     - cf.q.model_filt.o[0];
-  cf.r.out     = cf.r.feedback_filt.o[0]     + cf.r.model     - cf.r.model_filt.o[0];
+  // calc_model();
+
   // Propagate filter for sideslip correction
   float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
   update_butterworth_2_low_pass(&accely_filt, accely);
@@ -1678,7 +1620,7 @@ void oneloop_andi_init(void)
     bwls_1l[i] = EFF_MAT_G[i];
   }
   // Initialize filters and other variables
-  init_all_cf();
+  init_all_LP();
   init_filter();
   init_controller_gains();
   float_vect_zero(andi_u, ANDI_NUM_ACT_TOT);
@@ -1703,10 +1645,9 @@ void oneloop_andi_init(void)
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_GUID, send_eff_mat_guid_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE, send_guidance_oneloop_andi);
     // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATOR_STATE, send_oneloop_actuator_state);
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_oneloop_debug);
+    //egister_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_oneloop_debug);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_V, send_wls_v_oneloop);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_U, send_wls_u_oneloop);
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_COMPLEMENTARY_FILTER, send_cf_oneloop);
   #endif
 }
 
@@ -1729,7 +1670,7 @@ void oneloop_andi_enter(bool half_loop_sp, int ctrl_type)
   for (i = 0; i < ANDI_OUTPUTS; i++) {
     bwls_1l[i] = EFF_MAT_G[i];
   }
-  reinit_all_cf(true);
+  reinit_all_LP(true);
   init_filter();
   init_controller_gains();
   /* Stabilization Reset */
@@ -1903,12 +1844,12 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   oneloop_andi.sta_state.att[1]    = eulers_zxy.theta;
   oneloop_andi.sta_state.att[2]    = eulers_zxy.psi  ;
   oneloop_andi_propagate_filters();   //needs to be after update of attitude vector
-  oneloop_andi.sta_state.att_d[0]  = cf.p.out;
-  oneloop_andi.sta_state.att_d[1]  = cf.q.out;
-  oneloop_andi.sta_state.att_d[2]  = cf.r.out;
-  oneloop_andi.sta_state.att_2d[0] = cf.p_dot.out;
-  oneloop_andi.sta_state.att_2d[1] = cf.q_dot.out;
-  oneloop_andi.sta_state.att_2d[2] = cf.r_dot.out;
+  oneloop_andi.sta_state.att_d[0]  = LP.p.meas_filt.last_out;
+  oneloop_andi.sta_state.att_d[1]  = LP.q.meas_filt.last_out;
+  oneloop_andi.sta_state.att_d[2]  = LP.r.meas_filt.last_out;
+  oneloop_andi.sta_state.att_2d[0] = LP.p_dot.meas_filt.last_out;
+  oneloop_andi.sta_state.att_2d[1] = LP.q_dot.meas_filt.last_out;
+  oneloop_andi.sta_state.att_2d[2] = LP.r_dot.meas_filt.last_out;
   // (2) Position related
   oneloop_andi.gui_state.pos[0] = stateGetPositionNed_f()->x;   
   oneloop_andi.gui_state.pos[1] = stateGetPositionNed_f()->y;   
@@ -1916,9 +1857,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   oneloop_andi.gui_state.vel[0] = filt_veloc_N.o[0];      
   oneloop_andi.gui_state.vel[1] = filt_veloc_E.o[0];      
   oneloop_andi.gui_state.vel[2] = filt_veloc_D.o[0];      
-  oneloop_andi.gui_state.acc[0] = cf.ax.out;
-  oneloop_andi.gui_state.acc[1] = cf.ay.out;
-  oneloop_andi.gui_state.acc[2] = cf.az.out;
+  oneloop_andi.gui_state.acc[0] = LP.ax.meas_filt.last_out;
+  oneloop_andi.gui_state.acc[1] = LP.ay.meas_filt.last_out;
+  oneloop_andi.gui_state.acc[2] = LP.az.meas_filt.last_out;
   // Calculated feedforward signal for yaw control
   g2_ff = 0.0;
 
@@ -2230,38 +2171,38 @@ void normalize_nu(void){
 }
 
 /** @brief  Function that calculates the model prediction for the complementary filter. */
-void calc_model(void){
-  int8_t i;
-  int8_t j;
-  // // Absolute Model Prediction : 
-  float sphi   = sinf(eulers_zxy.phi);
-  float cphi   = cosf(eulers_zxy.phi);
-  float stheta = sinf(eulers_zxy.theta);
-  float ctheta = cosf(eulers_zxy.theta);
-  float spsi   = sinf(eulers_zxy.psi);
-  float cpsi   = cosf(eulers_zxy.psi);
-  // Thrust and Pusher force estimation
-  float L      = RW.wing.L / RW.m;          // Lift specific force
-  float T      = RW.T / RW.m;             //  Thrust specific force. Minus gravity is a guesstimate.
-  float P      = RW.P / RW.m;               // Pusher specific force
+// void calc_model(void){
+//   int8_t i;
+//   int8_t j;
+//   // // Absolute Model Prediction : 
+//   float sphi   = sinf(eulers_zxy.phi);
+//   float cphi   = cosf(eulers_zxy.phi);
+//   float stheta = sinf(eulers_zxy.theta);
+//   float ctheta = cosf(eulers_zxy.theta);
+//   float spsi   = sinf(eulers_zxy.psi);
+//   float cpsi   = cosf(eulers_zxy.psi);
+//   // Thrust and Pusher force estimation
+//   float L      = RW.wing.L / RW.m;          // Lift specific force
+//   float T      = RW.T / RW.m;             //  Thrust specific force. Minus gravity is a guesstimate.
+//   float P      = RW.P / RW.m;               // Pusher specific force
 
-  cf.ax.model = -(cpsi * stheta + ctheta * sphi * spsi) * T + (cpsi * ctheta - sphi * spsi * stheta) * P - sphi * spsi * L;
-  cf.ay.model = -(spsi * stheta - cpsi * ctheta * sphi) * T + (ctheta * spsi + cpsi * sphi * stheta) * P + cpsi * sphi * L;
-  cf.az.model = g - cphi * ctheta * T - cphi * stheta * P - cphi * L;
-  float model_pqr_dot[3] = {0.0, 0.0, 0.0};
-  for (i = 0; i < 3; i++){ // For loop for prediction of angular acceleration 
-    for (j = 0; j < ANDI_NUM_ACT; j++){
-      if(j == COMMAND_ELEVATOR){
-        model_pqr_dot[i] = model_pqr_dot[i] +  (actuator_state_1l[j] - RW.ele_pref) * EFF_MAT_RW[i+3][j]; // Ele pref is incidence angle
-      } else {
-        model_pqr_dot[i] = model_pqr_dot[i] +  actuator_state_1l[j] * EFF_MAT_RW[i+3][j];
-      }
-    }
-  }
-  cf.p_dot.model = model_pqr_dot[0];
-  cf.q_dot.model = model_pqr_dot[1];
-  cf.r_dot.model = model_pqr_dot[2];
-}
+//   cf.ax.model = -(cpsi * stheta + ctheta * sphi * spsi) * T + (cpsi * ctheta - sphi * spsi * stheta) * P - sphi * spsi * L;
+//   cf.ay.model = -(spsi * stheta - cpsi * ctheta * sphi) * T + (ctheta * spsi + cpsi * sphi * stheta) * P + cpsi * sphi * L;
+//   cf.az.model = g - cphi * ctheta * T - cphi * stheta * P - cphi * L;
+//   float model_pqr_dot[3] = {0.0, 0.0, 0.0};
+//   for (i = 0; i < 3; i++){ // For loop for prediction of angular acceleration 
+//     for (j = 0; j < ANDI_NUM_ACT; j++){
+//       if(j == COMMAND_ELEVATOR){
+//         model_pqr_dot[i] = model_pqr_dot[i] +  (actuator_state_1l[j] - RW.ele_pref) * EFF_MAT_RW[i+3][j]; // Ele pref is incidence angle
+//       } else {
+//         model_pqr_dot[i] = model_pqr_dot[i] +  actuator_state_1l[j] * EFF_MAT_RW[i+3][j];
+//       }
+//     }
+//   }
+//   cf.p_dot.model = model_pqr_dot[0];
+//   cf.q_dot.model = model_pqr_dot[1];
+//   cf.r_dot.model = model_pqr_dot[2];
+// }
 
 /** @brief  Function that maps navigation inputs to the oneloop controller for the generated autopilot. */
 void oneloop_from_nav(bool in_flight)
@@ -2606,6 +2547,12 @@ void oneloop_calc_model_disturbance(bool in_flight){
       }
       oneloop_andi_model[i] = oneloop_andi_model[i] / k3;
     } 
+    oneloop_andi_model[RW_aN] = update_custom_filter(&oneloop_andi_model_filt.ax, oneloop_andi_model[RW_aN]);
+    oneloop_andi_model[RW_aE] = update_custom_filter(&oneloop_andi_model_filt.ay, oneloop_andi_model[RW_aE]);
+    oneloop_andi_model[RW_aD] = update_custom_filter(&oneloop_andi_model_filt.az, oneloop_andi_model[RW_aD]);
+    oneloop_andi_model[RW_ap] = update_custom_filter(&oneloop_andi_model_filt.p_dot, oneloop_andi_model[RW_ap]);
+    oneloop_andi_model[RW_aq] = update_custom_filter(&oneloop_andi_model_filt.q_dot, oneloop_andi_model[RW_aq]);
+    oneloop_andi_model[RW_ar] = update_custom_filter(&oneloop_andi_model_filt.r_dot, oneloop_andi_model[RW_ar]);
   }else {
     float_vect_zero(oneloop_andi_model, ANDI_OUTPUTS);
   }

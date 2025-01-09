@@ -149,44 +149,99 @@ struct Gains2ndOrder{
   float k3;
 };
 
-struct CF4_t {
-  float tau;
-  float freq;
-  float freq_set;
-  float model;
-  Butterworth4LowPass model_filt;
-  float feedback;
-  Butterworth4LowPass feedback_filt;
-  float out;
+struct LP_t {
+  float  tau;
+  float  freq;
+  float  freq_set;
+  float  meas;
+  float  meas_prev;
+  struct FirstOrderLowPass meas_filt;
 };
-struct CF2_t {
-  float tau;
-  float freq;
-  float freq_set;
-  float model;
-  Butterworth2LowPass model_filt;
-  float feedback;
-  Butterworth2LowPass feedback_filt;
-  float out;
+struct Oneloop_LP_t {
+  struct LP_t p;
+  struct LP_t q;
+  struct LP_t r;
+  struct LP_t p_dot;
+  struct LP_t q_dot;
+  struct LP_t r_dot;
+  struct LP_t ax;
+  struct LP_t ay;
+  struct LP_t az;
 };
-
-struct Oneloop_CF_t {
-  struct CF2_t p;
-  struct CF2_t q;
-  struct CF2_t r;
-  struct CF4_t p_dot;
-  struct CF4_t q_dot;
-  struct CF4_t r_dot;
-  struct CF2_t ax;
-  struct CF2_t ay;
-  struct CF2_t az;
-};
-extern struct Oneloop_CF_t cf;
+extern struct Oneloop_LP_t LP;
 struct notch_axis_t{
   struct SecondOrderNotchFilter filter;
   float freq;
   float bandwidth;
 };
+
+struct CustomFilter {
+  float fc;
+  float dt;
+  float rho;
+  float yk;
+  float yk1;
+  float uk;
+  float uk1;
+};
+struct Oneloop_CustomFilter_t {
+  struct CustomFilter p_dot;
+  struct CustomFilter q_dot;
+  struct CustomFilter r_dot;
+  struct CustomFilter ax;
+  struct CustomFilter ay;
+  struct CustomFilter az;
+};
+/** Init Custum filter.
+ *
+ * Laplace transform in continious time:
+ *         (1-rho)*s + fc*rho
+ * H(s) = --------------------
+ *           rho*s + fc*rho
+ *
+ * @param filter      Custom filter structure
+ * @param fc          Filtering frequency [Hz]
+ * @param sample_time Sampling period of the signal
+ * @param value       Initial value of the filter
+ */
+static inline void init_custom_filter(struct CustomFilter *filter, float fc, float sample_time, float rho, float value)
+{
+  filter->fc  = fc * 2.0f * M_PI;
+  filter->dt  = sample_time;
+  filter->rho = rho;
+  filter->yk  = value;
+  filter->yk1 = value;
+  filter->uk  = value;
+  filter->uk1 = value;
+  printf("fc: %f, dt: %f, rho: %f, yk: %f, yk1: %f, uk: %f, uk1: %f\n", filter->fc, filter->dt, filter->rho, filter->yk, filter->yk1, filter->uk, filter->uk1);
+}
+/** Update Custom filter state with a new value.
+ *
+ * @param filter Custom filter structure
+ * @param value  New input value of the filter
+ * @return       New filtered value
+ */
+static inline float update_custom_filter(struct CustomFilter *filter, float value)
+{
+  filter->uk  = filter->uk1;
+  filter->uk1 = value;
+  filter->yk  = filter->yk1;
+  float D = (filter->dt * filter->fc + 2);
+  float A = -(filter->dt * filter->fc - 2) / D;
+  float B = (filter->dt * filter->fc - 2 * filter->rho + 2) / D;
+  float C = (2 * filter->rho + filter->dt * filter->fc - 2) / D;
+  float out = A * filter->yk + B * filter->uk1 + C * filter->uk;
+  filter->yk1 = out;
+  return out;
+}
+// function yk1 = fcn(uk,uk1,yk,dt, fc, rho)
+// D = (dt * fc + 2);
+// A = -(dt * fc - 2) / D;
+// B = (dt * fc - 2 * rho + 2) / D;
+// C = (2 * rho + dt * fc - 2) / D;
+
+// % Compute yk1
+// yk1 = A * yk + B * uk1 + C * uk;
 struct Oneloop_notch_t{
   struct notch_axis_t roll;
   struct notch_axis_t pitch;

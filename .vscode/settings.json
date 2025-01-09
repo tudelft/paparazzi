@@ -11,7 +11,8 @@
     "files.associations": {
         "Makefile.*": "makefile",
         "regex": "c",
-        "tensor": "c"
+        "tensor": "c",
+        "functional": "cpp"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",

@@ -7,15 +7,15 @@
    <dl_settings>
      <dl_settings NAME="oneloop">
       <dl_setting var="temp_k"             min="0.5"     step="0.1"   max="1000"  shortname="temp_k"/>
-      <dl_setting var="cf.p.freq_set"      min="0.5"     step="0.1"   max="20"    shortname="p_cf_freq"/>
-      <dl_setting var="cf.q.freq_set"      min="0.5"     step="0.1"   max="20"    shortname="q_cf_freq"/>
-      <dl_setting var="cf.r.freq_set"      min="0.5"     step="0.1"   max="20"    shortname="r_cf_freq"/>
-      <dl_setting var="cf.p_dot.freq_set"  min="0.5"     step="0.1"   max="20"    shortname="pdot_cf_freq"/>
-      <dl_setting var="cf.q_dot.freq_set"  min="0.5"     step="0.1"   max="20"    shortname="qdot_cf_freq"/>
-      <dl_setting var="cf.r_dot.freq_set"  min="0.5"     step="0.1"   max="20"    shortname="rdot_cf_freq"/>
-      <dl_setting var="cf.ax.freq_set"     min="0.5"     step="0.1"   max="20"    shortname="ax_cf_freq"/>
-      <dl_setting var="cf.ay.freq_set"     min="0.5"     step="0.1"   max="20"    shortname="ay_cf_freq"/>
-      <dl_setting var="cf.az.freq_set"     min="0.5"     step="0.1"   max="20"    shortname="az_cf_freq"/>
+      <dl_setting var="LP.p.freq_set"      min="0.5"     step="0.1"   max="20"    shortname="p_LP_freq"/>
+      <dl_setting var="LP.q.freq_set"      min="0.5"     step="0.1"   max="20"    shortname="q_LP_freq"/>
+      <dl_setting var="LP.r.freq_set"      min="0.5"     step="0.1"   max="20"    shortname="r_LP_freq"/>
+      <dl_setting var="LP.p_dot.freq_set"  min="0.5"     step="0.1"   max="20"    shortname="pdot_LP_freq"/>
+      <dl_setting var="LP.q_dot.freq_set"  min="0.5"     step="0.1"   max="20"    shortname="qdot_LP_freq"/>
+      <dl_setting var="LP.r_dot.freq_set"  min="0.5"     step="0.1"   max="20"    shortname="rdot_LP_freq"/>
+      <dl_setting var="LP.ax.freq_set"     min="0.5"     step="0.1"   max="20"    shortname="ax_LP_freq"/>
+      <dl_setting var="LP.ay.freq_set"     min="0.5"     step="0.1"   max="20"    shortname="ay_LP_freq"/>
+      <dl_setting var="LP.az.freq_set"     min="0.5"     step="0.1"   max="20"    shortname="az_LP_freq"/>
       <dl_setting var="max_as"             min="7"       step="1"     max="19"    shortname="max_airspeed"/>
       <dl_setting var="temp_pitch"         min="0"       step="1"     max="9600"  shortname="temp_pitch"/>
       <dl_setting var="k_as"               min="1.0"     step="0.001" max="10"    shortname="k_as"/> 
