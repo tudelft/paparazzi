@@ -80,12 +80,6 @@
 #define ROTWING_FW_STALL_TIMEOUT 0.5
 #endif
 
-/* Amount of time the navigation airspeed needs to be below/above the current airspeed to trigger 
- * a state switch in free mode */
-#ifndef ROTWING_FREE_MODE_SWITCH_TIMEOUT
-#define ROTWING_FREE_MODE_SWITCH_TIMEOUT 0.5
-#endif
-
 /* Fix for not having double can busses */
 #ifndef SERVO_BMOTOR_PUSH_IDX
 #define SERVO_BMOTOR_PUSH_IDX SERVO_MOTOR_PUSH_IDX
