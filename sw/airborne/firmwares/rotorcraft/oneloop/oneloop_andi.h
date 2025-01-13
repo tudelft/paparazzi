@@ -213,7 +213,7 @@ static inline void init_custom_filter(struct CustomFilter *filter, float fc, flo
   filter->yk1 = value;
   filter->uk  = value;
   filter->uk1 = value;
-  printf("fc: %f, dt: %f, rho: %f, yk: %f, yk1: %f, uk: %f, uk1: %f\n", filter->fc, filter->dt, filter->rho, filter->yk, filter->yk1, filter->uk, filter->uk1);
+  //printf("fc: %f, dt: %f, rho: %f, yk: %f, yk1: %f, uk: %f, uk1: %f\n", filter->fc, filter->dt, filter->rho, filter->yk, filter->yk1, filter->uk, filter->uk1);
 }
 /** Update Custom filter state with a new value.
  *

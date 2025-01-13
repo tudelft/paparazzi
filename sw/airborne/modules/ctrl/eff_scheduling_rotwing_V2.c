@@ -84,7 +84,7 @@ float ele_min = 0.0;
 struct RW_Model RW;
 
 int thrust_curve = 1.0;
-float temp_mQ_k = 5.0;
+float temp_mQ_k = 2.8; //5.0;
 inline void eff_scheduling_rotwing_update_wing_angle(void);
 inline void eff_scheduling_rotwing_update_airspeed(void);
 void  ele_pref_sched(void);
