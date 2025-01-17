@@ -1128,7 +1128,7 @@ void ec_3rd_pos( float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[],
  */
 void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], struct OneloopStabilizationRef bounds, float fb[3]){
   float e_x[3];    // (x-x_ref)*k1_e
-  float e_x_rates[3]; // (x_ref-x)*k1_e
+  float e_x_rates[3]={0.}; // (x_ref-x)*k1_e
   float x_d_f[3];  // x_d_ref + e_x
   float x_2d_f[3]; // x_2d_ref + e_x_d
 
@@ -1221,50 +1221,43 @@ void init_poles(void){
   // Attitude Controller Poles----------------------------------------------------------
   float slow_pole = 22.0; // Pole of the slowest dynamics used in the attitude controller
 
-  p_att_rm.omega_n = 10.0; // 10.0 4.71
-  p_att_rm.zeta    = 1.0;
-  p_att_rm.p3      = p_att_rm.omega_n * p_att_rm.zeta;
-
-  p_att_e.omega_n = ec_poles(p_att_rm.omega_n,  slow_pole, 1.28); //4.50;
+  p_att_e.omega_n = slow_pole/3.0;
   p_att_e.zeta    = 1.0;
-  p_att_e.p3      = slow_pole;
+  p_att_e.p3      = p_att_e.omega_n;
 
-  p_head_rm.omega_n = 7.0; // 7.0 2.56
-  p_head_rm.zeta    = 1.0;
-  p_head_rm.p3      = p_head_rm.omega_n * p_head_rm.zeta;
+  p_att_rm.omega_n = p_att_e.omega_n*0.8; 
+  p_att_rm.zeta    = 1.0;
+  p_att_rm.p3      = p_att_rm.omega_n;
 
-  p_head_e.omega_n = ec_poles(p_head_rm.omega_n, slow_pole, 1.28); //1.80;
+  p_head_e.omega_n = slow_pole/3.0;
   p_head_e.zeta    = 1.0;
-  p_head_e.p3      = slow_pole;
-  //printf("Attitude RM Poles: %f %f %f\n", p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
-  //printf("Attitude E Poles: %f %f %f\n", p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
+  p_head_e.p3      = p_head_e.omega_n;
+
+  p_head_rm.omega_n = p_head_e.omega_n*0.8; 
+  p_head_rm.zeta    = 1.0;
+  p_head_rm.p3      = p_head_rm.omega_n;
+
   act_dynamics[COMMAND_ROLL]  = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
   act_dynamics[COMMAND_PITCH] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
 
   // Position Controller Poles----------------------------------------------------------
   slow_pole = act_dynamics[COMMAND_ROLL]; // Pole of the slowest dynamics used in the position controller
-#ifdef ONELOOP_ANDI_POLES_POS_OMEGA_N
-  p_pos_rm.omega_n = ONELOOP_ANDI_POLES_POS_OMEGA_N;
-#else
-  p_pos_rm.omega_n = 0.93; //2.2;
-#endif
-  p_pos_rm.zeta    = 1.0;  
-  p_pos_rm.p3      = p_pos_rm.omega_n * p_pos_rm.zeta;
 
-  p_pos_e.omega_n = ec_poles(p_pos_rm.omega_n,slow_pole,1.28);//1.0;
+  p_pos_e.omega_n = slow_pole/3.0;
   p_pos_e.zeta    = 1.0; 
-  p_pos_e.p3      = slow_pole; 
-#ifdef ONELOOP_ANDI_POLES_ALT_OMEGA_N
-  p_alt_rm.omega_n = ONELOOP_ANDI_POLES_ALT_OMEGA_N;
-#else
-  p_alt_rm.omega_n = 0.93; //2.2;
-#endif
-  p_alt_rm.zeta    = 1.0;
-  p_alt_rm.p3      = p_alt_rm.omega_n * p_alt_rm.zeta;
+  p_pos_e.p3      = p_pos_e.omega_n; 
 
-  p_alt_e.omega_n = ec_poles(p_alt_rm.omega_n,slow_pole,1.28);//1.0;// 3.0;
+  p_pos_rm.omega_n = p_pos_e.omega_n*0.8; 
+  p_pos_rm.zeta    = 1.0;  
+  p_pos_rm.p3      = p_pos_rm.omega_n;
+
+  p_alt_e.omega_n = slow_pole/3.0;
   p_alt_e.zeta    = 1.0; 
-  p_alt_e.p3      = slow_pole; 
+  p_alt_e.p3      = p_alt_e.omega_n;
+
+  p_alt_rm.omega_n = p_alt_e.omega_n*0.8;
+  p_alt_rm.zeta    = 1.0;
+  p_alt_rm.p3      = p_alt_rm.omega_n; 
 }
 
 /** 
@@ -1277,8 +1270,8 @@ void init_controller_gains(void){
   max_v_nav = nav_max_speed + max_wind;
   max_a_nav = nav_max_acceleration_sp;
   /*Some calculations in case new poles have been specified*/
-  init_poles_att();
-  init_poles_pos();
+  //init_poles_att();
+  //init_poles_pos();
   p_att_rm.p3  = p_att_rm.omega_n  * p_att_rm.zeta;
   p_pos_rm.p3  = p_pos_rm.omega_n  * p_pos_rm.zeta;
   p_alt_rm.p3  = p_alt_rm.omega_n  * p_alt_rm.zeta;
@@ -1289,6 +1282,7 @@ void init_controller_gains(void){
   k_att_e.k1[0]  = k_rm_1_3_f(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
   k_att_e.k2[0]  = k_rm_2_3_f(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
   k_att_e.k3[0]  = k_rm_3_3_f(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
+
   k_att_e.k1[1]  = k_att_e.k1[0]; 
   k_att_e.k2[1]  = k_att_e.k2[0]; 
   k_att_e.k3[1]  = k_att_e.k3[0]; 
@@ -1309,14 +1303,14 @@ void init_controller_gains(void){
   k_att_rm.k2[2] = k_rm_2_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
   k_att_rm.k3[2] = k_rm_3_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
 
-  //printf("Attitude RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
-  //printf("Attitude EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
-  //printf("Heading  RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
-  //printf("Heading  EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
-  //printf("Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
-  //printf("Attitude EC Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
-  //printf("Heading  RM Gains: %f %f %f\n", k_att_rm.k1[2], k_att_rm.k2[2], k_att_rm.k3[2]);
-  //printf("Heading  EC Gains: %f %f %f\n", k_att_e.k1[2], k_att_e.k2[2], k_att_e.k3[2]);
+  printf("Attitude RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
+  printf("Attitude EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
+  printf("Heading  RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
+  printf("Heading  EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
+  printf("Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
+  printf("Attitude EC Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
+  printf("Heading  RM Gains: %f %f %f\n", k_att_rm.k1[2], k_att_rm.k2[2], k_att_rm.k3[2]);
+  printf("Heading  EC Gains: %f %f %f\n", k_att_e.k1[2], k_att_e.k2[2], k_att_e.k3[2]);
   /*Position Loop*/
   // k_pos_e.k1[0]  = k_e_1_3_f_v2(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
   // k_pos_e.k2[0]  = k_e_2_3_f_v2(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
@@ -1404,12 +1398,12 @@ void init_all_LP(void){
   init_LP(&LP.q,    15.0); //oneloop_andi_filt_cutoff_q
   init_LP(&LP.r,    15.0); //oneloop_andi_filt_cutoff_r
   
-  init_custom_filter(&oneloop_andi_model_filt.ax, oneloop_andi_filt_cutoff_a, 1.0 / PERIODIC_FREQUENCY,k_pos_e.k3[0]/positive_non_zero(p_pos_e.p3), 0.0);
-  init_custom_filter(&oneloop_andi_model_filt.ay, oneloop_andi_filt_cutoff_a, 1.0 / PERIODIC_FREQUENCY,k_pos_e.k3[1]/positive_non_zero(p_pos_e.p3), 0.0);
-  init_custom_filter(&oneloop_andi_model_filt.az, oneloop_andi_filt_cutoff_a, 1.0 / PERIODIC_FREQUENCY,k_pos_e.k3[2]/positive_non_zero(p_alt_e.p3), 0.0);
-  init_custom_filter(&oneloop_andi_model_filt.p_dot, 2.0, 1.0 / PERIODIC_FREQUENCY,k_att_e.k3[0]/positive_non_zero(p_att_e.p3), 0.0);
-  init_custom_filter(&oneloop_andi_model_filt.q_dot, 2.0, 1.0 / PERIODIC_FREQUENCY,k_att_e.k3[1]/positive_non_zero(p_att_e.p3), 0.0);
-  init_custom_filter(&oneloop_andi_model_filt.r_dot, 2.0, 1.0 / PERIODIC_FREQUENCY,k_att_e.k3[2]/positive_non_zero(p_head_e.p3), 0.0);
+  init_custom_filter(&oneloop_andi_model_filt.ax, oneloop_andi_filt_cutoff_a, 1.0 / PERIODIC_FREQUENCY,k_pos_e.k3[0]/(positive_non_zero(p_pos_e.p3)*3.0), 0.0);
+  init_custom_filter(&oneloop_andi_model_filt.ay, oneloop_andi_filt_cutoff_a, 1.0 / PERIODIC_FREQUENCY,k_pos_e.k3[1]/(positive_non_zero(p_pos_e.p3)*3.0), 0.0);
+  init_custom_filter(&oneloop_andi_model_filt.az, oneloop_andi_filt_cutoff_a, 1.0 / PERIODIC_FREQUENCY,k_pos_e.k3[2]/(positive_non_zero(p_alt_e.p3)*3.0), 0.0);
+  init_custom_filter(&oneloop_andi_model_filt.p_dot, 2.0, 1.0 / PERIODIC_FREQUENCY,k_att_e.k3[0]/(positive_non_zero(p_att_e.p3) *3.0), 0.0);
+  init_custom_filter(&oneloop_andi_model_filt.q_dot, 2.0, 1.0 / PERIODIC_FREQUENCY,k_att_e.k3[1]/(positive_non_zero(p_att_e.p3) *3.0), 0.0);
+  init_custom_filter(&oneloop_andi_model_filt.r_dot, 2.0, 1.0 / PERIODIC_FREQUENCY,k_att_e.k3[2]/(positive_non_zero(p_head_e.p3)*3.0), 0.0);
 
 }
 /** @brief Reinitialize Low Pass filter if new frequency setting or if forced */
@@ -1430,12 +1424,12 @@ void reinit_LP(struct LP_t *LP, bool reinit){
 }
 /** @brief Reinitialize all the Low Pass Filters */
 void reinit_all_LP(bool reinit){
-  reinit_LP_synchronous(&LP.ax,    &oneloop_andi_model_filt.ax    ,k_pos_e.k3[0]/positive_non_zero(p_pos_e.p3) ,reinit);
-  reinit_LP_synchronous(&LP.ay,    &oneloop_andi_model_filt.ay    ,k_pos_e.k3[1]/positive_non_zero(p_pos_e.p3) ,reinit);
-  reinit_LP_synchronous(&LP.az,    &oneloop_andi_model_filt.az    ,k_pos_e.k3[2]/positive_non_zero(p_alt_e.p3) ,reinit);
-  reinit_LP_synchronous(&LP.p_dot, &oneloop_andi_model_filt.p_dot ,k_att_e.k3[0]/positive_non_zero(p_att_e.p3) ,reinit);
-  reinit_LP_synchronous(&LP.q_dot, &oneloop_andi_model_filt.q_dot ,k_att_e.k3[1]/positive_non_zero(p_att_e.p3) ,reinit);
-  reinit_LP_synchronous(&LP.r_dot, &oneloop_andi_model_filt.r_dot ,k_att_e.k3[2]/positive_non_zero(p_head_e.p3),reinit);
+  reinit_LP_synchronous(&LP.ax,    &oneloop_andi_model_filt.ax    ,k_pos_e.k3[0]/(positive_non_zero(p_pos_e.p3) *3.0),reinit);
+  reinit_LP_synchronous(&LP.ay,    &oneloop_andi_model_filt.ay    ,k_pos_e.k3[1]/(positive_non_zero(p_pos_e.p3) *3.0),reinit);
+  reinit_LP_synchronous(&LP.az,    &oneloop_andi_model_filt.az    ,k_pos_e.k3[2]/(positive_non_zero(p_alt_e.p3) *3.0),reinit);
+  reinit_LP_synchronous(&LP.p_dot, &oneloop_andi_model_filt.p_dot ,k_att_e.k3[0]/(positive_non_zero(p_att_e.p3) *3.0),reinit);
+  reinit_LP_synchronous(&LP.q_dot, &oneloop_andi_model_filt.q_dot ,k_att_e.k3[1]/(positive_non_zero(p_att_e.p3) *3.0),reinit);
+  reinit_LP_synchronous(&LP.r_dot, &oneloop_andi_model_filt.r_dot ,k_att_e.k3[2]/(positive_non_zero(p_head_e.p3)*3.0),reinit);
   reinit_LP(&LP.p, reinit);
   reinit_LP(&LP.q, reinit);
   reinit_LP(&LP.r, reinit);
