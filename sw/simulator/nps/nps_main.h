@@ -18,7 +18,7 @@ void clock_get_current_time(struct timespec *ts);
 #endif // #ifdef __MACH__
 
 #define SIM_DT     (1./SYS_TIME_FREQUENCY)
-#define DISPLAY_DT (1./30.)
+#define DISPLAY_DT (1./500.)
 #define HOST_TIMEOUT_MS 40
 
 extern pthread_t th_flight_gear; // sends/receives flight gear packets
