@@ -271,7 +271,7 @@ struct Oneloop_StructuralModes_t {
   } model_filter;
 };
 
-
+extern bool drop_yaw;
 extern int16_t temp_pitch;
 /*Declaration of Reference Model and Error Controller Gains*/
 extern struct PolePlacement p_att_e;

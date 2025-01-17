@@ -596,7 +596,13 @@ float ratio_u_un[ANDI_NUM_ACT_TOT];
 float ratio_vn_v[ANDI_OUTPUTS];
 
 float temp_k = 300;
-
+float temp_ec_r = 0.0;
+float temp_ec_r_2 = 0.0;
+float  temp_e_x = 0.0;
+float  temp_e_x_rates = 0.0;
+float  temp_x_d_f = 0.0;
+float  temp_x_2d_f = 0.0;
+bool drop_yaw = false;
 /*Filters Initialization*/
 static Butterworth2LowPass filt_veloc_N;                 // Low pass filter for velocity NED - oneloop_andi_filt_cutoff_a (tau_a)       
 static Butterworth2LowPass filt_veloc_E;
@@ -687,20 +693,25 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
                            datasize, data);
 }
 
-// static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
-// {
-//   float temp_debug_vect[9];
-//   temp_debug_vect[0] = cf.ax.model;
-//   temp_debug_vect[1] = cf.ay.model;
-//   temp_debug_vect[2] = cf.az.model;
-//   temp_debug_vect[3] = cf.p_dot.model;
-//   temp_debug_vect[4] = cf.q_dot.model;
-//   temp_debug_vect[5] = cf.r_dot.model;
-//   temp_debug_vect[6] = cf.p.model;
-//   temp_debug_vect[7] = cf.q.model;
-//   temp_debug_vect[8] = cf.r.model;
-//   debug_vect(trans, dev, "model_cf", temp_debug_vect, 9);
-// }
+static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
+{
+  float temp_debug_vect[14];
+  temp_debug_vect[0] = oneloop_andi_model_filt.q_dot.fc;
+  temp_debug_vect[1] = oneloop_andi_model_filt.q_dot.dt;
+  temp_debug_vect[2] = oneloop_andi_model_filt.q_dot.rho;
+  temp_debug_vect[3] = oneloop_andi_model_filt.q_dot.yk1;
+  temp_debug_vect[4] = oneloop_andi_model_filt.q_dot.yk;
+  temp_debug_vect[5] = oneloop_andi_model_filt.q_dot.uk1;
+  temp_debug_vect[6] = oneloop_andi_model_filt.q_dot.uk;
+  temp_debug_vect[7] = oneloop_andi_model[RW_ap];
+  temp_debug_vect[8] = temp_ec_r_2;
+  temp_debug_vect[9] = temp_ec_r;
+  temp_debug_vect[10] = temp_e_x;
+  temp_debug_vect[11] = temp_e_x_rates;
+  temp_debug_vect[12] = temp_x_d_f;
+  temp_debug_vect[13] = temp_x_2d_f;
+  debug_vect(trans, dev, "model_cf", temp_debug_vect, 14);
+}
 #endif
 
 /** @brief Function to make sure that inputs are positive non zero vaues*/
@@ -1087,10 +1098,10 @@ void ec_3rd_pos( float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[],
   float e_x_2d[n];
 
   err_sum_nd(e_x_d, x_ref, x, k1_e, x_d_ref, n);
-  vect_bound_nd(e_x_d, x_d_bound, n);
+  vect_bound_nd(e_x_d, x_d_bound*1.5, n);
   
   err_sum_nd(e_x_2d, e_x_d, x_d, k2_e, x_2d_ref, n);
-  vect_bound_nd(e_x_2d,x_2d_bound, n);
+  vect_bound_nd(e_x_2d,x_2d_bound*1.5, n);
 
   // Calculate and bound distrubance --------------------
   float dist[3];
@@ -1126,22 +1137,29 @@ void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[
   float temp_diff = x_ref[2] - x[2];
   NormRadAngle(temp_diff);
   e_x[2] = k1_e[2] * temp_diff; // Correction for Heading error +-Pi
-  float_rates_of_euler_dot_vec(e_x_rates, x, e_x);
-  float_vect_sum(x_d_f, x_d_ref, e_x_rates, 3);
-  BoundAbs(x_d_f[0], bounds.att_d[0]);
-  BoundAbs(x_d_f[1], bounds.att_d[1]);
-  BoundAbs(x_d_f[2], bounds.att_d[2]);
+  //float_rates_of_euler_dot_vec(e_x_rates, x, e_x);
+  //float_vect_sum(x_d_f, x_d_ref, e_x_rates, 3);
+  float_vect_sum(x_d_f, x_d_ref, e_x, 3);
+  BoundAbs(x_d_f[0], bounds.att_d[0]*1.5);
+  BoundAbs(x_d_f[1], bounds.att_d[1]*1.5);
+  BoundAbs(x_d_f[2], bounds.att_d[2]*1.5);
   // Angular Rate Error ---------------------------------------------------
   err_sum_nd(x_2d_f, x_d_f,  x_d,  k2_e, x_2d_ref, 3);
-  BoundAbs(x_d_f[0], bounds.att_2d[0]);
-  BoundAbs(x_d_f[1], bounds.att_2d[1]);
-  BoundAbs(x_d_f[2], bounds.att_2d[2]);
+  BoundAbs(x_2d_f[0], bounds.att_2d[0]*1.5);
+  BoundAbs(x_2d_f[1], bounds.att_2d[1]*1.5);
+  BoundAbs(x_2d_f[2], bounds.att_2d[2]*1.5);
   // Calculate and bound distrubance --------------------------------------
   float dist[3];
   float_vect_diff(dist, x_2d, fb, 3);
   BoundAbs(dist[2], oneloop_andi_yaw_dist_limit);
   // Angular Acceleration Error -------------------------------------------
   err_sum_nd(y_4d, x_2d_f, dist, k3_e, x_3d_ref, 3);
+  temp_e_x = e_x[2];
+  temp_e_x_rates = e_x_rates[2];
+  temp_x_d_f = x_d_f[2];
+  temp_x_2d_f = x_2d_f[2];
+  temp_ec_r = (x_2d_f[2]-x_2d[2])*k3_e[2]+x_3d_ref[2];
+  temp_ec_r_2 = temp_diff*k1_e[2]*k2_e[2]*k3_e[2]+(x_d_ref[2]-x_d[2])*k2_e[2]*k3_e[2]+(x_2d_ref[2]-x_2d[2])*k3_e[2]+x_3d_ref[2];
 }
 
 /**
@@ -1645,7 +1663,7 @@ void oneloop_andi_init(void)
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_GUID, send_eff_mat_guid_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE, send_guidance_oneloop_andi);
     // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATOR_STATE, send_oneloop_actuator_state);
-    //egister_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_oneloop_debug);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_oneloop_debug);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_V, send_wls_v_oneloop);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_U, send_wls_u_oneloop);
   #endif
@@ -1875,7 +1893,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   // Run the Reference Model (RM)
   oneloop_andi_RM(half_loop, PSA_des, rm_order_h, rm_order_v, in_flight_oneloop);
   // Run Distrubance Bounder
-  oneloop_andi_bound_disturbance();
+  oneloop_andi_bound_disturbance(); // Fixme, can be removed
   // Guidance Pseudo Control Vector (nu) based on error controller
   if(half_loop){
     nu[0] = 0.0;
@@ -1903,9 +1921,15 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     float dummy0[3] = {0.0, 0.0, 0.0};
     //FIXME ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e_indi.k1, k_att_e_indi.k2, k_att_e_indi.k3, sta_bounds.att_3d[0]);
   }
-  nu[3] = y_4d_att[0];  
-  nu[4] = y_4d_att[1]; 
-  nu[5] = y_4d_att[2] + g2_ff;
+  if(half_loop && radio_control_get(RADIO_THROTTLE)<200){
+    nu[3] = 0.0;
+    nu[4] = 0.0;
+    nu[5] = 0.0;
+  } else {
+    nu[3] = y_4d_att[0];  
+    nu[4] = y_4d_att[1]; 
+    nu[5] = y_4d_att[2] + g2_ff;
+  }
 
   // temp restructuring------------------
   nu[0] = nu[0] + oneloop_andi_model[0];
@@ -1918,6 +1942,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   BoundAbs(nu[5], n_array[5]*coupling_factor[5]);
   // weather vaning ---------------------
   //nu[5] = oneloop_andi_model[5] - temp_k * oneloop_andi.sta_ref.att_d[2]; //Interesting idea to weather vane the drone
+  if (drop_yaw){
+    nu[5] = oneloop_andi_model[5];
+  }
   //------------------------------------
 
   if (!chirp_on){
@@ -2024,7 +2051,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     commands[i] = (int16_t) andi_u[i];
   }
   if (rotwing_state.fail_pusher_motor){
-    commands[COMMAND_MOTOR_PUSHER] = 0;//Min(1000,andi_u[COMMAND_MOTOR_PUSHER]);
+    commands[COMMAND_MOTOR_PUSHER] = -9600;//Min(1000,andi_u[COMMAND_MOTOR_PUSHER]);
   }
   commands[COMMAND_THRUST] = (commands[COMMAND_MOTOR_FRONT] + commands[COMMAND_MOTOR_RIGHT] + commands[COMMAND_MOTOR_BACK] + commands[COMMAND_MOTOR_LEFT])/num_thrusters_oneloop;
   autopilot.throttle = commands[COMMAND_THRUST];
