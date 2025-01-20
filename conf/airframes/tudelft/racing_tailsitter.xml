@@ -199,7 +199,7 @@
     <module name="tailsitter_auto_takeoff">
       <define name="TAKEOFF_THETA_REF" value="0.0"/>
     </module>
-
+     <module name="static_wind_tunnel"/>
     <module name="agl_dist">
       <define name="AGL_DIST_ID" value="AGL_LIDAR_TFMINI_ID"/>
       <define name="AGL_DIST_MAX_RANGE" value="5.0"/>
@@ -243,12 +243,13 @@
     <set servo="ELE_RIGHT"              value="autopilot.motors_on ? actuators_pprz[5] : 0"/> -->
 
   <command_laws>
+    <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
     <set servo="TILT_LEFT"  value="wt_data.run ? wt_data.commands[0] : -MAX_PPRZ"/>
     <set servo="TILT_RIGHT"  value="wt_data.run ? wt_data.commands[1] : -MAX_PPRZ"/>
     <set servo="RM"  value="wt_data.run ? wt_data.commands[2] : -MAX_PPRZ"/>
     <set servo="LM"  value="wt_data.run ? wt_data.commands[3] : -MAX_PPRZ"/>
-    <set servo="RM"  value="wt_data.run ? wt_data.commands[4] : -MAX_PPRZ"/>
-    <set servo="LM"  value="wt_data.run ? wt_data.commands[5] : -MAX_PPRZ"/>
+    <set servo="LEFT ELEVON"  value="wt_data.run ? wt_data.commands[4] : -MAX_PPRZ"/>
+    <set servo="RIGHT ELEVON"  value="wt_data.run ? wt_data.commands[5] : -MAX_PPRZ"/>
   </command_laws>
     <!-- <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
     <set servo="TILT_LEFT"  value="wt_data.run ? wt_data.commands[0] : 0"/>
@@ -257,9 +258,9 @@
     <set servo="LM"  value="wt_data.run ? wt_data.commands[3] : -MAX_PPRZ"/>
     <set servo="ELE_LEFT"  value="wt_data.run ? wt_data.commands[4] : 0"/>
     <set servo="ELE_RIGHT"  value="wt_data.run ? wt_data.commands[5] : 0"/>-->
-  </command_laws>
+  <!-- </command_laws> -->
 
-  <!--<section name="MIXING" prefix="MOTOR_MIXING_">
+  <section name="MIXING" prefix="MOTOR_MIXING_">
     <define name="TRIM_ROLL" value="0"/>
     <define name="TRIM_PITCH" value="0"/>
     <define name="TRIM_YAW" value="0"/>
@@ -273,7 +274,7 @@
     <define name="ROLL_COEF"   value="{ 0, 0, 0, 0 }"/>
     <define name="YAW_COEF"    value="{ 0, 0, 0, 0 }"/>
     <define name="THRUST_COEF" value="{ 0, 0, 0, 0 }"/>
-  </section>-->
+  </section>
 
   <!--<section name="WINDTUNNEL" prefix="STATIC_WIND_TUNNEL_">
     <define name="MEASUREMENT_TIME" value="10.0" description="Time to measure each conidion [seconds]"/>
@@ -411,8 +412,7 @@
     <define name="WEIGHT_T" value="8.56"/>
     <define name="WEIGHT_S" value="1.0"/>
     </section>
-
-    <module name="static_wind_tunnel"/>
+    
     <section name="WINDTUNNEL" prefix="STATIC_WIND_TUNNEL_">
       <define name="E" value="TRUE"/>
       <define name="TR" value="FALSE"/>
