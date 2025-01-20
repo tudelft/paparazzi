@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Freek van Tienen <freek.v.tienen@gmail.com>
+ * Copyright (C) 2024 Ziqing Ma
  *
  * This file is part of Paparazzi.
  *
@@ -25,13 +25,9 @@
  */
 
 #include "modules/ctrl/static_wind_tunnel.h"
-#define DYNAMIC_TEST TRUE
+
 #define STATIC_WIND_TUNNEL_NUM_CMD 6
 
-
-#if PERIODIC_TELEMETRY
-#include "modules/datalink/telemetry.h"
-float Kp = 0.8;
 struct ForceSensorData {
     float Fx;
     float Fy;
@@ -40,6 +36,17 @@ struct ForceSensorData {
     float Ty;
     float Tz;
 } force_sensor_data;
+
+struct WT_data wt_data = {
+  .measurement_time = 10.0,
+  .commands = {0},
+  .run = false,
+  .counter = 0,
+  .stage = 0,
+  .dynamic_test = false,
+  .vehicle_type = 0,
+  .kp = 0.8,
+};
 
 void force_sensor_callback(float Fx, float Fy, float Fz, float Tx, float Ty, float Tz) {
     force_sensor_data.Fx = Fx;
@@ -50,6 +57,8 @@ void force_sensor_callback(float Fx, float Fy, float Fz, float Tx, float Ty, flo
     force_sensor_data.Tz = Tz;
 }
 
+#if PERIODIC_TELEMETRY
+#include "modules/datalink/telemetry.h"
 static void send_wt(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_WIND_TUNNEL(trans, dev, AC_ID,
@@ -59,36 +68,16 @@ static void send_wt(struct transport_tx *trans, struct link_device *dev)
                    &force_sensor_data.Tx,
                    &force_sensor_data.Ty,
                    &force_sensor_data.Tz,
-                   &WT_data.commands[0],
-                   &WT_data.commands[1],
-                   &WT_data.commands[2],
-                   &WT_data.commands[3],
-                   &WT_data.commands[4],
-                   &WT_data.commands[5];     
+                   6, &wt_data.commands);
 }
 #endif
 
-void wt_init(void);
+void wt_init(void) {
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WIND_TUNNEL, send_wt);
+#endif
+}
 
-struct WT_data wt_data = {
-  .measurement_time = 10.0,
-  .commands = {0},
-  .run = false,
-  .counter = 0,
-  .stage = 0,
-};
-
-#if DYNAMIC_TEST
-#if STATIC_WIND_TUNNEL_E
-float dronetype = 1;
-#endif
-#if STABILIZATION_INDI_TR
-float dronetype = 2;
-#endif
-#if STABILIZATION_INDI_TRE
-float dronetype = 3;
-#endif
-#else
 #define STATIC_WIND_TUNNEL_NUM_CONFIGS 65
 // [tilt right, aileron right, right motor, left motor, tilt left ]
 // Define actuator inputs for each condition in PPRZ units
@@ -167,17 +156,6 @@ int32_t configurations[STATIC_WIND_TUNNEL_NUM_CONFIGS][STATIC_WIND_TUNNEL_NUM_CM
 //   {0,    0, -9600, 4000, 0},//decrease throttle gradually
 //   {0,    0, -9600, 800, 0},
 };
-#endif
-
-
-
-// Nothing to do here
-void wint_tunnel_init(void)
-{
-#if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WIND_TUNNEL, send_wind_tunnel);
-#endif
-}
 
 /**
  * Periodic function
@@ -187,27 +165,28 @@ void wint_tunnel_init(void)
 void wt_run(void)
 {
   if (wt_data.run) {
-    if(DYNAMIC_TEST){
+    if(wt_data.dynamic_test){
     wt_data.commands[3] = wt_data.commands[2];
-    float error = -force_sensor_data.Ty;  // 目标My为0
-    float delta_pprz = kp * error;
-    
-    // 计算新的PWM值
-    if(dronetype = 1){    
+    float error = -force_sensor_data.Ty;  // 目标My为0 FIXME: in English please!
+    float delta_pprz = wt_data.kp * error;
+
+    // 计算新的PWM值 FIXME: in English please!
+    if(wt_data.vehicle_type == E)
+    {
     wt_data.commands[0] = 0;
     wt_data.commands[1] = 0;
     wt_data.commands[5] -= delta_pprz*0.1;
     wt_data.commands[4] = -wt_data.commands[4];
     }
-    else if(dronetype =2)
-    {    
+    else if(wt_data.vehicle_type == TR)
+    {
     wt_data.commands[0] += delta_pprz*0.1;
     wt_data.commands[1] = wt_data.commands[0];
     wt_data.commands[4] = 0;
     wt_data.commands[5] = 0;
     }
-    else if(dronetype =3)
-    {    
+    else if(wt_data.vehicle_type == TRE)
+    {
     wt_data.commands[0] += delta_pprz*0.1;
     wt_data.commands[1] = wt_data.commands[0];
     wt_data.commands[5] -= delta_pprz*0.1;
