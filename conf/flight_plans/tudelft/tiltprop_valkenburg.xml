@@ -1,0 +1,180 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="30" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="2000" name="Rotorcraft Basic (Enac)" security_height="2">
+  <header>
+#include "autopilot.h"
+#include "generated/modules.h"
+</header>
+  <waypoints>
+    <waypoint name="HOME" x="25.7" y="-27.2"/>
+    <waypoint name="CLIMB" x="31.6" y="-8.4"/>
+    <waypoint lat="52.168420" lon="4.413000" name="STDBY"/>
+    <waypoint lat="52.168452" lon="4.413208" name="p1"/>
+    <waypoint lat="52.168714" lon="4.414454" name="p2"/>
+    <waypoint lat="52.167596" lon="4.415166" name="p3"/>
+    <waypoint lat="52.167347" lon="4.413840" name="p4"/>
+    <!-- <waypoint lat="52.168528" lon="4.413730" name="L1"/>
+    <waypoint lat="52.168078" lon="4.413987" name="L2"/>
+    <waypoint lat="52.167891" lon="4.413287" name="L3"/>
+    <waypoint lat="52.168339" lon="4.413103" name="L4"/> -->
+    <!-- <waypoint lat="52.168169" lon="4.412862" name="k1"/> -->
+    <waypoint lat="52.1677192" lon="4.4138128" name="k1"/>
+    <waypoint lat="52.168580" lon="4.414417" name="k2"/>
+    <waypoint lat="52.168091" lon="4.412564" name="TD"/>
+    <waypoint lat="52.169189" lon="4.410820" name="C1"/>
+    <waypoint lat="52.168049" lon="4.406923" name="C2"/>
+    <waypoint lat="52.166515" lon="4.408235" name="C3"/>
+    <waypoint lat="52.163255" lon="4.407668" name="C4"/>
+    <waypoint lat="52.161908" lon="4.410082" name="C5"/>
+    <waypoint lat="52.162641" lon="4.416992" name="C6"/>
+    <waypoint lat="52.164861" lon="4.427268" name="C7"/>
+    <waypoint lat="52.170422" lon="4.427511" name="C8"/>
+    <waypoint lat="52.172276" lon="4.424011" name="C9"/>
+  </waypoints>
+  <sectors>
+    <sector color="red" name="Geofence">
+      <corner name="C1"/>
+      <corner name="C2"/>
+      <corner name="C3"/>
+      <corner name="C4"/>
+      <corner name="C5"/>
+      <corner name="C6"/>
+      <corner name="C7"/>
+      <corner name="C8"/>
+      <corner name="C9"/>
+    </sector>
+  </sectors>
+  <exceptions>
+    <exception cond="Or(!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 200) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
+    <exception cond="(GpsIsLost())" deroute="Wait GPS"/>
+    <!-- <exception cond="datalink_time @GT 250 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/> -->
+  </exceptions>
+  <blocks>
+    <block name="Wait GPS">
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 1)"/>
+      <call_once fun="NavSetGroundReferenceHere()"/>
+    </block>
+    <block name="Holding point">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Automatic Takeoff">
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <call_once fun="NavResurrect()"/>
+      <call_once fun="autopilot_set_in_flight(false)"/>
+      <call_once fun="take_off_enter()"/>
+      <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
+      <exception cond="GetPosHeight() @GT 18.0" deroute="Standby"/>
+    </block>
+    <block name="Descent1">
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="CLIMB_flap">
+      <exception cond="GetPosHeight() @GT 12.0" deroute="Descent1"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
+    </block>
+
+    <!-- <block name="Descent0.8">
+      <exception cond="LessThan(GetPosHeight(), 0.5)" deroute="CLIMB1"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="CLIMB1.5">
+      <exception cond="GetPosHeight() @GT 12.0" deroute="Descent1"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <set value="1.5" var="nav.climb_vspeed"/>
+      <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
+    </block>
+    <block name="Descent1">
+      <exception cond="LessThan(GetPosHeight(), 0.5)" deroute="CLIMB2"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <set value="1.0" var="nav.descend_vspeed"/>
+      <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+        <block name="CLIMB2">
+      <exception cond="GetPosHeight() @GT 12.0" deroute="Descent1.5"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <set value="2.0" var="nav.climb_vspeed"/>
+      <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
+    </block>
+    <block name="Descent1.5">
+      <exception cond="LessThan(GetPosHeight(), 0.5)" deroute="flare"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <set value="1.5" var="nav.descend_vspeed"/>
+      <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
+    </block> -->
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <set value="false" var="force_forward"/>
+      <stay wp="STDBY"/>
+    </block>
+    <block name="stay_p1">
+      <set value="false" var="force_forward"/>
+      <stay wp="p1"/>
+    </block>
+    <block name="go_p2">
+      <set value="false" var="force_forward"/>
+      <go wp="p2"/>
+      <deroute block="stay_p1"/>
+    </block>
+    <!-- <block name="LowerALT">
+      <set value="true" var="force_forward"/>
+      <go wp="L1"/>
+      <go wp="L2"/>
+      <go wp="L3"/>
+      <go wp="L4"/>
+      <deroute block="land"/>
+    </block> -->
+    <block name="go_k1">
+      <set value="false" var="force_forward"/>
+      <go wp="k1"/>
+      <deroute block="Standby"/>
+    </block>
+    <block name="go_k2">
+      <set value="true" var="force_forward"/>
+      <go wp="k2"/>
+      <deroute block="go_k1"/>
+    </block>
+    <block name="route">
+      <set value="true" var="force_forward"/>
+      <while cond="true">
+      <go from="p1" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p3"/>
+      <go from="p3" hmode="route" wp="p1"/>
+      </while>
+      <!-- <go from="p4" hmode="route" wp="p1"/> -->
+      <!-- <go from="p1" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p3"/>
+      <go from="p3" hmode="route" wp="p4"/>
+      <set value="false" var="force_forward"/>
+      <go from="p4" wp="k1"/> -->
+      <deroute block="Standby"/>
+    </block>
+    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+    </block>
+    <block name="land">
+      <set value="false" var="force_forward"/>
+      <go vmode="alt" wp="TD"/> 
+    </block>
+    <block name="flare">
+      <exception cond="LessThan(agl_dist_value_filtered, 0.15) @AND agl_dist_valid" deroute="pivot_land"/>
+      <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="pivot_land">
+      <exception cond="LessThan(eulers_zxy.theta, RadOfDeg(-85.0)) || eulers_zxy.theta @GT RadOfDeg(85.0)" deroute="landed"/>
+      <set value="3" var="takeoff_stage"/>
+      <call_once fun="take_off_enter()"/>
+      <stay alt="0.0" wp="TD"/>
+    </block>
+    <block name="landed">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>
