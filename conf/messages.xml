@@ -2780,7 +2780,16 @@
       <field name="cycle_time" type="uint32" unit="ms"/>
     </message>
 
-    <!-- 51 is free -->
+    <message name="FORCE_SENSOR" id="51" link="forwarded">
+      <field name="ac_id" type="uint8"/>
+      <field name="Fx"                  type="float"/>
+      <field name="Fy"                  type="float"/>
+      <field name="Fz"                  type="float"/>
+      <field name="Mx"                  type="float"/>
+      <field name="My"                  type="float"/>
+      <field name="Mz"                  type="float"/>
+    </message>
+
     <!-- 52 is free -->
     <!-- 53 is free -->
 
