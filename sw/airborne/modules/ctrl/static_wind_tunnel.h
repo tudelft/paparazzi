@@ -51,6 +51,8 @@ extern struct WT_data wt_data;
 extern void wt_init(void);
 extern void wt_run(void);
 
+extern void wt_parse_force_sensor_dl(uint8_t *buf);
+
 
 #endif /* STATIC_WIND_TUNNEL_H_ */
 

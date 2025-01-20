@@ -26,15 +26,17 @@
 
 #include "modules/ctrl/static_wind_tunnel.h"
 
+#include "generated/modules.h"
+
 #define STATIC_WIND_TUNNEL_NUM_CMD 6
 
 struct ForceSensorData {
-    float Fx;
-    float Fy;
-    float Fz;
-    float Tx;
-    float Ty;
-    float Tz;
+  float Fx;
+  float Fy;
+  float Fz;
+  float Tx;
+  float Ty;
+  float Tz;
 } force_sensor_data;
 
 struct WT_data wt_data = {
@@ -48,13 +50,16 @@ struct WT_data wt_data = {
   .kp = 0.8,
 };
 
-void force_sensor_callback(float Fx, float Fy, float Fz, float Tx, float Ty, float Tz) {
-    force_sensor_data.Fx = Fx;
-    force_sensor_data.Fy = Fy;
-    force_sensor_data.Fz = Fz;
-    force_sensor_data.Tx = Tx;
-    force_sensor_data.Ty = Ty;
-    force_sensor_data.Tz = Tz;
+void wt_parse_force_sensor_dl(uint8_t *buf)
+{
+  uint8_t ac_id = DL_FORCE_SENSOR_ac_id(buf);
+  if (ac_id != AC_ID) { return; }
+  force_sensor_data.Fx = DL_FORCE_SENSOR_Fx(buf);
+  force_sensor_data.Fy = DL_FORCE_SENSOR_Fy(buf);
+  force_sensor_data.Fz = DL_FORCE_SENSOR_Fz(buf);
+  force_sensor_data.Tx = DL_FORCE_SENSOR_Mx(buf);
+  force_sensor_data.Ty = DL_FORCE_SENSOR_My(buf);
+  force_sensor_data.Tz = DL_FORCE_SENSOR_Mz(buf);
 }
 
 #if PERIODIC_TELEMETRY
@@ -62,17 +67,18 @@ void force_sensor_callback(float Fx, float Fy, float Fz, float Tx, float Ty, flo
 static void send_wt(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_WIND_TUNNEL(trans, dev, AC_ID,
-                   &force_sensor_data.Fx,
-                   &force_sensor_data.Fy,
-                   &force_sensor_data.Fz,
-                   &force_sensor_data.Tx,
-                   &force_sensor_data.Ty,
-                   &force_sensor_data.Tz,
-                   6, &wt_data.commands);
+                            &force_sensor_data.Fx,
+                            &force_sensor_data.Fy,
+                            &force_sensor_data.Fz,
+                            &force_sensor_data.Tx,
+                            &force_sensor_data.Ty,
+                            &force_sensor_data.Tz,
+                            6, wt_data.commands);
 }
 #endif
 
-void wt_init(void) {
+void wt_init(void)
+{
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WIND_TUNNEL, send_wt);
 #endif
@@ -83,14 +89,14 @@ void wt_init(void) {
 // Define actuator inputs for each condition in PPRZ units
 int32_t configurations[STATIC_WIND_TUNNEL_NUM_CONFIGS][STATIC_WIND_TUNNEL_NUM_CMD] = {
 //no motor, no tilt, flap deflected
-  {0,0, 0, -9600, -9600, 0},
+  {0, 0, 0, -9600, -9600, 0},
   {0, 2880, -9600, -9600, 0},
-  {0,0, 5760, -9600, -9600, 0},
-  {0,0, 9600, -9600, -9600, 0},
-  {0,0, -2880, -9600, -9600, 0},
-  {0,0, -5760, -9600, -9600, 0},
-  {0,0, -9600, -9600, -9600, 0},
-  {0,0, 0, 1000, -9600, 0},
+  {0, 0, 5760, -9600, -9600, 0},
+  {0, 0, 9600, -9600, -9600, 0},
+  {0, 0, -2880, -9600, -9600, 0},
+  {0, 0, -5760, -9600, -9600, 0},
+  {0, 0, -9600, -9600, -9600, 0},
+  {0, 0, 0, 1000, -9600, 0},
 // //30% motor, 0, 30%, 60%, 100% flap
 //   {0,    0, 2880, -9600, 0},
 //   {0, 2880, 2880, -9600, 0},
@@ -165,53 +171,47 @@ int32_t configurations[STATIC_WIND_TUNNEL_NUM_CONFIGS][STATIC_WIND_TUNNEL_NUM_CM
 void wt_run(void)
 {
   if (wt_data.run) {
-    if(wt_data.dynamic_test){
-    wt_data.commands[3] = wt_data.commands[2];
-    float error = -force_sensor_data.Ty;  // 目标My为0 FIXME: in English please!
-    float delta_pprz = wt_data.kp * error;
+    if (wt_data.dynamic_test) {
+      wt_data.commands[3] = wt_data.commands[2];
+      float error = -force_sensor_data.Ty;  // 目标My为0 FIXME: in English please!
+      float delta_pprz = wt_data.kp * error;
 
-    // 计算新的PWM值 FIXME: in English please!
-    if(wt_data.vehicle_type == E)
-    {
-    wt_data.commands[0] = 0;
-    wt_data.commands[1] = 0;
-    wt_data.commands[5] -= delta_pprz*0.1;
-    wt_data.commands[4] = -wt_data.commands[4];
-    }
-    else if(wt_data.vehicle_type == TR)
-    {
-    wt_data.commands[0] += delta_pprz*0.1;
-    wt_data.commands[1] = wt_data.commands[0];
-    wt_data.commands[4] = 0;
-    wt_data.commands[5] = 0;
-    }
-    else if(wt_data.vehicle_type == TRE)
-    {
-    wt_data.commands[0] += delta_pprz*0.1;
-    wt_data.commands[1] = wt_data.commands[0];
-    wt_data.commands[5] -= delta_pprz*0.1;
-    wt_data.commands[4] = -wt_data.commands[4];
-    }
-    }
-    else{
-    wt_data.counter = wt_data.counter + 1;
+      // 计算新的PWM值 FIXME: in English please!
+      if (wt_data.vehicle_type == E) {
+        wt_data.commands[0] = 0;
+        wt_data.commands[1] = 0;
+        wt_data.commands[5] -= delta_pprz * 0.1;
+        wt_data.commands[4] = -wt_data.commands[4];
+      } else if (wt_data.vehicle_type == TR) {
+        wt_data.commands[0] += delta_pprz * 0.1;
+        wt_data.commands[1] = wt_data.commands[0];
+        wt_data.commands[4] = 0;
+        wt_data.commands[5] = 0;
+      } else if (wt_data.vehicle_type == TRE) {
+        wt_data.commands[0] += delta_pprz * 0.1;
+        wt_data.commands[1] = wt_data.commands[0];
+        wt_data.commands[5] -= delta_pprz * 0.1;
+        wt_data.commands[4] = -wt_data.commands[4];
+      }
+    } else {
+      wt_data.counter = wt_data.counter + 1;
 
-    wt_data.stage = floor((wt_data.counter / STATIC_WIND_TUNNEL_FREQUENCY) / wt_data.measurement_time);
+      wt_data.stage = floor((wt_data.counter / STATIC_WIND_TUNNEL_FREQUENCY) / wt_data.measurement_time);
 
-    if (wt_data.stage > (STATIC_WIND_TUNNEL_NUM_CONFIGS - 1)) {
-      wt_data.counter = 0;
-      wt_data.run = false;
-      return;
-    }
+      if (wt_data.stage > (STATIC_WIND_TUNNEL_NUM_CONFIGS - 1)) {
+        wt_data.counter = 0;
+        wt_data.run = false;
+        return;
+      }
 
-    for (int i=0; i<STATIC_WIND_TUNNEL_NUM_CMD; i++) {
-      wt_data.commands[i] = configurations[wt_data.stage][i];
-    }
+      for (int i = 0; i < STATIC_WIND_TUNNEL_NUM_CMD; i++) {
+        wt_data.commands[i] = configurations[wt_data.stage][i];
+      }
     }
 
   } else {
     // Set everything to 0 by default
-    for (int i=0; i<STATIC_WIND_TUNNEL_NUM_CMD; i++) {
+    for (int i = 0; i < STATIC_WIND_TUNNEL_NUM_CMD; i++) {
       wt_data.commands[i] = 0;
     }
 

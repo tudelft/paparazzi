@@ -26,6 +26,7 @@
   <!-- <define name="STATIC_WIND_TUNNEL_FREQUENCY" value="100.0"/> -->
   <init fun="wt_init()"/>
   <periodic fun="wt_run()"  autorun="TRUE" freq="STATIC_WIND_TUNNEL_FREQUENCY" />
+  <datalink message="FORCE_SENSOR" fun="wt_parse_force_sensor_dl(buf)"/>
   <makefile>
     <file name="static_wind_tunnel.c"/>
     <configure name="STATIC_WIND_TUNNEL_FREQUENCY" default="100"/>
