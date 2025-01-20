@@ -173,25 +173,28 @@ void wt_run(void)
   if (wt_data.run) {
     if (wt_data.dynamic_test) {
       wt_data.commands[3] = wt_data.commands[2];
-      float error = -force_sensor_data.Ty;  // 目标My为0 FIXME: in English please!
+      float error = -force_sensor_data.Ty;
       float delta_pprz = wt_data.kp * error;
 
-      // 计算新的PWM值 FIXME: in English please!
+      //elevon only
       if (wt_data.vehicle_type == E) {
         wt_data.commands[0] = 0;
         wt_data.commands[1] = 0;
         wt_data.commands[5] -= delta_pprz * 0.1;
         wt_data.commands[4] = -wt_data.commands[4];
-      } else if (wt_data.vehicle_type == TR) {
+      } else if (wt_data.vehicle_type == TR) { //tilt rotor
         wt_data.commands[0] += delta_pprz * 0.1;
         wt_data.commands[1] = wt_data.commands[0];
         wt_data.commands[4] = 0;
         wt_data.commands[5] = 0;
-      } else if (wt_data.vehicle_type == TRE) {
+      } else if (wt_data.vehicle_type == TRE) {// tilt rotor and elevon
         wt_data.commands[0] += delta_pprz * 0.1;
         wt_data.commands[1] = wt_data.commands[0];
         wt_data.commands[5] -= delta_pprz * 0.1;
         wt_data.commands[4] = -wt_data.commands[4];
+      } else {
+        wt_data.run = false;
+        return;
       }
     } else {
       wt_data.counter = wt_data.counter + 1;
