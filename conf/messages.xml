@@ -1674,8 +1674,23 @@
     </message>
 
   <!-- Do we need this? Only in airborne/firmwares/wind_tunnel/main_mb.c-->
-    <message name="WT" id="175">
+    <!-- <message name="WT" id="175">
       <field name="rpm"      type="float"/>
+    </message> -->
+    <message name="WIND_TUNNEL" id="175">
+      <field name="Fx" type="float" unit="N"/>
+      <field name="Fy" type="float" unit="N"/>
+      <field name="Fz" type="float" unit="N"/>
+      <field name="Tx" type="float" unit="Nm"/>
+      <field name="Ty" type="float" unit="Nm"/>
+      <field name="Tz" type="float" unit="Nm"/>
+      <field name="commands0" type="int32"/>
+      <field name="commands1" type="int32"/>
+      <field name="commands2" type="int32"/>
+      <field name="commands3" type="int32"/>
+      <field name="commands4" type="int32"/>
+      <field name="commands5" type="int32"/>
+      <callback function="force_sensor_callback"/>
     </message>
 
   <!-- Do we need this? Used only in misc/log_parser/09_05_13__14_38_13.log -->

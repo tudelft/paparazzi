@@ -234,13 +234,22 @@
     <axis name="THRUST" failsafe_value="0"/>
   </commands>
 
-  <command_laws>
+  <!-- <command_laws>
     <set servo="TILT_LEFT"     value="autopilot.motors_on ? actuators_pprz[0] : 0"/>
     <set servo="TILT_RIGHT"    value="autopilot.motors_on ? actuators_pprz[1] : 0"/>
     <set servo="RM"              value="autopilot.motors_on ? actuators_pprz[2] : -MAX_PPRZ"/>
     <set servo="LM"              value="autopilot.motors_on ? actuators_pprz[3] : -MAX_PPRZ"/>
     <set servo="ELE_LEFT"              value="autopilot.motors_on ? actuators_pprz[4] : 0"/>
-    <set servo="ELE_RIGHT"              value="autopilot.motors_on ? actuators_pprz[5] : 0"/>
+    <set servo="ELE_RIGHT"              value="autopilot.motors_on ? actuators_pprz[5] : 0"/> -->
+
+  <command_laws>
+    <set servo="TILT_LEFT"  value="wt_data.run ? wt_data.commands[0] : -MAX_PPRZ"/>
+    <set servo="TILT_RIGHT"  value="wt_data.run ? wt_data.commands[1] : -MAX_PPRZ"/>
+    <set servo="RM"  value="wt_data.run ? wt_data.commands[2] : -MAX_PPRZ"/>
+    <set servo="LM"  value="wt_data.run ? wt_data.commands[3] : -MAX_PPRZ"/>
+    <set servo="RM"  value="wt_data.run ? wt_data.commands[4] : -MAX_PPRZ"/>
+    <set servo="LM"  value="wt_data.run ? wt_data.commands[5] : -MAX_PPRZ"/>
+  </command_laws>
     <!-- <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
     <set servo="TILT_LEFT"  value="wt_data.run ? wt_data.commands[0] : 0"/>
     <set servo="TILT_RIGHT"  value="wt_data.run ? wt_data.commands[1] : 0"/>
@@ -401,6 +410,14 @@
 
     <define name="WEIGHT_T" value="8.56"/>
     <define name="WEIGHT_S" value="1.0"/>
+    </section>
+
+    <module name="static_wind_tunnel"/>
+    <section name="WINDTUNNEL" prefix="STATIC_WIND_TUNNEL_">
+      <define name="E" value="TRUE"/>
+      <define name="TR" value="FALSE"/>
+      <define name="TRE" value="FALSE"/>
+      <define name="MEASUREMENT_TIME" value="10.0" description="Time to measure each conidion [seconds]"/>
     </section>
 
 <!-- Definitions for control effectiveness calculator module -->

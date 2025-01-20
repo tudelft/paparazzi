@@ -13,11 +13,12 @@
     <waypoint lat="52.168714" lon="4.414454" name="p2"/>
     <waypoint lat="52.167596" lon="4.415166" name="p3"/>
     <waypoint lat="52.167347" lon="4.413840" name="p4"/>
-    <waypoint lat="52.168528" lon="4.413730" name="L1"/>
+    <!-- <waypoint lat="52.168528" lon="4.413730" name="L1"/>
     <waypoint lat="52.168078" lon="4.413987" name="L2"/>
     <waypoint lat="52.167891" lon="4.413287" name="L3"/>
-    <waypoint lat="52.168339" lon="4.413103" name="L4"/>
-    <waypoint lat="52.168169" lon="4.412862" name="k1"/>
+    <waypoint lat="52.168339" lon="4.413103" name="L4"/> -->
+    <!-- <waypoint lat="52.168169" lon="4.412862" name="k1"/> -->
+    <waypoint lat="52.1677192" lon="4.4138128" name="k1"/>
     <waypoint lat="52.168580" lon="4.414417" name="k2"/>
     <waypoint lat="52.168091" lon="4.412564" name="TD"/>
     <waypoint lat="52.169189" lon="4.410820" name="C1"/>
@@ -67,7 +68,7 @@
       <call_once fun="autopilot_set_in_flight(false)"/>
       <call_once fun="take_off_enter()"/>
       <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
-      <exception cond="GetPosHeight() @GT 18.0" deroute="Descent1"/>
+      <exception cond="GetPosHeight() @GT 18.0" deroute="Standby"/>
     </block>
     <block name="Descent1">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
@@ -121,36 +122,38 @@
       <go wp="p2"/>
       <deroute block="stay_p1"/>
     </block>
-    <block name="LowerALT">
+    <!-- <block name="LowerALT">
       <set value="true" var="force_forward"/>
       <go wp="L1"/>
       <go wp="L2"/>
       <go wp="L3"/>
       <go wp="L4"/>
       <deroute block="land"/>
-    </block>
+    </block> -->
     <block name="go_k1">
       <set value="false" var="force_forward"/>
       <go wp="k1"/>
-      <deroute block="land here"/>
+      <deroute block="Standby"/>
     </block>
     <block name="go_k2">
-      <set value="false" var="force_forward"/>
+      <set value="true" var="force_forward"/>
       <go wp="k2"/>
       <deroute block="go_k1"/>
     </block>
     <block name="route">
       <set value="true" var="force_forward"/>
+      <while cond="true">
       <go from="p1" hmode="route" wp="p2"/>
       <go from="p2" hmode="route" wp="p3"/>
-      <go from="p3" hmode="route" wp="p4"/>
-      <go from="p4" hmode="route" wp="p1"/>
-      <go from="p1" hmode="route" wp="p2"/>
+      <go from="p3" hmode="route" wp="p1"/>
+      </while>
+      <!-- <go from="p4" hmode="route" wp="p1"/> -->
+      <!-- <go from="p1" hmode="route" wp="p2"/>
       <go from="p2" hmode="route" wp="p3"/>
       <go from="p3" hmode="route" wp="p4"/>
       <set value="false" var="force_forward"/>
-      <go from="p4" wp="k1"/>
-      <deroute block="land here"/>
+      <go from="p4" wp="k1"/> -->
+      <deroute block="Standby"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
