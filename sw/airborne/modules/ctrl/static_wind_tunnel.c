@@ -28,7 +28,27 @@
 
 #include "generated/modules.h"
 
+// 20000 PPRZ units/s
+#define THRUST_STEP_LIM 20000/STATIC_WIND_TUNNEL_FREQUENCY
+#define ATI_45_RESOLUTION 752
+
 #define STATIC_WIND_TUNNEL_NUM_CMD 6
+
+// vars: motor tilt, thrust
+#define NUM_VARIABLES 3
+#define MAX_NUM_TEST_CASES 4
+
+const int16_t test_cases[NUM_VARIABLES][MAX_NUM_TEST_CASES] = {
+    {0, 1, 2}, // vehicle config
+    {0, 2880, 5760, 9600}, // 0%, 30%, 60%, 100% tilt
+    {-9600, 2880, 4600, 6720}, // 0%, 30%, 50%, 70% thrust
+};
+
+// Current indices for each variable
+int current_indices[NUM_VARIABLES] = {0};
+int max_indices[NUM_VARIABLES] = {4,4};
+
+int16_t old_thrust = -MAX_PPRZ;
 
 struct ForceSensorData {
   float Fx;
@@ -47,8 +67,12 @@ struct WT_data wt_data = {
   .stage = 0,
   .dynamic_test = false,
   .vehicle_type = 0,
-  .kp = 0.8,
+  .ki = 0.8,
+  .integrator = 0.0,
 };
+
+static void set_commands(int16_t tilt, int16_t thrust, int16_t elevon);
+static bool set_next_test_case(void);
 
 void wt_parse_force_sensor_dl(uint8_t *buf)
 {
@@ -84,85 +108,6 @@ void wt_init(void)
 #endif
 }
 
-#define STATIC_WIND_TUNNEL_NUM_CONFIGS 65
-// [tilt right, aileron right, right motor, left motor, tilt left ]
-// Define actuator inputs for each condition in PPRZ units
-int32_t configurations[STATIC_WIND_TUNNEL_NUM_CONFIGS][STATIC_WIND_TUNNEL_NUM_CMD] = {
-//no motor, no tilt, flap deflected
-  {0, 0, 0, -9600, -9600, 0},
-  {0, 2880, -9600, -9600, 0},
-  {0, 0, 5760, -9600, -9600, 0},
-  {0, 0, 9600, -9600, -9600, 0},
-  {0, 0, -2880, -9600, -9600, 0},
-  {0, 0, -5760, -9600, -9600, 0},
-  {0, 0, -9600, -9600, -9600, 0},
-  {0, 0, 0, 1000, -9600, 0},
-// //30% motor, 0, 30%, 60%, 100% flap
-//   {0,    0, 2880, -9600, 0},
-//   {0, 2880, 2880, -9600, 0},
-//   {0, 5760, 2880, -9600, 0},
-//   {0, 9600, 2880, -9600, 0},
-//   {0, -2880, 2880, -9600, 0},
-//   {0, -5760, 2880, -9600, 0},
-//   {0, -9600, 2880, -9600, 0},
-//   {0, 0, 1000, -9600, 0},
-// //50% motor,0, 30%, 60%, 100% flap
-//   {0,    0, 4800, -9600, 0},
-//   {0, 2880, 4800, -9600, 0},
-//   {0, 5760, 4800, -9600, 0},
-//   {0, 9600, 4800, -9600, 0},
-//   {0, -2880, 4800, -9600, 0},
-//   {0, -5760, 4800, -9600, 0},
-//   {0, -9600, 4800, -9600, 0},
-//   {0, 0, 1000, -9600, 0},
-// //70% motor,0, 30%, 60%, 100% flap
-//   {0,   0,  6720, -9600, 0},
-//   {0, 2880, 6720, -9600, 0},
-//   {0, 5760, 6720, -9600, 0},
-//   {0, 9600, 6720, -9600, 0},
-//   {0, -2880, 6720, -9600, 0},
-//   {0, -5760, 6720, -9600, 0},
-//   {0, -9600, 6720, -9600, 0},
-//   {0, 0, 1000, -9600, 0},
-// //no motor,tilt angles, no flap
-//   {0, 0, -9600, -9600, 0},
-//   {2880, 0, -9600, -9600, 0},
-//   {5760, 0, -9600, -9600, 0},
-//   {9600, 0, -9600, -9600, 0},
-//   {-2880, 0, -9600, -9600, 0},
-//   {-5760, 0, -9600, -9600, 0},
-//   {-9600, 0, -9600, -9600, 0},
-//   {0, 0, -9600, 1000, 0},
-// ////30% motor, 0, 30%, 60%, 100% tilt
-//   {0,    0, -9600, 2880, 0},
-//   {2880, 0, -9600, 2880, 0},
-//   {5760, 0, -9600, 2880, 0},
-//   {9600, 0, -9600, 2880, 0},
-//   {-2880, 0, -9600, 2880,  0},
-//   {-5760, 0, -9600, 2880,  0},
-//   {-9600, 0, -9600, 2880,  0},
-//   {0, 0, -9600, 1000, 0},
-// //50% motor,0, 30%, 60%, 100% tilt
-//   {0,    0, -9600, 4800, 0},
-//   {2880, 0, -9600, 4800, 0},
-//   {5760, 0, -9600, 4800, 0},
-//   {9600, 0, -9600, 4800, 0},
-//   {-2880, 0, -9600, 4800, 0},
-//   {-5760, 0, -9600, 4800, 0},
-//   {-9600, 0, -9600, 4800, 0},
-//   {0, 0, -9600, 1000, 0},
-// //70% motor,0, 30%, 60%, 100% tilt
-//   {0,    0, -9600, 6720, 0},
-//   {2880, 0, -9600, 6720, 0},
-//   {5760, 0, -9600, 6720, 0},
-//   {9600, 0, -9600,6720, 0},
-//   {-2880, 0, -9600, 6720, 0},
-//   {-5760, 0, -9600, 6720, 0},
-//   {-9600, 0, -9600, 6720, 0},
-//   {0,    0, -9600, 4000, 0},//decrease throttle gradually
-//   {0,    0, -9600, 800, 0},
-};
-
 /**
  * Periodic function
  *
@@ -172,53 +117,92 @@ void wt_run(void)
 {
   if (wt_data.run) {
     if (wt_data.dynamic_test) {
-      wt_data.commands[3] = wt_data.commands[2];
-      float error = -force_sensor_data.Ty;
-      float delta_pprz = wt_data.kp * error;
 
-      //elevon only
-      if (wt_data.vehicle_type == E) {
-        wt_data.commands[0] = 0;
-        wt_data.commands[1] = 0;
-        wt_data.commands[5] -= delta_pprz * 0.1;
-        wt_data.commands[4] = -wt_data.commands[4];
-      } else if (wt_data.vehicle_type == TR) { //tilt rotor
-        wt_data.commands[0] += delta_pprz * 0.1;
-        wt_data.commands[1] = wt_data.commands[0];
-        wt_data.commands[4] = 0;
-        wt_data.commands[5] = 0;
-      } else if (wt_data.vehicle_type == TRE) {// tilt rotor and elevon
-        wt_data.commands[0] += delta_pprz * 0.1;
-        wt_data.commands[1] = wt_data.commands[0];
-        wt_data.commands[5] -= delta_pprz * 0.1;
-        wt_data.commands[4] = -wt_data.commands[4];
-      } else {
-        wt_data.run = false;
-        return;
-      }
-    } else {
       wt_data.counter = wt_data.counter + 1;
 
-      wt_data.stage = floor((wt_data.counter / STATIC_WIND_TUNNEL_FREQUENCY) / wt_data.measurement_time);
+      float time_past = (wt_data.counter / STATIC_WIND_TUNNEL_FREQUENCY);
 
-      if (wt_data.stage > (STATIC_WIND_TUNNEL_NUM_CONFIGS - 1)) {
+      if (time_past > wt_data.measurement_time) {
         wt_data.counter = 0;
-        wt_data.run = false;
-        return;
+
+        // Check if we need to move to the next test case and update current_indices
+        bool more_tests = set_next_test_case();
+        if(!more_tests) {
+          wt_data.run = false;
+          return;
+        }
       }
 
-      for (int i = 0; i < STATIC_WIND_TUNNEL_NUM_CMD; i++) {
-        wt_data.commands[i] = configurations[wt_data.stage][i];
-      }
+      // Set the actuators to the current test case
+      enum VehicleType vehicle_type = test_cases[0][current_indices[0]];
+      int16_t tilt = test_cases[1][current_indices[1]];
+      int16_t thrust = test_cases[2][current_indices[2]];
+
+      // use the elevon to control the moment
+      float error = -force_sensor_data.Ty;
+      wt_data.integrator += ATI_45_RESOLUTION * error;
+      int16_t elevon = wt_data.integrator*wt_data.ki;
+
+      set_commands(tilt, thrust, elevon);
+
+    } else {
+      // TODO: not implemented for now
+      // Set everything to 0 by default
+      set_commands(0, -MAX_PPRZ, 0);
+
+      wt_data.integrator = 0.0;
+      wt_data.counter = 0;
     }
 
   } else {
     // Set everything to 0 by default
-    for (int i = 0; i < STATIC_WIND_TUNNEL_NUM_CMD; i++) {
-      wt_data.commands[i] = 0;
-    }
+    set_commands(0, -MAX_PPRZ, 0);
 
+    wt_data.integrator = 0.0;
     wt_data.counter = 0;
   }
 
+}
+
+int16_t smooth_thrust(int16_t new_thrust) {
+  if (new_thrust - old_thrust > THRUST_STEP_LIM) {
+    return old_thrust + THRUST_STEP_LIM;
+  } else if (new_thrust - old_thrust < -THRUST_STEP_LIM) {
+    return old_thrust - THRUST_STEP_LIM;
+  } else {
+    return new_thrust;
+  }
+}
+
+// Function to get the next test case combination
+// Returns false when all combinations are exhausted
+bool set_next_test_case(void) {
+
+    // Update the indices to the next combination
+    for (int i = 0; i < NUM_VARIABLES; i++) {
+        current_indices[i]++;
+        if (current_indices[i] < max_indices[i]) {
+            // If the current index is valid, stop updating further
+            return true;
+        } else {
+            // Reset the current index and carry over to the next variable
+            current_indices[i] = 0;
+        }
+    }
+
+    // If we reach here, all combinations have been tested
+    return false;
+}
+
+void set_commands(int16_t tilt, int16_t thrust, int16_t elevon) {
+
+  int16_t new_thrust = smooth_thrust(thrust);
+  old_thrust = new_thrust;
+
+  wt_data.commands[0] = tilt;
+  wt_data.commands[1] = tilt;
+  wt_data.commands[2] = new_thrust;
+  wt_data.commands[3] = new_thrust;
+  wt_data.commands[4] = elevon;
+  wt_data.commands[5] = elevon;
 }
