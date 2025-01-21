@@ -37,11 +37,13 @@ enum VehicleType {
 };
 
 struct WT_data {
-  float measurement_time;
+  float max_stage_time;
+  float des_measurement_time;
   int32_t commands[6]; // tilt right, tilt left, motor right, motor left, elevon right, elevon left
   bool run;
   int32_t counter;
-  int32_t stage;
+  int32_t measurement_counter;
+  int32_t wait_for_controller_counter;
   bool dynamic_test;
   enum VehicleType vehicle_type;
   float ki;

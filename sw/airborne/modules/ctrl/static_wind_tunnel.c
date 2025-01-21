@@ -27,26 +27,29 @@
 #include "modules/ctrl/static_wind_tunnel.h"
 
 #include "generated/modules.h"
+#include "std.h"
 
 // 20000 PPRZ units/s
 #define THRUST_STEP_LIM 20000/STATIC_WIND_TUNNEL_FREQUENCY
 #define ATI_45_RESOLUTION 752
+#define WIND_TUNNEL_FILTER_CUTOFF_HZ 5.0
+#define MOMENT_CONTROL_TOLERANCE 0.1
 
 #define STATIC_WIND_TUNNEL_NUM_CMD 6
 
 // vars: motor tilt, thrust
-#define NUM_VARIABLES 3
+#define NUM_VARIABLES 2
 #define MAX_NUM_TEST_CASES 4
 
+//    {0, 1, 2}, // vehicle config
 const int16_t test_cases[NUM_VARIABLES][MAX_NUM_TEST_CASES] = {
-    {0, 1, 2}, // vehicle config
     {0, 2880, 5760, 9600}, // 0%, 30%, 60%, 100% tilt
     {-9600, 2880, 4600, 6720}, // 0%, 30%, 50%, 70% thrust
 };
 
 // Current indices for each variable
 int current_indices[NUM_VARIABLES] = {0};
-int max_indices[NUM_VARIABLES] = {4,4};
+int max_indices[NUM_VARIABLES] = {4, 4};
 
 int16_t old_thrust = -MAX_PPRZ;
 
@@ -60,19 +63,24 @@ struct ForceSensorData {
 } force_sensor_data;
 
 struct WT_data wt_data = {
-  .measurement_time = 10.0,
+  .max_stage_time = 15.0,
+  .des_measurement_time = 8.0,
   .commands = {0},
   .run = false,
   .counter = 0,
-  .stage = 0,
-  .dynamic_test = false,
+  .measurement_counter = 0,
+  .wait_for_controller_counter = 0,
+  .dynamic_test = true,
   .vehicle_type = 0,
-  .ki = 0.8,
+  .ki = 0.01,
   .integrator = 0.0,
 };
 
+Butterworth2LowPass pitch_moment_filter;
+
 static void set_commands(int16_t tilt, int16_t thrust, int16_t elevon);
 static bool set_next_test_case(void);
+int16_t smooth_thrust(int16_t new_thrust);
 
 void wt_parse_force_sensor_dl(uint8_t *buf)
 {
@@ -103,6 +111,12 @@ static void send_wt(struct transport_tx *trans, struct link_device *dev)
 
 void wt_init(void)
 {
+  // tau = 1/(2*pi*Fc)
+  float tau = 1.0 / (2.0 * M_PI * WIND_TUNNEL_FILTER_CUTOFF_HZ);
+  float sample_time = 1.0 / STATIC_WIND_TUNNEL_FREQUENCY;
+  // Filtering of the moment measurement
+  init_butterworth_2_low_pass(&pitch_moment_filter, tau, sample_time, 0.0);
+
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WIND_TUNNEL, send_wt);
 #endif
@@ -115,15 +129,19 @@ void wt_init(void)
  */
 void wt_run(void)
 {
+  update_butterworth_2_low_pass(&pitch_moment_filter, force_sensor_data.Ty);
+
   if (wt_data.run) {
     if (wt_data.dynamic_test) {
 
-      wt_data.counter = wt_data.counter + 1;
+      wt_data.counter += 1;
+      float time_past = ((float) wt_data.counter / STATIC_WIND_TUNNEL_FREQUENCY);
+      float measurement_time = (float) wt_data.measurement_counter / STATIC_WIND_TUNNEL_FREQUENCY;
 
-      float time_past = (wt_data.counter / STATIC_WIND_TUNNEL_FREQUENCY);
-
-      if (time_past > wt_data.measurement_time) {
+      if (measurement_time > wt_data.des_measurement_time || time_past > wt_data.max_stage_time) {
         wt_data.counter = 0;
+        wt_data.wait_for_controller_counter = 0;
+        wt_data.measurement_counter = 0;
 
         // Check if we need to move to the next test case and update current_indices
         bool more_tests = set_next_test_case();
@@ -134,13 +152,31 @@ void wt_run(void)
       }
 
       // Set the actuators to the current test case
-      enum VehicleType vehicle_type = test_cases[0][current_indices[0]];
-      int16_t tilt = test_cases[1][current_indices[1]];
-      int16_t thrust = test_cases[2][current_indices[2]];
+      // enum VehicleType vehicle_type = test_cases[0][current_indices[0]];
+      // int16_t tilt = test_cases[1][current_indices[1]];
+      // int16_t thrust = test_cases[2][current_indices[2]];
 
-      // use the elevon to control the moment
-      float error = -force_sensor_data.Ty;
-      wt_data.integrator += ATI_45_RESOLUTION * error;
+      int16_t tilt =   test_cases[0][current_indices[0]];
+      int16_t thrust = test_cases[1][current_indices[1]];
+
+      if (wt_data.wait_for_controller_counter < 100) {
+        // use the elevon to control the moment
+        float error = -pitch_moment_filter.o[0];
+        wt_data.integrator += ATI_45_RESOLUTION * error;
+        // prevent integrator windup
+        int32_t integrator_limit = MAX_PPRZ / wt_data.ki;
+        BoundAbs(wt_data.integrator, integrator_limit);
+
+        if (fabsf(pitch_moment_filter.o[0]) < MOMENT_CONTROL_TOLERANCE) {
+          wt_data.wait_for_controller_counter +=1;
+        } else {
+          wt_data.wait_for_controller_counter = 0;
+        }
+      } else{
+        // keep elevon constant
+        wt_data.measurement_counter += 1;
+      }
+
       int16_t elevon = wt_data.integrator*wt_data.ki;
 
       set_commands(tilt, thrust, elevon);
@@ -152,6 +188,8 @@ void wt_run(void)
 
       wt_data.integrator = 0.0;
       wt_data.counter = 0;
+      wt_data.measurement_counter = 0;
+      wt_data.wait_for_controller_counter = 0;
     }
 
   } else {
@@ -160,6 +198,8 @@ void wt_run(void)
 
     wt_data.integrator = 0.0;
     wt_data.counter = 0;
+    wt_data.measurement_counter = 0;
+    wt_data.wait_for_controller_counter = 0;
   }
 
 }
