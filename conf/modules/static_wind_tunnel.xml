@@ -4,7 +4,7 @@
     <description>
         Wind tunnel module that sets the actuators to predefined values
     </description>
-  <section name="WINDTUNNEL" prefix="STATIC_WIND_TUNNEL_">
+    <section name="WINDTUNNEL" prefix="STATIC_WIND_TUNNEL_">
       <define name="MEASUREMENT_TIME" value="10.0" description="Time to measure each conidion [seconds]"/>
     </section>
   </doc>
@@ -24,7 +24,6 @@
   <header>
     <file name="static_wind_tunnel.h"/>
   </header>
-  <!-- <define name="STATIC_WIND_TUNNEL_FREQUENCY" value="100.0"/> -->
   <init fun="wt_init()"/>
   <periodic fun="wt_run()"  autorun="TRUE" freq="STATIC_WIND_TUNNEL_FREQUENCY" />
   <datalink message="FORCE_SENSOR" fun="wt_parse_force_sensor_dl(buf)"/>

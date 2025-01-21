@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="ctrl_effectiveness_calculator" dir="ctrl">
+<module name="effectiveness_scheduling_tiltprop" dir="ctrl">
   <doc>
     <description>
       Function which calculates the control effectiveness matrix on the fly
@@ -8,8 +8,8 @@
     </description>
   </doc>
   <settings>
-  	<dl_settings>
-  		<dl_settings NAME="Ctrl Eff Calc">
+    <dl_settings>
+      <dl_settings NAME="effectiveness_scheduling_tiltprop">
         <dl_setting var="cde_offset" min="0.0" step="0.0001" max="0.1" shortname="cde_offset"/>
         <dl_setting var="c_delta_e" min="0.0" step="0.001" max="1" shortname="c_delta_e"/>
         <dl_setting var="cda_offset" min="0.0" step="0.0001" max="0.1" shortname="cda_offset"/>
@@ -20,15 +20,20 @@
   			<dl_setting var="mass_property.I_xx" min="0.0001" step="0.0001" max="0.01" shortname="I_xx" param="I_XX"/>
   			<dl_setting var="mass_property.I_yy" min="0.0001" step="0.0001" max="0.01" shortname="I_yy" param="I_YY"/>
   			<dl_setting var="mass_property.I_zz" min="0.0001" step="0.0001" max="0.05" shortname="I_zz" param="I_ZZ"/>
-  		</dl_settings>
-  	</dl_settings>
+      </dl_settings>
+    </dl_settings>
   </settings>
+
   <header>
-    <file name="ctrl_effectiveness_calculator.h"/>
+    <file name="effectiveness_scheduling_tiltprop.h"/>
   </header>
-  <init fun="ctrl_eff_calc_init()"/>
-  <periodic fun="ctrl_eff_periodic()" freq="500"/>
+  <init fun="eff_sched_tiltprop_init()"/>
+  <periodic fun="eff_sched_tiltprop_periodic()" autorun="TRUE" freq="500"/>
+
   <makefile>
-    <file name="ctrl_effectiveness_calculator.c"/>
+    <file name="effectiveness_scheduling_tiltprop.c"/>
+    <test/>
   </makefile>
+
 </module>
+
