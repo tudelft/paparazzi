@@ -37,6 +37,8 @@
 
 #define STATIC_WIND_TUNNEL_NUM_CMD 6
 
+#define DISTANCE_Z_TO_CG 0.085
+
 // vars: motor tilt, thrust
 #define NUM_VARIABLES 2
 #define MAX_NUM_TEST_CASES 4
@@ -129,7 +131,7 @@ void wt_init(void)
  */
 void wt_run(void)
 {
-  moment_y = force_sensor_data.Ty + force_sensor_data.Fx*0.085;
+  float moment_y = force_sensor_data.Ty + force_sensor_data.Fx*DISTANCE_Z_TO_CG;
   update_butterworth_2_low_pass(&pitch_moment_filter, moment_y);
 
   if (wt_data.run) {
