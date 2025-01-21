@@ -36,6 +36,8 @@ enum VehicleType {
   TRE
 };
 
+// tilt positive up, elevon positive down
+// X positive forward, Y positive left
 struct WT_data {
   float max_stage_time;
   float des_measurement_time;
@@ -48,6 +50,7 @@ struct WT_data {
   enum VehicleType vehicle_type;
   float ki;
   int32_t integrator;
+  float moment_control_tolerance;
 };
 
 extern struct WT_data wt_data;
