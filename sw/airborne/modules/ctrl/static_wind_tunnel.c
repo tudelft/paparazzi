@@ -129,7 +129,8 @@ void wt_init(void)
  */
 void wt_run(void)
 {
-  update_butterworth_2_low_pass(&pitch_moment_filter, force_sensor_data.Ty);
+  moment_y = force_sensor_data.Ty + force_sensor_data.Fx*0.085;
+  update_butterworth_2_low_pass(&pitch_moment_filter, moment_y);
 
   if (wt_data.run) {
     if (wt_data.dynamic_test) {
@@ -161,7 +162,7 @@ void wt_run(void)
 
       if (wt_data.wait_for_controller_counter < 100) {
         // use the elevon to control the moment
-        float error = -pitch_moment_filter.o[0];
+        float error = pitch_moment_filter.o[0];
         wt_data.integrator += ATI_45_RESOLUTION * error;
         // prevent integrator windup
         int32_t integrator_limit = MAX_PPRZ / wt_data.ki;

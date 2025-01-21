@@ -257,7 +257,7 @@
     <set servo="RM"  value="wt_data.run ? wt_data.commands[2] : -MAX_PPRZ"/>
     <set servo="LM"  value="wt_data.run ? wt_data.commands[3] : -MAX_PPRZ"/>
     <set servo="ELE_RIGHT"  value="wt_data.run ? wt_data.commands[4] : 0"/>
-    <set servo="ELE_LEFT"  value="wt_data.run ? wt_data.commands[5] : 0"/>
+    <set servo="ELE_LEFT"  value="wt_data.run ? -wt_data.commands[5] : 0"/>
   </command_laws>
 
   <section name="MIXING" prefix="MOTOR_MIXING_">
