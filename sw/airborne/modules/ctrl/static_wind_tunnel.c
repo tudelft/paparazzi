@@ -36,7 +36,7 @@
 
 #define STATIC_WIND_TUNNEL_NUM_CMD 6
 
-#define DISTANCE_Z_TO_CG 0.085
+#define DISTANCE_Z_TO_CG 0.095
 
 // vars: motor tilt, thrust
 #define NUM_VARIABLES 2
