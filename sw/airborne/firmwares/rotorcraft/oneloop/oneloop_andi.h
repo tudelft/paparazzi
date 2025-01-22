@@ -221,7 +221,7 @@ static inline void init_custom_filter(struct CustomFilter *filter, float fc, flo
  * @param value  New input value of the filter
  * @return       New filtered value
  */
-static inline float update_custom_filter(struct CustomFilter *filter, float value)
+static inline void update_custom_filter(struct CustomFilter *filter, float value)
 {
   filter->uk  = filter->uk1;
   filter->uk1 = value;
@@ -232,7 +232,7 @@ static inline float update_custom_filter(struct CustomFilter *filter, float valu
   float C = (2 * filter->rho + filter->dt * filter->fc - 2) / D;
   float out = A * filter->yk + B * filter->uk1 + C * filter->uk;
   filter->yk1 = out;
-  return out;
+  //return out;
 }
 // function yk1 = fcn(uk,uk1,yk,dt, fc, rho)
 // D = (dt * fc + 2);

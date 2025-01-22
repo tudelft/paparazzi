@@ -12,7 +12,8 @@
         "Makefile.*": "makefile",
         "regex": "c",
         "tensor": "c",
-        "functional": "cpp"
+        "functional": "cpp",
+        "chrono": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",

@@ -596,6 +596,8 @@ float ratio_u_un[ANDI_NUM_ACT_TOT];
 float ratio_vn_v[ANDI_OUTPUTS];
 
 float temp_k = 300;
+float temp_checks[2];
+float temp_dist_r = 0.0;
 float temp_ec_r = 0.0;
 float temp_ec_r_2 = 0.0;
 float  temp_e_x = 0.0;
@@ -696,14 +698,14 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
 static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
 {
   float temp_debug_vect[14];
-  temp_debug_vect[0] = oneloop_andi_model_filt.q_dot.fc;
-  temp_debug_vect[1] = oneloop_andi_model_filt.q_dot.dt;
-  temp_debug_vect[2] = oneloop_andi_model_filt.q_dot.rho;
-  temp_debug_vect[3] = oneloop_andi_model_filt.q_dot.yk1;
-  temp_debug_vect[4] = oneloop_andi_model_filt.q_dot.yk;
-  temp_debug_vect[5] = oneloop_andi_model_filt.q_dot.uk1;
-  temp_debug_vect[6] = oneloop_andi_model_filt.q_dot.uk;
-  temp_debug_vect[7] = oneloop_andi_model[RW_ap];
+  temp_debug_vect[0] = temp_checks[1];
+  temp_debug_vect[1] = temp_dist_r;
+  temp_debug_vect[2] = temp_checks[0];
+  temp_debug_vect[3] = oneloop_andi_model_filt.r_dot.yk1;
+  temp_debug_vect[4] = oneloop_andi_model_filt.r_dot.uk1;
+  temp_debug_vect[5] = oneloop_andi_model[RW_ap];
+  temp_debug_vect[6] = oneloop_andi_model[RW_aq];
+  temp_debug_vect[7] = oneloop_andi_model[RW_ar];
   temp_debug_vect[8] = temp_ec_r_2;
   temp_debug_vect[9] = temp_ec_r;
   temp_debug_vect[10] = temp_e_x;
@@ -893,6 +895,8 @@ void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[
   BoundAbs(e_x_d[0], bounds.att_2d[0]);
   BoundAbs(e_x_d[1], bounds.att_2d[1]);
   BoundAbs(e_x_d[2], bounds.att_2d[2]);
+  float temp_bound_r_dot = n_array[5]*coupling_factor[5]/(k_att_e.k3[2]*1.5);
+  BoundAbs(e_x_d[2], temp_bound_r_dot);
   // Angular Acceleration error -----------------------------------------
   err_nd(e_x_2d, e_x_d, x_2d_ref, k3_rm, 3);
   BoundAbs(e_x_2d[0], bounds.att_3d[0]);
@@ -1139,18 +1143,32 @@ void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[
   e_x[2] = k1_e[2] * temp_diff; // Correction for Heading error +-Pi
   //float_rates_of_euler_dot_vec(e_x_rates, x, e_x);
   //float_vect_sum(x_d_f, x_d_ref, e_x_rates, 3);
+  BoundAbs(e_x[0], bounds.att_d[0]*1.5);
+  BoundAbs(e_x[1], bounds.att_d[1]*1.5);
+  BoundAbs(e_x[2], bounds.att_d[2]*1.5);
   float_vect_sum(x_d_f, x_d_ref, e_x, 3);
-  BoundAbs(x_d_f[0], bounds.att_d[0]*1.5);
-  BoundAbs(x_d_f[1], bounds.att_d[1]*1.5);
-  BoundAbs(x_d_f[2], bounds.att_d[2]*1.5);
+  //BoundAbs(x_d_f[0], bounds.att_d[0]*1.5);
+  //BoundAbs(x_d_f[1], bounds.att_d[1]*1.5);
+  //BoundAbs(x_d_f[2], bounds.att_d[2]*1.5);
   // Angular Rate Error ---------------------------------------------------
-  err_sum_nd(x_2d_f, x_d_f,  x_d,  k2_e, x_2d_ref, 3);
+  x_2d_f[0] = (x_d_f[0]-x_d[0])*k2_e[0];
+  x_2d_f[1] = (x_d_f[1]-x_d[1])*k2_e[1];
+  x_2d_f[2] = (x_d_f[2]-x_d[2])*k2_e[2];
   BoundAbs(x_2d_f[0], bounds.att_2d[0]*1.5);
   BoundAbs(x_2d_f[1], bounds.att_2d[1]*1.5);
   BoundAbs(x_2d_f[2], bounds.att_2d[2]*1.5);
+  x_2d_f[0] += x_2d_ref[0];
+  x_2d_f[1] += x_2d_ref[1];
+  x_2d_f[2] += x_2d_ref[2]; 
+  //err_sum_nd(x_2d_f, x_d_f,  x_d,  k2_e, x_2d_ref, 3);
+  //BoundAbs(x_2d_f[0], bounds.att_2d[0]*1.5);
+  //BoundAbs(x_2d_f[1], bounds.att_2d[1]*1.5);
+  //BoundAbs(x_2d_f[2], bounds.att_2d[2]*1.5);
   // Calculate and bound distrubance --------------------------------------
   float dist[3];
   float_vect_diff(dist, x_2d, fb, 3);
+  temp_checks[0] = x_2d[2];
+  temp_checks[1] = fb[2];
   BoundAbs(dist[2], oneloop_andi_yaw_dist_limit);
   // Angular Acceleration Error -------------------------------------------
   err_sum_nd(y_4d, x_2d_f, dist, k3_e, x_3d_ref, 3);
@@ -1158,6 +1176,7 @@ void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[
   temp_e_x_rates = e_x_rates[2];
   temp_x_d_f = x_d_f[2];
   temp_x_2d_f = x_2d_f[2];
+  temp_dist_r = dist[2];
   temp_ec_r = (x_2d_f[2]-x_2d[2])*k3_e[2]+x_3d_ref[2];
   temp_ec_r_2 = temp_diff*k1_e[2]*k2_e[2]*k3_e[2]+(x_d_ref[2]-x_d[2])*k2_e[2]*k3_e[2]+(x_2d_ref[2]-x_2d[2])*k3_e[2]+x_3d_ref[2];
 }
@@ -1303,14 +1322,14 @@ void init_controller_gains(void){
   k_att_rm.k2[2] = k_rm_2_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
   k_att_rm.k3[2] = k_rm_3_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
 
-  printf("Attitude RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
-  printf("Attitude EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
-  printf("Heading  RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
-  printf("Heading  EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
-  printf("Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
-  printf("Attitude EC Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
-  printf("Heading  RM Gains: %f %f %f\n", k_att_rm.k1[2], k_att_rm.k2[2], k_att_rm.k3[2]);
-  printf("Heading  EC Gains: %f %f %f\n", k_att_e.k1[2], k_att_e.k2[2], k_att_e.k3[2]);
+  //printf("Attitude RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
+  //printf("Attitude EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
+  //printf("Heading  RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
+  //printf("Heading  EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
+  //printf("Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
+  //printf("Attitude EC Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
+  //printf("Heading  RM Gains: %f %f %f\n", k_att_rm.k1[2], k_att_rm.k2[2], k_att_rm.k3[2]);
+  //printf("Heading  EC Gains: %f %f %f\n", k_att_e.k1[2], k_att_e.k2[2], k_att_e.k3[2]);
   /*Position Loop*/
   // k_pos_e.k1[0]  = k_e_1_3_f_v2(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
   // k_pos_e.k2[0]  = k_e_2_3_f_v2(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
@@ -1744,7 +1763,7 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     for (i = 0; i < ANDI_NUM_ACT; i++) {
       a_thrust +=(thrust_cmd_1l) * EFF_MAT_RW[RW_aD][i] * act_dynamics[i];
     }
-    a_thrust = a_thrust - oneloop_andi_model[RW_aD]; 
+    a_thrust = a_thrust - oneloop_andi_model_filt.az.yk1; 
 
     rm_3rd_attitude(dt_1l, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, att_des, false, psi_vec, k_att_rm.k1, k_att_rm.k2, k_att_rm.k3, sta_bounds);
   }else{
@@ -1908,7 +1927,8 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   // Attitude Pseudo Control Vector (nu) based on error controller
   float y_4d_att[3];  
   if(oneloop_andi.ctrl_type == CTRL_ANDI){
-    float temp_dist_bound_sta[3] = {oneloop_andi_model[3], oneloop_andi_model[4], oneloop_andi_model[5]};
+    float temp_dist_bound_sta[3] = {oneloop_andi_model_filt.p_dot.yk1, oneloop_andi_model_filt.q_dot.yk1, oneloop_andi_model_filt.r_dot.yk1};
+    printf("Last check of model: %f \n",oneloop_andi_model_filt.r_dot.yk1);
     //float temp_dist_bound_sta[3] = {0.0, 0.0, 0.0};
     ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds,temp_dist_bound_sta);
 } else if (oneloop_andi.ctrl_type == CTRL_INDI){
@@ -1926,18 +1946,17 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   }
 
   // temp restructuring------------------
-  nu[0] = nu[0] + oneloop_andi_model[0];
-  nu[1] = nu[1] + oneloop_andi_model[1];
-  nu[2] = nu[2] + oneloop_andi_model[2];
+  nu[0] = nu[0] + oneloop_andi_model_filt.ax.yk1;
+  nu[1] = nu[1] + oneloop_andi_model_filt.ay.yk1;
+  nu[2] = nu[2] + oneloop_andi_model_filt.az.yk1;
   //nu[3] = nu[3] + oneloop_andi_model[3];
   //nu[4] = nu[4] + oneloop_andi_model[4];
   //nu[5] = nu[5] + oneloop_andi_model[5];
-  Bound(coupling_factor[5],0.2,0.8);
   BoundAbs(nu[5], n_array[5]*coupling_factor[5]);
   // weather vaning ---------------------
   //nu[5] = oneloop_andi_model[5] - temp_k * oneloop_andi.sta_ref.att_d[2]; //Interesting idea to weather vane the drone
   if (drop_yaw){
-    nu[5] = oneloop_andi_model[5];
+    nu[5] = oneloop_andi_model_filt.r_dot.yk1;
   }
   //------------------------------------
 
@@ -2521,6 +2540,7 @@ void oneloop_axis_effectiveness_calc(void){
       coupling_factor[i] += eff2 / (n_array[i] * m_array[j]);
     }
   }
+  Bound(coupling_factor[5],0.2,0.8);
   //printf("Coupling factor: %f %f %f %f %f %f \n", coupling_factor[0], coupling_factor[1], coupling_factor[2], coupling_factor[3], coupling_factor[4], coupling_factor[5]);
   //printf("Axis effectiven: %f %f %f %f %f %f \n", n_array[0], n_array[1], n_array[2], n_array[3], n_array[4], n_array[5]);
 }
@@ -2565,12 +2585,16 @@ void oneloop_calc_model_disturbance(bool in_flight){
       }
       oneloop_andi_model[i] = oneloop_andi_model[i] / k3;
     } 
-    oneloop_andi_model[RW_aN] = update_custom_filter(&oneloop_andi_model_filt.ax, oneloop_andi_model[RW_aN]);
-    oneloop_andi_model[RW_aE] = update_custom_filter(&oneloop_andi_model_filt.ay, oneloop_andi_model[RW_aE]);
-    oneloop_andi_model[RW_aD] = update_custom_filter(&oneloop_andi_model_filt.az, oneloop_andi_model[RW_aD]);
-    oneloop_andi_model[RW_ap] = update_custom_filter(&oneloop_andi_model_filt.p_dot, oneloop_andi_model[RW_ap]);
-    oneloop_andi_model[RW_aq] = update_custom_filter(&oneloop_andi_model_filt.q_dot, oneloop_andi_model[RW_aq]);
-    oneloop_andi_model[RW_ar] = update_custom_filter(&oneloop_andi_model_filt.r_dot, oneloop_andi_model[RW_ar]);
+    //print all of the filter settings like rho fc dt and so on for rdot
+    printf("rdot filter settings: %f,%f,%f \n",oneloop_andi_model_filt.r_dot.fc,oneloop_andi_model_filt.r_dot.rho,oneloop_andi_model_filt.r_dot.dt);
+    printf("IN: %f \n",oneloop_andi_model[RW_ar]);
+    update_custom_filter(&oneloop_andi_model_filt.ax, oneloop_andi_model[RW_aN]);
+    update_custom_filter(&oneloop_andi_model_filt.ay, oneloop_andi_model[RW_aE]);
+    update_custom_filter(&oneloop_andi_model_filt.az, oneloop_andi_model[RW_aD]);
+    update_custom_filter(&oneloop_andi_model_filt.p_dot, oneloop_andi_model[RW_ap]);
+    update_custom_filter(&oneloop_andi_model_filt.q_dot, oneloop_andi_model[RW_aq]);
+    update_custom_filter(&oneloop_andi_model_filt.r_dot, oneloop_andi_model[RW_ar]);
+    printf("OUT: %f \n",oneloop_andi_model_filt.r_dot.yk1);
   }else {
     float_vect_zero(oneloop_andi_model, ANDI_OUTPUTS);
   }
