@@ -231,8 +231,8 @@
     <!--<servo name="ELEVON_RIGHT"  no="1" min="820" neutral="1520" max="2220"/>-->
     <servo name="RM" no="2" min="1080" neutral="1100" max="1900"/>
     <servo name="LM" no="3" min="1080" neutral="1100" max="1900"/>
-    <servo name="ELE_LEFT"  no="4" min="710" neutral="1460" max="2210"/> <!--neutral 1440-->
-    <servo name="ELE_RIGHT"  no="5" min="730" neutral="1480" max="2230"/> <!--neutral 1440 1450-->
+    <servo name="ELE_LEFT"  no="4" min="750" neutral="1500" max="2250"/> <!--neutral 1440-->
+    <servo name="ELE_RIGHT"  no="5" min="750" neutral="1500" max="2250"/> <!--neutral 1440 1450-->
     <!--<servo name="SERVO_TEST" no="4" min="1000" neutral="1500" max="2000"/>-->
   </servos>
 
