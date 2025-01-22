@@ -30,7 +30,7 @@
 #include "std.h"
 
 // 20000 PPRZ units/s
-#define THRUST_STEP_LIM 20000/STATIC_WIND_TUNNEL_FREQUENCY
+#define CMD_STEP_LIM 20000/STATIC_WIND_TUNNEL_FREQUENCY
 #define ATI_45_RESOLUTION 752
 #define WIND_TUNNEL_FILTER_CUTOFF_HZ 5.0
 
@@ -72,6 +72,7 @@ const int16_t static_test_cases[STATIC_NUM_VARIABLES][STATIC_MAX_NUM_TEST_CASES]
 //----------------------------------------------
 
 int16_t old_thrust = -MAX_PPRZ;
+int16_t old_tilt = 0;
 
 struct ForceSensorData {
   float Fx;
@@ -101,7 +102,7 @@ Butterworth2LowPass pitch_moment_filter;
 
 static void set_commands(int16_t tilt, int16_t thrust, int16_t elevon);
 static bool set_next_test_case(void);
-int16_t smooth_thrust(int16_t new_thrust);
+int16_t smooth_cmd(int16_t new_cmd, int16_t old_cmd);
 
 void wt_parse_force_sensor_dl(uint8_t *buf)
 {
@@ -150,7 +151,7 @@ void wt_init(void)
  */
 void wt_run(void)
 {
-  float moment_y = force_sensor_data.Ty + force_sensor_data.Fx*0.085;
+  float moment_y = force_sensor_data.Ty + force_sensor_data.Fx*DISTANCE_Z_TO_CG;
   update_butterworth_2_low_pass(&pitch_moment_filter, moment_y);
 
   if (wt_data.run) {
@@ -233,13 +234,13 @@ void wt_run(void)
 
 }
 
-int16_t smooth_thrust(int16_t new_thrust) {
-  if (new_thrust - old_thrust > THRUST_STEP_LIM) {
-    return old_thrust + THRUST_STEP_LIM;
-  } else if (new_thrust - old_thrust < -THRUST_STEP_LIM) {
-    return old_thrust - THRUST_STEP_LIM;
+int16_t smooth_cmd(int16_t new_cmd, int16_t old_cmd) {
+  if (new_cmd - old_cmd > CMD_STEP_LIM) {
+    return old_cmd + CMD_STEP_LIM;
+  } else if (new_cmd - old_cmd < -CMD_STEP_LIM) {
+    return old_cmd - CMD_STEP_LIM;
   } else {
-    return new_thrust;
+    return new_cmd;
   }
 }
 
@@ -265,11 +266,14 @@ bool set_next_test_case(void) {
 
 void set_commands(int16_t tilt, int16_t thrust, int16_t elevon) {
 
-  int16_t new_thrust = smooth_thrust(thrust);
+  int16_t new_thrust = smooth_cmd(thrust, old_thrust);
   old_thrust = new_thrust;
 
-  wt_data.commands[0] = tilt;
-  wt_data.commands[1] = tilt;
+  int16_t new_tilt = smooth_cmd(tilt, old_tilt);
+  old_tilt = new_tilt;
+
+  wt_data.commands[0] = new_tilt;
+  wt_data.commands[1] = new_tilt;
   wt_data.commands[2] = new_thrust;
   wt_data.commands[3] = new_thrust;
   wt_data.commands[4] = elevon;
