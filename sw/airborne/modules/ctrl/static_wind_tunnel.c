@@ -67,7 +67,7 @@ int static_max_indices[STATIC_NUM_VARIABLES] = {5, 4, 5};
 const int16_t static_test_cases[STATIC_NUM_VARIABLES][STATIC_MAX_NUM_TEST_CASES] = {
     {0, 2400, 4800, 7200, 9600}, // 0%, 25%, 50%, 70%, 100% tilt
     {-9600, 2880, 4600, 6720}, // 0%, 30%, 50%, 70% thrust
-    {0, 2400, 4800, 7200, 9600}, // 0%, 30%, 50%, 70% elevon
+    {0, 2400, 4800, 7200, 9600}, // 0%, 25%, 50%, 70%,100%elevon
 };
 //----------------------------------------------
 
@@ -155,11 +155,10 @@ void wt_run(void)
   update_butterworth_2_low_pass(&pitch_moment_filter, moment_y);
 
   if (wt_data.run) {
+     float time_past = ((float) wt_data.counter / STATIC_WIND_TUNNEL_FREQUENCY);
+     float measurement_time = (float) wt_data.measurement_counter / STATIC_WIND_TUNNEL_FREQUENCY;
+     wt_data.counter += 1;
     if (wt_data.dynamic_test) {
-
-      wt_data.counter += 1;
-      float time_past = ((float) wt_data.counter / STATIC_WIND_TUNNEL_FREQUENCY);
-      float measurement_time = (float) wt_data.measurement_counter / STATIC_WIND_TUNNEL_FREQUENCY;
 
       if (measurement_time > wt_data.des_measurement_time || time_past > wt_data.max_stage_time) {
         wt_data.counter = 0;
@@ -212,14 +211,23 @@ void wt_run(void)
       set_commands(tilt, thrust, elevon);
 
     } else {
-      // TODO: not implemented for now
-      // Set everything to 0 by default
-      set_commands(0, -MAX_PPRZ, 0);
+     // Iterate through all combinations of settings
+    for (int i = 0; i < STATIC_MAX_NUM_TEST_CASES; i++) {
+        for (int j = 0; j < STATIC_MAX_NUM_TEST_CASES - 1;j++) {//only 4 settings for thrust
+            for (int k = 0; k < STATIC_MAX_NUM_TEST_CASES; k++) {
+                // Get the actuator settings for the current combination
+                int16_t tilt = static_test_cases[0][i];
+                int16_t thrust = static_test_cases[1][j];
+                int16_t elevon = static_test_cases[2][k];
+                do
+                {
+                  set_commands(tilt, thrust, elevon);
+                  wt_data.measurement_counter += 1;
+                }while (measurement_time < wt_data.des_measurement_time);
 
-      wt_data.integrator = 0.0;
-      wt_data.counter = 0;
-      wt_data.measurement_counter = 0;
-      wt_data.wait_for_controller_counter = 0;
+            }
+        }
+    }
     }
 
   } else {
