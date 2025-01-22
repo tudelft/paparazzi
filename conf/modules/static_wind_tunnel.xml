@@ -4,7 +4,7 @@
     <description>
         Wind tunnel module that sets the actuators to predefined values
     </description>
-  <section name="WINDTUNNEL" prefix="STATIC_WIND_TUNNEL_">
+    <section name="WINDTUNNEL" prefix="STATIC_WIND_TUNNEL_">
       <define name="MEASUREMENT_TIME" value="10.0" description="Time to measure each conidion [seconds]"/>
     </section>
   </doc>
@@ -17,14 +17,13 @@
         <dl_setting var="wt_data.dynamic_test" min="0" step="1" max="1" values="STATIC|DYNAMIC" module="ctrl/static_wind_tunnel" shortname="dynamic_test"/>
         <dl_setting var="wt_data.vehicle_type" min="0" step="1" max="2" values="E|TR|TRE" module="ctrl/static_wind_tunnel" shortname="vehicle type"/>
         <dl_setting var="wt_data.ki" min="0.001" step="0.1" max="10.0" module="ctrl/static_wind_tunnel" shortname="ki"/>
-        <dl_setting var="wt_data.commands[2]" min="0" step="10" max="9600" module="ctrl/static_wind_tunnel" shortname="motor"/>
+        <dl_setting var="wt_data.moment_control_tolerance" min="0" step="0.01" max="1.0" module="ctrl/static_wind_tunnel" shortname="pitch tolerance Nm"/>
       </dl_settings>
     </dl_settings>
   </settings>
   <header>
     <file name="static_wind_tunnel.h"/>
   </header>
-  <!-- <define name="STATIC_WIND_TUNNEL_FREQUENCY" value="100.0"/> -->
   <init fun="wt_init()"/>
   <periodic fun="wt_run()"  autorun="TRUE" freq="STATIC_WIND_TUNNEL_FREQUENCY" />
   <datalink message="FORCE_SENSOR" fun="wt_parse_force_sensor_dl(buf)"/>

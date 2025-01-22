@@ -33,7 +33,6 @@
 #define THRUST_STEP_LIM 20000/STATIC_WIND_TUNNEL_FREQUENCY
 #define ATI_45_RESOLUTION 752
 #define WIND_TUNNEL_FILTER_CUTOFF_HZ 5.0
-#define MOMENT_CONTROL_TOLERANCE 0.1
 
 #define STATIC_WIND_TUNNEL_NUM_CMD 6
 
@@ -41,17 +40,36 @@
 
 // vars: motor tilt, thrust
 #define NUM_VARIABLES 2
-#define MAX_NUM_TEST_CASES 4
-
-//    {0, 1, 2}, // vehicle config
-const int16_t test_cases[NUM_VARIABLES][MAX_NUM_TEST_CASES] = {
-    {0, 2880, 5760, 9600}, // 0%, 30%, 60%, 100% tilt
-    {-9600, 2880, 4600, 6720}, // 0%, 30%, 50%, 70% thrust
-};
+#define MAX_NUM_TEST_CASES 5
 
 // Current indices for each variable
 int current_indices[NUM_VARIABLES] = {0};
-int max_indices[NUM_VARIABLES] = {4, 4};
+int max_indices[NUM_VARIABLES] = {5, 4};
+
+//    {0, 1, 2}, // vehicle config
+const int16_t test_cases[NUM_VARIABLES][MAX_NUM_TEST_CASES] = {
+    {-1, 0, 2880, 5760, 9600}, // 0%, 30%, 60%, 100% tilt, use -1 to indicate balancing with tilt
+    {-9600, 2880, 4600, 6720}, // 0%, 30%, 50%, 70% thrust
+};
+
+//----------------------------------------------
+// STATIC WIND TUNNEL EXPERIMENT
+
+// vars: motor tilt, thrust, elevon
+#define STATIC_NUM_VARIABLES 3
+#define STATIC_MAX_NUM_TEST_CASES 5
+
+// Current indices for each variable
+int static_current_indices[STATIC_NUM_VARIABLES] = {0};
+int static_max_indices[STATIC_NUM_VARIABLES] = {5, 4, 5};
+
+//    {0, 1, 2}, // vehicle config
+const int16_t static_test_cases[STATIC_NUM_VARIABLES][STATIC_MAX_NUM_TEST_CASES] = {
+    {0, 2400, 4800, 7200, 9600}, // 0%, 25%, 50%, 70%, 100% tilt
+    {-9600, 2880, 4600, 6720}, // 0%, 30%, 50%, 70% thrust
+    {0, 2400, 4800, 7200, 9600}, // 0%, 30%, 50%, 70% elevon
+};
+//----------------------------------------------
 
 int16_t old_thrust = -MAX_PPRZ;
 
@@ -74,8 +92,9 @@ struct WT_data wt_data = {
   .wait_for_controller_counter = 0,
   .dynamic_test = true,
   .vehicle_type = 0,
-  .ki = 0.01,
+  .ki = 0.1,
   .integrator = 0.0,
+  .moment_control_tolerance = 0.1,
 };
 
 Butterworth2LowPass pitch_moment_filter;
@@ -131,7 +150,7 @@ void wt_init(void)
  */
 void wt_run(void)
 {
-  float moment_y = force_sensor_data.Ty + force_sensor_data.Fx*DISTANCE_Z_TO_CG;
+  float moment_y = force_sensor_data.Ty + force_sensor_data.Fx*0.085;
   update_butterworth_2_low_pass(&pitch_moment_filter, moment_y);
 
   if (wt_data.run) {
@@ -170,7 +189,7 @@ void wt_run(void)
         int32_t integrator_limit = MAX_PPRZ / wt_data.ki;
         BoundAbs(wt_data.integrator, integrator_limit);
 
-        if (fabsf(pitch_moment_filter.o[0]) < MOMENT_CONTROL_TOLERANCE) {
+        if (fabsf(pitch_moment_filter.o[0]) < wt_data.moment_control_tolerance) {
           wt_data.wait_for_controller_counter +=1;
         } else {
           wt_data.wait_for_controller_counter = 0;
@@ -181,6 +200,13 @@ void wt_run(void)
       }
 
       int16_t elevon = wt_data.integrator*wt_data.ki;
+
+      // Handle special case when we want to balance the moment with the tilt
+      if (tilt == -1) {
+        elevon = 0;
+        // balance the moment with the tilt
+        tilt = wt_data.integrator*wt_data.ki;
+      }
 
       set_commands(tilt, thrust, elevon);
 

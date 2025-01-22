@@ -1,16 +1,34 @@
 /*
  * Copyright (C) 2021 Gervase Lovell-Prescod <gervase.prescod@gmail.com>
+ *
+ * This file is part of Paparazzi.
+ *
+ * Paparazzi is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * Paparazzi is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Paparazzi; see the file COPYING.  If not, see
+ * <http://www.gnu.org/licenses/>.
  */
 
-/** @file modules/ctrl/ctrl_effectiveness_calculator.c
- * Module that calculates control effectiveness matrix for a tiltprop tailsitter
+/**
+ * @file modules/ctrl/effectiveness_scheduling_tiltprop.h
+ * @brief module to schedule control effectiveness calculations for tiltprop tailsitter
+ *
  */
 
-#include "modules/ctrl/ctrl_effectiveness_calculator.h"
-#include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
-#include "generated/airframe.h"
+#include "modules/ctrl/effectiveness_scheduling_tiltprop.h"
 #include "state.h"
-#include "math/pprz_algebra_float.h"
+#include "firmwares/rotorcraft/stabilization.h"
+#include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
+
 
 struct MassProperties mass_property = {CTRL_EFF_CALC_MASS, CTRL_EFF_CALC_I_XX, CTRL_EFF_CALC_I_YY, CTRL_EFF_CALC_I_ZZ};
 struct MotorCoefficients mot_coef = {CTRL_EFF_CALC_K1, CTRL_EFF_CALC_K2, CTRL_EFF_CALC_K3};
@@ -45,6 +63,8 @@ static float pprz_to_rad_left(float x);
 static float pprz_to_rad_right(float x);
 static float pprz_to_omega(float x);
 static float thrust_correcting_ratio(float x, float delta);
+void ctrl_eff(void);
+void ctrl_eff_ground_contact(void);
 
 #ifdef STABILIZATION_INDI_G1
 static float g1g2_hover[INDI_OUTPUTS][INDI_NUM_ACT] = STABILIZATION_INDI_G1;
@@ -57,18 +77,11 @@ static float g1g2_hover[INDI_OUTPUTS][INDI_NUM_ACT] = {
 };
 #endif
 
-#if PERIODIC_TELEMETRY
-// #include "modules/datalink/telemetry.h"
-// static void send_ctrl_eff_module(struct transport_tx *trans, struct link_device *dev)
-// {
-//   pprz_msg_send_CTRL_EFF_MODULE(trans, dev, AC_ID, &thrust_loss_r, &thrust_loss_l);
-// }
-#endif
 
 /*
  * Function which initialises
  */
-void ctrl_eff_calc_init(void)
+void eff_sched_tiltprop_init(void)
 {
 #if PERIODIC_TELEMETRY
   // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_CTRL_EFF_MODULE, send_ctrl_eff_module);
@@ -80,7 +93,7 @@ void ctrl_eff_calc_init(void)
  * calculator function or in the case of ground contact, the ground
  * contact one.
  */
-void ctrl_eff_periodic(void)
+void eff_sched_tiltprop_periodic(void)
 {
   if (CTRL_EFF_CALC_GROUND_CONTACT == 0) {
     ctrl_eff();
@@ -322,3 +335,5 @@ float UNUSED thrust_correcting_ratio(float x, float delta)
 
   return dv / v_e;
 }
+
+

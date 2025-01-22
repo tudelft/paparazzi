@@ -197,7 +197,7 @@
 
     <!-- Control effectiveness calculator that calculates
     	 the control effectiveness matrix on the fly	 -->
-    <module name="ctrl_effectiveness_calculator"/>
+    <module name="effectiveness_scheduling_tiltprop"/>
     <!-- ******************************************************* -->
     <!--<module name="static_wind_tunnel">
       <define name="TAILSITTER_WIND_TUNNEL" value="FALSE"/>
@@ -208,7 +208,7 @@
     <!-- <module name="tailsitter_auto_takeoff">
       <define name="TAKEOFF_THETA_REF" value="0.0"/>
     </module> -->
-     <module name="static_wind_tunnel"/>
+    <module name="static_wind_tunnel"/>
     <module name="agl_dist">
       <define name="AGL_DIST_ID" value="AGL_LIDAR_TFMINI_ID"/>
       <define name="AGL_DIST_MAX_RANGE" value="5.0"/>
