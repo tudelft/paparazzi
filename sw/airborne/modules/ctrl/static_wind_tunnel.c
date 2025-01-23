@@ -39,15 +39,15 @@
 #define DISTANCE_Z_TO_CG 0.095
 
 // vars: motor tilt, thrust
-#define NUM_VARIABLES 2
+#define DYNAMIC_NUM_VARIABLES 2
 #define MAX_NUM_TEST_CASES 5
 
 // Current indices for each variable
-int current_indices[NUM_VARIABLES] = {0};
-int max_indices[NUM_VARIABLES] = {5, 4};
+int dynamic_current_indices[DYNAMIC_NUM_VARIABLES] = {0};
+int dynamic_max_indices[DYNAMIC_NUM_VARIABLES] = {5, 4};
 
 //    {0, 1, 2}, // vehicle config
-const int16_t test_cases[NUM_VARIABLES][MAX_NUM_TEST_CASES] = {
+const int16_t dynamic_test_cases[DYNAMIC_NUM_VARIABLES][MAX_NUM_TEST_CASES] = {
     {-1, 0, 2880, 5760, 9600}, // 0%, 30%, 60%, 100% tilt, use -1 to indicate balancing with tilt
     {-9600, 2880, 4600, 6720}, // 0%, 30%, 50%, 70% thrust
 };
@@ -101,7 +101,7 @@ struct WT_data wt_data = {
 Butterworth2LowPass pitch_moment_filter;
 
 static void set_commands(int16_t tilt, int16_t thrust, int16_t elevon);
-static bool set_next_test_case(void);
+static bool set_next_test_case(int *current_indices, int *max_indices, int num_variables);
 int16_t smooth_cmd(int16_t new_cmd, int16_t old_cmd);
 
 void wt_parse_force_sensor_dl(uint8_t *buf)
@@ -166,20 +166,15 @@ void wt_run(void)
         wt_data.measurement_counter = 0;
 
         // Check if we need to move to the next test case and update current_indices
-        bool more_tests = set_next_test_case();
+        bool more_tests = set_next_test_case(dynamic_current_indices, dynamic_max_indices, DYNAMIC_NUM_VARIABLES);
         if(!more_tests) {
           wt_data.run = false;
           return;
         }
       }
 
-      // Set the actuators to the current test case
-      // enum VehicleType vehicle_type = test_cases[0][current_indices[0]];
-      // int16_t tilt = test_cases[1][current_indices[1]];
-      // int16_t thrust = test_cases[2][current_indices[2]];
-
-      int16_t tilt =   test_cases[0][current_indices[0]];
-      int16_t thrust = test_cases[1][current_indices[1]];
+      int16_t tilt =   dynamic_test_cases[0][dynamic_current_indices[0]];
+      int16_t thrust = dynamic_test_cases[1][dynamic_current_indices[1]];
 
       if (wt_data.wait_for_controller_counter < 100) {
         // use the elevon to control the moment
@@ -211,23 +206,26 @@ void wt_run(void)
       set_commands(tilt, thrust, elevon);
 
     } else {
-     // Iterate through all combinations of settings
-    for (int i = 0; i < STATIC_MAX_NUM_TEST_CASES; i++) {
-        for (int j = 0; j < STATIC_MAX_NUM_TEST_CASES - 1;j++) {//only 4 settings for thrust
-            for (int k = 0; k < STATIC_MAX_NUM_TEST_CASES; k++) {
-                // Get the actuator settings for the current combination
-                int16_t tilt = static_test_cases[0][i];
-                int16_t thrust = static_test_cases[1][j];
-                int16_t elevon = static_test_cases[2][k];
-                do
-                {
-                  set_commands(tilt, thrust, elevon);
-                  wt_data.measurement_counter += 1;
-                }while (measurement_time < wt_data.des_measurement_time);
+      if (measurement_time > wt_data.des_measurement_time) {
+        wt_data.counter = 0;
+        wt_data.wait_for_controller_counter = 0;
+        wt_data.measurement_counter = 0;
 
-            }
+        // Check if we need to move to the next test case and update current_indices
+        bool more_tests = set_next_test_case(static_current_indices, static_max_indices, STATIC_NUM_VARIABLES);
+        if(!more_tests) {
+          wt_data.run = false;
+          return;
         }
-    }
+      }
+
+      int16_t tilt =   static_test_cases[0][static_current_indices[0]];
+      int16_t thrust = static_test_cases[1][static_current_indices[1]];
+      int16_t elevon = static_test_cases[2][static_current_indices[2]];
+
+      set_commands(tilt, thrust, elevon);
+
+      wt_data.measurement_counter += 1;
     }
 
   } else {
@@ -254,10 +252,9 @@ int16_t smooth_cmd(int16_t new_cmd, int16_t old_cmd) {
 
 // Function to get the next test case combination
 // Returns false when all combinations are exhausted
-bool set_next_test_case(void) {
-
+bool set_next_test_case(int *current_indices, int *max_indices, int num_variables) {
     // Update the indices to the next combination
-    for (int i = 0; i < NUM_VARIABLES; i++) {
+    for (int i = 0; i < num_variables; i++) {
         current_indices[i]++;
         if (current_indices[i] < max_indices[i]) {
             // If the current index is valid, stop updating further
