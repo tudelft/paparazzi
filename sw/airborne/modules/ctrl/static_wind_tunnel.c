@@ -44,7 +44,7 @@
 
 // Current indices for each variable
 int dynamic_current_indices[DYNAMIC_NUM_VARIABLES] = {0};
-int dynamic_max_indices[DYNAMIC_NUM_VARIABLES] = {5, 4};
+int dynamic_max_indices[DYNAMIC_NUM_VARIABLES] = {5, 3};
 
 //    {0, 1, 2}, // vehicle config
 const int16_t dynamic_test_cases[DYNAMIC_NUM_VARIABLES][MAX_NUM_TEST_CASES] = {
