@@ -48,8 +48,8 @@ int dynamic_max_indices[DYNAMIC_NUM_VARIABLES] = {5, 4};
 
 //    {0, 1, 2}, // vehicle config
 const int16_t dynamic_test_cases[DYNAMIC_NUM_VARIABLES][MAX_NUM_TEST_CASES] = {
-    {-1, 0, 2880, 5760, 9600}, // 0%, 30%, 60%, 100% tilt, use -1 to indicate balancing with tilt
-    {-9600, 2880, 4600, 6720}, // 0%, 30%, 50%, 70% thrust
+    {-1, 0, 2400, 4800, 7200}, // 0%, 25%, 50%, 75% tilt, use -1 to indicate balancing with tilt
+    {-9600, 2880, 3840}, // 0%, 30%, 40% thrust
 };
 
 //----------------------------------------------
