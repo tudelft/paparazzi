@@ -32,7 +32,7 @@
 // 20000 PPRZ units/s
 #define CMD_STEP_LIM 20000/STATIC_WIND_TUNNEL_FREQUENCY
 #define ATI_45_RESOLUTION 752
-#define WIND_TUNNEL_FILTER_CUTOFF_HZ 5.0
+#define WIND_TUNNEL_FILTER_CUTOFF_HZ 0.5
 
 #define STATIC_WIND_TUNNEL_NUM_CMD 6
 
@@ -95,7 +95,7 @@ struct WT_data wt_data = {
   .vehicle_type = 0,
   .ki = 0.1,
   .integrator = 0.0,
-  .moment_control_tolerance = 0.1,
+  .moment_control_tolerance = 0.02,
   .alpha_deg = 0.0,
 };
 
