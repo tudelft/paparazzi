@@ -57,17 +57,17 @@ const int16_t dynamic_test_cases[DYNAMIC_NUM_VARIABLES][MAX_NUM_TEST_CASES] = {
 
 // vars: motor tilt, thrust, elevon
 #define STATIC_NUM_VARIABLES 3
-#define STATIC_MAX_NUM_TEST_CASES 5
+#define STATIC_MAX_NUM_TEST_CASES 9
 
 // Current indices for each variable
 int static_current_indices[STATIC_NUM_VARIABLES] = {0};
-int static_max_indices[STATIC_NUM_VARIABLES] = {5, 4, 5};
+int static_max_indices[STATIC_NUM_VARIABLES] = {4, 3, 9};
 
 //    {0, 1, 2}, // vehicle config
 const int16_t static_test_cases[STATIC_NUM_VARIABLES][STATIC_MAX_NUM_TEST_CASES] = {
-    {0, 2400, 4800, 7200, 9600}, // 0%, 25%, 50%, 70%, 100% tilt
-    {-9600, 2880, 4600, 6720}, // 0%, 30%, 50%, 70% thrust
-    {0, 2400, 4800, 7200, 9600}, // 0%, 25%, 50%, 70%,100%elevon
+    {0, 2400, 4800, 7200}, // 0%, 25%, 50%, 70%, 100% tilt
+    {-9600, 2880,3840}, // 0%, 30%, 40% thrust
+    {0, 2400, 4800, 7200, 9600, -2400, -4800, -7200, -9600}, // 0%, 25%, 50%, 70%,100%elevon
 };
 //----------------------------------------------
 
