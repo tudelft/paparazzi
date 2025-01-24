@@ -51,6 +51,7 @@ struct WT_data {
   float ki;
   int32_t integrator;
   float moment_control_tolerance;
+  float alpha_deg;
 };
 
 extern struct WT_data wt_data;

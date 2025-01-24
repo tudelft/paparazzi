@@ -96,6 +96,7 @@ struct WT_data wt_data = {
   .ki = 0.1,
   .integrator = 0.0,
   .moment_control_tolerance = 0.1,
+  .alpha_deg = 0.0,
 };
 
 Butterworth2LowPass pitch_moment_filter;
@@ -103,6 +104,7 @@ Butterworth2LowPass pitch_moment_filter;
 static void set_commands(int16_t tilt, int16_t thrust, int16_t elevon);
 static bool set_next_test_case(int *current_indices, int *max_indices, int num_variables);
 int16_t smooth_cmd(int16_t new_cmd, int16_t old_cmd);
+float calc_calibrated_moment(float alpha, float Fx, float My);
 
 void wt_parse_force_sensor_dl(uint8_t *buf)
 {
@@ -151,8 +153,10 @@ void wt_init(void)
  */
 void wt_run(void)
 {
-  float moment_y = force_sensor_data.Ty + force_sensor_data.Fx*DISTANCE_Z_TO_CG;
-  update_butterworth_2_low_pass(&pitch_moment_filter, moment_y);
+  float alpha = RadOfDeg(wt_data.alpha_deg);
+  float my_calib = calc_calibrated_moment(alpha, force_sensor_data.Fx, force_sensor_data.Ty);
+
+  update_butterworth_2_low_pass(&pitch_moment_filter, my_calib);
 
   if (wt_data.run) {
      float time_past = ((float) wt_data.counter / STATIC_WIND_TUNNEL_FREQUENCY);
@@ -284,3 +288,32 @@ void set_commands(int16_t tilt, int16_t thrust, int16_t elevon) {
   wt_data.commands[4] = elevon;
   wt_data.commands[5] = elevon;
 }
+
+// alpha in rad, speed in m/s
+// only valid for speed = 18.03 m/s for now!
+float calc_calibrated_moment(float alpha, float Fx, float My) {
+
+  // moment caused by the wind on the bar
+  float Mybw = -0.0222 + 0.0143*sinf(alpha);
+
+  // Force caused by gravity on the whole setup
+  float Fxdg = 0.0407 + -5.5502*sinf(alpha);
+
+  // Force caused by gravity on the bar
+  float Fxbg = 0.0008 + -1.3030*sinf(alpha);
+
+  // Force caused by the wind on the bar (with gravity)
+  float Fxbw = -0.3328 + -1.2186*sinf(alpha);
+
+  // Force caused by wind on the bar (but without gravity!)
+  float Fxab = Fxbw - Fxbg;
+
+  float Fxad = Fx - Fxdg - Fxab;
+
+  float Myad_sensor = My - Mybw;
+
+  float Myad = Myad_sensor - Fxad*DISTANCE_Z_TO_CG;
+
+  return Myad;
+}
+
