@@ -425,6 +425,11 @@ void guidance_set_max_climb_speed(float max_climb_speed_quad, float max_climb_sp
   gih_params.climb_vspeed_fwd = max_climb_speed_fw;
 }
 
+void guidance_set_max_descend_speed(float max_descend_speed_quad, float max_descend_speed_fw) {
+  gih_params.descend_vspeed_quad = max_descend_speed_quad;
+  gih_params.descend_vspeed_fwd = max_descend_speed_fw;
+}
+
 /**
  * @param accel_sp accel setpoint in NED frame [m/s^2]
  * @param heading_sp the desired heading [rad]

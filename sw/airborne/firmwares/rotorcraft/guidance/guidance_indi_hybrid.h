@@ -73,6 +73,7 @@ extern struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight, struc
 extern void guidance_set_min_max_airspeed(float min_airspeed, float max_airspeed);
 extern void guidance_set_max_bank_angle(float max_bank);
 extern void guidance_set_max_climb_speed(float max_climb_speed_quad, float max_climb_speed_fw);
+extern void guidance_set_max_descend_speed(float max_descend_speed_quad, float max_descend_speed_fw);
 
 struct guidance_indi_hybrid_params {
   float pos_gain;
