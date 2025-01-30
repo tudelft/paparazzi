@@ -18,7 +18,7 @@
             </module>
             <module name="sys_mon"/>
             <module name="flight_recorder"/>
-
+            
             <!-- RC switches -->
             <define name="RADIO_TH_HOLD"            value="RADIO_AUX1"/>
             <define name="RADIO_KILL_SWITCH"        value="RADIO_AUX1"/>
@@ -64,6 +64,11 @@
         <!-- Herelink datalink -->
         <module name="telemetry" type="transparent">
             <configure name="MODEM_BAUD" value="B460800"/>
+        </module>
+
+        <!-- Strain gauge readings -->
+        <module name="strain_gauge">
+            <define name="STRAIN_GAUGE" value="1"/> 
         </module>
 
         <!-- Sensors -->

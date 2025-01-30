@@ -79,7 +79,9 @@ endif
 #
 # Add syscalls and c++ new/delete operators
 #
-$(TARGET).srcs += c++.cpp pprz_syscalls.c
+# $(TARGET).srcs += c++.cpp pprz_syscalls.c\
+$(TARGET).srcs += pprz_syscalls.c
+
 $(TARGET).CXXFLAGS += -fno-sized-deallocation
 $(TARGET).CXXFLAGS += $(CXXSTANDARD)
 
