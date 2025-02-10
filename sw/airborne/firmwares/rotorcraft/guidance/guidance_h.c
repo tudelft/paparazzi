@@ -451,16 +451,8 @@ void guidance_h_from_nav(bool in_flight)
     guidance_h_nav_enter();
   }
 
-  if (nav.horizontal_mode == NAV_HORIZONTAL_MODE_MANUAL) {
-    #ifdef COMMAND_ROLL
-    stabilization_cmd[COMMAND_ROLL]  = nav.cmd_roll;
-    #endif
-    #ifdef COMMAND_PITCH
-    stabilization_cmd[COMMAND_PITCH] = nav.cmd_pitch;
-    #endif
-    #ifdef COMMAND_YAW
-    stabilization_cmd[COMMAND_YAW]   = nav.cmd_yaw;
-    #endif
+  if (nav.horizontal_mode == NAV_HORIZONTAL_MODE_NONE) {
+    return; // don't call guidance nor stabilization
   } else if (nav.horizontal_mode == NAV_HORIZONTAL_MODE_ATTITUDE) {
     if (nav.setpoint_mode == NAV_SETPOINT_MODE_QUAT) {
       // directly apply quat setpoint
@@ -482,11 +474,14 @@ void guidance_h_from_nav(bool in_flight)
   } else if (nav.horizontal_mode == NAV_HORIZONTAL_MODE_GUIDED) {
     guidance_h_guided_run(in_flight);
   } else {
-    // update carrot for display, even if sp is changed in speed mode
-    guidance_h_set_pos(nav.carrot.y, nav.carrot.x);
+    // update carrot for GCS display and convert ENU float -> NED int
+    // even if sp is changed later
+    guidance_h.sp.pos.x = POS_BFP_OF_REAL(nav.carrot.y);
+    guidance_h.sp.pos.y = POS_BFP_OF_REAL(nav.carrot.x);
+
     switch (nav.setpoint_mode) {
       case NAV_SETPOINT_MODE_POS:
-        // set guidance in NED
+        guidance_h_set_pos(nav.carrot.y, nav.carrot.x); // nav pos is in ENU frame, convert to NED
         guidance_h_update_reference();
         guidance_h_set_heading(nav.heading);
         guidance_h_cmd = guidance_h_run_pos(in_flight, &guidance_h);

@@ -825,7 +825,7 @@
         <product>
           <property>aero/qbar-psf</property>
           <value>47.9</value> <!-- Conversion to pascals -->
-          <value>0.0151</value> <!-- CD x Area (m^2) -->
+          <value>0.0453</value> <!-- CD x Area (m^2) -->
           <value>0.224808943</value> <!-- N to LBS -->
         </product>
       </function>
@@ -917,7 +917,7 @@
           <value>2.45</value> <!--Get rid of 0.5 rho-->
           <property>fcs/rudder_lag</property>
           <value>0.7376</value> <!--Convert to lbsft-->
-          <value> 0.002 </value>   
+          <value> 0.01 </value>   
         </product>
     </function>
 

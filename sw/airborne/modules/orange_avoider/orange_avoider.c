@@ -48,7 +48,7 @@ enum navigation_state_t {
   OBSTACLE_FOUND,
   SEARCH_FOR_SAFE_HEADING,
   OUT_OF_BOUNDS
-};
+  };
 
 // define settings
 float oa_color_count_frac = 0.18f;
@@ -131,12 +131,14 @@ void orange_avoider_periodic(void)
         navigation_state = OBSTACLE_FOUND;
       } else {
         moveWaypointForward(WP_GOAL, moveDistance);
+        moveWaypointForward(WP_RETREAT, -1.0f * moveDistance);
       }
 
       break;
     case OBSTACLE_FOUND:
       // stop
       waypoint_move_here_2d(WP_GOAL);
+      waypoint_move_here_2d(WP_RETREAT);
       waypoint_move_here_2d(WP_TRAJECTORY);
 
       // randomly select new search direction
@@ -156,6 +158,7 @@ void orange_avoider_periodic(void)
     case OUT_OF_BOUNDS:
       increase_nav_heading(heading_increment);
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
+      moveWaypointForward(WP_RETREAT, -1.0f);
 
       if (InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         // add offset to head back into arena
