@@ -1,0 +1,42 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="strain_gauge" dir="ctrl">
+  <doc>
+    <description>
+      strain gauge for landing control
+    </description>
+  </doc>
+
+  <!-- <settings>
+    <dl_settings>
+      <dl_settings NAME="strain_gauge">
+      </dl_settings>
+    </dl_settings>
+  </settings> -->
+  <!-- <dep>
+    <depends>i2c</depends>
+    <provides>airspeed</provides>
+  </dep> -->
+
+  <header>
+    <file name="strain_gauge.h"/>
+  </header>
+
+  <init fun="strain_gauge_init()"/>
+  <periodic fun="strain_gauge_periodic()" freq="80."/> <!-- 80 Hz for now-->
+  <event fun="strain_gauge_event()"/>
+
+  <makefile target="ap">
+    <!-- <configure name="MS45XX_I2C_DEV" default="i2c2" case="lower|upper"/>
+    <define name="MS45XX_I2C_DEV" value="$(MS45XX_I2C_DEV_LOWER)"/>
+    <define name="USE_$(MS45XX_I2C_DEV_UPPER)"/> -->
+    <file name="strain_gauge.c"/>
+    <!-- <test>
+      <define name="MS45XX_I2C_PERIODIC_PERIOD" value="0.001"/>
+      <define name="USE_I2C2"/>
+      <define name="DOWNLINK_TRANSPORT" value="pprz_tp"/>
+      <define name="DOWNLINK_DEVICE" value="uart0"/>
+      <define name="USE_UART0"/>
+    </test> -->
+  </makefile>
+</module>

@@ -69,6 +69,7 @@
         <!-- Strain gauge readings -->
         <module name="strain_gauge">
             <define name="STRAIN_GAUGE" value="1"/> 
+            <!-- what to add for value? -->
         </module>
 
         <!-- Sensors -->
