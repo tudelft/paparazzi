@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Ewoud Smeur <e.j.j.smeur@tudelft.nl>
+ * Copyright (C) 2025 Elize Alwash <e.alwash@student.tudelft.nl>
  *
  * This file is part of paparazzi
  *
@@ -18,9 +18,8 @@
  * <http://www.gnu.org/licenses/>.
  */
 /**
- * @file "modules/ctrl/approach_moving_target.h"
- * @author Ewoud Smeur <e.j.j.smeur@tudelft.nl>
- * Approach a moving target (e.g. ship)
+ * @file "modules/ctrl/strain_gauge.h"
+ * @author Elize Alwash <e.alwash@student.tudelft.nl>
  */
  
 #ifndef STRAIN_GAUGE
