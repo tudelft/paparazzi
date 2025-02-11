@@ -40,7 +40,7 @@
     </sector>
   </sectors>
   <exceptions>
-    <!-- GPS Lost -->
+    <!-- GPS Lost (KILL Motors) -->
     <exception cond="((GpsIsLost() == true) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('Emergency Landing')) @AND
@@ -121,7 +121,7 @@
       <exception cond="0.10 @GT GetPosAlt()" deroute="KILL"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
       <call_once fun="NavStartDetectGround()"/>
-      <stay climb="-1.0" vmode="climb" wp="TD"/>
+      <stay climb="-1.25" vmode="climb" wp="TD"/>
     </block>
     <block key="i" name="Immediate Landing" strip_button="Immediate Landing" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
@@ -144,7 +144,9 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="KILL">
-      <call_once fun="autopilot_static_set_mode(AP_MODE_KILL)"/> <!-- (Does NOT nnecessarily kill motors) Sets thurst to name="THRUST" failsafe_value="..." -->
+      <call_once fun="autopilot_set_mode(AP_MODE_KILL)"/>
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
   </blocks>
 </flight_plan>
