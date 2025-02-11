@@ -34,6 +34,7 @@
 extern float g1g2[INDI_OUTPUTS][INDI_NUM_ACT];
 extern float actuator_state_filt_vect[INDI_NUM_ACT];
 extern bool act_is_servo[INDI_NUM_ACT];
+extern uint8_t act_to_cmd[INDI_NUM_ACT];
 
 extern bool indi_use_adaptive;
 

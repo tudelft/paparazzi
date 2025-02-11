@@ -2,12 +2,25 @@
 
 <airframe>
 
-    <section name="GENERATED_AP">
+    <section name="AUTOPILOT">
+        <define name="MODE_MANUAL"      value="AP_MODE_ATTITUDE_DIRECT"/>
+        <define name="MODE_AUTO1"       value="AP_MODE_FORWARD"/>
+        <define name="MODE_AUTO2"       value="AP_MODE_NAV"/>
+        <define name="MODE_STARTUP"     value="AP_MODE_NAV"/>
+        
+        <!-- Failsafe defines for the generated AP -->
         <define name="NO_GPS_LOST_WITH_DATALINK_TIME"       value="0"/> <!-- Default was 20 seconds -->
         <define name="NO_GPS_LOST_WITH_RC_VALID"            value="FALSE"/> <!-- Default was TRUE -->
         <define name="RC_LOST_MODE"                         value="AP_MODE_NAV"/> 
         <!-- <define name="GPS_FIX_TIMEOUT"                      value="2"/>  -->
         <define name="FAILSAFE_DESCENT_SPEED"               value="1.0"/>
+    </section>
+
+    <section name="SIMULATOR" prefix="NPS_">
+        <define name="JSBSIM_MODEL"    value="rotwingv3c_SI" type="string"/>
+        <define name="SENSORS_PARAMS"  value="nps_sensors_params_default.h" type="string"/>
+        <define name="USE_COMMANDS"    value="TRUE"/>
+        <define name="JS_AXIS_MODE"    value="4"/>
     </section>
 
     <section name="CTRL_EFF_SHED" prefix="ROTWING_EFF_SCHED_">
@@ -128,6 +141,8 @@
         <define name="ACT_FREQ"             value="{20.0, 20.0, 20.0, 20.0, 52.7, 52.7, 52.7, 52.7, 30.0}"/>
         <define name="ACT_IS_SERVO"         value="{   0,    0,    0,    0,    1,    1,    1,    1,    0}"/>
         <define name="ACT_IS_THRUSTER_X"    value="{   0,    0,    0,    0,    0,    0,    0,    0,    1}"/>
+        <define name="ACT_TO_CMD"           value="{COMMAND_MOTOR_FRONT, COMMAND_MOTOR_RIGHT, COMMAND_MOTOR_BACK, COMMAND_MOTOR_LEFT, COMMAND_RUDDER, COMMAND_ELEVATOR, COMMAND_AILERONS, COMMAND_FLAPS, COMMAND_THRUST_X}"/>
+        <define name="USE_COMMANDS"         value="TRUE"/>
 
         <!-- Rate INDI -->
         <define name="MAX_RATE"             value="1.5"/>
@@ -205,6 +220,7 @@
 
     <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
         <!--WLS settings-->
+        <define name="USE_COMMANDS"         value="TRUE"/>
         <define name="USE_WLS"              value="TRUE"/>
         <define name="WLS_PRIORITIES"       value="{10., 10., 10.}"/>
         <define name="WLS_WU"               value="{100., 300., 4., 30.}"/>
@@ -250,22 +266,6 @@
         <define name="SLOPE"                    value="60.0"/>
         <define name="DISTANCE"                 value="70.0"/>
         <define name="SPEED"                    value="0.0"/>
-    </section>
-
-    <section name="AUTOPILOT">
-        <define name="MODE_MANUAL"      value="AP_MODE_ATTITUDE_DIRECT"/>
-        <define name="MODE_AUTO1"       value="AP_MODE_FORWARD"/>
-        <define name="MODE_AUTO2"       value="AP_MODE_NAV"/>
-        <define name="MODE_STARTUP"     value="AP_MODE_NAV"/>
-    </section>
-
-    <section name="SIMULATOR" prefix="NPS_">
-        <define name="ACTUATOR_NAMES" value="front_motor, right_motor, back_motor, left_motor, rudder, elevator, aileron, flap, pusher, skew" type="string[]"/>
-        <define name="JSBSIM_MODEL" value="rotwing3" type="string"/>
-        <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
-        <define name="COMMANDS_NB" value="10"/>
-        <define name="NO_MOTOR_MIXING" value="TRUE"/>
-        <define name="JS_AXIS_MODE" value="4"/>
     </section>
 
     <!--EKF Settings-->

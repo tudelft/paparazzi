@@ -216,6 +216,7 @@ float inv_eff[4];
 
 // Max bank angle in radians
 float guidance_indi_max_bank = GUIDANCE_H_MAX_BANK;
+float guidance_indi_max_pitch = GUIDANCE_INDI_MAX_PITCH;
 float guidance_indi_min_pitch = GUIDANCE_INDI_MIN_PITCH;
 
 #if defined(ROTWING_STATE_FW_MAX_AIRSPEED) && defined(ROTWING_STATE_QUAD_MAX_AIRSPEED)
@@ -532,7 +533,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
 
   //Bound euler angles to prevent flipping
   Bound(guidance_euler_cmd.phi, -guidance_indi_max_bank, guidance_indi_max_bank);
-  Bound(guidance_euler_cmd.theta, RadOfDeg(guidance_indi_min_pitch), RadOfDeg(GUIDANCE_INDI_MAX_PITCH));
+  Bound(guidance_euler_cmd.theta, RadOfDeg(guidance_indi_min_pitch), RadOfDeg(guidance_indi_max_pitch));
 
   // Use the current roll angle to determine the corresponding heading rate of change.
   float coordinated_turn_roll = eulers_zxy.phi;
@@ -623,6 +624,29 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   thrust_vect[2] = euler_cmd.z;
   // specific force not defined, return required increment
   thrust_sp = th_sp_from_incr_vect_f(thrust_vect);
+#endif
+
+#ifdef GUIDANCE_INDI_USE_COMMANDS
+  float roll_cmd = guidance_euler_cmd.phi * MAX_PPRZ / fabs(guidance_indi_max_bank);
+  float pitch_cmd;
+  float yaw_cmd = guidance_euler_cmd.psi * MAX_PPRZ / RadOfDeg(180.0);
+
+  // Assumes max pitch is positive
+  if (guidance_euler_cmd.theta >= 0.f) {
+    pitch_cmd = guidance_euler_cmd.theta * MAX_PPRZ / fabs(RadOfDeg(guidance_indi_max_pitch));
+  } else {
+    pitch_cmd = guidance_euler_cmd.theta * MAX_PPRZ / fabs(RadOfDeg(guidance_indi_min_pitch));
+  }
+  
+  Bound(roll_cmd, -MAX_PPRZ, MAX_PPRZ);
+  Bound(pitch_cmd, -MAX_PPRZ, MAX_PPRZ);
+  Bound(yaw_cmd, -MAX_PPRZ, MAX_PPRZ);
+
+  commands[COMMAND_ROLL] =  (int16_t) roll_cmd;
+  commands[COMMAND_PITCH] = (int16_t) pitch_cmd;
+  commands[COMMAND_YAW] =   (int16_t) yaw_cmd;
+
+  RunOnceEvery(10, printf("roll_cmd: %d, pitch_cmd: %d, yaw_cmd: %d\n", (int16_t) roll_cmd, (int16_t) pitch_cmd, (int16_t) yaw_cmd));
 #endif
 
   // Set the quaternion setpoint from eulers_zxy
