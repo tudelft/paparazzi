@@ -149,7 +149,7 @@
       <program name="PprzGCS"/>
       <program name="Joystick">
         <arg flag="-ac" constant="RotatingWingV3H"/>
-        <arg flag="radiomaster_tx12.xml"/>
+        <arg flag="tudelft/Rotwing_Taranis_X9D_plus.xml"/>
       </program>
       <program name="Environment Simulator"/>
       <program name="Messages"/>
