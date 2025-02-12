@@ -161,10 +161,6 @@ bool indi_use_adaptive = true;
 bool indi_use_adaptive = false;
 #endif
 
-#ifdef STABILIZATION_INDI_USE_COMMANDS
-uint8_t act_to_cmd[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_TO_CMD;
-#endif
-
 #ifdef STABILIZATION_INDI_ACT_RATE_LIMIT
 float act_rate_limit[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_RATE_LIMIT;
 #endif
@@ -717,10 +713,9 @@ void stabilization_indi_rate_run(bool in_flight, struct StabilizationSetpoint *s
 
   /*Commit the actuator command*/
   for (i = 0; i < INDI_NUM_ACT; i++) {
-#ifndef STABILIZATION_INDI_USE_COMMANDS
     actuators_pprz[i] = (int16_t) indi_u[i];
-#else
-    command_set(act_to_cmd[i], (int16_t) indi_u[i]);
+#if STABILIZATION_INDI_USE_COMMANDS
+    cmd[i] = (int16_t) indi_u[i]; // Requires an override for the default implementation of set_rotorcraft_commands() function in autopilot_utils
 #endif
   }
 
@@ -730,8 +725,6 @@ void stabilization_indi_rate_run(bool in_flight, struct StabilizationSetpoint *s
     cmd[COMMAND_THRUST] += actuator_state[i] * (int32_t) act_is_thruster_z[i];
   }
   cmd[COMMAND_THRUST] /= num_thrusters;
-
-  command_set(COMMAND_THRUST, cmd[COMMAND_THRUST]);
 
 }
 

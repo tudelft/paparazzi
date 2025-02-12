@@ -16,6 +16,7 @@
       <include name="modules/actuators/actuators.h"/>
       <include name="modules/rotwing_drone/rotwing_state.h"/>
       <include name="modules/nav/ground_detect.h"/>
+      
 
       <!-- Failsafe variables -->
       <define name="NO_GPS_LOST_WITH_DATALINK_TIME" value="20" cond="ifndef NO_GPS_LOST_WITH_DATALINK_TIME"/>

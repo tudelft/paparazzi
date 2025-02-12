@@ -642,11 +642,10 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   Bound(pitch_cmd, -MAX_PPRZ, MAX_PPRZ);
   Bound(yaw_cmd, -MAX_PPRZ, MAX_PPRZ);
 
-  commands[COMMAND_ROLL] =  (int16_t) roll_cmd;
-  commands[COMMAND_PITCH] = (int16_t) pitch_cmd;
-  commands[COMMAND_YAW] =   (int16_t) yaw_cmd;
+  stabilization.cmd[COMMAND_ROLL] = (int16_t) roll_cmd;
+  stabilization.cmd[COMMAND_PITCH] = (int16_t) pitch_cmd;
+  // stabilization.cmd[COMMAND_YAW] = (int16_t) yaw_cmd;
 
-  RunOnceEvery(10, printf("roll_cmd: %d, pitch_cmd: %d, yaw_cmd: %d\n", (int16_t) roll_cmd, (int16_t) pitch_cmd, (int16_t) yaw_cmd));
 #endif
 
   // Set the quaternion setpoint from eulers_zxy
