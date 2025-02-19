@@ -44,12 +44,12 @@
 
 // Current indices for each variable
 int dynamic_current_indices[DYNAMIC_NUM_VARIABLES] = {0};
-int dynamic_max_indices[DYNAMIC_NUM_VARIABLES] = {5, 3};
+int dynamic_max_indices[DYNAMIC_NUM_VARIABLES] = {5, 2};
 
 //    {0, 1, 2}, // vehicle config
 const int16_t dynamic_test_cases[DYNAMIC_NUM_VARIABLES][MAX_NUM_TEST_CASES] = {
     {-1, 0, 2400, 4800, 7200}, // 0%, 25%, 50%, 75% tilt, use -1 to indicate balancing with tilt
-    {-9600, 2880, 3840}, // 0%, 30%, 40% thrust
+    {3840, 4320}, // 0%, 40%, 45% thrust
 };
 
 //----------------------------------------------
@@ -66,7 +66,7 @@ int static_max_indices[STATIC_NUM_VARIABLES] = {4, 3, 9};
 //    {0, 1, 2}, // vehicle config
 const int16_t static_test_cases[STATIC_NUM_VARIABLES][STATIC_MAX_NUM_TEST_CASES] = {
     {0, 2400, 4800, 7200}, // 0%, 25%, 50%, 70%, 100% tilt
-    {-9600, 2880,3840}, // 0%, 30%, 40% thrust
+    {-9600, 2880, 3840}, // 0%, 30%, 40% thrust
     {0, 2400, 4800, 7200, 9600, -2400, -4800, -7200, -9600}, // 0%, 25%, 50%, 70%,100%elevon
 };
 //----------------------------------------------
@@ -198,7 +198,7 @@ void wt_run(void)
         wt_data.measurement_counter += 1;
       }
 
-      int16_t elevon = wt_data.integrator*wt_data.ki;
+      int16_t elevon = -wt_data.integrator*wt_data.ki;
 
       // Handle special case when we want to balance the moment with the tilt
       if (tilt == -1) {
