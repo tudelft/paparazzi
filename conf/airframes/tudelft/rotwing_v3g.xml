@@ -18,6 +18,10 @@
             </module>
             <module name="sys_mon"/>
             <module name="flight_recorder"/>
+            <module name="hx711">
+                <define name="HX711_DEVICES_NB" value="1"/>
+                <define name="HX711_DEVICES" value="{PWM_SERVO_2_GPIO,PWM_SERVO_2_PIN,0}"/>
+            </module>
 
             <!-- RC switches -->
             <define name="RADIO_TH_HOLD"                value="RADIO_AUX1"/>
