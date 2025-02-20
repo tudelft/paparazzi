@@ -27,6 +27,7 @@
 
 #include "hx711.h"
 #include "mcu_periph/gpio.h"
+#include "modules/datalink/downlink.h"
 #include BOARD_CONFIG
 
 #ifndef HX711_DEVICES_NB
@@ -120,7 +121,11 @@ void hx711_event(void)
   // Check if we have a measurement to read
   if(hx711.measurement_ready) {
     // Process the measurement ABI??
-
+    float debug[HX711_DEVICES_NB];
+    for(uint8_t i = 0; i < HX711_DEVICES_NB; i++) {
+      debug[i] = hx711.devices[i].measurement;
+    }
+    DOWNLINK_SEND_DEBUG_VECT(DefaultChannel, DefaultDevice, AC_ID, "hx711", HX711_DEVICES_NB, debug);
 
     hx711.measurement_ready = false;
   }
