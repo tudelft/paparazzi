@@ -42,8 +42,8 @@
 #define HX711_PWM_FREQUENCY 6000000
 #endif
 
-// Running at 0.5Mhz for a full clock pulse (1us high, 1us low)
-#define HX711_PERIOD (HX711_PWM_FREQUENCY / 500000)
+// Running at 50kHz for a full clock pulse (10us high, 10us low)
+#define HX711_PERIOD (HX711_PWM_FREQUENCY / 50000)
 
 struct hx711_dev_t {
   ioportid_t data_port;
@@ -52,17 +52,17 @@ struct hx711_dev_t {
 };
 
 struct hx711_t {
-  bool busy;
-  bool measurement_ready;
+  volatile bool busy;
+  volatile bool measurement_ready;
   struct hx711_dev_t devices[HX711_DEVICES_NB];
 
-  uint8_t read_bit_idx;
+  volatile uint8_t read_bit_idx;
 };
 
 
 static void pwmpcb(PWMDriver *pwmp __attribute__((unused)));
 
-static struct hx711_t hx711 = {
+static volatile struct hx711_t hx711 = {
   .busy = false,
   .measurement_ready = false,
   .devices = {
@@ -121,11 +121,13 @@ void hx711_event(void)
   // Check if we have a measurement to read
   if(hx711.measurement_ready) {
     // Process the measurement ABI??
-    float debug[HX711_DEVICES_NB];
+
+    // Send down for debug
+    float debug[HX711_DEVICES_NB] = {0};
     for(uint8_t i = 0; i < HX711_DEVICES_NB; i++) {
-      debug[i] = hx711.devices[i].measurement;
+      debug[i] = hx711.devices[i].measurement + 0.0001;
     }
-    DOWNLINK_SEND_DEBUG_VECT(DefaultChannel, DefaultDevice, AC_ID, "hx711", HX711_DEVICES_NB, debug);
+    DOWNLINK_SEND_DEBUG_VECT(DefaultChannel, DefaultDevice, strlen("hx711"), "hx711", HX711_DEVICES_NB, debug);
 
     hx711.measurement_ready = false;
   }
@@ -137,21 +139,33 @@ void hx711_event(void)
   }
 
   // Start reading data
+  chSysLock();
   hx711.busy = true;
   hx711.measurement_ready = false;
   hx711.read_bit_idx = 0;
-  pwmEnableChannelNotification(&HX711_PWM_DRIVER, HX711_PWM_CHANNEL);
   pwmEnableChannel(&HX711_PWM_DRIVER, HX711_PWM_CHANNEL, HX711_PERIOD/2); // 50% duty cycle
+  pwmEnableChannelNotification(&HX711_PWM_DRIVER, HX711_PWM_CHANNEL);
+  chSysUnlock();
 }
 
 /**
  * Callback on the falling edge of the clock signal
  */
 static void pwmpcb(PWMDriver *pwmp __attribute__((unused))) {
+  chSysLockFromISR();
+
+  /* In case we where not reading just stop */
+  if(!hx711.busy) {
+    pwmDisableChannelNotificationI(&HX711_PWM_DRIVER, HX711_PWM_CHANNEL);
+    pwmDisableChannelI(&HX711_PWM_DRIVER, HX711_PWM_CHANNEL);
+    chSysUnlockFromISR();
+    return;
+  }
+  
   /* Parse the measurements for all devices */
   if(hx711.read_bit_idx < 24) {
     for(uint8_t i = 0; i < HX711_DEVICES_NB; i++) {
-      struct hx711_dev_t *dev = &hx711.devices[i];
+      volatile struct hx711_dev_t *dev = &hx711.devices[i];
       
       // Reset or bitshift
       if(hx711.read_bit_idx == 0)
@@ -173,9 +187,13 @@ static void pwmpcb(PWMDriver *pwmp __attribute__((unused))) {
 
   /* Send gain and finish reading data */
   if(hx711.read_bit_idx >= (24 + HX711_GAIN)) {
-    pwmDisableChannelNotification(&HX711_PWM_DRIVER, HX711_PWM_CHANNEL);
-    pwmDisableChannel(&HX711_PWM_DRIVER, HX711_PWM_CHANNEL);
+    pwmDisableChannelNotificationI(&HX711_PWM_DRIVER, HX711_PWM_CHANNEL);
+    pwmDisableChannelI(&HX711_PWM_DRIVER, HX711_PWM_CHANNEL);
     hx711.busy = false;
     hx711.measurement_ready = true;
+    chSysUnlockFromISR();
+    return;
   }
+
+  chSysUnlockFromISR();
 }

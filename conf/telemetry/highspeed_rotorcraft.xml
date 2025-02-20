@@ -58,7 +58,7 @@
       <message name="GUIDANCE"                 period="0.02"/>
       <message name="STAB_ATTITUDE"            period="0.02"/>
       <message name="ROTORCRAFT_CMD"           period="0.2"/>
-      <message name="DEBUG_VECT"               period="0.2"/>
+      <!--message name="DEBUG_VECT"               period="0.2"/-->
       <message name="EXTERNAL_POSE_DOWN"       period="0.2"/>
       <message name="POWER_DEVICE"             period="0.12"/>
       <message name="FUELCELL"                 period="0.5"/>
@@ -244,7 +244,7 @@
       <message name="IMU_HEATER"               period="15.1"/>
       <message name="I2C_ERRORS"               period="4.1"/>
       <message name="UART_ERRORS"              period="3.1"/>
-      <message name="DEBUG_VECT"               period="0.9"/>
+      <!--message name="DEBUG_VECT"               period="0.9"/-->
       <message name="FUELCELL"                 period="1.5"/>
     </mode>
 
