@@ -2,6 +2,11 @@
 
 <airframe>
 
+    <section name="HX711">
+        <define name="HX711_KILL_THRESHOLD" value="10000000"/>
+        <define name="HX711_MEDIAN_FILT_SIZE" value="5"/>
+    </section>
+
     <section name="CTRL_EFF_SHED" prefix="ROTWING_EFF_SCHED_">
         <define name="IXX_BODY"              value="0.04780"/>
         <define name="IYY_BODY"              value="0.7546"/>
