@@ -28,6 +28,8 @@
 #include "hx711.h"
 #include "mcu_periph/gpio.h"
 #include "modules/datalink/downlink.h"
+#include "modules/datalink/telemetry.h"
+#include "filters/median_filter.h"
 #include BOARD_CONFIG
 
 #ifndef HX711_DEVICES_NB
@@ -44,6 +46,8 @@
 
 // Running at 50kHz for a full clock pulse (10us high, 10us low)
 #define HX711_PERIOD (HX711_PWM_FREQUENCY / 50000)
+
+struct MedianFilterFloat measurement_filt[HX711_DEVICES_NB];
 
 struct hx711_dev_t {
   ioportid_t data_port;
@@ -107,6 +111,9 @@ void hx711_init(void)
   hx711.busy = false;
   hx711.measurement_ready = false;
   hx711.read_bit_idx = 0;
+  for(uint8_t i = 0; i < HX711_DEVICES_NB; i++) {
+    init_median_filter_f(&measurement_filt[i], HX711_MEDIAN_FILT_SIZE);
+  }
 }
 
 /**
@@ -123,11 +130,12 @@ void hx711_event(void)
     // Process the measurement ABI??
 
     // Send down for debug
-    float debug[HX711_DEVICES_NB] = {0};
     for(uint8_t i = 0; i < HX711_DEVICES_NB; i++) {
-      debug[i] = hx711.devices[i].measurement + 0.0001;
+      update_median_filter_f(&measurement_filt[i], hx711.devices[i].measurement);
+      float filt_val = get_median_filter_f(&measurement_filt[i]);
+      DOWNLINK_SEND_STRAIN_GAUGE(DefaultChannel, DefaultDevice, &i, &filt_val);
+      pprz_msg_send_STRAIN_GAUGE(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, &i, &filt_val);
     }
-    DOWNLINK_SEND_DEBUG_VECT(DefaultChannel, DefaultDevice, strlen("hx711"), "hx711", HX711_DEVICES_NB, debug);
 
     hx711.measurement_ready = false;
   }
@@ -146,6 +154,22 @@ void hx711_event(void)
   pwmEnableChannel(&HX711_PWM_DRIVER, HX711_PWM_CHANNEL, HX711_PERIOD/2); // 50% duty cycle
   pwmEnableChannelNotification(&HX711_PWM_DRIVER, HX711_PWM_CHANNEL);
   chSysUnlock();
+}
+
+/* Kill motors when strain gauges are above a certain threshold */
+bool hx711_kill_motors(void) {
+  uint8_t kill_counter = 0;
+  for(uint8_t i = 0; i < HX711_DEVICES_NB; i++) {
+    if (hx711.devices[i].measurement > HX711_KILL_THRESHOLD) {
+      kill_counter++;
+    }
+  }
+
+  if (kill_counter > 0) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 /**

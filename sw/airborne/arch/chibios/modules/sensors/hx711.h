@@ -25,10 +25,13 @@
  *
  */
 
+#include "std.h"
+
 #ifndef HX711_H
 #define HX711_H
 
 void hx711_init(void);
 void hx711_event(void);
+extern bool hx711_kill_motors(void);
 
 #endif /* HX711_H */

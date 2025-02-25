@@ -2,6 +2,16 @@
 
 <airframe>
 
+    <section name="HX711">
+        <define name="HX711_KILL_THRESHOLD" value="10000000"/>
+        <define name="HX711_MEDIAN_FILT_SIZE" value="5"/>
+    </section>
+
+    <section name="HX711">
+        <define name="HX711_KILL_THRESHOLD" value="10000000"/>
+        <define name="HX711_MEDIAN_FILT_SIZE" value="5"/>
+    </section>
+
     <section name="AP_FAILSAFE">
         <!-- <define name="NO_GPS_LOST_WITH_DATALINK_TIME"       value="20"/> --> 
         <define name="NO_GPS_LOST_WITH_RC_VALID"            value="FALSE"/> 
