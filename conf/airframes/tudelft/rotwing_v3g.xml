@@ -88,14 +88,14 @@
         </module>
         <module name="air_data"/>
 
-        <module name="gps" type="datalink"/>
-        <!-- <configure name="PRIMARY_GPS" value="ublox"/>
-        <configure name="SECONDARY_GPS" value="ublox2"/> -->
-        <!-- <module name="gps" type="ublox">
+        <!-- <module name="gps" type="datalink"/> -->
+        <configure name="PRIMARY_GPS" value="ublox"/>
+        <configure name="SECONDARY_GPS" value="ublox2"/>
+        <module name="gps" type="ublox">
             <configure name="UBX_GPS_BAUD" value="B460800"/>
             <configure name="UBX2_GPS_BAUD" value="B460800"/>
             <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
-        </module> -->
+        </module>
 
         <!-- IMU / INS -->
         <module name="imu" type="cube"/>
