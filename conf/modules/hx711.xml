@@ -12,7 +12,14 @@
     <define name="HX711_DEVICES_NB" value="1" description="The amount of sensors to read"/>
     <define name="HX711_DEVICES" value="{port, pin, 0}, .." description="The list of sensor port/pin pairs to read"/>
   </doc>
-
+  <settings>
+      <dl_settings>
+        <dl_settings NAME="Strain_Gauge">
+          <dl_setting var="hx711_kill_threshold" min="-1000000" max="1000000" step="1000" shortname="kill_threshold"/>
+          <dl_setting var="hx711_kill_counter" min="0" max="20" step="1" shortname="kill_counter"/>
+        </dl_settings>
+      </dl_settings>
+    </settings>
   <header>
     <file name="hx711.h"/>
   </header>

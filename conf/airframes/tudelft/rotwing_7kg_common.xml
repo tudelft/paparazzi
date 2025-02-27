@@ -4,6 +4,7 @@
 
     <section name="HX711">
         <define name="HX711_KILL_THRESHOLD" value="10000000"/>
+        <define name="HX711_KILL_COUNTER"   value="10"/>
         <define name="HX711_MEDIAN_FILT_SIZE" value="5"/>
     </section>
 
