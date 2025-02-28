@@ -1,5 +1,34 @@
 # Path Planning for Drones
 
+## How to clone this repo correctly
+
+To clone this repo correctly, you should firstly clone it like this:
+
+```bash
+git clone https://github.com/thomasvandenheede/paparazzi-Group6
+```
+
+after this please change directory into the repo and checkout to this branch:
+
+```bash
+cd /paparazzi-Group6
+git checkout 1_path_planning
+```
+
+Perfect! Now don't forget to download the sub-modules like this:
+
+```bash
+git submodule update --init --recursive
+```
+
+This will ensure that all the files within the /ext (external) are correctly downloaded. The last thing to do is make the project by:
+
+```bash
+make
+```
+
+after this you should be ready to run paparazzi.
+
 ## Start running paparazzi
 
 To run this repo, start by starting paparazzi:
