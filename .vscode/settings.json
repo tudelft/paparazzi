@@ -9,8 +9,19 @@
         "editor.tabSize": 4,
     },
     "files.associations": {
-        "Makefile.*": "makefile"
+        "Makefile.*": "makefile",
+        "time.h": "c",
+        "flight_plan.h": "c",
+        "abi.h": "c",
+        "abi_messages.h": "c",
+        "modules.h": "c",
+        "state.h": "c",
+        "group_6_green.h": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
+    "makefile.configureOnOpen": true,
+    "cmake.ignoreCMakeListsMissing": true,
+    "C_Cpp.errorSquiggles": "disabled",
+    "git.detectSubmodulesLimit": 30,
 }

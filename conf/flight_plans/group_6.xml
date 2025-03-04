@@ -1,0 +1,129 @@
+<?xml version="1.0"?>
+<flight_plan alt="1.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="10" name="Bebop green detector" security_height="0.4">
+  <header>
+    #include "modules/datalink/datalink.h"
+    #include "modules/energy/electrical.h"
+    #include "modules/radio_control/radio_control.h"
+    #include "modules/ahrs/ahrs.h"
+    #define NPS_GAZEBO_WORLD "cyberzoo_orange_poles.world"
+</header>
+  <waypoints> <!-- waypoints are just a name, and location x,y is with respect to a reference point, while lat and lon are absolute pos -->
+    <waypoint lat="51.990631" lon="4.376796" name="HOME"/>
+    <waypoint name="CLIMB" x="1.9" y="1.0"/>
+    <waypoint name="STDBY" x="1.9" y="1.0"/>
+    <waypoint name="TD" x="0.8" y="-1.7" height="0.5"/>
+    <waypoint name="GOAL" x="1.9" y="1.0"/>
+    <waypoint name="TRAJECTORY" x="1.9" y="1.0"/>
+    <waypoint name="RETREAT" x="1.9" y="1.0"/>
+    <waypoint lat="51.9905834" lon="4.3767710" name="_CZ1"/>
+    <waypoint lat="51.9906440" lon="4.3767060" name="_CZ2"/>
+    <waypoint lat="51.9906860" lon="4.3768080" name="_CZ3"/>
+    <waypoint lat="51.9906238" lon="4.3768729" name="_CZ4"/>
+    <waypoint lat="51.9906006" lon="4.3767764" name="_OZ1"/>
+    <waypoint lat="51.9906405" lon="4.3767316" name="_OZ2"/>
+    <waypoint lat="51.9906687" lon="4.3768025" name="_OZ3"/>
+    <waypoint lat="51.9906273" lon="4.3768438" name="_OZ4"/>
+  </waypoints>
+  <sectors> <!-- These are a list of waypoint corners -->
+
+    <sector color="red" name="CyberZoo">
+      <corner name="_CZ1"/>
+      <corner name="_CZ2"/>
+      <corner name="_CZ3"/>
+      <corner name="_CZ4"/>
+    </sector>
+
+    <sector color="#FF9922" name="ObstacleZone">
+      <corner name="_OZ1"/>
+      <corner name="_OZ2"/>
+      <corner name="_OZ3"/>
+      <corner name="_OZ4"/>
+    </sector>
+
+  </sectors>
+
+  <exceptions>
+
+    <!-- GPS Lost (KILL Motors) -->
+    <exception cond="((GpsIsLost() == true) @AND
+      !(IndexOfBlock('Holding point') @GT nav_block) @AND
+      !(nav_block >= IndexOfBlock('Emergency Landing')) @AND
+      (autopilot_in_flight() == true) )" deroute="KILL"/>
+
+    <!-- Datalink Lost -->
+    <exception cond="((datalink_time @GT 2) @AND 
+      !(IndexOfBlock('Holding point') @GT nav_block) @AND
+      !(nav_block >= IndexOfBlock('Emergency Landing')) @AND
+      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
+
+    <!-- Geofencing XY -->
+    <exception cond="(!InsideCyberZoo(GetPosX(), GetPosY()) @AND
+      !(IndexOfBlock('Holding point') @GT nav_block) @AND
+      !(nav_block >= IndexOfBlock('Emergency Landing')) @AND
+      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
+
+    <!-- Geofencing Z 3.5 -->
+    <exception cond="((GetPosAlt() @GT 3.5) @AND
+      !(IndexOfBlock('Holding point') @GT nav_block) @AND
+      !(nav_block >= IndexOfBlock('Emergency Landing')) @AND
+      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
+
+    <!-- Geofencing Z 4.5 -->
+    <exception cond="((GetPosAlt() @GT 4.5) @AND
+      !(IndexOfBlock('Holding point') @GT nav_block) @AND
+      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
+
+    <!-- Bat Low -->
+    <exception cond="(electrical.bat_low @AND
+      !(IndexOfBlock('Holding point') @GT nav_block) @AND
+      !(nav_block >= IndexOfBlock('Emergency Landing')) @AND
+      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
+
+    <!-- Bat Critical -->
+    <exception cond="(electrical.bat_critical @AND
+      !(IndexOfBlock('Holding point') @GT nav_block) @AND
+      !(nav_block >= IndexOfBlock('Emergency Landing')) @AND
+      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
+
+  </exceptions>
+    
+  <blocks>
+
+    <block key="g" name="INIT">
+      <call_once fun="green_detector_init()"/>
+    </block>
+
+    <!-- Starts the engines -->
+    <block key="r" name="Start Engine">
+      <call_once fun="NavResurrect()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <call_once fun="NavResurrect()"/>
+    </block>
+
+    <!-- starts the autopilot -->
+    <block key="g" name="START" strip_button="Go" strip_icon="lookfore.png">
+      <call_once fun="green_detector_periodic()"/>
+    </block>
+
+    <!-- safety functions (i think?)-->
+    <block name="KILL">
+      <call_once fun="autopilot_set_mode(AP_MODE_KILL)"/>
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+
+    <block key="e" name="Emergency Landing">
+      <exception cond="!nav_is_in_flight()" deroute="KILL"/>
+      <exception cond="0.10 @GT GetPosAlt()" deroute="KILL"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <call_once fun="NavStartDetectGround()"/>
+      <stay climb="-1.25" vmode="climb" wp="TD"/>
+    </block>
+
+    <block name="Holding point">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+
+  </blocks>
+</flight_plan>

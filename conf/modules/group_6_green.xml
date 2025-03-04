@@ -1,0 +1,23 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="group_6_green">
+  <doc>
+    <description>
+        idk some text lol, if you read this you are a nerd
+    </description>
+  </doc>
+ 
+  <dep>
+    <depends>cv_detect_color_object</depends>
+  </dep>
+  <header>
+    <file name="group_6_green.h"/>
+  </header>
+
+  <init fun="green_detector_init()"/>
+  <periodic fun="green_detector_periodic()" freq="4"/>
+
+  <makefile target="ap|nps">
+    <file name="group_6_green.c"/>
+  </makefile>
+</module>
