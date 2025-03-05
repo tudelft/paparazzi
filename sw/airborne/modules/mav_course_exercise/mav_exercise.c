@@ -108,6 +108,9 @@ void mav_exercise_periodic(void) {
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
 
+      increase_nav_heading(20.0);
+      moveWaypointForward(WP_TRAJECTORY, 1.5f);
+
       navigation_state = HOLD;
       break;
     case OUT_OF_BOUNDS:

@@ -18,7 +18,7 @@ from pprzlink.ivy import IvyMessagesInterface
 from pprzlink.message import PprzMessage
 
 # See the issue and solution here: https://github.com/opencv/opencv/issues/10328
-os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'protocol_whitelist;file,rtp,udp'
+# os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'protocol_whitelist;file,rtp,udp'
 
 class RtpViewer:
     running = False
@@ -30,6 +30,7 @@ class RtpViewer:
     def __init__(self, src):
         # Create the video capture device
         self.cap = cv2.VideoCapture(src)
+        # self.cap = cv2.VideoCapture(-1)
 
         # Start the ivy interface
         self.ivy = IvyMessagesInterface("RTPviewer", start_ivy=False)
@@ -135,6 +136,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     filename = os.path.dirname(os.path.abspath(__file__)) + "/rtp_" + str(args.port) + ".sdp"
+    print(filename)
+    # filename = " rtp_5000.sdp"
 
     viewer = RtpViewer(filename)
     viewer.scale = args.scale

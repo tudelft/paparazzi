@@ -1,0 +1,19 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="depth_estimation">
+  <doc>
+    <description>
+    Module using monocular vision for depth estimation
+    </description>
+  </doc>
+  <dep>
+    <depends>cv_detect_color_object</depends>
+  </dep>
+  <header>
+    <file name="depth_estimation.h"/>
+  </header>
+  <init fun="depth_estimation_init()"/>
+  <makefile target="ap|nps">
+    <file name="depth_estimation.c"/>
+  </makefile>
+</module>
