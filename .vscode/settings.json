@@ -13,7 +13,8 @@
         "regex": "c",
         "tensor": "c",
         "functional": "cpp",
-        "chrono": "c"
+        "chrono": "c",
+        "typeinfo": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",

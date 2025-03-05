@@ -68,6 +68,7 @@ float G2_RW[EFF_MAT_COLS_NB]                       = {0};//ROTWING_EFF_SCHED_G2;
 float G1_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB]      = {0};//{ROTWING_EFF_SCHED_G1_ZERO, ROTWING_EFF_SCHED_G1_ZERO, ROTWING_EFF_SCHED_G1_THRUST, ROTWING_EFF_SCHED_G1_ROLL, ROTWING_EFF_SCHED_G1_PITCH, ROTWING_EFF_SCHED_G1_YAW}; //scaled by RW_G_SCALE 
 float EFF_MAT_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB] = {0};
 float I_inv[3][3]                                  = {0};
+static float flt_cut_a  = 1.0e-6;
 static float flt_cut_ap = 2.0e-3;
 static float flt_cut    = 1.0e-4;
 
@@ -137,7 +138,7 @@ void init_RW_Model(void)
   RW.I.w_xx = 0.0621; // [kgm²]
   RW.I.w_yy = 0.2788; // [kgm²]
   RW.I.xx   = RW.I.b_xx + RW.I.w_xx; // [kgm²]
-  RW.I.yy   = RW.I.b_yy + RW.I.b_yy; // [kgm²]
+  RW.I.yy   = RW.I.b_yy + RW.I.w_yy; // [kgm²]
   RW.I.zz   = 1.2842; // [kgm²]
   RW.m      = 7.200; // [kg]
 
@@ -394,6 +395,10 @@ void sum_EFF_MAT_RW(void) {
         case (RW_aN):
         case (RW_aE):
         case (RW_aD):
+          if (abs < flt_cut_a) {
+            EFF_MAT_RW[i][j] = 0.0;
+          }
+          break;
         case (RW_aq):
         case (RW_ar):
           if (abs < flt_cut) {

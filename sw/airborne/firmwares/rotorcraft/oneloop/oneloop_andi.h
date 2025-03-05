@@ -61,7 +61,7 @@
 
 extern bool ctrl_off;
 extern float act_state_filt_vect_1l[ANDI_NUM_ACT];
-extern float actuator_state_1l[ANDI_NUM_ACT];
+extern float actuator_state_1l[ANDI_NUM_ACT_TOT];
 extern float nu[6];
 extern float g1g2_1l[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
 extern float andi_u[ANDI_NUM_ACT_TOT];
@@ -149,13 +149,28 @@ struct Gains2ndOrder{
   float k3;
 };
 
+/* Possible types of Filters */
+enum FilterType {
+  LOWPASS_1,
+  BUTTERWORTH_2,
+  BUTTERWORTH_4,
+  NOTCH
+};
 struct LP_t {
   float  tau;
   float  freq;
   float  freq_set;
+  float  bandwidth;
   float  meas;
   float  meas_prev;
-  struct FirstOrderLowPass meas_filt;
+  float  out;
+  enum FilterType filter_type; // Type of filter used for the structural modes
+  union {
+    struct FirstOrderLowPass lp1;
+    Butterworth2LowPass bw2;
+    Butterworth4LowPass bw4;
+    struct SecondOrderNotchFilter notch;
+  } meas_filt;
 };
 struct Oneloop_LP_t {
   struct LP_t p;
@@ -184,6 +199,14 @@ struct CustomFilter {
   float uk;
   float uk1;
 };
+// struct Oneloop_CustomFilter_t {
+//   struct CustomFilter p_dot;
+//   struct CustomFilter q_dot;
+//   struct CustomFilter r_dot;
+//   struct CustomFilter ax;
+//   struct CustomFilter ay;
+//   struct CustomFilter az;
+// };
 struct Oneloop_CustomFilter_t {
   struct CustomFilter p_dot;
   struct CustomFilter q_dot;
@@ -234,26 +257,14 @@ static inline void update_custom_filter(struct CustomFilter *filter, float value
   filter->yk1 = out;
   //return out;
 }
-// function yk1 = fcn(uk,uk1,yk,dt, fc, rho)
-// D = (dt * fc + 2);
-// A = -(dt * fc - 2) / D;
-// B = (dt * fc - 2 * rho + 2) / D;
-// C = (2 * rho + dt * fc - 2) / D;
 
-// % Compute yk1
-// yk1 = A * yk + B * uk1 + C * uk;
 struct Oneloop_notch_t{
   struct notch_axis_t roll;
   struct notch_axis_t pitch;
   struct notch_axis_t yaw;
 };
 
-/* Possible types of Filters */
-enum FilterType {
-  BUTTERWORTH_2,
-  BUTTERWORTH_4,
-  NOTCH
-};
+
 /* Structural Modes Filtering*/
 struct Oneloop_StructuralModes_t {
   float freq;
