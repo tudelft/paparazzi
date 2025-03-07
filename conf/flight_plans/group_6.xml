@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<flight_plan alt="1.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="10" name="Bebop green detector" security_height="0.4">
+<flight_plan alt="0.5" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="10" name="Bebop green detector" security_height="0.4">
   <header>
     #include "modules/datalink/datalink.h"
     #include "modules/energy/electrical.h"
@@ -102,7 +102,8 @@
 
     <!-- starts the autopilot -->
     <block key="g" name="START" strip_button="Go" strip_icon="lookfore.png">
-      <call_once fun="green_detector_periodic()"/>
+      <call_once fun="NavSetWaypointHere(WP_GOAL)"/>
+      <stay wp="GOAL"/>
     </block>
 
     <!-- safety functions (i think?)-->

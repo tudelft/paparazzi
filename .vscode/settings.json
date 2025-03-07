@@ -16,7 +16,11 @@
         "abi_messages.h": "c",
         "modules.h": "c",
         "state.h": "c",
-        "group_6_green.h": "c"
+        "group_6_green.h": "c",
+        "image.h": "c",
+        "colorfilter.h": "c",
+        "navigation.h": "c",
+        "iterator": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
