@@ -1,4 +1,4 @@
-<!-- PlayStation 4 gamepad
+<!-- PlayStation 4/5 gamepad
 
  It has 6 axes:
   axis 0: LeftStickHorizontal
@@ -28,6 +28,15 @@
  where <Position> is one of
  Centered/Up/Right/Down/Left/RightUp/RightDown/LeftUp/LeftDown
  so e.g. HatDown(dpad)
+
+To use a PlayStation 3 controller, do the following:
+  1. Install xboxdrv (sudo apt-get install xboxdrv)
+  2. Run the following command: sudo xboxdrv --detach-kernel-driver
+  3. Plug in your Playstation 3 controller and press the Playstation button
+
+This will convert the PS3 controller inputs to that of an Xbox 360 controller. 
+Therefore, after completing these steps, you have to use the xbox_gamepad.xml
+config file.
 
 -->
 
@@ -83,9 +92,9 @@
       <field name="block_id" value="IndexOfBlock('Takeoff')"/>
     </message>
 
-    <!-- go to "land here" block if in AUTO2 and pressing down on dpad -->
+    <!-- go to "Land" block if in AUTO2 and pressing down on dpad -->
     <message class="ground" name="JUMP_TO_BLOCK" on_event="(mode > 1) && HatDown(dpad)">
-      <field name="block_id" value="IndexOfBlock('land here')"/>
+      <field name="block_id" value="IndexOfBlock('Land')"/>
     </message>
 
     <!-- resurrect throttle if throttle is 0 and R1 button is pressed -->
