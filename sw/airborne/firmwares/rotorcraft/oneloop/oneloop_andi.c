@@ -2088,8 +2088,8 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     commands[COMMAND_MOTOR_PUSHER] = -9600;//Min(1000,andi_u[COMMAND_MOTOR_PUSHER]);
   }
   if (drop_yaw && radio_control_get(RADIO_THROTTLE)>200){
-    commands[COMMAND_MOTOR_RIGHT] = 0.0;
-    commands[COMMAND_MOTOR_LEFT]  = 0.0;
+    commands[COMMAND_MOTOR_RIGHT] = radio_control_get(RADIO_THROTTLE);
+    commands[COMMAND_MOTOR_LEFT]  = radio_control_get(RADIO_THROTTLE);
     commands[COMMAND_MOTOR_FRONT] = radio_control_get(RADIO_THROTTLE);
     commands[COMMAND_MOTOR_BACK]  = radio_control_get(RADIO_THROTTLE);
 

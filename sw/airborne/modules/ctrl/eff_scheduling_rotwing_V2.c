@@ -489,9 +489,9 @@ void calc_all_thrust_curve(void){
       RW.mL.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, 4800.0);
       break;
     case(2):
-      RW.mF.dFdu = temp_mQ_k/RW_G_SCALE;
+      RW.mF.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);//temp_mQ_k/RW_G_SCALE;
       RW.mR.dFdu = temp_mQ_k/RW_G_SCALE;
-      RW.mB.dFdu = temp_mQ_k/RW_G_SCALE;
+      RW.mB.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);//temp_mQ_k/RW_G_SCALE;
       RW.mL.dFdu = temp_mQ_k/RW_G_SCALE;
       break;
   }
