@@ -156,8 +156,6 @@ import argparse
 
 # import NatNet client
 from NatNetClient import NatNetClient
-import DataDescriptions
-import MoCapData
 
 # if PAPARAZZI_HOME not set, then assume the tree containing this
 # file is a reasonable substitute
@@ -290,18 +288,15 @@ def performTransformation( pos, vel, quat ):
 
     return pos, vel, quat
 
-def receiveRigidBodyList( rigid_body_data, stamp ):
-    for rigid_body in rigid_body_data.rigid_body_list:
-        if not rigid_body.tracking_valid:
+def receiveRigidBodyList( rigidBodyList, stamp ):
+    for (ac_id, pos, quat, valid) in rigidBodyList:
+        if not valid:
             # skip if rigid body is not valid
             continue
 
-        i = str(rigid_body.id_num)
+        i = str(ac_id)
         if i not in id_dict.keys():
             continue
-        
-        pos = rigid_body.pos
-        quat = rigid_body.rot
 
         store_track(i, pos, stamp)
         if timestamp[i] is None or abs(stamp - timestamp[i]) < period:
@@ -385,41 +380,32 @@ if not run_test_cases:
         ivy = IvyMessagesInterface("natnet2ivy")
 
     # start natnet interface
-    natnet = NatNetClient()
-    natnet.set_server_address(args.server)
-    natnet.set_client_address('0.0.0.0')
-    natnet.rigid_body_list_listener = receiveRigidBodyList
-
-    if args.verbose:
-        natnet.set_print_level(1) # print all frames
-    else:
-        natnet.set_print_level(0)
+    natnet_version = (3,0,0,0)
     if args.old_natnet:
-        natnet.set_nat_net_version(2,9)
+        natnet_version = (2,9,0,0)
+    natnet = NatNetClient(
+            server=args.server,
+            rigidBodyListListener=receiveRigidBodyList,
+            dataPort=args.data_port,
+            commandPort=args.command_port,
+            verbose=args.verbose,
+            version=natnet_version)
+
     print("Starting Natnet3.x to Ivy interface at %s" % (args.server))
     try:
         # Start up the streaming client.
         # This will run perpetually, and operate on a separate thread.
         id_dict, timestamp, period, track, q_total, q_nose_correction = process_args(args)
-        is_running = natnet.run()
-        if not is_running:
-            print("Natnet error: Could not start streaming client.")
-            exit(-1)
-
-        sleep(1)
-        if not natnet.connected():
-            print("Natnet error: Fail to connect to natnet")
-            exit(-1)
-
+        natnet.run()
         while True:
             sleep(1)
     except (KeyboardInterrupt, SystemExit):
         print("Shutting down ivy and natnet interfaces...")
-        natnet.shutdown()
+        natnet.stop()
         ivy.shutdown()
     except OSError:
         print("Natnet connection error")
-        natnet.shutdown()
+        natnet.stop()
         ivy.stop()
         exit(-1)
 
