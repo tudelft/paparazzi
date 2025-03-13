@@ -69,14 +69,14 @@ so e.g. HatDown(hat)
       <field name="block_id" value="IndexOfBlock('Takeoff')"/>
     </message>
 
-    <!-- go to "land here" block if in AUTO2 and pressing shift + down -->
+    <!-- go to "Land" block if in AUTO2 and pressing shift + down -->
     <message class="ground" name="JUMP_TO_BLOCK" on_event="(mode > 1) && shift && down">
-      <field name="block_id" value="IndexOfBlock('land here')"/>
+      <field name="block_id" value="IndexOfBlock('Land')"/>
     </message>
 
     <!-- kill throttle when pressing both fire buttons at the same time -->
     <message class="ground" name="DL_SETTING" on_event="fire && fire2">
-      <field name="index" value="IndexOfSetting(autopilot.kill_throttle)"/>
+      <field name="index" value="IndexOfSetting('autopilot.kill_throttle')"/>
       <field name="value" value="1"/>
     </message>
 
