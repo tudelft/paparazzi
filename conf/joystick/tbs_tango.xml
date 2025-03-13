@@ -1,0 +1,44 @@
+<joystick>
+  <input>
+  <!--
+    <axis index="3" name="yaw"  deadband="10" limit="1.00" exponent="0.7" trim="0"/>
+    <axis index="2" name="pitch"/>
+    <axis index="1" name="roll"/>
+    <axis index="0" name="thrust"/>
+    -->
+    <axis index="3" name="LeftStickHorizontal"/>
+    <axis index="0" name="LeftStickVertical"/>
+    <axis index="1" name="RightStickHorizontal"/>
+    <axis index="2" name="RightStickVertical"/>
+    <axis index="4" name="arm"/>
+    <axis index="5" name="VRA1"/>
+    <axis index="6" name="VRA2"/>
+  </input>
+
+<!--
+  <variables>
+    <var name="mode" default="0"/>
+    <set var="mode" value="0" on_event="top_left"/>
+    <set var="mode" value="1" on_event="top_center"/>
+    <set var="mode" value="2" on_event="top_right"/>
+  </variables>
+-->
+  <messages period="0.01">
+
+    <message class="datalink" name="RC_4CH" send_always="true">
+      <field name="throttle"    value="Fit(LeftStickVertical,-127,127,0,127)"/>
+      <field name="roll"        value="RightStickHorizontal"/>
+      <field name="yaw"         value="LeftStickHorizontal"/>
+      <field name="pitch"       value="-RightStickVertical"/>
+      <field name="mode"        value="Fit(VRA1,-127,126,0,2)"/>
+    </message>
+    
+    <message class="ground" name="DL_SETTING" on_event="arm">
+      <field name="index" value="IndexOfSetting('autopilot.kill_throttle')"/>
+      <field name="value" value="Fit(-arm,-127,126,0,1)"/>
+    </message>
+    
+
+  </messages>
+</joystick>
+
