@@ -1,5 +1,5 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-<flight_plan alt="180" ground_alt="60" lat0="52.3931434" lon0="5.9205099" max_dist_from_home="5000" name="Rotating Wing 't Harde" security_height="2">
+<flight_plan alt="110" ground_alt="60" lat0="52.3931434" lon0="5.9205099" max_dist_from_home="5000" name="Rotating Wing 't Harde" security_height="2">
   <header/>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
@@ -54,9 +54,9 @@
   </variables>
   <exceptions>
     <!-- Outside of hard (red) geofence kill -->
-    <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosHeight() @GT 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Kill'))" deroute="Kill"/>
+    <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosHeight() @GT 400) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Kill'))" deroute="Kill"/>
     <!-- Outside of soft (orange) geofence go to standby free -->
-    <exception cond="Or(!InsideSoftGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 250.0) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Kill')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+    <exception cond="Or(!InsideSoftGeofence(GetPosX(), GetPosY()), GetPosHeight() @GT 80.0) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Kill')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
     <!-- Datalink timeout go to standby free -->
     <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Kill')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
     <!-- Bat low return to standby-->
