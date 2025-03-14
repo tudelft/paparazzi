@@ -51,7 +51,7 @@ enum navigation_state_t {
   };
 
 // define settings
-float oa_color_count_frac = 0.3f; // if 18% of the pixels in the camerafeed are orange, an obstacle will be presents
+float oa_color_count_frac = 0.4f; // if 30% of the pixels in the camerafeed are green, should be save to proceed
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
