@@ -25,7 +25,7 @@
       <define name="LOGGER_FILE_PATH" value="/tmp/paparazzi/log"/>
       
       <!-- Detect orange -->
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="40"/>
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="100"/>
       <define name="COLOR_OBJECT_DETECTOR_LUM_MAX1" value="158"/>
       <define name="COLOR_OBJECT_DETECTOR_CB_MIN1" value="69"/>
       <define name="COLOR_OBJECT_DETECTOR_CB_MAX1" value="100"/>
