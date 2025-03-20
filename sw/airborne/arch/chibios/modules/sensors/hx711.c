@@ -33,7 +33,7 @@
 #include BOARD_CONFIG
 
 #ifndef HX711_DEVICES_NB
-#define HX711_DEVICES_NB 1
+#define HX711_DEVICES_NB 2
 #endif
 
 #ifndef HX711_GAIN
