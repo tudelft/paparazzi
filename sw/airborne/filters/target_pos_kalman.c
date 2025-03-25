@@ -192,7 +192,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   float_mat_mul(_S, _H, _P, 6, 6, 6);                   // S = H * P
   float_mat_mul(_S, _S, _Ht, 6, 6, 6);                  // S = H * P * Ht
   for (int i = 0; i < 6; i++) {
-    _S[i][i] += sensor->noise[i];                                   // S = H * P * Ht + R
+    _S[i][i] += sensor->noise[i];                       // S = H * P * Ht + R
   }
 
   float abs_sum_S_diag = 0;
