@@ -572,6 +572,14 @@
 #endif
 
 /*
+ * SEGMENT_COUNTS communication (message 32)
+*/
+#ifndef GREEN_DETECTOR_SEGMENT_COUNTS_ID
+#define GREEN_DETECTOR_SEGMENT_COUNTS_ID 3  // choose a unique number
+#endif
+
+
+/*
  * JOYSTICK message (used for payload or control, but not as a RC)
  */
 #ifndef JOYSTICK_ID

@@ -12,11 +12,12 @@ The color filter settings are set using the cv_detect_color_object. This module 
 so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTION_ID setting.
     </description>
     <define name="ORANGE_AVOIDER_VISUAL_DETECTION_ID" value="ABI_BROADCAST" description="which VISUAL_DETECTION message to recieve for orange pole detection."/>
+    <define name="COLOR_OBJECT_SEGMENT_COUNTS_ID" value="ABI_BROADCAST" description="which COLOR_OBJECT_SEGMENT_COUNTS message to recieve for orange pole detection."/>
   </doc>
     <settings>
     <dl_settings>
       <dl_settings name="OrangeAvoider">
-         <dl_setting var="oa_color_count_frac" min="0" step="0.01" max="0.5"/>
+         <dl_setting var="green_perc_threshold" min="0" step="2" max="100"/>
       </dl_settings>
     </dl_settings>
   </settings>
@@ -27,8 +28,8 @@ so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTI
   <header>
     <file name="orange_avoider.h"/>
   </header>
-  <init fun="orange_avoider_init()"/>
-  <periodic fun="orange_avoider_periodic()" freq="4"/>
+  <init fun="green_detector_init()"/>
+  <periodic fun="green_detector_periodic()" freq="4"/>
   <makefile target="ap|nps">
     <file name="orange_avoider.c"/>
   </makefile>

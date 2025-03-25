@@ -1,22 +1,3 @@
-/*
- * Copyright (C) Roland Meertens
- *
- * This file is part of paparazzi
- *
- */
-/**
- * @file "modules/orange_avoider/orange_avoider.c"
- * @author Roland Meertens
- * Example on how to use the colours detected to avoid orange pole in the cyberzoo
- * This module is an example module for the course AE4317 Autonomous Flight of Micro Air Vehicles at the TU Delft.
- * This module is used in combination with a color filter (cv_detect_color_object) and the navigation mode of the autopilot.
- * The avoidance strategy is to simply count the total number of orange pixels. When above a certain percentage threshold,
- * (given by color_count_frac) we assume that there is an obstacle and we turn.
- *
- * The color filter settings are set using the cv_detect_color_object. This module can run multiple filters simultaneously
- * so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTION_ID setting.
- */
-
 #include "modules/orange_avoider/orange_avoider.h"
 #include "firmwares/rotorcraft/navigation.h"
 #include "generated/airframe.h"
@@ -50,16 +31,15 @@ enum navigation_state_t {
   OUT_OF_BOUNDS
   };
 
-// define settings
-float oa_color_count_frac = 0.4f; // if 30% of the pixels in the camerafeed are green, should be save to proceed
-
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
 int32_t color_count = 0;                // orange color count from color filter for obstacle detection
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
-float heading_increment = 5.f;          // heading angle increment [deg]
-float maxDistance = 2.25;               // max waypoint displacement [m]
+float heading_increment = 10.f;          // heading angle increment [deg]
+float maxDistance = 5;               // max waypoint displacement [m]
 
+int32_t segment_perc[5] = {0};
+int32_t green_perc_threshold = 30;
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
 
 /*
@@ -72,19 +52,24 @@ const int16_t max_trajectory_confidence = 5; // number of consecutive negative o
 #ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
 #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
+
 static abi_event color_detection_ev;
-static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
-                               int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
-                               int16_t __attribute__((unused)) pixel_width, int16_t __attribute__((unused)) pixel_height,
-                               int32_t quality, int16_t __attribute__((unused)) extra)
+
+static void color_detection_cb(int32_t quality, int32_t segment1_count, int32_t segment2_count, int32_t segment3_count, int32_t segment4_count, int32_t segment5_count)
 {
   color_count = quality;
+  segment_perc[0] = segment1_count;
+  segment_perc[1] = segment2_count;
+  segment_perc[2] = segment3_count;
+  segment_perc[3] = segment4_count;
+  segment_perc[4] = segment5_count;
 }
+
 
 /*
  * Initialisation function, setting the colour filter, random seed and heading_increment
  */
-void orange_avoider_init(void)
+void green_detector_init(void)
 {
   // Initialise random values
   srand(time(NULL));
@@ -92,25 +77,25 @@ void orange_avoider_init(void)
 
   // bind our colorfilter callbacks to receive the color filter outputs
   AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
+  AbiBindMsgSEGMENT_COUNTS(GREEN_DETECTOR_SEGMENT_COUNTS_ID, &color_detection_ev, color_detection_cb);
 }
 
 /*
  * Function that checks it is safe to move forwards, and then moves a waypoint forward or changes the heading
  */
-void orange_avoider_periodic(void)
+void green_detector_periodic(void)
 {
   // only evaluate our state machine if we are flying
   if(!autopilot_in_flight()){
     return;
   }
+  
+  printf("green percentage threshold: %d\n", green_perc_threshold);
+  printf("Segment percentages: %d %d %d %d %d\n", segment_perc[0], segment_perc[1], segment_perc[2], segment_perc[3], segment_perc[4]);
 
-  // compute current color thresholds
-  int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
-
-  VERBOSE_PRINT("Heading Increment: %d \n", heading_increment);
 
   // update our safe confidence using color threshold
-  if(color_count > color_count_threshold){
+  if(segment_perc[2] > green_perc_threshold){
     obstacle_free_confidence++;
   } else {
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
@@ -141,7 +126,7 @@ void orange_avoider_periodic(void)
       waypoint_move_here_2d(WP_RETREAT);
       waypoint_move_here_2d(WP_TRAJECTORY);
 
-      // randomly select new search direction
+      // randomly select new search dirfront_cameraection
       chooseRandomIncrementAvoidance();
 
       navigation_state = SEARCH_FOR_SAFE_HEADING;

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-<flight_plan alt="0.3" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="10" name="Bebop avoid orange TU Delft Cyberzoo" security_height="0.4">
+<flight_plan alt="0.2" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="10" name="Bebop avoid orange TU Delft Cyberzoo" security_height="0.4">
   <header>
     #include "modules/datalink/datalink.h"
     #include "modules/energy/electrical.h"
@@ -89,13 +89,14 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block key="r" name="Start Engine">
+        <!-- Call geo init -->
       <call_once fun="NavResurrect()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
       <call_once fun="NavResurrect()"/>
     </block>
     <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/> 
-      <exception cond="GetPosAlt() @GT 0.8" deroute="Standby"/>
+      <exception cond="GetPosAlt() @GT 0.2" deroute="Standby"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>

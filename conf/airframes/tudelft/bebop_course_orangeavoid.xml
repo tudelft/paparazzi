@@ -11,26 +11,26 @@
       <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
       <define name="MT9V117_TARGET_FPS" value="20"/>
       
-      <!-- Detect orange -->
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="30"/>
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX1" value="190"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MIN1" value="70"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MAX1" value="130"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MIN1" value="150"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MAX1" value="190"/>
+      <!-- Detect green inside application (camera of real drone) -->
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="95"/>
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX1" value="185"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MIN1" value="80"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MAX1" value="115"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MIN1" value="110"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MAX1" value="150"/>
     </target>
     <target name="nps" board="pc">
       <module name="fdm" type="gazebo"/>
       <define name="VIDEO_CAPTURE_PATH" value="/tmp/paparazzi/images"/>
       <define name="LOGGER_FILE_PATH" value="/tmp/paparazzi/log"/>
       
-      <!-- Detect orange -->
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="100"/>
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX1" value="158"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MIN1" value="69"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MAX1" value="100"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MIN1" value="99"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MAX1" value="134"/>
+      <!-- Detect green inside test environment (camera of simulation drone) -->
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="50"/>
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX1" value="160"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MIN1" value="70"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MAX1" value="115"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MIN1" value="110"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MAX1" value="150"/>
     </target>
     
     <define name="ARRIVED_AT_WAYPOINT" value="0.3"/><!-- Detect arrival at waypoint when within 0.3m -->
@@ -235,7 +235,7 @@
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
     <define name="MAX_BANK" value="20" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="0.5" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="2" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
     <define name="PGAIN" value="120"/>

@@ -14,11 +14,11 @@
 #define ORANGE_AVOIDER_H
 
 // settings
-extern float oa_color_count_frac;
+extern int green_perc_threshold;
 
 // functions
-extern void orange_avoider_init(void);
-extern void orange_avoider_periodic(void);
+extern void green_detector_init(void);
+extern void green_detector_periodic(void);
 
 #endif
 
