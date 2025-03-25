@@ -39,6 +39,6 @@
   <datalink class="intermcu" message="IMCU_FALCON_RELANGLE" fun="target_pos_parse_falcon_relangle(buf)"/>
   <makefile>
     <file name="target_pos.c"/>
-    <file name="simple_kinematic_kalman.c" dir="filters"/>
+    <file name="target_pos_kalman.c" dir="filters"/>
   </makefile>
 </module>

@@ -197,12 +197,6 @@
         <define name="SKEW_REF_MODEL_MAX_SPEED" value="20"/>    <!-- Maximum rotational skewing speed bound for the reference model -->
     </section>
 
-    <section name="FALCON" prefix="FALCON"> <!-- Body to sensor rotations, 3-2-1 -->
-        <define name="X_ANGLE"            value="90.0"/>
-        <define name="Y_ANGLE"            value="0.0"/>
-        <define name="Z_ANGLE"            value="180.0"/>
-    </section>
-
     <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
         <!--WLS settings-->
         <define name="USE_WLS"              value="TRUE"/>
@@ -250,6 +244,19 @@
         <define name="SLOPE"                    value="60.0"/>
         <define name="DISTANCE"                 value="70.0"/>
         <define name="SPEED"                    value="0.0"/>
+    </section>
+
+    <section name="TARGET_POS" prefix="TARGET_POS_">
+        <define name="KALMAN_USE_FALCON"            value="TRUE"/>
+        <define name="KALMAN_USE_GROUND_STATION"    value="TRUE"/>
+        <define name="KALMAN_USE_LIDAR"             value="TRUE"/>
+        <define name="KALMAN_USE_ARUCO"             value="FALSE"/>
+    </section>
+
+    <section name="FALCON" prefix="FALCON_"> <!-- Body to sensor rotations, 3-2-1 -->
+        <define name="X_ANGLE"            value="90.0"/>
+        <define name="Y_ANGLE"            value="0.0"/>
+        <define name="Z_ANGLE"            value="180.0"/>
     </section>
 
     <section name="AUTOPILOT">

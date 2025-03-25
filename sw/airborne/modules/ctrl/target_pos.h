@@ -29,6 +29,7 @@
 #include "std.h"
 #include "math/pprz_geodetic_int.h"
 #include "math/pprz_geodetic_float.h"
+#include "filters/target_pos_kalman.h"
 
 struct target_pos_t {
   bool valid;               ///< If the data of the target position is valid
@@ -72,6 +73,7 @@ struct falcon_sensor_t {
   struct FloatEulers angles;
   float intensity;
   float width;
+  struct KalmanSensor kalman;
 };
 
 extern struct falcon_sensor_t falcon;

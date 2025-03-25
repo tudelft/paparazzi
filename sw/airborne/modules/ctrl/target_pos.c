@@ -31,7 +31,7 @@
 #include "modules/datalink/telemetry.h"
 #include "modules/core/abi.h"
 #include "modules/datalink/downlink.h"
-#include "filters/simple_kinematic_kalman.h"
+#include "filters/target_pos_kalman.h"
 
 #ifndef TARGET_POS_GROUND_STATION
 #define TARGET_POS_GROUND_STATION false
@@ -45,35 +45,6 @@
 // The timeout when receiving an RTK gps message from the GPS
 #ifndef TARGET_RTK_TIMEOUT
 #define TARGET_RTK_TIMEOUT 1000
-#endif
-
-#ifndef TARGET_OFFSET_X
-#define TARGET_OFFSET_X 0.0
-#endif
-
-#ifndef TARGET_OFFSET_Y
-#define TARGET_OFFSET_Y 0.0
-#endif
-
-#ifndef TARGET_OFFSET_Z
-#define TARGET_OFFSET_Z 0.0
-#endif
-
-// Still need to find suitable initial values
-#ifndef TARGET_POS_KALMAN_P0_POS
-#define TARGET_POS_KALMAN_P0_POS 1.0
-#endif
-
-#ifndef TARGET_POS_KALMAN_P0_SPEED
-#define TARGET_POS_KALMAN_P0_SPEED 1.0
-#endif
-
-#ifndef TARGET_POS_KALMAN_Q_SIGMA2
-#define TARGET_POS_KALMAN_Q_SIGMA2 1.0
-#endif
-
-#ifndef TARGET_POS_KALMAN_R
-#define TARGET_POS_KALMAN_R 1.0
 #endif
 
 /* Body to sensor angle offsets */
@@ -93,19 +64,42 @@
 #define TARGET_POS_RELHEADING_REF_ID 0 
 #endif
 
+#ifndef TARGET_POS_KALMAN_USE_FALCON
+#define TARGET_POS_KALMAN_USE_FALCON false
+#endif
+
+#ifndef TARGET_POS_KALMAN_USE_ARUCO
+#define TARGET_POS_KALMAN_USE_ARUCO false
+#endif
+
+#ifndef TARGET_POS_KALMAN_USE_GROUND_STATION
+#define TARGET_POS_KALMAN_USE_GROUND_STATION false
+#endif
+
+#ifndef TARGET_POS_KALMAN_USE_LIDAR
+#define TARGET_POS_KALMAN_USE_LIDAR false
+#endif
+
 /* Initialize the main structure */
 struct target_t target = {
   .pos = {0},
-  .offset = {
-    .x = TARGET_OFFSET_X,
-    .y = TARGET_OFFSET_Y,
-    .z = TARGET_OFFSET_Z,
-  },
+  .offset = {0},
   .target_pos_timeout = TARGET_POS_TIMEOUT,
   .rtk_timeout = TARGET_RTK_TIMEOUT,
 };
 
 /* Initialize falcon sensor structure */
+const struct KalmanSensor falcon_kalman = {
+  .noise = {0.1, 0, 0.1, 0, 0.1, 0}, // not determined yet!
+  .meas = {0, 0, 0, 0, 0, 0},
+  .Hmat = {{1.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
+           {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
+           {0.f, 0.f, 1.f, 0.f, 0.f, 0.f},
+           {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
+           {0.f, 0.f, 0.f, 0.f, 1.f, 0.f}, 
+           {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}}
+};
+
 struct falcon_sensor_t falcon = {
   .valid = false,     // Assume invalid data on start up
   .manual = false,    // By default the tracking mode should be determined automatically
@@ -123,18 +117,23 @@ struct falcon_sensor_t falcon = {
   .q_var = {0},
   .angles = {0},
   .intensity = 0,
-  .width = 0
+  .width = 0,
+  .kalman = falcon_kalman
 };
 
 /* Initialize the linear kalman filter struct */
-struct SimpleKinematicKalman target_pos_kalman;
+struct TargetPosKalman target_pos_kalman;
+float P0[6] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
+float Q0[6] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
 struct FloatRMat body_to_falcon_sensor;
 
 /* GPS abi callback */
 static abi_event gps_ev;
 static abi_event relpos_ev;
+static abi_event lidar_ev;
 static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
 static void relpos_cb(uint8_t sender_id, uint32_t stamp, struct RelPosNED *relpos);
+static void lidar_cb(uint8_t sender_id, uint32_t stamp, float distance);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -225,9 +224,10 @@ void target_pos_init(void)
 
   AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
   AbiBindMsgRELPOS(ABI_BROADCAST, &relpos_ev, relpos_cb);
+  AbiBindMsgAGL(ABI_BROADCAST, &lidar_ev, lidar_cb);
 
   /* Initialize the linear Kalman filter */
-  target_pos_kalman_filter_init(TARGET_POS_KALMAN_R);
+  target_pos_kalman_filter_init(0.1);
 
   float_rmat_of_eulers_321(&body_to_falcon_sensor, &falcon.body_offset);
 
@@ -337,8 +337,20 @@ void target_parse_target_pos(uint8_t *buf)
   struct NedCoor_f *uav_speed = stateGetSpeedNed_f();
   VECT3_SUB(vel, *uav_speed);
 
-  simple_kinematic_kalman_update_pos(&target_pos_kalman, pos);
-  simple_kinematic_kalman_update_speed(&target_pos_kalman, vel, SIMPLE_KINEMATIC_KALMAN_SPEED_3D);
+#if TARGET_POS_KALMAN_USE_GROUND_STATION
+static struct KalmanSensor ground_station_kalman = {
+  .noise = {0.1f, 1.f, 0.1f, 1.f, 0.1f, 1.f}, // not determined yet!
+  .meas = {0, 0, 0, 0, 0, 0},
+  .Hmat = {{1.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
+           {0.f, 1.f, 0.f, 0.f, 0.f, 0.f}, 
+           {0.f, 0.f, 1.f, 0.f, 0.f, 0.f},
+           {0.f, 0.f, 0.f, 1.f, 0.f, 0.f}, 
+           {0.f, 0.f, 0.f, 0.f, 1.f, 0.f}, 
+           {0.f, 0.f, 0.f, 0.f, 0.f, 1.f}}
+};
+
+  target_pos_kalman_update(&target_pos_kalman, &ground_station_kalman);
+#endif
 
 #ifdef FALCON_LOG_ON_ARRIVAL
   pprz_msg_send_TARGET_POS_INFO(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
@@ -360,6 +372,32 @@ void target_parse_target_pos(uint8_t *buf)
                               &target.offset.y,
                               &target.offset.z);
 #endif
+}
+
+/* Update the lidar measurement */
+static void lidar_cb(uint8_t sender_id __attribute__((unused)), uint32_t stamp __attribute__((unused)), float distance)
+{
+
+  static struct KalmanSensor lidar_kalman = {
+    .noise = {0, 0, 0, 0, 0.1f, 0}, // not determined yet!
+    .meas = {0, 0, 0, 0, 0, 0},
+    .Hmat = {{0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
+             {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
+             {0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
+             {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
+             {0.f, 0.f, 0.f, 0.f, 1.f, 0.f}, 
+             {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}}
+  };
+
+  // Check if lidar AGL is in valid range
+  if (distance < 0.1f && distance > 5.0f) {
+    return;
+  }
+
+  lidar_kalman.meas[4] = distance;
+  if (TARGET_POS_KALMAN_USE_LIDAR) {
+    target_pos_kalman_update(&target_pos_kalman, &lidar_kalman);
+  }
 }
 
 /**
@@ -407,7 +445,12 @@ void target_pos_parse_falcon_sixdof(uint8_t *buf)
   falcon.p_var = p_var;
   falcon.q_var = q_var;
 
-  simple_kinematic_kalman_update_pos(&target_pos_kalman, p_out);
+#if (TARGET_POS_KALMAN_USE_FALCON)
+  falcon.kalman.meas[0] = p_out.x;
+  falcon.kalman.meas[2] = p_out.y;
+  falcon.kalman.meas[4] = p_out.z;
+  target_pos_kalman_update(&target_pos_kalman, &falcon.kalman);
+#endif
   
 #if FALCON_LOG_ON_ARRIVAL
   float p_out_arr[3] = {falcon.p_out.x, falcon.p_out.y, falcon.p_out.z};
@@ -477,7 +520,12 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
   struct FloatVect3 p_out;
   float_rmat_vmult(&p_out, &falcon_angles_rmat, &(struct FloatVect3){0, 0, distance});
   
-  simple_kinematic_kalman_update_pos(&target_pos_kalman, p_out);
+#if TARGET_POS_KALMAN_USE_FALCON
+  falcon.kalman.meas[0] = p_out.x;
+  falcon.kalman.meas[2] = p_out.y;
+  falcon.kalman.meas[4] = p_out.z;
+  target_pos_kalman_update(&target_pos_kalman, &falcon.kalman);
+#endif
 
 #if FALCON_LOG_ON_ARRIVAL
   float zeros_3[3] = {0, 0, 0};
@@ -572,18 +620,17 @@ bool target_pos_set_current_offset(float unk __attribute__((unused))) {
 }
 
 void target_pos_kalman_filter_init(float r __attribute__((unused))) {
-  simple_kinematic_kalman_init(&target_pos_kalman, TARGET_POS_KALMAN_P0_POS, TARGET_POS_KALMAN_P0_SPEED, 
-                                TARGET_POS_KALMAN_Q_SIGMA2, TARGET_POS_KALMAN_R, 1/TARGET_POS_PERIODIC_FREQ);
+  target_pos_kalman_init(&target_pos_kalman, P0, Q0, 1/TARGET_POS_PERIODIC_FREQ);
 }
 
 void target_pos_periodic(void) {
 #if !TARTGET_POS_GROUND_STATION && !USE_NPS
-  simple_kinematic_kalman_predict(&target_pos_kalman);
+  target_pos_kalman_predict(&target_pos_kalman);
 
   // Get Kalman state
   struct FloatVect3 pos;
   struct FloatVect3 speed;
-  simple_kinematic_kalman_get_state(&target_pos_kalman, &pos, &speed);
+  target_pos_kalman_get_state(&target_pos_kalman, &pos, &speed);
 
   pprz_msg_send_TARGET_POS_KALMAN(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
                                   &pos.x, &pos.y, &pos.z,
