@@ -45,6 +45,7 @@ bool cod_draw1 = false;
 bool cod_draw2 = false;
 
 uint16_t num_segments = 5;
+uint8_t fill_y_limit = 128;
 
 
 // define global variables
@@ -65,12 +66,13 @@ struct image_t *object_detector1(struct image_t *img, uint8_t camera_id);
 struct image_t *object_detector2(struct image_t *img, uint8_t camera_id);
 
 void draw_vertical_line(struct image_t *img, int x, int y);
+void draw_horizontal_line(struct image_t *img, int x);
 
 uint32_t count_green_pixels(struct image_t *img, bool draw, 
                               int *segment_counts, int num_segments,
                               uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
-                              uint8_t cr_min, uint8_t cr_max);
+                              uint8_t cr_min, uint8_t cr_max, uint8_t fill_y_limit);
 
 /*
  * object_detector
@@ -114,7 +116,13 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
     segment_counts[i] = 0;
   }
   
-  int32_t count = count_green_pixels(img, draw, segment_counts, num_segments, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
+  int32_t count = count_green_pixels(img, draw, segment_counts, num_segments, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max,fill_y_limit);
+
+  // #########################
+  // Chnage the 128 value (the value before the draw bool to hard code the fill limit)
+  // It is now set to half of the image width (255). For ideal results, this should be right at the horizon during forward flight so keep inmind the forward pitch.
+  //img = process_image(img, 235, 255, 86, 106, 120, 140, 128, draw, &count);
+  // #########################
   
   // calculate the percentage of green in every segment
   for (uint16_t i = 0; i < num_segments; i++) {
@@ -186,8 +194,6 @@ void color_object_detector_init(void)
  * Also returns the amount of pixels that satisfy these filter bounds.
  *
  * @param img - input image to process formatted as YUV422.
- * @param p_xc - x coordinate of the centroid of color object (relative to image center)
- * @param p_yc - y coordinate of the centroid of color object (relative to image center)
  * @param lum_min - minimum Y value for the filter in YCbCr colorspace
  * @param lum_max - maximum Y value for the filter in YCbCr colorspace
  * @param cb_min - minimum Cb value for the filter in YCbCr colorspace
@@ -198,56 +204,69 @@ void color_object_detector_init(void)
  * @return number of pixels in the image within the filter bounds.
  */
 uint32_t count_green_pixels(struct image_t *img, bool draw, 
-                              int *segment_counts, int num_segments,
-                              uint8_t lum_min, uint8_t lum_max,
-                              uint8_t cb_min, uint8_t cb_max,
-                              uint8_t cr_min, uint8_t cr_max)
+                            int *segment_counts, int num_segments,
+                            uint8_t lum_min, uint8_t lum_max,
+                            uint8_t cb_min, uint8_t cb_max,
+                            uint8_t cr_min, uint8_t cr_max,
+                            uint8_t fill_y_limit)
 {
   uint32_t cnt = 0;
   uint8_t *buffer = img->buf;
 
-  int segment_height = (img->h + num_segments - 1) / num_segments;
+  int IMAGE_WIDTH = img->w;
+  int IMAGE_HEIGHT = img->h;
+  int LIMIT = (int) fill_y_limit;
 
-  draw_vertical_line(img, 0, img->h/5);
-  draw_vertical_line(img, 0, img->h*2/5);
-  draw_vertical_line(img, 0, img->h*3/5);
-  draw_vertical_line(img, 0, img->h*4/5);
+  int segment_height = (IMAGE_HEIGHT + num_segments - 1) / num_segments;
 
-  // Iterate over all pixels
-  for (uint16_t y = 0; y < img->h; y++) {
+  draw_vertical_line(img, 0, IMAGE_HEIGHT/5);
+  draw_vertical_line(img, 0, IMAGE_HEIGHT*2/5);
+  draw_vertical_line(img, 0, IMAGE_HEIGHT*3/5);
+  draw_vertical_line(img, 0, IMAGE_HEIGHT*4/5);
+  draw_horizontal_line(img, fill_y_limit);
 
+  for (uint16_t y = 0; y < IMAGE_HEIGHT; y++) {
+    bool detected_right = false;
     int segment_index = y / segment_height;
 
-    for (uint16_t x = 0; x < img->w; x ++) {
-
+    for (int x = LIMIT; x >= 0; x--) {
       uint8_t *yp, *up, *vp;
+
       if (x % 2 == 0) {
         // Even x
-        up = &buffer[y * 2 * img->w + 2 * x];       // U
-        yp = &buffer[y * 2 * img->w + 2 * x + 1];     // Y1
-        vp = &buffer[y * 2 * img->w + 2 * x + 2];     // V
+        up = &buffer[y * 2 * IMAGE_WIDTH + 2 * x];       // U
+        yp = &buffer[y * 2 * IMAGE_WIDTH + 2 * x + 1];   // Y1
+        vp = &buffer[y * 2 * IMAGE_WIDTH + 2 * x + 2];   // V
       } else {
         // Odd x
-        up = &buffer[y * 2 * img->w + 2 * x - 2];     // U (shared)
-        vp = &buffer[y * 2 * img->w + 2 * x];         // V
-        yp = &buffer[y * 2 * img->w + 2 * x + 1];       // Y2
+        up = &buffer[y * 2 * IMAGE_WIDTH + 2 * x - 2];   // U (shared)
+        vp = &buffer[y * 2 * IMAGE_WIDTH + 2 * x];       // V
+        yp = &buffer[y * 2 * IMAGE_WIDTH + 2 * x + 1];   // Y2
       }
 
-      // Check if pixel is within filter bounds, draw on image
       if ((*yp >= lum_min) && (*yp <= lum_max) &&
           (*up >= cb_min ) && (*up <= cb_max ) &&
           (*vp >= cr_min ) && (*vp <= cr_max )) {
+        detected_right = true;
+      }
+
+      // Once green is detected in this row, count all pixels to the left
+      if (detected_right) {
         cnt++;
         segment_counts[segment_index]++;
         if (draw) {
-          // Existing drawing: brighten the pixel. (making it white?)
           *yp = 255;
+          // *yp = 245;
+          // *up = 96;
+          // *vp = 130;
         }
       }
     }
   }
+
   return cnt;
 }
+
 
 void color_object_detector_periodic(void)
 {
@@ -305,5 +324,25 @@ void draw_vertical_line(struct image_t *img, int x, int y) {
           yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
       }
       *yp = 0;  // Darken pixel to lowest intensity (black)
+  }
+}
+
+void draw_horizontal_line(struct image_t *img, int x) {
+  if (x < 0 || x >= img->h) return; // Bounds check
+
+  uint8_t *buffer = img->buf;
+
+  // Green Line
+  for (int y = 0; y < img->h; y++) {
+    int index = y * 2 * img->w + 2 * x;
+    if (x % 2 == 0) {
+      buffer[index + 1] = 0;
+      buffer[index]     = 0;
+      buffer[index + 2] = 0;
+    } else {
+      buffer[index + 1] = 0;
+      buffer[index - 2] = 0;
+      buffer[index]     = 0;
+    }
   }
 }

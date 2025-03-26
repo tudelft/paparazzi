@@ -22,7 +22,7 @@ static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
 static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
 static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 static uint8_t increase_nav_heading(float incrementDegrees);
-static uint8_t chooseRandomIncrementAvoidance(void);
+static uint8_t change_direction(void);
 
 enum navigation_state_t {
   SAFE,
@@ -39,7 +39,7 @@ float heading_increment = 10.f;          // heading angle increment [deg]
 float maxDistance = 5;               // max waypoint displacement [m]
 
 int32_t segment_perc[5] = {0};
-int32_t green_perc_threshold = 30;
+int32_t green_perc_threshold = 40;
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
 
 /*
@@ -73,7 +73,7 @@ void green_detector_init(void)
 {
   // Initialise random values
   srand(time(NULL));
-  chooseRandomIncrementAvoidance();
+  change_direction();
 
   // bind our colorfilter callbacks to receive the color filter outputs
   AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
@@ -90,16 +90,15 @@ void green_detector_periodic(void)
     return;
   }
   
-  printf("green percentage threshold: %d\n", green_perc_threshold);
-  printf("Segment percentages: %d %d %d %d %d\n", segment_perc[0], segment_perc[1], segment_perc[2], segment_perc[3], segment_perc[4]);
-
-
   // update our safe confidence using color threshold
   if(segment_perc[2] > green_perc_threshold){
     obstacle_free_confidence++;
   } else {
-    obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
+    obstacle_free_confidence -= 3;  // be more cautious with positive obstacle detections
   }
+
+  printf("Segment percentages: %d %d %d %d %d\n", segment_perc[0], segment_perc[1], segment_perc[2], segment_perc[3], segment_perc[4]);
+  // printf("obstacle free confidence: %d\n", obstacle_free_confidence);
 
   // bound obstacle_free_confidence
   Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
@@ -109,29 +108,35 @@ void green_detector_periodic(void)
   switch (navigation_state){
     case SAFE:
       // Move waypoint forward
-      moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
-      if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
-        navigation_state = OUT_OF_BOUNDS;
-      } else if (obstacle_free_confidence == 0){
+      moveWaypointForward(WP_TRAJECTORY, 1.f * moveDistance);
+    
+      if (obstacle_free_confidence <= 0 || (segment_perc[1] < 25 || segment_perc[3] < 25)){
+        if (segment_perc[1] < 25 || segment_perc[3] < 25){
+          obstacle_free_confidence = 0;
+        }
         navigation_state = OBSTACLE_FOUND;
-      } else {
+        printf("- found obstacle");
+      } 
+      else {
         moveWaypointForward(WP_GOAL, moveDistance);
         moveWaypointForward(WP_RETREAT, -1.0f * moveDistance);
+        printf("- moving forward");
       }
-
       break;
+
     case OBSTACLE_FOUND:
       // stop
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_RETREAT);
       waypoint_move_here_2d(WP_TRAJECTORY);
 
-      // randomly select new search dirfront_cameraection
-      chooseRandomIncrementAvoidance();
+      // select direction to turn
+      change_direction();
 
       navigation_state = SEARCH_FOR_SAFE_HEADING;
 
       break;
+
     case SEARCH_FOR_SAFE_HEADING:
       increase_nav_heading(heading_increment);
 
@@ -140,22 +145,7 @@ void green_detector_periodic(void)
         navigation_state = SAFE;
       }
       break;
-    case OUT_OF_BOUNDS:
-      increase_nav_heading(heading_increment);
-      moveWaypointForward(WP_TRAJECTORY, 1.5f);
-      moveWaypointForward(WP_RETREAT, -1.0f);
 
-      if (InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
-        // add offset to head back into arena
-        increase_nav_heading(heading_increment);
-
-        // reset safe counter
-        obstacle_free_confidence = 0;
-
-        // ensure direction is safe before continuing
-        navigation_state = SEARCH_FOR_SAFE_HEADING;
-      }
-      break;
     default:
       break;
   }
@@ -175,7 +165,6 @@ uint8_t increase_nav_heading(float incrementDegrees)
   // set heading, declared in firmwares/rotorcraft/navigation.h
   nav.heading = new_heading;
 
-  VERBOSE_PRINT("Increasing heading to %f\n", DegOfRad(new_heading));
   return false;
 }
 
@@ -200,9 +189,6 @@ uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
   // Now determine where to place the waypoint you want to go to
   new_coor->x = stateGetPositionEnu_i()->x + POS_BFP_OF_REAL(sinf(heading) * (distanceMeters));
   new_coor->y = stateGetPositionEnu_i()->y + POS_BFP_OF_REAL(cosf(heading) * (distanceMeters));
-  VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,	
-                POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y),
-                stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
   return false;
 }
 
@@ -211,8 +197,6 @@ uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
  */
 uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 {
-  VERBOSE_PRINT("Moving waypoint %d to x:%f y:%f\n", waypoint, POS_FLOAT_OF_BFP(new_coor->x),
-                POS_FLOAT_OF_BFP(new_coor->y));
   waypoint_move_xy_i(waypoint, new_coor->x, new_coor->y);
   return false;
 }
@@ -220,15 +204,15 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 /*
  * Sets the variable 'heading_increment' randomly positive/negative
  */
-uint8_t chooseRandomIncrementAvoidance(void)
+uint8_t change_direction(void)
 {
-  // Randomly choose CW or CCW avoiding direction
-  if (rand() % 2 == 0) {
-    heading_increment = 5.f;
-    VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
-  } else {
-    heading_increment = -5.f;
-    VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  // Compare segment_perc[1] (left) and segment_perc[3] (right)
+  if (segment_perc[1] > segment_perc[3]) {
+    heading_increment = -8.f; // Turn left
+    printf("Turning left: segment_perc[1] = %d, segment_perc[3] = %d\n", segment_perc[1], segment_perc[3]);
+  } else if (segment_perc[3] > segment_perc[1]) {
+    heading_increment = 8.f; // Turn right
+    printf("Turning right: segment_perc[1] = %d, segment_perc[3] = %d\n", segment_perc[1], segment_perc[3]);
   }
   return false;
 }
