@@ -35,11 +35,12 @@ enum navigation_state_t {
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
 int32_t color_count = 0;                // orange color count from color filter for obstacle detection
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
-float heading_increment = 10.f;          // heading angle increment [deg]
+float heading_increment = 5.f;          // heading angle increment [deg]
 float maxDistance = 5;               // max waypoint displacement [m]
 
 int32_t segment_perc[5] = {0};
-int32_t green_perc_threshold = 40;
+int32_t green_perc_threshold = 20;
+int32_t green_sides_threshold = 15;
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
 
 /*
@@ -58,11 +59,11 @@ static abi_event color_detection_ev;
 static void color_detection_cb(int32_t quality, int32_t segment1_count, int32_t segment2_count, int32_t segment3_count, int32_t segment4_count, int32_t segment5_count)
 {
   color_count = quality;
-  segment_perc[0] = segment1_count;
+  // segment_perc[0] = segment1_count;
   segment_perc[1] = segment2_count;
   segment_perc[2] = segment3_count;
   segment_perc[3] = segment4_count;
-  segment_perc[4] = segment5_count;
+  // segment_perc[4] = segment5_count;
 }
 
 
@@ -110,8 +111,8 @@ void green_detector_periodic(void)
       // Move waypoint forward
       moveWaypointForward(WP_TRAJECTORY, 1.f * moveDistance);
     
-      if (obstacle_free_confidence <= 0 || (segment_perc[1] < 25 || segment_perc[3] < 25)){
-        if (segment_perc[1] < 25 || segment_perc[3] < 25){
+      if (obstacle_free_confidence <= 0 || (segment_perc[1] < green_sides_threshold || segment_perc[3] < green_sides_threshold)){
+        if (segment_perc[1] < green_sides_threshold || segment_perc[3] < green_sides_threshold){
           obstacle_free_confidence = 0;
         }
         navigation_state = OBSTACLE_FOUND;
@@ -141,7 +142,7 @@ void green_detector_periodic(void)
       increase_nav_heading(heading_increment);
 
       // make sure we have a couple of good readings before declaring the way safe
-      if (obstacle_free_confidence >= 2){
+      if (obstacle_free_confidence >= 2 && (segment_perc[1] > green_sides_threshold && segment_perc[3] > green_sides_threshold) ){
         navigation_state = SAFE;
       }
       break;
@@ -208,10 +209,10 @@ uint8_t change_direction(void)
 {
   // Compare segment_perc[1] (left) and segment_perc[3] (right)
   if (segment_perc[1] > segment_perc[3]) {
-    heading_increment = -8.f; // Turn left
+    heading_increment = -4.f; // Turn left
     printf("Turning left: segment_perc[1] = %d, segment_perc[3] = %d\n", segment_perc[1], segment_perc[3]);
   } else if (segment_perc[3] > segment_perc[1]) {
-    heading_increment = 8.f; // Turn right
+    heading_increment = 4.f; // Turn right
     printf("Turning right: segment_perc[1] = %d, segment_perc[3] = %d\n", segment_perc[1], segment_perc[3]);
   }
   return false;

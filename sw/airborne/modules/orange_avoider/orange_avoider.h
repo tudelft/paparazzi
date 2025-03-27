@@ -15,6 +15,7 @@
 
 // settings
 extern int green_perc_threshold;
+extern int green_sides_threshold;
 
 // functions
 extern void green_detector_init(void);

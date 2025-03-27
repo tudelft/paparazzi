@@ -66,7 +66,7 @@ struct image_t *object_detector1(struct image_t *img, uint8_t camera_id);
 struct image_t *object_detector2(struct image_t *img, uint8_t camera_id);
 
 void draw_vertical_line(struct image_t *img, int x, int y);
-void draw_horizontal_line(struct image_t *img, int x);
+void draw_horizontal_line(struct image_t *img, int x, int y);
 
 uint32_t count_green_pixels(struct image_t *img, bool draw, 
                               int *segment_counts, int num_segments,
@@ -223,13 +223,14 @@ uint32_t count_green_pixels(struct image_t *img, bool draw,
   draw_vertical_line(img, 0, IMAGE_HEIGHT*2/5);
   draw_vertical_line(img, 0, IMAGE_HEIGHT*3/5);
   draw_vertical_line(img, 0, IMAGE_HEIGHT*4/5);
-  draw_horizontal_line(img, fill_y_limit);
+  draw_horizontal_line(img, 128, 0);
+  draw_horizontal_line(img, IMAGE_WIDTH-40, 0);
 
-  for (uint16_t y = 0; y < IMAGE_HEIGHT; y++) {
+  for (uint16_t y = IMAGE_HEIGHT/5; y < IMAGE_HEIGHT*4/5; y++) {
     bool detected_right = false;
     int segment_index = y / segment_height;
 
-    for (int x = LIMIT; x >= 0; x--) {
+    for (int x = LIMIT; x >= 40; x--) {
       uint8_t *yp, *up, *vp;
 
       if (x % 2 == 0) {
@@ -256,9 +257,6 @@ uint32_t count_green_pixels(struct image_t *img, bool draw,
         segment_counts[segment_index]++;
         if (draw) {
           *yp = 255;
-          // *yp = 245;
-          // *up = 96;
-          // *vp = 130;
         }
       }
     }
@@ -327,13 +325,13 @@ void draw_vertical_line(struct image_t *img, int x, int y) {
   }
 }
 
-void draw_horizontal_line(struct image_t *img, int x) {
+void draw_horizontal_line(struct image_t *img, int x, int y) {
   if (x < 0 || x >= img->h) return; // Bounds check
 
   uint8_t *buffer = img->buf;
 
   // Green Line
-  for (int y = 0; y < img->h; y++) {
+  for (y; y < img->h; y++) {
     int index = y * 2 * img->w + 2 * x;
     if (x % 2 == 0) {
       buffer[index + 1] = 0;
