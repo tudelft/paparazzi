@@ -1,14 +1,13 @@
-// Own header
+// green avoider color detection implementation
 #include "modules/computer_vision/cv_detect_color_object.h"
 #include "modules/computer_vision/cv.h"
 #include "modules/core/abi.h"
-#include "std.h"
-
-#include <stdio.h>
 #include <stdbool.h>
-#include <math.h>
-#include <stdlib.h>
 #include "pthread.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include "std.h"
 
 #define PRINT(string,...) fprintf(stderr, "[object_detector->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 #if OBJECT_DETECTOR_VERBOSE
@@ -26,7 +25,7 @@ static pthread_mutex_t mutex;
 #define COLOR_OBJECT_DETECTOR_FPS2 0 ///< Default FPS (zero means run at camera fps)
 #endif
 
-// Filter Settings
+// stadard filter settings for inside paparazzi
 uint8_t cod_lum_min1 = 0;
 uint8_t cod_lum_max1 = 0;
 uint8_t cod_cb_min1 = 0;
@@ -41,33 +40,36 @@ uint8_t cod_cb_max2 = 0;
 uint8_t cod_cr_min2 = 0;
 uint8_t cod_cr_max2 = 0;
 
-bool cod_draw1 = false;
-bool cod_draw2 = false;
 
-uint16_t num_segments = 5;
-uint8_t fill_y_limit = 128;
+// standard filter settings for outside paparazzi
+bool cod_draw1 = false;       // drawing on the image for visualization
+bool cod_draw2 = false;       
 
+uint16_t num_segments = 5;    // the number of segments we want to divide the image into
+uint8_t fill_y_limit = 128;   // the y limit for the carpet fill, this is the line where we stop counting pixels
 
-// define global variables
+// define global variables which will be send over via ABI
 struct color_object_t {
   int32_t x_c;
   int32_t y_c;
   int32_t color_count;
   bool updated;
-  int32_t segment_counts[5]; // Pre-allocated array for segment counts
+  int32_t segment_counts[5]; // pre-allocated array for segment counts
 };
 
 struct color_object_t global_filters[2];
 
 #define STACK_MAX 1024
 
-/* Existing function declaration */
+// function declaration
 struct image_t *object_detector1(struct image_t *img, uint8_t camera_id);
 struct image_t *object_detector2(struct image_t *img, uint8_t camera_id);
 
+// functions for drawing lines on the image for visualization
 void draw_vertical_line(struct image_t *img, int x, int y);
 void draw_horizontal_line(struct image_t *img, int x, int y);
 
+// function to count the number of green pixels in the image
 uint32_t count_green_pixels(struct image_t *img, bool draw, 
                               int *segment_counts, int num_segments,
                               uint8_t lum_min, uint8_t lum_max,
@@ -151,6 +153,7 @@ struct image_t *object_detector2(struct image_t *img, uint8_t camera_id __attrib
   return object_detector(img, 2);
 }
 
+// function to initialize the color object detector
 void color_object_detector_init(void)
 {
   memset(global_filters, 0, 2*sizeof(struct color_object_t));
@@ -265,7 +268,7 @@ uint32_t count_green_pixels(struct image_t *img, bool draw,
   return cnt;
 }
 
-
+// send the color object detection data over ABI
 void color_object_detector_periodic(void)
 {
   static struct color_object_t local_filters[2];
@@ -307,6 +310,7 @@ void color_object_detector_periodic(void)
   }
 }
 
+// function to draw a vertical line on the image
 void draw_vertical_line(struct image_t *img, int x, int y) {
   if (x < 0 || x >= img->w) return; // Bounds check
 
@@ -325,6 +329,7 @@ void draw_vertical_line(struct image_t *img, int x, int y) {
   }
 }
 
+// Draws a horizontal line across the image at a given y-coordinate
 void draw_horizontal_line(struct image_t *img, int x, int y) {
   if (x < 0 || x >= img->h) return; // Bounds check
 

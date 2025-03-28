@@ -1,16 +1,15 @@
+// implementation of the green detector inside the orange_avoider module
 #include "modules/orange_avoider/orange_avoider.h"
 #include "firmwares/rotorcraft/navigation.h"
+#include "generated/flight_plan.h"
 #include "generated/airframe.h"
-#include "state.h"
 #include "modules/core/abi.h"
+#include "state.h"
 #include <time.h>
 #include <stdio.h>
 
-#define NAV_C // needed to get the nav functions like Inside...
-#include "generated/flight_plan.h"
-
+#define NAV_C
 #define ORANGE_AVOIDER_VERBOSE TRUE
-
 #define PRINT(string,...) fprintf(stderr, "[orange_avoider->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 #if ORANGE_AVOIDER_VERBOSE
 #define VERBOSE_PRINT PRINT
@@ -18,12 +17,14 @@
 #define VERBOSE_PRINT(...)
 #endif
 
+// declaring functions based on the green detector implementation
 static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
 static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
 static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 static uint8_t increase_nav_heading(float incrementDegrees);
 static uint8_t change_direction(void);
 
+// define the navigation states, this is all the states the drone can be in
 enum navigation_state_t {
   SAFE,
   OBSTACLE_FOUND,
@@ -32,44 +33,31 @@ enum navigation_state_t {
   };
 
 // define and initialise global variables
-enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
-int32_t color_count = 0;                // orange color count from color filter for obstacle detection
-int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
-float heading_increment = 5.f;          // heading angle increment [deg]
-float maxDistance = 5;               // max waypoint displacement [m]
+enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING; // starting state
+int32_t color_count = 0;                      // green color count from color filter for obstacle detection
+int16_t obstacle_free_confidence = 0;         // a measure of how certain we are that the way ahead is safe.
+float heading_increment = 5.f;                // heading angle increment [deg]
+float maxDistance = 5;                        // max waypoint displacement [m]
 
-int32_t segment_perc[5] = {0};
-int32_t green_perc_threshold = 20;
-int32_t green_sides_threshold = 15;
-const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
+int32_t segment_perc[5] = {0};                // array of segment percentages from color filter
+int32_t green_perc_threshold = 20;            // percentage threshold for obstacle detection right in front of the drone
+int32_t green_sides_threshold = 15;           // percentage threshold for obstacle detection on the sides
+const int16_t max_trajectory_confidence = 5;  // number of consecutive negative object detections to be sure we are obstacle free
+static abi_event color_detection_ev;          // creating an ABI event for the color detection callback
 
-/*
- * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
- * any time data calculated in another module needs to be accessed. Including the file where this external
- * data is defined is not enough, since modules are executed parallel to each other, at different frequencies,
- * in different threads. The ABI event is triggered every time new data is sent out, and as such the function
- * defined in this file does not need to be explicitly called, only bound in the init function
- */
-#ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
-#define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
-#endif
-
-static abi_event color_detection_ev;
-
+// function to bind the color detection callback
 static void color_detection_cb(int32_t quality, int32_t segment1_count, int32_t segment2_count, int32_t segment3_count, int32_t segment4_count, int32_t segment5_count)
 {
   color_count = quality;
-  // segment_perc[0] = segment1_count;
+  // segment_perc[0] = segment1_count;  // the green percentage of the outer most segment, not used
   segment_perc[1] = segment2_count;
   segment_perc[2] = segment3_count;
   segment_perc[3] = segment4_count;
-  // segment_perc[4] = segment5_count;
+  // segment_perc[4] = segment5_count;  // the green percentage of the outer most segment, not used
 }
 
 
-/*
- * Initialisation function, setting the colour filter, random seed and heading_increment
- */
+// initialisation function, called once at the start of the program
 void green_detector_init(void)
 {
   // Initialise random values
@@ -81,9 +69,8 @@ void green_detector_init(void)
   AbiBindMsgSEGMENT_COUNTS(GREEN_DETECTOR_SEGMENT_COUNTS_ID, &color_detection_ev, color_detection_cb);
 }
 
-/*
- * Function that checks it is safe to move forwards, and then moves a waypoint forward or changes the heading
- */
+
+// function that checks it is safe to move forwards, and then moves a waypoint forward or changes the heading
 void green_detector_periodic(void)
 {
   // only evaluate our state machine if we are flying
@@ -98,19 +85,21 @@ void green_detector_periodic(void)
     obstacle_free_confidence -= 3;  // be more cautious with positive obstacle detections
   }
 
+  // printing the green percentage at every segment for debugging
   printf("Segment percentages: %d %d %d %d %d\n", segment_perc[0], segment_perc[1], segment_perc[2], segment_perc[3], segment_perc[4]);
-  // printf("obstacle free confidence: %d\n", obstacle_free_confidence);
 
-  // bound obstacle_free_confidence
+  // bound obstacle_free_confidence, so it doesnt get to big
   Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
 
+  // calculate the move distance based on the obstacle free confidence
   float moveDistance = fminf(maxDistance, 0.2f * obstacle_free_confidence);
 
+  // meain loop for the state machine
   switch (navigation_state){
+
+    // if safe, move forward, and check if we are still safe
     case SAFE:
-      // Move waypoint forward
       moveWaypointForward(WP_TRAJECTORY, 1.f * moveDistance);
-    
       if (obstacle_free_confidence <= 0 || (segment_perc[1] < green_sides_threshold || segment_perc[3] < green_sides_threshold)){
         if (segment_perc[1] < green_sides_threshold || segment_perc[3] < green_sides_threshold){
           obstacle_free_confidence = 0;
@@ -125,6 +114,7 @@ void green_detector_periodic(void)
       }
       break;
 
+    // if we have found an obstacle, we need to stop and change direction
     case OBSTACLE_FOUND:
       // stop
       waypoint_move_here_2d(WP_GOAL);
@@ -138,9 +128,9 @@ void green_detector_periodic(void)
 
       break;
 
+    // if we are searching for a safe heading, we need to stop and find a safe heading
     case SEARCH_FOR_SAFE_HEADING:
       increase_nav_heading(heading_increment);
-
       // make sure we have a couple of good readings before declaring the way safe
       if (obstacle_free_confidence >= 2 && (segment_perc[1] > green_sides_threshold && segment_perc[3] > green_sides_threshold) ){
         navigation_state = SAFE;
@@ -153,9 +143,8 @@ void green_detector_periodic(void)
   return;
 }
 
-/*
- * Increases the NAV heading. Assumes heading is an INT32_ANGLE. It is bound in this function.
- */
+
+// increases the NAV heading. Assumes heading is an INT32_ANGLE. It is bound in this function.
 uint8_t increase_nav_heading(float incrementDegrees)
 {
   float new_heading = stateGetNedToBodyEulers_f()->psi + RadOfDeg(incrementDegrees);
@@ -169,9 +158,8 @@ uint8_t increase_nav_heading(float incrementDegrees)
   return false;
 }
 
-/*
- * Calculates coordinates of distance forward and sets waypoint 'waypoint' to those coordinates
- */
+
+// calculates coordinates of distance forward and sets waypoint 'waypoint' to those coordinates
 uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters)
 {
   struct EnuCoor_i new_coor;
@@ -180,9 +168,8 @@ uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters)
   return false;
 }
 
-/*
- * Calculates coordinates of a distance of 'distanceMeters' forward w.r.t. current position and heading
- */
+
+// calculates coordinates of a distance of 'distanceMeters' forward w.r.t. current position and heading
 uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
 {
   float heading  = stateGetNedToBodyEulers_f()->psi;
@@ -193,18 +180,14 @@ uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
   return false;
 }
 
-/*
- * Sets waypoint 'waypoint' to the coordinates of 'new_coor'
- */
+// sets waypoint 'waypoint' to the coordinates of 'new_coor'
 uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 {
   waypoint_move_xy_i(waypoint, new_coor->x, new_coor->y);
   return false;
 }
 
-/*
- * Sets the variable 'heading_increment' randomly positive/negative
- */
+// sets the variable 'heading_increment' randomly positive/negative
 uint8_t change_direction(void)
 {
   // Compare segment_perc[1] (left) and segment_perc[3] (right)
