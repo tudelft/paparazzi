@@ -55,6 +55,7 @@ struct hx711_dev_t {
   ioportid_t data_port;
   uint16_t data_pin;
   int32_t measurement;
+  int32_t offset;
 };
 
 struct hx711_t {
@@ -234,4 +235,10 @@ static void pwmpcb(PWMDriver *pwmp __attribute__((unused))) {
   }
 
   chSysUnlockFromISR();
+}
+
+extern void hx711_autoset_offset(int32_t __attribute__((unused)) offset) {
+  for(uint8_t i = 0; i < HX711_DEVICES_NB; i++) {
+    hx711.devices[i].offset += get_median_filter_f(&measurement_filt[i]);
+  }
 }
