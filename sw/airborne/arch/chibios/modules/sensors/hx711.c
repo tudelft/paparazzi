@@ -132,12 +132,14 @@ void hx711_event(void)
     // Process the measurement ABI??
 
     // Send down for debug
+    float filt_val[HX711_DEVICES_NB];
     for(uint8_t i = 0; i < HX711_DEVICES_NB; i++) {
       update_median_filter_f(&measurement_filt[i], hx711.devices[i].measurement);
-      float filt_val = get_median_filter_f(&measurement_filt[i]);
-      DOWNLINK_SEND_STRAIN_GAUGE(DefaultChannel, DefaultDevice, &i, &filt_val);
-      pprz_msg_send_STRAIN_GAUGE(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, &i, &filt_val);
+      filt_val[i] = get_median_filter_f(&measurement_filt[i]);
     }
+
+    DOWNLINK_SEND_STRAIN_GAUGE(DefaultChannel, DefaultDevice, HX711_DEVICES_NB, filt_val);
+    pprz_msg_send_STRAIN_GAUGE(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, HX711_DEVICES_NB, filt_val);
 
     hx711.measurement_ready = false;
   }
