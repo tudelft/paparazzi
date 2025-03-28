@@ -34,9 +34,9 @@
 #define TARGET_POS_KALMAN_DIM 6
 
 struct KalmanSensor {
-    float noise[6];            ///< The noise of the measurement
-    float meas[6];             ///< The measurement
-    float Hmat[6][6];          ///< The measurement matrix
+    float noise[TARGET_POS_KALMAN_DIM];            ///< The noise of the measurement
+    float meas[TARGET_POS_KALMAN_DIM];             ///< The measurement
+    float Hmat[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];          ///< The measurement matrix
   };
 
 /** Kalman structure

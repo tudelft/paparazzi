@@ -64,7 +64,8 @@ struct falcon_sensor_t {
   bool manual;
   uint8_t mode;
   uint16_t beacon_id;
-  struct FloatEulers body_offset;
+  struct FloatRMat sensor_to_body_rotation;
+  struct FloatVect3 sensor_to_cg_translation;
   struct FloatVect3 p_out;
   struct FloatVect3 p_in;
   struct FloatQuat q;
@@ -73,9 +74,11 @@ struct falcon_sensor_t {
   struct FloatEulers angles;
   float intensity;
   float width;
+  float distance;
   struct KalmanSensor kalman;
 };
 
+extern float dist;
 extern struct falcon_sensor_t falcon;
 extern struct target_t target;
 extern void target_pos_init(void);

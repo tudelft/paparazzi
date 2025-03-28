@@ -44,7 +44,7 @@
         <define name="USE_AIRSPEED"                         value="TRUE"/>  
         <define name="NAV_HYBRID_MAX_AIRSPEED"              value="22"/> 
         <define name="DEFAULT_CIRCLE_RADIUS"                value="100.0"/>
-        <define name="INS_EKF2_FUSION_MODE"                 value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/>
+        <!-- <define name="INS_EKF2_FUSION_MODE"                 value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/> -->
         <define name="INS_EKF2_GPS_YAW_OFFSET"              value="0"/>
         <define name="INS_EKF2_RELHEADING_DISTANCE"        value="1.02"/>
         <define name="INS_EKF2_RELHEADING_REF_ID"           value="1"/>
@@ -251,12 +251,6 @@
         <define name="KALMAN_USE_GROUND_STATION"    value="TRUE"/>
         <define name="KALMAN_USE_LIDAR"             value="TRUE"/>
         <define name="KALMAN_USE_ARUCO"             value="FALSE"/>
-    </section>
-
-    <section name="FALCON" prefix="FALCON_"> <!-- Body to sensor rotations, 3-2-1 -->
-        <define name="X_ANGLE"            value="90.0"/>
-        <define name="Y_ANGLE"            value="0.0"/>
-        <define name="Z_ANGLE"            value="180.0"/>
     </section>
 
     <section name="AUTOPILOT">

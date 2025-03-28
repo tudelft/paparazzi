@@ -136,7 +136,7 @@
             <define name="INS_EKF2_GPS_POS_Y" value="0.0"/>
             <define name="INS_EKF2_GPS_POS_Z" value="0.0"/>
 
-            <!-- <define name="INS_EKF2_OPTITRACK" value="true"/> -->
+            <define name="INS_EKF2_OPTITRACK" value="true"/>
             <!--define name="INS_EKF2_OPTITRACK_POS_X" value="0.0"/>
             <define name="INS_EKF2_OPTITRACK_POS_Y" value="0.0"/>
             <define name="INS_EKF2_OPTITRACK_POS_Z" value="0.09"/>
@@ -277,6 +277,16 @@
 
         <define name="CHIRP_AXES" value="{0,1,2,3}"/>
         <define name="CHIRP_RADIO_CHANNEL" value="9"/>
+    </section>
+
+    <section name="FALCON" prefix="FALCON_"> <!-- Body to sensor rotations, 3-2-1 -->
+        <define name="X_ANGLE"              value="90.0"/>
+        <define name="Y_ANGLE"              value="0.0"/>
+        <define name="Z_ANGLE"              value="180.0"/>
+
+        <define name="CG_X_DIST"            value="0.0"/>
+        <define name="CG_Y_DIST"            value="0.0"/>
+        <define name="CG_Z_DIST"            value="0.0"/>
     </section>
 
     <section name="CALIBRATION">
