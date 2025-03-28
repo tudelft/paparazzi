@@ -135,7 +135,7 @@ void hx711_event(void)
     // Send down for debug
     float filt_val[HX711_DEVICES_NB];
     for(uint8_t i = 0; i < HX711_DEVICES_NB; i++) {
-      update_median_filter_f(&measurement_filt[i], hx711.devices[i].measurement);
+      update_median_filter_f(&measurement_filt[i], hx711.devices[i].measurement - hx711.devices[i].offset);
       filt_val[i] = get_median_filter_f(&measurement_filt[i]);
     }
 
