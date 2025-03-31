@@ -21,6 +21,8 @@
             <module name="hx711">
                 <define name="HX711_DEVICES_NB" value="2"/>
                 <define name="HX711_DEVICES" value="{PWM_SERVO_2_GPIO,PWM_SERVO_2_PIN,0,0},{PWM_SERVO_3_GPIO,PWM_SERVO_3_PIN,0,0}"/>
+                <define name="HX711_KILL_THRESHOLD" value="100000"/>
+                <define name="HX711_MEDIAN_FILT_SIZE" value="5"/>
             </module>
 
             <!-- RC switches -->

@@ -31,7 +31,7 @@
 #define HX711_H
 
 extern float hx711_kill_threshold;
-extern uint8_t hx711_kill_counter;
+extern int32_t hx711_offset;
 
 void hx711_init(void);
 void hx711_event(void);

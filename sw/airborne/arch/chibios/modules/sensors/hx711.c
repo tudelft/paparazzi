@@ -49,8 +49,7 @@
 
 struct MedianFilterFloat measurement_filt[HX711_DEVICES_NB];
 float hx711_kill_threshold = HX711_KILL_THRESHOLD;
-uint8_t hx711_kill_counter = HX711_KILL_COUNTER;
-
+int32_t hx711_offset = 0;
 struct hx711_dev_t {
   ioportid_t data_port;
   uint16_t data_pin;
@@ -163,28 +162,12 @@ void hx711_event(void)
 
 /* Kill motors when strain gauges are above a certain threshold */
 bool hx711_kill_motors(void) {
-  static uint8_t kill_counter = 0; // dont we want reset this after each instance?
-  uint8_t hx711_above_threshold = 0;
-
   for(uint8_t i = 0; i < HX711_DEVICES_NB; i++) {
-    if (hx711.devices[i].measurement > hx711_kill_threshold) {
-      hx711_above_threshold++;
+    if (get_median_filter_f(&measurement_filt[i]) > hx711_kill_threshold) {
+      return true;
     } 
   }
-
-  if (hx711_above_threshold > 0) {
-    kill_counter++;
-  }
-
-  float debug[2] = {(float) kill_counter, (float) hx711_above_threshold};
-  DOWNLINK_SEND_DEBUG_VECT(DefaultChannel, DefaultDevice, AC_ID, "kill_counter", 2, debug);
-
-  if (kill_counter > hx711_kill_counter) {
-    kill_counter = 0;
-    return true;
-  } else {
-    return false;
-  }
+  return false;
 }
 
 /**
