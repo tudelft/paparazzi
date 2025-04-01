@@ -279,14 +279,16 @@
         <define name="CHIRP_RADIO_CHANNEL" value="9"/>
     </section>
 
-    <section name="FALCON" prefix="FALCON_"> <!-- Body to sensor rotations, 3-2-1 -->
-        <define name="X_ANGLE"              value="90.0"/>
-        <define name="Y_ANGLE"              value="0.0"/>
-        <define name="Z_ANGLE"              value="180.0"/>
+    <section name="FALCON"> 
+        <!-- Sensor to body rotations, 3-2-1 -->
+        <define name="FALCON_X_ANGLE"              value="90.0"/>
+        <define name="FALCON_Y_ANGLE"              value="0.0"/>
+        <define name="FALCON_Z_ANGLE"              value="180.0"/>
 
-        <define name="CG_X_DIST"            value="0.0"/>
-        <define name="CG_Y_DIST"            value="0.0"/>
-        <define name="CG_Z_DIST"            value="0.0"/>
+        <!--  -->
+        <define name="BODY_FALCON_X_DIST"            value="0.0"/>
+        <define name="BODY_FALCON_Y_DIST"            value="0.0"/>
+        <define name="BODY_FALCON_Z_DIST"            value="0.0"/>
     </section>
 
     <section name="CALIBRATION">

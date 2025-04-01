@@ -58,10 +58,8 @@ struct TargetPosKalman {
 /** Init TargetPosKalman internal struct
  *
  * @param[in] kalman TargetPosKalman structure
- * @param[in] P0_pos initial covariance on position
- * @param[in] P0_speed initial covariance on speed
- * @param[in] Q_sigma2 process noise
- * @param[in] r measurement noise
+ * @param[in] P0 initial covariance on position
+ * @param[in] Q0 process noise
  * @param[in] dt prediction time step in seconds
  */
 extern void target_pos_kalman_init(struct TargetPosKalman *kalman, float *P0, float *Q_sigma2, float dt);
@@ -101,25 +99,16 @@ extern struct FloatVect3 target_pos_kalman_get_pos(struct TargetPosKalman *kalma
  */
 extern struct FloatVect3 target_pos_kalman_get_speed(struct TargetPosKalman *kalman);
 
-// /** Update process and measurement noises
-//  *
-//  * @param[in] kalman TargetPosKalman structure
-//  * @param[in] Q_sigma2 process noise
-//  * @param[in] r measurement noise
-//  */
-// extern void target_pos_kalman_update_noise(struct TargetPosKalman *kalman, float Q_sigma2, float r);
-
 /** Prediction step
  *
  * @param[in] kalman TargetPosKalman structure
  */
 extern void target_pos_kalman_predict(struct TargetPosKalman *kalman);
 
-/** Update step based on each new distance data
+/** Update step based on new sensor data
  *
  * @param[in] kalman TargetPosKalman structure
- * @param[in] update_type type of update, e.g. pos, speed, etc.
- * @param[in] meas array of measurements
+ * @param[in] sensor KalmanSensor structure
  */
 extern void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSensor *sensor);
 

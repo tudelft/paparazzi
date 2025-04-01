@@ -47,7 +47,7 @@
 #define TARGET_RTK_TIMEOUT 1000
 #endif
 
-/* Body to falcon sensor angle offsets */
+/* Falcon sensor to body rotation angles */
 #ifndef FALCON_X_ANGLE 
 #define FALCON_X_ANGLE 0
 #endif
@@ -60,17 +60,17 @@
 #define FALCON_Z_ANGLE 0
 #endif
 
-/* Falcon sensor to body c.g. in body frame */
-#ifndef FALCON_CG_X_DIST 
-#define FALCON_CG_X_DIST 0
+/* Body frame to sensor frame translation in body frame */
+#ifndef BODY_FALCON_X_DIST 
+#define BODY_FALCON_X_DIST 0
 #endif
 
-#ifndef FALCON_CG_Y_DIST
-#define FALCON_CG_Y_DIST 0
+#ifndef BODY_FALCON_Y_DIST
+#define BODY_FALCON_Y_DIST 0
 #endif
 
-#ifndef FALCON_CG_Z_DIST
-#define FALCON_CG_Z_DIST 0
+#ifndef BODY_FALCON_Z_DIST
+#define BODY_FALCON_Z_DIST 0
 #endif
 
 #ifndef TARGET_POS_RELHEADING_REF_ID
@@ -120,10 +120,10 @@ struct falcon_sensor_t falcon = {
   .manual = false,    // By default the tracking mode should be determined automatically
   .mode = 0,          // Initialize falcon sensor tracking mode to off
   .beacon_id = 0,
-  .sensor_to_cg_translation = {
-    .x = FALCON_CG_X_DIST,
-    .y = FALCON_CG_Y_DIST,
-    .z = FALCON_CG_Z_DIST,
+  .body_to_sensor_translation = {
+    .x = BODY_FALCON_X_DIST,
+    .y = BODY_FALCON_Y_DIST,
+    .z = BODY_FALCON_Z_DIST,
   },
   .p_out = {0},
   .p_in = {0},
@@ -156,6 +156,7 @@ static void send_target_pos_info(struct transport_tx *trans, struct link_device 
 {
 #if TARGET_POS_GROUND_STATION
   // Send the current state of the ground station
+  static const int32_t zero = 0;
   struct LlaCoor_i *pos = stateGetPositionLla_i();
   struct NedCoor_f *vel = stateGetSpeedNed_f();
   struct FloatQuat *quat = stateGetNedToBodyQuat_f();
@@ -164,6 +165,7 @@ static void send_target_pos_info(struct transport_tx *trans, struct link_device 
 
   DOWNLINK_SEND_TARGET_POS_INFO(DefaultChannel, DefaultDevice,
                               &tow,
+                              &zero,
                               &pos->lat,
                               &pos->lon,
                               &pos->alt,
@@ -183,6 +185,7 @@ static void send_target_pos_info(struct transport_tx *trans, struct link_device 
 #else
   pprz_msg_send_TARGET_POS_INFO(trans, dev, AC_ID,
                               &target.pos.tow,
+                              &target.pos.recv_time,
                               &target.pos.lla.lat,
                               &target.pos.lla.lon,
                               &target.pos.lla.alt,
@@ -242,11 +245,8 @@ void target_pos_init(void)
   AbiBindMsgAGL(ABI_BROADCAST, &lidar_ev, lidar_cb);
 
   /* Initialize the linear Kalman filter */
-  target_pos_kalman_filter_init(0.1);
-
-  struct FloatRMat body_to_falcon_sensor;
-  float_rmat_of_eulers_321(&body_to_falcon_sensor, &(struct FloatEulers) {FALCON_X_ANGLE, FALCON_Y_ANGLE, FALCON_Z_ANGLE});
-  float_rmat_transp(&falcon.sensor_to_body_rotation, &body_to_falcon_sensor);
+  target_pos_kalman_init(&target_pos_kalman, P0, Q0, 1/TARGET_POS_PERIODIC_FREQ);
+  float_rmat_of_eulers_321(&falcon.sensor_to_body_rotation, &(struct FloatEulers) {RadOfDeg(FALCON_X_ANGLE), RadOfDeg(FALCON_Y_ANGLE), RadOfDeg(FALCON_Z_ANGLE)});
 }
 
 /* Get the GPS lla position */
@@ -327,15 +327,6 @@ void target_parse_target_pos(uint8_t *buf)
   target.pos.rates.p = DL_TARGET_POS_p(buf);
   target.pos.rates.q = DL_TARGET_POS_q(buf);
   target.pos.rates.r = DL_TARGET_POS_r(buf);
-
-  // Calculate old properties for now to keep code compatible
-  target.pos.course = atan2f(target.pos.vel.y, target.pos.vel.x);
-  target.pos.ground_speed = sqrtf(target.pos.vel.x * target.pos.vel.x + target.pos.vel.y * target.pos.vel.y);
-  target.pos.climb = -target.pos.vel.z;
-  target.pos.valid = true;
-
-  // To test time between messages
-  target.pos.rates.p = (float)target.pos.recv_time - (float)target.pos.tow;
   
   struct NedCoor_i target_pos_cm;
   struct FloatVect3 pos;
@@ -365,12 +356,19 @@ static struct KalmanSensor ground_station_kalman = {
            {0.f, 0.f, 0.f, 0.f, 0.f, 1.f}}
 };
 
+  ground_station_kalman.meas[0] = pos.x;
+  ground_station_kalman.meas[2] = pos.y;
+  ground_station_kalman.meas[4] = pos.z;
+  ground_station_kalman.meas[1] = vel.x;
+  ground_station_kalman.meas[3] = vel.y;
+  ground_station_kalman.meas[5] = vel.z;
   target_pos_kalman_update(&target_pos_kalman, &ground_station_kalman);
 #endif
 
 #ifdef FALCON_LOG_ON_ARRIVAL
   pprz_msg_send_TARGET_POS_INFO(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
                               &target.pos.tow,
+                              &target.pos.recv_time,
                               &target.pos.lla.lat,
                               &target.pos.lla.lon,
                               &target.pos.lla.alt,
@@ -393,7 +391,7 @@ static struct KalmanSensor ground_station_kalman = {
 /* Update the lidar measurement */
 static void lidar_cb(uint8_t sender_id __attribute__((unused)), uint32_t stamp __attribute__((unused)), float distance)
 {
-
+#if TARGET_POS_KALMAN_USE_LIDAR
   static struct KalmanSensor lidar_kalman = {
     .noise = {0, 0, 0, 0, 0.1f, 0}, // not determined yet!
     .meas = {0, 0, 0, 0, 0, 0},
@@ -406,14 +404,13 @@ static void lidar_cb(uint8_t sender_id __attribute__((unused)), uint32_t stamp _
   };
 
   // Check if lidar AGL is in valid range
-  if (distance < 0.1f && distance > 5.0f) {
+  if (distance < 0.1f || distance > 5.0f) {
     return;
   }
 
   lidar_kalman.meas[4] = distance;
-  if (TARGET_POS_KALMAN_USE_LIDAR) {
-    target_pos_kalman_update(&target_pos_kalman, &lidar_kalman);
-  }
+  target_pos_kalman_update(&target_pos_kalman, &lidar_kalman);
+#endif
 }
 
 /**
@@ -522,23 +519,25 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
   // falcon.distance = 5.4165 + 75.5979 / falcon.intensity - 80.3343 / (falcon.intensity*falcon.intensity);
   
   // Obtain the relative position in sensor frame
-  struct FloatVect3 p_out;
+  struct FloatVect3 p_out_sensor;
+  struct FloatVect3 p_out_body;
+  struct FloatVect3 p_out_ned;
   struct FloatRMat rel_angles_sensor;
   float_rmat_of_eulers_321(&rel_angles_sensor, &falcon.angles);
-  float_rmat_vmult(&p_out, &rel_angles_sensor, &(struct FloatVect3){0, falcon.distance, 0});
+  float_rmat_vmult(&p_out_sensor, &rel_angles_sensor, &(struct FloatVect3){0, falcon.distance, 0});
 
   // Rotate the relative position to the body frame and add the sensor to c.g. translation
-  float_rmat_vmult(&p_out, &falcon.sensor_to_body_rotation, &p_out);
-  VECT3_ADD(p_out, falcon.sensor_to_cg_translation);
+  float_rmat_vmult(&p_out_body, &falcon.sensor_to_body_rotation, &p_out_sensor);
+  VECT3_ADD(p_out_body, falcon.body_to_sensor_translation);
 
   // Rotate the relative position to the NED frame
   struct FloatRMat *ned_to_body = stateGetNedToBodyRMat_f();
-  float_rmat_transp_vmult(&p_out, ned_to_body, &p_out);
+  float_rmat_transp_vmult(&p_out_ned, ned_to_body, &p_out_body);
   
 #if TARGET_POS_KALMAN_USE_FALCON
-  falcon.kalman.meas[0] = p_out.x;
-  falcon.kalman.meas[2] = p_out.y;
-  falcon.kalman.meas[4] = p_out.z;
+  falcon.kalman.meas[0] = p_out_ned.x;
+  falcon.kalman.meas[2] = p_out_ned.y;
+  falcon.kalman.meas[4] = p_out_ned.z;
   target_pos_kalman_update(&target_pos_kalman, &falcon.kalman);
 #endif
 
@@ -564,7 +563,7 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
   uint8_t wp_id = WP_RELANGLE;
   struct EnuCoor_f target_enu;
   struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
-  ENU_OF_TO_NED(target_enu, p_out);
+  ENU_OF_TO_NED(target_enu, p_out_ned);
   VECT3_ADD(target_enu, *uav_pos);
   // target_enu.z = waypoints[wp_id].enu_f.z;
   waypoint_set_enu(wp_id, &target_enu);

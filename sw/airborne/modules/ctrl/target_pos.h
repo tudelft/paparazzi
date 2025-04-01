@@ -39,10 +39,6 @@ struct target_pos_t {
   struct FloatVect3 vel;     ///< Speed of target in target local NED frame [m/s]
   struct FloatQuat quat;    ///< Attitude quaternion of the target body to target local NED frame
   struct FloatRates rates;  ///< Body rates of the target in [rad/s]
-  float ground_speed;       ///< Ground speed of the target [m/s]
-  float course;             ///< Ground course of the target [deg]
-  float heading;            ///< Heading of the target [deg]
-  float climb;              ///< Climb speed, z-up [m/s]
 };
 
 struct target_offset_t {
@@ -65,7 +61,7 @@ struct falcon_sensor_t {
   uint8_t mode;
   uint16_t beacon_id;
   struct FloatRMat sensor_to_body_rotation;
-  struct FloatVect3 sensor_to_cg_translation;
+  struct FloatVect3 body_to_sensor_translation;
   struct FloatVect3 p_out;
   struct FloatVect3 p_in;
   struct FloatQuat q;

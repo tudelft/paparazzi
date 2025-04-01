@@ -19,10 +19,9 @@
  */
 
 /** @file "filters/target_pos_kalman.c"
- * @author Gautier Hattenberger <gautier.hattenberger@enac.fr>
- * @author Antoine Leclerc, Nathan Puch, Pauline Molitor
+ * @author Noah Wechtler
  *
- * Basic kinematic kalman filter for tag tracking and constant speed
+ * Adapted basic kinematic kalman filter for target pos module
  */
 
 #include "filters/target_pos_kalman.h"
@@ -111,21 +110,6 @@ struct FloatVect3 target_pos_kalman_get_speed(struct TargetPosKalman *kalman)
   return speed;
 }
 
-// void target_pos_kalman_update_noise(struct TargetPosKalman *kalman, float Q_sigma2, float r)
-// {
-//   int i;
-//   const float dt = kalman->dt;
-//   const float dt2 = dt * dt;
-//   const float dt3 = dt2 * dt / 2.f;
-//   const float dt4 = dt2 * dt2 / 4.f;
-//   for (i = 0; i < TARGET_POS_KALMAN_DIM; i += 2) {
-//     kalman->Q[i][i] = Q_sigma2 * dt4;
-//     kalman->Q[i + 1][i] = Q_sigma2 * dt3;
-//     kalman->Q[i][i + 1] = Q_sigma2 * dt3;
-//     kalman->Q[i + 1][i + 1] = Q_sigma2 * dt2;
-//   }
-// }
-
 /** propagate dynamic model
  *
  * F = [ 1 dt 0 0  0 0
@@ -168,31 +152,33 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
 {
   
   // prepare variables and pointers
-  MAKE_MATRIX_PTR(_H, sensor->Hmat, TARGET_POS_KALMAN_DIM);
+  
   float Ht[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
   float S[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
-  MAKE_MATRIX_PTR(_Ht, Ht, TARGET_POS_KALMAN_DIM);
-  MAKE_MATRIX_PTR(_S, S, TARGET_POS_KALMAN_DIM);
   float invS[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
-  MAKE_MATRIX_PTR(_invS, invS, TARGET_POS_KALMAN_DIM);
   float HinvS_tmp[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
-  MAKE_MATRIX_PTR(_HinvS_tmp, HinvS_tmp, TARGET_POS_KALMAN_DIM);
   float K[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
-  MAKE_MATRIX_PTR(_K, K, TARGET_POS_KALMAN_DIM);
   float HX_tmp[TARGET_POS_KALMAN_DIM];
   float Z_HX[TARGET_POS_KALMAN_DIM];
   float K_ZHX_tmp[TARGET_POS_KALMAN_DIM];
   float KH_tmp[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
+  float P_tmp[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
+
+  MAKE_MATRIX_PTR(_H, sensor->Hmat, TARGET_POS_KALMAN_DIM);
+  MAKE_MATRIX_PTR(_Ht, Ht, TARGET_POS_KALMAN_DIM);
+  MAKE_MATRIX_PTR(_S, S, TARGET_POS_KALMAN_DIM);
+  MAKE_MATRIX_PTR(_invS, invS, TARGET_POS_KALMAN_DIM);
+  MAKE_MATRIX_PTR(_HinvS_tmp, HinvS_tmp, TARGET_POS_KALMAN_DIM);
+  MAKE_MATRIX_PTR(_K, K, TARGET_POS_KALMAN_DIM);
   MAKE_MATRIX_PTR(_KH_tmp, KH_tmp, TARGET_POS_KALMAN_DIM);
   MAKE_MATRIX_PTR(_P, kalman->P, TARGET_POS_KALMAN_DIM);
-  float P_tmp[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
   
   // Make S matrix
-  float_mat_transpose(_Ht, _H, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);                   // Ht
+  float_mat_transpose(_Ht, _H, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);                                       // Ht
   float_mat_mul(_S, _H, _P, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);                   // S = H * P
   float_mat_mul(_S, _S, _Ht, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);                  // S = H * P * Ht
   for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
-    _S[i][i] += sensor->noise[i];                       // S = H * P * Ht + R
+    _S[i][i] += sensor->noise[i];                                                                                   // S = H * P * Ht + R
   }
 
   float abs_sum_S_diag = 0;
@@ -201,17 +187,17 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   }
 
   if (abs_sum_S_diag < 1e-5) {
-    return; // don't inverse S if it is too small
+    return; // don't invert S if it is too small
   }
 
   // finally compute gain and correct state
-  float_mat_invert(_invS, _S, TARGET_POS_KALMAN_DIM);                       // S^-1
+  float_mat_invert(_invS, _S, TARGET_POS_KALMAN_DIM);                                                               // S^-1
   float_mat_mul(_HinvS_tmp, _Ht, _invS, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);       // Ht * S^-1
   float_mat_mul(_K, _P, _HinvS_tmp, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);           // P * Ht * S^-1
-  float_mat_vect_mul(HX_tmp, _H, kalman->state, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);  // H * X
-  float_vect_diff(Z_HX, sensor->meas, HX_tmp, TARGET_POS_KALMAN_DIM);       // Z - H * X
-  float_mat_vect_mul(K_ZHX_tmp, _K, Z_HX, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);        // K * (Z - H * X)
-  float_vect_add(kalman->state, K_ZHX_tmp, TARGET_POS_KALMAN_DIM);          // X + K * (Z - H * X)
+  float_mat_vect_mul(HX_tmp, _H, kalman->state, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);                      // H * X
+  float_vect_diff(Z_HX, sensor->meas, HX_tmp, TARGET_POS_KALMAN_DIM);                                               // Z - H * X
+  float_mat_vect_mul(K_ZHX_tmp, _K, Z_HX, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);                            // K * (Z - H * X)
+  float_vect_add(kalman->state, K_ZHX_tmp, TARGET_POS_KALMAN_DIM);                                                  // X + K * (Z - H * X)
 
   // precompute K*H and store current P
   float_mat_mul(_KH_tmp, _K, _H, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);
@@ -220,6 +206,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
       P_tmp[i][j] = kalman->P[i][j];
     }
   }
+  
   // correct covariance P = (I-K*H)*P = P - K*H*P
   for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
     for (int j = 0; j < TARGET_POS_KALMAN_DIM; j++) {
