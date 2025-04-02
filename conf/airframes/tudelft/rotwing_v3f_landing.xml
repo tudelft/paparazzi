@@ -281,9 +281,9 @@
 
     <section name="FALCON"> 
         <!-- Sensor to body rotations, 3-2-1 -->
-        <define name="FALCON_X_ANGLE"              value="90.0"/>
+        <define name="FALCON_X_ANGLE"              value="-90.0"/>
         <define name="FALCON_Y_ANGLE"              value="0.0"/>
-        <define name="FALCON_Z_ANGLE"              value="180.0"/>
+        <define name="FALCON_Z_ANGLE"              value="0.0"/>
 
         <!--  -->
         <define name="BODY_FALCON_X_DIST"            value="0.0"/>
