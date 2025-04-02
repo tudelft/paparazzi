@@ -50,6 +50,7 @@ struct target_offset_t {
 struct target_t {
   struct target_pos_t pos;                  ///< The target position message
   struct target_offset_t offset;            ///< The target offset relative to ground heading
+  bool autoset_target_offset;
   uint32_t target_pos_timeout;              ///< Ground target position message timeout [msec]
   uint32_t rtk_timeout;                     ///< RTK message timeout [msec]
   struct LlaCoor_i gps_lla;                 ///< GPS LLA position
@@ -87,7 +88,6 @@ extern bool target_get_pos(struct NedCoor_f *pos, float *heading);
 extern bool target_get_vel(struct NedCoor_f *vel);
 extern void target_set_wp(uint8_t wp_id);
 extern void target_pos_kalman_filter_init(float r);
-extern bool target_pos_set_current_offset(float unk);
-
+extern bool target_pos_set_current_offset(bool set_offset);
 
 #endif

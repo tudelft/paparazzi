@@ -103,7 +103,7 @@ struct target_t target = {
 
 /* Initialize falcon sensor structure */
 const struct KalmanSensor falcon_kalman = {
-  .noise = {0.1, 0, 0.1, 0, 0.1, 0}, // not determined yet!
+  .noise = {0.1, 999.f, 0.1, 999.f, 0.1, 999.f}, // not determined yet!
   .meas = {0, 0, 0, 0, 0, 0},
   .Hmat = {{1.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
            {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
@@ -393,7 +393,7 @@ static void lidar_cb(uint8_t sender_id __attribute__((unused)), uint32_t stamp _
 {
 #if TARGET_POS_KALMAN_USE_LIDAR
   static struct KalmanSensor lidar_kalman = {
-    .noise = {0, 0, 0, 0, 0.1f, 0}, // not determined yet!
+    .noise = {999.f, 999.f, 999.f, 999.f, 0.1f, 999.f}, // not determined yet!
     .meas = {0, 0, 0, 0, 0, 0},
     .Hmat = {{0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
              {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
@@ -612,24 +612,30 @@ bool target_get_vel(struct NedCoor_f *vel __attribute__((unused))) {
 /**
  * Set the current measured distances as offset (not constant in NED! needs fix)
  */
-bool target_pos_set_current_offset(float unk __attribute__((unused))) {
-    if(target.pos.valid && state.ned_initialized_i) { // && (get_sys_time_tow() - target.pos.tow) < TARGET_RTK_TIMEOUT) // not working atm
+bool target_pos_set_current_offset(__attribute__((unused)) bool set_offset) {
+  if(target.pos.valid && state.ned_initialized_i) { // && (get_sys_time_tow() - target.pos.tow) < TARGET_RTK_TIMEOUT) // not working atm
     struct NedCoor_i target_pos_cm;
 
     // Convert from LLA to NED using origin from the UAV
     ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &target.pos.lla);
 
-    // Convert to floating point (cm to meters)
-    struct NedCoor_f pos;
-    pos.x = target_pos_cm.x * 0.01;
-    pos.y = target_pos_cm.y * 0.01;
-    pos.z = target_pos_cm.z * 0.01;
+    target.offset.x -= (float)target_pos_cm.x * 0.01;
+    target.offset.y -= (float)target_pos_cm.y * 0.01;
+    target.offset.z -= (float)target_pos_cm.z * 0.01;
 
-    target.offset.x -= pos.x;
-    target.offset.y -= pos.y;
-    target.offset.z -= pos.z;
+    target.autoset_target_offset = true;
+    return true;
   }
 
+#if USE_NPS
+  struct FloatVect3 pos;
+  struct FloatVect3 vel;
+  target_pos_kalman_get_state(&target_pos_kalman, &pos, &vel);
+  target.offset.x -= pos.x;
+  target.offset.y -= pos.y;
+  target.offset.z -= pos.z;
+  target.autoset_target_offset = true;
+#endif
   return false;
 }
 
@@ -638,7 +644,59 @@ void target_pos_kalman_filter_init(float r __attribute__((unused))) {
 }
 
 void target_pos_periodic(void) {
-#if !TARTGET_POS_GROUND_STATION && !USE_NPS
+#if !TARTGET_POS_GROUND_STATION
+#if USE_NPS
+  // Fake some target pos data
+  
+  // Lidar every 10 Hz
+  RunOnceEvery(5, {
+    lidar_cb(0, 0, stateGetPositionNed_f()->z);
+  });
+
+  // Falcon every 50 Hz
+  static struct KalmanSensor falcon_kalman = {
+    .noise = {0.1, 999.f, 0.1, 999.f, 0.1, 999.f}, // not determined yet!
+    .meas = {0, 0, 0, 0, 0, 0},
+    .Hmat = {{1.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
+             {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
+             {0.f, 0.f, 1.f, 0.f, 0.f, 0.f},
+             {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
+             {0.f, 0.f, 0.f, 0.f, 1.f, 0.f}, 
+             {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}}
+  };
+  
+  falcon_kalman.meas[0] = stateGetPositionNed_f()->x + target.offset.x;
+  falcon_kalman.meas[2] = stateGetPositionNed_f()->y + target.offset.y;
+  falcon_kalman.meas[4] = stateGetPositionNed_f()->z + target.offset.z;
+
+  RunOnceEvery(1, {
+    target_pos_kalman_update(&target_pos_kalman, &falcon_kalman);
+  });
+
+  // GPS every 1 Hz
+  static struct KalmanSensor ground_station_kalman = {
+    .noise = {0.1f, 1.f, 0.1f, 1.f, 0.1f, 1.f}, // not determined yet!
+    .meas = {0, 0, 0, 0, 0, 0},
+    .Hmat = {{1.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
+             {0.f, 1.f, 0.f, 0.f, 0.f, 0.f}, 
+             {0.f, 0.f, 1.f, 0.f, 0.f, 0.f},
+             {0.f, 0.f, 0.f, 1.f, 0.f, 0.f}, 
+             {0.f, 0.f, 0.f, 0.f, 1.f, 0.f}, 
+             {0.f, 0.f, 0.f, 0.f, 0.f, 1.f}}
+  };
+  
+  ground_station_kalman.meas[0] = stateGetPositionNed_f()->x + target.offset.x;
+  ground_station_kalman.meas[2] = stateGetPositionNed_f()->y + target.offset.y;
+  ground_station_kalman.meas[4] = stateGetPositionNed_f()->z + target.offset.z;
+  ground_station_kalman.meas[1] = stateGetSpeedNed_f()->x;
+  ground_station_kalman.meas[3] = stateGetSpeedNed_f()->y;
+  ground_station_kalman.meas[5] = stateGetSpeedNed_f()->z;
+    
+  RunOnceEvery(50, {
+    target_pos_kalman_update(&target_pos_kalman, &ground_station_kalman);
+  });
+#endif
+
   target_pos_kalman_predict(&target_pos_kalman);
 
   // Get Kalman state
@@ -646,9 +704,11 @@ void target_pos_periodic(void) {
   struct FloatVect3 speed;
   target_pos_kalman_get_state(&target_pos_kalman, &pos, &speed);
 
+#if !USE_NPS
   pprz_msg_send_TARGET_POS_KALMAN(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
                                   &pos.x, &pos.y, &pos.z,
                                   &speed.x, &speed.y, &speed.z);
+#endif
   RunOnceEvery(100, {
   DOWNLINK_SEND_TARGET_POS_KALMAN(DefaultChannel, DefaultDevice,
                                   &pos.x, &pos.y, &pos.z,

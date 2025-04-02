@@ -13,6 +13,7 @@
     <waypoint name="TD" x="10" y="-1"/>
     <waypoint name="APP" x="70" y="-25"/>
     <waypoint name="FOLLOW" x="300" y="80"/>
+    <waypoint name="RELANGLE" x="-1" y="7"/>
     <!-- EHVB -->
     <waypoint lat="52.169189" lon="4.410820" name="C1"/>
     <waypoint lat="52.168049" lon="4.406923" name="C2"/>
@@ -42,11 +43,11 @@
     <variable var="liftoff_roll"/>
     <variable var="stage_timer_msec"/>
   </variables>
-  <modules>
+  <!-- <modules>
     <module name="follow_me">
       <define name="FOLLOW_ME_MOVING_WPS" value="WP_FOLLOW"/>
     </module>
-  </modules>
+  </modules> -->
   <exceptions>
     <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosHeight() @GT 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
     <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>

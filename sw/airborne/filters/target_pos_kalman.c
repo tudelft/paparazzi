@@ -31,7 +31,7 @@ void target_pos_kalman_init(struct TargetPosKalman *kalman, float *P0, float *Q_
 {
   int i, j;
   const float dt2 = dt * dt;
-  // const float dt3 = dt2 * dt / 2.f;
+  const float dt3 = dt2 * dt / 2.f;
   const float dt4 = dt2 * dt2 / 4.f;
   for (i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
     kalman->state[i] = 0.f; // don't forget to call set_state before running the filter for better results
@@ -44,8 +44,8 @@ void target_pos_kalman_init(struct TargetPosKalman *kalman, float *P0, float *Q_
     kalman->P[i][i] = P0[i];
     kalman->P[i + 1][i + 1] = P0[i + 1];
     kalman->Q[i][i] = Q_sigma2[i] * dt4;
-    // kalman->Q[i + 1][i] = Q_sigma2 * dt3;
-    // kalman->Q[i][i + 1] = Q_sigma2 * dt3;
+    kalman->Q[i + 1][i] = Q_sigma2[i] * dt3;
+    kalman->Q[i][i + 1] = Q_sigma2[i] * dt3;
     kalman->Q[i + 1][i + 1] = Q_sigma2[i + 1] * dt2;
   }
   kalman->dt = dt;
@@ -183,7 +183,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
 
   float abs_sum_S_diag = 0;
   for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
-    abs_sum_S_diag += fabs(S[i][i]);
+    abs_sum_S_diag += fabsf(S[i][i]);
   }
 
   if (abs_sum_S_diag < 1e-5) {
