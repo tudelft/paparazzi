@@ -246,10 +246,7 @@ void target_pos_init(void)
 
   /* Initialize the linear Kalman filter */
   target_pos_kalman_init(&target_pos_kalman, P0, Q0, 1/TARGET_POS_PERIODIC_FREQ);
-  
-  struct FloatRMat falcon_body_to_sensor;
-  float_rmat_of_eulers_321(&falcon_body_to_sensor, &(struct FloatEulers) {RadOfDeg(FALCON_X_ANGLE), RadOfDeg(FALCON_Y_ANGLE), RadOfDeg(FALCON_Z_ANGLE)});
-  float_rmat_transp(&falcon.sensor_to_body_rotation, &falcon_body_to_sensor);
+  float_rmat_of_eulers_321(&falcon.body_to_sensor_rotation, &(struct FloatEulers) {RadOfDeg(FALCON_X_ANGLE), RadOfDeg(FALCON_Y_ANGLE), RadOfDeg(FALCON_Z_ANGLE)});
 }
 
 /* Get the GPS lla position */
@@ -530,7 +527,7 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
   float_rmat_transp_vmult(&p_out_sensor, &rel_angles_sensor, &(struct FloatVect3){0, falcon.distance, 0});
 
   // Rotate the relative position to the body frame and add the sensor to c.g. translation
-  float_rmat_vmult(&p_out_body, &falcon.sensor_to_body_rotation, &p_out_sensor);
+  float_rmat_transp_vmult(&p_out_body, &falcon.body_to_sensor_rotation, &p_out_sensor);
   VECT3_ADD(p_out_body, falcon.body_to_sensor_translation);
 
   // Rotate the relative position to the NED frame
@@ -545,6 +542,7 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
 #endif
 
 #if FALCON_LOG_ON_ARRIVAL
+  float p_out[3] = {p_out_ned.x, p_out_ned.y, p_out_ned.z};
   float zeros_3[3] = {0, 0, 0};
   float zeros_4[4] = {0, 0, 0, 0};
 
@@ -552,7 +550,7 @@ void target_pos_parse_falcon_relangle(uint8_t *buf)
                               &falcon.valid,
                               &falcon.mode,
                               &falcon.beacon_id,
-                              zeros_3, // Relative position out (unused in relative angle mode)
+                              p_out, // Relative position out (unused in relative angle mode)
                               zeros_3, // Relative position in (unused in relative angle mode)
                               zeros_4, // Quaternion rotation (unused in relative angle mode)
                               zeros_3, // Position variance (unused in relative angle mode)

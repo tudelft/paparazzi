@@ -136,7 +136,7 @@
             <define name="INS_EKF2_GPS_POS_Y" value="0.0"/>
             <define name="INS_EKF2_GPS_POS_Z" value="0.0"/>
 
-            <!-- <define name="INS_EKF2_OPTITRACK" value="true"/> -->
+            <define name="INS_EKF2_OPTITRACK" value="true"/>
             <!--define name="INS_EKF2_OPTITRACK_POS_X" value="0.0"/>
             <define name="INS_EKF2_OPTITRACK_POS_Y" value="0.0"/>
             <define name="INS_EKF2_OPTITRACK_POS_Z" value="0.09"/>
@@ -281,7 +281,7 @@
 
     <section name="FALCON"> 
         <!-- Sensor to body rotations, 3-2-1 -->
-        <define name="FALCON_X_ANGLE"              value="-90.0"/>
+        <define name="FALCON_X_ANGLE"              value="90.0"/>
         <define name="FALCON_Y_ANGLE"              value="0.0"/>
         <define name="FALCON_Z_ANGLE"              value="0.0"/>
 

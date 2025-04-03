@@ -61,7 +61,7 @@ struct falcon_sensor_t {
   bool manual;
   uint8_t mode;
   uint16_t beacon_id;
-  struct FloatRMat sensor_to_body_rotation;
+  struct FloatRMat body_to_sensor_rotation;
   struct FloatVect3 body_to_sensor_translation;
   struct FloatVect3 p_out;
   struct FloatVect3 p_in;
