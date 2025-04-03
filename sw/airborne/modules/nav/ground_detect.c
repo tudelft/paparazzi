@@ -102,19 +102,51 @@ void ground_detect_periodic()
   float vspeed_ned = stateGetSpeedNed_f()->z;
 
   // Detect free fall (to be done, rearm?)
-  // bool acceleration_trigger = (fabsf(vspeed_ned) < 5.0);
-
+  
   // Detect noise level (to be done)
 
   // Detect ground based on AND of all triggers
-  if ((fabsf(vspeed_ned) < 5.0)
-      && (spec_thrust_down > -5.0)
-      && (fabsf(accel_filter.o[0]) < 2.0)
-#if USE_GROUND_DETECT_AGL_DIST
-      && (agl_dist_valid && (agl_dist_value_filtered < GROUND_DETECT_AGL_MIN_VALUE))
-#endif
-     ) {
 
+//   if ((fabsf(vspeed_ned) < 5.0)
+//       && (spec_thrust_down > -5.0)
+//       && (fabsf(accel_filter.o[0]) < 2.0)
+// #if USE_GROUND_DETECT_AGL_DIST
+//       && (agl_dist_valid && (agl_dist_value_filtered < GROUND_DETECT_AGL_MIN_VALUE))
+// #endif
+//      ) {
+  //   counter += 1;
+  //   if (counter > GROUND_DETECT_COUNTER_TRIGGER) {
+  //     ground_detected = true;
+
+  //     if (disarm_on_not_in_flight) {
+  //       autopilot_set_motors_on(false);
+  //       disarm_on_not_in_flight = false;
+  //     }
+  //   }
+  // } else {
+  //   ground_detected = false;
+  //   counter = 0;
+  // }
+
+#if USE_GROUND_DETECT_HX711
+  bool hx711_trigger = hx711_ground_detect(); 
+#else
+  bool hx711_trigger = false;
+#endif
+
+  bool acceleration_trigger = (fabsf(vspeed_ned) < 5.0);
+  bool thrust_trigger = (spec_thrust_down > -5.0);
+  bool accel_filter_trigger = (fabsf(accel_filter.o[0]) < 2.0);
+
+#if USE_GROUND_DETECT_AGL_DIST
+  bool dist_trigger = (agl_dist_valid && (agl_dist_value_filtered < GROUND_DETECT_AGL_MIN_VALUE));
+#else
+  bool dist_trigger = false;
+#endif
+
+  int trigger_sum = hx711_trigger + acceleration_trigger + thrust_trigger + accel_filter_trigger + dist_trigger;
+
+  if (trigger_sum >= 3) {
     counter += 1;
     if (counter > GROUND_DETECT_COUNTER_TRIGGER) {
       ground_detected = true;
@@ -130,7 +162,7 @@ void ground_detect_periodic()
   }
 
 #ifdef DEBUG_GROUND_DETECT
-  float payload[7];
+  float payload[8];
   payload[0] = vspeed_ned;
   payload[1] = spec_thrust_down;
   payload[2] = accel_filter.o[0];
@@ -143,8 +175,12 @@ void ground_detect_periodic()
   payload[5] = 0;
 #endif
   payload[6] = 1.f * ground_detected;
-
-  RunOnceEvery(10, {DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 7, payload);});
+#if USE_GROUND_DETECT_HX711
+  payload[7] = 1.f * hx711_trigger;
+#else
+  payload[7] = 0;
+#endif
+  RunOnceEvery(10, {DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 8, payload);});
 #endif
 }
 
