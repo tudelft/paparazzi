@@ -35,7 +35,7 @@ extern int32_t hx711_offset;
 
 void hx711_init(void);
 void hx711_event(void);
-extern bool hx711_kill_motors(void);
+extern bool hx711_ground_detect(void);
 extern void hx711_autoset_offset(int32_t offset);
 
 #endif /* HX711_H */

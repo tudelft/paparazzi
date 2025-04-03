@@ -146,7 +146,7 @@
     </block>
     <block name="strain_landing">
       <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
-      <exception cond="hx711_kill_motors()" deroute="Holding point"/>
+      <exception cond="hx711_ground_detect()" deroute="Holding point"/>
       <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
   </blocks>

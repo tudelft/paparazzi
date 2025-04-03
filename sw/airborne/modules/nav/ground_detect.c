@@ -40,6 +40,10 @@
 #endif
 #endif
 
+#if USE_GROUND_DETECT_HX711
+#include "modules/sensors/hx711.h"
+#endif
+
 #include "pprzlink/messages.h"
 #include "modules/datalink/downlink.h"
 
@@ -98,6 +102,7 @@ void ground_detect_periodic()
   float vspeed_ned = stateGetSpeedNed_f()->z;
 
   // Detect free fall (to be done, rearm?)
+  // bool acceleration_trigger = (fabsf(vspeed_ned) < 5.0);
 
   // Detect noise level (to be done)
 
@@ -129,10 +134,10 @@ void ground_detect_periodic()
   payload[0] = vspeed_ned;
   payload[1] = spec_thrust_down;
   payload[2] = accel_filter.o[0];
-  payload[3] = stateGetAccelNed_f()->z;
+  payload[3] = stateGetAccelNed_f()->z; // log strain gauge here
 #if USE_GROUND_DETECT_AGL_DIST
   payload[4] = agl_dist_valid;
-  payload[5] = agl_dist_value_filtered;
+  payload[5] = agl_dist_value_filtered; 
 #else
   payload[4] = 0;
   payload[5] = 0;

@@ -165,7 +165,7 @@ void hx711_event(void)
 }
 
 /* Kill motors when strain gauges are above a certain threshold */
-bool hx711_kill_motors(void) {
+bool hx711_ground_detect(void) {
   for(uint8_t i = 0; i < HX711_DEVICES_NB; i++) {
     if (get_median_filter_f(&measurement_filt[i]) > hx711_kill_threshold) {
       return true;
