@@ -50,6 +50,7 @@
 struct MedianFilterFloat measurement_filt[HX711_DEVICES_NB];
 float hx711_kill_threshold = HX711_KILL_THRESHOLD;
 int32_t hx711_offset = 0;
+float hx711_meas_time = 0;
 struct hx711_dev_t {
   ioportid_t data_port;
   uint16_t data_pin;
@@ -138,8 +139,11 @@ void hx711_event(void)
       filt_val[i] = get_median_filter_f(&measurement_filt[i]);
     }
 
-    DOWNLINK_SEND_STRAIN_GAUGE(DefaultChannel, DefaultDevice, HX711_DEVICES_NB, filt_val);
-    pprz_msg_send_STRAIN_GAUGE(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, HX711_DEVICES_NB, filt_val);
+    float freq = 1 / (get_sys_time_float() - hx711_meas_time);
+    hx711_meas_time = get_sys_time_float();
+
+    DOWNLINK_SEND_STRAIN_GAUGE(DefaultChannel, DefaultDevice, freq, HX711_DEVICES_NB, filt_val);
+    pprz_msg_send_STRAIN_GAUGE(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, freq, HX711_DEVICES_NB, filt_val);
 
     hx711.measurement_ready = false;
   }
