@@ -244,7 +244,7 @@
 
     <!-- MODULE: 17 -->
     <mode name="MODULE" shortname="ONE">
-      <select cond="RCMode2() && RCAP0() && DLModeModule()" exception="HOME"/>
+      <select cond="(RCMode1() || RCMode2()) && RCAP0() && DLModeModule()" exception="HOME"/>
       <on_enter>
         <call fun="oneloop_andi_enter(false, CTRL_ANDI)"/>
       </on_enter>
@@ -271,9 +271,9 @@
       <exception cond="RCLost()" deroute="FAILSAFE"/>
     </mode>  
 
-    <!-- Attitude mode fixed wing20-->
+    <!-- Attitude mode fixed wing: 20-->
     <mode name="ATTITUDE_DIRECT_FWD" shortname="ATT_Fwd">
-      <select cond="RCMode1()"/>
+      <!-- <select cond="RCMode1()"/> -->
       <on_enter>
         <call fun=" oneloop_andi_enter(true, CTRL_ANDI)"/>
       </on_enter>
