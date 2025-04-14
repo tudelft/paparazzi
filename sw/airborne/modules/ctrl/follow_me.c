@@ -160,7 +160,7 @@ void follow_me_parse_target_pos(uint8_t *buf)
   ground_heading = DL_TARGET_POS_heading(buf);
   if(ground_heading > 360.f) {
     // Ground heading is invalid
-    ground_set = false;
+    ground_set = true;
     return;
   }
 
