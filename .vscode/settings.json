@@ -12,7 +12,9 @@
         "Makefile.*": "makefile",
         "guidance_h.h": "c",
         "stabilization_attitude.h": "c",
-        "stabilization.h": "c"
+        "stabilization.h": "c",
+        "autopilot.h": "c",
+        "alignedvector3": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",

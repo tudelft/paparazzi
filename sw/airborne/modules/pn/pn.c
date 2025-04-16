@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "generated/airframe.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
+#include "firmwares/rotorcraft/guidance/guidance_indi.h"
 #include "modules/ins/ins_int.h"
 #include "state.h"
 #include "modules/imu/imu.h"
@@ -16,8 +17,9 @@ void pn_run(void);
 void pn_start(void);
 void pn_stop(void);
 float eucld(struct FloatVect3 v);
-static void saturate(struct FloatVect3 *vector);
+static void saturate(struct FloatVect3 *vector, float max_val);
 static float time_s = 0.0f;
+uint8_t flag = 1;
 const float dt = 1.0f / 100.0f; // NOTE THIS MUST MATCH THE IMU DATASTREAM??!?
 
 void pn_init(void)
@@ -35,23 +37,27 @@ void pn_run(void)
     }
 
     // === Configurable parameters ===
-    float lambda = 100.0f;
+    float lambda = 50.0f;
     float pp_weight = 0.03f;
     float max_accel = 5.0f;
     float epsilon = 1e-3f;
+    float heading_sp = 0.0f;
 
     float radius = 2.0f;
     float angular_speed = 0.5f;  // rad/s
 
     struct FloatVect3 pos_target = {
-        .x = radius * cosf(angular_speed * time_s),
-        .y = radius * sinf(angular_speed * time_s),
-        .z = -2.0f
+        .x = radius * sinf(angular_speed * time_s),
+        .y = radius * cosf(angular_speed * time_s),
+        .z = -1.0f
     };
 
     // === Get current position and velocity ===
     struct NedCoor_f *pos_now = stateGetPositionNed_f();
     struct NedCoor_f *vel_now = stateGetSpeedNed_f();
+
+    printf("Pos Drone: [%.2f, %.2f, %.2f]\n", pos_now->x, pos_now->y, pos_now->z);
+
 
     struct FloatVect3 r = {
         .x = pos_target.x - pos_now->x,
@@ -59,17 +65,23 @@ void pn_run(void)
         .z = pos_target.z - pos_now->z
     };
 
+    struct FloatVect3 vel_target = {
+        .x = radius * angular_speed * sinf(angular_speed * time_s),
+        .y = -radius * angular_speed * cosf(angular_speed * time_s),
+        .z = 0.0f
+    };
+    
     struct FloatVect3 r_dot = {
-        .x = -vel_now->x,
-        .y = -vel_now->y,
-        .z = -vel_now->z
+        .x = vel_target.x - vel_now->x,
+        .y = vel_target.y - vel_now->y,
+        .z = vel_target.z - vel_now->z
     };
 
     float r_norm = eucld(r);
     float r_dot_norm = eucld(r_dot);
     float t_go = r_norm / (r_dot_norm + epsilon);
 
-    // printf("[pn] Time: %.2fs | Target Pos: [%.2f, %.2f, %.2f]\n", time_s, pos_target.x, pos_target.y, pos_target.z);
+    printf("[pn] Time: %.2fs | Target Pos: [%.2f, %.2f, %.2f]\n", time_s, pos_target.x, pos_target.y, pos_target.z);
     // printf("[pn] Relative r = [%.2f, %.2f, %.2f], norm = %.2f\n", r.x, r.y, r.z, r_norm);
     // printf("[pn] Relative r_dot = [%.2f, %.2f, %.2f], norm = %.2f\n", r_dot.x, r_dot.y, r_dot.z, r_dot_norm);
     // printf("[pn] Time-to-go t_go = %.3f s\n", t_go);
@@ -86,13 +98,20 @@ void pn_run(void)
         .z = lambda * ((1 - pp_weight) * term1.z + pp_weight * r.z)
     };
 
-    // printf("[pn] Unconstrained FRPN accel = [%.2f, %.2f, %.2f]\n", acc_cmd.x, acc_cmd.y, acc_cmd.z);
-    // saturate(&acc_cmd);
-    // printf("[pn] Saturated accel = [%.2f, %.2f, %.2f]\n", acc_cmd.x, acc_cmd.y, acc_cmd.z);
+    printf("[pn] Unconstrained FRPN accel = [%.2f, %.2f, %.2f]\n", acc_cmd.x, acc_cmd.y, acc_cmd.z);
+    saturate(&acc_cmd, max_accel);
+    printf("[pn] Saturated accel = [%.2f, %.2f, %.2f]\n", acc_cmd.x, acc_cmd.y, acc_cmd.z);
 
-    guidance_h_set_acc(acc_cmd.x, acc_cmd.y); // horizontal
-    // printf("[pn] FRPN accel applied - horizontal: [%.2f, %.2f], vertical: %.2f\n",
-    //        acc_cmd.x, acc_cmd.y, acc_cmd.z);
+    // guidance_h_set_acc(acc_cmd.x, acc_cmd.y); // horizontal
+
+    AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, flag, &acc_cmd);
+
+    // struct StabilizationSetpoint sp = guidance_indi_run(&acc_cmd, heading_sp);
+
+    // struct Int32Quat q_des = stab_sp_to_quat_i(&sp);
+    // bool in_flight = autopilot_in_flight();
+    // stabilization_indi_attitude_run(q_des, in_flight);
+
     
     printf("Distance: %.3f m\n", r_norm);
 
@@ -114,11 +133,14 @@ float eucld(struct FloatVect3 v)
     return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
-static void saturate(struct FloatVect3 *vector)
+// Saturate the vector by its magnitude while preserving its direction.
+static void saturate(struct FloatVect3 *vector, float max_val)
 {
-    // Example saturation to max 2.0 for each component
-    float max_val = 5.0f;
-    if (vector->x > max_val) vector->x = max_val;
-    if (vector->y > max_val) vector->y = max_val;
-    if (vector->z > max_val) vector->z = max_val;
+    float mag = eucld(*vector);
+    if (mag > max_val) {
+        float scale = max_val / mag;
+        vector->x *= scale;
+        vector->y *= scale;
+        vector->z *= scale;
+    }
 }

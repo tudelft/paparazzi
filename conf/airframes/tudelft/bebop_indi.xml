@@ -12,6 +12,7 @@
     <target name="nps" board="pc">
       <define name="STABILIZATION_INDI_G2_R" value="0.0"/>
       <module name="fdm" type="jsbsim"/>
+      <!-- <module name="fdm" type="gazebo"/> -->
       <module name="udp"/>
     </target>
 
@@ -31,6 +32,7 @@
       <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
     </module>
     <module name="ins" type="extended"/>
+    <module name="pn"/>
     <module name="guidance" type="indi">
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500.0"/>
     </module>
