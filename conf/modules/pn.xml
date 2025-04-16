@@ -1,0 +1,18 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+ 
+<module name="pn">
+<doc>
+    <description>
+    Guidance controller for rotorcraft 
+    </description>
+</doc>
+<header>
+    <file name="pn.h"/>
+</header>
+<init fun="pn_init()"/>
+<periodic fun="pn_run()" freq="100" start="pn_start()"
+ 		    stop="pn_stop()" autorun="FALSE"/>
+<makefile target="ap|nps">
+    <file name="pn.c"/>
+</makefile>
+</module>

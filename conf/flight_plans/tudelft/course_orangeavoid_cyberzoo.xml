@@ -6,7 +6,17 @@
     #include "modules/energy/electrical.h"
     #include "modules/radio_control/radio_control.h"
     #include "modules/ahrs/ahrs.h"
-    #define NPS_GAZEBO_WORLD "cyberzoo_orange_poles.world"
+    #include "modules/pn/pn.h"
+    #define NPS_GAZEBO_WORLD "cyberzoo.world"
+#include "autopilot.h"
+inline void setNav(void){
+  autopilot_mode_auto2 = AP_MODE_NAV;
+  autopilot_static_set_mode(AP_MODE_NAV);
+}
+inline void setGuided(void){
+  autopilot_mode_auto2 = AP_MODE_GUIDED;
+  autopilot_static_set_mode(AP_MODE_GUIDED);
+}
 </header>
   <waypoints>
     <waypoint lat="51.990631" lon="4.376796" name="HOME"/>
@@ -39,6 +49,9 @@
       <corner name="_OZ4"/>
     </sector>
   </sectors>
+  <modules>
+   	<module name="pn"/>
+  </modules>
   <exceptions>
     <!-- GPS Lost (KILL Motors) -->
     <exception cond="((GpsIsLost() == true) @AND
@@ -104,11 +117,15 @@
       <stay wp="STDBY"/>
     </block>
     <block key="g" name="START" strip_button="Go" strip_icon="lookfore.png">
-      <call_once fun="NavSetWaypointHere(WP_GOAL)"/>
-      <stay wp="GOAL"/>
+      <call_once fun="setGuided()"/>
+      <call_once fun="pn_start()"/>
+      <while>
+        <call fun="pn_run"/>
+      </while>
     </block>
     <block name="STOP">
-      <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
+      <call_once fun="pn_stop()"/>
+      <call_once fun="setNav()"/>
       <stay wp="STDBY"/>
     </block>
     <block name="RETREAT">

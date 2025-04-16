@@ -9,7 +9,15 @@
                 "limitSymbolsToIncludedHeaders": true
             },
             "includePath": [
-                "${workspaceFolder}"
+                "${workspaceFolder}",
+                "${workspaceFolder}/sw/airborne/firmwares/rotorcraft",
+                "${workspaceFolder}/sw/airborne/test/ahrs",
+                "${workspaceFolder}/sw/airborne",
+                "${workspaceFolder}/sw/airborne/modules/digital_cam/catia",
+                "${workspaceFolder}/sw/include",
+                "${workspaceFolder}/sw/airborne/arch/chibios",
+                "${workspaceFolder}/sw/ext/chibios/demos/various/RT-ARMCM4-USELIB/rt",
+                "${workspaceFolder}/var/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/arm-none-eabi-gcc",
