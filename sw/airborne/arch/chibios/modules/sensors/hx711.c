@@ -33,7 +33,7 @@
 #include BOARD_CONFIG
 
 #ifndef HX711_DEVICES_NB
-#define HX711_DEVICES_NB 2
+#define HX711_DEVICES_NB 4
 #endif
 
 #ifndef HX711_GAIN
@@ -167,7 +167,7 @@ void hx711_event(void)
 /* Kill motors when strain gauges are above a certain threshold */
 bool hx711_ground_detect(void) {
   for(uint8_t i = 0; i < HX711_DEVICES_NB; i++) {
-    if (get_median_filter_f(&measurement_filt[i]) > hx711_kill_threshold) {
+    if (fabsf(get_median_filter_f(&measurement_filt[i])) > hx711_kill_threshold) {
       return true;
     } 
   }
