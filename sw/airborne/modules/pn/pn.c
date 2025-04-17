@@ -1,146 +1,197 @@
+// pn.c
+
+#include "pn.h"
 #include <stdio.h>
-#include "generated/airframe.h"
-#include "firmwares/rotorcraft/guidance/guidance_h.h"
-#include "firmwares/rotorcraft/guidance/guidance_indi.h"
-#include "modules/ins/ins_int.h"
+#include <math.h>
 #include "state.h"
-#include "modules/imu/imu.h"
-#include "mcu_periph/sys_time.h"
 #include "autopilot.h"
-#include "stabilization/stabilization_attitude_ref_quat_int.h"
-#include "firmwares/rotorcraft/stabilization.h"
-#include "filters/low_pass_filter.h"
 #include "modules/core/abi.h"
 
-void pn_init(void);
-void pn_run(void);
-void pn_start(void);
-void pn_stop(void);
-float eucld(struct FloatVect3 v);
-static void saturate(struct FloatVect3 *vector, float max_val);
+/*---------------------------------------------------------------------------*/
+/*                            Configuration                                  */
+/*---------------------------------------------------------------------------*/
+static const float DT        = 1.0f/50.0f;
+static const float LAMBDA    = 50.0f;
+static const float PP_WEIGHT = 0.03f;
+static const float MAX_ACCEL = 100.0f;
+static const float EPSILON   = 1e-3f;
+static const float K2        = 5.1f;
+
+
+/* Synthetic circular target */
+static const float RADIUS        = 2.0f;
+static const float ANGULAR_SPEED = 0.5f;   // rad/s
+static const float V_R           = -5.0f;  // closing speed bias (GRTPN only)
+
+/*---------------------------------------------------------------------------*/
+/*                            State & Mode                                  */
+/*---------------------------------------------------------------------------*/
 static float time_s = 0.0f;
-uint8_t flag = 1;
-const float dt = 1.0f / 100.0f; // NOTE THIS MUST MATCH THE IMU DATASTREAM??!?
+static pn_mode_t cur_mode = PN_MODE_GRTPN;
+static struct Proportional_nav pn_log;
 
-void pn_init(void)
-{
-    printf("[pn] pn_init() called\n");
+/*---------------------------------------------------------------------------*/
+/*                         Internal Helpers                                 */
+/*---------------------------------------------------------------------------/
+/** Short for ||v|| */
+#define V3_NORM(v) float_vect3_norm(&(v))
+
+/** In‐place clamp to max_val */
+static void saturate3(struct FloatVect3 *v, float max_val) {
+  float n = float_vect3_norm(v);
+  if (n > max_val) {
+    float scale = max_val / n;
+    /* v = v * scale */
+    float_vect_smul(&v->x, &v->x, scale, 3);
+  }
 }
 
-void pn_run(void)
-{
-    time_s += dt;
-
-    if (guidance_h.mode != GUIDANCE_H_MODE_GUIDED) {
-        printf("[pn] Not in GUIDED mode, skipping pursuit.\n");
-        return;
-    }
-
-    // === Configurable parameters ===
-    float lambda = 50.0f;
-    float pp_weight = 0.03f;
-    float max_accel = 5.0f;
-    float epsilon = 1e-3f;
-    float heading_sp = 0.0f;
-
-    float radius = 2.0f;
-    float angular_speed = 0.5f;  // rad/s
-
-    struct FloatVect3 pos_target = {
-        .x = radius * sinf(angular_speed * time_s),
-        .y = radius * cosf(angular_speed * time_s),
-        .z = -1.0f
-    };
-
-    // === Get current position and velocity ===
-    struct NedCoor_f *pos_now = stateGetPositionNed_f();
-    struct NedCoor_f *vel_now = stateGetSpeedNed_f();
-
-    printf("Pos Drone: [%.2f, %.2f, %.2f]\n", pos_now->x, pos_now->y, pos_now->z);
-
-
-    struct FloatVect3 r = {
-        .x = pos_target.x - pos_now->x,
-        .y = pos_target.y - pos_now->y,
-        .z = pos_target.z - pos_now->z
-    };
-
-    struct FloatVect3 vel_target = {
-        .x = radius * angular_speed * sinf(angular_speed * time_s),
-        .y = -radius * angular_speed * cosf(angular_speed * time_s),
-        .z = 0.0f
-    };
-    
-    struct FloatVect3 r_dot = {
-        .x = vel_target.x - vel_now->x,
-        .y = vel_target.y - vel_now->y,
-        .z = vel_target.z - vel_now->z
-    };
-
-    float r_norm = eucld(r);
-    float r_dot_norm = eucld(r_dot);
-    float t_go = r_norm / (r_dot_norm + epsilon);
-
-    printf("[pn] Time: %.2fs | Target Pos: [%.2f, %.2f, %.2f]\n", time_s, pos_target.x, pos_target.y, pos_target.z);
-    // printf("[pn] Relative r = [%.2f, %.2f, %.2f], norm = %.2f\n", r.x, r.y, r.z, r_norm);
-    // printf("[pn] Relative r_dot = [%.2f, %.2f, %.2f], norm = %.2f\n", r_dot.x, r_dot.y, r_dot.z, r_dot_norm);
-    // printf("[pn] Time-to-go t_go = %.3f s\n", t_go);
-
-    struct FloatVect3 term1 = {
-        .x = (r.x + r_dot.x * t_go) / (t_go * t_go),
-        .y = (r.y + r_dot.y * t_go) / (t_go * t_go),
-        .z = (r.z + r_dot.z * t_go) / (t_go * t_go)
-    };
-
-    struct FloatVect3 acc_cmd = {
-        .x = lambda * ((1 - pp_weight) * term1.x + pp_weight * r.x),
-        .y = lambda * ((1 - pp_weight) * term1.y + pp_weight * r.y),
-        .z = lambda * ((1 - pp_weight) * term1.z + pp_weight * r.z)
-    };
-
-    printf("[pn] Unconstrained FRPN accel = [%.2f, %.2f, %.2f]\n", acc_cmd.x, acc_cmd.y, acc_cmd.z);
-    saturate(&acc_cmd, max_accel);
-    printf("[pn] Saturated accel = [%.2f, %.2f, %.2f]\n", acc_cmd.x, acc_cmd.y, acc_cmd.z);
-
-    // guidance_h_set_acc(acc_cmd.x, acc_cmd.y); // horizontal
-
-    AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, flag, &acc_cmd);
-
-    // struct StabilizationSetpoint sp = guidance_indi_run(&acc_cmd, heading_sp);
-
-    // struct Int32Quat q_des = stab_sp_to_quat_i(&sp);
-    // bool in_flight = autopilot_in_flight();
-    // stabilization_indi_attitude_run(q_des, in_flight);
-
-    
-    printf("Distance: %.3f m\n", r_norm);
-
+/** Record last outputs */
+static void pn_info(const struct FloatVect3 *pt,
+                    const struct FloatVect3 *vt,
+                    const struct FloatVect3 *ac) {
+  pn_log.pos_target    = *pt;
+  pn_log.vel_target    = *vt;
+  pn_log.accel_command = *ac;
 }
 
+/*---------------------------------------------------------------------------*/
+/*                      Individual Pursuit Laws                              */
+/*---------------------------------------------------------------------------*/
+static void run_frpn(void) {
+  struct FloatVect3 pos_t, vel_t, r, r_dot, tmp, term1, part, acc;
+  struct NedCoor_f *pos_n = stateGetPositionNed_f();
+  struct NedCoor_f *vel_n = stateGetSpeedNed_f();
 
-void pn_start(void)
-{
-    printf("[pn] pn_start() called\n");
+  /* --- synthetic circular trajectory --- */
+  pos_t.x = RADIUS * sinf(ANGULAR_SPEED * time_s);
+  pos_t.y = RADIUS * cosf(ANGULAR_SPEED * time_s);
+  pos_t.z = -4.0f;
+  vel_t.x =  RADIUS * ANGULAR_SPEED * cosf(ANGULAR_SPEED * time_s);
+  vel_t.y = -RADIUS * ANGULAR_SPEED * sinf(ANGULAR_SPEED * time_s);
+  vel_t.z =  0.0f;
+
+  /* --- relative vectors r = pos_t - pos_n, r_dot = vel_t - vel_n --- */
+  VECT3_ASSIGN(r,
+    pos_t.x - pos_n->x,
+    pos_t.y - pos_n->y,
+    pos_t.z - pos_n->z);
+  VECT3_ASSIGN(r_dot,
+    vel_t.x - vel_n->x,
+    vel_t.y - vel_n->y,
+    vel_t.z - vel_n->z);
+
+  float R    = V3_NORM(r);
+  float Rdot = V3_NORM(r_dot);
+  float t_go = R / (Rdot + EPSILON);
+
+  /* FRPN term1 = (r + r_dot * t_go) / t_go^2 */
+  float_vect_smul(&tmp.x, &r_dot.x, t_go, 3);      // tmp = r_dot * t_go
+  float_vect_add(&tmp.x, &r.x, 3);                // tmp += r
+  float_vect_smul(&term1.x, &tmp.x, 1.0f/(t_go*t_go), 3);
+
+  /* blend & scale */
+  float_vect_smul(&part.x,    &r.x,       PP_WEIGHT,    3);
+  float_vect_smul(&tmp.x,     &term1.x, 1-PP_WEIGHT,   3);
+  float_vect_sum(&acc.x, &tmp.x, &part.x, 3);
+  float_vect_smul(&acc.x,     &acc.x,     LAMBDA,       3);
+
+  saturate3(&acc, MAX_ACCEL);
+  AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc);
+  pn_info(&pos_t, &vel_t, &acc);
 }
 
-void pn_stop(void)
-{
-    printf("[pn] pn_stop() called\n");
+static void run_grtpn(void) {
+  struct FloatVect3 pos_t, vel_t, r, r_dot, Ir, cross, phi_dot, glob, acc;
+  struct NedCoor_f *pos_n = stateGetPositionNed_f();
+  struct NedCoor_f *vel_n = stateGetSpeedNed_f();
+
+  /* --- same circular target, slightly different z --- */
+  pos_t.x = RADIUS * sinf(ANGULAR_SPEED * time_s);
+  pos_t.y = RADIUS * cosf(ANGULAR_SPEED * time_s);
+  pos_t.z = -4.0f;
+  vel_t.x =  RADIUS * ANGULAR_SPEED * cosf(ANGULAR_SPEED * time_s);
+  vel_t.y = -RADIUS * ANGULAR_SPEED * sinf(ANGULAR_SPEED * time_s);
+  vel_t.z =  0.0f;
+
+  VECT3_ASSIGN(r,
+    pos_t.x - pos_n->x,
+    pos_t.y - pos_n->y,
+    pos_t.z - pos_n->z);
+  VECT3_ASSIGN(r_dot,
+    vel_t.x - vel_n->x,
+    vel_t.y - vel_n->y,
+    vel_t.z - vel_n->z);
+
+  float R  = V3_NORM(r);
+  float Vc = V3_NORM(r_dot);
+
+  /* Ir = unit(r) */
+  if (R > EPSILON) {
+    Ir.x = r.x / R;  Ir.y = r.y / R;  Ir.z = r.z / R;
+  } else {
+    Ir.x = Ir.y = Ir.z = 0.0f;
+  }
+
+  /* φ̇ = (Ir × r_dot) / R² */
+  cross.x = Ir.y * r_dot.z - Ir.z * r_dot.y;
+  cross.y = Ir.z * r_dot.x - Ir.x * r_dot.z;
+  cross.z = Ir.x * r_dot.y - Ir.y * r_dot.x;
+  float_vect_smul(&phi_dot.x, &cross.x, 1.0f/(R*R), 3);
+
+  /* α = k2*(Vc - v_r) + r_dot·φ̇ */
+  float dot = float_vect_dot_product(&r_dot.x, &phi_dot.x, 3);
+  float alpha = K2 * (Vc - V_R) + dot;
+
+  /* global term = Ir * α */
+  float_vect_smul(&glob.x, &Ir.x, alpha, 3);
+
+  /* local = (φ̇ × Ir) * (λ * Vc) */
+  cross.x = phi_dot.y*Ir.z - phi_dot.z*Ir.y;
+  cross.y = phi_dot.z*Ir.x - phi_dot.x*Ir.z;
+  cross.z = phi_dot.x*Ir.y - phi_dot.y*Ir.x;
+  float_vect_smul(&cross.x, &cross.x, LAMBDA*Vc, 3);
+
+  /* combine & send */
+  float_vect_sum(&acc.x, &glob.x, &cross.x, 3);
+  saturate3(&acc, MAX_ACCEL);
+
+  AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc);
+  pn_info(&pos_t, &vel_t, &acc);
 }
 
-float eucld(struct FloatVect3 v)
-{
-    return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+/*---------------------------------------------------------------------------*/
+/*                            Public API                                     */
+/*---------------------------------------------------------------------------*/
+void pn_init(void) {
+  printf("[pn] init\n");
 }
 
-// Saturate the vector by its magnitude while preserving its direction.
-static void saturate(struct FloatVect3 *vector, float max_val)
-{
-    float mag = eucld(*vector);
-    if (mag > max_val) {
-        float scale = max_val / mag;
-        vector->x *= scale;
-        vector->y *= scale;
-        vector->z *= scale;
-    }
+void pn_start(void) {
+  time_s = 0.0f;
+  printf("[pn] start\n");
+}
+
+void pn_stop(void) {
+  printf("[pn] stop\n");
+}
+
+void pn_set_mode(pn_mode_t m) {
+  cur_mode = m;
+}
+
+void pn_run(void) {
+  time_s += DT;
+  if (guidance_h.mode != GUIDANCE_H_MODE_GUIDED) {
+    return;
+  }
+  if (cur_mode == PN_MODE_FRPN) {
+    run_frpn();
+  } else {
+    run_grtpn();
+  }
+}
+
+const struct Proportional_nav *pn_info_logger(void) {
+  return &pn_log;
 }

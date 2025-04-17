@@ -23,11 +23,15 @@
     <module name="gps" type="ublox"/>
     <module name="stabilization" type="indi_simple"/>
     <module name="ins" type="ekf2"/>
+    <module name="pn"/>
+    <module name="guidance" type="indi">
+      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500.0"/>
+    </module>
     
     <module name="air_data"/>
     <module name="gps" type="ubx_ucenter"/>
     <module name="logger_file">
-      <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000"/>
+      <define name="LOGGER_FILE_PATH" value="/home/merlijn/Desktop/log_files"/>
     </module>
   </firmware>
   

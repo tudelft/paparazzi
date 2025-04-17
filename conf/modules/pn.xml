@@ -10,7 +10,7 @@
     <file name="pn.h"/>
 </header>
 <init fun="pn_init()"/>
-<periodic fun="pn_run()" freq="100" start="pn_start()"
+<periodic fun="pn_run()" freq="50" start="pn_start()"
  		    stop="pn_stop()" autorun="FALSE"/>
 <makefile target="ap|nps">
     <file name="pn.c"/>

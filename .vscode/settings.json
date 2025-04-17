@@ -14,7 +14,12 @@
         "stabilization_attitude.h": "c",
         "stabilization.h": "c",
         "autopilot.h": "c",
-        "alignedvector3": "c"
+        "alignedvector3": "c",
+        "stabilization_attitude_ref_quat_int.h": "c",
+        "low_pass_filter.h": "c",
+        "ins_int.h": "c",
+        "logger_file.h": "c",
+        "guidance_indi.h": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
