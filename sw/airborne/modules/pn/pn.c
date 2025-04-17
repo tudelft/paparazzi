@@ -27,7 +27,7 @@ static const float V_R           = -5.0f;  // closing speed bias (GRTPN only)
 /*                            State & Mode                                  */
 /*---------------------------------------------------------------------------*/
 static float time_s = 0.0f;
-static pn_mode_t cur_mode = PN_MODE_GRTPN;
+static pn_mode_t cur_mode = PN_MODE_FRPN;
 static struct Proportional_nav pn_log;
 
 /*---------------------------------------------------------------------------*/
