@@ -44,13 +44,13 @@
       <field name="value" value="Scale(throttle, 1000, 2000)"/>
     </message-->
     <message class="ground" name="DL_SETTING" on_event="button11 || button10">
-      <field name="index" value="IndexOfSetting(autopilot.kill_throttle)"/>
+      <field name="index" value="IndexOfSetting('autopilot.kill_throttle')"/>
       <field name="value" value="mode"/>
     </message>
 
 
     <message class="ground" name="JUMP_TO_BLOCK" on_event="shoot && button7">
-      <field name="block_id" value="IndexOfBlock('land here')"/>
+      <field name="block_id" value="IndexOfBlock('Land')"/>
     </message>
     <!--message class="ground" name="JUMP_TO_BLOCK" on_event="shoot && button8">
       <field name="block_id" value="IndexOfBlock('Joystick')"/>

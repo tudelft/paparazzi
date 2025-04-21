@@ -12,7 +12,7 @@ import shutil
 import datetime
 import subprocess
 import sys
-import lsb_release
+import distro
 
 lib_path = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sw', 'lib', 'python'))
 sys.path.append(lib_path)
@@ -22,10 +22,10 @@ from paparazzi_health import PaparazziOverview
 
 import xml.etree.ElementTree
 
-release = lsb_release.get_distro_information()
+release = distro.lsb_release_info()
 isLegacy = False
-if release['ID'] == 'Ubuntu':
-    if release['RELEASE'] == '18.04' or release['RELEASE'] == '16.04':
+if release['distributor_id'] == 'Ubuntu':
+    if release['release'] == '18.04' or release['release'] == '16.04':
         isLegacy = True
 
 

@@ -1,4 +1,4 @@
-<!-- PlayStation 4 gamepad
+<!-- PlayStation 4/5 gamepad
 
  It has 6 axes:
   axis 0: LeftStickHorizontal
@@ -83,9 +83,9 @@
       <field name="block_id" value="IndexOfBlock('Takeoff')"/>
     </message>
 
-    <!-- go to "land here" block if in AUTO2 and pressing down on dpad -->
+    <!-- go to "Land" block if in AUTO2 and pressing down on dpad -->
     <message class="ground" name="JUMP_TO_BLOCK" on_event="(mode > 1) && HatDown(dpad)">
-      <field name="block_id" value="IndexOfBlock('land here')"/>
+      <field name="block_id" value="IndexOfBlock('Land')"/>
     </message>
 
     <!-- resurrect throttle if throttle is 0 and R1 button is pressed -->
