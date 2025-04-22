@@ -251,9 +251,9 @@ void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf) {
     pos_target.x  = DL_REMOTE_GPS_LOCAL_enu_y(buf); 
     pos_target.y  = DL_REMOTE_GPS_LOCAL_enu_x(buf);
     pos_target.z  = -DL_REMOTE_GPS_LOCAL_enu_z(buf);
-    vel_target.x  = DL_REMOTE_GPS_LOCAL_enu_xd(buf);
-    vel_target.y  = DL_REMOTE_GPS_LOCAL_enu_yd(buf);
-    vel_target.z  = DL_REMOTE_GPS_LOCAL_enu_zd(buf);
+    vel_target.x  = DL_REMOTE_GPS_LOCAL_enu_yd(buf);
+    vel_target.y  = DL_REMOTE_GPS_LOCAL_enu_xd(buf);
+    vel_target.z  = -DL_REMOTE_GPS_LOCAL_enu_zd(buf);
 
     printf("[pn] got target: x=%.2f y=%.2f z=%.2f\n",
           pos_target.x, pos_target.y, pos_target.z);
