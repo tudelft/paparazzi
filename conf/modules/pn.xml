@@ -18,6 +18,6 @@
     <configure name="MODEM_DEV" default="UDP0" case="upper|lower"/>
     <file name="pn.c"/>
     <file name="pprz_transport.c" dir="pprzlink/src"/>
-    <define name="DOWNLINK_DEVICE" value="$(MODEM_DEV_LOWER)"/>
+        <define name="DOWNLINK_DEVICE" value="$(MODEM_DEV_LOWER)"/>
 </makefile>
 </module>

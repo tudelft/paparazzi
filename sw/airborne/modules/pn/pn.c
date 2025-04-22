@@ -26,6 +26,12 @@ uint8_t pn_msg_buf[256] __attribute__((aligned));  ///< The InterMCU message buf
 
 void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf);
 
+static struct FloatVect3 pos_target = {0,0,-3};
+static struct FloatVect3 vel_target = {0,0,0};
+
+/** time (in frames) since last target message */
+static int time_since_msg = 0;
+
 
 /*---------------------------------------------------------------------------*/
 /*                            Configuration                                  */
@@ -36,11 +42,6 @@ static const float PP_WEIGHT = 0.03f;
 static const float MAX_ACCEL = 10.0f;
 static const float EPSILON   = 1e-3f;
 static const float K2        = 5.1f;
-
-
-/* Synthetic circular target */
-static const float RADIUS        = 2.0f;
-static const float ANGULAR_SPEED = 0.3f;   // rad/s
 static const float V_R           = -5.0f;  // closing speed bias (GRTPN only)
 
 /* acceleration filter time constant (seconds) */
@@ -62,8 +63,7 @@ static struct Proportional_nav pn_log;
 
 /*---------------------------------------------------------------------------*/
 /*                         Internal Helpers                                 */
-/*---------------------------------------------------------------------------/
-/** Short for ||v|| */
+/*---------------------------------------------------------------------------*/
 #define V3_NORM(v) float_vect3_norm(&(v))
 
 /** In‐place clamp to max_val */
@@ -89,17 +89,11 @@ static void pn_info(const struct FloatVect3 *pt,
 /*                      Individual Pursuit Laws                              */
 /*---------------------------------------------------------------------------*/
 static void run_frpn(void) {
-    struct FloatVect3 pos_t, vel_t, r, r_dot, tmp, term1, part, acc;
+    struct FloatVect3 r, r_dot, tmp, term1, part, acc;
     struct NedCoor_f *pos_n = stateGetPositionNed_f();
     struct NedCoor_f *vel_n = stateGetSpeedNed_f();
-
-    /* --- synthetic circular trajectory --- */
-    pos_t.x = RADIUS * sinf(ANGULAR_SPEED * time_s);
-    pos_t.y = RADIUS * cosf(ANGULAR_SPEED * time_s);
-    pos_t.z = -2.0f;
-    vel_t.x =  RADIUS * ANGULAR_SPEED * cosf(ANGULAR_SPEED * time_s);
-    vel_t.y = -RADIUS * ANGULAR_SPEED * sinf(ANGULAR_SPEED * time_s);
-    vel_t.z =  0.0f;
+    struct FloatVect3 pos_t = pos_target;
+    struct FloatVect3 vel_t = vel_target;
 
     /* --- relative vectors r = pos_t - pos_n, r_dot = vel_t - vel_n --- */
     VECT3_ASSIGN(r,
@@ -138,17 +132,12 @@ static void run_frpn(void) {
 }
 
 static void run_grtpn(void) {
-    struct FloatVect3 pos_t, vel_t, r, r_dot, Ir, cross, phi_dot, glob, acc;
+    struct FloatVect3 r, r_dot, Ir, cross, phi_dot, glob, acc;
     struct NedCoor_f *pos_n = stateGetPositionNed_f();
     struct NedCoor_f *vel_n = stateGetSpeedNed_f();
 
-    /* --- same circular target, slightly different z --- */
-    pos_t.x = RADIUS * sinf(ANGULAR_SPEED * time_s);
-    pos_t.y = RADIUS * cosf(ANGULAR_SPEED * time_s);
-    pos_t.z = -2.0f;
-    vel_t.x =  RADIUS * ANGULAR_SPEED * cosf(ANGULAR_SPEED * time_s);
-    vel_t.y = -RADIUS * ANGULAR_SPEED * sinf(ANGULAR_SPEED * time_s);
-    vel_t.z =  0.0f;
+    struct FloatVect3 pos_t = pos_target;
+    struct FloatVect3 vel_t = vel_target;
 
     VECT3_ASSIGN(r,
         pos_t.x - pos_n->x,
@@ -235,7 +224,6 @@ void pn_event(void)
   /* Parse incoming bytes */
   if (target_message.enabled) {
     pprz_check_and_parse(target_message.device, &target_message.transport, pn_msg_buf, &target_message.msg_available);
-    //PRINT("%d", pninfo.msg_available);
 
     if (target_message.msg_available) {
       uint8_t class_id = pprzlink_get_msg_class_id(pn_msg_buf);
@@ -259,18 +247,16 @@ void pn_run(void) {
   }
 }
 
-void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf)
-{
+void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf) {
+    pos_target.x  = DL_REMOTE_GPS_LOCAL_enu_y(buf); 
+    pos_target.y  = DL_REMOTE_GPS_LOCAL_enu_x(buf);
+    pos_target.z  = -DL_REMOTE_GPS_LOCAL_enu_z(buf);
+    vel_target.x  = DL_REMOTE_GPS_LOCAL_enu_xd(buf);
+    vel_target.y  = DL_REMOTE_GPS_LOCAL_enu_yd(buf);
+    vel_target.z  = DL_REMOTE_GPS_LOCAL_enu_zd(buf);
 
-  printf("Parsing message \n");
-  //if (DL_REMOTE_GPS_LOCAL_ac_id(buf) != AC_ID){return; }
-  // pos_target.x = DL_REMOTE_GPS_LOCAL_enu_x(buf);
-  // pos_target.y = DL_REMOTE_GPS_LOCAL_enu_y(buf);
-  // pos_target.z = DL_REMOTE_GPS_LOCAL_enu_z(buf);
-  // speed_target.x = DL_REMOTE_GPS_LOCAL_enu_xd(buf);
-  // speed_target.y = DL_REMOTE_GPS_LOCAL_enu_yd(buf);
-  // speed_target.z = DL_REMOTE_GPS_LOCAL_enu_zd(buf);
-  //PRINT("%f", pos_target.x);
+    printf("[pn] got target: x=%.2f y=%.2f z=%.2f\n",
+          pos_target.x, pos_target.y, pos_target.z);
 }
 
 const struct Proportional_nav *pn_info_logger(void) {
