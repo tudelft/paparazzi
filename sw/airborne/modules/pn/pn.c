@@ -7,6 +7,24 @@
 #include "autopilot.h"
 #include "modules/core/abi.h"
 #include "filters/low_pass_filter.h"
+#include "pprzlink/pprz_transport.h"
+#include "pprzlink/pprzlink_device.h"
+#include "pprzlink/intermcu_msg.h"
+
+/*---------------------------------------------------------------------------*/
+/*                            External Messaging                             */
+/*---------------------------------------------------------------------------*/
+
+struct pnmessage target_message = {
+  .device = (&((DOWNLINK_DEVICE).device)),
+  .enabled = true,
+  .msg_available = false,
+};
+
+uint8_t pn_msg_buf[256] __attribute__((aligned));  ///< The InterMCU message buffer
+
+void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf);
+
 
 /*---------------------------------------------------------------------------*/
 /*                            Configuration                                  */
@@ -188,6 +206,9 @@ static void run_grtpn(void) {
 /*---------------------------------------------------------------------------*/
 void pn_init(void) {
     printf("[pn] init\n");
+
+    pprz_transport_init(&target_message.transport);
+
     /* initialize filters with zero initial value */
     init_first_order_low_pass(&acc_filt_x, ACC_FILT_TAU, DT, 0.0f);
     init_first_order_low_pass(&acc_filt_y, ACC_FILT_TAU, DT, 0.0f);
@@ -207,6 +228,24 @@ void pn_set_mode(pn_mode_t m) {
   cur_mode = m;
 }
 
+
+void pn_event(void)
+{
+  /* Parse incoming bytes */
+  if (target_message.enabled) {
+    pprz_check_and_parse(target_message.device, &target_message.transport, pn_msg_buf, &target_message.msg_available);
+    //PRINT("%d", pninfo.msg_available);
+
+    if (target_message.msg_available) {
+      uint8_t class_id = pprzlink_get_msg_class_id(pn_msg_buf);
+      
+      target_message.time_since_last_frame = 0;
+      dl_parse_msg(target_message.device, &target_message.transport.trans_tx, pn_msg_buf);
+    }
+    target_message.msg_available = false;
+  }
+}
+
 void pn_run(void) {
   time_s += DT;
   if (guidance_h.mode != GUIDANCE_H_MODE_GUIDED) {
@@ -217,6 +256,20 @@ void pn_run(void) {
   } else {
     run_grtpn();
   }
+}
+
+void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf)
+{
+
+  printf("Parsing message \n");
+  //if (DL_REMOTE_GPS_LOCAL_ac_id(buf) != AC_ID){return; }
+  // pos_target.x = DL_REMOTE_GPS_LOCAL_enu_x(buf);
+  // pos_target.y = DL_REMOTE_GPS_LOCAL_enu_y(buf);
+  // pos_target.z = DL_REMOTE_GPS_LOCAL_enu_z(buf);
+  // speed_target.x = DL_REMOTE_GPS_LOCAL_enu_xd(buf);
+  // speed_target.y = DL_REMOTE_GPS_LOCAL_enu_yd(buf);
+  // speed_target.z = DL_REMOTE_GPS_LOCAL_enu_zd(buf);
+  //PRINT("%f", pos_target.x);
 }
 
 const struct Proportional_nav *pn_info_logger(void) {

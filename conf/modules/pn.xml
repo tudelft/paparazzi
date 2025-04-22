@@ -12,7 +12,12 @@
 <init fun="pn_init()"/>
 <periodic fun="pn_run()" freq="50" start="pn_start()"
  		    stop="pn_stop()" autorun="FALSE"/>
+<event fun="pn_event()"/>
+<datalink message="REMOTE_GPS_LOCAL" fun="pn_parse_REMOTE_GPS_LOCAL(buf)"/>
 <makefile target="ap|nps">
+    <configure name="MODEM_DEV" default="UDP0" case="upper|lower"/>
     <file name="pn.c"/>
+    <file name="pprz_transport.c" dir="pprzlink/src"/>
+    <define name="DOWNLINK_DEVICE" value="$(MODEM_DEV_LOWER)"/>
 </makefile>
 </module>
