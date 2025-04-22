@@ -235,6 +235,11 @@
         <!-- <call_once fun="NavStartDetectGround()"/> -->
         <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
+    <block name="strain_landing">
+      <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
+      <exception cond="hx711_ground_detect()" deroute="Holding point"/>
+      <stay climb="-0.5" vmode="climb" wp="TD"/>
+    </block>
     <block name="landed">
         <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
         <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>

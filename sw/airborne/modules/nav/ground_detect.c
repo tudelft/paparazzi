@@ -144,7 +144,7 @@ void ground_detect_periodic()
   bool dist_trigger = false;
 #endif
 
-  int trigger_sum = hx711_trigger + acceleration_trigger + thrust_trigger + accel_filter_trigger + dist_trigger;
+  int trigger_sum = (hx711_trigger? 1:0) + (acceleration_trigger? 1:0) + (thrust_trigger? 1:0) + (accel_filter_trigger? 1:0) + (dist_trigger? 1:0);
 
   if (trigger_sum >= 3) {
     counter += 1;
