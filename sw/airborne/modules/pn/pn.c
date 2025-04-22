@@ -10,6 +10,7 @@
 #include "pprzlink/pprz_transport.h"
 #include "pprzlink/pprzlink_device.h"
 #include "pprzlink/intermcu_msg.h"
+#include "modules/datalink/telemetry.h"
 
 /*---------------------------------------------------------------------------*/
 /*                            External Messaging                             */
