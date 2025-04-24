@@ -386,7 +386,7 @@
         <item name="gcs" type="text">Enter the GCS op</item>
         <item name="goal" type="text">Goal of the flight</item>
         <item name="basic law">Location, airspace and weather</item>
-        <item name="RC Battery">Check the RC battery</item>
+        <item name="RC Battery">Check the RC and RW battery</item>
         <item name="tail connection">Check tail connection</item>
         <item name="wing assembly">Check all four wing bolts present and tightened</item>
         <item name="wing connection">Check wing power and CAN lines connected</item>
