@@ -217,7 +217,6 @@
         <call fun="nav_periodic_task()"/>
       </control>
       <control>
-        <!-- <call fun="nav_periodic_task()"/> -->
         <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NAV)"/>
         <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_NAV)"/>
         <call fun="guidance_h_set_pos(nav.carrot.y, nav.carrot.x)"/>

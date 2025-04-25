@@ -32,6 +32,7 @@
 #include "generated/airframe.h"
 #include "filters/low_pass_filter.h"
 #include "filters/notch_filter_float.h"
+//#include "firmwares/rotorcraft/autopilot_rc_helpers.h"
 
 #ifndef ANDI_NUM_ACT
 #define ANDI_NUM_ACT COMMANDS_NB_REAL

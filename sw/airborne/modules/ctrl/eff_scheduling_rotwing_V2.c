@@ -142,8 +142,8 @@ void init_RW_Model(void)
   // Inertia and mass
   RW.I.b_xx = 0.0535; // [kgm²] (0.0478 + 0.08099)
   RW.I.b_yy = 0.9851; // [kgm²] (0.7546 + 0.1949)
-  RW.I.w_xx = 0.0621; // [kgm²]
-  RW.I.w_yy = 0.2788; // [kgm²]
+  RW.I.w_xx = 0.5*0.0621; // [kgm²] //fixme
+  RW.I.w_yy = 0.5*0.2788; // [kgm²] //fixme
   RW.I.xx   = RW.I.b_xx + RW.I.w_xx; // [kgm²]
   RW.I.yy   = RW.I.b_yy + RW.I.w_yy; // [kgm²]
   RW.I.zz   = 1.2842; // [kgm²]

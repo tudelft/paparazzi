@@ -911,7 +911,7 @@
         <arg flag="--ac_nose" constant="right"/>
         <arg flag="-ac" constant="3"/>
         <arg flag="29"/>
-        <arg flag="-f" constant="30"/>
+        <arg flag="-f" constant="100"/>
       </program>
     </session>
     <session name="Flight_udp_rw3c">

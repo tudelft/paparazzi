@@ -10,7 +10,7 @@
     <description>RotatingWingV3C for simulation</description>
 
     <firmware name="rotorcraft">
-        <autopilot name="rotorcraft_oneloop_switch.xml"/>
+        <autopilot name="rotorcraft_oneloop_andi_indi.xml"/>
         <target name="nps" board="pc">
             <configure name="PERIODIC_FREQUENCY"   value="500"/>
             <configure name="NAVIGATION_FREQUENCY" value="500"/>
@@ -203,6 +203,9 @@
     </command_laws>
     <section PREFIX="SYS_ID_" NAME="SYS_ID">
         <define name="DOUBLET_AXES" value="{0,1,2,3}"/>
+        <define name="MULTI_DOUBLET" value="TRUE"/>
+        <define name="MULTI_DOUBLET_NUM_COMBINATIONS" value="2"/>
+        <define name="MULTI_DOUBLET_COMBINATIONS" value="{{1,0,1,0},{0,1,0,1}}"/>        
         <!-- <define name="DOUBLET_RADIO_CHANNEL" value="6"/> -->
         <define name="AUTO_DOUBLETS_N_ACTUATORS" value="4"/>
         <define name="AUTO_DOUBLETS_ACTUATORS" value="{0,1,2,3}"/>

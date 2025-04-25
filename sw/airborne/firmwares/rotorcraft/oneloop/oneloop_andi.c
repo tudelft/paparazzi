@@ -550,11 +550,11 @@ bool  chirp_on            = false;
 bool  chirp_first_call    = true;
 float time_elapsed_chirp  = 0.0;
 float t_0_chirp           = 0.0;
-float f0_chirp            = 0.8 / (2.0 * M_PI);
-float f1_chirp            = 0.8 / (2.0 * M_PI);
-float t_chirp             = 45.0;
-float A_chirp             = 1.0;
-int8_t chirp_axis         = 0;
+float f0_chirp            = 0.1;//0.8 / (2.0 * M_PI);
+float f1_chirp            = 0.5;//0.8 / (2.0 * M_PI);
+float t_chirp             = 30.0;
+float A_chirp             = 0.08;
+int8_t chirp_axis         = 2;
 float p_ref_0[3]          = {0.0, 0.0, 0.0};
 
 /*Declaration of Reference Model and Error Controller Gains*/
@@ -591,7 +591,7 @@ float SF_BOUND_NU[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
 float ratio_u_un[ANDI_NUM_ACT_TOT];
 float ratio_vn_v[ANDI_OUTPUTS];
 
-float temp_k = 300;
+float temp_k = 3.0;
 float temp_checks[2];
 float temp_checks_2[3];
 float temp_ref_att[3];
@@ -603,6 +603,7 @@ float  temp_e_x_rates = 0.0;
 float  temp_x_d_f = 0.0;
 float  temp_x_2d_f = 0.0;
 bool drop_yaw = false;
+int16_t counter_andi = 0;
 /*Filters Initialization*/
 static Butterworth2LowPass filt_veloc_N;                 // Low pass filter for velocity NED - oneloop_andi_filt_cutoff_a (tau_a)       
 static Butterworth2LowPass filt_veloc_E;
@@ -736,6 +737,18 @@ static float k_e_2_2_f_v2(float omega, float zeta) {
     omega = positive_non_zero(omega);
     zeta  = positive_non_zero(zeta);
     return (2* zeta * omega);
+}
+
+static float k_1_2_f(float omega, float zeta) {
+  omega = positive_non_zero(omega);
+  zeta  = positive_non_zero(zeta);
+  return (omega / (2*zeta));
+}
+
+static float k_2_2_f(float omega, float zeta) {
+  omega = positive_non_zero(omega);
+  zeta  = positive_non_zero(zeta);
+  return (2* zeta * omega);
 }
 
 /** @brief Reference Model Gain Design */
@@ -889,21 +902,21 @@ void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[
   BoundAbs(e_x_rates[0], bounds.att_d[0]);
   BoundAbs(e_x_rates[1], bounds.att_d[1]);
   BoundAbs(e_x_rates[2], bounds.att_d[2]);
-  temp_ref_att[0] = e_x_rates[0];
+  temp_ref_att[0] = e_x_rates[2];
   // Angular Rate error -------------------------------------------------
   err_nd(e_x_d, e_x_rates, x_d_ref, k2_rm, 3);
   BoundAbs(e_x_d[0], bounds.att_2d[0]);
   BoundAbs(e_x_d[1], bounds.att_2d[1]);
   BoundAbs(e_x_d[2], bounds.att_2d[2]);
-  temp_ref_att[1] = e_x_d[0];
-  float temp_bound_r_dot = n_array[5]*coupling_factor[5]/(k_att_e.k3[2]*1.5);
-  BoundAbs(e_x_d[2], temp_bound_r_dot);
+  temp_ref_att[1] = e_x_d[2];
+  //float temp_bound_r_dot = n_array[5]*coupling_factor[5]/(k_att_e.k3[2]*1.5);
+  //BoundAbs(e_x_d[2], temp_bound_r_dot);
   // Angular Acceleration error -----------------------------------------
   err_nd(e_x_2d, e_x_d, x_2d_ref, k3_rm, 3);
   BoundAbs(e_x_2d[0], bounds.att_3d[0]);
   BoundAbs(e_x_2d[1], bounds.att_3d[1]);
   BoundAbs(e_x_2d[2], bounds.att_3d[2]);
-  temp_ref_att[2] = e_x_2d[0];
+  temp_ref_att[2] = e_x_2d[2];
   // Angular Jerk Reference ---------------------------------------------
   float_vect_copy(x_3d_ref,e_x_2d,3);
   //BoundAbs(x_3d_ref[0], bounds.att_3d[0]);
@@ -1274,20 +1287,20 @@ void init_poles(void){
   // Position Controller Poles----------------------------------------------------------
   slow_pole = act_dynamics[COMMAND_ROLL]; // Pole of the slowest dynamics used in the position controller
 
-  p_pos_e.omega_n = slow_pole/3.0;
-  p_pos_e.zeta    = 1.0; 
+  p_pos_e.omega_n = 1.19;//slow_pole/3.0;
+  p_pos_e.zeta    = 0.5; 
   p_pos_e.p3      = p_pos_e.omega_n; 
 
   p_pos_rm.omega_n = p_pos_e.omega_n*0.8; 
-  p_pos_rm.zeta    = 1.0;  
+  p_pos_rm.zeta    = 0.5;  
   p_pos_rm.p3      = p_pos_rm.omega_n;
 
-  p_alt_e.omega_n = slow_pole/3.0*2.0;
-  p_alt_e.zeta    = 1.0; 
+  p_alt_e.omega_n = 1.19;//slow_pole/3.0*2.0;
+  p_alt_e.zeta    = 0.5; 
   p_alt_e.p3      = p_alt_e.omega_n;
 
   p_alt_rm.omega_n = p_alt_e.omega_n*0.8;
-  p_alt_rm.zeta    = 1.0;
+  p_alt_rm.zeta    = 0.5;
   p_alt_rm.p3      = p_alt_rm.omega_n; 
 }
 
@@ -1334,28 +1347,27 @@ void init_controller_gains(void){
   k_att_rm.k2[2] = k_rm_2_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
   k_att_rm.k3[2] = k_rm_3_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
 
+  // Print INNERLOOP ANDI controller gains
   //printf("Attitude RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
   //printf("Attitude EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
   //printf("Heading  RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
   //printf("Heading  EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
-  //printf("Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
-  //printf("Attitude EC Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
-  //printf("Heading  RM Gains: %f %f %f\n", k_att_rm.k1[2], k_att_rm.k2[2], k_att_rm.k3[2]);
-  //printf("Heading  EC Gains: %f %f %f\n", k_att_e.k1[2], k_att_e.k2[2], k_att_e.k3[2]);
+  //printf("ANDI Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
+  //printf("ANDI Attitude EC Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
+  //printf("ANDI Heading  RM Gains: %f %f %f\n", k_att_rm.k1[2], k_att_rm.k2[2], k_att_rm.k3[2]);
+  //printf("ANDI Heading  EC Gains: %f %f %f\n", k_att_e.k1[2], k_att_e.k2[2], k_att_e.k3[2]);
+
   /*Position Loop*/
-  // k_pos_e.k1[0]  = k_e_1_3_f_v2(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
-  // k_pos_e.k2[0]  = k_e_2_3_f_v2(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
-  // k_pos_e.k3[0]  = k_e_3_3_f_v2(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
-  k_pos_e.k1[0]  = 0.595;//0.22;//0.38;//k_rm_1_3_f(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
-  k_pos_e.k2[0]  = 1.190;//0.65;//1.16;//k_rm_2_3_f(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
-  k_pos_e.k3[0]  = 2.380;//1.95;//3.57;//k_rm_3_3_f(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
+  k_pos_e.k1[0]  = k_rm_1_3_f(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3); //0.595;//
+  k_pos_e.k2[0]  = k_rm_2_3_f(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3); //1.190;//
+  k_pos_e.k3[0]  = k_rm_3_3_f(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3); //2.380;//
   k_pos_e.k1[1]  = k_pos_e.k1[0];  
   k_pos_e.k2[1]  = k_pos_e.k2[0];  
   k_pos_e.k3[1]  = k_pos_e.k3[0]; 
 
-  k_pos_rm.k1[0] = 0.595;//0.22;//k_rm_1_3_f(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3); 0.31
-  k_pos_rm.k2[0] = 1.190;//0.65;//k_rm_2_3_f(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3); 0.93
-  k_pos_rm.k3[0] = 2.380;//1.95;//k_rm_3_3_f(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3); 2.79
+  k_pos_rm.k1[0] = k_rm_1_3_f(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);//0.595;
+  k_pos_rm.k2[0] = k_rm_2_3_f(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);//1.190;
+  k_pos_rm.k3[0] = k_rm_3_3_f(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);//2.380;
   k_pos_rm.k1[1] = k_pos_rm.k1[0];
   k_pos_rm.k2[1] = k_pos_rm.k2[0];  
   k_pos_rm.k3[1] = k_pos_rm.k3[0];
@@ -1363,49 +1375,15 @@ void init_controller_gains(void){
   nav_hybrid_max_bank   = ONELOOP_ANDI_MAX_BANK;
 
   /*Altitude Loop*/
-  // k_pos_e.k1[2]  = k_e_1_3_f_v2(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3);
-  // k_pos_e.k2[2]  = k_e_2_3_f_v2(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3);
-  // k_pos_e.k3[2]  = k_e_3_3_f_v2(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3);
-  k_pos_e.k1[2]  = 0.595;//0.22; // k_rm_1_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3); //0.8;// 
-  k_pos_e.k2[2]  = 1.190;//0.65; // k_rm_2_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3); //2.5;// 
-  k_pos_e.k3[2]  = 2.380;//1.95; // k_rm_3_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3); //1.95;//
+  k_pos_e.k1[2]  = k_rm_1_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3); //0.595;
+  k_pos_e.k2[2]  = k_rm_2_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3); //1.190;
+  k_pos_e.k3[2]  = 22;//temp_k;//k_rm_3_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3); //2.380;
 
-  k_pos_rm.k1[2] = 0.595;//0.22; //k_rm_1_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3);
-  k_pos_rm.k2[2] = 1.190;//0.65; //k_rm_2_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3);
-  k_pos_rm.k3[2] = 2.380;//1.95; //k_rm_3_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3);
-  
-  //--INDI Controller gains --------------------------------------------------------------------------------
-    /*Attitude Loop*/
-  k_att_e_indi.k1[0]  = k_e_1_2_f_v2(p_att_e.omega_n, p_att_e.zeta);
-  k_att_e_indi.k2[0]  = k_e_2_2_f_v2(p_att_e.omega_n, p_att_e.zeta);
-  k_att_e_indi.k3[0]  = 1.0;
-  k_att_e_indi.k1[1]  = k_att_e_indi.k1[0]; 
-  k_att_e_indi.k2[1]  = k_att_e_indi.k2[0]; 
-  k_att_e_indi.k3[1]  = k_att_e_indi.k3[0]; 
+  k_pos_rm.k1[2] = k_rm_1_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3); //0.595;
+  k_pos_rm.k2[2] = k_rm_2_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3); //1.190;
+  k_pos_rm.k3[2] = k_rm_3_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3); //2.380;
 
-  /*Heading Loop NAV*/
-  k_att_e_indi.k1[2]  = k_e_1_2_f_v2(p_head_e.omega_n, p_head_e.zeta);
-  k_att_e_indi.k2[2]  = k_e_2_2_f_v2(p_head_e.omega_n, p_head_e.zeta);
-  k_att_e_indi.k3[2]  = 1.0;
-
-  /*Position Loop*/
-  k_pos_e_indi.k1[0]  = k_e_1_2_f_v2(p_pos_e.omega_n, p_pos_e.zeta);
-  k_pos_e_indi.k2[0]  = k_e_2_2_f_v2(p_pos_e.omega_n, p_pos_e.zeta);
-  k_pos_e_indi.k3[0]  = 1.0;
-  k_pos_e_indi.k1[1]  = k_pos_e_indi.k1[0];  
-  k_pos_e_indi.k2[1]  = k_pos_e_indi.k2[0];  
-  k_pos_e_indi.k3[1]  = k_pos_e_indi.k3[0]; 
-
-  /*Altitude Loop*/
-  k_pos_e_indi.k1[2]  = k_e_1_2_f_v2(p_alt_e.omega_n, p_alt_e.zeta);
-  k_pos_e_indi.k2[2]  = k_e_2_2_f_v2(p_alt_e.omega_n, p_alt_e.zeta);
-  k_pos_e_indi.k3[2]  = 1.0;
-   
-  //------------------------------------------------------------------------------------------
-  /*Approximated Dynamics*/
-  act_dynamics[COMMAND_ROLL]   = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
-  act_dynamics[COMMAND_PITCH]  = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
-
+  // Print OUTERLOOP ANDI controller gains
   //printf("Position NE RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);
   //printf("Position NE EC poles, omega_n: %f, zeta: %f, p3: %f\n", p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
   //printf("Position D  RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3);
@@ -1414,6 +1392,45 @@ void init_controller_gains(void){
   //printf("Position N  EC Gains: %f %f %f\n", k_pos_e.k1[0], k_pos_e.k2[0], k_pos_e.k3[0]);
   //printf("Position D  RM Gains: %f %f %f\n", k_pos_rm.k1[2], k_pos_rm.k2[2], k_pos_rm.k3[2]);
   //printf("Position D  EC Gains: %f %f %f\n", k_pos_e.k1[2], k_pos_e.k2[2], k_pos_e.k3[2]);
+  //--INDI Controller gains --------------------------------------------------------------------------------
+    /*Attitude Loop*/
+  k_att_e_indi.k1[0]  = k_att_e.k1[0];//k_1_2_f(p_att_e.omega_n, p_att_e.zeta);
+  k_att_e_indi.k2[0]  = k_att_e.k2[0];//k_2_2_f(p_att_e.omega_n, p_att_e.zeta);
+  k_att_e_indi.k3[0]  = 1.0;
+  k_att_e_indi.k1[1]  = k_att_e_indi.k1[0]; 
+  k_att_e_indi.k2[1]  = k_att_e_indi.k2[0]; 
+  k_att_e_indi.k3[1]  = k_att_e_indi.k3[0]; 
+
+  /*Heading Loop NAV*/
+  k_att_e_indi.k1[2]  = k_att_e.k1[2];//k_1_2_f(p_head_e.omega_n, p_head_e.zeta);
+  k_att_e_indi.k2[2]  = k_att_e.k2[2];//k_2_2_f(p_head_e.omega_n, p_head_e.zeta);
+  k_att_e_indi.k3[2]  = 1.0;
+  
+  // Print INDI INNERLOOP controller gains
+  //printf("INDI Attitude EC gains: %f %f %f\n", k_att_e_indi.k1[0], k_att_e_indi.k2[0], k_att_e_indi.k3[0]);
+  //printf("INDI Heading  EC gains: %f %f %f\n", k_att_e_indi.k1[2], k_att_e_indi.k2[2], k_att_e_indi.k3[2]);
+
+  /*Position Loop*/
+  k_pos_e_indi.k1[0]  = k_pos_e.k1[0];//k_1_2_f(p_pos_e.omega_n, p_pos_e.zeta);
+  k_pos_e_indi.k2[0]  = k_pos_e.k2[0];//k_2_2_f(p_pos_e.omega_n, p_pos_e.zeta);
+  k_pos_e_indi.k3[0]  = 1.0;
+  k_pos_e_indi.k1[1]  = k_pos_e_indi.k1[0];  
+  k_pos_e_indi.k2[1]  = k_pos_e_indi.k2[0];  
+  k_pos_e_indi.k3[1]  = k_pos_e_indi.k3[0]; 
+
+  /*Altitude Loop*/
+  k_pos_e_indi.k1[2]  = k_pos_e.k1[2];//k_1_2_f(p_alt_e.omega_n, p_alt_e.zeta);
+  k_pos_e_indi.k2[2]  = k_pos_e.k2[2];//k_2_2_f(p_alt_e.omega_n, p_alt_e.zeta);
+  k_pos_e_indi.k3[2]  = 1.0;
+  
+  // Print INDI OUTERLOOP controller gains
+  //printf("INDI Position NE EC gains: %f %f %f\n", k_pos_e_indi.k1[0], k_pos_e_indi.k2[0], k_pos_e_indi.k3[0]);
+  //printf("INDI Position D  EC gains: %f %f %f\n", k_pos_e_indi.k1[2], k_pos_e_indi.k2[2], k_pos_e_indi.k3[2]);
+
+  //------------------------------------------------------------------------------------------
+  /*Approximated Dynamics*/
+  act_dynamics[COMMAND_ROLL]   = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
+  act_dynamics[COMMAND_PITCH]  = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
   //printf("Act Dynamics: %f %f\n", act_dynamics[COMMAND_ROLL], act_dynamics[COMMAND_PITCH]);
 }
 // -----------------------------------------------------------------------------------------
@@ -1721,12 +1738,25 @@ void oneloop_andi_init(void)
  */
 void oneloop_andi_enter(bool half_loop_sp, int ctrl_type)
 {
-  //printf("ENTER \n");
+  //printf("ENTER %d \n", counter_andi);
+  //counter_andi++;
   ele_min = 0.0;
   oneloop_andi.half_loop      = half_loop_sp;
   oneloop_andi.ctrl_type      = ctrl_type;
   psi_des_rad                 = eulers_zxy.psi; 
   psi_des_deg                 = DegOfRad(eulers_zxy.psi);
+  // if (oneloop_andi.half_loop){
+  //   printf("HALF LOOP\n");
+  // } else {
+  //   printf("FULL LOOP\n");
+  // }
+  // if (oneloop_andi.ctrl_type == CTRL_ANDI){
+  //   printf("ANDI\n");
+  // } else if (oneloop_andi.ctrl_type == CTRL_INDI){
+  //   printf("INDI\n");
+  // } else {
+  //   printf("CTRL_TYPE NOT SET\n");
+  // }
   calc_normalization();
   G1G2_oneloop(oneloop_andi.ctrl_type);
   int8_t i;
@@ -1793,10 +1823,13 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     int8_t i;
     // To calculate the nu corrsponding to the Thrust command, plug it in the control law.
     for (i = 0; i < ANDI_NUM_ACT; i++) {
-      a_thrust +=(thrust_cmd_1l) * EFF_MAT_RW[RW_aD][i] * act_dynamics[i];
+      if(oneloop_andi.ctrl_type == CTRL_ANDI){
+        a_thrust +=(thrust_cmd_1l) * EFF_MAT_RW[RW_aD][i] * act_dynamics[i];
+      }else{
+        a_thrust +=(thrust_cmd_1l) * EFF_MAT_RW[RW_aD][i];
+      }
     }
-    a_thrust = a_thrust - oneloop_andi_model[RW_aD];//oneloop_andi_model_filt.az.out; 
-
+    a_thrust = a_thrust - oneloop_andi_model[RW_aD];  //oneloop_andi_model_filt.az.out; 
     rm_3rd_attitude(dt_1l, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, att_des, false, psi_vec, k_att_rm.k1, k_att_rm.k2, k_att_rm.k3, sta_bounds);
   }else{
     // Make sure X and Y jerk objectives are active
@@ -1951,9 +1984,11 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
       float temp_dist_bound_gui[3] = {0.0, 0.0, 0.0};
       ec_3rd_pos(nu, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e.k1, k_pos_e.k2, k_pos_e.k3, max_v_nav, max_a_nav, max_j_lin,temp_dist_bound_gui,3);
     } else if (oneloop_andi.ctrl_type == CTRL_INDI){
-      nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], 0.0, oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e_indi.k1[0], k_pos_e_indi.k2[0], k_pos_e_indi.k3[0]);
-      nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], 0.0, oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e_indi.k1[1], k_pos_e_indi.k2[1], k_pos_e_indi.k3[1]);
-      nu[2] = ec_3rd(oneloop_andi.gui_ref.pos[2], oneloop_andi.gui_ref.vel[2], oneloop_andi.gui_ref.acc[2], 0.0, oneloop_andi.gui_state.pos[2], oneloop_andi.gui_state.vel[2], oneloop_andi.gui_state.acc[2], k_pos_e_indi.k1[2], k_pos_e_indi.k2[2], k_pos_e_indi.k3[2]);  
+      float dummy1[3] = {0.0, 0.0, 0.0};
+      ec_3rd_pos(nu, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, dummy1, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e_indi.k1, k_pos_e_indi.k2, k_pos_e_indi.k3, max_v_nav, max_a_nav, max_j_lin,dummy1,3);
+      //nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], 0.0, oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e_indi.k1[0], k_pos_e_indi.k2[0], k_pos_e_indi.k3[0]);
+      //nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], 0.0, oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e_indi.k1[1], k_pos_e_indi.k2[1], k_pos_e_indi.k3[1]);
+      //nu[2] = ec_3rd(oneloop_andi.gui_ref.pos[2], oneloop_andi.gui_ref.vel[2], oneloop_andi.gui_ref.acc[2], 0.0, oneloop_andi.gui_state.pos[2], oneloop_andi.gui_state.vel[2], oneloop_andi.gui_state.acc[2], k_pos_e_indi.k1[2], k_pos_e_indi.k2[2], k_pos_e_indi.k3[2]);  
     }
   }
   // Attitude Pseudo Control Vector (nu) based on error controller
@@ -1961,12 +1996,11 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   if(oneloop_andi.ctrl_type == CTRL_ANDI){
     //float temp_dist_bound_sta[3] = {oneloop_andi_model_filt.p_dot.out, oneloop_andi_model_filt.q_dot.out, oneloop_andi_model_filt.r_dot.out};
     float temp_dist_bound_sta[3] = {oneloop_andi_model[RW_ap], oneloop_andi_model[RW_aq], oneloop_andi_model[RW_ar]};
-    //printf("Last check of model: %f \n",oneloop_andi_model_filt.r_dot.out);
-    //float temp_dist_bound_sta[3] = {0.0, 0.0, 0.0};
     ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds,temp_dist_bound_sta);
 } else if (oneloop_andi.ctrl_type == CTRL_INDI){
     float dummy0[3] = {0.0, 0.0, 0.0};
-    //FIXME ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e_indi.k1, k_att_e_indi.k2, k_att_e_indi.k3, sta_bounds.att_3d[0]);
+    float temp_dist_bound_sta_INDI[3] = {oneloop_andi_model[RW_ap]*k_att_e.k3[0], oneloop_andi_model[RW_aq]*k_att_e.k3[1], oneloop_andi_model[RW_ar]*k_att_e.k3[2]};
+    ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e_indi.k1, k_att_e_indi.k2, k_att_e_indi.k3, sta_bounds, temp_dist_bound_sta_INDI);
   }
   if(half_loop && radio_control_get(RADIO_THROTTLE)<200){
     nu[3] = 0.0;
@@ -2115,7 +2149,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   commands[COMMAND_THRUST] = (commands[COMMAND_MOTOR_FRONT] + commands[COMMAND_MOTOR_RIGHT] + commands[COMMAND_MOTOR_BACK] + commands[COMMAND_MOTOR_LEFT])/num_thrusters_oneloop;
   autopilot.throttle = commands[COMMAND_THRUST];
   stabilization.cmd[COMMAND_THRUST] = commands[COMMAND_THRUST];
-  if(autopilot.mode!=AP_MODE_ATTITUDE_DIRECT){
+  if(!half_loop){
     eulers_zxy_des.phi   =  andi_u[COMMAND_ROLL];
     eulers_zxy_des.theta =  andi_u[COMMAND_PITCH];
     //eulers_zxy_des.phi   = (float) (radio_control_get(RADIO_ROLL)) /MAX_PPRZ * ONELOOP_ANDI_MAX_PHI  ;
@@ -2454,12 +2488,14 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, i
     a_ref[1] = a_ref_chirp * mult_1; 
     j_ref[0] = j_ref_chirp * mult_0;
     j_ref[1] = j_ref_chirp * mult_1;
-  } else { //Pitch preferred chirp, for now a little bit hacked in...
+  } else if (n==3) { //Pitch preferred chirp, for now a little bit hacked in...
     pitch_pref = p_ref_chirp;
     pitch_pref = (pitch_pref / A + 1.0) * (theta_pref_max / 2.0);
     float pitch_offset = RadOfDeg(5.0);
     pitch_pref = pitch_pref + pitch_offset;
     Bound(pitch_pref,0.0,25.0);
+  } else {
+    // do a yaw chirp
   }
 }
 
@@ -2481,7 +2517,13 @@ void chirp_call(bool *chirp_on, bool *chirp_first_call, float* t_0, float* time_
       *chirp_first_call = true;
       *time_elapsed = 0.0;
       *t_0 = 0.0;
-      oneloop_andi_enter(false, oneloop_andi.ctrl_type);
+      p_ref_0[0] = p_ref[0];
+      p_ref_0[1] = p_ref[1];
+      p_ref_0[2] = p_ref[2];
+      float_vect_zero(v_ref, 3);
+      float_vect_zero(a_ref, 3);
+      float_vect_zero(j_ref, 3);
+      //oneloop_andi_enter(false, oneloop_andi.ctrl_type);
     }
   }
 }
@@ -2643,7 +2685,27 @@ void oneloop_calc_model_disturbance(bool in_flight){
       }
       for (j = 0; j < ANDI_NUM_ACT_TOT; j++){
         float den = positive_non_zero(ratio_u_un[j]*ratio_vn_v[i]);
-        oneloop_andi_model[i] += u_filt[j].o[0] * EFF_MAT_G[i][j] / den;
+        float num = u_filt[j].o[0] * EFF_MAT_G[i][j];
+        oneloop_andi_model[i] += num / den;
+        if ((i == RW_ap)&&(j == COMMAND_MOTOR_RIGHT)){
+          //printf("effectiveness [%d][%d]: %f \n",i,j, EFF_MAT_G[i][j]);
+          //printf("test model : %f \n", 1.0*EFF_MAT_G[i][j]/den);
+          // if (oneloop_andi.half_loop){
+          //   printf("HALF LOOP\n");
+          // } else {
+          //   printf("FULL LOOP\n");
+          // }
+          // if (oneloop_andi.ctrl_type == CTRL_ANDI){
+          //   printf("ANDI\n");
+          // } else if (oneloop_andi.ctrl_type == CTRL_INDI){
+          //   printf("INDI\n");
+          // } else {
+          //   printf("CTRL_TYPE NOT SET\n");
+          // }
+          //printf("RCAP0(): %d\n",RCAP0());
+          //printf("RCAP1(): %d\n",RCAP1());  
+          //printf("RCAP2(): %d\n",RCAP2());
+        }
         if(i == RW_aN){
           //printf("den [%d]: %f \n",j,den);
           //printf("act_dynamics[%d]: %f \n",j,act_dynamics[j]);
