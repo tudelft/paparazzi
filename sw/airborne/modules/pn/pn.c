@@ -227,7 +227,7 @@ void pn_event(void)
     pprz_check_and_parse(target_message.device, &target_message.transport, pn_msg_buf, &target_message.msg_available);
 
     if (target_message.msg_available) {
-      uint8_t class_id = pprzlink_get_msg_class_id(pn_msg_buf);
+      // uint8_t class_id = pprzlink_get_msg_class_id(pn_msg_buf);
       
       target_message.time_since_last_frame = 0;
       dl_parse_msg(target_message.device, &target_message.transport.trans_tx, pn_msg_buf);
@@ -263,6 +263,6 @@ void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf) {
     vel_target.z  = -DL_REMOTE_GPS_LOCAL_enu_zd(buf);
 }
 
-const struct Proportional_nav *pn_info_logger(void) {
+struct Proportional_nav *pn_info_logger(void) {
   return &pn_log;
 }

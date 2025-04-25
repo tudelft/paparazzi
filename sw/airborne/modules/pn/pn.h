@@ -35,6 +35,6 @@ struct Proportional_nav {
   struct FloatVect3 vel_target;
   struct FloatVect3 accel_command;
 };
-const struct Proportional_nav *pn_info_logger(void);
+struct Proportional_nav *pn_info_logger(void);
 
 #endif // PN_H

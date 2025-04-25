@@ -65,19 +65,19 @@ inline void setGuided(void){
       !(nav_block >= IndexOfBlock('Emergency Landing')) @AND
       (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
     <!-- Geofencing XY -->
-    <!-- <exception cond="(!InsideCyberZoo(GetPosX(), GetPosY()) @AND
+    <exception cond="(!InsideCyberZoo(GetPosX(), GetPosY()) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('Emergency Landing')) @AND
-      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/> -->
+      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
     <!-- Geofencing Z 3.5 -->
-    <!-- <exception cond="((GetPosAlt() @GT 3.5) @AND
+    <exception cond="((GetPosAlt() @GT 3.5) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('Emergency Landing')) @AND
-      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/> -->
+      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
     <!-- Geofencing Z 4.5 -->
-    <!-- <exception cond="((GetPosAlt() @GT 4.5) @AND
+    <exception cond="((GetPosAlt() @GT 4.5) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
-      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/> -->
+      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
     <!-- Bat Low -->
     <exception cond="(electrical.bat_low @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
