@@ -24,6 +24,7 @@
     <dl_settings>
       <dl_settings NAME="RemoteSensing">
         <dl_setting var="falcon_mode" min="0" max="3" step="1" values="OFF|SIXDOF|RELANGLE|RELBEACON" shortname="falcon_mode" module="modules/sensors/remote_sensing_AM" handler="send_falcon_cmd"/>
+        <dl_setting var="falcon_relangle_distance" min="0" max="20" step="0.01" shortname="relangle_dist"/>
       </dl_settings>
     </dl_settings>
   </settings>
@@ -39,5 +40,6 @@
   <datalink class="intermcu" message="IMCU_OPENCV_ARUCO" fun="remote_sensing_parse_opencv_aruco(buf)"/>
   <makefile>
     <file name="remote_sensing_AM.c"/>
+    <file name="target_pos_kalman.c" dir="filters"/>
   </makefile>
 </module>

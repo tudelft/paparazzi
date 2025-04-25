@@ -22,12 +22,18 @@
 #ifndef REMOTE_SENSING_AM_H
 #define REMOTE_SENSING_AM_H
 
+#define FALCON_MODE_NONE 0x00       ///< 
+#define FALCON_MODE_SIXDOF 0x01     ///< 
+#define FALCON_MODE_RELANGLE 0x02   ///< 
+#define FALCON_MODE_RELBEACON 0x03  ///< 
+
 //define the AzimuthElevation structure: 
 struct AzimuthElevation {
   float azimuth; // azimuth angle in rad
   float elevation; // elevation angle in rad
 };
 
+extern float falcon_relangle_distance; // Falcon sensor distance in meters
 extern uint8_t falcon_mode; 
 
 extern void remote_sensing_AM_init(void); 
