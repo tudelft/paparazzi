@@ -19,7 +19,9 @@
         "low_pass_filter.h": "c",
         "ins_int.h": "c",
         "logger_file.h": "c",
-        "guidance_indi.h": "c"
+        "guidance_indi.h": "c",
+        "pprzlink_device.h": "c",
+        "sys_time.h": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",

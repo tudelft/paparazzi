@@ -109,7 +109,7 @@ inline void setGuided(void){
     </block>
     <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/> 
-      <exception cond="GetPosAlt() @GT 1.8" deroute="Standby"/>
+      <exception cond="GetPosAlt() @GT 0.8" deroute="Standby"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
