@@ -1,0 +1,43 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="remote_sensing_AM" dir="sensors">
+  <doc>
+    <description>
+      Remote sensing module gathering data from falcon, aruco and target pos (ship box). Includes a kalman filter.
+    </description>
+    <!-- <section name="REMOTE_SENSING" prefix="REMOTE_SENSING_">
+      <define name="KALMAN_USE_GROUND_STATION" value="false" description="use ground station data to update kalman filter"/>
+      <define name="KALMAN_USE_FALCON_SIXDOF" value="false" description="use falcon sixdof data to update kalman filter"/>
+      <define name="KALMAN_USE_FALCON_RELANGLE" value="false" description="use falcon relangle data to update kalman filter"/>
+      <define name="KALMAN_USE_FALCON_RELBEACON" value="false" description="use falcon relbeacon data to update kalman filter"/>
+      <define name="KALMAN_USE_OPENCV_ARUCO" value="false" description="use opencv aruco data to update kalman filter"/>
+      <define name="FALCON_OFFSET_UAV_BODY_X" value="0.0"/>
+      <define name="FALCON_OFFSET_UAV_BODY_Y" value="0.0"/>
+      <define name="FALCON_OFFSET_UAV_BODY_Z" value="0.13"/>
+      <define name="OPENCV_ARUCO_OFFSET_UAV_BODY_X" value="0.0"/>
+      <define name="OPENCV_ARUCO_OFFSET_UAV_BODY_Y" value="0.0"/>
+      <define name="OPENCV_ARUCO_OFFSET_UAV_BODY_Z" value="0.13"/>
+      <define name="LOG_ON_ARRIVAL" value="true"/>
+    </section> -->
+  </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="RemoteSensing">
+        <dl_setting var="falcon_mode" min="0" max="3" step="1" values="OFF|SIXDOF|RELANGLE|RELBEACON" shortname="falcon_mode" module="modules/sensors/remote_sensing_AM" handler="send_falcon_cmd"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <header>
+    <file name="remote_sensing_AM.h"/>
+  </header>
+  <init fun="remote_sensing_AM_init()"/>
+  <periodic fun="remote_sensing_AM_periodic()" freq="50"/>
+  <datalink message="TARGET_POS" fun="remote_sensing_parse_target_pos(buf)"/>
+  <datalink class="intermcu" message="IMCU_FALCON_SIXDOF" fun="remote_sensing_parse_falcon_sixdof(buf)"/>
+  <datalink class="intermcu" message="IMCU_FALCON_RELANGLE" fun="remote_sensing_parse_falcon_relangle(buf)"/>
+  <datalink class="intermcu" message="IMCU_FALCON_RELBEACON" fun="remote_sensing_parse_falcon_relbeacon(buf)"/>
+  <datalink class="intermcu" message="IMCU_OPENCV_ARUCO" fun="remote_sensing_parse_opencv_aruco(buf)"/>
+  <makefile>
+    <file name="remote_sensing_AM.c"/>
+  </makefile>
+</module>
