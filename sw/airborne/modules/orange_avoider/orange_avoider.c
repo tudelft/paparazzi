@@ -54,13 +54,13 @@ enum navigation_state_t {
 // Define and initialise variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING; // Initial navigation state
 int32_t color_count = 0;                                            // Initial orange color count
-int16_t obstacle_free_confidence = 0;                               // Initial confidence that the way ahead is obstacle-free
+int16_t obstacle_free_confidence = 0;                               // Initial confidence that path ahead is clear
 float oa_color_count_frac = 0.18f;                                  // Threshold for obstacle detection
-const int16_t max_trajectory_confidence = 5;                        // Max value for obstacle free confidence
+const int16_t max_trajectory_confidence = 5;                        // Maximum confidence value
 float heading_increment = 5.f;                                      // Heading angle increment in degrees
 float maxDistance = 2.25f;                                          // Maximum waypoint displacement in meters
 
-// ABI binding for visual detection
+// ABI binding
 #ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
   #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
@@ -131,12 +131,15 @@ static void chooseRandomIncrementAvoidance(void)
 /**
  * @brief Callback function triggered on visual detection events.
  *
- * Only the quality (orange-pixel count) is used. Other parameters are ignored.
+ * Uses only the quality (orange pixel count). Other parameters are ignored.
  */
 static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
-                               int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
-                               int16_t __attribute__((unused)) pixel_width, int16_t __attribute__((unused)) pixel_height,
-                               int32_t quality, int16_t __attribute__((unused)) extra)
+                               int16_t __attribute__((unused)) pixel_x,
+                               int16_t __attribute__((unused)) pixel_y,
+                               int16_t __attribute__((unused)) pixel_width,
+                               int16_t __attribute__((unused)) pixel_height,
+                               int32_t quality,
+                               int16_t __attribute__((unused)) extra)
 {
   color_count = quality;
 }
@@ -155,7 +158,7 @@ void orange_avoider_init(void)
 }
 
 /**
- * @brief Main (periodic) control function for obstacle avoidance.
+ * @brief Main (periodic) update function for obstacle avoidance.
  */
 void orange_avoider_periodic(void)
 {
