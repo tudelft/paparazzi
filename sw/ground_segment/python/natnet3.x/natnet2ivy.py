@@ -199,7 +199,7 @@ parser.add_argument('-rg', '--remote_gps', dest='rgl_msg', action='store_true', 
 parser.add_argument('-sm', '--small', dest='small_msg', action='store_true', help="enable the EXTERNAL_POSE_SMALL message instead of the full")
 parser.add_argument('-o', '--old_natnet', dest='old_natnet', action='store_true', help="Change the NatNet version to 2.9")
 
-parser.add_argument('-tp', '--target_pos', dest='target_pos', type=int, default=0, help='also send the TARGET_POS message of the given id')
+parser.add_argument('-tp', nargs=2, metavar=('target_id','ac_id'), help='Pair of ac id and target id for forwarding a target pos message')
 
 def process_args(args):
     if args.ac is None:
@@ -252,8 +252,7 @@ def process_args(args):
         angle=np.deg2rad(nose_correction[args.ac_nose] + x_angle)
     )
 
-    target_pos_id = args.target_pos
-    return id_dict, timestamp, period, track, q_total, q_nose_correction, target_pos_id
+    return id_dict, timestamp, period, track, q_total, q_nose_correction
 
 
 # store track function
@@ -301,7 +300,6 @@ def performTransformation( pos, vel, quat ):
     return pos, vel, quat
 
 def receiveRigidBodyList( rigid_body_data, stamp ):
-    global target_pos_id
     for rigid_body in rigid_body_data.rigid_body_list:
         if not rigid_body.tracking_valid:
             # skip if rigid body is not valid
@@ -383,7 +381,8 @@ def receiveRigidBodyList( rigid_body_data, stamp ):
             gr['timestamp'] = stamp
             ivy.send(gr)
 
-    if target_pos_id != 0 and rigid_body.id_num == target_pos_id:
+    target, ac = args.tp
+    if int(target) == int(rigid_body.id_num):
         pos = rigid_body.pos
         quat = rigid_body.rot
 
@@ -400,8 +399,8 @@ def receiveRigidBodyList( rigid_body_data, stamp ):
 
         # Create and fill the TARGET_POS message
         tp_msg = PprzMessage("datalink", "TARGET_POS")
-        tp_msg['ac_id'] = 90  # Set your aircraft ID (e.g., 0 or a specific one)
-        tp_msg['target_id'] = 10  # Platform ID (e.g., 0 or another)
+        tp_msg['ac_id'] = str(ac)  # Set your aircraft ID (e.g., 0 or a specific one)
+        tp_msg['target_id'] = str(target)  # Platform ID (e.g., 0 or another)
         tp_msg['tow'] = int(1000.0 * stamp)  # Time of week in ms
 
         # Position
@@ -470,7 +469,7 @@ if not run_test_cases:
     try:
         # Start up the streaming client.
         # This will run perpetually, and operate on a separate thread.
-        id_dict, timestamp, period, track, q_total, q_nose_correction, target_pos_id = process_args(args)
+        id_dict, timestamp, period, track, q_total, q_nose_correction = process_args(args)
         is_running = natnet.run()
         if not is_running:
             print("Natnet error: Could not start streaming client.")

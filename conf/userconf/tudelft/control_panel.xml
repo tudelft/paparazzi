@@ -223,7 +223,15 @@
         <arg flag="-e udp://192.168.0.11:5242:192.168.0.10:5243"/>
         <arg flag="-e udp://0.0.0.0:4243:192.168.43.255:4242"/>
       </program>
-      <program name="NatNet3"/>
+      <program name="NatNet3">
+        <arg flag="--long_edge" constant="right"/>
+        <arg flag="--ac_nose" constant="right"/>
+        <arg flag="--x_side" constant="right"/>
+        <arg flag="-ac" constant="1"/>
+        <arg flag="10"/>
+        <arg flag="-tp" constant="132"/>
+        <arg flag="10"/>
+      </program>
     </session>
     <session name="Flight UDP Optitrack + Joystick">
       <program name="Data Link">
