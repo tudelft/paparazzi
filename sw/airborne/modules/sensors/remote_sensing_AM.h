@@ -38,6 +38,7 @@ extern uint8_t falcon_mode;
 
 extern void remote_sensing_AM_init(void); 
 extern void remote_sensing_AM_periodic(void);
+extern void remote_sensing_AM_kalman_filter_init(float r);
 extern void remote_sensing_parse_target_pos(uint8_t *buf);
 extern void remote_sensing_AM_send_falcon_cmd(uint8_t unk);
 extern void remote_sensing_parse_falcon_sixdof(uint8_t *buf);

@@ -124,7 +124,7 @@
             <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELANGLE" value="FALSE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELBEACON" value="TRUE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO" value="TRUE"/>
-            <define name="REMOTE_SENSING_FALCON_ROTATION_SENSOR_TO_BODY_X" value="-90"/> <!--In degrees -->
+            <define name="REMOTE_SENSING_FALCON_ROTATION_SENSOR_TO_BODY_X" value="90"/> <!--In degrees -->
             <define name="REMOTE_SENSING_FALCON_ROTATION_SENSOR_TO_BODY_Y" value="0"/> <!--In degrees -->
             <define name="REMOTE_SENSING_FALCON_ROTATION_SENSOR_TO_BODY_Z" value="0"/> <!--In degrees -->
             <define name="REMOTE_SENSING_FALCON_OFFSET_UAV_BODY_X" value="0.0"/>

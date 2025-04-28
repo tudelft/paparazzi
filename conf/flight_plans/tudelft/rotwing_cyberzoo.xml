@@ -9,7 +9,11 @@
     <waypoint name="TD" x="-3" y="5"/>
     <waypoint name="APP" x="-2" y="5"/>
     <waypoint name="FOLLOW" x="-1" y="5"/>
-    <waypoint name="RELANGLE" x="-1" y="7"/>
+    <waypoint name="SIXDOF" x="-1" y="7"/>
+    <waypoint name="RELANGLE" x="-10" y="-10"/>
+    <waypoint name="RELBEACON" x="-10" y="-10"/>
+    <waypoint name="ARUCO" x="-10" y="-10"/>
+    <waypoint name="KALMAN" x="-10" y="-10"/>
     <waypoint lat="51.9905979" lon="4.3767279" name="CZ1"/>
     <waypoint lat="51.9906685" lon="4.3767327" name="CZ2"/>
     <waypoint lat="51.9906652" lon="4.3768481" name="CZ3"/>
@@ -103,10 +107,6 @@
     <block name="Standby_free">
         <call_once fun="rotwing_state_set(ROTWING_STATE_FREE)"/>
         <stay wp="STDBY"/>
-    </block>
-    <block name="Approach APP">
-      <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-      <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
     </block>
     <block name="Transition_quad" strip_button="Transition Quad" strip_icon="wp_quad.png">
       <call_once fun="rotwing_state_set(ROTWING_STATE_FREE)"/>

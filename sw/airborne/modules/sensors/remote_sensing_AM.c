@@ -27,6 +27,7 @@
 #include "pprzlink/intermcu_msg.h"
 #include "generated/airframe.h"
 #include "filters/target_pos_kalman.h"
+#include "generated/flight_plan.h"
 
 uint8_t falcon_mode = FALCON_MODE_SIXDOF; // 0: no mode, 1: sixdof_mode, 2: relangle_mode, 3: relbeacon_mode
 
@@ -321,6 +322,15 @@ void remote_sensing_parse_falcon_sixdof(uint8_t *buf)
     sdlog_remote_sensing_am();
   #endif
 
+  // Update a position in the flight plan for now
+  uint8_t wp_id = WP_SIXDOF;
+  struct EnuCoor_f target_enu;
+  struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
+  ENU_OF_TO_NED(target_enu, falcon_sixdof_pos_NED);
+  VECT3_ADD(target_enu, *uav_pos);
+  target_enu.z = waypoints[wp_id].enu_f.z;
+  waypoint_set_enu(wp_id, &target_enu);
+
 }
 
 /**
@@ -377,6 +387,15 @@ void remote_sensing_parse_falcon_relangle(uint8_t *buf)
     sdlog_remote_sensing_am();
   #endif
 
+  // Update a position in the flight plan for now
+  uint8_t wp_id = WP_RELANGLE;
+  struct EnuCoor_f target_enu;
+  struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
+  ENU_OF_TO_NED(target_enu, p_out_ned);
+  VECT3_ADD(target_enu, *uav_pos);
+  target_enu.z = waypoints[wp_id].enu_f.z;
+  waypoint_set_enu(wp_id, &target_enu);
+
 }
 
 /**
@@ -416,6 +435,16 @@ void remote_sensing_parse_falcon_relbeacon(uint8_t *buf)
   #if REMOTE_SENSING_LOG_ON_ARRIVAL
     sdlog_remote_sensing_am();
   #endif
+
+  // Update a position in the flight plan for now
+  uint8_t wp_id = WP_RELBEACON;
+  struct EnuCoor_f target_enu;
+  struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
+  ENU_OF_TO_NED(target_enu, falcon_relbeacon_pos_NED);
+  VECT3_ADD(target_enu, *uav_pos);
+  target_enu.z = waypoints[wp_id].enu_f.z;
+  waypoint_set_enu(wp_id, &target_enu);
+
 }
 
 /**
@@ -456,8 +485,20 @@ void remote_sensing_parse_opencv_aruco(uint8_t *buf)
     sdlog_remote_sensing_am();
   #endif
 
+  // Update a position in the flight plan for now
+  uint8_t wp_id = WP_ARUCO;
+  struct EnuCoor_f target_enu;
+  struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
+  ENU_OF_TO_NED(target_enu, opencv_aruco_pos_NED);
+  VECT3_ADD(target_enu, *uav_pos);
+  target_enu.z = waypoints[wp_id].enu_f.z;
+  waypoint_set_enu(wp_id, &target_enu);
+
 }
 
+void remote_sensing_AM_kalman_filter_init(float r __attribute__((unused))) {
+  target_pos_kalman_init(&remote_sensing_kalman, P0, Q0, 1/REMOTE_SENSING_AM_PERIODIC_FREQ);
+}
 
 void remote_sensing_AM_init(void)
 {
@@ -489,6 +530,49 @@ void remote_sensing_AM_periodic(void) {
   struct FloatVect3 pos;
   struct FloatVect3 speed;
   target_pos_kalman_get_state(&remote_sensing_kalman, &pos, &speed);
+
+  // Update a position in the flight plan for now
+  uint8_t wp_id = WP_KALMAN;
+  struct EnuCoor_f target_enu;
+  struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
+  ENU_OF_TO_NED(target_enu, pos);
+  VECT3_ADD(target_enu, *uav_pos);
+  target_enu.z = waypoints[wp_id].enu_f.z;
+  waypoint_set_enu(wp_id, &target_enu);
+
+  // Send waypoint update every half second
+  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {
+    // Send to the GCS that the waypoint has been moved
+    wp_id = WP_KALMAN;
+    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+      &waypoints[WP_KALMAN].enu_i.x,
+      &waypoints[WP_KALMAN].enu_i.y,
+      &waypoints[WP_KALMAN].enu_i.z);
+    
+    wp_id = WP_SIXDOF;
+    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+      &waypoints[WP_SIXDOF].enu_i.x,
+      &waypoints[WP_SIXDOF].enu_i.y,
+      &waypoints[WP_SIXDOF].enu_i.z);
+
+    wp_id = WP_RELANGLE;
+    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+      &waypoints[WP_RELANGLE].enu_i.x,
+      &waypoints[WP_RELANGLE].enu_i.y,
+      &waypoints[WP_RELANGLE].enu_i.z);
+
+    wp_id = WP_RELBEACON;
+    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+      &waypoints[WP_RELBEACON].enu_i.x,
+      &waypoints[WP_RELBEACON].enu_i.y,
+      &waypoints[WP_RELBEACON].enu_i.z);
+    
+    wp_id = WP_ARUCO;
+    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+      &waypoints[WP_ARUCO].enu_i.x,
+      &waypoints[WP_ARUCO].enu_i.y,
+      &waypoints[WP_ARUCO].enu_i.z);
+    });
 
   #if !USE_NPS
   pprz_msg_send_TARGET_POS_KALMAN(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
