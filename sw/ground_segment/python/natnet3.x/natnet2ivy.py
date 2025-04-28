@@ -159,6 +159,12 @@ from NatNetClient import NatNetClient
 import DataDescriptions
 import MoCapData
 
+import pymap3d as pm  # Make sure you have pymap3d installed
+# Constants for reference
+lat0 = 51.990634
+lon0 = 4.376789
+alt0 = 0.0  # meters
+
 # if PAPARAZZI_HOME not set, then assume the tree containing this
 # file is a reasonable substitute
 PPRZ_HOME = getenv("PAPARAZZI_HOME", path.normpath(path.join(path.dirname(path.abspath(__file__)), '../../../../')))
@@ -192,6 +198,8 @@ parser.add_argument('-vs', '--vel_samples', dest='vel_samples', default=4, type=
 parser.add_argument('-rg', '--remote_gps', dest='rgl_msg', action='store_true', help="use the old REMOTE_GPS_LOCAL message")
 parser.add_argument('-sm', '--small', dest='small_msg', action='store_true', help="enable the EXTERNAL_POSE_SMALL message instead of the full")
 parser.add_argument('-o', '--old_natnet', dest='old_natnet', action='store_true', help="Change the NatNet version to 2.9")
+
+parser.add_argument('-tp', '--target_pos', dest='target_pos', type=int, default=0, help='also send the TARGET_POS message of the given id')
 
 def process_args(args):
     if args.ac is None:
@@ -244,7 +252,9 @@ def process_args(args):
         angle=np.deg2rad(nose_correction[args.ac_nose] + x_angle)
     )
 
-    return id_dict, timestamp, period, track, q_total, q_nose_correction
+    target_pos_id = args.target_pos
+    return id_dict, timestamp, period, track, q_total, q_nose_correction, target_pos_id
+
 
 # store track function
 def store_track(ac_id, pos, t):
@@ -291,6 +301,7 @@ def performTransformation( pos, vel, quat ):
     return pos, vel, quat
 
 def receiveRigidBodyList( rigid_body_data, stamp ):
+    global target_pos_id
     for rigid_body in rigid_body_data.rigid_body_list:
         if not rigid_body.tracking_valid:
             # skip if rigid body is not valid
@@ -372,6 +383,65 @@ def receiveRigidBodyList( rigid_body_data, stamp ):
             gr['timestamp'] = stamp
             ivy.send(gr)
 
+    if target_pos_id != 0 and rigid_body.id_num == target_pos_id:
+        pos = rigid_body.pos
+        quat = rigid_body.rot
+
+        # Transform position into ENU
+        pos, vel, quat = performTransformation(pos, [0., 0., 0.], quat)
+
+        # ENU to NED conversion (north = y, east = x, down = -z)
+        north = pos[1]
+        east = pos[0]
+        down = -pos[2]
+
+        # Convert NED to LLA
+        lat, lon, alt = pm.ned2geodetic(north, east, down, lat0, lon0, alt0)
+
+        # Create and fill the TARGET_POS message
+        tp_msg = PprzMessage("datalink", "TARGET_POS")
+        tp_msg['ac_id'] = 90  # Set your aircraft ID (e.g., 0 or a specific one)
+        tp_msg['target_id'] = 10  # Platform ID (e.g., 0 or another)
+        tp_msg['tow'] = int(1000.0 * stamp)  # Time of week in ms
+
+        # Position
+        tp_msg['lat'] = int(lat * 1e7)  # degrees to 1e7deg
+        tp_msg['lon'] = int(lon * 1e7)
+        tp_msg['alt'] = int(alt * 1000)  # meters to millimeters
+
+        # Velocity (currently zero, can be improved later)
+        tp_msg['vnorth'] = 0.0
+        tp_msg['veast'] = 0.0
+        tp_msg['vdown'] = 0.0
+
+        # Quaternion (body to NED frame)
+        tp_msg['body_qi'] = quat[3]
+        tp_msg['body_qx'] = quat[0]
+        tp_msg['body_qy'] = quat[1]
+        tp_msg['body_qz'] = quat[2]
+
+        # Body rates (p, q, r) — set to 0 for now
+        tp_msg['p'] = 0.0
+        tp_msg['q'] = 0.0
+        tp_msg['r'] = 0.0
+        
+        #print some debug info
+        if args.verbose:
+            print("Sending TARGET_POS message:")
+            print("  lat: %f" % (lat))
+            print("  lon: %f" % (lon))
+            print("  alt: %f" % (alt))
+            print("  vnorth: %f" % (tp_msg['vnorth']))
+            print("  veast: %f" % (tp_msg['veast']))
+            print("  vdown: %f" % (tp_msg['vdown']))
+            print("  body_qi: %f" % (tp_msg['body_qi']))
+            print("  body_qx: %f" % (tp_msg['body_qx']))
+            print("  body_qy: %f" % (tp_msg['body_qy']))
+            print("  body_qz: %f" % (tp_msg['body_qz']))
+
+        # Send the message on Ivy
+        ivy.send(tp_msg)
+
 run_test_cases = '--test' in sys.argv
 
 if not run_test_cases:
@@ -400,7 +470,7 @@ if not run_test_cases:
     try:
         # Start up the streaming client.
         # This will run perpetually, and operate on a separate thread.
-        id_dict, timestamp, period, track, q_total, q_nose_correction = process_args(args)
+        id_dict, timestamp, period, track, q_total, q_nose_correction, target_pos_id = process_args(args)
         is_running = natnet.run()
         if not is_running:
             print("Natnet error: Could not start streaming client.")
