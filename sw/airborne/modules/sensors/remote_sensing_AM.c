@@ -72,7 +72,7 @@ float P0[6] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
 float Q0[6] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
 
 struct KalmanSensor target_pos_kalman_sensor = { // Kalman sensor for the target position
-  .noise = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1}, // Process noise
+  .noise = {0.1, 1.f, 0.1, 1.f, 0.1, 1.f}, // Process noise
   .meas = {0, 0, 0, 0, 0, 0}, // Measurement
   .Hmat = {{1.f, 0.f, 0.f, 0.f, 0.f, 0.f}, // Measurement matrix
            {0.f, 1.f, 0.f, 0.f, 0.f, 0.f}, 
@@ -101,7 +101,7 @@ struct KalmanSensor aruco_kalman_sensor = {
            {0.f, 0.f, 1.f, 0.f, 0.f, 0.f},
            {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
            {0.f, 0.f, 0.f, 0.f, 1.f, 0.f}, 
-           {0.f, 0.f, 0.f, 0.f, 0.f, 1.f}}
+           {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}}
 };
 
 #if PERIODIC_TELEMETRY
@@ -263,6 +263,15 @@ void remote_sensing_parse_target_pos(uint8_t *buf)
   #if REMOTE_SENSING_LOG_ON_ARRIVAL
     sdlog_remote_sensing_am();
   #endif
+
+  // Update a position in the flight plan for now
+  uint8_t wp_id = WP_BOX;
+  struct EnuCoor_f target_enu;
+  struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
+  ENU_OF_TO_NED(target_enu, target_pos_NED);
+  VECT3_ADD(target_enu, *uav_pos);
+  target_enu.z = waypoints[wp_id].enu_f.z;
+  waypoint_set_enu(wp_id, &target_enu);
 }
 
 /**
@@ -545,33 +554,39 @@ void remote_sensing_AM_periodic(void) {
     // Send to the GCS that the waypoint has been moved
     wp_id = WP_KALMAN;
     DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-      &waypoints[WP_KALMAN].enu_i.x,
-      &waypoints[WP_KALMAN].enu_i.y,
-      &waypoints[WP_KALMAN].enu_i.z);
+      &waypoints[wp_id].enu_i.x,
+      &waypoints[wp_id].enu_i.y,
+      &waypoints[wp_id].enu_i.z);
     
     wp_id = WP_SIXDOF;
     DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-      &waypoints[WP_SIXDOF].enu_i.x,
-      &waypoints[WP_SIXDOF].enu_i.y,
-      &waypoints[WP_SIXDOF].enu_i.z);
+      &waypoints[wp_id].enu_i.x,
+      &waypoints[wp_id].enu_i.y,
+      &waypoints[wp_id].enu_i.z);
 
     wp_id = WP_RELANGLE;
     DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-      &waypoints[WP_RELANGLE].enu_i.x,
-      &waypoints[WP_RELANGLE].enu_i.y,
-      &waypoints[WP_RELANGLE].enu_i.z);
+      &waypoints[wp_id].enu_i.x,
+      &waypoints[wp_id].enu_i.y,
+      &waypoints[wp_id].enu_i.z);
 
     wp_id = WP_RELBEACON;
     DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-      &waypoints[WP_RELBEACON].enu_i.x,
-      &waypoints[WP_RELBEACON].enu_i.y,
-      &waypoints[WP_RELBEACON].enu_i.z);
+      &waypoints[wp_id].enu_i.x,
+      &waypoints[wp_id].enu_i.y,
+      &waypoints[wp_id].enu_i.z);
     
     wp_id = WP_ARUCO;
     DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-      &waypoints[WP_ARUCO].enu_i.x,
-      &waypoints[WP_ARUCO].enu_i.y,
-      &waypoints[WP_ARUCO].enu_i.z);
+      &waypoints[wp_id].enu_i.x,
+      &waypoints[wp_id].enu_i.y,
+      &waypoints[wp_id].enu_i.z);
+
+    wp_id = WP_BOX;
+    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+      &waypoints[wp_id].enu_i.x,
+      &waypoints[wp_id].enu_i.y,
+      &waypoints[wp_id].enu_i.z);
     });
 
   #if !USE_NPS

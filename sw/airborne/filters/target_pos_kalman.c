@@ -152,7 +152,6 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
 {
   
   // prepare variables and pointers
-  
   float Ht[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
   float S[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
   float invS[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
