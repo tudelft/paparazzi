@@ -24,11 +24,15 @@
  */
 
 #include "ground_detect.h"
-#include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #include "filters/low_pass_filter.h"
 #include "firmwares/rotorcraft/autopilot_firmware.h"
 
 #include "state.h"
+
+/* Number of triggers which need to be active to assume ground has been detected */
+#ifndef GROUND_DETECT_NUM_TRIGGERS
+#define GROUND_DETECT_NUM_TRIGGERS 3
+#endif
 
 #if USE_GROUND_DETECT_INDI_THRUST
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
@@ -39,6 +43,10 @@
 #ifndef GROUND_DETECT_AGL_MIN_VALUE
 #define GROUND_DETECT_AGL_MIN_VALUE 0.1
 #endif
+#endif
+
+#if USE_GROUND_DETECT_HX711
+#include "modules/sensors/hx711.h"
 #endif
 
 #include "pprzlink/messages.h"
@@ -56,15 +64,27 @@ bool disarm_on_not_in_flight = false;
 int32_t counter = 0;
 bool ground_detected = false;
 
+union ground_detect_bitmask_t ground_detect_status;
+
 #define DEBUG_GROUND_DETECT TRUE
 
-void ground_detect_init() {
+void ground_detect_init()
+{
+  // Initialize the ground detection status
+  ground_detect_status.value = 0;
+  ground_detect_status.vspeed_trigger = false;
+  ground_detect_status.spec_thrust_trigger = false;
+  ground_detect_status.accel_filt_trigger = false;
+  ground_detect_status.agl_trigger = false;
+  ground_detect_status.hx711_trigger = false;
+  
   float tau = 1.0 / (2.0 * M_PI * GROUND_DETECT_FILT_FREQ);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
   init_butterworth_2_low_pass(&accel_filter, tau, sample_time, 0.0);
 }
 
-bool ground_detect(void) {
+bool ground_detect(void)
+{
   return ground_detected;
 }
 
@@ -74,15 +94,19 @@ bool ground_detect(void) {
 //   return ground_detected;
 // }
 
-void ground_detect_periodic() {
+void ground_detect_periodic()
+{
 
   // Evaluate thrust given (less than hover thrust)
   // Use the control effectiveness in thrust in order to estimate the thrust delivered (only works for multicopters)
   float specific_thrust = 0.0; // m/s2
+ 
+#if USE_GROUND_DETECT_INDI_THRUST
   uint8_t i;
-  for (i = 0; i < INDI_NUM_ACT; i++){
+  for (i = 0; i < INDI_NUM_ACT; i++) {
     specific_thrust += actuator_state_filt_vect[i] * g1g2[3][i] * -((int32_t) act_is_servo[i] - 1);
   }
+#endif
 
   // vertical component
   float spec_thrust_down;
@@ -93,21 +117,35 @@ void ground_detect_periodic() {
   float vspeed_ned = stateGetSpeedNed_f()->z;
 
   // Detect free fall (to be done, rearm?)
-  //bool free_fall = false;
 
   // Detect noise level (to be done)
 
-  // Detect ground based on AND of all triggers
-  if ( (fabsf(vspeed_ned) < 5.0)
-    && (spec_thrust_down > -5.0)
-    && (fabsf(accel_filter.o[0]) < 2.0)
-    #if USE_GROUND_DETECT_AGL_DIST
-    && (agl_dist_valid && (agl_dist_value_filtered < GROUND_DETECT_AGL_MIN_VALUE))
-    #endif
-    )
-  {
+  // Detect ground based on AND of some triggers
 
-    counter +=1;
+#if USE_GROUND_DETECT_HX711
+  ground_detect_status.hx711_trigger = hx711_ground_detect(); 
+#else
+  ground_detect_status.hx711_trigger = false;
+#endif
+
+  ground_detect_status.vspeed_trigger = (fabsf(vspeed_ned) < 5.0)? 1:0;
+  ground_detect_status.spec_thrust_trigger = (spec_thrust_down > -5.0)? 1:0;
+  ground_detect_status.accel_filt_trigger = (fabsf(accel_filter.o[0]) < 2.0)? 1:0;
+
+#if USE_GROUND_DETECT_AGL_DIST
+  ground_detect_status.agl_trigger = (agl_dist_valid && (agl_dist_value_filtered < GROUND_DETECT_AGL_MIN_VALUE))? 1:0;
+#else
+  ground_detect_status.agl_trigger = false;
+#endif
+
+  int trigger_sum = ground_detect_status.vspeed_trigger +
+                    ground_detect_status.spec_thrust_trigger +
+                    ground_detect_status.accel_filt_trigger +
+                    ground_detect_status.agl_trigger +
+                    ground_detect_status.hx711_trigger;
+
+  if (trigger_sum >= GROUND_DETECT_NUM_TRIGGERS) {
+    counter += 1;
     if (counter > GROUND_DETECT_COUNTER_TRIGGER) {
       ground_detected = true;
 
@@ -121,25 +159,25 @@ void ground_detect_periodic() {
     counter = 0;
   }
 
-#ifdef DEBUG_GROUND_DETECT
-  float payload[7];
-  payload[0] = vspeed_ned;
-  payload[1] = spec_thrust_down;
-  payload[2] = accel_filter.o[0];
-  payload[3] = stateGetAccelNed_f()->z;
-  payload[4] = agl_dist_valid;
-  payload[5] = agl_dist_value_filtered;
-  payload[6] = 1.f*ground_detected;
-
-  RunOnceEvery(10, {DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 7, payload);} );
-#endif
+  uint8_t _ground_detect = ground_detected;
+  uint8_t _hx711_trigger = ground_detect_status.hx711_trigger;
+  pprz_msg_send_GROUND_DETECT(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
+                              &_ground_detect,
+                              &vspeed_ned,
+                              &spec_thrust_down,
+                              &accel_filter.o[0],
+                              &agl_dist_value_filtered,
+                              &_hx711_trigger,
+                              &ground_detect_status.value
+  );
 }
 
 /**
  * Filter the vertical acceleration with a low cutoff frequency.
  *
  */
-void ground_detect_filter_accel(void) {
+void ground_detect_filter_accel(void)
+{
   struct NedCoor_f *accel = stateGetAccelNed_f();
   update_butterworth_2_low_pass(&accel_filter, accel->z);
 }
