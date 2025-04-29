@@ -72,11 +72,6 @@ void ground_detect_init()
 {
   // Initialize the ground detection status
   ground_detect_status.value = 0;
-  ground_detect_status.vspeed_trigger = false;
-  ground_detect_status.spec_thrust_trigger = false;
-  ground_detect_status.accel_filt_trigger = false;
-  ground_detect_status.agl_trigger = false;
-  ground_detect_status.hx711_trigger = false;
   
   float tau = 1.0 / (2.0 * M_PI * GROUND_DETECT_FILT_FREQ);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
@@ -138,11 +133,8 @@ void ground_detect_periodic()
   ground_detect_status.agl_trigger = false;
 #endif
 
-  int trigger_sum = ground_detect_status.vspeed_trigger +
-                    ground_detect_status.spec_thrust_trigger +
-                    ground_detect_status.accel_filt_trigger +
-                    ground_detect_status.agl_trigger +
-                    ground_detect_status.hx711_trigger;
+  int trigger_sum = 0;
+  for(uint8_t i = 0; i < 16; i++) trigger_sum += (ground_detect_status.value >> i) & 0x1;
 
   if (trigger_sum >= GROUND_DETECT_NUM_TRIGGERS) {
     counter += 1;
