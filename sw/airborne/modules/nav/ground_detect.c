@@ -162,6 +162,18 @@ void ground_detect_periodic()
                               &_hx711_trigger,
                               &ground_detect_status.value
   );
+
+  RunOnceEvery(GROUND_DETECT_PERIODIC_FREQ / 10, {
+    DOWNLINK_SEND_GROUND_DETECT(DefaultChannel, DefaultDevice,
+                                &_ground_detect,
+                                &vspeed_ned,
+                                &spec_thrust_down,
+                                &accel_filter.o[0],
+                                &agl_dist_value_filtered,
+                                &_hx711_trigger,
+                                &ground_detect_status.value
+    );
+  });
 }
 
 /**
