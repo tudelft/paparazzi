@@ -7,16 +7,18 @@
     #include "modules/radio_control/radio_control.h"
     #include "modules/ahrs/ahrs.h"
     #define NPS_GAZEBO_WORLD "cyberzoo_orange_poles.world"
-#include "autopilot.h"
-inline void setNav(void){
-  autopilot_mode_auto2 = AP_MODE_NAV;
-  autopilot_static_set_mode(AP_MODE_NAV);
-}
-inline void setGuided(void){
-  autopilot_mode_auto2 = AP_MODE_GUIDED;
-  autopilot_static_set_mode(AP_MODE_GUIDED);
-}
-</header>
+    #include "autopilot.h"
+    #include "modules/orange_avoider/orange_avoider_guided.h"
+
+    inline void setNav(void){
+      autopilot_mode_auto2 = AP_MODE_NAV;
+      autopilot_static_set_mode(AP_MODE_NAV);
+    }
+    inline void setGuided(void){
+      autopilot_mode_auto2 = AP_MODE_GUIDED;
+      autopilot_static_set_mode(AP_MODE_GUIDED);
+    }
+  </header>
   <waypoints>
     <waypoint lat="51.990631" lon="4.376796" name="HOME"/>
     <waypoint name="CLIMB" x="1.9" y="1.0"/>
@@ -117,6 +119,12 @@ inline void setGuided(void){
     <block name="STOP">
       <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
       <call_once fun="setNav()"/>
+      <stay wp="STDBY"/>
+    </block>
+    <block name="RETREAT">
+      <call_once fun="setGuided()"/>
+      <call_once fun="orange_avoider_guided_retreat()"/>
+      <exception cond="block_time @GT 2.0" deroute="STOP"/>
       <stay wp="STDBY"/>
     </block>
     <block key="l" name="land here" strip_button="Land Here" strip_icon="land-right.png">

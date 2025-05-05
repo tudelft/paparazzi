@@ -23,6 +23,7 @@
  // Public functions
  extern void orange_avoider_guided_init(void);
  extern void orange_avoider_guided_periodic(void);
+ extern void orange_avoider_guided_retreat(void);
  
  #endif 
 
