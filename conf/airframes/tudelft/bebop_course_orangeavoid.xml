@@ -275,5 +275,4 @@
   <section name="GCS">
     <define name="AC_ICON"             value="quadrotor_xi"/>
   </section>
-
 </airframe>
