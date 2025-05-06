@@ -153,6 +153,8 @@ void ground_detect_periodic()
 
   uint8_t _ground_detect = ground_detected;
   uint8_t _hx711_trigger = ground_detect_status.hx711_trigger;
+
+#if !USE_NPS
   pprz_msg_send_GROUND_DETECT(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
                               &_ground_detect,
                               &vspeed_ned,
@@ -162,6 +164,7 @@ void ground_detect_periodic()
                               &_hx711_trigger,
                               &ground_detect_status.value
   );
+#endif
 
   RunOnceEvery(GROUND_DETECT_PERIODIC_FREQ / 10, {
     DOWNLINK_SEND_GROUND_DETECT(DefaultChannel, DefaultDevice,
