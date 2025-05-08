@@ -14,6 +14,8 @@
  * The color detection settings must be defined using ORANGE_AVOIDER_VISUAL_DETECTION_ID and
  * FLOOR_VISUAL_DETECTION_ID in the airframe configuration.
  *
+ * --- CyberZoo Tested
+ * 
  * Copyright (C) Kirk Scheper <kirkscheper@gmail.com>
  * This module is part of Paparazzi UAV.
  */

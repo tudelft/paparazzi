@@ -19,6 +19,8 @@
  *
  *    <define name="ORANGE_AVOIDER_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION1_ID"/>
  * 
+ * --- CyberZoo Tested
+ * 
  * Copyright (C) Roland Meertens
  * This module is part of Paparazzi UAV.
  */
