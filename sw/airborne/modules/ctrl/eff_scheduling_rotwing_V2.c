@@ -78,6 +78,7 @@ static Butterworth2LowPass phi_filt;
 static Butterworth2LowPass theta_filt;
 static Butterworth2LowPass psi_filt;
 /* Temp variables*/
+int G2_on = 1;
 bool airspeed_fake_on = false;
 float airspeed_fake = 0.0;
 float ele_eff = 19.36; // (0.88*22.0);
@@ -148,28 +149,28 @@ void init_RW_Model(void)
   RW.I.yy   = RW.I.b_yy + RW.I.w_yy; // [kgm²]
   RW.I.zz   = 1.2842; // [kgm²]
   RW.m      = 6.5; //7.200; // [kg]
-
+  
   // Init the thrust curves
   init_all_thrust_curve();
   // Motor Front
   //RW.mF.dFdu     = 3.835 / RW_G_SCALE; // [N  / pprz] 
-  RW.mF.dMdu     = 0.138 / RW_G_SCALE; // [Nm / pprz]
-  RW.mF.dMdud    = 0.00 / RW_G_SCALE; // [Nm / pprz]
+  RW.mF.dMdu     = 0.150 / RW_G_SCALE; // [Nm / pprz]
+  RW.mF.dMdud    = G2_on*27.74 / (RW_G_SCALE*RW_G_SCALE); // [Nm / pprz]
   RW.mF.l        = 0.440             ; // [m]   435                
   // Motor Right
   //RW.mR.dFdu     = roll_eff / RW_G_SCALE; // [N  / pprz]
-  RW.mR.dMdu     = yaw_eff / RW_G_SCALE; // [Nm / pprz]
-  RW.mR.dMdud    = 0.00 / RW_G_SCALE; // [Nm / pprz] 
+  RW.mR.dMdu     = 0.258 / RW_G_SCALE; // [Nm / pprz]
+  RW.mR.dMdud    = G2_on*3.711 / (RW_G_SCALE*RW_G_SCALE); // [Nm / pprz] 
   RW.mR.l        = 0.380             ; // [m]   375     
   // Motor Back
   //RW.mB.dFdu     = 3.835 / RW_G_SCALE; // [N  / pprz]
-  RW.mB.dMdu     = 0.138  / RW_G_SCALE; // [Nm / pprz]
-  RW.mB.dMdud    = 0.00 / RW_G_SCALE; // [Nm / pprz]
+  RW.mB.dMdu     = 0.150 / RW_G_SCALE; // [Nm / pprz]
+  RW.mB.dMdud    = G2_on*27.74 / (RW_G_SCALE*RW_G_SCALE); // [Nm / pprz]
   RW.mB.l        = 0.440             ; // [m]        
   // Motor Left
   //RW.mL.dFdu     = roll_eff / RW_G_SCALE; // [N  / pprz]
-  RW.mL.dMdu     = yaw_eff / RW_G_SCALE; // [Nm / pprz]
-  RW.mL.dMdud    = 0.00 / RW_G_SCALE; // [Nm / pprz]
+  RW.mL.dMdu     = 0.258 / RW_G_SCALE; // [Nm / pprz]
+  RW.mL.dMdud    = G2_on*3.711 / (RW_G_SCALE*RW_G_SCALE); // [Nm / pprz]
   RW.mL.l        = 0.380             ; // [m]        
   // Motor Pusher
   RW.mP.dFdu     = 0.0;//3.468 / RW_G_SCALE; // [N  / pprz]
@@ -273,25 +274,25 @@ void calc_G1_G2_RW(void)
   G1_RW[RW_ap][COMMAND_MOTOR_FRONT]  =  (RW.mF.dFdu * RW.mF.l) * I_inv[x][y];
   G1_RW[RW_aq][COMMAND_MOTOR_FRONT]  =  (RW.mF.dFdu * RW.mF.l) * I_inv[y][y];
   G1_RW[RW_ar][COMMAND_MOTOR_FRONT]  = -RW.mF.dMdu  * I_inv[z][z];
-  G2_RW[COMMAND_MOTOR_FRONT]         = -RW.mF.dMdud * I_inv[z][z];
+  G2_RW[COMMAND_MOTOR_FRONT]         = -G2_on*RW.mF.dMdud * I_inv[z][z] * PERIODIC_FREQUENCY;
   // Motor Right
   G1_RW[RW_aZ][COMMAND_MOTOR_RIGHT]  = -RW.mR.dFdu / RW.m;
   G1_RW[RW_ap][COMMAND_MOTOR_RIGHT]  = -RW.mR.dFdu * RW.mR.l * sigma2;
   G1_RW[RW_aq][COMMAND_MOTOR_RIGHT]  =  RW.mR.dFdu * RW.mR.l * sigma1;
   G1_RW[RW_ar][COMMAND_MOTOR_RIGHT]  =  RW.mR.dMdu  * I_inv[z][z];
-  G2_RW[COMMAND_MOTOR_RIGHT]         =  RW.mR.dMdud * I_inv[z][z];
+  G2_RW[COMMAND_MOTOR_RIGHT]         =  G2_on*RW.mR.dMdud * I_inv[z][z] * PERIODIC_FREQUENCY;
   // Motor Back
   G1_RW[RW_aZ][COMMAND_MOTOR_BACK]   = -RW.mB.dFdu / RW.m;
   G1_RW[RW_ap][COMMAND_MOTOR_BACK]   = -(RW.mB.dFdu * RW.mB.l) * I_inv[x][y];
   G1_RW[RW_aq][COMMAND_MOTOR_BACK]   = -(RW.mB.dFdu * RW.mB.l) * I_inv[y][y];
   G1_RW[RW_ar][COMMAND_MOTOR_BACK]   = -RW.mB.dMdu  * I_inv[z][z];
-  G2_RW[COMMAND_MOTOR_BACK]          = -RW.mB.dMdud * I_inv[z][z];
+  G2_RW[COMMAND_MOTOR_BACK]          = -G2_on*RW.mB.dMdud * I_inv[z][z] * PERIODIC_FREQUENCY;
   // Motor Left
   G1_RW[RW_aZ][COMMAND_MOTOR_LEFT]   = -RW.mL.dFdu / RW.m;
   G1_RW[RW_ap][COMMAND_MOTOR_LEFT]   =  RW.mL.dFdu * RW.mL.l * sigma2;
   G1_RW[RW_aq][COMMAND_MOTOR_LEFT]   = -RW.mL.dFdu * RW.mL.l * sigma1;
   G1_RW[RW_ar][COMMAND_MOTOR_LEFT]   =  RW.mL.dMdu  * I_inv[z][z];
-  G2_RW[COMMAND_MOTOR_LEFT]          =  RW.mL.dMdud * I_inv[z][z];
+  G2_RW[COMMAND_MOTOR_LEFT]          =  G2_on*RW.mL.dMdud * I_inv[z][z] * PERIODIC_FREQUENCY;
   // Motor Pusher
   G1_RW[RW_aX][COMMAND_MOTOR_PUSHER] =  RW.mP.dFdu / RW.m;
   // Elevator
@@ -354,16 +355,16 @@ void sum_EFF_MAT_RW(void) {
     case (COMMAND_MOTOR_RIGHT):     
     case (COMMAND_MOTOR_LEFT):
       EFF_MAT_RW[RW_aN][i] = (RW.att.cpsi * RW.att.stheta + RW.att.ctheta * RW.att.sphi   * RW.att.spsi) * G1_RW[RW_aZ][i];
-      if(i == COMMAND_MOTOR_FRONT){
-        //printf("Front: %f\n", EFF_MAT_RW[RW_aN][i]);
-        //printf("att part: %f\n", (RW.att.cpsi * RW.att.stheta + RW.att.ctheta * RW.att.sphi   * RW.att.spsi));
-        //printf("G1 part: %f\n", G1_RW[RW_aZ][i]);
-      }
       EFF_MAT_RW[RW_aE][i] = (RW.att.spsi * RW.att.stheta - RW.att.cpsi   * RW.att.ctheta * RW.att.sphi) * G1_RW[RW_aZ][i];
       EFF_MAT_RW[RW_aD][i] = (RW.att.cphi * RW.att.ctheta                                              ) * G1_RW[RW_aZ][i];
       EFF_MAT_RW[RW_ap][i] = (G1_RW[RW_ap][i])                                       ;
       EFF_MAT_RW[RW_aq][i] = (G1_RW[RW_aq][i])                                       ;
       EFF_MAT_RW[RW_ar][i] = (G1_RW[RW_ar][i] + G2_RW[i])                            ;
+      if(i == COMMAND_MOTOR_FRONT){
+        //printf("G2 part: %f\n", G2_RW[i]);
+        //printf("G1 part: %f\n", G1_RW[RW_ar][i]);
+        //printf("EFF_MAT_RW: %f\n", EFF_MAT_RW[RW_ar][i]);
+      }
       break;
     case (COMMAND_MOTOR_PUSHER): 
       EFF_MAT_RW[RW_aN][i] = (RW.att.cpsi   * RW.att.ctheta - RW.att.sphi * RW.att.spsi * RW.att.stheta) * G1_RW[RW_aX][i];

@@ -630,7 +630,7 @@ static void send_eff_mat_stab_oneloop_andi(struct transport_tx *trans, struct li
                 ANDI_NUM_ACT, EFF_MAT_RW[3],
                 ANDI_NUM_ACT, EFF_MAT_RW[4],
                 ANDI_NUM_ACT, EFF_MAT_RW[5], 
-                                    1, &zero,
+                ANDI_NUM_ACT, G2_RW,
                                     1, &zero);
 }
 
@@ -1958,16 +1958,13 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   oneloop_andi.gui_state.acc[2] = LP.az.out;
   // Calculated feedforward signal for yaw control
   g2_ff = 0.0;
-
   for (i = 0; i < ANDI_NUM_ACT; i++) {
     if (oneloop_andi.ctrl_type == CTRL_ANDI){
-      g2_ff += G2_RW[i] * act_dynamics[i] * andi_du[i];
+      g2_ff += G2_RW[i] * act_dynamics[i] * (andi_u[i]-actuator_state_1l[i]);
     } else if (oneloop_andi.ctrl_type == CTRL_INDI){
-      g2_ff += G2_RW[i]* andi_u_n[i];
+      g2_ff += G2_RW[i] * (andi_u[i]-actuator_state_1l[i]);
     }
   }
-  //G2 is scaled by ANDI_G_SCALING to make it readable
-  g2_ff = g2_ff;
   // Run the Reference Model (RM)
   oneloop_andi_RM(half_loop, PSA_des, rm_order_h, rm_order_v, in_flight_oneloop);
   // Run Distrubance Bounder
@@ -2170,12 +2167,16 @@ void get_act_state_oneloop(void)
   int8_t i;
   float prev_actuator_state_1l;
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
-    prev_actuator_state_1l = actuator_state_1l[i];
-    actuator_state_1l[i] = prev_actuator_state_1l + act_dynamics_d[i] * (andi_u[i] - prev_actuator_state_1l);
-    if(!autopilot_get_motors_on()){
-      actuator_state_1l[i] = 0.0;
+    if(i < ANDI_NUM_ACT){
+      prev_actuator_state_1l = actuator_state_1l[i];
+      actuator_state_1l[i] = prev_actuator_state_1l + act_dynamics_d[i] * (andi_u[i] - prev_actuator_state_1l);
+      if(!autopilot_get_motors_on()){
+        actuator_state_1l[i] = 0.0;
+      }
+      Bound(actuator_state_1l[i],act_min[i], act_max[i]);
+    } else {
+      actuator_state_1l[i] = oneloop_andi.sta_state.att[i-ANDI_NUM_ACT];
     }
-    Bound(actuator_state_1l[i],act_min[i], act_max[i]);
   }
 }
 

@@ -186,6 +186,7 @@ struct RW_Model{
 
 };
 
+extern int G2_on;
 extern int thrust_curve; 
 extern float temp_mQ_k;
 
