@@ -34,7 +34,8 @@
     <module name="geo_mag"/>
     <module name="air_data"/>
     <module name="logger_file">
-      <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000"/>
+      <!-- <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000"/> -->
+      <define name="LOGGER_FILE_PATH" value="/home/merlijn/Desktop/log_files/"/>
     </module>
   </firmware>
   

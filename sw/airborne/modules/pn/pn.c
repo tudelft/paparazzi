@@ -12,6 +12,7 @@
 #include "pprzlink/intermcu_msg.h"
 #include "modules/datalink/telemetry.h"
 #include "mcu_periph/sys_time.h"
+#define TARGET_AC_ID 11 
 
 
 /*---------------------------------------------------------------------------*/
@@ -28,7 +29,7 @@ uint8_t pn_msg_buf[256] __attribute__((aligned));  ///< The InterMCU message buf
 
 void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf);
 
-static struct FloatVect3 pos_target = {0,0,-3};
+static struct FloatVect3 pos_target = {0,1.0,-4};
 static struct FloatVect3 vel_target = {0,0,0};
 
 static bool first_remote_gps_msg_received = false;
@@ -40,7 +41,7 @@ static bool first_remote_gps_msg_received = false;
 static const float DT        = 1.0f/50.0f;
 static const float LAMBDA    = 50.0f;
 static const float PP_WEIGHT = 0.03f;
-static const float MAX_ACCEL = 10.0f;
+static const float MAX_ACCEL = 20.0f;
 static const float EPSILON   = 1e-3f;
 static const float K2        = 5.1f;
 static const float V_R           = -5.0f;  // closing speed bias (GRTPN only)
@@ -59,7 +60,7 @@ static struct FirstOrderLowPass acc_filt_z;
 /*                            State & Mode                                  */
 /*---------------------------------------------------------------------------*/
 static float time_s = 0.0f;
-static pn_mode_t cur_mode = PN_MODE_FRPN;
+static pn_mode_t cur_mode = PN_MODE_GRTPN;
 static struct Proportional_nav pn_log;
 
 /*---------------------------------------------------------------------------*/
@@ -248,20 +249,21 @@ void pn_run(void) {
   }
 }
 
-void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf) {
+void pn_parse_TARGET_INFO(uint8_t *buf) {
 
-    if (!first_remote_gps_msg_received) {
-        float t_now = get_sys_time_float();
-        printf("[pn] First REMOTE_GPS_LOCAL message received at t = %.3f seconds\n", t_now);
-        first_remote_gps_msg_received = true;
-    }
-    pos_target.x  = DL_REMOTE_GPS_LOCAL_enu_y(buf); 
-    pos_target.y  = DL_REMOTE_GPS_LOCAL_enu_x(buf);
-    pos_target.z  = -DL_REMOTE_GPS_LOCAL_enu_z(buf);
-    vel_target.x  = DL_REMOTE_GPS_LOCAL_enu_yd(buf);
-    vel_target.y  = DL_REMOTE_GPS_LOCAL_enu_xd(buf);
-    vel_target.z  = -DL_REMOTE_GPS_LOCAL_enu_zd(buf);
+  if (!first_remote_gps_msg_received) {
+      float t_now = get_sys_time_float();
+      printf("[pn] First TARGET_INFO message received at t = %.3f seconds\n", t_now);
+      first_remote_gps_msg_received = true;
+  }
+  pos_target.x  = DL_TARGET_INFO_enu_y(buf); 
+  pos_target.y  = DL_TARGET_INFO_enu_x(buf);
+  pos_target.z  = -DL_TARGET_INFO_enu_z(buf);
+  vel_target.x  = DL_TARGET_INFO_enu_yd(buf);
+  vel_target.y  = DL_TARGET_INFO_enu_xd(buf);
+  vel_target.z  = -DL_TARGET_INFO_enu_zd(buf);
 }
+
 
 struct Proportional_nav *pn_info_logger(void) {
   return &pn_log;
