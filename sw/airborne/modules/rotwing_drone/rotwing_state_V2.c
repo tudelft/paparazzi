@@ -28,6 +28,11 @@
 #include "modules/core/commands.h"
 #include "modules/actuators/actuators.h"
 #include "modules/core/abi.h"
+#include "modules/rotwing_drone/wing_rotation_adc_sensor.h"
+
+#ifndef SERVO_ROTATION_MECH_IDX
+#error ctrl_eff_sched_rotwing requires a servo named ROTATION_MECH_IDX
+#endif
 
 // Quad state identification
 #ifndef ROTWING_MIN_SKEW_ANGLE_DEG_QUAD
@@ -182,7 +187,7 @@ inline void rotwing_state_free_processor(void);
 #include "modules/datalink/telemetry.h"
 static void send_rotating_wing_state(struct transport_tx *trans, struct link_device *dev)
 {
-  uint16_t adc_dummy = 0;
+  uint16_t adc_dummy = adc_wing_rotation_extern;
 
   pprz_msg_send_ROTATING_WING_STATE(trans, dev, AC_ID,
                                     &rotwing_state.current_state,
@@ -764,7 +769,7 @@ static void rotwing_state_feedback_cb(uint8_t __attribute__((unused)) sender_id,
 
     for (int i = 0; i < num_act_message; i++) {
       // Check for wing rotation feedback
-      if ((feedback_msg[i].set.position) && (feedback_msg[i].idx == SERVO_ROTATION_MECH_IDX)) {
+      if ((feedback_msg[i].set.position) && (feedback_msg[i].idx == 69)) {
         // Get wing rotation angle from sensor
         float wing_angle_rad = 0.5 * M_PI - feedback_msg[i].position;
         rotwing_state_skewing.wing_angle_deg = DegOfRad(wing_angle_rad);

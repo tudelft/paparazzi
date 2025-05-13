@@ -54,7 +54,7 @@ static float adc_offset = ADC_WING_ROT_OFFSET;
 #ifdef ADC_WING_ROT_SCALE
 static float adc_scale = ADC_WING_ROT_SCALE;
 #endif
-
+float adc_wing_rotation_extern = 9.9;
 static struct adc_buf buf_wing_rot_pos;
 // Initialization
 void wing_rotation_adc_init(void)
@@ -67,11 +67,12 @@ void wing_rotation_adc_init(void)
 void wing_rotation_adc_to_deg(void)
 {
   float adc_wing_rotation = buf_wing_rot_pos.sum / buf_wing_rot_pos.av_nb_sample;
+  adc_wing_rotation_extern = adc_wing_rotation;
   float wing_angle_deg = adc_scale * adc_wing_rotation + adc_offset;
 
   // SEND ABI Message to ctr_eff_sched and other modules that want Actuator position feedback
   struct act_feedback_t feedback = {0};
-  feedback.idx =  SERVO_ROTATION_MECH_IDX;
+  feedback.idx =  69;
   feedback.position = 0.5 * M_PI - RadOfDeg(wing_angle_deg);
   feedback.set.position = true;
 
