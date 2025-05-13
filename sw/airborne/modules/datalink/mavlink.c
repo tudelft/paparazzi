@@ -59,10 +59,6 @@
 #include "modules/radio_control/radio_control.h"
 #endif
 
-#if USE_MISSION
-#include "modules/mission/mission_common.h"
-#endif
-
 // Change the autopilot identification code: by default identify as PPZ autopilot: alternatively as MAV_AUTOPILOT_ARDUPILOTMEGA
 #ifndef MAV_AUTOPILOT_ID
 // #define MAV_AUTOPILOT_ID MAV_AUTOPILOT_PPZ
@@ -83,8 +79,6 @@ static uint8_t mavlink_params_idx = NB_SETTING; /**< Transmitting parameters ind
  */
 static char mavlink_param_names[NB_SETTING][16 + 1] = SETTINGS_NAMES_SHORT;
 static uint8_t custom_version[8]; /**< first 8 bytes (16 chars) of GIT SHA1 */
-
-mavlink_mission_mgr mission_mgr;
 
 void mavlink_common_message_handler(const mavlink_message_t *msg);
 
@@ -108,7 +102,6 @@ static void mavlink_send_battery_status(struct transport_tx *trans, struct link_
 static void mavlink_send_gps_global_origin(struct transport_tx *trans, struct link_device *dev);
 static void mavlink_send_gps_status(struct transport_tx *trans, struct link_device *dev);
 static void mavlink_send_vfr_hud(struct transport_tx *trans, struct link_device *dev);
-static void mavlink_send_mission_current(struct transport_tx *trans, struct link_device *dev);
 static void mavlink_send_extended_sys_state(struct transport_tx *trans, struct link_device *dev);
 
 
@@ -132,7 +125,7 @@ void mavlink_init(void)
 
   get_pprz_git_version(custom_version);
 
-  mavlink_mission_init(&mission_mgr);
+  mavlink_mission_init();
 
   mavlink_determine_fp_modes();
 
@@ -152,7 +145,6 @@ void mavlink_init(void)
   register_periodic_telemetry(&mavlink_telemetry, MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN, mavlink_send_gps_global_origin);
   register_periodic_telemetry(&mavlink_telemetry, MAVLINK_MSG_ID_GPS_STATUS, mavlink_send_gps_status);
   register_periodic_telemetry(&mavlink_telemetry, MAVLINK_MSG_ID_VFR_HUD, mavlink_send_vfr_hud);
-  register_periodic_telemetry(&mavlink_telemetry, MAVLINK_MSG_ID_MISSION_CURRENT, mavlink_send_mission_current);
 #endif
 }
 
@@ -1142,33 +1134,6 @@ static void mavlink_send_vfr_hud(struct transport_tx *trans, struct link_device 
                            throttle,
                            stateGetPositionLla_f()->alt + hmsl_alt,
                            stateGetSpeedNed_f()->z); // climb rate
-  MAVLinkSendMessage();
-}
-
-/**
- * Message that announces the sequence number of the current target mission item (that the system will fly towards/execute when the mission is running).
- */
-static void mavlink_send_mission_current(struct transport_tx *trans, struct link_device *dev)
-{
-  /* Sequence number*/
-  uint16_t seq;
-  #if USE_MISSION
-  seq = mission.elements[mission.current_idx].index;
-  #else
-  seq = mission_mgr_seq;
-  #endif
-  /* Total number of mission items. 0: Not supported, UINT16_MAX if no mission is present on the vehicle.*/
-  uint16_t total = mission_mgr.active_count;
-  /* Mission state machine state. MISSION_STATE_UNKNOWN if state reporting not supported.*/
-  uint8_t mission_state = mission_mgr.mission_state;
-  /* Vehicle is in a mode that can execute mission items or suspended. 0: Unknown, 1: In mission mode, 2: Suspended (not in mission mode).*/
-  uint8_t mission_mode = 0; // TODO: implement
-
-  mavlink_msg_mission_current_send(MAVLINK_COMM_0,
-                                   seq,
-                                   total,
-                                   mission_state,
-                                   mission_mode);
   MAVLinkSendMessage();
 }
 

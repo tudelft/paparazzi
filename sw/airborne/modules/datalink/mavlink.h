@@ -58,6 +58,8 @@ extern uint16_t mavlink_rc_value;
 #define MAVLINK_DEV uart1
 #endif
 
+extern struct periodic_telemetry mavlink_telemetry;
+
 /*
  * The MAVLink link description
  */

@@ -92,6 +92,18 @@ static bool nav_rotwing_land(uint8_t nb __attribute__((unused)), float *params _
   return false;
 }
 
+static bool nav_rotwing_speed_change(uint8_t nb __attribute__((unused)), float *params __attribute__((unused)), enum MissionRunFlag flag)
+{
+  // Do nothing for now
+  if (flag == MissionInit) {
+    return nav_rotwing_speed_change_run();
+  } else if (flag == MissionRun) {
+    return nav_rotwing_speed_change_run();
+  }
+
+  return false;
+}
+
 #endif // USE_MISSION
 
 void nav_rotwing_init(void)
@@ -99,6 +111,7 @@ void nav_rotwing_init(void)
   #if USE_MISSION
     mission_register(nav_rotwing_takeoff, "TO");
     mission_register(nav_rotwing_land, "LAND");
+    mission_register(nav_rotwing_speed_change, "SPD");
   #endif
 }
 
@@ -214,5 +227,9 @@ bool nav_rotwing_land_run(void)
   // }
 
   // landing_timer += dt_navigation;
+  return false;
+}
+
+bool nav_rotwing_speed_change_run(void) {
   return false;
 }

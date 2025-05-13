@@ -193,6 +193,11 @@ extern int mission_run(void);
  */
 extern void mission_status_report(void);
 
+/** Get the number of elements in the mission
+ * @return return the number of elements in the mission
+ */
+extern uint8_t mission_get_nb_elements(void);
+
 /** Parsing functions called when a mission message is received
 */
 extern int mission_parse_GOTO_WP(uint8_t *buf);
