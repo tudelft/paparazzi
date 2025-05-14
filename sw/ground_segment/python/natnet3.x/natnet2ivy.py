@@ -304,6 +304,66 @@ def receiveRigidBodyList( rigid_body_data, stamp ):
         if not rigid_body.tracking_valid:
             # skip if rigid body is not valid
             continue
+        
+        target, ac = args.tp
+        if int(target) == int(rigid_body.id_num):
+            pos = rigid_body.pos
+            quat = rigid_body.rot
+
+            # Transform position into ENU
+            pos, vel, quat = performTransformation(pos, [0., 0., 0.], quat)
+
+            # ENU to NED conversion (north = y, east = x, down = -z)
+            north = pos[1]
+            east = pos[0]
+            down = -pos[2]
+
+            # Convert NED to LLA
+            lat, lon, alt = pm.ned2geodetic(north, east, down, lat0, lon0, alt0)
+
+            # Create and fill the TARGET_POS message
+            tp_msg = PprzMessage("datalink", "TARGET_POS")
+            tp_msg['ac_id'] = str(ac)  # Set your aircraft ID (e.g., 0 or a specific one)
+            tp_msg['target_id'] = str(target)  # Platform ID (e.g., 0 or another)
+            tp_msg['tow'] = int(1000.0 * stamp)  # Time of week in ms
+
+            # Position
+            tp_msg['lat'] = int(lat * 1e7)  # degrees to 1e7deg
+            tp_msg['lon'] = int(lon * 1e7)
+            tp_msg['alt'] = int(alt * 1000)  # meters to millimeters
+
+            # Velocity (currently zero, can be improved later)
+            tp_msg['vnorth'] = 0.0
+            tp_msg['veast'] = 0.0
+            tp_msg['vdown'] = 0.0
+
+            # Quaternion (body to NED frame)
+            tp_msg['body_qi'] = quat[3]
+            tp_msg['body_qx'] = quat[0]
+            tp_msg['body_qy'] = quat[1]
+            tp_msg['body_qz'] = quat[2]
+
+            # Body rates (p, q, r) — set to 0 for now
+            tp_msg['p'] = 0.0
+            tp_msg['q'] = 0.0
+            tp_msg['r'] = 0.0
+            
+            #print some debug info
+            if args.verbose:
+                print("Sending TARGET_POS message:")
+                print("  lat: %f" % (lat))
+                print("  lon: %f" % (lon))
+                print("  alt: %f" % (alt))
+                print("  vnorth: %f" % (tp_msg['vnorth']))
+                print("  veast: %f" % (tp_msg['veast']))
+                print("  vdown: %f" % (tp_msg['vdown']))
+                print("  body_qi: %f" % (tp_msg['body_qi']))
+                print("  body_qx: %f" % (tp_msg['body_qx']))
+                print("  body_qy: %f" % (tp_msg['body_qy']))
+                print("  body_qz: %f" % (tp_msg['body_qz']))
+
+            # Send the message on Ivy
+            ivy.send(tp_msg)
 
         i = str(rigid_body.id_num)
         if i not in id_dict.keys():
@@ -380,66 +440,6 @@ def receiveRigidBodyList( rigid_body_data, stamp ):
             gr['rate'] = [ 0., 0., 0. ]
             gr['timestamp'] = stamp
             ivy.send(gr)
-
-    target, ac = args.tp
-    if int(target) == int(rigid_body.id_num):
-        pos = rigid_body.pos
-        quat = rigid_body.rot
-
-        # Transform position into ENU
-        pos, vel, quat = performTransformation(pos, [0., 0., 0.], quat)
-
-        # ENU to NED conversion (north = y, east = x, down = -z)
-        north = pos[1]
-        east = pos[0]
-        down = -pos[2]
-
-        # Convert NED to LLA
-        lat, lon, alt = pm.ned2geodetic(north, east, down, lat0, lon0, alt0)
-
-        # Create and fill the TARGET_POS message
-        tp_msg = PprzMessage("datalink", "TARGET_POS")
-        tp_msg['ac_id'] = str(ac)  # Set your aircraft ID (e.g., 0 or a specific one)
-        tp_msg['target_id'] = str(target)  # Platform ID (e.g., 0 or another)
-        tp_msg['tow'] = int(1000.0 * stamp)  # Time of week in ms
-
-        # Position
-        tp_msg['lat'] = int(lat * 1e7)  # degrees to 1e7deg
-        tp_msg['lon'] = int(lon * 1e7)
-        tp_msg['alt'] = int(alt * 1000)  # meters to millimeters
-
-        # Velocity (currently zero, can be improved later)
-        tp_msg['vnorth'] = 0.0
-        tp_msg['veast'] = 0.0
-        tp_msg['vdown'] = 0.0
-
-        # Quaternion (body to NED frame)
-        tp_msg['body_qi'] = quat[3]
-        tp_msg['body_qx'] = quat[0]
-        tp_msg['body_qy'] = quat[1]
-        tp_msg['body_qz'] = quat[2]
-
-        # Body rates (p, q, r) — set to 0 for now
-        tp_msg['p'] = 0.0
-        tp_msg['q'] = 0.0
-        tp_msg['r'] = 0.0
-        
-        #print some debug info
-        if args.verbose:
-            print("Sending TARGET_POS message:")
-            print("  lat: %f" % (lat))
-            print("  lon: %f" % (lon))
-            print("  alt: %f" % (alt))
-            print("  vnorth: %f" % (tp_msg['vnorth']))
-            print("  veast: %f" % (tp_msg['veast']))
-            print("  vdown: %f" % (tp_msg['vdown']))
-            print("  body_qi: %f" % (tp_msg['body_qi']))
-            print("  body_qx: %f" % (tp_msg['body_qx']))
-            print("  body_qy: %f" % (tp_msg['body_qy']))
-            print("  body_qz: %f" % (tp_msg['body_qz']))
-
-        # Send the message on Ivy
-        ivy.send(tp_msg)
 
 run_test_cases = '--test' in sys.argv
 

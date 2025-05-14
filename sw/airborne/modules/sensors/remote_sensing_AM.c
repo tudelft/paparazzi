@@ -29,6 +29,10 @@
 #include "filters/target_pos_kalman.h"
 #include "generated/flight_plan.h"
 
+#if USE_NPS
+#include <stdlib.h>
+#endif
+
 uint8_t falcon_mode = FALCON_MODE_SIXDOF; // 0: no mode, 1: sixdof_mode, 2: relangle_mode, 3: relbeacon_mode
 
 // Target_pos global variables: 
@@ -68,12 +72,13 @@ struct FloatQuat opencv_aruco_sensor_to_body = {0}; // Rotation of the body rela
 
 /* Initialize the kalman filter structs */
 struct TargetPosKalman remote_sensing_kalman;
-float P0[6] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
+float P0[6] = {10., 10., 10., 10., 10., 10.};
 float Q0[6] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
 
 struct KalmanSensor target_pos_kalman_sensor = { // Kalman sensor for the target position
   .noise = {0.1, 1.f, 0.1, 1.f, 0.1, 1.f}, // Process noise
   .meas = {0, 0, 0, 0, 0, 0}, // Measurement
+  .n_meas = 6, // Number of measurements
   .Hmat = {{1.f, 0.f, 0.f, 0.f, 0.f, 0.f}, // Measurement matrix
            {0.f, 1.f, 0.f, 0.f, 0.f, 0.f}, 
            {0.f, 0.f, 1.f, 0.f, 0.f, 0.f},
@@ -83,24 +88,26 @@ struct KalmanSensor target_pos_kalman_sensor = { // Kalman sensor for the target
 };
 
 struct KalmanSensor falcon_kalman_sensor = {
-  .noise = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1}, // Process noise
+  .noise = {0.1, 0.1, 0.1, 0.0, 0.0, 0.0}, // Process noise
   .meas = {0, 0, 0, 0, 0, 0}, // Measurement
+  .n_meas = 3, // Number of measurements
   .Hmat = {{1.f, 0.f, 0.f, 0.f, 0.f, 0.f}, // Measurement matrix
+           {0.f, 0.f, 1.f, 0.f, 0.f, 0.f}, 
+           {0.f, 0.f, 0.f, 0.f, 1.f, 0.f},
            {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
-           {0.f, 0.f, 1.f, 0.f, 0.f, 0.f},
            {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
-           {0.f, 0.f, 0.f, 0.f, 1.f, 0.f}, 
            {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}}
 };
 
 struct KalmanSensor aruco_kalman_sensor = {
-  .noise = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1}, // Process noise
+  .noise = {0.1, 0.1, 0.1, 0.0, 0.0, 0.0}, // Process noise
   .meas = {0, 0, 0, 0, 0, 0}, // Measurement
+  .n_meas = 3, // Number of measurements
   .Hmat = {{1.f, 0.f, 0.f, 0.f, 0.f, 0.f}, // Measurement matrix
+           {0.f, 0.f, 1.f, 0.f, 0.f, 0.f}, 
+           {0.f, 0.f, 0.f, 0.f, 1.f, 0.f},
            {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
-           {0.f, 0.f, 1.f, 0.f, 0.f, 0.f},
            {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
-           {0.f, 0.f, 0.f, 0.f, 1.f, 0.f}, 
            {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}}
 };
 
@@ -148,6 +155,7 @@ static void send_remote_sensing_am_periodic(struct transport_tx *trans, struct l
 #endif
 
 
+#if !USE_NPS
 //Function to upload telemetry: 
 void sdlog_remote_sensing_am(void){ 
 
@@ -189,6 +197,7 @@ void sdlog_remote_sensing_am(void){
     opencv_aruco_pos_T,
     opencv_aruco_quat_T);
 }
+#endif
 
 //Send mode to the falcon system: 
 void remote_sensing_AM_send_falcon_cmd(uint8_t mode) 
@@ -215,7 +224,10 @@ void remote_sensing_AM_send_falcon_cmd(uint8_t mode)
     default: // No mode
       break;
   }
+
+  #if !USE_NPS
   pprz_msg_send_IMCU_FALCON_CMD(&extra_pprz_tp.trans_tx, &EXTRA_DOWNLINK_DEVICE.device, AC_ID, &falcon_mode);
+  #endif
 }
 
 /**
@@ -260,7 +272,7 @@ void remote_sensing_parse_target_pos(uint8_t *buf)
     target_pos_kalman_update(&remote_sensing_kalman, &target_pos_kalman_sensor);
   #endif
 
-  #if REMOTE_SENSING_LOG_ON_ARRIVAL
+  #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
     sdlog_remote_sensing_am();
   #endif
 
@@ -327,7 +339,7 @@ void remote_sensing_parse_falcon_sixdof(uint8_t *buf)
   target_pos_kalman_update(&remote_sensing_kalman, &falcon_kalman_sensor);
   #endif
 
-  #if REMOTE_SENSING_LOG_ON_ARRIVAL
+  #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
     sdlog_remote_sensing_am();
   #endif
 
@@ -392,7 +404,7 @@ void remote_sensing_parse_falcon_relangle(uint8_t *buf)
   target_pos_kalman_update(&remote_sensing_kalman, &falcon_kalman_sensor); 
   #endif
 
-  #if REMOTE_SENSING_LOG_ON_ARRIVAL
+  #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
     sdlog_remote_sensing_am();
   #endif
 
@@ -441,7 +453,7 @@ void remote_sensing_parse_falcon_relbeacon(uint8_t *buf)
   target_pos_kalman_update(&remote_sensing_kalman, &falcon_kalman_sensor);
   #endif
 
-  #if REMOTE_SENSING_LOG_ON_ARRIVAL
+  #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
     sdlog_remote_sensing_am();
   #endif
 
@@ -490,7 +502,7 @@ void remote_sensing_parse_opencv_aruco(uint8_t *buf)
   target_pos_kalman_update(&remote_sensing_kalman, &aruco_kalman_sensor);
   #endif
 
-  #if REMOTE_SENSING_LOG_ON_ARRIVAL
+  #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
     sdlog_remote_sensing_am();
   #endif
 
@@ -532,6 +544,41 @@ void remote_sensing_AM_init(void)
 }
 
 void remote_sensing_AM_periodic(void) {
+  
+#if !TARTGET_POS_GROUND_STATION
+#if USE_NPS
+  // Fake some target pos data
+  // Falcon every 50 Hz
+  static int N = 10;
+  falcon_kalman_sensor.meas[0] = stateGetPositionNed_f()->x + ((float)(rand() % (N + 1)) / N);
+  falcon_kalman_sensor.meas[2] = stateGetPositionNed_f()->y + ((float)(rand() % (N + 1)) / N);
+  falcon_kalman_sensor.meas[4] = stateGetPositionNed_f()->z + ((float)(rand() % (N + 1)) / N);
+
+  RunOnceEvery(1, {
+    target_pos_kalman_update(&remote_sensing_kalman, &falcon_kalman_sensor);
+  });
+
+  aruco_kalman_sensor.meas[0] = stateGetPositionNed_f()->x + ((float)(rand() % (N + 1)) / N * 3);
+  aruco_kalman_sensor.meas[2] = stateGetPositionNed_f()->y + ((float)(rand() % (N + 1)) / N * 3);
+  aruco_kalman_sensor.meas[4] = stateGetPositionNed_f()->z + ((float)(rand() % (N + 1)) / N * 3);
+
+  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ / 10, {
+    target_pos_kalman_update(&remote_sensing_kalman, &aruco_kalman_sensor);
+  });
+  
+  target_pos_kalman_sensor.meas[0] = stateGetPositionNed_f()->x + ((float)(rand() % (N + 1)) / N / 2);
+  target_pos_kalman_sensor.meas[2] = stateGetPositionNed_f()->y + ((float)(rand() % (N + 1)) / N / 2);
+  target_pos_kalman_sensor.meas[4] = stateGetPositionNed_f()->z + ((float)(rand() % (N + 1)) / N / 2);
+  target_pos_kalman_sensor.meas[1] = stateGetSpeedNed_f()->x + ((float)(rand() % (N + 1)) / N);
+  target_pos_kalman_sensor.meas[3] = stateGetSpeedNed_f()->y + ((float)(rand() % (N + 1)) / N);
+  target_pos_kalman_sensor.meas[5] = stateGetSpeedNed_f()->z + ((float)(rand() % (N + 1)) / N);
+    
+  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ / 8, {
+    target_pos_kalman_update(&remote_sensing_kalman, &target_pos_kalman_sensor);
+  });
+#endif
+#endif
+  
   // Here we can run the periodic KF update
   target_pos_kalman_predict(&remote_sensing_kalman);
 
@@ -540,14 +587,22 @@ void remote_sensing_AM_periodic(void) {
   struct FloatVect3 speed;
   target_pos_kalman_get_state(&remote_sensing_kalman, &pos, &speed);
 
-  // Update a position in the flight plan for now
-  uint8_t wp_id = WP_KALMAN;
-  struct EnuCoor_f target_enu;
-  struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
-  ENU_OF_TO_NED(target_enu, pos);
-  VECT3_ADD(target_enu, *uav_pos);
-  target_enu.z = waypoints[wp_id].enu_f.z;
-  waypoint_set_enu(wp_id, &target_enu);
+  uint8_t wp_id;
+
+  // Check for NaN
+  if (isnan(pos.x) || isnan(pos.y) || isnan(pos.z) || isnan(speed.x) || isnan(speed.y) || isnan(speed.z)) {
+    // Reset the kalman filter
+    target_pos_kalman_init(&remote_sensing_kalman, P0, Q0, 1/REMOTE_SENSING_AM_PERIODIC_FREQ);
+  } else {
+    // Update a position in the flight plan for now
+    wp_id = WP_KALMAN;
+    struct EnuCoor_f target_enu;
+    struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
+    ENU_OF_TO_NED(target_enu, pos);
+    VECT3_ADD(target_enu, *uav_pos);
+    target_enu.z = waypoints[wp_id].enu_f.z;
+    waypoint_set_enu(wp_id, &target_enu);
+  }
 
   // Send waypoint update every half second
   RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {

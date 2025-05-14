@@ -31,12 +31,15 @@
 #include "std.h"
 #include "math/pprz_algebra_float.h"
 
+#ifndef TARGET_POS_KALMAN_DIM
 #define TARGET_POS_KALMAN_DIM 6
+#endif
 
 struct KalmanSensor {
-    float noise[TARGET_POS_KALMAN_DIM];            ///< The noise of the measurement
+    float noise[TARGET_POS_KALMAN_DIM];            ///< The noise of the measurement, fill in order of Hmat, don't follow state vect.
     float meas[TARGET_POS_KALMAN_DIM];             ///< The measurement
-    float Hmat[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];          ///< The measurement matrix
+    float Hmat[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];          ///< The measurement matrix, fill non-zero rows first as it is trimmed.
+    uint8_t n_meas;                              ///< The number of measurements, used to trim Hmat
   };
 
 /** Kalman structure

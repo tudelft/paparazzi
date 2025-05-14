@@ -13,7 +13,12 @@
     <waypoint name="TD" x="10" y="-1"/>
     <waypoint name="APP" x="70" y="-25"/>
     <waypoint name="FOLLOW" x="300" y="80"/>
-    <waypoint name="RELANGLE" x="-1" y="7"/>
+    <waypoint name="SIXDOF" x="-1" y="7"/>
+    <waypoint name="RELANGLE" x="-10" y="-10"/>
+    <waypoint name="RELBEACON" x="-10" y="-10"/>
+    <waypoint name="ARUCO" x="-10" y="-10"/>
+    <waypoint name="KALMAN" x="-10" y="-10"/>
+    <waypoint name="BOX" x="-10" y="-10"/>
     <!-- EHVB -->
     <waypoint lat="52.169189" lon="4.410820" name="C1"/>
     <waypoint lat="52.168049" lon="4.406923" name="C2"/>

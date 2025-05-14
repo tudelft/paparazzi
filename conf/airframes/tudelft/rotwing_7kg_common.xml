@@ -44,7 +44,7 @@
         <define name="USE_AIRSPEED"                         value="TRUE"/>  
         <define name="NAV_HYBRID_MAX_AIRSPEED"              value="22"/> 
         <define name="DEFAULT_CIRCLE_RADIUS"                value="100.0"/>
-        <!-- <define name="INS_EKF2_FUSION_MODE"                 value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/> -->
+        <define name="INS_EKF2_FUSION_MODE"                 value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/>
         <define name="INS_EKF2_GPS_YAW_OFFSET"              value="0"/>
         <define name="INS_EKF2_RELHEADING_DISTANCE"        value="1.02"/>
         <define name="INS_EKF2_RELHEADING_REF_ID"           value="1"/>
