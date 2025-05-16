@@ -26,7 +26,8 @@
         "utility": "c",
         "variant": "c",
         "future": "c",
-        "complex": "c"
+        "complex": "c",
+        "typeinfo": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",

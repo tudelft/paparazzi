@@ -147,7 +147,6 @@ static void send_remote_sensing_am_periodic(struct transport_tx *trans, struct l
 
 #endif
 
-
 //Function to upload telemetry: 
 void sdlog_remote_sensing_am(void){ 
 
@@ -456,6 +455,43 @@ void remote_sensing_parse_falcon_relbeacon(uint8_t *buf)
 
 }
 
+void test_request_landing_path(void){
+  // Send also another message for debug: 
+  float min_time_landing = 0.1f;
+  float max_time_landing = 10.0f;
+  float landing_time_resolution = 0.1f;
+  float V_bound_max_control[3] = {5.0f, 5.0f, 5.0f};
+  float V_bound_min_control[3] = {-5.0f, -5.0f, -5.0f};
+  float A_bound_max_control[3] = {5.0f, 5.0f, 5.0f};
+  float A_bound_min_control[3] = {-5.0f, -5.0f, -5.0f};
+  uint16_t num_points = 13;
+
+  float coeffs_ship_prediction[24] = {
+    0.1f, 0.2f, 0.3f, 0.4f,
+    0.5f, 0.6f, 0.7f, 0.8f,
+    0.9f, 1.0f, 1.1f, 1.2f,
+    1.3f, 1.4f, 1.5f, 1.6f,
+    1.7f, 1.8f, 1.9f, 2.0f,
+  };
+  float init_NED_path_pos[3] = {1.0f, 2.0f, 3.0f};
+  float init_NED_path_speed[3] = {4.0f, 5.0f, 6.0f};
+  float init_NED_path_acc[3] = {0.0f, 0.0f, 0.0f};
+  float psi_ship_rad = 0.0f;
+  float P0_ship_NED[3] = {0, 0, 0}; // Current ship position in the NED frame
+  float time_delay_prediction = 0.0f; // Ship prediction delay
+
+  pprz_msg_send_IMCU_LANDING_PATH_SETTINGS(&extra_pprz_tp.trans_tx, &EXTRA_DOWNLINK_DEVICE.device, AC_ID, 
+    &min_time_landing, &max_time_landing, &landing_time_resolution,
+    V_bound_max_control, V_bound_min_control, A_bound_max_control, A_bound_min_control,
+    &num_points);
+
+  uint32_t current_time_ms = get_sys_time_tow();
+
+  pprz_msg_send_IMCU_REQUEST_PATH_COEFF(&extra_pprz_tp.trans_tx, &EXTRA_DOWNLINK_DEVICE.device, AC_ID,
+      &current_time_ms, coeffs_ship_prediction, init_NED_path_pos, init_NED_path_speed, init_NED_path_acc,
+      &psi_ship_rad, P0_ship_NED, &time_delay_prediction);
+}
+
 /**
  * Receive a RELBEACON message from the falcon and update the kalman filter if required
  */
@@ -551,6 +587,9 @@ void remote_sensing_AM_periodic(void) {
 
   // Send waypoint update every half second
   RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {
+
+    // test_request_landing_path();
+    
     // Send to the GCS that the waypoint has been moved
     wp_id = WP_KALMAN;
     DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
