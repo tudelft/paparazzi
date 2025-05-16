@@ -191,6 +191,18 @@ void mission_status_report(void)
 }
 
 
+uint8_t mission_get_nb_elements(void)
+{
+  uint8_t i = mission.current_idx;
+  uint8_t nb_elem = 0;
+  while (i != mission.insert_idx) {
+    nb_elem++;
+    i = (i + 1) % MISSION_ELEMENT_NB;
+  }
+  
+  return nb_elem;
+}
+
 ///////////////////////
 // Parsing functions //
 ///////////////////////

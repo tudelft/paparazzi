@@ -385,6 +385,13 @@ void lla_of_ecef_i(struct LlaCoor_i *out, struct EcefCoor_i *in)
 
 }
 
+void lla_of_enu_pos_i(struct LlaCoor_i *lla, struct LtpDef_i *def, struct EnuCoor_i *enu)
+{
+  struct EcefCoor_i ecef;
+  ecef_of_enu_pos_i(&ecef, def, enu);
+  lla_of_ecef_i(lla, &ecef);
+}
+
 /** Convert a LLA to ECEF.
  * @param[out] out  ECEF in cm
  * @param[in]  in   LLA in degrees*1e7 and mm above ellipsoid

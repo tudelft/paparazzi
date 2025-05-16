@@ -32,61 +32,54 @@
 #include <mavlink/mavlink_types.h>
 #include "modules/mission/mission_common.h"
 
+// include mavlink headers, but ignore some warnings
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+#pragma GCC diagnostic ignored "-Wswitch-default"
+#include "mavlink/ardupilotmega/mavlink.h"
+#pragma GCC diagnostic pop
+
 #ifndef MAVLINK_TIMEOUT
-#define MAVLINK_TIMEOUT 15 // as in MAVLink waypoint convention
+#define MAVLINK_TIMEOUT 1.5 // 1500ms as recommended in https://mavlink.io/en/services/mission.html
 #endif
 
-/// State machine
-enum MAVLINK_MISSION_MGR_STATES {
-  STATE_IDLE = 0,
-  STATE_SEND_LIST,
-  STATE_SEND_ITEM,
-  STATE_WAYPOINT_WRITE_TRANSACTION
-};
+#ifndef MAVLINK_MISSION_ITEM_TIMEOUT
+#define MAVLINK_MISSION_ITEM_TIMEOUT 0.25 // 250ms as recommended in https://mavlink.io/en/services/mission.html
+#endif
 
-struct mavlink_mission_item {
-  uint16_t seq;
-  uint8_t frame;
-  uint16_t cmd;
-  uint8_t current;
-  uint8_t autocontinue;
-  int32_t x;
-  int32_t y;
-  float z;
-};
-
-typedef struct mavlink_mission_item mavlink_mission_item;
+#ifndef MAVLINK_MISSION_MAX_RETRIES
+#define MAVLINK_MISSION_MAX_RETRIES 5 // Maximum number of retries
+#endif
 
 struct mavlink_mission_mgr {
-  uint8_t current_block; // Counter that holds the index of the current block
   uint8_t count; // Count of mission elements
-  uint8_t active_count; // Count of active mission elements
-  enum MAVLINK_MISSION_MGR_STATES state; // The current state of the mission handler
   uint8_t mission_state; // The current MISSION_STATE defined by common mavlink
-  uint16_t seq; // Sequence id (position of the current item on the list)
   uint16_t end_index; // Index of final element in a (partial) upload transaction
   uint8_t rem_sysid; // Remote system id
   uint8_t rem_compid; // Remote component id
   int timer_id; // Timer id
-  mavlink_mission_item active_mission_items[MISSION_ELEMENT_NB]; // The activated mission items
-  mavlink_mission_item standby_mission_items[MISSION_ELEMENT_NB]; // The standby mission items (used for fp upload)
+  uint8_t nb_retries; // Number of retries to get the current item
+  mavlink_mission_item_int_t mission_items[MISSION_ELEMENT_NB]; // The activated mission items
 };
 
-typedef struct mavlink_mission_mgr mavlink_mission_mgr;
+void mavlink_mission_init(void);
+void mavlink_mission_periodic(void);
 
-extern mavlink_mission_mgr mission_mgr;
+void mavlink_mission_message_handler(const mavlink_message_t *msg);
 
+void mavlink_mission_set_timer(float duration);
+void mavlink_mission_cancel_timer(void);
 
-extern void mavlink_mission_init(mavlink_mission_mgr *mgr);
-extern void mavlink_mission_message_handler(const mavlink_message_t *msg);
-extern void mavlink_mission_periodic(void);
+bool mavlink_mission_set_active(void);
 
-extern void mavlink_send_mission_ack(void);
+void mavlink_wp_message_handler(const mavlink_message_t *msg);
 
-extern void mavlink_mission_set_timer(void);
-extern void mavlink_mission_cancel_timer(void);
+bool mavlink_mission_item_from_pprz_mission_element(mavlink_mission_item_int_t *mission_item_int, struct _mission_element *me);
+bool pprz_mission_element_from_mavlink_mission_item(struct _mission_element *me, mavlink_mission_item_int_t *mi);
 
-extern enum MAV_MISSION_RESULT mavlink_mission_check_validity(void);
-extern void mavlink_mission_set_active(void);
+uint16_t first_missing_mission_item(void);
+void mavlink_lla_of_global(mavlink_mission_item_int_t *mi, struct LlaCoor_i *lla);
+void mavlink_lla_of_global_relative_alt(mavlink_mission_item_int_t *mi, struct LlaCoor_i *lla);
+void mavlink_mission_item_set_lla(mavlink_mission_item_int_t *mi, struct LlaCoor_i *lla);
 
 #endif

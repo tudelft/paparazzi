@@ -119,9 +119,9 @@
         <module name="air_data"/>
 
         <module name="remote_sensing_AM">
-            <define name="REMOTE_SENSING_KALMAN_USE_GROUND_STATION" value="FALSE"/>
-            <define name="REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF" value="FALSE"/>
-            <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELANGLE" value="FALSE"/>
+            <define name="REMOTE_SENSING_KALMAN_USE_GROUND_STATION" value="TRUE"/>
+            <define name="REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF" value="TRUE"/>
+            <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELANGLE" value="TRUE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELBEACON" value="TRUE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO" value="TRUE"/>
             <define name="REMOTE_SENSING_FALCON_ROTATION_SENSOR_TO_BODY_X" value="90"/> <!--In degrees -->
