@@ -113,6 +113,14 @@
         <call_once fun="rotwing_state_set(ROTWING_STATE_FREE)"/>
         <stay wp="STDBY"/>
     </block>
+    <block name="stay_ARUCO" strip_button="Stay ARUCO">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <stay wp="ARUCO"/>
+    </block>
+    <block name="stay_KALMAN" strip_button="Stay KALMAN">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <stay wp="KALMAN"/>
+    </block>
     <block name="stay_p1" strip_button="Stay P1" strip_icon="wp_quad.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <stay wp="p1"/>
