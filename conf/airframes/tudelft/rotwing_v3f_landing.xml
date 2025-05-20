@@ -135,7 +135,7 @@
             <define name="REMOTE_SENSING_OPENCV_ARUCO_OFFSET_UAV_BODY_Z" value="0.13"/>
             <define name="REMOTE_SENSING_OPENCV_ARUCO_ROTATION_SENSOR_TO_BODY_X" value="0"/> <!--In degrees -->
             <define name="REMOTE_SENSING_OPENCV_ARUCO_ROTATION_SENSOR_TO_BODY_Y" value="0"/> <!--In degrees -->
-            <define name="REMOTE_SENSING_OPENCV_ARUCO_ROTATION_SENSOR_TO_BODY_Z" value="0"/> <!--In degrees -->
+            <define name="REMOTE_SENSING_OPENCV_ARUCO_ROTATION_SENSOR_TO_BODY_Z" value="90"/> <!--In degrees -->
             <define name="REMOTE_SENSING_LOG_ON_ARRIVAL" value="TRUE"/>
         </module>
 
