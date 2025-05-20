@@ -50,7 +50,6 @@
       <message name="GPS_RELPOS"               period="0.1"/>
       <message name="AOA"                      period="0.2"/>
       <message name="APPROACH_MOVING_TARGET"   period="0.1"/>
-      <message name="AIRSPEED_RAW"             period="0.1"/>
       <message name="TARGET_POS_INFO"          period="0.1"/>
       <message name="ROTATING_WING_STATE"      period="0.2"/>
       <message name="ACTUATORS"                period="0.02"/>
@@ -66,6 +65,7 @@
       <message name="FUELCELL"                 period="1.5"/>
       <message name="POWER_DEVICE"             period="0.12"/>
       <message name="IMU_HEATER"               period="15.1"/>
+      <message name="AIRSPEED_RAW"        period="0.13"/>
     </mode>
 
     <mode name="sim" key_press="d">
@@ -405,6 +405,7 @@
       <message name="VFR_HUD"             period="0.5"/>
       <message name="RC_CHANNELS"         period="0.2"/>
       <message name="EXTENDED_SYS_STATE"  period="1.0"/>
+      <message name="AIRSPEED_RAW"        period="0.02"/>
     </mode>
   </process>
 
