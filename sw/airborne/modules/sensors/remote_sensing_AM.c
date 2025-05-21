@@ -468,6 +468,7 @@ void remote_sensing_parse_falcon_relbeacon(uint8_t *buf)
 
 }
 
+#if !USE_NPS
 void test_request_landing_path(void){
   // Send also another message for debug: 
   float min_time_landing = 0.1f;
@@ -504,6 +505,7 @@ void test_request_landing_path(void){
       &current_time_ms, coeffs_ship_prediction, init_NED_path_pos, init_NED_path_speed, init_NED_path_acc,
       &psi_ship_rad, P0_ship_NED, &time_delay_prediction);
 }
+#endif
 
 /**
  * Receive a RELBEACON message from the falcon and update the kalman filter if required

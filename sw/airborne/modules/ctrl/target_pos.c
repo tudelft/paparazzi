@@ -145,10 +145,12 @@ float Q0[6] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
 /* GPS abi callback */
 static abi_event gps_ev;
 static abi_event relpos_ev;
-static abi_event lidar_ev;
 static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
 static void relpos_cb(uint8_t sender_id, uint32_t stamp, struct RelPosNED *relpos);
+#if !TARGET_POS_GROUND_STATION
+static abi_event lidar_ev;
 static void lidar_cb(uint8_t sender_id, uint32_t stamp, float distance);
+#endif
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -156,7 +158,7 @@ static void send_target_pos_info(struct transport_tx *trans, struct link_device 
 {
 #if TARGET_POS_GROUND_STATION
   // Send the current state of the ground station
-  static const int32_t zero = 0;
+  static uint32_t zero = 0;
   struct LlaCoor_i *pos = stateGetPositionLla_i();
   struct NedCoor_f *vel = stateGetSpeedNed_f();
   struct FloatQuat *quat = stateGetNedToBodyQuat_f();
@@ -205,6 +207,7 @@ static void send_target_pos_info(struct transport_tx *trans, struct link_device 
 #endif
 }
 
+#if !TARGET_POS_GROUND_STATION
 static void send_falcon_sensor(struct transport_tx *trans, struct link_device *dev)
 {
   float p_out[3] = {falcon.p_out.x, falcon.p_out.y, falcon.p_out.z};
@@ -230,6 +233,7 @@ static void send_falcon_sensor(struct transport_tx *trans, struct link_device *d
                               &distance);
 }
 #endif
+#endif
 
 void target_pos_init(void)
 {
@@ -242,7 +246,9 @@ void target_pos_init(void)
 
   AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
   AbiBindMsgRELPOS(ABI_BROADCAST, &relpos_ev, relpos_cb);
+#if !TARGET_POS_GROUND_STATION
   AbiBindMsgAGL(ABI_BROADCAST, &lidar_ev, lidar_cb);
+#endif
 
   /* Initialize the linear Kalman filter */
   target_pos_kalman_init(&target_pos_kalman, P0, Q0, 1/TARGET_POS_PERIODIC_FREQ);
@@ -389,6 +395,7 @@ static struct KalmanSensor ground_station_kalman = {
 }
 
 /* Update the lidar measurement */
+#if !TARGET_POS_GROUND_STATION
 static void lidar_cb(uint8_t sender_id __attribute__((unused)), uint32_t stamp __attribute__((unused)), float distance)
 {
 #if TARGET_POS_KALMAN_USE_LIDAR
@@ -412,13 +419,14 @@ static void lidar_cb(uint8_t sender_id __attribute__((unused)), uint32_t stamp _
   target_pos_kalman_update(&target_pos_kalman, &lidar_kalman);
 #endif
 }
+#endif
 
 /**
  * Parse a Falcon sixdof message
  */
 #include "generated/flight_plan.h"
 #if TARGET_POS_GROUND_STATION
-void target_pos_parse_falcon_sixdof(uint8_t *buf) {} // required for dummy flightplan
+void target_pos_parse_falcon_sixdof(uint8_t __attribute__((unused)) *buf) {} // required for dummy flightplan
 #else
 void target_pos_parse_falcon_sixdof(uint8_t *buf)
 {
@@ -502,7 +510,7 @@ void target_pos_parse_falcon_sixdof(uint8_t *buf)
  * Parse a Falcon relative angle message
  */
 #if TARGET_POS_GROUND_STATION
-void target_pos_parse_falcon_relangle(uint8_t *buf) {} // required for dummy flightplan
+void target_pos_parse_falcon_relangle(uint8_t __attribute__((unused)) *buf) {} // required for dummy flightplan
 #else
 void target_pos_parse_falcon_relangle(uint8_t *buf) 
 {
