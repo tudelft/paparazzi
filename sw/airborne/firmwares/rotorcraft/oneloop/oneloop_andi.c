@@ -1136,8 +1136,8 @@ void ec_3rd_pos( float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[],
   //printf("CheeeeeeeekkkkkXXXXXXXXX \n");
   //printf("k3_e: %f,%f,%f\n", k3_e[0], k3_e[1], k3_e[2]);
   //vect_bound_nd(y_4d, x_3d_bound, n); This bound does not work anymore in this format
-  temp_checks_2[0] = e_x_2d[2];
-  temp_checks_2[1] = e_x_d[2];
+  //temp_checks_2[0] = e_x_2d[2];
+  //temp_checks_2[1] = e_x_d[2];
 }
 
 /** 
@@ -1204,6 +1204,8 @@ void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[
   temp_dist_r = dist[2];
   temp_ec_r = (x_2d_f[2]-x_2d[2])*k3_e[2]+x_3d_ref[2];
   temp_ec_r_2 = temp_diff*k1_e[2]*k2_e[2]*k3_e[2]+(x_d_ref[2]-x_d[2])*k2_e[2]*k3_e[2]+(x_2d_ref[2]-x_2d[2])*k3_e[2]+x_3d_ref[2];
+  temp_checks_2[0] = x_d_f[2];
+  temp_checks_2[1] = x_2d_f[2];
 }
 
 /**
@@ -1960,9 +1962,15 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   g2_ff = 0.0;
   for (i = 0; i < ANDI_NUM_ACT; i++) {
     if (oneloop_andi.ctrl_type == CTRL_ANDI){
-      g2_ff += G2_RW[i] * act_dynamics[i] * (andi_u[i]-actuator_state_1l[i]);
+      g2_ff += G2_RW[i] * act_dynamics[i] * (andi_u[i]-u_filt[i].o[0]);
+      //printf("i: %d\n", i);
+      //printf("andi_u: %f\n", andi_u[i]);
+      //printf("actuator_state_1l: %f\n", actuator_state_1l[i]);
+      //printf("act_dynamics: %f\n", act_dynamics[i]);
+      //printf("G2_RW: %f\n", G2_RW[i]);
+      //printf("g2_ff: %f\n", g2_ff);
     } else if (oneloop_andi.ctrl_type == CTRL_INDI){
-      g2_ff += G2_RW[i] * (andi_u[i]-actuator_state_1l[i]);
+      g2_ff += G2_RW[i] * (andi_u[i]-u_filt[i].o[0]);
     }
   }
   // Run the Reference Model (RM)
@@ -2688,86 +2696,15 @@ void oneloop_calc_model_disturbance(bool in_flight){
         float den = positive_non_zero(ratio_u_un[j]*ratio_vn_v[i]);
         float num = u_filt[j].o[0] * EFF_MAT_G[i][j];
         oneloop_andi_model[i] += num / den;
-        if ((i == RW_ap)&&(j == COMMAND_MOTOR_RIGHT)){
-          //printf("effectiveness [%d][%d]: %f \n",i,j, EFF_MAT_G[i][j]);
-          //printf("test model : %f \n", 1.0*EFF_MAT_G[i][j]/den);
-          // if (oneloop_andi.half_loop){
-          //   printf("HALF LOOP\n");
-          // } else {
-          //   printf("FULL LOOP\n");
-          // }
-          // if (oneloop_andi.ctrl_type == CTRL_ANDI){
-          //   printf("ANDI\n");
-          // } else if (oneloop_andi.ctrl_type == CTRL_INDI){
-          //   printf("INDI\n");
-          // } else {
-          //   printf("CTRL_TYPE NOT SET\n");
-          // }
-          //printf("RCAP0(): %d\n",RCAP0());
-          //printf("RCAP1(): %d\n",RCAP1());  
-          //printf("RCAP2(): %d\n",RCAP2());
-        }
-        if(i == RW_aN){
-          //printf("den [%d]: %f \n",j,den);
-          //printf("act_dynamics[%d]: %f \n",j,act_dynamics[j]);
-          //printf("u_filt[%d]: %f \n",j,u_filt[j].o[0]);
-          //printf("EFF_MAT_G[%d][%d]: %f \n",i,j,EFF_MAT_G[i][j]);
-          //printf("EFF_MAT_RW[%d][%d]: %f \n",i,j,EFF_MAT_RW[i][j]);
-          //printf("EFF_MAT_G_denorm[%d][%d]: %f \n",i,j,EFF_MAT_G[i][j]/(act_dynamics[j]*den));
-          //printf("new oneloop_andi_model[%d]: %f \n",i,oneloop_andi_model[i]);
-        }
-        // if (j < ANDI_NUM_ACT){
-        //  oneloop_andi_model[i] += actuator_state_1l[j] * EFF_MAT_G[i][j] / den; //EFF_MAT_RW[i][j] * act_dynamics[j]; //
-        // } else {
-        //  oneloop_andi_model[i] += oneloop_andi.sta_state.att[j-ANDI_NUM_ACT] * EFF_MAT_G[i][j] / den; //EFF_MAT_RW[i][j] * act_dynamics[j]; // 
-        // }
       }
       oneloop_andi_model[i] = oneloop_andi_model[i] / k3;
-      if(i == RW_aN){
-        //printf("oneloop_andi_model             : %f \n",oneloop_andi_model[i]);
-        //printf("oneloop_andi_model_att         : %f \n", u_filt[])
-        //printf("u_filt[phi,theta]              : %f %f \n",u_filt[COMMAND_ROLL].o[0],u_filt[COMMAND_PITCH].o[0]);
-        //printf("u [phi,theta]                  : %f %f \n", oneloop_andi.sta_state.att[0],oneloop_andi.sta_state.att[1]);
-        //printf("EFF North [phi,theta]          : %f %f \n", EFF_MAT_RW[i][COMMAND_ROLL],EFF_MAT_RW[i][COMMAND_PITCH]);
-        //printf("EFF North ANDI NORM [phi,theta]: %f %f \n", EFF_MAT_G[i][COMMAND_ROLL],EFF_MAT_G[i][COMMAND_PITCH]);
-        //printf("EFF used in model [phi,theta]  : %f %f \n", EFF_MAT_G[i][COMMAND_ROLL]/(ratio_u_un[COMMAND_ROLL]*ratio_vn_v[i]*1.95),EFF_MAT_G[i][COMMAND_PITCH]/(ratio_u_un[COMMAND_PITCH]*ratio_vn_v[i]*1.95));
-        //printf("ratio_u_un                     : %f %f \n", ratio_u_un[COMMAND_ROLL],ratio_u_un[COMMAND_PITCH]);
-        //printf("ratio_vn_v                     : %f \n", ratio_vn_v[i]);
-        //printf("recon model 1                  : %f \n", u_filt[COMMAND_ROLL].o[0] * EFF_MAT_RW[i][COMMAND_ROLL]+u_filt[COMMAND_PITCH].o[0] * EFF_MAT_RW[i][COMMAND_PITCH]);
-        //printf("reconf from eff G              : %f \n", u_filt[COMMAND_ROLL].o[0] *EFF_MAT_G[i][COMMAND_ROLL]/(ratio_u_un[COMMAND_ROLL]*ratio_vn_v[i]*1.95)+u_filt[COMMAND_PITCH].o[0] *EFF_MAT_G[i][COMMAND_PITCH]/(ratio_u_un[COMMAND_PITCH]*ratio_vn_v[i]*1.95));
-        //printf("oneloop_andi_model adapted     : %f \n",oneloop_andi_model[i]/1.95);
-      } 
-      //printf("oneloop_andi_model[%d]: %f \n",i,oneloop_andi_model[i]);
-      //printf("check oneloop_andi_model[0]: %f \n",oneloop_andi_model[0]);
     } 
-      // // Absolute Model Prediction : 
-    // float sphi   = sinf(eulers_zxy.phi);
-    // float cphi   = cosf(eulers_zxy.phi);
-    // float stheta = sinf(eulers_zxy.theta);
-    // float ctheta = cosf(eulers_zxy.theta);
-    // float spsi   = sinf(eulers_zxy.psi);
-    // float cpsi   = cosf(eulers_zxy.psi);
-    // // Thrust and Pusher force estimation
-    // float L      = RW.wing.L / RW.m;          // Lift specific force
-    // float T      = RW.T / RW.m;             //  Thrust specific force. Minus gravity is a guesstimate.
-    // float P      = RW.P / RW.m;               // Pusher specific force
-
-    // oneloop_andi_model[0] = -(cpsi * stheta + ctheta * sphi * spsi) * T + (cpsi * ctheta - sphi * spsi * stheta) * P - sphi * spsi * L;
-    // oneloop_andi_model[1] = -(spsi * stheta - cpsi * ctheta * sphi) * T + (ctheta * spsi + cpsi * sphi * stheta) * P + cpsi * sphi * L;
-    // oneloop_andi_model[2] = g - cphi * ctheta * T - cphi * stheta * P - cphi * L;
-    // oneloop_andi_model[0] = oneloop_andi_model[0] *1.95;
-    // oneloop_andi_model[1] = oneloop_andi_model[1] *1.95;
-    // oneloop_andi_model[2] = oneloop_andi_model[2] *1.95;
-    //print all of the filter settings like rho fc dt and so on for rdot
-    //printf("rdot filter settings: %f,%f,%f \n",oneloop_andi_model_filt.r_dot.fc,oneloop_andi_model_filt.r_dot.rho,oneloop_andi_model_filt.r_dot.dt);
-    //printf("IN: %f \n",oneloop_andi_model[RW_ar]);
     update_filter_on_type(&oneloop_andi_model_filt.ax, oneloop_andi_model[RW_aN]);
     update_filter_on_type(&oneloop_andi_model_filt.ay, oneloop_andi_model[RW_aE]);
     update_filter_on_type(&oneloop_andi_model_filt.az, oneloop_andi_model[RW_aD]);
     update_filter_on_type(&oneloop_andi_model_filt.p_dot, oneloop_andi_model[RW_ap]);
     update_filter_on_type(&oneloop_andi_model_filt.q_dot, oneloop_andi_model[RW_aq]);
     update_filter_on_type(&oneloop_andi_model_filt.r_dot, oneloop_andi_model[RW_ar]);
-    //printf("OUT: %f \n",oneloop_andi_model_filt.r_dot.out);
   }else {
     float_vect_zero(oneloop_andi_model, ANDI_OUTPUTS);
   }
