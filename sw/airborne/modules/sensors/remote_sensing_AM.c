@@ -26,130 +26,73 @@
 #include "modules/datalink/downlink.h"
 #include "pprzlink/intermcu_msg.h"
 #include "generated/airframe.h"
-#include "filters/target_pos_kalman.h"
 #include "generated/flight_plan.h"
 
+#define FLOATVECT3_TO_ARRAY(v) (float[3]){v.x, v.y, v.z}
+#define FLOATQUAT_TO_ARRAY(v) (float[4]){v.qi, v.qx, v.qy, v.qz}
+#define FLOATANGLES_TO_ARRAY(v) (float[2]){v.azimuth, v.elevation}
+
 #if USE_NPS
-#include <stdlib.h>
+#include "math/pprz_random.h"
+static float rand_norm_float(float mu, float sigma) {
+  return mu + sigma * rand_gaussian();
+}
 #endif
 
+// function prototypes
+static void update_waypoint(uint8_t wp_id, struct FloatVect3 pos);
+static void send_waypoint(uint8_t wp_id);
+static void load_kalman_sensor_from_airframe(struct KalmanSensor *ks, const struct KalmanSensor *ks_airframe);
+static void load_sensor_rotation_from_airframe(struct FloatQuat *q, struct FloatRMat *rmat_airframe);
+static void load_sensor_offset_from_airframe(struct FloatVect3 *offset, const struct FloatVect3 *offset_airframe);
+static void sensor_to_NED(struct FloatVect3 *ned, struct FloatVect3 *sensor, struct FloatQuat *sensor_to_body, struct FloatVect3 offset);
+
+// Global variables
 uint8_t falcon_mode = FALCON_MODE_SIXDOF; // 0: no mode, 1: sixdof_mode, 2: relangle_mode, 3: relbeacon_mode
 
-// Target_pos global variables: 
-uint32_t target_pos_tow = 0; // Time of week of the target position measurement
-struct FloatVect3 target_pos_vel_NED = {0, 0, 0}; // Ground station velocity in the Ground station NED frame assumed to be matching with the UAV one.
-struct FloatVect3 target_pos_NED = {0, 0, 0}; // Ground station position in the UAV NED frame.
-struct FloatQuat target_pos_quat = {0, 0, 0, 0}; // Ground station attitude in the Ground station NED frame.
-
-// Generic falcon sensor defines
-struct FloatQuat falcon_sensor_to_body = {0}; // Rotation of the body relative to the sensor
-
-// Falcon sixdof sensor global variables:
-uint32_t falcon_sixdof_tow = 0; // Time of week of the falcon sixdof measurement
-struct FloatVect3 falcon_sixdof_pos_NED = {0, 0, 0}; // Falcon sensor position in the UAV NED frame.
-struct FloatVect3 falcon_sixdof_pos_NED_var = {0, 0, 0}; // Falcon sensor position variance in the UAV NED frame.
-struct FloatQuat falcon_sixdof_quat = {0, 0, 0, 0}; // Falcon sensor attitude in the UAV NED frame.
-
-// Falcon relangle sensor global variables:
-uint32_t falcon_relangle_tow = 0; // Time of week of the falcon relangle measurement
-uint16_t falcon_relangle_beacon_id = 0; // Falcon sensor beacon id.
-struct AzimuthElevation falcon_relangle = {0, 0}; // Falcon sensor azimuth and elevation angles. 
-float falcon_relangle_intensity = 0; // Falcon sensor intensity.
-float falcon_relangle_width = 0; // Falcon sensor width.
-float falcon_relangle_distance = 1; // Relangle distance slider in meters
-
-// Falcon relbeacon sensor global variables:
-uint32_t falcon_relbeacon_tow = 0; // Time of week of the falcon relbeacon measurement
-uint16_t falcon_relbeacon_beacon_id = 0; // Falcon sensor beacon id.
-struct FloatVect3 falcon_relbeacon_pos = {0, 0, 0}; // Falcon sensor position in the sensor body frame.
-
-// Opencv_aruco sensor global variables:
-uint32_t opencv_aruco_tow = 0; // Time of week of the opencv aruco measurement
-uint16_t opencv_aruco_id = 0; // Opencv aruco id.
-struct FloatVect3 opencv_aruco_pos = {0, 0, 0}; // Opencv aruco position in the UAV NED frame.
-struct FloatQuat opencv_aruco_quat = {0, 0, 0, 0}; // Opencv aruco attitude in the UAV NED frame.
-struct FloatQuat opencv_aruco_sensor_to_body = {0}; // Rotation of the body relative to the sensor
+struct target_pos_t target = {0};
+struct falcon_t falcon = {0};
+struct aruco_t aruco = {0};
 
 /* Initialize the kalman filter structs */
 struct TargetPosKalman remote_sensing_kalman;
-float P0[6] = {10., 10., 10., 10., 10., 10.};
-float Q0[6] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
+static float P0[6] = REMOTE_SENSING_KALMAN_P0;
+static float Q0[6] = REMOTE_SENSING_KALMAN_Q0;
 
-struct KalmanSensor target_pos_kalman_sensor = { // Kalman sensor for the target position
-  .noise = {0.1, 1.f, 0.1, 1.f, 0.1, 1.f}, // Process noise
-  .meas = {0, 0, 0, 0, 0, 0}, // Measurement
-  .n_meas = 6, // Number of measurements
-  .Hmat = {{1.f, 0.f, 0.f, 0.f, 0.f, 0.f}, // Measurement matrix
-           {0.f, 1.f, 0.f, 0.f, 0.f, 0.f}, 
-           {0.f, 0.f, 1.f, 0.f, 0.f, 0.f},
-           {0.f, 0.f, 0.f, 1.f, 0.f, 0.f}, 
-           {0.f, 0.f, 0.f, 0.f, 1.f, 0.f}, 
-           {0.f, 0.f, 0.f, 0.f, 0.f, 1.f}}
-};
+// Load the sensors from the airframe file
+static struct KalmanSensor target_ks = TARGET_KALMAN_SENSOR;
+static struct KalmanSensor falcon_ks = FALCON_KALMAN_SENSOR;
+static struct KalmanSensor aruco_ks = ARUCO_KALMAN_SENSOR;
 
-struct KalmanSensor falcon_kalman_sensor = {
-  .noise = {0.1, 0.1, 0.1, 0.0, 0.0, 0.0}, // Process noise
-  .meas = {0, 0, 0, 0, 0, 0}, // Measurement
-  .n_meas = 3, // Number of measurements
-  .Hmat = {{1.f, 0.f, 0.f, 0.f, 0.f, 0.f}, // Measurement matrix
-           {0.f, 0.f, 1.f, 0.f, 0.f, 0.f}, 
-           {0.f, 0.f, 0.f, 0.f, 1.f, 0.f},
-           {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
-           {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
-           {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}}
-};
+static struct FloatRMat falcon_rmat = FALCON_BODY_TO_SENSOR;
+static struct FloatVect3 falcon_offset = FALCON_OFFSET_UAV_BODY;
 
-struct KalmanSensor aruco_kalman_sensor = {
-  .noise = {0.1, 0.1, 0.1, 0.0, 0.0, 0.0}, // Process noise
-  .meas = {0, 0, 0, 0, 0, 0}, // Measurement
-  .n_meas = 3, // Number of measurements
-  .Hmat = {{1.f, 0.f, 0.f, 0.f, 0.f, 0.f}, // Measurement matrix
-           {0.f, 0.f, 1.f, 0.f, 0.f, 0.f}, 
-           {0.f, 0.f, 0.f, 0.f, 1.f, 0.f},
-           {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
-           {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, 
-           {0.f, 0.f, 0.f, 0.f, 0.f, 0.f}}
-};
+static struct FloatRMat aruco_rmat = ARUCO_BODY_TO_SENSOR;
+static struct FloatVect3 aruco_offset = ARUCO_OFFSET_UAV_BODY;
 
 #if PERIODIC_TELEMETRY
-static void send_remote_sensing_am_periodic(struct transport_tx *trans, struct link_device *dev)
-{
-  float target_pos_vel_NED_T[3] = {target_pos_vel_NED.x, target_pos_vel_NED.y, target_pos_vel_NED.z};
-  float target_pos_NED_T[3] = {target_pos_NED.x, target_pos_NED.y, target_pos_NED.z};
-  float target_pos_quat_T[4] = {target_pos_quat.qi, target_pos_quat.qx, target_pos_quat.qy, target_pos_quat.qz};
-
-  float falcon_sixdof_pos_NED_T[3] = {falcon_sixdof_pos_NED.x, falcon_sixdof_pos_NED.y, falcon_sixdof_pos_NED.z};
-  float falcon_sixdof_pos_NED_var_T[3] = {falcon_sixdof_pos_NED_var.x, falcon_sixdof_pos_NED_var.y, falcon_sixdof_pos_NED_var.z};
-  float falcon_sixdof_quat_T[4] = {falcon_sixdof_quat.qi, falcon_sixdof_quat.qx, falcon_sixdof_quat.qy, falcon_sixdof_quat.qz};
-
-  float falcon_relangle_T[2] = {falcon_relangle.azimuth, falcon_relangle.elevation};
-
-  float falcon_relbecon_pos_T[3] = {falcon_relbeacon_pos.x, falcon_relbeacon_pos.y, falcon_relbeacon_pos.z};
-
-  float opencv_aruco_pos_T[3] = {opencv_aruco_pos.x, opencv_aruco_pos.y, opencv_aruco_pos.z};
-  float opencv_aruco_quat_T[4] = {opencv_aruco_quat.qi, opencv_aruco_quat.qx, opencv_aruco_quat.qy, opencv_aruco_quat.qz};
-  
+static void send_remote_sensing_am_periodic(struct transport_tx *trans, struct link_device *dev) {  
   pprz_msg_send_REMOTE_SENSING_AM(trans, dev, AC_ID,
-            &target_pos_tow,
-            target_pos_vel_NED_T,
-            target_pos_NED_T,
-            target_pos_quat_T,
-            &falcon_sixdof_tow,
-            falcon_sixdof_pos_NED_T,
-            falcon_sixdof_pos_NED_var_T,
-            falcon_sixdof_quat_T,
-            &falcon_relangle_tow,
-            &falcon_relangle_beacon_id,
-            falcon_relangle_T,
-            &falcon_relangle_intensity,
-            &falcon_relangle_width,
-            &falcon_relbeacon_tow,
-            &falcon_relbeacon_beacon_id,
-            falcon_relbecon_pos_T,
-            &opencv_aruco_tow,
-            &opencv_aruco_id,
-            opencv_aruco_pos_T,
-            opencv_aruco_quat_T);
+            &target.tow,
+            FLOATVECT3_TO_ARRAY(target.vel),
+            FLOATVECT3_TO_ARRAY(target.pos),
+            FLOATQUAT_TO_ARRAY(target.quat),
+            &falcon.sixdof.tow,
+            FLOATVECT3_TO_ARRAY(falcon.sixdof.pos),
+            FLOATVECT3_TO_ARRAY(falcon.sixdof.pos_var),
+            FLOATQUAT_TO_ARRAY(falcon.sixdof.quat),
+            &falcon.relangle.tow,
+            &falcon.relangle.beacon_id,
+            FLOATANGLES_TO_ARRAY(falcon.relangle.angles),
+            &falcon.relangle.intensity,
+            &falcon.relangle.width,
+            &falcon.relbeacon.tow,
+            &falcon.relbeacon.beacon_id,
+            FLOATVECT3_TO_ARRAY(falcon.relbeacon.pos),
+            &aruco.tow,
+            &aruco.id,
+            FLOATVECT3_TO_ARRAY(aruco.pos),
+            FLOATQUAT_TO_ARRAY(aruco.quat));
 }
 
 #endif
@@ -158,44 +101,28 @@ static void send_remote_sensing_am_periodic(struct transport_tx *trans, struct l
 #if !USE_NPS
 //Function to upload telemetry: 
 void sdlog_remote_sensing_am(void){ 
-
-  float target_pos_vel_NED_T[3] = {target_pos_vel_NED.x, target_pos_vel_NED.y, target_pos_vel_NED.z};
-  float target_pos_NED_T[3] = {target_pos_NED.x, target_pos_NED.y, target_pos_NED.z};
-  float target_pos_quat_T[4] = {target_pos_quat.qi, target_pos_quat.qx, target_pos_quat.qy, target_pos_quat.qz};
-
-  float falcon_sixdof_pos_NED_T[3] = {falcon_sixdof_pos_NED.x, falcon_sixdof_pos_NED.y, falcon_sixdof_pos_NED.z};
-  float falcon_sixdof_pos_NED_var_T[3] = {falcon_sixdof_pos_NED_var.x, falcon_sixdof_pos_NED_var.y, falcon_sixdof_pos_NED_var.z};
-  float falcon_sixdof_quat_T[4] = {falcon_sixdof_quat.qi, falcon_sixdof_quat.qx, falcon_sixdof_quat.qy, falcon_sixdof_quat.qz};
-
-  float falcon_relangle_T[2] = {falcon_relangle.azimuth, falcon_relangle.elevation};
-
-  float falcon_relbecon_pos_T[3] = {falcon_relbeacon_pos.x, falcon_relbeacon_pos.y, falcon_relbeacon_pos.z};
-
-  float opencv_aruco_pos_T[3] = {opencv_aruco_pos.x, opencv_aruco_pos.y, opencv_aruco_pos.z};
-  float opencv_aruco_quat_T[4] = {opencv_aruco_quat.qi, opencv_aruco_quat.qx, opencv_aruco_quat.qy, opencv_aruco_quat.qz};
-
   // Send the current state of the remote_sensing module
   pprz_msg_send_REMOTE_SENSING_AM(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
-    &target_pos_tow,
-    target_pos_vel_NED_T,
-    target_pos_NED_T,
-    target_pos_quat_T,
-    &falcon_sixdof_tow,
-    falcon_sixdof_pos_NED_T,
-    falcon_sixdof_pos_NED_var_T,
-    falcon_sixdof_quat_T,
-    &falcon_relangle_tow,
-    &falcon_relangle_beacon_id,
-    falcon_relangle_T,
-    &falcon_relangle_intensity,
-    &falcon_relangle_width,
-    &falcon_relbeacon_tow,
-    &falcon_relbeacon_beacon_id,
-    falcon_relbecon_pos_T,
-    &opencv_aruco_tow,
-    &opencv_aruco_id,
-    opencv_aruco_pos_T,
-    opencv_aruco_quat_T);
+            &target.tow,
+            FLOATVECT3_TO_ARRAY(target.vel),
+            FLOATVECT3_TO_ARRAY(target.pos),
+            FLOATQUAT_TO_ARRAY(target.quat),
+            &falcon.sixdof.tow,
+            FLOATVECT3_TO_ARRAY(falcon.sixdof.pos),
+            FLOATVECT3_TO_ARRAY(falcon.sixdof.pos_var),
+            FLOATQUAT_TO_ARRAY(falcon.sixdof.quat),
+            &falcon.relangle.tow,
+            &falcon.relangle.beacon_id,
+            FLOATANGLES_TO_ARRAY(falcon.relangle.angles),
+            &falcon.relangle.intensity,
+            &falcon.relangle.width,
+            &falcon.relbeacon.tow,
+            &falcon.relbeacon.beacon_id,
+            FLOATVECT3_TO_ARRAY(falcon.relbeacon.pos),
+            &aruco.tow,
+            &aruco.id,
+            FLOATVECT3_TO_ARRAY(aruco.pos),
+            FLOATQUAT_TO_ARRAY(aruco.quat));
 }
 #endif
 
@@ -203,26 +130,29 @@ void sdlog_remote_sensing_am(void){
 void remote_sensing_AM_send_falcon_cmd(uint8_t mode) 
 {
   falcon_mode = mode;
+  float noise[falcon.kalman_sensor.n_meas];
 
-  // Reset the kalman filter noise for the falcon sensor on mode switch
+  // Reset the kalman filter noise for the falcon sensor on mode switch, TODO: update once we have estimates of the real noise
   switch (falcon_mode) {
     case FALCON_MODE_SIXDOF:
-      for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
-        falcon_kalman_sensor.noise[i] = 0.1f;
+      for (int i = 0; i < falcon.kalman_sensor.n_meas; i++) {
+        noise[i] = 0.1f;
       }
       break;
     case FALCON_MODE_RELANGLE: 
-      for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
-        falcon_kalman_sensor.noise[i] = 0.1f;
+      for (int i = 0; i < falcon.kalman_sensor.n_meas; i++) {
+        noise[i] = 0.1f;
       }
       break;
     case FALCON_MODE_RELBEACON: 
-      for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
-        falcon_kalman_sensor.noise[i] = 0.1f;
+      for (int i = 0; i < falcon.kalman_sensor.n_meas; i++) {
+        noise[i] = 0.1f;
       }
       break;
     default: // No mode
       break;
+
+    target_pos_kalman_set_noise(&falcon.kalman_sensor, noise);
   }
 
   #if !USE_NPS
@@ -240,36 +170,36 @@ void remote_sensing_parse_target_pos(uint8_t *buf)
 
   // Save the received values on local structures
   // uint32_t target_pos_recv_tow = get_sys_time_tow();
-  target_pos_tow = DL_TARGET_POS_tow(buf);
+  target.tow = DL_TARGET_POS_tow(buf);
   struct LlaCoor_i target_pos_lla = {DL_TARGET_POS_lat(buf), DL_TARGET_POS_lon(buf), DL_TARGET_POS_alt(buf)};
-  target_pos_vel_NED.x = DL_TARGET_POS_vnorth(buf);
-  target_pos_vel_NED.y = DL_TARGET_POS_veast(buf);
-  target_pos_vel_NED.z = DL_TARGET_POS_vdown(buf);
-  target_pos_quat.qi = DL_TARGET_POS_body_qi(buf);
-  target_pos_quat.qx = DL_TARGET_POS_body_qx(buf);
-  target_pos_quat.qy = DL_TARGET_POS_body_qy(buf);
-  target_pos_quat.qz = DL_TARGET_POS_body_qz(buf);
+  target.vel.x = DL_TARGET_POS_vnorth(buf);
+  target.vel.y = DL_TARGET_POS_veast(buf);
+  target.vel.z = DL_TARGET_POS_vdown(buf);
+  target.quat.qi = DL_TARGET_POS_body_qi(buf);
+  target.quat.qx = DL_TARGET_POS_body_qx(buf);
+  target.quat.qy = DL_TARGET_POS_body_qy(buf);
+  target.quat.qz = DL_TARGET_POS_body_qz(buf);
 
   // struct FloatRates target_pos_rates = {DL_TARGET_POS_p(buf), DL_TARGET_POS_q(buf), DL_TARGET_POS_r(buf)};
   
   struct NedCoor_i target_pos_cm;
   ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &target_pos_lla);
-  target_pos_NED.x = target_pos_cm.x / 100.;
-  target_pos_NED.y = target_pos_cm.y / 100.;
-  target_pos_NED.z = target_pos_cm.z / 100.;
+  target.pos.x = target_pos_cm.x / 100.;
+  target.pos.y = target_pos_cm.y / 100.;
+  target.pos.z = target_pos_cm.z / 100.;
 
-  // Now we have the target position in the UAV NED frame (target_pos_NED) and the target velocity in the UAV NED frame (target_pos_vel_NED).
+  // Now we have the target position in the UAV NED frame (target.pos) and the target velocity in the UAV NED frame (target.vel).
 
 
   // Save the relative position and velocity in the target structure
   #if REMOTE_SENSING_KALMAN_USE_GROUND_STATION
-    target_pos_kalman_sensor.meas[0] = target_pos_NED.x;
-    target_pos_kalman_sensor.meas[2] = target_pos_NED.y;
-    target_pos_kalman_sensor.meas[4] = target_pos_NED.z;
-    target_pos_kalman_sensor.meas[1] = target_pos_vel_NED.x;
-    target_pos_kalman_sensor.meas[3] = target_pos_vel_NED.y;
-    target_pos_kalman_sensor.meas[5] = target_pos_vel_NED.z;
-    target_pos_kalman_update(&remote_sensing_kalman, &target_pos_kalman_sensor);
+    target.kalman_sensor.meas[0] = target.pos.x;
+    target.kalman_sensor.meas[2] = target.pos.y;
+    target.kalman_sensor.meas[4] = target.pos.z;
+    target.kalman_sensor.meas[1] = target.vel.x;
+    target.kalman_sensor.meas[3] = target.vel.y;
+    target.kalman_sensor.meas[5] = target.vel.z;
+    target_pos_kalman_update(&remote_sensing_kalman, &target.kalman_sensor);
   #endif
 
   #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
@@ -277,13 +207,8 @@ void remote_sensing_parse_target_pos(uint8_t *buf)
   #endif
 
   // Update a position in the flight plan for now
-  uint8_t wp_id = WP_BOX;
-  struct EnuCoor_f target_enu;
-  struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
-  ENU_OF_TO_NED(target_enu, target_pos_NED);
-  VECT3_ADD(target_enu, *uav_pos);
-  target_enu.z = waypoints[wp_id].enu_f.z;
-  waypoint_set_enu(wp_id, &target_enu);
+  update_waypoint(WP_BOX, target.pos);
+  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {send_waypoint(WP_BOX);});
 }
 
 /**
@@ -294,49 +219,30 @@ void remote_sensing_parse_falcon_sixdof(uint8_t *buf)
   float *pos = pprzlink_get_DL_IMCU_FALCON_SIXDOF_pos(buf);
   float *quat = pprzlink_get_DL_IMCU_FALCON_SIXDOF_quat(buf);
   float *pos_var = pprzlink_get_DL_IMCU_FALCON_SIXDOF_pos_var(buf);
-  // float *quat_var = pprzlink_get_DL_IMCU_FALCON_SIXDOF_quat_var(buf);
+  // float *quat_var = pprzlink_get_DL_IMCU_falcon.sixdof.quat_var(buf);
   struct FloatQuat q = {quat[0], quat[1], quat[2], quat[3]}; // Rotation of the platform relative to the sensor
   struct FloatVect3 p = {pos[0], pos[1], pos[2]}; // Position of the drone relative to the platform
   struct FloatVect3 p_var = {pos_var[0], pos_var[1], pos_var[2]}; // Variance of p
   // struct FloatVect3 q_var = {quat_var[0], quat_var[1], quat_var[2]}; // Variance of q
-  struct FloatVect3 p_rot, p_inv, p_out;
-  struct FloatVect3 p_var_rot, p_var_inv, p_var_out;
+  struct FloatVect3 p_rot, p_var_rot;
 
   // Calculate the position of the platform relative the the UAV
   float_quat_vmult(&p_rot, &q, &p); // Rotate the position around the platform
   float_quat_vmult(&p_var_rot, &q, &p_var); // Rotate the position variance around the platform
-  // Invert position and change from Y-Down to Z-Down reference frame
-  p_inv.x = -p_rot.x + REMOTE_SENSING_FALCON_OFFSET_UAV_BODY_X;
-  p_inv.y = p_rot.z + REMOTE_SENSING_FALCON_OFFSET_UAV_BODY_Y;
-  p_inv.z = -p_rot.y + REMOTE_SENSING_FALCON_OFFSET_UAV_BODY_Z;
-  p_var_inv.x = -p_var_rot.x;
-  p_var_inv.y = p_var_rot.z;
-  p_var_inv.z = -p_var_rot.y;
-
-  struct FloatQuat body_to_ned;
-  float_quat_invert(&body_to_ned, stateGetNedToBodyQuat_f());
-  float_quat_vmult(&p_out, &body_to_ned, &p_inv); // Rotate the position to earth frame NED
-  float_quat_vmult(&p_var_out, &body_to_ned, &p_var_inv); // Rotate the position variance to earth frame NED
+  // Rotate the position from sensor frame to NED
+  sensor_to_NED(&falcon.sixdof.pos, &p_rot, &falcon.sensor_to_body, falcon.body_to_sensor_offset);
+  sensor_to_NED(&falcon.sixdof.pos_var, &p_var_rot, &falcon.sensor_to_body, (struct FloatVect3){0, 0, 0});
 
   //Fill up the falcon structure
-  falcon_sixdof_tow = get_sys_time_tow();
-  falcon_sixdof_pos_NED.x = p_out.x;
-  falcon_sixdof_pos_NED.y = p_out.y;
-  falcon_sixdof_pos_NED.z = p_out.z;
-  falcon_sixdof_pos_NED_var.x = p_var_out.x;
-  falcon_sixdof_pos_NED_var.y = p_var_out.y;
-  falcon_sixdof_pos_NED_var.z = p_var_out.z;
-
+  falcon.sixdof.tow = get_sys_time_tow();
 
   #if REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF
   // Update the kalman filter with the new position and position variance
-  falcon_kalman_sensor.meas[0] = falcon_sixdof_pos_NED.x;
-  falcon_kalman_sensor.meas[2] = falcon_sixdof_pos_NED.y;
-  falcon_kalman_sensor.meas[4] = falcon_sixdof_pos_NED.z;
-  falcon_kalman_sensor.noise[0] = falcon_sixdof_pos_NED_var.x;
-  falcon_kalman_sensor.noise[2] = falcon_sixdof_pos_NED_var.y;
-  falcon_kalman_sensor.noise[4] = falcon_sixdof_pos_NED_var.z;
-  target_pos_kalman_update(&remote_sensing_kalman, &falcon_kalman_sensor);
+  float sixdof_pos[3] = {falcon.sixdof.pos.x, falcon.sixdof.pos.y, falcon.sixdof.pos.z};
+  float sixdof_pos_var[3] = {falcon.sixdof.pos_var.x, falcon.sixdof.pos_var.y, falcon.sixdof.pos_var.z};
+  target_pos_kalman_set_measurement(&falcon.kalman_sensor, sixdof_pos);
+  target_pos_kalman_set_noise(&falcon.kalman_sensor, sixdof_pos_var);
+  target_pos_kalman_update(&remote_sensing_kalman, &falcon.kalman_sensor);
   #endif
 
   #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
@@ -344,14 +250,8 @@ void remote_sensing_parse_falcon_sixdof(uint8_t *buf)
   #endif
 
   // Update a position in the flight plan for now
-  uint8_t wp_id = WP_SIXDOF;
-  struct EnuCoor_f target_enu;
-  struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
-  ENU_OF_TO_NED(target_enu, falcon_sixdof_pos_NED);
-  VECT3_ADD(target_enu, *uav_pos);
-  target_enu.z = waypoints[wp_id].enu_f.z;
-  waypoint_set_enu(wp_id, &target_enu);
-
+  update_waypoint(WP_SIXDOF, falcon.sixdof.pos);
+  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {send_waypoint(WP_SIXDOF);});
 }
 
 /**
@@ -359,49 +259,35 @@ void remote_sensing_parse_falcon_sixdof(uint8_t *buf)
  */
 void remote_sensing_parse_falcon_relangle(uint8_t *buf) 
 {
-  falcon_relangle_tow = get_sys_time_tow();
-  falcon_relangle_beacon_id = pprzlink_get_DL_IMCU_FALCON_RELANGLE_id(buf);
-  falcon_relangle_intensity = pprzlink_get_DL_IMCU_FALCON_RELANGLE_intensity(buf);
-  falcon_relangle_width = pprzlink_get_DL_IMCU_FALCON_RELANGLE_width(buf);
+  falcon.relangle.tow = get_sys_time_tow();
+  falcon.relangle.beacon_id = pprzlink_get_DL_IMCU_FALCON_RELANGLE_id(buf);
+  falcon.relangle.intensity = pprzlink_get_DL_IMCU_FALCON_RELANGLE_intensity(buf);
+  falcon.relangle.width = pprzlink_get_DL_IMCU_FALCON_RELANGLE_width(buf);
   float *rel_angles = pprzlink_get_DL_IMCU_FALCON_RELANGLE_angles(buf);
-  falcon_relangle.azimuth = rel_angles[0];
-  falcon_relangle.elevation = rel_angles[1];
+  falcon.relangle.angles.azimuth = rel_angles[0];
+  falcon.relangle.angles.elevation = rel_angles[1];
 
-  struct FloatEulers angles = {falcon_relangle.elevation, 0.f, falcon_relangle.azimuth};
+  struct FloatEulers angles = {falcon.relangle.angles.elevation, 0.f, falcon.relangle.angles.azimuth};
   
   /* Implement logic to go from distance and x/z angles to a relative position */
   // Temp relation for distance and intensity, depends on environment and beacon
-  // float falcon_relangle_distance = 5.4165 + 75.5979 / falcon_relangle_intensity - 80.3343 / (falcon_relangle_intensity*falcon_relangle_intensity);
+  // float falcon.relangle_distance = 5.4165 + 75.5979 / falcon.relangle_intensity - 80.3343 / (falcon.relangle_intensity*falcon.relangle_intensity);
   
   // // Obtain the relative position in sensor frame
   struct FloatVect3 p_out_sensor;
-  struct FloatVect3 p_out_body;
-  struct FloatVect3 p_out_ned;
-  struct FloatQuat body_to_ned;
   struct FloatQuat rel_angles_sensor;
   
   // Convert the relative angles to quaternions and multiple with the estimated distance along the sensor y axis to get the relative position
   // in the sensor frame
   float_quat_of_eulers(&rel_angles_sensor, &angles);
-  float_quat_vmult(&p_out_sensor, &rel_angles_sensor, &(struct FloatVect3){0, falcon_relangle_distance, 0});
-
-  // // Rotate the relative position to the body frame and add the sensor to c.g. translation
-  float_quat_vmult(&p_out_body, &falcon_sensor_to_body, &p_out_sensor);
-  
-  p_out_body.x += REMOTE_SENSING_FALCON_OFFSET_UAV_BODY_X;
-  p_out_body.y += REMOTE_SENSING_FALCON_OFFSET_UAV_BODY_Y;
-  p_out_body.z += REMOTE_SENSING_FALCON_OFFSET_UAV_BODY_Z;
-
-  // // Rotate the relative position to the NED frame
-  float_quat_invert(&body_to_ned, stateGetNedToBodyQuat_f());
-  float_quat_vmult(&p_out_ned, &body_to_ned, &p_out_body);
+  float_quat_vmult(&p_out_sensor, &rel_angles_sensor, &(struct FloatVect3){0, falcon.relangle.distance, 0});
+  sensor_to_NED(&falcon.relangle.pos, &p_out_sensor, &falcon.sensor_to_body, falcon.body_to_sensor_offset); // Rotate the position to body frame
   
   #if REMOTE_SENSING_KALMAN_USE_FALCON_RELANGLE
   // Update the kalman filter with the new angles and intensity.
-  falcon_kalman_sensor.meas[0] = p_out_ned.x;
-  falcon_kalman_sensor.meas[2] = p_out_ned.y;
-  falcon_kalman_sensor.meas[4] = p_out_ned.z;
-  target_pos_kalman_update(&remote_sensing_kalman, &falcon_kalman_sensor); 
+  float relangle_pos[3] = {falcon.relangle.pos.x, falcon.relangle.pos.y, falcon.relangle.pos.z};
+  target_pos_kalman_set_measurement(&falcon.kalman_sensor, relangle_pos);
+  target_pos_kalman_update(&remote_sensing_kalman, &falcon.kalman_sensor); 
   #endif
 
   #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
@@ -409,14 +295,8 @@ void remote_sensing_parse_falcon_relangle(uint8_t *buf)
   #endif
 
   // Update a position in the flight plan for now
-  uint8_t wp_id = WP_RELANGLE;
-  struct EnuCoor_f target_enu;
-  struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
-  ENU_OF_TO_NED(target_enu, p_out_ned);
-  VECT3_ADD(target_enu, *uav_pos);
-  target_enu.z = waypoints[wp_id].enu_f.z;
-  waypoint_set_enu(wp_id, &target_enu);
-
+  update_waypoint(WP_RELANGLE, falcon.relangle.pos);
+  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {send_waypoint(WP_RELANGLE);});
 }
 
 /**
@@ -424,33 +304,17 @@ void remote_sensing_parse_falcon_relangle(uint8_t *buf)
  */
 void remote_sensing_parse_falcon_relbeacon(uint8_t *buf) 
 {
-  falcon_relbeacon_tow = get_sys_time_tow();
-  falcon_relbeacon_beacon_id = pprzlink_get_DL_IMCU_FALCON_RELBEACON_id(buf);
+  falcon.relbeacon.tow = get_sys_time_tow();
+  falcon.relbeacon.beacon_id = pprzlink_get_DL_IMCU_FALCON_RELBEACON_id(buf);
   float *pos = pprzlink_get_DL_IMCU_FALCON_RELBEACON_pos(buf);
-  falcon_relbeacon_pos.x = pos[0];
-  falcon_relbeacon_pos.y = pos[1];
-  falcon_relbeacon_pos.z = pos[2];
 
-  //Transpose it to real drone body frame: 
-  struct FloatVect3 falcon_relbeacon_pos_UAV_body;
-  float_quat_vmult(&falcon_relbeacon_pos_UAV_body, &falcon_sensor_to_body, &falcon_relbeacon_pos); // Rotate the position to body frame
-
-  falcon_relbeacon_pos_UAV_body.x += REMOTE_SENSING_FALCON_OFFSET_UAV_BODY_X;
-  falcon_relbeacon_pos_UAV_body.y += REMOTE_SENSING_FALCON_OFFSET_UAV_BODY_Y;
-  falcon_relbeacon_pos_UAV_body.z += REMOTE_SENSING_FALCON_OFFSET_UAV_BODY_Z;
-
-  // Rotate the relative position to the NED frame
-  struct FloatQuat body_to_ned;
-  struct FloatVect3 falcon_relbeacon_pos_NED;
-  float_quat_invert(&body_to_ned, stateGetNedToBodyQuat_f());
-  float_quat_vmult(&falcon_relbeacon_pos_NED, &body_to_ned, &falcon_relbeacon_pos_UAV_body); // Rotate the position to earth frame NED
+  sensor_to_NED(&falcon.relbeacon.pos, &(struct FloatVect3){pos[0], pos[1], pos[2]}, &falcon.sensor_to_body, falcon.body_to_sensor_offset); // Rotate the position to NED frame
 
   #if REMOTE_SENSING_KALMAN_USE_FALCON_RELBEACON
   // Update the kalman filter with the beacon position.
-  falcon_kalman_sensor.meas[0] = falcon_relbeacon_pos_NED.x;
-  falcon_kalman_sensor.meas[2] = falcon_relbeacon_pos_NED.y;
-  falcon_kalman_sensor.meas[4] = falcon_relbeacon_pos_NED.z;
-  target_pos_kalman_update(&remote_sensing_kalman, &falcon_kalman_sensor);
+  float relbeacon_pos[3] = {falcon.relbeacon.pos.x, falcon.relbeacon.pos.y, falcon.relbeacon.pos.z};
+  target_pos_kalman_set_measurement(&falcon.kalman_sensor, relbeacon_pos);
+  target_pos_kalman_update(&remote_sensing_kalman, &falcon.kalman_sensor);
   #endif
 
   #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
@@ -458,14 +322,8 @@ void remote_sensing_parse_falcon_relbeacon(uint8_t *buf)
   #endif
 
   // Update a position in the flight plan for now
-  uint8_t wp_id = WP_RELBEACON;
-  struct EnuCoor_f target_enu;
-  struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
-  ENU_OF_TO_NED(target_enu, falcon_relbeacon_pos_NED);
-  VECT3_ADD(target_enu, *uav_pos);
-  target_enu.z = waypoints[wp_id].enu_f.z;
-  waypoint_set_enu(wp_id, &target_enu);
-
+  update_waypoint(WP_RELBEACON, falcon.relbeacon.pos);
+  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {send_waypoint(WP_RELBEACON);});
 }
 
 #if !USE_NPS
@@ -512,33 +370,17 @@ void test_request_landing_path(void){
  */
 void remote_sensing_parse_opencv_aruco(uint8_t *buf) 
 {
-  opencv_aruco_tow = get_sys_time_tow();
-  opencv_aruco_id = pprzlink_get_DL_IMCU_OPENCV_ARUCO_id(buf);
+  aruco.tow = get_sys_time_tow();
+  aruco.id = pprzlink_get_DL_IMCU_OPENCV_ARUCO_id(buf);
   float *pos = pprzlink_get_DL_IMCU_OPENCV_ARUCO_pos(buf);
-  opencv_aruco_pos.x = pos[0];
-  opencv_aruco_pos.y = pos[1];
-  opencv_aruco_pos.z = pos[2];
 
-  //Transpose it to real drone body frame: 
-  struct FloatVect3 opencv_aruco_pos_UAV_body;
-  float_quat_vmult(&opencv_aruco_pos_UAV_body, &opencv_aruco_sensor_to_body, &opencv_aruco_pos); // Rotate the position to body frame
-
-  opencv_aruco_pos_UAV_body.x += REMOTE_SENSING_OPENCV_ARUCO_OFFSET_UAV_BODY_X;
-  opencv_aruco_pos_UAV_body.y += REMOTE_SENSING_OPENCV_ARUCO_OFFSET_UAV_BODY_Y;
-  opencv_aruco_pos_UAV_body.z += REMOTE_SENSING_OPENCV_ARUCO_OFFSET_UAV_BODY_Z;
-
-  // Rotate the relative position to the NED frame
-  struct FloatQuat body_to_ned;
-  struct FloatVect3 opencv_aruco_pos_NED;
-  float_quat_invert(&body_to_ned, stateGetNedToBodyQuat_f());
-  float_quat_vmult(&opencv_aruco_pos_NED, &body_to_ned, &opencv_aruco_pos_UAV_body); // Rotate the position to earth frame NED
+  sensor_to_NED(&aruco.pos, &(struct FloatVect3){pos[0], pos[1], pos[2]}, &aruco.sensor_to_body, aruco.body_to_sensor_offset); // Rotate the position to NED frame
 
   #if REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO
   // Update the kalman filter with the aruco position.
-  aruco_kalman_sensor.meas[0] = opencv_aruco_pos_NED.x;
-  aruco_kalman_sensor.meas[2] = opencv_aruco_pos_NED.y;
-  aruco_kalman_sensor.meas[4] = opencv_aruco_pos_NED.z;
-  target_pos_kalman_update(&remote_sensing_kalman, &aruco_kalman_sensor);
+  float aruco_pos[3] = {aruco.pos.x, aruco.pos.y, aruco.pos.z};
+  target_pos_kalman_set_measurement(&aruco.kalman_sensor, aruco_pos);
+  target_pos_kalman_update(&remote_sensing_kalman, &aruco.kalman_sensor);
   #endif
 
   #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
@@ -546,14 +388,8 @@ void remote_sensing_parse_opencv_aruco(uint8_t *buf)
   #endif
 
   // Update a position in the flight plan for now
-  uint8_t wp_id = WP_ARUCO;
-  struct EnuCoor_f target_enu;
-  struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
-  ENU_OF_TO_NED(target_enu, opencv_aruco_pos_NED);
-  VECT3_ADD(target_enu, *uav_pos);
-  target_enu.z = waypoints[wp_id].enu_f.z;
-  waypoint_set_enu(wp_id, &target_enu);
-
+  update_waypoint(WP_ARUCO, aruco.pos);
+  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {send_waypoint(WP_ARUCO);});
 }
 
 void remote_sensing_AM_kalman_filter_init(float r __attribute__((unused))) {
@@ -562,6 +398,12 @@ void remote_sensing_AM_kalman_filter_init(float r __attribute__((unused))) {
 
 void remote_sensing_AM_init(void)
 {
+
+  // Initialize the RNG for simulations
+  #if USE_NPS
+  init_random();
+  #endif
+
   //Init function
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_REMOTE_SENSING_AM, send_remote_sensing_am_periodic);
@@ -569,17 +411,21 @@ void remote_sensing_AM_init(void)
 
   /* Initialize the linear Kalman filter */
   target_pos_kalman_init(&remote_sensing_kalman, P0, Q0, 1/REMOTE_SENSING_AM_PERIODIC_FREQ);
+
+  /* Configure the Kalman sensors */
+  load_kalman_sensor_from_airframe(&target.kalman_sensor, &target_ks);
+  load_kalman_sensor_from_airframe(&falcon.kalman_sensor, &falcon_ks);
+  load_kalman_sensor_from_airframe(&aruco.kalman_sensor, &aruco_ks);
   
   /* Store sensor to body rotation for falcon and aruco camera */
-  float_quat_of_eulers(&falcon_sensor_to_body, // ZYX order
-    &(struct FloatEulers) {RadOfDeg(REMOTE_SENSING_FALCON_ROTATION_SENSOR_TO_BODY_X), 
-                           RadOfDeg(REMOTE_SENSING_FALCON_ROTATION_SENSOR_TO_BODY_Y), 
-                           RadOfDeg(REMOTE_SENSING_FALCON_ROTATION_SENSOR_TO_BODY_Z)});
+  load_sensor_rotation_from_airframe(&falcon.sensor_to_body, &falcon_rmat);
+  load_sensor_rotation_from_airframe(&aruco.sensor_to_body, &aruco_rmat);
 
-  float_quat_of_eulers(&opencv_aruco_sensor_to_body, // ZYX order
-    &(struct FloatEulers) {RadOfDeg(REMOTE_SENSING_OPENCV_ARUCO_ROTATION_SENSOR_TO_BODY_X), 
-                           RadOfDeg(REMOTE_SENSING_OPENCV_ARUCO_ROTATION_SENSOR_TO_BODY_Y), 
-                           RadOfDeg(REMOTE_SENSING_OPENCV_ARUCO_ROTATION_SENSOR_TO_BODY_Z)});
+  /* Store sensor to body offset for falcon and aruco camera */
+  load_sensor_offset_from_airframe(&falcon.body_to_sensor_offset, &falcon_offset);
+  load_sensor_offset_from_airframe(&aruco.body_to_sensor_offset, &aruco_offset);
+
+  falcon.mode = FALCON_MODE_SIXDOF; // Default mode
 }
 
 void remote_sensing_AM_periodic(void) {
@@ -588,32 +434,31 @@ void remote_sensing_AM_periodic(void) {
 #if USE_NPS
   // Fake some target pos data
   // Falcon every 50 Hz
-  static int N = 10;
-  falcon_kalman_sensor.meas[0] = stateGetPositionNed_f()->x + ((float)(rand() % (N + 1)) / N);
-  falcon_kalman_sensor.meas[2] = stateGetPositionNed_f()->y + ((float)(rand() % (N + 1)) / N);
-  falcon_kalman_sensor.meas[4] = stateGetPositionNed_f()->z + ((float)(rand() % (N + 1)) / N);
+  falcon.kalman_sensor.meas[0] = rand_norm_float(0, falcon.kalman_sensor.noise[0]);
+  falcon.kalman_sensor.meas[1] = rand_norm_float(0, falcon.kalman_sensor.noise[1]);
+  falcon.kalman_sensor.meas[2] = rand_norm_float(0, falcon.kalman_sensor.noise[2]) - stateGetPositionNed_f()->z;
 
   RunOnceEvery(1, {
-    target_pos_kalman_update(&remote_sensing_kalman, &falcon_kalman_sensor);
+    target_pos_kalman_update(&remote_sensing_kalman, &falcon.kalman_sensor);
   });
 
-  aruco_kalman_sensor.meas[0] = stateGetPositionNed_f()->x + ((float)(rand() % (N + 1)) / N * 3);
-  aruco_kalman_sensor.meas[2] = stateGetPositionNed_f()->y + ((float)(rand() % (N + 1)) / N * 3);
-  aruco_kalman_sensor.meas[4] = stateGetPositionNed_f()->z + ((float)(rand() % (N + 1)) / N * 3);
+  aruco.kalman_sensor.meas[0] = rand_norm_float(0, aruco.kalman_sensor.noise[0]);
+  aruco.kalman_sensor.meas[1] = rand_norm_float(0, aruco.kalman_sensor.noise[1]);
+  aruco.kalman_sensor.meas[2] = rand_norm_float(0, aruco.kalman_sensor.noise[2]) - stateGetPositionNed_f()->z;
 
   RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ / 10, {
-    target_pos_kalman_update(&remote_sensing_kalman, &aruco_kalman_sensor);
+    target_pos_kalman_update(&remote_sensing_kalman, &aruco.kalman_sensor);
   });
   
-  target_pos_kalman_sensor.meas[0] = stateGetPositionNed_f()->x + ((float)(rand() % (N + 1)) / N / 2);
-  target_pos_kalman_sensor.meas[2] = stateGetPositionNed_f()->y + ((float)(rand() % (N + 1)) / N / 2);
-  target_pos_kalman_sensor.meas[4] = stateGetPositionNed_f()->z + ((float)(rand() % (N + 1)) / N / 2);
-  target_pos_kalman_sensor.meas[1] = stateGetSpeedNed_f()->x + ((float)(rand() % (N + 1)) / N);
-  target_pos_kalman_sensor.meas[3] = stateGetSpeedNed_f()->y + ((float)(rand() % (N + 1)) / N);
-  target_pos_kalman_sensor.meas[5] = stateGetSpeedNed_f()->z + ((float)(rand() % (N + 1)) / N);
+  target.kalman_sensor.meas[0] = rand_norm_float(0, target.kalman_sensor.noise[0]);
+  target.kalman_sensor.meas[2] = rand_norm_float(0, target.kalman_sensor.noise[2]);
+  target.kalman_sensor.meas[4] = rand_norm_float(0, target.kalman_sensor.noise[4]) - stateGetPositionNed_f()->z;
+  target.kalman_sensor.meas[1] = rand_norm_float(0, target.kalman_sensor.noise[1]);
+  target.kalman_sensor.meas[3] = rand_norm_float(0, target.kalman_sensor.noise[3]);
+  target.kalman_sensor.meas[5] = rand_norm_float(0, target.kalman_sensor.noise[5]) - stateGetSpeedNed_f()->z;
     
   RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ / 8, {
-    target_pos_kalman_update(&remote_sensing_kalman, &target_pos_kalman_sensor);
+    target_pos_kalman_update(&remote_sensing_kalman, &target.kalman_sensor);
   });
 #endif
 #endif
@@ -626,65 +471,14 @@ void remote_sensing_AM_periodic(void) {
   struct FloatVect3 speed;
   target_pos_kalman_get_state(&remote_sensing_kalman, &pos, &speed);
 
-  uint8_t wp_id;
-
   // Check for NaN
   if (isnan(pos.x) || isnan(pos.y) || isnan(pos.z) || isnan(speed.x) || isnan(speed.y) || isnan(speed.z)) {
     // Reset the kalman filter
     target_pos_kalman_init(&remote_sensing_kalman, P0, Q0, 1/REMOTE_SENSING_AM_PERIODIC_FREQ);
-  } else {
-    // Update a position in the flight plan for now
-    wp_id = WP_KALMAN;
-    struct EnuCoor_f target_enu;
-    struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
-    ENU_OF_TO_NED(target_enu, pos);
-    VECT3_ADD(target_enu, *uav_pos);
-    target_enu.z = waypoints[wp_id].enu_f.z;
-    waypoint_set_enu(wp_id, &target_enu);
-  }
+  } 
 
-  // Send waypoint update every half second
-  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {
-
-    // test_request_landing_path();
-    
-    // Send to the GCS that the waypoint has been moved
-    wp_id = WP_KALMAN;
-    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-      &waypoints[wp_id].enu_i.x,
-      &waypoints[wp_id].enu_i.y,
-      &waypoints[wp_id].enu_i.z);
-    
-    wp_id = WP_SIXDOF;
-    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-      &waypoints[wp_id].enu_i.x,
-      &waypoints[wp_id].enu_i.y,
-      &waypoints[wp_id].enu_i.z);
-
-    wp_id = WP_RELANGLE;
-    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-      &waypoints[wp_id].enu_i.x,
-      &waypoints[wp_id].enu_i.y,
-      &waypoints[wp_id].enu_i.z);
-
-    wp_id = WP_RELBEACON;
-    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-      &waypoints[wp_id].enu_i.x,
-      &waypoints[wp_id].enu_i.y,
-      &waypoints[wp_id].enu_i.z);
-    
-    wp_id = WP_ARUCO;
-    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-      &waypoints[wp_id].enu_i.x,
-      &waypoints[wp_id].enu_i.y,
-      &waypoints[wp_id].enu_i.z);
-
-    wp_id = WP_BOX;
-    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-      &waypoints[wp_id].enu_i.x,
-      &waypoints[wp_id].enu_i.y,
-      &waypoints[wp_id].enu_i.z);
-    });
+  update_waypoint(WP_KALMAN, pos);
+  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {send_waypoint(WP_KALMAN);});
 
   #if !USE_NPS
   pprz_msg_send_TARGET_POS_KALMAN(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
@@ -700,3 +494,52 @@ void remote_sensing_AM_periodic(void) {
   return;
 }
 
+static void update_waypoint(uint8_t wp_id, struct FloatVect3 pos) {
+  struct EnuCoor_f target_enu;
+  struct EnuCoor_f *uav_pos = stateGetPositionEnu_f();
+  ENU_OF_TO_NED(target_enu, pos);
+  VECT3_ADD(target_enu, *uav_pos);
+  target_enu.z = waypoints[wp_id].enu_f.z;
+  waypoint_set_enu(wp_id, &target_enu);
+}
+
+static void send_waypoint(uint8_t wp_id) {
+  DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+      &waypoints[wp_id].enu_i.x,
+      &waypoints[wp_id].enu_i.y,
+      &waypoints[wp_id].enu_i.z);
+}
+
+static void load_kalman_sensor_from_airframe(struct KalmanSensor *ks, const struct KalmanSensor *ks_airframe) {
+  for (int i = 0; i < ks_airframe->n_meas; i++) {
+    ks->noise[i] = ks_airframe->noise[i];
+    ks->Hmat[i] = ks_airframe->Hmat[i];
+  }
+
+  ks->n_meas = ks_airframe->n_meas;
+};
+
+static void load_sensor_rotation_from_airframe(struct FloatQuat *q, struct FloatRMat *rmat_airframe) {
+  struct FloatRMat sensor_to_body;
+  float_rmat_inv(&sensor_to_body, rmat_airframe);
+  float_quat_of_rmat(q, &sensor_to_body);
+}
+
+static void load_sensor_offset_from_airframe(struct FloatVect3 *offset, const struct FloatVect3 *offset_airframe) {
+  offset->x = offset_airframe->x;
+  offset->y = offset_airframe->y;
+  offset->z = offset_airframe->z;
+}
+
+static void sensor_to_NED(struct FloatVect3 *ned, struct FloatVect3 *sensor, struct FloatQuat *sensor_to_body, struct FloatVect3 offset) {
+  
+  // From sensor to body frame
+  struct FloatVect3 body;
+  float_quat_vmult(&body, sensor_to_body, sensor); // Rotate the position to body frame
+  VECT3_ADD(body, offset);
+  
+  // From body to NED frame
+  struct FloatQuat body_to_ned;
+  float_quat_invert(&body_to_ned, stateGetNedToBodyQuat_f());
+  float_quat_vmult(ned, &body_to_ned, &body); // Rotate the position to earth frame NED
+}

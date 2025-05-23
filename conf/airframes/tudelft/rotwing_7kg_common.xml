@@ -246,13 +246,6 @@
         <define name="SPEED"                    value="0.0"/>
     </section>
 
-    <section name="TARGET_POS" prefix="TARGET_POS_">
-        <define name="KALMAN_USE_FALCON"            value="TRUE"/>
-        <define name="KALMAN_USE_GROUND_STATION"    value="TRUE"/>
-        <define name="KALMAN_USE_LIDAR"             value="TRUE"/>
-        <define name="KALMAN_USE_ARUCO"             value="FALSE"/>
-    </section>
-
     <section name="AUTOPILOT">
         <define name="MODE_MANUAL"      value="AP_MODE_ATTITUDE_DIRECT"/>
         <define name="MODE_AUTO1"       value="AP_MODE_FORWARD"/>

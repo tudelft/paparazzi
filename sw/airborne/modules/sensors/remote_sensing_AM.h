@@ -18,6 +18,8 @@
  * <http://www.gnu.org/licenses/>.
  */
 #include "std.h"
+#include "math/pprz_algebra_float.h"
+#include "filters/target_pos_kalman.h"
 
 #ifndef REMOTE_SENSING_AM_H
 #define REMOTE_SENSING_AM_H
@@ -33,8 +35,59 @@ struct AzimuthElevation {
   float elevation; // elevation angle in rad
 };
 
-extern float falcon_relangle_distance; // Falcon sensor distance in meters
-extern uint8_t falcon_mode; 
+struct sixdof_t {
+  uint32_t tow; // Time of week of the sixdof measurement
+  struct FloatVect3 pos; // position in NED frame
+  struct FloatVect3 pos_var; // position variance in NED frame
+  struct FloatQuat quat; // attitude in NED frame
+  struct FloatVect3 quat_var; // attitude variance in NED frame
+};
+
+struct relangle_t {
+  uint32_t tow; // Time of week of the relangle measurement
+  uint16_t beacon_id; // Falcon sensor beacon id.
+  struct AzimuthElevation angles; // Falcon sensor azimuth and elevation angles. 
+  float intensity; // Falcon sensor intensity.
+  float width; // Falcon sensor width.
+  float distance; // Distance derived from angles and intensity.
+  struct FloatVect3 pos; // position in NED frame
+};
+
+struct relbeacon_t {
+  uint32_t tow; // Time of week of the relbeacon measurement
+  uint16_t beacon_id; // Falcon sensor beacon id.
+  struct FloatVect3 pos; // position in NED frame
+};
+
+struct target_pos_t {
+  uint32_t tow; // Time of week of the target position measurement
+  struct FloatVect3 pos; // position in NED frame
+  struct FloatVect3 vel; // velocity in NED frame
+  struct FloatQuat quat; // attitude in NED frame
+  struct KalmanSensor kalman_sensor; // Kalman filter for target position
+};
+
+struct falcon_t {
+  uint8_t mode; // Falcon sensor mode
+  struct FloatQuat sensor_to_body; // Rotation of the body relative to the sensor
+  struct FloatVect3 body_to_sensor_offset; // Position of the sensor in the body frame
+  struct sixdof_t sixdof; // Sixdof sensor data
+  struct relangle_t relangle; // Relangle sensor data
+  struct relbeacon_t relbeacon; // Relbeacon sensor data
+  struct KalmanSensor kalman_sensor; // Kalman filter for the falcon sensor
+};
+
+struct aruco_t {
+  uint32_t tow; // Time of week of the aruco measurement
+  uint16_t id; // Aruco marker id
+  struct FloatQuat sensor_to_body; // Rotation of the body relative to the sensor
+  struct FloatVect3 body_to_sensor_offset; // Position of the sensor in the body frame
+  struct FloatVect3 pos; // position in Ned frame
+  struct FloatQuat quat; // attitude in Ned frame
+  struct KalmanSensor kalman_sensor; // Kalman filter for the opencv aruco sensor
+};
+
+extern struct falcon_t falcon; // for settings
 
 extern void remote_sensing_AM_init(void); 
 extern void remote_sensing_AM_periodic(void);

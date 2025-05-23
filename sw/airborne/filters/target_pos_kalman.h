@@ -38,8 +38,8 @@
 struct KalmanSensor {
     float noise[TARGET_POS_KALMAN_DIM];            ///< The noise of the measurement, fill in order of Hmat, don't follow state vect.
     float meas[TARGET_POS_KALMAN_DIM];             ///< The measurement
-    float Hmat[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];          ///< The measurement matrix, fill non-zero rows first as it is trimmed.
-    uint8_t n_meas;                              ///< The number of measurements, used to trim Hmat
+    uint8_t Hmat[TARGET_POS_KALMAN_DIM];             ///< The measurement matrix, fill non-zero rows first as it is trimmed.
+    uint8_t n_meas;                                ///< The number of measurements, used to trim Hmat
   };
 
 /** Kalman structure
@@ -114,5 +114,19 @@ extern void target_pos_kalman_predict(struct TargetPosKalman *kalman);
  * @param[in] sensor KalmanSensor structure
  */
 extern void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSensor *sensor);
+
+/** Update a Kalman sensor struct with new measurements
+ *
+ * @param[in] sensor KalmanSensor structure
+ * @param[in] meas new measurements
+ */
+void target_pos_kalman_set_measurement(struct KalmanSensor *sensor, float *meas);
+
+/** Update a Kalman sensor struct with a new measurement noise estimate
+ *
+ * @param[in] sensor KalmanSensor structure
+ * @param[in] noise new measurement noise estimate
+ */
+void target_pos_kalman_set_noise(struct KalmanSensor *sensor, float *noise);
 
 #endif
