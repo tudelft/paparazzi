@@ -48,8 +48,6 @@ static void load_sensor_offset_from_airframe(struct FloatVect3 *offset, const st
 static void sensor_to_NED(struct FloatVect3 *ned, struct FloatVect3 *sensor, struct FloatQuat *sensor_to_body, struct FloatVect3 offset);
 
 // Global variables
-uint8_t falcon_mode = FALCON_MODE_SIXDOF; // 0: no mode, 1: sixdof_mode, 2: relangle_mode, 3: relbeacon_mode
-
 struct target_pos_t target = {0};
 struct falcon_t falcon = {0};
 struct aruco_t aruco = {0};
@@ -129,7 +127,7 @@ void sdlog_remote_sensing_am(void){
 //Send mode to the falcon system: 
 void remote_sensing_AM_send_falcon_cmd(uint8_t mode) 
 {
-  falcon_mode = mode;
+  uint8_t falcon_mode = mode;
   float noise[falcon.kalman_sensor.n_meas];
 
   // Reset the kalman filter noise for the falcon sensor on mode switch, TODO: update once we have estimates of the real noise
