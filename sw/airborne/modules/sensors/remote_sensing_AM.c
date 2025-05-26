@@ -28,9 +28,32 @@
 #include "generated/airframe.h"
 #include "generated/flight_plan.h"
 
+// Check if the sensors are enabled in the airframe file
+#ifndef REMOTE_SENSING_KALMAN_USE_GROUND_STATION 
+#warning "Ground Station GPS is not fused in Remote Sensing Kalman"
+#define REMOTE_SENSING_KALMAN_USE_GROUND_STATION FALSE
+#endif
+#ifndef REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF
+#warning "Falcon SIXDOF mode is not fused in Remote Sensing Kalman"
+#define REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF FALSE
+#endif
+#ifndef REMOTE_SENSING_KALMAN_USE_FALCON_RELANGLE
+#warning "Falcon Relative Angle mode is not fused in Remote Sensing Kalman"
+#define REMOTE_SENSING_KALMAN_USE_FALCON_RELANGLE FALSE
+#endif
+#ifndef REMOTE_SENSING_KALMAN_USE_FALCON_RELBEACON
+#warning "Falcon Relative Beacon mode is not fused in Remote Sensing Kalman"
+#define REMOTE_SENSING_KALMAN_USE_FALCON_RELBEACON FALSE
+#endif
+#ifndef REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO
+#warning "Aruco is not fused in Remote Sensing Kalman"
+#define REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO FALSE
+#endif
+
 #define FLOATVECT3_TO_ARRAY(v) (float[3]){v.x, v.y, v.z}
 #define FLOATQUAT_TO_ARRAY(v) (float[4]){v.qi, v.qx, v.qy, v.qz}
 #define FLOATANGLES_TO_ARRAY(v) (float[2]){v.azimuth, v.elevation}
+#define POS_SPEED_TO_ARRAY(p, s) (float[6]){p.x, s.x, p.y, s.y, p.z, s.z}
 
 #if USE_NPS
 #include "math/pprz_random.h"
@@ -191,12 +214,7 @@ void remote_sensing_parse_target_pos(uint8_t *buf)
 
   // Save the relative position and velocity in the target structure
   #if REMOTE_SENSING_KALMAN_USE_GROUND_STATION
-    target.kalman_sensor.meas[0] = target.pos.x;
-    target.kalman_sensor.meas[2] = target.pos.y;
-    target.kalman_sensor.meas[4] = target.pos.z;
-    target.kalman_sensor.meas[1] = target.vel.x;
-    target.kalman_sensor.meas[3] = target.vel.y;
-    target.kalman_sensor.meas[5] = target.vel.z;
+    target_pos_kalman_set_measurement(&target.kalman_sensor, POS_SPEED_TO_ARRAY(target.pos, target.vel));
     target_pos_kalman_update(&remote_sensing_kalman, &target.kalman_sensor);
   #endif
 
@@ -227,6 +245,10 @@ void remote_sensing_parse_falcon_sixdof(uint8_t *buf)
   // Calculate the position of the platform relative the the UAV
   float_quat_vmult(&p_rot, &q, &p); // Rotate the position around the platform
   float_quat_vmult(&p_var_rot, &q, &p_var); // Rotate the position variance around the platform
+
+  // Invert the position
+  VECT3_SMUL(p_rot, p_rot, -1.f);
+
   // Rotate the position from sensor frame to NED
   sensor_to_NED(&falcon.sixdof.pos, &p_rot, &falcon.sensor_to_body, falcon.body_to_sensor_offset);
   sensor_to_NED(&falcon.sixdof.pos_var, &p_var_rot, &falcon.sensor_to_body, (struct FloatVect3){0, 0, 0});
@@ -236,10 +258,8 @@ void remote_sensing_parse_falcon_sixdof(uint8_t *buf)
 
   #if REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF
   // Update the kalman filter with the new position and position variance
-  float sixdof_pos[3] = {falcon.sixdof.pos.x, falcon.sixdof.pos.y, falcon.sixdof.pos.z};
-  float sixdof_pos_var[3] = {falcon.sixdof.pos_var.x, falcon.sixdof.pos_var.y, falcon.sixdof.pos_var.z};
-  target_pos_kalman_set_measurement(&falcon.kalman_sensor, sixdof_pos);
-  target_pos_kalman_set_noise(&falcon.kalman_sensor, sixdof_pos_var);
+  target_pos_kalman_set_measurement(&falcon.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.sixdof.pos));
+  target_pos_kalman_set_noise(&falcon.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.sixdof.pos_var));
   target_pos_kalman_update(&remote_sensing_kalman, &falcon.kalman_sensor);
   #endif
 
@@ -283,8 +303,7 @@ void remote_sensing_parse_falcon_relangle(uint8_t *buf)
   
   #if REMOTE_SENSING_KALMAN_USE_FALCON_RELANGLE
   // Update the kalman filter with the new angles and intensity.
-  float relangle_pos[3] = {falcon.relangle.pos.x, falcon.relangle.pos.y, falcon.relangle.pos.z};
-  target_pos_kalman_set_measurement(&falcon.kalman_sensor, relangle_pos);
+  target_pos_kalman_set_measurement(&falcon.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.relangle.pos));
   target_pos_kalman_update(&remote_sensing_kalman, &falcon.kalman_sensor); 
   #endif
 
@@ -310,8 +329,7 @@ void remote_sensing_parse_falcon_relbeacon(uint8_t *buf)
 
   #if REMOTE_SENSING_KALMAN_USE_FALCON_RELBEACON
   // Update the kalman filter with the beacon position.
-  float relbeacon_pos[3] = {falcon.relbeacon.pos.x, falcon.relbeacon.pos.y, falcon.relbeacon.pos.z};
-  target_pos_kalman_set_measurement(&falcon.kalman_sensor, relbeacon_pos);
+  target_pos_kalman_set_measurement(&falcon.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.relbeacon.pos));
   target_pos_kalman_update(&remote_sensing_kalman, &falcon.kalman_sensor);
   #endif
 
@@ -376,8 +394,7 @@ void remote_sensing_parse_opencv_aruco(uint8_t *buf)
 
   #if REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO
   // Update the kalman filter with the aruco position.
-  float aruco_pos[3] = {aruco.pos.x, aruco.pos.y, aruco.pos.z};
-  target_pos_kalman_set_measurement(&aruco.kalman_sensor, aruco_pos);
+  target_pos_kalman_set_measurement(&aruco.kalman_sensor, FLOATVECT3_TO_ARRAY(aruco.pos));
   target_pos_kalman_update(&remote_sensing_kalman, &aruco.kalman_sensor);
   #endif
 
@@ -411,16 +428,23 @@ void remote_sensing_AM_init(void)
   target_pos_kalman_init(&remote_sensing_kalman, P0, Q0, 1/REMOTE_SENSING_AM_PERIODIC_FREQ);
 
   /* Configure the Kalman sensors */
+  // printf("Loading target...\n");
   load_kalman_sensor_from_airframe(&target.kalman_sensor, &target_ks);
+  // printf("Loading falcon...\n");
   load_kalman_sensor_from_airframe(&falcon.kalman_sensor, &falcon_ks);
+  // printf("Loading aruco...\n");
   load_kalman_sensor_from_airframe(&aruco.kalman_sensor, &aruco_ks);
   
   /* Store sensor to body rotation for falcon and aruco camera */
+  // printf("Loading falcon sensor rotation...\n");
   load_sensor_rotation_from_airframe(&falcon.sensor_to_body, &falcon_rmat);
+  // printf("Loading aruco sensor rotation...\n");
   load_sensor_rotation_from_airframe(&aruco.sensor_to_body, &aruco_rmat);
 
   /* Store sensor to body offset for falcon and aruco camera */
+  // printf("Loading falcon sensor offset...\n");
   load_sensor_offset_from_airframe(&falcon.body_to_sensor_offset, &falcon_offset);
+  // printf("Loading aruco sensor offset...\n");
   load_sensor_offset_from_airframe(&aruco.body_to_sensor_offset, &aruco_offset);
 
   falcon.mode = FALCON_MODE_SIXDOF; // Default mode
@@ -432,31 +456,50 @@ void remote_sensing_AM_periodic(void) {
 #if USE_NPS
   // Fake some target pos data
   // Falcon every 50 Hz
-  falcon.kalman_sensor.meas[0] = rand_norm_float(0, falcon.kalman_sensor.noise[0]);
-  falcon.kalman_sensor.meas[1] = rand_norm_float(0, falcon.kalman_sensor.noise[1]);
-  falcon.kalman_sensor.meas[2] = rand_norm_float(0, falcon.kalman_sensor.noise[2]) - stateGetPositionNed_f()->z;
+  struct FloatVect3 falcon_meas = {rand_norm_float(0, falcon.kalman_sensor.noise[0]),
+    rand_norm_float(0, falcon.kalman_sensor.noise[1]), 
+    rand_norm_float(0, falcon.kalman_sensor.noise[2]) - stateGetPositionNed_f()->z};
+
+  target_pos_kalman_set_measurement(&falcon.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon_meas));
 
   RunOnceEvery(1, {
     target_pos_kalman_update(&remote_sensing_kalman, &falcon.kalman_sensor);
   });
 
-  aruco.kalman_sensor.meas[0] = rand_norm_float(0, aruco.kalman_sensor.noise[0]);
-  aruco.kalman_sensor.meas[1] = rand_norm_float(0, aruco.kalman_sensor.noise[1]);
-  aruco.kalman_sensor.meas[2] = rand_norm_float(0, aruco.kalman_sensor.noise[2]) - stateGetPositionNed_f()->z;
+  struct FloatVect3 aruco_meas = {rand_norm_float(0, aruco.kalman_sensor.noise[0]),
+    rand_norm_float(0, aruco.kalman_sensor.noise[1]),
+    rand_norm_float(0, aruco.kalman_sensor.noise[2]) - stateGetPositionNed_f()->z};
+
+  target_pos_kalman_set_measurement(&aruco.kalman_sensor, FLOATVECT3_TO_ARRAY(aruco_meas));
 
   RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ / 10, {
     target_pos_kalman_update(&remote_sensing_kalman, &aruco.kalman_sensor);
   });
   
-  target.kalman_sensor.meas[0] = rand_norm_float(0, target.kalman_sensor.noise[0]);
-  target.kalman_sensor.meas[2] = rand_norm_float(0, target.kalman_sensor.noise[2]);
-  target.kalman_sensor.meas[4] = rand_norm_float(0, target.kalman_sensor.noise[4]) - stateGetPositionNed_f()->z;
-  target.kalman_sensor.meas[1] = rand_norm_float(0, target.kalman_sensor.noise[1]);
-  target.kalman_sensor.meas[3] = rand_norm_float(0, target.kalman_sensor.noise[3]);
-  target.kalman_sensor.meas[5] = rand_norm_float(0, target.kalman_sensor.noise[5]) - stateGetSpeedNed_f()->z;
+  struct FloatVect3 target_pos = {rand_norm_float(0, target.kalman_sensor.noise[0]),
+    rand_norm_float(0, target.kalman_sensor.noise[2]),
+    rand_norm_float(0, target.kalman_sensor.noise[4]) - stateGetPositionNed_f()->z};
+  
+    struct FloatVect3 target_speed = {rand_norm_float(0, target.kalman_sensor.noise[1]),
+    rand_norm_float(0, target.kalman_sensor.noise[3]),
+    rand_norm_float(0, target.kalman_sensor.noise[5]) - stateGetSpeedNed_f()->z};
+
+  target_pos_kalman_set_measurement(&target.kalman_sensor, POS_SPEED_TO_ARRAY(target_pos, target_speed));
     
   RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ / 8, {
     target_pos_kalman_update(&remote_sensing_kalman, &target.kalman_sensor);
+  });
+
+  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {
+    // Update a position in the flight plan for now
+    update_waypoint(WP_SIXDOF, falcon_meas);
+    send_waypoint(WP_SIXDOF);
+
+    update_waypoint(WP_ARUCO, aruco_meas);
+    send_waypoint(WP_ARUCO);
+
+    update_waypoint(WP_BOX, target_pos);
+    send_waypoint(WP_BOX);
   });
 #endif
 #endif
@@ -512,18 +555,30 @@ static void load_kalman_sensor_from_airframe(struct KalmanSensor *ks, const stru
   for (int i = 0; i < ks_airframe->n_meas; i++) {
     ks->noise[i] = ks_airframe->noise[i];
     ks->Hmat[i] = ks_airframe->Hmat[i];
+    // printf("Kalman sensor noise[%d] = %f\n", i, ks->noise[i]);
+    // printf("Kalman sensor Hmat[%d] = %d\n", i, ks->Hmat[i]);
   }
 
   ks->n_meas = ks_airframe->n_meas;
 };
 
 static void load_sensor_rotation_from_airframe(struct FloatQuat *q, struct FloatRMat *rmat_airframe) {
-  struct FloatRMat sensor_to_body;
-  float_rmat_inv(&sensor_to_body, rmat_airframe);
-  float_quat_of_rmat(q, &sensor_to_body);
+  // printf("Rmat airframe: \n");
+  // for (int i = 0; i < 9; i++) {
+  //   printf("%f ", rmat_airframe->m[i]);
+  //   if ((i + 1) % 3 == 0) {
+  //     printf("\n");
+  //   }
+  // }
+  
+  // struct FloatRMat sensor_to_body;
+  // float_rmat_transp(&sensor_to_body, rmat_airframe);
+  float_quat_of_rmat(q, rmat_airframe);
 }
 
 static void load_sensor_offset_from_airframe(struct FloatVect3 *offset, const struct FloatVect3 *offset_airframe) {
+  // printf("Offset airframe: (%f, %f, %f)\n", offset_airframe->x, offset_airframe->y, offset_airframe->z);
+
   offset->x = offset_airframe->x;
   offset->y = offset_airframe->y;
   offset->z = offset_airframe->z;

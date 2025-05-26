@@ -118,13 +118,13 @@
         </module>
         <module name="air_data"/>
 
-        <module name="remote_sensing_AM" prefix="REMOTE_SENSING_">
-            <define name="KALMAN_USE_GROUND_STATION" value="TRUE"/>
-            <define name="KALMAN_USE_FALCON_SIXDOF" value="TRUE"/>
-            <define name="KALMAN_USE_FALCON_RELANGLE" value="TRUE"/>
-            <define name="KALMAN_USE_FALCON_RELBEACON" value="TRUE"/>
-            <define name="KALMAN_USE_OPENCV_ARUCO" value="TRUE"/>
-            <define name="LOG_ON_ARRIVAL" value="TRUE"/>
+        <module name="remote_sensing_AM">
+            <define name="REMOTE_SENSING_KALMAN_USE_GROUND_STATION" value="TRUE"/>
+            <define name="REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF" value="TRUE"/>
+            <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELANGLE" value="TRUE"/>
+            <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELBEACON" value="TRUE"/>
+            <define name="REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO" value="TRUE"/>
+            <define name="REMOTE_SENSING_LOG_ON_ARRIVAL" value="TRUE"/>
             <define name="REMOTE_SENSING_KALMAN_P0" value="{10,10,10,10,10,10}"/>
             <define name="REMOTE_SENSING_KALMAN_Q0" value="{0.1,0.1,0.1,0.1,0.1,0.1}"/>
         </module>
@@ -293,24 +293,22 @@
     </section>
 
     <section name="FALCON" prefix="FALCON_"> 
-        <define name="BODY_TO_SENSOR" value="{{1.0,0,0,0,0,1.0,0,-1.0,0}}"/>
+        <define name="BODY_TO_SENSOR" value="{{1.0,0,0,0,0,-1.0,0,1.0,0}}"/>
         <define name="OFFSET_UAV_BODY" value="{0.0,0.0,0.13}"/>
         <define name="KALMAN_SENSOR" type="struct">
             <field name="noise" value="{0.1,0.1,0.1}"/>
             <field name="n_meas" value="3"/>
             <field name="Hmat" value="{0,2,4}"/>
-            <!-- <field name="meas" value="{0,0,0,0,0,0}"/> -->
         </define>
     </section>
 
     <section name="ARUCO" prefix="ARUCO_">
-        <define name="BODY_TO_SENSOR" value="{{0,-1.0,0,-1.0,0,0,0,0,1.0}}"/>
+        <define name="BODY_TO_SENSOR" value="{{0,-1.0,0,1.0,0,0,0,0,1.0}}"/>
         <define name="OFFSET_UAV_BODY" value="{0.0,0.0,0.13}"/>
         <define name="KALMAN_SENSOR" type="struct">
             <field name="noise" value="{0.1,0.1,0.1}"/>
             <field name="n_meas" value="3"/>
             <field name="Hmat" value="{0,2,4}"/>
-            <!-- <field name="meas" value="{0,0,0,0,0,0}"/> -->
         </define>
     </section>
 
@@ -319,7 +317,6 @@
             <field name="noise" value="{0.1,1.0,0.1,1.0,0.1,1.0}"/>
             <field name="n_meas" value="6"/>
             <field name="Hmat" value="{0,1,2,3,4,5}"/>
-            <!-- <field name="meas" value="{0,0,0,0,0,0}"/> -->
         </define>
     </section>
 
