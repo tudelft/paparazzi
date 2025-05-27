@@ -293,10 +293,10 @@
     </section>
 
     <section name="FALCON" prefix="FALCON_"> 
-        <define name="BODY_TO_SENSOR" value="{{1.0,0,0,0,0,-1.0,0,1.0,0}}"/>
+        <define name="BODY_TO_SENSOR" value="{{1.0,0,0,0,0,1.0,0,-1.0,0}}"/>
         <define name="OFFSET_UAV_BODY" value="{0.0,0.0,0.13}"/>
         <define name="KALMAN_SENSOR" type="struct">
-            <field name="noise" value="{0.1,0.1,0.1}"/>
+            <field name="noise" value="{1.0,1.0,1.0}"/>
             <field name="n_meas" value="3"/>
             <field name="Hmat" value="{0,2,4}"/>
         </define>
@@ -306,7 +306,7 @@
         <define name="BODY_TO_SENSOR" value="{{0,-1.0,0,1.0,0,0,0,0,1.0}}"/>
         <define name="OFFSET_UAV_BODY" value="{0.0,0.0,0.13}"/>
         <define name="KALMAN_SENSOR" type="struct">
-            <field name="noise" value="{0.1,0.1,0.1}"/>
+            <field name="noise" value="{1.0,1.0,1.0}"/>
             <field name="n_meas" value="3"/>
             <field name="Hmat" value="{0,2,4}"/>
         </define>

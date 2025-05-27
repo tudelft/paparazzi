@@ -285,7 +285,7 @@ void remote_sensing_parse_falcon_relangle(uint8_t *buf)
   falcon.relangle.angles.azimuth = rel_angles[0];
   falcon.relangle.angles.elevation = rel_angles[1];
 
-  struct FloatEulers angles = {falcon.relangle.angles.elevation, 0.f, falcon.relangle.angles.azimuth};
+  struct FloatEulers angles = {falcon.relangle.angles.azimuth, 0.f, falcon.relangle.angles.elevation};
   
   /* Implement logic to go from distance and x/z angles to a relative position */
   // Temp relation for distance and intensity, depends on environment and beacon
@@ -428,23 +428,16 @@ void remote_sensing_AM_init(void)
   target_pos_kalman_init(&remote_sensing_kalman, P0, Q0, 1/REMOTE_SENSING_AM_PERIODIC_FREQ);
 
   /* Configure the Kalman sensors */
-  // printf("Loading target...\n");
   load_kalman_sensor_from_airframe(&target.kalman_sensor, &target_ks);
-  // printf("Loading falcon...\n");
   load_kalman_sensor_from_airframe(&falcon.kalman_sensor, &falcon_ks);
-  // printf("Loading aruco...\n");
   load_kalman_sensor_from_airframe(&aruco.kalman_sensor, &aruco_ks);
   
   /* Store sensor to body rotation for falcon and aruco camera */
-  // printf("Loading falcon sensor rotation...\n");
   load_sensor_rotation_from_airframe(&falcon.sensor_to_body, &falcon_rmat);
-  // printf("Loading aruco sensor rotation...\n");
   load_sensor_rotation_from_airframe(&aruco.sensor_to_body, &aruco_rmat);
 
   /* Store sensor to body offset for falcon and aruco camera */
-  // printf("Loading falcon sensor offset...\n");
   load_sensor_offset_from_airframe(&falcon.body_to_sensor_offset, &falcon_offset);
-  // printf("Loading aruco sensor offset...\n");
   load_sensor_offset_from_airframe(&aruco.body_to_sensor_offset, &aruco_offset);
 
   falcon.mode = FALCON_MODE_SIXDOF; // Default mode
@@ -555,30 +548,18 @@ static void load_kalman_sensor_from_airframe(struct KalmanSensor *ks, const stru
   for (int i = 0; i < ks_airframe->n_meas; i++) {
     ks->noise[i] = ks_airframe->noise[i];
     ks->Hmat[i] = ks_airframe->Hmat[i];
-    // printf("Kalman sensor noise[%d] = %f\n", i, ks->noise[i]);
-    // printf("Kalman sensor Hmat[%d] = %d\n", i, ks->Hmat[i]);
   }
 
   ks->n_meas = ks_airframe->n_meas;
 };
 
-static void load_sensor_rotation_from_airframe(struct FloatQuat *q, struct FloatRMat *rmat_airframe) {
-  // printf("Rmat airframe: \n");
-  // for (int i = 0; i < 9; i++) {
-  //   printf("%f ", rmat_airframe->m[i]);
-  //   if ((i + 1) % 3 == 0) {
-  //     printf("\n");
-  //   }
-  // }
-  
-  // struct FloatRMat sensor_to_body;
-  // float_rmat_transp(&sensor_to_body, rmat_airframe);
+static void load_sensor_rotation_from_airframe(struct FloatQuat *q, struct FloatRMat *rmat_airframe) {  
+  struct FloatRMat sensor_to_body;
+  float_rmat_transp(&sensor_to_body, rmat_airframe);
   float_quat_of_rmat(q, rmat_airframe);
 }
 
 static void load_sensor_offset_from_airframe(struct FloatVect3 *offset, const struct FloatVect3 *offset_airframe) {
-  // printf("Offset airframe: (%f, %f, %f)\n", offset_airframe->x, offset_airframe->y, offset_airframe->z);
-
   offset->x = offset_airframe->x;
   offset->y = offset_airframe->y;
   offset->z = offset_airframe->z;
