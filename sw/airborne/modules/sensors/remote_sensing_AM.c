@@ -75,21 +75,10 @@ struct target_pos_t target = {0};
 struct falcon_t falcon = {0};
 struct aruco_t aruco = {0};
 
-/* Initialize the kalman filter structs */
+/* Initialize the kalman filter struct */
 struct TargetPosKalman remote_sensing_kalman;
 static float P0[6] = REMOTE_SENSING_KALMAN_P0;
 static float Q0[6] = REMOTE_SENSING_KALMAN_Q0;
-
-// Load the sensors from the airframe file
-static struct KalmanSensor target_ks = TARGET_KALMAN_SENSOR;
-static struct KalmanSensor falcon_ks = FALCON_KALMAN_SENSOR;
-static struct KalmanSensor aruco_ks = ARUCO_KALMAN_SENSOR;
-
-static struct FloatRMat falcon_rmat = FALCON_BODY_TO_SENSOR;
-static struct FloatVect3 falcon_offset = FALCON_OFFSET_UAV_BODY;
-
-static struct FloatRMat aruco_rmat = ARUCO_BODY_TO_SENSOR;
-static struct FloatVect3 aruco_offset = ARUCO_OFFSET_UAV_BODY;
 
 #if PERIODIC_TELEMETRY
 static void send_remote_sensing_am_periodic(struct transport_tx *trans, struct link_device *dev) {  
@@ -157,17 +146,17 @@ void remote_sensing_AM_send_falcon_cmd(uint8_t mode)
   switch (falcon_mode) {
     case FALCON_MODE_SIXDOF:
       for (int i = 0; i < falcon.kalman_sensor.n_meas; i++) {
-        noise[i] = 0.1f;
+        noise[i] = 1.0f;
       }
       break;
     case FALCON_MODE_RELANGLE: 
       for (int i = 0; i < falcon.kalman_sensor.n_meas; i++) {
-        noise[i] = 0.1f;
+        noise[i] = 1.0f;
       }
       break;
     case FALCON_MODE_RELBEACON: 
       for (int i = 0; i < falcon.kalman_sensor.n_meas; i++) {
-        noise[i] = 0.1f;
+        noise[i] = 1.0f;
       }
       break;
     default: // No mode
@@ -426,6 +415,17 @@ void remote_sensing_AM_init(void)
 
   /* Initialize the linear Kalman filter */
   target_pos_kalman_init(&remote_sensing_kalman, P0, Q0, 1/REMOTE_SENSING_AM_PERIODIC_FREQ);
+
+  // Load the sensors from the airframe file
+  struct KalmanSensor target_ks = TARGET_KALMAN_SENSOR;
+  struct KalmanSensor falcon_ks = FALCON_KALMAN_SENSOR;
+  struct KalmanSensor aruco_ks = ARUCO_KALMAN_SENSOR;
+
+  struct FloatRMat falcon_rmat = FALCON_BODY_TO_SENSOR;
+  struct FloatVect3 falcon_offset = FALCON_OFFSET_UAV_BODY;
+  
+  struct FloatRMat aruco_rmat = ARUCO_BODY_TO_SENSOR;
+  struct FloatVect3 aruco_offset = ARUCO_OFFSET_UAV_BODY;
 
   /* Configure the Kalman sensors */
   load_kalman_sensor_from_airframe(&target.kalman_sensor, &target_ks);
