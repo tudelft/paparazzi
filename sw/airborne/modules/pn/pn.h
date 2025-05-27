@@ -17,8 +17,9 @@ struct pnmessage {
 };
 
 typedef enum {
-  PN_MODE_FRPN = 0,
-  PN_MODE_GRTPN
+  PN_MODE_FRPN,
+  PN_MODE_GRTPN,
+  PN_MODE_NEURAL
 } pn_mode_t;
 
 

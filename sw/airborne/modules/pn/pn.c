@@ -12,6 +12,8 @@
 #include "pprzlink/intermcu_msg.h"
 #include "modules/datalink/telemetry.h"
 #include "mcu_periph/sys_time.h"
+#include "nn_controller/ppo_controller_weights.h"
+#include "pn/nn_controller/ppo_controller.h"
 #define TARGET_AC_ID 11 
 
 
@@ -29,8 +31,12 @@ uint8_t pn_msg_buf[256] __attribute__((aligned));  ///< The InterMCU message buf
 
 void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf);
 
-static struct FloatVect3 pos_target = {0,1.0,-4};
-static struct FloatVect3 vel_target = {0,0,0};
+static struct FloatVect3 target_pos_enu = {0, 1.0, -4};  // ENU
+static struct FloatVect3 target_vel_enu = {0, 0, 0};     // ENU
+
+// Auto-computed NED for traditional pursuit laws
+static struct FloatVect3 target_pos_ned;  // computed from ENU
+static struct FloatVect3 target_vel_ned;
 
 static bool first_remote_gps_msg_received = false;
 
@@ -41,7 +47,7 @@ static bool first_remote_gps_msg_received = false;
 static const float DT        = 1.0f/50.0f;
 static const float LAMBDA    = 50.0f;
 static const float PP_WEIGHT = 0.03f;
-static const float MAX_ACCEL = 20.0f;
+static const float MAX_ACCEL = 200.0f;
 static const float EPSILON   = 1e-3f;
 static const float K2        = 5.1f;
 static const float V_R           = -5.0f;  // closing speed bias (GRTPN only)
@@ -60,7 +66,7 @@ static struct FirstOrderLowPass acc_filt_z;
 /*                            State & Mode                                  */
 /*---------------------------------------------------------------------------*/
 static float time_s = 0.0f;
-static pn_mode_t cur_mode = PN_MODE_GRTPN;
+static pn_mode_t cur_mode = PN_MODE_FRPN;
 static struct Proportional_nav pn_log;
 
 /*---------------------------------------------------------------------------*/
@@ -87,6 +93,53 @@ static void pn_info(const struct FloatVect3 *pt,
   pn_log.accel_command = *ac;
 }
 
+void get_action(const float *obs, float *action_out);
+
+static void build_observation(float *obs) {
+  // Self state in ENU
+  struct EnuCoor_f *self_pos_enu = stateGetPositionEnu_f();
+  struct EnuCoor_f *self_vel_enu = stateGetSpeedEnu_f();
+
+  obs[0] = self_pos_enu->x;
+  obs[1] = self_pos_enu->y;
+  obs[2] = self_pos_enu->z;
+
+  obs[3] = target_pos_enu.x;
+  obs[4] = target_pos_enu.y;
+  obs[5] = target_pos_enu.z;
+
+  obs[6] = self_vel_enu->x;
+  obs[7] = self_vel_enu->y;
+  obs[8] = self_vel_enu->z;
+
+  obs[9]  = target_vel_enu.x;
+  obs[10] = target_vel_enu.y;
+  obs[11] = target_vel_enu.z;
+}
+
+
+// Converts NED to ENU
+static inline struct FloatVect3 ned_to_enu(struct FloatVect3 ned) {
+  struct FloatVect3 enu = {
+    .x = ned.y,
+    .y = ned.x,
+    .z = -ned.z
+  };
+  return enu;
+}
+
+// Converts ENU to NED
+static inline struct FloatVect3 enu_to_ned(struct FloatVect3 enu) {
+  struct FloatVect3 ned = {
+    .x = enu.y,
+    .y = enu.x,
+    .z = -enu.z
+  };
+  return ned;
+}
+
+
+
 /*---------------------------------------------------------------------------*/
 /*                      Individual Pursuit Laws                              */
 /*---------------------------------------------------------------------------*/
@@ -94,8 +147,8 @@ static void run_frpn(void) {
     struct FloatVect3 r, r_dot, tmp, term1, part, acc;
     struct NedCoor_f *pos_n = stateGetPositionNed_f();
     struct NedCoor_f *vel_n = stateGetSpeedNed_f();
-    struct FloatVect3 pos_t = pos_target;
-    struct FloatVect3 vel_t = vel_target;
+    struct FloatVect3 pos_t = target_pos_ned;
+    struct FloatVect3 vel_t = target_vel_ned;
 
     /* --- relative vectors r = pos_t - pos_n, r_dot = vel_t - vel_n --- */
     VECT3_ASSIGN(r,
@@ -138,8 +191,8 @@ static void run_grtpn(void) {
     struct NedCoor_f *pos_n = stateGetPositionNed_f();
     struct NedCoor_f *vel_n = stateGetSpeedNed_f();
 
-    struct FloatVect3 pos_t = pos_target;
-    struct FloatVect3 vel_t = vel_target;
+    struct FloatVect3 pos_t = target_pos_ned;
+    struct FloatVect3 vel_t = target_vel_ned;
 
     VECT3_ASSIGN(r,
         pos_t.x - pos_n->x,
@@ -193,6 +246,36 @@ static void run_grtpn(void) {
     pn_info(&pos_t, &vel_t, &acc);
 }
 
+static void run_nn_policy(void) {
+  float obs[12];
+  float accel_out[3];
+
+  build_observation(obs);
+  get_action(obs, accel_out);  // Returns ENU acceleration
+
+  // Convert output to ENU vector
+  struct FloatVect3 acc_enu = {
+    .x = accel_out[0] * MAX_ACCEL,
+    .y = accel_out[1] * MAX_ACCEL,
+    .z = accel_out[2] * MAX_ACCEL
+  };
+
+  // Convert to NED before sending to ABI
+  struct FloatVect3 acc_ned = enu_to_ned(acc_enu);
+
+  // saturate3(&acc_ned, MAX_ACCEL);
+
+  // Optional: Filtering here
+  // acc_ned.x = update_first_order_low_pass(&acc_filt_x, acc_ned.x);
+  // acc_ned.y = update_first_order_low_pass(&acc_filt_y, acc_ned.y);
+  // acc_ned.z = update_first_order_low_pass(&acc_filt_z, acc_ned.z);
+
+  AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc_ned);
+  pn_info(&target_pos_ned, &target_vel_ned, &acc_ned);
+}
+
+
+
 /*---------------------------------------------------------------------------*/
 /*                            Public API                                     */
 /*---------------------------------------------------------------------------*/
@@ -242,27 +325,41 @@ void pn_run(void) {
   if (guidance_h.mode != GUIDANCE_H_MODE_GUIDED) {
     return;
   }
-  if (cur_mode == PN_MODE_FRPN) {
-    run_frpn();
-  } else {
-    run_grtpn();
+
+  switch (cur_mode) {
+    case PN_MODE_FRPN:
+      run_frpn();
+      break;
+    case PN_MODE_GRTPN:
+      run_grtpn();
+      break;
+    case PN_MODE_NEURAL:  
+      run_nn_policy();
+      break;
   }
 }
 
 void pn_parse_TARGET_INFO(uint8_t *buf) {
-
   if (!first_remote_gps_msg_received) {
-      float t_now = get_sys_time_float();
-      printf("[pn] First TARGET_INFO message received at t = %.3f seconds\n", t_now);
-      first_remote_gps_msg_received = true;
+    float t_now = get_sys_time_float();
+    printf("[pn] First TARGET_INFO message received at t = %.3f seconds\n", t_now);
+    first_remote_gps_msg_received = true;
   }
-  pos_target.x  = DL_TARGET_INFO_enu_y(buf); 
-  pos_target.y  = DL_TARGET_INFO_enu_x(buf);
-  pos_target.z  = -DL_TARGET_INFO_enu_z(buf);
-  vel_target.x  = DL_TARGET_INFO_enu_yd(buf);
-  vel_target.y  = DL_TARGET_INFO_enu_xd(buf);
-  vel_target.z  = -DL_TARGET_INFO_enu_zd(buf);
+
+  // Store in ENU directly
+  target_pos_enu.x = DL_TARGET_INFO_enu_x(buf);
+  target_pos_enu.y = DL_TARGET_INFO_enu_y(buf);
+  target_pos_enu.z = DL_TARGET_INFO_enu_z(buf);
+
+  target_vel_enu.x = DL_TARGET_INFO_enu_xd(buf);
+  target_vel_enu.y = DL_TARGET_INFO_enu_yd(buf);
+  target_vel_enu.z = DL_TARGET_INFO_enu_zd(buf);
+
+  // Also convert to NED for traditional controllers
+  target_pos_ned = enu_to_ned(target_pos_enu);
+  target_vel_ned = enu_to_ned(target_vel_enu);
 }
+
 
 
 struct Proportional_nav *pn_info_logger(void) {

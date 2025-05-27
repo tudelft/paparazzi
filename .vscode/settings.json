@@ -21,7 +21,9 @@
         "logger_file.h": "c",
         "guidance_indi.h": "c",
         "pprzlink_device.h": "c",
-        "sys_time.h": "c"
+        "sys_time.h": "c",
+        "math.h": "c",
+        "ppo_controller_weights.h": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
