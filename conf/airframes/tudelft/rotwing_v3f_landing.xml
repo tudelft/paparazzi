@@ -149,7 +149,7 @@
             <define name="INS_EKF2_GPS_POS_Y" value="0.0"/>
             <define name="INS_EKF2_GPS_POS_Z" value="0.0"/>
 
-            <!-- <define name="INS_EKF2_OPTITRACK" value="true"/> -->
+            <define name="INS_EKF2_OPTITRACK" value="true"/>
             <!--define name="INS_EKF2_OPTITRACK_POS_X" value="0.0"/>
             <define name="INS_EKF2_OPTITRACK_POS_Y" value="0.0"/>
             <define name="INS_EKF2_OPTITRACK_POS_Z" value="0.09"/>
@@ -295,8 +295,11 @@
     <section name="FALCON" prefix="FALCON_"> 
         <define name="BODY_TO_SENSOR" value="{{1.0,0,0,0,0,1.0,0,-1.0,0}}"/>
         <define name="OFFSET_UAV_BODY" value="{0.0,0.0,0.13}"/>
+        <define name="SIXDOF_MEASUREMENT_NOISE" value="{0.1, 0.1, 0.1}"/>
+        <define name="RELANGLE_MEASUREMENT_NOISE" value="{0.5, 0.5, 0.5}"/> <!-- Noise should be on the angle measurement and scaled with distance to platform -->
+        <define name="RELBEACON_MEASUREMENT_NOISE" value="{0.25, 0.25, 0.25}"/>
         <define name="KALMAN_SENSOR" type="struct">
-            <field name="noise" value="{1.0,1.0,1.0}"/>
+            <field name="noise" value="{0.25,0.25,0.25}"/>
             <field name="n_meas" value="3"/>
             <field name="Hmat" value="{0,2,4}"/>
         </define>
@@ -306,7 +309,7 @@
         <define name="BODY_TO_SENSOR" value="{{0,-1.0,0,1.0,0,0,0,0,1.0}}"/>
         <define name="OFFSET_UAV_BODY" value="{0.0,0.0,0.13}"/>
         <define name="KALMAN_SENSOR" type="struct">
-            <field name="noise" value="{1.0,1.0,1.0}"/>
+            <field name="noise" value="{0.25,0.25,0.25}"/>
             <field name="n_meas" value="3"/>
             <field name="Hmat" value="{0,2,4}"/>
         </define>
@@ -314,7 +317,7 @@
 
     <section name="TARGET" prefix="TARGET_">
         <define name="KALMAN_SENSOR" type="struct">
-            <field name="noise" value="{0.1,1.0,0.1,1.0,0.1,1.0}"/>
+            <field name="noise" value="{0.1,0.2,0.1,0.2,0.1,0.2}"/>
             <field name="n_meas" value="6"/>
             <field name="Hmat" value="{0,1,2,3,4,5}"/>
         </define>
