@@ -80,6 +80,9 @@ struct TargetPosKalman remote_sensing_kalman;
 static float P0[6] = REMOTE_SENSING_KALMAN_P0;
 static float Q0[6] = REMOTE_SENSING_KALMAN_Q0;
 
+/* Initialize the landing algorithm outputs struct*/
+struct landing_algorithm_outputs_t landing_algorithm_outputs;
+
 #if PERIODIC_TELEMETRY
 static void send_remote_sensing_am_periodic(struct transport_tx *trans, struct link_device *dev) {  
   pprz_msg_send_REMOTE_SENSING_AM(trans, dev, AC_ID,
@@ -103,6 +106,18 @@ static void send_remote_sensing_am_periodic(struct transport_tx *trans, struct l
             &aruco.id,
             FLOATVECT3_TO_ARRAY(aruco.pos),
             FLOATQUAT_TO_ARRAY(aruco.quat));
+}
+
+static void send_landing_algorithm_outputs_periodic(struct transport_tx *trans, struct link_device *dev) {  
+  pprz_msg_send_LANDING_ALGORITHM_OUTPUT(trans, dev, AC_ID,
+            &landing_algorithm_outputs.timestamp_output,
+            landing_algorithm_outputs.UAV_acc_target_NED,
+            landing_algorithm_outputs.UAV_desired_phi_theta_rad,
+            &landing_algorithm_outputs.landing_algorithm_mode,
+            &landing_algorithm_outputs.exitflag_path_planner,
+            &landing_algorithm_outputs.expected_landing_time,
+            landing_algorithm_outputs.V_out_of_bounds_array,
+            landing_algorithm_outputs.A_out_of_bounds_array);
 }
 
 #endif
@@ -331,6 +346,50 @@ void remote_sensing_parse_falcon_relbeacon(uint8_t *buf)
   RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {send_waypoint(WP_RELBEACON);});
 }
 
+/**
+ * Receive a IMCU_LANDING_ALGORITHM_OUTPUT message from the falcon and update the kalman filter if required
+ */
+void receive_landing_algorithm_outputs(uint8_t *buf) 
+{
+  uint32_t timestamp_output = pprzlink_get_DL_IMCU_LANDING_ALGORITHM_OUTPUT_timestamp_output(buf);
+  float *UAV_acc_target_NED = pprzlink_get_DL_IMCU_LANDING_ALGORITHM_OUTPUT_UAV_acc_target_NED(buf);
+  float *UAV_desired_phi_theta_rad = pprzlink_get_DL_IMCU_LANDING_ALGORITHM_OUTPUT_UAV_desired_phi_theta_rad(buf);
+  int8_t landing_algorithm_mode = pprzlink_get_DL_IMCU_LANDING_ALGORITHM_OUTPUT_landing_algorithm_mode(buf);
+  int8_t exitflag_path_planner = pprzlink_get_DL_IMCU_LANDING_ALGORITHM_OUTPUT_exitflag_path_planner(buf);
+  float expected_landing_time = pprzlink_get_DL_IMCU_LANDING_ALGORITHM_OUTPUT_expected_landing_time(buf);
+  uint8_t *V_out_of_bounds_array = pprzlink_get_DL_IMCU_LANDING_ALGORITHM_OUTPUT_V_out_of_bounds_array(buf);
+  uint8_t *A_out_of_bounds_array = pprzlink_get_DL_IMCU_LANDING_ALGORITHM_OUTPUT_A_out_of_bounds_array(buf);
+
+  //Fill up the landing algorithm outputs structure
+  landing_algorithm_outputs.timestamp_output = timestamp_output;
+  landing_algorithm_outputs.UAV_acc_target_NED[0] = UAV_acc_target_NED[0];
+  landing_algorithm_outputs.UAV_acc_target_NED[1] = UAV_acc_target_NED[1];
+  landing_algorithm_outputs.UAV_acc_target_NED[2] = UAV_acc_target_NED[2];
+  landing_algorithm_outputs.UAV_desired_phi_theta_rad[0] = UAV_desired_phi_theta_rad[0];
+  landing_algorithm_outputs.UAV_desired_phi_theta_rad[1] = UAV_desired_phi_theta_rad[1];
+  landing_algorithm_outputs.landing_algorithm_mode = landing_algorithm_mode;
+  landing_algorithm_outputs.exitflag_path_planner = exitflag_path_planner;
+  landing_algorithm_outputs.expected_landing_time = expected_landing_time;
+  for (int i = 0; i < 6; i++) {
+    landing_algorithm_outputs.V_out_of_bounds_array[i] = V_out_of_bounds_array[i];
+    landing_algorithm_outputs.A_out_of_bounds_array[i] = A_out_of_bounds_array[i];
+  }
+
+  // Send the current state of the remote_sensing module
+  #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
+  pprz_msg_send_LANDING_ALGORITHM_OUTPUT(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
+            &timestamp_output,
+            UAV_acc_target_NED,
+            UAV_desired_phi_theta_rad,
+            &landing_algorithm_mode,
+            &exitflag_path_planner,
+            &expected_landing_time,
+            V_out_of_bounds_array,
+            A_out_of_bounds_array);
+  #endif
+}
+
+
 #if !USE_NPS
 void test_request_landing_path(void){
   // Send also another message for debug: 
@@ -367,6 +426,73 @@ void test_request_landing_path(void){
   pprz_msg_send_IMCU_REQUEST_PATH_COEFF(&extra_pprz_tp.trans_tx, &EXTRA_DOWNLINK_DEVICE.device, AC_ID,
       &current_time_ms, coeffs_ship_prediction, init_NED_path_pos, init_NED_path_speed, init_NED_path_acc,
       &psi_ship_rad, P0_ship_NED, &time_delay_prediction);
+}
+
+void send_landing_algorithm_params(void){
+  // Send the landing algorithm parameters
+  float PH_offset_ship_ctr[3] = {0.0f, 0.0f, 0.0f}; // Offset of the PH waypoint in the ship control reference frame
+  float line_approach_speed = 1.0f; // Line approach speed in m/s
+  float approach_line_angle_rad = 0.0f; // Angle with respect to the ship stern where the approach will be started
+  float dist_line_gain = 1.0f; // Distance line gain
+  float max_line_gain = 1.0f; // Maximum line gain
+  float vel_gain_approach[3] = {1.0f, 1.0f, 1.0f}; // Velocity gain of the approach landing phase
+  float pos_gain_hovering[3] = {1.0f, 1.0f, 1.0f}; // Position gain of the hovering landing phase
+  float vel_gain_hovering[3] = {1.0f, 1.0f, 1.0f}; // Velocity gain of the hovering landing phase
+  float hovering_engage_dist = 1.0f; // Euclidean distance for engagement of the PH hovering mode
+  float min_time_landing_trajectory = 0.1f; // Minimum time for landing
+  float max_time_landing_trajectory = 10.0f; // Maximum time for landing
+  float landing_time_resolution_trajectory = 0.1f; // Resolution of the landing trajectopry generation 
+  float V_bound_max_control[3] = {5.0f, 5.0f, 5.0f}; // Upper speed bounds for the trajectory generation in the control RF
+  float V_bound_min_control[3] = {-5.0f, -5.0f, -5.0f}; // Lower speed bounds for the trajectory generation in the control RF
+  float A_bound_max_control[3] = {5.0f, 5.0f, 5.0f}; // Upper acc bounds for the trajectory generation in the control RF
+  float A_bound_min_control[3] = {-5.0f, -5.0f, -5.0f}; // Lower acc bounds for the trajectory generation in the control RF
+  uint16_t num_points = 13; // Number of points where the speed and acc boundaries are checked
+  float pos_gain_trajectory[3] = {1.0f, 1.0f, 1.0f}; // Position gain of the trajectory landing phase
+  float vel_gain_trajectory[3] = {1.0f, 1.0f, 1.0f}; // Velocity gain of the trajectory landing phase
+  float flare_engage_height = 1.0f; // Engaging height for the flare manoeuvre
+  float flare_vertical_speed = 1.0f; // Vertical speed of the flare manoeuvre
+  float pos_gain_flare[3] = {1.0f, 1.0f, 1.0f}; // Position gain of the flare landing phase
+  float vel_gain_flare[3] = {1.0f, 1.0f, 1.0f}; // Velocity gain of the flare landing phase
+
+  // Send the landing algorithm parameters
+  pprz_msg_send_IMCU_LANDING_ALGORITHM_PARAMS(&extra_pprz_tp.trans_tx, &EXTRA_DOWNLINK_DEVICE.device, AC_ID, 
+    PH_offset_ship_ctr, &line_approach_speed, &approach_line_angle_rad, &dist_line_gain, &max_line_gain,
+    vel_gain_approach, pos_gain_hovering, vel_gain_hovering, &hovering_engage_dist,
+    &min_time_landing_trajectory, &max_time_landing_trajectory, &landing_time_resolution_trajectory,
+    V_bound_max_control, V_bound_min_control, A_bound_max_control, A_bound_min_control,
+    &num_points, pos_gain_trajectory, vel_gain_trajectory,
+    &flare_engage_height, &flare_vertical_speed, pos_gain_flare, vel_gain_flare);
+}
+
+void request_landing_algorithm_outputs(void){
+
+  // To request landing commands we just need to send the landing algorithm states message
+  uint32_t timestamp_states = get_sys_time_tow();
+
+  // Current UAV position and speed in the NED frame
+  float P0_UAV_NED[3] = {stateGetPositionNed_f()->x, stateGetPositionNed_f()->y, stateGetPositionNed_f()->z}; // Current UAV position in the NED frame
+  float V0_UAV_NED[3] = {stateGetSpeedNed_f()->x, stateGetSpeedNed_f()->y, stateGetSpeedNed_f()->z}; // Current UAV speed in the NED frame
+
+  //Ship states obtained from the kalman filter:
+  float P0_ship_NED[3] = {0, 0, 0}; // Current ship position in the NED frame
+  float V0_ship_NED[3] = {0, 0, 0}; // Current ship speed in the NED frame
+  float V0_ship_NED_filt[3] = {0, 0, 0}; // Filtered ship speed in the NED frame
+  float SHIP_att_rad[3] = {0, 0, 0}; // Ship attitude in radians
+  float UAV_psi_rad = 0.0f; // UAV psi angle in radians
+
+  //Coefficients for the ship speed prediction obtained from the ship speed prediction algorithm
+  float coeffs_ship_prediction[24] = {
+    0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f,
+    0.9f, 1.0f, 1.1f, 1.2f, 1.3f, 1.4f, 1.5f, 1.6f,
+    1.7f, 1.8f, 1.9f, 2.0f, 2.1f, 2.2f, 2.3f, 2.4f};
+  float t_delay_ship_prediction_seconds = 0.0f; // Time delay of ship predictions in seconds
+
+  // Send the landing algorithm parameters
+  pprz_msg_send_IMCU_LANDING_ALGORITHM_STATES(&extra_pprz_tp.trans_tx, &EXTRA_DOWNLINK_DEVICE.device, AC_ID, 
+    &timestamp_states, P0_UAV_NED, V0_UAV_NED,
+    P0_ship_NED, V0_ship_NED, V0_ship_NED_filt,
+    SHIP_att_rad, &UAV_psi_rad,
+    coeffs_ship_prediction, &t_delay_ship_prediction_seconds);
 }
 #endif
 
@@ -411,6 +537,7 @@ void remote_sensing_AM_init(void)
   //Init function
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_REMOTE_SENSING_AM, send_remote_sensing_am_periodic);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_LANDING_ALGORITHM_OUTPUT, send_landing_algorithm_outputs_periodic);
   #endif
 
   /* Initialize the linear Kalman filter */
@@ -497,6 +624,11 @@ void remote_sensing_AM_periodic(void) {
 #endif
 #endif
   
+  //Test the landing algorithm: 
+  RunOnceEvery(50*REMOTE_SENSING_AM_PERIODIC_FREQ, {send_landing_algorithm_params();});
+
+  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {request_landing_algorithm_outputs();});
+
   // Here we can run the periodic KF update
   target_pos_kalman_predict(&remote_sensing_kalman);
 

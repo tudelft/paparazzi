@@ -65,6 +65,7 @@
       <message name="FUELCELL"                 period="0.5"/>
       <message name="IMU_HEATER"               period="15.1"/>
       <message name="FALCON_SENSOR"            period="0.1"/>
+      <message name="LANDING_ALGORITHM_OUTPUT"            period="0.1"/>
     </mode>
 
     <mode name="calibration">

@@ -39,6 +39,7 @@
   <datalink class="intermcu" message="IMCU_FALCON_RELANGLE" fun="remote_sensing_parse_falcon_relangle(buf)"/>
   <datalink class="intermcu" message="IMCU_FALCON_RELBEACON" fun="remote_sensing_parse_falcon_relbeacon(buf)"/>
   <datalink class="intermcu" message="IMCU_OPENCV_ARUCO" fun="remote_sensing_parse_opencv_aruco(buf)"/>
+  <datalink class="intermcu" message="IMCU_LANDING_ALGORITHM_OUTPUT" fun="receive_landing_algorithm_outputs(buf)"/>
   <makefile>
     <file name="remote_sensing_AM.c"/>
     <file name="target_pos_kalman.c" dir="filters"/>
