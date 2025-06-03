@@ -132,6 +132,11 @@
     <module name="approach_moving_target">
       <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/>
     </module>
+    
+    <module name="ship_landing_module_AM">
+      <define name="PERIODIC_FREQUENCY_NAV_APPROACH_SHIP" value="80.0"/>
+    </module>
+
   </firmware>
 
   <servos>
