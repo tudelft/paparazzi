@@ -52,6 +52,10 @@
             <define name="BAT_CHECKER_DELAY" value="70"/>  <!-- to avoid bat low spike detection when strong up movement withch draws short sudden power-->
             <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="90"/> <!-- in 10/s seconds-->
         </target>
+       
+        <module name="sys_mon"/>
+        <!-- <module name="geo_mag"/>-->
+        <module name="air_data"/>
 
         <module name="dfu_command"/>
 
@@ -104,12 +108,12 @@
         </module>
 
         <!-- not all are tested or tuned -->
-       <!-- <module name="stabilization" type="rate"/>--><!-- not working yet..) -->
+       <!-- <module name="stabilization" type="rate"/> -->
         <!-- <module name="stabilization" type="rate_indi"/> -->
 
-        <module name="stabilization" type="int_quat"/>
+        <!-- <module name="stabilization" type="int_quat"/> -->
         <!--<module name="stabilization" type="float_quat"/>-->
-        <!-- <module name="stabilization" type="indi_simple" /> -->
+        <module name="stabilization" type="indi_simple" />
         <!-- <module name="stabilization" type="indi" /> -->
 
         <module name="ins" type="extended"/>
@@ -125,9 +129,9 @@
             <define name="AHRS_ALIGNER_IMU_ID" value="F1E_IMU_ID"/>-->
         <!-- </module> -->
 
-        <!--module name="guidance" type="indi">
+        <module name="guidance" type="indi">
              <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500.0"/>
-        </module-->
+        </module>
 
         <module name="ahrs" type="float_cmpl_quat">
             <!--<define name="AHRS_ICQ_IMU_ID" value="IMU_F1E_ID"/>
@@ -152,7 +156,7 @@
                     <configure name="JEVOIS_BAUD" value="B115200"/>
                 </module>
         -->
-
+        <module name="pn"/> 
         <module name="gps" type="datalink"/> <!-- using optitrack and natnet2ivy -->
 
         <!-- No I2C bus yet... still need to find some good spot for I2C pins... except on MCU solder blobs -->
@@ -460,14 +464,11 @@
         <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
     </section>
 
-<!-- ********************** AP ************************** -->
     <section name="AUTOPILOT">
-        <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/><!-- if GNSS use AP_MODE_NAV ...-->
+        <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
         <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-        <define name="MODE_AUTO1" value="AP_MODE_RATE_DIRECT"/><!-- for now...-->
-        <define name="MODE_AUTO2" value="AP_MODE_GUIDED"/> <!-- for dronerrace -->
-       <!-- <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>--> <!-- If GNSS device is added for autonomous flight -->
-        <!--<define name="USE_THROTTLE_FOR_MOTOR_ARMING" value="TRUE"/>-->
+        <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
+        <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
         <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/>
         <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     </section>

@@ -1,6 +1,6 @@
 // pn.c
 
-#include "pn.h"
+
 #include <stdio.h>
 #include <math.h>
 #include "state.h"
@@ -11,11 +11,9 @@
 #include "pprzlink/pprzlink_device.h"
 #include "pprzlink/intermcu_msg.h"
 #include "modules/datalink/telemetry.h"
-#include "mcu_periph/sys_time.h"
+#include "pn.h"
 #include "nn_controller/ppo_controller_weights.h"
 #include "pn/nn_controller/ppo_controller.h"
-#define TARGET_AC_ID 11 
-
 
 /*---------------------------------------------------------------------------*/
 /*                            External Messaging                             */
@@ -28,8 +26,6 @@ struct pnmessage target_message = {
 };
 
 uint8_t pn_msg_buf[256] __attribute__((aligned));  ///< The InterMCU message buffer
-
-void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf);
 
 static struct FloatVect3 target_pos_enu = {0, 1.0, -4};  // ENU
 static struct FloatVect3 target_vel_enu = {0, 0, 0};     // ENU
@@ -93,7 +89,7 @@ static void pn_info(const struct FloatVect3 *pt,
   pn_log.accel_command = *ac;
 }
 
-void get_action(const float *obs, float *action_out);
+//void get_action(const float *obs, float *action_out);
 
 static void build_observation(float *obs) {
   // Self state in ENU
@@ -340,12 +336,12 @@ void pn_run(void) {
 }
 
 void pn_parse_TARGET_INFO(uint8_t *buf) {
-  if (!first_remote_gps_msg_received) {
-    float t_now = get_sys_time_float();
-    printf("[pn] First TARGET_INFO message received at t = %.3f seconds\n", t_now);
-    first_remote_gps_msg_received = true;
-  }
-
+  // if (!first_remote_gps_msg_received) {
+  //   float t_now = get_sys_time_float();
+  //   printf("[pn] First TARGET_INFO message received at t = %.3f seconds\n", t_now);
+  //   first_remote_gps_msg_received = true;
+  // }
+  
   // Store in ENU directly
   target_pos_enu.x = DL_TARGET_INFO_enu_x(buf);
   target_pos_enu.y = DL_TARGET_INFO_enu_y(buf);

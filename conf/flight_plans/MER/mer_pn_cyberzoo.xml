@@ -7,7 +7,7 @@
     #include "modules/radio_control/radio_control.h"
     #include "modules/ahrs/ahrs.h"
     #include "modules/pn/pn.h"
-    #include "modules/loggers/logger_file.h"
+    <!-- #include "modules/loggers/logger_file.h" -->
     #define NPS_GAZEBO_WORLD "cyberzoo.world"
 #include "autopilot.h"
 inline void setNav(void){
@@ -118,17 +118,17 @@ inline void setGuided(void){
       <stay wp="STDBY"/>
     </block>
     <block key="g" name="START" strip_button="Go" strip_icon="lookfore.png">
-      <call_once fun="setGuided()"/>
-      <call_once fun="logger_file_start()"/>
+      <!-- <call_once fun="setGuided()"/> -->
+      <!-- <call_once fun="logger_file_start()"/> -->
       <call_once fun="pn_start()"/>
       <while>
         <call fun="pn_run"/>
       </while>
     </block>
     <block name="STOP">
-      <call_once fun="logger_file_stop()"/>
+      <!-- <call_once fun="logger_file_stop()"/> -->
       <call_once fun="pn_stop()"/>
-      <call_once fun="setNav()"/>
+      <!-- <call_once fun="setNav()"/> -->
       <stay wp="STDBY"/>
     </block>
     <block name="RETREAT">
