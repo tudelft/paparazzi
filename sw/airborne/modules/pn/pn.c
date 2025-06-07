@@ -14,7 +14,6 @@
 #include "mcu_periph/sys_time.h"
 #include "nn_controller/ppo_controller_weights.h"
 #include "pn/nn_controller/ppo_controller.h"
-#define TARGET_AC_ID 11 
 
 
 /*---------------------------------------------------------------------------*/
@@ -31,12 +30,12 @@ uint8_t pn_msg_buf[256] __attribute__((aligned));  ///< The InterMCU message buf
 
 void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf);
 
-static struct FloatVect3 target_pos_enu = {0, 1.0, -4};  // ENU
+static struct FloatVect3 target_pos_enu = {0, 0.0, 2.0};  // ENU
 static struct FloatVect3 target_vel_enu = {0, 0, 0};     // ENU
 
-// Auto-computed NED for traditional pursuit laws
-static struct FloatVect3 target_pos_ned;  // computed from ENU
-static struct FloatVect3 target_vel_ned;
+// NED for traditional pursuit laws
+static struct FloatVect3 target_pos_ned = {0.0, 0.0, -2.0};  
+static struct FloatVect3 target_vel_ned = {0, 0, 0};
 
 static bool first_remote_gps_msg_received = false;
 
@@ -44,16 +43,16 @@ static bool first_remote_gps_msg_received = false;
 /*---------------------------------------------------------------------------*/
 /*                            Configuration                                  */
 /*---------------------------------------------------------------------------*/
-static const float DT        = 1.0f/50.0f;
+static const float DT        = 1.0f/100.0f;
 static const float LAMBDA    = 50.0f;
 static const float PP_WEIGHT = 0.03f;
-static const float MAX_ACCEL = 200.0f;
+static const float MAX_ACCEL = 20.0f;
 static const float EPSILON   = 1e-3f;
 static const float K2        = 5.1f;
-static const float V_R           = -5.0f;  // closing speed bias (GRTPN only)
+static const float V_R       = -5.0f;  // closing speed bias (GRTPN only)
 
 /* acceleration filter time constant (seconds) */
-static const float ACC_FILT_TAU     = 0.0001f;
+static const float ACC_FILT_TAU     = 0.00001f;
 
 /*---------------------------------------------------------------------------*/
 /*                            Filter State                                   */
@@ -66,7 +65,7 @@ static struct FirstOrderLowPass acc_filt_z;
 /*                            State & Mode                                  */
 /*---------------------------------------------------------------------------*/
 static float time_s = 0.0f;
-static pn_mode_t cur_mode = PN_MODE_FRPN;
+static pn_mode_t cur_mode = PN_MODE_NEURAL;
 static struct Proportional_nav pn_log;
 
 /*---------------------------------------------------------------------------*/
@@ -97,24 +96,80 @@ void get_action(const float *obs, float *action_out);
 
 static void build_observation(float *obs) {
   // Self state in ENU
-  struct EnuCoor_f *self_pos_enu = stateGetPositionEnu_f();
-  struct EnuCoor_f *self_vel_enu = stateGetSpeedEnu_f();
+  struct EnuCoor_f *pu_pos = stateGetPositionEnu_f();
+  struct EnuCoor_f *pu_vel = stateGetSpeedEnu_f();
+  // struct FloatEulers *self_att = stateGetNedToBodyEulers_f();  // Optional, not needed anymore
+  // float thrust = stabilization_cmd[COMMAND_THRUST];            // Optional, not needed anymore
 
-  obs[0] = self_pos_enu->x;
-  obs[1] = self_pos_enu->y;
-  obs[2] = self_pos_enu->z;
+  struct FloatVect3 ev_pos = target_pos_enu;
+  struct FloatVect3 ev_vel = target_vel_enu;
 
-  obs[3] = target_pos_enu.x;
-  obs[4] = target_pos_enu.y;
-  obs[5] = target_pos_enu.z;
+  // (1) pursuer position
+  obs[0] = pu_pos->x;
+  obs[1] = pu_pos->y;
+  obs[2] = pu_pos->z;
 
-  obs[6] = self_vel_enu->x;
-  obs[7] = self_vel_enu->y;
-  obs[8] = self_vel_enu->z;
+  // (2) evader position
+  obs[3] = ev_pos.x;
+  obs[4] = ev_pos.y;
+  obs[5] = ev_pos.z;
 
-  obs[9]  = target_vel_enu.x;
-  obs[10] = target_vel_enu.y;
-  obs[11] = target_vel_enu.z;
+  // (3) pursuer velocity
+  obs[6] = pu_vel->x;
+  obs[7] = pu_vel->y;
+  obs[8] = pu_vel->z;
+
+  // (4) evader velocity
+  obs[9] = ev_vel.x;
+  obs[10] = ev_vel.y;
+  obs[11] = ev_vel.z;
+
+  // (5) Line-of-sight vector: r = ev_pos - pu_pos
+  struct FloatVect3 r = {
+    .x = ev_pos.x - pu_pos->x,
+    .y = ev_pos.y - pu_pos->y,
+    .z = ev_pos.z - pu_pos->z
+  };
+  obs[12] = r.x;
+  obs[13] = r.y;
+  obs[14] = r.z;
+
+  // (6) LOS distance
+  float R = float_vect3_norm(&r);
+  obs[15] = R;
+
+  // (7) Relative velocity: r_dot = ev_vel - pu_vel
+  struct FloatVect3 r_dot = {
+    .x = ev_vel.x - pu_vel->x,
+    .y = ev_vel.y - pu_vel->y,
+    .z = ev_vel.z - pu_vel->z
+  };
+  obs[16] = r_dot.x;
+  obs[17] = r_dot.y;
+  obs[18] = r_dot.z;
+
+  // (8) LOS rate: Vc = ||r_dot||
+  float Vc = float_vect3_norm(&r_dot);
+  obs[19] = Vc;
+
+  // (9) phi_dot = (Ir × r_dot) / ||r||²
+  float safe_R = (R > 1e-6f) ? R : 1e-6f;
+  struct FloatVect3 Ir = {
+    .x = r.x / safe_R,
+    .y = r.y / safe_R,
+    .z = r.z / safe_R
+  };
+
+  struct FloatVect3 cross = {
+    .x = Ir.y * r_dot.z - Ir.z * r_dot.y,
+    .y = Ir.z * r_dot.x - Ir.x * r_dot.z,
+    .z = Ir.x * r_dot.y - Ir.y * r_dot.x
+  };
+
+  float denom = safe_R * safe_R;
+  obs[20] = cross.x / denom;
+  obs[21] = cross.y / denom;
+  obs[22] = cross.z / denom;
 }
 
 
@@ -180,7 +235,7 @@ static void run_frpn(void) {
     /* smooth accel via low-pass filter */
     acc.x = update_first_order_low_pass(&acc_filt_x, acc.x);   
     acc.y = update_first_order_low_pass(&acc_filt_y, acc.y);   
-    acc.z = update_first_order_low_pass(&acc_filt_z, acc.z);   
+    acc.z = update_first_order_low_pass(&acc_filt_z, acc.z);  
 
     AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc);
     pn_info(&pos_t, &vel_t, &acc);
@@ -247,13 +302,12 @@ static void run_grtpn(void) {
 }
 
 static void run_nn_policy(void) {
-  float obs[12];
+  float obs[23];
   float accel_out[3];
 
   build_observation(obs);
-  get_action(obs, accel_out);  // Returns ENU acceleration
+  get_action(obs, accel_out);  // Returns ENU action
 
-  // Convert output to ENU vector
   struct FloatVect3 acc_enu = {
     .x = accel_out[0] * MAX_ACCEL,
     .y = accel_out[1] * MAX_ACCEL,

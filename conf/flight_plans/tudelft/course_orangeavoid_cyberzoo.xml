@@ -65,19 +65,19 @@ inline void setGuided(void){
       !(nav_block >= IndexOfBlock('Emergency Landing')) @AND
       (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
     <!-- Geofencing XY -->
-    <exception cond="(!InsideCyberZoo(GetPosX(), GetPosY()) @AND
+    <!-- <exception cond="(!InsideCyberZoo(GetPosX(), GetPosY()) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('Emergency Landing')) @AND
-      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
+      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/> -->
     <!-- Geofencing Z 3.5 -->
-    <exception cond="((GetPosAlt() @GT 3.5) @AND
+    <!-- <exception cond="((GetPosAlt() @GT 3.5) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('Emergency Landing')) @AND
-      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
+      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/> -->
     <!-- Geofencing Z 4.5 -->
-    <exception cond="((GetPosAlt() @GT 4.5) @AND
+    <!-- <exception cond="((GetPosAlt() @GT 4.5) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
-      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
+      (autopilot_in_flight() == true) )" deroute="Emergency Landing"/> -->
     <!-- Bat Low -->
     <exception cond="(electrical.bat_low @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
@@ -121,9 +121,7 @@ inline void setGuided(void){
       <call_once fun="setGuided()"/>
       <call_once fun="logger_file_start()"/>
       <call_once fun="pn_start()"/>
-      <while>
-        <call fun="pn_run"/>
-      </while>
+      <stay wp="STDBY"/>
     </block>
     <block name="STOP">
       <call_once fun="logger_file_stop()"/>
@@ -137,6 +135,8 @@ inline void setGuided(void){
       <stay wp="RETREAT"/>
     </block>
     <block key="e" name="Emergency Landing">
+      <call_once fun="pn_stop()"/>
+      <call_once fun="setNav()"/>
       <exception cond="!nav_is_in_flight()" deroute="KILL"/>
       <exception cond="0.10 @GT GetPosAlt()" deroute="KILL"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>

@@ -3,7 +3,7 @@
 
 extern float log_std[3];
 
-extern float mlp_extractor_policy_net_0_weight[768];
+extern float mlp_extractor_policy_net_0_weight[1472];
 
 extern float mlp_extractor_policy_net_0_bias[64];
 
@@ -11,7 +11,7 @@ extern float mlp_extractor_policy_net_2_weight[4096];
 
 extern float mlp_extractor_policy_net_2_bias[64];
 
-extern float mlp_extractor_value_net_0_weight[768];
+extern float mlp_extractor_value_net_0_weight[1472];
 
 extern float mlp_extractor_value_net_0_bias[64];
 
