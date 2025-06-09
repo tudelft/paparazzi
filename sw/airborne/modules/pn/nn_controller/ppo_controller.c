@@ -4,7 +4,7 @@
 #include "ppo_controller_weights.h"
 #include "ppo_controller.h"
 
-#define INPUT_DIM 23
+#define INPUT_DIM 20
 #define HIDDEN1_DIM 64
 #define HIDDEN2_DIM 64
 #define OUTPUT_DIM 3

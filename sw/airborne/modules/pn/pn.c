@@ -46,20 +46,29 @@ static bool first_remote_gps_msg_received = false;
 static const float DT        = 1.0f/100.0f;
 static const float LAMBDA    = 50.0f;
 static const float PP_WEIGHT = 0.03f;
-static const float MAX_ACCEL = 20.0f;
+static const float MAX_ACCEL = 10.0f;
 static const float EPSILON   = 1e-3f;
 static const float K2        = 5.1f;
 static const float V_R       = -5.0f;  // closing speed bias (GRTPN only)
 
-/* acceleration filter time constant (seconds) */
-static const float ACC_FILT_TAU     = 0.00001f;
-
 /*---------------------------------------------------------------------------*/
 /*                            Filter State                                   */
 /*---------------------------------------------------------------------------*/
-static struct FirstOrderLowPass acc_filt_x;
-static struct FirstOrderLowPass acc_filt_y;
-static struct FirstOrderLowPass acc_filt_z;
+static Butterworth2LowPass filter_acc_x;
+static Butterworth2LowPass filter_acc_y;
+static Butterworth2LowPass filter_acc_z;
+
+static const float ACC_CUTOFF_FREQ = 8.0f;  // Hz
+static const float TAU_ACC = 1.0f / (2.0f * M_PI * ACC_CUTOFF_FREQ);
+
+static Butterworth2LowPass filter_pu_vel_x, filter_pu_vel_y, filter_pu_vel_z;
+static Butterworth2LowPass filter_ev_vel_x, filter_ev_vel_y, filter_ev_vel_z;
+static Butterworth2LowPass filter_rdot_x, filter_rdot_y, filter_rdot_z;
+
+static const float OBS_SAMPLE_TIME = 1.0f / 100.0f;
+static const float OBS_CUTOFF_FREQ = 8.0f;  // Hz
+static const float TAU_OBS = 1.0f / (2.0f * M_PI * OBS_CUTOFF_FREQ);
+
 
 /*---------------------------------------------------------------------------*/
 /*                            State & Mode                                  */
@@ -94,83 +103,103 @@ static void pn_info(const struct FloatVect3 *pt,
 
 void get_action(const float *obs, float *action_out);
 
+static void normalize_and_magnitude(const struct FloatVect3 *v, float *unit_out, float *mag_out) {
+  float norm = float_vect3_norm((struct FloatVect3 *)v);
+  *mag_out = norm;
+  float safe_norm = norm > 1e-6f ? norm : 1e-6f;
+  unit_out[0] = v->x / safe_norm;
+  unit_out[1] = v->y / safe_norm;
+  unit_out[2] = v->z / safe_norm;
+}
+
 static void build_observation(float *obs) {
-  // Self state in ENU
   struct EnuCoor_f *pu_pos = stateGetPositionEnu_f();
   struct EnuCoor_f *pu_vel = stateGetSpeedEnu_f();
-  // struct FloatEulers *self_att = stateGetNedToBodyEulers_f();  // Optional, not needed anymore
-  // float thrust = stabilization_cmd[COMMAND_THRUST];            // Optional, not needed anymore
 
   struct FloatVect3 ev_pos = target_pos_enu;
   struct FloatVect3 ev_vel = target_vel_enu;
 
-  // (1) pursuer position
-  obs[0] = pu_pos->x;
-  obs[1] = pu_pos->y;
-  obs[2] = pu_pos->z;
+  // Filtered velocities
+  float pu_vx = update_butterworth_2_low_pass(&filter_pu_vel_x, pu_vel->x);
+  float pu_vy = update_butterworth_2_low_pass(&filter_pu_vel_y, pu_vel->y);
+  float pu_vz = update_butterworth_2_low_pass(&filter_pu_vel_z, pu_vel->z);
+  float ev_vx = update_butterworth_2_low_pass(&filter_ev_vel_x, ev_vel.x);
+  float ev_vy = update_butterworth_2_low_pass(&filter_ev_vel_y, ev_vel.y);
+  float ev_vz = update_butterworth_2_low_pass(&filter_ev_vel_z, ev_vel.z);
 
-  // (2) evader position
-  obs[3] = ev_pos.x;
-  obs[4] = ev_pos.y;
-  obs[5] = ev_pos.z;
+  struct FloatVect3 pu_pos_v = {pu_pos->x, pu_pos->y, pu_pos->z};
+  struct FloatVect3 ev_pos_v = ev_pos;
+  struct FloatVect3 pu_vel_v = {pu_vx, pu_vy, pu_vz};
+  struct FloatVect3 ev_vel_v = {ev_vx, ev_vy, ev_vz};
 
-  // (3) pursuer velocity
-  obs[6] = pu_vel->x;
-  obs[7] = pu_vel->y;
-  obs[8] = pu_vel->z;
+  // (1–4) pu position
+  normalize_and_magnitude(&pu_pos_v, &obs[0], &obs[3]);
 
-  // (4) evader velocity
-  obs[9] = ev_vel.x;
-  obs[10] = ev_vel.y;
-  obs[11] = ev_vel.z;
+  // (5–8) ev position
+  normalize_and_magnitude(&ev_pos_v, &obs[4], &obs[7]);
 
-  // (5) Line-of-sight vector: r = ev_pos - pu_pos
+  // (9–12) pu velocity
+  normalize_and_magnitude(&pu_vel_v, &obs[8], &obs[11]);
+
+  // (13–16) ev velocity
+  normalize_and_magnitude(&ev_vel_v, &obs[12], &obs[15]);
+
+  // (17–20) LOS vector (ev_pos - pu_pos)
   struct FloatVect3 r = {
     .x = ev_pos.x - pu_pos->x,
     .y = ev_pos.y - pu_pos->y,
     .z = ev_pos.z - pu_pos->z
   };
-  obs[12] = r.x;
-  obs[13] = r.y;
-  obs[14] = r.z;
+  normalize_and_magnitude(&r, &obs[16], &obs[19]);
 
-  // (6) LOS distance
-  float R = float_vect3_norm(&r);
-  obs[15] = R;
-
-  // (7) Relative velocity: r_dot = ev_vel - pu_vel
+  // (21–24) LOS rate vector (ev_vel - pu_vel)
   struct FloatVect3 r_dot = {
     .x = ev_vel.x - pu_vel->x,
     .y = ev_vel.y - pu_vel->y,
     .z = ev_vel.z - pu_vel->z
   };
-  obs[16] = r_dot.x;
-  obs[17] = r_dot.y;
-  obs[18] = r_dot.z;
+  normalize_and_magnitude(&r_dot, &obs[20], &obs[23]);
 
-  // (8) LOS rate: Vc = ||r_dot||
-  float Vc = float_vect3_norm(&r_dot);
-  obs[19] = Vc;
+  // Raw logs
+  pn_log.raw_pu_vel.x = pu_vel->x;
+  pn_log.raw_pu_vel.y = pu_vel->y;
+  pn_log.raw_pu_vel.z = pu_vel->z;
+          
+  pn_log.raw_ev_vel.x = ev_vel.x;
+  pn_log.raw_ev_vel.y = ev_vel.y;
+  pn_log.raw_ev_vel.z = ev_vel.z;
 
-  // (9) phi_dot = (Ir × r_dot) / ||r||²
-  float safe_R = (R > 1e-6f) ? R : 1e-6f;
-  struct FloatVect3 Ir = {
-    .x = r.x / safe_R,
-    .y = r.y / safe_R,
-    .z = r.z / safe_R
+
+  // Filtered logs
+  pn_log.filt_pu_vel.x = pu_vx;
+  pn_log.filt_pu_vel.y = pu_vy;
+  pn_log.filt_pu_vel.z = pu_vz;
+
+  pn_log.filt_ev_vel.x = ev_vx;
+  pn_log.filt_ev_vel.y = ev_vy;
+  pn_log.filt_ev_vel.z = ev_vz;
+
+  // Raw r and r_dot from unfiltered data
+  struct FloatVect3 r_raw = {
+    .x = ev_pos.x - pu_pos->x,
+    .y = ev_pos.y - pu_pos->y,
+    .z = ev_pos.z - pu_pos->z
   };
-
-  struct FloatVect3 cross = {
-    .x = Ir.y * r_dot.z - Ir.z * r_dot.y,
-    .y = Ir.z * r_dot.x - Ir.x * r_dot.z,
-    .z = Ir.x * r_dot.y - Ir.y * r_dot.x
+  struct FloatVect3 r_dot_raw = {
+    .x = ev_vel.x - pu_vel->x,
+    .y = ev_vel.y - pu_vel->y,
+    .z = ev_vel.z - pu_vel->z
   };
+  pn_log.raw_r = r_raw;
+  pn_log.raw_r_dot = r_dot_raw;
 
-  float denom = safe_R * safe_R;
-  obs[20] = cross.x / denom;
-  obs[21] = cross.y / denom;
-  obs[22] = cross.z / denom;
+  // Filtered r_dot = filtered_ev_vel - filtered_pu_vel
+  pn_log.filt_r_dot.x = ev_vx - pu_vx;
+  pn_log.filt_r_dot.y = ev_vy - pu_vy;
+  pn_log.filt_r_dot.z = ev_vz - pu_vz;
+
 }
+
 
 
 // Converts NED to ENU
@@ -233,9 +262,11 @@ static void run_frpn(void) {
     saturate3(&acc, MAX_ACCEL);
 
     /* smooth accel via low-pass filter */
-    acc.x = update_first_order_low_pass(&acc_filt_x, acc.x);   
-    acc.y = update_first_order_low_pass(&acc_filt_y, acc.y);   
-    acc.z = update_first_order_low_pass(&acc_filt_z, acc.z);  
+    acc.x = update_butterworth_2_low_pass(&filter_acc_x, acc.x);
+    acc.y = update_butterworth_2_low_pass(&filter_acc_y, acc.y);
+    acc.z = update_butterworth_2_low_pass(&filter_acc_z, acc.z);
+
+    pn_log.filt_accel_command = acc;
 
     AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc);
     pn_info(&pos_t, &vel_t, &acc);
@@ -293,16 +324,18 @@ static void run_grtpn(void) {
     saturate3(&acc, MAX_ACCEL);
 
     /* smooth accel via low-pass filter */
-    acc.x = update_first_order_low_pass(&acc_filt_x, acc.x);   
-    acc.y = update_first_order_low_pass(&acc_filt_y, acc.y);   
-    acc.z = update_first_order_low_pass(&acc_filt_z, acc.z);   
+    acc.x = update_butterworth_2_low_pass(&filter_acc_x, acc.x);
+    acc.y = update_butterworth_2_low_pass(&filter_acc_y, acc.y);
+    acc.z = update_butterworth_2_low_pass(&filter_acc_z, acc.z);
+
+    pn_log.filt_accel_command = acc;
 
     AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc);
     pn_info(&pos_t, &vel_t, &acc);
 }
 
 static void run_nn_policy(void) {
-  float obs[23];
+  float obs[24];
   float accel_out[3];
 
   build_observation(obs);
@@ -314,15 +347,16 @@ static void run_nn_policy(void) {
     .z = accel_out[2] * MAX_ACCEL
   };
 
+  acc_enu.x = update_butterworth_2_low_pass(&filter_acc_x, acc_enu.x);
+  acc_enu.y = update_butterworth_2_low_pass(&filter_acc_y, acc_enu.y);
+  acc_enu.z = update_butterworth_2_low_pass(&filter_acc_z, acc_enu.z);
+
+  pn_log.filt_accel_command = acc_enu;
+
   // Convert to NED before sending to ABI
   struct FloatVect3 acc_ned = enu_to_ned(acc_enu);
 
   // saturate3(&acc_ned, MAX_ACCEL);
-
-  // Optional: Filtering here
-  // acc_ned.x = update_first_order_low_pass(&acc_filt_x, acc_ned.x);
-  // acc_ned.y = update_first_order_low_pass(&acc_filt_y, acc_ned.y);
-  // acc_ned.z = update_first_order_low_pass(&acc_filt_z, acc_ned.z);
 
   AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc_ned);
   pn_info(&target_pos_ned, &target_vel_ned, &acc_ned);
@@ -335,13 +369,24 @@ static void run_nn_policy(void) {
 /*---------------------------------------------------------------------------*/
 void pn_init(void) {
     printf("[pn] init\n");
-
     pprz_transport_init(&target_message.transport);
 
-    /* initialize filters with zero initial value */
-    init_first_order_low_pass(&acc_filt_x, ACC_FILT_TAU, DT, 0.0f);
-    init_first_order_low_pass(&acc_filt_y, ACC_FILT_TAU, DT, 0.0f);
-    init_first_order_low_pass(&acc_filt_z, ACC_FILT_TAU, DT, 0.0f);
+    init_butterworth_2_low_pass(&filter_acc_x, TAU_ACC, DT, 0.0f);
+    init_butterworth_2_low_pass(&filter_acc_y, TAU_ACC, DT, 0.0f);
+    init_butterworth_2_low_pass(&filter_acc_z, TAU_ACC, DT, 0.0f);
+
+    init_butterworth_2_low_pass(&filter_pu_vel_x, TAU_OBS, OBS_SAMPLE_TIME, 0.0f);
+    init_butterworth_2_low_pass(&filter_pu_vel_y, TAU_OBS, OBS_SAMPLE_TIME, 0.0f);
+    init_butterworth_2_low_pass(&filter_pu_vel_z, TAU_OBS, OBS_SAMPLE_TIME, 0.0f);
+
+    init_butterworth_2_low_pass(&filter_ev_vel_x, TAU_OBS, OBS_SAMPLE_TIME, 0.0f);
+    init_butterworth_2_low_pass(&filter_ev_vel_y, TAU_OBS, OBS_SAMPLE_TIME, 0.0f);
+    init_butterworth_2_low_pass(&filter_ev_vel_z, TAU_OBS, OBS_SAMPLE_TIME, 0.0f);
+
+    init_butterworth_2_low_pass(&filter_rdot_x, TAU_OBS, OBS_SAMPLE_TIME, 0.0f);
+    init_butterworth_2_low_pass(&filter_rdot_y, TAU_OBS, OBS_SAMPLE_TIME, 0.0f);
+    init_butterworth_2_low_pass(&filter_rdot_z, TAU_OBS, OBS_SAMPLE_TIME, 0.0f);
+
   }
 
 void pn_start(void) {

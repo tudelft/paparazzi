@@ -16,6 +16,8 @@ struct pnmessage {
   bool msg_available;               ///< If we have an InterMCU message
 };
 
+void pn_parse_TARGET_INFO(uint8_t *buf);
+
 typedef enum {
   PN_MODE_FRPN,
   PN_MODE_GRTPN,
@@ -35,6 +37,18 @@ struct Proportional_nav {
   struct FloatVect3 pos_target;
   struct FloatVect3 vel_target;
   struct FloatVect3 accel_command;
+  struct FloatVect3 filt_accel_command; 
+
+  // Raw observations
+  struct FloatVect3 raw_pu_vel;
+  struct FloatVect3 raw_ev_vel;
+  struct FloatVect3 raw_r;
+  struct FloatVect3 raw_r_dot;
+
+  // Filtered observations
+  struct FloatVect3 filt_pu_vel;
+  struct FloatVect3 filt_ev_vel;
+  struct FloatVect3 filt_r_dot;
 };
 struct Proportional_nav *pn_info_logger(void);
 

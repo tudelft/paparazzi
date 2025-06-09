@@ -73,6 +73,14 @@ static void logger_file_write_header(FILE *file) {
   fprintf(file, "pos_target_x,pos_target_y,pos_target_z,");
   fprintf(file, "vel_target_x,vel_target_y,vel_target_z,");
   fprintf(file, "accel_command_x,accel_command_y,accel_command_z,");
+  fprintf(file, "filt_accel_command_x,filt_accel_command_y,filt_accel_command_z,");
+  fprintf(file, "raw_pu_vel_x,raw_pu_vel_y,raw_pu_vel_z,");
+  fprintf(file, "filt_pu_vel_x,filt_pu_vel_y,filt_pu_vel_z,");
+  fprintf(file, "raw_ev_vel_x,raw_ev_vel_y,raw_ev_vel_z,");
+  fprintf(file, "filt_ev_vel_x,filt_ev_vel_y,filt_ev_vel_z,");
+  fprintf(file, "raw_r_x,raw_r_y,raw_r_z,");
+  fprintf(file, "raw_r_dot_x,raw_r_dot_y,raw_r_dot_z,");
+  fprintf(file, "filt_r_dot_x,filt_r_dot_y,filt_r_dot_z,");
 #ifdef BOARD_BEBOP
   fprintf(file, "rpm_obs_1,rpm_obs_2,rpm_obs_3,rpm_obs_4,");
   fprintf(file, "rpm_ref_1,rpm_ref_2,rpm_ref_3,rpm_ref_4,");
@@ -110,6 +118,14 @@ static void logger_file_write_row(FILE *file) {
   fprintf(file, "%f,%f,%f,", pn_info->pos_target.x, pn_info->pos_target.y, pn_info->pos_target.z);
   fprintf(file, "%f,%f,%f,", pn_info->vel_target.x, pn_info->vel_target.y, pn_info->vel_target.z);
   fprintf(file, "%f,%f,%f,", pn_info->accel_command.x, pn_info->accel_command.y, pn_info->accel_command.z);
+  fprintf(file, "%f,%f,%f,", pn_info->filt_accel_command.x, pn_info->filt_accel_command.y, pn_info->filt_accel_command.z);
+  fprintf(file, "%f,%f,%f,", pn_info->raw_pu_vel.x, pn_info->raw_pu_vel.y, pn_info->raw_pu_vel.z);
+  fprintf(file, "%f,%f,%f,", pn_info->filt_pu_vel.x, pn_info->filt_pu_vel.y, pn_info->filt_pu_vel.z);
+  fprintf(file, "%f,%f,%f,", pn_info->raw_ev_vel.x, pn_info->raw_ev_vel.y, pn_info->raw_ev_vel.z);
+  fprintf(file, "%f,%f,%f,", pn_info->filt_ev_vel.x, pn_info->filt_ev_vel.y, pn_info->filt_ev_vel.z);
+  fprintf(file, "%f,%f,%f,", pn_info->raw_r.x, pn_info->raw_r.y, pn_info->raw_r.z);
+  fprintf(file, "%f,%f,%f,", pn_info->raw_r_dot.x, pn_info->raw_r_dot.y, pn_info->raw_r_dot.z);
+  fprintf(file, "%f,%f,%f,", pn_info->filt_r_dot.x, pn_info->filt_r_dot.y, pn_info->filt_r_dot.z);
 #ifdef BOARD_BEBOP
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_ref[0],actuators_bebop.rpm_ref[1],actuators_bebop.rpm_ref[2],actuators_bebop.rpm_ref[3]);

@@ -1,30 +1,30 @@
 #ifndef PPO_CONTROLLER_WEIGHTS_H
 #define PPO_CONTROLLER_WEIGHTS_H
 
-extern float log_std[3];
+extern float log_std[];
 
-extern float mlp_extractor_policy_net_0_weight[1472];
+extern float mlp_extractor_policy_net_0_weight[];
 
-extern float mlp_extractor_policy_net_0_bias[64];
+extern float mlp_extractor_policy_net_0_bias[];
 
-extern float mlp_extractor_policy_net_2_weight[4096];
+extern float mlp_extractor_policy_net_2_weight[];
 
-extern float mlp_extractor_policy_net_2_bias[64];
+extern float mlp_extractor_policy_net_2_bias[];
 
-extern float mlp_extractor_value_net_0_weight[1472];
+extern float mlp_extractor_value_net_0_weight[];
 
-extern float mlp_extractor_value_net_0_bias[64];
+extern float mlp_extractor_value_net_0_bias[];
 
-extern float mlp_extractor_value_net_2_weight[4096];
+extern float mlp_extractor_value_net_2_weight[];
 
-extern float mlp_extractor_value_net_2_bias[64];
+extern float mlp_extractor_value_net_2_bias[];
 
-extern float action_net_weight[192];
+extern float action_net_weight[];
 
-extern float action_net_bias[3];
+extern float action_net_bias[];
 
-extern float value_net_weight[64];
+extern float value_net_weight[];
 
-extern float value_net_bias[1];
+extern float value_net_bias[];
 
 #endif // PPO_CONTROLLER_WEIGHTS_H
