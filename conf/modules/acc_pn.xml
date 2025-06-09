@@ -1,15 +1,15 @@
 <!DOCTYPE module SYSTEM "module.dtd">
  
-<module name="pn">
+<module name="acc_pn">
 <doc>
     <description>
     Guidance controller for rotorcraft 
     </description>
 </doc>
 <header>
-    <file name="pn.h"/>
-    <file name="nn_controller/ppo_controller_weights.h"/>
-    <file name="nn_controller/ppo_controller.h"/>
+    <file name="acc_pn.h"/>
+    <file name="acc_nn/ppo_controller_weights.h"/>
+    <file name="acc_nn/ppo_controller.h"/>
 </header>
 <init fun="pn_init()"/>
 <periodic fun="pn_run()" freq="100" start="pn_start()"
@@ -18,9 +18,9 @@
 <datalink message="TARGET_INFO" fun="pn_parse_TARGET_INFO(buf)"/>
 <makefile target="ap|nps"> 
     <configure name="MODEM_DEV" default="UDP0" case="upper|lower"/>
-    <file name="pn.c"/>
-    <file name="nn_controller/ppo_controller_weights.c"/>
-    <file name="nn_controller/ppo_controller.c"/>
+    <file name="acc_pn.c"/>
+    <file name="acc_nn/ppo_controller_weights.c"/>
+    <file name="acc_nn/ppo_controller.c"/>
     <file name="pprz_transport.c" dir="pprzlink/src"/>
         <define name="DOWNLINK_DEVICE" value="$(MODEM_DEV_LOWER)"/>
 </makefile>

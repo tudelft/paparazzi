@@ -44,7 +44,7 @@
 #endif
 
 #include "generated/modules.h"
-#include "modules/pn/pn.h"
+#include "modules/acc_pn/acc_pn.h"
 
 /** Set the default File logger path to the USB drive */
 #ifndef LOGGER_FILE_PATH

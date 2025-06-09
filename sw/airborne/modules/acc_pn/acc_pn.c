@@ -1,6 +1,5 @@
 // pn.c
 
-#include "pn.h"
 #include <stdio.h>
 #include <math.h>
 #include "state.h"
@@ -12,8 +11,9 @@
 #include "pprzlink/intermcu_msg.h"
 #include "modules/datalink/telemetry.h"
 #include "mcu_periph/sys_time.h"
-#include "nn_controller/ppo_controller_weights.h"
-#include "pn/nn_controller/ppo_controller.h"
+#include "acc_nn/ppo_controller_weights.h"
+#include "acc_nn/ppo_controller.h"
+#include "acc_pn.h"
 
 
 /*---------------------------------------------------------------------------*/
