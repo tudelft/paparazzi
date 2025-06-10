@@ -388,6 +388,16 @@ static inline void finite_difference(float output[3], float new[3], float old[3]
  */
 void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight __attribute__((unused)))
 {
+
+  #ifdef CTBR_ACCEL_OVERRIDE
+  #pragma message "CTBR_ACCEL_OVERRIDE enabled: overriding rate_sp from CTBR control_nn[]!"
+    if (autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) {
+      rate_sp.p = control_nn[0];
+      rate_sp.q = control_nn[1];
+      rate_sp.r = control_nn[2];
+    }
+  #endif
+
   //Propagate input filters
   //first order actuator dynamics
   indi.u_act_dyn.p = indi.u_act_dyn.p + indi.act_dyn.p * (indi.u_in.p - indi.u_act_dyn.p);

@@ -284,6 +284,23 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   guidance_euler_cmd.psi = heading_sp;
 
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
+
+#ifdef CTBR_ACCEL_OVERRIDE
+if (indi_accel_sp_set_3d && autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) {
+    struct FloatVect3 filt_accel_ned_vec = {
+      filt_accel_ned[0].o[0],
+      filt_accel_ned[1].o[0],
+      filt_accel_ned[2].o[0] - 9.81f  // gravity compensation
+    };
+
+    struct FloatVect3 filt_accel_body;
+    float_quat_vmult(&filt_accel_body, stateGetNedToBodyQuat_f(), &filt_accel_ned_vec);
+
+    // Override thrust increment with difference between commanded and measured Z-accel
+    control_increment.z = indi_accel_sp.z - filt_accel_body.z;
+}
+#endif
+
   guidance_indi_filter_thrust();
 
   //Add the increment in specific force * specific_force_to_thrust_gain to the filtered thrust

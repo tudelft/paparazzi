@@ -30,4 +30,9 @@
     <file name="ins_ext_pose.c"/>
     <file name="ins.c"/>
   </makefile>
+  <makefile target="nps">
+    <define name="INS_TYPE_H" value="modules/ins/ins_ext_pose.h" type="string"/>
+    <file name="ins_ext_pose.c"/>
+    <file name="ins.c"/>
+  </makefile>
 </module>

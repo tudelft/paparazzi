@@ -24,7 +24,10 @@
         "sys_time.h": "c",
         "math.h": "c",
         "ppo_controller_weights.h": "c",
-        "acc_pn.h": "c"
+        "acc_pn.h": "c",
+        "telemetry.h": "c",
+        "pprz_transport.h": "c",
+        "state.h": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",

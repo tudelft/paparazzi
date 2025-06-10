@@ -1,0 +1,28 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+ 
+<module name="ctbr_pn">
+<doc>
+    <description>
+    Guidance controller for rotorcraft 
+    </description>
+</doc>
+<header>
+    <file name="ctbr_pn.h"/>
+    <file name="ctbr_nn/ppo_controller_weights.h"/>
+    <file name="ctbr_nn/ppo_controller.h"/>
+</header>
+<init fun="pn_init()"/>
+<periodic fun="pn_run()" freq="512" start="pn_start()"
+ 		    stop="pn_stop()" autorun="FALSE"/>
+<event fun="pn_event()"/> 
+<datalink message="TARGET_INFO" fun="pn_parse_TARGET_INFO(buf)"/>
+<makefile target="ap|nps"> 
+    <configure name="MODEM_DEV" default="UDP0" case="upper|lower"/>
+    <file name="ctbr_pn.c"/>
+    <define name="CTBR_ACCEL_OVERRIDE"/>
+    <file name="ctbr_nn/ppo_controller_weights.c"/>
+    <file name="ctbr_nn/ppo_controller.c"/>
+    <file name="pprz_transport.c" dir="pprzlink/src"/>
+        <define name="DOWNLINK_DEVICE" value="$(MODEM_DEV_LOWER)"/>
+</makefile>
+</module>

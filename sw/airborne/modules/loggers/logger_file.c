@@ -93,6 +93,9 @@ static void logger_file_write_header(FILE *file) {
 #else
   fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
 #endif
+#ifdef CTBR_ACCEL_OVERRIDE
+  fprintf(file, "nn_p,nn_q,nn_r,nn_thrust,");
+#endif
 }
 
 /** Write CSV row
@@ -107,7 +110,7 @@ static void logger_file_write_row(FILE *file) {
   struct NedCoor_f *acc = stateGetAccelNed_f();
   struct FloatEulers *att = stateGetNedToBodyEulers_f();
   struct FloatRates *rates = stateGetBodyRates_f();
-  struct Proportional_nav *pn_info = pn_info_logger();
+  struct LoggerData_PN *pn_info = pn_info_logger();
 
   fprintf(file, "%f,", get_sys_time_float());
   fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
@@ -140,6 +143,11 @@ static void logger_file_write_row(FILE *file) {
 #else
   fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
 #endif
+#ifdef CTBR_ACCEL_OVERRIDE
+  extern float control_nn[4];
+  fprintf(file, "%f,%f,%f,%f,", control_nn[0], control_nn[1], control_nn[2], control_nn[3]);
+#endif
+
 }
 
 

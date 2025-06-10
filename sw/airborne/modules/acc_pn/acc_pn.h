@@ -33,7 +33,7 @@ extern void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf);
 extern void pn_event(void);
 void pn_set_mode(pn_mode_t m);
 
-struct Proportional_nav {
+struct LoggerData_PN {
   struct FloatVect3 pos_target;
   struct FloatVect3 vel_target;
   struct FloatVect3 accel_command;
@@ -50,6 +50,6 @@ struct Proportional_nav {
   struct FloatVect3 filt_ev_vel;
   struct FloatVect3 filt_r_dot;
 };
-struct Proportional_nav *pn_info_logger(void);
+struct LoggerData_PN *pn_info_logger(void);
 
 #endif // PN_H

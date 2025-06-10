@@ -75,7 +75,7 @@ static const float TAU_OBS = 1.0f / (2.0f * M_PI * OBS_CUTOFF_FREQ);
 /*---------------------------------------------------------------------------*/
 static float time_s = 0.0f;
 static pn_mode_t cur_mode = PN_MODE_NEURAL;
-static struct Proportional_nav pn_log;
+static struct LoggerData_PN pn_log;
 
 /*---------------------------------------------------------------------------*/
 /*                         Internal Helpers                                 */
@@ -101,7 +101,7 @@ static void pn_info(const struct FloatVect3 *pt,
   pn_log.accel_command = *ac;
 }
 
-void get_action(const float *obs, float *action_out);
+void get_acc_action(const float *obs, float *action_out);
 
 static void normalize_and_magnitude(const struct FloatVect3 *v, float *unit_out, float *mag_out) {
   float norm = float_vect3_norm((struct FloatVect3 *)v);
@@ -339,7 +339,7 @@ static void run_nn_policy(void) {
   float accel_out[3];
 
   build_observation(obs);
-  get_action(obs, accel_out);  // Returns ENU action
+  get_acc_action(obs, accel_out);  // Returns ENU action
 
   struct FloatVect3 acc_enu = {
     .x = accel_out[0] * MAX_ACCEL,
@@ -461,6 +461,6 @@ void pn_parse_TARGET_INFO(uint8_t *buf) {
 
 
 
-struct Proportional_nav *pn_info_logger(void) {
+struct LoggerData_PN *pn_info_logger(void) {
   return &pn_log;
 }
