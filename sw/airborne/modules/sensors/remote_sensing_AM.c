@@ -645,11 +645,6 @@ void remote_sensing_AM_periodic(void) {
     send_waypoint(WP_BOX);
   });
 #endif
-  
-  //Test the landing algorithm: 
-  RunOnceEvery(50*REMOTE_SENSING_AM_PERIODIC_FREQ, {send_landing_algorithm_params();});
-
-  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {request_landing_algorithm_outputs();});
 
   // Here we can run the periodic KF update
   target_pos_kalman_predict(&remote_sensing_kalman);
@@ -669,6 +664,10 @@ void remote_sensing_AM_periodic(void) {
   RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {send_waypoint(WP_KALMAN);});
 
   #if !USE_NPS
+  //Test the landing algorithm: 
+  RunOnceEvery(50*REMOTE_SENSING_AM_PERIODIC_FREQ, {send_landing_algorithm_params();});
+  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {request_landing_algorithm_outputs();});
+
   pprz_msg_send_TARGET_POS_KALMAN(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
                                   &pos.x, &pos.y, &pos.z,
                                   &speed.x, &speed.y, &speed.z);
