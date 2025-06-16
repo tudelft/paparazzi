@@ -94,11 +94,10 @@ static void build_ctbr_obs(float *obs)
 
   struct FloatVect3 pu_pos_v = {pu_pos->y, -pu_pos->x, pu_pos->z}; // VERY IMPORTANT HACKY FIX. COORDINATE FRAME OF TRAINING_ENV HAS DIFFERENT COORDINATE FRAME
   struct FloatVect3 ev_pos_v =
-  {
-    target_pos_enu.y,
-    -target_pos_enu.x,
-    target_pos_enu.z
-  } // TRAINING ENV HAS NED ROTATED 180 DEG OVER X AXIS FRAME (NEEDS TO BE FIXED)
+      {
+          target_pos_enu.y,
+          -target_pos_enu.x,
+          target_pos_enu.z}; // TRAINING ENV HAS NED ROTATED 180 DEG OVER X AXIS FRAME (NEEDS TO BE FIXED)
   // struct FloatVect3 ev_pos_v = target_pos_enu;
 
   struct FloatVect3 pu_vel_v = {vy, -vx, vz}; // AGAIN COORDINATE FRAME MISMATCH
