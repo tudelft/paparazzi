@@ -30,11 +30,11 @@ uint8_t pn_msg_buf[256] __attribute__((aligned));  ///< The InterMCU message buf
 
 void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf);
 
-static struct FloatVect3 target_pos_enu = {0, 0.0, 2.0};  // ENU
+static struct FloatVect3 target_pos_enu = {0, 1.0, 1.0};  // ENU
 static struct FloatVect3 target_vel_enu = {0, 0, 0};     // ENU
 
 // NED for traditional pursuit laws
-static struct FloatVect3 target_pos_ned = {0.0, 0.0, -2.0};  
+static struct FloatVect3 target_pos_ned = {1.0, 0.0, -1.0};  
 static struct FloatVect3 target_vel_ned = {0, 0, 0};
 
 static bool first_remote_gps_msg_received = false;
@@ -228,7 +228,7 @@ static inline struct FloatVect3 enu_to_ned(struct FloatVect3 enu) {
 /*                      Individual Pursuit Laws                              */
 /*---------------------------------------------------------------------------*/
 static void run_frpn(void) {
-    struct FloatVect3 r, r_dot, tmp, term1, part, acc;
+    struct FloatVect3 r, r_dot, tmp, term1, part, acc_ned, acc_enu;
     struct NedCoor_f *pos_n = stateGetPositionNed_f();
     struct NedCoor_f *vel_n = stateGetSpeedNed_f();
     struct FloatVect3 pos_t = target_pos_ned;
@@ -256,24 +256,26 @@ static void run_frpn(void) {
     /* blend & scale */
     float_vect_smul(&part.x,    &r.x,       PP_WEIGHT,    3);
     float_vect_smul(&tmp.x,     &term1.x, 1-PP_WEIGHT,   3);
-    float_vect_sum(&acc.x, &tmp.x, &part.x, 3);
-    float_vect_smul(&acc.x,     &acc.x,     LAMBDA,       3);
+    float_vect_sum(&acc_ned.x, &tmp.x, &part.x, 3);
+    float_vect_smul(&acc_ned.x,     &acc_ned.x,     LAMBDA,       3);
 
-    saturate3(&acc, MAX_ACCEL);
+    saturate3(&acc_ned, MAX_ACCEL);
 
     /* smooth accel via low-pass filter */
-    acc.x = update_butterworth_2_low_pass(&filter_acc_x, acc.x);
-    acc.y = update_butterworth_2_low_pass(&filter_acc_y, acc.y);
-    acc.z = update_butterworth_2_low_pass(&filter_acc_z, acc.z);
+    acc_ned.x = update_butterworth_2_low_pass(&filter_acc_x, acc_ned.x);
+    acc_ned.y = update_butterworth_2_low_pass(&filter_acc_y, acc_ned.y);
+    acc_ned.z = update_butterworth_2_low_pass(&filter_acc_z, acc_ned.z);
 
-    pn_log.filt_accel_command = acc;
+    acc_enu = ned_to_enu(acc_ned);
 
-    AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc);
-    pn_info(&pos_t, &vel_t, &acc);
+    pn_log.filt_accel_command = acc_enu;
+
+    AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc_ned);
+    pn_info(&target_pos_enu, &target_vel_enu, &acc_enu);
 }
 
 static void run_grtpn(void) {
-    struct FloatVect3 r, r_dot, Ir, cross, phi_dot, glob, acc;
+    struct FloatVect3 r, r_dot, Ir, cross, phi_dot, glob, acc_ned, acc_enu;
     struct NedCoor_f *pos_n = stateGetPositionNed_f();
     struct NedCoor_f *vel_n = stateGetSpeedNed_f();
 
@@ -319,19 +321,22 @@ static void run_grtpn(void) {
     float_vect_smul(&cross.x, &cross.x, LAMBDA*Vc, 3);
 
     /* combine & send */
-    float_vect_sum(&acc.x, &glob.x, &cross.x, 3);
+    float_vect_sum(&acc_ned.x, &glob.x, &cross.x, 3);
 
-    saturate3(&acc, MAX_ACCEL);
+    saturate3(&acc_ned, MAX_ACCEL);
 
     /* smooth accel via low-pass filter */
-    acc.x = update_butterworth_2_low_pass(&filter_acc_x, acc.x);
-    acc.y = update_butterworth_2_low_pass(&filter_acc_y, acc.y);
-    acc.z = update_butterworth_2_low_pass(&filter_acc_z, acc.z);
+    acc_ned.x = update_butterworth_2_low_pass(&filter_acc_x, acc_ned.x);
+    acc_ned.y = update_butterworth_2_low_pass(&filter_acc_y, acc_ned.y);
+    acc_ned.z = update_butterworth_2_low_pass(&filter_acc_z, acc_ned.z);
 
-    pn_log.filt_accel_command = acc;
+    acc_enu = ned_to_enu(acc_ned);
 
-    AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc);
-    pn_info(&pos_t, &vel_t, &acc);
+    pn_log.filt_accel_command = acc_enu;
+
+
+    AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc_ned);
+    pn_info(&target_pos_enu, &target_vel_enu, &acc_enu);
 }
 
 static void run_nn_policy(void) {
@@ -359,7 +364,7 @@ static void run_nn_policy(void) {
   // saturate3(&acc_ned, MAX_ACCEL);
 
   AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc_ned);
-  pn_info(&target_pos_ned, &target_vel_ned, &acc_ned);
+  pn_info(&target_pos_enu, &target_vel_ned, &acc_enu);
 }
 
 
