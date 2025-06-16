@@ -15,26 +15,29 @@
 
 #include "ctbr_pn.h"
 
+#define DEBUGGER_ON false
+
 #define CTBR_OBS_DIM 31
-#define CTBR_DT (1.0f / 512.0f)
+#define CTBR_DT (1.0f / 100.0f)
 #define CTBR_CUTOFF_FREQ 8.0f
 #define CTBR_TAU (1.0f / (2.0f * M_PI * CTBR_CUTOFF_FREQ))
 
 static bool ctbr_active = false;
+static FILE *ctbr_debug_log = NULL; // Logger to validate observation --> actions, check if NN is working correctly
 
 /*---------------------------------------------------------------------------*/
 /* Target tracking                                                           */
 /*---------------------------------------------------------------------------*/
 
 struct pnmessage target_message = {
-  .device = (&((DOWNLINK_DEVICE).device)),
-  .enabled = true,
-  .msg_available = false,
+    .device = (&((DOWNLINK_DEVICE).device)),
+    .enabled = true,
+    .msg_available = false,
 };
 
 uint8_t pn_msg_buf[256] __attribute__((aligned));
 
-static struct FloatVect3 target_pos_enu = {0, 0.0, 2.0};
+static struct FloatVect3 target_pos_enu = {1.0, 1.0, 2.0};
 static struct FloatVect3 target_vel_enu = {0, 0, 0};
 static bool first_target_received = false;
 
@@ -54,19 +57,24 @@ void get_ctbr_action(const float *obs, float *ctbr_out); // extern NN inference
 /* Observation builder                                                       */
 /*---------------------------------------------------------------------------*/
 
-static void normalize_and_magnitude(struct FloatVect3 *vec, float *dir_out, float *mag_out) {
+static void normalize_and_magnitude(struct FloatVect3 *vec, float *dir_out, float *mag_out)
+{
   float mag = sqrtf(vec->x * vec->x + vec->y * vec->y + vec->z * vec->z);
-  if (mag > 1e-5f) {
+  if (mag > 1e-5f)
+  {
     dir_out[0] = vec->x / mag;
     dir_out[1] = vec->y / mag;
     dir_out[2] = vec->z / mag;
-  } else {
+  }
+  else
+  {
     dir_out[0] = dir_out[1] = dir_out[2] = 0.0f;
   }
   *mag_out = mag;
 }
 
-static void build_ctbr_obs(float *obs) {
+static void build_ctbr_obs(float *obs)
+{
   struct EnuCoor_f *pu_pos = stateGetPositionEnu_f();
   struct EnuCoor_f *pu_vel = stateGetSpeedEnu_f();
   struct FloatEulers *att = stateGetNedToBodyEulers_f();
@@ -84,52 +92,60 @@ static void build_ctbr_obs(float *obs) {
 
   float filtered_abz = update_butterworth_2_low_pass(&filt_abz, raw_abz);
 
-  struct FloatVect3 pu_pos_v = {pu_pos->x, pu_pos->y, pu_pos->z};
-  struct FloatVect3 ev_pos_v = target_pos_enu;
+  struct FloatVect3 pu_pos_v = {pu_pos->y, -pu_pos->x, pu_pos->z}; // VERY IMPORTANT HACKY FIX. COORDINATE FRAME OF TRAINING_ENV HAS DIFFERENT COORDINATE FRAME
+  struct FloatVect3 ev_pos_v =
+  {
+    target_pos_enu.y,
+    -target_pos_enu.x,
+    target_pos_enu.z
+  } // TRAINING ENV HAS NED ROTATED 180 DEG OVER X AXIS FRAME (NEEDS TO BE FIXED)
+  // struct FloatVect3 ev_pos_v = target_pos_enu;
 
-  struct FloatVect3 pu_vel_v = {vx, vy, vz};
+  struct FloatVect3 pu_vel_v = {vy, -vx, vz}; // AGAIN COORDINATE FRAME MISMATCH
   struct FloatVect3 ev_vel_v = {tx, ty, tz};
 
   struct FloatVect3 rel_pos = {
-    .x = ev_pos_v.x - pu_pos_v.x,
-    .y = ev_pos_v.y - pu_pos_v.y,
-    .z = ev_pos_v.z - pu_pos_v.z
-  };
+      .x = ev_pos_v.x - pu_pos_v.x,
+      .y = ev_pos_v.y - pu_pos_v.y,
+      .z = ev_pos_v.z - pu_pos_v.z};
 
   struct FloatVect3 rel_vel = {
-    .x = ev_vel_v.x - pu_vel_v.x,
-    .y = ev_vel_v.y - pu_vel_v.y,
-    .z = ev_vel_v.z - pu_vel_v.z
-  };
+      .x = ev_vel_v.x - pu_vel_v.x,
+      .y = ev_vel_v.y - pu_vel_v.y,
+      .z = ev_vel_v.z - pu_vel_v.z};
 
   // Index for filling obs array
   int i = 0;
 
   // Normalize and store pu_pos_v
-  normalize_and_magnitude(&pu_pos_v, &obs[i], &obs[i+3]); i += 4;
-  normalize_and_magnitude(&ev_pos_v, &obs[i], &obs[i+3]); i += 4;
-  normalize_and_magnitude(&pu_vel_v, &obs[i], &obs[i+3]); i += 4;
-  normalize_and_magnitude(&ev_vel_v, &obs[i], &obs[i+3]); i += 4;
-  normalize_and_magnitude(&rel_pos,  &obs[i], &obs[i+3]); i += 4;
-  normalize_and_magnitude(&rel_vel,  &obs[i], &obs[i+3]); i += 4;
+  normalize_and_magnitude(&pu_pos_v, &obs[i], &obs[i + 3]);
+  i += 4;
+  normalize_and_magnitude(&ev_pos_v, &obs[i], &obs[i + 3]);
+  i += 4;
+  normalize_and_magnitude(&pu_vel_v, &obs[i], &obs[i + 3]);
+  i += 4;
+  normalize_and_magnitude(&ev_vel_v, &obs[i], &obs[i + 3]);
+  i += 4;
+  normalize_and_magnitude(&rel_pos, &obs[i], &obs[i + 3]);
+  i += 4;
+  normalize_and_magnitude(&rel_vel, &obs[i], &obs[i + 3]);
+  i += 4;
 
   // Attitude (phi, theta, psi)
   obs[i++] = att->phi;
-  obs[i++] = att->theta;
+  obs[i++] = -1 * att->theta; // COORDIANTE FRAME MISMATCH
   obs[i++] = att->psi;
 
   // Angular rates
   obs[i++] = rates->p;
-  obs[i++] = rates->q;
+  obs[i++] = -1 * rates->q; // COORDIANTE FRAME MISMATCH
   obs[i++] = rates->r;
 
-  // Filtered acceleration in body frame normalize with the normalized (mass-less) thrust comands 
-  float T_min = 0.0;
-  float T_max = 16.0;
-  obs[i++] = (filtered_abz - T_min) / (T_max - T_min) * 2 - 1;
+  obs[i++] = -filtered_abz; // BODY ACCELERATION AS MEASURED THRUST INPUT (NED --> ENU)
 
   // Sanity check
-  if (i != CTBR_OBS_DIM) {
+  if (i != CTBR_OBS_DIM)
+  {
     printf("[build_ctbr_obs] WARNING: expected CTBR_OBS_DIM=%d but filled %d\n", CTBR_OBS_DIM, i);
   }
 
@@ -160,12 +176,13 @@ static void build_ctbr_obs(float *obs) {
   ctbr_log.filt_r_dot.z = tz - vz;
 }
 
-
 /*---------------------------------------------------------------------------*/
 /* Main CTBR logic                                                           */
 /*---------------------------------------------------------------------------*/
-void ctbr_run(void) {
-  if (!ctbr_active || guidance_h.mode != GUIDANCE_H_MODE_GUIDED) {
+void ctbr_run(void)
+{
+  if (!ctbr_active || guidance_h.mode != GUIDANCE_H_MODE_GUIDED)
+  {
     return;
   }
 
@@ -182,7 +199,7 @@ void ctbr_run(void) {
   const float r_min = -2.0f, r_max = 2.0f;
 
   // Thrust [m/s²] in body-z direction (used in ACCEL_SP)
-  const float T_min = 0.0f, T_max = 16.0f;
+  const float T_min = 0.0f, T_max = 18.0f;
 
   const float p_cmd = (action[0] + 1.0f) * 0.5f * (p_max - p_min) + p_min;
   const float q_cmd = (action[1] + 1.0f) * 0.5f * (q_max - q_min) + q_min;
@@ -190,27 +207,49 @@ void ctbr_run(void) {
   const float T_cmd = (action[3] + 1.0f) * 0.5f * (T_max - T_min) + T_min;
 
   // 1. Send scaled thrust (z-body) as acceleration setpoint
-  struct FloatVect3 acc_sp_body = {0., 0., -T_cmd};  // z-thrust
-  AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc_sp_body);  // flag=1: use all 3 axes
+  struct FloatVect3 acc_sp_body = {0., 0., -T_cmd};     // z-thrust
+  AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc_sp_body); // flag=1: use all 3 axes
 
   // 2. Store body rates and thrust for override (used in stabilization_indi_simple)
   control_nn[0] = p_cmd;
-  control_nn[1] = q_cmd;
+  control_nn[1] = -1 * q_cmd; // AGAIN COORDINATE FRAME MISMATCH!!!!
   control_nn[2] = r_cmd;
   control_nn[3] = T_cmd;
 
-  // Optional: for debugging/logging
-  // printf("[ctbr_run] raw=[%.2f %.2f %.2f %.2f] -> scaled=[%.2f %.2f %.2f %.2f]\n",
-  //        action[0], action[1], action[2], action[3], p_cmd, q_cmd, r_cmd, T_cmd);
-}
+  if (DEBUGGER_ON)
+  {
+    if (ctbr_debug_log)
+    {
+      fprintf(ctbr_debug_log, "%.3f,", get_sys_time_float());
 
+      // Log all observations
+      for (int i = 0; i < CTBR_OBS_DIM; i++)
+      {
+        fprintf(ctbr_debug_log, "%.4f,", obs[i]);
+      }
+
+      // Log actions
+      for (int i = 0; i < 4; i++)
+      {
+        fprintf(ctbr_debug_log, "%.4f", action[i]);
+        if (i < 3)
+          fprintf(ctbr_debug_log, ",");
+      }
+
+      fprintf(ctbr_debug_log, "\n");
+      fflush(ctbr_debug_log);
+    }
+  }
+}
 
 /*---------------------------------------------------------------------------*/
 /* Target parser                                                             */
 /*---------------------------------------------------------------------------*/
 
-void pn_parse_TARGET_INFO(uint8_t *buf) {
-  if (!first_target_received) {
+void pn_parse_TARGET_INFO(uint8_t *buf)
+{
+  if (!first_target_received)
+  {
     printf("[ctbr_pn] First TARGET_INFO received at t = %.2f s\n", get_sys_time_float());
     first_target_received = true;
   }
@@ -228,11 +267,14 @@ void pn_parse_TARGET_INFO(uint8_t *buf) {
 /* Event parsing                                                             */
 /*---------------------------------------------------------------------------*/
 
-void pn_event(void) {
-  if (target_message.enabled) {
+void pn_event(void)
+{
+  if (target_message.enabled)
+  {
     pprz_check_and_parse(target_message.device, &target_message.transport, pn_msg_buf, &target_message.msg_available);
 
-    if (target_message.msg_available) {
+    if (target_message.msg_available)
+    {
       target_message.time_since_last_frame = 0;
       dl_parse_msg(target_message.device, &target_message.transport.trans_tx, pn_msg_buf);
     }
@@ -245,7 +287,8 @@ void pn_event(void) {
 /* Public Interface                                                          */
 /*---------------------------------------------------------------------------*/
 
-void pn_init(void) {
+void pn_init(void)
+{
   printf("[ctbr_pn] init\n");
   pprz_transport_init(&target_message.transport);
 
@@ -261,22 +304,53 @@ void pn_init(void) {
   init_butterworth_2_low_pass(&filt_abz, CTBR_TAU, CTBR_DT, 0.0f);
 }
 
-void pn_start(void) {
+void pn_start(void)
+{
   ctbr_active = true;
   printf("[ctbr_pn] start\n");
+
+  if (DEBUGGER_ON)
+  {
+
+    ctbr_debug_log = fopen("/home/merlijn/Desktop/observation_action/NN_test.txt", "w");
+    if (!ctbr_debug_log)
+    {
+      printf("[CTBR] Failed to open debug log file\n");
+    }
+    else
+    {
+      fprintf(ctbr_debug_log, "time");
+      for (int i = 0; i < CTBR_OBS_DIM; i++)
+      {
+        fprintf(ctbr_debug_log, ",obs%d", i);
+      }
+      for (int i = 0; i < 4; i++)
+      {
+
+        fprintf(ctbr_debug_log, ",act%d", i);
+      }
+      fprintf(ctbr_debug_log, "\n");
+    }
+  }
 }
 
-void pn_stop(void) {
+void pn_stop(void)
+{
   ctbr_active = false;
   printf("[ctbr_pn] stop\n");
+  if (ctbr_debug_log)
+  {
+    fclose(ctbr_debug_log);
+    ctbr_debug_log = NULL;
+  }
 }
 
-
-void pn_run(void) {
+void pn_run(void)
+{
   ctbr_run();
 }
 
-struct LoggerData_PN *pn_info_logger(void) {
+struct LoggerData_PN *pn_info_logger(void)
+{
   return &ctbr_log;
 }
-
