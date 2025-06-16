@@ -89,13 +89,14 @@ static void logger_file_write_header(FILE *file) {
   ins_ext_pos_log_header(file);
 #endif
 #ifdef COMMAND_THRUST
-  fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
+  fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw,");
 #else
-  fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
+  fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,");
 #endif
 #ifdef CTBR_ACCEL_OVERRIDE
-  fprintf(file, "nn_p,nn_q,nn_r,nn_thrust,");
+  fprintf(file, "nn_p,nn_q,nn_r,nn_thrust");
 #endif
+  fprintf(file, "\n");
 }
 
 /** Write CSV row
@@ -105,8 +106,8 @@ static void logger_file_write_header(FILE *file) {
  * @param file Log file pointer
  */
 static void logger_file_write_row(FILE *file) {
-  struct NedCoor_f *pos = stateGetPositionNed_f();
-  struct NedCoor_f *vel = stateGetSpeedNed_f();
+  struct EnuCoor_f *pos = stateGetPositionEnu_f();
+  struct EnuCoor_f *vel = stateGetSpeedEnu_f();
   struct NedCoor_f *acc = stateGetAccelNed_f();
   struct FloatEulers *att = stateGetNedToBodyEulers_f();
   struct FloatRates *rates = stateGetBodyRates_f();
@@ -137,17 +138,17 @@ static void logger_file_write_row(FILE *file) {
   ins_ext_pos_log_data(file);
 #endif
 #ifdef COMMAND_THRUST
-  fprintf(file, "%d,%d,%d,%d\n",
+  fprintf(file, "%d,%d,%d,%d,",
       stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
       stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
 #else
-  fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
+  fprintf(file, "%d,%d,", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
 #endif
 #ifdef CTBR_ACCEL_OVERRIDE
   extern float control_nn[4];
-  fprintf(file, "%f,%f,%f,%f,", control_nn[0], control_nn[1], control_nn[2], control_nn[3]);
+  fprintf(file, "%f,%f,%f,%f", control_nn[0], control_nn[1], control_nn[2], control_nn[3]);
 #endif
-
+  fprintf(file, "\n");
 }
 
 

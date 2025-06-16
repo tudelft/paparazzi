@@ -12,7 +12,7 @@
     <file name="ctbr_nn/ppo_controller.h"/>
 </header>
 <init fun="pn_init()"/>
-<periodic fun="pn_run()" freq="512" start="pn_start()"
+<periodic fun="pn_run()" freq="100" start="pn_start()"
  		    stop="pn_stop()" autorun="FALSE"/>
 <event fun="pn_event()"/> 
 <datalink message="TARGET_INFO" fun="pn_parse_TARGET_INFO(buf)"/>

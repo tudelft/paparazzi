@@ -260,7 +260,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   //Bound the acceleration error so that the linearization still holds
   Bound(a_diff.x, -6.0, 6.0);
   Bound(a_diff.y, -6.0, 6.0);
-  Bound(a_diff.z, -2.0, 9.0); // NOTE WHAT IS OBSERVED IS THAT UPWARDS POSITIVE ACCELERATIONS CAUSE A LOT OF OVERSHOOT, LIMIT ERROR IN AN EFFORT TO DAMPEN RESPONSE
+  Bound(a_diff.z, -9.0, 9.0); // NOTE WHAT IS OBSERVED IS THAT UPWARDS POSITIVE ACCELERATIONS CAUSE A LOT OF OVERSHOOT, LIMIT ERROR IN AN EFFORT TO DAMPEN RESPONSE
 
   //If the thrust to specific force ratio has been defined, include vertical control
   //else ignore the vertical acceleration error
@@ -286,7 +286,8 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
 
 #ifdef CTBR_ACCEL_OVERRIDE
-if (indi_accel_sp_set_3d && autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) {
+#pragma message "INDI_GUIDANCE_THRUST_OVERRIDE! (UGLY FIX IN  [guidance_indi.c])"
+if (autopilot_get_mode() == AP_MODE_GUIDED) {
     struct FloatVect3 filt_accel_ned_vec = {
       filt_accel_ned[0].o[0],
       filt_accel_ned[1].o[0],
@@ -294,7 +295,7 @@ if (indi_accel_sp_set_3d && autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) {
     };
 
     struct FloatVect3 filt_accel_body;
-    float_quat_vmult(&filt_accel_body, stateGetNedToBodyQuat_f(), &filt_accel_ned_vec);
+    float_quat_vmult(&filt_accel_body, statequat, &filt_accel_ned_vec);
 
     // Override thrust increment with difference between commanded and measured Z-accel
     control_increment.z = indi_accel_sp.z - filt_accel_body.z;
