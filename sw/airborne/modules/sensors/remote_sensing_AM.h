@@ -90,13 +90,6 @@ struct aruco_t {
   struct KalmanSensor kalman_sensor; // Kalman filter for the opencv aruco sensor
 };
 
-struct nps_target_t {
-  struct FloatVect3 pos;  // position in NED frame
-  struct FloatVect3 vel;  // velocity in NED frame
-  struct FloatEulers rpy; // attitude
-  struct FloatRates pqr;  // angular rates
-};
-
 struct landing_algorithm_outputs_t {
   uint32_t timestamp_output; // Timestamp of the output
   float UAV_acc_target_NED[3]; // UAV commanded acceleration in NED frame

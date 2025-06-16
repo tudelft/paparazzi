@@ -55,15 +55,6 @@
 #define FLOATANGLES_TO_ARRAY(v) (float[2]){v.azimuth, v.elevation}
 #define POS_SPEED_TO_ARRAY(p, s) (float[6]){p.x, s.x, p.y, s.y, p.z, s.z}
 
-#if USE_NPS
-struct nps_target_t platform = {0}; // TODO: interface with moving base sim python script
-
-#include "math/pprz_random.h"
-static float rand_norm_float(float mu, float sigma) {
-  return mu + sigma * rand_gaussian();
-}
-#endif
-
 // function prototypes
 static void update_waypoint(uint8_t wp_id, struct FloatVect3 *pos);
 static void send_waypoint(uint8_t wp_id);
@@ -159,6 +150,8 @@ void remote_sensing_AM_send_falcon_cmd(uint8_t mode)
   falcon.mode = mode;
   #if !USE_NPS
   pprz_msg_send_IMCU_FALCON_CMD(&extra_pprz_tp.trans_tx, &EXTRA_DOWNLINK_DEVICE.device, AC_ID, &falcon.mode);
+  #else
+  pprz_msg_send_FALCON_CMD(&(DefaultChannel).trans_tx, &(DefaultDevice).device, AC_ID, &falcon.mode);
   #endif
 }
 
@@ -507,11 +500,6 @@ void remote_sensing_AM_kalman_filter_init(float r __attribute__((unused))) {
 void remote_sensing_AM_init(void)
 {
 
-  // Initialize the RNG for simulations
-  #if USE_NPS
-  init_random();
-  #endif
-
   //Init function
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_REMOTE_SENSING_AM, send_remote_sensing_am_periodic);
@@ -563,89 +551,6 @@ void remote_sensing_AM_init(void)
 
 void remote_sensing_AM_periodic(void) {
   
-#if USE_NPS
-  // TODO: Interface with moving base sim to simulate a target
-
-  /* Generate Falcon data */
-  switch (falcon.mode) {
-    case FALCON_MODE_SIXDOF:
-      struct FloatVect3 sixdof_relpos = {rand_norm_float(0, falcon.sixdof.kalman_sensor.noise[0]), 
-        rand_norm_float(0, falcon.sixdof.kalman_sensor.noise[1]), 
-        rand_norm_float(0, falcon.sixdof.kalman_sensor.noise[2]) - stateGetPositionNed_f()->z};
-      
-      VECT3_COPY(falcon.sixdof.pos, sixdof_relpos);
-      RunOnceEvery(1, {
-        target_pos_kalman_set_measurement(&falcon.sixdof.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.sixdof.pos));
-        update_waypoint(WP_SIXDOF, &falcon.sixdof.pos); 
-        send_waypoint(WP_SIXDOF);
-      });      
-      break;
-    case FALCON_MODE_RELANGLE:
-      struct FloatVect3 relangle_relpos = {rand_norm_float(0, falcon.sixdof.kalman_sensor.noise[0]),
-        rand_norm_float(0, falcon.sixdof.kalman_sensor.noise[1]), 
-        rand_norm_float(0, falcon.sixdof.kalman_sensor.noise[2]) - stateGetPositionNed_f()->z};
-      
-      VECT3_COPY(falcon.relangle.pos, relangle_relpos);
-      RunOnceEvery(1, {
-        target_pos_kalman_set_measurement(&falcon.relangle.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.relangle.pos));
-        update_waypoint(WP_RELANGLE, &falcon.sixdof.pos); 
-        send_waypoint(WP_RELANGLE);
-      });      
-      break;
-    case FALCON_MODE_RELBEACON:
-      struct FloatVect3 relbeacon_relpos = {rand_norm_float(0, falcon.relbeacon.kalman_sensor.noise[0]),
-          rand_norm_float(0, falcon.relbeacon.kalman_sensor.noise[1]), 
-          rand_norm_float(0, falcon.relbeacon.kalman_sensor.noise[2]) - stateGetPositionNed_f()->z};
-
-      VECT3_COPY(falcon.relbeacon.pos, relbeacon_relpos);
-      RunOnceEvery(1, {
-        target_pos_kalman_set_measurement(&falcon.relbeacon.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.relbeacon.pos));
-        update_waypoint(WP_RELBEACON, &falcon.sixdof.pos); 
-        send_waypoint(WP_RELBEACON);
-      });      
-      break;
-    case FALCON_MODE_NONE:
-    default:
-      break;
-  }
-
-  /* Generate the Aruco data */
-  struct FloatVect3 aruco_relpos = {rand_norm_float(0, aruco.kalman_sensor.noise[0]),
-    rand_norm_float(0, aruco.kalman_sensor.noise[1]),
-    rand_norm_float(0, aruco.kalman_sensor.noise[2]) - stateGetPositionNed_f()->z};
-  
-  VECT3_COPY(aruco.pos, aruco_relpos);
-  
-  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ / 10, {
-    target_pos_kalman_update(&remote_sensing_kalman, &aruco.kalman_sensor);
-  });
-  
-  /* Generate the Target pos data */
-  struct FloatVect3 target_relpos = {rand_norm_float(0, target.kalman_sensor.noise[0]),
-    rand_norm_float(0, target.kalman_sensor.noise[2]),
-    rand_norm_float(0, target.kalman_sensor.noise[4]) - stateGetPositionNed_f()->z};
-  
-  struct FloatVect3 target_relvel = {rand_norm_float(0, target.kalman_sensor.noise[1]),
-    rand_norm_float(0, target.kalman_sensor.noise[3]),
-    rand_norm_float(0, target.kalman_sensor.noise[5]) - stateGetSpeedNed_f()->z};
-  
-  VECT3_COPY(target.pos, target_relpos);
-  VECT3_COPY(target.vel, target_relvel);
-    
-  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ / 8, {
-    target_pos_kalman_update(&remote_sensing_kalman, &target.kalman_sensor);
-  });
-
-  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {
-    // Update a position in the flight plan for now
-    update_waypoint(WP_ARUCO, &aruco.pos);
-    send_waypoint(WP_ARUCO);
-
-    update_waypoint(WP_BOX, &target.pos);
-    send_waypoint(WP_BOX);
-  });
-#endif
-
   // Here we can run the periodic KF update
   target_pos_kalman_predict(&remote_sensing_kalman);
 

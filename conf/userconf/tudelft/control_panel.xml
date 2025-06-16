@@ -403,6 +403,26 @@
       <program name="AeronauticalInfo"/>
       <program name="RotWingStatus"/>
     </session>
+    <session name="Simulation + MovingBase">
+      <program name="Simulator">
+        <arg flag="-a" constant="RotatingWingV3F"/>
+        <arg flag="-t" constant="nps"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="PprzGCS"/>
+      <program name="Moving Base Sim">
+        <arg flag="-s" constant="1"/>
+        <arg flag="-he" constant="90"/>
+        <arg flag="-t" constant="0.1"/>
+        <arg flag="-i" constant="10"/>
+      </program>
+    </session>
     <session name="Simulation - Gazebo">
       <program name="Simulator">
         <arg flag="-a" constant="@AIRCRAFT"/>

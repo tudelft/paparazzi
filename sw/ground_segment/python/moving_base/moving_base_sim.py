@@ -52,7 +52,7 @@ class UAV:
         self.timeout = 0
 
 class Base:
-    def __init__(self, freq=10., use_ground_ref=False, verbose=False, speed=0, heading=0, turn_rate=0, id=[]):
+    def __init__(self, freq=10., use_ground_ref=False, verbose=False, speed=0, heading=0, turn_rate=0, id=[], kf=[]):
         self.step = 1. / freq
         self.use_ground_ref = use_ground_ref
         self.enabled = True # run sim by default
@@ -66,9 +66,17 @@ class Base:
         self.turn_rate = turn_rate #deg/s
         # self.lat = 38.08000040764657 #deg
         # self.lon = -9.1 #deg
-        self.lat = 52.926 #deg
-        self.lon = 4.499 #deg
+        self.lat = 52.1681551 #deg
+        self.lon = 4.4126468 #deg
+        self.lat0 = self.lat # deg
+        self.lon0 = self.lon
         self.altitude = 2.0 # starts from 1 m high
+        if kf is not None:
+            self.kf = [i.casefold() for i in kf]
+        else:
+            self.kf = []
+
+        self.falcon_mode = 0 # 0: None 1: sixdof, 2: relangle, 3: relbeacon
 
         # Start IVY interface
         self._interface = IvyMessagesInterface("Moving Base Sim")
@@ -89,6 +97,12 @@ class Base:
                 uav.initialized = True
         if not self.use_ground_ref:
             self._interface.subscribe(ins_cb, PprzMessage("telemetry", "INS"))
+
+        # Bind to IMCU_FALCON_CMD message
+        def falcon_cmd_cb(ac_id, msg):
+            self.falcon_mode = int(msg['mode'])
+        if "sixdof" in self.kf or "relangle" in self.kf or "relbeacon" in self.kf:
+            self._interface.subscribe(falcon_cmd_cb, PprzMessage("telemetry", "FALCON_CMD"))
 
         # bind to GROUND_REF message
         def ground_ref_cb(ground_id, msg):
@@ -160,9 +174,9 @@ class Base:
             msg['body_qx'] = 0
             msg['body_qy'] = 0
             msg['body_qz'] = 0
-            msg['body_p'] = 0
-            msg['body_q'] = 0
-            msg['body_r'] = 0
+            msg['p'] = 0
+            msg['q'] = 0
+            msg['r'] = 0
             self._interface.send(msg)
 
             msg2 = PprzMessage("ground", "FLIGHT_PARAM")
@@ -181,6 +195,30 @@ class Base:
             msg2['itow'] = 0
             msg2['airspeed'] = self.speed
             self._interface.send(msg2)
+
+            # Get NED position
+            ned_pos = pm.geodetic2ned(self.lat, self.lon, self.altitude, self.lat0, self.lon0, 0)
+
+            if "aruco" in self.kf:
+                msg3 = PprzMessage("rand", "IMCU_OPENCV_ARUCO")
+                msg3['id'] = np.uint16(0)
+                msg3['pos'] = ned_pos
+                self._interface.send(msg3)
+            
+            if "sixdof" in self.kf and self.falcon_mode == 1:
+                print("Sending sixdof message", file=sys.stderr)
+                msg4 = PprzMessage("intermcu", "IMCU_FALCON_SIXDOF")
+                msg4['pos'] = ned_pos
+                msg4['quat'] = [1, 0, 0, 0]
+                msg4['pos_var'] = [0, 0, 0] 
+                msg4['quat_var'] = [0, 0, 0]
+                self._interface.send(msg4)
+
+            if "relbeacon" in self.kf and self.falcon_mode == 3:
+                msg5 = PprzMessage("intermcu", "IMCU_FALCON_RELBEACON")
+                msg5['id'] = np.unit16(0)
+                msg5['pos'] = ned_pos
+                self._interface.send(msg5)
 
     def run(self):
         try:
@@ -214,8 +252,9 @@ if __name__ == '__main__':
     parser.add_argument('-he', '--heading', dest='heading', default=0, type=float, help="Heading of the ship (deg).")
     parser.add_argument('-t', '--turn_rate', dest='turn_rate', default=0, type=float, help="Turn rate of the ship (deg/s).")
     parser.add_argument('-i', '--id', dest='id', default=0, type=float, help="Aircraft ID.")
+    parser.add_argument('-k', '--kf_sensors', dest='kf_sensors', nargs='*', help="List of sensors used in Kalman filter (default: None). Available: Aruco, Sixdof, Relbeacon")
     args = parser.parse_args()
 
-    base = Base(speed=args.speed, heading=args.heading, turn_rate=args.turn_rate, id=args.id)
+    base = Base(speed=args.speed, heading=args.heading, turn_rate=args.turn_rate, id=args.id, kf=args.kf_sensors)
     base.run()
 
