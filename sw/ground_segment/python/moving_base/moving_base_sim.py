@@ -76,10 +76,11 @@ class Base:
         else:
             self.kf = []
 
-        self.falcon_mode = 0 # 0: None 1: sixdof, 2: relangle, 3: relbeacon
+        self.falcon_mode = int(1) # 0: None 1: sixdof, 2: relangle, 3: relbeacon
 
         # Start IVY interface
         self._interface = IvyMessagesInterface("Moving Base Sim")
+        self._interface.start()
 
         # bind to GPS_INT message
         def ins_cb(ac_id, msg):
@@ -98,11 +99,11 @@ class Base:
         if not self.use_ground_ref:
             self._interface.subscribe(ins_cb, PprzMessage("telemetry", "INS"))
 
-        # Bind to IMCU_FALCON_CMD message
+        # Bind to FALCON_CMD message
         def falcon_cmd_cb(ac_id, msg):
             self.falcon_mode = int(msg['mode'])
         if "sixdof" in self.kf or "relangle" in self.kf or "relbeacon" in self.kf:
-            self._interface.subscribe(falcon_cmd_cb, PprzMessage("telemetry", "FALCON_CMD"))
+            self._interface.subscribe(falcon_cmd_cb, PprzMessage("intermcu", "IMCU_FALCON_CMD"))
 
         # bind to GROUND_REF message
         def ground_ref_cb(ground_id, msg):
@@ -200,13 +201,12 @@ class Base:
             ned_pos = pm.geodetic2ned(self.lat, self.lon, self.altitude, self.lat0, self.lon0, 0)
 
             if "aruco" in self.kf:
-                msg3 = PprzMessage("rand", "IMCU_OPENCV_ARUCO")
+                msg3 = PprzMessage("intermcu", "IMCU_OPENCV_ARUCO")
                 msg3['id'] = np.uint16(0)
                 msg3['pos'] = ned_pos
                 self._interface.send(msg3)
             
             if "sixdof" in self.kf and self.falcon_mode == 1:
-                print("Sending sixdof message", file=sys.stderr)
                 msg4 = PprzMessage("intermcu", "IMCU_FALCON_SIXDOF")
                 msg4['pos'] = ned_pos
                 msg4['quat'] = [1, 0, 0, 0]
