@@ -421,6 +421,12 @@
         <arg flag="-he" constant="90"/>
         <arg flag="-t" constant="0.1"/>
         <arg flag="-i" constant="10"/>
+        <arg flag="-k" constant="aruco"/>
+        <arg flag="sixdof"/>
+      </program>
+      <program name="Messages">
+        <arg flag="-c" constant="datalink"/>
+        <arg flag="-c" constant="intermcu"/>
       </program>
     </session>
     <session name="Simulation - Gazebo">
