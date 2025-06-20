@@ -51,7 +51,7 @@ static Butterworth2LowPass filt_self_vx, filt_self_vy, filt_self_vz;
 static Butterworth2LowPass filt_target_vx, filt_target_vy, filt_target_vz;
 static Butterworth2LowPass filt_abz;
 
-void get_ctbr_action(const float *obs, float *ctbr_out); // extern NN inference
+void get_action(const float *obs, float *ctbr_out); // extern NN inference
 
 /*---------------------------------------------------------------------------*/
 /* Observation builder                                                       */

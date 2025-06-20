@@ -4,7 +4,7 @@
 #include "ppo_controller_weights.h"
 #include "ppo_controller.h"
 
-#define INPUT_DIM 20
+#define INPUT_DIM 24
 #define HIDDEN1_DIM 64
 #define HIDDEN2_DIM 64
 #define OUTPUT_DIM 3
@@ -36,7 +36,7 @@ static inline float clip01(float x)
 }
 
 // This is the function you'll call from Python
-__attribute__((visibility("default"))) void get_acc_action(const float *obs, float *action_out)
+__attribute__((visibility("default"))) void get_action(const float *obs, float *action_out)
 {
     float h1[HIDDEN1_DIM];
     float h2[HIDDEN2_DIM];

@@ -114,7 +114,7 @@
         <arg flag="-speech"/>
       </program>
       <program name="Joystick">
-        <arg flag="-ac" constant="bebop_orange_avoid"/>
+        <arg flag="-ac" constant="MER_ctbr_pn"/>
         <arg flag="sm600.xml"/>
       </program>
       <program name="NatNet3">
