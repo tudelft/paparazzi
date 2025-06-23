@@ -92,12 +92,6 @@
     <block name="land">
       <go wp="LAND"/>
     </block>
-    <block name="flare">
-      <exception cond="NavDetectGround()" deroute="Holding point"/>
-      <exception cond="!nav_is_in_flight()" deroute="landed"/>
-      <call_once fun="NavStartDetectGround()"/>
-      <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
-    </block>
     <block name="landed">
       <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
     </block>
