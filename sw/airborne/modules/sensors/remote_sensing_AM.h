@@ -24,10 +24,12 @@
 #ifndef REMOTE_SENSING_AM_H
 #define REMOTE_SENSING_AM_H
 
-#define FALCON_MODE_NONE 0x00       ///< 
-#define FALCON_MODE_SIXDOF 0x01     ///< 
-#define FALCON_MODE_RELANGLE 0x02   ///< 
-#define FALCON_MODE_RELBEACON 0x03  ///< 
+enum falcon_mode_t {
+  FALCON_MODE_NONE,       
+  FALCON_MODE_SIXDOF,     
+  FALCON_MODE_RELANGLE,   
+  FALCON_MODE_RELBEACON  
+};
 
 //define the AzimuthElevation structure: 
 struct AzimuthElevation {
@@ -71,6 +73,7 @@ struct target_pos_t {
 };
 
 struct falcon_t {
+  bool auto_mode; // Whether the falcon sensor can switch modes based on system state
   uint8_t mode; // Falcon sensor mode
   struct FloatQuat sensor_to_body; // Rotation of the body relative to the sensor
   struct FloatVect3 body_to_sensor_offset; // Position of the sensor in the body frame
@@ -107,7 +110,7 @@ extern void remote_sensing_AM_init(void);
 extern void remote_sensing_AM_periodic(void);
 extern void remote_sensing_AM_kalman_filter_init(float r);
 extern void remote_sensing_parse_target_pos(uint8_t *buf);
-extern void remote_sensing_AM_send_falcon_cmd(uint8_t unk);
+extern void remote_sensing_AM_send_falcon_cmd(uint8_t mode);
 extern void remote_sensing_parse_falcon_sixdof(uint8_t *buf);
 extern void remote_sensing_parse_falcon_relangle(uint8_t *buf);
 extern void remote_sensing_parse_falcon_relbeacon(uint8_t *buf);

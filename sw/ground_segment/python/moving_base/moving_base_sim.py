@@ -138,7 +138,7 @@ class Base:
 
     def send_pos(self):
         '''
-        Send position of base sation
+        Send position of base station
         '''
         ready = True
         for uav in self.uavs:
@@ -209,9 +209,9 @@ class Base:
             if "sixdof" in self.kf and self.falcon_mode == 1:
                 msg4 = PprzMessage("intermcu", "IMCU_FALCON_SIXDOF")
                 msg4['pos'] = ned_pos
-                msg4['quat'] = [1, 0, 0, 0]
-                msg4['pos_var'] = [0, 0, 0] 
-                msg4['quat_var'] = [0, 0, 0]
+                msg4['quat'] = [1, 0, 0, 0] # hardcoded for sim
+                msg4['pos_var'] = [0.1, 0.1, 0.1] # hardcode some variance
+                msg4['quat_var'] = [0.1, 0.1, 0.1]
                 self._interface.send(msg4)
 
             if "relbeacon" in self.kf and self.falcon_mode == 3:

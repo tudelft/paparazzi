@@ -62,6 +62,7 @@ static void load_kalman_sensor_from_airframe(struct KalmanSensor *ks, const stru
 static void load_sensor_rotation_from_airframe(struct FloatQuat *q, struct FloatRMat *rmat_airframe);
 static void load_sensor_offset_from_airframe(struct FloatVect3 *offset, const struct FloatVect3 *offset_airframe);
 static void sensor_to_NED(struct FloatVect3 *ned, struct FloatVect3 *sensor, struct FloatQuat *sensor_to_body, struct FloatVect3 *offset);
+static void falcon_auto_mode(void);
 
 // Global variables
 struct target_pos_t target = {0};
@@ -144,7 +145,7 @@ void sdlog_remote_sensing_am(void){
 }
 #endif
 
-//Send mode to the falcon system: 
+// Send mode to the falcon system: 
 void remote_sensing_AM_send_falcon_cmd(uint8_t mode) 
 {
   falcon.mode = mode;
@@ -264,9 +265,13 @@ void remote_sensing_parse_falcon_relangle(uint8_t *buf)
   
   /* Implement logic to go from distance and x/z angles to a relative position */
   // Temp relation for distance and intensity, depends on environment and beacon
-  // float falcon.relangle_distance = 5.4165 + 75.5979 / falcon.relangle_intensity - 80.3343 / (falcon.relangle_intensity*falcon.relangle_intensity);
+  // float falcon.relangle.distance = 5.4165 + 75.5979 / falcon.relangle.intensity - 80.3343 / (falcon.relangle.intensity*falcon.relangle.intensity);
   
-  // // Obtain the relative position in sensor frame
+  // Use the KF distance to estimate a distance for the relative position
+  struct FloatVect3 relangle_pos =  target_pos_kalman_get_pos(&remote_sensing_kalman);
+  falcon.relangle.distance = sqrtf(VECT3_DOT_PRODUCT(relangle_pos, relangle_pos));
+
+  // Obtain the relative position in sensor frame
   struct FloatVect3 p_out_sensor;
   struct FloatQuat rel_angles_sensor;
   
@@ -468,7 +473,7 @@ void request_landing_algorithm_outputs(void){
 #endif
 
 /**
- * Receive a RELBEACON message from the falcon and update the kalman filter if required
+ * Receive an OPENCV aruco message from the camera and update the kalman filter if required
  */
 void remote_sensing_parse_opencv_aruco(uint8_t *buf) 
 {
@@ -547,10 +552,15 @@ void remote_sensing_AM_init(void)
   load_sensor_offset_from_airframe(&aruco.body_to_sensor_offset, &aruco_offset);
 
   falcon.mode = FALCON_MODE_SIXDOF; // Default mode
+  falcon.auto_mode = false;
 }
 
 void remote_sensing_AM_periodic(void) {
   
+  if (falcon.auto_mode == true) {
+    falcon_auto_mode();
+  }
+
   // Here we can run the periodic KF update
   target_pos_kalman_predict(&remote_sensing_kalman);
 
@@ -624,7 +634,7 @@ static void load_sensor_offset_from_airframe(struct FloatVect3 *offset, const st
 }
 
 static void sensor_to_NED(struct FloatVect3 *ned, struct FloatVect3 *sensor, struct FloatQuat *sensor_to_body, struct FloatVect3 *offset) {
-  
+  #if !USE_NPS
   // From sensor to body frame
   struct FloatVect3 body;
   float_quat_vmult(&body, sensor_to_body, sensor); // Rotate the position to the body frame
@@ -634,4 +644,42 @@ static void sensor_to_NED(struct FloatVect3 *ned, struct FloatVect3 *sensor, str
   struct FloatQuat body_to_ned;
   float_quat_invert(&body_to_ned, stateGetNedToBodyQuat_f());
   float_quat_vmult(ned, &body_to_ned, &body); // Rotate the position to the NED frame
+  #else
+  VECT3_COPY(*ned, *sensor); // For NPS we send NED position so no need to convert
+  #endif
+}
+
+// Choose falcon mode automatically based on the current state of the system
+static void falcon_auto_mode(void) {
+  static float t_switch = 0;
+  static enum falcon_mode_t mode = FALCON_MODE_SIXDOF;
+  
+  enum falcon_mode_t new_mode = FALCON_MODE_SIXDOF;
+  float current_time = get_sys_time_float();
+  uint32_t current_tow = get_sys_time_tow();
+  
+  // Prevent constant switching of modes
+  if (current_time - t_switch < 3.0f) {
+    return;
+  }
+
+  struct FloatVect3 pos = target_pos_kalman_get_pos(&remote_sensing_kalman);
+  float dist_to_target = sqrtf(VECT3_DOT_PRODUCT(pos, pos));
+  
+  // If distance to target is large, always prefer RELANGLE mode
+  if (pos.z > 5.0f) { // 6 meters is the cut-off for SIXDOF mode, give a little margin
+    new_mode = FALCON_MODE_RELANGLE;
+  }
+
+  // Prefer sixdof mode
+  new_mode = FALCON_MODE_SIXDOF;
+
+  // If sixdof can't find platform try relbeacon and vice-versa
+  if (mode == FALCON_MODE_SIXDOF && current_tow - falcon.sixdof.tow > 5.0) new_mode = FALCON_MODE_RELBEACON;
+  else if (mode == FALCON_MODE_RELBEACON && current_tow - falcon.relbeacon.tow > 5.0) new_mode = FALCON_MODE_SIXDOF;
+  else if (mode != FALCON_MODE_RELANGLE && current_tow - falcon.sixdof.tow > 10.0 && current_tow - falcon.relbeacon.tow > 10.0) new_mode = FALCON_MODE_RELANGLE; // Fallback to relangle
+
+  if (new_mode == mode) return;
+  t_switch = current_time;
+  remote_sensing_AM_send_falcon_cmd(mode);
 }
