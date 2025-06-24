@@ -3,6 +3,7 @@
 <flight_plan alt="50" ground_alt="0" lat0="52.168185" lon0="4.412758" max_dist_from_home="1500" name="FwdSweptValkenburg" security_height="25">
   <header>
 #include "autopilot.h"
+#include "subsystems/navigation/common_nav.h"
   </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
@@ -49,7 +50,7 @@
                deroute="ReturnHome"/>
     <!-- Detect landing: low groundspeed -->
     <exception cond="(nav_block == IndexOfBlock('FinalApproach')) @AND
-                     (Speed2D() @LT 1.0)"
+                     (stateGetHorizontalSpeedNorm_f() @LT 1.0)"
                deroute="Landed"/>
   </exceptions>
   <blocks>
@@ -110,12 +111,5 @@
       <!-- All control surfaces neutral, throttle zero -->
       <attitude pitch="RadOfDeg(0)" roll="RadOfDeg(0)" throttle="0" vmode="throttle" until="FALSE"/>
     </block>
-<!--  <block name="FailsafeSpiralDown" type="NAV">-->
-<!--    <call fun="NavGotoWaypoint(WP_CURRENT)"/>  &lt;!&ndash; Stay in place &ndash;&gt;-->
-<!--    <set value="CIRCULAR_SPIRAL" var="nav_mode"/> &lt;!&ndash; Use circular nav mode &ndash;&gt;-->
-<!--    <set value="3.0" var="nav_radius"/>           &lt;!&ndash; Adjust radius to control tightness &ndash;&gt;-->
-<!--    <set value="RadOfDeg(-10)" var="nav_pitch"/>  &lt;!&ndash; Nose-down pitch &ndash;&gt;-->
-<!--    <set value="0.2" var="nav_throttle"/>         &lt;!&ndash; Low throttle &ndash;&gt;-->
-<!--  </block>-->
   </blocks>
 </flight_plan>
