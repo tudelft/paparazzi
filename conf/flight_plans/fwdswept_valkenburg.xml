@@ -39,7 +39,9 @@
   </sectors>
   <exceptions>
     <!-- Geofence violated, return home -->
-    <exception cond="!Or(InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500)"
+    <exception cond="!Or(InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500) @AND
+    !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND
+    !(nav_block == IndexOfBlock('Geo init'))"
                deroute="ReturnHome"/>
     <!-- Datalink timeout → return -->
     <exception cond="datalink_time @GT 20"
