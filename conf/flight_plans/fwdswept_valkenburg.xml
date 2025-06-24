@@ -3,7 +3,6 @@
 <flight_plan alt="50" ground_alt="0" lat0="52.168185" lon0="4.412758" max_dist_from_home="1500" name="FwdSweptValkenburg" security_height="25">
   <header>
 #include "autopilot.h"
-#include "subsystems/navigation/common_nav.h"
   </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
@@ -50,7 +49,7 @@
                deroute="ReturnHome"/>
     <!-- Detect landing: low groundspeed -->
     <exception cond="(nav_block == IndexOfBlock('FinalApproach')) @AND
-                     (stateGetHorizontalSpeedNorm_f() @LT 1.0)"
+                     (estimator_x.speed @LT 1.0)"
                deroute="Landed"/>
   </exceptions>
   <blocks>
