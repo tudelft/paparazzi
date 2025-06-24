@@ -49,7 +49,7 @@
                deroute="ReturnHome"/>
     <!-- Detect landing: low groundspeed -->
     <exception cond="(nav_block == IndexOfBlock('FinalApproach')) @AND
-                     (flite.groundspeed @LT 1.0)"
+                     (Speed2D() @LT 1.0)"
                deroute="Landed"/>
   </exceptions>
   <blocks>
