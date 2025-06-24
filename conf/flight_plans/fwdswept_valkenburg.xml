@@ -39,7 +39,7 @@
   </sectors>
   <exceptions>
     <!-- Geofence violated, return home -->
-    <exception cond="!InsideGeofenceNamed('Geofence')"
+    <exception cond="!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500)"
                deroute="ReturnHome"/>
     <!-- Datalink timeout → return -->
     <exception cond="datalink_time @GT 20"
