@@ -40,20 +40,10 @@
       <corner name="C8"/>
       <corner name="C9"/>
     </sector>
-    <sector color="red" name="Flyzone"> <!-- redefine this on the flying day based on wind etc. -->
-      <corner name="GF1"/>
-      <corner name="GF2"/>
-      <corner name="GF3"/>
-      <corner name="GF4"/>
-    </sector>
   </sectors>
   <exceptions>
-    <!-- Geofence violated → spiral down with low throttle -->
+    <!-- Geofence violated, return home -->
     <exception cond="!InsideGeofenceNamed('Geofence')"
-               deroute="FailsafeCircleDown"/>
-    <!-- Left flyzone but still within geofence → return home -->
-    <exception cond="!InsideGeofenceNamed('Flyzone') @AND
-                     InsideGeofenceNamed('Geofence')"
                deroute="ReturnHome"/>
     <!-- Datalink timeout → return -->
     <exception cond="datalink_time @GT 20"
