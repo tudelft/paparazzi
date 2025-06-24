@@ -8,8 +8,8 @@
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint name="CLIMB" x="0.0" y="20" alt="20"/>
     <waypoint name="STDBY" x="106.0" y="-55.1" alt="30"/>
-    <waypoint name="LAND1" x="106.0" y="-55.1" alt="4"/>  <!-- far in front of landing line -->
-    <waypoint name="LAND2" x="106.0" y="-55.1" alt="4"/> <!-- behind landing line -->
+    <waypoint name="LAND1" lat="52.1670536" lon="4.4138016" alt="4"/>  <!-- far in front of landing line -->
+    <waypoint name="LAND2" lat="52.1687356" lon="4.4126223" alt="4"/> <!-- behind landing line -->
     <waypoint name="p1" x="322.0" y="-254.3"/>
     <waypoint name="p2" x="696.0" y="-148.1"/>
     <waypoint name="p3" x="600.4" y="73.4"/>
@@ -39,8 +39,8 @@
   </sectors>
   <exceptions>
     <!-- Geofence violated, return home -->
-<!--    <exception cond="!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500)"-->
-<!--               deroute="ReturnHome"/>-->
+    <exception cond="!Or(InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500)"
+               deroute="ReturnHome"/>
     <!-- Datalink timeout → return -->
     <exception cond="datalink_time @GT 20"
                deroute="ReturnHome"/>
