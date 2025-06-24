@@ -8,7 +8,8 @@
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint name="CLIMB" x="0.0" y="5.0"/>
     <waypoint name="STDBY" x="106.0" y="-55.1"/>
-    <waypoint name="LAND" x="106.0" y="-55.1"/>
+    <waypoint name="LAND1" x="106.0" y="-55.1"/>  <!-- far in front of landing line -->
+    <waypoint name="LAND2" x="106.0" y="-55.1"/> <!-- behind landing line -->
     <waypoint name="p1" x="322.0" y="-254.3"/>
     <waypoint name="p2" x="696.0" y="-148.1"/>
     <waypoint name="p3" x="600.4" y="73.4"/>
@@ -22,9 +23,13 @@
     <waypoint lat="52.164861" lon="4.427268" name="C7"/>
     <waypoint lat="52.170422" lon="4.427511" name="C8"/>
     <waypoint lat="52.172276" lon="4.424011" name="C9"/>
+    <waypoint name="FZ1" x="-224.1" y="136.6"/>
+    <waypoint name="FZ2" x="-89.4" y="-289.8"/>
+    <waypoint name="FZ3" x="442.6" y="-139.6"/>
+    <waypoint name="FZ4" x="219.7" y="301.2"/>
   </waypoints>
   <sectors>
-    <sector color="red" name="Flyzone">
+    <sector color="red" name="Geofence">
       <corner name="C1"/>
       <corner name="C2"/>
       <corner name="C3"/>
@@ -35,11 +40,32 @@
       <corner name="C8"/>
       <corner name="C9"/>
     </sector>
+    <sector color="red" name="Flyzone"> <!-- redefine this on the flying day based on wind etc. -->
+      <corner name="GF1"/>
+      <corner name="GF2"/>
+      <corner name="GF3"/>
+      <corner name="GF4"/>
+    </sector>
   </sectors>
-  <variables>
-    <variable var="land_dir" init="45." min="0." max="360." step="0.1"/>
-    <variable var="land_distance" init="200." min="0." max="300." step="0.1"/>
-  </variables>
+  <exceptions>
+    <!-- Geofence violated → spiral down with low throttle -->
+    <exception cond="!InsideGeofenceNamed('Geofence')"
+               deroute="FailsafeCircleDown"/>
+    <!-- Left flyzone but still within geofence → return home -->
+    <exception cond="!InsideGeofenceNamed('Flyzone') @AND
+                     InsideGeofenceNamed('Geofence')"
+               deroute="ReturnHome"/>
+    <!-- Datalink timeout → return -->
+    <exception cond="datalink_time @GT 20"
+               deroute="ReturnHome"/>
+    <!-- RC lost → return -->
+    <exception cond="radio_control.status == RC_REALLY_LOST"
+               deroute="ReturnHome"/>
+    <!-- Detect landing: low groundspeed -->
+    <exception cond="(nav_block == IndexOfBlock('FinalApproach')) @AND
+                     (flite.groundspeed @LT 1.0)"
+               deroute="Landed"/>
+  </exceptions>
   <blocks>
     <block name="Wait GPS">
       <call_once fun="NavKillThrottle()"/>
@@ -80,20 +106,29 @@
       <go from="p2" hmode="route" wp="p1"/>
       <deroute block="stay_p1"/>
     </block>
-    <block name="route">
-      <go from="p1" hmode="route" wp="p3"/>
-      <go from="p3" hmode="route" wp="p4"/>
-      <go from="p4" hmode="route" wp="p1"/>
-      <deroute block="stay_p1"/>
+    <block name="ReturnHome">
+      <go wp="HOME"/>
+      <circle wp="HOME" radius="80." alt="ground+50"/>
     </block>
     <block name="Oval">
       <oval p1="p1" p2="p2" radius="-1"/>
     </block>
-    <block name="land">
-      <go wp="LAND"/>
+    <block name="FinalApproach">
+      <!-- Fly from WP1 to WP2 at 4 meters altitude -->
+      <go wp="LAND1" vmode="altitude" alt="4"/>
+      <go wp="LAND2" vmode="altitude" alt="4"/>
+      <go from="LAND2" hmode="route" wp="STDBY"/>
+      <deroute block="Standby"/>
     </block>
-    <block name="landed">
-      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    <block name="Landed">
+      <!-- All control surfaces neutral, throttle zero -->
+      <attitude pitch="RadOfDeg(0)" roll="RadOfDeg(0)" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+    <block name="FailsafeSpiralDown">
+      <!-- Spiral down in place if this is reached. -->
+      <set value="0.2" var="THROTTLE"/>           <!-- Low throttle -->
+      <set value="RadOfDeg(-10)" var="PITCH"/>    <!-- Nose-down pitch -->
+      <set value="RadOfDeg(30)" var="ROLL"/>      <!-- Bank right to spiral -->
     </block>
   </blocks>
 </flight_plan>
