@@ -110,11 +110,12 @@
       <!-- All control surfaces neutral, throttle zero -->
       <attitude pitch="RadOfDeg(0)" roll="RadOfDeg(0)" throttle="0" vmode="throttle" until="FALSE"/>
     </block>
-    <block name="FailsafeSpiralDown">
-      <!-- Spiral down in place if this is reached. -->
-      <set value="0.2" var="THROTTLE"/>           <!-- Low throttle -->
-      <set value="RadOfDeg(-10)" var="PITCH"/>    <!-- Nose-down pitch -->
-      <set value="RadOfDeg(30)" var="ROLL"/>      <!-- Bank right to spiral -->
-    </block>
+<!--  <block name="FailsafeSpiralDown" type="NAV">-->
+<!--    <call fun="NavGotoWaypoint(WP_CURRENT)"/>  &lt;!&ndash; Stay in place &ndash;&gt;-->
+<!--    <set value="CIRCULAR_SPIRAL" var="nav_mode"/> &lt;!&ndash; Use circular nav mode &ndash;&gt;-->
+<!--    <set value="3.0" var="nav_radius"/>           &lt;!&ndash; Adjust radius to control tightness &ndash;&gt;-->
+<!--    <set value="RadOfDeg(-10)" var="nav_pitch"/>  &lt;!&ndash; Nose-down pitch &ndash;&gt;-->
+<!--    <set value="0.2" var="nav_throttle"/>         &lt;!&ndash; Low throttle &ndash;&gt;-->
+<!--  </block>-->
   </blocks>
 </flight_plan>
