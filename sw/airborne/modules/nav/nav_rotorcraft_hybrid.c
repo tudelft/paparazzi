@@ -93,6 +93,14 @@ bool force_forward = 0.0f;
 #define NAV_HYBRID_GOTO_MODE NAV_SETPOINT_MODE_SPEED
 #endif
 
+bool nav_hybrid_wp_moving = false;
+static struct FloatVect3 wp_speed = {0.0f, 0.0f, 0.0f};
+
+void nav_hybrid_set_wp_speed(struct FloatVect3 *speed) {
+  // Set the speed of the waypoint
+  VECT3_COPY(wp_speed, *speed);
+}
+
 /** Implement basic nav function for the hybrid case
  */
 
@@ -126,6 +134,14 @@ static void nav_hybrid_goto(struct EnuCoor_f *wp)
     // Bound the setpoint velocity vector
     max_h_speed = Min(nav_goto_max_speed, max_speed_decel); // use hover max speed
   }
+  
+  // Feed forward speed in cases where the waypoint is moving
+  if (nav_hybrid_wp_moving) {
+    // Add the speed of the waypoint to the setpoint
+    VECT2_ADD(speed_sp, wp_speed);
+    nav.climb = speed_wp.z;
+  }
+
   float_vect2_bound_in_2d(&speed_sp, max_h_speed);
 
   VECT2_COPY(nav.speed, speed_sp);

@@ -27,6 +27,7 @@
 #include "pprzlink/intermcu_msg.h"
 #include "generated/airframe.h"
 #include "generated/flight_plan.h"
+#include "modules/nav/nav_rotorcraft_hybrid.h"
 
 // Check if the sensors are enabled in the airframe file
 #ifndef REMOTE_SENSING_KALMAN_USE_GROUND_STATION 
@@ -568,6 +569,7 @@ void remote_sensing_AM_periodic(void) {
   struct FloatVect3 pos;
   struct FloatVect3 speed;
   target_pos_kalman_get_state(&remote_sensing_kalman, &pos, &speed);
+  nav_hybrid_set_wp_speed(&speed);
 
   // Check for NaN
   if (isnan(pos.x) || isnan(pos.y) || isnan(pos.z) || isnan(speed.x) || isnan(speed.y) || isnan(speed.z)) {
