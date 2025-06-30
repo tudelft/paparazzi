@@ -482,6 +482,8 @@ void remote_sensing_parse_opencv_aruco(uint8_t *buf)
   aruco.id = pprzlink_get_DL_IMCU_OPENCV_ARUCO_id(buf);
   float *pos = pprzlink_get_DL_IMCU_OPENCV_ARUCO_pos(buf);
 
+  if (aruco.id != 5) return;
+
   sensor_to_NED(&aruco.pos, &(struct FloatVect3){pos[0], pos[1], pos[2]}, &aruco.sensor_to_body, &aruco.body_to_sensor_offset); // Rotate the position to NED frame
 
   #if REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO
@@ -569,7 +571,8 @@ void remote_sensing_AM_periodic(void) {
   struct FloatVect3 pos;
   struct FloatVect3 speed;
   target_pos_kalman_get_state(&remote_sensing_kalman, &pos, &speed);
-  nav_hybrid_set_wp_speed(&speed);
+  VECT3_ADD(speed, *stateGetSpeedNed_f());
+  nav_hybrid_set_wp_speed(&(struct EnuCoor_f){speed.y, speed.x, -speed.z}); 
 
   // Check for NaN
   if (isnan(pos.x) || isnan(pos.y) || isnan(pos.z) || isnan(speed.x) || isnan(speed.y) || isnan(speed.z)) {
@@ -666,7 +669,6 @@ static void falcon_auto_mode(void) {
   }
 
   struct FloatVect3 pos = target_pos_kalman_get_pos(&remote_sensing_kalman);
-  float dist_to_target = sqrtf(VECT3_DOT_PRODUCT(pos, pos));
   
   // If distance to target is large, always prefer RELANGLE mode
   if (pos.z > 5.0f) { // 6 meters is the cut-off for SIXDOF mode, give a little margin

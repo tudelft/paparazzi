@@ -119,11 +119,11 @@
         <module name="air_data"/>
 
         <module name="remote_sensing_AM">
-            <define name="REMOTE_SENSING_KALMAN_USE_GROUND_STATION" value="TRUE"/>
+            <define name="REMOTE_SENSING_KALMAN_USE_GROUND_STATION" value="FALSE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF" value="TRUE"/>
-            <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELANGLE" value="TRUE"/>
-            <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELBEACON" value="TRUE"/>
-            <define name="REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO" value="TRUE"/>
+            <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELANGLE" value="FALSE"/>
+            <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELBEACON" value="FALSE"/>
+            <define name="REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO" value="FALSE"/>
             <define name="REMOTE_SENSING_LOG_ON_ARRIVAL" value="TRUE"/>
             <define name="REMOTE_SENSING_KALMAN_P0" value="{10,10,10,10,10,10}"/>
             <define name="REMOTE_SENSING_KALMAN_Q0" value="{0.1,0.1,0.1,0.1,0.1,0.1}"/>
@@ -149,7 +149,7 @@
             <define name="INS_EKF2_GPS_POS_Y" value="0.0"/>
             <define name="INS_EKF2_GPS_POS_Z" value="0.0"/>
 
-            <!-- <define name="INS_EKF2_OPTITRACK" value="true"/> -->
+            <define name="INS_EKF2_OPTITRACK" value="true"/>
             <!--define name="INS_EKF2_OPTITRACK_POS_X" value="0.0"/>
             <define name="INS_EKF2_OPTITRACK_POS_Y" value="0.0"/>
             <define name="INS_EKF2_OPTITRACK_POS_Z" value="0.09"/>

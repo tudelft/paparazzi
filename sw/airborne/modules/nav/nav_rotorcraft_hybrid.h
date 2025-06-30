@@ -45,7 +45,7 @@ extern bool force_forward;
 
 
 extern void nav_rotorcraft_hybrid_init(void);
-void nav_hybrid_set_wp_speed(struct FloatVect3 *speed);
+void nav_hybrid_set_wp_speed(struct EnuCoor_f *speed);
 
 #endif
 

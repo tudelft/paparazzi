@@ -105,14 +105,13 @@
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <stay wp="FOLLOW"/>
     </block>
-    <block name="Standby_free">
-        <call_once fun="rotwing_state_set(ROTWING_STATE_FREE)"/>
-        <stay wp="STDBY"/>
+    <block name="stay_KALMAN" strip_button="Stay KALMAN" on_enter="nav_hybrid_wp_moving=true" on_exit="nav_hybrid_wp_moving=false">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <stay wp="KALMAN"/>
     </block>
-    <block name="Transition_quad" strip_button="Transition Quad" strip_icon="wp_quad.png">
-      <call_once fun="rotwing_state_set(ROTWING_STATE_FREE)"/>
-      <go wp="STDBY"/>
-      <deroute block="Standby"/>
+    <block name="descend_KALMAN" strip_button="Descend KALMAN" on_enter="nav_hybrid_wp_moving=true" on_exit="nav_hybrid_wp_moving=false">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <stay climb="-0.2" vmode="climb" wp="KALMAN"/>
     </block>
     <block name="land here">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
