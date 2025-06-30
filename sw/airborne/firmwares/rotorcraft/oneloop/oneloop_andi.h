@@ -77,6 +77,8 @@ extern float k_as;
 extern float max_as;
 extern float gi_unbounded_airspeed_sp;
 extern float temp_k;
+extern float oneloop_andi_sigma;
+extern bool  use_dyn_filter;
 /*Chirp test Variables*/
 extern bool  chirp_on;
 extern float f0_chirp;
@@ -281,6 +283,17 @@ struct Oneloop_StructuralModes_t {
     Butterworth4LowPass bw4;
     struct SecondOrderNotchFilter notch;
   } model_filter;
+};
+
+/* Dynamics Cancelling filter */
+struct Oneloop_DynFilt_t {
+  float fs;
+  float sigma;
+  float varepsilon;
+  float u_c;
+  float u_c_0;
+  float mu_c_0;
+  float mu_c;
 };
 
 extern bool drop_yaw;

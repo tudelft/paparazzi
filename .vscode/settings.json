@@ -14,7 +14,8 @@
         "tensor": "c",
         "functional": "cpp",
         "chrono": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "random": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",

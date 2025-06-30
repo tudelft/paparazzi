@@ -35,7 +35,7 @@
   </metrics>
 
   <mass_balance>
-    <ixx unit="KG*M2">  0.0846</ixx>
+    <ixx unit="KG*M2">  0.0338</ixx>
     <iyy unit="KG*M2">  1.1245</iyy>
     <izz unit="KG*M2">  1.2842</izz> <!-- 1.2842 FIXME-->
     <ixy unit="KG*M2">  0.0 </ixy>
@@ -414,6 +414,7 @@
             <property>aero/qbar-psf</property>
             <value>47.880259</value>  <!--Pound Per Square Foot to N/m² (Pascal)-->
             <value>1.6327</value>     <!-- 2/rho-->
+            <value>0.0</value>        <!-- Fixme Airspeed off temp-->
           </product>
         </function>
         <output>fcs/airspeed2_ms</output>
@@ -449,7 +450,7 @@
 
       <fcs_function name="Ixx_body">
         <function>
-          <value>0.0535</value>
+          <value>0.0214</value>
         </function>
         <output>fcs/Ixx_body</output>
       </fcs_function>
@@ -463,7 +464,7 @@
 
       <fcs_function name="Ixx_wing">
         <function>
-          <value>0.0311</value>
+          <value>0.0124</value>
         </function>
         <output>fcs/Ixx_wing</output>
       </fcs_function>

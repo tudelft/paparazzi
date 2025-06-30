@@ -65,6 +65,7 @@
 extern float EFF_MAT_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB];
 extern float G2_RW[EFF_MAT_COLS_NB]                      ; 
 extern float G1_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB]     ; 
+extern float ratio_I_xx;
 struct rotwing_eff_sched_param_t {
   float Ixx_body;                 // body MMOI around roll axis [kgm²]
   float Iyy_body;                 // body MMOI around pitch axis [kgm²]

@@ -269,9 +269,11 @@ bool   actuator_is_servo[ANDI_NUM_ACT_TOT] = {0};
 
 #ifdef ONELOOP_ANDI_ACT_DYN
 float  act_dynamics[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_DYN;
+float  act_dyn_ctrl[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_DYN;
 #else
 #error "You must specify the actuator dynamics"
 float  act_dynamics[ANDI_NUM_ACT_TOT] = = {1};
+float  act_dyn_ctrl[ANDI_NUM_ACT_TOT] = = {1};
 #endif
 
 #ifdef ONELOOP_ANDI_ACT_MAX
@@ -460,6 +462,8 @@ void  chirp_call(bool* chirp_on, bool* chirp_first_call, float* t_0_chirp, float
 void  oneloop_axis_effectiveness_calc(void);
 void  oneloop_andi_bound_disturbance(void);
 void  oneloop_calc_model_disturbance(bool in_flight);
+void  dynFilter_init(struct Oneloop_DynFilt_t *mu, float varepsilon, float sigma);
+void  dynFilter_run(struct Oneloop_DynFilt_t *mu, float u_c, float sigma);
 
 /* Oneloop Misc variables*/
 static float use_increment = 0.0;
@@ -545,18 +549,24 @@ static float Wu_backup[ANDI_NUM_ACT_TOT] = {1.0};
 #define USE_BW2
 struct Oneloop_LP_t LP;
 struct Oneloop_LP_t oneloop_andi_model_filt;
+struct Oneloop_DynFilt_t mu_mL;
+struct Oneloop_DynFilt_t mu_mR;  
+bool  use_dyn_filter = true; 
+float oneloop_andi_sigma = 29.0;
+float oneloop_andi_sigma_max = 29.0;
+float oneloop_andi_sigma_min = 8.0; 
 /*Chirp test Variables*/
 bool  chirp_on            = false;
 bool  chirp_first_call    = true;
 float time_elapsed_chirp  = 0.0;
 float t_0_chirp           = 0.0;
-float f0_chirp            = 0.1;//0.8 / (2.0 * M_PI);
-float f1_chirp            = 0.5;//0.8 / (2.0 * M_PI);
-float t_chirp             = 30.0;
-float A_chirp             = 0.08;
-int8_t chirp_axis         = 2;
+float f0_chirp            = 0.2;//0.8 / (2.0 * M_PI);
+float f1_chirp            = 0.2;//0.8 / (2.0 * M_PI);
+float t_chirp             = 1.0;
+float A_chirp             = -46.0;
+int8_t chirp_axis         = 5;
 float p_ref_0[3]          = {0.0, 0.0, 0.0};
-
+     
 /*Declaration of Reference Model and Error Controller Gains*/
 struct PolePlacement p_att_e;
 struct PolePlacement p_att_rm;
@@ -703,7 +713,7 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
   temp_debug_vect[3] = oneloop_andi_model[3];//oneloop_andi_model_filt.p_dot.out;
   temp_debug_vect[4] = oneloop_andi_model[4];//oneloop_andi_model_filt.q_dot.out;
   temp_debug_vect[5] = oneloop_andi_model[5];//oneloop_andi_model_filt.r_dot.out;
-  temp_debug_vect[6] = LP.ax.meas;
+  temp_debug_vect[6] = oneloop_andi_sigma;
   temp_debug_vect[7] = LP.ay.meas;
   temp_debug_vect[8] = LP.az.meas;
   temp_debug_vect[9] = temp_checks_2[0];
@@ -1694,6 +1704,8 @@ void oneloop_andi_init(void)
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     act_dynamics[i] = positive_non_zero(act_dynamics[i]);
   }
+  dynFilter_init(&mu_mR, act_dynamics[COMMAND_MOTOR_RIGHT], act_dynamics[COMMAND_MOTOR_RIGHT]);
+  dynFilter_init(&mu_mL, act_dynamics[COMMAND_MOTOR_LEFT], act_dynamics[COMMAND_MOTOR_LEFT]);
   // Initialize Effectiveness matrix
   calc_normalization();
   G1G2_oneloop(oneloop_andi.ctrl_type);
@@ -1826,7 +1838,7 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     // To calculate the nu corrsponding to the Thrust command, plug it in the control law.
     for (i = 0; i < ANDI_NUM_ACT; i++) {
       if(oneloop_andi.ctrl_type == CTRL_ANDI){
-        a_thrust +=(thrust_cmd_1l) * EFF_MAT_RW[RW_aD][i] * act_dynamics[i];
+        a_thrust +=(thrust_cmd_1l) * EFF_MAT_RW[RW_aD][i] * act_dyn_ctrl[i];
       }else{
         a_thrust +=(thrust_cmd_1l) * EFF_MAT_RW[RW_aD][i];
       }
@@ -1900,6 +1912,13 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     // Generate Reference signals for attitude using RM
     // FIX ME ow not yet defined, will be useful in the future to have accurate psi tracking in NAV functions
     bool ow_psi = false;
+    if (chirp_on && (chirp_axis==4|| chirp_axis==5)) {
+      ow_psi = true;
+      psi_vec[0] = oneloop_andi.sta_ref.att[2];
+      psi_vec[1] = oneloop_andi.sta_ref.att_d[2];
+      psi_vec[2] = oneloop_andi.sta_ref.att_2d[2];
+      psi_vec[3] = oneloop_andi.sta_ref.att_3d[2];
+    }
     rm_3rd_attitude(dt_1l, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, att_des, ow_psi, psi_vec, k_att_rm.k1, k_att_rm.k2, k_att_rm.k3, sta_bounds);
  }
 }
@@ -1924,7 +1943,12 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   for (i = 0; i < ANDI_OUTPUTS; i++) {
     bwls_1l[i] = EFF_MAT_G[i];
   }
-  
+  for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
+    act_dyn_ctrl[i] = act_dynamics[i];
+  }
+  act_dyn_ctrl[COMMAND_MOTOR_RIGHT] = oneloop_andi_sigma;
+  act_dyn_ctrl[COMMAND_MOTOR_LEFT]  = oneloop_andi_sigma;
+
   // If drone is not on the ground use incremental law
   use_increment = 0.0;
   bool  in_flight_oneloop = false;
@@ -1962,7 +1986,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   g2_ff = 0.0;
   for (i = 0; i < ANDI_NUM_ACT; i++) {
     if (oneloop_andi.ctrl_type == CTRL_ANDI){
-      g2_ff += G2_RW[i] * act_dynamics[i] * (andi_u[i]-u_filt[i].o[0]);
+      g2_ff += G2_RW[i] * act_dyn_ctrl[i] * (andi_u[i]-u_filt[i].o[0]);
       //printf("i: %d\n", i);
       //printf("andi_u: %f\n", andi_u[i]);
       //printf("actuator_state_1l: %f\n", actuator_state_1l[i]);
@@ -2132,6 +2156,13 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     andi_u[COMMAND_MOTOR_PUSHER] = radio_control.values[RADIO_AUX4];
   }
 #endif  
+  // Run the dynamics substitution filter 
+  dynFilter_run(&mu_mR, andi_u[COMMAND_MOTOR_RIGHT], oneloop_andi_sigma);
+  dynFilter_run(&mu_mL, andi_u[COMMAND_MOTOR_LEFT],  oneloop_andi_sigma);
+  if (use_dyn_filter){
+    andi_u[COMMAND_MOTOR_RIGHT] = mu_mR.mu_c;
+    andi_u[COMMAND_MOTOR_LEFT]  = mu_mL.mu_c;
+  }
   // TODO : USE THE PROVIDED MAX AND MIN and change limits for phi and theta
   // Bound the inputs to the actuators
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
@@ -2196,7 +2227,7 @@ void G1G2_oneloop(int ctrl_type) {
   int i = 0;
   float scaler = 1.0;
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
-
+    //printf("act_dyn_ctrl[%d] = %f\n", i, act_dyn_ctrl[i]);
     switch (i) {
       case (COMMAND_MOTOR_FRONT):
       case (COMMAND_MOTOR_RIGHT):
@@ -2208,7 +2239,7 @@ void G1G2_oneloop(int ctrl_type) {
       case (COMMAND_AILERONS):
       case (COMMAND_FLAPS):   
         if(ctrl_type == CTRL_ANDI){
-          scaler = act_dynamics[i] * ratio_u_un[i];
+          scaler = act_dyn_ctrl[i] * ratio_u_un[i];
         } else if (ctrl_type == CTRL_INDI){
           scaler = ratio_u_un[i];
         }
@@ -2216,7 +2247,7 @@ void G1G2_oneloop(int ctrl_type) {
       case (COMMAND_ROLL):
       case (COMMAND_PITCH):
         if(ctrl_type == CTRL_ANDI){
-          scaler = act_dynamics[i] * ratio_u_un[i];
+          scaler = act_dyn_ctrl[i] * ratio_u_un[i];
         } else if (ctrl_type == CTRL_INDI){
           scaler = ratio_u_un[i];
         }
@@ -2443,6 +2474,7 @@ static float chirp_pos_j_ref(float delta_t, float f0, float k, float A){
  * @param j_ref   [m/s3] jerk reference
  */
 void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]) {
+  float A_backup = A;
   f0      = positive_non_zero(f0);
   f1      = positive_non_zero(f1);
   t_chirp = positive_non_zero(t_chirp);
@@ -2450,8 +2482,8 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, i
   if ((f1-f0) < -FLT_EPSILON){
     f1 = f0;
   }
-  // 0 body x, 1 body y, 2 body z, 3 pitch pref
-  if (n > 3){
+  // 0 body x, 1 body y, 2 body z, 3 pitch pref, 4 Yaw
+  if (n > 5){
     n = 0;
   }
   if (n < 0){
@@ -2469,43 +2501,74 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, i
   float mult_0 = 0.0;
   float mult_1 = 0.0;
   float mult_2 = 0.0;
-  if (n == 0){
-    mult_0 = cpsi;
-    mult_1 = spsi;
-    mult_2 = 0.0;
-  }else if(n==1){
-    mult_0 = -spsi;
-    mult_1 = cpsi;
-    mult_2 = 0.0;
-  }else if(n==2){
-    mult_0 = 0.0;
-    mult_1 = 0.0;
-    mult_2 = 1.0;
+  switch (n) {
+      case 0:
+          mult_0 = cpsi;
+          mult_1 = spsi;
+          mult_2 = 0.0;
+          
+          p_ref[0] = p_ref_0[0] + p_ref_chirp * mult_0;
+          p_ref[1] = p_ref_0[1] + p_ref_chirp * mult_1; 
+          v_ref[0] = v_ref_chirp * mult_0;
+          v_ref[1] = v_ref_chirp * mult_1;
+          a_ref[0] = a_ref_chirp * mult_0;
+          a_ref[1] = a_ref_chirp * mult_1; 
+          j_ref[0] = j_ref_chirp * mult_0;
+          j_ref[1] = j_ref_chirp * mult_1;
+          break;
+      case 1:
+          mult_0 = -spsi;
+          mult_1 = cpsi;
+          mult_2 = 0.0;
+          
+          p_ref[0] = p_ref_0[0] + p_ref_chirp * mult_0;
+          p_ref[1] = p_ref_0[1] + p_ref_chirp * mult_1; 
+          v_ref[0] = v_ref_chirp * mult_0;
+          v_ref[1] = v_ref_chirp * mult_1;
+          a_ref[0] = a_ref_chirp * mult_0;
+          a_ref[1] = a_ref_chirp * mult_1; 
+          j_ref[0] = j_ref_chirp * mult_0;
+          j_ref[1] = j_ref_chirp * mult_1;
+          break;
+      case 2:
+          mult_0 = 0.0;
+          mult_1 = 0.0;
+          mult_2 = 1.0;
+          p_ref[2] = p_ref_0[2] + p_ref_chirp * mult_2;
+          v_ref[2] = v_ref_chirp * mult_2;
+          a_ref[2] = a_ref_chirp * mult_2;
+          j_ref[2] = j_ref_chirp * mult_2;
+          break;
+      case 3:
+          // Pitch preferred chirp
+          pitch_pref = p_ref_chirp;
+          pitch_pref = (pitch_pref / A + 1.0) * (theta_pref_max / 2.0);
+          float pitch_offset = RadOfDeg(5.0);
+          pitch_pref = pitch_pref + pitch_offset;
+          Bound(pitch_pref,0.0,25.0);
+          break;
+      case 4:
+          // Do a yaw acceleration chirp
+          oneloop_andi.sta_ref.att[2]    = psi_des_rad+p_ref_chirp*M_PI/180.0;//oneloop_andi.sta_state.att[2];
+          NormRadAngle(oneloop_andi.sta_ref.att[2]);
+          oneloop_andi.sta_ref.att_d[2]  = v_ref_chirp*M_PI/180.0;//oneloop_andi.sta_state.att_d[2];
+          oneloop_andi.sta_ref.att_2d[2] = a_ref_chirp*M_PI/180.0;//p_ref_chirp;
+          oneloop_andi.sta_ref.att_3d[2] = j_ref_chirp*M_PI/180.0;//v_ref_chirp;   
+          // Include change in dynamics
+          oneloop_andi_sigma = (oneloop_andi_sigma_min-oneloop_andi_sigma_max)/t_chirp * time_elapsed + oneloop_andi_sigma_max;
+          Bound(oneloop_andi_sigma, oneloop_andi_sigma_min, oneloop_andi_sigma_max);       
+          break;
+      case 5:
+          oneloop_andi.sta_ref.att[2]    = oneloop_andi.sta_state.att[2];
+          oneloop_andi.sta_ref.att_d[2]  = oneloop_andi.sta_state.att_d[2];
+          oneloop_andi.sta_ref.att_2d[2] = A_backup*M_PI/180.0;
+          oneloop_andi.sta_ref.att_3d[2] = 0.0;
+          float S_psi = 0.5*A_backup*M_PI/180.0*t_chirp*t_chirp;
+          BoundAbs(S_psi, 0.9*M_PI_2)
+          psi_des_rad = oneloop_andi.sta_state.att[2] + S_psi;
+          NormRadAngle(psi_des_rad);
   }
-  // Do not overwrite the reference if chirp is not on that axis
-  if (n == 2){
-    p_ref[2] = p_ref_0[2] + p_ref_chirp * mult_2;
-    v_ref[2] = v_ref_chirp * mult_2;
-    a_ref[2] = a_ref_chirp * mult_2;
-    j_ref[2] = j_ref_chirp * mult_2;
-  } else if (n < 2){
-    p_ref[0] = p_ref_0[0] + p_ref_chirp * mult_0;
-    p_ref[1] = p_ref_0[1] + p_ref_chirp * mult_1; 
-    v_ref[0] = v_ref_chirp * mult_0;
-    v_ref[1] = v_ref_chirp * mult_1;
-    a_ref[0] = a_ref_chirp * mult_0;
-    a_ref[1] = a_ref_chirp * mult_1; 
-    j_ref[0] = j_ref_chirp * mult_0;
-    j_ref[1] = j_ref_chirp * mult_1;
-  } else if (n==3) { //Pitch preferred chirp, for now a little bit hacked in...
-    pitch_pref = p_ref_chirp;
-    pitch_pref = (pitch_pref / A + 1.0) * (theta_pref_max / 2.0);
-    float pitch_offset = RadOfDeg(5.0);
-    pitch_pref = pitch_pref + pitch_offset;
-    Bound(pitch_pref,0.0,25.0);
-  } else {
-    // do a yaw chirp
-  }
+
 }
 
 void chirp_call(bool *chirp_on, bool *chirp_first_call, float* t_0, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]){
@@ -2532,6 +2595,7 @@ void chirp_call(bool *chirp_on, bool *chirp_first_call, float* t_0, float* time_
       float_vect_zero(v_ref, 3);
       float_vect_zero(a_ref, 3);
       float_vect_zero(j_ref, 3);
+      //oneloop_andi_sigma = oneloop_andi_sigma_max;
       //oneloop_andi_enter(false, oneloop_andi.ctrl_type);
     }
   }
@@ -2723,4 +2787,42 @@ void oneloop_andi_bound_disturbance(void){
     oneloop_andi_dist_bound[RW_ar] = oneloop_andi.sta_state.att_2d[2] - oneloop_andi_model[RW_ar];
     BoundAbs(oneloop_andi_dist_bound[RW_ar], 99999.f); // Large value to not bound
     //BoundAbs(oneloop_andi_dist_bound[RW_ar], oneloop_andi_yaw_dist_limit); // Bound from INDI controller
+}
+
+// void dynFilter_run(struct Oneloop_DynFilt_t *mu, float u_c, float sigma){
+//   mu->mu_c_0      = mu->mu_c;
+//   mu->u_c_0       = mu->u_c;
+//   mu->u_c         = u_c;
+//   mu->sigma       = sigma;
+//   float c_den     = (mu->fs+mu->sigma)*mu->varepsilon;
+//   float c_u_c     = (mu->fs*mu->sigma+mu->varepsilon*mu->sigma)/c_den;
+//   float c_u_c_0   = (-mu->fs*mu->sigma)/c_den;
+//   float c_mu_c_0  = (mu->fs*mu->varepsilon)/c_den;
+//   mu->mu_c        = c_u_c * mu->u_c + c_u_c_0 * mu->u_c_0 + c_mu_c_0 * mu->mu_c_0;
+// }
+void dynFilter_run(struct Oneloop_DynFilt_t *mu, float u_c, float sigma) {
+    mu->mu_c_0 = mu->mu_c;
+    mu->u_c_0  = mu->u_c;
+    mu->u_c    = u_c;
+    mu->sigma  = sigma;
+
+    // Calculate ZOH-based coefficients
+    float exp_term = expf(-mu->sigma / mu->fs); // Use expf for float precision
+    float c_u_c    = mu->sigma / mu->varepsilon;
+    float c_u_c_0  = (-mu->sigma + mu->varepsilon - mu->varepsilon * exp_term) / mu->varepsilon;
+    float c_mu_c_0 = exp_term;
+
+    mu->mu_c = c_u_c * mu->u_c + c_u_c_0 * mu->u_c_0 + c_mu_c_0 * mu->mu_c_0;
+}
+
+
+void dynFilter_init(struct Oneloop_DynFilt_t *mu, float varepsilon, float sigma){
+  mu->fs         = (float) PERIODIC_FREQUENCY;
+  mu->varepsilon = varepsilon;
+  mu->sigma      = sigma;
+  mu->mu_c       = 0.0;
+  mu->u_c        = 0.0;
+  mu->mu_c_0     = 0.0;
+  mu->u_c_0      = 0.0;
+  //printf("DynFilter initialized with varepsilon: %f, sigma: %f, fs: %f\n", mu->varepsilon, mu->sigma, mu->fs);
 }
