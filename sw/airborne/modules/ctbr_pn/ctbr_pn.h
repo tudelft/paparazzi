@@ -5,17 +5,45 @@
 #include "pprzlink/pprz_transport.h"
 #include "pprzlink/pprzlink_device.h"
 
-// Target info handling
+struct pnmessage
+{
+  struct link_device *device;      ///< Device used for communication
+  struct pprz_transport transport; ///< Transport over communication line (PPRZ)
+  uint8_t time_since_last_frame;   ///< Time since last frame
+  bool enabled;                    ///< If the InterMCU communication is enabled
+  bool msg_available;              ///< If we have an InterMCU message
+};
+
 void pn_parse_TARGET_INFO(uint8_t *buf);
 
-// internal function declaration
-void ctbr_run(void);
-
-// Core PN interface (same as acc_pn)
 void pn_init(void);
 void pn_start(void);
-void pn_stop(void);
 void pn_run(void);
-void pn_event(void);
+void pn_stop(void);
+extern void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf);
+extern void pn_event(void);
+
+void ctbr_run(void);
+
+struct LoggerData_PN
+{
+  struct FloatVect3 pos_target;
+  struct FloatVect3 vel_target;
+  struct FloatVect3 accel_command;
+  struct FloatVect3 filt_accel_command;
+
+  // Raw observations
+  struct FloatVect3 raw_pu_vel;
+  struct FloatVect3 raw_ev_vel;
+  struct FloatVect3 raw_r;
+  struct FloatVect3 raw_r_dot;
+
+  // Filtered observations
+  struct FloatVect3 filt_pu_vel;
+  struct FloatVect3 filt_ev_vel;
+  struct FloatVect3 filt_r_dot;
+};
+
+struct LoggerData_PN *pn_info_logger(void);
 
 #endif // CTBR_PN_H

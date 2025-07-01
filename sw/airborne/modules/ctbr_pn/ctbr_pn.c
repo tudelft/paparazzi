@@ -8,22 +8,34 @@
 #include "pprzlink/intermcu_msg.h"
 #include "modules/datalink/telemetry.h"
 #include "mcu_periph/sys_time.h"
-#include "acc_pn/acc_pn.h"
 #include "ctbr_nn/ppo_controller.h"
 /** EKF */
 #include "modules/ins/ins_ext_pose.h"
 
 #include "ctbr_pn.h"
 
-#define DEBUGGER_ON false
-
-#define CTBR_OBS_DIM 31
-#define CTBR_DT (1.0f / 100.0f)
-#define CTBR_CUTOFF_FREQ 8.0f
+/*---------------------------------------------------------------------------*/
+/* Constants                                                                 */
+/*---------------------------------------------------------------------------*/
+#define CTBR_OBS_DIM 18
+#define CTBR_DT (1.0f / 100.0f) // 100 Hz
+#define CTBR_CUTOFF_FREQ 8.0f   // Hz
 #define CTBR_TAU (1.0f / (2.0f * M_PI * CTBR_CUTOFF_FREQ))
 
+// Observation normalization safety
+#define MAG_EPSILON 1e-5f
+
+// Action scaling ranges
+#define P_MIN -3.0f
+#define P_MAX 3.0f
+#define Q_MIN -3.0f
+#define Q_MAX 3.0f
+#define R_MIN -2.0f
+#define R_MAX 2.0f
+#define THRUST_MIN 0.0f
+#define THRUST_MAX 18.0f
+
 static bool ctbr_active = false;
-static FILE *ctbr_debug_log = NULL; // Logger to validate observation --> actions, check if NN is working correctly
 
 /*---------------------------------------------------------------------------*/
 /* Target tracking                                                           */
@@ -37,8 +49,9 @@ struct pnmessage target_message = {
 
 uint8_t pn_msg_buf[256] __attribute__((aligned));
 
-static struct FloatVect3 target_pos_enu = {1.0, 1.0, 2.0};
-static struct FloatVect3 target_vel_enu = {0, 0, 0};
+static struct FloatVect3 target_pos_ned = {1.0f, 2.0f, -2.0f};
+static struct FloatVect3 target_vel_ned = {0.0f, 0.0f, 0.0f};
+
 static bool first_target_received = false;
 
 static struct LoggerData_PN ctbr_log;
@@ -48,7 +61,6 @@ static struct LoggerData_PN ctbr_log;
 /*---------------------------------------------------------------------------*/
 
 static Butterworth2LowPass filt_self_vx, filt_self_vy, filt_self_vz;
-static Butterworth2LowPass filt_target_vx, filt_target_vy, filt_target_vz;
 static Butterworth2LowPass filt_abz;
 
 void get_action(const float *obs, float *ctbr_out); // extern NN inference
@@ -60,7 +72,7 @@ void get_action(const float *obs, float *ctbr_out); // extern NN inference
 static void normalize_and_magnitude(struct FloatVect3 *vec, float *dir_out, float *mag_out)
 {
   float mag = sqrtf(vec->x * vec->x + vec->y * vec->y + vec->z * vec->z);
-  if (mag > 1e-5f)
+  if (mag > MAG_EPSILON)
   {
     dir_out[0] = vec->x / mag;
     dir_out[1] = vec->y / mag;
@@ -75,8 +87,8 @@ static void normalize_and_magnitude(struct FloatVect3 *vec, float *dir_out, floa
 
 static void build_ctbr_obs(float *obs)
 {
-  struct EnuCoor_f *pu_pos = stateGetPositionEnu_f();
-  struct EnuCoor_f *pu_vel = stateGetSpeedEnu_f();
+  struct NedCoor_f *pu_pos = stateGetPositionNed_f();
+  struct NedCoor_f *pu_vel = stateGetSpeedNed_f();
   struct FloatEulers *att = stateGetNedToBodyEulers_f();
   struct FloatRates *rates = stateGetBodyRates_f();
   float raw_abz = ekf_U[2] - ekf_X[11];
@@ -86,62 +98,50 @@ static void build_ctbr_obs(float *obs)
   float vy = update_butterworth_2_low_pass(&filt_self_vy, pu_vel->y);
   float vz = update_butterworth_2_low_pass(&filt_self_vz, pu_vel->z);
 
-  float tx = update_butterworth_2_low_pass(&filt_target_vx, target_vel_enu.x);
-  float ty = update_butterworth_2_low_pass(&filt_target_vy, target_vel_enu.y);
-  float tz = update_butterworth_2_low_pass(&filt_target_vz, target_vel_enu.z);
-
   float filtered_abz = update_butterworth_2_low_pass(&filt_abz, raw_abz);
 
-  struct FloatVect3 pu_pos_v = {pu_pos->y, -pu_pos->x, pu_pos->z}; // VERY IMPORTANT HACKY FIX. COORDINATE FRAME OF TRAINING_ENV HAS DIFFERENT COORDINATE FRAME
-  struct FloatVect3 ev_pos_v =
-      {
-          target_pos_enu.y,
-          -target_pos_enu.x,
-          target_pos_enu.z}; // TRAINING ENV HAS NED ROTATED 180 DEG OVER X AXIS FRAME (NEEDS TO BE FIXED)
-  // struct FloatVect3 ev_pos_v = target_pos_enu;
-
-  struct FloatVect3 pu_vel_v = {vy, -vx, vz}; // AGAIN COORDINATE FRAME MISMATCH
-  struct FloatVect3 ev_vel_v = {tx, ty, tz};
-
   struct FloatVect3 rel_pos = {
-      .x = ev_pos_v.x - pu_pos_v.x,
-      .y = ev_pos_v.y - pu_pos_v.y,
-      .z = ev_pos_v.z - pu_pos_v.z};
+      .x = target_pos_ned.x - pu_pos->x,
+      .y = target_pos_ned.y - pu_pos->y,
+      .z = target_pos_ned.z - pu_pos->z,
+  };
 
   struct FloatVect3 rel_vel = {
-      .x = ev_vel_v.x - pu_vel_v.x,
-      .y = ev_vel_v.y - pu_vel_v.y,
-      .z = ev_vel_v.z - pu_vel_v.z};
+      .x = target_vel_ned.x - pu_vel->x,
+      .y = target_vel_ned.y - pu_vel->y,
+      .z = target_vel_ned.z - pu_vel->z,
+  };
 
   // Index for filling obs array
   int i = 0;
 
-  // Normalize and store pu_pos_v
-  normalize_and_magnitude(&pu_pos_v, &obs[i], &obs[i + 3]);
-  i += 4;
-  normalize_and_magnitude(&ev_pos_v, &obs[i], &obs[i + 3]);
-  i += 4;
-  normalize_and_magnitude(&pu_vel_v, &obs[i], &obs[i + 3]);
-  i += 4;
-  normalize_and_magnitude(&ev_vel_v, &obs[i], &obs[i + 3]);
-  i += 4;
   normalize_and_magnitude(&rel_pos, &obs[i], &obs[i + 3]);
   i += 4;
   normalize_and_magnitude(&rel_vel, &obs[i], &obs[i + 3]);
   i += 4;
 
-  // Attitude (phi, theta, psi)
-  obs[i++] = att->phi;
-  obs[i++] = -1 * att->theta; // COORDIANTE FRAME MISMATCH
-  obs[i++] = att->psi;
+  // Rotation matrix cols 1 and 2 (get_rot_columns equivalent)
+  float cphi = cosf(att->phi), sphi = sinf(att->phi);
+  float ctheta = cosf(att->theta), stheta = sinf(att->theta);
+  float cpsi = cosf(att->psi), spsi = sinf(att->psi);
+
+  // Col 1
+  obs[i++] = ctheta * cpsi;
+  obs[i++] = ctheta * spsi;
+  obs[i++] = -stheta;
+
+  // Col 2
+  obs[i++] = sphi * stheta * cpsi - cphi * spsi;
+  obs[i++] = sphi * stheta * spsi + cphi * cpsi;
+  obs[i++] = sphi * ctheta;
 
   // Angular rates
   obs[i++] = rates->p;
-  obs[i++] = -1 * rates->q; // COORDIANTE FRAME MISMATCH
+  obs[i++] = rates->q; // Frame adjustment
   obs[i++] = rates->r;
 
-  obs[i++] = -filtered_abz; // BODY ACCELERATION AS MEASURED THRUST INPUT (NED --> ENU)
-
+  // T_force approximation: body thrust (z)
+  obs[i++] = -filtered_abz;
   // Sanity check
   if (i != CTBR_OBS_DIM)
   {
@@ -153,26 +153,15 @@ static void build_ctbr_obs(float *obs)
   ctbr_log.accel_command.y = 0.0f;
   ctbr_log.accel_command.z = 0.0f;
 
-  ctbr_log.pos_target = target_pos_enu;
-  ctbr_log.vel_target = target_vel_enu;
-
-  ctbr_log.raw_pu_vel = pu_vel_v;
-  ctbr_log.raw_ev_vel = ev_vel_v;
+  ctbr_log.pos_target = target_pos_ned;
+  ctbr_log.vel_target = target_vel_ned;
 
   ctbr_log.filt_pu_vel.x = vx;
   ctbr_log.filt_pu_vel.y = vy;
   ctbr_log.filt_pu_vel.z = vz;
 
-  ctbr_log.filt_ev_vel.x = tx;
-  ctbr_log.filt_ev_vel.y = ty;
-  ctbr_log.filt_ev_vel.z = tz;
-
   ctbr_log.raw_r = rel_pos;
   ctbr_log.raw_r_dot = rel_vel;
-
-  ctbr_log.filt_r_dot.x = tx - vx;
-  ctbr_log.filt_r_dot.y = ty - vy;
-  ctbr_log.filt_r_dot.z = tz - vz;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -193,12 +182,12 @@ void ctbr_run(void)
 
   // === SCALE FROM [-1, 1] TO PHYSICAL UNITS ===
   // Body rates [rad/s]
-  const float p_min = -3.0f, p_max = 3.0f;
-  const float q_min = -3.0f, q_max = 3.0f;
-  const float r_min = -2.0f, r_max = 2.0f;
+  const float p_min = P_MIN, p_max = P_MAX;
+  const float q_min = Q_MIN, q_max = Q_MAX;
+  const float r_min = R_MIN, r_max = R_MAX;
 
   // Thrust [m/s²] in body-z direction (used in ACCEL_SP)
-  const float T_min = 0.0f, T_max = 18.0f;
+  const float T_min = THRUST_MIN, T_max = THRUST_MAX;
 
   const float p_cmd = (action[0] + 1.0f) * 0.5f * (p_max - p_min) + p_min;
   const float q_cmd = (action[1] + 1.0f) * 0.5f * (q_max - q_min) + q_min;
@@ -211,34 +200,9 @@ void ctbr_run(void)
 
   // 2. Store body rates and thrust for override (used in stabilization_indi_simple)
   control_nn[0] = p_cmd;
-  control_nn[1] = -1 * q_cmd; // AGAIN COORDINATE FRAME MISMATCH!!!!
+  control_nn[1] = q_cmd; // AGAIN COORDINATE FRAME MISMATCH!!!!
   control_nn[2] = r_cmd;
   control_nn[3] = T_cmd;
-
-  if (DEBUGGER_ON)
-  {
-    if (ctbr_debug_log)
-    {
-      fprintf(ctbr_debug_log, "%.3f,", get_sys_time_float());
-
-      // Log all observations
-      for (int i = 0; i < CTBR_OBS_DIM; i++)
-      {
-        fprintf(ctbr_debug_log, "%.4f,", obs[i]);
-      }
-
-      // Log actions
-      for (int i = 0; i < 4; i++)
-      {
-        fprintf(ctbr_debug_log, "%.4f", action[i]);
-        if (i < 3)
-          fprintf(ctbr_debug_log, ",");
-      }
-
-      fprintf(ctbr_debug_log, "\n");
-      fflush(ctbr_debug_log);
-    }
-  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -247,19 +211,13 @@ void ctbr_run(void)
 
 void pn_parse_TARGET_INFO(uint8_t *buf)
 {
-  if (!first_target_received)
-  {
-    printf("[ctbr_pn] First TARGET_INFO received at t = %.2f s\n", get_sys_time_float());
-    first_target_received = true;
-  }
+  target_pos_ned.x = DL_TARGET_INFO_enu_x(buf);
+  target_pos_ned.y = DL_TARGET_INFO_enu_y(buf);
+  target_pos_ned.z = DL_TARGET_INFO_enu_z(buf);
 
-  target_pos_enu.x = DL_TARGET_INFO_enu_x(buf);
-  target_pos_enu.y = DL_TARGET_INFO_enu_y(buf);
-  target_pos_enu.z = DL_TARGET_INFO_enu_z(buf);
-
-  target_vel_enu.x = DL_TARGET_INFO_enu_xd(buf);
-  target_vel_enu.y = DL_TARGET_INFO_enu_yd(buf);
-  target_vel_enu.z = DL_TARGET_INFO_enu_zd(buf);
+  target_vel_ned.x = DL_TARGET_INFO_enu_xd(buf);
+  target_vel_ned.y = DL_TARGET_INFO_enu_yd(buf);
+  target_vel_ned.z = DL_TARGET_INFO_enu_zd(buf);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -296,10 +254,6 @@ void pn_init(void)
   init_butterworth_2_low_pass(&filt_self_vy, tau, CTBR_DT, 0.0f);
   init_butterworth_2_low_pass(&filt_self_vz, tau, CTBR_DT, 0.0f);
 
-  init_butterworth_2_low_pass(&filt_target_vx, tau, CTBR_DT, 0.0f);
-  init_butterworth_2_low_pass(&filt_target_vy, tau, CTBR_DT, 0.0f);
-  init_butterworth_2_low_pass(&filt_target_vz, tau, CTBR_DT, 0.0f);
-
   init_butterworth_2_low_pass(&filt_abz, CTBR_TAU, CTBR_DT, 0.0f);
 }
 
@@ -307,41 +261,12 @@ void pn_start(void)
 {
   ctbr_active = true;
   printf("[ctbr_pn] start\n");
-
-  if (DEBUGGER_ON)
-  {
-
-    ctbr_debug_log = fopen("/home/merlijn/Desktop/observation_action/NN_test.txt", "w");
-    if (!ctbr_debug_log)
-    {
-      printf("[CTBR] Failed to open debug log file\n");
-    }
-    else
-    {
-      fprintf(ctbr_debug_log, "time");
-      for (int i = 0; i < CTBR_OBS_DIM; i++)
-      {
-        fprintf(ctbr_debug_log, ",obs%d", i);
-      }
-      for (int i = 0; i < 4; i++)
-      {
-
-        fprintf(ctbr_debug_log, ",act%d", i);
-      }
-      fprintf(ctbr_debug_log, "\n");
-    }
-  }
 }
 
 void pn_stop(void)
 {
   ctbr_active = false;
   printf("[ctbr_pn] stop\n");
-  if (ctbr_debug_log)
-  {
-    fclose(ctbr_debug_log);
-    ctbr_debug_log = NULL;
-  }
 }
 
 void pn_run(void)
