@@ -119,7 +119,7 @@
       </program>
       <program name="NatNet3">
         <arg flag="-ac" constant="132"/>
-        <arg flag="42"/>
+        <arg flag="12"/>
         <arg flag="-xa" constant="57"/>
         <arg flag="-an" constant="far"/>
         <arg flag="-le" constant="far"/>

@@ -17,7 +17,9 @@
                 "${workspaceFolder}/sw/include",
                 "${workspaceFolder}/sw/airborne/arch/chibios",
                 "${workspaceFolder}/sw/ext/chibios/demos/various/RT-ARMCM4-USELIB/rt",
-                "${workspaceFolder}/var/include"
+                "${workspaceFolder}/var/include",
+                "${workspaceFolder}/tests/modules",
+                "${workspaceFolder}/sw/airborne/modules"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/arm-none-eabi-gcc",

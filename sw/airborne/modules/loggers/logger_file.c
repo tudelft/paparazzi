@@ -44,16 +44,14 @@
 #endif
 
 #include "generated/modules.h"
-#include "modules/acc_pn/acc_pn.h"
 
 /** Set the default File logger path to the USB drive */
 #ifndef LOGGER_FILE_PATH
-#define LOGGER_FILE_PATH /data/video/usb
+#define LOGGER_FILE_PATH / data / video / usb
 #endif
 
 /** The file pointer */
 static FILE *logger_file = NULL;
-
 
 /** Logging functions */
 
@@ -63,7 +61,8 @@ static FILE *logger_file = NULL;
  * line.
  * @param file Log file pointer
  */
-static void logger_file_write_header(FILE *file) {
+static void logger_file_write_header(FILE *file)
+{
   fprintf(file, "time,");
   fprintf(file, "pos_x,pos_y,pos_z,");
   fprintf(file, "vel_x,vel_y,vel_z,");
@@ -96,6 +95,9 @@ static void logger_file_write_header(FILE *file) {
 #ifdef CTBR_ACCEL_OVERRIDE
   fprintf(file, "nn_p,nn_q,nn_r,nn_thrust");
 #endif
+#ifdef MOTOR_OVERRIDE
+  fprintf(file, "nn_1,nn_2,nn_3,nn_4");
+#endif
   fprintf(file, "\n");
 }
 
@@ -105,9 +107,10 @@ static void logger_file_write_header(FILE *file) {
  * end of the line.
  * @param file Log file pointer
  */
-static void logger_file_write_row(FILE *file) {
-  struct EnuCoor_f *pos = stateGetPositionEnu_f();
-  struct EnuCoor_f *vel = stateGetSpeedEnu_f();
+static void logger_file_write_row(FILE *file)
+{
+  struct NedCoor_f *pos = stateGetPositionNed_f();
+  struct NedCoor_f *vel = stateGetSpeedNed_f();
   struct NedCoor_f *acc = stateGetAccelNed_f();
   struct FloatEulers *att = stateGetNedToBodyEulers_f();
   struct FloatRates *rates = stateGetBodyRates_f();
@@ -131,38 +134,41 @@ static void logger_file_write_row(FILE *file) {
   fprintf(file, "%f,%f,%f,", pn_info->raw_r_dot.x, pn_info->raw_r_dot.y, pn_info->raw_r_dot.z);
   fprintf(file, "%f,%f,%f,", pn_info->filt_r_dot.x, pn_info->filt_r_dot.y, pn_info->filt_r_dot.z);
 #ifdef BOARD_BEBOP
-  fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
-  fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_ref[0],actuators_bebop.rpm_ref[1],actuators_bebop.rpm_ref[2],actuators_bebop.rpm_ref[3]);
+  fprintf(file, "%d,%d,%d,%d,", actuators_bebop.rpm_obs[0], actuators_bebop.rpm_obs[1], actuators_bebop.rpm_obs[2], actuators_bebop.rpm_obs[3]);
+  fprintf(file, "%d,%d,%d,%d,", actuators_bebop.rpm_ref[0], actuators_bebop.rpm_ref[1], actuators_bebop.rpm_ref[2], actuators_bebop.rpm_ref[3]);
 #endif
 #ifdef INS_EXT_POSE_H
   ins_ext_pos_log_data(file);
 #endif
 #ifdef COMMAND_THRUST
   fprintf(file, "%d,%d,%d,%d,",
-      stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
-      stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
+          stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
+          stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
 #else
   fprintf(file, "%d,%d,", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
 #endif
 #ifdef CTBR_ACCEL_OVERRIDE
-  extern float control_nn[4];
+  fprintf(file, "%f,%f,%f,%f", control_nn[0], control_nn[1], control_nn[2], control_nn[3]);
+#endif
+#ifdef MOTOR_OVERRIDE
   fprintf(file, "%f,%f,%f,%f", control_nn[0], control_nn[1], control_nn[2], control_nn[3]);
 #endif
   fprintf(file, "\n");
 }
-
 
 /** Start the file logger and open a new file */
 void logger_file_start(void)
 {
   // Ensure that the module is running when started with this function
   logger_file_logger_file_periodic_status = MODULES_RUN;
-  
+
   // Create output folder if necessary
-  if (access(STRINGIFY(LOGGER_FILE_PATH), F_OK)) {
+  if (access(STRINGIFY(LOGGER_FILE_PATH), F_OK))
+  {
     char save_dir_cmd[256];
     sprintf(save_dir_cmd, "mkdir -p %s", STRINGIFY(LOGGER_FILE_PATH));
-    if (system(save_dir_cmd) != 0) {
+    if (system(save_dir_cmd) != 0)
+    {
       printf("[logger_file] Could not create log file directory %s.\n", STRINGIFY(LOGGER_FILE_PATH));
       return;
     }
@@ -171,7 +177,7 @@ void logger_file_start(void)
   // Get current date/time for filename
   char date_time[80];
   time_t now = time(0);
-  struct tm  tstruct;
+  struct tm tstruct;
   tstruct = *localtime(&now);
   strftime(date_time, sizeof(date_time), "%Y%m%d-%H%M%S", &tstruct);
 
@@ -180,7 +186,8 @@ void logger_file_start(void)
 
   // Check for available files
   sprintf(filename, "%s/%s.csv", STRINGIFY(LOGGER_FILE_PATH), date_time);
-  while ((logger_file = fopen(filename, "r"))) {
+  while ((logger_file = fopen(filename, "r")))
+  {
     fclose(logger_file);
 
     sprintf(filename, "%s/%s_%05d.csv", STRINGIFY(LOGGER_FILE_PATH), date_time, counter);
@@ -188,7 +195,8 @@ void logger_file_start(void)
   }
 
   logger_file = fopen(filename, "w");
-  if(!logger_file) {
+  if (!logger_file)
+  {
     printf("[logger_file] ERROR opening log file %s!\n", filename);
     return;
   }
@@ -201,7 +209,8 @@ void logger_file_start(void)
 /** Stop the logger an nicely close the file */
 void logger_file_stop(void)
 {
-  if (logger_file != NULL) {
+  if (logger_file != NULL)
+  {
     fclose(logger_file);
     logger_file = NULL;
   }
@@ -210,7 +219,8 @@ void logger_file_stop(void)
 /** Log the values to a csv file    */
 void logger_file_periodic(void)
 {
-  if (logger_file == NULL) {
+  if (logger_file == NULL)
+  {
     return;
   }
   logger_file_write_row(logger_file);
