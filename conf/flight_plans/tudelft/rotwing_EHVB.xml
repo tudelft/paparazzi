@@ -121,7 +121,7 @@
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <stay wp="KALMAN"/>
     </block>
-    <block name="stay_KALMAN_no_FF" strip_button="Stay KALMAN">
+    <block name="stay_KALMAN_no_FF" strip_button="Stay KALMAN no ff">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <stay wp="KALMAN"/>
     </block>

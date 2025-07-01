@@ -104,6 +104,14 @@ struct landing_algorithm_outputs_t {
   uint8_t A_out_of_bounds_array[6]; // Array of out of bounds flags for acceleration
 };
 
+extern int track_aruco_id;
+
+extern bool use_sixdof;
+extern bool use_relangle;
+extern bool use_relbeacon;
+extern bool use_aruco;
+extern bool use_rtk;
+
 extern struct falcon_t falcon; // for settings
 
 extern void remote_sensing_AM_init(void); 

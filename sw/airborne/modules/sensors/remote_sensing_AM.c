@@ -29,6 +29,8 @@
 #include "generated/flight_plan.h"
 #include "modules/nav/nav_rotorcraft_hybrid.h"
 
+int track_aruco_id = 17;
+
 // Check if the sensors are enabled in the airframe file
 #ifndef REMOTE_SENSING_KALMAN_USE_GROUND_STATION 
 #warning "Ground Station GPS is not fused in Remote Sensing Kalman"
@@ -50,6 +52,12 @@
 #warning "Aruco is not fused in Remote Sensing Kalman"
 #define REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO FALSE
 #endif
+
+bool use_sixdof = REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF;
+bool use_relangle = REMOTE_SENSING_KALMAN_USE_FALCON_RELANGLE;
+bool use_relbeacon = REMOTE_SENSING_KALMAN_USE_FALCON_RELBEACON;
+bool use_aruco = REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO;
+bool use_rtk = REMOTE_SENSING_KALMAN_USE_GROUND_STATION;
 
 #define FLOATVECT3_TO_ARRAY(v) (float[3]){v.x, v.y, v.z}
 #define FLOATQUAT_TO_ARRAY(v) (float[4]){v.qi, v.qx, v.qy, v.qz}
@@ -190,10 +198,10 @@ void remote_sensing_parse_target_pos(uint8_t *buf)
   VECT3_SUB(target.pos, *uav_pos);
 
   // Save the relative position and velocity in the target structure
-  #if REMOTE_SENSING_KALMAN_USE_GROUND_STATION
+  if (use_rtk) {
     target_pos_kalman_set_measurement(&target.kalman_sensor, POS_SPEED_TO_ARRAY(target.pos, target.vel));
     target_pos_kalman_update(&remote_sensing_kalman, &target.kalman_sensor);
-  #endif
+  }
 
   #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
     sdlog_remote_sensing_am();
@@ -233,12 +241,12 @@ void remote_sensing_parse_falcon_sixdof(uint8_t *buf)
   //Fill up the falcon structure
   falcon.sixdof.tow = get_sys_time_tow();
 
-  #if REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF
+  if (use_sixdof) {
   // Update the kalman filter with the new position and position variance
   target_pos_kalman_set_measurement(&falcon.sixdof.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.sixdof.pos));
   target_pos_kalman_set_noise(&falcon.sixdof.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.sixdof.pos_var));
   target_pos_kalman_update(&remote_sensing_kalman, &falcon.sixdof.kalman_sensor);
-  #endif
+  }
 
   #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
     sdlog_remote_sensing_am();
@@ -282,11 +290,11 @@ void remote_sensing_parse_falcon_relangle(uint8_t *buf)
   float_quat_vmult(&p_out_sensor, &rel_angles_sensor, &(struct FloatVect3){0, falcon.relangle.distance, 0});
   sensor_to_NED(&falcon.relangle.pos, &p_out_sensor, &falcon.sensor_to_body, &falcon.body_to_sensor_offset); // Rotate the position to body frame
   
-  #if REMOTE_SENSING_KALMAN_USE_FALCON_RELANGLE
+  if (use_relangle) {
   // Update the kalman filter with the new angles and intensity.
   target_pos_kalman_set_measurement(&falcon.relangle.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.relangle.pos));
   target_pos_kalman_update(&remote_sensing_kalman, &falcon.relangle.kalman_sensor); 
-  #endif
+  }
 
   #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
     sdlog_remote_sensing_am();
@@ -308,11 +316,11 @@ void remote_sensing_parse_falcon_relbeacon(uint8_t *buf)
 
   sensor_to_NED(&falcon.relbeacon.pos, &(struct FloatVect3){pos[0], pos[1], pos[2]}, &falcon.sensor_to_body, &falcon.body_to_sensor_offset); // Rotate the position to NED frame
 
-  #if REMOTE_SENSING_KALMAN_USE_FALCON_RELBEACON
+  if (use_relbeacon) {
   // Update the kalman filter with the beacon position.
   target_pos_kalman_set_measurement(&falcon.relbeacon.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.relbeacon.pos));
   target_pos_kalman_update(&remote_sensing_kalman, &falcon.relbeacon.kalman_sensor);
-  #endif
+  }
 
   #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
     sdlog_remote_sensing_am();
@@ -482,15 +490,15 @@ void remote_sensing_parse_opencv_aruco(uint8_t *buf)
   aruco.id = pprzlink_get_DL_IMCU_OPENCV_ARUCO_id(buf);
   float *pos = pprzlink_get_DL_IMCU_OPENCV_ARUCO_pos(buf);
 
-  if (aruco.id != 5) return;
+  if (aruco.id != track_aruco_id) return;
 
   sensor_to_NED(&aruco.pos, &(struct FloatVect3){pos[0], pos[1], pos[2]}, &aruco.sensor_to_body, &aruco.body_to_sensor_offset); // Rotate the position to NED frame
 
-  #if REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO
+  if (use_aruco) {
   // Update the kalman filter with the aruco position.
   target_pos_kalman_set_measurement(&aruco.kalman_sensor, FLOATVECT3_TO_ARRAY(aruco.pos));
   target_pos_kalman_update(&remote_sensing_kalman, &aruco.kalman_sensor);
-  #endif
+  }
 
   #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
     sdlog_remote_sensing_am();

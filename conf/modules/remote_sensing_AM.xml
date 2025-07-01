@@ -27,6 +27,12 @@
         <dl_setting var="falcon.mode" min="0" max="3" step="1" values="OFF|SIXDOF|RELANGLE|RELBEACON" shortname="falcon_mode" module="modules/sensors/remote_sensing_AM" handler="send_falcon_cmd"/>
         <dl_setting var="falcon.relangle.distance" min="0" max="20" step="0.01" shortname="relangle_dist"/>
         <dl_setting var="remote_sensing_kalman" min="0" max="0" values="INIT" shortname="kalman_reinit" module="modules/sensors/remote_sensing_AM" handler="kalman_filter_init" type="fun"/>
+        <dl_setting var="track_aruco_id" min="0" max="50" step="1" shortname="track_id"/>
+        <dl_setting var="use_sixdof" min="0" max="1" step="1" values="FALSE|TRUE" shortname="use_sixdof"/>
+        <dl_setting var="use_relangle" min="0" max="1" step="1" values="FALSE|TRUE" shortname="use_relangle"/>
+        <dl_setting var="use_relbeacon" min="0" max="1" step="1" values="FALSE|TRUE" shortname="use_relbeacon"/>
+        <dl_setting var="use_rtk" min="0" max="1" step="1" values="FALSE|TRUE" shortname="use_rtk"/>
+        <dl_setting var="use_aruco" min="0" max="1" step="1" values="FALSE|TRUE" shortname="use_aruco"/>
       </dl_settings>
     </dl_settings>
   </settings>
