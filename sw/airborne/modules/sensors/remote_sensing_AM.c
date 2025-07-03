@@ -510,7 +510,7 @@ void remote_sensing_parse_opencv_aruco(uint8_t *buf)
 }
 
 void remote_sensing_AM_kalman_filter_init(float r __attribute__((unused))) {
-  target_pos_kalman_init(&remote_sensing_kalman, P0, Q0, 1/REMOTE_SENSING_AM_PERIODIC_FREQ);
+  target_pos_kalman_init(&remote_sensing_kalman, P0, Q0, REMOTE_SENSING_AM_PERIODIC_PERIOD);
 }
 
 void remote_sensing_AM_init(void)
@@ -523,7 +523,7 @@ void remote_sensing_AM_init(void)
   #endif
 
   /* Initialize the linear Kalman filter */
-  target_pos_kalman_init(&remote_sensing_kalman, P0, Q0, 1/REMOTE_SENSING_AM_PERIODIC_FREQ);
+  target_pos_kalman_init(&remote_sensing_kalman, P0, Q0, REMOTE_SENSING_AM_PERIODIC_PERIOD);
 
   // Load the sensors from the airframe file
   struct KalmanSensor target_ks = TARGET_KALMAN_SENSOR;
@@ -585,7 +585,7 @@ void remote_sensing_AM_periodic(void) {
   // Check for NaN
   if (isnan(pos.x) || isnan(pos.y) || isnan(pos.z) || isnan(speed.x) || isnan(speed.y) || isnan(speed.z)) {
     // Reset the kalman filter
-    target_pos_kalman_init(&remote_sensing_kalman, P0, Q0, 1/REMOTE_SENSING_AM_PERIODIC_FREQ);
+    target_pos_kalman_init(&remote_sensing_kalman, P0, Q0, REMOTE_SENSING_AM_PERIODIC_PERIOD);
   } 
 
   update_waypoint(WP_KALMAN, &pos);
@@ -693,5 +693,5 @@ static void falcon_auto_mode(void) {
 
   if (new_mode == mode) return;
   t_switch = current_time;
-  remote_sensing_AM_send_falcon_cmd(mode);
+  remote_sensing_AM_send_falcon_cmd(new_mode);
 }
