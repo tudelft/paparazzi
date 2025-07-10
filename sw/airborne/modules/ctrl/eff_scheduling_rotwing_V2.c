@@ -68,7 +68,6 @@ float G2_RW[EFF_MAT_COLS_NB]                       = {0};//ROTWING_EFF_SCHED_G2;
 float G1_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB]      = {0};//{ROTWING_EFF_SCHED_G1_ZERO, ROTWING_EFF_SCHED_G1_ZERO, ROTWING_EFF_SCHED_G1_THRUST, ROTWING_EFF_SCHED_G1_ROLL, ROTWING_EFF_SCHED_G1_PITCH, ROTWING_EFF_SCHED_G1_YAW}; //scaled by RW_G_SCALE 
 float EFF_MAT_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB] = {0};
 float I_inv[3][3]                                  = {0};
-float ratio_I_xx = 0.4; // Should be 0.3778
 static float flt_cut_a  = 1.0e-6;
 static float flt_cut_ap = 2.0e-3;
 static float flt_cut    = 1.0e-4;
@@ -142,14 +141,14 @@ void eff_scheduling_rotwing_init(void)
 void init_RW_Model(void)
 {
   // Inertia and mass
-  RW.I.b_xx = 0.0535; // [kgm²] (0.0478 + 0.08099)
-  RW.I.b_yy = 0.9851; // [kgm²] (0.7546 + 0.1949)
-  RW.I.w_xx = 0.5*0.0621; // [kgm²] //fixme
-  RW.I.w_yy = 0.5*0.2788; // [kgm²] //fixme
-  RW.I.xx   = (RW.I.b_xx + RW.I.w_xx)*ratio_I_xx; // [kgm²]
-  RW.I.yy   = RW.I.b_yy + RW.I.w_yy; // [kgm²]
-  RW.I.zz   = 1.2842; // [kgm²]
-  RW.m      = 6.5; //7.200; // [kg]
+  RW.I.b_xx = ROTWING_EFF_SCHED_IXX_BODY; // [kgm²] 
+  RW.I.b_yy = ROTWING_EFF_SCHED_IYY_BODY; // [kgm²] 
+  RW.I.w_xx = ROTWING_EFF_SCHED_IXX_WING; // [kgm²] 
+  RW.I.w_yy = ROTWING_EFF_SCHED_IYY_WING; // [kgm²] 
+  RW.I.xx   = (RW.I.b_xx + RW.I.w_xx);    // [kgm²]
+  RW.I.yy   = RW.I.b_yy + RW.I.w_yy;      // [kgm²]
+  RW.I.zz   = ROTWING_EFF_SCHED_IZZ;      // [kgm²]
+  RW.m      = ROTWING_EFF_SCHED_M;        // [kg]
   
   // Init the thrust curves
   init_all_thrust_curve();
@@ -252,7 +251,7 @@ void calc_G1_G2_RW(void)
   int y = 1;
   int z = 2;
   float sigma = (RW.I.b_xx*RW.I.b_yy + RW.I.b_xx*RW.I.w_yy*RW.skew.cosr2 + RW.I.b_yy*RW.I.w_xx*RW.skew.cosr2 + RW.I.w_xx*RW.I.w_yy*RW.skew.cosr4 + RW.I.b_xx*RW.I.w_xx*RW.skew.sinr2 + RW.I.b_yy*RW.I.w_yy*RW.skew.sinr2 + RW.I.w_xx*RW.I.w_yy*RW.skew.sinr4 + 2*RW.I.w_xx*RW.I.w_yy*RW.skew.cosr2*RW.skew.sinr2);
-  I_inv[x][x] = (RW.I.w_yy*RW.skew.cosr2 + RW.I.w_xx*RW.skew.sinr2 + RW.I.b_yy)/(sigma*ratio_I_xx);
+  I_inv[x][x] = (RW.I.w_yy*RW.skew.cosr2 + RW.I.w_xx*RW.skew.sinr2 + RW.I.b_yy)/(sigma);
   I_inv[x][y] = (RW.skew.cosr*RW.skew.sinr*(RW.I.w_xx - RW.I.w_yy))/sigma;
   I_inv[x][z] = 0.0;
   I_inv[y][x] = I_inv[x][y];
@@ -457,7 +456,7 @@ void eff_scheduling_rotwing_update_wing_angle(void)
 float time = 0.0;
 void eff_scheduling_rotwing_update_airspeed(void)
 {
-  RW.as = 0.0;//stateGetAirspeed_f();
+  RW.as = 0.0; //stateGetAirspeed_f(); FIXME
   Bound(RW.as, 0. , 30.);
   RW.as2 = RW.as * RW.as;
   Bound(RW.as2, 0. , 900.);

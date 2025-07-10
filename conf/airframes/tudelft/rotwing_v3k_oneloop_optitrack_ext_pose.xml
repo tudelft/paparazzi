@@ -405,12 +405,12 @@
         <define name  = "dMzdu"              value = "{-0.40f,   0.40f,  -0.40f,   0.40f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>
         <define name  = "dMzdu_G2"           value = "{-0.02f,   0.02f,  -0.02f,   0.02f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f,   0.00f }"/>
         <define name  = "l"                  value = "{ 0.423f,  0.408f,   0.423f, 0.408f,  0.00f,   1.00f,   1.00f,   1.00f,   1.00f,   0.00f,   0.00f }"/> -->
-        <define name="IXX_BODY"              value="0.04780"/>
-        <define name="IYY_BODY"              value="0.7546"/>
-        <define name="IZZ"                   value="0.9752"/>
-        <define name="IXX_WING"              value="0.08099"/>
-        <define name="IYY_WING"              value="0.1949"/>
-        <define name="M"                     value="6.67"/>
+        <define name="IXX_BODY"              value="0.0214"/>
+        <define name="IYY_BODY"              value="0.9851"/>
+        <define name="IZZ"                   value="1.2842"/>
+        <define name="IXX_WING"              value="0.0124"/>
+        <define name="IYY_WING"              value="0.1394"/>
+        <define name="M"                     value="6.5"/>
     </section>    
 
     <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
