@@ -495,6 +495,7 @@ struct FloatEulers eulers_zxy;
 float  psi_des_rad = 0.0;
 float  psi_des_deg = 0.0;
 static float  psi_vec[4]  = {0.0, 0.0, 0.0, 0.0};
+static float  phi_vec[4] = {0.0, 0.0, 0.0, 0.0};
 
 #if ONELOOP_ANDI_HEADING_MANUAL
 bool heading_manual = true;
@@ -562,9 +563,9 @@ float time_elapsed_chirp  = 0.0;
 float t_0_chirp           = 0.0;
 float f0_chirp            = 0.2;//0.8 / (2.0 * M_PI);
 float f1_chirp            = 0.2;//0.8 / (2.0 * M_PI);
-float t_chirp             = 1.0;
-float A_chirp             = -46.0;
-int8_t chirp_axis         = 5;
+float t_chirp             = 0.5;
+float A_chirp             = 80.0;
+int8_t chirp_axis         = 6;
 float p_ref_0[3]          = {0.0, 0.0, 0.0};
      
 /*Declaration of Reference Model and Error Controller Gains*/
@@ -1919,7 +1920,21 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
       psi_vec[2] = oneloop_andi.sta_ref.att_2d[2];
       psi_vec[3] = oneloop_andi.sta_ref.att_3d[2];
     }
+    bool ow_phi = false;
+    if (chirp_on && chirp_axis==6){
+      ow_phi = true;
+      phi_vec[0] = oneloop_andi.sta_ref.att[0];
+      phi_vec[1] = oneloop_andi.sta_ref.att_d[0];
+      phi_vec[2] = oneloop_andi.sta_ref.att_2d[0];
+      phi_vec[3] = oneloop_andi.sta_ref.att_3d[0];
+    }
     rm_3rd_attitude(dt_1l, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, att_des, ow_psi, psi_vec, k_att_rm.k1, k_att_rm.k2, k_att_rm.k3, sta_bounds);
+    if (ow_phi){
+      oneloop_andi.sta_ref.att[0]    = phi_vec[0];
+      oneloop_andi.sta_ref.att_d[0]  = phi_vec[1];
+      oneloop_andi.sta_ref.att_2d[0] = phi_vec[2];
+      oneloop_andi.sta_ref.att_3d[0] = phi_vec[3];
+    }
  }
 }
 
@@ -2483,7 +2498,7 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, i
     f1 = f0;
   }
   // 0 body x, 1 body y, 2 body z, 3 pitch pref, 4 Yaw
-  if (n > 5){
+  if (n > 6){
     n = 0;
   }
   if (n < 0){
@@ -2567,6 +2582,15 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, i
           BoundAbs(S_psi, 0.9*M_PI_2)
           psi_des_rad = oneloop_andi.sta_state.att[2] + S_psi;
           NormRadAngle(psi_des_rad);
+          break;
+      case 6:
+          // Do a doublet on the roll acceleration
+          oneloop_andi.sta_ref.att[0]    = oneloop_andi.sta_state.att[0];
+          oneloop_andi.sta_ref.att_d[0]  = oneloop_andi.sta_state.att_d[0];
+          //oneloop_andi.sta_ref.att_2d[0] = (time_elapsed < (t_chirp/2.0)) ? A*M_PI/180.0 : -A*M_PI/180.0;
+          oneloop_andi.sta_ref.att_2d[0] = -A*M_PI/180.0;
+          oneloop_andi.sta_ref.att_3d[0] = 0.0;
+          break;
   }
 
 }

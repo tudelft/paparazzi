@@ -24,7 +24,7 @@
       <dl_setting var="k_as"               min="1.0"     step="0.001" max="10"    shortname="k_as"/> 
       <dl_setting var="ctrl_off"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="ctrl_off"/> 
       <dl_setting var="chirp_on"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="chirp_on"/>  
-      <dl_setting var="chirp_axis"         min="0"       step="1"     max="4"     shortname="chirp_axis"/>  
+      <dl_setting var="chirp_axis"         min="0"       step="1"     max="6"     shortname="chirp_axis"/>  
       <dl_setting var="f0_chirp"           min="0.01"    step="0.001" max="10"    shortname="f0_chirp"/> 
       <dl_setting var="f1_chirp"           min="0.01"    step="0.001" max="10"    shortname="f1_chirp"/>
       <dl_setting var="t_chirp"            min="0.01"    step="0.001" max="60"    shortname="t_chirp"/>
