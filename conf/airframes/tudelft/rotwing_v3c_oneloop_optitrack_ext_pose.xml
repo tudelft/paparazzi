@@ -366,8 +366,8 @@
         <define name="MF_k3"                 value="1.43f"/>
         <!--Motor Right-->
         <define name="MR_dFdu"               value="5.375f" /><!-- [N/pprz] -->
-        <define name="MR_dMdu"               value="0.258f" /><!-- [Nm/pprz] -->
-        <define name="MR_dMdud"              value="3.711f" /><!-- [Nm/pprz] -->
+        <define name="MR_dMdu"               value="0.150f" /><!-- [Nm/pprz] -->
+        <define name="MR_dMdud"              value="27.74f" /><!-- [Nm/pprz] -->
         <define name="MR_l"                  value="0.380f" /><!-- [m] -->
         <define name="MR_k1"                 value="5.37e-7f"/>
         <define name="MR_k2"                 value="2.20e-4f"/>
@@ -382,8 +382,8 @@
         <define name="MB_k3"                 value="1.43f"/>
         <!--Motor Left-->
         <define name="ML_dFdu"               value="5.375f" /><!-- [N/pprz] -->
-        <define name="ML_dMdu"               value="0.258f" /><!-- [Nm/pprz] -->
-        <define name="ML_dMdud"              value="3.711f" /><!-- [Nm/pprz] -->
+        <define name="ML_dMdu"               value="0.150f" /><!-- [Nm/pprz] -->
+        <define name="ML_dMdud"              value="27.74f" /><!-- [Nm/pprz] -->
         <define name="ML_l"                  value="0.380f" /><!-- [m] -->
         <define name="ML_k1"                 value="5.37e-7f"/>
         <define name="ML_k2"                 value="2.20e-4f"/>
