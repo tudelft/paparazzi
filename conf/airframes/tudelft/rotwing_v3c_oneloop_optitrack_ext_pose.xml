@@ -19,11 +19,7 @@
             </module>
             <module name="sys_mon"/>
             <module name="flight_recorder"/>
-
-            <module name="lidar_tfmini">
-                <configure name="TFMINI_PORT"    value="UART8"/>
-                <configure name="USE_TFMINI_AGL" value="TRUE"/>
-            </module>     
+    
             <!-- RC switches -->
             <define name="RADIO_TH_HOLD"            value="RADIO_AUX1"/>
             <define name="RADIO_KILL_SWITCH"        value="RADIO_AUX1"/>
@@ -38,8 +34,8 @@
             <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
             <!--Use adc rot sensor-->
             <module name="wing_rotation_adc_sensor">
-                <define name="ADC_WING_ROT_OFFSET" value="-49.1731"/>
-                <define name="ADC_WING_ROT_SCALE"  value="0.0029986"/>
+                <define name="ADC_WING_ROT_OFFSET" value="-52.2062"/>
+                <define name="ADC_WING_ROT_SCALE"  value="0.0029503"/>
             </module>
             <!-- Log in high speed (Remove for outdoor flights) -->
             <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
@@ -145,7 +141,7 @@
 
     <!-- PWM actuators -->   
     <servos driver="Pwm">
-        <servo no="0" name="ROTATION_MECH"   min="1360" neutral="1586" max="1812"/>
+        <servo no="0" name="ROTATION_MECH"   min="1268" neutral="1497" max="1726"/>
     </servos>
 
     <!-- Can bus 1 actuators -->
@@ -295,9 +291,10 @@
         <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true, .filter=true},.neutral={-12,-9,20}, .scale={{30726,37910,15728},{3133,3871,1611}}, .filter_sample_freq=1134.1, .filter_freq=30}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-9,-30,26}, .scale={{45288,818,33359},{8935,167,6832}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-35,-5,13}, .scale={{26152,56165,62837},{5357,11479,12884}}}}"/>
         <define name="MAG_CALIB"   value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={785,-2641,40}, .scale={{7727,22807,32483},{13208,38799,54820}}}}"/>
         <define name="GYRO_CALIB"  value="{{.abi_id=20, .calibrated={.filter=true}, .filter_sample_freq=1134.1, .filter_freq=30}}"/>                    
-        <define name="BODY_TO_IMU_PHI"   value="-4.54"  unit="deg"/>
-        <define name="BODY_TO_IMU_THETA" value="1.84"   unit="deg"/>
-        <define name="BODY_TO_IMU_PSI"   value="0."     unit="deg"/>
+        <!-- Define axis in hover frame -->
+        <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
+        <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
+        <define name="BODY_TO_IMU_PSI"   value="180." unit="deg"/>
     </section>
     <checklist>
         <item name="pic" type="text">Enter the PIC</item>
