@@ -88,8 +88,8 @@ float ele_min = 0.0;
 /* Define Forces and Moments tructs for each actuator*/
 struct RW_Model RW;
 
-int thrust_curve = 2.0;
-float temp_mQ_k = 1.37;//1.2919; //5.0;
+int thrust_curve = 1.0;
+float temp_mQ_k = 1.37; //Manual Value For Tuning
 inline void eff_scheduling_rotwing_update_wing_angle(void);
 inline void eff_scheduling_rotwing_update_airspeed(void);
 void  ele_pref_sched(void);
@@ -153,30 +153,35 @@ void init_RW_Model(void)
   // Init the thrust curves
   init_all_thrust_curve();
   // Motor Front
-  //RW.mF.dFdu     = 3.835 / RW_G_SCALE; // [N  / pprz] 
-  RW.mF.dMdu     = 0.150 / RW_G_SCALE; // [Nm / pprz]
-  RW.mF.dMdud    = G2_on*27.74 / (RW_G_SCALE*RW_G_SCALE); // [Nm / pprz]
-  RW.mF.l        = 0.440             ; // [m]   435                
+  RW.mF.dFdu  = ROTWING_EFF_SCHED_MF_dFdu / RW_G_SCALE;
+  RW.mF.dMdu  = ROTWING_EFF_SCHED_MF_dMdu / RW_G_SCALE;
+  RW.mF.dMdud = G2_on * ROTWING_EFF_SCHED_MF_dMdud / (RW_G_SCALE * RW_G_SCALE);
+  RW.mF.l     = ROTWING_EFF_SCHED_MF_l;
+
   // Motor Right
-  //RW.mR.dFdu     = roll_eff / RW_G_SCALE; // [N  / pprz]
-  RW.mR.dMdu     = 0.258 / RW_G_SCALE; // [Nm / pprz]
-  RW.mR.dMdud    = G2_on*3.711 / (RW_G_SCALE*RW_G_SCALE); // [Nm / pprz] 
-  RW.mR.l        = 0.380             ; // [m]   375     
+  RW.mR.dFdu  = ROTWING_EFF_SCHED_MR_dFdu / RW_G_SCALE;
+  RW.mR.dMdu  = ROTWING_EFF_SCHED_MR_dMdu / RW_G_SCALE;
+  RW.mR.dMdud = G2_on * ROTWING_EFF_SCHED_MR_dMdud / (RW_G_SCALE * RW_G_SCALE);
+  RW.mR.l     = ROTWING_EFF_SCHED_MR_l;
+
   // Motor Back
-  //RW.mB.dFdu     = 3.835 / RW_G_SCALE; // [N  / pprz]
-  RW.mB.dMdu     = 0.150 / RW_G_SCALE; // [Nm / pprz]
-  RW.mB.dMdud    = G2_on*27.74 / (RW_G_SCALE*RW_G_SCALE); // [Nm / pprz]
-  RW.mB.l        = 0.440             ; // [m]        
+  RW.mB.dFdu  = ROTWING_EFF_SCHED_MB_dFdu / RW_G_SCALE;
+  RW.mB.dMdu  = ROTWING_EFF_SCHED_MB_dMdu / RW_G_SCALE;
+  RW.mB.dMdud = G2_on * ROTWING_EFF_SCHED_MB_dMdud / (RW_G_SCALE * RW_G_SCALE);
+  RW.mB.l     = ROTWING_EFF_SCHED_MB_l;
+
   // Motor Left
-  //RW.mL.dFdu     = roll_eff / RW_G_SCALE; // [N  / pprz]
-  RW.mL.dMdu     = 0.258 / RW_G_SCALE; // [Nm / pprz]
-  RW.mL.dMdud    = G2_on*3.711 / (RW_G_SCALE*RW_G_SCALE); // [Nm / pprz]
-  RW.mL.l        = 0.380             ; // [m]        
+  RW.mL.dFdu  = ROTWING_EFF_SCHED_ML_dFdu / RW_G_SCALE;
+  RW.mL.dMdu  = ROTWING_EFF_SCHED_ML_dMdu / RW_G_SCALE;
+  RW.mL.dMdud = G2_on * ROTWING_EFF_SCHED_ML_dMdud / (RW_G_SCALE * RW_G_SCALE);
+  RW.mL.l     = ROTWING_EFF_SCHED_ML_l;
+
   // Motor Pusher
-  RW.mP.dFdu     = 0.0;//3.468 / RW_G_SCALE; // [N  / pprz]
-  RW.mP.dMdu     = 0.000 / RW_G_SCALE; // [Nm / pprz]
-  RW.mP.dMdud    = 0.000 / RW_G_SCALE; // [Nm / pprz]
-  RW.mP.l        = 0.000             ; // [m]        
+  RW.mP.dFdu  = ROTWING_EFF_SCHED_MP_dFdu / RW_G_SCALE;
+  RW.mP.dMdu  = ROTWING_EFF_SCHED_MP_dMdu / RW_G_SCALE;
+  RW.mP.dMdud = G2_on * ROTWING_EFF_SCHED_MP_dMdud / (RW_G_SCALE * RW_G_SCALE);
+  RW.mP.l     = ROTWING_EFF_SCHED_MP_l;     
+
   // Elevator
   RW.ele.dFdu    = ele_eff / (RW_G_SCALE * RW_G_SCALE); // [N  / pprz]   old value: 24.81 29.70
   RW.ele.dMdu    = 0;                                 // [Nm / pprz]
@@ -360,11 +365,6 @@ void sum_EFF_MAT_RW(void) {
       EFF_MAT_RW[RW_ap][i] = (G1_RW[RW_ap][i])                                       ;
       EFF_MAT_RW[RW_aq][i] = (G1_RW[RW_aq][i])                                       ;
       EFF_MAT_RW[RW_ar][i] = (G1_RW[RW_ar][i] + G2_RW[i])                            ;
-      if(i == COMMAND_MOTOR_FRONT){
-        //printf("G2 part: %f\n", G2_RW[i]);
-        //printf("G1 part: %f\n", G1_RW[RW_ar][i]);
-        //printf("EFF_MAT_RW: %f\n", EFF_MAT_RW[RW_ar][i]);
-      }
       break;
     case (COMMAND_MOTOR_PUSHER): 
       EFF_MAT_RW[RW_aN][i] = (RW.att.cpsi   * RW.att.ctheta - RW.att.sphi * RW.att.spsi * RW.att.stheta) * G1_RW[RW_aX][i];
@@ -494,51 +494,47 @@ float calc_thrust_curve_d(float k1, float k2, float u){
 void calc_all_thrust_curve(void){
   switch(thrust_curve){
     case(0):
-      RW.mF.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, actuator_state_1l[COMMAND_MOTOR_FRONT]);
-      RW.mR.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, actuator_state_1l[COMMAND_MOTOR_RIGHT]);
-      RW.mB.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, actuator_state_1l[COMMAND_MOTOR_BACK]);
-      RW.mL.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, actuator_state_1l[COMMAND_MOTOR_LEFT]);
+      // Curve calculated at the Current Motor State
+      RW.mF.dFdu = calc_thrust_curve_d(ROTWING_EFF_SCHED_MF_k1, ROTWING_EFF_SCHED_MF_k2, actuator_state_1l[COMMAND_MOTOR_FRONT]);
+      RW.mR.dFdu = calc_thrust_curve_d(ROTWING_EFF_SCHED_MR_k1, ROTWING_EFF_SCHED_MR_k2, actuator_state_1l[COMMAND_MOTOR_RIGHT]);
+      RW.mB.dFdu = calc_thrust_curve_d(ROTWING_EFF_SCHED_MB_k1, ROTWING_EFF_SCHED_MB_k2, actuator_state_1l[COMMAND_MOTOR_BACK]) ;
+      RW.mL.dFdu = calc_thrust_curve_d(ROTWING_EFF_SCHED_ML_k1, ROTWING_EFF_SCHED_ML_k2, actuator_state_1l[COMMAND_MOTOR_LEFT]) ;
       break;
     case(1):
-      RW.mF.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);
-      RW.mR.dFdu = 1.2919 / RW_G_SCALE;//calc_thrust_curve_d(5.37e-7, 2.20e-4, 4800.0);
-      RW.mB.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);
-      RW.mL.dFdu = 1.2919 / RW_G_SCALE;//calc_thrust_curve_d(5.37e-7, 2.20e-4, 4800.0);
+      // Curve statically calculated at 50% throttle
+      RW.mF.dFdu = calc_thrust_curve_d(ROTWING_EFF_SCHED_MF_k1, ROTWING_EFF_SCHED_MF_k2, 4800.0);
+      RW.mR.dFdu = calc_thrust_curve_d(ROTWING_EFF_SCHED_MR_k1, ROTWING_EFF_SCHED_MR_k2, 4800.0);
+      RW.mB.dFdu = calc_thrust_curve_d(ROTWING_EFF_SCHED_MB_k1, ROTWING_EFF_SCHED_MB_k2, 4800.0);
+      RW.mL.dFdu = calc_thrust_curve_d(ROTWING_EFF_SCHED_ML_k1, ROTWING_EFF_SCHED_ML_k2, 4800.0);
       break;
     case(2):
-      RW.mF.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);//temp_mQ_k/RW_G_SCALE;
+      // Manual thrust for tuning
+      RW.mF.dFdu = calc_thrust_curve_d(ROTWING_EFF_SCHED_MF_k1, ROTWING_EFF_SCHED_MF_k2, 4800.0);
       RW.mR.dFdu = temp_mQ_k/RW_G_SCALE;
-      RW.mB.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);//temp_mQ_k/RW_G_SCALE;
+      RW.mB.dFdu = calc_thrust_curve_d(ROTWING_EFF_SCHED_MB_k1, ROTWING_EFF_SCHED_MB_k2, 4800.0);;
       RW.mL.dFdu = temp_mQ_k/RW_G_SCALE;
       break;
   }
-  
-  // dTdu    = 2*k1*u + k2--------|k1     | k2     | u
-  //printf("dFdu: %f %f %f %f\n", RW.mF.dFdu, RW.mR.dFdu, RW.mB.dFdu, RW.mL.dFdu);
-  // T = k1*u^2 + k2*u + k3-------|k1     | k2     | k3  | u
-  float T_mF = calc_thrust_curve(5.00e-7, 2.05e-4, 1.43, actuator_state_1l[COMMAND_MOTOR_FRONT]);
-  float T_mR = calc_thrust_curve(5.37e-7, 2.20e-4, 1.53, actuator_state_1l[COMMAND_MOTOR_RIGHT]);
-  float T_mB = calc_thrust_curve(5.00e-7, 2.05e-4, 1.43, actuator_state_1l[COMMAND_MOTOR_BACK]);
-  float T_mL = calc_thrust_curve(5.37e-7, 2.20e-4, 1.53, actuator_state_1l[COMMAND_MOTOR_LEFT]);
-  //printf("Control - Quad thrusts: %f %f %f %f\n", T_mF, T_mR, T_mB, T_mL);
+  // T = k1*u^2 + k2*u + k3-----|k1                      | k2                     | k3                     | u
+  float T_mF = calc_thrust_curve(ROTWING_EFF_SCHED_MF_k1, ROTWING_EFF_SCHED_MF_k2, ROTWING_EFF_SCHED_MF_k3, actuator_state_1l[COMMAND_MOTOR_FRONT]);
+  float T_mR = calc_thrust_curve(ROTWING_EFF_SCHED_MR_k1, ROTWING_EFF_SCHED_MR_k2, ROTWING_EFF_SCHED_MR_k3, actuator_state_1l[COMMAND_MOTOR_RIGHT]);
+  float T_mB = calc_thrust_curve(ROTWING_EFF_SCHED_MB_k1, ROTWING_EFF_SCHED_MB_k2, ROTWING_EFF_SCHED_MB_k3, actuator_state_1l[COMMAND_MOTOR_BACK]);
+  float T_mL = calc_thrust_curve(ROTWING_EFF_SCHED_ML_k1, ROTWING_EFF_SCHED_ML_k2, ROTWING_EFF_SCHED_ML_k3, actuator_state_1l[COMMAND_MOTOR_LEFT]);
   RW.T = RW.m*9.81;//T_mF + T_mR + T_mB + T_mL;
   Bound(RW.T, 30.0, 180.0);
-  //printf("T: %f\n", RW.T);
 }
 
 void init_all_thrust_curve(void){
-  // dTdu    = 2*k1*u + k2--------|k1     | k2     | u
-  RW.mF.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);
-  RW.mR.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, 4800.0);
-  RW.mB.dFdu = calc_thrust_curve_d(5.00e-7, 2.05e-4, 4800.0);
-  RW.mL.dFdu = calc_thrust_curve_d(5.37e-7, 2.20e-4, 4800.0);
-  //printf("dFdu: %f %f %f %f\n", RW.mF.dFdu, RW.mR.dFdu, RW.mB.dFdu, RW.mL.dFdu);
-  // T = k1*u^2 + k2*u + k3-------|k1     | k2     | k3  | u
-  float T_mF = calc_thrust_curve(5.00e-7, 2.05e-4, 1.43, 4800.0);
-  float T_mR = calc_thrust_curve(5.37e-7, 2.20e-4, 1.53, 4800.0);
-  float T_mB = calc_thrust_curve(5.00e-7, 2.05e-4, 1.43, 4800.0);
-  float T_mL = calc_thrust_curve(5.37e-7, 2.20e-4, 1.53, 4800.0);
-  //printf("Control - Quad thrusts: %f %f %f %f\n", T_mF, T_mR, T_mB, T_mL);
+  // dTdu    = 2*k1*u + k2--------|k1                      | k2                      | u
+  RW.mF.dFdu = calc_thrust_curve_d(ROTWING_EFF_SCHED_MF_k1, ROTWING_EFF_SCHED_MF_k2, 4800.0);
+  RW.mR.dFdu = calc_thrust_curve_d(ROTWING_EFF_SCHED_MR_k1, ROTWING_EFF_SCHED_MR_k2, 4800.0);
+  RW.mB.dFdu = calc_thrust_curve_d(ROTWING_EFF_SCHED_MB_k1, ROTWING_EFF_SCHED_MB_k2, 4800.0);
+  RW.mL.dFdu = calc_thrust_curve_d(ROTWING_EFF_SCHED_ML_k1, ROTWING_EFF_SCHED_ML_k2, 4800.0);
+  // T = k1*u^2 + k2*u + k3-------|k1                     | k2                    | k3                     | u
+  float T_mF = calc_thrust_curve(ROTWING_EFF_SCHED_MF_k1, ROTWING_EFF_SCHED_MF_k2, ROTWING_EFF_SCHED_MF_k3, 4800.0);
+  float T_mR = calc_thrust_curve(ROTWING_EFF_SCHED_MR_k1, ROTWING_EFF_SCHED_MR_k2, ROTWING_EFF_SCHED_MR_k3, 4800.0);
+  float T_mB = calc_thrust_curve(ROTWING_EFF_SCHED_MB_k1, ROTWING_EFF_SCHED_MB_k2, ROTWING_EFF_SCHED_MB_k3, 4800.0);
+  float T_mL = calc_thrust_curve(ROTWING_EFF_SCHED_ML_k1, ROTWING_EFF_SCHED_ML_k2, ROTWING_EFF_SCHED_ML_k3, 4800.0);
   RW.T = T_mF + T_mR + T_mB + T_mL;
   Bound(RW.T, 0.0, 180.0);
 }
