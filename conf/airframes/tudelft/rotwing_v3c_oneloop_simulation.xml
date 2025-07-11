@@ -98,20 +98,17 @@
             <define name="WLS_N_V_MAX" value = "6"/>
         </module>
 
-        <module name="ground_detect"/>
+        <!-- <module name="ground_detect"/> -->
         <module name="rotwing_state_V2">
              <define name = "USE_ROTMECH_VIRTUAL" value = "TRUE"/>
              <define name = "ROTMECH_DYN"         value = "3.0"/>
         </module>
         <module name="agl_dist"/>
-        <module name="rotwing_automation">
-            <define name="RW_USE_MODULES_V2" value="TRUE"/>
-        </module>
     </firmware>
 
     <!-- PWM actuators -->   
     <servos driver="Pwm">
-        <servo no="0" name="ROTATION_MECH"   min="1360" neutral="1586" max="1812"/>
+        <servo no="0" name="ROTATION_MECH"   min="1268" neutral="1497" max="1726"/>
     </servos>
 
     <!-- Can bus 1 actuators -->
@@ -211,7 +208,7 @@
         <define name="STABILIZATION_ATTITUDE_DEADBAND_R"    value="200"             />
         <define name="FWD_SIDESLIP_GAIN"                    value="0.2"/> <!-- cyfoam 0.32-->
     </section>
-    <section name="GROUND_DETECT">
+    <!-- <section name="GROUND_DETECT">
         <define name="THRESHOLD_GROUND_DETECT"              value="40"/>
         <define name="USE_GROUND_DETECT_INDI_THRUST"        value="FALSE"/>
         <define name="USE_GROUND_DETECT_AGL_DIST"           value="TRUE"/>
@@ -219,7 +216,7 @@
         <define name="AGL_DIST_MIN_DISTANCE_CHECK"          value="0.20"/>
         <define name="AGL_DIST_MAX_DISTANCE_CHECK"          value="0.25"/>
         <define name="AGL_DIST_FILTER"                      value="0.07"/>
-    </section>
+    </section> -->
 
     <section name="IMU" prefix="IMU_">
         <!-- For some reason accel calibration does not work in JSBSIM. Cannot solve simply in NPS section. -->
@@ -266,26 +263,6 @@
         <define name="IXX_WING"              value="0.08099"/>
         <define name="IYY_WING"              value="0.1949"/>
         <define name="M"                     value="6.67"/>
-
-        <define name="DM_DPPRZ_HOVER_PITCH"  value="0.001537287553553"/>
-        <define name="DM_DPPRZ_HOVER_ROLL"   value="{5.86747416762564,0.001936126151564}"/>
-
-        <define name="HOVER_ROLL_PITCH_COEF" value="{0.001418491625685,-0.000649367806611}"/>
-        <define name="HOVER_ROLL_ROLL_COEF"  value="{-0.0000839259143513,-0.0000478083}"/>
-
-        <define name="K_ELEVATOR"            value="{0.4603,-4.81466,-28.8464}"/>
-        <define name="K_RUDDER"              value="{-26.1434,-0.336403,-5.9}"/>
-        <define name="K_AILERON"             value="2.777647188"/>
-        <define name="K_FLAPERON"            value="2.0439"/>
-        <define name="K_PUSHER"              value="{0.007777,-0.67521}"/>
-
-        <define name="K_ELEVATOR_DEFLECTION" value="{50.0,-0.0063}"/>
-        <define name="D_RUDDER_D_PPRZ"       value="-0.0018"/>
-        <define name="K_RPM_PPRZ_PUSHER"     value="{-116.518697071689,1.17051409813432,-0.00002580110593734}"/>
-
-        <define name="K_LIFT_WING"           value="{-0.335811392,-0.615611143}"/>
-        <define name="K_LIFT_FUSELAGE"       value="-0.050653927"/>
-        <define name="K_LIFT_TAIL"           value="-0.101691751"/>
     </section>
 
     <section name="AUTOPILOT">

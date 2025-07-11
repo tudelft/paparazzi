@@ -187,7 +187,7 @@ inline void rotwing_state_free_processor(void);
 #include "modules/datalink/telemetry.h"
 static void send_rotating_wing_state(struct transport_tx *trans, struct link_device *dev)
 {
-  uint16_t adc_dummy = adc_wing_rotation_extern;
+  uint16_t adc_dummy = 0.0;//adc_wing_rotation_extern;
 
   pprz_msg_send_ROTATING_WING_STATE(trans, dev, AC_ID,
                                     &rotwing_state.current_state,

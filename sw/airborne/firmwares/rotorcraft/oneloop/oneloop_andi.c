@@ -458,19 +458,19 @@ static void send_eff_mat_stab_oneloop_andi(struct transport_tx *trans, struct li
 {
   float zero = 0.0;
   pprz_msg_send_EFF_MAT_STAB(trans, dev, AC_ID, 
-                ANDI_NUM_ACT, EFF_MAT_G[3],
-                ANDI_NUM_ACT, EFF_MAT_G[4],
-                ANDI_NUM_ACT, EFF_MAT_G[5], 
+                ANDI_NUM_ACT, EFF_MAT_RW[3],
+                ANDI_NUM_ACT, EFF_MAT_RW[4],
+                ANDI_NUM_ACT, EFF_MAT_RW[5], 
                                     1, &zero,
-                                    1, &zero);
+                ANDI_NUM_ACT, G2_RW);
 }
 
 static void send_eff_mat_guid_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_EFF_MAT_GUID(trans, dev, AC_ID, 
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[0],
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[1],
-                ANDI_NUM_ACT_TOT, EFF_MAT_G[2]);
+                ANDI_NUM_ACT_TOT, EFF_MAT_RW[0],
+                ANDI_NUM_ACT_TOT, EFF_MAT_RW[1],
+                ANDI_NUM_ACT_TOT, EFF_MAT_RW[2]);
 }
 static void send_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
@@ -527,14 +527,11 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
 
 static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
 {
-  float temp_debug_vect[7];
-  temp_debug_vect[0] = model_pred[0];
-  temp_debug_vect[1] = model_pred[1];
-  temp_debug_vect[2] = model_pred[2];
-  temp_debug_vect[3] = model_pred[3];
-  temp_debug_vect[4] = model_pred[4];
-  temp_debug_vect[5] = model_pred[5];
-  temp_debug_vect[6] = RW.as;
+  float temp_debug_vect[4];
+  temp_debug_vect[0]  = EFF_MAT_G[2][0];
+  temp_debug_vect[1]  = EFF_MAT_G[3][0];
+  temp_debug_vect[2]  = EFF_MAT_G[4][0];
+  temp_debug_vect[3]  = EFF_MAT_G[5][0];
   debug_vect(trans, dev, "model_pred_as", temp_debug_vect, 7);
 }
 #endif
@@ -1694,6 +1691,7 @@ void G1G2_oneloop(int ctrl_type) {
     }
     int j = 0;
     for (j = 0; j < ANDI_OUTPUTS; j++) {
+      //printf("EFF_MAT_RW[%d][%d] = %f\n", j, i, EFF_MAT_RW[j][i]);
       EFF_MAT_G[j][i] = EFF_MAT_RW[j][i] * scaler * ratio_vn_v[j];
       if (airspeed_filt.o[0] < ELE_MIN_AS && i == COMMAND_ELEVATOR){
         EFF_MAT_G[j][i] = 0.0;
