@@ -640,7 +640,7 @@
   <aircraft
    name="RW3C_DePonti_Simulation"
    ac_id="198"
-   airframe="airframes/tudelft/rotwing_v3k_oneloop_simulation.xml"
+   airframe="airframes/tudelft/rotwing_v3c_oneloop_simulation.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/oneloop_telemetry.xml"
    flight_plan="flight_plans/tudelft/oneloop_valkenburg.xml"

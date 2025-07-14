@@ -186,6 +186,10 @@ struct RW_Model{
 
 };
 
+extern bool manual_roll  ;
+extern bool manual_pitch ;
+extern bool manual_yaw   ;
+
 extern int G2_on;
 extern int thrust_curve; 
 extern float temp_mQ_k;

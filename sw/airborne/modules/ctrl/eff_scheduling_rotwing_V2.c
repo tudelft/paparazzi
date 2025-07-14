@@ -63,6 +63,9 @@ float actuator_state_filt_vect[EFF_MAT_COLS_NB] = {0};
 #error "NO ROTWING_EFF_SCHED_M defined"
 #endif
 
+bool manual_roll  = true;
+bool manual_pitch = true;
+bool manual_yaw   = true;
 /* Effectiveness Matrix definition */
 float G2_RW[EFF_MAT_COLS_NB]                       = {0};//ROTWING_EFF_SCHED_G2; //scaled by RW_G_SCALE
 float G1_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB]      = {0};//{ROTWING_EFF_SCHED_G1_ZERO, ROTWING_EFF_SCHED_G1_ZERO, ROTWING_EFF_SCHED_G1_THRUST, ROTWING_EFF_SCHED_G1_ROLL, ROTWING_EFF_SCHED_G1_PITCH, ROTWING_EFF_SCHED_G1_YAW}; //scaled by RW_G_SCALE 
@@ -155,31 +158,32 @@ void init_RW_Model(void)
   // Motor Front
   RW.mF.dFdu  = ROTWING_EFF_SCHED_MF_dFdu / RW_G_SCALE;
   RW.mF.dMdu  = ROTWING_EFF_SCHED_MF_dMdu / RW_G_SCALE;
-  RW.mF.dMdud = G2_on * ROTWING_EFF_SCHED_MF_dMdud / (RW_G_SCALE * RW_G_SCALE);
+  RW.mF.dMdud = ROTWING_EFF_SCHED_MF_dMdud / (RW_G_SCALE * RW_G_SCALE);
+  printf("RW.mF.dFdu: %f\n", RW.mF.dFdu);
   RW.mF.l     = ROTWING_EFF_SCHED_MF_l;
 
   // Motor Right
   RW.mR.dFdu  = ROTWING_EFF_SCHED_MR_dFdu / RW_G_SCALE;
   RW.mR.dMdu  = ROTWING_EFF_SCHED_MR_dMdu / RW_G_SCALE;
-  RW.mR.dMdud = G2_on * ROTWING_EFF_SCHED_MR_dMdud / (RW_G_SCALE * RW_G_SCALE);
+  RW.mR.dMdud = ROTWING_EFF_SCHED_MR_dMdud / (RW_G_SCALE * RW_G_SCALE);
   RW.mR.l     = ROTWING_EFF_SCHED_MR_l;
 
   // Motor Back
   RW.mB.dFdu  = ROTWING_EFF_SCHED_MB_dFdu / RW_G_SCALE;
   RW.mB.dMdu  = ROTWING_EFF_SCHED_MB_dMdu / RW_G_SCALE;
-  RW.mB.dMdud = G2_on * ROTWING_EFF_SCHED_MB_dMdud / (RW_G_SCALE * RW_G_SCALE);
+  RW.mB.dMdud = ROTWING_EFF_SCHED_MB_dMdud / (RW_G_SCALE * RW_G_SCALE);
   RW.mB.l     = ROTWING_EFF_SCHED_MB_l;
 
   // Motor Left
   RW.mL.dFdu  = ROTWING_EFF_SCHED_ML_dFdu / RW_G_SCALE;
   RW.mL.dMdu  = ROTWING_EFF_SCHED_ML_dMdu / RW_G_SCALE;
-  RW.mL.dMdud = G2_on * ROTWING_EFF_SCHED_ML_dMdud / (RW_G_SCALE * RW_G_SCALE);
+  RW.mL.dMdud = ROTWING_EFF_SCHED_ML_dMdud / (RW_G_SCALE * RW_G_SCALE);
   RW.mL.l     = ROTWING_EFF_SCHED_ML_l;
 
   // Motor Pusher
   RW.mP.dFdu  = ROTWING_EFF_SCHED_MP_dFdu / RW_G_SCALE;
   RW.mP.dMdu  = ROTWING_EFF_SCHED_MP_dMdu / RW_G_SCALE;
-  RW.mP.dMdud = G2_on * ROTWING_EFF_SCHED_MP_dMdud / (RW_G_SCALE * RW_G_SCALE);
+  RW.mP.dMdud = ROTWING_EFF_SCHED_MP_dMdud / (RW_G_SCALE * RW_G_SCALE);
   RW.mP.l     = ROTWING_EFF_SCHED_MP_l;     
 
   // Elevator
@@ -429,6 +433,24 @@ void sum_EFF_MAT_RW(void) {
           break;
       }
     }
+  }
+  if(manual_roll){
+    EFF_MAT_RW[RW_ap][1] = -0.012149; 
+    EFF_MAT_RW[RW_ap][3] = 0.012149;
+  }
+  if(manual_pitch){
+    EFF_MAT_RW[RW_aq][0] = 0.001708; 
+    EFF_MAT_RW[RW_aq][2] = -0.001708;
+  }
+  if(manual_yaw){
+    EFF_MAT_RW[RW_ar][0] = -0.000421; 
+    EFF_MAT_RW[RW_ar][1] = 0.000421;
+    EFF_MAT_RW[RW_ar][2] = -0.000421;
+    EFF_MAT_RW[RW_ar][3] = 0.000421;
+    G2_RW[0] = -2.1e-5;
+    G2_RW[1] = 2.1e-5;
+    G2_RW[2] = -2.1e-5;
+    G2_RW[3] = 2.1e-5;
   }
 }
 

@@ -613,7 +613,7 @@ float  temp_e_x = 0.0;
 float  temp_e_x_rates = 0.0;
 float  temp_x_d_f = 0.0;
 float  temp_x_2d_f = 0.0;
-bool drop_yaw = false;
+bool drop_yaw = true;
 int16_t counter_andi = 0;
 /*Filters Initialization*/
 static Butterworth2LowPass filt_veloc_N;                 // Low pass filter for velocity NED - oneloop_andi_filt_cutoff_a (tau_a)       
@@ -641,8 +641,8 @@ static void send_eff_mat_stab_oneloop_andi(struct transport_tx *trans, struct li
                 ANDI_NUM_ACT, EFF_MAT_RW[3],
                 ANDI_NUM_ACT, EFF_MAT_RW[4],
                 ANDI_NUM_ACT, EFF_MAT_RW[5], 
-                ANDI_NUM_ACT, G2_RW,
-                                    1, &zero);
+                                   1, &zero,
+                ANDI_NUM_ACT, G2_RW);
 }
 
 static void send_eff_mat_guid_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
@@ -1807,6 +1807,11 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     // Disregard X and Y jerk objectives
     WLS_one_p.Wv[0] = 0.0;
     WLS_one_p.Wv[1] = 0.0;
+    if(drop_yaw){
+      WLS_one_p.Wv[5] = 0.0;
+    } else {
+      WLS_one_p.Wv[5] = Wv_backup[5];
+    }
     // Overwrite references with actual signals (for consistent plotting)
     float_vect_copy(oneloop_andi.gui_ref.pos,oneloop_andi.gui_state.pos,3);
     float_vect_copy(oneloop_andi.gui_ref.vel,oneloop_andi.gui_state.vel,3);
@@ -2067,11 +2072,11 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   // weather vaning ---------------------
   //nu[5] = oneloop_andi_model[5] - temp_k * oneloop_andi.sta_ref.att_d[2]; //Interesting idea to weather vane the drone
   if (drop_yaw){
-    nu[0] = oneloop_andi_model_filt.ax.out;
-    nu[1] = oneloop_andi_model_filt.ay.out;
-    nu[2] = oneloop_andi_model_filt.az.out;
-    nu[3] = oneloop_andi_model_filt.p_dot.out*k_att_e.k3[0];
-    nu[4] = oneloop_andi_model_filt.q_dot.out*k_att_e.k3[1];
+    // nu[0] = oneloop_andi_model_filt.ax.out;
+    // nu[1] = oneloop_andi_model_filt.ay.out;
+    // nu[2] = oneloop_andi_model_filt.az.out;
+    // nu[3] = oneloop_andi_model_filt.p_dot.out*k_att_e.k3[0];
+    // nu[4] = oneloop_andi_model_filt.q_dot.out*k_att_e.k3[1];
     nu[5] = oneloop_andi_model_filt.r_dot.out*k_att_e.k3[2];
   }
   //------------------------------------
@@ -2190,13 +2195,13 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   if (rotwing_state.fail_pusher_motor){
     commands[COMMAND_MOTOR_PUSHER] = -9600;//Min(1000,andi_u[COMMAND_MOTOR_PUSHER]);
   }
-  if (drop_yaw && radio_control_get(RADIO_THROTTLE)>200){
-    commands[COMMAND_MOTOR_RIGHT] = radio_control_get(RADIO_THROTTLE);
-    commands[COMMAND_MOTOR_LEFT]  = radio_control_get(RADIO_THROTTLE);
-    commands[COMMAND_MOTOR_FRONT] = radio_control_get(RADIO_THROTTLE);
-    commands[COMMAND_MOTOR_BACK]  = radio_control_get(RADIO_THROTTLE);
+  // if (drop_yaw && radio_control_get(RADIO_THROTTLE)>200){
+  //   commands[COMMAND_MOTOR_RIGHT] = radio_control_get(RADIO_THROTTLE);
+  //   commands[COMMAND_MOTOR_LEFT]  = radio_control_get(RADIO_THROTTLE);
+  //   commands[COMMAND_MOTOR_FRONT] = radio_control_get(RADIO_THROTTLE);
+  //   commands[COMMAND_MOTOR_BACK]  = radio_control_get(RADIO_THROTTLE);
 
-  }
+  // }
   commands[COMMAND_THRUST] = (commands[COMMAND_MOTOR_FRONT] + commands[COMMAND_MOTOR_RIGHT] + commands[COMMAND_MOTOR_BACK] + commands[COMMAND_MOTOR_LEFT])/num_thrusters_oneloop;
   autopilot.throttle = commands[COMMAND_THRUST];
   stabilization.cmd[COMMAND_THRUST] = commands[COMMAND_THRUST];
@@ -2274,8 +2279,8 @@ void G1G2_oneloop(int ctrl_type) {
     bool turn_quad_off = ((!rotwing_state.hover_motors_enabled || !rotwing_state_hover_motors_running()) && rotwing_state.state != ROTWING_STATE_FORCE_HOVER);
     for (j = 0; j < ANDI_OUTPUTS; j++) {
       EFF_MAT_G[j][i] = EFF_MAT_RW[j][i] * scaler * ratio_vn_v[j];
-      if (drop_yaw && (i == COMMAND_MOTOR_RIGHT || i == COMMAND_MOTOR_LEFT)){
-        EFF_MAT_G[j][i] = 0.0;
+      if (drop_yaw){
+        EFF_MAT_G[5][i] = 0.0;
       }
       if (airspeed_filt.o[0] < ELE_MIN_AS && i == COMMAND_ELEVATOR){
         EFF_MAT_G[j][i] = 0.0;
