@@ -123,6 +123,7 @@ extern void remote_sensing_parse_falcon_sixdof(uint8_t *buf);
 extern void remote_sensing_parse_falcon_relangle(uint8_t *buf);
 extern void remote_sensing_parse_falcon_relbeacon(uint8_t *buf);
 extern void remote_sensing_parse_opencv_aruco(uint8_t *buf);
+extern void remote_sensing_send_aruco_attitude(void);
 
 extern void receive_landing_algorithm_outputs(uint8_t *buf);
 void test_request_landing_path(void);

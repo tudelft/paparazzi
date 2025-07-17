@@ -40,7 +40,8 @@
     <file name="remote_sensing_AM.h"/>
   </header>
   <init fun="remote_sensing_AM_init()"/>
-  <periodic fun="remote_sensing_AM_periodic()" freq="50"/>
+  <periodic fun="remote_sensing_AM_periodic()"/>
+  <periodic fun="remote_sensing_send_aruco_attitude()"/>
   <datalink message="TARGET_POS" fun="remote_sensing_parse_target_pos(buf)"/>
   <datalink class="intermcu" message="IMCU_FALCON_SIXDOF" fun="remote_sensing_parse_falcon_sixdof(buf)"/>
   <datalink class="intermcu" message="IMCU_FALCON_RELANGLE" fun="remote_sensing_parse_falcon_relangle(buf)"/>

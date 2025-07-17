@@ -137,6 +137,24 @@ void target_pos_kalman_predict(struct TargetPosKalman *kalman)
     kalman->P[i + 1][i] += d_dt + kalman->Q[i + 1][i];
     kalman->P[i + 1][i + 1] += kalman->Q[i + 1][i + 1];
   }
+
+  // Incase we ever expand the dynamic model...
+  // // propagate covariance P = F*P*Ft + Q
+  // float Ft[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
+  // float FP[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
+  // float FPFt[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
+
+  // MAKE_MATRIX_PTR(_F, kalman->F, TARGET_POS_KALMAN_DIM);
+  // MAKE_MATRIX_PTR(_Ft, Ft, TARGET_POS_KALMAN_DIM);
+  // MAKE_MATRIX_PTR(_P, kalman->P, TARGET_POS_KALMAN_DIM);
+  // MAKE_MATRIX_PTR(_Q, kalman->Q, TARGET_POS_KALMAN_DIM);
+  // MAKE_MATRIX_PTR(_FP, FP, TARGET_POS_KALMAN_DIM);
+  // MAKE_MATRIX_PTR(_FPFt, FPFt, TARGET_POS_KALMAN_DIM);
+
+  // float_mat_transpose(_Ft, _F, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM); // Ft mxn
+  // float_mat_mul(_FP, _F, _P, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM); // F * P nxn
+  // float_mat_mul(_FPFt, _FP, _Ft, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM); // F*P*Ft nxn
+  // float_mat_sum(_P, _FPFt, _Q, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM); // P = F*P*Ft + Q nxn)
 }
 
 /** generic correction step
