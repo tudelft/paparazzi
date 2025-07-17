@@ -297,6 +297,7 @@ struct Oneloop_DynFilt_t {
 };
 
 extern bool drop_yaw;
+extern bool state_compensation_on;
 extern int16_t temp_pitch;
 /*Declaration of Reference Model and Error Controller Gains*/
 extern struct PolePlacement p_att_e;

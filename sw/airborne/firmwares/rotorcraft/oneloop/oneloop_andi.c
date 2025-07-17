@@ -462,6 +462,7 @@ void  chirp_call(bool* chirp_on, bool* chirp_first_call, float* t_0_chirp, float
 void  oneloop_axis_effectiveness_calc(void);
 void  oneloop_andi_bound_disturbance(void);
 void  oneloop_calc_model_disturbance(bool in_flight);
+void  oneloop_andi_state_compensation(bool state_compensation_on);
 void  dynFilter_init(struct Oneloop_DynFilt_t *mu, float varepsilon, float sigma);
 void  dynFilter_run(struct Oneloop_DynFilt_t *mu, float u_c, float sigma);
 
@@ -614,6 +615,7 @@ float  temp_e_x_rates = 0.0;
 float  temp_x_d_f = 0.0;
 float  temp_x_2d_f = 0.0;
 bool drop_yaw = true;
+bool state_compensation_on = true;
 int16_t counter_andi = 0;
 /*Filters Initialization*/
 static Butterworth2LowPass filt_veloc_N;                 // Low pass filter for velocity NED - oneloop_andi_filt_cutoff_a (tau_a)       
@@ -2072,13 +2074,17 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   // weather vaning ---------------------
   //nu[5] = oneloop_andi_model[5] - temp_k * oneloop_andi.sta_ref.att_d[2]; //Interesting idea to weather vane the drone
   if (drop_yaw){
-    // nu[0] = oneloop_andi_model_filt.ax.out;
-    // nu[1] = oneloop_andi_model_filt.ay.out;
-    // nu[2] = oneloop_andi_model_filt.az.out;
-    // nu[3] = oneloop_andi_model_filt.p_dot.out*k_att_e.k3[0];
-    // nu[4] = oneloop_andi_model_filt.q_dot.out*k_att_e.k3[1];
+    //nu[0] = oneloop_andi_model_filt.ax.out;
+    //nu[1] = oneloop_andi_model_filt.ay.out;
+    //nu[2] = oneloop_andi_model_filt.az.out;
+    //nu[3] = oneloop_andi_model_filt.p_dot.out*k_att_e.k3[0];
+    //nu[4] = oneloop_andi_model_filt.q_dot.out*k_att_e.k3[1];
+
     nu[5] = oneloop_andi_model_filt.r_dot.out*k_att_e.k3[2];
   }
+
+  oneloop_andi_state_compensation(state_compensation_on);
+
   //------------------------------------
 
   if (!chirp_on){
@@ -2200,7 +2206,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   //   commands[COMMAND_MOTOR_LEFT]  = radio_control_get(RADIO_THROTTLE);
   //   commands[COMMAND_MOTOR_FRONT] = radio_control_get(RADIO_THROTTLE);
   //   commands[COMMAND_MOTOR_BACK]  = radio_control_get(RADIO_THROTTLE);
-
   // }
   commands[COMMAND_THRUST] = (commands[COMMAND_MOTOR_FRONT] + commands[COMMAND_MOTOR_RIGHT] + commands[COMMAND_MOTOR_BACK] + commands[COMMAND_MOTOR_LEFT])/num_thrusters_oneloop;
   autopilot.throttle = commands[COMMAND_THRUST];
@@ -2816,6 +2821,21 @@ void oneloop_andi_bound_disturbance(void){
     oneloop_andi_dist_bound[RW_ar] = oneloop_andi.sta_state.att_2d[2] - oneloop_andi_model[RW_ar];
     BoundAbs(oneloop_andi_dist_bound[RW_ar], 99999.f); // Large value to not bound
     //BoundAbs(oneloop_andi_dist_bound[RW_ar], oneloop_andi_yaw_dist_limit); // Bound from INDI controller
+}
+
+void oneloop_andi_state_compensation(bool state_compensation_on){
+  float p     = oneloop_andi.sta_state.att_d[0];
+  float q     = oneloop_andi.sta_state.att_d[1];
+  float r     = oneloop_andi.sta_state.att_d[2];
+  float p_dot = oneloop_andi.sta_state.att_2d[0];
+  float q_dot = oneloop_andi.sta_state.att_2d[1];
+  float r_dot = oneloop_andi.sta_state.att_2d[2];
+  if (state_compensation_on){
+    // printf("Compensating\n");
+    // Add the state compensation to the nu vector
+    nu[3] -= (r*q_dot + q*r_dot)*(RW.I.yy-RW.I.zz)/RW.I.xx; // Roll
+    nu[4] -= (r*p_dot + p*r_dot)*(RW.I.zz-RW.I.xx)/RW.I.yy; // Pitch
+  }
 }
 
 // void dynFilter_run(struct Oneloop_DynFilt_t *mu, float u_c, float sigma){
