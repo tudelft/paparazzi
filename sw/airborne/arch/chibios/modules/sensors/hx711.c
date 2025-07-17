@@ -142,8 +142,8 @@ void hx711_event(void)
     float freq = 1 / (get_sys_time_float() - hx711_meas_time);
     hx711_meas_time = get_sys_time_float();
 
-    DOWNLINK_SEND_STRAIN_GAUGE(DefaultChannel, DefaultDevice, &freq, HX711_DEVICES_NB, filt_val);
-    pprz_msg_send_STRAIN_GAUGE(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, &freq, HX711_DEVICES_NB, filt_val);
+    DOWNLINK_SEND_HX711(DefaultChannel, DefaultDevice, &freq, HX711_DEVICES_NB, filt_val);
+    pprz_msg_send_HX711(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, &freq, HX711_DEVICES_NB, filt_val);
 
     hx711.measurement_ready = false;
   }
