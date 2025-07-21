@@ -1,6 +1,9 @@
-<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-<flight_plan alt="100" ground_alt="0" lat0="52.1681551" lon0="4.4126468" max_dist_from_home="1070" name="Rotating Wing Valkenburg" security_height="2">
-  <header/>
+<!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
+<flight_plan alt="50" ground_alt="0" lat0="52.1681551" lon0="4.4126468" max_dist_from_home="1070" name="Rotating Wing Valkenburg" security_height="2">
+  <header>
+#include "modules/checks/preflight_checks.h"
+#include "modules/checks/"
+  </header>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
     <waypoint name="CLIMB" x="300." y="70"/>
@@ -76,10 +79,14 @@
   <exceptions>
     <!-- Outside of hard (red) geofence kill -->
     <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosHeight() @GT 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
-    <!-- Outside of soft (orange) geofence go to standby free -->
+    <!-- Outside of soft (orange) geofence go to standby -->
     <exception cond="Or(!InsideSoftGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 250.0) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
-    <!-- Datalink timeout go to standby free -->
+    <!-- Datalink timeout go to standby -->
     <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+    <!-- Bat low return to standby-->
+    <exception cond="(electrical.bat_low @AND !(IndexOfBlock('Holding point') @GT nav_block) @AND !(nav_block >= IndexOfBlock('land here')) @AND (autopilot_in_flight() == true) )" deroute="Standby"/>
+    <!-- Bat critical land here-->
+    <exception cond="(electrical.bat_critical @AND !(IndexOfBlock('Holding point') @GT nav_block) @AND !(nav_block >= IndexOfBlock('land here')) @AND (autopilot_in_flight() == true) )" deroute="land here"/>
   </exceptions>
   <blocks>
    <block name="Wait GPS">
@@ -92,11 +99,24 @@
       <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetAltitudeReferenceHere()"/>
     </block>
+    <block name="Startup" on_enter="ms45xx.autoset_offset=true">
+      <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
+      <call_once fun="NavKillThrottle()"/>
+      <set var="stabilization.cmd[COMMAND_THRUST_X]" value="0"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <exception cond="!kill_switch_is_on()" deroute="Actuator Check"/>
+    </block>
+    <block name="Actuator Check" on_enter="pfc_actuators_start(true)" on_exit="pfc_actuators_start(false)">
+      <exception cond="kill_switch_is_on() @AND !preflight_check()" deroute="Startup"/>
+      <exception cond="preflight_check()" deroute="Holding point"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
     <block name="Holding point">
       <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
       <call_once fun="NavKillThrottle()"/>
       <set var="stabilization.cmd[COMMAND_THRUST_X]" value="0"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <exception cond="!kill_switch_is_on()" deroute="Actuator Check"/>
     </block>
     <block name="Start Engine" strip_button="Start Engines" strip_icon="on.png">
       <exception cond="stage_time > 10" deroute="Holding point"/>
@@ -128,8 +148,7 @@
       <call_once fun="nav_set_heading_current()"/>
       <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
-    <block name="Standby" strip_button="Standby" strip_icon="home.png">
-      <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+    <block name="Standby" strip_button="Standby" strip_icon="home.png" pre_call="rotwing_state_choose_state_by_dist(WP_STDBY)">
       <stay wp="STDBY"/>
     </block>
     <block name="Standby_dist" strip_button="Standby Dist" strip_icon="home.png" pre_call="rotwing_state_choose_state_by_dist(WP_STDBY)">
