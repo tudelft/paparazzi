@@ -63,9 +63,9 @@ float actuator_state_filt_vect[EFF_MAT_COLS_NB] = {0};
 #error "NO ROTWING_EFF_SCHED_M defined"
 #endif
 
-bool manual_roll  = true;
-bool manual_pitch = true;
-bool manual_yaw   = true;
+bool manual_roll  = false;
+bool manual_pitch = false;
+bool manual_yaw   = false;
 /* Effectiveness Matrix definition */
 float G2_RW[EFF_MAT_COLS_NB]                       = {0};//ROTWING_EFF_SCHED_G2; //scaled by RW_G_SCALE
 float G1_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB]      = {0};//{ROTWING_EFF_SCHED_G1_ZERO, ROTWING_EFF_SCHED_G1_ZERO, ROTWING_EFF_SCHED_G1_THRUST, ROTWING_EFF_SCHED_G1_ROLL, ROTWING_EFF_SCHED_G1_PITCH, ROTWING_EFF_SCHED_G1_YAW}; //scaled by RW_G_SCALE 
@@ -92,7 +92,7 @@ float ele_min = 0.0;
 struct RW_Model RW;
 
 int thrust_curve = 1.0;
-float temp_mQ_k = 1.37; //Manual Value For Tuning
+float temp_mQ_k = 1.37; //Manual Value For Tuning2
 inline void eff_scheduling_rotwing_update_wing_angle(void);
 inline void eff_scheduling_rotwing_update_airspeed(void);
 void  ele_pref_sched(void);

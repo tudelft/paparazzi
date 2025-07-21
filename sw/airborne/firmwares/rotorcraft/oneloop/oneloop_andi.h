@@ -81,6 +81,7 @@ extern float oneloop_andi_sigma;
 extern bool  use_dyn_filter;
 /*Chirp test Variables*/
 extern bool  chirp_on;
+extern bool  multiple_chirp_run;
 extern float f0_chirp;
 extern float f1_chirp;
 extern float t_chirp;

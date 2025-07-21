@@ -1445,7 +1445,7 @@
       <program name="Messages"/>
       <program name="Joystick">
         <arg flag="-d" constant="1"/>
-        <arg flag="-ac" constant="RotatingWingV3G"/>
+        <arg flag="-ac" constant="RW3C_DePonti_Simulation"/>
         <arg flag="radiomaster_tx12.xml"/>
       </program>
       <program name="Data Link">

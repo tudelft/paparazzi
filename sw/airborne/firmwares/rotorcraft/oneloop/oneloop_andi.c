@@ -564,11 +564,14 @@ float time_elapsed_chirp  = 0.0;
 float t_0_chirp           = 0.0;
 float f0_chirp            = 0.2;//0.8 / (2.0 * M_PI);
 float f1_chirp            = 0.2;//0.8 / (2.0 * M_PI);
-float t_chirp             = 0.5;
-float A_chirp             = 80.0;
-int8_t chirp_axis         = 6;
+float t_chirp             = 2.0;
+float A_chirp             =-46.0;
+int8_t chirp_axis         = 5;
 float p_ref_0[3]          = {0.0, 0.0, 0.0};
-     
+int16_t chirp_n_repeat    = 10;
+int16_t chirp_n_counter   = 0;
+int16_t firing_counter    = 0;
+bool multiple_chirp_run   = false;     
 /*Declaration of Reference Model and Error Controller Gains*/
 struct PolePlacement p_att_e;
 struct PolePlacement p_att_rm;
@@ -614,8 +617,8 @@ float  temp_e_x = 0.0;
 float  temp_e_x_rates = 0.0;
 float  temp_x_d_f = 0.0;
 float  temp_x_2d_f = 0.0;
-bool drop_yaw = true;
-bool state_compensation_on = true;
+bool drop_yaw = false;
+bool state_compensation_on = false;
 int16_t counter_andi = 0;
 /*Filters Initialization*/
 static Butterworth2LowPass filt_veloc_N;                 // Low pass filter for velocity NED - oneloop_andi_filt_cutoff_a (tau_a)       
@@ -717,7 +720,7 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
   temp_debug_vect[4] = oneloop_andi_model[4];//oneloop_andi_model_filt.q_dot.out;
   temp_debug_vect[5] = oneloop_andi_model[5];//oneloop_andi_model_filt.r_dot.out;
   temp_debug_vect[6] = oneloop_andi_sigma;
-  temp_debug_vect[7] = LP.ay.meas;
+  temp_debug_vect[7] = chirp_on ? 1.0 : 0.0;
   temp_debug_vect[8] = LP.az.meas;
   temp_debug_vect[9] = temp_checks_2[0];
   temp_debug_vect[10] = temp_checks_2[1];
@@ -1762,6 +1765,7 @@ void oneloop_andi_enter(bool half_loop_sp, int ctrl_type)
   oneloop_andi.ctrl_type      = ctrl_type;
   psi_des_rad                 = eulers_zxy.psi; 
   psi_des_deg                 = DegOfRad(eulers_zxy.psi);
+  multiple_chirp_run          = false;
   // if (oneloop_andi.half_loop){
   //   printf("HALF LOOP\n");
   // } else {
@@ -1916,6 +1920,28 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
       oneloop_andi.gui_ref.jer[2] = single_value_3d_ref[0];  
     }    
     // Run chirp test if turnerd on (overwrite the guidance references)
+    if (chirp_on && !multiple_chirp_run){
+        multiple_chirp_run = true;
+        chirp_on = false;
+    }
+    if (multiple_chirp_run && !chirp_on) {
+      if (chirp_n_counter < chirp_n_repeat) {
+        if (fabsf(oneloop_andi.sta_state.att_2d[2]) < RadOfDeg(5.0)) {
+          firing_counter++;
+        } else {
+          firing_counter = 0;
+        }
+        if (firing_counter >= 250){
+          chirp_n_counter++;
+          chirp_on = true;
+          firing_counter = 0;
+        }
+      } else {
+        multiple_chirp_run = false;
+        chirp_n_counter = 0;         
+      } 
+    }
+    
     chirp_call(&chirp_on, &chirp_first_call, &t_0_chirp, &time_elapsed_chirp, f0_chirp, f1_chirp, t_chirp, A_chirp, chirp_axis, att_des[2], oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer,p_ref_0);
     // Generate Reference signals for attitude using RM
     // FIX ME ow not yet defined, will be useful in the future to have accurate psi tracking in NAV functions
@@ -2586,7 +2612,11 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, i
       case 5:
           oneloop_andi.sta_ref.att[2]    = oneloop_andi.sta_state.att[2];
           oneloop_andi.sta_ref.att_d[2]  = oneloop_andi.sta_state.att_d[2];
-          oneloop_andi.sta_ref.att_2d[2] = A_backup*M_PI/180.0;
+          if (time_elapsed < (t_chirp/4.0)|| (time_elapsed > (3.0*t_chirp/4.0))){
+            oneloop_andi.sta_ref.att_2d[2] = 0.0;
+          } else {
+            oneloop_andi.sta_ref.att_2d[2] = A_backup*M_PI/180.0;
+          }
           oneloop_andi.sta_ref.att_3d[2] = 0.0;
           float S_psi = 0.5*A_backup*M_PI/180.0*t_chirp*t_chirp;
           BoundAbs(S_psi, 0.9*M_PI_2)
