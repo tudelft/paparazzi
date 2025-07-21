@@ -179,7 +179,7 @@ void rotwing_state_periodic(void)
   static float last_stall_time = 0;
   float current_time = get_sys_time_float();
   float meas_airspeed = stateGetAirspeed_f();
-  float meas_skew_angle = rotwing_state.meas_skew_angle_deg;
+  float meas_skew_angle = 0.0;//rotwing_state.meas_skew_angle_deg;
   Bound(meas_skew_angle, 0, 90); // Bound to prevent errors
   
   if(meas_airspeed > rotwing_state.fw_min_airspeed) {
@@ -340,7 +340,7 @@ void rotwing_state_periodic(void)
   rotwing_state.meas_rpm[0] = (actuators[SERVO_MOTOR_FRONT_IDX].pprz_val >= 0)? (ROTWING_QUAD_MIN_RPM + 100) : 0;
   rotwing_state.meas_rpm[1] = (actuators[SERVO_MOTOR_RIGHT_IDX].pprz_val >= 0)? (ROTWING_QUAD_MIN_RPM + 100) : 0;
   rotwing_state.meas_rpm[2] = (actuators[SERVO_MOTOR_BACK_IDX].pprz_val >= 0)? (ROTWING_QUAD_MIN_RPM + 100) : 0;
-  rotwing_state.meas_rpm[3] = (actuators[SERVO_MOTOR_LEFT_IDX].pprz_val >= 0)? (ROTWING_QUAD_MIN_RPM + 100) : 0;
+  rotwing_state.meas_rpm[3] = (actuators[SERVO_MOTOR_LEFT_IDX].pprz_vaskew_angle_radl >= 0)? (ROTWING_QUAD_MIN_RPM + 100) : 0;
   rotwing_state.meas_rpm[4] = (actuators[SERVO_MOTOR_PUSH_IDX].pprz_val >= 0)? (ROTWING_PUSH_MIN_RPM + 100) : 0;
   for(uint8_t i = 0; i < 5; i++) {
     rotwing_state.meas_rpm_time[i] = current_time;
@@ -373,7 +373,7 @@ static void rotwing_state_feedback_cb(uint8_t __attribute__((unused)) sender_id,
     if ((feedback_msg[i].set.position) && (idx == SERVO_ROTATION_MECH_IDX || idx == SERVO_BROTATION_MECH_IDX)) {
       // Get wing rotation angle from sensor
       float skew_angle_rad = 0.5 * M_PI - feedback_msg[i].position;
-      rotwing_state.meas_skew_angle_deg = DegOfRad(skew_angle_rad);
+      rotwing_state.meas_skew_angle_deg = 0.0;//DegOfRad(skew_angle_rad);
       rotwing_state.meas_skew_angle_time = current_time;
     }
 

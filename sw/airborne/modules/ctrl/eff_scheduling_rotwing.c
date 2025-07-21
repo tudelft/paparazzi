@@ -208,7 +208,8 @@ static void wing_position_cb(uint8_t sender_id UNUSED, struct act_feedback_t *po
     if (pos_msg[i].set.position && (pos_msg[i].idx == SERVO_ROTATION_MECH_IDX))
     {
       // Get wing rotation angle from sensor
-      eff_sched_var.wing_rotation_rad = 0.5 * M_PI - pos_msg[i].position;
+
+      eff_sched_var.wing_rotation_rad = 0.0;//0.5 * M_PI - pos_msg[i].position;
 
       // Bound wing rotation angle
       Bound(eff_sched_var.wing_rotation_rad, 0, 0.5 * M_PI);
@@ -268,6 +269,7 @@ void eff_scheduling_rotwing_periodic(void)
 void eff_scheduling_rotwing_update_wing_angle(void)
 {
   // Calculate sin and cosines of rotation
+  
   eff_sched_var.wing_rotation_deg = eff_sched_var.wing_rotation_rad / M_PI * 180.;
 
   eff_sched_var.cosr = cosf(eff_sched_var.wing_rotation_rad);
