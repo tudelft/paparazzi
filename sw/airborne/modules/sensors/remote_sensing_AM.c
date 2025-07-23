@@ -571,7 +571,9 @@ void remote_sensing_send_aruco_attitude(void) {
   struct FloatQuat q;
   float_quat_invert(&q, stateGetNedToBodyQuat_f());
   uint32_t time_msec = get_sys_time_msec();
+  #if !USE_NPS
   pprz_msg_send_IMCU_ARUCO_ATTITUDE(&extra_pprz_tp.trans_tx, &EXTRA_DOWNLINK_DEVICE.device, AC_ID, &time_msec, FLOATQUAT_TO_ARRAY(q));
+  #endif
 }
 
 void remote_sensing_AM_periodic(void) {
@@ -587,7 +589,7 @@ void remote_sensing_AM_periodic(void) {
   struct FloatVect3 speed;
   target_pos_kalman_get_state(&remote_sensing_kalman, &pos, &speed);
   VECT3_ADD(speed, *stateGetSpeedNed_f());
-  // nav_hybrid_set_wp_speed(&(struct EnuCoor_f){speed.y, speed.x, -speed.z}); 
+  nav_hybrid_set_wp_speed(&(struct EnuCoor_f){speed.y, speed.x, -speed.z}); 
 
   // Check for NaN
   if (isnan(pos.x) || isnan(pos.y) || isnan(pos.z) || isnan(speed.x) || isnan(speed.y) || isnan(speed.z)) {

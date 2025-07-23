@@ -40,11 +40,14 @@ extern float nav_hybrid_line_gain;
 extern float nav_hybrid_pos_gain; 
 extern float nav_hybrid_max_bank;
 extern float nav_hybrid_max_expected_wind;
+extern bool nav_hybrid_wp_moving;
+
 #ifndef GUIDANCE_INDI_HYBRID
 extern bool force_forward;
 #endif
 
 extern void nav_rotorcraft_hybrid_init(void);
+void nav_hybrid_set_wp_speed(struct EnuCoor_f *speed);
 
 #endif
 

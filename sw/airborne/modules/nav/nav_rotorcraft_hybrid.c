@@ -115,6 +115,14 @@ bool force_forward = 0.0f;
 
 static float max_speed_for_deceleration(float dist_to_wp);
 
+bool nav_hybrid_wp_moving = false;
+static struct FloatVect3 wp_speed = {0.0f, 0.0f, 0.0f};
+
+void nav_hybrid_set_wp_speed(struct EnuCoor_f *speed) {
+  // Set the speed of the waypoint
+  VECT3_COPY(wp_speed, *speed);
+}
+
 /** Implement basic nav function for the hybrid case
  */
 
@@ -132,16 +140,43 @@ static void nav_hybrid_goto(struct EnuCoor_f *wp)
 
   struct FloatVect2 speed_sp;
   VECT2_SMUL(speed_sp, pos_error, nav_hybrid_pos_gain);
+  
+  if (nav_hybrid_wp_moving) {
+    VECT2_ADD(speed_sp, wp_speed);
+    // if (nav.vertical_mode == NAV_VERTICAL_MODE_CLIMB) {
+    //     nav.climb += wp_speed.z;
+    // }
+  }
 
   // Bound the setpoint velocity vector
-  float max_h_speed = nav_max_speed;
+  struct FloatVect2 max_h_speed = {nav_max_speed, nav_max_speed};
   if (!force_forward) {
-    // If not in force_forward, compute speed based on deceleration and nav_max_speed
+    // If not in force_forward, compute speed based on decceleration and nav_goto_max_speed
     // Calculate distance to waypoint
-    float dist_to_wp = float_vect2_norm(&pos_error);
-    max_h_speed = max_speed_for_deceleration(dist_to_wp);
+
+    // Calculate max speed when decelerating at MAX capacity a_max
+    // distance travelled d = 1/2 a_max t^2
+    // The time in which it does this is: T = V / a_max
+    // The maximum speed at which to fly to still allow arriving with zero
+    // speed at the waypoint given maximum deceleration is: V = sqrt(2 * a_max * d)
+    struct FloatVect2 max_speed_decel;
+    VECT2_SMUL(max_speed_decel, pos_error, 2.f * nav_max_deceleration_sp * 0.8); // dist_to_wp can only be positive, but just in case
+    max_speed_decel.x = sqrtf(fabsf(max_speed_decel.x));
+    max_speed_decel.y = sqrtf(fabsf(max_speed_decel.y));
+
+    // Feed forward speed in cases where the waypoint is moving, instead of arriving with V=0 arrive with V=V_wp
+    if (nav_hybrid_wp_moving) {
+      VECT2_ADD(max_speed_decel, wp_speed);
+    }
+
+    float norm = FLOAT_VECT2_NORM(max_speed_decel);
+    VECT2_SDIV(max_speed_decel, max_speed_decel, norm);
+    VECT2_SMUL(max_speed_decel, max_speed_decel, nav_max_speed);
+    VECT2_COPY(max_h_speed, max_speed_decel);
   }
-  float_vect2_bound_in_2d(&speed_sp, max_h_speed);
+
+  Bound(speed_sp.x, -max_h_speed.x, max_h_speed.x);
+  Bound(speed_sp.y, -max_h_speed.y, max_h_speed.y);
 
   VECT2_COPY(nav.speed, speed_sp);
   nav.horizontal_mode = NAV_HORIZONTAL_MODE_WAYPOINT;

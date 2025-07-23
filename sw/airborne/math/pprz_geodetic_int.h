@@ -127,6 +127,7 @@ extern void ecef_of_enu_pos_i(struct EcefCoor_i *ecef, struct LtpDef_i *def, str
 extern void ecef_of_ned_pos_i(struct EcefCoor_i *ecef, struct LtpDef_i *def, struct NedCoor_i *ned);
 extern void ecef_of_enu_vect_i(struct EcefCoor_i *ecef, struct LtpDef_i *def, struct EnuCoor_i *enu);
 extern void ecef_of_ned_vect_i(struct EcefCoor_i *ecef, struct LtpDef_i *def, struct NedCoor_i *ned);
+extern void lla_of_enu_pos_i(struct LlaCoor_i *lla, struct LtpDef_i *def, struct EnuCoor_i *enu);
 
 #define CM_OF_M(_m)  ((_m)*1e2)
 #define M_OF_CM(_cm) ((_cm)/1e2)
