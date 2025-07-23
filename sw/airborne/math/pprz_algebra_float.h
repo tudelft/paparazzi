@@ -313,6 +313,9 @@ extern void float_rmat_ratemult(struct FloatRates *rb, struct FloatRMat *m_a2b,
 extern void float_rmat_transp_ratemult(struct FloatRates *rb, struct FloatRMat *m_b2a,
                                        struct FloatRates *ra);
 
+/** Take transpose of a matrix */                            
+extern void float_rmat_transp(struct FloatRMat *m_t, struct FloatRMat *m);
+
 /** initialises a rotation matrix from unit vector axis and angle */
 extern void float_rmat_of_axis_angle(struct FloatRMat *rm, struct FloatVect3 *uv, float angle);
 
