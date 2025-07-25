@@ -30,6 +30,7 @@ open Printf
 
 (* Handlers for the modem and Ivy messages *)
 module Tm_Pprz = PprzLink.Messages (struct let name = "telemetry" end)
+module Imcu_Pprz = PprzLink.Messages (struct let name = "intermcu" end)
 module Ground_Pprz = PprzLink.Messages (struct let name = "ground" end)
 module Dl_Pprz = PprzLink.Messages (struct let name = "datalink" end)
 module PprzTransport = Protocol.Transport (Pprz_transport.Transport)
@@ -87,6 +88,16 @@ let send_message_over_ivy = fun sender name vs ->
     Tm_Pprz.message_send ?timestamp ~link_id:!link_id sender name vs
   else
     Tm_Pprz.message_send ?timestamp sender name vs
+
+let send_imcu_message_over_ivy = fun sender name vs ->
+  let timestamp =
+    match !add_timestamp with
+      | None -> None
+      | Some start_time -> Some (Unix.gettimeofday () -. start_time) in
+  if !red_link then
+    Imcu_Pprz.message_send ?timestamp ~link_id:!link_id sender name vs
+  else
+    Imcu_Pprz.message_send ?timestamp sender name vs
 
 let send_ground_over_ivy = fun sender name vs ->
   let timestamp =
@@ -206,6 +217,19 @@ let use_tele_message = fun ?udp_peername ?raw_data_size payload ->
     update_status ?udp_peername ac_id raw_data_size (msg.PprzLink.name = "PONG")
   with
       exc ->
+        (* Try as inter-mcu *)
+        try
+          let (header, values) = Imcu_Pprz.values_of_payload payload in
+          let ac_id = header.PprzLink.sender_id in
+          let msg = Imcu_Pprz.message_of_id header.PprzLink.message_id in
+          send_imcu_message_over_ivy (string_of_int ac_id) msg.PprzLink.name values;
+        with
+            exc ->
+              prerr_endline "use_tele_message also failed for IMCU";
+              prerr_endline (Printexc.to_string exc);
+              Debug.call 'W' (fun f ->  fprintf f "Warning, cannot use: %s\n" (Debug.xprint buf));
+        
+        prerr_endline "use_tele_msg exept";
         prerr_endline (Printexc.to_string exc);
         Debug.call 'W' (fun f ->  fprintf f "Warning, cannot use: %s\n" (Debug.xprint buf));
 

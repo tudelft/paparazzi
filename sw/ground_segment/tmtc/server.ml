@@ -45,6 +45,7 @@ module Ground_Pprz = PprzLink.Messages(Ground)
 module Tm_Pprz = PprzLink.Messages (struct let name = "telemetry" end)
 module Alerts_Pprz = PprzLink.Messages(struct let name = "alert" end)
 module Dl_Pprz = PprzLink.Messages (struct let name = "datalink" end)
+module Imcu_Pprz = PprzLink.Messages (struct let name = "intermcu" end)
 
 let dl_id = "ground_dl" (* Hack, should be [my_id] *)
 

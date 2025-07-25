@@ -158,11 +158,11 @@ void sdlog_remote_sensing_am(void){
 void remote_sensing_AM_send_falcon_cmd(uint8_t mode) 
 {
   falcon.mode = mode;
-  #if !USE_NPS
+  // #if !USE_NPS
   pprz_msg_send_IMCU_FALCON_CMD(&extra_pprz_tp.trans_tx, &EXTRA_DOWNLINK_DEVICE.device, AC_ID, &falcon.mode);
-  #else
-  pprz_msg_send_FALCON_CMD(&(DefaultChannel).trans_tx, &(DefaultDevice).device, AC_ID, &falcon.mode);
-  #endif
+  // #else
+  // pprz_msg_send_FALCON_CMD(&(DefaultChannel).trans_tx, &(DefaultDevice).device, AC_ID, &falcon.mode);
+  // #endif
 }
 
 /**
@@ -375,7 +375,7 @@ void receive_landing_algorithm_outputs(uint8_t *buf)
 }
 
 
-#if !USE_NPS
+// #if !USE_NPS
 void test_request_landing_path(void){
   // Send also another message for debug: 
   float min_time_landing = 0.1f;
@@ -479,7 +479,7 @@ void request_landing_algorithm_outputs(void){
     SHIP_att_rad, &UAV_psi_rad,
     coeffs_ship_prediction, &t_delay_ship_prediction_seconds);
 }
-#endif
+// #endif
 
 /**
  * Receive an OPENCV aruco message from the camera and update the kalman filter if required
@@ -571,7 +571,10 @@ void remote_sensing_send_aruco_attitude(void) {
   struct FloatQuat q;
   float_quat_invert(&q, stateGetNedToBodyQuat_f());
   uint32_t time_msec = get_sys_time_msec();
-  #if !USE_NPS
+  #if USE_NPS
+  // Send request over the main link / IVY instead
+  pprz_msg_send_IMCU_ARUCO_ATTITUDE(&pprz_tp.trans_tx, &DOWNLINK_DEVICE.device, AC_ID, &time_msec, FLOATQUAT_TO_ARRAY(q));
+  #else
   pprz_msg_send_IMCU_ARUCO_ATTITUDE(&extra_pprz_tp.trans_tx, &EXTRA_DOWNLINK_DEVICE.device, AC_ID, &time_msec, FLOATQUAT_TO_ARRAY(q));
   #endif
 }
@@ -600,11 +603,11 @@ void remote_sensing_AM_periodic(void) {
   update_waypoint(WP_KALMAN, &pos);
   RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {send_waypoint(WP_KALMAN);});
 
-  #if !USE_NPS
+  
   //Test the landing algorithm: 
   RunOnceEvery(50*REMOTE_SENSING_AM_PERIODIC_FREQ, {send_landing_algorithm_params();});
   RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {request_landing_algorithm_outputs();});
-
+#if !USE_NPS
   pprz_msg_send_TARGET_POS_KALMAN(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
                                   &pos.x, &pos.y, &pos.z,
                                   &speed.x, &speed.y, &speed.z);

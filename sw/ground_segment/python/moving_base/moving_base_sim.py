@@ -84,6 +84,7 @@ class Base:
 
         # bind to GPS_INT message
         def ins_cb(ac_id, msg):
+            print(f"INS: {ac_id} {msg}")
             if ac_id not in self.ids:
                 self.ids.append(ac_id)
                 self.uavs.append(UAV(ac_id))
@@ -121,6 +122,10 @@ class Base:
                 uav.initialized = True
         if self.use_ground_ref:
             self._interface.subscribe(ground_ref_cb, PprzMessage("ground", "GROUND_REF"))
+        
+        def imcu_test_cb(ground_id, msg):
+            print(msg)
+        self._interface.subscribe(imcu_test_cb, PprzMessage("intermcu", "IMCU_ARUCO_ATTITUDE"))
 
     def __del__(self):
         self.stop()
