@@ -600,8 +600,8 @@ void remote_sensing_AM_periodic(void) {
 
   #if !USE_NPS
   //Test the landing algorithm: 
-  RunOnceEvery(50*REMOTE_SENSING_AM_PERIODIC_FREQ, {send_landing_algorithm_params();});
-  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {request_landing_algorithm_outputs();});
+  // RunOnceEvery(50*REMOTE_SENSING_AM_PERIODIC_FREQ, {send_landing_algorithm_params();});
+  // RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {request_landing_algorithm_outputs();});
 
   pprz_msg_send_TARGET_POS_KALMAN(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
                                   &pos.x, &pos.y, &pos.z,
