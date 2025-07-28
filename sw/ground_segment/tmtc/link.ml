@@ -447,6 +447,33 @@ let message_uplink = fun device ->
         | _ -> ())
     Dl_Pprz.messages
 
+let message_uplink_imcu = fun device ->
+  let forwarder = fun name _sender vs ->
+    Debug.call 'f' (fun f -> fprintf f "forward %s\n" name);
+    let ac_id = PprzLink.int_assoc "ac_id" vs in
+    let msg_id, _ = Imcu_Pprz.message_of_name name in
+    let s = Imcu_Pprz.payload_of_values msg_id my_id ac_id vs in
+    send ac_id device s High in
+  let set_forwarder = fun name ->
+    ignore (Imcu_Pprz.message_bind name (forwarder name)) in
+
+  let broadcaster = fun name _sender vs ->
+    Debug.call 'f' (fun f -> fprintf f "broadcast %s\n" name);
+    let msg_id, _ = Imcu_Pprz.message_of_name name in
+    let payload = Imcu_Pprz.payload_of_values msg_id my_id PprzLink.broadcast_id vs in
+    broadcast device payload Low in
+  let set_broadcaster = fun name ->
+    ignore (Imcu_Pprz.message_bind name (broadcaster name)) in
+
+  (* Set a forwarder or a broadcaster for all messages tagged in messages.xml *)
+  Hashtbl.iter
+    (fun _m_id msg ->
+      match msg.PprzLink.link with
+        | Some PprzLink.Forwarded -> set_forwarder msg.PprzLink.name
+        | Some PprzLink.Broadcasted -> if !ac_info then set_broadcaster msg.PprzLink.name
+        | _ -> ())
+    Imcu_Pprz.messages
+
 let send_ping_msg = fun device ->
   Hashtbl.iter
     (fun ac_id status ->
@@ -551,6 +578,9 @@ let () =
 
     if !uplink then begin
       message_uplink device
+    end;
+    if !uplink then begin
+      message_uplink_imcu device
     end;
 
     (** Init and Periodic tasks *)
