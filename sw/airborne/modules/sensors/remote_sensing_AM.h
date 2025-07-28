@@ -106,6 +106,8 @@ struct landing_algorithm_outputs_t {
 
 extern int track_aruco_id;
 
+extern bool aruco_use_current_att;
+extern bool aruco_filter_ids;
 extern bool use_sixdof;
 extern bool use_relangle;
 extern bool use_relbeacon;

@@ -29,7 +29,7 @@
 #include "generated/flight_plan.h"
 #include "modules/nav/nav_rotorcraft_hybrid.h"
 
-int track_aruco_id = 17;
+int track_aruco_id = 16;
 
 // Check if the sensors are enabled in the airframe file
 #ifndef REMOTE_SENSING_KALMAN_USE_GROUND_STATION 
@@ -52,6 +52,8 @@ int track_aruco_id = 17;
 #warning "Aruco is not fused in Remote Sensing Kalman"
 #define REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO FALSE
 #endif
+
+PRINT_CONFIG_VAR(REMOTE_SENSING_LOG_ON_ARRIVAL);
 
 bool use_sixdof = REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF;
 bool use_relangle = REMOTE_SENSING_KALMAN_USE_FALCON_RELANGLE;
@@ -85,6 +87,9 @@ static float Q0[6] = REMOTE_SENSING_KALMAN_Q0;
 
 /* Initialize the landing algorithm outputs struct*/
 struct landing_algorithm_outputs_t landing_algorithm_outputs;
+
+bool aruco_use_current_att = false;
+bool aruco_filter_ids = true;
 
 #if PERIODIC_TELEMETRY
 static void send_remote_sensing_am_periodic(struct transport_tx *trans, struct link_device *dev) {  
@@ -491,10 +496,13 @@ void remote_sensing_parse_opencv_aruco(uint8_t *buf)
   float *pos = pprzlink_get_DL_IMCU_OPENCV_ARUCO_pos(buf);
   float *quat = pprzlink_get_DL_IMCU_OPENCV_ARUCO_body_to_ned(buf);
 
-  if (aruco.id != track_aruco_id) return;
+  if (aruco.id != track_aruco_id && aruco_filter_ids) return;
 
-  sensor_to_NED(&aruco.pos, &(struct FloatVect3){pos[0], pos[1], pos[2]}, &aruco.sensor_to_body, &aruco.body_to_sensor_offset, &(struct FloatQuat){quat[0], quat[1], quat[2], quat[3]}); 
-
+  if (aruco_use_current_att) {
+    sensor_to_NED(&aruco.pos, &(struct FloatVect3){pos[0], pos[1], pos[2]}, &aruco.sensor_to_body, &aruco.body_to_sensor_offset, NULL); 
+  } else {
+    sensor_to_NED(&aruco.pos, &(struct FloatVect3){pos[0], pos[1], pos[2]}, &aruco.sensor_to_body, &aruco.body_to_sensor_offset, &(struct FloatQuat){quat[0], quat[1], quat[2], quat[3]}); 
+  }
   if (use_aruco) {
   // Update the kalman filter with the aruco position.
   target_pos_kalman_set_measurement(&aruco.kalman_sensor, FLOATVECT3_TO_ARRAY(aruco.pos));
