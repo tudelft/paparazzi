@@ -195,8 +195,10 @@ void target_pos_kalman_predict(struct TargetPosKalman *kalman)
   pprz_msg_send_TARGET_POS_KALMAN_DEBUG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, 
                                   rc, step, state_in, state_out, P, zeros, zeros);
   #endif
+  RunOnceEvery(100, {
   DOWNLINK_SEND_TARGET_POS_KALMAN_DEBUG(DefaultChannel, DefaultDevice,
                                   rc, step, state_in, state_out, P, zeros, zeros);
+  });
 #endif
 }
 
@@ -326,8 +328,10 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   pprz_msg_send_TARGET_POS_KALMAN_DEBUG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, 
                                   rc, step, state_in, state_out, P, Hmat, meas);
   #endif
+  RunOnceEvery(100, {
   DOWNLINK_SEND_TARGET_POS_KALMAN_DEBUG(DefaultChannel, DefaultDevice,
                                   rc, step, state_in, state_out, P, Hmat, meas);
+  });
 #endif
 }
 
