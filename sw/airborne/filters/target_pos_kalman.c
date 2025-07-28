@@ -28,6 +28,19 @@
 #include "filters/target_pos_kalman.h"
 #include <math.h>
 
+#ifndef TARGET_POS_KALMAN_DEBUG
+#define TARGET_POS_KALMAN_DEBUG FALSE
+#endif
+
+#if TARGET_POS_KALMAN_DEBUG
+#include "modules/datalink/telemetry.h"
+#include "modules/datalink/downlink.h"
+#include "state.h"
+#include <stdio.h>
+#endif
+
+PRINT_CONFIG_VAR(TARGET_POS_KALMAN_DEBUG);
+
 void target_pos_kalman_init(struct TargetPosKalman *kalman, float *P0, float *Q_sigma2, float dt)
 {
   int i, j;
@@ -123,6 +136,13 @@ struct FloatVect3 target_pos_kalman_get_speed(struct TargetPosKalman *kalman)
 void target_pos_kalman_predict(struct TargetPosKalman *kalman)
 {
   int i;
+#if TARGET_POS_KALMAN_DEBUG
+  float state_in[TARGET_POS_KALMAN_DIM];
+  for (i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
+    state_in[i] = kalman->state[i];
+  }
+#endif
+
   for (i = 0; i < TARGET_POS_KALMAN_DIM; i += 2) {
     // kinematic equation of the dynamic model X = F*X
     kalman->state[i] += kalman->state[i + 1] * kalman->dt;
@@ -155,6 +175,29 @@ void target_pos_kalman_predict(struct TargetPosKalman *kalman)
   // float_mat_mul(_FP, _F, _P, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM); // F * P nxn
   // float_mat_mul(_FPFt, _FP, _Ft, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM); // F*P*Ft nxn
   // float_mat_sum(_P, _FPFt, _Q, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM); // P = F*P*Ft + Q nxn)
+
+#if TARGET_POS_KALMAN_DEBUG
+  float zeros[TARGET_POS_KALMAN_DIM] = {0};
+  float P[TARGET_POS_KALMAN_DIM * TARGET_POS_KALMAN_DIM];
+  float state_out[TARGET_POS_KALMAN_DIM];
+
+  for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
+    state_out[i] = kalman->state[i];
+    for (int j = 0; j < TARGET_POS_KALMAN_DIM; j++) {
+      P[i * TARGET_POS_KALMAN_DIM + j] = kalman->P[i][j];
+    }
+  }
+
+  char step[20];
+  int rc = snprintf(step, sizeof(step), "p");
+  // send debug message
+  #if !USE_NPS
+  pprz_msg_send_TARGET_POS_KALMAN_DEBUG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, 
+                                  rc, step, state_in, state_out, P, zeros, zeros);
+  #endif
+  DOWNLINK_SEND_TARGET_POS_KALMAN_DEBUG(DefaultChannel, DefaultDevice,
+                                  rc, step, state_in, state_out, P, zeros, zeros);
+#endif
 }
 
 /** generic correction step
@@ -169,6 +212,24 @@ void target_pos_kalman_predict(struct TargetPosKalman *kalman)
  */
 void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSensor *sensor)
 {
+
+#if TARGET_POS_KALMAN_DEBUG
+  float state_in[TARGET_POS_KALMAN_DIM];
+  float meas[TARGET_POS_KALMAN_DIM] = {0};
+  float Hmat[TARGET_POS_KALMAN_DIM] = {0};
+  float noise[TARGET_POS_KALMAN_DIM] = {0};
+
+  for (int i = 0; i < sensor->n_meas; i++) {
+    meas[i] = sensor->meas[i];
+    Hmat[i] = sensor->Hmat[i];
+    noise[i] = sensor->noise[i];
+  }
+
+  for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
+    state_in[i] = kalman->state[i];
+  }
+#endif
+
   // prepare variables and pointers
   float H[sensor->n_meas][TARGET_POS_KALMAN_DIM];
   float Ht[TARGET_POS_KALMAN_DIM][sensor->n_meas];
@@ -246,6 +307,28 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
       }
     }
   }
+
+  #if TARGET_POS_KALMAN_DEBUG
+  float P[TARGET_POS_KALMAN_DIM * TARGET_POS_KALMAN_DIM];
+  float state_out[TARGET_POS_KALMAN_DIM];
+
+  for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
+    state_out[i] = kalman->state[i];
+    for (int j = 0; j < TARGET_POS_KALMAN_DIM; j++) {
+      P[i * TARGET_POS_KALMAN_DIM + j] = kalman->P[i][j];
+    }
+  }
+
+  char step[20];
+  int rc = snprintf(step, sizeof(step), "u");
+  // send debug message
+  #if !USE_NPS
+  pprz_msg_send_TARGET_POS_KALMAN_DEBUG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, 
+                                  rc, step, state_in, state_out, P, Hmat, meas);
+  #endif
+  DOWNLINK_SEND_TARGET_POS_KALMAN_DEBUG(DefaultChannel, DefaultDevice,
+                                  rc, step, state_in, state_out, P, Hmat, meas);
+#endif
 }
 
 
