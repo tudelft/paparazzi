@@ -38,7 +38,7 @@
 struct KalmanSensor {
     float noise[TARGET_POS_KALMAN_DIM];            ///< The noise of the measurement, fill in order of Hmat, don't follow state vect.
     float meas[TARGET_POS_KALMAN_DIM];             ///< The measurement
-    uint8_t Hmat[TARGET_POS_KALMAN_DIM];             ///< The measurement matrix, fill non-zero rows first as it is trimmed.
+    uint8_t Hmat[TARGET_POS_KALMAN_DIM];           ///< The measurement matrix, fill non-zero rows first as it is trimmed.
     uint8_t n_meas;                                ///< The number of measurements, used to trim Hmat
   };
 
@@ -52,6 +52,7 @@ struct KalmanSensor {
  * */
 struct TargetPosKalman {
   float state[TARGET_POS_KALMAN_DIM];                         ///< state vector
+  float B[TARGET_POS_KALMAN_DIM][3];                          ///< input matrix (acceleration)
   float P[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];      ///< covariance matrix
   float Q[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];      ///< process noise matrix
   float F[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];      ///< dynamic matrix

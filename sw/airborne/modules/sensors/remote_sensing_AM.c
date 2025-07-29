@@ -81,7 +81,7 @@ struct falcon_t falcon = {0};
 struct aruco_t aruco = {0};
 
 /* Initialize the kalman filter struct */
-struct TargetPosKalman remote_sensing_kalman;
+struct TargetPosKalman remote_sensing_kalman = {0};
 static float P0[6] = REMOTE_SENSING_KALMAN_P0;
 static float Q0[6] = REMOTE_SENSING_KALMAN_Q0;
 
@@ -678,7 +678,6 @@ static void sensor_to_NED(struct FloatVect3 *ned, struct FloatVect3 *sensor, str
   } else {
     float_quat_vmult(ned, body_to_ned, &body); // Rotate the position to the NED frame
   }
-  
   
   #else
   VECT3_COPY(*ned, *sensor); // For NPS we send NED position so no need to convert
