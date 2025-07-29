@@ -25,11 +25,14 @@
  */
 
 #include "filters/target_pos_kalman.h"
-#include "filters/target_pos_kalman.h"
 #include <math.h>
 
 #ifndef TARGET_POS_KALMAN_DEBUG
 #define TARGET_POS_KALMAN_DEBUG FALSE
+#endif
+
+#ifndef TARGET_POS_KALMAN_USE_ACCEL
+#define TARGET_POS_KALMAN_USE_ACCEL FALSE
 #endif
 
 #if TARGET_POS_KALMAN_DEBUG
@@ -39,7 +42,12 @@
 #include <stdio.h>
 #endif
 
+#if !TARGET_POS_KALMAN_DEBUG && TARGET_POS_KALMAN_USE_ACCEL
+#include "state.h"
+#endif
+
 PRINT_CONFIG_VAR(TARGET_POS_KALMAN_DEBUG);
+PRINT_CONFIG_VAR(TARGET_POS_KALMAN_USE_ACCEL);
 
 void target_pos_kalman_init(struct TargetPosKalman *kalman, float *P0, float *Q_sigma2, float dt)
 {
@@ -74,14 +82,23 @@ void target_pos_kalman_init(struct TargetPosKalman *kalman, float *P0, float *Q_
   for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
     for (int j = 0; j < TARGET_POS_KALMAN_DIM; j++) {
       if (i == j) {
-        kalman->F[i][i] = 1;
+        kalman->F[i][i] = 1.0f;
       } else if (i % 2 == 0 && j == i + 1) {
         kalman->F[i][j] = dt;
       } else {
-        kalman->F[i][j] = 0;
+        kalman->F[i][j] = 0.0f;
       }
     }
   }
+
+#if TARGET_POS_KALMAN_USE_ACCEL
+  kalman->B[0][0] = dt2 / 2.f;
+  kalman->B[1][0] = dt;
+  kalman->B[2][1] = dt2 / 2.f;
+  kalman->B[3][1] = dt;
+  kalman->B[4][2] = dt2 / 2.f;
+  kalman->B[5][2] = dt;
+#endif
 }
 
 void target_pos_kalman_set_state(struct TargetPosKalman *kalman, struct FloatVect3 pos,
@@ -143,9 +160,19 @@ void target_pos_kalman_predict(struct TargetPosKalman *kalman)
   }
 #endif
 
+#if TARGET_POS_KALMAN_USE_ACCEL
+  struct NedCoor_f accel_struct = *stateGetAccelNed_f();
+  float accel[3] = {-accel_struct.x, -accel_struct.y, -accel_struct.z};
+#endif
+
   for (i = 0; i < TARGET_POS_KALMAN_DIM; i += 2) {
-    // kinematic equation of the dynamic model X = F*X
+    // kinematic equation of the dynamic model X = F*X (or X = F*X + B*U if acceleration is used)
+    #if TARGET_POS_KALMAN_USE_ACCEL
+    kalman->state[i] += kalman->state[i + 1] * kalman->dt + kalman->B[i][i/2] * accel[i/2];
+    kalman->state[i + 1] += kalman->B[i + 1][i/2] * accel[i/2];
+    #else
     kalman->state[i] += kalman->state[i + 1] * kalman->dt;
+    #endif
 
     // propagate covariance P = F*P*Ft + Q
     // since F is diagonal by block, P can be updated by block here as well
@@ -188,7 +215,7 @@ void target_pos_kalman_predict(struct TargetPosKalman *kalman)
     }
   }
 
-  char step[20];
+  char step[5];
   int rc = snprintf(step, sizeof(step), "p");
   // send debug message
   #if !USE_NPS
@@ -219,12 +246,10 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   float state_in[TARGET_POS_KALMAN_DIM];
   float meas[TARGET_POS_KALMAN_DIM] = {0};
   float Hmat[TARGET_POS_KALMAN_DIM] = {0};
-  float noise[TARGET_POS_KALMAN_DIM] = {0};
 
   for (int i = 0; i < sensor->n_meas; i++) {
     meas[i] = sensor->meas[i];
     Hmat[i] = sensor->Hmat[i];
-    noise[i] = sensor->noise[i];
   }
 
   for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
@@ -254,7 +279,17 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   }
   
   for (int i = 0; i < sensor->n_meas; i++) {
-    H[i][sensor->Hmat[i]] = 1.0;
+    if (sensor->Hmat[i] >= TARGET_POS_KALMAN_DIM) {
+      // invalid H matrix index
+      char error[75];
+      int rc = snprintf(error, sizeof(error), "Observation matrix OOB: H[%d] = %d, TARGET_POS_KALMAN_DIM == %d", i, sensor->Hmat[i], TARGET_POS_KALMAN_DIM);
+      #if !USE_NPS
+      pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
+      #endif
+      DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error);
+      return;
+    }
+    H[i][sensor->Hmat[i]] = 1.0f;
   }
 
   MAKE_MATRIX_PTR(_H, H, sensor->n_meas);
@@ -275,7 +310,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
     _S[i][i] += sensor->noise[i];                                                                             // S = H * P * Ht + R
   }
 
-  float abs_sum_S_diag = 0;
+  float abs_sum_S_diag = 0.0f;
   for (int i = 0; i < sensor->n_meas; i++) {
     abs_sum_S_diag += fabsf(S[i][i]);
   }
@@ -321,7 +356,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
     }
   }
 
-  char step[20];
+  char step[5];
   int rc = snprintf(step, sizeof(step), "u");
   // send debug message
   #if !USE_NPS

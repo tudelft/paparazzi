@@ -98,6 +98,7 @@
 
         <module name="remote_sensing_AM">
             <define name="TARGET_POS_KALMAN_DEBUG" value="TRUE"/>
+            <define name="TARGET_POS_KALMAN_USE_ACCEL" value="FALSE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_GROUND_STATION" value="TRUE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF" value="TRUE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELANGLE" value="TRUE"/>
