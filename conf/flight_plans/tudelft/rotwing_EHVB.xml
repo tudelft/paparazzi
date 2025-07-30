@@ -78,6 +78,7 @@
     <!-- <module name="follow_me">
       <define name="FOLLOW_ME_MOVING_WPS" value="WP_FOLLOW"/>
     </module> -->
+    <module name="nav_moving_base"/>
   </modules>
   <exceptions>
     <!-- Outside of hard (red) geofence kill -->
@@ -152,18 +153,22 @@
     </block>
     <block name="stay_ARUCO" strip_button="Stay ARUCO">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay wp="ARUCO"/>
+        <call_once fun="nav_moving_base_init(WP_ARUCO)"/>
+        <call fun="nav_moving_base_run()"/>
     </block>
-    <block name="stay_KALMAN" strip_button="Stay KALMAN" on_enter="nav_hybrid_wp_moving=true" on_exit="nav_hybrid_wp_moving=false">
+    <block name="stay_KALMAN" strip_button="Stay KALMAN">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay wp="KALMAN"/>
+        <call_once fun="nav_moving_base_init(WP_KALMAN)"/>
+        <call fun="nav_moving_base_run()"/>
     </block>
     <block name="stay_KALMAN_no_FF" strip_button="Stay KALMAN no ff">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay wp="KALMAN"/>
+        <call_once fun="nav_moving_base_init(WP_KALMAN, )"/>
+        <call fun="nav_moving_base_run()"/>
     </block>
-    <block name="descend_KALMAN" strip_button="Descend KALMAN" on_enter="nav_hybrid_wp_moving=true" on_exit="nav_hybrid_wp_moving=false">
+    <block name="descend_KALMAN" strip_button="Descend KALMAN">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <call fun="nav_moving_base_run()"/>
         <stay climb="-0.2" vmode="climb" wp="KALMAN"/>
         <exception cond="agl_dist_valid @AND (agl_dist_value @LT 1.0)" deroute="stay_KALMAN_no_FF"/>
     </block>

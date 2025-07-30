@@ -151,7 +151,7 @@
         </module>
 
         <!-- Other -->
-        <!-- <module name="nav_rotwing"/> -->
+        <module name="nav_moving_base"/>
         <module name="sys_id_doublet"/>
         <module name="sys_id_auto_doublets"/>
         <module name="ground_detect"/>
