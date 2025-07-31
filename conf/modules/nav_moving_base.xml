@@ -12,7 +12,10 @@
     <depends>@navigation</depends>
   </dep>
   <header>
-    <file name="nav_moving_base.h" dir="firmwares/rotorcraft"/>
+    <file name="nav_moving_base.h" dir="modules/nav"/>
   </header>
   <init fun="nav_moving_base_init()"/>
+  <makefile>
+    <file name="nav_moving_base.c" dir="modules/nav"/>
+  </makefile>
 </module>
