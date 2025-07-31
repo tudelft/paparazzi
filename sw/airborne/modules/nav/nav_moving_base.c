@@ -23,24 +23,61 @@
  * Specific navigation functions for tracking and landing on a moving base
  */
 
-
 #include "modules/nav/nav_moving_base.h"
+#include "math/pprz_algebra.h"
+
+#ifndef NAV_MOVING_BASE_MAX_H_ACCEL
+#define NAV_MOVING_BASE_MAX_H_ACCEL (struct FloatVect2) { \
+  .x = 2.0f, \
+  .y = 2.0f \
+}
+#endif
+
+#ifndef NAV_MOVING_BASE_MAX_H_SPEED
+#define NAV_MOVING_BASE_MAX_H_SPEED (struct FloatVect2) { \
+  .x = 10.0f, \
+  .y = 10.0f \
+}
+#endif
+
+#ifndef NAV_MOVING_BASE_MAX_V_ACCEL
+// Use FloatVect2 for convenient math macros, x is upwards limit, y is downwards limit
+#define NAV_MOVING_BASE_MAX_V_ACCEL (struct FloatVect2) { \
+  .x = 2.0f, \
+  .y = -2.0f \
+}
+#endif
+
+#ifndef NAV_MOVING_BASE_MAX_V_SPEED
+// Use FloatVect2 for convenient math macros, x is upwards limit, y is downwards limit
+#define NAV_MOVING_BASE_MAX_V_SPEED (struct FloatVect2) { \
+  .x = 2.0f, \
+  .y = -2.0f \
+}
+#endif
 
 static void nav_moving_base_track(void);
 static void nav_moving_base_descend(void);
 static void nav_moving_base_land(void);
 
-void nav_moving_base_init() {
-  return;
+static struct NavMovingBase nav_moving_base;
+  
+void nav_moving_base_init(void) {
+  VECT2_COPY(nav_moving_base.max_accel_h, NAV_MOVING_BASE_MAX_H_ACCEL);
+  VECT2_COPY(nav_moving_base.max_speed_h, NAV_MOVING_BASE_MAX_H_SPEED);
+  VECT2_COPY(nav_moving_base.max_accel_v, NAV_MOVING_BASE_MAX_V_ACCEL);
+  VECT2_COPY(nav_moving_base.max_speed_v, NAV_MOVING_BASE_MAX_V_SPEED);
+  nav_moving_base.complete = false;
+  nav_moving_base.stay_indefinitely = false;
 }
 
-void nav_moving_base_setup(waypoint_t wp, NavMovingBaseMode mode) {
+void nav_moving_base_setup(int waypoint_id, enum NavMovingBaseMode mode) {
   nav_moving_base.complete = false;
   nav_moving_base.mode = mode;
-  nav_moving_base.wp = wp;
+  nav_moving_base.wp = waypoints[waypoint_id];
 }
 
-void nav_moving_base_run(void) {
+bool nav_moving_base_run(void) {
   switch (nav_moving_base.mode) {
     case NAV_MOVING_BASE_MODE_TRACKING_NO_FF:
       nav_moving_base_track();

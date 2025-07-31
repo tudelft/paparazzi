@@ -38,14 +38,17 @@ enum NavMovingBaseMode {
 
 struct NavMovingBase {
   enum NavMovingBaseMode mode;
-  waypoint_t wp; // The waypoint to track or land on
-  struct FloatVect3 max_accel;
-  struct FloatVect3 max_speed;
-  bool complete;  
+  struct Waypoint wp;
+  struct FloatVect2 max_accel_h;
+  struct FloatVect2 max_speed_h;
+  struct FloatVect2 max_accel_v;
+  struct FloatVect2 max_speed_v;
+  bool complete;
+  bool stay_indefinitely;
 };
 
-extern void nav_moving_base_init();
-void nav_moving_base_setup(waypoint_t wp, NavMovingBaseMode mode);
-void nav_moving_base_run(void);
+extern void nav_moving_base_init(void);
+extern void nav_moving_base_setup(int waypoint_id, enum NavMovingBaseMode mode);
+extern bool nav_moving_base_run(void);
 
 #endif
