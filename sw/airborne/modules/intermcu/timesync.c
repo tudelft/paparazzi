@@ -19,16 +19,9 @@ void timesync_perform_sync(uint8_t *buf)
   // TODO: check for tc1==0?
 
   // Respond in kind
-  #if !USE_NPS
   pprz_msg_send_IMCU_TIMESYNC(&extra_pprz_tp.trans_tx, &EXTRA_DOWNLINK_DEVICE.device, AC_ID,
           &cur_time,
           &ts1);
-  #else
-  // Allow it to run over IVY in NPS for easy debugging
-  pprz_msg_send_IMCU_TIMESYNC(&pprz_tp.trans_tx, &DOWNLINK_DEVICE.device, AC_ID,
-            &cur_time,
-            &ts1);
-  #endif
 }
 
 
