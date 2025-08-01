@@ -1,0 +1,15 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="timesync" dir="intermcu">
+  <doc>
+    <description>Timesync module for companion computers.</description>
+  </doc>
+  <header>
+    <file name="timesync.h"/>
+  </header>
+  
+  <datalink class="intermcu" message="IMCU_TIMESYNC" fun="timesync_perform_sync(buf)"/>
+
+  <makefile>
+    <file name="timesync.c"/>
+  </makefile>
+</module>
