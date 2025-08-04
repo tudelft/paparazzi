@@ -120,6 +120,7 @@ extern struct StabilizationSetpoint guidance_h_run(bool in_flight);
 extern struct StabilizationSetpoint guidance_h_run_pos(bool in_flight, struct HorizontalGuidance *gh);
 extern struct StabilizationSetpoint guidance_h_run_speed(bool in_flight, struct HorizontalGuidance *gh);
 extern struct StabilizationSetpoint guidance_h_run_accel(bool in_flight, struct HorizontalGuidance *gh);
+extern struct StabilizationSetpoint guidance_h_run_all(bool in_flight, struct HorizontalGuidance *gh);
 
 extern void guidance_h_hover_enter(void);
 extern void guidance_h_nav_enter(void);

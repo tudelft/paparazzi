@@ -22,6 +22,7 @@
     <waypoint name="ARUCO" x="-10" y="-10"/>
     <waypoint name="KALMAN" x="-10" y="-10"/>
     <waypoint name="BOX" x="-10" y="-10"/>
+    <waypoint name="MOVING_BASE" x="-500" y="-500" height="20"/>
     <!-- EHVB -->
     <waypoint lat="52.169189" lon="4.410820" name="C1"/>
     <waypoint lat="52.168049" lon="4.406923" name="C2"/>
@@ -155,22 +156,22 @@
     </block>
     <block name="stay_ARUCO" strip_button="Stay ARUCO">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <call_once fun="nav_moving_base_setup(WP_ARUCO, NAV_MOVING_BASE_MODE_TRACKING)"/>
+        <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING)"/>
         <call fun="nav_moving_base_run()"/>
     </block>
     <block name="stay_KALMAN" strip_button="Stay KALMAN">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <call_once fun="nav_moving_base_setup(WP_KALMAN, NAV_MOVING_BASE_MODE_TRACKING)"/>
+        <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING)"/>
         <call fun="nav_moving_base_run()"/>
     </block>
     <block name="stay_KALMAN_no_FF" strip_button="Stay KALMAN no ff">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <call_once fun="nav_moving_base_setup(WP_KALMAN, NAV_MOVING_BASE_MODE_TRACKING_NO_FF)"/>
+        <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING_NO_FF)"/>
         <call fun="nav_moving_base_run()"/>
     </block>
     <block name="descend_KALMAN" strip_button="Descend KALMAN">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <call_once fun="nav_moving_base_setup(WP_KALMAN, NAV_MOVING_BASE_MODE_DESCEND)"/>
+        <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_DESCEND)"/>
         <call fun="nav_moving_base_run()"/>
     </block>
     <block name="stay_p1" strip_button="Stay P1" strip_icon="wp_quad.png">
