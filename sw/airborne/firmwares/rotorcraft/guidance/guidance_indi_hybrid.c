@@ -827,7 +827,7 @@ struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight UNUSED, struc
     }
     return guidance_indi_run(&accel_sp, gh->sp.heading);
   }
-  else { // H_ACCEL
+  else if (h_mode == GUIDANCE_INDI_HYBRID_H_ACCEL) {// H_ACCEL
     gi_speed_sp.x = 0.f;
     gi_speed_sp.y = 0.f;
     if (v_mode == GUIDANCE_INDI_HYBRID_V_POS) {
@@ -845,6 +845,18 @@ struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight UNUSED, struc
     if (v_mode == GUIDANCE_INDI_HYBRID_V_ACCEL) {
       accel_sp.z = (gi_speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz + ACCEL_FLOAT_OF_BFP(gv->zdd_ref); // overwrite accel
     }
+    return guidance_indi_run(&accel_sp, gh->sp.heading);
+  }
+  else { // GUIDANCE_INDI_HYBRID_H_ALL
+    pos_err.x = POS_FLOAT_OF_BFP(gh->ref.pos.x) - stateGetPositionNed_f()->x;
+    pos_err.y = POS_FLOAT_OF_BFP(gh->ref.pos.y) - stateGetPositionNed_f()->y;
+    pos_err.z = POS_FLOAT_OF_BFP(gv->z_ref) - stateGetPositionNed_f()->z;
+    gi_speed_sp.x = pos_err.x * gih_params.pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
+    gi_speed_sp.y = pos_err.y * gih_params.pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
+    gi_speed_sp.z = bound_vz_sp(pos_err.z * gih_params.pos_gainz + SPEED_FLOAT_OF_BFP(gv->zd_ref));
+    accel_sp.x = (gi_speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain + ACCEL_FLOAT_OF_BFP(gh->ref.accel.x);
+    accel_sp.y = (gi_speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain + ACCEL_FLOAT_OF_BFP(gh->ref.accel.y);
+    accel_sp.z = (gi_speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz + ACCEL_FLOAT_OF_BFP(gv->zdd_ref); 
     return guidance_indi_run(&accel_sp, gh->sp.heading);
   }
 }
@@ -968,6 +980,11 @@ struct StabilizationSetpoint guidance_h_run_speed(bool in_flight, struct Horizon
 struct StabilizationSetpoint guidance_h_run_accel(bool in_flight, struct HorizontalGuidance *gh)
 {
   return guidance_indi_run_mode(in_flight, gh, _gv, GUIDANCE_INDI_HYBRID_H_ACCEL, _v_mode);
+}
+
+struct StabilizationSetpoint guidance_h_run_all(bool in_flight, struct HorizontalGuidance *gh)
+{
+  return guidance_indi_run_mode(in_flight, gh, _gv, GUIDANCE_INDI_HYBRID_H_ALL, _v_mode);
 }
 
 struct ThrustSetpoint guidance_v_run_pos(bool in_flight UNUSED, struct VerticalGuidance *gv)

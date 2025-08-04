@@ -100,6 +100,11 @@ extern "C" {
     (_vo).y =  (_vi).y * (_s);      \
   }
 
+#define VECT2_EMUL(_vo, _a, _b) {    \
+    (_vo).x =  (_a).x * (_b).x;      \
+    (_vo).y =  (_a).y * (_b).y;      \
+  }
+
 /* _vo =  _vi / _s */
 #define VECT2_SDIV(_vo, _vi, _s) {    \
     (_vo).x =  (_vi).x / (_s);      \

@@ -7,6 +7,11 @@
     </description>
   </doc>
   <settings>
+    <dl_settings>
+      <dl_settings NAME="MOVING_BASE">
+        <dl_setting var="nav_moving_base.stay" MIN="0" STEP="1" MAX="1" values="FALSE|TRUE" shortname="stay"/>
+      </dl_settings>
+    </dl_settings>
   </settings>
   <dep>
     <depends>@navigation</depends>

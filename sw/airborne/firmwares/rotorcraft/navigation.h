@@ -100,10 +100,11 @@
 #define NAV_SETPOINT_MODE_POS         0
 #define NAV_SETPOINT_MODE_SPEED       1
 #define NAV_SETPOINT_MODE_ACCEL       2
-#define NAV_SETPOINT_MODE_ATTITUDE    3 // attitude defined by roll, pitch and heading
-#define NAV_SETPOINT_MODE_QUAT        4 // attitude defined by unit quaternion
-#define NAV_SETPOINT_MODE_RATE        5
-#define NAV_SETPOINT_MODE_MANUAL      6
+#define NAV_SETPOINT_MODE_ALL         3 // all setpoints defined: pos, speed and accel
+#define NAV_SETPOINT_MODE_ATTITUDE    4 // attitude defined by roll, pitch and heading
+#define NAV_SETPOINT_MODE_QUAT        5 // attitude defined by unit quaternion
+#define NAV_SETPOINT_MODE_RATE        6
+#define NAV_SETPOINT_MODE_MANUAL      7
 
 typedef void (*navigation_stage_init)(void);
 typedef void (*navigation_goto)(struct EnuCoor_f *wp);

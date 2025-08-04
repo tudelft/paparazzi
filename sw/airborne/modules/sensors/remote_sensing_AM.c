@@ -27,7 +27,7 @@
 #include "pprzlink/intermcu_msg.h"
 #include "generated/airframe.h"
 #include "generated/flight_plan.h"
-#include "modules/nav/nav_rotorcraft_hybrid.h"
+#include "modules/nav/nav_moving_base.h"
 
 int track_aruco_id = 16;
 
@@ -525,7 +525,7 @@ void remote_sensing_AM_kalman_filter_init(float r __attribute__((unused))) {
 void remote_sensing_AM_init(void)
 {
 
-  //Init function
+  // Init function
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_REMOTE_SENSING_AM, send_remote_sensing_am_periodic);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_LANDING_ALGORITHM_OUTPUT, send_landing_algorithm_outputs_periodic);
@@ -596,8 +596,14 @@ void remote_sensing_AM_periodic(void) {
   struct FloatVect3 pos;
   struct FloatVect3 speed;
   target_pos_kalman_get_state(&remote_sensing_kalman, &pos, &speed);
+  
+  // Send absolute positions and speed in ENU frame to navigation
+  VECT3_ADD(pos, *stateGetPositionNed_f());
   VECT3_ADD(speed, *stateGetSpeedNed_f());
-  nav_hybrid_set_wp_speed(&(struct EnuCoor_f){speed.y, speed.x, -speed.z}); 
+  
+  nav_moving_base_set_pos(&(struct EnuCoor_f){pos.y, pos.x, -pos.z});
+  nav_moving_base_set_speed(&(struct EnuCoor_f){speed.y, speed.x, -speed.z});
+  nav_moving_base_set_accel(&(struct EnuCoor_f){0.0f, 0.0f, 0.0f});
 
   // Check for NaN
   if (isnan(pos.x) || isnan(pos.y) || isnan(pos.z) || isnan(speed.x) || isnan(speed.y) || isnan(speed.z)) {

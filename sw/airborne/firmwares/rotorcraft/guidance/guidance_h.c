@@ -328,6 +328,15 @@ static void guidance_h_update_reference(void)
           guidance_h.ref.accel.y = guidance_h.sp.accel.y;
           break;
 
+        case NAV_SETPOINT_MODE_ALL:
+          guidance_h.ref.pos.x = guidance_h.sp.pos.x;
+          guidance_h.ref.pos.y = guidance_h.sp.pos.y;
+          guidance_h.ref.speed.x = guidance_h.sp.speed.x;
+          guidance_h.ref.speed.y = guidance_h.sp.speed.y;
+          guidance_h.ref.accel.x = guidance_h.sp.accel.x;
+          guidance_h.ref.accel.y = guidance_h.sp.accel.y;
+          break;
+
         case NAV_SETPOINT_MODE_POS:
         default: // Fallback is guidance by pos
           VECT2_COPY(guidance_h.ref.pos, guidance_h.sp.pos);
@@ -443,6 +452,13 @@ struct StabilizationSetpoint guidance_h_from_nav(bool in_flight)
         guidance_h_update_reference();
         guidance_h_set_heading(nav.heading);
         guidance_h_cmd = guidance_h_run_accel(in_flight, &guidance_h);
+        break;
+
+      case NAV_SETPOINT_MODE_ALL:
+        guidance_h_set_all(nav.carrot.y, nav.carrot.x, nav.speed.y, nav.speed.x, nav.accel.y, nav.accel.x); // nav is in ENU frame, convert to NED
+        guidance_h_update_reference();
+        guidance_h_set_heading(nav.heading);
+        guidance_h_cmd = guidance_h_run_all(in_flight, &guidance_h);
         break;
 
       default:

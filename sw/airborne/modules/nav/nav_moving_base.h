@@ -26,7 +26,8 @@
 #ifndef NAV_MOVING_BASE_H
 #define NAV_MOVING_BASE_H
 
-#include "waypoints.h"
+#include "math/pprz_algebra_float.h"
+#include "math/pprz_geodetic_float.h"
 
 enum NavMovingBaseMode {
   NAV_MOVING_BASE_MODE_TRACKING_NO_FF,    // Track a moving base without feedforward speed
@@ -38,17 +39,25 @@ enum NavMovingBaseMode {
 
 struct NavMovingBase {
   enum NavMovingBaseMode mode;
-  struct Waypoint wp;
-  struct FloatVect2 max_accel_h;
-  struct FloatVect2 max_speed_h;
-  struct FloatVect2 max_accel_v;
-  struct FloatVect2 max_speed_v;
-  bool complete;
-  bool stay_indefinitely;
+  struct FloatVect2 max_accel_h[2]; ///< max horizontal acceleration in m/s^2, longitudinal (forwards, backwards), lateral (right, left)
+  struct FloatVect2 max_speed_h[2]; ///< max horizontal speed in m/s, longitudinal (forwards, backwards), lateral (right, left)
+  struct FloatVect2 max_accel_v; ///< max vertical acceleration in m/s^2, up, down
+  struct FloatVect2 max_speed_v; ///< max vertical speed in m/s, up, down
+  bool stay;
+  struct EnuCoor_f pos;
+  struct EnuCoor_f speed;
+  struct EnuCoor_f accel;
+  struct FloatVect3 pos_gain; ///< position gain for position control
+  struct FloatVect3 speed_gain; ///< speed gain for speed control
 };
 
+extern struct NavMovingBase nav_moving_base;
+
 extern void nav_moving_base_init(void);
-extern void nav_moving_base_setup(int waypoint_id, enum NavMovingBaseMode mode);
+extern void nav_moving_base_setup(enum NavMovingBaseMode mode);
 extern bool nav_moving_base_run(void);
+void nav_moving_base_set_pos(struct EnuCoor_f *pos);
+void nav_moving_base_set_speed(struct EnuCoor_f *speed);
+void nav_moving_base_set_accel(struct EnuCoor_f *accel);
 
 #endif

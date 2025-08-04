@@ -59,7 +59,8 @@ extern void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_an
 enum GuidanceIndiHybrid_HMode {
   GUIDANCE_INDI_HYBRID_H_POS,
   GUIDANCE_INDI_HYBRID_H_SPEED,
-  GUIDANCE_INDI_HYBRID_H_ACCEL
+  GUIDANCE_INDI_HYBRID_H_ACCEL,
+  GUIDANCE_INDI_HYBRID_H_ALL
 };
 
 enum GuidanceIndiHybrid_VMode {
