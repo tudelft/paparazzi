@@ -24,19 +24,26 @@
  */
 
 #include "modules/nav/nav_moving_base.h"
-#include "math/pprz_algebra.h"
+#include "firmwares/rotorcraft/navigation.h"
+#include "generated/flight_plan.h"
+#include "generated/airframe.h"
+#include "modules/nav/waypoints.h"
+
+#ifdef WP_MOVING_BASE
+#include "modules/datalink/downlink.h"
+#endif
 
 #ifndef NAV_MOVING_BASE_MAX_H_ACCEL
-#define NAV_MOVING_BASE_MAX_H_ACCEL (struct FloatVect2) { \
-  .x = 2.0f, \
-  .y = 2.0f \
+#define NAV_MOVING_BASE_MAX_H_ACCEL (struct FloatVect2[2]) { \
+  { .x = 2.0f, .y = 2.0f }, \
+  { .x = 2.0f, .y = 2.0f } \
 }
 #endif
 
 #ifndef NAV_MOVING_BASE_MAX_H_SPEED
-#define NAV_MOVING_BASE_MAX_H_SPEED (struct FloatVect2) { \
-  .x = 10.0f, \
-  .y = 10.0f \
+#define NAV_MOVING_BASE_MAX_H_SPEED (struct FloatVect2[2]) { \
+  { .x = 10.0f, .y = 10.0f }, \
+  { .x = 10.0f, .y = 10.0f } \
 }
 #endif
 
@@ -56,29 +63,62 @@
 }
 #endif
 
+struct NavMovingBase nav_moving_base;
+
+#ifdef GUIDANCE_INDI_POS_GAIN
+float pos_gain_h = GUIDANCE_INDI_POS_GAIN;
+#elif defined(NAV_MOVING_BASE_POS_GAIN)
+float pos_gain_h = NAV_MOVING_BASE_POS_GAIN;
+#else
+float pos_gain_h = 1.0f;
+#endif
+
+#ifdef GUIDANCE_INDI_POS_GAINZ
+float pos_gain_v = GUIDANCE_INDI_POS_GAINZ;
+#elif defined(NAV_MOVING_BASE_POS_GAINZ)
+float pos_gain_v = NAV_MOVING_BASE_POS_GAINZ;
+#else
+float pos_gain_v = 1.0f;
+#endif
+
+#ifdef GUIDANCE_INDI_SPEED_GAIN
+float speed_gain_h = GUIDANCE_INDI_SPEED_GAIN;
+#elif defined(NAV_MOVING_BASE_SPEED_GAIN)
+float speed_gain_h = NAV_MOVING_BASE_SPEED_GAIN;
+#else
+float speed_gain_h = 1.0f;
+#endif
+
+#ifdef GUIDANCE_INDI_SPEED_GAINZ
+float speed_gain_v = GUIDANCE_INDI_SPEED_GAINZ;
+#elif defined(NAV_MOVING_BASE_SPEED_GAINZ)
+float speed_gain_v = NAV_MOVING_BASE_SPEED_GAINZ;
+#else
+float speed_gain_v = 1.0f;
+#endif
+
 static void nav_moving_base_track(void);
 static void nav_moving_base_descend(void);
 static void nav_moving_base_land(void);
 static void enforce_horizontal_bounds(struct EnuCoor_f* quantity, struct FloatVect2* bounds);
 
-static struct NavMovingBase nav_moving_base;
-  
 void nav_moving_base_init(void) {
-  VECT2_COPY(nav_moving_base.max_accel_h, NAV_MOVING_BASE_MAX_H_ACCEL);
-  VECT2_COPY(nav_moving_base.max_speed_h, NAV_MOVING_BASE_MAX_H_SPEED);
+  VECT2_COPY(nav_moving_base.max_accel_h[0], NAV_MOVING_BASE_MAX_H_ACCEL[0]);
+  VECT2_COPY(nav_moving_base.max_accel_h[1], NAV_MOVING_BASE_MAX_H_ACCEL[1]);
+  VECT2_COPY(nav_moving_base.max_speed_h[0], NAV_MOVING_BASE_MAX_H_SPEED[0]);
+  VECT2_COPY(nav_moving_base.max_speed_h[1], NAV_MOVING_BASE_MAX_H_SPEED[1]);
   VECT2_COPY(nav_moving_base.max_accel_v, NAV_MOVING_BASE_MAX_V_ACCEL);
   VECT2_COPY(nav_moving_base.max_speed_v, NAV_MOVING_BASE_MAX_V_SPEED);
-  nav_moving_base.complete = false;
-  nav_moving_base.stay_indefinitely = false;
+
+  nav_moving_base.pos_gain = (struct FloatVect3) {pos_gain_h, pos_gain_h, pos_gain_v};
+  nav_moving_base.speed_gain = (struct FloatVect3) {speed_gain_h, speed_gain_h, speed_gain_v};
+
+  nav_moving_base.stay = false;
 }
 
-void nav_moving_base_setup(int waypoint_id, enum NavMovingBaseMode mode) {
-  nav_moving_base.complete = false;
+void nav_moving_base_setup(enum NavMovingBaseMode mode) {
   nav_moving_base.mode = mode;
-  nav_moving_base.wp = waypoints[waypoint_id];
-}
 
-bool nav_moving_base_run(void) {
   switch (nav_moving_base.mode) {
     case NAV_MOVING_BASE_MODE_TRACKING_NO_FF:
     case NAV_MOVING_BASE_MODE_TRACKING:
