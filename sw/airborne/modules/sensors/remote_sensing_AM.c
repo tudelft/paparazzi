@@ -596,14 +596,6 @@ void remote_sensing_AM_periodic(void) {
   struct FloatVect3 pos;
   struct FloatVect3 speed;
   target_pos_kalman_get_state(&remote_sensing_kalman, &pos, &speed);
-  
-  // Send absolute positions and speed in ENU frame to navigation
-  VECT3_ADD(pos, *stateGetPositionNed_f());
-  VECT3_ADD(speed, *stateGetSpeedNed_f());
-  
-  nav_moving_base_set_pos(&(struct EnuCoor_f){pos.y, pos.x, -pos.z});
-  nav_moving_base_set_speed(&(struct EnuCoor_f){speed.y, speed.x, -speed.z});
-  nav_moving_base_set_accel(&(struct EnuCoor_f){0.0f, 0.0f, 0.0f});
 
   // Check for NaN
   if (isnan(pos.x) || isnan(pos.y) || isnan(pos.z) || isnan(speed.x) || isnan(speed.y) || isnan(speed.z)) {
@@ -616,8 +608,8 @@ void remote_sensing_AM_periodic(void) {
 
   #if !USE_NPS
   //Test the landing algorithm: 
-  RunOnceEvery(50*REMOTE_SENSING_AM_PERIODIC_FREQ, {send_landing_algorithm_params();});
-  RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {request_landing_algorithm_outputs();});
+  // RunOnceEvery(50*REMOTE_SENSING_AM_PERIODIC_FREQ, {send_landing_algorithm_params();});
+  // RunOnceEvery(REMOTE_SENSING_AM_PERIODIC_FREQ, {request_landing_algorithm_outputs();});
 
   pprz_msg_send_TARGET_POS_KALMAN(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
                                   &pos.x, &pos.y, &pos.z,
@@ -628,6 +620,14 @@ void remote_sensing_AM_periodic(void) {
                                   &pos.x, &pos.y, &pos.z,
                                   &speed.x, &speed.y, &speed.z);
   });
+
+  // Send absolute positions and speed in ENU frame to navigation
+  VECT3_ADD(pos, *stateGetPositionNed_f());
+  VECT3_ADD(speed, *stateGetSpeedNed_f());
+  
+  nav_moving_base_set_pos(&(struct EnuCoor_f){pos.y, pos.x, -pos.z});
+  nav_moving_base_set_speed(&(struct EnuCoor_f){speed.y, speed.x, -speed.z});
+  nav_moving_base_set_accel(&(struct EnuCoor_f){0.0f, 0.0f, 0.0f});
 
   return;
 }
