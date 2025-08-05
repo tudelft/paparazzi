@@ -59,5 +59,7 @@ extern bool nav_moving_base_run(void);
 void nav_moving_base_set_pos(struct EnuCoor_f *pos);
 void nav_moving_base_set_speed(struct EnuCoor_f *speed);
 void nav_moving_base_set_accel(struct EnuCoor_f *accel);
+void nav_moving_base_set_max_accel_h(struct FloatVect2 longitudinal, struct FloatVect2 lateral);
+void nav_moving_base_set_max_speed_h(struct FloatVect2 longitudinal, struct FloatVect2 lateral);
 
-#endif
+#endif /* NAV_MOVING_BASE_H */

@@ -8,8 +8,14 @@
   </doc>
   <settings>
     <dl_settings>
-      <dl_settings NAME="MOVING_BASE">
+      <dl_settings NAME="nav_moving_base">
         <dl_setting var="nav_moving_base.stay" MIN="0" STEP="1" MAX="1" values="FALSE|TRUE" shortname="stay"/>
+        <dl_setting var="nav_moving_base.pos_gain.x" MIN="0.0" STEP="0.01" MAX="10.0" shortname="pos_gain_x"/>
+        <dl_setting var="nav_moving_base.pos_gain.y" MIN="0.0" STEP="0.01" MAX="10.0" shortname="pos_gain_y"/>
+        <dl_setting var="nav_moving_base.pos_gain.z" MIN="0.0" STEP="0.01" MAX="10.0" shortname="pos_gain_z"/>
+        <dl_setting var="nav_moving_base.speed_gain.x" MIN="0.0" STEP="0.01" MAX="10.0" shortname="speed_gain_x"/>
+        <dl_setting var="nav_moving_base.speed_gain.y" MIN="0.0" STEP="0.01" MAX="10.0" shortname="speed_gain_y"/>
+        <dl_setting var="nav_moving_base.speed_gain.z" MIN="0.0" STEP="0.01" MAX="10.0" shortname="speed_gain_z"/>
       </dl_settings>
     </dl_settings>
   </settings>
