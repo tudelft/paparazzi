@@ -89,6 +89,7 @@ struct NavMovingBase nav_moving_base;
 float pos_gain_h = GUIDANCE_INDI_POS_GAIN;
 #elif defined(NAV_MOVING_BASE_POS_GAIN)
 float pos_gain_h = NAV_MOVING_BASE_POS_GAIN;
+PRINT_CONFIG_VAR(NAV_MOVING_BASE_POS_GAIN);
 #else
 float pos_gain_h = 1.0f;
 #endif
@@ -97,6 +98,7 @@ float pos_gain_h = 1.0f;
 float pos_gain_v = GUIDANCE_INDI_POS_GAINZ;
 #elif defined(NAV_MOVING_BASE_POS_GAINZ)
 float pos_gain_v = NAV_MOVING_BASE_POS_GAINZ;
+PRINT_CONFIG_VAR(NAV_MOVING_BASE_POS_GAINZ);
 #else
 float pos_gain_v = 1.0f;
 #endif
@@ -105,6 +107,7 @@ float pos_gain_v = 1.0f;
 float speed_gain_h = GUIDANCE_INDI_SPEED_GAIN;
 #elif defined(NAV_MOVING_BASE_SPEED_GAIN)
 float speed_gain_h = NAV_MOVING_BASE_SPEED_GAIN;
+PRINT_CONFIG_VAR(NAV_MOVING_BASE_SPEED_GAIN);
 #else
 float speed_gain_h = 1.0f;
 #endif
@@ -112,10 +115,13 @@ float speed_gain_h = 1.0f;
 #if defined(GUIDANCE_INDI_SPEED_GAINZ) && !NAV_MOVING_BASE_OVERWRITE_SPEED_GAINZ
 float speed_gain_v = GUIDANCE_INDI_SPEED_GAINZ;
 #elif defined(NAV_MOVING_BASE_SPEED_GAINZ)
+PRINT_CONFIG_VAR(NAV_MOVING_BASE_SPEED_GAINZ);
 float speed_gain_v = NAV_MOVING_BASE_SPEED_GAINZ;
 #else
 float speed_gain_v = 1.0f;
 #endif
+
+PRINT_CONFIG_VAR(NAV_MOVING_BASE_DESCEND_SPEED);
 
 static bool nav_moving_base_track(void);
 static bool nav_moving_base_descend(void);
@@ -123,12 +129,17 @@ static bool nav_moving_base_land(void);
 static void enforce_horizontal_bounds(struct EnuCoor_f* quantity, struct FloatVect2* bounds);
 
 void nav_moving_base_init(void) {
-  VECT2_COPY(nav_moving_base.max_accel_h[0], NAV_MOVING_BASE_MAX_H_ACCEL[0]);
-  VECT2_COPY(nav_moving_base.max_accel_h[1], NAV_MOVING_BASE_MAX_H_ACCEL[1]);
-  VECT2_COPY(nav_moving_base.max_speed_h[0], NAV_MOVING_BASE_MAX_H_SPEED[0]);
-  VECT2_COPY(nav_moving_base.max_speed_h[1], NAV_MOVING_BASE_MAX_H_SPEED[1]);
-  VECT2_COPY(nav_moving_base.max_accel_v, NAV_MOVING_BASE_MAX_V_ACCEL);
-  VECT2_COPY(nav_moving_base.max_speed_v, NAV_MOVING_BASE_MAX_V_SPEED);
+  struct FloatVect2 max_h_accel[2] = NAV_MOVING_BASE_MAX_H_ACCEL;
+  struct FloatVect2 max_h_speed[2] = NAV_MOVING_BASE_MAX_H_SPEED;
+  struct FloatVect2 max_v_accel = NAV_MOVING_BASE_MAX_V_ACCEL;
+  struct FloatVect2 max_v_speed = NAV_MOVING_BASE_MAX_V_SPEED;
+
+  VECT2_COPY(nav_moving_base.max_accel_h[0], max_h_accel[0]);
+  VECT2_COPY(nav_moving_base.max_accel_h[1], max_h_accel[1]);
+  VECT2_COPY(nav_moving_base.max_speed_h[0], max_h_speed[0]);
+  VECT2_COPY(nav_moving_base.max_speed_h[1], max_h_speed[1]);
+  VECT2_COPY(nav_moving_base.max_accel_v, max_v_accel);
+  VECT2_COPY(nav_moving_base.max_speed_v, max_v_speed);
 
   nav_moving_base.pos_gain = (struct FloatVect3) {pos_gain_h, pos_gain_h, pos_gain_v};
   nav_moving_base.speed_gain = (struct FloatVect3) {speed_gain_h, speed_gain_h, speed_gain_v};
