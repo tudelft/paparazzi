@@ -56,6 +56,7 @@
         <define name="USE_GROUND_DETECT_INDI_THRUST"        value="TRUE"/>
         <define name="USE_GROUND_DETECT_AGL_DIST"           value="TRUE"/>
         <define name="GROUND_DETECT_SPECIFIC_THRUST_THRESHOLD"  value="-12.0"/>
+        <define name="USE_GROUND_DETECT_HX711"              value="TRUE"/>
         <define name="GROUND_DETECT_SENSOR_AGL_MIN_VALUE"       value="0.24"/>
 
         <!-- Flight plan defines -->

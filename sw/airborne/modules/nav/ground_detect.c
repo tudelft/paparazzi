@@ -29,6 +29,11 @@
 
 #include "state.h"
 
+/* Number of triggers which need to be active to assume ground has been detected */
+#ifndef GROUND_DETECT_NUM_TRIGGERS
+#define GROUND_DETECT_NUM_TRIGGERS 3
+#endif
+
 #if USE_GROUND_DETECT_INDI_THRUST
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #endif
@@ -38,10 +43,13 @@
 #ifndef GROUND_DETECT_AGL_MIN_VALUE
 #define GROUND_DETECT_AGL_MIN_VALUE 0.1
 #endif
-#endif
 
 #ifndef GROUND_DETECT_SPECIFIC_THRUST_THRESHOLD
 #define GROUND_DETECT_SPECIFIC_THRUST_THRESHOLD -5.0
+#endif
+
+#if USE_GROUND_DETECT_HX711
+#include "modules/sensors/hx711.h"
 #endif
 
 #include "pprzlink/messages.h"
@@ -59,10 +67,15 @@ bool disarm_on_not_in_flight = false;
 int32_t counter = 0;
 bool ground_detected = false;
 
+union ground_detect_bitmask_t ground_detect_status;
+
 #define DEBUG_GROUND_DETECT TRUE
 
 void ground_detect_init()
 {
+  // Initialize the ground detection status
+  ground_detect_status.value = 0;
+  
   float tau = 1.0 / (2.0 * M_PI * GROUND_DETECT_FILT_FREQ);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
   init_butterworth_2_low_pass(&accel_filter, tau, sample_time, 0.0);
@@ -107,13 +120,18 @@ void ground_detect_periodic()
 
   // Detect ground based on AND of all triggers
   if ((fabsf(vspeed_ned) < 5.0)
-      && (spec_thrust_down > GROUND_DETECT_SPECIFIC_THRUST_THRESHOLD)
+      && (spec_thrust_down > -5.0)
       && (fabsf(accel_filter.o[0]) < 2.0)
 #if USE_GROUND_DETECT_AGL_DIST
-      && (agl_dist_valid && (agl_dist_value_filtered < GROUND_DETECT_AGL_MIN_VALUE))
+  ground_detect_status.agl_trigger = (agl_dist_valid && (agl_dist_value_filtered < GROUND_DETECT_AGL_MIN_VALUE))? 1:0;
+#else
+  ground_detect_status.agl_trigger = false;
 #endif
-     ) {
 
+  int trigger_sum = 0;
+  for(uint8_t i = 0; i < 16; i++) trigger_sum += (ground_detect_status.value >> i) & 0x1;
+
+  if (trigger_sum >= GROUND_DETECT_NUM_TRIGGERS) {
     counter += 1;
     if (counter > GROUND_DETECT_COUNTER_TRIGGER) {
       ground_detected = true;
@@ -128,23 +146,32 @@ void ground_detect_periodic()
     counter = 0;
   }
 
-#ifdef DEBUG_GROUND_DETECT
-  float payload[7];
-  payload[0] = vspeed_ned;
-  payload[1] = spec_thrust_down;
-  payload[2] = accel_filter.o[0];
-  payload[3] = stateGetAccelNed_f()->z;
-#if USE_GROUND_DETECT_AGL_DIST
-  payload[4] = agl_dist_valid;
-  payload[5] = agl_dist_value_filtered;
-#else
-  payload[4] = 0;
-  payload[5] = 0;
-#endif
-  payload[6] = 1.f * ground_detected;
+  uint8_t _ground_detect = ground_detected;
+  uint8_t _hx711_trigger = ground_detect_status.hx711_trigger;
 
-  RunOnceEvery(10, {DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 7, payload);});
+#if !USE_NPS
+  pprz_msg_send_GROUND_DETECT(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID,
+                              &_ground_detect,
+                              &vspeed_ned,
+                              &spec_thrust_down,
+                              &accel_filter.o[0],
+                              &agl_dist_value_filtered,
+                              &_hx711_trigger,
+                              &ground_detect_status.value
+  );
 #endif
+
+  RunOnceEvery(GROUND_DETECT_PERIODIC_FREQ / 10, {
+    DOWNLINK_SEND_GROUND_DETECT(DefaultChannel, DefaultDevice,
+                                &_ground_detect,
+                                &vspeed_ned,
+                                &spec_thrust_down,
+                                &accel_filter.o[0],
+                                &agl_dist_value_filtered,
+                                &_hx711_trigger,
+                                &ground_detect_status.value
+    );
+  });
 }
 
 /**

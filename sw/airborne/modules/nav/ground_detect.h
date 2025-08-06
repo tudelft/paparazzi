@@ -28,6 +28,17 @@
 
 #include "std.h"
 
+union ground_detect_bitmask_t {
+  uint16_t value;
+  struct {
+    bool vspeed_trigger : 1;      
+    bool spec_thrust_trigger : 1;  
+    bool accel_filt_trigger: 1;     
+    bool agl_trigger : 1;  
+    bool hx711_trigger : 1;          
+  };
+};
+
 extern void ground_detect_init(void);
 extern void ground_detect_periodic(void);
 
