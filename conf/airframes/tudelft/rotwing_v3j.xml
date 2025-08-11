@@ -270,7 +270,7 @@
 
     <section name="FALCON" prefix="FALCON_"> 
         <define name="BODY_TO_SENSOR" value="{{1.0,0,0,0,0,1.0,0,-1.0,0}}"/>
-        <define name="OFFSET_UAV_BODY" value="{0.0,0.0,0.13}"/>
+        <define name="OFFSET_UAV_BODY" value="{0.0,0.0,0.16}"/>
         <define name="SIXDOF_MEASUREMENT_NOISE" value="{0.1, 0.1, 0.1}"/>
         <define name="RELANGLE_MEASUREMENT_NOISE" value="{0.5, 0.5, 0.5}"/> <!-- Noise should be on the angle measurement and scaled with distance to platform -->
         <define name="RELBEACON_MEASUREMENT_NOISE" value="{0.25, 0.25, 0.25}"/>
@@ -283,7 +283,7 @@
 
     <section name="ARUCO" prefix="ARUCO_">
         <define name="BODY_TO_SENSOR" value="{{0,-1.0,0,1.0,0,0,0,0,1.0}}"/>
-        <define name="OFFSET_UAV_BODY" value="{0.0,0.0,0.13}"/>
+        <define name="OFFSET_UAV_BODY" value="{0.07,0.0,0.16}"/>
         <define name="KALMAN_SENSOR" type="struct">
             <field name="noise" value="{0.25,0.25,0.25}"/>
             <field name="n_meas" value="3"/>
