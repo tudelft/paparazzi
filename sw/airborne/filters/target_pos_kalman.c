@@ -36,15 +36,14 @@
 #define TARGET_POS_KALMAN_USE_ACCEL FALSE
 #endif
 
+#if TARGET_POS_KALMAN_DEBUG || TARGET_POS_KALMAN_USE_ACCEL
+#include "state.h"
+#endif
+
 #if TARGET_POS_KALMAN_DEBUG
 #include "modules/datalink/telemetry.h"
 #include "modules/datalink/downlink.h"
-#include "state.h"
 #include <stdio.h>
-#endif
-
-#if !TARGET_POS_KALMAN_DEBUG && TARGET_POS_KALMAN_USE_ACCEL
-#include "state.h"
 #endif
 
 PRINT_CONFIG_VAR(TARGET_POS_KALMAN_DEBUG);
