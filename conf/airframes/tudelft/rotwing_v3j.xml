@@ -313,26 +313,26 @@
         <define name="OVERWRITE_SPEED_GAINZ" value="FALSE"/>
         <define name="SPEED_GAINZ" value="0.5"/>
 
-        <define name="MAX_H_ACCEL" type="array">
-            <!-- Maximum longitudinal acceleration -->
+        <define name="MAX_H_SPEED" type="array">
+            <!-- Maximum longitudinal speed -->
             <field type="struct">
                 <field name="x" value="12.0"/>
                 <field name="y" value="-8.0"/>
             </field>
-            <!-- Maximum lateral acceleration -->
+            <!-- Maximum lateral speed -->
             <field type="struct">
                 <field name="x" value="5.0"/>
                 <field name="y" value="-5.0"/>
             </field>
         </define>
 
-        <define name="MAX_H_SPEED" type="array">
-            <!-- Maximum longitudinal speed -->
+        <define name="MAX_H_ACCEL" type="array">
+            <!-- Maximum longitudinal acceleration -->
             <field type="struct">
                 <field name="x" value="3.0"/>
                 <field name="y" value="-1.0"/>
             </field>
-            <!-- Maximum lateral speed -->
+            <!-- Maximum lateral acceleration -->
             <field type="struct">
                 <field name="x" value="1.0"/>
                 <field name="y" value="-1.0"/>
@@ -340,8 +340,8 @@
         </define>
 
         <define name="MAX_V_ACCEL" type="struct">
-            <field name="x" value="2.0"/> <!-- Up -->
-            <field name="y" value="-2.0"/> <!-- Down -->
+            <field name="x" value="1.0"/> <!-- Up -->
+            <field name="y" value="-1.0"/> <!-- Down -->
         </define>
 
         <define name="MAX_V_SPEED" type="struct">

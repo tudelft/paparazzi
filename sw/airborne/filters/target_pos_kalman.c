@@ -242,6 +242,29 @@ void target_pos_kalman_predict(struct TargetPosKalman *kalman)
 void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSensor *sensor)
 {
 
+  if (kalman == NULL || sensor == NULL) {
+    // invalid kalman or sensor pointer
+    char error[75];
+    int rc = snprintf(error, sizeof(error), "Null pointer in target pos kalman filter");
+    #if !USE_NPS
+    pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
+    #endif
+    DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error);
+    return;
+  }
+
+  if (sensor->n_meas > TARGET_POS_KALMAN_DIM) {
+    // invalid H matrix index
+    char error[100];
+    int rc = snprintf(error, sizeof(error), "Number of measurements too large: %d, TARGET_POS_KALMAN_DIM == %d", sensor->n_meas, TARGET_POS_KALMAN_DIM);
+    #if !USE_NPS
+    pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
+    #endif
+    DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error);
+    return;
+  }
+
+
 #if TARGET_POS_KALMAN_DEBUG
   float state_in[TARGET_POS_KALMAN_DIM];
   float meas[TARGET_POS_KALMAN_DIM] = {0};
@@ -265,8 +288,8 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   float invS[sensor->n_meas][sensor->n_meas];
   float HtinvS_tmp[TARGET_POS_KALMAN_DIM][sensor->n_meas];
   float K[TARGET_POS_KALMAN_DIM][sensor->n_meas];
-  float HX_tmp[TARGET_POS_KALMAN_DIM];
-  float Z_HX[TARGET_POS_KALMAN_DIM];
+  float HX_tmp[sensor->n_meas];
+  float Z_HX[sensor->n_meas];
   float K_ZHX_tmp[TARGET_POS_KALMAN_DIM];
   float KH_tmp[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
   float P_tmp[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
