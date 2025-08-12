@@ -244,6 +244,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
 {
 
   if (kalman == NULL || sensor == NULL) {
+    #if TARGET_POS_KALMAN_DEBUG
     // invalid kalman or sensor pointer
     char error[75];
     int rc = snprintf(error, sizeof(error), "Null pointer in target pos kalman filter");
@@ -251,10 +252,12 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
     pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
     #endif
     DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error);
+    #endif // TARGET_POS_KALMAN_DEBUG
     return;
   }
 
   if (sensor->n_meas > TARGET_POS_KALMAN_DIM) {
+    #if TARGET_POS_KALMAN_DEBUG
     // invalid H matrix index
     char error[100];
     int rc = snprintf(error, sizeof(error), "Number of measurements too large: %d, TARGET_POS_KALMAN_DIM == %d", sensor->n_meas, TARGET_POS_KALMAN_DIM);
@@ -262,6 +265,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
     pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
     #endif
     DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error);
+    #endif // TARGET_POS_KALMAN_DEBUG
     return;
   }
 
@@ -279,7 +283,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
     state_in[i] = kalman->state[i];
   }
-#endif
+#endif // TARGET_POS_KALMAN_DEBUG
 
   // prepare variables and pointers
   float H[sensor->n_meas][TARGET_POS_KALMAN_DIM];
@@ -304,6 +308,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   
   for (int i = 0; i < sensor->n_meas; i++) {
     if (sensor->Hmat[i] >= TARGET_POS_KALMAN_DIM) {
+      #if TARGET_POS_KALMAN_DEBUG
       // invalid H matrix index
       char error[75];
       int rc = snprintf(error, sizeof(error), "Observation matrix OOB: H[%d] = %d, TARGET_POS_KALMAN_DIM == %d", i, sensor->Hmat[i], TARGET_POS_KALMAN_DIM);
@@ -311,6 +316,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
       pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
       #endif
       DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error);
+      #endif // TARGET_POS_KALMAN_DEBUG
       return;
     }
     H[i][sensor->Hmat[i]] = 1.0f;
@@ -347,17 +353,20 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   int solved = pprz_svd_float(_SC, w, _V, sensor->n_meas, sensor->n_meas);
   
   if (!solved) {
+    #if TARGET_POS_KALMAN_DEBUG
     char error[75];
     int rc = snprintf(error, sizeof(error), "SVD failed in Target pos Kalman");
     #if !USE_NPS
     pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
     #endif
     DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error);
+    #endif // TARGET_POS_KALMAN_DEBUG
     return;
   }
 
   for (int i = 0; i < sensor->n_meas; i++) {
     if (w[i] < 1e-6) {
+      #if TARGET_POS_KALMAN_DEBUG
       // Singular value is too small, matrix is not invertible
       char error[75];
       int rc = snprintf(error, sizeof(error), "Singular value is too small: %f", w[i]);
@@ -365,6 +374,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
       pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
       #endif
       DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error);
+      #endif // TARGET_POS_KALMAN_DEBUG
       return;
     }
   }
@@ -395,7 +405,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
     }
   }
 
-  #if TARGET_POS_KALMAN_DEBUG
+#if TARGET_POS_KALMAN_DEBUG
   float P[TARGET_POS_KALMAN_DIM * TARGET_POS_KALMAN_DIM];
   float state_out[TARGET_POS_KALMAN_DIM];
 
@@ -417,7 +427,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   DOWNLINK_SEND_TARGET_POS_KALMAN_DEBUG(DefaultChannel, DefaultDevice,
                                   rc, step, state_in, state_out, P, Hmat, meas);
   });
-#endif
+#endif // TARGET_POS_KALMAN_DEBUG
 }
 
 
