@@ -25,6 +25,7 @@
  */
 
 #include "filters/target_pos_kalman.h"
+#include "math/pprz_matrix_decomp_float.h"
 #include <math.h>
 
 #ifndef TARGET_POS_KALMAN_DEBUG
@@ -329,17 +330,43 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   float_mat_transpose(_Ht, _H, sensor->n_meas, TARGET_POS_KALMAN_DIM);                                        // Ht nxm
   float_mat_mul(_HP, _H, _P, sensor->n_meas, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);                   // S = H * P mxn
   float_mat_mul(_S, _HP, _Ht, sensor->n_meas, TARGET_POS_KALMAN_DIM, sensor->n_meas);                         // S = H * P * Ht mxm
+  
   for (int i = 0; i < sensor->n_meas; i++) {
     _S[i][i] += sensor->noise[i];                                                                             // S = H * P * Ht + R
   }
 
-  float abs_sum_S_diag = 0.0f;
-  for (int i = 0; i < sensor->n_meas; i++) {
-    abs_sum_S_diag += fabsf(S[i][i]);
+  // Check if S is invertible with SVD
+  float w[sensor->n_meas];
+  float v[sensor->n_meas][sensor->n_meas];
+  float SC[sensor->n_meas][sensor->n_meas];
+
+  MAKE_MATRIX_PTR(_SC, SC, sensor->n_meas);
+  MAKE_MATRIX_PTR(_V, v, sensor->n_meas);
+  float_mat_copy(_SC, _S, sensor->n_meas, sensor->n_meas);
+
+  int solved = pprz_svd_float(_SC, w, _V, sensor->n_meas, sensor->n_meas);
+  
+  if (!solved) {
+    char error[75];
+    int rc = snprintf(error, sizeof(error), "SVD failed in Target pos Kalman");
+    #if !USE_NPS
+    pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
+    #endif
+    DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error);
+    return;
   }
 
-  if (abs_sum_S_diag < 1e-5) {
-    return; // don't invert S if it is too small
+  for (int i = 0; i < sensor->n_meas; i++) {
+    if (w[i] < 1e-6) {
+      // Singular value is too small, matrix is not invertible
+      char error[75];
+      int rc = snprintf(error, sizeof(error), "Singular value is too small: %f", w[i]);
+      #if !USE_NPS
+      pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
+      #endif
+      DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error);
+      return;
+    }
   }
 
   // finally compute gain and correct state

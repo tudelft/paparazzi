@@ -54,5 +54,6 @@
     <file name="remote_sensing_AM.c"/>
     <file name="target_pos_kalman.c" dir="filters"/>
     <file name="pprz_random.c" dir="math"/>
+    <file name="pprz_matrix_decomp_float.c" dir="math"/>
   </makefile>
 </module>
