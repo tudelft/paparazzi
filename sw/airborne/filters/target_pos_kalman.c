@@ -36,6 +36,10 @@
 #define TARGET_POS_KALMAN_USE_ACCEL FALSE
 #endif
 
+#ifndef TARGET_POS_KALMAN_MAX_COND
+#define TARGET_POS_KALMAN_MAX_COND 1e4
+#endif
+
 #if TARGET_POS_KALMAN_DEBUG || TARGET_POS_KALMAN_USE_ACCEL
 #include "state.h"
 #endif
@@ -292,15 +296,24 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   float invS[sensor->n_meas][sensor->n_meas];
   float HtinvS_tmp[TARGET_POS_KALMAN_DIM][sensor->n_meas];
   float K[TARGET_POS_KALMAN_DIM][sensor->n_meas];
+  float K_T[sensor->n_meas][TARGET_POS_KALMAN_DIM];
   float HX_tmp[sensor->n_meas];
   float Z_HX[sensor->n_meas];
   float K_ZHX_tmp[TARGET_POS_KALMAN_DIM];
-  float KH_tmp[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
+  float KH[TARGET_POS_KALMAN_DIM][sensor->n_meas];
   float P_tmp[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
+  float I[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
+  float IKH[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
+  float IKH_T[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
+  float KRK_T[TARGET_POS_KALMAN_DIM][sensor->n_meas];
+  float KR[sensor->n_meas][TARGET_POS_KALMAN_DIM];
+  float R[sensor->n_meas][sensor->n_meas];
+  float IKHP[TARGET_POS_KALMAN_DIM][sensor->n_meas];
 
   // Generate the H matrix
   for (int i = 0; i < sensor->n_meas; i++) {
     for (int j = 0; j < TARGET_POS_KALMAN_DIM; j++) {
+      I[i][j] = (i == j) ? 1.0f : 0.0f; // identity matrix
       H[i][j] = 0;
     }
   }
@@ -328,9 +341,18 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   MAKE_MATRIX_PTR(_invS, invS, sensor->n_meas);
   MAKE_MATRIX_PTR(_HtinvS_tmp, HtinvS_tmp, TARGET_POS_KALMAN_DIM);
   MAKE_MATRIX_PTR(_K, K, TARGET_POS_KALMAN_DIM);
-  MAKE_MATRIX_PTR(_KH_tmp, KH_tmp, TARGET_POS_KALMAN_DIM);
+  MAKE_MATRIX_PTR(_K_T, K_T, sensor->n_meas);
+  MAKE_MATRIX_PTR(_KH, KH, TARGET_POS_KALMAN_DIM);
   MAKE_MATRIX_PTR(_P, kalman->P, TARGET_POS_KALMAN_DIM);
-  
+  MAKE_MATRIX_PTR(_P_TMP, P_tmp, TARGET_POS_KALMAN_DIM);
+  MAKE_MATRIX_PTR(_I, I, TARGET_POS_KALMAN_DIM);
+  MAKE_MATRIX_PTR(_IKH, IKH, TARGET_POS_KALMAN_DIM);
+  MAKE_MATRIX_PTR(_IKHP, IKHP, TARGET_POS_KALMAN_DIM);
+  MAKE_MATRIX_PTR(_IKH_T, IKH_T, TARGET_POS_KALMAN_DIM);
+  MAKE_MATRIX_PTR(_KRK_T, KRK_T, TARGET_POS_KALMAN_DIM);
+  MAKE_MATRIX_PTR(_KR, KR, sensor->n_meas);
+  MAKE_MATRIX_PTR(_R, R, sensor->n_meas);
+
   // Make S matrix
   float_mat_transpose(_Ht, _H, sensor->n_meas, TARGET_POS_KALMAN_DIM);                                        // Ht nxm
   float_mat_mul(_HP, _H, _P, sensor->n_meas, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);                   // S = H * P mxn
@@ -363,19 +385,31 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
     return;
   }
 
+  // Find the Condition number of the matrix
+  float min_singular_value = w[0];
+  float max_singular_value = w[0];
   for (int i = 0; i < sensor->n_meas; i++) {
-    if (w[i] < 1e-6) {
-      #if TARGET_POS_KALMAN_DEBUG
-      // Singular value is too small, matrix is not invertible
-      char error[75];
-      int rc = snprintf(error, sizeof(error), "Singular value is too small: %f", w[i]);
-      #if !USE_NPS
-      pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
-      #endif
-      DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error);
-      #endif // TARGET_POS_KALMAN_DEBUG
-      return;
+    if (w[i] < min_singular_value) {
+      min_singular_value = w[i];
     }
+
+    if (w[i] > max_singular_value) {
+      max_singular_value = w[i];
+    }
+  }
+
+
+  if (max_singular_value / min_singular_value > TARGET_POS_KALMAN_MAX_COND) {
+    // Condition number is too large, don't invert S matrix
+    #if TARGET_POS_KALMAN_DEBUG
+    char error[75];
+    int rc = snprintf(error, sizeof(error), "Cond Nr. of S matrix larger than %f: %f", TARGET_POS_KALMAN_MAX_COND, max_singular_value / min_singular_value);
+    #if !USE_NPS
+    pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
+    #endif
+    DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error);
+    #endif // TARGET_POS_KALMAN_DEBUG
+    return;
   }
 
   // finally compute gain and correct state
@@ -388,30 +422,34 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   float_vect_add(kalman->state, K_ZHX_tmp, TARGET_POS_KALMAN_DIM);                                            // X + K * (Z - H * X) nx1
 
   // precompute K*H and store current P
-  float_mat_mul(_KH_tmp, _K, _H, TARGET_POS_KALMAN_DIM, sensor->n_meas, TARGET_POS_KALMAN_DIM);
+  float_mat_mul(_KH, _K, _H, TARGET_POS_KALMAN_DIM, sensor->n_meas, TARGET_POS_KALMAN_DIM);
+  float_mat_copy(_P_TMP, _P, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);
+
+  // Make the R matrix
   for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
     for (int j = 0; j < TARGET_POS_KALMAN_DIM; j++) {
-      P_tmp[i][j] = kalman->P[i][j];
-    }
-  }
-  
-  // correct covariance P = (I-K*H)*P = P - K*H*P
-  for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
-    for (int j = 0; j < TARGET_POS_KALMAN_DIM; j++) {
-      for (int k = 0; k < TARGET_POS_KALMAN_DIM; k++) {
-        kalman->P[i][j] -= KH_tmp[i][k] * P_tmp[k][j];
-      }
+      R[i][j] = (i == j) ? sensor->noise[i] : 0;
     }
   }
 
+  // P = (I - K * H) * P * (I - K * H)^T + K * R * K^T (Joseph stabilized form)
+  float_mat_diff(_IKH, _I, _KH, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);
+  float_mat_transpose(_IKH_T, _IKH, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);
+  float_mat_mul(_IKHP, _IKH, _P_TMP, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);
+  float_mat_transpose(_K_T, _K, TARGET_POS_KALMAN_DIM, sensor->n_meas);
+  float_mat_mul(_P, _IKHP, _IKH_T, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);
+  float_mat_mul(_KR, _K, _R, TARGET_POS_KALMAN_DIM, sensor->n_meas, sensor->n_meas);
+  float_mat_mul(_KRK_T, _KR, _K_T, TARGET_POS_KALMAN_DIM, sensor->n_meas, TARGET_POS_KALMAN_DIM);
+  float_mat_sum(_P, _P, _KRK_T, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);
+
 #if TARGET_POS_KALMAN_DEBUG
-  float P[TARGET_POS_KALMAN_DIM * TARGET_POS_KALMAN_DIM];
+  float P_debug[TARGET_POS_KALMAN_DIM * TARGET_POS_KALMAN_DIM];
   float state_out[TARGET_POS_KALMAN_DIM];
 
   for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
     state_out[i] = kalman->state[i];
     for (int j = 0; j < TARGET_POS_KALMAN_DIM; j++) {
-      P[i * TARGET_POS_KALMAN_DIM + j] = kalman->P[i][j];
+      P_debug[i * TARGET_POS_KALMAN_DIM + j] = kalman->P[i][j];
     }
   }
 
@@ -420,11 +458,11 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   // send debug message
   #if !USE_NPS
   pprz_msg_send_TARGET_POS_KALMAN_DEBUG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, 
-                                  rc, step, state_in, state_out, P, Hmat, meas);
+                                  rc, step, state_in, state_out, P_debug, Hmat, meas);
   #endif
   RunOnceEvery(100, {
   DOWNLINK_SEND_TARGET_POS_KALMAN_DEBUG(DefaultChannel, DefaultDevice,
-                                  rc, step, state_in, state_out, P, Hmat, meas);
+                                  rc, step, state_in, state_out, P_debug, Hmat, meas);
   });
 #endif // TARGET_POS_KALMAN_DEBUG
 }
