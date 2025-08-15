@@ -282,7 +282,7 @@
     </section>
 
     <section name="ARUCO" prefix="ARUCO_">
-        <define name="BODY_TO_SENSOR" value="{{0,-1.0,0,1.0,0,0,0,0,1.0}}"/>
+        <define name="BODY_TO_SENSOR" value="{{-1.0,0.0,0.0,0.0,-1.0,0.0,0.0,0.0,1.0}}"/>
         <define name="OFFSET_UAV_BODY" value="{0.07,0.0,0.16}"/>
         <define name="KALMAN_SENSOR" type="struct">
             <field name="noise" value="{0.25,0.25,0.25}"/>
