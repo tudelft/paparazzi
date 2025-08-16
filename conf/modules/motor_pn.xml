@@ -8,7 +8,7 @@
 </doc>
 <header>
     <file name="motor_pn.h"/>
-    <file name="motor_nn/ppo_controller_weights.h"/>
+    <file name="motor_nn/weights/dr_00/ppo_controller_weights.h"/>
     <file name="motor_nn/ppo_controller.h"/>
 </header>
 <init fun="pn_init()"/>
@@ -20,7 +20,7 @@
     <configure name="MODEM_DEV" default="UDP0" case="upper|lower"/>
     <file name="motor_pn.c"/>
     <define name="MOTOR_OVERRIDE"/>
-    <file name="motor_nn/ppo_controller_weights.c"/>
+    <file name="motor_nn/weights/dr_00/ppo_controller_weights.c"/>
     <file name="motor_nn/ppo_controller.c"/>
     <file name="pprz_transport.c" dir="pprzlink/src"/>
         <define name="DOWNLINK_DEVICE" value="$(MODEM_DEV_LOWER)"/>

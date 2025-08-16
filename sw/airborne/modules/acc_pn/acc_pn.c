@@ -11,7 +11,6 @@
 #include "pprzlink/intermcu_msg.h"
 #include "modules/datalink/telemetry.h"
 #include "mcu_periph/sys_time.h"
-#include "acc_nn/ppo_controller_weights.h"
 #include "acc_nn/ppo_controller.h"
 #include "acc_pn.h"
 
@@ -29,11 +28,11 @@ uint8_t pn_msg_buf[256] __attribute__((aligned)); ///< The InterMCU message buff
 
 void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf);
 
-static struct FloatVect3 target_pos_enu = {0, 1.0, 1.0}; // ENU
-static struct FloatVect3 target_vel_enu = {0, 0, 0};     // ENU
+static struct FloatVect3 target_pos_enu = {1.0, 0.0, 1.5}; // ENU
+static struct FloatVect3 target_vel_enu = {0, 0, 0};       // ENU
 
 // NED for traditional pursuit laws
-static struct FloatVect3 target_pos_ned = {1.0, 0.0, -1.0};
+static struct FloatVect3 target_pos_ned = {0.0, 1.0, -1.5};
 static struct FloatVect3 target_vel_ned = {0, 0, 0};
 
 static bool first_remote_gps_msg_received = false;
@@ -44,7 +43,7 @@ static bool first_remote_gps_msg_received = false;
 static const float DT = 1.0f / 100.0f;
 static const float LAMBDA = 50.0f;
 static const float PP_WEIGHT = 0.03f;
-static const float MAX_ACCEL = 10.0f;
+static const float MAX_ACCEL = 20.0f;
 static const float EPSILON = 1e-3f;
 static const float K2 = 5.1f;
 static const float V_R = -5.0f; // closing speed bias (GRTPN only)
@@ -56,7 +55,7 @@ static Butterworth2LowPass filter_acc_x;
 static Butterworth2LowPass filter_acc_y;
 static Butterworth2LowPass filter_acc_z;
 
-static const float ACC_CUTOFF_FREQ = 8.0f; // Hz
+static const float ACC_CUTOFF_FREQ = 50.0f; // Hz
 static const float TAU_ACC = 1.0f / (2.0f * M_PI * ACC_CUTOFF_FREQ);
 
 static Butterworth2LowPass filter_pu_vel_x, filter_pu_vel_y, filter_pu_vel_z;
@@ -71,7 +70,7 @@ static const float TAU_OBS = 1.0f / (2.0f * M_PI * OBS_CUTOFF_FREQ);
 /*                            State & Mode                                  */
 /*---------------------------------------------------------------------------*/
 static float time_s = 0.0f;
-static pn_mode_t cur_mode = PN_MODE_NEURAL;
+static pn_mode_t cur_mode = PN_MODE_FRPN;
 static struct LoggerData_PN pn_log;
 
 /*---------------------------------------------------------------------------*/
@@ -261,10 +260,10 @@ static void run_frpn(void)
 
   acc_enu = ned_to_enu(acc_ned);
 
-  pn_log.filt_accel_command = acc_enu;
+  pn_log.filt_accel_command = acc_ned;
 
   AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc_ned);
-  pn_info(&target_pos_enu, &target_vel_enu, &acc_enu);
+  pn_info(&target_pos_ned, &target_vel_ned, &acc_ned);
 }
 
 static void run_grtpn(void)
@@ -455,18 +454,17 @@ void pn_parse_TARGET_INFO(uint8_t *buf)
     first_remote_gps_msg_received = true;
   }
 
-  // Store in ENU directly
-  target_pos_enu.x = DL_TARGET_INFO_enu_x(buf);
-  target_pos_enu.y = DL_TARGET_INFO_enu_y(buf);
-  target_pos_enu.z = DL_TARGET_INFO_enu_z(buf);
+  target_pos_ned.x = DL_TARGET_INFO_enu_x(buf);
+  target_pos_ned.y = DL_TARGET_INFO_enu_y(buf);
+  target_pos_ned.z = DL_TARGET_INFO_enu_z(buf);
 
-  target_vel_enu.x = DL_TARGET_INFO_enu_xd(buf);
-  target_vel_enu.y = DL_TARGET_INFO_enu_yd(buf);
-  target_vel_enu.z = DL_TARGET_INFO_enu_zd(buf);
+  target_vel_ned.x = DL_TARGET_INFO_enu_xd(buf);
+  target_vel_ned.y = DL_TARGET_INFO_enu_yd(buf);
+  target_vel_ned.z = DL_TARGET_INFO_enu_zd(buf);
 
   // Also convert to NED for traditional controllers
-  target_pos_ned = enu_to_ned(target_pos_enu);
-  target_vel_ned = enu_to_ned(target_vel_enu);
+  target_pos_enu = ned_to_enu(target_pos_ned);
+  target_vel_enu = ned_to_enu(target_vel_ned);
 }
 
 struct LoggerData_PN *pn_info_logger(void)
