@@ -26,8 +26,8 @@
 #define MOTOR_CUTOFF_FREQ 12.0f  /* Hz – Butterworth fc    */
 #define MOTOR_TAU (1.0f / (2.0f * M_PI * MOTOR_CUTOFF_FREQ))
 
-#define RPM_MIN 3000.0f /* for normalisation      */
-#define RPM_MAX 12000.0f
+#define RPM_MIN 2950.45f /* for normalisation      */
+#define RPM_MAX 11214.17f
 
 static struct LoggerData_PN pn_log;
 
@@ -132,9 +132,6 @@ static inline float norm_rpm(float rpm)
   return x;
 }
 
-/* -------------------------------------------------------------------------- */
-/* Observation builder                                                        */
-/* -------------------------------------------------------------------------- */
 static void build_motor_obs(float *obs /* [MOTOR_OBS_DIM] */)
 {
   struct NedCoor_f *pu_pos = stateGetPositionNed_f();
@@ -161,34 +158,51 @@ static void build_motor_obs(float *obs /* [MOTOR_OBS_DIM] */)
   const float w3 = update_butterworth_2_low_pass(&filt_rpm3, actuators_bebop.rpm_obs[2]);
   const float w4 = update_butterworth_2_low_pass(&filt_rpm4, actuators_bebop.rpm_obs[3]);
 
-  struct FloatVect3 rel_pos = {
+  // Build rel_pos and rel_vel in NED
+  struct FloatVect3 rel_pos_ned = {
       .x = target_pos_ned.x - pu_pos->x,
       .y = target_pos_ned.y - pu_pos->y,
       .z = target_pos_ned.z - pu_pos->z,
   };
 
-  struct FloatVect3 rel_vel = {
+  struct FloatVect3 rel_vel_ned = {
       .x = target_vel_ned.x - pu_vel->x,
       .y = target_vel_ned.y - pu_vel->y,
       .z = target_vel_ned.z - pu_vel->z,
   };
 
-  pn_log.raw_r = rel_pos;
-  pn_log.raw_r_dot = rel_vel;
-
-  // Index for filling obs array
-  int i = 0;
-
-  normalize_and_magnitude(&rel_pos, &obs[i], &obs[i + 3]);
-  i += 4;
-  normalize_and_magnitude(&rel_vel, &obs[i], &obs[i + 3]);
-  i += 4;
-
-  // Rotation matrix cols 1 and 2 (get_rot_columns equivalent)
+  // Rotation: from NED to BODY
   float cphi = cosf(att->phi), sphi = sinf(att->phi);
   float ctheta = cosf(att->theta), stheta = sinf(att->theta);
   float cpsi = cosf(att->psi), spsi = sinf(att->psi);
 
+  float R[3][3] = {
+      {ctheta * cpsi, ctheta * spsi, -stheta},
+      {sphi * stheta * cpsi - cphi * spsi, sphi * stheta * spsi + cphi * cpsi, sphi * ctheta},
+      {cphi * stheta * cpsi + sphi * spsi, cphi * stheta * spsi - sphi * cpsi, cphi * ctheta}};
+
+  // Rotate into body frame
+  struct FloatVect3 rel_pos_body = {
+      .x = R[0][0] * rel_pos_ned.x + R[0][1] * rel_pos_ned.y + R[0][2] * rel_pos_ned.z,
+      .y = R[1][0] * rel_pos_ned.x + R[1][1] * rel_pos_ned.y + R[1][2] * rel_pos_ned.z,
+      .z = R[2][0] * rel_pos_ned.x + R[2][1] * rel_pos_ned.y + R[2][2] * rel_pos_ned.z,
+  };
+
+  struct FloatVect3 rel_vel_body = {
+      .x = R[0][0] * rel_vel_ned.x + R[0][1] * rel_vel_ned.y + R[0][2] * rel_vel_ned.z,
+      .y = R[1][0] * rel_vel_ned.x + R[1][1] * rel_vel_ned.y + R[1][2] * rel_vel_ned.z,
+      .z = R[2][0] * rel_vel_ned.x + R[2][1] * rel_vel_ned.y + R[2][2] * rel_vel_ned.z,
+  };
+
+  int i = 0;
+
+  // Normalize and fill into obs
+  normalize_and_magnitude(&rel_pos_body, &obs[i], &obs[i + 3]);
+  i += 4;
+  normalize_and_magnitude(&rel_vel_body, &obs[i], &obs[i + 3]);
+  i += 4;
+
+  // Rotation matrix cols 1 and 2 (get_rot_columns equivalent)
   // Col 1
   obs[i++] = ctheta * cpsi;
   obs[i++] = ctheta * spsi;
@@ -209,6 +223,9 @@ static void build_motor_obs(float *obs /* [MOTOR_OBS_DIM] */)
   obs[i++] = norm_rpm(w2);
   obs[i++] = norm_rpm(w3);
   obs[i++] = norm_rpm(w4);
+
+  pn_log.pos_target = target_pos_ned;
+  pn_log.vel_target = target_vel_ned;
 
   /* sanity check */
   if (i != MOTOR_OBS_DIM)

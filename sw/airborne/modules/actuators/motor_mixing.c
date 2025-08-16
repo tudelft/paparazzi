@@ -326,7 +326,7 @@ void motor_mixing_run(bool motors_on, bool override_on, pprz_t in_cmd[])
   if (autopilot_get_mode() == AP_MODE_GUIDED)
   {
     const float RPM_MIN = 3.089704e02f * 9.5493f;
-    const float RPM_MAX = 1.174345e03f * 9.5493f;
+    const float RPM_MAX = 1.174345e03f * 9.5493f; // from SysID!
 
     for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++)
     {
