@@ -37,7 +37,7 @@ static inline float clip01(float x)
 }
 
 // This is the function you'll call from Python
-__attribute__((visibility("default"))) void get_action(const float *obs, float *action_out)
+__attribute__((visibility("default"))) void get_ctbr_action(const float *obs, float *action_out)
 {
     float h1[HIDDEN1_DIM];
     float h2[HIDDEN2_DIM];
