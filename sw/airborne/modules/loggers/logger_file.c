@@ -80,6 +80,9 @@ static void logger_file_write_header(FILE *file)
   fprintf(file, "raw_r_x,raw_r_y,raw_r_z,");
   fprintf(file, "raw_r_dot_x,raw_r_dot_y,raw_r_dot_z,");
   fprintf(file, "filt_r_dot_x,filt_r_dot_y,filt_r_dot_z,");
+#ifdef GUIDANCE_INDI_H
+  fprintf(file, "cmd_euler_phi,cmd_euler_theta,");
+#endif
 #ifdef BOARD_BEBOP
   fprintf(file, "rpm_obs_1,rpm_obs_2,rpm_obs_3,rpm_obs_4,");
   fprintf(file, "rpm_ref_1,rpm_ref_2,rpm_ref_3,rpm_ref_4,");
@@ -133,6 +136,10 @@ static void logger_file_write_row(FILE *file)
   fprintf(file, "%f,%f,%f,", pn_info->raw_r.x, pn_info->raw_r.y, pn_info->raw_r.z);
   fprintf(file, "%f,%f,%f,", pn_info->raw_r_dot.x, pn_info->raw_r_dot.y, pn_info->raw_r_dot.z);
   fprintf(file, "%f,%f,%f,", pn_info->filt_r_dot.x, pn_info->filt_r_dot.y, pn_info->filt_r_dot.z);
+#ifdef GUIDANCE_INDI_H
+  // NEW: commanded roll/pitch from guidance (radians)
+  fprintf(file, "%f,%f,", guidance_euler_cmd.phi, guidance_euler_cmd.theta);
+#endif
 #ifdef BOARD_BEBOP
   fprintf(file, "%d,%d,%d,%d,", actuators_bebop.rpm_obs[0], actuators_bebop.rpm_obs[1], actuators_bebop.rpm_obs[2], actuators_bebop.rpm_obs[3]);
   fprintf(file, "%d,%d,%d,%d,", actuators_bebop.rpm_ref[0], actuators_bebop.rpm_ref[1], actuators_bebop.rpm_ref[2], actuators_bebop.rpm_ref[3]);

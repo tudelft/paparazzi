@@ -37,13 +37,15 @@
 extern void guidance_indi_init(void);
 extern void guidance_indi_enter(void);
 
-enum GuidanceIndi_HMode {
+enum GuidanceIndi_HMode
+{
   GUIDANCE_INDI_H_POS,
   GUIDANCE_INDI_H_SPEED,
   GUIDANCE_INDI_H_ACCEL
 };
 
-enum GuidanceIndi_VMode {
+enum GuidanceIndi_VMode
+{
   GUIDANCE_INDI_V_POS,
   GUIDANCE_INDI_V_SPEED,
   GUIDANCE_INDI_V_ACCEL
@@ -59,6 +61,7 @@ extern float guidance_indi_pos_gain;
 extern float guidance_indi_speed_gain;
 extern float guidance_indi_max_bank;
 
+extern struct FloatEulers guidance_euler_cmd;
 
 extern struct FloatVect3 sp_accel;
 

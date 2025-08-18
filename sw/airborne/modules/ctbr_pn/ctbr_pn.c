@@ -32,8 +32,8 @@
 #define Q_MAX 3.0f
 #define R_MIN -2.0f
 #define R_MAX 2.0f
-#define THRUST_MIN 0.0f
-#define THRUST_MAX 18.0f
+#define THRUST_MIN 1.41f
+#define THRUST_MAX 20.4f
 
 static bool ctbr_active = false;
 
@@ -49,7 +49,7 @@ struct pnmessage target_message = {
 
 uint8_t pn_msg_buf[256] __attribute__((aligned));
 
-static struct FloatVect3 target_pos_ned = {1.0f, 2.0f, -2.0f};
+static struct FloatVect3 target_pos_ned = {1.0f, 0.0f, -2.5f};
 static struct FloatVect3 target_vel_ned = {0.0f, 0.0f, 0.0f};
 
 static bool first_target_received = false;

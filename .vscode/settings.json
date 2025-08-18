@@ -31,7 +31,8 @@
         "pprz_transport.h": "c",
         "state.h": "c",
         "pprz_algebra_float.h": "c",
-        "abi.h": "c"
+        "abi.h": "c",
+        "stabilization_adaptive.h": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
