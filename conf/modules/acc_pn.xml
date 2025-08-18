@@ -8,7 +8,7 @@
 </doc>
 <header>
     <file name="acc_pn.h"/>
-    <file name="acc_nn/weights/dr_00/ppo_controller_weights.h"/>
+    <file name="acc_nn/weights/testing/ppo_controller_weights.h"/>
     <file name="acc_nn/ppo_controller.h"/>
 </header>
 <init fun="pn_init()"/>
@@ -19,7 +19,7 @@
 <makefile target="ap|nps"> 
     <configure name="MODEM_DEV" default="UDP0" case="upper|lower"/>
     <file name="acc_pn.c"/>
-    <file name="acc_nn/weights/dr_00/ppo_controller_weights.c"/>
+    <file name="acc_nn/weights/testing/ppo_controller_weights.c"/>
     <file name="acc_nn/ppo_controller.c"/>
     <file name="pprz_transport.c" dir="pprzlink/src"/>
         <define name="DOWNLINK_DEVICE" value="$(MODEM_DEV_LOWER)"/>
