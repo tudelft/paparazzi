@@ -43,7 +43,7 @@ static bool first_remote_gps_msg_received = false;
 static const float DT = 1.0f / 100.0f;
 static const float LAMBDA = 50.0f;
 static const float PP_WEIGHT = 0.03f;
-static const float MAX_ACCEL = 20.0f;
+static const float MAX_ACCEL = 18.0f;
 static const float EPSILON = 1e-3f;
 static const float K2 = 5.1f;
 static const float V_R = -5.0f; // closing speed bias (GRTPN only)
@@ -55,7 +55,7 @@ static Butterworth2LowPass filter_acc_x;
 static Butterworth2LowPass filter_acc_y;
 static Butterworth2LowPass filter_acc_z;
 
-static const float ACC_CUTOFF_FREQ = 50.0f; // Hz
+static const float ACC_CUTOFF_FREQ = 8.0f; // Hz
 static const float TAU_ACC = 1.0f / (2.0f * M_PI * ACC_CUTOFF_FREQ);
 
 static Butterworth2LowPass filter_pu_vel_x, filter_pu_vel_y, filter_pu_vel_z;
@@ -70,7 +70,7 @@ static const float TAU_OBS = 1.0f / (2.0f * M_PI * OBS_CUTOFF_FREQ);
 /*                            State & Mode                                  */
 /*---------------------------------------------------------------------------*/
 static float time_s = 0.0f;
-static pn_mode_t cur_mode = PN_MODE_FRPN;
+static pn_mode_t cur_mode = PN_MODE_NEURAL;
 static struct LoggerData_PN pn_log;
 
 /*---------------------------------------------------------------------------*/
@@ -114,85 +114,29 @@ static void normalize_and_magnitude(const struct FloatVect3 *v, float *unit_out,
 
 static void build_observation(float *obs)
 {
-  struct EnuCoor_f *pu_pos = stateGetPositionEnu_f();
-  struct EnuCoor_f *pu_vel = stateGetSpeedEnu_f();
+  struct NedCoor_f *pu_pos = stateGetPositionNed_f();
+  struct NedCoor_f *pu_vel = stateGetSpeedNed_f();
 
-  struct FloatVect3 ev_pos = target_pos_enu;
-  struct FloatVect3 ev_vel = target_vel_enu;
+  // Build rel_pos and rel_vel in NED
+  struct FloatVect3 rel_pos_ned = {
+      .x = target_pos_ned.x - pu_pos->x,
+      .y = target_pos_ned.y - pu_pos->y,
+      .z = target_pos_ned.z - pu_pos->z,
+  };
 
-  // Filtered velocities
-  float pu_vx = update_butterworth_2_low_pass(&filter_pu_vel_x, pu_vel->x);
-  float pu_vy = update_butterworth_2_low_pass(&filter_pu_vel_y, pu_vel->y);
-  float pu_vz = update_butterworth_2_low_pass(&filter_pu_vel_z, pu_vel->z);
-  float ev_vx = update_butterworth_2_low_pass(&filter_ev_vel_x, ev_vel.x);
-  float ev_vy = update_butterworth_2_low_pass(&filter_ev_vel_y, ev_vel.y);
-  float ev_vz = update_butterworth_2_low_pass(&filter_ev_vel_z, ev_vel.z);
+  struct FloatVect3 rel_vel_ned = {
+      .x = target_vel_ned.x - pu_vel->x,
+      .y = target_vel_ned.y - pu_vel->y,
+      .z = target_vel_ned.z - pu_vel->z,
+  };
 
-  struct FloatVect3 pu_pos_v = {pu_pos->x, pu_pos->y, pu_pos->z};
-  struct FloatVect3 ev_pos_v = ev_pos;
-  struct FloatVect3 pu_vel_v = {pu_vx, pu_vy, pu_vz};
-  struct FloatVect3 ev_vel_v = {ev_vx, ev_vy, ev_vz};
+  int i = 0;
 
-  // (1–4) pu position
-  normalize_and_magnitude(&pu_pos_v, &obs[0], &obs[3]);
-
-  // (5–8) ev position
-  normalize_and_magnitude(&ev_pos_v, &obs[4], &obs[7]);
-
-  // (9–12) pu velocity
-  normalize_and_magnitude(&pu_vel_v, &obs[8], &obs[11]);
-
-  // (13–16) ev velocity
-  normalize_and_magnitude(&ev_vel_v, &obs[12], &obs[15]);
-
-  // (17–20) LOS vector (ev_pos - pu_pos)
-  struct FloatVect3 r = {
-      .x = ev_pos.x - pu_pos->x,
-      .y = ev_pos.y - pu_pos->y,
-      .z = ev_pos.z - pu_pos->z};
-  normalize_and_magnitude(&r, &obs[16], &obs[19]);
-
-  // (21–24) LOS rate vector (ev_vel - pu_vel)
-  struct FloatVect3 r_dot = {
-      .x = ev_vel.x - pu_vel->x,
-      .y = ev_vel.y - pu_vel->y,
-      .z = ev_vel.z - pu_vel->z};
-  normalize_and_magnitude(&r_dot, &obs[20], &obs[23]);
-
-  // Raw logs
-  pn_log.raw_pu_vel.x = pu_vel->x;
-  pn_log.raw_pu_vel.y = pu_vel->y;
-  pn_log.raw_pu_vel.z = pu_vel->z;
-
-  pn_log.raw_ev_vel.x = ev_vel.x;
-  pn_log.raw_ev_vel.y = ev_vel.y;
-  pn_log.raw_ev_vel.z = ev_vel.z;
-
-  // Filtered logs
-  pn_log.filt_pu_vel.x = pu_vx;
-  pn_log.filt_pu_vel.y = pu_vy;
-  pn_log.filt_pu_vel.z = pu_vz;
-
-  pn_log.filt_ev_vel.x = ev_vx;
-  pn_log.filt_ev_vel.y = ev_vy;
-  pn_log.filt_ev_vel.z = ev_vz;
-
-  // Raw r and r_dot from unfiltered data
-  struct FloatVect3 r_raw = {
-      .x = ev_pos.x - pu_pos->x,
-      .y = ev_pos.y - pu_pos->y,
-      .z = ev_pos.z - pu_pos->z};
-  struct FloatVect3 r_dot_raw = {
-      .x = ev_vel.x - pu_vel->x,
-      .y = ev_vel.y - pu_vel->y,
-      .z = ev_vel.z - pu_vel->z};
-  pn_log.raw_r = r_raw;
-  pn_log.raw_r_dot = r_dot_raw;
-
-  // Filtered r_dot = filtered_ev_vel - filtered_pu_vel
-  pn_log.filt_r_dot.x = ev_vx - pu_vx;
-  pn_log.filt_r_dot.y = ev_vy - pu_vy;
-  pn_log.filt_r_dot.z = ev_vz - pu_vz;
+  // Normalize and fill into obs
+  normalize_and_magnitude(&rel_pos_ned, &obs[i], &obs[i + 3]);
+  i += 4;
+  normalize_and_magnitude(&rel_vel_ned, &obs[i], &obs[i + 3]);
+  i += 4;
 }
 
 // Converts NED to ENU
@@ -338,30 +282,27 @@ static void run_grtpn(void)
 
 static void run_nn_policy(void)
 {
-  float obs[24];
+  float obs[8];
   float accel_out[3];
 
   build_observation(obs);
-  get_action(obs, accel_out); // Returns ENU action
+  get_action(obs, accel_out); // Returns NED action
 
-  struct FloatVect3 acc_enu = {
+  struct FloatVect3 acc_ned = {
       .x = accel_out[0] * MAX_ACCEL,
       .y = accel_out[1] * MAX_ACCEL,
       .z = accel_out[2] * MAX_ACCEL};
 
-  acc_enu.x = update_butterworth_2_low_pass(&filter_acc_x, acc_enu.x);
-  acc_enu.y = update_butterworth_2_low_pass(&filter_acc_y, acc_enu.y);
-  acc_enu.z = update_butterworth_2_low_pass(&filter_acc_z, acc_enu.z);
+  acc_ned.x = update_butterworth_2_low_pass(&filter_acc_x, acc_ned.x);
+  acc_ned.y = update_butterworth_2_low_pass(&filter_acc_y, acc_ned.y);
+  acc_ned.z = update_butterworth_2_low_pass(&filter_acc_z, acc_ned.z);
 
-  pn_log.filt_accel_command = acc_enu;
-
-  // Convert to NED before sending to ABI
-  struct FloatVect3 acc_ned = enu_to_ned(acc_enu);
+  pn_log.filt_accel_command = acc_ned;
 
   // saturate3(&acc_ned, MAX_ACCEL);
 
   AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, 1, &acc_ned);
-  pn_info(&target_pos_enu, &target_vel_ned, &acc_enu);
+  pn_info(&target_pos_ned, &target_vel_ned, &acc_ned);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -462,7 +403,7 @@ void pn_parse_TARGET_INFO(uint8_t *buf)
   target_vel_ned.y = DL_TARGET_INFO_enu_yd(buf);
   target_vel_ned.z = DL_TARGET_INFO_enu_zd(buf);
 
-  // Also convert to NED for traditional controllers
+  // Also convert to ENU
   target_pos_enu = ned_to_enu(target_pos_ned);
   target_vel_enu = ned_to_enu(target_vel_ned);
 }
