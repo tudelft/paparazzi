@@ -332,7 +332,7 @@ static void run_grtpn(void)
 
 static void run_nn_policy(void)
 {
-  float obs[8];
+  float obs[18];
   float accel_out[3];
 
   build_observation(obs);

@@ -69,8 +69,8 @@ inline void setGuided(void){
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('Emergency Landing')) @AND
       (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
-    <!-- Geofencing Z 3.5 -->
-    <exception cond="((GetPosAlt() @GT 3.5) @AND
+    <!-- Geofencing Z 4.0 -->
+    <exception cond="((GetPosAlt() @GT 4.0) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('Emergency Landing')) @AND
       (autopilot_in_flight() == true) )" deroute="Emergency Landing"/>
