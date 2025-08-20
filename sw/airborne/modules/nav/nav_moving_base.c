@@ -167,7 +167,7 @@ void nav_moving_base_setup(enum NavMovingBaseMode mode) {
 
     case NAV_MOVING_BASE_MODE_LANDING:
       nav.horizontal_mode = NAV_HORIZONTAL_MODE_WAYPOINT;
-      nav.vertical_mode = NAV_VERTICAL_MODE_GUIDED;
+      nav.vertical_mode = NAV_VERTICAL_MODE_ALL;
       nav.setpoint_mode = NAV_SETPOINT_MODE_ALL;
       break;
   }

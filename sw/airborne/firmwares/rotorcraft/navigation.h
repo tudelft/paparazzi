@@ -92,7 +92,8 @@
 #define NAV_VERTICAL_MODE_MANUAL      0
 #define NAV_VERTICAL_MODE_CLIMB       1
 #define NAV_VERTICAL_MODE_ALT         2
-#define NAV_VERTICAL_MODE_GUIDED      3
+#define NAV_VERTICAL_MODE_ALL         3
+#define NAV_VERTICAL_MODE_GUIDED      4
 
 /** Nav setpoint modes
  *  these modes correspond to submodes defined by navigation routines
