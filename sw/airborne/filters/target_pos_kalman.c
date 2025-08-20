@@ -306,7 +306,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   float IKH[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
   float IKH_T[TARGET_POS_KALMAN_DIM][TARGET_POS_KALMAN_DIM];
   float KRK_T[TARGET_POS_KALMAN_DIM][sensor->n_meas];
-  float KR[sensor->n_meas][TARGET_POS_KALMAN_DIM];
+  float KR[TARGET_POS_KALMAN_DIM][sensor->n_meas];
   float R[sensor->n_meas][sensor->n_meas];
   float IKHP[TARGET_POS_KALMAN_DIM][sensor->n_meas];
 
@@ -350,7 +350,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   MAKE_MATRIX_PTR(_IKHP, IKHP, TARGET_POS_KALMAN_DIM);
   MAKE_MATRIX_PTR(_IKH_T, IKH_T, TARGET_POS_KALMAN_DIM);
   MAKE_MATRIX_PTR(_KRK_T, KRK_T, TARGET_POS_KALMAN_DIM);
-  MAKE_MATRIX_PTR(_KR, KR, sensor->n_meas);
+  MAKE_MATRIX_PTR(_KR, KR, TARGET_POS_KALMAN_DIM);
   MAKE_MATRIX_PTR(_R, R, sensor->n_meas);
 
   // Make S matrix
@@ -398,12 +398,11 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
     }
   }
 
-
-  if (max_singular_value / min_singular_value > TARGET_POS_KALMAN_MAX_COND) {
+  if (min_singular_value / max_singular_value < 1/TARGET_POS_KALMAN_MAX_COND) {
     // Condition number is too large, don't invert S matrix
     #if TARGET_POS_KALMAN_DEBUG
     char error[75];
-    int rc = snprintf(error, sizeof(error), "Cond Nr. of S mat > %.0f: %.1f", TARGET_POS_KALMAN_MAX_COND, max_singular_value / min_singular_value);
+    int rc = snprintf(error, sizeof(error), "Cond Nr. of S mat > %.0f: %.1f", TARGET_POS_KALMAN_MAX_COND, min_singular_value / max_singular_value);
     #if !USE_NPS
     pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
     #endif
@@ -426,8 +425,8 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   float_mat_copy(_P_TMP, _P, TARGET_POS_KALMAN_DIM, TARGET_POS_KALMAN_DIM);
 
   // Make the R matrix
-  for (int i = 0; i < TARGET_POS_KALMAN_DIM; i++) {
-    for (int j = 0; j < TARGET_POS_KALMAN_DIM; j++) {
+  for (int i = 0; i < sensor->n_meas; i++) {
+    for (int j = 0; j < sensor->n_meas; j++) {
       R[i][j] = (i == j) ? sensor->noise[i] : 0;
     }
   }
