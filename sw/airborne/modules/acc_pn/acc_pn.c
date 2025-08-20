@@ -13,6 +13,8 @@
 #include "mcu_periph/sys_time.h"
 #include "acc_nn/ppo_controller.h"
 #include "acc_pn.h"
+/** EKF */
+#include "modules/ins/ins_ext_pose.h"
 
 /*---------------------------------------------------------------------------*/
 /*                            External Messaging                             */
@@ -28,11 +30,11 @@ uint8_t pn_msg_buf[256] __attribute__((aligned)); ///< The InterMCU message buff
 
 void pn_parse_REMOTE_GPS_LOCAL(uint8_t *buf);
 
-static struct FloatVect3 target_pos_enu = {1.0, 0.0, 1.5}; // ENU
+static struct FloatVect3 target_pos_enu = {1.0, 0.0, 2.0}; // ENU
 static struct FloatVect3 target_vel_enu = {0, 0, 0};       // ENU
 
 // NED for traditional pursuit laws
-static struct FloatVect3 target_pos_ned = {0.0, 1.0, -1.5};
+static struct FloatVect3 target_pos_ned = {0.0, 1.0, -2.0};
 static struct FloatVect3 target_vel_ned = {0, 0, 0};
 
 static bool first_remote_gps_msg_received = false;
@@ -61,6 +63,7 @@ static const float TAU_ACC = 1.0f / (2.0f * M_PI * ACC_CUTOFF_FREQ);
 static Butterworth2LowPass filter_pu_vel_x, filter_pu_vel_y, filter_pu_vel_z;
 static Butterworth2LowPass filter_ev_vel_x, filter_ev_vel_y, filter_ev_vel_z;
 static Butterworth2LowPass filter_rdot_x, filter_rdot_y, filter_rdot_z;
+static Butterworth2LowPass filt_abz;
 
 static const float OBS_SAMPLE_TIME = 1.0f / 100.0f;
 static const float OBS_CUTOFF_FREQ = 8.0f; // Hz
@@ -116,6 +119,11 @@ static void build_observation(float *obs)
 {
   struct NedCoor_f *pu_pos = stateGetPositionNed_f();
   struct NedCoor_f *pu_vel = stateGetSpeedNed_f();
+  struct FloatEulers *att = stateGetNedToBodyEulers_f();
+  struct FloatRates *rates = stateGetBodyRates_f();
+  float raw_abz = ekf_U[2] - ekf_X[11];
+
+  float filtered_abz = update_butterworth_2_low_pass(&filt_abz, raw_abz);
 
   // Build rel_pos and rel_vel in NED
   struct FloatVect3 rel_pos_ned = {
@@ -130,13 +138,55 @@ static void build_observation(float *obs)
       .z = target_vel_ned.z - pu_vel->z,
   };
 
+  // Rotation: from NED to BODY
+  float cphi = cosf(att->phi), sphi = sinf(att->phi);
+  float ctheta = cosf(att->theta), stheta = sinf(att->theta);
+  float cpsi = cosf(att->psi), spsi = sinf(att->psi);
+
+  float R[3][3] = {
+      {ctheta * cpsi, ctheta * spsi, -stheta},
+      {sphi * stheta * cpsi - cphi * spsi, sphi * stheta * spsi + cphi * cpsi, sphi * ctheta},
+      {cphi * stheta * cpsi + sphi * spsi, cphi * stheta * spsi - sphi * cpsi, cphi * ctheta}};
+
+  // Rotate into body frame
+  struct FloatVect3 rel_pos_body = {
+      .x = R[0][0] * rel_pos_ned.x + R[0][1] * rel_pos_ned.y + R[0][2] * rel_pos_ned.z,
+      .y = R[1][0] * rel_pos_ned.x + R[1][1] * rel_pos_ned.y + R[1][2] * rel_pos_ned.z,
+      .z = R[2][0] * rel_pos_ned.x + R[2][1] * rel_pos_ned.y + R[2][2] * rel_pos_ned.z,
+  };
+
+  struct FloatVect3 rel_vel_body = {
+      .x = R[0][0] * rel_vel_ned.x + R[0][1] * rel_vel_ned.y + R[0][2] * rel_vel_ned.z,
+      .y = R[1][0] * rel_vel_ned.x + R[1][1] * rel_vel_ned.y + R[1][2] * rel_vel_ned.z,
+      .z = R[2][0] * rel_vel_ned.x + R[2][1] * rel_vel_ned.y + R[2][2] * rel_vel_ned.z,
+  };
+
   int i = 0;
 
   // Normalize and fill into obs
-  normalize_and_magnitude(&rel_pos_ned, &obs[i], &obs[i + 3]);
+  normalize_and_magnitude(&rel_pos_body, &obs[i], &obs[i + 3]);
   i += 4;
-  normalize_and_magnitude(&rel_vel_ned, &obs[i], &obs[i + 3]);
+  normalize_and_magnitude(&rel_vel_body, &obs[i], &obs[i + 3]);
   i += 4;
+
+  // Rotation matrix cols 1 and 2 (get_rot_columns equivalent)
+  // Col 1
+  obs[i++] = ctheta * cpsi;
+  obs[i++] = ctheta * spsi;
+  obs[i++] = -stheta;
+
+  // Col 2
+  obs[i++] = sphi * stheta * cpsi - cphi * spsi;
+  obs[i++] = sphi * stheta * spsi + cphi * cpsi;
+  obs[i++] = sphi * ctheta;
+
+  // Angular rates
+  obs[i++] = rates->p;
+  obs[i++] = rates->q; // Frame adjustment
+  obs[i++] = rates->r;
+
+  // T_force approximation: body thrust (z)
+  obs[i++] = -filtered_abz;
 }
 
 // Converts NED to ENU
@@ -316,6 +366,7 @@ void pn_init(void)
   init_butterworth_2_low_pass(&filter_acc_x, TAU_ACC, DT, 0.0f);
   init_butterworth_2_low_pass(&filter_acc_y, TAU_ACC, DT, 0.0f);
   init_butterworth_2_low_pass(&filter_acc_z, TAU_ACC, DT, 0.0f);
+  init_butterworth_2_low_pass(&filt_abz, TAU_ACC, DT, 0.0f);
 
   init_butterworth_2_low_pass(&filter_pu_vel_x, TAU_OBS, OBS_SAMPLE_TIME, 0.0f);
   init_butterworth_2_low_pass(&filter_pu_vel_y, TAU_OBS, OBS_SAMPLE_TIME, 0.0f);

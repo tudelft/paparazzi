@@ -2,7 +2,7 @@
 #include "ppo_controller.h"
 #include "weights/testing/ppo_controller_weights.h"
 
-#define INPUT_DIM 8
+#define INPUT_DIM 18
 #define HIDDEN1_DIM 64
 #define HIDDEN2_DIM 64
 #define HIDDEN3_DIM 64
