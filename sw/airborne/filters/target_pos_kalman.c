@@ -37,7 +37,7 @@
 #endif
 
 #ifndef TARGET_POS_KALMAN_MAX_COND
-#define TARGET_POS_KALMAN_MAX_COND 1e4
+#define TARGET_POS_KALMAN_MAX_COND 1e6
 #endif
 
 #if TARGET_POS_KALMAN_DEBUG || TARGET_POS_KALMAN_USE_ACCEL
@@ -250,7 +250,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
     #if TARGET_POS_KALMAN_DEBUG
     // invalid kalman or sensor pointer
     char error[75];
-    int rc = snprintf(error, sizeof(error), "Null pointer in target pos kalman filter");
+    int rc = snprintf(error, sizeof(error), "Null in TPK");
     #if !USE_NPS
     pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
     #endif
@@ -263,7 +263,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
     #if TARGET_POS_KALMAN_DEBUG
     // invalid H matrix index
     char error[100];
-    int rc = snprintf(error, sizeof(error), "Number of measurements too large: %d, TARGET_POS_KALMAN_DIM == %d", sensor->n_meas, TARGET_POS_KALMAN_DIM);
+    int rc = snprintf(error, sizeof(error), "# meas too large: %d, TPK_DIM == %d", sensor->n_meas, TARGET_POS_KALMAN_DIM);
     #if !USE_NPS
     pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
     #endif
@@ -323,7 +323,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
       #if TARGET_POS_KALMAN_DEBUG
       // invalid H matrix index
       char error[75];
-      int rc = snprintf(error, sizeof(error), "Observation matrix OOB: H[%d] = %d, TARGET_POS_KALMAN_DIM == %d", i, sensor->Hmat[i], TARGET_POS_KALMAN_DIM);
+      int rc = snprintf(error, sizeof(error), "Obs matrix OOB: H[%d] = %d, TPK_DIM == %d", i, sensor->Hmat[i], TARGET_POS_KALMAN_DIM);
       #if !USE_NPS
       pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
       #endif
@@ -376,7 +376,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
   if (!solved) {
     #if TARGET_POS_KALMAN_DEBUG
     char error[75];
-    int rc = snprintf(error, sizeof(error), "SVD failed in Target pos Kalman");
+    int rc = snprintf(error, sizeof(error), "SVD failed in TPK");
     #if !USE_NPS
     pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
     #endif
@@ -403,7 +403,7 @@ void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSenso
     // Condition number is too large, don't invert S matrix
     #if TARGET_POS_KALMAN_DEBUG
     char error[75];
-    int rc = snprintf(error, sizeof(error), "Cond Nr. of S matrix larger than %f: %f", TARGET_POS_KALMAN_MAX_COND, max_singular_value / min_singular_value);
+    int rc = snprintf(error, sizeof(error), "Cond Nr. of S mat > %.0f: %.1f", TARGET_POS_KALMAN_MAX_COND, max_singular_value / min_singular_value);
     #if !USE_NPS
     pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
     #endif
