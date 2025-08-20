@@ -1,12 +1,13 @@
 // ppo_controller.c
 
 #include <math.h>
-#include "weights/dr_00/ppo_controller_weights.h"
+#include "weights/dr_20/ppo_controller_weights.h"
 #include "ppo_controller.h"
 
 #define INPUT_DIM 21
 #define HIDDEN1_DIM 64
 #define HIDDEN2_DIM 64
+#define HIDDEN3_DIM 64
 #define OUTPUT_DIM 4
 
 float control_nn[4] = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -16,15 +17,13 @@ void dense(const float *input, const float *weight, const float *bias,
 {
     for (int i = 0; i < out_dim; i++)
     {
-        output[i] = bias[i];
+        float acc = bias[i];
+        const float *wrow = &weight[i * in_dim];
         for (int j = 0; j < in_dim; j++)
         {
-            output[i] += weight[i * in_dim + j] * input[j];
+            acc += wrow[j] * input[j];
         }
-        if (apply_activation)
-        {
-            output[i] = tanhf(output[i]);
-        }
+        output[i] = apply_activation ? tanhf(acc) : acc;
     }
 }
 
@@ -42,19 +41,36 @@ __attribute__((visibility("default"))) void get_action(const float *obs, float *
 {
     float h1[HIDDEN1_DIM];
     float h2[HIDDEN2_DIM];
+    float h3[HIDDEN3_DIM];
     float raw[OUTPUT_DIM];
 
-    dense(obs, mlp_extractor_policy_net_0_weight, mlp_extractor_policy_net_0_bias,
+    // Layer 1: INPUT_DIM -> 64 (tanh)
+    dense(obs,
+          mlp_extractor_policy_net_0_weight,
+          mlp_extractor_policy_net_0_bias,
           INPUT_DIM, HIDDEN1_DIM, h1, 1);
 
-    dense(h1, mlp_extractor_policy_net_2_weight, mlp_extractor_policy_net_2_bias,
+    // Layer 2: 64 -> 64 (tanh)
+    dense(h1,
+          mlp_extractor_policy_net_2_weight,
+          mlp_extractor_policy_net_2_bias,
           HIDDEN1_DIM, HIDDEN2_DIM, h2, 1);
 
-    dense(h2, action_net_weight, action_net_bias,
-          HIDDEN2_DIM, OUTPUT_DIM, raw, 0);
+    // NEW Layer 3: 64 -> 64 (tanh)
+    dense(h2,
+          mlp_extractor_policy_net_4_weight, // add these to ppo_weights.h
+          mlp_extractor_policy_net_4_bias,
+          HIDDEN2_DIM, HIDDEN3_DIM, h3, 1);
 
+    // Output layer: 64 -> 4 (linear)
+    dense(h3,
+          action_net_weight,
+          action_net_bias,
+          HIDDEN3_DIM, OUTPUT_DIM, raw, 0);
+
+    // Squash to [-1, 1]
     for (int i = 0; i < OUTPUT_DIM; i++)
     {
-        action_out[i] = clip01(raw[i]); // squash to [-1, 1]
+        action_out[i] = clip01(raw[i]);
     }
 }

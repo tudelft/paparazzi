@@ -44,7 +44,7 @@ struct pnmessage target_message = {
 };
 uint8_t pn_msg_buf[256] __attribute__((aligned));
 
-static struct FloatVect3 target_pos_ned = {0.0f, 0.0f, -2.0f};
+static struct FloatVect3 target_pos_ned = {1.0f, 0.0f, -2.0f};
 static struct FloatVect3 target_vel_ned = {0.0f, 0.0f, 0.0f};
 
 /* Low-pass filters */
