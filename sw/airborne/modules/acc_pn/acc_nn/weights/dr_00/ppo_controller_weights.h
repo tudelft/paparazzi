@@ -19,6 +19,10 @@ extern float mlp_extractor_value_net_2_weight[];
 
 extern float mlp_extractor_value_net_2_bias[];
 
+extern float mlp_extractor_policy_net_4_weight[];
+
+extern float mlp_extractor_policy_net_4_bias[];
+
 extern float action_net_weight[];
 
 extern float action_net_bias[];

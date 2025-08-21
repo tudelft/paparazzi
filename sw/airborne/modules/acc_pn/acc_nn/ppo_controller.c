@@ -1,6 +1,6 @@
 #include <math.h>
 #include "ppo_controller.h"
-#include "weights/testing/ppo_controller_weights.h"
+#include "weights/dr_00/ppo_controller_weights.h"
 
 #define INPUT_DIM 18
 #define HIDDEN1_DIM 64
