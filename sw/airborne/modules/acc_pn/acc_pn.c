@@ -343,9 +343,9 @@ static void run_nn_policy(void)
       .y = accel_out[1] * MAX_ACCEL,
       .z = accel_out[2] * MAX_ACCEL};
 
-  acc_ned.x = update_butterworth_2_low_pass(&filter_acc_x, acc_ned.x);
-  acc_ned.y = update_butterworth_2_low_pass(&filter_acc_y, acc_ned.y);
-  acc_ned.z = update_butterworth_2_low_pass(&filter_acc_z, acc_ned.z);
+  // acc_ned.x = update_butterworth_2_low_pass(&filter_acc_x, acc_ned.x);
+  // acc_ned.y = update_butterworth_2_low_pass(&filter_acc_y, acc_ned.y);
+  // acc_ned.z = update_butterworth_2_low_pass(&filter_acc_z, acc_ned.z);
 
   pn_log.filt_accel_command = acc_ned;
 

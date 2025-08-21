@@ -49,7 +49,7 @@ struct pnmessage target_message = {
 
 uint8_t pn_msg_buf[256] __attribute__((aligned));
 
-static struct FloatVect3 target_pos_ned = {1.0f, 0.0f, -2.0f};
+static struct FloatVect3 target_pos_ned = {-2.5f, -2.5f, -2.0f};
 static struct FloatVect3 target_vel_ned = {0.0f, 0.0f, 0.0f};
 
 static bool first_target_received = false;
@@ -265,10 +265,9 @@ void pn_init(void)
   printf("[ctbr_pn] init\n");
   pprz_transport_init(&target_message.transport);
 
-  float tau = CTBR_TAU;
-  init_butterworth_2_low_pass(&filt_self_vx, tau, CTBR_DT, 0.0f);
-  init_butterworth_2_low_pass(&filt_self_vy, tau, CTBR_DT, 0.0f);
-  init_butterworth_2_low_pass(&filt_self_vz, tau, CTBR_DT, 0.0f);
+  init_butterworth_2_low_pass(&filt_self_vx, CTBR_TAU, CTBR_DT, 0.0f);
+  init_butterworth_2_low_pass(&filt_self_vy, CTBR_TAU, CTBR_DT, 0.0f);
+  init_butterworth_2_low_pass(&filt_self_vz, CTBR_TAU, CTBR_DT, 0.0f);
 
   init_butterworth_2_low_pass(&filt_abz, CTBR_TAU, CTBR_DT, 0.0f);
 }
