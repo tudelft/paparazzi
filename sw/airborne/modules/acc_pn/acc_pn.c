@@ -115,15 +115,89 @@ static void normalize_and_magnitude(const struct FloatVect3 *v, float *unit_out,
   unit_out[2] = v->z / safe_norm;
 }
 
+// static void build_observation(float *obs)
+// {
+//   struct NedCoor_f *pu_pos = stateGetPositionNed_f();
+//   struct NedCoor_f *pu_vel = stateGetSpeedNed_f();
+//   struct FloatEulers *att = stateGetNedToBodyEulers_f();
+//   struct FloatRates *rates = stateGetBodyRates_f();
+//   float raw_abz = ekf_U[2] - ekf_X[11];
+
+//   float filtered_abz = update_butterworth_2_low_pass(&filt_abz, raw_abz);
+
+//   // Build rel_pos and rel_vel in NED
+//   struct FloatVect3 rel_pos_ned = {
+//       .x = target_pos_ned.x - pu_pos->x,
+//       .y = target_pos_ned.y - pu_pos->y,
+//       .z = target_pos_ned.z - pu_pos->z,
+//   };
+
+//   struct FloatVect3 rel_vel_ned = {
+//       .x = target_vel_ned.x - pu_vel->x,
+//       .y = target_vel_ned.y - pu_vel->y,
+//       .z = target_vel_ned.z - pu_vel->z,
+//   };
+
+//   // Rotation: from NED to BODY
+//   float cphi = cosf(att->phi), sphi = sinf(att->phi);
+//   float ctheta = cosf(att->theta), stheta = sinf(att->theta);
+//   float cpsi = cosf(att->psi), spsi = sinf(att->psi);
+
+//   float R[3][3] = {
+//       {ctheta * cpsi, ctheta * spsi, -stheta},
+//       {sphi * stheta * cpsi - cphi * spsi, sphi * stheta * spsi + cphi * cpsi, sphi * ctheta},
+//       {cphi * stheta * cpsi + sphi * spsi, cphi * stheta * spsi - sphi * cpsi, cphi * ctheta}};
+
+//   // Rotate into body frame
+//   struct FloatVect3 rel_pos_body = {
+//       .x = R[0][0] * rel_pos_ned.x + R[0][1] * rel_pos_ned.y + R[0][2] * rel_pos_ned.z,
+//       .y = R[1][0] * rel_pos_ned.x + R[1][1] * rel_pos_ned.y + R[1][2] * rel_pos_ned.z,
+//       .z = R[2][0] * rel_pos_ned.x + R[2][1] * rel_pos_ned.y + R[2][2] * rel_pos_ned.z,
+//   };
+
+//   struct FloatVect3 rel_vel_body = {
+//       .x = R[0][0] * rel_vel_ned.x + R[0][1] * rel_vel_ned.y + R[0][2] * rel_vel_ned.z,
+//       .y = R[1][0] * rel_vel_ned.x + R[1][1] * rel_vel_ned.y + R[1][2] * rel_vel_ned.z,
+//       .z = R[2][0] * rel_vel_ned.x + R[2][1] * rel_vel_ned.y + R[2][2] * rel_vel_ned.z,
+//   };
+
+//   int i = 0;
+
+//   // Normalize and fill into obs
+//   normalize_and_magnitude(&rel_pos_body, &obs[i], &obs[i + 3]);
+//   i += 4;
+//   normalize_and_magnitude(&rel_vel_body, &obs[i], &obs[i + 3]);
+//   i += 4;
+
+//   // Rotation matrix cols 1 and 2 (get_rot_columns equivalent)
+//   // Col 1
+//   obs[i++] = ctheta * cpsi;
+//   obs[i++] = ctheta * spsi;
+//   obs[i++] = -stheta;
+
+//   // Col 2
+//   obs[i++] = sphi * stheta * cpsi - cphi * spsi;
+//   obs[i++] = sphi * stheta * spsi + cphi * cpsi;
+//   obs[i++] = sphi * ctheta;
+
+//   // Angular rates
+//   obs[i++] = rates->p;
+//   obs[i++] = rates->q; // Frame adjustment
+//   obs[i++] = rates->r;
+
+//   // T_force approximation: body thrust (z)
+//   obs[i++] = -filtered_abz;
+// }
+
 static void build_observation(float *obs)
 {
   struct NedCoor_f *pu_pos = stateGetPositionNed_f();
   struct NedCoor_f *pu_vel = stateGetSpeedNed_f();
-  struct FloatEulers *att = stateGetNedToBodyEulers_f();
-  struct FloatRates *rates = stateGetBodyRates_f();
-  float raw_abz = ekf_U[2] - ekf_X[11];
+  // struct FloatEulers *att = stateGetNedToBodyEulers_f();
+  // struct FloatRates *rates = stateGetBodyRates_f();
+  // float raw_abz = ekf_U[2] - ekf_X[11];
 
-  float filtered_abz = update_butterworth_2_low_pass(&filt_abz, raw_abz);
+  // float filtered_abz = update_butterworth_2_low_pass(&filt_abz, raw_abz);
 
   // Build rel_pos and rel_vel in NED
   struct FloatVect3 rel_pos_ned = {
@@ -138,55 +212,13 @@ static void build_observation(float *obs)
       .z = target_vel_ned.z - pu_vel->z,
   };
 
-  // Rotation: from NED to BODY
-  float cphi = cosf(att->phi), sphi = sinf(att->phi);
-  float ctheta = cosf(att->theta), stheta = sinf(att->theta);
-  float cpsi = cosf(att->psi), spsi = sinf(att->psi);
-
-  float R[3][3] = {
-      {ctheta * cpsi, ctheta * spsi, -stheta},
-      {sphi * stheta * cpsi - cphi * spsi, sphi * stheta * spsi + cphi * cpsi, sphi * ctheta},
-      {cphi * stheta * cpsi + sphi * spsi, cphi * stheta * spsi - sphi * cpsi, cphi * ctheta}};
-
-  // Rotate into body frame
-  struct FloatVect3 rel_pos_body = {
-      .x = R[0][0] * rel_pos_ned.x + R[0][1] * rel_pos_ned.y + R[0][2] * rel_pos_ned.z,
-      .y = R[1][0] * rel_pos_ned.x + R[1][1] * rel_pos_ned.y + R[1][2] * rel_pos_ned.z,
-      .z = R[2][0] * rel_pos_ned.x + R[2][1] * rel_pos_ned.y + R[2][2] * rel_pos_ned.z,
-  };
-
-  struct FloatVect3 rel_vel_body = {
-      .x = R[0][0] * rel_vel_ned.x + R[0][1] * rel_vel_ned.y + R[0][2] * rel_vel_ned.z,
-      .y = R[1][0] * rel_vel_ned.x + R[1][1] * rel_vel_ned.y + R[1][2] * rel_vel_ned.z,
-      .z = R[2][0] * rel_vel_ned.x + R[2][1] * rel_vel_ned.y + R[2][2] * rel_vel_ned.z,
-  };
-
   int i = 0;
 
   // Normalize and fill into obs
-  normalize_and_magnitude(&rel_pos_body, &obs[i], &obs[i + 3]);
+  normalize_and_magnitude(&rel_pos_ned, &obs[i], &obs[i + 3]);
   i += 4;
-  normalize_and_magnitude(&rel_vel_body, &obs[i], &obs[i + 3]);
+  normalize_and_magnitude(&rel_vel_ned, &obs[i], &obs[i + 3]);
   i += 4;
-
-  // Rotation matrix cols 1 and 2 (get_rot_columns equivalent)
-  // Col 1
-  obs[i++] = ctheta * cpsi;
-  obs[i++] = ctheta * spsi;
-  obs[i++] = -stheta;
-
-  // Col 2
-  obs[i++] = sphi * stheta * cpsi - cphi * spsi;
-  obs[i++] = sphi * stheta * spsi + cphi * cpsi;
-  obs[i++] = sphi * ctheta;
-
-  // Angular rates
-  obs[i++] = rates->p;
-  obs[i++] = rates->q; // Frame adjustment
-  obs[i++] = rates->r;
-
-  // T_force approximation: body thrust (z)
-  obs[i++] = -filtered_abz;
 }
 
 // Converts NED to ENU
@@ -332,7 +364,7 @@ static void run_grtpn(void)
 
 static void run_nn_policy(void)
 {
-  float obs[18];
+  float obs[8];
   float accel_out[3];
 
   build_observation(obs);
