@@ -94,7 +94,7 @@ class NatNetClient:
         self.__nat_net_requested_version = [3,0,0,0]
 
         # server stream version. This will be updated to the actual version the server is using during initialization.
-        self.__server_version = [0,0,0,0]
+        self.__server_version = [3,0,0,0]
 
         # Lock values once run is called
         self.__is_locked = False

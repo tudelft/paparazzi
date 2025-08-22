@@ -15,6 +15,7 @@
     <waypoint name="ARUCO" x="-10" y="-10"/>
     <waypoint name="KALMAN" x="-10" y="-10"/>
     <waypoint name="BOX" x="-10" y="-10"/>
+    <waypoint name="MOVING_BASE" x="-500" y="-500" height="20"/>
     <waypoint lat="51.9905979" lon="4.3767279" name="CZ1"/>
     <waypoint lat="51.9906685" lon="4.3767327" name="CZ2"/>
     <waypoint lat="51.9906652" lon="4.3768481" name="CZ3"/>
@@ -45,6 +46,12 @@
     <variable var="liftoff_roll"/>
     <variable var="stage_timer_msec"/>
   </variables>
+    <modules>
+    <!-- <module name="follow_me">
+      <define name="FOLLOW_ME_MOVING_WPS" value="WP_FOLLOW"/>
+    </module> -->
+    <module name="nav_moving_base"/>
+  </modules>
   <exceptions>
     <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosHeight() @GT 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
     <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
@@ -105,11 +112,11 @@
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <stay wp="FOLLOW"/>
     </block>
-    <block name="stay_KALMAN" strip_button="Stay KALMAN" on_enter="nav_hybrid_wp_moving=true" on_exit="nav_hybrid_wp_moving=false">
+    <block name="stay_KALMAN" strip_button="Stay KALMAN">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <stay wp="KALMAN"/>
     </block>
-    <block name="descend_KALMAN" strip_button="Descend KALMAN" on_enter="nav_hybrid_wp_moving=true" on_exit="nav_hybrid_wp_moving=false">
+    <block name="descend_KALMAN" strip_button="Descend KALMAN">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <stay climb="-0.2" vmode="climb" wp="KALMAN"/>
     </block>
