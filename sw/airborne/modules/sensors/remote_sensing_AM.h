@@ -93,17 +93,6 @@ struct aruco_t {
   struct KalmanSensor kalman_sensor; // Kalman filter for the opencv aruco sensor
 };
 
-struct landing_algorithm_outputs_t {
-  uint32_t timestamp_output; // Timestamp of the output
-  float UAV_acc_target_NED[3]; // UAV commanded acceleration in NED frame
-  float UAV_desired_phi_theta_rad[2]; // UAV commanded roll and pitch in radians
-  int8_t landing_algorithm_mode; // Landing algorithm mode
-  int8_t exitflag_path_planner; // Exit flag of the path planner
-  float expected_landing_time; // Expected landing time in seconds
-  uint8_t V_out_of_bounds_array[6]; // Array of out of bounds flags for velocity
-  uint8_t A_out_of_bounds_array[6]; // Array of out of bounds flags for acceleration
-};
-
 extern int track_aruco_id;
 
 extern bool aruco_use_current_att;
@@ -126,12 +115,6 @@ extern void remote_sensing_parse_falcon_relangle(uint8_t *buf);
 extern void remote_sensing_parse_falcon_relbeacon(uint8_t *buf);
 extern void remote_sensing_parse_opencv_aruco(uint8_t *buf);
 extern void remote_sensing_send_aruco_attitude(void);
-
-extern void receive_landing_algorithm_outputs(uint8_t *buf);
-void test_request_landing_path(void);
-void send_landing_algorithm_params(void);
-void request_landing_algorithm_outputs(void);
-
 
 #endif /* REMOTE_SENSING_H */
 
