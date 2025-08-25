@@ -49,12 +49,14 @@ struct NavMovingBase {
   struct EnuCoor_f accel;
   struct FloatVect3 pos_gain; ///< position gain for position control
   struct FloatVect3 speed_gain; ///< speed gain for speed control
+  uint8_t active_wp;
 };
 
 extern struct NavMovingBase nav_moving_base;
 
 extern void nav_moving_base_init(void);
-extern void nav_moving_base_setup(enum NavMovingBaseMode mode);
+extern void nav_moving_base_periodic(void);
+extern void nav_moving_base_setup(enum NavMovingBaseMode mode, uint8_t wp_index);
 extern bool nav_moving_base_run(void);
 void nav_moving_base_set_pos(struct EnuCoor_f *pos);
 void nav_moving_base_set_speed(struct EnuCoor_f *speed);

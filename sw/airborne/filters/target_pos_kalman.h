@@ -59,6 +59,15 @@ struct TargetPosKalman {
   float dt;                                                   ///< prediction step (in seconds)
 };
 
+enum TargetPosKalmanUpdateResult {
+  TARGET_POS_KALMAN_UPDATE_SUCCESS = 0,
+  TARGET_POS_KALMAN_UPDATE_NULL_PTR = 1,
+  TARGET_POS_KALMAN_UPDATE_DIM = 2,
+  TARGET_POS_KALMAN_UPDATE_OOB = 3,
+  TARGET_POS_KALMAN_UPDATE_SVD = 4,
+  TARGET_POS_KALMAN_UPDATE_RCOND = 5
+};
+
 /** Init TargetPosKalman internal struct
  *
  * @param[in] kalman TargetPosKalman structure
@@ -114,7 +123,7 @@ extern void target_pos_kalman_predict(struct TargetPosKalman *kalman);
  * @param[in] kalman TargetPosKalman structure
  * @param[in] sensor KalmanSensor structure
  */
-extern void target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSensor *sensor);
+extern enum TargetPosKalmanUpdateResult target_pos_kalman_update(struct TargetPosKalman *kalman, struct KalmanSensor *sensor);
 
 /** Update a Kalman sensor struct with new measurements
  *

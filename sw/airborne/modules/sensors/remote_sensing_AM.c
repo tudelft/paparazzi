@@ -28,6 +28,7 @@
 #include "generated/airframe.h"
 #include "generated/flight_plan.h"
 #include "modules/nav/nav_moving_base.h"
+#include <stdio.h>
 
 int track_aruco_id = 16;
 
@@ -53,6 +54,10 @@ int track_aruco_id = 16;
 #define REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO FALSE
 #endif
 
+#ifndef REMOTE_SENSING_KALMAN_MAX_REPEATED_FAILURE_CNT
+#define REMOTE_SENSING_KALMAN_MAX_REPEATED_FAILURE_CNT 5
+#endif
+
 PRINT_CONFIG_VAR(REMOTE_SENSING_LOG_ON_ARRIVAL);
 
 bool use_sixdof = REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF;
@@ -74,6 +79,7 @@ static void load_sensor_rotation_from_airframe(struct FloatQuat *q, struct Float
 static void load_sensor_offset_from_airframe(struct FloatVect3 *offset, const struct FloatVect3 *offset_airframe);
 static void sensor_to_NED(struct FloatVect3 *ned, struct FloatVect3 *sensor, struct FloatQuat *sensor_to_body, struct FloatVect3 *offset, struct FloatQuat *body_to_ned);
 static void falcon_auto_mode(void);
+static void handle_kalman_update_result(enum TargetPosKalmanUpdateResult result);
 
 // Global variables
 struct target_pos_t target = {0};
@@ -205,7 +211,8 @@ void remote_sensing_parse_target_pos(uint8_t *buf)
   // Save the relative position and velocity in the target structure
   if (use_rtk) {
     target_pos_kalman_set_measurement(&target.kalman_sensor, POS_SPEED_TO_ARRAY(target.pos, target.vel));
-    target_pos_kalman_update(&remote_sensing_kalman, &target.kalman_sensor);
+    enum TargetPosKalmanUpdateResult result = target_pos_kalman_update(&remote_sensing_kalman, &target.kalman_sensor);
+    handle_kalman_update_result(result);
   }
 
   #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
@@ -247,10 +254,11 @@ void remote_sensing_parse_falcon_sixdof(uint8_t *buf)
   falcon.sixdof.tow = get_sys_time_tow();
 
   if (use_sixdof) {
-  // Update the kalman filter with the new position and position variance
-  target_pos_kalman_set_measurement(&falcon.sixdof.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.sixdof.pos));
-  target_pos_kalman_set_noise(&falcon.sixdof.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.sixdof.pos_var));
-  target_pos_kalman_update(&remote_sensing_kalman, &falcon.sixdof.kalman_sensor);
+    // Update the kalman filter with the new position and position variance
+    target_pos_kalman_set_measurement(&falcon.sixdof.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.sixdof.pos));
+    target_pos_kalman_set_noise(&falcon.sixdof.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.sixdof.pos_var));
+    enum TargetPosKalmanUpdateResult result = target_pos_kalman_update(&remote_sensing_kalman, &falcon.sixdof.kalman_sensor);
+    handle_kalman_update_result(result);
   }
 
   #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
@@ -296,9 +304,10 @@ void remote_sensing_parse_falcon_relangle(uint8_t *buf)
   sensor_to_NED(&falcon.relangle.pos, &p_out_sensor, &falcon.sensor_to_body, &falcon.body_to_sensor_offset, NULL); // Rotate the position to body frame
   
   if (use_relangle) {
-  // Update the kalman filter with the new angles and intensity.
-  target_pos_kalman_set_measurement(&falcon.relangle.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.relangle.pos));
-  target_pos_kalman_update(&remote_sensing_kalman, &falcon.relangle.kalman_sensor); 
+    // Update the kalman filter with the new angles and intensity.
+    target_pos_kalman_set_measurement(&falcon.relangle.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.relangle.pos));
+    enum TargetPosKalmanUpdateResult result = target_pos_kalman_update(&remote_sensing_kalman, &falcon.relangle.kalman_sensor);
+    handle_kalman_update_result(result);
   }
 
   #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
@@ -322,9 +331,10 @@ void remote_sensing_parse_falcon_relbeacon(uint8_t *buf)
   sensor_to_NED(&falcon.relbeacon.pos, &(struct FloatVect3){pos[0], pos[1], pos[2]}, &falcon.sensor_to_body, &falcon.body_to_sensor_offset, NULL); // Rotate the position to NED frame
 
   if (use_relbeacon) {
-  // Update the kalman filter with the beacon position.
-  target_pos_kalman_set_measurement(&falcon.relbeacon.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.relbeacon.pos));
-  target_pos_kalman_update(&remote_sensing_kalman, &falcon.relbeacon.kalman_sensor);
+    // Update the kalman filter with the beacon position.
+    target_pos_kalman_set_measurement(&falcon.relbeacon.kalman_sensor, FLOATVECT3_TO_ARRAY(falcon.relbeacon.pos));
+    enum TargetPosKalmanUpdateResult result = target_pos_kalman_update(&remote_sensing_kalman, &falcon.relbeacon.kalman_sensor);
+    handle_kalman_update_result(result);
   }
 
   #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
@@ -504,9 +514,10 @@ void remote_sensing_parse_opencv_aruco(uint8_t *buf)
     sensor_to_NED(&aruco.pos, &(struct FloatVect3){pos[0], pos[1], pos[2]}, &aruco.sensor_to_body, &aruco.body_to_sensor_offset, &(struct FloatQuat){quat[0], quat[1], quat[2], quat[3]}); 
   }
   if (use_aruco) {
-  // Update the kalman filter with the aruco position.
-  target_pos_kalman_set_measurement(&aruco.kalman_sensor, FLOATVECT3_TO_ARRAY(aruco.pos));
-  target_pos_kalman_update(&remote_sensing_kalman, &aruco.kalman_sensor);
+    // Update the kalman filter with the aruco position.
+    target_pos_kalman_set_measurement(&aruco.kalman_sensor, FLOATVECT3_TO_ARRAY(aruco.pos));
+    enum TargetPosKalmanUpdateResult result = target_pos_kalman_update(&remote_sensing_kalman, &aruco.kalman_sensor);
+    handle_kalman_update_result(result);
   }
 
   #if REMOTE_SENSING_LOG_ON_ARRIVAL && !USE_NPS
@@ -722,4 +733,53 @@ static void falcon_auto_mode(void) {
   if (new_mode == mode) return;
   t_switch = current_time;
   remote_sensing_AM_send_falcon_cmd(new_mode);
+}
+
+static void handle_kalman_update_result(enum TargetPosKalmanUpdateResult result) {
+  static uint8_t failure_cnt = 0;
+  char error[30];
+  int rc;
+  switch (result) {
+    case TARGET_POS_KALMAN_UPDATE_SUCCESS:
+      failure_cnt = 0;
+      return;
+    case TARGET_POS_KALMAN_UPDATE_NULL_PTR:
+      rc = snprintf(error, sizeof(error), "TPK: Null Ptr");
+      failure_cnt++;
+      break;
+    case TARGET_POS_KALMAN_UPDATE_DIM:
+      rc = snprintf(error, sizeof(error), "TPK: n_meas > TPK_DIM");
+      failure_cnt++;
+      break;
+    case TARGET_POS_KALMAN_UPDATE_OOB:
+      rc = snprintf(error, sizeof(error), "TPK: Hmat OOB");
+      failure_cnt++;
+      break;
+    case TARGET_POS_KALMAN_UPDATE_SVD:
+      rc = snprintf(error, sizeof(error), "TPK: SVD error");
+      failure_cnt++;
+      break;
+    case TARGET_POS_KALMAN_UPDATE_RCOND:
+      rc = snprintf(error, sizeof(error), "TPK: RCond error");
+      failure_cnt++;
+      break;
+    default:
+      rc = snprintf(error, sizeof(error), "TPK: Unknown error");
+      failure_cnt++;
+      break;
+  }
+
+  #if TARGET_POS_KALMAN_DEBUG
+  #if !USE_NPS 
+    pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
+  #endif
+    DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error);
+  #endif
+
+  // Last resort reset of Kalman filter after repeated update failures
+  if (failure_cnt > REMOTE_SENSING_KALMAN_MAX_REPEATED_FAILURE_CNT) {
+    // Reset the kalman filter if we have too many failures
+    target_pos_kalman_init(&remote_sensing_kalman, P0, Q0, REMOTE_SENSING_AM_PERIODIC_PERIOD);
+    failure_cnt = 0;
+  }
 }

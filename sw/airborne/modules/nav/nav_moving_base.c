@@ -28,10 +28,7 @@
 #include "generated/flight_plan.h"
 #include "generated/airframe.h"
 #include "modules/nav/waypoints.h"
-
-#ifdef WP_MOVING_BASE
 #include "modules/datalink/downlink.h"
-#endif
 
 #ifndef NAV_MOVING_BASE_OVERWRITE_POS_GAIN
 #define NAV_MOVING_BASE_OVERWRITE_POS_GAIN FALSE
@@ -86,7 +83,7 @@
 struct NavMovingBase nav_moving_base;
 
 #if defined(GUIDANCE_INDI_POS_GAIN) && !NAV_MOVING_BASE_OVERWRITE_POS_GAIN
-float pos_gain_h = GUIDANCE_INDI_POS_GAIN;
+float pos_gain_h = GUIDANCE_INDI_POS_GAIN; // x 0.5, y 0.65
 #elif defined(NAV_MOVING_BASE_POS_GAIN)
 float pos_gain_h = NAV_MOVING_BASE_POS_GAIN;
 PRINT_CONFIG_VAR(NAV_MOVING_BASE_POS_GAIN);
@@ -104,7 +101,7 @@ float pos_gain_v = 1.0f;
 #endif
 
 #if defined(GUIDANCE_INDI_SPEED_GAIN) && !NAV_MOVING_BASE_OVERWRITE_SPEED_GAIN
-float speed_gain_h = GUIDANCE_INDI_SPEED_GAIN;
+float speed_gain_h = GUIDANCE_INDI_SPEED_GAIN; // x 1.2, y 1.7
 #elif defined(NAV_MOVING_BASE_SPEED_GAIN)
 float speed_gain_h = NAV_MOVING_BASE_SPEED_GAIN;
 PRINT_CONFIG_VAR(NAV_MOVING_BASE_SPEED_GAIN);
@@ -141,14 +138,19 @@ void nav_moving_base_init(void) {
   VECT2_COPY(nav_moving_base.max_accel_v, max_v_accel);
   VECT2_COPY(nav_moving_base.max_speed_v, max_v_speed);
 
+  nav_moving_base.pos = (struct EnuCoor_f){0., 0., 0.};
+  nav_moving_base.speed = (struct EnuCoor_f){0., 0., 0.};
+  nav_moving_base.accel = (struct EnuCoor_f){0., 0., 0.};
+
   nav_moving_base.pos_gain = (struct FloatVect3) {pos_gain_h, pos_gain_h, pos_gain_v};
   nav_moving_base.speed_gain = (struct FloatVect3) {speed_gain_h, speed_gain_h, speed_gain_v};
 
   nav_moving_base.stay = false;
 }
 
-void nav_moving_base_setup(enum NavMovingBaseMode mode) {
+void nav_moving_base_setup(enum NavMovingBaseMode mode, uint8_t wp_index) {
   nav_moving_base.mode = mode;
+  nav_moving_base.active_wp = wp_index;
 
   switch (nav_moving_base.mode) {
     case NAV_MOVING_BASE_MODE_TRACKING_NO_FF:
@@ -255,6 +257,14 @@ static bool nav_moving_base_land(void) {
   return complete;
 }
 
+void nav_moving_base_periodic(void) {
+  DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &nav_moving_base.active_wp,
+      &waypoints[nav_moving_base.active_wp].enu_i.x,
+      &waypoints[nav_moving_base.active_wp].enu_i.y,
+      &waypoints[nav_moving_base.active_wp].enu_i.z
+  );
+}
+
 static void enforce_horizontal_bounds(struct EnuCoor_f* quantity, struct FloatVect2* bounds) {
   // Quantity (Velocity or Accel) is in ENU frame, but should be bounded in control frame
   struct FloatVect2 quantity_control_rf;
@@ -277,14 +287,7 @@ static void enforce_horizontal_bounds(struct EnuCoor_f* quantity, struct FloatVe
 
 void nav_moving_base_set_pos(struct EnuCoor_f *pos) {
   VECT3_COPY(nav_moving_base.pos, *pos);
-#ifdef WP_MOVING_BASE
-  waypoint_set_enu(WP_MOVING_BASE, &nav_moving_base.pos);
-  RunOnceEvery(50, {DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &(uint8_t) {WP_MOVING_BASE},
-      &waypoints[WP_MOVING_BASE].enu_i.x,
-      &waypoints[WP_MOVING_BASE].enu_i.y,
-      &waypoints[WP_MOVING_BASE].enu_i.z);
-  });
-#endif
+  waypoint_set_enu(nav_moving_base.active_wp, &nav_moving_base.pos);
 }
 
 void nav_moving_base_set_speed(struct EnuCoor_f *speed) {
