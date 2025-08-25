@@ -827,7 +827,7 @@ struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight UNUSED, struc
   else if (h_mode == GUIDANCE_INDI_HYBRID_H_ACCEL) {// H_ACCEL
     gi_speed_sp.x = 0.f;
     gi_speed_sp.y = 0.f;
-    if (v_mode == GUIDANCE_INDI_HYBRID_V_POS) {
+    if (v_mode == GUIDANCE_INDI_HYBRID_V_POS || v_mode == GUIDANCE_INDI_HYBRID_V_ALL) {
       pos_err.z = POS_FLOAT_OF_BFP(gv->z_ref) - stateGetPositionNed_f()->z;
       gi_speed_sp.z = bound_vz_sp(pos_err.z * gih_params.pos_gainz + SPEED_FLOAT_OF_BFP(gv->zd_ref));
     } else if (v_mode == GUIDANCE_INDI_HYBRID_V_SPEED) {
@@ -839,7 +839,7 @@ struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight UNUSED, struc
     // overwrite accel X and Y
     accel_sp.x = (gi_speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain + ACCEL_FLOAT_OF_BFP(gh->ref.accel.x);
     accel_sp.y = (gi_speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain + ACCEL_FLOAT_OF_BFP(gh->ref.accel.y);
-    if (v_mode == GUIDANCE_INDI_HYBRID_V_ACCEL) {
+    if (v_mode == GUIDANCE_INDI_HYBRID_V_ACCEL || v_mode == GUIDANCE_INDI_HYBRID_V_ALL) {
       accel_sp.z = (gi_speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz + ACCEL_FLOAT_OF_BFP(gv->zdd_ref); // overwrite accel
     }
     return guidance_indi_run(&accel_sp, gh->sp.heading);
@@ -1001,6 +1001,14 @@ struct ThrustSetpoint guidance_v_run_accel(bool in_flight UNUSED, struct Vertica
 {
   _gv = gv;
   _v_mode = GUIDANCE_INDI_HYBRID_V_ACCEL;
+  return thrust_sp;
+}
+
+struct ThrustSetpoint guidance_v_run_all(bool in_flight UNUSED, struct VerticalGuidance *gv)
+{
+  printf("guidance_v_run_all");
+  _gv = gv;
+  _v_mode = GUIDANCE_INDI_HYBRID_V_ALL;
   return thrust_sp;
 }
 

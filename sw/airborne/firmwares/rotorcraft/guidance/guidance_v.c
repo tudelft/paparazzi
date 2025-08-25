@@ -326,12 +326,8 @@ struct ThrustSetpoint guidance_v_from_nav(bool in_flight)
     guidance_v_run_enter();
     sp = th_sp_from_thrust_i((int32_t)nav.throttle, THRUST_AXIS_Z);
   } else if (nav.vertical_mode == NAV_VERTICAL_MODE_ALL) {
-    guidance_v.z_sp = -POS_BFP_OF_REAL(nav.target.z);
-    guidance_v.zd_sp = -SPEED_BFP_OF_REAL(nav.speed.z);
-    guidance_v.zdd_sp = -ACCEL_BFP_OF_REAL(nav.accel.z);
-    GuidanceVSetRef(guidance_v.z_sp, guidance_v.zd_sp, guidance_v.zdd_sp);
-    guidance_v_run_enter();
-    sp = th_sp_from_thrust_i((int32_t)nav.throttle, THRUST_AXIS_Z);
+    guidance_v_set_all(-nav.target.z, -nav.speed.z, -nav.accel.z); // NED -> ENU
+    sp = guidance_v_guided_run(in_flight);
   } else if (nav.vertical_mode == NAV_VERTICAL_MODE_GUIDED) {
     sp = guidance_v_guided_run(in_flight);
   }
@@ -375,7 +371,7 @@ struct ThrustSetpoint guidance_v_guided_run(bool in_flight)
     case GUIDANCE_V_GUIDED_MODE_ALL:
       // update full reference
       guidance_v_set_ref(guidance_v.z_sp, guidance_v.zd_sp, guidance_v.zdd_sp);
-      sp = guidance_v_run_pos(in_flight, &guidance_v);
+      sp = guidance_v_run_all(in_flight, &guidance_v);
       break;
     default:
       break;
@@ -417,7 +413,7 @@ void guidance_v_set_th(float th)
 
 void guidance_v_set_all(float z, float vz, float az)
 {
-  guidance_v_guided_mode = GUIDANCE_V_GUIDED_MODE_ZHOLD;
+  guidance_v_guided_mode = GUIDANCE_V_GUIDED_MODE_ALL;
   guidance_v.z_sp = POS_BFP_OF_REAL(z);
   guidance_v.zd_sp = SPEED_BFP_OF_REAL(vz);
   guidance_v.zdd_sp = ACCEL_BFP_OF_REAL(az);

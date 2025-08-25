@@ -66,7 +66,8 @@ enum GuidanceIndiHybrid_HMode {
 enum GuidanceIndiHybrid_VMode {
   GUIDANCE_INDI_HYBRID_V_POS,
   GUIDANCE_INDI_HYBRID_V_SPEED,
-  GUIDANCE_INDI_HYBRID_V_ACCEL
+  GUIDANCE_INDI_HYBRID_V_ACCEL,
+  GUIDANCE_INDI_HYBRID_V_ALL
 };
 
 extern struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accep_sp, float heading_sp);
