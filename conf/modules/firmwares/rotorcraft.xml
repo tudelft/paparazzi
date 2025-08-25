@@ -15,12 +15,13 @@
     <configure name="SRC_FIRMWARE" value="firmwares/rotorcraft"/>
     <define name="ROTORCRAFT_FIRMWARE"/>
     <define name="PERIODIC_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
+    <define name="NAVIGATION_FREQUENCY" value="$(NAVIGATION_FREQUENCY)"/>
     <define name="AHRS_PROPAGATE_FREQUENCY" value="$(AHRS_PROPAGATE_FREQUENCY)" cond="ifdef AHRS_PROPAGATE_FREQUENCY"/>
     <define name="AHRS_CORRECT_FREQUENCY" value="$(AHRS_CORRECT_FREQUENCY)" cond="ifdef AHRS_CORRECT_FREQUENCY"/>
     <define name="AHRS_MAG_CORRECT_FREQUENCY" value="$(AHRS_MAG_CORRECT_FREQUENCY)" cond="ifdef AHRS_MAG_CORRECT_FREQUENCY"/>
     <include name="$(SRC_FIRMWARE)"/>
     <file name="main_bare.c" dir="." cond="ifneq ($(RTOS), chibios)"/>
-    <file name="main_chibios.c" dir="." cond="ifeq ($(RTOS), chibios)"/>
+  <file name="main_chibios.c" dir="." cond="ifeq ($(RTOS), chibios)"/>
   </makefile>
   <makefile target="!fbw">
     <file name="main_ap.c" dir="."/>
@@ -29,4 +30,3 @@
     <file name="nps_autopilot_rotorcraft.c" dir="nps"/>
   </makefile>
 </module>
-
