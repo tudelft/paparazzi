@@ -127,6 +127,7 @@ extern struct ThrustSetpoint guidance_v_run(bool in_flight);
 extern struct ThrustSetpoint guidance_v_run_pos(bool in_flight, struct VerticalGuidance *gv);
 extern struct ThrustSetpoint guidance_v_run_speed(bool in_flight, struct VerticalGuidance *gv);
 extern struct ThrustSetpoint guidance_v_run_accel(bool in_flight, struct VerticalGuidance *gv);
+extern struct ThrustSetpoint guidance_v_run_all(bool in_flight, struct VerticalGuidance *gv);
 
 /** Set guidance ref parameters
 */
