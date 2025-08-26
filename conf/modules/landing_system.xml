@@ -1,0 +1,23 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="landing_system" dir="ag_uav">
+  <doc>
+    <description>AG landing system interface</description>
+  </doc>
+  <header>
+    <file name="landing_system.h"/>
+  </header>
+
+  <init fun="landing_system_init()"/>
+  <periodic fun="landing_system_periodic()"/>
+
+  <datalink class="intermcu" message="IMCU_LANDING_ALGORITHM_OUTPUT" fun="receive_landing_algorithm_outputs(buf)"/>
+
+  <!-- Receive ship box data directly for testing -->
+  <datalink message="SHIP_INFO_MSG" fun="landing_system_parse_ship_info_msg(buf)"/>
+  <datalink message="SHIP_PREDICTION_MSG" fun="landing_system_parse_ship_prediction_msg(buf)"/>
+
+  <makefile>
+    <file name="landing_system.c"/>
+    <test/>
+  </makefile>
+</module>
