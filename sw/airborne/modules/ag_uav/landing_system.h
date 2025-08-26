@@ -43,7 +43,7 @@ extern void landing_system_parse_ship_info_msg(uint8_t *buf);
 
 extern void landing_system_parse_ship_prediction_msg(uint8_t *buf);
 
-extern bool nav_landing_system_run(void);
+// extern bool nav_landing_system_run(void);
 
 void send_landing_algorithm_params(void);
 void request_landing_algorithm_outputs(void);

@@ -54,6 +54,11 @@ int track_aruco_id = 16;
 #define REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO FALSE
 #endif
 
+#ifndef REMOTE_SENSING_UPDATE_MOVING_BASE
+#warning "Using default of disabled for REMOTE_SENSING_UPDATE_MOVING_BASE"
+#define REMOTE_SENSING_UPDATE_MOVING_BASE FALSE
+#endif
+
 #ifndef REMOTE_SENSING_KALMAN_MAX_REPEATED_FAILURE_CNT
 #define REMOTE_SENSING_KALMAN_MAX_REPEATED_FAILURE_CNT 5
 #endif
@@ -467,9 +472,12 @@ void remote_sensing_AM_periodic(void) {
   VECT3_ADD(pos, *stateGetPositionNed_f());
   VECT3_ADD(speed, *stateGetSpeedNed_f());
   
+  // Only update the nav_moving_base when feature is enabled (it'll fight with other systems otherwise)
+#if REMOTE_SENSING_UPDATE_MOVING_BASE
   nav_moving_base_set_pos(&(struct EnuCoor_f){pos.y, pos.x, -pos.z});
   nav_moving_base_set_speed(&(struct EnuCoor_f){speed.y, speed.x, -speed.z});
   nav_moving_base_set_accel(&(struct EnuCoor_f){0.0f, 0.0f, 0.0f});
+#endif
 
   return;
 }
