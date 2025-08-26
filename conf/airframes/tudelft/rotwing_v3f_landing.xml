@@ -67,13 +67,18 @@
 
             <define name="PREFLIGHT_CHECK_BYPASS" value="TRUE"/>
             <define name="USE_SONAR"              value="1"/> <!-- Because uavcan can't handle simulation yet -->
+            
+            <module name="udp" />
+            <module name="extra_dl">
+                <configure name="EXTRA_DL_PORT" value="UDP1"/>
+            </module>
         </target>
 
         <!-- Herelink datalink -->
         <module name="telemetry" type="transparent">
-            <configure name="MODEM_BAUD" value="B460800"/>
+            <!-- <configure name="MODEM_BAUD" value="B460800"/> -->
             <!-- <configure name="MODEM_BAUD" value="B115200"/> -->
-            <!-- <configure name="MODEM_PORT" value="usb_serial"/> -->
+            <configure name="MODEM_PORT" value="usb_serial"/> 
         </module>
 
         <!-- Sensors -->
@@ -162,6 +167,7 @@
         <module name="pfc_actuators"/>
         <module name="airspeed_consistency"/>
         <module name="agl_dist"/>
+        <module name="landing_system"/>
         <!-- <module name="approach_moving_target"/> -->
     </firmware>
 

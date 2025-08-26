@@ -175,6 +175,11 @@
         <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_LANDING, WP_KALMAN)"/>
         <call fun="nav_moving_base_run()"/>
     </block>
+    
+    <block name="AG_LAND" strip_button="Land AG">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <call fun="nav_landing_system_run()"/>
+    </block>
     <!-- <block name="Approach APP">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
