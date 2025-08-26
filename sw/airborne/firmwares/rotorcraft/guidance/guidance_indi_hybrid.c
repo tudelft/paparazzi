@@ -1006,7 +1006,6 @@ struct ThrustSetpoint guidance_v_run_accel(bool in_flight UNUSED, struct Vertica
 
 struct ThrustSetpoint guidance_v_run_all(bool in_flight UNUSED, struct VerticalGuidance *gv)
 {
-  printf("guidance_v_run_all");
   _gv = gv;
   _v_mode = GUIDANCE_INDI_HYBRID_V_ALL;
   return thrust_sp;
