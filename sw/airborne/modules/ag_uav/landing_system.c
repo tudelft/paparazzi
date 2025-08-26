@@ -18,6 +18,7 @@
 #include "firmwares/rotorcraft/navigation.h"
 #include "generated/flight_plan.h"
 #include "pprzlink/intermcu_msg.h"
+#include "modules/nav/nav_moving_base.h"
 
 
 /* Initialize the landing algorithm outputs struct*/
@@ -72,6 +73,14 @@ void receive_landing_algorithm_outputs(uint8_t *buf)
   }
 
   landing_algorithm_outputs.last_received_stamp = get_sys_time_usec();
+
+  nav_moving_base_set_pos(stateGetPositionEnu_f());
+  nav_moving_base_set_speed(stateGetSpeedEnu_f());
+  struct NedCoor_f accel_sp = {landing_algorithm_outputs.UAV_acc_target_NED[0], landing_algorithm_outputs.UAV_acc_target_NED[1], landing_algorithm_outputs.UAV_acc_target_NED[2]};
+    struct EnuCoor_f accel_sp_enu;
+    VECT3_ENU_OF_NED(accel_sp_enu, accel_sp);
+    nav_moving_base_set_accel(&accel_sp_enu);
+    printf("Setting acceleration, ENU target: %f, %f, %f\n", accel_sp_enu.x, accel_sp_enu.y, accel_sp_enu.z);
 
   // Send the current state of the landing system module
   #if LANDING_SYSTEM_LOG_ON_ARRIVAL && !USE_NPS
@@ -227,40 +236,40 @@ void landing_system_parse_ship_prediction_msg(uint8_t *buf)
   memcpy(ship_coefficients + 16, prediction_z + 2, 8 * sizeof(float)); // Copy the coefficients for the z-axis
 }
 
-bool nav_landing_system_run(void) {
-  if ((get_sys_time_usec() - landing_algorithm_outputs.last_received_stamp) < USEC_OF_SEC(0.5)) {
-    nav.horizontal_mode = NAV_HORIZONTAL_MODE_WAYPOINT;
-    nav.vertical_mode = NAV_VERTICAL_MODE_ALL;//NAV_VERTICAL_MODE_GUIDED;
-    nav.setpoint_mode = NAV_SETPOINT_MODE_ALL;
-    nav.climb = -1.f;
-    // NOTE: setting mode to all takes care of vertical as well (NOPE)
-    // nav.vertical_mode = NAV_VERTICAL_MODE_GUIDED;
+// bool nav_landing_system_run(void) {
+//   if ((get_sys_time_usec() - landing_algorithm_outputs.last_received_stamp) < USEC_OF_SEC(0.5)) {
+//     nav.horizontal_mode = NAV_HORIZONTAL_MODE_WAYPOINT;
+//     nav.vertical_mode = NAV_VERTICAL_MODE_ALL;//NAV_VERTICAL_MODE_GUIDED;
+//     nav.setpoint_mode = NAV_SETPOINT_MODE_ALL;
+//     nav.climb = -1.f;
+//     // NOTE: setting mode to all takes care of vertical as well (NOPE)
+//     // nav.vertical_mode = NAV_VERTICAL_MODE_GUIDED;
     
-    // struct NedCoor_f accel_sp = {0.f, 0.f, 2.f};
-    struct NedCoor_f accel_sp = {landing_algorithm_outputs.UAV_acc_target_NED[0], landing_algorithm_outputs.UAV_acc_target_NED[1], landing_algorithm_outputs.UAV_acc_target_NED[2]};
+//     // struct NedCoor_f accel_sp = {0.f, 0.f, 2.f};
+//     struct NedCoor_f accel_sp = {landing_algorithm_outputs.UAV_acc_target_NED[0], landing_algorithm_outputs.UAV_acc_target_NED[1], landing_algorithm_outputs.UAV_acc_target_NED[2]};
     
-    // printf("[landing system] Setting acceleration setpoint to: [%f, %f, %f]\n", accel_sp.x, accel_sp.y, accel_sp.z);
-    VECT3_ENU_OF_NED(nav.accel, accel_sp); // Convert from NED to ENU frame (why is it ENU?!FJDKLSJFDSJ:)
+//     // printf("[landing system] Setting acceleration setpoint to: [%f, %f, %f]\n", accel_sp.x, accel_sp.y, accel_sp.z);
+//     VECT3_ENU_OF_NED(nav.accel, accel_sp); // Convert from NED to ENU frame (why is it ENU?!FJDKLSJFDSJ:)
 
-    // We want to track an acceleration setpoint, so only the FF terms. Set the position/velocity setpoints to the current state to have 0 error contributions from those terms.
-    struct EnuCoor_f pos_sp = *stateGetPositionEnu_f();
-    // pos_sp.z = pos_sp.z - 1.f;
-    struct EnuCoor_f vel_sp = *stateGetSpeedEnu_f();
-    // vel_sp.z -= 1.f;
-    VECT3_COPY(nav.speed, vel_sp);
-    VECT3_COPY(nav.target, pos_sp);
-    nav.heading = M_PI/2; // 90 degree heading -> towards east; TODO: don't hard-code!
+//     // We want to track an acceleration setpoint, so only the FF terms. Set the position/velocity setpoints to the current state to have 0 error contributions from those terms.
+//     struct EnuCoor_f pos_sp = *stateGetPositionEnu_f();
+//     // pos_sp.z = pos_sp.z - 1.f;
+//     struct EnuCoor_f vel_sp = *stateGetSpeedEnu_f();
+//     // vel_sp.z -= 1.f;
+//     VECT3_COPY(nav.speed, vel_sp);
+//     VECT3_COPY(nav.target, pos_sp);
+//     nav.heading = M_PI/2; // 90 degree heading -> towards east; TODO: don't hard-code!
 
-    // Heading
-    // NOTE: heading does not seem to be controlled by setpoint for hybrids (see "take_heading_control")
-    // nav.heading = landing_algorithm_outputs.UAV_desired_phi_theta_rad[0]; // Use the desired yaw angle as heading; TODO: abusing psi, probably shouldn't
-    // printf()
+//     // Heading
+//     // NOTE: heading does not seem to be controlled by setpoint for hybrids (see "take_heading_control")
+//     // nav.heading = landing_algorithm_outputs.UAV_desired_phi_theta_rad[0]; // Use the desired yaw angle as heading; TODO: abusing psi, probably shouldn't
+//     // printf()
 
-    return true; // Not complete yet
-  } else {
-    printf("[landing system] No landing algorithm outputs received in the last 0.5 seconds, disengaging.\n");
-    return false; // Disengage
-  }
+//     return true; // Not complete yet
+//   } else {
+//     printf("[landing system] No landing algorithm outputs received in the last 0.5 seconds, disengaging.\n");
+//     return false; // Disengage
+//   }
 
   
-}
+// }
