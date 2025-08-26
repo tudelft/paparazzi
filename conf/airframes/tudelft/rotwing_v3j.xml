@@ -74,6 +74,9 @@
         <module name="telemetry" type="transparent">
             <configure name="MODEM_BAUD" value="B460800"/>
         </module>
+        
+        <configure name="NAVIGATION_FREQUENCY" value="100" />
+        <module name="landing_system"/>
 
         <!-- Sensors -->
         <module name="mag" type="rm3100">
@@ -260,7 +263,7 @@
     </section>
 
     <section name="MISC">
-        <define name="INS_EKF2_FUSION_MODE"  value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/>
+        <!--<define name="INS_EKF2_FUSION_MODE"  value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/>-->
 
         <!-- AGL distance -->
         <define name="AGL_DIST_MIN_DISTANCE_CHECK"          value="0.18"/>
