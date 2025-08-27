@@ -18,7 +18,7 @@
 #include "firmwares/rotorcraft/navigation.h"
 #include "generated/flight_plan.h"
 #include "pprzlink/intermcu_msg.h"
-#include "modules/nav/nav_moving_base.h"
+#include "modules/core/abi.h"
 
 
 /* Initialize the landing algorithm outputs struct*/
@@ -74,12 +74,10 @@ void receive_landing_algorithm_outputs(uint8_t *buf)
 
   landing_algorithm_outputs.last_received_stamp = get_sys_time_usec();
 
-  nav_moving_base_set_pos(stateGetPositionEnu_f());
-  nav_moving_base_set_speed(stateGetSpeedEnu_f());
   struct NedCoor_f accel_sp = {landing_algorithm_outputs.UAV_acc_target_NED[0], landing_algorithm_outputs.UAV_acc_target_NED[1], landing_algorithm_outputs.UAV_acc_target_NED[2]};
     struct EnuCoor_f accel_sp_enu;
     VECT3_ENU_OF_NED(accel_sp_enu, accel_sp);
-    nav_moving_base_set_accel(&accel_sp_enu);
+    AbiSendMsgMOVING_BASE(LANDING_ALGORITHM_ID, stateGetPositionEnu_f(), stateGetSpeedEnu_f(), &accel_sp_enu);
     printf("Setting acceleration, ENU target: %f, %f, %f\n", accel_sp_enu.x, accel_sp_enu.y, accel_sp_enu.z);
 
   // Send the current state of the landing system module
