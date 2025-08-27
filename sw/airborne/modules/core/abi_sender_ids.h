@@ -680,5 +680,16 @@
 #define LIDAR_DATA_VL53L5CX_ID 1
 #endif
 
+/*
+ * IDs of moving base target position senders
+ */
+
+#ifndef REMOTE_SENSING_ID
+#define REMOTE_SENSING_ID 1
+#endif
+
+#ifndef LANDING_ALGORITHM_ID
+#define LANDING_ALGORITHM_ID 2
+#endif
 
 #endif /* ABI_SENDER_IDS_H */

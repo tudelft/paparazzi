@@ -50,6 +50,7 @@ struct NavMovingBase {
   struct FloatVect3 pos_gain; ///< position gain for position control
   struct FloatVect3 speed_gain; ///< speed gain for speed control
   uint8_t active_wp;
+  uint8_t active_sender;
 };
 
 extern struct NavMovingBase nav_moving_base;
@@ -58,9 +59,8 @@ extern void nav_moving_base_init(void);
 extern void nav_moving_base_periodic(void);
 extern void nav_moving_base_setup(enum NavMovingBaseMode mode, uint8_t wp_index);
 extern bool nav_moving_base_run(void);
-void nav_moving_base_set_pos(struct EnuCoor_f *pos);
-void nav_moving_base_set_speed(struct EnuCoor_f *speed);
-void nav_moving_base_set_accel(struct EnuCoor_f *accel);
+extern void nav_moving_base_set_active_sender(uint8_t sender_id);
+extern void enforce_horizontal_bounds(struct EnuCoor_f* quantity, struct FloatVect2* bounds);
 void nav_moving_base_set_max_accel_h(struct FloatVect2 longitudinal, struct FloatVect2 lateral);
 void nav_moving_base_set_max_speed_h(struct FloatVect2 longitudinal, struct FloatVect2 lateral);
 

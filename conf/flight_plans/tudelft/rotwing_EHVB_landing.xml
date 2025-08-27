@@ -151,26 +151,31 @@
         <stay wp="STDBY"/>
     </block>
     <block name="stay_ARUCO" strip_button="Stay ARUCO">
+        <call_once fun="nav_moving_base_set_active_sender(REMOTE_SENSING_ID)"/>
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING, WP_ARUCO)"/>
         <call fun="nav_moving_base_run()"/>
     </block>
     <block name="stay_KALMAN" strip_button="Stay KALMAN">
+        <call_once fun="nav_moving_base_set_active_sender(REMOTE_SENSING_ID)"/>
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING, WP_KALMAN)"/>
         <call fun="nav_moving_base_run()"/>
     </block>
     <block name="stay_KALMAN_no_FF" strip_button="Stay KALMAN no ff">
+        <call_once fun="nav_moving_base_set_active_sender(REMOTE_SENSING_ID)"/>
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING_NO_FF, WP_KALMAN)"/>
         <call fun="nav_moving_base_run()"/>
     </block>
     <block name="descend_KALMAN" strip_button="Descend KALMAN">
+        <call_once fun="nav_moving_base_set_active_sender(REMOTE_SENSING_ID)"/>
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_DESCEND, WP_KALMAN)"/>
         <call fun="nav_moving_base_run()"/>
     </block>
     <block name="land_KALMAN" strip_button="Land Kalman">
+        <call_once fun="nav_moving_base_set_active_sender(LANDING_ALGORITHM_ID)"/>
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_LANDING, WP_KALMAN)"/>
         <call fun="nav_moving_base_run()"/>
