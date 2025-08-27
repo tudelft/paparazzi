@@ -149,7 +149,8 @@ void nav_moving_base_init(void) {
 
   nav_moving_base.stay = false;
 
-  AbiBindMsgMOVING_BASE(ABI_MOVING_BASE_ID, &nav_moving_base_ev, nav_moving_base_cb);
+  // Bind to broadcast, filtering based on sender ID is done by the callback itself
+  AbiBindMsgMOVING_BASE(ABI_BROADCAST, &nav_moving_base_ev, nav_moving_base_cb);
 }
 
 void nav_moving_base_setup(enum NavMovingBaseMode mode, uint8_t wp_index) {
