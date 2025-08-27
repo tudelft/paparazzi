@@ -59,7 +59,7 @@ let get_indexed_value = fun ?(text="UNK") t i ->
 let aircrafts = Hashtbl.create 3
 
 (** Broadcast of the received aircrafts *)
-let aircraft_msg_period = 500 (* ms *)
+let aircraft_msg_period = 50 (* ms *)
 let wind_msg_period = 5000 (* ms *)
 let aircraft_alerts_period = 1000 (* ms *)
 let send_aircrafts_msg = fun _asker _values ->
