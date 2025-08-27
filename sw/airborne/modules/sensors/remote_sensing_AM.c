@@ -27,7 +27,7 @@
 #include "pprzlink/intermcu_msg.h"
 #include "generated/airframe.h"
 #include "generated/flight_plan.h"
-#include "modules/nav/nav_moving_base.h"
+#include "modules/core/abi.h"
 #include <stdio.h>
 
 int track_aruco_id = 16;
@@ -471,13 +471,7 @@ void remote_sensing_AM_periodic(void) {
   // Send absolute positions and speed in ENU frame to navigation
   VECT3_ADD(pos, *stateGetPositionNed_f());
   VECT3_ADD(speed, *stateGetSpeedNed_f());
-  
-  // Only update the nav_moving_base when feature is enabled (it'll fight with other systems otherwise)
-#if REMOTE_SENSING_UPDATE_MOVING_BASE
-  nav_moving_base_set_pos(&(struct EnuCoor_f){pos.y, pos.x, -pos.z});
-  nav_moving_base_set_speed(&(struct EnuCoor_f){speed.y, speed.x, -speed.z});
-  nav_moving_base_set_accel(&(struct EnuCoor_f){0.0f, 0.0f, 0.0f});
-#endif
+  AbiSendMsgMOVING_BASE(REMOTE_SENSING_ID, &(struct EnuCoor_f) {pos.y, pos.x, -pos.z}, &(struct EnuCoor_f) {speed.y, speed.x, -speed.z}, NULL);
 
   return;
 }

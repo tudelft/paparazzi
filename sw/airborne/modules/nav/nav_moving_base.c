@@ -29,6 +29,7 @@
 #include "generated/airframe.h"
 #include "modules/nav/waypoints.h"
 #include "modules/datalink/downlink.h"
+#include "modules/core/abi.h"
 
 #ifndef NAV_MOVING_BASE_OVERWRITE_POS_GAIN
 #define NAV_MOVING_BASE_OVERWRITE_POS_GAIN FALSE
@@ -81,6 +82,8 @@
 #endif
 
 struct NavMovingBase nav_moving_base;
+abi_event nav_moving_base_ev;
+static void nav_moving_base_cb(uint8_t sender_id, struct EnuCoor_f *pos, struct EnuCoor_f *speed, struct EnuCoor_f *accel);
 
 #if defined(GUIDANCE_INDI_POS_GAIN) && !NAV_MOVING_BASE_OVERWRITE_POS_GAIN
 float pos_gain_h = GUIDANCE_INDI_POS_GAIN; // x 0.5, y 0.65
@@ -123,7 +126,6 @@ PRINT_CONFIG_VAR(NAV_MOVING_BASE_DESCEND_SPEED);
 static bool nav_moving_base_track(void);
 static bool nav_moving_base_descend(void);
 static bool nav_moving_base_land(void);
-static void enforce_horizontal_bounds(struct EnuCoor_f* quantity, struct FloatVect2* bounds);
 
 void nav_moving_base_init(void) {
   struct FloatVect2 max_h_accel[2] = NAV_MOVING_BASE_MAX_H_ACCEL;
@@ -146,6 +148,8 @@ void nav_moving_base_init(void) {
   nav_moving_base.speed_gain = (struct FloatVect3) {speed_gain_h, speed_gain_h, speed_gain_v};
 
   nav_moving_base.stay = false;
+
+  AbiBindMsgMOVING_BASE(ABI_MOVING_BASE_ID, &nav_moving_base_ev, nav_moving_base_cb);
 }
 
 void nav_moving_base_setup(enum NavMovingBaseMode mode, uint8_t wp_index) {
@@ -265,7 +269,7 @@ void nav_moving_base_periodic(void) {
   );
 }
 
-static void enforce_horizontal_bounds(struct EnuCoor_f* quantity, struct FloatVect2* bounds) {
+void enforce_horizontal_bounds(struct EnuCoor_f* quantity, struct FloatVect2* bounds) {
   // Quantity (Velocity or Accel) is in ENU frame, but should be bounded in control frame
   struct FloatVect2 quantity_control_rf;
   struct FloatEulers eulers_zxy = *stateGetNedToBodyEulers_f();
@@ -285,19 +289,6 @@ static void enforce_horizontal_bounds(struct EnuCoor_f* quantity, struct FloatVe
   quantity->y = -quantity_control_rf.y * sin_psi + quantity_control_rf.x * cos_psi;
 }
 
-void nav_moving_base_set_pos(struct EnuCoor_f *pos) {
-  VECT3_COPY(nav_moving_base.pos, *pos);
-  waypoint_set_enu(nav_moving_base.active_wp, &nav_moving_base.pos);
-}
-
-void nav_moving_base_set_speed(struct EnuCoor_f *speed) {
-  VECT3_COPY(nav_moving_base.speed, *speed);
-}
-
-void nav_moving_base_set_accel(struct EnuCoor_f *accel) {
-  VECT3_COPY(nav_moving_base.accel, *accel);
-}
-
 void nav_moving_base_set_max_accel_h(struct FloatVect2 longitudinal, struct FloatVect2 lateral) {
   VECT2_COPY(nav_moving_base.max_accel_h[0], longitudinal);
   VECT2_COPY(nav_moving_base.max_accel_h[1], lateral);
@@ -306,4 +297,29 @@ void nav_moving_base_set_max_accel_h(struct FloatVect2 longitudinal, struct Floa
 void nav_moving_base_set_max_speed_h(struct FloatVect2 longitudinal, struct FloatVect2 lateral) {
   VECT2_COPY(nav_moving_base.max_speed_h[0], longitudinal);
   VECT2_COPY(nav_moving_base.max_speed_h[1], lateral);
+}
+
+static void nav_moving_base_cb(uint8_t sender_id, struct EnuCoor_f *pos, struct EnuCoor_f *speed, struct EnuCoor_f *accel) {
+  if (sender_id != nav_moving_base.active_sender) {
+    return;
+  }
+
+
+  // FIXME else what?
+  if (pos != NULL) {
+    VECT3_COPY(nav_moving_base.pos, *pos);
+    waypoint_set_enu(nav_moving_base.active_wp, &nav_moving_base.pos);
+  }
+
+  if (speed != NULL) {
+    VECT3_COPY(nav_moving_base.speed, *speed);
+  }
+
+  if (accel != NULL) {
+    VECT3_COPY(nav_moving_base.accel, *accel);
+  }
+}
+
+void nav_moving_base_set_active_sender(uint8_t sender_id) {
+  nav_moving_base.active_sender = sender_id;
 }
