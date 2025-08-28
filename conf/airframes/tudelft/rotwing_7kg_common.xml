@@ -129,18 +129,18 @@
 
     <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
 
-        <!-- G1 and G2 7 kg-->
+        <!-- G1 and G2 7 kg                    M_F,   M_R      M_B    M_L   PUSH, ELE, RUD, AIL  FLAP -->           
         <define name="G1_ROLL"      value="{   0.0,  -15.0,    0.0,   15.0, 0.0, 0.0, 0.0, 0.0,  0.0}"/>
         <define name="G1_PITCH"     value="{   1.5,    0.0,   -1.5,    0.0, 0.0, 0.0, 0.0, 0.0,  0.0}"/>
         <define name="G1_YAW"       value="{  -0.3,    0.3,   -0.3,    0.3, 0.0, 0.0, 0.0, 0.0,  0.0}"/>
         <define name="G1_THRUST"    value="{-0.575, -0.575, -0.575, -0.575, 0.0, 0.0, 0.0, 0.0,  0.0}"/>
-        <define name="G1_THRUST_X"  value="{   0.0,    0.0,    0.0,    0.0, 0.0, 0.0, 0.0, 0.0, 0.55}"/>
+        <define name="G1_THRUST_X"  value="{   0.0,    0.0,    0.0,    0.0, 0.55, 0.0, 0.0, 0.0, 0.0}"/>
         <define name="G2"           value="{   0.0,    0.0,    0.0,    0.0, 0.0, 0.0, 0.0, 0.0,  0.0}"/>
 
         <!-- Actuator dynamics -->
-        <define name="ACT_FREQ"             value="{22.0, 22.0, 22.0, 22.0, 52.7, 52.7, 52.7, 52.7, 30.0}"/>
-        <define name="ACT_IS_SERVO"         value="{   0,    0,    0,    0,    1,    1,    1,    1,    0}"/>
-        <define name="ACT_IS_THRUSTER_X"    value="{   0,    0,    0,    0,    0,    0,    0,    0,    1}"/>
+        <define name="ACT_FREQ"             value="{22.0, 22.0, 22.0, 22.0, 30.0, 52.7, 52.7, 52.7, 52.7}"/>
+        <define name="ACT_IS_SERVO"         value="{   0,    0,    0,    0,    0,    1,    1,    1,    1}"/>
+        <define name="ACT_IS_THRUSTER_X"    value="{   0,    0,    0,    0,    1,    0,    0,    0,    0}"/>
         <define name="USE_COMMANDS"         value="TRUE"/>
 
         <!-- Rate INDI -->
@@ -161,8 +161,8 @@
         <define name="FILT_CUTOFF_P"                    value="5.0"/>
         <define name="FILT_CUTOFF_Q"                    value="20.0"/>
         <define name="FILT_CUTOFF_R"                    value="5.0"/>
-        <define name="FILT_CUTOFF"                      value="2.0"/>
-        <define name="ESTIMATION_FILT_CUTOFF"           value="2.0"/>
+        <define name="FILT_CUTOFF"                      value="2.5"/>
+        <define name="ESTIMATION_FILT_CUTOFF"           value="2.5"/>
         <define name="FILTER_YAW_RATE"                  value="TRUE"/>
         <define name="FILT_CUTOFF_RDOT"                 value="0.5"/>
 
