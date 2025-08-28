@@ -44,6 +44,16 @@
 float guidance_indi_thrust_z_eff = GUIDANCE_INDI_THRUST_Z_EFF;
 #endif
 
+#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
+#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
+#endif
+
+#ifndef GUIDANCE_INDI_ROLL_EFF_SCALING
+#define GUIDANCE_INDI_ROLL_EFF_SCALING 1.0
+#endif
+
+float gi_pitch_scaling = GUIDANCE_INDI_PITCH_EFF_SCALING;
+float gi_roll_scaling = GUIDANCE_INDI_ROLL_EFF_SCALING;
 float bodyz_filter_cutoff = 0.2;
 
 Butterworth2LowPass accel_bodyz_filt;
@@ -90,23 +100,19 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
   float spsi = sinf(eulers_zxy.psi);
   float cpsi = cosf(eulers_zxy.psi);
 
-#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
-#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
-#endif
-
   /*Amount of lift produced by the wing*/
   float lift_thrust_bz = accel_bodyz_filt.o[0]; // Sum of lift and thrust in boxy z axis (level flight)
 
   // get the derivative of the lift wrt to theta
   float liftd = guidance_indi_get_liftd(0.0f, 0.0f);
 
-  Gmat[0][0] = -sphi*stheta*lift_thrust_bz;
-  Gmat[1][0] = -cphi*lift_thrust_bz;
-  Gmat[2][0] = -sphi*ctheta*lift_thrust_bz;
+  Gmat[0][0] = -sphi*stheta*lift_thrust_bz*gi_roll_scaling;
+  Gmat[1][0] = -cphi*lift_thrust_bz*gi_roll_scaling;
+  Gmat[2][0] = -sphi*ctheta*lift_thrust_bz*gi_roll_scaling;
 
-  Gmat[0][1] =  cphi*ctheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING;
-  Gmat[1][1] =  sphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*liftd;
-  Gmat[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+  Gmat[0][1] =  cphi*ctheta*lift_thrust_bz*gi_pitch_scaling;
+  Gmat[1][1] =  sphi*stheta*lift_thrust_bz*gi_pitch_scaling - sphi*liftd;
+  Gmat[2][1] = -cphi*stheta*lift_thrust_bz*gi_pitch_scaling + cphi*liftd;
 
   Gmat[0][2] =  cphi*stheta;
   Gmat[1][2] = -sphi;
