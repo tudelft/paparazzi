@@ -142,12 +142,12 @@
         <define name="MAX_R"                        value="30.0" unit="deg/s"/>
 
         <!-- Filters -->
-        <define name="FILTER_RATES_SECOND_ORDER"        value="TRUE"/>
-        <define name="FILT_CUTOFF_P"                    value="5.0"/>
+        <define name="FILTER_RATES_SECOND_ORDER"        value="FALSE"/>
+        <define name="FILT_CUTOFF_P"                    value="20.0"/>
         <define name="FILT_CUTOFF_Q"                    value="20.0"/>
-        <define name="FILT_CUTOFF_R"                    value="5.0"/>
-        <define name="FILT_CUTOFF"                      value="2.0"/>
-        <define name="ESTIMATION_FILT_CUTOFF"           value="2.0"/>
+        <define name="FILT_CUTOFF_R"                    value="20.0"/>
+        <define name="FILT_CUTOFF"                      value="3.0"/>
+        <define name="ESTIMATION_FILT_CUTOFF"           value="3.0"/>
         <define name="FILTER_YAW_RATE"                  value="TRUE"/>
         <define name="FILT_CUTOFF_RDOT"                 value="0.5"/>
 
@@ -215,7 +215,7 @@
         <define name="SPEED_GAINZ"          value="0.6"/>
 
         <!-- Other -->
-        <define name="FILTER_CUTOFF"        value="2.5"/>
+        <define name="FILTER_CUTOFF"        value="3.0"/>
         <define name="HEADING_BANK_GAIN"    value="5."/>
         <define name="MAX_AIRSPEED"         value="19.0"/>
         <define name="PITCH_LIFT_EFF"       value="0.0"/>
@@ -280,6 +280,8 @@
         <define name="GPS_POS_X" value="-0.55"/>
         <define name="GPS_POS_Y" value="0.0"/>
         <define name="GPS_POS_Z" value="0.0"/>
+
+        <!-- <define name="OPTITRACK" value="true"/> -->
     </section>
 
     <!--Airspeed estimation using EKF-->
