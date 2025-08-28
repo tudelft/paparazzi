@@ -106,6 +106,7 @@ extern float guidance_indi_specific_force_gain;
 extern bool take_heading_control;
 extern float guidance_indi_max_bank;
 extern float guidance_indi_min_pitch;
+extern float guidance_indi_max_pitch;
 extern bool force_forward;       ///< forward flight for hybrid nav
 extern bool guidance_indi_airspeed_filtering;
 extern bool coordinated_turn_use_accel;
