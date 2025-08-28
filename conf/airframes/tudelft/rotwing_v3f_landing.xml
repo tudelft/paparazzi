@@ -12,6 +12,7 @@
     <firmware name="rotorcraft">
         <target name="ap" board="cube_orangeplus">
             <configure name="PERIODIC_FREQUENCY" value="500"/> <!-- Configure the main periodic frequency to 500Hz -->
+            <configure name="NAVIGATION_FREQUENCY" value="100"/>
 
             <module name="radio_control" type="ppm"/>
             <module name="sys_mon"/>
@@ -54,6 +55,7 @@
         </target>
 
         <target name="nps" board="pc">
+            <configure name="NAVIGATION_FREQUENCY" value="100"/>
             <module name="radio_control" type="datalink"/>
             <module name="fdm" type="jsbsim"/>
 
@@ -102,7 +104,7 @@
         <module name="air_data"/>
 
         <module name="remote_sensing_AM">
-            <define name="TARGET_POS_KALMAN_DEBUG" value="TRUE"/>
+            <define name="TARGET_POS_KALMAN_DEBUG" value="FALSE"/>
             <define name="TARGET_POS_KALMAN_USE_ACCEL" value="FALSE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_GROUND_STATION" value="TRUE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF" value="TRUE"/>
@@ -110,8 +112,8 @@
             <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELBEACON" value="TRUE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO" value="TRUE"/>
             <define name="REMOTE_SENSING_LOG_ON_ARRIVAL" value="TRUE"/>
-            <define name="REMOTE_SENSING_KALMAN_P0" value="{1000,1000,1000,1000,1000,1000}"/>
-            <define name="REMOTE_SENSING_KALMAN_Q0" value="{10,10,10,10,10,10}"/>
+            <define name="REMOTE_SENSING_KALMAN_P0" value="{10,10,10,10,10,10}"/>
+            <define name="REMOTE_SENSING_KALMAN_Q0" value="{100000,100000,100000,100000,100000,100000}"/>
         </module>
 
         <configure name="PRIMARY_GPS" value="ublox"/>
@@ -243,8 +245,8 @@
         <set VALUE="pfc_actuators_value(6, rotwing_state.skew_cmd)"  SERVO="ROTATION_MECH"/>
         <set VALUE="$ail_limit_hit? pfc_actuators_value(2, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])" SERVO="AIL_LEFT"/>
         <set VALUE="$ail_limit_hit? pfc_actuators_value(5, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])" SERVO="AIL_RIGHT"/>
-        <set VALUE="$flap_limit_hit? pfc_actuators_value(3, 0) : ($servo_hold? (RadioControlValues(RADIO_ROLL) - rw_flap_offset) : (actuators_pprz[7] - rw_flap_offset))" SERVO="FLAP_LEFT"/>
-        <set VALUE="$flap_limit_hit? pfc_actuators_value(4, 0) : ($servo_hold? (RadioControlValues(RADIO_ROLL) + rw_flap_offset) : (actuators_pprz[7] + rw_flap_offset))" SERVO="FLAP_RIGHT"/>
+        <set VALUE="$flap_limit_hit? pfc_actuators_value(3, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])" SERVO="FLAP_LEFT"/>
+        <set VALUE="$flap_limit_hit? pfc_actuators_value(4, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])" SERVO="FLAP_RIGHT"/>
 
         <!-- Backup commands -->
         <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(7, -9600)) : actuators_pprz[0])" SERVO="BMOTOR_FRONT"/>
@@ -328,21 +330,21 @@
             </field>
             <!-- Maximum lateral speed -->
             <field type="struct">
-                <field name="x" value="5.0"/>
-                <field name="y" value="-5.0"/>
+                <field name="x" value="8.0"/>
+                <field name="y" value="-8.0"/>
             </field>
         </define>
 
         <define name="MAX_H_ACCEL" type="array">
             <!-- Maximum longitudinal acceleration -->
             <field type="struct">
-                <field name="x" value="3.0"/>
-                <field name="y" value="-1.0"/>
+                <field name="x" value="25.0"/>
+                <field name="y" value="-20.0"/>
             </field>
             <!-- Maximum lateral acceleration -->
             <field type="struct">
-                <field name="x" value="1.0"/>
-                <field name="y" value="-1.0"/>
+                <field name="x" value="20.0"/>
+                <field name="y" value="-20.0"/>
             </field>
         </define>
 

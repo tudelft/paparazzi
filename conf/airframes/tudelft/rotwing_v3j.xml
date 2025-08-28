@@ -12,6 +12,7 @@
     <firmware name="rotorcraft">
         <target name="ap" board="cube_orangeplus">
             <configure name="PERIODIC_FREQUENCY" value="500"/> <!-- Configure the main periodic frequency to 500Hz -->
+            <configure name="NAVIGATION_FREQUENCY" value="100"/>
 
             <module name="radio_control" type="ppm"/>
             <module name="sys_mon"/>
@@ -56,6 +57,7 @@
         </target>
 
         <target name="nps" board="pc">
+            <configure name="NAVIGATION_FREQUENCY" value="100"/>
             <module name="radio_control" type="datalink"/>
             <module name="fdm" type="jsbsim"/>
 
@@ -105,7 +107,7 @@
         <module name="air_data"/>
 
         <module name="remote_sensing_AM">
-            <define name="TARGET_POS_KALMAN_DEBUG" value="TRUE"/>
+            <define name="TARGET_POS_KALMAN_DEBUG" value="FALSE"/>
             <define name="TARGET_POS_KALMAN_USE_ACCEL" value="FALSE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_GROUND_STATION" value="TRUE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF" value="TRUE"/>
@@ -113,8 +115,8 @@
             <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELBEACON" value="TRUE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO" value="TRUE"/>
             <define name="REMOTE_SENSING_LOG_ON_ARRIVAL" value="TRUE"/>
-            <define name="REMOTE_SENSING_KALMAN_P0" value="{1000,1000,1000,1000,1000,1000}"/>
-            <define name="REMOTE_SENSING_KALMAN_Q0" value="{10,10,10,10,10,10}"/>
+            <define name="REMOTE_SENSING_KALMAN_P0" value="{10,10,10,10,10,10}"/>
+            <define name="REMOTE_SENSING_KALMAN_Q0" value="{100000,100000,100000,100000,100000,100000}"/>
         </module>
 
         <configure name="PRIMARY_GPS" value="ublox"/>
@@ -231,7 +233,7 @@
         <let VAR="servo_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
         <let VAR="hover_off" VALUE="Or($th_hold, !rotwing_state.hover_motors_enabled)"/>
         <let var="ail_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 20)"/>
-        <let var="flap_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 50)"/>
+        <let var="flap_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 60)"/>
 
         <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
         <call fun="pfc_actuators_run()"/>
@@ -269,7 +271,7 @@
     </section>
 
     <section name="MISC">
-        <!--<define name="INS_EKF2_FUSION_MODE"  value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/>-->
+        <define name="INS_EKF2_FUSION_MODE"  value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/>
 
         <!-- AGL distance -->
         <define name="AGL_DIST_MIN_DISTANCE_CHECK"          value="0.18"/>
@@ -278,7 +280,7 @@
     </section>
 
     <section name="FALCON" prefix="FALCON_"> 
-        <define name="BODY_TO_SENSOR" value="{{1.0,0,0,0,0,1.0,0,-1.0,0}}"/>
+        <define name="BODY_TO_SENSOR" value="{{-1.0,0,0,0,0,-1.0,0,-1.0,0}}"/>
         <define name="OFFSET_UAV_BODY" value="{0.0,0.0,0.16}"/>
         <define name="SIXDOF_MEASUREMENT_NOISE" value="{0.1, 0.1, 0.1}"/>
         <define name="RELANGLE_MEASUREMENT_NOISE" value="{0.5, 0.5, 0.5}"/> <!-- Noise should be on the angle measurement and scaled with distance to platform -->
@@ -330,21 +332,21 @@
             </field>
             <!-- Maximum lateral speed -->
             <field type="struct">
-                <field name="x" value="5.0"/>
-                <field name="y" value="-5.0"/>
+                <field name="x" value="8.0"/>
+                <field name="y" value="-8.0"/>
             </field>
         </define>
 
         <define name="MAX_H_ACCEL" type="array">
             <!-- Maximum longitudinal acceleration -->
             <field type="struct">
-                <field name="x" value="3.0"/>
-                <field name="y" value="-1.0"/>
+                <field name="x" value="25.0"/>
+                <field name="y" value="-20.0"/>
             </field>
             <!-- Maximum lateral acceleration -->
             <field type="struct">
-                <field name="x" value="1.0"/>
-                <field name="y" value="-1.0"/>
+                <field name="x" value="20.0"/>
+                <field name="y" value="-20.0"/>
             </field>
         </define>
 
