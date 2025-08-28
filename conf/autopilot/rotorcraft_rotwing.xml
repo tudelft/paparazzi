@@ -4,13 +4,16 @@
 
   <state_machine name="ap" freq="PERIODIC_FREQUENCY" gcs_mode="true" settings_mode="true" settings_handler="autopilot_generated|SetModeHandler">
 
+    <modules>
+      <module name="nav" type="rotorcraft"/>
+      <module name="guidance" type="rotorcraft"/>
+      <module name="stabilization" type="rotorcraft"/>
+    </modules>
+
     <includes>
       <include name="generated/airframe.h"/>
       <include name="autopilot.h"/>
       <include name="autopilot_rc_helpers.h"/>
-      <include name="navigation.h"/>
-      <include name="guidance.h"/>
-      <include name="stabilization.h"/>
       <include name="modules/radio_control/radio_control.h"/>
       <include name="modules/gps/gps.h"/>
       <include name="modules/actuators/actuators.h"/>
@@ -204,6 +207,7 @@
     <!-- NAV: 13 -->
     <mode name="NAV">
       <select cond="RCMode2() && DLModeNav()" exception="HOME"/>
+      <select cond="$DEFAULT_MODE"/>
       <on_enter>
         <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NAV)"/>
         <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_NAV)"/>

@@ -197,34 +197,34 @@
         <axis name="THRUST"       group ="OTHER" failsafe_value="0"/>
     </commands>
 
-    <command_laws>
+<command_laws>
         <let var="th_hold" value="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
         <let VAR="servo_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
         <let VAR="hover_off" VALUE="Or($th_hold, !rotwing_state.hover_motors_enabled)"/>
-        <let var="ail_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 20)"/>
-        <let var="flap_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 50)"/>
+        <let var="ail_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 30)"/>
+        <let var="flap_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 60)"/>
 
         <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,commands)"/>
         <call fun="pfc_actuators_run()"/>
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(COMMAND_MOTOR_FRONT, -9600)) : commands[COMMAND_MOTOR_FRONT])" SERVO="MOTOR_FRONT"/>
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(COMMAND_MOTOR_RIGHT, -9600)) : commands[COMMAND_MOTOR_RIGHT])" SERVO="MOTOR_RIGHT"/>
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(COMMAND_MOTOR_BACK, -9600)) : commands[COMMAND_MOTOR_BACK])"  SERVO="MOTOR_BACK"/>
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(COMMAND_MOTOR_LEFT, -9600)) : commands[COMMAND_MOTOR_LEFT])" SERVO="MOTOR_LEFT"/>
-        <set VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : pfc_actuators_value(COMMAND_RUDDER, commands[COMMAND_RUDDER]))"    SERVO="SERVO_RUDDER"/>
-        <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? pfc_actuators_value(COMMAND_ELEVATOR, 0) : commands[COMMAND_ELEVATOR]))" SERVO="SERVO_ELEVATOR"/>
-        <set VALUE="($th_hold? ($servo_hold? -9600 : pfc_actuators_value(COMMAND_MOTOR_PUSHER, -9600)) : commands[COMMAND_MOTOR_PUSHER])" SERVO="MOTOR_PUSH"/>
-        <set VALUE="pfc_actuators_value(COMMAND_ROT_MECH, commands[COMMAND_ROT_MECH])"  SERVO="ROTATION_MECH"/>
-        <set VALUE="$ail_limit_hit? pfc_actuators_value(COMMAND_AILERONS, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : commands[COMMAND_AILERONS])" SERVO="AIL_LEFT"/>
-        <set VALUE="$ail_limit_hit? pfc_actuators_value(COMMAND_AILERONS, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : commands[COMMAND_AILERONS])" SERVO="AIL_RIGHT"/>
-        <set VALUE="$flap_limit_hit? pfc_actuators_value(COMMAND_FLAPS, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : commands[COMMAND_FLAPS])"   SERVO="FLAP_LEFT"/>
-        <set VALUE="$flap_limit_hit? pfc_actuators_value(COMMAND_FLAPS, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : commands[COMMAND_FLAPS])"   SERVO="FLAP_RIGHT"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(7, -9600)) : commands[COMMAND_MOTOR_FRONT])" SERVO="MOTOR_FRONT"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(8, -9600)) : commands[COMMAND_MOTOR_RIGHT])" SERVO="MOTOR_RIGHT"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(9, -9600)) : commands[COMMAND_MOTOR_BACK])"  SERVO="MOTOR_BACK"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(10, -9600)) : commands[COMMAND_MOTOR_LEFT])" SERVO="MOTOR_LEFT"/>
+        <set VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : pfc_actuators_value(1, commands[COMMAND_RUDDER]))"    SERVO="SERVO_RUDDER"/>
+        <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? pfc_actuators_value(0, 0) : commands[COMMAND_ELEVATOR]))" SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="($th_hold? ($servo_hold? -9600 : pfc_actuators_value(11, -9600)) : commands[COMMAND_MOTOR_PUSHER])" SERVO="MOTOR_PUSH"/>
+        <set VALUE="pfc_actuators_value(6, commands[COMMAND_ROT_MECH])"  SERVO="ROTATION_MECH"/>
+        <set VALUE="$ail_limit_hit? pfc_actuators_value(2, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : commands[COMMAND_AILERONS])" SERVO="AIL_LEFT"/>
+        <set VALUE="$ail_limit_hit? pfc_actuators_value(5, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : commands[COMMAND_AILERONS])" SERVO="AIL_RIGHT"/>
+        <set VALUE="$flap_limit_hit? pfc_actuators_value(3, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : commands[COMMAND_FLAPS])"   SERVO="FLAP_LEFT"/>
+        <set VALUE="$flap_limit_hit? pfc_actuators_value(4, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : commands[COMMAND_FLAPS])"   SERVO="FLAP_RIGHT"/>
 
         <!-- Backup commands -->
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(COMMAND_MOTOR_FRONT, -9600)) : commands[COMMAND_MOTOR_FRONT])" SERVO="BMOTOR_FRONT"/>
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(COMMAND_MOTOR_RIGHT, -9600)) : commands[COMMAND_MOTOR_RIGHT])" SERVO="BMOTOR_RIGHT"/>
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(COMMAND_MOTOR_BACK, -9600)) : commands[COMMAND_MOTOR_BACK])"  SERVO="BMOTOR_BACK"/>
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(COMMAND_MOTOR_LEFT, -9600)) : commands[COMMAND_MOTOR_LEFT])" SERVO="BMOTOR_LEFT"/>
-        <set VALUE="pfc_actuators_value(COMMAND_ROT_MECH, commands[COMMAND_ROT_MECH])"  SERVO="BROTATION_MECH"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(7, -9600)) : commands[COMMAND_MOTOR_FRONT])" SERVO="BMOTOR_FRONT"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(8, -9600)) : commands[COMMAND_MOTOR_RIGHT])" SERVO="BMOTOR_RIGHT"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(9, -9600)) : commands[COMMAND_MOTOR_BACK])"  SERVO="BMOTOR_BACK"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(10, -9600)) : commands[COMMAND_MOTOR_LEFT])" SERVO="BMOTOR_LEFT"/>
+        <set VALUE="pfc_actuators_value(6, commands[COMMAND_ROT_MECH])"  SERVO="BROTATION_MECH"/>
     </command_laws>
 
     <section PREFIX="SYS_ID_" NAME="SYS_ID">

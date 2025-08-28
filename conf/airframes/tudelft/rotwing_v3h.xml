@@ -10,6 +10,7 @@
     <description>RotatingWingV3H</description>
 
     <firmware name="rotorcraft">
+    <autopilot name="rotorcraft_rotwing.xml"/>
         <target name="ap" board="cube_orangeplus">
             <configure name="PERIODIC_FREQUENCY" value="500"/> <!-- Configure the main periodic frequency to 500Hz -->
 
@@ -49,15 +50,17 @@
             <module name="fdm" type="jsbsim"/>
 
             <!--Not dealing with these in the simulation-->
-            <define name="RADIO_TH_HOLD"            value="0"/> <!-- Throttle hold in command laws -->
-            <define name="RADIO_FMODE"              value="0"/> <!-- Throttle curve select -->
-            <define name="RADIO_FBW_MODE"           value="0"/> <!-- Switch between AP and FBW control -->
-            <define name="RADIO_KILL_SWITCH"        value="0"/>
-            <define name="RADIO_CONTROL_THRUST_X"   value="0"/>
+            <define name="RADIO_TH_HOLD"            value="RADIO_AUX1"/>
+            <define name="RADIO_KILL_SWITCH"        value="RADIO_AUX1"/>
+            <define name="RADIO_FMODE"              value="RADIO_AUX2"/>
+            <define name="RADIO_FBW_MODE"           value="RADIO_AUX3"/>
+            <define name="RADIO_CONTROL_THRUST_X"   value="RADIO_AUX4"/>
 
             <define name="PREFLIGHT_CHECK_BYPASS"   value="TRUE"/>
             <define name="USE_SONAR"                value="1"/> <!-- Because uavcan can't handle simulation yet -->
         </target>
+
+        <module name="rotwing_ap_utils"/>
 
         <!-- Herelink datalink -->
         <module name="telemetry" type="transparent">
@@ -173,64 +176,65 @@
     </servos>
 
     <commands>
-        <!-- commands from INDI -->
-        <axis name="FRONT_MOTOR" failsafe_value="0"/>
-        <axis name="RIGHT_MOTOR" failsafe_value="0"/>
-        <axis name="BACK_MOTOR"  failsafe_value="0"/>
-        <axis name="LEFT_MOTOR"  failsafe_value="0"/>
-        <axis name="RUDDER"      failsafe_value="0"/>
-        <axis name="ELEVATOR"    failsafe_value="0"/>
-        <axis name="AILERON"     failsafe_value="0"/>
-        <axis name="FLAP"        failsafe_value="0"/>
-        <axis name="THRUST_X"    failsafe_value="0"/>
-        <!-- commands modules -->
-        <axis name="SKEW"        failsafe_value="0"/>
-        <!-- default commands -->
-        <axis name="THRUST"      failsafe_value="0"/>
-        <axis name="ROLL"        failsafe_value="0"/>
-        <axis name="PITCH"       failsafe_value="0"/>
-        <axis name="YAW"         failsafe_value="0"/>
+        <!-- Real actuators commands -->
+        <axis name="MOTOR_FRONT"  group ="REAL" failsafe_value="0"/> <!-- IDX 0--> 
+        <axis name="MOTOR_RIGHT"  group ="REAL" failsafe_value="0"/> <!-- IDX 1-->
+        <axis name="MOTOR_BACK"   group ="REAL" failsafe_value="0"/> <!-- IDX 2-->
+        <axis name="MOTOR_LEFT"   group ="REAL" failsafe_value="0"/> <!-- IDX 3-->
+        <axis name="MOTOR_PUSHER" group ="REAL" failsafe_value="0"/> <!-- IDX 4-->
+        <axis name="ELEVATOR"     group ="REAL" failsafe_value="0"/> <!-- IDX 5-->
+        <axis name="RUDDER"       group ="REAL" failsafe_value="0"/> <!-- IDX 6-->
+        <axis name="AILERONS"     group ="REAL" failsafe_value="0"/> <!-- IDX 7-->
+        <axis name="FLAPS"        group ="REAL" failsafe_value="0"/> <!-- IDX 8-->
+        <!-- Virtual actuators commands -->
+        <axis name="ROLL"         group ="VIRTUAL" failsafe_value="0"/> <!-- IDX 9-->
+        <axis name="PITCH"        group ="VIRTUAL" failsafe_value="0"/> <!-- IDX 10-->
+        <!-- Passive actuators commands -->
+        <axis name="ROT_MECH"     group ="PASSIVE" failsafe_value="0"/> <!-- IDX 11-->
+        <!-- Legacy commands-->
+        <axis name="YAW"          group ="OTHER" failsafe_value="0"/>
+        <axis name="THRUST"       group ="OTHER" failsafe_value="0"/>
     </commands>
 
     <command_laws>
         <let var="th_hold" value="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
         <let VAR="servo_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
         <let VAR="hover_off" VALUE="Or($th_hold, !rotwing_state.hover_motors_enabled)"/>
-        <let var="ail_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 20)"/>
-        <let var="flap_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 50)"/>
+        <let var="ail_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 30)"/>
+        <let var="flap_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 60)"/>
 
-        <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
+        <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,commands)"/>
         <call fun="pfc_actuators_run()"/>
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(7, -9600)) : actuators_pprz[0])" SERVO="MOTOR_FRONT"/>
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(8, -9600)) : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(9, -9600)) : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(10, -9600)) : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
-        <set VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : pfc_actuators_value(1, actuators_pprz[4]))" SERVO="SERVO_RUDDER"/>
-        <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? pfc_actuators_value(0, 0) : actuators_pprz[5]))" SERVO="SERVO_ELEVATOR"/>
-        <set VALUE="($th_hold? ($servo_hold? -9600 : pfc_actuators_value(11, -9600)) : actuators_pprz[8])" SERVO="MOTOR_PUSH"/>
-        <set VALUE="pfc_actuators_value(6, rotwing_state.skew_cmd)"  SERVO="ROTATION_MECH"/>
-        <set VALUE="$ail_limit_hit? pfc_actuators_value(2, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])" SERVO="AIL_LEFT"/>
-        <set VALUE="$ail_limit_hit? pfc_actuators_value(5, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])" SERVO="AIL_RIGHT"/>
-        <set VALUE="$flap_limit_hit? pfc_actuators_value(3, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])" SERVO="FLAP_LEFT"/>
-        <set VALUE="$flap_limit_hit? pfc_actuators_value(4, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])" SERVO="FLAP_RIGHT"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(7, -9600)) : commands[COMMAND_MOTOR_FRONT])" SERVO="MOTOR_FRONT"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(8, -9600)) : commands[COMMAND_MOTOR_RIGHT])" SERVO="MOTOR_RIGHT"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(9, -9600)) : commands[COMMAND_MOTOR_BACK])"  SERVO="MOTOR_BACK"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(10, -9600)) : commands[COMMAND_MOTOR_LEFT])" SERVO="MOTOR_LEFT"/>
+        <set VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : pfc_actuators_value(1, commands[COMMAND_RUDDER]))"    SERVO="SERVO_RUDDER"/>
+        <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? pfc_actuators_value(0, 0) : commands[COMMAND_ELEVATOR]))" SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="($th_hold? ($servo_hold? -9600 : pfc_actuators_value(11, -9600)) : commands[COMMAND_MOTOR_PUSHER])" SERVO="MOTOR_PUSH"/>
+        <set VALUE="pfc_actuators_value(6, commands[COMMAND_ROT_MECH])"  SERVO="ROTATION_MECH"/>
+        <set VALUE="$ail_limit_hit? pfc_actuators_value(2, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : commands[COMMAND_AILERONS])" SERVO="AIL_LEFT"/>
+        <set VALUE="$ail_limit_hit? pfc_actuators_value(5, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : commands[COMMAND_AILERONS])" SERVO="AIL_RIGHT"/>
+        <set VALUE="$flap_limit_hit? pfc_actuators_value(3, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : commands[COMMAND_FLAPS])"   SERVO="FLAP_LEFT"/>
+        <set VALUE="$flap_limit_hit? pfc_actuators_value(4, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : commands[COMMAND_FLAPS])"   SERVO="FLAP_RIGHT"/>
 
         <!-- Backup commands -->
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(7, -9600)) : actuators_pprz[0])" SERVO="BMOTOR_FRONT"/>
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(8, -9600)) : actuators_pprz[1])" SERVO="BMOTOR_RIGHT"/>
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(9, -9600)) : actuators_pprz[2])" SERVO="BMOTOR_BACK"/>
-        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(10, -9600)) : actuators_pprz[3])" SERVO="BMOTOR_LEFT"/>
-        <set VALUE="pfc_actuators_value(6, rotwing_state.skew_cmd)"  SERVO="BROTATION_MECH"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(7, -9600)) : commands[COMMAND_MOTOR_FRONT])" SERVO="BMOTOR_FRONT"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(8, -9600)) : commands[COMMAND_MOTOR_RIGHT])" SERVO="BMOTOR_RIGHT"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(9, -9600)) : commands[COMMAND_MOTOR_BACK])"  SERVO="BMOTOR_BACK"/>
+        <set VALUE="($hover_off? ($servo_hold? -9600 : pfc_actuators_value(10, -9600)) : commands[COMMAND_MOTOR_LEFT])" SERVO="BMOTOR_LEFT"/>
+        <set VALUE="pfc_actuators_value(6, commands[COMMAND_ROT_MECH])"  SERVO="BROTATION_MECH"/>
     </command_laws>
 
     <section PREFIX="SYS_ID_" NAME="SYS_ID">
-        <define name="DOUBLET_AXES" value="{0,1,2,3,4,5,6,7,8}"/>
+        <define name="DOUBLET_AXES" value="{COMMAND_MOTOR_FRONT, COMMAND_MOTOR_RIGHT, COMMAND_MOTOR_BACK, COMMAND_MOTOR_LEFT, COMMAND_MOTOR_PUSHER, COMMAND_RUDDER, COMMAND_ELEVATOR, COMMAND_AILERONS, COMMAND_FLAPS}"/>
         <define name="DOUBLET_RADIO_CHANNEL" value="6"/>
 
         <define name="AUTO_DOUBLETS_N_ACTUATORS" value="4"/>
-        <define name="AUTO_DOUBLETS_ACTUATORS" value="{0,1,2,3}"/>
+        <define name="AUTO_DOUBLETS_ACTUATORS" value="{COMMAND_MOTOR_FRONT, COMMAND_MOTOR_RIGHT, COMMAND_MOTOR_BACK, COMMAND_MOTOR_LEFT}"/>
         <define name="AUTO_DOUBLETS_AMPLITUDE" value="{1500,1500,1500,1500}"/>
 
-        <define name="CHIRP_AXES" value="{0,1,2,3}"/>
+        <define name="CHIRP_AXES" value="{COMMAND_MOTOR_FRONT, COMMAND_MOTOR_RIGHT, COMMAND_MOTOR_BACK, COMMAND_MOTOR_LEFT}"/>
         <define name="CHIRP_RADIO_CHANNEL" value="9"/>
     </section>
 

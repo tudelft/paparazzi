@@ -440,10 +440,7 @@ void eff_scheduling_rotwing_schedule_liftd(void)
   float lift_d_tail = eff_sched_p.k_lift_tail * eff_sched_var.airspeed2 / eff_sched_p.m;
 
   float lift_d = lift_d_wing + lift_d_fuselage + lift_d_tail;
-  if (eff_sched_var.wing_rotation_deg < 60.) {
-    lift_d = 0.0;
-  }
-  Bound(lift_d, -130., 0.);
+  bound_or_zero(lift_d, -130.0, -15.0);
   eff_scheduling_rotwing_lift_d = lift_d;
 }
 
