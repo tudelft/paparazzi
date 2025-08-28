@@ -78,7 +78,6 @@ void receive_landing_algorithm_outputs(uint8_t *buf)
     struct EnuCoor_f accel_sp_enu;
     VECT3_ENU_OF_NED(accel_sp_enu, accel_sp);
     AbiSendMsgMOVING_BASE(LANDING_ALGORITHM_ID, stateGetPositionEnu_f(), stateGetSpeedEnu_f(), &accel_sp_enu);
-    printf("Setting acceleration, ENU target: %f, %f, %f\n", accel_sp_enu.x, accel_sp_enu.y, accel_sp_enu.z);
 
   // Send the current state of the landing system module
   #if LANDING_SYSTEM_LOG_ON_ARRIVAL && !USE_NPS

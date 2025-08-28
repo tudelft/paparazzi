@@ -507,7 +507,7 @@ void guidance_indi_hybrid_set_wls_settings(float body_v[3], float roll_angle, fl
   float min_pitch_limit_rad = RadOfDeg(GUIDANCE_INDI_MIN_PITCH);
 
   float fwd_pitch_limit_rad = RadOfDeg(GUIDANCE_INDI_MAX_PITCH);
-  float quad_pitch_limit_rad = RadOfDeg(5.0);
+  float quad_pitch_limit_rad = RadOfDeg(GUIDANCE_INDI_MAX_PITCH);
 
   float airspeed = stateGetAirspeed_f();
 
