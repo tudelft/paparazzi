@@ -851,9 +851,25 @@ struct StabilizationSetpoint guidance_indi_run_mode(bool in_flight UNUSED, struc
     gi_speed_sp.x = pos_err.x * gih_params.pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
     gi_speed_sp.y = pos_err.y * gih_params.pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
     gi_speed_sp.z = bound_vz_sp(pos_err.z * gih_params.pos_gainz + SPEED_FLOAT_OF_BFP(gv->zd_ref));
+    // FIX ME: separate from nav_moving_base
+    struct EnuCoor_f speed_sp_enu = (struct EnuCoor_f) {gi_speed_sp.y, gi_speed_sp.x, -gi_speed_sp.z};
+    enforce_horizontal_bounds(&speed_sp_enu, nav_moving_base.max_speed_h);
+    Bound(speed_sp_enu.z, nav_moving_base.max_speed_v.y, nav_moving_base.max_speed_v.x);
+    gi_speed_sp.x = speed_sp_enu.y;
+    gi_speed_sp.y = speed_sp_enu.x;
+    gi_speed_sp.z = -speed_sp_enu.z;
+
     accel_sp.x = (gi_speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain + ACCEL_FLOAT_OF_BFP(gh->ref.accel.x);
     accel_sp.y = (gi_speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain + ACCEL_FLOAT_OF_BFP(gh->ref.accel.y);
-    accel_sp.z = (gi_speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz + ACCEL_FLOAT_OF_BFP(gv->zdd_ref); 
+    accel_sp.z = (gi_speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz + ACCEL_FLOAT_OF_BFP(gv->zdd_ref);
+
+    struct EnuCoor_f accel_sp_enu = (struct EnuCoor_f) {accel_sp.y, accel_sp.x, -accel_sp.z};
+    enforce_horizontal_bounds(&accel_sp_enu, nav_moving_base.max_accel_h);
+    Bound(accel_sp_enu.z, nav_moving_base.max_accel_v.y, nav_moving_base.max_accel_v.x);
+    accel_sp.x = accel_sp_enu.y;
+    accel_sp.y = accel_sp_enu.x;
+    accel_sp.z = -accel_sp_enu.z;
+
     return guidance_indi_run(&accel_sp, gh->sp.heading);
   }
 }
