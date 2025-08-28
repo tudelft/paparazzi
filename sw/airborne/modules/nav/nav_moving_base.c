@@ -208,6 +208,7 @@ static bool nav_moving_base_track(void) {
   bool complete = false;
   
   VECT2_COPY(nav.target, nav_moving_base.pos);
+  nav.nav_altitude = waypoints[WP_STDBY].enu_f.z;
 
   // Calculate position error
   struct EnuCoor_f pos_error;
@@ -263,6 +264,10 @@ static bool nav_moving_base_land(void) {
 }
 
 void nav_moving_base_periodic(void) {
+  if (nav_moving_base.active_wp == WP_STDBY) {
+    VECT3_COPY(nav_moving_base.pos, waypoints[WP_STDBY].enu_f);
+  }
+  
   DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &nav_moving_base.active_wp,
       &waypoints[nav_moving_base.active_wp].enu_i.x,
       &waypoints[nav_moving_base.active_wp].enu_i.y,
@@ -300,11 +305,12 @@ void nav_moving_base_set_max_speed_h(struct FloatVect2 longitudinal, struct Floa
   VECT2_COPY(nav_moving_base.max_speed_h[1], lateral);
 }
 
-static void nav_moving_base_cb(uint8_t sender_id, struct EnuCoor_f *pos, struct EnuCoor_f *speed, struct EnuCoor_f *accel) {
+static void nav_moving_base_cb(uint8_t sender_id, struct EnuCoor_f *pos, struct EnuCoor_f *speed, struct EnuCoor_f *accel) {  
   if (sender_id != nav_moving_base.active_sender) {
     return;
   }
 
+  // TODO: Keep track of when we receive setpoints and start a timeout, raise exception in FP maybe?
 
   // FIXME else what?
   if (pos != NULL) {
