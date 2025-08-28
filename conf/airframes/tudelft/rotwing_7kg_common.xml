@@ -1,12 +1,26 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
 <airframe>
-    <section name="AP_FAILSAFE">
-        <!-- <define name="NO_GPS_LOST_WITH_DATALINK_TIME"       value="20"/> --> 
-        <define name="NO_GPS_LOST_WITH_RC_VALID"            value="FALSE"/> 
+
+    <section name="AUTOPILOT">
+        <define name="MODE_MANUAL"      value="AP_MODE_ATTITUDE_DIRECT"/>
+        <define name="MODE_AUTO1"       value="AP_MODE_FORWARD"/>
+        <define name="MODE_AUTO2"       value="AP_MODE_NAV"/>
+        <define name="MODE_STARTUP"     value="AP_MODE_NAV"/>
+        
+        <!-- Failsafe defines for the generated AP -->
+        <define name="NO_GPS_LOST_WITH_DATALINK_TIME"       value="0"/> <!-- Default was 20 seconds -->
+        <define name="NO_GPS_LOST_WITH_RC_VALID"            value="FALSE"/> <!-- Default was TRUE -->
         <define name="RC_LOST_MODE"                         value="AP_MODE_NAV"/> 
         <define name="GPS_FIX_TIMEOUT"                      value="5"/> 
         <define name="FAILSAFE_DESCENT_SPEED"               value="1.0"/> <!-- Does not work as expected with AP static -->
+    </section>
+
+    <section name="SIMULATOR" prefix="NPS_">
+        <define name="JSBSIM_MODEL"    value="rotwingv3c_SI" type="string"/>
+        <define name="SENSORS_PARAMS"  value="nps_sensors_params_default.h" type="string"/>
+        <define name="USE_COMMANDS"    value="TRUE"/>
+        <define name="JS_AXIS_MODE"    value="4"/>
     </section>
 
     <section name="CTRL_EFF_SCHED" prefix="ROTWING_EFF_SCHED_">
@@ -39,6 +53,8 @@
     </section>
 
     <section name="MISC">
+        <define name="COMMAND_THRUST_X"                     value="COMMAND_MOTOR_PUSHER"/>
+
         <!-- Others -->
         <define name="NAV_CLIMB_VSPEED"                     value="2.0" />
         <define name="NAV_DESCEND_VSPEED"                   value="-1.0"/>
@@ -125,6 +141,7 @@
         <define name="ACT_FREQ"             value="{22.0, 22.0, 22.0, 22.0, 52.7, 52.7, 52.7, 52.7, 30.0}"/>
         <define name="ACT_IS_SERVO"         value="{   0,    0,    0,    0,    1,    1,    1,    1,    0}"/>
         <define name="ACT_IS_THRUSTER_X"    value="{   0,    0,    0,    0,    0,    0,    0,    0,    1}"/>
+        <define name="USE_COMMANDS"         value="TRUE"/>
 
         <!-- Rate INDI -->
         <define name="MAX_RATE"             value="1.5"/>
@@ -202,6 +219,7 @@
 
     <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
         <!--WLS settings-->
+        <define name="USE_COMMANDS"         value="TRUE"/>
         <define name="USE_WLS"              value="TRUE"/>
         <define name="WLS_PRIORITIES"       value="{10., 10., 10.}"/>
         <define name="WLS_WU"               value="{100., 300., 4., 30.}"/>
@@ -220,7 +238,7 @@
 
         <define name="THRUST_Z_EFF"         value="-0.0023"/>
 
-        <define name="PUSHER_INDEX"         value="8"/>
+        <define name="PUSHER_INDEX"         value="COMMAND_MOTOR_PUSHER"/>
 
         <define name="MAX_PITCH"            value="12"/>
         <define name="MIN_PITCH"            value="-20"/>
@@ -247,22 +265,6 @@
         <define name="SLOPE"                    value="60.0"/>
         <define name="DISTANCE"                 value="70.0"/>
         <define name="SPEED"                    value="0.0"/>
-    </section>
-
-    <section name="AUTOPILOT">
-        <define name="MODE_MANUAL"      value="AP_MODE_ATTITUDE_DIRECT"/>
-        <define name="MODE_AUTO1"       value="AP_MODE_FORWARD"/>
-        <define name="MODE_AUTO2"       value="AP_MODE_NAV"/>
-        <define name="MODE_STARTUP"     value="AP_MODE_NAV"/>
-    </section>
-
-    <section name="SIMULATOR" prefix="NPS_">
-        <define name="ACTUATOR_NAMES" value="front_motor, right_motor, back_motor, left_motor, rudder, elevator, aileron, flap, pusher, skew" type="string[]"/>
-        <define name="JSBSIM_MODEL" value="rotwing3" type="string"/>
-        <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
-        <define name="COMMANDS_NB" value="10"/>
-        <define name="NO_MOTOR_MIXING" value="TRUE"/>
-        <define name="JS_AXIS_MODE" value="4"/>
     </section>
 
     <!--EKF Settings-->
