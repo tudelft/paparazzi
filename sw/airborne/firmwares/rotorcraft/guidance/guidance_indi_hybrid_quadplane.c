@@ -85,12 +85,12 @@ void guidance_indi_quadplane_propagate_filters(void) {
  */
 void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_HYBRID_U], struct FloatVect3 a_diff, float body_v[GUIDANCE_INDI_HYBRID_V]) {
   /*Pre-calculate sines and cosines*/
-  float sphi = sinf(roll_filt.o[0]);
-  float cphi = cosf(roll_filt.o[0]);
-  float stheta = sinf(pitch_filt.o[0]);
-  float ctheta = cosf(pitch_filt.o[0]);
-  float spsi = sinf(yaw_filt.o[0]);
-  float cpsi = cosf(yaw_filt.o[0]);
+  float sphi = sinf(eulers_zxy.phi);
+  float cphi = cosf(eulers_zxy.phi);
+  float stheta = sinf(eulers_zxy.theta);
+  float ctheta = cosf(eulers_zxy.theta);
+  float spsi = sinf(eulers_zxy.psi);
+  float cpsi = cosf(eulers_zxy.psi);
 
 #ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
 #define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
@@ -102,13 +102,13 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
   // get the derivative of the lift wrt to theta
   float liftd = guidance_indi_get_liftd(0.0f, 0.0f);
 
-  Gmat[0][0] = -sphi*stheta*lift_thrust_bz;
-  Gmat[1][0] = -cphi*lift_thrust_bz;
-  Gmat[2][0] = -sphi*ctheta*lift_thrust_bz;
+  Gmat[0][0] = -sphi*stheta*lift_thrust_bz*gi_roll_scaling;
+  Gmat[1][0] = -cphi*lift_thrust_bz*gi_roll_scaling;
+  Gmat[2][0] = -sphi*ctheta*lift_thrust_bz*gi_roll_scaling;
 
-  Gmat[0][1] =  cphi*ctheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING;
-  Gmat[1][1] =  sphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*liftd;
-  Gmat[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+  Gmat[0][1] =  cphi*ctheta*lift_thrust_bz*gi_pitch_scaling;
+  Gmat[1][1] =  sphi*stheta*lift_thrust_bz*gi_pitch_scaling - sphi*liftd;
+  Gmat[2][1] = -cphi*stheta*lift_thrust_bz*gi_pitch_scaling + cphi*liftd;
 
   Gmat[0][2] =  cphi*stheta;
   Gmat[1][2] = -sphi;
