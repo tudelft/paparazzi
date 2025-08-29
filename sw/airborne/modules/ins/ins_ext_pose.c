@@ -24,7 +24,6 @@
  * Integrated Navigation System interface.
  */
 
-
 #include <time.h>
 
 #include "ins_ext_pose.h"
@@ -40,27 +39,30 @@
 #include <stdio.h>
 #define DEBUG_PRINT(...) printf(__VA_ARGS__)
 #else
-#define DEBUG_PRINT(...) {}
+#define DEBUG_PRINT(...) \
+  {                      \
+  }
 #endif
 
 /** Data for telemetry and LTP origin.
  */
-struct InsExtPose {
+struct InsExtPose
+{
   /* Inputs */
   struct FloatRates gyros_f;
   struct FloatVect3 accels_f;
-  bool   has_new_gyro;
-  bool   has_new_acc;
+  bool has_new_gyro;
+  bool has_new_acc;
 
   struct FloatVect3 ev_pos;
   struct FloatVect3 ev_vel;
   struct FloatEulers ev_att;
   struct FloatQuat ev_quat;
-  bool   has_new_ext_pose;
-  float  ev_time;
+  bool has_new_ext_pose;
+  float ev_time;
 
   /* Origin */
-  struct LtpDef_i  ltp_def;
+  struct LtpDef_i ltp_def;
 
   /* output LTP NED */
   struct NedCoor_i ltp_pos;
@@ -68,7 +70,6 @@ struct InsExtPose {
   struct NedCoor_i ltp_accel;
 };
 struct InsExtPose ins_ext_pos;
-
 
 static void ins_ext_pose_init_from_flightplan(void)
 {
@@ -89,19 +90,40 @@ static void ins_ext_pose_init_from_flightplan(void)
   waypoints_localize_all();
 }
 
-
 /** Provide telemetry.
  */
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
 
+#include "state.h"
+#include "math/pprz_geodetic_int.h"
+
 static void send_ins(struct transport_tx *trans, struct link_device *dev)
 {
+  const struct NedCoor_f *pos_f = stateGetPositionNed_f(); // meters
+  const struct NedCoor_f *vel_f = stateGetSpeedNed_f();    // m/s
+  const struct NedCoor_f *acc_f = stateGetAccelNed_f();    // m/s^2
+
+  struct NedCoor_i pos_i;
+  pos_i.x = POS_BFP_OF_REAL(pos_f->x);
+  pos_i.y = POS_BFP_OF_REAL(pos_f->y);
+  pos_i.z = POS_BFP_OF_REAL(pos_f->z);
+
+  struct NedCoor_i vel_i;
+  vel_i.x = SPEED_BFP_OF_REAL(vel_f->x);
+  vel_i.y = SPEED_BFP_OF_REAL(vel_f->y);
+  vel_i.z = SPEED_BFP_OF_REAL(vel_f->z);
+
+  struct NedCoor_i acc_i;
+  acc_i.x = ACCEL_BFP_OF_REAL(acc_f->x);
+  acc_i.y = ACCEL_BFP_OF_REAL(acc_f->y);
+  acc_i.z = ACCEL_BFP_OF_REAL(acc_f->z);
+
   pprz_msg_send_INS(trans, dev, AC_ID,
-                    &ins_ext_pos.ltp_pos.x, &ins_ext_pos.ltp_pos.y, &ins_ext_pos.ltp_pos.z,
-                    &ins_ext_pos.ltp_speed.x, &ins_ext_pos.ltp_speed.y, &ins_ext_pos.ltp_speed.z,
-                    &ins_ext_pos.ltp_accel.x, &ins_ext_pos.ltp_accel.y, &ins_ext_pos.ltp_accel.z);
+                    &pos_i.x, &pos_i.y, &pos_i.z,
+                    &vel_i.x, &vel_i.y, &vel_i.z,
+                    &acc_i.x, &acc_i.y, &acc_i.z);
 }
 
 static void send_ins_z(struct transport_tx *trans, struct link_device *dev)
@@ -122,36 +144,35 @@ static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
 }
 
 static void send_external_pose_down(struct transport_tx *trans, struct link_device *dev)
-{ 
+{
   pprz_msg_send_EXTERNAL_POSE_DOWN(trans, dev, AC_ID,
-                        &ins_ext_pos.ev_time,
-                        &ins_ext_pos.ev_pos.x, 
-                        &ins_ext_pos.ev_pos.y, 
-                        &ins_ext_pos.ev_pos.z,
-                        &ins_ext_pos.ev_vel.x, 
-                        &ins_ext_pos.ev_vel.y, 
-                        &ins_ext_pos.ev_vel.z, 
-                        &ins_ext_pos.ev_quat.qi, 
-                        &ins_ext_pos.ev_quat.qx, 
-                        &ins_ext_pos.ev_quat.qy, 
-                        &ins_ext_pos.ev_quat.qz);
+                                   &ins_ext_pos.ev_time,
+                                   &ins_ext_pos.ev_pos.x,
+                                   &ins_ext_pos.ev_pos.y,
+                                   &ins_ext_pos.ev_pos.z,
+                                   &ins_ext_pos.ev_vel.x,
+                                   &ins_ext_pos.ev_vel.y,
+                                   &ins_ext_pos.ev_vel.z,
+                                   &ins_ext_pos.ev_quat.qi,
+                                   &ins_ext_pos.ev_quat.qx,
+                                   &ins_ext_pos.ev_quat.qy,
+                                   &ins_ext_pos.ev_quat.qz);
 }
 static void send_ahrs_bias(struct transport_tx *trans, struct link_device *dev)
 {
   float dummy0 = 0.0;
-  pprz_msg_send_AHRS_BIAS(trans, dev, AC_ID, 
-                &ekf_X[9], 
-                &ekf_X[10], 
-                &ekf_X[11], 
-                &ekf_X[12], 
-                &ekf_X[13], 
-                &ekf_X[14], 
-                &dummy0, 
-                &dummy0, 
-                &dummy0);
+  pprz_msg_send_AHRS_BIAS(trans, dev, AC_ID,
+                          &ekf_X[9],
+                          &ekf_X[10],
+                          &ekf_X[11],
+                          &ekf_X[12],
+                          &ekf_X[13],
+                          &ekf_X[14],
+                          &dummy0,
+                          &dummy0,
+                          &dummy0);
 }
 #endif
-
 
 /**
  * Import Gyro and Acc from ABI.
@@ -167,8 +188,6 @@ static abi_event gyro_ev;
 
 static void accel_cb(uint8_t sender_id, uint32_t stamp, struct Int32Vect3 *accel);
 static void gyro_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates *gyro);
-
-
 
 static void gyro_cb(uint8_t sender_id __attribute__((unused)),
                     uint32_t stamp __attribute__((unused)),
@@ -186,20 +205,22 @@ static void accel_cb(uint8_t sender_id __attribute__((unused)),
   ins_ext_pos.has_new_acc = true;
 }
 
-
 /**
  * Import External Pose Message
  */
 
 void ins_ext_pose_msg_update(uint8_t *buf)
 {
-  if (DL_EXTERNAL_POSE_ac_id(buf) != AC_ID) { return; } // not for this aircraft
-  
-  float enu_x  = DL_EXTERNAL_POSE_enu_x(buf);
-  float enu_y  = DL_EXTERNAL_POSE_enu_y(buf);
-  float enu_z  = DL_EXTERNAL_POSE_enu_z(buf);
+  if (DL_EXTERNAL_POSE_ac_id(buf) != AC_ID)
+  {
+    return;
+  } // not for this aircraft
+
+  float enu_x = DL_EXTERNAL_POSE_enu_x(buf);
+  float enu_y = DL_EXTERNAL_POSE_enu_y(buf);
+  float enu_z = DL_EXTERNAL_POSE_enu_z(buf);
   float enu_xd = DL_EXTERNAL_POSE_enu_xd(buf);
-  float enu_yd = DL_EXTERNAL_POSE_enu_yd(buf);              
+  float enu_yd = DL_EXTERNAL_POSE_enu_yd(buf);
   float enu_zd = DL_EXTERNAL_POSE_enu_zd(buf);
   float quat_i = DL_EXTERNAL_POSE_body_qi(buf);
   float quat_x = DL_EXTERNAL_POSE_body_qx(buf);
@@ -212,27 +233,27 @@ void ins_ext_pose_msg_update(uint8_t *buf)
   struct FloatEulers orient_eulers;
 
   // Transformation of External Pose. Optitrack motive 2.X Yup
-  orient.qi = quat_i ;
-  orient.qx = quat_y ; 
-  orient.qy = quat_x ;                
+  orient.qi = quat_i;
+  orient.qx = quat_y;
+  orient.qy = quat_x;
   orient.qz = -quat_z;
 
   float_eulers_of_quat(&orient_eulers, &orient);
-  
-  ins_ext_pos.ev_time       = get_sys_time_usec(); 
-  ins_ext_pos.ev_pos.x      = enu_y;                
-  ins_ext_pos.ev_pos.y      = enu_x;                
-  ins_ext_pos.ev_pos.z      = -enu_z;  
-  ins_ext_pos.ev_vel.x      = enu_yd;
-  ins_ext_pos.ev_vel.y      = enu_xd;
-  ins_ext_pos.ev_vel.z      = -enu_zd;             
-  ins_ext_pos.ev_att.phi    = orient_eulers.phi;
-  ins_ext_pos.ev_att.theta  = orient_eulers.theta;
-  ins_ext_pos.ev_att.psi    = orient_eulers.psi;
-  ins_ext_pos.ev_quat.qi    = orient.qi;
-  ins_ext_pos.ev_quat.qx    = orient.qx;
-  ins_ext_pos.ev_quat.qy    = orient.qy;
-  ins_ext_pos.ev_quat.qz    = orient.qz;
+
+  ins_ext_pos.ev_time = get_sys_time_usec();
+  ins_ext_pos.ev_pos.x = enu_y;
+  ins_ext_pos.ev_pos.y = enu_x;
+  ins_ext_pos.ev_pos.z = -enu_z;
+  ins_ext_pos.ev_vel.x = enu_yd;
+  ins_ext_pos.ev_vel.y = enu_xd;
+  ins_ext_pos.ev_vel.z = -enu_zd;
+  ins_ext_pos.ev_att.phi = orient_eulers.phi;
+  ins_ext_pos.ev_att.theta = orient_eulers.theta;
+  ins_ext_pos.ev_att.psi = orient_eulers.psi;
+  ins_ext_pos.ev_quat.qi = orient.qi;
+  ins_ext_pos.ev_quat.qx = orient.qx;
+  ins_ext_pos.ev_quat.qy = orient.qy;
+  ins_ext_pos.ev_quat.qz = orient.qz;
 
   ins_ext_pos.has_new_ext_pose = true;
 
@@ -249,7 +270,6 @@ void ins_reset_altitude_ref(void)
   // Ext pos does not allow geoinit: FP origin only
 }
 
-
 /** EKF protos
  */
 
@@ -258,7 +278,6 @@ static inline void ekf_run(void);
 
 /** Module
  */
-
 
 void ins_ext_pose_init(void)
 {
@@ -294,14 +313,9 @@ void ins_ext_pose_run(void)
   ekf_run();
 }
 
-
-
-
 /***************************************************
  * Kalman Filter.
  */
-
-
 
 static inline void ekf_f(const float X[EKF_NUM_STATES], const float U[EKF_NUM_INPUTS], float out[EKF_NUM_STATES]);
 static inline void ekf_F(const float X[EKF_NUM_STATES], const float U[EKF_NUM_INPUTS],
@@ -316,8 +330,6 @@ static inline void ekf_step(const float U[EKF_NUM_INPUTS], const float Z[EKF_NUM
 static inline void ekf_prediction_step(const float U[EKF_NUM_INPUTS], const float dt);
 static inline void ekf_measurement_step(const float Z[EKF_NUM_OUTPUTS]);
 
-
-
 float ekf_X[EKF_NUM_STATES];
 float ekf_U[EKF_NUM_INPUTS];
 float ekf_Z[EKF_NUM_OUTPUTS];
@@ -327,7 +339,6 @@ float ekf_R[EKF_NUM_OUTPUTS][EKF_NUM_OUTPUTS];
 
 float ekf_H[EKF_NUM_OUTPUTS][EKF_NUM_STATES] = {{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0}};
 
-
 float t0;
 float t1;
 
@@ -335,18 +346,21 @@ void ekf_set_diag(float **a, float *b, int n);
 void ekf_set_diag(float **a, float *b, int n)
 {
   int i, j;
-  for (i = 0 ; i < n; i++) {
-    for (j = 0 ; j < n; j++) {
-      if (i == j) {
+  for (i = 0; i < n; i++)
+  {
+    for (j = 0; j < n; j++)
+    {
+      if (i == j)
+      {
         a[i][j] = b[i];
-      } else {
+      }
+      else
+      {
         a[i][j] = 0.0;
       }
     }
   }
 }
-
-
 
 static inline void ekf_init(void)
 {
@@ -357,7 +371,7 @@ static inline void ekf_init(void)
   float Z0[EKF_NUM_OUTPUTS] = {0, 0, 0, 0, 0, 0};
 
   float Pdiag[EKF_NUM_STATES] = {1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.};
-  float Qdiag[EKF_NUM_INPUTS] = {1.0, 1.0, 1.0, 0.0173, 4.878e-4, 3.547e-4};//{0.0325, 0.4494, 0.5087, 0.0173, 4.878e-4, 3.547e-4};
+  float Qdiag[EKF_NUM_INPUTS] = {1.0, 1.0, 1.0, 0.0173, 4.878e-4, 3.547e-4}; //{0.0325, 0.4494, 0.5087, 0.0173, 4.878e-4, 3.547e-4};
 
   float Rdiag[EKF_NUM_OUTPUTS] = {8.372e-6, 3.832e-6, 4.761e-6, 2.830e-4, 8.684e-6, 7.013e-6};
 
@@ -681,7 +695,7 @@ static inline void ekf_F(const float X[EKF_NUM_STATES], const float U[EKF_NUM_IN
   out[14][14] = 0;
 }
 
-static inline void ekf_L(const float X[EKF_NUM_STATES], __attribute__((unused))  const float U[EKF_NUM_INPUTS],
+static inline void ekf_L(const float X[EKF_NUM_STATES], __attribute__((unused)) const float U[EKF_NUM_INPUTS],
                          float out[EKF_NUM_STATES][EKF_NUM_INPUTS])
 {
   float x0 = cos(X[7]);
@@ -788,8 +802,6 @@ static inline void ekf_L(const float X[EKF_NUM_STATES], __attribute__((unused)) 
   out[14][5] = 0;
 }
 
-
-
 static inline void ekf_f_rk4(const float X[EKF_NUM_STATES], const float U[EKF_NUM_INPUTS], const float dt,
                              float out[EKF_NUM_STATES])
 {
@@ -838,20 +850,17 @@ static inline void ekf_f_rk4(const float X[EKF_NUM_STATES], const float U[EKF_NU
   float_vect_add(out, X, EKF_NUM_STATES);
 }
 
-
 static inline void ekf_step(const float U[EKF_NUM_INPUTS], const float Z[EKF_NUM_OUTPUTS], const float dt)
 {
   // [1] Predicted (a priori) state estimate:
   float Xkk_1[EKF_NUM_STATES];
   ekf_f_rk4(ekf_X, U, dt, Xkk_1);
 
-
   // [2] Get matrices
   float F[EKF_NUM_STATES][EKF_NUM_STATES];
   float L[EKF_NUM_STATES][EKF_NUM_INPUTS];
   ekf_F(ekf_X, U, F);
   ekf_L(ekf_X, U, L);
-
 
   // [3] Continuous to discrete
   // Fd = eye(N) + F*dt + F*F*dt**2/2 = I + [I+F*dt/2]*F*dt
@@ -880,10 +889,10 @@ static inline void ekf_step(const float U[EKF_NUM_INPUTS], const float Z[EKF_NUM
 
   // Fd += I
   int i;
-  for (i = 0; i < EKF_NUM_STATES; i++) {
+  for (i = 0; i < EKF_NUM_STATES; i++)
+  {
     Fd[i][i] += 1;
   }
-
 
   // [4] Predicted covariance estimate:
   // Pkk_1 = Fd*P*Fd.T + Ld*Q*Ld.T
@@ -921,7 +930,6 @@ static inline void ekf_step(const float U[EKF_NUM_INPUTS], const float Z[EKF_NUM
   // Pkk_1 += tmp
   float_mat_sum_scaled(Pkk_1_, tmp_, 1, EKF_NUM_STATES, EKF_NUM_STATES);
 
-
   // [5] Measurement residual:
   // yk = Z - H*Xkk_1
   float yk[EKF_NUM_OUTPUTS];
@@ -931,7 +939,6 @@ static inline void ekf_step(const float U[EKF_NUM_INPUTS], const float Z[EKF_NUM
   float_mat_vect_mul(yk, ekf_H_, Xkk_1, EKF_NUM_OUTPUTS, EKF_NUM_STATES);
   float_vect_scale(yk, -1, EKF_NUM_OUTPUTS);
   float_vect_add(yk, Z, EKF_NUM_OUTPUTS);
-
 
   // [6] Residual covariance:
   // Sk = H*Pkk_1*H.T + R
@@ -952,7 +959,6 @@ static inline void ekf_step(const float U[EKF_NUM_INPUTS], const float Z[EKF_NUM
   // Sk += R
   float_mat_sum_scaled(Sk_, ekf_R_, 1, EKF_NUM_OUTPUTS, EKF_NUM_OUTPUTS);
 
-
   // [7] Near-optimal Kalman gain:
   // K = Pkk_1*H.T*inv(Sk)
   float Sk_inv[EKF_NUM_OUTPUTS][EKF_NUM_OUTPUTS];
@@ -967,12 +973,10 @@ static inline void ekf_step(const float U[EKF_NUM_INPUTS], const float Z[EKF_NUM
   // K = PHT*Sk_inv
   float_mat_mul(K_, PHT_, Sk_inv_, EKF_NUM_STATES, EKF_NUM_OUTPUTS, EKF_NUM_OUTPUTS);
 
-
   // [8] Updated state estimate
   // Xkk = Xkk_1 + K*yk
   float_mat_vect_mul(ekf_X, K_, yk, EKF_NUM_STATES, EKF_NUM_OUTPUTS);
   float_vect_add(ekf_X, Xkk_1, EKF_NUM_STATES);
-
 
   // [9] Updated covariance estimate:
   // Pkk = (I - K*H)*Pkk_1
@@ -984,7 +988,8 @@ static inline void ekf_step(const float U[EKF_NUM_INPUTS], const float Z[EKF_NUM
   float_mat_scale(tmp_, -1, EKF_NUM_STATES, EKF_NUM_STATES);
 
   // tmp += I
-  for (i = 0; i < EKF_NUM_STATES; i++) {
+  for (i = 0; i < EKF_NUM_STATES; i++)
+  {
     tmp_[i][i] += 1;
   }
   // P = tmp*Pkk_1
@@ -1002,13 +1007,11 @@ static inline void ekf_prediction_step(const float U[EKF_NUM_INPUTS], const floa
   // Xkk_1 += X
   float_vect_add(Xkk_1, ekf_X, EKF_NUM_STATES);
 
-
   // [2] Get matrices
   float F[EKF_NUM_STATES][EKF_NUM_STATES];
   float Ld[EKF_NUM_STATES][EKF_NUM_INPUTS];
   ekf_F(ekf_X, U, F);
   ekf_L(ekf_X, U, Ld);
-
 
   // [3] Continuous to discrete
   // Fd = eye(N) + F*dt
@@ -1025,7 +1028,6 @@ static inline void ekf_prediction_step(const float U[EKF_NUM_INPUTS], const floa
 
   // Ld = Ld*dt
   float_mat_scale(Ld_, dt, EKF_NUM_STATES, EKF_NUM_INPUTS);
-
 
   // [4] Predicted covariance estimate:
   // Pkk_1 = Fd*P*Fd.T + Ld*Q*Ld.T
@@ -1094,7 +1096,6 @@ static inline void ekf_measurement_step(const float Z[EKF_NUM_OUTPUTS])
   float_vect_scale(yk, -1, EKF_NUM_OUTPUTS);
   float_vect_add(yk, Z, EKF_NUM_OUTPUTS);
 
-
   // [6] Residual covariance:
   // Sk = H*Pkk_1*H.T + R
   float Sk[EKF_NUM_OUTPUTS][EKF_NUM_OUTPUTS];
@@ -1114,7 +1115,6 @@ static inline void ekf_measurement_step(const float Z[EKF_NUM_OUTPUTS])
   // Sk += R
   float_mat_sum_scaled(Sk_, ekf_R_, 1, EKF_NUM_OUTPUTS, EKF_NUM_OUTPUTS);
 
-
   // [7] Near-optimal Kalman gain:
   // K = Pkk_1*H.T*inv(Sk)
   float Sk_inv[EKF_NUM_OUTPUTS][EKF_NUM_OUTPUTS];
@@ -1129,12 +1129,10 @@ static inline void ekf_measurement_step(const float Z[EKF_NUM_OUTPUTS])
   // K = PHT*Sk_inv
   float_mat_mul(K_, PHT_, Sk_inv_, EKF_NUM_STATES, EKF_NUM_OUTPUTS, EKF_NUM_OUTPUTS);
 
-
   // [8] Updated state estimate
   // Xkk = Xkk_1 + K*yk
   float_mat_vect_mul(ekf_X, K_, yk, EKF_NUM_STATES, EKF_NUM_OUTPUTS);
   float_vect_add(ekf_X, Xkk_1, EKF_NUM_STATES);
-
 
   // [9] Updated covariance estimate:
   // Pkk = (I - K*H)*Pkk_1
@@ -1149,21 +1147,17 @@ static inline void ekf_measurement_step(const float Z[EKF_NUM_OUTPUTS])
 
   // tmp += I
   int i;
-  for (i = 0; i < EKF_NUM_STATES; i++) {
+  for (i = 0; i < EKF_NUM_STATES; i++)
+  {
     tmp_[i][i] += 1;
   }
   // P = tmp*Pkk_1
   float_mat_mul(ekf_P_, tmp_, Pkk_1_, EKF_NUM_STATES, EKF_NUM_STATES, EKF_NUM_STATES);
 }
 
-
-
-
-
 static inline void ekf_run(void)
 {
   static bool start = false;
-
 
   // Time
   t1 = get_sys_time_float();
@@ -1171,9 +1165,11 @@ static inline void ekf_run(void)
   t0 = t1;
 
   // Only Start If External Pose is Available
-  if (!start) {
+  if (!start)
+  {
     // ekf starts at the first ev update
-    if (ins_ext_pos.has_new_ext_pose) {
+    if (ins_ext_pos.has_new_ext_pose)
+    {
       start = true;
 
       // initial guess
@@ -1187,24 +1183,31 @@ static inline void ekf_run(void)
   }
 
   // set input values
-  if (ins_ext_pos.has_new_acc) {
+  if (ins_ext_pos.has_new_acc)
+  {
     ekf_U[0] = ins_ext_pos.accels_f.x;
     ekf_U[1] = ins_ext_pos.accels_f.y;
     ekf_U[2] = ins_ext_pos.accels_f.z;
     ins_ext_pos.has_new_acc = false;
-  } else {
+  }
+  else
+  {
     DEBUG_PRINT("ekf missing acc\n");
   }
-  if (ins_ext_pos.has_new_gyro) {
+  if (ins_ext_pos.has_new_gyro)
+  {
     ekf_U[3] = ins_ext_pos.gyros_f.p;
     ekf_U[4] = ins_ext_pos.gyros_f.q;
     ekf_U[5] = ins_ext_pos.gyros_f.r;
     ins_ext_pos.has_new_gyro = false;
-  } else {
+  }
+  else
+  {
     DEBUG_PRINT("ekf missing gyro\n");
   }
 
-  if (start) {
+  if (start)
+  {
 
     // prediction step
     DEBUG_PRINT("ekf prediction step U = %f, %f, %f, %f, %f, %f dt = %f \n", ekf_U[0], ekf_U[1], ekf_U[2], ekf_U[3],
@@ -1212,19 +1215,22 @@ static inline void ekf_run(void)
     ekf_prediction_step(ekf_U, dt);
 
     // measurement step
-    if (ins_ext_pos.has_new_ext_pose) {
+    if (ins_ext_pos.has_new_ext_pose)
+    {
 
-      //fix psi
+      // fix psi
       static float last_psi = 0;
       float delta_psi = ins_ext_pos.ev_att.psi - last_psi;
       last_psi = ins_ext_pos.ev_att.psi;
 
-      if (delta_psi > M_PI) {
+      if (delta_psi > M_PI)
+      {
         delta_psi -= 2 * M_PI;
-      } else if (delta_psi < -M_PI) {
+      }
+      else if (delta_psi < -M_PI)
+      {
         delta_psi += 2 * M_PI;
       }
-
 
       ekf_Z[0] = ins_ext_pos.ev_pos.x;
       ekf_Z[1] = ins_ext_pos.ev_pos.y;
@@ -1246,16 +1252,16 @@ static inline void ekf_run(void)
   ned_pos.z = ekf_X[2];
 
   struct NedCoor_f ned_speed;
-  ned_speed.x  = ekf_X[3];
+  ned_speed.x = ekf_X[3];
   ned_speed.y = ekf_X[4];
-  ned_speed.z  = ekf_X[5];
+  ned_speed.z = ekf_X[5];
 
   struct FloatEulers ned_to_body_eulers;
   ned_to_body_eulers.phi = ekf_X[6];
   ned_to_body_eulers.theta = ekf_X[7];
   ned_to_body_eulers.psi = ekf_X[8];
 
-  struct FloatRates rates = { ekf_U[3] - ekf_X[12], ekf_U[4] - ekf_X[13], ekf_U[5] - ekf_X[14] };
+  struct FloatRates rates = {ekf_U[3] - ekf_X[12], ekf_U[4] - ekf_X[13], ekf_U[5] - ekf_X[14]};
 
   struct FloatVect3 accel;
   struct FloatVect3 accel_ned_f;
@@ -1268,7 +1274,6 @@ static inline void ekf_run(void)
   ACCELS_BFP_OF_REAL(accel_i, accel);
   stateSetAccelBody_i(&accel_i);
 
-
   struct FloatRMat *ned_to_body_rmat_f = stateGetNedToBodyRMat_f();
   float_rmat_transp_vmult(&accel_ned_f, ned_to_body_rmat_f, &accel);
   accel_ned_f.z += 9.81;
@@ -1278,10 +1283,7 @@ static inline void ekf_run(void)
   stateSetNedToBodyEulers_f(&ned_to_body_eulers);
   stateSetBodyRates_f(&rates);
   stateSetAccelNed_f((struct NedCoor_f *)&accel_ned_f);
-
 }
-
-
 
 /**
  * Logging
