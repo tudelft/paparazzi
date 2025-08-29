@@ -164,6 +164,18 @@ void float_rmat_transp_ratemult(struct FloatRates *rb, struct FloatRMat *m_b2a, 
   rb->r = m_b2a->m[2] * ra->p + m_b2a->m[5] * ra->q + m_b2a->m[8] * ra->r;
 }
 
+/** Take transpose of a matrix */
+void float_rmat_transp(struct FloatRMat *m_t, struct FloatRMat *m) {
+  m_t->m[0] = m->m[0];
+  m_t->m[1] = m->m[3];
+  m_t->m[2] = m->m[6];
+  m_t->m[3] = m->m[1];
+  m_t->m[4] = m->m[4];
+  m_t->m[5] = m->m[7];
+  m_t->m[6] = m->m[2];
+  m_t->m[7] = m->m[5];
+  m_t->m[8] = m->m[8];
+}
 
 /** initialises a rotation matrix from unit vector axis and angle */
 void float_rmat_of_axis_angle(struct FloatRMat *rm, struct FloatVect3 *uv, float angle)
