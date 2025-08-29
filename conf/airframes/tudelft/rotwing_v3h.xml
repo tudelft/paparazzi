@@ -117,18 +117,6 @@
         <module name="stabilization" type="indi">
             <configure name="INDI_NUM_ACT" value="9"/>
             <configure name="INDI_OUTPUTS" value="5"/>
-            <define name="WLS_N_U_MAX" value="9"/>
-            <define name="WLS_N_V_MAX" value="5"/>
-        </module>
-
-        <!-- Control -->      
-        <module name="stabilization" type="oneloop" >
-            <define name="STABILIZATION_RATE_GAIN_P" value="1"/>
-            <define name="STABILIZATION_RATE_GAIN_Q" value="1"/>
-            <define name="STABILIZATION_RATE_GAIN_R" value="1"/>
-            <define name="STABILIZATION_RATE_SP_MAX_P" value="1"/>
-            <define name="STABILIZATION_RATE_SP_MAX_Q" value="1"/>
-            <define name="STABILIZATION_RATE_SP_MAX_R" value="1"/>
         </module>
 
         <module name="eff_scheduling_rotwing"/>

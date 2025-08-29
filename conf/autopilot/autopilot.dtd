@@ -9,8 +9,8 @@
 <!ELEMENT mode (select*,on_enter?,control*,exception*,on_exit?)>
 <!ELEMENT select EMPTY>
 <!ELEMENT mode_select EMPTY>
-<!ELEMENT on_enter (call)*>
-<!ELEMENT on_exit (call)*>
+<!ELEMENT on_enter (call|call_block)*>
+<!ELEMENT on_exit (call|call_block)*>
 <!ELEMENT control (call|call_block)*>
 <!ELEMENT exception EMPTY>
 <!ELEMENT include EMPTY>
@@ -129,4 +129,3 @@ group CDATA #IMPLIED
 key CDATA #REQUIRED
 value CDATA #REQUIRED
 >
-
