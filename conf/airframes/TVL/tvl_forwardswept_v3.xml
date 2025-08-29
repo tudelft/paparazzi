@@ -188,7 +188,7 @@
     <define name="THETA_DGAIN" value="700"/>
     <define name="THETA_IGAIN" value="10"/>
     
-    <define name="PSI_PGAIN" value="4000"/>
+    <define name="PSI_PGAIN" value="1000"/>
     <define name="PSI_DGAIN" value="200"/>
     <define name="PSI_IGAIN" value="10"/>
 
