@@ -328,18 +328,18 @@ void eff_scheduling_rotwing_update_hover_motor_effectiveness(void)
 
   // Roll motor effectiveness
   float dM_dpprz_right  = dM_dpprz[1];
-  float dM_dpprz_left   = dM_dpprz[3];;
+  float dM_dpprz_left   = dM_dpprz[3];
 
-  float roll_motor_p_eff_right = -(dM_dpprz_right * eff_sched_var.cosr + eff_sched_p.hover_roll_roll_coef[0] * eff_sched_var.wing_rotation_rad * eff_sched_var.wing_rotation_rad * eff_sched_var.airspeed * eff_sched_var.cosr) / eff_sched_var.Ixx;
+  float roll_motor_p_eff_right = -(dM_dpprz_right * eff_sched_var.cosr) / eff_sched_var.Ixx;
   roll_motor_p_eff_right = bound_or_zero(roll_motor_p_eff_right, -1.f, -0.00001f);
 
-  float roll_motor_p_eff_left = (dM_dpprz_left * eff_sched_var.cosr + eff_sched_p.hover_roll_roll_coef[0] * eff_sched_var.wing_rotation_rad * eff_sched_var.wing_rotation_rad * eff_sched_var.airspeed * eff_sched_var.cosr) / eff_sched_var.Ixx;
+  float roll_motor_p_eff_left = (dM_dpprz_left * eff_sched_var.cosr) / eff_sched_var.Ixx;
   roll_motor_p_eff_left = bound_or_zero(roll_motor_p_eff_left, 0.0005f, 1.f);
 
   float roll_motor_q_eff_right = (dM_dpprz_right * eff_sched_var.sinr) / eff_sched_var.Iyy;
+  roll_motor_q_eff_right = bound_or_zero(roll_motor_q_eff_right, 0.0005f, 1.f);
+
   float roll_motor_q_eff_left = -(dM_dpprz_left * eff_sched_var.sinr) / eff_sched_var.Iyy;
-  
-  roll_motor_q_eff_right = bound_or_zero(roll_motor_q_eff_right, 0.0005f, 1.f);;
   roll_motor_q_eff_left = bound_or_zero(roll_motor_q_eff_left, -1.f, -0.0005f);
 
   // Update front pitch motor q effectiveness
@@ -349,7 +349,7 @@ void eff_scheduling_rotwing_update_hover_motor_effectiveness(void)
   g1g2[RW_aq][COMMAND_MOTOR_BACK] = - dM_dpprz[2] / eff_sched_var.Iyy;  // pitch effectiveness back motor
   
   // Update right motor p and q effectiveness
-  g1g2[RW_ap][COMMAND_MOTOR_RIGHT] = roll_motor_p_eff_right;   // roll effectiveness right motor (no airspeed compensation)
+  g1g2[RW_ap][COMMAND_MOTOR_RIGHT] = roll_motor_p_eff_right;   // roll effectiveness right motor
   g1g2[RW_aq][COMMAND_MOTOR_RIGHT] = roll_motor_q_eff_right;    // pitch effectiveness right motor
 
   // Update left motor p and q effectiveness

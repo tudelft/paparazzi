@@ -121,11 +121,36 @@
             <define name="WLS_N_V_MAX" value="5"/>
         </module>
 
+        <!-- Control -->      
+        <module name="stabilization" type="oneloop" >
+            <define name="STABILIZATION_RATE_GAIN_P" value="1"/>
+            <define name="STABILIZATION_RATE_GAIN_Q" value="1"/>
+            <define name="STABILIZATION_RATE_GAIN_R" value="1"/>
+            <define name="STABILIZATION_RATE_SP_MAX_P" value="1"/>
+            <define name="STABILIZATION_RATE_SP_MAX_Q" value="1"/>
+            <define name="STABILIZATION_RATE_SP_MAX_R" value="1"/>
+        </module>
+
         <module name="eff_scheduling_rotwing"/>
 
         <module name="guidance" type="indi_hybrid_quadplane"/>
         <module name="nav" type="hybrid">
           <define name="GUIDANCE_H_USE_REF" value="FALSE"/>
+        </module>
+
+        <!-- Secondary Control -->      
+        <module name="stabilization" type="oneloop" >
+            <configure name="INDI_NUM_ACT" value="9"/>
+        </module>
+        <module name="guidance" type="oneloop"/>
+        <module name="oneloop" type="andi">
+            <configure name="ANDI_OUTPUTS" value="6"/>
+        </module>
+        <module name="eff_scheduling_rotwing_V2"/>  
+
+        <module name="wls">
+            <define name="WLS_N_U_MAX" value = "11"/>
+            <define name="WLS_N_V_MAX" value = "6"/>
         </module>
 
         <!-- Other -->
@@ -141,6 +166,30 @@
         <module name="agl_dist"/>
         <module name="approach_moving_target"/>
     </firmware>
+
+    <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
+        <define name  = "MAX_R"                     value = "120.0" unit="deg/s"/>
+        <define name  = "FILT_CUTOFF"               value = "3.0" />
+        <define name  = "FILT_CUTOFF_ACC"           value = "3.0"/>
+        <define name  = "FILT_CUTOFF_VEL"           value = "5.0"/>
+        <define name  = "FILT_CUTOFF_POS"           value = "10.0"/>
+        <define name  = "ESTIMATION_FILT_CUTOFF"    value = "3.2" />
+        <define name  = "FILT_CUTOFF_P"             value = "3.0"/>
+        <define name  = "FILT_CUTOFF_Q"             value = "3.0"/>
+        <define name  = "FILT_CUTOFF_R"             value = "3.0" />
+        <define name  = "FILT_CUTOFF_RDOT"          value = "0.5" />  
+        <define name  = "FILTER_YAW_RATE"           value = "TRUE"/>
+        <!--                                                 |   MF   |   MR   |    MB   |    ML   |   MP   |   ELE  |    RUD  |    AIL  |    FLA  |   PHI  |  THETA | -->
+        <define name  = "ACT_DYN"                   value = "{   22.0f,   22.0f,    22.0f,    22.0f,   30.0f,  50.00f,   50.00f,   50.00f,   50.00f,   0.00f,  0.00f }" />
+        <define name  = "ACT_IS_SERVO"              value = "{       0,       0,        0,        0,       0,       1,        1,        1,        1,       0,      0 }" />
+        <define name  = "ACT_MAX"                   value = "{ 9600.0f, 9600.0f,  9600.0f,  9600.0f, 9600.0f, 9600.0f,  9600.0f,  9600.0f,  9600.0f,  M_PI_4,  M_PI_6}"/>
+        <define name  = "ACT_MIN"                   value = "{    0.0f,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f, -9600.0f, -9600.0f, -9600.0f, -M_PI_4, -M_PI_6}"/>
+        <define name  = "ACT_MAX_NORM"              value = "{    1.0f,    1.0f,     1.0f,     1.0f,    1.0f,    1.0f,     1.0f,     1.0f,     1.0f,    1.0f,    1.0f}"/>
+        <define name  = "ACT_MIN_NORM"              value = "{    0.0f,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f,    -1.0f,    -1.0f,    -1.0f,   -1.0f,   -1.0f}"/>
+        <define name  = "WU"                        value = "{   0.75f,   0.75f,    0.75f,    0.75f,   1.00f,    6.0f,     6.0f,     6.0f,     6.0f,   1.20f,   1.20f}"/>
+        <define name  = "U_PREF"                    value = "{   0.00f,   0.00f,    0.00f,    0.00f,   0.00f, 8000.0f,    0.00f,    0.00f,    0.00f,   0.00f,   0.00f}"/>
+        <define name  = "WV"                        value = "{  4.0f,  4.0f,   4.0f,  8.0f,  8.0f,  1.00f}"/>   
+    </section>
 
     <!-- Can bus 1 actuators -->
     <servos driver="Uavcan1">
