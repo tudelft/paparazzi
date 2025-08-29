@@ -13,6 +13,12 @@
     <waypoint name="TD" x="10" y="-1"/>
     <waypoint name="APP" x="70" y="-25"/>
     <waypoint name="FOLLOW" x="300" y="80"/>
+    <waypoint name="SIXDOF" x="-1" y="7"/>
+    <waypoint name="RELANGLE" x="-10" y="-10"/>
+    <waypoint name="RELBEACON" x="-10" y="-10"/>
+    <waypoint name="ARUCO" x="-10" y="-10"/>
+    <waypoint name="KALMAN" x="-10" y="-10"/>
+    <waypoint name="BOX" x="-10" y="-10"/>
     <!-- EHVB -->
     <waypoint lat="52.169189" lon="4.410820" name="C1"/>
     <waypoint lat="52.168049" lon="4.406923" name="C2"/>
@@ -69,9 +75,9 @@
     <variable var="flare_height" init="FLARE_HEIGHT"/>
   </variables>
   <modules>
-    <module name="follow_me">
+    <!-- <module name="follow_me">
       <define name="FOLLOW_ME_MOVING_WPS" value="WP_FOLLOW"/>
-    </module>
+    </module> -->
   </modules>
   <exceptions>
     <!-- Outside of hard (red) geofence kill -->
@@ -144,6 +150,23 @@
       <call_once fun="rotwing_state_set(ROTWING_STATE_FREE)"/>
       <stay wp="STDBY"/>
     </block>
+    <block name="stay_ARUCO" strip_button="Stay ARUCO">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <stay wp="ARUCO"/>
+    </block>
+    <!-- <block name="stay_KALMAN" strip_button="Stay KALMAN" on_enter="nav_hybrid_wp_moving=true" on_exit="nav_hybrid_wp_moving=false">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <stay wp="KALMAN"/>
+    </block> -->
+    <block name="stay_KALMAN_no_FF" strip_button="Stay KALMAN no ff">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <stay wp="KALMAN"/>
+    </block>
+    <!-- <block name="descend_KALMAN" strip_button="Descend KALMAN" on_enter="nav_hybrid_wp_moving=true" on_exit="nav_hybrid_wp_moving=false">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <stay climb="-0.2" vmode="climb" wp="KALMAN"/>
+        <exception cond="agl_dist_valid @AND (agl_dist_value @LT 1.0)" deroute="stay_KALMAN_no_FF"/>
+    </block> -->
     <block name="stay_p1" strip_button="Stay P1" strip_icon="wp_quad.png">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
       <stay wp="p1"/>
