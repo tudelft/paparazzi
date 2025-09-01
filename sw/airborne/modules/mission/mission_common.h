@@ -117,7 +117,7 @@ struct _mission_element {
  *  can be redefined
  */
 #ifndef MISSION_ELEMENT_NB
-#define MISSION_ELEMENT_NB 20
+#define MISSION_ELEMENT_NB 200
 #endif
 
 /** Max number of registered nav/action callbacks
