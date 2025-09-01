@@ -424,7 +424,9 @@ let parse_and_gen_modes xml_file ap_name main_freq h_dir sm =
     if Sys.file_exists h_file then Sys.remove h_file;
     if Sys.command (sprintf "mv -f %s %s" tmp_file h_file) > 0 then
       failwith (sprintf "gen_autopilot: fail to move tmp file %s to final location" tmp_file)
-  with _ -> Sys.remove tmp_file
+  with err ->
+    Printf.eprintf "gen_autopilot: %s\n%!" (Printexc.to_string err);
+    Sys.remove tmp_file
 
 
 (** Main generation function
