@@ -26,4 +26,22 @@
 #ifndef ROTWING_AP_UTILS
 #define ROTWING_AP_UTILS
 
+#include "firmwares/rotorcraft/oneloop/oneloop_andi.h"
+#include "firmwares/rotorcraft/stabilization/guidance_indi_hybrid.h"
+
+enum rotwing_ctrl_mode {
+  ROTWING_CTRL_MODE_INDI,
+  ROTWING_CTRL_MODE_ANDI
+};
+
+struct rotwing_ap_utils {
+  enum rotwing_ctrl_mode ctrl_mode;
+  uint8_t h_mode;
+  uint8_t v_mode;
+};
+
+extern struct rotwing_ap_utils rotwing_ap_utils;
+
+extern void rotwing_ap_utils_init(void);
+
 #endif

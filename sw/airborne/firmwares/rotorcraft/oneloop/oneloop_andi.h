@@ -84,18 +84,6 @@ extern float t_chirp;
 extern float A_chirp;
 extern int8_t chirp_axis;
 
-// Delete once hybrid nav is fixed //////////////////////////////////////////////////////////////////////////////////
-struct guidance_indi_hybrid_params {
-  float pos_gain;
-  float pos_gainz;
-  float speed_gain;
-  float speed_gainz;
-  float heading_bank_gain;
-  float liftd_asq;
-  float liftd_p80;
-  float liftd_p50;
-};
-extern struct guidance_indi_hybrid_params gih_params;
 //extern bool force_forward; 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct OneloopGuidanceRef {

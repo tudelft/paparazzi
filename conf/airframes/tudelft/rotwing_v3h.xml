@@ -152,7 +152,7 @@
         <module name="pfc_actuators"/>
         <module name="airspeed_consistency"/>
         <module name="agl_dist"/>
-        <module name="approach_moving_target"/>
+        <!-- <module name="approach_moving_target"/> -->
     </firmware>
 
     <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">

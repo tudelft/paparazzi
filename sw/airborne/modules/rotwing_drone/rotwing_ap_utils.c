@@ -27,6 +27,15 @@
 #include "firmwares/rotorcraft/autopilot_utils.h"
 #include "modules/core/commands.h"
 
+struct rotwing_ap_utils rotwing_ap_utils;
+
+void rotwing_ap_utils_init(void)
+{
+  rotwing_ap_utils.ctrl_mode = ROTWING_CTRL_MODE_INDI;
+  rotwing_ap_utils.h_mode = GUIDANCE_INDI_HYBRID_H_SPEED;
+  rotwing_ap_utils.v_mode = GUIDANCE_INDI_HYBRID_V_SPEED;
+}
+
 void set_rotorcraft_commands(pprz_t *cmd_out, int32_t *cmd_in, bool in_flight __attribute__((unused)), bool motors_on __attribute__((unused)))
 {
 #if !ROTORCRAFT_IS_HELI

@@ -2236,8 +2236,8 @@ void reshape_wind(void)
   if (((airspeed > ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD) && (norm_des_as > (ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD+2.0f)))|| (force_forward)){
     float delta_psi = atan2f(des_as_NE.y, des_as_NE.x) - psi; 
     FLOAT_ANGLE_NORMALIZE(delta_psi);
-    des_acc_B.y = delta_psi * 5.0;//gih_params.heading_bank_gain;
-    des_acc_B.x = (des_as_B.x - airspeed) * k_pos_rm.k2[0];//gih_params.speed_gain;
+    des_acc_B.y = delta_psi * 5.0;
+    des_acc_B.x = (des_as_B.x - airspeed) * k_pos_rm.k2[0];
     acc_body_bound(&des_acc_B, max_a_nav); // Scale down side acceleration if norm is too large
     nav_target_new[0] = cpsi * des_acc_B.x - spsi * des_acc_B.y;
     nav_target_new[1] = spsi * des_acc_B.x + cpsi * des_acc_B.y; 

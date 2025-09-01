@@ -1,6 +1,8 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 <flight_plan alt="100" ground_alt="0" lat0="52.1681551" lon0="4.4126468" max_dist_from_home="1070" name="Rotating Wing Valkenburg" security_height="2">
-  <header/>
+  <header>
+    #include "modules/rotwing_drone/rotwing_ap_utils.h"
+  </header>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
     <waypoint name="CLIMB" x="300." y="70"/>
@@ -129,7 +131,11 @@
       <call_once fun="nav_set_heading_current()"/>
       <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
-    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+    <block name="Standby" strip_button="Standby INDI" strip_icon="home.png">
+      <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+      <stay wp="STDBY"/>
+    </block>
+    <block name="Standby_ANDI" strip_button="Standby ANDI" strip_icon="home.png" on_enter="rotwing_ctrl_mode=ROTWING_CTRL_MODE_ANDI" on_exit="rotwing_ctrl_mode=ROTWING_CTRL_MODE_INDI">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
       <stay wp="STDBY"/>
     </block>

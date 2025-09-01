@@ -9,7 +9,7 @@
   <header>
     <file name="rotwing_ap_utils.h"/>
   </header>
-
+  <init fun="rotwing_ap_utils_init()"/>
   <makefile>
     <file name="rotwing_ap_utils.c"/>
   </makefile>

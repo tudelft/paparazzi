@@ -31,14 +31,6 @@
 #include "filters/low_pass_filter.h"
 #include "modules/ins/ins_ext_pose.h"
 
-#define FORCE_ONELOOP
-#ifdef FORCE_ONELOOP
-#include "firmwares/rotorcraft/oneloop/oneloop_andi.h"
-float actuator_state_filt_vect[EFF_MAT_COLS_NB] = {0};
-#else
-#include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
-#endif
-
 #ifndef ROTWING_EFF_SCHED_IXX_BODY
 #error "NO ROTWING_EFF_SCHED_IXX_BODY defined"
 #endif
@@ -397,9 +389,10 @@ void eff_scheduling_rotwing_update_wing_angle(void)
 #endif
 
 }
-float time = 0.0;
+
 void eff_scheduling_rotwing_update_airspeed(void)
 {
+  static float time = 0.0;
   RW.as = stateGetAirspeed_f();
   Bound(RW.as, 0. , 30.);
   RW.as2 = RW.as * RW.as;
