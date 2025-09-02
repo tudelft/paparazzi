@@ -51,6 +51,8 @@ struct NavMovingBase {
   struct FloatVect3 speed_gain; ///< speed gain for speed control
   uint8_t active_wp;
   uint8_t active_sender;
+  int timer_id;
+  bool timed_out;
 };
 
 extern struct NavMovingBase nav_moving_base;

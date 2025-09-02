@@ -30,6 +30,7 @@
 #include "modules/nav/waypoints.h"
 #include "modules/datalink/downlink.h"
 #include "modules/core/abi.h"
+#include "mcu_periph/sys_time.h"
 
 #ifndef NAV_MOVING_BASE_OVERWRITE_POS_GAIN
 #define NAV_MOVING_BASE_OVERWRITE_POS_GAIN FALSE
@@ -49,6 +50,10 @@
 
 #ifndef NAV_MOVING_BASE_DESCEND_SPEED
 #define NAV_MOVING_BASE_DESCEND_SPEED 0.5f
+#endif
+
+#ifndef NAV_MOVING_BASE_TIMEOUT
+#define NAV_MOVING_BASE_TIMEOUT 0.5f
 #endif
 
 #ifndef NAV_MOVING_BASE_MAX_H_ACCEL
@@ -126,6 +131,8 @@ PRINT_CONFIG_VAR(NAV_MOVING_BASE_DESCEND_SPEED);
 static bool nav_moving_base_track(void);
 static bool nav_moving_base_descend(void);
 static bool nav_moving_base_land(void);
+static void nav_moving_base_set_timer(void);
+static void nav_moving_base_cancel_timer(void);
 
 void nav_moving_base_init(void) {
   struct FloatVect2 max_h_accel[2] = NAV_MOVING_BASE_MAX_H_ACCEL;
@@ -148,6 +155,7 @@ void nav_moving_base_init(void) {
   nav_moving_base.speed_gain = (struct FloatVect3) {speed_gain_h, speed_gain_h, speed_gain_v};
 
   nav_moving_base.stay = false;
+  nav_moving_base.timed_out = false;
 
   // Bind to broadcast, filtering based on sender ID is done by the callback itself
   AbiBindMsgMOVING_BASE(ABI_BROADCAST, &nav_moving_base_ev, nav_moving_base_cb);
@@ -264,15 +272,24 @@ static bool nav_moving_base_land(void) {
 }
 
 void nav_moving_base_periodic(void) {
+  
+  // check if we had a timeout on a transaction
+  if (sys_time_check_and_ack_timer(nav_moving_base.timer_id)) {
+    nav_moving_base_cancel_timer();
+    nav_moving_base.timed_out = true;
+  }
+
   if (nav_moving_base.active_wp == WP_STDBY) {
     VECT3_COPY(nav_moving_base.pos, waypoints[WP_STDBY].enu_f);
   }
-  
-  DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &nav_moving_base.active_wp,
-      &waypoints[nav_moving_base.active_wp].enu_i.x,
-      &waypoints[nav_moving_base.active_wp].enu_i.y,
-      &waypoints[nav_moving_base.active_wp].enu_i.z
-  );
+
+  RunOnceEvery(NAV_MOVING_BASE_PERIODIC_FREQ / 5, {
+    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &nav_moving_base.active_wp,
+        &waypoints[nav_moving_base.active_wp].enu_i.x,
+        &waypoints[nav_moving_base.active_wp].enu_i.y,
+        &waypoints[nav_moving_base.active_wp].enu_i.z
+    );
+  });
 }
 
 void enforce_horizontal_bounds(struct EnuCoor_f* quantity, struct FloatVect2* bounds) {
@@ -310,7 +327,8 @@ static void nav_moving_base_cb(uint8_t sender_id, struct EnuCoor_f *pos, struct 
     return;
   }
 
-  // TODO: Keep track of when we receive setpoints and start a timeout, raise exception in FP maybe?
+  nav_moving_base_cancel_timer();
+  nav_moving_base_set_timer();
 
   // FIXME else what?
   if (pos != NULL) {
@@ -329,4 +347,22 @@ static void nav_moving_base_cb(uint8_t sender_id, struct EnuCoor_f *pos, struct 
 
 void nav_moving_base_set_active_sender(uint8_t sender_id) {
   nav_moving_base.active_sender = sender_id;
+  nav_moving_base_set_timer();
+}
+
+void nav_moving_base_set_timer(void) {
+  nav_moving_base.timed_out = false;
+  if (nav_moving_base.timer_id < 0) {
+    nav_moving_base.timer_id = sys_time_register_timer(NAV_MOVING_BASE_TIMEOUT, NULL);
+  }
+  else {
+    sys_time_update_timer(nav_moving_base.timer_id, NAV_MOVING_BASE_TIMEOUT);
+  }
+}
+
+void nav_moving_base_cancel_timer(void) {
+  if (nav_moving_base.timer_id >= 0) {
+    sys_time_cancel_timer(nav_moving_base.timer_id);
+  }
+  nav_moving_base.timer_id = -1;
 }
