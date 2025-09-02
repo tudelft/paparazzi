@@ -4,17 +4,20 @@
 
   <state_machine name="ap" freq="PERIODIC_FREQUENCY" gcs_mode="true" settings_mode="true" settings_handler="autopilot_generated|SetModeHandler">
 
+    <modules>
+      <!-- <module name="nav" type="rotorcraft"/>
+      <module name="guidance" type="rotorcraft"/>
+      <module name="stabilization" type="rotorcraft"/> -->
+      <module name="rotwing_ap_utils"/>
+    </modules>
+
     <includes>
       <include name="generated/airframe.h"/>
       <include name="autopilot.h"/>
       <include name="autopilot_rc_helpers.h"/>
-      <include name="navigation.h"/>
-      <include name="guidance.h"/>
-      <include name="stabilization.h"/>
       <include name="modules/radio_control/radio_control.h"/>
       <include name="modules/gps/gps.h"/>
       <include name="modules/actuators/actuators.h"/>
-      <include name="modules/rotwing_drone/rotwing_state.h"/>
       <include name="modules/nav/ground_detect.h"/>
 
       <!-- Failsafe variables -->
@@ -44,9 +47,9 @@
       <call fun="SetThrottleValue()"/>
     </control_block>
 
-    <control_block name="run_attitude_control">
+    <control_block name="run_indi_att_control">
       <call fun="guidance_v_run(autopilot_in_flight())" store="struct ThrustSetpoint thrust_sp"/>
-      <call fun="stabilization_run(autopilot_in_flight(), &stabilization.rc_sp, &thrust_sp, stabilization.cmd)"/>
+      <call fun="stabilization_indi_attitude_run(autopilot_in_flight(), &stabilization.rc_sp, &thrust_sp, stabilization.cmd)"/>
     </control_block>
 
     <control_block name="run_rate_control">
@@ -54,10 +57,26 @@
       <call fun="stabilization_run(autopilot_in_flight(), &stabilization.rc_sp, &thrust_sp, stabilization.cmd)"/>
     </control_block>
 
-    <control_block name="run_guidance_control">
+    <!-- Enter blocks different controllers -->
+    <control_block name="indi_enter">
+      <call fun="guidance_indi_enter()"/>
+      <call fun="stabilization_indi_enter()"/>
+    </control_block>
+
+    <control_block name="andi_enter">
+      <call fun="oneloop_andi_enter(false, CTRL_ANDI)"/>
+    </control_block>
+
+    <!-- Periodic blocks different controllers -->
+    <control_block name="run_andi_attitude_control">
+      <call fun="guidance_oneloop_run_mode(autopilot_in_flight(), &guidance_h, &guidance_v, rotwing_ap.h_mode, rotwing_ap.v_mode)"/>
       <call fun="guidance_v_run(autopilot_in_flight())" store="struct ThrustSetpoint thrust_sp"/>
-      <call fun="guidance_h_run(autopilot_in_flight())" store="struct StabilizationSetpoint stab_sp"/>
-      <call fun="stabilization_run(autopilot_in_flight(), &stab_sp, &thrust_sp, stabilization.cmd)"/>
+    </control_block>
+
+    <control_block name="run_indi_control">
+      <call fun="guidance_indi_run_mode(autopilot_in_flight(), &guidance_h, &guidance_v, rotwing_ap.h_mode, rotwing_ap.v_mode)" store="struct StabilizationSetpoint stab_sp"/>
+      <call fun="guidance_v_run(autopilot_in_flight())" store="struct ThrustSetpoint thrust_sp"/>
+      <call fun="stabilization_indi_attitude_run(autopilot_in_flight(), &stab_sp, &thrust_sp, stabilization.cmd)"/>
     </control_block>
 
     <control_block name="update_v_sp_gcs">
@@ -119,7 +138,7 @@
         <call fun="nav_home()"/>
       </control>
       <control>
-        <call_block name="run_guidance_control"/>
+        <call_block name="run_indi_control"/>
         <call_block name="set_commands"/>
       </control>
       <exception cond="GpsIsLost() && autopilot_in_flight() && !NO_GPS_LOST_WITH_RC_VALID && (datalink_time > NO_GPS_LOST_WITH_DATALINK_TIME)" deroute="FAILSAFE"/>
@@ -155,80 +174,32 @@
         <call fun="nav_periodic_task()"/>
       </control>
       <control>
-        <call_block name="run_attitude_control"/>
+        <call_block name="run_indi_att_control"/>
         <call_block name="set_commands"/>
       </control>
-      <exception cond="RCLost()" deroute="NAV"/>
-    </mode>
-
-    <!-- Rate climb rc mode 5-->
-    <mode name="RATE_RC_CLIMB" shortname="RRCC">
-      <exception cond="RCLost()" deroute="NAV"/>
-    </mode>
-
-    <!-- ATTITUDE_RC_CLIMB: 6 -->
-    <mode name="ATTITUDE_RC_CLIMB" shortname="ATTITUDE_RC_CLIMB">
-      <exception cond="RCLost()" deroute="NAV"/>
-    </mode>
-
-    <!-- ATTITUDE_CLIMB: 7 -->
-    <mode name="ATTITUDE_CLIMB" shortname="ATTITUDE_CLIMB">
-      <exception cond="RCLost()" deroute="NAV"/>
-    </mode>
-
-    <!-- RATE_Z_HOLD: 8 -->
-    <mode name="RATE_Z_HOLD" shortname="RATE_Z_HOLD">
-      <exception cond="RCLost()" deroute="NAV"/>
-    </mode>
-
-    <!-- ATTITUDE_Z_HOLD: 9 -->
-    <mode name="ATTITUDE_Z_HOLD" shortname="A_ZH">
-      <exception cond="RCLost()" deroute="NAV"/>
-    </mode>
-
-    <!-- HOVER_DIRECT: 10 -->
-    <mode name="HOVER_DIRECT" shortname="HOVER_DIRECT">
-      <exception cond="RCLost()" deroute="NAV"/>
-    </mode>
-
-    <!-- HOVER_CLIMB: 11 -->
-    <mode name="HOVER_CLIMB" shortname="HOVER_CLIMB">
-      <exception cond="RCLost()" deroute="NAV"/>
-    </mode>
-
-    <!-- HOVER_Z_HOLD: 12 -->
-    <mode name="HOVER_Z_HOLD" shortname="HOVER_Z_HOLD">
       <exception cond="RCLost()" deroute="NAV"/>
     </mode>
 
     <!-- NAV: 13 -->
     <mode name="NAV">
       <select cond="RCMode2() && DLModeNav()" exception="HOME"/>
+      <select cond="$DEFAULT_MODE"/>
       <on_enter>
         <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NAV)"/>
         <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_NAV)"/>
         <call fun="stabilization_mode_changed(STABILIZATION_MODE_ATTITUDE, STABILIZATION_ATT_SUBMODE_HEADING)"/>
+        <call_block name="indi_enter"/>
       </on_enter>
       <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
-        
       </control>
       <control>
+        <call_block name="run_indi_control"/>
         <call_block name="update_v_sp_gcs"/>
-        <call_block name="run_guidance_control"/>
         <call_block name="set_commands"/>
       </control>
       <exception cond="GpsIsLost() && autopilot_in_flight() && !NO_GPS_LOST_WITH_RC_VALID && (datalink_time > NO_GPS_LOST_WITH_DATALINK_TIME)" deroute="FAILSAFE"/>
-    </mode>
-
-        <!-- RC_DIRECT: 14 -->
-    <mode name="RC_DIRECT" shortname="RC_DIRECT">
-      <exception cond="RCLost()" deroute="NAV"/>
-    </mode>
-
-    <!-- CARE_FREE_DIRECT: 15 -->
-    <mode name="CARE_FREE_DIRECT" shortname="CARE_FREE_DIRECT">
-      <exception cond="RCLost()" deroute="NAV"/>
+      <exception cond="rotwing_ap.ctrl_mode == ROTWING_CTRL_MODE_ANDI" deroute="NAV_ANDI"/>
     </mode>
 
     <!-- FORWARD: 16 -->
@@ -243,26 +214,36 @@
         <call fun="nav_periodic_task()"/>
       </control>
       <control>
-        <call_block name="run_attitude_control"/>
+        <call_block name="run_indi_att_control"/>
         <call_block name="set_commands"/>
       </control>
       <exception cond="RCLost()" deroute="NAV"/>
     </mode>
 
-    <!-- MODULE: 17 -->
-    <mode name="MODULE" shortname="MODULE">
-      <exception cond="RCLost()" deroute="NAV"/>
-    </mode>
-
-    <!-- FLIP: 18 -->
-    <mode name="FLIP" shortname="FLIP">
-      <exception cond="RCLost()" deroute="NAV"/>
-    </mode>
-
-    <!-- GUIDED: 19 -->
-    <mode name="GUIDED">
+    <!-- NAV_ANDI: 18 -->
+    <mode name="NAV_ANDI" shortname="NAV_ANDI">
+      <select cond="RCMode2() && DLModeNav()" exception="HOME"/>
+      <on_enter>
+        <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NAV)"/>
+        <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_NAV)"/>
+        <call fun="stabilization_mode_changed(STABILIZATION_MODE_ATTITUDE, STABILIZATION_ATT_SUBMODE_HEADING)"/>
+        <call fun="rotwing_ap_utils_configure_andi()"/>
+        <call_block name="andi_enter"/>
+      </on_enter>
+      <!-- <on_exit>
+        <call fun="rotwing_ap_utils_configure_indi()"/>
+      </on_exit> -->
+      <control freq="NAVIGATION_FREQUENCY">
+        <call fun="nav_periodic_task()"/>
+      </control>
+      <control>
+        <call_block name="run_andi_attitude_control"/>
+        <call_block name="update_v_sp_gcs"/>
+        <call_block name="set_commands"/>
+      </control>
       <exception cond="GpsIsLost() && autopilot_in_flight() && !NO_GPS_LOST_WITH_RC_VALID && (datalink_time > NO_GPS_LOST_WITH_DATALINK_TIME)" deroute="FAILSAFE"/>
-    </mode>  
+      <exception cond="rotwing_ap.ctrl_mode == ROTWING_CTRL_MODE_INDI" deroute="NAV"/>
+    </mode>
   </state_machine>
 
 </autopilot>
