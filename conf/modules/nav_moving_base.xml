@@ -26,7 +26,7 @@
     <file name="nav_moving_base.h" dir="modules/nav"/>
   </header>
   <init fun="nav_moving_base_init()"/>
-  <periodic fun="nav_moving_base_periodic()" freq="5"/>
+  <periodic fun="nav_moving_base_periodic()" freq="50"/>
   <makefile>
     <file name="nav_moving_base.c" dir="modules/nav"/>
   </makefile>
