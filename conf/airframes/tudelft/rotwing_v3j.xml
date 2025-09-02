@@ -61,8 +61,6 @@
             <define name="USE_SONAR"                value="1"/> <!-- Because uavcan can't handle simulation yet -->
         </target>
 
-        <module name="rotwing_ap_utils"/>
-
         <!-- Herelink datalink -->
         <module name="telemetry" type="transparent">
             <configure name="MODEM_BAUD" value="B460800"/>
@@ -140,7 +138,7 @@
         <module name="pfc_actuators"/>
         <module name="airspeed_consistency"/>
         <module name="agl_dist"/>
-        <module name="approach_moving_target"/>
+        <!-- <module name="approach_moving_target"/> -->
     </firmware>
 
     <!-- Can bus 1 actuators -->

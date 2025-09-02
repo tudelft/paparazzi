@@ -10,7 +10,7 @@
     <description>RotatingWingV3H</description>
 
     <firmware name="rotorcraft">
-    <autopilot name="rotorcraft_rotwing.xml"/>
+    <autopilot name="rotorcraft_rotwing_ANDI_INDI.xml"/>
         <target name="ap" board="cube_orangeplus">
             <configure name="PERIODIC_FREQUENCY" value="500"/> <!-- Configure the main periodic frequency to 500Hz -->
 
@@ -61,7 +61,7 @@
         </target>
 
         <module name="rotwing_ap_utils"/>
-
+        
         <!-- Herelink datalink -->
         <module name="telemetry" type="transparent">
             <configure name="MODEM_BAUD" value="B460800"/>

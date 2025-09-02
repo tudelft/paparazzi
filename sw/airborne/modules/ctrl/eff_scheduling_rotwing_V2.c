@@ -74,13 +74,13 @@ float ele_min = 0.0;
 /* Define Forces and Moments tructs for each actuator*/
 struct RW_Model RW;
 
-inline void eff_scheduling_rotwing_update_wing_angle(void);
-inline void eff_scheduling_rotwing_update_airspeed(void);
-void  ele_pref_sched(void);
-void  update_attitude(void);
-void  sum_EFF_MAT_RW(void);
-void  init_RW_Model(void);
-void  calc_G1_G2_RW(void);  
+static inline void eff_scheduling_rotwing_update_wing_angle(void);
+static inline void eff_scheduling_rotwing_update_airspeed(void);
+static void  ele_pref_sched(void);
+static void  update_attitude(void);
+static void  sum_EFF_MAT_RW(void);
+static void  init_RW_Model(void);
+static void  calc_G1_G2_RW(void);  
 
 /** ABI binding wing position data.
  */
@@ -104,7 +104,7 @@ static void wing_position_cb(uint8_t sender_id UNUSED, struct act_feedback_t *po
 
 #include "generated/modules.h"
 PRINT_CONFIG_VAR(EFF_SCHEDULING_ROTWING_PERIODIC_FREQ)
-void eff_scheduling_rotwing_init(void)
+void eff_scheduling_rotwing_v2_init(void)
 {
   init_RW_Model();
   update_attitude();
@@ -266,7 +266,7 @@ void calc_G1_G2_RW(void)
   RW.P                            = actuator_state_1l[COMMAND_MOTOR_PUSHER] * RW.mP.dFdu;
 }
 
-void eff_scheduling_rotwing_periodic(void)
+void eff_scheduling_rotwing_v2_periodic(void)
 {
   update_attitude();
   eff_scheduling_rotwing_update_wing_angle();

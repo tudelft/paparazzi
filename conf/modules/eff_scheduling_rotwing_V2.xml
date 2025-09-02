@@ -33,8 +33,8 @@
   <header>
     <file name="eff_scheduling_rotwing_V2.h"/>
   </header>
-  <init fun="eff_scheduling_rotwing_init()"/>
-  <periodic fun="eff_scheduling_rotwing_periodic()"/>
+  <init fun="eff_scheduling_rotwing_v2_init()"/>
+  <periodic fun="eff_scheduling_rotwing_v2_periodic()"/>
   <makefile>
     <file name="eff_scheduling_rotwing_V2.c"/>
     <test firmware="rotorcraft">

@@ -135,7 +135,7 @@
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
       <stay wp="STDBY"/>
     </block>
-    <block name="Standby_ANDI" strip_button="Standby ANDI" strip_icon="home.png" on_enter="rotwing_ctrl_mode=ROTWING_CTRL_MODE_ANDI" on_exit="rotwing_ctrl_mode=ROTWING_CTRL_MODE_INDI">
+    <block name="Standby_ANDI" strip_button="Standby ANDI" strip_icon="home.png" on_enter="rotwing_ap.ctrl_mode=ROTWING_CTRL_MODE_ANDI" on_exit="rotwing_ap.ctrl_mode=ROTWING_CTRL_MODE_INDI">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
       <stay wp="STDBY"/>
     </block>

@@ -28,11 +28,11 @@
 
 #include "std.h"
 
-#define RW_ap 0 // X body axis (angular acceleration)
-#define RW_aq 1 // Y body axis (angular acceleration)
-#define RW_ar 2 // Z body axis (angular acceleration)
-#define RW_aZ 3 // Z body axis (linear acceleration)
-#define RW_aX 4 // X body axis (linear acceleration) 
+#define RW_p_dot 0 // X body axis (angular acceleration)
+#define RW_q_dot 1 // Y body axis (angular acceleration)
+#define RW_r_dot 2 // Z body axis (angular acceleration)
+#define RW_Z_ddot 3 // Z body axis (linear acceleration)
+#define RW_X_ddot 4 // X body axis (linear acceleration) 
 
 struct rotwing_eff_sched_param_t {
   float Ixx_body;                 // body MMOI around roll axis [kgm²]

@@ -5,11 +5,13 @@
     This module provides some helper functions for the rotating wing drone generated autopilot
     </description>
   </doc>
-
+  <settings>
+    
+  </settings>
   <header>
     <file name="rotwing_ap_utils.h"/>
   </header>
-  <init fun="rotwing_ap_utils_init()"/>
+    <init fun="void rotwing_ap_utils_init(void)"/>
   <makefile>
     <file name="rotwing_ap_utils.c"/>
   </makefile>

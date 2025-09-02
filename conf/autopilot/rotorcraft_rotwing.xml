@@ -4,6 +4,13 @@
 
   <state_machine name="ap" freq="PERIODIC_FREQUENCY" gcs_mode="true" settings_mode="true" settings_handler="autopilot_generated|SetModeHandler">
 
+    <modules>
+      <!-- <module name="nav" type="rotorcraft"/>
+      <module name="guidance" type="rotorcraft"/>
+      <module name="stabilization" type="rotorcraft"/> -->
+      <module name="rotwing_ap_utils"/>
+    </modules>
+
     <includes>
       <include name="generated/airframe.h"/>
       <include name="autopilot.h"/>
