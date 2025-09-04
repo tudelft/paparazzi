@@ -273,16 +273,9 @@ static bool nav_moving_base_land(void) {
 }
 
 void nav_moving_base_periodic(void) {
-  
-  // Check if we've received a new setpoint from the active sender recently
-  if (sys_time_check_and_ack_timer(nav_moving_base.timer_id)) {
-    nav_moving_base_cancel_timer();
-    nav_moving_base.timed_out = true;
-  }
 
-  if (nav_moving_base.active_wp == WP_STDBY) {
-    VECT3_COPY(nav_moving_base.pos, waypoints[WP_STDBY].enu_f);
-  }
+  // Periodically copy the position of the active waypoint in case the waypoint is static, but was moved by the GCS operator
+  VECT3_COPY(nav_moving_base.pos, waypoints[nav_moving_base.active_wp].enu_f);
 
   RunOnceEvery(NAV_MOVING_BASE_PERIODIC_FREQ / 5, {
     DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &nav_moving_base.active_wp,
@@ -331,18 +324,24 @@ static void nav_moving_base_cb(uint8_t sender_id, struct EnuCoor_f *pos, struct 
   nav_moving_base_cancel_timer();
   nav_moving_base_set_timer();
 
-  // FIXME else what?
+  // TODO: double check else statements
   if (pos != NULL) {
     VECT3_COPY(nav_moving_base.pos, *pos);
     waypoint_set_enu(nav_moving_base.active_wp, &nav_moving_base.pos);
+  } else {
+    VECT3_COPY(nav_moving_base.pos, *stateGetPositionEnu_f());
   }
 
   if (speed != NULL) {
     VECT3_COPY(nav_moving_base.speed, *speed);
+  } else {
+    VECT3_COPY(nav_moving_base.speed, *stateGetSpeedEnu_f());
   }
 
   if (accel != NULL) {
     VECT3_COPY(nav_moving_base.accel, *accel);
+  } else {
+    FLOAT_VECT3_ZERO(nav_moving_base.accel);
   }
 }
 
