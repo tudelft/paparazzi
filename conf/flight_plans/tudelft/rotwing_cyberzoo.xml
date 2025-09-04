@@ -1,6 +1,9 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 <flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="60" name="Safe TU Delft Cyberzoo" security_height="0.4">
-  <header/>
+  <header>
+    #include "modules/nav/nav_moving_base.h"
+    #include "modules/nav/waypoints.h"
+  </header>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
     <waypoint name="CLIMB" x="-10." y="5"/>
@@ -15,15 +18,19 @@
     <waypoint name="ARUCO" x="-10" y="-10"/>
     <waypoint name="KALMAN" x="-10" y="-10"/>
     <waypoint name="BOX" x="-10" y="-10"/>
-    <waypoint name="MOVING_BASE" x="-500" y="-500" height="20"/>
+    <waypoint name="MOVING_BASE" x="-20" y="-20" height="20"/>
+    <waypoint name="p1" x="1.5" y="1.5"/>
+    <waypoint name="p2" x="1.5" y="-1.5"/>
+    <waypoint name="p3" x="-1.5" y="-1.5"/>
+    <waypoint name="p4" x="-1.5" y="1.5"/>
     <waypoint lat="51.9905979" lon="4.3767279" name="CZ1"/>
     <waypoint lat="51.9906685" lon="4.3767327" name="CZ2"/>
     <waypoint lat="51.9906652" lon="4.3768481" name="CZ3"/>
     <waypoint lat="51.9905941" lon="4.3768441" name="CZ4"/>
-    <waypoint lat="51.9906028" lon="4.3767375" name="p1"/>
-    <waypoint lat="51.9906633" lon="4.3767411" name="p2"/>
-    <waypoint lat="51.9906601" lon="4.3768415" name="p3"/>
-    <waypoint lat="51.9905979" lon="4.3768386" name="p4"/>
+    <waypoint lat="51.9906028" lon="4.3767375" name="s1"/>
+    <waypoint lat="51.9906633" lon="4.3767411" name="s2"/>
+    <waypoint lat="51.9906601" lon="4.3768415" name="s3"/>
+    <waypoint lat="51.9905979" lon="4.3768386" name="s4"/>
   </waypoints>
   <sectors>
     <sector color="blue" name="CyberZoo">
@@ -33,10 +40,10 @@
       <corner name="CZ4"/>
     </sector>
     <sector color="red" name="Flyzone">
-      <corner name="p1"/>
-      <corner name="p2"/>
-      <corner name="p3"/>
-      <corner name="p4"/>
+      <corner name="s1"/>
+      <corner name="s2"/>
+      <corner name="s3"/>
+      <corner name="s4"/>
     </sector>
   </sectors>
   <variables>
@@ -107,6 +114,31 @@
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <stay wp="STDBY"/>
+    </block>
+    <block name="Standby_MB" strip_button="Standby MB">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING, WP_STDBY)"/>
+        <call fun="nav_moving_base_run()"/>
+    </block>
+    <block name="p1" strip_button="Stay p1">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING, WP_p1)"/>
+        <call fun="nav_moving_base_run()"/>
+    </block>
+    <block name="p2" strip_button="Stay p2">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING, WP_p2)"/>
+        <call fun="nav_moving_base_run()"/>
+    </block>
+    <block name="p3" strip_button="Stay p3">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING, WP_p3)"/>
+        <call fun="nav_moving_base_run()"/>
+    </block>
+    <block name="p4" strip_button="Stay p4">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING, WP_p4)"/>
+        <call fun="nav_moving_base_run()"/>
     </block>
     <block name="FOLLOW">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
