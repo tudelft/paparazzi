@@ -217,7 +217,7 @@ static bool nav_moving_base_track(void) {
   bool complete = false;
   
   VECT2_COPY(nav.target, nav_moving_base.pos);
-  nav.nav_altitude = waypoints[WP_STDBY].enu_f.z;
+  nav.nav_altitude = waypoints[nav_moving_base.active_wp].enu_f.z;
 
   // Calculate position error
   struct EnuCoor_f pos_error;
@@ -249,7 +249,8 @@ static bool nav_moving_base_descend(void) {
   float speed_sp_v = -NAV_MOVING_BASE_DESCEND_SPEED;
   Bound(speed_sp_v, nav_moving_base.max_speed_v.y, nav_moving_base.max_speed_v.x);
 
-  // nav.target.z = nav_moving_base.pos.z;
+  // Update WP altitude while descending to avoid climbing back up
+  waypoints[nav_moving_base.active_wp].enu_f.z = stateGetPositionEnu_f()->z;
   nav.climb = speed_sp_v;
 
   return (vert_complete && hor_complete);
@@ -327,7 +328,7 @@ static void nav_moving_base_cb(uint8_t sender_id, struct EnuCoor_f *pos, struct 
   // TODO: double check else statements
   if (pos != NULL) {
     VECT3_COPY(nav_moving_base.pos, *pos);
-    waypoint_set_enu(nav_moving_base.active_wp, &nav_moving_base.pos);
+    waypoint_set_enu(nav_moving_base.active_wp, &(struct EnuCoor_f) {nav_moving_base.pos.x, nav_moving_base.pos.y, waypoints[nav_moving_base.active_wp].enu_f.z});
   } else {
     VECT3_COPY(nav_moving_base.pos, *stateGetPositionEnu_f());
   }
