@@ -155,6 +155,7 @@ void nav_moving_base_init(void) {
   nav_moving_base.speed_gain = (struct FloatVect3) {speed_gain_h, speed_gain_h, speed_gain_v};
 
   nav_moving_base.stay = false;
+  nav_moving_base.timer_id = -1;
   nav_moving_base.timed_out = false;
 
   // Bind to broadcast, filtering based on sender ID is done by the callback itself
@@ -273,7 +274,7 @@ static bool nav_moving_base_land(void) {
 
 void nav_moving_base_periodic(void) {
   
-  // check if we had a timeout on a transaction
+  // Check if we've received a new setpoint from the active sender recently
   if (sys_time_check_and_ack_timer(nav_moving_base.timer_id)) {
     nav_moving_base_cancel_timer();
     nav_moving_base.timed_out = true;
