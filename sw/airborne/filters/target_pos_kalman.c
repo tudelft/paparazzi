@@ -53,16 +53,16 @@
 PRINT_CONFIG_VAR(TARGET_POS_KALMAN_DEBUG);
 PRINT_CONFIG_VAR(TARGET_POS_KALMAN_USE_ACCEL);
 
-static void print_matrix(float **o, int rows, int cols, char *name)
-{
-  printf("%s:\n", name);
-  for (int i = 0; i < rows; i++) {
-    for (int j = 0; j < cols; j++) {
-      printf("%f ", o[i][j]);
-    }
-    printf("\n");
-  }
-}
+// static void print_matrix(float **o, int rows, int cols, char *name)
+// {
+//   printf("%s:\n", name);
+//   for (int i = 0; i < rows; i++) {
+//     for (int j = 0; j < cols; j++) {
+//       printf("%f ", o[i][j]);
+//     }
+//     printf("\n");
+//   }
+// }
 
 void target_pos_kalman_init(struct TargetPosKalman *kalman, float *P0, float *Q_sigma2, float dt)
 {
