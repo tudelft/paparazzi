@@ -1,7 +1,7 @@
 // ppo_controller.c
 
 #include <math.h>
-#include "weights/dr_00/ppo_controller_weights.h"
+#include "weights/test/ppo_controller_weights.h"
 #include "ppo_controller.h"
 
 #define INPUT_DIM 18
