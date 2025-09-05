@@ -275,6 +275,12 @@ static bool nav_moving_base_land(void) {
 
 void nav_moving_base_periodic(void) {
 
+  // Check timer for timeout
+  if (sys_time_check_and_ack_timer(nav_moving_base.timer_id)) {
+    nav_moving_base_cancel_timer();
+    nav_moving_base.timed_out = true;
+  }
+
   // Periodically copy the position of the active waypoint in case the waypoint is static, but was moved by the GCS operator
   VECT3_COPY(nav_moving_base.pos, waypoints[nav_moving_base.active_wp].enu_f);
 
