@@ -1,0 +1,13 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="control_mixing_forwardswept" dir="ctrl" task="control">
+  <doc>
+    <description>Control mixing specific to the Forwardswept drone</description>
+  </doc>
+  <header>
+    <file name="control_mixing_forwardswept.h"/>
+  </header>
+  <init fun="control_mixing_forwardswept_init()"/>
+  <makefile>
+    <file name="control_mixing_forwardswept.c"/>
+  </makefile>
+</module>

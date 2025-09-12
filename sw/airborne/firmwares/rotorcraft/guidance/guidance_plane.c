@@ -282,3 +282,22 @@ void guidance_plane_enter(void)
   throttle_sum_err = 0.f;
 }
 
+void guidance_h_run_enter(void) 
+{
+  guidance_plane_enter();
+}
+
+void guidance_v_run_enter(void) 
+{
+  // nothing to do
+}
+
+struct ThrustSetpoint guidance_v_run_pos(bool in_flight, struct VerticalGuidance *gv UNUSED)
+{
+  return guidance_plane_thrust_from_nav(in_flight);
+}
+
+struct ThrustSetpoint guidance_v_run_speed(bool in_flight, struct VerticalGuidance *gv UNUSED)
+{
+  return guidance_plane_thrust_from_nav(in_flight);
+}
