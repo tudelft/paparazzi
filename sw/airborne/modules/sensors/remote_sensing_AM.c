@@ -426,6 +426,8 @@ void remote_sensing_send_aruco_attitude(void) {
   uint32_t time_msec = get_sys_time_msec();
   #if !USE_NPS
   pprz_msg_send_IMCU_ARUCO_ATTITUDE(&extra_pprz_tp.trans_tx, &EXTRA_DOWNLINK_DEVICE.device, AC_ID, &time_msec, FLOATQUAT_TO_ARRAY(q));
+  #else
+  (void)time_msec;
   #endif
 }
 
@@ -526,6 +528,9 @@ static void sensor_to_NED(struct FloatVect3 *ned, struct FloatVect3 *sensor, str
   
   #else
   VECT3_COPY(*ned, *sensor); // For NPS we send NED position so no need to convert
+  (void)sensor_to_body;
+  (void)offset;
+  (void)body_to_ned;
   #endif
 }
 
@@ -602,6 +607,8 @@ static void handle_kalman_update_result(enum TargetPosKalmanUpdateResult result)
     pprz_msg_send_INFO_MSG(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, rc, error);
   #endif
     DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, error);
+  #else
+    (void)rc;
   #endif
 
   // Last resort reset of Kalman filter after repeated update failures
