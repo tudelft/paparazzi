@@ -126,6 +126,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)), uint32_t stamp, st
 
   // Use the timestamp from the ABI message, as it is more accurate
   sys_time.tow_sync = gps_s->tow - stamp/1000;
+  sys_time.gps_week = gps_s->week;
 }
 
 void sys_time_init(void)
@@ -134,6 +135,7 @@ void sys_time_init(void)
   sys_time.nb_sec_rem = 0;
   sys_time.nb_tick    = 0;
   sys_time.tow_sync   = 0;
+  sys_time.gps_week   = 0;
 
   sys_time.ticks_per_sec = SYS_TIME_FREQUENCY;
   sys_time.resolution = 1.0 / sys_time.ticks_per_sec;

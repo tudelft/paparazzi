@@ -29,6 +29,7 @@
 #define SYS_TIME_ARCH_H
 
 #include "std.h"
+#include <time.h>
 
 extern void sys_tick_handler(void);
 
@@ -60,6 +61,17 @@ static inline uint32_t get_sys_time_msec(void)
 {
   return sys_time.nb_sec * 1000 +
          msec_of_cpu_ticks(sys_time.nb_sec_rem);
+}
+
+/** 
+ * Get the current Unix epoch time in seconds 
+ * @return current Unix epoch time as uint64_t
+ */
+static inline uint64_t get_unix_epoch_time(void)
+{
+  struct timeval tv;
+  gettimeofday(&tv,NULL);
+  return (uint64_t)tv.tv_sec*1000000 + (uint64_t)tv.tv_usec;
 }
 
 /**

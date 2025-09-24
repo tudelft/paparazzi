@@ -845,7 +845,10 @@ static void mavlink_send_sys_status(struct transport_tx *trans, struct link_devi
  */
 static void mavlink_send_system_time(struct transport_tx *trans, struct link_device *dev)
 {
-  mavlink_msg_system_time_send(MAVLINK_COMM_0, 0, get_sys_time_msec());
+  mavlink_msg_system_time_send(MAVLINK_COMM_0, get_unix_epoch_time(), get_sys_time_msec());
+  char msg[100];
+  int rc = snprintf(msg, 100, "SYS TIME: %llu", get_unix_epoch_time());
+  DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, rc, msg);
   MAVLinkSendMessage();
 }
 

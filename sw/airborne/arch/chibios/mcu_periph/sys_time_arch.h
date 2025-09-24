@@ -58,4 +58,20 @@ static inline uint32_t get_sys_time_tow(void)
   return sys_time.tow_sync + get_sys_time_msec();
 }
 
+/** 
+ * Get the current Unix epoch time in microseconds from gps tow
+ * @return current Unix epoch time as uint64_t
+ */
+static inline uint64_t get_unix_epoch_time(void)
+{
+  static const uint64_t us_in_week = 7ULL*24ULL*3600ULL*1000000ULL;
+  static const uint64_t us_unix_to_gps = 315964800ULL*1000000ULL; // seconds from unix to gps epoch in microseconds
+  static const uint64_t us_leap_seconds = 18ULL*1000000ULL; // There are currently 18 leap seconds since GPS epoch (1-1-1980 <-> 23-9-2025)
+  uint64_t epoch_time_us = (uint64_t)(sys_time.tow_sync)*1000ULL + (uint64_t)(get_sys_time_usec());
+  epoch_time_us += (uint64_t)(sys_time.gps_week)*us_in_week;
+  epoch_time_us += us_unix_to_gps; 
+  epoch_time_us -= us_leap_seconds;
+  return epoch_time_us;
+}
+
 #endif /* SYS_TIME_ARCH_H */
