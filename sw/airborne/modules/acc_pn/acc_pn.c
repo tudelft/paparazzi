@@ -45,7 +45,7 @@ static bool first_remote_gps_msg_received = false;
 static const float DT = 1.0f / 100.0f;
 static const float LAMBDA = 50.0f;
 static const float PP_WEIGHT = 0.03f;
-static const float MAX_ACCEL = 18.0f;
+static const float MAX_ACCEL = 6.5f; // prevent fighting with angle limiter
 static const float EPSILON = 1e-3f;
 static const float K2 = 5.1f;
 static const float V_R = -5.0f; // closing speed bias (GRTPN only)
@@ -73,7 +73,7 @@ static const float TAU_OBS = 1.0f / (2.0f * M_PI * OBS_CUTOFF_FREQ);
 /*                            State & Mode                                  */
 /*---------------------------------------------------------------------------*/
 static float time_s = 0.0f;
-static pn_mode_t cur_mode = PN_MODE_NEURAL;
+static pn_mode_t cur_mode = PN_MODE_FRPN;
 static struct LoggerData_PN pn_log;
 
 /*---------------------------------------------------------------------------*/
