@@ -8,7 +8,7 @@
 </doc>
 <header>
     <file name="ctbr_pn.h"/>
-    <file name="ctbr_nn/weights/test/ppo_controller_weights.h"/>
+    <file name="ctbr_nn/weights/gamma_15_dr_10/ppo_controller_weights.h"/>
     <file name="ctbr_nn/ppo_controller.h"/>
 </header>
 <init fun="pn_init()"/>
@@ -20,7 +20,7 @@
     <configure name="MODEM_DEV" default="UDP0" case="upper|lower"/>
     <file name="ctbr_pn.c"/>
     <define name="CTBR_ACCEL_OVERRIDE"/>
-    <file name="ctbr_nn/weights/test/ppo_controller_weights.c"/>
+    <file name="ctbr_nn/weights/gamma_15_dr_10/ppo_controller_weights.c"/>
     <file name="ctbr_nn/ppo_controller.c"/>
     <file name="pprz_transport.c" dir="pprzlink/src"/>
         <define name="DOWNLINK_DEVICE" value="$(MODEM_DEV_LOWER)"/>
