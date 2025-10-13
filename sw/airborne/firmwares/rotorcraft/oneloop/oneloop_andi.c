@@ -138,92 +138,6 @@ float  oneloop_andi_filt_cutoff_pos = ONELOOP_ANDI_FILT_CUTOFF_POS;
 float  oneloop_andi_filt_cutoff_pos = 2.0;
 #endif
 
-// Stabilization Structural Modes Filtering ----------------------------------------
-
-//const float ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ = 17.90;
-//#define ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
-//#define ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ 17.90
-//#define USE_YAW_LP4
-
-// Roll Structural Mode Filtering
-#ifdef ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ
-#if !defined(USE_ROLL_NOTCH) && !defined(USE_ROLL_LP) && !defined(USE_ROLL_LP4)
-#error "Either USE_ROLL_NOTCH, USE_ROLL_LP4 or USE_ROLL_LP must be defined."
-#elif (defined(USE_ROLL_NOTCH) && defined(USE_ROLL_LP)) || \
-      (defined(USE_ROLL_NOTCH) && defined(USE_ROLL_LP4)) || \
-      (defined(USE_ROLL_LP) && defined(USE_ROLL_LP4))
-#error "Only one of USE_ROLL_NOTCH, USE_ROLL_LP4 or USE_ROLL_LP can be defined."
-#endif
-struct Oneloop_StructuralModes_t roll_structural_mode = {
-#ifdef USE_ROLL_NOTCH
-  .freq = ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ,
-  .bandwidth = 4.0,
-  .filter_type = NOTCH,
-#elif defined(USE_ROLL_LP) 
-  .freq = 11.0 //ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ-3.0, 
-  .bandwidth = 0.0,
-  .filter_type = BUTTERWORTH_2,
-#elif defined(USE_ROLL_LP4)
-  .freq = 11.0 //ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ-3.0,
-  .bandwidth = 0.0,
-  .filter_type = BUTTERWORTH_4,
-#endif
-};
-#endif
-// Pitch Structural Mode Filtering
-#ifdef ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ
-#if !defined(USE_PITCH_NOTCH) && !defined(USE_PITCH_LP) && !defined(USE_PITCH_LP4)
-#error "Either USE_PITCH_NOTCH, USE_PITCH_LP4 or USE_PITCH_LP must be defined."
-#elif (defined(USE_PITCH_NOTCH) && defined(USE_PITCH_LP)) || \
-      (defined(USE_PITCH_NOTCH) && defined(USE_PITCH_LP4)) || \
-      (defined(USE_PITCH_LP) && defined(USE_PITCH_LP4))
-#error "Only one of USE_PITCH_NOTCH, USE_PITCH_LP4 or USE_PITCH_LP can be defined."
-#endif
-struct Oneloop_StructuralModes_t pitch_structural_mode = {
-#ifdef USE_PITCH_NOTCH
-  .freq = ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ,
-  .bandwidth = 4.0,
-  .filter_type = NOTCH,
-#elif defined(USE_PITCH_LP)
-  .freq = ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ-3.0,
-  .bandwidth = 0.0,
-  .filter_type = BUTTERWORTH_2,
-#elif defined(USE_PITCH_LP4)
-  .freq = ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ-3.0,
-  .bandwidth = 0.0,
-  .filter_type = BUTTERWORTH_4,
-#endif
-};
-#endif
-// Yaw Structural Mode Filtering
-#ifdef ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
-#if !defined(USE_YAW_NOTCH) && !defined(USE_YAW_LP) && !defined(USE_YAW_LP4)
-#error "Either USE_YAW_NOTCH, USE_YAW_LP4 or USE_YAW_LP must be defined."
-#elif (defined(USE_YAW_NOTCH) && defined(USE_YAW_LP)) || \
-      (defined(USE_YAW_NOTCH) && defined(USE_YAW_LP4)) || \
-      (defined(USE_YAW_LP) && defined(USE_YAW_LP4))
-#error "Only one of USE_YAW_NOTCH, USE_YAW_LP4 or USE_YAW_LP can be defined."
-#endif
-struct Oneloop_StructuralModes_t yaw_structural_mode = {
-#ifdef USE_YAW_NOTCH
-  .freq = ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ,
-  .bandwidth = 4.0,
-  .filter_type = NOTCH,
-#elif defined(USE_YAW_LP)
-  .freq = 11.0, //ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ-3.0,
-  .bandwidth = 0.0,
-  .filter_type = BUTTERWORTH_2,
-#elif defined(USE_YAW_LP4)
-  .freq = 11.0, //ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ-3.0,
-  .bandwidth = 0.0,
-  .filter_type = BUTTERWORTH_4,
-#endif
-};
-#endif
-
-PRINT_CONFIG_VAR(ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ)
-PRINT_CONFIG_VAR(yaw_structural_mode.freq)
-// ---------------------------------------------------------------------------------
 #ifdef  ONELOOP_ANDI_FILT_CUTOFF_P
 #define ONELOOP_ANDI_FILTER_ROLL_RATE TRUE
 float oneloop_andi_filt_cutoff_p = ONELOOP_ANDI_FILT_CUTOFF_P;
@@ -475,8 +389,6 @@ static float nav_target[3]; // Can be a position, speed or acceleration dependin
 static float nav_target_new[3];
 static float dt_1l = 1./PERIODIC_FREQUENCY;
 static float g   = 9.81; // [m/s^2] Gravitational Acceleration
-float k_as = 2.0;
-int16_t temp_pitch = 0;
 float gi_unbounded_airspeed_sp = 0.0;
 
 /* Oneloop Control Variables*/
@@ -556,7 +468,7 @@ struct Oneloop_LP_t LP;
 struct Oneloop_LP_t oneloop_andi_model_filt;
 struct Oneloop_DynFilt_t mu_mL;
 struct Oneloop_DynFilt_t mu_mR;  
-bool  use_dyn_filter = true; 
+bool  use_dyn_filter = false; 
 float oneloop_andi_sigma = 29.0;
 float oneloop_andi_sigma_max = 29.0;
 float oneloop_andi_sigma_min = 8.0; 
@@ -611,7 +523,6 @@ float SF_BOUND_NU[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
 float ratio_u_un[ANDI_NUM_ACT_TOT];
 float ratio_vn_v[ANDI_OUTPUTS];
 
-float temp_k = 3.0;
 float temp_checks[2];
 float temp_checks_2[3];
 float temp_ref_att[3];
@@ -1439,7 +1350,7 @@ void init_controller_gains(void){
   /*Altitude Loop*/
   k_pos_e.k1[2]  = k_rm_1_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3); //0.595;
   k_pos_e.k2[2]  = k_rm_2_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3); //1.190;
-  k_pos_e.k3[2]  = 22;//temp_k;//k_rm_3_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3); //2.380;
+  k_pos_e.k3[2]  = 22;//k_rm_3_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3); //2.380;
 
   k_pos_rm.k1[2] = k_rm_1_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3); //0.595;
   k_pos_rm.k2[2] = k_rm_2_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3); //1.190;
@@ -1619,15 +1530,6 @@ static inline void reinit_all_LP(bool reinit){
 /** @brief  Initialize the filters */
 void init_filter(void)
 {
-#ifdef ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ
-  init_filter_on_type(&roll_structural_mode);
-#endif
-#ifdef ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ
-  init_filter_on_type(&pitch_structural_mode);
-#endif
-#ifdef ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
-  init_filter_on_type(&yaw_structural_mode);
-#endif
   // Filtering of the velocities 
   float tau   = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff);
   float tau_v = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_v);
@@ -1665,21 +1567,6 @@ void oneloop_andi_propagate_filters(void) {
   float temp_p_dot  = (LP.p.meas-LP.p.meas_prev)*PERIODIC_FREQUENCY;
   float temp_q_dot  = (LP.q.meas-LP.q.meas_prev)*PERIODIC_FREQUENCY;
   float temp_r_dot  = (LP.r.meas-LP.r.meas_prev)*PERIODIC_FREQUENCY;
-#ifdef ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ
-    LP.p_dot.meas = update_filter_on_type_feedback(&roll_structural_mode, temp_p_dot);
-#else
-  LP.p_dot.meas = temp_p_dot;
-#endif
-#ifdef ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ
-    LP.q_dot.meas = update_filter_on_type_feedback(&pitch_structural_mode, temp_q_dot);
-#else
-  LP.q_dot.meas = temp_q_dot;
-#endif
-#ifdef ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
-    LP.r_dot.meas = update_filter_on_type_feedback(&yaw_structural_mode, temp_r_dot);
-#else
-  LP.r_dot.meas = temp_r_dot;
-#endif
 
   // Update Filters of Feedbacks
   update_filter_on_type(&LP.ax,    LP.ax.meas);
@@ -2057,8 +1944,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     act_dyn_ctrl[i] = act_dynamics[i];
   }
-  act_dyn_ctrl[COMMAND_MOTOR_RIGHT] = oneloop_andi_sigma;
-  act_dyn_ctrl[COMMAND_MOTOR_LEFT]  = oneloop_andi_sigma;
 
   // Need to save and convert desired position for bounding. Not sure NAV always updates this correctly.
   float pos_des[3];
@@ -2168,8 +2053,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   //nu[4] = nu[4] + oneloop_andi_model[4];
   //nu[5] = nu[5] + oneloop_andi_model[5];
   //BoundAbs(nu[5], n_array[5]*coupling_factor[5]); //FIXME UNCOMMENT ME
-  // weather vaning ---------------------
-  //nu[5] = oneloop_andi_model[5] - temp_k * oneloop_andi.sta_ref.att_d[2]; //Interesting idea to weather vane the drone
   if (drop_yaw){
     //nu[0] = oneloop_andi_model_filt.ax.out;
     //nu[1] = oneloop_andi_model_filt.ay.out;
@@ -2763,7 +2646,6 @@ void chirp_call(bool *chirp_on, bool *chirp_first_call, float* t_0, float* time_
       drop_aN = false;
       drop_aE = false;
       drop_aD = false;
-      //oneloop_andi_sigma = oneloop_andi_sigma_max;
       //oneloop_andi_enter(false, oneloop_andi.ctrl_type);
     }
   }

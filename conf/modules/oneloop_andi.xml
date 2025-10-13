@@ -10,7 +10,6 @@
       <dl_setting var="use_dyn_filter"     min="0"       step="1"     max="1"     values="OFF|ON" shortname="use_dyn_filter"/> 
       <dl_setting var="oneloop_andi_sigma" min="1.0"     step="0.01"  max="50.0"  shortname="sigma"/>
       <dl_setting var="drop_yaw"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="drop_yaw"/> 
-      <dl_setting var="temp_k"             min="0.5"     step="0.1"   max="50"    shortname="temp_k"/>
       <dl_setting var="LP.p.freq_set"      min="0.5"     step="0.1"   max="20"    shortname="p_LP_freq"/>
       <dl_setting var="LP.q.freq_set"      min="0.5"     step="0.1"   max="20"    shortname="q_LP_freq"/>
       <dl_setting var="LP.r.freq_set"      min="0.5"     step="0.1"   max="20"    shortname="r_LP_freq"/>
@@ -21,8 +20,6 @@
       <dl_setting var="LP.ay.freq_set"     min="0.5"     step="0.1"   max="20"    shortname="ay_LP_freq"/>
       <dl_setting var="LP.az.freq_set"     min="0.5"     step="0.1"   max="20"    shortname="az_LP_freq"/>
       <dl_setting var="max_as"             min="7"       step="1"     max="19"    shortname="max_airspeed"/>
-      <dl_setting var="temp_pitch"         min="0"       step="1"     max="9600"  shortname="temp_pitch"/>
-      <dl_setting var="k_as"               min="1.0"     step="0.001" max="10"    shortname="k_as"/> 
       <dl_setting var="ctrl_off"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="ctrl_off"/> 
       <dl_setting var="multiple_chirp_run" min="0"       step="1"     max="1"     values="OFF|ON" shortname="multiple_chirp_run"/>
       <dl_setting var="chirp_on"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="chirp_on"/>  
