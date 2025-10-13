@@ -81,11 +81,11 @@ static Butterworth2LowPass phi_filt;
 static Butterworth2LowPass theta_filt;
 static Butterworth2LowPass psi_filt;
 /* Temp variables*/
-int G2_on = 1;
+int G2_on = 0;
 bool airspeed_fake_on = false;
 float airspeed_fake = 0.0;
 float ele_eff = 19.36; // (0.88*22.0);
-float roll_eff = 3.835;//3.835;5.5
+float roll_eff = 8.9;//15.402;//3.835;//3.835;5.5
 float yaw_eff  = 0.237; // 1.3171*0.390=0.514 or 0.659 and 0.812 (pitch - roll)
 float ele_min = 0.0;
 /* Define Forces and Moments tructs for each actuator*/
@@ -435,8 +435,10 @@ void sum_EFF_MAT_RW(void) {
     }
   }
   if(manual_roll){
-    EFF_MAT_RW[RW_ap][1] = -0.012149; 
-    EFF_MAT_RW[RW_ap][3] = 0.012149;
+    //EFF_MAT_RW[RW_ap][1] = -0.012149; 
+    //EFF_MAT_RW[RW_ap][3] = 0.012149;
+    EFF_MAT_RW[RW_ap][1] = -roll_eff/1000.0; 
+    EFF_MAT_RW[RW_ap][3] =  roll_eff/1000.0;
   }
   if(manual_pitch){
     EFF_MAT_RW[RW_aq][0] = 0.001708; 
