@@ -405,7 +405,8 @@ float max_v_nav = 5.0;
 #endif
 float max_as = 19.0f;
 float min_as = 0.0f;
-
+float xdot_lim_sf = 0.8;
+float ec_headroom = 1.5;
 #ifdef NAV_HYBRID_MAX_SPEED_V
 float max_v_nav_v = NAV_HYBRID_MAX_SPEED_V;
 #else
@@ -441,10 +442,12 @@ void  float_rates_of_euler_dot_vec(float r[3], float e[3], float edot[3]);
 void  float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3]);
 void  err_nd(float err[], float a[], float b[], float k[], int n);
 void  err_sum_nd(float err[], float a[], float b[], float k[], float c[], int n);
+void  float_vect_diff_euler(float err[3], float a[3], float b[3]);
 void  integrate_nd(float dt, float a[], float a_dot[], int n);
 void  vect_bound_nd(float vect[], float bound, int n);
 void  acc_body_bound(struct FloatVect2* vect, float bound);
-float bound_v_from_a(float e_x[], float v_bound, float a_bound, int n);
+float bound_v_from_a_vect(float e_x[], float v_bound, float a_bound, int n);
+float bound_v_from_a(float e_x, float v_bound, float a_bound);
 void  rm_2nd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm);
 void  rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
 void  rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
@@ -452,8 +455,8 @@ void  rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref
 void  rm_3rd_pos(float dt, float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_des[], float k1_rm[], float k2_rm[], float k3_rm[], float x_d_bound, float x_2d_bound, float x_3d_bound, int n);
 void  rm_2nd_pos(float dt, float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_d_des[], float k2_rm[], float k3_rm[], float x_2d_bound, float x_3d_bound, int n);
 void  rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], float k3_rm[], float x_3d_bound, int n);
-void  ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], struct OneloopStabilizationRef bounds, float fb[3]);
-void  ec_3rd_pos(float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, float fb[], int n);
+void  ec_3rd_att(float y_4d[3], float x_des[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], struct OneloopStabilizationRef bounds, float fb[3]);
+void  ec_3rd_pos(float y_4d[], float x_des[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, float fb[], int n);
 void  calc_model(void);
 float oneloop_andi_sideslip(void);
 void  reshape_wind(void);
@@ -564,16 +567,18 @@ float time_elapsed_chirp  = 0.0;
 float t_0_chirp           = 0.0;
 float f0_chirp            = 0.2;//0.8 / (2.0 * M_PI);
 float f1_chirp            = 0.2;//0.8 / (2.0 * M_PI);
-float t_chirp             = 2.0;
-float A_chirp             =-46.0;
-int8_t chirp_axis         = 5;
+float t_chirp             = 0.65 ;// 2.0  ;//
+float A_chirp             = 250.0;// -46.0;//
+int8_t chirp_axis         = 6   ;// 5    ;//
 float p_ref_0[3]          = {0.0, 0.0, 0.0};
 int16_t chirp_n_repeat    = 10;
 int16_t chirp_n_counter   = 0;
 int16_t firing_counter    = 0;
+int16_t delay_counter     = 0;
 bool multiple_chirp_run   = false;     
 /*Declaration of Reference Model and Error Controller Gains*/
 struct PolePlacement p_att_e;
+struct PolePlacement p_roll_e;
 struct PolePlacement p_att_rm;
 /*Position Loop*/
 struct PolePlacement p_pos_e;  
@@ -618,6 +623,11 @@ float  temp_e_x_rates = 0.0;
 float  temp_x_d_f = 0.0;
 float  temp_x_2d_f = 0.0;
 bool drop_yaw = false;
+bool drop_roll = false;
+bool drop_pitch = false;
+bool drop_aN = false;
+bool drop_aE = false;
+bool drop_aD = false;
 bool state_compensation_on = false;
 int16_t counter_andi = 0;
 /*Filters Initialization*/
@@ -713,7 +723,7 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
 static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
 {
   float temp_debug_vect[14];
-  temp_debug_vect[0] = oneloop_andi_model[0];//oneloop_andi_model_filt.ax.out;
+  temp_debug_vect[0] = (float) chirp_n_counter;//oneloop_andi_model[0];//oneloop_andi_model_filt.ax.out;
   temp_debug_vect[1] = oneloop_andi_model[1];//oneloop_andi_model_filt.ay.out;
   temp_debug_vect[2] = oneloop_andi_model[2];//oneloop_andi_model_filt.az.out;
   temp_debug_vect[3] = oneloop_andi_model[3];//oneloop_andi_model_filt.p_dot.out;
@@ -836,6 +846,15 @@ void err_sum_nd(float err[], float a[], float b[], float k[], float c[], int n)
   }
 }
 
+/** @brief Calculate Error between two 3D euler arrays with the psi normalized*/
+void float_vect_diff_euler(float err[3], float a[3], float b[3])
+{
+  err[0] = (a[0] - b[0]);
+  err[1] = (a[1] - b[1]);
+  err[2] = (a[2] - b[2]);
+  NormRadAngle(err[2]);
+}
+
 /** @brief Integrate in time 3D array*/
 void integrate_nd(float dt, float a[], float a_dot[], int n)
 {
@@ -878,11 +897,35 @@ void acc_body_bound(struct FloatVect2* vect, float bound) {
   vect->y = sign_v1*v[1];
 }
 
-/** @brief Calculate velocity limit based on acceleration limit */
-float bound_v_from_a(float e_x[], float v_bound, float a_bound, int n) {
-  float norm = float_vect_norm(e_x,n);
+/** 
+ * @brief Calculate velocity limit based on acceleration limit for a vector
+ * From SUVAT we have that v^2 = u^2 + 2*a*s. Assuming a is constant we can calculate the velocity
+ * bound given the position error and the acceleration limit. This bounding also assumes that we want to arrive
+ * at the waypoint with zero velocity which might be untrue.
+ * @param e_x             Error in Position (always wrt the Desired) 
+ * @param v_bound         Safety bound on velocity
+ * @param a_bound         Acceleration limit
+ * @param n               Size of vector */
+float bound_v_from_a_vect(float e_x[], float v_bound, float a_bound, int n) {
+  float norm = float_vect_norm(e_x,n); 
   norm = fmaxf(norm, 1.0);
-  float v_bound_a  = sqrtf(fabs(2.0 * a_bound * norm));
+  float v_bound_a  = sqrtf(fabs(2.0 * a_bound * norm * xdot_lim_sf));
+  return fminf(v_bound, v_bound_a);
+}
+
+/** 
+ * @brief Calculate velocity limit based on acceleration limit for a float
+ * From SUVAT we have that v^2 = u^2 + 2*a*s. Assuming a is constant we can calculate the velocity
+ * bound given the position error and the acceleration limit. This bounding also assumes that we want to arrive
+ * at the waypoint with zero velocity which might be untrue.
+ * @param e_x             Error in Position (always wrt the Desired) 
+ * @param v_bound         Safety bound on velocity
+ * @param a_bound         Acceleration limit
+ * @param n               Size of vector */
+float bound_v_from_a(float e_x, float v_bound, float a_bound) { 
+  float norm;
+  norm = fmaxf(e_x, 1.0);
+  float v_bound_a  = sqrtf(fabs(2.0 * a_bound * norm * xdot_lim_sf));
   return fminf(v_bound, v_bound_a);
 }
 
@@ -915,9 +958,15 @@ void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[
   NormRadAngle(temp_diff);
   e_x[2] = k1_rm[2] * temp_diff; // Correction for Heading error +-Pi
   float_rates_of_euler_dot_vec(e_x_rates, x_ref, e_x);
-  BoundAbs(e_x_rates[0], bounds.att_d[0]);
-  BoundAbs(e_x_rates[1], bounds.att_d[1]);
-  BoundAbs(e_x_rates[2], bounds.att_d[2]);
+  float bounds_att_d[3];
+  float error_in_x[3];
+  float_vect_diff_euler(error_in_x, x_des, x_ref);
+  bounds_att_d[0] =  bound_v_from_a(error_in_x[0], bounds.att_d[0], bounds.att_2d[0]);
+  bounds_att_d[1] =  bound_v_from_a(error_in_x[1], bounds.att_d[1], bounds.att_2d[1]);
+  bounds_att_d[2] =  bound_v_from_a(error_in_x[2], bounds.att_d[2], bounds.att_2d[2]);
+  BoundAbs(e_x_rates[0], bounds_att_d[0]);
+  BoundAbs(e_x_rates[1], bounds_att_d[1]);
+  BoundAbs(e_x_rates[2], bounds_att_d[2]);
   temp_ref_att[0] = e_x_rates[2];
   // Angular Rate error -------------------------------------------------
   err_nd(e_x_d, e_x_rates, x_d_ref, k2_rm, 3);
@@ -1033,7 +1082,7 @@ void rm_3rd_pos(float dt, float x_ref[], float x_d_ref[], float x_2d_ref[], floa
   float e_x_d[n];
   float e_x_2d[n];
   err_nd(e_x, x_des, x_ref, k1_rm, n);
-  float max_x_d = bound_v_from_a(e_x, x_d_bound, x_2d_bound, n);
+  float max_x_d = bound_v_from_a_vect(e_x, x_d_bound, x_2d_bound, n);
   vect_bound_nd(e_x, max_x_d, n);
   err_nd(e_x_d, e_x, x_d_ref, k2_rm, n);
   vect_bound_nd(e_x_d,x_2d_bound, n);
@@ -1128,32 +1177,22 @@ static float ec_3rd(float x_ref, float x_d_ref, float x_2d_ref, float x_3d_ref, 
   float y_4d = k1_e*(x_ref-x)+k2_e*(x_d_ref-x_d)+k3_e*(x_2d_ref-x_2d)+x_3d_ref;
   return y_4d;
 }
-void ec_3rd_pos( float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, float fb[], int n){
+void ec_3rd_pos( float y_4d[], float x_des[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, float fb[], int n){
   float e_x_d[n];
   float e_x_2d[n];
-
+  float e_x_des[n];
+  float_vect_diff(e_x_des, x_des, x, n);
+  float max_x_d = bound_v_from_a_vect(e_x_des, x_d_bound*ec_headroom, x_2d_bound*ec_headroom, n);
   err_sum_nd(e_x_d, x_ref, x, k1_e, x_d_ref, n);
-  vect_bound_nd(e_x_d, x_d_bound*1.5, n);
+  vect_bound_nd(e_x_d, max_x_d, n);
   float temp_delete = x_d_ref[2]+k1_e[2]*(x_ref[2]-x[2]);
-  //printf("A.P_e_ub: %f\n", temp_delete);
-  //printf("A.P_e_bn: %f\n", e_x_d[2]);
   err_sum_nd(e_x_2d, e_x_d, x_d, k2_e, x_2d_ref, n);
-  vect_bound_nd(e_x_2d,x_2d_bound*1.5, n);
+  vect_bound_nd(e_x_2d,x_2d_bound*ec_headroom, n);
   float temp_delete2 = x_2d_ref[2]+k2_e[2]*(e_x_d[2]-x_d[2]);
-  //printf("A.V_e_ub: %f\n", temp_delete2);
-  //printf("A.V_e_bn: %f\n", e_x_2d[2]);
-  //printf("A.V boun: %f\n", x_2d_bound*1.5);
-  //printf("A.V norm: %f\n", float_vect_norm(e_x_2d,n));
   // Calculate and bound distrubance --------------------
   float dist[3];
   float_vect_diff(dist, x_2d, fb, 3);
-  //BoundAbs(dist[2], oneloop_andi_yaw_dist_limit); Bound to be decided
   err_sum_nd(y_4d, e_x_2d, dist, k3_e, x_3d_ref, n);
-  //printf("CheeeeeeeekkkkkXXXXXXXXX \n");
-  //printf("k3_e: %f,%f,%f\n", k3_e[0], k3_e[1], k3_e[2]);
-  //vect_bound_nd(y_4d, x_3d_bound, n); This bound does not work anymore in this format
-  //temp_checks_2[0] = e_x_2d[2];
-  //temp_checks_2[1] = e_x_d[2];
 }
 
 /** 
@@ -1171,7 +1210,7 @@ void ec_3rd_pos( float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[],
  * @param k2_e            Error Controller Gain 2nd order signal
  * @param k3_e            Error Controller Gain 3rd order signal
  */
-void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], struct OneloopStabilizationRef bounds, float fb[3]){
+void ec_3rd_att(float y_4d[3], float x_des[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], struct OneloopStabilizationRef bounds, float fb[3]){
   float e_x[3];    // (x-x_ref)*k1_e
   float e_x_rates[3]={0.}; // (x_ref-x)*k1_e
   float x_d_f[3];  // x_d_ref + e_x
@@ -1182,35 +1221,36 @@ void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[
   float temp_diff = x_ref[2] - x[2];
   NormRadAngle(temp_diff);
   e_x[2] = k1_e[2] * temp_diff; // Correction for Heading error +-Pi
-  //float_rates_of_euler_dot_vec(e_x_rates, x, e_x);
-  //float_vect_sum(x_d_f, x_d_ref, e_x_rates, 3);
-  BoundAbs(e_x[0], bounds.att_d[0]*1.5);
-  BoundAbs(e_x[1], bounds.att_d[1]*1.5);
-  BoundAbs(e_x[2], bounds.att_d[2]*1.5);
+  float_rates_of_euler_dot_vec(e_x_rates, x, e_x);  // Euler dot to rates conversion
+  float_vect_sum(x_d_f, x_d_ref, e_x_rates, 3);     // Add body rates reference signal
+  
+  float error_in_x[3];
+  float_vect_diff_euler(error_in_x, x_des, x);
+  float bounds_att_d[3];
+  bounds_att_d[0] =  bound_v_from_a(error_in_x[0], bounds.att_d[0]*ec_headroom, bounds.att_2d[0]*ec_headroom);
+  bounds_att_d[1] =  bound_v_from_a(error_in_x[1], bounds.att_d[1]*ec_headroom, bounds.att_2d[1]*ec_headroom);
+  bounds_att_d[2] =  bound_v_from_a(error_in_x[2], bounds.att_d[2]*ec_headroom, bounds.att_2d[2]*ec_headroom);
+  BoundAbs(e_x_rates[0], bounds_att_d[0]);
+  BoundAbs(e_x_rates[1], bounds_att_d[1]);
+  BoundAbs(e_x_rates[2], bounds_att_d[2]);
   float_vect_sum(x_d_f, x_d_ref, e_x, 3);
-  //BoundAbs(x_d_f[0], bounds.att_d[0]*1.5);
-  //BoundAbs(x_d_f[1], bounds.att_d[1]*1.5);
-  //BoundAbs(x_d_f[2], bounds.att_d[2]*1.5);
   // Angular Rate Error ---------------------------------------------------
   x_2d_f[0] = (x_d_f[0]-x_d[0])*k2_e[0];
   x_2d_f[1] = (x_d_f[1]-x_d[1])*k2_e[1];
   x_2d_f[2] = (x_d_f[2]-x_d[2])*k2_e[2];
-  BoundAbs(x_2d_f[0], bounds.att_2d[0]*1.5);
-  BoundAbs(x_2d_f[1], bounds.att_2d[1]*1.5);
-  BoundAbs(x_2d_f[2], bounds.att_2d[2]*1.5);
+  BoundAbs(x_2d_f[0], bounds.att_2d[0]*ec_headroom);
+  BoundAbs(x_2d_f[1], bounds.att_2d[1]*ec_headroom);
+  BoundAbs(x_2d_f[2], bounds.att_2d[2]*ec_headroom);
   x_2d_f[0] += x_2d_ref[0];
   x_2d_f[1] += x_2d_ref[1];
   x_2d_f[2] += x_2d_ref[2]; 
   //err_sum_nd(x_2d_f, x_d_f,  x_d,  k2_e, x_2d_ref, 3);
-  //BoundAbs(x_2d_f[0], bounds.att_2d[0]*1.5);
-  //BoundAbs(x_2d_f[1], bounds.att_2d[1]*1.5);
-  //BoundAbs(x_2d_f[2], bounds.att_2d[2]*1.5);
   // Calculate and bound distrubance --------------------------------------
   float dist[3];
   float_vect_diff(dist, x_2d, fb, 3);
   temp_checks[0] = x_2d[2];
   temp_checks[1] = fb[2];
-  //BoundAbs(dist[2], oneloop_andi_yaw_dist_limit); //FIXME UNCOMMENT ME
+  //BoundAbs(dist[2], oneloop_andi_yaw_dist_limit); //FIXME UNCOMMENT ME TO HAVE MAX YAW CONTROL EFFORT
   // Angular Acceleration Error -------------------------------------------
   err_sum_nd(y_4d, x_2d_f, dist, k3_e, x_3d_ref, 3);
   temp_e_x = e_x[2];
@@ -1287,6 +1327,10 @@ void init_poles(void){
   p_att_e.zeta    = 1.0;
   p_att_e.p3      = p_att_e.omega_n;
 
+  p_roll_e.omega_n = 29.0/3.0;
+  p_roll_e.zeta    = 1.0;
+  p_roll_e.p3      = p_roll_e.omega_n;
+
   p_att_rm.omega_n = p_att_e.omega_n*0.8; 
   p_att_rm.zeta    = 1.0;
   p_att_rm.p3      = p_att_rm.omega_n;
@@ -1341,13 +1385,13 @@ void init_controller_gains(void){
 
   //--ANDI Controller gains --------------------------------------------------------------------------------
   /*Attitude Loop*/
-  k_att_e.k1[0]  = k_rm_1_3_f(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
-  k_att_e.k2[0]  = k_rm_2_3_f(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
-  k_att_e.k3[0]  = k_rm_3_3_f(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
+  k_att_e.k1[0]  = k_rm_1_3_f(p_roll_e.omega_n, p_roll_e.zeta, p_roll_e.p3);//k_rm_1_3_f(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
+  k_att_e.k2[0]  = k_rm_2_3_f(p_roll_e.omega_n, p_roll_e.zeta, p_roll_e.p3);//k_rm_2_3_f(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
+  k_att_e.k3[0]  = k_rm_3_3_f(p_roll_e.omega_n, p_roll_e.zeta, p_roll_e.p3);//k_rm_3_3_f(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
 
-  k_att_e.k1[1]  = k_att_e.k1[0]; 
-  k_att_e.k2[1]  = k_att_e.k2[0]; 
-  k_att_e.k3[1]  = k_att_e.k3[0]; 
+  k_att_e.k1[1]  = k_rm_1_3_f(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);//k_att_e.k1[0]; 
+  k_att_e.k2[1]  = k_rm_2_3_f(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);//k_att_e.k2[0]; 
+  k_att_e.k3[1]  = k_rm_3_3_f(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);//k_att_e.k3[0]; 
 
   k_att_rm.k1[0] = k_rm_1_3_f(p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
   k_att_rm.k2[0] = k_rm_2_3_f(p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
@@ -1926,7 +1970,20 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     }
     if (multiple_chirp_run && !chirp_on) {
       if (chirp_n_counter < chirp_n_repeat) {
-        if (fabsf(oneloop_andi.sta_state.att_2d[2]) < RadOfDeg(5.0)) {
+        delay_counter++;
+        int16_t idx_acc = 0;
+        float trigger_acc = 0.0;
+        switch (chirp_axis){
+          case 5: //Yaw
+            idx_acc = 2;
+            trigger_acc = 5.0;
+            break;
+          case 6: //Roll
+            idx_acc = 0;
+            trigger_acc = 15.0;
+            break;
+        }
+        if (fabsf(oneloop_andi.sta_state.att_2d[idx_acc]) < RadOfDeg(trigger_acc) && delay_counter >=2500 && fabsf(oneloop_andi.sta_state.att_d[idx_acc]) < RadOfDeg(5.0)) {
           firing_counter++;
         } else {
           firing_counter = 0;
@@ -1935,6 +1992,7 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
           chirp_n_counter++;
           chirp_on = true;
           firing_counter = 0;
+          delay_counter  = 0;
         }
       } else {
         multiple_chirp_run = false;
@@ -1952,6 +2010,10 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
       psi_vec[1] = oneloop_andi.sta_ref.att_d[2];
       psi_vec[2] = oneloop_andi.sta_ref.att_2d[2];
       psi_vec[3] = oneloop_andi.sta_ref.att_3d[2];
+      att_des[0] = 0.0;
+      att_des[1] = 0.0;
+      eulers_zxy_des.phi = 0.0;
+      eulers_zxy_des.theta = 0.0;
     }
     bool ow_phi = false;
     if (chirp_on && chirp_axis==6){
@@ -1960,6 +2022,7 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
       phi_vec[1] = oneloop_andi.sta_ref.att_d[0];
       phi_vec[2] = oneloop_andi.sta_ref.att_2d[0];
       phi_vec[3] = oneloop_andi.sta_ref.att_3d[0];
+      eulers_zxy_des.theta = 1.7;
     }
     rm_3rd_attitude(dt_1l, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, att_des, ow_psi, psi_vec, k_att_rm.k1, k_att_rm.k2, k_att_rm.k3, sta_bounds);
     if (ow_phi){
@@ -1996,6 +2059,13 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   }
   act_dyn_ctrl[COMMAND_MOTOR_RIGHT] = oneloop_andi_sigma;
   act_dyn_ctrl[COMMAND_MOTOR_LEFT]  = oneloop_andi_sigma;
+
+  // Need to save and convert desired position for bounding. Not sure NAV always updates this correctly.
+  float pos_des[3];
+  pos_des[0]   = POS_FLOAT_OF_BFP(POS_BFP_OF_REAL(nav.target.y));
+  pos_des[1]   = POS_FLOAT_OF_BFP(POS_BFP_OF_REAL(nav.target.x));
+  pos_des[2]   = POS_FLOAT_OF_BFP(-POS_BFP_OF_REAL(nav.nav_altitude));
+
 
   // If drone is not on the ground use incremental law
   use_increment = 0.0;
@@ -2059,10 +2129,10 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     if(oneloop_andi.ctrl_type == CTRL_ANDI){
       //float temp_dist_bound_gui[3] = {oneloop_andi_model[0], oneloop_andi_model[1], oneloop_andi_model[2]};
       float temp_dist_bound_gui[3] = {0.0, 0.0, 0.0};
-      ec_3rd_pos(nu, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e.k1, k_pos_e.k2, k_pos_e.k3, max_v_nav, max_a_nav, max_j_lin,temp_dist_bound_gui,3);
+      ec_3rd_pos(nu, pos_des, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e.k1, k_pos_e.k2, k_pos_e.k3, max_v_nav, max_a_nav, max_j_lin,temp_dist_bound_gui,3);
     } else if (oneloop_andi.ctrl_type == CTRL_INDI){
       float dummy1[3] = {0.0, 0.0, 0.0};
-      ec_3rd_pos(nu, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, dummy1, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e_indi.k1, k_pos_e_indi.k2, k_pos_e_indi.k3, max_v_nav, max_a_nav, max_j_lin,dummy1,3);
+      ec_3rd_pos(nu, pos_des, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, dummy1, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e_indi.k1, k_pos_e_indi.k2, k_pos_e_indi.k3, max_v_nav, max_a_nav, max_j_lin,dummy1,3);
       //nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], 0.0, oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e_indi.k1[0], k_pos_e_indi.k2[0], k_pos_e_indi.k3[0]);
       //nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], 0.0, oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e_indi.k1[1], k_pos_e_indi.k2[1], k_pos_e_indi.k3[1]);
       //nu[2] = ec_3rd(oneloop_andi.gui_ref.pos[2], oneloop_andi.gui_ref.vel[2], oneloop_andi.gui_ref.acc[2], 0.0, oneloop_andi.gui_state.pos[2], oneloop_andi.gui_state.vel[2], oneloop_andi.gui_state.acc[2], k_pos_e_indi.k1[2], k_pos_e_indi.k2[2], k_pos_e_indi.k3[2]);  
@@ -2070,14 +2140,15 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   }
   // Attitude Pseudo Control Vector (nu) based on error controller
   float y_4d_att[3];  
+  float att_des_4_ec[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, eulers_zxy_des.psi};
   if(oneloop_andi.ctrl_type == CTRL_ANDI){
     //float temp_dist_bound_sta[3] = {oneloop_andi_model_filt.p_dot.out, oneloop_andi_model_filt.q_dot.out, oneloop_andi_model_filt.r_dot.out};
     float temp_dist_bound_sta[3] = {oneloop_andi_model[RW_ap], oneloop_andi_model[RW_aq], oneloop_andi_model[RW_ar]};
-    ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds,temp_dist_bound_sta);
+    ec_3rd_att(y_4d_att, att_des_4_ec, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds,temp_dist_bound_sta);
 } else if (oneloop_andi.ctrl_type == CTRL_INDI){
     float dummy0[3] = {0.0, 0.0, 0.0};
     float temp_dist_bound_sta_INDI[3] = {oneloop_andi_model[RW_ap]*k_att_e.k3[0], oneloop_andi_model[RW_aq]*k_att_e.k3[1], oneloop_andi_model[RW_ar]*k_att_e.k3[2]};
-    ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e_indi.k1, k_att_e_indi.k2, k_att_e_indi.k3, sta_bounds, temp_dist_bound_sta_INDI);
+    ec_3rd_att(y_4d_att, att_des_4_ec, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e_indi.k1, k_att_e_indi.k2, k_att_e_indi.k3, sta_bounds, temp_dist_bound_sta_INDI);
   }
   if(half_loop && radio_control_get(RADIO_THROTTLE)<200){
     nu[3] = 0.0;
@@ -2105,8 +2176,22 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     //nu[2] = oneloop_andi_model_filt.az.out;
     //nu[3] = oneloop_andi_model_filt.p_dot.out*k_att_e.k3[0];
     //nu[4] = oneloop_andi_model_filt.q_dot.out*k_att_e.k3[1];
-
     nu[5] = oneloop_andi_model_filt.r_dot.out*k_att_e.k3[2];
+  }
+  if (drop_roll){
+    nu[3] = oneloop_andi_model_filt.p_dot.out*k_att_e.k3[0];
+  }
+  if (drop_pitch){
+    nu[4] = oneloop_andi_model_filt.q_dot.out*k_att_e.k3[1];
+  }
+  if (drop_aN){
+    nu[0] = oneloop_andi_model_filt.ax.out;
+  }
+  if (drop_aE){
+    nu[1] = oneloop_andi_model_filt.ay.out;
+  }
+  if (drop_aD){
+    nu[2] = oneloop_andi_model_filt.az.out;
   }
 
   oneloop_andi_state_compensation(state_compensation_on);
@@ -2622,14 +2707,27 @@ void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, i
           BoundAbs(S_psi, 0.9*M_PI_2)
           psi_des_rad = oneloop_andi.sta_state.att[2] + S_psi;
           NormRadAngle(psi_des_rad);
+          // Set the EC to track a 0 acceleration in Z
+          p_ref[2] = oneloop_andi.gui_state.pos[2];
+          v_ref[2] = oneloop_andi.gui_state.vel[2];
+          a_ref[2] = 0.0;
+          drop_aN = true;
+          drop_aE = true;
+
           break;
       case 6:
           // Do a doublet on the roll acceleration
           oneloop_andi.sta_ref.att[0]    = oneloop_andi.sta_state.att[0];
           oneloop_andi.sta_ref.att_d[0]  = oneloop_andi.sta_state.att_d[0];
           //oneloop_andi.sta_ref.att_2d[0] = (time_elapsed < (t_chirp/2.0)) ? A*M_PI/180.0 : -A*M_PI/180.0;
-          oneloop_andi.sta_ref.att_2d[0] = -A*M_PI/180.0;
+          if (time_elapsed < (0.5)){
+            oneloop_andi.sta_ref.att_2d[0] = 0.0;
+          } else {
+            oneloop_andi.sta_ref.att_2d[0] = -A*M_PI/180.0;
+          }
           oneloop_andi.sta_ref.att_3d[0] = 0.0;
+          drop_aN = true;
+          drop_aE = true;
           break;
   }
 
@@ -2659,6 +2757,12 @@ void chirp_call(bool *chirp_on, bool *chirp_first_call, float* t_0, float* time_
       float_vect_zero(v_ref, 3);
       float_vect_zero(a_ref, 3);
       float_vect_zero(j_ref, 3);
+      drop_yaw = false;
+      drop_roll = false;
+      drop_pitch = false;
+      drop_aN = false;
+      drop_aE = false;
+      drop_aD = false;
       //oneloop_andi_sigma = oneloop_andi_sigma_max;
       //oneloop_andi_enter(false, oneloop_andi.ctrl_type);
     }
