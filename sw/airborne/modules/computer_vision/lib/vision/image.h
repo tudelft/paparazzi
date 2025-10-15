@@ -129,4 +129,7 @@ void image_gradient_pixel(struct image_t *img, struct point_t *loc, int method, 
 uint8_t ker_mul_3x3(uint8_t const *source, int_fast8_t const *kernel, uint8_t total, uint8_t setting, int width, int YUV);
 void image_convolution_3x3(struct image_t *input, struct image_t *output, int_fast8_t const *kernel, uint8_t kernel_total);
 
+/* for minidrone */
+void image_yuyv_swap_uyvy(struct image_t *input);
+
 #endif

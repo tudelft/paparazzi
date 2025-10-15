@@ -1,0 +1,37 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="parrot_minidrone_cam" dir="../boards/parrot_minidrone">
+  <doc>
+    <description>
+      Compile and control the settings of a Parrot minidrone bottom cameras.
+    </description>
+    <section name="Bottom camera" prefix="MT9V117_">
+      <define name="TARGET_FPS" value="30" description="Desired frame rate"/>
+      <define name="FOCAL_X" value="0.48686" description="Focal length in the x-direction in pixels"/>
+      <define name="OFFSET_X" value="0.48908" description="Focal length in the y-direction in pixels"/>
+      <define name="CENTER_X" value="0.51015" description="Center image coordinate in the x-direction"/>
+      <define name="CENTER_Y" value="0.51015" description="Center image coordinate in the y-direction"/>
+      <define name="DHANE_K" value="1.25" description="(Un)Distortion parameter for a fish-eye lens"/>
+    </section>
+  </doc>
+  <dep>
+    <depends>i2c,video_thread</depends>
+  </dep>
+  <header>
+    <file name="mt9v117.h"/>
+  </header>
+  <init fun="mt9v117_init(PTR(mt9v117))"/>
+  <makefile target="ap">
+    <file name="mt9v117.c"/>
+    <define name="I2C_BUF_LEN" value="56"/>
+    <define name="USE_I2C0"/>
+    <test>
+      <define name="USE_I2C0"/>
+    </test>
+  </makefile>
+  <makefile target="sim|nps">
+    <file name="mt9v117_nps.c"/>
+    <define name="I2C_BUF_LEN" value="56"/>
+    <define name="USE_I2C0"/>
+  </makefile>
+</module>

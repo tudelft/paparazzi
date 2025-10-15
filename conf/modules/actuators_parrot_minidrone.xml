@@ -1,0 +1,19 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="actuators_parrot_minidrone" dir="actuators" task="actuators">
+  <doc>
+    <description>
+      Actuators Driver for a Parrot Minidrone
+    </description>
+  </doc>
+  <dep>
+    <depends>actuators</depends>
+    <provides>actuators</provides>
+  </dep>
+  <header>
+    <file name="actuators.h" dir="boards/parrot_minidrone"/>
+  </header>
+  <makefile target="ap">
+    <file name="actuators.c" dir="$(SRC_BOARD)"/>
+  </makefile>
+</module>

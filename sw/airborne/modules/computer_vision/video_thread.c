@@ -40,8 +40,9 @@
 
 #include "mcu_periph/sys_time.h"
 
-// include board for bottom_camera and front_camera on ARDrone2, Bebop and Disco
+// include board for bottom_camera and/or front_camera on Parrot ARDrone2, Bebop, Disco and Minidrone
 #include BOARD_CONFIG
+PRINT_CONFIG_VAR(BOARD_CONFIG)
 
 // Bebop and Disco can use the ISP (Image Signal Processors) to speed up things
 #if defined(BOARD_BEBOP) || defined(BOARD_DISCO)
@@ -98,8 +99,13 @@ static void *video_thread_function(void *data)
 
   // create the images
   if (vid->filters & VIDEO_FILTER_DEBAYER) {
-    // fixme: don't hardcode size, works for Bebop front camera for now
-#define IMG_FLT_SIZE 272
+    // fixme: don't hardcode size, works for bebop front camera for now
+    #ifdef BOARD_BEBOP
+    #define IMG_FLT_SIZE 272
+    #else
+    //#ifdef BOARD_PARROT_MINIDRONE //FIXME but currently no need have no debayer AFIAK
+    #define IMG_FLT_SIZE 240
+    #endif
     image_create(&img_color, IMG_FLT_SIZE, IMG_FLT_SIZE, IMAGE_YUV422);
   }
 
@@ -140,6 +146,7 @@ static void *video_thread_function(void *data)
 
     // Run selected filters
     if (vid->filters & VIDEO_FILTER_DEBAYER) {
+      fprintf(stderr, "[%s] using BayerToYUV first\n", print_tag);
       BayerToYUV(&img, &img_color, 0, 0);
       // use color image for further processing
       img_final = &img_color;

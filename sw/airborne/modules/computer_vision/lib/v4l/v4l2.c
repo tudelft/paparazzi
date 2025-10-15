@@ -311,12 +311,12 @@ struct v4l2_device *v4l2_init(char *device_name, struct img_size_t size, struct 
       return NULL;
     }
 
-    if(check_contiguity((unsigned long)buffers[i].buf, getpid(), &pmem, buf.length)) {
-      printf("[v4l2] Physical memory %d is not contiguous with length %d from %s\n", i, buf.length, device_name);
-      free(buffers);
-      close(fd);
-      return NULL;
-    }
+    // if(check_contiguity((unsigned long)buffers[i].buf, getpid(), &pmem, buf.length)) {
+    //   printf("[v4l2] Physical memory %d is not contiguous with length %d from %s\n", i, buf.length, device_name);
+    //   free(buffers);
+    //   close(fd);
+    //   return NULL;
+    // }
 
     buffers[i].physp = pmem.paddr;
   }

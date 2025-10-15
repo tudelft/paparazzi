@@ -73,7 +73,7 @@ PRINT_CONFIG_VAR(SECONDARY_GPS)
 
 struct GpsState gps;
 struct GpsTimeSync gps_time_sync;
-static struct RelPosNED gps_relposned[GPS_RELPOS_MAX] = {0};
+static struct RelPosNED gps_relposned[GPS_RELPOS_MAX] = {{0}};
 
 #ifdef SECONDARY_GPS
 static uint8_t current_gps_id = GpsId(PRIMARY_GPS);

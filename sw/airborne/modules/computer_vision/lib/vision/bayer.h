@@ -35,6 +35,7 @@
  *        which has a red pixel next to it and a blue underneath
  *
  */
+void BayerToYUV(struct image_t *in, struct image_t *out, int RedX, int RedY);
 
 inline void BayerToYUV(struct image_t *in, struct image_t *out,
                  int RedX, int RedY)

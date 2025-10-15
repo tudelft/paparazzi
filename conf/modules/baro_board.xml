@@ -233,6 +233,9 @@ else ifeq ($(BOARD), chimera)
   BARO_BOARD_SRCS += peripherals/ms5611_i2c.c
   BARO_BOARD_SRCS += boards/baro_board_ms5611_i2c.c
 
+else ifeq ($(BOARD), parrot_minidrone)
+    BARO_BOARD_SRCS += $(SRC_BOARD)/baro_board.c
+
 endif # check board
 
 ap.CFLAGS += $(BARO_BOARD_CFLAGS)
@@ -244,4 +247,3 @@ endif # check USE_BARO_BOARD
     </raw>
   </makefile>
 </module>
-

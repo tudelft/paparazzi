@@ -30,9 +30,6 @@
  */
 
 // Own header
-#include "modules/computer_vision/viewvideo.h"
-#include "modules/computer_vision/cv.h"
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -40,13 +37,17 @@
 #include <sys/time.h>
 #include <math.h>
 
+#include BOARD_CONFIG
+PRINT_CONFIG_VAR(BOARD_CONFIG)
+
 // Video
 #include "lib/vision/image.h"
 #include "lib/encoding/jpeg.h"
 #include "lib/encoding/rtp.h"
 #include "udp_socket.h"
 
-#include BOARD_CONFIG
+#include "modules/computer_vision/viewvideo.h"
+#include "modules/computer_vision/cv.h"
 
 // Downsize factor for video stream
 #ifndef VIEWVIDEO_DOWNSIZE_FACTOR
@@ -139,6 +140,7 @@ static struct image_t *viewvideo_function(struct UdpSocket *viewvideo_socket, st
 #endif
 
   if (viewvideo.is_streaming) {
+
     // Only resize when needed
     if (viewvideo.downsize_factor > 1) {
       image_yuv422_downsample(img, img_small, viewvideo.downsize_factor);
@@ -187,6 +189,7 @@ static struct image_t *viewvideo_function(struct UdpSocket *viewvideo_socket, st
 #endif
   }
 
+  // Free all buffers
   return NULL; // No new images were created
 }
 
