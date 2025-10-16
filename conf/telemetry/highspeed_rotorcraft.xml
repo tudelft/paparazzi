@@ -67,6 +67,7 @@
       <message name="FUELCELL"                 period="1.5"/>
       <message name="POWER_DEVICE"             period="0.12"/>
       <message name="IMU_HEATER"               period="15.1"/>
+      <message name="RTOS_MON"                  period="1.3"/>  
     </mode>
 
     <mode name="sim" key_press="d">

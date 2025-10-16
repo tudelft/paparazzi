@@ -122,23 +122,19 @@
     </block>
     <block name="p1" strip_button="Stay p1">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING, WP_p1)"/>
-        <call fun="nav_moving_base_run()"/>
+        <stay wp="p1"/>
     </block>
     <block name="p2" strip_button="Stay p2">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING, WP_p2)"/>
-        <call fun="nav_moving_base_run()"/>
+        <stay wp="p2"/>
     </block>
     <block name="p3" strip_button="Stay p3">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING, WP_p3)"/>
-        <call fun="nav_moving_base_run()"/>
+        <stay wp="p3"/>
     </block>
     <block name="p4" strip_button="Stay p4">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING, WP_p4)"/>
-        <call fun="nav_moving_base_run()"/>
+        <stay wp="p4"/>
     </block>
     <block name="FOLLOW">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>

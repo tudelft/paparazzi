@@ -151,11 +151,9 @@
         <stay wp="STDBY"/>
     </block>
     <block name="Standby_MB" strip_button="Standby MB">
-        <call_once fun="nav_moving_base_set_active_sender(0)"/>
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <call_once fun="nav_moving_base_setup(NAV_MOVING_BASE_MODE_TRACKING, WP_STDBY)"/>
         <call fun="nav_moving_base_run()"/>
-        <exception cond="nav_moving_base.timed_out" deroute="Standby"/>
     </block>
     <block name="stay_ARUCO" strip_button="Stay ARUCO">
         <call_once fun="nav_moving_base_set_active_sender(REMOTE_SENSING_ID)"/>
