@@ -50,7 +50,7 @@
             <module name="range_sensor_uavcan"/>
 
             <!-- Log in high speed (Remove for outdoor flights) -->
-            <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
+            <define name="IMU_LOG_HIGHSPEED"    value="FALSE"/>
             <define name="FALCON_LOG_ON_ARRIVAL" value="TRUE"/>
 
             <define name="I2C2_CLOCK_SPEED" value="100000"/>
@@ -232,7 +232,7 @@
         <let var="th_hold" value="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
         <let VAR="servo_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
         <let VAR="hover_off" VALUE="Or($th_hold, !rotwing_state.hover_motors_enabled)"/>
-        <let var="ail_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 20)"/>
+        <let var="ail_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 40)"/>
         <let var="flap_limit_hit" value="LessThan(rotwing_state.meas_skew_angle_deg, 60)"/>
 
         <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
@@ -277,6 +277,12 @@
         <define name="AGL_DIST_MIN_DISTANCE_CHECK"          value="0.18"/>
         <define name="AGL_DIST_MAX_DISTANCE_CHECK"          value="0.25"/>
         <define name="AGL_DIST_FILTER"                      value="0.07"/>
+
+        <!-- IMU acceleration compensation -->
+        <define name="INDI_COMP_ACCEL_FOR_CG_OFFSET" value="TRUE"/>
+        <define name="IMU_POS_X"                 value="0.321"/>  
+        <define name="IMU_POS_Y"                 value="0.0"/>    
+        <define name="IMU_POS_Z"                 value="0.0"/>
     </section>
 
     <section name="FALCON" prefix="FALCON_"> 
