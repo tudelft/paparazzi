@@ -140,7 +140,7 @@ conf/tools/blacklisted: conf/tools/blacklisted_example
 ground_segment: _print_building conf libpprz subdirs static
 ground_segment.opt: ground_segment cockpit.opt tmtc.opt
 
-static: cockpit tmtc generators sim_static joystick static_h
+static: cockpit tmtc generators sim_static static_h
 
 libpprzlink.update:
 	$(MAKE) -C $(EXT) pprzlink.update
@@ -174,7 +174,7 @@ sim_static: libpprz
 
 ext:
 	$(MAKE) -C $(EXT)
-	$(MAKE) -C $(TOOLS)/bluegiga_usb_dongle
+# 	$(MAKE) -C $(TOOLS)/bluegiga_usb_dongle
 
 opencv_bebop:
 	$(MAKE) -C $(EXT) opencv_bebop
