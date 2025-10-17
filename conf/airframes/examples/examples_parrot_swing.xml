@@ -24,6 +24,10 @@
     <module name="ahrs"          type="int_cmpl_quat"/>
     <module name="ins"/>
     <module name="air_data"/>
+    
+    <module name="logger_file">
+      <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
+    </module>
   </firmware>
 
   <commands>
@@ -201,8 +205,8 @@
   <section name="AUTOPILOT">
     <define name="MODE_STARTUP" value="AP_MODE_KILL"/>
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_Z_HOLD"/>
+    <define name="MODE_AUTO1" value="AP_MODE_NAV"/>
+    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
   </section>
 
   <section name="BAT">
