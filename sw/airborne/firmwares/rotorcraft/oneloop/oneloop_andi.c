@@ -84,13 +84,13 @@
 #include "modules/actuators/actuators.h"
 #include "modules/core/abi.h"
 #include "filters/low_pass_filter.h"
-#include "filters/notch_filter_float.h"
 #include "math/wls/wls_alloc.h"
 #include "modules/nav/nav_rotorcraft_hybrid.h"
 #include "firmwares/rotorcraft/navigation.h"
 #include "modules/rotwing_drone/rotwing_state.h"
 #include "modules/core/commands.h"
-#include "modules/ctrl/eff_scheduling_rotwing_V2.h"
+#include "firmwares/rotorcraft/oneloop/cyclone_fu.h"
+
 #include <stdio.h>
 #if INS_EXT_POSE
 #include "modules/ins/ins_ext_pose.h"
@@ -99,70 +99,18 @@
 #include "modules/gps/gps.h" // DELETE FIX
 //#include "nps/nps_fdm.h"
 
-// Number of real actuators (e.g. motors, servos)
-#ifndef ONELOOP_ANDI_NUM_THRUSTERS
-float num_thrusters_oneloop = 4.0; // Number of motors used for thrust
-#else
-float num_thrusters_oneloop = ONELOOP_ANDI_NUM_THRUSTERS;
-#endif
+/*Define general struct of the Oneloop ANDI controller*/
+struct OneloopGeneral oneloop_andi;
 
-#ifndef ONELOOP_ANDI_SCHEDULING
-#define ONELOOP_ANDI_SCHEDULING FALSE
-#endif
-
-#ifdef ONELOOP_ANDI_FILT_CUTOFF
-float  oneloop_andi_filt_cutoff = ONELOOP_ANDI_FILT_CUTOFF;
+// Use compile-time macros to set default filter type enum value
+#if defined(FILTER_USE_LP1)
+enum FilterType filter_type = LOWPASS_1;
+#elif defined(FILTER_USE_BW2)
+enum FilterType filter_type = BUTTERWORTH_2;
+#elif defined(FILTER_USE_YAW_LP4)
+enum FilterType filter_type = BUTTERWORTH_4;
 #else
-float  oneloop_andi_filt_cutoff = 2.0;
-#endif
-
-#ifdef ONELOOP_ANDI_FILT_CUTOFF_ACC
-float  oneloop_andi_filt_cutoff_a = ONELOOP_ANDI_FILT_CUTOFF_ACC;
-#else
-float  oneloop_andi_filt_cutoff_a = 2.0;
-#endif
-
-#ifdef ONELOOP_ANDI_FILT_CUTOFF_VEL
-float  oneloop_andi_filt_cutoff_v = ONELOOP_ANDI_FILT_CUTOFF_VEL;
-#else
-float  oneloop_andi_filt_cutoff_v = 2.0;
-#endif
-PRINT_CONFIG_VAR(ONELOOP_ANDI_FILT_CUTOFF_VEL)
-#ifdef ONELOOP_ANDI_FILT_CUTOFF_POS
-float  oneloop_andi_filt_cutoff_pos = ONELOOP_ANDI_FILT_CUTOFF_POS;
-#else
-float  oneloop_andi_filt_cutoff_pos = 2.0;
-#endif
-
-#ifdef  ONELOOP_ANDI_FILT_CUTOFF_P
-#define ONELOOP_ANDI_FILTER_ROLL_RATE TRUE
-float oneloop_andi_filt_cutoff_p = ONELOOP_ANDI_FILT_CUTOFF_P;
-#else
-float oneloop_andi_filt_cutoff_p = 20.0;
-#endif
-
-#ifdef  ONELOOP_ANDI_FILT_CUTOFF_Q
-#define ONELOOP_ANDI_FILTER_PITCH_RATE TRUE
-float oneloop_andi_filt_cutoff_q = ONELOOP_ANDI_FILT_CUTOFF_Q;
-#else
-float oneloop_andi_filt_cutoff_q = 20.0;
-#endif
-
-#ifdef  ONELOOP_ANDI_FILT_CUTOFF_R
-#define ONELOOP_ANDI_FILTER_YAW_RATE TRUE
-float oneloop_andi_filt_cutoff_r = ONELOOP_ANDI_FILT_CUTOFF_R;
-#else
-float oneloop_andi_filt_cutoff_r = 20.0;
-#endif
-
-PRINT_CONFIG_VAR(ONELOOP_ANDI_FILT_CUTOFF);
-PRINT_CONFIG_VAR(ONELOOP_ANDI_FILT_CUTOFF_Q);
-PRINT_CONFIG_VAR(ONELOOP_ANDI_FILT_CUTOFF_P);
-PRINT_CONFIG_VAR(ONELOOP_ANDI_FILT_CUTOFF_R);
-#ifndef MAX_R 
-float max_r = RadOfDeg(120.0);
-#else
-float max_r = RadOfDeg(MAX_R);
+#error "Filter type not defined. Define one of: USE_LP1, USE_BW2, USE_YAW_LP4."
 #endif
 
 #ifdef ONELOOP_ANDI_ACT_IS_SERVO
@@ -173,39 +121,28 @@ bool   actuator_is_servo[ANDI_NUM_ACT_TOT] = {0};
 
 #ifdef ONELOOP_ANDI_ACT_DYN
 float  act_dynamics[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_DYN;
+float  act_dyn_ctrl[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_DYN;
 #else
 #error "You must specify the actuator dynamics"
-float  act_dynamics[ANDI_NUM_ACT_TOT] = = {1};
 #endif
 
-#ifdef ONELOOP_ANDI_ACT_MAX
-float  act_max[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX;
+#if defined(ONELOOP_ANDI_ACT_MAX) && defined(ONELOOP_ANDI_ACT_MIN)
+float act_max[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX;
+float act_min[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN;
 #else
-float  act_max[ANDI_NUM_ACT_TOT] = = {MAX_PPRZ};
-#endif
-
-#ifdef ONELOOP_ANDI_ACT_MIN
-float  act_min[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN;
-#else
-float  act_min[ANDI_NUM_ACT_TOT] = = {0.0};
+#error "You must specify the actuator limits: ONELOOP_ANDI_ACT_MAX and ONELOOP_ANDI_ACT_MIN"
 #endif
 
 #ifdef ONELOOP_ANDI_ACT_MAX_NORM
 float  act_max_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX_NORM;
 #else
-float  act_max_norm[ANDI_NUM_ACT_TOT] = = {1.0};
+float  act_max_norm[ANDI_NUM_ACT_TOT] = {[0 ... ANDI_NUM_ACT_TOT-1] = 1.0};
 #endif
 
 #ifdef ONELOOP_ANDI_ACT_MIN_NORM
 float  act_min_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN_NORM;
 #else
-float  act_min_norm[ANDI_NUM_ACT_TOT] = = {0.0};
-#endif
-
-#ifdef ONELOOP_ANDI_NU_NORM_MAX
-float  nu_norm_max = ONELOOP_ANDI_NU_NORM_MAX;
-#else
-float  nu_norm_max = 1.0;
+float  act_min_norm[ANDI_NUM_ACT_TOT] = {[0 ... ANDI_NUM_ACT_TOT-1] = -1.0};
 #endif
 
 #ifdef ONELOOP_ANDI_U_PREF
@@ -214,183 +151,152 @@ static float u_pref[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_U_PREF;
 static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 #endif
 
-#ifndef ONELOOP_ANDI_DEBUG_MODE
-#define ONELOOP_ANDI_DEBUG_MODE  FALSE
-#endif
-
-// Assume phi and theta are the first actuators after the real ones unless otherwise specified
-#define ONELOOP_ANDI_MAX_BANK  act_max[COMMAND_ROLL] // assuming abs of max and min is the same
-#define ONELOOP_ANDI_MAX_PHI   act_max[COMMAND_ROLL] // assuming abs of max and min is the same
-
-#define ONELOOP_ANDI_MAX_THETA   act_max[COMMAND_PITCH] // assuming abs of max and min is the same
-
-#ifndef ONELOOP_THETA_PREF_MAX
-float theta_pref_max = RadOfDeg(20.0);
-#else
-float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
-#endif
-
 #if ANDI_NUM_ACT_TOT != WLS_N_U_MAX
 #error Matrix-WLS_N_U_MAX is not equal to the number of actuators: define WLS_N_U_MAX == ANDI_NUM_ACT_TOT in airframe file
-#define WLS_N_U_MAX == ANDI_NUM_ACT_TOT
+#define WLS_N_U_MAX ANDI_NUM_ACT_TOT
 #endif
 #if ANDI_OUTPUTS != WLS_N_V_MAX
 #error Matrix-WLS_N_V_MAX is not equal to the number of controlled axis: define WLS_N_V_MAX == ANDI_OUTPUTS in airframe file
-#define WLS_N_V_MAX == ANDI_OUTPUTS
+#define WLS_N_V_MAX ANDI_OUTPUTS
 #endif
-
-#ifndef ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD
-#define ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD 10.0
-#endif
-
-/* Declaration of Navigation Variables*/
-#ifdef NAV_HYBRID_MAX_DECELERATION
-float max_a_nav = NAV_HYBRID_MAX_DECELERATION;
-#else
-float max_a_nav = 4.0;   // (35[N]/6.5[Kg]) = 5.38[m/s2]  [0.8 SF]
-#endif
-
-#ifdef ONELOOP_MAX_JERK
-float max_j_nav = ONELOOP_MAX_JERK;
-#else
-float max_j_nav = 500.0; // Pusher Test shows erros above 2[Hz] ramp commands [0.6 SF]
-#endif
-
-#ifdef ONELOOP_MAX_ANGULAR_JERK
-float max_j_ang = ONELOOP_MAX_ANGULAR_JERK;
-#else
-float max_j_ang = 1000.0; 
-#endif
-
-#ifdef NAV_HYBRID_MAX_AIRSPEED
-float max_v_nav = NAV_HYBRID_MAX_AIRSPEED; // Consider implications of difference Ground speed and airspeed
-#else
-float max_v_nav = 5.0;
-#endif
-float max_as = 19.0f;
-float min_as = 0.0f;
-
-#ifdef NAV_HYBRID_MAX_SPEED_V
-float max_v_nav_v = NAV_HYBRID_MAX_SPEED_V;
-#else
-float max_v_nav_v = 1.5;
-#endif
-
-#ifndef FWD_SIDESLIP_GAIN
-float fwd_sideslip_gain = 0.2;
-#else
-float fwd_sideslip_gain = FWD_SIDESLIP_GAIN;
-#endif
-
-#ifndef ONELOOP_ANDI_WU_QUAD_MOTORS_FWD
-float Wu_quad_motors_fwd = 6.0;
-#else
-float Wu_quad_motors_fwd = ONELOOP_ANDI_WU_QUAD_MOTORS_FWD;
-#endif
-
 
 /*  Define Section of the functions used in this module*/
-void  init_poles(void);
-void  init_poles_att(void);
-void  init_poles_pos(void);
-void  calc_normalization(void);
-void  normalize_nu(void);
-void  G1G2_oneloop(int ctrl_type);
-void  get_act_state_oneloop(void);
-void  oneloop_andi_propagate_filters(void);
-void  init_filter(void);
-void  init_controller(void);
-void  float_rates_of_euler_dot_vec(float r[3], float e[3], float edot[3]);
-void  float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3]);
-void  err_nd(float err[], float a[], float b[], float k[], int n);
-void  err_sum_nd(float err[], float a[], float b[], float k[], float c[], int n);
-void  integrate_nd(float dt, float a[], float a_dot[], int n);
-void  vect_bound_nd(float vect[], float bound, int n);
-void  acc_body_bound(struct FloatVect2* vect, float bound);
-float bound_v_from_a(float e_x[], float v_bound, float a_bound, int n);
-void  rm_2nd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm);
-void  rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
-void  rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
-void  rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], bool ow_psi, float psi_overwrite[4], float k1_rm[3], float k2_rm[3], float k3_rm[3], float max_ang_jerk);
-void  rm_3rd_pos(float dt, float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_des[], float k1_rm[], float k2_rm[], float k3_rm[], float x_d_bound, float x_2d_bound, float x_3d_bound, int n);
-void  rm_2nd_pos(float dt, float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_d_des[], float k2_rm[], float k3_rm[], float x_2d_bound, float x_3d_bound, int n);
-void  rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], float k3_rm[], float x_3d_bound, int n);
-void  ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], float max_ang_jerk);
-void  ec_3rd_pos(float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, int n);
-void  calc_model(void);
-float oneloop_andi_sideslip(void);
-void  reshape_wind(void);
-void  chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
-void  chirp_call(bool* chirp_on, bool* chirp_first_call, float* t_0_chirp, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
-void  init_cf2(struct CF2_t *cf, float fc);
-void  init_cf4(struct CF4_t *cf, float fc);
-void  init_all_cf(void);
-void  reinit_cf2(struct CF2_t *cf, bool reinit);
-void  reinit_cf4(struct CF4_t *cf, bool reinit);
-void  reinit_all_cf(bool reinit);
+float positive_non_zero(float input)
+void scaled_error_nd(float err[], float a[], float b[], float k[], int n);
+void integrate_nd(float dt, float a[], float a_dot[], int n);
 
-/*Define general struct of the Oneloop ANDI controller*/
-struct OneloopGeneral oneloop_andi;
+void reference_model_rate(float dt, float rate_des[3], const struct Gains2ndOrder3 *k_rate_rm, const struct OneloopAttRef *bounds, struct OneloopAttRef *rate_ref);
+void reference_model_attitude(float dt, float att_des[3], const struct Gains3rdOrder3 *k_att_rm, const struct OneloopAttRef *bounds, struct OneloopAttRef *att_ref);
+void reference_model_position(float dt, float pos_des[2], const struct Gains3ndOrder2 *k_pos_rm, const struct OneloopPosRef *bounds, struct OneloopPosRef *pos_ref);
+void reference_model_altitude(float dt, float alt_des, const struct Gains3ndOrder1 *k_alt_rm, const struct OneloopAltRef *bounds, struct OneloopAltRef *alt_ref);
+void reference_model_heading(float dt, float head_des, const struct Gains2ndOrder1 *k_head_rm, const struct OneloopHeadRef *bounds, struct OneloopHeadRef *head_ref);
+
+void error_controller_rate(float dt, const struct OneloopAttRef *rate_ref, const struct OneloopAttState *rate_state, const struct Gains2ndOrder3 *k_rate_e, float *nu_rate);
+void error_controller_attitude(float dt, const struct OneloopAttRef *att_ref, const struct OneloopAttState *att_state, const struct Gains3rdOrder3 *k_att_e, float *nu_att);
+void error_controller_position(float dt, const struct OneloopPosRef *pos_ref, const struct OneloopPosState *pos_state, const struct Gains2ndOrder3 *k_pos_e, float *nu_pos);
+void error_controller_altitude(float dt, const struct OneloopAltRef *alt_ref, const struct OneloopAltState *alt_state, const struct Gains2ndOrder3 *k_alt_e, float *nu_alt);
+void error_controller_heading(float dt, const struct OneloopHeadRef *head_ref, const struct OneloopHeadState *head_state, const struct Gains2ndOrder3 *k_head_e, float *nu_head);
+
+void compute_gains_2nd_order_single(float* k1, float* k2, float omega_n, float zeta);
+void compute_gains_3rd_order_single(float* k1, float* k2, float* k3, float omega_n, float zeta, float p1);
+void compute_gains_2nd_order_3d(struct Gains2ndOrder3* gains, const struct Poles2ndOrder3* poles);
+void compute_gains_2nd_order_2d(struct Gains2ndOrder2* gains, const struct Poles2ndOrder2* poles);
+void compute_gains_2nd_order_1d(struct Gains2ndOrder1* gains, const struct Poles2ndOrder1* poles);
+void compute_gains_3rd_order_3d(struct Gains3rdOrder3* gains, const struct Poles3rdOrder3* poles);
+void compute_gains_3rd_order_2d(struct Gains3rdOrder2* gains, const struct Poles3rdOrder2* poles);
+void compute_gains_3rd_order_1d(struct Gains3rdOrder1* gains, const struct Poles3rdOrder1* poles);
+
+void  init_filter(struct Filter *filer, float fc, enum FilterType type);
+void  init_filter_on_type(struct Filter *filter, float x0);
+void  update_filter_on_type(struct Filter *filter, float input);
+void  oneloop_andi_propagate_filters(void);
+
+void get_desired_rates_radio_command(float* rate_des, const float* rate_bounds);
+void get_desired_attitude_radio_command(float* att_des, const float* att_bounds, float heading_rate_bound, float dt);
+void get_desired_heading_radio_command(float* heading_des, float heading_rate_bound, float dt);
+
+void get_act_state_oneloop(void);
+void discretize_act_dynamics(float dt, float* act_dynamics_d, const float* act_dynamics);
+void compute_wls_scaling_factor(float* wls_scaler_u, const float* act_max, const float* act_min, const float* act_max_norm, const float* act_min_norm);
+void evaluate_effectiveness_matrix(float* eff_mat, const float* scaler);
+
+/**
+ * @brief Controller poles
+ *
+ * These structures define pole placement parameters for different control modes.
+ * They are used for real-time tuning of stabilization, position, altitude, 
+ * and heading control loops.
+ */
+// FIXME: Make poles dynamically set from airframe file
+struct Poles2ndOrder3 p_stab_e;
+struct Poles2ndOrder3 p_stab_rm;
+struct Poles3rdOrder2 p_pos_e;
+struct Poles3rdOrder2 p_pos_rm;
+struct Poles3rdOrder1 p_alt_e;
+struct Poles3rdOrder1 p_alt_rm;
+struct Poles2ndOrder1 p_head_e;
+struct Poles2ndOrder1 p_head_rm;
+
+/** @brief Reference bounds
+ *
+ * These structures define the maximum allowable reference values for
+ * stabilization, position, altitude, and heading control loops.
+ * They are used to limit the reference commands within safe operational limits.
+ */
+struct OneloopStabRef att_bounds;
+struct OneloopPosRef pos_bounds;
+struct OneloopAltRef alt_bounds;
+struct OneloopHeadRef head_bounds;
+
+/**
+ * @brief Model coefficients 
+ */
+union CycloneCoefficients obm_coefficients;
+
+/** 
+ * @brief Controller gains
+ *
+ * These global variables store the controller gains derived from the
+ * previously defined pole placement parameters.
+ *
+ * The values are computed from the designed poles (p_stab_*, p_pos_*, etc.)
+ * and directly used by the flight control laws in the real-time control loop.
+ * Updating the poles during tuning automatically affects these gain values.
+ */
+struct Gains2ndOrder3 k_rate_e;
+struct Gains2ndOrder3 k_rate_rm
+struct Gains3rdOrder3 k_att_e;
+struct Gains3rdOrder3 k_att_rm;
+struct Gains3rdOrder2 k_pos_e;
+struct Gains3rdOrder2 k_pos_rm;
+struct Gains3rdOrder1 k_alt_e;
+struct Gains3rdOrder1 k_alt_rm;
+struct Gains2ndOrder1 k_head_e;
+struct Gains2ndOrder1 k_head_rm;
+
+static Filter filt_p;
+static Filter filt_q;
+static Filter filt_r;
+static Filter filt_p_dot;
+static Filter filt_q_dot;
+static Filter filt_r_dot;
+static Filter filt_an;
+static Filter filt_ae;
+static Filter filt_ad;
+static Filter filt_vn;
+static Filter filt_ve;
+static Filter filt_vd;
+
+static Filter filt_ay;
+static Filter filt_airspeed;
+static Filter filt_u[ANDI_NUM_ACT_TOT];  // Low pass filter for actuators          
 
 /* Oneloop Misc variables*/
-static float use_increment = 0.0;
-static float nav_target[3]; // Can be a position, speed or acceleration depending on the guidance H mode
-static float nav_target_new[3];
-static float dt_1l = 1./PERIODIC_FREQUENCY;
+static float dt_1l = 1. / PERIODIC_FREQUENCY;
 static float g   = 9.81; // [m/s^2] Gravitational Acceleration
-float k_as = 2.0;
-int16_t temp_pitch = 0;
-float gi_unbounded_airspeed_sp = 0.0;
 
 /* Oneloop Control Variables*/
 float andi_u[ANDI_NUM_ACT_TOT];
 float andi_du[ANDI_NUM_ACT_TOT];
-static float andi_du_n[ANDI_NUM_ACT_TOT];
 float nu[ANDI_OUTPUTS];
-float nu_n[ANDI_OUTPUTS];
 static float act_dynamics_d[ANDI_NUM_ACT_TOT];
-float actuator_state_1l[ANDI_NUM_ACT];
-static float a_thrust = 0.0;
-static float g2_ff= 0.0;
+float actuator_state_1l[ANDI_NUM_ACT_TOT];
 
-/*Attitude related variables*/
-struct Int32Eulers stab_att_sp_euler_1l;// here for now to correct warning, can be better eploited in the future 
-struct Int32Quat   stab_att_sp_quat_1l; // here for now to correct warning, can be better eploited in the future
-struct FloatEulers eulers_zxy_des;
-struct FloatEulers eulers_zxy;
-//static float  psi_des_rad = 0.0;
-float  psi_des_rad = 0.0;
-float  psi_des_deg = 0.0;
-static float  psi_vec[4]  = {0.0, 0.0, 0.0, 0.0};
-
-#if ONELOOP_ANDI_HEADING_MANUAL
-bool heading_manual = true;
-#else
-bool heading_manual = false;
-#endif
-#if ONELOOP_ANDI_YAW_STICK_IN_AUTO
-bool yaw_stick_in_auto = true;
-#else
-bool yaw_stick_in_auto = false;
-#endif
-bool ctrl_off = false;
 /*WLS Settings*/
-
-static float pitch_pref = 0;
-struct WLS_t WLS_one_p = {
+struct WLS_t wls_one_p = {
   .nu        = ANDI_NUM_ACT_TOT,
   .nv        = ANDI_OUTPUTS,
-  .gamma_sq  = 100.0,
+  .gamma_sq  = 1000.0,
   .v         = {0.0},
-#ifdef ONELOOP_ANDI_WV // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}  
+#ifdef ONELOOP_ANDI_WV // {ax_dot,ay_dot,az_dot,psi_dot,p_ddot,q_ddot,r_ddot}  
   .Wv        = ONELOOP_ANDI_WV,
 #else
-  .Wv        = {1.0},
+  .Wv        = {[0 ... ANDI_OUTPUTS-1] = 1.0},
 #endif
-#ifdef ONELOOP_ANDI_WU // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}  
+#ifdef ONELOOP_ANDI_WU // {eL,eR,mL,mR,p,q,r}  
   .Wu        = ONELOOP_ANDI_WU,
 #else
-  .Wu        = {1.0},
+  .Wu        = {[0 ... ANDI_NUM_ACT_TOT-1] = 1.0},
 #endif
   .u_pref    = {0.0},
   .u_min     = {0.0},
@@ -403,94 +309,82 @@ struct WLS_t WLS_one_p = {
 #ifdef ONELOOP_ANDI_WV // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}
 static float Wv_backup[ANDI_OUTPUTS] = ONELOOP_ANDI_WV;
 #else
-static float Wv_backup[ANDI_OUTPUTS] = {1.0};
+static float Wv_backup[ANDI_OUTPUTS] = {[0 ... ANDI_OUTPUTS-1] = 1.0};
 #endif
 
 #ifdef ONELOOP_ANDI_WU // {mF,mR,mB,mL,mP,de,dr,da,df,phi,theta}
 static float Wu_backup[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_WU;
 #else
-static float Wu_backup[ANDI_NUM_ACT_TOT] = {1.0};
+static float Wu_backup[ANDI_NUM_ACT_TOT] = {[0 ... ANDI_NUM_ACT_TOT-1] = 1.0};
 #endif
 
-/*Complementary Filter Variables*/
-struct Oneloop_CF_t cf;
-static struct Oneloop_notch_t oneloop_notch; 
-
+/*Filter Variables*/
+#define USE_BW2
+struct OneloopFilter LP;
+bool  use_dyn_filter = true; 
+float oneloop_andi_sigma = 29.0;
+float oneloop_andi_sigma_max = 29.0;
+float oneloop_andi_sigma_min = 8.0; 
 /*Chirp test Variables*/
 bool  chirp_on            = false;
 bool  chirp_first_call    = true;
 float time_elapsed_chirp  = 0.0;
 float t_0_chirp           = 0.0;
-float f0_chirp            = 0.8 / (2.0 * M_PI);
-float f1_chirp            = 0.8 / (2.0 * M_PI);
-float t_chirp             = 45.0;
-float A_chirp             = 1.0;
-int8_t chirp_axis         = 0;
+float f0_chirp            = 0.2;//0.8 / (2.0 * M_PI);
+float f1_chirp            = 0.2;//0.8 / (2.0 * M_PI);
+float t_chirp             = 0.65 ;// 2.0  ;//
+float A_chirp             = 250.0;// -46.0;//
+int8_t chirp_axis         = 6   ;// 5    ;//
 float p_ref_0[3]          = {0.0, 0.0, 0.0};
+int16_t chirp_n_repeat    = 10;
+int16_t chirp_n_counter   = 0;
+int16_t firing_counter    = 0;
+int16_t delay_counter     = 0;
+bool multiple_chirp_run   = false;
 
-/*Declaration of Reference Model and Error Controller Gains*/
-struct PolePlacement p_att_e;
-struct PolePlacement p_att_rm;
-/*Position Loop*/
-struct PolePlacement p_pos_e;  
-struct PolePlacement p_pos_rm;
-/*Altitude Loop*/
-struct PolePlacement p_alt_e;   
-struct PolePlacement p_alt_rm; 
-/*Heading Loop*/
-struct PolePlacement p_head_e;
-struct PolePlacement p_head_rm;
-/*Gains of EC and RM ANDI*/
-struct Gains3rdOrder k_att_e;
-struct Gains3rdOrder k_att_rm;  
-struct Gains3rdOrder k_pos_e;
-struct Gains3rdOrder k_pos_rm; 
-/*Gains of EC and RM INDI*/
-struct Gains3rdOrder k_att_e_indi;
-struct Gains3rdOrder k_pos_e_indi;
 
 /* Effectiveness Matrix definition */
 float *bwls_1l[ANDI_OUTPUTS];
-float EFF_MAT_G[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
-float ratio_u_un[ANDI_NUM_ACT_TOT];
-float ratio_vn_v[ANDI_OUTPUTS];
+float eff_mat[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
+float n_array[ANDI_OUTPUTS];
+float m_array[ANDI_NUM_ACT_TOT];
+float coupling_factor[ANDI_OUTPUTS];
+float oneloop_andi_model[ANDI_OUTPUTS];
+float oneloop_andi_dist_bound[ANDI_OUTPUTS];
+float SF_BOUND_NU[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
+float wls_scaler_u[ANDI_NUM_ACT_TOT];
 
-/*Filters Initialization*/
-static Butterworth2LowPass filt_veloc_N;                 // Low pass filter for velocity NED - oneloop_andi_filt_cutoff_a (tau_a)       
-static Butterworth2LowPass filt_veloc_E;
-static Butterworth2LowPass filt_veloc_D;
-static Butterworth2LowPass accely_filt;                       // Low pass filter for acceleration in y direction                - oneloop_andi_filt_cutoff (tau)
-static Butterworth2LowPass airspeed_filt;                     // Low pass filter for airspeed                                - oneloop_andi_filt_cutoff (tau)
+float temp_k = 3.0;
+float temp_checks[2];
+float temp_checks_2[3];
+float temp_ref_att[3];
+float temp_dist_r = 0.0;
+float temp_ec_r = 0.0;
+float temp_ec_r_2 = 0.0;
+float temp_e_x = 0.0;
+float temp_e_x_rates = 0.0;
+float temp_x_d_f = 0.0;
+float temp_x_2d_f = 0.0;
+bool drop_yaw = false;
+bool drop_roll = false;
+bool drop_pitch = false;
+bool drop_aN = false;
+bool drop_aE = false;
+bool drop_aD = false;
+bool state_compensation_on = false;
+int16_t counter_andi = 0;
+
 /* Define messages of the module*/
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
-// static void send_cf_oneloop(struct transport_tx *trans, struct link_device *dev)
-// {
-//   float temp_cf_p[5] = {cf.p.model,cf.p.model_filt.o[0],cf.p.feedback,cf.p.feedback_filt.o[0],cf.p.out};
-//   float temp_cf_q[5] = {cf.q.model,cf.q.model_filt.o[0],cf.q.feedback,cf.q.feedback_filt.o[0],cf.q.out};
-//   float temp_cf_r[5] = {cf.r.model,cf.r.model_filt.o[0],cf.r.feedback,cf.r.feedback_filt.o[0],cf.r.out};
-//   float temp_cf_p_dot[5] = {cf.p_dot.model,cf.p_dot.model_filt.lp2.o[0],cf.p_dot.feedback,cf.p_dot.feedback_filt.lp2.o[0],cf.p_dot.out};
-//   float temp_cf_q_dot[5] = {cf.q_dot.model,cf.q_dot.model_filt.lp2.o[0],cf.q_dot.feedback,cf.q_dot.feedback_filt.lp2.o[0],cf.q_dot.out};
-//   float temp_cf_r_dot[5] = {cf.r_dot.model,cf.r_dot.model_filt.o[0],cf.r_dot.feedback,cf.r_dot.feedback_filt.o[0],cf.r_dot.out};
-//   //float temp_cf_ax[5] = {cf.ax.model,cf.ax.model_filt.o[0],cf.ax.feedback,cf.ax.feedback_filt.o[0],cf.ax.out};
-//   //float temp_cf_ay[5] = {cf.ay.model,cf.ay.model_filt.o[0],cf.ay.feedback,cf.ay.feedback_filt.o[0],cf.ay.out};
-//   float temp_cf_az[5] = {cf.az.model,cf.az.model_filt.o[0],cf.az.feedback,cf.az.feedback_filt.o[0],cf.az.out};
-//   pprz_msg_send_COMPLEMENTARY_FILTER(trans, dev, AC_ID, 
-//                 5, temp_cf_p,
-//                 5, temp_cf_q,
-//                 5, temp_cf_r,
-//                 5, temp_cf_p_dot,
-//                 5, temp_cf_q_dot,
-//                 5, temp_cf_r_dot,
-//                 5, temp_cf_az);
-// }
+
 static void send_wls_v_oneloop(struct transport_tx *trans, struct link_device *dev)
 {
-  send_wls_v("one", &WLS_one_p, trans, dev); 
+  send_wls_v("one", &wls_one_p, trans, dev); 
 }
 static void send_wls_u_oneloop(struct transport_tx *trans, struct link_device *dev)
 {
-  send_wls_u("one", &WLS_one_p, trans, dev); 
+  send_wls_u("one", &wls_one_p, trans, dev); 
 }
 static void send_eff_mat_stab_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
@@ -499,8 +393,8 @@ static void send_eff_mat_stab_oneloop_andi(struct transport_tx *trans, struct li
                 ANDI_NUM_ACT, EFF_MAT_RW[3],
                 ANDI_NUM_ACT, EFF_MAT_RW[4],
                 ANDI_NUM_ACT, EFF_MAT_RW[5], 
-                                    1, &zero,
-                                    1, &zero);
+                                   1, &zero,
+                ANDI_NUM_ACT, G2_RW);
 }
 
 static void send_eff_mat_guid_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
@@ -565,874 +459,1015 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
 
 static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
 {
-  float temp_debug_vect[9];
-  temp_debug_vect[0] = cf.ax.model;
-  temp_debug_vect[1] = cf.ay.model;
-  temp_debug_vect[2] = cf.az.model;
-  temp_debug_vect[3] = cf.p_dot.model;
-  temp_debug_vect[4] = cf.q_dot.model;
-  temp_debug_vect[5] = cf.r_dot.model;
-  temp_debug_vect[6] = cf.p.model;
-  temp_debug_vect[7] = cf.q.model;
-  temp_debug_vect[8] = cf.r.model;
-  debug_vect(trans, dev, "model_cf", temp_debug_vect, 9);
+  float temp_debug_vect[14];
+  temp_debug_vect[0] = (float) chirp_n_counter;
+  temp_debug_vect[1] = oneloop_andi_model[1];
+  temp_debug_vect[2] = oneloop_andi_model[2];
+  temp_debug_vect[3] = oneloop_andi_model[3];
+  temp_debug_vect[4] = oneloop_andi_model[4];
+  temp_debug_vect[5] = oneloop_andi_model[5];
+  temp_debug_vect[6] = oneloop_andi_sigma;
+  temp_debug_vect[7] = chirp_on ? 1.0 : 0.0;
+  temp_debug_vect[8] = filt_ad.meas;
+  temp_debug_vect[9] = temp_checks_2[0];
+  temp_debug_vect[10] = temp_checks_2[1];
+  temp_debug_vect[11] = temp_ref_att[0];
+  temp_debug_vect[12] = temp_ref_att[1];
+  temp_debug_vect[13] = temp_ref_att[2];
+  debug_vect(trans, dev, "APF", temp_debug_vect, 14);
 }
-#endif
 
-/** @brief Function to make sure that inputs are positive non zero vaues*/
+#endif //PERIODIC_TELEMETRY
+
+
+
+/** @brief Function to make sure that inputs are positive non zero vaues
+ * 
+ * If the input is zero or negative, it returns a small positive value.
+ * @param input The float input value to check.
+ * @return The original input if positive and non-zero, otherwise a small positive value.
+ */
 static float positive_non_zero(float input)
 {
   if (input < FLT_EPSILON) {
-    input = 0.00001;
+    input = 0.00001; // FIXME: Remove magic number
   }
   return input;
 }
 
-/** @brief  Error Controller Gain Design */
-
-static float k_e_1_2_f_v2(float omega, float zeta) {
-    omega = positive_non_zero(omega);
-    zeta  = positive_non_zero(zeta);
-    return (omega * omega);
-}
-
-static float k_e_2_2_f_v2(float omega, float zeta) {
-    omega = positive_non_zero(omega);
-    zeta  = positive_non_zero(zeta);
-    return (2* zeta * omega);
-}
-
-static float k_e_1_3_f_v2(float omega_n, UNUSED float zeta, float p1) {
-    omega_n = positive_non_zero(omega_n);
-    p1      = positive_non_zero(p1);
-    return (omega_n * omega_n * p1);
-}
-
-static float k_e_2_3_f_v2(float omega_n, float zeta, float p1) {
-    omega_n = positive_non_zero(omega_n);
-    zeta    = positive_non_zero(zeta);
-    p1      = positive_non_zero(p1);
-    return (omega_n * omega_n + 2 * zeta * omega_n * p1);
-}
-
-static float k_e_3_3_f_v2(float omega_n, float zeta, float p1) {
-    omega_n = positive_non_zero(omega_n);
-    zeta    = positive_non_zero(zeta);
-    p1      = positive_non_zero(p1);
-    return (2 * zeta * omega_n + p1);
-}
-
-/** @brief Reference Model Gain Design */
-
-static float k_rm_1_3_f(float omega_n, float zeta, float p1) {
-    omega_n = positive_non_zero(omega_n);
-    zeta    = positive_non_zero(zeta);
-    p1      = positive_non_zero(p1);
-    return (omega_n * omega_n * p1) / (omega_n * omega_n + omega_n * p1 * zeta * 2.0);
-}
-
-static float k_rm_2_3_f(float omega_n, float zeta, float p1) {
-    omega_n = positive_non_zero(omega_n);
-    zeta    = positive_non_zero(zeta);
-    p1      = positive_non_zero(p1);
-    return (omega_n * omega_n + omega_n * p1 * zeta * 2.0) / (p1 + omega_n * zeta * 2.0);
-}
-
-static float k_rm_3_3_f(float omega_n, float zeta, float p1) {
-    omega_n = positive_non_zero(omega_n);
-    zeta    = positive_non_zero(zeta);
-    p1      = positive_non_zero(p1);
-    return p1 + omega_n * zeta * 2.0;
-}
-
-/** @brief Attitude Rates to Euler Conversion Function */
-void float_rates_of_euler_dot_vec(float r[3], float e[3], float edot[3])
+/**
+ * @brief Compute scaled error between two N-dimensional vectors.
+ *
+ * This function calculates the elementwise difference between two input arrays
+ * and scales each component by the corresponding gain factor.
+ *
+ * @param err Output array for the computed scaled error [n]
+ * @param a   First input array (reference or desired values) [n]
+ * @param b   Second input array (measured or actual values) [n]
+ * @param k   Scaling gains applied elementwise to the error [n]
+ * @param n   Dimension of the arrays
+ */
+void scaled_error_nd(float err[], float a[], float b[], float k[], int n)
 {
-  float sphi   = sinf(e[0]);
-  float cphi   = cosf(e[0]);
-  float stheta = sinf(e[1]);
-  float ctheta = cosf(e[1]);
-  r[0] =  edot[0] - stheta * edot[2];
-  r[1] =  cphi * edot[1] + sphi * ctheta * edot[2];
-  r[2] = -sphi * edot[1] + cphi * ctheta * edot[2];
-}
-
-/** @brief Attitude Euler to Rates Conversion Function */
-void float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3])
-{
-  float sphi   = sinf(e[0]);
-  float cphi   = cosf(e[0]);
-  float stheta = sinf(e[1]);
-  float ctheta = cosf(e[1]);
-  if (fabs(ctheta) < FLT_EPSILON){
-    ctheta = FLT_EPSILON;
-  }
-  edot[0] = r[0] + sphi*stheta/ctheta*r[1] + cphi*stheta/ctheta*r[2];
-  edot[1] = cphi*r[1] - sphi*r[2];
-  edot[2] = sphi/ctheta*r[1] + cphi/ctheta*r[2];
-}
-
-/** @brief Calculate Scaled Error between two 3D arrays*/
-void err_nd(float err[], float a[], float b[], float k[], int n)
-{
-  int8_t i;
-  for (i = 0; i < n; i++) {
+  for (uint8_t i = 0; i < n; i++) {
     err[i] = k[i] * (a[i] - b[i]);
   }
 }
 
-/** @brief Calculate Scaled Error between two 3D arrays*/
-void err_sum_nd(float err[], float a[], float b[], float k[], float c[], int n)
-{
-  int8_t i;
-  for (i = 0; i < n; i++) {
-    err[i] = k[i] * (a[i] - b[i]);
-    err[i] += c[i];
-  }
-}
-
-/** @brief Integrate in time 3D array*/
+/**
+ * @brief Integrate an N-dimensional vector forward in time.
+ *
+ * This function performs a simple discrete-time integration step for an input vector,
+ * updating each element based on its time derivative and the time step size.
+ *
+ * The integration assumes a forward Euler method:
+ *     a[i](t + dt) = a[i](t) + dt * a_dot[i]
+ *
+ * @param dt      Integration time step [s]
+ * @param a       Input/output array containing the integrated state values [n]
+ * @param a_dot   Input array containing the time derivatives of each state [n]
+ * @param n       Dimension of the arrays
+ */
 void integrate_nd(float dt, float a[], float a_dot[], int n)
 {
-  int8_t i;
-  for (i = 0; i < n; i++) {
+  for (uint8_t i = 0; i < n; i++) {
     a[i] = a[i] + dt * a_dot[i];
   }
 }
 
-/** @brief Scale a 3D array to within a 3D bound */
-void vect_bound_nd(float vect[], float bound, int n) {
-  float norm = float_vect_norm(vect,n);
-  norm = positive_non_zero(norm);
-  if((norm-bound) > FLT_EPSILON) {
-    float scale = bound/norm;
-    int8_t i;
-    for(i = 0; i < n; i++) {
-      vect[i] *= scale;
+/**
+ * @brief 2nd-order reference model for rate control.
+ *
+ * Generates smooth angular rate, acceleration, and jerk references with bounded dynamics.
+ * The attitude field is unused in rate control.
+ *
+ * @param[in] dt          Sample time [s]
+ * @param[in] rate_des   Desired angular rates [rad/s]
+ * @param[in] k_stb_rm    Pointer to reference model gain parameters
+ * @param[in] bounds      Pointer to reference model limits
+ * @param[in,out] att_ref Pointer to struct containing reference model states (in/out)
+ */
+
+void reference_model_rate(
+  float dt, 
+  float rate_des[3], 
+  const struct Gains2ndOrder3 *k_rate_rm,
+  const struct OneloopAttRef *bounds,
+  struct OneloopAttRef *att_ref)
+{
+  float rate_d_des[3];
+  float rate_2d_des[3];
+
+  for (uint8_t i = 0; i < 3; i++)
+    BoundAbs(rate_des[i], bounds->att_d[i]);
+
+  // Angular rate error 
+  scaled_error_nd(rate_d_des, rate_des, att_ref->att_2d, k_rate_rm->k1, 3);
+  for (uint8_t i = 0; i < 3; i++)
+    BoundAbs(rate_d_des[i], bounds->att_2d[i]);
+
+  // Angular acceleration error
+  scaled_error_nd(rate_2d_des, rate_d_des, att_ref->att_3d, k_rate_rm->k2, 3);
+  for (uint8_t i = 0; i < 3; i++)
+    BoundAbs(rate_2d_des[i], bounds->att_3d[i]);
+
+  // Reference propagation 
+  float_vect_copy(att_ref->att_3d, rate_2d_des, 3);
+  integrate_nd(dt, &(att_ref->att_2d), &rate_2d_des, 3);
+  integrate_nd(dt, &(att_ref->att_d), &(att_ref->att_2d), 3);
+  float_vect_zero(att_ref->att, 3);
+}
+
+/**
+ * @brief 3rd-order reference model for attitude control.
+ *
+ * Generates smooth desired attitude, angular rate, acceleration, and jerk references with
+ * bouded dynamics.
+ *
+ * @param[in] dt          Sample time [s]
+ * @param[in] att_des     Desired attitude command [rad]
+ * @param[in] k_stb_rm    Pointer to reference model gain parameters
+ * @param[in] bounds      Pointer to reference model limits
+ * @param[in,out] att_ref Pointer to struct containing reference model states (in/out)
+ */
+void reference_model_attitude(
+  float dt, 
+  float att_des[3],
+  const struct Gains3rOrder3 *k_att_rm,
+  const struct OneloopAttRef *bounds,
+  struct OneloopAttRef *att_ref)
+{
+  float att_d_des[3];
+  float att_2d_des[3];
+  float att_3d_des[3];
+
+  // Limit input attitude commands
+  for (uint8_t i = 0; i < 3; i++)
+    BoundAbs(att_des[i], bounds->att[i]);
+
+  // Attitude tracking error → desired angular rate
+  scaled_error_nd(att_d_des, att_des, att_ref->att_d, k_att_rm->k1, 3);
+  for (uint8_t i = 0; i < 3; i++)
+    BoundAbs(att_d_des[i], bounds->att_d[i]);
+
+  // Angular rate tracking error → desired angular acceleration
+  scaled_error_nd(att_2d_des, att_d_des, att_ref->att_2d, k_att_rm->k2, 3);
+  for (uint8_t i = 0; i < 3; i++)
+    BoundAbs(att_2d_des[i], bounds->att_2d[i]);
+
+  scaled_error_nd(att_3d_des, att_d_des, att_ref->att_3d, k_att_rm->k3, 3);
+  for (uint8_t i = 0; i < 3; i++)
+    BoundAbs(att_3d_des[i], bounds->att_3d[i]);
+
+  // Propagate references
+  float_vect_copy(att_ref->att_3d, att_3d_des, 3);
+  integrate_nd(dt, &(att_ref->att_2d), &att_3d_des, 3);
+  integrate_nd(dt, &(att_ref->att_d), &(att_ref->att_2d), 3);
+  integrate_nd(dt, &(att_ref->att), &(att_ref->att_d), 3);
+}
+
+
+/**
+ * @brief Reference Model for 3rd-order position control loop.
+ *
+ * Generates smooth position, velocity, acceleration, and jerk references
+ * for North and East axes using 3rd order gains.
+ * Velocity, acceleration, and jerk are bounded; position bounds are not applied.
+ *
+ * @param[in] dt        Sample time [s]
+ * @param[in] pos_des   Desired 2D position [m] (North and East)
+ * @param[in] k_pos_rm  Pointer to reference model gain parameters for 2D position
+ * @param[in] bounds    Pointer to reference model limits for velocity, acceleration, jerk
+ * @param[in,out] pos_ref   Pointer to struct with reference states (pos, vel, accel)
+ */
+void reference_model_position(
+  float dt,
+  float pos_des,
+  const struct Gains3rdOrder2 *k_pos_rm,
+  const struct OneloopPosRef *bounds,
+  struct OneloopPosRef *pos_ref)
+{
+  float vel_des[2];
+  float acc_des[2];
+  float jer_des[2];
+
+  // Position error
+  scaled_error_nd(vel_des, pos_des, pos_ref->pos, k_pos_rm->k1, 2);
+  for (uint8_t i = 0; i < 2; i++) {
+    BoundAbs(vel_des[i], bounds->vel[i]);
+  }
+
+  // Velocity error 
+  scaled_error_nd(acc_des, vel_des, pos_ref->vel, k_pos_rm->k2, 2);
+  for (uint8_t i = 0; i < 2; i++) {
+    BoundAbs(acc_des[i], bounds->acc[i]);
+  }
+
+  // Acceleration error
+  scaled_error_nd(jer_des, acc_des, pos_ref->accel, k_pos_rm->k3, 2);
+  for (uint8_t i = 0; i < 2; i++) {
+    BoundAbs(jer_des[i], bounds->jer[i]);
+  }
+
+  // Reference propagation 
+  float_vect_copy(pos_ref->jer, jer_des, 2);
+  integrate_nd(dt, &(pos_ref->acc), &jer_des, 2);
+  integrate_nd(dt, &(pos_ref->vel), &(pos_ref->acc), 2);
+  integrate_nd(dt, &(pos_ref->pos), &(pos_ref->vel), 2);
+}
+
+/**
+ * @brief Reference Model for 3rd-order altitude control loop.
+ *
+ * Generates smooth altitude, vertical velocity, acceleration, and jerk references
+ * using 3rd order gains. Velocity, acceleration, and jerk are bounded; altitude bounds are not applied.
+ *
+ * @param[in] dt        Sample time [s]
+ * @param[in] alt_des   Desired altitude [m]
+ * @param[in] k_alt_rm  Pointer to reference model gains for altitude
+ * @param[in] bounds    Pointer to reference model limits for vertical velocity, acceleration, jerk
+ * @param[in,out] alt_ref   Pointer to struct with altitude reference states (alt, vel, accel, jerk)
+ */
+void reference_model_altitude(
+  float dt,
+  float alt_des,
+  const struct Gains3rdOrder1 *k_alt_rm,
+  const struct OneloopAltRef *bounds,
+  struct OneloopAltRef *alt_ref)
+{
+  float vel_des;
+  float acc_des;
+  float jer_des;
+
+  // Altitude error scaled by k1
+  vel_des = k_alt_rm->k1 * (alt_des - alt_ref->pos);
+  BoundsAbs(pos_err, bounds->vel);
+
+  // Velocity error scaled by k2, bounded by velocity limits
+  acc_des = k_alt_rm->k2 * (vel_des - alt_ref->vel);
+  BoundAbs(acc_des, bounds->acc);
+
+  // Acceleration error scaled by k3, bounded by accel limits
+  jer_des = k_alt_rm->k3 * (acc_des - alt_ref->accel);
+  BoundAbs(jer_des, bounds->jer);
+
+  // Reference propagation
+  alt_ref->jer = jer_des;
+  integrate_nd(dt, &(alt_ref->acc), &jer_des, 1);
+  integrate_nd(dt, &(alt_ref->vel), &(alt_ref->acc), 1);
+  integrate_nd(dt, &(alt_ref->pos), &(alt_ref->vel), 1);
+}
+
+/**
+ * @brief Reference Model for 2nd-order heading control loop.
+ *
+ * Generates smooth heading angle and angular rate references
+ * using 2nd order gains. Angular rate and acceleration are bounded;
+ * heading angle bounds are not applied, instead heading is wrapped to [-pi, pi].
+ *
+ * @param[in] dt        Sample time [s]
+ * @param[in] head_des  Desired heading angle [rad]
+ * @param[in] k_head_rm Pointer to reference model gains for heading
+ * @param[in] bounds    Pointer to reference model limits for heading rate and yaw acceleration
+ * @param[in,out] head_ref  Pointer to struct with heading reference states (angle, rate, accel)
+ */
+void reference_model_heading(
+  float dt,
+  float head_des,
+  const struct Gains2ndOrder1 *k_head_rm,
+  const struct OneloopHeadRef *bounds,
+  struct OneloopHeadRef *head_ref)
+{
+  float rate_des;
+  float accel_des;
+
+  // Heading error
+  float head_err = head_des - head_ref->head;
+
+  NormRadAngle(head_err);
+  rate_des = k_head_rm->k1 * head_err;
+  BoundAbs(rate_des, bounds->head_d);
+
+  // Rate error
+  accel_des = k_head_rm->k2 * (rate_des - head_ref->head_d);
+  BoundAbs(accel_des, bounds->head_2d);
+
+  // Reference propagation
+  head_ref->head_2d = accel_des;
+  integrate_nd(dt, &(head_ref->head_d), &accel_des, 1);
+  integrate_nd(dt, &(head_ref->head), &(head_ref->head_d), 1);
+
+  // Normalize angle to [-pi, pi]
+  NormRadAngle(head_ref->head);
+}
+
+/**
+ * @brief Compute rate control error and generate virtual control input.
+ *
+ * Calculates scaled error vectors for angular rate and angular acceleration
+ * between reference and measured states, using structured 2nd-order gains.
+ * These errors are combined with the jerk reference to form a virtual control
+ * command for rate stabilization. The attitude reference is not used for rate control.
+ *
+ * @param[in]  dt         Time step [s]
+ * @param[in]  att_ref    Pointer to rate reference states (angular rate, acceleration, jerk)
+ * @param[in]  att_state  Pointer to current rate states (angular rate, acceleration)
+ * @param[in]  k_rate_e   Pointer to structured 2nd-order gains (k1, k2 per axis)
+ * @param[out] nu_rate    Pointer to output virtual control command [3]
+ */
+void error_controller_rate(
+  float dt,
+  const struct OneloopAttRef *att_ref,
+  const struct OneloopAttState *att_state,
+  const struct Gains2ndOrder3 *k_rate_e,
+  float *nu_rate)
+{
+  float omega_err[3];
+  float omega_d_err[3];
+
+  scaled_error_nd(omega_err, att_ref->att_d, att_state->att_d, k_rate_e->k1, 3);
+  scaled_error_nd(omega_d_err, att_ref->att_2d att_state->att_2d, k_rate_e->k2, 3);
+
+  // Compute virtual command
+  for (uint8_t i = 0; i < 3; i++) {
+    nu_rate[i] = omega_err[i] + omega_d_err[i] + att_ref->att_3d[i];
+  }
+}
+
+/**
+ * @brief Compute attitude control error and generate virtual control input.
+ *
+ * FIXME: Change to quaternion representation.
+ *
+ * Calculates scaled error vectors for attitude, angular rate, and angular acceleration
+ * between reference and measured states, using structured 2nd-order gains.
+ * These errors are summed with the angular jerk reference to form a virtual control
+ * command for attitude stabilization.
+ *
+ * @param[in]  dt         Time step [s]
+ * @param[in]  att_ref    Pointer to attitude reference states (attitude, angular rate, acceleration, jerk)
+ * @param[in]  att_state  Pointer to current attitude states (attitude, angular rate, acceleration)
+ * @param[in]  k_att_e    Pointer to structured gains for error scaling (k1, k2, k3 per axis)
+ * @param[out] nu_att     Pointer to output virtual control command vector [3]
+ */
+void error_controller_attitude(
+  float dt,
+  const struct OneloopAttRef *att_ref,
+  const struct OneloopAttState *att_state,
+  const struct Gains3rdOrder3 *k_att_e,
+  float *nu_att)
+{
+  float att_err[3];
+  float att_d_err[3];
+  float att_2d_err[3];
+
+  scaled_error_nd(att_err, att_ref->att, att_state->att, k_att_e->k1, 3);
+  scaled_error_nd(att_d_err, att_ref->att_d, att_state->att_d, k_att_e->k2, 3);
+  scaled_error_nd(att_2d_err, att_ref->att_2d att_state->att_2d, k_rate_e->k3, 3);
+
+  // Compute virtual command
+  for (uint8_t i = 0; i < 3; i++) {
+    nu_att[i] = att_err[i] + att_d_err[i] + att_2d_err[i] + att_ref->att_3d[i];
+  }
+}
+
+
+/**
+ * @brief Compute the position (North, East) control error and generate virtual command.
+ *
+ * This function calculates the error vectors for position, velocity, and acceleration
+ * between the reference states and current states, scales each error component by the
+ * corresponding 3rd-order structured gains, then sums these scaled errors together with
+ * the position jerk reference to form the virtual command for lateral stabilization.
+ *
+ * @param[in]  dt        Time step [s]
+ * @param[in]  pos_ref   Pointer to position reference states (pos, vel, accel, jerk)
+ * @param[in]  pos_state Pointer to current position states (pos, vel, accel)
+ * @param[in]  k_pos_e   Pointer to structured 3rd-order gains for error scaling (k1, k2, k3 per axis)
+ * @param[out] nu_pos    Pointer to output virtual command vector [2]
+ */
+void error_controller_position(
+  float dt,
+  const struct OneloopPosRef *pos_ref,
+  const struct OneloopPosState *pos_state,
+  const struct Gains3rdOrder2 *k_pos_e,
+  float *nu_pos)
+{
+  float pos_err[2];
+  float vel_err[2];
+  float acc_err[2];
+
+  scaled_error_nd(pos_err, pos_ref->pos, pos_state->pos, k_pos_e->k1, 2);
+  scaled_error_nd(vel_err, pos_ref->vel, pos_state->vel, k_pos_e->k2, 2);
+  scaled_error_nd(acc_err, pos_ref->acc, pos_state->acc, k_pos_e->k3, 2);
+
+  // Compute virtual command
+  for (uint8_t i = 0; i < 2; i++) {
+    nu_pos[i] = pos_err[i] + vel_err[i] + acc_err[i] + pos_ref->jer[i];
+  }
+}
+
+/**
+ * @brief Compute the altitude control error and generate virtual control input.
+ *
+ * This function calculates the error scalars for altitude, vertical velocity,
+ * and acceleration between the reference states and current states. Each error is scaled
+ * by its corresponding gain factor. These scaled errors are summed together with the
+ * jerk reference to form the virtual command for altitude stabilization.
+ *
+ * @param[in]  dt        Time step [s]. It is not modified, but not required to be const.
+ * @param[in]  alt_ref   Pointer to altitude reference states (position, velocity, acceleration, jerk)
+ * @param[in]  alt_state Pointer to current altitude states (position, velocity, acceleration)
+ * @param[in]  k_alt_e   Pointer to scalar 3rd-order gains for error scaling (k1, k2, k3)
+ * @param[out] nu_alt    Pointer to output virtual control input scalar
+ */
+void error_controller_altitude(
+  float dt,
+  const struct OneloopAltRef *alt_ref,
+  const struct OneloopAltState *alt_state,
+  const struct Gains3rdOrder1 *k_alt_e,
+  float *nu_alt)
+{
+  float pos_err;
+  float vel_err;
+  float acc_err;
+
+  scaled_error_nd(pos_err, pos_ref->pos, pos_state->pos, k_alt_e->k1, 1);
+  scaled_error_nd(vel_err, alt_ref->vel, alt_state->vel, k_alt_e->k2, 1);
+  scaled_error_nd(acc_err, alt_ref->acc, alt_state->acc, k_alt_e->k3, 1);
+
+  // Compute virtual command
+  *nu_alt = pos_err + vel_err + acc_err + alt_ref->jer;
+}
+
+/**
+ * @brief Compute heading control error and generate virtual control input.
+ *
+ * This function calculates the scalar error for heading angle and angular rate 
+ * between the reference states and current states. Each error is scaled by 
+ * its corresponding 3rd-order gain. The scaled errors are summed with the 
+ * angular acceleration (head_2d) feedforward reference to produce the virtual command output.
+ *
+ * @param[in]  dt         Time step [s].
+ * @param[in]  head_ref   Pointer to heading reference states (head, head_d, head_2d).
+ * @param[in]  head_state Pointer to current heading states (head, head_d).
+ * @param[in]  k_head_e   Pointer to 3rd-order gains (k1 and k2 gains).
+ * @param[out] nu_head    Pointer to output virtual control command (scalar).
+ */
+void error_controller_heading(
+  float dt,
+  const struct OneloopAltRef *head_ref,
+  const struct OneloopAltState *head_state,
+  const struct Gains3rdOrder1 *k_head_e,
+  float *nu_head)
+{
+  float head_err;
+  float head_d_err;
+
+  // Compute scaled position error
+  scaled_error_nd(head_err, head_ref->head, head_state->head, k_head_e->k1, 1);
+
+  // Compute scaled velocity error
+  scaled_error_nd(head_d_err, head_ref->head_d, head_state->head_d, k_head_e->k2, 1);
+
+  // Compute virtual command
+  *nu_head = head_err + head_d_err + head_ref->head_2d;
+}
+
+
+/**
+ * @brief Compute gain coefficients for one 2nd-order system
+ * 
+ * @param[out] k1     Computed k2 gain
+ * @param[out] k2     Computed k3 gain
+ * @param[in]  omega_n  Natural frequency
+ * @param[in]  zeta     Damping ratio
+ */
+static void compute_gains_2nd_order_single(float* k1, float* k2, float omega_n, float zeta)
+{
+    *k1 = omega_n / (2.0f * zeta);
+    *k2 = 2.0f * zeta * omega_n;
+}
+
+/**
+ * @brief Compute gain coefficients for one 3rd-order system
+ * 
+ * @param[out] k1     Computed k1 gain
+ * @param[out] k2     Computed k2 gain
+ * @param[out] k3     Computed k3 gain
+ * @param[in]  omega_n  Natural frequency
+ * @param[in]  zeta     Damping ratio
+ * @param[in]  p1       Additional pole parameter
+ */
+static void compute_gains_3rd_order_single(float* k1, float* k2, float* k3, float omega_n, float zeta, float p1)
+{ 
+    *k1 = (omega_n * omega_n * p1) / (omega_n * omega_n + 2.0f * zeta * omega_n * p1);
+    *k2 = (omega_n * omega_n + 2.0f * zeta * omega_n * p1) / (2.0f * zeta * omega_n + p1);
+    *k3 = 2.0f * zeta * omega_n + p1;
+}
+
+/**
+ * @brief Compute 2nd order gains with 3 outputs from poles
+ * 
+ * @param[out] gains Output structure for computed gains
+ * @param[in] poles Input pole structure (omega_n, zeta)
+ */
+void compute_gains_2nd_order_3(struct Gains2ndOrder3* gains, struct Poles2ndOrder3* poles)
+{
+    for (uint8_t i = 0; i < 3; ++i) {
+        compute_gains_2nd_order_single(&gains->k1[i], &gains->k2[i],
+                                       poles->omega_n[i], poles->zeta[i]);
+    }
+}
+
+/**
+ * @brief Compute 2nd order gains with 2 outputs from poles
+ * 
+ * @param[out] gains Output structure for computed gains
+ * @param[in] poles Input pole structure (omega_n, zeta)
+ */
+void compute_gains_2nd_order_2(struct Gains2ndOrder2* gains, struct Poles2ndOrder2* poles)
+{
+    for (uint8_t i = 0; i < 2; ++i) {
+        compute_gains_2nd_order_single(&gains->k1[i], &gains->k2[i],
+                                       poles->omega_n[i], poles->zeta[i]);
+    }
+}
+
+/**
+ * @brief Compute 2nd order gains with 1 output from poles
+ *  
+ * @param[out] gains Output structure for computed gains
+ * @param[in] poles Input pole structure (omega_n, zeta)
+ */
+void compute_gains_2nd_order_1(struct Gains2ndOrder1* gains, struct Poles2ndOrdert1* poles)
+{
+    compute_gains_2nd_order_single(&gains->k1, &gains->k2,
+                                   poles->omega_n, poles->zeta);
+}
+
+/**
+ * @brief Compute 3rd order gains with 3 outputs from poles
+ * 
+ * @param[out] gains Output structure for computed gains
+ * @param[in] poles Input pole structure (omega_n, zeta, p1)
+ */
+void compute_gains_3rd_order_3(struct Gains3rdOrder3* gains, struct Poles3rdOrder3* poles)
+{
+    for (uint8_t i = 0; i < 3; ++i) {
+        compute_gains_3rd_order_single(&gains->k1[i], &gains->k2[i], &gains->k3[i],
+                                      poles->omega_n[i], poles->zeta[i], poles->p3[i]);
+    }
+}
+
+/**
+ * @brief Compute 3rd order gains with 2 outputs from poles
+ * 
+ * @param[out] gains Output structure for computed gains
+ * @param[in] poles Input pole structure (omega_n, zeta, p1)
+ */
+void compute_gains_3rd_order_2(struct Gains3rdOrder2* gains, struct Poles3rdOrder2* poles)
+{
+    for (uint8_t i = 0; i < 2; ++i) {
+        compute_gains_3rd_order_single(&gains->k1[i], &gains->k2[i], &gains->k3[i],
+                                      poles->omega_n[i], poles->zeta[i], poles->p3[i]);
+    }
+}
+
+/**
+ * @brief Compute 3rd order gains with 1 output from poles
+ * 
+ * @param[out] gains Output structure for computed gains
+ * @param[in] poles Input pole structure (omega_n, zeta, p1)
+ */
+void compute_gains_3rd_order_1(struct Gains3rdOrder1* gains, struct Poles3rdOrdert1* poles)
+{
+    compute_gains_3rd_order_single(&gains->k1, &gains->k2, &gains->k3,
+                                  poles->omega_n, poles->zeta, poles->p3);
+}
+
+/** @brief Initialize a filter based on its type
+ *
+ *  Initializes the filter state of the specified type with initial value x0.
+ *  Supported types: LOWPASS_1, BUTTERWORTH_2, BUTTERWORTH_4, NOTCH.
+ *  If the filter_type is invalid, no initialization occurs.
+ * 
+ * @param[in,out] filter Pointer to the Filter filter struct
+ * @param[in] x0 Initial value to set the filter state
+ */
+static void init_filter_on_type(struct Filter *filter, float x0) {
+  float tau = 1.0f / (2.0f * M_PI * filter->freq);
+  switch(filter->filter_type) {
+    case LOWPASS_1:
+      init_first_order_low_pass(&filter->state.lp1, tau, 1.0f / PERIODIC_FREQUENCY, x0);
+      break;
+    case BUTTERWORTH_2:
+      init_butterworth_2_low_pass(&filter->state.bw2, tau, 1.0f / PERIODIC_FREQUENCY, x0);
+      break;
+    case BUTTERWORTH_4:
+      init_butterworth_4_low_pass(&filter->state.bw4, tau, 1.0f / PERIODIC_FREQUENCY, x0);
+      break;
+    default:
+      // Handle unexpected filter type
+      break;
+  }
+}
+
+/** @brief Initialize the Low Pass Filter struct with specified cutoff frequency
+ *
+ *  Sets parameters and filter type based on compile-time macros,
+ *  then initializes the filter state with 0 output.
+ * @param[in,out] filter Pointer to the Filter filter struct
+ * @param[in] fc Cutoff frequency for the low pass filter [Hz]
+ * @param[in] type Type of filter to use (e.g., LOWPASS_1, BUTTERWORTH_2, BUTTERWORTH_4)
+ */
+static void init_filter(struct Filter *filter, float fc, enum FilterType type){
+  filter->type     = type;
+  filter->freq     = fc;
+  init_filter_on_type(filter, 0.0);
+  filter->meas      = 0.0;
+  filter->meas_prev = 0.0;
+  filter->out       = 0.0;
+}
+
+/** @brief Update a filter based on its type
+ *
+ *  Feeds input to the filter specified by filter_type and updates the output.
+ *  Protects against invalid filter_type by setting output to 0.0f.
+ * @param[in,out] filter Pointer to the Filter filter struct
+ * @param[in] input New input value to feed into the filter
+ */
+static void update_filter_on_type(struct Filter *filter, float input) {
+  switch(filter->filter_type) {
+    case LOWPASS_1:
+      update_first_order_low_pass(&filter->state.lp1, input);
+      filter->out = filter->meas_filt.lp1.last_out;
+      break;
+    case BUTTERWORTH_2:
+      update_butterworth_2_low_pass(&filter->state.bw2, input);
+      filter->out = filter->meas_filt.bw2.o[0];
+      break;
+    case BUTTERWORTH_4:
+      update_butterworth_4_low_pass(&filter->state.bw4, input);
+      filter->out = filter->meas_filt.bw4.lp2.o[2];
+      break;
+    default:
+      filter->out = 0.0f;
+      break;
+  }
+}
+
+/** @brief  Propagate the filters */
+void oneloop_andi_propagate_filters(void) {
+  // Fetch feedback
+  struct  NedCoor_f *accel = stateGetAccelNed_f();
+  struct  NedCoor_f *veloc = stateGetSpeedNed_f();
+  struct  FloatRates *body_rates = stateGetBodyRates_f();
+
+  float filt_p_prev = filt_p.meas;
+  float filt_q_prev = filt_q.meas;
+  float filt_r_prev = filt_r.meas;
+
+  // Store feedback in filters
+  filt_ay.meas = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
+
+  filt_an.meas = accel->x;
+  filt_ae.meas = accel->y;
+  filt_ad.meas = accel->z;
+  filt_vn.meas = veloc->x;
+  filt_ve.meas = veloc->y;
+  filt_vd.meas = veloc->z;
+
+  filt_p.meas = body_rates->p;
+  filt_q.meas = body_rates->q;
+  filt_r.meas = body_rates->r;
+
+  // Finite differences
+  filt_p_dot.meas = (filt_p.meas - filt_p_prev) * PERIODIC_FREQUENCY;
+  filt_q_dot.meas = (filt_q.meas - filt_q_prev) * PERIODIC_FREQUENCY;
+  filt_r_dot.meas = (filt_r.meas - filt_r_prev) * PERIODIC_FREQUENCY;
+
+  // Update feedback filters
+  update_filter_on_type(&filt_an, filt_an.meas);
+  update_filter_on_type(&filt_ae, filt_ae.meas);
+  update_filter_on_type(&filt_ad, filt_ad.meas);
+  update_filter_on_type(&filt_vn, filt_vn.meas);
+  update_filter_on_type(&filt_ve, filt_ve.meas);
+  update_filter_on_type(&filt_vd, filt_vd.meas);
+
+  update_filter_on_type(&filt_p, filt_p.meas);
+  update_filter_on_type(&filt_q, filt_q.meas);
+  update_filter_on_type(&filt_r, filt_r.meas);
+  update_filter_on_type(&filt_p_dot, filt_p_dot.meas);
+  update_filter_on_type(&filt_q_dot, filt_q_dot.meas);
+  update_filter_on_type(&filt_r_dot, filt_r_dot.meas);
+
+   
+  update_filter_on_type(&filt_ay,    filt_ay.meas);
+  // update_filter_on_type(&filt_airspeed, 0.0f);
+
+  // FIXME: Fetch actuator feedback.
+  for (int i = 0; i < ANDI_NUM_ACT_TOTAL; i++) {
+      update_filter_on_type(&filt_u[i], 0.0f);
+  }
+}
+
+
+
+/**
+ * @brief Computes desired roll, pitch, and yaw rates from RC input.
+ *
+ * Converts radio control stick inputs to desired angular rates by scaling
+ * each channel value to be bounded by the corresponding rate bound.
+ *
+ * @param[out] rate_des    Output array [roll, pitch, yaw] containing desired rates.
+ * @param[in]  rate_bounds Input array [roll, pitch, yaw] of maximum rate limits.
+ */
+static void get_desired_rates_radio_command(float* rate_des, const float* rate_bounds)
+{
+  rate_des[0] = ((float)radio_control_get(RADIO_ROLL) / MAX_PPRZ) * rate_bounds[1];
+  rate_des[1] = ((float)radio_control_get(RADIO_PITCH) / MAX_PPRZ) * rate_bounds[2];
+  rate_des[2] = ((float)radio_control_get(cRADIO_YAW) / MAX_PPRZ) * rate_bounds[3];
+}
+
+/**
+ * @brief Computes desired roll, pitch, and yaw attitudes from RC input.
+ *
+ * Converts radio control stick inputs to desired attitude angles by scaling
+ * the roll and pitch sticks with corresponding attitude bounds, and
+ * computes the desired heading using a heading rate bound and time step.
+ *
+ * @param[in,out] att_des        Pointer to desired attitudes (radians).
+ * @param[in] att_bounds         Input array [roll, pitch] of maximum attitude limits (radians).
+ * @param[in] heading_rate_bound Maximum yaw rate bound (radians/sec).
+ * @param[in] dt                 Time step for integration (seconds).
+ */
+static void get_desired_attitude_radio_command(float* att_des, const float* att_bounds, float heading_rate_bound, float dt)
+{
+  att_des[0] = ((float)radio_control_get(RADIO_ROLL) / MAX_PPRZ) * att_bounds[0];
+  att_des[1] = ((float)radio_control_get(RADIO_PITCH) / MAX_PPRZ) * att_bounds[1];
+
+  get_desired_heading_radio_command(&att_des[2], heading_rate_bound, dt);
+}
+
+
+/**
+ * @brief Updates desired heading based on yaw RC input and integration.
+ *
+ * Integrates yaw rate command scaled by `heading_rate_bound` over time `dt`
+ * and normalizes the resulting heading angle.
+ *
+ * @param[in,out] heading_des Pointer to current desired heading (radians).
+ * @param[in] heading_rate_bound Maximum yaw rate bound (radians/sec).
+ * @param[in] dt Time step for integration (seconds).
+ */
+static void get_desired_heading_radio_command(float* heading_des, float heading_rate_bound, float dt)
+{
+  float rate_des = ((float)radio_control_get(RADIO_YAW) / MAX_PPRZ) * heading_rate_bound;
+  *heading_des += rate_des * dt
+  NormRadAngle(heading_des);
+}
+
+
+/** @brief  Function to reconstruct actuator state using first order dynamics */
+void get_act_state_oneloop(void)
+{
+  int8_t i;
+  float prev_actuator_state_1l;
+  for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
+    if(i < ANDI_NUM_ACT){
+      prev_actuator_state_1l = actuator_state_1l[i];
+      actuator_state_1l[i] = prev_actuator_state_1l + act_dynamics_d[i] * (andi_u[i] - prev_actuator_state_1l);
+      if(!autopilot_get_motors_on()){
+        actuator_state_1l[i] = 0.0;
+      }
+      Bound(actuator_state_1l[i],act_min[i], act_max[i]);
+    } else {
+      actuator_state_1l[i] = oneloop_andi.sta_state.att[i-ANDI_NUM_ACT];
     }
   }
 }
 
-/** @brief Scale a 3D array to within a 3D bound */
-void acc_body_bound(struct FloatVect2* vect, float bound) {
-  int n = 2;
-  float v[2] = {vect->x, vect->y};
-  float sign_v0 = (v[0] > 0.f) ? 1.f : (v[0] < 0.f) ? -1.f : 0.f;
-  float sign_v1 = (v[1] > 0.f) ? 1.f : (v[1] < 0.f) ? -1.f : 0.f;
-  float norm = float_vect_norm(v,n);
-  v[0] = fabsf(v[0]);
-  v[1] = fabsf(v[1]);
-  norm = positive_non_zero(norm);
-  if((norm-bound) > FLT_EPSILON) {
-    v[0] = Min(v[0], bound);
-    float acc_b_y_2 = bound*bound - v[0]*v[0];
-    acc_b_y_2 = positive_non_zero(acc_b_y_2);
-    v[1] = sqrtf(acc_b_y_2);
-  }
-  vect->x = sign_v0*v[0];
-  vect->y = sign_v1*v[1];
-}
-
-/** @brief Calculate velocity limit based on acceleration limit */
-float bound_v_from_a(float e_x[], float v_bound, float a_bound, int n) {
-  float norm = float_vect_norm(e_x,n);
-  norm = fmaxf(norm, 1.0);
-  float v_bound_a  = sqrtf(fabs(2.0 * a_bound * norm));
-  return fminf(v_bound, v_bound_a);
-}
-
-/** 
- * @brief Reference Model Definition for 3rd order system with attitude conversion functions
- * @param dt              Delta time [s]
- * @param x_ref           Reference signal 1st order
- * @param x_d_ref         Reference signal 2nd order
- * @param x_2d_ref        Reference signal 3rd order
- * @param x_3d_ref        Reference signal 4th order
- * @param x_des           Desired 1st order signal
- * @param ow_psi          Overwrite psi (for navigation functions) [bool]
- * @param psi_overwrite   Overwrite psi (for navigation functions) [values]
- * @param k1_rm           Reference Model Gain 1st order signal
- * @param k2_rm           Reference Model Gain 2nd order signal
- * @param k3_rm           Reference Model Gain 3rd order signal
- */
-void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], bool ow_psi, float psi_overwrite[4], float k1_rm[3], float k2_rm[3], float k3_rm[3], float max_ang_jerk){
-  float e_x[3];
-  float e_x_rates[3];
-  float e_x_d[3];
-  float e_x_2d[3];
-  float x_d_eul_ref[3];
-  err_nd(e_x, x_des, x_ref, k1_rm, 3);
-  float temp_diff = x_des[2] - x_ref[2];
-  NormRadAngle(temp_diff);
-  e_x[2] = k1_rm[2] * temp_diff; // Correction for Heading error +-Pi
-  float_rates_of_euler_dot_vec(e_x_rates, x_ref, e_x);
-  err_nd(e_x_d, e_x_rates, x_d_ref, k2_rm, 3);
-  err_nd(e_x_2d, e_x_d, x_2d_ref, k3_rm, 3);
-  float_vect_copy(x_3d_ref,e_x_2d,3);
-  vect_bound_nd(x_3d_ref, max_ang_jerk, 3);
-  if(ow_psi){x_3d_ref[2] = psi_overwrite[3];}
-  integrate_nd(dt, x_2d_ref, x_3d_ref, 3);
-  if(ow_psi){x_2d_ref[2] = psi_overwrite[2];}
-  integrate_nd(dt, x_d_ref, x_2d_ref, 3);
-  if(ow_psi){x_d_ref[2] = psi_overwrite[1];}
-  float_euler_dot_of_rates_vec(x_d_ref, x_ref, x_d_eul_ref);
-  integrate_nd(dt, x_ref, x_d_eul_ref, 3);
-  if(ow_psi){x_ref[2] = psi_overwrite[0];}
-  NormRadAngle(x_ref[2]);
-  //printf("k1_rm: %f %f %f\n", k1_rm[0], k1_rm[1], k1_rm[2]);
-  //printf("k2_rm: %f %f %f\n", k2_rm[0], k2_rm[1], k2_rm[2]);
-  //printf("k3_rm: %f %f %f\n", k3_rm[0], k3_rm[1], k3_rm[2]);
-}
-
-/** 
- * @brief Reference Model Definition for 3rd order system 
- * @param dt              Delta time [s]
- * @param x_ref           Reference signal 1st order
- * @param x_d_ref         Reference signal 2nd order
- * @param x_2d_ref        Reference signal 3rd order
- * @param x_3d_ref        Reference signal 4th order
- * @param x_des           Desired 1st order signal
- * @param k1_rm           Reference Model Gain 1st order signal
- * @param k2_rm           Reference Model Gain 2nd order signal
- * @param k3_rm           Reference Model Gain 3rd order signal
- */
-void rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm){
-  float e_x      = k1_rm * (x_des- *x_ref);
-  float e_x_d    = k2_rm * (e_x- *x_d_ref);
-  float e_x_2d   = k3_rm * (e_x_d- *x_2d_ref);
-  *x_3d_ref = e_x_2d;
-  *x_2d_ref = (*x_2d_ref + dt * (*x_3d_ref));
-  *x_d_ref  = (*x_d_ref  + dt * (*x_2d_ref));
-  *x_ref    = (*x_ref    + dt * (*x_d_ref ));
-}
-
-/** 
- * @brief Reference Model Definition for 3rd order system specific to the heading angle
- * @param dt              Delta time [s]
- * @param x_ref           Reference signal 1st order
- * @param x_d_ref         Reference signal 2nd order
- * @param x_2d_ref        Reference signal 3rd order
- * @param x_3d_ref        Reference signal 4th order
- * @param x_des           Desired 1st order signal
- * @param k1_rm           Reference Model Gain 1st order signal
- * @param k2_rm           Reference Model Gain 2nd order signal
- * @param k3_rm           Reference Model Gain 3rd order signal
- */
-void rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm){
-  float temp_diff = x_des - *x_ref;
-  NormRadAngle(temp_diff);
-  float e_x      = k1_rm * temp_diff;
-  float e_x_d    = k2_rm * (e_x- *x_d_ref);
-  float e_x_2d   = k3_rm * (e_x_d- *x_2d_ref);
-  *x_3d_ref = e_x_2d;
-  *x_2d_ref = (*x_2d_ref + dt * (*x_3d_ref));
-  *x_d_ref  = (*x_d_ref  + dt * (*x_2d_ref));
-  *x_ref    = (*x_ref    + dt * (*x_d_ref ));
-}
-
-/** 
- * @brief Reference Model Definition for 3rd order system specific to positioning with bounds
- * @param dt              Delta time [s]
- * @param x_ref           Reference signal 1st order
- * @param x_d_ref         Reference signal 2nd order
- * @param x_2d_ref        Reference signal 3rd order
- * @param x_3d_ref        Reference signal 4th order
- * @param x_des           Desired 1st order signal
- * @param k1_rm           Reference Model Gain 1st order signal
- * @param k2_rm           Reference Model Gain 2nd order signal
- * @param k3_rm           Reference Model Gain 3rd order signal
- * @param x_d_bound       Bound for the 2nd order reference signal
- * @param x_2d_bound      Bound for the 3rd order reference signal
- * @param x_3d_bound      Bound for the 4th order reference signal
- * @param n               Number of dimensions
- */
-void rm_3rd_pos(float dt, float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_des[], float k1_rm[], float k2_rm[], float k3_rm[], float x_d_bound, float x_2d_bound, float x_3d_bound, int n){
-  float e_x[n];
-  float e_x_d[n];
-  float e_x_2d[n];
-  err_nd(e_x, x_des, x_ref, k1_rm, n);
-  float max_x_d = bound_v_from_a(e_x, x_d_bound, x_2d_bound, n);
-  vect_bound_nd(e_x, max_x_d, n);
-  err_nd(e_x_d, e_x, x_d_ref, k2_rm, n);
-  vect_bound_nd(e_x_d,x_2d_bound, n);
-  err_nd(e_x_2d, e_x_d, x_2d_ref, k3_rm, n);
-  float_vect_copy(x_3d_ref,e_x_2d,n);
-  vect_bound_nd(x_3d_ref, x_3d_bound, n);
-  integrate_nd(dt, x_2d_ref, x_3d_ref, n);
-  integrate_nd(dt, x_d_ref, x_2d_ref, n);
-  integrate_nd(dt, x_ref, x_d_ref, n);
-}
-
-/** 
- * @brief Reference Model Definition for 3rd order system specific to positioning with bounds
- * @param dt              Delta time [s]
- * @param x_d_ref         Reference signal 2nd order
- * @param x_2d_ref        Reference signal 3rd order
- * @param x_3d_ref        Reference signal 4th order
- * @param x_d_des         Desired 2nd order signal
- * @param k2_rm           Reference Model Gain 2nd order signal
- * @param k3_rm           Reference Model Gain 3rd order signal
- * @param x_2d_bound      Bound for the 3rd order reference signal
- * @param x_3d_bound      Bound for the 4th order reference signal
- * @param n               Number of dimensions
- */
-void rm_2nd_pos(float dt, float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_d_des[], float k2_rm[], float k3_rm[], float x_2d_bound, float x_3d_bound, int n){
-  float e_x_d[n];
-  float e_x_2d[n];
-  err_nd(e_x_d, x_d_des, x_d_ref, k2_rm, n);
-  vect_bound_nd(e_x_d,x_2d_bound, n);
-  err_nd(e_x_2d, e_x_d, x_2d_ref, k3_rm, n);
-  float_vect_copy(x_3d_ref,e_x_2d,n);
-  vect_bound_nd(x_3d_ref, x_3d_bound, n);
-  integrate_nd(dt, x_2d_ref, x_3d_ref, n);
-  integrate_nd(dt, x_d_ref, x_2d_ref, n);
-}
-
-/** 
- * @brief Reference Model Definition for 3rd order system specific to positioning with bounds
- * @param dt              Delta time [s]
- * @param x_2d_ref        Reference signal 3rd order
- * @param x_3d_ref        Reference signal 4th order
- * @param x_2d_des        Desired 3rd order signal
- * @param k3_rm           Reference Model Gain 3rd order signal
- * @param x_3d_bound      Bound for the 4th order reference signal
- * @param n               Number of dimensions
- */
-void rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], float k3_rm[], float x_3d_bound, int n){
-  float e_x_2d[n];
-  err_nd(e_x_2d, x_2d_des, x_2d_ref, k3_rm, n);
-  float_vect_copy(x_3d_ref,e_x_2d,n);
-  vect_bound_nd(x_3d_ref, x_3d_bound, n);
-  integrate_nd(dt, x_2d_ref, x_3d_ref, n);
-}
-
-
-/** 
- * @brief Reference Model Definition for 2nd order system
- * @param dt              Delta time [s]
- * @param x_ref           Reference signal 1st order
- * @param x_d_ref         Reference signal 2nd order
- * @param x_2d_ref        Reference signal 3rd order
- * @param x_3d_ref        Reference signal 4th order
- * @param x_des           Desired 1st order signal
- * @param k1_rm           Reference Model Gain 1st order signal
- * @param k2_rm           Reference Model Gain 2nd order signal
- * @param k3_rm           Reference Model Gain 3rd order signal
- */
-void rm_2nd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm){
-  float e_x      = k1_rm * (x_des- *x_ref);
-  float e_x_d    = k2_rm * (e_x- *x_d_ref);
-  *x_2d_ref = e_x_d;
-  *x_d_ref  = (*x_d_ref  + dt * (*x_2d_ref));
-  *x_ref    = (*x_ref    + dt * (*x_d_ref ));
-}
-
-/** 
- * @brief Error Controller Definition for 3rd order system 
- * @param dt              Delta time [s]
- * @param x_ref           Reference signal 1st order
- * @param x_d_ref         Reference signal 2nd order
- * @param x_2d_ref        Reference signal 3rd order
- * @param x_3d_ref        Reference signal 4th order
- * @param x_des           Desired 1st order signal
- * @param x               Current 1st order signal
- * @param x_d             Current 2nd order signal
- * @param x_2d            Current 3rd order signal
- * @param k1_e            Error Controller Gain 1st order signal
- * @param k2_e            Error Controller Gain 2nd order signal
- * @param k3_e            Error Controller Gain 3rd order signal
- */
-static float ec_3rd(float x_ref, float x_d_ref, float x_2d_ref, float x_3d_ref, float x, float x_d, float x_2d, float k1_e, float k2_e, float k3_e){
-  float y_4d = k1_e*(x_ref-x)+k2_e*(x_d_ref-x_d)+k3_e*(x_2d_ref-x_2d)+x_3d_ref;
-  return y_4d;
-}
-void ec_3rd_pos( float y_4d[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, int n){
-  float e_x_d[n];
-  float e_x_2d[n];
-
-  err_sum_nd(e_x_d, x_ref, x, k1_e, x_d_ref, n);
-  vect_bound_nd(e_x_d, x_d_bound, n);
-  
-  err_sum_nd(e_x_2d, e_x_d, x_d, k2_e, x_2d_ref, n);
-  vect_bound_nd(e_x_2d,x_2d_bound, n);
-
-  err_sum_nd(y_4d, e_x_2d, x_2d, k3_e, x_3d_ref, n);
-  vect_bound_nd(y_4d, x_3d_bound, n);
-}
-/** 
- * @brief Error Controller Definition for 3rd order system specific to attitude
- * @param dt              Delta time [s]
- * @param x_ref           Reference signal 1st order
- * @param x_d_ref         Reference signal 2nd order
- * @param x_2d_ref        Reference signal 3rd order
- * @param x_3d_ref        Reference signal 4th order
- * @param x_des           Desired 1st order signal
- * @param x               Current 1st order signal
- * @param x_d             Current 2nd order signal
- * @param x_2d            Current 3rd order signal
- * @param k1_e            Error Controller Gain 1st order signal
- * @param k2_e            Error Controller Gain 2nd order signal
- * @param k3_e            Error Controller Gain 3rd order signal
- */
-void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], float max_ang_jerk){
-  float y_4d_1[3];
-  float y_4d_2[3];
-  float y_4d_3[3];
-  err_nd(y_4d_1, x_ref, x, k1_e, 3);
-  float temp_diff = x_ref[2] - x[2];
-  NormRadAngle(temp_diff);
-  float e_x = temp_diff;
-  y_4d_1[2] = k1_e[2] * e_x; // Correction for Heading error +-Pi
-  err_nd(y_4d_2, x_d_ref, x_d, k2_e, 3);
-  err_nd(y_4d_3, x_2d_ref, x_2d, k3_e, 3);
-  float_vect_copy(y_4d,x_3d_ref,3);
-  float_vect_sum(y_4d, y_4d, y_4d_1, 3);
-  float_vect_sum(y_4d, y_4d, y_4d_2, 3);
-  float_vect_sum(y_4d, y_4d, y_4d_3, 3);
-  vect_bound_nd(y_4d, max_ang_jerk, 3);
-}
-
 /**
- * @brief  Third Order to First Order Dynamics Approximation
- * @param p1              Pole 1
- * @param p2              Pole 2
- * @param p3              Pole 3
- * @param rm_k            Reference Model Gain
+ * @brief Computes discrete actuator dynamics from continuous inputs.
+ *
+ * @param[out] act_dynamics_d Array to store discrete dynamics results.
+ * @param[in] act_dynamics Array of continuous actuator dynamics inputs.
  */
-static float w_approx(float p1, float p2, float p3, float rm_k){
-  p1   = positive_non_zero(p1);
-  p2   = positive_non_zero(p2);
-  p3   = positive_non_zero(p3);
-  rm_k = positive_non_zero(rm_k);
-  float tao = (p1*p2+p1*p3+p2*p3)/(p1*p2*p3)/(rm_k);
-  tao  = positive_non_zero(tao);
-  return 1.0/tao;
-}
-
-/**
- * @brief Calculate EC poles given RM poles
- * @param p_rm      Reference Model Pole (3 coincident poles)
- * @param slow_pole Pole of the slowest dynamics
- * @param k         EC / RM ratio
- * @param omega_n   Natural Frequency
- */
-static float ec_poles(float p_rm, float slow_pole, float k){
-  p_rm      = positive_non_zero(p_rm);
-  slow_pole = positive_non_zero(slow_pole);
-  k         = positive_non_zero(k);
-  float omega_n = (2*p_rm*slow_pole*k)/(3*slow_pole-p_rm);
-  return omega_n;
-}
-
-/**
- * @brief Initialize Position of Poles
- * 
- */
-void init_poles_att(void){
-  float slow_pole  = 22.0; // Pole of the slowest dynamics used in the attitude controller
-  p_att_e.omega_n  = ec_poles(p_att_rm.omega_n,  slow_pole, 1.28);
-  p_head_e.omega_n = ec_poles(p_head_rm.omega_n, slow_pole, 1.28);
-}
-void init_poles_pos(void){
-  act_dynamics[COMMAND_ROLL]  = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
-  act_dynamics[COMMAND_PITCH] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
-  float slow_pole = act_dynamics[COMMAND_ROLL]; // Pole of the slowest dynamics used in the position controller
-  p_pos_e.omega_n = ec_poles(p_pos_rm.omega_n,slow_pole,1.28);//1.0;
-  p_alt_e.omega_n = ec_poles(p_alt_rm.omega_n,slow_pole,1.28);//1.0;// 3.0;
-}
-
-/**
- * @brief Initialize Position of Poles
- * 
- */
-void init_poles(void){
-
-  // Attitude Controller Poles----------------------------------------------------------
-  float slow_pole = 22.0; // Pole of the slowest dynamics used in the attitude controller
-
-  p_att_rm.omega_n = 10.0; // 10.0 4.71
-  p_att_rm.zeta    = 1.0;
-  p_att_rm.p3      = p_att_rm.omega_n * p_att_rm.zeta;
-
-  p_att_e.omega_n = ec_poles(p_att_rm.omega_n,  slow_pole, 1.28); //4.50;
-  p_att_e.zeta    = 1.0;
-  p_att_e.p3      = slow_pole;
-
-  p_head_rm.omega_n = 7.0; // 7.0 2.56
-  p_head_rm.zeta    = 1.0;
-  p_head_rm.p3      = p_head_rm.omega_n * p_head_rm.zeta;
-
-  p_head_e.omega_n = ec_poles(p_head_rm.omega_n, slow_pole, 1.28); //1.80;
-  p_head_e.zeta    = 1.0;
-  p_head_e.p3      = slow_pole;
-
-  act_dynamics[COMMAND_ROLL]  = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
-  act_dynamics[COMMAND_PITCH] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
-
-  // Position Controller Poles----------------------------------------------------------
-  slow_pole = act_dynamics[COMMAND_ROLL]; // Pole of the slowest dynamics used in the position controller
-#ifdef ONELOOP_ANDI_POLES_POS_OMEGA_N
-  p_pos_rm.omega_n = ONELOOP_ANDI_POLES_POS_OMEGA_N;
-#else
-  p_pos_rm.omega_n = 0.93; //2.2;
-#endif
-  p_pos_rm.zeta    = 1.0;  
-  p_pos_rm.p3      = p_pos_rm.omega_n * p_pos_rm.zeta;
-
-  p_pos_e.omega_n = ec_poles(p_pos_rm.omega_n,slow_pole,1.28);//1.0;
-  p_pos_e.zeta    = 1.0; 
-  p_pos_e.p3      = slow_pole; 
-#ifdef ONELOOP_ANDI_POLES_ALT_OMEGA_N
-  p_alt_rm.omega_n = ONELOOP_ANDI_POLES_ALT_OMEGA_N;
-#else
-  p_alt_rm.omega_n = 0.93; //2.2;
-#endif
-  p_alt_rm.zeta    = 1.0;
-  p_alt_rm.p3      = p_alt_rm.omega_n * p_alt_rm.zeta;
-
-  p_alt_e.omega_n = ec_poles(p_alt_rm.omega_n,slow_pole,1.28);//1.0;// 3.0;
-  p_alt_e.zeta    = 1.0; 
-  p_alt_e.p3      = slow_pole; 
-}
-
-/** 
- * @brief Initialize Controller Gains
- * FIXME: Calculate the gains dynamically for transition
- */
-void init_controller(void){
-  /*Register a variable from nav_hybrid. Should be improved when nav hybrid is final.*/
-  float max_wind  = 20.0;
-  max_v_nav = nav_max_speed + max_wind;
-  max_a_nav = nav_max_acceleration_sp;
-  /*Some calculations in case new poles have been specified*/
-  init_poles_att();
-  init_poles_pos();
-  p_att_rm.p3  = p_att_rm.omega_n  * p_att_rm.zeta;
-  p_pos_rm.p3  = p_pos_rm.omega_n  * p_pos_rm.zeta;
-  p_alt_rm.p3  = p_alt_rm.omega_n  * p_alt_rm.zeta;
-  p_head_rm.p3 = p_head_rm.omega_n * p_head_rm.zeta;
-
-  //--ANDI Controller gains --------------------------------------------------------------------------------
-  /*Attitude Loop*/
-  k_att_e.k1[0]  = k_e_1_3_f_v2(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
-  k_att_e.k2[0]  = k_e_2_3_f_v2(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
-  k_att_e.k3[0]  = k_e_3_3_f_v2(p_att_e.omega_n, p_att_e.zeta, p_att_e.p3);
-  k_att_e.k1[1]  = k_att_e.k1[0]; 
-  k_att_e.k2[1]  = k_att_e.k2[0]; 
-  k_att_e.k3[1]  = k_att_e.k3[0]; 
-
-  k_att_rm.k1[0] = k_rm_1_3_f(p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
-  k_att_rm.k2[0] = k_rm_2_3_f(p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
-  k_att_rm.k3[0] = k_rm_3_3_f(p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
-  k_att_rm.k1[1] = k_att_rm.k1[0];
-  k_att_rm.k2[1] = k_att_rm.k2[0];
-  k_att_rm.k3[1] = k_att_rm.k3[0];
-  
-  //printf("Attitude RM Gains: %f %f %f\n", k_att_rm.k1[0], k_att_rm.k2[0], k_att_rm.k3[0]);
-  //printf("Attitude E Gains: %f %f %f\n", k_att_e.k1[0], k_att_e.k2[0], k_att_e.k3[0]);
-  //printf("Heading E Gains: %f %f %f\n", k_att_e.k1[2], k_att_e.k2[2], k_att_e.k3[2]);
-  /*Heading Loop NAV*/
-  k_att_e.k1[2]  = k_e_1_3_f_v2(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
-  k_att_e.k2[2]  = k_e_2_3_f_v2(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
-  k_att_e.k3[2]  = k_e_3_3_f_v2(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
-
-  k_att_rm.k1[2] = k_rm_1_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
-  k_att_rm.k2[2] = k_rm_2_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
-  k_att_rm.k3[2] = k_rm_3_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
-
-  /*Position Loop*/
-  // k_pos_e.k1[0]  = k_e_1_3_f_v2(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
-  // k_pos_e.k2[0]  = k_e_2_3_f_v2(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
-  // k_pos_e.k3[0]  = k_e_3_3_f_v2(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
-  k_pos_e.k1[0]  = k_rm_1_3_f(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
-  k_pos_e.k2[0]  = k_rm_2_3_f(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
-  k_pos_e.k3[0]  = k_rm_3_3_f(p_pos_e.omega_n, p_pos_e.zeta, p_pos_e.p3);
-  k_pos_e.k1[1]  = k_pos_e.k1[0];  
-  k_pos_e.k2[1]  = k_pos_e.k2[0];  
-  k_pos_e.k3[1]  = k_pos_e.k3[0]; 
-
-  k_pos_rm.k1[0] = k_rm_1_3_f(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);
-  k_pos_rm.k2[0] = k_rm_2_3_f(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);
-  k_pos_rm.k3[0] = k_rm_3_3_f(p_pos_rm.omega_n, p_pos_rm.zeta, p_pos_rm.p3);
-  k_pos_rm.k1[1] = k_pos_rm.k1[0];  
-  k_pos_rm.k2[1] = k_pos_rm.k2[0];  
-  k_pos_rm.k3[1] = k_pos_rm.k3[0];
-  nav_hybrid_pos_gain   = k_pos_rm.k1[0];
-  nav_hybrid_max_bank   = ONELOOP_ANDI_MAX_BANK;
-
-  /*Altitude Loop*/
-  // k_pos_e.k1[2]  = k_e_1_3_f_v2(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3);
-  // k_pos_e.k2[2]  = k_e_2_3_f_v2(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3);
-  // k_pos_e.k3[2]  = k_e_3_3_f_v2(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3);
-  k_pos_e.k1[2]  = k_rm_1_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3);
-  k_pos_e.k2[2]  = k_rm_2_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3);
-  k_pos_e.k3[2]  = k_rm_3_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3);
-
-  k_pos_rm.k1[2] = k_rm_1_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3);
-  k_pos_rm.k2[2] = k_rm_2_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3);
-  k_pos_rm.k3[2] = k_rm_3_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3);
-  
-  //--INDI Controller gains --------------------------------------------------------------------------------
-    /*Attitude Loop*/
-  k_att_e_indi.k1[0]  = k_e_1_2_f_v2(p_att_e.omega_n, p_att_e.zeta);
-  k_att_e_indi.k2[0]  = k_e_2_2_f_v2(p_att_e.omega_n, p_att_e.zeta);
-  k_att_e_indi.k3[0]  = 1.0;
-  k_att_e_indi.k1[1]  = k_att_e_indi.k1[0]; 
-  k_att_e_indi.k2[1]  = k_att_e_indi.k2[0]; 
-  k_att_e_indi.k3[1]  = k_att_e_indi.k3[0]; 
-
-  /*Heading Loop NAV*/
-  k_att_e_indi.k1[2]  = k_e_1_2_f_v2(p_head_e.omega_n, p_head_e.zeta);
-  k_att_e_indi.k2[2]  = k_e_2_2_f_v2(p_head_e.omega_n, p_head_e.zeta);
-  k_att_e_indi.k3[2]  = 1.0;
-
-  /*Position Loop*/
-  k_pos_e_indi.k1[0]  = k_e_1_2_f_v2(p_pos_e.omega_n, p_pos_e.zeta);
-  k_pos_e_indi.k2[0]  = k_e_2_2_f_v2(p_pos_e.omega_n, p_pos_e.zeta);
-  k_pos_e_indi.k3[0]  = 1.0;
-  k_pos_e_indi.k1[1]  = k_pos_e_indi.k1[0];  
-  k_pos_e_indi.k2[1]  = k_pos_e_indi.k2[0];  
-  k_pos_e_indi.k3[1]  = k_pos_e_indi.k3[0]; 
-
-  /*Altitude Loop*/
-  k_pos_e_indi.k1[2]  = k_e_1_2_f_v2(p_alt_e.omega_n, p_alt_e.zeta);
-  k_pos_e_indi.k2[2]  = k_e_2_2_f_v2(p_alt_e.omega_n, p_alt_e.zeta);
-  k_pos_e_indi.k3[2]  = 1.0;
-   
-  //------------------------------------------------------------------------------------------
-  /*Approximated Dynamics*/
-  act_dynamics[COMMAND_ROLL]   = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
-  act_dynamics[COMMAND_PITCH]  = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
-}
-// Complementary Filters Functions -----------------------------------------------------------
-/** @brief Initialize the Complementary Filters 2nd Order Butterworth */
-void init_cf2(struct CF2_t *cf, float fc){
-  cf->freq     = fc;
-  cf->freq_set = fc;
-  cf->tau      = 1/(2*M_PI*cf->freq);
-  init_butterworth_2_low_pass(&cf->model_filt,    cf->tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
-  init_butterworth_2_low_pass(&cf->feedback_filt, cf->tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
-  cf->model    = 0.0;
-  cf->feedback = 0.0;
-  cf->out      = 0.0;
-}
-/** @brief  Initialize the Complementary Filters 4th Order Butterworth*/
-void init_cf4(struct CF4_t *cf, float fc){
-  cf->freq     = fc;
-  cf->freq_set = fc;
-  cf->tau      = 1/(2*M_PI*cf->freq);
-  init_butterworth_4_low_pass(&cf->model_filt,    cf->tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
-  init_butterworth_4_low_pass(&cf->feedback_filt, cf->tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
-  cf->model    = 0.0;
-  cf->feedback = 0.0;
-  cf->out      = 0.0;
-}
-/** @brief  Initialize all the Complementary Filters */
-void init_all_cf(void){
-  init_cf2(&cf.ax,    oneloop_andi_filt_cutoff_a);
-  init_cf2(&cf.ay,    oneloop_andi_filt_cutoff_a);
-  init_cf2(&cf.az,    oneloop_andi_filt_cutoff_a);
-  init_cf4(&cf.p_dot, 2.0);
-  init_cf4(&cf.q_dot, 2.0);
-  init_cf2(&cf.r_dot, oneloop_andi_filt_cutoff);
-  init_cf2(&cf.p,     oneloop_andi_filt_cutoff_p);
-  init_cf2(&cf.q,     oneloop_andi_filt_cutoff_q);
-  init_cf2(&cf.r,     oneloop_andi_filt_cutoff_r);
-}
-/** @brief Reinitialize 2nd Order CF if new frequency setting or if forced */
-void reinit_cf2(struct CF2_t *cf, bool reinit){
-  if(cf->freq != cf->freq_set || reinit){
-    cf->freq = cf->freq_set;
-    cf->tau = 1/(2*M_PI*cf->freq);
-    init_butterworth_2_low_pass(&cf->model_filt,    cf->tau, 1.0 / PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&cf->model_filt));
-    init_butterworth_2_low_pass(&cf->feedback_filt, cf->tau, 1.0 / PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&cf->feedback_filt));
-  }
-}
-/** @brief Reinitialize 4th Order CF if new frequency setting or if forced */
-void reinit_cf4(struct CF4_t *cf, bool reinit){
-  if(cf->freq != cf->freq_set || reinit){
-    cf->freq = cf->freq_set;
-    cf->tau = 1/(2*M_PI*cf->freq);
-    init_butterworth_4_low_pass(&cf->model_filt,    cf->tau, 1.0 / PERIODIC_FREQUENCY, get_butterworth_4_low_pass(&cf->model_filt));
-    init_butterworth_4_low_pass(&cf->feedback_filt, cf->tau, 1.0 / PERIODIC_FREQUENCY, get_butterworth_4_low_pass(&cf->feedback_filt));
-  }
-}
-/** @brief Reinitialize all the Complementary Filters */
-void reinit_all_cf(bool reinit){
-  reinit_cf2(&cf.ax,    reinit);
-  reinit_cf2(&cf.ay,    reinit);
-  reinit_cf2(&cf.az,    reinit);
-  reinit_cf4(&cf.p_dot, reinit);
-  reinit_cf4(&cf.q_dot, reinit);
-  reinit_cf2(&cf.r_dot, reinit);
-  reinit_cf2(&cf.p,     reinit);
-  reinit_cf2(&cf.q,     reinit);
-  reinit_cf2(&cf.r,     reinit);
-}
-//------------------------------------------------------------------------------------------
-/** @brief  Initialize the filters */
-void init_filter(void)
+static void discretize_act_dynamics(float dt, float* act_dynamics_d, const float* act_dynamics)
 {
-  // Store Notch filter values
-#ifdef ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ
-  oneloop_notch.roll.freq = ONELOOP_ANDI_ROLL_STRUCTURAL_MODE_FREQ,
-#else
-  oneloop_notch.roll.freq = 8.46,
-#endif
-#ifdef ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ
-  oneloop_notch.pitch.freq = ONELOOP_ANDI_PITCH_STRUCTURAL_MODE_FREQ,
-#else
-  oneloop_notch.pitch.freq = 6.44,
-#endif
-#ifdef ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ
-  oneloop_notch.yaw.freq = ONELOOP_ANDI_YAW_STRUCTURAL_MODE_FREQ,
-#else
-  oneloop_notch.yaw.freq = 17.90,
-#endif
-  oneloop_notch.roll.bandwidth  = 2.0;
-  oneloop_notch.pitch.bandwidth = 1.0;
-  oneloop_notch.yaw.bandwidth   = 4.0;
-  // Initialize Notch filters
-  notch_filter_init(&oneloop_notch.roll.filter, oneloop_notch.roll.freq, oneloop_notch.roll.bandwidth, PERIODIC_FREQUENCY);
-  notch_filter_init(&oneloop_notch.pitch.filter, oneloop_notch.pitch.freq, oneloop_notch.pitch.bandwidth, PERIODIC_FREQUENCY);
-  notch_filter_init(&oneloop_notch.yaw.filter, oneloop_notch.yaw.freq, oneloop_notch.yaw.bandwidth, PERIODIC_FREQUENCY);
-  // Filtering of the velocities 
-  float tau   = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff);
-  float tau_v = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_v);
-  //printf("tau: %f tau_v: %f\n", tau, tau_v);
-  //printf("initializing filters\n");
-  init_butterworth_2_low_pass(&filt_veloc_N,      tau_v, 1.0 / PERIODIC_FREQUENCY, 0.0);
-  init_butterworth_2_low_pass(&filt_veloc_E,      tau_v, 1.0 / PERIODIC_FREQUENCY, 0.0);
-  init_butterworth_2_low_pass(&filt_veloc_D,      tau_v, 1.0 / PERIODIC_FREQUENCY, 0.0);
-  init_butterworth_2_low_pass(&accely_filt,       tau,   1.0 / PERIODIC_FREQUENCY, 0.0);
-  init_butterworth_2_low_pass(&airspeed_filt,     tau,   1.0 / PERIODIC_FREQUENCY, 0.0);
+  for (uint8_t i = 0; i < ANDI_NUM_ACT_TOT; i++){
+    act_dynamics_d[i] = 1.0f - exp(-act_dynamics[i] * dt);
+    Bound(act_dynamics_d[i], 0.00001f, 1.0f); //Fixme: Are these bounds always valid? Magic numbers
+  }
+}
+
+/**
+ * @brief Computes scaling factors to normalize actuator input ranges for Weighted Least Squares control.
+ *
+ * This function calculates a scaling vector based on the ratio of the actuator's maximum and minimum
+ * values in SI units to their normalized ranges. The scaling improves the condition number of the matrix
+ * used in Weighted Least Squares control allocation for better accuracy.
+ *
+ * @param[out] wls_scaler Array to store computed scaling factors.
+ * @param[in] act_max Array of actuator maximum values in SI units.
+ * @param[in] act_min Array of actuator minimum values in SI units.
+ * @param[in] act_max_norm Array of actuator maximum values in normalized units.
+ * @param[in] act_min_norm Array of actuator minimum values in normalized units.
+ */
+static void compute_wls_scaling_factor(float* wls_scaler_u, const float* act_max, const float* act_min, const float* act_max_norm, const float* act_min_norm) {
+  for (uint8_t i = 0; i < ANDI_NUM_ACT_TOT; i++){
+    float nominator = positive_non_zero(act_max[i] - act_min[i])
+    float denominator = positive_non_zero(act_max_norm[i] - act_min_norm[i]);
+    wls_scaler_u[i] = nominator / denominator;
+  }
+}
+
+/**
+ * @brief Evaluate the control effectiveness
+ * 
+ * @param[out] eff_mat Control effectiveness matrix.
+ * @param[in] scaler Scale effectiveness matrix for WLS.
+ * FIXME: Add option for 'half loop' where CE is adjusted to not
+ * control certain virtual actuators.
+ */
+void evaluate_effectiveness_matrix(float* eff_mat, const float* scaler)
+{
+  // float v_e[3];
+  // v_e[0] = filt_vn.out;
+  // v_e[1] = filt_ve.out;
+  // v_e[2] = filt_vd.out;
+
+  // float w_e[3];
+  // w_e[0] = filt_p.out;
+  // w_e[1] = filt_q.out;
+  // w_e[2] = filt_r.out;
+
+  // Temporary contant values instead of sensor measurements  
+  float v_e[3] = {0.0f, 0.0f, 0.0f};
+  float w_e[3] = {0.0f, 0.0f, 0.0f};
+  float quat[4] = {1.0f, 0.0f, 0.0f, 0.0f};
+  float wind_e[3] = {0.0f, 0.0f, 0.0f};
+  float u[4] = {0.0f, 0.0f, 800f, 800f};
+  cyclone_fu(v_e, w_e,
+             quat, u,
+             wind_e, obm_coefficients.data,
+             eff_mat);
+             
+  for (uint8_t i = 0; i < ANDI_OUTPUTS; i++) {
+    for (uint8_t j = 0; j < ANDI_NUM_ACT_TOT; j++) {
+      eff_mat[i][j] *= scaler[j];
+    }
+  }
 }
 
 
-/** @brief  Propagate the filters */
-void oneloop_andi_propagate_filters(void) {
-  reinit_all_cf(false);
-  struct  NedCoor_f *accel = stateGetAccelNed_f();
-  struct  NedCoor_f *veloc = stateGetSpeedNed_f();
-  //printf("veloc: %f %f %f\n", veloc->x, veloc->y, veloc->z);
-  struct  FloatRates *body_rates = stateGetBodyRates_f();
-  // Store Feedbacks in the Complementary Filters
-  cf.ax.feedback    = accel->x;
-  cf.ay.feedback    = accel->y;
-  cf.az.feedback    = accel->z;
-//#define USE_ROLL_NOTCH
-//#define USE_PITCH_NOTCH
-#define USE_YAW_NOTCH
-  float temp_p_dot  = (body_rates->p-cf.p.feedback)*PERIODIC_FREQUENCY;
-  float temp_q_dot  = (body_rates->q-cf.q.feedback)*PERIODIC_FREQUENCY;
-  float temp_r_dot  = (body_rates->r-cf.r.feedback)*PERIODIC_FREQUENCY;
-#ifdef USE_ROLL_NOTCH
-  notch_filter_update(&oneloop_notch.roll.filter, &temp_p_dot, &cf.p_dot.feedback);
-#else
-  cf.p_dot.feedback = temp_p_dot;
-#endif
-#ifdef USE_PITCH_NOTCH
-  notch_filter_update(&oneloop_notch.pitch.filter, &temp_q_dot, &cf.q_dot.feedback);
-#else
-  cf.q_dot.feedback = temp_q_dot;
-#endif
-#ifdef USE_YAW_NOTCH
-  notch_filter_update(&oneloop_notch.yaw.filter, &temp_r_dot, &cf.r_dot.feedback);
-#else
-  cf.r_dot.feedback = temp_r_dot;
-#endif
-  cf.p.feedback     = body_rates->p;
-  cf.q.feedback     = body_rates->q;
-  cf.r.feedback     = body_rates->r;
-  // Update Filters of Feedbacks
-  update_butterworth_2_low_pass(&cf.ax.feedback_filt,    cf.ax.feedback);
-  update_butterworth_2_low_pass(&cf.ay.feedback_filt,    cf.ay.feedback);
-  update_butterworth_2_low_pass(&cf.az.feedback_filt,    cf.az.feedback);
-  update_butterworth_4_low_pass(&cf.p_dot.feedback_filt, cf.p_dot.feedback);
-  update_butterworth_4_low_pass(&cf.q_dot.feedback_filt, cf.q_dot.feedback);
-  update_butterworth_2_low_pass(&cf.r_dot.feedback_filt, cf.r_dot.feedback);
-  update_butterworth_2_low_pass(&cf.p.feedback_filt,     cf.p.feedback);
-  update_butterworth_2_low_pass(&cf.q.feedback_filt,     cf.q.feedback);
-  update_butterworth_2_low_pass(&cf.r.feedback_filt,     cf.r.feedback); 
-  //printf("veloc: %f %f %f\n", veloc->x, veloc->y, veloc->z);
-  update_butterworth_2_low_pass(&filt_veloc_N,      veloc->x);
-  update_butterworth_2_low_pass(&filt_veloc_E,      veloc->y);
-  update_butterworth_2_low_pass(&filt_veloc_D,      veloc->z); 
-  //printf("veloc_filt: %f %f %f\n", filt_veloc_N.o[0], filt_veloc_E.o[0], filt_veloc_D.o[0]);
-  // Calculate Model Predictions for Linear and Angular Accelerations Using the Effectiveness Matrix
-  calc_model();
-  // Update Filters of Model Predictions for Linear and Angular Accelerations
-  update_butterworth_2_low_pass(&cf.ax.model_filt,    cf.ax.model);
-  update_butterworth_2_low_pass(&cf.ay.model_filt,    cf.ay.model);
-  update_butterworth_2_low_pass(&cf.az.model_filt,    cf.az.model);
-  update_butterworth_4_low_pass(&cf.p_dot.model_filt, cf.p_dot.model);
-  update_butterworth_4_low_pass(&cf.q_dot.model_filt, cf.q_dot.model);
-  update_butterworth_2_low_pass(&cf.r_dot.model_filt, cf.r_dot.model);
-  // Calculate Complementary Filter outputs for Linear and Angular Accelerations 
-  cf.ax.out    = cf.ax.feedback_filt.o[0]    + cf.ax.model    - cf.ax.model_filt.o[0];
-  cf.ay.out    = cf.ay.feedback_filt.o[0]    + cf.ay.model    - cf.ay.model_filt.o[0];
-  cf.az.out    = cf.az.feedback_filt.o[0]    + cf.az.model    - cf.az.model_filt.o[0];
-  //cf.p_dot.out = cf.p_dot.feedback_filt.o[0] + cf.p_dot.model - cf.p_dot.model_filt.o[0];
-  cf.p_dot.out = cf.p_dot.feedback_filt.lp2.o[0] + cf.p_dot.model - cf.p_dot.model_filt.lp2.o[0];
-  //cf.q_dot.out = cf.q_dot.feedback_filt.o[0] + cf.q_dot.model - cf.q_dot.model_filt.o[0];
-  cf.q_dot.out = cf.q_dot.feedback_filt.lp2.o[0] + cf.q_dot.model - cf.q_dot.model_filt.lp2.o[0];
-  cf.r_dot.out = cf.r_dot.feedback_filt.o[0] + cf.r_dot.model - cf.r_dot.model_filt.o[0];
-  // Calculate Model Predictions for Angular Rates Using the output of the angular acceleration Complementary Filter
-  cf.p.model   = cf.p.model + cf.p_dot.out / PERIODIC_FREQUENCY;
-  cf.q.model   = cf.q.model + cf.q_dot.out / PERIODIC_FREQUENCY;
-  cf.r.model   = cf.r.model + cf.r_dot.out / PERIODIC_FREQUENCY;
-  // Update Filters of Model Predictions for Angular Rates
-  update_butterworth_2_low_pass(&cf.p.model_filt,     cf.p.model);
-  update_butterworth_2_low_pass(&cf.q.model_filt,     cf.q.model);
-  update_butterworth_2_low_pass(&cf.r.model_filt,     cf.r.model);
-  // Calculate Complementary Filter outputs for Angular Rates
-  cf.p.out     = cf.p.feedback_filt.o[0]     + cf.p.model     - cf.p.model_filt.o[0];
-  cf.q.out     = cf.q.feedback_filt.o[0]     + cf.q.model     - cf.q.model_filt.o[0];
-  cf.r.out     = cf.r.feedback_filt.o[0]     + cf.r.model     - cf.r.model_filt.o[0];
-  // Propagate filter for sideslip correction
-  float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
-  update_butterworth_2_low_pass(&accely_filt, accely);
-  float airspeed_meas = stateGetAirspeed_f();
-  Bound(airspeed_meas, 0.0, 30.0);
-  update_butterworth_2_low_pass(&airspeed_filt, airspeed_meas);
+/**
+ * @brief Computes desired altitude based on thrust RC input and integration.
+ *
+ * Converts the thrust command from radio control to an altitude rate,
+ * integrates it over the time step 'dt', and updates the desired altitude.
+ * 
+ * FIXME: Currently does not support different upper and lower altitude bounds.
+ *
+ * @param[in,out] alt_des Pointer to the current desired altitude (meters).
+ * @param[in] alt_rate_bound Maximum allowed altitude rate (meters/second).
+ * @param[in] dt Time step for integration (seconds).
+ */
+static void get_desired_altitude_radio_command(float* alt_des, float alt_rate_bound, float dt)
+{
+  float rate_des = ((float)radio_control_get(RADIO_THRUST) / MAX_PPRZ) * alt_rate_bound;
+  *alt_des += rate_des * dt;
 }
 
 /** @brief Init function of Oneloop ANDI controller  */
 void oneloop_andi_init(void)
 { 
-  oneloop_andi.half_loop = true;
-  oneloop_andi.ctrl_type = CTRL_ANDI;
-  init_poles();
+  printf("INIT ANDI controller: start \n");
+  oneloop_andi.ctrl_type = CONTROL_TYPE_ANDI;
+  oneloop_andi.control_mode = CONTROL_MODE_RATE;
+
+  // Initialize poles.
+  // FIXME: Make poles dynamically set from airframe file
+  p_rate_e  = {.omega_n={15.0, 7.5, 7.5}, .zeta={1.0, 1.0, 1.0}};
+  p_rate_rm = {.omega_n={12.0, 6.0, 6.0}, .zeta={1.0, 1.0, 1.0}};
+  p_att_e  = {.omega_n={15.0, 7.5, 7.5}, .zeta={1.0, 1.0, 1.0}, .p1={15.0, 7.5, 5.5}};
+  p_att_rm = {.omega_n={12.0, 6.0, 6.0}, .zeta={1.0, 1.0, 1.0}, .p1={12.0, 6.0, 6.0}};
+  p_pos_e   = {.omega_n={1.0, 1.0}, .zeta={1.0, 1.0}, .p1={1.0, 1.0}};
+  p_pos_rm  = {.omega_n={0.8, 0.8}, .zeta={1.0, 1.0}, .p1={0.8, 0.8}};
+  p_alt_e   = {.omega_n=1.0, .zeta=1.0, .p1=1.0};
+  p_alt_rm  = {.omega_n=0.8, .zeta=1.0, .p1=0.8};
+  p_head_e  = {.omega_n=0.5, .zeta=1.0};
+  p_head_rm = {.omega_n=0.5, .zeta=1.0};
+
+  // Compute gains from on poles
+  compute_gains_2nd_order_3(&k_rate_e, &p_rate_e);
+  compute_gains_2nd_order_3(&k_rate_rm, &p_rate_rm);
+  compute_gains_3nd_order_3(&k_att_e, &p_att_e);
+  compute_gains_3nd_order_3(&k_att_rm, &p_att_rm);
+  compute_gains_3nd_order_2(&k_pos_e, &p_pos_e);
+  compute_gains_3nd_order_2(&k_pos_rm, &p_pos_rm);
+  compute_gains_3nd_order_1(&k_alt_e, &p_alt_e);
+  compute_gains_3nd_order_1(&k_alt_rm, &p_alt_rm);
+  compute_gains_2nd_order_1(&k_head_e, &p_head_e);
+  compute_gains_2nd_order_1(&k_head_rm, &p_head_rm);
+  
+  // Initialize bounds
+  // FIXME: Make bounds dynamically set from airframe file
+  att_bounds = {.att={10, 10, 10}.att_d={1000.0, 1000.0, 1000.0}, .att_2d={1000.0, 1000.0, 1000.0}, .att_3d={1000.0, 1000.0, 1000.0}};
+  pos_bounds  = {.pos={0, 0}, .vel={1000.0, 1000.0}, .acc={1000.0, 1000.0}, .jerk={1000.0, 1000.0}};
+  alt_bounds  = {.alt=0, .vel=1000.0, .acc=1000.0, .jerk=1000.0};
+  head_bounds = {.head=0, .head_rate=1000.0, .head_acc=1000.0};
+
+  // Initialize obm coefficients
+  // FIXME: Make coefficients set from airframe file
+  obm_coefficients = {
+    .fx_motor_squared       = 0.00000735f,
+    .fx_speed_forward       = -0.03f,
+
+    .fy_speed_lateral       = -0.008f,
+
+    .fz_motor_squared       = 0.0f,
+    .fz_speed_forward       = 0.0f,
+    .fz_speed_vertical      = -0.144f,
+    .fz_elevator_speed      = 0.0f,
+    .fz_elevator_motor      = 0.0f,
+
+    .mx_motor_diff          = 0.0f,
+    .mx_elevator_motor_diff = 0.0000283f,
+    .mx_elevator_speed_diff = 0.344f,
+    .mx_angular_coupling    = -2.18f,
+
+    .my_speed_forward       = 0.0f,
+    .my_speed_vertical      = -0.0888f,
+    .my_constant_zero       = -1.032f,
+    .my_motor_sum           = 0.0f,
+    .my_elevator_motor_sum  = -0.0000424f,
+    .my_elevator_speed_sum  = -0.2525f,
+    .my_angular_sum         = 1.262f,
+
+    .mz_speed_lateral       = -0.00371f,
+    .mz_motor_diff          = 0.000039f,
+    .mz_speed_roll          = -0.0129f,
+    .mz_angular_coupling    = -0.4827f
+  };
+
+  // FIXME: Putting a small non zero value is dangerous.
   // Make sure that the dynamics are positive and non-zero
-  int8_t i;
-  for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
+  for (uint8_t i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     act_dynamics[i] = positive_non_zero(act_dynamics[i]);
   }
-  // Initialize Effectiveness matrix
-  calc_normalization();
-  G1G2_oneloop(oneloop_andi.ctrl_type);
-  for (i = 0; i < ANDI_OUTPUTS; i++) {
-    bwls_1l[i] = EFF_MAT_G[i];
+
+  discretize_act_dynamics(dt_1l, act_dynamics_d, act_dynamics);
+
+  // Initialize filter
+  init_filter(&filt_an,     2.0, BUTTERWORTH_2);
+  init_filter(&filt_ae,     2.0, BUTTERWORTH_2);
+  init_filter(&filt_ad,     2.0, BUTTERWORTH_2);
+  init_filter(&filt_vn,     2.0, BUTTERWORTH_2);
+  init_filter(&filt_ve,     2.0, BUTTERWORTH_2);
+  init_filter(&filt_vd,     2.0, BUTTERWORTH_2);
+  init_filter(&filt_p_dot,  2.0, BUTTERWORTH_2);
+  init_filter(&filt_q_dot,  2.0, BUTTERWORTH_2);
+  init_filter(&filt_r_dot,  2.0, BUTTERWORTH_2);
+  init_filter(&filt_p,     20.0, BUTTERWORTH_2);
+  init_filter(&filt_q,     20.0, BUTTERWORTH_2);
+  init_filter(&filt_r,     20.0, BUTTERWORTH_2);
+
+  init_filter(&filt_ay,      2.0, BUTTERWORTH_2);
+  init_filter(&filt_aispeed, 2.0, BUTTERWORTH_2);
+
+  for (int i = 0; i < ANDI_NUM_ACT_TOT; i++) {
+      init_filter(&filt_u[i], 2.0, BUTTERWORTH_2);
   }
-  // Initialize filters and other variables
-  init_all_cf();
-  init_filter();
-  init_controller();
+
+  // Initialize references to zero
+  float_vect_zero(oneloop_andi.att_ref.att, 3);
+  float_vect_zero(oneloop_andi.att_ref.att_d, 3);
+  float_vect_zero(oneloop_andi.att_ref.att_2d, 3);
+  float_vect_zero(oneloop_andi.att_ref.att_3d, 3);
+  float_vect_zero(oneloop_andi.pos_ref.pos, 2);
+  float_vect_zero(oneloop_andi.pos_ref.vel, 2);
+  float_vect_zero(oneloop_andi.pos_ref.acc, 2);
+  float_vect_zero(oneloop_andi.pos_ref.jer, 2);
+  oneloop_andi.alt_ref.pos = 0.0f;
+  oneloop_andi.alt_ref.vel = 0.0f;
+  oneloop_andi.alt_ref.acc = 0.0f;
+  oneloop_andi.alt_ref.jer = 0.0f;
+  oneloop_andi.head.head = 0.0f;
+  oneloop_andi.head.head_d = 0.0f;
+
+  // Initialize controller variables
   float_vect_zero(andi_u, ANDI_NUM_ACT_TOT);
   float_vect_zero(andi_du, ANDI_NUM_ACT_TOT);
-  float_vect_zero(andi_du_n, ANDI_NUM_ACT_TOT);
-  float_vect_zero(actuator_state_1l,ANDI_NUM_ACT);
-  float_vect_zero(oneloop_andi.sta_ref.att,3);
-  float_vect_zero(oneloop_andi.sta_ref.att_d,3);
-  float_vect_zero(oneloop_andi.sta_ref.att_2d,3);
-  float_vect_zero(oneloop_andi.sta_ref.att_3d,3);
+  float_vect_zero(andi_u_n, ANDI_NUM_ACT_TOT);
+  float_vect_zero(actuator_state_1l, ANDI_NUM_ACT_TOT);
+
   float_vect_zero(nu, ANDI_OUTPUTS);
   float_vect_zero(nu_n, ANDI_OUTPUTS);
-  float_vect_zero(nav_target,3);
-  float_vect_zero(nav_target_new,3);
-  eulers_zxy_des.phi   =  0.0;
-  eulers_zxy_des.theta =  0.0;
-  eulers_zxy_des.psi   =  0.0;
+  float_vect_zero(nav_target, 3);
+  float_vect_zero(nav_target_new, 3);
+
   // Start telemetry
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_oneloop_andi);
@@ -1443,8 +1478,9 @@ void oneloop_andi_init(void)
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_oneloop_debug);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_V, send_wls_v_oneloop);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_U, send_wls_u_oneloop);
-    // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_COMPLEMENTARY_FILTER, send_cf_oneloop);
   #endif
+  printf("INIT ANDI controller: succes \n");
+
 }
 
 /**
@@ -1453,803 +1489,131 @@ void oneloop_andi_init(void)
  * and there are multiple modes that use (the same) stabilization. Resetting the controller
  * is not so nice when you are flying.
  */
-void oneloop_andi_enter(bool half_loop_sp, int ctrl_type)
+void oneloop_andi_enter(enum ControlMode control_mode, int control_type)
 {
-  ele_min = 0.0;
-  oneloop_andi.half_loop     = half_loop_sp;
-  oneloop_andi.ctrl_type     = ctrl_type;
-  psi_des_rad   = eulers_zxy.psi; 
-  psi_des_deg   = DegOfRad(eulers_zxy.psi);
-  calc_normalization();
-  G1G2_oneloop(oneloop_andi.ctrl_type);
-  int8_t i;
-  for (i = 0; i < ANDI_OUTPUTS; i++) {
-    bwls_1l[i] = EFF_MAT_G[i];
-  }
-  reinit_all_cf(true);
-  init_filter();
-  init_controller();
-  /* Stabilization Reset */
-  float_vect_zero(oneloop_andi.sta_ref.att,2);
-  float_vect_zero(oneloop_andi.sta_ref.att_d,3);
-  float_vect_zero(oneloop_andi.sta_ref.att_2d,3);
-  float_vect_zero(oneloop_andi.sta_ref.att_3d,3);
-  float_vect_zero(nav_target,3);
-  float_vect_zero(nav_target_new,3);
-  eulers_zxy_des.phi   =  0.0;
-  eulers_zxy_des.theta =  0.0;
-  eulers_zxy_des.psi   =  psi_des_rad;
-  /*Guidance Reset*/
+  printf("ENTER ANDI controller: start (%d) \n", counter_andi);
+  // counter_andi++;
+  oneloop_andi.control_mode   = control_mode;
+  oneloop_andi.control_type   = control_type;
 }
 
-/**
- * @brief  Function to generate the reference signals for the oneloop controller
- * @param half_loop  In half-loop mode the controller is used for stabilization only
- * @param PSA_des    Desired position/speed/acceleration
- * @param rm_order_h Order of the reference model for horizontal guidance
- * @param rm_order_v Order of the reference model for vertical guidance
- */
-void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, int rm_order_v, bool in_flight_oneloop)
-{
-  // Initialize some variables
-  a_thrust = 0.0;
-  nav_target[0] = PSA_des.x;
-  nav_target[1] = PSA_des.y;
-  nav_target[2] = PSA_des.z;
-  float thrust_cmd_1l = 0.0;
-  float des_r = 0.0;
-  // Generate reference signals with reference model 
-  if(half_loop){
-    // Disregard X and Y jerk objectives
-    WLS_one_p.Wv[0] = 0.0;
-    WLS_one_p.Wv[1] = 0.0;
-    // Overwrite references with actual signals (for consistent plotting)
-    float_vect_copy(oneloop_andi.gui_ref.pos,oneloop_andi.gui_state.pos,3);
-    float_vect_copy(oneloop_andi.gui_ref.vel,oneloop_andi.gui_state.vel,3);
-    float_vect_copy(oneloop_andi.gui_ref.acc,oneloop_andi.gui_state.acc,3);
-    float_vect_zero(oneloop_andi.gui_ref.jer,3);
-    // Set desired attitude with stick input
-    eulers_zxy_des.phi   = (float) (radio_control_get(RADIO_ROLL)) /MAX_PPRZ * ONELOOP_ANDI_MAX_PHI  ;
-    eulers_zxy_des.theta = (float) (radio_control_get(RADIO_PITCH))/MAX_PPRZ * ONELOOP_ANDI_MAX_THETA;
-    // Set desired Yaw rate with stick input
-    des_r = (float) (radio_control_get(RADIO_YAW))/MAX_PPRZ*max_r;            // Get yaw rate from stick
-    BoundAbs(des_r,max_r);                                                    // Bound yaw rate
-    float delta_psi_des_rad = des_r * dt_1l;                                  // Integrate desired Yaw rate to get desired change in yaw
-    float delta_psi_rad = eulers_zxy_des.psi-eulers_zxy.psi;                  // Calculate current yaw difference between des and actual
-    NormRadAngle(delta_psi_rad);                                              // Normalize the difference
-    if (fabs(delta_psi_rad) > RadOfDeg(30.0)){                                // If difference is bigger than 10 deg do not further increment desired
-      delta_psi_des_rad = 0.0;
-    }
-    psi_des_rad += delta_psi_des_rad;                                         // Incrementdesired yaw
-    NormRadAngle(psi_des_rad);
-    // Register Attitude Setpoints from previous loop
-    if (!in_flight_oneloop){
-      psi_des_rad   = eulers_zxy.psi;
-    }
-    eulers_zxy_des.psi = psi_des_rad;
-    float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, eulers_zxy_des.psi};
-    // Create commands adhoc to get actuators to the wanted level
-    thrust_cmd_1l = (float) radio_control_get(RADIO_THROTTLE);
-    Bound(thrust_cmd_1l,0.0,MAX_PPRZ); 
-    int8_t i;
-    for (i = 0; i < ANDI_NUM_ACT; i++) {
-     a_thrust +=(thrust_cmd_1l - use_increment*actuator_state_1l[i]) * bwls_1l[2][i] / (ratio_u_un[i] * ratio_vn_v[RW_aD]);
-    }
-    rm_3rd_attitude(dt_1l, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, att_des, false, psi_vec, k_att_rm.k1, k_att_rm.k2, k_att_rm.k3, max_j_ang);
-  }else{
-    // Make sure X and Y jerk objectives are active
-    WLS_one_p.Wv[0] = Wv_backup[0];
-    WLS_one_p.Wv[1] = Wv_backup[1];
-    // Generate Reference signals for positioning using RM
-    if (rm_order_h == 3){
-      rm_3rd_pos(dt_1l, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target, k_pos_rm.k1, k_pos_rm.k2, k_pos_rm.k3, max_v_nav, max_a_nav, max_j_nav, 2);    
-    } else if (rm_order_h == 2){
-      float_vect_copy(oneloop_andi.gui_ref.pos, oneloop_andi.gui_state.pos,2);
-      float_vect_copy(oneloop_andi.gui_ref.vel, oneloop_andi.gui_state.vel,2);
-      reshape_wind();//returns accel sp as nav target new
-      rm_1st_pos(dt_1l, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target_new, k_pos_rm.k3, max_j_nav, 2); 
-      // rm_2nd_pos(dt_1l, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target_new, k_pos_rm.k2, k_pos_rm.k3, max_a_nav, max_j_nav, 2);   
-    } else if (rm_order_h == 1){
-      float_vect_copy(oneloop_andi.gui_ref.pos, oneloop_andi.gui_state.pos,2);
-      float_vect_copy(oneloop_andi.gui_ref.vel, oneloop_andi.gui_state.vel,2);
-      rm_1st_pos(dt_1l, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, nav_target, k_pos_rm.k3, max_j_nav, 2);   
-    }
-    // Update desired Heading (psi_des_rad) based on previous loop or changed setting
-    if (heading_manual){
-      psi_des_rad = RadOfDeg(psi_des_deg);
-      if (yaw_stick_in_auto){
-        psi_des_rad += (float) (radio_control_get(RADIO_YAW))/MAX_PPRZ*max_r * dt_1l;
-      }
-    } else {
-      float ref_mag_vel = float_vect_norm(oneloop_andi.gui_ref.vel,2);
-      psi_des_rad += oneloop_andi_sideslip() * dt_1l;
-      NormRadAngle(psi_des_rad);
-      if (ref_mag_vel > 3.0){
-        float psi_gs = atan2f(oneloop_andi.gui_ref.vel[1],oneloop_andi.gui_ref.vel[0]);
-        float delta_des_gs = psi_gs-psi_des_rad;  // Calculate current yaw difference between des and gs
-        NormRadAngle(delta_des_gs);                            
-        if (fabs(delta_des_gs) > RadOfDeg(60.0)){        // If difference is bigger than 60 deg bound the des psi angle so that it does not deviate too much
-          delta_des_gs *= RadOfDeg(60.0)/fabs(delta_des_gs);
-          psi_des_rad = psi_gs - delta_des_gs;
-          NormRadAngle(psi_des_rad);
-        }
-      }
-    }
-    // Register Attitude Setpoints from previous loop
-    if (!in_flight_oneloop){
-      psi_des_rad   = eulers_zxy.psi;
-    }
-    eulers_zxy_des.psi = psi_des_rad;
-    float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, eulers_zxy_des.psi};
-    // The RM functions want an array as input. Create a single entry array and write the vertical guidance entries. 
-    float single_value_ref[1]        = {oneloop_andi.gui_ref.pos[2]};
-    float single_value_d_ref[1]      = {oneloop_andi.gui_ref.vel[2]};
-    float single_value_2d_ref[1]     = {oneloop_andi.gui_ref.acc[2]};
-    float single_value_3d_ref[1]     = {oneloop_andi.gui_ref.jer[2]};
-    float single_value_nav_target[1] = {nav_target[2]};
-    float single_value_k1_rm[1]      = {k_pos_rm.k1[2]};
-    float single_value_k2_rm[1]      = {k_pos_rm.k2[2]};
-    float single_value_k3_rm[1]      = {k_pos_rm.k3[2]};
-    if (rm_order_v == 3){
-      rm_3rd_pos(dt_1l, single_value_ref, single_value_d_ref, single_value_2d_ref, single_value_3d_ref, single_value_nav_target, single_value_k1_rm, single_value_k2_rm, single_value_k3_rm, max_v_nav_v, max_a_nav, max_j_nav, 1);    
-      oneloop_andi.gui_ref.pos[2] = single_value_ref[0];
-      oneloop_andi.gui_ref.vel[2] = single_value_d_ref[0];
-      oneloop_andi.gui_ref.acc[2] = single_value_2d_ref[0];
-      oneloop_andi.gui_ref.jer[2] = single_value_3d_ref[0];
-    } else if (rm_order_v == 2){
-      rm_2nd_pos(dt_1l, single_value_d_ref, single_value_2d_ref, single_value_3d_ref, single_value_nav_target, single_value_k2_rm, single_value_k3_rm, max_a_nav, max_j_nav, 1);   
-      oneloop_andi.gui_ref.pos[2] = oneloop_andi.gui_state.pos[2];
-      oneloop_andi.gui_ref.vel[2] = single_value_d_ref[0];
-      oneloop_andi.gui_ref.acc[2] = single_value_2d_ref[0];
-      oneloop_andi.gui_ref.jer[2] = single_value_3d_ref[0];
-    } else if (rm_order_v == 1){
-      rm_1st_pos(dt_1l, single_value_2d_ref, single_value_3d_ref, single_value_nav_target, single_value_k3_rm, max_j_nav, 1); 
-      oneloop_andi.gui_ref.pos[2] = oneloop_andi.gui_state.pos[2];
-      oneloop_andi.gui_ref.vel[2] = oneloop_andi.gui_state.vel[2];
-      oneloop_andi.gui_ref.acc[2] = single_value_2d_ref[0];
-      oneloop_andi.gui_ref.jer[2] = single_value_3d_ref[0];  
-    }    
-    // Run chirp test if turnerd on (overwrite the guidance references)
-    chirp_call(&chirp_on, &chirp_first_call, &t_0_chirp, &time_elapsed_chirp, f0_chirp, f1_chirp, t_chirp, A_chirp, chirp_axis, att_des[2], oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer,p_ref_0);
-    // Generate Reference signals for attitude using RM
-    // FIX ME ow not yet defined, will be useful in the future to have accurate psi tracking in NAV functions
-    bool ow_psi = false;
-    rm_3rd_attitude(dt_1l, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, att_des, ow_psi, psi_vec, k_att_rm.k1, k_att_rm.k2, k_att_rm.k3, max_j_ang);
- }
-}
 
 /**
- * @brief  Main function that runs the controller and performs control allocation
+ * @brief Main function that runs the controller and performs control allocation
  * @param half_loop  In half-loop mode the controller is used for stabilization only
  * @param in_flight  The drone is in flight
  * @param PSA_des    Desired position/speed/acceleration
  * @param rm_order_h Order of the reference model for horizontal guidance
  * @param rm_order_v Order of the reference model for vertical guidance
  */
-void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, int rm_order_v)
+void oneloop_andi_run(bool in_flight, enum ControlMode control_mode, struct FloatVect3 PSA_des)
 {
   // At beginnig of the loop: (1) Register Attitude, (2) Initialize gains of RM and EC, (3) Calculate Normalization of Actuators Signals, (4) Propagate Actuator Model, (5) Update effectiveness matrix
-  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-  init_controller();
-  calc_normalization();
+
+  // Step 1: Fetch all sensor measurmements.
   get_act_state_oneloop();
-  G1G2_oneloop(oneloop_andi.ctrl_type);
-  int8_t i;
-  for (i = 0; i < ANDI_OUTPUTS; i++) {
+
+  for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
+    act_dyn_ctrl[i] = act_dynamics[i];
+  }
+
+  // Register the state of the drone in the variables used in RM and EC
+  float attitude_wxyz[4] = stateGetNedToBodyQuat_f();
+
+  // Attitude
+  float_eulers_of_quat_zxy(&oneloop_andi.att_state.att, attitude_wxyz);  //FIXME: Convert to quaternion representation
+  oneloop_andi_propagate_filters();   //needs to be after update of attitude vector (WHY?)
+  oneloop_andi.att_state.att_d[0]  = filt_p.out;
+  oneloop_andi.att_state.att_d[1]  = filt_q.out;
+  oneloop_andi.att_state.att_d[2]  = filt_r.out;
+  oneloop_andi.att_state.att_2d[0] = filt_p_dot.out;
+  oneloop_andi.att_state.att_2d[1] = filt_q_dot.out;
+  oneloop_andi.att_state.att_2d[2] = filt_r_dot.out;
+
+  // Position
+  oneloop_andi.pos_state.pos[0] = stateGetPositionNed_f()->x;   
+  oneloop_andi.pos_state.pos[1] = stateGetPositionNed_f()->y;   
+  oneloop_andi.pos_state.vel[0] = filt_vn.out;      
+  oneloop_andi.pos_state.vel[1] = filt_ve.out; 
+  oneloop_andi.pos_state.acc[0] = filt_an.out;
+  oneloop_andi.pos_state.acc[1] = filt_ae.out;
+
+  // Altitude
+  oneloop_andi.alt_state.pos[2] = stateGetPositionNed_f()->z;      
+  oneloop_andi.alt_state.vel[2] = filt_vd.out;      
+  oneloop_andi.alt_state.acc[2] = filt_ad.out;
+  // FIXME: Todo, add Heading state fetching (which is part of attitude, might be redundant)
+
+
+  // Guidance Pseudo Control Vector (nu) based on reference model and error controller
+
+  // Assemble pseudo control vector
+  // FIXME: Add heading control.
+  // FIXME: Add guidance control
+  float nu[ANDI_OUTPUTS] = {0.0f};
+  switch (control_mode) {
+    case CONTROL_MODE_RATE:
+      float rate_des[3];
+      float alt_des;
+
+      get_desired_rates_radio_command(rate_des, att_bounds.att_d);
+      reference_model_rate(dt_1l, rate_des, k_rate_rm, &att_bounds, &oneloop_andi.att_ref);
+      error_controller_rate(dt_1l, &oneloop_andi.att_ref, &oneloop_andi.att_state, &k_rate_e, &nu[4]);
+
+      get_desired_altitude_radio_command(&alt_des, alt_bounds.vel, dt_1l);
+      reference_model_altitude(dt_1l, alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref)
+      error_controller_altitude(dt_1l, &oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
+      break;
+
+    case CONTROL_MODE_ATTITUDE:
+      float att_des[3];
+      float alt_des;
+
+      get_desired_attitude_radio_command(att_des, att_bounds.att, att_bounds.att_d[2], dt_1l);
+      reference_model_attitude(dt_1l, att_des, k_att_rm, &att_bounds, &oneloop_andi.att_ref);
+      error_controller_attitude(dt_1l, &oneloop_andi.att_ref, &oneloop_andi.att_state, &k_att_e, &nu[4]);
+
+      get_desired_altitude_radio_command(&alt_des, alt_bounds.vel, dt_1l);
+      reference_model_altitude(dt_1l, alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref)
+      error_controller_altitude(dt_1l, &oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
+      break;
+
+    // case CONTROL_MODE_GUIDANCE:
+    //   float pos_des[2];
+    //   float alt_des;
+    //   float rate_des; // fetch from virtual actuators.
+    //   reference_model_position(dt_1l, pos_des, &k_pos_rm, &pos_bounds, &oneloop_andi.pos_ref)
+    //   error_controller_rate(dt_1l, &oneloop_andi.pos_ref, &oneloop_andi.pos_state, &k_pos_e, &nu[0]);
+    //   reference_model_altitude(dt_1l, alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref)
+    //   error_controller_altitude(dt_1l, &oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
+    //   reference_model_rate(dt_1l, rate_des, k_rate_rm, &att_bounds, &oneloop_andi.att_ref);
+    //   error_controller_rate(dt_1l, &oneloop_andi.att_ref, &oneloop_andi.att_state, &k_rate_e, &nu[4]);
+    //   break;
+    default:
+      // handle invalid control_mode (now do nothing)
+  }
+
+  float wls_scaler_u[ANDI_ACT_NUM_TOTAL];
+  compute_wls_scaling_factors(wls_scaler_u, act_max, act_min, act_max_norm, act_mix_norm);
+  evaluate_effectiveness_matrix(eff_mat, wls_scaler_u)
+  for (uint8_t i = 0; i < ANDI_OUTPUTS; i++) {
     bwls_1l[i] = EFF_MAT_G[i];
   }
-  
-  // If drone is not on the ground use incremental law
-  use_increment = 0.0;
-  bool  in_flight_oneloop       = false;
-  if(in_flight) {
-    use_increment = 1.0;
-    in_flight_oneloop       = true;
-  } 
-  if (ONELOOP_ANDI_DEBUG_MODE) {
-    in_flight_oneloop = false;
-  }
-  
-  // Register the state of the drone in the variables used in RM and EC
-  // (1) Attitude related
-  oneloop_andi.sta_state.att[0]    = eulers_zxy.phi  ;
-  oneloop_andi.sta_state.att[1]    = eulers_zxy.theta;
-  oneloop_andi.sta_state.att[2]    = eulers_zxy.psi  ;
-  oneloop_andi_propagate_filters();   //needs to be after update of attitude vector
-  oneloop_andi.sta_state.att_d[0]  = cf.p.out;
-  oneloop_andi.sta_state.att_d[1]  = cf.q.out;
-  oneloop_andi.sta_state.att_d[2]  = cf.r.out;
-  oneloop_andi.sta_state.att_2d[0] = cf.p_dot.out;
-  oneloop_andi.sta_state.att_2d[1] = cf.q_dot.out;
-  oneloop_andi.sta_state.att_2d[2] = cf.r_dot.out;
-  // (2) Position related
-  oneloop_andi.gui_state.pos[0] = stateGetPositionNed_f()->x;   
-  oneloop_andi.gui_state.pos[1] = stateGetPositionNed_f()->y;   
-  oneloop_andi.gui_state.pos[2] = stateGetPositionNed_f()->z;   
-  oneloop_andi.gui_state.vel[0] = filt_veloc_N.o[0];      
-  oneloop_andi.gui_state.vel[1] = filt_veloc_E.o[0];      
-  oneloop_andi.gui_state.vel[2] = filt_veloc_D.o[0];      
-  oneloop_andi.gui_state.acc[0] = cf.ax.out;
-  oneloop_andi.gui_state.acc[1] = cf.ay.out;
-  oneloop_andi.gui_state.acc[2] = cf.az.out;
-  // Calculated feedforward signal for yaw control
-  g2_ff = 0.0;
-
-  for (i = 0; i < ANDI_NUM_ACT; i++) {
-    if (oneloop_andi.ctrl_type == CTRL_ANDI){
-      g2_ff += G2_RW[i] * act_dynamics[i] * andi_du[i];
-    } else if (oneloop_andi.ctrl_type == CTRL_INDI){
-      g2_ff += G2_RW[i]* andi_du_n[i];
-    }
-  }
-  //G2 is scaled by ANDI_G_SCALING to make it readable
-  g2_ff = g2_ff;
-  // Run the Reference Model (RM)
-  oneloop_andi_RM(half_loop, PSA_des, rm_order_h, rm_order_v, in_flight_oneloop);
-  // Guidance Pseudo Control Vector (nu) based on error controller
-  if(half_loop){
-    nu[0] = 0.0;
-    nu[1] = 0.0;
-    nu[2] = a_thrust;
-    ctrl_off = false;
-  }else{
-    if(oneloop_andi.ctrl_type == CTRL_ANDI){
-      ec_3rd_pos(nu, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e.k1, k_pos_e.k2, k_pos_e.k3, max_v_nav, max_a_nav, max_j_nav, 3);
-      // nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], oneloop_andi.gui_ref.jer[0], oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e.k1[0], k_pos_e.k2[0], k_pos_e.k3[0]);
-      // nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], oneloop_andi.gui_ref.jer[1], oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e.k1[1], k_pos_e.k2[1], k_pos_e.k3[1]);
-      // nu[2] = ec_3rd(oneloop_andi.gui_ref.pos[2], oneloop_andi.gui_ref.vel[2], oneloop_andi.gui_ref.acc[2], oneloop_andi.gui_ref.jer[2], oneloop_andi.gui_state.pos[2], oneloop_andi.gui_state.vel[2], oneloop_andi.gui_state.acc[2], k_pos_e.k1[2], k_pos_e.k2[2], k_pos_e.k3[2]); 
-    } else if (oneloop_andi.ctrl_type == CTRL_INDI){
-      nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], 0.0, oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e_indi.k1[0], k_pos_e_indi.k2[0], k_pos_e_indi.k3[0]);
-      nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], 0.0, oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e_indi.k1[1], k_pos_e_indi.k2[1], k_pos_e_indi.k3[1]);
-      nu[2] = ec_3rd(oneloop_andi.gui_ref.pos[2], oneloop_andi.gui_ref.vel[2], oneloop_andi.gui_ref.acc[2], 0.0, oneloop_andi.gui_state.pos[2], oneloop_andi.gui_state.vel[2], oneloop_andi.gui_state.acc[2], k_pos_e_indi.k1[2], k_pos_e_indi.k2[2], k_pos_e_indi.k3[2]);  
-    }
-  }
-  // Attitude Pseudo Control Vector (nu) based on error controller
-  float y_4d_att[3];  
-  if(oneloop_andi.ctrl_type == CTRL_ANDI){
-    ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, oneloop_andi.sta_ref.att_3d, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3, max_j_ang);
-  } else if (oneloop_andi.ctrl_type == CTRL_INDI){
-    float dummy0[3] = {0.0, 0.0, 0.0};
-    ec_3rd_att(y_4d_att, oneloop_andi.sta_ref.att, oneloop_andi.sta_ref.att_d, oneloop_andi.sta_ref.att_2d, dummy0, oneloop_andi.sta_state.att, oneloop_andi.sta_state.att_d, oneloop_andi.sta_state.att_2d, k_att_e_indi.k1, k_att_e_indi.k2, k_att_e_indi.k3, max_j_ang);
-  }
-  nu[3] = y_4d_att[0];  
-  nu[4] = y_4d_att[1]; 
-  nu[5] = y_4d_att[2] + g2_ff; 
-  if (!chirp_on){
-    pitch_pref = radio_control.values[RADIO_AUX5]; 
-    pitch_pref = pitch_pref / MAX_PPRZ * theta_pref_max;
-    Bound(pitch_pref,0.0,theta_pref_max);
-  }
-  u_pref[COMMAND_PITCH] = pitch_pref;
-  // Calculate the min and max increments
-  for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
-    switch (i) {
-      case COMMAND_MOTOR_FRONT:
-      case COMMAND_MOTOR_RIGHT:
-      case COMMAND_MOTOR_BACK:
-      case COMMAND_MOTOR_LEFT: {
-        float skew_bound = RW.skew.deg;
-        Bound(skew_bound,70.0,90.0);
-        float Wu_sched   = (Wu_quad_motors_fwd-Wu_backup[i])/(90.0-70.0)*(skew_bound-70)+Wu_backup[i];
-        WLS_one_p.Wu[i]     = Wu_sched;
-        WLS_one_p.u_min[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
-        WLS_one_p.u_pref[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i];
-        WLS_one_p.u_max[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
-        if (rotwing_state.hover_motors_enabled){
-          WLS_one_p.u_max[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
-        } else
-        {
-          WLS_one_p.u_max[i]  = (0.0 - actuator_state_1l[i])/ratio_u_un[i];
-        }
-        break;
-      }
-      case COMMAND_MOTOR_PUSHER:
-      case COMMAND_RUDDER:
-        WLS_one_p.u_min[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
-        WLS_one_p.u_max[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
-        WLS_one_p.u_pref[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i]; 
-        break;      
-      case COMMAND_AILERONS:
-        if(RW.skew.deg > 25.0){
-            WLS_one_p.u_min[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
-            WLS_one_p.u_max[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
-          } else {
-            WLS_one_p.u_min[i]  = (0.0 - actuator_state_1l[i])/ratio_u_un[i];
-            WLS_one_p.u_max[i]  = (0.0 - actuator_state_1l[i])/ratio_u_un[i];
-          }
-        WLS_one_p.u_pref[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i];   
-        break;      
-      case COMMAND_FLAPS:
-        if(RW.skew.deg > 50.0){
-            WLS_one_p.u_min[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
-            WLS_one_p.u_max[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
-          } else {
-            WLS_one_p.u_min[i]  = (0.0 - actuator_state_1l[i])/ratio_u_un[i];
-            WLS_one_p.u_max[i]  = (0.0 - actuator_state_1l[i])/ratio_u_un[i];
-          }
-        WLS_one_p.u_pref[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i];   
-        break;
-      case COMMAND_ELEVATOR:  
-        WLS_one_p.u_min[i]  = (act_min[i] - actuator_state_1l[i])/ratio_u_un[i];
-        WLS_one_p.u_max[i]  = (act_max[i] - actuator_state_1l[i])/ratio_u_un[i];
-        u_pref[i]           = RW.ele_pref;
-        WLS_one_p.u_pref[i] = (u_pref[i]  - actuator_state_1l[i])/ratio_u_un[i];  
-        break;     
-      case COMMAND_ROLL:
-        WLS_one_p.u_min[i]  = (act_min[i] - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
-        WLS_one_p.u_max[i]  = (act_max[i] - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
-        WLS_one_p.u_pref[i] = (u_pref[i]  - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
-        break;         
-      case COMMAND_PITCH:
-        if (RW.skew.deg > 70.0){
-          WLS_one_p.u_min[i]  = (RadOfDeg(-17.0) - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
-          WLS_one_p.u_max[i]  = (RadOfDeg(17.0)  - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
-        } else {
-          WLS_one_p.u_min[i]  = (act_min[i] - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
-          WLS_one_p.u_max[i]  = (act_max[i] - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
-        }
-        WLS_one_p.u_pref[i] = (u_pref[i]  - oneloop_andi.sta_state.att[i-ANDI_NUM_ACT])/ratio_u_un[i];
-        break;           
-    }
-  }
   // WLS Control Allocator
-  normalize_nu();
-  wls_alloc(&WLS_one_p, bwls_1l, 0, 0, 10);
-  for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
-    andi_du_n[i] = WLS_one_p.u[i];
-    andi_du[i] = (float)(andi_du_n[i] * ratio_u_un[i]);
+  wls_alloc(&wls_one_p, bwls_1l, 0, 0, 10);
+  for (i = 0; i < ANDI_NUM_ACT_TOTAL; i++) {
+    andi_du[i] = wls_one_p.u[i];
   }
+ 
+  //FIXME: Convert du to u here.
 
-  if (in_flight_oneloop) {
-    // Add the increments to the actuators
-    float_vect_sum(andi_u, actuator_state_1l, andi_du, ANDI_NUM_ACT);
-    andi_u[COMMAND_ROLL]  = andi_du[COMMAND_ROLL]  + oneloop_andi.sta_state.att[0];
-    andi_u[COMMAND_PITCH] = andi_du[COMMAND_PITCH] + oneloop_andi.sta_state.att[1];
-  } else {
-    // Not in flight, so don't increment
-    float_vect_copy(andi_u, andi_du, ANDI_NUM_ACT);
-    andi_u[COMMAND_ROLL]  = andi_du[COMMAND_ROLL];
-    andi_u[COMMAND_PITCH] = andi_du[COMMAND_PITCH];
-  }
-#ifdef COMMAND_MOTOR_PUSHER
-  if ((half_loop)){
-    andi_u[COMMAND_MOTOR_PUSHER] = radio_control.values[RADIO_AUX4];
-  }
-#endif  
-  // TODO : USE THE PROVIDED MAX AND MIN and change limits for phi and theta
   // Bound the inputs to the actuators
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
-    Bound(andi_u[i], act_min[i], act_max[i]);
+    Bound(andi_du[i], act_min[i], act_max[i]);
   }
 
-  /*Commit the actuator command*/
+  // Commit the actuator command
   for (i = 0; i < ANDI_NUM_ACT; i++) {
-    commands[i] = (int16_t) andi_u[i];
-  }
-  if (rotwing_state.fail_pusher_motor){
-    commands[COMMAND_MOTOR_PUSHER] = 0;//Min(1000,andi_u[COMMAND_MOTOR_PUSHER]);
-  }
-  commands[COMMAND_THRUST] = (commands[COMMAND_MOTOR_FRONT] + commands[COMMAND_MOTOR_RIGHT] + commands[COMMAND_MOTOR_BACK] + commands[COMMAND_MOTOR_LEFT])/num_thrusters_oneloop;
-  autopilot.throttle = commands[COMMAND_THRUST];
-  stabilization.cmd[COMMAND_THRUST] = commands[COMMAND_THRUST];
-  if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
-    eulers_zxy_des.phi   =  andi_u[COMMAND_ROLL];
-    eulers_zxy_des.theta =  andi_u[COMMAND_PITCH];
-  } else {
-    eulers_zxy_des.phi   =  andi_u[COMMAND_ROLL];
-    eulers_zxy_des.theta =  andi_u[COMMAND_PITCH];
-  }
-  if (heading_manual){
-    psi_des_deg = DegOfRad(psi_des_rad);
-  } 
-
-  stabilization.cmd[COMMAND_ROLL]  = (int16_t) (DegOfRad(eulers_zxy_des.phi  ) * MAX_PPRZ / DegOfRad(ONELOOP_ANDI_MAX_PHI  ));
-  stabilization.cmd[COMMAND_PITCH] = (int16_t) (DegOfRad(eulers_zxy_des.theta) * MAX_PPRZ / DegOfRad(ONELOOP_ANDI_MAX_THETA));
-  stabilization.cmd[COMMAND_YAW]   = (int16_t) (psi_des_deg * MAX_PPRZ / 180.0);
-}
-
-/** @brief  Function to reconstruct actuator state using first order dynamics */
-void get_act_state_oneloop(void)
-{
-  int8_t i;
-  float prev_actuator_state_1l;
-  for (i = 0; i < ANDI_NUM_ACT; i++) {
-    prev_actuator_state_1l = actuator_state_1l[i];
-    actuator_state_1l[i] = prev_actuator_state_1l + act_dynamics_d[i] * (andi_u[i] - prev_actuator_state_1l);
-    if(!autopilot_get_motors_on()){
-      actuator_state_1l[i] = 0.0;
-    }
-    Bound(actuator_state_1l[i],act_min[i], act_max[i]);
+    commands[i] = (int16_t) andi_du[i];
   }
 }
-
-/**
- * @brief Function that samples and scales the effectiveness matrix
- * FIXME: make this function into a for loop to make it more adaptable to different configurations
- */
-void G1G2_oneloop(int ctrl_type) {
-  int i = 0;
-  float scaler = 1.0;
-  for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
-
-    switch (i) {
-      case (COMMAND_MOTOR_FRONT):
-      case (COMMAND_MOTOR_RIGHT):
-      case (COMMAND_MOTOR_BACK):
-      case (COMMAND_MOTOR_LEFT):
-      case (COMMAND_MOTOR_PUSHER):
-      case (COMMAND_ELEVATOR):
-      case (COMMAND_RUDDER):  
-      case (COMMAND_AILERONS):
-      case (COMMAND_FLAPS):   
-        if(ctrl_type == CTRL_ANDI){
-          scaler = act_dynamics[i] * ratio_u_un[i];
-        } else if (ctrl_type == CTRL_INDI){
-          scaler = ratio_u_un[i];
-        }
-        break;
-      case (COMMAND_ROLL):
-      case (COMMAND_PITCH):
-        if(ctrl_type == CTRL_ANDI){
-          scaler = act_dynamics[i] * ratio_u_un[i];
-        } else if (ctrl_type == CTRL_INDI){
-          scaler = ratio_u_un[i];
-        }
-        break;
-      default:
-        break;        
-    }
-    int j = 0;
-    bool turn_quad_off = ((!rotwing_state.hover_motors_enabled || !rotwing_state_hover_motors_running()) && rotwing_state.state != ROTWING_STATE_FORCE_HOVER);
-    for (j = 0; j < ANDI_OUTPUTS; j++) {
-      EFF_MAT_G[j][i] = EFF_MAT_RW[j][i] * scaler * ratio_vn_v[j];
-      if (airspeed_filt.o[0] < ELE_MIN_AS && i == COMMAND_ELEVATOR){
-        EFF_MAT_G[j][i] = 0.0;
-      }
-      if (turn_quad_off && i < 4){
-        EFF_MAT_G[j][i] = 0.0;
-      }
-      if (ctrl_off && i < 4  && j == 5){ //hack test
-        EFF_MAT_G[j][i] = 0.0;
-      } 
-      if (ctrl_off && i < 4  && j == 4){ //hack test
-        EFF_MAT_G[j][i] = 0.0;
-      } 
-      if (ctrl_off && i < 4  && j == 3){ //hack test
-        EFF_MAT_G[j][i] = 0.0;
-      } 
-    }
-  }
-}
-
-/** @brief  Calculate Normalization of actuators and discrete actuator dynamics  */
-void calc_normalization(void){
-  int8_t i;
-  for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
-    act_dynamics_d[i] = 1.0-exp(-act_dynamics[i]*dt_1l);
-    Bound(act_dynamics_d[i],0.00001,1.0);
-    Bound(act_max[i],0,MAX_PPRZ);
-    Bound(act_min[i],-MAX_PPRZ,0);
-    float ratio_numerator = act_max[i]-act_min[i];
-    ratio_numerator = positive_non_zero(ratio_numerator);// make sure numerator is non-zero
-    float ratio_denominator = act_max_norm[i]-act_min_norm[i];
-    ratio_denominator = positive_non_zero(ratio_denominator); // make sure denominator is non-zero
-    ratio_u_un[i] = ratio_numerator/ratio_denominator;
-    ratio_u_un[i] = positive_non_zero(ratio_u_un[i]);// make sure ratio is not zero
-  }
-  for (i = 0; i < ANDI_OUTPUTS; i++){
-    float ratio_numerator = positive_non_zero(nu_norm_max);
-    float ratio_denominator = 1.0;
-    switch (i) {
-      case (RW_aN):
-      case (RW_aE):
-      case (RW_aD):
-        ratio_denominator = positive_non_zero(max_j_nav);
-        ratio_vn_v[i] = ratio_numerator/ratio_denominator;
-        break;
-      case (RW_ap):
-      case (RW_aq):
-      case (RW_ar):
-        ratio_denominator = positive_non_zero(max_j_ang);
-        ratio_vn_v[i] = ratio_numerator/ratio_denominator;
-        break;
-    }
-  }
-}
-
-/** @brief  Function to normalize the pseudo control vector */
-void normalize_nu(void){
-  int8_t i;
-  for (i = 0; i < ANDI_OUTPUTS; i++){
-    nu_n[i] = nu[i] * ratio_vn_v[i];
-    WLS_one_p.v[i] = nu_n[i];
-  }
-}
-
-/** @brief  Function that calculates the model prediction for the complementary filter. */
-void calc_model(void){
-  int8_t i;
-  int8_t j;
-  // // Absolute Model Prediction : 
-  float sphi   = sinf(eulers_zxy.phi);
-  float cphi   = cosf(eulers_zxy.phi);
-  float stheta = sinf(eulers_zxy.theta);
-  float ctheta = cosf(eulers_zxy.theta);
-  float spsi   = sinf(eulers_zxy.psi);
-  float cpsi   = cosf(eulers_zxy.psi);
-  // Thrust and Pusher force estimation
-  float L      = RW.wing.L / RW.m;          // Lift specific force
-  float T      = RW.T / RW.m;             //  Thrust specific force. Minus gravity is a guesstimate.
-  float P      = RW.P / RW.m;               // Pusher specific force
-
-  cf.ax.model = -(cpsi * stheta + ctheta * sphi * spsi) * T + (cpsi * ctheta - sphi * spsi * stheta) * P - sphi * spsi * L;
-  cf.ay.model = -(spsi * stheta - cpsi * ctheta * sphi) * T + (ctheta * spsi + cpsi * sphi * stheta) * P + cpsi * sphi * L;
-  cf.az.model = g - cphi * ctheta * T - cphi * stheta * P - cphi * L;
-  float model_pqr_dot[3] = {0.0, 0.0, 0.0};
-  for (i = 0; i < 3; i++){ // For loop for prediction of angular acceleration 
-    for (j = 0; j < ANDI_NUM_ACT; j++){
-      if(j == COMMAND_ELEVATOR){
-        model_pqr_dot[i] = model_pqr_dot[i] +  (actuator_state_1l[j] - RW.ele_pref) * EFF_MAT_RW[i+3][j]; // Ele pref is incidence angle
-      } else {
-        model_pqr_dot[i] = model_pqr_dot[i] +  actuator_state_1l[j] * EFF_MAT_RW[i+3][j];
-      }
-    }
-  }
-  cf.p_dot.model = model_pqr_dot[0];
-  cf.q_dot.model = model_pqr_dot[1];
-  cf.r_dot.model = model_pqr_dot[2];
-}
-
-/** @brief  Function that maps navigation inputs to the oneloop controller for the generated autopilot. */
-void oneloop_from_nav(bool in_flight)
-{
-  if (!in_flight) {
-    oneloop_andi_enter(false, oneloop_andi.ctrl_type);
-  }
-  struct FloatVect3 PSA_des;
-  PSA_des.x = stateGetPositionNed_f()->x;
-  PSA_des.y = stateGetPositionNed_f()->y;
-  PSA_des.z = stateGetPositionNed_f()->z;
-  int    rm_order_h = 3;
-  int    rm_order_v = 3;
-  // Oneloop controller wants desired targets and handles reference generation internally
-  switch (nav.setpoint_mode) {
-    case NAV_SETPOINT_MODE_POS:
-      PSA_des.x   = POS_FLOAT_OF_BFP(POS_BFP_OF_REAL(nav.target.y));
-      PSA_des.y   = POS_FLOAT_OF_BFP(POS_BFP_OF_REAL(nav.target.x));
-      rm_order_h  = 3;
-      break;
-    case NAV_SETPOINT_MODE_SPEED:
-      PSA_des.x   = SPEED_FLOAT_OF_BFP(SPEED_BFP_OF_REAL(nav.speed.y));
-      PSA_des.y   = SPEED_FLOAT_OF_BFP(SPEED_BFP_OF_REAL(nav.speed.x));
-      rm_order_h  = 2;
-      break;
-  }
-  switch (nav.vertical_mode) {
-    case NAV_VERTICAL_MODE_ALT:
-      PSA_des.z   = POS_FLOAT_OF_BFP(-POS_BFP_OF_REAL(nav.nav_altitude));
-      rm_order_v  = 3;
-      break;
-    case NAV_VERTICAL_MODE_CLIMB:
-      PSA_des.z   = SPEED_FLOAT_OF_BFP(-SPEED_BFP_OF_REAL(nav.climb));
-      rm_order_v  = 2;
-      break;
-  }
-  oneloop_andi_run(in_flight, false, PSA_des, rm_order_h, rm_order_v);
-}
-
-/** @brief Function to calculate corrections for sideslip*/
-float oneloop_andi_sideslip(void)
-{
-  // Coordinated turn
-  // feedforward estimate angular rotation omega = g*tan(phi)/v
-  float omega = 0.0;
-  const float max_phi = RadOfDeg(ONELOOP_ANDI_MAX_BANK);
-  float airspeed_turn = airspeed_filt.o[0];
-  Bound(airspeed_turn, 1.0f, 30.0f);
-  // Use the current roll angle to determine the corresponding heading rate of change.
-  float coordinated_turn_roll = eulers_zxy.phi;
-  // Prevent flipping
-  if( (eulers_zxy.theta > 0.0f) && ( fabs(eulers_zxy.phi) < eulers_zxy.theta)) {
-    coordinated_turn_roll = ((eulers_zxy.phi > 0.0f) - (eulers_zxy.phi < 0.0f)) * eulers_zxy.theta;
-  }
-  BoundAbs(coordinated_turn_roll, max_phi);
-  omega = g / airspeed_turn * tanf(coordinated_turn_roll);
-  #ifdef FWD_SIDESLIP_GAIN
-  // Add sideslip correction
-  omega -= accely_filt.o[0]*fwd_sideslip_gain;
-  #endif
-  return omega;
-}
-
-/** @brief Function to calculate the position reference during the chirp*/
-static float chirp_pos_p_ref(float delta_t, float f0, float k, float A){
-  float p_ref_fun = sinf(delta_t * M_PI * (f0 + k * delta_t) * 2.0);
-  return (A * p_ref_fun);
-}
-/** @brief Function to calculate the velocity reference during the chirp*/
-static float chirp_pos_v_ref(float delta_t, float f0, float k, float A){
-  float v_ref_fun = cosf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * (M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0);
-  return (A * v_ref_fun);
-}
-/** @brief Function to calculate the acceleration reference during the chirp*/
-static float chirp_pos_a_ref(float delta_t, float f0, float k, float A){
-  float a_ref_fun = -sinf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * pow((M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0), 2) + k * M_PI * cosf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * 4.0;
-  return (A * a_ref_fun);
-}
-/** @brief Function to calculate the jerk reference during the chirp*/
-static float chirp_pos_j_ref(float delta_t, float f0, float k, float A){
-  float j_ref_fun = -cosf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * pow((M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0), 3) - k * M_PI * sinf(delta_t * M_PI * (f0 + k * delta_t) * 2.0) * (M_PI * (f0 + k * delta_t) * 2.0 + k * delta_t * M_PI * 2.0) * 1.2e+1;
-  return (A * j_ref_fun);
-}
-
-/** 
- * @brief Reference Model Definition for 3rd order system specific to positioning with bounds
- * @param dt      [s]    time passed since start of the chirp
- * @param f0      [Hz]   initial frequency of the chirp
- * @param f1      [Hz]   final frequency of the chirp
- * @param t_chirp [s]    duration of the chirp
- * @param p_ref   [m]    position reference
- * @param v_ref   [m/s]  velocity reference
- * @param a_ref   [m/s2] acceleration reference
- * @param j_ref   [m/s3] jerk reference
- */
-void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]) {
-  f0      = positive_non_zero(f0);
-  f1      = positive_non_zero(f1);
-  t_chirp = positive_non_zero(t_chirp);
-  A       = positive_non_zero(A);
-  if ((f1-f0) < -FLT_EPSILON){
-    f1 = f0;
-  }
-  // 0 body x, 1 body y, 2 body z, 3 pitch pref
-  if (n > 3){
-    n = 0;
-  }
-  if (n < 0){
-    n = 0;
-  }
-  // I think there should not be a problem with f1 being equal to f0
-  float k = (f1 - f0) / t_chirp;
-  float p_ref_chirp = chirp_pos_p_ref(time_elapsed, f0, k, A);
-  float v_ref_chirp = chirp_pos_v_ref(time_elapsed, f0, k, A);
-  float a_ref_chirp = chirp_pos_a_ref(time_elapsed, f0, k, A);
-  float j_ref_chirp = chirp_pos_j_ref(time_elapsed, f0, k, A);
-
-  float spsi   = sinf(psi);
-  float cpsi   = cosf(psi);
-  float mult_0 = 0.0;
-  float mult_1 = 0.0;
-  float mult_2 = 0.0;
-  if (n == 0){
-    mult_0 = cpsi;
-    mult_1 = spsi;
-    mult_2 = 0.0;
-  }else if(n==1){
-    mult_0 = -spsi;
-    mult_1 = cpsi;
-    mult_2 = 0.0;
-  }else if(n==2){
-    mult_0 = 0.0;
-    mult_1 = 0.0;
-    mult_2 = 1.0;
-  }
-  // Do not overwrite the reference if chirp is not on that axis
-  if (n == 2){
-    p_ref[2] = p_ref_0[2] + p_ref_chirp * mult_2;
-    v_ref[2] = v_ref_chirp * mult_2;
-    a_ref[2] = a_ref_chirp * mult_2;
-    j_ref[2] = j_ref_chirp * mult_2;
-  } else if (n < 2){
-    p_ref[0] = p_ref_0[0] + p_ref_chirp * mult_0;
-    p_ref[1] = p_ref_0[1] + p_ref_chirp * mult_1; 
-    v_ref[0] = v_ref_chirp * mult_0;
-    v_ref[1] = v_ref_chirp * mult_1;
-    a_ref[0] = a_ref_chirp * mult_0;
-    a_ref[1] = a_ref_chirp * mult_1; 
-    j_ref[0] = j_ref_chirp * mult_0;
-    j_ref[1] = j_ref_chirp * mult_1;
-  } else { //Pitch preferred chirp, for now a little bit hacked in...
-    pitch_pref = p_ref_chirp;
-    pitch_pref = (pitch_pref / A + 1.0) * (theta_pref_max / 2.0);
-    float pitch_offset = RadOfDeg(5.0);
-    pitch_pref = pitch_pref + pitch_offset;
-    Bound(pitch_pref,0.0,25.0);
-  }
-}
-
-void chirp_call(bool *chirp_on, bool *chirp_first_call, float* t_0, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]){
-  if (*chirp_on){
-    if (*chirp_first_call){
-      *time_elapsed = 0.0;
-      *chirp_first_call = false;
-      *t_0 = get_sys_time_float();
-      p_ref_0[0] = p_ref[0];
-      p_ref_0[1] = p_ref[1];
-      p_ref_0[2] = p_ref[2];
-    }
-    if (*time_elapsed < t_chirp){
-      *time_elapsed = get_sys_time_float() - *t_0;
-      chirp_pos(*time_elapsed, f0, f1, t_chirp, A, n, psi, p_ref, v_ref, a_ref, j_ref, p_ref_0);
-    } else {
-      *chirp_on   = false;
-      *chirp_first_call = true;
-      *time_elapsed = 0.0;
-      *t_0 = 0.0;
-      oneloop_andi_enter(false, oneloop_andi.ctrl_type);
-    }
-  }
-}
-
-/** Quadplanes can still be in-flight with COMMAND_THRUST==0 and can even soar not descending in updrafts with all thrust off */
-bool autopilot_in_flight_end_detection(bool motors_on UNUSED) {
-  return ! motors_on;
-}
-
-
-void reshape_wind(void)
-{
-  float psi = eulers_zxy.psi;
-  float cpsi = cosf(psi);
-  float spsi = sinf(psi);
-  float airspeed = airspeed_filt.o[0];
-  struct FloatVect2 NT_v_NE     = {nav_target[0], nav_target[1]}; // Nav target in North and East frame
-  struct FloatVect2 airspeed_v  = { cpsi * airspeed, spsi * airspeed };
-  struct FloatVect2 windspeed;
-  struct FloatVect2 groundspeed = { oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.vel[1] };
-  struct FloatVect2 des_as_NE;
-  struct FloatVect2 des_as_B;
-  struct FloatVect2 des_acc_B;
-  VECT2_DIFF(windspeed, groundspeed, airspeed_v); // Wind speed in North and East frame
-  VECT2_DIFF(des_as_NE, NT_v_NE, windspeed); // Desired airspeed in North and East frame
-  float norm_des_as = FLOAT_VECT2_NORM(des_as_NE);
-  gi_unbounded_airspeed_sp = norm_des_as;
-  //Check if some minimum airspeed is desired (e.g. to prevent stall)
-  if (norm_des_as < min_as) {
-     norm_des_as = min_as;
-  }
-  nav_target_new[0] = NT_v_NE.x;
-  nav_target_new[1] = NT_v_NE.y;
-  // if the desired airspeed is larger than the max airspeed or we are in force forward reshape gs des to cancel wind and fly at max airspeed
-  if ((norm_des_as > max_as)||(force_forward)){
-    float groundspeed_factor = 0.0f;
-    if (FLOAT_VECT2_NORM(windspeed) < max_as) {
-      float av = NT_v_NE.x * NT_v_NE.x + NT_v_NE.y * NT_v_NE.y; // norm squared of nav target 
-      float bv = -2.f * (windspeed.x * NT_v_NE.x + windspeed.y * NT_v_NE.y);
-      float cv = windspeed.x * windspeed.x + windspeed.y * windspeed.y - max_as * max_as;
-      float dv = bv * bv - 4.0f * av * cv;
-      // dv can only be positive, but just in case
-      if (dv < 0.0f) {
-        dv = fabsf(dv);
-      }
-      float d_sqrt = sqrtf(dv);
-      groundspeed_factor = (-bv + d_sqrt)  / (2.0f * av); 
-    }
-    des_as_NE.x = groundspeed_factor * NT_v_NE.x - windspeed.x;
-    des_as_NE.y = groundspeed_factor * NT_v_NE.y - windspeed.y;
-    NT_v_NE.x   = groundspeed_factor * NT_v_NE.x;
-    NT_v_NE.y   = groundspeed_factor * NT_v_NE.y; 
-  }
-  norm_des_as = FLOAT_VECT2_NORM(des_as_NE); // Recalculate norm of desired airspeed
-  des_as_B.x  = norm_des_as; // Desired airspeed in body x frame
-  des_as_B.y  = 0.0; // Desired airspeed in body y frame
-  if (((airspeed > ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD) && (norm_des_as > (ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD+2.0f)))|| (force_forward)){
-    float delta_psi = atan2f(des_as_NE.y, des_as_NE.x) - psi; 
-    FLOAT_ANGLE_NORMALIZE(delta_psi);
-    des_acc_B.y = delta_psi * 5.0;//gih_params.heading_bank_gain;
-    des_acc_B.x = (des_as_B.x - airspeed) * k_pos_rm.k2[0];//gih_params.speed_gain;
-    acc_body_bound(&des_acc_B, max_a_nav); // Scale down side acceleration if norm is too large
-    nav_target_new[0] = cpsi * des_acc_B.x - spsi * des_acc_B.y;
-    nav_target_new[1] = spsi * des_acc_B.x + cpsi * des_acc_B.y; 
-  } else {
-    nav_target_new[0] = (NT_v_NE.x - groundspeed.x) * k_pos_rm.k2[0];
-    nav_target_new[1] = (NT_v_NE.y - groundspeed.y) * k_pos_rm.k2[1];
-  }
-  vect_bound_nd(nav_target_new, max_a_nav, 2);
-}
-
-void guidance_set_min_max_airspeed(float min_airspeed, float max_airspeed) {
-  min_as = min_airspeed;
-  max_as = max_airspeed;
-}
-

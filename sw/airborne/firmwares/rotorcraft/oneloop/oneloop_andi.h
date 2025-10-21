@@ -31,7 +31,6 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_ref_quat_int.h"
 #include "generated/airframe.h"
 #include "filters/low_pass_filter.h"
-#include "filters/notch_filter_float.h"
 
 #ifndef ANDI_NUM_ACT
 #define ANDI_NUM_ACT COMMANDS_NB_REAL
@@ -44,182 +43,259 @@
 // Number of virtual actuators (e.g. Phi, Theta). For now 2 and only 2 are supported but in the future this can be further developed. 
 #if ANDI_NUM_VIRTUAL_ACT < 2
 #error "You must specify the number of virtual actuators to be at least 2"
-#define ANDI_NUM_VIRTUAL_ACT 2
+#define ANDI_NUM_VIRTUAL_ACT 3
 #endif
 
 #define ANDI_NUM_ACT_TOT (ANDI_NUM_ACT + ANDI_NUM_VIRTUAL_ACT)
 
 #ifndef ANDI_OUTPUTS
 #error "You must specify the number of controlled axis (outputs)"
-#define ANDI_OUTPUTS 6
+#define ANDI_OUTPUTS 7
 #endif
 #define ANDI_G_SCALING 1000.0f
 
-/** Control types.*/
-#define  CTRL_ANDI 0
-#define  CTRL_INDI 1
-
-extern bool ctrl_off;
-extern float act_state_filt_vect_1l[ANDI_NUM_ACT];
-extern float actuator_state_1l[ANDI_NUM_ACT];
+extern float actuator_state_1l[ANDI_NUM_ACT_TOT];
 extern float nu[6];
-extern float g1g2_1l[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
 extern float andi_u[ANDI_NUM_ACT_TOT];
 extern float andi_du[ANDI_NUM_ACT_TOT];
-extern float psi_des_deg;
-extern bool  heading_manual;
-extern bool  yaw_stick_in_auto;
-extern float fwd_sideslip_gain;
-extern struct FloatEulers eulers_zxy_des;
-extern float psi_des_rad;
-extern float k_as;
-extern float max_as;
-extern float gi_unbounded_airspeed_sp;
 
-/*Chirp test Variables*/
-extern bool  chirp_on;
-extern float f0_chirp;
-extern float f1_chirp;
-extern float t_chirp;
-extern float A_chirp;
-extern int8_t chirp_axis;
 
-// Delete once hybrid nav is fixed //////////////////////////////////////////////////////////////////////////////////
-struct guidance_indi_hybrid_params {
-  float pos_gain;
-  float pos_gainz;
-  float speed_gain;
-  float speed_gainz;
-  float heading_bank_gain;
-  float liftd_asq;
-  float liftd_p80;
-  float liftd_p50;
-};
-extern struct guidance_indi_hybrid_params gih_params;
-//extern bool force_forward; 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-struct OneloopGuidanceRef {
-  float pos[3];     
-  float vel[3]; 
-  float acc[3];
-  float jer[3];
-};
-
-struct OneloopGuidanceState {
-  float pos[3];     
-  float vel[3]; 
-  float acc[3];
-};
-
-struct OneloopStabilizationRef {
-  float att[3];     
-  float att_d[3]; 
-  float att_2d[3];
-  float att_3d[3];
-};
-
-struct OneloopStabilizationState {
-  float att[3];     
-  float att_d[3]; 
-  float att_2d[3];
-};
-struct OneloopGeneral {
-  bool   half_loop;
-  int    ctrl_type;
-  struct OneloopGuidanceRef         gui_ref;     // Guidance References
-  struct OneloopGuidanceState       gui_state;   // Guidance State
-  struct OneloopStabilizationRef    sta_ref;     // Stabilization References
-  struct OneloopStabilizationState  sta_state;   // Stabilization State
-
-};
-
-extern struct OneloopGeneral oneloop_andi;
-
-struct PolePlacement{
+struct Poles3rdOrdert1{
   float omega_n;
   float zeta;
   float p3;
 };
-struct Gains3rdOrder{
-  float k1[3];
-  float k2[3];
-  float k3[3];
+
+struct Poles3rdOrder2{
+  float omega_n[2];
+  float zeta[2];
+  float p3[2];
 };
-struct Gains2ndOrder{
+
+struct Poles3rdOrder3{
+  float omega_n[3];
+  float zeta[3];
+  float p3[3];
+};
+
+struct Poles2ndOrdert1{
+  float omega_n;
+  float zeta;
+};
+
+struct Poles2ndOrder2{
+  float omega_n[2];
+  float zeta[2];
+};
+
+struct Poles2ndOrder3{
+  float omega_n[3];
+  float zeta[3];
+};
+
+struct Gains3rdOrder1{
+  float k1;
   float k2;
   float k3;
 };
 
-struct CF4_t {
-  float tau;
-  float freq;
-  float freq_set;
-  float model;
-  Butterworth4LowPass model_filt;
-  float feedback;
-  Butterworth4LowPass feedback_filt;
-  float out;
-};
-struct CF2_t {
-  float tau;
-  float freq;
-  float freq_set;
-  float model;
-  Butterworth2LowPass model_filt;
-  float feedback;
-  Butterworth2LowPass feedback_filt;
-  float out;
+struct Gains3rdOrder2{
+  float k1[2];
+  float k2[2];
+  float k3[2];
 };
 
-struct Oneloop_CF_t {
-  struct CF2_t p;
-  struct CF2_t q;
-  struct CF2_t r;
-  struct CF4_t p_dot;
-  struct CF4_t q_dot;
-  struct CF2_t r_dot;
-  struct CF2_t ax;
-  struct CF2_t ay;
-  struct CF2_t az;
-};
-extern struct Oneloop_CF_t cf;
-struct notch_axis_t{
-  struct SecondOrderNotchFilter filter;
-  float freq;
-  float bandwidth;
-};
-struct Oneloop_notch_t{
-  struct notch_axis_t roll;
-  struct notch_axis_t pitch;
-  struct notch_axis_t yaw;
+struct Gains3rdOrder3{
+  float k1[3];
+  float k2[3];
+  float k3[3];
 };
 
-extern int16_t temp_pitch;
+struct Gains2ndOrder1{
+  float k1;
+  float k2;
+};
+
+struct Gains2ndOrder2{
+  float k1[2];
+  float k2[2];
+};
+
+struct Gains2ndOrder3{
+  float k1[3];
+  float k2[3];
+};
+
+struct OneloopPosRef {
+  float pos[2];     
+  float vel[2]; 
+  float acc[2];
+  float jer[2];
+};
+
+struct OneloopPosState {
+  float pos[2];     
+  float vel[2]; 
+  float acc[2];
+};
+
+struct OneloopAltRef {
+  float pos;     
+  float vel; 
+  float acc;
+  float jer;
+};
+
+struct OneloopAltState {
+  float pos;     
+  float vel; 
+  float acc;
+};
+
+struct OneloopHeadRef {
+  float head;     
+  float head_d; 
+  float head_2d;
+};
+
+struct OneloopHeadState {
+  float head;   
+  float head_d;  
+};
+
+struct OneloopAttRef {
+  float att[3]; 
+  float att_d[3];
+  float att_2d[3];
+  float att_3d[3];
+};
+
+struct OneloopAttState {
+  float att[3]; 
+  float att_d[3];
+  float att_2d[3];
+};
+
+union CycloneCoefficients {
+    struct {
+        // X-axis force coefficients (f_ff_x)
+        float fx_motor_squared;          // Motor thrust squared effect
+        float fx_speed_forward;          // Forward speed effect
+
+        // Y-axis force coefficients (f_ff_y) 
+        float fy_speed_lateral;          // Lateral speed effect
+
+        // Z-axis force coefficients (f_ff_z)
+        float fz_motor_squared;          // Motor thrust squared effect
+        float fz_speed_forward;          // Forward speed effect
+        float fz_speed_vertical;         // Vertical speed effect
+        float fz_elevator_speed;         // Elevator-speed coupling
+        float fz_elevator_motor;         // Elevator-motor coupling
+
+        // X-axis moment coefficients (m_ff_x)
+        float mx_motor_diff;             // (motor_l^2 - motor_r^2)
+        float mx_elevator_motor_diff;    // (ele_l * motor_l^2 - ele_r * motor_r^2)
+        float mx_elevator_speed_diff;    // (ele_l - ele_r) * speed * v_ff(1)
+        float mx_angular_coupling;       // w_ff(2) * w_ff(3)
+
+        // Y-axis moment coefficients (m_ff_y)
+        float my_speed_forward;          // speed * v_ff(1)
+        float my_speed_vertical;         // speed * v_ff(3)
+        float my_constant_zero;          // constant 0 term
+        float my_motor_sum;              // motor_l^2 + motor_r^2
+        float my_elevator_motor_sum;     // ele_l * motor_l^2 + ele_r * motor_r^2
+        float my_elevator_speed_sum;     // (ele_l + ele_r) * speed * v_ff(1)
+        float my_angular_sum;            // w_ff(1) + w_ff(3)
+
+        // Z-axis moment coefficients (m_ff_z)
+        float mz_speed_lateral;          // speed * v_ff(2)
+        float mz_motor_diff;             // motor_l^2 - motor_r^2
+        float mz_speed_roll;             // speed * w_ff(1)
+        float mz_angular_coupling;       // w_ff(1) * w_ff(2)
+    };
+    float data[23];
+};
+
+extern union CycloneCoefficients obm_coefficients;
+
+enum ControlMode {
+  CONTROL_MODE_RATE,
+  CONTROL_MODE_ATTITUDE,
+  CONTROL_MODE_GUIDANCE
+};
+
+enum ControlType {
+  CONTROL_TYPE_ANDI,
+  CONTROL_TYPE_INDI
+}
+
+struct OneloopGeneral {
+  enum ControlType control_type;
+  enum ControlMode control_mode;
+  struct OneloopAttRef     att_ref;
+  struct OneloopAttState   att_state;
+  struct OneloopPosRef     pos_ref;       // Guidance References
+  struct OneloopPosState   pos_state;     // Guidance State
+  struct OneloopAltRef     alt_ref;       // Altitude References
+  struct OneloopAltState   alt_state;     // Altitude State
+  struct OneloopHeadRef    head_ref;      // Heading References
+  struct OneloopHeadState  head_state;    // Heading State
+};
+
+extern struct OneloopGeneral oneloop_andi;
+
+enum FilterType {
+  LOWPASS_1,
+  BUTTERWORTH_2,
+  BUTTERWORTH_4,
+};
+
+/**
+ * @brief Structure representing filter parameters and state measurement filtering.
+ * 
+ * Contains frequency, and measurement data.
+ * Supports multiple filter types (first-order low-pass, Butterworth 2nd and 4th order, and notch filters)
+ * using a union to store the specific filter parameters.
+ */
+struct Filter {
+  float  freq;
+  float  meas;
+  float  out;
+  enum FilterType filter_type;
+  union {
+    struct FirstOrderLowPass lp1;
+    Butterworth2LowPass bw2;
+    Butterworth4LowPass bw4;
+    struct SecondOrderNotchFilter notch;
+  } state;
+};
+
 /*Declaration of Reference Model and Error Controller Gains*/
-extern struct PolePlacement p_att_e;
-extern struct PolePlacement p_att_rm;
-/*Position Loop*/
-extern struct PolePlacement p_pos_e;
-extern struct PolePlacement p_pos_rm;
-/*Altitude Loop*/
-extern struct PolePlacement p_alt_e;
-extern struct PolePlacement p_alt_rm;
-/*Heading Loop*/
-extern struct PolePlacement p_head_e;
-extern struct PolePlacement p_head_rm;
+/*Rate Loop*/
+struct Poles3rdOrder3 p_rate_e;
+struct Poles3rdOrder3 p_rate_rm;
+struct Poles2ndOrder3 p_att_e;
+struct Poles2ndOrder3 p_att_rm;
+struct Poles3rdOrder2 p_pos_e;
+struct Poles3rdOrder2 p_pos_rm;
+struct Poles3rdOrder1 p_alt_e;
+struct Poles3rdOrder1 p_alt_rm;
+struct Poles2ndOrder1 p_head_e;
+struct Poles2ndOrder1 p_head_rm;
+
 /*Gains of EC and RM*/
-extern struct Gains3rdOrder k_att_e;
-extern struct Gains3rdOrder k_att_rm;
-extern struct Gains2ndOrder k_head_e;
-extern struct Gains2ndOrder k_head_rm;
-extern struct Gains3rdOrder k_pos_e;
-extern struct Gains3rdOrder k_pos_rm;
+extern struct Gains2ndOrder3 k_rate_e;
+extern struct Gains2ndOrder3 k_rate_rm;
+extern struct Gains3rdOrder3 k_att_e;
+extern struct Gains3rdOrder3 k_att_rm;
+extern struct Gains3rdOrder2 k_pos_e;
+extern struct Gains3rdOrder2 k_pos_rm;
+extern struct Gains3rdOrder1 k_alt_e;
+extern struct Gains3rdOrder1 k_alt_rm;
+extern struct Gains2ndOrder1 k_head_e;
+extern struct Gains2ndOrder1 k_head_rm;
+
 extern void oneloop_andi_init(void);
-extern void oneloop_andi_enter(bool half_loop_sp, int ctrl_type);
-extern void oneloop_andi_set_failsafe_setpoint(void);
-extern void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, int rm_order_v);
-extern void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, int rm_order_v, bool in_flight_oneloop);
-extern void oneloop_andi_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn);
-extern void oneloop_from_nav(bool in_flight);
-extern void guidance_set_min_max_airspeed(float min_airspeed, float max_airspeed);
+extern void oneloop_andi_enter(enum ControlModel control_mode_sp, int ctrl_type);
+extern void oneloop_andi_run(bool in_flight, enum ControlModel control_mode_sp, struct FloatVect3 PSA_des, int rm_order_h, int rm_order_v);
 #endif  // ONELOOP_ANDI_H
