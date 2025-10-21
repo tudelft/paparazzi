@@ -104,17 +104,17 @@
 // Define configuration variables with default values if not defined in the airframe file
 //====================================================================================================================================
 //====================================================================================================================================
-// GENERAL VARIABLES
+// GENERAL VARIABLES 
 //====================================================================================================================================
-#ifndef ONELOOP_ANDI_DEBUG_MODE // Debug mode, sets in_flight to FALSE
-#define ONELOOP_ANDI_DEBUG_MODE FALSE
+#ifndef ONELOOP_ANDI_DEBUG_MODE                                             // Debug mode, sets in_flight to FALSE     
+#define ONELOOP_ANDI_DEBUG_MODE  FALSE
 #endif
 
-struct OneloopGeneral oneloop_andi;           // Define general struct of the Oneloop ANDI controller
-static float dt_1l = 1. / PERIODIC_FREQUENCY; // Time step of the oneloop controller [s]
-static float g = 9.81;                        // [m/s^2] Gravitational Acceleration
+struct OneloopGeneral oneloop_andi;                                         // Define general struct of the Oneloop ANDI controller   
+static float          dt_1l = 1./PERIODIC_FREQUENCY;                        // Time step of the oneloop controller [s]   
+static float          g = 9.81;                                             // [m/s^2] Gravitational Acceleration
 //====================================================================================================================================
-// FILTERING VARIABLES
+// FILTERING VARIABLES 
 //====================================================================================================================================
 #define USE_BW2
 
@@ -133,7 +133,7 @@ float oneloop_andi_filt_cutoff_a = 2.0;
 #ifdef ONELOOP_ANDI_FILT_CUTOFF_VEL
 float oneloop_andi_filt_cutoff_v = ONELOOP_ANDI_FILT_CUTOFF_VEL;
 #else
-float oneloop_andi_filt_cutoff_v = 2.0;
+float  oneloop_andi_filt_cutoff_v = 2.0;
 #endif
 
 #ifdef ONELOOP_ANDI_FILT_CUTOFF_P
@@ -167,79 +167,79 @@ PRINT_CONFIG_VAR(ONELOOP_ANDI_FILT_CUTOFF_P);
 PRINT_CONFIG_VAR(ONELOOP_ANDI_FILT_CUTOFF_R);
 PRINT_CONFIG_MSG("============================================================")
 
-struct Oneloop_LP_t LP;
-struct Oneloop_LP_t oneloop_andi_model_filt;
-struct Oneloop_DynFilt_t mu_mL;
-struct Oneloop_DynFilt_t mu_mR;
-bool use_dyn_filter = false;
-float oneloop_andi_sigma = 29.0;
-float oneloop_andi_sigma_max = 29.0;
-float oneloop_andi_sigma_min = 8.0;
+struct Oneloop_LP_t       LP;
+struct Oneloop_LP_t       oneloop_andi_model_filt;
+struct Oneloop_DynFilt_t  mu_mL;
+struct Oneloop_DynFilt_t  mu_mR;  
+bool                      use_dyn_filter = false; 
+float                     oneloop_andi_sigma = 29.0;
+float                     oneloop_andi_sigma_max = 29.0;
+float                     oneloop_andi_sigma_min = 8.0; 
 //====================================================================================================================================
-// ACTUATOR VARIABLES
+// ACTUATOR VARIABLES 
 //====================================================================================================================================
-#ifndef ONELOOP_ANDI_NUM_THRUSTERS // Number of motors used for thrust
-float num_thrusters_oneloop = 4.0;
+#ifndef ONELOOP_ANDI_NUM_THRUSTERS                                              // Number of motors used for thrust
+float num_thrusters_oneloop = 4.0; 
 #else
 float num_thrusters_oneloop = ONELOOP_ANDI_NUM_THRUSTERS;
 #endif
 
-#ifdef ONELOOP_ANDI_ACT_IS_SERVO // Unused but kept for future developments
-bool actuator_is_servo[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_IS_SERVO;
+#ifdef ONELOOP_ANDI_ACT_IS_SERVO                                                // Unused but kept for future developments
+bool   actuator_is_servo[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_IS_SERVO;
 #else
 bool actuator_is_servo[ANDI_NUM_ACT_TOT] = {0};
 #endif
 
-#ifdef ONELOOP_ANDI_ACT_DYN // Actuator dynamics (first order lag) corner frequency [rad/s]
-float act_dynamics[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_DYN;
-float act_dyn_ctrl[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_DYN;
+#ifdef ONELOOP_ANDI_ACT_DYN                                                     // Actuator dynamics (first order lag) corner frequency [rad/s]
+float  act_dynamics[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_DYN;
+float  act_dyn_ctrl[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_DYN;
 #else
 #error "You must specify the actuator dynamics"
 float act_dynamics[ANDI_NUM_ACT_TOT] = = {1};
 float act_dyn_ctrl[ANDI_NUM_ACT_TOT] = = {1};
 #endif
 
-#ifdef ONELOOP_ANDI_ACT_MAX // Maximum Paparazzi actuator command
-float act_max[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX;
+#ifdef ONELOOP_ANDI_ACT_MAX                                                     // Maximum Paparazzi actuator command 
+float  act_max[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX;
 #else
 float act_max[ANDI_NUM_ACT_TOT] = = {MAX_PPRZ};
 #endif
 
-#ifdef ONELOOP_ANDI_ACT_MIN // Minimum Paparazzi actuator command
-float act_min[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN;
+#ifdef ONELOOP_ANDI_ACT_MIN                                                     // Minimum Paparazzi actuator command
+float  act_min[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN;
 #else
 float act_min[ANDI_NUM_ACT_TOT] = = {0.0};
 #endif
 
-#ifdef ONELOOP_ANDI_ACT_MAX_NORM // Maximum normalized actuator command
-float act_max_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX_NORM;
+#ifdef ONELOOP_ANDI_ACT_MAX_NORM                                                // Maximum normalized actuator command 
+float  act_max_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX_NORM;
 #else
 float act_max_norm[ANDI_NUM_ACT_TOT] = = {1.0};
 #endif
 
-#ifdef ONELOOP_ANDI_ACT_MIN_NORM // Minimum normalized actuator command
-float act_min_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN_NORM;
+#ifdef ONELOOP_ANDI_ACT_MIN_NORM                                               // Minimum normalized actuator command
+float  act_min_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN_NORM;
 #else
 float act_min_norm[ANDI_NUM_ACT_TOT] = = {0.0};
 #endif
 
-#ifdef ONELOOP_ANDI_NU_NORM_MAX // Maximum norm of the normalized pseudo control vector
-float nu_norm_max = ONELOOP_ANDI_NU_NORM_MAX;
+#ifdef ONELOOP_ANDI_NU_NORM_MAX                                                // Maximum norm of the normalized pseudo control vector
+float  nu_norm_max = ONELOOP_ANDI_NU_NORM_MAX;
 #else
 float nu_norm_max = 1.0;
 #endif
 
-#ifdef ONELOOP_ANDI_U_PREF // Preferred Paparazzi actuator command
+#ifdef ONELOOP_ANDI_U_PREF                                                     // Preferred Paparazzi actuator command 
 static float u_pref[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_U_PREF;
 #else
 static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 #endif
 
-#define ONELOOP_ANDI_MAX_BANK act_max[COMMAND_ROLL]   // Max Bank (can be different from Max Roll) assuming abs of max and min is the same
-#define ONELOOP_ANDI_MAX_PHI act_max[COMMAND_ROLL]    // Max Roll assuming abs of max and min is the same
-#define ONELOOP_ANDI_MAX_THETA act_max[COMMAND_PITCH] // Max Pitch assuming abs of max and min is the same
+#define ONELOOP_ANDI_MAX_BANK  act_max[COMMAND_ROLL]                            // Max Bank (can be different from Max Roll) assuming abs of max and min is the same
+#define ONELOOP_ANDI_MAX_PHI   act_max[COMMAND_ROLL]                            // Max Roll assuming abs of max and min is the same
+#define ONELOOP_ANDI_MAX_THETA act_max[COMMAND_PITCH]                           // Max Pitch assuming abs of max and min is the same
 
-#ifndef ONELOOP_THETA_PREF_MAX // Max preferred pitch angles
+#ifndef ONELOOP_THETA_PREF_MAX                                                  // Max preferred pitch angles
 float theta_pref_max = RadOfDeg(20.0);
 #else
 float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
@@ -254,49 +254,48 @@ float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
 #define WLS_N_V_MAX == ANDI_OUTPUTS
 #endif
 
-float andi_u[ANDI_NUM_ACT_TOT];                // Control command vector
-float andi_du[ANDI_NUM_ACT_TOT];               // Control command increment vector
-static float andi_u_n[ANDI_NUM_ACT_TOT];       // Control command vector (normalized)
-float nu[ANDI_OUTPUTS];                        // Pseudo control vector
-float nu_n[ANDI_OUTPUTS];                      // Pseudo control vector (normalized)
-static float act_dynamics_d[ANDI_NUM_ACT_TOT]; // Actuator dynamics (first order lag) corner frequency [rad/s]
-float actuator_state_1l[ANDI_NUM_ACT_TOT];     // Actuator state vector (including virtual actuators)
+float         andi_u[ANDI_NUM_ACT_TOT];                                         // Control command vector   
+float         andi_du[ANDI_NUM_ACT_TOT];                                        // Control command increment vector
+static float  andi_u_n[ANDI_NUM_ACT_TOT];                                       // Control command vector (normalized)
+float         nu[ANDI_OUTPUTS];                                                 // Pseudo control vector
+float         nu_n[ANDI_OUTPUTS];                                               // Pseudo control vector (normalized)
+static float  act_dynamics_d[ANDI_NUM_ACT_TOT];                                 // Actuator dynamics (first order lag) corner frequency [rad/s]
+float         actuator_state_1l[ANDI_NUM_ACT_TOT];                              // Actuator state vector (including virtual actuators)
 //====================================================================================================================================
 // STABILIZATION VARIABLES
 //====================================================================================================================================
-#ifndef MAX_R // Max Yaw rate with the sticks
+#ifndef MAX_R                                                                     // Max Yaw rate with the sticks  
 float max_r = RadOfDeg(120.0);
 #else
 float max_r = RadOfDeg(MAX_R);
 #endif
 
-#ifdef ONELOOP_ANDI_YAW_DISTURBANCE_LIMIT // Yaw disturbance rejection limit
+#ifdef ONELOOP_ANDI_YAW_DISTURBANCE_LIMIT                                         // Yaw disturbance rejection limit     
 float oneloop_andi_yaw_dist_limit = ONELOOP_ANDI_YAW_DISTURBANCE_LIMIT;
-#else
-float oneloop_andi_yaw_dist_limit = 99999.f; // High value to disable the feature
+#else 
+float oneloop_andi_yaw_dist_limit = 99999.f;                                      // High value to disable the feature
 #endif
 
-#if ONELOOP_ANDI_HEADING_MANUAL // Specify heading in NAV with a slider
+#if ONELOOP_ANDI_HEADING_MANUAL                                                   // Specify heading in NAV with a slider
 bool heading_manual = true;
 #else
 bool heading_manual = false;
 #endif
 
-#if ONELOOP_ANDI_YAW_STICK_IN_AUTO // Specify heading in NAV with the yaw stick
+#if ONELOOP_ANDI_YAW_STICK_IN_AUTO                                                // Specify heading in NAV with the yaw stick
 bool yaw_stick_in_auto = true;
 #else
 bool yaw_stick_in_auto = false;
 #endif
 
-struct OneloopStabilizationRef sta_bounds = {
-    // Stabilization bounds specified per axis
-#ifdef ONELOOP_ANDI_MAX_ANGULAR_JERK
-    .att_3d[0] = ONELOOP_ANDI_MAX_ANGULAR_JERK,
-    .att_3d[1] = ONELOOP_ANDI_MAX_ANGULAR_JERK,
-#else
-    .att_3d[0] = RadOfDeg(100000.0),
-    .att_3d[1] = RadOfDeg(100000.0),
-#endif
+struct OneloopStabilizationRef sta_bounds = {                                     // Stabilization bounds specified per axis
+  #ifdef ONELOOP_ANDI_MAX_ANGULAR_JERK
+  .att_3d[0] = ONELOOP_ANDI_MAX_ANGULAR_JERK,
+  .att_3d[1] = ONELOOP_ANDI_MAX_ANGULAR_JERK,
+  #else
+  .att_3d[0] = RadOfDeg(100000.0),
+  .att_3d[1] = RadOfDeg(100000.0),
+  #endif
 
 #ifdef ONELOOP_ANDI_MAX_ANGULAR_JERK_YAW
     .att_3d[2] = ONELOOP_ANDI_MAX_ANGULAR_JERK_YAW,
@@ -304,13 +303,13 @@ struct OneloopStabilizationRef sta_bounds = {
     .att_3d[2] = RadOfDeg(1520.0),
 #endif
 
-#ifdef ONELOOP_ANDI_MAX_ANGULAR_ACCEL
-    .att_2d[0] = ONELOOP_ANDI_MAX_ANGULAR_ACCEL,
-    .att_2d[1] = ONELOOP_ANDI_MAX_ANGULAR_ACCEL,
-#else
-    .att_2d[0] = RadOfDeg(700.0),
-    .att_2d[1] = RadOfDeg(480.0),
-#endif
+  #ifdef ONELOOP_ANDI_MAX_ANGULAR_ACCEL
+  .att_2d[0] = ONELOOP_ANDI_MAX_ANGULAR_ACCEL,
+  .att_2d[1] = ONELOOP_ANDI_MAX_ANGULAR_ACCEL,
+  #else
+  .att_2d[0] = RadOfDeg(700.0),
+  .att_2d[1] = RadOfDeg(480.0),
+  #endif
 
 #ifdef ONELOOP_ANDI_MAX_ANGULAR_ACCEL_YAW
     .att_2d[2] = ONELOOP_ANDI_MAX_ANGULAR_ACCEL_YAW,
@@ -333,57 +332,58 @@ struct OneloopStabilizationRef sta_bounds = {
 #endif
 };
 
-struct FloatEulers eulers_zxy_des;              // Desired Euler angles in ZXY sequence
-struct FloatEulers eulers_zxy;                  // Actual Euler angles in ZXY sequence
-float psi_des_rad = 0.0;                        // Desired Yaw angle [rad]
-float psi_des_deg = 0.0;                        // Desired Yaw angle [deg]
-static float psi_vec[4] = {0.0, 0.0, 0.0, 0.0}; // Vector to overwrite the Yaw reference in the attitude controller
-static float phi_vec[4] = {0.0, 0.0, 0.0, 0.0}; // Vector to overwrite the Roll reference in the attitude controller
+struct FloatEulers  eulers_zxy_des;                                               // Desired Euler angles in ZXY sequence
+struct FloatEulers  eulers_zxy;                                                   // Actual Euler angles in ZXY sequence
+float               psi_des_rad = 0.0;                                            // Desired Yaw angle [rad]
+float               psi_des_deg = 0.0;                                            // Desired Yaw angle [deg]
+static float        psi_vec[4]  = {0.0, 0.0, 0.0, 0.0};                           // Vector to overwrite the Yaw reference in the attitude controller
+static float        phi_vec[4]  = {0.0, 0.0, 0.0, 0.0};                           // Vector to overwrite the Roll reference in the attitude controller
+
 
 //====================================================================================================================================
-// GUIDANCE VARIABLES
+// GUIDANCE VARIABLES 
 //====================================================================================================================================
-#ifndef ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD // Airspeed threshold to switch to coordinated turn behavior
+#ifndef ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD                                    // Airspeed threshold to switch to coordinated turn behavior    
 #define ONELOOP_ANDI_AIRSPEED_SWITCH_THRESHOLD 10.0
 #endif
 
-#ifndef FWD_SIDESLIP_GAIN // Gain to reduce sideslip when flying forward
+#ifndef FWD_SIDESLIP_GAIN                                                         // Gain to reduce sideslip when flying forward 
 float fwd_sideslip_gain = 0.2;
 #else
 float fwd_sideslip_gain = FWD_SIDESLIP_GAIN;
 #endif
 
-#ifdef NAV_HYBRID_MAX_DECELERATION // Max (ac)/(de)celeration. Can be overwritte nby NAV HYBRID
+#ifdef NAV_HYBRID_MAX_DECELERATION                                                // Max (ac)/(de)celeration. Can be overwritte nby NAV HYBRID   
 float max_a_nav = NAV_HYBRID_MAX_DECELERATION;
 #else
-float max_a_nav = 4.0;
+float max_a_nav = 4.0;  
 #endif
 
-#ifdef ONELOOP_ANDI_MAX_LINEAR_JERK // Max linear jerk [m/s^3]
+#ifdef ONELOOP_ANDI_MAX_LINEAR_JERK                                               // Max linear jerk [m/s^3]    
 float max_j_lin = ONELOOP_ANDI_MAX_LINEAR_JERK;
 #else
-float max_j_lin = 500.0;
+float max_j_lin = 500.0; 
 #endif
 
 #ifdef NAV_HYBRID_MAX_AIRSPEED
-float max_v_nav = NAV_HYBRID_MAX_AIRSPEED; // Max horizontal speed. Can be overwritten by NAV HYBRID
+float max_v_nav = NAV_HYBRID_MAX_AIRSPEED;                                        // Max horizontal speed. Can be overwritten by NAV HYBRID
 #else
 float max_v_nav = 5.0;
 #endif
 
-#ifdef NAV_HYBRID_MAX_SPEED_V // Max vertical speed
+#ifdef NAV_HYBRID_MAX_SPEED_V                                                     // Max vertical speed
 float max_v_nav_v = NAV_HYBRID_MAX_SPEED_V;
 #else
 float max_v_nav_v = 1.5;
 #endif
 
-float max_as = 19.0f;                 // Max airspeed [m/s]
-float min_as = 0.0f;                  // Min airspeed [m/s]
-float xdot_lim_sf = 0.8;              // Safety Factor on SUVAT velocity limit
-float ec_headroom = 1.5;              // Extra headroom for the EC wrt the RM
-static float nav_target[3];           // Can be a position, speed or acceleration depending on the guidance H mode
-static float nav_target_new[3];       // Wind triangle reshaped NAV target
-float gi_unbounded_airspeed_sp = 0.0; // Unbounded airspeed setpoint [m/s] (mimics guidance_indi_hybrid)
+float         max_as = 19.0f;                                                     // Max airspeed [m/s]    
+float         min_as = 0.0f;                                                      // Min airspeed [m/s] 
+float         xdot_lim_sf = 0.8;                                                  // Safety Factor on SUVAT velocity limit
+float         ec_headroom = 1.5;                                                  // Extra headroom for the EC wrt the RM  
+static float  nav_target[3];                                                      // Can be a position, speed or acceleration depending on the guidance H mode
+static float  nav_target_new[3];                                                  // Wind triangle reshaped NAV target
+float         gi_unbounded_airspeed_sp = 0.0;                                     // Unbounded airspeed setpoint [m/s] (mimics guidance_indi_hybrid)
 
 //====================================================================================================================================
 // CONTROL ALLOCATION VARIABLES
@@ -395,26 +395,27 @@ float Wu_quad_motors_fwd = ONELOOP_ANDI_WU_QUAD_MOTORS_FWD;
 #endif
 
 struct WLS_t WLS_one_p = {
-    .nu = ANDI_NUM_ACT_TOT,
-    .nv = ANDI_OUTPUTS,
-    .gamma_sq = 1000.0,
-    .v = {0.0},
-#ifdef ONELOOP_ANDI_WV // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}
-    .Wv = ONELOOP_ANDI_WV,
+  .nu        = ANDI_NUM_ACT_TOT,
+  .nv        = ANDI_OUTPUTS,
+  .gamma_sq  = 1000.0,
+  .v         = {0.0},
+#ifdef ONELOOP_ANDI_WV // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}  
+  .Wv        = ONELOOP_ANDI_WV,
 #else
-    .Wv = {1.0},
+  .Wv        = {1.0},
 #endif
-#ifdef ONELOOP_ANDI_WU // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}
-    .Wu = ONELOOP_ANDI_WU,
+#ifdef ONELOOP_ANDI_WU // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}  
+  .Wu        = ONELOOP_ANDI_WU,
 #else
-    .Wu = {1.0},
+  .Wu        = {1.0},
 #endif
-    .u_pref = {0.0},
-    .u_min = {0.0},
-    .u_max = {0.0},
-    .PC = 0.0,
-    .SC = 0.0,
-    .iter = 0};
+  .u_pref    = {0.0},
+  .u_min     = {0.0},
+  .u_max     = {0.0},
+  .PC        = 0.0,
+  .SC        = 0.0,
+  .iter      = 0
+};
 
 #ifdef ONELOOP_ANDI_WV // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}
 static float Wv_backup[ANDI_OUTPUTS] = ONELOOP_ANDI_WV;
@@ -428,56 +429,57 @@ static float Wu_backup[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_WU;
 static float Wu_backup[ANDI_NUM_ACT_TOT] = {1.0};
 #endif
 
-static float a_thrust = 0.0; // Virtual z-Acceleration to command a Thrust level[m/s^2]
-static float g2_ff = 0.0;    // Feedforward G2 term for Yaw control
-bool ctrl_off = false;       // Turn off stabilization with the quad motors
-static float pitch_pref = 0; // Preferred pitch angle for the control allocation
+static float a_thrust = 0.0;                                                      // Virtual z-Acceleration to command a Thrust level[m/s^2]
+static float g2_ff = 0.0;                                                         // Feedforward G2 term for Yaw control
+bool         ctrl_off = false;                                                    // Turn off stabilization with the quad motors
+static float pitch_pref = 0;                                                      // Preferred pitch angle for the control allocation
 
 //====================================================================================================================================
 // Function Section
 //====================================================================================================================================
-void init_poles(void);
-void init_poles_att(void);
-void init_poles_pos(void);
-void calc_normalization(void);
-void normalize_nu(void);
-void G1G2_oneloop(int ctrl_type);
-void get_act_state_oneloop(void);
-void oneloop_andi_propagate_filters(void);
-void init_filter(void);
-void init_controller_gains(void);
-void reinit_controller(void);
-void float_rates_of_euler_dot_vec(float r[3], float e[3], float edot[3]);
-void float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3]);
-void err_nd(float err[], float a[], float b[], float k[], int n);
-void err_sum_nd(float err[], float a[], float b[], float k[], float c[], int n);
-void float_vect_diff_euler(float err[3], float a[3], float b[3]);
-void integrate_nd(float dt, float a[], float a_dot[], int n);
-void vect_bound_nd(float vect[], float bound, int n);
-void acc_body_bound(struct FloatVect2 *vect, float bound);
+void  init_poles(void);
+void  init_poles_att(void);
+void  init_poles_pos(void);
+void  calc_normalization(void);
+void  normalize_nu(void);
+void  G1G2_oneloop(int ctrl_type);
+void  get_act_state_oneloop(void);
+void  oneloop_andi_propagate_filters(void);
+void  init_filter(void);
+void  init_controller_gains(void);
+void  reinit_controller(void);
+void  float_rates_of_euler_dot_vec(float r[3], float e[3], float edot[3]);
+void  float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3]);
+void  err_nd(float err[], float a[], float b[], float k[], int n);
+void  err_sum_nd(float err[], float a[], float b[], float k[], float c[], int n);
+void  float_vect_diff_euler(float err[3], float a[3], float b[3]);
+void  integrate_nd(float dt, float a[], float a_dot[], int n);
+void  vect_bound_nd(float vect[], float bound, int n);
+void  acc_body_bound(struct FloatVect2* vect, float bound);
 float bound_v_from_a_vect(float e_x[], float v_bound, float a_bound, int n);
 float bound_v_from_a(float e_x, float v_bound, float a_bound);
-void rm_2nd(float dt, float *x_ref, float *x_d_ref, float *x_2d_ref, float x_des, float k1_rm, float k2_rm);
-void rm_3rd(float dt, float *x_ref, float *x_d_ref, float *x_2d_ref, float *x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
-void rm_3rd_head(float dt, float *x_ref, float *x_d_ref, float *x_2d_ref, float *x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
-void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], bool ow_psi, float psi_overwrite[4], float k1_rm[3], float k2_rm[3], float k3_rm[3], struct OneloopStabilizationRef bounds);
-void rm_3rd_pos(float dt, float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_des[], float k1_rm[], float k2_rm[], float k3_rm[], float x_d_bound, float x_2d_bound, float x_3d_bound, int n);
-void rm_2nd_pos(float dt, float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_d_des[], float k2_rm[], float k3_rm[], float x_2d_bound, float x_3d_bound, int n);
-void rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], float k3_rm[], float x_3d_bound, int n);
-void ec_3rd_att(float y_4d[3], float x_des[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], struct OneloopStabilizationRef bounds, float fb[3]);
-void ec_3rd_pos(float y_4d[], float x_des[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, float fb[], int n);
-void calc_model(void);
+void  rm_2nd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm);
+void  rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
+void  rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
+void  rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], bool ow_psi, float psi_overwrite[4], float k1_rm[3], float k2_rm[3], float k3_rm[3], struct OneloopStabilizationRef bounds);
+void  rm_3rd_pos(float dt, float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_des[], float k1_rm[], float k2_rm[], float k3_rm[], float x_d_bound, float x_2d_bound, float x_3d_bound, int n);
+void  rm_2nd_pos(float dt, float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_d_des[], float k2_rm[], float k3_rm[], float x_2d_bound, float x_3d_bound, int n);
+void  rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], float k3_rm[], float x_3d_bound, int n);
+void  ec_3rd_att(float y_4d[3], float x_des[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], struct OneloopStabilizationRef bounds, float fb[3]);
+void  ec_3rd_pos(float y_4d[], float x_des[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, float fb[], int n);
+void  calc_model(void);
 float oneloop_andi_sideslip(void);
-void reshape_wind(void);
-void chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
-void chirp_call(bool *chirp_on, bool *chirp_first_call, float *t_0_chirp, float *time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
-void oneloop_axis_effectiveness_calc(void);
-void oneloop_andi_bound_disturbance(void);
-void oneloop_calc_model_disturbance(bool in_flight);
-void oneloop_andi_state_compensation(bool state_compensation_on);
-void dynFilter_init(struct Oneloop_DynFilt_t *mu, float varepsilon, float sigma);
-void dynFilter_run(struct Oneloop_DynFilt_t *mu, float u_c, float sigma);
+void  reshape_wind(void);
+void  chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
+void  chirp_call(bool* chirp_on, bool* chirp_first_call, float* t_0_chirp, float* time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
+void  oneloop_axis_effectiveness_calc(void);
+void  oneloop_andi_bound_disturbance(void);
+void  oneloop_calc_model_disturbance(bool in_flight);
+void  oneloop_andi_state_compensation(bool state_compensation_on);
+void  dynFilter_init(struct Oneloop_DynFilt_t *mu, float varepsilon, float sigma);
+void  dynFilter_run(struct Oneloop_DynFilt_t *mu, float u_c, float sigma);
 //====================================================================================================================================
+
 
 /*Chirp test Variables*/
 bool chirp_on = false;
@@ -871,8 +873,8 @@ float bound_v_from_a(float e_x, float v_bound, float a_bound)
 {
   float norm;
   norm = fabsf(e_x);
-  // norm = fmaxf(norm, 1.0);
-  float v_bound_a = sqrtf(fabs(2.0 * a_bound * norm * xdot_lim_sf));
+  //norm = fmaxf(norm, 1.0);
+  float v_bound_a  = sqrtf(fabs(2.0 * a_bound * norm * xdot_lim_sf));
   return fminf(v_bound, v_bound_a);
 }
 
@@ -1306,9 +1308,9 @@ void init_poles(void)
   p_att_e.zeta = 1.0;
   p_att_e.p3 = p_att_e.omega_n;
 
-  p_roll_e.omega_n = slow_pole / 3.0;
-  p_roll_e.zeta = 1.0;
-  p_roll_e.p3 = p_roll_e.omega_n;
+  p_roll_e.omega_n = slow_pole/3.0;
+  p_roll_e.zeta    = 1.0;
+  p_roll_e.p3      = p_roll_e.omega_n;
 
   p_att_rm.omega_n = p_att_e.omega_n * 0.8;
   p_att_rm.zeta = 1.0;
@@ -1390,20 +1392,20 @@ void init_controller_gains(void)
   k_att_rm.k3[2] = k_rm_3_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
 
   // Temporary overrirde of gains
-  k_att_e.k1[0] = 4.19;
-  k_att_e.k2[0] = 10.01;
-  k_att_e.k3[0] = 22.0;
-  k_att_e.k1[1] = k_att_e.k1[0];
-  k_att_e.k2[1] = k_att_e.k2[0];
-  k_att_e.k3[1] = k_att_e.k3[0];
+  k_att_e.k1[0]   = 4.19;
+  k_att_e.k2[0]   = 10.01;
+  k_att_e.k3[0]   = 22.0;
+  k_att_e.k1[1]   = k_att_e.k1[0];
+  k_att_e.k2[1]   = k_att_e.k2[0];
+  k_att_e.k3[1]   = k_att_e.k3[0];
 
-  // k_att_rm.k1[0]  = 4.19;
-  // k_att_rm.k2[0]  = 10.01;
-  // k_att_rm.k3[0]  = 22.0;
-  //
-  // k_pos_e.k1[0]  = 0.6539;
-  // k_pos_e.k2[0]  = 1.795;
-  // k_pos_e.k3[0]  = XXX;
+  //k_att_rm.k1[0]  = 4.19;
+  //k_att_rm.k2[0]  = 10.01;
+  //k_att_rm.k3[0]  = 22.0;
+//
+  //k_pos_e.k1[0]  = 0.6539;
+  //k_pos_e.k2[0]  = 1.795;
+  //k_pos_e.k3[0]  = XXX;
 
   // Print INNERLOOP ANDI controller gains
   // printf("Attitude RM poles, omega_n: %f, zeta: %f, p3: %f\n", p_att_rm.omega_n, p_att_rm.zeta, p_att_rm.p3);
@@ -1655,19 +1657,19 @@ void oneloop_andi_propagate_filters(void)
   // Store Feedbacks in the Complementary Filters
   if (!vel_inited) { veloc_prev = *veloc; vel_inited = true; }
 
-  LP.ax.meas = (veloc->x - veloc_prev.x) * PERIODIC_FREQUENCY; // accel->x;
-  LP.ay.meas = (veloc->y - veloc_prev.y) * PERIODIC_FREQUENCY; // accel->y;
-  LP.az.meas = (veloc->z - veloc_prev.z) * PERIODIC_FREQUENCY; // accel->z;
-  veloc_prev = *veloc;
-  LP.p.meas_prev = LP.p.meas;
-  LP.q.meas_prev = LP.q.meas;
-  LP.r.meas_prev = LP.r.meas;
-  LP.p.meas = body_rates->p;
-  LP.q.meas = body_rates->q;
-  LP.r.meas = body_rates->r;
-  LP.p_dot.meas = (LP.p.meas - LP.p.meas_prev) * PERIODIC_FREQUENCY;
-  LP.q_dot.meas = (LP.q.meas - LP.q.meas_prev) * PERIODIC_FREQUENCY;
-  LP.r_dot.meas = (LP.r.meas - LP.r.meas_prev) * PERIODIC_FREQUENCY;
+  LP.ax.meas      = (veloc->x - veloc_prev.x) * PERIODIC_FREQUENCY; // accel->x;
+  LP.ay.meas      = (veloc->y - veloc_prev.y) * PERIODIC_FREQUENCY; // accel->y;
+  LP.az.meas      = (veloc->z - veloc_prev.z) * PERIODIC_FREQUENCY; // accel->z;
+  veloc_prev      = *veloc;
+  LP.p.meas_prev  = LP.p.meas;
+  LP.q.meas_prev  = LP.q.meas;
+  LP.r.meas_prev  = LP.r.meas;
+  LP.p.meas       = body_rates->p;
+  LP.q.meas       = body_rates->q;
+  LP.r.meas       = body_rates->r;
+  LP.p_dot.meas   = (LP.p.meas - LP.p.meas_prev) * PERIODIC_FREQUENCY;
+  LP.q_dot.meas   = (LP.q.meas - LP.q.meas_prev) * PERIODIC_FREQUENCY;
+  LP.r_dot.meas   = (LP.r.meas - LP.r.meas_prev) * PERIODIC_FREQUENCY;
   // Update Filters of Feedbacks
   update_filter_on_type(&LP.ax, LP.ax.meas);
   update_filter_on_type(&LP.ay, LP.ay.meas);
@@ -2097,9 +2099,8 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
   pos_des[2] = POS_FLOAT_OF_BFP(-POS_BFP_OF_REAL(nav.nav_altitude));
 
   // If drone is not on the ground use incremental law
-  bool in_flight_oneloop = false;
-  if (in_flight)
-  {
+  bool  in_flight_oneloop = false;
+  if(in_flight) {
     in_flight_oneloop = true;
   }
   if (ONELOOP_ANDI_DEBUG_MODE)
