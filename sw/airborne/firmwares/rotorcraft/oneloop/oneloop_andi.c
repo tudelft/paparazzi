@@ -810,8 +810,12 @@ float bound_v_from_a(float e_x, float v_bound, float a_bound)
  * @param k3_rm           Reference Model Gain 3rd order signal
  * @param bounds          Bounds for the Reference Model
  */
-void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], bool ow_psi, float psi_overwrite[4], float k1_rm[3], float k2_rm[3], float k3_rm[3], struct OneloopStabilizationRef bounds)
-{
+void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], bool ow_psi, float psi_overwrite[4], float k1_rm[3], float k2_rm[3], float k3_rm[3], struct OneloopStabilizationRef bounds){
+  
+  float e_x[3];                                         // Attitude Error
+  float x_d_fw[3];                                      // Forward Signal Euler Dot
+  float x_d_fw_rates[3];                                // Forward Signal Angular Rates
+  float bounds_att_d[3];                                // Bounds on Angular Rate (SUVAT based)
   float e_x[3];
   float e_x_rates[3];
   float e_x_d[3];
@@ -820,23 +824,20 @@ void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[
 
   float x_2d_ref_ubd[3]; // Unbounded 2nd degree reference
   float x_d_ref_ubd[3];  // Unbounded 1st degree reference
-  
-  // Attitude error -----------------------------------------------------
-  err_nd(e_x, x_des, x_ref, k1_rm, 3);
-  float temp_diff = x_des[2] - x_ref[2];
-  NormRadAngle(temp_diff);
-  e_x[2] = k1_rm[2] * temp_diff; // Correction for Heading error +-Pi
-  float_rates_of_euler_dot_vec(e_x_rates, x_ref, e_x);
-  float bounds_att_d[3];
-  float error_in_x[3];
-  float_vect_diff_euler(error_in_x, x_des, x_ref);
-  bounds_att_d[0] = bound_v_from_a(error_in_x[0], bounds.att_d[0], bounds.att_2d[0]);
-  bounds_att_d[1] = bound_v_from_a(error_in_x[1], bounds.att_d[1], bounds.att_2d[1]);
-  bounds_att_d[2] = bound_v_from_a(error_in_x[2], bounds.att_d[2], bounds.att_2d[2]);
-  BoundAbs(e_x_rates[0], bounds_att_d[0]);
-  BoundAbs(e_x_rates[1], bounds_att_d[1]);
-  BoundAbs(e_x_rates[2], bounds_att_d[2]);
-  // Angular Rate error -------------------------------------------------
+
+  // Attitude error --------------------------------------------------------------------------------------------------
+  float_vect_diff_euler(e_x, x_des, x_ref);                                   // Calculate Attitude Error
+  x_d_fw[0] = e_x * k1_rm[0];                                                 // Calculate Forward Signal Euler Dot
+  x_d_fw[1] = e_x * k1_rm[1];                                                 // Calculate Forward Signal Euler Dot
+  x_d_fw[2] = e_x * k1_rm[2];                                                 // Calculate Forward Signal Euler Dot
+  float_rates_of_euler_dot_vec(x_d_fw_rates, x_ref, x_d_fw);                  // Convert Euler Dot to Angular Rates
+  bounds_att_d[0] =  bound_v_from_a(e_x[0], bounds.att_d[0], bounds.att_2d[0]);
+  bounds_att_d[1] =  bound_v_from_a(e_x[1], bounds.att_d[1], bounds.att_2d[1]);
+  bounds_att_d[2] =  bound_v_from_a(e_x[2], bounds.att_d[2], bounds.att_2d[2]);
+  BoundAbs(x_d_fw_rates[0], bounds_att_d[0]);
+  BoundAbs(x_d_fw_rates[1], bounds_att_d[1]);
+  BoundAbs(x_d_fw_rates[2], bounds_att_d[2]);
+  // Angular Rate error ----------------------------------------------------------------------------------------------
   err_nd(e_x_d, e_x_rates, x_d_ref, k2_rm, 3);
   BoundAbs(e_x_d[0], bounds.att_2d[0]);
   BoundAbs(e_x_d[1], bounds.att_2d[1]);
