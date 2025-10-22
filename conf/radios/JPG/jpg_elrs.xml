@@ -6,7 +6,7 @@ the order of the functon in the list
 -->
 
 <!-- for example below function="AUX1" means that it defines RADIO_AUX1 as 4 (0 based counting)-->
-<!DOCTYPE radio SYSTEM "radio.dtd">
+<!DOCTYPE radio SYSTEM "../radio.dtd">
 <radio name="Generic SBUS" data_min="986" data_max="2190" sync_min="5000" sync_max="15000" pulse_type="POSITIVE">
   <channel function="THROTTLE" min="986"  neutral="987"  max="1900" average="0"/>
   <channel function="ROLL"     min="1100" neutral="1500" max="1900" average="0"/>
