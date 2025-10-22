@@ -93,52 +93,50 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 
 #if ANDI_NUM_ACT_TOT != WLS_N_U_MAX
 #error Matrix-WLS_N_U_MAX is not equal to the number of actuators: define WLS_N_U_MAX == ANDI_NUM_ACT_TOT in airframe file
-#define WLS_N_U_MAX ANDI_NUM_ACT_TOT
 #endif
 #if ANDI_OUTPUTS != WLS_N_V_MAX
 #error Matrix-WLS_N_V_MAX is not equal to the number of controlled axis: define WLS_N_V_MAX == ANDI_OUTPUTS in airframe file
-#define WLS_N_V_MAX ANDI_OUTPUTS
 #endif
 
 /*  Define Section of the functions used in this module*/
-float positive_non_zero(float input)
-void scaled_error_nd(float err[], float a[], float b[], float k[], int n);
-void integrate_nd(float dt, float a[], float a_dot[], int n);
+static float positive_non_zero(float input);
+static void scaled_error_nd(int n, float err[restrict n], float a[static n], float b[static n], float k[static n]);
+static void integrate_nd(int n, float a[static n], float a_dot[static n], float dt);
 
-void reference_model_rate(float dt, float rate_des[3], const struct Gains2ndOrder3 *k_rate_rm, const struct OneloopAttRef *bounds, struct OneloopAttRef *rate_ref);
-void reference_model_attitude(float dt, float att_des[3], const struct Gains3rdOrder3 *k_att_rm, const struct OneloopAttRef *bounds, struct OneloopAttRef *att_ref);
-void reference_model_position(float dt, float pos_des[2], const struct Gains3ndOrder2 *k_pos_rm, const struct OneloopPosRef *bounds, struct OneloopPosRef *pos_ref);
-void reference_model_altitude(float dt, float alt_des, const struct Gains3ndOrder1 *k_alt_rm, const struct OneloopAltRef *bounds, struct OneloopAltRef *alt_ref);
-void reference_model_heading(float dt, float head_des, const struct Gains2ndOrder1 *k_head_rm, const struct OneloopHeadRef *bounds, struct OneloopHeadRef *head_ref);
+static void reference_model_rate(float dt, float rate_des[3], const struct Gains2ndOrder3 *k_rate_rm, const struct OneloopAttRef *bounds, struct OneloopAttRef *rate_ref);
+static void reference_model_attitude(float dt, float att_des[3], const struct Gains3rdOrder3 *k_att_rm, const struct OneloopAttRef *bounds, struct OneloopAttRef *att_ref);
+static void reference_model_position(float dt, float pos_des[2], const struct Gains3ndOrder2 *k_pos_rm, const struct OneloopPosRef *bounds, struct OneloopPosRef *pos_ref);
+static void reference_model_altitude(float dt, float alt_des, const struct Gains3ndOrder1 *k_alt_rm, const struct OneloopAltRef *bounds, struct OneloopAltRef *alt_ref);
+static void reference_model_heading(float dt, float head_des, const struct Gains2ndOrder1 *k_head_rm, const struct OneloopHeadRef *bounds, struct OneloopHeadRef *head_ref);
 
-void error_controller_rate(float dt, const struct OneloopAttRef *rate_ref, const struct OneloopAttState *rate_state, const struct Gains2ndOrder3 *k_rate_e, float *nu_rate);
-void error_controller_attitude(float dt, const struct OneloopAttRef *att_ref, const struct OneloopAttState *att_state, const struct Gains3rdOrder3 *k_att_e, float *nu_att);
-void error_controller_position(float dt, const struct OneloopPosRef *pos_ref, const struct OneloopPosState *pos_state, const struct Gains2ndOrder3 *k_pos_e, float *nu_pos);
-void error_controller_altitude(float dt, const struct OneloopAltRef *alt_ref, const struct OneloopAltState *alt_state, const struct Gains2ndOrder3 *k_alt_e, float *nu_alt);
-void error_controller_heading(float dt, const struct OneloopHeadRef *head_ref, const struct OneloopHeadState *head_state, const struct Gains2ndOrder3 *k_head_e, float *nu_head);
+static void error_controller_rate(float dt, const struct OneloopAttRef *rate_ref, const struct OneloopAttState *rate_state, const struct Gains2ndOrder3 *k_rate_e, float *nu_rate);
+static void error_controller_attitude(float dt, const struct OneloopAttRef *att_ref, const struct OneloopAttState *att_state, const struct Gains3rdOrder3 *k_att_e, float *nu_att);
+static void error_controller_position(float dt, const struct OneloopPosRef *pos_ref, const struct OneloopPosState *pos_state, const struct Gains2ndOrder3 *k_pos_e, float *nu_pos);
+static void error_controller_altitude(float dt, const struct OneloopAltRef *alt_ref, const struct OneloopAltState *alt_state, const struct Gains2ndOrder3 *k_alt_e, float *nu_alt);
+static void error_controller_heading(float dt, const struct OneloopHeadRef *head_ref, const struct OneloopHeadState *head_state, const struct Gains2ndOrder3 *k_head_e, float *nu_head);
 
-void compute_gains_2nd_order_single(float* k1, float* k2, float omega_n, float zeta);
-void compute_gains_3rd_order_single(float* k1, float* k2, float* k3, float omega_n, float zeta, float p1);
-void compute_gains_2nd_order_3d(struct Gains2ndOrder3* gains, const struct Poles2ndOrder3* poles);
-void compute_gains_2nd_order_2d(struct Gains2ndOrder2* gains, const struct Poles2ndOrder2* poles);
-void compute_gains_2nd_order_1d(struct Gains2ndOrder1* gains, const struct Poles2ndOrder1* poles);
-void compute_gains_3rd_order_3d(struct Gains3rdOrder3* gains, const struct Poles3rdOrder3* poles);
-void compute_gains_3rd_order_2d(struct Gains3rdOrder2* gains, const struct Poles3rdOrder2* poles);
-void compute_gains_3rd_order_1d(struct Gains3rdOrder1* gains, const struct Poles3rdOrder1* poles);
+static void compute_gains_2nd_order_single(float* k1, float* k2, float omega_n, float zeta);
+static void compute_gains_3rd_order_single(float* k1, float* k2, float* k3, float omega_n, float zeta, float p1);
+static void compute_gains_2nd_order_3d(struct Gains2ndOrder3* gains, const struct Poles2ndOrder3* poles);
+static void compute_gains_2nd_order_2d(struct Gains2ndOrder2* gains, const struct Poles2ndOrder2* poles);
+static void compute_gains_2nd_order_1d(struct Gains2ndOrder1* gains, const struct Poles2ndOrder1* poles);
+static void compute_gains_3rd_order_3d(struct Gains3rdOrder3* gains, const struct Poles3rdOrder3* poles);
+static void compute_gains_3rd_order_2d(struct Gains3rdOrder2* gains, const struct Poles3rdOrder2* poles);
+static void compute_gains_3rd_order_1d(struct Gains3rdOrder1* gains, const struct Poles3rdOrder1* poles);
 
-void  init_filter(struct Filter *filer, float fc, enum FilterType type);
-void  init_filter_on_type(struct Filter *filter, float x0);
-void  update_filter_on_type(struct Filter *filter, float input);
-void  oneloop_andi_propagate_filters(void);
+static void  init_filter(struct Filter *filer, float fc, enum FilterType type);
+static void  init_filter_on_type(struct Filter *filter, float x0);
+static void  update_filter_on_type(struct Filter *filter, float input);
+static void  oneloop_andi_propagate_filters(void);
 
-void get_desired_rates_radio_command(float* rate_des, const float* rate_bounds);
-void get_desired_attitude_radio_command(float* att_des, const float* att_bounds, float heading_rate_bound, float dt);
-void get_desired_heading_radio_command(float* heading_des, float heading_rate_bound, float dt);
+static void get_desired_rates_radio_command(float* rate_des, const float* rate_bounds);
+static void get_desired_attitude_radio_command(float* att_des, const float* att_bounds, float heading_rate_bound, float dt);
+static void get_desired_heading_radio_command(float* heading_des, float heading_rate_bound, float dt);
 
-void get_act_state_oneloop(void);
-void discretize_act_dynamics(float dt, float* act_dynamics_d, const float* act_dynamics);
-void compute_wls_scaling_factor(float* wls_scaler_u, const float* act_max, const float* act_min, const float* act_max_norm, const float* act_min_norm);
-void evaluate_effectiveness_matrix(float* eff_mat, const float* scaler);
+static void get_act_state_oneloop(void);
+static void discretize_act_dynamics(float dt, float* act_dynamics_d, const float* act_dynamics);
+static void compute_wls_scaling_factor(float* wls_scaler_u, const float* act_max, const float* act_min, const float* act_max_norm, const float* act_min_norm);
+static void evaluate_effectiveness_matrix(float* eff_mat);
 
 /**
  * @brief Controller poles
@@ -401,7 +399,7 @@ static float positive_non_zero(float input)
  * @param k   Scaling gains applied elementwise to the error [n]
  * @param n   Dimension of the arrays
  */
-void scaled_error_nd(float err[], float a[], float b[], float k[], int n)
+void scaled_error_nd(int n, float err[restrict n], float a[static n], float b[static n], float k[static n])
 {
   for (uint8_t i = 0; i < n; i++) {
     err[i] = k[i] * (a[i] - b[i]);
@@ -422,7 +420,7 @@ void scaled_error_nd(float err[], float a[], float b[], float k[], int n)
  * @param a_dot   Input array containing the time derivatives of each state [n]
  * @param n       Dimension of the arrays
  */
-void integrate_nd(float dt, float a[], float a_dot[], int n)
+void integrate_nd(int n, float a[static n], float a_dot[static n], float dt)
 {
   for (uint8_t i = 0; i < n; i++) {
     a[i] = a[i] + dt * a_dot[i];
@@ -456,19 +454,19 @@ void reference_model_rate(
     BoundAbs(rate_des[i], bounds->att_d[i]);
 
   // Angular rate error 
-  scaled_error_nd(rate_d_des, rate_des, att_ref->att_2d, k_rate_rm->k1, 3);
+  scaled_error_nd(3, rate_d_des, rate_des, att_ref->att_2d, k_rate_rm->k1);
   for (uint8_t i = 0; i < 3; i++)
     BoundAbs(rate_d_des[i], bounds->att_2d[i]);
 
   // Angular acceleration error
-  scaled_error_nd(rate_2d_des, rate_d_des, att_ref->att_3d, k_rate_rm->k2, 3);
+  scaled_error_nd(3, rate_2d_des, rate_d_des, att_ref->att_3d, k_rate_rm->k2);
   for (uint8_t i = 0; i < 3; i++)
     BoundAbs(rate_2d_des[i], bounds->att_3d[i]);
 
   // Reference propagation 
   float_vect_copy(att_ref->att_3d, rate_2d_des, 3);
-  integrate_nd(dt, &(att_ref->att_2d), &rate_2d_des, 3);
-  integrate_nd(dt, &(att_ref->att_d), &(att_ref->att_2d), 3);
+  integrate_nd(3, att_ref->att_2d, rate_2d_des, dt);
+  integrate_nd(3, att_ref->att_d, att_ref->att_2d, dt);
   float_vect_zero(att_ref->att, 3);
 }
 
@@ -500,24 +498,24 @@ void reference_model_attitude(
     BoundAbs(att_des[i], bounds->att[i]);
 
   // Attitude tracking error → desired angular rate
-  scaled_error_nd(att_d_des, att_des, att_ref->att_d, k_att_rm->k1, 3);
+  scaled_error_nd(3, att_d_des, att_des, att_ref->att_d, k_att_rm->k1);
   for (uint8_t i = 0; i < 3; i++)
     BoundAbs(att_d_des[i], bounds->att_d[i]);
 
   // Angular rate tracking error → desired angular acceleration
-  scaled_error_nd(att_2d_des, att_d_des, att_ref->att_2d, k_att_rm->k2, 3);
+  scaled_error_nd(3, att_2d_des, att_d_des, att_ref->att_2d, k_att_rm->k2);
   for (uint8_t i = 0; i < 3; i++)
     BoundAbs(att_2d_des[i], bounds->att_2d[i]);
 
-  scaled_error_nd(att_3d_des, att_d_des, att_ref->att_3d, k_att_rm->k3, 3);
+  scaled_error_nd(3, att_3d_des, att_d_des, att_ref->att_3d, k_att_rm->k3);
   for (uint8_t i = 0; i < 3; i++)
     BoundAbs(att_3d_des[i], bounds->att_3d[i]);
 
   // Propagate references
   float_vect_copy(att_ref->att_3d, att_3d_des, 3);
-  integrate_nd(dt, &(att_ref->att_2d), &att_3d_des, 3);
-  integrate_nd(dt, &(att_ref->att_d), &(att_ref->att_2d), 3);
-  integrate_nd(dt, &(att_ref->att), &(att_ref->att_d), 3);
+  integrate_nd(3, att_ref->att_2d, att_3d_des, dt);
+  integrate_nd(3, att_ref->att_d, att_ref->att_2d, dt);
+  integrate_nd(3, att_ref->att, att_ref->att_d, dt);
 }
 
 
@@ -546,28 +544,28 @@ void reference_model_position(
   float jer_des[2];
 
   // Position error
-  scaled_error_nd(vel_des, pos_des, pos_ref->pos, k_pos_rm->k1, 2);
+  scaled_error_nd(2, vel_des, pos_des, pos_ref->pos, k_pos_rm->k1);
   for (uint8_t i = 0; i < 2; i++) {
     BoundAbs(vel_des[i], bounds->vel[i]);
   }
 
   // Velocity error 
-  scaled_error_nd(acc_des, vel_des, pos_ref->vel, k_pos_rm->k2, 2);
+  scaled_error_nd(2, acc_des, vel_des, pos_ref->vel, k_pos_rm->k2);
   for (uint8_t i = 0; i < 2; i++) {
     BoundAbs(acc_des[i], bounds->acc[i]);
   }
 
   // Acceleration error
-  scaled_error_nd(jer_des, acc_des, pos_ref->accel, k_pos_rm->k3, 2);
+  scaled_error_nd(2, jer_des, acc_des, pos_ref->accel, k_pos_rm->k3);
   for (uint8_t i = 0; i < 2; i++) {
     BoundAbs(jer_des[i], bounds->jer[i]);
   }
 
   // Reference propagation 
   float_vect_copy(pos_ref->jer, jer_des, 2);
-  integrate_nd(dt, &(pos_ref->acc), &jer_des, 2);
-  integrate_nd(dt, &(pos_ref->vel), &(pos_ref->acc), 2);
-  integrate_nd(dt, &(pos_ref->pos), &(pos_ref->vel), 2);
+  integrate_nd(2, pos_ref->acc, jer_des, dt);
+  integrate_nd(2, pos_ref->vel, pos_ref->acc, dt);
+  integrate_nd(2, pos_ref->pos, pos_ref->vel, dt);
 }
 
 /**
@@ -607,9 +605,9 @@ void reference_model_altitude(
 
   // Reference propagation
   alt_ref->jer = jer_des;
-  integrate_nd(dt, &(alt_ref->acc), &jer_des, 1);
-  integrate_nd(dt, &(alt_ref->vel), &(alt_ref->acc), 1);
-  integrate_nd(dt, &(alt_ref->pos), &(alt_ref->vel), 1);
+  integrate_nd(1, alt_ref->acc, &jer_des, dt);
+  integrate_nd(1, alt_ref->vel, alt_ref->acc, dt);
+  integrate_nd(1, alt_ref->pos, alt_ref->vel, dt);
 }
 
 /**
@@ -648,8 +646,8 @@ void reference_model_heading(
 
   // Reference propagation
   head_ref->head_2d = accel_des;
-  integrate_nd(dt, &(head_ref->head_d), &accel_des, 1);
-  integrate_nd(dt, &(head_ref->head), &(head_ref->head_d), 1);
+  integrate_nd(1, head_ref->head_d, accel_des, dt);
+  integrate_nd(1, head_ref->head, head_ref->head_d, dt);
 
   // Normalize angle to [-pi, pi]
   NormRadAngle(head_ref->head);
@@ -679,8 +677,8 @@ void error_controller_rate(
   float omega_err[3];
   float omega_d_err[3];
 
-  scaled_error_nd(omega_err, att_ref->att_d, att_state->att_d, k_rate_e->k1, 3);
-  scaled_error_nd(omega_d_err, att_ref->att_2d att_state->att_2d, k_rate_e->k2, 3);
+  scaled_error_nd(3, omega_err, att_ref->att_d, att_state->att_d, k_rate_e->k1);
+  scaled_error_nd(3, omega_d_err, att_ref->att_2d att_state->att_2d, k_rate_e->k2);
 
   // Compute virtual command
   for (uint8_t i = 0; i < 3; i++) {
@@ -715,9 +713,9 @@ void error_controller_attitude(
   float att_d_err[3];
   float att_2d_err[3];
 
-  scaled_error_nd(att_err, att_ref->att, att_state->att, k_att_e->k1, 3);
-  scaled_error_nd(att_d_err, att_ref->att_d, att_state->att_d, k_att_e->k2, 3);
-  scaled_error_nd(att_2d_err, att_ref->att_2d att_state->att_2d, k_rate_e->k3, 3);
+  scaled_error_nd(3, att_err, att_ref->att, att_state->att, k_att_e->k1);
+  scaled_error_nd(3, att_d_err, att_ref->att_d, att_state->att_d, k_att_e->k2);
+  scaled_error_nd(3, att_2d_err, att_ref->att_2d att_state->att_2d, k_rate_e->k3);
 
   // Compute virtual command
   for (uint8_t i = 0; i < 3; i++) {
@@ -751,9 +749,9 @@ void error_controller_position(
   float vel_err[2];
   float acc_err[2];
 
-  scaled_error_nd(pos_err, pos_ref->pos, pos_state->pos, k_pos_e->k1, 2);
-  scaled_error_nd(vel_err, pos_ref->vel, pos_state->vel, k_pos_e->k2, 2);
-  scaled_error_nd(acc_err, pos_ref->acc, pos_state->acc, k_pos_e->k3, 2);
+  scaled_error_nd(2, pos_err, pos_ref->pos, pos_state->pos, k_pos_e->k1);
+  scaled_error_nd(2, vel_err, pos_ref->vel, pos_state->vel, k_pos_e->k2);
+  scaled_error_nd(2, acc_err, pos_ref->acc, pos_state->acc, k_pos_e->k3);
 
   // Compute virtual command
   for (uint8_t i = 0; i < 2; i++) {
@@ -786,9 +784,9 @@ void error_controller_altitude(
   float vel_err;
   float acc_err;
 
-  scaled_error_nd(pos_err, pos_ref->pos, pos_state->pos, k_alt_e->k1, 1);
-  scaled_error_nd(vel_err, alt_ref->vel, alt_state->vel, k_alt_e->k2, 1);
-  scaled_error_nd(acc_err, alt_ref->acc, alt_state->acc, k_alt_e->k3, 1);
+  scaled_error_nd(1, pos_err, pos_ref->pos, pos_state->pos, k_alt_e->k1);
+  scaled_error_nd(1, vel_err, alt_ref->vel, alt_state->vel, k_alt_e->k2);
+  scaled_error_nd(1, acc_err, alt_ref->acc, alt_state->acc, k_alt_e->k3);
 
   // Compute virtual command
   *nu_alt = pos_err + vel_err + acc_err + alt_ref->jer;
@@ -819,10 +817,10 @@ void error_controller_heading(
   float head_d_err;
 
   // Compute scaled position error
-  scaled_error_nd(head_err, head_ref->head, head_state->head, k_head_e->k1, 1);
+  scaled_error_nd(1, head_err, head_ref->head, head_state->head, k_head_e->k1);
 
   // Compute scaled velocity error
-  scaled_error_nd(head_d_err, head_ref->head_d, head_state->head_d, k_head_e->k2, 1);
+  scaled_error_nd(1, head_d_err, head_ref->head_d, head_state->head_d, k_head_e->k2);
 
   // Compute virtual command
   *nu_head = head_err + head_d_err + head_ref->head_2d;
@@ -962,8 +960,7 @@ static void init_filter_on_type(struct Filter *filter, float x0) {
       init_butterworth_4_low_pass(&filter->state.bw4, tau, 1.0f / PERIODIC_FREQUENCY, x0);
       break;
     default:
-      // Handle unexpected filter type
-      break;
+      return;
   }
 }
 
@@ -1065,8 +1062,6 @@ void oneloop_andi_propagate_filters(void) {
       update_filter_on_type(&filt_u[i], 0.0f);
   }
 }
-
-
 
 /**
  * @brief Computes desired roll, pitch, and yaw rates from RC input.
@@ -1185,7 +1180,7 @@ static void compute_wls_scaling_factor(float* wls_scaler_u, const float* act_max
  * FIXME: Add option for 'half loop' where CE is adjusted to not
  * control certain virtual actuators.
  */
-void evaluate_effectiveness_matrix(float* eff_mat, const float* scaler)
+void evaluate_effectiveness_matrix(float* eff_mat)
 {
   // float v_e[3];
   // v_e[0] = filt_vn.out;
@@ -1207,12 +1202,6 @@ void evaluate_effectiveness_matrix(float* eff_mat, const float* scaler)
              quat, u,
              wind_e, obm_coefficients.data,
              eff_mat);
-             
-  for (uint8_t i = 0; i < ANDI_OUTPUTS; i++) {
-    for (uint8_t j = 0; j < ANDI_NUM_ACT_TOT; j++) {
-      eff_mat[i][j] *= scaler[j];
-    }
-  }
 }
 
 
@@ -1442,9 +1431,10 @@ void oneloop_andi_run(enum ControlMode control_mode)
   // Assemble pseudo control vector
   // FIXME: Add heading control.
   // FIXME: Add guidance control
-  float nu[ANDI_OUTPUTS] = {0.0f};
+  float nu[ANDI_OUTPUTS] = {0.0f}; // An Ae Ad psi p q r
   switch (control_mode) {
     case CONTROL_MODE_RATE:
+      {
       float rate_des[3];
       float alt_des;
 
@@ -1456,8 +1446,9 @@ void oneloop_andi_run(enum ControlMode control_mode)
       reference_model_altitude(dt_1l, alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref)
       error_controller_altitude(dt_1l, &oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
       break;
-
+      }
     case CONTROL_MODE_ATTITUDE:
+      {
       float att_des[3];
       float alt_des;
 
@@ -1469,7 +1460,7 @@ void oneloop_andi_run(enum ControlMode control_mode)
       reference_model_altitude(dt_1l, alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref)
       error_controller_altitude(dt_1l, &oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
       break;
-
+      }
     // case CONTROL_MODE_GUIDANCE:
     //   float pos_des[2];
     //   float alt_des;
@@ -1482,19 +1473,29 @@ void oneloop_andi_run(enum ControlMode control_mode)
     //   error_controller_rate(dt_1l, &oneloop_andi.att_ref, &oneloop_andi.att_state, &k_rate_e, &nu[4]);
     //   break;
     default:
+      break;
       // handle invalid control_mode (now do nothing)
   }
 
+  // Control Allocation
+  // FIXME: Dynamically compute WLS bounds based on current actuator position.
+  // FIXME: Put this part in its own function?
+  evaluate_effectiveness_matrix(eff_mat);
+
   float wls_scaler_u[ANDI_ACT_NUM_TOTAL];
   compute_wls_scaling_factors(wls_scaler_u, act_max, act_min, act_max_norm, act_mix_norm);
-  evaluate_effectiveness_matrix(eff_mat, wls_scaler_u)
   for (uint8_t i = 0; i < ANDI_OUTPUTS; i++) {
-    bwls_1l[i] = EFF_MAT_G[i];
+    for (uint8_t j = 0; j < ANDI_NUM_ACT_TOT; j++) {
+      eff_mat[i * ANDI_NUM_ACT_TOT + j] *= scaler[j];
+    }
+  }
+  for (uint8_t i = 0; i < ANDI_OUTPUTS; i++) {
+    bwls_1l[i] = eff_mat[i];
   }
   // WLS Control Allocator
   wls_alloc(&wls_one_p, bwls_1l, 0, 0, 10);
   for (i = 0; i < ANDI_NUM_ACT_TOTAL; i++) {
-    andi_du[i] = wls_one_p.u[i];
+    andi_du[i] = scalar[i] * wls_one_p.u[i];
   }
  
   //FIXME: Convert du to u here.

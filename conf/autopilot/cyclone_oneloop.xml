@@ -1,9 +1,9 @@
 <!DOCTYPE autopilot SYSTEM "autopilot.dtd">
 
 <autopilot name="Oneloop Autopilot Cyclone">
-  <state_machine name="ap" freq="PERIODIC_FREQUENCY" gcs_mode="true" settings_mode="true" settings_handler="autopilor_generated|setModeHandler">
+  <state_machine name="ap" freq="PERIODIC_FREQUENCY" gcs_mode="true" settings_mode="true" settings_handler="autopilot_generated|setModeHandler">
     <includes>
-      <include name="generated/airframe.h">
+      <include name="generated/airframe.h"/>
       <include name="autopilot.h"/>
       <include name="autopilot_rc_helpers.h"/>
       <include name="oneloop/oneloop_andi.h"/>
@@ -14,7 +14,7 @@
     </includes>
 
     <settings>
-      <dl_setting var="autopilot.kill_throttle" min="0" stap="1" max="1" values="Resurrect|Kill" handler="KillThrottle"/>
+      <dl_setting var="autopilot.kill_throttle" min="0" step="1" max="1" values="Resurrect|Kill"/> <!--  handler="KillThrottle"-->
     </settings>
 
     <!-- Kill throttle mode 0-->

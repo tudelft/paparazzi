@@ -43,16 +43,13 @@
 // Number of virtual actuators (e.g. Phi, Theta). For now 2 and only 2 are supported but in the future this can be further developed. 
 #if ANDI_NUM_VIRTUAL_ACT < 2
 #error "You must specify the number of virtual actuators to be at least 2"
-#define ANDI_NUM_VIRTUAL_ACT 3
 #endif
 
 #define ANDI_NUM_ACT_TOT (ANDI_NUM_ACT + ANDI_NUM_VIRTUAL_ACT)
 
 #ifndef ANDI_OUTPUTS
 #error "You must specify the number of controlled axis (outputs)"
-#define ANDI_OUTPUTS 7
 #endif
-#define ANDI_G_SCALING 1000.0f
 
 extern float actuator_state_1l[ANDI_NUM_ACT_TOT];
 extern float nu[6];
@@ -272,16 +269,16 @@ struct Filter {
 
 /*Declaration of Reference Model and Error Controller Gains*/
 /*Rate Loop*/
-struct Poles3rdOrder3 p_rate_e;
-struct Poles3rdOrder3 p_rate_rm;
-struct Poles2ndOrder3 p_att_e;
-struct Poles2ndOrder3 p_att_rm;
-struct Poles3rdOrder2 p_pos_e;
-struct Poles3rdOrder2 p_pos_rm;
-struct Poles3rdOrder1 p_alt_e;
-struct Poles3rdOrder1 p_alt_rm;
-struct Poles2ndOrder1 p_head_e;
-struct Poles2ndOrder1 p_head_rm;
+extern struct Poles2ndOrder3 p_rate_e;
+extern struct Poles2ndOrder3 p_rate_rm;
+extern struct Poles3rdOrder3 p_att_e;
+extern struct Poles3rdOrder3 p_att_rm;
+extern struct Poles3rdOrder2 p_pos_e;
+extern struct Poles3rdOrder2 p_pos_rm;
+extern struct Poles3rdOrder1 p_alt_e;
+extern struct Poles3rdOrder1 p_alt_rm;
+extern struct Poles2ndOrder1 p_head_e;
+extern struct Poles2ndOrder1 p_head_rm;
 
 /*Gains of EC and RM*/
 extern struct Gains2ndOrder3 k_rate_e;
@@ -295,7 +292,7 @@ extern struct Gains3rdOrder1 k_alt_rm;
 extern struct Gains2ndOrder1 k_head_e;
 extern struct Gains2ndOrder1 k_head_rm;
 
-extern void oneloop_andi_init(void);
-extern void oneloop_andi_enter(enum ControlModel control_mode_sp, enum ControlType control_type);
-extern void oneloop_andi_run(enum ControlMode control_mode_sp);
+void oneloop_andi_init(void);
+void oneloop_andi_enter(enum ControlModel control_mode_sp, enum ControlType control_type);
+void oneloop_andi_run(enum ControlMode control_mode_sp);
 #endif  // ONELOOP_ANDI_H

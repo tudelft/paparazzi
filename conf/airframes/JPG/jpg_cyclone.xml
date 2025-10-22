@@ -37,8 +37,8 @@
 
             <module name="radio_control" type="sbus">
                 <configure name="SBUS_PORT" value="UART3"/>
-                <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1">
-                <define name="AP_MODE_SWITCH"    value="RADIO_AUX3">
+                <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
+                <define name="AP_MODE_SWITCH"    value="RADIO_AUX3"/>
             </module>
             <module name="sys_mon"/>
             <module name="flight_recorder"/>
@@ -70,8 +70,20 @@
             <configure name="ACTUATORS_T4_PORT" value="UART8"/>
             <configure name="ACTUATORS_T4_BAUD" value="B921600"/>
         </module>
+
+        <!-- Control -->      
+        <module name="stabilization" type="oneloop" >
+            <configure name="INDI_NUM_ACT" value="9"/>
+        </module>
         
     </firmware>
+
+    <section name="SIMULATOR" prefix="NPS_">
+        <define name="ACTUATOR_NAMES" value="ele_left, ele_right, mot_left, mot_right" type="string[]"/>
+        <define name="JSBSIM_MODEL" value="cyclone" type="string"/>
+        <define name="NO_MOTOR_MIXING" value="TRUE"/>
+        <define name="USE_COMMANDS"    value="TRUE"/>
+    </section>
 
     <!-- From old t4 code, I would need servos 1 and 5, and motor 1 and 2 respectively  -->
     <servos driver="T4">
@@ -91,13 +103,12 @@
         <axis name="YAW_RATE"     group="VIRTUAL" failsafe_value="0"/> 
     </commands>
 
+    <!-- Safety critical kill switch implementation -->
     <command_laws>
-        <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
-        <let VAR="servo_hold" VALUE="And(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_in_flight())"/>
-        <set VALUE="($servo_hold? 0 : commands[COMMAND_ELEVON_LEFT])"  SERVO="ELEVON_LEFT"/>
-        <set VALUE="($servo_hold? 0 : commands[COMMAND_ELEVON_RIGHT])" SERVO="ELEVON_RIGHT"/>
-        <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_LEFT])"  SERVO="MOTOR_LEFT"/>
-        <set VALUE="($th_hold? -9600 : commands[COMMAND_MOTOR_RIGHT])" SERVO="MOTOR_RIGHT"/>
+        <set servo="ELEVON_LEFT"  value="$autopilot.motors_on? commands[COMMAND_ELEVON_LEFT] : 0"/>
+        <set servo="ELEVON_RIGHT" value="$autopilot.motors_on? commands[COMMAND_ELEVON_RIGHT] : 0"/>
+        <set servo="MOTOR_LEFT"   value="$autopilot.motors_on? commands[COMMAND_MOTOR_LEFT] : -MAX_PPRZ"/>
+        <set servo="MOTOR_RIGHT"  value="$autopilot.motors_on? commands[COMMAND_MOTOR_RIGHT] : -MAX_PPRZ"/>
     </command_laws>
 
 </airframe>
