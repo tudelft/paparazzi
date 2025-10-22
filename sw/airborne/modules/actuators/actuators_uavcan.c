@@ -120,8 +120,19 @@ static uavcan_event device_temperature_ev;
 static uint8_t old_idx = 0;
 static uint8_t esc_idx = 0;
 static struct actuators_uavcan_telem_t *actuators_uavcan_next_telem(void) {
-#ifdef SINGLE_RPM_FEEDBACK_IDX
-uint8_t idx = SINGLE_RPM_FEEDBACK_IDX;
+#ifdef FORCE_RPM_FEEDBACK_IDX
+  static const uint8_t force_idx[] = FORCE_RPM_FEEDBACK_IDX;
+  static uint8_t idx_cur = 0; 
+
+  if (rand_uniform() > 0.02f) {
+    idx_cur++;
+  }
+
+  if (idx_cur >= (sizeof(force_idx) / sizeof(force_idx[0]))) {
+    idx_cur = 0;
+  }
+
+  uint8_t idx = force_idx[idx_cur];
   old_idx = idx;
   esc_idx = idx; 
   uint8_t offset = 0;
