@@ -17,7 +17,7 @@
     </includes>
 
     <settings>
-      <dl_setting var="autopilot.kill_throttle" min="0" step="1" max="1" values="Resurrect|Kill" handler="KillThrottle"/>
+      <dl_setting var="autopilot.kill_throttle" min="0" step="1" max="1" values="Resurrect|Kill"/> <!-- handler="KillThrottle" -->
     </settings>
 
     <!-- Kill throttle mode 0-->
