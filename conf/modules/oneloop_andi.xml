@@ -4,64 +4,35 @@
     <description>One loop (Guidance + Stabilization) ANDI controller for the rotating wing drone RW3C</description>
     <define name="ANDI_NUM_ACT" value="COMMANDS_NB_REAL" description="number of actuators"/>
     <define name="ANDI_NUM_VIRTUAL_ACT" value="COMMANDS_NB_VIRTUAL" description="number of virtual actuators, must be greater than 2"/>
-    <define name="ANDI_OUTPUTS" value="6" description="number of outputs for control allocation."/>
-    <define name="ANDI_G_SCALING" value="1000.0f" description="scaling factor for control effectiveness G matrix"/>
-    <define name="CTRL_ANDI" value="0|1" description="Use ANDI controller (1) or not (0)"/>
-    <define name="CTRL_INDI" value="0|1" description="Use ANDI controller (1) or not (0)"/>
-    <define name="ONELOOP_ANDI_NUM_THRUSTERS" value="4.0" description="number of motors used for thrust"/>
-    <define name="ONELOOP_ANDI_SCHEDULING" value="TRUE|FALSE" description="use scheduling of gains"/>
-
+    <define name="ANDI_OUTPUTS" value="7" description="number of outputs for control allocation."/>
   </doc>
   <settings>
    <dl_settings>
      <dl_settings NAME="oneloop">
-      <dl_setting var="state_compensation_on"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="state_compensation_on"/>
-      <dl_setting var="use_dyn_filter"     min="0"       step="1"     max="1"     values="OFF|ON" shortname="use_dyn_filter"/> 
-      <dl_setting var="oneloop_andi_sigma" min="1.0"     step="0.01"  max="50.0"  shortname="sigma"/>
-      <dl_setting var="drop_yaw"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="drop_yaw"/> 
-      <dl_setting var="temp_k"             min="0.5"     step="0.1"   max="50"    shortname="temp_k"/>
-      <dl_setting var="LP.p.freq_set"      min="0.5"     step="0.1"   max="20"    shortname="p_LP_freq"/>
-      <dl_setting var="LP.q.freq_set"      min="0.5"     step="0.1"   max="20"    shortname="q_LP_freq"/>
-      <dl_setting var="LP.r.freq_set"      min="0.5"     step="0.1"   max="20"    shortname="r_LP_freq"/>
-      <dl_setting var="LP.p_dot.freq_set"  min="0.5"     step="0.1"   max="20"    shortname="pdot_LP_freq"/>
-      <dl_setting var="LP.q_dot.freq_set"  min="0.5"     step="0.1"   max="20"    shortname="qdot_LP_freq"/>
-      <dl_setting var="LP.r_dot.freq_set"  min="0.5"     step="0.1"   max="20"    shortname="rdot_LP_freq"/>
-      <dl_setting var="LP.ax.freq_set"     min="0.5"     step="0.1"   max="20"    shortname="ax_LP_freq"/>
-      <dl_setting var="LP.ay.freq_set"     min="0.5"     step="0.1"   max="20"    shortname="ay_LP_freq"/>
-      <dl_setting var="LP.az.freq_set"     min="0.5"     step="0.1"   max="20"    shortname="az_LP_freq"/>
-      <dl_setting var="max_as"             min="7"       step="1"     max="19"    shortname="max_airspeed"/>
-      <dl_setting var="temp_pitch"         min="0"       step="1"     max="9600"  shortname="temp_pitch"/>
-      <dl_setting var="k_as"               min="1.0"     step="0.001" max="10"    shortname="k_as"/> 
-      <dl_setting var="ctrl_off"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="ctrl_off"/> 
-      <dl_setting var="multiple_chirp_run" min="0"       step="1"     max="1"     values="OFF|ON" shortname="multiple_chirp_run"/>
-      <dl_setting var="chirp_on"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="chirp_on"/>  
-      <dl_setting var="chirp_axis"         min="0"       step="1"     max="6"     shortname="chirp_axis"/>  
-      <dl_setting var="f0_chirp"           min="0.01"    step="0.001" max="10"    shortname="f0_chirp"/> 
-      <dl_setting var="f1_chirp"           min="0.01"    step="0.001" max="10"    shortname="f1_chirp"/>
-      <dl_setting var="t_chirp"            min="0.01"    step="0.001" max="60"    shortname="t_chirp"/>
-      <dl_setting var="A_chirp"            min="0.01"    step="0.001" max="10"    shortname="A_chirp"/>
-      <dl_setting var="heading_manual"     min="0"       step="1"     max="1"     values="OFF|ON" shortname="take_heading"/>
-      <dl_setting var="yaw_stick_in_auto"  min="0"       step="1"     max="1"     values="OFF|ON" shortname="yaw_stick_on"/>
-      <dl_setting var="fwd_sideslip_gain"  min="0.01"    step="0.001" max="20.0"  shortname="fwd_sideslip_gain"/>
-      <dl_setting var="psi_des_deg"        min="-180.0"  step="0.1"   max="180.0" shortname="psi_des"/>     
-      <dl_setting var="p_att_e.omega_n"    min="0.1"     step="0.001" max="20.0"  shortname="p_att_e_omega_n"/>
+      <!-- <dl_setting var="p_att_e.omega_n"    min="0.1"     step="0.001" max="20.0"  shortname="p_att_e_omega_n"/>
       <dl_setting var="p_att_e.zeta"       min="0.1"     step="0.001" max="1.0"   shortname="p_att_e_zeta"/>
+      <dl_setting var="p_att_e.p3"         min="0.1"     step="0.001" max="70.0"  shortname="p_att_e_p3"/>
       <dl_setting var="p_att_rm.omega_n"   min="0.1"     step="0.001" max="70.0"  shortname="p_att_rm_omega_n"/>
       <dl_setting var="p_att_rm.zeta"      min="0.1"     step="0.001" max="1.0"   shortname="p_att_rm_zeta"/>
       <dl_setting var="p_att_rm.p3"        min="0.1"     step="0.001" max="70.0"  shortname="p_att_rm_p3"/>
-      <dl_setting var="p_head_e.omega_n"   min="0.1"     step="0.001" max="20.0"  shortname="p_head_e_omega_n"/>
-      <dl_setting var="p_head_e.zeta"      min="0.1"     step="0.001" max="1.0"   shortname="p_head_e_zeta"/>
-      <dl_setting var="p_head_rm.omega_n"  min="0.1"     step="0.001" max="20.0"  shortname="p_head_rm_omega_n"/>
-      <dl_setting var="p_head_rm.zeta"     min="0.1"     step="0.001" max="1.0"   shortname="p_head_rm_zeta"/>
       <dl_setting var="p_pos_e.omega_n"    min="0.1"     step="0.001" max="70.0"  shortname="p_pos_e_omega_n"/>
       <dl_setting var="p_pos_e.zeta"       min="0.1"     step="0.001" max="1.0"   shortname="p_pos_e_zeta"/>
       <dl_setting var="p_pos_e.p3"         min="0.1"     step="0.001" max="70.0"  shortname="p_pos_e_p3"/>
       <dl_setting var="p_pos_rm.omega_n"   min="0.1"     step="0.001" max="20.0"  shortname="p_pos_rm_omega_n"/>
-      <dl_setting var="p_pos_rm.zeta"      min="0.1"     step="0.001" max="1.0"   shortname="p_pos_rm_zeta"/>       
+      <dl_setting var="p_pos_rm.zeta"      min="0.1"     step="0.001" max="1.0"   shortname="p_pos_rm_zeta"/>  
+      <dl_setting var="p_pos_rm.p3"        min="0.1"     step="0.001" max="70.0"  shortname="p_pos_rm_p3"/>
+     
       <dl_setting var="p_alt_e.omega_n"    min="0.1"     step="0.001" max="20.0"  shortname="p_alt_e_omega_n"/>
       <dl_setting var="p_alt_e.zeta"       min="0.1"     step="0.001" max="1.0"   shortname="p_alt_e_zeta"/>
+      <dl_setting var="p_alt_e.p3"         min="0.1"     step="0.001" max="70.0"  shortname="p_alt_e_p3"/>
       <dl_setting var="p_alt_rm.omega_n"   min="0.1"     step="0.001" max="20.0"  shortname="p_alt_rm_omega_n"/>
       <dl_setting var="p_alt_rm.zeta"      min="0.1"     step="0.001" max="1.0"   shortname="p_alt_rm_zeta"/>       
+      <dl_setting var="p_alt_rm.p3"        min="0.1"     step="0.001" max="70.0"  shortname="p_alt_rm_p3"/>
+
+      <dl_setting var="p_head_e.omega_n"   min="0.1"     step="0.001" max="20.0"  shortname="p_head_e_omega_n"/>
+      <dl_setting var="p_head_e.zeta"      min="0.1"     step="0.001" max="1.0"   shortname="p_head_e_zeta"/>
+      <dl_setting var="p_head_rm.omega_n"  min="0.1"     step="0.001" max="20.0"  shortname="p_head_rm_omega_n"/>
+      <dl_setting var="p_head_rm.zeta"     min="0.1"     step="0.001" max="1.0"   shortname="p_head_rm_zeta"/> -->
      </dl_settings>
    </dl_settings>
   </settings>
@@ -75,7 +46,7 @@
   <init fun="oneloop_andi_init()"/>
    <makefile target="ap|nps" firmware="rotorcraft">
     <file       name="oneloop_andi.c" dir="$(SRC_FIRMWARE)/oneloop"/>
-    <configure  name="ANDI_OUTPUTS" default="6"/>
+    <configure  name="ANDI_OUTPUTS" default="7"/>
     <define     name="ANDI_OUTPUTS" value="$(ANDI_OUTPUTS)"/>
   </makefile> 
 </module>

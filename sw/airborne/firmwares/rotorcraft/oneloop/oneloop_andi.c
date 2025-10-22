@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Tomaso De Ponti <tmldeponti@tudelft.nl>
+ * Copyright (C) 2025 Justin Dubois <j.p.g.dubois@student.tudelft.nl>
  *
  * This file is part of paparazzi
  *
@@ -17,63 +17,6 @@
  * along with paparazzi; see the file COPYING.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-
-/** @file "firmwares/rotorcraft/oneloop/oneloop_andi.h"
- * @author Tomaso De Ponti <tmldeponti@tudelft.nl>
- * One loop (Guidance + Stabilization) ANDI controller for rotorcrafts
- */
-///// EXPLANATION OF HALFLOOP ///////////////////////////////////////////////////////////
-/**
- * @param oneloop_andi_half_loop - A Boolean indicating the state of the oneloop controller.
- * @param oneloop_andi_half_loop = true - Control allocation is performed to accommodate desired Jerk Down, Roll Jerk, Pitch Jerk, and Yaw Jerk (ANDI).
- * @param oneloop_andi_half_loop = false - Control allocation is performed to accommodate desired Jerk North, Jerk East, Jerk Down, Roll Jerk, Pitch Jerk, and Yaw Jerk (ANDI).
- */
-///// Enter functions change the state of the oneloop controller //////////////////////
-/**
- * @fn stabilization_attitude_enter in @file "firmwares/rotorcraft/stabilization/stabilization_oneloop.c"
- * @result oneloop_andi_half_loop = true
- */
-/**
- * @fn guidance_h_run_enter in @file "firmwares/rotorcraft/guidance/guidance_oneloop.c"
- * @result oneloop_andi_half_loop = false
- */
-/**
- * @fn guidance_v_run_enter in @file "firmwares/rotorcraft/guidance/guidance_oneloop.c"
- * @result nothing
- */
-///// Example of execution of the oneloop controller for two different states in the state machine /////////////////////
-/**
- * @file "sw/airborne/firmwares/rotorcraft/autopilot_static.c"
- * 
- * @if MODE_ATTITUDE_RC_DIRECT
- * 
- * - @fn stabilization_attitude_run() in @file "firmwares/rotorcraft/stabilization/stabilization_oneloop.c"
- * 
- * - - @if half_loop
- * 
- * - - - @fn oneloop_andi_run(true) in @file "firmwares/rotorcraft/oneloop/oneloop_andi.c"
- * 
- * - - - @result: Control allocation is performed to accommodate desired Jerk Down, Roll Jerk, Pitch Jerk, and Yaw Jerk from stick inputs
- * - - @endif
- * 
- * @elseif MODE_NAV
- * 
- * - @fn guidance_h_run() in @file "firmwares/rotorcraft/guidance/guidance_oneloop.c"
- * 
- * - @fn oneloop_andi_run(false) in @file "firmwares/rotorcraft/oneloop/oneloop_andi.c"
- * 
- * - @result: Control allocation is performed to accommodate desired Jerk North, Jerk East, Jerk Down, Roll Jerk, Pitch Jerk, and Yaw Jerk from navigation outputs
- * 
- * - @fn guidance_v_run() in @file "firmwares/rotorcraft/guidance/guidance_oneloop.c"
- * 
- * - @result: nothing
- * 
- * - @fn stabilization_attitude_run() in @file "firmwares/rotorcraft/stabilization/stabilization_oneloop.c"
- * 
- * - @result: nothing because of oneloop_andi_half_loop = false
- * @endif
- */
-
 
 /* Include necessary header files */
 #include "firmwares/rotorcraft/oneloop/oneloop_andi.h"
@@ -95,9 +38,6 @@
 #if INS_EXT_POSE
 #include "modules/ins/ins_ext_pose.h"
 #endif
-
-#include "modules/gps/gps.h" // DELETE FIX
-//#include "nps/nps_fdm.h"
 
 /*Define general struct of the Oneloop ANDI controller*/
 struct OneloopGeneral oneloop_andi;
@@ -208,8 +148,10 @@ void evaluate_effectiveness_matrix(float* eff_mat, const float* scaler);
  * and heading control loops.
  */
 // FIXME: Make poles dynamically set from airframe file
-struct Poles2ndOrder3 p_stab_e;
-struct Poles2ndOrder3 p_stab_rm;
+struct Poles2ndOrder3 p_rate_e;
+struct Poles2ndOrder3 p_rate_rm;
+struct Poles3rdOrder3 p_att_e;
+struct Poles3rdOrder3 p_att_rm;
 struct Poles3rdOrder2 p_pos_e;
 struct Poles3rdOrder2 p_pos_rm;
 struct Poles3rdOrder1 p_alt_e;
@@ -318,61 +260,13 @@ static float Wu_backup[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_WU;
 static float Wu_backup[ANDI_NUM_ACT_TOT] = {[0 ... ANDI_NUM_ACT_TOT-1] = 1.0};
 #endif
 
-/*Filter Variables*/
-#define USE_BW2
-struct OneloopFilter LP;
-bool  use_dyn_filter = true; 
-float oneloop_andi_sigma = 29.0;
-float oneloop_andi_sigma_max = 29.0;
-float oneloop_andi_sigma_min = 8.0; 
-/*Chirp test Variables*/
-bool  chirp_on            = false;
-bool  chirp_first_call    = true;
-float time_elapsed_chirp  = 0.0;
-float t_0_chirp           = 0.0;
-float f0_chirp            = 0.2;//0.8 / (2.0 * M_PI);
-float f1_chirp            = 0.2;//0.8 / (2.0 * M_PI);
-float t_chirp             = 0.65 ;// 2.0  ;//
-float A_chirp             = 250.0;// -46.0;//
-int8_t chirp_axis         = 6   ;// 5    ;//
-float p_ref_0[3]          = {0.0, 0.0, 0.0};
-int16_t chirp_n_repeat    = 10;
-int16_t chirp_n_counter   = 0;
-int16_t firing_counter    = 0;
-int16_t delay_counter     = 0;
-bool multiple_chirp_run   = false;
-
-
 /* Effectiveness Matrix definition */
 float *bwls_1l[ANDI_OUTPUTS];
 float eff_mat[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
 float n_array[ANDI_OUTPUTS];
 float m_array[ANDI_NUM_ACT_TOT];
 float coupling_factor[ANDI_OUTPUTS];
-float oneloop_andi_model[ANDI_OUTPUTS];
-float oneloop_andi_dist_bound[ANDI_OUTPUTS];
-float SF_BOUND_NU[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
 float wls_scaler_u[ANDI_NUM_ACT_TOT];
-
-float temp_k = 3.0;
-float temp_checks[2];
-float temp_checks_2[3];
-float temp_ref_att[3];
-float temp_dist_r = 0.0;
-float temp_ec_r = 0.0;
-float temp_ec_r_2 = 0.0;
-float temp_e_x = 0.0;
-float temp_e_x_rates = 0.0;
-float temp_x_d_f = 0.0;
-float temp_x_2d_f = 0.0;
-bool drop_yaw = false;
-bool drop_roll = false;
-bool drop_pitch = false;
-bool drop_aN = false;
-bool drop_aE = false;
-bool drop_aD = false;
-bool state_compensation_on = false;
-int16_t counter_andi = 0;
 
 /* Define messages of the module*/
 #if PERIODIC_TELEMETRY
@@ -1489,24 +1383,22 @@ void oneloop_andi_init(void)
  * and there are multiple modes that use (the same) stabilization. Resetting the controller
  * is not so nice when you are flying.
  */
-void oneloop_andi_enter(enum ControlMode control_mode, int control_type)
+void oneloop_andi_enter(enum ControlMode control_mode, enum ControlType control_type)
 {
-  printf("ENTER ANDI controller: start (%d) \n", counter_andi);
+  printf("ENTER ANDI controller: start \n");
   // counter_andi++;
   oneloop_andi.control_mode   = control_mode;
   oneloop_andi.control_type   = control_type;
+  printf("ENTER ANDI controller: succes \n");
+
 }
 
 
 /**
  * @brief Main function that runs the controller and performs control allocation
- * @param half_loop  In half-loop mode the controller is used for stabilization only
  * @param in_flight  The drone is in flight
- * @param PSA_des    Desired position/speed/acceleration
- * @param rm_order_h Order of the reference model for horizontal guidance
- * @param rm_order_v Order of the reference model for vertical guidance
  */
-void oneloop_andi_run(bool in_flight, enum ControlMode control_mode, struct FloatVect3 PSA_des)
+void oneloop_andi_run(enum ControlMode control_mode)
 {
   // At beginnig of the loop: (1) Register Attitude, (2) Initialize gains of RM and EC, (3) Calculate Normalization of Actuators Signals, (4) Propagate Actuator Model, (5) Update effectiveness matrix
 

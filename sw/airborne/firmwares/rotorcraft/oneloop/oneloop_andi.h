@@ -296,6 +296,6 @@ extern struct Gains2ndOrder1 k_head_e;
 extern struct Gains2ndOrder1 k_head_rm;
 
 extern void oneloop_andi_init(void);
-extern void oneloop_andi_enter(enum ControlModel control_mode_sp, int ctrl_type);
-extern void oneloop_andi_run(bool in_flight, enum ControlModel control_mode_sp, struct FloatVect3 PSA_des, int rm_order_h, int rm_order_v);
+extern void oneloop_andi_enter(enum ControlModel control_mode_sp, enum ControlType control_type);
+extern void oneloop_andi_run(enum ControlMode control_mode_sp);
 #endif  // ONELOOP_ANDI_H

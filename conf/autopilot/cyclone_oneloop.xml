@@ -1,0 +1,44 @@
+<!DOCTYPE autopilot SYSTEM "autopilot.dtd">
+
+<autopilot name="Oneloop Autopilot Cyclone">
+  <state_machine name="ap" freq="PERIODIC_FREQUENCY" gcs_mode="true" settings_mode="true" settings_handler="autopilor_generated|setModeHandler">
+    <includes>
+      <include name="generated/airframe.h">
+      <include name="autopilot.h"/>
+      <include name="autopilot_rc_helpers.h"/>
+      <include name="oneloop/oneloop_andi.h"/>
+      <include name="modules/radio_control/radio_control.h"/>
+      <include name="modules/actuators/actuators.h"/>
+      <define name="MODE_RATE" value="AP_MODE_RATE" cond="ifndef MODE_RATE"/>
+      <define name="MODE_ATTITUDE" value="AP_MODE_ATTITUDE" cond="ifndef MODE_AUTO1"/>
+    </includes>
+
+    <settings>
+      <dl_setting var="autopilot.kill_throttle" min="0" stap="1" max="1" values="Resurrect|Kill" handler="KillThrottle"/>
+    </settings>
+
+    <!-- Kill throttle mode 0-->
+    <mode name="KILL">
+      <select cond="kill_switch_is_on()"/>
+      <on_enter>
+        <call fun="autopilot_set_in_flight(false)"/>
+        <call fun="autopilot_set_motors_on(false)"/>
+      </on_enter>
+      <control>
+        <call fun="SetCommands(commands_failsafe)"/>
+      </control>
+    </mode>
+
+    <!-- Rate mode 3-->
+    <mode name="RATE" shortname="RATE">
+      <select cond="RCMode0()"/>
+      <on_enter>
+        <call fun="oneloop_andi_enter(CONTROL_MODE_RATE, CONTROL_TYPE_ANDI)"/>
+      </on_enter>
+      <control>
+        <call fun="oneloop_andi_run(CONTROL_MODE_RATE)"/>
+      </control>
+    </mode>
+
+  </state_machine>
+</autopilot>
