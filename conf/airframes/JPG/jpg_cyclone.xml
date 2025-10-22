@@ -30,37 +30,32 @@
     </description>
 
     <firmware name="rotorcraft">
-        <autopilot name="cyclone_oneloop.xml"/>
-        <target name="ap" board="cube_orange">
-            <configure name="PERIODIC_FREQUENCY"   value="500"/>
-            <configure name="NAVIGATION_FREQUENCY" value="500"/>
 
+        <autopilot name="cyclone_oneloop.xml"/>
+
+        <configure name="PERIODIC_FREQUENCY"   value="500"/>
+        <configure name="NAVIGATION_FREQUENCY" value="500"/>
+
+        <target name="ap" board="cube_orange">
             <module name="radio_control" type="sbus">
                 <configure name="SBUS_PORT" value="UART3"/>
-                <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
-                <define name="AP_MODE_SWITCH"    value="RADIO_AUX3"/>
+                <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1">
+                <define name="AP_MODE_SWITCH"    value="RADIO_AUX3">
             </module>
+
             <module name="sys_mon"/>
+
             <module name="flight_recorder"/>
-            <module name="telemetry" type="transparent">
-                <configure name="MODEM_BAUD" value="B115200"/>
-            </module>
+
         </target>
 
         <target name="nps" board="pc">
-            <configure name="PERIODIC_FREQUENCY"   value="500"/>
-            <configure name="NAVIGATION_FREQUENCY" value="500"/>
-
             <module name="fdm" type="jsbsim"/>
             <module name="radio_control" type="datalink">
                 <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
                 <define name="AP_MODE_SWITCH"    value="RADIO_AUX7"/>
             </module>
         </target>
-
-        <module name="telemetry" type="transparent">
-            <configure name="MODEM_BAUD" value="B115200"/>
-        </module>
 
         <module name="imu" type="cube"/>
         <module name="ins" type="ekf2"/>
@@ -71,29 +66,54 @@
             <configure name="ACTUATORS_T4_BAUD" value="B921600"/>
         </module>
 
-        <!-- Control -->      
-        <module name="stabilization" type="oneloop" >
-            <configure name="INDI_NUM_ACT" value="9"/>
+        <module name="telemetry" type="transparent">
+            <configure name="MODEM_BAUD" value="B115200"/>
         </module>
         
-    </firmware>
+        <module name="gps" type="ublox">
+            <configure name="GPS_BAUD" value="B460800"/>
+        </module>
 
-    <section name="SIMULATOR" prefix="NPS_">
-        <define name="ACTUATOR_NAMES" value="ele_left, ele_right, mot_left, mot_right" type="string[]"/>
-        <define name="JSBSIM_MODEL" value="cyclone" type="string"/>
-        <define name="NO_MOTOR_MIXING" value="TRUE"/>
-        <define name="USE_COMMANDS"    value="TRUE"/>
-    </section>
+        <module name="mag" type="rm3100">
+            <define name="USE_I2C2"/>
+              <!-- <configure name="MAG_RM3100_PERIODIC_FREQUENCY" value="125"/> -->
+            <configure name="MAG_RM3100_I2C_DEV" value="i2c2"/>
+            <!-- <define name="MODULE_RM3100_UPDATE_AHRS" value="FALSE"/> -->
+            <define name="RM3100_CHAN_X" value="1"/>
+            <define name="RM3100_CHAN_Y" value="0"/>
+            <define name="RM3100_CHAN_Z" value="2"/>
+            <define name="RM3100_CHAN_X_SIGN" value="-"/>
+            <define name="RM3100_CHAN_Y_SIGN" value="+"/>
+            <define name="RM3100_CHAN_Z_SIGN" value="-"/>
+            <!-- <configure name="MODULE_RM3100_SYNC_SEND" value="TRUE"/> -->
+            <!-- <define name="DATA_RATE" value="RM3100_RATE_600"/> -->
+        </module>
+
+        <!-- 
+        <module name="nav" type="rotorcraft"/>
+        <module name="guidance" type="rotorcraft"/>
+        -->
+        <module name="stabilization" type="rotorcraft"/> 
+        <module name="guidance_oneloop.xml"/>
+
+    </firmware>
 
     <!-- From old t4 code, I would need servos 1 and 5, and motor 1 and 2 respectively  -->
     <servos driver="T4">
-      <servo name="ELEVON_LEFT"  no="1"  min="-9600" neutral="0" max="9600"/> 
-      <servo name="ELEVON_RIGHT" no="2"  min="-9600" neutral="0" max="9600"/> 
-      <servo name="MOTOR_LEFT"   no="13" min="0" neutral="0" max="9600"/> 
-      <servo name="MOTOR_RIGHT"  no="14" min="0" neutral="0" max="9600"/> <!-- Check units of bounds-->
+        <servo name="S_THROTTLE_LEFT"  no="13" min="230" neutral="250" max="1999"/> 
+        <servo name="S_THROTTLE_RIGHT" no="14" min="230" neutral="250" max="1999"/>
+        <servo name="S_ELEVON_LEFT"    no="1"  min="-5700" neutral="0" max="5700"/> <!-- 57.0 deg-->
+        <servo name="S_ELEVON_RIGHT"   no="2"  min="-5700" neutral="0" max="5700"/> <!-- 57.0 deg-->
     </servos>
 
-    <commands>
+    <!-- <rc_commands>
+        <set command="THROTTLE" value="@THROTTLE"/>
+        <set command="ROLL" value="@ROLL"/>
+        <set command="PITCH" value="@PITCH"/>
+        <set command="YAW" value="@YAW"/>
+    </rc_commands> -->
+
+    <commands><!-- TODO: CHECK if failsafe_values are what we want -->
         <axis name="ELEVON_LEFT"  group="REAL"    failsafe_value="0"/>
         <axis name="ELEVON_RIGHT" group="REAL"    failsafe_value="0"/>
         <axis name="MOTOR_LEFT"   group="REAL"    failsafe_value="0"/>
