@@ -120,6 +120,29 @@ static uavcan_event device_temperature_ev;
 static uint8_t old_idx = 0;
 static uint8_t esc_idx = 0;
 static struct actuators_uavcan_telem_t *actuators_uavcan_next_telem(void) {
+#ifdef SINGLE_RPM_FEEDBACK_IDX
+uint8_t idx = SINGLE_RPM_FEEDBACK_IDX;
+  old_idx = idx;
+  esc_idx = idx; 
+  uint8_t offset = 0;
+
+  #ifdef UAVCAN1_TELEM_NB
+  if (idx < UAVCAN1_TELEM_NB) {
+    return &uavcan1_telem[idx];
+  }
+  offset += UAVCAN1_TELEM_NB;
+  #endif
+
+  #ifdef UAVCAN2_TELEM_NB
+  if (idx < offset + UAVCAN2_TELEM_NB) {
+    return &uavcan2_telem[idx - offset];
+  }
+  offset += UAVCAN2_TELEM_NB;
+  #endif
+  esc_idx = 0;
+  return NULL;
+
+#else  
   // Randomness added for multiple  transport devices
   uint8_t add_idx = 0;
   if (rand_uniform() > 0.02) {
@@ -156,6 +179,7 @@ static struct actuators_uavcan_telem_t *actuators_uavcan_next_telem(void) {
   // Going round or no telemetry found
   esc_idx = 0;
   return NULL;
+#endif
 }
 
 static void actuators_uavcan_send_esc(struct transport_tx *trans, struct link_device *dev)
