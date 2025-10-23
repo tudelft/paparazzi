@@ -437,8 +437,10 @@ void sum_EFF_MAT_RW(void) {
   if(manual_roll){
     //EFF_MAT_RW[RW_ap][1] = -0.012149; 
     //EFF_MAT_RW[RW_ap][3] = 0.012149;
-    EFF_MAT_RW[RW_ap][1] = -roll_eff/1000.0; 
-    EFF_MAT_RW[RW_ap][3] =  roll_eff/1000.0;
+    //EFF_MAT_RW[RW_ap][1] = -roll_eff/1000.0; 
+    //EFF_MAT_RW[RW_ap][3] =  roll_eff/1000.0;
+    EFF_MAT_RW[RW_ap][0] = 0.0006;
+    EFF_MAT_RW[RW_ap][2] = -0.0006;
   }
   if(manual_pitch){
     EFF_MAT_RW[RW_aq][0] = 0.001708; 
