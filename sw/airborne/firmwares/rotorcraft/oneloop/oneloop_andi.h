@@ -60,19 +60,19 @@ extern float andi_du[ANDI_NUM_ACT_TOT];
 struct Poles3rdOrdert1{
   float omega_n;
   float zeta;
-  float p3;
+  float p1;
 };
 
 struct Poles3rdOrder2{
   float omega_n[2];
   float zeta[2];
-  float p3[2];
+  float p1[2];
 };
 
 struct Poles3rdOrder3{
   float omega_n[3];
   float zeta[3];
-  float p3[3];
+  float p1[3];
 };
 
 struct Poles2ndOrdert1{
@@ -224,7 +224,7 @@ enum ControlMode {
 enum ControlType {
   CONTROL_TYPE_ANDI,
   CONTROL_TYPE_INDI
-}
+};
 
 struct OneloopGeneral {
   enum ControlType control_type;
@@ -263,7 +263,6 @@ struct Filter {
     struct FirstOrderLowPass lp1;
     Butterworth2LowPass bw2;
     Butterworth4LowPass bw4;
-    struct SecondOrderNotchFilter notch;
   } state;
 };
 
@@ -293,6 +292,6 @@ extern struct Gains2ndOrder1 k_head_e;
 extern struct Gains2ndOrder1 k_head_rm;
 
 void oneloop_andi_init(void);
-void oneloop_andi_enter(enum ControlModel control_mode_sp, enum ControlType control_type);
+void oneloop_andi_enter(enum ControlMode control_mode_sp, enum ControlType control_type);
 void oneloop_andi_run(enum ControlMode control_mode_sp);
 #endif  // ONELOOP_ANDI_H

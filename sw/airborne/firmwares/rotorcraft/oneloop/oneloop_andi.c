@@ -43,15 +43,15 @@
 struct OneloopGeneral oneloop_andi;
 
 // Use compile-time macros to set default filter type enum value
-#if defined(FILTER_USE_LP1)
-enum FilterType filter_type = LOWPASS_1;
-#elif defined(FILTER_USE_BW2)
-enum FilterType filter_type = BUTTERWORTH_2;
-#elif defined(FILTER_USE_YAW_LP4)
-enum FilterType filter_type = BUTTERWORTH_4;
-#else
-#error "Filter type not defined. Define one of: USE_LP1, USE_BW2, USE_YAW_LP4."
-#endif
+// #if defined(FILTER_USE_LP1)
+// enum FilterType filter_type = LOWPASS_1;
+// #elif defined(FILTER_USE_BW2)
+// enum FilterType filter_type = BUTTERWORTH_2;
+// #elif defined(FILTER_USE_YAW_LP4)
+// enum FilterType filter_type = BUTTERWORTH_4;
+// #else
+// #error "Filter type not defined. Define one of: USE_LP1, USE_BW2, USE_YAW_LP4."
+// #endif
 
 #ifdef ONELOOP_ANDI_ACT_IS_SERVO
 bool   actuator_is_servo[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_IS_SERVO;
@@ -100,13 +100,13 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 
 /*  Define Section of the functions used in this module*/
 static float positive_non_zero(float input);
-static void scaled_error_nd(int n, float err[restrict n], float a[static n], float b[static n], float k[static n]);
-static void integrate_nd(int n, float a[static n], float a_dot[static n], float dt);
+static void scaled_error_nd(int n, float err[restrict n], const float a[static n], const float b[static n], const float k[static n]);
+static void integrate_nd(int n, float a[static n], const float a_dot[static n], float dt);
 
 static void reference_model_rate(float dt, float rate_des[3], const struct Gains2ndOrder3 *k_rate_rm, const struct OneloopAttRef *bounds, struct OneloopAttRef *rate_ref);
 static void reference_model_attitude(float dt, float att_des[3], const struct Gains3rdOrder3 *k_att_rm, const struct OneloopAttRef *bounds, struct OneloopAttRef *att_ref);
-static void reference_model_position(float dt, float pos_des[2], const struct Gains3ndOrder2 *k_pos_rm, const struct OneloopPosRef *bounds, struct OneloopPosRef *pos_ref);
-static void reference_model_altitude(float dt, float alt_des, const struct Gains3ndOrder1 *k_alt_rm, const struct OneloopAltRef *bounds, struct OneloopAltRef *alt_ref);
+static void reference_model_position(float dt, float pos_des[2], const struct Gains3rdOrder2 *k_pos_rm, const struct OneloopPosRef *bounds, struct OneloopPosRef *pos_ref);
+static void reference_model_altitude(float dt, float alt_des, const struct Gains3rdOrder1 *k_alt_rm, const struct OneloopAltRef *bounds, struct OneloopAltRef *alt_ref);
 static void reference_model_heading(float dt, float head_des, const struct Gains2ndOrder1 *k_head_rm, const struct OneloopHeadRef *bounds, struct OneloopHeadRef *head_ref);
 
 static void error_controller_rate(float dt, const struct OneloopAttRef *rate_ref, const struct OneloopAttState *rate_state, const struct Gains2ndOrder3 *k_rate_e, float *nu_rate);
@@ -135,8 +135,8 @@ static void get_desired_heading_radio_command(float* heading_des, float heading_
 
 static void get_act_state_oneloop(void);
 static void discretize_act_dynamics(float dt, float* act_dynamics_d, const float* act_dynamics);
-static void compute_wls_scaling_factor(float* wls_scaler_u, const float* act_max, const float* act_min, const float* act_max_norm, const float* act_min_norm);
-static void evaluate_effectiveness_matrix(float* eff_mat);
+static void compute_wls_scaling_factors(float* wls_scaler_u, const float* act_max, const float* act_min, const float* act_max_norm, const float* act_min_norm);
+static void evaluate_effectiveness_matrix(float eff_mat[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT]);
 
 /**
  * @brief Controller poles
@@ -146,16 +146,16 @@ static void evaluate_effectiveness_matrix(float* eff_mat);
  * and heading control loops.
  */
 // FIXME: Make poles dynamically set from airframe file
-struct Poles2ndOrder3 p_rate_e;
-struct Poles2ndOrder3 p_rate_rm;
-struct Poles3rdOrder3 p_att_e;
-struct Poles3rdOrder3 p_att_rm;
-struct Poles3rdOrder2 p_pos_e;
-struct Poles3rdOrder2 p_pos_rm;
-struct Poles3rdOrder1 p_alt_e;
-struct Poles3rdOrder1 p_alt_rm;
-struct Poles2ndOrder1 p_head_e;
-struct Poles2ndOrder1 p_head_rm;
+struct Poles2ndOrder3 p_rate_e = {.omega_n={15.0, 7.5, 7.5}, .zeta={1.0, 1.0, 1.0}};
+struct Poles2ndOrder3 p_rate_rm = {.omega_n={12.0, 6.0, 6.0}, .zeta={1.0, 1.0, 1.0}};
+struct Poles3rdOrder3 p_att_e = {.omega_n={15.0, 7.5, 7.5}, .zeta={1.0, 1.0, 1.0}, .p1={15.0, 7.5, 5.5}};
+struct Poles3rdOrder3 p_att_rm = {.omega_n={12.0, 6.0, 6.0}, .zeta={1.0, 1.0, 1.0}, .p1={12.0, 6.0, 6.0}};
+struct Poles3rdOrder2 p_pos_e = {.omega_n={1.0, 1.0}, .zeta={1.0, 1.0}, .p1={1.0, 1.0}};
+struct Poles3rdOrder2 p_pos_rm = {.omega_n={0.8, 0.8}, .zeta={1.0, 1.0}, .p1={0.8, 0.8}};
+struct Poles3rdOrder1 p_alt_e = {.omega_n=1.0, .zeta=1.0, .p1=1.0};
+struct Poles3rdOrder1 p_alt_rm = {.omega_n=0.8, .zeta=1.0, .p1=0.8};
+struct Poles2ndOrder1 p_head_e = {.omega_n=0.5, .zeta=1.0};
+struct Poles2ndOrder1 p_head_rm = {.omega_n=0.5, .zeta=1.0};
 
 /** @brief Reference bounds
  *
@@ -163,15 +163,44 @@ struct Poles2ndOrder1 p_head_rm;
  * stabilization, position, altitude, and heading control loops.
  * They are used to limit the reference commands within safe operational limits.
  */
-struct OneloopStabRef att_bounds;
-struct OneloopPosRef pos_bounds;
-struct OneloopAltRef alt_bounds;
-struct OneloopHeadRef head_bounds;
+struct OneloopStabRef att_bounds = {.att={10, 10, 10}.att_d={1000.0, 1000.0, 1000.0}, .att_2d={1000.0, 1000.0, 1000.0}, .att_3d={1000.0, 1000.0, 1000.0}};
+struct OneloopPosRef pos_bounds = {.pos={0, 0}, .vel={1000.0, 1000.0}, .acc={1000.0, 1000.0}, .jerk={1000.0, 1000.0}};
+struct OneloopAltRef alt_bounds = {.alt=0, .vel=1000.0, .acc=1000.0, .jerk=1000.0};
+struct OneloopHeadRef head_bounds = {.head=0, .head_rate=1000.0, .head_acc=1000.0};
 
 /**
  * @brief Model coefficients 
  */
-union CycloneCoefficients obm_coefficients;
+union CycloneCoefficients obm_coefficients = {
+    .fx_motor_squared       = 0.00000735f,
+    .fx_speed_forward       = -0.03f,
+
+    .fy_speed_lateral       = -0.008f,
+
+    .fz_motor_squared       = 0.0f,
+    .fz_speed_forward       = 0.0f,
+    .fz_speed_vertical      = -0.144f,
+    .fz_elevator_speed      = 0.0f,
+    .fz_elevator_motor      = 0.0f,
+
+    .mx_motor_diff          = 0.0f,
+    .mx_elevator_motor_diff = 0.0000283f,
+    .mx_elevator_speed_diff = 0.344f,
+    .mx_angular_coupling    = -2.18f,
+
+    .my_speed_forward       = 0.0f,
+    .my_speed_vertical      = -0.0888f,
+    .my_constant_zero       = -1.032f,
+    .my_motor_sum           = 0.0f,
+    .my_elevator_motor_sum  = -0.0000424f,
+    .my_elevator_speed_sum  = -0.2525f,
+    .my_angular_sum         = 1.262f,
+
+    .mz_speed_lateral       = -0.00371f,
+    .mz_motor_diff          = 0.000039f,
+    .mz_speed_roll          = -0.0129f,
+    .mz_angular_coupling    = -0.4827f
+  };
 
 /** 
  * @brief Controller gains
@@ -264,7 +293,6 @@ float eff_mat[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
 float n_array[ANDI_OUTPUTS];
 float m_array[ANDI_NUM_ACT_TOT];
 float coupling_factor[ANDI_OUTPUTS];
-float wls_scaler_u[ANDI_NUM_ACT_TOT];
 
 /* Define messages of the module*/
 #if PERIODIC_TELEMETRY
@@ -280,11 +308,11 @@ static void send_wls_u_oneloop(struct transport_tx *trans, struct link_device *d
 }
 static void send_eff_mat_stab_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
-  float zero = 0.0;
+  float zero = 0.0f;
   pprz_msg_send_EFF_MAT_STAB(trans, dev, AC_ID, 
-                ANDI_NUM_ACT, EFF_MAT_RW[3],
-                ANDI_NUM_ACT, EFF_MAT_RW[4],
-                ANDI_NUM_ACT, EFF_MAT_RW[5], 
+                ANDI_NUM_ACT, eff_mat[4],
+                ANDI_NUM_ACT, eff_mat[5],
+                ANDI_NUM_ACT, eff_mat[6], 
                                    1, &zero,
                 ANDI_NUM_ACT, G2_RW);
 }
@@ -292,82 +320,78 @@ static void send_eff_mat_stab_oneloop_andi(struct transport_tx *trans, struct li
 static void send_eff_mat_guid_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_EFF_MAT_GUID(trans, dev, AC_ID, 
-                ANDI_NUM_ACT_TOT, EFF_MAT_RW[0],
-                ANDI_NUM_ACT_TOT, EFF_MAT_RW[1],
-                ANDI_NUM_ACT_TOT, EFF_MAT_RW[2]);
+                ANDI_NUM_ACT_TOT, eff_mat[0],
+                ANDI_NUM_ACT_TOT, eff_mat[1],
+                ANDI_NUM_ACT_TOT, eff_mat[2],
+                ANDI_NUM_ACT_TOT, eff_mat[3]);
 }
 static void send_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
-  float temp_eulers_zxy_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, eulers_zxy_des.psi};
+  float zero = 0.0f;
   pprz_msg_send_STAB_ATTITUDE(trans, dev, AC_ID,
-                                        3, temp_eulers_zxy_des,
-                                        3, oneloop_andi.sta_state.att,
-                                        3, oneloop_andi.sta_ref.att,
-                                        3, oneloop_andi.sta_state.att_d,
-                                        3, oneloop_andi.sta_ref.att_d,                                       
-                                        3, oneloop_andi.sta_state.att_2d,
-                                        3, oneloop_andi.sta_ref.att_2d,
-                                        3, oneloop_andi.sta_ref.att_3d,                                       
+                                        1, &zero,
+                                        3, oneloop_andi.att_state.att,
+                                        3, oneloop_andi.att_ref.att,
+                                        3, oneloop_andi.att_state.att_d,
+                                        3, oneloop_andi.att_ref.att_d,                                       
+                                        3, oneloop_andi.att_state.att_2d,
+                                        3, oneloop_andi.att_ref.att_2d,
+                                        3, oneloop_andi.att_ref.att_3d,                                       
                                         ANDI_NUM_ACT, actuator_state_1l);                                      
 }
-// static void send_oneloop_actuator_state(struct transport_tx *trans, struct link_device *dev)
-// {
-//   pprz_msg_send_ACTUATOR_STATE(trans, dev, AC_ID, 
-//                                         ANDI_NUM_ACT, actuator_state_1l,
-//                                         ANDI_NUM_ACT_TOT, andi_u);
-// }
+
 static void send_guidance_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_GUIDANCE(trans, dev, AC_ID,
-                                        &oneloop_andi.gui_ref.pos[0],
-                                        &oneloop_andi.gui_ref.pos[1],
-                                        &oneloop_andi.gui_ref.pos[2],
-                                        &oneloop_andi.gui_state.pos[0],
-                                        &oneloop_andi.gui_state.pos[1],
-                                        &oneloop_andi.gui_state.pos[2],
-                                        &oneloop_andi.gui_ref.vel[0],
-                                        &oneloop_andi.gui_ref.vel[1],
-                                        &oneloop_andi.gui_ref.vel[2],
-                                        &oneloop_andi.gui_state.vel[0],
-                                        &oneloop_andi.gui_state.vel[1],
-                                        &oneloop_andi.gui_state.vel[2],
-                                        &oneloop_andi.gui_ref.acc[0],
-                                        &oneloop_andi.gui_ref.acc[1],
-                                        &oneloop_andi.gui_ref.acc[2],
-                                        &oneloop_andi.gui_state.acc[0],
-                                        &oneloop_andi.gui_state.acc[1],
-                                        &oneloop_andi.gui_state.acc[2],
-                                        &oneloop_andi.gui_ref.jer[0],
-                                        &oneloop_andi.gui_ref.jer[1],
-                                        &oneloop_andi.gui_ref.jer[2]);
+                                        &oneloop_andi.pos_ref.pos[0],
+                                        &oneloop_andi.pos_ref.pos[1],
+                                        &oneloop_andi.alt_ref.pos,
+                                        &oneloop_andi.pos_state.pos[0],
+                                        &oneloop_andi.pos_state.pos[1],
+                                        &oneloop_andi.alt_state.pos,
+                                        &oneloop_andi.pos_ref.vel[0],
+                                        &oneloop_andi.pos_ref.vel[1],
+                                        &oneloop_andi.alt_ref.vel,
+                                        &oneloop_andi.pos_state.vel[0],
+                                        &oneloop_andi.pos_state.vel[1],
+                                        &oneloop_andi.alt_state.vel,
+                                        &oneloop_andi.pos_ref.acc[0],
+                                        &oneloop_andi.pos_ref.acc[1],
+                                        &oneloop_andi.alt_ref.acc,
+                                        &oneloop_andi.pos_state.acc[0],
+                                        &oneloop_andi.pos_state.acc[1],
+                                        &oneloop_andi.alt_state.acc,
+                                        &oneloop_andi.pos_ref.jer[0],
+                                        &oneloop_andi.pos_ref.jer[1],
+                                        &oneloop_andi.alt_ref.jer);
 }
 
-static void debug_vect(struct transport_tx *trans, struct link_device *dev, char *name, float *data, int datasize)
-{
-  pprz_msg_send_DEBUG_VECT(trans, dev, AC_ID,
-                           strlen(name), name,
-                           datasize, data);
-}
+// static void debug_vect(struct transport_tx *trans, struct link_device *dev, char *name, float *data, int datasize)
+// {
+//   pprz_msg_send_DEBUG_VECT(trans, dev, AC_ID,
+//                            strlen(name), name,
+//                            datasize, data);
+// }
 
-static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
-{
-  float temp_debug_vect[14];
-  temp_debug_vect[0] = (float) chirp_n_counter;
-  temp_debug_vect[1] = oneloop_andi_model[1];
-  temp_debug_vect[2] = oneloop_andi_model[2];
-  temp_debug_vect[3] = oneloop_andi_model[3];
-  temp_debug_vect[4] = oneloop_andi_model[4];
-  temp_debug_vect[5] = oneloop_andi_model[5];
-  temp_debug_vect[6] = oneloop_andi_sigma;
-  temp_debug_vect[7] = chirp_on ? 1.0 : 0.0;
-  temp_debug_vect[8] = filt_ad.meas;
-  temp_debug_vect[9] = temp_checks_2[0];
-  temp_debug_vect[10] = temp_checks_2[1];
-  temp_debug_vect[11] = temp_ref_att[0];
-  temp_debug_vect[12] = temp_ref_att[1];
-  temp_debug_vect[13] = temp_ref_att[2];
-  debug_vect(trans, dev, "APF", temp_debug_vect, 14);
-}
+// static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
+// {
+//   float temp_debug_vect[14];
+//   temp_debug_vect[0] = (float) chirp_n_counter;
+//   temp_debug_vect[1] = oneloop_andi_model[1];
+//   temp_debug_vect[2] = oneloop_andi_model[2];
+//   temp_debug_vect[3] = oneloop_andi_model[3];
+//   temp_debug_vect[4] = oneloop_andi_model[4];
+//   temp_debug_vect[5] = oneloop_andi_model[5];
+//   temp_debug_vect[6] = oneloop_andi_sigma;
+//   temp_debug_vect[7] = chirp_on ? 1.0 : 0.0;
+//   temp_debug_vect[8] = filt_ad.meas;
+//   temp_debug_vect[9] = temp_checks_2[0];
+//   temp_debug_vect[10] = temp_checks_2[1];
+//   temp_debug_vect[11] = temp_ref_att[0];
+//   temp_debug_vect[12] = temp_ref_att[1];
+//   temp_debug_vect[13] = temp_ref_att[2];
+//   debug_vect(trans, dev, "APF", temp_debug_vect, 14);
+// }
 
 #endif //PERIODIC_TELEMETRY
 
@@ -399,9 +423,9 @@ static float positive_non_zero(float input)
  * @param k   Scaling gains applied elementwise to the error [n]
  * @param n   Dimension of the arrays
  */
-void scaled_error_nd(int n, float err[restrict n], float a[static n], float b[static n], float k[static n])
+static void scaled_error_nd(int n, float err[restrict n], const float a[static n], const float b[static n], const float k[static n])
 {
-  for (uint8_t i = 0; i < n; i++) {
+  for (uint_fast8_t i = 0; i < n; i++) {
     err[i] = k[i] * (a[i] - b[i]);
   }
 }
@@ -420,9 +444,9 @@ void scaled_error_nd(int n, float err[restrict n], float a[static n], float b[st
  * @param a_dot   Input array containing the time derivatives of each state [n]
  * @param n       Dimension of the arrays
  */
-void integrate_nd(int n, float a[static n], float a_dot[static n], float dt)
+static void integrate_nd(int n, float a[static n], const float a_dot[static n], float dt)
 {
-  for (uint8_t i = 0; i < n; i++) {
+  for (uint_fast8_t i = 0; i < n; i++) {
     a[i] = a[i] + dt * a_dot[i];
   }
 }
@@ -440,7 +464,7 @@ void integrate_nd(int n, float a[static n], float a_dot[static n], float dt)
  * @param[in,out] att_ref Pointer to struct containing reference model states (in/out)
  */
 
-void reference_model_rate(
+static void reference_model_rate(
   float dt, 
   float rate_des[3], 
   const struct Gains2ndOrder3 *k_rate_rm,
@@ -450,22 +474,22 @@ void reference_model_rate(
   float rate_d_des[3];
   float rate_2d_des[3];
 
-  for (uint8_t i = 0; i < 3; i++)
+  for (uint_fast8_t i = 0; i < 3; i++)
     BoundAbs(rate_des[i], bounds->att_d[i]);
 
   // Angular rate error 
   scaled_error_nd(3, rate_d_des, rate_des, att_ref->att_2d, k_rate_rm->k1);
-  for (uint8_t i = 0; i < 3; i++)
+  for (uint_fast8_t i = 0; i < 3; i++)
     BoundAbs(rate_d_des[i], bounds->att_2d[i]);
 
   // Angular acceleration error
   scaled_error_nd(3, rate_2d_des, rate_d_des, att_ref->att_3d, k_rate_rm->k2);
-  for (uint8_t i = 0; i < 3; i++)
+  for (uint_fast8_t i = 0; i < 3; i++)
     BoundAbs(rate_2d_des[i], bounds->att_3d[i]);
 
   // Reference propagation 
-  float_vect_copy(att_ref->att_3d, rate_2d_des, 3);
-  integrate_nd(3, att_ref->att_2d, rate_2d_des, dt);
+  float_vect_copy(att_ref->att_3d, &rate_2d_des, 3);
+  integrate_nd(3, att_ref->att_2d, &rate_2d_des, dt);
   integrate_nd(3, att_ref->att_d, att_ref->att_2d, dt);
   float_vect_zero(att_ref->att, 3);
 }
@@ -482,7 +506,7 @@ void reference_model_rate(
  * @param[in] bounds      Pointer to reference model limits
  * @param[in,out] att_ref Pointer to struct containing reference model states (in/out)
  */
-void reference_model_attitude(
+static void reference_model_attitude(
   float dt, 
   float att_des[3],
   const struct Gains3rOrder3 *k_att_rm,
@@ -494,26 +518,26 @@ void reference_model_attitude(
   float att_3d_des[3];
 
   // Limit input attitude commands
-  for (uint8_t i = 0; i < 3; i++)
+  for (uint_fast8_t i = 0; i < 3; i++)
     BoundAbs(att_des[i], bounds->att[i]);
 
   // Attitude tracking error → desired angular rate
   scaled_error_nd(3, att_d_des, att_des, att_ref->att_d, k_att_rm->k1);
-  for (uint8_t i = 0; i < 3; i++)
+  for (uint_fast8_t i = 0; i < 3; i++)
     BoundAbs(att_d_des[i], bounds->att_d[i]);
 
   // Angular rate tracking error → desired angular acceleration
   scaled_error_nd(3, att_2d_des, att_d_des, att_ref->att_2d, k_att_rm->k2);
-  for (uint8_t i = 0; i < 3; i++)
+  for (uint_fast8_t i = 0; i < 3; i++)
     BoundAbs(att_2d_des[i], bounds->att_2d[i]);
 
   scaled_error_nd(3, att_3d_des, att_d_des, att_ref->att_3d, k_att_rm->k3);
-  for (uint8_t i = 0; i < 3; i++)
+  for (uint_fast8_t i = 0; i < 3; i++)
     BoundAbs(att_3d_des[i], bounds->att_3d[i]);
 
   // Propagate references
-  float_vect_copy(att_ref->att_3d, att_3d_des, 3);
-  integrate_nd(3, att_ref->att_2d, att_3d_des, dt);
+  float_vect_copy(att_ref->att_3d, &att_3d_des, 3);
+  integrate_nd(3, att_ref->att_2d, &att_3d_des, dt);
   integrate_nd(3, att_ref->att_d, att_ref->att_2d, dt);
   integrate_nd(3, att_ref->att, att_ref->att_d, dt);
 }
@@ -532,7 +556,7 @@ void reference_model_attitude(
  * @param[in] bounds    Pointer to reference model limits for velocity, acceleration, jerk
  * @param[in,out] pos_ref   Pointer to struct with reference states (pos, vel, accel)
  */
-void reference_model_position(
+static void reference_model_position(
   float dt,
   float pos_des,
   const struct Gains3rdOrder2 *k_pos_rm,
@@ -545,25 +569,25 @@ void reference_model_position(
 
   // Position error
   scaled_error_nd(2, vel_des, pos_des, pos_ref->pos, k_pos_rm->k1);
-  for (uint8_t i = 0; i < 2; i++) {
+  for (uint_fast8_t i = 0; i < 2; i++) {
     BoundAbs(vel_des[i], bounds->vel[i]);
   }
 
   // Velocity error 
   scaled_error_nd(2, acc_des, vel_des, pos_ref->vel, k_pos_rm->k2);
-  for (uint8_t i = 0; i < 2; i++) {
+  for (uint_fast8_t i = 0; i < 2; i++) {
     BoundAbs(acc_des[i], bounds->acc[i]);
   }
 
   // Acceleration error
   scaled_error_nd(2, jer_des, acc_des, pos_ref->accel, k_pos_rm->k3);
-  for (uint8_t i = 0; i < 2; i++) {
+  for (uint_fast8_t i = 0; i < 2; i++) {
     BoundAbs(jer_des[i], bounds->jer[i]);
   }
 
   // Reference propagation 
-  float_vect_copy(pos_ref->jer, jer_des, 2);
-  integrate_nd(2, pos_ref->acc, jer_des, dt);
+  float_vect_copy(pos_ref->jer, &jer_des, 2);
+  integrate_nd(2, pos_ref->acc, &jer_des, dt);
   integrate_nd(2, pos_ref->vel, pos_ref->acc, dt);
   integrate_nd(2, pos_ref->pos, pos_ref->vel, dt);
 }
@@ -580,7 +604,7 @@ void reference_model_position(
  * @param[in] bounds    Pointer to reference model limits for vertical velocity, acceleration, jerk
  * @param[in,out] alt_ref   Pointer to struct with altitude reference states (alt, vel, accel, jerk)
  */
-void reference_model_altitude(
+static void reference_model_altitude(
   float dt,
   float alt_des,
   const struct Gains3rdOrder1 *k_alt_rm,
@@ -623,7 +647,7 @@ void reference_model_altitude(
  * @param[in] bounds    Pointer to reference model limits for heading rate and yaw acceleration
  * @param[in,out] head_ref  Pointer to struct with heading reference states (angle, rate, accel)
  */
-void reference_model_heading(
+static void reference_model_heading(
   float dt,
   float head_des,
   const struct Gains2ndOrder1 *k_head_rm,
@@ -646,7 +670,7 @@ void reference_model_heading(
 
   // Reference propagation
   head_ref->head_2d = accel_des;
-  integrate_nd(1, head_ref->head_d, accel_des, dt);
+  integrate_nd(1, head_ref->head_d, &accel_des, dt);
   integrate_nd(1, head_ref->head, head_ref->head_d, dt);
 
   // Normalize angle to [-pi, pi]
@@ -667,7 +691,7 @@ void reference_model_heading(
  * @param[in]  k_rate_e   Pointer to structured 2nd-order gains (k1, k2 per axis)
  * @param[out] nu_rate    Pointer to output virtual control command [3]
  */
-void error_controller_rate(
+static void error_controller_rate(
   float dt,
   const struct OneloopAttRef *att_ref,
   const struct OneloopAttState *att_state,
@@ -681,7 +705,7 @@ void error_controller_rate(
   scaled_error_nd(3, omega_d_err, att_ref->att_2d att_state->att_2d, k_rate_e->k2);
 
   // Compute virtual command
-  for (uint8_t i = 0; i < 3; i++) {
+  for (uint_fast8_t i = 0; i < 3; i++) {
     nu_rate[i] = omega_err[i] + omega_d_err[i] + att_ref->att_3d[i];
   }
 }
@@ -702,7 +726,7 @@ void error_controller_rate(
  * @param[in]  k_att_e    Pointer to structured gains for error scaling (k1, k2, k3 per axis)
  * @param[out] nu_att     Pointer to output virtual control command vector [3]
  */
-void error_controller_attitude(
+static void error_controller_attitude(
   float dt,
   const struct OneloopAttRef *att_ref,
   const struct OneloopAttState *att_state,
@@ -718,7 +742,7 @@ void error_controller_attitude(
   scaled_error_nd(3, att_2d_err, att_ref->att_2d att_state->att_2d, k_rate_e->k3);
 
   // Compute virtual command
-  for (uint8_t i = 0; i < 3; i++) {
+  for (uint_fast8_t i = 0; i < 3; i++) {
     nu_att[i] = att_err[i] + att_d_err[i] + att_2d_err[i] + att_ref->att_3d[i];
   }
 }
@@ -738,7 +762,7 @@ void error_controller_attitude(
  * @param[in]  k_pos_e   Pointer to structured 3rd-order gains for error scaling (k1, k2, k3 per axis)
  * @param[out] nu_pos    Pointer to output virtual command vector [2]
  */
-void error_controller_position(
+static void error_controller_position(
   float dt,
   const struct OneloopPosRef *pos_ref,
   const struct OneloopPosState *pos_state,
@@ -754,7 +778,7 @@ void error_controller_position(
   scaled_error_nd(2, acc_err, pos_ref->acc, pos_state->acc, k_pos_e->k3);
 
   // Compute virtual command
-  for (uint8_t i = 0; i < 2; i++) {
+  for (uint_fast8_t i = 0; i < 2; i++) {
     nu_pos[i] = pos_err[i] + vel_err[i] + acc_err[i] + pos_ref->jer[i];
   }
 }
@@ -773,7 +797,7 @@ void error_controller_position(
  * @param[in]  k_alt_e   Pointer to scalar 3rd-order gains for error scaling (k1, k2, k3)
  * @param[out] nu_alt    Pointer to output virtual control input scalar
  */
-void error_controller_altitude(
+static void error_controller_altitude(
   float dt,
   const struct OneloopAltRef *alt_ref,
   const struct OneloopAltState *alt_state,
@@ -806,7 +830,7 @@ void error_controller_altitude(
  * @param[in]  k_head_e   Pointer to 3rd-order gains (k1 and k2 gains).
  * @param[out] nu_head    Pointer to output virtual control command (scalar).
  */
-void error_controller_heading(
+static void error_controller_heading(
   float dt,
   const struct OneloopAltRef *head_ref,
   const struct OneloopAltState *head_state,
@@ -864,9 +888,9 @@ static void compute_gains_3rd_order_single(float* k1, float* k2, float* k3, floa
  * @param[out] gains Output structure for computed gains
  * @param[in] poles Input pole structure (omega_n, zeta)
  */
-void compute_gains_2nd_order_3(struct Gains2ndOrder3* gains, struct Poles2ndOrder3* poles)
+static void compute_gains_2nd_order_3(struct Gains2ndOrder3* gains, struct Poles2ndOrder3* poles)
 {
-    for (uint8_t i = 0; i < 3; ++i) {
+    for (uint_fast8_t i = 0; i < 3; ++i) {
         compute_gains_2nd_order_single(&gains->k1[i], &gains->k2[i],
                                        poles->omega_n[i], poles->zeta[i]);
     }
@@ -878,9 +902,9 @@ void compute_gains_2nd_order_3(struct Gains2ndOrder3* gains, struct Poles2ndOrde
  * @param[out] gains Output structure for computed gains
  * @param[in] poles Input pole structure (omega_n, zeta)
  */
-void compute_gains_2nd_order_2(struct Gains2ndOrder2* gains, struct Poles2ndOrder2* poles)
+static void compute_gains_2nd_order_2(struct Gains2ndOrder2* gains, struct Poles2ndOrder2* poles)
 {
-    for (uint8_t i = 0; i < 2; ++i) {
+    for (uint_fast8_t i = 0; i < 2; ++i) {
         compute_gains_2nd_order_single(&gains->k1[i], &gains->k2[i],
                                        poles->omega_n[i], poles->zeta[i]);
     }
@@ -892,7 +916,7 @@ void compute_gains_2nd_order_2(struct Gains2ndOrder2* gains, struct Poles2ndOrde
  * @param[out] gains Output structure for computed gains
  * @param[in] poles Input pole structure (omega_n, zeta)
  */
-void compute_gains_2nd_order_1(struct Gains2ndOrder1* gains, struct Poles2ndOrdert1* poles)
+static void compute_gains_2nd_order_1(struct Gains2ndOrder1* gains, struct Poles2ndOrdert1* poles)
 {
     compute_gains_2nd_order_single(&gains->k1, &gains->k2,
                                    poles->omega_n, poles->zeta);
@@ -904,9 +928,9 @@ void compute_gains_2nd_order_1(struct Gains2ndOrder1* gains, struct Poles2ndOrde
  * @param[out] gains Output structure for computed gains
  * @param[in] poles Input pole structure (omega_n, zeta, p1)
  */
-void compute_gains_3rd_order_3(struct Gains3rdOrder3* gains, struct Poles3rdOrder3* poles)
+static void compute_gains_3rd_order_3(struct Gains3rdOrder3* gains, struct Poles3rdOrder3* poles)
 {
-    for (uint8_t i = 0; i < 3; ++i) {
+    for (uint_fast8_t i = 0; i < 3; ++i) {
         compute_gains_3rd_order_single(&gains->k1[i], &gains->k2[i], &gains->k3[i],
                                       poles->omega_n[i], poles->zeta[i], poles->p3[i]);
     }
@@ -918,9 +942,9 @@ void compute_gains_3rd_order_3(struct Gains3rdOrder3* gains, struct Poles3rdOrde
  * @param[out] gains Output structure for computed gains
  * @param[in] poles Input pole structure (omega_n, zeta, p1)
  */
-void compute_gains_3rd_order_2(struct Gains3rdOrder2* gains, struct Poles3rdOrder2* poles)
+static void compute_gains_3rd_order_2(struct Gains3rdOrder2* gains, struct Poles3rdOrder2* poles)
 {
-    for (uint8_t i = 0; i < 2; ++i) {
+    for (uint_fast8_t i = 0; i < 2; ++i) {
         compute_gains_3rd_order_single(&gains->k1[i], &gains->k2[i], &gains->k3[i],
                                       poles->omega_n[i], poles->zeta[i], poles->p3[i]);
     }
@@ -932,7 +956,7 @@ void compute_gains_3rd_order_2(struct Gains3rdOrder2* gains, struct Poles3rdOrde
  * @param[out] gains Output structure for computed gains
  * @param[in] poles Input pole structure (omega_n, zeta, p1)
  */
-void compute_gains_3rd_order_1(struct Gains3rdOrder1* gains, struct Poles3rdOrdert1* poles)
+static void compute_gains_3rd_order_1(struct Gains3rdOrder1* gains, struct Poles3rdOrdert1* poles)
 {
     compute_gains_3rd_order_single(&gains->k1, &gains->k2, &gains->k3,
                                   poles->omega_n, poles->zeta, poles->p3);
@@ -1009,7 +1033,7 @@ static void update_filter_on_type(struct Filter *filter, float input) {
 }
 
 /** @brief  Propagate the filters */
-void oneloop_andi_propagate_filters(void) {
+static void oneloop_andi_propagate_filters(void) {
   // Fetch feedback
   struct  NedCoor_f *accel = stateGetAccelNed_f();
   struct  NedCoor_f *veloc = stateGetSpeedNed_f();
@@ -1058,7 +1082,7 @@ void oneloop_andi_propagate_filters(void) {
   // update_filter_on_type(&filt_airspeed, 0.0f);
 
   // FIXME: Fetch actuator feedback.
-  for (int i = 0; i < ANDI_NUM_ACT_TOTAL; i++) {
+  for (int i = 0; i < ANDI_NUM_ACT_TOT; i++) {
       update_filter_on_type(&filt_u[i], 0.0f);
   }
 }
@@ -1119,7 +1143,7 @@ static void get_desired_heading_radio_command(float* heading_des, float heading_
 
 
 /** @brief  Function to reconstruct actuator state using first order dynamics */
-void get_act_state_oneloop(void)
+static void get_act_state_oneloop(void)
 {
   int8_t i;
   float prev_actuator_state_1l;
@@ -1145,7 +1169,7 @@ void get_act_state_oneloop(void)
  */
 static void discretize_act_dynamics(float dt, float* act_dynamics_d, const float* act_dynamics)
 {
-  for (uint8_t i = 0; i < ANDI_NUM_ACT_TOT; i++){
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT_TOT; i++){
     act_dynamics_d[i] = 1.0f - exp(-act_dynamics[i] * dt);
     Bound(act_dynamics_d[i], 0.00001f, 1.0f); //Fixme: Are these bounds always valid? Magic numbers
   }
@@ -1164,8 +1188,8 @@ static void discretize_act_dynamics(float dt, float* act_dynamics_d, const float
  * @param[in] act_max_norm Array of actuator maximum values in normalized units.
  * @param[in] act_min_norm Array of actuator minimum values in normalized units.
  */
-static void compute_wls_scaling_factor(float* wls_scaler_u, const float* act_max, const float* act_min, const float* act_max_norm, const float* act_min_norm) {
-  for (uint8_t i = 0; i < ANDI_NUM_ACT_TOT; i++){
+static void compute_wls_scaling_factors(float* wls_scaler_u, const float* act_max, const float* act_min, const float* act_max_norm, const float* act_min_norm) {
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT_TOT; i++){
     float nominator = positive_non_zero(act_max[i] - act_min[i])
     float denominator = positive_non_zero(act_max_norm[i] - act_min_norm[i]);
     wls_scaler_u[i] = nominator / denominator;
@@ -1180,7 +1204,7 @@ static void compute_wls_scaling_factor(float* wls_scaler_u, const float* act_max
  * FIXME: Add option for 'half loop' where CE is adjusted to not
  * control certain virtual actuators.
  */
-void evaluate_effectiveness_matrix(float* eff_mat)
+static void evaluate_effectiveness_matrix(float eff_mat[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT])
 {
   // float v_e[3];
   // v_e[0] = filt_vn.out;
@@ -1219,7 +1243,7 @@ void evaluate_effectiveness_matrix(float* eff_mat)
  */
 static void get_desired_altitude_radio_command(float* alt_des, float alt_rate_bound, float dt)
 {
-  float rate_des = ((float)radio_control_get(RADIO_THRUST) / MAX_PPRZ) * alt_rate_bound;
+  float rate_des = ((float)radio_control_get(RADIO_THROTTLE) / MAX_PPRZ) * alt_rate_bound;
   *alt_des += rate_des * dt;
 }
 
@@ -1227,21 +1251,21 @@ static void get_desired_altitude_radio_command(float* alt_des, float alt_rate_bo
 void oneloop_andi_init(void)
 { 
   printf("INIT ANDI controller: start \n");
-  oneloop_andi.ctrl_type = CONTROL_TYPE_ANDI;
+  oneloop_andi.control_type = CONTROL_TYPE_ANDI;
   oneloop_andi.control_mode = CONTROL_MODE_RATE;
 
   // Initialize poles.
   // FIXME: Make poles dynamically set from airframe file
-  p_rate_e  = {.omega_n={15.0, 7.5, 7.5}, .zeta={1.0, 1.0, 1.0}};
-  p_rate_rm = {.omega_n={12.0, 6.0, 6.0}, .zeta={1.0, 1.0, 1.0}};
-  p_att_e  = {.omega_n={15.0, 7.5, 7.5}, .zeta={1.0, 1.0, 1.0}, .p1={15.0, 7.5, 5.5}};
-  p_att_rm = {.omega_n={12.0, 6.0, 6.0}, .zeta={1.0, 1.0, 1.0}, .p1={12.0, 6.0, 6.0}};
-  p_pos_e   = {.omega_n={1.0, 1.0}, .zeta={1.0, 1.0}, .p1={1.0, 1.0}};
-  p_pos_rm  = {.omega_n={0.8, 0.8}, .zeta={1.0, 1.0}, .p1={0.8, 0.8}};
-  p_alt_e   = {.omega_n=1.0, .zeta=1.0, .p1=1.0};
-  p_alt_rm  = {.omega_n=0.8, .zeta=1.0, .p1=0.8};
-  p_head_e  = {.omega_n=0.5, .zeta=1.0};
-  p_head_rm = {.omega_n=0.5, .zeta=1.0};
+  // p_rate_e  = {.omega_n={15.0, 7.5, 7.5}, .zeta={1.0, 1.0, 1.0}};
+  // p_rate_rm = {.omega_n={12.0, 6.0, 6.0}, .zeta={1.0, 1.0, 1.0}};
+  // p_att_e  = {.omega_n={15.0, 7.5, 7.5}, .zeta={1.0, 1.0, 1.0}, .p1={15.0, 7.5, 5.5}};
+  // p_att_rm = {.omega_n={12.0, 6.0, 6.0}, .zeta={1.0, 1.0, 1.0}, .p1={12.0, 6.0, 6.0}};
+  // p_pos_e   = {.omega_n={1.0, 1.0}, .zeta={1.0, 1.0}, .p1={1.0, 1.0}};
+  // p_pos_rm  = {.omega_n={0.8, 0.8}, .zeta={1.0, 1.0}, .p1={0.8, 0.8}};
+  // p_alt_e   = {.omega_n=1.0, .zeta=1.0, .p1=1.0};
+  // p_alt_rm  = {.omega_n=0.8, .zeta=1.0, .p1=0.8};
+  // p_head_e  = {.omega_n=0.5, .zeta=1.0};
+  // p_head_rm = {.omega_n=0.5, .zeta=1.0};
 
   // Compute gains from on poles
   compute_gains_2nd_order_3(&k_rate_e, &p_rate_e);
@@ -1257,47 +1281,47 @@ void oneloop_andi_init(void)
   
   // Initialize bounds
   // FIXME: Make bounds dynamically set from airframe file
-  att_bounds = {.att={10, 10, 10}.att_d={1000.0, 1000.0, 1000.0}, .att_2d={1000.0, 1000.0, 1000.0}, .att_3d={1000.0, 1000.0, 1000.0}};
-  pos_bounds  = {.pos={0, 0}, .vel={1000.0, 1000.0}, .acc={1000.0, 1000.0}, .jerk={1000.0, 1000.0}};
-  alt_bounds  = {.alt=0, .vel=1000.0, .acc=1000.0, .jerk=1000.0};
-  head_bounds = {.head=0, .head_rate=1000.0, .head_acc=1000.0};
+  // att_bounds = {.att={10, 10, 10}.att_d={1000.0, 1000.0, 1000.0}, .att_2d={1000.0, 1000.0, 1000.0}, .att_3d={1000.0, 1000.0, 1000.0}};
+  // pos_bounds  = {.pos={0, 0}, .vel={1000.0, 1000.0}, .acc={1000.0, 1000.0}, .jerk={1000.0, 1000.0}};
+  // alt_bounds  = {.alt=0, .vel=1000.0, .acc=1000.0, .jerk=1000.0};
+  // head_bounds = {.head=0, .head_rate=1000.0, .head_acc=1000.0};
 
   // Initialize obm coefficients
   // FIXME: Make coefficients set from airframe file
-  obm_coefficients = {
-    .fx_motor_squared       = 0.00000735f,
-    .fx_speed_forward       = -0.03f,
+  // obm_coefficients = {
+  //   .fx_motor_squared       = 0.00000735f,
+  //   .fx_speed_forward       = -0.03f,
 
-    .fy_speed_lateral       = -0.008f,
+  //   .fy_speed_lateral       = -0.008f,
 
-    .fz_motor_squared       = 0.0f,
-    .fz_speed_forward       = 0.0f,
-    .fz_speed_vertical      = -0.144f,
-    .fz_elevator_speed      = 0.0f,
-    .fz_elevator_motor      = 0.0f,
+  //   .fz_motor_squared       = 0.0f,
+  //   .fz_speed_forward       = 0.0f,
+  //   .fz_speed_vertical      = -0.144f,
+  //   .fz_elevator_speed      = 0.0f,
+  //   .fz_elevator_motor      = 0.0f,
 
-    .mx_motor_diff          = 0.0f,
-    .mx_elevator_motor_diff = 0.0000283f,
-    .mx_elevator_speed_diff = 0.344f,
-    .mx_angular_coupling    = -2.18f,
+  //   .mx_motor_diff          = 0.0f,
+  //   .mx_elevator_motor_diff = 0.0000283f,
+  //   .mx_elevator_speed_diff = 0.344f,
+  //   .mx_angular_coupling    = -2.18f,
 
-    .my_speed_forward       = 0.0f,
-    .my_speed_vertical      = -0.0888f,
-    .my_constant_zero       = -1.032f,
-    .my_motor_sum           = 0.0f,
-    .my_elevator_motor_sum  = -0.0000424f,
-    .my_elevator_speed_sum  = -0.2525f,
-    .my_angular_sum         = 1.262f,
+  //   .my_speed_forward       = 0.0f,
+  //   .my_speed_vertical      = -0.0888f,
+  //   .my_constant_zero       = -1.032f,
+  //   .my_motor_sum           = 0.0f,
+  //   .my_elevator_motor_sum  = -0.0000424f,
+  //   .my_elevator_speed_sum  = -0.2525f,
+  //   .my_angular_sum         = 1.262f,
 
-    .mz_speed_lateral       = -0.00371f,
-    .mz_motor_diff          = 0.000039f,
-    .mz_speed_roll          = -0.0129f,
-    .mz_angular_coupling    = -0.4827f
-  };
+  //   .mz_speed_lateral       = -0.00371f,
+  //   .mz_motor_diff          = 0.000039f,
+  //   .mz_speed_roll          = -0.0129f,
+  //   .mz_angular_coupling    = -0.4827f
+  // };
 
   // FIXME: Putting a small non zero value is dangerous.
   // Make sure that the dynamics are positive and non-zero
-  for (uint8_t i = 0; i < ANDI_NUM_ACT_TOT; i++) {
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     act_dynamics[i] = positive_non_zero(act_dynamics[i]);
   }
 
@@ -1379,7 +1403,6 @@ void oneloop_andi_enter(enum ControlMode control_mode, enum ControlType control_
   oneloop_andi.control_mode   = control_mode;
   oneloop_andi.control_type   = control_type;
   printf("ENTER ANDI controller: succes \n");
-
 }
 
 
@@ -1484,18 +1507,18 @@ void oneloop_andi_run(enum ControlMode control_mode)
 
   float wls_scaler_u[ANDI_ACT_NUM_TOTAL];
   compute_wls_scaling_factors(wls_scaler_u, act_max, act_min, act_max_norm, act_mix_norm);
-  for (uint8_t i = 0; i < ANDI_OUTPUTS; i++) {
-    for (uint8_t j = 0; j < ANDI_NUM_ACT_TOT; j++) {
-      eff_mat[i * ANDI_NUM_ACT_TOT + j] *= scaler[j];
+  for (uint_fast8_t i = 0; i < ANDI_OUTPUTS; i++) {
+    for (uint_fast8_t j = 0; j < ANDI_NUM_ACT_TOT; j++) {
+      eff_mat[i * ANDI_NUM_ACT_TOT + j] *= wls_scaler_u[j];
     }
   }
-  for (uint8_t i = 0; i < ANDI_OUTPUTS; i++) {
+  for (uint_fast8_t i = 0; i < ANDI_OUTPUTS; i++) {
     bwls_1l[i] = eff_mat[i];
   }
   // WLS Control Allocator
   wls_alloc(&wls_one_p, bwls_1l, 0, 0, 10);
   for (i = 0; i < ANDI_NUM_ACT_TOTAL; i++) {
-    andi_du[i] = scalar[i] * wls_one_p.u[i];
+    andi_du[i] = wls_scaler_u[i] * wls_one_p.u[i];
   }
  
   //FIXME: Convert du to u here.

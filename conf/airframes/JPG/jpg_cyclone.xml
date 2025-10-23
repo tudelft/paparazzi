@@ -102,9 +102,43 @@
 
         <!-- Control -->      
         <module name="stabilization" type="oneloop" >
-            <configure name="INDI_NUM_ACT" value="9"/>
+            <configure name="INDI_NUM_ACT" value="4"/>
         </module>
+        <module name="guidance" type="oneloop"/>
+
+        <module name="nav" type="hybrid">
+            <define name="NAV_HYBRID_MAX_AIRSPEED"      value="19.0f"/>
+            <define name="NAV_HYBRID_SPEED_MARGIN"      value="0.0f"/>
+            <define name="NAV_HYBRID_MAX_ACCELERATION"  value="4.0f"/>
+            <define name="NAV_HYBRID_SOFT_ACCELERATION" value="2.0f"/>
+            <define name="NAV_HYBRID_MAX_DECELERATION"  value="1.0f"/>
+            <define name="GUIDANCE_H_USE_REF"           value="FALSE"/>
+            <define name="NAV_HYBRID_LIMIT_CIRCLE_RADIUS" value="TRUE"/>
+        </module>
+
+        <module name="oneloop" type="andi">
+            <configure name="ANDI_OUTPUTS" value="7"/>
+        </module>
+
+        <module name="wls">
+            <define name="WLS_N_U_MAX" value = "7"/>
+            <define name="WLS_N_V_MAX" value = "7"/>
+        </module>
+
     </firmware>
+
+    <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
+        <!--                                                 |   EL   |   ER   |    ML   |    MR   |   P  |    Q  |    R  | -->
+        <define name  = "ACT_DYN"                   value = "{   20.0f,   20.0f,    40.0f,    40.0f,   1.0f,    1.0f,   1.0f}" />
+        <define name  = "ACT_IS_SERVO"              value = "{       1,       1,        0,        0,       0,    0,        0}" />
+        <define name  = "ACT_MAX"                   value = "{ 9600.0f, 9600.0f,  9600.0f,  9600.0f, 9600.0f, 9600.0f, 9600.0f}"/>
+        <define name  = "ACT_MIN"                   value = "{-9600.0f, -9600.0f,  0.0f,    0.0f,    -9600.0f, -9600.0f, -9600.0f}"/>
+        <define name  = "ACT_MAX_NORM"              value = "{    1.0f,    1.0f,     1.0f,     1.0f,    1.0f,    1.0f,     1.0f,}"/>
+        <define name  = "ACT_MIN_NORM"              value = "{    -1.0f,   -1.0f,     0.0f,     0.0f,    -1.0f,    -1.0f,    -1.0f}"/>
+        <define name  = "WU"                        value = "{   0.75f,   0.75f,    0.75f,    0.75f,   1.20f,   1.20f,   1.20f}"/>
+        <define name  = "U_PREF"                    value = "{   0.00f,   0.00f,    800.00f,    800.00f,   0.00f,   0.00f,   0.00f}"/>
+        <define name  = "WV"                        value = "{  4.0f,  4.0f,   4.0f,  1.0f, 8.0f,  8.0f,  1.00f}"/>   
+    </section>
 
 
     <!-- From old t4 code, I would need servos 1 and 5, and motor 1 and 2 respectively  -->
@@ -139,5 +173,4 @@
         <set servo="S_THROTTLE_LEFT"  value="$autopilot_get_motors_on()? commands[COMMAND_THROTTLE_LEFT] : -MAX_PPRZ"/>
         <set servo="S_THROTTLE_RIGHT" value="$autopilot_get_motors_on()? commands[COMMAND_THROTTLE_RIGHT] : -MAX_PPRZ"/>
     </command_laws>
-
 </airframe>

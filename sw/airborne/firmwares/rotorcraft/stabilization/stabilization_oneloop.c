@@ -29,17 +29,12 @@
 
 void stabilization_attitude_enter(void)
 {
-  oneloop_andi_enter(true, CTRL_ANDI);
+  oneloop_andi_enter(CONTROL_MODE_ATTITUDE, CONTROL_TYPE_ANDI);
 }
 
 void stabilization_attitude_run(bool in_flight, UNUSED struct StabilizationSetpoint *sp, UNUSED struct ThrustSetpoint *thrust, UNUSED int32_t *cmd)
 {
-  struct FloatVect3 PSA_des    = { 0 };
-  int    rm_order_h = 3;
-  int    rm_order_v = 3;
   // Run the oneloop controller in half-loop mode
-  if (oneloop_andi.half_loop) {
-    oneloop_andi_run(in_flight, oneloop_andi.half_loop, PSA_des, rm_order_h, rm_order_v);
-  }
+  oneloop_andi_run(CONTROL_MODE_ATTITUDE);
 }
 

@@ -6,10 +6,10 @@
     <define name="ANDI_NUM_VIRTUAL_ACT" value="COMMANDS_NB_VIRTUAL" description="number of virtual actuators, must be greater than 2"/>
     <define name="ANDI_OUTPUTS" value="7" description="number of outputs for control allocation."/>
   </doc>
-  <settings>
+  <!-- <settings>
    <dl_settings>
      <dl_settings NAME="oneloop">
-      <!-- <dl_setting var="p_att_e.omega_n"    min="0.1"     step="0.001" max="20.0"  shortname="p_att_e_omega_n"/>
+      <dl_setting var="p_att_e.omega_n"    min="0.1"     step="0.001" max="20.0"  shortname="p_att_e_omega_n"/>
       <dl_setting var="p_att_e.zeta"       min="0.1"     step="0.001" max="1.0"   shortname="p_att_e_zeta"/>
       <dl_setting var="p_att_e.p3"         min="0.1"     step="0.001" max="70.0"  shortname="p_att_e_p3"/>
       <dl_setting var="p_att_rm.omega_n"   min="0.1"     step="0.001" max="70.0"  shortname="p_att_rm_omega_n"/>
@@ -32,10 +32,10 @@
       <dl_setting var="p_head_e.omega_n"   min="0.1"     step="0.001" max="20.0"  shortname="p_head_e_omega_n"/>
       <dl_setting var="p_head_e.zeta"      min="0.1"     step="0.001" max="1.0"   shortname="p_head_e_zeta"/>
       <dl_setting var="p_head_rm.omega_n"  min="0.1"     step="0.001" max="20.0"  shortname="p_head_rm_omega_n"/>
-      <dl_setting var="p_head_rm.zeta"     min="0.1"     step="0.001" max="1.0"   shortname="p_head_rm_zeta"/> -->
+      <dl_setting var="p_head_rm.zeta"     min="0.1"     step="0.001" max="1.0"   shortname="p_head_rm_zeta"/>
      </dl_settings>
    </dl_settings>
-  </settings>
+  </settings> -->
   <dep>
     <depends>stabilization_rotorcraft,@attitude_command,wls</depends>
     <provides>commands</provides>
