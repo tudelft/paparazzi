@@ -1564,9 +1564,9 @@ void oneloop_andi_propagate_filters(void) {
   LP.p.meas         = body_rates->p;
   LP.q.meas         = body_rates->q;
   LP.r.meas         = body_rates->r;
-  float temp_p_dot  = (LP.p.meas-LP.p.meas_prev)*PERIODIC_FREQUENCY;
-  float temp_q_dot  = (LP.q.meas-LP.q.meas_prev)*PERIODIC_FREQUENCY;
-  float temp_r_dot  = (LP.r.meas-LP.r.meas_prev)*PERIODIC_FREQUENCY;
+  LP.p_dot.meas     = (LP.p.meas-LP.p.meas_prev)*PERIODIC_FREQUENCY;
+  LP.q_dot.meas     = (LP.q.meas-LP.q.meas_prev)*PERIODIC_FREQUENCY;
+  LP.r_dot.meas     = (LP.r.meas-LP.r.meas_prev)*PERIODIC_FREQUENCY;
 
   // Update Filters of Feedbacks
   update_filter_on_type(&LP.ax,    LP.ax.meas);
