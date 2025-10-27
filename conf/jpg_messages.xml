@@ -1813,47 +1813,76 @@
       <field name="alt"   type="float"/>
     </message>
 
-     <message name= "SERIAL_ACT_T4_IN" id = "190">
-         <description>Received message from Serial actuator module in Teensy 4.0</description>
-         <field name = "motor_1_rpm" type="int16" unit="rpm" >Motor 1 RPM telemetry</field>
-         <field name = "motor_2_rpm" type="int16" unit="rpm" >Motor 2 RPM telemetry</field>
+    <message name= "ACTUATORS_T4_IN" id="190">
+      <description>Received informational data from T4 Actuator Board, only used for debugging and logging</description>
+      <field name="esc_1_rpm" type="int16" unit="rpm">ESC 1 RPM telemetry</field>
+      <field name="esc_2_rpm" type="int16" unit="rpm">ESC 2 RPM telemetry</field>
+      <field name="esc_3_rpm" type="int16" unit="rpm">ESC 3 RPM telemetry</field>
+      <field name="esc_4_rpm" type="int16" unit="rpm">ESC 4 RPM telemetry</field>
+      <field name="servo_1_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 1 angle telemetry</field>
+      <field name="servo_2_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 2 angle telemetry</field>
+      <field name="servo_3_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 3 angle telemetry</field>
+      <field name="servo_4_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 4 angle telemetry</field>
+      <field name="servo_5_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 5 angle telemetry</field>
+      <field name="servo_6_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 6 angle telemetry</field>
+      <field name="servo_7_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 7 angle telemetry</field>
+      <field name="servo_8_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 8 angle telemetry</field>
+      <field name="servo_9_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 9 angle telemetry</field>
+      <field name="servo_10_angle" type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 10 angle telemetry</field>
+      <field name="servo_11_angle" type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 11 angle telemetry</field>
+      <field name="servo_12_angle" type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 12 angle telemetry</field>
+      <field name="actuators_t4_missed_packets"    type="uint32">Number of missed packets on T4 communication bus</field>
+      <field name="actuators_t4_message_frequency" type="uint16">Refresh rate of the incoming messages from T4 hardware module</field>
+      <field name="actuators_t4_rolling_msg_in"    type="float">T4 incoming rolling message content</field>
+      <field name="actuators_t4_rolling_msg_in_id" type="uint8">T4 incoming rolling message ID</field>
+      <field name="esc_1_err_code" type="int16">ESC 1 error code</field>
+      <field name="esc_2_err_code" type="int16">ESC 2 error code</field>
+      <field name="esc_3_err_code" type="int16">ESC 3 error code</field>
+      <field name="esc_4_err_code" type="int16">ESC 4 error code</field>
+      <field name="servo_1_load"  type="int16">servo 1 load</field>
+      <field name="servo_2_load"  type="int16">servo 2 load</field>
+      <field name="servo_3_load"  type="int16">servo 3 load</field>
+      <field name="servo_4_load"  type="int16">servo 4 load</field>
+      <field name="servo_5_load"  type="int16">servo 5 load</field>
+      <field name="servo_6_load"  type="int16">servo 6 load</field>
+      <field name="servo_7_load"  type="int16">servo 7 load</field>
+      <field name="servo_8_load"  type="int16">servo 8 load</field>
+      <field name="servo_9_load"  type="int16">Servo 9 load</field>
+      <field name="servo_10_load" type="int16">Servo 10 load</field>
+      <field name="bitmask_servo_health" type="uint16">Bitmask of servo health status</field>
+      <field name="esc_1_current" type="int16">ESC 1 current in mA</field>
+      <field name="esc_2_current" type="int16">ESC 2 current in mA</field>
+      <field name="esc_3_current" type="int16">ESC 3 current in mA</field>
+      <field name="esc_4_current" type="int16">ESC 4 current in mA</field>
+      <field name="esc_1_voltage" type="int16">ESC 1 voltage in mV</field>
+      <field name="esc_2_voltage" type="int16">ESC 2 voltage in mV</field>
+      <field name="esc_3_voltage" type="int16">ESC 3 voltage in mV</field>
+      <field name="esc_4_voltage" type="int16">ESC 4 voltage in mV</field>
+    </message>
 
-         <field name = "rotor_1_az_angle" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Rotor 1 azimuth angle telemetry</field>
-         <field name = "rotor_2_az_angle" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Rotor 2 azimuth angle telemetry</field>
-
-         <field name = "serial_act_t4_missed_packets" type="uint32">Missed packets on T4 serial communication</field>
-         <field name = "serial_act_t4_message_frequency" type="uint16">Refresh rate of the incoming messages from T4</field>
-         <field name = "serial_act_t4_rolling_msg_in" type="float">T4 Rolling message in content</field>
-         <field name = "serial_act_t4_rolling_msg_in_id" type="uint8">T4 Rolling message in id</field>
-
-         <field name = "motor_1_err_code" type="int16" >Motor 1 error code</field>
-         <field name = "motor_2_err_code" type="int16" >Motor 2 error code</field>
-
-         <field name = "rotor_1_az_update_time_us" type="int16" >Rotor 1 azimuth servo update time in microseconds</field>
-         <field name = "rotor_2_az_update_time_us" type="int16" >Rotor 2 azimuth servo update time in microseconds</field>
-         
-         <field name = "motor_1_current_int" type="int16" >Motor 1 current in mA</field>
-         <field name = "motor_2_current_int" type="int16" >Motor 2 current in mA</field>
-
-         <field name = "motor_1_voltage_int" type="int16" >Motor 1 voltagein mV</field>
-         <field name = "motor_2_voltage_int" type="int16" >Motor 2 voltagein mV</field>
-     </message>
-
-     <message name= "SERIAL_ACT_T4_OUT" id = "191">
-         <description>Transmitted message to Serial actuator module Teensy 4.0</description>
-         <field name = "motor_arm" type="int8" >Motor arm boolean</field>
-         <field name = "servo_arm" type="int8" >Servo arm boolean</field>
-
-         <field name = "motor_1_dshot_cmd" type="int16" unit="dshot" >Motor 1 dshot cmd</field>
-         <field name = "motor_2_dshot_cmd" type="int16" unit="dshot" >Motor 2 dshot cmd</field>
-
-         <field name = "rotor_1_az_angle_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Servo 1 angle cmd</field>
-         <field name = "rotor_2_az_angle_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Servo 3 angle cmd</field>
-
-         <field name = "serial_act_t4_rolling_msg_out" type="float">T4 Rolling message out content</field>
-         <field name = "serial_act_t4_rolling_msg_out_id" type="uint8">T4 Rolling message out id</field>
-
-     </message>
+    <message name= "ACTUATORS_T4_OUT" id="191">
+      <description>Transmitted commanded data to a T4 actuator board, only used for debugging and logging</description>
+      <field name="esc_arm"   type="uint8" >ESC arming status bitmask</field>
+      <field name="servo_arm" type="uint16" >Servo arming status bitmask</field>
+      <field name="esc_1_dshot_cmd" type="int16" unit="dshot">ESC 1 DShot commands</field>
+      <field name="esc_2_dshot_cmd" type="int16" unit="dshot">ESC 2 DShot commands</field>
+      <field name="esc_3_dshot_cmd" type="int16" unit="dshot">ESC 3 DShot commands</field>
+      <field name="esc_4_dshot_cmd" type="int16" unit="dshot">ESC 4 DShot commands</field>
+      <field name="servo_1_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 1 angle command</field>
+      <field name="servo_2_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 2 angle command</field>
+      <field name="servo_3_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 3 angle command</field>
+      <field name="servo_4_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 4 angle command</field>
+      <field name="servo_5_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 5 angle command</field>
+      <field name="servo_6_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 6 angle command</field>
+      <field name="servo_7_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 7 angle command</field>
+      <field name="servo_8_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 8 angle command</field>
+      <field name="servo_9_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 9 angle command</field>
+      <field name="servo_10_angle_cmd" type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 10 angle command</field>
+      <field name="servo_11_angle_cmd" type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 10 angle command</field>
+      <field name="servo_12_angle_cmd" type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 10 angle command</field>
+      <field name="actuators_t4_rolling_msg_out"    type="float">T4 output rolling message content</field>
+      <field name="actuators_t4_rolling_msg_out_id" type="uint8">T4 output Rolling message ID</field>
+    </message>
   
     <!-- 192 is free -->
 

@@ -8,6 +8,7 @@
       <include name="autopilot.h"/>
       <include name="autopilot_rc_helpers.h"/>
       <include name="oneloop/oneloop_andi.h"/>
+      <include name="stabilization/stabilization_attitude.h"/>
       <include name="modules/radio_control/radio_control.h"/>
       <include name="modules/actuators/actuators.h"/>
       <include name="modules/actuators/actuators_t4.h"/><!-- should not be needed here fixme -->
@@ -36,6 +37,28 @@
     <!-- Rate mode 3-->
     <mode name="RATE" shortname="RATE">
       <select cond="RCMode0()"/>
+      <on_enter>
+        <call fun="oneloop_andi_enter(CONTROL_MODE_RATE, CONTROL_TYPE_ANDI)"/>
+      </on_enter>
+      <control>
+        <call fun="oneloop_andi_run(CONTROL_MODE_RATE)"/>
+      </control>
+    </mode>
+
+    <!-- Nav mode (required for compiling)-->
+    <mode name="NAV" shortname="NAV">
+      <select cond="RCMode1()"/>
+      <on_enter>
+        <call fun="oneloop_andi_enter(CONTROL_MODE_RATE, CONTROL_TYPE_ANDI)"/>
+      </on_enter>
+      <control>
+        <call fun="oneloop_andi_run(CONTROL_MODE_RATE)"/>
+      </control>
+    </mode>
+  
+    <!-- Nav mode (required for compiling)-->
+    <mode name="FAILSAFE" shortname="NAV">
+      <select cond="RCMode1()"/>
       <on_enter>
         <call fun="oneloop_andi_enter(CONTROL_MODE_RATE, CONTROL_TYPE_ANDI)"/>
       </on_enter>

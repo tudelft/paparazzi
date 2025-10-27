@@ -35,8 +35,8 @@
       <message name="WIND_INFO_RET"            period="1."/>
       <message name="AHRS_REF_QUAT"            period="0.5"/>
       <message name="STAB_ATTITUDE"            period=".25"/>
-      <message name="ACTUATORS_T4_IN"          period=".5"/>
-      <message name="ACTUATORS_T4_OUT"         period=".5"/>
+      <message name="ACTUATORS_T4_IN"           period=".5"/>
+      <message name="ACTUATORS_T4_OUT"          period=".5"/>
       <message name="PPM"                      period="0.5"/>
       <message name="PAYLOAD_FLOAT"            period="0.5"/>
     </mode>
@@ -219,8 +219,8 @@
       <message name="HYBRID_GUIDANCE"          period="0.02"/>
       <message name="ESC"                      period="0.02"/>
       <message name="STAB_ATTITUDE"            period="0.002"/>
-      <message name="SERIAL_ACT_T4_IN"         period="0.002"/>
-      <message name="SERIAL_ACT_T4_OUT"        period="0.002"/>
+      <message name="ACTUATORS_T4_IN"           period="0.002"/>
+      <message name="ACTUATORS_T4_OUT"          period="0.002"/>
       <message name="GPS_RELPOS"               period="0.1"/>
       <message name="IMU_HEATER"               period="6.2"/>
       <message name="EFF_MAT_STAB"             period="0.002"/>

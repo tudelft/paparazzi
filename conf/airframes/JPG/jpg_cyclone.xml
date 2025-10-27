@@ -97,22 +97,20 @@
         <module name="nav" type="rotorcraft"/>
         <module name="guidance" type="rotorcraft"/>
         -->
-        <module name="stabilization" type="rotorcraft"/> 
+        <!-- <module name="stabilization" type="rotorcraft"/>  -->
         <module name="guidance_oneloop.xml"/>
 
         <!-- Control -->      
-        <module name="stabilization" type="oneloop" >
-            <configure name="INDI_NUM_ACT" value="4"/>
-        </module>
+        <module name="stabilization" type="oneloop"/>
         <module name="guidance" type="oneloop"/>
 
         <module name="nav" type="hybrid">
-            <define name="NAV_HYBRID_MAX_AIRSPEED"      value="19.0f"/>
-            <define name="NAV_HYBRID_SPEED_MARGIN"      value="0.0f"/>
-            <define name="NAV_HYBRID_MAX_ACCELERATION"  value="4.0f"/>
-            <define name="NAV_HYBRID_SOFT_ACCELERATION" value="2.0f"/>
-            <define name="NAV_HYBRID_MAX_DECELERATION"  value="1.0f"/>
-            <define name="GUIDANCE_H_USE_REF"           value="FALSE"/>
+            <define name="NAV_HYBRID_MAX_AIRSPEED"        value="19.0f"/>
+            <define name="NAV_HYBRID_SPEED_MARGIN"        value="0.0f"/>
+            <define name="NAV_HYBRID_MAX_ACCELERATION"    value="4.0f"/>
+            <define name="NAV_HYBRID_SOFT_ACCELERATION"   value="2.0f"/>
+            <define name="NAV_HYBRID_MAX_DECELERATION"    value="1.0f"/>
+            <define name="GUIDANCE_H_USE_REF"             value="FALSE"/>
             <define name="NAV_HYBRID_LIMIT_CIRCLE_RADIUS" value="TRUE"/>
         </module>
 
@@ -128,25 +126,35 @@
     </firmware>
 
     <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
-        <!--                                                 |   EL   |   ER   |    ML   |    MR   |   P  |    Q  |    R  | -->
-        <define name  = "ACT_DYN"                   value = "{   20.0f,   20.0f,    40.0f,    40.0f,   1.0f,    1.0f,   1.0f}" />
-        <define name  = "ACT_IS_SERVO"              value = "{       1,       1,        0,        0,       0,    0,        0}" />
-        <define name  = "ACT_MAX"                   value = "{ 9600.0f, 9600.0f,  9600.0f,  9600.0f, 9600.0f, 9600.0f, 9600.0f}"/>
-        <define name  = "ACT_MIN"                   value = "{-9600.0f, -9600.0f,  0.0f,    0.0f,    -9600.0f, -9600.0f, -9600.0f}"/>
-        <define name  = "ACT_MAX_NORM"              value = "{    1.0f,    1.0f,     1.0f,     1.0f,    1.0f,    1.0f,     1.0f,}"/>
-        <define name  = "ACT_MIN_NORM"              value = "{    -1.0f,   -1.0f,     0.0f,     0.0f,    -1.0f,    -1.0f,    -1.0f}"/>
-        <define name  = "WU"                        value = "{   0.75f,   0.75f,    0.75f,    0.75f,   1.20f,   1.20f,   1.20f}"/>
-        <define name  = "U_PREF"                    value = "{   0.00f,   0.00f,    800.00f,    800.00f,   0.00f,   0.00f,   0.00f}"/>
-        <define name  = "WV"                        value = "{  4.0f,  4.0f,   4.0f,  1.0f, 8.0f,  8.0f,  1.00f}"/>   
+        <!--                                    |   EL    |    ER   |    ML   |    MR   |    P    |    Q    |    R    | -->
+        <define name  = "ACT_IS_SERVO" value = "{        1,        1,        0,        0,        0,        0,        0}"/>
+        <define name  = "ACT_DYN"      value = "{    20.0f,    20.0f,    40.0f,    40.0f,     1.0f,     1.0f,     1.0f}"/>
+        <define name  = "ACT_MAX"      value = "{  9600.0f,  9600.0f,  9600.0f,  9600.0f,  9600.0f,  9600.0f,  9600.0f}"/>
+        <define name  = "ACT_MIN"      value = "{ -9600.0f, -9600.0f,     0.0f,     0.0f, -9600.0f, -9600.0f, -9600.0f}"/>
+        <define name  = "ACT_MAX_NORM" value = "{     1.0f,     1.0f,     1.0f,     1.0f,     1.0f,     1.0f,     1.0f}"/>
+        <define name  = "ACT_MIN_NORM" value = "{    -1.0f,    -1.0f,     0.0f,     0.0f,    -1.0f,    -1.0f,    -1.0f}"/>
+        <define name  = "WU"           value = "{    0.75f,    0.75f,    0.75f,    0.75f,    1.20f,    1.20f,    1.20f}"/>
+        <define name  = "U_PREF"       value = "{    0.00f,    0.00f,  800.00f,  800.00f,    0.00f,    0.00f,    0.00f}"/>
+
+        <!--                                    |   AN    |    AE   |    AD   |    PSI  |    P    |    Q    |    R    | -->
+        <define name  = "WV"           value = "{     4.0f,     4.0f,     4.0f,     1.0f,     8.0f,     8.0f,    8.00f}"/>   
+    </section>
+
+    <section NAME="MISC">
+        <define name="STABILIZATION_ATTITUDE_SP_MAX_PHI"    value="45." unit="deg"  /> 
+        <define name="STABILIZATION_ATTITUDE_SP_MAX_THETA"  value="45." unit="deg"  />
+        <define name="STABILIZATION_ATTITUDE_SP_MAX_R"      value="90." unit="deg/s"/>
+        <define name="STABILIZATION_ATTITUDE_DEADBAND_R"    value="200"             />
+
     </section>
 
 
     <!-- From old t4 code, I would need servos 1 and 5, and motor 1 and 2 respectively  -->
     <servos driver="T4">
-        <servo name="S_THROTTLE_LEFT"  no="13" min="230" neutral="250" max="1999"/> 
-        <servo name="S_THROTTLE_RIGHT" no="14" min="230" neutral="250" max="1999"/>
-        <servo name="S_ELEVON_LEFT"    no="1"  min="-5700" neutral="0" max="5700"/> <!-- 57.0 deg-->
-        <servo name="S_ELEVON_RIGHT"   no="2"  min="-5700" neutral="0" max="5700"/> <!-- 57.0 deg-->
+        <servo name="S_THROTTLE_LEFT"  no="13" min="230"   neutral="250" max="1999"/> 
+        <servo name="S_THROTTLE_RIGHT" no="14" min="230"   neutral="250" max="1999"/>
+        <servo name="S_ELEVON_LEFT"    no="1"  min="-5700" neutral="0"   max="5700"/> <!-- 57.0 deg-->
+        <servo name="S_ELEVON_RIGHT"   no="2"  min="-5700" neutral="0"   max="5700"/> <!-- 57.0 deg-->
     </servos>
 
     <!-- <rc_commands>
@@ -164,13 +172,15 @@
         <axis name="ROLL_RATE"      group="VIRTUAL" failsafe_value="0"/>
         <axis name="PITCH_RATE"     group="VIRTUAL" failsafe_value="0"/>
         <axis name="YAW_RATE"       group="VIRTUAL" failsafe_value="0"/> 
+        <axis name="YAW"           group ="OTHER" failsafe_value="0"/>
+        <axis name="THRUST"        group ="OTHER" failsafe_value="0"/>
     </commands>
 
     <!-- Safety critical kill switch implementation -->
     <command_laws>
-        <set servo="S_ELEVON_LEFT"    value="$autopilot_get_motors_on()? commands[COMMAND_ELEVON_LEFT] : 0"/>
-        <set servo="S_ELEVON_RIGHT"   value="$autopilot_get_motors_on()? commands[COMMAND_ELEVON_RIGHT] : 0"/>
-        <set servo="S_THROTTLE_LEFT"  value="$autopilot_get_motors_on()? commands[COMMAND_THROTTLE_LEFT] : -MAX_PPRZ"/>
-        <set servo="S_THROTTLE_RIGHT" value="$autopilot_get_motors_on()? commands[COMMAND_THROTTLE_RIGHT] : -MAX_PPRZ"/>
+        <set servo="S_ELEVON_LEFT"    value="autopilot_get_motors_on()? commands[COMMAND_ELEVON_LEFT] : 0"/>
+        <set servo="S_ELEVON_RIGHT"   value="autopilot_get_motors_on()? commands[COMMAND_ELEVON_RIGHT] : 0"/>
+        <set servo="S_THROTTLE_LEFT"  value="autopilot_get_motors_on()? commands[COMMAND_THROTTLE_LEFT] : -MAX_PPRZ"/>
+        <set servo="S_THROTTLE_RIGHT" value="autopilot_get_motors_on()? commands[COMMAND_THROTTLE_RIGHT] : -MAX_PPRZ"/>
     </command_laws>
 </airframe>

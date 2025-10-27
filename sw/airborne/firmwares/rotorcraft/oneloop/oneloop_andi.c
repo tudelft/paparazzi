@@ -73,16 +73,11 @@ float act_min[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN;
 #error "You must specify the actuator limits: ONELOOP_ANDI_ACT_MAX and ONELOOP_ANDI_ACT_MIN"
 #endif
 
-#ifdef ONELOOP_ANDI_ACT_MAX_NORM
-float  act_max_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX_NORM;
+#if defined(ONELOOP_ANDI_ACT_MAX_NORM) && defined(ONELOOP_ANDI_ACT_MIN_NORM)
+float act_max_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX_NORM;
+float act_min_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN_NORM;
 #else
-float  act_max_norm[ANDI_NUM_ACT_TOT] = {[0 ... ANDI_NUM_ACT_TOT-1] = 1.0};
-#endif
-
-#ifdef ONELOOP_ANDI_ACT_MIN_NORM
-float  act_min_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN_NORM;
-#else
-float  act_min_norm[ANDI_NUM_ACT_TOT] = {[0 ... ANDI_NUM_ACT_TOT-1] = -1.0};
+#error "You must specify the normalized actuator limits: ONELOOP_ANDI_ACT_MAX_NORM and ONELOOP_ANDI_ACT_MIN_NORM"
 #endif
 
 #ifdef ONELOOP_ANDI_U_PREF
@@ -238,7 +233,7 @@ static Filter filt_vd;
 
 static Filter filt_ay;
 static Filter filt_airspeed;
-static Filter filt_u[ANDI_NUM_ACT_TOT];  // Low pass filter for actuators          
+static Filter filt_u[ANDI_NUM_ACT_TOT];  // Low pass filter for actuators        
 
 /* Oneloop Misc variables*/
 static float dt_1l = 1. / PERIODIC_FREQUENCY;
@@ -250,6 +245,8 @@ float andi_du[ANDI_NUM_ACT_TOT];
 float nu[ANDI_OUTPUTS];
 static float act_dynamics_d[ANDI_NUM_ACT_TOT];
 float actuator_state_1l[ANDI_NUM_ACT_TOT];
+float actuator_obs[ANDI_NUM_ACT];  // observed actuator states
+
 
 /*WLS Settings*/
 struct WLS_t wls_one_p = {
