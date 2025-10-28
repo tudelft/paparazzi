@@ -51,9 +51,11 @@
 
         <target name="nps" board="pc">
             <module name="fdm" type="jsbsim">
-                <!-- <define name="ACTUATOR_NAMES" value="ele_left, ele_right, mot_left, mot_right" type="string[]"/> -->
-                <define name="JSBSIM_MODEL" value="cyclone" type="string"/>
-                <configure name="USE_COMMANDS" value="TRUE"/>
+                <define name="NPS_JSBSIM_MODEL" value="cyclone" type="string"/>
+                <define name="NPS_USE_COMMANDS" value="TRUE"/>
+                <define name="NPS_SENSORS_PARAMS"  value="nps_sensors_params_default.h" type="string"/>
+                <define name="NPS_JS_AXIS_MODE"    value="4"/>
+
             </module>
             <module name="radio_control" type="datalink">
                 <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
