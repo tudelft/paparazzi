@@ -52,12 +52,12 @@
 #endif
 
 extern float actuator_state_1l[ANDI_NUM_ACT_TOT];
-extern float nu[6];
+extern float nu[ANDI_OUTPUTS];
 extern float andi_u[ANDI_NUM_ACT_TOT];
 extern float andi_du[ANDI_NUM_ACT_TOT];
 
 
-struct Poles3rdOrdert1{
+struct Poles3rdOrder1{
   float omega_n;
   float zeta;
   float p1;
@@ -75,7 +75,7 @@ struct Poles3rdOrder3{
   float p1[3];
 };
 
-struct Poles2ndOrdert1{
+struct Poles2ndOrder1{
   float omega_n;
   float zeta;
 };
@@ -229,12 +229,16 @@ enum ControlType {
 struct OneloopGeneral {
   enum ControlType control_type;
   enum ControlMode control_mode;
+  float att_des[3];
   struct OneloopAttRef     att_ref;
   struct OneloopAttState   att_state;
+  float pos_des[2];
   struct OneloopPosRef     pos_ref;       // Guidance References
   struct OneloopPosState   pos_state;     // Guidance State
+  float alt_des;
   struct OneloopAltRef     alt_ref;       // Altitude References
   struct OneloopAltState   alt_state;     // Altitude State
+  float head_des;
   struct OneloopHeadRef    head_ref;      // Heading References
   struct OneloopHeadState  head_state;    // Heading State
 };
@@ -263,7 +267,7 @@ struct Filter {
     struct FirstOrderLowPass lp1;
     Butterworth2LowPass bw2;
     Butterworth4LowPass bw4;
-  } state;
+  };
 };
 
 /*Declaration of Reference Model and Error Controller Gains*/

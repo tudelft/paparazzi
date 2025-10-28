@@ -53,7 +53,7 @@
             <module name="fdm" type="jsbsim">
                 <!-- <define name="ACTUATOR_NAMES" value="ele_left, ele_right, mot_left, mot_right" type="string[]"/> -->
                 <define name="JSBSIM_MODEL" value="cyclone" type="string"/>
-                <!-- <define name="USE_COMMANDS" value="TRUE"/> -->
+                <configure name="USE_COMMANDS" value="TRUE"/>
             </module>
             <module name="radio_control" type="datalink">
                 <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
@@ -165,15 +165,18 @@
     </rc_commands> -->
 
     <commands><!-- TODO: CHECK if failsafe_values are what we want -->
+        <!-- Real actuators commands -->
         <axis name="ELEVON_LEFT"    group="REAL"    failsafe_value="0"/>
         <axis name="ELEVON_RIGHT"   group="REAL"    failsafe_value="0"/>
         <axis name="THROTTLE_LEFT"  group="REAL"    failsafe_value="0"/>
         <axis name="THROTTLE_RIGHT" group="REAL"    failsafe_value="0"/>
+        <!-- Virtual actuators commands -->
         <axis name="ROLL_RATE"      group="VIRTUAL" failsafe_value="0"/>
         <axis name="PITCH_RATE"     group="VIRTUAL" failsafe_value="0"/>
         <axis name="YAW_RATE"       group="VIRTUAL" failsafe_value="0"/> 
-        <axis name="YAW"           group ="OTHER" failsafe_value="0"/>
-        <axis name="THRUST"        group ="OTHER" failsafe_value="0"/>
+        <!-- Legacy commands-->
+        <axis name="YAW"           group ="OTHER"   failsafe_value="0"/>
+        <axis name="THRUST"        group ="OTHER"   failsafe_value="0"/>
     </commands>
 
     <!-- Safety critical kill switch implementation -->

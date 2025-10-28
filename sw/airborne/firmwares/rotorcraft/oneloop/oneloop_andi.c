@@ -80,11 +80,11 @@ float act_min_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN_NORM;
 #error "You must specify the normalized actuator limits: ONELOOP_ANDI_ACT_MAX_NORM and ONELOOP_ANDI_ACT_MIN_NORM"
 #endif
 
-#ifdef ONELOOP_ANDI_U_PREF
-static float u_pref[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_U_PREF;
-#else
-static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
-#endif
+// #ifdef ONELOOP_ANDI_U_PREF
+// static float u_pref[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_U_PREF;
+// #else
+// static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
+// #endif
 
 #if ANDI_NUM_ACT_TOT != WLS_N_U_MAX
 #error Matrix-WLS_N_U_MAX is not equal to the number of actuators: define WLS_N_U_MAX == ANDI_NUM_ACT_TOT in airframe file
@@ -95,8 +95,8 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 
 /*  Define Section of the functions used in this module*/
 static float positive_non_zero(float input);
-static void scaled_error_nd(int n, float err[restrict n], const float a[static n], const float b[static n], const float k[static n]);
-static void integrate_nd(int n, float a[static n], const float a_dot[static n], float dt);
+static void scaled_error_nd(uint_fast8_t n, float err[restrict n], const float a[static n], const float b[static n], const float k[static n]);
+static void integrate_nd(uint_fast8_t n, float a[static n], const float a_dot[static n], float dt);
 
 static void reference_model_rate(float dt, float rate_des[3], const struct Gains2ndOrder3 *k_rate_rm, const struct OneloopAttRef *bounds, struct OneloopAttRef *rate_ref);
 static void reference_model_attitude(float dt, float att_des[3], const struct Gains3rdOrder3 *k_att_rm, const struct OneloopAttRef *bounds, struct OneloopAttRef *att_ref);
@@ -104,20 +104,20 @@ static void reference_model_position(float dt, float pos_des[2], const struct Ga
 static void reference_model_altitude(float dt, float alt_des, const struct Gains3rdOrder1 *k_alt_rm, const struct OneloopAltRef *bounds, struct OneloopAltRef *alt_ref);
 static void reference_model_heading(float dt, float head_des, const struct Gains2ndOrder1 *k_head_rm, const struct OneloopHeadRef *bounds, struct OneloopHeadRef *head_ref);
 
-static void error_controller_rate(float dt, const struct OneloopAttRef *rate_ref, const struct OneloopAttState *rate_state, const struct Gains2ndOrder3 *k_rate_e, float *nu_rate);
-static void error_controller_attitude(float dt, const struct OneloopAttRef *att_ref, const struct OneloopAttState *att_state, const struct Gains3rdOrder3 *k_att_e, float *nu_att);
-static void error_controller_position(float dt, const struct OneloopPosRef *pos_ref, const struct OneloopPosState *pos_state, const struct Gains2ndOrder3 *k_pos_e, float *nu_pos);
-static void error_controller_altitude(float dt, const struct OneloopAltRef *alt_ref, const struct OneloopAltState *alt_state, const struct Gains2ndOrder3 *k_alt_e, float *nu_alt);
-static void error_controller_heading(float dt, const struct OneloopHeadRef *head_ref, const struct OneloopHeadState *head_state, const struct Gains2ndOrder3 *k_head_e, float *nu_head);
+static void error_controller_rate(const struct OneloopAttRef *rate_ref, const struct OneloopAttState *rate_state, const struct Gains2ndOrder3 *k_rate_e, float *nu_rate);
+static void error_controller_attitude(const struct OneloopAttRef *att_ref, const struct OneloopAttState *att_state, const struct Gains3rdOrder3 *k_att_e, float *nu_att);
+static void error_controller_position(const struct OneloopPosRef *pos_ref, const struct OneloopPosState *pos_state, const struct Gains3rdOrder2 *k_pos_e, float *nu_pos);
+static void error_controller_altitude(const struct OneloopAltRef *alt_ref, const struct OneloopAltState *alt_state, const struct Gains3rdOrder1 *k_alt_e, float *nu_alt);
+static void error_controller_heading(const struct OneloopHeadRef *head_ref, const struct OneloopHeadState *head_state, const struct Gains2ndOrder1 *k_head_e, float *nu_head);
 
 static void compute_gains_2nd_order_single(float* k1, float* k2, float omega_n, float zeta);
 static void compute_gains_3rd_order_single(float* k1, float* k2, float* k3, float omega_n, float zeta, float p1);
-static void compute_gains_2nd_order_3d(struct Gains2ndOrder3* gains, const struct Poles2ndOrder3* poles);
-static void compute_gains_2nd_order_2d(struct Gains2ndOrder2* gains, const struct Poles2ndOrder2* poles);
-static void compute_gains_2nd_order_1d(struct Gains2ndOrder1* gains, const struct Poles2ndOrder1* poles);
-static void compute_gains_3rd_order_3d(struct Gains3rdOrder3* gains, const struct Poles3rdOrder3* poles);
-static void compute_gains_3rd_order_2d(struct Gains3rdOrder2* gains, const struct Poles3rdOrder2* poles);
-static void compute_gains_3rd_order_1d(struct Gains3rdOrder1* gains, const struct Poles3rdOrder1* poles);
+static void compute_gains_2nd_order_3(struct Gains2ndOrder3* gains, const struct Poles2ndOrder3* poles);
+static void compute_gains_2nd_order_2(struct Gains2ndOrder2* gains, const struct Poles2ndOrder2* poles);
+static void compute_gains_2nd_order_1(struct Gains2ndOrder1* gains, const struct Poles2ndOrder1* poles);
+static void compute_gains_3rd_order_3(struct Gains3rdOrder3* gains, const struct Poles3rdOrder3* poles);
+static void compute_gains_3rd_order_2(struct Gains3rdOrder2* gains, const struct Poles3rdOrder2* poles);
+static void compute_gains_3rd_order_1(struct Gains3rdOrder1* gains, const struct Poles3rdOrder1* poles);
 
 static void  init_filter(struct Filter *filer, float fc, enum FilterType type);
 static void  init_filter_on_type(struct Filter *filter, float x0);
@@ -131,7 +131,7 @@ static void get_desired_heading_radio_command(float* heading_des, float heading_
 static void get_act_state_oneloop(void);
 static void discretize_act_dynamics(float dt, float* act_dynamics_d, const float* act_dynamics);
 static void compute_wls_scaling_factors(float* wls_scaler_u, const float* act_max, const float* act_min, const float* act_max_norm, const float* act_min_norm);
-static void evaluate_effectiveness_matrix(float eff_mat[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT]);
+static void evaluate_effectiveness_matrix(float eff_mat[ANDI_OUTPUTS * ANDI_NUM_ACT_TOT]);
 
 /**
  * @brief Controller poles
@@ -158,10 +158,10 @@ struct Poles2ndOrder1 p_head_rm = {.omega_n=0.5, .zeta=1.0};
  * stabilization, position, altitude, and heading control loops.
  * They are used to limit the reference commands within safe operational limits.
  */
-struct OneloopStabRef att_bounds = {.att={10, 10, 10}.att_d={1000.0, 1000.0, 1000.0}, .att_2d={1000.0, 1000.0, 1000.0}, .att_3d={1000.0, 1000.0, 1000.0}};
-struct OneloopPosRef pos_bounds = {.pos={0, 0}, .vel={1000.0, 1000.0}, .acc={1000.0, 1000.0}, .jerk={1000.0, 1000.0}};
-struct OneloopAltRef alt_bounds = {.alt=0, .vel=1000.0, .acc=1000.0, .jerk=1000.0};
-struct OneloopHeadRef head_bounds = {.head=0, .head_rate=1000.0, .head_acc=1000.0};
+struct OneloopAttRef att_bounds = {.att={10, 10, 10}, .att_d={1000.0, 1000.0, 1000.0}, .att_2d={1000.0, 1000.0, 1000.0}, .att_3d={1000.0, 1000.0, 1000.0}};
+struct OneloopPosRef pos_bounds = {.pos={0, 0}, .vel={1000.0, 1000.0}, .acc={1000.0, 1000.0}, .jer={1000.0, 1000.0}};
+struct OneloopAltRef alt_bounds = {.pos=0, .vel=1000.0, .acc=1000.0, .jer=1000.0};
+struct OneloopHeadRef head_bounds = {.head=0, .head_d=1000.0, .head_2d=1000.0};
 
 /**
  * @brief Model coefficients 
@@ -203,12 +203,12 @@ union CycloneCoefficients obm_coefficients = {
  * These global variables store the controller gains derived from the
  * previously defined pole placement parameters.
  *
- * The values are computed from the designed poles (p_stab_*, p_pos_*, etc.)
+ * The values are computed from the designed poles (p_att_*, p_pos_*, etc.)
  * and directly used by the flight control laws in the real-time control loop.
  * Updating the poles during tuning automatically affects these gain values.
  */
 struct Gains2ndOrder3 k_rate_e;
-struct Gains2ndOrder3 k_rate_rm
+struct Gains2ndOrder3 k_rate_rm;
 struct Gains3rdOrder3 k_att_e;
 struct Gains3rdOrder3 k_att_rm;
 struct Gains3rdOrder2 k_pos_e;
@@ -218,26 +218,26 @@ struct Gains3rdOrder1 k_alt_rm;
 struct Gains2ndOrder1 k_head_e;
 struct Gains2ndOrder1 k_head_rm;
 
-static Filter filt_p;
-static Filter filt_q;
-static Filter filt_r;
-static Filter filt_p_dot;
-static Filter filt_q_dot;
-static Filter filt_r_dot;
-static Filter filt_an;
-static Filter filt_ae;
-static Filter filt_ad;
-static Filter filt_vn;
-static Filter filt_ve;
-static Filter filt_vd;
+static struct Filter filt_p;
+static struct Filter filt_q;
+static struct Filter filt_r;
+static struct Filter filt_p_dot;
+static struct Filter filt_q_dot;
+static struct Filter filt_r_dot;
+static struct Filter filt_an;
+static struct Filter filt_ae;
+static struct Filter filt_ad;
+static struct Filter filt_vn;
+static struct Filter filt_ve;
+static struct Filter filt_vd;
 
-static Filter filt_ay;
-static Filter filt_airspeed;
-static Filter filt_u[ANDI_NUM_ACT_TOT];  // Low pass filter for actuators        
+static struct Filter filt_ay;
+static struct Filter filt_airspeed;
+static struct Filter filt_u[ANDI_NUM_ACT_TOT];  // Low pass filter for actuators        
 
 /* Oneloop Misc variables*/
 static float dt_1l = 1. / PERIODIC_FREQUENCY;
-static float g   = 9.81; // [m/s^2] Gravitational Acceleration
+// static float g   = 9.81; // [m/s^2] Gravitational Acceleration
 
 /* Oneloop Control Variables*/
 float andi_u[ANDI_NUM_ACT_TOT];
@@ -272,21 +272,9 @@ struct WLS_t wls_one_p = {
   .iter      = 0
 };
 
-#ifdef ONELOOP_ANDI_WV // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}
-static float Wv_backup[ANDI_OUTPUTS] = ONELOOP_ANDI_WV;
-#else
-static float Wv_backup[ANDI_OUTPUTS] = {[0 ... ANDI_OUTPUTS-1] = 1.0};
-#endif
-
-#ifdef ONELOOP_ANDI_WU // {mF,mR,mB,mL,mP,de,dr,da,df,phi,theta}
-static float Wu_backup[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_WU;
-#else
-static float Wu_backup[ANDI_NUM_ACT_TOT] = {[0 ... ANDI_NUM_ACT_TOT-1] = 1.0};
-#endif
-
 /* Effectiveness Matrix definition */
 float *bwls_1l[ANDI_OUTPUTS];
-float eff_mat[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
+float eff_mat[ANDI_OUTPUTS * ANDI_NUM_ACT_TOT];
 float n_array[ANDI_OUTPUTS];
 float m_array[ANDI_NUM_ACT_TOT];
 float coupling_factor[ANDI_OUTPUTS];
@@ -307,20 +295,20 @@ static void send_eff_mat_stab_oneloop_andi(struct transport_tx *trans, struct li
 {
   float zero = 0.0f;
   pprz_msg_send_EFF_MAT_STAB(trans, dev, AC_ID, 
-                ANDI_NUM_ACT, eff_mat[4],
-                ANDI_NUM_ACT, eff_mat[5],
-                ANDI_NUM_ACT, eff_mat[6], 
-                                   1, &zero,
-                ANDI_NUM_ACT, G2_RW);
+                ANDI_NUM_ACT_TOT, &eff_mat[4 * ANDI_NUM_ACT_TOT],
+                ANDI_NUM_ACT_TOT, &eff_mat[5 * ANDI_NUM_ACT_TOT],
+                ANDI_NUM_ACT_TOT, &eff_mat[6 * ANDI_NUM_ACT_TOT], 
+                           1,      &zero,
+                           1,      &zero);
 }
 
 static void send_eff_mat_guid_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_EFF_MAT_GUID(trans, dev, AC_ID, 
-                ANDI_NUM_ACT_TOT, eff_mat[0],
-                ANDI_NUM_ACT_TOT, eff_mat[1],
-                ANDI_NUM_ACT_TOT, eff_mat[2],
-                ANDI_NUM_ACT_TOT, eff_mat[3]);
+                ANDI_NUM_ACT_TOT, &eff_mat[0 * ANDI_NUM_ACT_TOT],
+                ANDI_NUM_ACT_TOT, &eff_mat[1 * ANDI_NUM_ACT_TOT],
+                ANDI_NUM_ACT_TOT, &eff_mat[2 * ANDI_NUM_ACT_TOT],
+                ANDI_NUM_ACT_TOT, &eff_mat[3 * ANDI_NUM_ACT_TOT]);
 }
 static void send_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
@@ -420,9 +408,9 @@ static float positive_non_zero(float input)
  * @param k   Scaling gains applied elementwise to the error [n]
  * @param n   Dimension of the arrays
  */
-static void scaled_error_nd(int n, float err[restrict n], const float a[static n], const float b[static n], const float k[static n])
+static void scaled_error_nd(uint_fast8_t n, float err[restrict n], const float a[static n], const float b[static n], const float k[static n])
 {
-  for (uint_fast8_t i = 0; i < n; i++) {
+  for (uint_fast8_t i = 0; i < (uint_fast8_t)n; i++) {
     err[i] = k[i] * (a[i] - b[i]);
   }
 }
@@ -441,7 +429,7 @@ static void scaled_error_nd(int n, float err[restrict n], const float a[static n
  * @param a_dot   Input array containing the time derivatives of each state [n]
  * @param n       Dimension of the arrays
  */
-static void integrate_nd(int n, float a[static n], const float a_dot[static n], float dt)
+static void integrate_nd(uint_fast8_t n, float a[static n], const float a_dot[static n], float dt)
 {
   for (uint_fast8_t i = 0; i < n; i++) {
     a[i] = a[i] + dt * a_dot[i];
@@ -485,8 +473,8 @@ static void reference_model_rate(
     BoundAbs(rate_2d_des[i], bounds->att_3d[i]);
 
   // Reference propagation 
-  float_vect_copy(att_ref->att_3d, &rate_2d_des, 3);
-  integrate_nd(3, att_ref->att_2d, &rate_2d_des, dt);
+  float_vect_copy(att_ref->att_3d, rate_2d_des, 3);
+  integrate_nd(3, att_ref->att_2d, rate_2d_des, dt);
   integrate_nd(3, att_ref->att_d, att_ref->att_2d, dt);
   float_vect_zero(att_ref->att, 3);
 }
@@ -506,7 +494,7 @@ static void reference_model_rate(
 static void reference_model_attitude(
   float dt, 
   float att_des[3],
-  const struct Gains3rOrder3 *k_att_rm,
+  const struct Gains3rdOrder3 *k_att_rm,
   const struct OneloopAttRef *bounds,
   struct OneloopAttRef *att_ref)
 {
@@ -533,8 +521,8 @@ static void reference_model_attitude(
     BoundAbs(att_3d_des[i], bounds->att_3d[i]);
 
   // Propagate references
-  float_vect_copy(att_ref->att_3d, &att_3d_des, 3);
-  integrate_nd(3, att_ref->att_2d, &att_3d_des, dt);
+  float_vect_copy(att_ref->att_3d, att_3d_des, 3);
+  integrate_nd(3, att_ref->att_2d, att_3d_des, dt);
   integrate_nd(3, att_ref->att_d, att_ref->att_2d, dt);
   integrate_nd(3, att_ref->att, att_ref->att_d, dt);
 }
@@ -555,7 +543,7 @@ static void reference_model_attitude(
  */
 static void reference_model_position(
   float dt,
-  float pos_des,
+  float pos_des[2],
   const struct Gains3rdOrder2 *k_pos_rm,
   const struct OneloopPosRef *bounds,
   struct OneloopPosRef *pos_ref)
@@ -577,14 +565,14 @@ static void reference_model_position(
   }
 
   // Acceleration error
-  scaled_error_nd(2, jer_des, acc_des, pos_ref->accel, k_pos_rm->k3);
+  scaled_error_nd(2, jer_des, acc_des, pos_ref->acc, k_pos_rm->k3);
   for (uint_fast8_t i = 0; i < 2; i++) {
     BoundAbs(jer_des[i], bounds->jer[i]);
   }
 
   // Reference propagation 
-  float_vect_copy(pos_ref->jer, &jer_des, 2);
-  integrate_nd(2, pos_ref->acc, &jer_des, dt);
+  float_vect_copy(pos_ref->jer, jer_des, 2);
+  integrate_nd(2, pos_ref->acc, jer_des, dt);
   integrate_nd(2, pos_ref->vel, pos_ref->acc, dt);
   integrate_nd(2, pos_ref->pos, pos_ref->vel, dt);
 }
@@ -614,21 +602,21 @@ static void reference_model_altitude(
 
   // Altitude error scaled by k1
   vel_des = k_alt_rm->k1 * (alt_des - alt_ref->pos);
-  BoundsAbs(pos_err, bounds->vel);
+  BoundAbs(vel_des, bounds->vel);
 
   // Velocity error scaled by k2, bounded by velocity limits
   acc_des = k_alt_rm->k2 * (vel_des - alt_ref->vel);
   BoundAbs(acc_des, bounds->acc);
 
   // Acceleration error scaled by k3, bounded by accel limits
-  jer_des = k_alt_rm->k3 * (acc_des - alt_ref->accel);
+  jer_des = k_alt_rm->k3 * (acc_des - alt_ref->acc);
   BoundAbs(jer_des, bounds->jer);
 
   // Reference propagation
   alt_ref->jer = jer_des;
-  integrate_nd(1, alt_ref->acc, &jer_des, dt);
-  integrate_nd(1, alt_ref->vel, alt_ref->acc, dt);
-  integrate_nd(1, alt_ref->pos, alt_ref->vel, dt);
+  integrate_nd(1, &alt_ref->acc, &jer_des, dt);
+  integrate_nd(1, &alt_ref->vel, &alt_ref->acc, dt);
+  integrate_nd(1, &alt_ref->pos, &alt_ref->vel, dt);
 }
 
 /**
@@ -667,8 +655,8 @@ static void reference_model_heading(
 
   // Reference propagation
   head_ref->head_2d = accel_des;
-  integrate_nd(1, head_ref->head_d, &accel_des, dt);
-  integrate_nd(1, head_ref->head, head_ref->head_d, dt);
+  integrate_nd(1, &head_ref->head_d, &accel_des, dt);
+  integrate_nd(1, &head_ref->head, &head_ref->head_d, dt);
 
   // Normalize angle to [-pi, pi]
   NormRadAngle(head_ref->head);
@@ -682,14 +670,12 @@ static void reference_model_heading(
  * These errors are combined with the jerk reference to form a virtual control
  * command for rate stabilization. The attitude reference is not used for rate control.
  *
- * @param[in]  dt         Time step [s]
  * @param[in]  att_ref    Pointer to rate reference states (angular rate, acceleration, jerk)
  * @param[in]  att_state  Pointer to current rate states (angular rate, acceleration)
  * @param[in]  k_rate_e   Pointer to structured 2nd-order gains (k1, k2 per axis)
  * @param[out] nu_rate    Pointer to output virtual control command [3]
  */
 static void error_controller_rate(
-  float dt,
   const struct OneloopAttRef *att_ref,
   const struct OneloopAttState *att_state,
   const struct Gains2ndOrder3 *k_rate_e,
@@ -699,7 +685,7 @@ static void error_controller_rate(
   float omega_d_err[3];
 
   scaled_error_nd(3, omega_err, att_ref->att_d, att_state->att_d, k_rate_e->k1);
-  scaled_error_nd(3, omega_d_err, att_ref->att_2d att_state->att_2d, k_rate_e->k2);
+  scaled_error_nd(3, omega_d_err, att_ref->att_2d, att_state->att_2d, k_rate_e->k2);
 
   // Compute virtual command
   for (uint_fast8_t i = 0; i < 3; i++) {
@@ -717,14 +703,12 @@ static void error_controller_rate(
  * These errors are summed with the angular jerk reference to form a virtual control
  * command for attitude stabilization.
  *
- * @param[in]  dt         Time step [s]
  * @param[in]  att_ref    Pointer to attitude reference states (attitude, angular rate, acceleration, jerk)
  * @param[in]  att_state  Pointer to current attitude states (attitude, angular rate, acceleration)
  * @param[in]  k_att_e    Pointer to structured gains for error scaling (k1, k2, k3 per axis)
  * @param[out] nu_att     Pointer to output virtual control command vector [3]
  */
 static void error_controller_attitude(
-  float dt,
   const struct OneloopAttRef *att_ref,
   const struct OneloopAttState *att_state,
   const struct Gains3rdOrder3 *k_att_e,
@@ -736,7 +720,7 @@ static void error_controller_attitude(
 
   scaled_error_nd(3, att_err, att_ref->att, att_state->att, k_att_e->k1);
   scaled_error_nd(3, att_d_err, att_ref->att_d, att_state->att_d, k_att_e->k2);
-  scaled_error_nd(3, att_2d_err, att_ref->att_2d att_state->att_2d, k_rate_e->k3);
+  scaled_error_nd(3, att_2d_err, att_ref->att_2d, att_state->att_2d, k_att_e->k3);
 
   // Compute virtual command
   for (uint_fast8_t i = 0; i < 3; i++) {
@@ -753,14 +737,12 @@ static void error_controller_attitude(
  * corresponding 3rd-order structured gains, then sums these scaled errors together with
  * the position jerk reference to form the virtual command for lateral stabilization.
  *
- * @param[in]  dt        Time step [s]
  * @param[in]  pos_ref   Pointer to position reference states (pos, vel, accel, jerk)
  * @param[in]  pos_state Pointer to current position states (pos, vel, accel)
  * @param[in]  k_pos_e   Pointer to structured 3rd-order gains for error scaling (k1, k2, k3 per axis)
  * @param[out] nu_pos    Pointer to output virtual command vector [2]
  */
 static void error_controller_position(
-  float dt,
   const struct OneloopPosRef *pos_ref,
   const struct OneloopPosState *pos_state,
   const struct Gains3rdOrder2 *k_pos_e,
@@ -788,29 +770,27 @@ static void error_controller_position(
  * by its corresponding gain factor. These scaled errors are summed together with the
  * jerk reference to form the virtual command for altitude stabilization.
  *
- * @param[in]  dt        Time step [s]. It is not modified, but not required to be const.
  * @param[in]  alt_ref   Pointer to altitude reference states (position, velocity, acceleration, jerk)
  * @param[in]  alt_state Pointer to current altitude states (position, velocity, acceleration)
  * @param[in]  k_alt_e   Pointer to scalar 3rd-order gains for error scaling (k1, k2, k3)
  * @param[out] nu_alt    Pointer to output virtual control input scalar
  */
 static void error_controller_altitude(
-  float dt,
   const struct OneloopAltRef *alt_ref,
   const struct OneloopAltState *alt_state,
   const struct Gains3rdOrder1 *k_alt_e,
   float *nu_alt)
 {
-  float pos_err;
+  float alt_err;
   float vel_err;
   float acc_err;
 
-  scaled_error_nd(1, pos_err, pos_ref->pos, pos_state->pos, k_alt_e->k1);
-  scaled_error_nd(1, vel_err, alt_ref->vel, alt_state->vel, k_alt_e->k2);
-  scaled_error_nd(1, acc_err, alt_ref->acc, alt_state->acc, k_alt_e->k3);
+  scaled_error_nd(1, &alt_err, &alt_ref->pos, &alt_state->pos, &k_alt_e->k1);
+  scaled_error_nd(1, &vel_err, &alt_ref->vel, &alt_state->vel, &k_alt_e->k2);
+  scaled_error_nd(1, &acc_err, &alt_ref->acc, &alt_state->acc, &k_alt_e->k3);
 
   // Compute virtual command
-  *nu_alt = pos_err + vel_err + acc_err + alt_ref->jer;
+  *nu_alt = alt_err + vel_err + acc_err + alt_ref->jer;
 }
 
 /**
@@ -821,27 +801,22 @@ static void error_controller_altitude(
  * its corresponding 3rd-order gain. The scaled errors are summed with the 
  * angular acceleration (head_2d) feedforward reference to produce the virtual command output.
  *
- * @param[in]  dt         Time step [s].
  * @param[in]  head_ref   Pointer to heading reference states (head, head_d, head_2d).
  * @param[in]  head_state Pointer to current heading states (head, head_d).
  * @param[in]  k_head_e   Pointer to 3rd-order gains (k1 and k2 gains).
  * @param[out] nu_head    Pointer to output virtual control command (scalar).
  */
 static void error_controller_heading(
-  float dt,
-  const struct OneloopAltRef *head_ref,
-  const struct OneloopAltState *head_state,
-  const struct Gains3rdOrder1 *k_head_e,
+  const struct OneloopHeadRef *head_ref,
+  const struct OneloopHeadState *head_state,
+  const struct Gains2ndOrder1 *k_head_e,
   float *nu_head)
 {
   float head_err;
   float head_d_err;
 
-  // Compute scaled position error
-  scaled_error_nd(1, head_err, head_ref->head, head_state->head, k_head_e->k1);
-
-  // Compute scaled velocity error
-  scaled_error_nd(1, head_d_err, head_ref->head_d, head_state->head_d, k_head_e->k2);
+  scaled_error_nd(1, &head_err, &head_ref->head, &head_state->head, &k_head_e->k1);
+  scaled_error_nd(1, &head_d_err, &head_ref->head_d, &head_state->head_d, &k_head_e->k2);
 
   // Compute virtual command
   *nu_head = head_err + head_d_err + head_ref->head_2d;
@@ -885,7 +860,7 @@ static void compute_gains_3rd_order_single(float* k1, float* k2, float* k3, floa
  * @param[out] gains Output structure for computed gains
  * @param[in] poles Input pole structure (omega_n, zeta)
  */
-static void compute_gains_2nd_order_3(struct Gains2ndOrder3* gains, struct Poles2ndOrder3* poles)
+static void compute_gains_2nd_order_3(struct Gains2ndOrder3* gains, const struct Poles2ndOrder3* poles)
 {
     for (uint_fast8_t i = 0; i < 3; ++i) {
         compute_gains_2nd_order_single(&gains->k1[i], &gains->k2[i],
@@ -899,7 +874,7 @@ static void compute_gains_2nd_order_3(struct Gains2ndOrder3* gains, struct Poles
  * @param[out] gains Output structure for computed gains
  * @param[in] poles Input pole structure (omega_n, zeta)
  */
-static void compute_gains_2nd_order_2(struct Gains2ndOrder2* gains, struct Poles2ndOrder2* poles)
+static void compute_gains_2nd_order_2(struct Gains2ndOrder2* gains, const struct Poles2ndOrder2* poles)
 {
     for (uint_fast8_t i = 0; i < 2; ++i) {
         compute_gains_2nd_order_single(&gains->k1[i], &gains->k2[i],
@@ -913,7 +888,7 @@ static void compute_gains_2nd_order_2(struct Gains2ndOrder2* gains, struct Poles
  * @param[out] gains Output structure for computed gains
  * @param[in] poles Input pole structure (omega_n, zeta)
  */
-static void compute_gains_2nd_order_1(struct Gains2ndOrder1* gains, struct Poles2ndOrdert1* poles)
+static void compute_gains_2nd_order_1(struct Gains2ndOrder1* gains, const struct Poles2ndOrder1* poles)
 {
     compute_gains_2nd_order_single(&gains->k1, &gains->k2,
                                    poles->omega_n, poles->zeta);
@@ -925,11 +900,11 @@ static void compute_gains_2nd_order_1(struct Gains2ndOrder1* gains, struct Poles
  * @param[out] gains Output structure for computed gains
  * @param[in] poles Input pole structure (omega_n, zeta, p1)
  */
-static void compute_gains_3rd_order_3(struct Gains3rdOrder3* gains, struct Poles3rdOrder3* poles)
+static void compute_gains_3rd_order_3(struct Gains3rdOrder3* gains, const struct Poles3rdOrder3* poles)
 {
     for (uint_fast8_t i = 0; i < 3; ++i) {
         compute_gains_3rd_order_single(&gains->k1[i], &gains->k2[i], &gains->k3[i],
-                                      poles->omega_n[i], poles->zeta[i], poles->p3[i]);
+                                      poles->omega_n[i], poles->zeta[i], poles->p1[i]);
     }
 }
 
@@ -939,11 +914,11 @@ static void compute_gains_3rd_order_3(struct Gains3rdOrder3* gains, struct Poles
  * @param[out] gains Output structure for computed gains
  * @param[in] poles Input pole structure (omega_n, zeta, p1)
  */
-static void compute_gains_3rd_order_2(struct Gains3rdOrder2* gains, struct Poles3rdOrder2* poles)
+static void compute_gains_3rd_order_2(struct Gains3rdOrder2* gains, const struct Poles3rdOrder2* poles)
 {
     for (uint_fast8_t i = 0; i < 2; ++i) {
         compute_gains_3rd_order_single(&gains->k1[i], &gains->k2[i], &gains->k3[i],
-                                      poles->omega_n[i], poles->zeta[i], poles->p3[i]);
+                                      poles->omega_n[i], poles->zeta[i], poles->p1[i]);
     }
 }
 
@@ -953,10 +928,10 @@ static void compute_gains_3rd_order_2(struct Gains3rdOrder2* gains, struct Poles
  * @param[out] gains Output structure for computed gains
  * @param[in] poles Input pole structure (omega_n, zeta, p1)
  */
-static void compute_gains_3rd_order_1(struct Gains3rdOrder1* gains, struct Poles3rdOrdert1* poles)
+static void compute_gains_3rd_order_1(struct Gains3rdOrder1* gains, const struct Poles3rdOrder1* poles)
 {
     compute_gains_3rd_order_single(&gains->k1, &gains->k2, &gains->k3,
-                                  poles->omega_n, poles->zeta, poles->p3);
+                                  poles->omega_n, poles->zeta, poles->p1);
 }
 
 /** @brief Initialize a filter based on its type
@@ -972,13 +947,13 @@ static void init_filter_on_type(struct Filter *filter, float x0) {
   float tau = 1.0f / (2.0f * M_PI * filter->freq);
   switch(filter->filter_type) {
     case LOWPASS_1:
-      init_first_order_low_pass(&filter->state.lp1, tau, 1.0f / PERIODIC_FREQUENCY, x0);
+      init_first_order_low_pass(&filter->lp1, tau, 1.0f / PERIODIC_FREQUENCY, x0);
       break;
     case BUTTERWORTH_2:
-      init_butterworth_2_low_pass(&filter->state.bw2, tau, 1.0f / PERIODIC_FREQUENCY, x0);
+      init_butterworth_2_low_pass(&filter->bw2, tau, 1.0f / PERIODIC_FREQUENCY, x0);
       break;
     case BUTTERWORTH_4:
-      init_butterworth_4_low_pass(&filter->state.bw4, tau, 1.0f / PERIODIC_FREQUENCY, x0);
+      init_butterworth_4_low_pass(&filter->bw4, tau, 1.0f / PERIODIC_FREQUENCY, x0);
       break;
     default:
       return;
@@ -994,12 +969,11 @@ static void init_filter_on_type(struct Filter *filter, float x0) {
  * @param[in] type Type of filter to use (e.g., LOWPASS_1, BUTTERWORTH_2, BUTTERWORTH_4)
  */
 static void init_filter(struct Filter *filter, float fc, enum FilterType type){
-  filter->type     = type;
-  filter->freq     = fc;
+  filter->filter_type = type;
+  filter->freq        = fc;
   init_filter_on_type(filter, 0.0);
-  filter->meas      = 0.0;
-  filter->meas_prev = 0.0;
-  filter->out       = 0.0;
+  filter->meas        = 0.0;
+  filter->out         = 0.0;
 }
 
 /** @brief Update a filter based on its type
@@ -1012,16 +986,16 @@ static void init_filter(struct Filter *filter, float fc, enum FilterType type){
 static void update_filter_on_type(struct Filter *filter, float input) {
   switch(filter->filter_type) {
     case LOWPASS_1:
-      update_first_order_low_pass(&filter->state.lp1, input);
-      filter->out = filter->meas_filt.lp1.last_out;
+      update_first_order_low_pass(&filter->lp1, input);
+      filter->out = filter->lp1.last_out;
       break;
     case BUTTERWORTH_2:
-      update_butterworth_2_low_pass(&filter->state.bw2, input);
-      filter->out = filter->meas_filt.bw2.o[0];
+      update_butterworth_2_low_pass(&filter->bw2, input);
+      filter->out = filter->bw2.o[0];
       break;
     case BUTTERWORTH_4:
-      update_butterworth_4_low_pass(&filter->state.bw4, input);
-      filter->out = filter->meas_filt.bw4.lp2.o[2];
+      update_butterworth_4_low_pass(&filter->bw4, input);
+      filter->out = filter->bw4.lp2.o[0];
       break;
     default:
       filter->out = 0.0f;
@@ -1097,7 +1071,7 @@ static void get_desired_rates_radio_command(float* rate_des, const float* rate_b
 {
   rate_des[0] = ((float)radio_control_get(RADIO_ROLL) / MAX_PPRZ) * rate_bounds[1];
   rate_des[1] = ((float)radio_control_get(RADIO_PITCH) / MAX_PPRZ) * rate_bounds[2];
-  rate_des[2] = ((float)radio_control_get(cRADIO_YAW) / MAX_PPRZ) * rate_bounds[3];
+  rate_des[2] = ((float)radio_control_get(RADIO_YAW) / MAX_PPRZ) * rate_bounds[3];
 }
 
 /**
@@ -1134,8 +1108,8 @@ static void get_desired_attitude_radio_command(float* att_des, const float* att_
 static void get_desired_heading_radio_command(float* heading_des, float heading_rate_bound, float dt)
 {
   float rate_des = ((float)radio_control_get(RADIO_YAW) / MAX_PPRZ) * heading_rate_bound;
-  *heading_des += rate_des * dt
-  NormRadAngle(heading_des);
+  *heading_des += rate_des * dt;
+  NormRadAngle(*heading_des);
 }
 
 
@@ -1151,9 +1125,9 @@ static void get_act_state_oneloop(void)
       if(!autopilot_get_motors_on()){
         actuator_state_1l[i] = 0.0;
       }
-      Bound(actuator_state_1l[i],act_min[i], act_max[i]);
+      Bound(actuator_state_1l[i], act_min[i], act_max[i]);
     } else {
-      actuator_state_1l[i] = oneloop_andi.sta_state.att[i-ANDI_NUM_ACT];
+      actuator_state_1l[i] = oneloop_andi.att_state.att[i - ANDI_NUM_ACT];
     }
   }
 }
@@ -1187,7 +1161,7 @@ static void discretize_act_dynamics(float dt, float* act_dynamics_d, const float
  */
 static void compute_wls_scaling_factors(float* wls_scaler_u, const float* act_max, const float* act_min, const float* act_max_norm, const float* act_min_norm) {
   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT_TOT; i++){
-    float nominator = positive_non_zero(act_max[i] - act_min[i])
+    float nominator = positive_non_zero(act_max[i] - act_min[i]);
     float denominator = positive_non_zero(act_max_norm[i] - act_min_norm[i]);
     wls_scaler_u[i] = nominator / denominator;
   }
@@ -1201,7 +1175,7 @@ static void compute_wls_scaling_factors(float* wls_scaler_u, const float* act_ma
  * FIXME: Add option for 'half loop' where CE is adjusted to not
  * control certain virtual actuators.
  */
-static void evaluate_effectiveness_matrix(float eff_mat[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT])
+static void evaluate_effectiveness_matrix(float eff_mat[ANDI_OUTPUTS * ANDI_NUM_ACT_TOT])
 {
   // float v_e[3];
   // v_e[0] = filt_vn.out;
@@ -1218,7 +1192,7 @@ static void evaluate_effectiveness_matrix(float eff_mat[ANDI_OUTPUTS][ANDI_NUM_A
   float w_e[3] = {0.0f, 0.0f, 0.0f};
   float quat[4] = {1.0f, 0.0f, 0.0f, 0.0f};
   float wind_e[3] = {0.0f, 0.0f, 0.0f};
-  float u[4] = {0.0f, 0.0f, 800f, 800f};
+  float u[4] = {0.0f, 0.0f, 800.0f, 800.0f};
   cyclone_fu(v_e, w_e,
              quat, u,
              wind_e, obm_coefficients.data,
@@ -1267,20 +1241,20 @@ void oneloop_andi_init(void)
   // Compute gains from on poles
   compute_gains_2nd_order_3(&k_rate_e, &p_rate_e);
   compute_gains_2nd_order_3(&k_rate_rm, &p_rate_rm);
-  compute_gains_3nd_order_3(&k_att_e, &p_att_e);
-  compute_gains_3nd_order_3(&k_att_rm, &p_att_rm);
-  compute_gains_3nd_order_2(&k_pos_e, &p_pos_e);
-  compute_gains_3nd_order_2(&k_pos_rm, &p_pos_rm);
-  compute_gains_3nd_order_1(&k_alt_e, &p_alt_e);
-  compute_gains_3nd_order_1(&k_alt_rm, &p_alt_rm);
+  compute_gains_3rd_order_3(&k_att_e, &p_att_e);
+  compute_gains_3rd_order_3(&k_att_rm, &p_att_rm);
+  compute_gains_3rd_order_2(&k_pos_e, &p_pos_e);
+  compute_gains_3rd_order_2(&k_pos_rm, &p_pos_rm);
+  compute_gains_3rd_order_1(&k_alt_e, &p_alt_e);
+  compute_gains_3rd_order_1(&k_alt_rm, &p_alt_rm);
   compute_gains_2nd_order_1(&k_head_e, &p_head_e);
   compute_gains_2nd_order_1(&k_head_rm, &p_head_rm);
   
   // Initialize bounds
   // FIXME: Make bounds dynamically set from airframe file
   // att_bounds = {.att={10, 10, 10}.att_d={1000.0, 1000.0, 1000.0}, .att_2d={1000.0, 1000.0, 1000.0}, .att_3d={1000.0, 1000.0, 1000.0}};
-  // pos_bounds  = {.pos={0, 0}, .vel={1000.0, 1000.0}, .acc={1000.0, 1000.0}, .jerk={1000.0, 1000.0}};
-  // alt_bounds  = {.alt=0, .vel=1000.0, .acc=1000.0, .jerk=1000.0};
+  // pos_bounds  = {.pos={0, 0}, .vel={1000.0, 1000.0}, .acc={1000.0, 1000.0}, .jer={1000.0, 1000.0}};
+  // alt_bounds  = {.alt=0, .vel=1000.0, .acc=1000.0, .jer=1000.0};
   // head_bounds = {.head=0, .head_rate=1000.0, .head_acc=1000.0};
 
   // Initialize obm coefficients
@@ -1338,39 +1312,38 @@ void oneloop_andi_init(void)
   init_filter(&filt_q,     20.0, BUTTERWORTH_2);
   init_filter(&filt_r,     20.0, BUTTERWORTH_2);
 
-  init_filter(&filt_ay,      2.0, BUTTERWORTH_2);
-  init_filter(&filt_aispeed, 2.0, BUTTERWORTH_2);
+  init_filter(&filt_ay,       2.0, BUTTERWORTH_2);
+  init_filter(&filt_airspeed, 2.0, BUTTERWORTH_2);
 
   for (int i = 0; i < ANDI_NUM_ACT_TOT; i++) {
       init_filter(&filt_u[i], 2.0, BUTTERWORTH_2);
   }
 
   // Initialize references to zero
+  float_vect_zero(oneloop_andi.att_des, 3);
   float_vect_zero(oneloop_andi.att_ref.att, 3);
   float_vect_zero(oneloop_andi.att_ref.att_d, 3);
   float_vect_zero(oneloop_andi.att_ref.att_2d, 3);
   float_vect_zero(oneloop_andi.att_ref.att_3d, 3);
+  float_vect_zero(oneloop_andi.pos_des, 2);
   float_vect_zero(oneloop_andi.pos_ref.pos, 2);
   float_vect_zero(oneloop_andi.pos_ref.vel, 2);
   float_vect_zero(oneloop_andi.pos_ref.acc, 2);
   float_vect_zero(oneloop_andi.pos_ref.jer, 2);
+  oneloop_andi.alt_des = 0.0f;
   oneloop_andi.alt_ref.pos = 0.0f;
   oneloop_andi.alt_ref.vel = 0.0f;
   oneloop_andi.alt_ref.acc = 0.0f;
   oneloop_andi.alt_ref.jer = 0.0f;
-  oneloop_andi.head.head = 0.0f;
-  oneloop_andi.head.head_d = 0.0f;
+  oneloop_andi.head_des = 0.0f;
+  oneloop_andi.head_ref.head = 0.0f;
+  oneloop_andi.head_ref.head_d = 0.0f;
 
   // Initialize controller variables
   float_vect_zero(andi_u, ANDI_NUM_ACT_TOT);
   float_vect_zero(andi_du, ANDI_NUM_ACT_TOT);
-  float_vect_zero(andi_u_n, ANDI_NUM_ACT_TOT);
   float_vect_zero(actuator_state_1l, ANDI_NUM_ACT_TOT);
-
   float_vect_zero(nu, ANDI_OUTPUTS);
-  float_vect_zero(nu_n, ANDI_OUTPUTS);
-  float_vect_zero(nav_target, 3);
-  float_vect_zero(nav_target_new, 3);
 
   // Start telemetry
   #if PERIODIC_TELEMETRY
@@ -1379,7 +1352,7 @@ void oneloop_andi_init(void)
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_GUID, send_eff_mat_guid_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE, send_guidance_oneloop_andi);
     // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATOR_STATE, send_oneloop_actuator_state);
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_oneloop_debug);
+    // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_oneloop_debug);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_V, send_wls_v_oneloop);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_U, send_wls_u_oneloop);
   #endif
@@ -1414,15 +1387,18 @@ void oneloop_andi_run(enum ControlMode control_mode)
   // Step 1: Fetch all sensor measurmements.
   get_act_state_oneloop();
 
-  for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     act_dyn_ctrl[i] = act_dynamics[i];
   }
 
   // Register the state of the drone in the variables used in RM and EC
-  float attitude_wxyz[4] = stateGetNedToBodyQuat_f();
+  struct FloatEulers attitude_euler;
+  float_eulers_of_quat_zxy(&attitude_euler, stateGetNedToBodyQuat_f());
 
   // Attitude
-  float_eulers_of_quat_zxy(&oneloop_andi.att_state.att, attitude_wxyz);  //FIXME: Convert to quaternion representation
+  oneloop_andi.att_state.att[0] = attitude_euler.phi;
+  oneloop_andi.att_state.att[1] = attitude_euler.theta;
+  oneloop_andi.att_state.att[2] = attitude_euler.psi;
   oneloop_andi_propagate_filters();   //needs to be after update of attitude vector (WHY?)
   oneloop_andi.att_state.att_d[0]  = filt_p.out;
   oneloop_andi.att_state.att_d[1]  = filt_q.out;
@@ -1440,9 +1416,9 @@ void oneloop_andi_run(enum ControlMode control_mode)
   oneloop_andi.pos_state.acc[1] = filt_ae.out;
 
   // Altitude
-  oneloop_andi.alt_state.pos[2] = stateGetPositionNed_f()->z;      
-  oneloop_andi.alt_state.vel[2] = filt_vd.out;      
-  oneloop_andi.alt_state.acc[2] = filt_ad.out;
+  oneloop_andi.alt_state.pos = stateGetPositionNed_f()->z;      
+  oneloop_andi.alt_state.vel = filt_vd.out;      
+  oneloop_andi.alt_state.acc = filt_ad.out;
   // FIXME: Todo, add Heading state fetching (which is part of attitude, might be redundant)
 
 
@@ -1455,30 +1431,24 @@ void oneloop_andi_run(enum ControlMode control_mode)
   switch (control_mode) {
     case CONTROL_MODE_RATE:
       {
-      float rate_des[3];
-      float alt_des;
+      get_desired_rates_radio_command(oneloop_andi.att_des, att_bounds.att_d);
+      reference_model_rate(dt_1l, oneloop_andi.att_des, &k_rate_rm, &att_bounds, &oneloop_andi.att_ref);
+      error_controller_rate(&oneloop_andi.att_ref, &oneloop_andi.att_state, &k_rate_e, &nu[4]);
 
-      get_desired_rates_radio_command(rate_des, att_bounds.att_d);
-      reference_model_rate(dt_1l, rate_des, k_rate_rm, &att_bounds, &oneloop_andi.att_ref);
-      error_controller_rate(dt_1l, &oneloop_andi.att_ref, &oneloop_andi.att_state, &k_rate_e, &nu[4]);
-
-      get_desired_altitude_radio_command(&alt_des, alt_bounds.vel, dt_1l);
-      reference_model_altitude(dt_1l, alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref)
-      error_controller_altitude(dt_1l, &oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
+      get_desired_altitude_radio_command(&oneloop_andi.alt_des, alt_bounds.vel, dt_1l);
+      reference_model_altitude(dt_1l, oneloop_andi.alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref);
+      error_controller_altitude(&oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
       break;
       }
     case CONTROL_MODE_ATTITUDE:
       {
-      float att_des[3];
-      float alt_des;
+      get_desired_attitude_radio_command(oneloop_andi.att_des, att_bounds.att, att_bounds.att_d[2], dt_1l);
+      reference_model_attitude(dt_1l, oneloop_andi.att_des, &k_att_rm, &att_bounds, &oneloop_andi.att_ref);
+      error_controller_attitude(&oneloop_andi.att_ref, &oneloop_andi.att_state, &k_att_e, &nu[4]);
 
-      get_desired_attitude_radio_command(att_des, att_bounds.att, att_bounds.att_d[2], dt_1l);
-      reference_model_attitude(dt_1l, att_des, k_att_rm, &att_bounds, &oneloop_andi.att_ref);
-      error_controller_attitude(dt_1l, &oneloop_andi.att_ref, &oneloop_andi.att_state, &k_att_e, &nu[4]);
-
-      get_desired_altitude_radio_command(&alt_des, alt_bounds.vel, dt_1l);
-      reference_model_altitude(dt_1l, alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref)
-      error_controller_altitude(dt_1l, &oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
+      get_desired_altitude_radio_command(&oneloop_andi.alt_des, alt_bounds.vel, dt_1l);
+      reference_model_altitude(dt_1l, oneloop_andi.alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref);
+      error_controller_altitude(&oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
       break;
       }
     // case CONTROL_MODE_GUIDANCE:
@@ -1502,31 +1472,31 @@ void oneloop_andi_run(enum ControlMode control_mode)
   // FIXME: Put this part in its own function?
   evaluate_effectiveness_matrix(eff_mat);
 
-  float wls_scaler_u[ANDI_ACT_NUM_TOTAL];
-  compute_wls_scaling_factors(wls_scaler_u, act_max, act_min, act_max_norm, act_mix_norm);
+  float wls_scaler_u[ANDI_NUM_ACT_TOT];
+  compute_wls_scaling_factors(wls_scaler_u, act_max, act_min, act_max_norm, act_min_norm);
   for (uint_fast8_t i = 0; i < ANDI_OUTPUTS; i++) {
     for (uint_fast8_t j = 0; j < ANDI_NUM_ACT_TOT; j++) {
       eff_mat[i * ANDI_NUM_ACT_TOT + j] *= wls_scaler_u[j];
     }
   }
   for (uint_fast8_t i = 0; i < ANDI_OUTPUTS; i++) {
-    bwls_1l[i] = eff_mat[i];
+    bwls_1l[i] = &eff_mat[i * ANDI_NUM_ACT_TOT];
   }
   // WLS Control Allocator
   wls_alloc(&wls_one_p, bwls_1l, 0, 0, 10);
-  for (i = 0; i < ANDI_NUM_ACT_TOTAL; i++) {
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     andi_du[i] = wls_scaler_u[i] * wls_one_p.u[i];
   }
  
   //FIXME: Convert du to u here.
 
   // Bound the inputs to the actuators
-  for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     Bound(andi_du[i], act_min[i], act_max[i]);
   }
 
   // Commit the actuator command
-  for (i = 0; i < ANDI_NUM_ACT; i++) {
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
     commands[i] = (int16_t) andi_du[i];
   }
 }
