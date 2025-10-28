@@ -120,47 +120,51 @@
     <channel name="filtering">
 
       <!--First order filter represents actuator dynamics-->
-      <lag_filter name="ele_left_lag">
-        <input> fcs/ele_left </input>
+      <lag_filter name="ELEVON_LEFT_lag">
+        <input> fcs/ELEVON_LEFT </input>
         <c1> 54 </c1>
-        <output> fcs/ele_left_lag</output>
+        <output> fcs/ELEVON_LEFT_lag</output>
       </lag_filter>
-      <lag_filter name="ele_right_lag">
-        <input> fcs/ele_right </input>
+      <lag_filter name="ELEVON_RIGHT_lag">
+        <input> fcs/ELEVON_RIGHT </input>
         <c1> 54 </c1>
-        <output> fcs/ele_right_lag</output>
+        <output> fcs/ELEVON_RIGHT_lag</output>
       </lag_filter>
-      <lag_filter name="mot_right_lag">
-        <input> fcs/mot_right </input>
+      <lag_filter name="MOTOR_RIGHT_lag">
+        <input> fcs/MOTOR_RIGHT </input>
         <c1> 31.7 </c1>
-        <output> fcs/mot_right_lag</output>
+        <output> fcs/MOTOR_RIGHT_lag</output>
       </lag_filter>
-      <lag_filter name="mot_left_lag">
-        <input> fcs/mot_left </input>
+      <lag_filter name="MOTOR_LEFT_lag">
+        <input> fcs/MOTOR_LEFT </input>
         <c1> 31.7 </c1>
-        <output> fcs/mot_left_lag</output>
+        <output> fcs/MOTOR_LEFT_lag</output>
       </lag_filter>
     </channel>
   </flight_control>
 
   <external_reactions>
 
-    <property>fcs/ele_left</property>
-    <property>fcs/ele_left_lag</property>
-    <property>fcs/ele_right</property>
-    <property>fcs/ele_right_lag</property>
-    <property>fcs/mot_right</property>
-    <property>fcs/mot_right_lag</property>
-    <property>fcs/mot_left</property>
-    <property>fcs/mot_left_lag</property>
-
+    <property>fcs/ELEVON_LEFT</property>
+    <property>fcs/ELEVON_LEFT_lag</property>
+    <property>fcs/ELEVON_RIGHT</property>
+    <property>fcs/ELEVON_RIGHT_lag</property>
+    <property>fcs/MOTOR_RIGHT</property>
+    <property>fcs/MOTOR_RIGHT_lag</property>
+    <property>fcs/MOTOR_LEFT</property>
+    <property>fcs/MOTOR_LEFT_lag</property>
+    <property>fcs/ROLL_RATE</property>
+    <property>fcs/PITCH_RATE</property>
+    <property>fcs/YAW_RATE</property>
+    <property>fcs/YAW</property>
+    <property>fcs/THRUST</property>
 
     <!-- First the lift forces produced by each propeller -->
 
-    <force name="mot_right" frame="BODY" unit="LBS">
+    <force name="MOTOR_RIGHT" frame="BODY" unit="LBS">
       <function>
         <product>
-          <property>fcs/mot_right_lag</property>
+          <property>fcs/MOTOR_RIGHT_lag</property>
           <value> 2.2 </value>
         </product>
       </function>
@@ -176,10 +180,10 @@
       </direction>
     </force>
 
-    <force name="mot_left" frame="BODY" unit="LBS">
+    <force name="MOTOR_LEFT" frame="BODY" unit="LBS">
       <function>
         <product>
-          <property>fcs/mot_left_lag</property>
+          <property>fcs/MOTOR_LEFT_lag</property>
           <value> 2.2 </value>
         </product>
       </function>
