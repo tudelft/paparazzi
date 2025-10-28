@@ -13,16 +13,13 @@
       <include name="modules/actuators/actuators.h"/>
       <include name="modules/actuators/actuators_t4.h"/><!-- should not be needed here fixme -->
       <include name="modules/actuators/actuators_t4_uart.h"/>
-      <define name="MODE_RATE" value="AP_MODE_RATE" cond="ifndef MODE_RATE"/>
-      <define name="MODE_NAV" value="AP_MODE_NAV" cond="ifndef MODE_NAV"/>
-      <define name="MODE_ATTITUDE" value="AP_MODE_ATTITUDE" cond="ifndef MODE_AUTO1"/>
     </includes>
 
     <settings>
       <dl_setting var="autopilot.kill_throttle" min="0" step="1" max="1" values="Resurrect|Kill"/> <!-- handler="KillThrottle" -->
     </settings>
 
-    <!-- Kill throttle mode 0-->
+    <!-- Kill throttle mode 0 -->
     <mode name="KILL">
       <select cond="kill_switch_is_on()"/>
       <on_enter>
@@ -34,7 +31,12 @@
       </control>
     </mode>
 
-    <!-- Rate mode 3-->
+    <!-- Failsafe mode 1 (required for compiling)-->
+    <mode name="FAILSAFE" shortname="FAIL">    
+      <!-- Failsafe does not work needs to be fixed-->
+    </mode>
+
+    <!-- Rate mode 2-->
     <mode name="RATE" shortname="RATE">
       <select cond="RCMode0()"/>
       <on_enter>
@@ -47,17 +49,6 @@
 
     <!-- Nav mode (required for compiling)-->
     <mode name="NAV" shortname="NAV">
-      <select cond="RCMode1()"/>
-      <on_enter>
-        <call fun="oneloop_andi_enter(CONTROL_MODE_RATE, CONTROL_TYPE_ANDI)"/>
-      </on_enter>
-      <control>
-        <call fun="oneloop_andi_run(CONTROL_MODE_RATE)"/>
-      </control>
-    </mode>
-  
-    <!-- Nav mode (required for compiling)-->
-    <mode name="FAILSAFE" shortname="NAV">
       <select cond="RCMode1()"/>
       <on_enter>
         <call fun="oneloop_andi_enter(CONTROL_MODE_RATE, CONTROL_TYPE_ANDI)"/>

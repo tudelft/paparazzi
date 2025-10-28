@@ -47,14 +47,26 @@
 
             <module name="flight_recorder"/>
 
+            <define name="INS_FINV_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
+            <define name="INS_EKF2_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
+            <define name="AHRS_ICQ_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
+
+            <!-- EKF EKF2  configure inputs -->
+            <define name="INS_EKF2_MAG_ID"          value="MAG_RM3100_SENDER_ID"/>
+            <define name="INS_EKF2_IMU_ID"          value="IMU_CUBE1_ID"/> 
+            <define name="INS_EKF2_GYRO_ID"         value="IMU_CUBE1_ID"/>
+            <define name="INS_EKF2_ACCEL_ID"        value="IMU_CUBE1_ID"/>
+
+            <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
+            <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
         </target>
 
         <target name="nps" board="pc">
             <module name="fdm" type="jsbsim">
+                <!-- <define name="NPS_ACTUATOR_NAMES" value="ele_left, ele_right, mot_right, mot_left" type="string[]"/> -->
                 <define name="NPS_JSBSIM_MODEL" value="cyclone" type="string"/>
                 <define name="NPS_USE_COMMANDS" value="TRUE"/>
-                <define name="NPS_SENSORS_PARAMS"  value="nps_sensors_params_default.h" type="string"/>
-                <define name="NPS_JS_AXIS_MODE"    value="4"/>
+                <define name="NPS_NO_MOTOR_MIXING" value="TRUE"/>
 
             </module>
             <module name="radio_control" type="datalink">
@@ -81,24 +93,27 @@
         </module>
 
         <module name="mag" type="rm3100">
-            <define name="USE_I2C2"/>
-              <!-- <configure name="MAG_RM3100_PERIODIC_FREQUENCY" value="125"/> -->
             <configure name="MAG_RM3100_I2C_DEV" value="i2c2"/>
-            <!-- <define name="MODULE_RM3100_UPDATE_AHRS" value="FALSE"/> -->
+            <!-- <configure name="MAG_RM3100_PERIODIC_FREQUENCY" value="125"/> -->
+
+            <!-- 0:X, 1:Y, 2:Z; -->
             <define name="RM3100_CHAN_X" value="1"/>
             <define name="RM3100_CHAN_Y" value="0"/>
             <define name="RM3100_CHAN_Z" value="2"/>
-            <define name="RM3100_CHAN_X_SIGN" value="-"/>
+
+            <define name="RM3100_CHAN_X_SIGN" value="+"/>
             <define name="RM3100_CHAN_Y_SIGN" value="+"/>
             <define name="RM3100_CHAN_Z_SIGN" value="-"/>
+
+            <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
             <!-- <configure name="MODULE_RM3100_SYNC_SEND" value="TRUE"/> -->
-            <!-- <define name="DATA_RATE" value="RM3100_RATE_600"/> -->
+
+            <!--TODO: Set correct angles-->
+            <define name="RM3100_MAG_TO_IMU_PHI" value="RadOfDeg\(0.0\)"/>
+            <define name="RM3100_MAG_TO_IMU_THETA" value="RadOfDeg\(0.0\)"/>
+            <define name="RM3100_MAG_TO_IMU_PSI" value="RadOfDeg\(0.0\)"/>
         </module>
 
-        <!-- 
-        <module name="nav" type="rotorcraft"/>
-        <module name="guidance" type="rotorcraft"/>
-        -->
         <!-- <module name="stabilization" type="rotorcraft"/>  -->
         <module name="guidance_oneloop.xml"/>
 
@@ -126,30 +141,6 @@
         </module>
 
     </firmware>
-
-    <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
-        <!--                                    |   EL    |    ER   |    ML   |    MR   |    P    |    Q    |    R    | -->
-        <define name  = "ACT_IS_SERVO" value = "{        1,        1,        0,        0,        0,        0,        0}"/>
-        <define name  = "ACT_DYN"      value = "{    20.0f,    20.0f,    40.0f,    40.0f,     1.0f,     1.0f,     1.0f}"/>
-        <define name  = "ACT_MAX"      value = "{  9600.0f,  9600.0f,  9600.0f,  9600.0f,  9600.0f,  9600.0f,  9600.0f}"/>
-        <define name  = "ACT_MIN"      value = "{ -9600.0f, -9600.0f,     0.0f,     0.0f, -9600.0f, -9600.0f, -9600.0f}"/>
-        <define name  = "ACT_MAX_NORM" value = "{     1.0f,     1.0f,     1.0f,     1.0f,     1.0f,     1.0f,     1.0f}"/>
-        <define name  = "ACT_MIN_NORM" value = "{    -1.0f,    -1.0f,     0.0f,     0.0f,    -1.0f,    -1.0f,    -1.0f}"/>
-        <define name  = "WU"           value = "{    0.75f,    0.75f,    0.75f,    0.75f,    1.20f,    1.20f,    1.20f}"/>
-        <define name  = "U_PREF"       value = "{    0.00f,    0.00f,  800.00f,  800.00f,    0.00f,    0.00f,    0.00f}"/>
-
-        <!--                                    |   AN    |    AE   |    AD   |    PSI  |    P    |    Q    |    R    | -->
-        <define name  = "WV"           value = "{     4.0f,     4.0f,     4.0f,     1.0f,     8.0f,     8.0f,    8.00f}"/>   
-    </section>
-
-    <section NAME="MISC">
-        <define name="STABILIZATION_ATTITUDE_SP_MAX_PHI"    value="45." unit="deg"  /> 
-        <define name="STABILIZATION_ATTITUDE_SP_MAX_THETA"  value="45." unit="deg"  />
-        <define name="STABILIZATION_ATTITUDE_SP_MAX_R"      value="90." unit="deg/s"/>
-        <define name="STABILIZATION_ATTITUDE_DEADBAND_R"    value="200"             />
-
-    </section>
-
 
     <!-- From old t4 code, I would need servos 1 and 5, and motor 1 and 2 respectively  -->
     <servos driver="T4">
@@ -188,4 +179,69 @@
         <set servo="S_THROTTLE_LEFT"  value="autopilot_get_motors_on()? commands[COMMAND_THROTTLE_LEFT] : -MAX_PPRZ"/>
         <set servo="S_THROTTLE_RIGHT" value="autopilot_get_motors_on()? commands[COMMAND_THROTTLE_RIGHT] : -MAX_PPRZ"/>
     </command_laws>
+
+    <section NAME="MISC">
+        <define name="TAILSITTER" value="TRUE"/>
+        <define name="USE_AIRSPEED" value="FALSE"/>
+        <define name="STABILIZATION_ATTITUDE_SP_MAX_PHI"    value="45." unit="deg"  /> 
+        <define name="STABILIZATION_ATTITUDE_SP_MAX_THETA"  value="45." unit="deg"  />
+        <define name="STABILIZATION_ATTITUDE_SP_MAX_R"      value="90." unit="deg/s"/>
+        <define name="STABILIZATION_ATTITUDE_DEADBAND_R"    value="200"             />
+    </section>
+
+    <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
+        <!--                                    |   EL    |    ER   |    ML   |    MR   |    P    |    Q    |    R    | -->
+        <define name  = "ACT_IS_SERVO" value = "{        1,        1,        0,        0,        0,        0,        0}"/>
+        <define name  = "ACT_DYN"      value = "{    20.0f,    20.0f,    40.0f,    40.0f,     1.0f,     1.0f,     1.0f}"/>
+        <define name  = "ACT_MAX"      value = "{  9600.0f,  9600.0f,  9600.0f,  9600.0f,  9600.0f,  9600.0f,  9600.0f}"/>
+        <define name  = "ACT_MIN"      value = "{ -9600.0f, -9600.0f,     0.0f,     0.0f, -9600.0f, -9600.0f, -9600.0f}"/>
+        <define name  = "ACT_MAX_NORM" value = "{     1.0f,     1.0f,     1.0f,     1.0f,     1.0f,     1.0f,     1.0f}"/>
+        <define name  = "ACT_MIN_NORM" value = "{    -1.0f,    -1.0f,     0.0f,     0.0f,    -1.0f,    -1.0f,    -1.0f}"/>
+        <define name  = "WU"           value = "{    0.75f,    0.75f,    0.75f,    0.75f,    1.20f,    1.20f,    1.20f}"/>
+        <define name  = "U_PREF"       value = "{    0.00f,    0.00f,  800.00f,  800.00f,    0.00f,    0.00f,    0.00f}"/>
+
+        <!--                                    |   AN    |    AE   |    AD   |    PSI  |    P    |    Q    |    R    | -->
+        <define name  = "WV"           value = "{     4.0f,     4.0f,     4.0f,     1.0f,     8.0f,     8.0f,    8.00f}"/>   
+    </section>
+
+    <section name="BAT">
+        <define name="BAT_NB_CELLS" value="4"/>
+        <define name="MAX_BAT_CAPACITY" value="2300" unit="mAh"/>
+        <!--<define name="MilliAmpereOfAdc(_adc)" value="(_adc-632)*4.14"/>-->
+        <define name="VoltageOfAdc(_adc)" value="(0.000611456 * _adc)"/>
+        <define name="MILLIAMP_AT_IDLE_THROTTLE" value="280" unit="mA"/>
+        <define name="MILLIAMP_AT_FULL_THROTTLE" value="20000" unit="mA"/>
+        <define name="MAX_BAT_LEVEL" value="16.8" unit="V"/>
+        <define name="LOW_BAT_LEVEL" value="14.0" unit="V"/>
+        <define name="CRITIC_BAT_LEVEL" value="13.5" unit="V"/>
+        <define name="CATASTROPHIC_BAT_LEVEL" value="13.2" unit="V"/>
+        <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.0"/>
+    </section>
+    
+    <section name="IMU" prefix="IMU_">
+
+        <define name="IMU_MAG_CALIB" type="array">
+            <field type="struct">
+                <field name="abi_id" value="5"/>
+                <field name="calibrated" type="struct">
+                    <field name="neutral" value="true"/>
+                    <field name="scale" value="true"/>
+                </field>
+                <field name="neutral" type="int[]" value="-2044,169,119"/>
+                <field name="scale" type="int[][]" value="{{5666,15649,36949},{9069,27419,63039}}"/>
+            </field>
+        </define>
+
+        <define name="MAG_X_NEUTRAL" value="-2044"/>
+        <define name="MAG_Y_NEUTRAL" value="169"/>
+        <define name="MAG_Z_NEUTRAL" value="119"/>
+        <define name="MAG_X_SENS" value="0.6247656861993671" integer="16"/>
+        <define name="MAG_Y_SENS" value="0.570735621337003" integer="16"/>
+        <define name="MAG_Z_SENS" value="0.5861292217757148" integer="16"/>
+
+        <!-- TODO: Set correct values -->
+        <define name="BODY_TO_IMU_PHI" value="0." unit="deg"/>
+        <define name="BODY_TO_IMU_THETA" value="90." unit="deg"/>
+        <define name="BODY_TO_IMU_PSI" value="0." unit="deg"/>
+    </section>
 </airframe>
