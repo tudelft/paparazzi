@@ -47,9 +47,19 @@
       </control>
     </mode>
 
+    <mode name="ATTITUDE" shortname="ATTI">
+      <select cond="RCMode1()"/>
+      <on_enter>
+        <call fun="oneloop_andi_enter(CONTROL_MODE_ATTITUDE, CONTROL_TYPE_ANDI)"/>
+      </on_enter>
+      <control>
+        <call fun="oneloop_andi_run(CONTROL_MODE_ATTITUDE)"/>
+      </control>
+    </mode>
+
     <!-- Nav mode (required for compiling)-->
     <mode name="NAV" shortname="NAV">
-      <select cond="RCMode1()"/>
+      <select cond="RCMode2()"/>
       <on_enter>
         <call fun="oneloop_andi_enter(CONTROL_MODE_RATE, CONTROL_TYPE_ANDI)"/>
       </on_enter>

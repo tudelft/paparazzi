@@ -158,7 +158,7 @@ struct Poles2ndOrder1 p_head_rm = {.omega_n=0.5, .zeta=1.0};
  * stabilization, position, altitude, and heading control loops.
  * They are used to limit the reference commands within safe operational limits.
  */
-struct OneloopAttRef att_bounds = {.att={10, 10, 10}, .att_d={1000.0, 1000.0, 1000.0}, .att_2d={1000.0, 1000.0, 1000.0}, .att_3d={1000.0, 1000.0, 1000.0}};
+struct OneloopAttRef att_bounds = {.att={2, 2, 2}, .att_d={10.0, 10.0, 10.0}, .att_2d={1000.0, 1000.0, 1000.0}, .att_3d={1000.0, 1000.0, 1000.0}};
 struct OneloopPosRef pos_bounds = {.pos={0, 0}, .vel={1000.0, 1000.0}, .acc={1000.0, 1000.0}, .jer={1000.0, 1000.0}};
 struct OneloopAltRef alt_bounds = {.pos=0, .vel=1000.0, .acc=1000.0, .jer=1000.0};
 struct OneloopHeadRef head_bounds = {.head=0, .head_d=1000.0, .head_2d=1000.0};
@@ -312,9 +312,8 @@ static void send_eff_mat_guid_oneloop_andi(struct transport_tx *trans, struct li
 }
 static void send_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
-  float zero = 0.0f;
   pprz_msg_send_STAB_ATTITUDE(trans, dev, AC_ID,
-                                        1, &zero,
+                                        3, oneloop_andi.att_des,
                                         3, oneloop_andi.att_state.att,
                                         3, oneloop_andi.att_ref.att,
                                         3, oneloop_andi.att_state.att_d,

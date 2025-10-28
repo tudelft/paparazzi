@@ -38,7 +38,7 @@
 
         <target name="ap" board="cube_orange">
             <module name="radio_control" type="sbus">
-                <configure name="SBUS_PORT" value="UART3"/>
+                <!-- <configure name="SBUS_PORT" value="UART3"/> -->
                 <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
                 <define name="AP_MODE_SWITCH"    value="RADIO_AUX3"/>
             </module>
