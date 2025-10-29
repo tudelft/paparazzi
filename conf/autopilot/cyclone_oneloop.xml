@@ -13,13 +13,18 @@
       <include name="modules/actuators/actuators.h"/>
       <include name="modules/actuators/actuators_t4.h"/><!-- should not be needed here fixme -->
       <include name="modules/actuators/actuators_t4_uart.h"/>
+      <define  name="RCLost()" value="(radio_control.status == RC_REALLY_LOST)"/>
     </includes>
 
     <settings>
       <dl_setting var="autopilot.kill_throttle" min="0" step="1" max="1" values="Resurrect|Kill"/> <!-- handler="KillThrottle" -->
     </settings>
 
-    <!-- Kill throttle mode 0 -->
+    <control_block name="update_v_sp_gcs">
+      <call fun="guidance_v_set_z(-nav.nav_altitude)"/>
+    </control_block>
+
+    <!-- KILL: 0 -->
     <mode name="KILL">
       <select cond="kill_switch_is_on()"/>
       <on_enter>
@@ -31,13 +36,18 @@
       </control>
     </mode>
 
-    <!-- Failsafe mode 1 (required for compiling)-->
+    <!-- FAILSAFE: 1 -->
     <mode name="FAILSAFE" shortname="FAIL">    
       <!-- Failsafe does not work needs to be fixed-->
     </mode>
 
-    <!-- Rate mode 2-->
-    <mode name="RATE" shortname="RATE">
+    <!-- HOME: 2 (UNUSED) -->
+    <mode name="HOME">
+      <exception cond="GpsIsLost()" deroute="FAILSAFE"/>
+    </mode>
+
+    <!-- RATE_DIRECT: 3 -->
+    <mode name="RATE_DIRECT" shortname="RATE">
       <select cond="RCMode0()"/>
       <on_enter>
         <call fun="oneloop_andi_enter(CONTROL_MODE_RATE, CONTROL_TYPE_ANDI)"/>
@@ -45,9 +55,11 @@
       <control>
         <call fun="oneloop_andi_run(CONTROL_MODE_RATE)"/>
       </control>
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
     </mode>
 
-    <mode name="ATTITUDE" shortname="ATTI">
+    <!-- ATITUDE_DIRECT: 4 -->
+    <mode name="ATTITUDE_DIRECT" shortname="ATT">
       <select cond="RCMode1()"/>
       <on_enter>
         <call fun="oneloop_andi_enter(CONTROL_MODE_ATTITUDE, CONTROL_TYPE_ANDI)"/>
@@ -55,18 +67,102 @@
       <control>
         <call fun="oneloop_andi_run(CONTROL_MODE_ATTITUDE)"/>
       </control>
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
     </mode>
 
-    <!-- Nav mode (required for compiling)-->
+    <!-- RATE_RC_CLIMB: 5 (UNUSED) -->
+    <mode name="RATE_RC_CLIMB" shortname="RRCC">
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
+    </mode>
+
+    <!-- ATTITUDE_RC_CLIMB: 6 (UNUSED) -->
+    <mode name="ATTITUDE_RC_CLIMB" shortname="ATTITUDE_RC_CLIMB">
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
+    </mode>
+
+    <!-- ATTITUDE_CLIMB: 7 (UNUSED) -->
+    <mode name="ATTITUDE_CLIMB" shortname="ATTITUDE_CLIMB">
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
+    </mode>
+
+    <!-- RATE_Z_HOLD: 8 (UNUSED) -->
+    <mode name="RATE_Z_HOLD" shortname="RATE_Z_HOLD">
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
+    </mode>
+
+    <!-- ATTITUDE_Z_HOLD: (UNUSED) 9 -->
+    <mode name="ATTITUDE_Z_HOLD" shortname="A_ZH">
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
+    </mode>
+
+    <!-- HOVER_DIRECT: 10 (UNUSED) -->
+    <mode name="HOVER_DIRECT" shortname="HOVER_DIRECT">
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
+    </mode>
+
+    <!-- HOVER_CLIMB: 11 (UNUSED) -->
+    <mode name="HOVER_CLIMB" shortname="HOVER_CLIMB">
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
+    </mode>
+
+    <!-- HOVER_Z_HOLD: 12 (UNUSED) -->
+    <mode name="HOVER_Z_HOLD" shortname="HOVER_Z_HOLD">
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
+    </mode>
+
+    <!-- NAV: 13 -->
     <mode name="NAV" shortname="NAV">
-      <select cond="RCMode2()"/>
+      <select cond="RCMode2()" exception="HOME"/>
       <on_enter>
-        <call fun="oneloop_andi_enter(CONTROL_MODE_RATE, CONTROL_TYPE_ANDI)"/>
+        <call fun="oneloop_andi_enter(CONTROL_MODE_GUIDANCE, CONTROL_TYPE_ANDI)"/>
       </on_enter>
+      <!-- <control>
+        <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NAV)"/>
+        <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_NAV)"/>
+        <call fun="guidance_h_set_pos(nav.carrot.y, nav.carrot.x)"/>
+        <call fun="guidance_v_set_z(-nav.nav_altitude)"/>
+        <call fun="oneloop_from_nav(autopilot_in_flight())"/>
+      </control> -->
       <control>
-        <call fun="oneloop_andi_run(CONTROL_MODE_RATE)"/>
+        <call fun="oneloop_andi_run(CONTROL_MODE_GUIDANCE)"/>
       </control>
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
     </mode>
 
+    <!-- RC_DIRECT: 14 (UNUSED) -->
+    <mode name="RC_DIRECT" shortname="RC_DIRECT">
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
+    </mode>
+
+    <!-- CARE_FREE_DIRECT: 15 (UNUSED) -->
+    <mode name="CARE_FREE_DIRECT" shortname="CARE_FREE_DIRECT">
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
+    </mode>
+    
+    <!-- FORWARD: 16 (UNUSED) -->
+    <mode name="FORWARD" shortname="FORWARD">
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
+    </mode>
+
+    <!-- MODULE: 17 (UNUSED) -->
+    <mode name="MODULE" shortname="MODULE">
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
+    </mode>
+
+    <!-- FLIP: 18 (UNUSED) -->
+    <mode name="FLIP" shortname="FLIP">
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
+    </mode>
+
+    <!-- GUIDED: 19 (UNUSED) -->
+    <mode name="GUIDED">
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
+    </mode>  
+
+    <!-- ATTITUDE_DIRECT_FWD: 20 (UNUSED) -->
+    <mode name="ATTITUDE_DIRECT_FWD" shortname="ATT_Fwd">
+      <exception cond="RCLost()" deroute="FAILSAFE"/>
+    </mode>
+  
   </state_machine>
 </autopilot>

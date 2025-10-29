@@ -60,8 +60,7 @@ bool   actuator_is_servo[ANDI_NUM_ACT_TOT] = {0};
 #endif
 
 #ifdef ONELOOP_ANDI_ACT_DYN
-float  act_dynamics[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_DYN;
-float  act_dyn_ctrl[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_DYN;
+float  actuator_dynamics[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_DYN;
 #else
 #error "You must specify the actuator dynamics"
 #endif
@@ -124,14 +123,18 @@ static void  init_filter_on_type(struct Filter *filter, float x0);
 static void  update_filter_on_type(struct Filter *filter, float input);
 static void  oneloop_andi_propagate_filters(void);
 
-static void get_desired_rates_radio_command(float* rate_des, const float* rate_bounds);
-static void get_desired_attitude_radio_command(float* att_des, const float* att_bounds, float heading_rate_bound, float dt);
-static void get_desired_heading_radio_command(float* heading_des, float heading_rate_bound, float dt);
+static void get_desired_rates_radio_command(float rate_des[3], const float rate_bounds[3]);
+static void get_desired_attitude_radio_command(float att_des[3], const float att_bounds[2], float heading_rate_bound, float heading_ref, float dt);
+static void get_desired_position_radio_command(float pos_des[2], const float pos_rate_bound[2], const float pos_ref[2], float dt);
+static void get_desired_altitude_radio_command(float* alt_des, float alt_rate_bound, float alt_ref, float dt);
+static void get_desired_heading_radio_command(float* heading_des, float heading_rate_bound, float heading_ref, float dt);
 
 static void get_act_state_oneloop(void);
-static void discretize_act_dynamics(float dt, float* act_dynamics_d, const float* act_dynamics);
 static void compute_wls_scaling_factors(float* wls_scaler_u, const float* act_max, const float* act_min, const float* act_max_norm, const float* act_min_norm);
 static void evaluate_effectiveness_matrix(float eff_mat[ANDI_OUTPUTS * ANDI_NUM_ACT_TOT]);
+
+static abi_event actuators_t4_in_event;
+static void actuators_t4_in_callback(uint8_t sender_id, struct ActuatorsT4In *actuators_t4_in_ptr, float *actuators_t4_extra_data_in_ptr);
 
 /**
  * @brief Controller poles
@@ -233,7 +236,7 @@ static struct Filter filt_vd;
 
 static struct Filter filt_ay;
 static struct Filter filt_airspeed;
-static struct Filter filt_u[ANDI_NUM_ACT_TOT];  // Low pass filter for actuators        
+static struct Filter filt_u[ANDI_NUM_ACT];  // Low pass filter for real actuators        
 
 /* Oneloop Misc variables*/
 static float dt_1l = 1. / PERIODIC_FREQUENCY;
@@ -242,10 +245,8 @@ static float dt_1l = 1. / PERIODIC_FREQUENCY;
 /* Oneloop Control Variables*/
 float andi_u[ANDI_NUM_ACT_TOT];
 float andi_du[ANDI_NUM_ACT_TOT];
-float nu[ANDI_OUTPUTS];
-static float act_dynamics_d[ANDI_NUM_ACT_TOT];
 float actuator_state_1l[ANDI_NUM_ACT_TOT];
-float actuator_obs[ANDI_NUM_ACT];  // observed actuator states
+float actuator_obs[ANDI_NUM_ACT];  // observed actuator states, updated by abi callback
 
 
 /*WLS Settings*/
@@ -401,11 +402,11 @@ static float positive_non_zero(float input)
  * This function calculates the elementwise difference between two input arrays
  * and scales each component by the corresponding gain factor.
  *
+ * @param n   Dimension of the arrays
  * @param err Output array for the computed scaled error [n]
  * @param a   First input array (reference or desired values) [n]
  * @param b   Second input array (measured or actual values) [n]
  * @param k   Scaling gains applied elementwise to the error [n]
- * @param n   Dimension of the arrays
  */
 static void scaled_error_nd(uint_fast8_t n, float err[restrict n], const float a[static n], const float b[static n], const float k[static n])
 {
@@ -442,12 +443,11 @@ static void integrate_nd(uint_fast8_t n, float a[static n], const float a_dot[st
  * The attitude field is unused in rate control.
  *
  * @param[in] dt          Sample time [s]
- * @param[in] rate_des   Desired angular rates [rad/s]
+ * @param[in] rate_des    Desired angular rates [rad/s]
  * @param[in] k_stb_rm    Pointer to reference model gain parameters
  * @param[in] bounds      Pointer to reference model limits
  * @param[in,out] att_ref Pointer to struct containing reference model states (in/out)
  */
-
 static void reference_model_rate(
   float dt, 
   float rate_des[3], 
@@ -462,12 +462,12 @@ static void reference_model_rate(
     BoundAbs(rate_des[i], bounds->att_d[i]);
 
   // Angular rate error 
-  scaled_error_nd(3, rate_d_des, rate_des, att_ref->att_2d, k_rate_rm->k1);
+  scaled_error_nd(3, rate_d_des, rate_des, att_ref->att_d, k_rate_rm->k1);
   for (uint_fast8_t i = 0; i < 3; i++)
     BoundAbs(rate_d_des[i], bounds->att_2d[i]);
 
   // Angular acceleration error
-  scaled_error_nd(3, rate_2d_des, rate_d_des, att_ref->att_3d, k_rate_rm->k2);
+  scaled_error_nd(3, rate_2d_des, rate_d_des, att_ref->att_2d, k_rate_rm->k2);
   for (uint_fast8_t i = 0; i < 3; i++)
     BoundAbs(rate_2d_des[i], bounds->att_3d[i]);
 
@@ -506,16 +506,16 @@ static void reference_model_attitude(
     BoundAbs(att_des[i], bounds->att[i]);
 
   // Attitude tracking error → desired angular rate
-  scaled_error_nd(3, att_d_des, att_des, att_ref->att_d, k_att_rm->k1);
+  scaled_error_nd(3, att_d_des, att_des, att_ref->att, k_att_rm->k1);
   for (uint_fast8_t i = 0; i < 3; i++)
     BoundAbs(att_d_des[i], bounds->att_d[i]);
 
   // Angular rate tracking error → desired angular acceleration
-  scaled_error_nd(3, att_2d_des, att_d_des, att_ref->att_2d, k_att_rm->k2);
+  scaled_error_nd(3, att_2d_des, att_d_des, att_ref->att_d, k_att_rm->k2);
   for (uint_fast8_t i = 0; i < 3; i++)
     BoundAbs(att_2d_des[i], bounds->att_2d[i]);
 
-  scaled_error_nd(3, att_3d_des, att_d_des, att_ref->att_3d, k_att_rm->k3);
+  scaled_error_nd(3, att_3d_des, att_2d_des, att_ref->att_2d, k_att_rm->k3);
   for (uint_fast8_t i = 0; i < 3; i++)
     BoundAbs(att_3d_des[i], bounds->att_3d[i]);
 
@@ -525,7 +525,6 @@ static void reference_model_attitude(
   integrate_nd(3, att_ref->att_d, att_ref->att_2d, dt);
   integrate_nd(3, att_ref->att, att_ref->att_d, dt);
 }
-
 
 /**
  * @brief Reference Model for 3rd-order position control loop.
@@ -933,6 +932,43 @@ static void compute_gains_3rd_order_1(struct Gains3rdOrder1* gains, const struct
                                   poles->omega_n, poles->zeta, poles->p1);
 }
 
+void print_Gains3rdOrder1(const char *name, const struct Gains3rdOrder1 *g) {
+    printf("%s:\n", name);
+    printf("  k1: %f\n  k2: %f\n  k3: %f\n\n", g->k1, g->k2, g->k3);
+}
+
+void print_Gains3rdOrder2(const char *name, const struct Gains3rdOrder2 *g) {
+    printf("%s:\n", name);
+    printf("  k1: [%f, %f]\n", g->k1[0], g->k1[1]);
+    printf("  k2: [%f, %f]\n", g->k2[0], g->k2[1]);
+    printf("  k3: [%f, %f]\n\n", g->k3[0], g->k3[1]);
+}
+
+void print_Gains3rdOrder3(const char *name, const struct Gains3rdOrder3 *g) {
+    printf("%s:\n", name);
+    printf("  k1: [%f, %f, %f]\n", g->k1[0], g->k1[1], g->k1[2]);
+    printf("  k2: [%f, %f, %f]\n", g->k2[0], g->k2[1], g->k2[2]);
+    printf("  k3: [%f, %f, %f]\n\n", g->k3[0], g->k3[1], g->k3[2]);
+}
+
+void print_Gains2ndOrder1(const char *name, const struct Gains2ndOrder1 *g) {
+    printf("%s:\n", name);
+    printf("  k1: %f\n  k2: %f\n\n", g->k1, g->k2);
+}
+
+void print_Gains2ndOrder2(const char *name, const struct Gains2ndOrder2 *g) {
+    printf("%s:\n", name);
+    printf("  k1: [%f, %f]\n", g->k1[0], g->k1[1]);
+    printf("  k2: [%f, %f]\n\n", g->k2[0], g->k2[1]);
+}
+
+void print_Gains2ndOrder3(const char *name, const struct Gains2ndOrder3 *g) {
+    printf("%s:\n", name);
+    printf("  k1: [%f, %f, %f]\n", g->k1[0], g->k1[1], g->k1[2]);
+    printf("  k2: [%f, %f, %f]\n\n", g->k2[0], g->k2[1], g->k2[2]);
+}
+
+
 /** @brief Initialize a filter based on its type
  *
  *  Initializes the filter state of the specified type with initial value x0.
@@ -1002,7 +1038,46 @@ static void update_filter_on_type(struct Filter *filter, float input) {
   }
 }
 
-/** @brief  Propagate the filters */
+/**
+ * @brief Updates actuator state observations from input actuator message.
+ *
+ * Converts servo angles from 0.01 degrees to radians and copies ESC RPM measurements
+ * into the global actuator observation array.
+ *
+ * @param[in] sender_id          ID of the message sender (unused).
+ * @param[in] actuators_t4_in_ptr Pointer to actuators input struct containing servo angles and ESC RPMs.
+ * @param[in,out] actuators_t4_extra_data_in_ptr Pointer to extra data (unused).
+ */
+static void actuators_t4_in_callback(uint8_t sender_id __attribute__((unused)), struct ActuatorsT4In *actuators_t4_in_ptr, float *actuators_t4_extra_data_in_ptr __attribute__((unused)))
+{
+    actuator_obs[0] = (float)actuators_t4_in_ptr->servo_1_angle * M_PI / 18000;  // rad
+    actuator_obs[1] = (float)actuators_t4_in_ptr->servo_5_angle * M_PI / 18000;  // rad
+    actuator_obs[2] = (float)actuators_t4_in_ptr->esc_1_rpm;
+    actuator_obs[3] = (float)actuators_t4_in_ptr->esc_2_rpm;
+}
+
+
+// static void actuator_feedback_callback(uint8_t sender_id __attribute__((unused)), struct act_feedback_t *feedback, uint8_t num_act)
+// {
+//   for (uint_fast8_t i = 0; i < num_act; i++) {
+//     int8_t idx = feedback[i].idx;
+
+//     if (feedback[i].set.rpm) {
+//       actuator_obs[idx] = (feedback[i].rpm - get_servo_min_T4(idx) / (float)(get_servo_max_T4(idx) - get_servo_min_T4(idx)));
+//     } else if (feedback[i].set.position) {
+//       actuator_obs[idx] = feedback[i].position * M_PI / 180;
+//     }
+//   }
+// }
+
+/**
+ * @brief Propagates sensor and actuator filters with the latest feedback data.
+ *
+ * This function retrieves the current accelerations, velocities, and body rates
+ * from the state estimator and updates all corresponding first-order filters.
+ * It computes angular rate derivatives using finite differences, applies each
+ * filter update through update_filter_on_type(), and processes actuator inputs.
+ */
 static void oneloop_andi_propagate_filters(void) {
   // Fetch feedback
   struct  NedCoor_f *accel = stateGetAccelNed_f();
@@ -1051,11 +1126,21 @@ static void oneloop_andi_propagate_filters(void) {
   update_filter_on_type(&filt_ay,    filt_ay.meas);
   // update_filter_on_type(&filt_airspeed, 0.0f);
 
-  // FIXME: Fetch actuator feedback.
-  for (int i = 0; i < ANDI_NUM_ACT_TOT; i++) {
-      update_filter_on_type(&filt_u[i], 0.0f);
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
+      update_filter_on_type(&filt_u[i], actuator_obs[i]);
   }
 }
+
+static float apply_deadband(float input, float deadband)
+{
+  if (fabsf(input) < deadband)
+    return 0.0f;
+  else if (input > 0)
+    return (input - deadband) / (1.0f - deadband);
+  else
+    return (input + deadband) / (1.0f - deadband);
+}
+
 
 /**
  * @brief Computes desired roll, pitch, and yaw rates from RC input.
@@ -1066,7 +1151,7 @@ static void oneloop_andi_propagate_filters(void) {
  * @param[out] rate_des    Output array [roll, pitch, yaw] containing desired rates.
  * @param[in]  rate_bounds Input array [roll, pitch, yaw] of maximum rate limits.
  */
-static void get_desired_rates_radio_command(float* rate_des, const float* rate_bounds)
+static void get_desired_rates_radio_command(float rate_des[3], const float rate_bounds[3])
 {
   rate_des[0] = ((float)radio_control_get(RADIO_ROLL) / MAX_PPRZ) * rate_bounds[1];
   rate_des[1] = ((float)radio_control_get(RADIO_PITCH) / MAX_PPRZ) * rate_bounds[2];
@@ -1085,14 +1170,59 @@ static void get_desired_rates_radio_command(float* rate_des, const float* rate_b
  * @param[in] heading_rate_bound Maximum yaw rate bound (radians/sec).
  * @param[in] dt                 Time step for integration (seconds).
  */
-static void get_desired_attitude_radio_command(float* att_des, const float* att_bounds, float heading_rate_bound, float dt)
+static void get_desired_attitude_radio_command(float att_des[3], const float att_bounds[2], float heading_rate_bound, float heading_ref, float dt)
 {
   att_des[0] = ((float)radio_control_get(RADIO_ROLL) / MAX_PPRZ) * att_bounds[0];
   att_des[1] = ((float)radio_control_get(RADIO_PITCH) / MAX_PPRZ) * att_bounds[1];
 
-  get_desired_heading_radio_command(&att_des[2], heading_rate_bound, dt);
+  get_desired_heading_radio_command(&att_des[2], heading_rate_bound, heading_ref, dt);
 }
 
+/**
+ * @brief Computes desired horizontal position (North-East) based on RC input and integration.
+ *
+ * Converts the pitch and roll commands from radio control to horizontal velocity setpoints,
+ * integrates them over the time step 'dt', and updates the desired position.
+ * 
+ * FIXME: Currently does not support different position bounds or scaling factors per axis.
+ *
+ * @param[in,out] pos_des Pointer to current desired position array [North, East] (meters).
+ * @param[in] pos_rate_bound Maximum allowed horizontal rate (meters/second).
+ * @param[in] dt Time step for integration (seconds).
+ */
+static void get_desired_position_radio_command(float pos_des[2], const float pos_rate_bound[2], const float pos_ref[2], float dt)
+{
+  // Convert RC inputs to desired velocity commands
+  float north_rate_des = (apply_deadband((float)radio_control_get(RADIO_PITCH), 150.0f) / MAX_PPRZ) * pos_rate_bound[0];
+  float east_rate_des  = (apply_deadband((float)radio_control_get(RADIO_ROLL), 150.0f)  / MAX_PPRZ) * pos_rate_bound[1];
+
+  // Integrate velocity to update desired position
+  pos_des[0] += north_rate_des * dt;
+  pos_des[1] += east_rate_des  * dt;
+
+  Bound(pos_des[0], pos_ref[0] - 0.1f, pos_ref[0] + 0.1f);
+  Bound(pos_des[1], pos_ref[1] - 0.1f, pos_ref[1] + 0.1f);
+}
+
+
+/**
+ * @brief Computes desired altitude based on thrust RC input and integration.
+ *
+ * Converts the thrust command from radio control to an altitude rate,
+ * integrates it over the time step 'dt', and updates the desired altitude.
+ * 
+ * FIXME: Currently does not support different upper and lower altitude bounds.
+ *
+ * @param[in,out] alt_des Pointer to the current desired altitude (meters).
+ * @param[in] alt_rate_bound Maximum allowed altitude rate (meters/second).
+ * @param[in] dt Time step for integration (seconds).
+ */
+static void get_desired_altitude_radio_command(float* alt_des, float alt_rate_bound, float alt_ref, float dt)
+{
+  float rate_des = (apply_deadband((float)radio_control_get(RADIO_THROTTLE), 300.0f) / MAX_PPRZ) * alt_rate_bound;
+  *alt_des += rate_des * dt;
+  Bound(*alt_des, alt_ref - 0.1f, alt_ref + 0.1f);
+}
 
 /**
  * @brief Updates desired heading based on yaw RC input and integration.
@@ -1104,46 +1234,17 @@ static void get_desired_attitude_radio_command(float* att_des, const float* att_
  * @param[in] heading_rate_bound Maximum yaw rate bound (radians/sec).
  * @param[in] dt Time step for integration (seconds).
  */
-static void get_desired_heading_radio_command(float* heading_des, float heading_rate_bound, float dt)
+static void get_desired_heading_radio_command(float* heading_des, float heading_rate_bound, float heading_ref, float dt)
 {
-  float rate_des = ((float)radio_control_get(RADIO_YAW) / MAX_PPRZ) * heading_rate_bound;
-  *heading_des += rate_des * dt;
+  float rate_des = (apply_deadband((float)radio_control_get(RADIO_YAW), 150.0f) / MAX_PPRZ) * heading_rate_bound;
+  float heading_des_new = *heading_des + rate_des * dt;
+  float heading_diff = heading_des_new - heading_ref;
+  NormRadAngle(heading_diff);
+  BoundAbs(heading_diff, 0.1f);
+  *heading_des += heading_ref + heading_diff;
   NormRadAngle(*heading_des);
 }
 
-
-/** @brief  Function to reconstruct actuator state using first order dynamics */
-static void get_act_state_oneloop(void)
-{
-  int8_t i;
-  float prev_actuator_state_1l;
-  for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
-    if(i < ANDI_NUM_ACT){
-      prev_actuator_state_1l = actuator_state_1l[i];
-      actuator_state_1l[i] = prev_actuator_state_1l + act_dynamics_d[i] * (andi_u[i] - prev_actuator_state_1l);
-      if(!autopilot_get_motors_on()){
-        actuator_state_1l[i] = 0.0;
-      }
-      Bound(actuator_state_1l[i], act_min[i], act_max[i]);
-    } else {
-      actuator_state_1l[i] = oneloop_andi.att_state.att[i - ANDI_NUM_ACT];
-    }
-  }
-}
-
-/**
- * @brief Computes discrete actuator dynamics from continuous inputs.
- *
- * @param[out] act_dynamics_d Array to store discrete dynamics results.
- * @param[in] act_dynamics Array of continuous actuator dynamics inputs.
- */
-static void discretize_act_dynamics(float dt, float* act_dynamics_d, const float* act_dynamics)
-{
-  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT_TOT; i++){
-    act_dynamics_d[i] = 1.0f - exp(-act_dynamics[i] * dt);
-    Bound(act_dynamics_d[i], 0.00001f, 1.0f); //Fixme: Are these bounds always valid? Magic numbers
-  }
-}
 
 /**
  * @brief Computes scaling factors to normalize actuator input ranges for Weighted Least Squares control.
@@ -1198,44 +1299,12 @@ static void evaluate_effectiveness_matrix(float eff_mat[ANDI_OUTPUTS * ANDI_NUM_
              eff_mat);
 }
 
-
-/**
- * @brief Computes desired altitude based on thrust RC input and integration.
- *
- * Converts the thrust command from radio control to an altitude rate,
- * integrates it over the time step 'dt', and updates the desired altitude.
- * 
- * FIXME: Currently does not support different upper and lower altitude bounds.
- *
- * @param[in,out] alt_des Pointer to the current desired altitude (meters).
- * @param[in] alt_rate_bound Maximum allowed altitude rate (meters/second).
- * @param[in] dt Time step for integration (seconds).
- */
-static void get_desired_altitude_radio_command(float* alt_des, float alt_rate_bound, float dt)
-{
-  float rate_des = ((float)radio_control_get(RADIO_THROTTLE) / MAX_PPRZ) * alt_rate_bound;
-  *alt_des += rate_des * dt;
-}
-
 /** @brief Init function of Oneloop ANDI controller  */
 void oneloop_andi_init(void)
 { 
   printf("INIT ANDI controller: start \n");
   oneloop_andi.control_type = CONTROL_TYPE_ANDI;
   oneloop_andi.control_mode = CONTROL_MODE_RATE;
-
-  // Initialize poles.
-  // FIXME: Make poles dynamically set from airframe file
-  // p_rate_e  = {.omega_n={15.0, 7.5, 7.5}, .zeta={1.0, 1.0, 1.0}};
-  // p_rate_rm = {.omega_n={12.0, 6.0, 6.0}, .zeta={1.0, 1.0, 1.0}};
-  // p_att_e  = {.omega_n={15.0, 7.5, 7.5}, .zeta={1.0, 1.0, 1.0}, .p1={15.0, 7.5, 5.5}};
-  // p_att_rm = {.omega_n={12.0, 6.0, 6.0}, .zeta={1.0, 1.0, 1.0}, .p1={12.0, 6.0, 6.0}};
-  // p_pos_e   = {.omega_n={1.0, 1.0}, .zeta={1.0, 1.0}, .p1={1.0, 1.0}};
-  // p_pos_rm  = {.omega_n={0.8, 0.8}, .zeta={1.0, 1.0}, .p1={0.8, 0.8}};
-  // p_alt_e   = {.omega_n=1.0, .zeta=1.0, .p1=1.0};
-  // p_alt_rm  = {.omega_n=0.8, .zeta=1.0, .p1=0.8};
-  // p_head_e  = {.omega_n=0.5, .zeta=1.0};
-  // p_head_rm = {.omega_n=0.5, .zeta=1.0};
 
   // Compute gains from on poles
   compute_gains_2nd_order_3(&k_rate_e, &p_rate_e);
@@ -1248,54 +1317,23 @@ void oneloop_andi_init(void)
   compute_gains_3rd_order_1(&k_alt_rm, &p_alt_rm);
   compute_gains_2nd_order_1(&k_head_e, &p_head_e);
   compute_gains_2nd_order_1(&k_head_rm, &p_head_rm);
-  
-  // Initialize bounds
-  // FIXME: Make bounds dynamically set from airframe file
-  // att_bounds = {.att={10, 10, 10}.att_d={1000.0, 1000.0, 1000.0}, .att_2d={1000.0, 1000.0, 1000.0}, .att_3d={1000.0, 1000.0, 1000.0}};
-  // pos_bounds  = {.pos={0, 0}, .vel={1000.0, 1000.0}, .acc={1000.0, 1000.0}, .jer={1000.0, 1000.0}};
-  // alt_bounds  = {.alt=0, .vel=1000.0, .acc=1000.0, .jer=1000.0};
-  // head_bounds = {.head=0, .head_rate=1000.0, .head_acc=1000.0};
 
-  // Initialize obm coefficients
-  // FIXME: Make coefficients set from airframe file
-  // obm_coefficients = {
-  //   .fx_motor_squared       = 0.00000735f,
-  //   .fx_speed_forward       = -0.03f,
-
-  //   .fy_speed_lateral       = -0.008f,
-
-  //   .fz_motor_squared       = 0.0f,
-  //   .fz_speed_forward       = 0.0f,
-  //   .fz_speed_vertical      = -0.144f,
-  //   .fz_elevator_speed      = 0.0f,
-  //   .fz_elevator_motor      = 0.0f,
-
-  //   .mx_motor_diff          = 0.0f,
-  //   .mx_elevator_motor_diff = 0.0000283f,
-  //   .mx_elevator_speed_diff = 0.344f,
-  //   .mx_angular_coupling    = -2.18f,
-
-  //   .my_speed_forward       = 0.0f,
-  //   .my_speed_vertical      = -0.0888f,
-  //   .my_constant_zero       = -1.032f,
-  //   .my_motor_sum           = 0.0f,
-  //   .my_elevator_motor_sum  = -0.0000424f,
-  //   .my_elevator_speed_sum  = -0.2525f,
-  //   .my_angular_sum         = 1.262f,
-
-  //   .mz_speed_lateral       = -0.00371f,
-  //   .mz_motor_diff          = 0.000039f,
-  //   .mz_speed_roll          = -0.0129f,
-  //   .mz_angular_coupling    = -0.4827f
-  // };
+  print_Gains2ndOrder3("RATE GAINS ERR:", &k_rate_e);
+  print_Gains2ndOrder3("RATE GAINS REF:", &k_rate_rm);
+  print_Gains3rdOrder3("ATT GAINS ERR:", &k_att_e);
+  print_Gains3rdOrder3("ATT GAINS REF:", &k_att_rm);
+  print_Gains3rdOrder2("POS GAINS ERR:", &k_pos_e);
+  print_Gains3rdOrder2("POS GAINS REF:", &k_pos_rm);
+  print_Gains3rdOrder1("ALT GAINS ERR:", &k_alt_e);
+  print_Gains3rdOrder1("ALT GAINS REF:", &k_alt_rm);
+  print_Gains2ndOrder1("HEAD GAINS ERR:", &k_head_e);
+  print_Gains2ndOrder1("HEAD GAINS REF:", &k_head_rm);
 
   // FIXME: Putting a small non zero value is dangerous.
   // Make sure that the dynamics are positive and non-zero
   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT_TOT; i++) {
-    act_dynamics[i] = positive_non_zero(act_dynamics[i]);
+    actuator_dynamics[i] = positive_non_zero(actuator_dynamics[i]);
   }
-
-  discretize_act_dynamics(dt_1l, act_dynamics_d, act_dynamics);
 
   // Initialize filter
   init_filter(&filt_an,     2.0, BUTTERWORTH_2);
@@ -1314,7 +1352,7 @@ void oneloop_andi_init(void)
   init_filter(&filt_ay,       2.0, BUTTERWORTH_2);
   init_filter(&filt_airspeed, 2.0, BUTTERWORTH_2);
 
-  for (int i = 0; i < ANDI_NUM_ACT_TOT; i++) {
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
       init_filter(&filt_u[i], 2.0, BUTTERWORTH_2);
   }
 
@@ -1342,8 +1380,9 @@ void oneloop_andi_init(void)
   float_vect_zero(andi_u, ANDI_NUM_ACT_TOT);
   float_vect_zero(andi_du, ANDI_NUM_ACT_TOT);
   float_vect_zero(actuator_state_1l, ANDI_NUM_ACT_TOT);
-  float_vect_zero(nu, ANDI_OUTPUTS);
 
+  // Bind actuator feedback
+  AbiBindMsgACTUATORS_T4_IN(ABI_BROADCAST, &actuators_t4_in_event, actuators_t4_in_callback);
   // Start telemetry
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_oneloop_andi);
@@ -1356,7 +1395,6 @@ void oneloop_andi_init(void)
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_U, send_wls_u_oneloop);
   #endif
   printf("INIT ANDI controller: succes \n");
-
 }
 
 /**
@@ -1374,31 +1412,22 @@ void oneloop_andi_enter(enum ControlMode control_mode, enum ControlType control_
   printf("ENTER ANDI controller: succes \n");
 }
 
-
 /**
  * @brief Main function that runs the controller and performs control allocation
- * @param in_flight  The drone is in flight
  */
 void oneloop_andi_run(enum ControlMode control_mode)
 {
   // At beginnig of the loop: (1) Register Attitude, (2) Initialize gains of RM and EC, (3) Calculate Normalization of Actuators Signals, (4) Propagate Actuator Model, (5) Update effectiveness matrix
-
-  // Step 1: Fetch all sensor measurmements.
-  get_act_state_oneloop();
-
-  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT_TOT; i++) {
-    act_dyn_ctrl[i] = act_dynamics[i];
-  }
+  oneloop_andi_propagate_filters();
 
   // Register the state of the drone in the variables used in RM and EC
-  struct FloatEulers attitude_euler;
-  float_eulers_of_quat_zxy(&attitude_euler, stateGetNedToBodyQuat_f());
 
   // Attitude
+  struct FloatEulers attitude_euler;
+  float_eulers_of_quat_zxy(&attitude_euler, stateGetNedToBodyQuat_f());
   oneloop_andi.att_state.att[0] = attitude_euler.phi;
   oneloop_andi.att_state.att[1] = attitude_euler.theta;
   oneloop_andi.att_state.att[2] = attitude_euler.psi;
-  oneloop_andi_propagate_filters();   //needs to be after update of attitude vector (WHY?)
   oneloop_andi.att_state.att_d[0]  = filt_p.out;
   oneloop_andi.att_state.att_d[1]  = filt_q.out;
   oneloop_andi.att_state.att_d[2]  = filt_r.out;
@@ -1434,33 +1463,41 @@ void oneloop_andi_run(enum ControlMode control_mode)
       reference_model_rate(dt_1l, oneloop_andi.att_des, &k_rate_rm, &att_bounds, &oneloop_andi.att_ref);
       error_controller_rate(&oneloop_andi.att_ref, &oneloop_andi.att_state, &k_rate_e, &nu[4]);
 
-      get_desired_altitude_radio_command(&oneloop_andi.alt_des, alt_bounds.vel, dt_1l);
+      get_desired_altitude_radio_command(&oneloop_andi.alt_des, alt_bounds.vel, oneloop_andi.alt_ref.pos, dt_1l);
       reference_model_altitude(dt_1l, oneloop_andi.alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref);
       error_controller_altitude(&oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
       break;
       }
     case CONTROL_MODE_ATTITUDE:
       {
-      get_desired_attitude_radio_command(oneloop_andi.att_des, att_bounds.att, att_bounds.att_d[2], dt_1l);
+      get_desired_attitude_radio_command(oneloop_andi.att_des, att_bounds.att, att_bounds.att_d[2], oneloop_andi.head_ref.head, dt_1l);
       reference_model_attitude(dt_1l, oneloop_andi.att_des, &k_att_rm, &att_bounds, &oneloop_andi.att_ref);
       error_controller_attitude(&oneloop_andi.att_ref, &oneloop_andi.att_state, &k_att_e, &nu[4]);
 
-      get_desired_altitude_radio_command(&oneloop_andi.alt_des, alt_bounds.vel, dt_1l);
+      get_desired_altitude_radio_command(&oneloop_andi.alt_des, alt_bounds.vel, oneloop_andi.alt_ref.pos, dt_1l);
       reference_model_altitude(dt_1l, oneloop_andi.alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref);
       error_controller_altitude(&oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
       break;
       }
-    // case CONTROL_MODE_GUIDANCE:
-    //   float pos_des[2];
-    //   float alt_des;
-    //   float rate_des; // fetch from virtual actuators.
-    //   reference_model_position(dt_1l, pos_des, &k_pos_rm, &pos_bounds, &oneloop_andi.pos_ref)
-    //   error_controller_rate(dt_1l, &oneloop_andi.pos_ref, &oneloop_andi.pos_state, &k_pos_e, &nu[0]);
-    //   reference_model_altitude(dt_1l, alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref)
-    //   error_controller_altitude(dt_1l, &oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
-    //   reference_model_rate(dt_1l, rate_des, k_rate_rm, &att_bounds, &oneloop_andi.att_ref);
-    //   error_controller_rate(dt_1l, &oneloop_andi.att_ref, &oneloop_andi.att_state, &k_rate_e, &nu[4]);
-    //   break;
+    case CONTROL_MODE_GUIDANCE:
+      {
+      // Position
+      get_desired_position_radio_command(oneloop_andi.pos_des, pos_bounds.vel, oneloop_andi.pos_ref.pos, dt_1l);
+      reference_model_position(dt_1l, oneloop_andi.pos_des, &k_pos_rm, &pos_bounds, &oneloop_andi.pos_ref);
+      error_controller_position(&oneloop_andi.pos_ref, &oneloop_andi.pos_state, &k_pos_e, &nu[0]);
+
+      // Altitude
+      get_desired_altitude_radio_command(&oneloop_andi.alt_des, alt_bounds.vel, oneloop_andi.alt_ref.pos, dt_1l);
+      reference_model_altitude(dt_1l, oneloop_andi.alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref);
+      error_controller_altitude(&oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
+
+      // Heading (todo)
+
+      // Rate (desired rate is taked from oneloop virtual actuator)
+      reference_model_rate(dt_1l, &andi_du[4], &k_rate_rm, &att_bounds, &oneloop_andi.att_ref);
+      error_controller_rate(&oneloop_andi.att_ref, &oneloop_andi.att_state, &k_rate_e, &nu[4]);
+      break;
+      }
     default:
       break;
       // handle invalid control_mode (now do nothing)
@@ -1486,14 +1523,12 @@ void oneloop_andi_run(enum ControlMode control_mode)
   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     andi_du[i] = wls_scaler_u[i] * wls_one_p.u[i];
   }
- 
-  //FIXME: Convert du to u here.
 
-  // Bound the inputs to the actuators
-  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT_TOT; i++) {
-    Bound(andi_du[i], act_min[i], act_max[i]);
+  // Real actuator commands
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
+    andi_u[i] = andi_du[i] * actuator_dynamics[i] + filt_u[i].out;
   }
-
+ 
   // Commit the actuator command
   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
     commands[i] = (int16_t) andi_du[i];

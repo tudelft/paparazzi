@@ -52,7 +52,6 @@
 #endif
 
 extern float actuator_state_1l[ANDI_NUM_ACT_TOT];
-extern float nu[ANDI_OUTPUTS];
 extern float andi_u[ANDI_NUM_ACT_TOT];
 extern float andi_du[ANDI_NUM_ACT_TOT];
 

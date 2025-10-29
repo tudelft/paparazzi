@@ -11,7 +11,8 @@
     "files.associations": {
         "Makefile.*": "makefile",
         "cstdint": "c",
-        "random": "c"
+        "random": "c",
+        "actuators_t4_uart.h": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
