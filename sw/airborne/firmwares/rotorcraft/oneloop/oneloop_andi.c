@@ -54,9 +54,9 @@ struct OneloopGeneral oneloop_andi;
 // #endif
 
 #ifdef ONELOOP_ANDI_ACT_IS_SERVO
-bool   actuator_is_servo[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_IS_SERVO;
+const bool   actuator_is_servo[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_IS_SERVO;
 #else
-bool   actuator_is_servo[ANDI_NUM_ACT_TOT] = {0};
+const bool   actuator_is_servo[ANDI_NUM_ACT_TOT] = {0};
 #endif
 
 #ifdef ONELOOP_ANDI_ACT_DYN
@@ -66,17 +66,17 @@ float  actuator_dynamics[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_DYN;
 #endif
 
 #if defined(ONELOOP_ANDI_ACT_MAX) && defined(ONELOOP_ANDI_ACT_MIN)
-float act_max[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX;
-float act_min[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN;
+const float act_max[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX;
+const float act_min[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN;
 #else
 #error "You must specify the actuator limits: ONELOOP_ANDI_ACT_MAX and ONELOOP_ANDI_ACT_MIN"
 #endif
 
-#if defined(ONELOOP_ANDI_ACT_MAX_NORM) && defined(ONELOOP_ANDI_ACT_MIN_NORM)
-float act_max_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX_NORM;
-float act_min_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN_NORM;
+#if defined(ONELOOP_ANDI_ACT_RATE_MAX) && defined(ONELOOP_ANDI_ACT_RATE_MIN)
+const float act_rate_max[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_RATE_MAX;
+const float act_rate_min[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_RATE_MIN;
 #else
-#error "You must specify the normalized actuator limits: ONELOOP_ANDI_ACT_MAX_NORM and ONELOOP_ANDI_ACT_MIN_NORM"
+#error "You must specify the actuator limits: ONELOOP_ANDI_ACT_MAX and ONELOOP_ANDI_ACT_MIN"
 #endif
 
 // #ifdef ONELOOP_ANDI_U_PREF
@@ -109,6 +109,7 @@ static void error_controller_position(const struct OneloopPosRef *pos_ref, const
 static void error_controller_altitude(const struct OneloopAltRef *alt_ref, const struct OneloopAltState *alt_state, const struct Gains3rdOrder1 *k_alt_e, float *nu_alt);
 static void error_controller_heading(const struct OneloopHeadRef *head_ref, const struct OneloopHeadState *head_state, const struct Gains2ndOrder1 *k_head_e, float *nu_head);
 
+
 static void compute_gains_2nd_order_single(float* k1, float* k2, float omega_n, float zeta);
 static void compute_gains_3rd_order_single(float* k1, float* k2, float* k3, float omega_n, float zeta, float p1);
 static void compute_gains_2nd_order_3(struct Gains2ndOrder3* gains, const struct Poles2ndOrder3* poles);
@@ -124,14 +125,19 @@ static void  update_filter_on_type(struct Filter *filter, float input);
 static void  oneloop_andi_propagate_filters(void);
 
 static void get_desired_rates_radio_command(float rate_des[3], const float rate_bounds[3]);
+static void get_desired_thrust_radio_command(float *thrust_des, float thrust_bound_min, float thrust_bound_max);
 static void get_desired_attitude_radio_command(float att_des[3], const float att_bounds[2], float heading_rate_bound, float heading_ref, float dt);
 static void get_desired_position_radio_command(float pos_des[2], const float pos_rate_bound[2], const float pos_ref[2], float dt);
 static void get_desired_altitude_radio_command(float* alt_des, float alt_rate_bound, float alt_ref, float dt);
 static void get_desired_heading_radio_command(float* heading_des, float heading_rate_bound, float heading_ref, float dt);
 
 static void get_act_state_oneloop(void);
-static void compute_wls_scaling_factors(float* wls_scaler_u, const float* act_max, const float* act_min, const float* act_max_norm, const float* act_min_norm);
-static void evaluate_effectiveness_matrix(float eff_mat[ANDI_OUTPUTS * ANDI_NUM_ACT_TOT]);
+
+static void compute_wls_scaling_factors(float wls_scaler_u[ANDI_NUM_ACT_TOT], const float act_rate_max[ANDI_NUM_ACT_TOT], const float act_rate_min[ANDI_NUM_ACT_TOT]);
+static void compute_wls_upper_bounds(float u_d_max[ANDI_NUM_ACT_TOT], const float act_state[ANDI_NUM_ACT_TOT], const float act_rate_max[ANDI_NUM_ACT_TOT], const float act_rate_max[ANDI_NUM_ACT_TOT], float dt);
+static void compute_wls_lower_bounds(float u_d_min[ANDI_NUM_ACT_TOT], const float act_state[ANDI_NUM_ACT_TOT], const float act_min[ANDI_NUM_ACT_TOT], const float act_rate_min[ANDI_NUM_ACT_TOT], float dt);
+
+static void evaluate_effectiveness_matrix_oneloop(float eff_mat[ANDI_OUTPUTS * ANDI_NUM_ACT_TOT]);
 
 static abi_event actuators_t4_in_event;
 static void actuators_t4_in_callback(uint8_t sender_id, struct ActuatorsT4In *actuators_t4_in_ptr, float *actuators_t4_extra_data_in_ptr);
@@ -248,6 +254,11 @@ float andi_du[ANDI_NUM_ACT_TOT];
 float actuator_state_1l[ANDI_NUM_ACT_TOT];
 float actuator_obs[ANDI_NUM_ACT];  // observed actuator states, updated by abi callback
 
+float wls_wv_rate[ANDI_OUTPUTS]     = {0.0f, 0.0f, 4.0f, 0.0f, 8.0f, 8.0f, 8.00f};
+float wls_wv_attitude[ANDI_OUTPUTS] = {0.0f, 0.0f, 4.0f, 0.0f, 8.0f, 8.0f, 8.00f};
+float wls_wv_guidance[ANDI_OUTPUTS] = {4.0f, 4.0f, 4.0f, 1.0f, 8.0f, 8.0f, 8.00f};
+
+float wls_scaler_u[ANDI_NUM_ACT_TOT];
 
 /*WLS Settings*/
 struct WLS_t wls_one_p = {
@@ -292,6 +303,19 @@ static void send_wls_u_oneloop(struct transport_tx *trans, struct link_device *d
 {
   send_wls_u("one", &wls_one_p, trans, dev); 
 }
+
+static void send_eff_mat_one_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_EFF_MAT_ONE(trans, dev, AC_ID,
+                            ANDI_NUM_ACT_TOT, &eff_mat[0 * ANDI_NUM_ACT_TOT],
+                            ANDI_NUM_ACT_TOT, &eff_mat[1 * ANDI_NUM_ACT_TOT],
+                            ANDI_NUM_ACT_TOT, &eff_mat[2 * ANDI_NUM_ACT_TOT],
+                            ANDI_NUM_ACT_TOT, &eff_mat[3 * ANDI_NUM_ACT_TOT],
+                            ANDI_NUM_ACT_TOT, &eff_mat[4 * ANDI_NUM_ACT_TOT],
+                            ANDI_NUM_ACT_TOT, &eff_mat[5 * ANDI_NUM_ACT_TOT],
+                            ANDI_NUM_ACT_TOT, &eff_mat[6 * ANDI_NUM_ACT_TOT]);
+}
+
 static void send_eff_mat_stab_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
   float zero = 0.0f;
@@ -303,14 +327,6 @@ static void send_eff_mat_stab_oneloop_andi(struct transport_tx *trans, struct li
                            1,      &zero);
 }
 
-static void send_eff_mat_guid_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
-{
-  pprz_msg_send_EFF_MAT_GUID(trans, dev, AC_ID, 
-                ANDI_NUM_ACT_TOT, &eff_mat[0 * ANDI_NUM_ACT_TOT],
-                ANDI_NUM_ACT_TOT, &eff_mat[1 * ANDI_NUM_ACT_TOT],
-                ANDI_NUM_ACT_TOT, &eff_mat[2 * ANDI_NUM_ACT_TOT],
-                ANDI_NUM_ACT_TOT, &eff_mat[3 * ANDI_NUM_ACT_TOT]);
-}
 static void send_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_STAB_ATTITUDE(trans, dev, AC_ID,
@@ -1159,6 +1175,21 @@ static void get_desired_rates_radio_command(float rate_des[3], const float rate_
 }
 
 /**
+ * Calculates the desired specific thrust command based on radio input and thrust bounds.
+ *
+ * The thrust command is computed as a scaled version of the radio throttle input,
+ * mapped linearly to the specified thrust bounds.
+ *
+ * @param[out] thrust_des Pointer to the variable where the computed thrust command will be stored.
+ * @param[in] thrust_bound_max Maximum thrust bound.
+ * @param[in] thrust_bound_min Minimum thrust bound.
+ */
+static void get_desired_thrust_radio_command(float *thrust_des, float thrust_bound_min, float thrust_bound_max)
+{
+  *thrust_des = -(float)radio_control_get(RADIO_THROTTLE) / MAX_PPRZ * (thrust_bound_max - thrust_bound_min) + thrust_bound_min;
+}
+
+/**
  * @brief Computes desired roll, pitch, and yaw attitudes from RC input.
  *
  * Converts radio control stick inputs to desired attitude angles by scaling
@@ -1256,16 +1287,47 @@ static void get_desired_heading_radio_command(float* heading_des, float heading_
  * @param[out] wls_scaler Array to store computed scaling factors.
  * @param[in] act_max Array of actuator maximum values in SI units.
  * @param[in] act_min Array of actuator minimum values in SI units.
- * @param[in] act_max_norm Array of actuator maximum values in normalized units.
- * @param[in] act_min_norm Array of actuator minimum values in normalized units.
  */
-static void compute_wls_scaling_factors(float* wls_scaler_u, const float* act_max, const float* act_min, const float* act_max_norm, const float* act_min_norm) {
+static void compute_wls_scaling_factors(float wls_scaler_u[ANDI_NUM_ACT_TOT], const float act_max[ANDI_NUM_ACT_TOT], const float act_min[ANDI_NUM_ACT_TOT]) {
   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT_TOT; i++){
-    float nominator = positive_non_zero(act_max[i] - act_min[i]);
-    float denominator = positive_non_zero(act_max_norm[i] - act_min_norm[i]);
-    wls_scaler_u[i] = nominator / denominator;
+    wls_scaler_u[i] = positive_non_zero(act_max[i] - act_min[i]);
   }
 }
+
+static void compute_wls_upper_bounds(float u_d_max[ANDI_NUM_ACT_TOT], const float act_state[ANDI_NUM_ACT_TOT], const float act_max[ANDI_NUM_ACT_TOT], const float act_rate_max[ANDI_NUM_ACT_TOT], float dt)
+{
+    for (uint_fast8_t i = 0; i < ANDI_NUM_ACT_TOT; i++)
+    {
+        // Calculate max rate allowed to avoid exceeding actuator max position in one timestep
+        float rate_limit_pos = (act_max[i] - act_state[i]) / dt;
+
+        // The rate limit considering actuator rate constraints (negative min rate since min rate might be negative)
+        float rate_limit_rate = act_rate_max[i];
+
+        // u_d_max is the minimum of the two constraints to avoid surpassing either constraint in the next step
+        u_d_max[i] = (rate_limit_pos < rate_limit_rate) ? rate_limit_pos : rate_limit_rate;
+    }
+}
+
+static void compute_wls_lower_bounds(float u_d_min[ANDI_NUM_ACT_TOT], const float act_state[ANDI_NUM_ACT_TOT], const float act_min[ANDI_NUM_ACT_TOT], const float act_rate_min[ANDI_NUM_ACT_TOT], float dt)
+{
+    for (uint_fast8_t i = 0; i < ANDI_NUM_ACT_TOT; i++)
+    {
+        // Calculate min rate allowed to avoid going below actuator min position in one timestep
+        float rate_limit_pos = (act_min[i] - act_state[i]) / dt;
+
+        // The rate limit considering actuator rate constraints (positive min rate)
+        float rate_limit_rate = act_rate_min[i];
+
+        // u_d_min is the maximum of the two constraints to avoid surpassing either constraint in the next step
+        u_d_min[i] = (rate_limit_pos > rate_limit_rate) ? rate_limit_pos : rate_limit_rate;
+
+        // Additionally ensure u_d_min is not greater than zero if actuator cannot reverse direction
+        if (u_d_min[i] > 0.0f)
+            u_d_min[i] = 0.0f;
+    }
+}
+
 
 /**
  * @brief Evaluate the control effectiveness
@@ -1275,7 +1337,7 @@ static void compute_wls_scaling_factors(float* wls_scaler_u, const float* act_ma
  * FIXME: Add option for 'half loop' where CE is adjusted to not
  * control certain virtual actuators.
  */
-static void evaluate_effectiveness_matrix(float eff_mat[ANDI_OUTPUTS * ANDI_NUM_ACT_TOT])
+static void evaluate_effectiveness_matrix_oneloop(float eff_mat[ANDI_OUTPUTS * ANDI_NUM_ACT_TOT])
 {
   // float v_e[3];
   // v_e[0] = filt_vn.out;
@@ -1383,11 +1445,13 @@ void oneloop_andi_init(void)
 
   // Bind actuator feedback
   AbiBindMsgACTUATORS_T4_IN(ABI_BROADCAST, &actuators_t4_in_event, actuators_t4_in_callback);
+
+  // Compute wls scaling constants
+  compute_wls_scaling_factors(wls_scaler_u, act_max, act_min, act_max_norm, act_min_norm);
   // Start telemetry
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_oneloop_andi);
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_STAB, send_eff_mat_stab_oneloop_andi);
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_GUID, send_eff_mat_guid_oneloop_andi);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_ONE, send_eff_mat_one_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE, send_guidance_oneloop_andi);
     // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATOR_STATE, send_oneloop_actuator_state);
     // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_oneloop_debug);
@@ -1406,9 +1470,25 @@ void oneloop_andi_init(void)
 void oneloop_andi_enter(enum ControlMode control_mode, enum ControlType control_type)
 {
   printf("ENTER ANDI controller: start \n");
-  // counter_andi++;
   oneloop_andi.control_mode   = control_mode;
   oneloop_andi.control_type   = control_type;
+
+  // initialize wls weights
+  switch (control_mode) {
+    case CONTROL_MODE_RATE:
+      float_vect_copy(wls_one_p.Wv, wls_wv_rate, ANDI_OUTPUTS);
+      actuator_dynamics[2] = 1;
+      actuator_dynamics[3] = 1;
+      break;
+    case CONTROL_MODE_ATTITUDE:
+      float_vect_copy(wls_one_p.Wv, wls_wv_attitude, ANDI_OUTPUTS);
+      actuator_dynamics[2] = 1;
+      actuator_dynamics[3] = 1;
+      break;
+    case CONTROL_MODE_GUIDANCE:
+      float_vect_copy(wls_one_p.Wv, wls_wv_guidance, ANDI_OUTPUTS);
+      break;
+  }
   printf("ENTER ANDI controller: succes \n");
 }
 
@@ -1449,34 +1529,37 @@ void oneloop_andi_run(enum ControlMode control_mode)
   oneloop_andi.alt_state.acc = filt_ad.out;
   // FIXME: Todo, add Heading state fetching (which is part of attitude, might be redundant)
 
+  float act_state[ANDI_NUM_ACT]
+
 
   // Guidance Pseudo Control Vector (nu) based on reference model and error controller
 
   // Assemble pseudo control vector
   // FIXME: Add heading control.
   // FIXME: Add guidance control
-  float nu[ANDI_OUTPUTS] = {0.0f}; // An Ae Ad psi p q r
+
+  evaluate_effectiveness_matrix_oneloop(eff_mat);
+
+  float_vect_zero(wls_one_p.v, ANDI_OUTPUTS); // An Ae Ad psi p q r
   switch (control_mode) {
     case CONTROL_MODE_RATE:
       {
       get_desired_rates_radio_command(oneloop_andi.att_des, att_bounds.att_d);
       reference_model_rate(dt_1l, oneloop_andi.att_des, &k_rate_rm, &att_bounds, &oneloop_andi.att_ref);
-      error_controller_rate(&oneloop_andi.att_ref, &oneloop_andi.att_state, &k_rate_e, &nu[4]);
+      error_controller_rate(&oneloop_andi.att_ref, &oneloop_andi.att_state, &k_rate_e, &wls_one_p.v[4]);
 
-      get_desired_altitude_radio_command(&oneloop_andi.alt_des, alt_bounds.vel, oneloop_andi.alt_ref.pos, dt_1l);
-      reference_model_altitude(dt_1l, oneloop_andi.alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref);
-      error_controller_altitude(&oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
+      // Direct thrust control
+      get_desired_thrust_radio_command(&wls_one_p.v[2], 0.0f, 3.0f);
       break;
       }
     case CONTROL_MODE_ATTITUDE:
       {
       get_desired_attitude_radio_command(oneloop_andi.att_des, att_bounds.att, att_bounds.att_d[2], oneloop_andi.head_ref.head, dt_1l);
       reference_model_attitude(dt_1l, oneloop_andi.att_des, &k_att_rm, &att_bounds, &oneloop_andi.att_ref);
-      error_controller_attitude(&oneloop_andi.att_ref, &oneloop_andi.att_state, &k_att_e, &nu[4]);
+      error_controller_attitude(&oneloop_andi.att_ref, &oneloop_andi.att_state, &k_att_e, &wls_one_p.v[4]);
 
-      get_desired_altitude_radio_command(&oneloop_andi.alt_des, alt_bounds.vel, oneloop_andi.alt_ref.pos, dt_1l);
-      reference_model_altitude(dt_1l, oneloop_andi.alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref);
-      error_controller_altitude(&oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
+      // Direct thrust control
+      get_desired_thrust_radio_command(&wls_one_p.v[2], 0.0f, 3.0f);
       break;
       }
     case CONTROL_MODE_GUIDANCE:
@@ -1484,18 +1567,18 @@ void oneloop_andi_run(enum ControlMode control_mode)
       // Position
       get_desired_position_radio_command(oneloop_andi.pos_des, pos_bounds.vel, oneloop_andi.pos_ref.pos, dt_1l);
       reference_model_position(dt_1l, oneloop_andi.pos_des, &k_pos_rm, &pos_bounds, &oneloop_andi.pos_ref);
-      error_controller_position(&oneloop_andi.pos_ref, &oneloop_andi.pos_state, &k_pos_e, &nu[0]);
+      error_controller_position(&oneloop_andi.pos_ref, &oneloop_andi.pos_state, &k_pos_e, &wls_one_p.v[0]);
 
       // Altitude
       get_desired_altitude_radio_command(&oneloop_andi.alt_des, alt_bounds.vel, oneloop_andi.alt_ref.pos, dt_1l);
       reference_model_altitude(dt_1l, oneloop_andi.alt_des, &k_alt_rm, &alt_bounds, &oneloop_andi.alt_ref);
-      error_controller_altitude(&oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &nu[2]);
+      error_controller_altitude(&oneloop_andi.alt_ref, &oneloop_andi.alt_state, &k_alt_e, &wls_one_p.v[2]);
 
       // Heading (todo)
 
       // Rate (desired rate is taked from oneloop virtual actuator)
       reference_model_rate(dt_1l, &andi_du[4], &k_rate_rm, &att_bounds, &oneloop_andi.att_ref);
-      error_controller_rate(&oneloop_andi.att_ref, &oneloop_andi.att_state, &k_rate_e, &nu[4]);
+      error_controller_rate(&oneloop_andi.att_ref, &oneloop_andi.att_state, &k_rate_e, &wls_one_p.v[4]);
       break;
       }
     default:
@@ -1506,17 +1589,17 @@ void oneloop_andi_run(enum ControlMode control_mode)
   // Control Allocation
   // FIXME: Dynamically compute WLS bounds based on current actuator position.
   // FIXME: Put this part in its own function?
-  evaluate_effectiveness_matrix(eff_mat);
-
-  float wls_scaler_u[ANDI_NUM_ACT_TOT];
-  compute_wls_scaling_factors(wls_scaler_u, act_max, act_min, act_max_norm, act_min_norm);
+  float eff_mat_scaled[ANDI_OUTPUTS * ANDI_NUM_ACT_TOT];
   for (uint_fast8_t i = 0; i < ANDI_OUTPUTS; i++) {
     for (uint_fast8_t j = 0; j < ANDI_NUM_ACT_TOT; j++) {
-      eff_mat[i * ANDI_NUM_ACT_TOT + j] *= wls_scaler_u[j];
+      eff_mat_scaled[i * ANDI_NUM_ACT_TOT + j] = eff_mat[i * ANDI_NUM_ACT_TOT + j] * wls_scaler_u[j];
     }
   }
+
+  compute_wls_upper_bounds(wls_one_p.u_max, actuator_state)
+
   for (uint_fast8_t i = 0; i < ANDI_OUTPUTS; i++) {
-    bwls_1l[i] = &eff_mat[i * ANDI_NUM_ACT_TOT];
+    bwls_1l[i] = &eff_mat_scaled[i * ANDI_NUM_ACT_TOT];
   }
   // WLS Control Allocator
   wls_alloc(&wls_one_p, bwls_1l, 0, 0, 10);
@@ -1524,13 +1607,9 @@ void oneloop_andi_run(enum ControlMode control_mode)
     andi_du[i] = wls_scaler_u[i] * wls_one_p.u[i];
   }
 
-  // Real actuator commands
+  // Commit real actuator commands
   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
-    andi_u[i] = andi_du[i] * actuator_dynamics[i] + filt_u[i].out;
-  }
- 
-  // Commit the actuator command
-  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
-    commands[i] = (int16_t) andi_du[i];
+    andi_u[i] = andi_du[i] / actuator_dynamics[i] + filt_u[i].out; // SI units
+    commands[i] = (int16_t)andi_u[i] * 100;
   }
 }

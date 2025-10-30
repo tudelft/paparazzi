@@ -19,6 +19,7 @@ void cyclone_fu(const float v_e[3], const float w_e[3],
                       const float wind_e[3], const float coefficients[23],
                       float F_obm_u[49])
 {
+  float fv[49];
   float b_t326_tmp;
   float t13;
   float t137;
@@ -111,6 +112,9 @@ void cyclone_fu(const float v_e[3], const float w_e[3],
   float t63;
   float t67;
   float t71;
+  int i;
+  int i1;
+  int i2;
   (void)w_e;
   /* symbolic_F_obm_u */
   /*     F_obm_u = symbolic_F_obm_u(IN1,IN2,IN3,IN4,IN5,IN6) */
@@ -401,86 +405,84 @@ void cyclone_fu(const float v_e[3], const float w_e[3],
   t432 = ((((t432 * t294 * t337 - t42 * t300 * t337) - t15) + t28 * 4.0F) +
           t273 * t335 * t337 * 2.0F) -
          t373;
-  F_obm_u[0] = -t283 * t386;
-  F_obm_u[1] = t268 * t386;
-  F_obm_u[2] = -t273 * t386;
-  F_obm_u[3] = 0.0F;
-  F_obm_u[4] = 0.0F;
-  F_obm_u[5] = t372 + coefficients[16] * t16;
-  F_obm_u[6] = -t370 - coefficients[9] * t16;
-  F_obm_u[7] = -t283 * t387;
-  F_obm_u[8] = t268 * t387;
-  F_obm_u[9] = -t273 * t387;
-  F_obm_u[10] = 0.0F;
-  F_obm_u[11] = 0.0F;
-  F_obm_u[12] = t372 + coefficients[16] * t17;
-  F_obm_u[13] = t370 + coefficients[9] * t17;
+  fv[0] = -t283 * t386;
+  fv[1] = t268 * t386;
+  fv[2] = -t273 * t386;
+  fv[3] = 0.0F;
+  fv[4] = 0.0F;
+  fv[5] = t372 + coefficients[16] * t16;
+  fv[6] = -t370 - coefficients[9] * t16;
+  fv[7] = -t283 * t387;
+  fv[8] = t268 * t387;
+  fv[9] = -t273 * t387;
+  fv[10] = 0.0F;
+  fv[11] = 0.0F;
+  fv[12] = t372 + coefficients[16] * t17;
+  fv[13] = t370 + coefficients[9] * t17;
   t58 = coefficients[0] * u[2];
   t389 = u[2] * (coefficients[3] + u[0] * coefficients[7]);
-  F_obm_u[14] = t58 * t267 * -2.0F - t389 * t283 * 2.0F;
-  F_obm_u[15] = t58 * t272 * 2.0F + t389 * t268 * 2.0F;
-  F_obm_u[16] = t58 * t281 * 2.0F - t389 * t273 * 2.0F;
-  F_obm_u[17] = 0.0F;
-  F_obm_u[18] = u[2] * coefficients[20] * 2.0F;
-  F_obm_u[19] = u[2] * (coefficients[15] + u[0] * coefficients[16]) * 2.0F;
-  F_obm_u[20] = u[2] * (coefficients[8] + u[0] * coefficients[9]) * -2.0F;
+  fv[14] = t58 * t267 * -2.0F - t389 * t283 * 2.0F;
+  fv[15] = t58 * t272 * 2.0F + t389 * t268 * 2.0F;
+  fv[16] = t58 * t281 * 2.0F - t389 * t273 * 2.0F;
+  fv[17] = 0.0F;
+  fv[18] = u[2] * coefficients[20] * 2.0F;
+  fv[19] = u[2] * (coefficients[15] + u[0] * coefficients[16]) * 2.0F;
+  fv[20] = u[2] * (coefficients[8] + u[0] * coefficients[9]) * -2.0F;
   t58 = coefficients[0] * u[3];
   t389 = u[3] * (coefficients[3] + u[1] * coefficients[7]);
-  F_obm_u[21] = t58 * t267 * -2.0F - t389 * t283 * 2.0F;
-  F_obm_u[22] = t58 * t272 * 2.0F + t389 * t268 * 2.0F;
-  F_obm_u[23] = t58 * t281 * 2.0F - t389 * t273 * 2.0F;
-  F_obm_u[24] = 0.0F;
-  F_obm_u[25] = u[3] * coefficients[20] * -2.0F;
-  F_obm_u[26] = u[3] * (coefficients[15] + u[1] * coefficients[16]) * 2.0F;
-  F_obm_u[27] = u[3] * (coefficients[8] + u[1] * coefficients[9]) * 2.0F;
-  F_obm_u[28] = ((quat[0] * t422 * -0.5F + quat[1] * t421 / 2.0F) -
-                 quat[2] * t55 / 2.0F) -
-                quat[3] * t429 / 2.0F;
-  F_obm_u[29] =
+  fv[21] = t58 * t267 * -2.0F - t389 * t283 * 2.0F;
+  fv[22] = t58 * t272 * 2.0F + t389 * t268 * 2.0F;
+  fv[23] = t58 * t281 * 2.0F - t389 * t273 * 2.0F;
+  fv[24] = 0.0F;
+  fv[25] = u[3] * coefficients[20] * -2.0F;
+  fv[26] = u[3] * (coefficients[15] + u[1] * coefficients[16]) * 2.0F;
+  fv[27] = u[3] * (coefficients[8] + u[1] * coefficients[9]) * 2.0F;
+  fv[28] = ((quat[0] * t422 * -0.5F + quat[1] * t421 / 2.0F) -
+            quat[2] * t55 / 2.0F) -
+           quat[3] * t429 / 2.0F;
+  fv[29] =
       ((quat[0] * t59 / 2.0F - quat[1] * t259 / 2.0F) + quat[2] * t394 / 2.0F) -
       quat[3] * t71 / 2.0F;
-  F_obm_u[30] =
+  fv[30] =
       ((quat[0] * t430 / 2.0F + quat[1] * t274 / 2.0F) + quat[2] * t43 / 2.0F) +
       quat[3] * t432 / 2.0F;
   t58 = quat[0] * t302 * t320;
   t389 = quat[1] * t302 * t320;
   t42 = quat[2] * t302 * t320;
   b_t326_tmp = quat[3] * t302 * t320;
-  F_obm_u[31] =
-      ((t58 * t334 * -0.5F - t389 * t331 / 2.0F) + t42 * t333 / 2.0F) -
-      b_t326_tmp * t330 / 2.0F;
-  F_obm_u[32] = coefficients[19] * t337 *
-                (((((((((((((((t18 * v_e[2] - t19 * v_e[2]) - t20 * v_e[2]) +
-                             t21 * v_e[2]) +
-                            t33 * v_e[1]) +
-                           t29 * v_e[0]) +
-                          t32 * v_e[0]) +
-                         t18 * wind_e[2]) -
-                        t19 * wind_e[2]) -
-                       t20 * wind_e[2]) +
-                      t21 * wind_e[2]) +
-                     t33 * wind_e[1]) +
-                    t29 * wind_e[0]) +
-                   t32 * wind_e[0]) -
-                  t28_tmp * v_e[1] * 2.0F) -
-                 t28_tmp * wind_e[1] * 2.0F);
+  fv[31] = ((t58 * t334 * -0.5F - t389 * t331 / 2.0F) + t42 * t333 / 2.0F) -
+           b_t326_tmp * t330 / 2.0F;
+  fv[32] = coefficients[19] * t337 *
+           (((((((((((((((t18 * v_e[2] - t19 * v_e[2]) - t20 * v_e[2]) +
+                        t21 * v_e[2]) +
+                       t33 * v_e[1]) +
+                      t29 * v_e[0]) +
+                     t32 * v_e[0]) +
+                    t18 * wind_e[2]) -
+                   t19 * wind_e[2]) -
+                  t20 * wind_e[2]) +
+                 t21 * wind_e[2]) +
+                t33 * wind_e[1]) +
+               t29 * wind_e[0]) +
+              t32 * wind_e[0]) -
+             t28_tmp * v_e[1] * 2.0F) -
+            t28_tmp * wind_e[1] * 2.0F);
   t43_tmp = u[0] * coefficients[17];
   t413 = u[1] * coefficients[17];
-  F_obm_u[33] = t327 * t337 * ((coefficients[12] + t43_tmp) + t413);
-  F_obm_u[34] = -coefficients[10] * t211 * t327 * t337;
-  F_obm_u[35] = ((quat[0] * t429 * -0.5F + quat[1] * t55 / 2.0F) +
-                 quat[2] * t421 / 2.0F) +
-                quat[3] * t422 / 2.0F;
-  F_obm_u[36] = ((quat[0] * t71 * -0.5F - quat[1] * t394 / 2.0F) -
-                 quat[2] * t259 / 2.0F) -
-                quat[3] * t59 / 2.0F;
-  F_obm_u[37] =
+  fv[33] = t327 * t337 * ((coefficients[12] + t43_tmp) + t413);
+  fv[34] = -coefficients[10] * t211 * t327 * t337;
+  fv[35] = ((quat[0] * t429 * -0.5F + quat[1] * t55 / 2.0F) +
+            quat[2] * t421 / 2.0F) +
+           quat[3] * t422 / 2.0F;
+  fv[36] = ((quat[0] * t71 * -0.5F - quat[1] * t394 / 2.0F) -
+            quat[2] * t259 / 2.0F) -
+           quat[3] * t59 / 2.0F;
+  fv[37] =
       ((quat[0] * t432 / 2.0F - quat[1] * t43 / 2.0F) + quat[2] * t274 / 2.0F) -
       quat[3] * t430 / 2.0F;
-  F_obm_u[38] =
-      ((t58 * t330 * -0.5F - t389 * t333 / 2.0F) - t42 * t331 / 2.0F) +
-      b_t326_tmp * t334 / 2.0F;
-  F_obm_u[39] = 0.0F;
+  fv[38] = ((t58 * t330 * -0.5F - t389 * t333 / 2.0F) - t42 * t331 / 2.0F) +
+           b_t326_tmp * t334 / 2.0F;
+  fv[39] = 0.0F;
   t326_tmp = coefficients[17] * -u[1];
   t311 = coefficients[13] * t18;
   t313 = coefficients[13] * t19;
@@ -490,23 +492,32 @@ void cyclone_fu(const float v_e[3], const float w_e[3],
   t63 = coefficients[13] * t29;
   t137 = coefficients[13] * t32;
   t47 = quat[0] * coefficients[13] * quat[1];
-    F_obm_u[40] = -t337 * (((((((((((((((((((((((((((((((((((((((((((((((((((((coefficients[12] * t160 + coefficients[12] * t162) + coefficients[12] * t168) + coefficients[12] * t170) + coefficients[12] * t185) + coefficients[12] * t186) + coefficients[12] * t189) + coefficients[12] * t193) + coefficients[12] * t194) + coefficients[12] * t197) + coefficients[12] * t230) + coefficients[12] * t232) + coefficients[12] * -t164) + coefficients[12] * -t166) + coefficients[12] * -t172) + coefficients[12] * -t174) + t43_tmp * t160) + t43_tmp * t162) + t413 * t160) + t43_tmp * t168) + t413 * t162) + t43_tmp * t170) + t413 * t168) + t413 * t170) + t43_tmp * t185) + t43_tmp * t186) + t43_tmp * t189) + t413 * t185) + t413 * t186) + t43_tmp * t193) + t43_tmp * t194) + t413 * t189) + t43_tmp * t197) + t413 * t193) + t413 * t194) + t413 * t197) + t43_tmp * t230) + t43_tmp * t232) + t413 * t230) + t413 * t232) + t43_tmp * -t164) + t43_tmp * -t166) + t43_tmp * -t172) + t43_tmp * -t174) + t326_tmp * t164) + t326_tmp * t166) + t326_tmp * t172) + t326_tmp * t174) + t311 * v_e[2]) - t313 * v_e[2]) - t373 * v_e[2]) + t139 * v_e[2]) + t138 * v_e[1]) + ((((((((((t63 * v_e[0] + t137 * v_e[0]) + t311 * wind_e[2]) - t313 * wind_e[2]) - t373 * wind_e[2]) + t139 * wind_e[2]) + t138 * wind_e[1]) + t63 * wind_e[0]) + t137 * wind_e[0]) - t47 * v_e[1] * 2.0F) - t47 * wind_e[1] * 2.0F));
-    F_obm_u[41] = coefficients[10] * t211 * t328 * t337;
-    F_obm_u[42] = ((quat[0] * t55 / 2.0F + quat[1] * t429 / 2.0F) -
-                   quat[2] * t422 / 2.0F) +
-                  quat[3] * t421 / 2.0F;
-    F_obm_u[43] = ((quat[0] * t394 * -0.5F + quat[1] * t71 / 2.0F) +
-                   quat[2] * t59 / 2.0F) -
-                  quat[3] * t259 / 2.0F;
-    F_obm_u[44] = ((quat[0] * t43 * -0.5F - quat[1] * t432 / 2.0F) +
-                   quat[2] * t430 / 2.0F) +
-                  quat[3] * t274 / 2.0F;
-    F_obm_u[45] =
-        ((t58 * t333 * -0.5F + t389 * t330 / 2.0F) - t42 * t334 / 2.0F) -
-        b_t326_tmp * t331 / 2.0F;
-    F_obm_u[46] = -coefficients[19] * t328 * t337;
-    F_obm_u[47] = coefficients[13] * t327 * t337;
-    F_obm_u[48] = 0.0F;
+    fv[40] = -t337 * (((((((((((((((((((((((((((((((((((((((((((((((((((((coefficients[12] * t160 + coefficients[12] * t162) + coefficients[12] * t168) + coefficients[12] * t170) + coefficients[12] * t185) + coefficients[12] * t186) + coefficients[12] * t189) + coefficients[12] * t193) + coefficients[12] * t194) + coefficients[12] * t197) + coefficients[12] * t230) + coefficients[12] * t232) + coefficients[12] * -t164) + coefficients[12] * -t166) + coefficients[12] * -t172) + coefficients[12] * -t174) + t43_tmp * t160) + t43_tmp * t162) + t413 * t160) + t43_tmp * t168) + t413 * t162) + t43_tmp * t170) + t413 * t168) + t413 * t170) + t43_tmp * t185) + t43_tmp * t186) + t43_tmp * t189) + t413 * t185) + t413 * t186) + t43_tmp * t193) + t43_tmp * t194) + t413 * t189) + t43_tmp * t197) + t413 * t193) + t413 * t194) + t413 * t197) + t43_tmp * t230) + t43_tmp * t232) + t413 * t230) + t413 * t232) + t43_tmp * -t164) + t43_tmp * -t166) + t43_tmp * -t172) + t43_tmp * -t174) + t326_tmp * t164) + t326_tmp * t166) + t326_tmp * t172) + t326_tmp * t174) + t311 * v_e[2]) - t313 * v_e[2]) - t373 * v_e[2]) + t139 * v_e[2]) + t138 * v_e[1]) + ((((((((((t63 * v_e[0] + t137 * v_e[0]) + t311 * wind_e[2]) - t313 * wind_e[2]) - t373 * wind_e[2]) + t139 * wind_e[2]) + t138 * wind_e[1]) + t63 * wind_e[0]) + t137 * wind_e[0]) - t47 * v_e[1] * 2.0F) - t47 * wind_e[1] * 2.0F));
+    fv[41] = coefficients[10] * t211 * t328 * t337;
+    fv[42] = ((quat[0] * t55 / 2.0F + quat[1] * t429 / 2.0F) -
+              quat[2] * t422 / 2.0F) +
+             quat[3] * t421 / 2.0F;
+    fv[43] = ((quat[0] * t394 * -0.5F + quat[1] * t71 / 2.0F) +
+              quat[2] * t59 / 2.0F) -
+             quat[3] * t259 / 2.0F;
+    fv[44] = ((quat[0] * t43 * -0.5F - quat[1] * t432 / 2.0F) +
+              quat[2] * t430 / 2.0F) +
+             quat[3] * t274 / 2.0F;
+    fv[45] = ((t58 * t333 * -0.5F + t389 * t330 / 2.0F) - t42 * t334 / 2.0F) -
+             b_t326_tmp * t331 / 2.0F;
+    fv[46] = -coefficients[19] * t328 * t337;
+    fv[47] = coefficients[13] * t327 * t337;
+    fv[48] = 0.0F;
+    i = 0;
+    i1 = 0;
+    for (i2 = 0; i2 < 49; i2++) {
+      F_obm_u[i1 + 7 * i] = fv[i2];
+      i++;
+      if (i > 6) {
+        i = 0;
+        i1++;
+      }
+    }
 }
 
 /* End of code generation (cyclone_fu.c) */

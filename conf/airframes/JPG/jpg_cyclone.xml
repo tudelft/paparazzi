@@ -143,8 +143,8 @@
     </firmware>
 
     <servos driver="T4">
-        <servo name="S_MOTOR_LEFT"   no="13" min="230"   neutral="250" max="1999"/> 
-        <servo name="S_MOTOR_RIGHT"  no="14" min="230"   neutral="250" max="1999"/>
+        <servo name="S_MOTOR_LEFT"   no="13" min="0"   neutral="250" max="1999"/> 
+        <servo name="S_MOTOR_RIGHT"  no="14" min="0"   neutral="250" max="1999"/>
         <servo name="S_ELEVON_LEFT"  no="1"  min="-5700" neutral="0"   max="5700"/> <!-- 57.0 deg-->
         <servo name="S_ELEVON_RIGHT" no="2"  min="-5700" neutral="0"   max="5700"/> <!-- 57.0 deg-->
     </servos>
@@ -192,10 +192,10 @@
         <!--                                    |   EL    |    ER   |    ML   |    MR   |    P    |    Q    |    R    | -->
         <define name  = "ACT_IS_SERVO" value = "{        1,        1,        0,        0,        0,        0,        0}"/>
         <define name  = "ACT_DYN"      value = "{    20.0f,    20.0f,    40.0f,    40.0f,     0.0f,     0.0f,     0.0f}"/> <!-- Only real actuator bandwidth is used -->
-        <define name  = "ACT_MAX"      value = "{  9600.0f,  9600.0f,  9600.0f,  9600.0f,  9600.0f,  9600.0f,  9600.0f}"/>
-        <define name  = "ACT_MIN"      value = "{ -9600.0f, -9600.0f,     0.0f,     0.0f, -9600.0f, -9600.0f, -9600.0f}"/>
+        <define name  = "ACT_MAX"      value = "{    10.0f,    10.0f,  2000.0f,  2000.0f,     10.0f,   10.0f,    10.0f}"/>
+        <define name  = "ACT_MIN"      value = "{   -10.0f,   -10.0f,     0.0f,     0.0f,    -10.0f,  -10.0f,   -10.0f}"/>
         <define name  = "ACT_MAX_NORM" value = "{     1.0f,     1.0f,     1.0f,     1.0f,     1.0f,     1.0f,     1.0f}"/>
-        <define name  = "ACT_MIN_NORM" value = "{    -1.0f,    -1.0f,     0.0f,     0.0f,    -1.0f,    -1.0f,    -1.0f}"/>
+        <define name  = "ACT_MIN_NORM" value = "{    -1.0f,    -1.0f,    -1.0f,    -1.0f,    -1.0f,    -1.0f,    -1.0f}"/>
         <define name  = "WU"           value = "{    0.75f,    0.75f,    0.75f,    0.75f,    1.20f,    1.20f,    1.20f}"/>
         <define name  = "U_PREF"       value = "{    0.00f,    0.00f,  800.00f,  800.00f,    0.00f,    0.00f,    0.00f}"/>
 

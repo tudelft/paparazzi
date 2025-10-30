@@ -61,6 +61,7 @@
     <!-- ATITUDE_DIRECT: 4 -->
     <mode name="ATTITUDE_DIRECT" shortname="ATT">
       <select cond="RCMode1()"/>
+      <select cond="$DEFAULT_MODE"/>
       <on_enter>
         <call fun="oneloop_andi_enter(CONTROL_MODE_ATTITUDE, CONTROL_TYPE_ANDI)"/>
       </on_enter>

@@ -438,6 +438,16 @@
       <field name="cycle_time" type="uint32" unit="ms"/>
     </message>
 
+    <message name="EFF_MAT_ONE" id="51">
+      <field name="row_1" type="float[]" unit="none"/>
+      <field name="row_2" type="float[]" unit="none"/>
+      <field name="row_3" type="float[]" unit="none"/>
+      <field name="row_4" type="float[]" unit="none"/>
+      <field name="row_5" type="float[]" unit="none"/>
+      <field name="row_6" type="float[]" unit="none"/>
+      <field name="row_7" type="float[]" unit="none"/>
+    </message>
+
     <message name="MPPT" id="52">
       <field name="values" type="int16[]" alt_unit_coef="1e-3"/>
     </message>
@@ -473,8 +483,6 @@
       <field name="offset" type="uint16"/>
       <field name="scaled" type="float"/>
     </message>
-
-    <!-- 57 is free-->
 
     <message name="VISION_OUTBACK" id="58">
       <field name="status" type="uint8"/>
