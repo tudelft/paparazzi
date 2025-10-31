@@ -1,0 +1,91 @@
+Here the instructions for the outdoor competition
+
+# Setup Corax Aircraft
+Corax Mini Flying Wing — Quick Start
+
+Preparation
+1) Remove battery and store in a LiPo-safe bag.
+
+Assembly (wings)
+6) Fit left wing: align very very precisely and carefully the wing connector, carefully push until flush with body.
+7) Slide the wing-rod from right into the body and then into the wing, gently!
+7) Right wing the same way, allign wing connector and slide it over the wing-rod.
+8) Install the central wing bolt. Tighten finger-tight, then snug with a tool. Do not crush foam.
+
+Battery and propeller
+9) Insert battery: slide it sideway from the left to the right into the body, just fits between the wingbolts and front
+9) strap the battery with the velcro over the top
+
+10) For setup, keep prop off. Power up and confirm motor spins the intended direction.
+11) Install prop with care
+21) Check center of gravity at the marks; if battery position is correct it should be balanced already.
+
+Telemetry and GCS
+12) Plug the XBee telemetry modem into a Laptop as GCS USB port.
+13) Checkout paparazzi branch: imav2025_outdoor.
+13) git submodule sync && git submodule update && make clean && make
+14) Start Paparazzi Center. 
+14) Select airframe: Corax. 
+14) Doublecheck flightplan is correct intended flight plan.
+14) Carefully pug in debug cable and connect to Laptop vai USB
+14) Switch on Tango TX OUTX27
+14) Power up AC
+16) Clean, Build and Flash the Airframe
+17) Unpower
+18) Disconnect the JTAG
+19) Switch on airplane
+15) Confirm telemetry link is active in GCS.
+
+Pre-flight checks
+20) Verify failsafe behavior for RC/telemetry loss.
+16) Power the aircraft. Wait for IMU init and 3D GPS fix.
+17) Control directions:
+    - Roll right: right elevon up, left elevon down.
+    - Pitch up: both elevons up. Pitch down: both down.
+18) Verify throttle idle and if available arm/disarm procedure.
+19) When possible Perform basic RC and telemetry range checks.
+
+22) Ensure all is correct
+
+Launch
+23) Face into wind if possible as much as situaton allows. 
+24) Select mode Auto2
+25) Click Takeoff in Flightplan
+26) Wait 4 seconds so motor if sully up to speed
+25) Hand-launch straight and firm with a slight nose-up (~20°).
+
+Wait... if you are lucky ~ 3h then the plane will autoland.
+Unplug battery and pack up in orderly fashion.
+
+Safety
+- Use LiPo-safe handling at all times.
+- Keep people clear of the propeller and launch path.
+- After landing: disarm, disconnect, and remove the battery.
+
+
+0) Remove the stored battery first into lipo safe bag
+1) First left wing carefully with the wing to body connector , make very ure it alligns
+2) Slide in the Wingrod throught the bod to the left wing
+3) connect right wing
+4) Fasten the bolt to tighten the left and right wings, not to tight but lso not loose
+5) Slide in the battery
+
+# Setup GCS
+1) Connect XBee telemetry Ground GCS modem in USB port
+2) Checkout Branch "imav2025_outdoor"
+3) Start Paparazzi center
+4) Select airframe Corax
+
+#Box Contents
+
+* Airplane
+* Spare popeller variations
+* XBee Telemetry with USBA connector 
+* Tools to mount prop bolt
+* JTAG BMP with USB a Cable
+* Also a UAB C to JTAG Cable
+
+#Mission Start
+
+* Checklist
+* If all set... Throw Aircraft firmly and straigt line but slight nose up like 20 degrees
