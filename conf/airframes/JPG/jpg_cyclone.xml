@@ -192,10 +192,10 @@
         <!--                                    |   EL    |    ER   |    ML   |    MR   |    P    |    Q    |    R    | -->
         <define name  = "ACT_IS_SERVO" value = "{        1,        1,        0,        0,        0,        0,        0}"/>
         <define name  = "ACT_DYN"      value = "{    20.0f,    20.0f,    40.0f,    40.0f,     0.0f,     0.0f,     0.0f}"/> <!-- Only real actuator bandwidth is used -->
-        <define name  = "ACT_MAX"      value = "{    10.0f,    10.0f,  2000.0f,  2000.0f,     10.0f,   10.0f,    10.0f}"/>
-        <define name  = "ACT_MIN"      value = "{   -10.0f,   -10.0f,     0.0f,     0.0f,    -10.0f,  -10.0f,   -10.0f}"/>
-        <define name  = "ACT_MAX_NORM" value = "{     1.0f,     1.0f,     1.0f,     1.0f,     1.0f,     1.0f,     1.0f}"/>
-        <define name  = "ACT_MIN_NORM" value = "{    -1.0f,    -1.0f,    -1.0f,    -1.0f,    -1.0f,    -1.0f,    -1.0f}"/>
+        <define name  = "ACT_MAX"      value = "{     1.0f,     1.0f,  2000.0f,  2000.0f,     10.0f,   10.0f,    10.0f}"/>
+        <define name  = "ACT_MIN"      value = "{    -1.0f,    -1.0f,   100.0f,   100.0f,    -10.0f,  -10.0f,   -10.0f}"/>
+        <define name  = "ACT_RATE_MAX" value = "{    10.0f,    10.0f, 25000.0f, 25000.0f,   1000.0f, 1000.0f,  1000.0f}"/>
+        <define name  = "ACT_RATE_MIN" value = "{   -10.0f,   -10.0f,-25000.0f,-25000.0f,  -1000.0f,-1000.0f, -1000.0f}"/>
         <define name  = "WU"           value = "{    0.75f,    0.75f,    0.75f,    0.75f,    1.20f,    1.20f,    1.20f}"/>
         <define name  = "U_PREF"       value = "{    0.00f,    0.00f,  800.00f,  800.00f,    0.00f,    0.00f,    0.00f}"/>
 
@@ -204,7 +204,7 @@
     </section>
 
     <section name="BAT">
-        <define name="BAT_NB_CELLS" value="4"/>
+        <!-- <define name="BAT_NB_CELLS" value="4"/> -->
         <define name="MAX_BAT_CAPACITY" value="2300" unit="mAh"/>
         <!--<define name="MilliAmpereOfAdc(_adc)" value="(_adc-632)*4.14"/>-->
         <define name="VoltageOfAdc(_adc)" value="(0.000611456 * _adc)"/>

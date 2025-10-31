@@ -76,7 +76,7 @@ const float act_min[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN;
 const float act_rate_max[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_RATE_MAX;
 const float act_rate_min[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_RATE_MIN;
 #else
-#error "You must specify the actuator limits: ONELOOP_ANDI_ACT_MAX and ONELOOP_ANDI_ACT_MIN"
+#error "You must specify the actuator limits: ONELOOP_ANDI_ACT_RATE_MAX and ONELOOP_ANDI_ACT_RATE_MIN"
 #endif
 
 // #ifdef ONELOOP_ANDI_U_PREF
@@ -134,7 +134,7 @@ static void get_desired_heading_radio_command(float* heading_des, float heading_
 static void get_act_state_oneloop(void);
 
 static void compute_wls_scaling_factors(float wls_scaler_u[ANDI_NUM_ACT_TOT], const float act_rate_max[ANDI_NUM_ACT_TOT], const float act_rate_min[ANDI_NUM_ACT_TOT]);
-static void compute_wls_upper_bounds(float u_d_max[ANDI_NUM_ACT_TOT], const float act_state[ANDI_NUM_ACT_TOT], const float act_rate_max[ANDI_NUM_ACT_TOT], const float act_rate_max[ANDI_NUM_ACT_TOT], float dt);
+static void compute_wls_upper_bounds(float u_d_max[ANDI_NUM_ACT_TOT], const float act_state[ANDI_NUM_ACT_TOT], const float act_max[ANDI_NUM_ACT_TOT], const float act_rate_max[ANDI_NUM_ACT_TOT], float dt);
 static void compute_wls_lower_bounds(float u_d_min[ANDI_NUM_ACT_TOT], const float act_state[ANDI_NUM_ACT_TOT], const float act_min[ANDI_NUM_ACT_TOT], const float act_rate_min[ANDI_NUM_ACT_TOT], float dt);
 
 static void evaluate_effectiveness_matrix_oneloop(float eff_mat[ANDI_OUTPUTS * ANDI_NUM_ACT_TOT]);
@@ -172,39 +172,44 @@ struct OneloopPosRef pos_bounds = {.pos={0, 0}, .vel={1000.0, 1000.0}, .acc={100
 struct OneloopAltRef alt_bounds = {.pos=0, .vel=1000.0, .acc=1000.0, .jer=1000.0};
 struct OneloopHeadRef head_bounds = {.head=0, .head_d=1000.0, .head_2d=1000.0};
 
+struct OneloopAttRef attitude_ref;
+struct OneloopAttState attitude_state;
+struct OneloopThrustRef thrust_ref;
+
+
 /**
  * @brief Model coefficients 
  */
 union CycloneCoefficients obm_coefficients = {
-    .fx_motor_squared       = 0.00000735f,
-    .fx_speed_forward       = -0.03f,
+  .fx_motor_squared       = 0.00000735f,
+  .fx_speed_forward       = -0.03f,
 
-    .fy_speed_lateral       = -0.008f,
+  .fy_speed_lateral       = -0.008f,
 
-    .fz_motor_squared       = 0.0f,
-    .fz_speed_forward       = 0.0f,
-    .fz_speed_vertical      = -0.144f,
-    .fz_elevator_speed      = 0.0f,
-    .fz_elevator_motor      = 0.0f,
+  .fz_motor_squared       = 0.0f,
+  .fz_speed_forward       = 0.0f,
+  .fz_speed_vertical      = -0.144f,
+  .fz_elevator_speed      = 0.0f,
+  .fz_elevator_motor      = 0.0f,
 
-    .mx_motor_diff          = 0.0f,
-    .mx_elevator_motor_diff = 0.0000283f,
-    .mx_elevator_speed_diff = 0.344f,
-    .mx_angular_coupling    = -2.18f,
+  .mx_motor_diff          = 0.0f,
+  .mx_elevator_motor_diff = 0.0000283f,
+  .mx_elevator_speed_diff = 0.344f,
+  .mx_angular_coupling    = -2.18f,
 
-    .my_speed_forward       = 0.0f,
-    .my_speed_vertical      = -0.0888f,
-    .my_constant_zero       = -1.032f,
-    .my_motor_sum           = 0.0f,
-    .my_elevator_motor_sum  = -0.0000424f,
-    .my_elevator_speed_sum  = -0.2525f,
-    .my_angular_sum         = 1.262f,
+  .my_speed_forward       = 0.0f,
+  .my_speed_vertical      = -0.0888f,
+  .my_constant_zero       = -1.032f,
+  .my_motor_sum           = 0.0f,
+  .my_elevator_motor_sum  = -0.0000424f,
+  .my_elevator_speed_sum  = -0.2525f,
+  .my_angular_sum         = 1.262f,
 
-    .mz_speed_lateral       = -0.00371f,
-    .mz_motor_diff          = 0.000039f,
-    .mz_speed_roll          = -0.0129f,
-    .mz_angular_coupling    = -0.4827f
-  };
+  .mz_speed_lateral       = -0.00371f,
+  .mz_motor_diff          = 0.000039f,
+  .mz_speed_roll          = -0.0129f,
+  .mz_angular_coupling    = -0.4827f
+};
 
 /** 
  * @brief Controller gains
@@ -277,8 +282,8 @@ struct WLS_t wls_one_p = {
   .Wu        = {[0 ... ANDI_NUM_ACT_TOT-1] = 1.0},
 #endif
   .u_pref    = {0.0},
-  .u_min     = {0.0},
-  .u_max     = {0.0},
+  .u_min     = ONELOOP_ANDI_ACT_RATE_MIN,
+  .u_max     = ONELOOP_ANDI_ACT_RATE_MAX,
   .PC        = 0.0,
   .SC        = 0.0,
   .iter      = 0
@@ -287,6 +292,7 @@ struct WLS_t wls_one_p = {
 /* Effectiveness Matrix definition */
 float *bwls_1l[ANDI_OUTPUTS];
 float eff_mat[ANDI_OUTPUTS * ANDI_NUM_ACT_TOT];
+// float eff_mat_stab[ANDI_OUTPUTS * ANDI_NUM_ACT];
 float n_array[ANDI_OUTPUTS];
 float m_array[ANDI_NUM_ACT_TOT];
 float coupling_factor[ANDI_OUTPUTS];
@@ -451,6 +457,265 @@ static void integrate_nd(uint_fast8_t n, float a[static n], const float a_dot[st
     a[i] = a[i] + dt * a_dot[i];
   }
 }
+
+
+/**
+ * @brief Generates a bounded second-order reference signal for attitude rate control.
+ *
+ * This function computes smooth angular rate, acceleration, and jerk references based on the desired rates,
+ * applying bounded limits to ensure stability and safe dynamic behavior. It updates the reference states 
+ * in place within the provided `att_ref` structure, which is a quaternion-based reference with associated rate states.
+ *
+ * @param[in] dt         The sampling interval in seconds.
+ * @param[in] rate_des   Desired angular rates (p, q, r) as a `FloatRates` structure.
+ * @param[in] k_rate_rm  Gain parameters as `GainsOrder2Vect3`, for the proportional and derivative terms.
+ * @param[in] bounds     Limits for the desired rates, rates derivatives, and accelerations, in `OneloopAttRefEulers`.
+ * @param[in,out] att_ref  The reference model states (attitude quaternion, rates, and derivatives),
+ *                         updated in place to produce the reference command.
+ */
+static void generate_reference_rate(
+  float dt,
+  struct FloatRates rate_des,
+  const struct GainsOrder2Vect3 *k_rate_rm,
+  const struct OneloopAttRefQuat *bounds,
+  struct OneloopAttRefQuat *att_ref)
+{
+    float p_des = rate_des.p;
+    float q_des = rate_des.q;
+    float r_des = rate_des.r;
+
+    BoundAbs(p_des, bounds->att_d.p);
+    BoundAbs(q_des, bounds->att_d.q);
+    BoundAbs(r_des, bounds->att_d.r);
+
+    float p_d_des = k_rate_rm->k1.x * (p_des - att_ref->att_d.p);
+    float q_d_des = k_rate_rm->k1.y * (q_des - att_ref->att_d.q);
+    float r_d_des = k_rate_rm->k1.z * (r_des - att_ref->att_d.r);
+
+    BoundAbs(p_d_des, bounds->att_2d.x);
+    BoundAbs(q_d_des, bounds->att_2d.y);
+    BoundAbs(r_d_des, bounds->att_2d.z);
+
+    float p_2d_des = k_rate_rm->k2.x * (p_d_des - att_ref->att_2d.x);
+    float q_2d_des = k_rate_rm->k2.y * (q_d_des - att_ref->att_2d.y);
+    float r_2d_des = k_rate_rm->k2.z * (r_d_des - att_ref->att_2d.z);
+
+    BoundAbs(p_2d_des, bounds->att_3d.x);
+    BoundAbs(q_2d_des, bounds->att_3d.y);
+    BoundAbs(r_2d_des, bounds->att_3d.z);
+
+    att_ref->att_3d.x = p_2d_des;
+    att_ref->att_3d.y = q_2d_des;
+    att_ref->att_3d.z = r_2d_des;
+
+    att_ref->att_2d.x += p_2d_des * dt;
+    att_ref->att_2d.y += q_2d_des * dt;
+    att_ref->att_2d.z += r_2d_des * dt;
+
+    att_ref->att_d.p += att_ref->att_2d.x * dt;
+    att_ref->att_d.q += att_ref->att_2d.y * dt;
+    att_ref->att_d.r += att_ref->att_2d.z * dt;
+
+    float_quat_identity(&att_ref->att); // zero the quaternion attitude reference
+}
+
+/**
+ * @brief Generates a bounded second-order reference signal for quaternion-based attitude control.
+ *
+ * Computes smooth angular rate, acceleration, and jerk references using quaternion error feedback.
+ * Bounds are applied to limit reference values and maintain system stability. The function updates
+ * the reference states in place within the provided `att_ref` structure, which includes quaternion attitude
+ * and associated rate states.
+ *
+ * @param[in] dt         Sampling interval in seconds.
+ * @param[in] att_des    Desired attitude as a unit quaternion.
+ * @param[in] k_att_rm   Gain parameters (proportional and derivative gains for rate control).
+ * @param[in] bounds     Limits on rate references and derivatives (angular velocity and higher).
+ * @param[in,out] att_ref Reference model state containing attitude quaternion and rate state, updated in place.
+ */
+static void generate_reference_attitude(
+  float dt,
+  struct FloatQuat att_des,
+  const struct GainsOrder3Vect3 *k_att_rm,
+  const struct OneloopAttRefQuat *bounds,
+  struct OneloopAttRefQuat *att_ref)
+{
+    struct FloatQuat att_err;
+    float_quat_inv_comp_norm_shortest(&att_err, &att_ref->att, &att_des);
+
+    float p_des = k_att_rm->k1.x * att_err.qx;
+    float q_des = k_att_rm->k1.y * att_err.qy;
+    float r_des = k_att_rm->k1.z * att_err.qz;
+
+    BoundAbs(p_des, bounds->att_d.p);
+    BoundAbs(q_des, bounds->att_d.q);
+    BoundAbs(r_des, bounds->att_d.r);
+
+    float p_d_des = k_att_rm->k2.x * (p_des - att_ref->att_d.p);
+    float q_d_des = k_att_rm->k2.y * (q_des - att_ref->att_d.q);
+    float r_d_des = k_att_rm->k2.z * (r_des - att_ref->att_d.r);
+
+    BoundAbs(p_d_des, bounds->att_2d.x);
+    BoundAbs(q_d_des, bounds->att_2d.y);
+    BoundAbs(r_d_des, bounds->att_2d.z);
+
+    float p_2d_des = k_att_rm->k3.x * (p_d_des - att_ref->att_2d.x);
+    float q_2d_des = k_att_rm->k3.y * (q_d_des - att_ref->att_2d.y);
+    float r_2d_des = k_att_rm->k3.z * (r_d_des - att_ref->att_2d.z);
+
+    BoundAbs(p_2d_des, bounds->att_3d.x);
+    BoundAbs(q_2d_des, bounds->att_3d.y);
+    BoundAbs(r_2d_des, bounds->att_3d.z);
+
+    att_ref->att_3d.x = p_2d_des;
+    att_ref->att_3d.y = q_2d_des;
+    att_ref->att_3d.z = r_2d_des;
+
+    att_ref->att_2d.x += p_2d_des * dt;
+    att_ref->att_2d.y += q_2d_des * dt;
+    att_ref->att_2d.z += r_2d_des * dt;
+
+    att_ref->att_d.p += att_ref->att_2d.x * dt;
+    att_ref->att_d.q += att_ref->att_2d.y * dt;
+    att_ref->att_d.r += att_ref->att_2d.z * dt;
+
+    float_quat_integrate(&att_ref->att, &att_ref->att_d, dt);
+}
+
+/**
+ * @brief Generates a bounded second-order reference signal for thrust control.
+ *
+ * Applies bounded limits to a desired thrust input and computes smoothed
+ * thrust rate and integrated thrust references. The reference states are
+ * updated in place inside the provided \p thrust_ref structure.
+ *
+ * @param[in] dt           Sampling interval in seconds.
+ * @param[in] thrust_des   Desired thrust input value.
+ * @param[in] k_thrust_rm  Gain parameter for thrust rate control (proportional gain).
+ * @param[in] bounds       Maximum allowable thrust magnitude.
+ * @param[in,out] att_ref  Pointer to OneloopThrustRef struct holding thrust reference states.
+ */
+static void generate_reference_thrust(
+  float dt,
+  float thrust_des,
+  const float k_thrust_rm,
+  const float bounds,
+  struct OneloopThrustRef *thrust_ref)
+{
+  BoundAbs(thrust_des, bounds);
+  thrust_ref->thrust_d = k_thrust_rm * (thrust_des - thrust_ref->thrust);
+  thrust_ref->thrust += thrust_ref->thrust_d * dt;
+}
+
+
+
+/**
+ * @brief Computes the control error command for attitude rate regulation.
+ *
+ * This function calculates the virtual control input vector \c nu required to reduce the error
+ * between the reference and current angular rate states. It uses proportional and derivative gains
+ * on the differences of rate and rate derivative components, respectively, and adds feedforward jerk.
+ *
+ * @param[in] att_ref   Pointer to the reference attitude and rate state structure.
+ * @param[in] att_state Pointer to the current attitude and rate state structure.
+ * @param[in] k_rate_e  Pointer to gain parameters structure, containing proportional and derivative gains.
+ *
+ * @return A FloatVect3 structure representing the computed virtual control input vector.
+ */
+static struct FloatVect3 control_error_rate(
+  const struct OneloopAttRefQuat *att_ref,
+  const struct OneloopAttStateQuat *att_state,
+  const struct GainsOrder2Vect3 *k_rate_e)
+{
+  struct FloatVect3 nu = att_ref->att_3d;
+
+  nu.x += k_rate_e->k2.x * (att_ref->att_2d.x - att_state->att_2d.x);
+  nu.y += k_rate_e->k2.y * (att_ref->att_2d.y - att_state->att_2d.y);
+  nu.z += k_rate_e->k2.z * (att_ref->att_2d.z - att_state->att_2d.z);
+
+  nu.x += k_rate_e->k1.x * (att_ref->att_d.p - att_state->att_d.p);
+  nu.y += k_rate_e->k1.y * (att_ref->att_d.q - att_state->att_d.q);
+  nu.z += k_rate_e->k1.z * (att_ref->att_d.r - att_state->att_d.r);
+
+  return nu;
+}
+
+/**
+ * @brief Computes the attitude rate error control command.
+ *
+ * This function calculates the control input vector \c nu to correct the attitude error and
+ * the associated angular rate errors using proportional-derivative gains. The quaternion error
+ * between the reference and current attitudes is also factored in the control law.
+ *
+ * @param[in] att_ref   Pointer to the reference attitude and rate states (quaternion-based).
+ * @param[in] att_state Pointer to the current attitude and rate states.
+ * @param[in] k_att_e   Pointer to gain parameters struct containing proportional, derivative, and jerk gains.
+ *
+ * @return A \c FloatVect3 struct representing the computed attitude error control command vector.
+ */
+static struct FloatVect3 control_error_attitude(
+  const struct OneloopAttRefQuat *att_ref,
+  const struct OneloopAttStateQuat *att_state,
+  const struct GainsOrder3Vect3 *k_att_e)
+{
+  struct FloatVect3 nu = att_ref->att_3d;
+
+  nu.x += k_att_e->k3.x * (att_ref->att_2d.x - att_state->att_2d.x);
+  nu.y += k_att_e->k3.y * (att_ref->att_2d.y - att_state->att_2d.y);
+  nu.z += k_att_e->k3.z * (att_ref->att_2d.z - att_state->att_2d.z);
+
+  nu.x += k_att_e->k2.x * (att_ref->att_d.p - att_state->att_d.p);
+  nu.y += k_att_e->k2.y * (att_ref->att_d.q - att_state->att_d.q);
+  nu.z += k_att_e->k2.z * (att_ref->att_d.r - att_state->att_d.r);
+
+  struct FloatQuat att_err;
+  float_quat_inv_comp_norm_shortest(&att_err, &att_ref->att, &att_state->att);
+  nu.x += k_att_e->k1.x * att_err.qx;
+  nu.y += k_att_e->k1.y * att_err.qy;
+  nu.z += k_att_e->k1.z * att_err.qz;
+
+  return nu;
+}
+
+/**
+ * @brief Computes the thrust control command based on desired and current thrust.
+ *
+ * This function calculates a corrected thrust command using a simple proportional
+ * feedback law. The correction term is scaled by the thrust error gain k_thrust_e
+ * to reduce the difference between the desired thrust (thrust_ref->thrust)
+ * and the current thrust (thrust_state). The resulting command is based on
+ * the desired thrust feedforward input thrust_ref->thrust_d.
+ *
+ * @param thrust_ref Pointer to a structure containing the desired thrust values.
+ * @param thrust_state Current measured thrust value.
+ * @param k_thrust_e Proportional gain applied to the thrust error correction.
+ *
+ * @return The computed thrust control command.
+ */
+static float control_error_thrust(
+  const struct OneloopThrustRef *thrust_ref,
+  const float thrust_state,
+  const float k_thrust_e)
+{
+  float nu = thrust_ref->thrust_d;
+
+  nu += k_thrust_e * (thrust_ref->thrust - thrust_state);
+
+  return nu;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * @brief 2nd-order reference model for rate control.
@@ -1063,6 +1328,7 @@ static void update_filter_on_type(struct Filter *filter, float input) {
  * @param[in] sender_id          ID of the message sender (unused).
  * @param[in] actuators_t4_in_ptr Pointer to actuators input struct containing servo angles and ESC RPMs.
  * @param[in,out] actuators_t4_extra_data_in_ptr Pointer to extra data (unused).
+ * FIXME: Get the correct actuator indices dynamically
  */
 static void actuators_t4_in_callback(uint8_t sender_id __attribute__((unused)), struct ActuatorsT4In *actuators_t4_in_ptr, float *actuators_t4_extra_data_in_ptr __attribute__((unused)))
 {
@@ -1094,7 +1360,8 @@ static void actuators_t4_in_callback(uint8_t sender_id __attribute__((unused)), 
  * It computes angular rate derivatives using finite differences, applies each
  * filter update through update_filter_on_type(), and processes actuator inputs.
  */
-static void oneloop_andi_propagate_filters(void) {
+static void oneloop_andi_propagate_filters(void)
+{
   // Fetch feedback
   struct  NedCoor_f *accel = stateGetAccelNed_f();
   struct  NedCoor_f *veloc = stateGetSpeedNed_f();
@@ -1156,7 +1423,6 @@ static float apply_deadband(float input, float deadband)
   else
     return (input + deadband) / (1.0f - deadband);
 }
-
 
 /**
  * @brief Computes desired roll, pitch, and yaw rates from RC input.
@@ -1368,7 +1634,7 @@ void oneloop_andi_init(void)
   oneloop_andi.control_type = CONTROL_TYPE_ANDI;
   oneloop_andi.control_mode = CONTROL_MODE_RATE;
 
-  // Compute gains from on poles
+  // Compute gains from poles
   compute_gains_2nd_order_3(&k_rate_e, &p_rate_e);
   compute_gains_2nd_order_3(&k_rate_rm, &p_rate_rm);
   compute_gains_3rd_order_3(&k_att_e, &p_att_e);
@@ -1447,7 +1713,7 @@ void oneloop_andi_init(void)
   AbiBindMsgACTUATORS_T4_IN(ABI_BROADCAST, &actuators_t4_in_event, actuators_t4_in_callback);
 
   // Compute wls scaling constants
-  compute_wls_scaling_factors(wls_scaler_u, act_max, act_min, act_max_norm, act_min_norm);
+  compute_wls_scaling_factors(wls_scaler_u, act_max, act_min);
   // Start telemetry
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_oneloop_andi);
@@ -1492,6 +1758,66 @@ void oneloop_andi_enter(enum ControlMode control_mode, enum ControlType control_
   printf("ENTER ANDI controller: succes \n");
 }
 
+// void stabilization_andi_rate_run(bool in_flight, struct StabilizationSetpoint att_sp, struct ThrustSetpoint, int32_t *cmd)
+// {
+//   // Fetch filtered aircraft states (SI units)
+//   oneloop_andi.att_state.att_d[0]  = filt_p.out;
+//   oneloop_andi.att_state.att_d[1]  = filt_q.out;
+//   oneloop_andi.att_state.att_d[2]  = filt_r.out;
+//   oneloop_andi.att_state.att_2d[0] = filt_p_dot.out;
+//   oneloop_andi.att_state.att_2d[1] = filt_q_dot.out;
+//   oneloop_andi.att_state.att_2d[2] = filt_r_dot.out;  
+//   oneloop_andi.pos_state.vel[0] = filt_vn.out;      
+//   oneloop_andi.pos_state.vel[1] = filt_ve.out;
+//   oneloop_andi.alt_state.vel = filt_vd.out;
+
+//   // Fetch filtered actuator states (SI units)
+//   float act_state[ANDI_NUM_ACT]
+//   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
+//     act_state[i] = filt_u[i];
+//   }
+
+//   float eff_mat_stab[4*4]
+//   evaluate_effectiveness_matrix_stab(eff_mat_stab)
+// }
+
+
+// void oneloop_andi_rate_run(bool in_flight, struct StabilizationSetpoint *att_sp, struct ThrustSetpoint *thrust, int32_t *cmd)
+// {
+//   // Update filters
+//   oneloop_andi_propagate_filters();
+//   // Register the state of the drone in the variables used in RM and EC
+//   struct FloatEulers attitude_euler;
+//   float_eulers_of_quat_zxy(&attitude_euler, stateGetNedToBodyQuat_f());
+//   oneloop_andi.att_state.att[0] = attitude_euler.phi;
+//   oneloop_andi.att_state.att[1] = attitude_euler.theta;
+//   oneloop_andi.att_state.att[2] = attitude_euler.psi;
+//   oneloop_andi.att_state.att_d[0]  = filt_p.out;
+//   oneloop_andi.att_state.att_d[1]  = filt_q.out;
+//   oneloop_andi.att_state.att_d[2]  = filt_r.out;
+//   oneloop_andi.att_state.att_2d[0] = filt_p_dot.out;
+//   oneloop_andi.att_state.att_2d[1] = filt_q_dot.out;
+//   oneloop_andi.att_state.att_2d[2] = filt_r_dot.out;
+
+//   oneloop_andi.pos_state.pos[0] = stateGetPositionNed_f()->x;   
+//   oneloop_andi.pos_state.pos[1] = stateGetPositionNed_f()->y;   
+//   oneloop_andi.pos_state.vel[0] = filt_vn.out;      
+//   oneloop_andi.pos_state.vel[1] = filt_ve.out; 
+//   oneloop_andi.pos_state.acc[0] = filt_an.out;
+//   oneloop_andi.pos_state.acc[1] = filt_ae.out;
+
+//   oneloop_andi.alt_state.pos = stateGetPositionNed_f()->z;      
+//   oneloop_andi.alt_state.vel = filt_vd.out;      
+//   oneloop_andi.alt_state.acc = filt_ad.out;
+
+//   // Get desired rate and thurst from setpoints
+//   // struct FloatRates rate_des = stab_sp_to_rates_f(att_sp);
+//   // float thrust_des = th_sp_to_thrust_f(thrust_state, THRUST_AXIS_Z);
+
+//   // Generate smooth references from inputs
+//   generate_reference_rate(dt_1l, rate_des, k_rate_rm, att_bounds, att_ref)
+// }
+
 /**
  * @brief Main function that runs the controller and performs control allocation
  */
@@ -1528,8 +1854,6 @@ void oneloop_andi_run(enum ControlMode control_mode)
   oneloop_andi.alt_state.vel = filt_vd.out;      
   oneloop_andi.alt_state.acc = filt_ad.out;
   // FIXME: Todo, add Heading state fetching (which is part of attitude, might be redundant)
-
-  float act_state[ANDI_NUM_ACT]
 
 
   // Guidance Pseudo Control Vector (nu) based on reference model and error controller
@@ -1596,7 +1920,7 @@ void oneloop_andi_run(enum ControlMode control_mode)
     }
   }
 
-  compute_wls_upper_bounds(wls_one_p.u_max, actuator_state)
+  // compute_wls_upper_bounds(wls_one_p.u_max, actuator_state_1l);
 
   for (uint_fast8_t i = 0; i < ANDI_OUTPUTS; i++) {
     bwls_1l[i] = &eff_mat_scaled[i * ANDI_NUM_ACT_TOT];
@@ -1611,5 +1935,6 @@ void oneloop_andi_run(enum ControlMode control_mode)
   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
     andi_u[i] = andi_du[i] / actuator_dynamics[i] + filt_u[i].out; // SI units
     commands[i] = (int16_t)andi_u[i] * 100;
+    commands[0] = 5000;
   }
 }
