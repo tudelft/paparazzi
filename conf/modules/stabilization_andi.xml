@@ -1,0 +1,56 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="stabilization_andi" dir="stabilization" task="control">
+  <doc>
+    <description>
+      Full ANDI stabilization controller for rotorcraft
+    </description>
+
+    <configure name="ANDI_OUTPUTS" default="4"/>
+    <configure name="ANDI_NUM_ACT" default="4"/>
+
+    <section name="STABILIZATION_ATTITUDE_ANDI" prefix="STABILIZATION_ANDI_">
+      <define name="ACT_IS_SERVO" value="{0, 0, 0, 0}" description="1 for every actuator that is a servo"/>
+      <define name="ACT_DYNAMICS" description="actuator bandwidth [rad/s]"/>
+      <define name="ACT_MAX" description="maximum actuator value [SI units]"/>
+      <define name="ACT_MIN" description="maximum actuator value [SI units]"/>
+      <define name="ACT_RATE_MAX" description="minimum actuator rate [SI units]"/>
+      <define name="ACT_RATE_MIN" description="minimum actuator rate [SI units]"/>
+      <!-- <define name="ACT_PREF" value="{0.0, 0.0, 0.0, 0.0}" description="preferred (low energy) actuator value. Important when the system is over-determined!"/> -->
+      <define name="WLS_WV" value="{1000, 1000, 1, 100}" description="WLS control objective priorities: roll, pitch, yaw, thrust (size of ANDI_OUTPUTS)"/>
+      <define name="WLS_WU" value="{1, 1, 1, 1}" description="WLS actuator cost (size of ANDI_NUM_ACT)"/>
+    </section>
+  </doc>
+  <!-- <settings>
+    <dl_settings>
+      <dl_settings NAME="andi">
+        <dl_setting var="andi_gains.att.p" min="0" step="1" max="2500" shortname="kp_p" param="STABILIZATION_INDI_REF_ERR_P"/>
+        <dl_setting var="andi_gains.rate.p" min="0.1" step="0.1" max="100" shortname="kd_p" param="STABILIZATION_INDI_REF_RATE_P"/>
+        <dl_setting var="andi_gains.att.q" min="0" step="1" max="2500" shortname="kp_q" param="STABILIZATION_INDI_REF_ERR_Q"/>
+        <dl_setting var="andi_gains.rate.q" min="0.1" step="0.1" max="100" shortname="kd_q" param="STABILIZATION_INDI_REF_RATE_P"/>
+        <dl_setting var="andi_gains.att.r" min="0" step="1" max="2500" shortname="kp_r" param="STABILIZATION_INDI_REF_ERR_R"/>
+        <dl_setting var="andi_gains.rate.r" min="0.1" step="0.1" max="100" shortname="kd_r" param="STABILIZATION_INDI_REF_RATE_P"/>
+        <dl_setting var="andi_use_adaptive" min="0" step="1" max="1" shortname="use_adaptive" values="FALSE|TRUE" param="STABILIZATION_INDI_USE_ADAPTIVE" type="uint8"/>
+        <dl_setting var="stablization_indi_yaw_dist_limit" min="0" step=".01" max="10.0" shortname="lim_yaw_spec_moment" param="STABILIZATION_INDI_YAW_DISTURBANCE_LIMIT"/>
+        <dl_setting MAX="50." MIN="1." STEP="0.1" VAR="stabilization_indi_filter_freq" shortname="filt_freq" module="stabilization/stabilization_indi" handler="update_filt_freq"/>
+      </dl_settings>
+    </dl_settings>
+  </settings> -->
+  <dep>
+    <depends>stabilization_rotorcraft,@attitude_command,wls</depends>
+    <provides>commands</provides>
+  </dep>
+  <header>
+    <file name="stabilization_andi.h"/>
+  </header>
+  <init fun="stabilization_andi_init()"/>
+  <makefile target="ap|nps" firmware="rotorcraft">
+    <file name="stabilization_andi.c" dir="$(SRC_FIRMWARE)/stabilization"/>
+    <file name="obm_cyclone.c" dir="$(SRC_FIRMWARE)/stabilization"/>
+    <configure name="ANDI_OUTPUTS" default="4"/>
+    <configure name="ANDI_NUM_ACT" default="4"/>
+    <define name="ANDI_OUTPUTS" value="$(ANDI_OUTPUTS)"/>
+    <define name="ANDI_NUM_ACT" value="$(ANDI_NUM_ACT)"/>
+    <define name="USE_STABILIZATION_RATE"/>
+  </makefile>
+</module>

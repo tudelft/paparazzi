@@ -1,10 +1,13 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_andi.h"
+#include<math.h>
 
-#if ANDI_NUM_ACT != 4;
+#if ANDI_NUM_ACT != 4
 #error Cyclone expects 4 actuators
+#endif
 
-#if ANDI_OUTPUTS != 4;
+#if ANDI_OUTPUTS != 4
 #error The cyclone model provides 4 outputs
+#endif
 
 union CycloneCoefficients {
     struct {
@@ -198,7 +201,7 @@ static void cyclone_f_stb_x(const float rates[3], const float vel_body[3],
   t19 = sqrtf((t10 + vel_body[1] * vel_body[1]) + t12);
   fv[0] = 1.0E-8F;
   fv[1] = t19;
-  mt1_tmp = maximum(fv);
+  mt1_tmp = fmaxf(fv[0], fv[1]);
   fv1[0] = t17 * vel_body[0] / mt1_tmp;
   f = actuator_state[0] * obm_coefficients[17];
   f1 = actuator_state[1] * obm_coefficients[17];
@@ -257,7 +260,7 @@ static void cyclone_f_stb_x(const float rates[3], const float vel_body[3],
 /* End of code generation (cyclone_f_stb_x.c) */
 
 
-void evaluate_obm_f_stb_u(float fu_mat[ANDI_NUM_ACT * ANDI_OUTPUTS], const FloatVect3 *rates, const struct FloatVect *vel_body, const float actuator_state[ANDI_NUM_ACT])
+void evaluate_obm_f_stb_u(float fu_mat[ANDI_NUM_ACT * ANDI_OUTPUTS], const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT])
 {
   float rates_array[3];
   float vel_body_array[3];
@@ -270,21 +273,26 @@ void evaluate_obm_f_stb_u(float fu_mat[ANDI_NUM_ACT * ANDI_OUTPUTS], const Float
   vel_body_array[1] = vel_body->y;
   vel_body_array[2] = vel_body->z;
 
-  cyclone_f_stb_u(rates_array, vel_body_array, actuator_state, fu_mat, obm_coefficients.data);
+  cyclone_f_stb_u(rates_array, vel_body_array, actuator_state, obm_coefficients.data, fu_mat);
 }
 
-void evaluate_obm_f_stb_x(float fx_mat[ANDI_NUM_ACT * ANDI_OUTPUTS], const FloatVect3 *rates, const struct FloatVect *vel_body, const float actuator_state[ANDI_NUM_ACT])
+// void evaluate_obm_f_stb_x(float fx_mat[ANDI_NUM_STATES * ANDI_OUTPUTS], const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT])
+// {
+//   float rates_array[3];
+//   float vel_body_array[3];
+
+//   rates_array[0] = rates->p;
+//   rates_array[1] = rates->q;
+//   rates_array[2] = rates->r;
+
+//   vel_body_array[0] = vel_body->x;
+//   vel_body_array[1] = vel_body->y;
+//   vel_body_array[2] = vel_body->z;
+
+//   cyclone_f_stb_x(rates_array, vel_body_array, actuator_state, obm_coefficients.data, fx_mat);
+// }
+
+float evaluate_obm_thrust(const float actuator_state[ANDI_NUM_ACT])
 {
-  float rates_array[3];
-  float vel_body_array[3];
-
-  rates_array[0] = rates->p;
-  rates_array[1] = rates->q;
-  rates_array[2] = rates->r;
-
-  vel_body_array[0] = vel_body->x;
-  vel_body_array[1] = vel_body->y;
-  vel_body_array[2] = vel_body->z;
-
-  cyclone_f_stb_x(rates_array, vel_body_array, actuator_state, fx_mat, obm_coefficients.data);
+  return obm_coefficients.fx_motor_squared * (actuator_state[2] * actuator_state[2] + actuator_state[3] * actuator_state[3]);
 }

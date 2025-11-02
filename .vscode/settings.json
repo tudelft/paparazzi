@@ -12,7 +12,10 @@
         "Makefile.*": "makefile",
         "cstdint": "c",
         "random": "c",
-        "actuators_t4_uart.h": "c"
+        "actuators_t4_uart.h": "c",
+        "format": "c",
+        "pprz_algebra_float.h": "c",
+        "stabilization_andi.h": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",

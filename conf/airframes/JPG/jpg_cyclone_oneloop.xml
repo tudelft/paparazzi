@@ -31,7 +31,7 @@
 
     <firmware name="rotorcraft">
 
-        <autopilot name="jpg_cyclone_andi.xml"/>
+        <autopilot name="cyclone_oneloop.xml"/>
 
         <configure name="PERIODIC_FREQUENCY"   value="500"/>
         <configure name="NAVIGATION_FREQUENCY" value="500"/>
@@ -115,42 +115,29 @@
         </module>
 
         <!-- <module name="stabilization" type="rotorcraft"/>  -->
-        <!-- Control --> 
-        <module name="stabilization" type="andi">
-            <define name="WLS_N_U_MAX" value="4" />
-            <define name="WLS_N_V_MAX" value="4" />
-        </module>
+        <module name="guidance_oneloop.xml"/>
 
-        <module name="guidance" type="indi_hybrid_tailsitter">
-            <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
-            <define name="NAV_HYBRID_POS_GAIN" value="0.2"/>
-            <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>
-            <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
-            <define name="GUIDANCE_INDI_POS_GAINZ" value="0.5"/>
-            <define name="GUIDANCE_INDI_SPEED_GAINZ" value="1.8"/>
-            <define name="GUIDANCE_INDI_LIFTD_ASQ" value="0.20"/>
-            <define name="GUIDANCE_INDI_PITCH_EFF_SCALING" value="1.0"/>
-            <define name="GUIDANCE_H_REF_MAX_SPEED" value="18.0"/>
-            <!--not used-->
-            <define name="GUIDANCE_INDI_MIN_THROTTLE" value="3000"/>
-            <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="1500"/>
-            <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="16.0"/>
-            <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="15.0"/>
-            <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500.0"/>
-            <define name="GUIDANCE_INDI_THRUST_DYNAMICS_FREQ" value="23.6"/>
-            <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.5"/>
-        </module>
-
+        <!-- Control -->      
+        <module name="stabilization" type="oneloop"/>
+        <module name="guidance" type="oneloop"/>
 
         <module name="nav" type="hybrid">
-            <define name="GUIDANCE_H_USE_REF" value="FALSE"/>
-            <define name="NAV_NO_CARROT" value="TRUE"/>
+            <define name="NAV_HYBRID_MAX_AIRSPEED"        value="19.0f"/>
+            <define name="NAV_HYBRID_SPEED_MARGIN"        value="0.0f"/>
+            <define name="NAV_HYBRID_MAX_ACCELERATION"    value="4.0f"/>
+            <define name="NAV_HYBRID_SOFT_ACCELERATION"   value="2.0f"/>
+            <define name="NAV_HYBRID_MAX_DECELERATION"    value="1.0f"/>
+            <define name="GUIDANCE_H_USE_REF"             value="FALSE"/>
+            <define name="NAV_HYBRID_LIMIT_CIRCLE_RADIUS" value="TRUE"/>
         </module>
 
+        <module name="oneloop" type="andi">
+            <configure name="ANDI_OUTPUTS" value="7"/>
+        </module>
 
         <module name="wls">
-            <define name="WLS_N_U_MAX" value = "4"/>
-            <define name="WLS_N_V_MAX" value = "4"/>
+            <define name="WLS_N_U_MAX" value = "7"/>
+            <define name="WLS_N_V_MAX" value = "7"/>
         </module>
 
     </firmware>
@@ -159,7 +146,7 @@
         <servo name="S_MOTOR_LEFT"   no="13" min="0"   neutral="250" max="1999"/> 
         <servo name="S_MOTOR_RIGHT"  no="14" min="0"   neutral="250" max="1999"/>
         <servo name="S_ELEVON_LEFT"  no="1"  min="-5700" neutral="0"   max="5700"/> <!-- 57.0 deg-->
-        <servo name="S_ELEVON_RIGHT" no="5"  min="-5700" neutral="0"   max="5700"/> <!-- 57.0 deg-->
+        <servo name="S_ELEVON_RIGHT" no="2"  min="-5700" neutral="0"   max="5700"/> <!-- 57.0 deg-->
     </servos>
 
     <!-- <rc_commands>
@@ -175,43 +162,45 @@
         <axis name="ELEVON_RIGHT" group="REAL"    failsafe_value="0"/>
         <axis name="MOTOR_LEFT"   group="REAL"    failsafe_value="0"/>
         <axis name="MOTOR_RIGHT"  group="REAL"    failsafe_value="0"/>
+        <!-- Virtual actuators commands -->
+        <axis name="ROLL_RATE"    group="VIRTUAL" failsafe_value="0"/>
+        <axis name="PITCH_RATE"   group="VIRTUAL" failsafe_value="0"/>
+        <axis name="YAW_RATE"     group="VIRTUAL" failsafe_value="0"/> 
         <!-- Legacy commands-->
-        <!-- <axis name="ROLL"         group="OTHER"  failsafe_value="0"/>
-        <axis name="PITCH"        group="OTHER"  failsafe_value="0"/> -->
-        <axis name="YAW"          group="OTHER"  failsafe_value="0"/>
-        <axis name="THRUST"       group="OTHER"  failsafe_value="0"/>
+        <axis name="YAW"          group ="OTHER"  failsafe_value="0"/>
+        <axis name="THRUST"       group ="OTHER"  failsafe_value="0"/>
     </commands>
 
     <!-- Safety critical kill switch implementation -->
     <command_laws>
-        <set servo="S_ELEVON_LEFT"  value="autopilot_get_motors_on()? commands[COMMAND_ELEVON_LEFT] : 0"/>
-        <set servo="S_ELEVON_RIGHT" value="autopilot_get_motors_on()? commands[COMMAND_ELEVON_RIGHT] : 0"/>
-        <set servo="S_MOTOR_LEFT"   value="autopilot_get_motors_on()? commands[COMMAND_MOTOR_LEFT] : -MAX_PPRZ"/>
-        <set servo="S_MOTOR_RIGHT"  value="autopilot_get_motors_on()? commands[COMMAND_MOTOR_RIGHT] : -MAX_PPRZ"/>
+        <set servo="S_ELEVON_LEFT"    value="autopilot_get_motors_on()? commands[COMMAND_ELEVON_LEFT] : 0"/>
+        <set servo="S_ELEVON_RIGHT"   value="autopilot_get_motors_on()? commands[COMMAND_ELEVON_RIGHT] : 0"/>
+        <set servo="S_MOTOR_LEFT"  value="autopilot_get_motors_on()? commands[COMMAND_MOTOR_LEFT] : -MAX_PPRZ"/>
+        <set servo="S_MOTOR_RIGHT" value="autopilot_get_motors_on()? commands[COMMAND_MOTOR_RIGHT] : -MAX_PPRZ"/>
     </command_laws>
 
-    <section name="MISC">
-        <define name="TAILSITTER"   value="TRUE"/>
+    <section NAME="MISC">
+        <define name="TAILSITTER" value="TRUE"/>
         <define name="USE_AIRSPEED" value="FALSE"/>
-        <define name="STABILIZATION_ATTITUDE_SP_MAX_PHI"   value="45." unit="deg"  /> 
-        <define name="STABILIZATION_ATTITUDE_SP_MAX_THETA" value="45." unit="deg"  />
-        <define name="STABILIZATION_ATTITUDE_SP_MAX_R"     value="90." unit="deg/s"/>
-        <define name="STABILIZATION_ATTITUDE_DEADBAND_R"   value="200"             />
+        <define name="STABILIZATION_ATTITUDE_SP_MAX_PHI"    value="45." unit="deg"  /> 
+        <define name="STABILIZATION_ATTITUDE_SP_MAX_THETA"  value="45." unit="deg"  />
+        <define name="STABILIZATION_ATTITUDE_SP_MAX_R"      value="90." unit="deg/s"/>
+        <define name="STABILIZATION_ATTITUDE_DEADBAND_R"    value="200"             />
     </section>
 
-    <section name="STABILIZATION_ANDI" prefix="STABILIZATION_ANDI_" >
-        <!--                               |   EL    |    ER   |    ML   |    MR   | -->
-        <define name="ACT_IS_SERVO" value="{        1,        1,        0,        0}"/>
-        <define name="ACT_DYNAMICS" value="{    20.0f,    20.0f,    40.0f,    40.0f}"/>
-        <define name="ACT_MAX"      value="{     1.0f,     1.0f,  2000.0f,  2000.0f}"/>
-        <define name="ACT_MIN"      value="{    -1.0f,    -1.0f,   100.0f,   100.0f}"/>
-        <define name="ACT_RATE_MAX" value="{    10.0f,    10.0f, 25000.0f, 25000.0f}"/>
-        <define name="ACT_RATE_MIN" value="{   -10.0f,   -10.0f,-25000.0f,-25000.0f}"/>
-        <define name="WLS_WU"       value="{     1.0f,     1.0f,     1.0f,     1.0f}"/>
-        <!-- <define name="ACT_PREF"     value="{    0.00f,    0.00f,  800.00f,  800.00f}"/> -->
+    <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
+        <!--                                    |   EL    |    ER   |    ML   |    MR   |    P    |    Q    |    R    | -->
+        <define name  = "ACT_IS_SERVO" value = "{        1,        1,        0,        0,        0,        0,        0}"/>
+        <define name  = "ACT_DYN"      value = "{    20.0f,    20.0f,    40.0f,    40.0f,     0.0f,     0.0f,     0.0f}"/> <!-- Only real actuator bandwidth is used -->
+        <define name  = "ACT_MAX"      value = "{     1.0f,     1.0f,  2000.0f,  2000.0f,     10.0f,   10.0f,    10.0f}"/>
+        <define name  = "ACT_MIN"      value = "{    -1.0f,    -1.0f,   100.0f,   100.0f,    -10.0f,  -10.0f,   -10.0f}"/>
+        <define name  = "ACT_RATE_MAX" value = "{    10.0f,    10.0f, 25000.0f, 25000.0f,   1000.0f, 1000.0f,  1000.0f}"/>
+        <define name  = "ACT_RATE_MIN" value = "{   -10.0f,   -10.0f,-25000.0f,-25000.0f,  -1000.0f,-1000.0f, -1000.0f}"/>
+        <define name  = "WU"           value = "{    0.75f,    0.75f,    0.75f,    0.75f,    1.20f,    1.20f,    1.20f}"/>
+        <define name  = "U_PREF"       value = "{    0.00f,    0.00f,  800.00f,  800.00f,    0.00f,    0.00f,    0.00f}"/>
 
-        <!--                                |    P    |    Q    |    R    |   Tau   | -->
-        <define name ="WLS_WV"       value="{  1000.0f,  1000.0f,     1.0f,   100.0f}"/>   
+        <!--                                    |   AN    |    AE   |    AD   |    PSI  |    P    |    Q    |    R    | -->
+        <define name  = "WV"           value = "{     4.0f,     4.0f,     4.0f,     1.0f,     8.0f,     8.0f,    8.00f}"/>   
     </section>
 
     <section name="BAT">

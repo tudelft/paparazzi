@@ -8,7 +8,6 @@
     <mode name="default" key_press="d">
       <message name="AUTOPILOT_VERSION"        period="11.1"/>
       <message name="DL_VALUE"                 period="1.1"/>
-      <message name="MYDEBUG"                  period="1.0"/>
       <message name="ROTORCRAFT_STATUS"        period="1.2"/>
       <message name="ROTORCRAFT_FP"            period="0.25"/>
       <message name="ALIVE"                    period="2.1"/>
@@ -35,13 +34,13 @@
       <message name="WIND_INFO_RET"            period="1."/>
       <message name="AHRS_REF_QUAT"            period="0.5"/>
       <message name="STAB_ATTITUDE"            period=".25"/>
+      <message name="STAB_THRUST"              period=".25"/>
       <message name="GUIDANCE"                 period=".25"/>
       <message name="ACTUATORS_T4_IN"          period="0.1"/>
       <message name="ACTUATORS_T4_OUT"         period="0.1"/>
       <message name="PPM"                      period="0.5"/>
       <message name="PAYLOAD_FLOAT"            period="0.5"/>
       <message name="ROTORCRAFT_RADIO_CONTROL" period="0.1"/>
-      <message name="EFF_MAT_ONE"              period="1.0"/>
       <message name="WLS_V"                    period="0.2"/>
       <message name="WLS_U"                    period="0.2"/>
       <message name="COMMANDS"                 period="0.2"/>
@@ -118,8 +117,8 @@
       <message name="STAB_ATTITUDE_FLOAT"     period=".03"/>
       <message name="STAB_ATTITUDE_REF_FLOAT" period=".03"/>
       <message name="STAB_ATTITUDE"           period=".25"/>
+      <message name="STAB_THRUST"             period=".25"/>
       <message name="EFF_MAT_STAB"            period="2.0"/>
-      <message name="EFF_MAT_ONE"             period="1.0"/>
     </mode>
 
     <mode name="vert_loop" key_press="v">
@@ -226,11 +225,11 @@
       <message name="HYBRID_GUIDANCE"          period="0.02"/>
       <message name="ESC"                      period="0.02"/>
       <message name="STAB_ATTITUDE"            period="0.002"/>
+      <message name="STAB_THRUST"              period=".25"/>
       <message name="ACTUATORS_T4_IN"           period="0.002"/>
       <message name="ACTUATORS_T4_OUT"          period="0.002"/>
       <message name="GPS_RELPOS"               period="0.1"/>
       <message name="IMU_HEATER"               period="6.2"/>
-      <message name="EFF_MAT_ONE"              period="1.0"/>
       <message name="GUIDANCE"                 period="0.002"/>
       <message name="EXTERNAL_POSE_DOWN"       period="0.002"/>
       <message name="ROTATING_WING_STATE"      period="0.1"/>

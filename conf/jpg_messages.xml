@@ -59,12 +59,14 @@
       <field name="psi"   type="float" unit="rad" alt_unit="deg"/>
       <field name="theta" type="float" unit="rad" alt_unit="deg"/>
     </message>
-
-    <message name="MYDEBUG" id="7">
-      <field name="jpg_test" type="int32"/>
-    </message>
-
     <!-- 7 is free-->
+
+    <message name="STAB_THRUST" id="7">
+      <field name="thrust_des" type="float" unit="rad/s"/>
+      <field name="thrust_ref" type="float" unit="rad/s"/>
+      <field name="thrust_state" type="float" unit="rad/s"/>
+      <field name="thrust_d_ref" type="float" unit="rad/s^2"/>
+    </message>
 
     <message name="GPS" id="8">
       <field name="mode"       type="uint8"  unit="byte_mask"/>
@@ -1792,7 +1794,6 @@
       <field name="G1_aN"      type="float[]" unit="none"/>
       <field name="G1_aE"      type="float[]" unit="none"/>
       <field name="G1_aD"      type="float[]" unit="none"/>
-      <field name="G1_psi_dot" type="float[]" unit="none"/>
     </message>
 
     <message name="WLS_V" id="187">

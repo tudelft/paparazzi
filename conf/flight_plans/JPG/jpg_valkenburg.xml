@@ -68,20 +68,20 @@
       <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
-      <set value="false" var="force_forward"/>
+      <!-- <set value="false" var="force_forward"/> -->
       <stay wp="STDBY"/>
     </block>
     <block name="stay_p1">
-      <set value="false" var="force_forward"/>
+      <!-- <set value="false" var="force_forward"/> -->
       <stay wp="p1"/>
     </block>
     <block name="go_p2">
-      <set value="false" var="force_forward"/>
+      <!-- <set value="false" var="force_forward"/> -->
       <go wp="p2"/>
       <deroute block="stay_p1"/>
     </block>
     <block name="route">
-      <set value="true" var="force_forward"/>
+      <!-- <set value="true" var="force_forward"/> -->
       <while cond="true">
         <go from="p1" hmode="route" wp="p2"/>
         <go from="p2" hmode="route" wp="p3"/>
@@ -105,7 +105,7 @@
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>
     <block name="land">
-      <set value="false" var="force_forward"/>
+      <!-- <set value="false" var="force_forward"/> -->
       <go wp="TD"/>
     </block>
     <block name="flare">
