@@ -722,7 +722,7 @@
     <define name="CARROT" value="5.0" unit="s"/>
 
     <define name="UNLOCKED_HOME_MODE" value="TRUE"/>
-    <define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>
+    <!--define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/-->
         <!-- <define name="NO_GPS_NEEDED_FOR_NAV" value="TRUE"/>-->
     <!-- Avoid GPS loss behavior when having RC or datalink -->
     <!-- <define name="NO_GPS_LOST_WITH_DATALINK_TIME" value="20000"/>-->
