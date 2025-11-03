@@ -286,6 +286,7 @@
     <module name="geo_mag"/>
 
     <module name="navigation"/>
+    
 
     <module name="nav" type="line"/>
     <module name="nav" type="line_border"/>
@@ -459,10 +460,13 @@
   </section> -->
 
   <section name="AHRS" prefix="AHRS_">
-    <!-- Local Magnetic field DE2025 -->
+    <!-- Local Magnetic field DE2025 >
     <define name="H_X" value="0.421661"/>
     <define name="H_Y" value="-0.014624"/>
-    <define name="H_Z" value="0.906636"/>
+    <define name="H_Z" value="0.906636"/-->
+    
+    
+    
     <!-- <define name="GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>-->
     <define name="GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
     <define name="GRAVITY_HEURISTIC_FACTOR" value="0.0"/>

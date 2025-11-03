@@ -50,15 +50,6 @@
       <define name="USE_SONAR"/>
       <define name="SENSOR_SYNC_SEND_SONAR"/>
     </module-->
-
-    <module name="bebop_cam"/>
-
-    <module name="video_capture">
-      <define name="VIDEO_CAPTURE_CAMERA" value="bottom_camera"/>
-      <define name="VIDEO_CAPTURE_PATH" value="/data/ftp/internal_000/images/"/>
-    </module>
-
-
   </firmware>
 
   <servos>
@@ -106,9 +97,9 @@
     <define name="ACCEL_Z_SENS" value="2.41899590699" integer="16"/>
 
 
-    <define name="MAG_X_NEUTRAL" value="-223"/>
-    <define name="MAG_Y_NEUTRAL" value="-183"/>
-    <define name="MAG_Z_NEUTRAL" value="-734"/>
+    <define name="MAG_X_NEUTRAL" value="-268"/>
+    <define name="MAG_Y_NEUTRAL" value="-172"/>
+    <define name="MAG_Z_NEUTRAL" value="-724"/>
     <define name="MAG_X_SENS" value="8.8419" integer="16"/>
     <define name="MAG_Y_SENS" value="8.5683" integer="16"/>
     <define name="MAG_Z_SENS" value="9.2719" integer="16"/>
