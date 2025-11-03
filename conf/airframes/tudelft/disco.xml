@@ -51,11 +51,14 @@
       <define name="SENSOR_SYNC_SEND_SONAR"/>
     </module-->
 
-    <module name="bebop_cam"/>
+    <module name="bebop_cam">
+      <define name="MT9V117_TARGET_FPS" value="10" />
+    </module>
 
     <module name="video_capture">
       <define name="VIDEO_CAPTURE_CAMERA" value="bottom_camera"/>
       <define name="VIDEO_CAPTURE_PATH" value="/data/ftp/internal_000/images/"/>
+      <define name="VIDEO_CAPTURE_FPS" value="5" />
     </module>
 
 
