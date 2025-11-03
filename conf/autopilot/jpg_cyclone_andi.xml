@@ -97,7 +97,7 @@
       </control>
       <control>
         <call_block name="run_rate_control"/>
-        <call_block name="set_commands"/>
+        <!-- <call_block name="set_commands"/> -->
       </control>
       <exception cond="RCLost()" deroute="FAILSAFE"/>
     </mode>

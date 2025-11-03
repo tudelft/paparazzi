@@ -39,9 +39,6 @@
 #include "modules/ins/ins_ext_pose.h"
 #endif
 
-#define USE_ACTUATOR_FEEDBACK
-
-
 #ifdef STABILIZATION_ANDI_ACT_IS_SERVO
 const bool   ACTUATOR_IS_SERVO[ANDI_NUM_ACT] = STABILIZATION_ANDI_ACT_IS_SERVO;
 #else
@@ -107,8 +104,8 @@ struct PolesOrder2Vect3 andi_p_rate_e = {.omega_n={.x=15.0, .y=7.5, .z=7.5}, .ze
 struct PolesOrder2Vect3 andi_p_rate_rm = {.omega_n={.x=12.0, .y=6.0, .z=6.0}, .zeta={.x=1.0, .y=1.0, .z=1.0}};
 struct PolesOrder3Vect3 andi_p_att_e = {.omega_n={.x=15.0, .y=7.5, .z=7.5}, .zeta={.x=1.0, .y=1.0, .z=1.0}, .p1={.x=15.0, .y=7.5, .z=5.5}};
 struct PolesOrder3Vect3 andi_p_att_rm = {.omega_n={.x=12.0, .y=6.0, .z=6.0}, .zeta={.x=1.0, .y=1.0, .z=1.0}, .p1={.x=12.0, .y=6.0, .z=6.0}};
-float andi_p_thrust_e = 1.0f; // omega_n
-float andi_p_thrust_rm = 1.0f; // omega_n
+float andi_p_thrust_e = 40.0f; // omega_n
+float andi_p_thrust_rm = 32.0f; // omega_n
 
 struct GainsOrder2Vect3 andi_k_rate_e;
 struct GainsOrder2Vect3 andi_k_rate_rm;
@@ -117,7 +114,6 @@ struct GainsOrder3Vect3 andi_k_att_rm;
 float andi_k_thrust_e;
 float andi_k_thrust_rm;
 
-float act_dynamics_discrete[ANDI_NUM_ACT];
 float actuator_meas[ANDI_NUM_ACT];
 
 // Filter variables
@@ -132,8 +128,8 @@ struct FloatRates rates_prev;
 
 // Filtered state variables
 struct AttQuat attitude_state;
-float thrust_state; // specific thrust in m/s^2
-float actuator_state[ANDI_NUM_ACT]; // actuator state in SI units
+float thrust_state;
+float actuator_state[ANDI_NUM_ACT];
 float andi_u[ANDI_NUM_ACT];
 
 // Reference model variables
@@ -146,7 +142,6 @@ float thrust_des;
 // Bounds
 struct AttQuat attitude_bounds;
 struct ThrustRef thrust_bounds;
-
 
 // Controller variables
 float ce_mat[ANDI_OUTPUTS * ANDI_NUM_ACT];
@@ -173,7 +168,6 @@ static void send_eff_mat_stabilization_andi(struct transport_tx *trans, struct l
 }
 static void send_stab_attitude_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
 {
-  float zero = 0.0f;
   pprz_msg_send_STAB_ATTITUDE(trans, dev, AC_ID,
                                               3, (float*)&rates_des,
                                               4, (float*)&attitude_state.att,
@@ -188,7 +182,6 @@ static void send_stab_attitude_stabilization_andi(struct transport_tx *trans, st
 
 static void send_stab_thrust_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
 {
-  float zero = 0.0f;
   pprz_msg_send_STAB_THRUST(trans, dev, AC_ID,
                                               &thrust_des,
                                               &thrust_ref.thrust,
@@ -198,6 +191,7 @@ static void send_stab_thrust_stabilization_andi(struct transport_tx *trans, stru
 #endif //PERIODIC_TELEMETRY
 
 
+#ifdef USE_ACTUATOR_FEEDBACK
 // T4 Actuator feedback handling
 struct ActuatorsT4In actuators_t4_obs;
 abi_event actuators_t4_in_event;
@@ -246,21 +240,58 @@ static void fetch_actuators_t4(float actuator_meas[ANDI_NUM_ACT], const struct A
   actuator_meas[2] = (float)actuators_t4_in_ptr->esc_1_rpm;  // Feedback is actually in rad/s instead of rpm (1/s)
   actuator_meas[3] = (float)actuators_t4_in_ptr->esc_2_rpm;
 }
+#else
+float act_dynamics_discrete[ANDI_NUM_ACT];
+
+/**
+ * @brief Retrieve actuator measurement from first order model.
+ *
+ * This function updates the passed array `actuator_meas` by applying a discrete
+ * actuator dynamics filter, combining previous measurements and control inputs.
+ *
+ * @param[in,out] actuator_meas Array of floats with size ANDI_NUM_ACT to store
+ *                              the actuator measurement results in radians (angles)
+ *                              and radians per second (rotational speeds).
+ * @param[in] andi_u Array of floats with size ANDI_NUM_ACT with previous actuator
+ *                   commands.
+ */
+static void apply_actuator_dynamics_filter(float actuator_meas[ANDI_NUM_ACT], float andi_u[ANDI_NUM_ACT])
+{
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
+    actuator_meas[i] = actuator_meas[i] * (1 - act_dynamics_discrete[i]) + andi_u[i] * act_dynamics_discrete[i];
+  }
+}
+#endif //USE_ACTUATOR_FEEDBACK
 
 /**
  * @brief Retrieve the current actuator state measurements.
  *
  * This function updates the passed array `actuator_meas` with the latest
- * actuator data by invoking `fetch_actuators_t4` using the current global
- * actuator telemetry data stored in `actuators_t4_in`.
+ * actuator data. The behavior depends on the compilation flag `USE_ACTUATOR_FEEDBACK`:
+ *
+ * - If `USE_ACTUATOR_FEEDBACK` is defined, it calls `fetch_actuators_t4` using the global
+ *   variable `actuators_t4_obs` which holds the current actuator telemetry observation.
+ *
+ * - Otherwise, it calls `apply_actuator_dynamics_filter` which updates `actuator_meas`
+ *   using the global control input array `andi_u` and the global discrete actuator
+ *   dynamics array `act_dynamics_discrete`.
  *
  * @param[in,out] actuator_meas Array of floats with size ANDI_NUM_ACT to store
- *                          the actuator measurement results in radians (angles)
- *                          and radians per second (rotational speeds).
+ *                              the actuator measurement results in radians (angles)
+ *                              and radians per second (rotational speeds).
+ *                              This array also functions as input and should contain the 
+ *                              previous actuator state in case a model is used.
+ * 
+ * FIXME: Thrust control does not work with USE_ACTUATOR_FEEDBACK, needs to be fixed.
  */
 static void get_actuator_measurement(float actuator_meas[ANDI_NUM_ACT])
 {
+#ifdef USE_ACTUATOR_FEEDBACK
+  // FIXME: Using actuator feedback does not work at the moment
   fetch_actuators_t4(actuator_meas, &actuators_t4_obs);
+#else
+  apply_actuator_dynamics_filter(actuator_meas, andi_u);
+#endif
 }
 
 struct GainsOrder3Vect3 compute_gains_order_3_vect_3(const struct PolesOrder3Vect3* poles)
@@ -442,8 +473,6 @@ static void generate_reference_thrust(
   thrust_ref->thrust += thrust_ref->thrust_d * dt;
 }
 
-
-
 /**
  * @brief Computes the control error command for attitude rate regulation.
  *
@@ -532,8 +561,7 @@ static float control_error_thrust(
   const float thrust_state,
   const float k_thrust_e)
 {
-  // float nu = thrust_ref->thrust_d;
-  float nu = 0;  // FIXME: This disables thrust feed forward
+  float nu = thrust_ref->thrust_d;
   nu += k_thrust_e * (thrust_ref->thrust - thrust_state);
   return nu;
 }
@@ -725,7 +753,6 @@ void stabilization_andi_init(void)
   attitude_state.att_3d.y = 0.0f; // redundant, should never be used
   attitude_state.att_3d.z = 0.0f; // redundant, should never be used
 
-
   thrust_state = 0.0f;
   float_vect_zero(actuator_state, ANDI_NUM_ACT);
   float_vect_zero(actuator_meas, ANDI_NUM_ACT);
@@ -790,6 +817,7 @@ void stabilization_andi_init(void)
 
 void stabilization_andi_enter(void)
 {
+  ;
   // Do nothing for now
   // FIXME: Reset attitude references when changing mode.
 }
@@ -853,6 +881,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   }
 
   // FIXME: Thrust setpoint can not be of type THRUST_INCR_SP
+  // FIXME: DO not hardcode thrust scaler
   thrust_des = th_sp_to_thrust_f(thrust_setpoint, 0, THRUST_AXIS_Z) * 3307;
   generate_reference_thrust(SAMPLE_TIME, thrust_des, andi_k_thrust_rm, &thrust_bounds, &thrust_ref);
 
@@ -908,23 +937,20 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   compute_wls_upper_bounds(wls_stab_p.u_max, actuator_state, ACTUATOR_MAX, ACTUATOR_D_MAX, SAMPLE_TIME);
   wls_alloc(&wls_stab_p, bwls, 0, 0, 10);
 
-  // Resulting commands are in rad for servo and rad/s for motor
-  // Paparazzi expects the commands in pprz units (-MAX_PPRZ to MAX_PPRZ for servo, 0 to MAX_PPRZ for motor).
-
   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
     andi_u[i] = wls_stab_p.u[i] / ACTUATOR_DYNAMICS[i] + actuator_state[i];
     Bound(andi_u[i], ACTUATOR_MIN[i], ACTUATOR_MAX[i]); // This line is extra ensurance, should not be needed is actuator dynamics are correct.
   }
 
   // Commit actuator commands
-  cmd[0] = (pprz_t)((andi_u[0] * 18000 / M_PI) / ACTUATOR_MAX[0] * MAX_PPRZ);
-  cmd[1] = (pprz_t)((andi_u[1] * 18000 / M_PI) / ACTUATOR_MAX[1] * MAX_PPRZ);
-  cmd[2] = (pprz_t)(((andi_u[2] / 8.823) - 250) / (ACTUATOR_MAX[2] - 250) * MAX_PPRZ);
-  cmd[3] = (pprz_t)(((andi_u[3] / 8.823) - 250) / (ACTUATOR_MAX[3] - 250) * MAX_PPRZ);
-  cmd[0] = (pprz_t)5000; // FIXME: Force actuators to fixed value, remove this
-  cmd[1] = (pprz_t)5000;
-  // commands[2] = (pprz_t)((500 - 250) / (ACTUATOR_MAX[2] - 250) * MAX_PPRZ); // 250 is the neutral value for the motor
-  // commands[3] = (pprz_t)((2000 - 250) / (ACTUATOR_MAX[3] - 250) * MAX_PPRZ);
+  // Resulting commands are in rad for servo and rad/s for motor
+  // Paparazzi expects the commands in pprz units (-MAX_PPRZ to MAX_PPRZ for servo, 0 to MAX_PPRZ for motor).
+
+  // FIXME: Get this to work using the cmd arguement passed as input to this function (probably need a different implementation of SetRotorcraftCommands)
+  commands[0] = (pprz_t)((andi_u[0] * 18000 / M_PI) / ACTUATOR_MAX[0] * MAX_PPRZ);
+  commands[1] = (pprz_t)((andi_u[1] * 18000 / M_PI) / ACTUATOR_MAX[1] * MAX_PPRZ);
+  commands[2] = (pprz_t)(((andi_u[2] / 8.823) - 0) / (2000 - 0) * MAX_PPRZ); // FIXME: get this to work, also for neutral servo position not zero.
+  commands[3] = (pprz_t)(((andi_u[3] / 8.823) - 0) / (2000 - 0) * MAX_PPRZ);
 }
 
 void stabilization_rate_enter()
