@@ -33,7 +33,7 @@
 #include "std.h"
 #include "math/pprz_algebra_int.h"
 #include "math/pprz_algebra_float.h"
-#include "filters/high_pass_filter.h"
+#include "filters/low_pass_filter.h"
 #include "firmwares/rotorcraft/guidance.h"
 #include "firmwares/rotorcraft/stabilization.h"
 
@@ -112,5 +112,9 @@ extern float guidance_indi_min_pitch;
 extern bool force_forward;       ///< forward flight for hybrid nav
 extern bool guidance_indi_airspeed_filtering;
 extern bool coordinated_turn_use_accel;
+
+extern Butterworth2LowPass roll_filt;
+extern Butterworth2LowPass pitch_filt;
+extern Butterworth2LowPass yaw_filt;
 
 #endif /* GUIDANCE_INDI_HYBRID_H */

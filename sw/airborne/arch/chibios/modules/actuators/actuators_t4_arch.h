@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Gautier Hattenberger
+ * Copyright (C) 2024 The Paparazzi Team
  *
  * This file is part of paparazzi.
  *
@@ -17,32 +17,26 @@
  * along with paparazzi; see the file COPYING.  If not, write to
  * the Free Software Foundation, 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
- *
  */
-/** \file cam_segment.c
- *  \brief camera control to track a segment using the general cam driver (target mode)
- *
- * initial version: pointing towards the carrot
+/**
+ * @file arch/chibios/modules/actuators/actuators_t4_arch.h
+ * @brief Actuator interface for T4 driver
  */
+#ifndef ACTUATORS_T4_ARCH_H
+#define ACTUATORS_T4_ARCH_H
 
-#include "modules/cam_control/cam_segment.h"
-#include "modules/cam_control/cam.h"
-#include "firmwares/fixedwing/nav.h"
+#include "std.h"
 
-void cam_segment_init(void)
-{
-}
+// Servo 1 to 12 plus ESC 1 to 4 is a total of 16
+#ifndef ACTUATORS_T4_NB
+#define ACTUATORS_T4_NB 17 //Not 16 since using 0 as index
+#endif
 
-void cam_segment_stop(void)
-{
-  cam_mode = CAM_MODE_OFF;
-}
+extern int32_t actuators_t4_values[ACTUATORS_T4_NB];
 
-void cam_segment_periodic(void)
-{
-  cam_mode = CAM_MODE_XY_TARGET;
-  cam_target_x = desired_x;
-  cam_target_y = desired_y;
-  cam_target_alt = ground_alt;
-}
+extern void actuators_t4_commit(void);
 
+#define ActuatorT4Set(_i, _v) { actuators_t4_values[_i] = _v; }
+#define ActuatorsT4Commit  actuators_t4_commit
+
+#endif /* ACTUATORS_T4_ARCH_H */

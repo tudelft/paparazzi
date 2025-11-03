@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2003-2011 Pascal Brisset, Antoine Drouin
+ * Copyright (C) 2025 Fabien-B <fabien-b@github.com>
  *
- * This file is part of paparazzi.
+ * This file is part of paparazzi
  *
  * paparazzi is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,16 +14,15 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with paparazzi; see the file COPYING.  If not, write to
- * the Free Software Foundation, 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
- *
+ * along with paparazzi; see the file COPYING.  If not, see
+ * <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CAM_ROLL_H
-#define CAM_ROLL_H
+/** @file "modules/gps/gps_uavcan.h"
+ * @author Fabien-B <fabien-b@github.com>
+ * UAVCAN gps module. Handle uavcan.equipment.gnss.Fix2 message (1063).
+ */
 
-extern uint8_t cam_roll_mode;
-extern float cam_roll_phi;
+#pragma once
 
-#endif /* CAM_ROLL_H */
+extern void gps_uavcan_init(void);

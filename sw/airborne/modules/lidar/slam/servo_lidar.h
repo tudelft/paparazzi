@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Gautier Hattenberger
+ * Copyright (C) 2025 Alejandro Rochas <alrochas@ucm.es>
  *
  * This file is part of paparazzi.
  *
@@ -19,17 +19,32 @@
  * Boston, MA 02111-1307, USA.
  *
  */
-/** \file cam_segment.c
- *  \brief camera control to track a segment using the general cam driver (target mode)
+
+/** @file modules/lidar/slam/servo_lidar.h
+ *  @brief driver for the servo to move the lidar
  *
- * initial version: pointing towards the carrot
  */
 
-#ifndef CAM_SEGMENT_H
-#define CAM_SEGMENT_H
 
-extern void cam_segment_init(void);
-extern void cam_segment_stop(void);
-extern void cam_segment_periodic(void);
+#ifndef SERVO_LIDAR_H
+#define SERVO_LIDAR_H
+
+#include "std.h"
+
+#define PWM2ANGLE(pwm) (((pwm) + MAX_PPRZ) * 90 / MAX_PPRZ) - 90 
+
+struct ServoLidar {
+  bool enabled;
+  uint8_t speed;
+  int32_t position;
+  float angle;
+  uint8_t direction;
+  uint32_t last_update;
+};
+
+extern struct ServoLidar servoLidar;
+
+extern void servoLidar_init(void);
+extern void servoLidar_periodic(void);
 
 #endif

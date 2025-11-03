@@ -44,17 +44,13 @@
 float guidance_indi_thrust_z_eff = GUIDANCE_INDI_THRUST_Z_EFF;
 #endif
 
-#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
-#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
+#ifndef GUIDANCE_INDI_BODYZ_FILTER_CUTOFF
+#ifdef GUIDANCE_INDI_FILTER_CUTOFF
+#define GUIDANCE_INDI_BODYZ_FILTER_CUTOFF GUIDANCE_INDI_FILTER_CUTOFF
+#else
+#define GUIDANCE_INDI_BODYZ_FILTER_CUTOFF 3.0
 #endif
-
-#ifndef GUIDANCE_INDI_ROLL_EFF_SCALING
-#define GUIDANCE_INDI_ROLL_EFF_SCALING 1.0
 #endif
-
-float gi_pitch_scaling = GUIDANCE_INDI_PITCH_EFF_SCALING;
-float gi_roll_scaling = GUIDANCE_INDI_ROLL_EFF_SCALING;
-float bodyz_filter_cutoff = 0.2;
 
 Butterworth2LowPass accel_bodyz_filt;
 
@@ -63,7 +59,7 @@ Butterworth2LowPass accel_bodyz_filt;
  * Call upon entering indi guidance
  */
 void guidance_indi_quadplane_init(void) {
-  float tau_bodyz = 1.0/(2.0*M_PI*bodyz_filter_cutoff);
+  float tau_bodyz = 1.0/(2.0*M_PI*GUIDANCE_INDI_BODYZ_FILTER_CUTOFF);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
   init_butterworth_2_low_pass(&accel_bodyz_filt, tau_bodyz, sample_time, -9.81);
 }
@@ -88,17 +84,17 @@ void guidance_indi_quadplane_propagate_filters(void) {
  * @param body_v 3D vector to write the control objective v
  */
 void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_HYBRID_U], struct FloatVect3 a_diff, float body_v[GUIDANCE_INDI_HYBRID_V]) {
-  // Get attitude
-  struct FloatEulers eulers_zxy;
-  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-
   /*Pre-calculate sines and cosines*/
-  float sphi = sinf(eulers_zxy.phi);
-  float cphi = cosf(eulers_zxy.phi);
-  float stheta = sinf(eulers_zxy.theta);
-  float ctheta = cosf(eulers_zxy.theta);
-  float spsi = sinf(eulers_zxy.psi);
-  float cpsi = cosf(eulers_zxy.psi);
+  float sphi = sinf(roll_filt.o[0]);
+  float cphi = cosf(roll_filt.o[0]);
+  float stheta = sinf(pitch_filt.o[0]);
+  float ctheta = cosf(pitch_filt.o[0]);
+  float spsi = sinf(yaw_filt.o[0]);
+  float cpsi = cosf(yaw_filt.o[0]);
+
+#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
+#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
+#endif
 
   /*Amount of lift produced by the wing*/
   float lift_thrust_bz = accel_bodyz_filt.o[0]; // Sum of lift and thrust in boxy z axis (level flight)
@@ -106,13 +102,13 @@ void guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_INDI_H
   // get the derivative of the lift wrt to theta
   float liftd = guidance_indi_get_liftd(0.0f, 0.0f);
 
-  Gmat[0][0] = -sphi*stheta*lift_thrust_bz*gi_roll_scaling;
-  Gmat[1][0] = -cphi*lift_thrust_bz*gi_roll_scaling;
-  Gmat[2][0] = -sphi*ctheta*lift_thrust_bz*gi_roll_scaling;
+  Gmat[0][0] = -sphi*stheta*lift_thrust_bz;
+  Gmat[1][0] = -cphi*lift_thrust_bz;
+  Gmat[2][0] = -sphi*ctheta*lift_thrust_bz;
 
-  Gmat[0][1] =  cphi*ctheta*lift_thrust_bz*gi_pitch_scaling;
-  Gmat[1][1] =  sphi*stheta*lift_thrust_bz*gi_pitch_scaling - sphi*liftd;
-  Gmat[2][1] = -cphi*stheta*lift_thrust_bz*gi_pitch_scaling + cphi*liftd;
+  Gmat[0][1] =  cphi*ctheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING;
+  Gmat[1][1] =  sphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*liftd;
+  Gmat[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
 
   Gmat[0][2] =  cphi*stheta;
   Gmat[1][2] = -sphi;

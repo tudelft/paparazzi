@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2008  Arnold Schroeter
+ * Copyright (C) 2024 The Paparazzi Team
  *
  * This file is part of paparazzi.
  *
@@ -17,22 +17,26 @@
  * along with paparazzi; see the file COPYING.  If not, write to
  * the Free Software Foundation, 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
- *
  */
+/**
+ * @file arch/sim/modules/actuators/actuators_t4_arch.h
+ * @brief Actuator interface for T4 driver
+ */
+#ifndef ACTUATORS_T4_ARCH_H
+#define ACTUATORS_T4_ARCH_H
 
+#include "std.h"
 
-#ifndef POINT_H
-#define POINT_H
-
-#if defined(SHOW_CAM_COORDINATES)
-extern uint16_t cam_point_distance_from_home;
-extern float cam_point_lon,  cam_point_lat;
-extern float distance_correction;
+// Servo 1 to 12 plus ESC 1 to 4 is a total of 16
+#ifndef ACTUATORS_T4_NB
+#define ACTUATORS_T4_NB 17 //Not 16 since using 0 as index
 #endif
 
-void vPoint(float fPlaneEast, float fPlaneNorth, float fPlaneAltitude,
-            float fRollAngle, float fPitchAngle, float fYawAngle,
-            float fObjectEast, float fObjectNorth, float fAltitude,
-            float *fPan, float *fTilt);
+extern int32_t actuators_t4_values[ACTUATORS_T4_NB];
 
-#endif /* POINT_H */
+extern void actuators_t4_commit(void);
+
+#define ActuatorT4Set(_i, _v) { actuators_t4_values[_i] = _v; }
+#define ActuatorsT4Commit  actuators_t4_commit
+
+#endif /* ACTUATORS_T4_ARCH_H */

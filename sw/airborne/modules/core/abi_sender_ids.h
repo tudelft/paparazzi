@@ -120,7 +120,7 @@
 #endif
 
 /*
- * IDs of Incidence angles (message 24)
+ * IDs of Incidence angles (message 25)
  */
 #ifndef AOA_ADC_ID
 #define AOA_ADC_ID 1
@@ -128,6 +128,10 @@
 
 #ifndef AOA_PWM_ID
 #define AOA_PWM_ID 2
+#endif
+
+#ifndef AOA_T4_ID
+#define AOA_T4_ID 3
 #endif
 
 #ifndef INCIDENCE_NPS_ID
@@ -199,6 +203,10 @@
 
 #ifndef AGL_UAVCAN_ID
 #define AGL_UAVCAN_ID 16
+#endif
+
+#ifndef AGL_SONAR_I2C_ID
+#define AGL_SONAR_I2C_ID 17
 #endif
 
 /*
@@ -302,6 +310,10 @@
 
 #ifndef GPS_UBX2_ID
 #define GPS_UBX2_ID 16
+#endif
+
+#ifndef GPS_UAVCAN_ID
+#define GPS_UAVCAN_ID 17
 #endif
 
 /*
