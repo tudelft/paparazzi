@@ -156,8 +156,8 @@
     </firmware>
 
     <servos driver="T4">
-        <servo name="S_MOTOR_LEFT"   no="13" min="0"   neutral="250" max="1999"/> 
-        <servo name="S_MOTOR_RIGHT"  no="14" min="0"   neutral="250" max="1999"/>
+        <servo name="S_MOTOR_LEFT"   no="13" min="0"     neutral="250" max="1999"/> 
+        <servo name="S_MOTOR_RIGHT"  no="14" min="0"     neutral="250" max="1999"/>
         <servo name="S_ELEVON_LEFT"  no="1"  min="-5700" neutral="0"   max="5700"/> <!-- 57.0 deg-->
         <servo name="S_ELEVON_RIGHT" no="5"  min="-5700" neutral="0"   max="5700"/> <!-- 57.0 deg-->
     </servos>
@@ -202,13 +202,13 @@
     <section name="STABILIZATION_ANDI" prefix="STABILIZATION_ANDI_" >
         <!--                               |   EL    |    ER   |    ML   |    MR   | -->
         <define name="ACT_IS_SERVO" value="{        1,        1,        0,        0}"/>
-        <define name="ACT_DYNAMICS" value="{    20.0f,    20.0f,    40.0f,    40.0f}"/>
-        <define name="ACT_MAX"      value="{     1.0f,     1.0f,  2000.0f,  2000.0f}"/>
-        <define name="ACT_MIN"      value="{    -1.0f,    -1.0f,   100.0f,   100.0f}"/>
-        <define name="ACT_RATE_MAX" value="{    10.0f,    10.0f, 25000.0f, 25000.0f}"/>
-        <define name="ACT_RATE_MIN" value="{   -10.0f,   -10.0f,-25000.0f,-25000.0f}"/>
+        <define name="ACT_DYNAMICS" value="{   200.0f,   200.0f,   400.0f,   400.0f}"/> <!-- corner frequency [rad/s]-->
+        <define name="ACT_MAX"      value="{     1.0f,     1.0f,2000000.0f,2000000.0f}"/> <!-- [rad | rad/s]--> 
+        <define name="ACT_MIN"      value="{    -1.0f,    -1.0f,     0.0f,     0.0f}"/> <!-- [rad | rad/s]--> 
+        <define name="ACT_RATE_MAX" value="{    10.0f,    10.0f,9000000.0f,9000000.0f}"/> <!-- [rad/s | rad/s^2]--> 
+        <define name="ACT_RATE_MIN" value="{   -10.0f,   -10.0f,-9000000.0f,-9000000.0f}"/> <!-- [rad/s | rad/s^2]--> 
         <define name="WLS_WU"       value="{     1.0f,     1.0f,     1.0f,     1.0f}"/>
-        <!-- <define name="ACT_PREF"     value="{    0.00f,    0.00f,  800.00f,  800.00f}"/> -->
+        <!-- <define name="ACT_PREF"     value="{    0.00f,    0.00f,  800.00f,  800.00f}"/> --> 
 
         <!--                                |    P    |    Q    |    R    |   Tau   | -->
         <define name ="WLS_WV"       value="{  1000.0f,  1000.0f,     1.0f,   100.0f}"/>   

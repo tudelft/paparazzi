@@ -34,7 +34,7 @@
     </settings>
 
     <control_block name="set_commands">
-      <call fun="SetRotorcraftCommands(stabilization.cmd, autopilot_in_flight(), autopilot_get_motors_on())"/>
+      <call fun="SetRotorcraftCommands(stabilization.cmd, true, true)"/>
     </control_block>
 
     <control_block name="run_rate_control">

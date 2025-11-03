@@ -62,10 +62,10 @@
     <!-- 7 is free-->
 
     <message name="STAB_THRUST" id="7">
-      <field name="thrust_des" type="float" unit="rad/s"/>
-      <field name="thrust_ref" type="float" unit="rad/s"/>
-      <field name="thrust_state" type="float" unit="rad/s"/>
-      <field name="thrust_d_ref" type="float" unit="rad/s^2"/>
+      <field name="thrust_des" type="float" unit="m/s^2"/>
+      <field name="thrust_ref" type="float" unit="m/s^2"/>
+      <field name="thrust_state" type="float" unit="m/s^2"/>
+      <field name="thrust_d_ref" type="float" unit="m/s^3"/>
     </message>
 
     <message name="GPS" id="8">
