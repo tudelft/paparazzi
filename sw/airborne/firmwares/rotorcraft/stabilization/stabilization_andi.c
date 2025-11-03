@@ -484,7 +484,7 @@ static void generate_reference_thrust(
  * @param[in] att_state Pointer to the current attitude and rate state structure.
  * @param[in] k_rate_e  Pointer to gain parameters structure, containing proportional and derivative gains.
  *
- * @return A FloatVect3 structure representing the computed virtual control input vector.
+ * @return A \c FloatVect3 structure representing the computed virtual control input vector.
  */
 static struct FloatVect3 control_error_rate(
   const struct AttQuat *att_ref,
@@ -515,7 +515,7 @@ static struct FloatVect3 control_error_rate(
  * @param[in] att_state Pointer to the current attitude and rate states.
  * @param[in] k_att_e   Pointer to gain parameters struct containing proportional, derivative, and jerk gains.
  *
- * @return A \c FloatVect3 struct representing the computed attitude error control command vector.
+ * @return A \c FloatVect3 structure representing the computed virtual control input vector.
  */
 static struct FloatVect3 control_error_attitude(
   const struct AttQuat *att_ref,
@@ -554,7 +554,7 @@ static struct FloatVect3 control_error_attitude(
  * @param thrust_state Current measured thrust value.
  * @param k_thrust_e Proportional gain applied to the thrust error correction.
  *
- * @return The computed thrust control command.
+ * @return A \c float representing the computed virtual control thrust input.
  */
 static float control_error_thrust(
   const struct ThrustRef *thrust_ref,
@@ -640,16 +640,16 @@ static void compute_wls_lower_bounds(float u_d_min[ANDI_NUM_ACT], const float ac
  * @param freq_rates_d Cutoff frequency for the rate derivative filters (Hz).
  * @param dt Sampling time interval (seconds).
  */
-static void init_attitude_filters(struct AttFilter att_filter, float freq_rates, float freq_rates_d, float dt)
+static void init_attitude_filters(struct AttFilter *att_filter_ptr, float freq_rates, float freq_rates_d, float dt)
 {
   float tau_rates = 1.0f / (2.0f * M_PI * freq_rates);
   float tau_rates_d = 1.0f / (2.0f * M_PI * freq_rates_d);
-  init_butterworth_2_low_pass(&att_filter.att_d_filter_p, tau_rates, dt, 0.0);
-  init_butterworth_2_low_pass(&att_filter.att_d_filter_q, tau_rates, dt, 0.0);
-  init_butterworth_2_low_pass(&att_filter.att_d_filter_r, tau_rates, dt, 0.0);
-  init_butterworth_2_low_pass(&att_filter.att_2d_filter_x, tau_rates_d, dt, 0.0);
-  init_butterworth_2_low_pass(&att_filter.att_2d_filter_y, tau_rates_d, dt, 0.0);
-  init_butterworth_2_low_pass(&att_filter.att_2d_filter_z, tau_rates_d, dt, 0.0);
+  init_butterworth_2_low_pass(&att_filter_ptr->att_d_filter_p, tau_rates, dt, 0.0);
+  init_butterworth_2_low_pass(&att_filter_ptr->att_d_filter_q, tau_rates, dt, 0.0);
+  init_butterworth_2_low_pass(&att_filter_ptr->att_d_filter_r, tau_rates, dt, 0.0);
+  init_butterworth_2_low_pass(&att_filter_ptr->att_2d_filter_x, tau_rates_d, dt, 0.0);
+  init_butterworth_2_low_pass(&att_filter_ptr->att_2d_filter_y, tau_rates_d, dt, 0.0);
+  init_butterworth_2_low_pass(&att_filter_ptr->att_2d_filter_z, tau_rates_d, dt, 0.0);
 }
 
 
@@ -660,10 +660,10 @@ static void init_attitude_filters(struct AttFilter att_filter, float freq_rates,
  * @param freq Cutoff frequency of the filter (Hz).
  * @param dt Sampling time interval (seconds).
  */
-static void init_thrust_filter(Butterworth2LowPass thrust_filter, float freq, float dt)
+static void init_thrust_filter(Butterworth2LowPass *thrust_filter_ptr, float freq, float dt)
 {
   float tau = 1.0f / (2.0f * M_PI * freq);
-  init_butterworth_2_low_pass(&thrust_filter, tau, dt, 0.0);
+  init_butterworth_2_low_pass(thrust_filter_ptr, tau, dt, 0.0f);
 }
 
 /**
@@ -687,7 +687,7 @@ static void init_actuator_filters(Butterworth2LowPass actuator_filters[ANDI_NUM_
  * @param att_filter Struct holding the Butterworth filters to be updated.
  * @param att_input Pointer to an AttQuat struct containing attitude derivatives.
  */
-static void propagate_attitude_filters(struct AttFilter *att_filter, const struct AttQuat *att_input)
+static void update_attitude_filters(struct AttFilter *att_filter, const struct AttQuat *att_input)
 {
   update_butterworth_2_low_pass(&att_filter->att_d_filter_p, att_input->att_d.p);
   update_butterworth_2_low_pass(&att_filter->att_d_filter_q, att_input->att_d.q);
@@ -698,23 +698,12 @@ static void propagate_attitude_filters(struct AttFilter *att_filter, const struc
 }
 
 /**
- * @brief Update thrust Butterworth filter with new thrust input value.
- * 
- * @param thrust_filter Butterworth2LowPass filter instance for thrust.
- * @param thrust_input Latest thrust measurement.
- */
-static void propagate_thrust_filter(Butterworth2LowPass *thrust_filter, const float thrust_input)
-{
-  update_butterworth_2_low_pass(thrust_filter, thrust_input);
-}
-
-/**
  * @brief Update array of actuator Butterworth filters with new actuator input values.
  * 
  * @param actuator_filters Array of Butterworth2LowPass filters to update.
  * @param actuator_input Array containing latest actuator input values.
  */
-static void propagate_actuator_filters(Butterworth2LowPass actuator_filters[ANDI_NUM_ACT], const float actuator_input[ANDI_NUM_ACT])
+static void update_actuator_filters(Butterworth2LowPass actuator_filters[ANDI_NUM_ACT], const float actuator_input[ANDI_NUM_ACT])
 {
   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++)
   {
@@ -733,9 +722,6 @@ void stabilization_andi_init(void)
   andi_k_att_rm = compute_gains_order_3_vect_3(&andi_p_att_rm);
   andi_k_thrust_e = andi_p_thrust_e;
   andi_k_thrust_rm = andi_p_thrust_rm;
-
-  printf("Gain rate RM %f\n", andi_k_rate_rm.k1.x);
-  printf("Gain rate RM %f\n", andi_k_rate_rm.k2.x);
 
   // Initialize state variables
   rates_prev.p = 0.0f;
@@ -788,10 +774,10 @@ void stabilization_andi_init(void)
   thrust_bounds.thrust_d = 10.0f;
 
   // Initialize filters
-  init_attitude_filters(attitude_filter_meas, 20.0f, 20.0f, SAMPLE_TIME);
-  init_attitude_filters(attitude_filter_sync, 20.0f ,20.0f, SAMPLE_TIME);
-  init_thrust_filter(thrust_filter_meas, 20.0f, SAMPLE_TIME);
-  init_thrust_filter(thrust_filter_sync, 20.0f, SAMPLE_TIME);
+  init_attitude_filters(&attitude_filter_meas, 20.0f, 20.0f, SAMPLE_TIME);
+  init_attitude_filters(&attitude_filter_sync, 20.0f ,20.0f, SAMPLE_TIME);
+  init_thrust_filter(&thrust_filter_meas, 20.0f, SAMPLE_TIME);
+  init_thrust_filter(&thrust_filter_sync, 20.0f, SAMPLE_TIME);
   init_actuator_filters(actuator_filters, 20.0f, SAMPLE_TIME);
 
 #ifdef USE_ACTUATOR_FEEDBACK
@@ -838,34 +824,27 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   get_actuator_measurement(actuator_meas);
 
   // Motor rpm feedback should be in rad/s
-  float thrust_meas = evaluate_obm_thrust(actuator_meas);  // Mapping rad/s to specific thrust
   // Specific thrust thrust_meas is in m/s^2
+  float thrust_meas = evaluate_obm_thrust(actuator_meas);  // Mapping actuators to specific thrust
 
   // Get filtered states
-  propagate_attitude_filters(&attitude_filter_meas, &attitude_meas);
-  propagate_actuator_filters(actuator_filters, actuator_meas);
-  propagate_thrust_filter(&thrust_filter_meas, thrust_meas);
+  update_attitude_filters(&attitude_filter_meas, &attitude_meas);
+  update_actuator_filters(actuator_filters, actuator_meas);
+  update_butterworth_2_low_pass(&thrust_filter_meas, thrust_meas);
 
-  // attitude_state.att = attitude_meas.att;
-  // attitude_state.att_d.p = attitude_filter_meas.att_d_filter_p.o[0];
-  // attitude_state.att_d.q = attitude_filter_meas.att_d_filter_q.o[0];
-  // attitude_state.att_d.r = attitude_filter_meas.att_d_filter_r.o[0];
-  // attitude_state.att_2d.x = attitude_filter_meas.att_2d_filter_x.o[0];
-  // attitude_state.att_2d.y = attitude_filter_meas.att_2d_filter_y.o[0];
-  // attitude_state.att_2d.z = attitude_filter_meas.att_2d_filter_z.o[0];
+  attitude_state.att = attitude_meas.att;
+  attitude_state.att_d.p = get_butterworth_2_low_pass(&attitude_filter_meas.att_d_filter_p);
+  attitude_state.att_d.q = get_butterworth_2_low_pass(&attitude_filter_meas.att_d_filter_q);
+  attitude_state.att_d.r = get_butterworth_2_low_pass(&attitude_filter_meas.att_d_filter_r);
+  attitude_state.att_2d.x = get_butterworth_2_low_pass(&attitude_filter_meas.att_2d_filter_x);
+  attitude_state.att_2d.y = get_butterworth_2_low_pass(&attitude_filter_meas.att_2d_filter_y);
+  attitude_state.att_2d.z = get_butterworth_2_low_pass(&attitude_filter_meas.att_2d_filter_z);
 
-  // for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
-  //   actuator_state[i] = actuator_filters[i].o[0];
-  // };
-
-  // thrust_state = thrust_filter_meas.o[0];
-
-  // BYPASS FILTERS
-  thrust_state = thrust_meas;
-  attitude_state = attitude_meas;
   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
-    actuator_state[i] = actuator_meas[i];
-  }
+    actuator_state[i] = get_butterworth_2_low_pass(&actuator_filters[i]);
+  };
+
+  thrust_state = get_butterworth_2_low_pass(&thrust_filter_meas);
 
   // Evaluate control effectiveness matrix
   struct FloatVect3 body_vel = {.x=0.0f, .y=0.0f, .z=0.0f};
@@ -881,29 +860,27 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   }
 
   // FIXME: Thrust setpoint can not be of type THRUST_INCR_SP
-  // FIXME: DO not hardcode thrust scaler
+  // FIXME: Do not hardcode thrust scaler
   thrust_des = th_sp_to_thrust_f(thrust_setpoint, 0, THRUST_AXIS_Z) * 3307;
   generate_reference_thrust(SAMPLE_TIME, thrust_des, andi_k_thrust_rm, &thrust_bounds, &thrust_ref);
 
   // Time sync references
-  propagate_attitude_filters(&attitude_filter_sync, &attitude_ref);
-  propagate_thrust_filter(&thrust_filter_sync, thrust_ref.thrust);
+  update_attitude_filters(&attitude_filter_sync, &attitude_ref);
+  update_butterworth_2_low_pass(&thrust_filter_sync, thrust_ref.thrust);
 
-  struct AttQuat attitude_ref_synced = attitude_ref; // Bypass time sync filter
-  // struct AttQuat attitude_ref_synced;
-  // attitude_ref_synced.att = attitude_ref.att;
-  // attitude_ref_synced.att_d.p = attitude_filter_sync.att_d_filter_p.o[0];
-  // attitude_ref_synced.att_d.q = attitude_filter_sync.att_d_filter_q.o[0];
-  // attitude_ref_synced.att_d.r = attitude_filter_sync.att_d_filter_r.o[0];
-  // attitude_ref_synced.att_2d.x = attitude_filter_sync.att_2d_filter_x.o[0];
-  // attitude_ref_synced.att_2d.y = attitude_filter_sync.att_2d_filter_y.o[0];
-  // attitude_ref_synced.att_2d.z = attitude_filter_sync.att_2d_filter_z.o[0];
-  // attitude_ref_synced.att_3d = attitude_ref.att_3d;
+  struct AttQuat attitude_ref_synced;
+  attitude_ref_synced.att = attitude_ref.att;
+  attitude_ref_synced.att_d.p = get_butterworth_2_low_pass(&attitude_filter_sync.att_d_filter_p);
+  attitude_ref_synced.att_d.q = get_butterworth_2_low_pass(&attitude_filter_sync.att_d_filter_q);
+  attitude_ref_synced.att_d.r = get_butterworth_2_low_pass(&attitude_filter_sync.att_d_filter_r);
+  attitude_ref_synced.att_2d.x = get_butterworth_2_low_pass(&attitude_filter_sync.att_2d_filter_x);
+  attitude_ref_synced.att_2d.y = get_butterworth_2_low_pass(&attitude_filter_sync.att_2d_filter_y);
+  attitude_ref_synced.att_2d.z = get_butterworth_2_low_pass(&attitude_filter_sync.att_2d_filter_z);
+  attitude_ref_synced.att_3d = attitude_ref.att_3d;
 
-  struct ThrustRef thrust_ref_synced = thrust_ref; // Bypass time sync filter
-  // struct ThrustRef thrust_ref_synced;
-  // thrust_ref_synced.thrust = thrust_filter_sync.o[0];
-  // thrust_ref_synced.thrust_d = thrust_ref.thrust_d;
+  struct ThrustRef thrust_ref_synced;
+  thrust_ref_synced.thrust = get_butterworth_2_low_pass(&thrust_filter_sync);
+  thrust_ref_synced.thrust_d = thrust_ref.thrust_d;
 
   // Construct pseudo control
   struct FloatVect3 nu_attitude;
