@@ -53,7 +53,7 @@
 
   <servos>
     <servo name="MOTOR" no="0" min="1000" neutral="1000" max="12500"/>
-    <servo name="AILEVON_RIGHT" no="6" min="1900" neutral="1500" max="1100"/>
+    <servo name="AILEVON_RIGHT" no="6" min="1750" neutral="1350" max="950"/>
     <servo name="AILEVON_LEFT" no="1" min="1100" neutral="1500" max="1900"/>
   </servos>
 
@@ -95,12 +95,13 @@
     <define name="ACCEL_Y_SENS" value="2.46264528353" integer="16"/>
     <define name="ACCEL_Z_SENS" value="2.41899590699" integer="16"/>
 
-    <define name="MAG_X_NEUTRAL" value="-164"/>
-    <define name="MAG_Y_NEUTRAL" value="-244"/>
-    <define name="MAG_Z_NEUTRAL" value="-590"/>
-    <define name="MAG_X_SENS" value="7.76268606256" integer="16"/>
-    <define name="MAG_Y_SENS" value="7.53777959342" integer="16"/>
-    <define name="MAG_Z_SENS" value="8.13033580043" integer="16"/>
+
+    <define name="MAG_X_NEUTRAL" value="-223"/>
+    <define name="MAG_Y_NEUTRAL" value="-183"/>
+    <define name="MAG_Z_NEUTRAL" value="-734"/>
+    <define name="MAG_X_SENS" value="8.8419" integer="16"/>
+    <define name="MAG_Y_SENS" value="8.5683" integer="16"/>
+    <define name="MAG_Z_SENS" value="9.2719" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI" value="0"/>
     <define name="BODY_TO_IMU_THETA" value="0"/>
