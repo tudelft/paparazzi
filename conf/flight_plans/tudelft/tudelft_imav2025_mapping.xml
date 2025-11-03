@@ -52,7 +52,7 @@
       <circle radius="nav_radius" wp="MOB"/>
     </block>
     <block group="extra_pattern" name="Survey S1-S2" strip_button="Survey (wp S1-S2)" strip_icon="survey.png">
-      <survey_rectangle grid="150" wp1="S1" wp2="S2"/>
+      <survey_rectangle grid="25" wp1="S1" wp2="S2"/>
     </block>
     <block group="extra_pattern" name="Path 1,2,S1,S2,STDBY" strip_button="Path (1,2,S1,S2,STDBY)" strip_icon="path.png">
       <path wpts="1,2 S1"/>

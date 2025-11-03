@@ -1,0 +1,3 @@
+ls *.jpg | xargs -I {} echo "file '{}'" > images.txt
+ffmpeg -f concat -safe 0 -i images.txt -c:v libx264 -crf 18 -profile:v baseline -level 3.0 -pix_fmt yuv420p -movflags faststart ../test3.mp4
+
