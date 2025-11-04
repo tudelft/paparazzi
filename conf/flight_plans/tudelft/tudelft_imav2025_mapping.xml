@@ -3,6 +3,14 @@
 <flight_plan alt="2150" ground_alt="2080" lat0="18.9426688" lon0="-98.1893464" max_dist_from_home="1500" name="Basic" security_height="2130">
   <header>
 #include "modules/datalink/datalink.h"
+
+// Extras for Photoscan
+#ifdef DC_AUTOSHOOT_PERIOD
+//TODO make shooting distance not periodic
+#define LINE_START_FUNCTION dc_autoshoot = DC_AUTOSHOOT_PERIODIC;
+#define LINE_STOP_FUNCTION dc_autoshoot = DC_AUTOSHOOT_STOP;
+#endif
+
 </header>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
@@ -52,7 +60,7 @@
       <circle radius="nav_radius" wp="MOB"/>
     </block>
     <block group="extra_pattern" name="Survey S1-S2" strip_button="Survey (wp S1-S2)" strip_icon="survey.png">
-      <survey_rectangle grid="25" wp1="S1" wp2="S2"/>
+      <survey_rectangle grid="80" wp1="S1" wp2="S2"/>
     </block>
     <block group="extra_pattern" name="Path 1,2,S1,S2,STDBY" strip_button="Path (1,2,S1,S2,STDBY)" strip_icon="path.png">
       <path wpts="1,2 S1"/>

@@ -47,7 +47,7 @@
 /* Camera structure */
 struct video_config_t bottom_camera = {
   .output_size = {
-    .w = 240,
+    .w = 320,
     .h = 240
   },
   .sensor_size = {
@@ -55,9 +55,9 @@ struct video_config_t bottom_camera = {
     .h = 240,
   },
   .crop = {
-    .x = 40,
+    .x = 0,
     .y = 0,
-    .w = 240,
+    .w = 320,
     .h = 240
   },
   .dev_name = "/dev/video0",
