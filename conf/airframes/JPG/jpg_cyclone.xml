@@ -158,8 +158,8 @@
     <servos driver="T4">
         <servo name="S_ELEVON_LEFT"  no="1"  min="-5700" neutral="0"   max="5700"/> <!-- 57.0 deg-->
         <servo name="S_ELEVON_RIGHT" no="6"  min="-5700" neutral="0"   max="5700"/> <!-- 57.0 deg-->
-        <servo name="S_MOTOR_LEFT"   no="14" min="0"     neutral="0"   max="1999"/> 
-        <servo name="S_MOTOR_RIGHT"  no="13" min="0"     neutral="0"   max="1999"/>
+        <servo name="S_MOTOR_LEFT"   no="13" min="0"     neutral="0"   max="1999"/> 
+        <servo name="S_MOTOR_RIGHT"  no="14" min="0"     neutral="0"   max="1999"/>
     </servos>
 
     <!-- <rc_commands>
@@ -212,7 +212,8 @@
         <define name="WLS_WU"       value="{      1.0f,      1.0f,         1.0f,         1.0f}"/>
 
         <!--                                |    P    |    Q    |    R    |   Tau   | -->
-        <define name ="WLS_WV"       value="{  1000.0f,  1000.0f,    10.0f,   100.0f}"/>   
+        <define name="WLS_WV"       value="{   1000.0f,  1000.0f,    10.0f,   100.0f}"/>   
+        <define name="RC_RATE_MAX"     value="{      5.0f,     5.0f,     5.0f,     0.0f}"/> <!-- [rad/s | m/s^3]--> 
     </section>
 
     <section name="BAT">

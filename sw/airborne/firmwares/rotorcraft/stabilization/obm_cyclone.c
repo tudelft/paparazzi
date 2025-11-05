@@ -50,6 +50,37 @@ union CycloneCoefficients {
 }; 
 
 // Model coefficinets
+// union CycloneCoefficients obm_coefficients = {
+//   .fx_motor_squared       = 0.00000735f,
+//   .fx_speed_forward       = -0.03f,
+
+//   .fy_speed_lateral       = -0.008f,
+
+//   .fz_motor_squared       = 0.0f,
+//   .fz_speed_forward       = 0.0f,
+//   .fz_speed_vertical      = -0.144f,
+//   .fz_elevator_speed      = 0.0f,
+//   .fz_elevator_motor      = 0.0f,
+
+//   .mx_motor_diff          = 0.0f,
+//   .mx_elevator_motor_diff = 0.0000283f,
+//   .mx_elevator_speed_diff = 0.344f,
+//   .mx_angular_coupling    = -2.18f,
+
+//   .my_speed_forward       = 0.0f,
+//   .my_speed_vertical      = -0.0888f,
+//   .my_constant_zero       = -1.032f,
+//   .my_motor_sum           = 0.0f,
+//   .my_elevator_motor_sum  = -0.0000424f,
+//   .my_elevator_speed_sum  = -0.2525f,
+//   .my_angular_sum         = 1.262f,
+
+//   .mz_speed_lateral       = -0.00371f,
+//   .mz_motor_diff          = 0.000039f,
+//   .mz_speed_roll          = -0.0129f,
+//   .mz_angular_coupling    = -0.4827f
+// };
+
 union CycloneCoefficients obm_coefficients = {
   .fx_motor_squared       = 0.00000735f,
   .fx_speed_forward       = -0.03f,
@@ -63,7 +94,7 @@ union CycloneCoefficients obm_coefficients = {
   .fz_elevator_motor      = 0.0f,
 
   .mx_motor_diff          = 0.0f,
-  .mx_elevator_motor_diff = 0.0000283f,
+  .mx_elevator_motor_diff = 0.0000283f, // 0000283f
   .mx_elevator_speed_diff = 0.344f,
   .mx_angular_coupling    = -2.18f,
 

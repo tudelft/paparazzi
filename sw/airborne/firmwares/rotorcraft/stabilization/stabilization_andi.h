@@ -51,6 +51,7 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_rate.h"
 #include "generated/airframe.h"
 #include "filters/low_pass_filter.h"
+#include <stdio.h>
 
 #ifndef ANDI_NUM_ACT
 #define ANDI_NUM_ACT COMMANDS_NB_REAL
@@ -105,6 +106,23 @@ struct GainsOrder3Vect3 {
   struct FloatVect3 k3;
 };
 
+static inline void print_FloatVect3(const char *name, struct FloatVect3 v) {
+    printf("%s: [%.3f, %.3f, %.3f]\n", name, v.x, v.y, v.z);
+}
+
+static inline void print_GainsOrder2Vect3(const char *gain_name, const struct GainsOrder2Vect3 *gains) {
+    printf("%s (GainsOrder2Vect3):\n", gain_name);
+    print_FloatVect3("  k1", gains->k1);
+    print_FloatVect3("  k2", gains->k2);
+}
+
+static inline void print_GainsOrder3Vect3(const char *gain_name, const struct GainsOrder3Vect3 *gains) {
+    printf("%s (GainsOrder3Vect3):\n", gain_name);
+    print_FloatVect3("  k1", gains->k1);
+    print_FloatVect3("  k2", gains->k2);
+    print_FloatVect3("  k3", gains->k3);
+}
+
 static inline float k1_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n * p1) / (omega_n * omega_n + 2.0f * zeta * omega_n * p1); }
 static inline float k2_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n + 2.0f * zeta * omega_n * p1) / (2.0f * zeta * omega_n + p1); }
 static inline float k3_order3_f(const float omega_n, const float zeta, const float p1) { return 2.0f * zeta * omega_n + p1; }
@@ -114,11 +132,11 @@ static inline float k2_order2_f(const float omega_n, const float zeta) { return 
 extern union CycloneCoefficients obm_coefficients;
 
 /*Declaration of Reference Model and Error Controller Poles*/
-extern struct PolesOrder2Vect3 andi_p_rate_e;
+extern struct PolesOrder2Vect3 andi_p_rate_ec;
 extern struct PolesOrder2Vect3 andi_p_rate_rm;
-extern struct PolesOrder3Vect3 andi_p_att_e;
+extern struct PolesOrder3Vect3 andi_p_att_ec;
 extern struct PolesOrder3Vect3 andi_p_att_rm;
-extern float andi_p_thrust_e;
+extern float andi_p_thrust_ec;
 extern float andi_p_thrust_rm;
 
 void stabilization_andi_init(void);
