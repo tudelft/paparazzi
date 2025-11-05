@@ -16,6 +16,7 @@
       <include name="autopilot_rc_helpers.h"/>
       <include name="navigation.h"/>
       <include name="guidance.h"/>
+      <include name="stabilization.h"/>
       <include name="stabilization/stabilization_attitude.h"/>
       <include name="stabilization/stabilization_andi.h"/>
       <include name="modules/radio_control/radio_control.h"/>
@@ -33,8 +34,9 @@
       <dl_setting var="autopilot_mode_auto2" min="2" step="1" max="3" module="autopilot" values="NAV|GUIDED"/>
     </settings>
 
+    <!-- Commit actuator commands. ANDI/INDI perform allocation themselves; retained so COMMAND_THRUST remains set -->
     <control_block name="set_commands">
-      <call fun="SetRotorcraftCommands(stabilization.cmd, true, true)"/>
+      <call fun="SetRotorcraftCommands(stabilization.cmd, autopilot_in_flight(), autopilot_get_motors_on())"/>
     </control_block>
 
     <control_block name="run_rate_control">
@@ -90,14 +92,14 @@
         <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NONE)"/>
         <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_RC_DIRECT)"/>
         <call fun="stabilization_mode_changed(STABILIZATION_MODE_RATE, STABILIZATION_ATT_SUBMODE_HEADING)"/>
-        <!-- <call fun="stabilization_andi_enter(CONTROL_MODE_RATE, CONTROL_TYPE_ANDI)"/> -->
+        <call fun="stabilization_andi_enter()"/>
       </on_enter>
       <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
       </control>
       <control>
         <call_block name="run_rate_control"/>
-        <!-- <call_block name="set_commands"/> -->
+        <call_block name="set_commands"/>
       </control>
       <exception cond="RCLost()" deroute="FAILSAFE"/>
     </mode>
@@ -108,6 +110,7 @@
         <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NONE)"/>
         <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_RC_DIRECT)"/>
         <call fun="stabilization_mode_changed(STABILIZATION_MODE_ATTITUDE, STABILIZATION_ATT_SUBMODE_HEADING)"/>
+        <call fun="stabilization_andi_enter()"/>
       </on_enter>
       <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
