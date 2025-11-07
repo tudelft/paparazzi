@@ -69,6 +69,13 @@ struct AttQuat {
   struct FloatVect3 att_3d;
 };
 
+struct AttEulers {
+  struct FloatEulers att; 
+  struct FloatRates att_d;
+  struct FloatVect3 att_2d;
+  struct FloatVect3 att_3d;
+};
+
 struct ThrustRef {
   float thrust;
   float thrust_d;
@@ -123,11 +130,19 @@ static inline void print_GainsOrder3Vect3(const char *gain_name, const struct Ga
     print_FloatVect3("  k3", gains->k3);
 }
 
-static inline float k1_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n * p1) / (omega_n * omega_n + 2.0f * zeta * omega_n * p1); }
-static inline float k2_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n + 2.0f * zeta * omega_n * p1) / (2.0f * zeta * omega_n + p1); }
-static inline float k3_order3_f(const float omega_n, const float zeta, const float p1) { return 2.0f * zeta * omega_n + p1; }
-static inline float k1_order2_f(const float omega_n, const float zeta) { return omega_n / (2.0f * zeta); }
-static inline float k2_order2_f(const float omega_n, const float zeta) { return 2.0f * zeta * omega_n; }
+// static inline float rm_k1_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n * p1) / (omega_n * omega_n + 2.0f * zeta * omega_n * p1); }
+// static inline float rm_k2_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n + 2.0f * zeta * omega_n * p1) / (2.0f * zeta * omega_n + p1); }
+// static inline float rm_k3_order3_f(const float omega_n, const float zeta, const float p1) { return 2.0f * zeta * omega_n + p1; }
+// static inline float rm_k1_order2_f(const float omega_n, const float zeta) { return omega_n / (2.0f * zeta); }
+// static inline float rm_k2_order2_f(const float omega_n, const float zeta) { return 2.0f * zeta * omega_n; }
+
+// static inline float ec_k1_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n * p1); }
+// static inline float ec_k2_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n + 2.0f * zeta * omega_n * p1); }
+// static inline float ec_k3_order3_f(const float omega_n, const float zeta, const float p1) { return 2.0f * zeta * omega_n + p1; }
+// static inline float ec_k1_order2_f(const float omega_n, const float zeta) { return omega_n * omega_n; }
+// static inline float ec_k2_order2_f(const float omega_n, const float zeta) { return 2.0f * zeta * omega_n; }
+
+
 
 extern union CycloneCoefficients obm_coefficients;
 

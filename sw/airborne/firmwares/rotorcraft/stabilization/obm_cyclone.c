@@ -279,9 +279,7 @@ static void cyclone_f_stb_x(const float rates[3], const float vel_body[3],
 
 void evaluate_obm_f_stb_u(float fu_mat[ANDI_NUM_ACT * ANDI_OUTPUTS], const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT])
 {
-  float rates_array[3];
   float vel_body_array[3];
-
   (void)rates; 
 
   vel_body_array[0] = vel_body->x;

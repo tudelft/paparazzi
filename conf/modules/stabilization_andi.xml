@@ -88,42 +88,42 @@
     <define name="ANDI_NUM_ACT" value="$(ANDI_NUM_ACT)"/>
     <define name="USE_STABILIZATION_RATE"/>
 
-    <configure name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X" default="80.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Y" default="80.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Z" default="80.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X" default="10.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Y" default="10.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Z" default="10.0"/>
     <configure name="STABILIZATION_ANDI_POLE_RATE_EC_ZETA_X" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_RATE_EC_ZETA_Y" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_RATE_EC_ZETA_Z" default="1.0"/>
 
-    <configure name="STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_X" default="60.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_Y" default="60.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_Z" default="60.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_X" default="10.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_Y" default="10.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_Z" default="10.0"/>
     <configure name="STABILIZATION_ANDI_POLE_RATE_RM_ZETA_X" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_RATE_RM_ZETA_Y" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_RATE_RM_ZETA_Z" default="1.0"/>
 
-    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_X" default="40"/>
-    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Y" default="40"/>
-    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Z" default="40"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_X" default="8.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Y" default="8.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Z" default="8.0"/>
     <configure name="STABILIZATION_ANDI_POLE_ATT_EC_ZETA_X" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_ATT_EC_ZETA_Y" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_ATT_EC_ZETA_Z" default="1.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_P1_X" default="40"/>
-    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_P1_Y" default="40"/>
-    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_P1_Z" default="40"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_P1_X" default="8.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_P1_Y" default="8.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_P1_Z" default="8.0"/>
 
-    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_X" default="30"/>
-    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_Y" default="30"/>
-    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_Z" default="30"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_X" default="8.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_Y" default="8.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_Z" default="8.0"/>
     <configure name="STABILIZATION_ANDI_POLE_ATT_RM_ZETA_X" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_ATT_RM_ZETA_Y" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_ATT_RM_ZETA_Z" default="1.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_P1_X" default="30"/>
-    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_P1_Y" default="30"/>
-    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_P1_Z" default="30"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_P1_X" default="8.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_P1_Y" default="8.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_P1_Z" default="8.0"/>
 
-    <configure name="STABILIZATION_ANDI_POLE_THRUST_EC" default="40.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_THRUST_RM" default="32.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_THRUST_EC" default="180.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_THRUST_RM" default="60.0"/>
 
     <define name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X" value="$(STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X)"/>
     <define name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Y" value="$(STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Y)"/>
