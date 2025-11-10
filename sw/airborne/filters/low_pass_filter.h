@@ -81,7 +81,7 @@ static inline float update_first_order_low_pass(struct FirstOrderLowPass *filter
  * @param filter first order low pass filter structure
  * @return current value of the filter
  */
-static inline float get_first_order_low_pass(struct FirstOrderLowPass *filter)
+static inline float get_first_order_low_pass(const struct FirstOrderLowPass *filter)
 {
   return filter->last_out;
 }
@@ -186,7 +186,7 @@ static inline float update_second_order_low_pass(struct SecondOrderLowPass *filt
  * @param filter second order low pass filter structure
  * @return current value of the filter
  */
-static inline float get_second_order_low_pass(struct SecondOrderLowPass *filter)
+static inline float get_second_order_low_pass(const struct SecondOrderLowPass *filter)
 {
   return filter->o[0];
 }
@@ -256,7 +256,7 @@ static inline int32_t update_second_order_low_pass_int(struct SecondOrderLowPass
  * @param filter second order low pass filter structure
  * @return current value of the filter
  */
-static inline int32_t get_second_order_low_pass_int(struct SecondOrderLowPass_int *filter)
+static inline int32_t get_second_order_low_pass_int(const struct SecondOrderLowPass_int *filter)
 {
   return filter->o[0];
 }
@@ -298,7 +298,7 @@ static inline float update_butterworth_2_low_pass(Butterworth2LowPass *filter, f
  * @param filter second order Butterworth low pass filter structure
  * @return current value of the filter
  */
-static inline float get_butterworth_2_low_pass(Butterworth2LowPass *filter)
+static inline float get_butterworth_2_low_pass(const Butterworth2LowPass *filter)
 {
   return filter->o[0];
 }
@@ -341,7 +341,7 @@ static inline int32_t update_butterworth_2_low_pass_int(Butterworth2LowPass_int 
  * @param filter second order Butterworth low pass filter structure
  * @return current value of the filter
  */
-static inline int32_t get_butterworth_2_low_pass_int(Butterworth2LowPass_int *filter)
+static inline int32_t get_butterworth_2_low_pass_int(const Butterworth2LowPass_int *filter)
 {
   return filter->o[0];
 }
@@ -393,7 +393,7 @@ static inline float update_butterworth_4_low_pass(Butterworth4LowPass *filter, f
  * @param filter fourth order Butterworth low pass filter structure
  * @return current value of the filter
  */
-static inline float get_butterworth_4_low_pass(Butterworth4LowPass *filter)
+static inline float get_butterworth_4_low_pass(const Butterworth4LowPass *filter)
 {
   return filter->lp2.o[0];
 }
@@ -446,7 +446,7 @@ static inline int32_t update_butterworth_4_low_pass_int(Butterworth4LowPass_int 
  * @param filter fourth order Butterworth low pass filter structure
  * @return current value of the filter
  */
-static inline int32_t get_butterworth_4_low_pass_int(Butterworth4LowPass_int *filter)
+static inline int32_t get_butterworth_4_low_pass_int(const Butterworth4LowPass_int *filter)
 {
   return filter->lp2.o[0];
 }
