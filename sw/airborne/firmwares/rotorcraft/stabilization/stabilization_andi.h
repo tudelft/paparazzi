@@ -69,11 +69,10 @@ struct AttQuat {
   struct FloatVect3 att_3d;
 };
 
-struct AttEulers {
-  struct FloatEulers att; 
+struct AttStateQuat {
+  struct FloatQuat att; 
   struct FloatRates att_d;
   struct FloatVect3 att_2d;
-  struct FloatVect3 att_3d;
 };
 
 struct ThrustRef {
@@ -89,6 +88,12 @@ struct AttFilter {
   Butterworth2LowPass att_2d_filter_x;
   Butterworth2LowPass att_2d_filter_y;
   Butterworth2LowPass att_2d_filter_z;
+};
+
+struct FilterVect3 {
+  Butterworth2LowPass x;
+  Butterworth2LowPass y;
+  Butterworth2LowPass z;
 };
 
 struct PolesOrder3Vect3 {

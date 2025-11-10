@@ -122,8 +122,8 @@
     <configure name="STABILIZATION_ANDI_POLE_ATT_RM_P1_Y" default="8.0"/>
     <configure name="STABILIZATION_ANDI_POLE_ATT_RM_P1_Z" default="8.0"/>
 
-    <configure name="STABILIZATION_ANDI_POLE_THRUST_EC" default="180.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_THRUST_RM" default="60.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_THRUST_EC" default="40.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_THRUST_RM" default="35.0"/>
 
     <define name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X" value="$(STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X)"/>
     <define name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Y" value="$(STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Y)"/>
