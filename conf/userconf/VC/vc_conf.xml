@@ -1,0 +1,24 @@
+<conf>
+  <aircraft
+   name="OJF_Easystar3_Black_rotorcraft"
+   ac_id="46"
+   airframe="airframes/VC/vc_multiplex_easystar3_black_rotorcraft.xml"
+   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
+   telemetry="telemetry/seal_rotorcraft_merged_indoor.xml"
+   flight_plan="flight_plans/tudelft/seal_FP_soaring_OJF.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/air_data.xml modules/ctrl_effectiveness_scheduling_nld.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid.xml modules/guidance_indi_hybrid_fixedwing_soaring.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_ekf2.xml modules/nav_rotorcraft.xml modules/stabilization_indi.xml"
+   gui_color="white"
+  />
+  <aircraft
+   name="Easystar3_Black"
+   ac_id="44"
+   airframe="airframes/VC/vc_multiplex_easystar3_black.xml"
+   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
+   telemetry="telemetry/OPENUAS/openuas_fixedwing_imu_rc.xml"
+   flight_plan="flight_plans/basic.xml"
+   settings="settings/fixedwing_basic.xml"
+   settings_modules="modules/ahrs_float_cmpl_quat.xml modules/air_data.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_full_pid_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/stabilization_adaptive_fw.xml"
+   gui_color="white"
+  />
+</conf>
