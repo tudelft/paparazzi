@@ -1,7 +1,7 @@
 <conf>
   <aircraft
    name="OJF_Easystar3_Black_rotorcraft"
-   ac_id="46"
+   ac_id="44"
    airframe="airframes/VC/vc_multiplex_easystar3_black_rotorcraft.xml"
    radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
    telemetry="telemetry/seal_rotorcraft_merged_indoor.xml"
@@ -12,7 +12,7 @@
   />
   <aircraft
    name="Easystar3_Black"
-   ac_id="44"
+   ac_id="42"
    airframe="airframes/VC/vc_multiplex_easystar3_black.xml"
    radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
    telemetry="telemetry/OPENUAS/openuas_fixedwing_imu_rc.xml"

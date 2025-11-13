@@ -498,5 +498,24 @@
         <arg flag="hobbyking.xml"/>
       </program>
     </session>
+    <session name="Flight OJF for PIV">
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Server"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
+      </program>
+      <program name="Joystick">
+        <arg flag="-ac" constant="OJF_Easystar3_Black_rotorcraft"/>
+      </program>
+      <program name="NatNet3">
+        <arg flag="-ac" constant="1"/>
+        <arg flag="44"/>
+        <arg flag="-o"/>
+        <arg flag="-zf"/>
+      </program>
+      <program name="Messages"/>
+    </session>
   </section>
 </control_panel>
