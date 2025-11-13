@@ -10,43 +10,43 @@
 #endif
 
 union CycloneCoefficients {
-    struct {
-        // X-axis force coefficients (f_ff_x)
-        float fx_motor_squared;          // Motor thrust squared effect
-        float fx_speed_forward;          // Forward speed effect
+  struct {
+    // X-axis force coefficients (f_ff_x)
+    float fx_motor_squared;          // Motor thrust squared effect
+    float fx_speed_forward;          // Forward speed effect
 
-        // Y-axis force coefficients (f_ff_y) 
-        float fy_speed_lateral;          // Lateral speed effect
+    // Y-axis force coefficients (f_ff_y) 
+    float fy_speed_lateral;          // Lateral speed effect
 
-        // Z-axis force coefficients (f_ff_z)
-        float fz_motor_squared;          // Motor thrust squared effect
-        float fz_speed_forward;          // Forward speed effect
-        float fz_speed_vertical;         // Vertical speed effect
-        float fz_elevator_speed;         // Elevator-speed coupling
-        float fz_elevator_motor;         // Elevator-motor coupling
+    // Z-axis force coefficients (f_ff_z)
+    float fz_motor_squared;          // Motor thrust squared effect
+    float fz_speed_forward;          // Forward speed effect
+    float fz_speed_vertical;         // Vertical speed effect
+    float fz_elevator_speed;         // Elevator-speed coupling
+    float fz_elevator_motor;         // Elevator-motor coupling
 
-        // X-axis moment coefficients (m_ff_x)
-        float mx_motor_diff;             // (motor_l^2 - motor_r^2)
-        float mx_elevator_motor_diff;    // (ele_l * motor_l^2 - ele_r * motor_r^2)
-        float mx_elevator_speed_diff;    // (ele_l - ele_r) * speed * v_ff(1)
-        float mx_angular_coupling;       // w_ff(2) * w_ff(3)
+    // X-axis moment coefficients (m_ff_x)
+    float mx_motor_diff;             // (motor_l^2 - motor_r^2)
+    float mx_elevator_motor_diff;    // (ele_l * motor_l^2 - ele_r * motor_r^2)
+    float mx_elevator_speed_diff;    // (ele_l - ele_r) * speed * v_ff(1)
+    float mx_angular_coupling;       // w_ff(2) * w_ff(3)
 
-        // Y-axis moment coefficients (m_ff_y)
-        float my_speed_forward;          // speed * v_ff(1)
-        float my_speed_vertical;         // speed * v_ff(3)
-        float my_constant_zero;          // constant 0 term
-        float my_motor_sum;              // motor_l^2 + motor_r^2
-        float my_elevator_motor_sum;     // ele_l * motor_l^2 + ele_r * motor_r^2
-        float my_elevator_speed_sum;     // (ele_l + ele_r) * speed * v_ff(1)
-        float my_angular_sum;            // w_ff(1) + w_ff(3)
+    // Y-axis moment coefficients (m_ff_y)
+    float my_speed_forward;          // speed * v_ff(1)
+    float my_speed_vertical;         // speed * v_ff(3)
+    float my_constant_zero;          // constant 0 term
+    float my_motor_sum;              // motor_l^2 + motor_r^2
+    float my_elevator_motor_sum;     // ele_l * motor_l^2 + ele_r * motor_r^2
+    float my_elevator_speed_sum;     // (ele_l + ele_r) * speed * v_ff(1)
+    float my_angular_sum;            // w_ff(1) + w_ff(3)
 
-        // Z-axis moment coefficients (m_ff_z)
-        float mz_speed_lateral;          // speed * v_ff(2)
-        float mz_motor_diff;             // motor_l^2 - motor_r^2
-        float mz_speed_roll;             // speed * w_ff(1)
-        float mz_angular_coupling;       // w_ff(1) * w_ff(2)
-    };
-    float data[23];
+    // Z-axis moment coefficients (m_ff_z)
+    float mz_speed_lateral;          // speed * v_ff(2)
+    float mz_motor_diff;             // motor_l^2 - motor_r^2
+    float mz_speed_roll;             // speed * w_ff(1)
+    float mz_angular_coupling;       // w_ff(1) * w_ff(2)
+  };
+  float data[23];
 }; 
 
 // Model coefficinets

@@ -33,16 +33,17 @@
       <message name="INS_EKF2"                 period=".25"/>
       <message name="WIND_INFO_RET"            period="1."/>
       <message name="AHRS_REF_QUAT"            period="0.5"/>
-      <message name="STAB_ATTITUDE"            period=".02"/>
-      <message name="STAB_THRUST"              period=".02"/>
+      <message name="STAB_ATTITUDE"            period=".1"/>
+      <message name="STAB_THRUST"              period=".1"/>
       <message name="GUIDANCE"                 period=".25"/>
-      <message name="ACTUATORS_T4_IN"          period="0.02"/>
-      <message name="ACTUATORS_T4_OUT"         period="0.02"/>
+      <message name="ACTUATORS_T4_IN"          period="0.1"/>
+      <message name="ACTUATORS_T4_OUT"         period="0.1"/>
       <message name="PPM"                      period="0.5"/>
       <message name="PAYLOAD_FLOAT"            period="0.5"/>
       <message name="ROTORCRAFT_RADIO_CONTROL" period="0.1"/>
-      <message name="WLS_V"                    period="0.02"/>
-      <message name="WLS_U"                    period="0.02"/>
+      <message name="WLS_V"                    period="0.1"/>
+      <message name="WLS_U"                    period="0.1"/>
+      <message name="DEBUG_VECT"               period="0.1"/>
       <message name="COMMANDS"                 period="0.2"/>
     </mode>
 
@@ -237,6 +238,7 @@
       <message name="DEBUG"                    period="0.02"/> <!-- For the parachute module -->
       <message name="WLS_V"                    period="0.002"/>
       <message name="WLS_U"                    period="0.002"/>
+      <message name="DEBUG_VECT"               period="0.1"/>
       <message name="PPM"                      period="0.1"/>
     </mode>
   </process>

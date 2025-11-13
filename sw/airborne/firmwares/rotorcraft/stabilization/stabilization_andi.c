@@ -89,6 +89,19 @@ const float SAMPLE_TIME = 1.0f / PERIODIC_FREQUENCY;
 #if ANDI_OUTPUTS != WLS_N_V_MAX
 #error "Matrix-WLS_N_V_MAX is not equal to the number of controlled axis: define WLS_N_V_MAX == ANDI_OUTPUTS in airframe file"
 #endif
+
+static inline float rm_k1_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n * p1) / (omega_n * omega_n + 2.0f * zeta * omega_n * p1); }
+static inline float rm_k2_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n + 2.0f * zeta * omega_n * p1) / (2.0f * zeta * omega_n + p1); }
+static inline float rm_k3_order3_f(const float omega_n, const float zeta, const float p1) { return 2.0f * zeta * omega_n + p1; }
+static inline float rm_k1_order2_f(const float omega_n, const float zeta) { return omega_n / (2.0f * zeta); }
+static inline float rm_k2_order2_f(const float omega_n, const float zeta) { return 2.0f * zeta * omega_n; }
+
+static inline float ec_k1_order3_f(const float omega_n, const float zeta __attribute__((unused)), const float p1) { return (omega_n * omega_n * p1); }
+static inline float ec_k2_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n + 2.0f * zeta * omega_n * p1); }
+static inline float ec_k3_order3_f(const float omega_n, const float zeta, const float p1) { return 2.0f * zeta * omega_n + p1; }
+static inline float ec_k1_order2_f(const float omega_n, const float zeta __attribute__((unused))) { return omega_n * omega_n; }
+static inline float ec_k2_order2_f(const float omega_n, const float zeta) { return 2.0f * zeta * omega_n; }
+
 struct WLS_t wls_stab_p = {
   .nu       = ANDI_NUM_ACT,
   .nv       = ANDI_OUTPUTS,
@@ -111,17 +124,8 @@ struct WLS_t wls_stab_p = {
   .iter     = 0
 };
 
-static inline float rm_k1_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n * p1) / (omega_n * omega_n + 2.0f * zeta * omega_n * p1); }
-static inline float rm_k2_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n + 2.0f * zeta * omega_n * p1) / (2.0f * zeta * omega_n + p1); }
-static inline float rm_k3_order3_f(const float omega_n, const float zeta, const float p1) { return 2.0f * zeta * omega_n + p1; }
-static inline float rm_k1_order2_f(const float omega_n, const float zeta) { return omega_n / (2.0f * zeta); }
-static inline float rm_k2_order2_f(const float omega_n, const float zeta) { return 2.0f * zeta * omega_n; }
-
-static inline float ec_k1_order3_f(const float omega_n, const float zeta __attribute__((unused)), const float p1) { return (omega_n * omega_n * p1); }
-static inline float ec_k2_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n + 2.0f * zeta * omega_n * p1); }
-static inline float ec_k3_order3_f(const float omega_n, const float zeta, const float p1) { return 2.0f * zeta * omega_n + p1; }
-static inline float ec_k1_order2_f(const float omega_n, const float zeta __attribute__((unused))) { return omega_n * omega_n; }
-static inline float ec_k2_order2_f(const float omega_n, const float zeta) { return 2.0f * zeta * omega_n; }
+float wls_u_scaler[ANDI_NUM_ACT];
+float wls_v_scaler[ANDI_OUTPUTS];
 
 struct PolesOrder2Vect3 andi_p_rate_ec = {
   .omega_n={
@@ -184,11 +188,14 @@ float andi_k_thrust_rm;
 float actuator_meas[ANDI_NUM_ACT];
 
 // Filter variables
+float andi_rate_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_RATE;  // Hz
+float andi_accel_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_RATE;  // Hz
+float andi_jerk_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_RATE;  // Hz
+
 struct FilterVect3 angular_rates_filter_meas;
 struct FilterVect3 angular_rates_filter_sync;
 struct FilterVect3 angular_accel_filter_meas;
 struct FilterVect3 angular_accel_filter_sync;
-
 Butterworth2LowPass thrust_filter_meas;
 Butterworth2LowPass thrust_filter_sync;
 Butterworth2LowPass actuator_filters[ANDI_NUM_ACT];
@@ -202,9 +209,13 @@ float thrust_state;
 float actuator_state[ANDI_NUM_ACT];
 float andi_u[ANDI_NUM_ACT];
 
+float control_output[ANDI_OUTPUTS] = {0.0f};
+
 // Reference model variables
 struct AttQuat attitude_ref;
 struct ThrustRef thrust_ref;
+struct ThrustRef thrust_ref_synced;
+
 
 struct FloatRates rates_des;
 struct FloatQuat attitude_des;
@@ -255,14 +266,20 @@ static void send_stab_thrust_stabilization_andi(struct transport_tx *trans, stru
 {
   pprz_msg_send_STAB_THRUST(trans, dev, AC_ID,
                                               &thrust_des,
-                                              &thrust_ref.thrust,
+                                              &thrust_ref_synced.thrust,
                                               &thrust_state,
-                                              &thrust_ref.thrust_d);                                      
+                                              &thrust_ref_synced.thrust_d);                                      
+}
+static void send_debug_vect_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
+{
+  char *name = "control output";
+  pprz_msg_send_DEBUG_VECT(trans, dev, AC_ID,
+                                              strlen(name), name,
+                                              ANDI_OUTPUTS, (float*)&control_output);
 }
 #endif //PERIODIC_TELEMETRY
 
 
-// #ifdef USE_ACTUATOR_FEEDBACK
 // T4 Actuator feedback handling
 struct ActuatorsT4In actuators_t4_obs;
 abi_event actuators_t4_in_event;
@@ -293,7 +310,7 @@ static void actuators_t4_in_callback(uint8_t sender_id __attribute__((unused)), 
  * and rotational speeds in radians per second, storing them in the 
  * provided actuator_state array.
  *
- * FIXME: Avoid hardcoding indices, conversion factors, and inversions; ask Erik for possible solution.
+ * FIXME: Avoid hardcoding indices, conversion factors, and inversions; ask Erik for possible solution. => Leave it be for now
  *
  * @param[out] actuator_state Array of floats with size ANDI_NUM_ACT where the
  *                           converted actuator states will be stored. The caller
@@ -304,8 +321,8 @@ static void actuators_t4_in_callback(uint8_t sender_id __attribute__((unused)), 
 static void fetch_actuators_t4(float actuator_meas[ANDI_NUM_ACT], const struct ActuatorsT4In *actuators_t4_in_ptr)
 {
   actuator_meas[0] = (float)actuators_t4_in_ptr->servo_1_angle / 18000 * M_PI; // Convert 1e-2 deg to rad
-  actuator_meas[1] = -(float)actuators_t4_in_ptr->servo_2_angle / 18000 * M_PI; 
-  actuator_meas[2] = (float)actuators_t4_in_ptr->esc_1_rpm * 2 * M_PI / 60;
+  actuator_meas[1] = -(float)actuators_t4_in_ptr->servo_6_angle / 18000 * M_PI; 
+  actuator_meas[2] = (float)actuators_t4_in_ptr->esc_1_rpm * 2 * M_PI / 60; // Convert rpm to rad/s
   actuator_meas[2] *= actuator_meas[2]; // square motor rpm
   actuator_meas[3] = (float)actuators_t4_in_ptr->esc_2_rpm * 2 * M_PI / 60;
   actuator_meas[3] *= actuator_meas[3]; // square motor rpm
@@ -324,15 +341,16 @@ float act_dynamics_discrete[ANDI_NUM_ACT];
  *                              and radians per second (rotational speeds).
  * @param[in] andi_u Array of floats with size ANDI_NUM_ACT with previous actuator
  *                   commands.
+ * FIXME: Add transmission delay handling
  */
 static void apply_actuator_dynamics_filter(float actuator_meas[ANDI_NUM_ACT], float andi_u[ANDI_NUM_ACT])
 {
   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
+    float old_meas = actuator_meas[i];
     actuator_meas[i] = actuator_meas[i] * (1 - act_dynamics_discrete[i]) + andi_u[i] * act_dynamics_discrete[i];
     Bound(actuator_meas[i], ACTUATOR_MIN[i], ACTUATOR_MAX[i]);
   }
 }
-// #endif //USE_ACTUATOR_FEEDBACK
 
 /**
  * @brief Retrieve the current actuator state measurements.
@@ -397,7 +415,6 @@ struct GainsOrder3Vect3 compute_reference_gains_order_3_vect_3(const struct Pole
   gains.k3.z = rm_k3_order3_f(poles->omega_n.z, poles->zeta.z, poles->p1.z);
   return gains;
 }
-
 
 /** 
  * Compute reference-model gains for a 2nd-order 3D system. 
@@ -608,7 +625,7 @@ static void generate_reference_thrust(
   Bound(thrust_des, 0, bounds->thrust);
   thrust_ref->thrust_d = k_thrust_rm * (thrust_des - thrust_ref->thrust);
 
-  BoundAbs(thrust_ref->thrust_d, bounds->thrust_d);
+  // BoundAbs(thrust_ref->thrust_d, bounds->thrust_d);
   thrust_ref->thrust += thrust_ref->thrust_d * dt;
 }
 
@@ -672,7 +689,7 @@ static struct FloatVect3 control_error_attitude(
   nu.z += k_att_ec->k2.z * (att_ref->att_d.r - att_state->att_d.r);
 
   struct FloatQuat att_err;
-  float_quat_inv_comp_norm_shortest(&att_err, (struct FloatQuat *)&att_state->att, (struct FloatQuat *)&att_ref->att); // FIXME: quaternion library is not const correct
+  float_quat_inv_comp_norm_shortest(&att_err, &att_state->att, &att_ref->att);
   // Multiplication by 2 needed to convert quaternion difference to angular rate (assuming small angles)
   nu.x += k_att_ec->k1.x * att_err.qx * 2;
   nu.y += k_att_ec->k1.y * att_err.qy * 2;
@@ -757,10 +774,56 @@ static void compute_wls_lower_bounds(float u_d_min[ANDI_NUM_ACT], const float ac
 }
 
 /**
+ * @brief Compute input scaling factors for normalizing weighted least squares.
+ * 
+ * This function calculates the input scaling factors (`u_scaler`) for each actuator
+ * based on the provided minimum (`act_min`) and maximum (`act_max`) actuator values.
+ * The scaling factor is computed as the inverse of the range (max - min). If the
+ * range is zero, the scaling factor is set to 1.0 to avoid division by zero.
+ * 
+ * u_norm = u_scaler * u
+ * 
+ * @param[out] u_scaler Array to store the computed input scaling factors.
+ * @param[in] act_min Array of minimum actuator values.
+ * @param[in] act_max Array of maximum actuator values.
+ */
+static void compute_wls_u_scaler(float u_scaler[ANDI_NUM_ACT], const float act_min[ANDI_NUM_ACT], const float act_max[ANDI_NUM_ACT])
+{
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
+    float range = act_max[i] - act_min[i];
+    if (range == 0.0f) {
+      u_scaler[i] = 1.0f;
+    } else {
+      u_scaler[i] = 1.0f / range;
+    }
+  }
+}
+
+/**
+ * @brief Compute output inverse-scaling factors for normalizing weighted least squares outputs.
+ *
+ * For each output i this sets v_scaler[i] = 1.0f / v[i] when v[i] is non-zero; otherwise v_scaler[i] is set
+ * to 1.0f to avoid a division-by-zero. The normalized output used in WLS is then v_norm = v_scaler * v.
+ *
+ * @param[out] v_scaler Array of length ANDI_NUM_ACT to store the computed inverse scaling factors.
+ * @param[in]  v        Array of length ANDI_NUM_ACT containing reference/scaling values used to compute the inverse.
+ */
+static void compute_wls_v_scaler(float v_scaler[ANDI_NUM_ACT], const float v[ANDI_NUM_ACT])
+{
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
+    if (v[i] == 0.0f) {
+      v_scaler[i] = 1.0f;
+    } else {
+      v_scaler[i] = 1.0f / v[i];
+    }
+  }
+}
+
+/**
  * @brief Initialize a set of Butterworth low-pass filters to zero for 3D vector data.
  * 
  * @param[out] filter Struct containing Butterworth filters for x, y, z components.
- * @param[in] freq Cutoff frequency for the filters (rad/s).
+ * @param[in] freq Cutoff frequency for the filters (Hz).
  * @param[in] dt Sampling time interval (seconds).
  * 
  * FIXME: Add support for different filter types.
@@ -776,7 +839,7 @@ static void init_filter_vect3(struct FilterVect3 *filter, float freq, float dt)
  * @brief Initialize a Butterworth low-pass filter to zero.
  * 
  * @param[out] filter Butterworth2LowPass filter instance.
- * @param[in] freq Cutoff frequency of the filter (rad/s).
+ * @param[in] freq Cutoff frequency of the filter (Hz).
  * @param[in] dt Sampling time interval (seconds).
  * 
  * FIXME: Add support for different filter types.
@@ -791,7 +854,7 @@ static void init_filter(Butterworth2LowPass *filter, float freq, float dt)
  * 
  * @param[in] n Number of filters to initialize.
  * @param[out] filter_array Array of Butterworth2LowPass filters to initialize.
- * @param[in] freq Cutoff frequency for the filters (rad/s).
+ * @param[in] freq Cutoff frequency for the filters (Hz).
  * @param[in] dt Sampling time interval (seconds).
  * 
  * FIXME: Add support for different filter types.
@@ -863,7 +926,7 @@ static void update_filter_array(uint8_t n, Butterworth2LowPass filter_array[rest
  */
 static void reset_filter(Butterworth2LowPass *filter, float value)
 {
-  filter->i[0]  = filter->i[1] = filter->o[0] = filter->o[1] = value;
+  filter->i[0] = filter->i[1] = filter->o[0] = filter->o[1] = value;
 }
 
 /**
@@ -874,9 +937,9 @@ static void reset_filter(Butterworth2LowPass *filter, float value)
  */
 static void reset_filter_vect3(struct FilterVect3 *filter, const struct FloatVect3 *value)
 {
-  filter->x.i[0]  = filter->x.i[1] = filter->x.o[0] = filter->x.o[1] = value->x;
-  filter->y.i[0]  = filter->y.i[1] = filter->y.o[0] = filter->y.o[1] = value->y;
-  filter->z.i[0]  = filter->z.i[1] = filter->z.o[0] = filter->z.o[1] = value->z;
+  filter->x.i[0] = filter->x.i[1] = filter->x.o[0] = filter->x.o[1] = value->x;
+  filter->y.i[0] = filter->y.i[1] = filter->y.o[0] = filter->y.o[1] = value->y;
+  filter->z.i[0] = filter->z.i[1] = filter->z.o[0] = filter->z.o[1] = value->z;
 }
 
 /**
@@ -887,9 +950,9 @@ static void reset_filter_vect3(struct FilterVect3 *filter, const struct FloatVec
  */
 static void reset_filter_rates(struct FilterVect3 *filter, const struct FloatRates *value)
 {
-  filter->x.i[0]  = filter->x.i[1] = filter->x.o[0] = filter->x.o[1] = value->p;
-  filter->y.i[0]  = filter->y.i[1] = filter->y.o[0] = filter->y.o[1] = value->q;
-  filter->z.i[0]  = filter->z.i[1] = filter->z.o[0] = filter->z.o[1] = value->r;
+  filter->x.i[0] = filter->x.i[1] = filter->x.o[0] = filter->x.o[1] = value->p;
+  filter->y.i[0] = filter->y.i[1] = filter->y.o[0] = filter->y.o[1] = value->q;
+  filter->z.i[0] = filter->z.i[1] = filter->z.o[0] = filter->z.o[1] = value->r;
 }
 
 /**
@@ -1026,7 +1089,8 @@ void stabilization_andi_init(void)
   attitude_bounds.att_3d.y = 100.0f;
   attitude_bounds.att_3d.z = 100.0f;
 
-  thrust_bounds.thrust = 52.0f;
+  // Limit thrust bounds
+  thrust_bounds.thrust =52.0f;
   thrust_bounds.thrust_d = 1000.0f;
 
   // Initial control effectiveness matrix
@@ -1034,22 +1098,22 @@ void stabilization_andi_init(void)
   evaluate_obm_f_stb_u(ce_mat, &attitude_state.att_d, &body_vel, ACTUATOR_PREF);
 
   // Initialize filters
-  init_filter_vect3(&angular_rates_filter_meas, 10.0f, SAMPLE_TIME);
-  init_filter_vect3(&angular_rates_filter_sync, 10.0f, SAMPLE_TIME);
-  init_filter_vect3(&angular_accel_filter_meas, 10.0f, SAMPLE_TIME);
-  init_filter_vect3(&angular_accel_filter_sync, 10.0f, SAMPLE_TIME);
-  init_filter(&thrust_filter_meas, 10.0f, SAMPLE_TIME);
-  init_filter(&thrust_filter_sync, 10.0f, SAMPLE_TIME);
-  init_filter_array(ANDI_OUTPUTS, actuator_filters, 10.0f, SAMPLE_TIME);
+  init_filter_vect3(&angular_rates_filter_meas, andi_rate_freq_cutoff, SAMPLE_TIME);
+  init_filter_vect3(&angular_rates_filter_sync, andi_rate_freq_cutoff, SAMPLE_TIME);
+  init_filter_vect3(&angular_accel_filter_meas, andi_accel_freq_cutoff, SAMPLE_TIME);
+  init_filter_vect3(&angular_accel_filter_sync, andi_accel_freq_cutoff, SAMPLE_TIME);
+  init_filter(&thrust_filter_meas, andi_accel_freq_cutoff, SAMPLE_TIME);
+  init_filter(&thrust_filter_sync, andi_accel_freq_cutoff, SAMPLE_TIME);
+  init_filter_array(ANDI_OUTPUTS, actuator_filters, andi_jerk_freq_cutoff, SAMPLE_TIME);
 
-// #ifdef USE_ACTUATOR_FEEDBACK
   // Bind T4 actuator feedback abi message
   AbiBindMsgACTUATORS_T4_IN(ABI_BROADCAST, &actuators_t4_in_event, actuators_t4_in_callback);
-// #else
+
+  float_vect_zero(andi_u, ANDI_NUM_ACT);
+  // Precompute discrete-time actuator dynamics coefficients
   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
     act_dynamics_discrete[i] = 1 - exp(-ACTUATOR_DYNAMICS[i] / PERIODIC_FREQUENCY);
   }
-// #endif
 
   // Start telemetry
   #if PERIODIC_TELEMETRY
@@ -1058,6 +1122,7 @@ void stabilization_andi_init(void)
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_eff_mat_stabilization_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_V, send_wls_v_stabilization_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_U, send_wls_u_stabilization_andi);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_debug_vect_stabilization_andi);
 
   #endif
   printf("INIT ANDI controller: SUCCES \n");
@@ -1099,7 +1164,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 {
 
   // Recompute gains
-  // FIXME: Can't this only be done when parameters changed? Maybe using handler?
+  // FIXME: Can't this only be done when parameters have changed? Maybe using handler?
   andi_k_rate_ec = compute_error_gains_order_2_vect_3(&andi_p_rate_ec);
   andi_k_rate_rm = compute_reference_gains_order_2_vect_3(&andi_p_rate_rm);
   andi_k_att_ec = compute_error_gains_order_3_vect_3(&andi_p_att_ec);
@@ -1107,13 +1172,12 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   andi_k_thrust_ec = andi_p_thrust_ec;
   andi_k_thrust_rm = andi_p_thrust_rm;
   
-
   // Fetch current raw sensor measurements
   struct AttQuat attitude_meas;
   attitude_meas.att = *stateGetNedToBodyQuat_f();
   attitude_meas.att_d = *stateGetBodyRates_f();
 
-  // NOTE: First derivative then filtering, could cause rounding errors but allows for the use of different filters.
+  // NOTE: First derivative then filtering, could cause rounding errors but allows for the use of different filters. Alternatively, deal with double filtered signals in time syncing.
   attitude_meas.att_2d.x = (attitude_meas.att_d.p - rates_prev.p) * PERIODIC_FREQUENCY;
   attitude_meas.att_2d.y = (attitude_meas.att_d.q - rates_prev.q) * PERIODIC_FREQUENCY;
   attitude_meas.att_2d.z = (attitude_meas.att_d.r - rates_prev.r) * PERIODIC_FREQUENCY;
@@ -1121,10 +1185,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 
   get_actuator_measurement(actuator_meas);
 
-  float thrust_meas = 0;
-  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
-      thrust_meas += ce_mat[3 * ANDI_NUM_ACT + i] * actuator_meas[i] * !ACTUATOR_IS_SERVO[i]; // 3*4 + i -> accessing the last row entries in row-major order
-  }
+  float thrust_meas = evaluate_obm_thrust(actuator_meas);
 
   // Get filtered states
   update_filter_rates(&angular_rates_filter_meas, &attitude_meas.att_d);
@@ -1136,8 +1197,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   attitude_state.att_d = get_filter_rates(&angular_rates_filter_meas);
   attitude_state.att_2d = get_filter_vect3(&angular_accel_filter_meas);
   get_filter_array(ANDI_NUM_ACT, actuator_filters, actuator_state);
-  // thrust_state = get_filter(&thrust_filter_meas);
-  thrust_state = thrust_meas; // FIXME: No filtering on thrust, problems with time syncing.
+  thrust_state = get_filter(&thrust_filter_meas);
 
   // Get setpoints
   if (use_rate_control) {
@@ -1149,7 +1209,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   }
 
   // FIXME: Thrust setpoint can not be of type THRUST_INCR_SP, this is not enforced.
-  // FIXME: Do not hardcode thrust des scaler
+  // FIXME: Do not hardcode thrust_des scaler
   thrust_des = th_sp_to_thrust_f(thrust_setpoint, 0, THRUST_AXIS_Z) * 52;
   generate_reference_thrust(SAMPLE_TIME, thrust_des, andi_k_thrust_rm, &thrust_bounds, &thrust_ref);
 
@@ -1162,12 +1222,11 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   attitude_ref_synced.att = attitude_ref.att;
   attitude_ref_synced.att_d = get_filter_rates(&angular_rates_filter_sync);
   attitude_ref_synced.att_2d = get_filter_vect3(&angular_accel_filter_sync);
-  attitude_ref_synced.att_3d = attitude_ref.att_3d; // No filtering on jerk feedforward, Is required when adding state dependend effects for time syncing.
+  attitude_ref_synced.att_3d = attitude_ref.att_3d;
 
-  struct ThrustRef thrust_ref_synced;
-  // thrust_ref_synced.thrust = get_filter(&thrust_filter_sync);
-  thrust_ref_synced.thrust = thrust_ref.thrust; // FIXME: No filtering due to time sync problems.
-  thrust_ref_synced.thrust_d = thrust_ref.thrust_d; // No filtering on thrust_d feedforward, Is required when adding state dependend effects for time syncing.
+  // struct ThrustRef thrust_ref_synced;
+  thrust_ref_synced.thrust = get_filter(&thrust_filter_sync);
+  thrust_ref_synced.thrust_d = thrust_ref.thrust_d;
 
   // Construct pseudo control
   struct FloatVect3 nu_attitude;
@@ -1178,36 +1237,62 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   }
   float nu_thrust = control_error_thrust(&thrust_ref_synced, thrust_state, andi_k_thrust_ec);
 
+  float nu[ANDI_OUTPUTS];
+
   // FIXME: Add state feedback here!
+
   if (in_flight) {
-    wls_stab_p.v[0] = nu_attitude.x;
-    wls_stab_p.v[1] = nu_attitude.y;
-    wls_stab_p.v[2] = nu_attitude.z;
+    nu[0] = nu_attitude.x;
+    nu[1] = nu_attitude.y;
+    nu[2] = nu_attitude.z;
   } else {
-    wls_stab_p.v[0] = 0.0f;
-    wls_stab_p.v[1] = 0.0f;
-    wls_stab_p.v[2] = 0.0f;
+    nu[0] = 0.0f;
+    nu[1] = 0.0f;
+    nu[2] = 0.0f;
   }
-  wls_stab_p.v[3] = nu_thrust;
+  nu[3] = nu_thrust;
 
   // Compute control effectiveness matrix based on current states
   // FIXME: control effectiveness matrix is not scheduled for now
+  // FIXME: body velocity is not measured or filtered for now
   struct FloatVect3 body_vel = {.x=0.0f, .y=0.0f, .z=0.0f};
   struct FloatRates body_rates = {.p=0.0f, .q=0.0f, .r=0.0f};
   evaluate_obm_f_stb_u(ce_mat, &body_rates, &body_vel, ACTUATOR_PREF);
 
-  float *bwls[ANDI_OUTPUTS];
-  for (uint_fast8_t i = 0; i < ANDI_OUTPUTS; i++) {
-    bwls[i] = &ce_mat[i * ANDI_NUM_ACT];
+  // Solve control allocation using weighted least squares
+  float u_min[ANDI_NUM_ACT];
+  float u_max[ANDI_NUM_ACT];
+  compute_wls_lower_bounds(u_min, actuator_state, ACTUATOR_MIN, ACTUATOR_D_MIN, SAMPLE_TIME);
+  compute_wls_upper_bounds(u_max, actuator_state, ACTUATOR_MAX, ACTUATOR_D_MAX, SAMPLE_TIME);
+  compute_wls_u_scaler(wls_u_scaler, ACTUATOR_MIN, ACTUATOR_MAX);
+  compute_wls_v_scaler(wls_v_scaler, nu);
+
+  float ce_mat_scaled[ANDI_NUM_ACT][ANDI_OUTPUTS];
+  float *bwls[ANDI_NUM_ACT];
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) { // step through rows
+    wls_stab_p.u_min[i] = u_min[i] * wls_u_scaler[i];
+    wls_stab_p.u_max[i] = u_max[i] * wls_u_scaler[i];
+    wls_stab_p.u_pref[i] = ACTUATOR_PREF[i] * wls_u_scaler[i];
+    for (uint_fast8_t j = 0; j < ANDI_OUTPUTS; j++) { // step through columns
+      ce_mat_scaled[i][j] = ce_mat[i * ANDI_OUTPUTS + j] * wls_v_scaler[i] / wls_u_scaler[j]; // u_scaler on each column, v_scaler on each row
+    }
+    bwls[i] = ce_mat_scaled[i];
   }
 
-  // Calculate the min and max actuator rates
-  compute_wls_lower_bounds(wls_stab_p.u_min, actuator_meas, ACTUATOR_MIN, ACTUATOR_D_MIN, SAMPLE_TIME);
-  compute_wls_upper_bounds(wls_stab_p.u_max, actuator_meas, ACTUATOR_MAX, ACTUATOR_D_MAX, SAMPLE_TIME);
+  for (uint_fast8_t i = 0; i < ANDI_OUTPUTS; i++) {
+    wls_stab_p.v[i] = nu[i] * wls_v_scaler[i];
+  }
   wls_alloc(&wls_stab_p, bwls, 0, 0, 10);
 
   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
-    andi_u[i] = wls_stab_p.u[i] / ACTUATOR_DYNAMICS[i] + actuator_meas[i];
+    andi_u[i] = (wls_stab_p.u[i] / wls_u_scaler[i]) / ACTUATOR_DYNAMICS[i] + actuator_meas[i];
+  }
+  // Compute control outputs for logging
+  for (uint_fast8_t i = 0; i < ANDI_OUTPUTS; i++) {
+      control_output[i] = 0.0f;
+      for (uint_fast8_t j = 0; j < ANDI_NUM_ACT; j++) {
+          control_output[i] += ce_mat[i * ANDI_NUM_ACT + j] * wls_stab_p.u[j];
+      }
   }
 
   // Commit actuator commands
@@ -1221,7 +1306,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   commands[3] = (pprz_t)(sqrt(andi_u[3] / ACTUATOR_MAX[3]) * MAX_PPRZ);
 
   // Update thrust command such that the current is correctly estimated
-  // FIXME: DO not hardcode actuator layout
+  // FIXME: Do not hardcode actuator layout
   cmd[COMMAND_THRUST] = 0;
   cmd[COMMAND_THRUST] += (pprz_t)(sqrt(andi_u[2] / ACTUATOR_MAX[2]) * MAX_PPRZ);
   cmd[COMMAND_THRUST] += (pprz_t)(sqrt(andi_u[2] / ACTUATOR_MAX[2]) * MAX_PPRZ);

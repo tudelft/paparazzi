@@ -156,10 +156,10 @@
     </firmware>
 
     <servos driver="T4">
-        <servo name="S_ELEVON_LEFT"  no="1"  min="-5700" neutral="0"   max="5700"/> <!-- 57.0 deg-->
-        <servo name="S_ELEVON_RIGHT" no="6"  min="-5700" neutral="0"   max="5700"/> <!-- 57.0 deg-->
-        <servo name="S_MOTOR_LEFT"   no="13" min="0"     neutral="0"   max="1999"/> 
-        <servo name="S_MOTOR_RIGHT"  no="14" min="0"     neutral="0"   max="1999"/>
+        <servo name="S_ELEVON_LEFT"  no="1"  min="-5700" neutral="0" max="5700"/> <!-- 57.0 deg-->
+        <servo name="S_ELEVON_RIGHT" no="6"  min="5700"  neutral="0" max="-5700"/> <!-- 57.0 deg-->
+        <servo name="S_MOTOR_LEFT"   no="13" min="0"     neutral="0" max="1999"/> <!-- neutral is value when motor is not spinning -->
+        <servo name="S_MOTOR_RIGHT"  no="14" min="0"     neutral="0" max="1999"/>
     </servos>
 
     <!-- <rc_commands>
@@ -185,7 +185,7 @@
     <!-- Safety critical kill switch implementation -->
     <command_laws>
         <set servo="S_ELEVON_LEFT"  value="autopilot_get_motors_on()? commands[COMMAND_ELEVON_LEFT] : 0"/>
-        <set servo="S_ELEVON_RIGHT" value="autopilot_get_motors_on()? -commands[COMMAND_ELEVON_RIGHT] : 0"/>
+        <set servo="S_ELEVON_RIGHT" value="autopilot_get_motors_on()? commands[COMMAND_ELEVON_RIGHT] : 0"/>
         <set servo="S_MOTOR_LEFT"   value="autopilot_get_motors_on()? commands[COMMAND_MOTOR_LEFT] : -MAX_PPRZ"/>
         <set servo="S_MOTOR_RIGHT"  value="autopilot_get_motors_on()? commands[COMMAND_MOTOR_RIGHT] : -MAX_PPRZ"/>
     </command_laws>
@@ -206,8 +206,8 @@
         <define name="ACT_DYNAMICS" value="{     20.0f,     20.0f,        40.0f,        40.0f}"/> <!-- corner frequency [1/s]-->
         <define name="ACT_MAX"      value="{      1.0f,      1.0f,   3534400.0f,   3534400.0f}"/> <!-- [rad | rad/s]--> 
         <define name="ACT_MIN"      value="{     -1.0f,     -1.0f,      2500.0f,      2500.0f}"/> <!-- [rad | rad/s]--> 
-        <define name="ACT_RATE_MAX" value="{     10.0f,     10.0f,  90000000.0f,  90000000.0f}"/> <!-- [rad/s | rad/s^2]--> 
-        <define name="ACT_RATE_MIN" value="{    -10.0f,    -10.0f, -90000000.0f, -90000000.0f}"/> <!-- [rad/s | rad/s^2]--> 
+        <define name="ACT_RATE_MAX" value="{     10.0f,     10.0f,  9000000000.0f,  9000000000.0f}"/> <!-- [rad/s | rad/s^2]--> 
+        <define name="ACT_RATE_MIN" value="{    -10.0f,    -10.0f, -9000000000.0f, -9000000000.0f}"/> <!-- [rad/s | rad/s^2]--> 
         <define name="ACT_PREF"     value="{     0.00f,     0.00f,    705600.0f,    705600.0f}"/> 
         <define name="WLS_WU"       value="{      1.0f,      1.0f,         1.0f,         1.0f}"/>
 

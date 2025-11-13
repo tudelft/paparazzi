@@ -68,6 +68,10 @@
 
         <dl_setting var="andi_p_thrust_ec" min="0" step="0.25" max="100" shortname="pole_thrust_ec" param="STABILIZATION_ANDI_POLE_THRUST_EC"/>
 
+        <dl_setting var="andi_rate_freq_cutoff" min="1" step="1" max="100" shortname="cutoff_freq_rate" param="STABILIZATION_ANDI_CUTOFF_FREQ_RATE"/>
+        <dl_setting var="andi_accel_freq_cutoff" min="1" step="1" max="100" shortname="cutoff_freq_accel" param="STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL"/>
+        <dl_setting var="andi_jerk_freq_cutoff" min="1" step="1" max="100" shortname="cutoff_freq_jerk" param="STABILIZATION_ANDI_CUTOFF_FREQ_JERK"/>
+
       </dl_settings>
     </dl_settings>
   </settings>
@@ -122,8 +126,12 @@
     <configure name="STABILIZATION_ANDI_POLE_ATT_RM_P1_Y" default="8.0"/>
     <configure name="STABILIZATION_ANDI_POLE_ATT_RM_P1_Z" default="8.0"/>
 
-    <configure name="STABILIZATION_ANDI_POLE_THRUST_EC" default="40.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_THRUST_RM" default="35.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_THRUST_EC" default="10.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_THRUST_RM" default="8.0"/>
+
+    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_RATE" default="10.0"/>
+    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL" default="10.0"/>
+    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_JERK" default="50.0"/>
 
     <define name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X" value="$(STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X)"/>
     <define name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Y" value="$(STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Y)"/>
@@ -162,5 +170,8 @@
     <define name="STABILIZATION_ANDI_POLE_THRUST_EC" value="$(STABILIZATION_ANDI_POLE_THRUST_EC)"/>
     <define name="STABILIZATION_ANDI_POLE_THRUST_RM" value="$(STABILIZATION_ANDI_POLE_THRUST_RM)"/>
 
+    <define name="STABILIZATION_ANDI_CUTOFF_FREQ_RATE" value="$(STABILIZATION_ANDI_CUTOFF_FREQ_RATE)"/>
+    <define name="STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL" value="$(STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL)"/>
+    <define name="STABILIZATION_ANDI_CUTOFF_FREQ_JERK" value="$(STABILIZATION_ANDI_CUTOFF_FREQ_JERK)"/>
   </makefile>
 </module>

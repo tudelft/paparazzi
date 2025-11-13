@@ -17,31 +17,8 @@
  * along with paparazzi; see the file COPYING.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-/** @file stabilization_oneloop.c
- */
-
-
-
-
- /*
- * Copyright (C) 2011-2012 The Paparazzi Team
- *
- * This file is part of paparazzi.
- *
- * paparazzi is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2, or (at your option)
- * any later version.
- *
- * paparazzi is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with paparazzi; see the file COPYING.  If not, write to
- * the Free Software Foundation, 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+/** @file stabilization_andi.h
+ *  @brief ANDI stabilization controller for rotorcraft
  */
 
 #ifndef STABILIZATION_ANDI_H
@@ -134,21 +111,7 @@ static inline void print_GainsOrder3Vect3(const char *gain_name, const struct Ga
     print_FloatVect3("  k2", gains->k2);
     print_FloatVect3("  k3", gains->k3);
 }
-
-// static inline float rm_k1_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n * p1) / (omega_n * omega_n + 2.0f * zeta * omega_n * p1); }
-// static inline float rm_k2_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n + 2.0f * zeta * omega_n * p1) / (2.0f * zeta * omega_n + p1); }
-// static inline float rm_k3_order3_f(const float omega_n, const float zeta, const float p1) { return 2.0f * zeta * omega_n + p1; }
-// static inline float rm_k1_order2_f(const float omega_n, const float zeta) { return omega_n / (2.0f * zeta); }
-// static inline float rm_k2_order2_f(const float omega_n, const float zeta) { return 2.0f * zeta * omega_n; }
-
-// static inline float ec_k1_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n * p1); }
-// static inline float ec_k2_order3_f(const float omega_n, const float zeta, const float p1) { return (omega_n * omega_n + 2.0f * zeta * omega_n * p1); }
-// static inline float ec_k3_order3_f(const float omega_n, const float zeta, const float p1) { return 2.0f * zeta * omega_n + p1; }
-// static inline float ec_k1_order2_f(const float omega_n, const float zeta) { return omega_n * omega_n; }
-// static inline float ec_k2_order2_f(const float omega_n, const float zeta) { return 2.0f * zeta * omega_n; }
-
-
-
+// On board model coefficients
 extern union CycloneCoefficients obm_coefficients;
 
 /*Declaration of Reference Model and Error Controller Poles*/
@@ -158,6 +121,10 @@ extern struct PolesOrder3Vect3 andi_p_att_ec;
 extern struct PolesOrder3Vect3 andi_p_att_rm;
 extern float andi_p_thrust_ec;
 extern float andi_p_thrust_rm;
+
+extern float andi_rate_freq_cutoff;
+extern float andi_accel_freq_cutoff;
+extern float andi_jerk_freq_cutoff;
 
 void stabilization_andi_init(void);
 void stabilization_andi_enter(void);
