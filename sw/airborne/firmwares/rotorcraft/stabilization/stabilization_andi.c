@@ -18,6 +18,14 @@
  * <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * Assumptions:
+ * - Airframe is a tiltbody with 2 elevons and 2 motors in a tractor configuration 
+ * - Elevons are at index 0 and 1 in the actuator array
+ * - Motors are at index 2 and 3 in the actuator array
+ * - ESC neutral value corresponds to zero thrust.
+ */
+
  /* Include necessary header files */
 #include "firmwares/rotorcraft/stabilization/stabilization_andi.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
@@ -102,31 +110,9 @@ static inline float ec_k3_order3_f(const float omega_n, const float zeta, const 
 static inline float ec_k1_order2_f(const float omega_n, const float zeta __attribute__((unused))) { return omega_n * omega_n; }
 static inline float ec_k2_order2_f(const float omega_n, const float zeta) { return 2.0f * zeta * omega_n; }
 
-struct WLS_t wls_stab_p = {
-  .nu       = ANDI_NUM_ACT,
-  .nv       = ANDI_OUTPUTS,
-  .gamma_sq = 1000.0,
-#ifdef STABILIZATION_ANDI_WLS_WV
-  .Wv       = STABILIZATION_ANDI_WLS_WV,
-#else
-  .Wv       = {1000.0f, 1000.0f, 1.0f, 100.0f},
-#endif
-#ifdef STABILIZATION_ANDI_WLS_WU
-  .Wu       = STABILIZATION_ANDI_WLS_WU,
-#else
-  .Wu       = {[0 ... ANDI_NUM_ACT - 1] = 1.0f},
-#endif
-  .u_pref   = {0.0f},
-  .u_min    = {0.0f},
-  .u_max    = {0.0f},
-  .PC       = 0.0f,
-  .SC       = 0.0f,
-  .iter     = 0
-};
-
-float wls_u_scaler[ANDI_NUM_ACT];
-float wls_v_scaler[ANDI_OUTPUTS];
-
+// External variables (can be dynamically changed)
+// FIXME: These should be initialized in the init function through handlers instead of here 
+// (might not even need to be initialized depending on how the xml dl_settings work).
 struct PolesOrder2Vect3 andi_p_rate_ec = {
   .omega_n={
     .x=STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X, 
@@ -178,6 +164,38 @@ struct PolesOrder3Vect3 andi_p_att_rm = {
 float andi_p_thrust_ec = STABILIZATION_ANDI_POLE_THRUST_EC;
 float andi_p_thrust_rm = STABILIZATION_ANDI_POLE_THRUST_RM;
 
+// Filter variables
+float andi_rate_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_RATE;  // Hz
+float andi_accel_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_RATE;  // Hz
+float andi_jerk_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_RATE;  // Hz
+
+// WLS allocation variables
+struct WLS_t wls_stab_p = {
+  .nu       = ANDI_NUM_ACT,
+  .nv       = ANDI_OUTPUTS,
+  .gamma_sq = 1000.0,
+#ifdef STABILIZATION_ANDI_WLS_WV
+  .Wv       = STABILIZATION_ANDI_WLS_WV,
+#else
+  .Wv       = {1000.0f, 1000.0f, 1.0f, 100.0f},
+#endif
+#ifdef STABILIZATION_ANDI_WLS_WU
+  .Wu       = STABILIZATION_ANDI_WLS_WU,
+#else
+  .Wu       = {[0 ... ANDI_NUM_ACT - 1] = 1.0f},
+#endif
+  .u_pref   = {0.0f}, // Must be zero
+  .u_min    = {0.0f},
+  .u_max    = {0.0f},
+  .PC       = 0.0f,
+  .SC       = 0.0f,
+  .iter     = 0
+};
+
+float wls_u_scaler[ANDI_NUM_ACT];
+float wls_v_scaler[ANDI_OUTPUTS];
+
+// Controller gains
 struct GainsOrder2Vect3 andi_k_rate_ec;
 struct GainsOrder2Vect3 andi_k_rate_rm;
 struct GainsOrder3Vect3 andi_k_att_ec;
@@ -185,13 +203,7 @@ struct GainsOrder3Vect3 andi_k_att_rm;
 float andi_k_thrust_ec;
 float andi_k_thrust_rm;
 
-float actuator_meas[ANDI_NUM_ACT];
-
-// Filter variables
-float andi_rate_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_RATE;  // Hz
-float andi_accel_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_RATE;  // Hz
-float andi_jerk_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_RATE;  // Hz
-
+// Filter instances
 struct FilterVect3 angular_rates_filter_meas;
 struct FilterVect3 angular_rates_filter_sync;
 struct FilterVect3 angular_accel_filter_meas;
@@ -202,21 +214,19 @@ Butterworth2LowPass actuator_filters[ANDI_NUM_ACT];
 
 // Raw state measurement variables
 struct FloatRates rates_prev;
+float actuator_meas[ANDI_NUM_ACT];
 
-// Filtered state variables
+// State variables
 struct AttStateQuat attitude_state;
 float thrust_state;
 float actuator_state[ANDI_NUM_ACT];
-float andi_u[ANDI_NUM_ACT];
-
-float control_output[ANDI_OUTPUTS] = {0.0f};
 
 // Reference model variables
 struct AttQuat attitude_ref;
 struct ThrustRef thrust_ref;
-struct ThrustRef thrust_ref_synced;
+struct ThrustRef thrust_ref_synced; // Fixme: remove, should not be global
 
-
+// Setpoints
 struct FloatRates rates_des;
 struct FloatQuat attitude_des;
 float thrust_des;
@@ -227,6 +237,10 @@ struct ThrustRef thrust_bounds;
 
 // Controller variables
 float ce_mat[ANDI_OUTPUTS * ANDI_NUM_ACT];
+float andi_u[ANDI_NUM_ACT];
+
+// Debug variables
+float control_output[ANDI_OUTPUTS] = {0.0f};
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -346,7 +360,6 @@ float act_dynamics_discrete[ANDI_NUM_ACT];
 static void apply_actuator_dynamics_filter(float actuator_meas[ANDI_NUM_ACT], float andi_u[ANDI_NUM_ACT])
 {
   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
-    float old_meas = actuator_meas[i];
     actuator_meas[i] = actuator_meas[i] * (1 - act_dynamics_discrete[i]) + andi_u[i] * act_dynamics_discrete[i];
     Bound(actuator_meas[i], ACTUATOR_MIN[i], ACTUATOR_MAX[i]);
   }
@@ -800,7 +813,7 @@ static void compute_wls_u_scaler(float u_scaler[ANDI_NUM_ACT], const float act_m
 }
 
 /**
- * @brief Compute output inverse-scaling factors for normalizing weighted least squares outputs.
+ * @brief Compute output scaling factors for normalizing weighted least squares outputs.
  *
  * For each output i this sets v_scaler[i] = 1.0f / v[i] when v[i] is non-zero; otherwise v_scaler[i] is set
  * to 1.0f to avoid a division-by-zero. The normalized output used in WLS is then v_norm = v_scaler * v.
@@ -1302,7 +1315,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   // FIXME: Do not hardcode motor command to rpm factor (and use a better model for this mapping)
   commands[0] = (pprz_t)(andi_u[0] / ACTUATOR_MAX[0] * MAX_PPRZ);
   commands[1] = (pprz_t)(andi_u[1] / ACTUATOR_MAX[1] * MAX_PPRZ);
-  commands[2] = (pprz_t)(sqrt(andi_u[2] / ACTUATOR_MAX[2]) * MAX_PPRZ); // FIXME: get this to work, also for non zero neutral servo position.
+  commands[2] = (pprz_t)(sqrt(andi_u[2] / ACTUATOR_MAX[2]) * MAX_PPRZ);
   commands[3] = (pprz_t)(sqrt(andi_u[3] / ACTUATOR_MAX[3]) * MAX_PPRZ);
 
   // Update thrust command such that the current is correctly estimated
