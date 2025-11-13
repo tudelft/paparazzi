@@ -20,13 +20,13 @@
 
 /*
  * Assumptions:
- * - Airframe is a tiltbody with 2 elevons and 2 motors in a tractor configuration 
+ * - Airframe is a tiltbody with 2 elevons and 2 motors in a tractor configuration
  * - Elevons are at index 0 and 1 in the actuator array
  * - Motors are at index 2 and 3 in the actuator array
  * - ESC neutral value corresponds to zero thrust.
  */
 
- /* Include necessary header files */
+/* Include necessary header files */
 #include "firmwares/rotorcraft/stabilization/stabilization_andi.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "math/pprz_algebra_float.h"
@@ -48,13 +48,13 @@
 #endif
 
 #ifdef STABILIZATION_ANDI_ACT_IS_SERVO
-const bool   ACTUATOR_IS_SERVO[ANDI_NUM_ACT] = STABILIZATION_ANDI_ACT_IS_SERVO;
+const bool ACTUATOR_IS_SERVO[ANDI_NUM_ACT] = STABILIZATION_ANDI_ACT_IS_SERVO;
 #else
-const bool   ACTUATOR_IS_SERVO[ANDI_NUM_ACT] = {0};
+const bool ACTUATOR_IS_SERVO[ANDI_NUM_ACT] = {0};
 #endif
 
 #ifdef STABILIZATION_ANDI_ACT_DYNAMICS
-const float  ACTUATOR_DYNAMICS[ANDI_NUM_ACT] = STABILIZATION_ANDI_ACT_DYNAMICS;
+const float ACTUATOR_DYNAMICS[ANDI_NUM_ACT] = STABILIZATION_ANDI_ACT_DYNAMICS;
 #else
 #error "You must specify the actuator dynamics"
 #endif
@@ -111,86 +111,63 @@ static inline float ec_k1_order2_f(const float omega_n, const float zeta __attri
 static inline float ec_k2_order2_f(const float omega_n, const float zeta) { return 2.0f * zeta * omega_n; }
 
 // External variables (can be dynamically changed)
-// FIXME: These should be initialized in the init function through handlers instead of here 
+// FIXME: These should be initialized in the init function through handlers instead of here
 // (might not even need to be initialized depending on how the xml dl_settings work).
 struct PolesOrder2Vect3 andi_p_rate_ec = {
-  .omega_n={
-    .x=STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X, 
-    .y=STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Y, 
-    .z=STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Z}, 
-  .zeta={
-    .x=STABILIZATION_ANDI_POLE_RATE_EC_ZETA_X, 
-    .y=STABILIZATION_ANDI_POLE_RATE_EC_ZETA_Y, 
-    .z=STABILIZATION_ANDI_POLE_RATE_EC_ZETA_Z}
-};
+    .omega_n = {
+        .x = STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X,
+        .y = STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Y,
+        .z = STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Z},
+    .zeta = {.x = STABILIZATION_ANDI_POLE_RATE_EC_ZETA_X, .y = STABILIZATION_ANDI_POLE_RATE_EC_ZETA_Y, .z = STABILIZATION_ANDI_POLE_RATE_EC_ZETA_Z}};
 struct PolesOrder2Vect3 andi_p_rate_rm = {
-  .omega_n={
-    .x=STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_X, 
-    .y=STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_Y, 
-    .z=STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_Z}, 
-  .zeta={
-    .x=STABILIZATION_ANDI_POLE_RATE_RM_ZETA_X, 
-    .y=STABILIZATION_ANDI_POLE_RATE_RM_ZETA_Y, 
-    .z=STABILIZATION_ANDI_POLE_RATE_RM_ZETA_Z}
-};
+    .omega_n = {
+        .x = STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_X,
+        .y = STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_Y,
+        .z = STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_Z},
+    .zeta = {.x = STABILIZATION_ANDI_POLE_RATE_RM_ZETA_X, .y = STABILIZATION_ANDI_POLE_RATE_RM_ZETA_Y, .z = STABILIZATION_ANDI_POLE_RATE_RM_ZETA_Z}};
 struct PolesOrder3Vect3 andi_p_att_ec = {
-    .omega_n={
-    .x=STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_X, 
-    .y=STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Y, 
-    .z=STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Z}, 
-  .zeta={
-    .x=STABILIZATION_ANDI_POLE_ATT_EC_ZETA_X, 
-    .y=STABILIZATION_ANDI_POLE_ATT_EC_ZETA_Y, 
-    .z=STABILIZATION_ANDI_POLE_ATT_EC_ZETA_Z},
-  .p1={
-    .x=STABILIZATION_ANDI_POLE_ATT_EC_P1_X,
-    .y=STABILIZATION_ANDI_POLE_ATT_EC_P1_Y,
-    .z=STABILIZATION_ANDI_POLE_ATT_EC_P1_Z}
-};
+    .omega_n = {
+        .x = STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_X,
+        .y = STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Y,
+        .z = STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Z},
+    .zeta = {.x = STABILIZATION_ANDI_POLE_ATT_EC_ZETA_X, .y = STABILIZATION_ANDI_POLE_ATT_EC_ZETA_Y, .z = STABILIZATION_ANDI_POLE_ATT_EC_ZETA_Z},
+    .p1 = {.x = STABILIZATION_ANDI_POLE_ATT_EC_P1_X, .y = STABILIZATION_ANDI_POLE_ATT_EC_P1_Y, .z = STABILIZATION_ANDI_POLE_ATT_EC_P1_Z}};
 struct PolesOrder3Vect3 andi_p_att_rm = {
-    .omega_n={
-    .x=STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_X, 
-    .y=STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_Y, 
-    .z=STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_Z}, 
-  .zeta={
-    .x=STABILIZATION_ANDI_POLE_ATT_RM_ZETA_X, 
-    .y=STABILIZATION_ANDI_POLE_ATT_RM_ZETA_Y, 
-    .z=STABILIZATION_ANDI_POLE_ATT_RM_ZETA_Z},
-  .p1={
-    .x=STABILIZATION_ANDI_POLE_ATT_RM_P1_X,
-    .y=STABILIZATION_ANDI_POLE_ATT_RM_P1_Y,
-    .z=STABILIZATION_ANDI_POLE_ATT_RM_P1_Z}
-};
+    .omega_n = {
+        .x = STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_X,
+        .y = STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_Y,
+        .z = STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_Z},
+    .zeta = {.x = STABILIZATION_ANDI_POLE_ATT_RM_ZETA_X, .y = STABILIZATION_ANDI_POLE_ATT_RM_ZETA_Y, .z = STABILIZATION_ANDI_POLE_ATT_RM_ZETA_Z},
+    .p1 = {.x = STABILIZATION_ANDI_POLE_ATT_RM_P1_X, .y = STABILIZATION_ANDI_POLE_ATT_RM_P1_Y, .z = STABILIZATION_ANDI_POLE_ATT_RM_P1_Z}};
 float andi_p_thrust_ec = STABILIZATION_ANDI_POLE_THRUST_EC;
 float andi_p_thrust_rm = STABILIZATION_ANDI_POLE_THRUST_RM;
 
 // Filter variables
 float andi_rate_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_RATE;  // Hz
-float andi_accel_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_RATE;  // Hz
+float andi_accel_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_RATE; // Hz
 float andi_jerk_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_RATE;  // Hz
 
 // WLS allocation variables
 struct WLS_t wls_stab_p = {
-  .nu       = ANDI_NUM_ACT,
-  .nv       = ANDI_OUTPUTS,
-  .gamma_sq = 1000.0,
+    .nu = ANDI_NUM_ACT,
+    .nv = ANDI_OUTPUTS,
+    .gamma_sq = 1000.0,
 #ifdef STABILIZATION_ANDI_WLS_WV
-  .Wv       = STABILIZATION_ANDI_WLS_WV,
+    .Wv = STABILIZATION_ANDI_WLS_WV,
 #else
-  .Wv       = {1000.0f, 1000.0f, 1.0f, 100.0f},
+    .Wv = {1000.0f, 1000.0f, 1.0f, 100.0f},
 #endif
 #ifdef STABILIZATION_ANDI_WLS_WU
-  .Wu       = STABILIZATION_ANDI_WLS_WU,
+    .Wu = STABILIZATION_ANDI_WLS_WU,
 #else
-  .Wu       = {[0 ... ANDI_NUM_ACT - 1] = 1.0f},
+    .Wu = {[0 ... ANDI_NUM_ACT - 1] = 1.0f},
 #endif
-  .u_pref   = {0.0f}, // Must be zero
-  .u_min    = {0.0f},
-  .u_max    = {0.0f},
-  .PC       = 0.0f,
-  .SC       = 0.0f,
-  .iter     = 0
-};
+    .u_pref = {0.0f}, // Must be zero
+    .u_min = {0.0f},
+    .u_max = {0.0f},
+    .PC = 0.0f,
+    .SC = 0.0f,
+    .iter = 0};
 
 float wls_u_scaler[ANDI_NUM_ACT];
 float wls_v_scaler[ANDI_OUTPUTS];
@@ -246,53 +223,52 @@ float control_output[ANDI_OUTPUTS] = {0.0f};
 #include "modules/datalink/telemetry.h"
 static void send_wls_v_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
 {
-  send_wls_v("stab", &wls_stab_p, trans, dev); 
+  send_wls_v("stab", &wls_stab_p, trans, dev);
 }
 static void send_wls_u_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
 {
-  send_wls_u("stab", &wls_stab_p, trans, dev); 
+  send_wls_u("stab", &wls_stab_p, trans, dev);
 }
 static void send_eff_mat_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
 {
   float zero = 0.0f;
-  pprz_msg_send_EFF_MAT_STAB(trans, dev, AC_ID, 
-                                  ANDI_NUM_ACT, &ce_mat[0 * ANDI_NUM_ACT],
-                                  ANDI_NUM_ACT, &ce_mat[1 * ANDI_NUM_ACT],
-                                  ANDI_NUM_ACT, &ce_mat[2 * ANDI_NUM_ACT], 
-                                  ANDI_NUM_ACT, &ce_mat[3 * ANDI_NUM_ACT],
-                                             1, &zero);
+  pprz_msg_send_EFF_MAT_STAB(trans, dev, AC_ID,
+                             ANDI_NUM_ACT, &ce_mat[0 * ANDI_NUM_ACT],
+                             ANDI_NUM_ACT, &ce_mat[1 * ANDI_NUM_ACT],
+                             ANDI_NUM_ACT, &ce_mat[2 * ANDI_NUM_ACT],
+                             ANDI_NUM_ACT, &ce_mat[3 * ANDI_NUM_ACT],
+                             1, &zero);
 }
 static void send_stab_attitude_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_STAB_ATTITUDE(trans, dev, AC_ID,
-                                              4, (float*)&attitude_des,
-                                              4, (float*)&attitude_state.att,
-                                              4, (float*)&attitude_ref.att,
-                                              3, (float*)&attitude_state.att_d,
-                                              3, (float*)&attitude_ref.att_d,
-                                              3, (float*)&attitude_state.att_2d,
-                                              3, (float*)&attitude_ref.att_2d,
-                                              3, (float*)&attitude_ref.att_3d,
-                                   ANDI_NUM_ACT, andi_u);                                      
+                              4, (float *)&attitude_des,
+                              4, (float *)&attitude_state.att,
+                              4, (float *)&attitude_ref.att,
+                              3, (float *)&attitude_state.att_d,
+                              3, (float *)&attitude_ref.att_d,
+                              3, (float *)&attitude_state.att_2d,
+                              3, (float *)&attitude_ref.att_2d,
+                              3, (float *)&attitude_ref.att_3d,
+                              ANDI_NUM_ACT, andi_u);
 }
 
 static void send_stab_thrust_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_STAB_THRUST(trans, dev, AC_ID,
-                                              &thrust_des,
-                                              &thrust_ref_synced.thrust,
-                                              &thrust_state,
-                                              &thrust_ref_synced.thrust_d);                                      
+                            &thrust_des,
+                            &thrust_ref_synced.thrust,
+                            &thrust_state,
+                            &thrust_ref_synced.thrust_d);
 }
 static void send_debug_vect_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
 {
   char *name = "control output";
   pprz_msg_send_DEBUG_VECT(trans, dev, AC_ID,
-                                              strlen(name), name,
-                                              ANDI_OUTPUTS, (float*)&control_output);
+                           strlen(name), name,
+                           ANDI_OUTPUTS, (float *)&control_output);
 }
-#endif //PERIODIC_TELEMETRY
-
+#endif // PERIODIC_TELEMETRY
 
 // T4 Actuator feedback handling
 struct ActuatorsT4In actuators_t4_obs;
@@ -319,9 +295,9 @@ static void actuators_t4_in_callback(uint8_t sender_id __attribute__((unused)), 
 /**
  * @brief Extract actuator states from ActuatorsT4In struct.
  *
- * This function converts selected actuator telemetry data from the 
+ * This function converts selected actuator telemetry data from the
  * input struct into floating-point values representing angles in radians
- * and rotational speeds in radians per second, storing them in the 
+ * and rotational speeds in radians per second, storing them in the
  * provided actuator_state array.
  *
  * FIXME: Avoid hardcoding indices, conversion factors, and inversions; ask Erik for possible solution. => Leave it be for now
@@ -335,9 +311,9 @@ static void actuators_t4_in_callback(uint8_t sender_id __attribute__((unused)), 
 static void fetch_actuators_t4(float actuator_meas[ANDI_NUM_ACT], const struct ActuatorsT4In *actuators_t4_in_ptr)
 {
   actuator_meas[0] = (float)actuators_t4_in_ptr->servo_1_angle / 18000 * M_PI; // Convert 1e-2 deg to rad
-  actuator_meas[1] = -(float)actuators_t4_in_ptr->servo_6_angle / 18000 * M_PI; 
+  actuator_meas[1] = -(float)actuators_t4_in_ptr->servo_6_angle / 18000 * M_PI;
   actuator_meas[2] = (float)actuators_t4_in_ptr->esc_1_rpm * 2 * M_PI / 60; // Convert rpm to rad/s
-  actuator_meas[2] *= actuator_meas[2]; // square motor rpm
+  actuator_meas[2] *= actuator_meas[2];                                     // square motor rpm
   actuator_meas[3] = (float)actuators_t4_in_ptr->esc_2_rpm * 2 * M_PI / 60;
   actuator_meas[3] *= actuator_meas[3]; // square motor rpm
 }
@@ -359,7 +335,8 @@ float act_dynamics_discrete[ANDI_NUM_ACT];
  */
 static void apply_actuator_dynamics_filter(float actuator_meas[ANDI_NUM_ACT], float andi_u[ANDI_NUM_ACT])
 {
-  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++)
+  {
     actuator_meas[i] = actuator_meas[i] * (1 - act_dynamics_discrete[i]) + andi_u[i] * act_dynamics_discrete[i];
     Bound(actuator_meas[i], ACTUATOR_MIN[i], ACTUATOR_MAX[i]);
   }
@@ -381,10 +358,10 @@ static void apply_actuator_dynamics_filter(float actuator_meas[ANDI_NUM_ACT], fl
  * @param[in,out] actuator_meas Array of floats with size ANDI_NUM_ACT to store
  *                              the actuator measurement results in radians (angles)
  *                              and radians per second (rotational speeds).
- *                              This array also functions as input and should contain the 
+ *                              This array also functions as input and should contain the
  *                              previous actuator state in case a model is used.
- * 
- * FIXME: Thrust control does not work with USE_ACTUATOR_FEEDBACK, needs to be fixed. 
+ *
+ * FIXME: Thrust control does not work with USE_ACTUATOR_FEEDBACK, needs to be fixed.
  *        (probably need a proper rmp controller for this)
  */
 static void get_actuator_measurement(float actuator_meas[ANDI_NUM_ACT])
@@ -393,12 +370,12 @@ static void get_actuator_measurement(float actuator_meas[ANDI_NUM_ACT])
   float actuator_meas_tmp_2[ANDI_NUM_ACT];
   float_vect_copy(actuator_meas_tmp_2, actuator_meas, ANDI_NUM_ACT);
 
-// #ifdef USE_ACTUATOR_FEEDBACK
+  // #ifdef USE_ACTUATOR_FEEDBACK
   // FIXME: Using actuator feedback does not work at the moment
   fetch_actuators_t4(actuator_meas_tmp_1, &actuators_t4_obs);
-// #else
+  // #else
   apply_actuator_dynamics_filter(actuator_meas_tmp_2, andi_u);
-// #endif
+  // #endif
   // choose actuator feedback or model
   actuator_meas[0] = actuator_meas_tmp_1[0]; // elevon left
   actuator_meas[1] = actuator_meas_tmp_1[1]; // elevon right
@@ -406,13 +383,13 @@ static void get_actuator_measurement(float actuator_meas[ANDI_NUM_ACT])
   actuator_meas[3] = actuator_meas_tmp_2[3]; // motor right
 }
 
-/** 
- * Compute reference-model gains for a 3rd-order 3D system. 
+/**
+ * Compute reference-model gains for a 3rd-order 3D system.
  * Each axis gain (x, y, z) is computed using rm_k*_order3_f() with omega_n, zeta, and p1 parameters.
  * @param[in] poles Pointer to PolesOrder3Vect3 containing omega_n, zeta, and p1 for each axis.
  * @return Struct containing k1, k2, k3 gains for x, y, z.
  */
-struct GainsOrder3Vect3 compute_reference_gains_order_3_vect_3(const struct PolesOrder3Vect3* poles)
+struct GainsOrder3Vect3 compute_reference_gains_order_3_vect_3(const struct PolesOrder3Vect3 *poles)
 {
   struct GainsOrder3Vect3 gains;
   gains.k1.x = rm_k1_order3_f(poles->omega_n.x, poles->zeta.x, poles->p1.x);
@@ -429,13 +406,13 @@ struct GainsOrder3Vect3 compute_reference_gains_order_3_vect_3(const struct Pole
   return gains;
 }
 
-/** 
- * Compute reference-model gains for a 2nd-order 3D system. 
+/**
+ * Compute reference-model gains for a 2nd-order 3D system.
  * Each axis gain (x, y, z) is computed using rm_k*_order2_f() with omega_n and zeta parameters.
  * @param[in] poles Pointer to PolesOrder2Vect3 containing omega_n and zeta for each axis.
  * @return Struct containing k1, k2 gains for x, y, z.
  */
-struct GainsOrder2Vect3 compute_reference_gains_order_2_vect_3(const struct PolesOrder2Vect3* poles)
+struct GainsOrder2Vect3 compute_reference_gains_order_2_vect_3(const struct PolesOrder2Vect3 *poles)
 {
   struct GainsOrder2Vect3 gains;
   gains.k1.x = rm_k1_order2_f(poles->omega_n.x, poles->zeta.x);
@@ -448,13 +425,13 @@ struct GainsOrder2Vect3 compute_reference_gains_order_2_vect_3(const struct Pole
   return gains;
 }
 
-/** 
- * Compute error-compensation gains for a 3rd-order 3D system. 
+/**
+ * Compute error-compensation gains for a 3rd-order 3D system.
  * Each axis gain (x, y, z) is computed using ec_k*_order3_f() with omega_n, zeta, and p1 parameters.
  * @param[in] poles Pointer to PolesOrder3Vect3 containing omega_n, zeta, and p1 for each axis.
  * @return Struct containing k1, k2, k3 gains for x, y, z.
  */
-struct GainsOrder3Vect3 compute_error_gains_order_3_vect_3(const struct PolesOrder3Vect3* poles)
+struct GainsOrder3Vect3 compute_error_gains_order_3_vect_3(const struct PolesOrder3Vect3 *poles)
 {
   struct GainsOrder3Vect3 gains;
   gains.k1.x = ec_k1_order3_f(poles->omega_n.x, poles->zeta.x, poles->p1.x);
@@ -471,13 +448,13 @@ struct GainsOrder3Vect3 compute_error_gains_order_3_vect_3(const struct PolesOrd
   return gains;
 }
 
-/** 
- * Compute error-compensation gains for a 2nd-order 3D system. 
+/**
+ * Compute error-compensation gains for a 2nd-order 3D system.
  * Each axis gain (x, y, z) is computed using ec_k*_order2_f() with omega_n and zeta parameters.
  * @param[in] poles[ Pointer to PolesOrder2Vect3 containing omega_n and zeta for each axis.
  * @return Struct containing k1, k2 gains for x, y, z.
  */
-struct GainsOrder2Vect3 compute_error_gains_order_2_vect_3(const struct PolesOrder2Vect3* poles)
+struct GainsOrder2Vect3 compute_error_gains_order_2_vect_3(const struct PolesOrder2Vect3 *poles)
 {
   struct GainsOrder2Vect3 gains;
   gains.k1.x = ec_k1_order2_f(poles->omega_n.x, poles->zeta.x);
@@ -490,12 +467,11 @@ struct GainsOrder2Vect3 compute_error_gains_order_2_vect_3(const struct PolesOrd
   return gains;
 }
 
-
 /**
  * @brief Generates a bounded second-order reference signal for attitude rate control.
  *
  * This function computes smooth angular rate, acceleration, and jerk references based on the desired rates,
- * applying bounded limits to ensure stability and safe dynamic behavior. It updates the reference states 
+ * applying bounded limits to ensure stability and safe dynamic behavior. It updates the reference states
  * in place within the provided `att_ref` structure, which is a quaternion-based reference with associated rate states.
  *
  * @param[in] dt         The sampling interval in seconds.
@@ -506,49 +482,49 @@ struct GainsOrder2Vect3 compute_error_gains_order_2_vect_3(const struct PolesOrd
  *                         updated in place to produce the reference command.
  */
 static void generate_reference_rate(
-  float dt,
-  const struct FloatRates *rate_des,
-  const struct GainsOrder2Vect3 *k_rate_rm,
-  const struct AttQuat *bounds,
-  struct AttQuat *att_ref)
+    float dt,
+    const struct FloatRates *rate_des,
+    const struct GainsOrder2Vect3 *k_rate_rm,
+    const struct AttQuat *bounds,
+    struct AttQuat *att_ref)
 {
-    float p_des = rate_des->p;
-    float q_des = rate_des->q;
-    float r_des = rate_des->r;
+  float p_des = rate_des->p;
+  float q_des = rate_des->q;
+  float r_des = rate_des->r;
 
-    BoundAbs(p_des, bounds->att_d.p);
-    BoundAbs(q_des, bounds->att_d.q);
-    BoundAbs(r_des, bounds->att_d.r);
+  BoundAbs(p_des, bounds->att_d.p);
+  BoundAbs(q_des, bounds->att_d.q);
+  BoundAbs(r_des, bounds->att_d.r);
 
-    float p_d_des = k_rate_rm->k1.x * (p_des - att_ref->att_d.p);
-    float q_d_des = k_rate_rm->k1.y * (q_des - att_ref->att_d.q);
-    float r_d_des = k_rate_rm->k1.z * (r_des - att_ref->att_d.r);
+  float p_d_des = k_rate_rm->k1.x * (p_des - att_ref->att_d.p);
+  float q_d_des = k_rate_rm->k1.y * (q_des - att_ref->att_d.q);
+  float r_d_des = k_rate_rm->k1.z * (r_des - att_ref->att_d.r);
 
-    BoundAbs(p_d_des, bounds->att_2d.x);
-    BoundAbs(q_d_des, bounds->att_2d.y);
-    BoundAbs(r_d_des, bounds->att_2d.z);
+  BoundAbs(p_d_des, bounds->att_2d.x);
+  BoundAbs(q_d_des, bounds->att_2d.y);
+  BoundAbs(r_d_des, bounds->att_2d.z);
 
-    float p_2d_des = k_rate_rm->k2.x * (p_d_des - att_ref->att_2d.x);
-    float q_2d_des = k_rate_rm->k2.y * (q_d_des - att_ref->att_2d.y);
-    float r_2d_des = k_rate_rm->k2.z * (r_d_des - att_ref->att_2d.z);
+  float p_2d_des = k_rate_rm->k2.x * (p_d_des - att_ref->att_2d.x);
+  float q_2d_des = k_rate_rm->k2.y * (q_d_des - att_ref->att_2d.y);
+  float r_2d_des = k_rate_rm->k2.z * (r_d_des - att_ref->att_2d.z);
 
-    BoundAbs(p_2d_des, bounds->att_3d.x);
-    BoundAbs(q_2d_des, bounds->att_3d.y);
-    BoundAbs(r_2d_des, bounds->att_3d.z);
+  BoundAbs(p_2d_des, bounds->att_3d.x);
+  BoundAbs(q_2d_des, bounds->att_3d.y);
+  BoundAbs(r_2d_des, bounds->att_3d.z);
 
-    att_ref->att_3d.x = p_2d_des;
-    att_ref->att_3d.y = q_2d_des;
-    att_ref->att_3d.z = r_2d_des;
+  att_ref->att_3d.x = p_2d_des;
+  att_ref->att_3d.y = q_2d_des;
+  att_ref->att_3d.z = r_2d_des;
 
-    att_ref->att_2d.x += p_2d_des * dt;
-    att_ref->att_2d.y += q_2d_des * dt;
-    att_ref->att_2d.z += r_2d_des * dt;
-  
-    att_ref->att_d.p += att_ref->att_2d.x * dt;
-    att_ref->att_d.q += att_ref->att_2d.y * dt;
-    att_ref->att_d.r += att_ref->att_2d.z * dt;
+  att_ref->att_2d.x += p_2d_des * dt;
+  att_ref->att_2d.y += q_2d_des * dt;
+  att_ref->att_2d.z += r_2d_des * dt;
 
-    float_quat_identity(&att_ref->att); // zero the quaternion attitude reference
+  att_ref->att_d.p += att_ref->att_2d.x * dt;
+  att_ref->att_d.q += att_ref->att_2d.y * dt;
+  att_ref->att_d.r += att_ref->att_2d.z * dt;
+
+  float_quat_identity(&att_ref->att); // zero the quaternion attitude reference
 }
 
 /**
@@ -566,53 +542,53 @@ static void generate_reference_rate(
  * @param[in,out] att_ref Reference model state containing attitude quaternion and rate state, updated in place.
  */
 static void generate_reference_attitude(
-  float dt,
-  const struct FloatQuat *att_des,
-  const struct GainsOrder3Vect3 *k_att_rm,
-  const struct AttQuat *bounds,
-  struct AttQuat *att_ref)
+    float dt,
+    const struct FloatQuat *att_des,
+    const struct GainsOrder3Vect3 *k_att_rm,
+    const struct AttQuat *bounds,
+    struct AttQuat *att_ref)
 {
-    struct FloatQuat att_err; // rotation needed from ref to des
-    float_quat_inv_comp_norm_shortest(&att_err, (struct FloatQuat *)&att_ref->att, (struct FloatQuat *)att_des); // FIXME: quaternion library is not const correct.
-    
-    // factor 2 needed to convert quaternion difference to angular rate (assuming small angles)
-    float p_des = k_att_rm->k1.x * att_err.qx * 2;
-    float q_des = k_att_rm->k1.y * att_err.qy * 2;
-    float r_des = k_att_rm->k1.z * att_err.qz * 2;
+  struct FloatQuat att_err;                                                                                    // rotation needed from ref to des
+  float_quat_inv_comp_norm_shortest(&att_err, (struct FloatQuat *)&att_ref->att, (struct FloatQuat *)att_des); // FIXME: quaternion library is not const correct.
 
-    BoundAbs(p_des, bounds->att_d.p);
-    BoundAbs(q_des, bounds->att_d.q);
-    BoundAbs(r_des, bounds->att_d.r);
+  // factor 2 needed to convert quaternion difference to angular rate (assuming small angles)
+  float p_des = k_att_rm->k1.x * att_err.qx * 2;
+  float q_des = k_att_rm->k1.y * att_err.qy * 2;
+  float r_des = k_att_rm->k1.z * att_err.qz * 2;
 
-    float p_d_des = k_att_rm->k2.x * (p_des - att_ref->att_d.p);
-    float q_d_des = k_att_rm->k2.y * (q_des - att_ref->att_d.q);
-    float r_d_des = k_att_rm->k2.z * (r_des - att_ref->att_d.r);
+  BoundAbs(p_des, bounds->att_d.p);
+  BoundAbs(q_des, bounds->att_d.q);
+  BoundAbs(r_des, bounds->att_d.r);
 
-    BoundAbs(p_d_des, bounds->att_2d.x);
-    BoundAbs(q_d_des, bounds->att_2d.y);
-    BoundAbs(r_d_des, bounds->att_2d.z);
+  float p_d_des = k_att_rm->k2.x * (p_des - att_ref->att_d.p);
+  float q_d_des = k_att_rm->k2.y * (q_des - att_ref->att_d.q);
+  float r_d_des = k_att_rm->k2.z * (r_des - att_ref->att_d.r);
 
-    float p_2d_des = k_att_rm->k3.x * (p_d_des - att_ref->att_2d.x);
-    float q_2d_des = k_att_rm->k3.y * (q_d_des - att_ref->att_2d.y);
-    float r_2d_des = k_att_rm->k3.z * (r_d_des - att_ref->att_2d.z);
+  BoundAbs(p_d_des, bounds->att_2d.x);
+  BoundAbs(q_d_des, bounds->att_2d.y);
+  BoundAbs(r_d_des, bounds->att_2d.z);
 
-    BoundAbs(p_2d_des, bounds->att_3d.x);
-    BoundAbs(q_2d_des, bounds->att_3d.y);
-    BoundAbs(r_2d_des, bounds->att_3d.z);
+  float p_2d_des = k_att_rm->k3.x * (p_d_des - att_ref->att_2d.x);
+  float q_2d_des = k_att_rm->k3.y * (q_d_des - att_ref->att_2d.y);
+  float r_2d_des = k_att_rm->k3.z * (r_d_des - att_ref->att_2d.z);
 
-    att_ref->att_3d.x = p_2d_des;
-    att_ref->att_3d.y = q_2d_des;
-    att_ref->att_3d.z = r_2d_des;
+  BoundAbs(p_2d_des, bounds->att_3d.x);
+  BoundAbs(q_2d_des, bounds->att_3d.y);
+  BoundAbs(r_2d_des, bounds->att_3d.z);
 
-    att_ref->att_2d.x += p_2d_des * dt;
-    att_ref->att_2d.y += q_2d_des * dt;
-    att_ref->att_2d.z += r_2d_des * dt;
+  att_ref->att_3d.x = p_2d_des;
+  att_ref->att_3d.y = q_2d_des;
+  att_ref->att_3d.z = r_2d_des;
 
-    att_ref->att_d.p += att_ref->att_2d.x * dt;
-    att_ref->att_d.q += att_ref->att_2d.y * dt;
-    att_ref->att_d.r += att_ref->att_2d.z * dt;
+  att_ref->att_2d.x += p_2d_des * dt;
+  att_ref->att_2d.y += q_2d_des * dt;
+  att_ref->att_2d.z += r_2d_des * dt;
 
-    float_quat_integrate(&att_ref->att, &att_ref->att_d, dt);
+  att_ref->att_d.p += att_ref->att_2d.x * dt;
+  att_ref->att_d.q += att_ref->att_2d.y * dt;
+  att_ref->att_d.r += att_ref->att_2d.z * dt;
+
+  float_quat_integrate(&att_ref->att, &att_ref->att_d, dt);
 }
 
 /**
@@ -629,11 +605,11 @@ static void generate_reference_attitude(
  * @param[in,out] att_ref  Pointer to ThrustRef struct holding thrust reference states.
  */
 static void generate_reference_thrust(
-  float dt,
-  float thrust_des,
-  const float k_thrust_rm,
-  const struct ThrustRef *bounds,
-  struct ThrustRef *thrust_ref)
+    float dt,
+    float thrust_des,
+    const float k_thrust_rm,
+    const struct ThrustRef *bounds,
+    struct ThrustRef *thrust_ref)
 {
   Bound(thrust_des, 0, bounds->thrust);
   thrust_ref->thrust_d = k_thrust_rm * (thrust_des - thrust_ref->thrust);
@@ -656,9 +632,9 @@ static void generate_reference_thrust(
  * @return A \c FloatVect3 structure representing the computed virtual control input vector.
  */
 static struct FloatVect3 control_error_rate(
-  const struct AttQuat *att_ref,
-  const struct AttStateQuat *att_state,
-  const struct GainsOrder2Vect3 *k_rate_ec)
+    const struct AttQuat *att_ref,
+    const struct AttStateQuat *att_state,
+    const struct GainsOrder2Vect3 *k_rate_ec)
 {
   struct FloatVect3 nu = att_ref->att_3d;
 
@@ -687,9 +663,9 @@ static struct FloatVect3 control_error_rate(
  * @return A \c FloatVect3 structure representing the computed virtual control input vector.
  */
 static struct FloatVect3 control_error_attitude(
-  const struct AttQuat *att_ref,
-  const struct AttStateQuat *att_state,
-  const struct GainsOrder3Vect3 *k_att_ec)
+    const struct AttQuat *att_ref,
+    const struct AttStateQuat *att_state,
+    const struct GainsOrder3Vect3 *k_att_ec)
 {
   struct FloatVect3 nu = att_ref->att_3d;
 
@@ -727,9 +703,9 @@ static struct FloatVect3 control_error_attitude(
  * @return A \c float representing the computed virtual control thrust input.
  */
 static float control_error_thrust(
-  const struct ThrustRef *thrust_ref,
-  const float thrust_state,
-  const float k_thrust_ec)
+    const struct ThrustRef *thrust_ref,
+    const float thrust_state,
+    const float k_thrust_ec)
 {
   float nu = thrust_ref->thrust_d;
   nu += k_thrust_ec * (thrust_ref->thrust - thrust_state);
@@ -752,7 +728,8 @@ static float control_error_thrust(
  */
 static void compute_wls_upper_bounds(float u_d_max[ANDI_NUM_ACT], const float act_state[ANDI_NUM_ACT], const float act_max[ANDI_NUM_ACT], const float act_rate_max[ANDI_NUM_ACT], float dt)
 {
-  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++)
+  {
     // Calculate max rate allowed to avoid exceeding actuator max position in one timestep
     float rate_limit_pos = (act_max[i] - act_state[i]) / dt;
     u_d_max[i] = (rate_limit_pos < act_rate_max[i]) ? rate_limit_pos : act_rate_max[i];
@@ -788,25 +765,29 @@ static void compute_wls_lower_bounds(float u_d_min[ANDI_NUM_ACT], const float ac
 
 /**
  * @brief Compute input scaling factors for normalizing weighted least squares.
- * 
+ *
  * This function calculates the input scaling factors (`u_scaler`) for each actuator
  * based on the provided minimum (`act_min`) and maximum (`act_max`) actuator values.
  * The scaling factor is computed as the inverse of the range (max - min). If the
  * range is zero, the scaling factor is set to 1.0 to avoid division by zero.
- * 
+ *
  * u_norm = u_scaler * u
- * 
+ *
  * @param[out] u_scaler Array to store the computed input scaling factors.
  * @param[in] act_min Array of minimum actuator values.
  * @param[in] act_max Array of maximum actuator values.
  */
 static void compute_wls_u_scaler(float u_scaler[ANDI_NUM_ACT], const float act_min[ANDI_NUM_ACT], const float act_max[ANDI_NUM_ACT])
 {
-  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++)
+  {
     float range = act_max[i] - act_min[i];
-    if (range == 0.0f) {
+    if (range == 0.0f)
+    {
       u_scaler[i] = 1.0f;
-    } else {
+    }
+    else
+    {
       u_scaler[i] = 1.0f / range;
     }
   }
@@ -823,10 +804,14 @@ static void compute_wls_u_scaler(float u_scaler[ANDI_NUM_ACT], const float act_m
  */
 static void compute_wls_v_scaler(float v_scaler[ANDI_NUM_ACT], const float v[ANDI_NUM_ACT])
 {
-  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
-    if (v[i] == 0.0f) {
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++)
+  {
+    if (v[i] == 0.0f)
+    {
       v_scaler[i] = 1.0f;
-    } else {
+    }
+    else
+    {
       v_scaler[i] = 1.0f / v[i];
     }
   }
@@ -834,11 +819,11 @@ static void compute_wls_v_scaler(float v_scaler[ANDI_NUM_ACT], const float v[AND
 
 /**
  * @brief Initialize a set of Butterworth low-pass filters to zero for 3D vector data.
- * 
+ *
  * @param[out] filter Struct containing Butterworth filters for x, y, z components.
  * @param[in] freq Cutoff frequency for the filters (Hz).
  * @param[in] dt Sampling time interval (seconds).
- * 
+ *
  * FIXME: Add support for different filter types.
  */
 static void init_filter_vect3(struct FilterVect3 *filter, float freq, float dt)
@@ -850,11 +835,11 @@ static void init_filter_vect3(struct FilterVect3 *filter, float freq, float dt)
 
 /**
  * @brief Initialize a Butterworth low-pass filter to zero.
- * 
+ *
  * @param[out] filter Butterworth2LowPass filter instance.
  * @param[in] freq Cutoff frequency of the filter (Hz).
  * @param[in] dt Sampling time interval (seconds).
- * 
+ *
  * FIXME: Add support for different filter types.
  */
 static void init_filter(Butterworth2LowPass *filter, float freq, float dt)
@@ -864,25 +849,26 @@ static void init_filter(Butterworth2LowPass *filter, float freq, float dt)
 
 /**
  * @brief Initialize an array of Butterworth low-pass filters to zero.
- * 
+ *
  * @param[in] n Number of filters to initialize.
  * @param[out] filter_array Array of Butterworth2LowPass filters to initialize.
  * @param[in] freq Cutoff frequency for the filters (Hz).
  * @param[in] dt Sampling time interval (seconds).
- * 
+ *
  * FIXME: Add support for different filter types.
  */
 static void init_filter_array(uint8_t n, Butterworth2LowPass filter_array[restrict n], float freq, float dt)
 {
   float tau = 1.0f / freq;
-  for (uint_fast8_t i = 0; i < n; i++) {
+  for (uint_fast8_t i = 0; i < n; i++)
+  {
     init_butterworth_2_low_pass(&filter_array[i], tau, dt, 0.0f);
   }
 }
 
 /**
  * @brief Update a Butterworth low-pass filter with new input data.
- * 
+ *
  * @param[in,out] filter Butterworth2LowPass filter instance to update.
  * @param[in] input New input data to feed into the filter.
  */
@@ -893,7 +879,7 @@ static void update_filter(Butterworth2LowPass *filter, float input)
 
 /**
  * @brief Update 3D vector Butterworth filters with new input data.
- * 
+ *
  * @param[in,out] filter Struct containing Butterworth filters for x, y, z components.
  * @param[in] input Pointer to FloatVect3 struct containing new input data.
  */
@@ -901,12 +887,12 @@ static void update_filter_vect3(struct FilterVect3 *filter, const struct FloatVe
 {
   update_butterworth_2_low_pass(&filter->x, input->x);
   update_butterworth_2_low_pass(&filter->y, input->y);
-  update_butterworth_2_low_pass(&filter->z, input->z); 
+  update_butterworth_2_low_pass(&filter->z, input->z);
 }
 
 /**
  * @brief Update 3D vector Butterworth filters with new rate input data.
- * 
+ *
  * @param[in,out] filter Struct containing Butterworth filters for x, y, z components.
  * @param[in] input Pointer to FloatRates struct containing new input rate data.
  */
@@ -914,26 +900,27 @@ static void update_filter_rates(struct FilterVect3 *filter, const struct FloatRa
 {
   update_butterworth_2_low_pass(&filter->x, input->p);
   update_butterworth_2_low_pass(&filter->y, input->q);
-  update_butterworth_2_low_pass(&filter->z, input->r); 
+  update_butterworth_2_low_pass(&filter->z, input->r);
 }
 
 /**
  * @brief Update an array of Butterworth low-pass filters with new input data.
- * 
+ *
  * @param[in] n Number of filters in the array.
  * @param[in,out] filter_array Array of Butterworth2LowPass filters to update.
  * @param[in] input_array Array containing new input data for each filter.
  */
 static void update_filter_array(uint8_t n, Butterworth2LowPass filter_array[restrict n], const float input_array[restrict n])
 {
-  for (uint_fast8_t i = 0; i < n; i++) {
+  for (uint_fast8_t i = 0; i < n; i++)
+  {
     update_butterworth_2_low_pass(&filter_array[i], input_array[i]);
   }
 }
 
 /**
  * @brief Reset a Butterworth low-pass filter to a specific value.
- * 
+ *
  * @param[out] filter Butterworth2LowPass filter instance to reset.
  * @param[in] value Value to reset the filter to.
  */
@@ -944,7 +931,7 @@ static void reset_filter(Butterworth2LowPass *filter, float value)
 
 /**
  * @brief Reset 3D vector Butterworth filters to a specific value.
- * 
+ *
  * @param[out] filter Struct containing Butterworth filters for x, y, z components.
  * @param[in] value Pointer to FloatVect3 struct containing the reset value.
  */
@@ -957,7 +944,7 @@ static void reset_filter_vect3(struct FilterVect3 *filter, const struct FloatVec
 
 /**
  * @brief Reset 3D vector Butterworth filters to specific rate values.
- * 
+ *
  * @param[out] filter Struct containing Butterworth filters for x, y, z components.
  * @param[in] value Pointer to FloatRates struct containing the reset values.
  */
@@ -970,21 +957,22 @@ static void reset_filter_rates(struct FilterVect3 *filter, const struct FloatRat
 
 /**
  * @brief Reset an array of Butterworth low-pass filters to specific values.
- * 
+ *
  * @param[in] n Number of filters in the array.
  * @param[out] filter_array Array of Butterworth2LowPass filters to reset.
  * @param[in] value_array Array containing reset values for each filter.
  */
 static void reset_filter_array(uint8_t n, Butterworth2LowPass filter_array[restrict n], const float value_array[restrict n])
 {
-  for (uint_fast8_t i = 0; i < n; i++) {
-    filter_array[i].i[0]  = filter_array[i].i[1] = filter_array[i].o[0] = filter_array[i].o[1] = value_array[i];
+  for (uint_fast8_t i = 0; i < n; i++)
+  {
+    filter_array[i].i[0] = filter_array[i].i[1] = filter_array[i].o[0] = filter_array[i].o[1] = value_array[i];
   }
 }
 
 /**
  * @brief Retrieve the filtered output from a Butterworth low-pass filter.
- * 
+ *
  * @param[in] filter Butterworth2LowPass filter instance.
  * @return Filtered output value.
  */
@@ -995,7 +983,7 @@ static float get_filter(const Butterworth2LowPass *filter)
 
 /**
  * @brief Retrieve the filtered output from 3D vector Butterworth filters.
- * 
+ *
  * @param[in] filter Struct containing Butterworth filters for x, y, z components.
  * @return FloatVect3 struct containing the filtered output values.
  */
@@ -1010,7 +998,7 @@ static struct FloatVect3 get_filter_vect3(const struct FilterVect3 *filter)
 
 /**
  * @brief Retrieve the filtered output from a Butterworth low-pass filter.
- * 
+ *
  * @param[in] filter Butterworth2LowPass filter instance.
  * @return Filtered output value.
  */
@@ -1025,14 +1013,15 @@ static struct FloatRates get_filter_rates(const struct FilterVect3 *filter)
 
 /**
  * @brief Retrieve the filtered outputs from an array of Butterworth low-pass filters.
- * 
+ *
  * @param[in] n Number of filters in the array.
  * @param[in] filter_array Array of Butterworth2LowPass filters.
  * @param[out] output_array Array to store the filtered output values.
  */
 static void get_filter_array(uint8_t n, const Butterworth2LowPass filter_array[restrict n], float output_array[restrict n])
 {
-  for (uint_fast8_t i = 0; i < n; i++) {
+  for (uint_fast8_t i = 0; i < n; i++)
+  {
     output_array[i] = get_butterworth_2_low_pass(&filter_array[i]);
   }
 }
@@ -1103,11 +1092,11 @@ void stabilization_andi_init(void)
   attitude_bounds.att_3d.z = 100.0f;
 
   // Limit thrust bounds
-  thrust_bounds.thrust =52.0f;
+  thrust_bounds.thrust = 52.0f;
   thrust_bounds.thrust_d = 1000.0f;
 
   // Initial control effectiveness matrix
-  struct FloatVect3 body_vel = {.x=0.0f, .y=0.0f, .z=0.0f};
+  struct FloatVect3 body_vel = {.x = 0.0f, .y = 0.0f, .z = 0.0f};
   evaluate_obm_f_stb_u(ce_mat, &attitude_state.att_d, &body_vel, ACTUATOR_PREF);
 
   // Initialize filters
@@ -1124,20 +1113,21 @@ void stabilization_andi_init(void)
 
   float_vect_zero(andi_u, ANDI_NUM_ACT);
   // Precompute discrete-time actuator dynamics coefficients
-  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++)
+  {
     act_dynamics_discrete[i] = 1 - exp(-ACTUATOR_DYNAMICS[i] / PERIODIC_FREQUENCY);
   }
 
-  // Start telemetry
-  #if PERIODIC_TELEMETRY
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_stab_attitude_stabilization_andi);
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_stab_thrust_stabilization_andi);
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_eff_mat_stabilization_andi);
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_V, send_wls_v_stabilization_andi);
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_U, send_wls_u_stabilization_andi);
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_debug_vect_stabilization_andi);
+// Start telemetry
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_stab_attitude_stabilization_andi);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_stab_thrust_stabilization_andi);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_eff_mat_stabilization_andi);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_V, send_wls_v_stabilization_andi);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_U, send_wls_u_stabilization_andi);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_debug_vect_stabilization_andi);
 
-  #endif
+#endif
   printf("INIT ANDI controller: SUCCES \n");
 }
 
@@ -1184,7 +1174,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   andi_k_att_rm = compute_reference_gains_order_3_vect_3(&andi_p_att_rm);
   andi_k_thrust_ec = andi_p_thrust_ec;
   andi_k_thrust_rm = andi_p_thrust_rm;
-  
+
   // Fetch current raw sensor measurements
   struct AttQuat attitude_meas;
   attitude_meas.att = *stateGetNedToBodyQuat_f();
@@ -1213,12 +1203,17 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   thrust_state = get_filter(&thrust_filter_meas);
 
   // Get setpoints
-  if (use_rate_control) {
+  if (use_rate_control)
+  {
     rates_des = stab_sp_to_rates_f(stab_setpoint);
-    if (in_flight) generate_reference_rate(SAMPLE_TIME, &rates_des, &andi_k_rate_rm, &attitude_bounds, &attitude_ref);
-  } else {
+    if (in_flight)
+      generate_reference_rate(SAMPLE_TIME, &rates_des, &andi_k_rate_rm, &attitude_bounds, &attitude_ref);
+  }
+  else
+  {
     attitude_des = stab_sp_to_quat_f(stab_setpoint);
-    if (in_flight) generate_reference_attitude(SAMPLE_TIME, &attitude_des, &andi_k_att_rm, &attitude_bounds, &attitude_ref);
+    if (in_flight)
+      generate_reference_attitude(SAMPLE_TIME, &attitude_des, &andi_k_att_rm, &attitude_bounds, &attitude_ref);
   }
 
   // FIXME: Thrust setpoint can not be of type THRUST_INCR_SP, this is not enforced.
@@ -1243,9 +1238,12 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 
   // Construct pseudo control
   struct FloatVect3 nu_attitude;
-  if (use_rate_control) {
+  if (use_rate_control)
+  {
     nu_attitude = control_error_rate(&attitude_ref_synced, &attitude_state, &andi_k_rate_ec);
-  } else {
+  }
+  else
+  {
     nu_attitude = control_error_attitude(&attitude_ref_synced, &attitude_state, &andi_k_att_ec);
   }
   float nu_thrust = control_error_thrust(&thrust_ref_synced, thrust_state, andi_k_thrust_ec);
@@ -1254,11 +1252,14 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 
   // FIXME: Add state feedback here!
 
-  if (in_flight) {
+  if (in_flight)
+  {
     nu[0] = nu_attitude.x;
     nu[1] = nu_attitude.y;
     nu[2] = nu_attitude.z;
-  } else {
+  }
+  else
+  {
     nu[0] = 0.0f;
     nu[1] = 0.0f;
     nu[2] = 0.0f;
@@ -1268,8 +1269,8 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   // Compute control effectiveness matrix based on current states
   // FIXME: control effectiveness matrix is not scheduled for now
   // FIXME: body velocity is not measured or filtered for now
-  struct FloatVect3 body_vel = {.x=0.0f, .y=0.0f, .z=0.0f};
-  struct FloatRates body_rates = {.p=0.0f, .q=0.0f, .r=0.0f};
+  struct FloatVect3 body_vel = {.x = 0.0f, .y = 0.0f, .z = 0.0f};
+  struct FloatRates body_rates = {.p = 0.0f, .q = 0.0f, .r = 0.0f};
   evaluate_obm_f_stb_u(ce_mat, &body_rates, &body_vel, ACTUATOR_PREF);
 
   // Solve control allocation using weighted least squares
@@ -1282,30 +1283,36 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 
   float ce_mat_scaled[ANDI_NUM_ACT][ANDI_OUTPUTS];
   float *bwls[ANDI_NUM_ACT];
-  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) { // step through rows
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++)
+  { // step through rows
     wls_stab_p.u_min[i] = u_min[i] * wls_u_scaler[i];
     wls_stab_p.u_max[i] = u_max[i] * wls_u_scaler[i];
     wls_stab_p.u_pref[i] = ACTUATOR_PREF[i] * wls_u_scaler[i];
-    for (uint_fast8_t j = 0; j < ANDI_OUTPUTS; j++) { // step through columns
+    for (uint_fast8_t j = 0; j < ANDI_OUTPUTS; j++)
+    {                                                                                         // step through columns
       ce_mat_scaled[i][j] = ce_mat[i * ANDI_OUTPUTS + j] * wls_v_scaler[i] / wls_u_scaler[j]; // u_scaler on each column, v_scaler on each row
     }
     bwls[i] = ce_mat_scaled[i];
   }
 
-  for (uint_fast8_t i = 0; i < ANDI_OUTPUTS; i++) {
+  for (uint_fast8_t i = 0; i < ANDI_OUTPUTS; i++)
+  {
     wls_stab_p.v[i] = nu[i] * wls_v_scaler[i];
   }
   wls_alloc(&wls_stab_p, bwls, 0, 0, 10);
 
-  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++) {
+  for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++)
+  {
     andi_u[i] = (wls_stab_p.u[i] / wls_u_scaler[i]) / ACTUATOR_DYNAMICS[i] + actuator_meas[i];
   }
   // Compute control outputs for logging
-  for (uint_fast8_t i = 0; i < ANDI_OUTPUTS; i++) {
-      control_output[i] = 0.0f;
-      for (uint_fast8_t j = 0; j < ANDI_NUM_ACT; j++) {
-          control_output[i] += ce_mat[i * ANDI_NUM_ACT + j] * wls_stab_p.u[j];
-      }
+  for (uint_fast8_t i = 0; i < ANDI_OUTPUTS; i++)
+  {
+    control_output[i] = 0.0f;
+    for (uint_fast8_t j = 0; j < ANDI_NUM_ACT; j++)
+    {
+      control_output[i] += ce_mat[i * ANDI_NUM_ACT + j] * wls_stab_p.u[j];
+    }
   }
 
   // Commit actuator commands
@@ -1350,13 +1357,16 @@ struct StabilizationSetpoint stabilization_rate_read_rc(struct RadioControl *rc)
 {
   struct FloatRates rate_sp;
   FLOAT_RATES_ZERO(rate_sp);
-  if (ROLL_RATE_DEADBAND_EXCEEDED(rc)) {
+  if (ROLL_RATE_DEADBAND_EXCEEDED(rc))
+  {
     rate_sp.p = rc->values[RC_RATE_P] * RC_RATE_MAX[0] / MAX_PPRZ;
   }
-  if (PITCH_RATE_DEADBAND_EXCEEDED(rc)) {
+  if (PITCH_RATE_DEADBAND_EXCEEDED(rc))
+  {
     rate_sp.q = rc->values[RC_RATE_Q] * RC_RATE_MAX[1] / MAX_PPRZ;
   }
-  if (YAW_RATE_DEADBAND_EXCEEDED(rc)) {
+  if (YAW_RATE_DEADBAND_EXCEEDED(rc))
+  {
     rate_sp.r = rc->values[RC_RATE_R] * RC_RATE_MAX[2] / MAX_PPRZ;
   }
   return stab_sp_from_rates_f(&rate_sp);

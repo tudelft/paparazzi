@@ -39,26 +39,30 @@
 #endif
 
 // Reference model
-struct AttQuat {
-  struct FloatQuat att; 
+struct AttQuat
+{
+  struct FloatQuat att;
   struct FloatRates att_d;
   struct FloatVect3 att_2d;
   struct FloatVect3 att_3d;
 };
 
-struct AttStateQuat {
-  struct FloatQuat att; 
+struct AttStateQuat
+{
+  struct FloatQuat att;
   struct FloatRates att_d;
   struct FloatVect3 att_2d;
 };
 
-struct ThrustRef {
+struct ThrustRef
+{
   float thrust;
   float thrust_d;
 };
 
 // Filters
-struct AttFilter {
+struct AttFilter
+{
   Butterworth2LowPass att_d_filter_p;
   Butterworth2LowPass att_d_filter_q;
   Butterworth2LowPass att_d_filter_r;
@@ -67,49 +71,57 @@ struct AttFilter {
   Butterworth2LowPass att_2d_filter_z;
 };
 
-struct FilterVect3 {
+struct FilterVect3
+{
   Butterworth2LowPass x;
   Butterworth2LowPass y;
   Butterworth2LowPass z;
 };
 
-struct PolesOrder3Vect3 {
+struct PolesOrder3Vect3
+{
   struct FloatVect3 omega_n;
   struct FloatVect3 zeta;
   struct FloatVect3 p1;
 };
 
-struct PolesOrder2Vect3 {
+struct PolesOrder2Vect3
+{
   struct FloatVect3 omega_n;
   struct FloatVect3 zeta;
 };
 
-struct GainsOrder2Vect3 {
+struct GainsOrder2Vect3
+{
   struct FloatVect3 k1;
   struct FloatVect3 k2;
 };
 
-struct GainsOrder3Vect3 {
+struct GainsOrder3Vect3
+{
   struct FloatVect3 k1;
   struct FloatVect3 k2;
   struct FloatVect3 k3;
 };
 
-static inline void print_FloatVect3(const char *name, struct FloatVect3 v) {
-    printf("%s: [%.3f, %.3f, %.3f]\n", name, v.x, v.y, v.z);
+static inline void print_FloatVect3(const char *name, struct FloatVect3 v)
+{
+  printf("%s: [%.3f, %.3f, %.3f]\n", name, v.x, v.y, v.z);
 }
 
-static inline void print_GainsOrder2Vect3(const char *gain_name, const struct GainsOrder2Vect3 *gains) {
-    printf("%s (GainsOrder2Vect3):\n", gain_name);
-    print_FloatVect3("  k1", gains->k1);
-    print_FloatVect3("  k2", gains->k2);
+static inline void print_GainsOrder2Vect3(const char *gain_name, const struct GainsOrder2Vect3 *gains)
+{
+  printf("%s (GainsOrder2Vect3):\n", gain_name);
+  print_FloatVect3("  k1", gains->k1);
+  print_FloatVect3("  k2", gains->k2);
 }
 
-static inline void print_GainsOrder3Vect3(const char *gain_name, const struct GainsOrder3Vect3 *gains) {
-    printf("%s (GainsOrder3Vect3):\n", gain_name);
-    print_FloatVect3("  k1", gains->k1);
-    print_FloatVect3("  k2", gains->k2);
-    print_FloatVect3("  k3", gains->k3);
+static inline void print_GainsOrder3Vect3(const char *gain_name, const struct GainsOrder3Vect3 *gains)
+{
+  printf("%s (GainsOrder3Vect3):\n", gain_name);
+  print_FloatVect3("  k1", gains->k1);
+  print_FloatVect3("  k2", gains->k2);
+  print_FloatVect3("  k3", gains->k3);
 }
 // On board model coefficients
 extern union CycloneCoefficients obm_coefficients;
