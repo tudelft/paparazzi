@@ -249,10 +249,10 @@
         <arg flag="-speech"/>
       </program>
       <program name="NatNet3">
-        <arg flag="-le" constant="left"/>
+        <arg flag="-le" constant="right"/>
         <arg flag="-an" constant="left"/>
-        <arg flag="-xa" constant="2"/>
-        <arg flag="-ac" constant="2149"/>
+        <arg flag="-xa" constant="56"/>
+        <arg flag="-ac" constant="1"/>
         <arg flag="44"/>
       </program>
     </session>
