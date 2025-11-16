@@ -158,7 +158,7 @@
     <servos driver="T4">
         <servo name="S_ELEVON_LEFT"  no="1"  min="-5700" neutral="0" max="5700"/> <!-- 57.0 deg-->
         <servo name="S_ELEVON_RIGHT" no="6"  min="5700"  neutral="0" max="-5700"/> <!-- 57.0 deg-->
-        <servo name="S_MOTOR_LEFT"   no="13" min="0"     neutral="0" max="1999"/> <!-- neutral is value when motor is not spinning -->
+        <servo name="S_MOTOR_LEFT"   no="13" min="0"     neutral="0" max="1999"/> <!-- neutral is value when motor is not spinning, must be 0 -->
         <servo name="S_MOTOR_RIGHT"  no="14" min="0"     neutral="0" max="1999"/>
     </servos>
 
@@ -201,23 +201,24 @@
     </section>
 
     <section name="STABILIZATION_ANDI" prefix="STABILIZATION_ANDI_" >
-        <!--                               |    EL    |    ER    |    ML    |    MR    | -->
-        <define name="ACT_IS_SERVO" value="{         1,         1,            0,            0}"/>
-        <define name="ACT_DYNAMICS" value="{     20.0f,     20.0f,        40.0f,        40.0f}"/> <!-- corner frequency [1/s]-->
-        <define name="ACT_MAX"      value="{      1.0f,      1.0f,   3534400.0f,   3534400.0f}"/> <!-- [rad | rad/s]--> 
-        <define name="ACT_MIN"      value="{     -1.0f,     -1.0f,      2500.0f,      2500.0f}"/> <!-- [rad | rad/s]--> 
-        <define name="ACT_RATE_MAX" value="{     10.0f,     10.0f,  9000000000.0f,  9000000000.0f}"/> <!-- [rad/s | rad/s^2]--> 
-        <define name="ACT_RATE_MIN" value="{    -10.0f,    -10.0f, -9000000000.0f, -9000000000.0f}"/> <!-- [rad/s | rad/s^2]--> 
-        <define name="ACT_PREF"     value="{     0.00f,     0.00f,    705600.0f,    705600.0f}"/> 
-        <define name="WLS_WU"       value="{      1.0f,      1.0f,         1.0f,         1.0f}"/>
+        <!--                                 |      EL      |      ER      |      ML^2    |      MR^2    | -->
+        <define name="ACT_IS_SERVO"   value="{             1,             1,             0,             0}"/>
+        <define name="ACT_DYNAMICS"   value="{         20.0f,         20.0f,         40.0f,         40.0f}"/> <!-- [Hz]-->
+        <define name="ACT_MAX"        value="{          1.0f,          1.0f,    3534400.0f,    3534400.0f}"/> <!-- [  rad |   (rad/s)^2]--> 
+        <define name="ACT_MIN"        value="{         -1.0f,         -1.0f,       2500.0f,       2500.0f}"/> <!-- [  rad |   (rad/s)^2]--> 
+        <define name="ACT_RATE_MAX"   value="{         10.0f,         10.0f,   90000000.0f,   90000000.0f}"/> <!-- [rad/s | (rad/s)^2/s]--> 
+        <define name="ACT_RATE_MIN"   value="{        -10.0f,        -10.0f,  -90000000.0f,  -90000000.0f}"/> <!-- [rad/s | (rad/s)^2/s]--> 
+        <define name="ACT_PREF"       value="{         0.00f,         0.00f,     705600.0f,     705600.0f}"/> <!-- [  rad |   (rad/s)^2]--> <!-- Should be removed, only used when not scheduling-->
+        <define name="WLS_WU"         value="{          1.0f,          1.0f,          1.0f,          1.0f}"/>
 
-        <!--                                |    P    |    Q    |    R    |   Tau   | -->
-        <define name="WLS_WV"       value="{   1000.0f,  1000.0f,    10.0f,   100.0f}"/>   
-        <define name="RC_RATE_MAX"     value="{      5.0f,     5.0f,     5.0f,     0.0f}"/> <!-- [rad/s | m/s^3]--> 
+        <!--                                 |      P       |      Q       |      R       |      Tau     | -->
+        <define name="WLS_WV"         value="{       1000.0f,       1000.0f,         10.0f,        100.0f}"/>   
+
+        <!--                                 |    P    |    Q    |    R    | -->
+        <define name="RC_RATE_MAX"    value="{      5.0f,     5.0f,     5.0f}"/> <!-- [rad/s]--> 
     </section>
 
     <section name="BAT">
-        <!-- <define name="BAT_NB_CELLS" value="4"/> -->
         <define name="MAX_BAT_CAPACITY" value="2300" unit="mAh"/>
         <!--<define name="MilliAmpereOfAdc(_adc)" value="(_adc-632)*4.14"/>-->
         <define name="VoltageOfAdc(_adc)" value="(0.000611456 * _adc)"/>
