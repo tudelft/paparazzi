@@ -182,10 +182,10 @@ float andi_k_thrust_ec;
 float andi_k_thrust_rm;
 
 // Filter instances
-struct FilterVect3 angular_rates_filter_meas;
-struct FilterVect3 angular_rates_filter_sync;
-struct FilterVect3 angular_accel_filter_meas;
-struct FilterVect3 angular_accel_filter_sync;
+struct Butterworth2Vect3 angular_rates_filter_meas;
+struct Butterworth2Vect3 angular_rates_filter_sync;
+struct Butterworth4Vect3 angular_accel_filter_meas;
+struct Butterworth4Vect3 angular_accel_filter_sync;
 Butterworth2LowPass thrust_filter_meas;
 Butterworth2LowPass thrust_filter_sync;
 Butterworth2LowPass actuator_filters[ANDI_NUM_ACT];
@@ -202,7 +202,6 @@ float actuator_state[ANDI_NUM_ACT];
 // Reference model variables
 struct AttQuat attitude_ref;
 struct ThrustRef thrust_ref;
-struct ThrustRef thrust_ref_synced; // Fixme: remove, should not be global
 
 // Setpoints
 struct FloatRates rates_des;
@@ -258,9 +257,9 @@ static void send_stab_thrust_stabilization_andi(struct transport_tx *trans, stru
 {
   pprz_msg_send_STAB_THRUST(trans, dev, AC_ID,
                             &thrust_des,
-                            &thrust_ref_synced.thrust,
+                            &thrust_ref.thrust,
                             &thrust_state,
-                            &thrust_ref_synced.thrust_d);
+                            &thrust_ref.thrust_d);
 }
 static void send_debug_vect_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
 {
@@ -825,10 +824,8 @@ static void compute_wls_v_scaler(float v_scaler[ANDI_NUM_ACT], const float v[AND
  * @param[out] filter Struct containing Butterworth filters for x, y, z components.
  * @param[in] freq Cutoff frequency for the filters (Hz).
  * @param[in] dt Sampling time interval (seconds).
- *
- * FIXME: Add support for different filter types.
  */
-static void init_filter_vect3(struct FilterVect3 *filter, float freq, float dt)
+static void init_butterworth_2_vect3(struct Butterworth2Vect3 *filter, float freq, float dt)
 {
   init_butterworth_2_low_pass(&filter->x, 1.0f / freq, dt, 0.0f);
   init_butterworth_2_low_pass(&filter->y, 1.0f / freq, dt, 0.0f);
@@ -841,10 +838,8 @@ static void init_filter_vect3(struct FilterVect3 *filter, float freq, float dt)
  * @param[out] filter Butterworth2LowPass filter instance.
  * @param[in] freq Cutoff frequency of the filter (Hz).
  * @param[in] dt Sampling time interval (seconds).
- *
- * FIXME: Add support for different filter types.
  */
-static void init_filter(Butterworth2LowPass *filter, float freq, float dt)
+static void init_butterworth_2(Butterworth2LowPass *filter, float freq, float dt)
 {
   init_butterworth_2_low_pass(filter, 1.0f / freq, dt, 0.0f);
 }
@@ -856,10 +851,8 @@ static void init_filter(Butterworth2LowPass *filter, float freq, float dt)
  * @param[out] filter_array Array of Butterworth2LowPass filters to initialize.
  * @param[in] freq Cutoff frequency for the filters (Hz).
  * @param[in] dt Sampling time interval (seconds).
- *
- * FIXME: Add support for different filter types.
  */
-static void init_filter_array(uint8_t n, Butterworth2LowPass filter_array[restrict n], float freq, float dt)
+static void init_butterworth_2_array(uint8_t n, Butterworth2LowPass filter_array[restrict n], float freq, float dt)
 {
   float tau = 1.0f / freq;
   for (uint_fast8_t i = 0; i < n; i++)
@@ -874,7 +867,7 @@ static void init_filter_array(uint8_t n, Butterworth2LowPass filter_array[restri
  * @param[in,out] filter Butterworth2LowPass filter instance to update.
  * @param[in] input New input data to feed into the filter.
  */
-static void update_filter(Butterworth2LowPass *filter, float input)
+static void update_butterworth_2(Butterworth2LowPass *filter, float input)
 {
   update_butterworth_2_low_pass(filter, input);
 }
@@ -885,7 +878,7 @@ static void update_filter(Butterworth2LowPass *filter, float input)
  * @param[in,out] filter Struct containing Butterworth filters for x, y, z components.
  * @param[in] input Pointer to FloatVect3 struct containing new input data.
  */
-static void update_filter_vect3(struct FilterVect3 *filter, const struct FloatVect3 *input)
+static void update_butterworth_2_vect3(struct Butterworth2Vect3 *filter, const struct FloatVect3 *input)
 {
   update_butterworth_2_low_pass(&filter->x, input->x);
   update_butterworth_2_low_pass(&filter->y, input->y);
@@ -898,7 +891,7 @@ static void update_filter_vect3(struct FilterVect3 *filter, const struct FloatVe
  * @param[in,out] filter Struct containing Butterworth filters for x, y, z components.
  * @param[in] input Pointer to FloatRates struct containing new input rate data.
  */
-static void update_filter_rates(struct FilterVect3 *filter, const struct FloatRates *input)
+static void update_butterworth_2_rates(struct Butterworth2Vect3 *filter, const struct FloatRates *input)
 {
   update_butterworth_2_low_pass(&filter->x, input->p);
   update_butterworth_2_low_pass(&filter->y, input->q);
@@ -912,7 +905,7 @@ static void update_filter_rates(struct FilterVect3 *filter, const struct FloatRa
  * @param[in,out] filter_array Array of Butterworth2LowPass filters to update.
  * @param[in] input_array Array containing new input data for each filter.
  */
-static void update_filter_array(uint8_t n, Butterworth2LowPass filter_array[restrict n], const float input_array[restrict n])
+static void update_butterworth_2_array(uint8_t n, Butterworth2LowPass filter_array[restrict n], const float input_array[restrict n])
 {
   for (uint_fast8_t i = 0; i < n; i++)
   {
@@ -926,7 +919,7 @@ static void update_filter_array(uint8_t n, Butterworth2LowPass filter_array[rest
  * @param[out] filter Butterworth2LowPass filter instance to reset.
  * @param[in] value Value to reset the filter to.
  */
-static void reset_filter(Butterworth2LowPass *filter, float value)
+static void reset_butterworth_2(Butterworth2LowPass *filter, float value)
 {
   filter->i[0] = filter->i[1] = filter->o[0] = filter->o[1] = value;
 }
@@ -937,7 +930,7 @@ static void reset_filter(Butterworth2LowPass *filter, float value)
  * @param[out] filter Struct containing Butterworth filters for x, y, z components.
  * @param[in] value Pointer to FloatVect3 struct containing the reset value.
  */
-static void reset_filter_vect3(struct FilterVect3 *filter, const struct FloatVect3 *value)
+static void reset_butterworth_2_vect3(struct Butterworth2Vect3 *filter, const struct FloatVect3 *value)
 {
   filter->x.i[0] = filter->x.i[1] = filter->x.o[0] = filter->x.o[1] = value->x;
   filter->y.i[0] = filter->y.i[1] = filter->y.o[0] = filter->y.o[1] = value->y;
@@ -950,7 +943,7 @@ static void reset_filter_vect3(struct FilterVect3 *filter, const struct FloatVec
  * @param[out] filter Struct containing Butterworth filters for x, y, z components.
  * @param[in] value Pointer to FloatRates struct containing the reset values.
  */
-static void reset_filter_rates(struct FilterVect3 *filter, const struct FloatRates *value)
+static void reset_butterworth_2_rates(struct Butterworth2Vect3 *filter, const struct FloatRates *value)
 {
   filter->x.i[0] = filter->x.i[1] = filter->x.o[0] = filter->x.o[1] = value->p;
   filter->y.i[0] = filter->y.i[1] = filter->y.o[0] = filter->y.o[1] = value->q;
@@ -964,7 +957,7 @@ static void reset_filter_rates(struct FilterVect3 *filter, const struct FloatRat
  * @param[out] filter_array Array of Butterworth2LowPass filters to reset.
  * @param[in] value_array Array containing reset values for each filter.
  */
-static void reset_filter_array(uint8_t n, Butterworth2LowPass filter_array[restrict n], const float value_array[restrict n])
+static void reset_butterworth_2_array(uint8_t n, Butterworth2LowPass filter_array[restrict n], const float value_array[restrict n])
 {
   for (uint_fast8_t i = 0; i < n; i++)
   {
@@ -972,31 +965,49 @@ static void reset_filter_array(uint8_t n, Butterworth2LowPass filter_array[restr
   }
 }
 
-// /**
-//  * @brief Reinitialize a Butterworth low-pass filter with new frequency and time step.
-//  *
-//  * @param[out] filter Butterworth2LowPass filter instance to reinitialize.
-//  * @param[in] freq New cutoff frequency for the filter (Hz).
-//  * @param[in] dt New sampling time interval (seconds).
-//  */
-// static void reinit_filter(Butterworth2LowPass *filter, float freq, float dt)
-// {
-//   init_butterworth_2_low_pass(filter, 1.0f / freq, dt, get_butterworth_2_low_pass(filter));
-// }
+/**
+ * @brief Reinitialize a Butterworth low-pass filter with new frequency and time step.
+ *
+ * @param[out] filter Butterworth2LowPass filter instance to reinitialize.
+ * @param[in] freq New cutoff frequency for the filter (Hz).
+ * @param[in] dt New sampling time interval (seconds).
+ */
+static void reinit_butterworth_2(Butterworth2LowPass *filter, float freq, float dt)
+{
+  init_butterworth_2_low_pass(filter, 1.0f / freq, dt, get_butterworth_2_low_pass(filter));
+}
 
-// /**
-//  * @brief Reinitialize 3D vector Butterworth filters with new frequency and time step.
-//  *
-//  * @param[out] filter Struct containing Butterworth filters for x, y, z components.
-//  * @param[in] freq New cutoff frequency for the filters (Hz).
-//  * @param[in] dt New sampling time interval (seconds).
-//  */
-// static void reinit_filter_vect3(struct FilterVect3 *filter, float freq, float dt)
-// {
-//   init_butterworth_2_low_pass(&filter->x, 1.0f / freq, dt, get_butterworth_2_low_pass(&filter->x));
-//   init_butterworth_2_low_pass(&filter->y, 1.0f / freq, dt, get_butterworth_2_low_pass(&filter->y));
-//   init_butterworth_2_low_pass(&filter->z, 1.0f / freq, dt, get_butterworth_2_low_pass(&filter->z));
-// }
+/**
+ * @brief Reinitialize 3D vector Butterworth filters with new frequency and time step.
+ *
+ * @param[out] filter Struct containing Butterworth filters for x, y, z components.
+ * @param[in] freq New cutoff frequency for the filters (Hz).
+ * @param[in] dt New sampling time interval (seconds).
+ */
+static void reinit_butterworth_2_vect3(struct Butterworth2Vect3 *filter, float freq, float dt)
+{
+  init_butterworth_2_low_pass(&filter->x, 1.0f / freq, dt, get_butterworth_2_low_pass(&filter->x));
+  init_butterworth_2_low_pass(&filter->y, 1.0f / freq, dt, get_butterworth_2_low_pass(&filter->y));
+  init_butterworth_2_low_pass(&filter->z, 1.0f / freq, dt, get_butterworth_2_low_pass(&filter->z));
+}
+
+/**
+ * @brief Reinitialize an array of Butterworth low-pass filters with new frequency and time step.
+ *
+ * @param[in] n Number of filters in the array.
+ * @param[out] filter_array Array of Butterworth2LowPass filters to reinitialize.
+ * @param[in] freq New cutoff frequency for the filters (Hz).
+ * @param[in] dt New sampling time interval (seconds).
+ */
+static void reinit_butterworth_2_array(uint8_t n, Butterworth2LowPass filter_array[restrict n], float freq, float dt)
+{
+  float tau = 1.0f / freq;
+  for (uint_fast8_t i = 0; i < n; i++)
+  {
+    init_butterworth_2_low_pass(&filter_array[i], tau, dt, get_butterworth_2_low_pass(&filter_array[i]));
+  }
+}
+
 
 /**
  * @brief Retrieve the filtered output from a Butterworth low-pass filter.
@@ -1004,7 +1015,7 @@ static void reset_filter_array(uint8_t n, Butterworth2LowPass filter_array[restr
  * @param[in] filter Butterworth2LowPass filter instance.
  * @return Filtered output value.
  */
-static float get_filter(const Butterworth2LowPass *filter)
+static float get_butterworth_2(const Butterworth2LowPass *filter)
 {
   return get_butterworth_2_low_pass(filter);
 }
@@ -1015,7 +1026,7 @@ static float get_filter(const Butterworth2LowPass *filter)
  * @param[in] filter Struct containing Butterworth filters for x, y, z components.
  * @return FloatVect3 struct containing the filtered output values.
  */
-static struct FloatVect3 get_filter_vect3(const struct FilterVect3 *filter)
+static struct FloatVect3 get_butterworth_2_vect3(const struct Butterworth2Vect3 *filter)
 {
   struct FloatVect3 output;
   output.x = get_butterworth_2_low_pass(&filter->x);
@@ -1030,7 +1041,7 @@ static struct FloatVect3 get_filter_vect3(const struct FilterVect3 *filter)
  * @param[in] filter Butterworth2LowPass filter instance.
  * @return Filtered output value.
  */
-static struct FloatRates get_filter_rates(const struct FilterVect3 *filter)
+static struct FloatRates get_butterworth_2_rates(const struct Butterworth2Vect3 *filter)
 {
   struct FloatRates output;
   output.p = get_butterworth_2_low_pass(&filter->x);
@@ -1046,13 +1057,246 @@ static struct FloatRates get_filter_rates(const struct FilterVect3 *filter)
  * @param[in] filter_array Array of Butterworth2LowPass filters.
  * @param[out] output_array Array to store the filtered output values.
  */
-static void get_filter_array(uint8_t n, const Butterworth2LowPass filter_array[restrict n], float output_array[restrict n])
+static void get_butterworth_2_array(uint8_t n, const Butterworth2LowPass filter_array[restrict n], float output_array[restrict n])
 {
   for (uint_fast8_t i = 0; i < n; i++)
   {
     output_array[i] = get_butterworth_2_low_pass(&filter_array[i]);
   }
 }
+
+/**
+ * @brief Initialize a set of Butterworth low-pass filters to zero for 3D vector data.
+ *
+ * @param[out] filter Struct containing Butterworth filters for x, y, z components.
+ * @param[in] freq Cutoff frequency for the filters (Hz).
+ * @param[in] dt Sampling time interval (seconds).
+ */
+static void init_butterworth_4_vect3(struct Butterworth4Vect3 *filter, float freq, float dt)
+{
+  init_butterworth_4_low_pass(&filter->x, 1.0f / freq, dt, 0.0f);
+  init_butterworth_4_low_pass(&filter->y, 1.0f / freq, dt, 0.0f);
+  init_butterworth_4_low_pass(&filter->z, 1.0f / freq, dt, 0.0f);
+}
+
+/**
+ * @brief Initialize a Butterworth low-pass filter to zero.
+ *
+ * @param[out] filter Butterworth2LowPass filter instance.
+ * @param[in] freq Cutoff frequency of the filter (Hz).
+ * @param[in] dt Sampling time interval (seconds).
+ */
+static void init_butterworth_4(Butterworth4LowPass *filter, float freq, float dt)
+{
+  init_butterworth_4_low_pass(filter, 1.0f / freq, dt, 0.0f);
+}
+
+/**
+ * @brief Initialize an array of Butterworth low-pass filters to zero.
+ *
+ * @param[in] n Number of filters to initialize.
+ * @param[out] filter_array Array of Butterworth2LowPass filters to initialize.
+ * @param[in] freq Cutoff frequency for the filters (Hz).
+ * @param[in] dt Sampling time interval (seconds).
+ */
+static void init_butterworth_4_array(uint8_t n, Butterworth4LowPass filter_array[restrict n], float freq, float dt)
+{
+  float tau = 1.0f / freq;
+  for (uint_fast8_t i = 0; i < n; i++)
+  {
+    init_butterworth_4_low_pass(&filter_array[i], tau, dt, 0.0f);
+  }
+}
+
+/**
+ * @brief Update a Butterworth low-pass filter with new input data.
+ *
+ * @param[in,out] filter Butterworth2LowPass filter instance to update.
+ * @param[in] input New input data to feed into the filter.
+ */
+static void update_butterworth_4(Butterworth4LowPass *filter, float input)
+{
+  update_butterworth_4_low_pass(filter, input);
+}
+
+/**
+ * @brief Update 3D vector Butterworth filters with new input data.
+ *
+ * @param[in,out] filter Struct containing Butterworth filters for x, y, z components.
+ * @param[in] input Pointer to FloatVect3 struct containing new input data.
+ */
+static void update_butterworth_4_vect3(struct Butterworth4Vect3 *filter, const struct FloatVect3 *input)
+{
+  update_butterworth_4_low_pass(&filter->x, input->x);
+  update_butterworth_4_low_pass(&filter->y, input->y);
+  update_butterworth_4_low_pass(&filter->z, input->z);
+}
+
+/**
+ * @brief Update 3D vector Butterworth filters with new rate input data.
+ *
+ * @param[in,out] filter Struct containing Butterworth filters for x, y, z components.
+ * @param[in] input Pointer to FloatRates struct containing new input rate data.
+ */
+static void update_butterworth_4_rates(struct Butterworth4Vect3 *filter, const struct FloatRates *input)
+{
+  update_butterworth_4_low_pass(&filter->x, input->p);
+  update_butterworth_4_low_pass(&filter->y, input->q);
+  update_butterworth_4_low_pass(&filter->z, input->r);
+}
+
+/**
+ * @brief Reset a Butterworth low-pass filter to a specific value.
+ *
+ * @param[out] filter Butterworth2LowPass filter instance to reset.
+ * @param[in] value Value to reset the filter to.
+ */
+static void reset_butterworth_4(Butterworth4LowPass *filter, float value)
+{
+  filter->lp1.i[0] = filter->lp1.i[1] = filter->lp1.o[0] = filter->lp1.o[1] = filter->lp2.i[0] = filter->lp2.i[1] = filter->lp2.o[0] = filter->lp2.o[1] = value;
+}
+
+/**
+ * @brief Reset 3D vector Butterworth filters to a specific value.
+ *
+ * @param[out] filter Struct containing Butterworth filters for x, y, z components.
+ * @param[in] value Pointer to FloatVect3 struct containing the reset value.
+ */
+static void reset_butterworth_4_vect3(struct Butterworth4Vect3 *filter, const struct FloatVect3 *value)
+{
+  filter->x.lp1.i[0] = filter->x.lp1.i[1] = filter->x.lp1.o[0] = filter->x.lp1.o[1] = filter->x.lp2.i[0] = filter->x.lp2.i[1] = filter->x.lp2.o[0] = filter->x.lp2.o[1] = value->x;
+  filter->y.lp1.i[0] = filter->y.lp1.i[1] = filter->y.lp1.o[0] = filter->y.lp1.o[1] = filter->y.lp2.i[0] = filter->y.lp2.i[1] = filter->y.lp2.o[0] = filter->y.lp2.o[1] = value->y;
+  filter->z.lp1.i[0] = filter->z.lp1.i[1] = filter->z.lp1.o[0] = filter->z.lp1.o[1] = filter->z.lp2.i[0] = filter->z.lp2.i[1] = filter->z.lp2.o[0] = filter->z.lp2.o[1] = value->z;
+}
+
+/**
+ * @brief Reset 3D vector Butterworth filters to specific rate values.
+ *
+ * @param[out] filter Struct containing Butterworth filters for x, y, z components.
+ * @param[in] value Pointer to FloatRates struct containing the reset values.
+ */
+static void reset_butterworth_4_rates(struct Butterworth4Vect3 *filter, const struct FloatRates *value)
+{
+  filter->x.lp1.i[0] = filter->x.lp1.i[1] = filter->x.lp1.o[0] = filter->x.lp1.o[1] = filter->x.lp2.i[0] = filter->x.lp2.i[1] = filter->x.lp2.o[0] = filter->x.lp2.o[1] = value->p;
+  filter->y.lp1.i[0] = filter->y.lp1.i[1] = filter->y.lp1.o[0] = filter->y.lp1.o[1] = filter->y.lp2.i[0] = filter->y.lp2.i[1] = filter->y.lp2.o[0] = filter->y.lp2.o[1] = value->q;
+  filter->z.lp1.i[0] = filter->z.lp1.i[1] = filter->z.lp1.o[0] = filter->z.lp1.o[1] = filter->z.lp2.i[0] = filter->z.lp2.i[1] = filter->z.lp2.o[0] = filter->z.lp2.o[1] = value->r;
+}
+
+/**
+ * @brief Reset an array of Butterworth low-pass filters to specific values.
+ *
+ * @param[in] n Number of filters in the array.
+ * @param[out] filter_array Array of Butterworth2LowPass filters to reset.
+ * @param[in] value_array Array containing reset values for each filter.
+ */
+static void reset_butterworth_4_array(uint8_t n, Butterworth4LowPass filter_array[restrict n], const float value_array[restrict n])
+{
+  for (uint_fast8_t i = 0; i < n; i++)
+  {
+    filter_array[i].lp1.i[0] = filter_array[i].lp1.i[1] = filter_array[i].lp1.o[0] = filter_array[i].lp2.o[1] = filter_array[i].lp2.i[0] = filter_array[i].lp2.i[1] = filter_array[i].lp2.o[0] = filter_array[i].lp2.o[1] = value_array[i];
+  }
+}
+
+/**
+ * @brief Reinitialize a Butterworth low-pass filter with new frequency and time step.
+ *
+ * @param[out] filter Butterworth2LowPass filter instance to reinitialize.
+ * @param[in] freq New cutoff frequency for the filter (Hz).
+ * @param[in] dt New sampling time interval (seconds).
+ */
+static void reinit_butterworth_4(Butterworth4LowPass *filter, float freq, float dt)
+{
+  init_butterworth_4_low_pass(filter, 1.0f / freq, dt, get_butterworth_4_low_pass(filter));
+}
+
+/**
+ * @brief Reinitialize 3D vector Butterworth filters with new frequency and time step.
+ *
+ * @param[out] filter Struct containing Butterworth filters for x, y, z components.
+ * @param[in] freq New cutoff frequency for the filters (Hz).
+ * @param[in] dt New sampling time interval (seconds).
+ */
+static void reinit_butterorth_4_vect3(struct Butterworth4Vect3 *filter, float freq, float dt)
+{
+  init_butterworth_4_low_pass(&filter->x, 1.0f / freq, dt, get_butterworth_4_low_pass(&filter->x));
+  init_butterworth_4_low_pass(&filter->y, 1.0f / freq, dt, get_butterworth_4_low_pass(&filter->y));
+  init_butterworth_4_low_pass(&filter->z, 1.0f / freq, dt, get_butterworth_4_low_pass(&filter->z));
+}
+
+/**
+ * @brief Reinitialize an array of Butterworth low-pass filters with new frequency and time step.
+ *
+ * @param[in] n Number of filters in the array.
+ * @param[out] filter_array Array of Butterworth2LowPass filters to reinitialize.
+ * @param[in] freq New cutoff frequency for the filters (Hz).
+ * @param[in] dt New sampling time interval (seconds).
+ */
+static void reinit_butterworth_4_array(uint8_t n, Butterworth4LowPass filter_array[restrict n], float freq, float dt)
+{
+  float tau = 1.0f / freq;
+  for (uint_fast8_t i = 0; i < n; i++)
+  {
+    init_butterworth_4_low_pass(&filter_array[i], tau, dt, get_butterworth_4_low_pass(&filter_array[i]));
+  }
+}
+
+/**
+ * @brief Retrieve the filtered output from a Butterworth low-pass filter.
+ *
+ * @param[in] filter Butterworth2LowPass filter instance.
+ * @return Filtered output value.
+ */
+static float get_butterworth_4(const Butterworth4LowPass *filter)
+{
+  return get_butterworth_4_low_pass(filter);
+}
+
+/**
+ * @brief Retrieve the filtered output from 3D vector Butterworth filters.
+ *
+ * @param[in] filter Struct containing Butterworth filters for x, y, z components.
+ * @return FloatVect3 struct containing the filtered output values.
+ */
+static struct FloatVect3 get_butterworth_4_vect3(const struct Butterworth4Vect3 *filter)
+{
+  struct FloatVect3 output;
+  output.x = get_butterworth_4_low_pass(&filter->x);
+  output.y = get_butterworth_4_low_pass(&filter->y);
+  output.z = get_butterworth_4_low_pass(&filter->z);
+  return output;
+}
+
+/**
+ * @brief Retrieve the filtered output from a Butterworth low-pass filter.
+ *
+ * @param[in] filter Butterworth2LowPass filter instance.
+ * @return Filtered output value.
+ */
+static struct FloatRates get_butterworth_4_rates(const struct Butterworth4Vect3 *filter)
+{
+  struct FloatRates output;
+  output.p = get_butterworth_4_low_pass(&filter->x);
+  output.q = get_butterworth_4_low_pass(&filter->y);
+  output.r = get_butterworth_4_low_pass(&filter->z);
+  return output;
+}
+
+/**
+ * @brief Retrieve the filtered outputs from an array of Butterworth low-pass filters.
+ *
+ * @param[in] n Number of filters in the array.
+ * @param[in] filter_array Array of Butterworth2LowPass filters.
+ * @param[out] output_array Array to store the filtered output values.
+ */
+static void get_butterworth_4_array(uint8_t n, const Butterworth4LowPass filter_array[restrict n], float output_array[restrict n])
+{
+  for (uint_fast8_t i = 0; i < n; i++)
+  {
+    output_array[i] = get_butterworth_4_low_pass(&filter_array[i]);
+  }
+}
+
+
 
 void stabilization_andi_init(void)
 {
@@ -1129,13 +1373,13 @@ void stabilization_andi_init(void)
   evaluate_obm_f_stb_u(ce_mat, &attitude_state.att_d, &body_vel, ACTUATOR_PREF);
 
   // Initialize filters
-  init_filter_vect3(&angular_rates_filter_meas, andi_rate_freq_cutoff, SAMPLE_TIME);
-  init_filter_vect3(&angular_rates_filter_sync, andi_rate_freq_cutoff, SAMPLE_TIME);
-  init_filter_vect3(&angular_accel_filter_meas, andi_accel_freq_cutoff, SAMPLE_TIME);
-  init_filter_vect3(&angular_accel_filter_sync, andi_accel_freq_cutoff, SAMPLE_TIME);
-  init_filter(&thrust_filter_meas, andi_accel_freq_cutoff, SAMPLE_TIME);
-  init_filter(&thrust_filter_sync, andi_accel_freq_cutoff, SAMPLE_TIME);
-  init_filter_array(ANDI_OUTPUTS, actuator_filters, andi_jerk_freq_cutoff, SAMPLE_TIME);
+  init_butterworth_2_vect3(&angular_rates_filter_meas, andi_rate_freq_cutoff, SAMPLE_TIME);
+  init_butterworth_2_vect3(&angular_rates_filter_sync, andi_rate_freq_cutoff, SAMPLE_TIME);
+  init_butterworth_4_vect3(&angular_accel_filter_meas, andi_accel_freq_cutoff, SAMPLE_TIME);
+  init_butterworth_4_vect3(&angular_accel_filter_sync, andi_accel_freq_cutoff, SAMPLE_TIME);
+  init_butterworth_2(&thrust_filter_meas, andi_accel_freq_cutoff, SAMPLE_TIME);
+  init_butterworth_2(&thrust_filter_sync, andi_accel_freq_cutoff, SAMPLE_TIME);
+  init_butterworth_2_array(ANDI_OUTPUTS, actuator_filters, andi_jerk_freq_cutoff, SAMPLE_TIME);
 
   // Bind T4 actuator feedback abi message
   AbiBindMsgACTUATORS_T4_IN(ABI_BROADCAST, &actuators_t4_in_event, actuators_t4_in_callback);
@@ -1189,13 +1433,13 @@ void stabilization_andi_enter(void)
   float_vect_zero(andi_u, ANDI_NUM_ACT); // Actuator command at k = -1
 
   // Reset filters to current measurements (just zero mainly)
-  reset_filter_rates(&angular_rates_filter_meas, &attitude_state.att_d);
-  reset_filter_rates(&angular_rates_filter_sync, &attitude_ref.att_d);
-  reset_filter_vect3(&angular_accel_filter_meas, &attitude_state.att_2d);
-  reset_filter_vect3(&angular_accel_filter_sync, &attitude_ref.att_2d);
-  reset_filter(&thrust_filter_meas, thrust_state);
-  reset_filter(&thrust_filter_sync, thrust_ref.thrust);
-  reset_filter_array(ANDI_NUM_ACT, actuator_filters, actuator_state);
+  reset_butterworth_2_rates(&angular_rates_filter_meas, &attitude_state.att_d);
+  reset_butterworth_2_rates(&angular_rates_filter_sync, &attitude_ref.att_d);
+  reset_butterworth_4_vect3(&angular_accel_filter_meas, &attitude_state.att_2d);
+  reset_butterworth_4_vect3(&angular_accel_filter_sync, &attitude_ref.att_2d);
+  reset_butterworth_2(&thrust_filter_meas, thrust_state);
+  reset_butterworth_2(&thrust_filter_sync, thrust_ref.thrust);
+  reset_butterworth_2_array(ANDI_NUM_ACT, actuator_filters, actuator_state);
 }
 
 void stabilization_andi_run(bool use_rate_control, bool in_flight, struct StabilizationSetpoint *stab_setpoint, struct ThrustSetpoint *thrust_setpoint, int32_t *cmd)
@@ -1226,16 +1470,16 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   float thrust_meas = evaluate_obm_thrust(actuator_meas);
 
   // Get filtered states
-  update_filter_rates(&angular_rates_filter_meas, &attitude_meas.att_d);
-  update_filter_vect3(&angular_accel_filter_meas, &attitude_meas.att_2d);
-  update_filter_array(ANDI_NUM_ACT, actuator_filters, actuator_meas);
-  update_filter(&thrust_filter_meas, thrust_meas);
+  update_butterworth_2_rates(&angular_rates_filter_meas, &attitude_meas.att_d);
+  update_butterworth_4_vect3(&angular_accel_filter_meas, &attitude_meas.att_2d);
+  update_butterworth_2_array(ANDI_NUM_ACT, actuator_filters, actuator_meas);
+  update_butterworth_2(&thrust_filter_meas, thrust_meas);
 
   attitude_state.att = attitude_meas.att; // No filtering on attitude
-  attitude_state.att_d = get_filter_rates(&angular_rates_filter_meas);
-  attitude_state.att_2d = get_filter_vect3(&angular_accel_filter_meas);
-  get_filter_array(ANDI_NUM_ACT, actuator_filters, actuator_state);
-  thrust_state = get_filter(&thrust_filter_meas);
+  attitude_state.att_d = get_butterworth_2_rates(&angular_rates_filter_meas);
+  attitude_state.att_2d = get_butterworth_4_vect3(&angular_accel_filter_meas);
+  get_butterworth_2_array(ANDI_NUM_ACT, actuator_filters, actuator_state);
+  thrust_state = get_butterworth_2(&thrust_filter_meas);
 
   // Get setpoints
   if (use_rate_control)
@@ -1257,18 +1501,19 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   generate_reference_thrust(SAMPLE_TIME, thrust_des, andi_k_thrust_rm, &thrust_bounds, &thrust_ref);
 
   // Time sync references
-  update_filter_rates(&angular_rates_filter_sync, &attitude_ref.att_d);
-  update_filter_vect3(&angular_accel_filter_sync, &attitude_ref.att_2d);
-  update_filter(&thrust_filter_sync, thrust_ref.thrust);
+  update_butterworth_2_rates(&angular_rates_filter_sync, &attitude_ref.att_d);
+  update_butterworth_4_vect3(&angular_accel_filter_sync, &attitude_ref.att_2d);
+  update_butterworth_2(&thrust_filter_sync, thrust_ref.thrust);
 
   struct AttQuat attitude_ref_synced;
   attitude_ref_synced.att = attitude_ref.att;
-  attitude_ref_synced.att_d = get_filter_rates(&angular_rates_filter_sync);
-  attitude_ref_synced.att_2d = get_filter_vect3(&angular_accel_filter_sync);
+  attitude_ref_synced.att_d = get_butterworth_2_rates(&angular_rates_filter_sync);
+  attitude_ref_synced.att_2d = get_butterworth_4_vect3(&angular_accel_filter_sync);
   attitude_ref_synced.att_3d = attitude_ref.att_3d;
 
   // struct ThrustRef thrust_ref_synced;
-  thrust_ref_synced.thrust = get_filter(&thrust_filter_sync);
+  struct ThrustRef thrust_ref_synced;
+  thrust_ref_synced.thrust = get_butterworth_2(&thrust_filter_sync);
   thrust_ref_synced.thrust_d = thrust_ref.thrust_d;
 
   // Construct pseudo control
@@ -1302,11 +1547,13 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   nu[3] = nu_thrust;
 
   // Compute control effectiveness matrix based on current states
-  // FIXME: control effectiveness matrix is not scheduled for now
+  // FIXME: control effectiveness matrix is only scheduled based on actuator measurements, not on body velocity
   // FIXME: body velocity is not measured or filtered for now
+  float actuator_meas_t4[ANDI_NUM_ACT];
+  fetch_actuators_t4(actuator_meas_t4, &actuators_t4_obs); // FIXME: this should be the filtered actuator measurement, this is not ideal though since rpm measurements are not used and instead a model is used. 
   struct FloatVect3 body_vel = {.x = 0.0f, .y = 0.0f, .z = 0.0f};
   struct FloatRates body_rates = {.p = 0.0f, .q = 0.0f, .r = 0.0f};
-  evaluate_obm_f_stb_u(ce_mat, &body_rates, &body_vel, ACTUATOR_PREF);
+  evaluate_obm_f_stb_u(ce_mat, &body_rates, &body_vel, actuator_meas_t4);
 
   // Solve control allocation using weighted least squares
   float u_min[ANDI_NUM_ACT];
@@ -1337,7 +1584,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 
   for (uint_fast8_t i = 0; i < ANDI_NUM_ACT; i++)
   {
-    andi_u[i] = (wls_stab_p.u[i] / wls_u_scaler[i]) / ACTUATOR_DYNAMICS[i] + actuator_state[i]; // FIXME: change actuator_meas to actuator_state
+    andi_u[i] = (wls_stab_p.u[i] / wls_u_scaler[i]) / ACTUATOR_DYNAMICS[i] + actuator_state[i];
   }
 
   // Compute control outputs for logging

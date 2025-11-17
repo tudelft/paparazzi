@@ -22,13 +22,13 @@ union CycloneCoefficients {
     float fz_motor_squared;          // Motor thrust squared effect
     float fz_speed_forward;          // Forward speed effect
     float fz_speed_vertical;         // Vertical speed effect
-    float fz_elevator_speed;         // Elevator-speed coupling
-    float fz_elevator_motor;         // Elevator-motor coupling
+    float fz_elevon_speed;           // Elevon-speed coupling
+    float fz_elevon_motor;           // Elevon-motor coupling
 
     // X-axis moment coefficients (m_ff_x)
     float mx_motor_diff;             // (motor_l^2 - motor_r^2)
-    float mx_elevator_motor_diff;    // (ele_l * motor_l^2 - ele_r * motor_r^2)
-    float mx_elevator_speed_diff;    // (ele_l - ele_r) * speed * v_ff(1)
+    float mx_elevon_motor_diff;      // (ele_l * motor_l^2 - ele_r * motor_r^2)
+    float mx_elevon_speed_diff;      // (ele_l - ele_r) * speed * v_ff(1)
     float mx_angular_coupling;       // w_ff(2) * w_ff(3)
 
     // Y-axis moment coefficients (m_ff_y)
@@ -36,8 +36,8 @@ union CycloneCoefficients {
     float my_speed_vertical;         // speed * v_ff(3)
     float my_constant_zero;          // constant 0 term
     float my_motor_sum;              // motor_l^2 + motor_r^2
-    float my_elevator_motor_sum;     // ele_l * motor_l^2 + ele_r * motor_r^2
-    float my_elevator_speed_sum;     // (ele_l + ele_r) * speed * v_ff(1)
+    float my_elevon_motor_sum;       // ele_l * motor_l^2 + ele_r * motor_r^2
+    float my_elevon_speed_sum;       // (ele_l + ele_r) * speed * v_ff(1)
     float my_angular_sum;            // w_ff(1) + w_ff(3)
 
     // Z-axis moment coefficients (m_ff_z)
@@ -90,20 +90,20 @@ union CycloneCoefficients obm_coefficients = {
   .fz_motor_squared       = 0.0f,
   .fz_speed_forward       = 0.0f,
   .fz_speed_vertical      = -0.144f,
-  .fz_elevator_speed      = 0.0f,
-  .fz_elevator_motor      = 0.0f,
+  .fz_elevon_speed        = 0.0f,
+  .fz_elevon_motor        = 0.0f,
 
   .mx_motor_diff          = 0.0f,
-  .mx_elevator_motor_diff = 0.0000283f, // 0000283f
-  .mx_elevator_speed_diff = 0.344f,
+  .mx_elevon_motor_diff   = 0.0000283f,
+  .mx_elevon_speed_diff   = 0.344f,
   .mx_angular_coupling    = -2.18f,
 
   .my_speed_forward       = 0.0f,
   .my_speed_vertical      = -0.0888f,
   .my_constant_zero       = -1.032f,
   .my_motor_sum           = 0.0f,
-  .my_elevator_motor_sum  = -0.0000424f,
-  .my_elevator_speed_sum  = -0.2525f,
+  .my_elevon_motor_sum    = -0.0000624f, // -0.0000424f, // Increase effectiveness in an attempt to fix oscillations in the eleons in pitch
+  .my_elevon_speed_sum    = -0.2525f,
   .my_angular_sum         = 1.262f,
 
   .mz_speed_lateral       = -0.00371f,

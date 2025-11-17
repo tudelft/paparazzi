@@ -71,12 +71,20 @@ struct AttFilter
   Butterworth2LowPass att_2d_filter_z;
 };
 
-struct FilterVect3
+struct Butterworth2Vect3
 {
   Butterworth2LowPass x;
   Butterworth2LowPass y;
   Butterworth2LowPass z;
 };
+
+struct Butterworth4Vect3
+{
+  Butterworth4LowPass x;
+  Butterworth4LowPass y;
+  Butterworth4LowPass z;
+};
+
 
 struct PolesOrder3Vect3
 {
