@@ -64,10 +64,21 @@ opt :
 	@echo Skipping legacy GCS.opt build \(missing lablgtk2.glade\)
 
 else
+
+ifeq ($(LABLGTK2CANVAS),)
+
+all :
+	@echo Skipping legacy GCS build \(missing lablgtk2-gnome.gnomecanvas\)
+
+opt :
+	@echo Skipping legacy GCS.opt build \(missing lablgtk2-gnome.gnomecanvas\)
+
+else
 all : $(MAIN)
 
 opt : $(MAIN).opt
 
+endif
 endif
 endif
 

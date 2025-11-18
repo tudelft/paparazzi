@@ -5,11 +5,19 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-import lsb_release
+#import lsb_release
 import subprocess
 import webbrowser
 
-release = lsb_release.get_distro_information()
+# release = lsb_release.get_distro_information()
+import distro
+
+release = {
+    'ID': distro.id(),
+    #'DESCRIPTION': distro.description(),
+    'RELEASE': distro.version(),
+    'CODENAME': distro.codename(),
+}
 docs = 'https://paparazzi-uav.readthedocs.io'
 
 
