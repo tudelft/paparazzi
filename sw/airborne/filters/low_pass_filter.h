@@ -21,6 +21,8 @@
 
 /** @file filters/low_pass_filter.h
  *  @brief Simple first order low pass filter with bilinear transform
+ * 
+ * @FIXME: INT and FLOAT implementations are inconsistent, tau and cut_off freq are mixed, switch everything to freq?
  *
  */
 

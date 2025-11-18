@@ -822,7 +822,7 @@ static void compute_wls_v_scaler(float v_scaler[ANDI_NUM_ACT], const float v[AND
  * @brief Initialize a set of Butterworth low-pass filters to zero for 3D vector data.
  *
  * @param[out] filter Struct containing Butterworth filters for x, y, z components.
- * @param[in] freq Cutoff frequency for the filters (Hz).
+ * @param[in] freq Cutoff frequency for the filters (rads/).
  * @param[in] dt Sampling time interval (seconds).
  */
 static void init_butterworth_2_vect3(struct Butterworth2Vect3 *filter, float freq, float dt)
@@ -836,7 +836,7 @@ static void init_butterworth_2_vect3(struct Butterworth2Vect3 *filter, float fre
  * @brief Initialize a Butterworth low-pass filter to zero.
  *
  * @param[out] filter Butterworth2LowPass filter instance.
- * @param[in] freq Cutoff frequency of the filter (Hz).
+ * @param[in] freq Cutoff frequency of the filter (rad/s).
  * @param[in] dt Sampling time interval (seconds).
  */
 static void init_butterworth_2(Butterworth2LowPass *filter, float freq, float dt)
@@ -849,7 +849,7 @@ static void init_butterworth_2(Butterworth2LowPass *filter, float freq, float dt
  *
  * @param[in] n Number of filters to initialize.
  * @param[out] filter_array Array of Butterworth2LowPass filters to initialize.
- * @param[in] freq Cutoff frequency for the filters (Hz).
+ * @param[in] freq Cutoff frequency for the filters (rad/s).
  * @param[in] dt Sampling time interval (seconds).
  */
 static void init_butterworth_2_array(uint8_t n, Butterworth2LowPass filter_array[restrict n], float freq, float dt)
@@ -969,7 +969,7 @@ static void reset_butterworth_2_array(uint8_t n, Butterworth2LowPass filter_arra
  * @brief Reinitialize a Butterworth low-pass filter with new frequency and time step.
  *
  * @param[out] filter Butterworth2LowPass filter instance to reinitialize.
- * @param[in] freq New cutoff frequency for the filter (Hz).
+ * @param[in] freq New cutoff frequency for the filter (rad/s).
  * @param[in] dt New sampling time interval (seconds).
  */
 static void reinit_butterworth_2(Butterworth2LowPass *filter, float freq, float dt)
@@ -981,7 +981,7 @@ static void reinit_butterworth_2(Butterworth2LowPass *filter, float freq, float 
  * @brief Reinitialize 3D vector Butterworth filters with new frequency and time step.
  *
  * @param[out] filter Struct containing Butterworth filters for x, y, z components.
- * @param[in] freq New cutoff frequency for the filters (Hz).
+ * @param[in] freq New cutoff frequency for the filters (rad/s).
  * @param[in] dt New sampling time interval (seconds).
  */
 static void reinit_butterworth_2_vect3(struct Butterworth2Vect3 *filter, float freq, float dt)
@@ -996,7 +996,7 @@ static void reinit_butterworth_2_vect3(struct Butterworth2Vect3 *filter, float f
  *
  * @param[in] n Number of filters in the array.
  * @param[out] filter_array Array of Butterworth2LowPass filters to reinitialize.
- * @param[in] freq New cutoff frequency for the filters (Hz).
+ * @param[in] freq New cutoff frequency for the filters (rad/s).
  * @param[in] dt New sampling time interval (seconds).
  */
 static void reinit_butterworth_2_array(uint8_t n, Butterworth2LowPass filter_array[restrict n], float freq, float dt)
@@ -1069,7 +1069,7 @@ static void get_butterworth_2_array(uint8_t n, const Butterworth2LowPass filter_
  * @brief Initialize a set of Butterworth low-pass filters to zero for 3D vector data.
  *
  * @param[out] filter Struct containing Butterworth filters for x, y, z components.
- * @param[in] freq Cutoff frequency for the filters (Hz).
+ * @param[in] freq Cutoff frequency for the filters (rad/s).
  * @param[in] dt Sampling time interval (seconds).
  */
 static void init_butterworth_4_vect3(struct Butterworth4Vect3 *filter, float freq, float dt)
@@ -1083,7 +1083,7 @@ static void init_butterworth_4_vect3(struct Butterworth4Vect3 *filter, float fre
  * @brief Initialize a Butterworth low-pass filter to zero.
  *
  * @param[out] filter Butterworth2LowPass filter instance.
- * @param[in] freq Cutoff frequency of the filter (Hz).
+ * @param[in] freq Cutoff frequency of the filter (rads/).
  * @param[in] dt Sampling time interval (seconds).
  */
 static void init_butterworth_4(Butterworth4LowPass *filter, float freq, float dt)
@@ -1096,7 +1096,7 @@ static void init_butterworth_4(Butterworth4LowPass *filter, float freq, float dt
  *
  * @param[in] n Number of filters to initialize.
  * @param[out] filter_array Array of Butterworth2LowPass filters to initialize.
- * @param[in] freq Cutoff frequency for the filters (Hz).
+ * @param[in] freq Cutoff frequency for the filters (rad/s).
  * @param[in] dt Sampling time interval (seconds).
  */
 static void init_butterworth_4_array(uint8_t n, Butterworth4LowPass filter_array[restrict n], float freq, float dt)
@@ -1201,7 +1201,7 @@ static void reset_butterworth_4_array(uint8_t n, Butterworth4LowPass filter_arra
  * @brief Reinitialize a Butterworth low-pass filter with new frequency and time step.
  *
  * @param[out] filter Butterworth2LowPass filter instance to reinitialize.
- * @param[in] freq New cutoff frequency for the filter (Hz).
+ * @param[in] freq New cutoff frequency for the filter (rad/s).
  * @param[in] dt New sampling time interval (seconds).
  */
 static void reinit_butterworth_4(Butterworth4LowPass *filter, float freq, float dt)
@@ -1213,7 +1213,7 @@ static void reinit_butterworth_4(Butterworth4LowPass *filter, float freq, float 
  * @brief Reinitialize 3D vector Butterworth filters with new frequency and time step.
  *
  * @param[out] filter Struct containing Butterworth filters for x, y, z components.
- * @param[in] freq New cutoff frequency for the filters (Hz).
+ * @param[in] freq New cutoff frequency for the filters (rad/s).
  * @param[in] dt New sampling time interval (seconds).
  */
 static void reinit_butterorth_4_vect3(struct Butterworth4Vect3 *filter, float freq, float dt)
@@ -1228,7 +1228,7 @@ static void reinit_butterorth_4_vect3(struct Butterworth4Vect3 *filter, float fr
  *
  * @param[in] n Number of filters in the array.
  * @param[out] filter_array Array of Butterworth2LowPass filters to reinitialize.
- * @param[in] freq New cutoff frequency for the filters (Hz).
+ * @param[in] freq New cutoff frequency for the filters (rad/s).
  * @param[in] dt New sampling time interval (seconds).
  */
 static void reinit_butterworth_4_array(uint8_t n, Butterworth4LowPass filter_array[restrict n], float freq, float dt)
@@ -1295,8 +1295,6 @@ static void get_butterworth_4_array(uint8_t n, const Butterworth4LowPass filter_
     output_array[i] = get_butterworth_4_low_pass(&filter_array[i]);
   }
 }
-
-
 
 void stabilization_andi_init(void)
 {
@@ -1467,7 +1465,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 
   get_actuator_measurement(actuator_meas);
 
-  float thrust_meas = evaluate_obm_thrust(actuator_meas);
+  float thrust_meas = evaluate_obm_thrust_z(actuator_meas);
 
   // Get filtered states
   update_butterworth_2_rates(&angular_rates_filter_meas, &attitude_meas.att_d);
