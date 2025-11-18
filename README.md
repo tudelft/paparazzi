@@ -1,3 +1,8 @@
+FOR DEMO, apply this to pprzlink (python version stuff): 
+
+    git apply pprzlink.patch --directory=sw/ext/pprzlink
+
+
 # MAIN README
 
 Paparazzi UAS

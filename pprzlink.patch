@@ -1,0 +1,91 @@
+diff --git a/lib/v1.0/python/pprzlink/ivy.py b/lib/v1.0/python/pprzlink/ivy.py
+index 72e336c..39d5562 100644
+--- a/lib/v1.0/python/pprzlink/ivy.py
++++ b/lib/v1.0/python/pprzlink/ivy.py
+@@ -175,19 +175,19 @@ class IvyMessagesInterface(object):
+         # request: "sender_name request_id msg_name_REQ msg_payload..."
+         # answer:  "request_id sender_name msg_name msg_payload..."
+ 
+-        data = re.search("(\S+) +(\S+) +(.*)", ivy_msg)
++        data = re.search(r"(\S+) +(\S+) +(.*)", ivy_msg)
+         # check for request_id in first or second string (-> advanced format with msg_name in third string)
+         if data is None:
+             return
+-        if re.search("[0-9]+_[0-9]+", data.group(1)) or re.search("[0-9]+_[0-9]+", data.group(2)):
+-            if re.search("[0-9]+_[0-9]+", data.group(1)):
++        if re.search(r"[0-9]+_[0-9]+", data.group(1)) or re.search(r"[0-9]+_[0-9]+", data.group(2)):
++            if re.search(r"[0-9]+_[0-9]+", data.group(1)):
+                 sender_name = data.group(2)
+                 request_id = data.group(1)
+             else:
+                 sender_name = data.group(1)
+                 request_id = data.group(2)
+             # this is an advanced type, split again
+-            data = re.search("(\S+)+( .*|$)", data.group(3))
++            data = re.search(r"(\S+)+( .*|$)", data.group(3))
+             msg_name = data.group(1)
+             payload = data.group(2)
+         else:
+diff --git a/lib/v1.0/python/pprzlink/message.py b/lib/v1.0/python/pprzlink/message.py
+index 323dbaf..27061cc 100644
+--- a/lib/v1.0/python/pprzlink/message.py
++++ b/lib/v1.0/python/pprzlink/message.py
+@@ -228,7 +228,7 @@ class PprzMessage(object):
+         length = 0
+         for idx, t in enumerate(self.fieldtypes):
+             bin_type = self.fieldbintypes(t)
+-            r = re.compile('[\[\]]')
++            r = re.compile(r'[\[\]]')
+             s = r.split(t)
+             if len(s) > 1: # this is an array
+                 array_length = len(self.fieldvalues[idx])
+diff --git a/lib/v2.0/python/pprzlink/ivy.py b/lib/v2.0/python/pprzlink/ivy.py
+index 2b6b830..44a6dfc 100644
+--- a/lib/v2.0/python/pprzlink/ivy.py
++++ b/lib/v2.0/python/pprzlink/ivy.py
+@@ -178,19 +178,19 @@ class IvyMessagesInterface(object):
+         # request: "sender_name request_id msg_name_REQ msg_payload..."
+         # answer:  "request_id sender_name msg_name msg_payload..."
+ 
+-        data = re.search("(\S+) +(\S+) +(.*)", ivy_msg)
++        data = re.search(r"(\S+) +(\S+) +(.*)", ivy_msg)
+         # check for request_id in first or second string (-> advanced format with msg_name in third string)
+         if data is None:
+             return
+-        if re.search("[0-9]+_[0-9]+", data.group(1)) or re.search("[0-9]+_[0-9]+", data.group(2)):
+-            if re.search("[0-9]+_[0-9]+", data.group(1)):
++        if re.search(r"[0-9]+_[0-9]+", data.group(1)) or re.search(r"[0-9]+_[0-9]+", data.group(2)):
++            if re.search(r"[0-9]+_[0-9]+", data.group(1)):
+                 sender_name = data.group(2)
+                 request_id = data.group(1)
+             else:
+                 sender_name = data.group(1)
+                 request_id = data.group(2)
+             # this is an advanced type, split again
+-            data = re.search("(\S+)+( .*|$)", data.group(3))
++            data = re.search(r"(\S+)+( .*|$)", data.group(3))
+             msg_name = data.group(1)
+             payload = data.group(2)
+         else:
+diff --git a/lib/v2.0/python/pprzlink/message.py b/lib/v2.0/python/pprzlink/message.py
+index 87a3650..542dfb3 100644
+--- a/lib/v2.0/python/pprzlink/message.py
++++ b/lib/v2.0/python/pprzlink/message.py
+@@ -241,7 +241,7 @@ class PprzMessage(object):
+         struct_string = "<"
+         data = []
+         length = 0
+-        r = re.compile('[\[\]]')
++        r = re.compile(r'[\[\]]')
+         for idx, t in enumerate(self.fieldtypes):
+             bin_type = self.fieldbintypes(t)
+             s = r.split(t)
+@@ -278,7 +278,7 @@ class PprzMessage(object):
+     def binary_to_payload(self, data):
+         msg_offset = 0
+         values = []
+-        r = re.compile('[\[\]]')
++        r = re.compile(r'[\[\]]')
+         for idx, t in enumerate(self.fieldtypes):
+             bin_type = self.fieldbintypes(t)
+             s = r.split(t)
