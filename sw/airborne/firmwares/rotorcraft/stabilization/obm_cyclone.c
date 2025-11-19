@@ -271,7 +271,18 @@ void evaluate_obm_f_stb_u(float fu_mat[ANDI_NUM_ACT * ANDI_OUTPUTS], const struc
   vel_body_array[1] = vel_body->y;
   vel_body_array[2] = vel_body->z;
 
-  cyclone_f_stb_u(vel_body_array, actuator_state, obm_coefficients.data, fu_mat);
+  // Bound min motor speed in actuator_state to prevent really low control effectiveness which may result in instabilities.
+  // This should make "free fall" more stable at the cost of some model inaccuracy at very low thrust.
+  // FIXME: Rethink this solution.
+  // FIXME: Apply this bounding directly on the elevon effectiveness terms in the final matrix instead of modifying actuator_state.
+  // FIXME: Would it be possible to dynamically identify or saturate the control effectiveness?
+  float actuator_state_bounded[ANDI_NUM_ACT];
+  actuator_state_bounded[0] = actuator_state[0];
+  actuator_state_bounded[1] = actuator_state[1];
+  actuator_state_bounded[2] = fmaxf(actuator_state[2], 360000.0f);
+  actuator_state_bounded[3] = fmaxf(actuator_state[3], 360000.0f);
+
+  cyclone_f_stb_u(vel_body_array, actuator_state_bounded, obm_coefficients.data, fu_mat);
 }
 
 void evaluate_obm_f_stb_x(float nu_obm[ANDI_OUTPUTS], const struct FloatRates *rates, const struct FloatVect3 *vel_body, const struct FloatVect3 *ang_accel, const struct FloatVect3 *accel_body, const float actuator_state[ANDI_NUM_ACT])

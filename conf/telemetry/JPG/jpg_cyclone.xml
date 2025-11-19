@@ -54,7 +54,7 @@
       <message name="PPM"                      period="0.5"/>
       <message name="RC"                       period="0.5"/>
       <message name="ROTORCRAFT_RADIO_CONTROL" period="0.5"/>
-      <message name="ROTORCRAFT_STATUS"        period="1"/>
+      <message name="ROTORCRAFT_STATUS"        period="1.2"/>
       <message name="BEBOP_ACTUATORS"          period="0.2"/>
     </mode>
 
@@ -195,7 +195,7 @@
       <message name="AUTOPILOT_VERSION"        period="11.1"/>
       <message name="GPS"                      period="11.1"/>
       <!-- <message name="DL_VALUE"                 period="2.5"/> -->
-      <message name="ROTORCRAFT_STATUS"        period="1.2"/>
+      <message name="ROTORCRAFT_STATUS"        period="0.02"/>
       <message name="ROTORCRAFT_FP"            period="0.1"/>
       <message name="ROTORCRAFT_RADIO_CONTROL" period="0.20"/>
       <message name="COMMANDS"                 period="0.002"/>

@@ -197,15 +197,17 @@
         <define name="STABILIZATION_ATTITUDE_SP_MAX_THETA" value="45." unit="deg"  />
         <define name="STABILIZATION_ATTITUDE_SP_MAX_R"     value="90." unit="deg/s"/>
         <define name="STABILIZATION_ATTITUDE_DEADBAND_R"   value="200"             />
-        <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST"      value="1000"/>
+        <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST"      value="1500"            /> <!-- Equivalent to ~300 rad/s -->
+        <define name="AUTOPILOT_IN_FLIGHT_MIN_SPEED"       value="0"               />
+        <define name="AUTOPILOT_IN_FLIGHT_MIN_ACCEL"       value="0"               />
     </section>
 
     <section name="STABILIZATION_ANDI" prefix="STABILIZATION_ANDI_" >
         <!--                                 |      EL      |      ER      |      ML^2    |      MR^2    | -->
         <define name="ACT_IS_SERVO"   value="{             1,             1,             0,             0}"/>
-        <define name="ACT_DYNAMICS"   value="{         20.0f,         20.0f,         40.0f,         40.0f}"/> <!-- [rad/s]-->
+        <define name="ACT_DYNAMICS"   value="{         20.0f,         20.0f,         35.0f,         35.0f}"/> <!-- [rad/s]-->
         <define name="ACT_MAX"        value="{          1.0f,          1.0f,    3534400.0f,    3534400.0f}"/> <!-- [  rad |   (rad/s)^2]--> 
-        <define name="ACT_MIN"        value="{         -1.0f,         -1.0f,       2500.0f,       2500.0f}"/> <!-- [  rad |   (rad/s)^2]--> 
+        <define name="ACT_MIN"        value="{         -1.0f,         -1.0f,      40000.0f,      40000.0f}"/> <!-- [  rad |   (rad/s)^2]--> 
         <define name="ACT_RATE_MAX"   value="{         10.0f,         10.0f,   90000000.0f,   90000000.0f}"/> <!-- [rad/s | (rad/s)^2/s]--> 
         <define name="ACT_RATE_MIN"   value="{        -10.0f,        -10.0f,  -90000000.0f,  -90000000.0f}"/> <!-- [rad/s | (rad/s)^2/s]--> 
         <define name="ACT_PREF"       value="{         0.00f,         0.00f,     705600.0f,     705600.0f}"/> <!-- [  rad |   (rad/s)^2]--> <!-- Should be removed, only used when not scheduling-->

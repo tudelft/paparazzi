@@ -90,7 +90,7 @@ struct PolesOrder3Vect3
 {
   struct FloatVect3 omega_n;
   struct FloatVect3 zeta;
-  struct FloatVect3 p1;
+  struct FloatVect3 omega_a;
 };
 
 struct PolesOrder2Vect3
