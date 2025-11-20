@@ -702,7 +702,7 @@ static inline void float_mat_transpose_square(float **a, int n)
 
 
 /** transpose non-square matrix */
-static inline void float_mat_transpose(float **o, float const *const * a, int n, int m)
+static inline void float_mat_transpose(float **o, float ** a, int n, int m)
 {
   int i, j;
   for (i = 0; i < n; i++) {

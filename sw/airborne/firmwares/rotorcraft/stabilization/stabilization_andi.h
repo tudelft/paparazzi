@@ -54,6 +54,12 @@ struct AttStateQuat
   struct FloatVect3 att_2d;
 };
 
+struct LinState
+{
+  struct FloatVect3 vel;
+  struct FloatVect3 acc;
+};
+
 struct ThrustRef
 {
   float thrust;
@@ -112,25 +118,6 @@ struct GainsOrder3Vect3
   struct FloatVect3 k3;
 };
 
-static inline void print_FloatVect3(const char *name, struct FloatVect3 v)
-{
-  printf("%s: [%.3f, %.3f, %.3f]\n", name, v.x, v.y, v.z);
-}
-
-static inline void print_GainsOrder2Vect3(const char *gain_name, const struct GainsOrder2Vect3 *gains)
-{
-  printf("%s (GainsOrder2Vect3):\n", gain_name);
-  print_FloatVect3("  k1", gains->k1);
-  print_FloatVect3("  k2", gains->k2);
-}
-
-static inline void print_GainsOrder3Vect3(const char *gain_name, const struct GainsOrder3Vect3 *gains)
-{
-  printf("%s (GainsOrder3Vect3):\n", gain_name);
-  print_FloatVect3("  k1", gains->k1);
-  print_FloatVect3("  k2", gains->k2);
-  print_FloatVect3("  k3", gains->k3);
-}
 // On board model coefficients
 extern union CycloneCoefficients obm_coefficients;
 
@@ -145,6 +132,8 @@ extern float andi_p_thrust_rm;
 extern float andi_rate_freq_cutoff;
 extern float andi_accel_freq_cutoff;
 extern float andi_jerk_freq_cutoff;
+
+extern float ANDI_RELAX_OBM;
 
 void stabilization_andi_init(void);
 void stabilization_andi_enter(void);

@@ -67,6 +67,9 @@
         <dl_setting var="andi_p_att_ec.omega_a.z" min="0" step="0.25" max="100" shortname="pole_att_ec/p1.z" param="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_A_Z"/>
 
         <dl_setting var="andi_p_thrust_ec" min="0" step="0.25" max="100" shortname="pole_thrust_ec" param="STABILIZATION_ANDI_POLE_THRUST_EC"/>
+
+        <dl_setting var="ANDI_RELAX_OBM" min="0" step="0.1" max="1" shortname="CHANGE THIS!"/>
+
 <!-- 
         <dl_setting var="andi_rate_freq_cutoff" min="1" step="1" max="100" shortname="cutoff_freq_rate" param="STABILIZATION_ANDI_CUTOFF_FREQ_RATE"/>
         <dl_setting var="andi_accel_freq_cutoff" min="1" step="1" max="100" shortname="cutoff_freq_accel" param="STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL"/>

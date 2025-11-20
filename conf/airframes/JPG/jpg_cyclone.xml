@@ -76,7 +76,14 @@
         </target>
 
         <module name="imu" type="cube"/>
-        <module name="ins" type="ekf2"/>
+        <!-- For optitrack use ins ext_pose and comment out ahrs module below-->
+        <module name="ins" type="ext_pose">
+            <define name="INS_EXT_POSE_IMU_ID"      value="IMU_CUBE1_ID"/>
+            <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
+            <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
+        </module>
+        <!-- <module name="ins" type="ekf2"/> -->
+
 
         <module name="actuators" type="t4"/>
         <module name="actuators_t4_uart">
@@ -88,9 +95,10 @@
             <configure name="MODEM_BAUD" value="B115200"/>
         </module>
         
-        <module name="gps" type="ublox">
+        <module name="gps" type="datalink"/>   
+        <!-- <module name="gps" type="ublox">
             <configure name="GPS_BAUD" value="B460800"/>
-        </module>
+        </module> -->
 
         <module name="mag" type="rm3100">
             <configure name="MAG_RM3100_I2C_DEV" value="i2c2"/>
