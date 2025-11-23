@@ -530,6 +530,8 @@ float SF_BOUND_NU[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
 float ratio_u_un[ANDI_NUM_ACT_TOT];
 float ratio_vn_v[ANDI_OUTPUTS];
 
+float temp_ang_rate_fw[3];
+float temp_ang_accel_fw[3];
 float temp_checks[2];
 float temp_checks_2[3];
 float temp_ref_att[3];
@@ -642,12 +644,12 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
 {
   float temp_debug_vect[14];
   temp_debug_vect[0] = (float) chirp_n_counter;//oneloop_andi_model[0];//oneloop_andi_model_filt.ax.out;
-  temp_debug_vect[1] = oneloop_andi_model[1];//oneloop_andi_model_filt.ay.out;
-  temp_debug_vect[2] = oneloop_andi_model[2];//oneloop_andi_model_filt.az.out;
-  temp_debug_vect[3] = oneloop_andi_model[3];//oneloop_andi_model_filt.p_dot.out;
-  temp_debug_vect[4] = oneloop_andi_model[4];//oneloop_andi_model_filt.q_dot.out;
-  temp_debug_vect[5] = oneloop_andi_model[5];//oneloop_andi_model_filt.r_dot.out;
-  temp_debug_vect[6] = oneloop_andi_sigma;
+  temp_debug_vect[1] = temp_ang_rate_fw[0];
+  temp_debug_vect[2] = temp_ang_rate_fw[1];
+  temp_debug_vect[3] = temp_ang_rate_fw[2];
+  temp_debug_vect[4] = temp_ang_accel_fw[0];
+  temp_debug_vect[5] = temp_ang_accel_fw[1];
+  temp_debug_vect[6] = temp_ang_accel_fw[2];
   temp_debug_vect[7] = chirp_on ? 1.0 : 0.0;
   temp_debug_vect[8] = LP.az.meas;
   temp_debug_vect[9] = temp_checks_2[0];
@@ -1152,7 +1154,10 @@ void ec_3rd_att(float y_4d[3], float x_des[3], float x_ref[3], float x_d_ref[3],
   BoundAbs(e_x_rates[0], bounds_att_d[0]);
   BoundAbs(e_x_rates[1], bounds_att_d[1]);
   BoundAbs(e_x_rates[2], bounds_att_d[2]);
-  float_vect_sum(x_d_f, x_d_ref, e_x, 3);
+  float_vect_sum(x_d_f, x_d_ref, e_x_rates, 3);
+  temp_ang_rate_fw[0] = x_d_f[0];
+  temp_ang_rate_fw[1] = x_d_f[1];
+  temp_ang_rate_fw[2] = x_d_f[2];
   // Angular Rate Error ---------------------------------------------------
   x_2d_f[0] = (x_d_f[0]-x_d[0])*k2_e[0];
   x_2d_f[1] = (x_d_f[1]-x_d[1])*k2_e[1];
@@ -1162,7 +1167,10 @@ void ec_3rd_att(float y_4d[3], float x_des[3], float x_ref[3], float x_d_ref[3],
   BoundAbs(x_2d_f[2], bounds.att_2d[2]*ec_headroom);
   x_2d_f[0] += x_2d_ref[0];
   x_2d_f[1] += x_2d_ref[1];
-  x_2d_f[2] += x_2d_ref[2]; 
+  x_2d_f[2] += x_2d_ref[2];
+  temp_ang_accel_fw[0] = x_2d_f[0];
+  temp_ang_accel_fw[1] = x_2d_f[1];
+  temp_ang_accel_fw[2] = x_2d_f[2];
   //err_sum_nd(x_2d_f, x_d_f,  x_d,  k2_e, x_2d_ref, 3);
   // Calculate and bound distrubance --------------------------------------
   float dist[3];
