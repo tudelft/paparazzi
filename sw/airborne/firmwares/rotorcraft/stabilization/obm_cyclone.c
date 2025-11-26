@@ -90,7 +90,7 @@ union CycloneCoefficients obm_coefficients = {
   .fz_motor_squared       = 0.0f,
   .fz_speed_forward       = 0.0f,
   .fz_speed_vertical      = -0.144f,
-  .fz_elevon_speed        = 0.0f,
+  .fz_elevon_speed        = 0.0f, // non minimum phase coupling term
   .fz_elevon_motor        = 0.0f,
 
   .mx_motor_diff          = 0.0f,

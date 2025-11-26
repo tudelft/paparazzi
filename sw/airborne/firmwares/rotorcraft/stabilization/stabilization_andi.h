@@ -27,8 +27,9 @@
 #include "firmwares/rotorcraft/stabilization.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_rate.h"
 #include "generated/airframe.h"
-#include "filters/low_pass_filter.h"
 #include <stdio.h>
+#include "filters/low_pass_filter.h"
+
 
 #ifndef ANDI_NUM_ACT
 #define ANDI_NUM_ACT COMMANDS_NB_REAL
@@ -76,21 +77,6 @@ struct AttFilter
   Butterworth2LowPass att_2d_filter_y;
   Butterworth2LowPass att_2d_filter_z;
 };
-
-struct Butterworth2Vect3
-{
-  Butterworth2LowPass x;
-  Butterworth2LowPass y;
-  Butterworth2LowPass z;
-};
-
-struct Butterworth4Vect3
-{
-  Butterworth4LowPass x;
-  Butterworth4LowPass y;
-  Butterworth4LowPass z;
-};
-
 
 struct PolesOrder3Vect3
 {
