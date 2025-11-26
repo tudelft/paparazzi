@@ -126,6 +126,46 @@ void stabilization_andi_enter(void);
 void stabilization_andi_run(bool use_rate_control, bool in_flight, struct StabilizationSetpoint *stab_setpoint, struct ThrustSetpoint *thrust_setpoint, int32_t *cmd);
 
 /**
+ * @brief Evaluate total force acting on the vehicle from the OBM
+ *
+ * Computes the full set of forces modeled by the on board model for
+ * the given airframe as a function of the state and input.
+ * 
+ * This function is used for complementary filtering in ANDI.
+ * 
+ * @param[in] rates Current angular rates (p, q, r) used by the model (rad/s).
+ * @param[in] vel_body Body-frame linear velocity vector (u, v, w) (m/s).
+ * @param[in] actuator_state Current actuator commands/deflections array (length
+ *                           ANDI_NUM_ACT). Units and normalization depend on the
+ *                           airframe and actuator type (e.g. radians, throttle fraction).
+ * @return Computed force vector produced by the actuators as per the OBM.
+ *
+ * @note Implementation is airframe-specific.
+ * @see obm_cyclone
+ */
+struct FloatVect3 evaluate_obm_forces(const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT]);
+
+/**
+ * @brief Evaluate total moments acting on the vehicle from the OBM
+ *
+ * Computes the full set of moments modeled by the on board model for
+ * the given airframe as a function of the state and input.
+ * 
+ * This function is used for complementary filtering in ANDI.
+ * 
+ * @param[in] rates Current angular rates (p, q, r) used by the model (rad/s).
+ * @param[in] vel_body Body-frame linear velocity vector (u, v, w) (m/s).
+ * @param[in] actuator_state Current actuator commands/deflections array (length
+ *                           ANDI_NUM_ACT). Units and normalization depend on the
+ *                           airframe and actuator type (e.g. radians, throttle fraction).
+ * @return Computed moment vector produced by the actuators as per the OBM.
+ *
+ * @note Implementation is airframe-specific.
+ * @see obm_cyclone
+ */
+struct FloatVect3 evaluate_obm_moments(const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT]);
+
+/**
  * @brief Evaluate the state-dependent control effectiveness matrix F_u for stabilization.
  *
  * This function computes the mapping from actuator inputs to aerodynamic/motor outputs

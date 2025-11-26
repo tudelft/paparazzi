@@ -12,6 +12,7 @@
     <section name="STABILIZATION_ATTITUDE_ANDI" prefix="STABILIZATION_ANDI_">
       <define name="ACT_IS_SERVO" value="{0, 0, 0, 0}" description="1 for every actuator that is a servo"/>
       <define name="ACT_DYNAMICS" description="actuator bandwidth [rad/s]"/>
+      <define name="ACTUATOR_DELAY" description="actuator transport delay [samples]"/>
       <define name="ACT_MAX" description="maximum actuator value [SI units]"/>
       <define name="ACT_MIN" description="maximum actuator value [SI units]"/>
       <define name="ACT_RATE_MAX" description="minimum actuator rate [SI units]"/>
@@ -132,9 +133,12 @@
     <configure name="STABILIZATION_ANDI_POLE_THRUST_EC" default="35.0"/>
     <configure name="STABILIZATION_ANDI_POLE_THRUST_RM" default="35.0"/>
 
-    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_RATE" default="100.0"/>  <!-- rad/s -->
-    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL" default="45.0"/> <!-- rad/s -->
-    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_JERK" default="45.0"/> <!-- rad/s -->
+    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL" default="65.0"/> <!-- rad/s -->
+    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_VEL" default="100.0"/> <!-- rad/s -->
+    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA" default="100.0"/> <!-- rad/s -->
+    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT" default="65.0"/> <!-- rad/s -->
+    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_ACTUATOR" default="130.0"/> <!-- rad/s -->
+
 
     <define name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X" value="$(STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X)"/>
     <define name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Y" value="$(STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Y)"/>
@@ -173,8 +177,10 @@
     <define name="STABILIZATION_ANDI_POLE_THRUST_EC" value="$(STABILIZATION_ANDI_POLE_THRUST_EC)"/>
     <define name="STABILIZATION_ANDI_POLE_THRUST_RM" value="$(STABILIZATION_ANDI_POLE_THRUST_RM)"/>
 
-    <define name="STABILIZATION_ANDI_CUTOFF_FREQ_RATE" value="$(STABILIZATION_ANDI_CUTOFF_FREQ_RATE)"/>
     <define name="STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL" value="$(STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL)"/>
-    <define name="STABILIZATION_ANDI_CUTOFF_FREQ_JERK" value="$(STABILIZATION_ANDI_CUTOFF_FREQ_JERK)"/>
+    <define name="STABILIZATION_ANDI_CUTOFF_FREQ_VEL" value="$(STABILIZATION_ANDI_CUTOFF_FREQ_VEL)"/>
+    <define name="STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA" value="$(STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA)"/>
+    <define name="STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT" value="$(STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA)"/>
+    <define name="STABILIZATION_ANDI_CUTOFF_FREQ_ACTUATOR" value="$(STABILIZATION_ANDI_CUTOFF_FREQ_ACTUATOR)"/>
   </makefile>
 </module>

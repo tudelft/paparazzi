@@ -13,7 +13,7 @@
  * @param[in] freq Cutoff frequency of the filter in rad/s.
  * @param[in] sample_time Sampling period in seconds.
  */
-static inline void init_butterworth_2_complementary(Butterworth2LowPassComplementary *filter, float freq, float sample_time)
+static inline void init_butterworth_2_complementary(Butterworth2Complementary *filter, float freq, float sample_time)
 {
   init_butterworth_2_low_pass_complementary(filter, 1.0f / freq, sample_time, 0.0f);
 }
@@ -25,7 +25,7 @@ static inline void init_butterworth_2_complementary(Butterworth2LowPassComplemen
  * @param[in] value_x Input value x for the filter update.
  * @param[in] value_y Input value y for the filter update.
  */
-static inline void update_butterworth_2_complementary(Butterworth2LowPassComplementary *filter, float value_x, float value_y)
+static inline void update_butterworth_2_complementary(Butterworth2Complementary *filter, float value_x, float value_y)
 {
   update_butterworth_2_low_pass_complementary(filter, value_x, value_y);
 }
@@ -37,7 +37,7 @@ static inline void update_butterworth_2_complementary(Butterworth2LowPassComplem
  * @return Current filtered output value.
  */
 
-static inline float get_butterworth_2_complementary(const Butterworth2LowPassComplementary *filter)
+static inline float get_butterworth_2_complementary(const Butterworth2Complementary *filter)
 {
   return get_butterworth_2_low_pass_complementary(filter);
 }
@@ -49,7 +49,7 @@ static inline float get_butterworth_2_complementary(const Butterworth2LowPassCom
  * @param[in] freq Cutoff frequency in rad/s.
  * @param[in] sample_time Sampling period in seconds.
  */
-static inline void init_butterworth_4_complementary(Butterworth4LowPassComplementary *filter, float freq, float sample_time)
+static inline void init_butterworth_4_complementary(Butterworth4Complementary *filter, float freq, float sample_time)
 {
   init_butterworth_4_low_pass_complementary(filter, 1.0f / freq, sample_time, 0.0f);
 }
@@ -61,7 +61,7 @@ static inline void init_butterworth_4_complementary(Butterworth4LowPassComplemen
  * @param[in] value_x Input value x for the filter update.
  * @param[in] value_y Input value y for the filter update.
  */
-static inline void update_butterworth_4_complementary(Butterworth4LowPassComplementary *filter, float value_x, float value_y)
+static inline void update_butterworth_4_complementary(Butterworth4Complementary *filter, float value_x, float value_y)
 {
   update_butterworth_4_low_pass_complementary(filter, value_x, value_y);
 }
@@ -72,7 +72,7 @@ static inline void update_butterworth_4_complementary(Butterworth4LowPassComplem
  * @param[in] filter Pointer to the Butterworth4Complementary filter instance.
  * @return Current filtered output value.
  */
-static inline float get_butterworth_4_complementary(const Butterworth4LowPassComplementary *filter)
+static inline float get_butterworth_4_complementary(const Butterworth4Complementary *filter)
 {
   return get_butterworth_4_low_pass_complementary(filter);
 }
@@ -80,9 +80,9 @@ static inline float get_butterworth_4_complementary(const Butterworth4LowPassCom
 
 struct Butterworth2ComplementaryVect3
 {
-  Butterworth2LowPassComplementary x;
-  Butterworth2LowPassComplementary y;
-  Butterworth2LowPassComplementary z;
+  Butterworth2Complementary x;
+  Butterworth2Complementary y;
+  Butterworth2Complementary z;
 };
 
 /**
@@ -161,11 +161,11 @@ static inline struct FloatRates get_butterworth_2_complementary_rates(const stru
  * @brief Initialize an array of 2nd order Butterworth complementary filters.
  *
  * @param[in] n Number of filters in the array.
- * @param[out] filter_array Array of Butterworth2LowPassComplementary filters.
+ * @param[out] filter_array Array of Butterworth2Complementary filters.
  * @param[in] freq Cutoff frequency in rad/s.
  * @param[in] sample_time Sampling period in seconds.
  */
-static inline void init_butterworth_2_complementary_array(uint8_t n, Butterworth2LowPassComplementary filter_array[restrict n], float freq, float sample_time)
+static inline void init_butterworth_2_complementary_array(uint8_t n, Butterworth2Complementary filter_array[restrict n], float freq, float sample_time)
 {
   float tau = 1.0f / freq;
   for (uint8_t i = 0; i < n; i++)
@@ -178,11 +178,11 @@ static inline void init_butterworth_2_complementary_array(uint8_t n, Butterworth
  * @brief Update an array of 2nd order Butterworth complementary filters.
  *
  * @param[in] n Number of filters in the array.
- * @param[in,out] filter_array Array of Butterworth2LowPassComplementary filters.
+ * @param[in,out] filter_array Array of Butterworth2Complementary filters.
  * @param[in] value_x_array Array of input x values.
  * @param[in] value_y_array Array of input y values.
  */
-static inline void update_butterworth_2_complementary_array(uint8_t n, Butterworth2LowPassComplementary filter_array[restrict n], const float value_x_array[restrict n], const float value_y_array[restrict n])
+static inline void update_butterworth_2_complementary_array(uint8_t n, Butterworth2Complementary filter_array[restrict n], const float value_x_array[restrict n], const float value_y_array[restrict n])
 {
   for (uint8_t i = 0; i < n; i++)
   {
@@ -193,10 +193,10 @@ static inline void update_butterworth_2_complementary_array(uint8_t n, Butterwor
  * @brief Get current outputs from an array of 2nd order Butterworth complementary filters.
  *
  * @param[in] n Number of filters in the array.
- * @param[in] filter_array Array of Butterworth2LowPassComplementary filters.
+ * @param[in] filter_array Array of Butterworth2Complementary filters.
  * @param[out] output_array Array to store the filtered output values.
  */
-static inline void get_butterworth_2_complementary_array(uint8_t n, const Butterworth2LowPassComplementary filter_array[restrict n], float output_array[restrict n])
+static inline void get_butterworth_2_complementary_array(uint8_t n, const Butterworth2Complementary filter_array[restrict n], float output_array[restrict n])
 {
   for (uint8_t i = 0; i < n; i++)
   {
@@ -207,9 +207,9 @@ static inline void get_butterworth_2_complementary_array(uint8_t n, const Butter
 
 struct Butterworth4ComplementaryVect3
 {
-  Butterworth4LowPassComplementary x;
-  Butterworth4LowPassComplementary y;
-  Butterworth4LowPassComplementary z;
+  Butterworth4Complementary x;
+  Butterworth4Complementary y;
+  Butterworth4Complementary z;
 };
 
 /**
@@ -288,11 +288,11 @@ static inline struct FloatRates get_butterworth_4_complementary_rates(const stru
  * @brief Initialize an array of 4th order Butterworth complementary filters.
  *
  * @param[in] n Number of filters to initialize.
- * @param[out] filter_array Array of Butterworth4LowPassComplementary filters.
+ * @param[out] filter_array Array of Butterworth4Complementary filters.
  * @param[in] freq Cutoff frequency for the filters (rad/s).
  * @param[in] sample_time Sampling period (seconds).
  */
-static inline void init_butterworth_4_complementary_array(uint8_t n, Butterworth4LowPassComplementary filter_array[restrict n], float freq, float sample_time)
+static inline void init_butterworth_4_complementary_array(uint8_t n, Butterworth4Complementary filter_array[restrict n], float freq, float sample_time)
 {
   float tau = 1.0f / freq;
   for (uint8_t i = 0; i < n; i++)
@@ -305,11 +305,11 @@ static inline void init_butterworth_4_complementary_array(uint8_t n, Butterworth
  * @brief Update an array of 4th order Butterworth complementary filters.
  *
  * @param[in] n Number of filters in the array.
- * @param[in,out] filter_array Array of Butterworth4LowPassComplementary filters.
+ * @param[in,out] filter_array Array of Butterworth4Complementary filters.
  * @param[in] value_x_array Array of input x values.
  * @param[in] value_y_array Array of input y values.
  */
-static inline void update_butterworth_4_complementary_array(uint8_t n, Butterworth4LowPassComplementary filter_array[restrict n], const float value_x_array[restrict n], const float value_y_array[restrict n])
+static inline void update_butterworth_4_complementary_array(uint8_t n, Butterworth4Complementary filter_array[restrict n], const float value_x_array[restrict n], const float value_y_array[restrict n])
 {
   for (uint8_t i = 0; i < n; i++)
   {
@@ -321,10 +321,10 @@ static inline void update_butterworth_4_complementary_array(uint8_t n, Butterwor
  * @brief Get current outputs from an array of 4th order Butterworth complementary filters.
  *
  * @param[in] n Number of filters in the array.
- * @param[in] filter_array Array of Butterworth4LowPassComplementary filters.
+ * @param[in] filter_array Array of Butterworth4Complementary filters.
  * @param[out] output_array Array to store the filtered output values.
  */
-static inline void get_butterworth_4_complementary_array(uint8_t n, const Butterworth4LowPassComplementary filter_array[restrict n], float output_array[restrict n])
+static inline void get_butterworth_4_complementary_array(uint8_t n, const Butterworth4Complementary filter_array[restrict n], float output_array[restrict n])
 {
   for (uint8_t i = 0; i < n; i++)
   {

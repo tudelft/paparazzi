@@ -144,7 +144,7 @@ static inline float get_second_order_complementary(const struct SecondOrderCompl
   return filter->x_lp_filter.i[0] - x_lp_output + y_lp_output;
 }
 
-typedef struct SecondOrderComplementary Butterworth2LowPassComplementary;
+typedef struct SecondOrderComplementary Butterworth2Complementary;
 
 /** Initialize the Butterworth 2nd order low-pass complementary filter.
  *
@@ -154,7 +154,7 @@ typedef struct SecondOrderComplementary Butterworth2LowPassComplementary;
  * @param value Initial value for filter history
  */
 static inline void init_butterworth_2_low_pass_complementary(
-    Butterworth2LowPassComplementary *filter,
+    Butterworth2Complementary *filter,
     float tau, float sample_time,
     float value)
 {
@@ -171,7 +171,7 @@ static inline void init_butterworth_2_low_pass_complementary(
  * @param value_y New input value from the low-pass path
  * @return New filtered output value
  */
-static inline float update_butterworth_2_low_pass_complementary(Butterworth2LowPassComplementary *filter, float value_x, float value_y)
+static inline float update_butterworth_2_low_pass_complementary(Butterworth2Complementary *filter, float value_x, float value_y)
 {
   return update_second_order_complementary((struct SecondOrderComplementary *)filter, value_x, value_y);
 }
@@ -181,7 +181,7 @@ static inline float update_butterworth_2_low_pass_complementary(Butterworth2LowP
  * @param filter Complementary filter struct
  * @return Current output value of the filter
  */
-static inline float get_butterworth_2_low_pass_complementary(const Butterworth2LowPassComplementary *filter)
+static inline float get_butterworth_2_low_pass_complementary(const Butterworth2Complementary *filter)
 {
   return get_second_order_complementary((const struct SecondOrderComplementary *)filter);
 }
@@ -190,7 +190,7 @@ typedef struct
 {
   Butterworth4LowPass x_lp_filter; // Low pass filter instance for high pass path
   Butterworth4LowPass y_lp_filter; // Low pass filter instance for low pass path
-} Butterworth4LowPassComplementary;
+} Butterworth4Complementary;
 
 /** Initialize the Butterworth 4th order low-pass complementary filter.
  *
@@ -199,7 +199,7 @@ typedef struct
  * @param sample_time Sampling period
  * @param value Initial value for filter history
  */
-static inline void init_butterworth_4_low_pass_complementary(Butterworth4LowPassComplementary *filter, float tau, float sample_time, float value)
+static inline void init_butterworth_4_low_pass_complementary(Butterworth4Complementary *filter, float tau, float sample_time, float value)
 {
   init_butterworth_4_low_pass(&filter->x_lp_filter, tau, sample_time, value);
   init_butterworth_4_low_pass(&filter->y_lp_filter, tau, sample_time, value);
@@ -212,7 +212,7 @@ static inline void init_butterworth_4_low_pass_complementary(Butterworth4LowPass
  * @param value_y New input value from the low-pass path
  * @return New filtered output value
  */
-static inline float update_butterworth_4_low_pass_complementary(Butterworth4LowPassComplementary *filter, float value_x, float value_y)
+static inline float update_butterworth_4_low_pass_complementary(Butterworth4Complementary *filter, float value_x, float value_y)
 {
   float x_lp_output = update_butterworth_4_low_pass(&filter->x_lp_filter, value_x);
   float y_lp_output = update_butterworth_4_low_pass(&filter->y_lp_filter, value_y);
@@ -224,7 +224,7 @@ static inline float update_butterworth_4_low_pass_complementary(Butterworth4LowP
  * @param filter Complementary filter struct
  * @return Current output value of the filter
  */
-static inline float get_butterworth_4_low_pass_complementary(const Butterworth4LowPassComplementary *filter)
+static inline float get_butterworth_4_low_pass_complementary(const Butterworth4Complementary *filter)
 {
   float x_lp_output = get_butterworth_4_low_pass(&filter->x_lp_filter);
   float y_lp_output = get_butterworth_4_low_pass(&filter->y_lp_filter);
