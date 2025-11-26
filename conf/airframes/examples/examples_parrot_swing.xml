@@ -22,9 +22,25 @@
     <module name="gps" type="datalink"/>
     <module name="stabilization" type="int_quat"/>
     <module name="ahrs"          type="int_cmpl_quat"/>
-    <module name="ins"/>
-    <module name="air_data"/>
     
+    <!-- ins configured for optitrack -->
+    <module name="ins">
+      <define name="INS_VFF_R_GPS" value="0.01"/>
+      <define name="INS_USE_GPS_ALT" value="TRUE"/>
+      <define name="USE_BARO_BOARD" value="FALSE"/>
+    </module>
+    <!-- <module name="ins" type="ext_pose"> -->
+      <!-- <define name="INS_EXT_POSE_R_NOISE" value="{8.372e-6, 3.832e-6, 4.761e-6, 2.830e-4, 8.684e-4, 7.013e-4}"/> -->
+    <!-- </module> -->
+
+    <configure name="USE_MAGNETOMETER" value="FALSE"/>
+    <!-- Use GPS heading instead of magneto -->
+    <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
+    <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
+    <define name="USE_BARO" value="FALSE"/>    
+    
+    <module name="air_data"/>
+
     <module name="logger_file">
       <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
     </module>
