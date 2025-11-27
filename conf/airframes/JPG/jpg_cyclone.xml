@@ -84,7 +84,6 @@
         </module>
         <!-- <module name="ins" type="ekf2"/> -->
 
-
         <module name="actuators" type="t4"/>
         <module name="actuators_t4_uart">
             <configure name="ACTUATORS_T4_PORT" value="UART8"/>

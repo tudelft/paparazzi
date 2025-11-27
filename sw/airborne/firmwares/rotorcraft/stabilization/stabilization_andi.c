@@ -49,7 +49,6 @@
 #include "filters/transport_delay.h"
 #include "filters/transport_delay_types.h"
 
-
 #include <stdio.h>
 #if INS_EXT_POSE
 #include "modules/ins/ins_ext_pose.h"
@@ -58,7 +57,7 @@
 #ifdef STABILIZATION_ANDI_RELAX_OBM
 float ANDI_RELAX_OBM = STABILIZATION_ANDI_RELAX_OBM;
 #else
-float ANDI_RELAX_OBM = 0.5f;
+float ANDI_RELAX_OBM = 1.0f;
 #endif
 
 #ifdef STABILIZATION_ANDI_ACT_IS_SERVO
@@ -124,7 +123,6 @@ static inline float ec_k2_order2_f(const float omega_n, const float zeta) { retu
 static inline float rm_k1_order2_f(const float omega_n, const float zeta) { return omega_n / (2.0f * zeta); }
 static inline float rm_k2_order2_f(const float omega_n, const float zeta) { return 2.0f * zeta * omega_n; }
 
-
 // External variables (can be dynamically changed)
 // FIXME: These should be initialized in the init function through handlers instead of here
 // (might not even need to be initialized depending on how the xml dl_settings work).
@@ -157,11 +155,11 @@ struct PolesOrder3Vect3 andi_p_att_rm = {
 float andi_p_thrust_ec = STABILIZATION_ANDI_POLE_THRUST_EC;
 float andi_p_thrust_rm = STABILIZATION_ANDI_POLE_THRUST_RM;
 
-float andi_omega_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA; //rad/s
-float andi_omega_dot_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT; //rad/s
-float andi_accel_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL; // rad/s
-float andi_vel_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_VEL; // rad/s
-float andi_actuator_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_ACTUATOR; // rad/s
+float andi_omega_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA;         // rad/s
+float andi_omega_dot_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT; // rad/s
+float andi_accel_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL;         // rad/s
+float andi_vel_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_VEL;             // rad/s
+float andi_actuator_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_ACTUATOR;   // rad/s
 
 // WLS allocation variables
 struct WLS_t wls_stab_p = {
@@ -210,7 +208,8 @@ Butterworth2LowPass actuator_lp[ANDI_NUM_ACT]; // small bit of filtering on actu
 // Raw state measurement variables
 struct FloatRates rates_prev;
 float actuator_meas[ANDI_NUM_ACT];
-
+float actuator_state_dot[ANDI_NUM_ACT];
+float actuator_prev[ANDI_NUM_ACT];
 float act_dynamics_discrete[ANDI_NUM_ACT];
 
 // State variables
@@ -245,9 +244,9 @@ float du_max[ANDI_NUM_ACT];
 #include "modules/datalink/telemetry.h"
 static void send_wls_v_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
 {
-  char* name = "andi";
+  char *name = "andi";
   pprz_msg_send_WLS_V(trans, dev, AC_ID,
-                      strlen(name),name,
+                      strlen(name), name,
                       &wls_stab_p.gamma_sq, // Does this need scaling?
                       (uint8_t *)&wls_stab_p.iter,
                       ANDI_OUTPUTS, andi_nu,
@@ -255,12 +254,12 @@ static void send_wls_v_stabilization_andi(struct transport_tx *trans, struct lin
 }
 static void send_wls_u_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
 {
-  char* name = "andi";
+  char *name = "andi";
   float zero_array[ANDI_NUM_ACT] = {0.0f};
   pprz_msg_send_WLS_U(trans, dev, AC_ID,
-                      strlen(name),name,
-                      ANDI_NUM_ACT, wls_stab_p.Wu,// Does this need scaling?
-                      ANDI_NUM_ACT, zero_array, // u_pref is zero
+                      strlen(name), name,
+                      ANDI_NUM_ACT, wls_stab_p.Wu, // Does this need scaling?
+                      ANDI_NUM_ACT, zero_array,    // u_pref is zero
                       ANDI_NUM_ACT, du_min,
                       ANDI_NUM_ACT, du_max,
                       ANDI_NUM_ACT, andi_du);
@@ -299,7 +298,6 @@ static void send_stab_thrust_stabilization_andi(struct transport_tx *trans, stru
 }
 
 #endif // PERIODIC_TELEMETRY
-
 
 // T4 Actuator feedback handling
 struct ActuatorsT4In actuators_t4_obs;
@@ -342,14 +340,13 @@ static void actuators_t4_in_callback(uint8_t sender_id __attribute__((unused)), 
  */
 static void fetch_actuators_t4(float actuator_meas[ANDI_NUM_ACT], const struct ActuatorsT4In *actuators_t4_in_ptr)
 {
-  actuator_meas[0] = RadOfDeg((float)actuators_t4_in_ptr->servo_1_angle / 100); // Convert 1e-2 deg to rad
+  actuator_meas[0] = RadOfDeg((float)actuators_t4_in_ptr->servo_1_angle / 100);  // Convert 1e-2 deg to rad
   actuator_meas[1] = -RadOfDeg((float)actuators_t4_in_ptr->servo_6_angle / 100); // Convert 1e-2 deg to rad
-  actuator_meas[2] = (float)actuators_t4_in_ptr->esc_1_rpm * 2 * M_PI / 60; // Convert rpm to rad/s
-  actuator_meas[2] *= actuator_meas[2];                                     // square motor rpm
+  actuator_meas[2] = (float)actuators_t4_in_ptr->esc_1_rpm * 2 * M_PI / 60;      // Convert rpm to rad/s
+  actuator_meas[2] *= actuator_meas[2];                                          // square motor rpm
   actuator_meas[3] = (float)actuators_t4_in_ptr->esc_2_rpm * 2 * M_PI / 60;
   actuator_meas[3] *= actuator_meas[3]; // square motor rpm
 }
-
 
 /**
  * @brief Retrieve actuator measurement from first order model.
@@ -371,7 +368,6 @@ static void apply_actuator_dynamics_filter(float actuator_meas[ANDI_NUM_ACT], fl
     actuator_meas[i] = actuator_meas[i] * (1 - act_dynamics_discrete[i]) + andi_u[i] * act_dynamics_discrete[i];
     Bound(actuator_meas[i], ACTUATOR_MIN[i], ACTUATOR_MAX[i]);
   }
-  
 }
 
 /**
@@ -407,10 +403,10 @@ static void get_actuator_measurement(float actuator_meas[ANDI_NUM_ACT])
   apply_actuator_dynamics_filter(actuator_meas_tmp_2, andi_u);
 
   // choose actuator feedback or model
-  actuator_meas[0] = actuator_meas_tmp_1[0]; // elevon left
-  actuator_meas[1] = actuator_meas_tmp_1[1]; // elevon right
-  actuator_meas[2] = actuator_meas_tmp_2[2]; // motor left
-  actuator_meas[3] = actuator_meas_tmp_2[3]; // motor right
+  actuator_meas[0] = actuator_meas_tmp_2[0]; // elevon left
+  actuator_meas[1] = actuator_meas_tmp_2[1]; // elevon right
+  actuator_meas[2] = actuator_meas_tmp_2[2]; // motor^2 left
+  actuator_meas[3] = actuator_meas_tmp_2[3]; // motor^2 right
 }
 
 /**
@@ -481,7 +477,7 @@ struct GainsOrder3Vect3 compute_error_gains_order_3_vect_3(const struct PolesOrd
 /**
  * Compute error-compensation gains for a 2nd-order 3D system.
  * Each axis gain (x, y, z) is computed using ec_k*_order2_f() with omega_n and zeta parameters.
- * @param[in] poles[ Pointer to PolesOrder2Vect3 containing omega_n and zeta for each axis.
+ * @param[in] poles Pointer to PolesOrder2Vect3 containing omega_n and zeta for each axis.
  * @return Struct containing k1, k2 gains for x, y, z.
  */
 struct GainsOrder2Vect3 compute_error_gains_order_2_vect_3(const struct PolesOrder2Vect3 *poles)
@@ -578,7 +574,7 @@ static void generate_reference_attitude(
     const struct AttQuat *bounds,
     struct AttQuat *att_ref)
 {
-  struct FloatQuat att_err;  // rotation needed from ref to des
+  struct FloatQuat att_err;                                                                                    // rotation needed from ref to des
   float_quat_inv_comp_norm_shortest(&att_err, (struct FloatQuat *)&att_ref->att, (struct FloatQuat *)att_des); // FIXME: quaternion library is not const correct.
 
   // factor 2 needed to convert quaternion difference to angular rate (assuming small angles)
@@ -632,7 +628,7 @@ static void generate_reference_attitude(
  * @param[in] thrust_des   Desired thrust input value.
  * @param[in] k_thrust_rm  Gain parameter for thrust rate control (proportional gain).
  * @param[in] bounds       Maximum allowable thrust magnitude.
- * @param[in,out] att_ref  Pointer to ThrustRef struct holding thrust reference states.
+ * @param[in,out] thrust_ref  Pointer to ThrustRef struct holding thrust reference states.
  */
 static void generate_reference_thrust(
     float dt,
@@ -879,11 +875,11 @@ void stabilization_andi_init(void)
   lin_state.acc.z = 0.0f;
 
   thrust_state = 0.0f;
-  float_vect_zero(actuator_state, ANDI_NUM_ACT);  // Actuator at k = -1
-  float_vect_zero(actuator_t4_state, ANDI_NUM_ACT);  // Actuator at k = -1
-  float_vect_zero(actuator_meas, ANDI_NUM_ACT);  // Actuator at k = -1
-  float_vect_zero(andi_u, ANDI_NUM_ACT); // Actuator command at k = -1
-  float_vect_zero(andi_du, ANDI_NUM_ACT); // Actuator command at k = -1
+  float_vect_zero(actuator_state, ANDI_NUM_ACT);    // Actuator at k = -1
+  float_vect_zero(actuator_t4_state, ANDI_NUM_ACT); // Actuator at k = -1
+  float_vect_zero(actuator_meas, ANDI_NUM_ACT);     // Actuator at k = -1
+  float_vect_zero(andi_u, ANDI_NUM_ACT);            // Actuator command at k = -1
+  float_vect_zero(andi_du, ANDI_NUM_ACT);           // Actuator command at k = -1
 
   // Initialize reference variables
   float_quat_identity(&attitude_ref.att);
@@ -979,7 +975,7 @@ void stabilization_andi_enter(void)
   lin_state.acc.x = 0.0f;
   lin_state.acc.y = 0.0f;
   lin_state.acc.z = 0.0f;
-  
+
   // Reset thrust reference to zero
   // thrust_ref.thrust = 0.0f; // Thrust at k = -1
   // thrust_ref.thrust_d = 0.0f; // Thrust_d at k = -1
@@ -1003,7 +999,6 @@ void stabilization_andi_enter(void)
 
   // reset_butterworth_2_vect3(&obm_linear_vel_filter_meas, &lin_state.vel);
   // reset_butterworth_4_vect3(&obm_linear_accel_filter_meas, &lin_state.acc);
-
 }
 
 void stabilization_andi_run(bool use_rate_control, bool in_flight, struct StabilizationSetpoint *stab_setpoint, struct ThrustSetpoint *thrust_setpoint, int32_t *cmd)
@@ -1018,31 +1013,31 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   andi_k_thrust_ec = andi_p_thrust_ec;
   andi_k_thrust_rm = andi_p_thrust_rm;
 
-
   // Fetch linear measurements
   struct LinState lin_meas;
   float_quat_vmult(&lin_meas.vel, stateGetNedToBodyQuat_f(), (struct FloatVect3 *)stateGetSpeedNed_f()); // From Kalman filter
-  lin_meas.acc = *stateGetAccelBody_f(); // From accelerometer
-  
+  lin_meas.acc = *stateGetAccelBody_f();                                                                 // From accelerometer
+
   // Fetch attitude measurements
   struct AttStateQuat attitude_meas;
   attitude_meas.att = *stateGetNedToBodyQuat_f(); // From Kalman filter
-  attitude_meas.att_d = *stateGetBodyRates_f(); // From gyroscope
+  attitude_meas.att_d = *stateGetBodyRates_f();   // From gyroscope
   attitude_meas.att_2d.x = (attitude_meas.att_d.p - rates_prev.p) * PERIODIC_FREQUENCY;
   attitude_meas.att_2d.y = (attitude_meas.att_d.q - rates_prev.q) * PERIODIC_FREQUENCY;
   attitude_meas.att_2d.z = (attitude_meas.att_d.r - rates_prev.r) * PERIODIC_FREQUENCY;
   rates_prev = attitude_meas.att_d; // Store previous rates for next acceleration calculation
 
   // Fetch actuator measurements
+
   get_actuator_measurement(actuator_meas); // FIXME: This only includes servo feedback and models ESC Feedback.
-  
+
   float actuator_t4_meas[ANDI_NUM_ACT];
   fetch_actuators_t4(actuator_t4_meas, &actuators_t4_obs); // FIXME: This does include ESC feedback
 
   // COMPLEMENTARY FILTERING SECTION
   // Evaluate On Board Model at previous state.
-  struct FloatVect3 angular_accel_obm = evaluate_obm_moments(&attitude_state.att_d, &lin_state.vel, actuator_state);
-  struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&attitude_state.att_d, &lin_state.vel, actuator_state);
+  struct FloatVect3 angular_accel_obm = evaluate_obm_moments(&attitude_state.att_d, &lin_state.vel, actuator_state, actuator_state_dot);
+  struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&attitude_state.att_d, &lin_state.vel, actuator_state, actuator_state_dot);
 
   // Cascaded complementary filter for linear velocity and acclererations
   update_butterworth_4_complementary_vect3(&linear_accel_cf, &linear_accel_obm, &lin_meas.acc);
@@ -1056,13 +1051,20 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   attitude_state.att_2d = get_butterworth_4_complementary_vect3(&angular_accel_cf);
   float_rates_vect3_integrate_fi(&angular_rates_obm, &attitude_state.att_2d, SAMPLE_TIME);
   update_butterworth_2_complementary_rates(&angular_rates_cf, &angular_rates_obm, &attitude_meas.att_d);
-  attitude_state.att_d  = get_butterworth_2_complementary_rates(&angular_rates_cf);
+  attitude_state.att_d = get_butterworth_2_complementary_rates(&angular_rates_cf);
 
   attitude_state.att = attitude_meas.att; // No filtering on attitude
 
   update_butterworth_2_array(ANDI_NUM_ACT, actuator_lp, actuator_meas);
   get_butterworth_2_array(ANDI_NUM_ACT, actuator_lp, actuator_state);
+  // float_vect_copy(actuator_state, actuator_meas, ANDI_NUM_ACT);
   float_vect_copy(actuator_t4_state, actuator_t4_meas, ANDI_NUM_ACT);
+
+  for (uint8_t i = 0; i < ANDI_NUM_ACT; i++)
+  {
+    actuator_state_dot[i] = (actuator_state[i] - actuator_prev[i]) * PERIODIC_FREQUENCY;
+  }
+  float_vect_copy(actuator_prev, actuator_state, ANDI_NUM_ACT);
 
   thrust_state = evaluate_obm_thrust_z(actuator_state); // Do not use actuator_t4_state here!
 
@@ -1117,14 +1119,12 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   }
   andi_nu[3] = nu_thrust;
 
-
   // Thrust model components is not used, should always be zero anyway.
 
   // Compute control effectiveness matrix based on current states
   // FIXME: control effectiveness matrix is only scheduled based on actuator measurements, not on body velocity
   // FIXME: body velocity is not measured or filtered for now
   evaluate_obm_f_stb_u(ce_mat, &attitude_state.att_d, &lin_state.vel, actuator_t4_state);
-
 
   // Solve control allocation using weighted least squares
   compute_wls_lower_bounds(du_min, actuator_state, ACTUATOR_MIN, ACTUATOR_D_MIN, SAMPLE_TIME);
@@ -1153,7 +1153,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 
   for (uint8_t i = 0; i < ANDI_NUM_ACT; i++)
   {
-    andi_du[i] = (wls_stab_p.u[i] / wls_u_scaler[i]); // Fixme: remove relaxation
+    andi_du[i] = (wls_stab_p.u[i] / wls_u_scaler[i]) * 1.0f;
     andi_u[i] = andi_du[i] / ACTUATOR_DYNAMICS[i] + actuator_state[i];
   }
 
@@ -1171,7 +1171,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   // FIXME: Do not hardcode actuator layout
   cmd[COMMAND_THRUST] = 0;
   cmd[COMMAND_THRUST] += (pprz_t)(sqrt(andi_u[2] / ACTUATOR_MAX[2]) * MAX_PPRZ);
-  cmd[COMMAND_THRUST] += (pprz_t)(sqrt(andi_u[2] / ACTUATOR_MAX[2]) * MAX_PPRZ);
+  cmd[COMMAND_THRUST] += (pprz_t)(sqrt(andi_u[3] / ACTUATOR_MAX[3]) * MAX_PPRZ);
   cmd[COMMAND_THRUST] /= 2;
 }
 
@@ -1218,7 +1218,7 @@ struct StabilizationSetpoint stabilization_rate_read_rc(struct RadioControl *rc)
 }
 
 // FIXME: Maybe this helps prevent falling from sky
-bool autopilot_in_flight_end_detection(bool motors_on UNUSED) {
+bool autopilot_in_flight_end_detection(bool motors_on UNUSED)
+{
   return false;
 }
-
