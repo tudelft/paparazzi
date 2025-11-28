@@ -34,7 +34,7 @@ union CycloneCoefficients {
     // Y-axis moment coefficients (m_ff_y)
     float my_speed_forward;          // speed * v_ff(1)
     float my_speed_vertical;         // speed * v_ff(3)
-    float my_constant_zero;          // constant 0 term
+    float my_elevon_dot_sum;         // ele_l_dot + ele_r_dots
     float my_motor_sum;              // motor_l^2 + motor_r^2
     float my_elevon_motor_sum;       // ele_l * motor_l^2 + ele_r * motor_r^2
     float my_elevon_speed_sum;       // (ele_l + ele_r) * speed * v_ff(1)
@@ -50,66 +50,35 @@ union CycloneCoefficients {
 }; 
 
 // Model coefficinets
-// union CycloneCoefficients obm_coefficients = {
-//   .fx_motor_squared       = 0.00000735f,
-//   .fx_speed_forward       = -0.03f,
-
-//   .fy_speed_lateral       = -0.008f,
-
-//   .fz_motor_squared       = 0.0f,
-//   .fz_speed_forward       = 0.0f,
-//   .fz_speed_vertical      = -0.144f,
-//   .fz_elevator_speed      = 0.0f,
-//   .fz_elevator_motor      = 0.0f,
-
-//   .mx_motor_diff          = 0.0f,
-//   .mx_elevator_motor_diff = 0.0000283f,
-//   .mx_elevator_speed_diff = 0.344f,
-//   .mx_angular_coupling    = -2.18f,
-
-//   .my_speed_forward       = 0.0f,
-//   .my_speed_vertical      = -0.0888f,
-//   .my_constant_zero       = -1.032f,
-//   .my_motor_sum           = 0.0f,
-//   .my_elevator_motor_sum  = -0.0000424f,
-//   .my_elevator_speed_sum  = -0.2525f,
-//   .my_angular_sum         = 1.262f,
-
-//   .mz_speed_lateral       = -0.00371f,
-//   .mz_motor_diff          = 0.000039f,
-//   .mz_speed_roll          = -0.0129f,
-//   .mz_angular_coupling    = -0.4827f
-// };
-
 union CycloneCoefficients obm_coefficients = {
-  .fx_motor_squared       = 0.00000735f,
-  .fx_speed_forward       = -0.03f,
+  .fx_motor_squared     = 0.00000735f,
+  .fx_speed_forward     = -0.03f,
 
-  .fy_speed_lateral       = -0.008f,
+  .fy_speed_lateral     = -0.008f,
 
-  .fz_motor_squared       = 0.0f,
-  .fz_speed_forward       = 0.0f,
-  .fz_speed_vertical      = -0.144f,
-  .fz_elevon_speed        = 0.0f, // non minimum phase coupling term
-  .fz_elevon_motor        = 0.0f,
+  .fz_motor_squared     = 0.0f,
+  .fz_speed_forward     = 0.0f,
+  .fz_speed_vertical    = -0.144f,
+  .fz_elevon_speed      = 0.0f,
+  .fz_elevon_motor      = 0.0f,
 
-  .mx_motor_diff          = 0.0f,
-  .mx_elevon_motor_diff   = 0.0000283f,
-  .mx_elevon_speed_diff   = 0.344f,
-  .mx_angular_coupling    = -2.18f,
+  .mx_motor_diff        = 0.0f,
+  .mx_elevon_motor_diff = 0.0000283f,
+  .mx_elevon_speed_diff = 0.344f,
+  .mx_angular_coupling  = -2.18f,
 
-  .my_speed_forward       = 0.0f,
-  .my_speed_vertical      = -0.0888f,
-  .my_constant_zero       = -1.032f,
-  .my_motor_sum           = 0.0f,
-  .my_elevon_motor_sum    = -0.0000624f, // -0.0000424f, // Increase effectiveness in an attempt to fix oscillations in the eleons in pitch
-  .my_elevon_speed_sum    = -0.2525f,
-  .my_angular_sum         = 1.262f,
+  .my_speed_forward     = 0.0f,
+  .my_speed_vertical    = -0.0888f,
+  .my_elevon_dot_sum    = -1.032f,
+  .my_motor_sum         = 0.0f,
+  .my_elevon_motor_sum  = -0.0000424f,
+  .my_elevon_speed_sum  = -0.2525f,
+  .my_angular_sum       = 1.262f,
 
-  .mz_speed_lateral       = -0.00371f,
-  .mz_motor_diff          = 0.000039f,
-  .mz_speed_roll          = -0.0129f,
-  .mz_angular_coupling    = -0.4827f
+  .mz_speed_lateral     = -0.00371f,
+  .mz_motor_diff        = 0.000039f,
+  .mz_speed_roll        = -0.0129f,
+  .mz_angular_coupling  = -0.4827f
 };
 
 
@@ -352,8 +321,14 @@ struct FloatVect3 evaluate_obm_moments(const struct FloatRates *rates, const str
   rates_array[1] = rates->q;
   rates_array[2] = rates->r;
 
+  // Ignore actuator_state_dot for now
+  (void)actuator_state_dot;
+  float zeros[4];
+  float_vect_zero(zeros, 4);
+
+
   float moments_array[3];
-  cyclone_obm_moments(rates_array, vel_body_array, actuator_state, actuator_state_dot, obm_coefficients.data, moments_array);  
+  cyclone_obm_moments(rates_array, vel_body_array, actuator_state, zeros, obm_coefficients.data, moments_array);  
   struct FloatVect3 moments;
   moments.x = moments_array[0];
   moments.y = moments_array[1];

@@ -76,6 +76,7 @@
         </target>
 
         <module name="imu" type="cube"/>
+
         <!-- For optitrack use ins ext_pose and comment out ahrs module below-->
         <module name="ins" type="ext_pose">
             <define name="INS_EXT_POSE_IMU_ID"      value="IMU_CUBE1_ID"/>
@@ -163,8 +164,8 @@
     </firmware>
 
     <servos driver="T4">
-        <servo name="S_ELEVON_LEFT"  no="1"  min="-5700" neutral="0" max="5700"/> <!-- 57.0 deg-->
-        <servo name="S_ELEVON_RIGHT" no="6"  min="5700"  neutral="0" max="-5700"/> <!-- 57.0 deg-->
+        <servo name="S_ELEVON_LEFT"  no="1"  min="-4000" neutral="0" max="4000"/> <!-- 57.0 deg-->
+        <servo name="S_ELEVON_RIGHT" no="6"  min="4000"  neutral="0" max="-4000"/> <!-- 57.0 deg-->
         <servo name="S_MOTOR_LEFT"   no="13" min="0"     neutral="0" max="1999"/> <!-- neutral is value when motor is not spinning, must be 0 -->
         <servo name="S_MOTOR_RIGHT"  no="14" min="0"     neutral="0" max="1999"/>
     </servos>
@@ -213,9 +214,9 @@
         <!--                                 |      EL      |      ER      |      ML^2    |      MR^2    | -->
         <define name="ACT_IS_SERVO"   value="{             1,             1,             0,             0}"/>
         <define name="ACT_DYNAMICS"   value="{         20.0f,         20.0f,         35.0f,         35.0f}"/> <!-- [rad/s]-->
-        <define name="ACT_MAX"        value="{          1.0f,          1.0f,    3534400.0f,    3534400.0f}"/> <!-- [  rad |   (rad/s)^2]--> 
-        <define name="ACT_DELAY"      value="{            10,            10,             0,             0}"/> <!-- [rad/s]-->
-        <define name="ACT_MIN"        value="{         -1.0f,         -1.0f,      40000.0f,      40000.0f}"/> <!-- [  rad |   (rad/s)^2]--> 
+        <define name="ACT_DELAY"      value="{             0,             0,            10,            10}"/> <!-- [rad/s]-->
+        <define name="ACT_MAX"        value="{         0.65f,         0.65f,    3534400.0f,    3534400.0f}"/> <!-- [  rad |   (rad/s)^2]--> 
+        <define name="ACT_MIN"        value="{        -0.65f,        -0.65f,      40000.0f,      40000.0f}"/> <!-- [  rad |   (rad/s)^2]--> 
         <define name="ACT_RATE_MAX"   value="{         10.0f,         10.0f,   90000000.0f,   90000000.0f}"/> <!-- [rad/s | (rad/s)^2/s]--> 
         <define name="ACT_RATE_MIN"   value="{        -10.0f,        -10.0f,  -90000000.0f,  -90000000.0f}"/> <!-- [rad/s | (rad/s)^2/s]--> 
         <define name="ACT_PREF"       value="{         0.00f,         0.00f,     705600.0f,     705600.0f}"/> <!-- [  rad |   (rad/s)^2]--> <!-- Should be removed, only used when not scheduling-->

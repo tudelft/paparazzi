@@ -72,6 +72,12 @@ const float ACTUATOR_DYNAMICS[ANDI_NUM_ACT] = STABILIZATION_ANDI_ACT_DYNAMICS;
 #error "You must specify the actuator dynamics"
 #endif
 
+#ifdef STABILIZATION_ANDI_ACT_DELAY
+const uint8_t ACTUATOR_DELAY[ANDI_NUM_ACT] = STABILIZATION_ANDI_ACT_DELAY;
+#else
+const uint8_t ACTUATOR_DELAY[ANDI_NUM_ACT] = {0};
+#endif
+
 #if defined(STABILIZATION_ANDI_ACT_MAX) && defined(STABILIZATION_ANDI_ACT_MIN)
 const float ACTUATOR_MAX[ANDI_NUM_ACT] = STABILIZATION_ANDI_ACT_MAX;
 const float ACTUATOR_MIN[ANDI_NUM_ACT] = STABILIZATION_ANDI_ACT_MIN;
@@ -204,10 +210,12 @@ struct Butterworth4ComplementaryVect3 linear_accel_cf;
 struct FloatVect3 linear_velocity_obm;
 
 Butterworth2LowPass actuator_lp[ANDI_NUM_ACT]; // small bit of filtering on actuators, is not compensated for.
+struct TransportDelay actuator_delay[ANDI_NUM_ACT];
 
 // Raw state measurement variables
 struct FloatRates rates_prev;
 float actuator_meas[ANDI_NUM_ACT];
+float actuator_meas_rt[ANDI_NUM_ACT];
 float actuator_state_dot[ANDI_NUM_ACT];
 float actuator_prev[ANDI_NUM_ACT];
 float act_dynamics_discrete[ANDI_NUM_ACT];
@@ -239,6 +247,7 @@ float andi_u[ANDI_NUM_ACT];
 float andi_du[ANDI_NUM_ACT];
 float du_min[ANDI_NUM_ACT];
 float du_max[ANDI_NUM_ACT];
+float nu_reconstructed[ANDI_OUTPUTS];
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -272,7 +281,7 @@ static void send_eff_mat_stabilization_andi(struct transport_tx *trans, struct l
                              ANDI_NUM_ACT, &ce_mat[1 * ANDI_NUM_ACT],
                              ANDI_NUM_ACT, &ce_mat[2 * ANDI_NUM_ACT],
                              ANDI_NUM_ACT, &ce_mat[3 * ANDI_NUM_ACT],
-                             1, &zero);
+                             4,  nu_reconstructed);
 }
 static void send_stab_attitude_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
 {
@@ -285,7 +294,7 @@ static void send_stab_attitude_stabilization_andi(struct transport_tx *trans, st
                               3, (float *)&attitude_state.att_2d,
                               3, (float *)&attitude_ref.att_2d,
                               3, (float *)&attitude_ref.att_3d,
-                              ANDI_OUTPUTS, andi_nu);
+                              ANDI_OUTPUTS, actuator_state);
 }
 
 static void send_stab_thrust_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
@@ -403,8 +412,8 @@ static void get_actuator_measurement(float actuator_meas[ANDI_NUM_ACT])
   apply_actuator_dynamics_filter(actuator_meas_tmp_2, andi_u);
 
   // choose actuator feedback or model
-  actuator_meas[0] = actuator_meas_tmp_2[0]; // elevon left
-  actuator_meas[1] = actuator_meas_tmp_2[1]; // elevon right
+  actuator_meas[0] = actuator_meas_tmp_1[0]; // elevon left
+  actuator_meas[1] = actuator_meas_tmp_1[1]; // elevon right
   actuator_meas[2] = actuator_meas_tmp_2[2]; // motor^2 left
   actuator_meas[3] = actuator_meas_tmp_2[3]; // motor^2 right
 }
@@ -574,8 +583,8 @@ static void generate_reference_attitude(
     const struct AttQuat *bounds,
     struct AttQuat *att_ref)
 {
-  struct FloatQuat att_err;                                                                                    // rotation needed from ref to des
-  float_quat_inv_comp_norm_shortest(&att_err, (struct FloatQuat *)&att_ref->att, (struct FloatQuat *)att_des); // FIXME: quaternion library is not const correct.
+  struct FloatQuat att_err;  // rotation needed from ref to des
+  float_quat_inv_comp_norm_shortest(&att_err, (struct FloatQuat *)&att_ref->att, (struct FloatQuat *)att_des);
 
   // factor 2 needed to convert quaternion difference to angular rate (assuming small angles)
   float p_des = k_att_rm->k1.x * att_err.qx * 2;
@@ -878,8 +887,10 @@ void stabilization_andi_init(void)
   float_vect_zero(actuator_state, ANDI_NUM_ACT);    // Actuator at k = -1
   float_vect_zero(actuator_t4_state, ANDI_NUM_ACT); // Actuator at k = -1
   float_vect_zero(actuator_meas, ANDI_NUM_ACT);     // Actuator at k = -1
+  float_vect_zero(actuator_meas_rt, ANDI_NUM_ACT);     // Actuator at k = -1
   float_vect_zero(andi_u, ANDI_NUM_ACT);            // Actuator command at k = -1
   float_vect_zero(andi_du, ANDI_NUM_ACT);           // Actuator command at k = -1
+  float_vect_zero(nu_reconstructed, ANDI_NUM_ACT);
 
   // Initialize reference variables
   float_quat_identity(&attitude_ref.att);
@@ -930,6 +941,7 @@ void stabilization_andi_init(void)
   linear_velocity_obm.z = 0.0f;
 
   init_butterworth_2_array(ANDI_NUM_ACT, actuator_lp, andi_actuator_freq_cutoff, SAMPLE_TIME);
+  init_transport_delay_array(ANDI_NUM_ACT, actuator_delay, ACTUATOR_DELAY, actuator_state);
 
   // Bind T4 actuator feedback abi message
   AbiBindMsgACTUATORS_T4_IN(ABI_BROADCAST, &actuators_t4_in_event, actuators_t4_in_callback);
@@ -1029,7 +1041,9 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 
   // Fetch actuator measurements
 
-  get_actuator_measurement(actuator_meas); // FIXME: This only includes servo feedback and models ESC Feedback.
+  get_actuator_measurement(actuator_meas_rt); // FIXME: This only includes servo feedback and models ESC Feedback.
+  update_transport_delay_array(ANDI_NUM_ACT, actuator_delay, actuator_meas_rt);
+  get_transport_delay_array(ANDI_NUM_ACT, actuator_delay, actuator_meas);
 
   float actuator_t4_meas[ANDI_NUM_ACT];
   fetch_actuators_t4(actuator_t4_meas, &actuators_t4_obs); // FIXME: This does include ESC feedback
@@ -1055,9 +1069,9 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 
   attitude_state.att = attitude_meas.att; // No filtering on attitude
 
-  update_butterworth_2_array(ANDI_NUM_ACT, actuator_lp, actuator_meas);
-  get_butterworth_2_array(ANDI_NUM_ACT, actuator_lp, actuator_state);
-  // float_vect_copy(actuator_state, actuator_meas, ANDI_NUM_ACT);
+  // update_butterworth_2_array(ANDI_NUM_ACT, actuator_lp, actuator_meas);
+  // get_butterworth_2_array(ANDI_NUM_ACT, actuator_lp, actuator_state);
+  float_vect_copy(actuator_state, actuator_meas, ANDI_NUM_ACT);
   float_vect_copy(actuator_t4_state, actuator_t4_meas, ANDI_NUM_ACT);
 
   for (uint8_t i = 0; i < ANDI_NUM_ACT; i++)
@@ -1126,6 +1140,15 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   // FIXME: body velocity is not measured or filtered for now
   evaluate_obm_f_stb_u(ce_mat, &attitude_state.att_d, &lin_state.vel, actuator_t4_state);
 
+  // Reconstruct nu
+  for (uint8_t i = 0; i < ANDI_NUM_ACT; i++)
+  {
+    for (uint8_t j = 0; j < ANDI_OUTPUTS; j++)
+    {
+      nu_reconstructed[j] += ce_mat[i * ANDI_OUTPUTS + j] * andi_u[i];
+    }
+  }
+
   // Solve control allocation using weighted least squares
   compute_wls_lower_bounds(du_min, actuator_state, ACTUATOR_MIN, ACTUATOR_D_MIN, SAMPLE_TIME);
   compute_wls_upper_bounds(du_max, actuator_state, ACTUATOR_MAX, ACTUATOR_D_MAX, SAMPLE_TIME);
@@ -1173,6 +1196,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   cmd[COMMAND_THRUST] += (pprz_t)(sqrt(andi_u[2] / ACTUATOR_MAX[2]) * MAX_PPRZ);
   cmd[COMMAND_THRUST] += (pprz_t)(sqrt(andi_u[3] / ACTUATOR_MAX[3]) * MAX_PPRZ);
   cmd[COMMAND_THRUST] /= 2;
+
 }
 
 // FIXME: The following functions are to integrate the controller in the existing stabilization framework, find a better way to do this
