@@ -23,6 +23,12 @@
     <waypoint lat="51.9906633" lon="4.3767411" name="p2"/>
     <waypoint lat="51.9906601" lon="4.3768415" name="p3"/>
     <waypoint lat="51.9905979" lon="4.3768386" name="p4"/>
+    <waypoint lat="51.9906138" lon="4.3767585" name="i1"/>
+    <waypoint lat="51.9906518" lon="4.3767611" name="i2"/>
+    <waypoint lat="51.9906507" lon="4.3768247" name="i3"/>
+    <waypoint lat="51.9906107" lon="4.3768194" name="i4"/>
+
+
   </waypoints>
   <sectors>
     <sector color="blue" name="CyberZoo">
@@ -95,6 +101,22 @@
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <stay wp="STDBY"/>
     </block>
+    <block name="Start Square">
+      <stay wp="i1"/>
+      <exception cond="NavBlockTime() @GT 5" deroute="go_i2"/>
+    </block>
+    <block name="go_i2">
+      <stay wp="i2"/>
+      <exception cond="NavBlockTime() @GT 5" deroute="go_i3"/>
+    </block>
+    <block name="go_i3">
+      <stay wp="i3"/>
+      <exception cond="NavBlockTime() @GT 5" deroute="go_i4"/>
+    </block>
+    <block name="go_i4">
+      <stay wp="i4"/>
+      <exception cond="NavBlockTime() @GT 5" deroute="Standby"/>
+    </block>    
     <block name="go_p5">
       <stay wp="p5"/>
     </block>
