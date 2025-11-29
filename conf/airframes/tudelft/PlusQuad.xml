@@ -378,7 +378,7 @@
     </section>
 
     <section name="SIMULATOR" prefix="NPS_">
-        <define name="JSBSIM_MODEL"    value="rotwingv3c_SI" type="string"/>
+        <define name="JSBSIM_MODEL"    value="PlusQuad_SI" type="string"/>
         <define name="SENSORS_PARAMS"  value="nps_sensors_params_default.h" type="string"/>
         <define name="USE_COMMANDS"    value="TRUE"/>
         <define name="JS_AXIS_MODE"    value="4"/>
