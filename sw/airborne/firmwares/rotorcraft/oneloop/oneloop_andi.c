@@ -1438,9 +1438,9 @@ void oneloop_andi_propagate_filters(void)
   static bool vel_inited = false;
   static struct NedCoor_f veloc_prev;
   if (!vel_inited) { veloc_prev = *veloc; vel_inited = true; }
-  LP.ax.meas      = (veloc->x - veloc_prev.x) * PERIODIC_FREQUENCY; // accel->x;
-  LP.ay.meas      = (veloc->y - veloc_prev.y) * PERIODIC_FREQUENCY; // accel->y;
-  LP.az.meas      = (veloc->z - veloc_prev.z) * PERIODIC_FREQUENCY; // accel->z;
+  LP.ax.meas      = (veloc->x - veloc_prev.x) * PERIODIC_FREQUENCY;
+  LP.ay.meas      = (veloc->y - veloc_prev.y) * PERIODIC_FREQUENCY;
+  LP.az.meas      = (veloc->z - veloc_prev.z) * PERIODIC_FREQUENCY;
   veloc_prev      = *veloc;
 #else
   struct NedCoor_f *accel = stateGetAccelNed_f();
