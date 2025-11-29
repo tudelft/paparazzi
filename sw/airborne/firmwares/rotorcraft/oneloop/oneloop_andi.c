@@ -742,10 +742,8 @@ void acc_body_bound(struct FloatVect2 *vect, float bound)
 {
   int n = 2;
   float v[2] = {vect->x, vect->y};
-  float sign_v0 = (v[0] > 0.f) ? 1.f : (v[0] < 0.f) ? -1.f
-                                                    : 0.f;
-  float sign_v1 = (v[1] > 0.f) ? 1.f : (v[1] < 0.f) ? -1.f
-                                                    : 0.f;
+  float sign_v0 = (v[0] > 0.f) ? 1.f : (v[0] < 0.f) ? -1.f;                                                  : 0.f;
+  float sign_v1 = (v[1] > 0.f) ? 1.f : (v[1] < 0.f) ? -1.f;                                                : 0.f;
   float norm = float_vect_norm(v, n);
   v[0] = fabsf(v[0]);
   v[1] = fabsf(v[1]);
