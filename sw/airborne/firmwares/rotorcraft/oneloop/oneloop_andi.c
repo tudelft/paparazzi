@@ -708,7 +708,7 @@ static float k_rm_3_3_f(float omega_n, float zeta, float p1) {
 }
 //====================================================================================================================================
 // Attitude Conversion Functions
-/** @brief Attitude Rates to Euler Conversion Function */
+/** @brief Attitude Rates to Euler Conversion Function ZYX */
 void float_rates_of_euler_dot_vec(float r[3], float e[3], float edot[3])
 {
   float sphi = sinf(e[0]);
@@ -720,7 +720,7 @@ void float_rates_of_euler_dot_vec(float r[3], float e[3], float edot[3])
   r[2] = -sphi * edot[1] + cphi * ctheta * edot[2];
 }
 
-/** @brief Attitude Euler to Rates Conversion Function */
+/** @brief Attitude Euler to Rates Conversion Function ZYX */
 void float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3])
 {
   float sphi = sinf(e[0]);
@@ -742,8 +742,8 @@ void acc_body_bound(struct FloatVect2 *vect, float bound)
 {
   int n = 2;
   float v[2] = {vect->x, vect->y};
-  float sign_v0 = (v[0] > 0.f) ? 1.f : (v[0] < 0.f) ? -1.f;                                                  : 0.f;
-  float sign_v1 = (v[1] > 0.f) ? 1.f : (v[1] < 0.f) ? -1.f;                                                : 0.f;
+  float sign_v0 = (v[0] > 0.f) ? 1.f : (v[0] < 0.f) ? -1.f                                               : 0.f;
+  float sign_v1 = (v[1] > 0.f) ? 1.f : (v[1] < 0.f) ? -1.f                                               : 0.f;
   float norm = float_vect_norm(v, n);
   v[0] = fabsf(v[0]);
   v[1] = fabsf(v[1]);
@@ -934,10 +934,8 @@ void rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], 
   vect_bound_nd(x_3d_ref, x_3d_bound, n);
   integrate_nd(dt, x_2d_ref, x_3d_ref, n);
 }
-
-
-
-
+//====================================================================================================================================
+// Error Controller Functions
 /**
  * @brief Error Controller Definition for 3rd order system
  * @param dt              Delta time [s]
@@ -953,11 +951,6 @@ void rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], 
  * @param k2_e            Error Controller Gain 2nd order signal
  * @param k3_e            Error Controller Gain 3rd order signal
  */
-static float ec_3rd(float x_ref, float x_d_ref, float x_2d_ref, float x_3d_ref, float x, float x_d, float x_2d, float k1_e, float k2_e, float k3_e)
-{
-  float y_4d = k1_e * (x_ref - x) + k2_e * (x_d_ref - x_d) + k3_e * (x_2d_ref - x_2d) + x_3d_ref;
-  return y_4d;
-}
 void ec_3rd_pos(float y_4d[], float x_des[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, float fb[], int n)
 {
   float e_x_d[n];
@@ -994,46 +987,40 @@ void ec_3rd_pos(float y_4d[], float x_des[], float x_ref[], float x_d_ref[], flo
  */
 void ec_3rd_att(float y_4d[3], float x_des[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], struct OneloopStabilizationRef bounds, float fb[3])
 {
-  float e_x[3];              // (x-x_ref)*k1_e
-  float e_x_rates[3] = {0.}; // (x_ref-x)*k1_e
-  float x_d_f[3];            // x_d_ref + e_x
-  float x_2d_f[3];           // x_2d_ref + e_x_d
-
-  // Attitude Error and Heading conversion --------------------------------
-  err_nd(e_x, x_ref, x, k1_e, 3);
-  float temp_diff = x_ref[2] - x[2];
-  NormRadAngle(temp_diff);
-  e_x[2] = k1_e[2] * temp_diff;                    // Correction for Heading error +-Pi
-  float_rates_of_euler_dot_vec(e_x_rates, x, e_x); // Euler dot to rates conversion
-  float_vect_sum(x_d_f, x_d_ref, e_x_rates, 3);    // Add body rates reference signal
-
-  float error_in_x[3];
-  float_vect_diff_euler(error_in_x, x_des, x);
+  float e_x[3];              // Attitude Error on Reference
+  float e_x_des[3];          // Attitude Error on Desired
+  float x_d_fw[3];           // Forward Signal Euler Dot
+  float x_d_fw_rates[3];     // Forward Signal Angular Rates
+  float x_d_fw_rates_rm[3];  // Forward Signal Angular Rates plus RM
+  float x_2d_fw[3];          // Forward Signal Angular Acceleration
   float bounds_att_d[3];
-  bounds_att_d[0] = bound_v_from_a(error_in_x[0], bounds.att_d[0] * ec_headroom, bounds.att_2d[0] * ec_headroom);
-  bounds_att_d[1] = bound_v_from_a(error_in_x[1], bounds.att_d[1] * ec_headroom, bounds.att_2d[1] * ec_headroom);
-  bounds_att_d[2] = bound_v_from_a(error_in_x[2], bounds.att_d[2] * ec_headroom, bounds.att_2d[2] * ec_headroom);
-  BoundAbs(e_x_rates[0], bounds_att_d[0]);
-  BoundAbs(e_x_rates[1], bounds_att_d[1]);
-  BoundAbs(e_x_rates[2], bounds_att_d[2]);
-  float_vect_sum(x_d_f, x_d_ref, e_x_rates, 3);
+  // Attitude Error and Heading conversion --------------------------------
+  float_vect_diff_euler(e_x,x_ref,x);                    // Calculate the Attitude Error
+  x_d_fw[0] = e_x[0]*k1_e[0];                            // Calculate Forward Signal Euler Dot
+  x_d_fw[1] = e_x[1]*k1_e[1];                            // Calculate Forward Signal Euler Dot
+  x_d_fw[2] = e_x[2]*k1_e[2];                            // Calculate Forward Signal Euler Dot
+  float_rates_of_euler_dot_vec(x_d_fw_rates, x, x_d_fw); // Euler dot to rates conversion
+  float_vect_sum(x_d_fw_rates_rm, x_d_ref, x_d_fw_rates, 3);// Add body rates reference signal
+  float_vect_diff_euler(e_x_des, x_des, x);
+  bounds_att_d[0] = bound_v_from_a(e_x_des[0], bounds.att_d[0] * ec_headroom, bounds.att_2d[0] * ec_headroom);
+  bounds_att_d[1] = bound_v_from_a(e_x_des[1], bounds.att_d[1] * ec_headroom, bounds.att_2d[1] * ec_headroom);
+  bounds_att_d[2] = bound_v_from_a(e_x_des[2], bounds.att_d[2] * ec_headroom, bounds.att_2d[2] * ec_headroom);
+  BoundAbs(x_d_fw_rates_rm[0], bounds_att_d[0]);
+  BoundAbs(x_d_fw_rates_rm[1], bounds_att_d[1]);
+  BoundAbs(x_d_fw_rates_rm[2], bounds_att_d[2]);
   // Angular Rate Error ---------------------------------------------------
-  x_2d_f[0] = (x_d_f[0] - x_d[0]) * k2_e[0];
-  x_2d_f[1] = (x_d_f[1] - x_d[1]) * k2_e[1];
-  x_2d_f[2] = (x_d_f[2] - x_d[2]) * k2_e[2];
-  BoundAbs(x_2d_f[0], bounds.att_2d[0] * ec_headroom);
-  BoundAbs(x_2d_f[1], bounds.att_2d[1] * ec_headroom);
-  BoundAbs(x_2d_f[2], bounds.att_2d[2] * ec_headroom);
-  x_2d_f[0] += x_2d_ref[0];
-  x_2d_f[1] += x_2d_ref[1];
-  x_2d_f[2] += x_2d_ref[2];
-  // err_sum_nd(x_2d_f, x_d_f,  x_d,  k2_e, x_2d_ref, 3);
+  x_2d_fw[0] = (x_d_fw_rates_rm[0] - x_d[0]) * k2_e[0] + x_2d_ref[0];
+  x_2d_fw[1] = (x_d_fw_rates_rm[1] - x_d[1]) * k2_e[1] + x_2d_ref[1];
+  x_2d_fw[2] = (x_d_fw_rates_rm[2] - x_d[2]) * k2_e[2] + x_2d_ref[2];
+  BoundAbs(x_2d_fw[0], bounds.att_2d[0] * ec_headroom);
+  BoundAbs(x_2d_fw[1], bounds.att_2d[1] * ec_headroom);
+  BoundAbs(x_2d_fw[2], bounds.att_2d[2] * ec_headroom);
   //  Calculate and bound distrubance --------------------------------------
   float dist[3];
-  float_vect_diff(dist, x_2d, fb, 3);
+  float_vect_diff(dist, x_2d, fb, 3); // The Disturbance is THe difference between the measurment and the Model
   //BoundAbs(dist[2], oneloop_andi_yaw_dist_limit); //FIXME UNCOMMENT ME TO HAVE MAX YAW CONTROL EFFORT
   // Angular Acceleration Error -------------------------------------------
-  err_sum_nd(y_4d, x_2d_f, dist, k3_e, x_3d_ref, 3);
+  err_sum_nd(y_4d, x_2d_fw, dist, k3_e, x_3d_ref, 3);
 }
 
 /**
