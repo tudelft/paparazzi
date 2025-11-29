@@ -63,6 +63,8 @@
 #define  CTRL_INDI 1
 //====================================================================================================================================
 // Declaration of global variables
+extern float  k1_NE_tune;
+extern float  k2_NE_tune;
 extern bool   ctrl_off;                                 // Turn off stabilization control with the quad motors
 extern float  act_state_filt_vect_1l[ANDI_NUM_ACT];     // Filtered actuator state vector to synch with the feedback signals
 extern float  actuator_state_1l[ANDI_NUM_ACT_TOT];      // Actuator state vector (including virtual actuators)

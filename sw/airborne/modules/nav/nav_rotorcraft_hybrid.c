@@ -361,7 +361,7 @@ static void nav_hybrid_check_airspeed(void){
 #if USE_NPS
     pitot_circle.new_pitot_scaling = air_data.ratio_circle_2; // Just to see if value is updated in sim
 #else
-    pitot_circle.new_pitot_scaling = air_data.ratio_circle_2 * ms45xx.pressure_scale;
+    pitot_circle.new_pitot_scaling = air_data.ratio_circle_2;; // FIXME need to be general * ms45xx.pressure_scale;
 #endif
   }
 }

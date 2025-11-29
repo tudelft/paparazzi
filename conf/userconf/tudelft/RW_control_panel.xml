@@ -1124,6 +1124,57 @@
       </program>
       <program name="Server"/>
     </session>
+    <session name="PlusQuad_PI_light">
+      <program name="PprzGCS"/>
+      <program name="Server">
+        <arg flag=""/>
+      </program>
+      <program name="Messages"/>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="NatNet3">
+        <arg flag="--long_edge" constant="right"/>
+        <arg flag="--x_side" constant="right"/>
+        <arg flag="--ac_nose" constant="right"/>
+        <arg flag="-ac" constant="9"/>
+        <arg flag="36"/>
+        <arg flag="-f" constant="100"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="POS_N"/>
+        <arg flag="-c" constant="*:telemetry:GUIDANCE:pos_N_ref"/>
+        <arg flag="-c" constant="*:telemetry:GUIDANCE:pos_N"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="POS_E"/>
+        <arg flag="-c" constant="*:telemetry:GUIDANCE:pos_E_ref"/>
+        <arg flag="-c" constant="*:telemetry:GUIDANCE:pos_E"/>
+      </program>      
+    </session>
+    <session name="PlusQuad_XBee">
+      <program name="PprzGCS"/>
+      <program name="Server">
+        <arg flag=""/>
+      </program>
+      <program name="Messages"/>
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/ttyUSB0"/>
+        <arg flag="-s" constant="115200"/>
+      </program>
+      <program name="NatNet3">
+        <arg flag="--long_edge" constant="right"/>
+        <arg flag="--x_side" constant="right"/>
+        <arg flag="--ac_nose" constant="right"/>
+        <arg flag="-ac" constant="3"/>
+        <arg flag="29"/>
+        <arg flag="-f" constant="100"/>
+      </program>
+    </session>
     <session name="RW25">
       <program name="Data Link">
         <arg flag="-udp"/>
@@ -1435,6 +1486,32 @@
         <arg flag="-d" constant="1"/>
         <arg flag="-ac" constant="Bebop_DePonti"/>
         <arg flag="radiomaster_tx12.xml"/>
+      </program>
+    </session>
+    <session name="sim_quad_simple">
+      <program name="PprzGCS"/>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Joystick">
+        <arg flag="-d" constant="1"/>
+        <arg flag="-ac" constant="RW3C_DePonti_Simulation"/>
+        <arg flag="radiomaster_tx12.xml"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="u"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[0]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[1]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[2]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[3]"/>
+        <arg flag=""/>
+        <arg flag="-g" constant="1050x300+0+900"/>
       </program>
     </session>
     <session name="sim_rw3c_simple">
