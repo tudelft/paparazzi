@@ -812,25 +812,19 @@ float bound_v_from_a(float e_x, float v_bound, float a_bound)
  */
 void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], bool ow_psi, float psi_overwrite[4], float k1_rm[3], float k2_rm[3], float k3_rm[3], struct OneloopStabilizationRef bounds){
   
-  float e_x[3];                                         // Attitude Error
-  float x_d_fw[3];                                      // Forward Signal Euler Dot
-  float x_d_fw_rates[3];                                // Forward Signal Angular Rates
-  float bounds_att_d[3];                                // Bounds on Angular Rate (SUVAT based)
-  float e_x[3];
-  float e_x_rates[3];
-  float e_x_d[3];
-  float e_x_2d[3];
-  float x_d_eul_ref[3];
-
-  float x_2d_ref_ubd[3]; // Unbounded 2nd degree reference
-  float x_d_ref_ubd[3];  // Unbounded 1st degree reference
-
+  float e_x[3];                // Attitude Error
+  float x_d_fw[3];             // Forward Signal Euler Dot
+  float x_d_fw_rates[3];       // Forward Signal Angular Rates
+  float x_2d_fw[3];            // Forward Signal Angular Acceleration
+  float x_3d_fw[3];            // Forward Signal Angular Jerk
+  float bounds_att_d[3];       // Bounds on Angular Rate (SUVAT based)
+  float x_d_eul_ref[3];        // Euler angle Reference
   // Attitude error --------------------------------------------------------------------------------------------------
-  float_vect_diff_euler(e_x, x_des, x_ref);                                   // Calculate Attitude Error
-  x_d_fw[0] = e_x * k1_rm[0];                                                 // Calculate Forward Signal Euler Dot
-  x_d_fw[1] = e_x * k1_rm[1];                                                 // Calculate Forward Signal Euler Dot
-  x_d_fw[2] = e_x * k1_rm[2];                                                 // Calculate Forward Signal Euler Dot
-  float_rates_of_euler_dot_vec(x_d_fw_rates, x_ref, x_d_fw);                  // Convert Euler Dot to Angular Rates
+  float_vect_diff_euler(e_x, x_des, x_ref);                    // Calculate Attitude Error
+  x_d_fw[0] = e_x[0] * k1_rm[0];                               // Calculate Forward Signal Euler Dot
+  x_d_fw[1] = e_x[1] * k1_rm[1];                               // Calculate Forward Signal Euler Dot
+  x_d_fw[2] = e_x[2] * k1_rm[2];                               // Calculate Forward Signal Euler Dot
+  float_rates_of_euler_dot_vec(x_d_fw_rates, x_ref, x_d_fw);   // Convert Euler Dot to Angular Rates
   bounds_att_d[0] =  bound_v_from_a(e_x[0], bounds.att_d[0], bounds.att_2d[0]);
   bounds_att_d[1] =  bound_v_from_a(e_x[1], bounds.att_d[1], bounds.att_2d[1]);
   bounds_att_d[2] =  bound_v_from_a(e_x[2], bounds.att_d[2], bounds.att_2d[2]);
@@ -838,60 +832,29 @@ void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[
   BoundAbs(x_d_fw_rates[1], bounds_att_d[1]);
   BoundAbs(x_d_fw_rates[2], bounds_att_d[2]);
   // Angular Rate error ----------------------------------------------------------------------------------------------
-  err_nd(e_x_d, e_x_rates, x_d_ref, k2_rm, 3);
-  BoundAbs(e_x_d[0], bounds.att_2d[0]);
-  BoundAbs(e_x_d[1], bounds.att_2d[1]);
-  BoundAbs(e_x_d[2], bounds.att_2d[2]);
-  //float temp_bound_r_dot = n_array[5]*coupling_factor[5]/(k_att_e.k3[2]*1.5);
-  //BoundAbs(e_x_d[2], temp_bound_r_dot);
+  err_nd(x_2d_fw, x_d_fw_rates, x_d_ref, k2_rm, 3);
+  BoundAbs(x_2d_fw[0], bounds.att_2d[0]);
+  BoundAbs(x_2d_fw[1], bounds.att_2d[1]);
+  BoundAbs(x_2d_fw[2], bounds.att_2d[2]);
   // Angular Acceleration error -----------------------------------------
-  err_nd(e_x_2d, e_x_d, x_2d_ref, k3_rm, 3);
-  BoundAbs(e_x_2d[0], bounds.att_3d[0]);
-  BoundAbs(e_x_2d[1], bounds.att_3d[1]);
-  BoundAbs(e_x_2d[2], bounds.att_3d[2]);
+  err_nd(x_3d_fw, x_2d_fw, x_2d_ref, k3_rm, 3);
+  BoundAbs(x_3d_fw[0], bounds.att_3d[0]);
+  BoundAbs(x_3d_fw[1], bounds.att_3d[1]);
+  BoundAbs(x_3d_fw[2], bounds.att_3d[2]);
   // Angular Jerk Reference ---------------------------------------------
-  float_vect_copy(x_3d_ref, e_x_2d, 3);
-  // BoundAbs(x_3d_ref[0], bounds.att_3d[0]);
-  // BoundAbs(x_3d_ref[1], bounds.att_3d[1]);
-  // BoundAbs(x_3d_ref[2], bounds.att_3d[2]);
-  // vect_bound_nd(x_3d_ref, max_ang_jerk, 3);
-  if (ow_psi)
-  {
-    x_3d_ref[2] = psi_overwrite[3];
-  }
+  float_vect_copy(x_3d_ref, x_3d_fw, 3);
+  if (ow_psi){x_3d_ref[2] = psi_overwrite[3];}
   // Angular Acceleration Reference -------------------------------------
   integrate_nd(dt, x_2d_ref, x_3d_ref, 3);
-  float_vect_copy(x_2d_ref_ubd, x_2d_ref, 3);
-  // BoundAbs(x_2d_ref[0], bounds.att_2d[0]);
-  // BoundAbs(x_2d_ref[1], bounds.att_2d[1]);
-  // BoundAbs(x_2d_ref[2], bounds.att_2d[2]);
-  if (ow_psi)
-  {
-    x_2d_ref[2] = psi_overwrite[2];
-  }
+  if (ow_psi){x_2d_ref[2] = psi_overwrite[2];}
   // Angular Rate Reference ---------------------------------------------
   integrate_nd(dt, x_d_ref, x_2d_ref, 3);
-  float_vect_copy(x_d_ref_ubd, x_d_ref, 3);
-  // BoundAbs(x_d_ref[0], bounds.att_d[0]);
-  // BoundAbs(x_d_ref[1], bounds.att_d[1]);
-  // BoundAbs(x_d_ref[2], bounds.att_d[2]);
-  if (ow_psi)
-  {
-    x_d_ref[2] = psi_overwrite[1];
-  }
+  if (ow_psi){x_d_ref[2] = psi_overwrite[1];}
   // Attitude Reference ------------------------------------------------
   float_euler_dot_of_rates_vec(x_d_ref, x_ref, x_d_eul_ref);
   integrate_nd(dt, x_ref, x_d_eul_ref, 3);
-  if (ow_psi)
-  {
-    x_ref[2] = psi_overwrite[0];
-  }
+  if (ow_psi){x_ref[2] = psi_overwrite[0];}
   NormRadAngle(x_ref[2]);
-  // Anti-windup Correction ---------------------------------------------
-  // for (int i = 0; i < 3; i++) {
-  //   x_3d_ref[i] = x_3d_ref[i] + (x_2d_ref[i]-x_2d_ref_ubd[i])/(dt) + (x_d_ref[i]-x_d_ref_ubd[i])/(dt*dt);
-  //   x_2d_ref[i] = x_2d_ref[i] + (x_d_ref[i]-x_d_ref_ubd[i])/(dt);
-  // }
 }
 
 
@@ -1056,9 +1019,6 @@ void ec_3rd_att(float y_4d[3], float x_des[3], float x_ref[3], float x_d_ref[3],
   BoundAbs(e_x_rates[1], bounds_att_d[1]);
   BoundAbs(e_x_rates[2], bounds_att_d[2]);
   float_vect_sum(x_d_f, x_d_ref, e_x_rates, 3);
-  temp_ang_rate_fw[0] = x_d_f[0];
-  temp_ang_rate_fw[1] = x_d_f[1];
-  temp_ang_rate_fw[2] = x_d_f[2];
   // Angular Rate Error ---------------------------------------------------
   x_2d_f[0] = (x_d_f[0] - x_d[0]) * k2_e[0];
   x_2d_f[1] = (x_d_f[1] - x_d[1]) * k2_e[1];
@@ -1069,9 +1029,6 @@ void ec_3rd_att(float y_4d[3], float x_des[3], float x_ref[3], float x_d_ref[3],
   x_2d_f[0] += x_2d_ref[0];
   x_2d_f[1] += x_2d_ref[1];
   x_2d_f[2] += x_2d_ref[2];
-  temp_ang_accel_fw[0] = x_2d_f[0];
-  temp_ang_accel_fw[1] = x_2d_f[1];
-  temp_ang_accel_fw[2] = x_2d_f[2];
   // err_sum_nd(x_2d_f, x_d_f,  x_d,  k2_e, x_2d_ref, 3);
   //  Calculate and bound distrubance --------------------------------------
   float dist[3];
