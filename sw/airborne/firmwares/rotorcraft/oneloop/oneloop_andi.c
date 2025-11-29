@@ -381,13 +381,15 @@ float max_v_nav_v = NAV_HYBRID_MAX_SPEED_V;
 float max_v_nav_v = 1.5;
 #endif
 
+#define USE_ND_VELOCITIES                                                         // Use NumDiff of velocities instead of Accelerometer.
+
 float         max_as = 19.0f;                                                     // Max airspeed [m/s]    
 float         min_as = 0.0f;                                                      // Min airspeed [m/s] 
 float         xdot_lim_sf = 0.8;                                                  // Safety Factor on SUVAT velocity limit
 float         ec_headroom = 1.5;                                                  // Extra headroom for the EC wrt the RM  
 static float  nav_target[3];                                                      // Can be a position, speed or acceleration depending on the guidance H mode
 static float  nav_target_new[3];                                                  // Wind triangle reshaped NAV target
-float         gi_unbounded_airspeed_sp = 0.0;                                     // Unbounded airspeed setpoint [m/s] (mimics guidance_indi_hybrid)
+float         gi_unbounded_airspeed_sp = 0.0;                                     // Unbounded airspeed setpoint [m/s] (mimics guidance_indi_hybrid)                                          
 //====================================================================================================================================
 // CONTROL ALLOCATION VARIABLES
 //====================================================================================================================================
@@ -1429,19 +1431,23 @@ void init_filter(void)
 /** @brief  Propagate the filters */
 void oneloop_andi_propagate_filters(void)
 {
-  reinit_all_LP(false);
-  struct NedCoor_f *accel = stateGetAccelNed_f();
+  reinit_all_LP(false); 
   struct NedCoor_f *veloc = stateGetSpeedNed_f();
   struct FloatRates *body_rates = stateGetBodyRates_f();
+#ifdef USE_ND_VELOCITIES  
   static bool vel_inited = false;
   static struct NedCoor_f veloc_prev;
-  // Store Feedbacks in the Complementary Filters
   if (!vel_inited) { veloc_prev = *veloc; vel_inited = true; }
-
   LP.ax.meas      = (veloc->x - veloc_prev.x) * PERIODIC_FREQUENCY; // accel->x;
   LP.ay.meas      = (veloc->y - veloc_prev.y) * PERIODIC_FREQUENCY; // accel->y;
   LP.az.meas      = (veloc->z - veloc_prev.z) * PERIODIC_FREQUENCY; // accel->z;
   veloc_prev      = *veloc;
+#else
+  struct NedCoor_f *accel = stateGetAccelNed_f();
+  LP.ax.meas      = accel->x;
+  LP.ay.meas      = accel->y;
+  LP.az.meas      = accel->z;
+#endif  
   LP.p.meas_prev  = LP.p.meas;
   LP.q.meas_prev  = LP.q.meas;
   LP.r.meas_prev  = LP.r.meas;
