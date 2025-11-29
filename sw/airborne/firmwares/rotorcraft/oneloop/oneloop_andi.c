@@ -529,7 +529,7 @@ void  rm_3rd_pos(float dt, float x_ref[], float x_d_ref[], float x_2d_ref[], flo
 void  rm_2nd_pos(float dt, float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_d_des[], float k2_rm[], float k3_rm[], float x_2d_bound, float x_3d_bound, int n);
 void  rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], float k3_rm[], float x_3d_bound, int n);
 void  ec_3rd_att(float y_4d[3], float x_des[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], struct OneloopStabilizationRef bounds, float fb[3]);
-void  ec_3rd_pos(float y_4d[], float x_des[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, float fb[], int n);
+void  ec_3rd_pos(float y_4d[], float x_des[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float fb[], int n);
 float oneloop_andi_sideslip(void);
 void  reshape_wind(void);
 void  chirp_pos(float time_elapsed, float f0, float f1, float t_chirp, float A, int8_t n, float psi, float p_ref[], float v_ref[], float a_ref[], float j_ref[], float p_ref_0[]);
@@ -951,7 +951,7 @@ void rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], 
  * @param k2_e            Error Controller Gain 2nd order signal
  * @param k3_e            Error Controller Gain 3rd order signal
  */
-void ec_3rd_pos(float y_4d[], float x_des[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float x_3d_bound, float fb[], int n)
+void ec_3rd_pos(float y_4d[], float x_des[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float fb[], int n)
 {
   float e_x_d[n];
   float e_x_2d[n];
@@ -960,10 +960,8 @@ void ec_3rd_pos(float y_4d[], float x_des[], float x_ref[], float x_d_ref[], flo
   float max_x_d = bound_v_from_a_vect(e_x_des, x_d_bound * ec_headroom, x_2d_bound * ec_headroom, n);
   err_sum_nd(e_x_d, x_ref, x, k1_e, x_d_ref, n);
   vect_bound_nd(e_x_d, max_x_d, n);
-  float temp_delete = x_d_ref[2] + k1_e[2] * (x_ref[2] - x[2]);
   err_sum_nd(e_x_2d, e_x_d, x_d, k2_e, x_2d_ref, n);
   vect_bound_nd(e_x_2d, x_2d_bound * ec_headroom, n);
-  float temp_delete2 = x_2d_ref[2] + k2_e[2] * (e_x_d[2] - x_d[2]);
   // Calculate and bound distrubance --------------------
   float dist[3];
   float_vect_diff(dist, x_2d, fb, 3);
@@ -1944,12 +1942,12 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
     {
       // float temp_dist_bound_gui[3] = {oneloop_andi_model[0], oneloop_andi_model[1], oneloop_andi_model[2]};
       float temp_dist_bound_gui[3] = {0.0, 0.0, 0.0};
-      ec_3rd_pos(nu, pos_des, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e.k1, k_pos_e.k2, k_pos_e.k3, max_v_nav, max_a_nav, max_j_lin, temp_dist_bound_gui, 3);
+      ec_3rd_pos(nu, pos_des, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, oneloop_andi.gui_ref.jer, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e.k1, k_pos_e.k2, k_pos_e.k3, max_v_nav, max_a_nav, temp_dist_bound_gui, 3);
     }
     else if (oneloop_andi.ctrl_type == CTRL_INDI)
     {
       float dummy1[3] = {0.0, 0.0, 0.0};
-      ec_3rd_pos(nu, pos_des, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, dummy1, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e_indi.k1, k_pos_e_indi.k2, k_pos_e_indi.k3, max_v_nav, max_a_nav, max_j_lin, dummy1, 3);
+      ec_3rd_pos(nu, pos_des, oneloop_andi.gui_ref.pos, oneloop_andi.gui_ref.vel, oneloop_andi.gui_ref.acc, dummy1, oneloop_andi.gui_state.pos, oneloop_andi.gui_state.vel, oneloop_andi.gui_state.acc, k_pos_e_indi.k1, k_pos_e_indi.k2, k_pos_e_indi.k3, max_v_nav, max_a_nav, dummy1, 3);
       // nu[0] = ec_3rd(oneloop_andi.gui_ref.pos[0], oneloop_andi.gui_ref.vel[0], oneloop_andi.gui_ref.acc[0], 0.0, oneloop_andi.gui_state.pos[0], oneloop_andi.gui_state.vel[0], oneloop_andi.gui_state.acc[0], k_pos_e_indi.k1[0], k_pos_e_indi.k2[0], k_pos_e_indi.k3[0]);
       // nu[1] = ec_3rd(oneloop_andi.gui_ref.pos[1], oneloop_andi.gui_ref.vel[1], oneloop_andi.gui_ref.acc[1], 0.0, oneloop_andi.gui_state.pos[1], oneloop_andi.gui_state.vel[1], oneloop_andi.gui_state.acc[1], k_pos_e_indi.k1[1], k_pos_e_indi.k2[1], k_pos_e_indi.k3[1]);
       // nu[2] = ec_3rd(oneloop_andi.gui_ref.pos[2], oneloop_andi.gui_ref.vel[2], oneloop_andi.gui_ref.acc[2], 0.0, oneloop_andi.gui_state.pos[2], oneloop_andi.gui_state.vel[2], oneloop_andi.gui_state.acc[2], k_pos_e_indi.k1[2], k_pos_e_indi.k2[2], k_pos_e_indi.k3[2]);
