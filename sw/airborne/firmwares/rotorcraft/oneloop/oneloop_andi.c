@@ -711,31 +711,62 @@ static float k_rm_3_3_f(float omega_n, float zeta, float p1) {
 //====================================================================================================================================
 // Attitude Conversion Functions
 /** @brief Attitude Rates to Euler Conversion Function ZYX */
+// void float_rates_of_euler_dot_vec(float r[3], float e[3], float edot[3])
+// {
+//   float sphi = sinf(e[0]);
+//   float cphi = cosf(e[0]);
+//   float stheta = sinf(e[1]);
+//   float ctheta = cosf(e[1]);
+//   r[0] = edot[0] - stheta * edot[2];
+//   r[1] = cphi * edot[1] + sphi * ctheta * edot[2];
+//   r[2] = -sphi * edot[1] + cphi * ctheta * edot[2];
+// }
+
+/** @brief Attitude Rates to Euler Conversion Function ZXY */
 void float_rates_of_euler_dot_vec(float r[3], float e[3], float edot[3])
 {
-  float sphi = sinf(e[0]);
-  float cphi = cosf(e[0]);
-  float stheta = sinf(e[1]);
-  float ctheta = cosf(e[1]);
-  r[0] = edot[0] - stheta * edot[2];
-  r[1] = cphi * edot[1] + sphi * ctheta * edot[2];
-  r[2] = -sphi * edot[1] + cphi * ctheta * edot[2];
+    float sphi   = sinf(e[0]);
+    float cphi   = cosf(e[0]);
+    float stheta = sinf(e[1]);
+    float ctheta = cosf(e[1]);
+    r[0] =  ctheta * edot[0] - stheta * cphi * edot[2]; 
+    r[1] =  edot[1] + sphi * edot[2];
+    r[2] =  stheta * edot[0] + ctheta *cphi * edot[2]; 
 }
 
 /** @brief Attitude Euler to Rates Conversion Function ZYX */
+// void float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3])
+// {
+//   float sphi = sinf(e[0]);
+//   float cphi = cosf(e[0]);
+//   float stheta = sinf(e[1]);
+//   float ctheta = cosf(e[1]);
+//   if (fabs(ctheta) < FLT_EPSILON)
+//   {
+//     ctheta = FLT_EPSILON;
+//   }
+//   edot[0] = r[0] + sphi * stheta / ctheta * r[1] + cphi * stheta / ctheta * r[2];
+//   edot[1] = cphi * r[1] - sphi * r[2];
+//   edot[2] = sphi / ctheta * r[1] + cphi / ctheta * r[2];
+// }
+
+/** @brief Attitude Euler to Rates Conversion Function ZXY */
 void float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3])
 {
   float sphi = sinf(e[0]);
   float cphi = cosf(e[0]);
   float stheta = sinf(e[1]);
   float ctheta = cosf(e[1]);
+  float spsi = sinf(e[2]);
+   float cpsi = cosf(e[2]);
+
   if (fabs(ctheta) < FLT_EPSILON)
   {
     ctheta = FLT_EPSILON;
   }
-  edot[0] = r[0] + sphi * stheta / ctheta * r[1] + cphi * stheta / ctheta * r[2];
+  edot[0] = r[0] + spsi * stheta / ctheta * r[1] + cpsi * stheta / ctheta * r[2];
   edot[1] = cphi * r[1] - sphi * r[2];
-  edot[2] = sphi / ctheta * r[1] + cphi / ctheta * r[2];
+  edot[2] = sphi * r[1] + cphi * r[2];
 }
 //====================================================================================================================================
 // Bounding Functions
