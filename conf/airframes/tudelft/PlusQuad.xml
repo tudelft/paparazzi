@@ -99,8 +99,8 @@
         <module name="eff_scheduling_plusquad"/>
         <!-- Control allocation-->
         <module name="wls">
-            <define name="WLS_N_U_MAX" value = "6"/>
-            <define name="WLS_N_V_MAX" value = "6"/>
+            <define name="WLS_N_U_MAX" value = "4"/>
+            <define name="WLS_N_V_MAX" value = "4"/>
         </module>
         <module name="sys_id_doublet"/>
         <module name="sys_id_auto_doublets"/>
@@ -120,9 +120,6 @@
         <axis name="MOTOR_RIGHT"  group ="REAL" failsafe_value="0"/> <!-- IDX 1-->
         <axis name="MOTOR_BACK"   group ="REAL" failsafe_value="0"/> <!-- IDX 2-->
         <axis name="MOTOR_LEFT"   group ="REAL" failsafe_value="0"/> <!-- IDX 3-->
-        <!-- Virtual actuators commands -->
-        <axis name="ROLL"         group ="VIRTUAL" failsafe_value="0"/> <!-- IDX 4-->
-        <axis name="PITCH"        group ="VIRTUAL" failsafe_value="0"/> <!-- IDX 5-->
         <!-- Legacy commands-->
         <axis name="YAW"          group ="OTHER" failsafe_value="0"/>
         <axis name="THRUST"       group ="OTHER" failsafe_value="0"/>
