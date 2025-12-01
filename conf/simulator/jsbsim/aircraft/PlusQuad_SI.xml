@@ -357,8 +357,9 @@
     <moment name="MOTOR_FRONT_PITCH" frame="BODY" unit="FT*LBS">
       <function>
         <product>
-          <property>fcs/mF_T</property>
+          <property>fcs/MOTOR_FRONT_lag</property>
           <value> 0.0274249</value>
+          <property>fcs/pprz2jsbsim</property>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
       </function>
@@ -377,8 +378,9 @@
     <moment name="MOTOR_BACK_PITCH" frame="BODY" unit="FT*LBS">
       <function>
         <product>
-          <property>fcs/mB_T</property>
+          <property>fcs/MOTOR_BACK_lag</property>
           <value> 0.0274249</value>
+          <property>fcs/pprz2jsbsim</property>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
       </function>
@@ -397,8 +399,9 @@
     <moment name="MOTOR_RIGHT_ROLL" frame="BODY" unit="FT*LBS">
       <function>
         <product>
-          <property>fcs/mR_T</property>
+          <property>fcs/MOTOR_RIGHT_lag</property>
           <value> 0.0317895</value> 
+          <property>fcs/pprz2jsbsim</property>
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
       </function>
@@ -417,8 +420,9 @@
     <moment name="MOTOR_LEFT_ROLL" frame="BODY" unit="FT*LBS">
       <function>
         <product>
-          <property>fcs/mL_T</property>
-          <value> 0.0317895</value> 
+          <property>fcs/MOTOR_LEFT_lag</property>
+          <value> 0.0317895</value>
+          <property>fcs/pprz2jsbsim</property> 
           <value> 0.738</value> <!-- Nm to ft-lbs -->
         </product>
       </function>
