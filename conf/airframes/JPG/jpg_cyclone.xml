@@ -6,7 +6,7 @@
         + Model:       Cyclone 2 is a tiltbody wing with a ~1m wingspan
         + Autopilot:   Cube orange
         + Actuators:   Feetech sts3032
-        + GNSS         Ublox F9P GNSS with RTK
+        <!-- + GNSS         Ublox F9P GNSS with RTK -->
         + MAG          ΡΜ3100
         + ESC:         KISS ECSs
         + RCRX:        ELRS RP1
@@ -96,6 +96,7 @@
         </module>
         
         <module name="gps" type="datalink"/>   
+        <!-- GPS has been removed, dont use this without reinstalling gps-->
         <!-- <module name="gps" type="ublox">
             <configure name="GPS_BAUD" value="B460800"/>
         </module> -->
@@ -164,18 +165,11 @@
     </firmware>
 
     <servos driver="T4">
-        <servo name="S_ELEVON_LEFT"  no="1"  min="-4000" neutral="0" max="4000"/> <!-- 57.0 deg-->
-        <servo name="S_ELEVON_RIGHT" no="6"  min="4000"  neutral="0" max="-4000"/> <!-- 57.0 deg-->
+        <servo name="S_ELEVON_LEFT"  no="1"  min="-4000" neutral="0" max="4000"/> <!-- 40.0 deg-->
+        <servo name="S_ELEVON_RIGHT" no="6"  min="4000"  neutral="0" max="-4000"/> <!-- 40.0 deg-->
         <servo name="S_MOTOR_LEFT"   no="13" min="0"     neutral="0" max="1999"/> <!-- neutral is value when motor is not spinning, must be 0 -->
         <servo name="S_MOTOR_RIGHT"  no="14" min="0"     neutral="0" max="1999"/>
     </servos>
-
-    <!-- <rc_commands>
-        <set command="THROTTLE" value="@THROTTLE"/>
-        <set command="ROLL" value="@ROLL"/>
-        <set command="PITCH" value="@PITCH"/>
-        <set command="YAW" value="@YAW"/>
-    </rc_commands> -->
 
     <commands>
         <!-- Real actuators commands -->
@@ -184,8 +178,6 @@
         <axis name="MOTOR_LEFT"   group="REAL"    failsafe_value="0"/>
         <axis name="MOTOR_RIGHT"  group="REAL"    failsafe_value="0"/>
         <!-- Legacy commands-->
-        <!-- <axis name="ROLL"         group="OTHER"  failsafe_value="0"/>
-        <axis name="PITCH"        group="OTHER"  failsafe_value="0"/> -->
         <axis name="YAW"          group="OTHER"  failsafe_value="0"/>
         <axis name="THRUST"       group="OTHER"  failsafe_value="0"/>
     </commands>
@@ -205,28 +197,36 @@
         <define name="STABILIZATION_ATTITUDE_SP_MAX_THETA" value="45." unit="deg"  />
         <define name="STABILIZATION_ATTITUDE_SP_MAX_R"     value="90." unit="deg/s"/>
         <define name="STABILIZATION_ATTITUDE_DEADBAND_R"   value="200"             />
-        <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST"      value="1500"            /> <!-- Equivalent to ~300 rad/s -->
+        <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST"      value="1500"            />
         <define name="AUTOPILOT_IN_FLIGHT_MIN_SPEED"       value="0"               />
         <define name="AUTOPILOT_IN_FLIGHT_MIN_ACCEL"       value="0"               />
     </section>
 
     <section name="STABILIZATION_ANDI" prefix="STABILIZATION_ANDI_" >
-        <!--                                 |      EL      |      ER      |      ML^2    |      MR^2    | -->
-        <define name="ACT_IS_SERVO"   value="{             1,             1,             0,             0}"/>
-        <define name="ACT_DYNAMICS"   value="{         20.0f,         20.0f,         35.0f,         35.0f}"/> <!-- [rad/s]-->
-        <define name="ACT_DELAY"      value="{             0,             0,            10,            10}"/> <!-- [rad/s]-->
-        <define name="ACT_MAX"        value="{         0.65f,         0.65f,    3534400.0f,    3534400.0f}"/> <!-- [  rad |   (rad/s)^2]--> 
-        <define name="ACT_MIN"        value="{        -0.65f,        -0.65f,      40000.0f,      40000.0f}"/> <!-- [  rad |   (rad/s)^2]--> 
-        <define name="ACT_RATE_MAX"   value="{         10.0f,         10.0f,   90000000.0f,   90000000.0f}"/> <!-- [rad/s | (rad/s)^2/s]--> 
-        <define name="ACT_RATE_MIN"   value="{        -10.0f,        -10.0f,  -90000000.0f,  -90000000.0f}"/> <!-- [rad/s | (rad/s)^2/s]--> 
-        <define name="ACT_PREF"       value="{         0.00f,         0.00f,     705600.0f,     705600.0f}"/> <!-- [  rad |   (rad/s)^2]--> <!-- Should be removed, only used when not scheduling-->
-        <define name="WLS_WU"         value="{          1.0f,          1.0f,          1.0f,          1.0f}"/>
+        <define name="SCHEDULE_EFF"       value="FALSE"/>
+        <define name="USE_STATE_DYNAMICS" value="FALSE"/>
+        <define name="RELAX_OBM"          value="1.0f"/>
+        <!-- <define name="USE_COMMAND_FILTER"  value="TRUE"/> -->
 
-        <!--                                 |      P       |      Q       |      R       |      Tau     | -->
-        <define name="WLS_WV"         value="{       1000.0f,       1000.0f,         10.0f,        100.0f}"/>   
+        <!--                               |      EL      |      ER      |      ML^2    |      MR^2    | -->
+        <define name="ACT_IS_SERVO" value="{             1,             1,             0,             0}"/>
+        <define name="ACT_DYNAMICS" value="{         20.0f,         20.0f,         35.0f,         35.0f}"/> <!-- [rad/s]-->
+        <define name="ACT_DELAY"    value="{             0,             0,            10,            10}"/> <!-- [rad/s]-->
+        <define name="ACT_MIN"      value="{        -0.65f,        -0.65f,      40000.0f,      40000.0f}"/> <!-- [  rad |   (rad/s)^2]--> 
+        <define name="ACT_MAX"      value="{         0.65f,         0.65f,    3534400.0f,    3534400.0f}"/> <!-- [  rad |   (rad/s)^2]--> 
+        <define name="ACT_RATE_MIN" value="{        -10.0f,        -10.0f,  -90000000.0f,  -90000000.0f}"/> <!-- [rad/s | (rad/s)^2/s]--> 
+        <define name="ACT_RATE_MAX" value="{         10.0f,         10.0f,   90000000.0f,   90000000.0f}"/> <!-- [rad/s | (rad/s)^2/s]--> 
+        <define name="ACT_PREF"     value="{         0.00f,         0.00f,     705600.0f,     705600.0f}"/> <!-- [  rad |   (rad/s)^2]--> <!-- Used as operating point when not scheduling-->
+        <define name="WLS_WU"       value="{          1.0f,          1.0f,          1.0f,          1.0f}"/>
 
-        <!--                                 |    P    |    Q    |    R    | -->
-        <define name="RC_RATE_MAX"    value="{      5.0f,     5.0f,     5.0f}"/> <!-- [rad/s]--> 
+        <!--                               |      P       |      Q       |      R       |      Tau     | -->
+        <define name="WLS_WV"       value="{       1000.0f,       1000.0f,         10.0f,        100.0f}"/>   
+        <!--                               |    P    |    Q    |    R    | -->
+        <define name="RC_RATE_MAX"  value="{     5.0f,     5.0f,     5.0f}"/> <!-- [rad/s  ]--> 
+
+        <define name="THRUST_MIN"       value="0.6f"  /> <!-- [m/s^2]-->
+        <define name="THRUST_MAX"       value="52.0f" /> <!-- [m/s^2]-->
+
     </section>
 
     <section name="BAT">

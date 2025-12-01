@@ -81,6 +81,37 @@ union CycloneCoefficients obm_coefficients = {
   .mz_angular_coupling  = -0.4827f
 };
 
+union CeMatrix {
+  struct {
+    float ce_11;
+    float ce_12;
+    float ce_13;
+    float ce_14;
+    float ce_21;
+    float ce_22;
+    float ce_23;
+    float ce_24;
+    float ce_31;
+    float ce_32;
+    float ce_33;
+    float ce_34;
+    float ce_41;
+    float ce_42;
+    float ce_43;
+    float ce_44;
+    
+  };
+  float data[16];
+}; 
+
+// Model coefficinets
+union CeMatrix ce_mat_tmp = {
+  .ce_11 = 0.0f,        .ce_12 = 0.0f,        .ce_13 = 3.9e-5f,     .ce_14 = -3.9e-5f, // Roll 
+  .ce_21 = -29.917439f, .ce_22 = -29.917439f, .ce_23 = 0.0f,        .ce_24 = 0.0f,     // Pitch
+  .ce_31 = -19.968481f, .ce_32 = 19.968481f,  .ce_33 = 0.0f,        .ce_34 = 0.0f,     // Yaw
+  .ce_41 = 0.0f,        .ce_42 = 0.0f,        .ce_43 = 7e-6f,       .ce_44 = 7e-6f,    // Thrust
+};
+
 
 /* Function Definitions */
 static void cyclone_obm_forces(const float body_vel[3], const float u[4],
@@ -104,7 +135,7 @@ static void cyclone_obm_forces(const float body_vel[3], const float u[4],
   F_obm_forces[2] = -coeff[0] * t2 + coeff[1] * t7 * body_vel[2];
 }
 
-void cyclone_obm_moments(const float rates[3],
+static void cyclone_obm_moments(const float rates[3],
                          const float body_vel[3], const float u[4],
                          const float u_dot[4], const float coeff[23],
                          float F_obm_moments[3])
@@ -149,7 +180,7 @@ void cyclone_obm_moments(const float rates[3],
  */
 
 /* Function Definitions */
-static void cyclone_f_stb_u(const float body_vel[3], const float u[4],
+static void cyclone_f_stb_u(const float body_vel[3], const float u[ANDI_NUM_ACT],
                             const float coeff[23], float F_stb_u[16])
 {
   float fv[16];
@@ -359,6 +390,8 @@ void evaluate_obm_f_stb_u(float fu_mat[ANDI_NUM_ACT * ANDI_OUTPUTS], const struc
   actuator_state_bounded[3] = fmaxf(actuator_state[3], 360000.0f);
 
   cyclone_f_stb_u(vel_body_array, actuator_state_bounded, obm_coefficients.data, fu_mat);
+
+  fu_mat = ce_mat_tmp.data; // FIXME: Temporary hack to use ce_mat instead of the real computed matrix
 }
 
 void evaluate_obm_f_stb_x(float nu_obm[ANDI_OUTPUTS], const struct FloatRates *rates, const struct FloatVect3 *vel_body, const struct FloatVect3 *ang_accel, const struct FloatVect3 *accel_body, const float actuator_state[ANDI_NUM_ACT])

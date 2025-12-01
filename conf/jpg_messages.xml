@@ -1893,7 +1893,12 @@
       <field name="actuators_t4_rolling_msg_out_id" type="uint8">T4 output Rolling message ID</field>
     </message>
   
-    <!-- 192 is free -->
+    <message name="STAB_PSEUDO_COMMAND" id="192">
+      <field name="nu_obj"           type="float[]"/>
+      <field name="nu_ec"            type="float[]"/>
+      <field name="nu_obm"           type="float[]"/>
+      <field name="nu_reconstructed" type="float[]"/>
+    </message>
 
     <message name="AHRS_LKF" id="193">
       <field name="phi"   type="float" unit="rad"   alt_unit="deg"   alt_unit_coef="57.29578" />

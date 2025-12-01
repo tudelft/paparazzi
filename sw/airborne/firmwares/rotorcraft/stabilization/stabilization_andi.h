@@ -39,7 +39,6 @@
 #error "You must specify the number of controlled axis (outputs)"
 #endif
 
-// Reference model
 struct AttQuat
 {
   struct FloatQuat att;
@@ -65,17 +64,6 @@ struct ThrustRef
 {
   float thrust;
   float thrust_d;
-};
-
-// Filters
-struct AttFilter
-{
-  Butterworth2LowPass att_d_filter_p;
-  Butterworth2LowPass att_d_filter_q;
-  Butterworth2LowPass att_d_filter_r;
-  Butterworth2LowPass att_2d_filter_x;
-  Butterworth2LowPass att_2d_filter_y;
-  Butterworth2LowPass att_2d_filter_z;
 };
 
 struct PolesOrder3Vect3
@@ -104,9 +92,6 @@ struct GainsOrder3Vect3
   struct FloatVect3 k3;
 };
 
-// On board model coefficients
-extern union CycloneCoefficients obm_coefficients;
-
 /*Declaration of Reference Model and Error Controller Poles*/
 extern struct PolesOrder2Vect3 andi_p_rate_ec;
 extern struct PolesOrder2Vect3 andi_p_rate_rm;
@@ -115,15 +100,23 @@ extern struct PolesOrder3Vect3 andi_p_att_rm;
 extern float andi_p_thrust_ec;
 extern float andi_p_thrust_rm;
 
-extern float andi_rate_freq_cutoff;
-extern float andi_accel_freq_cutoff;
-extern float andi_jerk_freq_cutoff;
-
-extern float ANDI_RELAX_OBM;
-
 void stabilization_andi_init(void);
 void stabilization_andi_enter(void);
 void stabilization_andi_run(bool use_rate_control, bool in_flight, struct StabilizationSetpoint *stab_setpoint, struct ThrustSetpoint *thrust_setpoint, int32_t *cmd);
+
+
+/**
+ * @brief OBM coefficients instance for the cyclone airframe
+ * 
+ * This instance holds the coefficients used by the cyclone OBM
+ * to compute forces and moments based on the current state and
+ * actuator inputs.
+ * 
+ * @note The actual coefficients must be defined and initialized
+ *       in the corresponding .c file (obm_cyclone.c).
+ * @see obm_cyclone.c
+ */
+extern union CycloneCoefficients obm_coefficients;
 
 /**
  * @brief Evaluate total force acting on the vehicle from the OBM
@@ -141,7 +134,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
  * @return Computed force vector produced by the actuators as per the OBM.
  *
  * @note Implementation is airframe-specific.
- * @see obm_cyclone
+ * @see obm_cyclone.c
  */
 struct FloatVect3 evaluate_obm_forces(const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT], const float actuator_state_dot[ANDI_NUM_ACT]);
 
@@ -161,7 +154,7 @@ struct FloatVect3 evaluate_obm_forces(const struct FloatRates *rates, const stru
  * @return Computed moment vector produced by the actuators as per the OBM.
  *
  * @note Implementation is airframe-specific.
- * @see obm_cyclone
+ * @see obm_cyclone.c
  */
 struct FloatVect3 evaluate_obm_moments(const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT], const float actuator_state_dot[ANDI_NUM_ACT]);
 
@@ -189,7 +182,7 @@ struct FloatVect3 evaluate_obm_moments(const struct FloatRates *rates, const str
  *
  * @note Implementations are airframe-specific and must account for the particular
  *       actuator layout and aerodynamic/motor characteristics of the platform.
- * @see obm_cyclone
+ * @see obm_cyclone.c
  */
 void evaluate_obm_f_stb_u(float fu_mat[ANDI_NUM_ACT * ANDI_OUTPUTS], const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT]);
 
@@ -216,7 +209,7 @@ void evaluate_obm_f_stb_u(float fu_mat[ANDI_NUM_ACT * ANDI_OUTPUTS], const struc
  * @note The function computes only the state-dependent part of the model. The full
  *       modeled output is typically nu_obm + F_u * delta_u (where F_u is provided by
  *       evaluate_obm_f_stb_u). Implementations must be provided per airframe.
- * @see obm_cyclone
+ * @see obm_cyclone.c
  */
 void evaluate_obm_f_stb_x(float nu_obm[ANDI_OUTPUTS], const struct FloatRates *rates, const struct FloatVect3 *vel_body, const struct FloatVect3 *ang_accel, const struct FloatVect3 *accel_body, const float actuator_state[ANDI_NUM_ACT]);
 
@@ -240,7 +233,7 @@ void evaluate_obm_f_stb_x(float nu_obm[ANDI_OUTPUTS], const struct FloatRates *r
  *         in the airframe implementation.
  *
  * @note Implementation is airframe-specific.
- * @see obm_cyclone
+ * @see obm_cyclone.c
  */
 float evaluate_obm_thrust_z(const float actuator_state[ANDI_NUM_ACT]);
 #endif // STABILIZATION_ANDI_H

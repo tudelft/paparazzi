@@ -10,14 +10,18 @@
     <configure name="ANDI_NUM_ACT" default="4"/>
 
     <section name="STABILIZATION_ATTITUDE_ANDI" prefix="STABILIZATION_ANDI_">
+      <define name="SCHEDULE_EFF" value="0" description="1 to schedule control effectiveness based on throttle command. 0 uses ACT_PREF to compute constant control effectiveness"/>
+      <define name="USE_STATE_DYNAMICS" value="0" description="1 to use obm state derivative term, 0 to neglect this term."/>
+      <define name="RELAX_OBM" value="1.0f" description="relaxation factor for obm state derivative contribution."/>
+
       <define name="ACT_IS_SERVO" value="{0, 0, 0, 0}" description="1 for every actuator that is a servo"/>
       <define name="ACT_DYNAMICS" description="actuator bandwidth [rad/s]"/>
-      <define name="ACTUATOR_DELAY" description="actuator transport delay [samples]"/>
+      <define name="ACT_DELAY" description="actuator transport delay [samples]"/>
       <define name="ACT_MAX" description="maximum actuator value [SI units]"/>
       <define name="ACT_MIN" description="maximum actuator value [SI units]"/>
       <define name="ACT_RATE_MAX" description="minimum actuator rate [SI units]"/>
       <define name="ACT_RATE_MIN" description="minimum actuator rate [SI units]"/>
-      <!-- <define name="ACT_PREF" value="{0.0, 0.0, 0.0, 0.0}" description="preferred (low energy) actuator value. Important when the system is over-determined!"/> -->
+      <define name="ACT_PREF" value="{0.0, 0.0, 0.0, 0.0}" description="preferred actuator value used for unscheduled control effectiveness"/>
       <define name="WLS_WV" value="{1000, 1000, 1, 100}" description="WLS control objective priorities: roll, pitch, yaw, thrust (size of ANDI_OUTPUTS)"/>
       <define name="WLS_WU" value="{1, 1, 1, 1}" description="WLS actuator cost (size of ANDI_NUM_ACT)"/>
     </section>
@@ -68,14 +72,6 @@
         <dl_setting var="andi_p_att_ec.omega_a.z" min="0" step="0.25" max="100" shortname="pole_att_ec/p1.z" param="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_A_Z"/>
 
         <dl_setting var="andi_p_thrust_ec" min="0" step="0.25" max="100" shortname="pole_thrust_ec" param="STABILIZATION_ANDI_POLE_THRUST_EC"/>
-
-        <dl_setting var="ANDI_RELAX_OBM" min="0" step="0.1" max="1" shortname="CHANGE THIS!"/>
-
-<!-- 
-        <dl_setting var="andi_rate_freq_cutoff" min="1" step="1" max="100" shortname="cutoff_freq_rate" param="STABILIZATION_ANDI_CUTOFF_FREQ_RATE"/>
-        <dl_setting var="andi_accel_freq_cutoff" min="1" step="1" max="100" shortname="cutoff_freq_accel" param="STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL"/>
-        <dl_setting var="andi_jerk_freq_cutoff" min="1" step="1" max="100" shortname="cutoff_freq_jerk" param="STABILIZATION_ANDI_CUTOFF_FREQ_JERK"/> -->
-
       </dl_settings>
     </dl_settings>
   </settings>
@@ -96,24 +92,24 @@
     <define name="ANDI_NUM_ACT" value="$(ANDI_NUM_ACT)"/>
     <define name="USE_STABILIZATION_RATE"/>
 
-    <configure name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X" default="3.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Y" default="3.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Z" default="3.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X" default="7.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Y" default="7.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_Z" default="7.0"/>
     <configure name="STABILIZATION_ANDI_POLE_RATE_EC_ZETA_X" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_RATE_EC_ZETA_Y" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_RATE_EC_ZETA_Z" default="1.0"/>
 
-    <configure name="STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_X" default="3.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_Y" default="3.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_Z" default="3.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_X" default="7.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_Y" default="7.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_RATE_RM_OMEGA_N_Z" default="7.0"/>
     <configure name="STABILIZATION_ANDI_POLE_RATE_RM_ZETA_X" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_RATE_RM_ZETA_Y" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_RATE_RM_ZETA_Z" default="1.0"/>
 
-    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_X" default="7.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Y" default="7.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Z" default="7.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_ZETA_X" default="1.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_X" default="7.0"/> <!-- rad/s-->
+    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Y" default="7.0"/> <!-- rad/s-->
+    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Z" default="7.0"/> <!-- rad/s-->
+    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_ZETA_X" default="1.0"/> 
     <configure name="STABILIZATION_ANDI_POLE_ATT_EC_ZETA_Y" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_ATT_EC_ZETA_Z" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_A_X" default="35.0"/> <!-- Equivalent actuator bandwidth -->
@@ -138,6 +134,7 @@
     <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA" default="100.0"/> <!-- rad/s -->
     <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT" default="55.0"/> <!-- rad/s -->
     <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_ACTUATOR" default="40.0"/> <!-- rad/s -->
+    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_COMMAND" default="80.0"/> <!-- rad/s -->
 
 
     <define name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X" value="$(STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X)"/>
@@ -182,5 +179,6 @@
     <define name="STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA" value="$(STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA)"/>
     <define name="STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT" value="$(STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA)"/>
     <define name="STABILIZATION_ANDI_CUTOFF_FREQ_ACTUATOR" value="$(STABILIZATION_ANDI_CUTOFF_FREQ_ACTUATOR)"/>
+    <define name="STABILIZATION_ANDI_CUTOFF_FREQ_COMMAND" value="$(STABILIZATION_ANDI_CUTOFF_FREQ_COMMAND)"/>
   </makefile>
 </module>

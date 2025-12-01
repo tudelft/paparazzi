@@ -122,6 +122,7 @@ typedef uint8_t unit_t;
 #define DeciDegOfRad(x) ((x) * (1800./ M_PI))
 #define RadOfDeg(x) ((x) * (M_PI/180.))
 #define RadOfDeciDeg(x) ((x) * (M_PI/1800.))
+#define RadOfCentiDeg(x) ((x) * (M_PI/18000.))
 
 #define MOfCm(_x) (((float)(_x))/100.)
 #define MOfMm(_x) (((float)(_x))/1000.)
