@@ -46,7 +46,7 @@ struct FirstOrderComplementary
  * @param sample_time Sampling period
  * @param value Initial value for filter history
  */
-static inline void init_first_order_low_pass_complementary(
+static inline void init_first_order_complementary(
     struct FirstOrderComplementary *filter,
     float tau, float sample_time,
     float value)
@@ -62,7 +62,7 @@ static inline void init_first_order_low_pass_complementary(
  * @param value_y New input value from the low-pass path
  * @return New filtered output value
  */
-static inline float update_first_order_low_pass_complementary(
+static inline float update_first_order_complementary(
     struct FirstOrderComplementary *filter,
     float value_x, float value_y)
 {
@@ -71,12 +71,28 @@ static inline float update_first_order_low_pass_complementary(
   return filter->x_lp_filter.last_in - x_lp_output + y_lp_output;
 }
 
+/** 
+ * @brief Reset the first order complementary filter to a specific value.
+ * 
+ * @param filter Complementary filter struct
+ * @param value Value to reset the filter to
+ * @return The reset value
+ */
+static inline float reset_first_order_complementary(
+    struct FirstOrderComplementary *filter,
+    float value)
+{
+  reset_first_order_low_pass(&filter->x_lp_filter, value);
+  reset_first_order_low_pass(&filter->y_lp_filter, value);
+  return value;
+}
+
 /** Get current value of the second order complementary filter.
  *
  * @param filter Complementary filter struct
  * @return Current output value of the filter
  */
-static inline float get_first_order_low_pass_complementary(const struct FirstOrderComplementary *filter)
+static inline float get_first_order_complementary(const struct FirstOrderComplementary *filter)
 {
   float x_lp_output = get_first_order_low_pass(&filter->x_lp_filter);
   float y_lp_output = get_first_order_low_pass(&filter->y_lp_filter);
@@ -123,6 +139,21 @@ static inline float update_second_order_complementary(
   return filter->x_lp_filter.i[0] - x_lp_output + y_lp_output;
 }
 
+/**
+ * @brief Reset the second order complementary filter to a specific value.
+ * 
+ * @param filter Complementary filter struct
+ * @param value Value to reset the filter to
+ * @return The reset value
+ */
+static inline float reset_second_order_complementary(
+    struct SecondOrderComplementary *filter,
+    float value)
+{
+  reset_second_order_low_pass(&filter->x_lp_filter, value);
+  reset_second_order_low_pass(&filter->y_lp_filter, value);
+  return value;
+}
 /** Get current value of the second order complementary filter.
  *
  * @param filter Complementary filter struct
@@ -144,7 +175,7 @@ typedef struct SecondOrderComplementary Butterworth2Complementary;
  * @param sample_time Sampling period
  * @param value Initial value for filter history
  */
-static inline void init_butterworth_2_low_pass_complementary(
+static inline void init_butterworth_2_complementary(
     Butterworth2Complementary *filter,
     float tau, float sample_time,
     float value)
@@ -162,7 +193,7 @@ static inline void init_butterworth_2_low_pass_complementary(
  * @param value_y New input value from the low-pass path
  * @return New filtered output value
  */
-static inline float update_butterworth_2_low_pass_complementary(Butterworth2Complementary *filter, float value_x, float value_y)
+static inline float update_butterworth_2_complementary(Butterworth2Complementary *filter, float value_x, float value_y)
 {
   return update_second_order_complementary((struct SecondOrderComplementary *)filter, value_x, value_y);
 }
@@ -172,7 +203,7 @@ static inline float update_butterworth_2_low_pass_complementary(Butterworth2Comp
  * @param filter Complementary filter struct
  * @return Current output value of the filter
  */
-static inline float get_butterworth_2_low_pass_complementary(const Butterworth2Complementary *filter)
+static inline float get_butterworth_2_complementary(const Butterworth2Complementary *filter)
 {
   return get_second_order_complementary((const struct SecondOrderComplementary *)filter);
 }
@@ -190,7 +221,7 @@ typedef struct
  * @param sample_time Sampling period
  * @param value Initial value for filter history
  */
-static inline void init_butterworth_4_low_pass_complementary(Butterworth4Complementary *filter, float tau, float sample_time, float value)
+static inline void init_butterworth_4_complementary(Butterworth4Complementary *filter, float tau, float sample_time, float value)
 {
   init_butterworth_4_low_pass(&filter->x_lp_filter, tau, sample_time, value);
   init_butterworth_4_low_pass(&filter->y_lp_filter, tau, sample_time, value);
@@ -203,7 +234,7 @@ static inline void init_butterworth_4_low_pass_complementary(Butterworth4Complem
  * @param value_y New input value from the low-pass path
  * @return New filtered output value
  */
-static inline float update_butterworth_4_low_pass_complementary(Butterworth4Complementary *filter, float value_x, float value_y)
+static inline float update_butterworth_4_complementary(Butterworth4Complementary *filter, float value_x, float value_y)
 {
   float x_lp_output = update_butterworth_4_low_pass(&filter->x_lp_filter, value_x);
   float y_lp_output = update_butterworth_4_low_pass(&filter->y_lp_filter, value_y);
@@ -215,7 +246,7 @@ static inline float update_butterworth_4_low_pass_complementary(Butterworth4Comp
  * @param filter Complementary filter struct
  * @return Current output value of the filter
  */
-static inline float get_butterworth_4_low_pass_complementary(const Butterworth4Complementary *filter)
+static inline float get_butterworth_4_complementary(const Butterworth4Complementary *filter)
 {
   float x_lp_output = get_butterworth_4_low_pass(&filter->x_lp_filter);
   float y_lp_output = get_butterworth_4_low_pass(&filter->y_lp_filter);

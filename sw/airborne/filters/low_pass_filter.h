@@ -78,6 +78,20 @@ static inline float update_first_order_low_pass(struct FirstOrderLowPass *filter
   return out;
 }
 
+/** 
+ * @brief Reset the first order low-pass filter to a specific value.
+ * 
+ * @param filter first order low pass filter structure
+ * @param value Value to reset the filter to
+ * @return The reset value
+ */
+static inline float reset_first_order_low_pass(struct FirstOrderLowPass *filter, float value)
+{
+  filter->last_in = value;
+  filter->last_out = value;
+  return value;
+}
+
 /** Get current value of the first order low pass filter.
  *
  * @param filter first order low pass filter structure
@@ -161,6 +175,19 @@ static inline void init_second_order_low_pass(struct SecondOrderLowPass *filter,
   filter->b[0] = K * K / poly;
   filter->b[1] = 2.0f * filter->b[0];
   filter->i[0] = filter->i[1] = filter->o[0] = filter->o[1] = value;
+}
+
+/** 
+ * @brief Reset the second order low-pass filter to a specific value.
+ * 
+ * @param filter second order low pass filter structure
+ * @param value Value to reset the filter to
+ * @return The reset value
+ */
+static inline float reset_second_order_low_pass(struct SecondOrderLowPass *filter, float value)
+{
+  filter->i[0] = filter->i[1] = filter->o[0] = filter->o[1] = value;
+  return value;
 }
 
 /** Update second order low pass filter state with a new value.
@@ -295,6 +322,18 @@ static inline float update_butterworth_2_low_pass(Butterworth2LowPass *filter, f
   return update_second_order_low_pass((struct SecondOrderLowPass *)filter, value);
 }
 
+/**
+ * @brief Reset a Butterworth low-pass filter to a specific value.
+ *
+ * @param[out] filter Butterworth2LowPass filter instance to reset.
+ * @param[in] value Value to reset the filter to.
+ * @return The reset value.
+ */
+static inline float reset_butterworth_2_low_pass(Butterworth2LowPass *filter, float value)
+{
+  return reset_second_order_low_pass((struct SecondOrderLowPass *)filter, value);
+}
+
 /** Get current value of the second order Butterworth low pass filter.
  *
  * @param filter second order Butterworth low pass filter structure
@@ -302,7 +341,7 @@ static inline float update_butterworth_2_low_pass(Butterworth2LowPass *filter, f
  */
 static inline float get_butterworth_2_low_pass(const Butterworth2LowPass *filter)
 {
-  return filter->o[0];
+  return get_second_order_low_pass((const struct SecondOrderLowPass *)filter);
 }
 
 /** Second order Butterworth low pass filter(fixed point version).
@@ -398,6 +437,17 @@ static inline float update_butterworth_4_low_pass(Butterworth4LowPass *filter, f
 static inline float get_butterworth_4_low_pass(const Butterworth4LowPass *filter)
 {
   return filter->lp2.o[0];
+}
+
+/**
+ * @brief Reset a Butterworth low-pass filter to a specific value.
+ *
+ * @param[out] filter Butterworth4LowPass filter instance to reset.
+ * @param[in] value Value to reset the filter to.
+ */
+static inline void reset_butterworth_4_low_pass(Butterworth4LowPass *filter, float value)
+{
+  filter->lp1.i[0] = filter->lp1.i[1] = filter->lp1.o[0] = filter->lp1.o[1] = filter->lp2.i[0] = filter->lp2.i[1] = filter->lp2.o[0] = filter->lp2.o[1] = value;
 }
 
 /** Fourth order Butterworth low pass filter(fixed point version).
