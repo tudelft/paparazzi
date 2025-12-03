@@ -241,11 +241,7 @@ float andi_omega_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA;         // 
 float andi_omega_dot_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT; // rad/s
 float andi_accel_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL;         // rad/s
 float andi_vel_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_VEL;             // rad/s
-float andi_actuator_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_ACTUATOR;   // rad/s
 
-#ifdef STABILIZATION_ANDI_USE_COMMAND_FILTER
-float andi_command_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_COMMAND;     // rad/s
-#endif
 // WLS allocation variables
 struct WLS_t wls_stab_p = {
     .nu = ANDI_NUM_ACT,
