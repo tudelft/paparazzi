@@ -6,6 +6,11 @@ pyserial
 PyQt5
 PyQtWebEngine
 pyqtgraph
+PyOpenGL
 unidecode
 matplotlib
 distro
+empy
+pexpect
+setuptools
+

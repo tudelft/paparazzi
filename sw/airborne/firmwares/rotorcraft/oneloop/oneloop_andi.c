@@ -556,6 +556,26 @@ void  dynFilter_run(struct Oneloop_DynFilt_t *mu, float u_c, float sigma);
 //====================================================================================================================================
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
+// static void send_cf_oneloop(struct transport_tx *trans, struct link_device *dev)
+// {
+//   float temp_cf_p[5] = {cf.p.model,cf.p.model_filt.o[0],cf.p.feedback,cf.p.feedback_filt.o[0],cf.p.out};
+//   float temp_cf_q[5] = {cf.q.model,cf.q.model_filt.o[0],cf.q.feedback,cf.q.feedback_filt.o[0],cf.q.out};
+//   float temp_cf_r[5] = {cf.r.model,cf.r.model_filt.o[0],cf.r.feedback,cf.r.feedback_filt.o[0],cf.r.out};
+//   float temp_cf_p_dot[5] = {cf.p_dot.model,cf.p_dot.model_filt.lp2.o[0],cf.p_dot.feedback,cf.p_dot.feedback_filt.lp2.o[0],cf.p_dot.out};
+//   float temp_cf_q_dot[5] = {cf.q_dot.model,cf.q_dot.model_filt.lp2.o[0],cf.q_dot.feedback,cf.q_dot.feedback_filt.lp2.o[0],cf.q_dot.out};
+//   float temp_cf_r_dot[5] = {cf.r_dot.model,cf.r_dot.model_filt.o[0],cf.r_dot.feedback,cf.r_dot.feedback_filt.o[0],cf.r_dot.out};
+//   //float temp_cf_ax[5] = {cf.ax.model,cf.ax.model_filt.o[0],cf.ax.feedback,cf.ax.feedback_filt.o[0],cf.ax.out};
+//   //float temp_cf_ay[5] = {cf.ay.model,cf.ay.model_filt.o[0],cf.ay.feedback,cf.ay.feedback_filt.o[0],cf.ay.out};
+//   float temp_cf_az[5] = {cf.az.model,cf.az.model_filt.o[0],cf.az.feedback,cf.az.feedback_filt.o[0],cf.az.out};
+//   pprz_msg_send_COMPLEMENTARY_FILTER(trans, dev, AC_ID, 
+//                 5, temp_cf_p,
+//                 5, temp_cf_q,
+//                 5, temp_cf_r,
+//                 5, temp_cf_p_dot,
+//                 5, temp_cf_q_dot,
+//                 5, temp_cf_r_dot,
+//                 5, temp_cf_az);
+// }
 static void send_wls_v_oneloop(struct transport_tx *trans, struct link_device *dev)
 {
   send_wls_v("one", &WLS_one_p, trans, dev);
@@ -1168,6 +1188,38 @@ static float ec_poles(float p_rm, float slow_pole, float k)
 }
 
 /**
+ * @brief Calculate EC poles given RM poles
+ * @param p_rm      Reference Model Pole (3 coincident poles)
+ * @param slow_pole Pole of the slowest dynamics
+ * @param k         EC / RM ratio
+ * @param omega_n   Natural Frequency
+ */
+static float ec_poles(float p_rm, float slow_pole, float k){
+  p_rm      = positive_non_zero(p_rm);
+  slow_pole = positive_non_zero(slow_pole);
+  k         = positive_non_zero(k);
+  float omega_n = (2*p_rm*slow_pole*k)/(3*slow_pole-p_rm);
+  return omega_n;
+}
+
+/**
+ * @brief Initialize Position of Poles
+ * 
+ */
+void init_poles_att(void){
+  float slow_pole  = 22.0; // Pole of the slowest dynamics used in the attitude controller
+  p_att_e.omega_n  = ec_poles(p_att_rm.omega_n,  slow_pole, 1.28);
+  p_head_e.omega_n = ec_poles(p_head_rm.omega_n, slow_pole, 1.28);
+}
+void init_poles_pos(void){
+  act_dynamics[COMMAND_ROLL]  = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
+  act_dynamics[COMMAND_PITCH] = w_approx(p_att_rm.p3, p_att_rm.p3, p_att_rm.p3, 1.0);
+  float slow_pole = act_dynamics[COMMAND_ROLL]; // Pole of the slowest dynamics used in the position controller
+  p_pos_e.omega_n = ec_poles(p_pos_rm.omega_n,slow_pole,1.28);//1.0;
+  p_alt_e.omega_n = ec_poles(p_alt_rm.omega_n,slow_pole,1.28);//1.0;// 3.0;
+}
+
+/**
  * @brief Initialize Position of Poles
  *
  */
@@ -1273,7 +1325,6 @@ void init_controller_gains(void)
   k_att_rm.k1[1] = k_att_rm.k1[0];
   k_att_rm.k2[1] = k_att_rm.k2[0];
   k_att_rm.k3[1] = k_att_rm.k3[0];
-
   /*Heading Loop NAV*/
   k_att_e.k1[2] = k_rm_1_3_f(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
   k_att_e.k2[2] = k_rm_2_3_f(p_head_e.omega_n, p_head_e.zeta, p_head_e.p3);
