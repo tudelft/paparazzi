@@ -267,19 +267,15 @@ float andi_k_thrust_ec;
 float andi_k_thrust_rm;
 
 // Complementary filter instances
-struct Butterworth2ComplementaryVect3 angular_rates_cf;
-struct Butterworth4ComplementaryVect3 angular_accel_cf;
+struct FirstOrderComplementaryVect3 angular_rates_cf;
+struct FirstOrderComplementaryVect3 angular_accel_cf;
 struct FloatRates angular_rates_obm;
 
-struct Butterworth2ComplementaryVect3 linear_vel_cf;
-struct Butterworth4ComplementaryVect3 linear_accel_cf;
+struct FirstOrderComplementaryVect3 linear_vel_cf;
+struct FirstOrderComplementaryVect3 linear_accel_cf;
 struct FloatVect3 linear_velocity_obm;
 
-// Command shaping filter
-Butterworth2LowPass command_lp[ANDI_NUM_ACT]; // Filter on command to actuator, used to suppress resonance modes and undesired high freq content
-
 // Actuator filtering and delay
-Butterworth2LowPass actuator_lp[ANDI_NUM_ACT]; // small bit of filtering on actuators, currently unused
 struct TransportDelay actuator_delay[ANDI_NUM_ACT]; // transport delay for actuator model
 
 float act_dynamics_discrete[ANDI_NUM_ACT]; // discrete-time actuator dynamics
@@ -1031,23 +1027,18 @@ void stabilization_andi_init(void)
   evaluate_obm_f_stb_u(ce_mat, &attitude_state.att_d, &linear_state.vel, ACTUATOR_PREF);
 
   // Initialize filters
-  init_butterworth_2_complementary_vect3(&angular_rates_cf, andi_omega_freq_cutoff, SAMPLE_TIME);
-  init_butterworth_4_complementary_vect3(&angular_accel_cf, andi_omega_dot_freq_cutoff, SAMPLE_TIME);
+  init_first_order_complementary_vect3(&angular_rates_cf, andi_omega_freq_cutoff, SAMPLE_TIME);
+  init_first_order_complementary_vect3(&angular_accel_cf, andi_omega_dot_freq_cutoff, SAMPLE_TIME);
   angular_rates_obm.p = 0.0f;
   angular_rates_obm.q = 0.0f;
   angular_rates_obm.r = 0.0f;
 
-  init_butterworth_2_complementary_vect3(&linear_vel_cf, andi_vel_freq_cutoff, SAMPLE_TIME);
-  init_butterworth_4_complementary_vect3(&linear_accel_cf, andi_accel_freq_cutoff, SAMPLE_TIME);
+  init_first_order_complementary_vect3(&linear_vel_cf, andi_vel_freq_cutoff, SAMPLE_TIME);
+  init_first_order_complementary_vect3(&linear_accel_cf, andi_accel_freq_cutoff, SAMPLE_TIME);
   linear_velocity_obm.x = 0.0f;
   linear_velocity_obm.y = 0.0f;
   linear_velocity_obm.z = 0.0f;
 
-#ifdef USE_COMMAND_FILTER
-  init_butterworth_2_array(ANDI_NUM_ACT, command_lp, andi_command_freq_cutoff, SAMPLE_TIME);
-#endif
-
-  init_butterworth_2_array(ANDI_NUM_ACT, actuator_lp, andi_actuator_freq_cutoff, SAMPLE_TIME);
   init_transport_delay_array(ANDI_NUM_ACT, actuator_delay, ACTUATOR_DELAY, actuator_state);
 
   // Bind T4 actuator feedback abi message
@@ -1149,23 +1140,21 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&attitude_state.att_d, &linear_state.vel, actuator_state, actuator_state_dot);
 
   // Cascaded complementary filter for linear velocity and acclererations
-  update_butterworth_4_complementary_vect3(&linear_accel_cf, &linear_accel_obm, &lin_meas.acc);
-  linear_state.acc = get_butterworth_4_complementary_vect3(&linear_accel_cf);
+  update_first_order_complementary_vect3(&linear_accel_cf, &linear_accel_obm, &lin_meas.acc);
+  linear_state.acc = get_first_order_complementary_vect3(&linear_accel_cf);
   float_vect3_integrate_fi(&linear_velocity_obm, &linear_state.acc, SAMPLE_TIME);
-  update_butterworth_2_complementary_vect3(&linear_vel_cf, &linear_velocity_obm, &lin_meas.vel);
-  linear_state.vel = get_butterworth_2_complementary_vect3(&linear_vel_cf);
+  update_first_order_complementary_vect3(&linear_vel_cf, &linear_velocity_obm, &lin_meas.vel);
+  linear_state.vel = get_first_order_complementary_vect3(&linear_vel_cf);
 
   // Cascaded complementary filter for angular rates and accelerations
-  update_butterworth_4_complementary_vect3(&angular_accel_cf, &angular_accel_obm, &attitude_meas.att_2d);
-  attitude_state.att_2d = get_butterworth_4_complementary_vect3(&angular_accel_cf);
+  update_first_order_complementary_vect3(&angular_accel_cf, &angular_accel_obm, &attitude_meas.att_2d);
+  attitude_state.att_2d = get_first_order_complementary_vect3(&angular_accel_cf);
   float_rates_vect3_integrate_fi(&angular_rates_obm, &attitude_state.att_2d, SAMPLE_TIME);
-  update_butterworth_2_complementary_rates(&angular_rates_cf, &angular_rates_obm, &attitude_meas.att_d);
-  attitude_state.att_d = get_butterworth_2_complementary_rates(&angular_rates_cf);
+  update_first_order_complementary_rates(&angular_rates_cf, &angular_rates_obm, &attitude_meas.att_d);
+  attitude_state.att_d = get_first_order_complementary_rates(&angular_rates_cf);
 
   attitude_state.att = attitude_meas.att; // No filtering on attitude
 
-  // update_butterworth_2_array(ANDI_NUM_ACT, actuator_lp, actuator_meas);
-  // get_butterworth_2_array(ANDI_NUM_ACT, actuator_lp, actuator_state);
   float_vect_copy(actuator_state, actuator_meas, ANDI_NUM_ACT);
   float_vect_copy(actuator_t4_state, actuator_t4_meas, ANDI_NUM_ACT);
 
@@ -1284,10 +1273,6 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
     du_cmd[i] = (wls_stab_p.u[i] / wls_u_scaler[i]);
     u_cmd[i] = du_cmd[i] / ACTUATOR_DYNAMICS[i] + actuator_state[i];
   }
-#ifdef USE_COMMAND_FILTER
-  update_butterworth_2_array(ANDI_NUM_ACT, command_lp, u_cmd);
-  get_butterworth_2_array(ANDI_NUM_ACT, command_lp, u_cmd);
-#endif
 
   // Commit actuator commands
   // Resulting commands are in rad for servo and rad/s for motor

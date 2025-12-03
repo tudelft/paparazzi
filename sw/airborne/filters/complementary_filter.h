@@ -30,68 +30,59 @@
 #include "std.h"
 #include "filters/low_pass_filter.h"
 
+
+
 struct FirstOrderComplementary
 {
-  float time_const;
-  float x_last_in;
-  float y_last_in;
-  float last_out;
+  struct FirstOrderLowPass x_lp_filter; // Low pass filter instance for high pass path
+  struct FirstOrderLowPass y_lp_filter; // Low pass filter instance for low pass path
 };
 
-/** Init first order complementary filter.
+/** Initialize the second order complementary filter.
  *
- * @param filter first order complementary filter structure
- * @param tau time constant of the complementary filter
- * @param sample_time sampling period of the signal
- * @param value initial value of the filter
+ * @param filter Complementary filter struct
+ * @param tau Time constant of the low-pass filter
+ * @param Q Q factor of the low-pass filter
+ * @param sample_time Sampling period
+ * @param value Initial value for filter history
  */
-static inline void init_first_order_complementary(struct FirstOrderComplementary *filter, float tau,
-                                                  float sample_time, float value)
+static inline void init_first_order_low_pass_complementary(
+    struct FirstOrderComplementary *filter,
+    float tau, float sample_time,
+    float value)
 {
-  filter->x_last_in = value;
-  filter->y_last_in = value;
-  filter->last_out = value;
-  filter->time_const = 2.0f * tau / sample_time;
+  init_first_order_low_pass(&filter->x_lp_filter, tau, sample_time, value);
+  init_first_order_low_pass(&filter->y_lp_filter, tau, sample_time, value);
 }
 
-/** Update first order complementary filter state with a new value.
+/** Update the second order complementary filter with new input values.
  *
- * @param filter first order complementary filter structure
- * @param value_x new input value of the filter from the high pass path
- * @param value_y new input value of the filter from the low pass path
- * @return new filtered value
+ * @param filter Complementary filter struct
+ * @param value_x New input value from the high-pass path
+ * @param value_y New input value from the low-pass path
+ * @return New filtered output value
  */
-static inline float update_first_order_complementary(struct FirstOrderComplementary *filter, float value_x, float value_y)
+static inline float update_first_order_low_pass_complementary(
+    struct FirstOrderComplementary *filter,
+    float value_x, float value_y)
 {
-  float out = (value_x + filter->x_last_in + filter->time_const * (value_y - filter->y_last_in) + (filter->time_const - 1.0f) * filter->last_out) / (filter->time_const + 1.0f);
-
-  filter->x_last_in = value_x;
-  filter->y_last_in = value_y;
-  filter->last_out = out;
-
-  return out;
+  float x_lp_output = update_first_order_low_pass(&filter->x_lp_filter, value_x);
+  float y_lp_output = update_first_order_low_pass(&filter->y_lp_filter, value_y);
+  return filter->x_lp_filter.last_in - x_lp_output + y_lp_output;
 }
 
-/** Get current value of the first order complementary filter.
+/** Get current value of the second order complementary filter.
  *
- * @param filter first order complementary filter structure
- * @return current value of the filter
+ * @param filter Complementary filter struct
+ * @return Current output value of the filter
  */
-static inline float get_first_order_complementary(const struct FirstOrderComplementary *filter)
+static inline float get_first_order_low_pass_complementary(const struct FirstOrderComplementary *filter)
 {
-  return filter->last_out;
+  float x_lp_output = get_first_order_low_pass(&filter->x_lp_filter);
+  float y_lp_output = get_first_order_low_pass(&filter->y_lp_filter);
+  return filter->x_lp_filter.last_in - x_lp_output + y_lp_output;
 }
 
-/** Update time constant of the first order complementary filter.
- *
- * @param filter first order complementary filter structure
- * @param tau new time constant of the complementary filter
- * @param sample_time sampling period of the signal
- */
-static inline void update_first_order_complementary_tau(struct FirstOrderComplementary *filter, float tau, float sample_time)
-{
-  filter->time_const = 2.0f * tau / sample_time;
-}
 
 struct SecondOrderComplementary
 {
