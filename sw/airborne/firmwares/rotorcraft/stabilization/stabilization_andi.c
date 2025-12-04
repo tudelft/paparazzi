@@ -356,6 +356,7 @@ static void send_wls_u_stabilization_andi(struct transport_tx *trans, struct lin
                       ANDI_NUM_ACT, du_max,
                       ANDI_NUM_ACT, du_cmd);
 }
+
 static void send_eff_mat_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
 {
   float zero = 0.0f;
@@ -1330,7 +1331,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   for (uint8_t i = 0; i < ANDI_OUTPUTS; i++)
   {
     wls_stab_p.v[i] = nu_obj[i] * wls_v_scaler[i];
-    wls_stab_p.Wv[i] = fabs(WLS_WV[i] * wls_v_scaler[i]); // Weights must be non-negative, check WV is not negative in Airframe file
+    wls_stab_p.Wv[i] = fabs(WLS_WV[i]);// * wls_v_scaler[i]); // Weights must be non-negative, check WV is not negative in Airframe file
   }
 
   wls_alloc(&wls_stab_p, bwls, 0, 0, 10);
