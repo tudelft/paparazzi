@@ -106,9 +106,9 @@
     <configure name="STABILIZATION_ANDI_POLE_RATE_RM_ZETA_Y" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_RATE_RM_ZETA_Z" default="1.0"/>
 
-    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_X" default="5.0"/> <!-- rad/s-->
-    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Y" default="5.0"/> <!-- rad/s-->
-    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Z" default="5.0"/> <!-- rad/s-->
+    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_X" default="7.0"/> <!-- rad/s-->
+    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Y" default="7.0"/> <!-- rad/s-->
+    <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_N_Z" default="7.0"/> <!-- rad/s-->
     <configure name="STABILIZATION_ANDI_POLE_ATT_EC_ZETA_X" default="1.0"/> 
     <configure name="STABILIZATION_ANDI_POLE_ATT_EC_ZETA_Y" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_ATT_EC_ZETA_Z" default="1.0"/>
@@ -116,9 +116,9 @@
     <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_A_Y" default="20.0"/> <!-- Equivalent actuator bandwidth -->
     <configure name="STABILIZATION_ANDI_POLE_ATT_EC_OMEGA_A_Z" default="20.0"/> <!-- Equivalent actuator bandwidth -->
 
-    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_X" default="5.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_Y" default="5.0"/>
-    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_Z" default="5.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_X" default="7.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_Y" default="7.0"/>
+    <configure name="STABILIZATION_ANDI_POLE_ATT_RM_OMEGA_N_Z" default="7.0"/>
     <configure name="STABILIZATION_ANDI_POLE_ATT_RM_ZETA_X" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_ATT_RM_ZETA_Y" default="1.0"/>
     <configure name="STABILIZATION_ANDI_POLE_ATT_RM_ZETA_Z" default="1.0"/>
@@ -129,10 +129,10 @@
     <configure name="STABILIZATION_ANDI_POLE_THRUST_EC" default="35.0"/>
     <configure name="STABILIZATION_ANDI_POLE_THRUST_RM" default="35.0"/>
 
-    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL" default="55.0"/> <!-- rad/s -->
+    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL" default="45.0"/> <!-- rad/s -->
     <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_VEL" default="100.0"/> <!-- rad/s -->
     <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA" default="100.0"/> <!-- rad/s -->
-    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT" default="55.0"/> <!-- rad/s -->
+    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT" default="45.0"/> <!-- rad/s -->
     <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_THRUST" default="100.0"/> <!-- rad/s -->
 
     <define name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X" value="$(STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X)"/>

@@ -27,6 +27,13 @@
  * - Motors are controlled in squared rpm (to linearize thrust curve).
  */
 
+/**
+ * FIXME: Normalization of WLS allocation is not ideal. The Wu and Wv costs are dependent on the
+ * scaling of the control effectiveness matrix, which itself depends on the current state (e.g. airspeed).
+ * A better approach would be to normalize the costs based on the maximum achievable control derivatives
+ * for each actuator and output.
+ */
+
 /* Include necessary header files */
 
 #include "firmwares/rotorcraft/stabilization/stabilization_andi.h"
@@ -148,6 +155,11 @@ const float WLS_WV[ANDI_OUTPUTS] = STABILIZATION_ANDI_WLS_WV;
 const float WLS_WV[ANDI_OUTPUTS] = {[0 ... ANDI_OUTPUTS - 1] = 1.0f};
 #endif
 
+/**
+ * Normalized actuator cost for WLS allocation.
+ * Each value corresponds to the relative cost of using each actuator, normalized over
+ * the possible range of u_dot for that actuator.
+ */
 #ifdef STABILIZATION_ANDI_WLS_WU
 float WLS_WU[ANDI_NUM_ACT] = STABILIZATION_ANDI_WLS_WU;
 #else
@@ -247,7 +259,7 @@ float andi_thrust_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_THRUST;       // 
 struct WLS_t wls_stab_p = {
     .nu = ANDI_NUM_ACT,
     .nv = ANDI_OUTPUTS,
-    .gamma_sq = 1000.0,
+    .gamma_sq = 100000.0,
     .u_pref = {0.0f},
     .u_min = {0.0f},
     .u_max = {0.0f},
@@ -1303,9 +1315,9 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   compute_wls_lower_bounds(du_min, actuator_state, ACTUATOR_MIN, ACTUATOR_D_MIN, SAMPLE_TIME);
   compute_wls_upper_bounds(du_max, actuator_state, ACTUATOR_MAX, ACTUATOR_D_MAX, SAMPLE_TIME);
   float wls_u_scaler[ANDI_NUM_ACT];
-  float wls_v_scaler[ANDI_OUTPUTS];
+  float wls_v_scaler[ANDI_OUTPUTS] = {[0 ... ANDI_OUTPUTS - 1] = 1.0f}; // Disable v scaling
   compute_wls_u_scaler(wls_u_scaler, du_min, du_max);
-  compute_wls_v_scaler(wls_v_scaler, nu_obj);
+  // compute_wls_v_scaler(wls_v_scaler, nu_obj);
 
   float ce_mat_scaled[ANDI_OUTPUTS][ANDI_NUM_ACT];
   float *bwls[ANDI_OUTPUTS];
@@ -1324,14 +1336,14 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   {
     wls_stab_p.u_min[i] = du_min[i] * wls_u_scaler[i];
     wls_stab_p.u_max[i] = du_max[i] * wls_u_scaler[i]; // FIXME: Put u_pref as mean of u_min, u_max?
-    wls_stab_p.Wu[i] = WLS_WU[i] * wls_u_scaler[i];
+    wls_stab_p.Wu[i] = WLS_WU[i];
   }
 
   // Scale pseudo control and weights
   for (uint8_t i = 0; i < ANDI_OUTPUTS; i++)
   {
     wls_stab_p.v[i] = nu_obj[i] * wls_v_scaler[i];
-    wls_stab_p.Wv[i] = fabs(WLS_WV[i]);// * wls_v_scaler[i]); // Weights must be non-negative, check WV is not negative in Airframe file
+    wls_stab_p.Wv[i] = WLS_WV[i];
   }
 
   wls_alloc(&wls_stab_p, bwls, 0, 0, 10);
