@@ -26,6 +26,7 @@
 
 
 #include <time.h>
+#include <math.h>
 
 #include "ins_ext_pose.h"
 #include "state.h"
@@ -71,6 +72,15 @@ struct InsExtPose {
   struct NedCoor_i ltp_accel;
 };
 struct InsExtPose ins_ext_pos;
+
+// Parameters for accel-based attitude virtual measurements
+#ifndef INS_EXT_ATT_VEL_MAX
+#define INS_EXT_ATT_VEL_MAX 0.5f    // [m/s] max speed for using accel-derived attitude
+#endif
+// Saved accel-based attitude measurement for next EKF update
+static float acc_att_phi_meas = 0.0f;
+static float acc_att_theta_meas = 0.0f;
+static bool  acc_att_meas_valid = false;
 
 
 static void ins_ext_pose_init_from_flightplan(void)
@@ -149,8 +159,8 @@ static void send_ahrs_bias(struct transport_tx *trans, struct link_device *dev)
                 &ekf_X[12], 
                 &ekf_X[13], 
                 &ekf_X[14], 
-                &dummy0, 
-                &dummy0, 
+                &ekf_X[15], 
+                &ekf_X[16], 
                 &dummy0);
 }
 #endif
@@ -338,7 +348,34 @@ float ekf_P[EKF_NUM_STATES][EKF_NUM_STATES];
 float ekf_Q[EKF_NUM_INPUTS][EKF_NUM_INPUTS];
 float ekf_R[EKF_NUM_OUTPUTS][EKF_NUM_OUTPUTS];
 
-float ekf_H[EKF_NUM_OUTPUTS][EKF_NUM_STATES] = {{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0}};
+/*
+ * Measurement model:
+ * z = [ pN, pE, pD,
+ *       phi_ev, theta_ev, psi_ev,
+ *       phi_acc, theta_acc ]
+ *
+ * phi_ev   = phi   + b_phi_ev
+ * theta_ev = theta + b_theta_ev
+ * psi_ev   = psi
+ * phi_acc  = phi
+ * theta_acc= theta
+ */
+float ekf_H[EKF_NUM_OUTPUTS][EKF_NUM_STATES] = {
+  // pN, pE, pD
+  {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+  // phi_meas   = phi   + b_phi_ev
+  {0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
+  // theta_meas = theta + b_theta_ev
+  {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  // psi_meas = psi (no bias)
+  {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
+  // phi_acc_meas = phi (from accelerations)
+  {0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+  // theta_acc_meas = theta (from accelerations)
+  {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+};
 
 
 float t0;
@@ -365,14 +402,46 @@ static inline void ekf_init(void)
 {
 
   DEBUG_PRINT("ekf init");
-  float X0[EKF_NUM_STATES] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  float X0[EKF_NUM_STATES] = {
+    // pos, vel
+    0, 0, 0, 0, 0, 0,
+    // att
+    0, 0, 0,
+    // accel biases
+    0, 0, 0,
+    // gyro biases
+    0, 0, 0,
+    // NEW: EV attitude biases (phi, theta)
+    0, 0
+  };
+
   float U0[EKF_NUM_INPUTS] = {0, 0, 0, 0, 0, 0};
-  float Z0[EKF_NUM_OUTPUTS] = {0, 0, 0, 0, 0, 0};
+  float Z0[EKF_NUM_OUTPUTS] = {0, 0, 0, 0, 0, 0, 0, 0};
 
-  float Pdiag[EKF_NUM_STATES] = {1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.};
-  float Qdiag[EKF_NUM_INPUTS] = {1.0, 1.0, 1.0, 0.0173, 4.878e-4, 3.547e-4};//{0.0325, 0.4494, 0.5087, 0.0173, 4.878e-4, 3.547e-4};
+  float Pdiag[EKF_NUM_STATES] = {
+    // pos
+    1., 1., 1.,
+    // vel
+    1., 1., 1.,
+    // att
+    1., 1., 1.,
+    // accel biases
+    1., 1., 1.,
+    // gyro biases
+    1., 1., 1.,
+    // NEW: phi/theta EV biases
+    0.1, 0.1
+  };
 
-  float Rdiag[EKF_NUM_OUTPUTS] = {8.372e-6, 3.832e-6, 4.761e-6, 2.830e-4, 8.684e-6, 7.013e-6};
+  float Qdiag[EKF_NUM_INPUTS] = {1.0, 1.0, 1.0, 0.0173, 4.878e-4, 3.547e-4};
+
+  // Rdiag for:
+  // [pN, pE, pD, phi_ev, theta_ev, psi_ev, phi_acc, theta_acc]
+  float Rdiag[EKF_NUM_OUTPUTS] = {
+    8.372e-6f, 3.832e-6f, 4.761e-6f,   // positions
+    2.830e-4f, 8.684e-6f, 7.013e-6f,   // EV-based attitude
+    1.0e-3f,   1.0e-3f                  // accel-based attitude (slightly noisier)
+  };
 
   MAKE_MATRIX_PTR(ekf_P_, ekf_P, EKF_NUM_STATES);
   MAKE_MATRIX_PTR(ekf_Q_, ekf_Q, EKF_NUM_INPUTS);
@@ -384,6 +453,8 @@ static inline void ekf_init(void)
   float_vect_copy(ekf_X, X0, EKF_NUM_STATES);
   float_vect_copy(ekf_U, U0, EKF_NUM_INPUTS);
   float_vect_copy(ekf_Z, Z0, EKF_NUM_OUTPUTS);
+
+  acc_att_meas_valid = false;
 }
 
 static inline void ekf_f(const float X[EKF_NUM_STATES], const float U[EKF_NUM_INPUTS], float out[EKF_NUM_STATES])
@@ -423,11 +494,23 @@ static inline void ekf_f(const float X[EKF_NUM_STATES], const float U[EKF_NUM_IN
   out[12] = 0;
   out[13] = 0;
   out[14] = 0;
+
+  // EV attitude biases are constant
+  out[15] = 0; // b_phi_ev dot
+  out[16] = 0; // b_theta_ev dot
 }
 
 static inline void ekf_F(const float X[EKF_NUM_STATES], const float U[EKF_NUM_INPUTS],
                          float out[EKF_NUM_STATES][EKF_NUM_STATES])
 {
+  // Initialize all entries to zero first
+  int r, c;
+  for (r = 0; r < EKF_NUM_STATES; r++) {
+    for (c = 0; c < EKF_NUM_STATES; c++) {
+      out[r][c] = 0.0f;
+    }
+  }
+
   float x0 = U[1] - X[10];
   float x1 = sin(X[6]);
   float x2 = sin(X[8]);
@@ -692,6 +775,7 @@ static inline void ekf_F(const float X[EKF_NUM_STATES], const float U[EKF_NUM_IN
   out[14][12] = 0;
   out[14][13] = 0;
   out[14][14] = 0;
+  // Rows/columns for states 15 and 16 remain zero: biases are constant and decoupled
 }
 
 static inline void ekf_L(const float X[EKF_NUM_STATES], __attribute__((unused))  const float U[EKF_NUM_INPUTS],
@@ -799,6 +883,21 @@ static inline void ekf_L(const float X[EKF_NUM_STATES], __attribute__((unused)) 
   out[14][3] = 0;
   out[14][4] = 0;
   out[14][5] = 0;
+
+  // EV attitude bias states have no direct process noise input
+  out[15][0] = 0;
+  out[15][1] = 0;
+  out[15][2] = 0;
+  out[15][3] = 0;
+  out[15][4] = 0;
+  out[15][5] = 0;
+
+  out[16][0] = 0;
+  out[16][1] = 0;
+  out[16][2] = 0;
+  out[16][3] = 0;
+  out[16][4] = 0;
+  out[16][5] = 0;
 }
 
 
@@ -906,7 +1005,7 @@ static inline void ekf_step(const float U[EKF_NUM_INPUTS], const float Z[EKF_NUM
 
   MAKE_MATRIX_PTR(Pkk_1_, Pkk_1, EKF_NUM_STATES);
   MAKE_MATRIX_PTR(ekf_P_, ekf_P, EKF_NUM_STATES);
-  MAKE_MATRIX_PTR(ekf_Q_, ekf_Q, EKF_NUM_STATES);
+  MAKE_MATRIX_PTR(ekf_Q_, ekf_Q, EKF_NUM_INPUTS);
   MAKE_MATRIX_PTR(LdT_, LdT, EKF_NUM_INPUTS);
   MAKE_MATRIX_PTR(QLdT_, QLdT, EKF_NUM_INPUTS);
 
@@ -1032,7 +1131,7 @@ static inline void ekf_prediction_step(const float U[EKF_NUM_INPUTS], const floa
   MAKE_MATRIX_PTR(Fd_, Fd, EKF_NUM_STATES);
   MAKE_MATRIX_PTR(Ld_, Ld, EKF_NUM_STATES);
 
-  // Fd = I+F*dt/2
+  // Fd = I+F*dt
   float_mat_diagonal_scal(Fd_, 1, EKF_NUM_STATES);
   float_mat_sum_scaled(Fd_, F_, dt, EKF_NUM_STATES, EKF_NUM_STATES);
 
@@ -1049,7 +1148,7 @@ static inline void ekf_prediction_step(const float U[EKF_NUM_INPUTS], const floa
 
   MAKE_MATRIX_PTR(Pkk_1_, Pkk_1, EKF_NUM_STATES);
   MAKE_MATRIX_PTR(ekf_P_, ekf_P, EKF_NUM_STATES);
-  MAKE_MATRIX_PTR(ekf_Q_, ekf_Q, EKF_NUM_STATES);
+  MAKE_MATRIX_PTR(ekf_Q_, ekf_Q, EKF_NUM_INPUTS);
   MAKE_MATRIX_PTR(LdT_, LdT, EKF_NUM_INPUTS);
   MAKE_MATRIX_PTR(QLdT_, QLdT, EKF_NUM_INPUTS);
   MAKE_MATRIX_PTR(tmp_, tmp, EKF_NUM_STATES);
@@ -1245,9 +1344,24 @@ static inline void ekf_run(void)
       ekf_Z[3] = ins_ext_pos.ev_att.phi;
       ekf_Z[4] = ins_ext_pos.ev_att.theta;
       ekf_Z[5] += delta_psi;
+
+      // Virtual accel-based attitude measurements:
+      // if we have a valid accel attitude estimate, use it; otherwise,
+      // set Z[6],Z[7] equal to the EV pose.
+      if (acc_att_meas_valid) {
+        ekf_Z[6] = acc_att_phi_meas;
+        ekf_Z[7] = acc_att_theta_meas;
+        acc_att_meas_valid = false; // consume measurement
+      } else {
+        ekf_Z[6] = ekf_Z[3]-ekf_X[15]; 
+        ekf_Z[7] = ekf_Z[4]-ekf_X[16];
+      }
+
       ins_ext_pos.has_new_ext_pose = false;
 
-      DEBUG_PRINT("ekf measurement step Z = %f, %f, %f, %f \n", ekf_Z[0], ekf_Z[1], ekf_Z[2], ekf_Z[3]);
+      DEBUG_PRINT("ekf measurement step Z = %f, %f, %f, %f, %f, %f, %f, %f\n",
+                  ekf_Z[0], ekf_Z[1], ekf_Z[2], ekf_Z[3], ekf_Z[4],
+                  ekf_Z[5], ekf_Z[6], ekf_Z[7]);
       ekf_measurement_step(ekf_Z);
     }
   }
@@ -1285,6 +1399,47 @@ static inline void ekf_run(void)
   struct FloatRMat *ned_to_body_rmat_f = stateGetNedToBodyRMat_f();
   float_rmat_transp_vmult(&accel_ned_f, ned_to_body_rmat_f, &accel);
   accel_ned_f.z += 9.81;
+
+  // Compute accel-based attitude estimate for next step (virtual measurement)
+  {
+    // velocity norm in NED
+    float vN = ekf_X[3];
+    float vE = ekf_X[4];
+    float vD = ekf_X[5];
+    float v2 = vN * vN + vE * vE + vD * vD;
+    float v_thresh2 = INS_EXT_ATT_VEL_MAX * INS_EXT_ATT_VEL_MAX;
+
+    if (v2 < v_thresh2) {
+      float aN = accel_ned_f.x;
+      float aE = accel_ned_f.y;
+      float aD = accel_ned_f.z;
+
+      float psi = ekf_X[8];
+      float cpsi = cosf(psi);
+      float spsi = sinf(psi);
+
+      // Rotate NED accel into heading-aligned frame
+      float aX =  cpsi * aN + spsi * aE;
+      float aY = -spsi * aN + cpsi * aE;
+      float aZ = aD - 9.81f;
+
+      float l2 = aX * aX + aY * aY + aZ * aZ;
+      float l = sqrtf(l2);
+      float ix = aX / l;
+      float iy = aY / l;
+      float phi_acc = asinf(iy);
+      float cphi  = cosf(phi_acc);
+      if (fabsf(cphi) > 1e-3f) {
+        float theta_acc = asinf(-ix / cphi);
+        acc_att_phi_meas = phi_acc;
+        acc_att_theta_meas = theta_acc;
+        acc_att_meas_valid = true;
+
+        DEBUG_PRINT("ACC ATT meas: phi_acc=%f theta_acc=%f\n",
+                    phi_acc, theta_acc);
+      }
+    }
+  }
 
   stateSetPositionNed_f(&ned_pos);
   stateSetSpeedNed_f(&ned_speed);
