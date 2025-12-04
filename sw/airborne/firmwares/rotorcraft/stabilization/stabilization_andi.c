@@ -277,9 +277,9 @@ float andi_k_thrust_rm;
 
 // Low pass filters for measured states and time synchronization
 struct FirstOrderLowPassVect3 angular_rates_meas_lpf;
-struct FirstOrderLowPassVect3 angular_rates_sync_lpf;
+struct FirstOrderLowPassVect3 attitude_att_d_sync_lpf;
 struct FirstOrderLowPassVect3 angular_accel_meas_lpf;
-struct FirstOrderLowPassVect3 angular_accel_sync_lpf;
+struct FirstOrderLowPassVect3 attitude_att_2d_sync_lpf;
 struct FirstOrderLowPass thrust_meas_lpf;
 struct FirstOrderLowPass thrust_sync_lpf;
 
@@ -318,8 +318,8 @@ float actuator_t4_state[ANDI_NUM_ACT];
 // Reference model variables
 struct AttQuat attitude_ref;
 struct ThrustRef thrust_ref;
-struct AttQuat attitude_ref_sync;
-struct ThrustRef thrust_ref_sync;
+struct AttQuat attitude_ref_lpf;
+struct ThrustRef thrust_ref_lpf;
 
 // Setpoints
 struct FloatRates rates_des;
@@ -384,12 +384,12 @@ static void send_stab_attitude_stabilization_andi(struct transport_tx *trans, st
   pprz_msg_send_STAB_ATTITUDE(trans, dev, AC_ID,
                               4, (float *)&attitude_des,
                               4, (float *)&attitude_state_lpf.att,
-                              4, (float *)&attitude_ref_sync.att,
+                              4, (float *)&attitude_ref_lpf.att,
                               3, (float *)&attitude_state_lpf.att_d,
-                              3, (float *)&attitude_ref_sync.att_d,
+                              3, (float *)&attitude_ref_lpf.att_d,
                               3, (float *)&attitude_state_lpf.att_2d,
-                              3, (float *)&attitude_ref_sync.att_2d,
-                              3, (float *)&attitude_ref_sync.att_3d,
+                              3, (float *)&attitude_ref_lpf.att_2d,
+                              3, (float *)&attitude_ref_lpf.att_3d,
                               ANDI_OUTPUTS, actuator_state);
 }
 
@@ -1031,19 +1031,19 @@ void stabilization_andi_init(void)
   thrust_ref.thrust = 0.0f;
   thrust_ref.thrust_d = 0.0f;
 
-  float_quat_identity(&attitude_ref_sync.att);
-  attitude_ref_sync.att_d.p = 0.0f;
-  attitude_ref_sync.att_d.q = 0.0f;
-  attitude_ref_sync.att_d.r = 0.0f;
-  attitude_ref_sync.att_2d.x = 0.0f;
-  attitude_ref_sync.att_2d.y = 0.0f;
-  attitude_ref_sync.att_2d.z = 0.0f;
-  attitude_ref_sync.att_3d.x = 0.0f;
-  attitude_ref_sync.att_3d.y = 0.0f;
-  attitude_ref_sync.att_3d.z = 0.0f;
+  float_quat_identity(&attitude_ref_lpf.att);
+  attitude_ref_lpf.att_d.p = 0.0f;
+  attitude_ref_lpf.att_d.q = 0.0f;
+  attitude_ref_lpf.att_d.r = 0.0f;
+  attitude_ref_lpf.att_2d.x = 0.0f;
+  attitude_ref_lpf.att_2d.y = 0.0f;
+  attitude_ref_lpf.att_2d.z = 0.0f;
+  attitude_ref_lpf.att_3d.x = 0.0f;
+  attitude_ref_lpf.att_3d.y = 0.0f;
+  attitude_ref_lpf.att_3d.z = 0.0f;
 
-  thrust_ref_sync.thrust = 0.0f;
-  thrust_ref_sync.thrust_d = 0.0f;
+  thrust_ref_lpf.thrust = 0.0f;
+  thrust_ref_lpf.thrust_d = 0.0f;
 
   // FIXME: These bounds should be set via parameters
   // Initialize attitude bounds (symmetric bounds on abs values)
@@ -1069,9 +1069,9 @@ void stabilization_andi_init(void)
 
   // Initialize filters
   init_first_order_low_pass_vect3(&angular_rates_meas_lpf, 1.0f / andi_omega_freq_cutoff, SAMPLE_TIME);
-  init_first_order_low_pass_vect3(&angular_rates_sync_lpf, 1.0f / andi_omega_freq_cutoff, SAMPLE_TIME);
+  init_first_order_low_pass_vect3(&attitude_att_d_sync_lpf, 1.0f / andi_omega_freq_cutoff, SAMPLE_TIME);
   init_first_order_low_pass_vect3(&angular_accel_meas_lpf, 1.0f / andi_omega_dot_freq_cutoff, SAMPLE_TIME);
-  init_first_order_low_pass_vect3(&angular_accel_sync_lpf, 1.0f / andi_omega_dot_freq_cutoff, SAMPLE_TIME);
+  init_first_order_low_pass_vect3(&attitude_att_2d_sync_lpf, 1.0f / andi_omega_dot_freq_cutoff, SAMPLE_TIME);
   init_first_order_low_pass(&thrust_meas_lpf, 1.0f / andi_thrust_freq_cutoff, SAMPLE_TIME, 0.0f);
   init_first_order_low_pass(&thrust_sync_lpf, 1.0f / andi_thrust_freq_cutoff, SAMPLE_TIME, 0.0f);
 
@@ -1127,16 +1127,16 @@ void stabilization_andi_enter(void)
   attitude_ref.att_3d.y = 0.0f;
   attitude_ref.att_3d.z = 0.0f;
 
-  attitude_ref_sync.att = *stateGetNedToBodyQuat_f();
-  attitude_ref_sync.att_d.p = 0.0f;
-  attitude_ref_sync.att_d.q = 0.0f;
-  attitude_ref_sync.att_d.r = 0.0f;
-  attitude_ref_sync.att_2d.x = 0.0f;
-  attitude_ref_sync.att_2d.y = 0.0f;
-  attitude_ref_sync.att_2d.z = 0.0f;
-  attitude_ref_sync.att_3d.x = 0.0f;
-  attitude_ref_sync.att_3d.y = 0.0f;
-  attitude_ref_sync.att_3d.z = 0.0f;
+  attitude_ref_lpf.att = *stateGetNedToBodyQuat_f();
+  attitude_ref_lpf.att_d.p = 0.0f;
+  attitude_ref_lpf.att_d.q = 0.0f;
+  attitude_ref_lpf.att_d.r = 0.0f;
+  attitude_ref_lpf.att_2d.x = 0.0f;
+  attitude_ref_lpf.att_2d.y = 0.0f;
+  attitude_ref_lpf.att_2d.z = 0.0f;
+  attitude_ref_lpf.att_3d.x = 0.0f;
+  attitude_ref_lpf.att_3d.y = 0.0f;
+  attitude_ref_lpf.att_3d.z = 0.0f;
 
   // Fetch linear measurements
   struct LinState lin_meas;
@@ -1251,30 +1251,30 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   generate_reference_thrust(SAMPLE_TIME, thrust_des, andi_k_thrust_rm, &thrust_bounds_min, &thrust_bounds_max, &thrust_ref);
 
   // SYNC FILTERING OF REFERENCE INPUTS
-  attitude_ref_sync.att_3d.x = attitude_ref.att_3d.x;
-  attitude_ref_sync.att_3d.y = attitude_ref.att_3d.y;
-  attitude_ref_sync.att_3d.z = attitude_ref.att_3d.z;
-  update_first_order_low_pass_vect3(&angular_rates_sync_lpf, &attitude_ref.att_2d);
-  attitude_ref_sync.att_2d = get_first_order_low_pass_vect3(&angular_rates_sync_lpf);
-  update_first_order_low_pass_rates(&angular_rates_sync_lpf, &attitude_ref.att_d);
-  attitude_ref_sync.att_d = get_first_order_low_pass_rates(&angular_rates_sync_lpf);
-  attitude_ref_sync.att = attitude_ref.att; // No filtering on attitude
+  attitude_ref_lpf.att_3d.x = attitude_ref.att_3d.x;
+  attitude_ref_lpf.att_3d.y = attitude_ref.att_3d.y;
+  attitude_ref_lpf.att_3d.z = attitude_ref.att_3d.z;
+  update_first_order_low_pass_vect3(&attitude_att_2d_sync_lpf, &attitude_ref.att_2d);
+  attitude_ref_lpf.att_2d = get_first_order_low_pass_vect3(&attitude_att_2d_sync_lpf);
+  update_first_order_low_pass_rates(&attitude_att_d_sync_lpf, &attitude_ref.att_d);
+  attitude_ref_lpf.att_d = get_first_order_low_pass_rates(&attitude_att_d_sync_lpf);
+  attitude_ref_lpf.att = attitude_ref.att; // No filtering on attitude
 
-  thrust_ref_sync.thrust_d = thrust_ref.thrust;
+  thrust_ref_lpf.thrust_d = thrust_ref.thrust;
   update_first_order_low_pass(&thrust_sync_lpf, thrust_ref.thrust);
-  thrust_ref_sync.thrust = get_first_order_low_pass(&thrust_sync_lpf);
+  thrust_ref_lpf.thrust = get_first_order_low_pass(&thrust_sync_lpf);
 
   // Construct pseudo control
   struct FloatVect3 nu_attitude;
   if (use_rate_control)
   {
-    nu_attitude = control_error_rate(&attitude_ref_sync, &attitude_state_cf, &andi_k_rate_ec);
+    nu_attitude = control_error_rate(&attitude_ref_lpf, &attitude_state_lpf, &andi_k_rate_ec);
   }
   else
   {
-    nu_attitude = control_error_attitude(&attitude_ref_sync, &attitude_state_cf, &andi_k_att_ec);
+    nu_attitude = control_error_attitude(&attitude_ref_lpf, &attitude_state_lpf, &andi_k_att_ec);
   }
-  float nu_thrust = control_error_thrust(&thrust_ref_sync, thrust_state_lpf, andi_k_thrust_ec);
+  float nu_thrust = control_error_thrust(&thrust_ref_lpf, thrust_state_lpf, andi_k_thrust_ec);
 
   nu_ec[0] = nu_attitude.x;
   nu_ec[1] = nu_attitude.y;

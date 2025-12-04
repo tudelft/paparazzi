@@ -132,7 +132,7 @@
     <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL" default="45.0"/> <!-- rad/s -->
     <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_VEL" default="100.0"/> <!-- rad/s -->
     <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA" default="100.0"/> <!-- rad/s -->
-    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT" default="45.0"/> <!-- rad/s -->
+    <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT" default="30.0"/> <!-- rad/s -->
     <configure name="STABILIZATION_ANDI_CUTOFF_FREQ_THRUST" default="100.0"/> <!-- rad/s -->
 
     <define name="STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X" value="$(STABILIZATION_ANDI_POLE_RATE_EC_OMEGA_N_X)"/>
