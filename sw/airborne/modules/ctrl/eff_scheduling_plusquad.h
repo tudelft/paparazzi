@@ -43,6 +43,18 @@
 #define RW_aq 4 // Y body axis (angular acceleration)
 #define RW_ar 5 // Z body axis (angular acceleration)
 
+#ifndef COMMANDS_NB_VIRTUAL
+#define COMMANDS_NB_VIRTUAL 0
+#endif
+
+#ifndef COMMAND_ROLL
+#define COMMAND_ROLL COMMANDS_NB+1
+#endif
+
+#ifndef COMMAND_PITCH
+#define COMMAND_PITCH COMMANDS_NB+2
+#endif
+
 #ifndef EFF_MAT_COLS_NB
 #define EFF_MAT_COLS_NB (COMMANDS_NB_REAL + COMMANDS_NB_VIRTUAL)
 #endif

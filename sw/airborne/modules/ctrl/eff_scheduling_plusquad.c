@@ -33,7 +33,7 @@
 
 #define FORCE_ONELOOP
 #ifdef FORCE_ONELOOP
-#include "firmwares/rotorcraft/oneloop/oneloop_andi.h"
+#include "firmwares/rotorcraft/oneloop/oneloop_nB.h"
 float actuator_state_filt_vect[EFF_MAT_COLS_NB] = {0};
 #else
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"

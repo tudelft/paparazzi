@@ -10,7 +10,7 @@
     <description>A PlusQuad with optitrack and INS ext pose</description>
 
     <firmware name="rotorcraft">
-     <autopilot name="rotorcraft_oneloop_andi_indi.xml"/>
+     <autopilot name="rotorcraft_oneloop_nB.xml"/>
         <target name="nps" board="pc">
             <configure name="PERIODIC_FREQUENCY"   value="500"/>
             <configure name="NAVIGATION_FREQUENCY" value="500"/>
@@ -55,7 +55,7 @@
         <!-- Control -->      
         <module name="stabilization" type="int_quat"/>
         
-        <module name="guidance" type="oneloop"/>
+        <module name="guidance" type="oneloop_nB"/>
         <module name="nav" type="hybrid">
             <define name="NAV_HYBRID_MAX_AIRSPEED"      value="19.0f"/>
             <define name="NAV_HYBRID_SPEED_MARGIN"      value="0.0f"/>
@@ -67,8 +67,8 @@
             <define name="NAV_HYBRID_LIMIT_CIRCLE_RADIUS" value="TRUE"/>
         </module>
 
-        <module name="oneloop" type="andi">
-            <configure name="ANDI_OUTPUTS" value="6"/>
+        <module name="oneloop" type="nB">
+            <configure name="ANDI_OUTPUTS" value="4"/>
         </module>
 
         <!-- Backup Control for quad-->
@@ -80,8 +80,8 @@
         <module name="eff_scheduling_plusquad"/>
         <!-- Control allocation-->
         <module name="wls">
-            <define name="WLS_N_U_MAX" value = "6"/>
-            <define name="WLS_N_V_MAX" value = "6"/>
+            <define name="WLS_N_U_MAX" value = "4"/>
+            <define name="WLS_N_V_MAX" value = "4"/>
         </module>
         <module name="sys_id_doublet"/>
         <module name="sys_id_auto_doublets"/>
@@ -101,10 +101,9 @@
         <axis name="MOTOR_RIGHT"  group ="REAL" failsafe_value="0"/> <!-- IDX 1-->
         <axis name="MOTOR_BACK"   group ="REAL" failsafe_value="0"/> <!-- IDX 2-->
         <axis name="MOTOR_LEFT"   group ="REAL" failsafe_value="0"/> <!-- IDX 3-->
-        <!-- Virtual actuators commands -->
-        <axis name="ROLL"         group ="VIRTUAL" failsafe_value="0"/> <!-- IDX 4-->
-        <axis name="PITCH"        group ="VIRTUAL" failsafe_value="0"/> <!-- IDX 5-->
         <!-- Legacy commands-->
+        <axis name="ROLL"         group ="OTHER" failsafe_value="0"/>
+        <axis name="PITCH"        group ="OTHER" failsafe_value="0"/>
         <axis name="YAW"          group ="OTHER" failsafe_value="0"/>
         <axis name="THRUST"       group ="OTHER" failsafe_value="0"/>
     </commands>
@@ -186,7 +185,7 @@
         <item name="announce">Announce flight to other airspace users</item>
     </checklist>
 
-    <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
+    <section PREFIX="ONELOOP_NB_" NAME="ONELOOP_NB">
         <define name  = "SIMPLE_QUAD"               value = "TRUE"/>
         <define name  = "POLES_POS_OMEGA_N"         value = "1.2"/>
         <define name  = "POLES_ALT_OMEGA_N"         value = "2.2"/>
@@ -203,16 +202,16 @@
         <define name  = "FILT_CUTOFF_RDOT"          value = "0.5" />
         <define name  = "FILTER_YAW_RATE"           value = "TRUE"/>
         <define name  = "YAW_DISTURBANCE_LIMIT"     value = "0.68"/> 
-        <!--                                                 |   MF   |   MR   |    MB   |    ML   |   PHI  |  THETA | -->
-        <define name  = "ACT_DYN"                   value = "{   29.0f,   29.0f,    29.0f,    29.0f,   0.00f,  0.00f }" />
-        <define name  = "ACT_IS_SERVO"              value = "{       0,       0,        0,        0,       0,      0 }" />
-        <define name  = "ACT_MAX"                   value = "{ 9600.0f, 9600.0f,  9600.0f,  9600.0f,  M_PI_4,  M_PI_6}"/>
-        <define name  = "ACT_MIN"                   value = "{    0.0f,    0.0f,     0.0f,     0.0f, -M_PI_4, -M_PI_6}"/>
-        <define name  = "ACT_MAX_NORM"              value = "{    1.0f,    1.0f,     1.0f,     1.0f,    1.0f,    1.0f}"/>
-        <define name  = "ACT_MIN_NORM"              value = "{    0.0f,    0.0f,     0.0f,     0.0f,   -1.0f,   -1.0f}"/>
-        <define name  = "WU"                        value = "{   0.75f,   0.75f,    0.75f,    0.75f,   1.20f,   1.20f}"/>
-        <define name  = "U_PREF"                    value = "{   0.00f,   0.00f,    0.00f,    0.00f,   0.00f,   0.00f}"/>
-        <define name  = "WV"                        value = "{  4.0f,  4.0f,   4.0f,  8.0f,  8.0f,  1.00f}"/>   
+        <!--                                                 |   MF   |   MR   |    MB   |    ML    -->
+        <define name  = "ACT_DYN"                   value = "{   29.0f,   29.0f,    29.0f,    29.0f}" />
+        <define name  = "ACT_IS_SERVO"              value = "{       0,       0,        0,        0}" />
+        <define name  = "ACT_MAX"                   value = "{ 9600.0f, 9600.0f,  9600.0f,  9600.0f}"/>
+        <define name  = "ACT_MIN"                   value = "{    0.0f,    0.0f,     0.0f,     0.0f}"/>
+        <define name  = "ACT_MAX_NORM"              value = "{    1.0f,    1.0f,     1.0f,     1.0f}"/>
+        <define name  = "ACT_MIN_NORM"              value = "{    0.0f,    0.0f,     0.0f,     0.0f}"/>
+        <define name  = "WU"                        value = "{   0.75f,   0.75f,    0.75f,    0.75f}"/>
+        <define name  = "U_PREF"                    value = "{   0.00f,   0.00f,    0.00f,    0.00f}"/>
+        <define name  = "WV"                        value = "{ 4.0f,  8.0f,  8.0f,  1.00f}"/>   
     </section>
 
     <section name="CTRL_EFF_SHED" prefix="PLUSQUAD_EFF_SCHED_">
