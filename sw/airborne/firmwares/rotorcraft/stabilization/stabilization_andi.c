@@ -334,9 +334,9 @@ float du_cmd[ANDI_NUM_ACT];
 float u_cmd[ANDI_NUM_ACT];
 
 // Pseudo command variables
-float nu_obj[ANDI_OUTPUTS]; // Total pseudo command allocated to the actuators
-float nu_ec[ANDI_OUTPUTS]; // Pseudo command from the error controller
-float nu_obm[ANDI_OUTPUTS]; // Pseudo command from the on board model state dependent term
+float nu_obj[ANDI_OUTPUTS];           // Total pseudo command allocated to the actuators
+float nu_ec[ANDI_OUTPUTS];            // Pseudo command from the error controller
+float nu_obm[ANDI_OUTPUTS];           // Pseudo command from the on board model state dependent term
 float nu_reconstructed[ANDI_OUTPUTS]; // Reconstructed angular acceleration from the actuator commands (for model verification)
 
 #if PERIODIC_TELEMETRY

@@ -479,7 +479,7 @@ void imu_init(void)
         imu.gyros[i].scale_f.r = (float)imu.gyros[i].scale[0].r / (float)imu.gyros[i].scale[1].r;
         imu.gyros[i].calibrated.scale_f = true;
       } else {
-        VECT3_ASSIGN(imu.accels[i].scale_f, IMU_GYRO_P_SIGN, IMU_GYRO_Q_SIGN, IMU_GYRO_R_SIGN);
+        RATES_ASSIGN(imu.gyros[i].scale_f, IMU_GYRO_P_SIGN, IMU_GYRO_Q_SIGN, IMU_GYRO_R_SIGN);
       }
     }
 
