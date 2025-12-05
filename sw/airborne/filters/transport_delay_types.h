@@ -45,13 +45,26 @@ static inline void init_transport_delay_array(uint8_t n, struct TransportDelay t
 /**
  * @brief Update an array of TransportDelay structures with input values.
  * @param[in] n Number of TransportDelay structures in the array.
- * @param[in, out] td_array Array of TransportDelay structures to update.
+ * @param[in,out] td_array Array of TransportDelay structures to update.
  * @param[in] input_array Array of input values for each TransportDelay structure.
  */
 static inline void update_transport_delay_array(uint8_t n, struct TransportDelay td_array[restrict n], const float input_array[restrict n])
 {
   for (uint8_t i = 0; i < n; i++) {
     update_transport_delay(&td_array[i], input_array[i]);
+  }
+}
+
+/**
+ * @brief Reset an array of TransportDelay structures to specific initial values.
+ * @param[in] n Number of TransportDelay structures in the array.
+ * @param[in,out] td_array Array of TransportDelay structures to reset.
+ * @param[in] initial_value Array of initial values to reset the buffers to.
+ */
+static inline void reset_transport_delay_array(const uint8_t n, struct TransportDelay td_array[restrict n], const float initial_value[restrict n])
+{
+  for (uint8_t i = 0; i < n; i++) {
+    reset_transport_delay(&td_array[i], initial_value[i]);
   }
 }
 

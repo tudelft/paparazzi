@@ -42,6 +42,7 @@
       <message name="WLS_V"                    period="0.1"/>
       <message name="WLS_U"                    period="0.1"/>
       <message name="SYS_MON"                  period="0.25"/>
+      <message name="EXTERNAL_POSE_DOWN"       period="0.1"/>
       <!-- <message name="DEBUG_VECT"               period="0.1"/> -->
       <message name="COMMANDS"                 period="0.2"/>
     </mode>
@@ -241,6 +242,7 @@
       <message name="WLS_U"                    period="0.01"/>
       <message name="DEBUG_VECT"               period="0.1"/>
       <message name="PPM"                      period="0.1"/>
+      <message name="EXTERNAL_POSE_DOWN"       period="0.02"/>
     </mode>
   </process>
 

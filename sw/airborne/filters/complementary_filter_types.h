@@ -55,6 +55,32 @@ static inline void update_first_order_complementary_rates(struct FirstOrderCompl
 }
 
 /**
+ * @brief Reset 3D vector of 1st order complementary filters to a specific value.
+ *
+ * @param[in,out] filter Pointer to the FirstOrderComplementaryVect3 struct.
+ * @param[in] value Value to reset the filters to.
+ */
+static inline void reset_first_order_complementary_vect3(struct FirstOrderComplementaryVect3 *filter, const struct FloatVect3 *value)
+{
+  reset_first_order_complementary(&filter->x, value->x);
+  reset_first_order_complementary(&filter->y, value->y);
+  reset_first_order_complementary(&filter->z, value->z);
+}
+
+/**
+ * @brief Reset 3D vector of 1st order complementary filters for rates to a specific value.
+ *
+ * @param[in,out] filter Pointer to the FirstOrderComplementaryVect3 struct.
+ * @param[in] value Value to reset the filters to.
+ */
+static inline void reset_first_order_complementary_rates(struct FirstOrderComplementaryVect3 *filter, const struct FloatRates *value)
+{
+  reset_first_order_complementary(&filter->x, value->p);
+  reset_first_order_complementary(&filter->y, value->q);
+  reset_first_order_complementary(&filter->z, value->r);
+}
+
+/**
  * @brief Get current output 3D vector from 1st order complementary filters.
  *
  * @param[in] filter Pointer to FirstOrderComplementaryVect3 struct.

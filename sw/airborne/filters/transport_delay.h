@@ -46,7 +46,7 @@ struct TransportDelay {
  * @note: If delay_samples > TRANSPORT_DELAY_BUFFER_SIZE, it will be clamped to TRANSPORT_DELAY_BUFFER_SIZE
  *       and the requested delay will not be fully honored.
  */
-static inline void init_transport_delay(struct TransportDelay *td, uint8_t delay_samples, float initial_value)
+static inline void init_transport_delay(struct TransportDelay *td, uint8_t delay_samples, const float initial_value)
 {
   if (delay_samples > TRANSPORT_DELAY_BUFFER_SIZE) {
     delay_samples = TRANSPORT_DELAY_BUFFER_SIZE;
@@ -65,13 +65,27 @@ static inline void init_transport_delay(struct TransportDelay *td, uint8_t delay
  * @param[in] input New input value to add to the buffer.
  * @return Delayed output value from the buffer.
  */
-static inline float update_transport_delay(struct TransportDelay *td, float input)
+static inline float update_transport_delay(struct TransportDelay *td, const float input)
 {
   td->buffer[td->write_index] = input;
   uint8_t read_index = (td->write_index + TRANSPORT_DELAY_BUFFER_SIZE - td->delay_samples) % TRANSPORT_DELAY_BUFFER_SIZE;
   float output = td->buffer[read_index];
   td->write_index = (td->write_index + 1) % TRANSPORT_DELAY_BUFFER_SIZE;
   return output;
+}
+
+/**
+ * Reset the transport delay buffer to a specific initial value.
+ *
+ * @param[in,out] td Pointer to the transport_delay_t structure.
+ * @param[in] initial_value Value to reset the buffer elements to.
+ */
+static inline void reset_transport_delay(struct TransportDelay *td, const float initial_value)
+{
+  td->write_index = 0;
+  for (uint8_t i = 0; i < TRANSPORT_DELAY_BUFFER_SIZE; i++) {
+    td->buffer[i] = initial_value;
+  }
 }
 
 /**

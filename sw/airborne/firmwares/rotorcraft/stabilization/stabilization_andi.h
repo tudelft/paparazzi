@@ -136,7 +136,7 @@ extern union CycloneCoefficients obm_coefficients;
  * @note Implementation is airframe-specific.
  * @see obm_cyclone.c
  */
-struct FloatVect3 evaluate_obm_forces(const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT], const float actuator_state_dot[ANDI_NUM_ACT]);
+struct FloatVect3 evaluate_obm_forces(const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT]);
 
 /**
  * @brief Evaluate total moments acting on the vehicle from the OBM
@@ -156,7 +156,7 @@ struct FloatVect3 evaluate_obm_forces(const struct FloatRates *rates, const stru
  * @note Implementation is airframe-specific.
  * @see obm_cyclone.c
  */
-struct FloatVect3 evaluate_obm_moments(const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT], const float actuator_state_dot[ANDI_NUM_ACT]);
+struct FloatVect3 evaluate_obm_moments(const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT]);
 
 /**
  * @brief Evaluate the state-dependent control effectiveness matrix F_u for stabilization.

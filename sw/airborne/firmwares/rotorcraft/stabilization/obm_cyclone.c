@@ -318,11 +318,10 @@ static void cyclone_f_stb_x(const float rates[3], const float vel_body[3],
 
 /* End of code generation (cyclone_f_stb_x.c) */
 
-struct FloatVect3 evaluate_obm_forces(const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT], const float actuator_state_dot[ANDI_NUM_ACT])
+struct FloatVect3 evaluate_obm_forces(const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT])
 {
   float vel_body_array[3];
   (void)rates;
-  (void)actuator_state_dot;
 
   vel_body_array[0] = vel_body->x;
   vel_body_array[1] = vel_body->y;
@@ -339,7 +338,7 @@ struct FloatVect3 evaluate_obm_forces(const struct FloatRates *rates, const stru
   return forces;
 }
 
-struct FloatVect3 evaluate_obm_moments(const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT], const float actuator_state_dot[ANDI_NUM_ACT])
+struct FloatVect3 evaluate_obm_moments(const struct FloatRates *rates, const struct FloatVect3 *vel_body, const float actuator_state[ANDI_NUM_ACT])
 {
   float vel_body_array[3];
   float rates_array[3];
@@ -352,8 +351,6 @@ struct FloatVect3 evaluate_obm_moments(const struct FloatRates *rates, const str
   rates_array[1] = rates->q;
   rates_array[2] = rates->r;
 
-  // Ignore actuator_state_dot for now
-  (void)actuator_state_dot;
   float zeros[4];
   float_vect_zero(zeros, 4);
 
