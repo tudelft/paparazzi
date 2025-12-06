@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright (C) 2025 Justin Dubois <j.p.g.dubois@student.tudelft.nl>
  *
  * This file is part of paparazzi
@@ -16,25 +17,27 @@
  * You should have received a copy of the GNU General Public License
  * along with paparazzi; see the file COPYING.  If not, see
  * <http://www.gnu.org/licenses/>.
- */
-
-/*
- * Assumptions:
- * - Airframe is a tiltbody with 2 elevons and 2 motors in a tractor configuration
- * - Elevons are at index 0 and 1 in the actuator array
- * - Motors are at index 2 and 3 in the actuator array
- * - ESC neutral value corresponds to zero thrust (usually equals 0).
- * - Motors are controlled in squared rpm (to linearize thrust curve).
+ *
  */
 
 /**
- * FIXME: Normalization of WLS allocation is not ideal. The Wu and Wv costs are dependent on the
- * scaling of the control effectiveness matrix, which itself depends on the current state (e.g. airspeed).
- * A better approach would be to normalize the costs based on the maximum achievable control derivatives
- * for each actuator and output.
+ * @file sw/airborne/firmwares/rotorcraft/stabilization/stabilization_andi.c
+ * @brief ANDI stabilization controller for tiltbody rotorcraft.
+ *
+ * Implements Adaptive Nonlinear Dynamic Inversion (ANDI) for attitude and thrust control
+ * with on-board model compensation.
+ *
+ * Assumptions:
+ * - Airframe is a tiltbody with 2 elevons (indices 0,1) and 2 motors (indices 2,3) in tractor configuration.
+ * - ESC neutral value equals zero thrust (usually 0).
+ * - Motors controlled in squared RPM to linearize thrust curve.
+ *
+ * FIXME: WLS allocation normalization depends on control effectiveness scaling (state-dependent).
+ * Consider normalizing costs by max achievable derivatives per actuator/output.
+ *
+ * @author Justin Dubois <j.p.g.dubois@student.tudelft.nl>
  */
 
-/* Include necessary header files */
 
 #include "firmwares/rotorcraft/stabilization/stabilization_andi.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
@@ -161,6 +164,7 @@ const float WLS_WV[ANDI_OUTPUTS] = {[0 ... ANDI_OUTPUTS - 1] = 1.0f};
  * Normalized actuator cost for WLS allocation.
  * Each value corresponds to the relative cost of using each actuator, normalized over
  * the possible range of u_dot for that actuator.
+ * FIXME: This normalization is not ideal or constant, as it depends on the scaling of the control.
  */
 #ifdef STABILIZATION_ANDI_WLS_WU
 float WLS_WU[ANDI_NUM_ACT] = STABILIZATION_ANDI_WLS_WU;
@@ -327,7 +331,7 @@ struct ThrustRef thrust_bounds_min;
 struct ThrustRef thrust_bounds_max;
 
 // Controller variables
-float ce_mat[ANDI_OUTPUTS * ANDI_NUM_ACT];
+float ce_mat[ANDI_NUM_ACT * ANDI_OUTPUTS];
 float du_min[ANDI_NUM_ACT];
 float du_max[ANDI_NUM_ACT];
 float du_cmd[ANDI_NUM_ACT];
@@ -445,7 +449,8 @@ static void actuators_t4_in_callback(uint8_t sender_id UNUSED, struct ActuatorsT
  * and rotational speeds in radians per second, storing them in the
  * provided actuator_state array.
  *
- * FIXME: Avoid hardcoding indices, conversion factors, and inversions; ask Erik for possible solution. => Leave it be for now
+ * FIXME: Avoid hardcoding indices, conversion factors, and inversions; This requires additional functionality in actuators_t4.
+ * FIXME: Put actuator feedback / state management in a separate module.
  * FIXME: All ESC type actuators will be squared rpm for thrust linearization.
  *
  * @param[out] actuator_state Array of floats with size ANDI_NUM_ACT where the
@@ -1038,6 +1043,16 @@ void stabilization_andi_init(void)
 #endif
 }
 
+/**
+ * @brief Initializes the ANDI stabilization controller state upon entering stabilization mode.
+ *
+ * This function resets all relevant state variables, filters, and actuator states to match the current
+ * measurements when entering the ANDI stabilization mode. It ensures that the controller starts from a
+ * consistent state when entering stabilization.
+ * 
+ * FIXME: This function currently assumes that the actuator feedback message is being received.
+ * FIXME: Transient free initialization for the cascaded complementary filters is not implemented.
+ */
 void stabilization_andi_enter(void)
 {
   // Reset actuator states to current measurements
@@ -1098,6 +1113,46 @@ void stabilization_andi_enter(void)
 
 }
 
+/**
+ * @brief Main ANDI stabilization control loop.
+ *
+ * This function implements the core logic of the ANDI stabilization controller.
+ * The following steps are performed each time the function is called:
+ * 1. Fetch measurements:
+ * - Linear state (velocity and acceleration)
+ * - Attitude state (quaternion, angular rates, angular accelerations)
+ * - Actuator states (from T4 feedback and/or on-board model estimates)
+ * 
+ * 2. Filtering:
+ * - Apply cascaded complementary filtering to obtain an undelayed estimates of attitude and linear states. (used for state dependent model contribution (and scheduling))
+ * - Apply low-pass filtering to obtain synchronized (delayed) estimates of attitude and thrust states. (used for control error computation)
+ * 
+ * 3. Reference generation:
+ * - Generate reference models for attitude and thrust using desired setpoints and reference model gains.
+ * - Apply low-pass filtering to the references to synchronize with measurement lag.
+ * 
+ * 4. Pseudo-command computation:
+ * - Compute error controller pseudo command for attitude and thrust reference and feedback using parallel error controller.
+ * - Compute state dependent on-board model pseudo command contribution based on undelayed state estimates.
+ * - Combine pseudo commands to form the overall virtual control input vector.
+ * 
+ * 5. Actuator command allocation:
+ * - Update the control effectiveness matrix based on the current state.
+ * - Compute actuator commands using weighted least squares allocation with bounds and scaling.
+ * 
+ * @param[in] use_rate_control  Flag indicating whether to use rate control mode.
+ * @param[in] in_flight        Flag indicating whether the vehicle is in flight.
+ * @param[in,out] stab_setpoint Pointer to the stabilization setpoint structure.
+ * @param[in,out] thrust_setpoint Pointer to the thrust setpoint structure.
+ * @param[out] cmd             Pointer to the output command array for actuators.
+ * 
+ * @note The attitude stabilization mode is \c ATTITUDE_HEADING_MODE. 
+ * A heading estimate and setpoint is needed. Consider implementing
+ * \c ATTITUDE_HEADING_RATE_MODE to avoid needing a heading estimate.
+ * 
+ * FIXME: The function currently recomputes gains at each call. This could be optimized to only recompute when parameters change.
+ * FIXME: The choice of actuator feedback source (T4 vs on-board model) should be configurable.
+ */
 void stabilization_andi_run(bool use_rate_control, bool in_flight, struct StabilizationSetpoint *stab_setpoint, struct ThrustSetpoint *thrust_setpoint, int32_t *cmd)
 {
 
@@ -1124,7 +1179,6 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   attitude_meas.att_2d.z = (attitude_meas.att_d.r - rates_prev.r) * PERIODIC_FREQUENCY;
   rates_prev = attitude_meas.att_d; // Store previous rates for next acceleration calculation
 
-  // Fetch actuator measurements
   // Propagate and get on board model actuator state estimates
   float actuator_obm[ANDI_NUM_ACT];
   update_first_order_zoh_low_pass_array(ANDI_NUM_ACT, actuator_obm_zohlpf, u_cmd);
@@ -1145,35 +1199,34 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 
   // COMPLEMENTARY FILTERING
   // Evaluate On Board Model at previous state.
-   // Note: Using actuator_meas to avoid errors due to incorrect actuator model. Especially relevant for ESC.
+  // Note: Using actuator_meas to avoid errors due to incorrect actuator model. Especially relevant for ESC rpm.
   struct FloatVect3 angular_accel_obm = evaluate_obm_moments(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_meas);
   struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_meas);
 
-  // Cascaded complementary filter for linear velocity and acclererations
+  // Cascaded complementary filter for linear velocity and accelerations measurements
   update_first_order_complementary_vect3(&linear_accel_cf, &linear_accel_obm, &lin_meas.acc);
   linear_state_cf.acc = get_first_order_complementary_vect3(&linear_accel_cf);
   float_vect3_integrate_fi(&linear_velocity_obm, &linear_state_cf.acc, SAMPLE_TIME);
   update_first_order_complementary_vect3(&linear_vel_cf, &linear_velocity_obm, &lin_meas.vel);
   linear_state_cf.vel = get_first_order_complementary_vect3(&linear_vel_cf);
 
-  // Cascaded complementary filter for angular rates and accelerations
+  // Cascaded complementary filter for angular rates and accelerations measurements
   update_first_order_complementary_vect3(&attitude_accel_cf, &angular_accel_obm, &attitude_meas.att_2d);
   attitude_state_cf.att_2d = get_first_order_complementary_vect3(&attitude_accel_cf);
   float_rates_vect3_integrate_fi(&angular_rates_obm, &attitude_state_cf.att_2d, SAMPLE_TIME);
   update_first_order_complementary_rates(&attitude_rates_cf, &angular_rates_obm, &attitude_meas.att_d);
   attitude_state_cf.att_d = get_first_order_complementary_rates(&attitude_rates_cf);
+  attitude_state_cf.att = attitude_meas.att;
 
-  attitude_state_cf.att = attitude_meas.att; // No filtering on attitude
-
+  // Low-pass filtering for angular rates and accelerations measurements
   update_first_order_low_pass_vect3(&attitude_accel_meas_lpf, &attitude_meas.att_2d);
   attitude_state_lpf.att_2d = get_first_order_low_pass_vect3(&attitude_accel_meas_lpf);
   update_first_order_low_pass_rates(&attitude_rates_meas_lpf, &attitude_meas.att_d);
   attitude_state_lpf.att_d = get_first_order_low_pass_rates(&attitude_rates_meas_lpf);
+  attitude_state_lpf.att = attitude_meas.att;
 
-  attitude_state_lpf.att = attitude_meas.att; // No filtering on attitude
-
-
-  float thrust_meas = evaluate_obm_thrust_z(actuator_state); // Do not use actuator_t4_state here!
+  // Low-pass filtering for thrust measurement
+  float thrust_meas = evaluate_obm_thrust_z(actuator_state);
   update_first_order_low_pass(&thrust_meas_lpf, thrust_meas);
   thrust_state_lpf = get_first_order_low_pass(&thrust_meas_lpf);
 
@@ -1196,16 +1249,14 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   generate_reference_thrust(SAMPLE_TIME, thrust_des, andi_k_thrust_rm, &thrust_bounds_min, &thrust_bounds_max, &thrust_ref);
 
   // SYNC FILTERING OF REFERENCE INPUTS
-  attitude_ref_lpf.att_3d.x = attitude_ref.att_3d.x;
-  attitude_ref_lpf.att_3d.y = attitude_ref.att_3d.y;
-  attitude_ref_lpf.att_3d.z = attitude_ref.att_3d.z;
+  attitude_ref_lpf.att_3d = attitude_ref.att_3d;  // Feedforward, not filtered
   update_first_order_low_pass_vect3(&attitude_accel_sync_lpf, &attitude_ref.att_2d);
   attitude_ref_lpf.att_2d = get_first_order_low_pass_vect3(&attitude_accel_sync_lpf);
   update_first_order_low_pass_rates(&attitude_rates_sync_lpf, &attitude_ref.att_d);
   attitude_ref_lpf.att_d = get_first_order_low_pass_rates(&attitude_rates_sync_lpf);
-  attitude_ref_lpf.att = attitude_ref.att; // No filtering on attitude
+  attitude_ref_lpf.att = attitude_ref.att;
 
-  thrust_ref_lpf.thrust_d = thrust_ref.thrust;
+  thrust_ref_lpf.thrust_d = thrust_ref.thrust_d;  // Feedforward, not filtered
   update_first_order_low_pass(&thrust_sync_lpf, thrust_ref.thrust);
   thrust_ref_lpf.thrust = get_first_order_low_pass(&thrust_sync_lpf);
 
@@ -1248,11 +1299,11 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 
   // Reconstruct nu based actuator state, this should be close to state measurements if OBM is accurate
   float_vect_copy(nu_reconstructed, nu_obm, ANDI_OUTPUTS);
-  for (uint8_t i = 0; i < ANDI_NUM_ACT; i++)
+  for (uint8_t i = 0; i < ANDI_OUTPUTS; i++)
   {
-    for (uint8_t j = 0; j < ANDI_OUTPUTS; j++)
+    for (uint8_t j = 0; j < ANDI_NUM_ACT; j++)
     {
-      nu_reconstructed[j] += ce_mat[i * ANDI_OUTPUTS + j] * actuator_meas[i];
+      nu_reconstructed[j] += ce_mat[i * ANDI_NUM_ACT + j] * actuator_meas[i];
     }
   }
 
@@ -1280,7 +1331,8 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   for (uint8_t i = 0; i < ANDI_NUM_ACT; i++)
   {
     wls_stab_p.u_min[i] = du_min[i] * wls_u_scaler[i];
-    wls_stab_p.u_max[i] = du_max[i] * wls_u_scaler[i]; // FIXME: Put u_pref as mean of u_min, u_max?
+    wls_stab_p.u_max[i] = du_max[i] * wls_u_scaler[i];
+    wls_stab_p.u_pref[i] = (wls_stab_p.u_min[i] + wls_stab_p.u_max[i]) / 2.0f; // Use mid-point as preferred command
     wls_stab_p.Wu[i] = WLS_WU[i];
   }
 
@@ -1298,13 +1350,13 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   {
     du_cmd[i] = (wls_stab_p.u[i] / wls_u_scaler[i]);
     u_cmd[i] = du_cmd[i] / ACTUATOR_DYNAMICS[i] + actuator_state[i];
+    Bound(u_cmd[i], ACTUATOR_MIN[i], ACTUATOR_MAX[i]);
   }
 
   // Commit actuator commands
   // Resulting commands are in rad for servo and rad/s for motor
   // Paparazzi expects the commands in pprz units (-MAX_PPRZ to MAX_PPRZ for servo, 0 to MAX_PPRZ for motor).
   // FIXME: Do not hardcode actuator layout
-  // FIXME: Do not hardcode motor command to rpm factor (and use a better model for this mapping)
   commands[0] = (pprz_t)(u_cmd[0] / ACTUATOR_MAX[0] * MAX_PPRZ);
   commands[1] = (pprz_t)(u_cmd[1] / ACTUATOR_MAX[1] * MAX_PPRZ);
   commands[2] = (pprz_t)(sqrt(u_cmd[2] / ACTUATOR_MAX[2]) * MAX_PPRZ);
@@ -1316,16 +1368,6 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   cmd[COMMAND_THRUST] += (pprz_t)(sqrt(u_cmd[2] / ACTUATOR_MAX[2]) * MAX_PPRZ);
   cmd[COMMAND_THRUST] += (pprz_t)(sqrt(u_cmd[3] / ACTUATOR_MAX[3]) * MAX_PPRZ);
   cmd[COMMAND_THRUST] /= 2;
-
-}
-
-/**
- * @brief Default weak function for evaluating state feedback from onboard model.
- */
-void WEAK evaluate_obm_f_stb_x(float nu_obm[ANDI_OUTPUTS], const struct FloatRates *rates UNUSED, const struct FloatVect3 *vel_body UNUSED, const struct FloatVect3 *ang_accel UNUSED, const struct FloatVect3 *accel_body UNUSED, const float actuator_state[ANDI_NUM_ACT] UNUSED)
-{
-  // Default: No state feedback
-  float_vect_zero(nu_obm, ANDI_OUTPUTS);
 }
 
 // FIXME: The following functions are to integrate the controller in the existing stabilization framework, find a better way to do this
