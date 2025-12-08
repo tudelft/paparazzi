@@ -27,6 +27,7 @@
 #define ONELOOP_NB_H
 //====================================================================================================================================
 // Include the header files needed
+#include "math/pprz_algebra_float.h"
 #include "firmwares/rotorcraft/stabilization.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_common_int.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_ref_quat_int.h"
@@ -58,6 +59,8 @@
 /** Control types.*/
 #define  CTRL_ANDI 0
 #define  CTRL_INDI 1
+#define  CTRL_NB_ANDI 2
+#define  CTRL_NB_INDI 3
 
 //====================================================================================================================================
 // Declaration of global variables
@@ -119,13 +122,25 @@ struct OneloopStabilizationState {
   float att_d[3]; 
   float att_2d[3];
 };
+struct OneloopStabilizationnBState {
+  struct FloatVect3 nB;     
+  struct FloatVect3 nB_d; 
+  struct FloatVect3 nB_2d;
+  struct FloatVect3 nI_des;
+  struct FloatVect3 nI;
+  struct FloatVect3 nI_d;
+  struct FloatVect3 nI_2d;
+  struct FloatVect3 nI_3d;
+  struct FloatVect3 mu_B;
+};
 struct OneloopGeneral {
   bool   half_loop;
   int    ctrl_type;
-  struct OneloopGuidanceRef         gui_ref;     // Guidance References
-  struct OneloopGuidanceState       gui_state;   // Guidance State
-  struct OneloopStabilizationRef    sta_ref;     // Stabilization References
-  struct OneloopStabilizationState  sta_state;   // Stabilization State
+  struct OneloopGuidanceRef           gui_ref;      // Guidance References
+  struct OneloopGuidanceState         gui_state;    // Guidance State
+  struct OneloopStabilizationRef      sta_ref;      // Stabilization References
+  struct OneloopStabilizationState    sta_state;    // Stabilization State
+  struct OneloopStabilizationnBState  sta_nB_state; // nB Stabilization State
 };
 extern struct OneloopGeneral oneloop_nB;
 //====================================================================================================================================

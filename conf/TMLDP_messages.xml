@@ -1721,7 +1721,17 @@
       <field name="max_airspeed"    type="float" unit="m/s">Maximum airspeed bound for NAV</field>
     </message>
 
-    <!-- 182 is free -->
+    <message name="NB_CTRL" id="182">
+      <field name="nI_des"  type="float[]">Stick Input Desired vector in Inertial</field>
+      <field name="nI"      type="float[]">Desired vector in Inertial after RM</field>
+      <field name="nI_d"    type="float[]">Desired vector 1st derivative in Inertial</field>
+      <field name="nI_2d"   type="float[]">Desired vector 2nd derivative in Inertial</field>
+      <field name="nI_3d"   type="float[]">Desired vector 3rd derivative in Inertial</field>
+      <field name="nB"      type="float[]">Desired vector in Body after RM</field>
+      <field name="nB_d"    type="float[]">Desired vector 1st derivative in Body</field>
+      <field name="nB_2d"   type="float[]">Desired vector 2nd derivative in Body</field>
+      <field name="mu_B"    type="float[]">Pricipal rotation axis</field>
+    </message>
 
     <message name="DOUBLET" id="183">
       <field name="active"              type="uint8">Doublet is active</field>

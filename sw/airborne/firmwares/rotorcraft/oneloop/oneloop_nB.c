@@ -179,7 +179,6 @@ PRINT_CONFIG_VAR(ANDI_NUM_ACT_TOT)
 PRINT_CONFIG_VAR(ANDI_OUTPUTS)
 PRINT_CONFIG_MSG("============================================================")
 struct Oneloop_LP_t         LP;
-struct Oneloop_LP_t         oneloop_nB_model_filt;
 
 #define USE_PID_NUMDIFF_DERIVATIVE
 #ifdef USE_PID_NUMDIFF_DERIVATIVE
@@ -274,6 +273,7 @@ float         nu[ANDI_OUTPUTS];                                                 
 float         nu_n[ANDI_OUTPUTS];                                               // Pseudo control vector (normalized)
 static float  act_dynamics_d[ANDI_NUM_ACT_TOT];                                 // Actuator dynamics (first order lag) corner frequency [rad/s]
 float         actuator_state_1l[ANDI_NUM_ACT_TOT];                              // Actuator state vector (including virtual actuators)
+float         delete_me_nB_nu[3];
 //====================================================================================================================================
 // STABILIZATION VARIABLES
 //====================================================================================================================================
@@ -514,6 +514,7 @@ void  rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref
 void  rm_3rd_pos(float dt, float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_des[], float k1_rm[], float k2_rm[], float k3_rm[], float x_d_bound, float x_2d_bound, float x_3d_bound, int n);
 void  rm_2nd_pos(float dt, float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_d_des[], float k2_rm[], float k3_rm[], float x_2d_bound, float x_3d_bound, int n);
 void  rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], float k3_rm[], float x_3d_bound, int n);
+void  rm_3rd_nI(float dt, struct FloatVect3 *x_ref, struct FloatVect3 *x_d_ref, struct FloatVect3 *x_2d_ref, struct FloatVect3 *x_3d_ref, const struct FloatVect3 *x_des, const float k1_rm[3], const float k2_rm[3], const float k3_rm[3]);
 void  ec_3rd_att(float y_4d[3], float x_des[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3], struct OneloopStabilizationRef bounds, float fb[3]);
 void  ec_3rd_pos(float y_4d[], float x_des[], float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x[], float x_d[], float x_2d[], float k1_e[], float k2_e[], float k3_e[], float x_d_bound, float x_2d_bound, float fb[], int n);
 float oneloop_nB_sideslip(void);
@@ -524,7 +525,10 @@ void  oneloop_calc_model_disturbance(bool in_flight);
 void  oneloop_nB_state_compensation(bool state_compensation_on);
 void  set_WLS_settings(void);
 void  drop_axis(void);
-
+void  skew_symmetric(struct FloatRMat *out, const struct FloatVect3 *in);
+void  oneloop_nB_calc_nB_states(void);
+void  nB_EC(struct FloatVect3 nB, struct FloatVect3 nB_d, struct FloatVect3 nB_2d, struct FloatVect3 mu_B, float k1_e[3], float k2_e[3], float k3_e[3], float dist[3], float nB_nu[3]);
+void  calc_HB_matrix(float HB[3][3], struct FloatVect3 nB);
 //====================================================================================================================================
 // Telemetry Section
 //====================================================================================================================================
@@ -569,6 +573,28 @@ static void send_oneloop_nB(struct transport_tx *trans, struct link_device *dev)
                               3, oneloop_nB.sta_ref.att_3d,
                               ANDI_NUM_ACT, actuator_state_1l);
 }
+static void send_oneloop_nB_ctrl(struct transport_tx *trans, struct link_device *dev)
+{
+  float nI_des[3] = {oneloop_nB.sta_nB_state.nI_des.x, oneloop_nB.sta_nB_state.nI_des.y, oneloop_nB.sta_nB_state.nI_des.z};
+  float nI[3]     = {oneloop_nB.sta_nB_state.nI.x,     oneloop_nB.sta_nB_state.nI.y,     oneloop_nB.sta_nB_state.nI.z};
+  float nI_d[3]   = {oneloop_nB.sta_nB_state.nI_d.x,   oneloop_nB.sta_nB_state.nI_d.y,   oneloop_nB.sta_nB_state.nI_d.z};
+  float nI_2d[3]  = {oneloop_nB.sta_nB_state.nI_2d.x,  oneloop_nB.sta_nB_state.nI_2d.y,  oneloop_nB.sta_nB_state.nI_2d.z};
+  float nI_3d[3]  = {oneloop_nB.sta_nB_state.nI_3d.x,  oneloop_nB.sta_nB_state.nI_3d.y,  oneloop_nB.sta_nB_state.nI_3d.z};
+  float nB[3]     = {oneloop_nB.sta_nB_state.nB.x,     oneloop_nB.sta_nB_state.nB.y,     oneloop_nB.sta_nB_state.nB.z};
+  float nB_d[3]   = {oneloop_nB.sta_nB_state.nB_d.x,   oneloop_nB.sta_nB_state.nB_d.y,   oneloop_nB.sta_nB_state.nB_d.z};
+  float nB_2d[3]  = {oneloop_nB.sta_nB_state.nB_2d.x,  oneloop_nB.sta_nB_state.nB_2d.y,  oneloop_nB.sta_nB_state.nB_2d.z};
+  float mu_B[3]    = {oneloop_nB.sta_nB_state.mu_B.x,    oneloop_nB.sta_nB_state.mu_B.y,    oneloop_nB.sta_nB_state.mu_B.z};
+  pprz_msg_send_NB_CTRL(trans, dev, AC_ID,
+                              3, nI_des,
+                              3, nI,
+                              3, nI_d,
+                              3, nI_2d,
+                              3, nI_3d,
+                              3, nB,
+                              3, nB_d,
+                              3, nB_2d,
+                              3, mu_B);
+}
 static void send_guidance_oneloop_nB(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_GUIDANCE(trans, dev, AC_ID,
@@ -602,7 +628,7 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
 }
 static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
 {
-  float temp_debug_vect[9];
+  float temp_debug_vect[12];
   //temp_debug_vect[0] = oneloop_nB_model[0];
   //temp_debug_vect[1] = oneloop_nB_model[1];
   //temp_debug_vect[2] = oneloop_nB_model[2];
@@ -617,8 +643,11 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
   temp_debug_vect[5] = temp_D_error[2];
   temp_debug_vect[6] = temp_I_error[0];
   temp_debug_vect[7] = temp_I_error[1];
-  temp_debug_vect[8] = temp_I_error[2];  
-  debug_vect(trans, dev, "APF", temp_debug_vect, 9);
+  temp_debug_vect[8] = temp_I_error[2]; 
+  temp_debug_vect[9] = delete_me_nB_nu[0];
+  temp_debug_vect[10] = delete_me_nB_nu[1];
+  temp_debug_vect[11] = delete_me_nB_nu[2]; 
+  debug_vect(trans, dev, "APF", temp_debug_vect, 12);
 }
 #endif
 //====================================================================================================================================
@@ -1437,24 +1466,17 @@ static inline void init_all_LP(void)
   init_LP(&LP.p, 15.0); // oneloop_nB_filt_cutoff_p
   init_LP(&LP.q, 15.0); // oneloop_nB_filt_cutoff_q
   init_LP(&LP.r, 15.0); // oneloop_nB_filt_cutoff_r
-
-  init_LP(&oneloop_nB_model_filt.ax, 2.0); // oneloop_nB_filt_cutoff_a
-  init_LP(&oneloop_nB_model_filt.ay, 2.0); // oneloop_nB_filt_cutoff_a
-  init_LP(&oneloop_nB_model_filt.az, 2.0); // oneloop_nB_filt_cutoff_a
-  init_LP(&oneloop_nB_model_filt.p_dot, 2.0);
-  init_LP(&oneloop_nB_model_filt.q_dot, 2.0);
-  init_LP(&oneloop_nB_model_filt.r_dot, 2.0);
 }
 
 /** @brief Reinitialize all the Low Pass Filters */
 static inline void reinit_all_LP(bool reinit)
 {
-  reinit_LP_synchronous(&LP.ax, &oneloop_nB_model_filt.ax, reinit);
-  reinit_LP_synchronous(&LP.ay, &oneloop_nB_model_filt.ay, reinit);
-  reinit_LP_synchronous(&LP.az, &oneloop_nB_model_filt.az, reinit);
-  reinit_LP_synchronous(&LP.p_dot, &oneloop_nB_model_filt.p_dot, reinit);
-  reinit_LP_synchronous(&LP.q_dot, &oneloop_nB_model_filt.q_dot, reinit);
-  reinit_LP_synchronous(&LP.r_dot, &oneloop_nB_model_filt.r_dot, reinit);
+  //reinit_LP_synchronous(&LP.ax, &oneloop_nB_model_filt.ax, reinit);
+  //reinit_LP_synchronous(&LP.ay, &oneloop_nB_model_filt.ay, reinit);
+  //reinit_LP_synchronous(&LP.az, &oneloop_nB_model_filt.az, reinit);
+  //reinit_LP_synchronous(&LP.p_dot, &oneloop_nB_model_filt.p_dot, reinit);
+  //reinit_LP_synchronous(&LP.q_dot, &oneloop_nB_model_filt.q_dot, reinit);
+  //reinit_LP_synchronous(&LP.r_dot, &oneloop_nB_model_filt.r_dot, reinit);
   reinit_LP(&LP.p, reinit);
   reinit_LP(&LP.q, reinit);
   reinit_LP(&LP.r, reinit);
@@ -1533,18 +1555,6 @@ void oneloop_nB_propagate_filters(void)
 /** @brief Re-Init function of controller variables */
 void reinit_controller(void)
 {
-  //printf("Re-INIT \n");
-  // store float version of commands
-  // float commands_float[ANDI_NUM_ACT_TOT];
-  // for (int i = 0; i < ANDI_NUM_ACT; i++) {
-  //   commands_float[i] = (float)commands[i];
-  // }
-  // Actuators
-  // float_vect_copy(andi_u, commands_float, ANDI_NUM_ACT);
-  
-  // float_vect_zero(andi_du, ANDI_NUM_ACT_TOT);  // Not used
-  // float_vect_zero(andi_u_n, ANDI_NUM_ACT_TOT); // Not used
-  // float_vect_copy(actuator_state_1l, commands_float, ANDI_NUM_ACT);
   //  Stabilization
   float_vect_copy(oneloop_nB.sta_ref.att, oneloop_nB.sta_state.att, 3);
   float_vect_copy(oneloop_nB.sta_ref.att_d, oneloop_nB.sta_state.att_d, 3);
@@ -1558,25 +1568,19 @@ void reinit_controller(void)
   float_vect_copy(oneloop_nB.gui_ref.vel, oneloop_nB.gui_state.vel, 3);
   float_vect_copy(oneloop_nB.gui_ref.acc, oneloop_nB.gui_state.acc, 3);
   float_vect_zero(oneloop_nB.gui_ref.jer, 3);
-  // Controller Inputs
-  // float_vect_zero(nu, ANDI_OUTPUTS); // Not used
-  // float_vect_zero(nu_n, ANDI_OUTPUTS); // Not used
-  // float_vect_zero(nav_target,3); // Not used
-  // float_vect_zero(nav_target_new,3); // Not used
+  // nB controller
+  oneloop_nB.sta_nB_state.nI.x = 0.0;
+  oneloop_nB.sta_nB_state.nI.y = 0.0;
+  oneloop_nB.sta_nB_state.nI.z =-1.0;
 }
 /** @brief Init function of Oneloop ANDI controller  */
 void oneloop_nB_init(void)
 {
-  //printf("INIT \n");
   oneloop_nB.half_loop = true;
   oneloop_nB.ctrl_type = CTRL_ANDI;
   init_poles();
   // Make sure that the dynamics are positive and non-zero
-  int8_t i;
-  for (i = 0; i < ANDI_NUM_ACT_TOT; i++)
-  {
-    act_dynamics[i] = positive_non_zero(act_dynamics[i]);
-  }
+  for (int8_t i = 0; i < ANDI_NUM_ACT_TOT; i++){act_dynamics[i] = positive_non_zero(act_dynamics[i]);}
   // Initialize Effectiveness matrix
   calc_normalization();
   G1G2_oneloop(oneloop_nB.ctrl_type);
@@ -1599,13 +1603,17 @@ void oneloop_nB_init(void)
   eulers_zxy_des.phi = 0.0;
   eulers_zxy_des.theta = 0.0;
   eulers_zxy_des.psi = 0.0;
+  // nB controller
+  oneloop_nB.sta_nB_state.nI.x = 0.0;
+  oneloop_nB.sta_nB_state.nI.y = 0.0;
+  oneloop_nB.sta_nB_state.nI.z =-1.0;
 // Start telemetry
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_oneloop_nB);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE, send_oneloop_nB_ctrl);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_STAB, send_eff_mat_stab_oneloop_nB);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EFF_MAT_GUID, send_eff_mat_guid_oneloop_nB);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE, send_guidance_oneloop_nB);
-  // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATOR_STATE, send_oneloop_actuator_state);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_VECT, send_oneloop_debug);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_V, send_wls_v_oneloop);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_U, send_wls_u_oneloop);
@@ -1620,18 +1628,13 @@ void oneloop_nB_init(void)
  */
 void oneloop_nB_enter(bool half_loop_sp, int ctrl_type)
 {
-  ele_min = 0.0;
   oneloop_nB.half_loop = half_loop_sp;
   oneloop_nB.ctrl_type = ctrl_type;
   psi_des_rad = eulers_zxy.psi;
   psi_des_deg = DegOfRad(eulers_zxy.psi);
   calc_normalization();
   G1G2_oneloop(oneloop_nB.ctrl_type);
-  // reinit_all_LP(true); // Not used
-  // init_filter();
   init_controller_gains();
-  /* Stabilization Reset */
-  /*Guidance Reset*/
   reinit_controller();
 }
 
@@ -1642,20 +1645,46 @@ void oneloop_nB_enter(bool half_loop_sp, int ctrl_type)
  */
 void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_oneloop)
 {
+  printf("Starting Oneloop ANDI RM\n");
   // Initialize some variables
-  a_thrust            = 0.0;
-  nav_target[0]       = PSA_des.x;
-  nav_target[1]       = PSA_des.y;
-  nav_target[2]       = PSA_des.z;
-  float thrust_cmd_1l = 0.0;
-  float des_r         = 0.0;
+  a_thrust               = 0.0;
+  nav_target[0]          = PSA_des.x;
+  nav_target[1]          = PSA_des.y;
+  nav_target[2]          = PSA_des.z;
+  float radio_thrust_cmd = 0.0;
+  float radio_roll_cmd   = 0.0;
+  float radio_pitch_cmd  = 0.0;
+  float des_r            = 0.0;
   // Generate reference signals with reference model
   if (half_loop)
   {
+    printf("Half loop mode RM enabled\n");
     // ======================================================================================================================================================
     // PHI & THETA Set desired attitude with stick input
-    eulers_zxy_des.phi   = (float)(radio_control_get(RADIO_ROLL)) / MAX_PPRZ * ONELOOP_NB_MAX_PHI;
-    eulers_zxy_des.theta = (float)(radio_control_get(RADIO_PITCH)) / MAX_PPRZ * ONELOOP_NB_MAX_THETA;
+    radio_roll_cmd  = (float)(radio_control_get(RADIO_ROLL));
+    radio_pitch_cmd = (float)(radio_control_get(RADIO_PITCH));
+    Bound(radio_roll_cmd, -MAX_PPRZ, MAX_PPRZ);
+    Bound(radio_pitch_cmd, -MAX_PPRZ, MAX_PPRZ);
+    eulers_zxy_des.phi   = radio_roll_cmd / MAX_PPRZ * ONELOOP_NB_MAX_PHI;
+    eulers_zxy_des.theta = radio_pitch_cmd / MAX_PPRZ * ONELOOP_NB_MAX_THETA;
+    float sphi_des   = sinf(eulers_zxy_des.phi);
+    float cphi_des   = cosf(eulers_zxy_des.phi);
+    float stheta_des = sinf(eulers_zxy_des.theta);
+    float ctheta_des = cosf(eulers_zxy_des.theta);
+    oneloop_nB.sta_nB_state.nI_des.x = -stheta_des;
+    oneloop_nB.sta_nB_state.nI_des.y = sphi_des*ctheta_des;
+    oneloop_nB.sta_nB_state.nI_des.z = -cphi_des*ctheta_des;
+#define nB_RADIO_BODY_CTRL
+#ifdef nB_RADIO_BODY_CTRL
+    float sin_psi = sinf(eulers_zxy.psi);
+    float cos_psi = cosf(eulers_zxy.psi);
+    struct FloatVect3 nI_des_NED;
+    nI_des_NED.x = oneloop_nB.sta_nB_state.nI_des.x * cos_psi - oneloop_nB.sta_nB_state.nI_des.y * sin_psi;
+    nI_des_NED.y = oneloop_nB.sta_nB_state.nI_des.x * sin_psi + oneloop_nB.sta_nB_state.nI_des.y * cos_psi;
+    oneloop_nB.sta_nB_state.nI_des.x = nI_des_NED.x;
+    oneloop_nB.sta_nB_state.nI_des.y = nI_des_NED.y;
+#else
+#endif
     // ======================================================================================================================================================
     // PSI Set desired Yaw rate with stick input
     des_r = (float)(radio_control_get(RADIO_YAW)) / MAX_PPRZ * max_r; // Get yaw rate from stick
@@ -1671,26 +1700,49 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
     NormRadAngle(psi_des_rad);
     // ======================================================================================================================================================
     // THRUST Create commands adhoc to get actuators to the wanted level
-    thrust_cmd_1l = (float)radio_control_get(RADIO_THROTTLE);
-    Bound(thrust_cmd_1l, 0.0, MAX_PPRZ);
+    radio_thrust_cmd = (float)radio_control_get(RADIO_THROTTLE);
+    Bound(radio_thrust_cmd, 0.0, MAX_PPRZ);
     int8_t i;
     // To calculate the nu corrsponding to the Thrust command, plug it in the control law.
     for (i = 0; i < ANDI_NUM_ACT; i++)
     {
-      if (oneloop_nB.ctrl_type == CTRL_ANDI)
+      switch (oneloop_nB.ctrl_type)
       {
-        a_thrust += (thrust_cmd_1l)*EFF_MAT_RW[RW_aD][i] * act_dyn_ctrl[i];
-      }
-      else
-      {
-        a_thrust += (thrust_cmd_1l)*EFF_MAT_RW[RW_aD][i];
+      case (CTRL_ANDI):
+      case (CTRL_NB_ANDI):
+        a_thrust += (radio_thrust_cmd) * EFF_MAT_RW[RW_aD][i] * act_dyn_ctrl[i];
+        break;
+      case (CTRL_INDI):
+      case (CTRL_NB_INDI):
+        a_thrust += (radio_thrust_cmd) * EFF_MAT_RW[RW_aD][i];
+        break;
+      default:
+        a_thrust += (radio_thrust_cmd) * EFF_MAT_RW[RW_aD][i];
+        break;
       }
     }
     a_thrust = a_thrust - oneloop_nB_model[IDX_aD]; // Subtract model disturbance
     ctrl_off = false; // Make sure all control on for manual takeover
+    nu[IDX_aD] = a_thrust;
   }
   else
   {
+    // ======================================================================================================================================================
+    // Need to save and convert desired position for bounding. Not sure NAV always updates this correctly.
+    float pos_des[3];
+    pos_des[0] = POS_FLOAT_OF_BFP(POS_BFP_OF_REAL(nav.target.y));
+    pos_des[1] = POS_FLOAT_OF_BFP(POS_BFP_OF_REAL(nav.target.x));
+    pos_des[2] = POS_FLOAT_OF_BFP(-POS_BFP_OF_REAL(nav.nav_altitude));
+    // ======================================================================================================================================================
+    // PID Guidance 
+    float acc_des[3];
+    Pos_PID(pos_des, oneloop_nB.gui_state.pos, oneloop_nB.gui_state.vel, k_P, k_I, k_D,acc_des);
+    nu[IDX_aD] = (acc_des[2]-oneloop_nB.gui_state.acc[2])*k_pos_e.k3[2];
+    shape_vector(acc_des);
+    eul_of_acc(acc_des, eulers_zxy.psi);
+    oneloop_nB.sta_nB_state.nI_des.x = acc_des[0];
+    oneloop_nB.sta_nB_state.nI_des.y = acc_des[1];
+    oneloop_nB.sta_nB_state.nI_des.z = acc_des[2];
     // Update desired Heading (psi_des_rad) based on previous loop or changed setting
     if (heading_manual)
     {
@@ -1711,8 +1763,24 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
   eulers_zxy_des.psi = psi_des_rad;
   // ======================================================================================================================================================
   // Set and Save the desired attitude and run the attitude RM
-  float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, eulers_zxy_des.psi};
-  rm_3rd_attitude(dt_1l, oneloop_nB.sta_ref.att, oneloop_nB.sta_ref.att_d, oneloop_nB.sta_ref.att_2d, oneloop_nB.sta_ref.att_3d, att_des, false, psi_vec, k_att_rm.k1, k_att_rm.k2, k_att_rm.k3, sta_bounds);
+  switch (oneloop_nB.ctrl_type)
+  {
+    case CTRL_ANDI:
+    case CTRL_INDI:
+      float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, eulers_zxy_des.psi};
+      rm_3rd_attitude(dt_1l, oneloop_nB.sta_ref.att, oneloop_nB.sta_ref.att_d, oneloop_nB.sta_ref.att_2d, oneloop_nB.sta_ref.att_3d, att_des, false, psi_vec, k_att_rm.k1, k_att_rm.k2, k_att_rm.k3, sta_bounds);
+    //   break;
+    // case CTRL_NB_ANDI:
+    // case CTRL_NB_INDI:
+      printf("Running nB RM\n");
+      rm_3rd_nI(dt_1l, &oneloop_nB.sta_nB_state.nI, &oneloop_nB.sta_nB_state.nI_d, &oneloop_nB.sta_nB_state.nI_2d, &oneloop_nB.sta_nB_state.nI_3d, &oneloop_nB.sta_nB_state.nI_des, k_att_rm.k1, k_att_rm.k2, k_att_rm.k3);
+      break;
+  }
+  printf("Completed RM step\n");
+  printf("nI: x: %f y: %f z: %f\n", oneloop_nB.sta_nB_state.nI.x, oneloop_nB.sta_nB_state.nI.y, oneloop_nB.sta_nB_state.nI.z);
+  printf("nI_d: x: %f y: %f z: %f\n", oneloop_nB.sta_nB_state.nI_d.x, oneloop_nB.sta_nB_state.nI_d.y, oneloop_nB.sta_nB_state.nI_d.z);
+  printf("nI_2d: x: %f y: %f z: %f\n", oneloop_nB.sta_nB_state.nI_2d.x, oneloop_nB.sta_nB_state.nI_2d.y, oneloop_nB.sta_nB_state.nI_2d.z);
+  
   // ======================================================================================================================================================
 }
 
@@ -1730,18 +1798,11 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
   init_controller_gains();
   calc_normalization();
   get_act_state_oneloop();
-  G1G2_oneloop(oneloop_nB.ctrl_type);
-  // ======================================================================================================================================================
-  // Need to save and convert desired position for bounding. Not sure NAV always updates this correctly.
-  float pos_des[3];
-  pos_des[0] = POS_FLOAT_OF_BFP(POS_BFP_OF_REAL(nav.target.y));
-  pos_des[1] = POS_FLOAT_OF_BFP(POS_BFP_OF_REAL(nav.target.x));
-  pos_des[2] = POS_FLOAT_OF_BFP(-POS_BFP_OF_REAL(nav.nav_altitude));
   // ======================================================================================================================================================
   // If drone is not on the ground use incremental law
   bool  in_flight_oneloop = false;
   if(in_flight) {in_flight_oneloop = true;}
-  if (ONELOOP_NB_DEBUG_MODE){in_flight_oneloop = false;}
+  if (ONELOOP_NB_DEBUG_MODE){in_flight_oneloop = true;}
   // ======================================================================================================================================================
   // Calculate disturbance (model control effort) based on the model
   oneloop_calc_model_disturbance(in_flight);
@@ -1773,40 +1834,58 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
   g2_ff = 0.0;
   for (int i = 0; i < ANDI_NUM_ACT; i++)
   {
-    if (oneloop_nB.ctrl_type == CTRL_ANDI)
+    switch (oneloop_nB.ctrl_type)
     {
+    case CTRL_ANDI:
       g2_ff += G2_RW[i] * act_dyn_ctrl[i] * (andi_u[i] - u_filt[i].o[0]);
-    }
-    else if (oneloop_nB.ctrl_type == CTRL_INDI)
-    {
+      break;
+    case CTRL_INDI:
       g2_ff += G2_RW[i] * (andi_u[i] - u_filt[i].o[0]);
+      break;
+    default:
+      break;
     }
   }
   // ======================================================================================================================================================
   // Run the Reference Model (RM)
   oneloop_nB_RM(half_loop, PSA_des, in_flight_oneloop);
   // ======================================================================================================================================================
-  // PID Guidance 
-  float acc_des[3];
-  Pos_PID(pos_des, oneloop_nB.gui_state.pos, oneloop_nB.gui_state.vel, k_P, k_I, k_D,acc_des);
-  nu[IDX_aD] = (acc_des[2]-oneloop_nB.gui_state.acc[2])*k_pos_e.k3[2];
-  shape_vector(acc_des);
-  eul_of_acc(acc_des, eulers_zxy.psi);
-  if (half_loop){nu[IDX_aD] = a_thrust;}
+  // Calculate new nB states based on updated RM for nI
+  oneloop_nB_calc_nB_states();
+  // ======================================================================================================================================================
+  // Update Effectiveness matrix based on the control type
+  G1G2_oneloop(oneloop_nB.ctrl_type);
   // ======================================================================================================================================================
   // Attitude EC
   float att_jerk_des[3];
+  float delete_me_nB_nu[3];
   float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, eulers_zxy_des.psi};
-  if (oneloop_nB.ctrl_type == CTRL_ANDI)
+  oneloop_nB.sta_nB_state.mu_B.x = 0.0;
+  oneloop_nB.sta_nB_state.mu_B.y = 0.0;
+  oneloop_nB.sta_nB_state.mu_B.z =-1.0;
+
+  switch (oneloop_nB.ctrl_type)
   {
-    float temp_dist_bound_sta[3] = {oneloop_nB_model[IDX_ap], oneloop_nB_model[IDX_aq], oneloop_nB_model[IDX_ar]};
-    ec_3rd_att(att_jerk_des, att_des, oneloop_nB.sta_ref.att, oneloop_nB.sta_ref.att_d, oneloop_nB.sta_ref.att_2d, oneloop_nB.sta_ref.att_3d, oneloop_nB.sta_state.att, oneloop_nB.sta_state.att_d, oneloop_nB.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds, temp_dist_bound_sta);
-  }
-  else if (oneloop_nB.ctrl_type == CTRL_INDI)
-  {
-    float dummy0[3] = {0.0, 0.0, 0.0};
-    float temp_dist_bound_sta_INDI[3] = {oneloop_nB_model[IDX_ap] * k_att_e.k3[0], oneloop_nB_model[IDX_aq] * k_att_e.k3[1], oneloop_nB_model[IDX_ar] * k_att_e.k3[2]};
-    ec_3rd_att(att_jerk_des, att_des, oneloop_nB.sta_ref.att, oneloop_nB.sta_ref.att_d, oneloop_nB.sta_ref.att_2d, dummy0, oneloop_nB.sta_state.att, oneloop_nB.sta_state.att_d, oneloop_nB.sta_state.att_2d, k_att_e_indi.k1, k_att_e_indi.k2, k_att_e_indi.k3, sta_bounds, temp_dist_bound_sta_INDI);
+    case CTRL_ANDI:
+      float temp_dist_bound_sta[3] = {oneloop_nB_model[IDX_ap], oneloop_nB_model[IDX_aq], oneloop_nB_model[IDX_ar]};
+      float dummy1[3] = {1.0, 1.0, 1.0};
+      ec_3rd_att(att_jerk_des, att_des, oneloop_nB.sta_ref.att, oneloop_nB.sta_ref.att_d, oneloop_nB.sta_ref.att_2d, oneloop_nB.sta_ref.att_3d, oneloop_nB.sta_state.att, oneloop_nB.sta_state.att_d, oneloop_nB.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds, temp_dist_bound_sta);
+      float nB_dist_INDI_2[3] = {oneloop_nB_model[IDX_ap] * k_att_e.k3[0], oneloop_nB_model[IDX_aq] * k_att_e.k3[1], oneloop_nB_model[IDX_ar] * k_att_e.k3[2]};
+      nB_EC(oneloop_nB.sta_nB_state.nB, oneloop_nB.sta_nB_state.nB_d, oneloop_nB.sta_nB_state.nB_2d, oneloop_nB.sta_nB_state.mu_B, k_att_e.k1, k_att_e.k2, dummy1, nB_dist_INDI_2, delete_me_nB_nu);
+      break;
+    case CTRL_INDI:
+      float dummy0[3] = {0.0, 0.0, 0.0};
+      float temp_dist_bound_sta_INDI[3] = {oneloop_nB_model[IDX_ap] * k_att_e.k3[0], oneloop_nB_model[IDX_aq] * k_att_e.k3[1], oneloop_nB_model[IDX_ar] * k_att_e.k3[2]};
+      ec_3rd_att(att_jerk_des, att_des, oneloop_nB.sta_ref.att, oneloop_nB.sta_ref.att_d, oneloop_nB.sta_ref.att_2d, dummy0, oneloop_nB.sta_state.att, oneloop_nB.sta_state.att_d, oneloop_nB.sta_state.att_2d, k_att_e_indi.k1, k_att_e_indi.k2, k_att_e_indi.k3, sta_bounds, temp_dist_bound_sta_INDI);
+      break;
+    case CTRL_NB_ANDI:
+      float nB_dist_ANDI[3] = {oneloop_nB_model[IDX_ap], oneloop_nB_model[IDX_aq], oneloop_nB_model[IDX_ar]};
+      nB_EC(oneloop_nB.sta_nB_state.nB, oneloop_nB.sta_nB_state.nB_d, oneloop_nB.sta_nB_state.nB_2d, oneloop_nB.sta_nB_state.mu_B, k_att_e.k1, k_att_e.k2, k_att_e.k3, nB_dist_ANDI, att_jerk_des);
+      break;
+    case CTRL_NB_INDI:
+      float nB_dist_INDI[3] = {oneloop_nB_model[IDX_ap] * k_att_e.k3[0], oneloop_nB_model[IDX_aq] * k_att_e.k3[1], oneloop_nB_model[IDX_ar] * k_att_e.k3[2]};
+      nB_EC(oneloop_nB.sta_nB_state.nB, oneloop_nB.sta_nB_state.nB_d, oneloop_nB.sta_nB_state.nB_2d, oneloop_nB.sta_nB_state.mu_B, k_att_e.k1, k_att_e.k2, k_att_e.k3, nB_dist_INDI, att_jerk_des);
+      break;
   }
   // ======================================================================================================================================================
   // Set Pseudo-control inputs nu based on EC outputs
@@ -1846,7 +1925,11 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
   /*Commit the actuator command*/
   for (int i = 0; i < ANDI_NUM_ACT; i++)
   {
+#if ONELOOP_NB_DEBUG_MODE
+    commands[i] = (int16_t)(0.0);   
+#else 
     commands[i] = (int16_t)andi_u[i];
+#endif
   }
   commands[COMMAND_THRUST] = (commands[COMMAND_MOTOR_FRONT] + commands[COMMAND_MOTOR_RIGHT] + commands[COMMAND_MOTOR_BACK] + commands[COMMAND_MOTOR_LEFT]) / num_thrusters_oneloop;
   autopilot.throttle = commands[COMMAND_THRUST];
@@ -1893,39 +1976,60 @@ void get_act_state_oneloop(void)
 //=========================================================================================================================================================
 void G1G2_oneloop(int ctrl_type)
 {
-  int i = 0;
   float scaler = 1.0;
-  for (i = 0; i < ANDI_NUM_ACT_TOT; i++)
+  for (int i = 0; i < ANDI_NUM_ACT_TOT; i++)
   {
-    switch (i)
+    switch (ctrl_type)
     {
-    case (COMMAND_MOTOR_FRONT):
-    case (COMMAND_MOTOR_RIGHT):
-    case (COMMAND_MOTOR_BACK):
-    case (COMMAND_MOTOR_LEFT):
-      if (ctrl_type == CTRL_ANDI)
-      {
-        scaler = act_dyn_ctrl[i] * ratio_u_un[i];
-      }
-      else if (ctrl_type == CTRL_INDI)
-      {
-        scaler = ratio_u_un[i];
-      }
+    case (CTRL_ANDI):
+    case (CTRL_NB_ANDI):
+      scaler = act_dyn_ctrl[i] * ratio_u_un[i];
       break;
-    default:
+    case (CTRL_INDI):
+    case (CTRL_NB_INDI):
+      scaler = ratio_u_un[i];
       break;
     }
     for (int j = 0; j < ANDI_OUTPUTS; j++)
     {
-      // EFF_MAT_RW has extra entries for North and EAST
-      EFF_MAT_G[j][i] = EFF_MAT_RW[2+j][i] * scaler * ratio_vn_v[j];
+      EFF_MAT_G[j][i] = EFF_MAT_RW[2+j][i] * scaler * ratio_vn_v[j]; // EFF_MAT_RW has extra entries for North and EAST
     }
   }
-  for (int i = 0; i < ANDI_OUTPUTS; i++)
+
+  switch (ctrl_type)
   {
-    bwls_1l[i] = EFF_MAT_G[i];
+  case (CTRL_ANDI):
+  case (CTRL_INDI):
+    for (int i = 0; i < ANDI_OUTPUTS; i++)
+    {
+      bwls_1l[i] = EFF_MAT_G[i];
+    }
+    break;
+  case (CTRL_NB_ANDI):
+  case (CTRL_NB_INDI):
+    float HB[3][3];
+    calc_HB_matrix(HB, oneloop_nB.sta_nB_state.nB);
+    float B[3][4] = {
+    { EFF_MAT_G[IDX_ap][COMMAND_MOTOR_FRONT], EFF_MAT_G[IDX_ap][COMMAND_MOTOR_RIGHT], EFF_MAT_G[IDX_ap][COMMAND_MOTOR_BACK], EFF_MAT_G[IDX_ap][COMMAND_MOTOR_LEFT]},
+    { EFF_MAT_G[IDX_aq][COMMAND_MOTOR_FRONT], EFF_MAT_G[IDX_aq][COMMAND_MOTOR_RIGHT], EFF_MAT_G[IDX_aq][COMMAND_MOTOR_BACK], EFF_MAT_G[IDX_aq][COMMAND_MOTOR_LEFT]},
+    { EFF_MAT_G[IDX_ar][COMMAND_MOTOR_FRONT], EFF_MAT_G[IDX_ar][COMMAND_MOTOR_RIGHT], EFF_MAT_G[IDX_ar][COMMAND_MOTOR_BACK], EFF_MAT_G[IDX_ar][COMMAND_MOTOR_LEFT]}};
+    float C[3][4];
+    // build row-pointer views for the matrices
+    MAKE_MATRIX_PTR(HB_p,        HB,        3);
+    MAKE_MATRIX_PTR(B_p,         B,         3);
+    MAKE_MATRIX_PTR(C_p,         C,         3);
+    MAKE_MATRIX_PTR(EFF_MAT_G_p, EFF_MAT_G, 4);
+    MAKE_MATRIX_PTR(bwls_1l_p,   bwls_1l,   4);
+    float_mat_mul(C_p, HB_p, B_p, 3, 3, 4);
+    //float_mat_mul(bwls_1l_p, HB_p, EFF_MAT_G_p, 3, 3, 3);
+    bwls_1l[IDX_aD] = EFF_MAT_G[IDX_aD]; // keep thrust control allocation direct
+    bwls_1l[IDX_ar] = EFF_MAT_G[IDX_ar]; // keep yaw control allocation direct
+    for (int j = 0; j < ANDI_NUM_ACT_TOT; j++) bwls_1l[IDX_ap][j] = C[0][j];
+    for (int j = 0; j < ANDI_NUM_ACT_TOT; j++) bwls_1l[IDX_aq][j] = C[1][j];
+    break;
   }
-  for (i = 0; i < ANDI_NUM_ACT_TOT; i++)
+
+  for (int i = 0; i < ANDI_NUM_ACT_TOT; i++)
   {
     act_dyn_ctrl[i] = act_dynamics[i];
   }
@@ -2176,15 +2280,11 @@ void oneloop_calc_model_disturbance(bool in_flight)
       for (j = 0; j < ANDI_NUM_ACT_TOT; j++)
       {
         float den = positive_non_zero(ratio_u_un[j] * ratio_vn_v[i]);
-        float num = u_filt[j].o[0] * EFF_MAT_G[i][j];
+        float num = u_filt[j].o[0] * bwls_1l[i][j];
         oneloop_nB_model[i] += num / den;
       }
       oneloop_nB_model[i] = oneloop_nB_model[i] / k3;
     }
-    update_filter_on_type(&oneloop_nB_model_filt.az, oneloop_nB_model[IDX_aD]);
-    update_filter_on_type(&oneloop_nB_model_filt.p_dot, oneloop_nB_model[IDX_ap]);
-    update_filter_on_type(&oneloop_nB_model_filt.q_dot, oneloop_nB_model[IDX_aq]);
-    update_filter_on_type(&oneloop_nB_model_filt.r_dot, oneloop_nB_model[IDX_ar]);
   }
   else
   {
@@ -2214,19 +2314,19 @@ void oneloop_nB_state_compensation(bool state_compensation_on)
 void drop_axis(void){
   if (drop_yaw)
   {
-    nu[IDX_ar] = oneloop_nB_model_filt.r_dot.out * k_att_e.k3[2];
+    nu[IDX_ar] = oneloop_nB_model[IDX_ar] * k_att_e.k3[2];
   }
   if (drop_roll)
   {
-    nu[IDX_ap] = oneloop_nB_model_filt.p_dot.out * k_att_e.k3[0];
+    nu[IDX_ap] = oneloop_nB_model[IDX_ap] * k_att_e.k3[0];
   }
   if (drop_pitch)
   {
-    nu[IDX_aq] = oneloop_nB_model_filt.q_dot.out * k_att_e.k3[1];
+    nu[IDX_aq] = oneloop_nB_model[IDX_aq] * k_att_e.k3[1];
   }
   if (drop_aD)
   {
-    nu[IDX_aD] = oneloop_nB_model_filt.az.out;
+    nu[IDX_aD] = oneloop_nB_model[IDX_aD];
   }  
 }
 //=========================================================================================================================================================
@@ -2250,3 +2350,148 @@ void set_WLS_settings(void){
   }
 }
 //=========================================================================================================================================================
+/** @brief Function which estimates the nB states */
+void oneloop_nB_calc_nB_states(void)
+{
+  struct FloatRMat *LBI = stateGetNedToBodyRMat_f();
+  struct FloatRMat Omega_B;
+  struct FloatRMat Omega_B_dot;
+  struct FloatVect3 pqr;
+  struct FloatVect3 pqr_dot;
+  struct FloatVect3 A;
+  struct FloatVect3 B;
+  struct FloatVect3 C;
+  struct FloatVect3 D;
+  struct FloatVect3 temp;
+  FLOAT_VECT3_ZERO(oneloop_nB.sta_nB_state.nB);
+  FLOAT_VECT3_ZERO(oneloop_nB.sta_nB_state.nB_d);
+  FLOAT_VECT3_ZERO(oneloop_nB.sta_nB_state.nB_2d);
+  //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  pqr.x     = oneloop_nB.sta_state.att_d[0];
+  pqr.y     = oneloop_nB.sta_state.att_d[1];
+  pqr.z     = oneloop_nB.sta_state.att_d[2];
+  pqr_dot.x = oneloop_nB.sta_state.att_2d[0];
+  pqr_dot.y = oneloop_nB.sta_state.att_2d[1];
+  pqr_dot.z = oneloop_nB.sta_state.att_2d[2];
+  skew_symmetric(&Omega_B, &pqr);
+  skew_symmetric(&Omega_B_dot, &pqr_dot);
+  //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  // nB = LBI * nI 
+  float_rmat_vmult(&oneloop_nB.sta_nB_state.nB, LBI, &oneloop_nB.sta_nB_state.nI);
+  //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  // nB_d= -Omega_B * nB + LBI * nI_dot 
+  float_rmat_vmult(&A, &Omega_B, &oneloop_nB.sta_nB_state.nB);
+  float_rmat_vmult(&B, LBI, &oneloop_nB.sta_nB_state.nI_d);
+  VECT3_SUB(oneloop_nB.sta_nB_state.nB_d, A);
+  VECT3_ADD(oneloop_nB.sta_nB_state.nB_d, B);
+  //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  // nB_2d= -Omega_B_dot * nB - Omega_B * nB_dot - Omega_B * LBI * nI_dot + LBI * nI_2dot
+  float_rmat_vmult(&A, &Omega_B_dot, &oneloop_nB.sta_nB_state.nB);
+  float_rmat_vmult(&B, &Omega_B, &oneloop_nB.sta_nB_state.nB_d);
+  float_rmat_vmult(&temp, LBI, &oneloop_nB.sta_nB_state.nI_d);
+  float_rmat_vmult(&C, &Omega_B, &temp);
+  float_rmat_vmult(&D, LBI, &oneloop_nB.sta_nB_state.nI_2d);
+  VECT3_SUB(oneloop_nB.sta_nB_state.nB_2d, A);
+  VECT3_SUB(oneloop_nB.sta_nB_state.nB_2d, B);
+  VECT3_SUB(oneloop_nB.sta_nB_state.nB_2d, C);
+  VECT3_ADD(oneloop_nB.sta_nB_state.nB_2d, D); 
+}
+void nB_EC(struct FloatVect3 nB, struct FloatVect3 nB_d, struct FloatVect3 nB_2d, struct FloatVect3 mu_B, float k1_e[3], float k2_e[3], float k3_e[3], float dist[3], float nB_nu[3])
+{
+  float nB_d_des[3];
+  nB_d_des[0] = k1_e[0]*(mu_B.x-nB.x);
+  nB_d_des[1] = k1_e[1]*(mu_B.y-nB.y);
+  nB_d_des[2] = k1_e[2]*(mu_B.z-nB.z);
+  float nB_2d_des[3];
+  nB_2d_des[0] = k2_e[0]*(nB_d_des[0]-nB_d.x);
+  nB_2d_des[1] = k2_e[1]*(nB_d_des[1]-nB_d.y);
+  nB_2d_des[2] = k2_e[2]*(nB_d_des[2]-nB_d.z);
+  
+  nB_nu[0] = k3_e[0]*(nB_2d_des[0]-nB_2d.x) + dist[0];
+  nB_nu[1] = k3_e[1]*(nB_2d_des[1]-nB_2d.y) + dist[1];
+  nB_nu[2] = 0.0;//k3_e[2]*(nB_2d_des[2]-nB_2d.z) + dist[2];
+}
+
+void skew_symmetric(struct FloatRMat *out, const struct FloatVect3 *in)
+{
+  // Row 0
+  out->m[0] = 0.0f;      // (0,0)
+  out->m[1] = -in->z;    // (0,1)
+  out->m[2] =  in->y;    // (0,2)
+  // Row 1
+  out->m[3] =  in->z;    // (1,0)
+  out->m[4] =  0.0f;     // (1,1)
+  out->m[5] = -in->x;    // (1,2)
+  // Row 2
+  out->m[6] = -in->y;    // (2,0)
+  out->m[7] =  in->x;    // (2,1)
+  out->m[8] =  0.0f;     // (2,2)
+}
+
+void rm_3rd_nI(float dt,struct FloatVect3 *x_ref,struct FloatVect3 *x_d_ref,struct FloatVect3 *x_2d_ref,struct FloatVect3 *x_3d_ref,const struct FloatVect3 *x_des,const float k1_rm[3],const float k2_rm[3],const float k3_rm[3])
+{
+  printf("RM 3rd nI\n");
+  printf("x_ref: %f, %f, %f\n", x_ref->x, x_ref->y, x_ref->z);
+  printf("x_d_ref: %f, %f, %f\n", x_d_ref->x, x_d_ref->y, x_d_ref->z);
+  printf("x_2d_ref: %f, %f, %f\n", x_2d_ref->x, x_2d_ref->y, x_2d_ref->z);   
+  printf("x_3d_ref: %f, %f, %f\n", x_3d_ref->x, x_3d_ref->y, x_3d_ref->z);
+  printf("x_des: %f, %f, %f\n", x_des->x, x_des->y, x_des->z);
+
+  float e_x[3];
+  float e_x_d[3];
+  float e_x_2d[3];
+
+  e_x[0]    = k1_rm[0] * (x_des->x - x_ref->x);
+  e_x[1]    = k1_rm[1] * (x_des->y - x_ref->y);
+  e_x[2]    = k1_rm[2] * (x_des->z - x_ref->z);
+
+  e_x_d[0]  = k2_rm[0] * (e_x[0] - x_d_ref->x);
+  e_x_d[1]  = k2_rm[1] * (e_x[1] - x_d_ref->y);
+  e_x_d[2]  = k2_rm[2] * (e_x[2] - x_d_ref->z);
+
+  e_x_2d[0] = k3_rm[0] * (e_x_d[0] - x_2d_ref->x);
+  e_x_2d[1] = k3_rm[1] * (e_x_d[1] - x_2d_ref->y);
+  e_x_2d[2] = k3_rm[2] * (e_x_d[2] - x_2d_ref->z);
+
+  printf("e_x: %f, %f, %f\n", e_x[0], e_x[1], e_x[2]);
+  printf("e_x_d: %f, %f, %f\n", e_x_d[0], e_x_d[1], e_x_d[2]);
+  printf("e_x_2d: %f, %f, %f\n", e_x_2d[0], e_x_2d[1], e_x_2d[2]);
+
+  // 3rd derivative
+  x_3d_ref->x = e_x_2d[0];
+  x_3d_ref->y = e_x_2d[1];
+  x_3d_ref->z = e_x_2d[2];
+
+  // integrate jerk -> acceleration
+  x_2d_ref->x += dt * x_3d_ref->x;
+  x_2d_ref->y += dt * x_3d_ref->y;
+  x_2d_ref->z += dt * x_3d_ref->z;
+
+  // integrate acceleration -> velocity
+  x_d_ref->x  += dt * x_2d_ref->x;
+  x_d_ref->y  += dt * x_2d_ref->y;
+  x_d_ref->z  += dt * x_2d_ref->z;
+
+  // integrate velocity -> position
+  x_ref->x    += dt * x_d_ref->x;
+  x_ref->y    += dt * x_d_ref->y;
+  x_ref->z    += dt * x_d_ref->z;
+
+  printf("Updated x_ref: %f, %f, %f\n", x_ref->x, x_ref->y, x_ref->z);
+  printf("Updated x_d_ref: %f, %f, %f\n", x_d_ref->x, x_d_ref->y, x_d_ref->z);
+  printf("Updated x_2d_ref: %f, %f, %f\n", x_2d_ref->x, x_2d_ref->y, x_2d_ref->z);   
+  printf("Updated x_3d_ref: %f, %f, %f\n", x_3d_ref->x, x_3d_ref->y, x_3d_ref->z);
+}
+
+
+void calc_HB_matrix(float HB[3][3], struct FloatVect3 nB){
+  HB[0][0] =  0.0;
+  HB[0][1] = -nB.z;
+  HB[0][2] =  nB.y;
+  HB[1][0] =  nB.z;
+  HB[1][1] =  0.0;
+  HB[1][2] = -nB.x;
+  HB[2][0] = -nB.y;
+  HB[2][1] =  nB.x;
+  HB[2][2] =  0.0;
+}
