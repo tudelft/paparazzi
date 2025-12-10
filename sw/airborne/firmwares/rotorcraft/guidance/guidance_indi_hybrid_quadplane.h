@@ -22,8 +22,6 @@
 #ifndef GUIDANCE_INDI_HYBRID_QUADPLANE
 #define GUIDANCE_INDI_HYBRID_QUADPLANE
 
-extern float gi_pitch_scaling;
-extern float gi_roll_scaling;
 
 extern void guidance_indi_quadplane_init(void);
 extern void guidance_indi_quadplane_propagate_filters(void);
