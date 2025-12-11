@@ -39,7 +39,6 @@
         <target name="ap" board="cube_orange">
 
             <module name="radio_control" type="sbus">
-                <!-- <configure name="SBUS_PORT" value="UART3"/> -->
                 <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
                 <define name="AP_MODE_SWITCH"    value="RADIO_AUX3"/>
             </module>
@@ -54,7 +53,7 @@
             <define name="INS_EKF2_GYRO_ID"         value="IMU_CUBE1_ID"/>
             <define name="INS_EKF2_ACCEL_ID"        value="IMU_CUBE1_ID"/>
 
-            <define name="INS_EKF2_OPTITRACK"       value="TRUE"/>
+            <define name="INS_EKF2_OPTITRACK"       value="TRUE"/> <!-- Not sure if it is actually using Optitrack here. Flies just fine with Optitrack Z-up instead of Y-up-->
 
         </target>
 
@@ -75,21 +74,7 @@
         <module name="imu" type="cube"/>
         <module name="air_data"/>
         <module name="ins" type="ekf2">
-            <!-- <define name="USE_INS_NAV_INIT" value="FALSE"/> -->
         </module>
-
-
-
-        <!-- For optitrack use ins ext_pose and comment out ahrs module below-->
-        <!-- <module name="ins" type="ext_pose"> -->
-            <!-- <define name="INS_EXT_POSE_IMU_ID"      value="IMU_CUBE1_ID"/> -->
-            <!-- <define name="IMU_GYRO_ABI_SEND_ID"     value="IMU_CUBE1_ID"/> -->
-            <!-- <define name="IMU_ACCEL_ABI_SEND_ID"    value="IMU_CUBE1_ID"/> -->
-            <!-- Process covariance matrix                 |  North  |  East   |  Down   |  Phi    |  Theta  |  Psi    |-->
-            <!-- <define name="INS_EXT_POSE_Q_NOISE"     value="{      1.0,      1.0,      1.0,  1.73e-4, 4.878e-6, 3.547e-6}"/> -->
-            <!-- Measurement covarianve matrix             |  acc_x  |  acc_y  |  acc_z  |  gyro_x |  gyro_y |  gyro_z |-->
-            <!-- <define name="INS_EXT_PO/SE_R_NOISE"     value="{ 8.372e-6, 3.832e-6, 4.761e-6, 2.830e-4, 8.684e-6, 7.013e-6}"/>  -->
-        <!-- </module> -->
 
         <module name="actuators" type="t4"/>
         <module name="actuators_t4_uart">
@@ -111,10 +96,6 @@
             <configure name="MAG_RM3100_I2C_DEV" value="i2c2"/>
             <define name="MODULE_RM3100_SYNC_SEND" value="TRUE"/>
             <define name="MODULE_RM3100_UPDATE_AHRS"    value="TRUE"/>
-
-            <!-- <define name="MODULE_RM3100_UPDATE_AHRS"    value="TRUE"/> -->
-
-            <!-- <configure name="MAG_RM3100_PERIODIC_FREQUENCY" value="125"/> -->
 
             <!-- 0:X, 1:Y, 2:Z; -->
             <define name="RM3100_CHAN_X" value="1"/>
@@ -202,7 +183,7 @@
         <define name="USE_AIRSPEED" value="FALSE"/>
         <define name="STABILIZATION_ATTITUDE_SP_MAX_PHI"   value="45." unit="deg"  /> 
         <define name="STABILIZATION_ATTITUDE_SP_MAX_THETA" value="45." unit="deg"  />
-        <define name="STABILIZATION_ATTITUDE_SP_MAX_R"     value="90." unit="deg/s"/>
+        <define name="STABILIZATION_ATTITUDE_SP_MAX_R"     value="360." unit="deg/s"/>
         <define name="STABILIZATION_ATTITUDE_DEADBAND_R"   value="200"             />
         <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST"      value="1500"            />
         <define name="AUTOPILOT_IN_FLIGHT_MIN_SPEED"       value="0"               />
@@ -210,8 +191,8 @@
     </section>
 
     <section name="STABILIZATION_ANDI" prefix="STABILIZATION_ANDI_" >
-        <define name="SCHEDULE_EFF"       value="TRUE"/>
-        <define name="USE_STATE_DYNAMICS" value="TRUE"/>
+        <define name="SCHEDULE_EFF"       value="FALSE"/>
+        <define name="USE_STATE_DYNAMICS" value="FALSE"/>
         <define name="RELAX_OBM"          value="1.0f"/>
 
         <!--                               |      EL      |      ER      |      ML^2    |      MR^2    | -->
@@ -233,6 +214,11 @@
 
         <define name="THRUST_MIN"   value="0.6f"  /> <!-- [m/s^2]-->
         <define name="THRUST_MAX"   value="52.0f" /> <!-- [m/s^2]-->
+
+        <define name="CUTOFF_FREQ_ACCEL"     value=" 30.0f"/> <!-- rad/s -->
+        <define name="CUTOFF_FREQ_VEL"       value=" 80.0f"/> <!-- rad/s -->
+        <define name="CUTOFF_FREQ_OMEGA_DOT" value=" 30.0f"/> <!-- rad/s -->
+        <define name="CUTOFF_FREQ_OMEGA"     value=" 80.0f"/> <!-- rad/s -->
 
     </section>
 

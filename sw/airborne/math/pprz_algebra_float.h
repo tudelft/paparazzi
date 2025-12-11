@@ -487,6 +487,10 @@ extern void float_quat_of_rmat(struct FloatQuat *q, const struct FloatRMat *rm);
 /// Tilt twist decomposition of quaternion
 extern void float_quat_tilt_twist(struct FloatQuat *tilt, struct FloatQuat *twist, const struct FloatQuat *quat);
 
+extern void float_quat_log_error(struct FloatEulers *err, const struct FloatQuat *q);
+
+extern void float_quat_log_error_shortest(struct FloatEulers *b2c, const struct FloatQuat *a2b, const struct FloatQuat *a2c);
+
 
 /* defines for backwards compatibility */
 #define FLOAT_QUAT_ZERO(_q) WARNING("FLOAT_QUAT_ZERO macro is deprecated, use the lower case function instead") float_quat_identity(&(_q))

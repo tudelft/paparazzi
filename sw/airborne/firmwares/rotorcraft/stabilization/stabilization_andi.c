@@ -172,6 +172,49 @@ float WLS_WU[ANDI_NUM_ACT] = STABILIZATION_ANDI_WLS_WU;
 float WLS_WU[ANDI_NUM_ACT] = {[0 ... ANDI_NUM_ACT - 1] = 1.0f};
 #endif
 
+#ifdef STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA
+const struct FloatVect3 CUTOFF_FREQ_OMEGA = {
+  .x = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA,
+  .y = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA,
+  .z = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA
+}; // rad/s
+#else
+#error "You must specify the cutoff frequency for omega: STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA"
+#endif
+
+#ifdef STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT
+const struct FloatVect3 CUTOFF_FREQ_OMEGA_DOT = {
+  .x = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT,
+  .y = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT,
+  .z = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT
+}; // rad/s
+const float CUTOFF_FREQ_ACTUATOR[ANDI_NUM_ACT] = {[0 ... ANDI_NUM_ACT - 1] = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT}; // rad/s
+const float CUTOFF_FREQ_THRUST = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT; // rad/s
+#else
+#error "You must specify the cutoff frequency for omega_dot: STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT"
+#endif
+
+#ifdef STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL
+const struct FloatVect3 CUTOFF_FREQ_ACCEL = {
+  .x = STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL,
+  .y = STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL,
+  .z = STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL
+};
+#else
+#error "You must specify the cutoff frequency for accel: STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL"
+#endif
+
+#ifdef STABILIZATION_ANDI_CUTOFF_FREQ_VEL
+const struct FloatVect3 CUTOFF_FREQ_VEL = {
+  .x = STABILIZATION_ANDI_CUTOFF_FREQ_VEL,
+  .y = STABILIZATION_ANDI_CUTOFF_FREQ_VEL,
+  .z = STABILIZATION_ANDI_CUTOFF_FREQ_VEL
+}; // rad/s
+#else
+#error "You must specify the cutoff frequency for vel: STABILIZATION_ANDI_CUTOFF_FREQ_VEL"
+#endif
+
+
 // Function prototypes
 static void actuators_t4_in_callback(uint8_t sender_id, struct ActuatorsT4In *actuators_t4_in_ptr, float *actuators_t4_extra_data_in_ptr);
 static void fetch_actuators_t4(float actuator_meas[ANDI_NUM_ACT], const struct ActuatorsT4In *actuators_t4_in_ptr);
@@ -253,11 +296,6 @@ struct PolesOrder3Vect3 andi_p_att_rm = {
 float andi_p_thrust_ec = STABILIZATION_ANDI_POLE_THRUST_EC;
 float andi_p_thrust_rm = STABILIZATION_ANDI_POLE_THRUST_RM;
 
-float andi_omega_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA;         // rad/s
-float andi_omega_dot_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_OMEGA_DOT; // rad/s
-float andi_accel_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_ACCEL;         // rad/s
-float andi_vel_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_VEL;             // rad/s
-float andi_thrust_freq_cutoff = STABILIZATION_ANDI_CUTOFF_FREQ_THRUST;       // rad/s
 
 // WLS allocation variables
 struct WLS_t wls_stab_p = {
@@ -282,24 +320,26 @@ float andi_k_thrust_rm;
 // Low pass filters for measured states and time synchronization
 struct FirstOrderLowPassVect3 attitude_rates_meas_lpf;
 struct FirstOrderLowPassVect3 attitude_rates_sync_lpf;
-struct FirstOrderLowPassVect3 attitude_accel_meas_lpf;
-struct FirstOrderLowPassVect3 attitude_accel_sync_lpf;
+struct Butterworth2LowPassVect3 attitude_accel_meas_lpf;
+Butterworth2LowPass actuator_meas_lpf[ANDI_NUM_ACT];
+struct Butterworth2LowPassVect3 attitude_accel_sync_lpf; // FIXME: No longer needed
 struct FirstOrderLowPass thrust_meas_lpf;
 struct FirstOrderLowPass thrust_sync_lpf;
 
 // Complementary filter instances for state dependent contribution
 struct FirstOrderComplementaryVect3 attitude_rates_cf;
-struct FirstOrderComplementaryVect3 attitude_accel_cf;
+struct Butterworth2ComplementaryVect3 attitude_accel_cf;
 struct FloatRates angular_rates_obm;
 
 struct FirstOrderComplementaryVect3 linear_vel_cf;
-struct FirstOrderComplementaryVect3 linear_accel_cf;
+struct Butterworth2ComplementaryVect3 linear_accel_cf;
 struct FloatVect3 linear_velocity_obm;
 
-// Actuator filtering and delay
+// Actuator and delay
 struct FirstOrderZOHLowPass actuator_obm_zohlpf[ANDI_NUM_ACT]; // ZOH low pass filter for actuator model
 struct TransportDelay actuator_obm_delay[ANDI_NUM_ACT]; // transport delay for actuator model
-float actuator_state[ANDI_NUM_ACT]; // Actuator state used for incrementing, either from feedback or model
+float actuator_state[ANDI_NUM_ACT]; // from feedback or model
+float actuator_state_lpf[ANDI_NUM_ACT]; // delayed actuator state
 
 // T4 Actuator feedback handling
 struct ActuatorsT4In actuators_t4_obs;
@@ -378,6 +418,7 @@ static void send_eff_mat_stabilization_andi(struct transport_tx *trans, struct l
                              ANDI_NUM_ACT, &ce_mat[3 * ANDI_NUM_ACT],
                              1,  &zero);
 }
+
 static void send_stab_attitude_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_STAB_ATTITUDE(trans, dev, AC_ID,
@@ -635,7 +676,8 @@ static void generate_reference_attitude(
     struct AttQuat *att_ref)
 {
   struct FloatQuat att_err;  // rotation from ref to des
-  float_quat_inv_comp_norm_shortest(&att_err, (struct FloatQuat *)&att_ref->att, (struct FloatQuat *)att_des);
+  float_quat_inv_comp_norm_shortest(&att_err, &att_ref->att, att_des);
+  // float_quat_log_error_shortest(&att_err, &att_ref->att, att_des); // FIXME: alternative using log quaternion error (no small angle assumption, untested!)
 
   // factor 2 needed to convert quaternion difference to angular rate (assuming small angles)
   float p_des = k_att_rm->k1.x * att_err.qx * 2;
@@ -1006,21 +1048,22 @@ void stabilization_andi_init(void)
   evaluate_obm_f_stb_u(ce_mat, &attitude_state_cf.att_d, &linear_state_cf.vel, ACTUATOR_PREF); // FIXME: Choose state estimate for scheduling.
 
   // Initialize filters
-  init_first_order_low_pass_vect3(&attitude_rates_meas_lpf, 1.0f / andi_omega_freq_cutoff, SAMPLE_TIME);
-  init_first_order_low_pass_vect3(&attitude_rates_sync_lpf, 1.0f / andi_omega_freq_cutoff, SAMPLE_TIME);
-  init_first_order_low_pass_vect3(&attitude_accel_meas_lpf, 1.0f / andi_omega_dot_freq_cutoff, SAMPLE_TIME);
-  init_first_order_low_pass_vect3(&attitude_accel_sync_lpf, 1.0f / andi_omega_dot_freq_cutoff, SAMPLE_TIME);
-  init_first_order_low_pass(&thrust_meas_lpf, 1.0f / andi_thrust_freq_cutoff, SAMPLE_TIME, 0.0f);
-  init_first_order_low_pass(&thrust_sync_lpf, 1.0f / andi_thrust_freq_cutoff, SAMPLE_TIME, 0.0f);
+  init_first_order_low_pass_vect3(&attitude_rates_meas_lpf, &CUTOFF_FREQ_OMEGA, SAMPLE_TIME);
+  init_first_order_low_pass_vect3(&attitude_rates_sync_lpf, &CUTOFF_FREQ_OMEGA, SAMPLE_TIME);
+  init_butterworth_2_low_pass_vect3(&attitude_accel_meas_lpf, &CUTOFF_FREQ_OMEGA_DOT, SAMPLE_TIME);
+  init_butterworth_2_low_pass_vect3(&attitude_accel_sync_lpf, &CUTOFF_FREQ_OMEGA_DOT, SAMPLE_TIME);
+  init_butterworth_2_low_pass_array(ANDI_NUM_ACT, actuator_meas_lpf, CUTOFF_FREQ_ACTUATOR, SAMPLE_TIME);
+  init_first_order_low_pass(&thrust_meas_lpf, 1.0f / CUTOFF_FREQ_THRUST, SAMPLE_TIME, 0.0f);
+  init_first_order_low_pass(&thrust_sync_lpf, 1.0f / CUTOFF_FREQ_THRUST, SAMPLE_TIME, 0.0f);
 
-  init_first_order_complementary_vect3(&attitude_rates_cf, 1.0f / andi_omega_freq_cutoff, SAMPLE_TIME);
-  init_first_order_complementary_vect3(&attitude_accel_cf, 1.0f / andi_omega_dot_freq_cutoff, SAMPLE_TIME);
+  init_first_order_complementary_vect3(&attitude_rates_cf, &CUTOFF_FREQ_OMEGA, SAMPLE_TIME);
+  init_butterworth_2_complementary_vect3(&attitude_accel_cf, &CUTOFF_FREQ_OMEGA_DOT, SAMPLE_TIME);
   angular_rates_obm.p = 0.0f;
   angular_rates_obm.q = 0.0f;
   angular_rates_obm.r = 0.0f;
 
-  init_first_order_complementary_vect3(&linear_vel_cf, 1.0f / andi_vel_freq_cutoff, SAMPLE_TIME);
-  init_first_order_complementary_vect3(&linear_accel_cf, 1.0f / andi_accel_freq_cutoff, SAMPLE_TIME);
+  init_first_order_complementary_vect3(&linear_vel_cf, &CUTOFF_FREQ_VEL, SAMPLE_TIME);
+  init_butterworth_2_complementary_vect3(&linear_accel_cf, &CUTOFF_FREQ_ACCEL, SAMPLE_TIME);
   linear_velocity_obm.x = 0.0f;
   linear_velocity_obm.y = 0.0f;
   linear_velocity_obm.z = 0.0f;
@@ -1059,6 +1102,7 @@ void stabilization_andi_enter(void)
   fetch_actuators_t4(actuator_state, &actuators_t4_obs);
   reset_first_order_zoh_low_pass_array(ANDI_NUM_ACT, actuator_obm_zohlpf, actuator_state);
   reset_transport_delay_array(ANDI_NUM_ACT, actuator_obm_delay, actuator_state);
+  reset_butterworth_2_low_pass_array(ANDI_NUM_ACT, actuator_meas_lpf, actuator_state);
 
   // Clear previous rates
   rates_prev.p = 0.0f;
@@ -1071,7 +1115,7 @@ void stabilization_andi_enter(void)
   linear_state_cf.acc.y = 0.0f;
   linear_state_cf.acc.z = 0.0f;
   reset_first_order_complementary_vect3(&linear_vel_cf, &linear_state_cf.vel);
-  reset_first_order_complementary_vect3(&linear_accel_cf, &linear_state_cf.acc);
+  reset_butterworth_2_complementary_vect3(&linear_accel_cf, &linear_state_cf.acc);
   linear_velocity_obm = linear_state_cf.vel;
 
   attitude_state_cf.att = *stateGetNedToBodyQuat_f();
@@ -1080,12 +1124,12 @@ void stabilization_andi_enter(void)
   attitude_state_cf.att_2d.y = 0.0f;
   attitude_state_cf.att_2d.z = 0.0f;
   reset_first_order_complementary_rates(&attitude_rates_cf, &attitude_state_cf.att_d);
-  reset_first_order_complementary_vect3(&attitude_accel_cf, &attitude_state_cf.att_2d);
+  reset_butterworth_2_complementary_vect3(&attitude_accel_cf, &attitude_state_cf.att_2d);
   angular_rates_obm = attitude_state_cf.att_d;
 
   memcpy(&attitude_state_lpf, &attitude_state_cf, sizeof(struct AttStateQuat));
   reset_first_order_low_pass_rates(&attitude_rates_meas_lpf, &attitude_state_cf.att_d);
-  reset_first_order_low_pass_vect3(&attitude_accel_meas_lpf, &attitude_state_cf.att_2d);
+  reset_butterworth_2_low_pass_vect3(&attitude_accel_meas_lpf, &attitude_state_cf.att_2d);
 
   attitude_ref.att = attitude_state_cf.att;
   attitude_ref.att_d = attitude_state_cf.att_d;
@@ -1095,8 +1139,7 @@ void stabilization_andi_enter(void)
   attitude_ref.att_3d.z = 0.0f;
   memcpy(&attitude_ref_lpf, &attitude_ref, sizeof(struct AttQuat));
   reset_first_order_low_pass_rates(&attitude_rates_sync_lpf, &attitude_state_cf.att_d);
-  reset_first_order_low_pass_vect3(&attitude_accel_sync_lpf, &attitude_state_cf.att_2d);
-
+  reset_butterworth_2_low_pass_vect3(&attitude_accel_sync_lpf, &attitude_state_cf.att_2d);
 
   thrust_state_lpf = evaluate_obm_thrust_z(actuator_state);
 
@@ -1197,38 +1240,42 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   actuator_state[2] = actuator_obm[2];
   actuator_state[3] = actuator_obm[3];
 
+    // Low-pass filter actuator commands for synchronization with angular acceleration measurements
+  update_butterworth_2_low_pass_array(ANDI_NUM_ACT, actuator_meas_lpf, actuator_state);
+  get_butterworth_2_low_pass_array(ANDI_NUM_ACT, actuator_meas_lpf, actuator_state_lpf);
+
   // COMPLEMENTARY FILTERING
   // Evaluate On Board Model at previous state.
   // Note: Using actuator_meas to avoid errors due to incorrect actuator model. Especially relevant for ESC rpm.
-  struct FloatVect3 angular_accel_obm = evaluate_obm_moments(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_meas);
-  struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_meas);
+  struct FloatVect3 angular_accel_obm = evaluate_obm_moments(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state_lpf); // FIXME: Use filtered actuator meas
+  struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state_lpf);
 
   // Cascaded complementary filter for linear velocity and accelerations measurements
-  update_first_order_complementary_vect3(&linear_accel_cf, &linear_accel_obm, &lin_meas.acc);
-  linear_state_cf.acc = get_first_order_complementary_vect3(&linear_accel_cf);
+  update_butterworth_2_complementary_vect3(&linear_accel_cf, &linear_accel_obm, &lin_meas.acc);
+  linear_state_cf.acc = get_butterworth_2_complementary_vect3(&linear_accel_cf);
   float_vect3_integrate_fi(&linear_velocity_obm, &linear_state_cf.acc, SAMPLE_TIME);
   update_first_order_complementary_vect3(&linear_vel_cf, &linear_velocity_obm, &lin_meas.vel);
   linear_state_cf.vel = get_first_order_complementary_vect3(&linear_vel_cf);
 
   // Cascaded complementary filter for angular rates and accelerations measurements
-  update_first_order_complementary_vect3(&attitude_accel_cf, &angular_accel_obm, &attitude_meas.att_2d);
-  attitude_state_cf.att_2d = get_first_order_complementary_vect3(&attitude_accel_cf);
+  update_butterworth_2_complementary_vect3(&attitude_accel_cf, &angular_accel_obm, &attitude_meas.att_2d);
+  attitude_state_cf.att_2d = get_butterworth_2_complementary_vect3(&attitude_accel_cf);
   float_rates_vect3_integrate_fi(&angular_rates_obm, &attitude_state_cf.att_2d, SAMPLE_TIME);
   update_first_order_complementary_rates(&attitude_rates_cf, &angular_rates_obm, &attitude_meas.att_d);
   attitude_state_cf.att_d = get_first_order_complementary_rates(&attitude_rates_cf);
   attitude_state_cf.att = attitude_meas.att;
 
   // Low-pass filtering for angular rates and accelerations measurements
-  update_first_order_low_pass_vect3(&attitude_accel_meas_lpf, &attitude_meas.att_2d);
-  attitude_state_lpf.att_2d = get_first_order_low_pass_vect3(&attitude_accel_meas_lpf);
+  update_butterworth_2_low_pass_vect3(&attitude_accel_meas_lpf, &attitude_meas.att_2d);
+  attitude_state_lpf.att_2d = get_butterworth_2_low_pass_vect3(&attitude_accel_meas_lpf);
   update_first_order_low_pass_rates(&attitude_rates_meas_lpf, &attitude_meas.att_d);
   attitude_state_lpf.att_d = get_first_order_low_pass_rates(&attitude_rates_meas_lpf);
   attitude_state_lpf.att = attitude_meas.att;
 
   // Low-pass filtering for thrust measurement
-  float thrust_meas = evaluate_obm_thrust_z(actuator_state);
-  update_first_order_low_pass(&thrust_meas_lpf, thrust_meas);
-  thrust_state_lpf = get_first_order_low_pass(&thrust_meas_lpf);
+  thrust_state_lpf = evaluate_obm_thrust_z(actuator_state_lpf);
+  // update_first_order_low_pass(&thrust_meas_lpf, thrust_meas);
+  // thrust_state_lpf = get_first_order_low_pass(&thrust_meas_lpf);
 
   // Get setpoints
   if (use_rate_control)
@@ -1250,8 +1297,9 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 
   // SYNC FILTERING OF REFERENCE INPUTS
   attitude_ref_lpf.att_3d = attitude_ref.att_3d;  // Feedforward, not filtered
-  update_first_order_low_pass_vect3(&attitude_accel_sync_lpf, &attitude_ref.att_2d);
-  attitude_ref_lpf.att_2d = get_first_order_low_pass_vect3(&attitude_accel_sync_lpf);
+  // update_butterworth_2_low_pass_vect3(&attitude_accel_sync_lpf, &attitude_ref.att_2d);
+  // attitude_ref_lpf.att_2d = get_butterworth_2_low_pass_vect3(&attitude_accel_sync_lpf);
+  attitude_ref_lpf.att_2d = attitude_ref.att_2d; // FIXME: Not filtered for now
   update_first_order_low_pass_rates(&attitude_rates_sync_lpf, &attitude_ref.att_d);
   attitude_ref_lpf.att_d = get_first_order_low_pass_rates(&attitude_rates_sync_lpf);
   attitude_ref_lpf.att = attitude_ref.att;
@@ -1278,7 +1326,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   nu_ec[3] = nu_thrust;
 
   // State feedback from on board model
-  if (USE_STATE_DYNAMICS) evaluate_obm_f_stb_x(nu_obm, &attitude_state_cf.att_d, &linear_state_cf.vel, &attitude_meas.att_2d, &linear_state_cf.acc, actuator_meas);
+  if (USE_STATE_DYNAMICS) evaluate_obm_f_stb_x(nu_obm, &attitude_state_cf.att_d, &linear_state_cf.vel, &attitude_meas.att_2d, &linear_state_cf.acc, actuator_state_lpf);
   else float_vect_zero(nu_obm, ANDI_OUTPUTS);
   if (in_flight)
   {
@@ -1295,7 +1343,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   nu_obj[3] = nu_ec[3] - (nu_obm[3] * ANDI_RELAX_OBM);
 
   // Compute control effectiveness matrix based on current states
-  if (SCHEDULE_EFF) evaluate_obm_f_stb_u(ce_mat, &attitude_state_cf.att_d, &linear_state_cf.vel, actuator_meas);
+  if (SCHEDULE_EFF) evaluate_obm_f_stb_u(ce_mat, &attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state_lpf);
 
   // Reconstruct nu based actuator state, this should be close to state measurements if OBM is accurate
   float_vect_copy(nu_reconstructed, nu_obm, ANDI_OUTPUTS);
@@ -1308,8 +1356,8 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   }
 
   // Solve control allocation using weighted least squares
-  compute_wls_lower_bounds(du_min, actuator_state, ACTUATOR_MIN, ACTUATOR_D_MIN, SAMPLE_TIME);
-  compute_wls_upper_bounds(du_max, actuator_state, ACTUATOR_MAX, ACTUATOR_D_MAX, SAMPLE_TIME);
+  compute_wls_lower_bounds(du_min, actuator_state_lpf, ACTUATOR_MIN, ACTUATOR_D_MIN, SAMPLE_TIME);
+  compute_wls_upper_bounds(du_max, actuator_state_lpf, ACTUATOR_MAX, ACTUATOR_D_MAX, SAMPLE_TIME);
   float wls_u_scaler[ANDI_NUM_ACT];
   float wls_v_scaler[ANDI_OUTPUTS] = {[0 ... ANDI_OUTPUTS - 1] = 1.0f}; // Disable v scaling
   compute_wls_u_scaler(wls_u_scaler, du_min, du_max);
@@ -1349,7 +1397,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   for (uint8_t i = 0; i < ANDI_NUM_ACT; i++)
   {
     du_cmd[i] = (wls_stab_p.u[i] / wls_u_scaler[i]);
-    u_cmd[i] = du_cmd[i] / ACTUATOR_DYNAMICS[i] + actuator_state[i];
+    u_cmd[i] = du_cmd[i] / ACTUATOR_DYNAMICS[i] + actuator_state_lpf[i];
     Bound(u_cmd[i], ACTUATOR_MIN[i], ACTUATOR_MAX[i]);
   }
 

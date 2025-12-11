@@ -665,6 +665,42 @@ void float_quat_tilt_twist(struct FloatQuat *tilt, struct FloatQuat *twist, cons
 }
 
 
+void float_quat_log_error(struct FloatEulers *err, const struct FloatQuat *q) {    
+    // Assume input q is normalized error quaternion with positive scalar part
+    float qw = q->qi;
+    float qx = q->qx, qy = q->qy, qz = q->qz;
+    
+    // Vector part magnitude
+    float qv_norm = sqrtf(qx*qx + qy*qy + qz*qz);
+    
+    // Logarithmic map: phi_mag = 2 * atan2(||qv||, qw)
+    float phi_mag = 2.0f * atan2f(qv_norm, qw);
+    
+    // Rotation vector components: phi = phi_mag * (qv / ||qv||)
+    if (qv_norm > 1e-10f) {
+        err->phi   = phi_mag * (qx / qv_norm);  // Roll
+        err->theta = phi_mag * (qy / qv_norm);  // Pitch  
+        err->psi   = phi_mag * (qz / qv_norm);  // Yaw
+    }
+    else {
+        err->phi = 0.0f;
+        err->theta = 0.0f;
+        err->psi = 0.0f;
+    }
+}
+
+void float_quat_log_error_shortest(struct FloatEulers *b2c, 
+                                  const struct FloatQuat *a2b, 
+                                  const struct FloatQuat *a2c)
+{
+    struct FloatQuat b2c_quat;
+    float_quat_comp_inv_norm_shortest(&b2c_quat, a2b, a2c); // q_err = q_current^-1 * q_desired
+    float_quat_log_error(b2c, &b2c_quat);              // Log map to rotation vector
+}
+
+
+
+
 /*
  *
  * Euler angle functions.
