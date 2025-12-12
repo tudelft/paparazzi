@@ -893,7 +893,7 @@
   </axis>
 
   <axis name="PITCH">
-    <function name="aero/moment/Pitch_elevator" frame="BODY" unit="FT*LBS"> 
+    <function name="aero/moment/Pitch_elevator" frame="BODY" unit="FT*LBS">
         <product>
                 <property>aero/qbar-psf</property>
                 <value>47.880259</value> <!--to N/m²-->
@@ -904,7 +904,7 @@
                 <value>-0.5</value> <!--Compensation voor 0 moment at about 75 percent of cmd-->
                 </sum>
                 <value>0.7376</value> <!--Convert to lbsft-->
-                <value> 0.173856 </value>     
+                <value> 0.173856 </value>
         </product>
     </function>
   </axis>
@@ -917,7 +917,7 @@
           <value>2.45</value> <!--Get rid of 0.5 rho-->
           <property>fcs/rudder_lag</property>
           <value>0.7376</value> <!--Convert to lbsft-->
-          <value> 0.01 </value>   
+          <value> 0.01 </value>
         </product>
     </function>
 
@@ -925,8 +925,8 @@
         <product>
           <property>aero/qbar-psf</property>
           <value>47.880259</value>  <!--Pound Per Square Foot to N/m² (Pascal)-->
-          <value>5.73</value> 
-          <property>aero/beta-rad</property> 
+          <value>5.73</value>
+          <property>aero/beta-rad</property>
           <value>0.039</value> <!--Aerea vertical tail-->
         </product>
     </function>

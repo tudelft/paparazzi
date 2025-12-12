@@ -91,4 +91,3 @@ extern void eff_scheduling_rotwing_init(void);
 extern void eff_scheduling_rotwing_periodic(void);
 
 #endif  // CTRL_EFF_SCHED_ROTWING_H
-
