@@ -64,6 +64,9 @@
 
 //====================================================================================================================================
 // Declaration of global variables
+extern float SpinQuadRate;
+extern bool  SpinQuad;
+extern bool  fault_pitch;
 extern float k_P;
 extern float k_D;
 extern float  k1_NE_tune;
