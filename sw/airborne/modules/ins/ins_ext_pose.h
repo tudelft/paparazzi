@@ -32,9 +32,9 @@ Section 5.3: Non-additive noise formulation and equations
 #ifndef INS_EXT_POSE_H
 #define INS_EXT_POSE_H
 
-#define EKF_NUM_STATES 17
+#define EKF_NUM_STATES 15
 #define EKF_NUM_INPUTS 6
-#define EKF_NUM_OUTPUTS 8
+#define EKF_NUM_OUTPUTS 6
 
 #include "std.h"
 #include "math/pprz_algebra_float.h"
