@@ -71,10 +71,10 @@ static inline void reset_transport_delay_array(const uint8_t n, struct Transport
 /**
  * @brief Get output values from an array of TransportDelay structures.
  * @param[in] n Number of TransportDelay structures in the array.
- * @param[out] td_array Array of TransportDelay structures to get outputs from.
+ * @param[in] td_array Array of TransportDelay structures to get outputs from.
  * @param[out] output_array Array to store the output values for each TransportDelay structure.
  */
-static inline void get_transport_delay_array(uint8_t n, const struct TransportDelay td_array[restrict n], float output_array[restrict n])
+static inline void get_transport_delay_array(const uint8_t n, const struct TransportDelay td_array[restrict n], float output_array[restrict n])
 {
   for (uint8_t i = 0; i < n; i++) {
     output_array[i] = get_transport_delay(&td_array[i]);

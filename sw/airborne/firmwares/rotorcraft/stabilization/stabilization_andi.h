@@ -123,7 +123,7 @@ struct PolesOrder3Vect3
  */
 struct PolesOrder2Vect3
 {
-  struct FloatVect3 omega_n;
+  struct FloatVect3 omega_a;
   struct FloatVect3 zeta;
 };
 
@@ -157,6 +157,7 @@ extern float andi_p_thrust_rm;
 void stabilization_andi_init(void);
 void stabilization_andi_enter(void);
 void stabilization_andi_run(bool use_rate_control, bool in_flight, struct StabilizationSetpoint *stab_setpoint, struct ThrustSetpoint *thrust_setpoint, int32_t *cmd);
+void actuator_debug(bool do_servo_step, bool do_motor_step, float step_rate);
 
 /**
  * @brief Evaluate total force acting on the vehicle from the OBM

@@ -231,6 +231,7 @@
       <message name="STAB_ATTITUDE"            period="0.01"/>
       <message name="STAB_THRUST"              period="0.01"/>
       <message name="STAB_PSEUDO_COMMAND"      period="0.01"/>
+      <message name="ON_BOARD_MODEL"           period="0.01"/>
       <message name="ACTUATORS_T4_IN"          period="0.01"/>
       <message name="ACTUATORS_T4_OUT"         period="0.01"/>
       <message name="GPS_RELPOS"               period="0.1"/>

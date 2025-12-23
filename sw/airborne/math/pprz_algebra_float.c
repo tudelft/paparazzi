@@ -477,6 +477,28 @@ void float_quat_vmult(struct FloatVect3 *v_out, const struct FloatQuat *q, const
 }
 
 /**
+ * @brief Project unit quaternion q onto given axis.
+ *
+ * @param[out] q_proj projected quaternion output (unit, rotation only about axis).
+ * @param[in]  q      input quaternion (assumed unit-norm).
+ * @param[in]  axis   unit vector rotation axis (assumed ||axis|| = 1).
+ *
+ * @note Assumptions:
+ * - q is a proper unit rotation quaternion.
+ * - axis is normalized.
+ * - Resulting q_proj is unit-length up to floating-point error; no explicit
+ *   normalization is performed.
+ */
+void float_quat_project(struct FloatQuat *q_proj, const struct FloatQuat *q, const struct FloatVect3 *axis)
+{
+  float dot = q->qx * axis->x + q->qy * axis->y + q->qz * axis->z;
+  q_proj->qx = axis->x * dot;
+  q_proj->qy = axis->y * dot;
+  q_proj->qz = axis->z * dot;
+  q_proj->qi = sqrt(fmaxf(1.f - q_proj->qx * q_proj->qx - q_proj->qy * q_proj->qy - q_proj->qz * q_proj->qz, 0.0f));
+}
+
+/**
  * @brief quat of euler roation 'ZYX'
  *
  * @param q Quat output
