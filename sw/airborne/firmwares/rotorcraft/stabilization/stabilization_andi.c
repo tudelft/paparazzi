@@ -741,11 +741,11 @@ static void generate_reference_attitude_test(
     const struct AttQuat *bounds,
     struct AttQuat *att_ref)
 {
-  float r_d_des = 2.0f; // yaw acceleration test signal
-  float r_2d_des = k_att_rm->k3.z * (r_d_des - att_ref->att_2d.z);
+  float r_2d_des = 1.0f; // yaw acceleration test signal
+  // float r_2d_des = k_att_rm->k3.z * (r_d_des - att_ref->att_2d.z);
 
   // Bound the desired jerk
-  BoundAbs(r_2d_des, bounds->att_3d.z);
+  // BoundAbs(r_2d_des, bounds->att_3d.z);
 
   att_ref->att_3d.x = 0.0f;
   att_ref->att_3d.y = 0.0f;
