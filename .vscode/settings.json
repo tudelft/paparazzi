@@ -1,6 +1,7 @@
 {
     "[c]": {
         "editor.tabSize": 2,
+        "editor.inlayHints.enabled": "offUnlessPressed",
     },
     "[cpp]": {
         "editor.tabSize": 2,

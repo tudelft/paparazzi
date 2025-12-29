@@ -438,7 +438,7 @@ static void send_on_board_model_stabilization_andi(struct transport_tx *trans, s
                                3, (float *)&linear_state_cf.vel,
                                3, (float *)&linear_state_cf.acc,
                                ANDI_NUM_ACT, (float *)&actuator_meas,
-                               3, (float *)&nu_obm);
+                               ANDI_OUTPUTS, (float *)&nu_obm);
 }
 
 static void send_stab_pseudo_command_stabilization_andi(struct transport_tx *trans, struct link_device *dev)
@@ -718,6 +718,46 @@ static void generate_reference_attitude(
   att_ref->att_d.p += att_ref->att_2d.x * dt;
   att_ref->att_d.q += att_ref->att_2d.y * dt;
   att_ref->att_d.r += att_ref->att_2d.z * dt;
+
+  float_quat_integrate(&att_ref->att, &att_ref->att_d, dt);
+  float_quat_normalize(&att_ref->att);
+}
+
+
+/**
+ * @brief Generates a bounded second-order reference signal for quaternion-based attitude control.
+ *
+ * Generates a constant yaw acceleration reference signal. Roll and pitch references remain zero.
+ * The function updates the reference states in place within the provided `att_ref` structure.
+ *
+ * @param[in] dt         Sampling interval in seconds.
+ * @param[in] k_att_rm   Gain parameters (proportional and derivative gains for rate control).
+ * @param[in] bounds     Limits on rate references and derivatives (angular velocity and higher).
+ * @param[in,out] att_ref Reference model state containing attitude quaternion and rate state, updated in place.
+ */
+static void generate_reference_attitude_test(
+    float dt,
+    const struct GainsOrder3Vect3 *k_att_rm,
+    const struct AttQuat *bounds,
+    struct AttQuat *att_ref)
+{
+  float r_d_des = 2.0f; // yaw acceleration test signal
+  float r_2d_des = k_att_rm->k3.z * (r_d_des - att_ref->att_2d.z);
+
+  // Bound the desired jerk
+  BoundAbs(r_2d_des, bounds->att_3d.z);
+
+  att_ref->att_3d.x = 0.0f;
+  att_ref->att_3d.y = 0.0f;
+  att_ref->att_3d.z = r_2d_des; // jerk
+
+  att_ref->att_2d.x = 0.0f;
+  att_ref->att_2d.y = 0.0f;
+  att_ref->att_2d.z += r_2d_des * dt; // acceleration
+
+  att_ref->att_d.p = 0;
+  att_ref->att_d.q = 0;
+  att_ref->att_d.r += att_ref->att_2d.z * dt; // rate
 
   float_quat_integrate(&att_ref->att, &att_ref->att_d, dt);
   float_quat_normalize(&att_ref->att);
@@ -1173,6 +1213,8 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   andi_k_thrust_ec = andi_p_thrust_ec;
   andi_k_thrust_rm = andi_p_thrust_rm;
 
+  if (use_rate_control) { andi_k_att_ec.k1.z = 0.0f; } // Disable attitude error feedback in rate control mode (when doing spin test)
+
   // Fetch linear measurements
   struct LinState lin_meas;
   float_quat_vmult(&lin_meas.vel, stateGetNedToBodyQuat_f(), (struct FloatVect3 *)stateGetSpeedNed_f()); // From Kalman filter
@@ -1230,9 +1272,10 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   // Get setpoints
   if (use_rate_control)
   {
-    rates_des = stab_sp_to_rates_f(stab_setpoint);
+    // rates_des = stab_sp_to_rates_f(stab_setpoint);
     if (in_flight)
-      generate_reference_rate(SAMPLE_TIME, &rates_des, &andi_k_rate_rm, &attitude_bounds, &attitude_ref);
+      // generate_reference_rate(SAMPLE_TIME, &rates_des, &andi_k_rate_rm, &attitude_bounds, &attitude_ref);
+      generate_reference_attitude_test(SAMPLE_TIME, &andi_k_att_rm, &attitude_bounds, &attitude_ref);
   }
   else
   {
@@ -1247,11 +1290,11 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 
   // Construct pseudo control
   struct FloatVect3 nu_attitude;
-  if (use_rate_control)
-  {
-    nu_attitude = control_error_rate(&attitude_ref, &attitude_state_cf, &andi_k_rate_ec);
-  }
-  else
+  // if (use_rate_control)
+  // {
+  //   nu_attitude = control_error_rate(&attitude_ref, &attitude_state_cf, &andi_k_rate_ec);
+  // }
+  // else
   {
     nu_attitude = control_error_attitude(&attitude_ref, &attitude_state_cf, &andi_k_att_ec);
   }
@@ -1263,7 +1306,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   nu_ec[3] = nu_thrust;
 
   // State feedback from on board model
-  if (USE_STATE_DYNAMICS) evaluate_obm_f_stb_x(nu_obm, &attitude_state_cf.att_d, &linear_state_cf.vel, &attitude_meas.att_2d, &linear_state_cf.acc, actuator_state);
+  if (USE_STATE_DYNAMICS) evaluate_obm_f_stb_x(nu_obm, &attitude_state_cf.att_d, &linear_state_cf.vel,&attitude_state_cf.att_2d, &linear_state_cf.acc, actuator_state);
   else float_vect_zero(nu_obm, ANDI_OUTPUTS);
 
   if (in_flight)
@@ -1289,7 +1332,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   {
     for (uint8_t j = 0; j < ANDI_NUM_ACT; j++)
     {
-      nu_reconstructed[j] += ce_mat[i * ANDI_NUM_ACT + j] * actuator_state[i];
+      nu_reconstructed[i] += ce_mat[i * ANDI_NUM_ACT + j] * actuator_state[j];
     }
   }
 

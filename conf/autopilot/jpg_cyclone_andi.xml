@@ -17,7 +17,7 @@
       <include name="modules/actuators/actuators_t4.h"/><!-- should not be needed here fixme -->
       <include name="modules/actuators/actuators_t4_uart.h"/>
       <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT" cond="ifndef MODE_MANUAL"/>
-      <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT" cond="ifndef MODE_AUTO1"/>
+      <define name="MODE_AUTO1" value="AP_MODE_RATE_DIRECT" cond="ifndef MODE_AUTO1"/>
       <define name="MODE_AUTO2" value="AP_MODE_RATE_DIRECT" cond="ifndef MODE_AUTO2"/>
       <define name="RCLost()" value="(radio_control.status == RC_REALLY_LOST)"/>
     </includes>
@@ -44,7 +44,7 @@
     <mode_selection>
       <mode_select cond="RCMode0()" mode="MODE_MANUAL"/>
       <mode_select cond="RCMode1()" mode="MODE_AUTO1"/>
-      <mode_select cond="RCMode2()" mode="autopilot_mode_auto2" exception="HOME"/>
+      <mode_select cond="RCMode2()" mode="MODE_AUTO2"/>
     </mode_selection>
 
     <!-- <exceptions>
