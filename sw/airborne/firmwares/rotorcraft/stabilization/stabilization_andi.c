@@ -741,11 +741,11 @@ static void generate_reference_attitude_test(
     const struct AttQuat *bounds,
     struct AttQuat *att_ref)
 {
-  float r_2d_des = 1.0f; // yaw acceleration test signal
-  // float r_2d_des = k_att_rm->k3.z * (r_d_des - att_ref->att_2d.z);
+  float r_d_des = 2.0f; // yaw acceleration test signal
+  float r_2d_des = k_att_rm->k3.z * (r_d_des - att_ref->att_2d.z);
 
   // Bound the desired jerk
-  // BoundAbs(r_2d_des, bounds->att_3d.z);
+  BoundAbs(r_2d_des, bounds->att_3d.z);
 
   att_ref->att_3d.x = 0.0f;
   att_ref->att_3d.y = 0.0f;
@@ -1250,6 +1250,12 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   // Evaluate On Board Model with previous filtered state
   struct FloatVect3 angular_accel_obm = evaluate_obm_moments(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
   struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
+
+  // Temporarily store OBM as nu_reconstructed for logging
+  nu_reconstructed[0] = angular_accel_obm.x;
+  nu_reconstructed[1] = angular_accel_obm.y;
+  nu_reconstructed[2] = angular_accel_obm.z;
+  nu_reconstructed[3] = 0;
 
   // Cascaded complementary filter for linear velocity and accelerations measurements
   update_butterworth_2_complementary_vect3(&linear_accel_cf, &linear_accel_obm, &lin_meas.acc);
