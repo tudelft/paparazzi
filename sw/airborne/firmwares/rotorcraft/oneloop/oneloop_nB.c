@@ -277,6 +277,7 @@ static float  act_dynamics_d[ANDI_NUM_ACT_TOT];                                 
 float         actuator_state_1l[ANDI_NUM_ACT_TOT];                              // Actuator state vector (including virtual actuators)
 float         nB_jerk_des[3];
 float SQ_r = 0.0; 
+float max_pitch_mot = 3000.0;
 //====================================================================================================================================
 // STABILIZATION VARIABLES
 //====================================================================================================================================
@@ -1752,20 +1753,8 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
     // To calculate the nu corrsponding to the Thrust command, plug it in the control law.
     for (i = 0; i < ANDI_NUM_ACT; i++)
     {
-      switch (oneloop_nB.ctrl_type)
-      {
-      case (CTRL_ANDI):
-      case (CTRL_NB_ANDI):
-        a_thrust += (radio_thrust_cmd) * EFF_MAT_RW[RW_aD][i] * act_dyn_ctrl[i];
-        break;
-      case (CTRL_INDI):
-      case (CTRL_NB_INDI):
-        a_thrust += (radio_thrust_cmd) * EFF_MAT_RW[RW_aD][i];
-        break;
-      default:
-        a_thrust += (radio_thrust_cmd) * EFF_MAT_RW[RW_aD][i];
-        break;
-      }
+      float den = positive_non_zero(ratio_u_un[i] * ratio_vn_v[IDX_aD]);
+      a_thrust += (radio_thrust_cmd) * EFF_MAT_G[IDX_aD][i] / den;
     }
     a_thrust = a_thrust - ctrl_effort_model[IDX_aD]; // Subtract model disturbance
     ctrl_off = false; // Make sure all control on for manual takeover
@@ -2001,6 +1990,12 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
     andi_u[i] = (float)(andi_u_n[i] * ratio_u_un[i]);
     Bound(andi_u[i], act_min[i], act_max[i]);
   }
+  if (fault_pitch && oneloop_nB.ctrl_type == CTRL_NB_INDI){
+    float temp_thrust = (float)radio_control_get(RADIO_THROTTLE);
+    Bound(temp_thrust, 0.0, max_pitch_mot);
+    andi_u[COMMAND_MOTOR_FRONT] = temp_thrust;
+    andi_u[COMMAND_MOTOR_BACK]  = temp_thrust;
+  }
   /*Commit the actuator command*/
   for (int i = 0; i < ANDI_NUM_ACT; i++)
   {
@@ -2010,6 +2005,7 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
     commands[i] = (int16_t)andi_u[i];
 #endif
   }
+
   commands[COMMAND_THRUST] = (commands[COMMAND_MOTOR_FRONT] + commands[COMMAND_MOTOR_RIGHT] + commands[COMMAND_MOTOR_BACK] + commands[COMMAND_MOTOR_LEFT]) / num_thrusters_oneloop;
   autopilot.throttle = commands[COMMAND_THRUST];
   stabilization.cmd[COMMAND_THRUST] = commands[COMMAND_THRUST];
@@ -2458,8 +2454,6 @@ void set_WLS_settings(void){
         break;
     }
   }
-  //printf("ctrl type = %i \n", oneloop_nB.ctrl_type);
-  //printf("do i want to fault pitch? %i\n", fault_pitch);
   if (fault_pitch && oneloop_nB.ctrl_type == CTRL_NB_INDI){
     //printf("I AM FAULTED \n");
     WLS_one_p.Wv[IDX_ap] = 0.0; // Roll axis dropped because it is body axis

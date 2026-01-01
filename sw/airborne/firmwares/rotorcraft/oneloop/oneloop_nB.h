@@ -64,6 +64,7 @@
 
 //====================================================================================================================================
 // Declaration of global variables
+extern float max_pitch_mot;
 extern float SpinQuadRate;
 extern bool  SpinQuad;
 extern bool  fault_pitch;
