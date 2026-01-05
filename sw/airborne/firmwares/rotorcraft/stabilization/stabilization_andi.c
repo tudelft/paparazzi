@@ -452,7 +452,9 @@ static void send_stab_pseudo_command_stabilization_andi(struct transport_tx *tra
    * equal to the measured state plus any external disturbances.
    * 
    * nu_obj = nu_ec + nu_obm
-   * nu_reconstructed = Ce * u_meas - nu_obm
+   * nu_reconstructed = Ce * u_meas - nu_obm NOTE: This is wrong equation, fix it.
+   * 
+   * FIXME: nu_reconstructed has been repurposed and no longer is the reconstructed value. Update the telemetry message accordingly.
    */
   pprz_msg_send_STAB_PSEUDO_COMMAND(trans, dev, AC_ID,
                                     ANDI_OUTPUTS, nu_obj, // Total pseudo command
@@ -651,7 +653,7 @@ static void generate_reference_rate(
   att_ref->att_d.q += att_ref->att_2d.y * dt;
   att_ref->att_d.r += att_ref->att_2d.z * dt;
 
-  float_quat_identity(&att_ref->att); // zero the quaternion attitude reference
+  float_quat_identity(&att_ref->att);
 }
 
 /**
@@ -1067,7 +1069,7 @@ void stabilization_andi_init(void)
   thrust_bounds_max.thrust_d = 1000.0f;
 
   // Initial control effectiveness matrix
-  evaluate_obm_f_stb_u(ce_mat, &attitude_state_cf.att_d, &linear_state_cf.vel, ACTUATOR_PREF); // FIXME: Choose state estimate for scheduling.
+  evaluate_obm_f_stb_u(ce_mat, &attitude_state_cf.att_d, &linear_state_cf.vel, ACTUATOR_PREF);
 
   // Initialize filters
   init_first_order_complementary_vect3(&attitude_rates_cf, &CUTOFF_FREQ_OMEGA, SAMPLE_TIME);
@@ -1251,12 +1253,6 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   struct FloatVect3 angular_accel_obm = evaluate_obm_moments(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
   struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
 
-  // Temporarily store OBM as nu_reconstructed for logging
-  nu_reconstructed[0] = angular_accel_obm.x;
-  nu_reconstructed[1] = angular_accel_obm.y;
-  nu_reconstructed[2] = angular_accel_obm.z;
-  nu_reconstructed[3] = 0;
-
   // Cascaded complementary filter for linear velocity and accelerations measurements
   update_butterworth_2_complementary_vect3(&linear_accel_cf, &linear_accel_obm, &lin_meas.acc);
   linear_state_cf.acc = get_butterworth_2_complementary_vect3(&linear_accel_cf);
@@ -1274,6 +1270,14 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 
   // Get thrust measurement from on board model
   thrust_state = evaluate_obm_thrust_z(actuator_state);
+
+  // Reconstructed nu is repurposed to hold modeled moments and specific thrust from the on board model (for obm validation).
+  // This can be used to compare the on board model prediction to the actual measured acceleration to validate model accuracy.
+  // Do not compare this to the complementary filter values since these are influenced by the model, use the raw measurements instead.
+  nu_reconstructed[0] = angular_accel_obm.p;
+  nu_reconstructed[1] = angular_accel_obm.q;
+  nu_reconstructed[2] = angular_accel_obm.r;
+  nu_reconstructed[3] = thrust_state;
 
   // Get setpoints
   if (use_rate_control)
@@ -1329,18 +1333,15 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   }
   nu_obj[3] = nu_ec[3] - (nu_obm[3] * ANDI_RELAX_OBM);
 
+  // Fully disable roll and pitch control in rate control mode (for spin test)
+  if (use_rate_control)
+  {
+    nu_obj[0] = 0.0f;
+    nu_obj[1] = 0.0f;
+  }
+
   // Compute control effectiveness matrix based on current states
   if (SCHEDULE_EFF) evaluate_obm_f_stb_u(ce_mat, &attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
-
-  // Reconstruct nu based actuator state, this should be close to state measurements if OBM is accurate
-  float_vect_copy(nu_reconstructed, nu_obm, ANDI_OUTPUTS);
-  for (uint8_t i = 0; i < ANDI_OUTPUTS; i++)
-  {
-    for (uint8_t j = 0; j < ANDI_NUM_ACT; j++)
-    {
-      nu_reconstructed[i] += ce_mat[i * ANDI_NUM_ACT + j] * actuator_state[j];
-    }
-  }
 
   // Solve control allocation using weighted least squares
   compute_wls_lower_bounds(du_min, actuator_state, ACTUATOR_MIN, ACTUATOR_D_MIN, SAMPLE_TIME);

@@ -63,22 +63,22 @@ union CycloneCoefficients obm_coefficients = {
   .fz_elevon_speed      = 0.0f,
   .fz_elevon_motor      = 0.0f,
 
-  .mx_elevon_motor_diff = 0.0000203f,
-  .mx_elevon_speed_diff = 0.0f,
-  .mx_angular_drag      = -0.4249f,
-  .mx_angular_coupling  = 0.0f,
+  .mx_elevon_motor_diff = 2.9577e-5f,
+  .mx_elevon_speed_diff = 0.344f,
+  .mx_angular_drag      = -0.3940217f,
+  .mx_angular_coupling  = -2.18f,
 
   .my_speed_forward     = 0.0f,
-  .my_speed_vertical    = 0.0f,
+  .my_speed_vertical    = -0.0888f,
   .my_motor_sum         = 0.0f,
   .my_elevon_motor_sum  = -0.0000424f,
-  .my_elevon_speed_sum  = -0.0f,
-  .my_angular_sum       = 0.0f,
+  .my_elevon_speed_sum  = 0.2525f,
+  .my_angular_sum       = 1.262f,
 
-  .mz_speed_lateral     = 0.0f,
+  .mz_speed_lateral     = -0.00371f,
   .mz_motor_diff        = 0.000039f,
-  .mz_speed_roll        = 0.0f,
-  .mz_angular_coupling  = 0.0f,
+  .mz_speed_roll        = -0.0129f,
+  .mz_angular_coupling  = -0.4827f,
 };
 
 union CeMatrix {
