@@ -153,8 +153,8 @@
     </firmware>
 
     <servos driver="T4">
-        <servo name="S_ELEVON_LEFT"  no="1"  min="-5000" neutral="0" max="5000"/> <!-- 50.0 deg-->
-        <servo name="S_ELEVON_RIGHT" no="6"  min="5000"  neutral="0" max="-5000"/> <!-- 50.0 deg-->
+        <servo name="S_ELEVON_LEFT"  no="1"  min="-5000" neutral="0" max="5000"/> <!-- [50.0 deg]-->
+        <servo name="S_ELEVON_RIGHT" no="6"  min="5000"  neutral="0" max="-5000"/> <!-- [50.0 deg]-->
         <servo name="S_MOTOR_LEFT"   no="13" min="0"     neutral="0" max="1999"/> <!-- neutral is value when motor is not spinning, must be 0 -->
         <servo name="S_MOTOR_RIGHT"  no="14" min="0"     neutral="0" max="1999"/>
     </servos>
@@ -170,7 +170,7 @@
         <axis name="THRUST"       group="OTHER"  failsafe_value="0"/>
     </commands>
 
-    <!-- Safety critical kill switch implementation -->
+    <!-- Safety critical kill switch implementation, DO NOT REMOVE -->
     <command_laws>
         <set servo="S_ELEVON_LEFT"  value="autopilot_get_motors_on()? commands[COMMAND_ELEVON_LEFT] : 0"/>
         <set servo="S_ELEVON_RIGHT" value="autopilot_get_motors_on()? commands[COMMAND_ELEVON_RIGHT] : 0"/>
@@ -192,7 +192,7 @@
 
     <section name="STABILIZATION_ANDI" prefix="STABILIZATION_ANDI_" >
         <define name="SCHEDULE_EFF"       value="TRUE"/>
-        <define name="USE_STATE_DYNAMICS" value="TRUE"/>
+        <define name="USE_STATE_DYNAMICS" value="FALSE"/>
         <define name="RELAX_OBM"          value="1.0f"/>
 
         <!--                               |      EL      |      ER      |      ML^2    |      MR^2    | -->
@@ -208,19 +208,18 @@
         <define name="WLS_WU"       value="{          1.0f,          1.0f,          1.0f,          1.0f}"/>
 
         <!--                               |      P       |      Q       |      R       |      Tau     | -->
-        <!--define name="WLS_WV"       value="{      10000.0f,       1000.0f,         10.0f,        100.0f}"/--> <!-- Roll is more important than pitch, we do not want to sacrefice roll control in case failing to reach a certain pitch command-->
-        <define name="WLS_WV"       value="{        100.0f,        100.0f,      10000.0f,        100.0f}"/> <!-- Roll is more important than pitch, we do not want to sacrefice roll control in case failing to reach a certain pitch command-->
+        <define name="WLS_WV"       value="{      10000.0f,       1000.0f,         10.0f,        100.0f}"/> <!-- Roll is more important than pitch, we do not want to sacrefice roll control in case failing to reach a certain pitch command -->
 
         <!--                               |    P    |    Q    |    R    | -->
-        <define name="RC_RATE_MAX"  value="{     5.0f,     5.0f,     5.0f}"/> <!-- [rad/s  ]--> 
+        <define name="RC_RATE_MAX"  value="{     5.0f,     5.0f,     5.0f}"/> <!-- [rad/s]--> 
 
         <define name="THRUST_MIN"   value="0.6f"  /> <!-- [m/s^2]-->
         <define name="THRUST_MAX"   value="52.0f" /> <!-- [m/s^2]-->
 
-        <define name="CUTOFF_FREQ_ACCEL"     value=" 10.0f"/> <!-- rad/s -->
-        <define name="CUTOFF_FREQ_VEL"       value=" 80.0f"/> <!-- rad/s -->
-        <define name="CUTOFF_FREQ_OMEGA_DOT" value=" 20.0f"/> <!-- rad/s -->
-        <define name="CUTOFF_FREQ_OMEGA"     value=" 80.0f"/> <!-- rad/s -->
+        <define name="CUTOFF_FREQ_ACCEL"     value=" 20.0f"/> <!-- [rad/s]-->
+        <define name="CUTOFF_FREQ_VEL"       value=" 80.0f"/> <!-- [rad/s]-->
+        <define name="CUTOFF_FREQ_OMEGA_DOT" value=" 20.0f"/> <!-- [rad/s]-->
+        <define name="CUTOFF_FREQ_OMEGA"     value=" 80.0f"/> <!-- [rad/s]-->
 
     </section>
 

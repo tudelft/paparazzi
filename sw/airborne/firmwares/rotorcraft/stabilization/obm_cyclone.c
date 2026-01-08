@@ -63,9 +63,9 @@ union CycloneCoefficients obm_coefficients = {
   .fz_elevon_speed      = 0.0f,
   .fz_elevon_motor      = 0.0f,
 
-  .mx_elevon_motor_diff = 2.9577e-5f,
+  .mx_elevon_motor_diff = 1.9e-05f,
   .mx_elevon_speed_diff = 0.344f,
-  .mx_angular_drag      = -0.3940217f,
+  .mx_angular_drag      = -0.4940217f,
   .mx_angular_coupling  = -2.18f,
 
   .my_speed_forward     = 0.0f,

@@ -1215,7 +1215,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   andi_k_thrust_ec = andi_p_thrust_ec;
   andi_k_thrust_rm = andi_p_thrust_rm;
 
-  if (use_rate_control) { andi_k_att_ec.k1.z = 0.0f; } // Disable attitude error feedback in rate control mode (when doing spin test)
+  // if (use_rate_control) { andi_k_att_ec.k1.z = 0.0f; } // Disable attitude error feedback in rate control mode (when doing spin test)
 
   // Fetch linear measurements
   struct LinState lin_meas;
@@ -1249,9 +1249,15 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   actuator_state[3] = actuator_obm[3];
 
   // COMPLEMENTARY FILTERING
-  // Evaluate On Board Model with previous filtered state
-  struct FloatVect3 angular_accel_obm = evaluate_obm_moments(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
-  struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
+  // For testing purposes, evaluate OBM at zero state to disable model contribution to the filter
+  struct FloatVect3 zero_vect = {0.0f, 0.0f, 0.0f};
+  struct FloatRates zero_rates = {0.0f, 0.0f, 0.0f};
+  struct FloatVect3 angular_accel_obm = evaluate_obm_moments(&zero_rates, &zero_vect, actuator_state);
+  struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&zero_rates, &zero_vect, actuator_state);
+  
+  // Evaluate On Board Model with previous filtered state estimates
+  // struct FloatVect3 angular_accel_obm = evaluate_obm_moments(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
+  // struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
 
   // Cascaded complementary filter for linear velocity and accelerations measurements
   update_butterworth_2_complementary_vect3(&linear_accel_cf, &linear_accel_obm, &lin_meas.acc);
@@ -1274,9 +1280,9 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   // Reconstructed nu is repurposed to hold modeled moments and specific thrust from the on board model (for obm validation).
   // This can be used to compare the on board model prediction to the actual measured acceleration to validate model accuracy.
   // Do not compare this to the complementary filter values since these are influenced by the model, use the raw measurements instead.
-  nu_reconstructed[0] = angular_accel_obm.p;
-  nu_reconstructed[1] = angular_accel_obm.q;
-  nu_reconstructed[2] = angular_accel_obm.r;
+  nu_reconstructed[0] = angular_accel_obm.x;
+  nu_reconstructed[1] = angular_accel_obm.y;
+  nu_reconstructed[2] = angular_accel_obm.z;
   nu_reconstructed[3] = thrust_state;
 
   // Get setpoints
@@ -1332,13 +1338,6 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
     nu_obj[2] = 0.0f;
   }
   nu_obj[3] = nu_ec[3] - (nu_obm[3] * ANDI_RELAX_OBM);
-
-  // Fully disable roll and pitch control in rate control mode (for spin test)
-  if (use_rate_control)
-  {
-    nu_obj[0] = 0.0f;
-    nu_obj[1] = 0.0f;
-  }
 
   // Compute control effectiveness matrix based on current states
   if (SCHEDULE_EFF) evaluate_obm_f_stb_u(ce_mat, &attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
