@@ -236,9 +236,9 @@ static void compute_wls_v_scaler(float v_scaler[ANDI_NUM_ACT], const float v[AND
 static inline float ec_k1_order3_f(const float omega_n, const float zeta, const float omega_a) { return (omega_n * omega_n * (omega_a - 2 * zeta * omega_n)); }
 static inline float ec_k2_order3_f(const float omega_n, const float zeta, const float omega_a) { return (omega_n * omega_n + 2.0f * zeta * omega_n * (omega_a - 2 * zeta * omega_n)); }
 static inline float ec_k3_order3_f(const float omega_n UNUSED, const float zeta UNUSED, const float omega_a) { return omega_a; }
-static inline float rm_k1_order3_f(const float omega_n, const float zeta, const float omega_a) { return ec_k1_order3_f(omega_n, zeta, omega_a) / ec_k2_order3_f(omega_n, zeta, omega_a); }
-static inline float rm_k2_order3_f(const float omega_n, const float zeta, const float omega_a) { return ec_k2_order3_f(omega_n, zeta, omega_a) / ec_k3_order3_f(omega_n, zeta, omega_a); }
-static inline float rm_k3_order3_f(const float omega_n, const float zeta, const float omega_a) { return ec_k3_order3_f(omega_n, zeta, omega_a); }
+static inline float rm_k1_order3_f(const float omega_n, const float zeta, const float omega_a) { return (omega_n * omega_n) / (omega_n * omega_n + 2 * zeta * omega_n * omega_a); }
+static inline float rm_k2_order3_f(const float omega_n, const float zeta, const float omega_a) { return (omega_n * omega_n + 2 * zeta * omega_n * omega_a) / (2 * zeta * omega_n + omega_a); }
+static inline float rm_k3_order3_f(const float omega_n, const float zeta, const float omega_a) { return 2 * zeta * omega_n + omega_a; }
 
 static inline float ec_k1_order2_f(const float omega_a, const float zeta) { return omega_a * omega_a / (4 * zeta * zeta); }
 static inline float ec_k2_order2_f(const float omega_a, const float zeta UNUSED) { return omega_a; }
@@ -727,46 +727,6 @@ static void generate_reference_attitude(
 
 
 /**
- * @brief Generates a bounded second-order reference signal for quaternion-based attitude control.
- *
- * Generates a constant yaw acceleration reference signal. Roll and pitch references remain zero.
- * The function updates the reference states in place within the provided `att_ref` structure.
- *
- * @param[in] dt         Sampling interval in seconds.
- * @param[in] k_att_rm   Gain parameters (proportional and derivative gains for rate control).
- * @param[in] bounds     Limits on rate references and derivatives (angular velocity and higher).
- * @param[in,out] att_ref Reference model state containing attitude quaternion and rate state, updated in place.
- */
-static void generate_reference_attitude_test(
-    float dt,
-    const struct GainsOrder3Vect3 *k_att_rm,
-    const struct AttQuat *bounds,
-    struct AttQuat *att_ref)
-{
-  float r_d_des = 2.0f; // yaw acceleration test signal
-  float r_2d_des = k_att_rm->k3.z * (r_d_des - att_ref->att_2d.z);
-
-  // Bound the desired jerk
-  BoundAbs(r_2d_des, bounds->att_3d.z);
-
-  att_ref->att_3d.x = 0.0f;
-  att_ref->att_3d.y = 0.0f;
-  att_ref->att_3d.z = r_2d_des; // jerk
-
-  att_ref->att_2d.x = 0.0f;
-  att_ref->att_2d.y = 0.0f;
-  att_ref->att_2d.z += r_2d_des * dt; // acceleration
-
-  att_ref->att_d.p = 0;
-  att_ref->att_d.q = 0;
-  att_ref->att_d.r += att_ref->att_2d.z * dt; // rate
-
-  float_quat_integrate(&att_ref->att, &att_ref->att_d, dt);
-  float_quat_normalize(&att_ref->att);
-}
-
-
-/**
  * @brief Generates a bounded second-order reference signal for thrust control.
  *
  * Applies bounded limits to a desired thrust input and computes smoothed
@@ -1215,8 +1175,6 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   andi_k_thrust_ec = andi_p_thrust_ec;
   andi_k_thrust_rm = andi_p_thrust_rm;
 
-  // if (use_rate_control) { andi_k_att_ec.k1.z = 0.0f; } // Disable attitude error feedback in rate control mode (when doing spin test)
-
   // Fetch linear measurements
   struct LinState lin_meas;
   float_quat_vmult(&lin_meas.vel, stateGetNedToBodyQuat_f(), (struct FloatVect3 *)stateGetSpeedNed_f()); // From Kalman filter
@@ -1286,16 +1244,29 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   nu_reconstructed[3] = thrust_state;
 
   // Get setpoints
-  if (use_rate_control)
+  // if (use_rate_control)
+  // {
+  //   rates_des = stab_sp_to_rates_f(stab_setpoint);
+  //   if (in_flight)
+  //     generate_reference_rate(SAMPLE_TIME, &rates_des, &andi_k_rate_rm, &attitude_bounds, &attitude_ref);
+  // }
+  // else
   {
-    // rates_des = stab_sp_to_rates_f(stab_setpoint);
-    if (in_flight)
-      // generate_reference_rate(SAMPLE_TIME, &rates_des, &andi_k_rate_rm, &attitude_bounds, &attitude_ref);
-      generate_reference_attitude_test(SAMPLE_TIME, &andi_k_att_rm, &attitude_bounds, &attitude_ref);
-  }
-  else
-  {
-    attitude_des = stab_sp_to_quat_f(stab_setpoint);
+    if (use_rate_control) // No longer rate control, repurpose to test state effects
+    {
+      // Add 170 degree rotation around Z for testing state effects
+      struct FloatQuat attitude_des_temp = stab_sp_to_quat_f(stab_setpoint);
+      const double cz = 0.07073786f;
+      const double sz = 0.99749499f;
+      attitude_des.qi =  attitude_des_temp.qi * cz - attitude_des_temp.qz * sz;
+      attitude_des.qx =  attitude_des_temp.qx * cz + attitude_des_temp.qy * sz;
+      attitude_des.qy = -attitude_des_temp.qx * sz + attitude_des_temp.qy * cz;
+      attitude_des.qz =  attitude_des_temp.qi * sz + attitude_des_temp.qz * cz;
+    }
+    else
+    {
+      attitude_des = stab_sp_to_quat_f(stab_setpoint);
+    }
     if (in_flight)
       generate_reference_attitude(SAMPLE_TIME, &attitude_des, &andi_k_att_rm, &attitude_bounds, &attitude_ref);
   }
