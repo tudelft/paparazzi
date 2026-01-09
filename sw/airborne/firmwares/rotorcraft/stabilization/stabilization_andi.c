@@ -689,7 +689,7 @@ static void generate_reference_attitude(
 
   // BoundAbs(p_des, bounds->att_d.p);
   // BoundAbs(q_des, bounds->att_d.q);
-  // BoundAbs(r_des, bounds->att_d.r);
+  BoundAbs(r_des, bounds->att_d.r);
 
   float p_d_des = k_att_rm->k2.x * (p_des - att_ref->att_d.p);
   float q_d_des = k_att_rm->k2.y * (q_des - att_ref->att_d.q);
@@ -697,7 +697,7 @@ static void generate_reference_attitude(
 
   // BoundAbs(p_d_des, bounds->att_2d.x);
   // BoundAbs(q_d_des, bounds->att_2d.y);
-  // BoundAbs(r_d_des, bounds->att_2d.z);
+  BoundAbs(r_d_des, bounds->att_2d.z);
 
   float p_2d_des = k_att_rm->k3.x * (p_d_des - att_ref->att_2d.x);
   float q_2d_des = k_att_rm->k3.y * (q_d_des - att_ref->att_2d.y);
@@ -705,7 +705,7 @@ static void generate_reference_attitude(
 
   // BoundAbs(p_2d_des, bounds->att_3d.x);
   // BoundAbs(q_2d_des, bounds->att_3d.y);
-  // BoundAbs(r_2d_des, bounds->att_3d.z);
+  BoundAbs(r_2d_des, bounds->att_3d.z);
 
   att_ref->att_3d.x = p_2d_des;
   att_ref->att_3d.y = q_2d_des;
@@ -1012,10 +1012,10 @@ void stabilization_andi_init(void)
   float_quat_identity(&attitude_bounds.att);
   attitude_bounds.att_d.p = 100.0f;
   attitude_bounds.att_d.q = 100.0f;
-  attitude_bounds.att_d.r = 100.0f;
+  attitude_bounds.att_d.r = 25.0f;
   attitude_bounds.att_2d.x = 100.0f;
   attitude_bounds.att_2d.y = 100.0f;
-  attitude_bounds.att_2d.z = 100.0f;
+  attitude_bounds.att_2d.z = 20.0f;
   attitude_bounds.att_3d.x = 100.0f;
   attitude_bounds.att_3d.y = 100.0f;
   attitude_bounds.att_3d.z = 100.0f;
