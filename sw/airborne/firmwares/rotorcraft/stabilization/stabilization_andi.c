@@ -236,7 +236,7 @@ static void compute_wls_v_scaler(float v_scaler[ANDI_NUM_ACT], const float v[AND
 static inline float ec_k1_order3_f(const float omega_n, const float zeta, const float omega_a) { return (omega_n * omega_n * (omega_a - 2 * zeta * omega_n)); }
 static inline float ec_k2_order3_f(const float omega_n, const float zeta, const float omega_a) { return (omega_n * omega_n + 2.0f * zeta * omega_n * (omega_a - 2 * zeta * omega_n)); }
 static inline float ec_k3_order3_f(const float omega_n UNUSED, const float zeta UNUSED, const float omega_a) { return omega_a; }
-static inline float rm_k1_order3_f(const float omega_n, const float zeta, const float omega_a) { return (omega_n * omega_n) / (omega_n * omega_n + 2 * zeta * omega_n * omega_a); }
+static inline float rm_k1_order3_f(const float omega_n, const float zeta, const float omega_a) { return (omega_n * omega_n * omega_a) / (omega_n * omega_n + 2 * zeta * omega_n * omega_a); }
 static inline float rm_k2_order3_f(const float omega_n, const float zeta, const float omega_a) { return (omega_n * omega_n + 2 * zeta * omega_n * omega_a) / (2 * zeta * omega_n + omega_a); }
 static inline float rm_k3_order3_f(const float omega_n, const float zeta, const float omega_a) { return 2 * zeta * omega_n + omega_a; }
 
@@ -669,6 +669,10 @@ static void generate_reference_rate(
  * @param[in] k_att_rm   Gain parameters (proportional and derivative gains for rate control).
  * @param[in] bounds     Limits on rate references and derivatives (angular velocity and higher).
  * @param[in,out] att_ref Reference model state containing attitude quaternion and rate state, updated in place.
+ * 
+ * FIXME: The bounds introduce nonlinearities that may destabilize the reference model for large changes in attitude. 
+ * Currently removed, consider revising the bounding strategy.
+ * FIXME: Quaternion error calculation assumes small angle errors; may need to be revised for large attitude changes.
  */
 static void generate_reference_attitude(
     float dt,
@@ -683,31 +687,25 @@ static void generate_reference_attitude(
   float q_des = k_att_rm->k1.y * att_err.qy * 2;
   float r_des = k_att_rm->k1.z * att_err.qz * 2;
 
-  // struct FloatEulers att_err;  // rotation from ref to des
-  // float_quat_log_error_shortest(&att_err, att_des, &att_ref->att);
-  // float p_des = k_att_rm->k1.x * att_err.phi;
-  // float q_des = k_att_rm->k1.y * att_err.theta;
-  // float r_des = k_att_rm->k1.z * att_err.psi;
-
-  BoundAbs(p_des, bounds->att_d.p);
-  BoundAbs(q_des, bounds->att_d.q);
-  BoundAbs(r_des, bounds->att_d.r);
+  // BoundAbs(p_des, bounds->att_d.p);
+  // BoundAbs(q_des, bounds->att_d.q);
+  // BoundAbs(r_des, bounds->att_d.r);
 
   float p_d_des = k_att_rm->k2.x * (p_des - att_ref->att_d.p);
   float q_d_des = k_att_rm->k2.y * (q_des - att_ref->att_d.q);
   float r_d_des = k_att_rm->k2.z * (r_des - att_ref->att_d.r);
 
-  BoundAbs(p_d_des, bounds->att_2d.x);
-  BoundAbs(q_d_des, bounds->att_2d.y);
-  BoundAbs(r_d_des, bounds->att_2d.z);
+  // BoundAbs(p_d_des, bounds->att_2d.x);
+  // BoundAbs(q_d_des, bounds->att_2d.y);
+  // BoundAbs(r_d_des, bounds->att_2d.z);
 
   float p_2d_des = k_att_rm->k3.x * (p_d_des - att_ref->att_2d.x);
   float q_2d_des = k_att_rm->k3.y * (q_d_des - att_ref->att_2d.y);
   float r_2d_des = k_att_rm->k3.z * (r_d_des - att_ref->att_2d.z);
 
-  BoundAbs(p_2d_des, bounds->att_3d.x);
-  BoundAbs(q_2d_des, bounds->att_3d.y);
-  BoundAbs(r_2d_des, bounds->att_3d.z);
+  // BoundAbs(p_2d_des, bounds->att_3d.x);
+  // BoundAbs(q_2d_des, bounds->att_3d.y);
+  // BoundAbs(r_2d_des, bounds->att_3d.z);
 
   att_ref->att_3d.x = p_2d_des;
   att_ref->att_3d.y = q_2d_des;
@@ -1208,14 +1206,14 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
 
   // COMPLEMENTARY FILTERING
   // For testing purposes, evaluate OBM at zero state to disable model contribution to the filter
-  struct FloatVect3 zero_vect = {0.0f, 0.0f, 0.0f};
-  struct FloatRates zero_rates = {0.0f, 0.0f, 0.0f};
-  struct FloatVect3 angular_accel_obm = evaluate_obm_moments(&zero_rates, &zero_vect, actuator_state);
-  struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&zero_rates, &zero_vect, actuator_state);
+  // struct FloatVect3 zero_vect = {0.0f, 0.0f, 0.0f};
+  // struct FloatRates zero_rates = {0.0f, 0.0f, 0.0f};
+  // struct FloatVect3 angular_accel_obm = evaluate_obm_moments(&zero_rates, &zero_vect, actuator_state);
+  // struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&zero_rates, &zero_vect, actuator_state);
   
   // Evaluate On Board Model with previous filtered state estimates
-  // struct FloatVect3 angular_accel_obm = evaluate_obm_moments(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
-  // struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
+  struct FloatVect3 angular_accel_obm = evaluate_obm_moments(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
+  struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
 
   // Cascaded complementary filter for linear velocity and accelerations measurements
   update_butterworth_2_complementary_vect3(&linear_accel_cf, &linear_accel_obm, &lin_meas.acc);
@@ -1256,12 +1254,14 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
     {
       // Add 170 degree rotation around Z for testing state effects
       struct FloatQuat attitude_des_temp = stab_sp_to_quat_f(stab_setpoint);
-      const double cz = 0.07073786f;
-      const double sz = 0.99749499f;
-      attitude_des.qi =  attitude_des_temp.qi * cz - attitude_des_temp.qz * sz;
-      attitude_des.qx =  attitude_des_temp.qx * cz + attitude_des_temp.qy * sz;
-      attitude_des.qy = -attitude_des_temp.qx * sz + attitude_des_temp.qy * cz;
-      attitude_des.qz =  attitude_des_temp.qi * sz + attitude_des_temp.qz * cz;
+      // Rotation quaternion: q_rot = [cos(85°), 0, 0, sin(85°)]
+      const float cz = 0.0871557f;  // cos(85°)
+      const float sz = 0.9961947f;  // sin(85°)
+      // Quaternion multiplication: q_result = q_rot * q_original
+      attitude_des.qi = cz * attitude_des_temp.qi - sz * attitude_des_temp.qz;
+      attitude_des.qx = cz * attitude_des_temp.qx + sz * attitude_des_temp.qy;
+      attitude_des.qy = cz * attitude_des_temp.qy - sz * attitude_des_temp.qx;
+      attitude_des.qz = cz * attitude_des_temp.qz + sz * attitude_des_temp.qi;
     }
     else
     {

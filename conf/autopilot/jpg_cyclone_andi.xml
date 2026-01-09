@@ -83,7 +83,7 @@
       <on_enter>
         <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NONE)"/>
         <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_RC_DIRECT)"/>
-        <call fun="stabilization_mode_changed(STABILIZATION_MODE_RATE, STABILIZATION_ATT_SUBMODE_HEADING)"/>
+        <call fun="stabilization_mode_changed(STABILIZATION_MODE_ATTITUDE, STABILIZATION_ATT_SUBMODE_HEADING)"/>
         <call fun="stabilization_andi_enter()"/>
       </on_enter>
       <control freq="NAVIGATION_FREQUENCY">
