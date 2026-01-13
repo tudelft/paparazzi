@@ -183,7 +183,7 @@
 #define ADC_3_GPIO_PORT GPIOA
 #define ADC_3_GPIO_PIN GPIO3
 #endif
-#define MilliAmpereOfAdc(adc)((float)adc) * (3.3f / 4096.0f) * (90.0f / 5.0f)
+#define DefaultMilliAmpereOfAdc(adc)((float)adc) * (3.3f / 4096.0f) * (90.0f / 5.0f)
 
 /* allow to define ADC_CHANNEL_VSUPPLY in the airframe file*/
 #ifndef ADC_CHANNEL_VSUPPLY
@@ -246,7 +246,7 @@
 
 /* Default actuators driver */
 #define DEFAULT_ACTUATORS "modules/actuators/actuators_pwm.h"
-#define ActuatorDefaultSet(_x,_y) ActuatorPwmSet(_x,_y)
+#define ActuatorDefaultSet ActuatorPwmSet
 #define ActuatorsDefaultInit() ActuatorsPwmInit()
 #define ActuatorsDefaultCommit() ActuatorsPwmCommit()
 

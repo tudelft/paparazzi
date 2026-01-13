@@ -305,7 +305,7 @@ test: test_math test_examples test_modules
 # subset of airframes for coverity test to pass the limited build time on travis
 test_coverity: all
 	CONF_XML=conf/conf_tests_coverity.xml prove tests/aircrafts/ 2>&1 | tee ./var/compile.log
-	python ./sw/tools/parse_compile_logs.py
+	prove -v ./tests/parse_compile_logs.py
 
 # test AggieAir conf
 test_aggieair: all
@@ -323,17 +323,17 @@ test_tudelft: all
 	CONF_XML=conf/userconf/tudelft/delfly_conf.xml prove tests/aircrafts/ 2>&1 | tee -a ./var/compile.log
 	CONF_XML=conf/userconf/tudelft/course_conf.xml prove tests/aircrafts/ 2>&1 | tee -a ./var/compile.log
 	CONF_XML=conf/userconf/tudelft/guido_conf.xml prove tests/aircrafts/ 2>&1 | tee -a ./var/compile.log
-	python ./sw/tools/parse_compile_logs.py | tee ./issues.md
+	prove -v ./tests/parse_compile_logs.py
 
 # test GVF conf
 test_gvf: all
-	CONF_XML=conf/userconf/GVF/gvf_conf.xml prove tests/aircrafts/
+	CONF_XML=conf/userconf/conf_example_gvf.xml prove tests/aircrafts/
 
 
 # compiles all aircrafts in conf_tests.xml
 test_examples: all
 	CONF_XML=conf/conf_tests.xml prove tests/aircrafts/ 2>&1 | tee ./var/compile.log
-	python ./sw/tools/parse_compile_logs.py | tee ./issues.md
+	prove -v ./tests/parse_compile_logs.py
 
 # test compilation of modules
 test_modules: all
@@ -350,7 +350,7 @@ test_math:
 
 test_full:
 	make -C ./ test_all_confs 2>&1 | tee ./var/compile.log
-	python ./sw/tools/parse_compile_logs.py | tee ./issues.md
+	prove -v ./tests/parse_compile_logs.py
 
 
 

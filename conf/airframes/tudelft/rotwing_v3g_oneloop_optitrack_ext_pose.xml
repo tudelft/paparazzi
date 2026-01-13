@@ -32,13 +32,13 @@
             <!--Only send gyro and accel that is being used-->
             <define name="IMU_GYRO_ABI_SEND_ID"     value= "IMU_CUBE1_ID"/>
             <define name="IMU_ACCEL_ABI_SEND_ID"    value= "IMU_CUBE1_ID"/>
-
             <!-- Range sensor connected to supercan -->
             <module name="range_sensor_uavcan"/>
 
             <!-- Log in high speed (Remove for outdoor flights) -->
             <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
             <define name="I2C2_CLOCK_SPEED" value="100000"/>
+            <define name="INS_EXT_VISION_ROTATION"  value="TRUE"/><!--AP only-->
         </target>
 
         <target name="nps" board="pc">
@@ -267,7 +267,6 @@
         <define name="NO_GPS_LOST_WITH_RC_VALID"            value="TRUE"/>
         <define name="USE_AIRSPEED"                         value="TRUE"/>
         <define name="FWD_SIDESLIP_GAIN"                    value="0.25"/> <!-- cyfoam 0.32-->
-        <define name="INS_EXT_VISION_ROTATION"              value="TRUE"/>
     </section>
     <section name="GROUND_DETECT">
         <define name="THRESHOLD_GROUND_DETECT"              value="40"/>
