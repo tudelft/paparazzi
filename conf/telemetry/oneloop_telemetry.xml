@@ -47,7 +47,7 @@
       <!--<message name="ESC"                      period="0.5"/>-->
       <message name="AHRS_REF_QUAT"            period="0.5"/>
       <message name="INS_FLOW_INFO"            period="0.5"/>
-      <message name="GPS_RTK"                  period="0.5"/>
+      <!-- <message name="GPS_RTK"                  period="0.5"/> -->
       <message name="AOA"                      period="0.5"/>
       <message name="APPROACH_MOVING_TARGET"   period="0.5"/>
       <message name="AIRSPEED_RAW"             period="0.5"/>

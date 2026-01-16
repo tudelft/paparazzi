@@ -106,10 +106,11 @@
 //====================================================================================================================================
 // GENERAL VARIABLES 
 //====================================================================================================================================
+
 #ifndef ONELOOP_NB_DEBUG_MODE                                             // Debug mode, sets in_flight to FALSE     
 #define ONELOOP_NB_DEBUG_MODE  FALSE
 #endif
-
+int8_t TestMotorIDX = 0;
 struct OneloopGeneral oneloop_nB;                                         // Define general struct of the Oneloop ANDI controller   
 static float          dt_1l = 1./PERIODIC_FREQUENCY;                        // Time step of the oneloop controller [s]   
 static float          g = 9.81;                                             // [m/s^2] Gravitational Acceleration
@@ -2000,7 +2001,11 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
   for (int i = 0; i < ANDI_NUM_ACT; i++)
   {
 #if ONELOOP_NB_DEBUG_MODE
-    commands[i] = (int16_t)(0.0);   
+    if (i == TestMotorIDX){
+      commands[i] = (int16_t)radio_control_get(RADIO_THROTTLE);
+    }else{
+      commands[i] = (int16_t)(0.0);  
+    } 
 #else 
     commands[i] = (int16_t)andi_u[i];
 #endif

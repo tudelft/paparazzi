@@ -617,11 +617,16 @@
       <description>
       Information about the trajectory followed by the Guidance Vector Field algorithm.
       </description>
-      <field name="error" type="float">Error index e, i.e. 'distance' to the trajectory</field>
-      <field name="traj" type="uint8">Kind of trajectory</field>
-      <field name="s" type="int8" values="1|-1">Direction to be followed</field>
-      <field name="ke" type="float">Gain for the vector field convergence</field>
-      <field name="p" type="float[]">Parameters describing the trajectory</field>
+      <field name="error" type="float">Deviation from the trajectory's implicit equation</field>
+      <field name="traj" type="uint8">Type of trajectory being followed</field>
+      <field name="s" type="int8" values="1|-1">Direction of travel along the trajectory (1 for forward, -1 for reverse)</field>
+      <field name="ke" type="float">Gain controlling convergence to the trajectory</field>
+      <field name="p" type="float[]">Parameters defining the trajectory shape or behavior (provided to PprzGCS)</field>
+      <field name="error_n" type="float">Lateral alignment error relative to the trajectory</field>
+      <field name="n_norm" type="float">Magnitude of the normal component of the vector field at the level set</field>
+      <field name="t_norm" type="float">Magnitude of the tangential component of the vector field at the level set</field>
+      <field name="omega_d" type="float">Desired angular velocity for correct tracking once aligned</field>
+      <field name="omega" type="float">Current angular velocity command from the 2D GVF controller</field>
     </message>
 
     <message name="SUPERBITRF" id="72">
@@ -1742,27 +1747,27 @@
     </message>
 
     <message name="GUIDANCE" id="184">
-      <field name="pos_N_ref"   type="float"    unit="m"/>
-      <field name="pos_E_ref"   type="float"    unit="m"/>
-      <field name="pos_D_ref"   type="float"    unit="m"/>
-      <field name="pos_N"       type="float"    unit="m"/>
-      <field name="pos_E"       type="float"    unit="m"/>
-      <field name="pos_D"       type="float"    unit="m"/>
-      <field name="vel_N_ref"   type="float"    unit="m/s"/>
-      <field name="vel_E_ref"   type="float"    unit="m/s"/>
-      <field name="vel_D_ref"   type="float"    unit="m/s"/>
-      <field name="vel_N"       type="float"    unit="m/s"/>
-      <field name="vel_E"       type="float"    unit="m/s"/>
-      <field name="vel_D"       type="float"    unit="m/s"/>
-      <field name="acc_N_ref"   type="float"    unit="m/s^2"/>
-      <field name="acc_E_ref"   type="float"    unit="m/s^2"/>
-      <field name="acc_D_ref"   type="float"    unit="m/s^2"/>
-      <field name="acc_N"       type="float"    unit="m/s^2"/>
-      <field name="acc_E"       type="float"    unit="m/s^2"/>
-      <field name="acc_D"       type="float"    unit="m/s^2"/>
-      <field name="jerk_N_ref"  type="float"    unit="m/s^3"/>
-      <field name="jerk_E_ref"  type="float"    unit="m/s^3"/>
-      <field name="jerk_D_ref"  type="float"    unit="m/s^3"/>
+      <field name="pos_N_ref"     type="float"    unit="m"/>
+      <field name="pos_E_ref"     type="float"    unit="m"/>
+      <field name="pos_D_ref"     type="float"    unit="m"/>
+      <field name="pos_N"         type="float"    unit="m"/>
+      <field name="pos_E"         type="float"    unit="m"/>
+      <field name="pos_D"         type="float"    unit="m"/>
+      <field name="vel_N_ref"     type="float"    unit="m/s"/>
+      <field name="vel_E_ref"     type="float"    unit="m/s"/>
+      <field name="vel_D_ref"     type="float"    unit="m/s"/>
+      <field name="vel_N"         type="float"    unit="m/s"/>
+      <field name="vel_E"         type="float"    unit="m/s"/>
+      <field name="vel_D"         type="float"    unit="m/s"/>
+      <field name="acc_N_ref"     type="float"    unit="m/s^2"/>
+      <field name="acc_E_ref"     type="float"    unit="m/s^2"/>
+      <field name="acc_D_ref"     type="float"    unit="m/s^2"/>
+      <field name="acc_N"         type="float"    unit="m/s^2"/>
+      <field name="acc_E"         type="float"    unit="m/s^2"/>
+      <field name="acc_D"         type="float"    unit="m/s^2"/>
+      <field name="jerk_N_ref"    type="float"    unit="m/s^3"/>
+      <field name="jerk_E_ref"    type="float"    unit="m/s^3"/>
+      <field name="jerk_D_ref"    type="float"    unit="m/s^3"/>
     </message>
 
     <message name="EFF_MAT_STAB" id="185">
@@ -1805,8 +1810,77 @@
       <field name="alt"   type="float"/>
     </message>
 
-    <!-- 190 is free -->
-    <!-- 191 is free -->
+    <message name= "ACTUATORS_T4_IN" id="190">
+      <description>Received informational data from T4 Actuator Board, only used for debugging and logging</description>
+      <field name="esc_1_rpm" type="int16" unit="rpm">ESC 1 RPM telemetry</field>
+      <field name="esc_2_rpm" type="int16" unit="rpm">ESC 2 RPM telemetry</field>
+      <field name="esc_3_rpm" type="int16" unit="rpm">ESC 3 RPM telemetry</field>
+      <field name="esc_4_rpm" type="int16" unit="rpm">ESC 4 RPM telemetry</field>
+      <field name="servo_1_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 1 angle telemetry</field>
+      <field name="servo_2_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 2 angle telemetry</field>
+      <field name="servo_3_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 3 angle telemetry</field>
+      <field name="servo_4_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 4 angle telemetry</field>
+      <field name="servo_5_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 5 angle telemetry</field>
+      <field name="servo_6_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 6 angle telemetry</field>
+      <field name="servo_7_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 7 angle telemetry</field>
+      <field name="servo_8_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 8 angle telemetry</field>
+      <field name="servo_9_angle"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 9 angle telemetry</field>
+      <field name="servo_10_angle" type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 10 angle telemetry</field>
+      <field name="servo_11_angle" type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 11 angle telemetry</field>
+      <field name="servo_12_angle" type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 12 angle telemetry</field>
+      <field name="actuators_t4_missed_packets"    type="uint32">Number of missed packets on T4 communication bus</field>
+      <field name="actuators_t4_message_frequency" type="uint16">Refresh rate of the incoming messages from T4 hardware module</field>
+      <field name="actuators_t4_rolling_msg_in"    type="float">T4 incoming rolling message content</field>
+      <field name="actuators_t4_rolling_msg_in_id" type="uint8">T4 incoming rolling message ID</field>
+      <field name="esc_1_err_code" type="int16">ESC 1 error code</field>
+      <field name="esc_2_err_code" type="int16">ESC 2 error code</field>
+      <field name="esc_3_err_code" type="int16">ESC 3 error code</field>
+      <field name="esc_4_err_code" type="int16">ESC 4 error code</field>
+      <field name="servo_1_load"  type="int16">servo 1 load</field>
+      <field name="servo_2_load"  type="int16">servo 2 load</field>
+      <field name="servo_3_load"  type="int16">servo 3 load</field>
+      <field name="servo_4_load"  type="int16">servo 4 load</field>
+      <field name="servo_5_load"  type="int16">servo 5 load</field>
+      <field name="servo_6_load"  type="int16">servo 6 load</field>
+      <field name="servo_7_load"  type="int16">servo 7 load</field>
+      <field name="servo_8_load"  type="int16">servo 8 load</field>
+      <field name="servo_9_load"  type="int16">Servo 9 load</field>
+      <field name="servo_10_load" type="int16">Servo 10 load</field>
+      <field name="bitmask_servo_health" type="uint16">Bitmask of servo health status</field>
+      <field name="esc_1_current" type="int16">ESC 1 current in mA</field>
+      <field name="esc_2_current" type="int16">ESC 2 current in mA</field>
+      <field name="esc_3_current" type="int16">ESC 3 current in mA</field>
+      <field name="esc_4_current" type="int16">ESC 4 current in mA</field>
+      <field name="esc_1_voltage" type="int16">ESC 1 voltage in mV</field>
+      <field name="esc_2_voltage" type="int16">ESC 2 voltage in mV</field>
+      <field name="esc_3_voltage" type="int16">ESC 3 voltage in mV</field>
+      <field name="esc_4_voltage" type="int16">ESC 4 voltage in mV</field>
+     </message>
+
+     <message name= "ACTUATORS_T4_OUT" id="191">
+      <description>Transmitted commanded data to a T4 actuator board, only used for debugging and logging</description>
+      <field name="esc_arm"   type="uint8" >ESC arming status bitmask</field>
+      <field name="servo_arm" type="uint16" >Servo arming status bitmask</field>
+      <field name="esc_1_dshot_cmd" type="int16" unit="dshot">ESC 1 DShot commands</field>
+      <field name="esc_2_dshot_cmd" type="int16" unit="dshot">ESC 2 DShot commands</field>
+      <field name="esc_3_dshot_cmd" type="int16" unit="dshot">ESC 3 DShot commands</field>
+      <field name="esc_4_dshot_cmd" type="int16" unit="dshot">ESC 4 DShot commands</field>
+      <field name="servo_1_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 1 angle command</field>
+      <field name="servo_2_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 2 angle command</field>
+      <field name="servo_3_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 3 angle command</field>
+      <field name="servo_4_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 4 angle command</field>
+      <field name="servo_5_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 5 angle command</field>
+      <field name="servo_6_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 6 angle command</field>
+      <field name="servo_7_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 7 angle command</field>
+      <field name="servo_8_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 8 angle command</field>
+      <field name="servo_9_angle_cmd"  type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 9 angle command</field>
+      <field name="servo_10_angle_cmd" type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 10 angle command</field>
+      <field name="servo_11_angle_cmd" type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 10 angle command</field>
+      <field name="servo_12_angle_cmd" type="int16" unit="1e2_deg" alt_unit="deg" alt_unit_coef="0.01">Servo 10 angle command</field>
+      <field name="actuators_t4_rolling_msg_out"    type="float">T4 output rolling message content</field>
+      <field name="actuators_t4_rolling_msg_out_id" type="uint8">T4 output Rolling message ID</field>
+     </message>
+  
     <!-- 192 is free -->
 
     <message name="AHRS_LKF" id="193">
@@ -2079,7 +2153,6 @@
       <field name="amsl_baro" type="float" unit="m">barometric altitude above mean sea level</field>
       <field name="airspeed" type="float" unit="m/s">Equivalent Air Speed (or Calibrated Air Speed at low speed/altitude)</field>
       <field name="tas" type="float">True Air Speed (when P, T and P_diff are available)</field>
-      <field name="circle_ratio_2" type="float">Correction ratio of the scaling having completed a circle with constant wind</field>
     </message>
 
     <message name="AMSL" id="223">
@@ -2344,22 +2417,19 @@
 
     <!-- 250 is free -->
 
-    <message name="GPS_RTK" id="251">
-      <field name="iTOW"          type="uint32" unit="ms"/>
-      <field name="refStationId"  type="uint16"/>
-      <field name="relPosN"       type="int32" unit="cm"/>
-      <field name="relPosE"       type="int32" unit="cm"/>
-      <field name="relPosD"       type="int32" unit="cm"/>
-      <field name="relPosHPN"     type="int8"  unit="mm"/>
-      <field name="relPosHPE"     type="int8"  unit="mm"/>
-      <field name="relPosHPD"     type="int8"  unit="mm"/>
-      <field name="accN"          type="uint32" unit="mm"/>
-      <field name="accE"          type="uint32" unit="mm"/>
-      <field name="accD"          type="uint32" unit="mm"/>
-      <field name="carrSoln"      type="uint8"  values="NONE|RTK FLOAT|RTK FIX"/>
-      <field name="relPosValid"   type="uint8"  values="FALSE|TRUE"/>
-      <field name="diffSoln"      type="uint8"  values="NONE|DGPS"/>
-      <field name="gnssFixOK"           type="uint8" values="NONE|3D"/>
+    <message name="GPS_RELPOS" id="251">
+      <field name="reference_id"  type="uint16">Reference station identification</field>
+      <field name="tow"           type="uint32" unit="ms">Time of week (GPS)</field>
+      <field name="posN"          type="double" unit="m">Relative position North to the reference station</field>
+      <field name="posE"          type="double" unit="m">Relative position East to the reference station</field>
+      <field name="posD"          type="double" unit="m">Relative position Down to the reference station</field>
+      <field name="distance"      type="double" unit="m">Relative distance to the reference station</field>
+      <field name="heading"       type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.29578">Relative heading to the reference station</field>
+      <field name="posAccN"       type="float" unit="m">Position accuracy North</field>
+      <field name="posAccE"       type="float" unit="m">Position accuracy East</field>
+      <field name="posAccD"       type="float" unit="m">Position accuracy Down</field>
+      <field name="distanceAcc"   type="float" unit="m">Distance accuracy</field>
+      <field name="headingAcc"    type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.29578">Heading accuracy</field>
     </message>
 
     <message name="GPS_SMALL" id="252">
@@ -2717,6 +2787,23 @@
       <field name="y" type="float" unit="m">Y position/velocity in NED</field>
       <field name="z" type="float" unit="m">Z position/velocity in NED (negative altitude)</field>
       <field name="yaw" type="float" unit="rad" alt_unit="deg">yaw/rate setpoint</field>
+    </message>
+
+    <message name="GUIDED_FULL_NED" id="41" link="forwarded">
+      <description>
+        Set vehicle position, velocity and accel in NED, with heading angle.
+      </description>
+      <field name="x" type="float" unit="m">X position in NED</field>
+      <field name="y" type="float" unit="m">Y position in NED</field>
+      <field name="z" type="float" unit="m">Z position in NED (negative altitude)</field>
+      <field name="vx" type="float" unit="m">X velocity in NED</field>
+      <field name="vy" type="float" unit="m">Y velocity in NED</field>
+      <field name="vz" type="float" unit="m">Z velocity in NED</field>
+      <field name="ax" type="float" unit="m">X acceleration in NED</field>
+      <field name="ay" type="float" unit="m">Y acceleration in NED</field>
+      <field name="az" type="float" unit="m">Z acceleration in NED</field>
+      <field name="heading" type="float" unit="rad" alt_unit="deg">yaw setpoint</field>
+      <field name="ac_id" type="uint8"/>
     </message>
 
     <message name="WINDTURBINE_STATUS" id="50" link="broadcasted">

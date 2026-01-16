@@ -64,6 +64,7 @@
 
 //====================================================================================================================================
 // Declaration of global variables
+extern int8_t TestMotorIDX;
 extern float max_pitch_mot;
 extern float SpinQuadRate;
 extern bool  SpinQuad;
