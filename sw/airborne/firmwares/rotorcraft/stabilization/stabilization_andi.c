@@ -1068,7 +1068,7 @@ void stabilization_andi_init(void)
  * measurements when entering the ANDI stabilization mode. It ensures that the controller starts from a
  * consistent state when entering stabilization.
  * 
- * FIXME: This function currently assumes that the actuator feedback message is being received.
+ * NOTE: This function currently assumes that the actuator feedback message is being received.
  * FIXME: Transient free initialization for the cascaded complementary filters is not implemented.
  */
 void stabilization_andi_enter(void)
@@ -1320,7 +1320,7 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   compute_wls_upper_bounds(du_max, actuator_state, ACTUATOR_MAX, ACTUATOR_D_MAX, ACTUATOR_DYNAMICS);
   float wls_u_scaler[ANDI_NUM_ACT];
   float wls_v_scaler[ANDI_OUTPUTS] = {[0 ... ANDI_OUTPUTS - 1] = 1.0f}; // Disable v scaling
-  compute_wls_u_scaler(wls_u_scaler, du_min, du_max); // FIXME: Compute in advance
+  compute_wls_u_scaler(wls_u_scaler, du_min, du_max); // FIXME: Compute only once in advance for fixed bounds (important for well defined WLS Wu weights)
   // compute_wls_v_scaler(wls_v_scaler, nu_obj);
 
   float ce_mat_scaled[ANDI_OUTPUTS][ANDI_NUM_ACT];

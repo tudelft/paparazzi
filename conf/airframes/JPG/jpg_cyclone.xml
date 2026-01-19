@@ -205,10 +205,10 @@
         <define name="ACT_RATE_MIN" value="{        -10.0f,        -10.0f,  -90000000.0f,  -90000000.0f}"/> <!-- [rad/s | (rad/s)^2/s]--> 
         <define name="ACT_RATE_MAX" value="{         10.0f,         10.0f,   90000000.0f,   90000000.0f}"/> <!-- [rad/s | (rad/s)^2/s]--> 
         <define name="ACT_PREF"     value="{         0.00f,         0.00f,     705600.0f,     705600.0f}"/> <!-- [  rad |   (rad/s)^2]--> <!-- Used as operating point when not scheduling-->
-        <define name="WLS_WU"       value="{          1.0f,          1.0f,          1.0f,          1.0f}"/>
+        <define name="WLS_WU"       value="{          0.0f,          0.0f,          0.0f,          0.0f}"/>
 
         <!--                               |      P       |      Q       |      R       |      Tau     | -->
-        <define name="WLS_WV"       value="{      10000.0f,       1000.0f,         10.0f,        100.0f}"/> <!-- Roll is more important than pitch, we do not want to sacrefice roll control in case failing to reach a certain pitch command -->
+        <define name="WLS_WV"       value="{       1000.0f,        100.0f,          1.0f,         10.0f}"/> <!-- Roll is more important than pitch, we do not want to sacrefice roll control in case failing to reach a certain pitch command -->
 
         <!--                               |    P    |    Q    |    R    | -->
         <define name="RC_RATE_MAX"  value="{     5.0f,     5.0f,     5.0f}"/> <!-- [rad/s]--> 
