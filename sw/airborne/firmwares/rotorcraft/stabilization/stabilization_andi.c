@@ -228,8 +228,8 @@ static void generate_reference_thrust(float dt, float thrust_des, const float k_
 static struct FloatVect3 control_error_rate(const struct AttQuat *att_ref, const struct AttStateQuat *att_state, const struct GainsOrder2Vect3 *k_rate_ec);
 static struct FloatVect3 control_error_attitude(const struct AttQuat *att_ref, const struct AttStateQuat *att_state, const struct GainsOrder3Vect3 *k_att_ec);
 static float control_error_thrust(const struct ThrustRef *thrust_ref, const float thrust_state, const float k_thrust_ec);
-static void compute_wls_upper_bounds(float u_d_max[ANDI_NUM_ACT], const float act_state[ANDI_NUM_ACT], const float act_max[ANDI_NUM_ACT], const float act_rate_max[ANDI_NUM_ACT], float dt);
-static void compute_wls_lower_bounds(float u_d_min[ANDI_NUM_ACT], const float act_state[ANDI_NUM_ACT], const float act_min[ANDI_NUM_ACT], const float act_rate_min[ANDI_NUM_ACT], float dt);
+static void compute_wls_upper_bounds(float u_d_max[ANDI_NUM_ACT], const float act_state[ANDI_NUM_ACT], const float act_max[ANDI_NUM_ACT], const float act_rate_max[ANDI_NUM_ACT], const float actuator_bandwidth[ANDI_NUM_ACT]);
+static void compute_wls_lower_bounds(float u_d_min[ANDI_NUM_ACT], const float act_state[ANDI_NUM_ACT], const float act_min[ANDI_NUM_ACT], const float act_rate_min[ANDI_NUM_ACT], const float actuator_bandwidth[ANDI_NUM_ACT]);
 static void compute_wls_u_scaler(float u_scaler[ANDI_NUM_ACT], const float act_min[ANDI_NUM_ACT], const float act_max[ANDI_NUM_ACT]);
 static void compute_wls_v_scaler(float v_scaler[ANDI_NUM_ACT], const float v[ANDI_NUM_ACT]);
 
@@ -717,7 +717,7 @@ static void generate_reference_attitude(
 
   att_ref->att_d.p += att_ref->att_2d.x * dt;
   att_ref->att_d.q += att_ref->att_2d.y * dt;
-  att_ref->att_d.r += att_ref->att_2d.z * dt;
+  att_ref->att_d.r += att_ref->att_2d.z * dt
 
   float_quat_integrate(&att_ref->att, &att_ref->att_d, dt);
   float_quat_normalize(&att_ref->att);
@@ -858,14 +858,14 @@ static float control_error_thrust(
  * @param[in] act_state Current states (positions) of the actuators.
  * @param[in] act_max Maximum allowable positions for the actuators.
  * @param[in] act_rate_max Maximum allowable rates for the actuators.
- * @param[in] dt Timestep duration over which the rate limits are applied.
+ * @param[in] actuator_bandwidth Bandwidth of the actuators used to compute rate limits.
  */
-static void compute_wls_upper_bounds(float u_d_max[ANDI_NUM_ACT], const float act_state[ANDI_NUM_ACT], const float act_max[ANDI_NUM_ACT], const float act_rate_max[ANDI_NUM_ACT], float dt)
+static void compute_wls_upper_bounds(float u_d_max[ANDI_NUM_ACT], const float act_state[ANDI_NUM_ACT], const float act_max[ANDI_NUM_ACT], const float act_rate_max[ANDI_NUM_ACT], const float actuator_bandwidth[ANDI_NUM_ACT])
 {
   for (uint8_t i = 0; i < ANDI_NUM_ACT; i++)
   {
     // Calculate max rate allowed to avoid exceeding actuator max position in one timestep
-    float rate_limit_pos = (act_max[i] - act_state[i]) / dt;
+    float rate_limit_pos = (act_max[i] - act_state[i]) * actuator_bandwidth[i];
     u_d_max[i] = (rate_limit_pos < act_rate_max[i]) ? rate_limit_pos : act_rate_max[i];
     Bound(u_d_max[i], 0.0f, INFINITY);
   }
@@ -884,14 +884,14 @@ static void compute_wls_upper_bounds(float u_d_max[ANDI_NUM_ACT], const float ac
  * @param[in] act_state Current states (positions) of the actuators.
  * @param[in] act_min Minimum allowable positions for the actuators.
  * @param[in] act_rate_min Minimum allowable rates for the actuators.
- * @param[in] dt Timestep duration over which the rate limits are applied.
+ * @param[in] actuator_bandwidth Bandwidth of the actuators used to compute rate limits.
  */
-static void compute_wls_lower_bounds(float u_d_min[ANDI_NUM_ACT], const float act_state[ANDI_NUM_ACT], const float act_min[ANDI_NUM_ACT], const float act_rate_min[ANDI_NUM_ACT], float dt)
+static void compute_wls_lower_bounds(float u_d_min[ANDI_NUM_ACT], const float act_state[ANDI_NUM_ACT], const float act_min[ANDI_NUM_ACT], const float act_rate_min[ANDI_NUM_ACT], const float actuator_bandwidth[ANDI_NUM_ACT])
 {
   for (uint8_t i = 0; i < ANDI_NUM_ACT; i++)
   {
     // Calculate min rate allowed to avoid going below actuator min position in one timestep
-    float rate_limit_pos = (act_min[i] - act_state[i]) / dt;
+    float rate_limit_pos = (act_min[i] - act_state[i]) * actuator_bandwidth[i];
     u_d_min[i] = (rate_limit_pos > act_rate_min[i]) ? rate_limit_pos : act_rate_min[i];
     Bound(u_d_min[i], -INFINITY, 0.0f);
   }
@@ -1215,6 +1215,8 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   struct FloatVect3 angular_accel_obm = evaluate_obm_moments(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
   struct FloatVect3 linear_accel_obm = evaluate_obm_forces(&attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
 
+  // FIXME: Integral before filtering can cause numerical issues. Update complementary filter to handle this case.
+  // FIXME: Numerical differentiation to get accelerations can be noisy. Consider using a filter before differentiation.
   // Cascaded complementary filter for linear velocity and accelerations measurements
   update_butterworth_2_complementary_vect3(&linear_accel_cf, &linear_accel_obm, &lin_meas.acc);
   linear_state_cf.acc = get_butterworth_2_complementary_vect3(&linear_accel_cf);
@@ -1314,11 +1316,11 @@ void stabilization_andi_run(bool use_rate_control, bool in_flight, struct Stabil
   if (SCHEDULE_EFF) evaluate_obm_f_stb_u(ce_mat, &attitude_state_cf.att_d, &linear_state_cf.vel, actuator_state);
 
   // Solve control allocation using weighted least squares
-  compute_wls_lower_bounds(du_min, actuator_state, ACTUATOR_MIN, ACTUATOR_D_MIN, SAMPLE_TIME);
-  compute_wls_upper_bounds(du_max, actuator_state, ACTUATOR_MAX, ACTUATOR_D_MAX, SAMPLE_TIME);
+  compute_wls_lower_bounds(du_min, actuator_state, ACTUATOR_MIN, ACTUATOR_D_MIN, ACTUATOR_DYNAMICS);
+  compute_wls_upper_bounds(du_max, actuator_state, ACTUATOR_MAX, ACTUATOR_D_MAX, ACTUATOR_DYNAMICS);
   float wls_u_scaler[ANDI_NUM_ACT];
   float wls_v_scaler[ANDI_OUTPUTS] = {[0 ... ANDI_OUTPUTS - 1] = 1.0f}; // Disable v scaling
-  compute_wls_u_scaler(wls_u_scaler, du_min, du_max);
+  compute_wls_u_scaler(wls_u_scaler, du_min, du_max); // FIXME: Compute in advance
   // compute_wls_v_scaler(wls_v_scaler, nu_obj);
 
   float ce_mat_scaled[ANDI_OUTPUTS][ANDI_NUM_ACT];
