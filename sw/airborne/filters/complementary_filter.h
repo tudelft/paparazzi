@@ -26,6 +26,10 @@
  * Provides structures and functions to initialize, update, reset, and get outputs from
  * first order and second order complementary filters, as well as Butterworth complementary filters.
  *
+ * FIXME: This implementation of complementary filters forces user to first integrate or differentiate 
+ * the signals outside of the filter before passing them in. Consider extending the filter to handle integration
+ * and differentiation internally. Maybe implement cascaded complementary filters for this purpose.
+ * 
  * @author Justin Dubois <j.p.g.dubois@student.tudelft.nl>
  */
 
@@ -166,6 +170,7 @@ static inline float reset_second_order_complementary(
   reset_second_order_low_pass(&filter->y_lp_filter, value);
   return value;
 }
+
 /** Get current value of the second order complementary filter.
  *
  * @param filter Complementary filter struct
@@ -281,6 +286,7 @@ static inline void reset_butterworth_4_complementary(Butterworth4Complementary *
   reset_butterworth_4_low_pass(&filter->x_lp_filter, value);
   reset_butterworth_4_low_pass(&filter->y_lp_filter, value);
 }
+
 /** Get current value of the Butterworth 4th order low-pass complementary filter.
  *
  * @param filter Complementary filter struct
@@ -292,5 +298,12 @@ static inline float get_butterworth_4_complementary(const Butterworth4Complement
   float y_lp_output = get_butterworth_4_low_pass(&filter->y_lp_filter);
   return filter->x_lp_filter.lp1.i[0] - x_lp_output + y_lp_output;
 }
+
+
+
+
+
+
+
 
 #endif /* COMPLEMENTARY_FILTER_H */
