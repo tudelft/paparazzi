@@ -302,6 +302,16 @@ PRINT_CONFIG_VAR(INS_EKF2_BARO_NOISE)
 #define INS_EKF2_RELHEADING_ERR 0.2
 #endif
 
+/** By default log highspeed on the flightrecorder */
+#ifndef INS_EKF2_HIGHSPEED_DEVICE
+#define INS_EKF2_HIGHSPEED_DEVICE flightrecorder_sdlog
+#endif
+
+#ifndef INS_EKF2_LOG_HIGHSPEED
+#define INS_EKF2_LOG_HIGHSPEED FALSE
+#endif
+PRINT_CONFIG_VAR(INS_EKF2_LOG_HIGHSPEED)
+
 /* All registered ABI events */
 static abi_event baro_ev;
 static abi_event temperature_ev;
@@ -707,6 +717,15 @@ void ins_ekf2_update(void)
   /* Update the EKF */
   if (ekf2.got_imu_data) {
     // Update the EKF but ignore the response and also copy the faster intermediate filter
+#if INS_EKF2_LOG_HIGHSPEED
+    static uint32_t prev_time = 0;
+    uint32_t curr_time = get_sys_time_usec();
+    char msg[40];
+    int rc = snprintf(msg, 40, "%s", __func__);
+    uint32_t t_diff = curr_time - prev_time;
+    pprz_msg_send_EKF_HIGHSPEED_LOG(&pprzlog_tp.trans_tx, &(INS_EKF2_HIGHSPEED_DEVICE).device, AC_ID, rc, msg, &t_diff);
+    prev_time = curr_time;
+#endif
     ekf.update();
     filter_control_status_u control_status = ekf.control_status();
 
@@ -821,6 +840,17 @@ void ins_ekf2_parse_EXTERNAL_POSE_SMALL(uint8_t __attribute__((unused)) *buf) {
  */
 static void ins_ekf2_publish_attitude(uint32_t stamp)
 {
+
+#if INS_EKF2_LOG_HIGHSPEED
+  static uint32_t prev_time = 0;
+  uint32_t curr_time = get_sys_time_usec();
+  char msg[40];
+  int rc = snprintf(msg, 40, "%s", __func__);
+  uint32_t t_diff = curr_time - prev_time;
+  pprz_msg_send_EKF_HIGHSPEED_LOG(&pprzlog_tp.trans_tx, &(INS_EKF2_HIGHSPEED_DEVICE).device, AC_ID, rc, msg, &t_diff);
+  prev_time = curr_time;
+#endif
+
   imuSample imu_sample = {};
   imu_sample.time_us = stamp;
   imu_sample.delta_ang_dt = ekf2.gyro_dt * 1.e-6f;

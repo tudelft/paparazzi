@@ -27,7 +27,7 @@
                 <configure name="EXTRA_DL_BAUD" value="1500000"/>
             </module> -->
             
-             <module name="mission_rotorcraft">
+            <module name="mission_rotorcraft">
                 <define name="MISSION_WAIT_TIMEOUT" value="0"/>
                 <define name="MISSION_ELEMENT_NB" value="200"/>
             </module>
@@ -55,6 +55,7 @@
 
             <!-- Log in high speed (Remove for outdoor flights) -->
             <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
+            <!-- <define name="INS_EKF2_LOG_HIGHSPEED" value="TRUE"/> -->
             <!-- <define name="FALCON_LOG_ON_ARRIVAL" value="TRUE"/> -->
 
             <define name="I2C2_CLOCK_SPEED" value="100000"/>
@@ -143,8 +144,8 @@
             <define name="INS_EKF2_RW" value="true"/-->
         </module>
 
-        <module name="parachute"/>
-        <module name="ekf_aw"/>
+        <!-- <module name="parachute"/> -->
+        <!-- <module name="ekf_aw"/> -->
 
         <!-- Actuators on dual CAN bus -->
         <module name="actuators" type="uavcan">
