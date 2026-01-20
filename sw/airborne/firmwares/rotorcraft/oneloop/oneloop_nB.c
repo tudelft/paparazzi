@@ -2654,3 +2654,20 @@ void SpinQuad_overwrite(float gain, float ce_model, float *nu_stab_2)
   }
 }
 
+
+void guidance_set_max_bank_angle(float max_bank) {
+  (void)max_bank;
+  return;
+}
+
+void guidance_set_max_climb_speed(float max_climb_speed_quad, float max_climb_speed_fwd) {
+  (void)max_climb_speed_quad;
+  (void)max_climb_speed_fwd;
+  return;
+}
+
+void guidance_set_max_descend_speed(float max_descend_speed_quad, float max_descend_speed_fwd) {
+  (void)max_descend_speed_quad;
+  (void)max_descend_speed_fwd;
+  return;
+}

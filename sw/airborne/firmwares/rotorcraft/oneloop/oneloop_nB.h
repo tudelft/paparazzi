@@ -238,4 +238,8 @@ extern void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_fli
 extern void oneloop_nB_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn);
 extern void oneloop_from_nav(bool in_flight);
 extern void guidance_set_min_max_airspeed(float min_airspeed, float max_airspeed);
+extern void guidance_set_max_bank_angle(float max_bank);
+extern void guidance_set_max_climb_speed(float max_climb_speed_quad, float max_climb_speed_fwd);
+extern void guidance_set_max_descend_speed(float max_descend_speed_quad, float max_descend_speed_fwd);
+
 #endif  // ONELOOP_NB_H

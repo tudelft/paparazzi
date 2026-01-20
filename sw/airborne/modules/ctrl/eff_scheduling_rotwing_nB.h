@@ -18,7 +18,7 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-/** @file "modules/ctrl/eff_scheduling_rotwing_V2.h"
+/** @file "modules/ctrl/eff_scheduling_rotwing_nB.h"
  * @author Tomaso De Ponti <T.M.L.DePonti@tudelft.nl>
  * The control effectiveness scheduler for the rotating wing drone type
  */
@@ -33,10 +33,6 @@
 #define EFF_MAT_ROWS_NB 6
 #endif
 
-#ifndef COMMANDS_NB_VIRTUAL
-#define COMMANDS_NB_VIRTUAL 0
-#endif
-
 #define RW_aX 0 // X body axis (linear acceleration) 
 #define RW_aY 1 // Y body axis (linear acceleration)
 #define RW_aZ 2 // Z body axis (linear acceleration)
@@ -46,6 +42,18 @@
 #define RW_ap 3 // X body axis (angular acceleration)
 #define RW_aq 4 // Y body axis (angular acceleration)
 #define RW_ar 5 // Z body axis (angular acceleration)
+
+#ifndef COMMANDS_NB_VIRTUAL
+#define COMMANDS_NB_VIRTUAL 0
+#endif
+
+#ifndef COMMAND_ROLL
+#define COMMAND_ROLL COMMANDS_NB+1
+#endif
+
+#ifndef COMMAND_PITCH
+#define COMMAND_PITCH COMMANDS_NB+2
+#endif
 
 #ifndef EFF_MAT_COLS_NB
 #define EFF_MAT_COLS_NB (COMMANDS_NB_REAL + COMMANDS_NB_VIRTUAL)
