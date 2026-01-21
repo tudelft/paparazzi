@@ -749,7 +749,7 @@
   />
   <aircraft
    name="Swing"
-   ac_id="444"
+   ac_id="255"
    airframe="airframes/tudelft/swing.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"

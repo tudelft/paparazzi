@@ -24,7 +24,7 @@ Where -d 0 must be -d 1 if you have a laptop with accelometer installed
 The basis of steering is the standard signs of aerospace convention
 -->
 
-<joystick>
+<!-- <joystick>
   <input>
     <axis index="4" name="LeftStickHorizontal"/>
     <axis index="2" name="LeftStickVertical"/>
@@ -37,6 +37,28 @@ The basis of steering is the standard signs of aerospace convention
   <messages period="0.05">
     <message class="datalink" name="RC_UP" send_always="true">
       <field name="channels" value="RightStickHorizontal;-RightStickVertical;LeftStickHorizontal;Fit(LeftStickVertical,0,127,0,127);-(VRA*2-1)*127"/>
+    </message>
+  </messages>
+
+</joystick> -->
+
+<joystick>
+  <input>
+    <axis index="4" name="LeftStickHorizontal"/>
+    <axis index="2" name="LeftStickVertical"/>
+    <axis index="0" name="RightStickHorizontal"/>
+    <axis index="1" name="RightStickVertical"/>
+    <axis index="3" name="VRB"/>
+    <button index="0" name="VRA"/>
+  </input>
+
+  <messages period="0.05">
+    <message class="datalink" name="RC_UP" send_always="true">
+      <field name="throttle" value="Fit(LeftStickVertical,0,64,0,127)"/>
+      <field name="roll" value="RightStickHorizontal"/>
+      <field name="pitch" value="-RightStickVertical"/>
+      <field name="yaw" value="LeftStickHorizontal"/>
+      <field name="mode" value="2-2*VRA"/>
     </message>
   </messages>
 

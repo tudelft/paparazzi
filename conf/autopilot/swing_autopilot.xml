@@ -6,7 +6,7 @@
 
     <includes>
       <include name="generated/airframe.h"/>
-      <include name="autopilot.h"/>
+      <!-- <include name="autopilot.h"/> -->
       <include name="autopilot_rc_helpers.h"/>
       <include name="navigation.h"/>
       <include name="guidance.h"/>
