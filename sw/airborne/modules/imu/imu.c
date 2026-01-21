@@ -471,7 +471,7 @@ void imu_init(void)
     if(!imu.gyros[i].calibrated.neutral) {
       INT_RATES_ZERO(imu.gyros[i].neutral);
     }
-    
+
     if(!imu.gyros[i].calibrated.scale_f) {
       if(imu.gyros[i].calibrated.scale) {
         imu.gyros[i].scale_f.p = (float)imu.gyros[i].scale[0].p / (float)imu.gyros[i].scale[1].p;
