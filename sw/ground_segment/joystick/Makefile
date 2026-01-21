@@ -42,19 +42,13 @@ GLIB_LDFLAGS = $(shell pkg-config glib-2.0 --libs)
 #GLIBIVY_LDFLAGS = $(shell pkg-config ivy-glib --libs)
 
 # apparently on OSX `sdl-config --libs` also has -lSDLmain which we don't want
-# SDL linking for macOS and Linux
-UNAME := $(shell uname)
-ifeq ($(UNAME),Darwin)
-  SDL_LDFLAGS = $(shell sdl-config --libs)
-  SDL_LDIRS =
-  SDL_LIBS =
-else
-  SDL_LDFLAGS =
-  SDL_LDIRS = $(shell pkg-config --variable=libdir sdl)
-  SDL_LIBS = -lSDL -lpthread
-endif
+SDL_LDIRS = $(shell pkg-config sdl --libs-only-L)
+SDL_LIBS = -lSDL
+# we do however need -lSDLmain for test_stick, which is just c
+SDL_LDFLAGS = $(shell sdl-config --libs)
 
-ML_SDL_LFLAGS = $(foreach u,$(SDL_LDIRS),-ccopt $(u)) $(foreach u,$(SDL_LIBS),-cclib $(u)) $(foreach u,$(SDL_LDFLAGS),-cclib $(u))
+# apparently on OSX `sdl-config --libs` also has -lSDLmain which we don't want
+ML_SDL_LFLAGS = $(foreach u,$(SDL_LDIRS),-ccopt $(u)) $(foreach u,$(SDL_LIBS),-cclib $(u)) libSDL.so
 ML_SDL_LFLAGS += -dllpath ${PAPARAZZI_SRC}/sw/ground_segment/joystick
 INCLUDES += -I $(shell ocamlc -where)
 
@@ -85,7 +79,7 @@ endif
 
 test_stick: test_sdl_stick.o
 	@echo BUILD $@
-	$(Q)$(CC) -g -O2 -DSTICK_DBG $(GLIB_CFLAGS) -o $@ $^ sdl_stick.c $(GLIB_LDFLAGS) $(SDL_LIBS) $(SDL_LDFLAGS)
+	$(Q)$(CC) -g -O2 -DSTICK_DBG $(GLIB_CFLAGS) -o $@ $^ sdl_stick.c $(GLIB_LDFLAGS) $(SDL_LDFLAGS)
 
 input2ivy: $(LIBPPRZCMA) $(LIBPPRZLINKCMA) $(INPUT2IVY_DEPS)
 	@echo OL $@
