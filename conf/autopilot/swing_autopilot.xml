@@ -14,7 +14,6 @@
       <include name="modules/radio_control/radio_control.h"/>
       <include name="modules/gps/gps.h"/>
       <include name="modules/actuators/actuators.h"/>
-      <define name="MODE_AUTO2" value="AP_MODE_NAV" cond="ifndef MODE_AUTO2"/>
       <define name="RCLost()" value="(radio_control.status == RC_REALLY_LOST)"/>
     </includes>
 
@@ -43,8 +42,23 @@
       <exception cond="kill_switch_is_on()" deroute="KILL"/>
     </exceptions>
 
-    <mode name="ATTITUDE_DIRECT" shortname="ATT">
+    <mode name="KILL">
       <select cond="RCMode0()"/>
+      <on_enter>
+        <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NONE)"/>
+        <call fun="stabilization_mode_changed(STABILIZATION_MODE_NONE, 0)"/>
+        <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_KILL)"/>
+        <call fun="autopilot_set_in_flight(false)"/>
+        <call fun="autopilot_set_motors_on(false)"/>
+        <!--call fun="stabilization.cmd[COMMAND_THRUST] = 0"/-->
+      </on_enter>
+      <control>
+        <call fun="SetCommands(commands_failsafe)"/>
+      </control>
+    </mode>
+
+    <mode name="ATTITUDE_DIRECT" shortname="ATT">
+      <select cond="RCMode2()"/>
       <on_enter>
         <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NONE)"/>
         <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_RC_DIRECT)"/>
@@ -76,7 +90,7 @@
     </mode> -->
 
     <mode name="NAV">
-      <select cond="RCMode2()" exception="HOME"/>
+      <select cond="RCMode1()" exception="HOME"/>
       <select cond="$DEFAULT_MODE"/>
       <on_enter>
         <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NAV)"/>
@@ -109,7 +123,6 @@
       <exception cond="GpsIsLost()" deroute="FAILSAFE"/>
     </mode>
 
-    <!-- Safe landing -->
     <mode name="FAILSAFE" shortname="FAIL">
       <on_enter>
         <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NONE)"/>
@@ -124,22 +137,6 @@
         <call_block name="set_commands"/>
       </control>
       <exception cond="!GpsIsLost()" deroute="$LAST_MODE"/>
-    </mode>
-
-    <!-- Kill throttle mode -->
-    <mode name="KILL">
-      <select cond="kill_switch_is_on()"/>
-      <on_enter>
-        <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NONE)"/>
-        <call fun="stabilization_mode_changed(STABILIZATION_MODE_NONE, 0)"/>
-        <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_KILL)"/>
-        <call fun="autopilot_set_in_flight(false)"/>
-        <call fun="autopilot_set_motors_on(false)"/>
-        <!--call fun="stabilization.cmd[COMMAND_THRUST] = 0"/-->
-      </on_enter>
-      <control>
-        <call fun="SetCommands(commands_failsafe)"/>
-      </control>
     </mode>
 
   </state_machine>

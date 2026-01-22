@@ -216,13 +216,6 @@
         <define name="CARROT_DIST" value="100"/>
     </section> -->
 
-    <section name="AUTOPILOT">
-        <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
-        <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-        <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
-        <!-- <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/> -->
-    </section>
-
     <section name="BAT">
         <define name="CATASTROPHIC_BAT_LEVEL" value="3.1" unit="V"/>
         <define name="CRITIC_BAT_LEVEL" value="3.3" unit="V"/>
