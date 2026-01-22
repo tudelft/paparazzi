@@ -477,5 +477,11 @@
         <arg flag="sm600.xml"/>
       </program>
     </session>
+    <session name="Joystick sm600">
+      <program name="Joystick">
+        <arg flag="-ac" constant="Swing"/>
+        <arg flag="sm600.xml"/>
+      </program>
+    </session>
   </section>
 </control_panel>

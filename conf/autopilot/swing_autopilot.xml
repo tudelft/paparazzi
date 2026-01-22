@@ -14,12 +14,15 @@
       <include name="modules/radio_control/radio_control.h"/>
       <include name="modules/gps/gps.h"/>
       <include name="modules/actuators/actuators.h"/>
+      <define name="MODE_MANUAL" value="AP_MODE_KILL"/>
+      <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
+      <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/>
       <define name="RCLost()" value="(radio_control.status == RC_REALLY_LOST)"/>
     </includes>
 
     <settings>
       <dl_setting var="autopilot.kill_throttle" min="0" step="1" max="1" module="autopilot" values="Resurrect|Kill" handler="KillThrottle"/>
-      <dl_setting var="autopilot_mode_auto2" min="2" step="1" max="3" module="autopilot" values="NAV|GUIDED"/>
+      <!-- <dl_setting var="autopilot_mode_auto2" min="2" step="1" max="3" module="autopilot" values="NAV|GUIDED"/> -->
     </settings>
 
     <control_block name="set_commands">
@@ -37,13 +40,19 @@
       <call fun="stabilization_run(autopilot_in_flight(), &stab_sp, &thrust_sp, stabilization.cmd)"/>
     </control_block>
 
-    <exceptions>
+    <!-- <exceptions>
       <exception cond="nav.too_far_from_home" deroute="HOME"/>
       <exception cond="kill_switch_is_on()" deroute="KILL"/>
-    </exceptions>
+    </exceptions> -->
+
+    <mode_selection>
+      <mode_select cond="RCMode0()" mode="MODE_MANUAL"/>
+      <mode_select cond="RCMode1()" mode="MODE_AUTO1"/>
+      <mode_select cond="RCMode2()" mode="MODE_AUTO2"/>
+    </mode_selection>
 
     <mode name="KILL">
-      <select cond="RCMode0()"/>
+      <select cond="$DEFAULT_MODE"/>
       <on_enter>
         <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NONE)"/>
         <call fun="stabilization_mode_changed(STABILIZATION_MODE_NONE, 0)"/>
@@ -58,7 +67,6 @@
     </mode>
 
     <mode name="ATTITUDE_DIRECT" shortname="ATT">
-      <select cond="RCMode2()"/>
       <on_enter>
         <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NONE)"/>
         <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_RC_DIRECT)"/>
@@ -71,27 +79,10 @@
         <call_block name="run_attitude_control"/>
         <call_block name="set_commands"/>
       </control>
-      <exception cond="RCLost()" deroute="FAILSAFE"/>
+      <!-- <exception cond="RCLost()" deroute="FAILSAFE"/> -->
     </mode>
-
-    <!-- <mode name="MODULE">
-      <select cond="RCMode1()"/>
-      <on_enter>
-        <call fun="guidance_module_enter()"/>
-      </on_enter>
-      <control freq="NAVIGATION_FREQUENCY">
-        <call fun="nav_periodic_task()"/>
-      </control>
-      <control>
-        <call fun="guidance_module_run(autopilot_in_flight())"/>
-        <call_block name="set_commands"/>
-      </control>
-      <exception cond="RCLost()" deroute="FAILSAFE"/>
-    </mode> -->
 
     <mode name="NAV">
-      <select cond="RCMode1()" exception="HOME"/>
-      <select cond="$DEFAULT_MODE"/>
       <on_enter>
         <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NAV)"/>
         <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_NAV)"/>
@@ -104,23 +95,7 @@
         <call_block name="run_guidance_control"/>
         <call_block name="set_commands"/>
       </control>
-      <exception cond="GpsIsLost() && autopilot_in_flight()" deroute="FAILSAFE"/>
-    </mode>
-
-    <mode name="HOME">
-      <on_enter>
-        <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NAV)"/>
-        <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_NAV)"/>
-        <call fun="stabilization_mode_changed(STABILIZATION_MODE_ATTITUDE, STABILIZATION_ATT_SUBMODE_HEADING)"/>
-      </on_enter>
-      <control freq="NAVIGATION_FREQUENCY">
-        <call fun="nav_home()"/>
-      </control>
-      <control>
-        <call_block name="run_guidance_control"/>
-        <call_block name="set_commands"/>
-      </control>
-      <exception cond="GpsIsLost()" deroute="FAILSAFE"/>
+      <!-- <exception cond="GpsIsLost() && autopilot_in_flight()" deroute="FAILSAFE"/> -->
     </mode>
 
     <mode name="FAILSAFE" shortname="FAIL">
@@ -136,7 +111,7 @@
         <call fun="stabilization_run(autopilot_in_flight(), &stab_failsafe, &thrust_sp, stabilization.cmd)"/>
         <call_block name="set_commands"/>
       </control>
-      <exception cond="!GpsIsLost()" deroute="$LAST_MODE"/>
+      <!-- <exception cond="!GpsIsLost()" deroute="$LAST_MODE"/> -->
     </mode>
 
   </state_machine>
