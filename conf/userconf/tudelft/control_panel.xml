@@ -263,6 +263,24 @@
         <arg flag="extreme_3d_pro.xml"/>
       </program>
     </session>
+    <session name="swing - sim">
+      <program name="Simulator">
+        <arg flag="-a" constant="Swing"/>
+        <arg flag="-t" constant="nps"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="PprzGCS"/>
+      <program name="Joystick">
+        <arg flag="-ac" constant="Swing"/>
+        <arg flag="sm600.xml"/>
+      </program>
+    </session>
     <session name="Messages and Settings">
       <program name="Messages"/>
       <program name="Settings">
@@ -472,12 +490,6 @@
       <program name="Server"/>
       <program name="Messages"/>
       <program name="PprzGCS"/>
-      <program name="Joystick">
-        <arg flag="-ac" constant="Swing"/>
-        <arg flag="sm600.xml"/>
-      </program>
-    </session>
-    <session name="Joystick sm600">
       <program name="Joystick">
         <arg flag="-ac" constant="Swing"/>
         <arg flag="sm600.xml"/>

@@ -36,14 +36,6 @@
             <define name="USE_BARO_BOARD" value="FALSE"/>
         </module>
 
-        <!-- <module name="guidance" type="indi">
-            <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500.0"/>
-            <define name="GUIDANCE_INDI_THRUST_DYNAMICS_FREQ" value="53.9"/>
-            <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
-            <define name="WLS_N_U_MAX" value="4"/>
-            <define name="WLS_N_V_MAX" value="4"/>
-        </module> -->
-
         <!-- Use GPS heading instead of magneto -->
         <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
         <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
@@ -95,12 +87,6 @@
         <set servo="TOP_LEFT"     value="motor_mixing.commands[3]"/>
     </command_laws>
 
-    <section name="AIR_DATA" prefix="AIR_DATA_">
-        <define name="CALC_AIRSPEED" value="FALSE"/>
-        <define name="CALC_TAS_FACTOR" value="FALSE"/>
-        <define name="CALC_AMSL_BARO" value="TRUE"/>
-    </section>
-
     <section name="IMU" prefix="IMU_">
         <!-- Accelero -->
         <!-- <define name="ACCEL_X_NEUTRAL" value="2048"/>
@@ -133,10 +119,6 @@
         <define name="H_Z" value="0.9211303"/>
     </section>
 
-    <!-- <section name="INS" prefix="INS_">
-        <define name="SONAR_MAX_RANGE" value="2.2"/>
-    </section> -->
-
     <section name="RC_SETPOINT" prefix="STABILIZATION_ATTITUDE_">
         <!-- setpoint limits for attitude stabilization rc flight -->
         <define name="SP_MAX_PHI" value="45" unit="deg"/>
@@ -149,12 +131,12 @@
 
     <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
         <!-- control effectiveness -->
-        <define name="G1_ROLL" value="{20 , -20, -20 , 20 }"/>
-        <define name="G1_PITCH" value="{14 , 14, -14 , -14 }"/>
+        <define name="G1_ROLL" value="{10 , -10, -10 , 10 }"/>
+        <define name="G1_PITCH" value="{7 , 7, -7 , -7 }"/>
         <define name="G1_YAW" value="{-1, 1, -1, 1}"/>
-        <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4}"/>
+        <define name="G1_THRUST" value="{-.2, -.2, -.2, -.2}"/>
         <!--Counter torque effect of spinning up a rotor-->
-        <define name="G2" value="{-61.2093,   65.3670,  -65.7419,   65.4516}"/>
+        <define name="G2" value="{0, 0, 0, 0}"/>
 
         <!-- reference acceleration for attitude control -->
         <define name="REF_ERR_P" value="600.0"/>
@@ -178,11 +160,6 @@
         <define name="WLS_PRIORITIES" value="{1000, 1000, 1, 100}"/>
     </section>
 
-    <!-- <section name="SIMULATOR" prefix="NPS_">
-        <define name="ACTUATOR_NAMES" value="nw_motor, ne_motor, se_motor, sw_motor" type="string[]"/>
-        <define name="JSBSIM_MODEL" value="simple_x_quad_ccw" type="string"/>
-        <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
-    </section> -->
     <section name="SIMULATOR" prefix="NPS_">
         <define name="ACTUATOR_NAMES" value="nw_motor, ne_motor, se_motor, sw_motor" type="string[]"/>
         <define name="COMMANDS_NB" value="4"/>
@@ -190,7 +167,14 @@
         <define name="NO_MOTOR_MIXING" value="TRUE"/>
     </section>
 
+    <section name="BAT">
+        <define name="CATASTROPHIC_BAT_LEVEL" value="3.1" unit="V"/>
+        <define name="CRITIC_BAT_LEVEL" value="3.3" unit="V"/>
+        <define name="LOW_BAT_LEVEL" value="3.5" unit="V"/>
+        <define name="MAX_BAT_LEVEL" value="4.1" unit="V"/>
+    </section>
 
+    <!-- DUMMY defines -->
     <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
         <define name="HOVER_KP" value="283"/>
         <define name="HOVER_KD" value="82"/>
@@ -216,10 +200,4 @@
         <define name="CARROT_DIST" value="100"/>
     </section> -->
 
-    <section name="BAT">
-        <define name="CATASTROPHIC_BAT_LEVEL" value="3.1" unit="V"/>
-        <define name="CRITIC_BAT_LEVEL" value="3.3" unit="V"/>
-        <define name="LOW_BAT_LEVEL" value="3.5" unit="V"/>
-        <define name="MAX_BAT_LEVEL" value="4.1" unit="V"/>
-    </section>
 </airframe>
