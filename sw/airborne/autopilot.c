@@ -84,25 +84,25 @@ static void send_dl_value(struct transport_tx *trans, struct link_device *dev)
   PeriodicSendDlValue(trans, dev);
 }
 
-static void send_minimal_com(struct transport_tx *trans, struct link_device *dev)
-{
-  float lat = DegOfRad(stateGetPositionLla_f()->lat);
-  float lon = DegOfRad(stateGetPositionLla_f()->lon);
-  float hmsl = stateGetPositionUtm_f()->alt;
-  float gspeed = stateGetHorizontalSpeedNorm_f();
-  float course = stateGetHorizontalSpeedDir_f();
-  float climb = stateGetSpeedEnu_f()->z;
-  uint8_t throttle = (uint8_t)(100 * autopilot.throttle / MAX_PPRZ);
-#if USE_GPS
-  uint8_t gps_fix = gps.fix;
-#else
-  uint8_t gps_fix = 0;
-#endif
-  pprz_msg_send_MINIMAL_COM(trans, dev, AC_ID,
-                            &lat, &lon, &hmsl, &gspeed, &course, &climb,
-                            &electrical.vsupply, &throttle, &autopilot.mode,
-                            &nav_block, &gps_fix, &autopilot.flight_time);
-}
+// static void send_minimal_com(struct transport_tx *trans, struct link_device *dev)
+// {
+//   float lat = DegOfRad(stateGetPositionLla_f()->lat);
+//   float lon = DegOfRad(stateGetPositionLla_f()->lon);
+//   float hmsl = stateGetPositionUtm_f()->alt;
+//   float gspeed = stateGetHorizontalSpeedNorm_f();
+//   float course = stateGetHorizontalSpeedDir_f();
+//   float climb = stateGetSpeedEnu_f()->z;
+//   uint8_t throttle = (uint8_t)(100 * autopilot.throttle / MAX_PPRZ);
+// #if USE_GPS
+//   uint8_t gps_fix = gps.fix;
+// #else
+//   uint8_t gps_fix = 0;
+// #endif
+//   pprz_msg_send_MINIMAL_COM(trans, dev, AC_ID,
+//                             &lat, &lon, &hmsl, &gspeed, &course, &climb,
+//                             &electrical.vsupply, &throttle, &autopilot.mode,
+//                             &nav_block, &gps_fix, &autopilot.flight_time);
+// }
 
 void autopilot_init(void)
 {
@@ -138,7 +138,7 @@ void autopilot_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ALIVE, send_alive);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ATTITUDE, send_attitude);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DL_VALUE, send_dl_value);
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MINIMAL_COM, send_minimal_com);
+  // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MINIMAL_COM, send_minimal_com);
 }
 
 /** AP periodic call

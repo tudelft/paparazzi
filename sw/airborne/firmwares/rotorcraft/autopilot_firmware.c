@@ -111,30 +111,6 @@ bool WEAK autopilot_in_flight_end_detection(bool motors_on UNUSED) {
 #include "modules/actuators/motor_mixing.h"
 #endif
 
-static void send_status(struct transport_tx *trans, struct link_device *dev)
-{
-  uint32_t imu_nb_err = 0;
-#if USE_MOTOR_MIXING
-  uint8_t _motor_nb_err = motor_mixing.nb_saturation + motor_mixing.nb_failure * 10;
-#else
-  uint8_t _motor_nb_err = 0;
-#endif
-#if USE_GPS
-  uint8_t fix = gps.fix;
-#else
-  uint8_t fix = 0;
-#endif
-  uint8_t in_flight = autopilot.in_flight;
-  uint8_t motors_on = autopilot.motors_on;
-  uint16_t time_sec = sys_time.nb_sec;
-  pprz_msg_send_ROTORCRAFT_STATUS(trans, dev, AC_ID,
-                                  &imu_nb_err, &_motor_nb_err,
-                                  &radio_control.status, &radio_control.frame_rate,
-                                  &fix, &autopilot.mode, &in_flight, &motors_on,
-                                  &autopilot.arming_status, &guidance_h.mode, &guidance_v.mode,
-                                  &time_sec, &electrical.vsupply, &electrical.vboard);
-}
-
 static void send_energy(struct transport_tx *trans, struct link_device *dev)
 {
   uint8_t throttle = 100 * autopilot.throttle / MAX_PPRZ;
@@ -146,38 +122,6 @@ static void send_energy(struct transport_tx *trans, struct link_device *dev)
 
   pprz_msg_send_ENERGY(trans, dev, AC_ID,
                        &throttle, &electrical.vsupply, &electrical.current, &power, &avg_power, &electrical.charge, &electrical.energy);
-}
-
-static void send_fp(struct transport_tx *trans, struct link_device *dev)
-{
-  int32_t carrot_up = -guidance_v.z_sp;
-  int32_t carrot_heading = ANGLE_BFP_OF_REAL(guidance_h.sp.heading);
-  int32_t thrust = (int32_t)autopilot.throttle;
-  struct EnuCoor_i *pos = stateGetPositionEnu_i();
-#if GUIDANCE_INDI_HYBRID
-  struct FloatEulers eulers_zxy;
-  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-  struct Int32Eulers att;
-  EULERS_BFP_OF_REAL(att, eulers_zxy);
-#else
-  struct Int32Eulers att = *stateGetNedToBodyEulers_i();
-#endif
-  pprz_msg_send_ROTORCRAFT_FP(trans, dev, AC_ID,
-                              &pos->x,
-                              &pos->y,
-                              &pos->z,
-                              &(stateGetSpeedEnu_i()->x),
-                              &(stateGetSpeedEnu_i()->y),
-                              &(stateGetSpeedEnu_i()->z),
-                              &att.phi,
-                              &att.theta,
-                              &att.psi,
-                              &guidance_h.sp.pos.y,
-                              &guidance_h.sp.pos.x,
-                              &carrot_up,
-                              &carrot_heading,
-                              &thrust,
-                              &autopilot.flight_time);
 }
 
 static void send_body_rates_accel(struct transport_tx *trans, struct link_device *dev)
@@ -237,33 +181,6 @@ static void send_rotorcraft_cmd(struct transport_tx *trans, struct link_device *
 #else
 static void send_rotorcraft_cmd(struct transport_tx *trans UNUSED, struct link_device *dev UNUSED) {}
 #endif
-
-
-void autopilot_firmware_init(void)
-{
-  autopilot_in_flight_counter = 0;
-#ifdef MODE_AUTO2
-  autopilot_mode_auto2 = MODE_AUTO2;
-#endif
-
-  // register messages
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_STATUS, send_status);
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ENERGY, send_energy);
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_FP, send_fp);
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_FP_MIN, send_fp_min);
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_CMD, send_rotorcraft_cmd);
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_BODY_RATES_ACCEL, send_body_rates_accel);
-#ifdef RADIO_CONTROL
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_RADIO_CONTROL, send_rotorcraft_rc);
-#endif
-}
-
-void autopilot_send_mode(void)
-{
-#if DOWNLINK
-  send_status(&(DefaultChannel).trans_tx, &(DefaultDevice).device);
-#endif
-}
 
 /** autopilot event function
  *
