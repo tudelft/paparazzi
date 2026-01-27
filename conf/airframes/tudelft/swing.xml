@@ -28,6 +28,8 @@
         <module name="stabilization" type="indi"/>
         <module name="stabilization" type="rate_indi"/>
         <module name="ahrs" type="int_cmpl_quat"/>
+    
+        <module name="flatness_guidance"/>
         
         <!-- ins configured for optitrack -->
         <module name="ins">
@@ -173,31 +175,5 @@
         <define name="LOW_BAT_LEVEL" value="3.5" unit="V"/>
         <define name="MAX_BAT_LEVEL" value="4.1" unit="V"/>
     </section>
-
-    <!-- DUMMY defines -->
-    <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
-        <define name="HOVER_KP" value="283"/>
-        <define name="HOVER_KD" value="82"/>
-        <define name="HOVER_KI" value="20"/>
-        <define name="NOMINAL_HOVER_THROTTLE" value="0.655"/>
-        <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
-    </section>
-
-    <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-        <!-- Good weather -->
-        <define name="MAX_BANK" value="20" unit="deg"/>
-        <define name="REF_MAX_SPEED" value="2" unit="m/s"/>
-        <!-- Bad weather -->
-        <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
-        <define name="PGAIN" value="79"/>
-        <define name="DGAIN" value="100"/>
-        <define name="IGAIN" value="30"/>
-    </section>
-
-    <!-- <section name="NAVIGATION" prefix="NAV_">
-        <define name="CLIMB_VSPEED" value="2.5"/>
-        <define name="DESCEND_VSPEED" value="-1.0"/>
-        <define name="CARROT_DIST" value="100"/>
-    </section> -->
 
 </airframe>

@@ -1,0 +1,22 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="flatness_guidance" dir="flatness" task="control">
+    
+    <doc>
+        <description>Differential flatness based guidance.</description>
+    </doc>
+    
+    <dep>
+        <!-- <depends></depends> -->
+        <provides>guidance,navigation,autopilot_guided,attitude_command</provides>
+    </dep>
+    
+    <header>
+        <file name="flatness_guidance.h"/>
+    </header>
+
+    <init fun="flatness_guidance_init()"/>
+
+    <makefile>
+        <file name="flatness_guidance.c"/>
+    </makefile>
+</module>
