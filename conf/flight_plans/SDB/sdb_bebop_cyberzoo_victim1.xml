@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="1.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="60" name="Bebop avoid orange TU Delft Cyberzoo" security_height="0.4">
+<flight_plan alt="0.5" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="60" name="Bebop avoid orange TU Delft Cyberzoo" security_height="0.4">
   <header>
     #include "modules/datalink/datalink.h"
     #include "modules/energy/electrical.h"
@@ -106,7 +106,7 @@ inline void setGuided(void){
       <attitude pitch="0" roll="0" throttle="0" until="autopilot_get_motors_on()" vmode="throttle"/>
     </block>
     <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="GetPosAlt() @GT 3.0" deroute="Standby"/>
+      <exception cond="GetPosAlt() @GT 0.5" deroute="Standby"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <call_once fun="autopilot_set_in_flight(true)"/>
       <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>

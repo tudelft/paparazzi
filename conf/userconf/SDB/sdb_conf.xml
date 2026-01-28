@@ -1,0 +1,57 @@
+<conf>
+  <aircraft
+   name="RotatingWingSwarm1"
+   ac_id="101"
+   airframe="airframes/SDB/sdb_rotwing_v3k_swarm101.xml"
+   radio="radios/crossfire_sbus.xml"
+   telemetry="telemetry/SDB/sdb_highspeed_rotorcraft.xml"
+   flight_plan="flight_plans/SDB/sdb_rotwing_EHVB.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/air_data.xml modules/airspeed_consistency.xml modules/airspeed_ms45xx_i2c.xml modules/airspeed_uavcan.xml modules/approach_moving_target.xml modules/eff_scheduling_rotwing.xml modules/ekf_aw.xml modules/electrical.xml modules/follow_me.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/imu_heater.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_hybrid.xml modules/nav_rotorcraft.xml modules/parachute.xml modules/pfc_actuators.xml modules/preflight_checks.xml modules/rotwing_state.xml modules/stabilization_indi.xml modules/sys_id_auto_doublets.xml modules/sys_id_doublet.xml modules/target_pos.xml"
+   gui_color="red"
+  />
+  <aircraft
+   name="RotatingWingSwarm2"
+   ac_id="102"
+   airframe="airframes/SDB/sdb_rotwing_v3k_swarm102.xml"
+   radio="radios/crossfire_sbus.xml"
+   telemetry="telemetry/SDB/sdb_highspeed_rotorcraft.xml"
+   flight_plan="flight_plans/SDB/sdb_rotwing_EHVB.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/air_data.xml modules/airspeed_consistency.xml modules/airspeed_ms45xx_i2c.xml modules/airspeed_uavcan.xml modules/approach_moving_target.xml modules/eff_scheduling_rotwing.xml modules/ekf_aw.xml modules/electrical.xml modules/follow_me.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/imu_heater.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_hybrid.xml modules/nav_rotorcraft.xml modules/parachute.xml modules/pfc_actuators.xml modules/preflight_checks.xml modules/rotwing_state.xml modules/stabilization_indi.xml modules/sys_id_auto_doublets.xml modules/sys_id_doublet.xml modules/target_pos.xml"
+   gui_color="yellow"
+  />
+  <aircraft
+   name="B_Cow"
+   ac_id="121"
+   airframe="airframes/SDB/sdb_parrot_bebop2_indi_opti.xml"
+   radio="radios/dummy.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/SDB/sdb_bebop_cyberzoo_scanner2.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/air_data.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/guidance_indi.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_rotorcraft.xml modules/stabilization_indi.xml"
+   gui_color="Green"
+  />
+  <aircraft
+   name="B_Chicken"
+   ac_id="122"
+   airframe="airframes/SDB/sdb_bebop_guided1.xml"
+   radio="radios/dummy.xml"
+   telemetry="telemetry/SDB/sdb_highspeed_rotorcraft.xml"
+   flight_plan="flight_plans/SDB/sdb_bebop_cyberzoo_scanner2.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/air_data.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/gps_ubx_ucenter.xml modules/guidance_indi.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_rotorcraft.xml modules/stabilization_indi.xml"
+   gui_color="White"
+  />
+  <aircraft
+   name="B_Goat"
+   ac_id="123"
+   airframe="airframes/SDB/sdb_bebop_guided2.xml"
+   radio="radios/dummy.xml"
+   telemetry="telemetry/SDB/sdb_highspeed_rotorcraft.xml"
+   flight_plan="flight_plans/SDB/sdb_bebop_cyberzoo_victim1.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/air_data.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/gps_ubx_ucenter.xml modules/guidance_indi.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_rotorcraft.xml modules/stabilization_indi.xml"
+   gui_color="Purple"
+  />
+</conf>
