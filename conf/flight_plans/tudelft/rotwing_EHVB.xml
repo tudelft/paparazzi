@@ -113,37 +113,6 @@
         <call_once fun="rotwing_state_set(ROTWING_STATE_FREE)"/>
         <stay wp="STDBY"/>
     </block>
-    <block name="stay_ARUCO" strip_button="Stay ARUCO">
-        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay wp="ARUCO"/>
-    </block>
-    <block name="stay_SIXDOF" strip_button="Stay SIXDOF">
-        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay wp="SIXDOF"/>
-    </block>
-    <block name="stay_KALMAN" strip_button="Stay KALMAN" on_enter="nav_hybrid_wp_moving=true" on_exit="nav_hybrid_wp_moving=false">
-        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay wp="KALMAN"/>
-    </block>
-    <block name="stay_KALMAN_no_FF" strip_button="Stay KALMAN no ff">
-        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay wp="KALMAN"/>
-    </block>
-    <block name="descend_KALMAN" strip_button="Descend KALMAN" on_enter="nav_hybrid_wp_moving=true" on_exit="nav_hybrid_wp_moving=false">
-        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay climb="-0.2" vmode="climb" wp="KALMAN"/>
-        <exception cond="agl_dist_valid @AND (agl_dist_value @LT 2.0)" deroute="land here"/>
-    </block>
-    <block name="descend_ARUCO" strip_button="Descend ARUCO">
-        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay climb="-0.2" vmode="climb" wp="ARUCO"/>
-        <exception cond="agl_dist_valid @AND (agl_dist_value @LT 1.0)" deroute="stay_ARUCO"/>
-    </block>
-    <block name="descend_SIXDOF" strip_button="Descend SIXDOF">
-        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay climb="-0.2" vmode="climb" wp="SIXDOF"/>
-        <exception cond="agl_dist_valid @AND (agl_dist_value @LT 1.0)" deroute="stay_KALMAN_no_FF"/>
-    </block>
     <block name="stay_p1" strip_button="Stay P1" strip_icon="wp_quad.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <stay wp="p1"/>
@@ -168,14 +137,14 @@
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
       <stay pre_call="follow_me_set_wp(WP_p1, 0)" wp="p1"/>
     </block> -->
-    <!-- <block name="route">
+    <block name="route">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
       <go from="p1" hmode="route" wp="p2"/>
       <go from="p2" hmode="route" wp="p3"/>
       <go from="p3" hmode="route" wp="p4"/>
       <go from="p4" hmode="route" wp="p1"/>
       <deroute block="route"/>
-    </block> -->
+    </block>
     <!-- <block name="small_route" strip_button="Route" strip_icon="path.png">
       <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_FW)"/>
       <go wp="p2"/>
