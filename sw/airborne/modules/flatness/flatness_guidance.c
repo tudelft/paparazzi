@@ -34,6 +34,8 @@
 static abi_event rc_ev;
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
 
+struct ThrustSetpoint thrust_sp;
+
 void flatness_guidance_init(void)
 {
      AbiBindMsgRADIO_CONTROL(ABI_BROADCAST, &rc_ev, rc_cb);
@@ -41,15 +43,15 @@ void flatness_guidance_init(void)
 
 struct ThrustSetpoint get_thrust(void)
 {
-    struct ThrustSetpoint thrust_sp;
-
     return thrust_sp;
 }
 
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc)
 {
-    /* used in RC_DIRECT directly and as saturation in CLIMB and HOVER */
-    int32_t throttle = (int32_t)rc->values[RADIO_THROTTLE];
-    printf("throttle = %d", throttle);
+    int32_t rc_throttle = (int32_t)rc->values[RADIO_THROTTLE];
+    printf("throttle = %d", rc_throttle);
+
+    // THRUST_SP_SET_ZERO(thrust_sp);
+    thrust_sp = th_sp_from_thrust_i(rc_throttle, THRUST_AXIS_Z);
 }
 
