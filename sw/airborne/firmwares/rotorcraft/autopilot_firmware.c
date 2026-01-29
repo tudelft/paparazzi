@@ -111,29 +111,30 @@ bool WEAK autopilot_in_flight_end_detection(bool motors_on UNUSED) {
 #include "modules/actuators/motor_mixing.h"
 #endif
 
-// static void send_status(struct transport_tx *trans, struct link_device *dev)
-// {
-//   uint32_t imu_nb_err = 0;
-// #if USE_MOTOR_MIXING
-//   uint8_t _motor_nb_err = motor_mixing.nb_saturation + motor_mixing.nb_failure * 10;
-// #else
-//   uint8_t _motor_nb_err = 0;
-// #endif
-// #if USE_GPS
-//   uint8_t fix = gps.fix;
-// #else
-//   uint8_t fix = 0;
-// #endif
-//   uint8_t in_flight = autopilot.in_flight;
-//   uint8_t motors_on = autopilot.motors_on;
-//   uint16_t time_sec = sys_time.nb_sec;
-//   pprz_msg_send_ROTORCRAFT_STATUS(trans, dev, AC_ID,
-//                                   &imu_nb_err, &_motor_nb_err,
-//                                   &radio_control.status, &radio_control.frame_rate,
-//                                   &fix, &autopilot.mode, &in_flight, &motors_on,
-//                                   &autopilot.arming_status, &guidance_h.mode, &guidance_v.mode,
-//                                   &time_sec, &electrical.vsupply, &electrical.vboard);
-// }
+uint8_t dummy_mode = 0;
+static void send_status(struct transport_tx *trans, struct link_device *dev)
+{
+  uint32_t imu_nb_err = 0;
+#if USE_MOTOR_MIXING
+  uint8_t _motor_nb_err = motor_mixing.nb_saturation + motor_mixing.nb_failure * 10;
+#else
+  uint8_t _motor_nb_err = 0;
+#endif
+#if USE_GPS
+  uint8_t fix = gps.fix;
+#else
+  uint8_t fix = 0;
+#endif
+  uint8_t in_flight = autopilot.in_flight;
+  uint8_t motors_on = autopilot.motors_on;
+  uint16_t time_sec = sys_time.nb_sec;
+  pprz_msg_send_ROTORCRAFT_STATUS(trans, dev, AC_ID,
+                                  &imu_nb_err, &_motor_nb_err,
+                                  &radio_control.status, &radio_control.frame_rate,
+                                  &fix, &autopilot.mode, &in_flight, &motors_on,
+                                  &autopilot.arming_status, &dummy_mode, &dummy_mode,
+                                  &time_sec, &electrical.vsupply, &electrical.vboard);
+}
 
 static void send_energy(struct transport_tx *trans, struct link_device *dev)
 {
@@ -247,7 +248,7 @@ void autopilot_firmware_init(void)
 #endif
 
   // register messages
-  // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_STATUS, send_status);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_STATUS, send_status);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ENERGY, send_energy);
   // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_FP, send_fp);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_FP_MIN, send_fp_min);
