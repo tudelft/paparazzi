@@ -66,6 +66,7 @@ void autopilot_generated_periodic(void)
     autopilot.detect_ground_once = false;
   }
 
+  autopilot.throttle = commands[COMMAND_THRUST];
 }
 
 /** AP mode setting handler
