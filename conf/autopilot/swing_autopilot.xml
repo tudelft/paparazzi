@@ -5,17 +5,17 @@
     <state_machine name="ap" freq="PERIODIC_FREQUENCY" gcs_mode="true" settings_mode="true" settings_handler="autopilot_generated|SetModeHandler">
 
         <includes>
-            <include name="generated/airframe.h"/>
-            <include name="autopilot.h"/>
+            <!-- <include name="generated/airframe.h"/> -->
+            <!-- <include name="autopilot.h"/> -->
             <include name="autopilot_rc_helpers.h"/>
-            <include name="stabilization.h"/>
-            <include name="modules/radio_control/radio_control.h"/>
-            <include name="modules/gps/gps.h"/>
-            <include name="modules/actuators/actuators.h"/>
+            <!-- <include name="stabilization.h"/> -->
+            <!-- <include name="modules/radio_control/radio_control.h"/> -->
+            <!-- <include name="modules/gps/gps.h"/> -->
+            <!-- <include name="modules/actuators/actuators.h"/> -->
             <define name="MODE_MANUAL" value="AP_MODE_KILL"/>
             <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
             <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/>
-            <define name="RCLost()" value="(radio_control.status == RC_REALLY_LOST)"/>
+            <!-- <define name="RCLost()" value="(radio_control.status == RC_REALLY_LOST)"/> -->
         </includes>
 
         <settings>

@@ -113,7 +113,6 @@
     </section>
 
     <!-- local magnetic field -->
-    <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
     <section name="AHRS" prefix="AHRS_">
         <!-- Delft -->
         <define name="H_X" value="0.3892503"/>
@@ -122,7 +121,6 @@
     </section>
 
     <section name="RC_SETPOINT" prefix="STABILIZATION_ATTITUDE_">
-        <!-- setpoint limits for attitude stabilization rc flight -->
         <define name="SP_MAX_PHI" value="45" unit="deg"/>
         <define name="SP_MAX_THETA" value="45" unit="deg"/>
         <define name="SP_MAX_R" value="400" unit="deg/s"/>
@@ -132,15 +130,12 @@
     </section>
 
     <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
-        <!-- control effectiveness -->
-        <define name="G1_ROLL" value="{10 , -10, -10 , 10 }"/>
-        <define name="G1_PITCH" value="{7 , 7, -7 , -7 }"/>
+        <define name="G1_ROLL" value="{30 , -30, -30 , 30 }"/>
+        <define name="G1_PITCH" value="{15 , 15, -15 , -15 }"/>
         <define name="G1_YAW" value="{-1, 1, -1, 1}"/>
         <define name="G1_THRUST" value="{-.2, -.2, -.2, -.2}"/>
-        <!--Counter torque effect of spinning up a rotor-->
         <define name="G2" value="{0, 0, 0, 0}"/>
 
-        <!-- reference acceleration for attitude control -->
         <define name="REF_ERR_P" value="600.0"/>
         <define name="REF_ERR_Q" value="600.0"/>
         <define name="REF_ERR_R" value="600.0"/>
@@ -149,7 +144,7 @@
         <define name="REF_RATE_R" value="28.0"/>
 
         <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
-        <define name="FILT_CUTOFF" value="5.0"/>
+        <define name="FILT_CUTOFF" value="5.0"/>  <!-- maybe 2.3? -->
 
         <!-- first order actuator dynamics -->
         <define name="ACT_FREQ" value="{53.9, 53.9, 53.9, 53.9}"/>
