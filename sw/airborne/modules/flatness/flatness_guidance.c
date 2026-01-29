@@ -49,7 +49,7 @@ struct ThrustSetpoint get_thrust(void)
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc)
 {
     int32_t rc_throttle = (int32_t)rc->values[RADIO_THROTTLE];
-    printf("throttle = %d", rc_throttle);
+    // printf("throttle = %d", rc_throttle);
 
     // THRUST_SP_SET_ZERO(thrust_sp);
     thrust_sp = th_sp_from_thrust_i(rc_throttle, THRUST_AXIS_Z);
