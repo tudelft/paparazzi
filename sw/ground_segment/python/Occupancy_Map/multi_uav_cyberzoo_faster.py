@@ -30,24 +30,6 @@ sys.path.append(PPRZ_HOME + "/sw/ext/pprzlink/lib/v1.0/python")
 
 lat0, lon0, alt0 = 51.990634, 4.376789, 0.0
 LAT0, LON0, ALT0 =lat0, lon0, alt0 
-# xml_file = os.path.expanduser("~/paparazzi2/paparazzi/conf/flight_plans/SDB/sdb_rotwing_EHVB.xml")
-# tree = ET.parse(xml_file)
-# root = tree.getroot()
-
-# waypoints = {}
-# for wp in root.findall(".//waypoint"):
-#     name = wp.attrib.get("name")
-#     if "lat" in wp.attrib and "lon" in wp.attrib:
-#         lat, lon = float(wp.attrib["lat"]), float(wp.attrib["lon"])
-#         alt = float(wp.attrib.get("alt", 0.0))
-#         x, y, z = pm.geodetic2enu(lat, lon, alt, lat0, lon0, alt0)
-#         waypoints[name] = (x, y, z)
-#     elif "x" in wp.attrib and "y" in wp.attrib:
-#         x, y = float(wp.attrib["x"]), float(wp.attrib["y"])
-#         z = float(wp.attrib.get("z", 0.0))
-#         waypoints[name] = (x, y, z)
-
-
 # --- CyberZoo Geofence Setup ---
 # Extracted from cyberzoo XML
 cz_waypoints = {
@@ -68,11 +50,9 @@ for name in ["_CZ1", "_CZ2", "_CZ3", "_CZ4"]:
 
 soft_poly = Polygon(softgeo_xy)
 
-# softgeo_xy = np.array([waypoints[wp][:2] for wp in ["S1","S2","S3","S4","S5","S6","S7","S8","S9"]])
-# soft_poly = Polygon(softgeo_xy)
 
 x_min, y_min, x_max, y_max = soft_poly.bounds
-grid_resolution = 0.5  # Finer resolution (0.5m)
+grid_resolution = 0.05  # Finer resolution (0.5m)
 
 # 1. Create the axes
 grid_x = np.arange(x_min, x_max + grid_resolution, grid_resolution)
@@ -160,37 +140,90 @@ FIRST_GPS_RECEIVED = False
 CALIB_OFFSET_X = 0.0
 CALIB_OFFSET_Y = 0.0
 
+# def on_gps_int(ac_id, msg):
+#     global FIRST_GPS_RECEIVED, CALIB_OFFSET_X, CALIB_OFFSET_Y
+#     if msg.name != "GPS_INT": return
+#     ac_id = int(ac_id)
+#     uav = ensure_uav(ac_id)
+
+#     lat = float(msg["lat"]) * 1e-7
+#     lon = float(msg["lon"]) * 1e-7
+#     alt = float(msg["alt"]) / 1000.0 
+
+#     # Convert using your XML Lat0/Lon0
+#     x, y, z = pm.geodetic2enu(lat, lon, alt, LAT0, LON0, ALT0)
+
+#     # --- CALIBRATION HACK ---
+#     # The first time we get a GPS message, assuming the drone is at "Home" (0,0)
+#     # we calculate the error.
+#     if not FIRST_GPS_RECEIVED:
+#         # Ask yourself: Is the drone physically at the XML Home (S1/Start) right now?
+#         # If yes, x and y SHOULD be 0.0. If they are 50.0, your offset is 50.0.
+#         print(f"\n[CALIBRATION] Drone is at Python Coords: X={x:.2f}, Y={y:.2f}")
+#         print(f"[CALIBRATION] If drone is actually at HOME (0,0), subtract these values!\n")
+#         FIRST_GPS_RECEIVED = True
+        
+#     # Apply Calibration (Uncomment if you want to force it to 0,0)
+#     # x -= 54.0  (Example: Replace with value printed above)
+#     # y -= -12.0 (Example)
+    
+#     with LOCK:
+#         uav["state"]["x"] = x
+#         uav["state"]["y"] = y
+#         uav["state"]["z"] = z
+
+# --- GLOBAL CALIBRATION VARIABLES ---
+# Define known starting heights here. 
+# If a drone isn't listed, it defaults to 0.0 (Ground).
+
+KNOWN_START_HEIGHTS = {
+    121: 2.0,  # Example: AC 121 is hovering at 2m
+    122: 3.0,  # Example: AC 122 is on a box
+    123: 0.5,  # Example: AC 122 is on a box
+}
+
+GROUND_REF_AMSL = None  # Will store the calculated Sea Level of the floor
+
 def on_gps_int(ac_id, msg):
-    global FIRST_GPS_RECEIVED, CALIB_OFFSET_X, CALIB_OFFSET_Y
+    global GROUND_REF_AMSL
     if msg.name != "GPS_INT": return
     ac_id = int(ac_id)
     uav = ensure_uav(ac_id)
 
+    # 1. Raw GPS Data
     lat = float(msg["lat"]) * 1e-7
     lon = float(msg["lon"]) * 1e-7
-    alt = float(msg["alt"]) / 1000.0 
+    alt_amsl = float(msg["alt"]) / 1000.0  # Raw Height above Mean Sea Level (e.g. 45.2m)
 
-    # Convert using your XML Lat0/Lon0
-    x, y, z = pm.geodetic2enu(lat, lon, alt, LAT0, LON0, ALT0)
+    # 2. Get X, Y (Standard conversion)
+    x, y, _ = pm.geodetic2enu(lat, lon, alt_amsl, LAT0, LON0, ALT0)
 
-    # --- CALIBRATION HACK ---
-    # The first time we get a GPS message, assuming the drone is at "Home" (0,0)
-    # we calculate the error.
-    if not FIRST_GPS_RECEIVED:
-        # Ask yourself: Is the drone physically at the XML Home (S1/Start) right now?
-        # If yes, x and y SHOULD be 0.0. If they are 50.0, your offset is 50.0.
-        print(f"\n[CALIBRATION] Drone is at Python Coords: X={x:.2f}, Y={y:.2f}")
-        print(f"[CALIBRATION] If drone is actually at HOME (0,0), subtract these values!\n")
-        FIRST_GPS_RECEIVED = True
+    # 3. Handle Z Calibration (One-time setup)
+    if GROUND_REF_AMSL is None:
+        # We use the FIRST drone seen to establish where the "Floor" is.
+        # Look up this drone's known start height (default to 0.0 if unknown)
+        start_h = KNOWN_START_HEIGHTS.get(ac_id, 0.0)
         
-    # Apply Calibration (Uncomment if you want to force it to 0,0)
-    # x -= 54.0  (Example: Replace with value printed above)
-    # y -= -12.0 (Example)
-    
+        # Calculate Ground AMSL: (Current GPS Alt) - (Physical Height)
+        GROUND_REF_AMSL = alt_amsl - start_h
+        
+        print(f"\n[CALIBRATION] Global Ground Reference set!")
+        print(f"  -> Based on AC{ac_id} reading {alt_amsl:.2f}m AMSL")
+        print(f"  -> Known physical height was {start_h:.2f}m")
+        print(f"  -> Calculated Ground Level: {GROUND_REF_AMSL:.2f}m AMSL\n")
+
+    # 4. Calculate Z relative to the calculated Ground Level
+    # This works for ALL drones now, regardless of their height.
+    z_agl = alt_amsl - GROUND_REF_AMSL
+
+    # Optional: Apply X/Y offsets if needed (as discussed before)
+    # x -= CALIB_OFFSET_X
+    # y -= CALIB_OFFSET_Y
+
     with LOCK:
         uav["state"]["x"] = x
         uav["state"]["y"] = y
-        uav["state"]["z"] = z
+        uav["state"]["z"] = z_agl
 
 def on_ins(ac_id, msg):
     if msg.name != "INS":
@@ -280,10 +313,10 @@ def world_to_grid(x, y):
 # -----------------------------
 
 dt_step = 1.0
-v_drift = np.array([0.02, 0.0])
-theta_FOV = np.deg2rad(15)
-E_scale = 100.0
-E_scale_track = 40.0
+v_drift = np.array([0.05, 0.0])
+theta_FOV = np.deg2rad(25)
+E_scale = 0.1
+E_scale_track = 0.04
 gamma_wind = 2.0
 v_wind = np.array([0.0, 0.0])
 v_max = 2.0        # max velocity [m/s]
@@ -351,7 +384,7 @@ def energy_of_path(path):
             # Note: We use the wind-aware vg we just fixed in the planner
             unit_vec = vec_g / (dist_xy + 1e-6)
             v_headwind_comp = np.dot(v_wind[:2], unit_vec)
-            vg_allowed = max(2.0, min(20.0, 20.0 + v_headwind_comp))
+            vg_allowed = max(2.0, min(2.0, 2.0 + v_headwind_comp))
             
             v_ground_vec = unit_vec * vg_allowed
             
@@ -797,11 +830,11 @@ if __name__ == "__main__":
         # Handle case where no searchers connected
         if not AC_IDS:
             print("[WARN] No SEARCH drones found via Ivy. Using Sim Defaults [121, 122].")
-            AC_IDS = [101, 102]
+            AC_IDS = [121, 122]
             # Fake init
-            ensure_uav(101); ensure_uav(102)
-            UAVS[101]['state']['x'] = 3.0; UAVS[101]['state']['z'] = 2.0
-            UAVS[102]['state']['x'] = -2.0; UAVS[102]['state']['y'] = 3.0; UAVS[102]['state']['z'] = 2.5
+            ensure_uav(121); ensure_uav(122)
+            UAVS[121]['state']['x'] = 3.0; UAVS[121]['state']['z'] = 2.0
+            UAVS[122]['state']['x'] = -2.0; UAVS[122]['state']['y'] = 3.0; UAVS[122]['state']['z'] = 2.5
         else:
             print(f"[BRIDGE] Active Search Drones: {AC_IDS}")
             USE_INTERNAL_PHYSICS = False
@@ -809,8 +842,8 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"[ERR] Ivy fail: {e}")
         ivy = None
-        AC_IDS = [101, 102]
-        ensure_uav(101); ensure_uav(102)
+        AC_IDS = [121, 122]
+        ensure_uav(121); ensure_uav(122)
         HAS_REAL_VICTIM = False
         active_victim_ids = []
         USE_INTERNAL_PHYSICS = True
@@ -1063,7 +1096,7 @@ if __name__ == "__main__":
             belief_map[~inside_mask] = 0.5 
             
             # INCREASE SIGMA: Makes "cleared" areas decay back to "unknown" faster
-            belief_map = gaussian_filter(belief_map, sigma=0.35)
+            belief_map = gaussian_filter(belief_map, sigma=1.0)
             # ------------------------------------------
             # 1. Victim motion (Drift)
             # ------------------------------------------

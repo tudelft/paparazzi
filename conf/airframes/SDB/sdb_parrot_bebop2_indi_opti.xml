@@ -7,15 +7,14 @@
   Parrot Bebop 2
      + Autopilot:   Default Parrot Bebop 2 board
      + Actuators:   Default Motors
-     + GPS:         Default uBlox M8N GNSS
+     + GPS:         Swapped to uBlox M9P GNSS
      + TELEMETRY:   Default WiFi
      + CURRENT:     Default Build in V/A sensing
      + RC RX:       Optional a joystick on GCS via Wifi
 
  NOTES
      + This airframe can be used with Optitrack motion capture system
-     ~/paparazzi/sw/ground_segment/python/natnet3.x/natnet2ivy.py -ac 200 239 --long_edge right --x_side right --ac_nose far
-     ~/paparazzi/sw/ground_segment/python/natnet3.x/natnet2ivy.py -xa 57 -an far -le far -o -ac 200 239
+
 
      + IF you want to fly then:
      ++ Calibrate your magnetometer... Yes, you too...
@@ -63,6 +62,13 @@
       <module name="gps" type="datalink"/> <!-- Indoor Cyberzoo -->
       <!--<module name="gps" type="ubx_ucenter"/>--><!-- only usefull in real hardware not sim -->
       <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/logs"/>
+
+<!--killall -9 ap.elf || /data/ftp/internal_000/paparazzi/ap.elf -->
+
+      <configure name="HOST" value="192.168.209.$(AC_ID)"/><!-- the airframe -->
+      <configure name="MODEM_HOST" value="192.168.209.249"/> <!-- the router -->
+      <configure name="MODEM_BROADCAST" value="TRUE"/>
+      
     </target>
 
     <target name="nps" board="pc">
