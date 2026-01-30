@@ -26,7 +26,7 @@
 #ifndef FLATNESS_GUIDANCE_H
 #define FLATNESS_GUIDANCE_H
 
-extern struct ThrustSetpoint thrust_sp;
+extern struct ThrustSetpoint thr_sp;
 
 extern void flatness_guidance_init(void);
 extern struct ThrustSetpoint get_thrust(void);

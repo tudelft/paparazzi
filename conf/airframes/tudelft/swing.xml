@@ -25,8 +25,8 @@
         <module name="actuators" type="parrot_minidrone"/>
         <module name="imu" type="parrot_minidrone"/>
         <module name="gps" type="datalink"/>
-        <module name="stabilization" type="indi"/>
-        <module name="stabilization" type="rate_indi"/>
+        <module name="stabilization" type="indi_simple"/>
+        <!-- <module name="stabilization" type="rate_indi"/> -->
         <module name="ahrs" type="int_cmpl_quat"/>
     
         <module name="flatness_guidance"/>
@@ -38,8 +38,10 @@
             <define name="USE_BARO_BOARD" value="FALSE"/>
         </module>
 
+        <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
+        <define name="AHRS_FLOATING_HEADING" value="TRUE"/>
         <!-- Use GPS heading instead of magneto -->
-        <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
+        <!-- <define name="AHRS_USE_GPS_HEADING" value="TRUE"/> -->
         <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
         <define name="USE_BARO" value="FALSE"/>    
 
@@ -130,27 +132,35 @@
     </section>
 
     <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
-        <define name="G1_ROLL" value="{30 , -30, -30 , 30 }"/>
+        <define name="G1_P" value="0.025"/>
+        <define name="G1_Q" value="0.020"/>
+        <define name="G1_R" value="0.0010"/>
+        <define name="G2_R" value="0"/>
+
+        <define name="ACT_FREQ_P" value="53.9"/>
+        <define name="ACT_FREQ_Q" value="53.9"/>
+        <define name="ACT_FREQ_R" value="53.9"/>
+
+        <!-- <define name="G1_ROLL" value="{30 , -30, -30 , 30 }"/>
         <define name="G1_PITCH" value="{15 , 15, -15 , -15 }"/>
         <define name="G1_YAW" value="{-1, 1, -1, 1}"/>
         <define name="G1_THRUST" value="{-.2, -.2, -.2, -.2}"/>
-        <define name="G2" value="{0, 0, 0, 0}"/>
+        <define name="G2" value="{0, 0, 0, 0}"/> -->
 
-        <define name="REF_ERR_P" value="600.0"/>
-        <define name="REF_ERR_Q" value="600.0"/>
-        <define name="REF_ERR_R" value="600.0"/>
-        <define name="REF_RATE_P" value="28.0"/>
-        <define name="REF_RATE_Q" value="28.0"/>
-        <define name="REF_RATE_R" value="28.0"/>
+        <!-- <define name="ACT_FREQ" value="{53.9, 53.9, 53.9, 53.9}"/> -->
+
+        <define name="REF_ERR_P" value="90.0"/>
+        <define name="REF_ERR_Q" value="90.0"/>
+        <define name="REF_ERR_R" value="50.0"/>
+        <define name="REF_RATE_P" value="20.0"/>
+        <define name="REF_RATE_Q" value="20.0"/>
+        <define name="REF_RATE_R" value="20.0"/>
 
         <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
-        <define name="FILT_CUTOFF" value="5.0"/>  <!-- maybe 2.3? -->
-
-        <!-- first order actuator dynamics -->
-        <define name="ACT_FREQ" value="{53.9, 53.9, 53.9, 53.9}"/>
+        <define name="FILT_CUTOFF" value="5"/>  <!-- maybe lower -->
 
         <!-- Adaptive Learning Rate -->
-        <define name="USE_ADAPTIVE" value="TRUE"/>
+        <define name="USE_ADAPTIVE" value="FALSE"/>
         <define name="ADAPTIVE_MU" value="0.0001"/>
 
         <!--Priority for each axis (roll, pitch, yaw and thrust)-->
