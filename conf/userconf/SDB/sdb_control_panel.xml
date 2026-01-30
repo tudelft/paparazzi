@@ -188,8 +188,30 @@
         <arg flag="--coordinate_north" constant="far"/>
         <arg flag=""/>
         <arg flag="--craft_noses" constant="right"/>
-        <arg flag="--streaming_ids" constant="200"/>
+        <arg flag="--streaming_ids" constant="121"/>
         <arg flag="--ac_id" constant="121"/>
+      </program>
+      <program name="UnifiedMoCap">
+        <arg flag="optitrack"/>
+        <arg flag="ivy"/>
+        <arg flag="--publish_frequency" constant="10"/>
+        <arg flag="--coordinate_system" constant="enu"/>
+        <arg flag="--coordinate_north" constant="far"/>
+        <arg flag=""/>
+        <arg flag="--craft_noses" constant="right"/>
+        <arg flag="--streaming_ids" constant="122"/>
+        <arg flag="--ac_id" constant="122"/>
+      </program>
+      <program name="UnifiedMoCap">
+        <arg flag="optitrack"/>
+        <arg flag="ivy"/>
+        <arg flag="--publish_frequency" constant="10"/>
+        <arg flag="--coordinate_system" constant="enu"/>
+        <arg flag="--coordinate_north" constant="far"/>
+        <arg flag=""/>
+        <arg flag="--craft_noses" constant="right"/>
+        <arg flag="--streaming_ids" constant="123"/>
+        <arg flag="--ac_id" constant="123"/>
       </program>
     </session>
   </section>
