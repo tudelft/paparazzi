@@ -63,9 +63,10 @@ static FILE *logger_file = NULL;
  * @param file Log file pointer
  */
 static void logger_file_write_header(FILE *file) {
-  fprintf(file, "time,");
+  fprintf(file, "timestamp,");
   fprintf(file, "pos_x,pos_y,pos_z,");
   fprintf(file, "vel_x,vel_y,vel_z,");
+  fprintf(file, "acc_x,acc_y,acc_z,");
   fprintf(file, "att_phi,att_theta,att_psi,");
   fprintf(file, "rate_p,rate_q,rate_r,");
 #ifdef BOARD_BEBOP
@@ -76,10 +77,12 @@ static void logger_file_write_header(FILE *file) {
   ins_ext_pos_log_header(file);
 #endif
 // #ifdef COMMAND_THRUST
-//   fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
+//   fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw,");
 // #else
-//   fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
+//   fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,");
 // #endif
+  // fprintf(file, "rpm_ref[0],rpm_ref[1],rpm_ref[2],rpm_ref[3]\n");
+  fprintf(file, "cmd_TL,cmd_TR,cmd_BR,cmd_BL\n");
 }
 
 /** Write CSV row
@@ -91,12 +94,14 @@ static void logger_file_write_header(FILE *file) {
 static void logger_file_write_row(FILE *file) {
   struct NedCoor_f *pos = stateGetPositionNed_f();
   struct NedCoor_f *vel = stateGetSpeedNed_f();
+  struct NedCoor_f *acc = stateGetAccelNed_f();
   struct FloatEulers *att = stateGetNedToBodyEulers_f();
   struct FloatRates *rates = stateGetBodyRates_f();
 
   fprintf(file, "%f,", get_sys_time_float());
   fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
   fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
+  fprintf(file, "%f,%f,%f,", acc->x, acc->y, acc->z);
   fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
 #ifdef BOARD_BEBOP
@@ -107,12 +112,13 @@ static void logger_file_write_row(FILE *file) {
   ins_ext_pos_log_data(file);
 #endif
 // #ifdef COMMAND_THRUST
-//   fprintf(file, "%d,%d,%d,%d\n",
+//   fprintf(file, "%d,%d,%d,%d,",
 //       stabilization.cmd[COMMAND_THRUST], stabilization.cmd[COMMAND_ROLL],
 //       stabilization.cmd[COMMAND_PITCH], stabilization.cmd[COMMAND_YAW]);
 // #else
-//   fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
+//   fprintf(file, "%d,%d,", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
 // #endif
+  fprintf(file, "%d,%d,%d,%d\n", actuators_pprz[0], actuators_pprz[1], actuators_pprz[2], actuators_pprz[3]);
 }
 
 
