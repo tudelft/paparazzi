@@ -1514,6 +1514,32 @@
         <arg flag="-g" constant="1050x300+0+900"/>
       </program>
     </session>
+    <session name="sim_rw3c_nB">
+      <program name="PprzGCS"/>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Joystick">
+        <arg flag="-d" constant="1"/>
+        <arg flag="-ac" constant="RW3C_nB_sim"/>
+        <arg flag="radiomaster_tx12.xml"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="u"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[0]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[1]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[2]"/>
+        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[3]"/>
+        <arg flag=""/>
+        <arg flag="-g" constant="1050x300+0+900"/>
+      </program>
+    </session>
     <session name="sim_rw3c_simple">
       <program name="PprzGCS"/>
       <program name="Server">
@@ -1597,31 +1623,25 @@
       </program>
       <program name="RotWingStatus"/>
     </session>
-    <session name="sim_rw3c_nB">
+    <session name="Flight Optitrack nB">
       <program name="PprzGCS"/>
       <program name="Server">
-        <arg flag="-n"/>
+        <arg flag=""/>
       </program>
       <program name="Messages"/>
-      <program name="Joystick">
-        <arg flag="-d" constant="1"/>
-        <arg flag="-ac" constant="RW3C_nB_sim"/>
-        <arg flag="radiomaster_tx12.xml"/>
-      </program>
       <program name="Data Link">
         <arg flag="-udp"/>
       </program>
-      <program name="Real-time Plotter">
-        <arg flag="-m" constant="1000"/>
-        <arg flag="-u" constant="0.05"/>
-        <arg flag="-t" constant="u"/>
-        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[0]"/>
-        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[1]"/>
-        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[2]"/>
-        <arg flag="-c" constant="*:telemetry:STAB_ATTITUDE:u[3]"/>
-        <arg flag=""/>
-        <arg flag="-g" constant="1050x300+0+900"/>
+      <program name="NatNet3">
+        <arg flag="--long_edge" constant="right"/>
+        <arg flag="--x_side" constant="right"/>
+        <arg flag="--ac_nose" constant="right"/>
+        <arg flag="-ac" constant="4"/>
+        <arg flag="1"/>
+        <arg flag="-f" constant="100"/>
       </program>
+      <program name="Real-time Plotter"/>
+      <program name="Real-time Plotter"/>
     </session>
   </section>
 </control_panel>

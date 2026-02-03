@@ -64,11 +64,18 @@
 
 //====================================================================================================================================
 // Declaration of global variables
+extern bool use_push_Position;
+extern bool use_push_PID;
+extern float max_bank;
+extern float max_phi;
+extern float max_theta;
 extern int8_t TestMotorIDX;
+extern float max_pusher_cmd;
 extern float max_pitch_mot;
 extern float SpinQuadRate;
 extern bool  SpinQuad;
 extern bool  fault_pitch;
+extern bool  fault_roll;
 extern float k_P;
 extern float k_D;
 extern float  k1_NE_tune;
@@ -138,6 +145,27 @@ struct OneloopStabilizationnBState {
   struct FloatVect3 nI_3d;
   struct FloatVect3 mu_B;
 };
+struct OneloopPushnB {
+  float pN_d;
+  float pE_d;
+  float pN;
+  float pE;
+  float vN_d;
+  float vE_d;
+  float vN;
+  float vE;
+  float vN_d_filt;
+  float vE_d_filt;
+  float vN_filt;
+  float vE_filt;
+  float xi;
+  float xi_0;
+  float push_cmd;
+  float max_push_cmd;
+  float max_v_d;
+  float varepsilon;
+  int   n;
+};
 struct OneloopGeneral {
   bool   half_loop;
   int    ctrl_type;
@@ -146,6 +174,7 @@ struct OneloopGeneral {
   struct OneloopStabilizationRef      sta_ref;      // Stabilization References
   struct OneloopStabilizationState    sta_state;    // Stabilization State
   struct OneloopStabilizationnBState  sta_nB_state; // nB Stabilization State
+  struct OneloopPushnB                push_nB;      // Pusher controller struct
 };
 extern struct OneloopGeneral oneloop_nB;
 //====================================================================================================================================

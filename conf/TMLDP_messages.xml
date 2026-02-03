@@ -1881,7 +1881,23 @@
       <field name="actuators_t4_rolling_msg_out_id" type="uint8">T4 output Rolling message ID</field>
      </message>
   
-    <!-- 192 is free -->
+    <message name="PUSH_NB" id="192">
+      <field name="pN_d"                type="float"/>
+      <field name="pE_d"                type="float"/>  
+      <field name="pN"                  type="float"/>
+      <field name="pE"                  type="float"/>         
+      <field name="vN_d"                type="float"/>
+      <field name="vE_d"                type="float"/>
+      <field name="vN_d_filt"           type="float"/>
+      <field name="vE_d_filt"           type="float"/>      
+      <field name="vN"                  type="float"/>
+      <field name="vE"                  type="float"/>
+      <field name="vN_filt"             type="float"/>
+      <field name="vE_filt"             type="float"/>
+      <field name="xi"                  type="float" unit="rad"   alt_unit="deg"   alt_unit_coef="57.29578"/>
+      <field name="xi_0"                type="float" unit="rad"   alt_unit="deg"   alt_unit_coef="57.29578"/>
+      <field name="push_cmd"            type="float"/>
+    </message>
 
     <message name="AHRS_LKF" id="193">
       <field name="phi"   type="float" unit="rad"   alt_unit="deg"   alt_unit_coef="57.29578" />
