@@ -14,7 +14,7 @@
             <define name="STABILIZATION_INDI_RPM_FEEDBACK" value="FALSE"/>
         </target>
 
-        <define name="IMU_SWING_PERIODIC_FREQ" value="512"/>
+        <define name="IMU_SWING_PERIODIC_FREQ" value="500"/>
 
         <configure name="PREFIX" value="/opt/arm-2012.03/bin/arm-none-linux-gnueabi-"/>
         <configure name="USE_BARO_BOARD" value="FALSE"/>
@@ -48,6 +48,8 @@
         
         <module name="air_data"/>
 
+        <!-- <module name="sys_mon"/> -->
+
         <module name="logger_file">
             <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
         </module>
@@ -69,7 +71,7 @@
     </servos>
 
     <command_laws>
-        <set servo="TOP_LEFT"     value="autopilot.motors_on ? actuators_pprz[COMMAND_TOP_LEFT]    : -MAX_PPRZ"/>
+        <set servo="TOP_LEFT"     value="autopilot.motors_on ? actuators_pprz[COMMAND_TOP_LEFT]     : -MAX_PPRZ"/>
         <set servo="TOP_RIGHT"    value="autopilot.motors_on ? actuators_pprz[COMMAND_TOP_RIGHT]    : -MAX_PPRZ"/>
         <set servo="BOTTOM_RIGHT" value="autopilot.motors_on ? actuators_pprz[COMMAND_BOTTOM_RIGHT] : -MAX_PPRZ"/>
         <set servo="BOTTOM_LEFT"  value="autopilot.motors_on ? actuators_pprz[COMMAND_BOTTOM_LEFT]  : -MAX_PPRZ"/>
