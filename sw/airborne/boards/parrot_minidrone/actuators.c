@@ -48,7 +48,7 @@ typedef struct { unsigned int val[4]; } __attribute__ ((packed)) pwm_delos_quadr
 #define PWM_REG_SATURATION (PWM_REG_RATIO_PRECISION_MASK|PWM_TOTAL_RANGE)
 
 #include "modules/actuators/actuators.h"
-#include "modules/actuators/motor_mixing.h"
+// #include "modules/actuators/motor_mixing.h"
 #include "actuators.h"
 #include "autopilot.h"
 

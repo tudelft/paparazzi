@@ -21,12 +21,11 @@
 
         <module name="telemetry" type="transparent_udp"/>
         <module name="radio_control" type="datalink"/>
-        <module name="motor_mixing"/>
+        <!-- <module name="motor_mixing"/> -->
         <module name="actuators" type="parrot_minidrone"/>
         <module name="imu" type="parrot_minidrone"/>
         <module name="gps" type="datalink"/>
-        <module name="stabilization" type="indi_simple"/>
-        <!-- <module name="stabilization" type="rate_indi"/> -->
+        <module name="stabilization" type="indi"/>
         <module name="ahrs" type="int_cmpl_quat"/>
     
         <module name="flatness_guidance"/>
@@ -55,40 +54,25 @@
     </firmware>
 
     <commands>
-        <axis name="PITCH"  failsafe_value="0"/>
-        <axis name="ROLL"   failsafe_value="0"/>
-        <axis name="YAW"    failsafe_value="0"/>
-        <axis name="THRUST" failsafe_value="0"/>
+        <axis name="TOP_LEFT"     group="REAL"    failsafe_value="0"/>
+        <axis name="TOP_RIGHT"    group="REAL"    failsafe_value="0"/>
+        <axis name="BOTTOM_RIGHT" group="REAL"    failsafe_value="0"/>
+        <axis name="BOTTOM_LEFT"  group="REAL"    failsafe_value="0"/>
+        <axis name="THRUST"       group ="OTHER"  failsafe_value="0"/> 
     </commands>
 
     <servos>
-        <servo name="BOTTOM_RIGHT"  no="0" min="0" neutral="15" max="511"/>
-        <servo name="TOP_RIGHT"     no="1" min="0" neutral="15" max="511"/>
-        <servo name="BOTTOM_LEFT"   no="2" min="0" neutral="15" max="511"/>
-        <servo name="TOP_LEFT"      no="3" min="0" neutral="15" max="511"/>
+        <servo name="TOP_RIGHT"     no="0" min="0" neutral="15" max="511"/>
+        <servo name="BOTTOM_RIGHT"  no="1" min="0" neutral="15" max="511"/>
+        <servo name="TOP_LEFT"      no="2" min="0" neutral="15" max="511"/>
+        <servo name="BOTTOM_LEFT"   no="3" min="0" neutral="15" max="511"/>
     </servos>
 
-    <section name="MIXING" prefix="MOTOR_MIXING_">
-        <define name="TRIM_ROLL" value="0"/>
-        <define name="TRIM_PITCH" value="0"/>
-        <define name="TRIM_YAW" value="0"/>
-        <define name="NB_MOTOR" value="4"/>
-        <define name="SCALE" value="256"/>
-        <define name="MAX_SATURATION_OFFSET" value="3*MAX_PPRZ"/>
-
-        <!-- Time cross layout (X), with order NW (CW), NE (CCW), SE (CW), SW (CCW) -->
-        <define name="ROLL_COEF"   value="{ -81,  -81,   81,   81}"/>
-        <define name="PITCH_COEF"  value="{ 243, -243,  243, -243}"/>
-        <define name="YAW_COEF"    value="{ 128, -128, -128,  128}"/>
-        <define name="THRUST_COEF" value="{ 256,  256,  256,  256}"/>
-    </section>
-
     <command_laws>
-        <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
-        <set servo="BOTTOM_RIGHT" value="motor_mixing.commands[0]"/>
-        <set servo="TOP_RIGHT"    value="motor_mixing.commands[1]"/>
-        <set servo="BOTTOM_LEFT"  value="motor_mixing.commands[2]"/>
-        <set servo="TOP_LEFT"     value="motor_mixing.commands[3]"/>
+        <set servo="TOP_LEFT"     value="autopilot.motors_on ? commands[COMMAND_TOP_LEFT]     : -MAX_PPRZ"/>
+        <set servo="TOP_RIGHT"    value="autopilot.motors_on ? commands[COMMAND_TOP_RIGHT]    : -MAX_PPRZ"/>
+        <set servo="BOTTOM_RIGHT" value="autopilot.motors_on ? commands[COMMAND_BOTTOM_RIGHT] : -MAX_PPRZ"/>
+        <set servo="BOTTOM_LEFT"  value="autopilot.motors_on ? commands[COMMAND_BOTTOM_LEFT]  : -MAX_PPRZ"/>
     </command_laws>
 
     <section name="IMU" prefix="IMU_">
@@ -132,22 +116,13 @@
     </section>
 
     <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
-        <define name="G1_P" value="0.025"/>
-        <define name="G1_Q" value="0.020"/>
-        <define name="G1_R" value="0.0010"/>
-        <define name="G2_R" value="0"/>
-
-        <define name="ACT_FREQ_P" value="53.9"/>
-        <define name="ACT_FREQ_Q" value="53.9"/>
-        <define name="ACT_FREQ_R" value="53.9"/>
-
-        <!-- <define name="G1_ROLL" value="{30 , -30, -30 , 30 }"/>
-        <define name="G1_PITCH" value="{15 , 15, -15 , -15 }"/>
+        <define name="G1_ROLL" value="{30 , -30, -30 , 30 }"/>
+        <define name="G1_PITCH" value="{30 , 30, -30 , -30 }"/>
         <define name="G1_YAW" value="{-1, 1, -1, 1}"/>
         <define name="G1_THRUST" value="{-.2, -.2, -.2, -.2}"/>
-        <define name="G2" value="{0, 0, 0, 0}"/> -->
+        <define name="G2" value="{0, 0, 0, 0}"/>
 
-        <!-- <define name="ACT_FREQ" value="{53.9, 53.9, 53.9, 53.9}"/> -->
+        <define name="ACT_FREQ" value="{53.9, 53.9, 53.9, 53.9}"/>
 
         <define name="REF_ERR_P" value="90.0"/>
         <define name="REF_ERR_Q" value="90.0"/>
@@ -157,7 +132,7 @@
         <define name="REF_RATE_R" value="20.0"/>
 
         <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
-        <define name="FILT_CUTOFF" value="5"/>  <!-- maybe lower -->
+        <define name="FILT_CUTOFF" value="5"/>
 
         <!-- Adaptive Learning Rate -->
         <define name="USE_ADAPTIVE" value="FALSE"/>

@@ -142,5 +142,11 @@ void WEAK set_rotorcraft_commands(pprz_t *cmd_out, int32_t *cmd_in, bool in_flig
   cmd_out[COMMAND_YAW] = cmd_in[COMMAND_YAW];
 #endif
   cmd_out[COMMAND_THRUST] = cmd_in[COMMAND_THRUST];
+
+  // this needs to be implemented in a non weak function for my airframe, but which file is appropriate?
+  cmd_out[0] = cmd_in[0];
+  cmd_out[1] = cmd_in[1];
+  cmd_out[2] = cmd_in[2];
+  cmd_out[3] = cmd_in[3];
 }
 

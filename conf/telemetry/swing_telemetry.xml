@@ -40,7 +40,8 @@
       <!-- <message name="STAB_ATTITUDE"            period=".25"/> -->
       <!-- <message name="EFF_MAT_STAB"             period="2.0"/> -->
       <message name="PAYLOAD_FLOAT"            period="0.2"/>
-      <message name="ACTUATORS"                period="0.1"/>
+      <message name="ACTUATORS"                period="0.2"/>
+      <message name="COMMANDS"                 period="0.2"/>
     </mode>
 
     <mode name="ppm">

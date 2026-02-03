@@ -75,11 +75,11 @@ static void logger_file_write_header(FILE *file) {
 #ifdef INS_EXT_POSE_H
   ins_ext_pos_log_header(file);
 #endif
-#ifdef COMMAND_THRUST
-  fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
-#else
-  fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
-#endif
+// #ifdef COMMAND_THRUST
+//   fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
+// #else
+//   fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
+// #endif
 }
 
 /** Write CSV row
@@ -106,13 +106,13 @@ static void logger_file_write_row(FILE *file) {
 #ifdef INS_EXT_POSE_H
   ins_ext_pos_log_data(file);
 #endif
-#ifdef COMMAND_THRUST
-  fprintf(file, "%d,%d,%d,%d\n",
-      stabilization.cmd[COMMAND_THRUST], stabilization.cmd[COMMAND_ROLL],
-      stabilization.cmd[COMMAND_PITCH], stabilization.cmd[COMMAND_YAW]);
-#else
-  fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
-#endif
+// #ifdef COMMAND_THRUST
+//   fprintf(file, "%d,%d,%d,%d\n",
+//       stabilization.cmd[COMMAND_THRUST], stabilization.cmd[COMMAND_ROLL],
+//       stabilization.cmd[COMMAND_PITCH], stabilization.cmd[COMMAND_YAW]);
+// #else
+//   fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
+// #endif
 }
 
 
