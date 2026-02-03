@@ -722,12 +722,6 @@ void stabilization_indi_rate_run(bool in_flight, struct StabilizationSetpoint *s
     cmd[COMMAND_THRUST] += actuator_state[i] * (int32_t) act_is_thruster_z[i];
   }
   cmd[COMMAND_THRUST] /= num_thrusters;
-
-  // this needs to be removed - but shows how it should be implemented in my controller
-  cmd[0] = (int32_t)actuators_pprz[0];
-  cmd[1] = (int32_t)actuators_pprz[1];
-  cmd[2] = (int32_t)actuators_pprz[2];
-  cmd[3] = (int32_t)actuators_pprz[3];
 }
 
 /**
