@@ -1,0 +1,23 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="guidance_unified" dir="guidance" task="control">
+    
+    <doc>
+        <description>A unified guidance module.</description>
+    </doc>
+    
+    <dep>
+        <provides>guidance,navigation,autopilot_guided,attitude_command</provides>
+    </dep>
+    
+    <header>
+        <file name="guidance_unified.h"/>
+    </header>
+    
+    <init fun="guidance_unified_init()"/>
+
+    <makefile>
+        <file name="guidance_unified.c"/>
+        <test/>
+    </makefile>
+
+</module>

@@ -28,7 +28,9 @@
         <module name="stabilization" type="indi"/>
         <module name="ahrs" type="int_cmpl_quat"/>
     
-        <module name="flatness_guidance"/>
+        <module name="guidance_unified">
+            <define name="MOL_DRONE_WEIGHT" value="0.4"/>
+        </module>
         
         <!-- ins configured for optitrack -->
         <module name="ins">
