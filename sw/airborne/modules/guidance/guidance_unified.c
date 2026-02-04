@@ -61,7 +61,7 @@ float T;
 float roll_rate_calc;
 float pitch_rate_calc;
 float dcmd[3];
-struct FloatQuat q;
+struct FloatQuat quat;
 
 struct ctrl_guidance_unified {
     struct AttitudeRCInput rc_sp;
@@ -258,13 +258,13 @@ float * guidance_function(float *d_accel_ref)
   e.psi = 0.0;        
   e.theta = dcmd[1]; 
   e.phi = dcmd[0]; 
-  float_quat_of_eulers(&q, &e); //This function employs ZYX, as in MATLab
+  float_quat_of_eulers(&quat, &e); //This function employs ZYX, as in MATLab
 
 
   // Make array to return
   static float array[3];
-  array[0] = ROLL_RATE_GAIN*2*q.qx;
-  array[1] = -PITCH_RATE_GAIN*2*q.qy;
+  array[0] = ROLL_RATE_GAIN*2*quat.qx;
+  array[1] = -PITCH_RATE_GAIN*2*quat.qy;
   array[2] = dcmd[2]/mass;
 
   return array;

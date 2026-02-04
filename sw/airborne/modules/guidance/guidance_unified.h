@@ -36,7 +36,6 @@ extern float T;
 extern float roll_rate_calc;
 extern float pitch_rate_calc;
 extern float dcmd[3];
-extern struct FloatQuat q;
 extern struct ThrustSetpoint thr_sp;
 
 extern void guidance_unified_init(void);
