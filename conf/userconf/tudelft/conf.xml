@@ -690,6 +690,6 @@
    flight_plan="flight_plans/tudelft/rotwing_EHVB.xml"
    settings=""
    settings_modules="modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/airspeed_uavcan.xml modules/eff_scheduling_rotwing.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi_hybrid.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/imu_heater.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_hybrid.xml modules/nav_rotorcraft.xml modules/pfc_actuators.xml modules/preflight_checks.xml modules/rotwing_state.xml modules/stabilization_indi.xml"
-   gui_color="red"
+   gui_color="#00000000ff00"
   />
 </conf>
