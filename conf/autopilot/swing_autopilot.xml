@@ -5,22 +5,14 @@
     <state_machine name="ap" freq="PERIODIC_FREQUENCY" gcs_mode="true" settings_mode="true" settings_handler="autopilot_generated|SetModeHandler">
 
         <includes>
-            <!-- <include name="generated/airframe.h"/> -->
-            <!-- <include name="autopilot.h"/> -->
             <include name="autopilot_rc_helpers.h"/>
-            <!-- <include name="stabilization.h"/> -->
-            <!-- <include name="modules/radio_control/radio_control.h"/> -->
-            <!-- <include name="modules/gps/gps.h"/> -->
-            <!-- <include name="modules/actuators/actuators.h"/> -->
             <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
             <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
-            <define name="MODE_AUTO2" value="AP_MODE_GUIDANCE_UNIFIED"/>
-            <!-- <define name="RCLost()" value="(radio_control.status == RC_REALLY_LOST)"/> -->
+            <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_FLATNESS"/>
         </includes>
 
         <settings>
             <dl_setting var="autopilot.kill_throttle" min="0" step="1" max="1" module="autopilot" values="Resurrect|Kill" handler="KillThrottle"/>
-            <!-- <dl_setting var="autopilot_mode_auto2" min="2" step="1" max="3" module="autopilot" values="NAV|GUIDED"/> -->
         </settings>
 
         <control_block name="set_commands">
@@ -28,9 +20,13 @@
         </control_block>
 
         <control_block name="run_attitude_control">
-            <!-- <call fun="guidance_v_run(autopilot_in_flight())" store="struct ThrustSetpoint thrust_sp"/> -->
             <call fun="get_thrust()" store="struct ThrustSetpoint thrust_sp"/>
             <call fun="stabilization_run(autopilot_in_flight(), &stabilization.rc_sp, &thrust_sp, stabilization.cmd)"/>
+        </control_block>
+
+        <control_block name="run_attitude_flatness_control">
+            <!-- <call fun="get_thrust()" store="struct ThrustSetpoint thrust_sp"/> -->
+            <call fun="flatness_stabilization_run(autopilot_in_flight(), &stabilization.rc_sp, &thrust_sp, stabilization.cmd)"/>
         </control_block>
 
         <mode_selection>
@@ -42,11 +38,10 @@
         <mode name="KILL">
             <on_enter>
                 <!-- <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NONE)"/> -->
-                <call fun="stabilization_mode_changed(STABILIZATION_MODE_NONE, 0)"/>
                 <!-- <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_KILL)"/> -->
+                <call fun="stabilization_mode_changed(STABILIZATION_MODE_NONE, 0)"/>
                 <call fun="autopilot_set_in_flight(false)"/>
                 <call fun="autopilot_set_motors_on(false)"/>
-                <!--call fun="stabilization.cmd[COMMAND_THRUST] = 0"/-->
             </on_enter>
             <control>
                 <call fun="SetCommands(commands_failsafe)"/>
@@ -65,13 +60,12 @@
             </control>
         </mode>
 
-        <mode name="GUIDANCE_UNIFIED" shortname="G_UNIF">
+        <mode name="ATTITUDE_FLATNESS" shortname="ATT_FL">
             <on_enter>
-                <call fun="guidance_unified_enter()"/>
             </on_enter>
-            <control freq="PERIODIC_FREQUENCY">
-                <call fun="guidance_unified_run(autopilot_in_flight())"/>
-                <call_block name="set_commands"/>
+            <control>
+                <call_block name="run_attitude_flatness_control"/>
+                <!-- <call_block name="set_commands"/> -->
             </control>
         </mode>
 

@@ -1,0 +1,13 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="flatness_stabilization" dir="flatness" task="control">
+  <doc>
+    <description>A differential flatness-based INDI stabilization controller.</description>
+  </doc>
+  <header>
+    <file name="flatness_stabilization.h"/>
+  </header>
+  <makefile>
+    <file name="flatness_stabilization.c"/>
+    <test/>
+  </makefile>
+</module>
