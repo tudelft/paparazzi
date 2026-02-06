@@ -29,5 +29,5 @@
 
 void flatness_stabilization_run(bool in_flight, struct StabilizationSetpoint *att_sp, struct ThrustSetpoint *thrust, int32_t *cmd)
 {
-    printf("AA!\n");
+    // printf("AA!\n");
 }
