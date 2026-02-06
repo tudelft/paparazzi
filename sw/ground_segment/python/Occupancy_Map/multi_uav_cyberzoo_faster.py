@@ -14,6 +14,8 @@ import time
 import matplotlib.cm as cm
 import threading
 import math
+import csv
+from datetime import datetime
 
 # --- PAPARAZZI BRIDGE GLOBALS ---
 UAVS = {}   # Stores state: {ac_id: {'state': {'x':..., 'y':...}}}
@@ -79,7 +81,6 @@ inside_mask = mask_flat.reshape(rows, cols)
 # 5. Apply to belief
 belief_map[~inside_mask] = 0.5
 
-
 from pprzlink.ivy import IvyMessagesInterface
 from pprzlink.message import PprzMessage
 
@@ -118,68 +119,16 @@ def ensure_uav(ac_id):
             print(f"[BRIDGE] Registered new AC{ac_id}")
         return UAVS[ac_id]
 
-# def on_gps_int(ac_id, msg):
-#     if msg.name != "GPS_INT": return
-#     ac_id = int(ac_id)
-#     uav = ensure_uav(ac_id)
-
-#     lat = float(msg["lat"]) * 1e-7
-#     lon = float(msg["lon"]) * 1e-7
-#     alt = float(msg["alt"]) / 1000.0  # mm -> m
-
-#     x, y, z = pm.geodetic2enu(lat, lon, alt, LAT0, LON0, ALT0)
-#     with LOCK:
-#         uav["state"]["x"] = x
-#         uav["state"]["y"] = y
-#         uav["state"]["z"] = z
-    
-#     # print(f"[GPS] AC{ac_id} update: {x:.1f}, {y:.1f}, {z:.1f}")
-
 # Add this GLOBAL variable at the top
 FIRST_GPS_RECEIVED = False
 CALIB_OFFSET_X = 0.0
 CALIB_OFFSET_Y = 0.0
 
-# def on_gps_int(ac_id, msg):
-#     global FIRST_GPS_RECEIVED, CALIB_OFFSET_X, CALIB_OFFSET_Y
-#     if msg.name != "GPS_INT": return
-#     ac_id = int(ac_id)
-#     uav = ensure_uav(ac_id)
-
-#     lat = float(msg["lat"]) * 1e-7
-#     lon = float(msg["lon"]) * 1e-7
-#     alt = float(msg["alt"]) / 1000.0 
-
-#     # Convert using your XML Lat0/Lon0
-#     x, y, z = pm.geodetic2enu(lat, lon, alt, LAT0, LON0, ALT0)
-
-#     # --- CALIBRATION HACK ---
-#     # The first time we get a GPS message, assuming the drone is at "Home" (0,0)
-#     # we calculate the error.
-#     if not FIRST_GPS_RECEIVED:
-#         # Ask yourself: Is the drone physically at the XML Home (S1/Start) right now?
-#         # If yes, x and y SHOULD be 0.0. If they are 50.0, your offset is 50.0.
-#         print(f"\n[CALIBRATION] Drone is at Python Coords: X={x:.2f}, Y={y:.2f}")
-#         print(f"[CALIBRATION] If drone is actually at HOME (0,0), subtract these values!\n")
-#         FIRST_GPS_RECEIVED = True
-        
-#     # Apply Calibration (Uncomment if you want to force it to 0,0)
-#     # x -= 54.0  (Example: Replace with value printed above)
-#     # y -= -12.0 (Example)
-    
-#     with LOCK:
-#         uav["state"]["x"] = x
-#         uav["state"]["y"] = y
-#         uav["state"]["z"] = z
-
-# --- GLOBAL CALIBRATION VARIABLES ---
-# Define known starting heights here. 
-# If a drone isn't listed, it defaults to 0.0 (Ground).
 
 KNOWN_START_HEIGHTS = {
-    121: 2.0,  # Example: AC 121 is hovering at 2m
-    122: 3.0,  # Example: AC 122 is on a box
-    123: 0.5,  # Example: AC 122 is on a box
+    121: 2.0,  # HOver heights
+    122: 3.0, 
+    123: 0.5,  
 }
 
 GROUND_REF_AMSL = None  # Will store the calculated Sea Level of the floor
@@ -215,10 +164,6 @@ def on_gps_int(ac_id, msg):
     # 4. Calculate Z relative to the calculated Ground Level
     # This works for ALL drones now, regardless of their height.
     z_agl = alt_amsl - GROUND_REF_AMSL
-
-    # Optional: Apply X/Y offsets if needed (as discussed before)
-    # x -= CALIB_OFFSET_X
-    # y -= CALIB_OFFSET_Y
 
     with LOCK:
         uav["state"]["x"] = x
@@ -276,25 +221,39 @@ def on_pprz_msg(ac_id, msg):
     elif msg.name in ["INS", "INS_EKF2"]:
         on_ins(ac_id, msg)
 
+
 def send_pprz_velocity(interface, ac_id, vx_enu, vy_enu, vz_enu):
-    """
-    Sends GUIDED_SETPOINT_NED velocity command to a specific AC_ID.
-    Converts Sim ENU (East/North/Up) -> Pprz NED (North/East/Down).
-    """
     if interface is None: return
 
-    # Transformation: ENU -> NED
+    # 1. Convert ENU -> NED
     vx_ned = vy_enu   # North 
     vy_ned = vx_enu   # East
     vz_ned = -vz_enu  # Down
 
+    # 2. Calculate Heading (Yaw) from Velocity
+    # This ensures the drone faces the direction it is drifting/flying
+    # if abs(vx_ned) > 0.05 or abs(vy_ned) > 0.05:
+    #     # Standard atan2(y, x) gives angle from X-axis. 
+    #     # For NED, North is X, East is Y. 
+    #     desired_yaw = math.atan2(vy_ned, vx_ned)
+    # else:
+    #     # If stopped, keep current heading (or 0.0)
+    #     desired_yaw = 0.0
+
+    if (vx_ned**2 + vy_ned**2) > 0.001: 
+        desired_yaw = math.atan2(vy_ned, vx_ned)
+    else:
+        desired_yaw = 0.0
+
     msg = PprzMessage("datalink", "GUIDED_SETPOINT_NED")
     msg['ac_id'] = int(ac_id)
-    msg['flags'] = np.packbits([0,0,0,0,0,1,1,0], bitorder='little')[0].astype(np.uint8)
+    msg['flags'] = 0x60 
+    
     msg['x'] = float(vx_ned)
     msg['y'] = float(vy_ned)
     msg['z'] = float(vz_ned)
-    msg['yaw'] = 0.0
+    msg['yaw'] = float(desired_yaw)  # <--- Send calculated heading
+    
     interface.send(msg, ac_id=int(ac_id))
 
 
@@ -312,14 +271,14 @@ def world_to_grid(x, y):
 # GLOBAL PARAMETERS
 # -----------------------------
 
-dt_step = 1.0
-v_drift = np.array([0.05, 0.0])
+dt_step = 0.2 #was 1.0
+v_drift = np.array([0.06, 0.0])
 theta_FOV = np.deg2rad(25)
 E_scale = 0.1
 E_scale_track = 0.04
 gamma_wind = 2.0
 v_wind = np.array([0.0, 0.0])
-v_max = 2.0        # max velocity [m/s]
+v_max = 0.6        # max velocity [m/s]
 
 confirm_pconf = 0.6
 peak_tresh = 0.75
@@ -534,7 +493,7 @@ def calc_ig_numba(path_arr, belief_map, inside_mask, x_min, y_min, grid_res, fov
 
 def plan_velocity_ipp_3D(drone_pos, drone_vel, belief_map, inside_mask, grid_origin, grid_resolution, soft_poly,
                          constraint_poly=None,
-                         fov_angle=theta_FOV, v_max=1.0, n_directions=16,
+                         fov_angle=theta_FOV, v_max=1.0, n_directions=8,
                          step_length=2.0, altitude_candidates=[2, 3, 4],
                          E_scale=100.0,    
                          lam=0.4,          
@@ -749,7 +708,7 @@ def active_cone_mask_2d(t_now, XX, YY, track, v_drift):
 
         if region_poly and not region_poly.is_empty:
             # Buffer it as before
-            poly_buffered = region_poly.buffer(0.3)
+            poly_buffered = region_poly.buffer(0.7)
             
             # Rasterize: Convert Polygon -> Boolean Mask
             mpl_path = MplPath(list(poly_buffered.exterior.coords))
@@ -782,7 +741,39 @@ def get_view_window(pos_xyz, fov_angle=theta_FOV):
     
     return (slice(r_start, r_end), slice(c_start, c_end)), r_m, (r_center, c_center)
 
+def apply_path_to_belief(belief_map, path, grid_origin, grid_resolution, fov_tan, inside_mask):
+    """
+    Paints the path onto the belief map as 'scanned' (0.001) so other drones
+    don't try to go there in the same timestep.
+    """
+    x_min, y_min = grid_origin
+    rows, cols = belief_map.shape
+    
+    for i in range(len(path)-1):
+        p0, p1 = path[i], path[i+1]
+        dist = np.linalg.norm(p1[:2] - p0[:2])
+        n_samples = max(1, int(dist / 0.5))
+        
+        for k in range(n_samples+1):
+            alpha = k / n_samples
+            pos = p0 * (1-alpha) + p1 * alpha
+            
+            # Simple square approximation of FOV for reservation
+            r_m = pos[2] * fov_tan
+            r_cells = int(np.ceil(r_m / grid_resolution))
+            
+            c_cen = int((pos[0] - x_min) / grid_resolution)
+            r_cen = int((pos[1] - y_min) / grid_resolution)
+            
+            r_start = max(0, r_cen - r_cells)
+            r_end = min(rows, r_cen + r_cells + 1)
+            c_start = max(0, c_cen - r_cells)
+            c_end = min(cols, c_cen + r_cells + 1)
+            
+            # Mark as low probability (effectively "reserved/scanned")
+            belief_map[r_start:r_end, c_start:c_end] = 0.001
 
+    return belief_map
 
 victims_template = np.array([[-1.0,-2.0],[-3.0,0.0], [0.0, 0.0], [2.0, -1.0]])
 DISCOVERED_POSITIONS = {}
@@ -978,7 +969,7 @@ if __name__ == "__main__":
     # SIMULATION LOOP (multi-UAV)
     # -----------------------------
     max_dheading = np.deg2rad(10)  # max heading change per second
-    buffer = 0.3 # safe buffer for polygon
+    buffer = 0.7 # safe buffer for polygon
 
     # Create a buffered polygon for safe navigation
     safe_poly = soft_poly.buffer(-buffer) if buffer > 0 else soft_poly
@@ -1043,6 +1034,35 @@ if __name__ == "__main__":
         cone_centers.append(center)
         cone_fills.append(fill)
 
+
+    # -----------------------------
+    # DATA LOGGING SETUP
+    # -----------------------------
+    # -----------------------------
+    # DATA LOGGING SETUP (Dual File)
+    # -----------------------------
+    timestamp_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+    
+    # File 1: Searcher Drone Data
+    log_uav_filename = f"log_uavs_{timestamp_str}.csv"
+    f_uav = open(log_uav_filename, mode='w', newline='')
+    writer_uav = csv.writer(f_uav)
+    writer_uav.writerow([
+        "timestamp", "uav_id", 
+        "x", "y", "z", 
+        "vx", "vy", "vz", 
+        "mode", "target_est_x", "target_est_y", "loop_rate"
+    ])
+    
+    # File 2: True Victim Ground Truth
+    log_vic_filename = f"log_victims_{timestamp_str}.csv"
+    f_vic = open(log_vic_filename, mode='w', newline='')
+    writer_vic = csv.writer(f_vic)
+    writer_vic.writerow(["timestamp", "victim_id", "true_x", "true_y"])
+    
+    print(f"[LOG] Logging UAVs to:    {log_uav_filename}")
+    print(f"[LOG] Logging Victims to: {log_vic_filename}")
+
     try:
         # Initialize clocks
         start_time = time.time()
@@ -1059,7 +1079,6 @@ if __name__ == "__main__":
             dt = now - last_loop_time
             last_loop_time = now
             
-            # Safety Clamp: Prevent huge jumps if computer lags
             # (If lag > 0.2s, we pretend it was only 0.2s to stop teleporting)
             dt = np.clip(dt, 0.001, 0.2) 
 
@@ -1096,17 +1115,55 @@ if __name__ == "__main__":
             belief_map[~inside_mask] = 0.5 
             
             # INCREASE SIGMA: Makes "cleared" areas decay back to "unknown" faster
-            belief_map = gaussian_filter(belief_map, sigma=1.0)
-            # ------------------------------------------
+            belief_map = gaussian_filter(belief_map, sigma=1.5) # Higher sigma is " forgettting" the map faster
+
+
+            # Move victims in Real Time
             # 1. Victim motion (Drift)
             # ------------------------------------------
 
-            # Move victims in Real Time
+            # if HAS_REAL_VICTIM:
+            #     for i, v_id in enumerate(active_victim_ids):
+            #         # 1. SEND COMMAND (Drift)
+            #         send_pprz_velocity(ivy, v_id, v_drift[0], v_drift[1], 0.0)
+                    
+            #         # 2. [FIX] READ POSITION BACK so the map knows where it is!
+            #         # We use index 0 or 'i' depending on how you initialized victims array
+            #         if i < len(victims):
+            #             real_pos, _ = sync_drone_state(0, v_id, np.zeros(3))
+            #             victims[i] = real_pos[:2]
+
+            # else:
+            #     victims[:, :2] += v_drift * dt
+
+
+            # ------------------------------------------
+            # 1. Victim motion (Drift + Altitude Hold)
+            # ------------------------------------------
             if HAS_REAL_VICTIM:
                 for i, v_id in enumerate(active_victim_ids):
+                    # A. Get current state (so we know where we are!)
+                    # We pass '0' as a dummy index since we just need the position
                     vic_pos, _ = sync_drone_state(0, v_id, np.zeros(3))
+                    
+                    # B. Altitude Hold Logic
+                    # Target: 0.5 meters
+                    target_z = 0.5  
+                    z_err = target_z - vic_pos[2]
+                    
+                    # P-Controller: Correct drift with vertical velocity
+                    # Limit max climb/sink to 0.2 m/s for safety
+                    vz_hold = np.clip(z_err * 1.0, -0.2, 0.2)
+                    
+                    # C. Send Command (Drift XY + Hold Z)
+                    # Note: We now send 'vz_hold' instead of '0.0'
+                    send_pprz_velocity(ivy, v_id, v_drift[0], v_drift[1], vz_hold)
+                    
+                    # D. Update internal map variable
                     victims[i] = vic_pos[:2]
+
             else:
+                # Virtual drift
                 victims[:, :2] += v_drift * dt
 
             # ------------------------------------------
@@ -1148,7 +1205,7 @@ if __name__ == "__main__":
                 if not np.any(vis_mask):
                     continue
                 
-                # --- C. Check for "True" Victim Detection (Oracle) ---
+                # ---  Check for "True" Victim Detection (Oracle) ---
                 # Instead of checking 1 million grid cells, just check if 
                 # any victim is physically close to the drone.
                 # dist(drone, victim) < FOV_radius
@@ -1197,20 +1254,19 @@ if __name__ == "__main__":
                 local_belief[vis_mask] = np.clip(p_post, 1e-6, 1 - 1e-6)
 
             # ------------------------------------------
-            # 5. Centralized detection & tracker assignment
+            #  Centralized detection & tracker assignment
             # ------------------------------------------
 
-            # (5.1) Build mask of existing cones (Fast 2D Rasterization)
-            # REPLACES: in_active_cone = active_cone_mask(...)
+            # Build mask of existing cones (Fast 2D Rasterization)
             in_active_cone = active_cone_mask_2d(t, XX, YY, track, v_drift)
 
-            # (5.2) Select eligible explorers
+            # Select eligible explorers
             eligible_explorers = [
                 d_idx for d_idx, mode in enumerate(drone_modes)
                 if mode == "explore" and t >= cooldown_until[d_idx]
             ]
 
-            # (5.3) Check for NEW detections
+            #  Check for NEW detections
             NEW_DETECTION = False
             detection_uav = None
             detection_pos = None
@@ -1221,11 +1277,9 @@ if __name__ == "__main__":
                     continue
 
                 # 2. Localize the signal (Find peak in the 2D window)
-                # REPLACES: looping through vis_mask indices
                 (r_slice, c_slice), r_m, _ = get_view_window(drone_positions[d_idx])
                 
                 local_patch = belief_map[r_slice, c_slice]
-                
                 if local_patch.size == 0: continue
 
                 # Find peak index in local patch
@@ -1236,27 +1290,35 @@ if __name__ == "__main__":
                 global_r = r_slice.start + max_r
                 global_c = c_slice.start + max_c
                 
-                # 3. Check if inside an existing cone (using the 2D mask)
-                if in_active_cone[global_r, global_c]:
-                    continue
-                
-                # 4. Convert to World Position
+                # --- MOVED UP: Convert to World Position immediately ---
                 det_x = grid_x[global_c]
                 det_y = grid_y[global_r]
-                detection_pos = np.array([det_x, det_y])
+                candidate_pos = np.array([det_x, det_y])
+
+                # 3. [RELAXED CHECK] Check distance to existing targets
+                # Instead of checking the whole "cone mask", we only skip if
+                # we are virtually on top (<2.0m) of a known target.
+                is_too_close = False
+                for tr in track:
+                    if tr["active"] and tr["pos"] is not None:
+                         if np.linalg.norm(candidate_pos - tr["pos"]) < 2.0:
+                             is_too_close = True
+                             break
+                
+                if is_too_close:
+                    continue
 
                 # Found valid new detection
+                detection_pos = candidate_pos
                 NEW_DETECTION = True
                 detection_uav = d_idx
-                break 
+                break
 
 
             # (5.4) If no new detection, skip
             if (not NEW_DETECTION) or detection_uav is None:
                 pass
             else:
-                # (5.5) Duplicate Suppression (Geometric check)
-                # This logic remains largely the same, just checking the new detection_pos
                 det_point = Point(detection_pos[0], detection_pos[1])
                 is_duplicate = False
                 duplicate_thresh = 100.0
@@ -1271,13 +1333,10 @@ if __name__ == "__main__":
                         v_drift=v_drift
                     )
 
-                    if region_poly_exist and not region_poly_exist.is_empty:
-                        if region_poly_exist.buffer(0.3).contains(det_point):
-                            is_duplicate = True; break
-
                     dist = np.linalg.norm(detection_pos - tr_exist["pos"])
-                    if dist < max(duplicate_thresh, radius_R * 0.8):
-                        is_duplicate = True; break
+                    if dist < 1.0:  # 2.0 meters is the minimum separation between two distinct victims
+                        is_duplicate = True
+                        break
 
                 if is_duplicate:
                     print(f"[t={t}] Detection at {detection_pos} overlaps existing tracker.")
@@ -1320,28 +1379,44 @@ if __name__ == "__main__":
             # ------------------------------------------
             commanded_vels = np.zeros((num_drones, 3))
 
+            planning_belief = belief_map.copy()
+
             for d_idx in range(num_drones):
                 tr = track[d_idx]
 
                 # --- A. EXPLORATION MODE ---
                 if drone_modes[d_idx] == "explore":
-                    vx_des, vy_des, vz_des, *_ = plan_velocity_ipp_3D(
+
+                    target_alt = uav_nominal_altitudes[d_idx]
+
+                    vx_des, vy_des, vz_des, best_path, best_mask, _= plan_velocity_ipp_3D(
                         drone_positions[d_idx], 
                         drone_vels[d_idx],
-                        belief_map,           # <--- 2D Matrix
+                        planning_belief,           # <--- 2D Matrix
                         inside_mask,          # <--- 2D Mask
                         (x_min, y_min),       # <--- Origin
                         grid_resolution,      # <--- Res
                         soft_poly,
                         constraint_poly=None,
                         step_length=2.0,
-                        fov_angle=theta_FOV, v_max=v_max, n_directions=16,
-                        altitude_candidates=[2, 3, 5], pred_depth=pred_depth, E_scale=E_scale,
+                        fov_angle=theta_FOV, v_max=v_max, n_directions=8,
+                        altitude_candidates=[target_alt], pred_depth=pred_depth, E_scale=E_scale,
                         lam=0.5,        
                         buffer=buffer
                     )
                     # Maintain nominal altitude
-                    vz_des = np.clip(uav_nominal_altitudes[d_idx] - drone_positions[d_idx][2], -1.0, 1.0)
+
+                    if best_mask is not None:
+                        planning_belief[best_mask] = 0.001
+
+                    # This simple P-controller ensures we stick to the altitude
+                    # even if the planner's velocity output drifts slightly.
+                    z_err = target_alt - drone_positions[d_idx][2]
+
+                    if abs(z_err) > 0.1:
+                        vz_des = np.clip(z_err, -0.5, 0.5)  
+
+                    # vz_des = np.clip(uav_nominal_altitudes[d_idx] - drone_positions[d_idx][2], -1.0, 1.0)
 
 
                 # --- B. TRACKING MODE ---
@@ -1376,7 +1451,7 @@ if __name__ == "__main__":
 
                         # 2. PREDICTIVE BRAKING (The Fix)
                         # Slow down proportional to distance so we don't overshoot.
-                        if dist > 3.0:
+                        if dist > 1.0:
                             # Far away? Cruise at max speed.
                             vx_des, vy_des = (vec / (dist + 1e-6)) * 2.0
                         else:
@@ -1391,7 +1466,7 @@ if __name__ == "__main__":
                         vz_des = 0.0
 
                         # Switch to cone tracking when VERY close
-                        if dist < 1.5:
+                        if dist < 0.6:
                             tr["phase"] = "cone_tracking"
                             tr["cone_start"] = t
 
@@ -1417,7 +1492,6 @@ if __name__ == "__main__":
                             tr["phase"] = "cone_tracking"
                             tr["cone_start"] = t
 
-
                     # --- PHASE: CONE TRACKING (IPP inside cone) ---
                     elif tr["phase"] == "cone_tracking":
                         det_pos = tr["pos"]
@@ -1425,21 +1499,18 @@ if __name__ == "__main__":
 
                         # 1. Update Cone
                         region_poly, center_R, _ = tracking_region(t, det_pos, det_time, v_drift)
-                        valid_search_area = soft_poly.intersection(region_poly)
                         
-                        if valid_search_area.is_empty:
-                            tr["active"] = False; drone_modes[d_idx] = "explore"
-                            continue
+                        # Safety check
+                        if region_poly.is_empty:
+                            tr["active"] = False; drone_modes[d_idx] = "explore"; continue
 
-                        # 2. Rasterize Cone (REPLACES: list comprehension)
-                        # We need to find belief stats inside the cone
-                        # Use MplPath for fast point-in-polygon on the grid
+                        # 2. Rasterize Cone (Check Belief Stats FIRST)
                         poly_path = MplPath(list(region_poly.exterior.coords))
                         points_flat = np.vstack((XX.flatten(), YY.flatten())).T
                         mask_flat = poly_path.contains_points(points_flat)
                         in_R_mask = mask_flat.reshape(rows, cols)
                         
-                        # 3. Calculate Stats
+                        # 3. Calculate Stats & Logic
                         if np.any(in_R_mask):
                             p_vals = belief_map[in_R_mask]
                             frac_high = np.mean(p_vals > confirm_pconf)
@@ -1452,12 +1523,13 @@ if __name__ == "__main__":
                                 tr["fail_timer"] = 0.0
                                 tr["pos"] = drone_positions[d_idx][:2].copy() # Anchor
                                 tr["time"] = t
+                                tr["hover_start"] = t
                                 continue
 
-                            # Descent Logic
+                            # Descent Logic (Keep this! It helps confirm targets)
                             if max_p > 0.20 and drone_positions[d_idx][2] > MIN_ALT + 0.5:
-                                vz_des = -1.5 # Descend
-                            
+                                vz_des = -0.5 # Descend slowly
+
                             # Timeout/Failure Logic
                             z = drone_positions[d_idx][2]
                             if z <= MIN_ALT + 0.5:
@@ -1465,12 +1537,11 @@ if __name__ == "__main__":
                                 tr["fail_timer"] += dt
                                 if tr["fail_timer"] > 8.0:
                                     print(f"UAV{d_idx} Bad Detection. Clearing area.")
-                                    # Clear local area in 2D
                                     dx = XX - tr["pos_at_detection"][0]
                                     dy = YY - tr["pos_at_detection"][1]
                                     belief_map[(dx**2 + dy**2) < 2.0**2] = 0.0
                                     tr["active"] = False; drone_modes[d_idx] = "explore"
-                                    vz_des = 1.5
+                                    vz_des = 1.0
                                     continue
                             
                             if (t - tr["cone_start"]) >= cone_search_timeout and max_p < 0.50:
@@ -1478,8 +1549,9 @@ if __name__ == "__main__":
                                 vz_des = 1.0
                                 continue
 
-                        # 4. Motion: IPP constrained to Cone
-                        soft_cone_constraint = region_poly.buffer(0.3)
+                        # 4. Motion: IPP (With ROBUST RECOVERY)
+                        # Use 0.5m buffer to avoid edge-stuck issues
+                        soft_cone_constraint = region_poly.buffer(0.7)
                         
                         vx_ipp, vy_ipp, vz_ipp, _, _, _ = plan_velocity_ipp_3D(
                             drone_positions[d_idx], 
@@ -1488,17 +1560,34 @@ if __name__ == "__main__":
                             (x_min, y_min), grid_resolution,
                             soft_poly,
                             constraint_poly=soft_cone_constraint,
-                            step_length=2.0,
-                            fov_angle=theta_FOV, v_max=v_max, 
+                            step_length=1.5,         # Precise steps
+                            fov_angle=theta_FOV, 
+                            v_max=0.4,               # [FIX] Slower speed for tracking
                             altitude_candidates=[drone_positions[d_idx][2]], 
                             pred_depth=1, E_scale=E_scale_track,
                             lam=0.5,       
                             buffer=buffer
                         )
 
-                        vx_des = vx_ipp + v_drift[0] * 0.4
-                        vy_des = vy_ipp + v_drift[1] * 0.4
-                        if 'vz_des' not in locals(): vz_des = vz_ipp
+                        # [FIX] Recovery Logic: If planner fails (0.0 speed), fly to center
+                        if (abs(vx_ipp) < 0.01 and abs(vy_ipp) < 0.01):
+                            err_vec = center_R - drone_positions[d_idx][:2]
+                            dist_err = np.linalg.norm(err_vec)
+                            if dist_err > 0.1:
+                                speed = 0.25
+                                vx_des, vy_des = (err_vec / dist_err) * speed
+                            else:
+                                vx_des, vy_des = 0.0, 0.0
+                        else:
+                            vx_des, vy_des = vx_ipp, vy_ipp
+
+                        # Drift Compensation
+                        vx_des += v_drift[0] * 0.8
+                        vy_des += v_drift[1] * 0.8
+
+                        # If 'vz_des' wasn't set by the Descent Logic above, use 0.0
+                        if 'vz_des' not in locals(): 
+                            vz_des = 0.0
 
 
                     # --- PHASE: HOVER CONFIRM ---
@@ -1548,7 +1637,7 @@ if __name__ == "__main__":
                             tr["target_smooth"] = raw_target  # Snap on first frame
 
                         # Alpha 0.4 means 40% new data, 60% old position (smooth drift)
-                        alpha_pos = 0.1
+                        alpha_pos = 0.3
                         tr["target_smooth"] = (1 - alpha_pos) * tr["target_smooth"] + alpha_pos * raw_target
                         target_xy = tr["target_smooth"]
 
@@ -1556,7 +1645,7 @@ if __name__ == "__main__":
                         err_vec = target_xy - drone_positions[d_idx][:2]
                         dist_err = np.linalg.norm(err_vec)
 
-                        if dist_err > 0.5:
+                        if dist_err > 0.1:
                             # P-Controller
                             speed = np.clip(dist_err * 0.5, 0.5, v_max)
                             vx_cmd, vy_cmd = (err_vec / (dist_err + 1e-6)) * speed
@@ -1564,7 +1653,7 @@ if __name__ == "__main__":
                             vx_cmd, vy_cmd = 0.0, 0.0
 
                     
-                        if dist_err > 0.5:
+                        if dist_err > 0.1:
                             speed = np.clip(dist_err * 0.5, 0.5, v_max)
                             vx_cmd, vy_cmd = (err_vec / (dist_err + 1e-6)) * speed
                         else:
@@ -1618,7 +1707,7 @@ if __name__ == "__main__":
                                 
                                 tr["active"] = False; tr["confirmed"] = True
                                 drone_modes[d_idx] = "explore"
-                                vz_des = 2.0
+                                vz_des = 0.25
                             # --- RESTORED LOGIC END ---
 
                         # Timeout Logic
@@ -1643,63 +1732,23 @@ if __name__ == "__main__":
                     vx_des, vy_des, vz_des, *_ = plan_velocity_ipp_3D(
                         drone_positions[d_idx], 
                         drone_vels[d_idx],
-                        belief_map, inside_mask,
+                        planning_belief, inside_mask,
                         (x_min, y_min), grid_resolution,
                         soft_poly,
                         constraint_poly=None,
                         step_length=2.0,
-                        fov_angle=theta_FOV, v_max=v_max, n_directions=16,
+                        fov_angle=theta_FOV, v_max=v_max, n_directions=8,
                         altitude_candidates=[2, 3, 4], pred_depth=pred_depth, E_scale=E_scale,
                         lam=0.5,        
                         buffer=buffer
                     )
-                
-                # commanded_vels[d_idx] = [vx_des, vy_des, vz_des]
-
-                # # --- MOTION SMOOTHING (Physics-Compliant) ---
-
-                # # --- UNIVERSAL MOTION SMOOTHING (Physics-Compliant) ---
-                # # Applies acceleration limits to ALL modes (Explore, Track, Abort)
-                # # This prevents the 12 m/s jumps when switching modes.
-
-                # # 1. Calculate the requested jump from current velocity to desired
-                # v_current = drone_vels[d_idx][:2]
-                # v_target = np.array([vx_des, vy_des])
-                
-                # delta_v = v_target - v_current
-                # dist_v = np.linalg.norm(delta_v)
-                
-                # # 2. Universal Acceleration Limit (2.0 m/s^2)
-                # # This ensures even if the planner says "Go 10m/s West" instantly,
-                # # the drone will only accelerate at 6m/s^2 to get there.
-                # max_accel = 4.0  
-                # max_change = max_accel * dt
-                
-                # if dist_v > max_change:
-                #     # Clamp the change vector magnitude
-                #     ratio = max_change / dist_v
-                #     delta_v = delta_v * ratio
-                    
-                # # 3. Apply Horizontal Velocity
-                # drone_vels[d_idx][:2] = v_current + delta_v
-                
-                # # 4. Vertical Smoothing (Limit vertical accel to 1.0 m/s^2)
-                # z_diff = vz_des - drone_vels[d_idx][2]
-                # drone_vels[d_idx][2] += np.clip(z_diff, -1.0, 1.0)
-
+              
                 commanded_vels[d_idx] = [vx_des, vy_des, vz_des]
 
-                # --- MOTION SMOOTHING (The Fix) ---
-
-                # CASE A: REAL DRONE (Ivy Connected)
-                # We send the RAW desired velocity directly. 
-                # Paparazzi has its own internal PID controller that handles acceleration/braking physics.
-                # If we smooth it here, we double-filter the command, causing lag and slow braking.
+       
                 if not USE_INTERNAL_PHYSICS:
                     drone_vels[d_idx] = np.array([vx_des, vy_des, vz_des])
 
-                # CASE B: INTERNAL SIMULATION
-                # We must simulate inertia manually so the dots don't teleport on the map.
                 else:
                     # 1. Calculate the requested jump from current velocity to desired
                     v_current = drone_vels[d_idx][:2]
@@ -1709,7 +1758,7 @@ if __name__ == "__main__":
                     dist_v = np.linalg.norm(delta_v)
                     
                     # 2. Universal Acceleration Limit (4.0 m/s^2)
-                    max_accel = 2.0  
+                    max_accel = 0.3  
                     max_change = max_accel * dt
                     
                     if dist_v > max_change:
@@ -1733,8 +1782,8 @@ if __name__ == "__main__":
             # A. Calculate Repulsion Forces (Stay away from each other)
             # ---------------------------------------------------------
             repulsion_vels = np.zeros((num_drones, 3))
-            safe_separation = 0.5  # [m]
-            repulsion_gain = 10.0
+            safe_separation = 0.8  # [m]
+            repulsion_gain = 2.0
 
             for i in range(num_drones):
                 for j in range(i + 1, num_drones):
@@ -1766,7 +1815,7 @@ if __name__ == "__main__":
                 dist_v = np.linalg.norm(delta_v)
                 
                 # Clamp change to physical limits (e.g., 4 m/s^2)
-                max_accel = 2.0 
+                max_accel = 0.3 
                 max_change = max_accel * dt 
                 
                 if dist_v > max_change:
@@ -1809,7 +1858,7 @@ if __name__ == "__main__":
                     unit_v = v_proposed[:2] / v_g_mag
                     # Allow higher speed if flying INTO wind
                     v_headwind = np.dot(v_wind[:2], unit_v)
-                    limit = 1.0 + v_headwind
+                    limit = 0.7 + v_headwind
                     if v_g_mag > limit:
                         v_proposed[:2] = unit_v * max(0.5, limit)
                 
@@ -1876,15 +1925,12 @@ if __name__ == "__main__":
             fig.canvas.draw_idle()
             fig.canvas.flush_events()
 
-        
 
             # 2. CONDITIONAL Rendering (Draw every 5th frame)
-            VIZ_INTERVAL = 10
+            VIZ_INTERVAL = 5
             
             if t % VIZ_INTERVAL == 0:
                 
-                # D. PRINT COMMANDED VS GROUND VELOCITY
-                # D. PRINT FULL STATUS (Cmd vs Gnd vs Air)
                 print(f"--- Time t={t} ---")
                 for d_idx in range(num_drones):
                     # 1. Ground Velocity (What you see on the map)
@@ -1901,14 +1947,13 @@ if __name__ == "__main__":
                     
                     print(f"  UAV{d_idx}: Cmd=[{cvx:5.2f}, {cvy:5.2f}] Gnd=[{vx:5.2f}, {vy:5.2f}] | GS: {g_speed:5.1f} m/s | AS: {air_speed:5.1f} m/s")
 
-            # ============================
-            # 12. DEBUG: Frequency Measurement
-            # ============================
+
             frame_count += 1
             now = time.time()
             elapsed = now - start_time
             
             # Update frequency calculation every 1.0 second
+            current_freq = 0.0
             if elapsed >= 1.0:
                 current_freq = frame_count / elapsed
                 print(f"--- PERFORMANCE: Loop Rate = {current_freq:.2f} Hz ---")
@@ -1919,6 +1964,45 @@ if __name__ == "__main__":
 
             # --- Small delay for real-time smoothness ---
             plt.pause(0.0001)
+
+
+
+            # ... (Inside while True loop, after plt.pause) ...
+
+            # A. Log Searcher Drones
+            for d_idx in range(num_drones):
+                pos = drone_positions[d_idx]
+                vel = drone_vels[d_idx]
+                mode = drone_modes[d_idx]
+                
+                # Tracking estimate (if exists)
+                tr = track[d_idx]
+                if tr["active"] and tr["pos"] is not None:
+                    est_x, est_y = tr["pos"][0], tr["pos"][1]
+                else:
+                    est_x, est_y = "", ""
+                
+                writer_uav.writerow([
+                    f"{t:.3f}", d_idx,
+                    f"{pos[0]:.3f}", f"{pos[1]:.3f}", f"{pos[2]:.3f}",
+                    f"{vel[0]:.3f}", f"{vel[1]:.3f}", f"{vel[2]:.3f}",
+                    mode, est_x, est_y,
+                    f"{current_freq:.2f}"
+                ])
+                
+            # B. Log Ground Truth Victims
+            # We log EVERY victim at this timestep
+            for v_idx, v_pos in enumerate(victims):
+                # If using real victims, v_pos is updated by sync_drone_state earlier
+                writer_vic.writerow([
+                    f"{t:.3f}", v_idx,
+                    f"{v_pos[0]:.3f}", f"{v_pos[1]:.3f}"
+                ])
+                
+            # Flush periodically to ensure data is saved if script crashes
+            if frame_count % 10 == 0:
+                f_uav.flush()
+                f_vic.flush()
 
     except KeyboardInterrupt:
         print("\n[BRIDGE] Stopping...")
