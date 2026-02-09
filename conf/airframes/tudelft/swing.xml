@@ -6,39 +6,41 @@
         
         <autopilot name="swing_autopilot"/>
 
+        <define name="IMU_SWING_PERIODIC_FREQ" value="500"/>
+        <configure name="PERIODIC_FREQUENCY"   value="500"/> <!-- use configure here, define produces mult redefinitions -->
+
+        <configure name="PREFIX" value="/opt/arm-2012.03/bin/arm-none-linux-gnueabi-"/>
+        <configure name="USE_BARO_BOARD" value="FALSE"/>
+
         <target name="ap" board="parrot_minidrone">
             <configure name="USE_MAGNETOMETER" value="FALSE"/>
 
             <!-- ins configured for optitrack -->
-            <module name="ins">
-                <define name="INS_VFF_R_GPS" value="0.01"/>
-                <define name="INS_USE_GPS_ALT" value="TRUE"/>
-                <define name="USE_BARO_BOARD" value="FALSE"/>
-            </module>
+            <define name="INS_VFF_R_GPS" value="0.01"/>
+            <define name="INS_USE_GPS_ALT" value="TRUE"/>
+            <define name="USE_BARO_BOARD" value="FALSE"/>
         
-            <!-- Use GPS heading instead of magneto -->
+            <!-- Use GPS heading instead of magneto-->
             <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
-            <!-- <define name="AHRS_USE_GPS_HEADING" value="FALSE"/> -->
-            <!-- <define name="AHRS_FLOATING_HEADING" value="TRUE"/> -->
             <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
             <define name="USE_BARO" value="FALSE"/>    
+
+            <!-- In case of cyberzoo + NO optitrack for quick manual test flight -->
+            <!-- <define name="AHRS_USE_GPS_HEADING" value="FALSE"/> -->
+            <!-- <define name="AHRS_FLOATING_HEADING" value="TRUE"/> -->
+
+            <module name="sys_mon"/>
         </target>
 
         <target name="nps" board="pc">
             <module name="fdm" type="jsbsim"/>
             <module name="udp"/>
-            <!-- <define name="STABILIZATION_INDI_RPM_FEEDBACK" value="FALSE"/> -->
-
             <configure name="USE_MAGNETOMETER" value="TRUE"/>
             <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
-            <module name="ins" type="extended"/>
         </target>
 
-        <define name="IMU_SWING_PERIODIC_FREQ" value="500"/>
-
-        <configure name="PREFIX" value="/opt/arm-2012.03/bin/arm-none-linux-gnueabi-"/>
-        <configure name="USE_BARO_BOARD" value="FALSE"/>
-
+        <!-- common modules -->
+        <module name="ins" type="extended"/>
         <module name="telemetry" type="transparent_udp"/>
         <module name="radio_control" type="datalink"/>
         <module name="actuators" type="parrot_minidrone"/>
@@ -46,17 +48,13 @@
         <module name="gps" type="datalink"/>
         <module name="stabilization" type="indi"/>
         <module name="ahrs" type="int_cmpl_quat"/>
-    
-        <module name="flatness_stabilization"/>
-        <module name="flatness_guidance"/>
-        
-        <module name="air_data"/>
-
-        <!-- <module name="sys_mon"/> -->
-
+        <module name="air_data"/> <!-- needed? -->
         <module name="logger_file">
             <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
         </module>
+        <module name="flatness_stabilization"/>
+        <module name="flatness_guidance"/>
+
     </firmware>
 
     <commands>
