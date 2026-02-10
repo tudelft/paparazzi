@@ -94,14 +94,14 @@ static void logger_file_write_header(FILE *file) {
 static void logger_file_write_row(FILE *file) {
   struct NedCoor_f *pos = stateGetPositionNed_f();
   struct NedCoor_f *vel = stateGetSpeedNed_f();
-  struct NedCoor_f *acc = stateGetAccelNed_f();
+  struct Int32Vect3 *acc = stateGetAccelBody_i();
   struct FloatEulers *att = stateGetNedToBodyEulers_f();
   struct FloatRates *rates = stateGetBodyRates_f();
 
   fprintf(file, "%f,", get_sys_time_float());
   fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
   fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
-  fprintf(file, "%f,%f,%f,", acc->x, acc->y, acc->z);
+  fprintf(file, "%d,%d,%d,", acc->x, acc->y, acc->z);
   fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
 #ifdef BOARD_BEBOP
