@@ -92,25 +92,24 @@ static void logger_file_write_header(FILE *file) {
  * @param file Log file pointer
  */
 static void logger_file_write_row(FILE *file) {
-  struct Int32Vect3 *acc_i;
-  struct FloatVect3 *acc_f;
+  struct FloatVect3 acc_f;
+  struct FloatEulers att;
 
   struct NedCoor_f *pos = stateGetPositionNed_f();
   struct NedCoor_f *vel = stateGetSpeedNed_f();
 
-  acc_i = stateGetAccelBody_i();
-  ACCELS_FLOAT_OF_BFP(*acc_f, *acc_i);
+  struct Int32Vect3 *acc_i = stateGetAccelBody_i();
+  ACCELS_FLOAT_OF_BFP(acc_f, *acc_i);
   
-  struct FloatEulers *att;
-  float_eulers_of_quat_zxy(att, stateGetNedToBodyQuat_f());
+  float_eulers_of_quat_zxy(&att, stateGetNedToBodyQuat_f());
   
   struct FloatRates *rates = stateGetBodyRates_f();
 
   fprintf(file, "%f,", get_sys_time_float());
   fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
   fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
-  fprintf(file, "%d,%d,%d,", acc_f->x, acc_f->y, acc_f->z);
-  fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
+  fprintf(file, "%f,%f,%f,", acc_f.x, acc_f.y, acc_f.z);
+  fprintf(file, "%f,%f,%f,", att.phi, att.theta, att.psi);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
 #ifdef BOARD_BEBOP
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
