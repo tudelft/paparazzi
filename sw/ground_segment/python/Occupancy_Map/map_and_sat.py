@@ -23,7 +23,7 @@ PPRZ_HOME = os.getenv(
 sys.path.append(PPRZ_HOME + "/sw/ext/pprzlink/lib/v1.0/python")
 
 lat0, lon0, alt0 = 52.1681551, 4.4126468, 0.0
-xml_file = os.path.expanduser("~/paparazzi2/paparazzi/conf/flight_plans/tudelft/rotwing_EHVB_Damian.xml")
+xml_file = os.path.expanduser("~/paparazzi2/paparazzi/conf/flight_plans/SDB/sdb_rotwing_EHVB.xml")
 
 tree = ET.parse(xml_file)
 root = tree.getroot()

@@ -780,7 +780,7 @@ if __name__ == "__main__":
             # Fake init
             ensure_uav(101); ensure_uav(102)
             UAVS[101]['state']['x'] = 50.0; UAVS[101]['state']['z'] = 40.0
-            UAVS[102]['state']['x'] = -50.0; UAVS[102]['state']['y'] = 60.0; UAVS[102]['state']['z'] = 80.0
+            UAVS[102]['state']['x'] = -50.0; UAVS[102]['state']['y'] = 60.0; UAVS[102]['state']['z'] = 50.0
         else:
             print(f"[BRIDGE] Active Search Drones: {AC_IDS}")
             USE_INTERNAL_PHYSICS = False

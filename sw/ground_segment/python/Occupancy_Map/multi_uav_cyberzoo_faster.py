@@ -128,7 +128,8 @@ CALIB_OFFSET_Y = 0.0
 KNOWN_START_HEIGHTS = {
     121: 2.0,  # HOver heights
     122: 3.0, 
-    123: 0.5,  
+    123: 0.5, 
+    219: 2.0, 
 }
 
 GROUND_REF_AMSL = None  # Will store the calculated Sea Level of the floor
@@ -278,7 +279,7 @@ E_scale = 0.1
 E_scale_track = 0.04
 gamma_wind = 2.0
 v_wind = np.array([0.0, 0.0])
-v_max = 0.6        # max velocity [m/s]
+v_max = 0.5        # max velocity [m/s]
 
 confirm_pconf = 0.6
 peak_tresh = 0.75
@@ -493,7 +494,7 @@ def calc_ig_numba(path_arr, belief_map, inside_mask, x_min, y_min, grid_res, fov
 
 def plan_velocity_ipp_3D(drone_pos, drone_vel, belief_map, inside_mask, grid_origin, grid_resolution, soft_poly,
                          constraint_poly=None,
-                         fov_angle=theta_FOV, v_max=1.0, n_directions=8,
+                         fov_angle=theta_FOV, v_max=0.5, n_directions=8,
                          step_length=2.0, altitude_candidates=[2, 3, 4],
                          E_scale=100.0,    
                          lam=0.4,          
@@ -820,12 +821,13 @@ if __name__ == "__main__":
 
         # Handle case where no searchers connected
         if not AC_IDS:
-            print("[WARN] No SEARCH drones found via Ivy. Using Sim Defaults [121, 122].")
-            AC_IDS = [121, 122]
+            print("[WARN] No SEARCH drones found via Ivy. Using Sim Defaults [121, 122, 219].")
+            AC_IDS = [121, 122, 219]  
             # Fake init
-            ensure_uav(121); ensure_uav(122)
+            ensure_uav(121); ensure_uav(122) ; ensure_uav(219)
             UAVS[121]['state']['x'] = 3.0; UAVS[121]['state']['z'] = 2.0
             UAVS[122]['state']['x'] = -2.0; UAVS[122]['state']['y'] = 3.0; UAVS[122]['state']['z'] = 2.5
+            UAVS[219]['state']['x'] = 0.0; UAVS[219]['state']['y'] = -1.0; UAVS[219]['state']['z'] = 2.5
         else:
             print(f"[BRIDGE] Active Search Drones: {AC_IDS}")
             USE_INTERNAL_PHYSICS = False
@@ -833,8 +835,8 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"[ERR] Ivy fail: {e}")
         ivy = None
-        AC_IDS = [121, 122]
-        ensure_uav(121); ensure_uav(122)
+        AC_IDS = [121, 122, 219]
+        ensure_uav(121); ensure_uav(122); ensure_uav(219)
         HAS_REAL_VICTIM = False
         active_victim_ids = []
         USE_INTERNAL_PHYSICS = True
@@ -1044,7 +1046,7 @@ if __name__ == "__main__":
     timestamp_str = datetime.now().strftime('%Y%m%d_%H%M%S')
     
     # File 1: Searcher Drone Data
-    log_uav_filename = f"log_uavs_{timestamp_str}.csv"
+    log_uav_filename = f"log_uavs_real_{timestamp_str}.csv"
     f_uav = open(log_uav_filename, mode='w', newline='')
     writer_uav = csv.writer(f_uav)
     writer_uav.writerow([
@@ -1493,6 +1495,103 @@ if __name__ == "__main__":
                             tr["cone_start"] = t
 
                     # --- PHASE: CONE TRACKING (IPP inside cone) ---
+                    # elif tr["phase"] == "cone_tracking":
+                    #     det_pos = tr["pos"]
+                    #     det_time = tr["time"]
+
+                    #     # 1. Update Cone
+                    #     region_poly, center_R, _ = tracking_region(t, det_pos, det_time, v_drift)
+                        
+                    #     # Safety check
+                    #     if region_poly.is_empty:
+                    #         tr["active"] = False; drone_modes[d_idx] = "explore"; continue
+
+                    #     # 2. Rasterize Cone (Check Belief Stats FIRST)
+                    #     poly_path = MplPath(list(region_poly.exterior.coords))
+                    #     points_flat = np.vstack((XX.flatten(), YY.flatten())).T
+                    #     mask_flat = poly_path.contains_points(points_flat)
+                    #     in_R_mask = mask_flat.reshape(rows, cols)
+                        
+                    #     # 3. Calculate Stats & Logic
+                    #     if np.any(in_R_mask):
+                    #         p_vals = belief_map[in_R_mask]
+                    #         frac_high = np.mean(p_vals > confirm_pconf)
+                    #         mean_p = np.mean(p_vals)
+                    #         max_p = np.max(p_vals)
+
+                    #         # Success -> Hover
+                    #         if (frac_high >= rho_th or mean_p >= 0.30 or max_p >= peak_tresh):
+                    #             tr["phase"] = "hover_confirm"
+                    #             tr["fail_timer"] = 0.0
+                    #             tr["pos"] = drone_positions[d_idx][:2].copy() # Anchor
+                    #             tr["time"] = t
+                    #             tr["hover_start"] = t
+                    #             continue
+
+                    #         # Descent Logic (Keep this! It helps confirm targets)
+                    #         if max_p > 0.20 and drone_positions[d_idx][2] > MIN_ALT + 0.5:
+                    #             vz_des = -0.5 # Descend slowly
+
+                    #         # Timeout/Failure Logic
+                    #         z = drone_positions[d_idx][2]
+                    #         if z <= MIN_ALT + 0.5:
+                    #             tr.setdefault("fail_timer", 0.0)
+                    #             tr["fail_timer"] += dt
+                    #             if tr["fail_timer"] > 8.0:
+                    #                 print(f"UAV{d_idx} Bad Detection. Clearing area.")
+                    #                 dx = XX - tr["pos_at_detection"][0]
+                    #                 dy = YY - tr["pos_at_detection"][1]
+                    #                 belief_map[(dx**2 + dy**2) < 2.0**2] = 0.0
+                    #                 tr["active"] = False; drone_modes[d_idx] = "explore"
+                    #                 vz_des = 1.0
+                    #                 continue
+                            
+                    #         if (t - tr["cone_start"]) >= cone_search_timeout and max_p < 0.50:
+                    #             tr["active"] = False; drone_modes[d_idx] = "explore"
+                    #             vz_des = 1.0
+                    #             continue
+
+                    #     # 4. Motion: IPP (With ROBUST RECOVERY)
+                    #     # Use 0.5m buffer to avoid edge-stuck issues
+                    #     soft_cone_constraint = region_poly.buffer(0.7)
+                        
+                    #     vx_ipp, vy_ipp, vz_ipp, _, _, _ = plan_velocity_ipp_3D(
+                    #         drone_positions[d_idx], 
+                    #         drone_vels[d_idx],
+                    #         belief_map, inside_mask,
+                    #         (x_min, y_min), grid_resolution,
+                    #         soft_poly,
+                    #         constraint_poly=soft_cone_constraint,
+                    #         step_length=1.5,         # Precise steps
+                    #         fov_angle=theta_FOV, 
+                    #         v_max=0.4,               # [FIX] Slower speed for tracking
+                    #         altitude_candidates=[drone_positions[d_idx][2]], 
+                    #         pred_depth=1, E_scale=E_scale_track,
+                    #         lam=0.5,       
+                    #         buffer=buffer
+                    #     )
+
+                    #     # [FIX] Recovery Logic: If planner fails (0.0 speed), fly to center
+                    #     if (abs(vx_ipp) < 0.01 and abs(vy_ipp) < 0.01):
+                    #         err_vec = center_R - drone_positions[d_idx][:2]
+                    #         dist_err = np.linalg.norm(err_vec)
+                    #         if dist_err > 0.1:
+                    #             speed = 0.25
+                    #             vx_des, vy_des = (err_vec / dist_err) * speed
+                    #         else:
+                    #             vx_des, vy_des = 0.0, 0.0
+                    #     else:
+                    #         vx_des, vy_des = vx_ipp, vy_ipp
+
+                    #     # Drift Compensation
+                    #     vx_des += v_drift[0] * 0.8
+                    #     vy_des += v_drift[1] * 0.8
+
+                    #     # If 'vz_des' wasn't set by the Descent Logic above, use 0.0
+                    #     if 'vz_des' not in locals(): 
+                    #         vz_des = 0.0
+
+                    # --- PHASE: CONE TRACKING (IPP inside cone) ---
                     elif tr["phase"] == "cone_tracking":
                         det_pos = tr["pos"]
                         det_time = tr["time"]
@@ -1500,25 +1599,24 @@ if __name__ == "__main__":
                         # 1. Update Cone
                         region_poly, center_R, _ = tracking_region(t, det_pos, det_time, v_drift)
                         
-                        # Safety check
                         if region_poly.is_empty:
                             tr["active"] = False; drone_modes[d_idx] = "explore"; continue
 
-                        # 2. Rasterize Cone (Check Belief Stats FIRST)
+                        # 2. Rasterize Cone
                         poly_path = MplPath(list(region_poly.exterior.coords))
                         points_flat = np.vstack((XX.flatten(), YY.flatten())).T
                         mask_flat = poly_path.contains_points(points_flat)
                         in_R_mask = mask_flat.reshape(rows, cols)
                         
-                        # 3. Calculate Stats & Logic
+                        # 3. Calculate Stats
                         if np.any(in_R_mask):
                             p_vals = belief_map[in_R_mask]
                             frac_high = np.mean(p_vals > confirm_pconf)
                             mean_p = np.mean(p_vals)
                             max_p = np.max(p_vals)
 
-                            # Success -> Hover
-                            if (frac_high >= rho_th or mean_p >= 0.30 or max_p >= peak_tresh):
+                            # Success -> Hover (Relaxed threshold for curiosity)
+                            if (frac_high >= rho_th or mean_p >= 0.25 or max_p >= peak_tresh):
                                 tr["phase"] = "hover_confirm"
                                 tr["fail_timer"] = 0.0
                                 tr["pos"] = drone_positions[d_idx][:2].copy() # Anchor
@@ -1526,31 +1624,19 @@ if __name__ == "__main__":
                                 tr["hover_start"] = t
                                 continue
 
-                            # Descent Logic (Keep this! It helps confirm targets)
+                            # Descent Logic (Investigative Descent)
+                            # Only descend if signal is decent AND we are high up
                             if max_p > 0.20 and drone_positions[d_idx][2] > MIN_ALT + 0.5:
-                                vz_des = -0.5 # Descend slowly
-
-                            # Timeout/Failure Logic
-                            z = drone_positions[d_idx][2]
-                            if z <= MIN_ALT + 0.5:
-                                tr.setdefault("fail_timer", 0.0)
-                                tr["fail_timer"] += dt
-                                if tr["fail_timer"] > 8.0:
-                                    print(f"UAV{d_idx} Bad Detection. Clearing area.")
-                                    dx = XX - tr["pos_at_detection"][0]
-                                    dy = YY - tr["pos_at_detection"][1]
-                                    belief_map[(dx**2 + dy**2) < 2.0**2] = 0.0
-                                    tr["active"] = False; drone_modes[d_idx] = "explore"
-                                    vz_des = 1.0
-                                    continue
+                                vz_des = -0.25 # Slow descent
                             
-                            if (t - tr["cone_start"]) >= cone_search_timeout and max_p < 0.50:
+                            # Timeout/Failure Logic
+                            # Extended timeout to 25s (15+10) to allow for slow indoor movement
+                            if (t - tr["cone_start"]) >= (cone_search_timeout + 10.0) and max_p < 0.40:
                                 tr["active"] = False; drone_modes[d_idx] = "explore"
-                                vz_des = 1.0
+                                vz_des = 0.5
                                 continue
 
-                        # 4. Motion: IPP (With ROBUST RECOVERY)
-                        # Use 0.5m buffer to avoid edge-stuck issues
+                        # 4. Motion: IPP constrained to Cone
                         soft_cone_constraint = region_poly.buffer(0.7)
                         
                         vx_ipp, vy_ipp, vz_ipp, _, _, _ = plan_velocity_ipp_3D(
@@ -1560,16 +1646,16 @@ if __name__ == "__main__":
                             (x_min, y_min), grid_resolution,
                             soft_poly,
                             constraint_poly=soft_cone_constraint,
-                            step_length=1.5,         # Precise steps
+                            step_length=1.5,         
                             fov_angle=theta_FOV, 
-                            v_max=0.4,               # [FIX] Slower speed for tracking
+                            v_max=0.4,               
                             altitude_candidates=[drone_positions[d_idx][2]], 
                             pred_depth=1, E_scale=E_scale_track,
                             lam=0.5,       
                             buffer=buffer
                         )
 
-                        # [FIX] Recovery Logic: If planner fails (0.0 speed), fly to center
+                        # Recovery Logic
                         if (abs(vx_ipp) < 0.01 and abs(vy_ipp) < 0.01):
                             err_vec = center_R - drone_positions[d_idx][:2]
                             dist_err = np.linalg.norm(err_vec)
@@ -1581,16 +1667,11 @@ if __name__ == "__main__":
                         else:
                             vx_des, vy_des = vx_ipp, vy_ipp
 
-                        # Drift Compensation
                         vx_des += v_drift[0] * 0.8
                         vy_des += v_drift[1] * 0.8
-
-                        # If 'vz_des' wasn't set by the Descent Logic above, use 0.0
-                        if 'vz_des' not in locals(): 
-                            vz_des = 0.0
+                        if 'vz_des' not in locals(): vz_des = 0.0
 
 
-                    # --- PHASE: HOVER CONFIRM ---
                     # --- PHASE: HOVER CONFIRM ---
                     elif tr["phase"] == "hover_confirm":
                         det_pos = tr["pos"]
@@ -1604,12 +1685,11 @@ if __name__ == "__main__":
                         # 2. Stabilized Targeting
                         hotspot_mask_local = (local_belief > confirm_pconf)
                         
-                        raw_target = None
-                        has_visual_lock = False
                         theoretical_center = det_pos + v_drift * (t - det_time)
+                        raw_target = theoretical_center
+                        has_visual_lock = False
 
                         if np.sum(hotspot_mask_local) > 3:
-                            # Reconstruct World Coordinates locally
                             y_indices = np.arange(r_s.start, r_s.stop) * grid_resolution + y_min
                             x_indices = np.arange(c_s.start, c_s.stop) * grid_resolution + x_min
                             loc_x_mesh, loc_y_mesh = np.meshgrid(x_indices, y_indices)
@@ -1622,21 +1702,15 @@ if __name__ == "__main__":
                             vis_y = np.average(coords_y, weights=weights)
                             visual_centroid = np.array([vis_x, vis_y])
 
-                            # Gating
+                            # Gating: Tight check for indoor (2.0m)
                             if np.linalg.norm(visual_centroid - theoretical_center) < 2.0:
                                 has_visual_lock = True
                                 raw_target = visual_centroid
-                            else:
-                                raw_target = theoretical_center
-                        else:
-                            raw_target = theoretical_center
 
-                        # --- FIX: LOW PASS FILTER ON TARGET POSITION ---
-                        # This prevents the drone from jerking when switching between visual/model
+                        # Low Pass Filter
                         if "target_smooth" not in tr or tr["target_smooth"] is None:
-                            tr["target_smooth"] = raw_target  # Snap on first frame
+                            tr["target_smooth"] = raw_target
 
-                        # Alpha 0.4 means 40% new data, 60% old position (smooth drift)
                         alpha_pos = 0.3
                         tr["target_smooth"] = (1 - alpha_pos) * tr["target_smooth"] + alpha_pos * raw_target
                         target_xy = tr["target_smooth"]
@@ -1645,16 +1719,9 @@ if __name__ == "__main__":
                         err_vec = target_xy - drone_positions[d_idx][:2]
                         dist_err = np.linalg.norm(err_vec)
 
+                        # TENACIOUS CHASE: Keep chasing until 10cm (0.1m)
                         if dist_err > 0.1:
-                            # P-Controller
-                            speed = np.clip(dist_err * 0.5, 0.5, v_max)
-                            vx_cmd, vy_cmd = (err_vec / (dist_err + 1e-6)) * speed
-                        else:
-                            vx_cmd, vy_cmd = 0.0, 0.0
-
-                    
-                        if dist_err > 0.1:
-                            speed = np.clip(dist_err * 0.5, 0.5, v_max)
+                            speed = np.clip(dist_err * 0.6, 0.3, v_max) # Min speed 0.3 to prevent stalling
                             vx_cmd, vy_cmd = (err_vec / (dist_err + 1e-6)) * speed
                         else:
                             vx_cmd, vy_cmd = 0.0, 0.0
@@ -1662,67 +1729,188 @@ if __name__ == "__main__":
                         vx_des = vx_cmd + v_drift[0]
                         vy_des = vy_cmd + v_drift[1]
 
-                        # Vertical Logic
+                        # 4. Vertical Logic (The "Cylinder" Check)
                         current_alt = drone_positions[d_idx][2]
-                        allowed_err = np.interp(current_alt, [1.0, 3.0], [0.5, 5.0])
                         
-                        if has_visual_lock and dist_err > allowed_err:
-                            vz_des = 0.0
-                        elif current_alt > 1.0:
-                            vz_des = -0.3
+                        # Only descend if we are > 1.0m high
+                        if current_alt > 1.0:
+                            # SCALED CHECK: Only drop if within 0.8m of target (80cm)
+                            if dist_err < 0.8:
+                                vz_des = -0.3 # Slow, controlled descent
+                            else:
+                                vz_des = 0.0  # Wait to align
                         else:
                             vz_des = 0.0
 
-                        # 4. Confirmation Stats
+                        # 5. Confirmation Stats
                         p_vals = local_belief[hotspot_mask_local]
+                        max_p = np.max(p_vals) if len(p_vals) > 0 else 0.0
+                        mean_p = np.mean(p_vals) if len(p_vals) > 0 else 0.0
+
+                        # Dynamic Ceiling
+                        # if mean_p >= 0.90: req_alt = 1.5
+                        # elif mean_p >= 0.70: req_alt = 1.0
+                        # else: req_alt = 0.5
+
+                        req_alt = 1.0  # We want to get as close as possible for confirmation
                         
-                        if len(p_vals) > 0:
-                            mean_p = np.mean(p_vals)
-                            max_p = np.max(p_vals)
+                        # A. CONFIRMATION
+                        if (current_alt <= req_alt and max_p >= peak_tresh):
+                            print(f"[t={t}] UAV{d_idx} CONFIRMED victim at alt={current_alt:.1f}m.")
+                            belief_map = clear_confirmed_region_2d(belief_map, XX, YY, det_pos, v_drift)
+                            dx = XX - det_pos[0]; dy = YY - det_pos[1]
+                            belief_map[(dx**2 + dy**2) < 2.0**2] *= 0.05
                             
-                            # --- RESTORED LOGIC START ---
-                            # Dynamic Confirmation Ceiling (Higher Altitudes Allowed!)
-                            if mean_p >= 0.90:
-                                required_confirmation_alt = 1.5
-                            elif mean_p >= 0.70:
-                                required_confirmation_alt = 1.0
-                            else:
-                                required_confirmation_alt = 0.5
-                                
-                            alt_ready = (current_alt <= required_confirmation_alt)
+                            tr["active"] = False; tr["confirmed"] = True
+                            drone_modes[d_idx] = "explore"
+                            vz_des = 0.5
 
-                            # Check Confirmation
-                            if (alt_ready and max_p >= peak_tresh):
-                                print(f"[t={t}] UAV{d_idx} CONFIRMED victim at alt={current_alt:.1f}m.")
-                                
-                                # 1. Clear Ellipse (2D Version)
-                                belief_map = clear_confirmed_region_2d(belief_map, XX, YY, det_pos, v_drift)
-                                
-                                # 2. Hard Clear Center (2D Version)
-                                dx = XX - det_pos[0]
-                                dy = YY - det_pos[1]
-                                belief_map[(dx**2 + dy**2) < 2.0**2] *= 0.05
-                                
-                                print(f"[t={t}] Fully cleared victim region.")
-                                
-                                tr["active"] = False; tr["confirmed"] = True
-                                drone_modes[d_idx] = "explore"
-                                vz_des = 0.25
-                            # --- RESTORED LOGIC END ---
+                        # B. TIMEOUT (Extended)
+                        # Increased to 20s to allow for the align-then-descend behavior
+                        if (t - tr["hover_start"]) > 20.0:
+                             # Only abort if low enough but still not sure
+                             if current_alt <= req_alt:
+                                print(f"[t={t}] UAV{d_idx} hover-confirm timeout → aborting.")
+                                tr["active"] = False; drone_modes[d_idx] = "explore"
+                                vz_des = 0.5
+                             # Hard Safety limit (e.g. 40s)
+                             elif (t - tr["hover_start"]) > 40.0:
+                                tr["active"] = False; drone_modes[d_idx] = "explore"; vz_des = 0.5
 
-                        # Timeout Logic
-                        # (Uses the same alt_ready logic to decide if we timed out waiting for confirmation)
-                        # We recalculate alt_ready here just in case p_vals was empty above
-                        if mean_p >= 0.70: req_alt = 1.0 
-                        else: req_alt = 0.5
+
+                    # --- PHASE: HOVER CONFIRM ---
+                    # --- PHASE: HOVER CONFIRM ---
+                    # elif tr["phase"] == "hover_confirm":
+                    #     det_pos = tr["pos"]
+                    #     det_time = tr["time"]
+                    #     if "hover_start" not in tr: tr["hover_start"] = t
+
+                    #     # 1. Get Visibility Window
+                    #     (r_s, c_s), r_m, _ = get_view_window(drone_positions[d_idx])
+                    #     local_belief = belief_map[r_s, c_s]
                         
-                        if (
-                            (current_alt <= req_alt) 
-                            and (t - tr["hover_start"]) > 10.0
-                        ):
-                            print(f"[t={t}] UAV{d_idx} hover-confirm timeout → aborting.")
-                            tr["active"] = False; drone_modes[d_idx] = "explore"
-                            vz_des = 0.25
+                    #     # 2. Stabilized Targeting
+                    #     hotspot_mask_local = (local_belief > confirm_pconf)
+                        
+                    #     raw_target = None
+                    #     has_visual_lock = False
+                    #     theoretical_center = det_pos + v_drift * (t - det_time)
+
+                    #     if np.sum(hotspot_mask_local) > 3:
+                    #         # Reconstruct World Coordinates locally
+                    #         y_indices = np.arange(r_s.start, r_s.stop) * grid_resolution + y_min
+                    #         x_indices = np.arange(c_s.start, c_s.stop) * grid_resolution + x_min
+                    #         loc_x_mesh, loc_y_mesh = np.meshgrid(x_indices, y_indices)
+                            
+                    #         coords_x = loc_x_mesh[hotspot_mask_local]
+                    #         coords_y = loc_y_mesh[hotspot_mask_local]
+                    #         weights = local_belief[hotspot_mask_local]**2
+                            
+                    #         vis_x = np.average(coords_x, weights=weights)
+                    #         vis_y = np.average(coords_y, weights=weights)
+                    #         visual_centroid = np.array([vis_x, vis_y])
+
+                    #         # Gating
+                    #         if np.linalg.norm(visual_centroid - theoretical_center) < 2.0:
+                    #             has_visual_lock = True
+                    #             raw_target = visual_centroid
+                    #         else:
+                    #             raw_target = theoretical_center
+                    #     else:
+                    #         raw_target = theoretical_center
+
+                    #     # --- FIX: LOW PASS FILTER ON TARGET POSITION ---
+                    #     # This prevents the drone from jerking when switching between visual/model
+                    #     if "target_smooth" not in tr or tr["target_smooth"] is None:
+                    #         tr["target_smooth"] = raw_target  # Snap on first frame
+
+                    #     # Alpha 0.4 means 40% new data, 60% old position (smooth drift)
+                    #     alpha_pos = 0.3
+                    #     tr["target_smooth"] = (1 - alpha_pos) * tr["target_smooth"] + alpha_pos * raw_target
+                    #     target_xy = tr["target_smooth"]
+
+                    #     # 3. Control (Chase the Smoothed Target)
+                    #     err_vec = target_xy - drone_positions[d_idx][:2]
+                    #     dist_err = np.linalg.norm(err_vec)
+
+                    #     if dist_err > 0.1:
+                    #         # P-Controller
+                    #         speed = np.clip(dist_err * 0.5, 0.5, v_max)
+                    #         vx_cmd, vy_cmd = (err_vec / (dist_err + 1e-6)) * speed
+                    #     else:
+                    #         vx_cmd, vy_cmd = 0.0, 0.0
+
+                    
+                    #     if dist_err > 0.1:
+                    #         speed = np.clip(dist_err * 0.5, 0.5, v_max)
+                    #         vx_cmd, vy_cmd = (err_vec / (dist_err + 1e-6)) * speed
+                    #     else:
+                    #         vx_cmd, vy_cmd = 0.0, 0.0
+                        
+                    #     vx_des = vx_cmd + v_drift[0]
+                    #     vy_des = vy_cmd + v_drift[1]
+
+                    #     # Vertical Logic
+                    #     current_alt = drone_positions[d_idx][2]
+                    #     allowed_err = np.interp(current_alt, [1.0, 3.0], [0.5, 5.0])
+                        
+                    #     if has_visual_lock and dist_err > allowed_err:
+                    #         vz_des = 0.0
+                    #     elif current_alt > 1.0:
+                    #         vz_des = -0.3
+                    #     else:
+                    #         vz_des = 0.0
+
+                    #     # 4. Confirmation Stats
+                    #     p_vals = local_belief[hotspot_mask_local]
+                        
+                    #     if len(p_vals) > 0:
+                    #         mean_p = np.mean(p_vals)
+                    #         max_p = np.max(p_vals)
+                            
+                    #         # --- RESTORED LOGIC START ---
+                    #         # Dynamic Confirmation Ceiling (Higher Altitudes Allowed!)
+                    #         if mean_p >= 0.90:
+                    #             required_confirmation_alt = 1.5
+                    #         elif mean_p >= 0.70:
+                    #             required_confirmation_alt = 1.0
+                    #         else:
+                    #             required_confirmation_alt = 0.5
+                                
+                    #         alt_ready = (current_alt <= required_confirmation_alt)
+
+                    #         # Check Confirmation
+                    #         if (alt_ready and max_p >= peak_tresh):
+                    #             print(f"[t={t}] UAV{d_idx} CONFIRMED victim at alt={current_alt:.1f}m.")
+                                
+                    #             # 1. Clear Ellipse (2D Version)
+                    #             belief_map = clear_confirmed_region_2d(belief_map, XX, YY, det_pos, v_drift)
+                                
+                    #             # 2. Hard Clear Center (2D Version)
+                    #             dx = XX - det_pos[0]
+                    #             dy = YY - det_pos[1]
+                    #             belief_map[(dx**2 + dy**2) < 2.0**2] *= 0.05
+                                
+                    #             print(f"[t={t}] Fully cleared victim region.")
+                                
+                    #             tr["active"] = False; tr["confirmed"] = True
+                    #             drone_modes[d_idx] = "explore"
+                    #             vz_des = 0.25
+                    #         # --- RESTORED LOGIC END ---
+
+                    #     # Timeout Logic
+                    #     # (Uses the same alt_ready logic to decide if we timed out waiting for confirmation)
+                    #     # We recalculate alt_ready here just in case p_vals was empty above
+                    #     if mean_p >= 0.70: req_alt = 1.0 
+                    #     else: req_alt = 0.5
+                        
+                    #     if (
+                    #         (current_alt <= req_alt) 
+                    #         and (t - tr["hover_start"]) > 10.0
+                    #     ):
+                    #         print(f"[t={t}] UAV{d_idx} hover-confirm timeout → aborting.")
+                    #         tr["active"] = False; drone_modes[d_idx] = "explore"
+                    #         vz_des = 0.25
 
                     else:
                         vx_des, vy_des, vz_des = 0.0, 0.0, 0.0

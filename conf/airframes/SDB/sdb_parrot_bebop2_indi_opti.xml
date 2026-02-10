@@ -66,7 +66,7 @@
 <!--killall -9 ap.elf || /data/ftp/internal_000/paparazzi/ap.elf -->
 
       <configure name="HOST" value="192.168.209.$(AC_ID)"/><!-- the airframe -->
-      <configure name="MODEM_HOST" value="192.168.209.249"/> <!-- the router -->
+      <configure name="MODEM_HOST" value="192.168.209.155"/> <!-- the router -->
       <configure name="MODEM_BROADCAST" value="TRUE"/>
       
     </target>

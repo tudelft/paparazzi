@@ -40,7 +40,7 @@ softgeo_xy = np.array([waypoints[wp][:2] for wp in ["S1","S2","S3","S4","S5","S6
 soft_poly = Polygon(softgeo_xy)
 
 x_min, y_min, x_max, y_max = soft_poly.bounds
-grid_resolution = 10.0  # Finer resolution (2m)
+grid_resolution = 10.0  
 
 # 1. Create the axes
 grid_x = np.arange(x_min, x_max + grid_resolution, grid_resolution)
@@ -87,7 +87,7 @@ theta_FOV = np.deg2rad(45)
 E_scale = 100.0
 E_scale_track = 40.0
 gamma_wind = 5.0
-v_wind = np.array([10.0, 0.0])
+v_wind = np.array([2.0, 0.0])
 v_max = 20.0        # max velocity [m/s]
 
 confirm_pconf = 0.6
@@ -848,14 +848,27 @@ victims = victims[:num_victims]
 # MULTI-UAV SETUP
 # -----------------------------
 
+# master_positions = [
+#     np.array([400.0, 0.0, 80.0]),
+#     np.array([50.0, -300.0, 40.0]),
+#     np.array([0.0, -200.0, 40.0]), 
+#     np.array([300.0, -40.0, 40.0]),
+#     np.array([80.0, -100.0, 80.0]),
+#     np.array([10.0, -250.0, 40.0]),
+#     np.array([0.0, 0.0, 80.0])
+# ]
+
+
+#### Starting from the same position shows the bottleneck we had with uavs planning for the same steps!!!
+
 master_positions = [
-    np.array([400.0, 0.0, 80.0]),
-    np.array([50.0, -300.0, 40.0]),
-    np.array([0.0, -200.0, 40.0]), 
-    np.array([300.0, -40.0, 40.0]),
-    np.array([80.0, -100.0, 80.0]),
-    np.array([10.0, -250.0, 40.0]),
-    np.array([0.0, 0.0, 80.0])
+    np.array([0.0, 0.0, 50.0]),
+    np.array([0.0, 0.0, 50.0]),
+    np.array([0.0, 0.0, 50.0]), 
+    np.array([0.0, 0.0, 50.0]),
+    np.array([0.0, 0.0, 50.0]),
+    np.array([0.0, 0.0, 50.0]),
+    np.array([0.0, 0.0, 50.0])
 ]
 
 #  Ask User for Count
@@ -1141,7 +1154,7 @@ if __name__ == "__main__":
     frame_count = 0
     current_freq = 0.0
 
-    for t in range(250):
+    for t in range(500):
         # ------------------------------------------
         # 0. Dynamic mapping
         # ------------------------------------------
@@ -1377,23 +1390,42 @@ if __name__ == "__main__":
         # ------------------------------------------
         # 6. Plan next velocities
         # ------------------------------------------
-        # ------------------------------------------
-        # 6. Plan next velocities (Logic Updated for 2D Arrays)
-        # ------------------------------------------
+     
         commanded_vels = np.zeros((num_drones, 3))
+
+        # Create a temporary 'scratchpad' for this timestep's planning phase
+        # Drones will mark areas as "scanned" here to warn others away,
+        # but this won't affect the real map used for detection/tracking.
+        planning_belief = belief_map.copy()
 
         for d_idx in range(num_drones):
             tr = track[d_idx]
 
-            # --- A. EXPLORATION MODE ---
+            if t < 5:
+                # 360 degrees divided by N drones
+                angle_rad = (2 * np.pi / num_drones) * d_idx 
+                speed = v_max # Fast cruise speed
+                
+                vx_des = speed * np.cos(angle_rad)
+                vy_des = speed * np.sin(angle_rad)
+                vz_des = 0.0 
+                
+                # 1. Apply to Physics (This makes them move)
+                drone_vels[d_idx] = np.array([vx_des, vy_des, vz_des])
+                
+                # 2. [FIX] Save to Logging Array (This makes the print correct)
+                commanded_vels[d_idx] = [vx_des, vy_des, vz_des]
+                continue
+
+            # --- A. EXPLORATION MODE (With Reservation) ---
             if drone_modes[d_idx] == "explore":
-                vx_des, vy_des, vz_des, *_ = plan_velocity_ipp_3D(
+                vx_des, vy_des, vz_des, best_path, best_mask, _ = plan_velocity_ipp_3D(
                     drone_positions[d_idx], 
                     drone_vels[d_idx],
-                    belief_map,           # <--- 2D Matrix
-                    inside_mask,          # <--- 2D Mask
-                    (x_min, y_min),       # <--- Origin
-                    grid_resolution,      # <--- Res
+                    planning_belief,      # <--- [FIX] Use Scratchpad
+                    inside_mask,
+                    (x_min, y_min),
+                    grid_resolution,
                     soft_poly,
                     constraint_poly=None,
                     step_length=40.0,
@@ -1403,6 +1435,9 @@ if __name__ == "__main__":
                     buffer=buffer
                 )
                 # Maintain nominal altitude
+                if best_mask is not None:
+                    planning_belief[best_mask] = 0.001
+
                 vz_des = np.clip(uav_nominal_altitudes[d_idx] - drone_positions[d_idx][2], -1.0, 1.0)
 
 
@@ -1701,7 +1736,8 @@ if __name__ == "__main__":
                  vx_des, vy_des, vz_des, *_ = plan_velocity_ipp_3D(
                     drone_positions[d_idx], 
                     drone_vels[d_idx],
-                    belief_map, inside_mask,
+                    planning_belief,    # <--- [FIX] Fallback also uses scratchpad
+                    inside_mask,
                     (x_min, y_min), grid_resolution,
                     soft_poly,
                     constraint_poly=None,
@@ -1745,60 +1781,7 @@ if __name__ == "__main__":
             z_diff = vz_des - drone_vels[d_idx][2]
             drone_vels[d_idx][2] += np.clip(z_diff, -1.0, 1.0)
             
-        # ------------------------------------------
-        # 7. Safety Clamp & Integration 
-        # ------------------------------------------
-        # for d_idx in range(num_drones):
-        #     # A. Predicted Next Position
-        #     next_pos = drone_positions[d_idx] + drone_vels[d_idx] * dt_step
-            
-        #     # --- OPTIMIZATION: FAST ARRAY LOOKUP ---
-        #     # Check the mask first. If True, we skip the slow Shapely math.
-        #     c_idx = int(round((next_pos[0] - x_min) / grid_resolution))
-        #     r_idx = int(round((next_pos[1] - y_min) / grid_resolution))
-            
-        #     is_safe = False
-        #     if 0 <= r_idx < rows and 0 <= c_idx < cols:
-        #         if inside_mask[r_idx, c_idx]:
-        #             is_safe = True
-            
-        #     # B. Geofence Correction (Only run slow math if 'is_safe' is False)
-        #     if not is_safe:
-        #         point_next = Point(next_pos[0], next_pos[1])
-        #         if not soft_poly.contains(point_next):
-        #             # Project onto boundary (The slow part)
-        #             nearest = np.array(safe_poly.exterior.interpolate(
-        #                 safe_poly.exterior.project(point_next)
-        #             ).coords[0])
-                    
-        #             direction_vec = nearest - drone_positions[d_idx][:2]
-        #             norm = np.linalg.norm(direction_vec)
-                    
-        #             if norm > 1e-3:
-        #                 unit_dir = direction_vec / norm
-        #                 v_headwind_comp = np.dot(v_wind[:2], unit_dir)
-        #                 v_g_allowed = 20.0 + v_headwind_comp 
-        #                 speed_limit = max(2.0, min(20.0, v_g_allowed)) 
-                        
-        #                 corr_speed = min(norm / dt_step, speed_limit)
-        #                 drone_vels[d_idx][:2] = unit_dir * corr_speed
-        #             else:
-        #                 drone_vels[d_idx][:2] = [0.0, 0.0]
-
-        #     # C. Final Airspeed/Wind Safety Check
-        #     v_g = drone_vels[d_idx][:2]
-        #     v_g_mag = np.linalg.norm(v_g)
-        #     if v_g_mag > 1e-3:
-        #         unit_vg = v_g / v_g_mag
-        #         v_headwind_comp = np.dot(v_wind[:2], unit_vg)
-        #         v_g_limit = 20.0 + v_headwind_comp
-        #         if v_g_mag > v_g_limit:
-        #             drone_vels[d_idx][:2] = unit_vg * max(2.0, v_g_limit)
-
-        #     # D. Advance Position
-        #     drone_positions[d_idx] += drone_vels[d_idx] * dt_step
-
-
+       
         # ------------------------------------------
         # 7. Safety Clamp, Collision Avoidance & Integration
         # ------------------------------------------
@@ -2017,7 +2000,7 @@ if __name__ == "__main__":
         #     vel_history[d_idx] = np.vstack((vel_history[d_idx], [vx, vy, vz]))
 
         # 2. CONDITIONAL Rendering (Draw every 5th frame)
-        VIZ_INTERVAL = 5
+        VIZ_INTERVAL = 1
         
         if t % VIZ_INTERVAL == 0:
             
