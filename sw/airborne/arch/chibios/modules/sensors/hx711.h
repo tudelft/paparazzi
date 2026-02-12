@@ -30,7 +30,7 @@
 #ifndef HX711_H
 #define HX711_H
 
-extern float hx711_kill_threshold;
+extern float hx711_ground_threshold;
 extern int32_t hx711_offset;
 
 void hx711_init(void);

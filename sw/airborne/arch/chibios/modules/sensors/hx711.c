@@ -44,11 +44,23 @@
 #define HX711_PWM_FREQUENCY 6000000
 #endif
 
+#ifndef HX711_DEVICES
+#define HX711_DEVICES {}
+#endif
+
+#ifndef HX711_GROUND_THRESHOLD 
+#define HX711_GROUND_THRESHOLD 100000 
+#endif
+
+#ifndef HX711_MEDIAN_FILT_SIZE 
+#define HX711_MEDIAN_FILT_SIZE 3 
+#endif
+
 // Running at 50kHz for a full clock pulse (10us high, 10us low)
 #define HX711_PERIOD (HX711_PWM_FREQUENCY / 50000)
 
 struct MedianFilterFloat measurement_filt[HX711_DEVICES_NB];
-float hx711_kill_threshold = HX711_KILL_THRESHOLD;
+float hx711_ground_threshold = HX711_GROUND_THRESHOLD;
 int32_t hx711_offset = 0;
 float hx711_meas_time = 0;
 struct hx711_dev_t {
@@ -164,10 +176,10 @@ void hx711_event(void)
   chSysUnlock();
 }
 
-/* Kill motors when strain gauges are above a certain threshold */
+/* Ground detected if strain gauges read above a certain threshold */
 bool hx711_ground_detect(void) {
   for(uint8_t i = 0; i < HX711_DEVICES_NB; i++) {
-    if (fabsf(get_median_filter_f(&measurement_filt[i])) > hx711_kill_threshold) {
+    if (fabsf(get_median_filter_f(&measurement_filt[i])) > hx711_ground_threshold) {
       return true;
     } 
   }
@@ -224,7 +236,8 @@ static void pwmpcb(PWMDriver *pwmp __attribute__((unused))) {
   chSysUnlockFromISR();
 }
 
-extern void hx711_autoset_offset(int32_t __attribute__((unused)) offset) {
+void hx711_autoset_offset(int32_t offset) {
+  (void) offset;
   for(uint8_t i = 0; i < HX711_DEVICES_NB; i++) {
     hx711.devices[i].offset += get_median_filter_f(&measurement_filt[i]);
   }
