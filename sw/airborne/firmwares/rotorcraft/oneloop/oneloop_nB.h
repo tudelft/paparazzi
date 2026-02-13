@@ -64,6 +64,7 @@
 
 //====================================================================================================================================
 // Declaration of global variables
+extern bool oneloop_nB_Z_hold;
 extern bool use_push_Position;
 extern bool use_push_PID;
 extern float max_bank;
@@ -71,12 +72,14 @@ extern float max_phi;
 extern float max_theta;
 extern int8_t TestMotorIDX;
 extern float max_pusher_cmd;
-extern float max_pitch_mot;
+extern float max_fault_mot;
 extern float SpinQuadRate;
 extern bool  SpinQuad;
 extern bool  fault_pitch;
 extern bool  fault_roll;
+extern float k_K;
 extern float k_P;
+extern float k_I;
 extern float k_D;
 extern float  k1_NE_tune;
 extern float  k2_NE_tune;

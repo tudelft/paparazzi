@@ -14,11 +14,13 @@
       <dl_setting var="max_theta"          min="2.0"     step="0.1"   max="30.0"  shortname="max_theta"  unit="rad" alt_unit="deg"/>
       <dl_setting var="TestMotorIDX"       min="0"       step="1"     max="10"    shortname="TestMotorIDX"/>
       <dl_setting var="SpinQuad"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="SpinQuad"/>
-      <dl_setting var="max_pitch_mot"      min="0.0"     step="100.0"  max="9600.0"     shortname="max_pitch_mot"/>
+      <dl_setting var="max_fault_mot"      min="0.0"     step="100.0"  max="9600.0"     shortname="max_fault_mot"/>
       <dl_setting var="SpinQuadRate"       min="-10.0"   step="0.01"  max="10.0"     shortname="SpinQuadRate"/>
       <dl_setting var="fault_pitch"        min="0"       step="1"     max="1"     values="OFF|ON" shortname="fault_pitch"/>
       <dl_setting var="fault_roll"         min="0"       step="1"     max="1"     values="OFF|ON" shortname="fault_roll"/>
+      <dl_setting var="k_K"                min="0.1"     step="0.01"  max="5"     shortname="K Gain Pos"/>
       <dl_setting var="k_P"                min="0.1"     step="0.01"  max="5"     shortname="P Gain Pos"/>
+      <dl_setting var="k_I"                min="0.0"     step="0.0001"  max="1.0" shortname="I Gain Pos"/>
       <dl_setting var="k_D"                min="0.1"     step="0.01"  max="5"     shortname="D Gain Pos"/>
       <dl_setting var="state_compensation_on"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="state_compensation_on"/>
       <dl_setting var="drop_yaw"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="drop_yaw"/> 
@@ -35,6 +37,7 @@
       <dl_setting var="ctrl_off"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="ctrl_off"/> 
       <dl_setting var="heading_manual"     min="0"       step="1"     max="1"     values="OFF|ON" shortname="take_heading"/>
       <dl_setting var="yaw_stick_in_auto"  min="0"       step="1"     max="1"     values="OFF|ON" shortname="yaw_stick_on"/>
+      <dl_setting var="oneloop_nB_Z_hold"  min="0"       step="1"     max="1"     values="OFF|ON" shortname="oneloop_nB_Z_hold"/>
       <dl_setting var="fwd_sideslip_gain"  min="0.01"    step="0.001" max="20.0"  shortname="fwd_sideslip_gain"/>
       <dl_setting var="psi_des_deg"        min="-180.0"  step="0.1"   max="180.0" shortname="psi_des"/>     
       <dl_setting var="p_att_e.omega_n"    min="0.1"     step="0.001" max="20.0"  shortname="p_att_e_omega_n"/>

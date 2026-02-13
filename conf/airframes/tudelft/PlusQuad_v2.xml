@@ -254,14 +254,17 @@
         <define name  = "MAX_R"                     value = "120.0" unit="deg/s"/>
         <define name  = "FILT_CUTOFF"               value = "3.0" />
         <define name  = "FILT_CUTOFF_ACC"           value = "1.0"/>
-        <define name  = "FILT_CUTOFF_VEL"           value = "30.0"/>
+        <define name  = "FILT_CUTOFF_VEL"           value = "10.0"/>
         <define name  = "ESTIMATION_FILT_CUTOFF"    value = "3.2" />
         <define name  = "FILT_CUTOFF_P"             value = "3.0"/>
         <define name  = "FILT_CUTOFF_Q"             value = "3.0"/>
         <define name  = "FILT_CUTOFF_R"             value = "3.0" />
         <define name  = "FILT_CUTOFF_RDOT"          value = "0.5" />
         <define name  = "FILTER_YAW_RATE"           value = "TRUE"/>
-        <define name  = "YAW_DISTURBANCE_LIMIT"     value = "0.68"/> 
+        <define name  = "YAW_DISTURBANCE_LIMIT"     value = "0.68"/>
+        <define name  = "MAX_BANK"                  value = "RadOfDeg(45.0)"/>
+        <define name  = "MAX_PHI"                   value = "RadOfDeg(45.0)"/>
+        <define name  = "MAX_THETA"                 value = "RadOfDeg(45.0)"/>
         <!--                                                 |   MF   |   MR   |    MB   |    ML    -->
         <define name  = "ACT_DYN"                   value = "{   29.0f,   29.0f,    29.0f,    29.0f}" />
         <define name  = "ACT_IS_SERVO"              value = "{       0,       0,        0,        0}" />
@@ -279,9 +282,7 @@
         <define name="IXX"                   value="0.0535"/>
         <define name="IYY"                   value="0.9851"/>
         <define name="IZZ"                   value="1.2842"/>
-        <define name="IXX_WING"              value="0.0621"/>
-        <define name="IYY_WING"              value="0.2788"/>
-        <define name="M"                     value="1.2"/>
+        <define name="M"                     value="0.938"/>
         <!--Motor Front-->
         <define name="MF_dFdu"               value="5.005f" /><!-- [N/pprz] -->
         <define name="MF_dMdu"               value="0.150f" /><!-- [Nm/pprz] -->

@@ -127,6 +127,11 @@ extern bool manual_roll  ;
 extern bool manual_pitch ;
 extern bool manual_yaw   ;
 
+extern float roll_mult   ;
+extern float pitch_mult  ;
+extern float yaw_mult    ;
+extern float thrust_mult ;
+
 extern int G2_on;
 extern int thrust_curve; 
 extern float temp_mQ_k;

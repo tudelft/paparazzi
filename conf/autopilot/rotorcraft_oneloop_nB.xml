@@ -43,12 +43,12 @@
       <call fun="motor_mixing_run(autopilot_get_motors_on(), false, commands)"/>
     </control_block> -->
 
-    <control_block name="run_rate_control">
+    <!-- <control_block name="run_rate_control">
       <call fun="guidance_v_run(autopilot_in_flight())" store="struct ThrustSetpoint thrust_sp"/>
       <call fun="stabilization_rate_read_rc(&radio_control)" store="struct StabilizationSetpoint rate_sp"/>
       <call fun="stabilization_rate_run(autopilot_in_flight(), &rate_sp, &thrust_sp, stabilization.cmd)"/>
       <call fun="motor_mixing_run(autopilot_get_motors_on(), false, commands)"/>
-    </control_block>
+    </control_block> -->
 
     <control_block name="run_guidance_control">
       <call fun="guidance_v_run(autopilot_in_flight())" store="struct ThrustSetpoint thrust_sp"/>
@@ -236,7 +236,21 @@
     </mode>
 
     <!-- FORWARD: 16 -->
-    <mode name="FORWARD" shortname="FORWARD">
+    <mode name="FORWARD" shortname="nB_NAV">
+      <select cond="(RCMode1() || RCMode2()) && RCAP2() && DLModeModule()" exception="HOME"/>
+      <on_enter>
+        <call fun="oneloop_nB_enter(false, CTRL_NB_INDI)"/>
+      </on_enter>
+      <control freq="NAVIGATION_FREQUENCY">
+        <call fun="nav_periodic_task()"/>
+      </control>
+      <control>
+        <call fun="guidance_h_mode_changed(GUIDANCE_H_MODE_NAV)"/>
+        <call fun="guidance_v_mode_changed(GUIDANCE_V_MODE_NAV)"/>
+        <call fun="guidance_h_set_pos(nav.carrot.y, nav.carrot.x)"/>
+        <call_block name="update_v_sp_gcs"/>
+        <call fun="oneloop_from_nav(autopilot_in_flight())"/>
+      </control>
       <exception cond="RCLost()" deroute="FAILSAFE"/>
     </mode>
 

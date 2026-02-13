@@ -170,10 +170,10 @@
 
     <!-- CAN BUS 2 command outputs-->
     <servos driver="Uavcan2Cmd">
-        <servo no="7"  name="AIL_LEFT"   min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
-        <servo no="8"  name="FLAP_LEFT"  min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
-        <servo no="9"  name="FLAP_RIGHT" min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
-        <servo no="10" name="AIL_RIGHT"  min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
+        <servo no="8"  name="AIL_LEFT"   min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
+        <servo no="9"  name="FLAP_LEFT"  min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
+        <servo no="10" name="FLAP_RIGHT" min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
+        <servo no="11" name="AIL_RIGHT"  min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
     </servos>
 
     <commands>
@@ -321,7 +321,7 @@
         <define name  = "MAX_R"                     value = "120.0" unit="deg/s"/>
         <define name  = "FILT_CUTOFF"               value = "3.0" />
         <define name  = "FILT_CUTOFF_ACC"           value = "1.0"/>
-        <define name  = "FILT_CUTOFF_VEL"           value = "30.0"/>
+        <define name  = "FILT_CUTOFF_VEL"           value = "10.0"/>
         <define name  = "ESTIMATION_FILT_CUTOFF"    value = "3.2" />
         <define name  = "FILT_CUTOFF_P"             value = "3.0"/>
         <define name  = "FILT_CUTOFF_Q"             value = "3.0"/>
@@ -329,6 +329,9 @@
         <define name  = "FILT_CUTOFF_RDOT"          value = "0.5" />
         <define name  = "FILTER_YAW_RATE"           value = "TRUE"/>
         <define name  = "YAW_DISTURBANCE_LIMIT"     value = "0.68"/> 
+        <define name  = "MAX_BANK"                  value = "RadOfDeg(5.0)"/>
+        <define name  = "MAX_PHI"                   value = "RadOfDeg(5.0)"/>
+        <define name  = "MAX_THETA"                 value = "RadOfDeg(5.0)"/>
         <!--                                                 |   MF   |   MR   |    MB   |    ML   | -->
         <define name  = "ACT_DYN"                   value = "{   22.0f,   22.0f,    22.0f,    22.0f}" />
         <define name  = "ACT_IS_SERVO"              value = "{       0,       0,        0,        0}" />

@@ -84,38 +84,38 @@ struct ThrustSetpoint guidance_v_run_accel(bool in_flight UNUSED, struct Vertica
 struct StabilizationSetpoint guidance_oneloop_nB_run_mode(bool in_flight, struct HorizontalGuidance *gh, struct VerticalGuidance *gv, enum GuidanceOneloop_HMode h_mode, enum GuidanceOneloop_VMode v_mode)
 {
   struct FloatVect3 PSA_des    = { 0 };
-  int    rm_order_h = 3;
-  int    rm_order_v = 3;
+  //int    rm_order_h = 3;
+  //int    rm_order_v = 3;
   // Oneloop controller wants desired targets and handles reference generation internally
   if (h_mode == GUIDANCE_ONELOOP_NB_H_POS) {
     PSA_des.x   = POS_FLOAT_OF_BFP(gh->sp.pos.x);
     PSA_des.y   = POS_FLOAT_OF_BFP(gh->sp.pos.y);
-    rm_order_h  = 3;
+    //rm_order_h  = 3;
   }
   else if (h_mode == GUIDANCE_ONELOOP_NB_H_SPEED) {
     PSA_des.x   = SPEED_FLOAT_OF_BFP(gh->sp.speed.x);
     PSA_des.y   = SPEED_FLOAT_OF_BFP(gh->sp.speed.y);
     PSA_des.z   = SPEED_FLOAT_OF_BFP(gv->zd_sp);
-    rm_order_h  = 2;
+    //rm_order_h  = 2;
   }
   else { // H_ACCEL
     PSA_des.x   = ACCEL_FLOAT_OF_BFP(gh->ref.accel.x);
     PSA_des.y   = ACCEL_FLOAT_OF_BFP(gh->ref.accel.y);
     PSA_des.z   = ACCEL_FLOAT_OF_BFP(gv->zdd_ref);
-    rm_order_h  = 1;
+    //rm_order_h  = 1;
   }
 
   if (v_mode == GUIDANCE_ONELOOP_NB_V_POS){
     PSA_des.z   = POS_FLOAT_OF_BFP(gv->z_sp);
-    rm_order_v  = 3;
+    //rm_order_v  = 3;
   }
   else if (v_mode == GUIDANCE_ONELOOP_NB_V_SPEED) {
     PSA_des.z   = SPEED_FLOAT_OF_BFP(gv->zd_sp);
-    rm_order_v  = 2;
+    //rm_order_v  = 2;
   }
   else { // H_ACCEL
     PSA_des.z   = ACCEL_FLOAT_OF_BFP(gv->zdd_ref); //why is there not acceleration SP and only REF?
-    rm_order_v  = 1;
+    //rm_order_v  = 1;
   }
   oneloop_nB.half_loop = false;
   oneloop_nB_run(in_flight, oneloop_nB.half_loop, PSA_des);

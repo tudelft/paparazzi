@@ -58,6 +58,11 @@ float actuator_state_filt_vect[EFF_MAT_COLS_NB] = {0};
 bool manual_roll  = true;
 bool manual_pitch = true;
 bool manual_yaw   = true;
+
+float roll_mult   = 1.0;
+float pitch_mult  = 1.0;
+float yaw_mult    = 1.0;
+float thrust_mult = 1.0;
 /* Effectiveness Matrix definition */
 float G2_RW[EFF_MAT_COLS_NB]                       = {0};//PLUSQUAD_EFF_SCHED_G2; //scaled by RW_G_SCALE
 float G1_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB]      = {0};//{PLUSQUAD_EFF_SCHED_G1_ZERO, PLUSQUAD_EFF_SCHED_G1_ZERO, PLUSQUAD_EFF_SCHED_G1_THRUST, PLUSQUAD_EFF_SCHED_G1_ROLL, PLUSQUAD_EFF_SCHED_G1_PITCH, PLUSQUAD_EFF_SCHED_G1_YAW}; //scaled by RW_G_SCALE 
@@ -297,19 +302,19 @@ void sum_EFF_MAT_RW(void) {
     }
   }
   if(manual_roll){
-    EFF_MAT_RW[RW_ap][1] = -0.0317895;
-    EFF_MAT_RW[RW_ap][3] = 0.0317895;
+    EFF_MAT_RW[RW_ap][1] = -0.0370*roll_mult;//-0.0317895*roll_mult;
+    EFF_MAT_RW[RW_ap][3] =  0.0370*roll_mult;// 0.0317895*roll_mult;
     
   }
   if(manual_pitch){
-    EFF_MAT_RW[RW_aq][0] = 0.0274249; 
-    EFF_MAT_RW[RW_aq][2] = -0.0274249;
+    EFF_MAT_RW[RW_aq][0] =  0.0314*pitch_mult;// 0.0274249*pitch_mult; 
+    EFF_MAT_RW[RW_aq][2] = -0.0314*pitch_mult;//-0.0274249*pitch_mult;
   }
   if(manual_yaw){
-    EFF_MAT_RW[RW_ar][0] = -0.0025; 
-    EFF_MAT_RW[RW_ar][1] = 0.0025;
-    EFF_MAT_RW[RW_ar][2] = -0.0025;
-    EFF_MAT_RW[RW_ar][3] = 0.0025;
+    EFF_MAT_RW[RW_ar][0] = -0.0022*yaw_mult;//-0.0025*yaw_mult; 
+    EFF_MAT_RW[RW_ar][1] =  0.0022*yaw_mult;// 0.0025*yaw_mult;
+    EFF_MAT_RW[RW_ar][2] = -0.0022*yaw_mult;//-0.0025*yaw_mult;
+    EFF_MAT_RW[RW_ar][3] =  0.0022*yaw_mult;// 0.0025*yaw_mult;
     //G2_RW[0] = -2.1e-5;
     //G2_RW[1] = 2.1e-5;
     //G2_RW[2] = -2.1e-5;
@@ -345,17 +350,17 @@ void calc_all_thrust_curve(void){
       break;
     case(2):
       // Manual thrust for tuning
-      RW.mF.dFdu = 0.0009645;//calc_thrust_curve_d(PLUSQUAD_EFF_SCHED_MF_k1, PLUSQUAD_EFF_SCHED_MF_k2, 4800.0);
-      RW.mR.dFdu = 0.0009645;//temp_mQ_k/RW_G_SCALE;
-      RW.mB.dFdu = 0.0009645;//calc_thrust_curve_d(PLUSQUAD_EFF_SCHED_MB_k1, PLUSQUAD_EFF_SCHED_MB_k2, 4800.0);;
-      RW.mL.dFdu = 0.0009645;//temp_mQ_k/RW_G_SCALE;
+      RW.mF.dFdu = 0.0009645*thrust_mult;//calc_thrust_curve_d(PLUSQUAD_EFF_SCHED_MF_k1, PLUSQUAD_EFF_SCHED_MF_k2, 4800.0);
+      RW.mR.dFdu = 0.0009645*thrust_mult;//temp_mQ_k/RW_G_SCALE;
+      RW.mB.dFdu = 0.0009645*thrust_mult;//calc_thrust_curve_d(PLUSQUAD_EFF_SCHED_MB_k1, PLUSQUAD_EFF_SCHED_MB_k2, 4800.0);;
+      RW.mL.dFdu = 0.0009645*thrust_mult;//temp_mQ_k/RW_G_SCALE;
       break;
   }
   // T = k1*u^2 + k2*u + k3-----|k1                      | k2                     | k3                     | u
-  float T_mF = calc_thrust_curve(PLUSQUAD_EFF_SCHED_MF_k1, PLUSQUAD_EFF_SCHED_MF_k2, PLUSQUAD_EFF_SCHED_MF_k3, actuator_state_1l[COMMAND_MOTOR_FRONT]);
-  float T_mR = calc_thrust_curve(PLUSQUAD_EFF_SCHED_MR_k1, PLUSQUAD_EFF_SCHED_MR_k2, PLUSQUAD_EFF_SCHED_MR_k3, actuator_state_1l[COMMAND_MOTOR_RIGHT]);
-  float T_mB = calc_thrust_curve(PLUSQUAD_EFF_SCHED_MB_k1, PLUSQUAD_EFF_SCHED_MB_k2, PLUSQUAD_EFF_SCHED_MB_k3, actuator_state_1l[COMMAND_MOTOR_BACK]);
-  float T_mL = calc_thrust_curve(PLUSQUAD_EFF_SCHED_ML_k1, PLUSQUAD_EFF_SCHED_ML_k2, PLUSQUAD_EFF_SCHED_ML_k3, actuator_state_1l[COMMAND_MOTOR_LEFT]);
+  // float T_mF = calc_thrust_curve(PLUSQUAD_EFF_SCHED_MF_k1, PLUSQUAD_EFF_SCHED_MF_k2, PLUSQUAD_EFF_SCHED_MF_k3, actuator_state_1l[COMMAND_MOTOR_FRONT]);
+  // float T_mR = calc_thrust_curve(PLUSQUAD_EFF_SCHED_MR_k1, PLUSQUAD_EFF_SCHED_MR_k2, PLUSQUAD_EFF_SCHED_MR_k3, actuator_state_1l[COMMAND_MOTOR_RIGHT]);
+  // float T_mB = calc_thrust_curve(PLUSQUAD_EFF_SCHED_MB_k1, PLUSQUAD_EFF_SCHED_MB_k2, PLUSQUAD_EFF_SCHED_MB_k3, actuator_state_1l[COMMAND_MOTOR_BACK]);
+  // float T_mL = calc_thrust_curve(PLUSQUAD_EFF_SCHED_ML_k1, PLUSQUAD_EFF_SCHED_ML_k2, PLUSQUAD_EFF_SCHED_ML_k3, actuator_state_1l[COMMAND_MOTOR_LEFT]);
   RW.T = RW.m*9.81/(RW.att.cphi * RW.att.ctheta);//T_mF + T_mR + T_mB + T_mL;
   Bound(RW.T, 30.0, 180.0);
 }
