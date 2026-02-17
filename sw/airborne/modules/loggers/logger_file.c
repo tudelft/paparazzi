@@ -66,28 +66,15 @@ static void logger_file_write_header(FILE *file) {
   fprintf(file, "timestamp,");
   // fprintf(file, "pos_x,pos_y,pos_z,");
   // fprintf(file, "vel_x,vel_y,vel_z,");
-  fprintf(file, "acc.x,acc.y,acc.z,");
-  fprintf(file, "rate.p,rate.q,rate.r,");
-  fprintf(file, "att_sp.phi,att_sp.theta,att_sp.psi,");
-  fprintf(file, "att.phi,att.theta,att.psi,");
-  fprintf(file, "rate_sp.p,rate_sp.q,rate_sp.r,");
-  fprintf(file, "rate_filt.p,rate_filt.q,rate_filt.r,");
-  fprintf(file, "angaccel_sp.pdot,angaccel_sp.qdot,angaccel_sp.rdot,");
-  fprintf(file, "angaccel.pdot,angaccel.qdot,angaccel.rdot,");
-  #ifdef BOARD_BEBOP
-  fprintf(file, "rpm_obs_1,rpm_obs_2,rpm_obs_3,rpm_obs_4,");
-  fprintf(file, "rpm_ref_1,rpm_ref_2,rpm_ref_3,rpm_ref_4,");
-#endif
-#ifdef INS_EXT_POSE_H
-  ins_ext_pos_log_header(file);
-#endif
-// #ifdef COMMAND_THRUST
-//   fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw,");
-// #else
-//   fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,");
-// #endif
-  // fprintf(file, "rpm_ref[0],rpm_ref[1],rpm_ref[2],rpm_ref[3]\n");
-  fprintf(file, "cmd.TL,cmd.TR,cmd.BR,cmd.BL\n");
+  fprintf(file, "imu_acc_x,imu_acc_y,imu_acc_z,");
+  fprintf(file, "imu_rate_p,imu_rate_q,imu_rate_r,");
+  fprintf(file, "att_cmd_phi,att_cmd_theta,att_cmd_psi,");
+  fprintf(file, "att_phi,att_theta,att_psi,");
+  fprintf(file, "rate_cmd_p,rate_cmd_q,rate_cmd_r,");
+  fprintf(file, "rate_filt_p,rate_filt_q,rate_filt_r,");
+  fprintf(file, "ang_accel_cmd_pdot,ang_accel_cmd_qdot,ang_accel_cmd_rdot,");
+  fprintf(file, "ang_accel_pdot,ang_accel_qdot,ang_accel_rdot,");
+  fprintf(file, "act_cmd_TL,act_cmd_TR,act_cmd_BR,act_cmd_BL\n");
 }
 
 /** Write CSV row
@@ -96,10 +83,10 @@ static void logger_file_write_header(FILE *file) {
  * end of the line.
  * @param file Log file pointer
  */
-extern struct FloatRates *dbg_rate_sp;
-extern struct FloatRates *dbg_rates_filt;
-extern struct FloatEulers *dbg_stab_att_sp_euler;
-extern struct FloatRates *angular_accel_ref;
+extern struct FloatEulers dbg_stab_att_sp_euler_f;
+extern struct FloatRates dbg_rate_sp;
+extern struct FloatRates dbg_rates_filt;
+extern struct FloatRates angular_accel_ref;
 extern float angular_acceleration[3];
 
 static void logger_file_write_row(FILE *file) {
@@ -117,26 +104,12 @@ static void logger_file_write_row(FILE *file) {
   // fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
   fprintf(file, "%f,%f,%f,", acc_f.x, acc_f.y, acc_f.z);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
-  fprintf(file, "%f,%f,%f,", dbg_stab_att_sp_euler->phi, dbg_stab_att_sp_euler->theta, dbg_stab_att_sp_euler->psi);
+  fprintf(file, "%f,%f,%f,", dbg_stab_att_sp_euler_f.phi, dbg_stab_att_sp_euler_f.theta, dbg_stab_att_sp_euler_f.psi);
   fprintf(file, "%f,%f,%f,", att.phi, att.theta, att.psi);
-  fprintf(file, "%f,%f,%f,", dbg_rate_sp->p, dbg_rate_sp->q, dbg_rate_sp->r);
-  fprintf(file, "%f,%f,%f,", dbg_rates_filt->p, dbg_rates_filt->q, dbg_rates_filt->r);
-  fprintf(file, "%f,%f,%f,", angular_accel_ref->p, angular_accel_ref->q, angular_accel_ref->r);
+  fprintf(file, "%f,%f,%f,", dbg_rate_sp.p, dbg_rate_sp.q, dbg_rate_sp.r);
+  fprintf(file, "%f,%f,%f,", dbg_rates_filt.p, dbg_rates_filt.q, dbg_rates_filt.r);
+  fprintf(file, "%f,%f,%f,", angular_accel_ref.p, angular_accel_ref.q, angular_accel_ref.r);
   fprintf(file, "%f,%f,%f,", angular_acceleration[0], angular_acceleration[1], angular_acceleration[2]);
-  #ifdef BOARD_BEBOP
-  fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
-  fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_ref[0],actuators_bebop.rpm_ref[1],actuators_bebop.rpm_ref[2],actuators_bebop.rpm_ref[3]);
-#endif
-#ifdef INS_EXT_POSE_H
-  ins_ext_pos_log_data(file);
-#endif
-// #ifdef COMMAND_THRUST
-//   fprintf(file, "%d,%d,%d,%d,",
-//       stabilization.cmd[COMMAND_THRUST], stabilization.cmd[COMMAND_ROLL],
-//       stabilization.cmd[COMMAND_PITCH], stabilization.cmd[COMMAND_YAW]);
-// #else
-//   fprintf(file, "%d,%d,", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
-// #endif
   fprintf(file, "%d,%d,%d,%d\n", actuators_pprz[0], actuators_pprz[1], actuators_pprz[2], actuators_pprz[3]);
 }
 

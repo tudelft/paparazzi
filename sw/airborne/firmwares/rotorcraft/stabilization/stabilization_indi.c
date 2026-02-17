@@ -768,13 +768,13 @@ void WEAK stabilization_indi_set_wls_settings(void)
  *
  * Function that should be called to run the INDI controller
  */
-struct FloatEulers dbg_stab_att_sp_euler; 
+struct FloatEulers dbg_stab_att_sp_euler_f; 
 void stabilization_indi_attitude_run(bool in_flight, struct StabilizationSetpoint *att_sp, struct ThrustSetpoint *thrust, int32_t *cmd)
 {
   stab_att_sp_euler = stab_sp_to_eulers_i(att_sp);  // stab_att_sp_euler.psi still used in ref..
   stab_att_sp_quat = stab_sp_to_quat_i(att_sp);     // quat attitude setpoint
   
-  dbg_stab_att_sp_euler = stab_sp_to_eulers_f(att_sp);
+  dbg_stab_att_sp_euler_f = stab_sp_to_eulers_f(att_sp);
 
   /* attitude error in float */
   struct FloatQuat att_err;
