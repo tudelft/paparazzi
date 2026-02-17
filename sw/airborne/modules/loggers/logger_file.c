@@ -66,8 +66,8 @@ static void logger_file_write_header(FILE *file) {
   fprintf(file, "timestamp,");
   // fprintf(file, "pos_x,pos_y,pos_z,");
   // fprintf(file, "vel_x,vel_y,vel_z,");
-  fprintf(file, "imu_acc_x,imu_acc_y,imu_acc_z,");
-  fprintf(file, "imu_rate_p,imu_rate_q,imu_rate_r,");
+  fprintf(file, "acc_imu_x,acc_imu_y,acc_imu_z,");
+  fprintf(file, "rate_imu_p,rate_imu_q,rate_imu_r,");
   fprintf(file, "att_cmd_phi,att_cmd_theta,att_cmd_psi,");
   fprintf(file, "att_phi,att_theta,att_psi,");
   fprintf(file, "rate_cmd_p,rate_cmd_q,rate_cmd_r,");
