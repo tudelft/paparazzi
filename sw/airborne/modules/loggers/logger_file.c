@@ -64,12 +64,17 @@ static FILE *logger_file = NULL;
  */
 static void logger_file_write_header(FILE *file) {
   fprintf(file, "timestamp,");
-  fprintf(file, "pos_x,pos_y,pos_z,");
-  fprintf(file, "vel_x,vel_y,vel_z,");
-  fprintf(file, "acc_x,acc_y,acc_z,");
-  fprintf(file, "att_phi,att_theta,att_psi,");
-  fprintf(file, "rate_p,rate_q,rate_r,");
-#ifdef BOARD_BEBOP
+  // fprintf(file, "pos_x,pos_y,pos_z,");
+  // fprintf(file, "vel_x,vel_y,vel_z,");
+  fprintf(file, "acc.x,acc.y,acc.z,");
+  fprintf(file, "rate.p,rate.q,rate.r,");
+  fprintf(file, "att_sp.phi,att_sp.theta,att_sp.psi,");
+  fprintf(file, "att.phi,att.theta,att.psi,");
+  fprintf(file, "rate_sp.p,rate_sp.q,rate_sp.r,");
+  fprintf(file, "rate_filt.p,rate_filt.q,rate_filt.r,");
+  fprintf(file, "angaccel_sp.pdot,angaccel_sp.qdot,angaccel_sp.rdot,");
+  fprintf(file, "angaccel.pdot,angaccel.qdot,angaccel.rdot,");
+  #ifdef BOARD_BEBOP
   fprintf(file, "rpm_obs_1,rpm_obs_2,rpm_obs_3,rpm_obs_4,");
   fprintf(file, "rpm_ref_1,rpm_ref_2,rpm_ref_3,rpm_ref_4,");
 #endif
@@ -82,7 +87,7 @@ static void logger_file_write_header(FILE *file) {
 //   fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,");
 // #endif
   // fprintf(file, "rpm_ref[0],rpm_ref[1],rpm_ref[2],rpm_ref[3]\n");
-  fprintf(file, "cmd_TL,cmd_TR,cmd_BR,cmd_BL\n");
+  fprintf(file, "cmd.TL,cmd.TR,cmd.BR,cmd.BL\n");
 }
 
 /** Write CSV row
@@ -91,27 +96,34 @@ static void logger_file_write_header(FILE *file) {
  * end of the line.
  * @param file Log file pointer
  */
+extern struct FloatRates *dbg_rate_sp;
+extern struct FloatRates *dbg_rates_filt;
+extern struct FloatEulers *dbg_stab_att_sp_euler;
+extern struct FloatRates *angular_accel_ref;
+extern float angular_acceleration[3];
+
 static void logger_file_write_row(FILE *file) {
   struct FloatVect3 acc_f;
   struct FloatEulers att;
-
-  struct NedCoor_f *pos = stateGetPositionNed_f();
-  struct NedCoor_f *vel = stateGetSpeedNed_f();
-
+  // struct NedCoor_f *pos = stateGetPositionNed_f();
+  // struct NedCoor_f *vel = stateGetSpeedNed_f();
   struct Int32Vect3 *acc_i = stateGetAccelBody_i();
   ACCELS_FLOAT_OF_BFP(acc_f, *acc_i);
-  
   float_eulers_of_quat_zxy(&att, stateGetNedToBodyQuat_f());
-  
   struct FloatRates *rates = stateGetBodyRates_f();
 
   fprintf(file, "%f,", get_sys_time_float());
-  fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
-  fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
+  // fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
+  // fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
   fprintf(file, "%f,%f,%f,", acc_f.x, acc_f.y, acc_f.z);
-  fprintf(file, "%f,%f,%f,", att.phi, att.theta, att.psi);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
-#ifdef BOARD_BEBOP
+  fprintf(file, "%f,%f,%f,", dbg_stab_att_sp_euler->phi, dbg_stab_att_sp_euler->theta, dbg_stab_att_sp_euler->psi);
+  fprintf(file, "%f,%f,%f,", att.phi, att.theta, att.psi);
+  fprintf(file, "%f,%f,%f,", dbg_rate_sp->p, dbg_rate_sp->q, dbg_rate_sp->r);
+  fprintf(file, "%f,%f,%f,", dbg_rates_filt->p, dbg_rates_filt->q, dbg_rates_filt->r);
+  fprintf(file, "%f,%f,%f,", angular_accel_ref->p, angular_accel_ref->q, angular_accel_ref->r);
+  fprintf(file, "%f,%f,%f,", angular_acceleration[0], angular_acceleration[1], angular_acceleration[2]);
+  #ifdef BOARD_BEBOP
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_ref[0],actuators_bebop.rpm_ref[1],actuators_bebop.rpm_ref[2],actuators_bebop.rpm_ref[3]);
 #endif

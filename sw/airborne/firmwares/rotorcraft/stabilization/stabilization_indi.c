@@ -517,6 +517,10 @@ void init_filters(void)
  *
  * Function that calculates the INDI commands
  */
+
+struct FloatRates dbg_rate_sp;
+struct FloatRates dbg_rates_filt;
+
 void stabilization_indi_rate_run(bool in_flight, struct StabilizationSetpoint *sp, struct ThrustSetpoint *thrust, int32_t *cmd)
 {
 
@@ -615,12 +619,15 @@ void stabilization_indi_rate_run(bool in_flight, struct StabilizationSetpoint *s
   rates_filt.r = body_rates->r;
 #endif
 
+  dbg_rates_filt = rates_filt;
+
   // calculate the virtual control (reference acceleration) based on a PD controller
   struct FloatRates rate_sp = stab_sp_to_rates_f(sp);
+  dbg_rate_sp = rate_sp;
   angular_accel_ref.p = (rate_sp.p - rates_filt.p) * indi_gains.rate.p;
   angular_accel_ref.q = (rate_sp.q - rates_filt.q) * indi_gains.rate.q;
   angular_accel_ref.r = (rate_sp.r - rates_filt.r) * indi_gains.rate.r;
-
+  
   // compute virtual thrust
   struct FloatVect3 v_thrust = { 0.f, 0.f, 0.f };
   if (thrust->type == THRUST_INCR_SP) {
@@ -761,10 +768,13 @@ void WEAK stabilization_indi_set_wls_settings(void)
  *
  * Function that should be called to run the INDI controller
  */
+struct FloatEulers dbg_stab_att_sp_euler; 
 void stabilization_indi_attitude_run(bool in_flight, struct StabilizationSetpoint *att_sp, struct ThrustSetpoint *thrust, int32_t *cmd)
 {
   stab_att_sp_euler = stab_sp_to_eulers_i(att_sp);  // stab_att_sp_euler.psi still used in ref..
   stab_att_sp_quat = stab_sp_to_quat_i(att_sp);     // quat attitude setpoint
+  
+  dbg_stab_att_sp_euler = stab_sp_to_eulers_f(att_sp);
 
   /* attitude error in float */
   struct FloatQuat att_err;
