@@ -16,8 +16,9 @@
       <dl_setting var="SpinQuad"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="SpinQuad"/>
       <dl_setting var="max_fault_mot"      min="0.0"     step="100.0"  max="9600.0"     shortname="max_fault_mot"/>
       <dl_setting var="SpinQuadRate"       min="-10.0"   step="0.01"  max="10.0"     shortname="SpinQuadRate"/>
-      <dl_setting var="fault_pitch"        min="0"       step="1"     max="1"     values="OFF|ON" shortname="fault_pitch"/>
-      <dl_setting var="fault_roll"         min="0"       step="1"     max="1"     values="OFF|ON" shortname="fault_roll"/>
+      <dl_setting var="fault_pitch_motors" min="0"       step="1"     max="1"     values="OFF|ON" shortname="fault_pitch_motors"/>
+      <dl_setting var="fault_roll_motors"  min="0"       step="1"     max="1"     values="OFF|ON" shortname="fault_roll_motors"/>
+      <dl_setting var="fault_ailerons"     min="0"       step="1"     max="1"     values="OFF|ON" shortname="fault_ailerons"/>
       <dl_setting var="k_K"                min="0.1"     step="0.01"  max="5"     shortname="K Gain Pos"/>
       <dl_setting var="k_P"                min="0.1"     step="0.01"  max="5"     shortname="P Gain Pos"/>
       <dl_setting var="k_I"                min="0.0"     step="0.0001"  max="1.0" shortname="I Gain Pos"/>

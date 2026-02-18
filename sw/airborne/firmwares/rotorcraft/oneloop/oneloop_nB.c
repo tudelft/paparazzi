@@ -281,6 +281,12 @@ float theta_pref_max = RadOfDeg(20.0);
 float theta_pref_max = RadOfDeg(ONELOOP_THETA_PREF_MAX);
 #endif
 
+PRINT_CONFIG_MSG("============================================================")
+PRINT_CONFIG_MSG("%%% ONELOOP WLS %%%")
+PRINT_CONFIG_VAR(ANDI_OUTPUTS)
+PRINT_CONFIG_VAR(WLS_N_V_MAX)
+PRINT_CONFIG_MSG("============================================================")
+
 #if ANDI_NUM_ACT_TOT != WLS_N_U_MAX
 #error Matrix-WLS_N_U_MAX is not equal to the number of actuators: define WLS_N_U_MAX == ANDI_NUM_ACT_TOT in airframe file
 #define WLS_N_U_MAX == ANDI_NUM_ACT_TOT
@@ -299,7 +305,7 @@ static float  act_dynamics_d[ANDI_NUM_ACT_TOT];                                 
 float         actuator_state_1l[ANDI_NUM_ACT_TOT];                              // Actuator state vector (including virtual actuators)
 float         nB_jerk_des[3];
 float SQ_r = 0.0; 
-float max_fault_mot = 3000.0;
+float max_fault_mot = 2300.0;
 //====================================================================================================================================
 // STABILIZATION VARIABLES
 //====================================================================================================================================
@@ -481,11 +487,12 @@ float         ratio_vn_v[ANDI_OUTPUTS];
 //====================================================================================================================================
 float         SpinQuadRate  =0.0;
 bool          SpinQuad              = false;                                      // Quadrotor spinning configuration
-bool          fault_pitch           = false;
-bool          fault_roll            = false;
+bool          fault_pitch_motors    = false;                                      // Fault pitch motors
+bool          fault_roll_motors     = false;                                      // Fault roll motors
+bool          fault_ailerons        = false;                                      // Fault ailerons
 bool          drop_yaw              = false;                                      // Drop the control of the Yaw axis
 bool          drop_roll             = false;                                      // Drop the control of the Roll axis
-bool          drop_pitch            = false;                                     // Drop the control of the aE axis
+bool          drop_pitch            = false;                                      // Drop the control of the aE axis
 bool          drop_aD               = false;                                      // Drop the control of the aD axis
 bool          state_compensation_on = false;                                      // State compensation for rotating bodies
 bool          use_push_PID          = false;                                      // Use PID to cmd the pusher
@@ -901,7 +908,8 @@ static void Pos_KPID_ARW(const float x_des[3],
     static float prev_vel[3] = {0.f, 0.f, 0.f};
     static float integral[3] = {0.f, 0.f, 0.f};
 
-    const float a_max = 0.12f * 9.81f; //0.5f * 9.81f;
+    const float a_max = 0.5f * 9.81f;//0.05f * 9.81f;//0.12f * 9.81f; //0.5f * 9.81f;
+    const float v_max = 0.5f;
     const float I_MAX = 0.4f;
 
     float v_d[3];
@@ -917,7 +925,7 @@ static void Pos_KPID_ARW(const float x_des[3],
     for (int i = 0; i < 3; i++) {
         v_d[i] = (x_des[i] - x[i]) * k_K;
     }
-
+    vect_bound_nd(v_d, v_max, 3);
     // Build candidate integral and unsaturated acceleration command
     for (int i = 0; i < 3; i++) {
         update_butterworth_2_low_pass(&KPID_vel_filt[i], x_dot[i]);
@@ -1876,7 +1884,7 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
   // Some Pusher control definitions
   oneloop_nB.push_nB.n            = 2;
   oneloop_nB.push_nB.max_push_cmd = max_pusher_cmd;
-  oneloop_nB.push_nB.varepsilon   = 10.0;
+  oneloop_nB.push_nB.varepsilon   = 25.0;//10.0;
   oneloop_nB.push_nB.max_v_d      = 1.0;
   oneloop_nB.push_nB.pN_d         = pos_des[0];
   oneloop_nB.push_nB.pE_d         = pos_des[1];
@@ -1915,7 +1923,7 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
       }
     }
 #endif
-    radio_body_ctrl = (!fault_pitch) && (!fault_roll);
+    radio_body_ctrl = (!fault_pitch_motors) && (!fault_roll_motors);
     if (radio_body_ctrl){
       float sin_psi = sinf(eulers_zxy.psi);
       float cos_psi = cosf(eulers_zxy.psi);
@@ -2230,18 +2238,27 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
     andi_u[i] = (float)(andi_u_n[i] * ratio_u_un[i]);
     Bound(andi_u[i], act_min[i], act_max[i]);
   }
-  if (fault_pitch && oneloop_nB.ctrl_type == CTRL_NB_INDI){
-    float temp_thrust = (float)radio_control_get(RADIO_THROTTLE)-1000.0;
-    Bound(temp_thrust, 0.0, max_fault_mot);
+  // ======================================================================================================================================================
+  // Handle fault static commands
+  float temp_thrust = (float)radio_control_get(RADIO_THROTTLE)-1000.0;
+  Bound(temp_thrust, 0.0, max_fault_mot);
+  if (fault_pitch_motors && !fault_roll_motors && oneloop_nB.ctrl_type == CTRL_NB_INDI){
     andi_u[COMMAND_MOTOR_FRONT] = temp_thrust;
     andi_u[COMMAND_MOTOR_BACK]  = temp_thrust;
   }
-  if (fault_roll && oneloop_nB.ctrl_type == CTRL_NB_INDI){
-    float temp_thrust = (float)radio_control_get(RADIO_THROTTLE)-1000.0;
-    Bound(temp_thrust, 0.0, max_fault_mot);
+  else if (fault_roll_motors && !fault_pitch_motors && oneloop_nB.ctrl_type == CTRL_NB_INDI){
     andi_u[COMMAND_MOTOR_RIGHT] = temp_thrust;
     andi_u[COMMAND_MOTOR_LEFT]  = temp_thrust;
   }  
+  else if (fault_roll_motors && fault_pitch_motors && oneloop_nB.ctrl_type == CTRL_NB_INDI){
+    float temp_roll = (float)radio_control_get(RADIO_THROTTLE)-max_fault_mot;
+    Bound(temp_roll,0.0,MAX_PPRZ);
+    andi_u[COMMAND_MOTOR_FRONT] = (float)radio_control_get(RADIO_THROTTLE);
+    andi_u[COMMAND_MOTOR_BACK]  = (float)radio_control_get(RADIO_THROTTLE);
+    andi_u[COMMAND_MOTOR_RIGHT] = temp_roll;
+    andi_u[COMMAND_MOTOR_LEFT]  = temp_roll;
+  }  
+  // ======================================================================================================================================================
   /*Commit the actuator command*/
   for (int i = 0; i < ANDI_NUM_ACT; i++)
   {
@@ -2324,82 +2341,46 @@ void G1G2_oneloop(int ctrl_type)
       EFF_MAT_G[j][i] = EFF_MAT_RW[2+j][i] * scaler * ratio_vn_v[j]; // EFF_MAT_RW has extra entries for North and EAST
     }
   }
-
+//=========================================================================================================================================================
+  // If using an nB controller, convert the Eff matrix to the nB axes
   switch (ctrl_type)
   {
   case (CTRL_NB_ANDI):
   case (CTRL_NB_INDI):
    {
-    //printf("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
-    //printf("EFF_MAT_G MOTOR RIGHT [%i][%i]=%f\n",IDX_ap,COMMAND_MOTOR_RIGHT,EFF_MAT_G[IDX_ap][COMMAND_MOTOR_RIGHT]);
-    //printf("EFF_MAT_G MOTOR LEFT  [%i][%i]=%f\n",IDX_ap,COMMAND_MOTOR_LEFT,EFF_MAT_G[IDX_ap][COMMAND_MOTOR_LEFT]);
-    //printf("nB_filt[0].o[0]=%f\n",nB_filt[0].o[0]);
-    //printf("nB_filt[1].o[0]=%f\n",nB_filt[1].o[0]);
-    //printf("nB_filt[2].o[0]=%f\n",nB_filt[2].o[0]);
-    for (int j = 0; j < ANDI_NUM_ACT_TOT; j++){ 
-      
-      if(j == COMMAND_MOTOR_RIGHT){
-        //printf("PC EFF_MAT_G[IDX_aq][COMMAND_MOTOR_RIGHT]=%f\n",EFF_MAT_G[IDX_ap][j]);
-        //printf("PC EFF_MAT_G[IDX_ar][COMMAND_MOTOR_RIGHT]=%f\n",EFF_MAT_G[IDX_ar][j]);
-        //printf("nB_filt[0].o[0]=%f\n",nB_filt[0].o[0]);
-        //printf("nB_filt[2].o[0]=%f\n",nB_filt[2].o[0]);
-      }
-      if (j == COMMAND_MOTOR_LEFT){
-        //printf("PC EFF_MAT_G[IDX_aq][COMMAND_MOTOR_LEFT]=%f\n",EFF_MAT_G[IDX_ap][j]);
-        //printf("PC EFF_MAT_G[IDX_ar][COMMAND_MOTOR_LEFT]=%f\n",EFF_MAT_G[IDX_ar][j]);
-        //printf("nB_filt[0].o[0]=%f\n",nB_filt[0].o[0]);
-        //printf("nB_filt[2].o[0]=%f\n",nB_filt[2].o[0]);
-      }      
+    for (int j = 0; j < ANDI_NUM_ACT_TOT; j++){     
       float temp_ap_j = - EFF_MAT_G[IDX_aq][j]*nB_filt[2].o[0] ;//+ EFF_MAT_G[IDX_ar][j]*nB_filt[1].o[0] ;
       float temp_aq_j = EFF_MAT_G[IDX_ap][j]*nB_filt[2].o[0]   ;//- EFF_MAT_G[IDX_ar][j]*nB_filt[0].o[0];
       EFF_MAT_G[IDX_ap][j] = temp_ap_j;
       EFF_MAT_G[IDX_aq][j] = temp_aq_j;
-    
-      if(j == COMMAND_MOTOR_RIGHT){
-        //printf("bwls_1l[IDX_aq][COMMAND_MOTOR_RIGHT]=%f\n",bwls_1l[IDX_aq][j]);
-      }
-      if (j == COMMAND_MOTOR_LEFT){
-        //printf("bwls_1l[IDX_aq][COMMAND_MOTOR_LEFT]=%f\n",bwls_1l[IDX_aq][j]);
-      }
     }
-    if (fault_pitch){
-      for (int j = 0; j < ANDI_NUM_ACT_TOT; j++){ 
-#ifdef COMMAND_ROT_MECH
-        if(RW.skew.deg > 70.0){
-          EFF_MAT_G[IDX_aq][j] = 0.0;
-        } else {
-          EFF_MAT_G[IDX_ap][j] = 0.0;
-        }
-#else 
-        EFF_MAT_G[IDX_ap][j] = 0.0;
-#endif        
-        EFF_MAT_G[IDX_ar][j] = 0.0;
-      }
+//=========================================================================================================================================================
+    if (fault_pitch_motors){       
+      EFF_MAT_G[IDX_ar][COMMAND_MOTOR_RIGHT] = 0.0;
+      EFF_MAT_G[IDX_ar][COMMAND_MOTOR_LEFT]  = 0.0; 
       for (int i = 0; i < ANDI_OUTPUTS; i++){
         EFF_MAT_G[i][COMMAND_MOTOR_FRONT] = 0.0;
         EFF_MAT_G[i][COMMAND_MOTOR_BACK]  = 0.0;
       }      
     }
-    if (fault_roll){
-      for (int j = 0; j < ANDI_NUM_ACT_TOT; j++){     
-        EFF_MAT_G[IDX_ar][j] = 0.0;
-      }
+    if (fault_roll_motors){    
+      EFF_MAT_G[IDX_ar][COMMAND_MOTOR_FRONT] = 0.0;
+      EFF_MAT_G[IDX_ar][COMMAND_MOTOR_BACK]  = 0.0;
       for (int i = 0; i < ANDI_OUTPUTS; i++){
         EFF_MAT_G[i][COMMAND_MOTOR_RIGHT] = 0.0;
         EFF_MAT_G[i][COMMAND_MOTOR_LEFT]  = 0.0;
       }      
-    }    
-  }
+    }
+#ifdef COMMAND_AILERONS    
+    if (fault_ailerons){    
+      for (int i = 0; i < ANDI_OUTPUTS; i++){
+        EFF_MAT_G[i][COMMAND_AILERONS] = 0.0;
+      }      
+    }
+#endif              
+   }
     break;
   }
-
-  for (int i = 0; i < ANDI_OUTPUTS; i++){
-    //printf("MOTOR FRONT [%i][%i]=%f\n",i,COMMAND_MOTOR_FRONT,bwls_1l[i][COMMAND_MOTOR_FRONT]);
-    //printf("MOTOR BACK  [%i][%i]=%f\n",i,COMMAND_MOTOR_BACK,bwls_1l[i][COMMAND_MOTOR_BACK]);
-    //printf("MOTOR RIGHT [%i][%i]=%f\n",i,COMMAND_MOTOR_RIGHT,bwls_1l[i][COMMAND_MOTOR_RIGHT]);
-    //printf("MOTOR LEFT  [%i][%i]=%f\n",i,COMMAND_MOTOR_LEFT,bwls_1l[i][COMMAND_MOTOR_LEFT]);
-  }
-
   for (int i = 0; i < ANDI_NUM_ACT_TOT; i++)
   {
     act_dyn_ctrl[i] = act_dynamics[i];
@@ -2713,6 +2694,9 @@ void set_WLS_settings(void){
       case COMMAND_MOTOR_RIGHT:
       case COMMAND_MOTOR_BACK:
       case COMMAND_MOTOR_LEFT:
+#ifdef COMMAND_AILERONS       
+      case COMMAND_AILERONS:
+#endif
         WLS_one_p.Wu[i]     = Wu_backup[i];
         WLS_one_p.u_min[i]  = (act_min[i]) / ratio_u_un[i];
         WLS_one_p.u_pref[i] = (u_pref[i]) / ratio_u_un[i];
@@ -2720,41 +2704,114 @@ void set_WLS_settings(void){
         break;
     }
   }
-  if (fault_pitch && oneloop_nB.ctrl_type == CTRL_NB_INDI){
+  bool IN_QUAD = true;
 #ifdef COMMAND_ROT_MECH
-    if(RW.skew.deg > 70.0){
-      WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap]; // Roll axis dropped because it is body axis
-      WLS_one_p.Wv[IDX_aq] = 0.0;
-      drop_roll  = false;
-      drop_pitch = true;
-    } else {
-      WLS_one_p.Wv[IDX_ap] = 0.0; // Roll axis dropped because it is body axis
+  if(RW.skew.deg > 70.0){
+    IN_QUAD = false;
+  }
+#endif
+  if (fault_pitch_motors && !fault_roll_motors &&  fault_ailerons &&  IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+      /* TRUE FALSE TRUE, QUAD → 0 1 0, 1 0 1 */
+      WLS_one_p.Wv[IDX_ap] = 0.0;
       WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
+      WLS_one_p.Wv[IDX_ar] = 0.0;
       drop_roll  = true;
       drop_pitch = false;
-    }
-#else 
-    WLS_one_p.Wv[IDX_ap] = 0.0; // Roll axis dropped because it is body axis
-    WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
-    drop_roll  = true;
-    drop_pitch = false;
-#endif
-    WLS_one_p.Wv[IDX_ar] = 0.0; // Drop Yaw axis
-    drop_yaw = true;
-  } else if (fault_roll && oneloop_nB.ctrl_type == CTRL_NB_INDI){
-    WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
-    WLS_one_p.Wv[IDX_aq] = 0.0; // Pitch axis dropped because it is body axis
-    WLS_one_p.Wv[IDX_ar] = 0.0; // Drop Yaw axis
-    drop_yaw = true;
-    drop_pitch = true;
-    drop_roll = false;    
+      drop_yaw   = true;
+
+  } else if (fault_pitch_motors && !fault_roll_motors &&  fault_ailerons && !IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+      /* TRUE FALSE TRUE, skew90 → 1 0 0, 0 1 1 */
+      WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
+      WLS_one_p.Wv[IDX_aq] = 0.0;
+      WLS_one_p.Wv[IDX_ar] = 0.0;
+      drop_roll  = false;
+      drop_pitch = true;
+      drop_yaw   = true;
+
+  } else if (!fault_pitch_motors &&  fault_roll_motors &&  fault_ailerons &&  IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+      /* FALSE TRUE TRUE, QUAD → 0 1 0, 1 0 1 */
+      WLS_one_p.Wv[IDX_ap] = 0.0;
+      WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
+      WLS_one_p.Wv[IDX_ar] = 0.0;
+      drop_roll  = true;
+      drop_pitch = false;
+      drop_yaw   = true;
+
+  } else if (!fault_pitch_motors &&  fault_roll_motors &&  fault_ailerons && !IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+      /* FALSE TRUE TRUE, skew90 → 1 0 0, 0 1 1 */
+      WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
+      WLS_one_p.Wv[IDX_aq] = 0.0;
+      WLS_one_p.Wv[IDX_ar] = 0.0;
+      drop_roll  = false;
+      drop_pitch = true;
+      drop_yaw   = true;
+
+  } else if (fault_pitch_motors && !fault_roll_motors && !fault_ailerons &&  IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+      /* TRUE FALSE FALSE, QUAD → 0 1 0, 1 0 1 */
+      WLS_one_p.Wv[IDX_ap] = 0.0;
+      WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
+      WLS_one_p.Wv[IDX_ar] = 0.0;
+      drop_roll  = true;
+      drop_pitch = false;
+      drop_yaw   = true;
+
+  } else if (fault_pitch_motors && !fault_roll_motors && !fault_ailerons && !IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+      /* TRUE FALSE FALSE, skew90 → 1 1 0, 0 0 1 */
+      WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
+      WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
+      WLS_one_p.Wv[IDX_ar] = 0.0;
+      drop_roll  = false;
+      drop_pitch = false;
+      drop_yaw   = true;
+
+  } else if (!fault_pitch_motors &&  fault_roll_motors && !fault_ailerons &&  IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+      /* FALSE TRUE FALSE, QUAD → 0 1 0, 1 0 1 */
+      WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
+      WLS_one_p.Wv[IDX_aq] = 0.0;
+      WLS_one_p.Wv[IDX_ar] = 0.0;
+      drop_roll  = false;
+      drop_pitch = true;
+      drop_yaw   = true;
+
+  } else if (!fault_pitch_motors &&  fault_roll_motors && !fault_ailerons && !IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+      /* FALSE TRUE FALSE, skew90 → 1 1 0, 0 0 1 */
+      WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
+      WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
+      WLS_one_p.Wv[IDX_ar] = 0.0;
+      drop_roll  = false;
+      drop_pitch = false;
+      drop_yaw   = true;
+
+  } else if (fault_pitch_motors &&  fault_roll_motors && !fault_ailerons &&  IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+      /* TRUE TRUE FALSE, QUAD → 0 0 0, 1 1 1 */
+      WLS_one_p.Wv[IDX_ap] = 0.0;
+      WLS_one_p.Wv[IDX_aq] = 0.0;
+      WLS_one_p.Wv[IDX_ar] = 0.0;
+      drop_roll  = true;
+      drop_pitch = true;
+      drop_yaw   = true;
+
+  } else if (fault_pitch_motors &&  fault_roll_motors && !fault_ailerons && !IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+      /* TRUE TRUE FALSE, skew90 → 1 0 0, 0 1 1 */
+      WLS_one_p.Wv[IDX_ap] = 0.0;
+      WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
+      WLS_one_p.Wv[IDX_ar] = 0.0;
+      WLS_one_p.Wv[IDX_aD] = 0.0;
+      drop_roll  = true;
+      drop_pitch = false;
+      drop_yaw   = true;
+      drop_aD    = true;
+
   } else {
-    WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
-    WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
-    WLS_one_p.Wv[IDX_ar] = Wv_backup[IDX_ar];
-    drop_yaw = false;
-    drop_roll = false;
-    drop_pitch = false;
+      /* any other case → safe default */
+      WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
+      WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
+      WLS_one_p.Wv[IDX_ar] = Wv_backup[IDX_ar];
+      WLS_one_p.Wv[IDX_aD] = Wv_backup[IDX_aD];
+      drop_roll  = false;
+      drop_pitch = false;
+      drop_yaw   = false;
+      drop_aD    = false;
   }
 }
 //=========================================================================================================================================================

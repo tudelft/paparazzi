@@ -71,9 +71,9 @@ float G2_RW[EFF_MAT_COLS_NB]                       = {0};//ROTWING_EFF_SCHED_G2;
 float G1_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB]      = {0};//{ROTWING_EFF_SCHED_G1_ZERO, ROTWING_EFF_SCHED_G1_ZERO, ROTWING_EFF_SCHED_G1_THRUST, ROTWING_EFF_SCHED_G1_ROLL, ROTWING_EFF_SCHED_G1_PITCH, ROTWING_EFF_SCHED_G1_YAW}; //scaled by RW_G_SCALE 
 float EFF_MAT_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB] = {0};
 float I_inv[3][3]                                  = {0};
-static float flt_cut_a  = 1.0e-6;
-static float flt_cut_ap = 2.0e-3;
-static float flt_cut    = 1.0e-4;
+static float flt_cut_a  = 1.0e-6;//1.0e-6;
+static float flt_cut_ap = 2.0e-6;//2.0e-5; //2.0e-3
+static float flt_cut    = 1.0e-6;//1.0e-5; //1.0e-4
 
 struct FloatEulers eulers_zxy_RW_EFF;
 static Butterworth2LowPass skew_filt; 
@@ -298,6 +298,12 @@ void calc_G1_G2_RW(void)
   G1_RW[RW_aq][COMMAND_MOTOR_LEFT]   = -RW.mL.dFdu * RW.mL.l * sigma1;
   G1_RW[RW_ar][COMMAND_MOTOR_LEFT]   =  RW.mL.dMdu  * I_inv[z][z];
   G2_RW[COMMAND_MOTOR_LEFT]          =  G2_on*RW.mL.dMdud * I_inv[z][z] * PERIODIC_FREQUENCY;
+
+  // Aileron
+  float Mx_a = RW.ail.dFdu * RW.as2 * RW.ail.l * RW.skew.sinr3;
+  float My_a = RW.ail.dFdu * RW.as2 * RW.ail.l * (RW.skew.cosr-RW.skew.cosr3);
+  G1_RW[RW_ap][COMMAND_AILERONS]     =  Mx_a * I_inv[x][x] + My_a * I_inv[x][y];
+  G1_RW[RW_aq][COMMAND_AILERONS]     =  Mx_a * I_inv[x][y] + My_a * I_inv[y][y];
   // Lift and thrust
   RW.wing.dLdtheta                =  (RW.wing.k0 + RW.wing.k1 * RW.skew.sinr2) * RW.as2;
   Bound(RW.wing.dLdtheta, 0.0, 1300.0);
@@ -346,7 +352,15 @@ void sum_EFF_MAT_RW(void) {
       EFF_MAT_RW[RW_aD][i] = (RW.att.cphi * RW.att.ctheta                                              ) * G1_RW[RW_aZ][i];
       EFF_MAT_RW[RW_ap][i] = (G1_RW[RW_ap][i])                                       ;
       EFF_MAT_RW[RW_aq][i] = (G1_RW[RW_aq][i])                                       ;
-      EFF_MAT_RW[RW_ar][i] = (G1_RW[RW_ar][i] + G2_RW[i])                            ;
+      EFF_MAT_RW[RW_ar][i] = (G1_RW[RW_ar][i] + G2_RW[i])  ;
+      break;  
+    case (COMMAND_AILERONS):
+      EFF_MAT_RW[RW_aN][i] = 0.0;
+      EFF_MAT_RW[RW_aE][i] = 0.0;
+      EFF_MAT_RW[RW_aD][i] = 0.0;
+      EFF_MAT_RW[RW_ap][i] = G1_RW[RW_ap][i];
+      EFF_MAT_RW[RW_aq][i] = G1_RW[RW_aq][i];
+      EFF_MAT_RW[RW_ar][i] = G1_RW[RW_ar][i];                             
       break;     
     case (COMMAND_ROLL):
       EFF_MAT_RW[RW_aN][i] = (-RW.att.cphi * RW.att.ctheta * RW.att.spsi * T);
@@ -441,10 +455,12 @@ void eff_scheduling_rotwing_update_wing_angle(void)
 static float sim_time = 0.0f;
 void eff_scheduling_rotwing_update_airspeed(void)
 {
-  RW.as = 0.0; //stateGetAirspeed_f(); FIXME
-  Bound(RW.as, 0. , 30.);
-  RW.as2 = RW.as * RW.as;
-  Bound(RW.as2, 0. , 900.);
+  struct FloatRates *body_rates = stateGetBodyRates_f();
+  RW.as = body_rates->r*0.5; //stateGetAirspeed_f(); FIXME
+  float sgn_as = copysignf(1.0,RW.as);
+  BoundAbs(RW.as,30.);
+  RW.as2 = sgn_as * RW.as * RW.as;
+  BoundAbs(RW.as2, 900.);
   if(airspeed_fake_on) {
     //float freq = 0.5;
     //float amp = 3.0;
