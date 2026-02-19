@@ -129,15 +129,15 @@
     </section>
 
     <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
-        <define name="G1_ROLL" value="{8 , -8, -8 , 8 }"/>
-        <define name="G1_PITCH" value="{17 , 17, -17 , -17 }"/>
-        <define name="G1_YAW" value="{-1.5, 1.5, -1.5, 1.5}"/>
-        <define name="G1_THRUST" value="{-0.4, -0.4, -0.4, -0.4}"/>
+        <define name="G1_ROLL" value="{9 , -9, -9 , 9 }"/> <!-- OK -->
+        <define name="G1_PITCH" value="{19 , 19 -19 , -19}"/> <!-- OK -->
+        <define name="G1_YAW" value="{-2, 2, -2, 2}"/> <!-- probably OK, handtuned a bit -->
+        <define name="G1_THRUST" value="{-0.15, -0.15, -0.15, -0.15}"/> <!-- probably OK, handtuned to be a bit more aggresive -->
         <define name="G2" value="{0, 0, 0, 0}"/>
 
-        <define name="ACT_FREQ" value="{11, 11, 11, 11}"/>
+        <define name="ACT_FREQ" value="{11, 11, 11, 11}"/> <!-- OK -->
 
-        <define name="REF_ERR_P" value="36.0"/>
+        <define name="REF_ERR_P" value="36.0"/> 
         <define name="REF_ERR_Q" value="36.0"/>
         <define name="REF_ERR_R" value="36.0"/>
         <define name="REF_RATE_P" value="7.0"/>
