@@ -45,25 +45,37 @@
 #endif
 #endif
 
-#ifndef GROUND_DETECT_SPECIFIC_THRUST_THRESHOLD
-#define GROUND_DETECT_SPECIFIC_THRUST_THRESHOLD -5.0
+#if USE_GROUND_DETECT_HX711
+#include "modules/sensors/hx711.h"
 #endif
 
 #ifndef GROUND_DETECT_REVERSE_THRUST_ON_GROUND_DETECTED
 #define GROUND_DETECT_REVERSE_THRUST_ON_GROUND_DETECTED false
 #endif
 
-#if USE_GROUND_DETECT_HX711
-#include "modules/sensors/hx711.h"
+#ifndef GROUND_DETECT_SPECIFIC_THRUST_THRESHOLD
+#define GROUND_DETECT_SPECIFIC_THRUST_THRESHOLD -5.0
+#endif
+
+#ifndef GROUND_DETECT_VERTICAL_SPEED_THRESHOLD
+#define GROUND_DETECT_VERTICAL_SPEED_THRESHOLD 5.0
+#endif
+
+#ifndef GROUND_DETECT_VERTICAL_ACCEL_THRESHOLD
+#define GROUND_DETECT_VERTICAL_ACCEL_THRESHOLD 2.0
 #endif
 
 #include "pprzlink/messages.h"
 #include "modules/datalink/downlink.h"
 
+#ifndef GROUND_DETECT_COUNTER_TRIGGER
 #define GROUND_DETECT_COUNTER_TRIGGER 5
+#endif
 
 // Cutoff frequency of accelerometer filter in Hz
+#ifndef GROUND_DETECT_FILT_FREQ
 #define GROUND_DETECT_FILT_FREQ 5.0
+#endif
 
 Butterworth2LowPass accel_filter;
 
@@ -74,8 +86,6 @@ bool ground_detected = false;
 bool override_reverse = false;
 
 union ground_detect_bitmask_t ground_detect_status;
-
-#define DEBUG_GROUND_DETECT TRUE
 
 void ground_detect_init()
 {
@@ -132,9 +142,9 @@ void ground_detect_periodic()
   ground_detect_status.hx711_trigger = false;
 #endif
 
-  ground_detect_status.vspeed_trigger = (fabsf(vspeed_ned) < 5.0)? 1:0;
-  ground_detect_status.spec_thrust_trigger = (spec_thrust_down > -5.0)? 1:0;
-  ground_detect_status.accel_filt_trigger = (fabsf(accel_filter.o[0]) < 2.0)? 1:0;
+  ground_detect_status.vspeed_trigger = (fabsf(vspeed_ned) < GROUND_DETECT_VERTICAL_SPEED_THRESHOLD)? 1:0;
+  ground_detect_status.spec_thrust_trigger = (spec_thrust_down > GROUND_DETECT_SPECIFIC_THRUST_THRESHOLD)? 1:0;
+  ground_detect_status.accel_filt_trigger = (fabsf(accel_filter.o[0]) < GROUND_DETECT_VERTICAL_ACCEL_THRESHOLD)? 1:0;
 
 #if USE_GROUND_DETECT_AGL_DIST
   ground_detect_status.agl_trigger = (agl_dist_valid && (agl_dist_value_filtered < GROUND_DETECT_AGL_MIN_VALUE))? 1:0;

@@ -3,6 +3,8 @@
   <header>
     #include "modules/nav/waypoints.h"
     #include "modules/sensors/hx711.h"
+    #include "autopilot_rc_helpers.h"
+    #include "modules/checks/preflight_checks.h"
   </header>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
@@ -74,6 +76,18 @@
       <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetAltitudeReferenceHere()"/>
     </block>
+    <block name="Preflight Checks" on_enter="ms45xx.autoset_offset=true">
+      <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
+      <call_once fun="NavKillThrottle()"/>
+      <set var="stabilization.cmd[COMMAND_THRUST_X]" value="0"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <exception cond="!kill_switch_is_on()" deroute="Actuator Check"/>
+    </block>
+    <block name="Actuator Check" on_enter="pfc_actuators_start(true)" on_exit="pfc_actuators_start(false)">
+      <exception cond="kill_switch_is_on() @AND !preflight_check()" deroute="Holding point"/>
+      <exception cond="preflight_check()" deroute="Holding point"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
     <block name="Holding point">
       <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
       <call_once fun="NavKillThrottle()"/>
@@ -115,45 +129,21 @@
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <stay wp="STDBY"/>
     </block>
-    <block name="p1" strip_button="Stay p1">
-        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay wp="p1"/>
-    </block>
-    <block name="p2" strip_button="Stay p2">
-        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay wp="p2"/>
-    </block>
-    <block name="p3" strip_button="Stay p3">
-        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay wp="p3"/>
-    </block>
-    <block name="p4" strip_button="Stay p4">
-        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay wp="p4"/>
-    </block>
     <block name="FOLLOW">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <stay wp="FOLLOW"/>
-    </block>
-    <block name="stay_KALMAN" strip_button="Stay KALMAN">
-        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay wp="KALMAN"/>
-    </block>
-    <block name="descend_KALMAN" strip_button="Descend KALMAN">
-        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <stay climb="-0.2" vmode="climb" wp="KALMAN"/>
     </block>
     <block name="land here">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>
     <block name="land" strip_button="Land" strip_icon="land-right.png">
-        <call_once fun="hx711_autoset_offset(1)"/>
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <go wp="TD"/>
     </block>
     <block name="descend" strip_button="Descend" strip_icon="descend.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <call_once fun="hx711_autoset_offset(1)"/>
         <exception cond="GetPosHeight() @LT 12.0" deroute="flare"/>
         <stay climb="-1.0" vmode="climb" wp="TD"/>
     </block>
