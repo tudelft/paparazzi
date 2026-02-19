@@ -137,6 +137,7 @@
 
         <define name="ACT_FREQ" value="{11, 11, 11, 11}"/> <!-- OK -->
 
+        <!-- theoretical values estimated for a first order system with 11r/s cutoff freq-->
         <define name="REF_ERR_P" value="36.0"/> 
         <define name="REF_ERR_Q" value="36.0"/>
         <define name="REF_ERR_R" value="36.0"/>
@@ -144,8 +145,8 @@
         <define name="REF_RATE_Q" value="7.0"/>
         <define name="REF_RATE_R" value="7.0"/>
 
-        <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
-        <define name="FILT_CUTOFF" value="3"/>
+        <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/> <!-- this is not used -->
+        <define name="FILT_CUTOFF" value="3"/> <!-- should be higher close to 5 --> 
 
         <!-- Adaptive Learning Rate -->
         <define name="USE_ADAPTIVE" value="FALSE"/>
