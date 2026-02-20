@@ -1,1 +1,1 @@
-<program command="$pprzgcs" name="PprzGCS" icon="gcs.svg" favorite="true"/>
+<program command="sw/tools/gcs_launch.py" name="PprzGCS" icon="gcs.svg" favorite="true"/>

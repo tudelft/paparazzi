@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-<flight_plan alt="1.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="60" name="Bebop avoid orange TU Delft Cyberzoo" security_height="0.4">
+<flight_plan alt="1.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="10" name="Bebop avoid orange TU Delft Cyberzoo" security_height="0.4">
   
   <!--=== Header: module and Gazebo simulation world includes ===-->
   <header>
@@ -51,36 +51,42 @@
 
   <!--=== Exceptions: handle emergencies and geofencing ===-->
   <exceptions>
-    <!-- RC lost -->
-    <!--exception cond="((radio_control.status == RC_REALLY_LOST) @AND
+    <!-- GPS lost: kill motors -->
+    <exception cond="((GpsIsLost() == true) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('land here')) @AND
-      (autopilot_in_flight() == true) )" deroute="Standby"/-->
-    <!-- Datalink lost (constant RPM descent) -->
-    <exception cond="((datalink_time @GT 5) @AND
+      (autopilot_in_flight() == true) )" deroute="KILL"/>
+
+    <!-- Datalink lost after 2s: land here -->
+    <exception cond="((datalink_time @GT 2) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('land here')) @AND
       (autopilot_in_flight() == true) )" deroute="land here"/>
-    <!-- Geofencing XY -->
+
+    <!-- Leave XY geofence: land here -->
     <exception cond="(!InsideCyberZoo(GetPosX(), GetPosY()) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('land here')) @AND
       (autopilot_in_flight() == true) )" deroute="land here"/>
-    <!-- Geofencing Z 3.5 -->
+
+    <!-- Leave Z geofence (3.5m, soft geofence): land here -->
     <exception cond="((GetPosAlt() @GT 3.5) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('land here')) @AND
       (autopilot_in_flight() == true) )" deroute="land here"/>
-    <!-- Geofencing Z 4.5 (constant RPM descent)-->
+
+    <!-- Leave Z geofence (4.5m, hard geofence): land here -->
     <exception cond="((GetPosAlt() @GT 4.5) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
-      (autopilot_in_flight() == true) )" deroute="Landed"/>
-    <!-- Bat low -->
+      (autopilot_in_flight() == true) )" deroute="land here"/>
+
+    <!-- Battery low: land here -->
     <exception cond="(electrical.bat_low @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('land here')) @AND
       (autopilot_in_flight() == true) )" deroute="land here"/>
-    <!-- Bat critical (constant RPM no stabilization)-->
+
+    <!-- Battery critical: land here -->
     <exception cond="(electrical.bat_critical @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('land here')) @AND
@@ -148,8 +154,7 @@
 
     <block key="l" name="land here" strip_button="land here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
-      <go wp="TD"/>
-      <deroute block="Flare"/>
+      <deroute block="Land"/>
     </block>
     <block name="Land">
       <exception cond="0.55 @GEQ GetPosAlt()" deroute="Flare"/>
@@ -159,7 +164,6 @@
     </block>
 
     <block name="Flare">
-      <exception cond="NavDetectGround()" deroute="Holding point"/>
       <exception cond="!nav_is_in_flight()" deroute="Landed"/>
       <exception cond="0.10 @GT GetPosAlt()" deroute="Landed"/>
       <call_once fun="NavStartDetectGround()"/>

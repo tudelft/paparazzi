@@ -1,10 +1,27 @@
 <control_panel name="paparazzi control panel">
   <section name="programs">
-    <program name="UnifiedMoCap" command="sw/ext/unifiedmocaprouter/build/mocap-router"/>
-    <program name="GST" command="/usr/bin/gst-launch-1.0"/>
+    <program name="Server" command="sw/ground_segment/tmtc/server"/>
+    <program name="Data Link" command="sw/ground_segment/tmtc/link">
+      <arg flag="-d" constant="/dev/ttyUSB0"/>
+    </program>
+    <program name="Messages" command="sw/ground_segment/tmtc/messages"/>
+    <program name="Settings" command="sw/ground_segment/tmtc/settings">
+      <arg flag="-ac" constant="@AIRCRAFT"/>
+    </program>
+    <program name="Log Plotter" command="sw/logalizer/logplotter"/>
+    <program name="Real-time Plotter" command="sw/logalizer/plotter"/>
+    <program name="Log File Player" command="sw/logalizer/play"/>
+    <program name="Simulator" command="sw/simulator/pprzsim-launch"/>
+    <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
+      <arg flag="-ac" constant="@AIRCRAFT"/>
+      <arg flag="sm600.xml"/>
+    </program>
+    <program name="Environment Simulator" command="sw/simulator/gaia"/>
+    <program name="NatNet3" command="sw/ground_segment/python/natnet3.x/natnet2ivy.py"/>
+    <program name="Gazebo" command="sw/tools/gzclient_launcher.sh"/>
+    <program name="Real-time Distance Counter" command="sw/ground_segment/python/distance_counter/dist.py"/>
   </section>
   <section name="sessions">
-
     <session name="Simulation - Gazebo">
       <program name="Simulator">
         <arg flag="-a" constant="@AIRCRAFT"/>
@@ -26,37 +43,32 @@
         <arg flag="-d 0"/>
       </program>
       <program name="Gazebo"/>
-      <program name="RtpViewer">
-        <arg flag="-s" constant="1"/>
-        <arg flag="-r" constant="3"/>
-      </program>
-      <program name="GST" command="/usr/bin/gst-launch-1.0">
-        <arg flag="udpsrc"/>
-        <arg flag="port=5000"/>
-        <arg flag="caps=application/x-rtp,payload=26"/>
-        <arg flag="! rtpjpegdepay ! jpegdec ! videoflip method=counterclockwise ! autovideosink"/>
-      </program>
-      <program name="VLC">
-        <arg flag="./sw/tools/rtp_viewer/rtp_5000.sdp"/>
-      </program>
-      <program name="VLC">
-        <arg flag="./sw/tools/rtp_viewer/rtp_6000.sdp"/>
-      </program>
     </session>
-
+    <session name="Simulation - Gazebo + Joystick">
+      <program name="Simulator">
+        <arg flag="-a" constant="@AIRCRAFT"/>
+        <arg flag="-t" constant="nps"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-ping_period" constant="100"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="PprzGCS">
+        <arg flag="--speech"/>
+      </program>
+      <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
+        <arg flag="-ac" constant="@AIRCRAFT"/>
+        <arg flag="sm600.xml"/>
+        <arg flag="-d 0"/>
+      </program>
+      <program name="Gazebo"/>
+    </session>
     <session name="Flight UDP">
       <program name="Data Link">
         <arg flag="-udp"/>
-      </program>
-      <program name="UnifiedMoCap" command="sw/ext/unifiedmocaprouter/build/mocap-router">
-        <arg flag="optitrack"/>
-        <arg flag="ivy"/>
-        <arg flag="--publish_frequency" constant="10"/>
-        <arg flag="--coordinate_system" constant="enu"/>
-        <arg flag="--coordinate_north" constant="far"/>
-        <arg flag="--craft_noses" constant="right"/>
-        <arg flag="--streaming_ids" constant="1"/>
-        <arg flag="--ac_id" constant="@AC_ID"/>
       </program>
       <program name="Server"/>
       <program name="PprzGCS">
@@ -67,32 +79,15 @@
         <arg flag="sm600.xml"/>
         <arg flag="-d 0"/>
       </program>
-      <!--program name="NatNet3">
+      <program name="NatNet3">
         <arg flag="-ac 9999" constant="@AC_ID"/>
         <arg flag="-xa" constant="57"/>
         <arg flag="-an" constant="far"/>
         <arg flag="-le" constant="far"/>
-      </program-->
-      <program name="RtpViewer">
-        <arg flag="-s" constant="1"/>
-        <arg flag="-r" constant="3"/>
-      </program>
-      <program name="VLC">
-        <arg flag="./sw/tools/rtp_viewer/rtp_5000.sdp"/>
-      </program>
-      <program name="VLC">
-        <arg flag="./sw/tools/rtp_viewer/rtp_6000.sdp"/>
-      </program>
-      <program name="GST" command="/usr/bin/gst-launch-1.0">
-        <arg flag="udpsrc"/>
-        <arg flag="port=5000"/>
-        <arg flag="caps=application/x-rtp,payload=26"/>
-        <arg flag="! rtpjpegdepay ! jpegdec ! videoflip method=counterclockwise ! autovideosink"/>
       </program>
     </session>
     <session name="Distance Counter">
-      <program name="Optitrack Distance Counter"/>
+      <program name="Real-time Distance Counter"/>
     </session>
-
   </section>
 </control_panel>

@@ -50,15 +50,19 @@ It has 8 buttons.
   <variables>
     <!-- manual by default and when pressing b_green, AUTO1 on b_yellow, AUTO2 on b_red -->
     <var name="mode" default="0"/>
-    <set var="mode" value="-127" on_event="b_green"/>
-    <set var="mode" value="0" on_event="b_yellow"/>
-    <set var="mode" value="127" on_event="b_red"/>
+    <set var="mode" value="0" on_event="b_green"/>
+    <set var="mode" value="1" on_event="b_yellow"/>
+    <set var="mode" value="2" on_event="b_red"/>
   </variables>
 
   <messages period="0.0333333333">
 
-    <message class="datalink" name="RC_UP" send_always="true">
-      <field name="channels" value="rx;ry;lx;Bound(0-ly,0,127);mode"/>
+    <message class="datalink" name="RC_4CH" send_always="true">
+      <field name="mode"        value="mode"/>
+      <field name="throttle"    value="Bound(0-ly,0,127)"/>
+      <field name="roll"        value="rx"/>
+      <field name="yaw"         value="lx"/>
+      <field name="pitch"       value="ry"/>
     </message>
 
 
@@ -106,12 +110,12 @@ It has 8 buttons.
 
     <!-- resurrect throttle on start button -->
     <message class="ground" name="DL_SETTING" on_event="b_start">
-      <field name="index" value="IndexOfSetting(autopilot.kill_throttle)"/>
+      <field name="index" value="IndexOfSetting('autopilot.kill_throttle')"/>
       <field name="value" value="0"/>
     </message>
     <!-- kill throttle when pressing both back and blue buttons at the same time -->
     <message class="ground" name="DL_SETTING" on_event="b_back && b_blue">
-      <field name="index" value="IndexOfSetting(autopilot.kill_throttle)"/>
+      <field name="index" value="IndexOfSetting('autopilot.kill_throttle')"/>
       <field name="value" value="1"/>
     </message>
 

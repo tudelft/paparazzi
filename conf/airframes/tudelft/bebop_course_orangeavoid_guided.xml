@@ -275,6 +275,7 @@
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
 
+    <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>
 
   <section name="BAT">
@@ -283,5 +284,9 @@
     <define name="CRITIC_BAT_LEVEL" value="10.8" unit="V"/>
     <define name="LOW_BAT_LEVEL" value="11.1" unit="V"/>
     <define name="MAX_BAT_LEVEL" value="12.4" unit="V"/>
+  </section>
+
+  <section name="GCS">
+    <define name="AC_ICON" value="quadrotor_xi"/>
   </section>
 </airframe>
