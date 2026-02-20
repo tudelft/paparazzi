@@ -41,7 +41,7 @@ def main():
 
     parser.add_option("-g", "--gcs", dest="gcstype",
                       type='choice', choices=['pprzgcs', 'legacy'],
-                      action="store", help="GCS type to start: pprgcs or legacy")
+                      action="store", help="GCS type to start: pprzgcs or legacy")
     parser.add_option("--pprzgcs_help", dest="pprzgcs_help", action="callback", callback=pprzgcs_help,
                       help="Print help for pprzgcs")
     parser.add_option("--legacy_help", dest="legacy_help", action="callback", callback=legacy_help,
