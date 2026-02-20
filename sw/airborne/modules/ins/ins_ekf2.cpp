@@ -49,11 +49,6 @@
 #define USE_INS_NAV_INIT TRUE
 #endif
 
-/** Maximum allowed error in distance between dual GPS antennae */
-#ifndef INS_EKF2_MAX_REL_LENGTH_ERROR
-#define INS_EKF2_MAX_REL_LENGTH_ERROR 0.2 // Factor which gets multiplied by the reference distance
-#endif
-
 /** Special configuration for Optitrack */
 #if INS_EKF2_OPTITRACK
 #ifndef INS_EKF2_FUSION_MODE
