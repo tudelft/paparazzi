@@ -145,7 +145,7 @@
         <define name="REF_RATE_Q" value="7.0"/>
         <define name="REF_RATE_R" value="7.0"/>
 
-        <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/> <!-- this is not used -->
+        <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/> <!--only for adaptive learning-->
         <define name="FILT_CUTOFF" value="3"/> <!-- should be higher close to 5 --> 
 
         <!-- Adaptive Learning Rate -->
