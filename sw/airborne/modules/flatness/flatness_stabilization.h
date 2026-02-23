@@ -29,6 +29,12 @@
 #include <stdint.h>
 #include "firmwares/rotorcraft/stabilization.h"
 
-extern void flatness_stabilization_run(bool, struct StabilizationSetpoint *, struct ThrustSetpoint *, int32_t *);
+struct Fl_stabilization {
+    int32_t cmd[4];
+};
+
+extern struct Fl_stabilization fl_stabilization;
+
+extern void flatness_stabilization_run(struct ThrustSetpoint *, int32_t *);
 
 #endif  // FLATNESS_STABILIZATION_H

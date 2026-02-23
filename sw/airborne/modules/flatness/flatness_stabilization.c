@@ -24,10 +24,18 @@
  */
 
 #include "modules/flatness/flatness_stabilization.h"
+#include "modules/actuators/actuators.h"
 
 // #include "modules/datalink/telemetry.h"
 
-void flatness_stabilization_run(bool in_flight, struct StabilizationSetpoint *att_sp, struct ThrustSetpoint *thrust, int32_t *cmd)
+struct Fl_stabilization fl_stabilization;
+
+void flatness_stabilization_run(struct ThrustSetpoint *thrust, int32_t *cmd)
 {
-    // printf("AA!\n");
+  for (int i = 0; i < 4; i++) {
+    actuators_pprz[i] = (int16_t) 2000;
+  }
+
+  cmd[COMMAND_THRUST] = (actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])/4;
+
 }

@@ -104,7 +104,7 @@ void actuators_init(void)
 void actuators_periodic(void)
 {
 #if USE_COMMANDS
-  pprz_t trimmed_commands[COMMANDS_NB];
+  pprz_t trimmed_commands[COMMANDS_NB] __attribute__((unused));
   int i;
   for (i = 0; i < COMMANDS_NB; i++) {trimmed_commands[i] = commands[i];}
 
