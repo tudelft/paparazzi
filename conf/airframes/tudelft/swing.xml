@@ -120,23 +120,23 @@
     </section>
 
     <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
-        <define name="G1_ROLL" value="{30 , -30, -30 , 30 }"/>
-        <define name="G1_PITCH" value="{30 , 30, -30 , -30 }"/>
-        <define name="G1_YAW" value="{-1, 1, -1, 1}"/>
-        <define name="G1_THRUST" value="{-.2, -.2, -.2, -.2}"/>
+        <define name="G1_ROLL" value="{8 , -8, -8 , 8 }"/>
+        <define name="G1_PITCH" value="{17 , 17, -17 , -17 }"/>
+        <define name="G1_YAW" value="{-1.5, 1.5, -1.5, 1.5}"/>
+        <define name="G1_THRUST" value="{-0.4, -0.4, -0.4, -0.4}"/>
         <define name="G2" value="{0, 0, 0, 0}"/>
 
-        <define name="ACT_FREQ" value="{53.9, 53.9, 53.9, 53.9}"/>
+        <define name="ACT_FREQ" value="{11, 11, 11, 11}"/>
 
-        <define name="REF_ERR_P" value="90.0"/>
-        <define name="REF_ERR_Q" value="90.0"/>
-        <define name="REF_ERR_R" value="50.0"/>
-        <define name="REF_RATE_P" value="20.0"/>
-        <define name="REF_RATE_Q" value="20.0"/>
-        <define name="REF_RATE_R" value="20.0"/>
+        <define name="REF_ERR_P" value="36.0"/>
+        <define name="REF_ERR_Q" value="36.0"/>
+        <define name="REF_ERR_R" value="36.0"/>
+        <define name="REF_RATE_P" value="7.0"/>
+        <define name="REF_RATE_Q" value="7.0"/>
+        <define name="REF_RATE_R" value="7.0"/>
 
         <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
-        <define name="FILT_CUTOFF" value="5"/>
+        <define name="FILT_CUTOFF" value="3"/>
 
         <!-- Adaptive Learning Rate -->
         <define name="USE_ADAPTIVE" value="FALSE"/>
