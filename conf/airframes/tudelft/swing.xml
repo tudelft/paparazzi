@@ -29,7 +29,7 @@
         <module name="ahrs" type="int_cmpl_quat"/>
     
         <module name="guidance_unified">
-            <define name="MOL_DRONE_WEIGHT" value="0.4"/>
+            <define name="MOL_DRONE_WEIGHT" value="0.075"/>
         </module>
         
         <!-- ins configured for optitrack -->
