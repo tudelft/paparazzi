@@ -105,22 +105,22 @@ void guidance_unified_run(bool in_flight)
     // Desired position
     pos_ref[0] = 0.0;
     // pos_ref[0] = -5 * sinf(counter/freq);
-    // pos_ref[1] = 7 * cosf(counter/freq);
-    pos_ref[1] = 5.0;
+    pos_ref[1] = 1 * cosf(counter/freq);
+    // pos_ref[1] = 5.0;
     pos_ref[2] = -5.0;
 
     // Analytical derivatives of pos_ref for the feedforward input
     // Not including frequency in the derivative, as time = counter / freq
     vel_ref[0] = 0.0;
     // vel_ref[0] = -5 * cosf(counter/freq);
-    // vel_ref[1] = -7 * sinf(counter/freq);
-    vel_ref[1] = 0.0;
+    vel_ref[1] = -1 * sinf(counter/freq);
+    // vel_ref[1] = 0.0;
     vel_ref[2] = 0.0;
 
     accel_ref[0] = 0.0;
     // accel_ref[0] = 5 * sinf(counter/freq);
-    // accel_ref[1] = -7 * cosf(counter/freq);
-    accel_ref[1] = 0.0;
+    accel_ref[1] = -1 * cosf(counter/freq);
+    // accel_ref[1] = 0.0;
     accel_ref[2] = 0.0;
 
     // Current positions
