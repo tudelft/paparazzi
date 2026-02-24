@@ -30,11 +30,17 @@
 #include "firmwares/rotorcraft/stabilization.h"
 
 struct Fl_stabilization {
-    int32_t cmd[4];
+    int32_t cmd[COMMANDS_NB];
+    struct StabilizationSetpoint rc_sp;
+    struct AttitudeRCInput rc_in;
 };
 
 extern struct Fl_stabilization fl_stabilization;
 
-extern void flatness_stabilization_run(struct ThrustSetpoint *, int32_t *);
+extern void flatness_stabilization_run(bool, struct StabilizationSetpoint *, struct ThrustSetpoint *, int32_t *);
+
+// float forw_rot_ flatness(float *u);
+void att_control(void);
+void inv_rot_flatness(void);
 
 #endif  // FLATNESS_STABILIZATION_H

@@ -29,6 +29,8 @@
 #include "modules/radio_control/radio_control.h"
 #include "modules/radio_control/rc_datalink.h"
 #include "modules/core/abi.h"
+#include "modules/flatness/flatness_stabilization.h"
+#include "autopilot.h"
 
 // #include "modules/datalink/telemetry.h"
 
@@ -55,6 +57,9 @@ static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc)
 
     THRUST_SP_SET_ZERO(thr_sp);
     thr_sp = th_sp_from_thrust_i(rc_throttle, THRUST_AXIS_Z);
+
+    stabilization_attitude_read_rc_setpoint(&fl_stabilization.rc_in, autopilot_in_flight(), FALSE, FALSE, rc);
+    fl_stabilization.rc_sp = stab_sp_from_quat_f(&fl_stabilization.rc_in.rc_quat);
 
     // float buf[4];
     // buf[0] = (float)rc_throttle;

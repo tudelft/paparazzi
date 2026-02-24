@@ -157,7 +157,7 @@
 
     <section name="SIMULATOR" prefix="NPS_">
         <define name="ACTUATOR_NAMES" value="nw_motor, ne_motor, se_motor, sw_motor" type="string[]"/>
-        <define name="COMMANDS_NB" value="4"/>
+        <define name="COMMANDS_NB" value="4"/> <!-- or to match the ap target 5? -->
         <define name="JSBSIM_MODEL" value="bebop" type="string"/>
         <define name="NO_MOTOR_MIXING" value="TRUE"/>
     </section>
