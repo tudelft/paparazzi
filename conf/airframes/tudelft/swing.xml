@@ -6,12 +6,22 @@
         
         <autopilot name="swing_autopilot"/>
 
-        <target name="ap" board="parrot_minidrone"/>
+        <target name="ap" board="parrot_minidrone">
+            <module name="logger_file">
+                <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
+                <configure name="LOGGER_FILE_FREQUENCY" value="500"/>
+            </module>
+        </target>
 
         <target name="nps" board="pc">
             <module name="fdm" type="jsbsim"/>
             <module name="udp"/>
             <define name="STABILIZATION_INDI_RPM_FEEDBACK" value="FALSE"/>
+
+            <module name="logger_file">
+                <define name="LOGGER_FILE_PATH" value="/home/bimse/Documents/Sim_logsg"/>
+                <configure name="LOGGER_FILE_FREQUENCY" value="500"/>
+            </module>
         </target>
 
         <define name="IMU_SWING_PERIODIC_FREQ" value="500"/>
@@ -52,9 +62,9 @@
 
         <!-- <module name="sys_mon"/> -->
 
-        <module name="logger_file">
+        <!-- <module name="logger_file">
             <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
-        </module>
+        </module> -->
     </firmware>
 
     <commands>
