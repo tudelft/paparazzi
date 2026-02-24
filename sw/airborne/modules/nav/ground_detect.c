@@ -44,6 +44,10 @@
 #define GROUND_DETECT_SPECIFIC_THRUST_THRESHOLD -5.0
 #endif
 
+#ifndef GROUND_DETECT_REVERSE_THRUST_ON_GROUND_DETECTED
+#define GROUND_DETECT_REVERSE_THRUST_ON_GROUND_DETECTED false
+#endif
+
 #include "pprzlink/messages.h"
 #include "modules/datalink/downlink.h"
 
@@ -155,4 +159,13 @@ void ground_detect_filter_accel(void)
 {
   struct NedCoor_f *accel = stateGetAccelNed_f();
   update_butterworth_2_low_pass(&accel_filter, accel->z);
+}
+
+bool ground_detect_reverse_thrust(void)
+{
+  if (GROUND_DETECT_REVERSE_THRUST_ON_GROUND_DETECTED && ground_detected) {
+    return true;
+  } else {
+    return false;
+  }
 }
