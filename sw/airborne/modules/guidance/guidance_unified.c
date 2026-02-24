@@ -40,9 +40,9 @@ float * guidance_function(float *);
 // Gains and limits
 static const float VEL_LIMIT = 15.0f;
 static const float ACC_LIMIT = 6.0f;
-static const float THRUST_LIMIT = 1.4f;
-static const float K_P = 0.8f;
-static const float K_V = 2.4f;
+static const float THRUST_LIMIT = 1.0f;
+static const float K_P = 3.0f;
+static const float K_V = 0.8f;
 static const float ROLL_RATE_GAIN = 15.0f;
 static const float PITCH_RATE_GAIN = 15.0f;
 
@@ -145,20 +145,20 @@ void guidance_unified_run(bool in_flight)
     accel_a[2] = accel_actual->z;
 
     // Velocity and acceleration limits
-    for (int i = 0; i < 3; i++){
-        if (vel_ref[i] <= -VEL_LIMIT) { 
-        vel_ref[i] = -VEL_LIMIT;
-        }
-        if (vel_ref[i] >= VEL_LIMIT) { 
-        vel_ref[i] = VEL_LIMIT;
-        }
-        if (accel_ref[i] <= -ACC_LIMIT) { 
-        accel_ref[i] = -ACC_LIMIT;
-        }
-        if (accel_ref[i] >= ACC_LIMIT) { 
-        accel_ref[i] = ACC_LIMIT;
-        }
-    }
+    // for (int i = 0; i < 3; i++){
+    //     if (vel_ref[i] <= -VEL_LIMIT) { 
+    //     vel_ref[i] = -VEL_LIMIT;
+    //     }
+    //     if (vel_ref[i] >= VEL_LIMIT) { 
+    //     vel_ref[i] = VEL_LIMIT;
+    //     }
+    //     if (accel_ref[i] <= -ACC_LIMIT) { 
+    //     accel_ref[i] = -ACC_LIMIT;
+    //     }
+    //     if (accel_ref[i] >= ACC_LIMIT) { 
+    //     accel_ref[i] = ACC_LIMIT;
+    //     }
+    // }
 
     // Difference in accelerations: d_accel_ref
     static float d_accel_ref[3];
@@ -206,8 +206,8 @@ float * guidance_function(float *d_accel_ref)
   // T = -thrust_estimate;  
   T = -ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->z)*mass;
 
-  // Include a thrust limit
-  if (T < THRUST_LIMIT) {
+//   Include a thrust limit
+  if (T > THRUST_LIMIT) {
     T = THRUST_LIMIT;
   }
 
