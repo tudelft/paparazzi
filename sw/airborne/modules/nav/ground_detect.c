@@ -62,6 +62,7 @@ bool disarm_on_not_in_flight = false;
 
 int32_t counter = 0;
 bool ground_detected = false;
+bool override_reverse = false;
 
 #define DEBUG_GROUND_DETECT TRUE
 
@@ -165,7 +166,10 @@ bool ground_detect_reverse_thrust(void)
 {
   if (GROUND_DETECT_REVERSE_THRUST_ON_GROUND_DETECTED && ground_detected) {
     return true;
-  } else {
+  } else if (override_reverse) {
+    return true;
+  }
+  else {
     return false;
   }
 }
