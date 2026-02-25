@@ -35,12 +35,17 @@ struct Fl_stabilization {
     struct AttitudeRCInput rc_in;
 };
 
+// debugging
+typedef struct {
+    float *u_cmd;
+    float *u;
+    float *u_filt;
+} dbg_t;
+extern dbg_t dbg;
+
 extern struct Fl_stabilization fl_stabilization;
 
+extern void flatness_stabilization_init(void);
 extern void flatness_stabilization_run(bool, struct StabilizationSetpoint *, struct ThrustSetpoint *, int32_t *);
-
-// float forw_rot_ flatness(float *u);
-void att_control(void);
-void inv_rot_flatness(void);
 
 #endif  // FLATNESS_STABILIZATION_H
