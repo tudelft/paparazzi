@@ -719,7 +719,7 @@ def get_random_vector(magnitude):
     return np.array([magnitude * np.cos(theta), magnitude * np.sin(theta)])
 
 
-def run_single_sim(num_drones, n_victims, map_s, max_time, mixed_alt=False, seed=None, viz=False):
+def run_single_sim(num_drones, n_victims, map_s, max_time, wind_mag=2.0, drift_mag=0.1, mixed_alt=False, seed=None, viz=False):
     """
     Headless simulation with:
     - 2 m/s Random Wind
@@ -766,8 +766,10 @@ def run_single_sim(num_drones, n_victims, map_s, max_time, mixed_alt=False, seed
     belief_map[~inside_mask] = 0.5
 
     # --- 2. SETUP ENVIRONMENT & ACTORS ---
-    v_wind = get_random_vector(2.0)   # Standard 2 m/s
-    v_drift = get_random_vector(0.1)  # Standard 0.1 m/s
+    # v_wind = get_random_vector(2.0)   # Standard 2 m/s
+    # v_drift = get_random_vector(0.1)  # Standard 0.1 m/s
+    v_wind = get_random_vector(wind_mag)
+    v_drift = get_random_vector(drift_mag)
 
     # Victims
     spawn_limit = half_s - 100.0
@@ -801,6 +803,7 @@ def run_single_sim(num_drones, n_victims, map_s, max_time, mixed_alt=False, seed
     energy_consumed = np.zeros(num_drones)
 
     entropy_history = []
+    abort_count = 0  
     
     # Constants
     COOLDOWN_TIME = 30
@@ -1157,6 +1160,7 @@ def run_single_sim(num_drones, n_victims, map_s, max_time, mixed_alt=False, seed
                             print(f"[t={t}] UAV{d_idx} target cleared by peer → Aborting.")
                             tr["active"] = False; tr["phase"] = None
                             drone_modes[d_idx] = "explore"
+                            abort_count += 1
                             continue
 
                 # --- PHASE: APPROACH ("to_detection") ---
@@ -1223,6 +1227,7 @@ def run_single_sim(num_drones, n_victims, map_s, max_time, mixed_alt=False, seed
                     
                     if valid_search_area.is_empty:
                         tr["active"] = False; drone_modes[d_idx] = "explore"
+                        abort_count += 1    
                         continue
 
                     # 2. Rasterize Cone
@@ -1270,12 +1275,14 @@ def run_single_sim(num_drones, n_victims, map_s, max_time, mixed_alt=False, seed
                                 belief_map[(dx**2 + dy**2) < 40.0**2] = 0.0
                                 tr["active"] = False; drone_modes[d_idx] = "explore"
                                 vz_des = 1.5
+                                abort_count += 1
                                 continue
                         
                         # [FIX 2] Extended General Timeout
                         if (t - tr["cone_start"]) >= (cone_search_timeout + 15.0) and max_p < 0.40:
                             tr["active"] = False; drone_modes[d_idx] = "explore"
                             vz_des = 1.0
+                            abort_count += 1
                             continue
 
                     # 4. Motion: IPP constrained to Cone
@@ -1412,6 +1419,7 @@ def run_single_sim(num_drones, n_victims, map_s, max_time, mixed_alt=False, seed
                             print(f"[t={t}] UAV{d_idx} False Positive (No victim < 50m). Clearing map.")
                             belief_map = clear_confirmed_region_2d(belief_map, XX, YY, my_pos, v_drift)
                             tr["active"] = False; drone_modes[d_idx] = "explore"; vz_des = 2.0
+                            abort_count += 1
 
                     # B. TIMEOUT LOGIC
                     # [FIX 4] Extended Timeout
@@ -1422,9 +1430,11 @@ def run_single_sim(num_drones, n_victims, map_s, max_time, mixed_alt=False, seed
                             print(f"[t={t}] UAV{d_idx} hover-confirm timeout (low alt, low conf) → aborting.")
                             tr["active"] = False; drone_modes[d_idx] = "explore"
                             vz_des = 2.0
+                            abort_count += 1
                          # Safety break if we are stuck high up for too long (e.g. 40s)
                          elif (t - tr["hover_start"]) > 40.0:
                             tr["active"] = False; drone_modes[d_idx] = "explore"; vz_des = 2.0
+                            abort_count += 1
 
                 else:
                     vx_des, vy_des, vz_des = 0.0, 0.0, 0.0
@@ -1603,239 +1613,163 @@ def run_single_sim(num_drones, n_victims, map_s, max_time, mixed_alt=False, seed
         "energy_list": energy_consumed.tolist(),
         "victims_found": len(confirmed_ids),
         "total_victims": n_victims,
-        "entropy_history": entropy_history
+        "entropy_history": entropy_history,
+        "abort_count": abort_count  
     }
         
         
 
 
-# if __name__ == "__main__":
-#     import pandas as pd
-    
-    
-#     # Change this to True to verify the code works visually
-#     DEBUG_VISUAL = False 
-    
-#     if DEBUG_VISUAL:
-#         print("Running Single Debug Simulation (Visual)...")
-#         # Run 1 trial: Map=500m, 4 Drones, 3 Victims, Mixed Altitude
-#         success, duration, _ = run_single_sim(
-#             num_drones=2, n_victims=10, map_s=500, max_time=600, 
-#             mixed_alt=True, seed=42, viz=False
-#         )
-#         print(f"Debug Result: Success={success}, Time={duration}s")
-#         exit() # Stop here so we don't start the 1-hour batch run immediately
-
-
-#     # --- 2. BATCH MODE (RUN THIS FOR DATA COLLECTION) ---
-#     TRIALS = 5
-#     MAX_TIME = 600
-    
-#     # CONFIGS = [
-#     #     (500,  [2, 4, 6]),
-#     #     (2000, [4, 6, 8, 10, 12, 14, 16, 18, 20]),
-#     #     (5000, [20, 30, 40, 50, 60, 70])
-#     # ]
-#     CONFIGS = [
-#         (5000, [50, 60, 70, 80, 90, 100])
-#     ]
-#     VICTIM_LEVELS = [3, 5, 10, 15, 25]
-#     ALT_MODES = [False, True]
-
-#     results = []
-#     print(f"--- STARTING BATCH SIMULATION ---")
-
-#     import os, json
-#     # ... (Previous Configs) ...
-
-#     # --- [CHANGE] Folder Setup ---
-#     base_dir = "large_test_NEW"
-#     json_dir = os.path.join(base_dir, "json")
-#     csv_file = os.path.join(base_dir, "experiment_results.csv")
-    
-#     # Create directories
-#     os.makedirs(json_dir, exist_ok=True)
-    
-#     # Initialize CSV if missing
-#     if not os.path.exists(csv_file):
-#         headers = ["Map", "Drones", "Victims", "Mode", "Success", "Time", "Avg_Energy", "Victims_Found", "Seed"]
-#         pd.DataFrame(columns=headers).to_csv(csv_file, index=False)
-
-#     print(f"--- STARTING BATCH SIMULATION ---")
-#     print(f"Results Directory: {base_dir}/")
-
-#     for map_s, drone_counts in CONFIGS:
-#         # ... (Loops continue) ...
-#         for n_drones in drone_counts:
-#             for n_victims in VICTIM_LEVELS:
-#                 # if n_victims > n_drones: continue 
-
-#                 for mixed in ALT_MODES:
-#                     mode_str = "Mixed" if mixed else "Uniform"
-#                     print(f"Running: Map {map_s} | Drones {n_drones} | Vic {n_victims} | {mode_str}")
-                    
-#                     for i in range(TRIALS):
-#                         seed = np.random.randint(0, 1000000)
-#                         try:
-#                             # Run Simulation
-#                             data = run_single_sim(
-#                                 n_drones, n_victims, map_s, MAX_TIME, mixed, seed, viz=False
-#                             )
-                            
-#                             # 1. Update CSV (Calculate Avg Energy here)
-#                             avg_energy = np.mean(data["energy_list"])
-                            
-#                             row = {
-#                                 "Map": map_s, "Drones": n_drones, "Victims": n_victims,
-#                                 "Mode": mode_str, "Success": data["success"], 
-#                                 "Time": data["time"], "Avg_Energy": avg_energy,
-#                                 "Victims_Found": data["victims_found"], 
-#                                 "Seed": seed
-#                             }
-#                             # Save to CSV
-#                             pd.DataFrame([row]).to_csv(csv_file, mode='a', header=False, index=False)
-                            
-#                             # 2. Save JSON (Remove Energy List)
-#                             json_data = data.copy()
-                            
-#                             # [CHANGE] Remove huge energy list to save space
-#                             if "energy_list" in json_data:
-#                                 del json_data["energy_list"]
-                                
-#                             # Add metadata
-#                             json_data["config"] = {
-#                                 "map": map_s, "drones": n_drones, 
-#                                 "victims": n_victims, "mode": mode_str, "seed": seed
-#                             }
-                            
-#                             log_name = f"log_{map_s}m_n{n_drones}_v{n_victims}_{mode_str}_{seed}.json"
-#                             log_path = os.path.join(json_dir, log_name)
-                            
-#                             with open(log_path, 'w') as f:
-#                                 json.dump(json_data, f, indent=4)
-                                
-#                         except Exception as e:
-#                             print(f"Error: {e}")
-
-#     pd.DataFrame(results).to_csv(csv_file, index=False)
-#     print("Done.")
 
 
 
 if __name__ == "__main__":
     import pandas as pd
-    import numpy as np # Added this import as it was missing in the snippet
-    import os, json
+    import numpy as np
+    import os, json, time
     
     # Change this to True to verify the code works visually
     DEBUG_VISUAL = False 
     
     if DEBUG_VISUAL:
-        # ... (Debug code remains the same) ...
         pass # Placeholder for brevity
 
-    # --- 2. BATCH MODE ---
-    TRIALS = 5
+    # --- 1. STATIC EXPERIMENT CONSTANTS ---
     MAX_TIME = 600
-    
-    CONFIGS = [
-        (5000, [50, 60, 70, 80, 90, 100, 110, 120])
-    ]
-    VICTIM_LEVELS = [3, 5, 10, 15, 25]
-    ALT_MODES = [False, True]
+    MAP_SIZE = 500      # 500x500 meter test area
+    N_DRONES = 3        # 3 drones
+    MIXED_ALT = False   # False forces exactly 50m altitude for all drones
 
-    # --- RESUME SETTINGS ---
-    # Define exactly where you want to pick up
-    RESUME_MAP = 5000
-    RESUME_DRONES = 100
-    RESUME_VICTIMS = 3
+    # --- 2. EXPERIMENTAL CONFIGURATION ---
+    severities = {
+        "Low": (2.0, 0.06),   # (Wind m/s, Drift m/s)
+        "Medium": (5.0, 0.18),
+        "High": (10.0, 0.30)
+    }
+    victim_counts = range(1, 11) # 1 to 10 victims
+    TRIALS = 25                  # 25 seeds per configuration
+
+    # --- 3. RESUME SETTINGS ---
+    # Define exactly where you want to pick up (e.g., if it crashed at Medium, 5 victims)
+    RESUME_SEVERITY = "Low"
+    RESUME_VICTIMS = 7
     
     # Set to False initially. It flips to True when we hit the target above.
     resume_found = False 
-    # -----------------------
-
-    results = [] # NOTE: You aren't appending to this in your loop, see warning at bottom.
     
-    # --- Folder Setup ---
-    base_dir = "large_test_NEW"
+    # --- 4. FOLDER SETUP ---
+    base_dir = "wind_drift_severity_experiment_new"
     json_dir = os.path.join(base_dir, "json")
     csv_file = os.path.join(base_dir, "experiment_results.csv")
     
     os.makedirs(json_dir, exist_ok=True)
     
+    # Initialize CSV if missing
     if not os.path.exists(csv_file):
-        headers = ["Map", "Drones", "Victims", "Mode", "Success", "Time", "Avg_Energy", "Victims_Found", "Seed"]
+        headers = [
+            "Severity", "Wind_Speed", "Drift_Speed", "Map", "Drones", "Num_Victims", 
+            "Success", "Sim_Time", "Confirmed", "Aborted", "Entropy_Reduction", 
+            "Avg_Energy_Consumed", "Wall_Time", "Trial_Seed"
+        ]
         pd.DataFrame(columns=headers).to_csv(csv_file, index=False)
 
-    print(f"--- STARTING BATCH SIMULATION ---")
+    print(f"--- STARTING SEVERITY BATCH SIMULATION ---")
     print(f"Results Directory: {base_dir}/")
-    print(f"Skipping until: Map {RESUME_MAP} | Drones {RESUME_DRONES} | Vic {RESUME_VICTIMS}...")
+    print(f"Fixed parameters: Map={MAP_SIZE}m, Drones={N_DRONES}, Alt=50m")
+    print(f"Skipping until: Severity '{RESUME_SEVERITY}' | Vic {RESUME_VICTIMS}...")
 
-    for map_s, drone_counts in CONFIGS:
-        for n_drones in drone_counts:
-            for n_victims in VICTIM_LEVELS:
+    # --- 5. EXECUTION LOOP ---
+    for sev_name, settings in severities.items():
+        wind_mag = settings[0]
+        drift_mag = settings[1]
+        
+        for n_vics in victim_counts:
+            
+            # --- RESUME LOGIC START ---
+            if not resume_found:
+                if sev_name == RESUME_SEVERITY and n_vics == RESUME_VICTIMS:
+                    resume_found = True
+                    print(f"\n>>> FOUND RESUME POINT. STARTING SIMULATION NOW. <<<\n")
+                else:
+                    continue # Skip this iteration if we haven't reached the target
+            # --- RESUME LOGIC END ---
+
+            print(f"\n>>> Starting Severity: {sev_name} (Wind: {wind_mag}m/s, Drift: {drift_mag}m/s) | Vics: {n_vics} <<<")
+            
+            for trial in range(TRIALS):
+                seed = np.random.randint(0, 1000000)
+                start_wall = time.time()
                 
-                # --- RESUME LOGIC START ---
-                if not resume_found:
-                    # Check if we have reached the restart point
-                    if map_s == RESUME_MAP and n_drones == RESUME_DRONES and n_victims == RESUME_VICTIMS:
-                        resume_found = True
-                        print(f"\n>>> FOUND RESUME POINT. STARTING SIMULATION NOW. <<<\n")
-                    else:
-                        # Skip this iteration if we haven't reached the target yet
-                        continue 
-                # --- RESUME LOGIC END ---
-
-                # if n_victims > n_drones: continue 
-
-                for mixed in ALT_MODES:
-                    mode_str = "Mixed" if mixed else "Uniform"
-                    print(f"Running: Map {map_s} | Drones {n_drones} | Vic {n_victims} | {mode_str}")
+                try:
+                    # Execute simulation seed
+                    data = run_single_sim(
+                        num_drones=N_DRONES, 
+                        n_victims=n_vics, 
+                        map_s=MAP_SIZE, 
+                        max_time=MAX_TIME,
+                        wind_mag=wind_mag,
+                        drift_mag=drift_mag,
+                        mixed_alt=MIXED_ALT, 
+                        seed=seed, 
+                        viz=False
+                    )
                     
-                    for i in range(TRIALS):
-                        seed = np.random.randint(0, 1000000)
-                        try:
-                            # Run Simulation
-                            data = run_single_sim(
-                                n_drones, n_victims, map_s, MAX_TIME, mixed, seed, viz=False
-                            )
-                            
-                            # 1. Update CSV
-                            avg_energy = np.mean(data["energy_list"])
-                            
-                            row = {
-                                "Map": map_s, "Drones": n_drones, "Victims": n_victims,
-                                "Mode": mode_str, "Success": data["success"], 
-                                "Time": data["time"], "Avg_Energy": avg_energy,
-                                "Victims_Found": data["victims_found"], 
-                                "Seed": seed
-                            }
-                            
-                            # Save to CSV immediately (Safer)
-                            pd.DataFrame([row]).to_csv(csv_file, mode='a', header=False, index=False)
-                            
-                            # 2. Save JSON
-                            json_data = data.copy()
-                            if "energy_list" in json_data:
-                                del json_data["energy_list"]
-                                
-                            json_data["config"] = {
-                                "map": map_s, "drones": n_drones, 
-                                "victims": n_victims, "mode": mode_str, "seed": seed
-                            }
-                            
-                            log_name = f"log_{map_s}m_n{n_drones}_v{n_victims}_{mode_str}_{seed}.json"
-                            log_path = os.path.join(json_dir, log_name)
-                            
-                            with open(log_path, 'w') as f:
-                                json.dump(json_data, f, indent=4)
-                                
-                        except Exception as e:
-                            print(f"Error: {e}")
+                    # Calculate entropy reduction (Difference between first and last entropy value)
+                    ent_hist = data.get("entropy_history", [0.0, 0.0])
+                    ent_reduction = ent_hist[0] - ent_hist[-1] if len(ent_hist) > 1 else 0.0
+                    
+                    # Calculate Average Energy safely
+                    avg_energy = np.mean(data["energy_list"]) if len(data.get("energy_list", [])) > 0 else 0.0
+                    wall_time = time.time() - start_wall
 
-    # --- CRITICAL CHANGE ---
-    # I commented this out because 'results' list is empty in your loop. 
-    # If this runs, it will OVERWRITE your CSV with an empty file at the very end.
-    pd.DataFrame(results).to_csv(csv_file, index=False) 
-    
-    print("Done.")
+                    # --- Append to Summary CSV (Trial-by-Trial) ---
+                    df_row = pd.DataFrame([{
+                        "Severity": sev_name,
+                        "Wind_Speed": wind_mag,
+                        "Drift_Speed": drift_mag,
+                        "Map": MAP_SIZE,
+                        "Drones": N_DRONES,
+                        "Num_Victims": n_vics,
+                        "Success": data.get("success", False),
+                        "Sim_Time": data.get("time", MAX_TIME),
+                        "Confirmed": data.get("victims_found", 0),
+                        "Aborted": data.get("abort_count", 0),
+                        "Entropy_Reduction": ent_reduction,
+                        "Avg_Energy_Consumed": avg_energy,
+                        "Wall_Time": wall_time,
+                        "Trial_Seed": seed
+                    }])
+                    
+                    # Append row to CSV
+                    df_row.to_csv(csv_file, mode='a', index=False, header=False)
+                    
+                    # --- Save Detailed JSON Log ---
+                    log_file = os.path.join(json_dir, f"log_{sev_name}_v{n_vics}_t{trial}_{seed}.json")
+                    with open(log_file, 'w') as f:
+                        json.dump({
+                            "config": {
+                                "severity": sev_name, 
+                                "wind_vec": wind_mag,
+                                "drift_vec": drift_mag,
+                                "map": MAP_SIZE,
+                                "drones": N_DRONES,
+                                "victims": n_vics, 
+                                "seed": seed
+                            },
+                            "results": {
+                                "success": data.get("success", False),
+                                "total_sim_time": data.get("time", MAX_TIME),
+                                "final_confirmed": data.get("victims_found", 0),
+                                "final_aborted": data.get("abort_count", 0),
+                                "entropy_reduction": ent_reduction,
+                                "avg_energy": avg_energy,
+                                "wall_time_seconds": wall_time
+                            }
+                        }, f, indent=4)
+                    
+                    print(f"[{sev_name}] V:{n_vics} | Trial {trial+1}/{TRIALS} | Sim Time: {data.get('time', 0)}s | Confirmed: {data.get('victims_found', 0)}/{n_vics} | Aborts: {data.get('abort_count', 0)}")
+                    
+                except Exception as e:
+                    print(f"Error on Severity {sev_name}, Vic {n_vics}, Trial {trial} (Seed {seed}): {e}")
+
+    print("\nCampaign Complete. Results saved in:", base_dir)
