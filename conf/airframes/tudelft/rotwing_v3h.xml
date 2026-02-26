@@ -202,10 +202,10 @@
         <let VAR="ail_limit_hit"    VALUE="LessThan(rotwing_state.meas_skew_angle_deg, 20)"/>
         <let VAR="flap_limit_hit"   VALUE="LessThan(rotwing_state.meas_skew_angle_deg, 50)"/>
 
-        <let VAR="motor_front_mapped" VALUE="LessThan(actuators_pprz[0], 0)? 0 : (actuators_pprz[0] + ($can_neutral / SERVO_MOTOR_FRONT_MAX) * (MAX_PPRZ - actuators_pprz[0]))"/>
-        <let VAR="motor_right_mapped" VALUE="LessThan(actuators_pprz[1], 0)? 0 : (actuators_pprz[1] + ($can_neutral / SERVO_MOTOR_RIGHT_MAX) * (MAX_PPRZ - actuators_pprz[1]))"/>
-        <let VAR="motor_back_mapped" VALUE="LessThan(actuators_pprz[2], 0)? 0 : (actuators_pprz[2] + ($can_neutral / SERVO_MOTOR_BACK_MAX) * (MAX_PPRZ - actuators_pprz[2]))"/>
-        <let VAR="motor_left_mapped" VALUE="LessThan(actuators_pprz[3], 0)? 0 : (actuators_pprz[3] + ($can_neutral / SERVO_MOTOR_LEFT_MAX) * (MAX_PPRZ - actuators_pprz[3]))"/>
+        <let VAR="motor_front_mapped" VALUE="LessThan(actuators_pprz[0], 0)? 0 : (actuators_pprz[0] + ((float)$can_neutral / (float)SERVO_MOTOR_FRONT_MAX) * (MAX_PPRZ - actuators_pprz[0]))"/>
+        <let VAR="motor_right_mapped" VALUE="LessThan(actuators_pprz[1], 0)? 0 : (actuators_pprz[1] + ((float)$can_neutral / (float)SERVO_MOTOR_RIGHT_MAX) * (MAX_PPRZ - actuators_pprz[1]))"/>
+        <let VAR="motor_back_mapped" VALUE="LessThan(actuators_pprz[2], 0)? 0 : (actuators_pprz[2] + ((float)$can_neutral / (float)SERVO_MOTOR_BACK_MAX) * (MAX_PPRZ - actuators_pprz[2]))"/>
+        <let VAR="motor_left_mapped" VALUE="LessThan(actuators_pprz[3], 0)? 0 : (actuators_pprz[3] + ((float)$can_neutral / (float)SERVO_MOTOR_LEFT_MAX) * (MAX_PPRZ - actuators_pprz[3]))"/>
 
         <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
         <call fun="pfc_actuators_run()"/>
