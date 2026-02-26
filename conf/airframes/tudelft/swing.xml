@@ -44,7 +44,7 @@
             <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
 
             <module name="logger_file">
-                <define name="LOGGER_FILE_PATH" value="/home/ntouev/LOGS/swing/nps/"/>
+                <define name="LOGGER_FILE_PATH" value="/home/ntouev/LOGS/swing/nps"/>
                 <configure name="LOGGER_FILE_FREQUENCY" value="500"/>
             </module>
 

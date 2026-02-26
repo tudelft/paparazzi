@@ -35,11 +35,21 @@ struct Fl_stabilization {
     struct AttitudeRCInput rc_in;
 };
 
+typedef struct {
+    float cmd[4];
+    float state[4];
+    float state_filt[4];
+} Act_t;
+
 // debugging
 typedef struct {
-    float *u_cmd;
-    float *u;
-    float *u_filt;
+    struct FloatQuat *quat;
+    struct FloatQuat *quat_sp;
+    struct FloatRates *rates;
+    struct FloatRates *rates_sp;
+    struct FloatRates *ang_accel_sp;
+    float *ang_accel_filt;
+    Act_t *act;
 } dbg_t;
 extern dbg_t dbg;
 

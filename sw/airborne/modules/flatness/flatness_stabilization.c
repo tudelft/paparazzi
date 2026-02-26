@@ -53,19 +53,34 @@ struct Fl_stabilization fl_stabilization;
 static Butterworth2LowPass act_filter[ACTUATORS_NB];
 static Butterworth2LowPass rates_num_der_filter[3];
 static float ACT_DYN_ALPHA;
+static Act_t act = {0};
+static struct FloatQuat *quat, quat_sp;
+static struct FloatRates rates_sp;
+static struct FloatRates *rates;
+static struct FloatRates ang_accel_sp = {0., 0., 0.};
+static float ang_accel_filt[3] = {0., 0., 0.};
 
 // helper functions
 float discrete_first_order_filter(float, float, float);
-void expose_dbg_variables(float *, float *, float *);
+void expose_dbg_variables(struct FloatQuat *, struct FloatQuat *, 
+                          struct FloatRates *, struct FloatRates *,
+                          struct FloatRates *, float *,
+                          Act_t *);
 void forw_rot_flatness(float *, float *);
 void inv_rot_flatness(float, float *, float *);
 
-void expose_dbg_variables(float *u_cmd, float *u, float *u_filt)
+void expose_dbg_variables(struct FloatQuat *quat, struct FloatQuat *quat_sp,
+                          struct FloatRates *rates, struct FloatRates *rates_sp,
+                          struct FloatRates *ang_accel_sp, float *ang_accel_filt,
+                          Act_t *act)
 {
-    // shallow copy, be carefull!
-    dbg.u_cmd = u_cmd;
-    dbg.u = u;
-    dbg.u_filt = u_filt;
+    dbg.quat = quat;
+    dbg.quat_sp = quat_sp;
+    dbg.rates = rates;
+    dbg.rates_sp = rates_sp;
+    dbg.ang_accel_sp = ang_accel_sp;
+    dbg.ang_accel_filt = ang_accel_filt;
+    dbg.act = act;
 }
 
 void flatness_stabilization_init(void)
@@ -86,75 +101,73 @@ void flatness_stabilization_init(void)
 
 void flatness_stabilization_run(bool in_flight, struct StabilizationSetpoint *att_sp, struct ThrustSetpoint *thrust, int32_t *cmd)
 {
-    // calculate quaternion error
+
     struct FloatQuat quat_err;
-    struct FloatQuat quat_sp = stab_sp_to_quat_f(att_sp);
-    struct FloatQuat *quat = stateGetNedToBodyQuat_f();
-    float_quat_inv_comp_norm_shortest(&quat_err, quat, &quat_sp);
-
-    // calculate rates setpoint
-    struct FloatRates rates_sp;
-    rates_sp.p = 2 * Kq.x * quat_err.qx;
-    rates_sp.q = 2 * Kq.y * quat_err.qy;
-    rates_sp.r = 2 * Kq.z * quat_err.qz;
-
-    // add FF rate sp
-    // struct FloatRates rate_ff = stab_sp_to_rates_f(att_sp);
-    // RATES_ADD(rates_sp, rate_ff);
-
-    // calculate angular acceleration setpoint
-    struct FloatRates *rates = stateGetBodyRates_f();
-    struct FloatRates ang_accel_sp = {0., 0., 0.};
-    ang_accel_sp.p = Komega.x * (rates_sp.p - rates->p);
-    ang_accel_sp.q = Komega.y * (rates_sp.q - rates->q);
-    ang_accel_sp.r = Komega.z * (rates_sp.r - rates->r);
-
-    // butterworth filter for actuators    
-    float u[ACTUATORS_NB] = { 0., 0., 0., 0. };
-    float u_cmd[ACTUATORS_NB] = { 0., 0., 0., 0. };
-    float u_filt[ACTUATORS_NB] = { 0., 0., 0., 0. };
-    for (int i = 0; i < ACTUATORS_NB; i++) {
-        u[i] = discrete_first_order_filter(ACT_DYN_ALPHA, u_cmd[i], u[i]);
-        update_butterworth_2_low_pass(&act_filter[i], u[i]);
-        u_filt[i] = act_filter[i].o[0];
-    }
-    
-    // numerical derivative + butterworth filter for angular acceleration
-    float ang_accel_filt[3] = {0., 0., 0.};
-    float rates_vector[3] = {rates->p, rates->q, rates->r};
-    for (int i = 0; i < 3; i++) {
-        update_butterworth_2_low_pass(&rates_num_der_filter[i], rates_vector[i]);
-        ang_accel_filt[i] = (rates_num_der_filter[i].o[0] - rates_num_der_filter[i].o[1]) * PERIODIC_FREQUENCY;
-    }
-
-    // forward rotational flatness
-    float m_filt[3];
-    forw_rot_flatness(u_filt, m_filt);
-
-    // incremental law
-    float m_cmd[3];
-    float ang_accel_sp_vector[3] = {ang_accel_sp.p, ang_accel_sp.q, ang_accel_sp.r};
-    for (int i = 0; i < 3; i++) {
-        m_cmd[i] = (ang_accel_sp_vector[i] - ang_accel_filt[i]) + m_filt[i];
-    }
-
-    // inverse rotational flatness
-    float specific_thrust = -10; // m/s^2
-    inv_rot_flatness(specific_thrust, m_cmd, u_cmd);
-
     if (in_flight) {
+
+        // calculate quaternion error
+        quat_sp = stab_sp_to_quat_f(att_sp);
+        quat = stateGetNedToBodyQuat_f();
+        float_quat_inv_comp_norm_shortest(&quat_err, quat, &quat_sp);
+
+        // calculate rates setpoint
+        rates_sp.p = 2 * Kq.x * quat_err.qx;
+        rates_sp.q = 2 * Kq.y * quat_err.qy;
+        rates_sp.r = 2 * Kq.z * quat_err.qz;
+
+        // add FF rate sp
+        // struct FloatRates rate_ff = stab_sp_to_rates_f(att_sp);
+        // RATES_ADD(rates_sp, rate_ff);
+
+        // calculate angular acceleration setpoint
+        rates = stateGetBodyRates_f();
+        ang_accel_sp.p = Komega.x * (rates_sp.p - rates->p);
+        ang_accel_sp.q = Komega.y * (rates_sp.q - rates->q);
+        ang_accel_sp.r = Komega.z * (rates_sp.r - rates->r);
+
+        // butterworth filter for actuators    
+        for (int i = 0; i < ACTUATORS_NB; i++) {
+            act.state[i] = discrete_first_order_filter(ACT_DYN_ALPHA, act.cmd[i], act.state[i]);
+            update_butterworth_2_low_pass(&act_filter[i], act.state[i]);
+            act.state_filt[i] = act_filter[i].o[0];
+        }
+        
+        // numerical derivative + butterworth filter for angular acceleration
+        float rates_vector[3] = {rates->p, rates->q, rates->r};
+        for (int i = 0; i < 3; i++) {
+            update_butterworth_2_low_pass(&rates_num_der_filter[i], rates_vector[i]);
+            ang_accel_filt[i] = (rates_num_der_filter[i].o[0] - rates_num_der_filter[i].o[1]) * PERIODIC_FREQUENCY;
+        }
+
+        // forward rotational flatness
+        float m_filt[3];
+        forw_rot_flatness(act.state_filt, m_filt);
+
+        // incremental law
+        float m_cmd[3];
+        float ang_accel_sp_vector[3] = {ang_accel_sp.p, ang_accel_sp.q, ang_accel_sp.r};
+        for (int i = 0; i < 3; i++) {
+            m_cmd[i] = (ang_accel_sp_vector[i] - ang_accel_filt[i]) + m_filt[i];
+        }
+
+        // inverse rotational flatness
+        // float specific_thrust = -10; // m/s^2
+        float specific_thrust = -((float)thrust->sp.thrust_i[THRUST_AXIS_Z])*10.0/5700.0;
+        inv_rot_flatness(specific_thrust, m_cmd, act.cmd);
+
         // assign commands
         for (int i = 0; i < ACTUATORS_NB; i++) {
-            // actuators_pprz[i] = (int16_t) thrust->sp.thrust_i[THRUST_AXIS_Z];
-            actuators_pprz[i] = u_cmd[i];
+            actuators_pprz[i] = act.cmd[i];
         }
-        cmd[COMMAND_THRUST] = (actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])/4;
+    
     }
+
+    cmd[COMMAND_THRUST] = thrust->sp.thrust_i[THRUST_AXIS_Z];
     stabilization.cmd[COMMAND_THRUST] = cmd[COMMAND_THRUST]; // for autopilot_check_in_flight()
 
-    printf("%f\t%f\t%f\n", u_cmd[0], u[0], u_filt[0]);
+    // printf("%.0f\t%.0f\t%.0f\t%.0f\t\t", act.cmd[0], act.cmd[1], act.cmd[2], act.cmd[3]);
 
-    expose_dbg_variables(u_cmd, u, u_filt);
+    expose_dbg_variables(quat, &quat_sp, rates, &rates_sp, &ang_accel_sp, ang_accel_filt, &act);
 }
 
 float discrete_first_order_filter(float alpha, float input, float prev_output)

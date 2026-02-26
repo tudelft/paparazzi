@@ -523,7 +523,7 @@ struct FloatRates dbg_rates_filt;
 
 void stabilization_indi_rate_run(bool in_flight, struct StabilizationSetpoint *sp, struct ThrustSetpoint *thrust, int32_t *cmd)
 {
-
+  printf("old stab!\n");
   // Propagate actuator filters
   get_actuator_state();
   float actuator_state_filt_vect_prev[INDI_NUM_ACT];

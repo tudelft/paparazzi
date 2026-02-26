@@ -114,14 +114,31 @@ static FILE *logger_file = NULL;
 // }
 
 static void logger_file_write_header(FILE *file) {
-    fprintf(file, "timestamp,");
-    fprintf(file, "u_cmd_0,u_0,u_filt_0,");
+    fprintf(file, "timestamp");
+    fprintf(file, ",qs_sp,qx_sp,qy_sp,qz_sp");
+    fprintf(file, ",qs,qx,qy,qz");
+    fprintf(file, ",rates_p_sp,rates_q_sp,rates_r_sp");
+    fprintf(file, ",rates_p,rates_q,rates_r");
+    fprintf(file, ",pdot_sp,qdot_sp,rdot_sp");
+    fprintf(file, ",pdot_filt,qdot_filt,rdot_filt");
+    fprintf(file, ",act_cmd_1,act_cmd_2,act_cmd_3,act_cmd_4");
+    fprintf(file, ",act_state_1,act_state_2,act_state_3,act_state_4");
+    fprintf(file, ",act_state_filt_1,act_state_filt_2,act_state_filt_3,act_state_filt_4");
     fprintf(file, "\n");
 }
 
 static void logger_file_write_row(FILE *file) {
-    fprintf(file, "%f,", get_sys_time_float());
-    fprintf(file, "%f,%f,%f\n", dbg.u_cmd[0], *(dbg.u + 0), *(dbg.u_filt + 0));
+    fprintf(file, "%f", get_sys_time_float());
+    fprintf(file, ",%f,%f,%f,%f", dbg.quat_sp->qi, dbg.quat_sp->qx, dbg.quat_sp->qy, dbg.quat_sp->qz);
+    fprintf(file, ",%f,%f,%f,%f", dbg.quat->qi, dbg.quat->qx, dbg.quat->qy, dbg.quat->qz);
+    fprintf(file, ",%f,%f,%f", dbg.rates_sp->p, dbg.rates_sp->q, dbg.rates_sp->r);
+    fprintf(file, ",%f,%f,%f", dbg.rates->p, dbg.rates->q, dbg.rates->r);
+    fprintf(file, ",%f,%f,%f", dbg.ang_accel_sp->p, dbg.ang_accel_sp->q, dbg.ang_accel_sp->r);
+    fprintf(file, ",%f,%f,%f", dbg.ang_accel_filt[0], dbg.ang_accel_filt[1], dbg.ang_accel_filt[2]);
+    fprintf(file, ",%f,%f,%f,%f", dbg.act->cmd[0], dbg.act->cmd[1], dbg.act->cmd[2], dbg.act->cmd[3]);
+    fprintf(file, ",%f,%f,%f,%f", dbg.act->state[0], dbg.act->state[1], dbg.act->state[2], dbg.act->state[3]);
+    fprintf(file, ",%f,%f,%f,%f", dbg.act->state_filt[0], dbg.act->state_filt[1], dbg.act->state_filt[2], dbg.act->state_filt[3]);
+    fprintf(file, "\n");
 }
 
 
