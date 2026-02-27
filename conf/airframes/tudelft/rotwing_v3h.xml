@@ -149,11 +149,19 @@
 
     <!-- Can bus 1 actuators -->
     <servos driver="Uavcan1">
+<<<<<<< HEAD
         <servo no="0"  name="MOTOR_FRONT"     min="-8191"     neutral="1000" max="8191"/>
         <servo no="1"  name="MOTOR_RIGHT"     min="-8191"     neutral="1000" max="8191"/>
         <servo no="2"  name="MOTOR_BACK"      min="-8191"     neutral="1000" max="8191"/>
         <servo no="3"  name="MOTOR_LEFT"      min="-8191"     neutral="1000" max="8191"/>
         <servo no="4"  name="MOTOR_PUSH"      min="0"     neutral="1000" max="8191"/>
+=======
+        <servo no="0"  name="MOTOR_FRONT"     min="-7372"     neutral="0" max="7372"/>
+        <servo no="1"  name="MOTOR_RIGHT"     min="-7372"     neutral="0" max="7372"/>
+        <servo no="2"  name="MOTOR_BACK"      min="-7372"     neutral="0" max="7372"/>
+        <servo no="3"  name="MOTOR_LEFT"      min="-7372"     neutral="0" max="7372"/>
+        <servo no="4"  name="MOTOR_PUSH"      min="0"     neutral="1000" max="7372"/>
+>>>>>>> d89eeb35bf (don't reverse pusher)
         <servo no="5"  name="ROTATION_MECH"   min="-1392" neutral="451"  max="2294"/>
     </servos>
 
