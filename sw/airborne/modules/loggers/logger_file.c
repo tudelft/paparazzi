@@ -45,6 +45,8 @@
 
 #include "generated/modules.h"
 
+#include "guidance/guidance_unified.h"
+
 /** Set the default File logger path to the USB drive */
 #ifndef LOGGER_FILE_PATH
 #define LOGGER_FILE_PATH /data/video/usb
@@ -65,14 +67,16 @@ static FILE *logger_file = NULL;
 static void logger_file_write_header(FILE *file) {
   fprintf(file, "timestamp,");
   fprintf(file, "pos_x,pos_y,pos_z,");
+  fprintf(file, "pos_ref_x,pos_ref_y,pos_ref_z,");
   fprintf(file, "vel_x,vel_y,vel_z,");
+  fprintf(file, "vel_ref_x,vel_ref_y,vel_ref_z,");
   fprintf(file, "acc_x,acc_y,acc_z,");
+  fprintf(file, "acc_ref_x,acc_ref_y,acc_ref_z,");
   fprintf(file, "att_phi,att_theta,att_psi,");
   fprintf(file, "rate_p,rate_q,rate_r,");
-#ifdef BOARD_BEBOP
-  fprintf(file, "rpm_obs_1,rpm_obs_2,rpm_obs_3,rpm_obs_4,");
-  fprintf(file, "rpm_ref_1,rpm_ref_2,rpm_ref_3,rpm_ref_4,");
-#endif
+  fprintf(file, "roll_rate_calc,pitch_rate_calc,");
+  fprintf(file, "T_guid,");
+  fprintf(file, "thr_sp,");
 #ifdef INS_EXT_POSE_H
   ins_ext_pos_log_header(file);
 #endif
@@ -100,14 +104,16 @@ static void logger_file_write_row(FILE *file) {
 
   fprintf(file, "%f,", get_sys_time_float());
   fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
+  fprintf(file, "%f,%f,%f,", pos_ref[0], pos_ref[1], pos_ref[2]);
   fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
+  fprintf(file, "%f,%f,%f,", vel_ref[0], vel_ref[1], vel_ref[2]);
   fprintf(file, "%f,%f,%f,", acc->x, acc->y, acc->z);
+  fprintf(file, "%f,%f,%f,", accel_ref[0], accel_ref[1], accel_ref[2]);
   fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
-#ifdef BOARD_BEBOP
-  fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
-  fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_ref[0],actuators_bebop.rpm_ref[1],actuators_bebop.rpm_ref[2],actuators_bebop.rpm_ref[3]);
-#endif
+  fprintf(file, "%f,%f,", roll_rate_calc, pitch_rate_calc);
+  fprintf(file, "%f,", T);
+  fprintf(file, "%f,", thr_sp);
 #ifdef INS_EXT_POSE_H
   ins_ext_pos_log_data(file);
 #endif
