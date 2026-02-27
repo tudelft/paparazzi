@@ -52,10 +52,13 @@
  * MAVLink description before main MAVLink include
  */
 extern mavlink_system_t mavlink_system;
+extern uint16_t mavlink_rc_value;
 
 #ifndef MAVLINK_DEV
 #define MAVLINK_DEV uart1
 #endif
+
+extern struct periodic_telemetry mavlink_telemetry;
 
 /*
  * The MAVLink link description
@@ -65,6 +68,22 @@ extern mavlink_system_t mavlink_system;
 #define MAVLinkChAvailable() MAVLinkDev->char_available(MAVLinkDev->periph)
 #define MAVLinkGetch() MAVLinkDev->get_byte(MAVLinkDev->periph)
 #define MAVLinkSendMessage() MAVLinkDev->send_message(MAVLinkDev->periph, 0)
+
+/**
+ * Struct of available mavlink commands
+ */
+struct mavlink_modes_t {
+  uint8_t current_mode;
+  bool takeoff_available;
+  bool hover_available;
+  bool guided_available;
+  bool land_available;
+  uint8_t block_takeoff;
+  uint8_t block_hover;
+  uint8_t block_guided;
+  uint8_t block_land;
+};
+
 
 /**
  * Module functions
