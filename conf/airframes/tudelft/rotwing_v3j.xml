@@ -107,16 +107,36 @@
         <module name="air_data"/>
 
         <module name="remote_sensing_AM">
-            <define name="TARGET_POS_KALMAN_DEBUG" value="FALSE"/>
-            <define name="TARGET_POS_KALMAN_USE_ACCEL" value="FALSE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_GROUND_STATION" value="TRUE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_FALCON_SIXDOF" value="TRUE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELANGLE" value="TRUE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_FALCON_RELBEACON" value="TRUE"/>
             <define name="REMOTE_SENSING_KALMAN_USE_OPENCV_ARUCO" value="TRUE"/>
             <define name="REMOTE_SENSING_LOG_ON_ARRIVAL" value="TRUE"/>
-            <define name="REMOTE_SENSING_KALMAN_P0" value="{10,10,10,10,10,10}"/>
-            <define name="REMOTE_SENSING_KALMAN_Q0" value="{100000,100000,100000,100000,100000,100000}"/>
+            
+            <!-- Remote Sensing EKF defines -->
+            <define name="REMOTE_SENSING_KALMAN_P0" value="{10,10,10,10,10,10,1e-2,1e-2,1e-2}"/>
+            <define name="REMOTE_SENSING_KALMAN_Q0" value="{100,100,100,100,100,100,1,1,1}"/>
+
+            <!-- Aruco camera body offset and Euler extrinsics (radians) -->
+            <define name="REMOTE_SENSING_ARUCO_BODY_OFFSET_X" value="0.07"/>
+            <define name="REMOTE_SENSING_ARUCO_BODY_OFFSET_Y" value="0.0"/>
+            <define name="REMOTE_SENSING_ARUCO_BODY_OFFSET_Z" value="0.16"/>
+            <define name="REMOTE_SENSING_ARUCO_PHI"   value="0.0"/>
+            <define name="REMOTE_SENSING_ARUCO_THETA" value="0.0"/>
+            <define name="REMOTE_SENSING_ARUCO_PSI"   value="3.14159265358979323846"/>
+            <define name="REMOTE_SENSING_ARUCO_MEASUREMENT_NOISE" value="{1.,1.,1.}"/> 
+
+            <!-- Falcon body offset and Euler extrinsics (radians) -->
+            <define name="REMOTE_SENSING_FALCON_BODY_OFFSET_X" value="0.0"/>
+            <define name="REMOTE_SENSING_FALCON_BODY_OFFSET_Y" value="0.0"/>
+            <define name="REMOTE_SENSING_FALCON_BODY_OFFSET_Z" value="0.16"/>
+            <define name="REMOTE_SENSING_FALCON_PHI"   value="-1.57079632679489661923"/>
+            <define name="REMOTE_SENSING_FALCON_THETA" value="0.0"/>
+            <define name="REMOTE_SENSING_FALCON_PSI"   value="3.14159265358979323846"/>
+            <define name="REMOTE_SENSING_SIXDOF_MEASUREMENT_NOISE" value="{1.,1.,1.}"/>
+
+            <define name="REMOTE_SENSING_RTK_MEASUREMENT_NOISE" value="{0.1,0.1,0.1,0.05,0.05,0.05}"/>
         </module>
 
         <configure name="PRIMARY_GPS" value="ublox"/>
@@ -283,37 +303,6 @@
         <define name="IMU_POS_X"                 value="0.321"/>  
         <define name="IMU_POS_Y"                 value="0.0"/>    
         <define name="IMU_POS_Z"                 value="0.0"/>
-    </section>
-
-    <section name="FALCON" prefix="FALCON_"> 
-        <define name="BODY_TO_SENSOR" value="{{-1.0,0,0,0,0,-1.0,0,-1.0,0}}"/>
-        <define name="OFFSET_UAV_BODY" value="{0.0,0.0,0.16}"/>
-        <define name="SIXDOF_MEASUREMENT_NOISE" value="{0.1, 0.1, 0.1}"/>
-        <define name="RELANGLE_MEASUREMENT_NOISE" value="{0.5, 0.5, 0.5}"/> <!-- Noise should be on the angle measurement and scaled with distance to platform -->
-        <define name="RELBEACON_MEASUREMENT_NOISE" value="{0.25, 0.25, 0.25}"/>
-        <define name="KALMAN_SENSOR" type="struct">
-            <field name="noise" value="{0.25,0.25,0.25}"/>
-            <field name="n_meas" value="3"/>
-            <field name="Hmat" value="{0,2,4}"/>
-        </define>
-    </section>
-
-    <section name="ARUCO" prefix="ARUCO_">
-        <define name="BODY_TO_SENSOR" value="{{-1.0,0.0,0.0,0.0,-1.0,0.0,0.0,0.0,1.0}}"/>
-        <define name="OFFSET_UAV_BODY" value="{0.07,0.0,0.16}"/>
-        <define name="KALMAN_SENSOR" type="struct">
-            <field name="noise" value="{0.25,0.25,0.25}"/>
-            <field name="n_meas" value="3"/>
-            <field name="Hmat" value="{0,2,4}"/>
-        </define>
-    </section>
-
-    <section name="TARGET" prefix="TARGET_">
-        <define name="KALMAN_SENSOR" type="struct">
-            <field name="noise" value="{0.1,0.2,0.1,0.2,0.1,0.2}"/>
-            <field name="n_meas" value="6"/>
-            <field name="Hmat" value="{0,1,2,3,4,5}"/>
-        </define>
     </section>
 
     <section name="NAV_MOVING_BASE" prefix="NAV_MOVING_BASE_">

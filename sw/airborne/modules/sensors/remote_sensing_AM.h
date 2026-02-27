@@ -19,7 +19,6 @@
  */
 #include "std.h"
 #include "math/pprz_algebra_float.h"
-#include "filters/target_pos_kalman.h"
 
 #ifndef REMOTE_SENSING_AM_H
 #define REMOTE_SENSING_AM_H
@@ -39,11 +38,10 @@ struct AzimuthElevation {
 
 struct sixdof_t {
   uint32_t tow; // Time of week of the sixdof measurement
-  struct FloatVect3 pos; // position in NED frame
-  struct FloatVect3 pos_var; // position variance in NED frame
-  struct FloatQuat quat; // attitude in NED frame
-  struct FloatVect3 quat_var; // attitude variance in NED frame
-  struct KalmanSensor kalman_sensor; // Kalman filter for the falcon sensor
+  struct FloatVect3 pos; // position in Sensor frame
+  struct FloatVect3 pos_var; // position variance in Sensor frame
+  struct FloatQuat quat; // attitude of the sixdof platform relative to the sensor
+  struct FloatVect3 quat_var; // attitude variance of the sixdof platform relative to the sensor
 };
 
 struct relangle_t {
@@ -54,14 +52,12 @@ struct relangle_t {
   float width; // Falcon sensor width.
   float distance; // Distance derived from angles and intensity.
   struct FloatVect3 pos; // position in NED frame
-  struct KalmanSensor kalman_sensor; // Kalman filter for the falcon sensor
 };
 
 struct relbeacon_t {
   uint32_t tow; // Time of week of the relbeacon measurement
   uint16_t beacon_id; // Falcon sensor beacon id.
-  struct FloatVect3 pos; // position in NED frame
-  struct KalmanSensor kalman_sensor; // Kalman filter for the falcon sensor
+  struct FloatVect3 pos; // position in falcon sensor frame
 };
 
 struct target_pos_t {
@@ -69,28 +65,20 @@ struct target_pos_t {
   struct FloatVect3 pos; // position in NED frame
   struct FloatVect3 vel; // velocity in NED frame
   struct FloatQuat quat; // attitude in NED frame
-  struct KalmanSensor kalman_sensor; // Kalman filter for target position
 };
 
 struct falcon_t {
-  bool auto_mode; // Whether the falcon sensor can switch modes based on system state
   uint8_t mode; // Falcon sensor mode
-  struct FloatQuat sensor_to_body; // Rotation of the body relative to the sensor
-  struct FloatVect3 body_to_sensor_offset; // Position of the sensor in the body frame
   struct sixdof_t sixdof; // Sixdof sensor data
   struct relangle_t relangle; // Relangle sensor data
   struct relbeacon_t relbeacon; // Relbeacon sensor data
-  struct KalmanSensor kalman_sensor; // Kalman filter for the falcon sensor
 };
 
 struct aruco_t {
   uint32_t tow; // Time of week of the aruco measurement
   uint16_t id; // Aruco marker id
-  struct FloatQuat sensor_to_body; // Rotation of the body relative to the sensor
-  struct FloatVect3 body_to_sensor_offset; // Position of the sensor in the body frame
-  struct FloatVect3 pos; // position in Ned frame
-  struct FloatQuat quat; // attitude in Ned frame
-  struct KalmanSensor kalman_sensor; // Kalman filter for the opencv aruco sensor
+  struct FloatVect3 pos; // position in Camera frame
+  struct FloatQuat quat; // Attitude of drone at the time of measurement
 };
 
 extern int track_aruco_id;
