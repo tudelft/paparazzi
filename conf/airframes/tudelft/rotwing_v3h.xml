@@ -145,7 +145,7 @@
         <servo no="1"  name="MOTOR_RIGHT"     min="-7372"     neutral="0" max="7372"/>
         <servo no="2"  name="MOTOR_BACK"      min="-7372"     neutral="0" max="7372"/>
         <servo no="3"  name="MOTOR_LEFT"      min="-7372"     neutral="0" max="7372"/>
-        <servo no="4"  name="MOTOR_PUSH"      min="-7372"     neutral="1000" max="7372"/>
+        <servo no="4"  name="MOTOR_PUSH"      min="0"     neutral="1000" max="7372"/>
         <servo no="5"  name="ROTATION_MECH"   min="-1392" neutral="451"  max="2294"/>
     </servos>
 
@@ -197,7 +197,7 @@
         <let VAR="servo_hold"       VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
         <let VAR="hover_off"        VALUE="Or($th_hold, !rotwing_state.hover_motors_enabled)"/>
         <let VAR="reverse_th"       VALUE="ground_detect_reverse_thrust()"/>
-        <let VAR="reverse_th_level" VALUE="-4800"/>
+        <let VAR="reverse_th_level" VALUE="-3000"/>
         <let VAR="can_neutral"      VALUE="1000"/>
         <let VAR="ail_limit_hit"    VALUE="LessThan(rotwing_state.meas_skew_angle_deg, 20)"/>
         <let VAR="flap_limit_hit"   VALUE="LessThan(rotwing_state.meas_skew_angle_deg, 50)"/>
