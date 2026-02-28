@@ -23,6 +23,8 @@
     <waypoint name="TD" x="0" y="0"/>
     <waypoint name="p1" x="65" y="75"/>
     <waypoint name="p2" x="200" y="120"/>
+    <waypoint name="p3" x="350" y="-150"/>
+    <waypoint name="p4" x="100" y="-300"/>
 
     <waypoint lat="52.169189" lon="4.410820" name="C1"/>
     <waypoint lat="52.168049" lon="4.406923" name="C2"/>
@@ -139,6 +141,18 @@
       <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
       <call_once fun="setNav()"/>
       <stay wp="STDBY"/>
+    </block>
+
+    <block name="Route Path" strip_button="Route Path" strip_icon="path.png">
+      <call_once fun="setNav()"/>
+      <go wp="p1"/>
+      
+      <go from="p1" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p3"/>
+      <go from="p3" hmode="route" wp="p4"/>
+      <go from="p4" hmode="route" wp="p1"/>
+      
+      <deroute block="Route Path"/>
     </block>
     
     <block key="l" name="land here" strip_button="Land Here" strip_icon="land-right.png">
