@@ -165,5 +165,26 @@
         <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
         <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
+    <block name="land_reverse" strip_button="Land" strip_icon="land-right.png">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <go wp="TD"/>
+    </block>
+    <block name="descend_reverse" strip_button="Descend" strip_icon="descend.png">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <call_once fun="hx711_autoset_offset(1)"/>
+        <exception cond="GetPosHeight() @LT 12.0" deroute="flare"/>
+        <stay climb="-1.0" vmode="climb" wp="TD"/>
+    </block>
+    <block name="flare_reverse">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
+        <stay climb="-0.5" vmode="climb" wp="TD"/>
+        <!--<exception cond="!(GetPosHeight() @LT 2.0)" deroute="flare_low"/>-->
+        <exception cond="agl_dist_valid @AND (agl_dist_value @LT 0.28)" deroute="flare_low_reverse"/>
+    </block>
+    <block name="flare_low_reverse" on_enter="ground_detect_allow_reverse_thrust()" on_exit="ground_detect_disallow_reverse_thrust()">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
+        <call_once fun="NavStartDetectGround()"/>
+        <stay climb="-0.5" vmode="climb" wp="TD"/>
+    </block>
   </blocks>
 </flight_plan>

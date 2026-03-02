@@ -38,6 +38,11 @@
             <!-- Range sensor connected to supercan -->
             <module name="range_sensor_uavcan"/>
 
+            <!-- Log in high speed (Remove for outdoor flights) -->
+            <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
+
+            <define name="I2C2_CLOCK_SPEED" value="100000"/>
+
             <!-- Strain gauges connected to hx711 load cell -->
             <module name="hx711">
                 <define name="HX711_DEVICES_NB" value="4"/>
@@ -45,11 +50,6 @@
                 <define name="HX711_GROUND_THRESHOLD" value="100000"/>
                 <define name="HX711_MEDIAN_FILT_SIZE" value="3"/>
             </module>
-
-            <!-- Log in high speed (Remove for outdoor flights) -->
-            <!-- <define name="IMU_LOG_HIGHSPEED"    value="TRUE"/> -->
-
-            <define name="I2C2_CLOCK_SPEED" value="100000"/>
         </target>
 
         <target name="nps" board="pc">
@@ -136,7 +136,9 @@
         <!-- Other -->
         <module name="sys_id_doublet"/>
         <module name="sys_id_auto_doublets"/>
-        <module name="ground_detect"/>
+        <module name="ground_detect">
+            <define name="GROUND_DETECT_REVERSE_THRUST_ON_GROUND_DETECTED" value="TRUE"/>
+        </module>
         <module name="rotwing_state"/>
         <module name="preflight_checks">
             <define name="SDLOG_PREFLIGHT_ERROR" value="TRUE"/>
@@ -343,7 +345,7 @@
                 <field name="feedback_id" value="SERVO_MOTOR_FRONT_IDX"/>
                 <field name="feedback_id2" value="SERVO_BMOTOR_FRONT_IDX"/>
                 <field name="low" value="-9600"/>
-                <field name="high" value="0"/>
+                <field name="high" value="1300"/>
                 <field name="low_feedback" value="0"/>
                 <field name="high_feedback" value="763"/>
                 <field name="timeout" value="3"/>
@@ -352,7 +354,7 @@
                 <field name="feedback_id" value="SERVO_MOTOR_RIGHT_IDX"/>
                 <field name="feedback_id2" value="SERVO_BMOTOR_RIGHT_IDX"/>
                 <field name="low" value="-9600"/>
-                <field name="high" value="0"/>
+                <field name="high" value="1300"/>
                 <field name="low_feedback" value="0"/>
                 <field name="high_feedback" value="763"/>
                 <field name="timeout" value="3"/>
@@ -361,7 +363,7 @@
                 <field name="feedback_id" value="SERVO_MOTOR_BACK_IDX"/>
                 <field name="feedback_id2" value="SERVO_BMOTOR_BACK_IDX"/>
                 <field name="low" value="-9600"/>
-                <field name="high" value="0"/>
+                <field name="high" value="1300"/>
                 <field name="low_feedback" value="0"/>
                 <field name="high_feedback" value="763"/>
                 <field name="timeout" value="3"/>
@@ -370,7 +372,7 @@
                 <field name="feedback_id" value="SERVO_MOTOR_LEFT_IDX"/>
                 <field name="feedback_id2" value="SERVO_BMOTOR_LEFT_IDX"/>
                 <field name="low" value="-9600"/>
-                <field name="high" value="0"/>
+                <field name="high" value="1300"/>
                 <field name="low_feedback" value="0"/>
                 <field name="high_feedback" value="763"/>
                 <field name="timeout" value="3"/>

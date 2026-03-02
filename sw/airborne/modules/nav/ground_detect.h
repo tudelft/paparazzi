@@ -48,6 +48,8 @@ extern void ground_detect_filter_accel(void);
 
 extern bool disarm_on_not_in_flight;
 extern bool ground_detect_reverse_thrust(void);
+extern void ground_detect_disallow_reverse_thrust(void);
+extern void ground_detect_allow_reverse_thrust(void);
 
 extern bool override_reverse;
 
