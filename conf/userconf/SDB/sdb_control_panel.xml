@@ -225,5 +225,40 @@
         <arg flag="--ac_id" constant="219"/>
       </program>
     </session>
+    <session name="SDB EHVB Simulation">
+      <program name="Simulator">
+        <arg flag="-a" constant="B_Tiger"/>
+        <arg flag="-t" constant="nps"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="PprzGCS"/>
+      <program name="Simulator">
+        <arg flag="-a" constant="B_Chicken"/>
+      </program>
+      <program name="Simulator">
+        <arg flag="-a" constant="B_Goat"/>
+      </program>
+      <program name="Simulator">
+        <arg flag="-a" constant="B_Zebra"/>
+      </program>
+      <program name="Simulator">
+        <arg flag="-a" constant="B_Sheep"/>
+      </program>
+      <program name="Simulator">
+        <arg flag="-a" constant="B_Lion"/>
+      </program>
+      <program name="Simulator">
+        <arg flag="-a" constant="B_Horse"/>
+      </program>
+      <program name="Simulator">
+        <arg flag="-a" constant="B_Cow"/>
+      </program>
+    </session>
   </section>
 </control_panel>
