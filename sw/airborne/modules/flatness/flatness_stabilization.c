@@ -39,13 +39,13 @@ typedef struct {
 } Gain_t;
 
 // constants
-static const float PHI_COEFF_DIV = 100000000;
-static const float MU_X = 70  / PHI_COEFF_DIV;
-static const float MU_Y = 150 / PHI_COEFF_DIV;
-static const float MU_Z = 15  / PHI_COEFF_DIV;
-static const float C_Z  = -5  / PHI_COEFF_DIV;
+// static const float PHI_COEFF_DIV = 100000000.0f;
+static const float MU_X = 70.0f  / 100000000.0f;
+static const float MU_Y = 150.0f / 100000000.0f;
+static const float MU_Z = 15.0f  / 100000000.0f;
+static const float C_Z  = -5.0f  / 100000000.0f;
 static const float ACT_CUTOFF_OMEGA = 11.0f;
-static const float FILT_CUTOFF_FREQ = 5;
+static const float FILT_CUTOFF_FREQ = 5.0f;
 static const Gain_t Kq = {1.0f, 1.0f, 1.0f};
 static const Gain_t Komega = {5.0f, 5.0f, 5.0f};
 
@@ -57,7 +57,11 @@ struct Fl_stabilization fl_stabilization;
 static Butterworth2LowPass act_filter[ACTUATORS_NB];
 static Butterworth2LowPass rates_num_der_filter[3];
 static float ACT_DYN_ALPHA;
-static Act_t act = {0};
+static Act_t act = {
+    .cmd        = {0.0f, 0.0f, 0.0f, 0.0f},
+    .state      = {0.0f},
+    .state_filt = {0.0f}
+};
 static struct FloatQuat *quat, quat_sp;
 static struct FloatRates rates_sp;
 static struct FloatRates *rates;
@@ -68,25 +72,19 @@ static float ang_accel_filt[3] = {0., 0., 0.};
 static float discrete_first_order_filter(float, float, float);
 static void forw_rot_flatness(float *, float *);
 static void inv_rot_flatness(float, float *, float *);
-static void expose_dbg_variables(struct FloatQuat *, struct FloatQuat *, 
-                          struct FloatRates *, struct FloatRates *,
-                          struct FloatRates *, float *,
-                          Act_t *);
+static void expose_dbg_variables(void);
 
 // -------- CODE ---------- //
 
-static void expose_dbg_variables(struct FloatQuat *quat, struct FloatQuat *quat_sp,
-                          struct FloatRates *rates, struct FloatRates *rates_sp,
-                          struct FloatRates *ang_accel_sp, float *ang_accel_filt,
-                          Act_t *act)
+static void expose_dbg_variables(void)
 {
     dbg.quat = quat;
-    dbg.quat_sp = quat_sp;
+    dbg.quat_sp = &quat_sp;
     dbg.rates = rates;
-    dbg.rates_sp = rates_sp;
-    dbg.ang_accel_sp = ang_accel_sp;
+    dbg.rates_sp = &rates_sp;
+    dbg.ang_accel_sp = &ang_accel_sp;
     dbg.ang_accel_filt = ang_accel_filt;
-    dbg.act = act;
+    dbg.act = &act;
 }
 
 void flatness_stabilization_init(void)
@@ -172,7 +170,7 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
     // printf("%.0f\t%.0f\t%.0f\t%.0f", act.cmd[0], act.cmd[1], act.cmd[2], act.cmd[3]);
     // printf("\n");
 
-    expose_dbg_variables(quat, &quat_sp, rates, &rates_sp, &ang_accel_sp, ang_accel_filt, &act);
+    expose_dbg_variables();
 }
 
 static float discrete_first_order_filter(float alpha, float input, float prev_output)
