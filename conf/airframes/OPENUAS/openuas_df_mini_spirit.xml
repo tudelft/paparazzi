@@ -16,7 +16,7 @@
     + AIRSPEED:    No airspeed sensor
     + TELEMETRY:   Si10xx Chip based with firmware enabeling PPRZ RSSI message
     + CURRENT:     No current sensor
-    + RANGER:      None
+    + RANGEFINDER: None
     + MOTOR:       Default DF-RC 1104 - 5700KV
     + PROP:        Small 4 blade
 
@@ -98,7 +98,7 @@
         <define name="USE_I2C1"/>
         <configure name="MAG_RM3100_PERIODIC_FREQUENCY" value="125"/>
         <configure name="MAG_RM3100_I2C_DEV" value="i2c1"/>
-        <!-- <define name="RM3100_ADDR" value="RM3100_ADDR1"/> -->
+        <define name="RM3100_ADDR" value="RM3100_ADDR3"/>
         <!-- <define name="RM3100_DATA_RATE" value="RM3100_RATE_300"/> -->
         <define name="RM3100_USE_MEDIAN_FILTER" value="TRUE"/>  <!-- Enabled to avoid sporadic spikes in output-->  
 

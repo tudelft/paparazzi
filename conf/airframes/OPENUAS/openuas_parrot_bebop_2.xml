@@ -48,7 +48,7 @@
   + All setting a so this object is ment to fly inide a "virtual" box of 10m x 10m with RTK to the max of its envelope with no wind
    The values are tuned so that the flight speed is limited and the drone does not over-shoot the waypoints as it would in outdoor settings.
   Setting2:
-  + All setting a so this object is ment to fly outside to the max of its envelope unde various wind conditions
+  + All setting a so this object is ment to fly outside to the max of its envelope under various wind conditions
   </description>
 
   <firmware name="rotorcraft">
@@ -57,6 +57,11 @@
     <!-- Warning: unit conversion does not work in this section of airframe,
     so use the native units, or you'll have big trouble... -->
     <target name="ap" board="bebop2">
+      <define name="INDI_RPM_FEEDBACK" value="TRUE"/>
+      <!--<ONLY if you fly multiple Bebops over a Wifi router the lines below should be enabled -->
+      <!-- <configure name="HOST" value="192.168.2.2$(AC_ID)"/>
+      <configure name="MODEM_HOST" value="192.168.2.255"/>
+ 	    <configure name="MODEM_BROADCAST" value="TRUE"/> -->
 
       <!-- Towards less aligner issues -->
       <!--
@@ -125,7 +130,14 @@
       <!-- <define name="RADIO_CONTROL_NB_CHANNEL" value="12"/>--> <!-- An Orange R620X Has maximum sbus channel output of 12 -->
     <!--</module>-->
 
-    <module name="gps" type="datalink"/> <!-- for Optitrac systems use type="datalink" -->
+    <module name="gps" type="ublox"> <!-- for Optitrac systems use type="datalink" -->
+    <!-- 
+      <configure name="GPS_BAUD" value="B38400"/>
+      <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
+      <define name="USE_GPS_UBX_RXM_RAW" value="TRUE"/>
+      <configure name="GPS_PORT" value="UART2"/>
+    -->
+    </module>
     <!-- This GPS is a real ublox M8N, so setting can be saved, no need
     for ubx_ucenter one has can set it oneself since we have all kinds
     of nifty Galilleio setting begin 2020 we rather keep that, but for now...
@@ -133,49 +145,54 @@
     <!--<module name="gps" type="ubx_ucenter"/>-->
     <!--<module name="mag_calib_ukf"/>--><!-- New, and needs more testing, be careful with testflights if enabled -->
 
-    <module name="motor_mixing"/>
+    <!--TODO Obsolite Maybe <module name="motor_mixing"/>-->
     <module name="actuators" type="bebop"/>
     <module name="imu" type="bebop">
-      <define name="BEBOP_LOWPASS_FILTER" value="MPU60X0_DLPF_42HZ"/>
+    <!--<define name="BEBOP_LOWPASS_FILTER" value="MPU60X0_DLPF_42HZ"/>
       <define name="BEBOP_SMPLRT_DIV" value="0"/>
       <define name="BEBOP_GYRO_RANGE" value="MPU60X0_GYRO_RANGE_2000"/>
-      <define name="BEBOP_ACCEL_RANGE" value="MPU60X0_ACCEL_RANGE_16G"/>
+      <define name="BEBOP_ACCEL_RANGE" value="MPU60X0_ACCEL_RANGE_16G"/>-->
     </module>
 
-    <module name="ins" type="extended"> <!--or ekf2" or extended-->
+    <module name="stabilization" type="indi"/>
 
+    <!--Guidance indi-->
+    <module name="guidance" type="indi">
+      <define name="GUIDANCE_INDI_POS_GAIN" value="0.5"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.8"/>
+      <define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.06"/>
+      <!--<define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.0"/>-->
+    </module>
+
+    <module name="ins" type="extended">
     <!-- Disable use of GPS: -->
     <!--  define name="INS_INT_GPS_ID" value="ABI_DISABLE"-->
     </module>
 
-    <module name="ahrs" type="float_cmpl_quat">
-      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
+    <module name="ahrs" type="int_cmpl_quat">
+      <configure name="USE_MAGNETOMETER" value="TRUE"/>
+      <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
       <configure name="USE_MAGNETOMETER" value="TRUE"/> <!-- if using INS EKF2 this forced already-->
       <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/><!-- if using INS EKF2 this forced already-->
-      <define name="AHRS_MAG_UPDATE_ALL_AXES" value="TRUE"/>
+      <!--<define name="AHRS_MAG_UPDATE_ALL_AXES" value="TRUE"/>-->
       <!-- <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>-->
-      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="3.0"/> <!-- in unit m/s" -->
-      <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="0.0"/>
+      <!--<define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="3.0"/>--> <!-- in unit m/s" -->
+      <!--<define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="0.0"/>-->
     </module>
-    <module name="stabilization" type="indi_simple"/>
-    <!-- for later if simple works
-    <module name="stabilization" type="indi">
-    </module>-->
-    <!--<module name="guidance" type="indi"/>--><!-- for later if classic works-->
 
-    <!-- Also used if QNH needed -->
+    <!-- Also used if QNH is needed -->
     <module name="air_data">
-     <define name="CALC_AIRSPEED" value="FALSE"/>
-     <define name="CALC_TAS_FACTOR" value="FALSE"/>
-     <define name="CALC_AMSL_BARO" value="TRUE"/>
+      <define name="CALC_AIRSPEED" value="FALSE"/>
+      <define name="CALC_TAS_FACTOR" value="FALSE"/>
+      <define name="CALC_AMSL_BARO" value="TRUE"/>
     </module>
 
     <module name="geo_mag"/>
 
-
     <module name="nav" type="survey_rectangle_rotorcraft">
       <define name="RECTANGLE_SURVEY_DEFAULT_SWEEP" value="10"/>
     </module>
+
     <module name="nav" type="survey_poly_rotorcraft">
       <define name="POLYSURVEY_DEFAULT_DISTANCE" value="10"/><!-- in M -->
     </module>
@@ -189,20 +206,23 @@
         <!-- Make sure something like this is defined <define name="USE_SONAR"/>-->
     </module>
 
-    <!--<module name="imu_temp_ctrl">
+    <!--GNSS loss of fix time  see also the NO_GPS_LOST_WITH_DATALINK_TIME-->
+    <!--<module name="gps_lost_time"/>-->
+
+    <module name="imu_temp_ctrl">
       <define name="IMU_TEMP_CTRL_DEBUG"/>
-    </module>-->
+    </module>
 
     <module name="bebop_cam"/>
 
-    <!--<module name="pose_history"/>-->
+    <module name="pose_history"/>
 
-    <!--<module name="cv_opticflow">
+    <module name="cv_opticflow">
       <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
       <define name="MAX_HORIZON" value="10"/>
-      <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="0.8"/>--> <!--Obtained from a linefit-->
-      <!--<define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.85"/>--> <!--Obtained from a linefit-->
-    <!--</module>-->
+      <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="0.8"/><!--Obtained from a linefit-->
+      <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.85"/> <!--Obtained from a linefit-->
+    </module>
 
     <module name="video_capture">
       <define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>
@@ -261,28 +281,17 @@
   </commands>
 
   <servos driver="Default">
-    <servo name="TOP_LEFT" no="0" min="2500" neutral="2500" max="12000"/>
-    <servo name="TOP_RIGHT" no="1" min="2500" neutral="2500" max="12000"/>
-    <servo name="BOTTOM_RIGHT" no="2" min="2500" neutral="2500" max="12000"/>
-    <servo name="BOTTOM_LEFT" no="3" min="2500" neutral="2500" max="12000"/>
+    <servo name="TOP_LEFT" no="0" min="2500" neutral="2510" max="12000"/>
+    <servo name="TOP_RIGHT" no="1" min="2500" neutral="2510" max="12000"/>
+    <servo name="BOTTOM_RIGHT" no="2" min="2500" neutral="2510" max="12000"/>
+    <servo name="BOTTOM_LEFT" no="3" min="2500" neutral="2510" max="12000"/>
   </servos>
 
-  <section name="MIXING" prefix="MOTOR_MIXING_">
-    <define name="TRIM_ROLL" value="0"/>
-    <define name="TRIM_PITCH" value="0"/>
-    <define name="TRIM_YAW" value="0"/>
-
-    <!-- Time cross layout (X), with order NW (CCW), NE (CW), SE (CCW), SW (CW) -->
-    <define name="REVERSE" value="TRUE"/>
-    <define name="TYPE" value="QUAD_X"/>
-  </section>
-
   <command_laws>
-    <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
-    <set servo="TOP_LEFT" value="motor_mixing.commands[MOTOR_FRONT_LEFT]"/>
-    <set servo="TOP_RIGHT" value="motor_mixing.commands[MOTOR_FRONT_RIGHT]"/>
-    <set servo="BOTTOM_RIGHT" value="motor_mixing.commands[MOTOR_BACK_RIGHT]"/>
-    <set servo="BOTTOM_LEFT" value="motor_mixing.commands[MOTOR_BACK_LEFT]"/>
+    <set servo="TOP_LEFT"     value="autopilot_get_motors_on() ? actuators_pprz[0] : -MAX_PPRZ"/>
+    <set servo="TOP_RIGHT"    value="autopilot_get_motors_on() ? actuators_pprz[1] : -MAX_PPRZ"/>
+    <set servo="BOTTOM_RIGHT" value="autopilot_get_motors_on() ? actuators_pprz[2] : -MAX_PPRZ"/>
+    <set servo="BOTTOM_LEFT"  value="autopilot_get_motors_on() ? actuators_pprz[3] : -MAX_PPRZ"/>
   </command_laws>
 
   <section name="BEBOP_FRONT_CAMERA" prefix="MT9F002_">
@@ -301,6 +310,9 @@
     <define name="CENTER_Y" value="0.51015"/>
     <define name="DHANE_K" value="1.25"/>
   </section>
+
+ <!-- include airframe calibration -->
+  <!--<include href="conf/airframes/OPENUAS/CALIB/BB2$AC_ID.xml"/>-->
 
   <section name="AIR_DATA" prefix="AIR_DATA_">
     <define name="CALC_AIRSPEED" value="FALSE"/>
@@ -377,16 +389,17 @@ The most crucial part for the magnetometer calibration:
 <!-- *************************** SONAR DEVICE ***************************** -->
   <section name="SONAR" prefix="SONAR_">
     <define name="SCALE" value="0.016775" integer="16"/>
-    <define name="OFFSET" value="0.03" unit="m"/><!-- The landing gear height to tarmac, well ~0 m with this flyingwing -->
+    <define name="OFFSET" value="0.03" unit="m"/><!-- The landing gear height to tarmac in respect to sonar bottom -->
     <define name="MAX_RANGE" value="9.0" unit="m"/>
     <define name="MIN_RANGE" value="0.18" unit="m"/>
+    <define name="COMPENSATE_ROTATION" value="TRUE"/><!-- compensate AGL for body rotation -->
   </section>
 
   <!-- *************************** AGL **************************** -->
   <section name="AGL" prefix="AGL_DIST_SONAR_">
     <define name="ID" value="ABI_BROADCAST"/>
-    <define name="MAX_RANGE" value="9." unit="m"/>
-    <define name="MIN_RANGE" value="0.018" unit="m"/>
+    <define name="MAX_RANGE" value="6.0" unit="m"/> <!-- used upto 6.0m-->
+    <define name="MIN_RANGE" value="0.17" unit="m"/> <!-- use downto 0.17m -->
     <define name="FILTER" value="0.15"/> <!--Low pass filter time constant-->
   </section>
 
@@ -413,13 +426,11 @@ The most crucial part for the magnetometer calibration:
     <define name="ROLL_NEUTRAL_DEFAULT" value="0." unit="deg"/>
     <define name="PITCH_NEUTRAL_DEFAULT" value="0." unit="deg"/>
 
-    <define name="SONAR_COMPENSATE_ROTATION" value="TRUE"/><!-- compensate AGL for body rotation -->
-
     <define name="USE_GPS_ALT" value="TRUE"/>
     <define name="USE_GPS_ALT_SPEED" value="FALSE"/>
     <define name="VFF_R_GPS" value="0.1"/>
 
-    <!-- If you trust GPS a lot: -->
+    <!-- If you trust GPS a lot use this: -->
     <!-- <define name="VFF_R_GPS" value="0.01"/> -->
     <!-- <define name="VFF_VZ_R_GPS" value="0.01"/> -->
 
@@ -457,23 +468,21 @@ The most crucial part for the magnetometer calibration:
   </section>
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
-    <!-- control effectiveness, can be obtained by switching on "adaptive" in the indi settings -->
-    <define name="G1_P" value="0.0390"/>
-    <define name="G1_Q" value="0.0473"/>
-    <define name="G1_R" value="0.00122"/>
-
-    <define name="G2_R" value="0.20"/>
-
-    <!--unit: Hz-->
-    <define name="FILT_CUTOFF_P" value="20.0"/>
+    <!-- control effectiveness -->
+    <define name="G1_ROLL" value="{16 ,  -16, -16,  16}"/>
+    <define name="G1_PITCH" value="{12,   12, -12,  -12}"/>
+    <define name="G1_YAW" value="{ 0.8, -0.8, 0.8, -0.8}"/>
+    <define name="G1_THRUST" value="{-.6, -.6, -.6, -.6}"/>
+    <!--Counter torque effect of spinning up a rotor-->
+    <define name="G2" value="{112, -112, 112, -112}"/>
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="170.0"/>
-    <define name="REF_ERR_Q" value="600.0"/>
-    <define name="REF_ERR_R" value="600.0"/>
-    <define name="REF_RATE_P" value="14.3"/>
-    <define name="REF_RATE_Q" value="28.0"/>
-    <define name="REF_RATE_R" value="28.0"/>
+    <define name="REF_ERR_P" value="320.0"/>
+    <define name="REF_ERR_Q" value="320.0"/>
+    <define name="REF_ERR_R" value="320.0"/>
+    <define name="REF_RATE_P" value="16.0"/>
+    <define name="REF_RATE_Q" value="16.0"/>
+    <define name="REF_RATE_R" value="16.0"/>
 
     <!-- second order filter parameters -->
     <!-- Check if still needed
@@ -482,25 +491,26 @@ The most crucial part for the magnetometer calibration:
     <define name="FILT_OMEGA_R" value="20.0"/>
     <define name="FILT_ZETA_R" value="0.7"/>
         -->
-
     <!-- second order filter parameters -->
+    <define name="ESTIMATION_FILT_CUTOFF" value="3.2"/>
     <define name="FILT_CUTOFF" value="3.2"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_FREQ_P" value="31.7"/>
-    <define name="ACT_FREQ_Q" value="31.7"/>
-    <define name="ACT_FREQ_R" value="31.7"/>
+    <define name="ACT_DYN" value="{0.1, 0.1, 0.1, 0.1}"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/> <!-- make true if all works -->
     <define name="ADAPTIVE_MU" value="0.0001"/> <!-- tune better -->
+
+    <!--Priority for each axis (roll, pitch, yaw and thrust)-->
+    <define name="WLS_PRIORITIES" value="{1000, 1000, 1, 100}"/>
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
     <define name="HOVER_KP" value="350"/>
     <define name="HOVER_KD" value="85"/>
     <define name="HOVER_KI" value="20"/>
-    <define name="NOMINAL_HOVER_THROTTLE" value="0.57"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value="0.650"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
     <!-- TODO: Check
     <define name="ADAPT_INITIAL_HOVER_THROTTLE" value="NOMINAL_HOVER_THROTTLE"/>
@@ -511,17 +521,17 @@ The most crucial part for the magnetometer calibration:
   </section>
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="MAX_BANK" value="22" unit="deg"/><!-- TODO: determine -->
-    <define name="REF_MAX_SPEED" value="2.5" unit="m/s"/>
+    <define name="MAX_BANK" value="28" unit="deg"/>
+    <define name="REF_MAX_SPEED" value="8.0" unit="m/s"/>
     <define name="PGAIN" value="120"/><!-- GPS: 120 no GPS: 0-->
     <define name="DGAIN" value="100"/><!-- GPS: 80 no GPS: 302-->
     <define name="IGAIN" value="30"/><!-- GPS: 30 no GPS: 0-->
 
-    <define name="REF_ZETA" value="1.0"/> <!-- 1.0 or more for no waypoint overshooting -->
+    <!--<define name="REF_ZETA" value="1.0"/>--> <!-- 1.0 or more for no waypoint overshooting -->
   </section>
 
   <section name="MISC">
-    <define name="ARRIVED_AT_WAYPOINT" value="0.2" unit="m"/> <!-- To set how far away you find OK that drone thnks the waypoint is reached -->
+    <define name="ARRIVED_AT_WAYPOINT" value="5.0" unit="m"/> <!-- To set how far away you find OK that drone thinks the waypoint is reached -->
     <define name="KILL_MODE_DISTANCE" value="MAX_DIST_FROM_HOME*1.1+HOME_RADIUS" unit="m"/>  <!--  improve value by default turn radius calc -->
     <define name="DEFAULT_CIRCLE_RADIUS" value="5." unit="m"/><!-- for if you want to.... circle ;) -->
     <define name="CARROT" value="4." unit="s"/>
@@ -532,6 +542,12 @@ The most crucial part for the magnetometer calibration:
     or  fly a long range mission you define the wanted mode behaviour here.
     If you do not define it, it defaults to flying to the flightplan HOME -->
     <!--<define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>-->
+    <define name="NO_GPS_LOST_WITH_DATALINK_TIME" value="10"/>
+
+    <!--<define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>-->
+
+    <define name="THRESHOLD_GROUND_DETECT" value="40"/> <!--m/s²-->
+    <define name="AGL_DIST_MAX_RANGE" value="1.5"/>
 
     <!-- TODO: SET some modem values with multipoint also the $AC_ID -->
     <!--  Here XBEE init will be misused to set SiK Si10xx based modems as the Hope and RFdesign -->
@@ -541,26 +557,18 @@ The most crucial part for the magnetometer calibration:
 
   <section name="NAVIGATION" prefix="NAV_">
     <define name="CLIMB_VSPEED" value="4.5"/>
-    <define name="DESCEND_VSPEED" value="-1.5"/>
+    <define name="DESCEND_VSPEED" value="-1.0"/>
   </section>
 
   <section name="AUTOPILOT">
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_RC_CLIMB"/> <!--or use AP_MODE_ATTITUDE_Z_HOLD"/>-->
+    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/> <!--or use AP_MODE_ATTITUDE_RC_CLIMB or AP_MODE_ATTITUDE_Z_HOLD"/>-->
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
-
-    <!--
-    <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_MANUAL" value="AP_MODE_MODULE"/>
-    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
-    <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/>
-    -->
 
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>
 
-<!-- **************************** BAT ****************************** -->
   <section name="BAT">
     <define name="MAX_BAT_CAPACITY" value="2700" unit="mAh"/> <!-- Original Parrot battery -->
     <!-- <define name="MAX_BAT_CAPACITY" value="4150" unit="mAh"/>--> <!-- 3rd party battery -->
@@ -574,7 +582,6 @@ The most crucial part for the magnetometer calibration:
     <define name="MIN_BAT_LEVEL" value="9.0" unit="V"/> <!-- TODO: test when AP board switches off -->
   </section>
 
-<!-- ********************** GCS SPECIFICS ************************** -->
   <section name="GCS">
     <define name="ALT_SHIFT_PLUS_PLUS" value="5"/>
     <define name="ALT_SHIFT_PLUS"      value="1"/>
@@ -582,12 +589,18 @@ The most crucial part for the magnetometer calibration:
     <define name="AC_ICON"             value="quadrotor_xi"/>
   </section>
 
-<!-- ************************ NPSSIM ******************************* -->
   <section name="SIMULATOR" prefix="NPS_">
     <define name="ACTUATOR_NAMES" value="nw_motor, ne_motor, se_motor, sw_motor" type="string[]"/>
-    <define name="JSBSIM_MODEL" value="simple_x_quad_ccw" type="string"/>
-    <define name="WEIGHT" value="0.4"/>
+    <define name="JSBSIM_MODEL" value="bebop" type="string"/>
+    <define name="NO_MOTOR_MIXING" value="TRUE"/>
+    <!--<define name="WEIGHT" value="0.4"/>-->
+    <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
+        <!-- mode switch on joystick channel 5 (axis numbering starting at zero) -->
+    <define name="JS_AXIS_MODE" value="4"/>
+    <define name="DEBUG_SPEED_SP" value="FALSE"/>
   </section>
+
+  <!-- if using GAZEBO then enable-->
   <!--<include href="conf/simulator/gazebo/airframes/bebop.xml"/>-->
 
 </airframe>
