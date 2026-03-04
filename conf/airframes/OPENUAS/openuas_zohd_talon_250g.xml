@@ -1,0 +1,424 @@
+<!DOCTYPE airframe SYSTEM "../airframe.dtd">
+<airframe name="Talon_250G">
+  <description>
+    Fun Fixedwing airframe equipped with a MATEKSYS F405TE V3 or compatible flightcontroller hardware
+
+    + Model:       ZoHD Talon 250G
+    + Autopilot:   MATEKSYSF405TE compatible FlyingRC F405 v1.5
+    + Actuators:   PDI 1143HB 4.3g servos
+    + GNSS         Ublox M10 GNSS
+    + MAG          External QMC Magnetometer on GNSS device
+    + ESC:         AM32 20A ESC
+    + RCRX:        TBS Nano Receiver
+    + AIRSPEED:    SDP33 nano
+    + TELEMETRY:   ESP32C3 with 
+    + CURRENT:     None
+    + RANGER:      None
+    + MOTOR:       Default 1406-2600KV Outrunner Brushless
+    + PROP:        Two blade 5" x 5" 
+
+    NOTES:
+    + ServoPins on PCB point to tail of airframe
+    + The FC PCB is mounted with the F4 Processor towards the top of the airframe
+    + Battery voltage and current via onboard sensor
+    + 2nd motor current values via additional external sensor
+    + Servos powered via BEC on FC
+    + Flightcontroller powered via FC Onboard BEC
+    + Telemetry powered via FC
+    + C3 Chip based with firmware enabling real mesh
+    + Uploading of the firmware can be performed via ARDU bootloader flased via USB, or boot button STM32
+    + On I2C we have external magneto and Airspeed sensor
+    + GNSS set to ~19Hz update rate, 4 constelations, SBAS enabled
+    + Advised battery for this airframe is a 3300mAh 2S LiIon min. 5C
+    + ESC set to fixed endpoints 1100-1900us
+    + Taking 100mA the ESPC3 modem powered via FC 3v3
+    + RC RX powered via FC 5v
+  </description>
+
+  <firmware name="fixedwing">
+    <!--<configure name="RTOS_DEBUG" value="0"/>-->
+    <!--configure name="CH_OPT" value="0 -g -ggdb3"/-->
+
+    <!--<target name="ap" board="matek_f765_wing">-->
+    <!-- <target name="ap" board="px4fmu_4.0_chibios"> -->
+    <target name="ap" board="matek_f405_wing_v1">
+    <!-- https://github.com/ArduPilot/ardupilot/blob/e4a27943f5b692ad331c09840960f0c408169599/libraries/AP_HAL_ChibiOS/hwdef/MatekF405-TE/hwdef.dat#L25 -->
+    <!-- The debug pins for SWD PA13/PA14 are exposed as LED's, you can get an ST-LINK / J-LINK via those, but then you'd need to suppress in your code -->
+
+
+      <!--<define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>-->
+      <define name="DEBUG" value="0"/><!--Enable for debug output, e.g. ms5611-->
+      <!--<define name="USE_PERIODIC_TELEMETRY_REPORT" value="TRUE"/> -->
+
+      <configure name="CPU_LED" value="1"/><!-- Multicolor -->
+
+      <configure name="PERIODIC_FREQUENCY" value="500"/>
+
+      <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
+      <configure name="AHRS_CORRECT_FREQUENCY" value="500"/>
+      <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/> -->
+      <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="200"/>
+      <configure name="NAVIGATION_FREQUENCY" value="20"/>
+      <configure name="CONTROL_FREQUENCY" value="100"/>
+      <configure name="TELEMETRY_FREQUENCY" value="50"/>
+      <configure name="MODULES_FREQUENCY" value="500"/>
+
+      <!-- OSD CONFIGURATION -->
+      <!-- <configure name="MAX7456_SPI_DEV" value="spi2" />
+      <configure name="MAX7456_SLAVE_IDX" value="SPI_SLAVE1" />
+      <define name="USE_MATEK_TYPE_OSD_CHIP" value="true" />
+      <define name="USE_PAL_FOR_OSD_VIDEO" value="true" />
+      <define name="BARO_ALTITUDE_VAR" value="baro_alt" />  -->
+      <!-- if non defined the default var is ''baro_alt'' -->
+
+      <module name="imu" type="icm42688">
+        <configure name="IMU_SPI_DEV" value="spi1"/>
+        <configure name="IMU_SPI_SLAVE_IDX" value="SPI_SLAVE0"/>
+   <!-- <configure name="IMU_ODR" default="4KHZ"/>
+        <configure name="GYRO_RANGE" default="2000DPS"/>
+        <configure name="ACCEL_RANGE" default="8G"/>
+        <configure name="GYRO_AAF" default="977"/>
+        <configure name="ACCEL_AAF" default="213"/> -->
+      </module>
+
+      <module name="telemetry" type="transparent">
+        <configure name="MODEM_PORT" value="usb_serial"/>
+        <!-- <configure  name="MODEM_BAUD" value="B57600"/>
+        <configure  name="MODEM_PORT" value="UART6"/> -->
+      </module>
+
+      <module name="gps"  type="ublox" >
+        <configure name="GPS_BAUD" value="B38400"/>
+        <configure name="GPS_PORT" value="UART1"/>
+        <configure name="GPS_LED" value="2"/>
+      </module>
+
+      <module name="control" />
+
+      <module name="radio_control" type="ppm">
+        <define name="RADIO_CONTROL_PPM_PIN" value="UART2_RX"/>
+      </module>
+
+      <!-- <module name="radio_control" type="sbus">
+        <configure name="SBUS_PORT" value="UART2"/>
+      </module> -->
+
+      <module name="navigation"/>
+      <module name="ahrs" type="float_dcm"/>
+
+      <module name="ins" type="alt_float">
+        <define name="AHRS_USE_GPS_HEADING" value="true"/>
+        <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN"/>
+      </module>
+
+      <module name="nav_line"/>
+
+    </target>
+
+    <define name="USE_ADC_1"/>
+    <define name="USE_ADC_2"/>
+    <define name="USE_ADC_3"/>
+    <define name="USE_ADC_4"/>
+    <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
+
+    <define name="AGR_CLIMB"/>
+    <define name="TUNE_AGRESSIVE_CLIMB"/>
+
+    <define name="STRONG_WIND"/>
+    <define name="WIND_INFO"/>
+    <define name="WIND_INFO_RET"/>
+
+    <!-- <configure name="USE_BARO_BOARD" value="TRUE"/>
+    <configure name="BARO_PERIODIC_FREQUENCY" value="50"/>
+    <define name="USE_BARO_MEDIAN_FILTER"/>
+    <define name="AUTOPILOT_DISABLE_AHRS_KILL"/> -->
+
+    <define name="BAT_CHECKER_DELAY" value="80"/>
+    <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410"/>
+    <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
+    <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/>
+
+    <module name="actuators" type="pwm">
+    </module>
+
+  </firmware>
+
+<!-- *********************** -->
+  <firmware name="setup">
+    <target name="tunnel" board="matek_f405_wing_v1" />
+    <target name="usb_tunnel" board="matek_f405_wing_v1">
+    <configure name="TUNNEL_PORT" value="UART3"/>
+    </target>
+  </firmware>
+
+  <servos driver="Pwm">
+    <servo name="S_THROTTLE" no="4" min="1098" neutral="1100" max="1900"/>
+    <servo name="S_AILERON" no="1" min="1900" neutral="1500" max="1100"/>
+    <servo name="S_ELEVATOR" no="2" min="1900" neutral="1500" max="1100"/>
+    <servo name="S_RUDDER" no="3" min="1100" neutral="1550" max="1900"/>
+  </servos>
+
+  <!--For mixed servo controls -->
+  <section name="MIXER">
+    <define name="ASSIST_ROLL_WITH_RUDDER" value="0.0"/>
+    <define name="AILERON_DIFF" value="0.0"/>
+    <define name="BRAKE" value="0.3"/>
+  </section>
+
+  <command_laws>
+    <set servo="S_THROTTLE" value="@THROTTLE"/>
+    <set servo="S_AILERON" value="@ROLL"/>
+    <set servo="S_ELEVATOR" value="@PITCH"/>
+    <set servo="S_RUDDER" value="@YAW - @ROLL*ASSIST_ROLL_WITH_RUDDER"/>
+  </command_laws>
+
+  <rc_commands>
+    <set command="THROTTLE" value="@THROTTLE"/>
+    <set command="ROLL" value="@ROLL"/>
+    <set command="PITCH" value="@PITCH"/>
+    <set command="YAW" value="@YAW"/>
+  </rc_commands>
+
+  <auto_rc_commands>
+    <set command="YAW" value="@YAW*0.8"/>
+  </auto_rc_commands>
+
+  <commands>
+    <axis name="THROTTLE" failsafe_value="0"/>
+    <axis name="ROLL" failsafe_value="400"/>
+    <axis name="PITCH" failsafe_value="0"/>
+    <axis name="YAW" failsafe_value="0"/>
+  </commands>
+
+  <section name="AUTO1" prefix="AUTO1_">
+    <define name="MAX_ROLL" value="60" unit="deg"/>
+    <define name="MAX_PITCH" value="80" unit="deg"/>
+  </section>
+
+  <section name="TRIM" prefix="COMMAND_">
+    <define name="ROLL_TRIM" value="0.0"/>
+    <define name="PITCH_TRIM" value="0.0"/>
+  </section>
+
+  <section name="FAILSAFE" prefix="FAILSAFE_">
+    <define name="DEFAULT_THROTTLE" value="0.20" unit="%"/>
+    <define name="DEFAULT_GEAR" value="1100"/>
+    <define name="DEFAULT_ROLL" value="8.0" unit="deg"/>
+    <define name="DEFAULT_PITCH" value="-4.0" unit="deg"/>
+    <define name="HOME_RADIUS" value="DEFAULT_CIRCLE_RADIUS" unit="m"/>
+    <define name="KILL_MODE_DISTANCE" value="MAX_DIST_FROM_HOME*1.3+HOME_RADIUS" unit="m"/>
+    <define name="DELAY_WITHOUT_GPS" value="5" unit="s"/>
+  </section>
+
+  <section name="IMU" prefix="IMU_">
+    <!-- <define name="GYRO_P_SIGN" value="1"/>
+    <define name="GYRO_Q_SIGN" value="1"/>
+    <define name="GYRO_R_SIGN" value="1"/>
+
+    <define name="ACCEL_X_SIGN" value="1"/>
+    <define name="ACCEL_Y_SIGN" value="1"/>
+    <define name="ACCEL_Z_SIGN" value="1"/> -->
+
+    <!-- <define name="GYRO_P_SENS" value=" 1.01" integer="16"/> -->
+    <!-- <define name="GYRO_Q_SENS" value=" 1.01" integer="16"/> -->
+    <!-- <define name="GYRO_R_SENS" value=" 1.01" integer="16"/> -->
+    <!-- <define name="GYRO_P_NEUTRAL" value="0"/> -->
+    <!-- <define name="GYRO_Q_NEUTRAL" value="0"/> -->
+    <!-- <define name="GYRO_R_NEUTRAL" value="0"/> -->
+
+    <define name="ACCEL_X_NEUTRAL" value="0"/>
+    <define name="ACCEL_Y_NEUTRAL" value="0"/>
+    <define name="ACCEL_Z_NEUTRAL" value="0"/>
+    <define name="ACCEL_X_SENS" value="4.90" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="4.90" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="4.93" integer="16"/>
+
+    <define name="BODY_TO_IMU_PHI" value="0.0" unit="deg"/>
+    <define name="BODY_TO_IMU_THETA" value="0.0" unit="deg"/>
+    <define name="BODY_TO_IMU_PSI" value="0.0" unit="deg"/>
+
+  </section>
+
+  <section name="INS">
+    <define name="INS_BODY_TO_GPS_X" value="0.15" unit="m"/>
+    <define name="INS_BODY_TO_GPS_Y" value="0.0" unit="m"/>
+    <define name="INS_BODY_TO_GPS_Z" value="0.06" unit="m"/>
+
+    <!-- <define name="USE_INS_MODULE"/> -->
+
+    <define name="ROLL_NEUTRAL_DEFAULT" value="0." unit="deg"/>
+    <define name="PITCH_NEUTRAL_DEFAULT" value="0." unit="deg"/>
+    <define name="USE_GPS_ALT" value="TRUE"/>
+    <!--<define name="USE_GPS_ALT_SPEED" value="FALSE"/>-->
+    <define name="VFF_R_GPS" value="0.2"/>
+    <!--<define name="VFF_VZ_R_GPS" value="0.2"/>-->
+
+  </section>
+
+  <section name="HORIZONTAL CONTROL" prefix="H_CTL_">
+    <define name="COURSE_PGAIN" value="0.8"/>
+    <define name="COURSE_DGAIN" value="0.05"/>
+    <define name="COURSE_TAU" value="0.7"/>
+    <define name="COURSE_PRE_BANK_CORRECTION" value="0.99"/>
+
+    <define name="ROLL_MAX_SETPOINT" value="45" unit="deg"/>
+    <define name="PITCH_MAX_SETPOINT" value="40" unit="deg"/>
+    <define name="PITCH_MIN_SETPOINT" value="-40" unit="deg"/>
+
+    <define name="PITCH_PGAIN" value="6000"/>
+    <define name="PITCH_DGAIN" value="80"/>
+    <define name="PITCH_IGAIN" value="6"/>
+    <define name="PITCH_KFFA" value="5."/>
+    <define name="PITCH_KFFD" value="0."/>
+
+    <define name="ELEVATOR_OF_ROLL" value="1500" unit="PPRZ_MAX"/>
+    <define name="ROLL_SLEW" value="0.2"/>
+    <define name="ROLL_ATTITUDE_GAIN" value="11000."/>
+    <define name="ROLL_RATE_GAIN" value="500."/>
+    <define name="ROLL_IGAIN" value="20."/>
+    <define name="ROLL_KFFA" value="10."/>
+    <define name="ROLL_KFFD" value="0."/>
+
+  </section>
+
+
+
+<!-- ****************************** V ****************************** -->
+  <section name="VERTICAL CONTROL" prefix="V_CTL_">
+    <!-- power -->
+    <define name="POWER_CTL_BAT_NOMINAL" value="11.7" unit="volt"/>
+
+    <!-- Classic -->
+    <!-- outer loop proportional gain -->
+    <define name="ALTITUDE_PGAIN" value="0.05"/> <!--unit="(m/s)/m"-->
+    <!-- disable climb rate limiter -->
+    <define name="AUTO_CLIMB_LIMIT" value="1.7*V_CTL_ALTITUDE_MAX_CLIMB"/>
+    <!-- auto throttle -->
+    <!-- Cruise throttle + limits -->
+    <define name="AUTO_THROTTLE_MIN_CRUISE_THROTTLE" value="0.45" unit="%"/>  
+    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.6" unit="%"/> 
+    <define name="AUTO_THROTTLE_MAX_CRUISE_THROTTLE" value="0.85" unit="%"/>
+
+    <define name="AUTO_THROTTLE_LOITER_TRIM" value="1000" unit="pprz_t"/>
+    <define name="AUTO_THROTTLE_DASH_TRIM" value="-2000" unit="pprz_t"/>
+
+    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.30" unit="%/(m/s)"/> 
+
+    <!-- Climb loop (throttle) -->
+    <define name="AUTO_THROTTLE_PGAIN" value="0.01" unit="%/(m/s)"/>
+    <define name="AUTO_THROTTLE_IGAIN" value="0.001"/>
+    <define name="AUTO_THROTTLE_DGAIN" value="0.001"/>
+    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.01" unit="rad/(m/s)"/> 
+    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0." unit="rad"/> <!-- default 0 -->
+
+    <define name="THROTTLE_SLEW_LIMITER" value="0.8" unit="m/s/s"/>  <!-- Limiter for e.g. a powerful motor -->
+
+    <!-- airspeed control -->
+    <!-- Best to never set AUTO_AIRSPEED_SETPOINT lower than airframe stall speed if you hate repairs ;) -->
+    <!-- investigate: howto if higher then _AIRSPEED_SETPOINT then airframe tries to maintain a constand ground speed UNKNOWN -->
+    <define name="AUTO_AIRSPEED_SETPOINT" value="12.0" unit="m/s"/>
+    <define name="AUTO_AIRSPEED_THROTTLE_PGAIN" value="0.07" unit="%/(m/s)"/>
+    <define name="AUTO_AIRSPEED_THROTTLE_DGAIN" value="0.06"/>
+    <define name="AUTO_AIRSPEED_THROTTLE_IGAIN" value="0.002"/>
+    <define name="AUTO_AIRSPEED_PITCH_PGAIN" value="0.12" unit="degree/(m/s)"/>
+    <define name="AUTO_AIRSPEED_PITCH_DGAIN" value="0.001"/>
+    <define name="AUTO_AIRSPEED_PITCH_IGAIN" value="0.02"/>
+
+    <define name="AIRSPEED_MAX" value="18.0" unit="m/s"/>
+    <define name="AIRSPEED_MIN" value="7.0" unit="m/s"/>
+
+    <!-- pitch trim -->
+    <define name="PITCH_LOITER_TRIM" value="0.5" unit="deg"/> <!-- Non ETECS -->
+    <define name="PITCH_DASH_TRIM" value="0." unit="deg"/> <!-- Non ETECS -->
+
+    <!-- groundspeed control -->
+    <define name="AUTO_GROUNDSPEED_SETPOINT" value="6.0" unit="m/s"/>
+    <define name="AUTO_GROUNDSPEED_PGAIN" value="0.8"/>
+    <define name="AUTO_GROUNDSPEED_IGAIN" value="0.2"/>
+
+    <define name="AIRSPEED_PGAIN" value="0.15"/>
+
+    <!-- outer loop saturation -->
+    <define name="ALTITUDE_MAX_CLIMB" value="1.0" unit="m/s"/>
+    <define name="MAX_ACCELERATION" value="0.8" unit="G"/>
+
+    <!-- Only for control classic as in not new or enegry etc.-->
+    <define name="AUTO_AIRSPEED_PGAIN" value="0.18" unit="%/(m/s)"/>
+    <define name="AUTO_AIRSPEED_IGAIN" value="0.2"/>
+
+    <!-- auto pitch inner loop -->
+
+    <!-- Climb loop (pitch) -->
+    <define name="AUTO_PITCH_PGAIN" value="0.015"/> 
+    <define name="AUTO_PITCH_DGAIN" value="0.01"/>   
+    <define name="AUTO_PITCH_IGAIN" value="0.001"/> 
+    <!--define name="AUTO_PITCH_CLIMB_THROTTLE_INCREMENT" value="0.14"/-->
+    <define name="AUTO_PITCH_MAX_PITCH" value="30" unit="deg"/>
+    <define name="AUTO_PITCH_MIN_PITCH" value="-30" unit="deg"/>
+
+  </section>
+
+  <section name="AGGRESSIVE" prefix="AGR_">
+    <define name="BLEND_START" value="20" unit="m"/>
+    <define name="BLEND_END" value="10" unit="m"/>
+    <define name="CLIMB_THROTTLE" value="0.85" unit="%"/>
+    <define name="CLIMB_PITCH" value="45" unit="deg"/>
+    <define name="DESCENT_THROTTLE" value="0.4" unit="%"/>
+    <define name="DESCENT_PITCH" value="-35" unit="deg"/>
+    <define name="CLIMB_NAV_RATIO" value="0.6" unit="%"/>
+    <define name="DESCENT_NAV_RATIO" value="0.9" unit="%"/>
+  </section>
+
+  <section name="BAT">
+    <define name="CALIB_AMP_A" value="0.0045360"/>
+    <define name="CALIB_AMP_B" value="2.8136"/>
+    <!--define name="MilliAmpereOfAdc(_adc)" value="(_adc-620)*4.536"/-->
+
+    <!--<define name="MilliAmpereOfAdc(_adc)" value="(_adc-632)*4.14"/>--><!-- Change if you have a non default 3DR type powerbrick-->
+    <!--<define name="VoltageOfAdc(_adc)" value="0.01017793941"/>--><!-- Change if you have a non default 3DR type powerbrick-->
+    <!-- tested at V 11.7 the avg -->  <!-- idle RPM then ?.0A half throttle ?A-->
+    <define name="MAX_BAT_CAPACITY" value="3500" unit="mAh"/>
+    <define name="MILLIAMP_AT_IDLE_THROTTLE" value="220" unit="mA"/>
+    <define name="MILLIAMP_AT_FULL_THROTTLE" value="4400" unit="mA"/>
+    <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.0"/>
+
+    <!-- Modern 2S Li-Ion 2x4.2V = 8.4V -->
+    <define name="MAX_BAT_LEVEL" value="8.4" unit="V"/> 
+    <!--<define name="BAT_NB_CELLS" value="2"/> -->
+    <define name="LOW_BAT_LEVEL" value="7.0" unit="V"/>
+    <define name="CRITIC_BAT_LEVEL" value="6.2" unit="V"/>
+    <define name="CATASTROPHIC_BAT_LEVEL" value="5.6" unit="V"/>
+  </section>
+
+  <section name="MISC">
+    <!-- All for use with default motor and propeller -->
+    <define name="MINIMUM_AIRSPEED" value="10.0" unit="m/s"/>
+    <define name="NOMINAL_AIRSPEED" value="16.0" unit="m/s"/>
+    <define name="MAXIMUM_AIRSPEED" value="21.0" unit="m/s"/>
+    <define name="CLIMB_AIRSPEED" value="7.0" unit="m/s"/>
+    <define name="TRACKING_AIRSPEED" value="20.0" unit="m/s"/>
+    <define name="GLIDE_AIRSPEED" value="11.0" unit="m/s"/>
+    <define name="STALL_AIRSPEED" value="9.0" unit="m/s"/>
+    <define name="RACE_AIRSPEED" value="33.0" unit="m/s"/>
+    <define name="MIN_SPEED_FOR_TAKEOFF" value="11.0" unit="m/s"/>
+    <define name="AIRSPEED_SETPOINT_SLEW" value="0.4" unit="m/s/s"/>
+
+    <define name="TAKEOFF_PITCH_ANGLE" value="35" unit="deg"/>
+    <define name="FLARE_PITCH_ANGLE" value="15" unit="deg"/>
+    <define name="NAV_GLIDE_PITCH_TRIM" value="-2.0" unit="deg"/>
+
+    <define name="KILL_MODE_DISTANCE" value="MAX_DIST_FROM_HOME*1.3+HOME_RADIUS" unit="m"/>
+    <define name="DEFAULT_CIRCLE_RADIUS" value="120.0" unit="m"/>
+    <define name="HOME_RADIUS" value="DEFAULT_CIRCLE_RADIUS" unit="m"/>
+    <define name="LANDING_CIRCLE_RADIUS" value="100.0" unit="m"/>
+    <define name="MIN_CIRCLE_RADIUS" value="100.0" unit="m"/>
+
+    <define name="CARROT" value="6.0" unit="s"/>
+
+    <define name="UNLOCKED_HOME_MODE" value="TRUE"/>
+    <define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>
+
+    <define name="NO_XBEE_API_INIT" value="TRUE"/>
+  </section>
+
+</airframe>
