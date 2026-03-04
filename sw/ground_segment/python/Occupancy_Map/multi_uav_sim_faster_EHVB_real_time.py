@@ -19,6 +19,7 @@ from datetime import datetime
 
 # --- PAPER EXPERIMENT TOGGLE ---
 EXPERIMENT_MODE = "ENERGY_AWARE" # Change to "BASELINE" for the control run
+SHOW_REAL_TIME_PLOT = False
 
 if EXPERIMENT_MODE == "ENERGY_AWARE":
     lam = 0.5       # Planner cares about energy
@@ -250,28 +251,6 @@ def on_pprz_msg(ac_id, msg):
             uav["state"]["vy"] = vy
             uav["state"]["vz"] = vz
             uav["state"]["heading"] = math.radians(psi_deg)
-
-# def send_pprz_velocity(interface, ac_id, vx_enu, vy_enu, vz_enu):
-#     if interface is None: return
-
-#     # Transformation: ENU -> NED
-#     vx_ned = vy_enu   # North 
-#     vy_ned = vx_enu   # East
-#     vz_ned = -vz_enu  # Down
-
-#     if (vx_ned**2 + vy_ned**2) > 0.001: 
-#         desired_yaw = math.atan2(vy_ned, vx_ned)
-#     else:
-#         desired_yaw = 0.0
-
-#     msg = PprzMessage("datalink", "GUIDED_SETPOINT_NED")
-#     msg['ac_id'] = int(ac_id)
-#     msg['flags'] = 0x78  # <--- CHANGED FROM 0x60 TO 0x78 (X, Y, Z as Velocities)
-#     msg['x'] = float(vx_ned)
-#     msg['y'] = float(vy_ned)
-#     msg['z'] = float(vz_ned)
-#     msg['yaw'] = float(desired_yaw)
-#     interface.send(msg, ac_id=int(ac_id))
 
 # Store the last yaw state and timestamp for each drone to calculate rate
 YAW_MEMORY = {} 
@@ -648,6 +627,38 @@ def calc_ig_numba(path_arr, belief_map, inside_mask, x_min, y_min, grid_res, fov
                         
     return total_IG
 
+
+# logging entropy:
+@jit(nopython=True)
+def calculate_global_map_entropy_numba(prob_map, inside_mask):
+    """
+    Calculates the actual current entropy of the entire global map.
+    Only counts cells that are actually inside the mission geofence.
+    """
+    total_entropy = 0.0
+    rows, cols = prob_map.shape
+    
+    for r in range(rows):
+        for c in range(cols):
+            # Only calculate entropy for valid flying area
+            if not inside_mask[r, c]:
+                continue
+                
+            p = prob_map[r, c]
+            
+            # Safe clipping just like in your IG calculator
+            if p < 1e-9: 
+                p_safe = 1e-9
+            elif p > (1.0 - 1e-9): 
+                p_safe = 1.0 - 1e-9
+            else:
+                p_safe = p
+                
+            H = -p_safe * np.log2(p_safe) - (1.0 - p_safe) * np.log2(1.0 - p_safe)
+            total_entropy += H
+            
+    return total_entropy
+
 # ==============================================================================
 # 2. UPDATED PLANNER FUNCTION (CALLS NUMBA)
 # ==============================================================================
@@ -1006,23 +1017,6 @@ if __name__ == "__main__":
         except: num_victims = 2
         victims = victims_template[:num_victims]
 
-    # --- B. Setup Search Drones ---
-    # num_drones = len(AC_IDS)
-    # drone_positions = []
-    # uav_nominal_altitudes = []
-    
-    # # Initialize from the UAVS dictionary populated by on_gps_int/on_ins
-    # for ac_id in AC_IDS:
-    #     uav = UAVS[ac_id]
-    #     with LOCK:
-    #         s = uav['state']
-    #         pos = np.array([s['x'], s['y'], max(0.5, s['z'])])
-        
-    #     print(f" -> Init Searcher AC{ac_id} at {pos}")
-    #     drone_positions.append(pos)
-    #     uav_nominal_altitudes.append(pos[2])
-
-    # uav_nominal_altitudes = np.array(uav_nominal_altitudes)
 
     # --- B. Setup Search Drones ---
     num_drones = len(AC_IDS)
@@ -1066,6 +1060,7 @@ if __name__ == "__main__":
     cmap.set_bad(color='white')
 
     # --- Main occupancy map figure ---
+    # if SHOW_REAL_TIME_PLOT:
     fig, ax_map = plt.subplots(figsize=(8, 8))
 
     # 1. Prepare initial display data
@@ -1107,7 +1102,7 @@ if __name__ == "__main__":
         c='r', marker='x', s=60, label='Victims', zorder=10
     )
 
-   
+
     ax_map.cone_fill = None  # placeholder for the red cone fill patch
 
     # Colorbar and labels
@@ -1211,27 +1206,17 @@ if __name__ == "__main__":
     # -----------------------------
     # DATA LOGGING SETUP (Dual File)
     # -----------------------------
-    timestamp_str = datetime.now().strftime('%Y%m%d_%H%M%S')
-    
-    # File 1: Searcher Drone Data
-    # log_uav_filename = f"log_uavs_EHVB_{timestamp_str}.csv"
-    # f_uav = open(log_uav_filename, mode='w', newline='')
-    # writer_uav = csv.writer(f_uav)
-    # writer_uav.writerow([
-    #     "timestamp", "uav_id", 
-    #     "x", "y", "z", 
-    #     "vx", "vy", "vz", 
-    #     "mode", "target_est_x", "target_est_y", "loop_rate"
-    # ])
-    
-    # # File 2: True Victim Ground Truth
-    # log_vic_filename = f"log_victims_EHVB_{timestamp_str}.csv"
-    # f_vic = open(log_vic_filename, mode='w', newline='')
-    # writer_vic = csv.writer(f_vic)
-    # writer_vic.writerow(["timestamp", "victim_id", "true_x", "true_y"])
-    
-    # print(f"[LOG] Logging UAVs to:    {log_uav_filename}")
-    # print(f"[LOG] Logging Victims to: {log_vic_filename}")
+    # Create a unique filename based on the current time
+    timestamp = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
+    map_log_filename = f"map_metrics_{timestamp}.csv"
+
+    # Open the file and write the headers
+    map_log_file = open(map_log_filename, mode='w', newline='')
+    map_writer = csv.writer(map_log_file)
+    map_writer.writerow(['time_s', 'total_entropy', 'entropy_reduced_percent', 'compute_time_ms'])
+
+    initial_entropy = None  # Will be set on the first loop iteratio
+    previous_entropy = None
     
     # Initialize frequency variable to prevent crash on first loop
     current_freq = 0.0    
@@ -1241,7 +1226,7 @@ if __name__ == "__main__":
         start_time = time.time()
         last_loop_time = time.time()
         frame_count = 0
-        
+                
         # Use 'while True' for continuous bridge operation
         while True:
             # -------------------------------------------------------
@@ -1559,8 +1544,6 @@ if __name__ == "__main__":
                         lam=lam,        
                         buffer=buffer
                     )
-                    # Maintain nominal altitude
-                    # vz_des = np.clip(uav_nominal_altitudes[d_idx] - drone_positions[d_idx][2], -1.0, 1.0)
 
         
 
@@ -1942,21 +1925,7 @@ if __name__ == "__main__":
                     # 4. Vertical Smoothing (Limit vertical accel to 1.0 m/s^2)
                     z_diff = vz_des - drone_vels[d_idx][2]
                     drone_vels[d_idx][2] += np.clip(z_diff, -1.0, 1.0)
-                
-            # A. Calculate Repulsion Forces (Stay away from each other)
-            # ---------------------------------------------------------
-            # repulsion_vels = np.zeros((num_drones, 3))
-            # safe_separation = 15.0  # [m]
-            # repulsion_gain = 2.0
-
-            # for i in range(num_drones):
-            #     for j in range(i + 1, num_drones):
-            #         diff_vec = drone_positions[i] - drone_positions[j]
-            #         dist = np.linalg.norm(diff_vec)
-            #         if dist < safe_separation and dist > 0.1:
-            #             push = (diff_vec / dist) * (safe_separation - dist) * repulsion_gain
-            #             repulsion_vels[i] += push
-            #             repulsion_vels[j] -= push
+          
 
 
             repulsion_vels = np.zeros((num_drones, 3))
@@ -2058,52 +2027,85 @@ if __name__ == "__main__":
                 for d_idx in range(num_drones):
                     drone_positions[d_idx] += drone_vels[d_idx] * dt
 
+
+           # =========================================================
+            # 10. DATA LOGGING (Map Entropy & Mission Success)
+            # =========================================================
+            # 1. Take a snapshot of the current global entropy using your belief_map
+            current_entropy = calculate_global_map_entropy_numba(belief_map, inside_mask)
+
+            # 2. If this is the very first loop, set our baselines
+            if initial_entropy is None:
+                initial_entropy = current_entropy
+                previous_entropy = current_entropy
+
+            # 3. Calculate Entropy Reduced PER TIMESTEP (Current step vs Last step)
+            entropy_reduced_this_step = previous_entropy - current_entropy
+
+            # 4. Calculate TOTAL Entropy Reduced (Current step vs Very beginning)
+            total_entropy_reduced = initial_entropy - current_entropy
+            percent_reduced = (total_entropy_reduced / initial_entropy) * 100.0 if initial_entropy > 0 else 0.0
+
+            # 5. Write everything to your CSV
+            map_writer.writerow([
+                f"{t:.3f}",                           # Current time
+                f"{current_entropy:.3f}",             # Absolute entropy remaining
+                f"{entropy_reduced_this_step:.4f}",   # Entropy reduced in this specific loop
+                f"{percent_reduced:.2f}"              # Overall mission progress (%)
+            ])
+            map_log_file.flush() # Save immediately
+
+            # 6. Update 'previous_entropy' so it is ready for the next loop iteration
+            previous_entropy = current_entropy
+
             # ============================
             #  Visualization Update
             # ============================
 
-            # A. Update Belief Map (IMSHOW)
-            display_data = belief_map.copy()
-            display_data[~inside_mask] = np.nan
-            im_display.set_data(display_data)
+            if SHOW_REAL_TIME_PLOT:
 
-            # B. Update Markers
-            for d_idx in range(num_drones):
-                drone_plots[d_idx].set_data(drone_positions[d_idx][0], drone_positions[d_idx][1])
-            victim_plot.set_offsets(victims[:, :2])
+                # A. Update Belief Map (IMSHOW)
+                display_data = belief_map.copy()
+                display_data[~inside_mask] = np.nan
+                im_display.set_data(display_data)
 
-            # C. Update Cone Graphics
-            for d_idx in range(num_drones):
-                tr = track[d_idx]
-                
-                # Show cone only if tracking and active
-                if tr["active"] and tr["pos"] is not None:
-                    region_poly, center_R, _ = tracking_region(
-                        t_now=t,
-                        detection_pos=tr["pos"],
-                        detection_time=tr["time"],
-                        v_drift=v_drift
-                    )
+                # B. Update Markers
+                for d_idx in range(num_drones):
+                    drone_plots[d_idx].set_data(drone_positions[d_idx][0], drone_positions[d_idx][1])
+                victim_plot.set_offsets(victims[:, :2])
+
+                # C. Update Cone Graphics
+                for d_idx in range(num_drones):
+                    tr = track[d_idx]
                     
-                    if region_poly and not region_poly.is_empty:
-                        xR, yR = region_poly.exterior.xy
-                        cone_lines[d_idx].set_data(xR, yR)
-                        cone_centers[d_idx].set_data(center_R[0], center_R[1])
-                        cone_fills[d_idx].set_xy(np.column_stack([xR, yR]))
+                    # Show cone only if tracking and active
+                    if tr["active"] and tr["pos"] is not None:
+                        region_poly, center_R, _ = tracking_region(
+                            t_now=t,
+                            detection_pos=tr["pos"],
+                            detection_time=tr["time"],
+                            v_drift=v_drift
+                        )
+                        
+                        if region_poly and not region_poly.is_empty:
+                            xR, yR = region_poly.exterior.xy
+                            cone_lines[d_idx].set_data(xR, yR)
+                            cone_centers[d_idx].set_data(center_R[0], center_R[1])
+                            cone_fills[d_idx].set_xy(np.column_stack([xR, yR]))
+                        else:
+                            # Hide
+                            cone_lines[d_idx].set_data([], [])
+                            cone_centers[d_idx].set_data([], [])
+                            cone_fills[d_idx].set_xy(np.zeros((3,2))) # Safe dummy coords
                     else:
                         # Hide
                         cone_lines[d_idx].set_data([], [])
                         cone_centers[d_idx].set_data([], [])
-                        cone_fills[d_idx].set_xy(np.zeros((3,2))) # Safe dummy coords
-                else:
-                    # Hide
-                    cone_lines[d_idx].set_data([], [])
-                    cone_centers[d_idx].set_data([], [])
-                    cone_fills[d_idx].set_xy(np.zeros((3,2)))
+                        cone_fills[d_idx].set_xy(np.zeros((3,2)))
 
-            # Draw Main Map
-            fig.canvas.draw_idle()
-            fig.canvas.flush_events()
+                # Draw Main Map
+                fig.canvas.draw_idle()
+                fig.canvas.flush_events()
 
         
 
@@ -2159,39 +2161,6 @@ if __name__ == "__main__":
                 os.makedirs("EHVB_flight_logs", exist_ok=True)
                 f_name = f"EHVB_flight_logs/frame_{int(t*10):06d}.png"
                 plt.savefig(f_name, dpi=60, bbox_inches='tight')
-
-            # Log Searcher Drones
-            # for d_idx in range(num_drones):
-            #     pos = drone_positions[d_idx]
-            #     vel = drone_vels[d_idx]
-            #     mode = drone_modes[d_idx]
-                
-            #     # Tracking estimate
-            #     tr = track[d_idx]
-            #     if tr["active"] and tr["pos"] is not None:
-            #         est_x, est_y = f"{tr['pos'][0]:.3f}", f"{tr['pos'][1]:.3f}"
-            #     else:
-            #         est_x, est_y = "", ""
-                
-            #     writer_uav.writerow([
-            #         f"{t:.3f}", d_idx,
-            #         f"{pos[0]:.3f}", f"{pos[1]:.3f}", f"{pos[2]:.3f}",
-            #         f"{vel[0]:.3f}", f"{vel[1]:.3f}", f"{vel[2]:.3f}",
-            #         mode, est_x, est_y,
-            #         f"{current_freq:.2f}"
-            #     ])
-                
-            # Log Ground Truth Victims
-            # for v_idx, v_pos in enumerate(victims):
-            #     writer_vic.writerow([
-            #         f"{t:.3f}", v_idx,
-            #         f"{v_pos[0]:.3f}", f"{v_pos[1]:.3f}"
-            #     ])
-                
-            # # Flush periodically to save data mid-flight
-            # if frame_count % 10 == 0:
-            #     f_uav.flush()
-            #     f_vic.flush()
 
     except KeyboardInterrupt:
         print("\n[BRIDGE] Stopping...")

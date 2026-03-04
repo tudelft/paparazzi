@@ -71,7 +71,7 @@
       <corner name="S9"/>
     </sector>
   </sectors>
-
+<!-- 
   <exceptions>
     <exception cond="((datalink_time @GT 5) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
@@ -79,6 +79,38 @@
       (autopilot_in_flight() == true) )" deroute="land here"/>
     
     <exception cond="(!InsideFlyzone(GetPosX(), GetPosY()) @AND
+      !(IndexOfBlock('Holding point') @GT nav_block) @AND
+      !(nav_block >= IndexOfBlock('land here')) @AND
+      (autopilot_in_flight() == true) )" deroute="land here"/>
+
+    <exception cond="((GetPosAlt() @GT 100.0) @AND
+      !(IndexOfBlock('Holding point') @GT nav_block) @AND
+      !(nav_block >= IndexOfBlock('land here')) @AND
+      (autopilot_in_flight() == true) )" deroute="land here"/>
+
+    <exception cond="(electrical.bat_low @AND
+      !(IndexOfBlock('Holding point') @GT nav_block) @AND
+      !(nav_block >= IndexOfBlock('land here')) @AND
+      (autopilot_in_flight() == true) )" deroute="land here"/>
+      
+    <exception cond="(electrical.bat_critical @AND
+      !(IndexOfBlock('Holding point') @GT nav_block) @AND
+      !(nav_block >= IndexOfBlock('land here')) @AND
+      (autopilot_in_flight() == true) )" deroute="land here"/>
+  </exceptions> -->
+
+  <exceptions>
+    <exception cond="(!InsideFlyzone(GetPosX(), GetPosY()) @AND
+      !(IndexOfBlock('Holding point') @GT nav_block) @AND
+      !(nav_block >= IndexOfBlock('land here')) @AND
+      (autopilot_in_flight() == true) )" deroute="land here"/>
+
+    <exception cond="(!InsideSoftGeofence(GetPosX(), GetPosY()) @AND
+      !(IndexOfBlock('Holding point') @GT nav_block) @AND
+      !(nav_block >= IndexOfBlock('land here')) @AND
+      (autopilot_in_flight() == true) )" deroute="Return Safe"/>
+
+    <exception cond="((datalink_time @GT 5) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('land here')) @AND
       (autopilot_in_flight() == true) )" deroute="land here"/>
@@ -153,6 +185,11 @@
       <go from="p4" hmode="route" wp="p1"/>
       
       <deroute block="Route Path"/>
+    </block>
+
+    <block name="Return Safe" strip_button="Return Safe" strip_icon="home.png">
+      <call_once fun="setNav()"/>
+      <stay wp="HOME"/>
     </block>
     
     <block key="l" name="land here" strip_button="Land Here" strip_icon="land-right.png">
