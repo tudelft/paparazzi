@@ -17,6 +17,15 @@ import math
 import csv
 from datetime import datetime
 
+# --- PAPER EXPERIMENT TOGGLE ---
+EXPERIMENT_MODE = "ENERGY_AWARE" # Change to "BASELINE" for the control run
+
+if EXPERIMENT_MODE == "ENERGY_AWARE":
+    lam = 0.5       # Planner cares about energy
+else:
+    lam = 0.0       # BASELINE: Planner ignores energy completely (Standard IPP)
+    
+
 # --- PAPARAZZI BRIDGE GLOBALS ---
 UAVS = {}   # Stores state: {ac_id: {'state': {'x':..., 'y':...}}}
 LOCK = threading.Lock()
@@ -354,13 +363,13 @@ def world_to_grid(x, y):
 # -----------------------------
 
 dt_step = 1.0
-v_drift = np.array([1.0, 0.0])
+v_drift = np.array([0.5, 0.0])
 theta_FOV = np.deg2rad(45)
-E_scale = 100.0
-E_scale_track = 40.0
+E_scale = 2.0
+E_scale_track = 1.0
 gamma_wind = 5.0
 v_wind = np.array([0.0, 0.0])
-v_max = 20.0        # max velocity [m/s]
+v_max = 15.0        # max velocity [m/s]
 
 confirm_pconf = 0.6
 peak_tresh = 0.75
@@ -404,7 +413,67 @@ def get_vsqp_power(v):
         return 154.5 * v - 104.6  # Transition Regime (Linear Fit)
     else:
         return 323.0   # Fixed-Wing Cruise Regime
+
+def get_quadcopter_power(v):
+    """
+    Returns instantaneous power (W) for a given horizontal airspeed v (m/s).
+    Empirically tuned for a Bebop 2 quadcopter.
+    - Hover: ~70W (from flight data)
+    - Max Speed: 21 m/s (saturation)
+    """
+    # U-shaped power curve: P(v) = P_hover - (Translational Lift) + (Parasite Drag)
+    power = 70.0 - (1.5 * v) + (0.015 * v**3)
     
+    # Safety floor just in case extreme tailwinds cause weird math
+    return max(power, 50.0)
+    
+'''For VSQP:'''
+# def energy_of_path(path):
+#     # Use the global wind vector
+#     global v_wind 
+    
+#     total_energy = 0.0
+#     v_climb, v_desc = 2.0, 3.0
+#     P_climb = get_vsqp_power(0.0) # 1751 W
+
+#     for i in range(len(path) - 1):
+#         p0, p1 = path[i], path[i+1]
+#         vec_g = (p1[:2] - p0[:2])
+#         dist_xy = np.linalg.norm(vec_g)
+#         dz = p1[2] - p0[2]
+
+#         if dist_xy > 1e-3:
+#             # Calculate the ground velocity vector for this segment
+#             # Note: We use the wind-aware vg we just fixed in the planner
+#             unit_vec = vec_g / (dist_xy + 1e-6)
+#             v_headwind_comp = np.dot(v_wind[:2], unit_vec)
+#             vg_allowed = max(2.0, min(20.0, 20.0 + v_headwind_comp))
+            
+#             v_ground_vec = unit_vec * vg_allowed
+            
+#             # Find the resulting airspeed vector
+#             v_air_vec = v_ground_vec - v_wind[:2]
+#             v_air_mag = np.linalg.norm(v_air_vec)
+            
+#             # Get power based on AIRSPEED
+#             P_segment = get_vsqp_power(v_air_mag)
+            
+#             t_segment = dist_xy / vg_allowed
+#             E_horiz = P_segment * t_segment
+#         else:
+#             E_horiz = 0.0
+
+#         # Vertical Energy (unchanged)
+#         if dz > 0:   
+#             E_vert = P_climb * (dz / v_climb)
+#         elif dz < 0: 
+#             E_vert = P_climb * (-dz / v_desc) * 0.5
+#         else:        
+#             E_vert = 0.0
+        
+#         total_energy += (E_horiz + E_vert)
+        
+#     return total_energy
 
 def energy_of_path(path):
     # Use the global wind vector
@@ -412,7 +481,16 @@ def energy_of_path(path):
     
     total_energy = 0.0
     v_climb, v_desc = 2.0, 3.0
-    P_climb = get_vsqp_power(0.0) # 1751 W
+    
+    # --- QUADCOPTER VERTICAL POWER MODEL ---
+    # Base hover power is ~70W
+    P_hover = get_quadcopter_power(0.0) 
+    
+    # Climbing takes roughly 20% more power than hovering
+    P_climb = P_hover * 1.20  
+    
+    # Descending takes roughly 20% less power than hovering
+    P_desc = P_hover * 0.80   
 
     for i in range(len(path) - 1):
         p0, p1 = path[i], path[i+1]
@@ -422,10 +500,11 @@ def energy_of_path(path):
 
         if dist_xy > 1e-3:
             # Calculate the ground velocity vector for this segment
-            # Note: We use the wind-aware vg we just fixed in the planner
             unit_vec = vec_g / (dist_xy + 1e-6)
             v_headwind_comp = np.dot(v_wind[:2], unit_vec)
-            vg_allowed = max(2.0, min(20.0, 20.0 + v_headwind_comp))
+            
+            # --- See derivation of 13.26 m/s ---
+            vg_allowed = max(2.0, min(13.26, 13.26 + v_headwind_comp))
             
             v_ground_vec = unit_vec * vg_allowed
             
@@ -433,19 +512,19 @@ def energy_of_path(path):
             v_air_vec = v_ground_vec - v_wind[:2]
             v_air_mag = np.linalg.norm(v_air_vec)
             
-            # Get power based on AIRSPEED
-            P_segment = get_vsqp_power(v_air_mag)
+            # --- CALL THE NEW QUADCOPTER POWER CURVE ---
+            P_segment = get_quadcopter_power(v_air_mag)
             
             t_segment = dist_xy / vg_allowed
             E_horiz = P_segment * t_segment
         else:
             E_horiz = 0.0
 
-        # Vertical Energy (unchanged)
+        # --- UPDATED VERTICAL ENERGY CALCULATION ---
         if dz > 0:   
             E_vert = P_climb * (dz / v_climb)
         elif dz < 0: 
-            E_vert = P_climb * (-dz / v_desc) * 0.5
+            E_vert = P_desc * (-dz / v_desc) 
         else:        
             E_vert = 0.0
         
@@ -575,10 +654,10 @@ def calc_ig_numba(path_arr, belief_map, inside_mask, x_min, y_min, grid_res, fov
 
 def plan_velocity_ipp_3D(drone_pos, drone_vel, belief_map, inside_mask, grid_origin, grid_resolution, soft_poly,
                          constraint_poly=None,
-                         fov_angle=theta_FOV, v_max=20.0, n_directions=16,
+                         fov_angle=theta_FOV, v_max=15.0, n_directions=16,
                          step_length=40.0, altitude_candidates=[30, 35, 40, 45, 50],
                          E_scale=100.0,    
-                         lam=0.4,          
+                         lam=0.5,          
                          buffer=0.0, pred_depth=3):
 
     # Unpack origin for Numba
@@ -685,7 +764,7 @@ def plan_velocity_ipp_3D(drone_pos, drone_vel, belief_map, inside_mask, grid_ori
     
     # Calculate the max allowed ground speed for this heading
     # (Matches the logic you pasted in energy_of_path)
-    v_g_allowed = max(2.0, min(20.0, 20.0 + v_headwind_comp))
+    v_g_allowed = max(2.0, min(15.0, 15.0 + v_headwind_comp))
     
     # Calculate velocity components
     travel_time = max(dist / v_g_allowed, 0.1)
@@ -741,7 +820,7 @@ def tracking_region(t_now, detection_pos, detection_time, v_drift,
 
 
 def clear_confirmed_region_2d(belief_map, XX, YY, victim_pos, wind_vec,
-                              major_axis=120.0, minor_axis=60.0, decay=0.01):
+                              major_axis=80.0, minor_axis=60.0, decay=0.01):
     
     # Normalize wind direction
     w = wind_vec[:2]
@@ -1477,7 +1556,7 @@ if __name__ == "__main__":
                         step_length=20.0,
                         fov_angle=theta_FOV, v_max=v_max, n_directions=16,
                         altitude_candidates=[target_alt], pred_depth=3, E_scale=E_scale,
-                        lam=0.5,        
+                        lam=lam,        
                         buffer=buffer
                     )
                     # Maintain nominal altitude
@@ -1534,14 +1613,14 @@ if __name__ == "__main__":
                         # Slow down proportional to distance so we don't overshoot.
                         if dist > 75.0:
                             # Far away? Cruise at max speed.
-                            vx_des, vy_des = (vec / (dist + 1e-6)) * 20.0
+                            vx_des, vy_des = (vec / (dist + 1e-6)) * 15.0
                         else:
                             # Closer than 15m? Slow down.
                             # At 15m -> 7.5 m/s
                             # At 2m  -> 1.0 m/s
                             # speed = np.clip(dist * 1.5, 1.0, 20.0)
                             # Gain 0.8 requires ~2.5 m/s² braking (Feasible)
-                            speed = np.clip(dist * 0.3, 0.5, 20.0)
+                            speed = np.clip(dist * 0.3, 0.5, 15.0)
                             vx_des, vy_des = (vec / (dist + 1e-6)) * speed
                         
                         # vz_des = 0.0
@@ -1652,7 +1731,7 @@ if __name__ == "__main__":
                             fov_angle=theta_FOV, v_max=v_max, 
                             altitude_candidates=[drone_positions[d_idx][2]], 
                             pred_depth=1, E_scale=E_scale_track,
-                            lam=0.5,       
+                            lam=lam,       
                             buffer=buffer
                         )
 
@@ -1813,7 +1892,7 @@ if __name__ == "__main__":
                         step_length=20.0,
                         fov_angle=theta_FOV, v_max=v_max, n_directions=16,
                         altitude_candidates=[30, 50, 70], pred_depth=3, E_scale=E_scale,
-                        lam=0.5,        
+                        lam=lam,        
                         buffer=buffer
                     )
 
@@ -1959,7 +2038,7 @@ if __name__ == "__main__":
                     unit_v = v_proposed[:2] / v_g_mag
                     # Allow higher speed if flying INTO wind
                     v_headwind = np.dot(v_wind[:2], unit_v)
-                    limit = 20.0 + v_headwind
+                    limit = 15.0 + v_headwind
                     if v_g_mag > limit:
                         v_proposed[:2] = unit_v * max(2.0, limit)
                 
