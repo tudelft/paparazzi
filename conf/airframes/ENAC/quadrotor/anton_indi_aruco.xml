@@ -63,8 +63,9 @@
       <define name="AHRS_ALIGNER_IMU_ID" value="IMU_F1E_ID"/>
     </module-->
 
-    <!--module name="sonar_adc">
-      <configure name="SONAR_ADC_PORT" value="ADC_1"/>
+    <!-- still old name USE_SONAR for the sonar rangefinder, to avoid code of INS, needs refactoring later -->
+    <!--module name="rangefinder_adc">
+      <configure name="RANGEFINDER_ADC_PORT" value="ADC_1"/>
       <define name="USE_SONAR"/>
     </module>
     <module name="agl_dist"/-->

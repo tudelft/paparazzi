@@ -460,17 +460,17 @@ NOTES:
   if target comparator is 3.3v then(3.3/5=0.66) 0.66*0.0038447=0.0025375V/cm
   -->
 
-  <section name="SONAR" prefix="SONAR_">
-    <!--<define name="SONAR_USE_ADC_LOWPASS_FILTER"/>-->
-    <define name="SONAR_ADC_LOWPASS_TAU" value="0.25"/>
-    <define name="USE_ADC_FILTER"/>
-    <define name="MEDIAN_SIZE" value="15"/><!-- since no ground shielded adc voltage ripple is huge-->
-    <define name="COMPENSATE_ROTATION" value="TRUE"/>
-    <define name="SCALE" value="0.00197" integer="16"/> <!-- 0.003844734 TODO: MB1010, LV-MaxSonar-EZ1 5V supply scaled to 3.3V 5/3.3 = 1.5151 * scale 0.0166 = 2.525252 p.cm -->
-    <define name="OFFSET" value="90.0"/><!--130 or 90--> <!-- No unit, value is ADC meas offset. FIXME to a Si Unit. BTW AC is Belly landing no landing gear so height to tarmac almost 0 -->
-    <define name="MAX_RANGE" value="6.0" unit="m"/> <!-- test for various surface, but at lease short grass -->
-    <define name="MIN_RANGE" value="0.15" unit="m"/> <!-- ...sadly -->
-  </section>
+  <module name="rangefinder_adc">
+    <configure name="RANGEFINDER_ADC_PORT" value="ADC_CHANNEL_RSSI"/>
+    <configure name="RANGEFINDER_ADC_COMPENSATE_ROTATION" value="FALSE"/>
+    <configure name="RANGEFINDER_ADC_USE_FILTER" value="TRUE"/>
+    <configure name="RANGEFINDER_ADC_PERIODIC_FREQUENCY" value="10"/>
+    <configure name="RANGEFINDER_ADC_LOWPASS_TAU" value="0.11"/>
+    <configure name="RANGEFINDER_ADC_SCALE" value="0.001789"/>
+    <configure name="RANGEFINDER_ADC_USE_FOR_AGL" value="TRUE"/>
+    <define name="RANGEFINDER_ADC_SYNC_SEND"/>
+  </module>
+
 
   <section name="AGL" prefix="AGL_DIST_SONAR_">
     <define name="ID" value="ABI_BROADCAST"/>
