@@ -7,7 +7,7 @@
    telemetry="telemetry/OPENUAS/openuas_fixedwing_imu_rc.xml"
    flight_plan="flight_plans/basic.xml"
    settings="settings/fixedwing_basic.xml settings/control/ctl_new.xml settings/nps.xml [settings/persistent_settings.xml]"
-   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_full_pid_fw.xml modules/imu_common.xml modules/imu_quality_assessment.xml modules/nav_basic_fw.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/stabilization_adaptive_fw.xml modules/stabilization_float_quat.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_full_pid_fw.xml modules/imu_common.xml modules/imu_quality_assessment.xml modules/nav_basic_fw.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/rangefinder_i2c.xml modules/stabilization_adaptive_fw.xml modules/stabilization_float_quat.xml"
    gui_color="#ee00ee00ec00"
   />
   <aircraft
@@ -418,17 +418,6 @@
    gui_color="#ba00bd00b600"
   />
   <aircraft
-   name="Itsy_Bitsy"
-   ac_id="253"
-   airframe="airframes/OPENUAS/openuas_own_itsy_bitsy.xml"
-   radio="radios/spektrum.xml"
-   telemetry="telemetry/default_rotorcraft.xml"
-   flight_plan="flight_plans/rotorcraft_basic.xml"
-   settings="[settings/rotorcraft_basic.xml] settings/superbitrf.xml settings/control/stabilization_att_int_quat.xml"
-   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/air_data.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/gps_ubx_ucenter.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/nav_basic_rotorcraft.xml modules/radio_control_superbitrf_rc.xml modules/stabilization_int_quat.xml"
-   gui_color="#cc0000000000"
-  />
-  <aircraft
    name="Mavtec"
    ac_id="149"
    airframe="airframes/OPENUAS/openuas_own_mavtec.xml"
@@ -561,28 +550,6 @@
    gui_color="#ee00ee00ec00"
   />
   <aircraft
-   name="Tinyhawk_II"
-   ac_id="142"
-   airframe="airframes/OPENUAS/openuas_emax_tinyhawk_ii.xml"
-   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
-   telemetry="telemetry/default_rotorcraft.xml"
-   flight_plan="flight_plans/dummy.xml"
-   settings="settings/rotorcraft_basic.xml settings/persistent_settings.xml"
-   settings_modules="modules/ahrs_float_cmpl_quat.xml modules/gps.xml modules/gps_ublox.xml [modules/guidance_rotorcraft.xml] modules/imu_common.xml [modules/ins_extended.xml] [modules/nav_basic_rotorcraft.xml] modules/radio_control_cc2500_frsky.xml modules/stabilization_int_quat.xml"
-   gui_color="white"
-  />
-  <aircraft
-   name="Trashcan"
-   ac_id="203"
-   airframe="airframes/OPENUAS/openuas_eachine_trashcan.xml"
-   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
-   telemetry="telemetry/default_rotorcraft_slow.xml"
-   flight_plan="flight_plans/dummy.xml"
-   settings="settings/rotorcraft_basic.xml"
-   settings_modules="modules/ahrs_float_cmpl_quat.xml modules/electrical.xml modules/gps.xml modules/guidance_pid_rotorcraft.xml [modules/guidance_rotorcraft.xml] modules/imu_common.xml [modules/ins_extended.xml] [modules/nav_basic_rotorcraft.xml] modules/radio_control_cc2500_frsky.xml modules/stabilization_int_quat.xml"
-   gui_color="#d7002c002c00"
-  />
-  <aircraft
    name="Trashcan_voir"
    ac_id="202"
    airframe="airframes/OPENUAS/openuas_eachine_trashcan.xml"
@@ -592,17 +559,6 @@
    settings="settings/rotorcraft_basic.xml"
    settings_modules="modules/ahrs_float_cmpl_quat.xml modules/gps.xml [modules/guidance_rotorcraft.xml] [modules/imu_common.xml] [modules/ins_extended.xml] [modules/nav_basic_rotorcraft.xml] modules/radio_control_cc2500_frsky.xml [modules/stabilization_int_quat.xml]"
    gui_color="white"
-  />
-  <aircraft
-   name="Twinstar_ND"
-   ac_id="218"
-   airframe="airframes/OPENUAS/openuas_multiplex_twinstar_nd.xml"
-   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
-   telemetry="telemetry/OPENUAS/openuas_fixedwing_imu_rc.xml"
-   flight_plan="flight_plans/OPENUAS/openuas_versatile_unified.xml"
-   settings="settings/fixedwing_basic.xml [settings/estimation/ac_char.xml] [settings/control/ctl_energy.xml] [settings/control/tune_agr_climb.xml] [settings/control/ctl_energyadaptive.xml]"
-   settings_modules="modules/ahrs_float_cmpl_quat.xml modules/air_data.xml modules/digital_cam.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/gps_ubx_ucenter.xml modules/guidance_full_pid_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/nav_catapult.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/stabilization_adaptive_fw.xml modules/tune_airspeed.xml"
-   gui_color="#72009f00cf00"
   />
   <aircraft
    name="TX220"
@@ -658,16 +614,5 @@
    settings="settings/fixedwing_basic.xml [settings/estimation/ac_char.xml] [settings/control/ctl_energy.xml] [settings/control/tune_agr_climb.xml] [settings/control/ctl_energyadaptive.xml]"
    settings_modules="modules/ahrs_float_cmpl_quat.xml modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_full_pid_fw.xml modules/imu_common.xml modules/logger_sd_chibios.xml modules/nav_basic_fw.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/stabilization_adaptive_fw.xml modules/tune_airspeed.xml"
    gui_color="yellow"
-  />
-  <aircraft
-   name="TESTPPM"
-   ac_id="1"
-   airframe="airframes/OPENUAS/openuas_own_testppm.xml"
-   radio="radios/OPENUAS/openuas_rxsr_cppm_8ch_mod.xml"
-   telemetry="telemetry/OPENUAS/openuas_fixedwing_imu_rc.xml"
-   flight_plan="flight_plans/OPENUAS/openuas_versatile_unified.xml"
-   settings="settings/fixedwing_basic.xml"
-   settings_modules="modules/ahrs_float_cmpl_quat.xml modules/air_data.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_full_pid_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/stabilization_adaptive_fw.xml modules/tune_airspeed.xml"
-   gui_color="#ffffed9b40f2"
   />
 </conf>

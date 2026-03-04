@@ -262,8 +262,8 @@
   <servos>
     <servo name="S_THROTTLE" no="5" min="1080" neutral="1094" max="1920"/>
     <servo name="S_AILERON_LEFT" no="4" min="1100" neutral="1500" max="1900"/>
-    <servo name="S_ELEVATOR" no="2" min="1100" neutral="1500" max="1900"/>
-    <servo name="S_RUDDER" no="3" min="1900" neutral="1500" max="1100"/>
+    <servo name="S_ELEVATOR" no="3" min="1100" neutral="1500" max="1900"/>
+    <servo name="S_RUDDER" no="2" min="1900" neutral="1500" max="1100"/>
     <servo name="S_AILERON_RIGHT" no="1" min="1100" neutral="1500" max="1900"/>
     <servo name="S_LIGHT" no="0" min="1100" neutral="1530" max="1900"/>
   </servos>
@@ -327,18 +327,18 @@
     <let var="gyro_yaw" value="$gyro_active * (stateGetBodyRates_i()->r)"/>
     <let var="yaw_ctrl_sgl" value="@YAW - ($k_rudder_gyro * ($gyro_yaw)) - @ROLL * ASSIST_ROLL_WITH_RUDDER"/>
     <let var="aileron" value="@ROLL+(BRAKEGAIN*SPOILERON_BRAKE_FULL)"/>
-    <!-- <set servo="S_THROTTLE" value="@THROTTLE"/>
+    <set servo="S_THROTTLE" value="@THROTTLE"/>
     <set servo="S_AILERON_LEFT" value="$aileron"/>
     <set servo="S_AILERON_RIGHT" value="$aileron"/>
     <set servo="S_ELEVATOR" value="@PITCH+(-BRAKEGAIN*SPOILERON_BRAKE_FULL)"/>
     <set servo="S_RUDDER" value="$yaw_ctrl_sgl"/>
-    <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MAX_PPRZ : @ACTIVELIGHTS)"/> -->
-    <set servo="S_THROTTLE" value="@THROTTLE"/>
+    <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MAX_PPRZ : @ACTIVELIGHTS)"/>
+    <!-- <set servo="S_THROTTLE" value="@THROTTLE"/>
     <set servo="S_AILERON_LEFT" value="@ROLL"/>
     <set servo="S_AILERON_RIGHT" value="-@ROLL"/>
     <set servo="S_ELEVATOR" value="@PITCH"/>
     <set servo="S_RUDDER" value="@YAW"/>
-    <set servo="S_LIGHT" value="@ACTIVELIGHTS"/>
+    <set servo="S_LIGHT" value="@ACTIVELIGHTS"/> -->
   </command_laws>
 
   <section name="AUTO1" prefix="AUTO1_">

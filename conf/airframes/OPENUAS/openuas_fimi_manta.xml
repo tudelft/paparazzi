@@ -93,6 +93,24 @@ NOTES:
       <define name="SERVO_HZ" value="400"/>
     </module>
 
+        <!--
+  MB1340, LV-MaxSonar-EZ1 External BEC 5V power supply
+  Datasheet states a scaling factor of (Vcc/512) per inch.
+  A supply of 5V yields 0.0098V per inch = 0.0039 per cm
+  if target comparator is 3.3v then(3.3/5=0.66) 0.66*0.0038447=0.0025375V/cm
+  -->
+
+  <module name="rangefinder_adc">
+    <configure name="RANGEFINDER_ADC_PORT" value="ADC_CHANNEL_RSSI"/>
+    <configure name="RANGEFINDER_ADC_COMPENSATE_ROTATION" value="FALSE"/>
+    <configure name="RANGEFINDER_ADC_USE_FILTER" value="TRUE"/>
+    <configure name="RANGEFINDER_ADC_PERIODIC_FREQUENCY" value="10"/>
+    <configure name="RANGEFINDER_ADC_LOWPASS_TAU" value="0.11"/>
+    <configure name="RANGEFINDER_ADC_SCALE" value="0.001789"/>
+    <configure name="RANGEFINDER_ADC_USE_FOR_AGL" value="TRUE"/>
+    <define name="RANGEFINDER_ADC_SYNC_SEND"/>
+  </module>
+
     <!-- 
     <module name="mag" type="hmc58xx">
       <configure name="MAG_HMC58XX_I2C_DEV" value="i2c1"/>
@@ -204,6 +222,8 @@ NOTES:
       <configure name="SHELL_PORT" value="usb_serial_debug"/>
     </module>
   -->
+
+
 
   </firmware>
 
@@ -452,25 +472,6 @@ NOTES:
     <define name="ARRIVED_AT_WAYPOINT" value="20.0"/>
     <define name="USE_AIRSPEED" value="TRUE"/>
   </section>
-
-    <!--
-  MB1340, LV-MaxSonar-EZ1 External BEC 5V power supply
-  Datasheet states a scaling factor of (Vcc/512) per inch.
-  A supply of 5V yields 0.0098V per inch = 0.0039 per cm
-  if target comparator is 3.3v then(3.3/5=0.66) 0.66*0.0038447=0.0025375V/cm
-  -->
-
-  <module name="rangefinder_adc">
-    <configure name="RANGEFINDER_ADC_PORT" value="ADC_CHANNEL_RSSI"/>
-    <configure name="RANGEFINDER_ADC_COMPENSATE_ROTATION" value="FALSE"/>
-    <configure name="RANGEFINDER_ADC_USE_FILTER" value="TRUE"/>
-    <configure name="RANGEFINDER_ADC_PERIODIC_FREQUENCY" value="10"/>
-    <configure name="RANGEFINDER_ADC_LOWPASS_TAU" value="0.11"/>
-    <configure name="RANGEFINDER_ADC_SCALE" value="0.001789"/>
-    <configure name="RANGEFINDER_ADC_USE_FOR_AGL" value="TRUE"/>
-    <define name="RANGEFINDER_ADC_SYNC_SEND"/>
-  </module>
-
 
   <section name="AGL" prefix="AGL_DIST_SONAR_">
     <define name="ID" value="ABI_BROADCAST"/>
