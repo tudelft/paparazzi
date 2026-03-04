@@ -141,8 +141,8 @@
 /*
  * IDs of AGL measurment modules that can be loaded (sonars, lidars,...) (message 2)
  */
-#ifndef AGL_SONAR_ADC_ID
-#define AGL_SONAR_ADC_ID 1
+#ifndef AGL_RANGEFINDER_ADC_ID
+#define AGL_RANGEFINDER_ADC_ID 1
 #endif
 
 #ifndef AGL_SONAR_ARDRONE2_ID
@@ -189,8 +189,8 @@
 #define AGL_VL53L1X_ID 12
 #endif
 
-#ifndef AGL_SONAR_PWM_ID
-#define AGL_SONAR_PWM_ID 13
+#ifndef AGL_RANGEFINDER_PWM_ID
+#define AGL_RANGEFINDER_PWM_ID 13
 #endif
 
 #ifndef AGL_LIDAR_TFMINI_I2C_ID
@@ -205,8 +205,8 @@
 #define AGL_UAVCAN_ID 16
 #endif
 
-#ifndef AGL_SONAR_I2C_ID
-#define AGL_SONAR_I2C_ID 17
+#ifndef AGL_RANGEFINDER_I2C_ID
+#define AGL_RANGEFINDER_I2C_ID 17
 #endif
 
 /*
