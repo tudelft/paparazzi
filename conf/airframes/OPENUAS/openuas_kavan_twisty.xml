@@ -106,6 +106,7 @@
         <define name="RANGEFINDER_I2C_OFFSET" value="0.02" unit="m"/>
         <define name="RANGEFINDER_I2C_SCALE" value="0.001"/>
         <define name="RANGEFINDER_I2C_READ_MODE_SINGLE" value="0x00"/>
+        <!-- <define name="RANGEFINDER_I2C_SYNC_SEND" value="TRUE"/>  -->
       </module>
 
       <module name="actuators" type="pwm">
@@ -333,12 +334,15 @@
     <set servo="S_ELEVATOR" value="@PITCH+(-BRAKEGAIN*SPOILERON_BRAKE_FULL)"/>
     <set servo="S_RUDDER" value="$yaw_ctrl_sgl"/>
     <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MAX_PPRZ : @ACTIVELIGHTS)"/>
-    <!-- <set servo="S_THROTTLE" value="@THROTTLE"/>
+    <!-- 
+    Enable bare  values debugging to validate the basics first 
+    <set servo="S_THROTTLE" value="@THROTTLE"/>
     <set servo="S_AILERON_LEFT" value="@ROLL"/>
     <set servo="S_AILERON_RIGHT" value="-@ROLL"/>
     <set servo="S_ELEVATOR" value="@PITCH"/>
     <set servo="S_RUDDER" value="@YAW"/>
-    <set servo="S_LIGHT" value="@ACTIVELIGHTS"/> -->
+    <set servo="S_LIGHT" value="@ACTIVELIGHTS"/> 
+    -->
   </command_laws>
 
   <section name="AUTO1" prefix="AUTO1_">
