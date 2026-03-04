@@ -3,9 +3,9 @@
 <module name="imu_lisa_m_v2.1" dir="imu" task="sensors">
   <doc>
     <description>
-      IMU on Lisa/M and MX v2.1 boards.
-      MPU60x0 via SPI2. HMC5883 as I2C slave of MPU.
+      Driver for the IMU on Lisa/M v2.1 boards
     </description>
+    <define name="LISA_M_OR_MX21_ROTATED_180_DEG" value="TRUE" description="set to TRUE if the Lisa/M(X) FC is rotated 180 degrees on Yaw, default is false"/>
     <section name="IMU" prefix="IMU_">
       <define name="MAG_X_NEUTRAL" value="2358"/>
       <define name="MAG_Y_NEUTRAL" value="2362"/>

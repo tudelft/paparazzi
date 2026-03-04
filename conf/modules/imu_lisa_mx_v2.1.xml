@@ -3,9 +3,9 @@
 <module name="imu_lisa_mx_v2.1" dir="imu" task="sensors">
   <doc>
     <description>
-      IMU on Lisa/MX v2.1 boards.
-      This is just a convenience "alias" for imu_lisa_m_v2.1
+      Driver for the IMU on Lisa/MX v2.1 boards
     </description>
+     <define name="LISA_M_OR_MX21_ROTATED_180_DEG" value="TRUE" description="set to TRUE if the Lisa/M(X) FC is rotated 180 degrees on Yaw, default is false"/>
   </doc>
   <dep>
     <depends>imu_lisa_m_v2.1</depends>

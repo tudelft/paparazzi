@@ -196,10 +196,21 @@ void imu_aspirin2_event(void)
 #endif
 #else
 
-    /* Handle axis assignement for Lisa/M or Lisa/MX V2.1 integrated Aspirin like
-     * IMU.
-     */
-#ifdef LISA_M_OR_MX_21
+/* Handle axis assignment for Lisa/M or Lisa/MX V2.1 integrated Aspirin like IMU. */
+#ifdef LISA_M_OR_MX_21 /* Per default defined if using Lisa M(X) module */
+#if defined(LISA_M_OR_MX21_ROTATED_180_DEG) || defined(ASPIRIN_2_ROTATED_180_DEG)
+    RATES_ASSIGN(gyro,
+                 imu_aspirin2.mpu.data_rates.rates.q,
+                 -imu_aspirin2.mpu.data_rates.rates.p,
+                 imu_aspirin2.mpu.data_rates.rates.r);
+    VECT3_ASSIGN(accel,
+                 imu_aspirin2.mpu.data_accel.vect.y,
+                 -imu_aspirin2.mpu.data_accel.vect.x,
+                 imu_aspirin2.mpu.data_accel.vect.z);
+#if !ASPIRIN_2_DISABLE_MAG
+    VECT3_ASSIGN(mag_rot, -mag.y, -mag.x, mag.z);
+#endif
+#else
     RATES_ASSIGN(gyro,
                  -imu_aspirin2.mpu.data_rates.rates.q,
                  imu_aspirin2.mpu.data_rates.rates.p,
@@ -211,9 +222,9 @@ void imu_aspirin2_event(void)
 #if !ASPIRIN_2_DISABLE_MAG
     VECT3_ASSIGN(mag_rot, -mag.y, mag.x, mag.z);
 #endif
+#endif
 #else
-
-    /* Handle real Aspirin IMU axis assignement. */
+/* Handle real Aspirin IMU axis assignment. */
 #ifdef LISA_M_LONGITUDINAL_X
     RATES_ASSIGN(gyro,
                  imu_aspirin2.mpu.data_rates.rates.q,

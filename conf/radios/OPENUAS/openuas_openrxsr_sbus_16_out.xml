@@ -5,7 +5,7 @@ If you do not define this then the order of the PPM is the one of
 the order of the functon in the list
 -->
 <!DOCTYPE radio SYSTEM "../radio.dtd">
-<radio name="Graupner MX22 OUTX01" data_min="987" data_max="2190" sync_min="5000" sync_max="15000" pulse_type="POSITIVE">
+<radio name="Graupner MX22 OUTX01" data_min="987" data_max="2190" sync_min="2000" sync_max="20000" pulse_type="POSITIVE">
     <channel ctl="left_stick_vert"   function="THROTTLE" min="987" neutral="988" max="1900" average="0"/>
     <channel ctl="right_stick_horiz" function="ROLL" min="1100" neutral="1500" max="1900" average="0"/>
     <channel ctl="right_stick_vert"  function="PITCH" min="1100" neutral="1500" max="1900" average="0"/>

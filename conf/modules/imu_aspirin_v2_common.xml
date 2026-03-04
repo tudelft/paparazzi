@@ -3,21 +3,26 @@
 <module name="imu_aspirin_v2_common" dir="imu" task="sensors">
   <doc>
     <description>
-      Common functionality of Aspirin v2 IMUs.
-      - Accelerometer/Gyroscope: MPU6000 via SPI
-      - Magnetometer: HMC5883 as I2C slave of MPU
+      Common functionality of Aspirin v2 IMUs. The Aspirin IMU can be used on different flight controllers. 
+      Most commonly used onboard a Lisa M(X) v2.1 FC, but IMU can be connected over SPI to other flight controllers as well. 
+      The Aspirin IMU consists of:
+      - Accelerometer and Gyro: MPU6000 connected over SPI.
+      - Magnetometer: HMC5883 as I2C slave of the MPU6000 Acc/gyro.
+      - Barometer: ms5611 connected over SPI as well, but this is not handled by this module, but by the barometer module.
     </description>
-    <configure name="ASPIRIN_2_SPI_DEV" value="spi2" description="SPI device to use for accel"/>
-    <configure name="ASPIRIN_2_SPI_SLAVE_IDX" value="SPI_SLAVE2" description="slave index of the accel CS pin"/>
+    <configure name="ASPIRIN_2_SPI_DEV" value="spi2" description="SPI device to use for for the IMU sensor"/>
+    <configure name="ASPIRIN_2_SPI_SLAVE_IDX" value="SPI_SLAVE2" description="On which slave index the IMU is connected"/>
     <define name="ASPIRIN_2_DISABLE_MAG" value="FALSE" description="set to TRUE to disable the mag on Aspirin"/>
+    <define name="ASPIRIN_2_ROTATED_180_DEG" value="FALSE" description="set to TRUE if IMU is 180 degrees rotated on Z axis on Aspirin IMU, default is False"/>
+    
     <section name="IMU" prefix="IMU_">
-      <define name="MAG_X_NEUTRAL" value="2358"/>
-      <define name="MAG_Y_NEUTRAL" value="2362"/>
-      <define name="MAG_Z_NEUTRAL" value="2119"/>
+      <define name="MAG_X_NEUTRAL" value="2350"/>
+      <define name="MAG_Y_NEUTRAL" value="2350"/>
+      <define name="MAG_Z_NEUTRAL" value="2100"/>
 
-      <define name="MAG_X_SENS" value="3.4936416" integer="16"/>
-      <define name="MAG_Y_SENS" value="3.607713" integer="16"/>
-      <define name="MAG_Z_SENS" value="4.90788848" integer="16"/>
+      <define name="MAG_X_SENS" value="3.50" integer="16"/>
+      <define name="MAG_Y_SENS" value="3.60" integer="16"/>
+      <define name="MAG_Z_SENS" value="4.90" integer="16"/>
     </section>
   </doc>
   <dep>

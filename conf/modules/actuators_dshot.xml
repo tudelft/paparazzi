@@ -11,8 +11,7 @@
 
       Configure DSHOT_BIDIR to TRUE to enable bidirectionnal DSHOT.
       It overrides the rpm values from the UART dshot telemetry.
-      UART dshot telemetry is still usefull for current and voltage telemetry.
-
+      Telemetry output in KISS message format to a UART port is specifically useful for current and voltage datastream
     </description>
     <configure name="DSHOT_BIDIR" value="FALSE" description="Bidirectionnal DSHOT for fast rpm feedback"/>
     <define name="DSHOT_SPEED" value="600" description="DSHOT speed (150,300,600,1200)"/>

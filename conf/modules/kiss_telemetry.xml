@@ -1,0 +1,35 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="kiss_telemetry" dir="actuators" task="sensors">
+  <doc>
+    <description>
+    Retrieve live telemetry data from a KISS or KISS compatible ESCs. 
+    If using an opensource ESC like AM32 or ESCape Do make sure to enable the KISS telemetry output in the settings of the ESC.
+
+    + If KISS_TELEMETRY_MOTOR_POLES is set incorrectly the RPM value will be incorrect.
+    + Make sure to connect the ESC telemetry output wire to the correct UART RX pin on your flightcontroller.
+    </description>
+    <configure name="KISS_TELEMETRY_PORT" value="UART9" description="Set the UART port the ESC telemetry output wire is connected to on your flightcontroller, defaults to UART1"/>
+    <configure name="KISS_TELEMETRY_MOTOR_POLES" value="16" description="Number of poles you have on your motor, is always an even number, default is 14"/>
+  </doc> 
+  <dep>
+    <depends>uart</depends>
+    <provides>actuators</provides>
+  </dep>
+  <header>
+    <file name="kiss_telemetry.h"/>
+  </header>
+  <init fun="kiss_telemetry_init()"/>
+  <periodic fun="kiss_telemetry_periodic()" freq="50" autorun="TRUE"/>
+  <event fun="kiss_telemetry_event()"/>
+  <makefile>
+    <file name="kiss_telemetry.c"/>
+    <configure name="KISS_TELEMETRY_PORT" default="uart1" case="upper|lower"/>
+    <configure name="KISS_TELEMETRY_MOTOR_POLES" default="14"/>
+    <define name="USE_$(KISS_TELEMETRY_PORT_UPPER)" value="1"/>
+    <define name="$(KISS_TELEMETRY_PORT_UPPER)_BAUD" value="B115200"/>
+    <define name="KISS_TELEMETRY_PORT" value="$(KISS_TELEMETRY_PORT_LOWER)"/>
+    <define name="KISS_TELEMETRY_MOTOR_POLES" value="$(KISS_TELEMETRY_MOTOR_POLES)"/>
+  </makefile>
+</module>
+

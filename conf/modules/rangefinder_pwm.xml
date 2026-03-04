@@ -1,0 +1,74 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="rangefinder_pwm" dir="sensors" task="sensors">
+  <doc>
+    <description>
+    Driver for a PWM based rangefinder sensor
+    Reads sensor using PWM input and outputs rangefinder distance to object in [m]
+
+    Notes:
+    + The maximum useful detection distance is 4m for common rangefinder PWM output signal small sized sensors, even if datasheet e.g. states 7m.
+    For most PWM of the ultrasonic type of devices, a sampling rate of at least 10Hz is supported. However, if measurements are taken at longer distances, 
+    the time required for the ultrasonic pulse to return increases, which may limit the maximum achievable sampling rate. 
+    It is recommended to adjust the RANGEFINDER_PWM_PERIODIC_FREQUENCY parameter according to the sensor's capabilities and the expected measurement range to ensure reliable readings.
+    For laser type of sensors, usually much higher sampling rates are possible, light just is a tad bit faster than sound.
+
+    + If the distance is read but the scale is incorrect, adjust the RANGEFINDER_PWM_SCALE parameter to match the sensor's specifications.
+    The scale factor can also be determined experimentally by measuring a known distance and adjusting the scale until the output matches the expected value.
+
+    + If the sensor is used in an airframe with landing gear, it is recommended to set the RANGEFINDER_PWM_OFFSET to the length of the landing gear, so that the AGL value is correct. 
+    Keep in mind that most ultrasonic type of sensors have a deadzone of 0.15m to 0.25m, so the AGL cannot be measured if landinggear is shorter than the deadzone range.
+
+    + There is an option to compensate the AGL value for body rotation, which is useful if e.g. a roll maneuver, the sensor is not pointing straight down it compensates the AGL value for the body rotation.
+    
+    + Also an option to filter the sensor output is available, which is useful if the sensor is noisy or has a lot of outliers, in case of a sonar type sensors, almost always the case.
+    Lidar type of sensors are usually less noisy and have less outliers, so filtering better be disabled.
+    
+    Why choose PWM sensor over ADC sensor:
+    One only needs to connect GND, VCC and one more signal wire, same as ADC but not the disadvantages of ADC sensors noise
+
+    PWM Sensor example: Maxbotix LV-EZ1
+    </description>
+    <configure name="RANGEFINDER_PWM_PORT" value="PWM_INPUTx" description="Select PWM input port on flightcontroller for sensor to use e.g. PWM_INPUT1"/>
+    <configure name="RANGEFINDER_PWM_USE_FOR_AGL" value="TRUE|FALSE" description="Updates the AGL value in state,if not defined, defaults to FALSE"/>
+    <configure name="RANGEFINDER_PWM_COMPENSATE_ROTATION" value="TRUE|FALSE" description="Compensate AGL measurements for body rotation. Disabled by default"/>
+    <configure name="RANGEFINDER_PWM_PERIODIC_FREQUENCY" value="30" description="Sensor readings in HZ"/>
+    <define name="RANGEFINDER_PWM_USE_FILTER" value="TRUE|FALSE" description="If this is enabled, a median filter on the distance output, defaults to TRUE"/>
+    <define name="RANGEFINDER_PWM_MEDIAN_SIZE" value="11" description="If median filter is enabled then set this option to filter the output more(or less), default is 7"/>
+    <define name="RANGEFINDER_PWM_SCALE" value="0.00006" description="Sensor scale for raw sensor output to a meter unit conversion, "/>
+    <define name="RANGEFINDER_PWM_OFFSET" value="0.56" description="Sensor offset in meters, as in where one wants zero to be for e.g. landinggear to ground, default is 0.0"/>
+    <define name="RANGEFINDER_PWM_MIN_RANGE" value="0.44" unit="m" description="If defined, set limit to minimum value the sensor can reliably measure, default 0.25m"/>
+    <define name="RANGEFINDER_PWM_MAX_RANGE" value="2.2" unit="m" description="If defined, set limit to maximum value the sensor can reliably measure, default 7.0m"/>
+    <define name="RANGEFINDER_PWM_SYNC_SEND" value="TRUE|FALSE" description="Send RAW and scaled message with each new measurement,useful for debugging sensor issues (default: FALSE)"/>
+    <define name="RANGEFINDER_PWM_PWM_PERIOD" value="4096" description="period in microsec (e.g. 4096 for 12 bits sensor)"/>
+    <define name="RANGEFINDER_PWM_PWM_OFFSET" value="320" description="initial offset on the raw pwm signal if needed (default: 820usec). Do not confuse this with RANGEFINDER_PWM_OFFSET"/>
+  </doc>
+
+  <dep>
+    <depends>pwm_meas</depends>
+    <provides>sonar</provides>
+  </dep>
+  <header>
+    <file name="rangefinder_pwm.h" />
+  </header>
+  <init fun="rangefinder_pwm_init()" />
+  <periodic fun="rangefinder_pwm_read()" freq="RANGEFINDER_PWM_PERIODIC_FREQUENCY" />
+  <!-- <periodic fun="rangefinder_periodic_report()" freq="10" autorun="FALSE"/> -->
+  <makefile target="ap|nps|sim">
+    <file name="rangefinder_pwm.c"/>
+  </makefile>
+  <makefile target="ap">
+    <!-- <configure name="RANGEFINDER_PWM_PORT" value="$(RANGEFINDER_PWM_PORT)"/> -->
+    <configure name="RANGEFINDER_PWM_USE_FOR_AGL" default="0"/>
+    <configure name="RANGEFINDER_PWM_COMPENSATE_ROTATION" default="0"/>
+    <configure name="RANGEFINDER_PWM_PERIODIC_FREQUENCY" default="30"/>
+    <define name="RANGEFINDER_PWM_PORT" value="$(RANGEFINDER_PWM_PORT)" cond="ifdef RANGEFINDER_PWM_PORT"/>
+    <define name="$(RANGEFINDER_PWM_PORT)_TICKS_PER_USEC" value="1" />
+    <define name="USE_$(RANGEFINDER_PWM_PORT)" value="PWM_PULSE_TYPE_ACTIVE_LOW" />
+    <define name="RANGEFINDER_PWM_USE_FOR_AGL" value="$(RANGEFINDER_PWM_USE_FOR_AGL)"/>
+    <!-- <define name="RANGEFINDER_PWM_SCALE" value="$(RANGEFINDER_PWM_SCALE)"/> -->
+    <define name="RANGEFINDER_PWM_COMPENSATE_ROTATION" value="$(RANGEFINDER_PWM_COMPENSATE_ROTATION)"/>
+    <define name="RANGEFINDER_PWM_PERIODIC_FREQUENCY" value="$(RANGEFINDER_PWM_PERIODIC_FREQUENCY)"/>
+    <file name="rangefinder_pwm.c"/>
+  </makefile>
+</module>
