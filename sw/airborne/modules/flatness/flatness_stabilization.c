@@ -42,16 +42,17 @@ typedef struct {
 
 // constants
 // const float G[4][4] = {
-//     { -4.03e-8f,  -3.67e-8f,  -3.25e-8f,  -3.51e-8f },  // Accel z
 //     { 61.1e-8f,  -61.1e-8f,  -63.2e-8f,   62.5e-8f },   // Ang x
 //     { 149e-8f,    158e-8f,   -135e-8f,   -147e-8f },    // Ang y
-//     { -15.8e-8f,   18.2e-8f,  -14.6e-8f,    9.8e-8f }   // Ang z
+//     { -15.8e-8f,   18.2e-8f,  -14.6e-8f,    9.8e-8f },   // Ang z
+//     { -4.03e-8f,  -3.67e-8f,  -3.25e-8f,  -3.51e-8f }  // Accel z
 // };
 static float G[4][4] = {
-    { -3.50f, -3.50f, -3.50f, -3.50f },  // Accel z
+    // omega_1, omega_2, omega_3, omega_4
     { 70.0f, -70.0f, -70.0f, 70.0f },   // Ang x
     { 150.0f, 150.0f, -150.0f, -150.0f },    // Ang y
-    { -15.0f, 15.0f, -15.0f, 15.0f }   // Ang z
+    { -15.0f, 15.0f, -15.0f, 15.0f },   // Ang z
+    { -3.50f, -3.50f, -3.50f, -3.50f }  // Accel z
 };
 
 static const float MU_X = 70.0f  / 100000000.0f;
@@ -177,26 +178,25 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
     // This comes from the guidance code or by the rc controller (map 0-9600 -> 0-2g)
     float specific_thrust = -(float)(2*9.81/9600)*thrust->sp.thrust_i[THRUST_AXIS_Z];
 
-    // inverse rotational flatness
-    inv_rot_flatness(specific_thrust, m_cmd, act.cmd);
-    
-    // float Ginv[4][4];
-    // float *Ginv_rows[4] = { Ginv[0], Ginv[1], Ginv[2], Ginv[3] };
-    // float u_squared[4];
-    // float m_and_tau[4] = {m_cmd[0], m_cmd[1], m_cmd[2], specific_thrust};
-    // float_mat_inv_4d(Ginv, G);
-    // float_mat_vect_mul(u_squared, Ginv_rows, m_and_tau, 4, 4);
-    // float temp_u[4];
-    // temp_u[0] = SAFE_SQRT(u_squared[0] * 100000000);
-    // temp_u[1] = SAFE_SQRT(u_squared[1] * 100000000);
-    // temp_u[2] = SAFE_SQRT(u_squared[2] * 100000000);
-    // temp_u[3] = SAFE_SQRT(u_squared[3] * 100000000);
+    // 1. inverse rotational flatness
+    // inv_rot_flatness(specific_thrust, m_cmd, act.cmd);
+    // 2. ... or do it with matrix inverse
+    float Ginv[4][4];
+    float *Ginv_rows[4] = { Ginv[0], Ginv[1], Ginv[2], Ginv[3] };
+    float u_squared[4];
+    float m_and_tau[4] = {m_cmd[0], m_cmd[1], m_cmd[2], specific_thrust};
+    float_mat_inv_4d(Ginv, G);
+    float_mat_vect_mul(u_squared, Ginv_rows, m_and_tau, 4, 4);
+    act.cmd[0] = SAFE_SQRT(u_squared[0] * 100000000.0f);
+    act.cmd[1] = SAFE_SQRT(u_squared[1] * 100000000.0f);
+    act.cmd[2] = SAFE_SQRT(u_squared[2] * 100000000.0f);
+    act.cmd[3] = SAFE_SQRT(u_squared[3] * 100000000.0f);
 
-    // saturate and assign commands
+    // saturate and assign commands. proper WLS needed!
     for (int i = 0; i < ACTUATORS_NB; i++) {
-        if (act.cmd[i] > 9600)
+        if (act.cmd[i] > 9600) {
             act.cmd[i] = 9600;
-
+        }
         actuators_pprz[i] = act.cmd[i];
     }
     
@@ -205,8 +205,7 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
     stabilization.cmd[COMMAND_THRUST] = cmd[COMMAND_THRUST]; // for autopilot_check_in_flight()
 
     // printf("%d\t",in_flight);
-    // printf("%.0f\t%.0f\t%.0f\t%.0f", act.cmd[0], act.cmd[1], act.cmd[2], act.cmd[3]);
-    // printf("%.0f\t%.0f\t%.0f\t%.0f", temp_u[0], temp_u[1], temp_u[2], temp_u[3]);
+    // printf("%.0f\t%.0f\t%.0f\t%.0f\t", act.cmd[0], act.cmd[1], act.cmd[2], act.cmd[3]);
     // printf("\n");
 
     expose_dbg_variables();
