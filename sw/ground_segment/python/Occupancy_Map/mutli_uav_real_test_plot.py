@@ -51,11 +51,11 @@ with open(filename, 'r') as f:
                 continue
                 
             # Time constraints per aircraft
-            if ac_id in ['121', '219'] and 1018 <= t <= 1030:
+            if ac_id in ['121', '219'] and 960 <= t <= 1000:
                 data[ac_id]['x'].append(float(parts[3]) / 256.0)
                 data[ac_id]['y'].append(float(parts[4]) / 256.0)
                 data[ac_id]['z'].append(z)
-            elif ac_id == '123' and 1018 <= t <= 1030:
+            elif ac_id == '123' and 960 <= t <= 1000:
                 data[ac_id]['x'].append(float(parts[3]) / 256.0)
                 data[ac_id]['y'].append(float(parts[4]) / 256.0)
                 data[ac_id]['z'].append(z)

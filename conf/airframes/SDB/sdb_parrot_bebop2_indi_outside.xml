@@ -64,11 +64,9 @@
       <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/logs"/>
 
 <!--killall -9 ap.elf || /data/ftp/internal_000/paparazzi/ap.elf -->
-
       <configure name="HOST" value="192.168.209.$(AC_ID)"/><!-- the airframe -->
       <configure name="MODEM_HOST" value="192.168.209.155"/> <!-- the router -->
       <configure name="MODEM_BROADCAST" value="TRUE"/>
-      
     </target>
 
     <target name="nps" board="pc">
@@ -77,7 +75,11 @@
       <module name="udp"/>
     </target>
 
-    <module name="gps" type="ublox"/>
+    <!-- <module name="gps" type="ublox"/> -->
+
+    <module name="gps" type="ublox">
+      <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
+    </module>
 
     <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>

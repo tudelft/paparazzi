@@ -9,45 +9,6 @@ from scipy.ndimage import gaussian_filter
 from shapely.affinity import rotate, translate
 import pandas as pd
 
-# --- Paparazzi setup ---
-# PPRZ_HOME = os.getenv("PAPARAZZI_HOME", os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../..')))
-# sys.path.append(PPRZ_HOME + "/sw/ext/pprzlink/lib/v1.0/python")
-
-
-# lat0, lon0, alt0 = 52.1681551, 4.4126468, 0.0
-# xml_file = os.path.expanduser("~/paparazzi2/paparazzi/conf/flight_plans/SDB/sdb_rotwing_EHVB.xml")
-# tree = ET.parse(xml_file)
-# root = tree.getroot()
-
-# waypoints = {}
-# for wp in root.findall(".//waypoint"):
-#     name = wp.attrib.get("name")
-#     if "lat" in wp.attrib and "lon" in wp.attrib:
-#         lat, lon = float(wp.attrib["lat"]), float(wp.attrib["lon"])
-#         alt = float(wp.attrib.get("alt", 0.0))
-#         x, y, z = pm.geodetic2enu(lat, lon, alt, lat0, lon0, alt0)
-#         waypoints[name] = (x, y, z)
-#     elif "x" in wp.attrib and "y" in wp.attrib:
-#         x, y = float(wp.attrib["x"]), float(wp.attrib["y"])
-#         z = float(wp.attrib.get("z", 0.0))
-#         waypoints[name] = (x, y, z)
-
-
-# softgeo_xy = np.array([waypoints[wp][:2] for wp in ["S1","S2","S3","S4","S5","S6","S7","S8","S9"]])
-# soft_poly = Polygon(softgeo_xy)
-# buffer_val = 30.0
-# safe_poly = soft_poly.buffer(-buffer_val) if buffer_val > 0 else soft_poly
-
-# # Precompute Grid globally once
-# x_min, y_min, x_max, y_max = soft_poly.bounds
-# grid_resolution = 10.0
-# grid_x = np.arange(x_min, x_max + grid_resolution, grid_resolution)
-# grid_y = np.arange(y_min, y_max + grid_resolution, grid_resolution)
-# XX, YY = np.meshgrid(grid_x, grid_y)
-# grid_points_all = np.column_stack([XX.ravel(), YY.ravel()])
-# inside_mask_full = np.array([soft_poly.contains(Point(p)) for p in grid_points_all])
-# grid_points = grid_points_all[inside_mask_full]
-
 
 
 # --- Manually set this before each batch run (2000 or 5000) ---

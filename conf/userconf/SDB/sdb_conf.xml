@@ -85,7 +85,7 @@
    flight_plan="flight_plans/SDB/sdb_bebop_EHVB.xml"
    settings="settings/rotorcraft_basic.xml"
    settings_modules="modules/ahrs_int_cmpl_quat.xml modules/air_data.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_indi.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_rotorcraft.xml modules/stabilization_indi.xml"
-   gui_color="Black"
+   gui_color="Yellow"
   />
   <aircraft
    name="B_Lion"

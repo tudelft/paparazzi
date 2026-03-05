@@ -174,7 +174,7 @@ def manual_test(interface):
  
     while True:
         # send_guided(interface, 44,  1.0,  5.0, 0.0)
-        send_guided(interface, 121, 0.2, 0.2, 0.1)
+        send_guided(interface, 121, 10.0, 0.0, 0.0)
 
         # print("Sent test commands: AC44 -> (1,5), AC46 -> (-1,-5)")
         time.sleep(0.2)   # 5 Hz

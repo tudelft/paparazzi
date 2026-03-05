@@ -72,11 +72,10 @@ TOOLS=sw/tools
 # build some stuff in subdirs
 # nothing should depend on these...
 #
-PPRZCENTER=sw/supervision
 MISC=sw/ground_segment/misc
 LOGALIZER=sw/logalizer
 
-SUBDIRS = $(PPRZCENTER) $(LOGALIZER) sw/tools
+SUBDIRS = $(LOGALIZER) sw/tools
 SUBDIRS_EXTRA = $(MISC)
 
 #
@@ -179,6 +178,9 @@ ext:
 opencv_bebop:
 	$(MAKE) -C $(EXT) opencv_bebop
 
+mocap:
+	$(MAKE) -C $(EXT) unifiedmocaprouter
+
 #
 # make misc subdirs
 #
@@ -192,8 +194,6 @@ $(SUBDIRS): libpprz
 
 $(SUBDIRS_EXTRA): libpprz
 	$(MAKE) -C $@
-
-$(PPRZCENTER): libpprz
 
 $(LOGALIZER): libpprz
 
@@ -356,6 +356,6 @@ test_full:
 
 .PHONY: all print_build_version _print_building _save_build_version init dox ground_segment ground_segment.opt \
 subdirs $(SUBDIRS) conf ext libpprz libpprzlink.update libpprzlink.install cockpit cockpit.opt tmtc tmtc.opt generators\
-static sim_static opencv_bebop\
+static sim_static opencv_bebop mocap\
 clean cleanspaces ab_clean dist_clean distclean dist_clean_irreversible \
 test test_examples test_math test_all_confs

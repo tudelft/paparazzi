@@ -46,9 +46,20 @@ class InstallWindow(QWidget):
 
     def cmd_dev(self):
         self.execute('sudo -E apt-get -f -y install paparazzi-dev')
+        self.execute('sudo -E apt-get -f -y install python-is-python3')
         # Missing
         if distro_version <= 20.04:
             self.execute('sudo -E apt-get install -y python3-lxml python3-numpy')
+        elif distro_version >= 24.04:
+            self.execute('sudo -E apt-get install -y liblablgtk2-ocaml-dev')
+        if distro_version == 18.04:
+            self.execute('wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -')
+            self.execute('sudo apt-add-repository \'deb https://apt.kitware.com/ubuntu/ bionic main\'')
+        self.execute('sudo apt-get update && sudo apt-get install cmake')
+        self.execute('sudo -E apt-get install -y libboost-program-options-dev libboost-filesystem-dev')
+        if distro_version >= 24.04:
+            self.execute('python3 -m pip install telnetlib3') # Required for bebop tools
+
 
     def cmd_arm(self):
         self.execute('sudo -E apt-get -f -y install paparazzi-dev')
@@ -71,23 +82,42 @@ class InstallWindow(QWidget):
         self.execute('sudo -E apt-get -f -y install dfu-util')
         self.execute('sudo -E cp conf/system/udev/rules/*.rules /etc/udev/rules.d/ && sudo -E udevadm control --reload-rules')
 
+    def cmd_gazebo_classic(self):
+        if distro_version <= 22.04:
+            self.execute('sudo -E apt-get update')
+            self.execute('sudo -E apt-get -f -y install lsb-release wget gnupg')
+            self.execute('sudo sh -c \'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list\'')
+            self.execute('wget http://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -')
+            self.execute('sudo apt update')
+            self.execute('sudo -E apt-get -f -y install gazebo11 libgazebo11-dev')
+        self.execute('git submodule init && git submodule sync && git submodule update ./sw/ext/tudelft_gazebo_models')
+
     def cmd_gazebo(self):
-        if distro_version > 20.04:
-            self.execute('sudo -E apt-get -f -y install gazebo libgazebo-dev')
-        else:
-            self.execute('sudo -E apt-get -f -y install gazebo9 libgazebo9-dev')
+        if distro_version >= 22.04:
+            self.execute('sudo -E apt-get update')
+            self.execute('sudo -E apt-get -f -y install curl lsb-release gnupg')
+            self.execute('sudo curl https://packages.osrfoundation.org/gazebo.gpg --output /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg')
+            self.execute('echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] https://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null')
+            self.execute('sudo apt update')
+            self.execute('sudo -E apt-get -f -y install gz-harmonic')
         self.execute('git submodule init && git submodule sync && git submodule update ./sw/ext/tudelft_gazebo_models')
 
 
     def cmd_bebopcv(self):
         self.execute('git submodule init && git submodule sync && git submodule update ./sw/ext/opencv_bebop')
-        self.execute('sudo -E apt-get -f -y install cmake libjpeg-turbo8-dev libpng-dev libtiff-dev zlib1g-dev libdc1394-22-dev')
+        if distro_version < 22.04:
+            self.execute('sudo -E apt-get -f -y install cmake libjpeg-turbo8-dev libpng-dev libtiff-dev zlib1g-dev libdc1394-22-dev')
+        else:
+            self.execute('sudo -E apt-get -f -y install cmake libjpeg-turbo8-dev libpng-dev libtiff-dev zlib1g-dev libdc1394-dev')
 
     def cmd_vlc(self):
         self.execute('sudo -E apt-get -f -y install ffmpeg vlc jstest-gtk default-jre')
         self.execute('sudo -E apt-get install -y python3-pip')
+        self.execute('python3 -m pip install future') # Required for MAVLink
         self.execute('python3 -m pip install pyquaternion ivy-python') # Required for NatNat
         self.execute('python3 -m pip install pymap3d') # Required for Moving-Base
+        self.execute('python3 -m pip install opencv-python') # Required for RTP-viewer
+        
 
     def cmd_doc(self):
         self.view('https://paparazzi-uav.readthedocs.io')
@@ -152,17 +182,21 @@ class InstallWindow(QWidget):
         button6.clicked.connect(self.cmd_mcu)
         btn_layout.addWidget(button6)
 
-        if distro_version <= 20.04:
-            button7 = QPushButton('7) Gazebo9')
-        else:
-            button7 = QPushButton('7) Gazebo11')
-        button7.clicked.connect(self.cmd_gazebo)
+        button7 = QPushButton('7a) Gazebo11 Classic')
+        if distro_version > 22.04:
+            button7.setDisabled(True)
+        button7.clicked.connect(self.cmd_gazebo_classic)
         btn_layout.addWidget(button7)
+
+        button7b = QPushButton('7b) Gazebo Harmonic')
+        if distro_version >= 22.04:
+            button7b.clicked.connect(self.cmd_gazebo)
+        else:
+            button7b.setDisabled(True)
+        btn_layout.addWidget(button7b)
 
         button8 = QPushButton('8) Bebop Opencv')
         button8.clicked.connect(self.cmd_bebopcv)
-        if distro_version > 20.04:
-            button8.setDisabled(True)
         btn_layout.addWidget(button8)
 
         button9 = QPushButton('9) VLC + Joystick + Natnet')
