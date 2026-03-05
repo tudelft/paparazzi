@@ -1,6 +1,6 @@
-(* Automatically generated from /tmp/tmp.0iqdccyhzw by lablgladecc *)
+(* Automatically generated from /tmp/tmp.iy1smMNsKr by lablgladecc *)
 
-class table_led_editor ?(file="/tmp/tmp.0iqdccyhzw") ?domain ?autoconnect(*=true*) () =
+class table_led_editor ?(file="/tmp/tmp.iy1smMNsKr") ?domain ?autoconnect(*=true*) () =
   let xmldata = Glade.create ~file  ~root:"table_led_editor" ?domain () in
   object (self)
     inherit Glade.xml ?autoconnect xmldata
