@@ -44,6 +44,8 @@ typedef struct {
 // debugging
 typedef struct {
     float timestamp;
+    float voltage;
+    int32_t throttle;
     struct FloatQuat *quat;
     struct FloatQuat *quat_sp;
     struct FloatRates *rates;

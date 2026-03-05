@@ -28,6 +28,7 @@
 
 #include "filters/low_pass_filter.h"
 #include "mcu_periph/sys_time.h"
+#include "modules/energy/electrical.h"
 
 // #include "modules/datalink/telemetry.h"
 
@@ -40,6 +41,19 @@ typedef struct {
 } Gain_t;
 
 // constants
+// const float G[4][4] = {
+//     { -4.03e-8f,  -3.67e-8f,  -3.25e-8f,  -3.51e-8f },  // Accel z
+//     { 61.1e-8f,  -61.1e-8f,  -63.2e-8f,   62.5e-8f },   // Ang x
+//     { 149e-8f,    158e-8f,   -135e-8f,   -147e-8f },    // Ang y
+//     { -15.8e-8f,   18.2e-8f,  -14.6e-8f,    9.8e-8f }   // Ang z
+// };
+static float G[4][4] = {
+    { -3.50f, -3.50f, -3.50f, -3.50f },  // Accel z
+    { 70.0f, -70.0f, -70.0f, 70.0f },   // Ang x
+    { 150.0f, 150.0f, -150.0f, -150.0f },    // Ang y
+    { -15.0f, 15.0f, -15.0f, 15.0f }   // Ang z
+};
+
 static const float MU_X = 70.0f  / 100000000.0f;
 static const float MU_Y = 150.0f / 100000000.0f;
 static const float MU_Z = 15.0f  / 100000000.0f;
@@ -68,6 +82,7 @@ static struct FloatRates rates_sp;
 static struct FloatRates *rates;
 static struct FloatRates ang_accel_sp = {0., 0., 0.};
 static float ang_accel_filt[3] = {0., 0., 0.};
+static int32_t temp_throttle;
 
 // helper functions
 static float discrete_first_order_filter(float, float, float);
@@ -80,6 +95,8 @@ static void expose_dbg_variables(void);
 static void expose_dbg_variables(void)
 {
     dbg.timestamp = timestamp;
+    dbg.voltage = electrical.vsupply;
+    dbg.throttle = temp_throttle;
     dbg.quat = quat;
     dbg.quat_sp = &quat_sp;
     dbg.rates = rates;
@@ -162,17 +179,34 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
 
     // inverse rotational flatness
     inv_rot_flatness(specific_thrust, m_cmd, act.cmd);
+    
+    // float Ginv[4][4];
+    // float *Ginv_rows[4] = { Ginv[0], Ginv[1], Ginv[2], Ginv[3] };
+    // float u_squared[4];
+    // float m_and_tau[4] = {m_cmd[0], m_cmd[1], m_cmd[2], specific_thrust};
+    // float_mat_inv_4d(Ginv, G);
+    // float_mat_vect_mul(u_squared, Ginv_rows, m_and_tau, 4, 4);
+    // float temp_u[4];
+    // temp_u[0] = SAFE_SQRT(u_squared[0] * 100000000);
+    // temp_u[1] = SAFE_SQRT(u_squared[1] * 100000000);
+    // temp_u[2] = SAFE_SQRT(u_squared[2] * 100000000);
+    // temp_u[3] = SAFE_SQRT(u_squared[3] * 100000000);
 
-    // assign commands
+    // saturate and assign commands
     for (int i = 0; i < ACTUATORS_NB; i++) {
+        if (act.cmd[i] > 9600)
+            act.cmd[i] = 9600;
+
         actuators_pprz[i] = act.cmd[i];
     }
     
     cmd[COMMAND_THRUST] = thrust->sp.thrust_i[THRUST_AXIS_Z];
+    temp_throttle = cmd[COMMAND_THRUST];
     stabilization.cmd[COMMAND_THRUST] = cmd[COMMAND_THRUST]; // for autopilot_check_in_flight()
 
     // printf("%d\t",in_flight);
     // printf("%.0f\t%.0f\t%.0f\t%.0f", act.cmd[0], act.cmd[1], act.cmd[2], act.cmd[3]);
+    // printf("%.0f\t%.0f\t%.0f\t%.0f", temp_u[0], temp_u[1], temp_u[2], temp_u[3]);
     // printf("\n");
 
     expose_dbg_variables();

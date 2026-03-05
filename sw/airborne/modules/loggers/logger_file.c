@@ -115,6 +115,9 @@ static FILE *logger_file = NULL;
 
 static void logger_file_write_header(FILE *file) {
     fprintf(file, "timestamp");
+    fprintf(file, ",voltage");
+    fprintf(file, ",throttle");
+    fprintf(file, ",acc_x,acc_y,acc_z");
     fprintf(file, ",qs_sp,qx_sp,qy_sp,qz_sp");
     fprintf(file, ",qs,qx,qy,qz");
     fprintf(file, ",rates_p_sp,rates_q_sp,rates_r_sp");
@@ -128,7 +131,14 @@ static void logger_file_write_header(FILE *file) {
 }
 
 static void logger_file_write_row(FILE *file) {
-    fprintf(file, "%f", get_sys_time_float());
+    struct FloatVect3 acc_f;
+    struct Int32Vect3 *acc_i = stateGetAccelBody_i();
+    ACCELS_FLOAT_OF_BFP(acc_f, *acc_i);
+
+    fprintf(file, "%f", dbg.timestamp);
+    fprintf(file, ",%f", dbg.voltage);
+    fprintf(file, ",%d", dbg.throttle);
+    fprintf(file, ",%f,%f,%f", acc_f.x, acc_f.y, acc_f.z);
     fprintf(file, ",%f,%f,%f,%f", dbg.quat_sp->qi, dbg.quat_sp->qx, dbg.quat_sp->qy, dbg.quat_sp->qz);
     fprintf(file, ",%f,%f,%f,%f", dbg.quat->qi, dbg.quat->qx, dbg.quat->qy, dbg.quat->qz);
     fprintf(file, ",%f,%f,%f", dbg.rates_sp->p, dbg.rates_sp->q, dbg.rates_sp->r);
@@ -169,12 +179,12 @@ void logger_file_start(void)
   char filename[512];
 
   // Check for available files
-  sprintf(filename, "%s/%s.csv", STRINGIFY(LOGGER_FILE_PATH), date_time);
+  sprintf(filename, "%s/test.csv", STRINGIFY(LOGGER_FILE_PATH));
   while ((logger_file = fopen(filename, "r"))) {
     fclose(logger_file);
 
-    sprintf(filename, "%s/%s_%05d.csv", STRINGIFY(LOGGER_FILE_PATH), date_time, counter);
     counter++;
+    sprintf(filename, "%s/test_%02d.csv", STRINGIFY(LOGGER_FILE_PATH), counter);
   }
 
   logger_file = fopen(filename, "w");

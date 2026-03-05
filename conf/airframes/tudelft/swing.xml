@@ -6,13 +6,13 @@
         
         <autopilot name="swing_autopilot"/>
 
-        <define name="IMU_SWING_PERIODIC_FREQ" value="100"/>
-        <configure name="PERIODIC_FREQUENCY"   value="100"/> <!-- use configure here, define produces mult redefinitions -->
-
         <configure name="PREFIX" value="/opt/arm-2012.03/bin/arm-none-linux-gnueabi-"/>
         <configure name="USE_BARO_BOARD" value="FALSE"/>
 
         <target name="ap" board="parrot_minidrone">
+            <define name="IMU_SWING_PERIODIC_FREQ" value="100"/>
+            <configure name="PERIODIC_FREQUENCY"   value="100"/> <!-- use configure here, define produces mult redefinitions -->
+
             <configure name="USE_MAGNETOMETER" value="FALSE"/>
 
             <!-- ins configured for optitrack -->
@@ -38,6 +38,9 @@
         </target>
 
         <target name="nps" board="pc">
+            <define name="IMU_SWING_PERIODIC_FREQ" value="500"/>
+            <configure name="PERIODIC_FREQUENCY"   value="500"/> <!-- use configure here, define produces mult redefinitions -->
+
             <module name="fdm" type="jsbsim"/>
             <module name="udp"/>
             <configure name="USE_MAGNETOMETER" value="TRUE"/>
@@ -45,7 +48,7 @@
 
             <module name="logger_file">
                 <define name="LOGGER_FILE_PATH" value="/home/ntouev/LOGS/swing/nps"/>
-                <configure name="LOGGER_FILE_FREQUENCY" value="100"/>
+                <configure name="LOGGER_FILE_FREQUENCY" value="500"/>
             </module>
 
         </target>
