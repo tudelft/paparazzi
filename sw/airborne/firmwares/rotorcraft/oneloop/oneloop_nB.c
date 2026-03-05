@@ -500,7 +500,7 @@ bool          use_push_Position     = false;                                    
 bool          radio_body_ctrl       = false;                                      // Control nI in body axes   
 bool          oneloop_nB_Z_hold     = false;                                      // Hold only the altitude when in NAV  
 float  xi = 0.0;
-float max_pusher_cmd = 5000;
+float max_pusher_cmd = 7500;
 //====================================================================================================================================
 // Error Controller and Reference Model VARIABLES
 //====================================================================================================================================
@@ -528,8 +528,8 @@ struct Gains3rdOrder k_pos_e_indi;
 float k1_NE_tune = 0.6;
 float k2_NE_tune = 1.85;
 /* PID */
-float k_K = 0.6;
-float k_P = 1.8;
+float k_K = 0.6; //1.33; //2.4/1.8=1.33
+float k_P = 1.8; //
 float k_I = 0.4;
 float k_D = 0.2;
 float temp_P_error[3];
@@ -908,7 +908,7 @@ static void Pos_KPID_ARW(const float x_des[3],
     static float prev_vel[3] = {0.f, 0.f, 0.f};
     static float integral[3] = {0.f, 0.f, 0.f};
 
-    const float a_max = 0.5f * 9.81f;//0.05f * 9.81f;//0.12f * 9.81f; //0.5f * 9.81f;
+    const float a_max = 0.12f * 9.81f;//0.05f * 9.81f;//0.12f * 9.81f; //0.5f * 9.81f;
     const float v_max = 0.5f;
     const float I_MAX = 0.4f;
 
@@ -1915,8 +1915,8 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
     if(use_push_PID){
       // Desired Velocity ============================================================== 
       if(use_push_Position){
-        oneloop_nB.push_nB.vN_d = (oneloop_nB.push_nB.pN_d-oneloop_nB.push_nB.pN)*k_P; //
-        oneloop_nB.push_nB.vE_d = (oneloop_nB.push_nB.pE_d-oneloop_nB.push_nB.pE)*k_P; //
+        oneloop_nB.push_nB.vN_d = (oneloop_nB.push_nB.pN_d-oneloop_nB.push_nB.pN)*k_K; //
+        oneloop_nB.push_nB.vE_d = (oneloop_nB.push_nB.pE_d-oneloop_nB.push_nB.pE)*k_K; //
       } else {
         oneloop_nB.push_nB.vN_d = -radio_pitch_cmd / MAX_PPRZ * oneloop_nB.push_nB.max_v_d ; //
         oneloop_nB.push_nB.vE_d =  radio_roll_cmd  / MAX_PPRZ * oneloop_nB.push_nB.max_v_d ; //
@@ -2010,8 +2010,8 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
 #ifdef ROTWING_EFF_SCHED_MP_dFdu    
     if(use_push_PID){
       // Desired Velocity from Position Set Point ============================================================== 
-      oneloop_nB.push_nB.vN_d = (pos_des[0]-oneloop_nB.gui_state.pos[0])*k_K; //
-      oneloop_nB.push_nB.vE_d = (pos_des[1]-oneloop_nB.gui_state.pos[1])*k_K; //
+      oneloop_nB.push_nB.vN_d = (oneloop_nB.push_nB.pN_d-oneloop_nB.push_nB.pN)*k_K;//
+      oneloop_nB.push_nB.vE_d = (oneloop_nB.push_nB.pE_d-oneloop_nB.push_nB.pE)*k_K;//
     }
 #endif
   }
@@ -2034,8 +2034,10 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
     oneloop_nB.push_nB.vE_filt = push_PID_vel[1].o[0]; 
     // Calculate Amplitude ===========================================================
     float push_delta_v[2];
-    push_delta_v[0] = (oneloop_nB.push_nB.vN_d_filt-oneloop_nB.push_nB.vN_filt);
-    push_delta_v[1] = (oneloop_nB.push_nB.vE_d_filt-oneloop_nB.push_nB.vE_filt);
+    //push_delta_v[0] = (oneloop_nB.push_nB.vN_d_filt-oneloop_nB.push_nB.vN_filt);
+    //push_delta_v[1] = (oneloop_nB.push_nB.vE_d_filt-oneloop_nB.push_nB.vE_filt);
+    push_delta_v[0] = (oneloop_nB.push_nB.vN_d-oneloop_nB.push_nB.vN)*k_P;
+    push_delta_v[1] = (oneloop_nB.push_nB.vE_d-oneloop_nB.push_nB.vE)*k_P;
     // Allocation on Integral Solution ===============================================
     float push_delta_v_norm = sqrtf(push_delta_v[0] * push_delta_v[0] + push_delta_v[1] * push_delta_v[1]);
     float r_int_sol = oneloop_nB.sta_state.att_d[2];
