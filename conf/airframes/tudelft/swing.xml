@@ -6,8 +6,8 @@
         
         <autopilot name="swing_autopilot"/>
 
-        <define name="IMU_SWING_PERIODIC_FREQ" value="500"/>
-        <configure name="PERIODIC_FREQUENCY"   value="500"/> <!-- use configure here, define produces mult redefinitions -->
+        <define name="IMU_SWING_PERIODIC_FREQ" value="100"/>
+        <configure name="PERIODIC_FREQUENCY"   value="100"/> <!-- use configure here, define produces mult redefinitions -->
 
         <configure name="PREFIX" value="/opt/arm-2012.03/bin/arm-none-linux-gnueabi-"/>
         <configure name="USE_BARO_BOARD" value="FALSE"/>
@@ -33,7 +33,7 @@
 
             <module name="logger_file">
                 <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
-                <configure name="LOGGER_FILE_FREQUENCY" value="500"/>
+                <configure name="LOGGER_FILE_FREQUENCY" value="200"/>
             </module>
         </target>
 
@@ -45,7 +45,7 @@
 
             <module name="logger_file">
                 <define name="LOGGER_FILE_PATH" value="/home/ntouev/LOGS/swing/nps"/>
-                <configure name="LOGGER_FILE_FREQUENCY" value="500"/>
+                <configure name="LOGGER_FILE_FREQUENCY" value="100"/>
             </module>
 
         </target>

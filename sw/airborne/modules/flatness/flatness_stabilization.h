@@ -43,6 +43,7 @@ typedef struct {
 
 // debugging
 typedef struct {
+    float timestamp;
     struct FloatQuat *quat;
     struct FloatQuat *quat_sp;
     struct FloatRates *rates;

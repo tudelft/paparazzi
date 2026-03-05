@@ -27,6 +27,7 @@
 #include "modules/actuators/actuators.h"
 
 #include "filters/low_pass_filter.h"
+#include "mcu_periph/sys_time.h"
 
 // #include "modules/datalink/telemetry.h"
 
@@ -39,21 +40,21 @@ typedef struct {
 } Gain_t;
 
 // constants
-// static const float PHI_COEFF_DIV = 100000000.0f;
 static const float MU_X = 70.0f  / 100000000.0f;
 static const float MU_Y = 150.0f / 100000000.0f;
 static const float MU_Z = 15.0f  / 100000000.0f;
-static const float C_Z  = -5.0f  / 100000000.0f;
+static const float C_Z  = -3.5f  / 100000000.0f;
 static const float ACT_CUTOFF_OMEGA = 11.0f;
 static const float FILT_CUTOFF_FREQ = 5.0f;
-static const Gain_t Kq = {1.0f, 1.0f, 1.0f};
-static const Gain_t Komega = {5.0f, 5.0f, 5.0f};
+static const Gain_t Kq = {2.5f, 2.5f, 2.5f};
+static const Gain_t Komega = {12.0f, 12.0f, 12.0f};
 
 // global vars declared as extern in header file
 dbg_t dbg;
 struct Fl_stabilization fl_stabilization;
 
 // global vars
+static float timestamp;
 static Butterworth2LowPass act_filter[ACTUATORS_NB];
 static Butterworth2LowPass rates_num_der_filter[3];
 static float ACT_DYN_ALPHA;
@@ -78,6 +79,7 @@ static void expose_dbg_variables(void);
 
 static void expose_dbg_variables(void)
 {
+    dbg.timestamp = timestamp;
     dbg.quat = quat;
     dbg.quat_sp = &quat_sp;
     dbg.rates = rates;
@@ -89,22 +91,25 @@ static void expose_dbg_variables(void)
 
 void flatness_stabilization_init(void)
 {
-    float tau = 1.0 / (2.0 * M_PI * FILT_CUTOFF_FREQ);
-    float sample_time = 1.0 / PERIODIC_FREQUENCY;
+    float tau = 1.0f / (2.0f * M_PI * FILT_CUTOFF_FREQ);
+    float sample_time = 1.0f / PERIODIC_FREQUENCY;
 
     for (int i = 0; i < ACTUATORS_NB; i++) {
-        init_butterworth_2_low_pass(&act_filter[i], tau, sample_time, 0.0);
+        init_butterworth_2_low_pass(&act_filter[i], tau, sample_time, 0.0f);
     }
 
     for (int i = 0; i < 3; i++) {
-        init_butterworth_2_low_pass(&rates_num_der_filter[i], tau, sample_time, 0.0);
+        init_butterworth_2_low_pass(&rates_num_der_filter[i], tau, sample_time, 0.0f);
     }
 
+    // actuator dynamics
     ACT_DYN_ALPHA = exp(-ACT_CUTOFF_OMEGA/PERIODIC_FREQUENCY);
 }
 
 void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpoint *att_sp, struct ThrustSetpoint *thrust, int32_t *cmd)
 {
+    // get the timestamp
+    timestamp = get_sys_time_float();
 
     // calculate quaternion error
     struct FloatQuat quat_err;
@@ -134,7 +139,7 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
         act.state_filt[i] = act_filter[i].o[0];
     }
     
-    // angular acceleration numerical calculation + butterworth filter
+    // angular acceleration: butterworth filter + numerical estimation
     float rates_vector[3] = {rates->p, rates->q, rates->r};
     for (int i = 0; i < 3; i++) {
         update_butterworth_2_low_pass(&rates_num_der_filter[i], rates_vector[i]);
