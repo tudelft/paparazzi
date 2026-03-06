@@ -29,6 +29,32 @@
 
 #include "generated/airframe.h"
 #include "modules/radio_control/radio_control.h"
+#include "generated/modules.h"
+
+#define AUTOPILOT_THROTTLE_THRESHOLD      (MAX_PPRZ / 20)
+#define AUTOPILOT_YAW_THRESHOLD           (MAX_PPRZ * 19 / 20)
+#ifndef AUTOPILOT_STICK_CENTER_THRESHOLD
+#define AUTOPILOT_STICK_CENTER_THRESHOLD  (MAX_PPRZ * 1 / 20)
+#endif
+
+#define THROTTLE_STICK_DOWN()                                           \
+  (radio_control.values[RADIO_THROTTLE] < AUTOPILOT_THROTTLE_THRESHOLD)
+#define YAW_STICK_PUSHED()                                      \
+  (radio_control.values[RADIO_YAW] > AUTOPILOT_YAW_THRESHOLD ||  \
+   radio_control.values[RADIO_YAW] < -AUTOPILOT_YAW_THRESHOLD)
+#define YAW_STICK_CENTERED()                                            \
+  (radio_control.values[RADIO_YAW] < AUTOPILOT_STICK_CENTER_THRESHOLD && \
+   radio_control.values[RADIO_YAW] > -AUTOPILOT_STICK_CENTER_THRESHOLD)
+#define PITCH_STICK_CENTERED()                                          \
+  (radio_control.values[RADIO_PITCH] < AUTOPILOT_STICK_CENTER_THRESHOLD && \
+   radio_control.values[RADIO_PITCH] > -AUTOPILOT_STICK_CENTER_THRESHOLD)
+#define ROLL_STICK_CENTERED()                                           \
+  (radio_control.values[RADIO_ROLL] < AUTOPILOT_STICK_CENTER_THRESHOLD && \
+   radio_control.values[RADIO_ROLL] > -AUTOPILOT_STICK_CENTER_THRESHOLD)
+
+// macros with pointer to radio control struct
+#define THROTTLE_STICK_DOWN_FROM_RC(_rc)                                \
+  (_rc->values[RADIO_THROTTLE] < AUTOPILOT_THROTTLE_THRESHOLD)
 
 /** RC mode switch position helper
  *  switch positions threshold are evenly spaced
@@ -56,6 +82,44 @@ static inline bool rc_mode_switch(uint8_t chan, uint8_t pos, uint8_t max)
 #define RCMode1() rc_mode_switch(RADIO_MODE, 1, 3)
 #define RCMode2() rc_mode_switch(RADIO_MODE, 2, 3)
 #endif
+
+#ifdef AP_MODE_SWITCH
+#define RCAP0() rc_mode_switch(AP_MODE_SWITCH, 0, 3)
+#define RCAP1() rc_mode_switch(AP_MODE_SWITCH, 1, 3)
+#define RCAP2() rc_mode_switch(AP_MODE_SWITCH, 2, 3)
+#endif
+
+static inline bool rc_attitude_sticks_centered(void)
+{
+  return ROLL_STICK_CENTERED() && PITCH_STICK_CENTERED() && YAW_STICK_CENTERED();
+}
+
+#ifdef RADIO_KILL_SWITCH
+static inline bool kill_switch_is_on(void)
+{
+  if (radio_control.values[RADIO_KILL_SWITCH] < 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+#else
+static inline bool kill_switch_is_on(void)
+{
+  return false;
+}
+#endif
+
+static inline uint8_t percent_from_rc(int channel)
+{
+  int per = (MAX_PPRZ + (int32_t)radio_control.values[channel]) * 50 / MAX_PPRZ;
+  if (per < 0) {
+    per = 0;
+  } else if (per > 100) {
+    per = 100;
+  }
+  return per;
+}
 
 
 #endif /* AUTOPILOT_RC_HELPERS_H */
