@@ -19,7 +19,7 @@ from datetime import datetime
 
 # --- PAPER EXPERIMENT TOGGLE ---
 EXPERIMENT_MODE = "ENERGY_AWARE" # Change to "BASELINE" for the control run
-SHOW_REAL_TIME_PLOT = False
+SHOW_REAL_TIME_PLOT = True
 
 if EXPERIMENT_MODE == "ENERGY_AWARE":
     lam = 0.5       # Planner cares about energy
@@ -342,13 +342,13 @@ def world_to_grid(x, y):
 # -----------------------------
 
 dt_step = 1.0
-v_drift = np.array([0.5, 0.0])
+v_drift = np.array([1.0, 0.0])
 theta_FOV = np.deg2rad(45)
 E_scale = 2.0
 E_scale_track = 1.0
 gamma_wind = 5.0
 v_wind = np.array([0.0, 0.0])
-v_max = 15.0        # max velocity [m/s]
+v_max = 8.0        # max velocity [m/s]
 
 confirm_pconf = 0.6
 peak_tresh = 0.75
@@ -665,7 +665,7 @@ def calculate_global_map_entropy_numba(prob_map, inside_mask):
 
 def plan_velocity_ipp_3D(drone_pos, drone_vel, belief_map, inside_mask, grid_origin, grid_resolution, soft_poly,
                          constraint_poly=None,
-                         fov_angle=theta_FOV, v_max=15.0, n_directions=16,
+                         fov_angle=theta_FOV, v_max=8.0, n_directions=16,
                          step_length=40.0, altitude_candidates=[30, 35, 40, 45, 50],
                          E_scale=100.0,    
                          lam=0.5,          
@@ -775,7 +775,7 @@ def plan_velocity_ipp_3D(drone_pos, drone_vel, belief_map, inside_mask, grid_ori
     
     # Calculate the max allowed ground speed for this heading
     # (Matches the logic you pasted in energy_of_path)
-    v_g_allowed = max(2.0, min(15.0, 15.0 + v_headwind_comp))
+    v_g_allowed = max(2.0, min(8.0, 8.0 + v_headwind_comp))
     
     # Calculate velocity components
     travel_time = max(dist / v_g_allowed, 0.1)
@@ -1596,14 +1596,14 @@ if __name__ == "__main__":
                         # Slow down proportional to distance so we don't overshoot.
                         if dist > 75.0:
                             # Far away? Cruise at max speed.
-                            vx_des, vy_des = (vec / (dist + 1e-6)) * 15.0
+                            vx_des, vy_des = (vec / (dist + 1e-6)) * 8.0
                         else:
                             # Closer than 15m? Slow down.
                             # At 15m -> 7.5 m/s
                             # At 2m  -> 1.0 m/s
                             # speed = np.clip(dist * 1.5, 1.0, 20.0)
                             # Gain 0.8 requires ~2.5 m/s² braking (Feasible)
-                            speed = np.clip(dist * 0.3, 0.5, 15.0)
+                            speed = np.clip(dist * 0.3, 0.5, 8.0)
                             vx_des, vy_des = (vec / (dist + 1e-6)) * speed
                         
                         # vz_des = 0.0

@@ -105,7 +105,9 @@
     </module>
 
     <module name="ahrs" type="int_cmpl_quat">
-        <configure name="USE_MAGNETOMETER" value="TRUE"/> <!-- Using Optitrack then set to false-->
+        <configure name="USE_MAGNETOMETER" value="TRUE"/> <!-- if using INS EKF2 this forced already-->
+        <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/><!-- if using INS EKF2 this forced already-->
+        <define name="AHRS_MAG_UPDATE_ALL_AXES" value="TRUE"/>
     </module>
 
     <module name="ins" type="extended"/>
@@ -221,7 +223,7 @@
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
     <define name="MAX_BANK" value="20" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="15" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="8" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
     <define name="PGAIN" value="120"/>

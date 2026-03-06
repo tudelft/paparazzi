@@ -9,14 +9,9 @@
           <field name="neutral" value="true"/>
           <field name="scale_f" value="true"/>
         </field>
-        <field name="neutral" value="-139,132,26" type="int[]"/>
-        <field name="scale_f" value="{ 7.0827, 7.4046, 7.2325 }"/>
+        <field name="neutral" value="-139,133,23" type="int[]"/>
+        <field name="scale_f" value="{ 6.8445, 7.1526, 7.0009 }"/>
       </field>
     </define>
-
-
-
-
-
   </section>
 </airframe>
