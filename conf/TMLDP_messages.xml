@@ -1735,6 +1735,7 @@
       <field name="nB"      type="float[]">Desired vector in Body after RM</field>
       <field name="nB_d"    type="float[]">Desired vector 1st derivative in Body</field>
       <field name="nB_2d"   type="float[]">Desired vector 2nd derivative in Body</field>
+      <field name="nB_3d"   type="float[]">Desired vector 3rd derivative in Body</field>
       <field name="mu_B"    type="float[]">Pricipal rotation axis</field>
     </message>
 

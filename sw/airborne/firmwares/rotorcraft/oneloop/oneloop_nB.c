@@ -647,6 +647,7 @@ static void send_oneloop_nB_ctrl(struct transport_tx *trans, struct link_device 
   float nB[3]     = {oneloop_nB.sta_nB_state.nB.x,     oneloop_nB.sta_nB_state.nB.y,     oneloop_nB.sta_nB_state.nB.z};
   float nB_d[3]   = {oneloop_nB.sta_nB_state.nB_d.x,   oneloop_nB.sta_nB_state.nB_d.y,   oneloop_nB.sta_nB_state.nB_d.z};
   float nB_2d[3]  = {oneloop_nB.sta_nB_state.nB_2d.x,  oneloop_nB.sta_nB_state.nB_2d.y,  oneloop_nB.sta_nB_state.nB_2d.z};
+  float nB_3d[3]  = {oneloop_nB.sta_nB_state.nB_3d.x,  oneloop_nB.sta_nB_state.nB_3d.y,  oneloop_nB.sta_nB_state.nB_3d.z};
   float mu_B[3]    = {oneloop_nB.sta_nB_state.mu_B.x,    oneloop_nB.sta_nB_state.mu_B.y,    oneloop_nB.sta_nB_state.mu_B.z};
   pprz_msg_send_NB_CTRL(trans, dev, AC_ID,
                               3, nI_des,
@@ -657,6 +658,7 @@ static void send_oneloop_nB_ctrl(struct transport_tx *trans, struct link_device 
                               3, nB,
                               3, nB_d,
                               3, nB_2d,
+                              3, nB_3d,
                               3, mu_B);
 }
 static void send_guidance_oneloop_nB(struct transport_tx *trans, struct link_device *dev)
@@ -1662,6 +1664,9 @@ static inline void init_all_LP(void)
   init_LP(&LP.ax, 2.0); // oneloop_nB_filt_cutoff_a
   init_LP(&LP.ay, 2.0); // oneloop_nB_filt_cutoff_a
   init_LP(&LP.az, 2.0); // oneloop_nB_filt_cutoff_a
+  init_LP(&LP.p_ddot, 2.0);
+  init_LP(&LP.q_ddot, 2.0);
+  init_LP(&LP.r_ddot, 2.0);
   init_LP(&LP.p_dot, 2.0);
   init_LP(&LP.q_dot, 2.0);
   init_LP(&LP.r_dot, 2.0);
@@ -1741,13 +1746,22 @@ void oneloop_nB_propagate_filters(void)
   LP.p.meas       = body_rates->p;
   LP.q.meas       = body_rates->q;
   LP.r.meas       = body_rates->r;
+  LP.p_dot.meas_prev  = LP.p_dot.meas;
+  LP.q_dot.meas_prev  = LP.q_dot.meas;
+  LP.r_dot.meas_prev  = LP.r_dot.meas;
   LP.p_dot.meas   = (LP.p.meas - LP.p.meas_prev) * PERIODIC_FREQUENCY;
   LP.q_dot.meas   = (LP.q.meas - LP.q.meas_prev) * PERIODIC_FREQUENCY;
   LP.r_dot.meas   = (LP.r.meas - LP.r.meas_prev) * PERIODIC_FREQUENCY;
+  LP.p_ddot.meas  = (LP.p_dot.meas - LP.p_dot.meas_prev) * PERIODIC_FREQUENCY;
+  LP.q_ddot.meas  = (LP.q_dot.meas - LP.q_dot.meas_prev) * PERIODIC_FREQUENCY;
+  LP.r_ddot.meas  = (LP.r_dot.meas - LP.r_dot.meas_prev) * PERIODIC_FREQUENCY;
   // Update Filters of Feedbacks
   update_filter_on_type(&LP.ax, LP.ax.meas);
   update_filter_on_type(&LP.ay, LP.ay.meas);
   update_filter_on_type(&LP.az, LP.az.meas);
+  update_filter_on_type(&LP.p_ddot, LP.p_ddot.meas);
+  update_filter_on_type(&LP.q_ddot, LP.q_ddot.meas);
+  update_filter_on_type(&LP.r_ddot, LP.r_ddot.meas);
   update_filter_on_type(&LP.p_dot, LP.p_dot.meas);
   update_filter_on_type(&LP.q_dot, LP.q_dot.meas);
   update_filter_on_type(&LP.r_dot, LP.r_dot.meas);
@@ -2823,34 +2837,53 @@ void oneloop_nB_calc_nB_states(void)
   struct FloatRMat *LBI = stateGetNedToBodyRMat_f();
   struct FloatRMat Omega_B;
   struct FloatRMat Omega_B_dot;
+  struct FloatRMat Omega_B_ddot;
+  
   struct FloatVect3 pqr;
   struct FloatVect3 pqr_dot;
+  struct FloatVect3 pqr_ddot;
+  
   struct FloatVect3 A;
   struct FloatVect3 B;
   struct FloatVect3 C;
   struct FloatVect3 D;
   struct FloatVect3 temp;
+  struct FloatVect3 temp2;
+  
+  // Variables for the 3rd derivative components
+  struct FloatVect3 t1, t2, t3, t4, t5, t6, t7;
+
   FLOAT_VECT3_ZERO(oneloop_nB.sta_nB_state.nB);
   FLOAT_VECT3_ZERO(oneloop_nB.sta_nB_state.nB_d);
   FLOAT_VECT3_ZERO(oneloop_nB.sta_nB_state.nB_2d);
+  FLOAT_VECT3_ZERO(oneloop_nB.sta_nB_state.nB_3d);
+
   //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  pqr.x     = LP.p.meas;      //oneloop_nB.sta_state.att_d[0];
-  pqr.y     = LP.q.meas;      //oneloop_nB.sta_state.att_d[1];
-  pqr.z     = LP.r.meas;      //oneloop_nB.sta_state.att_d[2];
-  pqr_dot.x = LP.p_dot.meas;  //oneloop_nB.sta_state.att_2d[0];
-  pqr_dot.y = LP.q_dot.meas;  //oneloop_nB.sta_state.att_2d[1];
-  pqr_dot.z = LP.r_dot.meas;  //oneloop_nB.sta_state.att_2d[2];
+  pqr.x      = LP.p.meas;      
+  pqr.y      = LP.q.meas;      
+  pqr.z      = LP.r.meas;      
+  pqr_dot.x  = LP.p_dot.meas;  
+  pqr_dot.y  = LP.q_dot.meas;  
+  pqr_dot.z  = LP.r_dot.meas;  
+  pqr_ddot.x = LP.p_ddot.meas;
+  pqr_ddot.y = LP.q_ddot.meas;
+  pqr_ddot.z = LP.r_ddot.meas; 
+
   skew_symmetric(&Omega_B, &pqr);
   skew_symmetric(&Omega_B_dot, &pqr_dot);
+  skew_symmetric(&Omega_B_ddot, &pqr_ddot);
   //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  
   // nB = LBI * nI 
   float_rmat_vmult(&oneloop_nB.sta_nB_state.nB, LBI, &oneloop_nB.sta_nB_state.nI);
+  
   //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   // nB_d= -Omega_B * nB + LBI * nI_dot 
   float_rmat_vmult(&A, &Omega_B, &oneloop_nB.sta_nB_state.nB);
   float_rmat_vmult(&B, LBI, &oneloop_nB.sta_nB_state.nI_d);
   VECT3_SUB(oneloop_nB.sta_nB_state.nB_d, A);
   VECT3_ADD(oneloop_nB.sta_nB_state.nB_d, B);
+  
   //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   // nB_2d= -Omega_B_dot * nB - Omega_B * nB_dot - Omega_B * LBI * nI_dot + LBI * nI_2dot
 #ifdef USE_ND_NB_2D  
@@ -2879,7 +2912,66 @@ void oneloop_nB_calc_nB_states(void)
   VECT3_SUB(oneloop_nB.sta_nB_state.nB_2d, C);
   VECT3_ADD(oneloop_nB.sta_nB_state.nB_2d, D); 
 #endif
+
+  //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  // nB_3d = -Omega_B_ddot*nB - 2*Omega_B*Omega_B_dot*nB - Omega_B*Omega_B*Omega_B*nB 
+  //         + LBI*nI_3d - 3*Omega_B*nB_2d - 3*Omega_B_dot*nB_d - 3*Omega_B*Omega_B*nB_d
+#ifdef USE_ND_NB_3D
+  static bool nB_3d_inited = false;
+  static struct FloatVect3 nB_2d_prev;
+  if (!nB_3d_inited) { 
+    nB_2d_prev.x = oneloop_nB.sta_nB_state.nB_2d.x;
+    nB_2d_prev.y = oneloop_nB.sta_nB_state.nB_2d.y;
+    nB_2d_prev.z = oneloop_nB.sta_nB_state.nB_2d.z;
+    nB_3d_inited = true; 
+  }
+  oneloop_nB.sta_nB_state.nB_3d.x = (oneloop_nB.sta_nB_state.nB_2d.x - nB_2d_prev.x) * PERIODIC_FREQUENCY;
+  oneloop_nB.sta_nB_state.nB_3d.y = (oneloop_nB.sta_nB_state.nB_2d.y - nB_2d_prev.y) * PERIODIC_FREQUENCY;
+  oneloop_nB.sta_nB_state.nB_3d.z = (oneloop_nB.sta_nB_state.nB_2d.z - nB_2d_prev.z) * PERIODIC_FREQUENCY;
+  nB_2d_prev.x = oneloop_nB.sta_nB_state.nB_2d.x;
+  nB_2d_prev.y = oneloop_nB.sta_nB_state.nB_2d.y;
+  nB_2d_prev.z = oneloop_nB.sta_nB_state.nB_2d.z;
+#else
+  // t1 = Omega_B_ddot * nB
+  float_rmat_vmult(&t1, &Omega_B_ddot, &oneloop_nB.sta_nB_state.nB);
+
+  // t2 = 2 * Omega_B * Omega_B_dot * nB
+  float_rmat_vmult(&temp, &Omega_B_dot, &oneloop_nB.sta_nB_state.nB);
+  float_rmat_vmult(&t2, &Omega_B, &temp);
+  t2.x *= 2.0f; t2.y *= 2.0f; t2.z *= 2.0f;
+
+  // t3 = Omega_B * Omega_B * Omega_B * nB
+  float_rmat_vmult(&temp, &Omega_B, &oneloop_nB.sta_nB_state.nB);
+  float_rmat_vmult(&temp2, &Omega_B, &temp);
+  float_rmat_vmult(&t3, &Omega_B, &temp2);
+
+  // t4 = LBI * nI_3d
+  float_rmat_vmult(&t4, LBI, &oneloop_nB.sta_nB_state.nI_3d);
+
+  // t5 = 3 * Omega_B * nB_2d
+  float_rmat_vmult(&t5, &Omega_B, &oneloop_nB.sta_nB_state.nB_2d);
+  t5.x *= 3.0f; t5.y *= 3.0f; t5.z *= 3.0f;
+
+  // t6 = 3 * Omega_B_dot * nB_d
+  float_rmat_vmult(&t6, &Omega_B_dot, &oneloop_nB.sta_nB_state.nB_d);
+  t6.x *= 3.0f; t6.y *= 3.0f; t6.z *= 3.0f;
+
+  // t7 = 3 * Omega_B * Omega_B * nB_d
+  float_rmat_vmult(&temp, &Omega_B, &oneloop_nB.sta_nB_state.nB_d);
+  float_rmat_vmult(&t7, &Omega_B, &temp);
+  t7.x *= 3.0f; t7.y *= 3.0f; t7.z *= 3.0f;
+
+  // Combine components into nB_3d state
+  VECT3_SUB(oneloop_nB.sta_nB_state.nB_3d, t1);
+  VECT3_SUB(oneloop_nB.sta_nB_state.nB_3d, t2);
+  VECT3_SUB(oneloop_nB.sta_nB_state.nB_3d, t3);
+  VECT3_ADD(oneloop_nB.sta_nB_state.nB_3d, t4);
+  VECT3_SUB(oneloop_nB.sta_nB_state.nB_3d, t5);
+  VECT3_SUB(oneloop_nB.sta_nB_state.nB_3d, t6);
+  VECT3_SUB(oneloop_nB.sta_nB_state.nB_3d, t7);
+#endif
 }
+
 void nB_EC(struct FloatVect3 nB, struct FloatVect3 nB_d, struct FloatVect3 nB_2d, struct FloatVect3 mu_B, float k1_e[3], float k2_e[3], float k3_e[3], float dist[3], float nB_nu[3])
 {
   float nB_d_des[3];

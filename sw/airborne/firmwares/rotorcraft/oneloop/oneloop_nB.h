@@ -142,6 +142,7 @@ struct OneloopStabilizationnBState {
   struct FloatVect3 nB;     
   struct FloatVect3 nB_d; 
   struct FloatVect3 nB_2d;
+  struct FloatVect3 nB_3d;
   struct FloatVect3 nI_des;
   struct FloatVect3 nI;
   struct FloatVect3 nI_d;
@@ -247,6 +248,9 @@ struct Oneloop_LP_t {                         // Struct containing all feedback 
   struct LP_t p_dot;                          // Roll acceleration filter
   struct LP_t q_dot;                          // Pitch acceleration filter
   struct LP_t r_dot;                          // Yaw acceleration filter
+  struct LP_t p_ddot;                         // Roll jerk filter
+  struct LP_t q_ddot;                         // Pitch jerk filter
+  struct LP_t r_ddot;                         // Yaw jerk filter
   struct LP_t ax;                             // X acceleration filter
   struct LP_t ay;                             // Y acceleration filter
   struct LP_t az;                             // Z acceleration filter
