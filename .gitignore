@@ -209,3 +209,4 @@ tests/results/*
 *.kate-swp
 
 datasets/
+sandbox/models/
