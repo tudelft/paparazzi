@@ -498,7 +498,8 @@ bool          state_compensation_on = false;                                    
 bool          use_push_PID          = false;                                      // Use PID to cmd the pusher
 bool          use_push_Position     = false;                                      // Use position loop to cmd the pusher
 bool          radio_body_ctrl       = false;                                      // Control nI in body axes   
-bool          oneloop_nB_Z_hold     = false;                                      // Hold only the altitude when in NAV  
+bool          oneloop_nB_Z_hold     = false;                                      // Hold only the altitude when in NAV 
+bool          vel_ctrl_in_manual    = false;                                      // Use velocity control in manual mode (instead of direct stick to acceleration mapping) 
 float  xi = 0.0;
 float max_pusher_cmd = 7500;
 //====================================================================================================================================
@@ -899,6 +900,63 @@ static void ARW_ClampVec3(const float err[3],
         I_next[1] = I_prev[1];
         I_next[2] = I_prev[2];
     }
+}
+
+static void Vel_PID_ARW(float x_dot_des[3],
+                         const float x_dot[3],
+                         float k_P, float k_I, float k_D,
+                         float a_sp[3])
+{
+    static float prev_vel[3] = {0.f, 0.f, 0.f};
+    static float integral[3] = {0.f, 0.f, 0.f};
+
+    const float a_max = 0.12f * 9.81f;
+    const float v_max = 0.5f;
+    const float I_MAX = 0.4f;
+
+    float err[3];
+
+    float I_cand[3];
+    float I_next[3];
+
+    float a_unsat[3];
+    float a_sat[3];
+
+    vect_bound_nd(x_dot_des, v_max, 3);
+    // Build candidate integral and unsaturated acceleration command
+    for (int i = 0; i < 3; i++) {
+        update_butterworth_2_low_pass(&KPID_vel_filt[i], x_dot[i]);
+        err[i] = x_dot_des[i] - KPID_vel_filt[i].o[0];
+
+        I_cand[i] = integral[i] + err[i] * dt_1l;
+        BoundAbs(I_cand[i], I_MAX);
+
+        // derivative on measurement (measured acceleration ~= d/dt(x_dot))
+        const float vel_dot_nd = (x_dot[i] - prev_vel[i]) / dt_1l;
+        update_butterworth_2_low_pass(&KPID_filt[i], vel_dot_nd);
+        prev_vel[i] = x_dot[i];
+
+        const float vel_dot_filt = KPID_filt[i].o[0];
+
+        // PX4-like sign: ... - D * vel_dot
+        a_unsat[i] = k_P * err[i] + k_I * I_cand[i] - k_D * vel_dot_filt;
+        a_sat[i]   = a_unsat[i];
+    }
+
+    // Apply the real saturation (vector magnitude)
+    vect_bound_nd(a_sat, a_max, 3);
+
+    // Apply ARW (decide whether to accept the integral update)
+    ARW_ClampVec3(err, a_unsat, a_sat, integral, I_cand, I_next);
+
+    // Commit I state and output saturated acceleration setpoint
+    integral[0] = I_next[0];
+    integral[1] = I_next[1];
+    integral[2] = I_next[2];
+
+    a_sp[0] = a_sat[0];
+    a_sp[1] = a_sat[1];
+    a_sp[2] = a_sat[2];
 }
 
 static void Pos_KPID_ARW(const float x_des[3],
@@ -1661,15 +1719,15 @@ static inline void reinit_LP(struct LP_t *LP, bool reinit)
 /** @brief  Initialize all Low Pass Filters */
 static inline void init_all_LP(void)
 {
-  init_LP(&LP.ax, 2.0); // oneloop_nB_filt_cutoff_a
-  init_LP(&LP.ay, 2.0); // oneloop_nB_filt_cutoff_a
-  init_LP(&LP.az, 2.0); // oneloop_nB_filt_cutoff_a
-  init_LP(&LP.p_ddot, 2.0);
-  init_LP(&LP.q_ddot, 2.0);
-  init_LP(&LP.r_ddot, 2.0);
-  init_LP(&LP.p_dot, 2.0);
-  init_LP(&LP.q_dot, 2.0);
-  init_LP(&LP.r_dot, 2.0);
+  init_LP(&LP.ax,     oneloop_nB_filt_cutoff); 
+  init_LP(&LP.ay,     oneloop_nB_filt_cutoff); 
+  init_LP(&LP.az,     oneloop_nB_filt_cutoff); 
+  init_LP(&LP.p_ddot, oneloop_nB_filt_cutoff);
+  init_LP(&LP.q_ddot, oneloop_nB_filt_cutoff);
+  init_LP(&LP.r_ddot, oneloop_nB_filt_cutoff);
+  init_LP(&LP.p_dot,  oneloop_nB_filt_cutoff);
+  init_LP(&LP.q_dot,  oneloop_nB_filt_cutoff);
+  init_LP(&LP.r_dot,  oneloop_nB_filt_cutoff);
   init_LP(&LP.p, 15.0); // oneloop_nB_filt_cutoff_p
   init_LP(&LP.q, 15.0); // oneloop_nB_filt_cutoff_q
   init_LP(&LP.r, 15.0); // oneloop_nB_filt_cutoff_r
@@ -1684,10 +1742,40 @@ static inline void reinit_all_LP(bool reinit)
   //reinit_LP_synchronous(&LP.p_dot, &ctrl_effort_model_filt.p_dot, reinit);
   //reinit_LP_synchronous(&LP.q_dot, &ctrl_effort_model_filt.q_dot, reinit);
   //reinit_LP_synchronous(&LP.r_dot, &ctrl_effort_model_filt.r_dot, reinit);
-  reinit_LP(&LP.p, reinit);
-  reinit_LP(&LP.q, reinit);
-  reinit_LP(&LP.r, reinit);
+  reinit_LP(&LP.p,      reinit);
+  reinit_LP(&LP.q,      reinit);
+  reinit_LP(&LP.r,      reinit);
+  LP.p_dot.freq_set   = oneloop_nB_filt_cutoff;
+  LP.q_dot.freq_set   = oneloop_nB_filt_cutoff;
+  LP.r_dot.freq_set   = oneloop_nB_filt_cutoff;
+  LP.p_ddot.freq_set  = oneloop_nB_filt_cutoff;
+  LP.q_ddot.freq_set  = oneloop_nB_filt_cutoff;
+  LP.r_ddot.freq_set  = oneloop_nB_filt_cutoff;
+  LP.ax.freq_set      = oneloop_nB_filt_cutoff;
+  LP.ay.freq_set      = oneloop_nB_filt_cutoff;
+  LP.az.freq_set      = oneloop_nB_filt_cutoff;
+  bool reinit_other = ((LP.p_dot.freq != LP.p_dot.freq_set) || reinit);
+  reinit_LP(&LP.p_dot,  reinit);
+  reinit_LP(&LP.q_dot,  reinit);
+  reinit_LP(&LP.r_dot,  reinit);
+  reinit_LP(&LP.p_ddot, reinit);
+  reinit_LP(&LP.q_ddot, reinit);
+  reinit_LP(&LP.r_ddot, reinit);
+  reinit_LP(&LP.ax,     reinit);
+  reinit_LP(&LP.ay,     reinit);
+  reinit_LP(&LP.az,     reinit);
+  if (reinit_other){
+    float tau = 1.0 / (2.0 * M_PI * oneloop_nB_filt_cutoff);
+    for (int i = 0; i < ANDI_NUM_ACT_TOT; i++){
+      init_butterworth_2_low_pass(&u_filt[i], tau, 1.0 / PERIODIC_FREQUENCY, u_filt[i].o[0]);
+    }
+    for (int i = 0; i < 3; i++) {
+      init_butterworth_2_low_pass(&nB_filt[i], tau, 1.0 / PERIODIC_FREQUENCY, nB_filt[i].o[0]);
+      init_butterworth_2_low_pass(&nB_2d_filt[i], tau, 1.0 / PERIODIC_FREQUENCY, nB_2d_filt[i].o[0]);
+    }
+  }
 }
+
 //------------------------------------------------------------------------------------------
 
 /** @brief  Initialize the filters */
@@ -1696,7 +1784,7 @@ void init_filter(void)
   // Filtering of the velocities
   float tau = 1.0 / (2.0 * M_PI * oneloop_nB_filt_cutoff);
   float tau_v = 1.0 / (2.0 * M_PI * oneloop_nB_filt_cutoff_v);
-  float tau_2 = 1.0 / (2.0 * M_PI * 2.0);
+  //float tau_2 = 1.0 / (2.0 * M_PI * 2.0);
   float tau_r = 1.0 / (5.0);
   // printf("tau: %f tau_v: %f\n", tau, tau_v);
   // printf("initializing filters\n");
@@ -1712,11 +1800,11 @@ void init_filter(void)
   init_butterworth_2_low_pass(&push_PID_vel_d[1], tau_r, 1.0 / PERIODIC_FREQUENCY, push_PID_vel_d[1].o[0]);
   for (int i = 0; i < ANDI_NUM_ACT_TOT; i++)
   {
-    init_butterworth_2_low_pass(&u_filt[i], tau_2, 1.0 / PERIODIC_FREQUENCY, 0.0);
+    init_butterworth_2_low_pass(&u_filt[i], tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
   }
   for (int i = 0; i < 3; i++) {
-    init_butterworth_2_low_pass(&nB_filt[i], tau_2, 1.0 / PERIODIC_FREQUENCY, 0.0);
-    init_butterworth_2_low_pass(&nB_2d_filt[i], tau_2, 1.0 / PERIODIC_FREQUENCY, 0.0);
+    init_butterworth_2_low_pass(&nB_filt[i], tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
+    init_butterworth_2_low_pass(&nB_2d_filt[i], tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
   }
 }
 
@@ -1922,9 +2010,6 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
     float cphi_des   = cosf(eulers_zxy_des.phi);
     float stheta_des = sinf(eulers_zxy_des.theta);
     float ctheta_des = cosf(eulers_zxy_des.theta);
-    oneloop_nB.sta_nB_state.nI_des.x = -stheta_des;
-    oneloop_nB.sta_nB_state.nI_des.y = sphi_des*ctheta_des;
-    oneloop_nB.sta_nB_state.nI_des.z = -cphi_des*ctheta_des;
 #ifdef ROTWING_EFF_SCHED_MP_dFdu    
     if(use_push_PID){
       // Desired Velocity ============================================================== 
@@ -1938,14 +2023,39 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
     }
 #endif
     radio_body_ctrl = (!fault_pitch_motors) && (!fault_roll_motors);
-    if (radio_body_ctrl){
-      float sin_psi = sinf(eulers_zxy.psi);
-      float cos_psi = cosf(eulers_zxy.psi);
-      struct FloatVect3 nI_des_NED;
-      nI_des_NED.x = oneloop_nB.sta_nB_state.nI_des.x * cos_psi - oneloop_nB.sta_nB_state.nI_des.y * sin_psi;
-      nI_des_NED.y = oneloop_nB.sta_nB_state.nI_des.x * sin_psi + oneloop_nB.sta_nB_state.nI_des.y * cos_psi;
-      oneloop_nB.sta_nB_state.nI_des.x = nI_des_NED.x;
-      oneloop_nB.sta_nB_state.nI_des.y = nI_des_NED.y;
+    if(vel_ctrl_in_manual){
+      float x_dot_des[3];
+      x_dot_des[0] = -radio_pitch_cmd / MAX_PPRZ * oneloop_nB.push_nB.max_v_d;
+      x_dot_des[1] =  radio_roll_cmd  / MAX_PPRZ * oneloop_nB.push_nB.max_v_d;
+      x_dot_des[2] = 0.0;
+      if (radio_body_ctrl){
+        float sin_psi = sinf(eulers_zxy.psi);
+        float cos_psi = cosf(eulers_zxy.psi);
+        struct FloatVect3 x_dot_des_NE;
+        x_dot_des_NE.x = x_dot_des[0] * cos_psi - x_dot_des[1] * sin_psi;
+        x_dot_des_NE.y = x_dot_des[0] * sin_psi + x_dot_des[1] * cos_psi;
+        x_dot_des[0] = x_dot_des_NE.x;
+        x_dot_des[1] = x_dot_des_NE.y;
+      }
+      Vel_PID_ARW(x_dot_des,oneloop_nB.gui_state.vel,k_P,k_I,k_D,acc_des);
+      shape_vector(acc_des);
+      eul_of_acc(acc_des, eulers_zxy.psi);
+      oneloop_nB.sta_nB_state.nI_des.x = acc_des[0];
+      oneloop_nB.sta_nB_state.nI_des.y = acc_des[1];
+      oneloop_nB.sta_nB_state.nI_des.z = acc_des[2];
+    } else {
+      oneloop_nB.sta_nB_state.nI_des.x = -stheta_des;
+      oneloop_nB.sta_nB_state.nI_des.y = sphi_des*ctheta_des;
+      oneloop_nB.sta_nB_state.nI_des.z = -cphi_des*ctheta_des;
+      if (radio_body_ctrl){
+        float sin_psi = sinf(eulers_zxy.psi);
+        float cos_psi = cosf(eulers_zxy.psi);
+        struct FloatVect3 nI_des_NED;
+        nI_des_NED.x = oneloop_nB.sta_nB_state.nI_des.x * cos_psi - oneloop_nB.sta_nB_state.nI_des.y * sin_psi;
+        nI_des_NED.y = oneloop_nB.sta_nB_state.nI_des.x * sin_psi + oneloop_nB.sta_nB_state.nI_des.y * cos_psi;
+        oneloop_nB.sta_nB_state.nI_des.x = nI_des_NED.x;
+        oneloop_nB.sta_nB_state.nI_des.y = nI_des_NED.y;
+      }
     }
     // ======================================================================================================================================================
     // PSI Set desired Yaw rate with stick input
@@ -2059,14 +2169,6 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
     float push_cmd_A = fabs(r_int_sol)*sqrtf((float) oneloop_nB.push_nB.n)/(2.0*sqrtf((float)M_PI)*RW.mP.dFdu/RW.m)*push_delta_v_norm;
     Bound(push_cmd_A, 0.0f, oneloop_nB.push_nB.max_push_cmd);
     oneloop_nB.push_nB.push_cmd = push_cmd_A*pusher_cmd_fun(push_delta_v[0], push_delta_v[1], oneloop_nB.sta_state.att_d[2], oneloop_nB.sta_state.att[2], oneloop_nB.push_nB.varepsilon, oneloop_nB.push_nB.n);  
-    
-    //float push_v_norm = sqrtf(oneloop_nB.push_nB.vN_d_filt * oneloop_nB.push_nB.vN_d_filt + oneloop_nB.push_nB.vE_d_filt * oneloop_nB.push_nB.vE_d_filt);
-    //float r_int_sol = oneloop_nB.sta_state.att_d[2];
-    //BoundAbs(r_int_sol, 5.0);
-    //float push_cmd_A = push_v_norm * oneloop_nB.push_nB.max_push_cmd;
-    //Bound(push_cmd_A, 0.0f, oneloop_nB.push_nB.max_push_cmd);
-    //oneloop_nB.push_nB.push_cmd = push_cmd_A*pusher_cmd_fun(oneloop_nB.push_nB.vN_d_filt, oneloop_nB.push_nB.vE_d_filt, oneloop_nB.sta_state.att_d[2], oneloop_nB.sta_state.att[2], oneloop_nB.push_nB.varepsilon, oneloop_nB.push_nB.n);  
-    
     commands[COMMAND_MOTOR_PUSHER] = (int16_t) oneloop_nB.push_nB.push_cmd;
     oneloop_nB.sta_nB_state.nI_des.x = 0.0;
     oneloop_nB.sta_nB_state.nI_des.y = 0.0;

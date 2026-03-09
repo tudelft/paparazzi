@@ -340,7 +340,7 @@
         <define name  = "HEADING_MANUAL"            value = "TRUE"/>
         <define name  = "YAW_STICK_IN_AUTO"         value = "TRUE"/>
         <define name  = "MAX_R"                     value = "120.0" unit="deg/s"/>
-        <define name  = "FILT_CUTOFF"               value = "3.0" />
+        <define name  = "FILT_CUTOFF"               value = "2.0" />
         <define name  = "FILT_CUTOFF_ACC"           value = "3.0"/>
         <define name  = "FILT_CUTOFF_VEL"           value = "30.0"/>
         <define name  = "FILT_CUTOFF_POS"           value = "10.0"/>

@@ -64,6 +64,8 @@
 
 //====================================================================================================================================
 // Declaration of global variables
+extern float oneloop_nB_filt_cutoff;
+extern bool vel_ctrl_in_manual;
 extern bool oneloop_nB_Z_hold;
 extern bool use_push_Position;
 extern bool use_push_PID;

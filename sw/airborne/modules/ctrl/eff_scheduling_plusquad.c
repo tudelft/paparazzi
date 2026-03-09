@@ -63,6 +63,7 @@ float roll_mult   = 1.0;
 float pitch_mult  = 1.0;
 float yaw_mult    = 1.0;
 float thrust_mult = 1.0;
+float cutoff_prev = 1.0;
 /* Effectiveness Matrix definition */
 float G2_RW[EFF_MAT_COLS_NB]                       = {0};//PLUSQUAD_EFF_SCHED_G2; //scaled by RW_G_SCALE
 float G1_RW[EFF_MAT_ROWS_NB][EFF_MAT_COLS_NB]      = {0};//{PLUSQUAD_EFF_SCHED_G1_ZERO, PLUSQUAD_EFF_SCHED_G1_ZERO, PLUSQUAD_EFF_SCHED_G1_THRUST, PLUSQUAD_EFF_SCHED_G1_ROLL, PLUSQUAD_EFF_SCHED_G1_PITCH, PLUSQUAD_EFF_SCHED_G1_YAW}; //scaled by RW_G_SCALE 
@@ -102,7 +103,7 @@ void eff_scheduling_rotwing_init(void)
 {
   init_RW_Model();
   update_attitude();
-  float tau_att = 1.0 / (2.0 * M_PI * 2.0);
+  float tau_att = 1.0 / (2.0 * M_PI * oneloop_nB_filt_cutoff);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
   init_butterworth_2_low_pass(&phi_filt, tau_att, sample_time, 0.0);
   init_butterworth_2_low_pass(&theta_filt, tau_att, sample_time, 0.0);
@@ -153,11 +154,21 @@ void init_RW_Model(void)
   RW.att.ctheta = 0.0; 
   RW.att.spsi   = 0.0; 
   RW.att.cpsi   = 0.0;
+
+  cutoff_prev = oneloop_nB_filt_cutoff;
 }
 
 /*Update the attitude*/
 void  update_attitude(void)
 {
+  if(cutoff_prev != oneloop_nB_filt_cutoff){
+    float tau_att = 1.0 / (2.0 * M_PI * oneloop_nB_filt_cutoff);
+    float sample_time = 1.0 / PERIODIC_FREQUENCY;
+    init_butterworth_2_low_pass(&phi_filt, tau_att, sample_time, RW.att.phi);
+    init_butterworth_2_low_pass(&theta_filt, tau_att, sample_time, RW.att.theta);
+    init_butterworth_2_low_pass(&psi_filt, tau_att, sample_time, RW.att.psi);
+    cutoff_prev = oneloop_nB_filt_cutoff;
+  }
   float_eulers_of_quat_zxy(&eulers_zxy_RW_EFF, stateGetNedToBodyQuat_f());
   update_butterworth_2_low_pass(&phi_filt, eulers_zxy_RW_EFF.phi);
   update_butterworth_2_low_pass(&theta_filt, eulers_zxy_RW_EFF.theta);
