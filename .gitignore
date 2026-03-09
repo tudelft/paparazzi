@@ -210,3 +210,5 @@ tests/results/*
 
 datasets/
 sandbox/models/
+sandbox/models/midas_v21_large_384.onnx
+
