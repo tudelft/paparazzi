@@ -109,6 +109,33 @@ uint32_t get_sys_time_msec(void)
 }
 
 /**
+ * Get the time in milliseconds since the start of the week.
+ * If no GPS is connected this will return the time since startup
+ * @return Time of the week in milliseconds
+ */
+uint32_t get_sys_time_tow(void)
+{
+  return sys_time.tow_sync + get_sys_time_msec();
+}
+
+/** 
+ * Get the current Unix epoch time in microseconds from gps tow
+ * @return current Unix epoch time as uint64_t
+ */
+#define NB_LEAP_SEC 18ULL // There are currently 18 positive leap seconds since GPS epoch (1-1-1980 <-> 09-03-2025)
+uint64_t get_unix_epoch_time(void)
+{
+  static const uint64_t us_in_week = 7ULL*24ULL*3600ULL*1000000ULL; // Number of microseconds in a week
+  static const uint64_t us_unix_to_gps = 315964800ULL*1000000ULL; // time from unix to gps epoch in microseconds
+  static const uint64_t us_leap_seconds = NB_LEAP_SEC*1000000ULL;
+  uint64_t epoch_time_us = (uint64_t)(sys_time.tow_sync)*1000ULL + (uint64_t)(get_sys_time_usec());
+  epoch_time_us += (uint64_t)(sys_time.gps_week)*us_in_week;
+  epoch_time_us += us_unix_to_gps; 
+  epoch_time_us -= us_leap_seconds;
+  return epoch_time_us;
+}
+
+/**
  * sys_time_usleep(uint32_t us)
  *
  * using intermediate 64 bits variable to avoid wrapping
