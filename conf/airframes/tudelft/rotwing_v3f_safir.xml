@@ -26,11 +26,6 @@
                 <configure name="EXTRA_DL_PORT" value="UART3"/>
                 <configure name="EXTRA_DL_BAUD" value="1500000"/>
             </module> -->
-            
-            <module name="mission_rotorcraft">
-                <define name="MISSION_WAIT_TIMEOUT" value="0"/>
-                <define name="MISSION_ELEMENT_NB" value="200"/>
-            </module>
 
             <!-- RC switches -->
             <define name="RADIO_TH_HOLD"            value="RADIO_AUX1"/>
@@ -72,10 +67,6 @@
                 <configure name="MAVLINK_PORT" value="UDP1"/>
             </module>
             
-            <module name="mission_rotorcraft">
-                <define name="MISSION_WAIT_TIMEOUT" value="0"/>
-            </module>
-
             <!--Not dealing with these in the simulation-->
             <define name="RADIO_TH_HOLD"          value="0"/> <!-- Throttle hold in command laws -->
             <define name="RADIO_FMODE"            value="0"/> <!-- Throttle curve select -->
@@ -123,6 +114,12 @@
         <!-- IMU / INS -->
         <module name="imu" type="cube"/>
         <module name="ins" type="ekf2"/>
+
+        <module name="mission_rotorcraft">
+            <define name="MISSION_WAIT_TIMEOUT" value="0"/>
+            <define name="MISSION_ELEMENT_NB" value="200"/>
+        </module>
+
 
         <!-- Actuators on dual CAN bus -->
         <module name="actuators" type="uavcan">
