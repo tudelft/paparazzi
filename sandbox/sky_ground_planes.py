@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 # Specify your folder path
-folder_path = "./datasets/Organised/20260306-handFlying-3"  # Change this to your image folder
+folder_path = "./datasets/Organised/20260306-handFlying-2"  # Change this to your image folder
 
 # Get all image files sorted
 image_files = sorted([f for f in os.listdir(folder_path) 

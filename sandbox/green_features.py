@@ -21,8 +21,14 @@ height, width = first_image.shape[:2]
 rotation_code = cv2.ROTATE_90_COUNTERCLOCKWISE
 
 # HSV green range for pixel filtering.
-green_lower = np.array([35, 50, 50], dtype=np.uint8)
-green_upper = np.array([85, 255, 255], dtype=np.uint8)
+green_lower = np.array([25, 35, 60], dtype=np.uint8)
+green_upper = np.array([95, 255, 255], dtype=np.uint8)
+
+# Morphological growth for green regions.
+expand_kernel_size = 3
+expand_iterations = 1
+dilate_kernel_size = 5
+dilate_iterations = 1
 
 # Sparse feature detector setup with runtime toggling.
 max_features = 150
@@ -93,7 +99,27 @@ def draw_grid(display_image):
 def keep_only_green_pixels(image_bgr):
     hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
     green_mask = cv2.inRange(hsv, green_lower, green_upper)
-    return cv2.bitwise_and(image_bgr, image_bgr, mask=green_mask)
+
+    expand_kernel = np.ones((expand_kernel_size, expand_kernel_size), dtype=np.uint8)
+    dilate_kernel = np.ones((dilate_kernel_size, dilate_kernel_size), dtype=np.uint8)
+
+    # Expand connected green regions, then dilate further to grow coverage.
+    expanded_mask = cv2.morphologyEx(
+        green_mask,
+        cv2.MORPH_CLOSE,
+        expand_kernel,
+        iterations=expand_iterations,
+    )
+    grown_mask = cv2.dilate(expanded_mask, dilate_kernel, iterations=dilate_iterations)
+
+    green_only = cv2.bitwise_and(image_bgr, image_bgr, mask=grown_mask)
+    return green_only, grown_mask
+
+
+def overlay_red_mask(image_bgr, green_mask, alpha=0.5):
+    overlay = image_bgr.copy()
+    overlay[green_mask > 0] = (0, 0, 255)
+    return cv2.addWeighted(overlay, alpha, image_bgr, 1.0 - alpha, 0.0)
 
 # Play images
 for image_file in image_files:
@@ -108,10 +134,11 @@ for image_file in image_files:
     
     image = cv2.rotate(image, rotation_code)
     original_image = image.copy()
-    masked_image = keep_only_green_pixels(image)
+    masked_image, green_mask = keep_only_green_pixels(image)
+    red_overlay_image = overlay_red_mask(original_image, green_mask)
 
     gray_image = cv2.cvtColor(masked_image, cv2.COLOR_BGR2GRAY)
-    display_image = masked_image.copy() if show_masked_view else original_image.copy()
+    display_image = red_overlay_image.copy() if show_masked_view else original_image.copy()
 
     current_method = feature_methods[feature_method_idx]
     points = detect_points(gray_image, current_method, max_features)
@@ -156,7 +183,7 @@ for image_file in image_files:
     )
     cv2.putText(
         display_image,
-        f"View: {'MASKED' if show_masked_view else 'ORIGINAL'} (press 'm')",
+        f"View: {'RED MASK OVERLAY' if show_masked_view else 'ORIGINAL'} (press 'm')",
         (10, 120),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.7,

@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 # Specify your folder path
-folder_path = "./datasets/Organised/20260306-handFlying-1"  # Change this to your image folder
+folder_path = "./datasets/Organised/20260306-handFlying-2"  # Change this to your image folder
 
 # Get all image files sorted
 image_files = sorted([f for f in os.listdir(folder_path) 
@@ -92,7 +92,7 @@ for image_file in image_files:
     prev_gray = gray_image.copy()
     
     # Press 'q' to quit, wait 500ms between frames
-    key = cv2.waitKey(30) & 0xFF
+    key = cv2.waitKey(100) & 0xFF
     if key == ord('f'):
         show_flow_visualization = not show_flow_visualization
     if key == ord('q'):
