@@ -1,0 +1,44 @@
+import numpy as np
+import cv2
+import torch
+import matplotlib.pyplot as plt
+from SimpleDroneClassifier import CNN
+
+model = CNN()
+model.load_state_dict(torch.load("depth_model.pth"))
+model.eval()
+
+patch_size = 16  # same as during training
+
+# Load a full image
+img_path = './real/94020533.jpg'  # example
+img = cv2.imread(img_path)
+h, w, _ = img.shape
+
+# Convert to YUV and channels-first
+yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
+yuv_tensor = torch.tensor(np.transpose(yuv, (2,0,1)), dtype=torch.float32).unsqueeze(0)  # shape (1,3,H,W)
+
+# Prepare empty array for depth map
+depth_pred = np.zeros((h, w), dtype=np.float32)
+count_map = np.zeros((h, w), dtype=np.float32)  # for averaging overlapping patches
+
+stride = patch_size // 2 # can also use smaller stride for overlap
+
+# Slide window
+for y0 in range(0, h - patch_size + 1, stride):
+    for x0 in range(0, w - patch_size + 1, stride):
+        patch = yuv_tensor[:, :, y0:y0+patch_size, x0:x0+patch_size]  # shape (1,3,patch_size,patch_size)
+        with torch.no_grad():
+            pred_patch = model(patch)  # (1,1,patch_size,patch_size)
+        pred_patch_np = pred_patch.numpy()[0,0]  # (patch_size, patch_size)
+        depth_pred[y0:y0+patch_size, x0:x0+patch_size] += pred_patch_np
+        count_map[y0:y0+patch_size, x0:x0+patch_size] += 1
+
+# Average overlapping patches
+depth_pred /= np.maximum(count_map, 1)
+
+# Visualize
+plt.imshow(depth_pred, cmap='gray')
+plt.colorbar()
+plt.show()
