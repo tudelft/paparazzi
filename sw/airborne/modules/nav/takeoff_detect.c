@@ -24,7 +24,7 @@
  *
  * Automatic takeoff assistance for fixed-wing.
  * The planes's launching can be triggered/aborted
- * by pointing the nose up or down for a given time.
+ * by pointing the nose up or down for a given amount of time.
  */
 
 #include "std.h"

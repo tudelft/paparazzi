@@ -305,13 +305,10 @@
       <!-- <module name="gps" type="ublox"/>-->
     </target>
 
-    <define name="USE_AIRSPEED" value="TRUE"/>
-
     <define name="RADIO_CONTROL_AUTO1"/>
 
     <define name="AGR_CLIMB"/>
     <define name="TUNE_AGRESSIVE_CLIMB"/>
-    <define name="AUTOPILOT_DISABLE_AHRS_KILL"/> <!--  Starts in KILL, but can now switch to NAV -->
     <define name="STRONG_WIND"/>
     <define name="WIND_INFO"/>
     <define name="WIND_INFO_RET"/>
@@ -322,7 +319,7 @@
     <configure name="USE_BARO_BOARD" value="TRUE"/>
     <configure name="USE_MAGNETOMETER" value="FALSE"/>
 
-    <define name="AUTOPILOT_DISABLE_AHRS_KILL"/>
+    <define name="AUTOPILOT_DISABLE_AHRS_KILL"/> <!--  Starts in KILL, but can now switch to NAV -->
 
     <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
     <!-- <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/> -->
@@ -335,7 +332,7 @@
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
       <define name="USE_AHRS_GPS_ACCELERATIONS"/>
       <!-- <define name="AHRS_DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/> -->
-      <!-- <define name="AHRS_DCM_MAG_ID" value="MAG_RM3100_SENDER_ID"/> -->
+      <define name="AHRS_DCM_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
     </module>
 
     <module name="ins" type="alt_float"/>

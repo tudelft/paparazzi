@@ -5,11 +5,14 @@
     <description>
       Fixed-wing automatic launch detection
 
-      When loaded, the pitch angle of plane is monitored, and will trigger the launch variable
-      if the angle goes over a specified value (nose up) for 2 seconds.
-      The launch variable can be reset to FALSE by pointing the nose to the ground.
-      The module disables itself within a few seconds (4s)  after detecting the launch.
-      It can be re-actiaved by hand from the GCS.
+      When this module is used, the pitch angle of plane is monitored, if the angle goes over a specified value (nose up) for 2 seconds it will trigger the launch variable. 
+      This is useful for handlaunch when one has no GCS or remote control at hand, or simply to avoid the risk of forgetting to switch to Auto mode before throwing the plane.
+
+      The launch variable can be reset to FALSE by pointing the nose to the ground a user specified amount of time. This is useful to abort the launch in case of not wanting to launch anymore.
+
+      The module can be configured to also work in AUTO1, which is useful for handlaunch when no autonomy flight is tested.
+      The module disables itself within a few seconds, per default 4s,  after detecting the launch.
+      It can be re-activated by hand from the GCS.
     </description>
     <section name="TO_DETECT">
       <define name="TAKEOFF_DETECT_LAUNCH_PITCH" value="30." unit="deg" description="Picth angle for takeoff detection (set 'launch' to TRUE)"/>

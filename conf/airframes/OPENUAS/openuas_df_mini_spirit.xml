@@ -2,7 +2,7 @@
 <airframe name="mini_spirit">
   <description>
     About:
-    Tiny blendedwing of EPP foam with Lisa MXS flightcontroller hardware
+    Tiny blendedwing made from EPP foam controlled by Lisa MXS flightcontroller hardware
 
     !Specifications:
     + Model:       DF Mini Spirit 
@@ -13,8 +13,8 @@
     + ESC:         Favorite Littlebee20A
     + BEC:         Tiny 2.5A BEC for Servos only
     + RCRX:        OpenRXSR Receiver
-    + AIRSPEED:    No airspeed sensor
-    + TELEMETRY:   Si10xx Chip based with firmware enabeling PPRZ RSSI message
+    + AIRSPEED:    Senserion SDP33 Airspeed sensor
+    + TELEMETRY:   Si10xx Chip based with firmware enabling PPRZ RSSI message
     + CURRENT:     No current sensor
     + RANGEFINDER: None
     + MOTOR:       Default DF-RC 1104 - 5700KV
@@ -28,7 +28,6 @@
     + Uses PAPARAZZI standard radio channel settings
     + A 460mAh 2s1p LiPo battery, expect flighttimes of X minutes at X m/s
     + ESC must be set to fixed endpoints of 1060-1900μs
-    + Optional addition of a pico airspeed sensor with sensirion SDP33
 
     !Launching:
     1) Set TX to AUTO2, or if no TX it is AUTO2
@@ -43,35 +42,27 @@
 
     <target name="ap" board="lisa_mxs_1.0_chibios">
       <define name="REMAP_UART3" value="TRUE"/>
+
       <!--<configure name="FLASH_MODE" value="SWD"/>--> <!--Enable when flashing with black magic probe HWv1.0-->
-      <!--<define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>-->
+      <!--<define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>--><!-- not working under CHIBIOS yet -->
 
       <!--<define name="AHRS_ALIGNER_SAMPLES_NB" value="600"/>-->
       <!--<define name="LOW_NOISE_THRESHOLD" value="30000"/>-->
       <!--<define name="LOW_NOISE_TIME" value="10"/>-->
 
-      <configure name="CPU_LED" value="1"/> <!-- Change to whatever you like -->
-
-      <!-- Note that PERIODIC_FREQUENCY should be least equal or greater than AHRS_PROPAGATE_FREQUENCY -->
-      <configure name="PERIODIC_FREQUENCY" value="500"/>
-
-      <define name="MPU_GYRO_RANGE" value="MPU60X0_GYRO_RANGE_2000"/>
-      <define name="MPU_ACCEL_RANGE" value="MPU60X0_ACCEL_RANGE_16G"/>
-      <!--
-      <define name="IMU_MPU_LOWPASS_FILTER" value="MPU60X0_DLPF_256HZ"/>
-      <define name="IMU_MPU_ACCEL_LOWPASS_FILTER" value="MPU60X0_DLPF_42HZ"/>
-      <define name="IMU_MPU_SMPLRT_DIV" value="0"/>-->
+      <configure name="CPU_LED" value="1"/>
 
       <!-- Best to use numbers from this list 1, 2, 4, 5, 10, 20, 25, 50, 100, 125, 250, 500 -->
-      <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
+      <configure name="PERIODIC_FREQUENCY" value="500"/>
+      <configure name="AHRS_PROPAGATE_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
       
-      <configure name="AHRS_CORRECT_FREQUENCY" value="500"/>
-      <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/>
+      <configure name="AHRS_CORRECT_FREQUENCY" value="$(AHRS_PROPAGATE_FREQUENCY)"/>
+      <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="250"/>
 
       <configure name="NAVIGATION_FREQUENCY" value="20"/>
       <configure name="CONTROL_FREQUENCY" value="100"/>
       <configure name="TELEMETRY_FREQUENCY" value="50"/>
-      <configure name="MODULES_FREQUENCY" value="500"/>
+      <configure name="MODULES_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
 
       <module name="imu" type="mpu6000">
         <define name="USE_SPI2"/>
@@ -88,7 +79,7 @@
         <define name="IMU_MPU_USE_MEDIAN_FILTER" value="TRUE"/>
         <define name="IMU_MPU_GYRO_RANGE" value="MPU60X0_GYRO_RANGE_2000"/>
         <define name="IMU_MPU_ACCEL_RANGE" value="MPU60X0_ACCEL_RANGE_16G"/>
-        <!-- Even dampned on sorbutane small cornerblocks set correct filter to avoid attitude runaway due to vibration -->
+        <!-- Even dampned on Sorbothane small cornerblocks set correct filter to avoid attitude runaway due to vibration -->
         <define name="IMU_MPU_LOWPASS_FILTER" value="MPU60X0_DLPF_42HZ"/>
         <define name="IMU_MPU_SMPLRT_DIV" value="0"/>
         <define name="IMU_MPU_ACCEL_LOWPASS_FILTER" value="MPU60X0_DLPF_ACC_44HZ"/>
@@ -96,21 +87,17 @@
 
       <module name="mag" type="rm3100">
         <define name="USE_I2C1"/>
-        <configure name="MAG_RM3100_PERIODIC_FREQUENCY" value="125"/>
-        <configure name="MAG_RM3100_I2C_DEV" value="i2c1"/>
-        <define name="RM3100_ADDR" value="RM3100_ADDR3"/>
-        <!-- <define name="RM3100_DATA_RATE" value="RM3100_RATE_300"/> -->
-        <define name="RM3100_USE_MEDIAN_FILTER" value="TRUE"/>  <!-- Enabled to avoid sporadic spikes in output-->  
-
+        <configure name="MAG_RM3100_PERIODIC_FREQUENCY" value="250"/>
+        <configure name="MAG_RM3100_I2C_DEV" value="I2C1"/>
+        <define name="RM3100_DATA_RATE" value="RM3100_RATE_300"/>
+        <define name="RM3100_USE_MEDIAN_FILTER" value="TRUE"/>  <!-- Must be enabled! This is to avoid sporadic spikes in output that will mess-up the state completely-->
         <define name="RM3100_CHAN_X" value="1"/>
         <define name="RM3100_CHAN_Y" value="0"/>
         <define name="RM3100_CHAN_Z" value="2"/>
         <define name="RM3100_CHAN_X_SIGN" value="-"/>
         <define name="RM3100_CHAN_Y_SIGN" value="+"/>
         <define name="RM3100_CHAN_Z_SIGN" value="-"/>
-
-        <define name="MODULE_RM3100_UPDATE_AHRS" value="FALSE"/>
-        <configure name="MODULE_RM3100_SYNC_SEND" value="TRUE"/>
+        <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
       </module>
 
       <module name="baro_ms5611_spi">
@@ -119,15 +106,12 @@
       </module>
 
       <module name="airspeed" type="sdp3x">
-        <configure name="SDP3X_I2C_DEV" value="i2c1"/>
-        <define name="SDP3X_I2C_ADDR" value="0x50"/>
-        <define name="SDP3X_SYNC_SEND" value="FALSE"/>
-        <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>
-        <define name="SDP3X_PRESSURE_OFFSET" value="0.0"/>
-        <define name="SDP3X_AIRSPEED_SCALE" value="1.6327"/>
-        <define name="SDP3X_LOWPASS_TAU" value="0.15"/>
-        <!--<define name="USE_AIRSPEED_LOWPASS_FILTER" value="FALSE">-->
+        <configure name="SDP3X_I2C_DEV" value="I2C1"/>
+        <define name="SDP3X_LOWPASS_TAU" value="0.09"/>
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
+        <define name="USE_AIRSPEED" value="TRUE"/>
+        <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>
+        <!-- <define name="SDP3X_SYNC_SEND" value="1"/> -->
       </module>
 
       <module name="actuators" type="pwm"/>
@@ -157,14 +141,14 @@
         <define name="AHRS_ALIGNER_IMU_ID" value="IMU_F1E_ID"/> 
       </module>-->
 
-      <!--<module name="flight_benchmark">
-        <define name="BENCHMARK_AIRSPEED value="FALSE"/>
-        <define name="BENCHMARK_ALTITUDE value="TRUE"/>
-        <define name="BENCHMARK_POSITION value="TRUE"/>
+      <!-- <module name="flight_benchmark">
+        <define name="BENCHMARK_AIRSPEED" value="TRUE"/>
+        <define name="BENCHMARK_ALTITUDE" value="TRUE"/>
+        <define name="BENCHMARK_POSITION" value="TRUE"/>
         <define name="BENCHMARK_TOLERANCE_AIRSPEED" value="1" unit="m/s"/>
         <define name="BENCHMARK_TOLERANCE_ALTITUDE" value="3" unit="m"/>
         <define name="BENCHMARK_TOLERANCE_POSITION" value="4" unit="m"/>
-      </module>-->
+      </module> -->
 
       <module name="sys_mon"/>
 
@@ -176,7 +160,7 @@
     </target>
 
     <target name="sim" board="pc">
-      <define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>
+      <define name="AHRS_FC_MAG_IDS_BARO_ID" value="BARO_SIM_SENDER_ID"/>
       <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
       <module name="radio_control" type="ppm"/>
       <define name="RADIO_GEAR" value="RADIO_AUX2"/>
@@ -222,7 +206,7 @@
     <define name="autopilot_motors_on" value="TRUE"/>
 
     <configure name="USE_BARO_BOARD" value="TRUE"/>
-    <define name="SENSOR_SYNC_SEND"/>
+    <!-- <define name="SENSOR_SYNC_SEND"/> --><!-- enable for debugging only -->
     <configure name="BARO_PERIODIC_FREQUENCY" value="50"/>
     <define name="USE_BARO_MEDIAN_FILTER"/>
     <define name="AUTOPILOT_DISABLE_AHRS_KILL"/>
@@ -233,41 +217,39 @@
     <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/> <!-- forward acceleration compensation from GPS speed -->
     <define name="USE_MAGNETOMETER_ONGROUND" value="FALSE"/> <!--DEFINE only used if float_dcm Use magnetic compensation before takeoff only while GPS course not good -->
    <!-- If AHRS_MAG_CORRECT_FREQUENCY is set outside of target no need USE_MAGNETOMETER it is assumed TRUE -->
-    <configure name="USE_MAGNETOMETER" value="FALSE"/><!-- should be as in USE the device-->
+    <configure name="USE_MAGNETOMETER" value="TRUE"/><!-- should be as in USE the device-->
 
     <module name="ahrs" type="float_cmpl_quat"> <!-- Compare e.g. float_dcm, float_cmpl_quat -->
       <!--<define name="AHRS_ACCEL_ZETA" value="2.1"/>--><!-- default 0.063, see ahrs_float_cmpl.c -->
-      <!--<define name="AHRS_ACCEL_OMEGA" value="0.1"/>--><!-- default 0.9, see ahrs_float_cmpl.c -->
-      <configure name="AHRS_USE_MAGNETOMETER" value="FALSE"/>
+      <!--<define name="AHRS_ACCEL_OMEGA" value="0.3"/>--><!-- default 0.9, see ahrs_float_cmpl.c -->
+      <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/>
       <!--<configure name="AHRS_ALIGNER_LED" value="2"/>-->
-      <define name="AHRS_MAG_UPDATE_ALL_AXES" value="FALSE"/>
+      <define name="AHRS_MAG_UPDATE_ALL_AXES" value="TRUE"/>
       <!--<define name="AHRS_USE_GPS_HEADING" value="FALSE"/>--><!-- TRUE per default -->
       <!--<define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>--><!-- already TRUE per default -->
       <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
       <!--<define name="AHRS_PROPAGATE_LOW_PASS_RATES" value="FALSE"/>-->
       <!--<define name="AHRS_BIAS_UPDATE_HEADING_THRESHOLD" value="0.174533"/>--><!--unit="rad"/-->
-      <!--<define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0.0"/--> <!--unit="m/s"-->
+      <!--<define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="3.0"/--> <!--unit="m/s"-->
       <!-- Some insights https://lists.nongnu.org/archive/html/paparazzi-devel/2013-10/msg00126.html -->
       <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="0.0"/>
-      <!-- <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID"/> -->
+      <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
     </module>
 
     <module name="ins" type="alt_float">
       <define name="INS_PROPAGATE_FREQUENCY" value="500"/>
     </module>
 
-    <module name="control" type="new"/>
+    <!-- <module name="control" type="new"/> -->
+    <module name="control" type="energyadaptive"/>
 
-    <!--<module name="imu_quality_assessment"/>--><!--NOTE NOT working for SIM, and disable after initial tuning-->
+    <module name="imu_quality_assessment"/><!--NOTE NOT working for SIM, and disable after initial tuning-->
 
     <module name="auto1_commands"/>
-
     <module name="geo_mag"/>
-
     <module name="air_data"/>
 
     <module name="navigation"/>
-    <!--<module name="nav" type="drop"/>-->
     <module name="nav" type="line"/>
     <module name="nav" type="line_border"/>
     <module name="nav" type="line_osam"/>
@@ -278,25 +260,30 @@
     <module name="nav" type="smooth"/>
     <module name="nav" type="vertical_raster"/>
     <module name="nav" type="flower"/>
-
-    <!-- module name="nav" type="catapult"/> -->
+    <module name="nav" type="drop"/>
+    <module name="nav" type="spiral_3D"/>
+    <!-- <module name="nav" type="cube"/> -->
+    <!-- <module name="nav" type="launcher"/> -->
+    <!-- <module name="nav" type="skid_landing"/> -->
+    <!-- <module name="nav" type="bungee_takeoff"/> -->
+    <!-- <module name="nav" type="shakestart"/> -->
 
     <!-- Quite a good alternative for the catapult module in this airfrsme -->
     <!--
     launch unit="rad"45deg Pitch angle for takeoff detection (sets 'launch' state to TRUE)
-    Abort  unit="rad" -20deg Pitch angle to abort takeoff (set 'launch' to FALSE)
+    Abort  unit="rad" -20deg Pitch angle to abort takeoff (sets 'launch' state to FALSE)
     Timer for takeoff detection in seconds (default 2s above pitch angle threshold)
     Disable Timer for module de-activation (default 4s after the launch detection)
     In Auto1 Sometimes throwing is not so easy :) so takeoff stabilized
-      -->
-    <!--
+    -->
+
     <module name="takeoff_detect">
       <define name="TAKEOFF_DETECT_LAUNCH_PITCH" value="0.785398"/>
-      <define name="TAKEOFF_DETECT_ABORT_PITCH" value="-0.349066"/> 
+      <define name="TAKEOFF_DETECT_ABORT_PITCH" value="-0.349066"/>
       <define name="TAKEOFF_DETECT_TIMER" value="1.2"/> 
       <define name="TAKEOFF_DETECT_DISABLE_TIMER" value="6.0"/> 
       <define name="TAKEOFF_DETECT_ALSO_IN_AUTO1" value="TRUE"/> 
-    </module>-->
+    </module>
 
     <module name="photogrammetry_calculator"/>
 
@@ -306,7 +293,7 @@
 
     <module name="traffic_info"/>
     <module name="tcas"/>
-    <!--<module name="tune_airspeed"/>-->
+    <module name="tune_airspeed"/>
 
   </firmware>
 
@@ -344,8 +331,8 @@
     <define name="ELEVON_ROLL_FACTOR" value="0.8"/>
     <define name="ELEVON_PITCH_FACTOR" value="0.9"/>
     <define name="ELEVON_YAW_FACTOR" value="0.8"/>
-    <!-- Set up/down deflection differences, needs many in flight tests to find acceptable values-->
-    <define name="ELEVON_DIFF" value="0.3f"/> <!-- TODO: not used yet, not tuned yet... -->
+    <!-- Set up/down deflection differences, needs quite some in flight tests to find acceptable values-->
+    <define name="ELEVON_DIFF" value="0.3f"/>
   </section>
 
   <command_laws>
@@ -384,7 +371,7 @@
 
   <auto_rc_commands><!-- TODO: Disable later, now used to correct manually if tiny aircraft turn radius is not yet correcly tuned to be able keep it in sight -->
       <set command="YAW" value="@YAW*0.8"/>  
-    <!-- To determine best pitch for flare in auto2 one can add Pitch command temporary while landing-->
+    <!-- To testfly and determine best pitch for flare in auto2 one can add Pitch command temporary while landing -->
     <!--<set command="PITCH" value="@PITCH"/>-->
   </auto_rc_commands>
   <!-- in PPRZ_MIN PPRZ_MAX range units-->
@@ -427,13 +414,6 @@
 
   <section name="IMU" prefix="IMU_">
 
-    <!-- <define name="GYRO_P_SENS" value=" 1.01" integer="16"/> -->
-    <!-- <define name="GYRO_Q_SENS" value=" 1.01" integer="16"/> -->
-    <!-- <define name="GYRO_R_SENS" value=" 1.01" integer="16"/> -->
-    <!-- <define name="GYRO_P_NEUTRAL" value="0"/> -->
-    <!-- <define name="GYRO_Q_NEUTRAL" value="0"/> -->
-    <!-- <define name="GYRO_R_NEUTRAL" value="0"/> -->
-
     <!-- Replace these values with your own calibration, on the correct sensor -->
 
     <!-- Accellometer Calibrated on 20230326 -->
@@ -466,12 +446,11 @@
     <define name="MAG_Y_SENS" value="0.5597712987373732" integer="16"/>
     <define name="MAG_Z_SENS" value="0.5523320364279138" integer="16"/>
     
-    <!-- TODO: Calibrate -->
     <!-- on full throttle range with default battery  but only after airframe is fully finalized with all cables in fixed place -->
     <!-- Not possible anymore as of latest code? -->
-    <define name="MAG_X_CURRENT_COEF" value="0.0"/>
+    <!-- <define name="MAG_X_CURRENT_COEF" value="0.0"/>
     <define name="MAG_Y_CURRENT_COEF" value="0.0"/>
-    <define name="MAG_Z_CURRENT_COEF" value="0.0"/>
+    <define name="MAG_Z_CURRENT_COEF" value="0.0"/> -->
 
   </section>
 
@@ -485,10 +464,10 @@
   </section>
 
   <section name="AHRS" prefix="AHRS_">
-    <!-- Local Magnetic field DE2023 -->
-    <define name="H_X" value="0.413671"/>
-    <define name="H_Y" value="-0.013374"/>
-    <define name="H_Z" value="0.910328"/>
+    <!-- Local Magnetic field DE2026 -->
+    <define name="H_X" value="0.413550"/>
+    <define name="H_Y" value="-0.010176"/>
+    <define name="H_Z" value="0.910424"/>
   </section>
 
   <section name="INS"> <!-- prefix="INS_"> -->
@@ -513,7 +492,7 @@
     <define name="PITCH_MIN_SETPOINT" value="-45" unit="deg"/>
 
     <define name="PITCH_PGAIN" value="7000"/>
-    <define name="PITCH_DGAIN" value="80"/>
+    <define name="PITCH_DGAIN" value="100"/>
     <define name="PITCH_IGAIN" value="6"/>
     <define name="PITCH_KFFA" value="5."/>
     <define name="PITCH_KFFD" value="0."/>
@@ -569,7 +548,8 @@
     <!--define name="AUTO_PITCH_CLIMB_THROTTLE_INCREMENT" value="0.14"/-->
     <define name="AUTO_PITCH_MAX_PITCH" value="45" unit="deg"/>
     <define name="AUTO_PITCH_MIN_PITCH" value="-45" unit="deg"/>
-    <!--  ETECS, not yet used -->
+
+    <!--  ETECS -->
     <define name="ENERGY_TOT_PGAIN" value="0.35"/> 
     <define name="ENERGY_TOT_IGAIN" value="0.20"/> 
     <define name="ENERGY_DIFF_PGAIN" value="0.40"/> 
@@ -611,10 +591,10 @@
     <define name="MAX_BAT_CAPACITY" value="460" unit="mAh"/>
     <define name="MILLIAMP_AT_IDLE_THROTTLE" value="220" unit="mA"/><!-- The amps by AP+RX+ESC+Telemetry+Servos is not MOTOR power this substracted-->
     <define name="MILLIAMP_AT_FULL_THROTTLE" value="6100" unit="mA"/><!-- 4 blade prop Motor amp draw at full Power static test at 7.6v -->
-    <!-- <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.03"/> -->
+    <!-- <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.03"/> --><!-- the default value 1.1 may be already beast -->
     <define name="MAX_BAT_LEVEL" value="8.4" unit="V"/> <!-- 2S lipo 2x4.2 = 8.4 -->
     <!--<define name="BAT_NB_CELLS" value="2"/> -->
-    <define name="LOW_BAT_LEVEL" value="7.2" unit="V"/> <!-- conservative since quick voltage dropoff at end of battery voltage -->
+    <define name="LOW_BAT_LEVEL" value="7.2" unit="V"/> <!-- Conservative value since there is a quick voltage dropoff at end of battery voltage -->
     <define name="CRITIC_BAT_LEVEL" value="6.6" unit="V"/>
     <define name="CATASTROPHIC_BAT_LEVEL" value="6.0" unit="V"/>
   </section>
@@ -637,7 +617,7 @@
     <define name="FLARE_PITCH_ANGLE" value="5" unit="deg"/>
     <define name="NAV_GLIDE_PITCH_TRIM" value="2.0" unit="deg"/>
 
-    <define name="KILL_MODE_DISTANCE" value="MAX_DIST_FROM_HOME*1.3+HOME_RADIUS" unit="m"/>  <!--  improve value by default turn radius calc -->
+    <define name="KILL_MODE_DISTANCE" value="MAX_DIST_FROM_HOME*1.1+HOME_RADIUS" unit="m"/>  <!--  improve value by default turn radius calc -->
     <define name="DEFAULT_CIRCLE_RADIUS" value="70." unit="m"/>
     <define name="HOME_RADIUS" value="DEFAULT_CIRCLE_RADIUS" unit="m"/>
     <define name="LANDING_CIRCLE_RADIUS" value="60.0" unit="m"/>
@@ -667,18 +647,9 @@
   </section>
 
   <section name="AIR_DATA" prefix="AIR_DATA_">
-    <define name="CALC_AIRSPEED" value="FALSE"/>
+    <define name="CALC_AIRSPEED" value="TRUE"/>
     <define name="CALC_TAS_FACTOR" value="TRUE"/>
     <define name="CALC_AMSL_BARO" value="TRUE"/>
-  </section>
-
-  <!-- Can as well be your handlaunch, a.k.a. the human catapult ;) -->
-  <section name="CATAPULT" prefix="NAV_CATAPULT_">
-    <define name="MOTOR_DELAY" value="0." unit="s"/>
-    <define name="HEADING_DELAY" value="3.0" unit="s"/>
-    <define name="ACCELERATION_THRESHOLD" value="1.1"/>
-    <define name="INITIAL_PITCH" value="20.0" unit="deg"/>
-    <define name="INITIAL_THROTTLE" value="1.0"/>
   </section>
 
   <section name="GLS_APPROACH" prefix="APP_">
