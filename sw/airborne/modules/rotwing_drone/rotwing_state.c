@@ -550,3 +550,16 @@ bool rotwing_state_choose_state_by_dist(uint8_t wp_id) {
 
   return false; // Necessary for flight plan
 }
+
+void rotwing_state_update_WP_height(uint8_t wp_id, float height) {
+  struct EnuCoor_f target_enu = {.x = waypoints[wp_id].enu_f.x,
+                                 .y = waypoints[wp_id].enu_f.y,
+                                 .z = height};
+  
+  waypoint_set_enu(wp_id, &target_enu);
+
+  DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+                               &waypoints[wp_id].enu_i.x,
+                               &waypoints[wp_id].enu_i.y,
+                               &waypoints[wp_id].enu_i.z);
+}

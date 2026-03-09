@@ -119,6 +119,7 @@ struct _mission_element {
 #ifndef MISSION_ELEMENT_NB
 #define MISSION_ELEMENT_NB 20
 #endif
+PRINT_CONFIG_VAR(MISSION_ELEMENT_NB)
 
 /** Max number of registered nav/action callbacks
  *  can be redefined
@@ -155,6 +156,9 @@ extern bool mission_insert(enum MissionInsertMode insert, struct _mission_elemen
  */
 extern bool mission_register(mission_custom_cb cb, char *type);
 
+// Returns a pointer to a register struct with matching types, NULL if not found
+extern struct _mission_registered *mission_get_registered(char *type);
+
 /** Get current mission element
  * @return return a pointer to the next mission element or NULL if no more elements
  */
@@ -189,6 +193,11 @@ extern int mission_run(void);
  * Send mission status over datalink
  */
 extern void mission_status_report(void);
+
+/** Get the number of elements in the mission
+ * @return return the number of elements in the mission
+ */
+extern uint8_t mission_get_nb_elements(void);
 
 /** Parsing functions called when a mission message is received
 */

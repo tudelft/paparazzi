@@ -148,7 +148,7 @@ bool mission_register(mission_custom_cb cb, char *type)
 }
 
 // Returns a pointer to a register struct with matching types, NULL if not found
-static struct _mission_registered *mission_get_registered(char *type)
+struct _mission_registered *mission_get_registered(char *type)
 {
   for (int i = 0; i < MISSION_REGISTER_NB; i++) {
     if (str_equal(mission.registered[i].type, type)) {
@@ -190,6 +190,18 @@ void mission_status_report(void)
   send_mission_status(&(DefaultChannel).trans_tx, &(DefaultDevice).device);
 }
 
+
+uint8_t mission_get_nb_elements(void)
+{
+  uint8_t i = mission.current_idx;
+  uint8_t nb_elem = 0;
+  while (i != mission.insert_idx) {
+    nb_elem++;
+    i = (i + 1) % MISSION_ELEMENT_NB;
+  }
+  
+  return nb_elem;
+}
 
 ///////////////////////
 // Parsing functions //
