@@ -32,5 +32,6 @@ extern void nav_rotwing_init(void);
 
 extern bool nav_rotwing_takeoff_run(void);
 extern bool nav_rotwing_land_run(void);
+extern bool nav_rotwing_speed_change_run(void);
 
 #endif  // NAV_ROTWING_H
