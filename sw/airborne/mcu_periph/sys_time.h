@@ -78,6 +78,8 @@ struct sys_time {
   uint32_t ticks_per_sec;         ///< sys_time ticks per second (SYS_TIME_FREQUENCY)
   uint32_t resolution_cpu_ticks;  ///< sys_time_timer resolution in cpu ticks
   uint32_t cpu_ticks_per_sec;     ///< cpu ticks per second
+  uint32_t tow_sync;              ///< time of week at startup, synced with GPS in ms
+  uint16_t gps_week;              ///< GPS week number at last sync
 };
 
 extern struct sys_time sys_time;
@@ -114,6 +116,19 @@ uint32_t get_sys_time_usec100(void);
  * @return milliseconds since startup as uint32_t
  */
 uint32_t get_sys_time_msec(void);
+
+/** 
+ * Get the current Unix epoch time in seconds 
+ * @return current Unix epoch time as uint64_t
+ */
+uint64_t get_unix_epoch_time(void);
+
+/**
+ * Get the time in milliseconds since the start of the week.
+ * If no GPS is connected this will return the time since startup
+ * @return Time of the week in milliseconds
+ */
+uint32_t get_sys_time_tow(void);
 
 /**
  * Register a new system timer.

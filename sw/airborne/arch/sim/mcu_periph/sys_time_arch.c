@@ -80,3 +80,24 @@ void sys_time_usleep(uint32_t us __attribute__((unused))) {}
 void sys_time_msleep(uint32_t ms) {
   sys_time_usleep(ms*1000);
 }
+
+/** 
+ * Get the current Unix epoch time in seconds 
+ * @return current Unix epoch time as uint64_t
+ */
+uint64_t get_unix_epoch_time(void)
+{
+  struct timeval tv;
+  gettimeofday(&tv,NULL);
+  return (uint64_t)tv.tv_sec*1000000 + (uint64_t)tv.tv_usec;
+}
+
+/**
+ * Get the time in milliseconds since the start of the week.
+ * If no GPS is connected this will return the time since startup
+ * @return Time of the week in milliseconds
+ */
+uint32_t get_sys_time_tow(void)
+{
+  return sys_time.tow_sync + get_sys_time_msec();
+}
