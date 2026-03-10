@@ -1,0 +1,72 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="luke_optical_flow">
+  <doc>
+    <description>
+    MAV Course 2026 - Optical Flow Module.
+    Computes optical flow divergence from the front camera using a dedicated
+    video callback (Chapter 4.2.3). When divergence exceeds a tunable
+    threshold, sends a VISUAL_DETECTION ABI message (Chapter 4.2.4) so the
+    orange_avoider can steer away from the obstacle.
+    </description>
+  </doc>
+
+  <!--
+    dep/depends: pull in cv_opticflow so its source files (opticflow_calculator.c,
+    lucas_kanade.c, etc.) are compiled and its include paths are available.
+    This means you should NOT also add cv_opticflow to your airframe separately,
+    as this dependency already includes it.
+  -->
+  <dep>
+    <depends>cv_opticflow</depends>
+  </dep>
+
+  <!--
+    header: tells Paparazzi which .h file to include in the generated code.
+    The dir attribute is relative to sw/airborne/modules/.
+    If dir is omitted, Paparazzi uses the module name (luke_optical_flow/) by default.
+  -->
+  <header>
+    <file name="luke_optical_flow.h"/>
+  </header>
+
+  <!--
+    init: function called ONCE at autopilot startup.
+    Sets up the mutex, initialises the opticflow calculator,
+    and registers the video callback with cv_add_to_device().
+  -->
+  <init fun="luke_optical_flow_init()"/>
+
+  <!--
+    periodic: function called repeatedly at 4 Hz by the autopilot loop.
+    Reads the divergence result from the video thread (via mutex),
+    prints it for debugging, and sends the VISUAL_DETECTION ABI message.
+    autorun="TRUE" means the module starts automatically without needing
+    a manual START command from the GCS.
+  -->
+  <periodic fun="luke_optical_flow_periodic()" freq="4" autorun="TRUE"/>
+
+  <!--
+    settings: exposes luke_of_divergence_threshold to the GCS (Chapter 4.2.7).
+    In the GCS go to Settings > LukeOpticalFlow and use the slider to
+    adjust the threshold live during flight, without recompiling.
+  -->
+  <settings>
+    <dl_settings name="LukeOpticalFlow">
+      <dl_setting var="luke_of_divergence_threshold"
+                  min="0.0" step="0.05" max="2.0"
+                  shortname="div_thresh"/>
+    </dl_settings>
+  </settings>
+
+  <!--
+    makefile: lists the source files to compile for this module.
+    The dir attribute is relative to sw/airborne/modules/.
+    All other required source files (opticflow_calculator.c, lucas_kanade.c,
+    etc.) are pulled in via the cv_opticflow dependency above.
+  -->
+  <makefile target="ap|nps">
+    <file name="luke_optical_flow.c"/>
+  </makefile>
+
+</module>
