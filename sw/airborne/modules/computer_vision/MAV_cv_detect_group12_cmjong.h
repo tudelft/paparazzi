@@ -49,6 +49,7 @@ extern uint8_t cod_cr_max2;
 extern bool cod_draw1;
 extern bool cod_draw2;
 
+
 // Module functions
 extern void MAV_cv_detect_group12_cmjong_init(void);
 extern void MAV_cv_detect_group12_cmjong_periodic(void);
