@@ -29,6 +29,7 @@
 #include "filters/low_pass_filter.h"
 #include "mcu_periph/sys_time.h"
 #include "modules/energy/electrical.h"
+#include "math/wls/wls_alloc.h"
 
 // #include "modules/datalink/telemetry.h"
 
@@ -40,29 +41,38 @@ typedef struct {
     float z;
 } Gain_t;
 
-// constants
-// const float G[4][4] = {
-//     { 61.1e-8f,  -61.1e-8f,  -63.2e-8f,   62.5e-8f },   // Ang x
-//     { 149e-8f,    158e-8f,   -135e-8f,   -147e-8f },    // Ang y
-//     { -15.8e-8f,   18.2e-8f,  -14.6e-8f,    9.8e-8f },   // Ang z
-//     { -4.03e-8f,  -3.67e-8f,  -3.25e-8f,  -3.51e-8f }  // Accel z
+// struct WLS_t wls_stab = {
+//     .nu        = 4,
+//     .nv        = 4,
+//     .gamma_sq  = 10000.0,
+//     .v         = {0.0},
+//     .Wv        = {1000, 1000, 1, 100},
+//     .Wu        = {1.0, 1.0, 1.0, 1.0},
+//     .u_pref    = {0.0, 0.0, 0.0, 0.0},
+//     .u_min     = {0.0, 0.0, 0.0, 0.0},
+//     .u_max     = {0.9216f, 0.9216f, 0.9216f, 0.9216f},
+//     .PC        = 0.0,
+//     .SC        = 0.0,
+//     .iter      = 0
 // };
-static float G[4][4] = {
-    // omega_1, omega_2, omega_3, omega_4
-    { 70.0f, -70.0f, -70.0f, 70.0f },   // Ang x
-    { 150.0f, 150.0f, -150.0f, -150.0f },    // Ang y
-    { -15.0f, 15.0f, -15.0f, 15.0f },   // Ang z
-    { -3.50f, -3.50f, -3.50f, -3.50f }  // Accel z
+
+// constants
+static const float MU_X = 60.0f  / 100000000.0f;
+static const float MU_Y = 120.0f / 100000000.0f;
+static const float MU_Z = 12.0f  / 100000000.0f;
+static const float C_T  = -3.5f  / 100000000.0f;
+
+static const float G[4][4] = {
+    {  MU_X,  -MU_X,  -MU_X,   MU_X },
+    {  MU_Y,   MU_Y,  -MU_Y,  -MU_Y },
+    { -MU_Z,   MU_Z,  -MU_Z,   MU_Z },
+    {  C_T,    C_T,    C_T,    C_T  }
 };
 
-static const float MU_X = 70.0f  / 100000000.0f;
-static const float MU_Y = 150.0f / 100000000.0f;
-static const float MU_Z = 15.0f  / 100000000.0f;
-static const float C_Z  = -3.5f  / 100000000.0f;
 static const float ACT_CUTOFF_OMEGA = 11.0f;
 static const float FILT_CUTOFF_FREQ = 5.0f;
-static const Gain_t Kq = {2.5f, 2.5f, 2.5f};
-static const Gain_t Komega = {12.0f, 12.0f, 12.0f};
+static const Gain_t Kq = {3.0f, 3.5f, 2.0f};
+static const Gain_t Komega = {14.0f, 16.0f, 12.0f};
 
 // global vars declared as extern in header file
 dbg_t dbg;
@@ -176,27 +186,43 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
     }
 
     // This comes from the guidance code or by the rc controller (map 0-9600 -> 0-2g)
-    float specific_thrust = -(float)(2*9.81/9600)*thrust->sp.thrust_i[THRUST_AXIS_Z];
+    // but this is not linear also I reduced to prevent saturations
+    float specific_thrust = -(float)(1.5*9.81/9600)*thrust->sp.thrust_i[THRUST_AXIS_Z];
 
     // 1. inverse rotational flatness
-    // inv_rot_flatness(specific_thrust, m_cmd, act.cmd);
+    inv_rot_flatness(specific_thrust, m_cmd, act.cmd);
+    
     // 2. ... or do it with matrix inverse
-    float Ginv[4][4];
-    float *Ginv_rows[4] = { Ginv[0], Ginv[1], Ginv[2], Ginv[3] };
-    float u_squared[4];
-    float m_and_tau[4] = {m_cmd[0], m_cmd[1], m_cmd[2], specific_thrust};
-    float_mat_inv_4d(Ginv, G);
-    float_mat_vect_mul(u_squared, Ginv_rows, m_and_tau, 4, 4);
-    act.cmd[0] = SAFE_SQRT(u_squared[0] * 100000000.0f);
-    act.cmd[1] = SAFE_SQRT(u_squared[1] * 100000000.0f);
-    act.cmd[2] = SAFE_SQRT(u_squared[2] * 100000000.0f);
-    act.cmd[3] = SAFE_SQRT(u_squared[3] * 100000000.0f);
+    // float Ginv[4][4];
+    // float *Ginv_rows[4] = { Ginv[0], Ginv[1], Ginv[2], Ginv[3] };
+    // float u_squared[4];
+    // float indi_v[4] = {m_cmd[0], m_cmd[1], m_cmd[2], specific_thrust};
+    // float_mat_inv_4d(Ginv, G);
+    // float_mat_vect_mul(u_squared, Ginv_rows, indi_v, 4, 4);
+    // act.cmd[0] = SAFE_SQRT(u_squared[0] * 100000000.0f);
+    // act.cmd[1] = SAFE_SQRT(u_squared[1] * 100000000.0f);
+    // act.cmd[2] = SAFE_SQRT(u_squared[2] * 100000000.0f);
+    // act.cmd[3] = SAFE_SQRT(u_squared[3] * 100000000.0f);
+    
+    // 3. ... or WLS
+    // WLS Control Allocator
+    // float *G_rows[4] = { &G[0][0], &G[1][0], &G[2][0], &G[3][0] };
+    // float indi_v[4] = {m_cmd[0], m_cmd[1], m_cmd[2], specific_thrust};
+    // float u_squared[4];
+    // for (int i = 0; i < 4; i++) {
+    //     wls_stab.v[i] = indi_v[i];
+    // }
+    // wls_alloc(&wls_stab, G_rows, 0, 0, 10);
+    // for (int i = 0; i < 4; i++) {
+    //     u_squared[i] = wls_stab.u[i];
+    // }
+    // act.cmd[0] = SAFE_SQRT(u_squared[0] * 100000000.0f);
+    // act.cmd[1] = SAFE_SQRT(u_squared[1] * 100000000.0f);
+    // act.cmd[2] = SAFE_SQRT(u_squared[2] * 100000000.0f);
+    // act.cmd[3] = SAFE_SQRT(u_squared[3] * 100000000.0f);
 
-    // saturate and assign commands. proper WLS needed!
+    // assign commands
     for (int i = 0; i < ACTUATORS_NB; i++) {
-        if (act.cmd[i] > 9600) {
-            act.cmd[i] = 9600;
-        }
         actuators_pprz[i] = act.cmd[i];
     }
     
@@ -229,8 +255,8 @@ static void forw_rot_flatness(float *u, float *m)
 static void inv_rot_flatness(float tau, float *m, float *u)
 {
     // I could do that with matrix inverse
-    u[0] = SAFE_SQRT((tau/C_Z + m[0]/MU_X + m[1]/MU_Y - m[2]/MU_Z)/ACTUATORS_NB);
-    u[1] = SAFE_SQRT((tau/C_Z - m[0]/MU_X + m[1]/MU_Y + m[2]/MU_Z)/ACTUATORS_NB);
-    u[2] = SAFE_SQRT((tau/C_Z - m[0]/MU_X - m[1]/MU_Y - m[2]/MU_Z)/ACTUATORS_NB);
-    u[3] = SAFE_SQRT((tau/C_Z + m[0]/MU_X - m[1]/MU_Y + m[2]/MU_Z)/ACTUATORS_NB);
+    u[0] = SAFE_SQRT((tau/C_T + m[0]/MU_X + m[1]/MU_Y - m[2]/MU_Z)/ACTUATORS_NB);
+    u[1] = SAFE_SQRT((tau/C_T - m[0]/MU_X + m[1]/MU_Y + m[2]/MU_Z)/ACTUATORS_NB);
+    u[2] = SAFE_SQRT((tau/C_T - m[0]/MU_X - m[1]/MU_Y - m[2]/MU_Z)/ACTUATORS_NB);
+    u[3] = SAFE_SQRT((tau/C_T + m[0]/MU_X - m[1]/MU_Y + m[2]/MU_Z)/ACTUATORS_NB);
 }
