@@ -36,6 +36,12 @@ struct Fl_stabilization {
 };
 
 typedef struct {
+    float x;
+    float y;
+    float z;
+} Gain_t;
+
+typedef struct {
     float cmd[4];
     float state[4];
     float state_filt[4];
@@ -43,6 +49,16 @@ typedef struct {
 
 // debugging
 typedef struct {
+    
+    // metadata
+    Gain_t Kq;
+    Gain_t Komega;
+    float MU_X;
+    float MU_Y;
+    float MU_Z;
+    float C_T;
+
+    // data
     float timestamp;
     float voltage;
     int32_t throttle;

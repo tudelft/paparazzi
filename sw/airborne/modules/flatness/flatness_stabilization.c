@@ -35,12 +35,6 @@
 
 #define SAFE_SQRT(x) (sqrt((x) > 0 ? (x) : 0.0))
 
-typedef struct {
-    float x;
-    float y;
-    float z;
-} Gain_t;
-
 // struct WLS_t wls_stab = {
 //     .nu        = 4,
 //     .nv        = 4,
@@ -62,12 +56,12 @@ static const float MU_Y = 120.0f / 100000000.0f;
 static const float MU_Z = 12.0f  / 100000000.0f;
 static const float C_T  = -3.5f  / 100000000.0f;
 
-static const float G[4][4] = {
-    {  MU_X,  -MU_X,  -MU_X,   MU_X },
-    {  MU_Y,   MU_Y,  -MU_Y,  -MU_Y },
-    { -MU_Z,   MU_Z,  -MU_Z,   MU_Z },
-    {  C_T,    C_T,    C_T,    C_T  }
-};
+// static const float G[4][4] = {
+//     {  MU_X,  -MU_X,  -MU_X,   MU_X },
+//     {  MU_Y,   MU_Y,  -MU_Y,  -MU_Y },
+//     { -MU_Z,   MU_Z,  -MU_Z,   MU_Z },
+//     {  C_T,    C_T,    C_T,    C_T  }
+// };
 
 static const float ACT_CUTOFF_OMEGA = 11.0f;
 static const float FILT_CUTOFF_FREQ = 5.0f;
@@ -105,6 +99,15 @@ static void expose_dbg_variables(void);
 
 static void expose_dbg_variables(void)
 {
+    //metadata
+    dbg.Kq = Kq;
+    dbg.Komega = Komega;
+    dbg.MU_X = MU_X;
+    dbg.MU_Y = MU_Y;
+    dbg.MU_Z = MU_Z;
+    dbg.C_T = C_T;
+
+    //data
     dbg.timestamp = timestamp;
     dbg.voltage = electrical.vsupply;
     dbg.throttle = temp_throttle;
@@ -185,9 +188,9 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
         m_cmd[i] = (ang_accel_sp_vector[i] - ang_accel_filt[i]) + m_filt[i];
     }
 
-    // This comes from the guidance code or by the rc controller (map 0-9600 -> 0-2g)
-    // but this is not linear also I reduced to prevent saturations
-    float specific_thrust = -(float)(1.5*9.81/9600)*thrust->sp.thrust_i[THRUST_AXIS_Z];
+    // this mapping is wrong because throttle -> specific thrust is a quadratic map!
+    // I approximate with linear here
+    float specific_thrust = -(float)(1.5f*9.81f/9600.0f)*thrust->sp.thrust_i[THRUST_AXIS_Z];
 
     // 1. inverse rotational flatness
     inv_rot_flatness(specific_thrust, m_cmd, act.cmd);

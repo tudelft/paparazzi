@@ -114,6 +114,16 @@ static FILE *logger_file = NULL;
 // }
 
 static void logger_file_write_header(FILE *file) {
+    
+    //metadata
+    fprintf(file, "#Kq,%.1f,%.1f,%.1f\n", dbg.Kq.x, dbg.Kq.y, dbg.Kq.z);
+    fprintf(file, "#Komega,%.1f,%.1f,%.1f\n", dbg.Komega.x, dbg.Komega.y, dbg.Komega.z);
+    fprintf(file, "#MU_X_1e_8,%.0f\n", dbg.MU_X*1e8);
+    fprintf(file, "#MU_Y_1e_8,%.0f\n", dbg.MU_Y*1e8);
+    fprintf(file, "#MU_Z_1e_8,%.0f\n", dbg.MU_Z*1e8);
+    fprintf(file, "#C_T_1e_8,%.1f\n", dbg.C_T*1e8);
+
+    // data
     fprintf(file, "timestamp");
     fprintf(file, ",voltage");
     fprintf(file, ",throttle");
