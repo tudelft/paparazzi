@@ -29,6 +29,7 @@
 #include "modules/radio_control/radio_control.h"
 #include "modules/radio_control/rc_datalink.h"
 #include "modules/core/abi.h"
+#include "filters/low_pass_filter.h"
 
 static abi_event rc_ev;
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -41,13 +42,15 @@ float * guidance_function(float *);
 static const float VEL_LIMIT = 15.0f;
 static const float ACC_LIMIT = 6.0f;
 static const float THRUST_LIMIT = 1.0f;
-static const float K_P = 3.0f;
-static const float K_V = 0.8f;
+static const float K_P = 0.8f;
+static const float K_V = 3.0f;
+// static const float K_P = 3.0f;
+// static const float K_V = 0.8f;
 static const float ROLL_RATE_GAIN = 5.0f;
 static const float PITCH_RATE_GAIN = 5.0f;
 
 #ifndef MOL_DRONE_WEIGHT
-#error "You have to define MOL_DRONE_WEIGHT for the ctrl_module_outerloop_demo!"
+#error "You have to define MOL_DRONE_WEIGHT for the swing!"
 #endif
 float mass = MOL_DRONE_WEIGHT;
 float freq = (float)PERIODIC_FREQUENCY;
@@ -65,6 +68,23 @@ float dcmd[3];
 struct FloatQuat quat;
 struct FloatVect3 d_accel_ref_b_calc;
 struct FloatVect3 d_accel_ref_v_calc;
+
+// Initiate Butterworth filters
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+Butterworth2LowPass T_filter;
+Butterworth2LowPass cmd_pitch_filter;
+Butterworth2LowPass cmd_roll_filter;
+Butterworth2LowPass accel_x_filter;
+Butterworth2LowPass accel_y_filter;
+Butterworth2LowPass accel_z_filter;
+
+#ifndef FILT_CUTOFF
+#error "You have to define FILT_CUTOFF for the swing!"
+#endif
+float cutoff_freq = FILT_CUTOFF;
 
 
 struct ctrl_guidance_unified {
@@ -89,6 +109,15 @@ void guidance_unified_init(void)
 {
     AbiBindMsgRADIO_CONTROL(ABI_BROADCAST, &rc_ev, rc_cb);
     // stabilization_attitude_rc_setpoint_init(&ctrl.rc_sp);
+    float tau = 1.0 / (2.0 * M_PI * cutoff_freq);
+    float sample_time = 1.0 / freq;
+
+    init_butterworth_2_low_pass(&T_filter, tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&cmd_pitch_filter, tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&cmd_roll_filter, tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&accel_x_filter, tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&accel_y_filter, tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&accel_z_filter, tau, sample_time, 0.0);
 }
 
 void guidance_unified_enter(void)
@@ -109,22 +138,22 @@ void guidance_unified_run(bool in_flight)
     // Desired position
     pos_ref[0] = 0.0;
     // pos_ref[0] = -5 * sinf(counter/freq);
-    // pos_ref[1] = 2 * cosf(counter/freq);
-    pos_ref[1] = 0.0;
+    pos_ref[1] = 2 * cosf(counter/freq);
+    // pos_ref[1] = 0.0;
     pos_ref[2] = -1.5;
 
     // Analytical derivatives of pos_ref for the feedforward input
     // Not including frequency in the derivative, as time = counter / freq
     vel_ref[0] = 0.0;
     // vel_ref[0] = -5 * cosf(counter/freq);
-    // vel_ref[1] = -2 * sinf(counter/freq);
-    vel_ref[1] = 0.0;
+    vel_ref[1] = -2 * sinf(counter/freq);
+    // vel_ref[1] = 0.0;
     vel_ref[2] = 0.0;
 
     accel_ref[0] = 0.0;
     // accel_ref[0] = 5 * sinf(counter/freq);
-    // accel_ref[1] = -2 * cosf(counter/freq);
-    accel_ref[1] = 0.0;
+    accel_ref[1] = -2 * cosf(counter/freq);
+    // accel_ref[1] = 0.0;
     accel_ref[2] = 0.0;
 
     // Current positions
@@ -144,9 +173,14 @@ void guidance_unified_run(bool in_flight)
     // Current accelerations
     struct NedCoor_f *accel_actual = stateGetAccelNed_f();
     float accel_a[3];
+    float accel_a_filt[3];
     accel_a[0] = accel_actual->x;
     accel_a[1] = accel_actual->y;
     accel_a[2] = accel_actual->z;
+
+    accel_a_filt[0] = update_butterworth_2_low_pass(&accel_x_filter, accel_a[0]);
+    accel_a_filt[1] = update_butterworth_2_low_pass(&accel_y_filter, accel_a[1]);
+    accel_a_filt[2] = update_butterworth_2_low_pass(&accel_z_filter, accel_a[2]);
 
     // Difference in accelerations: d_accel_ref
     static float d_accel_ref[3];
@@ -165,8 +199,14 @@ void guidance_unified_run(bool in_flight)
     float * rates_guidance = guidance_function(d_accel_ref);
     
     // Send control to the drone (angular rates)
-    ctrl.cmd.p = rates_guidance[0];
-    ctrl.cmd.q = rates_guidance[1];
+    float roll_rate_filt = update_butterworth_2_low_pass(&cmd_roll_filter, rates_guidance[0]);
+    float pitch_rate_filt = update_butterworth_2_low_pass(&cmd_pitch_filter, rates_guidance[1]);
+    ctrl.cmd.p = roll_rate_filt;
+    ctrl.cmd.q = pitch_rate_filt;
+
+    // ctrl.cmd.p = rates_guidance[0];
+    // ctrl.cmd.q = rates_guidance[1];
+
     ctrl.cmd.r = 0.0;
 
     roll_rate_calc = ctrl.cmd.p;
@@ -183,14 +223,10 @@ void guidance_unified_run(bool in_flight)
 float * guidance_function(float *d_accel_ref)
 {
   // Get thrust
-  T = mass*9.81*2.0; // Hard-coding as a constant needed for a hover to counteract gravity for now, probably have to change.
+//   T = mass*9.81*2.0; // Hard-coding as a constant needed for a hover to counteract gravity for now, probably have to change.
   // T = -thrust_estimate;  
-//   T = -ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->z)*mass;
-
-//   Include a thrust limit
-//   if (T > THRUST_LIMIT) {
-//     T = THRUST_LIMIT;
-//   }
+  T = -ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->z)*mass;
+  float T_filt = update_butterworth_2_low_pass(&T_filter, T);
 
   // Rotation matrix, replacing eul2rotm(eulerzyx,"ZYX"). This gets the desired acceleration in the body frame
   struct FloatRMat *rot = stateGetNedToBodyRMat_f(); 
@@ -207,8 +243,8 @@ float * guidance_function(float *d_accel_ref)
   // Calculate dcmd via "matrix" calculation: dcmd = B_inverse * d_accel_ref_b * mass;
   // Inverse of the control effectiveness matrix = {{0, 1/T, 0}, {1/T, 0, 0}, {0, 0, 1}};
   // dcmd[3] is defined globally
-  dcmd[0] = 1/T * d_accel_ref_b.y * mass;
-  dcmd[1] = 1/T * d_accel_ref_b.x * mass;
+  dcmd[0] = 1/T_filt * d_accel_ref_b.y * mass;
+  dcmd[1] = 1/T_filt * d_accel_ref_b.x * mass;
   dcmd[2] = 1 * d_accel_ref_b.z * mass;
 
   // Quaternion
