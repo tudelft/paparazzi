@@ -35,8 +35,11 @@ extern float accel_ref_with_gains[3];
 extern float T;
 extern float roll_rate_calc;
 extern float pitch_rate_calc;
+extern float T_cmd;
 extern float dcmd[3];
 extern struct ThrustSetpoint thr_sp;
+extern struct FloatVect3 d_accel_ref_b_calc;
+extern struct FloatVect3 d_accel_ref_v_calc;
 
 extern void guidance_unified_init(void);
 extern void guidance_unified_enter(void);

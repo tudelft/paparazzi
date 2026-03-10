@@ -76,16 +76,12 @@ static void logger_file_write_header(FILE *file) {
   fprintf(file, "rate_p,rate_q,rate_r,");
   fprintf(file, "roll_rate_calc,pitch_rate_calc,");
   fprintf(file, "T_guid,");
-  fprintf(file, "thr_sp,");
+  fprintf(file, "T_cmd,");
+  fprintf(file, "d_accel_ref_v.x, d_accel_ref_v.y, d_accel_ref_v.z,");
+  fprintf(file, "d_accel_ref_b.x, d_accel_ref_b.y, d_accel_ref_b.z,");
 #ifdef INS_EXT_POSE_H
   ins_ext_pos_log_header(file);
 #endif
-// #ifdef COMMAND_THRUST
-//   fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw,");
-// #else
-//   fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,");
-// #endif
-  // fprintf(file, "rpm_ref[0],rpm_ref[1],rpm_ref[2],rpm_ref[3]\n");
   fprintf(file, "cmd_TL,cmd_TR,cmd_BR,cmd_BL\n");
 }
 
@@ -113,17 +109,12 @@ static void logger_file_write_row(FILE *file) {
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
   fprintf(file, "%f,%f,", roll_rate_calc, pitch_rate_calc);
   fprintf(file, "%f,", T);
-  fprintf(file, "%f,", thr_sp);
+  fprintf(file, "%f,", T_cmd);
+  fprintf(file, "%f,%f,%f,", d_accel_ref_v_calc.x, d_accel_ref_v_calc.y, d_accel_ref_v_calc.z);
+  fprintf(file, "%f,%f,%f,", d_accel_ref_b_calc.x, d_accel_ref_b_calc.y, d_accel_ref_b_calc.z);
 #ifdef INS_EXT_POSE_H
   ins_ext_pos_log_data(file);
 #endif
-// #ifdef COMMAND_THRUST
-//   fprintf(file, "%d,%d,%d,%d,",
-//       stabilization.cmd[COMMAND_THRUST], stabilization.cmd[COMMAND_ROLL],
-//       stabilization.cmd[COMMAND_PITCH], stabilization.cmd[COMMAND_YAW]);
-// #else
-//   fprintf(file, "%d,%d,", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
-// #endif
   fprintf(file, "%d,%d,%d,%d\n", actuators_pprz[0], actuators_pprz[1], actuators_pprz[2], actuators_pprz[3]);
 }
 
