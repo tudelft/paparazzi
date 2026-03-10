@@ -127,6 +127,8 @@ static void logger_file_write_header(FILE *file) {
     fprintf(file, "timestamp");
     fprintf(file, ",voltage");
     fprintf(file, ",throttle");
+    fprintf(file, ",pos_x,pos_y,pos_z");
+    fprintf(file, ",vel_x,vel_y,vel_z");
     fprintf(file, ",acc_x,acc_y,acc_z");
     fprintf(file, ",qs_sp,qx_sp,qy_sp,qz_sp");
     fprintf(file, ",qs,qx,qy,qz");
@@ -141,6 +143,9 @@ static void logger_file_write_header(FILE *file) {
 }
 
 static void logger_file_write_row(FILE *file) {
+    struct NedCoor_f *pos = stateGetPositionNed_f();
+    struct NedCoor_f *vel = stateGetSpeedNed_f();
+
     struct FloatVect3 acc_f;
     struct Int32Vect3 *acc_i = stateGetAccelBody_i();
     ACCELS_FLOAT_OF_BFP(acc_f, *acc_i);
@@ -148,6 +153,8 @@ static void logger_file_write_row(FILE *file) {
     fprintf(file, "%f", dbg.timestamp);
     fprintf(file, ",%f", dbg.voltage);
     fprintf(file, ",%d", dbg.throttle);
+    fprintf(file, ",%f,%f,%f", pos->x, pos->y, pos->z);
+    fprintf(file, ",%f,%f,%f", vel->x, vel->y, vel->z);
     fprintf(file, ",%f,%f,%f", acc_f.x, acc_f.y, acc_f.z);
     fprintf(file, ",%f,%f,%f,%f", dbg.quat_sp->qi, dbg.quat_sp->qx, dbg.quat_sp->qy, dbg.quat_sp->qz);
     fprintf(file, ",%f,%f,%f,%f", dbg.quat->qi, dbg.quat->qx, dbg.quat->qy, dbg.quat->qz);
