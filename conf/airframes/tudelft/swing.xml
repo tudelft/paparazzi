@@ -38,8 +38,8 @@
         </target>
 
         <target name="nps" board="pc">
-            <define name="IMU_SWING_PERIODIC_FREQ" value="200"/>
-            <configure name="PERIODIC_FREQUENCY"   value="200"/> <!-- use configure here, define produces mult redefinitions -->
+            <define name="IMU_SWING_PERIODIC_FREQ" value="500"/>
+            <configure name="PERIODIC_FREQUENCY"   value="500"/> <!-- use configure here, define produces mult redefinitions -->
 
             <module name="fdm" type="jsbsim"/>
             <module name="udp"/>
