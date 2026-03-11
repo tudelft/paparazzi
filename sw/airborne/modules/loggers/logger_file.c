@@ -127,8 +127,8 @@ static void logger_file_write_header(FILE *file) {
     fprintf(file, "timestamp");
     fprintf(file, ",voltage");
     fprintf(file, ",throttle");
-    fprintf(file, ",pos_x,pos_y,pos_z");
-    fprintf(file, ",vel_x,vel_y,vel_z");
+    fprintf(file, ",pos_n,pos_e,pos_d");
+    fprintf(file, ",vel_n,vel_e,vel_d");
     fprintf(file, ",acc_x,acc_y,acc_z");
     fprintf(file, ",qs_sp,qx_sp,qy_sp,qz_sp");
     fprintf(file, ",qs,qx,qy,qz");

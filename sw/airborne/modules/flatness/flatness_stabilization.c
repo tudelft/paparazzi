@@ -33,20 +33,20 @@
 
 // #include "modules/datalink/telemetry.h"
 
-#define SAFE_SQRT(x) (sqrt((x) > 0 ? (x) : 0.0))
+#define SAFE_SQRT(x) (sqrtf((x) > 0 ? (x) : 0.0f))
 
 // struct WLS_t wls_stab = {
 //     .nu        = 4,
 //     .nv        = 4,
-//     .gamma_sq  = 10000.0,
-//     .v         = {0.0},
-//     .Wv        = {1000, 1000, 1, 100},
-//     .Wu        = {1.0, 1.0, 1.0, 1.0},
-//     .u_pref    = {0.0, 0.0, 0.0, 0.0},
-//     .u_min     = {0.0, 0.0, 0.0, 0.0},
+//     .gamma_sq  = 10000.0f,
+//     .v         = {0.0f},
+//     .Wv        = {1000.0f, 1000.0f, 1.0f, 100.0f},
+//     .Wu        = {1.0f, 1.0f, 1.0f, 1.0f},
+//     .u_pref    = {0.0f, 0.0f, 0.0f, 0.0f},
+//     .u_min     = {0.0f, 0.0f, 0.0f, 0.0f},
 //     .u_max     = {0.9216f, 0.9216f, 0.9216f, 0.9216f},
-//     .PC        = 0.0,
-//     .SC        = 0.0,
+//     .PC        = 0.0f,
+//     .SC        = 0.0f,
 //     .iter      = 0
 // };
 
@@ -57,10 +57,10 @@ static const float MU_Z = 12.0f  / 100000000.0f;
 static const float C_T  = -3.5f  / 100000000.0f;
 
 // static const float G[4][4] = {
-//     {  MU_X,  -MU_X,  -MU_X,   MU_X },
-//     {  MU_Y,   MU_Y,  -MU_Y,  -MU_Y },
-//     { -MU_Z,   MU_Z,  -MU_Z,   MU_Z },
-//     {  C_T,    C_T,    C_T,    C_T  }
+//     {  MU_X * 100000000.0f,  -MU_X * 100000000.0f,  -MU_X * 100000000.0f,   MU_X * 100000000.0f },
+//     {  MU_Y * 100000000.0f,   MU_Y * 100000000.0f,  -MU_Y * 100000000.0f,  -MU_Y * 100000000.0f },
+//     { -MU_Z * 100000000.0f,   MU_Z * 100000000.0f,  -MU_Z * 100000000.0f,   MU_Z * 100000000.0f },
+//     {  C_T * 100000000.0f,    C_T * 100000000.0f,    C_T * 100000000.0f,    C_T * 100000000.0f  }
 // };
 
 static const float ACT_CUTOFF_OMEGA = 11.0f;
@@ -74,7 +74,7 @@ struct Fl_stabilization fl_stabilization;
 
 // global vars
 static float timestamp;
-static Butterworth2LowPass act_filter[ACTUATORS_NB];
+static Butterworth2LowPass act_filter[4];
 static Butterworth2LowPass rates_num_der_filter[3];
 static float ACT_DYN_ALPHA;
 static Act_t act = {
@@ -85,8 +85,8 @@ static Act_t act = {
 static struct FloatQuat *quat, quat_sp;
 static struct FloatRates rates_sp;
 static struct FloatRates *rates;
-static struct FloatRates ang_accel_sp = {0., 0., 0.};
-static float ang_accel_filt[3] = {0., 0., 0.};
+static struct FloatRates ang_accel_sp = {0.0f, 0.0f, 0.0f};
+static float ang_accel_filt[3] = {0.0f, 0.0f, 0.0f};
 static int32_t temp_throttle;
 
 // helper functions
@@ -125,7 +125,7 @@ void flatness_stabilization_init(void)
     float tau = 1.0f / (2.0f * M_PI * FILT_CUTOFF_FREQ);
     float sample_time = 1.0f / PERIODIC_FREQUENCY;
 
-    for (int i = 0; i < ACTUATORS_NB; i++) {
+    for (int i = 0; i < 4; i++) {
         init_butterworth_2_low_pass(&act_filter[i], tau, sample_time, 0.0f);
     }
 
@@ -149,9 +149,9 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
     float_quat_inv_comp_norm_shortest(&quat_err, quat, &quat_sp);
 
     // calculate rates setpoint
-    rates_sp.p = 2 * Kq.x * quat_err.qx;
-    rates_sp.q = 2 * Kq.y * quat_err.qy;
-    rates_sp.r = 2 * Kq.z * quat_err.qz;
+    rates_sp.p = 2.0f * Kq.x * quat_err.qx;
+    rates_sp.q = 2.0f * Kq.y * quat_err.qy;
+    rates_sp.r = 2.0f * Kq.z * quat_err.qz;
 
     // add FF rate sp
     // struct FloatRates rate_ff = stab_sp_to_rates_f(att_sp);
@@ -164,7 +164,7 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
     ang_accel_sp.r = Komega.z * (rates_sp.r - rates->r);
 
     // actuator state estimation + butterworth filter    
-    for (int i = 0; i < ACTUATORS_NB; i++) {
+    for (int i = 0; i < 4; i++) {
         act.state[i] = discrete_first_order_filter(ACT_DYN_ALPHA, act.cmd[i], act.state[i]);
         update_butterworth_2_low_pass(&act_filter[i], act.state[i]);
         act.state_filt[i] = act_filter[i].o[0];
@@ -225,7 +225,7 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
     // act.cmd[3] = SAFE_SQRT(u_squared[3] * 100000000.0f);
 
     // assign commands
-    for (int i = 0; i < ACTUATORS_NB; i++) {
+    for (int i = 0; i < 4; i++) {
         actuators_pprz[i] = act.cmd[i];
     }
     
@@ -258,8 +258,8 @@ static void forw_rot_flatness(float *u, float *m)
 static void inv_rot_flatness(float tau, float *m, float *u)
 {
     // I could do that with matrix inverse
-    u[0] = SAFE_SQRT((tau/C_T + m[0]/MU_X + m[1]/MU_Y - m[2]/MU_Z)/ACTUATORS_NB);
-    u[1] = SAFE_SQRT((tau/C_T - m[0]/MU_X + m[1]/MU_Y + m[2]/MU_Z)/ACTUATORS_NB);
-    u[2] = SAFE_SQRT((tau/C_T - m[0]/MU_X - m[1]/MU_Y - m[2]/MU_Z)/ACTUATORS_NB);
-    u[3] = SAFE_SQRT((tau/C_T + m[0]/MU_X - m[1]/MU_Y + m[2]/MU_Z)/ACTUATORS_NB);
+    u[0] = SAFE_SQRT((tau/C_T + m[0]/MU_X + m[1]/MU_Y - m[2]/MU_Z)/4.0f);
+    u[1] = SAFE_SQRT((tau/C_T - m[0]/MU_X + m[1]/MU_Y + m[2]/MU_Z)/4.0f);
+    u[2] = SAFE_SQRT((tau/C_T - m[0]/MU_X - m[1]/MU_Y - m[2]/MU_Z)/4.0f);
+    u[3] = SAFE_SQRT((tau/C_T + m[0]/MU_X - m[1]/MU_Y + m[2]/MU_Z)/4.0f);
 }

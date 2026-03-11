@@ -49,7 +49,6 @@ typedef struct {
 
 // debugging
 typedef struct {
-    
     // metadata
     Gain_t Kq;
     Gain_t Komega;
@@ -57,7 +56,6 @@ typedef struct {
     float MU_Y;
     float MU_Z;
     float C_T;
-
     // data
     float timestamp;
     float voltage;
