@@ -1,0 +1,29 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="custom_avoider">
+  <doc>
+    <description>
+This module is an example module for the course AE4317 Autonomous Flight of Micro Air Vehicles at the TU Delft.
+This module is used in combination with a color filter (custom_detect_color_object) and the navigation mode of the autopilot.
+The avoidance strategy is to simply count the total number of custom pixels. When above a certain percentage threshold,
+(given by color_count_frac) we assume that there is an obstacle and we turn.
+
+The color filter settings are set using the custom_detect_color_object. This module can run multiple filters simultaneously
+so you have to define which filter to use with the CUSTOM_AVOIDER_VISUAL_DETECTION_ID setting.
+  </description>
+    <define name="CUSTOM_AVOIDER_CUSTOM_DETECTION_ID" value="ABI_BROADCAST" description="which VISUAL_DETECTION message to receive for custom pixel detection."/>
+  </doc>
+
+  
+  <dep>
+    <depends>custom_detect_color_object</depends>
+  </dep>
+  <header>
+    <file name="custom_avoider.h"/>
+  </header>
+  <init fun="navigation_controller_init()"/>
+  <periodic fun="navigation_controller_periodic()" freq="4"/>
+  <makefile target="ap|nps">
+    <file name="custom_avoider.c"/>
+  </makefile>
+</module>

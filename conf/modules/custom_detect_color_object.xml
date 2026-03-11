@@ -1,0 +1,69 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="custom_detect_color_object" dir="computer_vision">
+  <doc>
+    <description>Custom Color Object Detector
+    Detects an object by a continuous color. Optionally draws on image.
+    
+    </description>
+    <define name="COLOR_OBJECT_DETECTOR_CAMERA" value="front_camera|bottom_camera" description="Video device to use"/>
+    <define name="COLOR_OBJECT_DETECTOR_FPS" value="0" description="Desired FPS (0: camera rate)"/>
+    <define name="ORANGE_OBJECT_DETECTOR_LUM_MIN" value="0" description="Filter 1 min luminance"/>
+    <define name="ORANGE_OBJECT_DETECTOR_LUM_MAX" value="0" description="Filter 1 max luminance"/>
+    <define name="ORANGE_OBJECT_DETECTOR_CB_MIN" value="0" description="Filter 1 min blue chroma"/>
+    <define name="ORANGE_OBJECT_DETECTOR_CB_MAX" value="0" description="Filter 1 max blue chroma"/>
+    <define name="ORANGE_OBJECT_DETECTOR_CR_MIN" value="0" description="Filter 1 min red chroma"/>
+    <define name="ORANGE_OBJECT_DETECTOR_CR_MAX" value="0" description="Filter 1 max red chroma"/>
+  
+    <define name="GREEN_OBJECT_DETECTOR_LUM_MIN" value="0" description="Filter 1 min luminance"/>
+    <define name="GREEN_OBJECT_DETECTOR_LUM_MAX" value="0" description="Filter 1 max luminance"/>
+    <define name="GREEN_OBJECT_DETECTOR_CB_MIN" value="0" description="Filter 1 min blue chroma"/>
+    <define name="GREEN_OBJECT_DETECTOR_CB_MAX" value="0" description="Filter 1 max blue chroma"/>
+    <define name="GREEN_OBJECT_DETECTOR_CR_MIN" value="0" description="Filter 1 min red chroma"/>
+    <define name="GREEN_OBJECT_DETECTOR_CR_MAX" value="0" description="Filter 1 max red chroma"/>
+   
+    <define name="OBJECT_OBJECT_DETECTOR_DRAW" value="FALSE|TRUE" description="Whether or not to draw on image"/> 
+  
+  </doc>
+
+  <settings>
+    <dl_settings>
+      <dl_settings name="ColorObjectDetector">
+         <dl_setting var="orange_lum_min" min="0" step="1" max="255" shortname="y_min_orange"/>
+         <dl_setting var="orange_lum_max" min="0" step="1" max="255" shortname="y_max_orange"/>
+         <dl_setting var="orange_cb_min"   min="0" step="1" max="255" shortname="u_min_orange"/>
+         <dl_setting var="orange_cb_max"   min="0" step="1" max="255" shortname="u_max_orange"/>
+         <dl_setting var="orange_cr_min"   min="0" step="1" max="255" shortname="v_min_orange"/>
+         <dl_setting var="orange_cr_max"   min="0" step="1" max="255" shortname="v_max_orange"/>
+
+         <dl_setting var="green_lum_min" min="0" step="1" max="255" shortname="y_min_green"/>
+         <dl_setting var="green_lum_max" min="0" step="1" max="255" shortname="y_max_green"/>
+         <dl_setting var="green_cb_min"   min="0" step="1" max="255" shortname="u_min_green"/>
+         <dl_setting var="green_cb_max"   min="0" step="1" max="255" shortname="u_max_green"/>
+        <dl_setting var="green_cr_min"   min="0" step="1" max="255" shortname="v_min_green"/>
+        <dl_setting var="green_cr_max"   min="0" step="1" max="255" shortname="v_max_green"/>
+
+        <dl_setting var="orange_percent" min="0" step="1" max="100" shortname="% orange"/>
+        <dl_setting var="green_percent" min="0" step="1" max="100" shortname="% green"/>
+         
+        <dl_setting var="cod_draw"  min="0" step="1" max="1" values="False|True" shortname="draw 1" />
+
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <dep>
+    <depends>video_thread</depends>
+  </dep>
+
+  <header>
+    <file name="custom_detect_color_object.h"/>
+  </header>
+
+  <init fun="color_object_detector_init()"/>
+  <periodic fun="color_object_detector_periodic()" freq="50"/>
+  <makefile target="ap|nps">
+    <file name="custom_detect_color_object.c"/>
+  </makefile>
+</module>
+

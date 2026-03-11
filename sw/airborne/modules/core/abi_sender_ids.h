@@ -607,6 +607,11 @@
 #define COLOR_OBJECT_DETECTION2_ID 2
 #endif
 
+// message id 
+#ifndef COLOR_OBJECT_DETECTION_ID
+#define COLOR_OBJECT_DETECTION_ID 1
+#endif
+
 /*
  * JOYSTICK message (used for payload or control, but not as a RC)
  */
