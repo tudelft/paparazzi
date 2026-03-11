@@ -64,6 +64,7 @@
 
 //====================================================================================================================================
 // Declaration of global variables
+extern float delta_fault;
 extern float oneloop_nB_filt_cutoff;
 extern bool vel_ctrl_in_manual;
 extern bool oneloop_nB_Z_hold;

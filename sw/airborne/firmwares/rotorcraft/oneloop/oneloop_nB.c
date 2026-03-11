@@ -190,6 +190,7 @@ static Butterworth2LowPass  airspeed_filt;                // FIXME (check if con
 static Butterworth2LowPass  u_filt[ANDI_NUM_ACT_TOT];     // FIXME (check if condenseable) Low pass filter for actuators for synchronous filtering      
 static Butterworth2LowPass  nB_filt[3];
 static Butterworth2LowPass  nB_2d_filt[3];
+static Butterworth2LowPass  nB_3d_state_filt[2];
 //====================================================================================================================================
 // ACTUATOR VARIABLES 
 //====================================================================================================================================
@@ -487,9 +488,9 @@ float         ratio_vn_v[ANDI_OUTPUTS];
 //====================================================================================================================================
 float         SpinQuadRate  =0.0;
 bool          SpinQuad              = false;                                      // Quadrotor spinning configuration
-bool          fault_pitch_motors    = false;                                      // Fault pitch motors
+bool          fault_pitch_motors    = true;                                       // Fault pitch motors
 bool          fault_roll_motors     = false;                                      // Fault roll motors
-bool          fault_ailerons        = false;                                      // Fault ailerons
+bool          fault_ailerons        = true;                                       // Fault ailerons
 bool          drop_yaw              = false;                                      // Drop the control of the Yaw axis
 bool          drop_roll             = false;                                      // Drop the control of the Roll axis
 bool          drop_pitch            = false;                                      // Drop the control of the aE axis
@@ -499,9 +500,18 @@ bool          use_push_PID          = false;                                    
 bool          use_push_Position     = false;                                      // Use position loop to cmd the pusher
 bool          radio_body_ctrl       = false;                                      // Control nI in body axes   
 bool          oneloop_nB_Z_hold     = false;                                      // Hold only the altitude when in NAV 
-bool          vel_ctrl_in_manual    = false;                                      // Use velocity control in manual mode (instead of direct stick to acceleration mapping) 
-float  xi = 0.0;
+bool          vel_ctrl_in_manual    = true;                                       // Use velocity control in manual mode (instead of direct stick to acceleration mapping) 
+float xi = 0.0;
 float max_pusher_cmd = 7500;
+float debug_state[3];
+float state_term[3];
+#ifdef ONELOOP_NB_DELTA_FAULT
+  float delta_fault = ONELOOP_NB_DELTA_FAULT;
+#else
+  float delta_fault = 1000.0;
+#endif
+PRINT_CONFIG_MSG("%%% DELTA FAULT %%%")
+PRINT_CONFIG_VAR(ONELOOP_NB_DELTA_FAULT)
 //====================================================================================================================================
 // Error Controller and Reference Model VARIABLES
 //====================================================================================================================================
@@ -599,7 +609,7 @@ static void send_wls_u_oneloop(struct transport_tx *trans, struct link_device *d
 }
 static void send_eff_mat_stab_oneloop_nB(struct transport_tx *trans, struct link_device *dev)
 {
-#define STREAM_BWLS  
+//#define STREAM_BWLS  
 #ifdef STREAM_BWLS
   pprz_msg_send_EFF_MAT_STAB(trans, dev, AC_ID, 
                 ANDI_NUM_ACT, bwls_1l[1],
@@ -717,16 +727,16 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
 }
 static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
 {
-  float temp_debug_vect[23];
-  temp_debug_vect[0]  = temp_P_error[0];
-  temp_debug_vect[1]  = temp_P_error[1];
-  temp_debug_vect[2]  = temp_P_error[2];
-  temp_debug_vect[3]  = temp_D_error[0];
-  temp_debug_vect[4]  = temp_D_error[1];
-  temp_debug_vect[5]  = temp_D_error[2];
-  temp_debug_vect[6]  = temp_I_error[0];
-  temp_debug_vect[7]  = temp_I_error[1];
-  temp_debug_vect[8]  = temp_I_error[2]; 
+  float temp_debug_vect[19];
+  temp_debug_vect[0]  = LP.p.meas;
+  temp_debug_vect[1]  = LP.q.meas;
+  temp_debug_vect[2]  = LP.r.meas;
+  temp_debug_vect[3]  = LP.p_dot.meas;
+  temp_debug_vect[4]  = LP.q_dot.meas;
+  temp_debug_vect[5]  = LP.r_dot.meas;
+  temp_debug_vect[6]  = LP.p_ddot.meas;
+  temp_debug_vect[7]  = LP.q_ddot.meas;
+  temp_debug_vect[8]  = LP.r_ddot.meas; 
   temp_debug_vect[9]  = nB_jerk_des[0];
   temp_debug_vect[10] = nB_jerk_des[1];
   temp_debug_vect[11] = nB_jerk_des[2]; 
@@ -734,14 +744,10 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
   temp_debug_vect[13] = ctrl_effort_model[IDX_ap];
   temp_debug_vect[14] = ctrl_effort_model[IDX_aq];
   temp_debug_vect[15] = ctrl_effort_model[IDX_ar];
-  temp_debug_vect[16] = SQ_r;
-  temp_debug_vect[17] = LP.p.meas;    
-  temp_debug_vect[18] = LP.q.meas;    
-  temp_debug_vect[19] = LP.r.meas;    
-  temp_debug_vect[20] = LP.p.out;
-  temp_debug_vect[21] = LP.q.out;
-  temp_debug_vect[22] = LP.r.out;
-  debug_vect(trans, dev, "APF", temp_debug_vect, 23);
+  temp_debug_vect[16] = debug_state[0];
+  temp_debug_vect[17] = debug_state[1];
+  temp_debug_vect[18] = debug_state[2];
+  debug_vect(trans, dev, "APF", temp_debug_vect, 19);
 }
 #endif
 //====================================================================================================================================
@@ -911,7 +917,7 @@ static void Vel_PID_ARW(float x_dot_des[3],
     static float integral[3] = {0.f, 0.f, 0.f};
 
     const float a_max = 0.12f * 9.81f;
-    const float v_max = 0.5f;
+    const float v_max = 3.0f;//0.5f;
     const float I_MAX = 0.4f;
 
     float err[3];
@@ -1773,6 +1779,8 @@ static inline void reinit_all_LP(bool reinit)
       init_butterworth_2_low_pass(&nB_filt[i], tau, 1.0 / PERIODIC_FREQUENCY, nB_filt[i].o[0]);
       init_butterworth_2_low_pass(&nB_2d_filt[i], tau, 1.0 / PERIODIC_FREQUENCY, nB_2d_filt[i].o[0]);
     }
+    init_butterworth_2_low_pass(&nB_3d_state_filt[0], tau, 1.0 / PERIODIC_FREQUENCY, state_term[0]);
+    init_butterworth_2_low_pass(&nB_3d_state_filt[1], tau, 1.0 / PERIODIC_FREQUENCY, state_term[1]);
   }
 }
 
@@ -1806,6 +1814,8 @@ void init_filter(void)
     init_butterworth_2_low_pass(&nB_filt[i], tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
     init_butterworth_2_low_pass(&nB_2d_filt[i], tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
   }
+  init_butterworth_2_low_pass(&nB_3d_state_filt[0], tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
+  init_butterworth_2_low_pass(&nB_3d_state_filt[1], tau, 1.0 / PERIODIC_FREQUENCY, 0.0);
 }
 
 /** @brief  Propagate the filters */
@@ -1862,13 +1872,6 @@ void oneloop_nB_propagate_filters(void)
   float airspeed_meas = stateGetAirspeed_f();
   Bound(airspeed_meas, 0.0, 30.0);
   update_butterworth_2_low_pass(&airspeed_filt, airspeed_meas);
-  update_butterworth_2_low_pass(&nB_filt[0], oneloop_nB.sta_nB_state.nB.x);
-  update_butterworth_2_low_pass(&nB_filt[1], oneloop_nB.sta_nB_state.nB.y);
-  update_butterworth_2_low_pass(&nB_filt[2], oneloop_nB.sta_nB_state.nB.z);
-  update_butterworth_2_low_pass(&nB_2d_filt[0], oneloop_nB.sta_nB_state.nB_2d.x);
-  update_butterworth_2_low_pass(&nB_2d_filt[1], oneloop_nB.sta_nB_state.nB_2d.y);
-  update_butterworth_2_low_pass(&nB_2d_filt[2], oneloop_nB.sta_nB_state.nB_2d.z);
-
 }
 //------------------------------------------------------------------------------------------
 /** @brief Re-Init function of controller variables */
@@ -2025,8 +2028,8 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
     radio_body_ctrl = (!fault_pitch_motors) && (!fault_roll_motors);
     if(vel_ctrl_in_manual){
       float x_dot_des[3];
-      x_dot_des[0] = -radio_pitch_cmd / MAX_PPRZ * oneloop_nB.push_nB.max_v_d;
-      x_dot_des[1] =  radio_roll_cmd  / MAX_PPRZ * oneloop_nB.push_nB.max_v_d;
+      x_dot_des[0] = -radio_pitch_cmd / MAX_PPRZ * 3;//oneloop_nB.push_nB.max_v_d;
+      x_dot_des[1] =  radio_roll_cmd  / MAX_PPRZ * 3;//oneloop_nB.push_nB.max_v_d;
       x_dot_des[2] = 0.0;
       if (radio_body_ctrl){
         float sin_psi = sinf(eulers_zxy.psi);
@@ -2306,8 +2309,8 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
       ec_3rd_att(att_jerk_des, att_des, oneloop_nB.sta_ref.att, oneloop_nB.sta_ref.att_d, oneloop_nB.sta_ref.att_2d, oneloop_nB.sta_ref.att_3d, oneloop_nB.sta_state.att, oneloop_nB.sta_state.att_d, oneloop_nB.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds, ctrl_effort_model_att);
       //nB_EC(oneloop_nB.sta_nB_state.nB, oneloop_nB.sta_nB_state.nB_d, oneloop_nB.sta_nB_state.nB_2d, oneloop_nB.sta_nB_state.mu_B, k_att_e.k1, k_att_e.k2, k_att_e.k3, ctrl_effort_model_att, nB_jerk_des);
       nB_EC(oneloop_nB.sta_nB_state.nB, oneloop_nB.sta_nB_state.nB_d, nB_2d_FV3, oneloop_nB.sta_nB_state.mu_B, k_att_e.k1, k_att_e.k2, k_att_e.k3, ctrl_effort_model_att, nB_jerk_des);
-      nu_stab[0] = nB_jerk_des[0];
-      nu_stab[1] = nB_jerk_des[1];
+      nu_stab[0] = nB_jerk_des[0]-nB_3d_state_filt[0].o[0];//state_term[0];
+      nu_stab[1] = nB_jerk_des[1]-nB_3d_state_filt[1].o[0];//state_term[1];
       nu_stab[2] = att_jerk_des[2];
       SpinQuad_overwrite(k_att_e.k3[2], ctrl_effort_model[IDX_ar], &nu_stab[2]);
       break;
@@ -2358,17 +2361,17 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
   }
   // ======================================================================================================================================================
   // Handle fault static commands
-  float temp_thrust = (float)radio_control_get(RADIO_THROTTLE)-1000.0;
+  float temp_thrust = (float)radio_control_get(RADIO_THROTTLE)-delta_fault;
   Bound(temp_thrust, 0.0, max_fault_mot);
-  if (fault_pitch_motors && !fault_roll_motors && oneloop_nB.ctrl_type == CTRL_NB_INDI){
+  if (fault_pitch_motors && !fault_roll_motors && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI)){
     andi_u[COMMAND_MOTOR_FRONT] = temp_thrust;
     andi_u[COMMAND_MOTOR_BACK]  = temp_thrust;
   }
-  else if (fault_roll_motors && !fault_pitch_motors && oneloop_nB.ctrl_type == CTRL_NB_INDI){
+  else if (fault_roll_motors && !fault_pitch_motors && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI)){
     andi_u[COMMAND_MOTOR_RIGHT] = temp_thrust;
     andi_u[COMMAND_MOTOR_LEFT]  = temp_thrust;
   }  
-  else if (fault_roll_motors && fault_pitch_motors && oneloop_nB.ctrl_type == CTRL_NB_INDI){
+  else if (fault_roll_motors && fault_pitch_motors && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI)){
     float temp_roll = (float)radio_control_get(RADIO_THROTTLE)-max_fault_mot;
     Bound(temp_roll,0.0,MAX_PPRZ);
     andi_u[COMMAND_MOTOR_FRONT] = (float)radio_control_get(RADIO_THROTTLE);
@@ -2828,7 +2831,7 @@ void set_WLS_settings(void){
     IN_QUAD = false;
   }
 #endif
-  if (fault_pitch_motors && !fault_roll_motors &&  fault_ailerons &&  IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+  if (fault_pitch_motors && !fault_roll_motors &&  fault_ailerons &&  IN_QUAD && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI)) {
       /* TRUE FALSE TRUE, QUAD → 0 1 0, 1 0 1 */
       WLS_one_p.Wv[IDX_ap] = 0.0;
       WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
@@ -2837,7 +2840,7 @@ void set_WLS_settings(void){
       drop_pitch = false;
       drop_yaw   = true;
 
-  } else if (fault_pitch_motors && !fault_roll_motors &&  fault_ailerons && !IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+  } else if (fault_pitch_motors && !fault_roll_motors &&  fault_ailerons && !IN_QUAD && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI)) {
       /* TRUE FALSE TRUE, skew90 → 1 0 0, 0 1 1 */
       WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
       WLS_one_p.Wv[IDX_aq] = 0.0;
@@ -2846,7 +2849,7 @@ void set_WLS_settings(void){
       drop_pitch = true;
       drop_yaw   = true;
 
-  } else if (!fault_pitch_motors &&  fault_roll_motors &&  fault_ailerons &&  IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+  } else if (!fault_pitch_motors &&  fault_roll_motors &&  fault_ailerons &&  IN_QUAD && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI)) {
       /* FALSE TRUE TRUE, QUAD → 0 1 0, 1 0 1 */
       WLS_one_p.Wv[IDX_ap] = 0.0;
       WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
@@ -2855,7 +2858,7 @@ void set_WLS_settings(void){
       drop_pitch = false;
       drop_yaw   = true;
 
-  } else if (!fault_pitch_motors &&  fault_roll_motors &&  fault_ailerons && !IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+  } else if (!fault_pitch_motors &&  fault_roll_motors &&  fault_ailerons && !IN_QUAD && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI)) {
       /* FALSE TRUE TRUE, skew90 → 1 0 0, 0 1 1 */
       WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
       WLS_one_p.Wv[IDX_aq] = 0.0;
@@ -2864,7 +2867,7 @@ void set_WLS_settings(void){
       drop_pitch = true;
       drop_yaw   = true;
 
-  } else if (fault_pitch_motors && !fault_roll_motors && !fault_ailerons &&  IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+  } else if (fault_pitch_motors && !fault_roll_motors && !fault_ailerons &&  IN_QUAD && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI)) {
       /* TRUE FALSE FALSE, QUAD → 0 1 0, 1 0 1 */
       WLS_one_p.Wv[IDX_ap] = 0.0;
       WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
@@ -2873,7 +2876,7 @@ void set_WLS_settings(void){
       drop_pitch = false;
       drop_yaw   = true;
 
-  } else if (fault_pitch_motors && !fault_roll_motors && !fault_ailerons && !IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+  } else if (fault_pitch_motors && !fault_roll_motors && !fault_ailerons && !IN_QUAD && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI)) {
       /* TRUE FALSE FALSE, skew90 → 1 1 0, 0 0 1 */
       WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
       WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
@@ -2882,7 +2885,7 @@ void set_WLS_settings(void){
       drop_pitch = false;
       drop_yaw   = true;
 
-  } else if (!fault_pitch_motors &&  fault_roll_motors && !fault_ailerons &&  IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+  } else if (!fault_pitch_motors &&  fault_roll_motors && !fault_ailerons &&  IN_QUAD && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI)) {
       /* FALSE TRUE FALSE, QUAD → 0 1 0, 1 0 1 */
       WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
       WLS_one_p.Wv[IDX_aq] = 0.0;
@@ -2891,7 +2894,7 @@ void set_WLS_settings(void){
       drop_pitch = true;
       drop_yaw   = true;
 
-  } else if (!fault_pitch_motors &&  fault_roll_motors && !fault_ailerons && !IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+  } else if (!fault_pitch_motors &&  fault_roll_motors && !fault_ailerons && !IN_QUAD && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI)) {
       /* FALSE TRUE FALSE, skew90 → 1 1 0, 0 0 1 */
       WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
       WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
@@ -2900,7 +2903,7 @@ void set_WLS_settings(void){
       drop_pitch = false;
       drop_yaw   = true;
 
-  } else if (fault_pitch_motors &&  fault_roll_motors && !fault_ailerons &&  IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+  } else if (fault_pitch_motors &&  fault_roll_motors && !fault_ailerons &&  IN_QUAD && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI)) {
       /* TRUE TRUE FALSE, QUAD → 0 0 0, 1 1 1 */
       WLS_one_p.Wv[IDX_ap] = 0.0;
       WLS_one_p.Wv[IDX_aq] = 0.0;
@@ -2909,7 +2912,7 @@ void set_WLS_settings(void){
       drop_pitch = true;
       drop_yaw   = true;
 
-  } else if (fault_pitch_motors &&  fault_roll_motors && !fault_ailerons && !IN_QUAD && oneloop_nB.ctrl_type == CTRL_NB_INDI) {
+  } else if (fault_pitch_motors &&  fault_roll_motors && !fault_ailerons && !IN_QUAD && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI)) {
       /* TRUE TRUE FALSE, skew90 → 1 0 0, 0 1 1 */
       WLS_one_p.Wv[IDX_ap] = 0.0;
       WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
@@ -3064,13 +3067,40 @@ void oneloop_nB_calc_nB_states(void)
   t7.x *= 3.0f; t7.y *= 3.0f; t7.z *= 3.0f;
 
   // Combine components into nB_3d state
-  VECT3_SUB(oneloop_nB.sta_nB_state.nB_3d, t1);
+  
   VECT3_SUB(oneloop_nB.sta_nB_state.nB_3d, t2);
   VECT3_SUB(oneloop_nB.sta_nB_state.nB_3d, t3);
   VECT3_ADD(oneloop_nB.sta_nB_state.nB_3d, t4);
   VECT3_SUB(oneloop_nB.sta_nB_state.nB_3d, t5);
   VECT3_SUB(oneloop_nB.sta_nB_state.nB_3d, t6);
   VECT3_SUB(oneloop_nB.sta_nB_state.nB_3d, t7);
+  debug_state[0] = oneloop_nB.sta_nB_state.nB_3d.x;
+  debug_state[1] = oneloop_nB.sta_nB_state.nB_3d.y;
+  debug_state[2] = oneloop_nB.sta_nB_state.nB_3d.z;
+  state_term[0]  = oneloop_nB.sta_nB_state.nB_3d.x;
+  state_term[1]  = oneloop_nB.sta_nB_state.nB_3d.y;
+  state_term[2]  = oneloop_nB.sta_nB_state.nB_3d.z;
+  VECT3_SUB(oneloop_nB.sta_nB_state.nB_3d, t1);
+
+  float sigma_1 = RW.I.yy*(pqr.y*pqr_dot.z+pqr_dot.y*pqr.z)-RW.I.zz*(pqr.y*pqr_dot.z+pqr_dot.y*pqr.z);
+  float sigma_2 = RW.I.xx*(pqr.x*pqr_dot.z+pqr_dot.x*pqr.z)-RW.I.zz*(pqr.x*pqr_dot.z+pqr_dot.x*pqr.z);
+  float sigma_3 = RW.I.xx*(pqr.x*pqr_dot.y+pqr_dot.x*pqr.y)-RW.I.yy*(pqr.x*pqr_dot.y+pqr_dot.x*pqr.y);
+  float upsilon_1 = oneloop_nB.sta_nB_state.nB.y*sigma_3/RW.I.zz+oneloop_nB.sta_nB_state.nB.z*sigma_2/RW.I.yy;
+  float upsilon_2 = oneloop_nB.sta_nB_state.nB.z*sigma_1/RW.I.xx-oneloop_nB.sta_nB_state.nB.x*sigma_3/RW.I.zz;
+  float upsilon_3 = -oneloop_nB.sta_nB_state.nB.x*sigma_2/RW.I.yy-oneloop_nB.sta_nB_state.nB.y*sigma_1/RW.I.xx;
+  state_term[0] += upsilon_1;
+  state_term[1] += upsilon_2;
+  state_term[2] += upsilon_3;
+
+  update_butterworth_2_low_pass(&nB_filt[0], oneloop_nB.sta_nB_state.nB.x);
+  update_butterworth_2_low_pass(&nB_filt[1], oneloop_nB.sta_nB_state.nB.y);
+  update_butterworth_2_low_pass(&nB_filt[2], oneloop_nB.sta_nB_state.nB.z);
+  update_butterworth_2_low_pass(&nB_2d_filt[0], oneloop_nB.sta_nB_state.nB_2d.x);
+  update_butterworth_2_low_pass(&nB_2d_filt[1], oneloop_nB.sta_nB_state.nB_2d.y);
+  update_butterworth_2_low_pass(&nB_2d_filt[2], oneloop_nB.sta_nB_state.nB_2d.z);
+  update_butterworth_2_low_pass(&nB_3d_state_filt[0], state_term[0]);
+  update_butterworth_2_low_pass(&nB_3d_state_filt[1], state_term[1]); 
+
 #endif
 }
 

@@ -55,9 +55,9 @@ float actuator_state_filt_vect[EFF_MAT_COLS_NB] = {0};
 #error "NO PLUSQUAD_EFF_SCHED_M defined"
 #endif
 
-bool manual_roll  = true;
-bool manual_pitch = true;
-bool manual_yaw   = true;
+bool manual_roll  = false;
+bool manual_pitch = false;
+bool manual_yaw   = false;
 
 float roll_mult   = 1.0;
 float pitch_mult  = 1.0;
@@ -361,10 +361,10 @@ void calc_all_thrust_curve(void){
       break;
     case(2):
       // Manual thrust for tuning
-      RW.mF.dFdu = 0.0009645*thrust_mult;//calc_thrust_curve_d(PLUSQUAD_EFF_SCHED_MF_k1, PLUSQUAD_EFF_SCHED_MF_k2, 4800.0);
-      RW.mR.dFdu = 0.0009645*thrust_mult;//temp_mQ_k/RW_G_SCALE;
-      RW.mB.dFdu = 0.0009645*thrust_mult;//calc_thrust_curve_d(PLUSQUAD_EFF_SCHED_MB_k1, PLUSQUAD_EFF_SCHED_MB_k2, 4800.0);;
-      RW.mL.dFdu = 0.0009645*thrust_mult;//temp_mQ_k/RW_G_SCALE;
+      RW.mF.dFdu = PLUSQUAD_EFF_SCHED_MF_k2*thrust_mult;//0.0009645*thrust_mult;//calc_thrust_curve_d(PLUSQUAD_EFF_SCHED_MF_k1, PLUSQUAD_EFF_SCHED_MF_k2, 4800.0);
+      RW.mR.dFdu = PLUSQUAD_EFF_SCHED_MR_k2*thrust_mult;//0.0009645*thrust_mult;//temp_mQ_k/RW_G_SCALE;
+      RW.mB.dFdu = PLUSQUAD_EFF_SCHED_MB_k2*thrust_mult;//0.0009645*thrust_mult;//calc_thrust_curve_d(PLUSQUAD_EFF_SCHED_MB_k1, PLUSQUAD_EFF_SCHED_MB_k2, 4800.0);;
+      RW.mL.dFdu = PLUSQUAD_EFF_SCHED_ML_k2*thrust_mult;//0.0009645*thrust_mult;//temp_mQ_k/RW_G_SCALE;
       break;
   }
   // T = k1*u^2 + k2*u + k3-----|k1                      | k2                     | k3                     | u

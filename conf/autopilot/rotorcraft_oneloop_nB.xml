@@ -152,11 +152,11 @@
     </mode>
 
     <!-- Rate climb rc mode 5-->
-    <mode name="RATE_RC_CLIMB" shortname="ATT_INDI">
+    <mode name="RATE_RC_CLIMB" shortname="CTRL_NB_ANDI">
        <select cond="RCMode0() && RCAP1()"/>
       <on_enter>
         <!-- <call fun="printf(\"Entering INDI ATT\\n\")"/>  -->
-        <call fun=" oneloop_nB_enter(true, CTRL_INDI)"/>        
+        <call fun=" oneloop_nB_enter(true, CTRL_NB_ANDI)"/>        
       </on_enter>
       <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
