@@ -200,7 +200,8 @@ static void airspeed_cb(uint8_t sender_id, float airspeed)
 static void baro_cb(uint8_t sender_id, uint32_t stamp, float pressure)
 {
   (void)sender_id; (void)stamp;
-  static float baro_qfe = 0.0f;
+  static float baro_qfe =
+    0.0f;  // see eg https://aeropeep.com/qnh-qfe-and-qne   Ground level pressure reference for altitude calculation, set on first valid reading
   if (pressure <= 0.0f) return;
   if (baro_qfe == 0.0f) baro_qfe = pressure; // Zero ground upon boot
 
@@ -208,7 +209,8 @@ static void baro_cb(uint8_t sender_id, uint32_t stamp, float pressure)
 
   eskf_state.baro_valid = true;
   // Note: NED Z is Down, meaning positive upward altitude is strongly negative Z.
-  ins_eskf_mea_baro(-alt, 2.0f);
+  ins_eskf_mea_baro(-alt,
+                    2.0f);//TODO no magic numbers and noise model, maybe also add pressure as a separate measurement for better low altitude performance and less sensitivity to QFE errors
 }
 
 /**
@@ -428,6 +430,8 @@ void ins_eskf_init(void)
   FLOAT_RATES_ZERO(eskf_state.gyro_bias);
   FLOAT_VECT3_ZERO(eskf_state.accel_bias);
 
+  //TODO: less magic numbers overall everywhere, these are just rough initial guesses and should be tuned based on the expected dynamics and sensor noise characteristics of the specific platform.
+  // TODO Use vaslues of very common sensors
   // Init state covariance matrix (P) with sensible initial uncertainty bounds
   for (int i = 0; i < 15; i++) { for (int j = 0; j < 15; j++) { P[i][j] = 0.0f; } }
   for (int i = 0; i < 3; i++) P[i][i] = 0.01f; // Attitude uncertainty
@@ -435,6 +439,7 @@ void ins_eskf_init(void)
   for (int i = 6; i < 9; i++) P[i][i] = 1.0f;  // Position uncertainty
   for (int i = 9; i < 12; i++) P[i][i] = 0.0001f; // Gyro Bias uncertainty
   for (int i = 12; i < 15; i++) P[i][i] = 0.01f; // Accel Bias uncertainty
+
 
   // Init Process noise (Q) diagonals.
   // Represents confidence in our mathematical model vs sensor integration noise.
@@ -619,13 +624,15 @@ void ins_eskf_update(void)
 
   // Save to P and add process noise Q
   for (int i = 0; i < EKF_N; i++) {
-    for (int j = 0; j < EKF_N; j++) {
-      P[i][j] = F_P_FT[i][j];
+    for (int j = i; j < EKF_N; j++) {
+      // Add structural exact symmetry enforcement alongside process noise
+      float sym = 0.5f * (F_P_FT[i][j] + F_P_FT[j][i]);
       if (i == j) {
-        P[i][j] += Q[i] * dt; // Add process noise only on diagonals
-        /* SAFEGUARD: Prevent Diagonal Variances from dropping below zero due to float precision */
-        if (P[i][i] < 1e-9f) P[i][i] = 1e-9f;
+        sym += Q[i] * dt; // Add process noise
+        if (sym < 1e-9f) sym = 1e-9f;
       }
+      P[i][j] = sym;
+      P[j][i] = sym; // Perfect symmetry bounds EKF drift mathematically
     }
   }
 
@@ -796,23 +803,59 @@ static void eskf_update_3d(float H[3][EKF_N], float R[3][3], float z[3])
   // Inject computed error state into Nominal States
   apply_error_state(dx);
 
-  // Update Covariance Matrix: P = P - K * (H * P)
-  // We already computed HP = H * P earlier.
-  // Update Covariance Matrix symmetrically
+  // Covariance Matrix Update: TRUE mathematically stable Joseph Form
+  // P = (I - K*H)*P*(I - K*H)^T + K*R*K^T
+  // This computationally prevents P from ever losing positive semi-definiteness.
+  float I_KH[EKF_N][EKF_N];
+  for (int i = 0; i < EKF_N; i++) {
+    for (int j = 0; j < EKF_N; j++) {
+      float kh = 0.0f;
+      for (int k = 0; k < 3; k++) kh += K[i][k] * H[k][j];
+      I_KH[i][j] = (i == j ? 1.0f : 0.0f) - kh;
+    }
+  }
+
+  float I_KH_P[EKF_N][EKF_N] = {0};
+  for (int i = 0; i < EKF_N; i++) {
+    for (int k = 0; k < EKF_N; k++) {
+      if (I_KH[i][k] != 0.0f) {
+        for (int j = 0; j < EKF_N; j++) {
+          I_KH_P[i][j] += I_KH[i][k] * P[k][j];
+        }
+      }
+    }
+  }
+
+  float P_new[EKF_N][EKF_N] = {0};
   for (int i = 0; i < EKF_N; i++) {
     for (int j = i; j < EKF_N; j++) {
-      float K_HP_ij = 0.0f;
-      float K_HP_ji = 0.0f;
-      for (int k = 0; k < 3; k++) {
-        K_HP_ij += K[i][k] * HP[k][j];
-        K_HP_ji += K[j][k] * HP[k][i];
+      float val = 0.0f;
+      // (I_KH * P) * I_KH^T
+      for (int k = 0; k < EKF_N; k++) {
+        val += I_KH_P[i][k] * I_KH[j][k];
       }
-      float sym_update = P[i][j] - 0.5f * (K_HP_ij + K_HP_ji);
-      P[i][j] = sym_update;
-      P[j][i] = sym_update;
+      // + K * R * K^T
+      for (int r1 = 0; r1 < 3; r1++) {
+        for (int r2 = 0; r2 < 3; r2++) {
+          val += K[i][r1] * R[r1][r2] * K[j][r2];
+        }
+      }
+      P_new[i][j] = val;
+      P_new[j][i] = val;
     }
-    /* SAFEGUARD: Variance strict positivity */
+  }
+
+  // Final swap into array & apply minimum covariances (Variance bounding)
+  for (int i = 0; i < EKF_N; i++) {
+    for (int j = 0; j < EKF_N; j++) P[i][j] = P_new[i][j];
     if (P[i][i] < 1e-9f) P[i][i] = 1e-9f;
+
+    // Pearson correlation coefficient bounding [-1, 1] to stop exploding covariance correlation rounding failures
+    for (int j = i + 1; j < EKF_N; j++) {
+      float max_cov = sqrtf(P[i][i] * P[j][j]);
+      if (P[i][j] > max_cov) { P[i][j] = max_cov; P[j][i] = max_cov; }
+      else if (P[i][j] < -max_cov) { P[i][j] = -max_cov; P[j][i] = -max_cov; }
+    }
   }
 }
 
@@ -952,16 +995,30 @@ static void eskf_update_1d(const float H[EKF_N], float R, float z)
   // Inject computed error state into Nominal States
   apply_error_state(dx);
 
-  // Update Covariance Matrix: P = (I - K * H) * P = P - K * (H * P)
-  // Ensure symmetry directly (P = (P + P^T)/2)
+  // TRUE Joseph Form mathematically stable covariance update for 1D: P = (I - K*H)*P*(I - K*H)^T + K*R*K^T
+  float P_new[EKF_N][EKF_N] = {0};
   for (int i = 0; i < EKF_N; i++) {
     for (int j = i; j < EKF_N; j++) {
-      float sym = P[i][j] - 0.5f * (K[i] * HP[j] + K[j] * HP[i]);
-      P[i][j] = sym;
-      P[j][i] = sym;
+      // Instead of storing I_kH, compute elements on the fly for 1D since it's a vector multiplication
+      // P_new_ij = P_ij - K_i(H*P)_j - (P*H^T)_i K_j + K_i * (H*P*H^T + R) * K_j
+      // Since H*P*H^T + R is actually our Innovation scalar Variable "S" we already computed!
+      float term = P[i][j] - K[i] * HP[j] - HP[i] * K[j] + K[i] * S * K[j];
+      P_new[i][j] = term;
+      P_new[j][i] = term;
     }
-    /* SAFEGUARD: Variance strict positivity */
+  }
+
+  // Apply changes with variance and correlation safety limitations
+  for (int i = 0; i < EKF_N; i++) {
+    for (int j = 0; j < EKF_N; j++) P[i][j] = P_new[i][j];
     if (P[i][i] < 1e-9f) P[i][i] = 1e-9f;
+
+    // Bounds correlation matrix constraints safely
+    for (int j = i + 1; j < EKF_N; j++) {
+      float max_cov = sqrtf(P[i][i] * P[j][j]);
+      if (P[i][j] > max_cov) { P[i][j] = max_cov; P[j][i] = max_cov; }
+      else if (P[i][j] < -max_cov) { P[i][j] = -max_cov; P[j][i] = -max_cov; }
+    }
   }
 }
 
