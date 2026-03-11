@@ -138,6 +138,7 @@
         <module name="sys_id_auto_doublets"/>
         <module name="ground_detect">
             <define name="GROUND_DETECT_REVERSE_THRUST_ON_GROUND_DETECTED" value="TRUE"/>
+            <define name="USE_GROUND_DETECT_HX711" value="TRUE"/>
         </module>
         <module name="rotwing_state"/>
         <module name="preflight_checks">
@@ -207,7 +208,6 @@
         <let VAR="servo_hold"       VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
         <let VAR="hover_off"        VALUE="Or($th_hold, !rotwing_state.hover_motors_enabled)"/>
         <let VAR="reverse_th"       VALUE="ground_detect_reverse_thrust()"/>
-        <let VAR="reverse_th_level" VALUE="-4800"/>
         <let VAR="can_neutral"      VALUE="1000"/>
         <let VAR="ail_limit_hit"    VALUE="LessThan(rotwing_state.meas_skew_angle_deg, 30)"/>
         <let VAR="flap_limit_hit"   VALUE="LessThan(rotwing_state.meas_skew_angle_deg, 60)"/>
@@ -219,10 +219,10 @@
 
         <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
         <call fun="pfc_actuators_run()"/>
-        <set SERVO="MOTOR_FRONT"    VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(7, 0)) : ($reverse_th? $reverse_th_level : $motor_front_mapped))"/>
-        <set SERVO="MOTOR_RIGHT"    VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(8, 0)) : ($reverse_th? $reverse_th_level : $motor_right_mapped))"/>
-        <set SERVO="MOTOR_BACK"     VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(9, 0)) : ($reverse_th? $reverse_th_level : $motor_back_mapped))"/>
-        <set SERVO="MOTOR_LEFT"     VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(10, 0)) : ($reverse_th? $reverse_th_level : $motor_left_mapped))"/>
+        <set SERVO="MOTOR_FRONT"    VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(7, 0)) : ($reverse_th? reverse_th_level : $motor_front_mapped))"/>
+        <set SERVO="MOTOR_RIGHT"    VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(8, 0)) : ($reverse_th? reverse_th_level : $motor_right_mapped))"/>
+        <set SERVO="MOTOR_BACK"     VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(9, 0)) : ($reverse_th? reverse_th_level : $motor_back_mapped))"/>
+        <set SERVO="MOTOR_LEFT"     VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(10, 0)) : ($reverse_th? reverse_th_level : $motor_left_mapped))"/>
         <set SERVO="SERVO_RUDDER"   VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : pfc_actuators_value(1, @RUDDER))"/>
         <set SERVO="SERVO_ELEVATOR" VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? pfc_actuators_value(0, 0) : @ELEVATOR))"/>
         <set SERVO="MOTOR_PUSH"     VALUE="($th_hold? ($servo_hold? -9600 : pfc_actuators_value(11, -9600)) : @THRUST_X)"/>
@@ -233,10 +233,10 @@
         <set SERVO="FLAP_RIGHT"     VALUE="$flap_limit_hit? pfc_actuators_value(4, 0) : ($servo_hold? RadioControlValues(RADIO_ROLL) : @FLAPS)"/>
 
         <!-- Backup commands -->
-        <set SERVO="BMOTOR_FRONT"   VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(7, 0)) : ($reverse_th? $reverse_th_level : $motor_front_mapped))"/>
-        <set SERVO="BMOTOR_RIGHT"   VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(8, 0)) : ($reverse_th? $reverse_th_level : $motor_right_mapped))"/>
-        <set SERVO="BMOTOR_BACK"    VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(9, 0)) : ($reverse_th? $reverse_th_level : $motor_back_mapped))"/>
-        <set SERVO="BMOTOR_LEFT"    VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(10, 0)) : ($reverse_th? $reverse_th_level : $motor_left_mapped))"/>
+        <set SERVO="BMOTOR_FRONT"   VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(7, 0)) : ($reverse_th? reverse_th_level : $motor_front_mapped))"/>
+        <set SERVO="BMOTOR_RIGHT"   VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(8, 0)) : ($reverse_th? reverse_th_level : $motor_right_mapped))"/>
+        <set SERVO="BMOTOR_BACK"    VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(9, 0)) : ($reverse_th? reverse_th_level : $motor_back_mapped))"/>
+        <set SERVO="BMOTOR_LEFT"    VALUE="($hover_off? ($servo_hold? 0 : pfc_actuators_value(10, 0)) : ($reverse_th? reverse_th_level : $motor_left_mapped))"/>
         <set SERVO="BROTATION_MECH" VALUE="pfc_actuators_value(6, @ROT_MECH)"/>
     </command_laws>
 
@@ -253,9 +253,9 @@
     </section>
 
     <section name="MISC">
-        <define name="INS_EKF2_FUSION_MODE"  value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/>
-        <!-- <define name="INS_EKF2_OPTITRACK" value="TRUE"/> -->
-        <!-- <define name="INS_EKF2_MAG_FUSION_TYPE" value="MAG_FUSE_TYPE_AUTO"/> -->
+        <!-- <define name="INS_EKF2_FUSION_MODE"  value="(MASK_USE_GPS|MASK_USE_GPSYAW)"/> -->
+        <define name="INS_EKF2_OPTITRACK" value="TRUE"/>
+        <define name="INS_EKF2_MAG_FUSION_TYPE" value="MAG_FUSE_TYPE_AUTO"/>
 
         <!-- AGL distance -->
         <define name="AGL_DIST_MIN_DISTANCE_CHECK"          value="0.18"/>
@@ -344,7 +344,7 @@
             <field type="struct">
                 <field name="feedback_id" value="SERVO_MOTOR_FRONT_IDX"/>
                 <field name="feedback_id2" value="SERVO_BMOTOR_FRONT_IDX"/>
-                <field name="low" value="-9600"/>
+                <field name="low" value="0"/>
                 <field name="high" value="1300"/>
                 <field name="low_feedback" value="0"/>
                 <field name="high_feedback" value="763"/>
@@ -353,7 +353,7 @@
             <field type="struct">
                 <field name="feedback_id" value="SERVO_MOTOR_RIGHT_IDX"/>
                 <field name="feedback_id2" value="SERVO_BMOTOR_RIGHT_IDX"/>
-                <field name="low" value="-9600"/>
+                <field name="low" value="0"/>
                 <field name="high" value="1300"/>
                 <field name="low_feedback" value="0"/>
                 <field name="high_feedback" value="763"/>
@@ -362,7 +362,7 @@
             <field type="struct">
                 <field name="feedback_id" value="SERVO_MOTOR_BACK_IDX"/>
                 <field name="feedback_id2" value="SERVO_BMOTOR_BACK_IDX"/>
-                <field name="low" value="-9600"/>
+                <field name="low" value="0"/>
                 <field name="high" value="1300"/>
                 <field name="low_feedback" value="0"/>
                 <field name="high_feedback" value="763"/>
@@ -371,7 +371,7 @@
             <field type="struct">
                 <field name="feedback_id" value="SERVO_MOTOR_LEFT_IDX"/>
                 <field name="feedback_id2" value="SERVO_BMOTOR_LEFT_IDX"/>
-                <field name="low" value="-9600"/>
+                <field name="low" value="0"/>
                 <field name="high" value="1300"/>
                 <field name="low_feedback" value="0"/>
                 <field name="high_feedback" value="763"/>

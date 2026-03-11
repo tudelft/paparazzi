@@ -2,7 +2,7 @@
 <flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="60" name="Safe TU Delft Cyberzoo" security_height="0.4">
   <header>
     #include "modules/nav/waypoints.h"
-    <!-- #include "modules/sensors/hx711.h" -->
+    #include "modules/sensors/hx711.h"
     #include "autopilot_rc_helpers.h"
     #include "modules/checks/preflight_checks.h"
     #include "modules/nav/ground_detect.h"
@@ -128,12 +128,12 @@
     </block>
     <block name="descend" strip_button="Descend" strip_icon="descend.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <!-- <call_once fun="hx711_autoset_offset(1)"/> -->
         <exception cond="GetPosHeight() @LT 12.0" deroute="flare"/>
         <stay climb="-1.0" vmode="climb" wp="TD"/>
     </block>
     <block name="flare">
         <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
+        <call_once fun="hx711_autoset_offset(1)"/>
         <stay climb="-0.5" vmode="climb" wp="TD"/>
         <!--<exception cond="!(GetPosHeight() @LT 2.0)" deroute="flare_low"/>-->
         <exception cond="agl_dist_valid @AND (agl_dist_value @LT 0.28)" deroute="flare_low"/>
@@ -152,12 +152,12 @@
     </block>
     <block name="descend_reverse_thrust" strip_button="Descend Reverse Thrust" strip_icon="descend.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
-        <!-- <call_once fun="hx711_autoset_offset(1)"/> -->
         <exception cond="GetPosHeight() @LT 12.0" deroute="flare_reverse_thrust"/>
         <stay climb="-1.0" vmode="climb" wp="TD"/>
     </block>
     <block name="flare_reverse_thrust">
         <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
+        <call_once fun="hx711_autoset_offset(1)"/>
         <stay climb="-0.5" vmode="climb" wp="TD"/>
         <!--<exception cond="!(GetPosHeight() @LT 2.0)" deroute="flare_low"/>-->
         <exception cond="agl_dist_valid @AND (agl_dist_value @LT 0.28)" deroute="flare_low_reverse_thrust"/>

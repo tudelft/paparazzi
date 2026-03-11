@@ -37,6 +37,7 @@
 #if USE_GROUND_DETECT_INDI_THRUST
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #endif
+PRINT_CONFIG_VAR(USE_GROUND_DETECT_INDI_THRUST)
 
 #if USE_GROUND_DETECT_AGL_DIST
 #include "modules/sonar/agl_dist.h"
@@ -44,10 +45,12 @@
 #define GROUND_DETECT_AGL_MIN_VALUE 0.1
 #endif
 #endif
+PRINT_CONFIG_VAR(USE_GROUND_DETECT_AGL_DIST)
 
 #if USE_GROUND_DETECT_HX711
 #include "modules/sensors/hx711.h"
 #endif
+PRINT_CONFIG_VAR(USE_GROUND_DETECT_HX711)
 
 #ifndef GROUND_DETECT_REVERSE_THRUST_ON_GROUND_DETECTED
 #define GROUND_DETECT_REVERSE_THRUST_ON_GROUND_DETECTED false
@@ -57,14 +60,17 @@ PRINT_CONFIG_VAR(GROUND_DETECT_REVERSE_THRUST_ON_GROUND_DETECTED)
 #ifndef GROUND_DETECT_SPECIFIC_THRUST_THRESHOLD
 #define GROUND_DETECT_SPECIFIC_THRUST_THRESHOLD -5.0
 #endif
+PRINT_CONFIG_VAR(GROUND_DETECT_SPECIFIC_THRUST_THRESHOLD)
 
 #ifndef GROUND_DETECT_VERTICAL_SPEED_THRESHOLD
-#define GROUND_DETECT_VERTICAL_SPEED_THRESHOLD 5.0
+#define GROUND_DETECT_VERTICAL_SPEED_THRESHOLD 0.1
 #endif
+PRINT_CONFIG_VAR(GROUND_DETECT_VERTICAL_SPEED_THRESHOLD)
 
 #ifndef GROUND_DETECT_VERTICAL_ACCEL_THRESHOLD
-#define GROUND_DETECT_VERTICAL_ACCEL_THRESHOLD 2.0
+#define GROUND_DETECT_VERTICAL_ACCEL_THRESHOLD -3.0
 #endif
+PRINT_CONFIG_VAR(GROUND_DETECT_VERTICAL_ACCEL_THRESHOLD)
 
 #include "pprzlink/messages.h"
 #include "modules/datalink/downlink.h"
@@ -86,6 +92,7 @@ bool allow_reverse_thrust = false;
 int32_t counter = 0;
 bool ground_detected = false;
 bool override_reverse = false;
+uint16_t reverse_th_level = -6800;
 
 union ground_detect_bitmask_t ground_detect_status;
 
@@ -145,7 +152,11 @@ void ground_detect_periodic()
 #endif
 
   ground_detect_status.vspeed_trigger = (fabsf(vspeed_ned) < GROUND_DETECT_VERTICAL_SPEED_THRESHOLD)? 1:0;
+
+#if USE_GROUND_DETECT_INDI_THRUST
   ground_detect_status.spec_thrust_trigger = (spec_thrust_down > GROUND_DETECT_SPECIFIC_THRUST_THRESHOLD)? 1:0;
+#endif
+
   ground_detect_status.accel_filt_trigger = (fabsf(accel_filter.o[0]) < GROUND_DETECT_VERTICAL_ACCEL_THRESHOLD)? 1:0;
 
 #if USE_GROUND_DETECT_AGL_DIST

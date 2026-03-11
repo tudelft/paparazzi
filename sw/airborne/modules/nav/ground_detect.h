@@ -52,5 +52,6 @@ extern void ground_detect_disallow_reverse_thrust(void);
 extern void ground_detect_allow_reverse_thrust(void);
 
 extern bool override_reverse;
+extern uint16_t reverse_th_level;
 
 #endif  // GROUND_DETECT_H

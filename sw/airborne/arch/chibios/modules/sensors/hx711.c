@@ -151,10 +151,13 @@ void hx711_event(void)
       filt_val[i] = get_median_filter_f(&measurement_filt[i]);
     }
 
-    float freq = 1 / (get_sys_time_float() - hx711_meas_time);
-    hx711_meas_time = get_sys_time_float();
+    float current_time = get_sys_time_float();
+    float freq = 1 / (current_time - hx711_meas_time);
+    hx711_meas_time = current_time;
 
-    DOWNLINK_SEND_HX711(DefaultChannel, DefaultDevice, &freq, HX711_DEVICES_NB, filt_val);
+    RunOnceEvery(10, {
+      DOWNLINK_SEND_HX711(DefaultChannel, DefaultDevice, &freq, HX711_DEVICES_NB, filt_val);
+    });
     pprz_msg_send_HX711(&pprzlog_tp.trans_tx, &flightrecorder_sdlog.device, AC_ID, &freq, HX711_DEVICES_NB, filt_val);
 
     hx711.measurement_ready = false;
