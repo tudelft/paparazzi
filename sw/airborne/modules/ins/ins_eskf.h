@@ -17,7 +17,7 @@
  * along with paparazzi; see the file COPYING.  If not, write to
  * the Free Software Foundation, 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
- * 
+ *
  * @file modules/ins/ins_eskf.h
  * @brief Error-State Kalman Filter (ESKF) implementation in pure C, header.
  *
