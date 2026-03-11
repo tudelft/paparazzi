@@ -153,7 +153,12 @@ NOTES:
       <module name="gps" type="ublox">
         <configure name="GPS_BAUD" value="B460800"/>
         <!-- <configure name="GPS_PORT" value="UARTx"/>-->        <!-- Device connected to the default GPS port on pixracer no need to define it -->
-      </module>
+        <define name="GPS_UBX_UCENTER_RATE" value="100"/>
+        <!-- <define name="USE_GPS_UBX_RXM_RAW"/> -->
+        <!-- <define name="USE_GPS_UBX_RXM_SFRB"/> -->      
+        <!-- <define name="LOG_RAW_GPS"/> -->
+      </module> 
+      <module name="gps" type="ubx_ucenter"/>
 
       <!-- Enable this module if you want it for debugging the raw ADC values, 
            useful to determine what a ADC sensor RAW value is to determine gain value 

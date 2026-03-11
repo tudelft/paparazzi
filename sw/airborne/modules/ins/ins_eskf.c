@@ -1,6 +1,25 @@
 /**
+ * Copyright (C) 2026 OpenUAS <info@openuas.org>
+ *
+ * This file is part of paparazzi.
+ *
+ * paparazzi is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * paparazzi is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with paparazzi; see the file COPYING.  If not, write to
+ * the Free Software Foundation, 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
+ * 
  * @file modules/ins/ins_eskf.c
- * @brief Error-State Kalman Filter (ESKF) implementation in pure C.
+ * @brief Error-State Kalman Filter (ESKF) implementation in pure C no reliance on another compiler
  *
  * @ingroup ins_eskf
  *
@@ -15,18 +34,12 @@
  *    from exteroceptive sensors (GPS/Mag) and applying it to the nominal state.
  */
 
+/* Make naming better e.g.no fixed 15x15, refactor, add sensors optiflow abd whatnot */
+
 #include "modules/ins/ins_eskf.h"
+
 #include "math/pprz_isa.h"
 #include "state.h"
-
-//#include "modules/nav/waypoints.h"
-//#include "stabilization/stabilization_attitude.h"
-//#include "generated/airframe.h"
-//#include "generated/flight_plan.h"
-
-//#include "math/pprz_geodetic_wgs84.h"
-//#include "mcu_periph/sys_time.h"
-#include "autopilot.h"
 
 /** For SITL and NPS we need special includes */
 #if defined SITL && USE_NPS
@@ -51,7 +64,10 @@ struct eskf_t eskf_state;
 
 float ins_eskf_gps_p_noise = INS_ESKF_GPS_P_NOISE;
 float ins_eskf_gps_v_noise = INS_ESKF_GPS_V_NOISE;
-static struct FloatVect3 mag_earth_ref = {0.38925f, 0.00179f, 0.92113f};
+
+// Magic generic earth magnetic field vector (normalized approximation)
+// This should best be initialized based on GPS location.
+static struct FloatVect3 mag_earth_ref = {0.413550f, -0.010176f, 0.910424f};//FIXME take aircraft defines, for now these are the default for if there is no GNSS lock
 
 /* ABI Bindings Configuration defaults from XML */
 #ifndef INS_ESKF_GYRO_ID
@@ -78,16 +94,6 @@ static struct FloatVect3 mag_earth_ref = {0.38925f, 0.00179f, 0.92113f};
 #ifndef INS_ESKF_AGL_ID
 #define INS_ESKF_AGL_ID ABI_BROADCAST
 #endif
-
-/* TODO: All registered ABI events */
-// static abi_event baro_ev;
-// static abi_event agl_ev;
-// static abi_event gyro_int_ev;
-// static abi_event accel_int_ev;
-// static abi_event mag_ev;
-// static abi_event gps_ev;
-// static abi_event relpos_ev;
-// static abi_event reset_ev;
 
 /**
  * @name ABI Callbacks
@@ -233,7 +239,7 @@ static void agl_cb(uint8_t sender_id, uint32_t stamp, float distance)
   /* Feed AGL distance into the solution */
   eskf_state.agl = distance;
   eskf_state.agl_valid = true;
-  ins_eskf_mea_agl(distance, 0.5f); // 0.5m noise std dev approximation 
+  ins_eskf_mea_agl(distance, 0.2f); // 0.2m noise std dev approximation 
 }
 
 /**
@@ -262,7 +268,7 @@ static void geo_mag_cb(uint8_t sender_id __attribute__((unused)), struct FloatVe
  * 9-11: Gyroscope bias error
  * 12-14: Accelerometer bias error
  */
-#define EKF_N 15
+#define EKF_N 15 //TODO: extend to more states like sideslip, wind, etc
 
 // State error covariance matrix (P) and Process Noise covariance (Q)
 static float P[EKF_N][EKF_N];
@@ -270,10 +276,6 @@ static float Q[EKF_N];
 
 // Constants
 static const float g_earth = 9.81f; // Standard local gravity
-
-// Magic generic earth magnetic field vector (normalized approximation)
-// In a real application, this should be initialized based on GPS location.
- 
 
 /* ------------------------------------------------------------------------- *
  * Helper Matrix Operations 
@@ -328,6 +330,86 @@ static void mat_mult_15x15_transB(float C[15][15], const float A[15][15], const 
     }
 }
 
+
+#if PERIODIC_TELEMETRY
+#include "modules/datalink/telemetry.h"
+
+static void send_ins(struct transport_tx *trans, struct link_device *dev)
+{
+//TODO: 
+//maybe should have a proper function to send the full state, but for now we can reuse the INS message which has pos/vel/accel and is commonly used for EKF outputs. We can also add more messages later for more specific outputs like attitude, biases, etc.
+//pprz_msg_send_INS(trans, dev, AC_ID, &pos.x, &pos.y, &pos.z, &speed.x, &speed.y, &speed.z, &accel.x, &accel.y, &accel.z);
+  pprz_msg_send_PONG(trans, dev, AC_ID); //Placeholder until we implement the actual message
+}
+
+static void send_ins_z(struct transport_tx *trans, struct link_device *dev)
+{
+// TODO:
+// pprz_msg_send_INS_Z(trans, dev, AC_ID, &baro_z, &pos_z, &speed_z, &accel_z);
+  pprz_msg_send_PONG(trans, dev, AC_ID); //Placeholder until we implement the actual message
+}
+
+static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
+{
+//FIXME: this is a bit hacky, we should have a proper function to send the reference and also include the qfe
+//USE available message for now, but it is not ideal since it is meant for the local origin and not the full reference.
+//     pprz_msg_send_INS_REF(trans, dev, AC_ID,
+  pprz_msg_send_PONG(trans, dev, AC_ID); //Placeholder until we implement the actual message
+}
+
+static void send_ins_eskf(struct transport_tx *trans, struct link_device *dev)
+{
+//Re-use the available EKF2 message
+//   pprz_msg_send_INS_EKF2(trans, dev, AC_ID,
+//                          &control_mode, &filter_fault_status, &gps_check_status, &soln_status,
+//                          &innov_test_status, &mag, &vel, &pos, &hgt, &tas, &hagl, &flow, &beta,
+//                          &mag_decl, &terrain_valid, &dead_reckoning);
+  pprz_msg_send_PONG(trans, dev, AC_ID); //Placeholder until we implement the actual message
+}
+
+static void send_ins_eskf_ext(struct transport_tx *trans, struct link_device *dev)
+{
+//Nothing yet, we can add more detailed ESKF outputs like GPS drift, vibration metrics, etc in a custom message or reuse an existing one if it fits.
+  pprz_msg_send_PONG(trans, dev, AC_ID); //Placeholder until we implement the actual message
+}
+
+static void send_filter_status(struct transport_tx *trans, struct link_device *dev)
+{
+  //uint8_t ahrs_eskf_id = AHRS_COMP_ID_EKF2; // Reuse EKF2 ID for now, we can define a new one if needed
+  //uint16_t filter_fault_status = 0; //TODO: we can define some fault status based on the innovation test failures, covariance limits, etc. For now we set it to 0 which means no fault.
+  //uint16_t filter_fault_status_16 = filter_fault_status;
+ // pprz_msg_send_STATE_FILTER_STATUS(trans, dev, AC_ID, &ahrs_eskf_id, &mde, &filter_fault_status_16);
+   pprz_msg_send_PONG(trans, dev, AC_ID); //Placeholder until we implement the actual message
+}
+
+static void send_wind_info_ret(struct transport_tx *trans, struct link_device *dev)
+{
+//pprz_msg_send_WIND_INFO_RET(trans, dev, AC_ID, &flags, &wind(1), &wind(0), &f_zero, &tas);
+  pprz_msg_send_PONG(trans, dev, AC_ID); //Placeholder until we implement the actual message
+}
+
+static void send_ahrs_bias(struct transport_tx *trans, struct link_device *dev)
+{
+ //pprz_msg_send_
+  pprz_msg_send_PONG(trans, dev, AC_ID); //Placeholder until we implement the actual message
+}
+
+static void send_ahrs_quat(struct transport_tx *trans, struct link_device *dev)
+{
+ //pprz_msg_send_
+   pprz_msg_send_PONG(trans, dev, AC_ID); //Placeholder until we implement the actual message
+}
+
+static void send_external_pose_down(struct transport_tx *trans, struct link_device *dev)
+{
+// TODO: Send the estimated pose down to the ground for visualization.
+// We can use the EXTERNAL_POSE_DOWN message which includes position and attitude in NED frame. 
+//pprz_msg_send_
+  pprz_msg_send_PONG(trans, dev, AC_ID); //Placeholder until we implement the actual message
+} 
+
+#endif
+
 /**
  * @brief Initializes the ESKF.
  * Sets the initial nominal state, prediction covariances (P), and process noise (Q).
@@ -358,6 +440,19 @@ void ins_eskf_init(void) {
     for (int i=6; i<9; i++) Q[i] = 1e-5f;        // Position noise
     for (int i=9; i<12; i++) Q[i] = 1e-7f;       // Gyro bias wander
     for (int i=12; i<15; i++) Q[i] = 1e-5f;      // Accel bias wander
+
+#if PERIODIC_TELEMETRY
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS, send_ins);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_Z, send_ins_z);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_EKF2, send_ins_eskf);//Re-Used EKF2 messages for now since we can reuse them, but we can define new ones if needed for more specific outputs.
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_EKF2_EXT, send_ins_eskf_ext);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STATE_FILTER_STATUS, send_filter_status);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WIND_INFO_RET, send_wind_info_ret);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_BIAS, send_ahrs_bias);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_QUAT_INT, send_ahrs_quat);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_EXTERNAL_POSE_DOWN, send_external_pose_down);
+#endif
 
     /* Binding ABI messages */
     AbiBindMsgIMU_GYRO(INS_ESKF_GYRO_ID, &eskf_state.gyro_ev, gyro_cb);
