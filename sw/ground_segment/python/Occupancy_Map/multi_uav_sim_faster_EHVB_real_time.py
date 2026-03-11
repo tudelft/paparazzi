@@ -43,7 +43,7 @@ sys.path.append(PPRZ_HOME + "/sw/ext/pprzlink/lib/v1.0/python")
 
 lat0, lon0, alt0 = 52.1681551, 4.4126468, 0.0
 LAT0, LON0, ALT0 =lat0, lon0, alt0 
-xml_file = os.path.expanduser("~/paparazzi2/paparazzi/conf/flight_plans/SDB/sdb_rotwing_EHVB.xml")
+xml_file = os.path.expanduser("~/paparazzi2/paparazzi/conf/flight_plans/SDB/sdb_bebop_EHVB.xml")
 tree = ET.parse(xml_file)
 root = tree.getroot()
 
@@ -254,8 +254,8 @@ def on_pprz_msg(ac_id, msg):
 
 # Store the last yaw state and timestamp for each drone to calculate rate
 YAW_MEMORY = {} 
-# Maximum allowed turn rate: 30 degrees per second (smooth and realistic for fast flight)
-MAX_YAW_RATE = math.radians(30.0) 
+# Maximum allowed turn rate: 20 degrees per second (smooth and realistic for fast flight)
+MAX_YAW_RATE = math.radians(20.0) 
 
 def send_pprz_velocity(interface, ac_id, vx_enu, vy_enu, vz_enu):
     if interface is None: return
@@ -344,8 +344,8 @@ def world_to_grid(x, y):
 dt_step = 1.0
 v_drift = np.array([1.0, 0.0])
 theta_FOV = np.deg2rad(45)
-E_scale = 2.0
-E_scale_track = 1.0
+E_scale = 20.0
+E_scale_track = 20.0
 gamma_wind = 5.0
 v_wind = np.array([0.0, 0.0])
 v_max = 8.0        # max velocity [m/s]
@@ -395,13 +395,11 @@ def get_vsqp_power(v):
 
 def get_quadcopter_power(v):
     """
-    Returns instantaneous power (W) for a given horizontal airspeed v (m/s).
-    Empirically tuned for a Bebop 2 quadcopter.
-    - Hover: ~70W (from flight data)
-    - Max Speed: 21 m/s (saturation)
+    Returns instantaneous electrical power (W) for a given horizontal airspeed v (m/s).
+    Empirically derived from flight log '26_03_06__16_15_17.data'.
     """
     # U-shaped power curve: P(v) = P_hover - (Translational Lift) + (Parasite Drag)
-    power = 70.0 - (1.5 * v) + (0.015 * v**3)
+    power = 81.3 - (1.626 * v) + (0.219 * v**2)
     
     # Safety floor just in case extreme tailwinds cause weird math
     return max(power, 50.0)
@@ -755,6 +753,7 @@ def plan_velocity_ipp_3D(drone_pos, drone_vel, belief_map, inside_mask, grid_ori
         E_p = energy_of_path(path)
         E_norm = E_p / E_scale
         J = I_p - (lam * E_norm)
+        print(f" IG={I_p:.2f}, E={E_p:.1f}J, J={J:.2f}")
         
         if J > best_J:
             best_J = J
@@ -775,7 +774,7 @@ def plan_velocity_ipp_3D(drone_pos, drone_vel, belief_map, inside_mask, grid_ori
     
     # Calculate the max allowed ground speed for this heading
     # (Matches the logic you pasted in energy_of_path)
-    v_g_allowed = max(2.0, min(8.0, 8.0 + v_headwind_comp))
+    v_g_allowed = max(1.0, min(8.0, 8.0 + v_headwind_comp))
     
     # Calculate velocity components
     travel_time = max(dist / v_g_allowed, 0.1)
@@ -915,7 +914,7 @@ def get_view_window(pos_xyz, fov_angle=theta_FOV):
 
 
 
-victims_template = np.array([[50.0,-200.0],[50.0,-400.0], [0.0, 0.0], [50.0, 50.0]])
+victims_template = np.array([[100.0,-150.0],[300.0,0.0], [0.0, 0.0], [50.0, 50.0]])
 DISCOVERED_POSITIONS = {}
 
 VICTIM_IDS = [123, 219]  
@@ -962,19 +961,19 @@ if __name__ == "__main__":
         # Handle case where no searchers connected via Ivy
         if not AC_IDS:
             print("[WARN] No SEARCH drones found via Ivy. Using Sim Defaults.")
-            AC_IDS = [121, 122, 215, 216, 221, 222]
+            AC_IDS = [122, 215, 216, 221, 222]
             
             # Initialize states for all 6 drones
             for ac in AC_IDS:
                 ensure_uav(ac)
             
             # Spread them out along the X-axis so they don't immediately collide
-            UAVS[121]['state']['x'] = 0.0;   UAVS[121]['state']['y'] = 0.0;  UAVS[121]['state']['z'] = 30.0
+            # UAVS[121]['state']['x'] = 0.0;   UAVS[121]['state']['y'] = 0.0;  UAVS[121]['state']['z'] = 30.0 // This one is broken now ;()
             UAVS[122]['state']['x'] = 20.0;  UAVS[122]['state']['y'] = 0.0;  UAVS[122]['state']['z'] = 30.0
-            UAVS[215]['state']['x'] = 40.0;  UAVS[215]['state']['y'] = 0.0;  UAVS[215]['state']['z'] = 30.0
-            UAVS[216]['state']['x'] = 60.0;  UAVS[216]['state']['y'] = 0.0;  UAVS[216]['state']['z'] = 50.0
-            UAVS[221]['state']['x'] = 80.0;  UAVS[221]['state']['y'] = 0.0;  UAVS[221]['state']['z'] = 50.0
-            UAVS[222]['state']['x'] = 100.0; UAVS[222]['state']['y'] = 0.0;  UAVS[222]['state']['z'] = 50.0
+            UAVS[215]['state']['x'] = 40.0;  UAVS[215]['state']['y'] = 0.0;  UAVS[215]['state']['z'] = 32.0
+            UAVS[216]['state']['x'] = 60.0;  UAVS[216]['state']['y'] = 0.0;  UAVS[216]['state']['z'] = 35.0
+            UAVS[221]['state']['x'] = 80.0;  UAVS[221]['state']['y'] = 0.0;  UAVS[221]['state']['z'] = 37.0
+            UAVS[222]['state']['x'] = 100.0; UAVS[222]['state']['y'] = 0.0;  UAVS[222]['state']['z'] = 40.0
         else:
             print(f"[BRIDGE] Active Search Drones: {AC_IDS}")
             USE_INTERNAL_PHYSICS = False
@@ -982,7 +981,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"[ERR] Ivy fail: {e}")
         ivy = None
-        AC_IDS = [121, 122, 215, 216, 221, 222]
+        AC_IDS = [122, 215, 216, 221, 222]
         for ac in AC_IDS:
             ensure_uav(ac)
         HAS_REAL_VICTIM = False
@@ -1022,28 +1021,29 @@ if __name__ == "__main__":
     num_drones = len(AC_IDS)
     drone_positions = []
     uav_nominal_altitudes = []
-    
-    # Hardcoded altitude tiers (All 50m for this specific field test)
-    # You can easily change this to [30.0, 50.0, 70.0, 30.0, 50.0, 70.0] later!
-    assigned_alts = [50.0, 50.0, 50.0, 50.0, 50.0, 50.0]
+
+
+    # --- B. Setup Search Drones ---
+    num_drones = len(AC_IDS)
+    drone_positions = []
+    uav_nominal_altitudes = []
     
     # Initialize from the UAVS dictionary populated by on_gps_int/on_ins
     for i, ac_id in enumerate(AC_IDS):
         uav = UAVS[ac_id]
         with LOCK:
             s = uav['state']
-            pos = np.array([s['x'], s['y'], max(0.5, s['z'])])
+            # Read the actual Z from the drone
+            real_z = max(0.5, s['z'])
+            pos = np.array([s['x'], s['y'], real_z])
         
-        # FORCE them to use the assigned tiers, ignoring their start height
-        forced_alt = assigned_alts[i % len(assigned_alts)]
+        # We now use the drone's actual current altitude as its nominal tier
+        # (Assuming it is currently flying at its assigned XML altitude)
+        assigned_alt = real_z
         
-        # We override the starting 'z' to be the forced_alt so the planner doesn't 
-        # panic on frame 1 if the drone is physically still on the ground
-        pos[2] = forced_alt 
-        
-        print(f" -> Init Searcher AC{ac_id} at {pos[:2]} | Assigned Alt: {forced_alt}m")
+        print(f" -> Init Searcher AC{ac_id} at {pos[:2]} | Assigned Alt: {assigned_alt:.1f}m")
         drone_positions.append(pos)
-        uav_nominal_altitudes.append(forced_alt)
+        uav_nominal_altitudes.append(assigned_alt)
 
     uav_nominal_altitudes = np.array(uav_nominal_altitudes)
 
@@ -1149,17 +1149,12 @@ if __name__ == "__main__":
     COOLDOWN_TIME = 30  # seconds of detection lockout
     cone_artists = []
     # --- TRACKING TIMERS ---
-    initial_lock_duration = 5.0   # Seconds to follow cone center before spiraling
-    cone_search_timeout = 60.0    # Seconds to search a cone before giving up
     MIN_ALT = 20.0                # Minimum flight altitude
-    DESCENT_STEP = 0.5            # Meters per step to descend
-
     # --- Tracking timing parameters ---
     initial_lock_duration = 8.0    # seconds tracking cone center before IPP
     cone_search_timeout   = 30.0   # max time doing IPP inside cone before abort
-    HOVER_CONFIRM_TIME = 10.0  # seconds at low altitude before abort if not confirmed
     dt = dt_step           # simulation time step [s]
-    DESCENT_STEP = 3.0
+ 
 
     detection_event = [False]*num_drones
 
@@ -1549,7 +1544,7 @@ if __name__ == "__main__":
 
                     # 3. Strict P-controller to guarantee it sticks to the altitude outdoors
                     z_err = target_alt - drone_positions[d_idx][2]
-                    vz_des = np.clip(z_err * 1.5, -2.0, 2.0) # Increased from [-1.0, 1.0]
+                    vz_des = np.clip(z_err * 0.5, -2.0, 2.0) # Increased from [-1.0, 1.0]
                     
 
 
@@ -1608,7 +1603,7 @@ if __name__ == "__main__":
                         
                         # vz_des = 0.0
                         z_err = uav_nominal_altitudes[d_idx] - drone_positions[d_idx][2]
-                        vz_des = np.clip(z_err * 1.5, -2.0, 2.0)
+                        vz_des = np.clip(z_err * 0.5, -2.0, 2.0)
 
                         # Switch to cone tracking when VERY close
                         if dist < 5.0:
@@ -1633,7 +1628,7 @@ if __name__ == "__main__":
 
                         # vz_des = 0.0 
                         z_err = uav_nominal_altitudes[d_idx] - drone_positions[d_idx][2]
-                        vz_des = np.clip(z_err * 1.5, -2.0, 2.0)
+                        vz_des = np.clip(z_err * 0.5, -2.0, 2.0)
 
                         if (t - tr["lock_start"]) >= initial_lock_duration:
                             tr["phase"] = "cone_tracking"
@@ -1711,20 +1706,22 @@ if __name__ == "__main__":
                             soft_poly,
                             constraint_poly=soft_cone_constraint,
                             step_length=20.0,
-                            fov_angle=theta_FOV, v_max=v_max, 
+                            fov_angle=theta_FOV, v_max=5.0, 
                             altitude_candidates=[drone_positions[d_idx][2]], 
-                            pred_depth=1, E_scale=E_scale_track,
+                            pred_depth=2, E_scale=E_scale_track,
                             lam=lam,       
                             buffer=buffer
                         )
 
-                        vx_des = vx_ipp + v_drift[0] * 0.8
-                        vy_des = vy_ipp + v_drift[1] * 0.8
+                        # vx_des = vx_ipp + v_drift[0] * 0.8
+                        # vy_des = vy_ipp + v_drift[1] * 0.8
+                        vx_des = vx_ipp 
+                        vy_des = vy_ipp 
                         # if 'vz_des' not in locals(): vz_des = vz_ipp
 
                         if vz_des is None: 
                             z_err = uav_nominal_altitudes[d_idx] - drone_positions[d_idx][2]
-                            vz_des = np.clip(z_err * 1.5, -2.0, 2.0)
+                            vz_des = np.clip(z_err * 0.5, -2.0, 2.0)
 
                     # --- PHASE: HOVER CONFIRM ---
                     elif tr["phase"] == "hover_confirm":

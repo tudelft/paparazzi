@@ -1,5 +1,5 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-<flight_plan alt="30" ground_alt="0" lat0="52.1681551" lon0="4.4126468" max_dist_from_home="1070" name="Bebop EHVB Guided" security_height="2">
+<flight_plan alt="33" ground_alt="0" lat0="52.1681551" lon0="4.4126468" max_dist_from_home="1070" name="Bebop EHVB Guided" security_height="2">
   <header>
     #include "modules/datalink/datalink.h"
     #include "modules/energy/electrical.h"
@@ -19,7 +19,7 @@
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
     <waypoint name="CLIMB" x="10" y="10"/>
-    <waypoint name="STDBY" x="30" y="77"/>
+    <waypoint name="STDBY" x="51" y="-54"/>
     <waypoint name="TD" x="0" y="0"/>
     <waypoint name="p1" x="100" y="50"/>
     <waypoint name="p2" x="250" y="75"/>

@@ -1,5 +1,5 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-<flight_plan alt="30" ground_alt="0" lat0="52.1681551" lon0="4.4126468" max_dist_from_home="1070" name="Bebop EHVB Guided" security_height="2">
+<flight_plan alt="8" ground_alt="0" lat0="52.1681551" lon0="4.4126468" max_dist_from_home="1070" name="Bebop EHVB Guided" security_height="2">
   <header>
     #include "modules/datalink/datalink.h"
     #include "modules/energy/electrical.h"
@@ -19,12 +19,12 @@
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
     <waypoint name="CLIMB" x="10" y="10"/>
-    <waypoint name="STDBY" x="30" y="77"/>
+    <waypoint name="STDBY" x="211" y="-100"/>
     <waypoint name="TD" x="0" y="0"/>
-    <waypoint name="p1" x="100" y="50"/>
-    <waypoint name="p2" x="250" y="75"/>
-    <waypoint name="p3" x="275" y="-75"/>
-    <waypoint name="p4" x="140" y="-120"/>
+    <waypoint name="p1" x="282" y="-87"/>
+    <waypoint name="p2" x="359" y="-65"/>
+    <waypoint name="p3" x="430" y="-29"/>
+    <waypoint name="p4" x="493" y="42"/>
 
     <waypoint lat="52.1692076" lon="4.4109107" name="C1"/>
     <waypoint lat="52.1679041" lon="4.4115361" name="C2"/>
@@ -160,9 +160,11 @@
     </block>
     
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
+      <call_once fun="guidance_h_SetMaxSpeed(8.0)"/>
       <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
       <stay wp="STDBY"/>
     </block>
+
 
     <block key="g" name="START" strip_button="Go Guided" strip_icon="lookfore.png">
       <call_once fun="setGuided()"/>
@@ -175,7 +177,7 @@
       <stay wp="STDBY"/>
     </block>
 
-    <block name="Route Path" strip_button="Route Path" strip_icon="path.png">
+    <!-- <block name="Route Path" strip_button="Route Path" strip_icon="path.png">
       <call_once fun="setNav()"/>
       <go wp="p1"/>
       
@@ -185,9 +187,27 @@
       <go from="p4" hmode="route" wp="p1"/>
       
       <deroute block="Route Path"/>
+    </block> -->
+
+    <block name="Route Path" strip_button="Route Path" strip_icon="path.png">
+      <call_once fun="setNav()"/>
+      
+      <call_once fun="guidance_h_SetMaxSpeed(1.0)"/>
+
+      <go wp="p1"/>
+      
+      <go from="p1" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p3"/>
+      <go from="p3" hmode="route" wp="p4"/>
+      <go from="p4" hmode="route" wp="p1"/>
+      
+      <!-- <call_once fun="guidance_h_SetMaxSpeed(1.0)"/> -->
+      
+      <deroute block="Route Path"/>
     </block>
 
     <block name="Return Safe" strip_button="Return Safe" strip_icon="home.png">
+      <call_once fun="guidance_h_SetMaxSpeed(8.0)"/>
       <call_once fun="setNav()"/>
       <stay wp="HOME"/>
     </block>

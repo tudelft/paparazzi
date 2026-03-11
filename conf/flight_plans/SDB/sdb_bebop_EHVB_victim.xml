@@ -138,7 +138,7 @@
     </block>
     
     <block name="Geo init">
-      <while cond="LessThan(NavBlockTime(), 2)"/>
+      <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetAltitudeReferenceHere()"/>
     </block>
     
@@ -204,10 +204,10 @@
     </block>
     
     <block name="Flare">
-      <exception cond="NavDetectGround()" deroute="Holding point"/>
+      <!-- <exception cond="NavDetectGround()" deroute="Holding point"/> -->
       <exception cond="!nav_is_in_flight()" deroute="Landed"/>
       <exception cond="0.10 @GT GetPosAlt()" deroute="Landed"/>
-      <call_once fun="NavStartDetectGround()"/>
+      <!-- <call_once fun="NavStartDetectGround()"/> -->
       <stay climb="-0.8" vmode="climb" wp="TD"/>
     </block>
     

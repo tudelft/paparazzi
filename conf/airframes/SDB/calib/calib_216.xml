@@ -2,7 +2,7 @@
 
 <airframe>
   <section name="IMU" prefix="IMU_">
-    <define name="IMU_MAG_CALIB" type="array">
+    <define name="MAG_CALIB" type="array">
       <field type="struct">
         <field name="abi_id" value="1"/>
         <field name="calibrated" type="struct">
