@@ -1,8 +1,8 @@
 /**
- * @file modules/ins/ins_eskf_c.c
+ * @file modules/ins/ins_eskf.c
  * @brief Error-State Kalman Filter (ESKF) implementation in pure C.
  *
- * @ingroup ins_eskf_c
+ * @ingroup ins_eskf
  *
  * This filter fuses IMU (accelerometer and gyroscope) measurements with GPS
  * and magnetometer data to estimate the attitude, velocity, and position 
@@ -15,49 +15,79 @@
  *    from exteroceptive sensors (GPS/Mag) and applying it to the nominal state.
  */
 
-#include "modules/ins/ins_eskf_c.h"
+#include "modules/ins/ins_eskf.h"
 #include "math/pprz_isa.h"
 #include "state.h"
 
-struct ekf2_c_t ekf2_c_state;
+//#include "modules/nav/waypoints.h"
+//#include "stabilization/stabilization_attitude.h"
+//#include "generated/airframe.h"
+//#include "generated/flight_plan.h"
 
-#ifndef INS_ESKF_C_GPS_P_NOISE
-#define INS_ESKF_C_GPS_P_NOISE 0.5f
+//#include "math/pprz_geodetic_wgs84.h"
+//#include "mcu_periph/sys_time.h"
+#include "autopilot.h"
+
+/** For SITL and NPS we need special includes */
+#if defined SITL && USE_NPS
+#include "nps_autopilot.h"
+#include <stdio.h>
 #endif
 
-#ifndef INS_ESKF_C_GPS_V_NOISE
-#define INS_ESKF_C_GPS_V_NOISE 0.3f
+/** INS reference from flight plan, true by default */
+#ifndef USE_INS_NAV_INIT
+#define USE_INS_NAV_INIT TRUE
 #endif
 
-float ins_eskf_c_gps_p_noise = INS_ESKF_C_GPS_P_NOISE;
-float ins_eskf_c_gps_v_noise = INS_ESKF_C_GPS_V_NOISE;
+struct eskf_t eskf_state;
+
+#ifndef INS_ESKF_GPS_P_NOISE
+#define INS_ESKF_GPS_P_NOISE 0.5f
+#endif
+
+#ifndef INS_ESKF_GPS_V_NOISE
+#define INS_ESKF_GPS_V_NOISE 0.3f
+#endif
+
+float ins_eskf_gps_p_noise = INS_ESKF_GPS_P_NOISE;
+float ins_eskf_gps_v_noise = INS_ESKF_GPS_V_NOISE;
 static struct FloatVect3 mag_earth_ref = {0.38925f, 0.00179f, 0.92113f};
 
 /* ABI Bindings Configuration defaults from XML */
-#ifndef INS_ESKF_C_GYRO_ID
-#define INS_ESKF_C_GYRO_ID ABI_BROADCAST
+#ifndef INS_ESKF_GYRO_ID
+#define INS_ESKF_GYRO_ID ABI_BROADCAST
 #endif
-#ifndef INS_ESKF_C_ACCEL_ID
-#define INS_ESKF_C_ACCEL_ID ABI_BROADCAST
+#ifndef INS_ESKF_ACCEL_ID
+#define INS_ESKF_ACCEL_ID ABI_BROADCAST
 #endif
-#ifndef INS_ESKF_C_MAG_ID
-#define INS_ESKF_C_MAG_ID ABI_BROADCAST
+#ifndef INS_ESKF_MAG_ID
+#define INS_ESKF_MAG_ID ABI_BROADCAST
 #endif
-#ifndef INS_ESKF_C_GPS_ID
-#define INS_ESKF_C_GPS_ID GPS_MULTI_ID
+#ifndef INS_ESKF_GPS_ID
+#define INS_ESKF_GPS_ID GPS_MULTI_ID
 #endif
-#ifndef INS_ESKF_C_AIRSPEED_ID
-#define INS_ESKF_C_AIRSPEED_ID ABI_BROADCAST
+#ifndef INS_ESKF_AIRSPEED_ID
+#define INS_ESKF_AIRSPEED_ID ABI_BROADCAST
 #endif
-#ifndef INS_ESKF_C_BARO_ID
-#define INS_ESKF_C_BARO_ID ABI_BROADCAST
+#ifndef INS_ESKF_BARO_ID
+#define INS_ESKF_BARO_ID ABI_BROADCAST
 #endif
-#ifndef INS_ESKF_C_INCIDENCE_ID
-#define INS_ESKF_C_INCIDENCE_ID ABI_BROADCAST
+#ifndef INS_ESKF_INCIDENCE_ID
+#define INS_ESKF_INCIDENCE_ID ABI_BROADCAST
 #endif
-#ifndef INS_ESKF_C_AGL_ID
-#define INS_ESKF_C_AGL_ID ABI_BROADCAST
+#ifndef INS_ESKF_AGL_ID
+#define INS_ESKF_AGL_ID ABI_BROADCAST
 #endif
+
+/* TODO: All registered ABI events */
+// static abi_event baro_ev;
+// static abi_event agl_ev;
+// static abi_event gyro_int_ev;
+// static abi_event accel_int_ev;
+// static abi_event mag_ev;
+// static abi_event gps_ev;
+// static abi_event relpos_ev;
+// static abi_event reset_ev;
 
 /**
  * @name ABI Callbacks
@@ -75,14 +105,14 @@ static void gyro_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates *gyro)
   (void)sender_id; /* unused in basic filter */
   static uint32_t last_stamp = 0;
   if (last_stamp > 0) {
-    ekf2_c_state.gyro_dt = stamp - last_stamp;
+    eskf_state.gyro_dt = stamp - last_stamp;
   } else {
-    ekf2_c_state.gyro_dt = 10000; // default 10ms initial
+    eskf_state.gyro_dt = 10000; // default 10ms initial
   }
   last_stamp = stamp;
   
-  RATES_FLOAT_OF_BFP(ekf2_c_state.delta_gyro, *gyro);
-  ekf2_c_state.gyro_valid = true;
+  RATES_FLOAT_OF_BFP(eskf_state.delta_gyro, *gyro);
+  eskf_state.gyro_valid = true;
 }
 
 /**
@@ -96,15 +126,15 @@ static void accel_cb(uint8_t sender_id, uint32_t stamp, struct Int32Vect3 *accel
   (void)sender_id; /* unused in basic filter */
   static uint32_t last_stamp = 0;
   if (last_stamp > 0) {
-    ekf2_c_state.accel_dt = stamp - last_stamp;
+    eskf_state.accel_dt = stamp - last_stamp;
   } else {
-    ekf2_c_state.accel_dt = 10000;
+    eskf_state.accel_dt = 10000;
   }
   last_stamp = stamp;
 
-  ACCELS_FLOAT_OF_BFP(ekf2_c_state.delta_accel, *accel);
-  ekf2_c_state.accel_valid = true;
-  ekf2_c_state.got_imu_data = ekf2_c_state.gyro_valid && ekf2_c_state.accel_valid;
+  ACCELS_FLOAT_OF_BFP(eskf_state.delta_accel, *accel);
+  eskf_state.accel_valid = true;
+  eskf_state.got_imu_data = eskf_state.gyro_valid && eskf_state.accel_valid;
 }
 
 /**
@@ -117,9 +147,9 @@ static void mag_cb(uint8_t sender_id, uint32_t stamp, struct Int32Vect3 *mag)
 {
   (void)sender_id;
   (void)stamp;
-  MAGS_FLOAT_OF_BFP(ekf2_c_state.mag, *mag);
-  ekf2_c_state.mag_valid = true;
-  ins_ekf2_c_mea_mag();
+  MAGS_FLOAT_OF_BFP(eskf_state.mag, *mag);
+  eskf_state.mag_valid = true;
+  ins_eskf_mea_mag();
 }
 
 /**
@@ -137,8 +167,8 @@ static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s)
     pos_meas.x = gps_s->ecef_pos.x / 100.0f; /* cm to m */
     pos_meas.y = gps_s->ecef_pos.y / 100.0f;
     pos_meas.z = gps_s->ecef_pos.z / 100.0f;
-    struct FloatVect3 pos_noise = {ins_eskf_c_gps_p_noise, ins_eskf_c_gps_p_noise, ins_eskf_c_gps_p_noise};
-    ins_ekf2_c_mea_pos(&pos_meas, &pos_noise);
+    struct FloatVect3 pos_noise = {ins_eskf_gps_p_noise, ins_eskf_gps_p_noise, ins_eskf_gps_p_noise};
+    ins_eskf_mea_pos(&pos_meas, &pos_noise);
   }
 }
 
@@ -150,9 +180,9 @@ static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s)
 static void airspeed_cb(uint8_t sender_id, float airspeed)
 {
   (void)sender_id;
-  ekf2_c_state.airspeed = airspeed;
-  ekf2_c_state.airspeed_valid = true;
-  ins_ekf2_c_mea_airspeed(airspeed, 1.0f);
+  eskf_state.airspeed = airspeed;
+  eskf_state.airspeed_valid = true;
+  ins_eskf_mea_airspeed(airspeed, 1.0f);
 }
 
 /**
@@ -170,9 +200,9 @@ static void baro_cb(uint8_t sender_id, uint32_t stamp, float pressure)
 
   float alt = pprz_isa_height_of_pressure(pressure, baro_qfe);
   
-  ekf2_c_state.baro_valid = true;
+  eskf_state.baro_valid = true;
   // Note: NED Z is Down, meaning positive upward altitude is strongly negative Z.
-  ins_ekf2_c_mea_baro(-alt, 2.0f); 
+  ins_eskf_mea_baro(-alt, 2.0f); 
 }
 
 /**
@@ -186,9 +216,9 @@ static void incidence_cb(uint8_t sender_id, uint8_t flag, float aoa, float sides
 {
   (void)sender_id; (void)flag; (void)aoa;
   /* Convert sideslip angle flag if valid */
-  ekf2_c_state.sideslip_valid = true;
+  eskf_state.sideslip_valid = true;
   // Assume sideslip noise around 0.1 rad
-  ins_ekf2_c_mea_sideslip(sideslip, 0.1f);
+  ins_eskf_mea_sideslip(sideslip, 0.1f);
 }
 
 /**
@@ -201,9 +231,9 @@ static void agl_cb(uint8_t sender_id, uint32_t stamp, float distance)
 {
   (void)sender_id; (void)stamp;
   /* Feed AGL distance into the solution */
-  ekf2_c_state.agl = distance;
-  ekf2_c_state.agl_valid = true;
-  ins_ekf2_c_mea_agl(distance, 0.5f); // 0.5m noise std dev approximation 
+  eskf_state.agl = distance;
+  eskf_state.agl_valid = true;
+  ins_eskf_mea_agl(distance, 0.5f); // 0.5m noise std dev approximation 
 }
 
 /**
@@ -302,16 +332,16 @@ static void mat_mult_15x15_transB(float C[15][15], const float A[15][15], const 
  * @brief Initializes the ESKF.
  * Sets the initial nominal state, prediction covariances (P), and process noise (Q).
  */
-void ins_ekf2_c_init(void) {
-    struct ekf2_c_t zero_state = {0};
-    ekf2_c_state = zero_state;
+void ins_eskf_init(void) {
+    struct eskf_t zero_state = {0};
+    eskf_state = zero_state;
     
     // Initialize standard kinematics to zero/identity
-    float_quat_identity(&ekf2_c_state.quat);
-    FLOAT_VECT3_ZERO(ekf2_c_state.vel);
-    FLOAT_VECT3_ZERO(ekf2_c_state.pos);
-    FLOAT_RATES_ZERO(ekf2_c_state.gyro_bias);
-    FLOAT_VECT3_ZERO(ekf2_c_state.accel_bias);
+    float_quat_identity(&eskf_state.quat);
+    FLOAT_VECT3_ZERO(eskf_state.vel);
+    FLOAT_VECT3_ZERO(eskf_state.pos);
+    FLOAT_RATES_ZERO(eskf_state.gyro_bias);
+    FLOAT_VECT3_ZERO(eskf_state.accel_bias);
 
     // Init state covariance matrix (P) with sensible initial uncertainty bounds
     for(int i=0; i<15; i++) { for(int j=0; j<15; j++) { P[i][j] = 0.0f; } }
@@ -330,15 +360,15 @@ void ins_ekf2_c_init(void) {
     for (int i=12; i<15; i++) Q[i] = 1e-5f;      // Accel bias wander
 
     /* Binding ABI messages */
-    AbiBindMsgIMU_GYRO(INS_ESKF_C_GYRO_ID, &ekf2_c_state.gyro_ev, gyro_cb);
-    AbiBindMsgIMU_ACCEL(INS_ESKF_C_ACCEL_ID, &ekf2_c_state.accel_ev, accel_cb);
-    AbiBindMsgIMU_MAG(INS_ESKF_C_MAG_ID, &ekf2_c_state.mag_ev, mag_cb);
-    AbiBindMsgGPS(INS_ESKF_C_GPS_ID, &ekf2_c_state.gps_ev, gps_cb);
-    AbiBindMsgAIRSPEED(INS_ESKF_C_AIRSPEED_ID, &ekf2_c_state.airspeed_ev, airspeed_cb);
-    AbiBindMsgBARO_ABS(INS_ESKF_C_BARO_ID, &ekf2_c_state.baro_ev, baro_cb);
-    AbiBindMsgINCIDENCE(INS_ESKF_C_INCIDENCE_ID, &ekf2_c_state.incidence_ev, incidence_cb);
-    AbiBindMsgAGL(INS_ESKF_C_AGL_ID, &ekf2_c_state.agl_ev, agl_cb);
-    AbiBindMsgGEO_MAG(ABI_BROADCAST, &ekf2_c_state.geo_mag_ev, geo_mag_cb);
+    AbiBindMsgIMU_GYRO(INS_ESKF_GYRO_ID, &eskf_state.gyro_ev, gyro_cb);
+    AbiBindMsgIMU_ACCEL(INS_ESKF_ACCEL_ID, &eskf_state.accel_ev, accel_cb);
+    AbiBindMsgIMU_MAG(INS_ESKF_MAG_ID, &eskf_state.mag_ev, mag_cb);
+    AbiBindMsgGPS(INS_ESKF_GPS_ID, &eskf_state.gps_ev, gps_cb);
+    AbiBindMsgAIRSPEED(INS_ESKF_AIRSPEED_ID, &eskf_state.airspeed_ev, airspeed_cb);
+    AbiBindMsgBARO_ABS(INS_ESKF_BARO_ID, &eskf_state.baro_ev, baro_cb);
+    AbiBindMsgINCIDENCE(INS_ESKF_INCIDENCE_ID, &eskf_state.incidence_ev, incidence_cb);
+    AbiBindMsgAGL(INS_ESKF_AGL_ID, &eskf_state.agl_ev, agl_cb);
+    AbiBindMsgGEO_MAG(ABI_BROADCAST, &eskf_state.geo_mag_ev, geo_mag_cb);
 }
 
 /**
@@ -375,30 +405,30 @@ static void skew_symmetric(float m[3][3], const struct FloatVect3 *v) {
  * Integrates the IMU readings to update the nominal state (Position, Velocity, Attitude)
  * and propagates the state error covariance matrix (P) forward in time.
  */
-void ins_ekf2_c_update(void) {
-    if (!ekf2_c_state.gyro_valid || !ekf2_c_state.accel_valid) return;
+void ins_eskf_update(void) {
+    if (!eskf_state.gyro_valid || !eskf_state.accel_valid) return;
     
     // dt measured in seconds
-    float dt = (float)ekf2_c_state.gyro_dt * 0.000001f;
+    float dt = (float)eskf_state.gyro_dt * 0.000001f;
     
     /* SAFEGUARD: Limit maximum prediction step and protect against negative time */
     if (dt <= 0.0f) {
-        ekf2_c_state.gyro_valid = false;
-        ekf2_c_state.accel_valid = false;
+        eskf_state.gyro_valid = false;
+        eskf_state.accel_valid = false;
         return;
     }
     if (dt > 0.2f) dt = 0.2f; // Assuming 5Hz is lowest practical IMU frequency
     
     // 1. Subtract estimated biases from raw IMU readings
     struct FloatRates omega;
-    omega.p = ekf2_c_state.delta_gyro.p - ekf2_c_state.gyro_bias.p;
-    omega.q = ekf2_c_state.delta_gyro.q - ekf2_c_state.gyro_bias.q;
-    omega.r = ekf2_c_state.delta_gyro.r - ekf2_c_state.gyro_bias.r;
+    omega.p = eskf_state.delta_gyro.p - eskf_state.gyro_bias.p;
+    omega.q = eskf_state.delta_gyro.q - eskf_state.gyro_bias.q;
+    omega.r = eskf_state.delta_gyro.r - eskf_state.gyro_bias.r;
     
     struct FloatVect3 acc;
-    acc.x = ekf2_c_state.delta_accel.x - ekf2_c_state.accel_bias.x;
-    acc.y = ekf2_c_state.delta_accel.y - ekf2_c_state.accel_bias.y;
-    acc.z = ekf2_c_state.delta_accel.z - ekf2_c_state.accel_bias.z;
+    acc.x = eskf_state.delta_accel.x - eskf_state.accel_bias.x;
+    acc.y = eskf_state.delta_accel.y - eskf_state.accel_bias.y;
+    acc.z = eskf_state.delta_accel.z - eskf_state.accel_bias.z;
 
     /* --------------------------------------------------------------------- *
      * NOMINAL STATE UPDATE (Kinematics Integration)
@@ -408,21 +438,21 @@ void ins_ekf2_c_update(void) {
     // q_new = q_old + 0.5 * q \otimes [0, omega] * dt
     float dt_half = 0.5f * dt;
     struct FloatQuat dq;
-    dq.qi = (-ekf2_c_state.quat.qx*omega.p - ekf2_c_state.quat.qy*omega.q - ekf2_c_state.quat.qz*omega.r) * dt_half;
-    dq.qx = ( ekf2_c_state.quat.qi*omega.p + ekf2_c_state.quat.qy*omega.r - ekf2_c_state.quat.qz*omega.q) * dt_half;
-    dq.qy = ( ekf2_c_state.quat.qi*omega.q - ekf2_c_state.quat.qx*omega.r + ekf2_c_state.quat.qz*omega.p) * dt_half;
-    dq.qz = ( ekf2_c_state.quat.qi*omega.r + ekf2_c_state.quat.qx*omega.q - ekf2_c_state.quat.qy*omega.p) * dt_half;
+    dq.qi = (-eskf_state.quat.qx*omega.p - eskf_state.quat.qy*omega.q - eskf_state.quat.qz*omega.r) * dt_half;
+    dq.qx = ( eskf_state.quat.qi*omega.p + eskf_state.quat.qy*omega.r - eskf_state.quat.qz*omega.q) * dt_half;
+    dq.qy = ( eskf_state.quat.qi*omega.q - eskf_state.quat.qx*omega.r + eskf_state.quat.qz*omega.p) * dt_half;
+    dq.qz = ( eskf_state.quat.qi*omega.r + eskf_state.quat.qx*omega.q - eskf_state.quat.qy*omega.p) * dt_half;
 
     // First order Euler integration
-    ekf2_c_state.quat.qi += dq.qi;
-    ekf2_c_state.quat.qx += dq.qx;
-    ekf2_c_state.quat.qy += dq.qy;
-    ekf2_c_state.quat.qz += dq.qz;
-    normalize_quat(&ekf2_c_state.quat); // Must remain normalized
+    eskf_state.quat.qi += dq.qi;
+    eskf_state.quat.qx += dq.qx;
+    eskf_state.quat.qy += dq.qy;
+    eskf_state.quat.qz += dq.qz;
+    normalize_quat(&eskf_state.quat); // Must remain normalized
 
     // Get rotational matrix C (Body to NED) from our updated quaternion
     struct FloatRMat C;
-    float_rmat_of_quat(&C, &ekf2_c_state.quat);
+    float_rmat_of_quat(&C, &eskf_state.quat);
     
     // Transform specific force into Navigation frame (NED) and subtract gravity
     struct FloatVect3 acc_ned;
@@ -430,13 +460,13 @@ void ins_ekf2_c_update(void) {
     acc_ned.z += g_earth; // Gravity down, so we add to neutralize constant upward specific force
     
     // Integrate Velocity and Position
-    ekf2_c_state.vel.x += acc_ned.x * dt;
-    ekf2_c_state.vel.y += acc_ned.y * dt;
-    ekf2_c_state.vel.z += acc_ned.z * dt;
+    eskf_state.vel.x += acc_ned.x * dt;
+    eskf_state.vel.y += acc_ned.y * dt;
+    eskf_state.vel.z += acc_ned.z * dt;
     
-    ekf2_c_state.pos.x += ekf2_c_state.vel.x * dt;
-    ekf2_c_state.pos.y += ekf2_c_state.vel.y * dt;
-    ekf2_c_state.pos.z += ekf2_c_state.vel.z * dt;
+    eskf_state.pos.x += eskf_state.vel.x * dt;
+    eskf_state.pos.y += eskf_state.vel.y * dt;
+    eskf_state.pos.z += eskf_state.vel.z * dt;
 
     /* --------------------------------------------------------------------- *
      * ERROR STATE COVARIANCE UPDATE (F = Jacobian of Error Dynamics)
@@ -498,23 +528,23 @@ void ins_ekf2_c_update(void) {
     }
 
     // Reset IMU availability flags for the next run
-    ekf2_c_state.gyro_valid = false;
-    ekf2_c_state.accel_valid = false;
+    eskf_state.gyro_valid = false;
+    eskf_state.accel_valid = false;
 
     /* SAFEGUARD: NaN Infestation Check */
-    if (isnan(ekf2_c_state.pos.x) || isnan(ekf2_c_state.quat.qi) || isnan(ekf2_c_state.vel.x)) {
-        ins_ekf2_c_init(); // Exploded, re-init.
+    if (isnan(eskf_state.pos.x) || isnan(eskf_state.quat.qi) || isnan(eskf_state.vel.x)) {
+        ins_eskf_init(); // Exploded, re-init.
         return;
     }
 
     // Output mapped states to the generic Paparazzi framework
     struct NedCoor_f ned_pos, ned_vel;
-    ned_pos.x = ekf2_c_state.pos.x; ned_pos.y = ekf2_c_state.pos.y; ned_pos.z = ekf2_c_state.pos.z;
-    ned_vel.x = ekf2_c_state.vel.x; ned_vel.y = ekf2_c_state.vel.y; ned_vel.z = ekf2_c_state.vel.z;
+    ned_pos.x = eskf_state.pos.x; ned_pos.y = eskf_state.pos.y; ned_pos.z = eskf_state.pos.z;
+    ned_vel.x = eskf_state.vel.x; ned_vel.y = eskf_state.vel.y; ned_vel.z = eskf_state.vel.z;
     
     stateSetPositionNed_f(0, &ned_pos);
     stateSetSpeedNed_f(0, &ned_vel);
-    stateSetNedToBodyQuat_f(0, &ekf2_c_state.quat);
+    stateSetNedToBodyQuat_f(0, &eskf_state.quat);
 }
 
 /**
@@ -565,27 +595,27 @@ static void apply_error_state(const float err_X[EKF_N]) {
     
     // Inject attitude error (q_new = q_old * dq)
     struct FloatQuat q_new;
-    float_quat_comp(&q_new, &ekf2_c_state.quat, &dq);
-    ekf2_c_state.quat = q_new;
-    normalize_quat(&ekf2_c_state.quat);
+    float_quat_comp(&q_new, &eskf_state.quat, &dq);
+    eskf_state.quat = q_new;
+    normalize_quat(&eskf_state.quat);
 
     // Directly apply linear error to Velocity & Position
-    ekf2_c_state.vel.x += err_X[3];
-    ekf2_c_state.vel.y += err_X[4];
-    ekf2_c_state.vel.z += err_X[5];
+    eskf_state.vel.x += err_X[3];
+    eskf_state.vel.y += err_X[4];
+    eskf_state.vel.z += err_X[5];
     
-    ekf2_c_state.pos.x += err_X[6];
-    ekf2_c_state.pos.y += err_X[7];
-    ekf2_c_state.pos.z += err_X[8];
+    eskf_state.pos.x += err_X[6];
+    eskf_state.pos.y += err_X[7];
+    eskf_state.pos.z += err_X[8];
     
     // Update estimated biases
-    ekf2_c_state.gyro_bias.p += err_X[9];
-    ekf2_c_state.gyro_bias.q += err_X[10];
-    ekf2_c_state.gyro_bias.r += err_X[11];
+    eskf_state.gyro_bias.p += err_X[9];
+    eskf_state.gyro_bias.q += err_X[10];
+    eskf_state.gyro_bias.r += err_X[11];
     
-    ekf2_c_state.accel_bias.x += err_X[12];
-    ekf2_c_state.accel_bias.y += err_X[13];
-    ekf2_c_state.accel_bias.z += err_X[14];
+    eskf_state.accel_bias.x += err_X[12];
+    eskf_state.accel_bias.y += err_X[13];
+    eskf_state.accel_bias.z += err_X[14];
 }
 
 /**
@@ -688,7 +718,7 @@ static void eskf_update_3d(float H[3][EKF_N], float R[3][3], float z[3]) {
  * Often fed by GPS or visual odometry. Provides observability into NED Position
  * vectors driving the internal biases into convergence.
  */
-void ins_ekf2_c_mea_pos(struct FloatVect3 *pos_meas, struct FloatVect3 *pos_noise) {
+void ins_eskf_mea_pos(struct FloatVect3 *pos_meas, struct FloatVect3 *pos_noise) {
     float H[3][EKF_N] = {0};
     
     // Jacobian mapping states to expected measurements.
@@ -705,9 +735,9 @@ void ins_ekf2_c_mea_pos(struct FloatVect3 *pos_meas, struct FloatVect3 *pos_nois
     
     // Calculate Innovation / Residual (difference between measured & expected Pos)
     float z[3];
-    z[0] = pos_meas->x - ekf2_c_state.pos.x;
-    z[1] = pos_meas->y - ekf2_c_state.pos.y;
-    z[2] = pos_meas->z - ekf2_c_state.pos.z;
+    z[0] = pos_meas->x - eskf_state.pos.x;
+    z[1] = pos_meas->y - eskf_state.pos.y;
+    z[2] = pos_meas->z - eskf_state.pos.z;
     
     eskf_update_3d(H, R, z);
 }
@@ -717,14 +747,14 @@ void ins_ekf2_c_mea_pos(struct FloatVect3 *pos_meas, struct FloatVect3 *pos_nois
  * Connects Earth's magnetic forces to our internal State. Heavily relies
  * on Attitude error states since compass rotations provide direct attitude constraints.
  */
-void ins_ekf2_c_mea_mag(void) {
-    if(!ekf2_c_state.mag_valid) return;
+void ins_eskf_mea_mag(void) {
+    if(!eskf_state.mag_valid) return;
     
     float H[3][EKF_N] = {0};
     
     // Retrieve the Rotation Matrix C (Body into Frame)
     struct FloatRMat C;
-    float_rmat_of_quat(&C, &ekf2_c_state.quat);
+    float_rmat_of_quat(&C, &eskf_state.quat);
     
     // Project the expected mathematical Mag Earth Reference back into Body Frame
     // Expected Measurement: m_hat = C^T * m_earth
@@ -750,14 +780,14 @@ void ins_ekf2_c_mea_mag(void) {
     
     // Computes measurement residuals: z = actual measurements - expected measurements 
     float z[3];
-    z[0] = ekf2_c_state.mag.x - m_hat.x;
-    z[1] = ekf2_c_state.mag.y - m_hat.y;
-    z[2] = ekf2_c_state.mag.z - m_hat.z;
+    z[0] = eskf_state.mag.x - m_hat.x;
+    z[1] = eskf_state.mag.y - m_hat.y;
+    z[2] = eskf_state.mag.z - m_hat.z;
     
     eskf_update_3d(H, R, z);
     
     // Flag to wait for next reading
-    ekf2_c_state.mag_valid = false;
+    eskf_state.mag_valid = false;
 }
 
 /**
@@ -836,21 +866,21 @@ static void eskf_update_1d(const float H[EKF_N], float R, float z) {
  * @param airspeed_meas True forward airspeed measurement from sensor.
  * @param airspeed_noise Uncertainty/Variance in the airspeed reading.
  */
-void ins_ekf2_c_mea_airspeed(float airspeed_meas, float airspeed_noise) {
-    if(!ekf2_c_state.airspeed_valid) return;
+void ins_eskf_mea_airspeed(float airspeed_meas, float airspeed_noise) {
+    if(!eskf_state.airspeed_valid) return;
     
     float H[EKF_N] = {0};
     
     // Retrieve Rotation Matrix C (Body to NED) -> C^T is NED to Body
     struct FloatRMat C;
-    float_rmat_of_quat(&C, &ekf2_c_state.quat);
+    float_rmat_of_quat(&C, &eskf_state.quat);
     
     // Expected forward airspeed in Body Frame (v_x_body)
     // v^B = C^T * v^N
     // v_x^B = C_00 * v_N + C_10 * v_E + C_20 * v_D
-    float v_x_body = C.m[0]*ekf2_c_state.vel.x + C.m[3]*ekf2_c_state.vel.y + C.m[6]*ekf2_c_state.vel.z;
-    float v_y_body = C.m[1]*ekf2_c_state.vel.x + C.m[4]*ekf2_c_state.vel.y + C.m[7]*ekf2_c_state.vel.z;
-    float v_z_body = C.m[2]*ekf2_c_state.vel.x + C.m[5]*ekf2_c_state.vel.y + C.m[8]*ekf2_c_state.vel.z;
+    float v_x_body = C.m[0]*eskf_state.vel.x + C.m[3]*eskf_state.vel.y + C.m[6]*eskf_state.vel.z;
+    float v_y_body = C.m[1]*eskf_state.vel.x + C.m[4]*eskf_state.vel.y + C.m[7]*eskf_state.vel.z;
+    float v_z_body = C.m[2]*eskf_state.vel.x + C.m[5]*eskf_state.vel.y + C.m[8]*eskf_state.vel.z;
     
     // Jacobian wrt Velocity (indexes 3, 4, 5)
     H[3] = C.m[0];
@@ -871,7 +901,7 @@ void ins_ekf2_c_mea_airspeed(float airspeed_meas, float airspeed_noise) {
     eskf_update_1d(H, airspeed_noise, z);
     
     // Reset flag for next reading
-    ekf2_c_state.airspeed_valid = false;
+    eskf_state.airspeed_valid = false;
 }
 
 /**
@@ -879,18 +909,18 @@ void ins_ekf2_c_mea_airspeed(float airspeed_meas, float airspeed_noise) {
  * @param baro_alt_meas Altitude measurement from barometric sensors
  * @param baro_alt_noise Measurement uncertainty/variance
  */
-void ins_ekf2_c_mea_baro(float baro_alt_meas, float baro_alt_noise) {
-  if(!ekf2_c_state.baro_valid) return;
+void ins_eskf_mea_baro(float baro_alt_meas, float baro_alt_noise) {
+  if(!eskf_state.baro_valid) return;
 
-  ekf2_c_state.baro_alt = baro_alt_meas;
+  eskf_state.baro_alt = baro_alt_meas;
 
   float H[EKF_N] = {0};
   // Maps to global Z Position (NED downward altitude: index 8)
   H[8] = 1.0f;
 
-  float z = baro_alt_meas - ekf2_c_state.pos.z;
+  float z = baro_alt_meas - eskf_state.pos.z;
   eskf_update_1d(H, baro_alt_noise * baro_alt_noise, z);
-  ekf2_c_state.baro_valid = false;
+  eskf_state.baro_valid = false;
 }
 
 /**
@@ -898,23 +928,23 @@ void ins_ekf2_c_mea_baro(float baro_alt_meas, float baro_alt_noise) {
  * @param agl_meas Distance measurement facing downwards to terrain
  * @param agl_noise Measurement uncertainty/variance
  */
-void ins_ekf2_c_mea_agl(float agl_meas, float agl_noise) {
-  if(!ekf2_c_state.agl_valid) return;
+void ins_eskf_mea_agl(float agl_meas, float agl_noise) {
+  if(!eskf_state.agl_valid) return;
   
   // Transform rangefinder distance pointing down (Body Z axis) to Earth Z axis (Alt)
   // Range * cos(pitch) * cos(roll) gives delta Altitude in generic approximation,
   // more accurately mathematically derived from C_33 (Rotation Matrix Z dot Z)
   struct FloatRMat C;
-  float_rmat_of_quat(&C, &ekf2_c_state.quat);
+  float_rmat_of_quat(&C, &eskf_state.quat);
   float z_measured = -agl_meas * C.m[8]; // Negative because ground is down, and AGL is positive distance.
 
   float H[EKF_N] = {0};
   // Maps to global Z Position (NED downward altitude: index 8)
   H[8] = 1.0f;
 
-  float z_innovation = z_measured - ekf2_c_state.pos.z;
+  float z_innovation = z_measured - eskf_state.pos.z;
   eskf_update_1d(H, agl_noise * agl_noise, z_innovation);
-  ekf2_c_state.agl_valid = false;
+  eskf_state.agl_valid = false;
 }
 
 /**
@@ -926,15 +956,15 @@ void ins_ekf2_c_mea_agl(float agl_meas, float agl_noise) {
  * Often, this is used as a synthetic "zero sideslip" measurement (beta=0) 
  * to correct lateral estimation and heading when flying forward.
  */
-void ins_ekf2_c_mea_sideslip(float sideslip_meas, float sideslip_noise) {
+void ins_eskf_mea_sideslip(float sideslip_meas, float sideslip_noise) {
   /* Current attitude matrix C: Body to NED */
   struct FloatRMat C;
-  float_rmat_of_quat(&C, &ekf2_c_state.quat);
+  float_rmat_of_quat(&C, &eskf_state.quat);
   
   /* Map NED velocity to Body Frame */
-  float v_bx = C.m[0]*ekf2_c_state.vel.x + C.m[3]*ekf2_c_state.vel.y + C.m[6]*ekf2_c_state.vel.z;
-  float v_by = C.m[1]*ekf2_c_state.vel.x + C.m[4]*ekf2_c_state.vel.y + C.m[7]*ekf2_c_state.vel.z;
-  float v_bz = C.m[2]*ekf2_c_state.vel.x + C.m[5]*ekf2_c_state.vel.y + C.m[8]*ekf2_c_state.vel.z;
+  float v_bx = C.m[0]*eskf_state.vel.x + C.m[3]*eskf_state.vel.y + C.m[6]*eskf_state.vel.z;
+  float v_by = C.m[1]*eskf_state.vel.x + C.m[4]*eskf_state.vel.y + C.m[7]*eskf_state.vel.z;
+  float v_bz = C.m[2]*eskf_state.vel.x + C.m[5]*eskf_state.vel.y + C.m[8]*eskf_state.vel.z;
 
   /* Determine total airspeed estimate to scale sideslip angle appropriately */
   float V_est = sqrtf(v_bx*v_bx + v_by*v_by + v_bz*v_bz);

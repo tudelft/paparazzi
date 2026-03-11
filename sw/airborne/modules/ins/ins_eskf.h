@@ -1,14 +1,14 @@
 /**
- * @file modules/ins/ins_eskf_c.h
+ * @file modules/ins/ins_eskf.h
  * @brief Error-State Kalman Filter (ESKF) implementation in pure C, header.
  *
- * @defgroup ins_eskf_c Error-State Kalman Filter (ESKF)
+ * @defgroup ins_eskf Error-State Kalman Filter (ESKF)
  * @ingroup math
  * @{
  */
 
-#ifndef INS_EKF2_C_H
-#define INS_EKF2_C_H
+#ifndef INS_ESKF_H
+#define INS_ESKF_H
 
 #include "modules/ahrs/ahrs.h"
 #include "modules/ins/ins.h"
@@ -18,7 +18,7 @@
  * @brief ESKF State Structure.
  * Contains the nominal state, sensor variables, boolean flags for asynchronous execution, and ABI handlers.
  */
-struct ekf2_c_t {
+struct eskf_t {
   struct FloatRates delta_gyro;   ///< Last gyroscope measurements
   struct FloatVect3 delta_accel;  ///< Last accelerometer measurements
   struct FloatVect3 mag;          ///< Magnetometer measurements
@@ -55,19 +55,19 @@ struct ekf2_c_t {
   abi_event geo_mag_ev;
 };
 
-extern struct ekf2_c_t ekf2_c_state;
+extern struct eskf_t eskf_state;
 
-extern float ins_eskf_c_gps_p_noise;
-extern float ins_eskf_c_gps_v_noise;
+extern float ins_eskf_gps_p_noise;
+extern float ins_eskf_gps_v_noise;
 
-extern void ins_ekf2_c_init(void);
-extern void ins_ekf2_c_update(void);
-extern void ins_ekf2_c_mea_pos(struct FloatVect3 *pos_meas, struct FloatVect3 *pos_noise);
-extern void ins_ekf2_c_mea_mag(void);
-extern void ins_ekf2_c_mea_airspeed(float airspeed_meas, float airspeed_noise);
-extern void ins_ekf2_c_mea_baro(float baro_alt_meas, float baro_alt_noise);
-extern void ins_ekf2_c_mea_sideslip(float sideslip_meas, float sideslip_noise);
-extern void ins_ekf2_c_mea_agl(float agl_meas, float agl_noise);
+extern void ins_eskf_init(void);
+extern void ins_eskf_update(void);
+extern void ins_eskf_mea_pos(struct FloatVect3 *pos_meas, struct FloatVect3 *pos_noise);
+extern void ins_eskf_mea_mag(void);
+extern void ins_eskf_mea_airspeed(float airspeed_meas, float airspeed_noise);
+extern void ins_eskf_mea_baro(float baro_alt_meas, float baro_alt_noise);
+extern void ins_eskf_mea_sideslip(float sideslip_meas, float sideslip_noise);
+extern void ins_eskf_mea_agl(float agl_meas, float agl_noise);
 
 #endif
 

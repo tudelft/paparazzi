@@ -383,7 +383,8 @@ NOTES:
       <configure name="AHRS_ALIGNER_LED" value="2"/> <!-- Preferred LED used as align indicator -->
     </module>
 
-    <module name="ins" type="eskf_c">
+    <module name="ins" type="eskf">
+      <define name="USE_INS_ANGLE_OF_ATTACK" value="TRUE"/> <!-- Use angle-->
       <!-- <define name="USE_INS_MODULE"/> -->
      <!-- <define name="INS_PROPAGATE_FREQUENCY" value="500"/> -->
     </module>
