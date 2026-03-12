@@ -1,34 +1,27 @@
 <!DOCTYPE module SYSTEM "module.dtd">
-
 <module name="MAV_fast_controller_group12_cmjong">
   <doc>
     <description>
-This module is an example module for the course AE4317 Autonomous Flight of Micro Air Vehicles at the TU Delft.
-This module is used in combination with a color filter (cv_detect_color_object) and the navigation mode of the autopilot.
-The avoidance strategy is to simply count the total number of orange pixels. When above a certain percentage threshold,
-(given by color_count_frac) we assume that there is an obstacle and we turn.
-
-The color filter settings are set using the cv_detect_color_object. This module can run multiple filters simultaneously
-so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTION_ID setting.
+      Fast controller for MAV group 12 (cmjong).
+      Receives left/middle/right loss values from MAV_cv_detect_group12_cmjong
+      and navigates using a state machine: SAFE_AND_WAIT, TURN_TO_LOWEST_LOSS,
+      MOVE_FORWARD_WITH_FIXED_DISTANCE, OUT_OF_BOUNDS.
     </description>
-    <define name="ORANGE_AVOIDER_VISUAL_DETECTION_ID" value="ABI_BROADCAST" description="which VISUAL_DETECTION message to receive for orange pixel detection."/>
+    <define name="MAV_cmjong_VISUAL_DETECTION_ID" value="ABI_BROADCAST"
+            description="Which VISUAL_DETECTION message to receive loss values from."/>
   </doc>
-    <settings>
-    <dl_settings>
-      <dl_settings name="OrangeAvoider">
-         <dl_setting var="oa_color_count_frac" min="0" step="0.01" max="0.5"/>
-      </dl_settings>
-    </dl_settings>
-  </settings>
-  
+
   <dep>
     <depends>MAV_cv_detect_group12_cmjong</depends>
   </dep>
+
   <header>
     <file name="MAV_fast_controller_group12_cmjong.h"/>
   </header>
+
   <init fun="MAV_fast_controller_group12_cmjong_init()"/>
   <periodic fun="MAV_fast_controller_group12_cmjong_periodic()" freq="4"/>
+
   <makefile target="ap|nps">
     <file name="MAV_fast_controller_group12_cmjong.c"/>
   </makefile>

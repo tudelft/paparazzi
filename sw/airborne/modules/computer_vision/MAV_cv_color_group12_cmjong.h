@@ -31,12 +31,7 @@
  * @param cr_max  - Maximum Cr (red chroma) value
  * @return Number of pixels that matched the color filter
  */
-uint32_t find_object_centroid(struct image_t *img,
-                              int32_t *p_xc, int32_t *p_yc,
-                              bool draw,
-                              uint8_t lum_min, uint8_t lum_max,
-                              uint8_t cb_min,  uint8_t cb_max,
-                              uint8_t cr_min,  uint8_t cr_max);
+
 
 typedef struct {
   uint32_t left;
@@ -47,6 +42,7 @@ typedef struct {
 PixelCount orange_detection(struct image_t *img,
                              uint8_t lum_min, uint8_t lum_max,
                              uint8_t cb_min,  uint8_t cb_max,
-                             uint8_t cr_min,  uint8_t cr_max);
+                             uint8_t cr_min,  uint8_t cr_max,
+                             bool draw);
 
 #endif
