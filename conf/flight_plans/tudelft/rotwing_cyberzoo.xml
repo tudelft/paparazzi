@@ -146,6 +146,29 @@
         <call_once fun="NavStartDetectGround()"/>
         <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
+    <block name="land_strain" strip_button="Land Strain" strip_icon="land-right.png">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <go wp="TD"/>
+    </block>
+    <block name="descend_strain" strip_button="Descend Strain" strip_icon="descend.png">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
+        <exception cond="GetPosHeight() @LT 12.0" deroute="flare_strain"/>
+        <stay climb="-1.0" vmode="climb" wp="TD"/>
+    </block>
+    <block name="flare_strain">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
+        <call_once fun="hx711_autoset_offset(1)"/>
+        <stay climb="-0.5" vmode="climb" wp="TD"/>
+        <!--<exception cond="!(GetPosHeight() @LT 2.0)" deroute="flare_low"/>-->
+        <exception cond="agl_dist_valid @AND (agl_dist_value @LT 0.28)" deroute="flare_low_strain"/>
+    </block>
+    <block name="flare_low_strain">
+        <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
+        <exception cond="NavDetectGround()" deroute="Reverse Thrust"/>
+        <exception cond="!nav_is_in_flight()" deroute="Reverse Thrust"/>
+        <exception cond="hx711_ground_detect()" deroute="Reverse Thrust"/>
+        <stay climb="-0.5" vmode="climb" wp="TD"/>
+    </block>
     <block name="land_reverse_thrust" strip_button="Land Reverse Thrust" strip_icon="land-right.png">
         <call_once fun="rotwing_state_set(ROTWING_STATE_REQUEST_HOVER)"/>
         <go wp="TD"/>
