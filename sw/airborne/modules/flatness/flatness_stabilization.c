@@ -56,6 +56,11 @@ static const float MU_Y = 120.0f / 100000000.0f;
 static const float MU_Z = 12.0f  / 100000000.0f;
 static const float C_T  = -3.5f  / 100000000.0f;
 
+static const float MU_X_v = 4.5f  / 100000000.0f;
+static const float MU_Y_v = 10.4f / 100000000.0f;
+static const float MU_Z_v = 0.88f  / 100000000.0f;
+static const float C_T_v  = -0.22f  / 100000000.0f;
+
 // static const float G[4][4] = {
 //     {  MU_X * 100000000.0f,  -MU_X * 100000000.0f,  -MU_X * 100000000.0f,   MU_X * 100000000.0f },
 //     {  MU_Y * 100000000.0f,   MU_Y * 100000000.0f,  -MU_Y * 100000000.0f,  -MU_Y * 100000000.0f },
@@ -250,16 +255,40 @@ static float discrete_first_order_filter(float alpha, float input, float prev_ou
 
 static void forw_rot_flatness(float *u, float *m)
 {
-    m[0] = MU_X * (u[0]*u[0] - u[1]*u[1] - u[2]*u[2] + u[3]*u[3]);
-    m[1] = MU_Y * (u[0]*u[0] + u[1]*u[1] - u[2]*u[2] - u[3]*u[3]);
-    m[2] = MU_Z * (-u[0]*u[0] + u[1]*u[1] - u[2]*u[2] + u[3]*u[3]);
+    // m[0] = MU_X * (u[0]*u[0] - u[1]*u[1] - u[2]*u[2] + u[3]*u[3]);
+    // m[1] = MU_Y * (u[0]*u[0] + u[1]*u[1] - u[2]*u[2] - u[3]*u[3]);
+    // m[2] = MU_Z * (-u[0]*u[0] + u[1]*u[1] - u[2]*u[2] + u[3]*u[3]);
+
+    float v_squared = electrical.vsupply * electrical.vsupply;
+
+    m[0] = MU_X_v * v_squared * (u[0]*u[0] - u[1]*u[1] - u[2]*u[2] + u[3]*u[3]);
+    m[1] = MU_Y_v * v_squared * (u[0]*u[0] + u[1]*u[1] - u[2]*u[2] - u[3]*u[3]);
+    m[2] = MU_Z_v * v_squared * (-u[0]*u[0] + u[1]*u[1] - u[2]*u[2] + u[3]*u[3]);
 }
 
 static void inv_rot_flatness(float tau, float *m, float *u)
 {
-    // I could do that with matrix inverse
-    u[0] = SAFE_SQRT((tau/C_T + m[0]/MU_X + m[1]/MU_Y - m[2]/MU_Z)/4.0f);
-    u[1] = SAFE_SQRT((tau/C_T - m[0]/MU_X + m[1]/MU_Y + m[2]/MU_Z)/4.0f);
-    u[2] = SAFE_SQRT((tau/C_T - m[0]/MU_X - m[1]/MU_Y - m[2]/MU_Z)/4.0f);
-    u[3] = SAFE_SQRT((tau/C_T + m[0]/MU_X - m[1]/MU_Y + m[2]/MU_Z)/4.0f);
+    // u[0] = SAFE_SQRT((tau/C_T + m[0]/MU_X + m[1]/MU_Y - m[2]/MU_Z)/4.0f);
+    // u[1] = SAFE_SQRT((tau/C_T - m[0]/MU_X + m[1]/MU_Y + m[2]/MU_Z)/4.0f);
+    // u[2] = SAFE_SQRT((tau/C_T - m[0]/MU_X - m[1]/MU_Y - m[2]/MU_Z)/4.0f);
+    // u[3] = SAFE_SQRT((tau/C_T + m[0]/MU_X - m[1]/MU_Y + m[2]/MU_Z)/4.0f);
+
+    float v_squared = electrical.vsupply * electrical.vsupply;
+
+    u[0] = SAFE_SQRT(( tau/(C_T_v   * v_squared) + 
+                       m[0]/(MU_X_v * v_squared) + 
+                       m[1]/(MU_Y_v * v_squared) - 
+                       m[2]/(MU_Z_v * v_squared))/4.0f );
+    u[1] = SAFE_SQRT(( tau/(C_T_v   * v_squared) - 
+                       m[0]/(MU_X_v * v_squared) + 
+                       m[1]/(MU_Y_v * v_squared) + 
+                       m[2]/(MU_Z_v * v_squared))/4.0f );
+    u[2] = SAFE_SQRT(( tau/(C_T_v   * v_squared) - 
+                       m[0]/(MU_X_v * v_squared) - 
+                       m[1]/(MU_Y_v * v_squared) - 
+                       m[2]/(MU_Z_v * v_squared))/4.0f );
+    u[3] = SAFE_SQRT(( tau/(C_T_v   * v_squared) + 
+                       m[0]/(MU_X_v * v_squared) - 
+                       m[1]/(MU_Y_v * v_squared) + 
+                       m[2]/(MU_Z_v * v_squared))/4.0f );  
 }
