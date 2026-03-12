@@ -164,8 +164,6 @@
     </block>
     <block name="flare_low_strain">
         <call_once fun="rotwing_state_set(ROTWING_STATE_FORCE_HOVER)"/>
-        <exception cond="NavDetectGround()" deroute="Reverse Thrust"/>
-        <exception cond="!nav_is_in_flight()" deroute="Reverse Thrust"/>
         <exception cond="hx711_ground_detect()" deroute="Reverse Thrust"/>
         <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
@@ -193,7 +191,6 @@
         <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
     <block name="Reverse Thrust" on_enter="ground_detect_allow_reverse_thrust()" on_exit="ground_detect_disallow_reverse_thrust()">
-        <while cond="ground_detect()"/>
         <stay climb="-0.5" vmode="climb" wp="TD"/>  
     </block>
     <block name="landed">
