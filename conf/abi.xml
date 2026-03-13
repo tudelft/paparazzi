@@ -275,6 +275,13 @@
       <field name="actuators_t4_extra_data_in_ptr" type="float *">Pointer pointing at the actuators_t4_extra_data_in array</field>
     </message>
 
+
+    <message name="CUSTOM_DETECTION" id="42">
+      <field name="left" type="uint8_t">1 if left region risk bigger 2, else 0</field>
+      <field name="middle" type="uint8_t">1 if center region risk bigger 2, else 0</field>
+      <field name="right" type="uint8_t">1 if right region risk bigger 2, else 0</field>
+    </message>
+
   </msg_class>
 
 </protocol>
