@@ -74,5 +74,6 @@ extern struct Fl_stabilization fl_stabilization;
 
 extern void flatness_stabilization_init(void);
 extern void flatness_stabilization_run(bool, struct StabilizationSetpoint *, struct ThrustSetpoint *, int32_t *);
+// extern void flatness_guidance_run(void);
 
 #endif  // FLATNESS_STABILIZATION_H

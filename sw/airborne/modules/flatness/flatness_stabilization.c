@@ -51,6 +51,9 @@
 // };
 
 // constants
+static const float C_X = -0.612;
+static const float C_Z = -0.079;
+
 static const float MU_X = 60.0f  / 100000000.0f;
 static const float MU_Y = 120.0f / 100000000.0f;
 static const float MU_Z = 12.0f  / 100000000.0f;
@@ -230,10 +233,26 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
     // act.cmd[3] = SAFE_SQRT(u_squared[3] * 100000000.0f);
 
     // assign commands
+    // for (int i = 0; i < 4; i++) {
+    //     if (thrust->sp.thrust_i[THRUST_AXIS_Z] < 4500) {
+    //         act.cmd[0] = 200;
+    //         act.cmd[1] = 200;
+    //         act.cmd[2] = 200;
+    //         act.cmd[3] = 200;      
+    //     }
+    //     else {
+    //         act.cmd[0] = 9600;
+    //         act.cmd[1] = 9600;
+    //         act.cmd[2] = 9600;
+    //         act.cmd[3] = 9600;               
+    //     }
+    //     actuators_pprz[i] = act.cmd[i];
+    // }
+    
     for (int i = 0; i < 4; i++) {
         actuators_pprz[i] = act.cmd[i];
     }
-    
+
     cmd[COMMAND_THRUST] = thrust->sp.thrust_i[THRUST_AXIS_Z];
     temp_throttle = cmd[COMMAND_THRUST];
     stabilization.cmd[COMMAND_THRUST] = cmd[COMMAND_THRUST]; // for autopilot_check_in_flight()
@@ -244,6 +263,20 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
 
     expose_dbg_variables();
 }
+
+// static void flatness_guidance_run() {
+
+//     // forw flatness
+//     struct NedCoor_f vel_i = stateGetSpeedNed_f();
+//     struct NedCoor_f vel_b;
+//     struct FloatRMat R_i2b = stateGetNedToBodyRMat_f();
+    
+//     float_rmat_vmult(&vel_b, &R_i2b, &vel_i);
+//     float vel_norm = sqrtf(vel_b.x*vel_b.x + vel_b.y*vel_b.y + vel_b.z*vel_b.z);
+
+//     float fbfx = C_X*vel_norm*vel_b.x;
+//     float fbfz = C_Z*vel_norm*vel_b.z + C_T*(uf(1)^2 + uf(2)^2 + uf(3)^2 + uf(4)^2);
+// }
 
 static float discrete_first_order_filter(float alpha, float input, float prev_output)
 {  
@@ -292,3 +325,11 @@ static void inv_rot_flatness(float tau, float *m, float *u)
                        m[1]/(MU_Y_v * v_squared) + 
                        m[2]/(MU_Z_v * v_squared))/4.0f );  
 }
+
+// static void inv_transl_flatness() {
+
+//     // hardcode by axis
+
+//     // find theta_e and specific thrust
+    
+// }
