@@ -64,6 +64,9 @@
 
 //====================================================================================================================================
 // Declaration of global variables
+extern bool use_safety_killer;
+extern bool safety_killer_trigger;
+extern float safety_killer_cutoff;
 extern float delta_fault;
 extern float oneloop_nB_filt_cutoff;
 extern bool vel_ctrl_in_manual;

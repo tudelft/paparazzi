@@ -61,7 +61,10 @@
       <dl_setting var="p_alt_e.omega_n"    min="0.1"     step="0.001" max="20.0"  shortname="p_alt_e_omega_n"/>
       <dl_setting var="p_alt_e.zeta"       min="0.1"     step="0.001" max="1.0"   shortname="p_alt_e_zeta"/>
       <dl_setting var="p_alt_rm.omega_n"   min="0.1"     step="0.001" max="20.0"  shortname="p_alt_rm_omega_n"/>
-      <dl_setting var="p_alt_rm.zeta"      min="0.1"     step="0.001" max="1.0"   shortname="p_alt_rm_zeta"/>       
+      <dl_setting var="p_alt_rm.zeta"      min="0.1"     step="0.001" max="1.0"   shortname="p_alt_rm_zeta"/>
+      <dl_setting var="use_safety_killer"  min="0"       step="1"     max="1"     values="OFF|ON" shortname="use_safety_killer"/>
+      <dl_setting var="safety_killer_trigger"  min="0"       step="1"     max="1"     values="OFF|ON" shortname="safety_killer_trigger"/>
+      <dl_setting var="safety_killer_cutoff"   min="1000.0"     step="100.0" max="9600.0"   shortname="safety_killer_cutoff"/>      
      </dl_settings>
    </dl_settings>
   </settings>

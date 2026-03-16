@@ -78,7 +78,7 @@ static Butterworth2LowPass phi_filt;
 static Butterworth2LowPass theta_filt;
 static Butterworth2LowPass psi_filt;
 /* Temp variables*/
-int G2_on = 0;
+int G2_on = 1;
 float roll_eff = 8.9;//15.402;//3.835;//3.835;5.5
 float yaw_eff  = 0.237; // 1.3171*0.390=0.514 or 0.659 and 0.812 (pitch - roll)
 float ele_min = 0.0;

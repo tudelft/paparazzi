@@ -246,7 +246,8 @@
     </checklist>
 
     <section PREFIX="ONELOOP_NB_" NAME="ONELOOP_NB">
-        <define name  = "DELTA_FAULT"               value = "1500.0"/>
+        <define name  = "DELTA_FAULT"               value = "1000.0"/>
+        <define name  = "SLOW_POLE"                 value = "29.0"/>
         <define name  = "SIMPLE_QUAD"               value = "TRUE"/>
         <define name  = "POLES_POS_OMEGA_N"         value = "1.2"/>
         <define name  = "POLES_ALT_OMEGA_N"         value = "2.2"/>
@@ -286,32 +287,32 @@
         <define name="M"                     value="0.938"/>
         <!--Motor Front-->
         <define name="MF_dFdu"               value="0.968f"    /><!-- [N/pprz] -->
-        <define name="MF_dMdu"               value="0.0083f"   /><!-- [Nm/pprz] -->
-        <define name="MF_dMdud"              value="0.000f"    /><!-- [Nm/pprz] -->
+        <define name="MF_dMdu"               value="0.0098f"   /><!-- [Nm/pprz] -->
+        <define name="MF_dMdud"              value="1.485f"    /><!-- [Nm/pprz] -->
         <define name="MF_l"                  value="0.130f"    /><!-- [m] -->
         <define name="MF_k1"                 value="0.000f"    />
         <define name="MF_k2"                 value="0.968e-3f" />
         <define name="MF_k3"                 value="0.000f"    />
         <!--Motor Right-->
         <define name="MR_dFdu"               value="0.968f"    /><!-- [N/pprz] -->
-        <define name="MR_dMdu"               value="0.0083f"   /><!-- [Nm/pprz] -->
-        <define name="MR_dMdud"              value="0.000f"    /><!-- [Nm/pprz] -->
+        <define name="MR_dMdu"               value="0.0098f"   /><!-- [Nm/pprz] -->
+        <define name="MR_dMdud"              value="1.485f"    /><!-- [Nm/pprz] -->
         <define name="MR_l"                  value="0.130f"    /><!-- [m] -->
         <define name="MR_k1"                 value="0.000f"    />
         <define name="MR_k2"                 value="0.968e-3f" />
         <define name="MR_k3"                 value="0.000f"    />
         <!--Motor Back-->
         <define name="MB_dFdu"               value="0.968f"    /><!-- [N/pprz] -->
-        <define name="MB_dMdu"               value="0.0083f"   /><!-- [Nm/pprz] -->
-        <define name="MB_dMdud"              value="0.000f"    /><!-- [Nm/pprz] -->
+        <define name="MB_dMdu"               value="0.0098f"   /><!-- [Nm/pprz] -->
+        <define name="MB_dMdud"              value="1.485f"    /><!-- [Nm/pprz] -->
         <define name="MB_l"                  value="0.130f"    /><!-- [m] -->
         <define name="MB_k1"                 value="0.000f"    />
         <define name="MB_k2"                 value="0.968e-3f" />
         <define name="MB_k3"                 value="0.000f"    />
         <!--Motor Left-->
         <define name="ML_dFdu"               value="0.968f"    /><!-- [N/pprz] -->
-        <define name="ML_dMdu"               value="0.0083f"   /><!-- [Nm/pprz] -->
-        <define name="ML_dMdud"              value="0.000f"    /><!-- [Nm/pprz] -->
+        <define name="ML_dMdu"               value="0.0098f"   /><!-- [Nm/pprz] -->
+        <define name="ML_dMdud"              value="1.485f"    /><!-- [Nm/pprz] -->
         <define name="ML_l"                  value="0.130f"    /><!-- [m] -->
         <define name="ML_k1"                 value="0.000f"    />
         <define name="ML_k2"                 value="0.968e-3f" />

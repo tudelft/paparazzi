@@ -311,7 +311,7 @@ float max_fault_mot = 2300.0;
 // STABILIZATION VARIABLES
 //====================================================================================================================================
 #ifndef MAX_R                                                                     // Max Yaw rate with the sticks  
-float max_r = RadOfDeg(120.0);
+float max_r = RadOfDeg(180.0);//RadOfDeg(120.0);
 #else
 float max_r = RadOfDeg(MAX_R);
 #endif
@@ -346,7 +346,7 @@ struct OneloopStabilizationRef sta_bounds = {                                   
 #ifdef ONELOOP_NB_MAX_ANGULAR_JERK_YAW
     .att_3d[2] = ONELOOP_NB_MAX_ANGULAR_JERK_YAW,
 #else
-    .att_3d[2] = RadOfDeg(1520.0),
+    .att_3d[2] = RadOfDeg(100000.0),
 #endif
 
   #ifdef ONELOOP_NB_MAX_ANGULAR_ACCEL
@@ -360,7 +360,7 @@ struct OneloopStabilizationRef sta_bounds = {                                   
 #ifdef ONELOOP_NB_MAX_ANGULAR_ACCEL_YAW
     .att_2d[2] = ONELOOP_NB_MAX_ANGULAR_ACCEL_YAW,
 #else
-    .att_2d[2] = RadOfDeg(130.0),
+    .att_2d[2] = RadOfDeg(480.0),
 #endif
 
 #ifdef ONELOOP_NB_MAX_ANGULAR_VEL
@@ -374,7 +374,7 @@ struct OneloopStabilizationRef sta_bounds = {                                   
 #ifdef ONELOOP_NB_MAX_ANGULAR_VEL_YAW
     .att_d[2] = ONELOOP_NB_MAX_ANGULAR_VEL_YAW,
 #else
-    .att_d[2] = RadOfDeg(30.0),
+    .att_d[2] = RadOfDeg(10000.0),
 #endif
 };
 
@@ -488,7 +488,7 @@ float         ratio_vn_v[ANDI_OUTPUTS];
 //====================================================================================================================================
 float         SpinQuadRate  =0.0;
 bool          SpinQuad              = false;                                      // Quadrotor spinning configuration
-bool          fault_pitch_motors    = true;                                       // Fault pitch motors
+bool          fault_pitch_motors    = false;                                       // Fault pitch motors
 bool          fault_roll_motors     = false;                                      // Fault roll motors
 bool          fault_ailerons        = true;                                       // Fault ailerons
 bool          drop_yaw              = false;                                      // Drop the control of the Yaw axis
@@ -501,6 +501,10 @@ bool          use_push_Position     = false;                                    
 bool          radio_body_ctrl       = false;                                      // Control nI in body axes   
 bool          oneloop_nB_Z_hold     = false;                                      // Hold only the altitude when in NAV 
 bool          vel_ctrl_in_manual    = true;                                       // Use velocity control in manual mode (instead of direct stick to acceleration mapping) 
+bool          use_safety_killer     = false;                                      // !!DANGER!! never turn on by default.
+bool          safety_killer_trigger = false;
+
+float safety_killer_cutoff = 5500.0;
 float xi = 0.0;
 float max_pusher_cmd = 7500;
 float debug_state[3];
@@ -515,6 +519,13 @@ PRINT_CONFIG_VAR(ONELOOP_NB_DELTA_FAULT)
 //====================================================================================================================================
 // Error Controller and Reference Model VARIABLES
 //====================================================================================================================================
+#ifdef ONELOOP_NB_SLOW_POLE
+float slow_pole = ONELOOP_NB_SLOW_POLE;
+#else
+float slow_pole = 22.0;
+#endif
+PRINT_CONFIG_MSG("%%% SLOW POLE %%%")
+PRINT_CONFIG_VAR(ONELOOP_NB_SLOW_POLE)
 /*Declaration of Reference Model and Error Controller Gains*/
 struct PolePlacement p_att_e;
 struct PolePlacement p_roll_e;
@@ -911,13 +922,13 @@ static void ARW_ClampVec3(const float err[3],
 static void Vel_PID_ARW(float x_dot_des[3],
                          const float x_dot[3],
                          float k_P, float k_I, float k_D,
-                         float a_sp[3])
+                         float a_sp[3], float a_max, float v_max)
 {
     static float prev_vel[3] = {0.f, 0.f, 0.f};
     static float integral[3] = {0.f, 0.f, 0.f};
 
-    const float a_max = 0.12f * 9.81f;
-    const float v_max = 3.0f;//0.5f;
+    // const float a_max = 0.12f * 9.81f;
+    // const float v_max = 3.0f;//0.5f;
     const float I_MAX = 0.4f;
 
     float err[3];
@@ -969,13 +980,13 @@ static void Pos_KPID_ARW(const float x_des[3],
                          const float x[3],
                          const float x_dot[3],
                          float k_K, float k_P, float k_I, float k_D,
-                         float a_sp[3])
+                         float a_sp[3], float a_max, float v_max)
 {
     static float prev_vel[3] = {0.f, 0.f, 0.f};
     static float integral[3] = {0.f, 0.f, 0.f};
 
-    const float a_max = 0.12f * 9.81f;//0.05f * 9.81f;//0.12f * 9.81f; //0.5f * 9.81f;
-    const float v_max = 0.5f;
+    //const float a_max = 0.12f * 9.81f;//0.05f * 9.81f;//0.12f * 9.81f; //0.5f * 9.81f;
+    //const float v_max = 0.5f;
     const float I_MAX = 0.4f;
 
     float v_d[3];
@@ -1045,8 +1056,8 @@ static void eul_of_acc(float a[3], float psi){
   float ctheta_des = cosf(theta_des);
   if (fabs(ctheta_des) < FLT_EPSILON){ctheta_des = FLT_EPSILON;}
   phi_des   = asinf(aY/ctheta_des);
-  BoundAbs(phi_des, M_PI_6); // Limit to 30 deg
-  BoundAbs(theta_des, M_PI_6); // Limit to 30 deg
+  BoundAbs(phi_des, max_phi); // Limit to 30 deg
+  BoundAbs(theta_des, max_theta); // Limit to 30 deg
   eulers_zxy_des.phi   = phi_des;
   eulers_zxy_des.theta = theta_des;
 }
@@ -1422,16 +1433,14 @@ static float ec_poles(float p_rm, float slow_pole, float k)
  *
  */
 void init_poles_att(void)
-{
-  float slow_pole = 22.0;                                          // Pole of the slowest dynamics used in the attitude controller
+{                                       
   p_att_e.omega_n = ec_poles(p_att_rm.omega_n, slow_pole, 1.28);   // k = 1.28;
   p_head_e.omega_n = ec_poles(p_head_rm.omega_n, slow_pole, 1.28); // k = 1.28;
 }
 void init_poles_pos(void)
 {
-  float slow_pole = 22.0/3.0;// Pole of the slowest dynamics used in the position controller
-  p_pos_e.omega_n = ec_poles(p_pos_rm.omega_n, slow_pole, 1.28); // k = 1.28; 1.0;
-  p_alt_e.omega_n = ec_poles(p_alt_rm.omega_n, slow_pole, 1.28); // k = 1.28; 1.0;// 3.0
+  p_pos_e.omega_n = ec_poles(p_pos_rm.omega_n, slow_pole/3.0, 1.28); // k = 1.28; 1.0;
+  p_alt_e.omega_n = ec_poles(p_alt_rm.omega_n, slow_pole/3.0, 1.28); // k = 1.28; 1.0;// 3.0
 }
 
 /**
@@ -1442,8 +1451,6 @@ void init_poles(void)
 {
 
   // Attitude Controller Poles----------------------------------------------------------
-  float slow_pole = 22.0; // Pole of the slowest dynamics used in the attitude controller
-
   p_att_e.omega_n = slow_pole / 3.0;
   p_att_e.zeta = 1.0;
   p_att_e.p3 = p_att_e.omega_n;
@@ -1465,7 +1472,6 @@ void init_poles(void)
   p_head_rm.p3 = p_head_rm.omega_n;
 
   // Position Controller Poles----------------------------------------------------------
-  slow_pole = 22.0/3.0;// Pole of the slowest dynamics used in the position controller
 
   p_pos_e.omega_n = 1.19; // slow_pole/3.0;
   p_pos_e.zeta = 0.5;
@@ -1941,6 +1947,7 @@ void oneloop_nB_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_V, send_wls_v_oneloop);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WLS_U, send_wls_u_oneloop);
 #endif
+  safety_killer_trigger = false;
     // Log pointer to effectiveness matrix (can do only once after init)
 }
 
@@ -1960,6 +1967,7 @@ void oneloop_nB_enter(bool half_loop_sp, int ctrl_type)
   G1G2_oneloop(oneloop_nB.ctrl_type);
   init_controller_gains();
   reinit_controller();
+  safety_killer_trigger = false;
 }
 
 /**
@@ -1995,7 +2003,8 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
   oneloop_nB.push_nB.pE_d         = pos_des[1];
   oneloop_nB.push_nB.pN           = oneloop_nB.gui_state.pos[0];
   oneloop_nB.push_nB.pE           = oneloop_nB.gui_state.pos[1];
-
+  float PID_a_max = 0.6*9.81;
+  float PID_v_max = 3.0; 
   float acc_des[3];
   // Generate reference signals with reference model
   if (half_loop)
@@ -2028,8 +2037,8 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
     radio_body_ctrl = (!fault_pitch_motors) && (!fault_roll_motors);
     if(vel_ctrl_in_manual){
       float x_dot_des[3];
-      x_dot_des[0] = -radio_pitch_cmd / MAX_PPRZ * 3;//oneloop_nB.push_nB.max_v_d;
-      x_dot_des[1] =  radio_roll_cmd  / MAX_PPRZ * 3;//oneloop_nB.push_nB.max_v_d;
+      x_dot_des[0] = -radio_pitch_cmd / MAX_PPRZ * 3.0;//oneloop_nB.push_nB.max_v_d;
+      x_dot_des[1] =  radio_roll_cmd  / MAX_PPRZ * 3.0;//oneloop_nB.push_nB.max_v_d;
       x_dot_des[2] = 0.0;
       if (radio_body_ctrl){
         float sin_psi = sinf(eulers_zxy.psi);
@@ -2040,7 +2049,7 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
         x_dot_des[0] = x_dot_des_NE.x;
         x_dot_des[1] = x_dot_des_NE.y;
       }
-      Vel_PID_ARW(x_dot_des,oneloop_nB.gui_state.vel,k_P,k_I,k_D,acc_des);
+      Vel_PID_ARW(x_dot_des,oneloop_nB.gui_state.vel,k_P,k_I,k_D,acc_des,PID_a_max, PID_v_max);
       shape_vector(acc_des);
       eul_of_acc(acc_des, eulers_zxy.psi);
       oneloop_nB.sta_nB_state.nI_des.x = acc_des[0];
@@ -2094,7 +2103,7 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
   {
     // ======================================================================================================================================================
     // PID Guidance 
-    Pos_KPID_ARW(pos_des, oneloop_nB.gui_state.pos, oneloop_nB.gui_state.vel, k_K, k_P, k_I, k_D,acc_des);
+    Pos_KPID_ARW(pos_des, oneloop_nB.gui_state.pos, oneloop_nB.gui_state.vel, k_K, k_P, k_I, k_D,acc_des,PID_a_max, PID_v_max);
     switch (oneloop_nB.ctrl_type)
     {
       case CTRL_ANDI:
@@ -2253,10 +2262,12 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
   {
     switch (oneloop_nB.ctrl_type)
     {
-    case CTRL_ANDI:
+    case (CTRL_ANDI):
+    case (CTRL_NB_ANDI):
       g2_ff += G2_RW[i] * act_dyn_ctrl[i] * (andi_u[i] - u_filt[i].o[0]);
       break;
-    case CTRL_INDI:
+    case (CTRL_INDI):
+    case (CTRL_NB_INDI):
       g2_ff += G2_RW[i] * (andi_u[i] - u_filt[i].o[0]);
       break;
     default:
@@ -2358,6 +2369,9 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
     andi_u_n[i] = WLS_one_p.u[i];
     andi_u[i] = (float)(andi_u_n[i] * ratio_u_un[i]);
     Bound(andi_u[i], act_min[i], act_max[i]);
+    if(andi_u[i]>safety_killer_cutoff && use_safety_killer){
+      safety_killer_trigger = true;
+    }
   }
   // ======================================================================================================================================================
   // Handle fault static commands
@@ -2389,8 +2403,12 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
     }else{
       commands[i] = (int16_t)(0.0);  
     } 
-#else 
-    commands[i] = (int16_t)andi_u[i];
+#else
+    if (use_safety_killer && safety_killer_trigger){
+      commands[i] = (int16_t)0.0;
+    } else {
+      commands[i] = (int16_t)andi_u[i];
+    }
 #endif
   }
 
