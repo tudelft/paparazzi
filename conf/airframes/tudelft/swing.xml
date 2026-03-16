@@ -65,7 +65,6 @@
         <module name="air_data"/> <!-- needed? -->
         
         <module name="flatness_stabilization"/>
-        <module name="flatness_guidance"/>
 
     </firmware>
 

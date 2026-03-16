@@ -6,7 +6,9 @@
     
     <dep>
         <depends></depends>
-        <provides></provides>
+        <!-- provides guidance,navigation,autopilot_guided to make build system happy
+             the plan is to provide guidance only -->
+        <provides>guidance,navigation,autopilot_guided,attitude_command</provides>
     </dep>
 
     <header>

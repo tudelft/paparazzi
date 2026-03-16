@@ -30,6 +30,7 @@
 #include "mcu_periph/sys_time.h"
 #include "modules/energy/electrical.h"
 #include "math/wls/wls_alloc.h"
+#include "modules/core/abi.h"
 
 // #include "modules/datalink/telemetry.h"
 
@@ -81,6 +82,8 @@ dbg_t dbg;
 struct Fl_stabilization fl_stabilization;
 
 // global vars
+static abi_event rc_ev;
+struct ThrustSetpoint thr_sp;
 static float timestamp;
 static Butterworth2LowPass act_filter[4];
 static Butterworth2LowPass rates_num_der_filter[3];
@@ -98,6 +101,7 @@ static float ang_accel_filt[3] = {0.0f, 0.0f, 0.0f};
 static int32_t temp_throttle;
 
 // helper functions
+static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
 static float discrete_first_order_filter(float, float, float);
 static void forw_rot_flatness(float *, float *);
 static void inv_rot_flatness(float, float *, float *);
@@ -128,6 +132,18 @@ static void expose_dbg_variables(void)
     dbg.act = &act;
 }
 
+static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc)
+{
+    int32_t rc_throttle = (int32_t)rc->values[RADIO_THROTTLE];
+
+    THRUST_SP_SET_ZERO(thr_sp);
+    thr_sp = th_sp_from_thrust_i(rc_throttle, THRUST_AXIS_Z);
+
+    stabilization_attitude_read_rc_setpoint(&fl_stabilization.rc_in, autopilot_in_flight(), FALSE, FALSE, rc);
+    fl_stabilization.rc_sp = stab_sp_from_quat_f(&fl_stabilization.rc_in.rc_quat);
+}
+
+
 void flatness_stabilization_init(void)
 {
     float tau = 1.0f / (2.0f * M_PI * FILT_CUTOFF_FREQ);
@@ -143,9 +159,11 @@ void flatness_stabilization_init(void)
 
     // actuator dynamics
     ACT_DYN_ALPHA = exp(-ACT_CUTOFF_OMEGA/PERIODIC_FREQUENCY);
+
+    AbiBindMsgRADIO_CONTROL(ABI_BROADCAST, &rc_ev, rc_cb);
 }
 
-void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpoint *att_sp, struct ThrustSetpoint *thrust, int32_t *cmd)
+void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpoint *att_sp, int32_t *cmd)
 {
     // get the timestamp
     timestamp = get_sys_time_float();
@@ -198,7 +216,7 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
 
     // this mapping is wrong because throttle -> specific thrust is a quadratic map!
     // I approximate with linear here
-    float specific_thrust = -(float)(1.5f*9.81f/9600.0f)*thrust->sp.thrust_i[THRUST_AXIS_Z];
+    float specific_thrust = -(float)(1.5f*9.81f/9600.0f)*thr_sp.sp.thrust_i[THRUST_AXIS_Z];
 
     // 1. inverse rotational flatness
     inv_rot_flatness(specific_thrust, m_cmd, act.cmd);
@@ -253,7 +271,7 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
         actuators_pprz[i] = act.cmd[i];
     }
 
-    cmd[COMMAND_THRUST] = thrust->sp.thrust_i[THRUST_AXIS_Z];
+    cmd[COMMAND_THRUST] = thr_sp.sp.thrust_i[THRUST_AXIS_Z];
     temp_throttle = cmd[COMMAND_THRUST];
     stabilization.cmd[COMMAND_THRUST] = cmd[COMMAND_THRUST]; // for autopilot_check_in_flight()
 
