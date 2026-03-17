@@ -25,7 +25,7 @@
  * @param draw    - If true, matching pixels are brightened in the image (for debugging)
  * @param lum_min - Minimum Y (luminance) value
  * @param lum_max - Maximum Y (luminance) value
- * @param cb_min  - Minimum Cb (blue chroma) value
+ * @param cb_min  - Minimum Cb (blue chroma) value 
  * @param cb_max  - Maximum Cb (blue chroma) value
  * @param cr_min  - Minimum Cr (red chroma) value
  * @param cr_max  - Maximum Cr (red chroma) value

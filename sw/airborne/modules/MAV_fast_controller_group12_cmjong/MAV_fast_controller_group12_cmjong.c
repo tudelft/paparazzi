@@ -59,7 +59,7 @@ typedef struct {
 #define LOSS_SAFE_THRESHOLD 10000u
 
 #define AVOIDANCE_TURN_DEGREES 10.f 
-#define MOVE_DISTANCE       1.f   
+#define MOVE_DISTANCE       0.5f   
 #define AVOIDANCE_TURN_DEGREES_OutOfBound 5.f
 
 // define and initialise global variables
