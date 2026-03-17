@@ -8,7 +8,7 @@
             <include name="autopilot_rc_helpers.h"/>
             <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_FLATNESS"/>  
             <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_FLATNESS"/> <!-- UNUSED -->
-            <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_FLATNESS"/>
+            <define name="MODE_AUTO2" value="AP_MODE_GUIDANCE_FLATNESS"/>
         </includes>
 
         <!-- <settings>
@@ -38,20 +38,20 @@
             <on_enter>
             </on_enter>
             <control>
-                <call fun="flatness_stabilization_run(autopilot_in_flight(), &fl_stabilization.rc_sp, fl_stabilization.cmd)"/>
+                <call fun="get_spec_thrust()" store="float spec_thrust"/>
+                <call fun="flatness_stabilization_run(autopilot_in_flight(), &fl_stabilization.rc_sp, spec_thrust, fl_stabilization.cmd)"/>
                 <call fun="SetRotorcraftCommands(fl_stabilization.cmd, autopilot_in_flight(), autopilot_get_motors_on())"/>
             </control>
         </mode>
 
-        <!-- <mode name="GUIDANCE_FLATNESS" shortname="ATT_GUID">
+        <mode name="GUIDANCE_FLATNESS" shortname="GUID_FL">
             <on_enter>
             </on_enter>
             <control>
-                <call fun="get_thrust()" store="struct ThrustSetpoint thrust_sp"/>
-                <call fun="flatness_stabilization_run(autopilot_in_flight(), &fl_stabilization.rc_sp, &thrust_sp, fl_stabilization.cmd)"/>
+                <call fun="flatness_guidance_run(autopilot_in_flight(), fl_stabilization.cmd)"/>
                 <call fun="SetRotorcraftCommands(fl_stabilization.cmd, autopilot_in_flight(), autopilot_get_motors_on())"/>
             </control>
-        </mode> -->
+        </mode>
 
     </state_machine>
 

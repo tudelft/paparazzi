@@ -30,52 +30,41 @@
 #include "mcu_periph/sys_time.h"
 #include "modules/energy/electrical.h"
 #include "math/wls/wls_alloc.h"
+#include "modules/radio_control/radio_control.h"
 #include "modules/core/abi.h"
+#include "autopilot.h"
+#include "state.h"
 
 // #include "modules/datalink/telemetry.h"
 
 #define SAFE_SQRT(x) (sqrtf((x) > 0 ? (x) : 0.0f))
 
-// struct WLS_t wls_stab = {
-//     .nu        = 4,
-//     .nv        = 4,
-//     .gamma_sq  = 10000.0f,
-//     .v         = {0.0f},
-//     .Wv        = {1000.0f, 1000.0f, 1.0f, 100.0f},
-//     .Wu        = {1.0f, 1.0f, 1.0f, 1.0f},
-//     .u_pref    = {0.0f, 0.0f, 0.0f, 0.0f},
-//     .u_min     = {0.0f, 0.0f, 0.0f, 0.0f},
-//     .u_max     = {0.9216f, 0.9216f, 0.9216f, 0.9216f},
-//     .PC        = 0.0f,
-//     .SC        = 0.0f,
-//     .iter      = 0
-// };
-
 // constants
-static const float C_X = -0.612;
-static const float C_Z = -0.079;
+// static const float C_X = -0.612f;
+// static const float C_Z = -0.079f;
+static const float C_X = 0.0f;
+static const float C_Z = 0.0f;
+static const float C_T  = -3.5f  / 100000000.0f;
 
 static const float MU_X = 60.0f  / 100000000.0f;
 static const float MU_Y = 120.0f / 100000000.0f;
 static const float MU_Z = 12.0f  / 100000000.0f;
-static const float C_T  = -3.5f  / 100000000.0f;
 
 static const float MU_X_v = 4.5f  / 100000000.0f;
 static const float MU_Y_v = 10.4f / 100000000.0f;
 static const float MU_Z_v = 0.88f  / 100000000.0f;
 static const float C_T_v  = -0.22f  / 100000000.0f;
 
-// static const float G[4][4] = {
-//     {  MU_X * 100000000.0f,  -MU_X * 100000000.0f,  -MU_X * 100000000.0f,   MU_X * 100000000.0f },
-//     {  MU_Y * 100000000.0f,   MU_Y * 100000000.0f,  -MU_Y * 100000000.0f,  -MU_Y * 100000000.0f },
-//     { -MU_Z * 100000000.0f,   MU_Z * 100000000.0f,  -MU_Z * 100000000.0f,   MU_Z * 100000000.0f },
-//     {  C_T * 100000000.0f,    C_T * 100000000.0f,    C_T * 100000000.0f,    C_T * 100000000.0f  }
-// };
+static const float MIN_TAU = -0.981f;
+static const float MAX_TAU = -2.0f*9.81f;
+static const float ACCEL_BOUND = 9.81f/5.0f;
 
 static const float ACT_CUTOFF_OMEGA = 11.0f;
 static const float FILT_CUTOFF_FREQ = 5.0f;
 static const Gain_t Kq = {3.0f, 3.5f, 2.0f};
 static const Gain_t Komega = {14.0f, 16.0f, 12.0f};
+static const Gain_t Kp = {1.0f, 1.0f, 1.0f};
+static const Gain_t Kv = {5.0f, 5.0f, 5.0f};
 
 // global vars declared as extern in header file
 dbg_t dbg;
@@ -83,9 +72,10 @@ struct Fl_stabilization fl_stabilization;
 
 // global vars
 static abi_event rc_ev;
-struct ThrustSetpoint thr_sp;
+struct ThrustSetpoint rc_thr_sp;
 static float timestamp;
 static Butterworth2LowPass act_filter[4];
+static Butterworth2LowPass accel_filter[3];
 static Butterworth2LowPass rates_num_der_filter[3];
 static float ACT_DYN_ALPHA;
 static Act_t act = {
@@ -99,13 +89,22 @@ static struct FloatRates *rates;
 static struct FloatRates ang_accel_sp = {0.0f, 0.0f, 0.0f};
 static float ang_accel_filt[3] = {0.0f, 0.0f, 0.0f};
 static int32_t temp_throttle;
+static float temp_spec_thrust;
+struct FloatVect3 pos_ref;
+struct FloatVect3 vel_ref = {0.0f, 0.0f, 0.0f};
+struct FloatVect3 accel_ref = {0.0f, 0.0f, 0.0f};
+static struct FloatVect3 vel_sp, accel_sp;
+static float accel_vector[3], accel_filt[3];
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
 static float discrete_first_order_filter(float, float, float);
 static void forw_rot_flatness(float *, float *);
 static void inv_rot_flatness(float, float *, float *);
+static void forw_transl_flatness(float, struct FloatVect3 *, float *, struct FloatVect3 *);
 static void expose_dbg_variables(void);
+float spec_thrust_from_throttle(float throttle, float min_spec_thrust, float max_spec_thrust);
+float throttle_from_spec_thrust(float spec_thrust, float min_spec_thrust, float max_spec_thrust);
 
 // -------- CODE ---------- //
 
@@ -123,6 +122,14 @@ static void expose_dbg_variables(void)
     dbg.timestamp = timestamp;
     dbg.voltage = electrical.vsupply;
     dbg.throttle = temp_throttle;
+    dbg.spec_thrust = temp_spec_thrust;
+    dbg.accel.x = accel_vector[0]; dbg.accel.y = accel_vector[1]; dbg.accel.z = accel_vector[2];
+
+    dbg.pos_ref = pos_ref;
+    dbg.vel_sp = vel_sp;
+    dbg.accel_sp = accel_sp;
+    dbg.accel_filt.x = accel_filt[0]; dbg.accel_filt.y = accel_filt[1]; dbg.accel_filt.z = accel_filt[2];
+
     dbg.quat = quat;
     dbg.quat_sp = &quat_sp;
     dbg.rates = rates;
@@ -136,13 +143,31 @@ static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc)
 {
     int32_t rc_throttle = (int32_t)rc->values[RADIO_THROTTLE];
 
-    THRUST_SP_SET_ZERO(thr_sp);
-    thr_sp = th_sp_from_thrust_i(rc_throttle, THRUST_AXIS_Z);
+    THRUST_SP_SET_ZERO(rc_thr_sp);
+    rc_thr_sp = th_sp_from_thrust_i(rc_throttle, THRUST_AXIS_Z);
 
     stabilization_attitude_read_rc_setpoint(&fl_stabilization.rc_in, autopilot_in_flight(), FALSE, FALSE, rc);
     fl_stabilization.rc_sp = stab_sp_from_quat_f(&fl_stabilization.rc_in.rc_quat);
 }
 
+float get_spec_thrust(void)
+{
+    float spec_thrust = spec_thrust_from_throttle((float)rc_thr_sp.sp.thrust_i[THRUST_AXIS_Z], MIN_TAU, MAX_TAU);
+
+    return spec_thrust;
+}
+
+float spec_thrust_from_throttle(float throttle, float min_spec_thrust, float max_spec_thrust)
+{
+    // a linear map: [0 9600] --> [min max]
+    return min_spec_thrust + (throttle - 0.0f)*(max_spec_thrust - min_spec_thrust)/(9600.0f - 0.0f);
+}
+
+float throttle_from_spec_thrust(float spec_thrust, float min_spec_thrust, float max_spec_thrust)
+{
+    // a linear map: [0 9600] <-- [min max]
+    return 0.0f + (spec_thrust - min_spec_thrust)*(9600.0f - 0.0f)/(max_spec_thrust - min_spec_thrust);
+}
 
 void flatness_stabilization_init(void)
 {
@@ -155,6 +180,7 @@ void flatness_stabilization_init(void)
 
     for (int i = 0; i < 3; i++) {
         init_butterworth_2_low_pass(&rates_num_der_filter[i], tau, sample_time, 0.0f);
+        init_butterworth_2_low_pass(&accel_filter[i], tau, sample_time, 0.0f);
     }
 
     // actuator dynamics
@@ -163,7 +189,7 @@ void flatness_stabilization_init(void)
     AbiBindMsgRADIO_CONTROL(ABI_BROADCAST, &rc_ev, rc_cb);
 }
 
-void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpoint *att_sp, int32_t *cmd)
+void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpoint *att_sp, float spec_thrust, int32_t *cmd)
 {
     // get the timestamp
     timestamp = get_sys_time_float();
@@ -214,94 +240,136 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
         m_cmd[i] = (ang_accel_sp_vector[i] - ang_accel_filt[i]) + m_filt[i];
     }
 
-    // this mapping is wrong because throttle -> specific thrust is a quadratic map!
-    // I approximate with linear here
-    float specific_thrust = -(float)(1.5f*9.81f/9600.0f)*thr_sp.sp.thrust_i[THRUST_AXIS_Z];
-
     // 1. inverse rotational flatness
-    inv_rot_flatness(specific_thrust, m_cmd, act.cmd);
-    
-    // 2. ... or do it with matrix inverse
-    // float Ginv[4][4];
-    // float *Ginv_rows[4] = { Ginv[0], Ginv[1], Ginv[2], Ginv[3] };
-    // float u_squared[4];
-    // float indi_v[4] = {m_cmd[0], m_cmd[1], m_cmd[2], specific_thrust};
-    // float_mat_inv_4d(Ginv, G);
-    // float_mat_vect_mul(u_squared, Ginv_rows, indi_v, 4, 4);
-    // act.cmd[0] = SAFE_SQRT(u_squared[0] * 100000000.0f);
-    // act.cmd[1] = SAFE_SQRT(u_squared[1] * 100000000.0f);
-    // act.cmd[2] = SAFE_SQRT(u_squared[2] * 100000000.0f);
-    // act.cmd[3] = SAFE_SQRT(u_squared[3] * 100000000.0f);
-    
-    // 3. ... or WLS
-    // WLS Control Allocator
-    // float *G_rows[4] = { &G[0][0], &G[1][0], &G[2][0], &G[3][0] };
-    // float indi_v[4] = {m_cmd[0], m_cmd[1], m_cmd[2], specific_thrust};
-    // float u_squared[4];
-    // for (int i = 0; i < 4; i++) {
-    //     wls_stab.v[i] = indi_v[i];
-    // }
-    // wls_alloc(&wls_stab, G_rows, 0, 0, 10);
-    // for (int i = 0; i < 4; i++) {
-    //     u_squared[i] = wls_stab.u[i];
-    // }
-    // act.cmd[0] = SAFE_SQRT(u_squared[0] * 100000000.0f);
-    // act.cmd[1] = SAFE_SQRT(u_squared[1] * 100000000.0f);
-    // act.cmd[2] = SAFE_SQRT(u_squared[2] * 100000000.0f);
-    // act.cmd[3] = SAFE_SQRT(u_squared[3] * 100000000.0f);
-
-    // assign commands
-    // for (int i = 0; i < 4; i++) {
-    //     if (thrust->sp.thrust_i[THRUST_AXIS_Z] < 4500) {
-    //         act.cmd[0] = 200;
-    //         act.cmd[1] = 200;
-    //         act.cmd[2] = 200;
-    //         act.cmd[3] = 200;      
-    //     }
-    //     else {
-    //         act.cmd[0] = 9600;
-    //         act.cmd[1] = 9600;
-    //         act.cmd[2] = 9600;
-    //         act.cmd[3] = 9600;               
-    //     }
-    //     actuators_pprz[i] = act.cmd[i];
-    // }
+    inv_rot_flatness(spec_thrust, m_cmd, act.cmd);
     
     for (int i = 0; i < 4; i++) {
         actuators_pprz[i] = act.cmd[i];
     }
 
-    cmd[COMMAND_THRUST] = thr_sp.sp.thrust_i[THRUST_AXIS_Z];
-    temp_throttle = cmd[COMMAND_THRUST];
+    cmd[COMMAND_THRUST] = throttle_from_spec_thrust(spec_thrust, MIN_TAU, MAX_TAU); // for GCS throttle display
     stabilization.cmd[COMMAND_THRUST] = cmd[COMMAND_THRUST]; // for autopilot_check_in_flight()
+    temp_throttle = cmd[COMMAND_THRUST]; // for logging
+    temp_spec_thrust = spec_thrust; // for logging
 
     // printf("%d\t",in_flight);
+    // printf("%.2f\t", spec_thrust);
     // printf("%.0f\t%.0f\t%.0f\t%.0f\t", act.cmd[0], act.cmd[1], act.cmd[2], act.cmd[3]);
     // printf("\n");
 
     expose_dbg_variables();
 }
 
-// static void flatness_guidance_run() {
-
-//     // forw flatness
-//     struct NedCoor_f vel_i = stateGetSpeedNed_f();
-//     struct NedCoor_f vel_b;
-//     struct FloatRMat R_i2b = stateGetNedToBodyRMat_f();
+void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     
-//     float_rmat_vmult(&vel_b, &R_i2b, &vel_i);
-//     float vel_norm = sqrtf(vel_b.x*vel_b.x + vel_b.y*vel_b.y + vel_b.z*vel_b.z);
+    pos_ref.x = 0;
+    pos_ref.y = 0;
+    pos_ref.z = -2.0f;
 
-//     float fbfx = C_X*vel_norm*vel_b.x;
-//     float fbfz = C_Z*vel_norm*vel_b.z + C_T*(uf(1)^2 + uf(2)^2 + uf(3)^2 + uf(4)^2);
-// }
+    // position P controller
+    struct NedCoor_f *pos = stateGetPositionNed_f();
+    struct FloatVect3 vel_sp0;
+    vel_sp0.x = Kp.x * (pos_ref.x - pos->x);
+    vel_sp0.y = Kp.y * (pos_ref.y - pos->y);
+    vel_sp0.z = Kp.z * (pos_ref.z - pos->z);
 
-static float discrete_first_order_filter(float alpha, float input, float prev_output)
-{  
-    // y_{k} = a*y_{k-1} + (1 - a)*x_{k}
-    float output = alpha*prev_output + (1 - alpha) * input;
+    vel_sp.x = vel_sp0.x + vel_ref.x;
+    vel_sp.y = vel_sp0.y + vel_ref.y;
+    vel_sp.z = vel_sp0.z + vel_ref.z;
 
-    return output;
+    // velocity P controller
+    struct NedCoor_f *vel_i_nedcoor_f = stateGetSpeedNed_f();
+    struct FloatVect3 *vel_i = (struct FloatVect3 *)vel_i_nedcoor_f;
+    struct FloatVect3 accel_sp0;
+    accel_sp0.x = Kv.x * (vel_sp.x - vel_i->x);
+    accel_sp0.y = Kv.y * (vel_sp.y - vel_i->y);
+    accel_sp0.z = Kv.z * (vel_sp.z - vel_i->z);
+
+    accel_sp.x = accel_sp0.x + accel_ref.x;
+    accel_sp.y = accel_sp0.y + accel_ref.y;
+    accel_sp.z = accel_sp0.z + accel_ref.z;
+
+    // bound the commanded acceleration
+    if (accel_sp.x > ACCEL_BOUND)
+        accel_sp.x = ACCEL_BOUND;
+    else if (accel_sp.x < -ACCEL_BOUND)
+        accel_sp.x = -ACCEL_BOUND;
+    
+    if (accel_sp.y > ACCEL_BOUND)
+        accel_sp.y = ACCEL_BOUND;
+    else if (accel_sp.y < -ACCEL_BOUND)
+        accel_sp.y = -ACCEL_BOUND;
+
+    if (accel_sp.z > ACCEL_BOUND)
+        accel_sp.z = ACCEL_BOUND;
+    else if (accel_sp.z < -ACCEL_BOUND)
+        accel_sp.z = -ACCEL_BOUND;
+
+    // calculate body velocity and norm
+    struct FloatVect3 vel_b;
+    struct FloatRMat *R_i2b = stateGetNedToBodyRMat_f();
+    float_rmat_vmult(&vel_b, R_i2b, vel_i);
+    float vel_norm = sqrtf(vel_b.x*vel_b.x + vel_b.y*vel_b.y + vel_b.z*vel_b.z);
+
+    // forw flatness
+    struct FloatVect3 fb_filt, fi_filt;
+    forw_transl_flatness(vel_norm, &vel_b, act.state_filt, &fb_filt);
+    float_rmat_transp_vmult(&fi_filt, R_i2b, &fb_filt);
+
+    // incremental law
+    float f_cmd[3];
+    struct NedCoor_f *accel = stateGetAccelNed_f();
+    accel_vector[0] = accel->x;
+    accel_vector[1] = accel->y;
+    accel_vector[2] = accel->z;
+    for (int i = 0; i < 3; i++) {    
+        update_butterworth_2_low_pass(&accel_filter[i], accel_vector[i]);
+        accel_filt[i] = accel_filter[i].o[0];
+    }
+    f_cmd[0] = (accel_sp.x - accel_filt[0]) + fi_filt.x;
+    f_cmd[1] = (accel_sp.y - accel_filt[1]) + fi_filt.y;
+    f_cmd[2] = (accel_sp.z - accel_filt[2]) + fi_filt.z;
+
+    // inverse translational flatness (get attitude and spec. thrust sp)
+    struct FloatEulers eulers_sp = {0.0f, 0.0f, 0.0f};
+    float beta_x = -sinf(eulers_sp.psi)*f_cmd[0] + cosf(eulers_sp.psi)*f_cmd[1];
+    float beta_z = f_cmd[2];
+    eulers_sp.phi = atan2f(beta_x, -beta_z);
+
+    struct FloatRMat R_i2e;
+    float_rmat_of_eulers_312(&R_i2e, &eulers_sp);
+    struct FloatVect3 ve, fe;
+    struct FloatVect3 fi_cmd = {f_cmd[0], f_cmd[1], f_cmd[2]};
+    float_rmat_vmult(&ve, &R_i2e, vel_i);
+    float_rmat_vmult(&fe, &R_i2e, &fi_cmd);
+
+    float sigma_x = fe.x - C_X*vel_norm*ve.x;
+    float sigma_z = fe.z - C_X*vel_norm*ve.z;
+    float theta_e = atan2f(-sigma_x, -sigma_z);
+
+    float spec_thrust = sinf(theta_e)*fe.x + 
+                        cos(theta_e)*fe.z - 
+                        C_Z*vel_norm*(sin(theta_e)*ve.x + cos(theta_e)*ve.z);
+
+    eulers_sp.theta = theta_e;
+    struct FloatQuat _quat_sp;
+    float_quat_of_eulers_zxy(&_quat_sp, &eulers_sp);
+    struct StabilizationSetpoint _att_sp = stab_sp_from_quat_f(&_quat_sp);
+
+    flatness_stabilization_run(in_flight, &_att_sp, spec_thrust, cmd);
+
+    // printf("%.2f\t%.2f\t%.2f\t%.2f\t", accel_sp.z , accel_filt[2], fi_filt.z, f_cmd[2]);
+    // printf("%.0f\t%.0f\t%.0f\t%.0f\t", act.cmd[0], act.cmd[1], act.cmd[2], act.cmd[3]);
+    // printf("\n");
+}
+
+static void forw_transl_flatness(float vel_norm, struct FloatVect3 *vel_b, float *u, struct FloatVect3 *fb)
+{
+    // float v_squared = electrical.vsupply * electrical.vsupply;
+
+    fb->x = C_X*vel_norm*vel_b->x;
+    fb->y = 0; // remove?
+    fb->z = C_Z*vel_norm*vel_b->z + C_T*(u[0]*u[0] + u[1]*u[1] + u[2]*u[2] + u[3]*u[3]);
 }
 
 static void forw_rot_flatness(float *u, float *m)
@@ -344,10 +412,10 @@ static void inv_rot_flatness(float tau, float *m, float *u)
                        m[2]/(MU_Z_v * v_squared))/4.0f );  
 }
 
-// static void inv_transl_flatness() {
+static float discrete_first_order_filter(float alpha, float input, float prev_output)
+{  
+    // y_{k} = a*y_{k-1} + (1 - a)*x_{k}
+    float output = alpha*prev_output + (1 - alpha) * input;
 
-//     // hardcode by axis
-
-//     // find theta_e and specific thrust
-    
-// }
+    return output;
+}

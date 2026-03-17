@@ -56,10 +56,19 @@ typedef struct {
     float MU_Y;
     float MU_Z;
     float C_T;
+    
     // data
     float timestamp;
     float voltage;
     int32_t throttle;
+    float spec_thrust;
+    struct FloatVect3 accel;
+    
+    struct FloatVect3 pos_ref;
+    struct FloatVect3 vel_sp;
+    struct FloatVect3 accel_sp;
+    struct FloatVect3 accel_filt;
+    
     struct FloatQuat *quat;
     struct FloatQuat *quat_sp;
     struct FloatRates *rates;
@@ -73,7 +82,8 @@ extern dbg_t dbg;
 extern struct Fl_stabilization fl_stabilization;
 
 extern void flatness_stabilization_init(void);
-extern void flatness_stabilization_run(bool, struct StabilizationSetpoint *, int32_t *);
-// extern void flatness_guidance_run(void);
+extern void flatness_stabilization_run(bool, struct StabilizationSetpoint *, float, int32_t *);
+extern void flatness_guidance_run(bool, int32_t *);
+extern float get_spec_thrust(void);
 
 #endif  // FLATNESS_STABILIZATION_H
