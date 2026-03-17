@@ -39,7 +39,7 @@ typedef struct {
   uint32_t right;
 } PixelCount;
 
-PixelCount orange_detection(struct image_t *img,
+PixelCount color_detection(struct image_t *img,
                              uint8_t lum_min, uint8_t lum_max,
                              uint8_t cb_min,  uint8_t cb_max,
                              uint8_t cr_min,  uint8_t cr_max,

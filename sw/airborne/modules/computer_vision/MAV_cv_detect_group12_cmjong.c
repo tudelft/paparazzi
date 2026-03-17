@@ -111,7 +111,7 @@ static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
   ----------------------------------------------------------------------------------------------------------------
   */
 
-  PixelCount count = orange_detection(img, orange_lum_min, orange_lum_max, orange_cb_min, orange_cb_max, orange_cr_min, orange_cr_max, TRUE);
+  PixelCount count = color_detection(img, orange_lum_min, orange_lum_max, orange_cb_min, orange_cb_max, orange_cr_min, orange_cr_max, TRUE);
   // count.left, count.middle, count.right
   //VERBOSE_PRINT("Orange pixel count: %u left , %u middle , %u right", Count.left , Count.middle, Count.right);
 
