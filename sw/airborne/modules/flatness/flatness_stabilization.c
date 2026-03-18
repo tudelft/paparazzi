@@ -106,7 +106,7 @@ static struct FloatVect3 vel_sp, accel_sp;
 static float accel_vector[3], accel_filt[3];
 float f_cmd[3];
 fl_guid_fsm_t fsm_state = FSM_INIT;
-float septic_coeff_n[8], septic_coeff_e[8], septic_coeff_d[8];
+float quintic_coeff_n[6], quintic_coeff_e[6], quintic_coeff_d[6];
 float timestamp_p2p_start, timestamp_p2p;
 
 // helper functions
@@ -120,8 +120,8 @@ float spec_thrust_from_throttle(float throttle, float min_spec_thrust, float max
 float throttle_from_spec_thrust(float spec_thrust, float min_spec_thrust, float max_spec_thrust);
 void flatness_guidance_run(bool in_flight, int32_t *cmd);
 void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd);
-void compute_septic_ref(float t);
-void compute_septic_coefficients(struct FloatVect3 *pos_start, const struct FloatVect3 *pos_end);
+void compute_quintic_ref(float t);
+void compute_quintic_coefficients(struct FloatVect3 *pos_start, const struct FloatVect3 *pos_end, struct FloatVect3 *vel_start, struct FloatVect3 *accel_start);
 static void matrix_vector_mult(float *result, float **mat, float *vec, int n);
 
 // -------- CODE ---------- //
@@ -440,7 +440,9 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
         case FSM_INIT:
             timestamp_p2p_start = get_sys_time_float();
             struct FloatVect3 *pos_start = (struct FloatVect3 *)stateGetPositionNed_f();
-            compute_septic_coefficients(pos_start, &POS_END);
+            struct FloatVect3 *vel_start = (struct FloatVect3 *)stateGetSpeedNed_f();
+            struct FloatVect3 *accel_start = (struct FloatVect3 *)stateGetAccelNed_f();
+            compute_quintic_coefficients(pos_start, &POS_END, vel_start, accel_start);
             fsm_state = FSM_STANDBY;
             break;
 
@@ -449,7 +451,7 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
             if (timestamp_p2p > P2P_DT) {
                 timestamp_p2p = P2P_DT;
             } 
-            compute_septic_ref(timestamp_p2p);
+            compute_quintic_ref(timestamp_p2p);
             flatness_guidance_run(in_flight, cmd);
 
             // if (/* condition to start trajectory */) {
@@ -467,71 +469,70 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
     }
 }
 
-void compute_septic_ref(float t)
+void compute_quintic_ref(float t)
 {
-    float t2 = t*t, t3 = t2*t, t4 = t3*t, t5 = t4*t, t6 = t5*t, t7 = t6*t;
-    pos_ref.x = 1.0f*septic_coeff_n[0] + t*septic_coeff_n[1] + t2*septic_coeff_n[2] + t3*septic_coeff_n[3] +
-                  t4*septic_coeff_n[4] + t5*septic_coeff_n[5] + t6*septic_coeff_n[6] + t7*septic_coeff_n[7]; 
-    pos_ref.y = 1.0f*septic_coeff_e[0] + t*septic_coeff_e[1] + t2*septic_coeff_e[2] + t3*septic_coeff_e[3] +
-                  t4*septic_coeff_e[4] + t5*septic_coeff_e[5] + t6*septic_coeff_e[6] + t7*septic_coeff_e[7]; 
-    pos_ref.z = 1.0f*septic_coeff_d[0] + t*septic_coeff_d[1] + t2*septic_coeff_d[2] + t3*septic_coeff_d[3] +
-                  t4*septic_coeff_d[4] + t5*septic_coeff_d[5] + t6*septic_coeff_d[6] + t7*septic_coeff_d[7]; 
+    float t2 = t*t, t3 = t2*t, t4 = t3*t, t5 = t4*t;
+    pos_ref.x = 1.0f*quintic_coeff_n[0] + t*quintic_coeff_n[1] + t2*quintic_coeff_n[2] + 
+                  t3*quintic_coeff_n[3] + t4*quintic_coeff_n[4] + t5*quintic_coeff_n[5];
+    pos_ref.y = 1.0f*quintic_coeff_e[0] + t*quintic_coeff_e[1] + t2*quintic_coeff_e[2] + 
+                  t3*quintic_coeff_e[3] + t4*quintic_coeff_e[4] + t5*quintic_coeff_e[5];
+    pos_ref.z = 1.0f*quintic_coeff_d[0] + t*quintic_coeff_d[1] + t2*quintic_coeff_d[2] + 
+                  t3*quintic_coeff_d[3] + t4*quintic_coeff_d[4] + t5*quintic_coeff_d[5];
 
-    vel_ref.x = 1.0f*septic_coeff_n[1] + 2.0f*t*septic_coeff_n[2] + 3.0f*t2*septic_coeff_n[3] +
-                  4.0f*t3*septic_coeff_n[4] + 5.0f*t4*septic_coeff_n[5] + 6.0f*t5*septic_coeff_n[6] + 7.0f*t6*septic_coeff_n[7]; 
-    vel_ref.y = 1.0f*septic_coeff_e[1] + 2.0f*t*septic_coeff_e[2] + 3.0f*t2*septic_coeff_e[3] +
-                  4.0f*t3*septic_coeff_e[4] + 5.0f*t4*septic_coeff_e[5] + 6.0f*t5*septic_coeff_e[6] + 7.0f*t6*septic_coeff_e[7]; 
-    vel_ref.z = 1.0f*septic_coeff_d[1] + 2.0f*t*septic_coeff_d[2] + 3.0f*t2*septic_coeff_d[3] +
-                  4.0f*t3*septic_coeff_d[4] + 5.0f*t4*septic_coeff_d[5] + 6.0f*t5*septic_coeff_d[6] + 7.0f*t6*septic_coeff_d[7]; 
 
-    accel_ref.x = 1.0f*septic_coeff_n[2] + 6.0f*t*septic_coeff_n[3] + 12.0f*t2*septic_coeff_n[4] +
-                  20.0f*t3*septic_coeff_n[5] + 30.0f*t4*septic_coeff_n[6] + 42.0f*t5*septic_coeff_n[7]; 
-    accel_ref.y = 1.0f*septic_coeff_e[2] + 6.0f*t*septic_coeff_e[3] + 12.0f*t2*septic_coeff_e[4] +
-                  20.0f*t3*septic_coeff_e[5] + 30.0f*t4*septic_coeff_e[6] + 42.0f*t5*septic_coeff_e[7];                   
-    accel_ref.z = 1.0f*septic_coeff_d[2] + 6.0f*t*septic_coeff_d[3] + 12.0f*t2*septic_coeff_d[4] +
-                  20.0f*t3*septic_coeff_d[5] + 30.0f*t4*septic_coeff_d[6] + 42.0f*t5*septic_coeff_d[7]; 
+    vel_ref.x = 1.0f*quintic_coeff_n[1] + 2.0f*t*quintic_coeff_n[2] + 3.0f*t2*quintic_coeff_n[3] +
+                4.0f*t3*quintic_coeff_n[4] + 5.0f*t4*quintic_coeff_n[5];
+    vel_ref.y = 1.0f*quintic_coeff_e[1] + 2.0f*t*quintic_coeff_e[2] + 3.0f*t2*quintic_coeff_e[3] +
+                4.0f*t3*quintic_coeff_e[4] + 5.0f*t4*quintic_coeff_e[5]; 
+    vel_ref.z = 1.0f*quintic_coeff_d[1] + 2.0f*t*quintic_coeff_d[2] + 3.0f*t2*quintic_coeff_d[3] +
+                4.0f*t3*quintic_coeff_d[4] + 5.0f*t4*quintic_coeff_d[5]; 
+
+
+    accel_ref.x = 2.0f*quintic_coeff_n[2] + 6.0f*t*quintic_coeff_n[3] + 12.0f*t2*quintic_coeff_n[4] +
+                  20.0f*t3*quintic_coeff_n[5];
+    accel_ref.y = 2.0f*quintic_coeff_e[2] + 6.0f*t*quintic_coeff_e[3] + 12.0f*t2*quintic_coeff_e[4] +
+                  20.0f*t3*quintic_coeff_e[5];
+    accel_ref.z = 2.0f*quintic_coeff_d[2] + 6.0f*t*quintic_coeff_d[3] + 12.0f*t2*quintic_coeff_d[4] +
+                  20.0f*t3*quintic_coeff_d[5];
+
 }
 
-void compute_septic_coefficients(struct FloatVect3 *pos_start, const struct FloatVect3 *pos_end)
+void compute_quintic_coefficients(struct FloatVect3 *pos_start, const struct FloatVect3 *pos_end, struct FloatVect3 *vel_start, struct FloatVect3 *accel_start)
 {
     float ts = 0.0f, te = P2P_DT;
-    float ts2 = ts*ts, ts3 = ts2*ts, ts4 = ts3*ts, ts5 = ts4*ts, ts6 = ts5*ts, ts7 = ts6*ts;
-    float te2 = te*te, te3 = te2*te, te4 = te3*te, te5 = te4*te, te6 = te5*te, te7 = te6*te;
+    float ts2 = ts*ts, ts3 = ts2*ts, ts4 = ts3*ts, ts5 = ts4*ts;
+    float te2 = te*te, te3 = te2*te, te4 = te3*te, te5 = te4*te;
 
-    float boundary_cond_n[8] = {pos_start->x, pos_end->x, 0, 0, 0, 0, 0, 0};
-    float boundary_cond_e[8] = {pos_start->y, pos_end->y, 0, 0, 0, 0, 0, 0};
-    float boundary_cond_d[8] = {pos_start->z, pos_end->z, 0, 0, 0, 0, 0, 0};
+    float boundary_cond_n[6] = {pos_start->x, pos_end->x, vel_start->x, 0, accel_start->x, 0};
+    float boundary_cond_e[6] = {pos_start->y, pos_end->y, vel_start->y, 0, accel_start->y, 0};
+    float boundary_cond_d[6] = {pos_start->z, pos_end->z, vel_start->z, 0, accel_start->z, 0};
 
-    float M[8][8] = {
-        {1.0f, ts, ts2, ts3, ts4, ts5, ts6, ts7},
-        {1.0f, te, te2, te3, te4, te5, te6, te7},
-        {0.0f, 1.0f, 2*ts, 3*ts2, 4*ts3, 5*ts4, 6*ts5, 7*ts6},
-        {0.0f, 1.0f, 2*te, 3*te2, 4*te3, 5*te4, 6*te5, 7*te6},
-        {0.0f, 0.0f, 2.0f, 6*ts, 12*ts2, 20*ts3, 30*ts4, 42*ts5},
-        {0.0f, 0.0f, 2.0f, 6*te, 12*te2, 20*te3, 30*te4, 42*te5},
-        {0.0f, 0.0f, 0.0f, 6.0f, 24*ts, 60*ts2, 120*ts3, 210*ts4},
-        {0.0f, 0.0f, 0.0f, 6.0f, 24*te, 60*te2, 120*te3, 210*te4}
+    float M[6][6] = {
+        {1.0f, ts, ts2, ts3, ts4, ts5},
+        {1.0f, te, te2, te3, te4, te5},
+        {0.0f, 1.0f, 2*ts, 3*ts2, 4*ts3, 5*ts4},
+        {0.0f, 1.0f, 2*te, 3*te2, 4*te3, 5*te4},
+        {0.0f, 0.0f, 2.0f, 6*ts, 12*ts2, 20*ts3},
+        {0.0f, 0.0f, 2.0f, 6*te, 12*te2, 20*te3},
     };
 
-    float M_inv[8][8] = {
-        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}
+    float M_inv[6][6] = {
+        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
     };
 
-    float *M_rows[8] = { M[0], M[1], M[2], M[3], M[4], M[5], M[6], M[7] };
-    float *M_inv_rows[8] = { M_inv[0], M_inv[1], M_inv[2], M_inv[3], M_inv[4], M_inv[5], M_inv[6], M_inv[7] };
+    float *M_rows[6] = { M[0], M[1], M[2], M[3], M[4], M[5] };
+    float *M_inv_rows[6] = { M_inv[0], M_inv[1], M_inv[2], M_inv[3], M_inv[4], M_inv[5] };
 
-    float_mat_invert(M_inv_rows, M_rows, 8);
+    float_mat_invert(M_inv_rows, M_rows, 6);
 
-    matrix_vector_mult(septic_coeff_n, M_inv_rows, boundary_cond_n, 8);
-    matrix_vector_mult(septic_coeff_e, M_inv_rows, boundary_cond_e, 8);
-    matrix_vector_mult(septic_coeff_d, M_inv_rows, boundary_cond_d, 8);
+    matrix_vector_mult(quintic_coeff_n, M_inv_rows, boundary_cond_n, 6);
+    matrix_vector_mult(quintic_coeff_e, M_inv_rows, boundary_cond_e, 6);
+    matrix_vector_mult(quintic_coeff_d, M_inv_rows, boundary_cond_d, 6);
 }
 
 static void matrix_vector_mult(float *result, float **mat, float *vec, int n)
