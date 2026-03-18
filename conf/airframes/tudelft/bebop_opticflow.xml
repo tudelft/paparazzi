@@ -25,7 +25,6 @@
     <module name="imu" type="bebop"/>
     <module name="gps" type="datalink"/> <!-- Optitrack -->
     <module name="stabilization" type="indi_simple"/>
-    <module name="guidance_pid_rotorcraft"/>
     <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="TRUE"/>
       <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
