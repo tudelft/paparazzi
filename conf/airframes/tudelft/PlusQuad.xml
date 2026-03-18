@@ -205,7 +205,7 @@
     </checklist>
 
     <section PREFIX="ONELOOP_NB_" NAME="ONELOOP_NB">
-        <define name  = "DELTA_FAULT"               value = "1000.0"/>
+        <define name  = "DELTA_FAULT"               value = "2600.0"/>
         <define name  = "SLOW_POLE"                 value = "29.0"/>
         <define name  = "SIMPLE_QUAD"               value = "TRUE"/>
         <define name  = "POLES_POS_OMEGA_N"         value = "1.2"/>
