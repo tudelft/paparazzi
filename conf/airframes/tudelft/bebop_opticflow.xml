@@ -6,8 +6,6 @@
 
   <firmware name="rotorcraft">
 
-    <autopilot name="rotorcraft_autopilot"/>
-
     <target name="ap" board="bebop"/>
 
     <target name="nps" board="pc">
@@ -87,8 +85,6 @@
     <define name="CALC_TAS_FACTOR" value="FALSE"/>
     <define name="CALC_AMSL_BARO" value="TRUE"/>
   </section>
-
-  <include href="conf/airframes/tudelft/calibrations/bebopTUBB17.xml"/>
 
   <section name="IMU" prefix="IMU_">
     <define name="BODY_TO_IMU_PHI" value="0." unit="deg"/>
