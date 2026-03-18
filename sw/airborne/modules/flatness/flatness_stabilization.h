@@ -61,12 +61,12 @@ typedef struct {
     float timestamp;
     float voltage;
     int32_t throttle;
-    float spec_thrust;
-    struct FloatVect3 accel;
+    float spec_thrust_sp;
     
     struct FloatVect3 pos_ref;
     struct FloatVect3 vel_sp;
     struct FloatVect3 accel_sp;
+    struct FloatVect3 f_cmd;
     struct FloatVect3 accel_filt;
     
     struct FloatQuat *quat;

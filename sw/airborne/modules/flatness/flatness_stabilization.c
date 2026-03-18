@@ -57,7 +57,7 @@ static const float C_T_v  = -0.22f  / 100000000.0f;
 
 static const float MIN_TAU = -0.981f;
 static const float MAX_TAU = -2.0f*9.81f;
-static const float ACCEL_BOUND = 9.81f/5.0f;
+static const float ACCEL_BOUND = 9.81f/2.0f;
 
 static const float ACT_CUTOFF_OMEGA = 11.0f;
 static const float FILT_CUTOFF_FREQ = 5.0f;
@@ -89,12 +89,13 @@ static struct FloatRates *rates;
 static struct FloatRates ang_accel_sp = {0.0f, 0.0f, 0.0f};
 static float ang_accel_filt[3] = {0.0f, 0.0f, 0.0f};
 static int32_t temp_throttle;
-static float temp_spec_thrust;
+static float temp_spec_thrust_sp;
 struct FloatVect3 pos_ref;
 struct FloatVect3 vel_ref = {0.0f, 0.0f, 0.0f};
 struct FloatVect3 accel_ref = {0.0f, 0.0f, 0.0f};
 static struct FloatVect3 vel_sp, accel_sp;
 static float accel_vector[3], accel_filt[3];
+float f_cmd[3];
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -122,12 +123,12 @@ static void expose_dbg_variables(void)
     dbg.timestamp = timestamp;
     dbg.voltage = electrical.vsupply;
     dbg.throttle = temp_throttle;
-    dbg.spec_thrust = temp_spec_thrust;
-    dbg.accel.x = accel_vector[0]; dbg.accel.y = accel_vector[1]; dbg.accel.z = accel_vector[2];
+    dbg.spec_thrust_sp = temp_spec_thrust_sp;
 
     dbg.pos_ref = pos_ref;
     dbg.vel_sp = vel_sp;
     dbg.accel_sp = accel_sp;
+    dbg.f_cmd.x = f_cmd[0]; dbg.f_cmd.y = f_cmd[1]; dbg.f_cmd.z = f_cmd[2];
     dbg.accel_filt.x = accel_filt[0]; dbg.accel_filt.y = accel_filt[1]; dbg.accel_filt.z = accel_filt[2];
 
     dbg.quat = quat;
@@ -189,7 +190,7 @@ void flatness_stabilization_init(void)
     AbiBindMsgRADIO_CONTROL(ABI_BROADCAST, &rc_ev, rc_cb);
 }
 
-void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpoint *att_sp, float spec_thrust, int32_t *cmd)
+void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpoint *att_sp, float spec_thrust_sp, int32_t *cmd)
 {
     // get the timestamp
     timestamp = get_sys_time_float();
@@ -241,19 +242,19 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
     }
 
     // 1. inverse rotational flatness
-    inv_rot_flatness(spec_thrust, m_cmd, act.cmd);
+    inv_rot_flatness(spec_thrust_sp, m_cmd, act.cmd);
     
     for (int i = 0; i < 4; i++) {
         actuators_pprz[i] = act.cmd[i];
     }
 
-    cmd[COMMAND_THRUST] = throttle_from_spec_thrust(spec_thrust, MIN_TAU, MAX_TAU); // for GCS throttle display
+    cmd[COMMAND_THRUST] = throttle_from_spec_thrust(spec_thrust_sp, MIN_TAU, MAX_TAU); // for GCS throttle display
     stabilization.cmd[COMMAND_THRUST] = cmd[COMMAND_THRUST]; // for autopilot_check_in_flight()
     temp_throttle = cmd[COMMAND_THRUST]; // for logging
-    temp_spec_thrust = spec_thrust; // for logging
+    temp_spec_thrust_sp = spec_thrust_sp; // for logging
 
     // printf("%d\t",in_flight);
-    // printf("%.2f\t", spec_thrust);
+    // printf("%.2f\t", spec_thrust_sp);
     // printf("%.0f\t%.0f\t%.0f\t%.0f\t", act.cmd[0], act.cmd[1], act.cmd[2], act.cmd[3]);
     // printf("\n");
 
@@ -317,7 +318,6 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     float_rmat_transp_vmult(&fi_filt, R_i2b, &fb_filt);
 
     // incremental law
-    float f_cmd[3];
     struct NedCoor_f *accel = stateGetAccelNed_f();
     accel_vector[0] = accel->x;
     accel_vector[1] = accel->y;
@@ -347,7 +347,7 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     float sigma_z = fe.z - C_X*vel_norm*ve.z;
     float theta_e = atan2f(-sigma_x, -sigma_z);
 
-    float spec_thrust = sinf(theta_e)*fe.x + 
+    float spec_thrust_sp = sinf(theta_e)*fe.x + 
                         cos(theta_e)*fe.z - 
                         C_Z*vel_norm*(sin(theta_e)*ve.x + cos(theta_e)*ve.z);
 
@@ -356,7 +356,7 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     float_quat_of_eulers_zxy(&_quat_sp, &eulers_sp);
     struct StabilizationSetpoint _att_sp = stab_sp_from_quat_f(&_quat_sp);
 
-    flatness_stabilization_run(in_flight, &_att_sp, spec_thrust, cmd);
+    flatness_stabilization_run(in_flight, &_att_sp, spec_thrust_sp, cmd);
 
     // printf("%.2f\t%.2f\t%.2f\t%.2f\t", accel_sp.z , accel_filt[2], fi_filt.z, f_cmd[2]);
     // printf("%.0f\t%.0f\t%.0f\t%.0f\t", act.cmd[0], act.cmd[1], act.cmd[2], act.cmd[3]);

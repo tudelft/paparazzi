@@ -127,14 +127,15 @@ static void logger_file_write_header(FILE *file) {
     fprintf(file, "timestamp");
     fprintf(file, ",voltage");
     fprintf(file, ",throttle");
-    fprintf(file, ",spec_thrust");
-    fprintf(file, ",acc_n,acc_e,acc_d");
+    fprintf(file, ",spec_thrust_sp");
+    fprintf(file, ",acc_x,acc_y,acc_z");
 
     fprintf(file, ",pos_ref_n,pos_ref_e,pos_ref_d");
     fprintf(file, ",pos_n,pos_e,pos_d");
     fprintf(file, ",vel_sp_n,vel_sp_e,vel_sp_d");
     fprintf(file, ",vel_n,vel_e,vel_d");
     fprintf(file, ",acc_sp_n,acc_sp_e,acc_sp_d");
+    fprintf(file, ",f_cmd_n,f_cmd_e,f_cmd_d");
     fprintf(file, ",acc_filt_n,acc_filt_e,acc_filt_d");
     
     fprintf(file, ",qs_sp,qx_sp,qy_sp,qz_sp");
@@ -153,21 +154,22 @@ static void logger_file_write_header(FILE *file) {
 static void logger_file_write_row(FILE *file) {
     struct NedCoor_f *pos = stateGetPositionNed_f();
     struct NedCoor_f *vel = stateGetSpeedNed_f();
-    // struct FloatVect3 acc_f;
-    // struct Int32Vect3 *acc_i = stateGetAccelBody_i();
-    // ACCELS_FLOAT_OF_BFP(acc_f, *acc_i);
+    struct FloatVect3 acc_f;
+    struct Int32Vect3 *acc_i = stateGetAccelBody_i();
+    ACCELS_FLOAT_OF_BFP(acc_f, *acc_i);
 
     fprintf(file, "%f", dbg.timestamp);
     fprintf(file, ",%f", dbg.voltage);
     fprintf(file, ",%d", dbg.throttle);
-    fprintf(file, ",%f", dbg.spec_thrust);
-    fprintf(file, ",%f,%f,%f", dbg.accel.x, dbg.accel.y, dbg.accel.z);
+    fprintf(file, ",%f", dbg.spec_thrust_sp);
+    fprintf(file, ",%f,%f,%f", acc_f.x, acc_f.y, acc_f.z);
 
     fprintf(file, ",%f,%f,%f", dbg.pos_ref.x, dbg.pos_ref.y, dbg.pos_ref.z);
     fprintf(file, ",%f,%f,%f", pos->x, pos->y, pos->z);
     fprintf(file, ",%f,%f,%f", dbg.vel_sp.x, dbg.vel_sp.y, dbg.vel_sp.z);
     fprintf(file, ",%f,%f,%f", vel->x, vel->y, vel->z);
     fprintf(file, ",%f,%f,%f", dbg.accel_sp.x, dbg.accel_sp.y, dbg.accel_sp.z);
+    fprintf(file, ",%f,%f,%f", dbg.f_cmd.x, dbg.f_cmd.y, dbg.f_cmd.z);
     fprintf(file, ",%f,%f,%f", dbg.accel_filt.x, dbg.accel_filt.y, dbg.accel_filt.z);
 
     fprintf(file, ",%f,%f,%f,%f", dbg.quat_sp->qi, dbg.quat_sp->qx, dbg.quat_sp->qy, dbg.quat_sp->qz);
