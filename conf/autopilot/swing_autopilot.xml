@@ -48,7 +48,8 @@
             <on_enter>
             </on_enter>
             <control>
-                <call fun="flatness_guidance_run(autopilot_in_flight(), fl_stabilization.cmd)"/>
+                <!-- <call fun="flatness_guidance_run(autopilot_in_flight(), fl_stabilization.cmd)"/> -->
+                <call fun="flatness_guidance_fsm(autopilot_in_flight(), fl_stabilization.cmd)"/>
                 <call fun="SetRotorcraftCommands(fl_stabilization.cmd, autopilot_in_flight(), autopilot_get_motors_on())"/>
             </control>
         </mode>
