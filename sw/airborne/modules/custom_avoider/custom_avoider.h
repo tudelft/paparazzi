@@ -1,14 +1,3 @@
-/*
- * Copyright (C) Roland Meertens
- *
- * This file is part of paparazzi
- *
- */
-/**
- * @file "modules/custom_avoider/custom_avoider.h"
- * @author Roland Meertens
- * Example on how to use the colours detected to avoid custom obstacle in the cyberzoo
- */
 
 #ifndef CUSTOM_AVOIDER_H
 #define CUSTOM_AVOIDER_H

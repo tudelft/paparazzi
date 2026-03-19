@@ -50,14 +50,15 @@
       <define name="VIDEO_CAPTURE_FPS" value="10"/>
     </module>
 
-    <module name="custom_detector">
-      <define name="CUSTOM_DETECT_COLOR_OBJECT_CAMERA" value="front_camera"/>
-      <define name="CUSTOM_DETECT_COLOR_OBJECT_FPS" value="0"/>
-      <define name="CUSTOM_DETECT_COLOR_OBJECT_ID" value="ABI_BROADCAST"/>
+    <module name="gate_cnn_detector">
+      <define name="GATE_CNN_DETECTOR_CAMERA" value="front_camera"/>
+      <define name="GATE_CNN_DETECTOR_FPS" value="0"/>
+      <define name="GATE_CNN_VISUAL_DETECTION_ID" value="ABI_BROADCAST"/>
     </module>
 
     <module name="custom_avoider">
-      <define name="CUSTOM_AVOIDER_CUSTOM_DETECTION_ID" value="ABI_BROADCAST"/>
+      <define name="GATE_FUSION_VISUAL_DETECTION_ID" value="ABI_BROADCAST"/>
+      <define name="GATE_FUSION_IMAGE_CENTER_X" value="120"/>
     </module>
 
     <module name="video_rtp_stream">
@@ -241,3 +242,4 @@
     <define name="MAX_BAT_LEVEL" value="12.4" unit="V"/>
   </section>
 </airframe>
+

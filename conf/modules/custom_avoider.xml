@@ -8,17 +8,17 @@ This module is used in combination with the custom_detect_color_object module an
 The avoidance strategy is based on the CUSTOM_DETECTION ABI message, which contains three binary obstacle indicators
 for the left, middle, and right image regions.
 
-The detector publishes the CUSTOM_DETECTION message, and this module receives it using the
-CUSTOM_AVOIDER_CUSTOM_DETECTION_ID setting.
+The detector publishes the VISUAL_DETECTION message, and this module receives it using the
+GATE_FUSION_VISUAL_DETECTION_ID setting.
     </description>
 
-    <define name="CUSTOM_AVOIDER_CUSTOM_DETECTION_ID"
-            value="ABI_BROADCAST"
-            description="Which CUSTOM_DETECTION message sender ID to receive."/>
+    <define name="GATE_FUSION_VISUAL_DETECTION_ID"
+        value="ABI_BROADCAST"
+        description="Sender id for VISUAL_DETECTION ABI message"/>
   </doc>
 
   <dep>
-    <depends>custom_detector</depends>
+    <depends>gate_cnn_detector</depends>
   </dep>
 
   <header>

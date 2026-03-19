@@ -37,6 +37,10 @@ OCAMLMKLIB = ocamlmklib
 OCAMLLEX=ocamllex
 OCAMLYACC=ocamlyacc
 OCAMLLIBDIR=$(shell $(OCAMLC) -where)
+OCAML_CONFIG=$(shell $(OCAMLC) -config)
+OCAML_VERSION=$(shell printf '%s\n' "$(OCAML_CONFIG)" | sed -n 's/^version: //p')
+OCAML_EXEC_MAGIC=$(shell printf '%s\n' "$(OCAML_CONFIG)" | sed -n 's/^exec_magic_number: //p')
+OCAML_STAMP=.ocaml-toolchain
 LIBPPRZLINKDIR = $(PAPARAZZI_HOME)/var/lib/ocaml
 LIBPPRZDIR = $(PAPARAZZI_SRC)/sw/lib/ocaml
 LIBPPRZCMA = $(LIBPPRZDIR)/lib-pprz.cma
@@ -51,6 +55,10 @@ OCAMLXDLL = -dllpath $(LIBPPRZDIR),$(LIBPPRZLINKDIR)
 OCAMLPATH:=$(shell echo $(LIBPPRZLINKDIR):$(LIBPPRZDIR):$(OCAMLPATH))
 export OCAMLPATH
 
+$(OCAML_STAMP): Makefile
+	@printf '%s\n' 'version=$(OCAML_VERSION)' 'exec_magic=$(OCAML_EXEC_MAGIC)' > $@.tmp
+	@if ! cmp -s $@.tmp $@; then mv $@.tmp $@; else rm -f $@.tmp; fi
+
 # Test lablgtk version, use V2 if available, V3 otherwise
 # disable ocaml/gtk tools if none ?
 LABLGTK2_VER = $(shell ocamlfind query -p-format lablgtk2 2>/dev/null)
@@ -64,4 +72,3 @@ else
 USE_LABELGTK=
 endif
 endif
-

@@ -1,20 +1,10 @@
 /*
- * Copyright (C) Roland Meertens
- *
- * This file is part of paparazzi
- *
- */
-/**
- * @file "modules/custom_avoider/custom_avoider.c"
- * @author Roland Meertens
- * Example on how to use the colours detected to avoid custom obstacle in the cyberzoo
- * This module is an example module for the course AE4317 Autonomous Flight of Micro Air Vehicles at the TU Delft.
- * This module is used in combination with a color filter (cv_detect_color_object) and the navigation mode of the autopilot.
- * The avoidance strategy is to simply count the total number of custom pixels. When above a certain percentage threshold,
- * (given by color_count_frac) we assume that there is an obstacle and we turn.
- *
- * The color filter settings are set using the cv_detect_color_object. This module can run multiple filters simultaneously
- * so you have to define which filter to use with the CUSTOM_AVOIDER_VISUAL_DETECTION_ID setting.
+ * Gate-only navigation module:
+ * - subscribes ONLY to VISUAL_DETECTION
+ * - searches for gate
+ * - aligns to gate
+ * - flies toward gate
+ * - performs blind pass-through when close
  */
 
 #include "modules/custom_avoider/custom_avoider.h"
@@ -22,210 +12,237 @@
 #include "generated/airframe.h"
 #include "state.h"
 #include "modules/core/abi.h"
-#include <time.h>
+
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
 
 #include "generated/flight_plan.h"
 
-#define CUSTOM_AVOIDER_VERBOSE TRUE
+/* --------------------------------------------------------- */
+/* ABI                                                       */
+/* --------------------------------------------------------- */
 
-#define PRINT(string,...) fprintf(stderr, "[custom_avoider->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
-#if CUSTOM_AVOIDER_VERBOSE
-#define VERBOSE_PRINT PRINT
-#else
-#define VERBOSE_PRINT(...)
+#ifndef GATE_FUSION_VISUAL_DETECTION_ID
+#define GATE_FUSION_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
+
+static abi_event gate_ev;
+
+/* gate detector output */
+static uint8_t gate_detected = 0;
+static int16_t gate_px = 0;
+static int16_t gate_pw = 0;
+static int16_t gate_ph = 0;
+static int32_t gate_quality = 0;
+
+/* --------------------------------------------------------- */
+/* Tunable settings                                          */
+/* --------------------------------------------------------- */
+
+#ifndef GATE_FUSION_IMAGE_CENTER_X
+#define GATE_FUSION_IMAGE_CENTER_X 120
+#endif
+
+#ifndef GATE_FUSION_ALIGN_TOL_PX
+#define GATE_FUSION_ALIGN_TOL_PX 20
+#endif
+
+#ifndef GATE_FUSION_MIN_QUALITY
+#define GATE_FUSION_MIN_QUALITY 250
+#endif
+
+#ifndef GATE_FUSION_BLIND_QUALITY
+#define GATE_FUSION_BLIND_QUALITY 500
+#endif
+
+#ifndef GATE_FUSION_BLIND_MIN_WIDTH
+#define GATE_FUSION_BLIND_MIN_WIDTH 120
+#endif
+
+#ifndef GATE_FUSION_BLIND_MIN_HEIGHT
+#define GATE_FUSION_BLIND_MIN_HEIGHT 120
+#endif
+
+#ifndef GATE_FUSION_BLIND_CYCLES
+#define GATE_FUSION_BLIND_CYCLES 10
+#endif
+
+#ifndef GATE_FUSION_FORWARD_DIST
+#define GATE_FUSION_FORWARD_DIST 1.0f
+#endif
+
+#ifndef GATE_FUSION_TRAJ_FORWARD_DIST
+#define GATE_FUSION_TRAJ_FORWARD_DIST 1.5f
+#endif
+
+#ifndef GATE_FUSION_SEARCH_HEADING_INC_DEG
+#define GATE_FUSION_SEARCH_HEADING_INC_DEG 5.0f
+#endif
+
+#ifndef GATE_FUSION_ALIGN_HEADING_INC_DEG
+#define GATE_FUSION_ALIGN_HEADING_INC_DEG 4.0f
+#endif
+
+/* --------------------------------------------------------- */
+/* State machine                                             */
+/* --------------------------------------------------------- */
+
+enum navigation_state_t {
+  SEARCH_FOR_GATE = 0,
+  ALIGN_TO_GATE,
+  FLY_TO_GATE,
+  BLIND_THROUGH_GATE
+};
+
+static enum navigation_state_t navigation_state = SEARCH_FOR_GATE;
+static float heading_increment = 5.f;
+static uint8_t blind_cycles_remaining = 0;
+
+/* --------------------------------------------------------- */
+/* Forward declarations                                      */
+/* --------------------------------------------------------- */
 
 static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
 static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
 static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 static uint8_t increase_nav_heading(float incrementDegrees);
-static uint8_t chooseRandomIncrementAvoidance(void);
+static uint8_t gate_is_good(void);
+static uint8_t gate_is_close(void);
 
-enum navigation_state_t {
-  SAFE,
-  OBSTACLE_LEFT,
-  OBSTACLE_RIGHT,
-  OBSTACLE_MIDDLE,
-  SEARCH_FOR_SAFE_HEADING,
-  OUT_OF_BOUNDS
-};
+/* --------------------------------------------------------- */
+/* ABI callback                                              */
+/* --------------------------------------------------------- */
 
-// define settings
-
-// define and initialise global variables
-enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
-
-uint8_t objectLeft = 0;
-uint8_t objectMiddle = 0;
-uint8_t objectRight = 0;
-
-float heading_increment = 1.f;          // heading angle increment [deg]
-float maxDistance = 2.25;               // max waypoint displacement [m]
-
-
-/*
- * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
- * any time data calculated in another module needs to be accessed. Including the file where this external
- * data is defined is not enough, since modules are executed parallel to each other, at different frequencies,
- * in different threads. The ABI event is triggered every time new data is sent out, and as such the function
- * defined in this file does not need to be explicitly called, only bound in the init function
- */
-#ifndef CUSTOM_AVOIDER_CUSTOM_DETECTION_ID
-#define CUSTOM_AVOIDER_CUSTOM_DETECTION_ID ABI_BROADCAST
-#endif
-static abi_event color_detection_ev;
-static void object_detection_cb(uint8_t __attribute__((unused)) sender_id,
-                               uint8_t __attribute__((unused)) left,
-                               uint8_t __attribute__((unused)) middle, 
-                               uint8_t __attribute__((unused)) right
-                               )
+static void gate_detection_cb(uint8_t sender_id __attribute__((unused)),
+                              int16_t pixel_x,
+                              int16_t pixel_y __attribute__((unused)),
+                              int16_t pixel_width,
+                              int16_t pixel_height,
+                              int32_t quality,
+                              int16_t extra __attribute__((unused)))
 {
-  objectLeft = left;
-  objectMiddle = middle;
-  objectRight = right;
+  gate_px = pixel_x;
+  gate_pw = pixel_width;
+  gate_ph = pixel_height;
+  gate_quality = quality;
+  gate_detected = (quality > 0) ? 1 : 0;
 }
 
-/*
- * Initialisation function, setting the colour filter, random seed and heading_increment
- */
+/* --------------------------------------------------------- */
+/* Init                                                      */
+/* --------------------------------------------------------- */
+
 void navigation_controller_init(void)
 {
-  // Initialise random values
-  srand(time(NULL));
-  chooseRandomIncrementAvoidance();
+  navigation_state = SEARCH_FOR_GATE;
+  blind_cycles_remaining = 0;
 
-  // bind our colorfilter callbacks to receive the color filter outputs
-  AbiBindMsgCUSTOM_DETECTION(CUSTOM_AVOIDER_CUSTOM_DETECTION_ID, &color_detection_ev, object_detection_cb);
+  AbiBindMsgVISUAL_DETECTION(GATE_FUSION_VISUAL_DETECTION_ID,
+                             &gate_ev,
+                             gate_detection_cb);
 }
 
-/*
- * Function that checks it is safe to move forwards, and then moves a waypoint forward or changes the heading
- */
+/* --------------------------------------------------------- */
+/* Main loop                                                 */
+/* --------------------------------------------------------- */
+
 void navigation_controller_periodic(void)
 {
-  // only evaluate our state machine if we are flying
-  if(!autopilot_in_flight()){
+  if (!autopilot_in_flight()) {
     return;
   }
 
-  // bound obstacle_free_confidence
+  switch (navigation_state) {
 
-  float moveDistance = 1.5f; // default move distance [m]
-  float headingIncrement = 5.f; // default heading increment [deg]
- 
-  VERBOSE_PRINT("Object detections - Left: %d, Middle: %d, Right: %d\n", objectLeft, objectMiddle, objectRight);
-
-  switch (navigation_state){
-    case SAFE:
-      // Move waypoint forward
-      moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
-      if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
-        navigation_state = OUT_OF_BOUNDS;
-        VERBOSE_PRINT("Sate: OUT_OF_BOUNDS\n");
-      } else if(objectMiddle == 1){
-        navigation_state = OBSTACLE_MIDDLE;
-        VERBOSE_PRINT("State: OBSTACLE_MIDDLE\n");
-      } else if (objectLeft == 1 && objectRight == 0){
-        navigation_state = OBSTACLE_LEFT;
-        VERBOSE_PRINT("State: OBSTACLE_LEFT\n");
-      } else if (objectRight == 1 && objectLeft == 0){
-        navigation_state = OBSTACLE_RIGHT;
-        VERBOSE_PRINT("State: OBSTACLE_RIGHT\n");
-      } else {
-            moveWaypointForward(WP_GOAL, moveDistance);
-      }
-
-      break;
-    case OBSTACLE_LEFT:
-      // stop
-      waypoint_move_here_2d(WP_GOAL);
-      waypoint_move_here_2d(WP_TRAJECTORY);
-
-      increase_nav_heading(headingIncrement);
-
-      if(objectLeft == 0){
-        navigation_state = SAFE;
-        VERBOSE_PRINT("State: SAFE\n");
-      }
- 
-      break;
-
-    case OBSTACLE_RIGHT:
-      // stop
-      waypoint_move_here_2d(WP_GOAL);
-      waypoint_move_here_2d(WP_TRAJECTORY);
-
-      increase_nav_heading(-headingIncrement);
-
-      if(objectRight == 0){
-        navigation_state = SAFE;
-        VERBOSE_PRINT("State: SAFE\n");
-      }
-    
-      break;
-
-    case OBSTACLE_MIDDLE:
-      // stop
-      waypoint_move_here_2d(WP_GOAL);
-      waypoint_move_here_2d(WP_TRAJECTORY);
-
-      chooseRandomIncrementAvoidance();
-      navigation_state = SEARCH_FOR_SAFE_HEADING;
-      VERBOSE_PRINT("State: SEARCH_FOR_SAFE_HEADING\n");
-
-      break;
-
-    case SEARCH_FOR_SAFE_HEADING:
-    increase_nav_heading(heading_increment);
-
-      // make sure we have a couple of good readings before declaring the way safe
-      if (objectLeft == 0 && objectMiddle == 0 && objectRight == 0){
-        navigation_state = SAFE;
-        VERBOSE_PRINT("State: SAFE\n");
-      }
-      break;
-    case OUT_OF_BOUNDS:
+    case SEARCH_FOR_GATE:
       increase_nav_heading(heading_increment);
-      moveWaypointForward(WP_TRAJECTORY, 1.5f);
 
-      if (InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
-        // add offset to head back into arena
-        increase_nav_heading(heading_increment);
-
-        // ensure direction is safe before continuing
-        navigation_state = SEARCH_FOR_SAFE_HEADING;
-        VERBOSE_PRINT("State: SEARCH_FOR_SAFE_HEADING\n");
+      if (gate_is_good()) {
+        navigation_state = ALIGN_TO_GATE;
       }
       break;
+
+    case ALIGN_TO_GATE: {
+      if (!gate_is_good()) {
+        navigation_state = SEARCH_FOR_GATE;
+        break;
+      }
+
+      int16_t err_x = gate_px - GATE_FUSION_IMAGE_CENTER_X;
+
+      if (err_x < -GATE_FUSION_ALIGN_TOL_PX) {
+        increase_nav_heading(GATE_FUSION_ALIGN_HEADING_INC_DEG);
+      } else if (err_x > GATE_FUSION_ALIGN_TOL_PX) {
+        increase_nav_heading(-GATE_FUSION_ALIGN_HEADING_INC_DEG);
+      } else {
+        navigation_state = FLY_TO_GATE;
+      }
+      break;
+    }
+
+    case FLY_TO_GATE:
+      if (!gate_is_good()) {
+        navigation_state = SEARCH_FOR_GATE;
+        break;
+      }
+
+      if (gate_is_close()) {
+        blind_cycles_remaining = GATE_FUSION_BLIND_CYCLES;
+        navigation_state = BLIND_THROUGH_GATE;
+        break;
+      }
+
+      moveWaypointForward(WP_TRAJECTORY, GATE_FUSION_TRAJ_FORWARD_DIST);
+      moveWaypointForward(WP_GOAL, GATE_FUSION_FORWARD_DIST);
+      break;
+
+    case BLIND_THROUGH_GATE:
+      moveWaypointForward(WP_TRAJECTORY, GATE_FUSION_TRAJ_FORWARD_DIST);
+      moveWaypointForward(WP_GOAL, GATE_FUSION_FORWARD_DIST);
+
+      if (blind_cycles_remaining > 0) {
+        blind_cycles_remaining--;
+      }
+
+      if (blind_cycles_remaining == 0) {
+        navigation_state = SEARCH_FOR_GATE;
+      }
+      break;
+
     default:
+      navigation_state = SEARCH_FOR_GATE;
       break;
   }
-  return;
 }
 
+/* --------------------------------------------------------- */
+/* Helpers                                                   */
+/* --------------------------------------------------------- */
 
-/*
- * Increases the NAV heading. Assumes heading is an INT32_ANGLE. It is bound in this function.
- */
-uint8_t increase_nav_heading(float incrementDegrees)
+static uint8_t gate_is_good(void)
+{
+  return (gate_detected && gate_quality >= GATE_FUSION_MIN_QUALITY);
+}
+
+static uint8_t gate_is_close(void)
+{
+  if (!gate_detected) return 0;
+
+  return (gate_quality >= GATE_FUSION_BLIND_QUALITY ||
+          gate_pw >= GATE_FUSION_BLIND_MIN_WIDTH ||
+          gate_ph >= GATE_FUSION_BLIND_MIN_HEIGHT);
+}
+
+static uint8_t increase_nav_heading(float incrementDegrees)
 {
   float new_heading = stateGetNedToBodyEulers_f()->psi + RadOfDeg(incrementDegrees);
-
-  // normalize heading to [-pi, pi]
   FLOAT_ANGLE_NORMALIZE(new_heading);
-
-  // set heading, declared in firmwares/rotorcraft/navigation.h
   nav.heading = new_heading;
-
-  //VERBOSE_PRINT("Increasing heading to %f\n", DegOfRad(new_heading));
   return false;
 }
 
-/*
- * Calculates coordinates of distance forward and sets waypoint 'waypoint' to those coordinates
- */
-uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters)
+static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters)
 {
   struct EnuCoor_i new_coor;
   calculateForwards(&new_coor, distanceMeters);
@@ -233,46 +250,17 @@ uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters)
   return false;
 }
 
-/*
- * Calculates coordinates of a distance of 'distanceMeters' forward w.r.t. current position and heading
- */
-uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
+static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
 {
-  float heading  = stateGetNedToBodyEulers_f()->psi;
+  float heading = stateGetNedToBodyEulers_f()->psi;
 
-  // Now determine where to place the waypoint you want to go to
-  new_coor->x = stateGetPositionEnu_i()->x + POS_BFP_OF_REAL(sinf(heading) * (distanceMeters));
-  new_coor->y = stateGetPositionEnu_i()->y + POS_BFP_OF_REAL(cosf(heading) * (distanceMeters));
-  // VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,	
-  //               POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y),
-  //               stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
+  new_coor->x = stateGetPositionEnu_i()->x + POS_BFP_OF_REAL(sinf(heading) * distanceMeters);
+  new_coor->y = stateGetPositionEnu_i()->y + POS_BFP_OF_REAL(cosf(heading) * distanceMeters);
   return false;
 }
 
-/*
- * Sets waypoint 'waypoint' to the coordinates of 'new_coor'
- */
-uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
+static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 {
-  // VERBOSE_PRINT("Moving waypoint %d to x:%f y:%f\n", waypoint, POS_FLOAT_OF_BFP(new_coor->x),
-  //               POS_FLOAT_OF_BFP(new_coor->y));
   waypoint_move_xy_i(waypoint, new_coor->x, new_coor->y);
   return false;
 }
-
-/*
- * Sets the variable 'heading_increment' randomly positive/negative
- */
-uint8_t chooseRandomIncrementAvoidance(void)
-{
-  // Randomly choose CW or CCW avoiding direction
-  if (rand() % 2 == 0) {
-    heading_increment = 5.f;
-    //VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
-  } else {
-    heading_increment = -5.f;
-    //VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
-  }
-  return false;
-}
-

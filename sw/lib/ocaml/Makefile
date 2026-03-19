@@ -58,21 +58,21 @@ byte : lib-pprz.cma xlib-pprz.cma xml_get.out META.pprz
 native : lib-pprz.cmxa xlib-pprz.cmxa META.pprz
 
 
-lib-pprz.cma liblib-pprz.a: $(CMO)
+lib-pprz.cma liblib-pprz.a: $(CMO) $(OCAML_STAMP)
 	@echo OL $@
-	$(Q)$(OCAMLMKLIB) $(VERBOSITY) $(INCLUDES) -o lib-pprz $^
+	$(Q)$(OCAMLMKLIB) $(VERBOSITY) $(INCLUDES) -o lib-pprz $(CMO)
 
-lib-pprz.cmxa dlllib-pprz.so: $(CMX)
+lib-pprz.cmxa dlllib-pprz.so: $(CMX) $(OCAML_STAMP)
 	@echo OOL $@
-	$(Q)$(OCAMLMKLIB) $(VERBOSITY) $(INCLUDES) -o lib-pprz $^
+	$(Q)$(OCAMLMKLIB) $(VERBOSITY) $(INCLUDES) -o lib-pprz $(CMX)
 
-xlib-pprz.cma: $(XCMO)
+xlib-pprz.cma: $(XCMO) $(OCAML_STAMP)
 	@echo OL $@
-	$(Q)$(OCAMLC) -a $(XINCLUDES) -o $@ $^
+	$(Q)$(OCAMLC) -a $(XINCLUDES) -o $@ $(XCMO)
 
-xlib-pprz.cmxa: $(XCMX)
+xlib-pprz.cmxa: $(XCMX) $(OCAML_STAMP)
 	@echo OOL $@
-	$(Q)$(OCAMLOPT) -a $(XINCLUDES) -o $@ $^
+	$(Q)$(OCAMLOPT) -a $(XINCLUDES) -o $@ $(XCMX)
 
 # trying to set correct dependencies for parallel build
 # these are order only depedencies
@@ -84,29 +84,29 @@ xml_get.cmo : xml_get.ml lib-pprz.cma
 	@echo OC $@
 	$(Q)$(OCAMLC) $(INCLUDES) -package $(PKGCOMMON) -I . lib-pprz.cma -c $<
 
-xml_get.out : lib-pprz.cma xml_get.cmo
+xml_get.out : lib-pprz.cma xml_get.cmo $(OCAML_STAMP)
 	@echo OL $@
-	$(Q)$(OCAMLC) $(INCLUDES) -o $@ -package str,xml-light -linkpkg -I . $^
+	$(Q)$(OCAMLC) $(INCLUDES) -o $@ -package str,xml-light -linkpkg -I . lib-pprz.cma xml_get.cmo
 
 tests : lib-pprz.cma $(TESTS_CMO)
 	$(Q)$(OCAMLC) $(INCLUDES) -o $@ -package unix,str,xml-light,ivy -linkpkg -I . -dllpath . $^
 
-%.o : %.c
+%.o : %.c $(OCAML_STAMP)
 	@echo OC $<
 	$(Q)$(OCAMLC) -ccopt -fPIC $(INCLUDES) -package $(PKGCOMMON) -c $<
 
 $(XCMO) $(XCMX): PKGCOMMON=$(XPKGCOMMON)
 
 
-%.cmo : %.ml
+%.cmo : %.ml $(OCAML_STAMP)
 	@echo OC $<
 	$(Q)$(OCAMLC) $(INCLUDES) -package $(PKGCOMMON) -c $<
 
-%.cmx : %.ml
+%.cmx : %.ml $(OCAML_STAMP)
 	@echo OOC $<
 	$(Q)$(OCAMLOPT) $(INCLUDES) -package $(PKGCOMMON) -c $<
 
-%.cmi : %.mli
+%.cmi : %.mli $(OCAML_STAMP)
 	@echo OC $<
 	$(Q)$(OCAMLC) $(XINCLUDES) $(INCLUDES) -package $(PKGCOMMON),$(XPKGCOMMON) $<
 
@@ -119,7 +119,7 @@ $(XCMO) $(XCMX): PKGCOMMON=$(XPKGCOMMON)
 	$(Q)$(OCAMLYACC) $<
 
 clean :
-	$(Q)rm -f *~ *.cm* *.out *.opt .depend *.a *.o *.so tests gtk_papget_*.ml expr_parser.ml expr_parser.mli expr_lexer.ml expr_lexer.mli
+	$(Q)rm -f *~ *.cm* *.out *.opt .depend *.a *.o *.so $(OCAML_STAMP) tests gtk_papget_*.ml expr_parser.ml expr_parser.mli expr_lexer.ml expr_lexer.mli
 
 .PHONY: all byte native clean
 

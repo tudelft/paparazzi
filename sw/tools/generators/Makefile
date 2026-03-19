@@ -24,43 +24,54 @@ Q=@
 
 include ../../Makefile.ocaml
 
-INCLUDES =
-PKG = -package pprz
-LINKPKG = $(PKG) -linkpkg -dllpath-pkg pprz,pprzlink
+INCLUDES = -I $(LIBPPRZDIR)
+PKG_BASE = pprzlink,xml-light,glibivy
+PKG_HTTP = $(PKG_BASE),netclient,nettls-gnutls
+PKG = -package $(PKG_BASE)
+LINKPKG = $(PKG) -linkpkg $(OCAMLDLL) -dllpath-pkg pprzlink,glibivy
+HTTPLINKPKG = -package $(PKG_HTTP) -linkpkg $(OCAMLDLL) -dllpath-pkg pprzlink,glibivy
 
 GENACCMO = gen_airframe.cmo gen_flight_plan.cmo gen_autopilot.cmo gen_periodic.cmo gen_makefile.cmo gen_radio.cmo gen_modules.cmo gen_settings.cmo gen_aircraft.cmo
 GENACCMX = $(GENACCMO:.cmo=.cmx)
 
 all: gen_aircraft.out gen_ubx.out gen_mtk.out gen_xsens.out gen_abi.out gen_srtm.out dump_flight_plan.out dump_modules_list.out
 
-gen_aircraft.out : $(GENACCMO) $(LIBPPRZCMA)
-	@echo OL $@
-	$(Q)$(OCAMLC) $(INCLUDES) -o $@ $(LINKPKG) $^
+FORCE:
 
-gen_srtm.out : gen_srtm.ml $(LIBPPRZCMA) $(LIBPPRZLINKCMA)
-	@echo OL $@
-	$(Q)$(OCAMLC) $(INCLUDES) -o $@ $(LINKPKG) $<
+$(LIBPPRZCMA): FORCE
+	$(Q)PAPARAZZI_SRC=$(PAPARAZZI_SRC) PAPARAZZI_HOME=$(PAPARAZZI_HOME) $(MAKE) -C $(LIBPPRZDIR) lib-pprz.cma
 
-dump_flight_plan.out : gen_flight_plan.ml dump_flight_plan.ml $(LIBPPRZCMA)
-	@echo OL $@
-	$(Q)$(OCAMLC) $(INCLUDES) -o $@ $(LINKPKG) $^
+$(LIBPPRZDIR)/%.cmi $(LIBPPRZDIR)/%.cmo $(LIBPPRZDIR)/%.cmx $(LIBPPRZDIR)/%.o: FORCE
+	$(Q)PAPARAZZI_SRC=$(PAPARAZZI_SRC) PAPARAZZI_HOME=$(PAPARAZZI_HOME) $(MAKE) -C $(LIBPPRZDIR) $(notdir $@)
 
-%.out : %.ml $(LIBPPRZCMA) $(LIBPPRZLINKCMA)
+gen_aircraft.out : $(GENACCMO) $(LIBPPRZCMA) $(OCAML_STAMP)
+	@echo OL $@
+	$(Q)$(OCAMLC) $(INCLUDES) -o $@ $(LINKPKG) $(LIBPPRZCMA) $(GENACCMO)
+
+gen_srtm.out : gen_srtm.cmo $(LIBPPRZCMA) $(LIBPPRZLINKCMA) $(OCAML_STAMP)
+	@echo OL $@
+	$(Q)$(OCAMLC) $(INCLUDES) -o $@ $(HTTPLINKPKG) $(LIBPPRZCMA) gen_srtm.cmo
+
+dump_flight_plan.out : gen_flight_plan.cmo dump_flight_plan.cmo $(LIBPPRZCMA) $(OCAML_STAMP)
+	@echo OL $@
+	$(Q)$(OCAMLC) $(INCLUDES) -o $@ $(LINKPKG) $(LIBPPRZCMA) gen_flight_plan.cmo dump_flight_plan.cmo
+
+%.out : %.cmo $(LIBPPRZCMA) $(LIBPPRZLINKCMA) $(OCAML_STAMP)
 	@echo OL $<
-	$(Q)$(OCAMLC) $(INCLUDES) -o $@ $(LINKPKG) $<
+	$(Q)$(OCAMLC) $(INCLUDES) -o $@ $(LINKPKG) $(LIBPPRZCMA) $<
 
-%.cmo : %.ml
+%.cmo : %.ml $(OCAML_STAMP)
 	@echo OC $<
 	$(Q)$(OCAMLC) $(INCLUDES) $(PKG) -c $<
 
-%.cmi : %.mli
+%.cmi : %.mli $(OCAML_STAMP)
 	@echo OC $<
 	$(Q)$(OCAMLC) $(INCLUDES) $(PKG) -c $<
 
 clean:
-	$(Q)rm -f *.cm* *.out *~ .depend
+	$(Q)rm -f *.cm* *.out *~ .depend $(OCAML_STAMP)
 
-.PHONY: all clean
+.PHONY: all clean FORCE
 
 #
 # Dependencies
