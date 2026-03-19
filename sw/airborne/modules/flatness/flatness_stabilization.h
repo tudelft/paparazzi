@@ -52,10 +52,12 @@ typedef struct {
     // metadata
     Gain_t Kq;
     Gain_t Komega;
-    float MU_X;
-    float MU_Y;
-    float MU_Z;
-    float C_T;
+    Gain_t Kp;
+    Gain_t Kv;
+    float MU_X_v;
+    float MU_Y_v;
+    float MU_Z_v;
+    float C_T_v;
     
     // data
     float timestamp;

@@ -50,11 +50,11 @@ typedef enum {
 // static const float C_Z = -0.079f;
 static const float C_X = 0.0f;
 static const float C_Z = 0.0f;
-static const float C_T  = -2.5f  / 100000000.0f;
+// static const float C_T  = -2.5f  / 100000000.0f;
 
-static const float MU_X = 60.0f  / 100000000.0f;
-static const float MU_Y = 120.0f / 100000000.0f;
-static const float MU_Z = 12.0f  / 100000000.0f;
+// static const float MU_X = 60.0f  / 100000000.0f;
+// static const float MU_Y = 120.0f / 100000000.0f;
+// static const float MU_Z = 12.0f  / 100000000.0f;
 
 static const float MU_X_v = 4.5f  / 100000000.0f;
 static const float MU_Y_v = 10.4f / 100000000.0f;
@@ -131,10 +131,12 @@ static void expose_dbg_variables(void)
     //metadata
     dbg.Kq = Kq;
     dbg.Komega = Komega;
-    dbg.MU_X = MU_X;
-    dbg.MU_Y = MU_Y;
-    dbg.MU_Z = MU_Z;
-    dbg.C_T = C_T;
+    dbg.Kp = Kp;
+    dbg.Kv = Kv;
+    dbg.MU_X_v = MU_X_v;
+    dbg.MU_Y_v = MU_Y_v;
+    dbg.MU_Z_v = MU_Z_v;
+    dbg.C_T_v = C_T_v;
 
     //data
     dbg.timestamp = timestamp;
@@ -380,11 +382,11 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
 
 static void forw_transl_flatness(float vel_norm, struct FloatVect3 *vel_b, float *u, struct FloatVect3 *fb)
 {
-    // float v_squared = electrical.vsupply * electrical.vsupply;
+    float v_squared = electrical.vsupply * electrical.vsupply;
 
     fb->x = C_X*vel_norm*vel_b->x;
     fb->y = 0; // remove?
-    fb->z = C_Z*vel_norm*vel_b->z + C_T*(u[0]*u[0] + u[1]*u[1] + u[2]*u[2] + u[3]*u[3]);
+    fb->z = C_Z*vel_norm*vel_b->z + C_T_v * v_squared * (u[0]*u[0] + u[1]*u[1] + u[2]*u[2] + u[3]*u[3]);
 }
 
 static void forw_rot_flatness(float *u, float *m)
