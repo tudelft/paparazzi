@@ -64,6 +64,8 @@ typedef struct {
     float spec_thrust_sp;
     
     struct FloatVect3 pos_ref;
+    struct FloatVect3 vel_ref;
+    struct FloatVect3 accel_ref;
     struct FloatVect3 vel_sp;
     struct FloatVect3 accel_sp;
     struct FloatVect3 f_cmd;
@@ -85,5 +87,6 @@ extern void flatness_stabilization_init(void);
 extern void flatness_stabilization_run(bool, struct StabilizationSetpoint *, float, int32_t *);
 extern void flatness_guidance_fsm(bool, int32_t *);
 extern float get_spec_thrust(void);
+extern void flatness_guidance_fsm_init(void);
 
 #endif  // FLATNESS_STABILIZATION_H
