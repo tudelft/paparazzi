@@ -9,7 +9,7 @@ extern "C" {
 
 #define GATE_CNN_INPUT_W 48
 #define GATE_CNN_INPUT_H 12
-#define GATE_CNN_THRESHOLD 0.5f
+#define GATE_CNN_THRESHOLD 0.8f
 
 typedef struct {
   float present_prob;
