@@ -50,7 +50,7 @@ typedef enum {
 // static const float C_Z = -0.079f;
 static const float C_X = 0.0f;
 static const float C_Z = 0.0f;
-static const float C_T  = -3.5f  / 100000000.0f;
+static const float C_T  = -2.5f  / 100000000.0f;
 
 static const float MU_X = 60.0f  / 100000000.0f;
 static const float MU_Y = 120.0f / 100000000.0f;
@@ -70,9 +70,9 @@ static const float FILT_CUTOFF_FREQ = 5.0f;
 static const Gain_t Kq = {3.0f, 3.5f, 2.0f};
 static const Gain_t Komega = {14.0f, 16.0f, 12.0f};
 static const Gain_t Kp = {1.0f, 1.0f, 1.0f};
-static const Gain_t Kv = {5.0f, 5.0f, 5.0f};
+static const Gain_t Kv = {2.0f, 2.0f, 2.0f};
 
-static const struct FloatVect3 POS_END = {1.0f, 0.0f, -2.0f};
+static const struct FloatVect3 POS_END = {0.0f, 0.0f, -2.0f};
 static const float P2P_DT = 3.0f;  
 
 // global vars declared as extern in header file
@@ -108,6 +108,7 @@ float f_cmd[3];
 fl_guid_fsm_t fsm_state = FSM_INIT;
 float quintic_coeff_n[6], quintic_coeff_e[6], quintic_coeff_d[6];
 float timestamp_p2p_start, timestamp_p2p;
+struct FloatVect3 *pos_start, *vel_start, *accel_start;
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -119,10 +120,9 @@ static void expose_dbg_variables(void);
 float spec_thrust_from_throttle(float throttle, float min_spec_thrust, float max_spec_thrust);
 float throttle_from_spec_thrust(float spec_thrust, float min_spec_thrust, float max_spec_thrust);
 void flatness_guidance_run(bool in_flight, int32_t *cmd);
-void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd);
-void compute_quintic_ref(float t);
+void compute_quintic_ref(float t, struct FloatVect3 *pos_start, const struct FloatVect3 *pos_end);
 void compute_quintic_coefficients(struct FloatVect3 *pos_start, const struct FloatVect3 *pos_end, struct FloatVect3 *vel_start, struct FloatVect3 *accel_start);
-static void matrix_vector_mult(float *result, float **mat, float *vec, int n);
+// static void matrix_vector_mult(float *result, float **mat, float *vec, int n);
 
 // -------- CODE ---------- //
 
@@ -143,6 +143,8 @@ static void expose_dbg_variables(void)
     dbg.spec_thrust_sp = temp_spec_thrust_sp;
 
     dbg.pos_ref = pos_ref;
+    dbg.vel_ref = vel_ref;
+    dbg.accel_ref = accel_ref;
     dbg.vel_sp = vel_sp;
     dbg.accel_sp = accel_sp;
     dbg.f_cmd.x = f_cmd[0]; dbg.f_cmd.y = f_cmd[1]; dbg.f_cmd.z = f_cmd[2];
@@ -438,20 +440,22 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
     switch (fsm_state)
     {
         case FSM_INIT:
+            // printf("fsm_init\n");
             timestamp_p2p_start = get_sys_time_float();
-            struct FloatVect3 *pos_start = (struct FloatVect3 *)stateGetPositionNed_f();
-            struct FloatVect3 *vel_start = (struct FloatVect3 *)stateGetSpeedNed_f();
-            struct FloatVect3 *accel_start = (struct FloatVect3 *)stateGetAccelNed_f();
+            pos_start = (struct FloatVect3 *)stateGetPositionNed_f();
+            vel_start = (struct FloatVect3 *)stateGetSpeedNed_f();
+            accel_start = (struct FloatVect3 *)stateGetAccelNed_f();
             compute_quintic_coefficients(pos_start, &POS_END, vel_start, accel_start);
             fsm_state = FSM_STANDBY;
-            break;
+             /* fall through */ 
 
         case FSM_STANDBY:
+            // printf("fsm_stdby\n");
             timestamp_p2p = get_sys_time_float() - timestamp_p2p_start;
             if (timestamp_p2p > P2P_DT) {
                 timestamp_p2p = P2P_DT;
             } 
-            compute_quintic_ref(timestamp_p2p);
+            compute_quintic_ref(timestamp_p2p, pos_start, &POS_END);
             flatness_guidance_run(in_flight, cmd);
 
             // if (/* condition to start trajectory */) {
@@ -469,78 +473,47 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
     }
 }
 
-void compute_quintic_ref(float t)
+void compute_quintic_ref(float t, struct FloatVect3 *pos_start, const struct FloatVect3 *pos_end)
 {
     float t2 = t*t, t3 = t2*t, t4 = t3*t, t5 = t4*t;
-    pos_ref.x = 1.0f*quintic_coeff_n[0] + t*quintic_coeff_n[1] + t2*quintic_coeff_n[2] + 
-                  t3*quintic_coeff_n[3] + t4*quintic_coeff_n[4] + t5*quintic_coeff_n[5];
-    pos_ref.y = 1.0f*quintic_coeff_e[0] + t*quintic_coeff_e[1] + t2*quintic_coeff_e[2] + 
-                  t3*quintic_coeff_e[3] + t4*quintic_coeff_e[4] + t5*quintic_coeff_e[5];
-    pos_ref.z = 1.0f*quintic_coeff_d[0] + t*quintic_coeff_d[1] + t2*quintic_coeff_d[2] + 
-                  t3*quintic_coeff_d[3] + t4*quintic_coeff_d[4] + t5*quintic_coeff_d[5];
+    pos_ref.x = pos_start->x + (quintic_coeff_n[1]*t + quintic_coeff_n[2]*t2 + quintic_coeff_n[3]*t3 + quintic_coeff_n[4]*t4 + quintic_coeff_n[5]*t5)*(pos_end->x - pos_start->x);
+    pos_ref.y = pos_start->y + (quintic_coeff_e[1]*t + quintic_coeff_e[2]*t2 + quintic_coeff_e[3]*t3 + quintic_coeff_e[4]*t4 + quintic_coeff_e[5]*t5)*(pos_end->y - pos_start->y);
+    pos_ref.z = pos_start->z + (quintic_coeff_d[1]*t + quintic_coeff_d[2]*t2 + quintic_coeff_d[3]*t3 + quintic_coeff_d[4]*t4 + quintic_coeff_d[5]*t5)*(pos_end->z - pos_start->z);
 
+    vel_ref.x = (quintic_coeff_n[1] + 2*quintic_coeff_n[2]*t + 3*quintic_coeff_n[3]*t2 + 4*quintic_coeff_n[4]*t3 + 5*quintic_coeff_n[5]*t4)*(pos_end->x - pos_start->x);
+    vel_ref.y = (quintic_coeff_e[1] + 2*quintic_coeff_e[2]*t + 3*quintic_coeff_e[3]*t2 + 4*quintic_coeff_e[4]*t3 + 5*quintic_coeff_e[5]*t4)*(pos_end->y - pos_start->y);
+    vel_ref.z = (quintic_coeff_d[1] + 2*quintic_coeff_d[2]*t + 3*quintic_coeff_d[3]*t2 + 4*quintic_coeff_d[4]*t3 + 5*quintic_coeff_d[5]*t4)*(pos_end->z - pos_start->z);
 
-    vel_ref.x = 1.0f*quintic_coeff_n[1] + 2.0f*t*quintic_coeff_n[2] + 3.0f*t2*quintic_coeff_n[3] +
-                4.0f*t3*quintic_coeff_n[4] + 5.0f*t4*quintic_coeff_n[5];
-    vel_ref.y = 1.0f*quintic_coeff_e[1] + 2.0f*t*quintic_coeff_e[2] + 3.0f*t2*quintic_coeff_e[3] +
-                4.0f*t3*quintic_coeff_e[4] + 5.0f*t4*quintic_coeff_e[5]; 
-    vel_ref.z = 1.0f*quintic_coeff_d[1] + 2.0f*t*quintic_coeff_d[2] + 3.0f*t2*quintic_coeff_d[3] +
-                4.0f*t3*quintic_coeff_d[4] + 5.0f*t4*quintic_coeff_d[5]; 
-
-
-    accel_ref.x = 2.0f*quintic_coeff_n[2] + 6.0f*t*quintic_coeff_n[3] + 12.0f*t2*quintic_coeff_n[4] +
-                  20.0f*t3*quintic_coeff_n[5];
-    accel_ref.y = 2.0f*quintic_coeff_e[2] + 6.0f*t*quintic_coeff_e[3] + 12.0f*t2*quintic_coeff_e[4] +
-                  20.0f*t3*quintic_coeff_e[5];
-    accel_ref.z = 2.0f*quintic_coeff_d[2] + 6.0f*t*quintic_coeff_d[3] + 12.0f*t2*quintic_coeff_d[4] +
-                  20.0f*t3*quintic_coeff_d[5];
-
+    accel_ref.x = (2*quintic_coeff_n[2] + 6*quintic_coeff_n[3]*t + 12*quintic_coeff_n[4]*t2 + 20*quintic_coeff_n[5]*t3)*(pos_end->x - pos_start->x);
+    accel_ref.y = (2*quintic_coeff_e[2] + 6*quintic_coeff_e[3]*t + 12*quintic_coeff_e[4]*t2 + 20*quintic_coeff_e[5]*t3)*(pos_end->y - pos_start->y);
+    accel_ref.z = (2*quintic_coeff_d[2] + 6*quintic_coeff_d[3]*t + 12*quintic_coeff_d[4]*t2 + 20*quintic_coeff_d[5]*t3)*(pos_end->z - pos_start->z);
 }
 
 void compute_quintic_coefficients(struct FloatVect3 *pos_start, const struct FloatVect3 *pos_end, struct FloatVect3 *vel_start, struct FloatVect3 *accel_start)
 {
-    float ts = 0.0f, te = P2P_DT;
-    float ts2 = ts*ts, ts3 = ts2*ts, ts4 = ts3*ts, ts5 = ts4*ts;
-    float te2 = te*te, te3 = te2*te, te4 = te3*te, te5 = te4*te;
+    quintic_coeff_n[0] = 0;
+    quintic_coeff_n[1] = vel_start->x/(pos_end->x - pos_start->x);
+    quintic_coeff_n[2] = accel_start->x/(2*(pos_end->x - pos_start->x));
+    quintic_coeff_n[3] = -(3*quintic_coeff_n[2]*P2P_DT*P2P_DT + 6*quintic_coeff_n[1]*P2P_DT - 10)/(P2P_DT*P2P_DT*P2P_DT);
+    quintic_coeff_n[4] = (3*quintic_coeff_n[2]*P2P_DT*P2P_DT + 8*quintic_coeff_n[1]*P2P_DT - 15)/(P2P_DT*P2P_DT*P2P_DT*P2P_DT);
+    quintic_coeff_n[5] = -(quintic_coeff_n[2]*P2P_DT*P2P_DT + 3*quintic_coeff_n[1]*P2P_DT - 6)/(P2P_DT*P2P_DT*P2P_DT*P2P_DT*P2P_DT);
 
-    float boundary_cond_n[6] = {pos_start->x, pos_end->x, vel_start->x, 0, accel_start->x, 0};
-    float boundary_cond_e[6] = {pos_start->y, pos_end->y, vel_start->y, 0, accel_start->y, 0};
-    float boundary_cond_d[6] = {pos_start->z, pos_end->z, vel_start->z, 0, accel_start->z, 0};
+    quintic_coeff_e[0] = 0;
+    quintic_coeff_e[1] = vel_start->y/(pos_end->y - pos_start->y);
+    quintic_coeff_e[2] = accel_start->y/(2*(pos_end->y - pos_start->y));
+    quintic_coeff_e[3] = -(3*quintic_coeff_e[2]*P2P_DT*P2P_DT + 6*quintic_coeff_e[1]*P2P_DT - 10)/(P2P_DT*P2P_DT*P2P_DT);
+    quintic_coeff_e[4] = (3*quintic_coeff_e[2]*P2P_DT*P2P_DT + 8*quintic_coeff_e[1]*P2P_DT - 15)/(P2P_DT*P2P_DT*P2P_DT*P2P_DT);
+    quintic_coeff_e[5] = -(quintic_coeff_e[2]*P2P_DT*P2P_DT + 3*quintic_coeff_e[1]*P2P_DT - 6)/(P2P_DT*P2P_DT*P2P_DT*P2P_DT*P2P_DT);
 
-    float M[6][6] = {
-        {1.0f, ts, ts2, ts3, ts4, ts5},
-        {1.0f, te, te2, te3, te4, te5},
-        {0.0f, 1.0f, 2*ts, 3*ts2, 4*ts3, 5*ts4},
-        {0.0f, 1.0f, 2*te, 3*te2, 4*te3, 5*te4},
-        {0.0f, 0.0f, 2.0f, 6*ts, 12*ts2, 20*ts3},
-        {0.0f, 0.0f, 2.0f, 6*te, 12*te2, 20*te3},
-    };
-
-    float M_inv[6][6] = {
-        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-    };
-
-    float *M_rows[6] = { M[0], M[1], M[2], M[3], M[4], M[5] };
-    float *M_inv_rows[6] = { M_inv[0], M_inv[1], M_inv[2], M_inv[3], M_inv[4], M_inv[5] };
-
-    float_mat_invert(M_inv_rows, M_rows, 6);
-
-    matrix_vector_mult(quintic_coeff_n, M_inv_rows, boundary_cond_n, 6);
-    matrix_vector_mult(quintic_coeff_e, M_inv_rows, boundary_cond_e, 6);
-    matrix_vector_mult(quintic_coeff_d, M_inv_rows, boundary_cond_d, 6);
+    quintic_coeff_d[0] = 0;
+    quintic_coeff_d[1] = vel_start->z/(pos_end->z - pos_start->z);
+    quintic_coeff_d[2] = accel_start->z/(2*(pos_end->z - pos_start->z));
+    quintic_coeff_d[3] = -(3*quintic_coeff_d[2]*P2P_DT*P2P_DT + 6*quintic_coeff_d[1]*P2P_DT - 10)/(P2P_DT*P2P_DT*P2P_DT);
+    quintic_coeff_d[4] = (3*quintic_coeff_d[2]*P2P_DT*P2P_DT + 8*quintic_coeff_d[1]*P2P_DT - 15)/(P2P_DT*P2P_DT*P2P_DT*P2P_DT);
+    quintic_coeff_d[5] = -(quintic_coeff_d[2]*P2P_DT*P2P_DT + 3*quintic_coeff_d[1]*P2P_DT - 6)/(P2P_DT*P2P_DT*P2P_DT*P2P_DT*P2P_DT);
 }
 
-static void matrix_vector_mult(float *result, float **mat, float *vec, int n)
+void flatness_guidance_fsm_init(void)
 {
-    for (int i = 0; i < n; i++) {
-        result[i] = 0.0f;
-        for (int j = 0; j < n; j++) {
-            result[i] += mat[i][j] * vec[j];
-        }
-    }
+    fsm_state = FSM_INIT;
 }
