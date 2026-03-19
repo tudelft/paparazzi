@@ -106,12 +106,21 @@ struct viewvideo_t viewvideo = {
 #endif
 };
 
+extern void luke_optical_flow_annotate_stream(struct image_t *img, uint8_t camera_id) __attribute__((weak));
+
+static inline void viewvideo_annotate_stream(struct image_t *img, uint8_t camera_id)
+{
+  if (luke_optical_flow_annotate_stream != NULL) {
+    luke_optical_flow_annotate_stream(img, camera_id);
+  }
+}
+
 /**
  * Handles all the video streaming and saving of the image shots
  * This is a separate thread, so it needs to be thread safe!
  */
-static struct image_t *viewvideo_function(struct UdpSocket *viewvideo_socket, struct image_t *img, uint16_t *rtp_packet_nr, uint32_t *rtp_frame_time,
-    struct image_t *img_small, struct image_t *img_jpeg)
+static struct image_t *viewvideo_function(struct UdpSocket *viewvideo_socket, struct image_t *img, uint8_t camera_id,
+    uint16_t *rtp_packet_nr, uint32_t *rtp_frame_time, struct image_t *img_small, struct image_t *img_jpeg)
 {
   // Resize small image if needed
   if(img_small->buf_size < img->buf_size/(viewvideo.downsize_factor*viewvideo.downsize_factor)){
@@ -139,6 +148,8 @@ static struct image_t *viewvideo_function(struct UdpSocket *viewvideo_socket, st
 #endif
 
   if (viewvideo.is_streaming) {
+    viewvideo_annotate_stream(img, camera_id);
+
     // Only resize when needed
     if (viewvideo.downsize_factor > 1) {
       image_yuv422_downsample(img, img_small, viewvideo.downsize_factor);
@@ -197,7 +208,7 @@ static struct image_t *viewvideo_function1(struct image_t *img, uint8_t camera_i
   static uint32_t rtp_frame_time = 0;
   static struct image_t img_small = {.buf=NULL, .buf_size=0};
   static struct image_t img_jpeg = {.buf=NULL, .buf_size=0};
-  return viewvideo_function(&video_sock1, img, &rtp_packet_nr, &rtp_frame_time, &img_small, &img_jpeg);
+  return viewvideo_function(&video_sock1, img, camera_id, &rtp_packet_nr, &rtp_frame_time, &img_small, &img_jpeg);
 }
 #endif
 
@@ -208,7 +219,7 @@ static struct image_t *viewvideo_function2(struct image_t *img, uint8_t camera_i
   static uint32_t rtp_frame_time = 0;
   static struct image_t img_small = {.buf=NULL, .buf_size=0};
   static struct image_t img_jpeg = {.buf=NULL, .buf_size=0};
-  return viewvideo_function(&video_sock2, img, &rtp_packet_nr, &rtp_frame_time, &img_small, &img_jpeg);
+  return viewvideo_function(&video_sock2, img, camera_id, &rtp_packet_nr, &rtp_frame_time, &img_small, &img_jpeg);
 }
 #endif
 

@@ -1,164 +1,184 @@
 /*
  * MAV Course 2026 - Luke Optical Flow Module
  *
- * Implements a Paparazzi module that:
- *  1. Registers a VIDEO CALLBACK (Section 4.2.3) that runs in a separate
- *     camera thread to compute optical flow divergence using Lucas-Kanade.
- *  2. Uses a MUTEX (Section 4.2.3) to safely pass the result from the
- *     camera thread to the autopilot (periodic) thread.
- *  3. Sends an ABI VISUAL_DETECTION MESSAGE (Section 4.2.4) so the
- *     orange_avoider (or any other subscriber) can react to the obstacle.
- *  4. Exposes the divergence threshold as a GCS SETTING (Section 4.2.7)
- *     so it can be tuned live without recompiling.
+ * Thin obstacle-detection wrapper around Paparazzi's opticflow_calculator.
+ * The standard calculator handles corner detection, Lucas-Kanade tracking,
+ * feature management, derotation, and size-divergence estimation. This module
+ * maps the resulting size divergence to a simple VISUAL_DETECTION quality flag
+ * and provides a lightweight RTP debug overlay.
  */
 
 #include "luke_optical_flow.h"
 
-#include <stdio.h>    // printf for debug output (Section 4.3.1)
-#include <pthread.h>  // pthread_mutex_t for thread safety
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include <pthread.h>
 
-#include "modules/core/abi.h"              // AbiSendMsgVISUAL_DETECTION
-#include "modules/computer_vision/cv.h"   // cv_add_to_device
-#include "opticflow_module.h"             // opticflow_t, opticflow_result_t,
-                                          // opticflow_calc_init, opticflow_calc_frame
-#include "modules/pose_history/pose_history.h" // get_rotation_at_timestamp (for derotation)
+#include "generated/airframe.h"
+#include "modules/core/abi.h"
+#include "modules/computer_vision/cv.h"
+#include "modules/computer_vision/lib/vision/image.h"
+#include "modules/computer_vision/opticflow/opticflow_calculator.h"
+#include "modules/pose_history/pose_history.h"
 
-// ─── Configuration ────────────────────────────────────────────────────────────
-// The camera to run optical flow on. Set in the airframe XML with:
-//   <define name="LUKE_OF_CAMERA" value="front_camera"/>
-// Defaults to front_camera if not defined.
-#ifndef LUKE_OF_CAMERA
-#define LUKE_OF_CAMERA front_camera
-#endif
-
-// Maximum FPS for the video callback. 0 means "run at the camera's native FPS".
-#ifndef LUKE_OF_FPS
-#define LUKE_OF_FPS 0
-#endif
-
-// ABI sender ID for our outgoing VISUAL_DETECTION messages.
-// The orange_avoider listens on ABI_BROADCAST by default, so this works.
-// You can pin a specific ID in your airframe if needed.
+// ABI sender ID for outgoing VISUAL_DETECTION messages.
 #ifndef LUKE_OF_VISUAL_DETECTION_ID
 #define LUKE_OF_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
 
-// ─── GCS-tunable parameter (Section 4.2.7) ────────────────────────────────────
-// Divergence above this value → obstacle detected (quality=1).
-// Exposed via <dl_setting> in the XML; the GCS writes directly to this variable.
-float luke_of_divergence_threshold = 0.3f;
+// Luke wraps a single opticflow calculator instance for one forward camera.
+#define LUKE_OF_CAMERA_SLOTS 1
+#define LUKE_OF_OVERLAY_POINTS 64
 
-// ─── Thread-shared state ──────────────────────────────────────────────────────
-// opticflow_calc_init expects an array, so we declare one element here.
-static struct opticflow_t luke_of_opticflow[1];
+// Divergence above this value triggers quality=1 (obstacle detected).
+float luke_of_divergence_threshold = 0.01f;
+bool luke_of_show_stream_overlay = false;
+bool luke_of_derotation = true;
 
-// This struct holds the latest result from the video thread.
-// It is protected by luke_of_mutex — never access it without holding the lock.
+// EMA smoothing: smoothed = alpha * new_sample + (1-alpha) * smoothed.
+float luke_of_ema_alpha = 0.5f;
+float luke_of_smoothed_divergence = 0.0f;
+
+// Exposed so the GCS can tune selected standard opticflow parameters.
+struct opticflow_t luke_of_opticflow[LUKE_OF_CAMERA_SLOTS];
+
 static struct opticflow_result_t luke_of_result;
-
-// Flag set by the video thread when a fresh result is ready,
-// cleared by the periodic thread after it has consumed the result.
 static bool luke_of_got_result = false;
-
-// The mutex that guards luke_of_result and luke_of_got_result.
 static pthread_mutex_t luke_of_mutex;
 
-// ─── Video callback (runs in the camera thread) ───────────────────────────────
-//
-// Paparazzi calls this function from a dedicated camera thread every time a
-// new frame arrives. Because this runs IN PARALLEL with the autopilot loop,
-// it MUST NOT write to shared variables without locking the mutex first.
-//
-// The function signature is fixed by Paparazzi's cv.h:
-//   struct image_t *callback(struct image_t *img, uint8_t camera_id)
-// You must return the img pointer at the end so the next subscriber gets it.
-static struct image_t *luke_of_calc(struct image_t *img,
-                                    uint8_t camera_id __attribute__((unused)))
+struct luke_of_stream_debug_snapshot {
+  bool valid;
+  uint8_t camera_id;
+  float divergence;
+  bool threshold_crossed;
+  uint16_t point_cnt;
+  struct point_t points[LUKE_OF_OVERLAY_POINTS];
+};
+static struct luke_of_stream_debug_snapshot luke_of_stream_debug;
+
+static struct image_t *luke_optical_flow_process(struct image_t *img, uint8_t camera_id)
 {
-  // Copy the drone's attitude at this frame's exact timestamp.
-  // The opticflow calculator uses the Euler angles to remove the rotational
-  // component from the flow (derotation), leaving only translational flow.
+  if (img == NULL || img->buf == NULL || camera_id >= LUKE_OF_CAMERA_SLOTS) {
+    return img;
+  }
+
+  // Match the standard opticflow module: use the pose closest to the image timestamp.
   struct pose_t pose = get_rotation_at_timestamp(img->pprz_ts);
   img->eulers = pose.eulers;
 
-  // opticflow_calc_frame runs Lucas-Kanade + divergence estimation.
-  // It returns true when a valid result is available (not on the very first
-  // frame, since it needs two frames to compute flow).
-  static struct opticflow_result_t temp; // static: corners are kept between calls
-  if (opticflow_calc_frame(&luke_of_opticflow[0], img, &temp)) {
-    // We have a valid result. Copy it to the shared variable behind the mutex.
-    // Keep the lock as short as possible — just the copy, nothing else.
+  luke_of_opticflow[camera_id].derotation = luke_of_derotation;
+
+  // Static result keeps the calculator's feature-management state across frames.
+  static struct opticflow_result_t temp_result[LUKE_OF_CAMERA_SLOTS];
+  if (opticflow_calc_frame(&luke_of_opticflow[camera_id], img, &temp_result[camera_id])) {
     pthread_mutex_lock(&luke_of_mutex);
-    luke_of_result = temp;
+    luke_of_result = temp_result[camera_id];
     luke_of_got_result = true;
+
+    luke_of_stream_debug.valid = true;
+    luke_of_stream_debug.camera_id = camera_id;
+    luke_of_stream_debug.divergence = temp_result[camera_id].div_size;
+    luke_of_stream_debug.threshold_crossed =
+      (temp_result[camera_id].div_size > luke_of_divergence_threshold);
+
+    uint16_t snapshot_points = temp_result[camera_id].tracked_cnt;
+    if (snapshot_points > LUKE_OF_OVERLAY_POINTS) {
+      snapshot_points = LUKE_OF_OVERLAY_POINTS;
+    }
+    luke_of_stream_debug.point_cnt = snapshot_points;
+    if (snapshot_points > 0 && luke_of_opticflow[camera_id].fast9_ret_corners != NULL) {
+      memcpy(luke_of_stream_debug.points, luke_of_opticflow[camera_id].fast9_ret_corners,
+             snapshot_points * sizeof(struct point_t));
+    }
+    pthread_mutex_unlock(&luke_of_mutex);
+  } else {
+    pthread_mutex_lock(&luke_of_mutex);
+    luke_of_stream_debug.valid = false;
     pthread_mutex_unlock(&luke_of_mutex);
   }
 
-  // Return the (possibly annotated) image for the next camera subscriber.
   return img;
 }
 
-// ─── Init function (called once at autopilot startup) ─────────────────────────
-//
-// This is specified in the XML as <init fun="luke_optical_flow_init()"/>.
-// Use it to initialise data structures and register the video callback.
-// Do NOT do heavy computation here.
-void luke_optical_flow_init(void)
+void luke_optical_flow_annotate_stream(struct image_t *img, uint8_t camera_id)
 {
-  // Initialise the mutex before any thread can use it.
-  pthread_mutex_init(&luke_of_mutex, NULL);
+#if !(defined(USE_NPS) && USE_NPS)
+  (void)img;
+  (void)camera_id;
+  return;
+#else
+  if (img == NULL || img->buf == NULL || img->w == 0 || img->h == 0 || !luke_of_show_stream_overlay) {
+    return;
+  }
 
-  // Initialise the opticflow calculator's internal state (sets all parameters
-  // like window size, FAST9 thresholds, etc. from the OPTICFLOW_* defines).
-  opticflow_calc_init(luke_of_opticflow);
-
-  // Register our video callback with Paparazzi's camera framework.
-  // From this point on, luke_of_calc() will be called in the camera thread
-  // every time a new frame arrives from LUKE_OF_CAMERA at up to LUKE_OF_FPS.
-  cv_add_to_device(&LUKE_OF_CAMERA, luke_of_calc, LUKE_OF_FPS, 0);
-}
-
-// ─── Periodic function (called at 4 Hz in the autopilot thread) ───────────────
-//
-// This is specified in the XML as <periodic fun="..." freq="4"/>.
-// It runs in the MAIN autopilot thread, so it must not take too long.
-// Here we read the latest divergence, log it, and decide whether an obstacle
-// is present by comparing against the tunable threshold.
-void luke_optical_flow_periodic(void)
-{
-  float local_div;
-  bool got;
-
-  // Step 1: safely copy the shared state under the lock.
-  // We copy to local variables immediately so we release the lock fast,
-  // allowing the video thread to write its next result without waiting.
+  struct luke_of_stream_debug_snapshot snapshot;
   pthread_mutex_lock(&luke_of_mutex);
-  local_div = luke_of_result.div_size; // divergence in 1/seconds
-  got = luke_of_got_result;
-  luke_of_got_result = false;          // consume the flag
+  snapshot = luke_of_stream_debug;
   pthread_mutex_unlock(&luke_of_mutex);
 
-  // Step 2: if no new result since last call, skip (avoids acting on stale data).
-  if (!got) { return; }
+  if (!snapshot.valid || snapshot.camera_id != camera_id) {
+    return;
+  }
 
-  // Step 3: print to terminal for debugging (Section 4.3.1).
-  // Visible in the Paparazzi Center terminal during simulation.
-  printf("[luke_of] divergence = %f  (threshold = %f)\n",
-         local_div, luke_of_divergence_threshold);
+  uint8_t green[4] = {90, 150, 90, 150};
+  uint8_t red[4] = {90, 76, 240, 76};
+  uint8_t yellow[4] = {16, 220, 146, 220};
+  uint8_t *overlay_color = snapshot.point_cnt > 0 ?
+                           (snapshot.threshold_crossed ? red : green) :
+                           yellow;
 
-  // Step 4: threshold check — obstacle detected if divergence is too large.
-  // quality=1 signals "obstacle present", quality=0 signals "path clear".
-  int32_t quality = (local_div > luke_of_divergence_threshold) ? 1 : 0;
+  image_draw_rectangle(img, 0, img->w - 1, 0, img->h - 1, overlay_color);
+  if (snapshot.point_cnt > 0) {
+    image_show_points_color(img, snapshot.points, snapshot.point_cnt, overlay_color);
+  }
+#endif
+}
 
-  // Step 5: send the VISUAL_DETECTION ABI message (Section 4.2.4).
-  // The orange_avoider subscribes to this message type and turns away when
-  // quality (mapped to color_count inside the avoider) is above its own
-  // threshold. The pixel_x/y/width/height fields are unused here (set to 0).
+void luke_optical_flow_init(void)
+{
+  pthread_mutex_init(&luke_of_mutex, NULL);
+  memset(&luke_of_result, 0, sizeof(luke_of_result));
+  memset(&luke_of_stream_debug, 0, sizeof(luke_of_stream_debug));
+
+  opticflow_calc_init(luke_of_opticflow);
+  luke_of_opticflow[0].show_flow = false;
+  luke_of_opticflow[0].derotation = luke_of_derotation;
+
+  cv_add_to_device(&OPTICFLOW_CAMERA, luke_optical_flow_process, 0, 0);
+}
+
+void luke_optical_flow_periodic(void)
+{
+  struct opticflow_result_t local_result;
+  bool got;
+
+  pthread_mutex_lock(&luke_of_mutex);
+  local_result = luke_of_result;
+  got = luke_of_got_result;
+  luke_of_got_result = false;
+  pthread_mutex_unlock(&luke_of_mutex);
+
+  if (!got) {
+    return;
+  }
+
+  // Clamp negative divergence to zero: we only care about expansion (approaching).
+  // Negative values from turns/noise would drag the EMA baseline down and delay detection.
+  float clamped_div = local_result.div_size > 0.0f ? local_result.div_size : 0.0f;
+
+  // Exponential moving average to smooth noisy per-frame divergence.
+  luke_of_smoothed_divergence = luke_of_ema_alpha * clamped_div
+                              + (1.0f - luke_of_ema_alpha) * luke_of_smoothed_divergence;
+
+  printf("[luke_of] div=%.4f smooth=%.4f thr=%.3f tracked=%d max_corners=%d\n",
+         local_result.div_size,
+         luke_of_smoothed_divergence,
+         luke_of_divergence_threshold,
+         local_result.tracked_cnt,
+         luke_of_opticflow[0].max_track_corners);
+
+  int32_t quality = (luke_of_smoothed_divergence > luke_of_divergence_threshold) ? 1 : 0;
   AbiSendMsgVISUAL_DETECTION(LUKE_OF_VISUAL_DETECTION_ID,
-                              0,       // pixel_x  (not used)
-                              0,       // pixel_y  (not used)
-                              0,       // pixel_width
-                              0,       // pixel_height
-                              quality, // quality → used as obstacle flag
-                              0);      // extra
+                             0, 0, 0, 0, quality, 0);
 }

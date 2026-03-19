@@ -90,7 +90,7 @@ includes:
   - weighted function
   - calls the color detection function
   - calls the edge detection function
-  - ...
+  - calls the optical flow function
  */
 static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
 {
@@ -128,8 +128,7 @@ static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
   Add you function below here
   ----------------------------------------------------------------------------------------------------------------
   */
-
-  PixelCount count = orange_detection(img, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max, TRUE);
+  PixelCount count = orange_detection(img, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max, FALSE);
   // count.left, count.middle, count.right
   //VERBOSE_PRINT("Orange pixel count: %u left , %u middle , %u right", Count.left , Count.middle, Count.right);
 

@@ -66,6 +66,10 @@
       <define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>
       <define name="VIDEO_CAPTURE_FPS" value="10"/>
     </module>
+    <module name="luke_optical_flow">
+      <define name="LUKE_OF_VISUAL_DETECTION_ID" value="3"/>
+      <define name="OPTICFLOW_CAMERA" value="front_camera"/>
+    </module>
     <!-- module name="cv_opencvdemo">
       <define name="OPENCVDEMO_CAMERA" value="front_camera"/>
       <define name="OPENCVDEMO_FPS" value="10"/>
@@ -77,6 +81,7 @@
     </module>
     <module name="MAV_fast_controller_group12_cmjong">
       <define name="MAV_cmjong_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION1_ID"/>
+      <define name="MAV_cmjong_OF_VISUAL_DETECTION_ID" value="3"/>
     </module>
     <module name="video_rtp_stream">
       <define name="VIEWVIDEO_CAMERA" value="front_camera"/>
@@ -145,7 +150,17 @@
     <define name="MAG_Y_NEUTRAL" value="0"/>
     <define name="MAG_Z_NEUTRAL" value="0"/>
   </section>
-
+  <!-- Optical flow settings -->
+  <section name="OPTICFLOW" prefix="OPTICFLOW_">
+    <define name="MAX_TRACK_CORNERS" value="100"/>
+    <define name="FAST9_THRESHOLD" value="7"/>
+    <define name="FAST9_MIN_DISTANCE" value="5"/>
+    <define name="FEATURE_MANAGEMENT" value="TRUE"/>
+    <define name="FAST9_REGION_DETECT" value="TRUE"/>
+    <define name="FAST9_NUM_REGIONS" value="9"/>
+    <define name="PYRAMID_LEVEL" value="2"/>
+    <define name="METHOD" value="0"/>
+  </section>
   <!-- local magnetic field -->
   <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
   <section name="AHRS" prefix="AHRS_">

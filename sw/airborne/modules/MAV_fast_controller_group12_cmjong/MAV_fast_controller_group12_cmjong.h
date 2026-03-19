@@ -19,6 +19,6 @@ extern float oa_color_count_frac;
 // functions
 extern void MAV_fast_controller_group12_cmjong_init(void);
 extern void MAV_fast_controller_group12_cmjong_periodic(void);
+extern void MAV_fast_controller_group12_cmjong_safety_periodic(void);
 
 #endif
-

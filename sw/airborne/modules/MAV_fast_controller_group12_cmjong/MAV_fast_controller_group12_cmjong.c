@@ -40,6 +40,7 @@ static uint8_t move_waypoint_forward(uint8_t waypoint, float distance_m);
 static uint8_t calculate_forward_position(struct EnuCoor_i *new_coor, float distance_m);
 static uint8_t set_waypoint_position(uint8_t waypoint, struct EnuCoor_i *new_coor);
 static uint8_t rotate_drone_heading(float degrees);
+static void hold_current_waypoints(void);
 
 enum navigation_state_t {
   SAFE_AND_WAIT,                     //begin state and if the cv_detect needs to proces things
@@ -66,6 +67,7 @@ typedef struct {
 enum navigation_state_t navigation_state = SAFE_AND_WAIT;
 
 Loss Loss_image = {0, 0, 0};
+static bool of_obstacle_ahead = false;
 
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
@@ -77,7 +79,12 @@ Loss Loss_image = {0, 0, 0};
 #ifndef MAV_cmjong_VISUAL_DETECTION_ID
 #define MAV_cmjong_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
+#ifndef MAV_cmjong_OF_VISUAL_DETECTION_ID
+#define MAV_cmjong_OF_VISUAL_DETECTION_ID ABI_BROADCAST
+#endif
 static abi_event cv_detect_event;
+static abi_event luke_of_event;
+
 static void cv_detection_message_callback(
     uint8_t  __attribute__((unused)) sender_id,
     int16_t  loss_left,
@@ -93,12 +100,25 @@ static void cv_detection_message_callback(
   Loss_image.right  = (uint16_t)loss_right;
 }
 
+static void luke_of_message_callback(
+    uint8_t  __attribute__((unused)) sender_id,
+    int16_t  __attribute__((unused)) pixel_x,
+    int16_t  __attribute__((unused)) pixel_y,
+    int16_t  __attribute__((unused)) pixel_width,
+    int16_t  __attribute__((unused)) pixel_height,
+    int32_t  quality,
+    int16_t  __attribute__((unused)) extra)
+{
+  of_obstacle_ahead = (quality > 0);
+}
+
 /*
 -------------function that is called once--------------------------------------------------------------------------
 */
 void MAV_fast_controller_group12_cmjong_init(void)
 {
   AbiBindMsgVISUAL_DETECTION(MAV_cmjong_VISUAL_DETECTION_ID, &cv_detect_event, cv_detection_message_callback);
+  AbiBindMsgVISUAL_DETECTION(MAV_cmjong_OF_VISUAL_DETECTION_ID, &luke_of_event, luke_of_message_callback);
 }
 
 /*
@@ -109,7 +129,8 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
   // only evaluate our state machine if we are flying
   if(!autopilot_in_flight()){ return; }
   
-  VERBOSE_PRINT("State: %d | Losses L:%u M:%u R:%u\n", navigation_state, Loss_image.left, Loss_image.middle, Loss_image.right);
+  VERBOSE_PRINT("State: %d | Losses L:%u M:%u R:%u | OF:%u\n",
+                navigation_state, Loss_image.left, Loss_image.middle, Loss_image.right, of_obstacle_ahead);
 
   bool middle_is_best = (Loss_image.middle <= Loss_image.left) &&
                         (Loss_image.middle <= Loss_image.right);
@@ -121,10 +142,9 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
 
     case SAFE_AND_WAIT:
       // Hold position, wait for cv_detect to get a reading 
-      waypoint_move_here_2d(WP_GOAL);
-      waypoint_move_here_2d(WP_TRAJECTORY);
+      hold_current_waypoints();
 
-      if (Loss_image.middle < LOSS_SAFE_THRESHOLD) {
+      if (Loss_image.middle < LOSS_SAFE_THRESHOLD && !of_obstacle_ahead) {
         navigation_state = MOVE_FORWARD_WITH_FIXED_DISTANCE;
       } else {
         navigation_state = TURN_TO_LOWEST_LOSS;
@@ -133,33 +153,46 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
 
     case TURN_TO_LOWEST_LOSS:
     // Turn to the direction where the loss is the lowest 
-      if (left_is_best) {
+      if (of_obstacle_ahead && middle_is_best) {
+        if (Loss_image.left <= Loss_image.right) {
+          rotate_drone_heading(-AVOIDANCE_TURN_DEGREES);
+        } else {
+          rotate_drone_heading(AVOIDANCE_TURN_DEGREES);
+        }
+      } else if (left_is_best) {
         rotate_drone_heading(-AVOIDANCE_TURN_DEGREES);
         // VERBOSE_PRINT("Turning LEFT %.1f degrees toward lower loss\n", AVOIDANCE_TURN_DEGREES);
       } else if (right_is_best) {
         rotate_drone_heading(AVOIDANCE_TURN_DEGREES);
         // VERBOSE_PRINT("Turning RIGHT %.1f degrees toward lower loss\n", AVOIDANCE_TURN_DEGREES);
-      } else if (middle_is_best) {
+      } else if (middle_is_best && !of_obstacle_ahead) {
         navigation_state = SAFE_AND_WAIT;
       }
       break;
 
 
     case MOVE_FORWARD_WITH_FIXED_DISTANCE:
-      move_waypoint_forward(WP_TRAJECTORY, MOVE_DISTANCE);
+    {
+      struct EnuCoor_i next_coor;
 
-      if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
-        navigation_state = OUT_OF_BOUNDS;
-
-      } else if (Loss_image.middle >= LOSS_SAFE_THRESHOLD) {
-        // Obstacle appeared ahead — stop and re-evaluate
+      if (Loss_image.middle >= LOSS_SAFE_THRESHOLD || of_obstacle_ahead) {
+        // Obstacle already visible — hold before issuing another forward step.
+        hold_current_waypoints();
         navigation_state = SAFE_AND_WAIT;
 
       } else {
-        // Still clear — advance goal waypoint
-        move_waypoint_forward(WP_GOAL, MOVE_DISTANCE);
+        calculate_forward_position(&next_coor, MOVE_DISTANCE);
+
+        if (!InsideObstacleZone(POS_FLOAT_OF_BFP(next_coor.x), POS_FLOAT_OF_BFP(next_coor.y))) {
+          navigation_state = OUT_OF_BOUNDS;
+
+        } else {
+          set_waypoint_position(WP_TRAJECTORY, &next_coor);
+          set_waypoint_position(WP_GOAL, &next_coor);
+        }
       }
       break;
+    }
 
     case OUT_OF_BOUNDS:
       // Rotate and probe until back inside arena
@@ -176,6 +209,19 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
 
     default:
       break;
+  }
+}
+
+void MAV_fast_controller_group12_cmjong_safety_periodic(void)
+{
+  if (!autopilot_in_flight()) {
+    return;
+  }
+
+  if (navigation_state == MOVE_FORWARD_WITH_FIXED_DISTANCE &&
+      (of_obstacle_ahead || Loss_image.middle >= LOSS_SAFE_THRESHOLD)) {
+    hold_current_waypoints();
+    navigation_state = SAFE_AND_WAIT;
   }
 }
 
@@ -218,4 +264,10 @@ static uint8_t set_waypoint_position(uint8_t waypoint, struct EnuCoor_i *new_coo
     // waypoint, POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y));
   waypoint_move_xy_i(waypoint, new_coor->x, new_coor->y);
   return false;
+}
+
+static void hold_current_waypoints(void)
+{
+  waypoint_move_here_2d(WP_GOAL);
+  waypoint_move_here_2d(WP_TRAJECTORY);
 }
