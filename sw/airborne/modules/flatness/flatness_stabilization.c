@@ -108,7 +108,7 @@ float f_cmd[3];
 fl_guid_fsm_t fsm_state = FSM_INIT;
 float quintic_coeff_n[6], quintic_coeff_e[6], quintic_coeff_d[6];
 float timestamp_p2p_start, timestamp_p2p;
-struct FloatVect3 *pos_start, *vel_start, *accel_start;
+// struct FloatVect3 *pos_start, *vel_start, *accel_start;
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -122,7 +122,6 @@ float throttle_from_spec_thrust(float spec_thrust, float min_spec_thrust, float 
 void flatness_guidance_run(bool in_flight, int32_t *cmd);
 void compute_quintic_ref(float t, struct FloatVect3 *pos_start, const struct FloatVect3 *pos_end);
 void compute_quintic_coefficients(struct FloatVect3 *pos_start, const struct FloatVect3 *pos_end, struct FloatVect3 *vel_start, struct FloatVect3 *accel_start);
-// static void matrix_vector_mult(float *result, float **mat, float *vec, int n);
 
 // -------- CODE ---------- //
 
@@ -444,9 +443,9 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
         case FSM_INIT:
             // printf("fsm_init\n");
             timestamp_p2p_start = get_sys_time_float();
-            pos_start = (struct FloatVect3 *)stateGetPositionNed_f();
-            vel_start = (struct FloatVect3 *)stateGetSpeedNed_f();
-            accel_start = (struct FloatVect3 *)stateGetAccelNed_f();
+            struct FloatVect3 *pos_start = (struct FloatVect3 *)stateGetPositionNed_f();
+            struct FloatVect3 *vel_start = (struct FloatVect3 *)stateGetSpeedNed_f();
+            struct FloatVect3 *accel_start = (struct FloatVect3 *)stateGetAccelNed_f();
             compute_quintic_coefficients(pos_start, &POS_END, vel_start, accel_start);
             fsm_state = FSM_STANDBY;
              /* fall through */ 
