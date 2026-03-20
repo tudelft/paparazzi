@@ -90,5 +90,6 @@ extern void flatness_stabilization_run(bool, struct StabilizationSetpoint *, flo
 extern void flatness_guidance_fsm(bool, int32_t *);
 extern float get_spec_thrust(void);
 extern void flatness_guidance_fsm_init(void);
+extern void flatness_set_guided(bool);
 
 #endif  // FLATNESS_STABILIZATION_H

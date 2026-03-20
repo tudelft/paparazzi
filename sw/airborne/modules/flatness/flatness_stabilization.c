@@ -80,6 +80,7 @@ struct ThrustSetpoint rc_thr_sp;
 static float timestamp;
 static Butterworth2LowPass act_filter[4];
 static Butterworth2LowPass accel_filter[3];
+static Butterworth2LowPass quat_filter[4];
 static Butterworth2LowPass rates_num_der_filter[3];
 static float ACT_DYN_ALPHA;
 static Act_t act = {
@@ -103,7 +104,7 @@ float f_cmd[3];
 fl_guid_fsm_t fsm_state = FSM_INIT;
 float quintic_coeff_n[6], quintic_coeff_e[6], quintic_coeff_d[6];
 float timestamp_p2p_start, timestamp_p2p;
-// struct FloatVect3 *pos_start, *vel_start, *accel_start;
+bool flatness_guided;
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -192,6 +193,7 @@ void flatness_stabilization_init(void)
 
     for (int i = 0; i < 4; i++) {
         init_butterworth_2_low_pass(&act_filter[i], tau, sample_time, 0.0f);
+        init_butterworth_2_low_pass(&quat_filter[i], tau, sample_time, 0.0f);
     }
 
     for (int i = 0; i < 3; i++) {
@@ -231,11 +233,13 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
     ang_accel_sp.q = Komega.y * (rates_sp.q - rates->q);
     ang_accel_sp.r = Komega.z * (rates_sp.r - rates->r);
 
-    // actuator state estimation + butterworth filter    
-    for (int i = 0; i < 4; i++) {
-        act.state[i] = discrete_first_order_filter(ACT_DYN_ALPHA, act.cmd[i], act.state[i]);
-        update_butterworth_2_low_pass(&act_filter[i], act.state[i]);
-        act.state_filt[i] = act_filter[i].o[0];
+    if (flatness_guided == false) {
+        // actuator state estimation + butterworth filter    
+        for (int i = 0; i < 4; i++) {
+            act.state[i] = discrete_first_order_filter(ACT_DYN_ALPHA, act.cmd[i], act.state[i]);
+            update_butterworth_2_low_pass(&act_filter[i], act.state[i]);
+            act.state_filt[i] = act_filter[i].o[0];
+        }
     }
     
     // angular acceleration: butterworth filter + numerical estimation
@@ -317,16 +321,36 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     else if (accel_sp.z < -ACCEL_BOUND)
         accel_sp.z = -ACCEL_BOUND;
 
-    // calculate body velocity and norm
-    struct FloatVect3 vel_b;
+    // actuator state estimation + butterworth filter    
+    for (int i = 0; i < 4; i++) {
+        act.state[i] = discrete_first_order_filter(ACT_DYN_ALPHA, act.cmd[i], act.state[i]);
+        update_butterworth_2_low_pass(&act_filter[i], act.state[i]);
+        act.state_filt[i] = act_filter[i].o[0];
+    }
+
+    // filter attitude feedback
+    struct FloatQuat *quat_temp = stateGetNedToBodyQuat_f();
+    float quat_vector[4] = {quat_temp->qi, quat_temp->qx, quat_temp->qy, quat_temp->qz};
+    float quat_vector_filt[4];
+    for (int i = 0; i < 4; i++) {    
+        update_butterworth_2_low_pass(&quat_filter[i], quat_vector[i]);
+        quat_vector_filt[i] = quat_filter[i].o[0];
+    }
+    struct FloatRMat R_i2b_filt;
+    struct FloatQuat quat_filt = {quat_vector_filt[0], quat_vector_filt[1], quat_vector_filt[2], quat_vector_filt[3]};
+    float_quat_normalize(&quat_filt);
+    float_rmat_of_quat(&R_i2b_filt, &quat_filt);
+
+    // calculate body velocity and norm. But do i need filtered velocity instead?
     struct FloatRMat *R_i2b = stateGetNedToBodyRMat_f();
+    struct FloatVect3 vel_b;
     float_rmat_vmult(&vel_b, R_i2b, vel_i);
     float vel_norm = sqrtf(vel_b.x*vel_b.x + vel_b.y*vel_b.y + vel_b.z*vel_b.z);
 
     // forw flatness
     struct FloatVect3 fb_filt, fi_filt;
     forw_transl_flatness(vel_norm, &vel_b, act.state_filt, &fb_filt);
-    float_rmat_transp_vmult(&fi_filt, R_i2b, &fb_filt);
+    float_rmat_transp_vmult(&fi_filt, &R_i2b_filt, &fb_filt); // not sure about this
 
     // incremental law
     struct NedCoor_f *accel = stateGetAccelNed_f();
@@ -335,7 +359,7 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     accel_vector[2] = accel->z;
     for (int i = 0; i < 3; i++) {    
         update_butterworth_2_low_pass(&accel_filter[i], accel_vector[i]);
-        accel_filt[i] = accel_filter[i].o[0]; // try to get previous value here so that it is synced or not but R should be filtered i think
+        accel_filt[i] = accel_filter[i].o[0];
     }
     f_cmd[0] = (accel_sp.x - accel_filt[0]) + fi_filt.x;
     f_cmd[1] = (accel_sp.y - accel_filt[1]) + fi_filt.y;
@@ -512,4 +536,9 @@ void compute_quintic_coefficients(struct FloatVect3 *pos_start, const struct Flo
 void flatness_guidance_fsm_init(void)
 {
     fsm_state = FSM_INIT;
+}
+
+void flatness_set_guided(bool value)
+{
+    flatness_guided = value;
 }
