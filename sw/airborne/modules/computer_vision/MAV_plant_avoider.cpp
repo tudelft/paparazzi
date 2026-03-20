@@ -32,7 +32,7 @@ extern "C" {
 #endif
 
 #ifndef PLANT_AVOIDER_SHOW_MASK
-#define PLANT_AVOIDER_SHOW_MASK 0
+#define PLANT_AVOIDER_SHOW_MASK 1
 #endif
 
 #ifndef PLANT_AVOIDER_GROUND_ALT_M
@@ -62,6 +62,15 @@ extern "C" {
 
 #ifndef PLANT_AVOIDER_RIGHT_TIE_BONUS
 #define PLANT_AVOIDER_RIGHT_TIE_BONUS 0.02f
+#endif
+
+/*
+ * CMJong-style control rule:
+ * - If the middle/top-forward sector is below this raw loss threshold, fly straight.
+ * - Otherwise, turn to the side with the lowest green load.
+ */
+#ifndef PLANT_AVOIDER_LOSS_SAFE_THRESHOLD
+#define PLANT_AVOIDER_LOSS_SAFE_THRESHOLD 10000U
 #endif
 
 /* Green range in YUV: [Y, U(Cb), V(Cr)] */
@@ -271,39 +280,26 @@ extern "C" void plant_avoider_periodic(void)
     pa_load_right = 0.0f;
   }
 
-  /* Lower load = better. Add small preference bonuses: straight, then right. */
-  float w_left = 100.0f - pa_load_left;
-  float w_straight = 100.0f - pa_load_straight;
-  float w_right = 100.0f - pa_load_right;
-
-  w_straight += PLANT_AVOIDER_STRAIGHT_SIDE_BONUS;
-  w_right += PLANT_AVOIDER_RIGHT_TIE_BONUS;
-
-  if (grounded || s.total == 0U) {
-    w_left = 0.0f;
-    w_straight = 1.0f;
-    w_right = 0.0f;
-  }
-
-  const float w_sum = w_left + w_straight + w_right;
-  if (w_sum > 1e-6f) {
-    pa_weight_left = w_left / w_sum;
-    pa_weight_straight = w_straight / w_sum;
-    pa_weight_right = w_right / w_sum;
-  } else {
-    pa_weight_left = 0.0f;
-    pa_weight_straight = 1.0f;
-    pa_weight_right = 0.0f;
-  }
-
   int8_t direction = 0;
-  if (pa_weight_straight >= pa_weight_left && pa_weight_straight >= pa_weight_right) {
-    direction = 0;
-  } else if (pa_weight_right >= pa_weight_left) {
-    direction = +1;
-  } else {
-    direction = -1;
+  if (!grounded && s.total > 0U) {
+    const bool middle_is_safe = (s.straight < PLANT_AVOIDER_LOSS_SAFE_THRESHOLD);
+    const bool left_is_best = (pa_load_left < pa_load_straight) &&
+                              (pa_load_left < pa_load_right);
+
+    if (middle_is_safe) {
+      direction = 0;
+    } else if (left_is_best) {
+      direction = -1;
+    } else {
+      /* Match CMJong tie behavior: if not middle and not left, choose right. */
+      direction = +1;
+    }
   }
+
+  pa_weight_left = (direction < 0) ? 1.0f : 0.0f;
+  pa_weight_straight = (direction == 0) ? 1.0f : 0.0f;
+  pa_weight_right = (direction > 0) ? 1.0f : 0.0f;
+
   pa_last_direction = direction;
 
   float vx = pa_forward_speed;
