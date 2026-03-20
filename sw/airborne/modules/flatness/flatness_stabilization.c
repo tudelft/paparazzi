@@ -80,7 +80,7 @@ struct ThrustSetpoint rc_thr_sp;
 static float timestamp;
 static Butterworth2LowPass act_filter[4];
 static Butterworth2LowPass accel_filter[3];
-static Butterworth2LowPass quat_filter[4];
+static Butterworth2LowPass spec_force_filter[4];
 static Butterworth2LowPass rates_num_der_filter[3];
 static float ACT_DYN_ALPHA;
 static Act_t act = {
@@ -193,12 +193,12 @@ void flatness_stabilization_init(void)
 
     for (int i = 0; i < 4; i++) {
         init_butterworth_2_low_pass(&act_filter[i], tau, sample_time, 0.0f);
-        init_butterworth_2_low_pass(&quat_filter[i], tau, sample_time, 0.0f);
     }
 
     for (int i = 0; i < 3; i++) {
         init_butterworth_2_low_pass(&rates_num_der_filter[i], tau, sample_time, 0.0f);
         init_butterworth_2_low_pass(&accel_filter[i], tau, sample_time, 0.0f);
+        init_butterworth_2_low_pass(&spec_force_filter[i], tau, sample_time, 0.0f);
     }
 
     // actuator dynamics
@@ -328,29 +328,22 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
         act.state_filt[i] = act_filter[i].o[0];
     }
 
-    // filter attitude feedback
-    struct FloatQuat *quat_temp = stateGetNedToBodyQuat_f();
-    float quat_vector[4] = {quat_temp->qi, quat_temp->qx, quat_temp->qy, quat_temp->qz};
-    float quat_vector_filt[4];
-    for (int i = 0; i < 4; i++) {    
-        update_butterworth_2_low_pass(&quat_filter[i], quat_vector[i]);
-        quat_vector_filt[i] = quat_filter[i].o[0];
-    }
-    struct FloatRMat R_i2b_filt;
-    struct FloatQuat quat_filt = {quat_vector_filt[0], quat_vector_filt[1], quat_vector_filt[2], quat_vector_filt[3]};
-    float_quat_normalize(&quat_filt);
-    float_rmat_of_quat(&R_i2b_filt, &quat_filt);
-
-    // calculate body velocity and norm. But do i need filtered velocity instead?
+    // calculate body velocity and norm.
     struct FloatRMat *R_i2b = stateGetNedToBodyRMat_f();
     struct FloatVect3 vel_b;
     float_rmat_vmult(&vel_b, R_i2b, vel_i);
     float vel_norm = sqrtf(vel_b.x*vel_b.x + vel_b.y*vel_b.y + vel_b.z*vel_b.z);
 
-    // forw flatness
-    struct FloatVect3 fb_filt, fi_filt;
-    forw_transl_flatness(vel_norm, &vel_b, act.state_filt, &fb_filt);
-    float_rmat_transp_vmult(&fi_filt, &R_i2b_filt, &fb_filt); // not sure about this
+    // forw flatness -> rotate -> filter
+    struct FloatVect3 fb, fi;
+    forw_transl_flatness(vel_norm, &vel_b, act.state, &fb);
+    float_rmat_transp_vmult(&fi, R_i2b, &fb);
+    float fi_vector[3] = {fi.x, fi.y, fi.z}; 
+    float fi_vector_filt[3];
+    for (int i = 0; i < 3; i++) {    
+        update_butterworth_2_low_pass(&spec_force_filter[i], fi_vector[i]);
+        fi_vector_filt[i] = spec_force_filter[i].o[0];
+    }   
 
     // incremental law
     struct NedCoor_f *accel = stateGetAccelNed_f();
@@ -361,9 +354,9 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
         update_butterworth_2_low_pass(&accel_filter[i], accel_vector[i]);
         accel_filt[i] = accel_filter[i].o[0];
     }
-    f_cmd[0] = (accel_sp.x - accel_filt[0]) + fi_filt.x;
-    f_cmd[1] = (accel_sp.y - accel_filt[1]) + fi_filt.y;
-    f_cmd[2] = (accel_sp.z - accel_filt[2]) + fi_filt.z;
+    f_cmd[0] = (accel_sp.x - accel_filt[0]) + fi_vector_filt[0];
+    f_cmd[1] = (accel_sp.y - accel_filt[1]) + fi_vector_filt[1];
+    f_cmd[2] = (accel_sp.z - accel_filt[2]) + fi_vector_filt[2];
 
     // inverse translational flatness (get attitude and spec. thrust sp)
     struct FloatEulers eulers_sp = {0.0f, 0.0f, 0.0f};
