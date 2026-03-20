@@ -43,7 +43,7 @@ static const float VEL_LIMIT = 15.0f;
 static const float ACC_LIMIT = 6.0f;
 static const float THRUST_LIMIT = 1.0f;
 static const float K_P = 0.8f;
-static const float K_V = 3.0f;
+static const float K_V = 1.5f;
 // static const float K_P = 3.0f;
 // static const float K_V = 0.8f;
 static const float ROLL_RATE_GAIN = 5.0f;
@@ -74,12 +74,10 @@ struct FloatVect3 d_accel_ref_v_calc;
 #define M_PI 3.14159265358979323846
 #endif
 
-Butterworth2LowPass T_filter;
+Butterworth2LowPass T_filter;  // "Measured thrust" (used for calculating commanded pitch rate, roll rate, thrust)
+Butterworth2LowPass T_cmd_filter;  // Commanded thrust
 Butterworth2LowPass cmd_pitch_filter;
 Butterworth2LowPass cmd_roll_filter;
-Butterworth2LowPass accel_x_filter;
-Butterworth2LowPass accel_y_filter;
-Butterworth2LowPass accel_z_filter;
 
 #ifndef FILT_CUTOFF
 #error "You have to define FILT_CUTOFF for the swing!"
@@ -113,11 +111,9 @@ void guidance_unified_init(void)
     float sample_time = 1.0 / freq;
 
     init_butterworth_2_low_pass(&T_filter, tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&T_cmd_filter, tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&cmd_pitch_filter, tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&cmd_roll_filter, tau, sample_time, 0.0);
-    init_butterworth_2_low_pass(&accel_x_filter, tau, sample_time, 0.0);
-    init_butterworth_2_low_pass(&accel_y_filter, tau, sample_time, 0.0);
-    init_butterworth_2_low_pass(&accel_z_filter, tau, sample_time, 0.0);
 }
 
 void guidance_unified_enter(void)
@@ -138,7 +134,8 @@ void guidance_unified_run(bool in_flight)
     // Desired position
     pos_ref[0] = 0.0;
     // pos_ref[0] = -5 * sinf(counter/freq);
-    pos_ref[1] = 2 * cosf(counter/freq);
+    pos_ref[1] = 1.0 * cosf(counter/freq);
+    // pos_ref[1] = 1 * cosf(2* counter/freq);
     // pos_ref[1] = 0.0;
     pos_ref[2] = -1.5;
 
@@ -146,13 +143,15 @@ void guidance_unified_run(bool in_flight)
     // Not including frequency in the derivative, as time = counter / freq
     vel_ref[0] = 0.0;
     // vel_ref[0] = -5 * cosf(counter/freq);
-    vel_ref[1] = -2 * sinf(counter/freq);
+    vel_ref[1] = -1.0 * sinf(counter/freq);
+    // vel_ref[1] = -1 * 2* sinf(2* counter/freq);
     // vel_ref[1] = 0.0;
     vel_ref[2] = 0.0;
 
     accel_ref[0] = 0.0;
     // accel_ref[0] = 5 * sinf(counter/freq);
-    accel_ref[1] = -2 * cosf(counter/freq);
+    accel_ref[1] = -1.0* cosf(counter/freq);
+    // accel_ref[1] = -1 * 4* cosf(2* counter/freq);
     // accel_ref[1] = 0.0;
     accel_ref[2] = 0.0;
 
@@ -177,10 +176,6 @@ void guidance_unified_run(bool in_flight)
     accel_a[0] = accel_actual->x;
     accel_a[1] = accel_actual->y;
     accel_a[2] = accel_actual->z;
-
-    accel_a_filt[0] = update_butterworth_2_low_pass(&accel_x_filter, accel_a[0]);
-    accel_a_filt[1] = update_butterworth_2_low_pass(&accel_y_filter, accel_a[1]);
-    accel_a_filt[2] = update_butterworth_2_low_pass(&accel_z_filter, accel_a[2]);
 
     // Difference in accelerations: d_accel_ref
     static float d_accel_ref[3];
@@ -211,6 +206,8 @@ void guidance_unified_run(bool in_flight)
 
     roll_rate_calc = ctrl.cmd.p;
     pitch_rate_calc = ctrl.cmd.q;
+    
+    float T_cmd_filt = update_butterworth_2_low_pass(&T_cmd_filter, rates_guidance[2])
     T_cmd = rates_guidance[2];
 
     struct StabilizationSetpoint sp = stab_sp_from_rates_f(&(ctrl.cmd));
@@ -224,12 +221,16 @@ float * guidance_function(float *d_accel_ref)
 {
   // Get thrust
 //   T = mass*9.81*2.0; // Hard-coding as a constant needed for a hover to counteract gravity for now, probably have to change.
+//   float T_filt = T;
   // T = -thrust_estimate;  
   T = -ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->z)*mass;
   float T_filt = update_butterworth_2_low_pass(&T_filter, T);
 
   // Rotation matrix, replacing eul2rotm(eulerzyx,"ZYX"). This gets the desired acceleration in the body frame
   struct FloatRMat *rot = stateGetNedToBodyRMat_f(); 
+
+  // Add hover thrust to global z coordinate
+  d_accel_ref[2] = d_accel_ref[2] - mass * 9.81;
 
   // Calculate d_accel_ref_b via "matrix" calculation: d_accel_ref_b = rot * d_accel_ref 
   struct FloatVect3 d_accel_ref_b;
