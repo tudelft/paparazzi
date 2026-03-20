@@ -55,9 +55,9 @@ extern uint8_t green_cr_max;
 
 extern bool cod_draw;
 
-extern float weight_orange_detector;
-extern float weight_green_detector;
-extern float weight_optical_flow;
+extern float threshold_orange_detector;
+extern float threshold_green_detector;
+extern float threshold_optical_flow;
 
 
 // Module functions

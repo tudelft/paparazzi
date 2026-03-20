@@ -35,9 +35,9 @@
 
     <define name="COLOR_OBJECT_DETECTOR_DRAW" value="FALSE|TRUE" description="Draw detection on image"/>
 
-    <define name="WEIGHT_ORANGE_DETECTOR" value="0"/>
-    <define name="WEIGHT_GREEN_DETECTOR" value="0"/>
-    <define name="WEIGHT_OPTICAL_FLOW" value="0"/>
+    <define name="THRESHOLD_ORANGE_DETECTOR" value="0"/>
+    <define name="THRESHOLD_GREEN_DETECTOR" value="0"/>
+    <define name="THRESHOLD_OPTICAL_FLOW" value="0"/>
 
 
   </doc>
@@ -71,10 +71,10 @@
 
   <settings>
     <dl_settings>
-      <dl_settings name="Weigth_of_detectors">
-         <dl_setting var="weight_orange_detector" min="0" step="0.01" max="1" shortname="W_orange_d"/>
-         <dl_setting var="weight_green_detector" min="0" step="0.01" max="1" shortname="W_green_d"/>
-         <dl_setting var="weight_optical_flow" min="0" step="0.01" max="1" shortname="W_optical_f"/>
+      <dl_settings name="Threshold_of_detectors">
+         <dl_setting var="threshold_orange_detector" min="0" step="1" max="5000" shortname="W_orange_d"/>
+         <dl_setting var="threshold_green_detector" min="0" step="1" max="5000" shortname="W_green_d"/>
+         <dl_setting var="threshold_optical_flow" min="0" step="1" max="5000" shortname="W_optical_f"/>
       </dl_settings>
     </dl_settings>
   </settings>

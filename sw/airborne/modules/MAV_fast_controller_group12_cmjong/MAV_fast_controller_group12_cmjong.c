@@ -50,13 +50,6 @@ enum navigation_state_t {
   OUT_OF_BOUNDS
 };
 
-typedef struct {
-  uint16_t left;
-  uint16_t middle;
-  uint16_t right;
-} Loss;
-
-#define LOSS_SAFE_THRESHOLD 10000u
 
 #define AVOIDANCE_TURN_DEGREES 10.f 
 #define MOVE_DISTANCE       0.5f   
@@ -64,8 +57,8 @@ typedef struct {
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SAFE_AND_WAIT;
-
-Loss Loss_image = {0, 0, 0};
+uint16_t detected_local = 1;
+uint16_t color_count_local = 0;
 
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
@@ -80,17 +73,16 @@ Loss Loss_image = {0, 0, 0};
 static abi_event cv_detect_event;
 static void cv_detection_message_callback(
     uint8_t  __attribute__((unused)) sender_id,
-    int16_t  loss_left,
-    int16_t  loss_middle,
-    int16_t  loss_right,
+    int16_t  detected,
+    int16_t  color_count,
+    int16_t  __attribute__((unused)) extra5,
     int16_t  __attribute__((unused)) extra1,
     int32_t  __attribute__((unused)) extra2,
     int16_t  __attribute__((unused)) extra3)
 {
   // Safe cast: ABI guarantees int16, loss is always >= 0
-  Loss_image.left   = (uint16_t)loss_left;
-  Loss_image.middle = (uint16_t)loss_middle;
-  Loss_image.right  = (uint16_t)loss_right;
+  detected_local = detected;
+  color_count_local = color_count;
 }
 
 /*
@@ -109,13 +101,8 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
   // only evaluate our state machine if we are flying
   if(!autopilot_in_flight()){ return; }
   
-  VERBOSE_PRINT("State: %d | Losses L:%u M:%u R:%u\n", navigation_state, Loss_image.left, Loss_image.middle, Loss_image.right);
+  VERBOSE_PRINT("State: %d | detected: %u , %u\n", navigation_state, detected_local , color_count_local);
 
-  bool middle_is_best = (Loss_image.middle <= Loss_image.left) &&
-                        (Loss_image.middle <= Loss_image.right);
-  bool left_is_best   = (Loss_image.left < Loss_image.middle) &&
-                        (Loss_image.left < Loss_image.right);
-  bool right_is_best  = !middle_is_best && !left_is_best;
 
   switch (navigation_state) {
 
@@ -124,22 +111,20 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
 
-      if (Loss_image.middle < LOSS_SAFE_THRESHOLD) {
+      if (detected_local == 0) {
         navigation_state = MOVE_FORWARD_WITH_FIXED_DISTANCE;
-      } else {
-        navigation_state = TURN_TO_LOWEST_LOSS;
-      }
+      } else if (detected_local > 0) {
+      // Obstacle appeared ahead — stop and re-evaluate
+      navigation_state = TURN_TO_LOWEST_LOSS;
+      } 
         break;
 
     case TURN_TO_LOWEST_LOSS:
     // Turn to the direction where the loss is the lowest 
-      if (left_is_best) {
-        rotate_drone_heading(-AVOIDANCE_TURN_DEGREES);
-        // VERBOSE_PRINT("Turning LEFT %.1f degrees toward lower loss\n", AVOIDANCE_TURN_DEGREES);
-      } else if (right_is_best) {
+      if (detected_local > 0) {
         rotate_drone_heading(AVOIDANCE_TURN_DEGREES);
-        // VERBOSE_PRINT("Turning RIGHT %.1f degrees toward lower loss\n", AVOIDANCE_TURN_DEGREES);
-      } else if (middle_is_best) {
+      }
+      else {
         navigation_state = SAFE_AND_WAIT;
       }
       break;
@@ -151,7 +136,7 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
         navigation_state = OUT_OF_BOUNDS;
 
-      } else if (Loss_image.middle >= LOSS_SAFE_THRESHOLD) {
+      } else if (detected_local > 0) {
         // Obstacle appeared ahead — stop and re-evaluate
         navigation_state = SAFE_AND_WAIT;
 

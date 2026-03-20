@@ -78,19 +78,19 @@ uint8_t green_cr_max = 0;
 
 bool cod_draw = false;
 
-float weight_orange_detector = 0;
-float weight_green_detector = 0;
-float weight_optical_flow = 0;
+float threshold_orange_detector = 0;
+float threshold_green_detector = 0;
+float threshold_optical_flow = 0;
 
 
 // define global variables: this is the function that the information is stored that is send to the fast controller.
 struct cv_detect_message {
-  int16_t  loss_left;
-  int16_t  loss_middle;
-  int16_t  loss_right;
+  int16_t  detected;
+  int16_t  color_count;
   bool updated;
 };
 struct cv_detect_message global_message[1];
+
 
 
 
@@ -111,24 +111,32 @@ static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
   ----------------------------------------------------------------------------------------------------------------
   */
 
-  PixelCount count = color_detection(img, orange_lum_min, orange_lum_max, orange_cb_min, orange_cb_max, orange_cr_min, orange_cr_max, TRUE);
-  // count.left, count.middle, count.right
-  //VERBOSE_PRINT("Orange pixel count: %u left , %u middle , %u right", Count.left , Count.middle, Count.right);
 
+  uint16_t detected_local = 0;
+
+  uint16_t count = color_detection(img, orange_lum_min, orange_lum_max, orange_cb_min, orange_cb_max, orange_cr_min, orange_cr_max, TRUE);
+  if (count < threshold_orange_detector && detected_local == 0){
+    // uint16_t count = color_detection(img, orange_lum_min, orange_lum_max, orange_cb_min, orange_cb_max, orange_cr_min, orange_cr_max, TRUE);
+  } else {
+    detected_local = 1;
+  }
+
+  // if (count < threshold_green_detector && detected_local == 0){
+  //   uint16_t count = color_detection(img, orange_lum_min, orange_lum_max, orange_cb_min, orange_cb_max, orange_cr_min, orange_cr_max, TRUE);
+  // } else {
+  //   detected_local = 2;
+  // }
 
    /*
   ----------------------------------------------------------------------------------------------------------------
   Weighted function below here 
   ----------------------------------------------------------------------------------------------------------------
   */
-  int16_t weighted_left  = weight_orange_detector * (int16_t)count.left;
-  int16_t weighted_middle = weight_orange_detector * (int16_t)count.middle;
-  int16_t weighted_right  = weight_orange_detector * (int16_t)count.right;
+  
 
   pthread_mutex_lock(&mutex);
-  global_message[camera_id].loss_left   = weighted_left;
-  global_message[camera_id].loss_middle = weighted_middle;
-  global_message[camera_id].loss_right  = weighted_right;
+  global_message[camera_id].detected = detected_local;
+  global_message[camera_id].color_count = count;
   global_message[camera_id].updated = TRUE;
   pthread_mutex_unlock(&mutex);
 
@@ -184,10 +192,10 @@ void MAV_cv_detect_group12_cmjong_init(void)
   green_cr_max  = GREEN_OBJECT_DETECTOR_CR_MAX;
 #endif
 
-#ifdef WEIGHT_ORANGE_DETECTOR
-  weight_orange_detector = WEIGHT_ORANGE_DETECTOR;
-  weight_green_detector = WEIGHT_GREEN_DETECTOR;
-  weight_optical_flow = WEIGHT_OPTICAL_FLOW;
+#ifdef THRESHOLD_ORANGE_DETECTOR
+  threshold_orange_detector = THRESHOLD_ORANGE_DETECTOR;
+  threshold_green_detector = THRESHOLD_GREEN_DETECTOR;
+  threshold_optical_flow = THRESHOLD_OPTICAL_FLOW;
 #endif
 
 #ifdef COLOR_OBJECT_DETECTOR_DRAW
@@ -214,21 +222,10 @@ void MAV_cv_detect_group12_cmjong_periodic(void)
 
   if(local_message[0].updated){
     AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION1_ID,
-    local_message[0].loss_left,
-    local_message[0].loss_middle,
-    local_message[0].loss_right,
-    0, 0, 0);
-
-    local_message[0].updated = false;
-  }
-
-  if(local_message[1].updated){
-    AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION2_ID,
-    local_message[1].loss_left,
-    local_message[1].loss_middle,
-    local_message[1].loss_right,
-    0, 0, 0);
-    
-    local_message[1].updated = false;
+    local_message[0].detected,
+    local_message[0].color_count,
+    0,0, 0, 0);
   }
 }
+
+
