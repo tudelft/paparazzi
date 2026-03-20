@@ -57,11 +57,42 @@ struct luke_of_stream_debug_snapshot {
 };
 static struct luke_of_stream_debug_snapshot luke_of_stream_debug;
 
+static void crop_image_center(struct image_t *img, float keep_w_frac, float keep_h_frac)
+{
+  // Crop to center region: keep_w_frac of width, keep_h_frac of height.
+  // YUV422: 2 bytes per pixel, macro-pixels are 4 bytes (2 pixels), so widths must be even.
+  uint16_t new_w = (uint16_t)(img->w * keep_w_frac);
+  uint16_t new_h = (uint16_t)(img->h * keep_h_frac);
+  new_w &= ~1u;  // round down to even for YUV422 macro-pixel alignment
+
+  uint16_t x_off = (img->w - new_w) / 2;
+  uint16_t y_off = (img->h - new_h) / 2;
+  x_off &= ~1u;  // keep even
+
+  uint16_t old_row_bytes = img->w * 2;
+  uint16_t new_row_bytes = new_w * 2;
+  uint8_t *src = (uint8_t *)img->buf + y_off * old_row_bytes + x_off * 2;
+  uint8_t *dst = (uint8_t *)img->buf;
+
+  for (uint16_t r = 0; r < new_h; r++) {
+    memmove(dst, src, new_row_bytes);
+    dst += new_row_bytes;
+    src += old_row_bytes;
+  }
+
+  img->w = new_w;
+  img->h = new_h;
+  img->buf_size = new_w * new_h * 2;
+}
+
 static struct image_t *luke_optical_flow_process(struct image_t *img, uint8_t camera_id)
 {
   if (img == NULL || img->buf == NULL || camera_id >= LUKE_OF_CAMERA_SLOTS) {
     return img;
   }
+
+  // Crop to center: 40% horizontal, 80% vertical
+  crop_image_center(img, 0.40f, 0.80f);
 
   // Match the standard opticflow module: use the pose closest to the image timestamp.
   struct pose_t pose = get_rotation_at_timestamp(img->pprz_ts);

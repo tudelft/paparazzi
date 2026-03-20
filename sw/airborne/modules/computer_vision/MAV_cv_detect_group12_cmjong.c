@@ -138,9 +138,9 @@ static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
   Weighted function below here 
   ----------------------------------------------------------------------------------------------------------------
   */
-  int16_t weighted_left  = 1 * (int16_t)count.left;
-  int16_t weighted_middle = 1 * (int16_t)count.middle;
-  int16_t weighted_right  = 1 * (int16_t)count.right;
+  int16_t weighted_left  = 0 * (int16_t)count.left;
+  int16_t weighted_middle = 0 * (int16_t)count.middle;
+  int16_t weighted_right  = 0 * (int16_t)count.right;
 
   pthread_mutex_lock(&mutex);
   global_message[camera_id].loss_left   = weighted_left;

@@ -47,8 +47,9 @@ enum navigation_state_t {
   TURN_TO_LOWEST_LOSS,               //Lowest loss is not in the middle so turn 
   SEARCH_FOR_SAFE_HEADING,           //All the losses are not below threshold so turn
   MOVE_FORWARD_WITH_FIXED_DISTANCE,  //Lowest loss is in the middle so move forward
-  GATE_DETECTED,   
-  OUT_OF_BOUNDS
+  GATE_DETECTED,
+  OUT_OF_BOUNDS,
+  SAFETY_HOLD                        // holding after safety trigger, rotate if still unsafe
 };
 
 typedef struct {
@@ -59,7 +60,7 @@ typedef struct {
 
 #define LOSS_SAFE_THRESHOLD 10000u
 
-#define AVOIDANCE_TURN_DEGREES 10.f 
+#define AVOIDANCE_TURN_DEGREES 60.f 
 #define MOVE_DISTANCE       1.f   
 #define AVOIDANCE_TURN_DEGREES_OutOfBound 5.f
 
@@ -220,7 +221,18 @@ void MAV_fast_controller_group12_cmjong_safety_periodic(void)
 
   if (navigation_state == MOVE_FORWARD_WITH_FIXED_DISTANCE &&
       (of_obstacle_ahead || Loss_image.middle >= LOSS_SAFE_THRESHOLD)) {
+    // First: stop and hold position
     hold_current_waypoints();
+    navigation_state = SAFETY_HOLD;
+
+  } else if (navigation_state == SAFETY_HOLD &&
+             (of_obstacle_ahead || Loss_image.middle >= LOSS_SAFE_THRESHOLD)) {
+    // Still unsafe: rotate 60 degrees toward the safer side
+    if (Loss_image.left <= Loss_image.right) {
+      rotate_drone_heading(-AVOIDANCE_TURN_DEGREES);
+    } else {
+      rotate_drone_heading(AVOIDANCE_TURN_DEGREES);
+    }
     navigation_state = SAFE_AND_WAIT;
   }
 }
