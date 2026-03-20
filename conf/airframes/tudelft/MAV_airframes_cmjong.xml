@@ -26,12 +26,12 @@
       <define name="BLUE_OBJECT_DETECTOR_CR_MIN" value="146"/>
       <define name="BLUE_OBJECT_DETECTOR_CR_MAX" value="200"/>
 
-      <define name="GREEN_OBJECT_DETECTOR_LUM_MIN" value="50"/>
-      <define name="GREEN_OBJECT_DETECTOR_LUM_MAX" value="255"/>
-      <define name="GREEN_OBJECT_DETECTOR_CB_MIN" value="100"/>
-      <define name="GREEN_OBJECT_DETECTOR_CB_MAX" value="150"/>
-      <define name="GREEN_OBJECT_DETECTOR_CR_MIN" value="0"/>
-      <define name="GREEN_OBJECT_DETECTOR_CR_MAX" value="128"/>
+      <define name="GREEN_OBJECT_DETECTOR_LUM_MIN" value="18"/>
+      <define name="GREEN_OBJECT_DETECTOR_LUM_MAX" value="170"/>
+      <define name="GREEN_OBJECT_DETECTOR_CB_MIN" value="70"/>
+      <define name="GREEN_OBJECT_DETECTOR_CB_MAX" value="145"/>
+      <define name="GREEN_OBJECT_DETECTOR_CR_MIN" value="20"/>
+      <define name="GREEN_OBJECT_DETECTOR_CR_MAX" value="120"/>
 
       <module name="ahrs" type="int_cmpl_quat">
         <configure name="USE_MAGNETOMETER" value="FALSE"/>
@@ -59,11 +59,11 @@
       <define name="BLUE_OBJECT_DETECTOR_CR_MIN" value="0"/>
       <define name="BLUE_OBJECT_DETECTOR_CR_MAX" value="120"/>
 
-      <define name="GREEN_OBJECT_DETECTOR_LUM_MIN" value="20"/>
-      <define name="GREEN_OBJECT_DETECTOR_LUM_MAX" value="200"/>
-      <define name="GREEN_OBJECT_DETECTOR_CB_MIN" value="0"/>
-      <define name="GREEN_OBJECT_DETECTOR_CB_MAX" value="120"/>
-      <define name="GREEN_OBJECT_DETECTOR_CR_MIN" value="0"/>
+      <define name="GREEN_OBJECT_DETECTOR_LUM_MIN" value="18"/>
+      <define name="GREEN_OBJECT_DETECTOR_LUM_MAX" value="170"/>
+      <define name="GREEN_OBJECT_DETECTOR_CB_MIN" value="70"/>
+      <define name="GREEN_OBJECT_DETECTOR_CB_MAX" value="145"/>
+      <define name="GREEN_OBJECT_DETECTOR_CR_MIN" value="20"/>
       <define name="GREEN_OBJECT_DETECTOR_CR_MAX" value="120"/>
 
       <module name="ahrs" type="float_mlkf"> <!-- was int_cmpl_quat  -->
@@ -100,15 +100,21 @@
       <define name="OPENCVDEMO_CAMERA" value="front_camera"/>
       <define name="OPENCVDEMO_FPS" value="10"/>
     </module -->
-    <module name="cv_detect_color_object">
+    <module name="MAV_cv_detect_group12_cmjong">
       <define name="COLOR_OBJECT_DETECTOR_CAMERA" value="front_camera"/>
-      <define name="COLOR_OBJECT_DETECTOR_FPS1" value="5"/>
-      <define name="COLOR_OBJECT_DETECTOR_DRAW" value="0"/>
+      <define name="COLOR_OBJECT_DETECTOR_FPS1" value="0"/>
+      <define name="COLOR_OBJECT_DETECTOR_DRAW" value="1"/>
+      <define name="WEIGHT_ORANGE_DETECTOR" value="0.65"/>
+      <define name="WEIGHT_GREEN_DETECTOR" value="1.0"/>
+      <define name="WEIGHT_OPTICAL_FLOW" value="1.0"/>
+    </module>
+    <module name="MAV_fast_controller_group12_cmjong">
+      <define name="MAV_cmjong_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION1_ID"/>
     </module>
     <module name="MAV_plant_avoider">
       <define name="PLANT_AVOIDER_CAMERA" value="front_camera"/>
       <define name="PLANT_AVOIDER_FPS" value="5"/>
-      <define name="PLANT_AVOIDER_SHOW_MASK" value="0"/>
+      <define name="PLANT_AVOIDER_SHOW_MASK" value="1"/>
     </module>
     <module name="video_rtp_stream">
       <define name="VIEWVIDEO_CAMERA" value="front_camera"/>

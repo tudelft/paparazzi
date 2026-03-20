@@ -1,0 +1,99 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="MAV_cv_detect_group12_cmjong" dir="computer_vision">
+  <doc>
+    <description>Color Object Detector
+    Detects an object by a continuous color. Optionally draws on image.
+    
+    </description>
+    <define name="COLOR_OBJECT_DETECTOR_CAMERA" value="front_camera" description="Video device to use"/>
+    <define name="ORANGE_OBJECT_DETECTOR_FPS" value="0" description="Desired FPS (0: camera rate)"/>
+    <define name="ORANGE_OBJECT_DETECTOR_LUM_MIN" value="0" description="Min luminance"/>
+    <define name="ORANGE_OBJECT_DETECTOR_LUM_MAX" value="0" description="Max luminance"/>
+    <define name="ORANGE_OBJECT_DETECTOR_CB_MIN" value="0" description="Min blue chroma"/>
+    <define name="ORANGE_OBJECT_DETECTOR_CB_MAX" value="0" description="Max blue chroma"/>
+    <define name="ORANGE_OBJECT_DETECTOR_CR_MIN" value="0" description="Min red chroma"/>
+    <define name="ORANGE_OBJECT_DETECTOR_CR_MAX" value="0" description="Max red chroma"/>
+    
+    <define name="BLUE_OBJECT_DETECTOR_CAMERA" value="front_camera"/>
+    <define name="BLUE_OBJECT_DETECTOR_FPS" value="0"/>
+    <define name="BLUE_OBJECT_DETECTOR_LUM_MIN" value="0"/>
+    <define name="BLUE_OBJECT_DETECTOR_LUM_MAX" value="0"/>
+    <define name="BLUE_OBJECT_DETECTOR_CB_MIN" value="0"/>
+    <define name="BLUE_OBJECT_DETECTOR_CB_MAX" value="0"/>
+    <define name="BLUE_OBJECT_DETECTOR_CR_MIN" value="0"/>
+    <define name="BLUE_OBJECT_DETECTOR_CR_MAX" value="0"/>
+
+    <define name="GREEN_OBJECT_DETECTOR_CAMERA" value="front_camera"/>
+    <define name="GREEN_OBJECT_DETECTOR_FPS" value="0"/>
+    <define name="GREEN_OBJECT_DETECTOR_LUM_MIN" value="0"/>
+    <define name="GREEN_OBJECT_DETECTOR_LUM_MAX" value="0"/>
+    <define name="GREEN_OBJECT_DETECTOR_CB_MIN" value="0"/>
+    <define name="GREEN_OBJECT_DETECTOR_CB_MAX" value="0"/>
+    <define name="GREEN_OBJECT_DETECTOR_CR_MIN" value="0"/>
+    <define name="GREEN_OBJECT_DETECTOR_CR_MAX" value="0"/>
+
+    <define name="COLOR_OBJECT_DETECTOR_DRAW" value="FALSE|TRUE" description="Draw detection on image"/>
+
+    <define name="WEIGHT_ORANGE_DETECTOR" value="0"/>
+    <define name="WEIGHT_GREEN_DETECTOR" value="0"/>
+    <define name="WEIGHT_OPTICAL_FLOW" value="0"/>
+
+
+  </doc>
+
+  <settings>
+    <dl_settings>
+      <dl_settings name="ColorObjectDetector">
+         <dl_setting var="orange_lum_min" min="0" step="1" max="255" shortname="y_orange_min"/>
+         <dl_setting var="orange_lum_max" min="0" step="1" max="255" shortname="y_orange_max"/>
+         <dl_setting var="orange_cb_min"  min="0" step="1" max="255" shortname="u_orange_min"/>
+         <dl_setting var="orange_cb_max"  min="0" step="1" max="255" shortname="u_orange_max"/>
+         <dl_setting var="orange_cr_min"  min="0" step="1" max="255" shortname="v_orange_min"/>
+         <dl_setting var="orange_cr_max"  min="0" step="1" max="255" shortname="v_orange_max"/>
+         <dl_setting var="blue_lum_min" min="0" step="1" max="255" shortname="y_blue_min"/>
+         <dl_setting var="blue_lum_max" min="0" step="1" max="255" shortname="y_blue_max"/>
+         <dl_setting var="blue_cb_min"  min="0" step="1" max="255" shortname="u_blue_min"/>
+         <dl_setting var="blue_cb_max"  min="0" step="1" max="255" shortname="u_blue_max"/>
+         <dl_setting var="blue_cr_min"  min="0" step="1" max="255" shortname="v_blue_min"/>
+         <dl_setting var="blue_cr_max"  min="0" step="1" max="255" shortname="v_blue_max"/>
+         <dl_setting var="green_lum_min" min="0" step="1" max="255" shortname="y_green_min"/>
+         <dl_setting var="green_lum_max" min="0" step="1" max="255" shortname="y_green_max"/>
+         <dl_setting var="green_cb_min"  min="0" step="1" max="255" shortname="u_green_min"/>
+         <dl_setting var="green_cb_max"  min="0" step="1" max="255" shortname="u_green_max"/>
+         <dl_setting var="green_cr_min"  min="0" step="1" max="255" shortname="v_green_min"/>
+         <dl_setting var="green_cr_max"  min="0" step="1" max="255" shortname="v_green_max"/>
+         <dl_setting var="cod_draw"  min="0" step="1" max="1" values="False|True" shortname="draw 1" />
+
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <settings>
+    <dl_settings>
+      <dl_settings name="Weigth_of_detectors">
+         <dl_setting var="weight_orange_detector" min="0" step="0.01" max="1" shortname="W_orange_d"/>
+         <dl_setting var="weight_green_detector" min="0" step="0.01" max="1" shortname="W_green_d"/>
+         <dl_setting var="weight_optical_flow" min="0" step="0.01" max="1" shortname="W_optical_f"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+
+
+  <dep>
+    <depends>video_thread</depends>
+  </dep>
+
+  <header>
+    <file name="MAV_cv_detect_group12_cmjong.h"/>
+  </header>
+
+  <init fun="MAV_cv_detect_group12_cmjong_init()"/>
+  <periodic fun="MAV_cv_detect_group12_cmjong_periodic()" freq="50"/>
+  <makefile target="ap|nps">
+    <file name="MAV_cv_detect_group12_cmjong.c"/>
+    <file name="MAV_cv_color_group12_cmjong.c"/>  
+  </makefile>
+</module>
+

@@ -51,6 +51,11 @@ extern "C" {
 #define PLANT_AVOIDER_STRAIGHT_BIAS 0.10f
 #endif
 
+/* Bebop camera feed is rotated in this setup: selecting x < w/2 maps to top half in viewer. */
+#ifndef PLANT_AVOIDER_ROTATED_CAMERA_TOP_HALF
+#define PLANT_AVOIDER_ROTATED_CAMERA_TOP_HALF 1
+#endif
+
 #ifndef PLANT_AVOIDER_STRAIGHT_SIDE_BONUS
 #define PLANT_AVOIDER_STRAIGHT_SIDE_BONUS 0.05f
 #endif
@@ -61,22 +66,46 @@ extern "C" {
 
 /* Green range in YUV: [Y, U(Cb), V(Cr)] */
 #ifndef PLANT_AVOIDER_Y_MIN
+#ifdef GREEN_OBJECT_DETECTOR_LUM_MIN
+#define PLANT_AVOIDER_Y_MIN GREEN_OBJECT_DETECTOR_LUM_MIN
+#else
 #define PLANT_AVOIDER_Y_MIN 50
 #endif
+#endif
 #ifndef PLANT_AVOIDER_Y_MAX
+#ifdef GREEN_OBJECT_DETECTOR_LUM_MAX
+#define PLANT_AVOIDER_Y_MAX GREEN_OBJECT_DETECTOR_LUM_MAX
+#else
 #define PLANT_AVOIDER_Y_MAX 255
 #endif
+#endif
 #ifndef PLANT_AVOIDER_U_MIN
+#ifdef GREEN_OBJECT_DETECTOR_CB_MIN
+#define PLANT_AVOIDER_U_MIN GREEN_OBJECT_DETECTOR_CB_MIN
+#else
 #define PLANT_AVOIDER_U_MIN 100
 #endif
+#endif
 #ifndef PLANT_AVOIDER_U_MAX
+#ifdef GREEN_OBJECT_DETECTOR_CB_MAX
+#define PLANT_AVOIDER_U_MAX GREEN_OBJECT_DETECTOR_CB_MAX
+#else
 #define PLANT_AVOIDER_U_MAX 150
 #endif
+#endif
 #ifndef PLANT_AVOIDER_V_MIN
+#ifdef GREEN_OBJECT_DETECTOR_CR_MIN
+#define PLANT_AVOIDER_V_MIN GREEN_OBJECT_DETECTOR_CR_MIN
+#else
 #define PLANT_AVOIDER_V_MIN 0
 #endif
+#endif
 #ifndef PLANT_AVOIDER_V_MAX
+#ifdef GREEN_OBJECT_DETECTOR_CR_MAX
+#define PLANT_AVOIDER_V_MAX GREEN_OBJECT_DETECTOR_CR_MAX
+#else
 #define PLANT_AVOIDER_V_MAX 128
+#endif
 #endif
 
 float pa_straight_bias = PLANT_AVOIDER_STRAIGHT_BIAS;
@@ -118,13 +147,26 @@ static void detect_green_top_half(struct image_t *img, struct pa_zone_scores_t *
   memset(out, 0, sizeof(*out));
 
   const uint16_t w = img->w;
-  const uint16_t h_top = img->h / 2;
-  const uint16_t one_third = w / 3;
+  const uint16_t h = img->h;
+  const uint16_t one_third_y = h / 3;
+#if !PLANT_AVOIDER_ROTATED_CAMERA_TOP_HALF
+  const uint16_t one_third_x = w / 3;
+#endif
   uint8_t *buf = (uint8_t*)img->buf;
 
-  for (uint16_t y = 0; y < h_top; y++) {
+  for (uint16_t y = 0; y < h; y++) {
     const uint32_t row_base = (uint32_t)y * 2U * (uint32_t)w;
     for (uint16_t x = 0; x < w; x++) {
+#if PLANT_AVOIDER_ROTATED_CAMERA_TOP_HALF
+  if (x < (w / 2U)) {
+        continue;
+      }
+#else
+      if (y >= (h / 2U)) {
+        continue;
+      }
+#endif
+
       uint8_t yp;
       uint8_t up;
       uint8_t vp;
@@ -156,13 +198,23 @@ static void detect_green_top_half(struct image_t *img, struct pa_zone_scores_t *
       }
 #endif
 
-      if (x < one_third) {
+#if PLANT_AVOIDER_ROTATED_CAMERA_TOP_HALF
+      if (y < one_third_y) {
         out->left++;
-      } else if (x < (2U * one_third)) {
+      } else if (y < (2U * one_third_y)) {
         out->straight++;
       } else {
         out->right++;
       }
+#else
+      if (x < one_third_x) {
+        out->left++;
+      } else if (x < (2U * one_third_x)) {
+        out->straight++;
+      } else {
+        out->right++;
+      }
+#endif
       out->total++;
     }
   }

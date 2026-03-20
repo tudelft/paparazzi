@@ -1,0 +1,28 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="MAV_fast_controller_group12_cmjong">
+  <doc>
+    <description>
+      Fast controller for MAV group 12 (cmjong).
+      Receives left/middle/right loss values from MAV_cv_detect_group12_cmjong
+      and navigates using a state machine: SAFE_AND_WAIT, TURN_TO_LOWEST_LOSS,
+      MOVE_FORWARD_WITH_FIXED_DISTANCE, OUT_OF_BOUNDS.
+    </description>
+    <define name="MAV_cmjong_VISUAL_DETECTION_ID" value="ABI_BROADCAST"
+            description="Which VISUAL_DETECTION message to receive loss values from."/>
+  </doc>
+
+  <dep>
+    <depends>MAV_cv_detect_group12_cmjong</depends>
+  </dep>
+
+  <header>
+    <file name="MAV_fast_controller_group12_cmjong.h"/>
+  </header>
+
+  <init fun="MAV_fast_controller_group12_cmjong_init()"/>
+  <periodic fun="MAV_fast_controller_group12_cmjong_periodic()" freq="4"/>
+
+  <makefile target="ap|nps">
+    <file name="MAV_fast_controller_group12_cmjong.c"/>
+  </makefile>
+</module>
