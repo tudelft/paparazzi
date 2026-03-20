@@ -50,25 +50,20 @@ typedef enum {
 // static const float C_Z = -0.079f;
 static const float C_X = 0.0f;
 static const float C_Z = 0.0f;
-// static const float C_T  = -2.5f  / 100000000.0f;
-
-// static const float MU_X = 60.0f  / 100000000.0f;
-// static const float MU_Y = 120.0f / 100000000.0f;
-// static const float MU_Z = 12.0f  / 100000000.0f;
 
 static const float MU_X_v = 4.5f  / 100000000.0f;
 static const float MU_Y_v = 10.4f / 100000000.0f;
 static const float MU_Z_v = 0.88f  / 100000000.0f;
-static const float C_T_v  = -0.22f  / 100000000.0f;
+static const float C_T_v  = -0.25f  / 100000000.0f;
 
 static const float MIN_TAU = -0.981f;
 static const float MAX_TAU = -2.0f*9.81f;
-static const float ACCEL_BOUND = 9.81f/2.0f;
+static const float ACCEL_BOUND = 9.81f/1.0f;
 
 static const float ACT_CUTOFF_OMEGA = 11.0f;
 static const float FILT_CUTOFF_FREQ = 5.0f;
-static const Gain_t Kq = {3.0f, 3.5f, 2.0f};
-static const Gain_t Komega = {14.0f, 16.0f, 12.0f};
+static const Gain_t Kq = {3.0f, 3.0f, 3.0f};
+static const Gain_t Komega = {14.0f, 15.0f, 14.0f};
 static const Gain_t Kp = {1.0f, 1.0f, 1.0f};
 static const Gain_t Kv = {2.0f, 2.0f, 2.0f};
 
@@ -340,7 +335,7 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     accel_vector[2] = accel->z;
     for (int i = 0; i < 3; i++) {    
         update_butterworth_2_low_pass(&accel_filter[i], accel_vector[i]);
-        accel_filt[i] = accel_filter[i].o[0];
+        accel_filt[i] = accel_filter[i].o[0]; // try to get previous value here so that it is synced or not but R should be filtered i think
     }
     f_cmd[0] = (accel_sp.x - accel_filt[0]) + fi_filt.x;
     f_cmd[1] = (accel_sp.y - accel_filt[1]) + fi_filt.y;
