@@ -16,11 +16,13 @@ extern "C" {
 #include "modules/computer_vision/cv.h"
 #include "modules/computer_vision/lib/vision/image.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
+#include "modules/datalink/downlink.h"
 #include "state.h"
 }
 
 #include <math.h>
 #include <pthread.h>
+#include <stdio.h>
 #include <string.h>
 
 #ifndef PLANT_AVOIDER_CAMERA
@@ -29,6 +31,23 @@ extern "C" {
 
 #ifndef PLANT_AVOIDER_FPS
 #define PLANT_AVOIDER_FPS 4
+#endif
+
+/* Temporary debug: print sampled YUV pixel values from camera stream. */
+#ifndef PLANT_AVOIDER_DEBUG_YUV
+#define PLANT_AVOIDER_DEBUG_YUV 1
+#endif
+
+#ifndef PLANT_AVOIDER_DEBUG_YUV_PERIOD_FRAMES
+#define PLANT_AVOIDER_DEBUG_YUV_PERIOD_FRAMES 10U
+#endif
+
+#ifndef PLANT_AVOIDER_DEBUG_YUV_TO_GCS
+#define PLANT_AVOIDER_DEBUG_YUV_TO_GCS 1
+#endif
+
+#ifndef PLANT_AVOIDER_DEBUG_YUV_STDOUT
+#define PLANT_AVOIDER_DEBUG_YUV_STDOUT 0
 #endif
 
 #ifndef PLANT_AVOIDER_SHOW_MASK
@@ -73,48 +92,45 @@ extern "C" {
 #define PLANT_AVOIDER_LOSS_SAFE_THRESHOLD 10000U
 #endif
 
-/* Green range in YUV: [Y, U(Cb), V(Cr)] */
-#ifndef PLANT_AVOIDER_Y_MIN
-#ifdef GREEN_OBJECT_DETECTOR_LUM_MIN
-#define PLANT_AVOIDER_Y_MIN GREEN_OBJECT_DETECTOR_LUM_MIN
-#else
-#define PLANT_AVOIDER_Y_MIN 50
+/* Temporary calibration target: Y=90 U=100 V=124 */
+#ifndef PLANT_AVOIDER_Y_CENTER
+#define PLANT_AVOIDER_Y_CENTER 90
 #endif
+#ifndef PLANT_AVOIDER_U_CENTER
+#define PLANT_AVOIDER_U_CENTER 100
+#endif
+#ifndef PLANT_AVOIDER_V_CENTER
+#define PLANT_AVOIDER_V_CENTER 124
+#endif
+
+/* Tolerance window around sampled YUV values for robust matching. */
+#ifndef PLANT_AVOIDER_Y_TOL
+#define PLANT_AVOIDER_Y_TOL 25
+#endif
+#ifndef PLANT_AVOIDER_U_TOL
+#define PLANT_AVOIDER_U_TOL 25
+#endif
+#ifndef PLANT_AVOIDER_V_TOL
+#define PLANT_AVOIDER_V_TOL 25
+#endif
+
+#ifndef PLANT_AVOIDER_Y_MIN
+#define PLANT_AVOIDER_Y_MIN (PLANT_AVOIDER_Y_CENTER - PLANT_AVOIDER_Y_TOL)
 #endif
 #ifndef PLANT_AVOIDER_Y_MAX
-#ifdef GREEN_OBJECT_DETECTOR_LUM_MAX
-#define PLANT_AVOIDER_Y_MAX GREEN_OBJECT_DETECTOR_LUM_MAX
-#else
-#define PLANT_AVOIDER_Y_MAX 255
-#endif
+#define PLANT_AVOIDER_Y_MAX (PLANT_AVOIDER_Y_CENTER + PLANT_AVOIDER_Y_TOL)
 #endif
 #ifndef PLANT_AVOIDER_U_MIN
-#ifdef GREEN_OBJECT_DETECTOR_CB_MIN
-#define PLANT_AVOIDER_U_MIN GREEN_OBJECT_DETECTOR_CB_MIN
-#else
-#define PLANT_AVOIDER_U_MIN 100
-#endif
+#define PLANT_AVOIDER_U_MIN (PLANT_AVOIDER_U_CENTER - PLANT_AVOIDER_U_TOL)
 #endif
 #ifndef PLANT_AVOIDER_U_MAX
-#ifdef GREEN_OBJECT_DETECTOR_CB_MAX
-#define PLANT_AVOIDER_U_MAX GREEN_OBJECT_DETECTOR_CB_MAX
-#else
-#define PLANT_AVOIDER_U_MAX 150
-#endif
+#define PLANT_AVOIDER_U_MAX (PLANT_AVOIDER_U_CENTER + PLANT_AVOIDER_U_TOL)
 #endif
 #ifndef PLANT_AVOIDER_V_MIN
-#ifdef GREEN_OBJECT_DETECTOR_CR_MIN
-#define PLANT_AVOIDER_V_MIN GREEN_OBJECT_DETECTOR_CR_MIN
-#else
-#define PLANT_AVOIDER_V_MIN 0
-#endif
+#define PLANT_AVOIDER_V_MIN (PLANT_AVOIDER_V_CENTER - PLANT_AVOIDER_V_TOL)
 #endif
 #ifndef PLANT_AVOIDER_V_MAX
-#ifdef GREEN_OBJECT_DETECTOR_CR_MAX
-#define PLANT_AVOIDER_V_MAX GREEN_OBJECT_DETECTOR_CR_MAX
-#else
-#define PLANT_AVOIDER_V_MAX 128
-#endif
+#define PLANT_AVOIDER_V_MAX (PLANT_AVOIDER_V_CENTER + PLANT_AVOIDER_V_TOL)
 #endif
 
 float pa_straight_bias = PLANT_AVOIDER_STRAIGHT_BIAS;
@@ -138,6 +154,34 @@ struct pa_zone_scores_t {
 
 static struct pa_zone_scores_t g_scores;
 static pthread_mutex_t g_mutex;
+static uint32_t g_debug_yuv_frame_count = 0U;
+
+static bool yuv422_get_pixel(const struct image_t *img, uint16_t x, uint16_t y,
+                             uint8_t *y_out, uint8_t *u_out, uint8_t *v_out)
+{
+  if (!img || !img->buf || img->type != IMAGE_YUV422) {
+    return false;
+  }
+  if (x >= img->w || y >= img->h) {
+    return false;
+  }
+
+  uint8_t *buf = (uint8_t *)img->buf;
+  const uint32_t row_base = (uint32_t)y * 2U * (uint32_t)img->w;
+  const uint32_t base = row_base + (uint32_t)(2U * x);
+
+  if ((x & 1U) == 0U) {
+    *u_out = buf[base];
+    *y_out = buf[base + 1U];
+    *v_out = buf[base + 2U];
+  } else {
+    *u_out = buf[base - 2U];
+    *y_out = buf[base + 1U];
+    *v_out = buf[base];
+  }
+
+  return true;
+}
 
 static inline bool is_green_yuv(uint8_t y, uint8_t u, uint8_t v)
 {
@@ -240,6 +284,30 @@ static struct image_t *plant_avoider_func(struct image_t *img, uint8_t camera_id
 
   /* Debug behavior: always run detection/highlighting, even on ground. */
   detect_green_top_half(img, &s);
+
+#if PLANT_AVOIDER_DEBUG_YUV
+  uint8_t py, pu, pv;
+  const uint16_t sx = (uint16_t)(img->w / 2U);
+  const uint16_t sy = (uint16_t)(img->h / 2U);
+  if (yuv422_get_pixel(img, sx, sy, &py, &pu, &pv)) {
+    if ((g_debug_yuv_frame_count % PLANT_AVOIDER_DEBUG_YUV_PERIOD_FRAMES) == 0U) {
+#if PLANT_AVOIDER_DEBUG_YUV_TO_GCS
+      float yuv_msg[5];
+      yuv_msg[0] = (float)sx;
+      yuv_msg[1] = (float)sy;
+      yuv_msg[2] = (float)py;
+      yuv_msg[3] = (float)pu;
+      yuv_msg[4] = (float)pv;
+      DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 5, yuv_msg);
+#endif
+#if PLANT_AVOIDER_DEBUG_YUV_STDOUT
+      printf("[plant_avoider] sample pixel x=%u y=%u -> Y=%u U=%u V=%u\n",
+             (unsigned)sx, (unsigned)sy, (unsigned)py, (unsigned)pu, (unsigned)pv);
+#endif
+    }
+    g_debug_yuv_frame_count++;
+  }
+#endif
 
   pthread_mutex_lock(&g_mutex);
   g_scores = s;
