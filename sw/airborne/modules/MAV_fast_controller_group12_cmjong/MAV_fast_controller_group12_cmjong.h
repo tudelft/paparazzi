@@ -13,12 +13,8 @@
 #ifndef MAV_FAST_CONTROLLER_GROUP12_CMJONG_H
 #define MAV_FAST_CONTROLLER_GROUP12_CMJONG_H
 
-// settings
-extern float oa_color_count_frac;
-
 // functions
 extern void MAV_fast_controller_group12_cmjong_init(void);
 extern void MAV_fast_controller_group12_cmjong_periodic(void);
-extern void MAV_fast_controller_group12_cmjong_safety_periodic(void);
 
 #endif

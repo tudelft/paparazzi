@@ -3,8 +3,8 @@
   <doc>
     <description>
       Fast controller for MAV group 12 (cmjong).
-      Receives left/middle/right loss values from MAV_cv_detect_group12_cmjong
-      plus an obstacle-ahead flag from Luke optical flow, and navigates using a state machine: SAFE_AND_WAIT, TURN_TO_LOWEST_LOSS,
+      Receives color detection and optical flow obstacle flags, and navigates
+      using a state machine: SAFE_AND_WAIT, TURN_AVOID,
       MOVE_FORWARD_WITH_FIXED_DISTANCE, OUT_OF_BOUNDS.
     </description>
     <define name="MAV_cmjong_VISUAL_DETECTION_ID" value="ABI_BROADCAST"
@@ -23,7 +23,6 @@
 
   <init fun="MAV_fast_controller_group12_cmjong_init()"/>
   <periodic fun="MAV_fast_controller_group12_cmjong_periodic()" freq="4"/>
-  <periodic fun="MAV_fast_controller_group12_cmjong_safety_periodic()" freq="10" autorun="TRUE"/>
 
   <makefile target="ap|nps">
     <file name="MAV_fast_controller_group12_cmjong.c"/>

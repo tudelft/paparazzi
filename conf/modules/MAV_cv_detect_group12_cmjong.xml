@@ -37,7 +37,6 @@
 
     <define name="THRESHOLD_ORANGE_DETECTOR" value="0"/>
     <define name="THRESHOLD_GREEN_DETECTOR" value="0"/>
-    <define name="THRESHOLD_OPTICAL_FLOW" value="0"/>
 
 
   </doc>
@@ -74,7 +73,6 @@
       <dl_settings name="Threshold_of_detectors">
          <dl_setting var="threshold_orange_detector" min="0" step="1" max="5000" shortname="W_orange_d"/>
          <dl_setting var="threshold_green_detector" min="0" step="1" max="5000" shortname="W_green_d"/>
-         <dl_setting var="threshold_optical_flow" min="0" step="1" max="5000" shortname="W_optical_f"/>
       </dl_settings>
     </dl_settings>
   </settings>

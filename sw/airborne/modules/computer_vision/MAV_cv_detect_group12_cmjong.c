@@ -80,7 +80,6 @@ bool cod_draw = false;
 
 float threshold_orange_detector = 0;
 float threshold_green_detector = 0;
-float threshold_optical_flow = 0;
 
 
 // define global variables: this is the function that the information is stored that is send to the fast controller.
@@ -194,7 +193,6 @@ void MAV_cv_detect_group12_cmjong_init(void)
 #ifdef THRESHOLD_ORANGE_DETECTOR
   threshold_orange_detector = THRESHOLD_ORANGE_DETECTOR;
   threshold_green_detector = THRESHOLD_GREEN_DETECTOR;
-  threshold_optical_flow = THRESHOLD_OPTICAL_FLOW;
 #endif
 
 #ifdef COLOR_OBJECT_DETECTOR_DRAW

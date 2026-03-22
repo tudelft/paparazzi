@@ -43,13 +43,12 @@ static uint8_t rotate_drone_heading(float degrees);
 static void hold_current_waypoints(void);
 
 enum navigation_state_t {
-  SAFE_AND_WAIT,                     //begin state and if the cv_detect needs to proces things
-  TURN_TO_LOWEST_LOSS,               //Lowest loss is not in the middle so turn 
-  SEARCH_FOR_SAFE_HEADING,           //All the losses are not below threshold so turn
-  MOVE_FORWARD_WITH_FIXED_DISTANCE,  //Lowest loss is in the middle so move forward
+  SAFE_AND_WAIT,
+  TURN_AVOID,
+  SEARCH_FOR_SAFE_HEADING,
+  MOVE_FORWARD_WITH_FIXED_DISTANCE,
   GATE_DETECTED,
   OUT_OF_BOUNDS,
-  SAFETY_HOLD                        // holding after safety trigger, rotate if still unsafe
 };
 
 
@@ -123,29 +122,26 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
   // only evaluate our state machine if we are flying
   if(!autopilot_in_flight()){ return; }
   
-  VERBOSE_PRINT("State: %d | detected: %u , %u\n", navigation_state, detected_local , color_count_local);
+  VERBOSE_PRINT("State: %d | detected: %u, %u | of: %d\n", navigation_state, detected_local, color_count_local, of_obstacle_ahead);
 
 
   switch (navigation_state) {
 
     case SAFE_AND_WAIT:
-      // Hold position, wait for cv_detect to get a reading 
+      // Hold position, wait for cv_detect to get a reading
       hold_current_waypoints();
 
-      if (detected_local == 0) {
+      if (detected_local == 0 && !of_obstacle_ahead) {
         navigation_state = MOVE_FORWARD_WITH_FIXED_DISTANCE;
-      } else if (detected_local > 0) {
-      // Obstacle appeared ahead — stop and re-evaluate
-      navigation_state = TURN_TO_LOWEST_LOSS;
-      } 
-        break;
-
-    case TURN_TO_LOWEST_LOSS:
-    // Turn to the direction where the loss is the lowest 
-      if (detected_local > 0) {
-        rotate_drone_heading(AVOIDANCE_TURN_DEGREES);
+      } else if (detected_local > 0 || of_obstacle_ahead) {
+        navigation_state = TURN_AVOID;
       }
-      else {
+      break;
+
+    case TURN_AVOID:
+      if (detected_local > 0 || of_obstacle_ahead) {
+        rotate_drone_heading(AVOIDANCE_TURN_DEGREES);
+      } else {
         navigation_state = SAFE_AND_WAIT;
       }
       break;
@@ -158,8 +154,7 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
         navigation_state = OUT_OF_BOUNDS;
 
-      } else if (detected_local > 0) {
-        // Obstacle appeared ahead — stop and re-evaluate
+      } else if (detected_local > 0 || of_obstacle_ahead) {
         navigation_state = SAFE_AND_WAIT;
 
       } else {
@@ -194,29 +189,6 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
   }
 }
 
-void MAV_fast_controller_group12_cmjong_safety_periodic(void)
-{
-  if (!autopilot_in_flight()) {
-    return;
-  }
-
-  if (navigation_state == MOVE_FORWARD_WITH_FIXED_DISTANCE &&
-      (of_obstacle_ahead || Loss_image.middle >= LOSS_SAFE_THRESHOLD)) {
-    // First: stop and hold position
-    hold_current_waypoints();
-    navigation_state = SAFETY_HOLD;
-
-  } else if (navigation_state == SAFETY_HOLD &&
-             (of_obstacle_ahead || Loss_image.middle >= LOSS_SAFE_THRESHOLD)) {
-    // Still unsafe: rotate 60 degrees toward the safer side
-    if (Loss_image.left <= Loss_image.right) {
-      rotate_drone_heading(-AVOIDANCE_TURN_DEGREES);
-    } else {
-      rotate_drone_heading(AVOIDANCE_TURN_DEGREES);
-    }
-    navigation_state = SAFE_AND_WAIT;
-  }
-}
 
 static uint8_t rotate_drone_heading(float degrees)
 {

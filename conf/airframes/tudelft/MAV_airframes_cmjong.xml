@@ -110,7 +110,6 @@
       <define name="COLOR_OBJECT_DETECTOR_DRAW" value="1"/>
       <define name="THRESHOLD_ORANGE_DETECTOR" value="1000"/>
       <define name="THRESHOLD_GREEN_DETECTOR" value="1000"/>
-      <define name="THRESHOLD_OPTICAL_FLOW" value="1000"/>
     </module>
     <module name="MAV_fast_controller_group12_cmjong">
       <define name="MAV_cmjong_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION1_ID"/>

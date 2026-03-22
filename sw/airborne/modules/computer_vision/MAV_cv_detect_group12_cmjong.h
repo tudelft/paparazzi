@@ -57,7 +57,6 @@ extern bool cod_draw;
 
 extern float threshold_orange_detector;
 extern float threshold_green_detector;
-extern float threshold_optical_flow;
 
 
 // Module functions
