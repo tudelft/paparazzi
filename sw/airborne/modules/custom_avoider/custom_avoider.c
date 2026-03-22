@@ -85,7 +85,7 @@ static int32_t gate_quality = 0;
 #endif
 
 #ifndef GATE_FUSION_DEBUG
-#define GATE_FUSION_DEBUG 1
+#define GATE_FUSION_DEBUG true
 #endif
 
 #ifndef GATE_FUSION_DEBUG_PERIOD
