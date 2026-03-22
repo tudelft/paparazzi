@@ -6,9 +6,12 @@
 
 #include <pthread.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stddef.h>
 #include <string.h>
 #include <math.h>
+#include <stdio.h>
+#include <time.h>
 
 #ifndef GATE_CNN_DETECTOR_CAMERA
 #error "Define GATE_CNN_DETECTOR_CAMERA in the airframe/module settings"
@@ -26,6 +29,15 @@
 #define C2 16
 #define C3 24
 
+#ifndef GATE_CNN_DEBUG
+#define GATE_CNN_DEBUG true
+#endif
+
+#ifndef GATE_CNN_DEBUG_EVERY_N_FRAMES
+#define GATE_CNN_DEBUG_EVERY_N_FRAMES 1
+#endif
+
+
 /* --------------------------------------------------------- */
 /* Shared detector result                                    */
 /* --------------------------------------------------------- */
@@ -33,6 +45,22 @@
 static pthread_mutex_t gate_cnn_mutex;
 static gate_prediction_t g_pred;
 static struct video_listener *gate_cnn_listener;
+
+static uint32_t g_frame_counter = 0u;
+static float g_last_inference_ms = 0.0f;
+
+#if GATE_CNN_DEBUG
+#define GATE_CNN_PRINT(...) printf(__VA_ARGS__)
+#else
+#define GATE_CNN_PRINT(...) do { } while (0)
+#endif
+
+static inline double gate_cnn_now_ms(void)
+{
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return (double)ts.tv_sec * 1000.0 + (double)ts.tv_nsec / 1000000.0;
+}
 
 /* --------------------------------------------------------- */
 /* Scratch buffers: fixed-size, no malloc                    */
@@ -378,6 +406,40 @@ static int gate_cnn_predict_uyvy_core(const uint8_t *frame, int width, int heigh
   return 0;
 }
 
+static void gate_cnn_debug_print_prediction(const gate_prediction_t *pred, int width, int height, uint32_t frame_idx)
+{
+#if GATE_CNN_DEBUG
+  if (pred == NULL) {
+    return;
+  }
+  if ((frame_idx % GATE_CNN_DEBUG_EVERY_N_FRAMES) != 0u) {
+    return;
+  }
+
+  GATE_CNN_PRINT("[gate_cnn_detector.c][cnn] frame=%lu time=%.3f ms prob=%.3f detected=%u center=(%.1f,%.1f) size=(%.1f,%.1f) bbox=(%.1f,%.1f,%.1f,%.1f) img=%dx%d\n",
+                 (unsigned long)frame_idx,
+                 (double)g_last_inference_ms,
+                 (double)pred->present_prob,
+                 pred->present,
+                 (double)pred->center_x,
+                 (double)pred->center_y,
+                 (double)pred->bbox_width,
+                 (double)pred->bbox_height,
+                 (double)pred->bbox_xyxy[0],
+                 (double)pred->bbox_xyxy[1],
+                 (double)pred->bbox_xyxy[2],
+                 (double)pred->bbox_xyxy[3],
+                 width,
+                 height);
+
+  if (pred->present) {
+    GATE_CNN_PRINT("[gate_cnn_detector.c][detection] frame=%lu DETECTED gate -> will send VISUAL_DETECTION with quality=%ld\n",
+                   (unsigned long)frame_idx,
+                   (long)(1000.0f * pred->present_prob));
+  }
+#endif
+}
+
 /* --------------------------------------------------------- */
 /* Paparazzi video callback                                  */
 /* --------------------------------------------------------- */
@@ -397,10 +459,23 @@ static struct image_t *gate_cnn_detector_func(struct image_t *img, uint8_t camer
 
   memset(&local_pred, 0, sizeof(local_pred));
 
-  if (gate_cnn_predict_uyvy_core((const uint8_t *)img->buf, img->w, img->h, &local_pred) == 0) {
+  double t0_ms = gate_cnn_now_ms();
+  int status = gate_cnn_predict_uyvy_core((const uint8_t *)img->buf, img->w, img->h, &local_pred);
+  double t1_ms = gate_cnn_now_ms();
+  g_last_inference_ms = (float)(t1_ms - t0_ms);
+  g_frame_counter++;
+
+  if (status == 0) {
+    gate_cnn_debug_print_prediction(&local_pred, img->w, img->h, g_frame_counter);
+
     pthread_mutex_lock(&gate_cnn_mutex);
     memcpy(&g_pred, &local_pred, sizeof(local_pred));
     pthread_mutex_unlock(&gate_cnn_mutex);
+  } else {
+    GATE_CNN_PRINT("[gate_cnn_detector.c][cnn] frame=%lu prediction_failed status=%d time=%.3f ms\n",
+                   (unsigned long)g_frame_counter,
+                   status,
+                   (double)g_last_inference_ms);
   }
 
   return img;
@@ -417,6 +492,8 @@ void gate_cnn_detector_init(void)
 
   map_w = -1;
   map_h = -1;
+  g_frame_counter = 0u;
+  g_last_inference_ms = 0.0f;
 
   gate_cnn_listener = cv_add_to_device(&GATE_CNN_DETECTOR_CAMERA,
                                        gate_cnn_detector_func,
@@ -435,13 +512,27 @@ void gate_cnn_detector_periodic(void)
   pthread_mutex_unlock(&gate_cnn_mutex);
 
   if (local_pred.updated && local_pred.present) {
+    int16_t msg_px = (int16_t)local_pred.center_x;
+    int16_t msg_py = (int16_t)local_pred.center_y;
+    int16_t msg_w = (int16_t)local_pred.bbox_width;
+    int16_t msg_h = (int16_t)local_pred.bbox_height;
+    int32_t msg_q = (int32_t)(1000.0f * local_pred.present_prob);
+
+    GATE_CNN_PRINT("[gate_cnn_detector.c][tx VISUAL_DETECTION] px=%d py=%d w=%d h=%d quality=%ld time=%.3f ms\n",
+                   msg_px,
+                   msg_py,
+                   msg_w,
+                   msg_h,
+                   (long)msg_q,
+                   (double)g_last_inference_ms);
+
     AbiSendMsgVISUAL_DETECTION(
       GATE_CNN_VISUAL_DETECTION_ID,
-      (int16_t)local_pred.center_x,
-      (int16_t)local_pred.center_y,
-      (int16_t)local_pred.bbox_width,
-      (int16_t)local_pred.bbox_height,
-      (int32_t)(1000.0f * local_pred.present_prob),
+      msg_px,
+      msg_py,
+      msg_w,
+      msg_h,
+      msg_q,
       0
     );
   }
