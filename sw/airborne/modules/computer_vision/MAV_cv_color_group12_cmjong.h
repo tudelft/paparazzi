@@ -25,7 +25,7 @@
  * @param draw    - If true, matching pixels are brightened in the image (for debugging)
  * @param lum_min - Minimum Y (luminance) value
  * @param lum_max - Maximum Y (luminance) value
- * @param cb_min  - Minimum Cb (blue chroma) value
+ * @param cb_min  - Minimum Cb (blue chroma) value 
  * @param cb_max  - Maximum Cb (blue chroma) value
  * @param cr_min  - Minimum Cr (red chroma) value
  * @param cr_max  - Maximum Cr (red chroma) value
@@ -33,13 +33,9 @@
  */
 
 
-typedef struct {
-  uint32_t left;
-  uint32_t middle;
-  uint32_t right;
-} PixelCount;
 
-PixelCount orange_detection(struct image_t *img,
+
+uint16_t color_detection(struct image_t *img,
                              uint8_t lum_min, uint8_t lum_max,
                              uint8_t cb_min,  uint8_t cb_max,
                              uint8_t cr_min,  uint8_t cr_max,
