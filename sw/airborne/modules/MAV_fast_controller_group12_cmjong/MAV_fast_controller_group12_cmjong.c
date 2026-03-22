@@ -22,12 +22,17 @@
 #include "generated/airframe.h"
 #include "state.h"
 #include "modules/core/abi.h"
+#include "mcu_periph/sys_time.h"
 #include <time.h>
 #include <stdio.h>
 
 #include "generated/flight_plan.h"
 
 #define MAV_FAST_CONTROLLER_VERBOSE TRUE
+
+#ifndef MAV_FAST_CONTROLLER_ENABLE_NAV_COMMANDS
+#define MAV_FAST_CONTROLLER_ENABLE_NAV_COMMANDS 1
+#endif
 
 #define PRINT(string,...) fprintf(stderr, "[MAV_fast_controller_group12_cmjong->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 #if MAV_FAST_CONTROLLER_VERBOSE
@@ -62,10 +67,25 @@ typedef struct {
 #define MOVE_DISTANCE       0.5f   
 #define AVOIDANCE_TURN_DEGREES_OutOfBound 5.f
 
+#ifndef STUCK_TURN_TIMEOUT_S
+#define STUCK_TURN_TIMEOUT_S 20.0f
+#endif
+
+#ifndef STUCK_TURN_DEGREES
+#define STUCK_TURN_DEGREES 90.0f
+#endif
+
+#ifndef STUCK_POSITION_RADIUS_M
+#define STUCK_POSITION_RADIUS_M 0.30f
+#endif
+
 // define and initialise global variables
 enum navigation_state_t navigation_state = SAFE_AND_WAIT;
 
 Loss Loss_image = {0, 0, 0};
+static bool stuck_watchdog_initialized = false;
+static struct EnuCoor_f stuck_anchor_pos;
+static float stuck_last_move_time_s = 0.0f;
 
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
@@ -107,9 +127,41 @@ void MAV_fast_controller_group12_cmjong_init(void)
 void MAV_fast_controller_group12_cmjong_periodic(void)
 {
   // only evaluate our state machine if we are flying
-  if(!autopilot_in_flight()){ return; }
+  if(!autopilot_in_flight()){
+    stuck_watchdog_initialized = false;
+    return;
+  }
+
+  const struct EnuCoor_f *pos = stateGetPositionEnu_f();
+  const float now_s = get_sys_time_float();
+  if (!stuck_watchdog_initialized) {
+    stuck_anchor_pos = *pos;
+    stuck_last_move_time_s = now_s;
+    stuck_watchdog_initialized = true;
+  }
+
+  const float dx = pos->x - stuck_anchor_pos.x;
+  const float dy = pos->y - stuck_anchor_pos.y;
+  const float dist2 = dx * dx + dy * dy;
+  const float move_radius2 = STUCK_POSITION_RADIUS_M * STUCK_POSITION_RADIUS_M;
+  if (dist2 > move_radius2) {
+    stuck_anchor_pos = *pos;
+    stuck_last_move_time_s = now_s;
+  } else if ((now_s - stuck_last_move_time_s) > STUCK_TURN_TIMEOUT_S) {
+    VERBOSE_PRINT("Stuck watchdog: no motion for %.1fs, forcing %.1f deg turn\n",
+                  STUCK_TURN_TIMEOUT_S, STUCK_TURN_DEGREES);
+    rotate_drone_heading(STUCK_TURN_DEGREES);
+    navigation_state = SAFE_AND_WAIT;
+    stuck_anchor_pos = *pos;
+    stuck_last_move_time_s = now_s;
+    return;
+  }
   
   VERBOSE_PRINT("State: %d | Losses L:%u M:%u R:%u\n", navigation_state, Loss_image.left, Loss_image.middle, Loss_image.right);
+
+#if !MAV_FAST_CONTROLLER_ENABLE_NAV_COMMANDS
+  return;
+#endif
 
   bool middle_is_best = (Loss_image.middle <= Loss_image.left) &&
                         (Loss_image.middle <= Loss_image.right);

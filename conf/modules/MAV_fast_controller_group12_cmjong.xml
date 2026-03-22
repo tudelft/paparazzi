@@ -9,6 +9,8 @@
     </description>
     <define name="MAV_cmjong_VISUAL_DETECTION_ID" value="ABI_BROADCAST"
             description="Which VISUAL_DETECTION message to receive loss values from."/>
+        <define name="MAV_FAST_CONTROLLER_ENABLE_NAV_COMMANDS" value="0|1"
+          description="Enable nav/waypoint commands from this module (set 0 when fused with MAV_plant_avoider)."/>
   </doc>
 
   <dep>

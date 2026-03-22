@@ -28,6 +28,7 @@
 // Own header
 #include "modules/computer_vision/MAV_cv_detect_group12_cmjong.h"
 #include "modules/computer_vision/MAV_cv_color_group12_cmjong.h"
+#include "modules/computer_vision/MAV_plant_avoider.h"
 
 #include "modules/computer_vision/cv.h"
 #include "modules/core/abi.h"
@@ -52,6 +53,15 @@ static pthread_mutex_t mutex;
 #endif
 #ifndef COLOR_OBJECT_DETECTOR_FPS2
 #define COLOR_OBJECT_DETECTOR_FPS2 0 ///< Default FPS (zero means run at camera fps)
+#endif
+
+/* Keep plant mask visible by default, even if generic detector draw is toggled off at runtime. */
+#ifndef GREEN_OBJECT_DETECTOR_DRAW
+#define GREEN_OBJECT_DETECTOR_DRAW true
+#endif
+
+#ifndef ORANGE_OBJECT_DETECTOR_DRAW
+#define ORANGE_OBJECT_DETECTOR_DRAW true
 #endif
 
 // Filter Settings
@@ -90,7 +100,7 @@ struct cv_detect_message {
   int16_t  loss_right;
   bool updated;
 };
-struct cv_detect_message global_message[1];
+struct cv_detect_message global_message[2];
 
 
 
@@ -111,9 +121,18 @@ static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
   ----------------------------------------------------------------------------------------------------------------
   */
 
-  PixelCount count = color_detection(img, orange_lum_min, orange_lum_max, orange_cb_min, orange_cb_max, orange_cr_min, orange_cr_max, cod_draw);
-  // count.left, count.middle, count.right
-  //VERBOSE_PRINT("Orange pixel count: %u left , %u middle , %u right", Count.left , Count.middle, Count.right);
+  const bool draw_orange_mask = cod_draw || ORANGE_OBJECT_DETECTOR_DRAW;
+  PixelCount orange_count = color_detection(img,
+                                            orange_lum_min, orange_lum_max,
+                                            orange_cb_min, orange_cb_max,
+                                            orange_cr_min, orange_cr_max,
+                                            draw_orange_mask);
+
+  uint32_t plant_left = 0U;
+  uint32_t plant_middle = 0U;
+  uint32_t plant_right = 0U;
+  const bool draw_green_mask = cod_draw || GREEN_OBJECT_DETECTOR_DRAW;
+  plant_avoider_detect_losses(img, draw_green_mask, &plant_left, &plant_middle, &plant_right);
 
 
    /*
@@ -121,9 +140,12 @@ static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
   Weighted function below here 
   ----------------------------------------------------------------------------------------------------------------
   */
-  int16_t weighted_left  = weight_orange_detector * (int16_t)count.left;
-  int16_t weighted_middle = weight_orange_detector * (int16_t)count.middle;
-  int16_t weighted_right  = weight_orange_detector * (int16_t)count.right;
+  int16_t weighted_left = (int16_t)(weight_orange_detector * (float)orange_count.left +
+                                    weight_green_detector * (float)plant_left);
+  int16_t weighted_middle = (int16_t)(weight_orange_detector * (float)orange_count.middle +
+                                      weight_green_detector * (float)plant_middle);
+  int16_t weighted_right = (int16_t)(weight_orange_detector * (float)orange_count.right +
+                                     weight_green_detector * (float)plant_right);
 
   pthread_mutex_lock(&mutex);
   global_message[camera_id].loss_left   = weighted_left;
@@ -154,7 +176,7 @@ struct image_t *object_detector1(struct image_t *img, uint8_t camera_id __attrib
 */
 void MAV_cv_detect_group12_cmjong_init(void)
 {
-  memset(global_message, 0, 1*sizeof(struct cv_detect_message));
+  memset(global_message, 0, 2*sizeof(struct cv_detect_message));
   pthread_mutex_init(&mutex, NULL);
 #ifdef COLOR_OBJECT_DETECTOR_CAMERA
 #ifdef ORANGE_OBJECT_DETECTOR_LUM_MIN

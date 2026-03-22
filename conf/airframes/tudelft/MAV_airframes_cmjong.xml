@@ -104,6 +104,7 @@
       <define name="COLOR_OBJECT_DETECTOR_CAMERA" value="front_camera"/>
       <define name="COLOR_OBJECT_DETECTOR_FPS1" value="0"/>
       <define name="COLOR_OBJECT_DETECTOR_DRAW" value="1"/>
+      <define name="GREEN_OBJECT_DETECTOR_DRAW" value="1"/>
       <define name="WEIGHT_ORANGE_DETECTOR" value="0.65"/>
       <define name="WEIGHT_GREEN_DETECTOR" value="1.0"/>
       <define name="WEIGHT_OPTICAL_FLOW" value="1.0"/>

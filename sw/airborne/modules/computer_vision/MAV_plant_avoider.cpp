@@ -16,6 +16,7 @@ extern "C" {
 #include "modules/computer_vision/cv.h"
 #include "modules/computer_vision/lib/vision/image.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
+#include "firmwares/rotorcraft/navigation.h"
 #include "modules/datalink/downlink.h"
 #include "state.h"
 }
@@ -50,8 +51,35 @@ extern "C" {
 #define PLANT_AVOIDER_DEBUG_YUV_STDOUT 0
 #endif
 
+/* In NAV mode, route guidance can overwrite speed setpoints.
+ * Enable this to let avoider commands drive horizontal guidance in simulation. */
+#ifndef PLANT_AVOIDER_NAV_MODE_CONTROL
+#define PLANT_AVOIDER_NAV_MODE_CONTROL 0
+#endif
+
+/* When 0, this module does not send guidance commands. */
+#ifndef PLANT_AVOIDER_ENABLE_STANDALONE_CONTROL
+#define PLANT_AVOIDER_ENABLE_STANDALONE_CONTROL 0
+#endif
+
+/* Keep camera processing/highlighting active even if control is disabled. */
+#ifndef PLANT_AVOIDER_ENABLE_VISION_CALLBACK
+#define PLANT_AVOIDER_ENABLE_VISION_CALLBACK 1
+#endif
+
 #ifndef PLANT_AVOIDER_SHOW_MASK
-#define PLANT_AVOIDER_SHOW_MASK 1
+#define PLANT_AVOIDER_SHOW_MASK 0
+#endif
+
+/* YUV color used to render the debug mask in the video stream. */
+#ifndef PLANT_AVOIDER_MASK_Y
+#define PLANT_AVOIDER_MASK_Y 145U
+#endif
+#ifndef PLANT_AVOIDER_MASK_U
+#define PLANT_AVOIDER_MASK_U 54U
+#endif
+#ifndef PLANT_AVOIDER_MASK_V
+#define PLANT_AVOIDER_MASK_V 34U
 #endif
 
 #ifndef PLANT_AVOIDER_GROUND_ALT_M
@@ -70,9 +98,14 @@ extern "C" {
 #define PLANT_AVOIDER_STRAIGHT_BIAS 0.10f
 #endif
 
-/* Bebop camera feed is rotated in this setup: selecting x < w/2 maps to top half in viewer. */
+/* Gazebo front camera is typically not rotated; set to 1 only for rotated feeds (e.g. some Bebop setups). */
 #ifndef PLANT_AVOIDER_ROTATED_CAMERA_TOP_HALF
 #define PLANT_AVOIDER_ROTATED_CAMERA_TOP_HALF 1
+#endif
+
+/* Set to 1 to keep legacy half-frame ROI, 0 to detect/draw across the full frame. */
+#ifndef PLANT_AVOIDER_USE_HALF_FOV
+#define PLANT_AVOIDER_USE_HALF_FOV 1
 #endif
 
 #ifndef PLANT_AVOIDER_STRAIGHT_SIDE_BONUS
@@ -84,12 +117,17 @@ extern "C" {
 #endif
 
 /*
- * CMJong-style control rule:
- * - If the middle/top-forward sector is below this raw loss threshold, fly straight.
- * - Otherwise, turn to the side with the lowest green load.
+ * Control rule based on straight-sector load percentage (resolution independent):
+ * - If straight load is below safe percent, fly straight.
+ * - Otherwise, turn to the side with the lower load.
  */
-#ifndef PLANT_AVOIDER_LOSS_SAFE_THRESHOLD
-#define PLANT_AVOIDER_LOSS_SAFE_THRESHOLD 10000U
+#ifndef PLANT_AVOIDER_STRAIGHT_SAFE_PCT
+#define PLANT_AVOIDER_STRAIGHT_SAFE_PCT 40.0f
+#endif
+
+/* Emergency behavior when center is heavily blocked: stop forward motion while turning. */
+#ifndef PLANT_AVOIDER_STRAIGHT_BLOCKED_PCT
+#define PLANT_AVOIDER_STRAIGHT_BLOCKED_PCT 60.0f
 #endif
 
 /* Temporary calibration target: Y=90 U=100 V=124 */
@@ -105,13 +143,13 @@ extern "C" {
 
 /* Tolerance window around sampled YUV values for robust matching. */
 #ifndef PLANT_AVOIDER_Y_TOL
-#define PLANT_AVOIDER_Y_TOL 25
+#define PLANT_AVOIDER_Y_TOL 20
 #endif
 #ifndef PLANT_AVOIDER_U_TOL
-#define PLANT_AVOIDER_U_TOL 25
+#define PLANT_AVOIDER_U_TOL 20
 #endif
 #ifndef PLANT_AVOIDER_V_TOL
-#define PLANT_AVOIDER_V_TOL 25
+#define PLANT_AVOIDER_V_TOL 20
 #endif
 
 #ifndef PLANT_AVOIDER_Y_MIN
@@ -195,7 +233,7 @@ static bool is_drone_near_ground(void)
   return stateGetPositionEnu_f()->z <= PLANT_AVOIDER_GROUND_ALT_M;
 }
 
-static void detect_green_top_half(struct image_t *img, struct pa_zone_scores_t *out)
+static void detect_green_top_half(struct image_t *img, bool draw_mask, struct pa_zone_scores_t *out)
 {
   memset(out, 0, sizeof(*out));
 
@@ -211,11 +249,11 @@ static void detect_green_top_half(struct image_t *img, struct pa_zone_scores_t *
     const uint32_t row_base = (uint32_t)y * 2U * (uint32_t)w;
     for (uint16_t x = 0; x < w; x++) {
 #if PLANT_AVOIDER_ROTATED_CAMERA_TOP_HALF
-  if (x < (w / 2U)) {
+  if (PLANT_AVOIDER_USE_HALF_FOV && x < (w / 2U)) {
         continue;
       }
 #else
-      if (y >= (h / 2U)) {
+  if (PLANT_AVOIDER_USE_HALF_FOV && y >= (h / 2U)) {
         continue;
       }
 #endif
@@ -241,13 +279,20 @@ static void detect_green_top_half(struct image_t *img, struct pa_zone_scores_t *
       }
 
 #if PLANT_AVOIDER_SHOW_MASK
-      /* Safe overlay: adjust luma only, keep shared U/V bytes untouched. */
-      if ((x & 1U) == 0U) {
-        const uint32_t base = row_base + (uint32_t)(2U * x);
-        buf[base + 1U] = 235U;  /* Y pixel x */
-      } else {
-        const uint32_t base = row_base + (uint32_t)(2U * x);
-        buf[base + 1U] = 235U;  /* Y pixel x */
+      if (draw_mask) {
+        /* YUV422 packs chroma per 2-pixel pair: [U Y0 V Y1]. */
+        const uint16_t x_pair = (uint16_t)(x & (uint16_t)~1U);
+        const uint32_t pair_base = row_base + (uint32_t)(2U * x_pair);
+        const uint32_t row_end = row_base + (uint32_t)(2U * w);
+        if ((pair_base + 3U) < row_end) {
+          buf[pair_base] = PLANT_AVOIDER_MASK_U;
+          buf[pair_base + 2U] = PLANT_AVOIDER_MASK_V;
+          if ((x & 1U) == 0U) {
+            buf[pair_base + 1U] = PLANT_AVOIDER_MASK_Y;
+          } else {
+            buf[pair_base + 3U] = PLANT_AVOIDER_MASK_Y;
+          }
+        }
       }
 #endif
 
@@ -273,6 +318,23 @@ static void detect_green_top_half(struct image_t *img, struct pa_zone_scores_t *
   }
 }
 
+extern "C" void plant_avoider_detect_losses(struct image_t *img, bool draw_mask,
+                                              uint32_t *left, uint32_t *straight, uint32_t *right)
+{
+  struct pa_zone_scores_t s;
+  detect_green_top_half(img, draw_mask, &s);
+
+  if (left) {
+    *left = s.left;
+  }
+  if (straight) {
+    *straight = s.straight;
+  }
+  if (right) {
+    *right = s.right;
+  }
+}
+
 static struct image_t *plant_avoider_func(struct image_t *img, uint8_t camera_id)
 {
   (void)camera_id;
@@ -283,7 +345,7 @@ static struct image_t *plant_avoider_func(struct image_t *img, uint8_t camera_id
   struct pa_zone_scores_t s;
 
   /* Debug behavior: always run detection/highlighting, even on ground. */
-  detect_green_top_half(img, &s);
+  detect_green_top_half(img, true, &s);
 
 #if PLANT_AVOIDER_DEBUG_YUV
   uint8_t py, pu, pv;
@@ -325,13 +387,19 @@ extern "C" void plant_avoider_init(void)
   pa_forward_speed = PLANT_AVOIDER_FORWARD_SPEED;
   pa_turn_speed = PLANT_AVOIDER_TURN_SPEED;
 
+#if PLANT_AVOIDER_ENABLE_VISION_CALLBACK
   cv_add_to_device(&PLANT_AVOIDER_CAMERA, plant_avoider_func, PLANT_AVOIDER_FPS, 0);
+#endif
 }
 
 extern "C" void plant_avoider_periodic(void)
 {
+#if !PLANT_AVOIDER_ENABLE_STANDALONE_CONTROL
+  return;
+#else
   const bool grounded = is_drone_near_ground();
-  const bool guided_mode = (guidance_h.mode == GUIDANCE_H_MODE_GUIDED);
+  const bool control_mode_active = (guidance_h.mode == GUIDANCE_H_MODE_GUIDED) ||
+                                   (guidance_h.mode == GUIDANCE_H_MODE_NAV);
 
   struct pa_zone_scores_t s;
   pthread_mutex_lock(&g_mutex);
@@ -350,7 +418,7 @@ extern "C" void plant_avoider_periodic(void)
 
   int8_t direction = 0;
   if (!grounded && s.total > 0U) {
-    const bool middle_is_safe = (s.straight < PLANT_AVOIDER_LOSS_SAFE_THRESHOLD);
+    const bool middle_is_safe = (pa_load_straight < PLANT_AVOIDER_STRAIGHT_SAFE_PCT);
     const bool left_is_best = (pa_load_left < pa_load_straight) &&
                               (pa_load_left < pa_load_right);
 
@@ -373,13 +441,24 @@ extern "C" void plant_avoider_periodic(void)
   float vx = pa_forward_speed;
   float vy = 0.0f;
 
+  if (direction != 0) {
+    vx = 0.0f;
+  }
+
   if (direction < 0) {
     vy = -pa_turn_speed;
   } else if (direction > 0) {
     vy = pa_turn_speed;
   }
 
-  if (guided_mode && !grounded) {
+  if (control_mode_active && !grounded) {
+#if PLANT_AVOIDER_NAV_MODE_CONTROL
+    if (guidance_h.mode == GUIDANCE_H_MODE_NAV) {
+      nav.horizontal_mode = NAV_HORIZONTAL_MODE_GUIDED;
+      nav.setpoint_mode = NAV_SETPOINT_MODE_SPEED;
+    }
+#endif
     guidance_h_set_body_vel(vx, vy);
   }
+#endif
 }
