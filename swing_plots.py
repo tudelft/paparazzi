@@ -25,6 +25,9 @@ df = pd.read_csv('/home/bimse/Documents/Flight_logs/mrt17/19700101-000821GRAVITY
 # df = pd.read_csv('/home/bimse/Documents/Flight_logs/mrt17/19700101-000229LONGER_SMALL_SIN.csv')
 # df = pd.read_csv('/home/bimse/Documents/Flight_logs/mrt17/19700101-000659BIGGER_SIN.csv')
 
+df = pd.read_csv('/home/bimse/Documents/Flight_logs/mrt23/19700101-000852ANOTHERLONGHOVER.csv')
+df = pd.read_csv('/home/bimse/Documents/Flight_logs/mrt23/19700101-004259GOODHOVERITHINK.csv')
+
 problems_start = 80
 
 time = df['timestamp']

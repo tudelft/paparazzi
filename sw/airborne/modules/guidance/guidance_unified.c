@@ -134,25 +134,25 @@ void guidance_unified_run(bool in_flight)
     // Desired position
     pos_ref[0] = 0.0;
     // pos_ref[0] = -5 * sinf(counter/freq);
-    pos_ref[1] = 1.0 * cosf(counter/freq);
+    // pos_ref[1] = 1.0 * cosf(counter/freq);
     // pos_ref[1] = 1 * cosf(2* counter/freq);
-    // pos_ref[1] = 0.0;
+    pos_ref[1] = 0.0;
     pos_ref[2] = -1.5;
 
     // Analytical derivatives of pos_ref for the feedforward input
     // Not including frequency in the derivative, as time = counter / freq
     vel_ref[0] = 0.0;
     // vel_ref[0] = -5 * cosf(counter/freq);
-    vel_ref[1] = -1.0 * sinf(counter/freq);
+    // vel_ref[1] = -1.0 * sinf(counter/freq);
     // vel_ref[1] = -1 * 2* sinf(2* counter/freq);
-    // vel_ref[1] = 0.0;
+    vel_ref[1] = 0.0;
     vel_ref[2] = 0.0;
 
     accel_ref[0] = 0.0;
     // accel_ref[0] = 5 * sinf(counter/freq);
-    accel_ref[1] = -1.0* cosf(counter/freq);
+    // accel_ref[1] = -1.0* cosf(counter/freq);
     // accel_ref[1] = -1 * 4* cosf(2* counter/freq);
-    // accel_ref[1] = 0.0;
+    accel_ref[1] = 0.0;
     accel_ref[2] = 0.0;
 
     // Current positions
@@ -207,7 +207,7 @@ void guidance_unified_run(bool in_flight)
     roll_rate_calc = ctrl.cmd.p;
     pitch_rate_calc = ctrl.cmd.q;
     
-    float T_cmd_filt = update_butterworth_2_low_pass(&T_cmd_filter, rates_guidance[2])
+    float T_cmd_filt = update_butterworth_2_low_pass(&T_cmd_filter, rates_guidance[2]);
     T_cmd = rates_guidance[2];
 
     struct StabilizationSetpoint sp = stab_sp_from_rates_f(&(ctrl.cmd));
