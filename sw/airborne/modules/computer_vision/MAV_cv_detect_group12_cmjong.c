@@ -57,11 +57,11 @@ static pthread_mutex_t mutex;
 
 /* Keep plant mask visible by default, even if generic detector draw is toggled off at runtime. */
 #ifndef GREEN_OBJECT_DETECTOR_DRAW
-#define GREEN_OBJECT_DETECTOR_DRAW true
+#define GREEN_OBJECT_DETECTOR_DRAW false
 #endif
 
 #ifndef ORANGE_OBJECT_DETECTOR_DRAW
-#define ORANGE_OBJECT_DETECTOR_DRAW true
+#define ORANGE_OBJECT_DETECTOR_DRAW false
 #endif
 
 // Filter Settings

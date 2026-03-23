@@ -61,9 +61,9 @@ typedef struct {
   uint16_t right;
 } Loss;
 
-#define LOSS_SAFE_THRESHOLD 10000u
+#define LOSS_SAFE_THRESHOLD 9500u
 
-#define AVOIDANCE_TURN_DEGREES 10.f 
+#define AVOIDANCE_TURN_DEGREES 20.f 
 #define MOVE_DISTANCE       0.5f   
 #define AVOIDANCE_TURN_DEGREES_OutOfBound 5.f
 
