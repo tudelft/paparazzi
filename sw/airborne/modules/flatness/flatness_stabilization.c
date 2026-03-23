@@ -91,7 +91,7 @@ struct Fl_stabilization fl_stabilization;
 // global vars
 static abi_event rc_ev;
 struct ThrustSetpoint rc_thr_sp;
-static float timestamp;
+static float timestamp, timestamp_prev, dt;
 static Butterworth2LowPass act_filter[4];
 static Butterworth2LowPass accel_filter[3];
 static Butterworth2LowPass spec_force_filter[3];
@@ -122,6 +122,9 @@ float timestamp_p2p_start, timestamp_p2p, timestamp_traj, timestamp_traj_start;
 bool flatness_guided;
 static FILE *ref_traj_fd = NULL;
 static Traj_row_t traj[NB_CSV_ROWS];
+static struct FloatVect3 *pos_start;
+static struct FloatVect3 *vel_start;
+static struct FloatVect3 *accel_start;
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -153,6 +156,8 @@ static void expose_dbg_variables(void)
 
     //data
     dbg.timestamp = timestamp;
+    dbg.dt = dt;
+    dbg.Ts = timestamp - timestamp_prev;
     dbg.voltage = electrical.vsupply;
     dbg.throttle = temp_throttle;
     dbg.spec_thrust_sp = temp_spec_thrust_sp;
@@ -225,18 +230,21 @@ void flatness_stabilization_init(void)
     AbiBindMsgRADIO_CONTROL(ABI_BROADCAST, &rc_ev, rc_cb);
 
     char filename[256];
-    sprintf(filename, "%s/circular_vs2_R2.csv", STRINGIFY(REF_TRAJ_FILE_PATH));
+    sprintf(filename, "%s/circular_vs2_r2.csv", STRINGIFY(REF_TRAJ_FILE_PATH));
     ref_traj_fd = fopen(filename, "r");
     if(!ref_traj_fd) {
-        printf("[ref_traj_fd] ERROR opening reference trajectory file %s!\n", filename);
-        return;
+        return; // todo: add error handling here?
     }
+    
+    load_csv_traj();
 }
 
 void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpoint *att_sp, float spec_thrust_sp, int32_t *cmd)
 {
-    // get the timestamp
-    timestamp = get_sys_time_float();
+    if (flatness_guided == false) {
+        timestamp_prev = timestamp;
+        timestamp = get_sys_time_float();
+    }
 
     // calculate quaternion error
     struct FloatQuat quat_err;
@@ -302,6 +310,8 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
     // printf("%.2f\t", spec_thrust_sp);
     // printf("%.0f\t%.0f\t%.0f\t%.0f\t", act.cmd[0], act.cmd[1], act.cmd[2], act.cmd[3]);
     // printf("\n");
+
+    dt = get_sys_time_float() - timestamp;
 
     expose_dbg_variables();
 }
@@ -520,15 +530,17 @@ static float discrete_first_order_filter(float alpha, float input, float prev_ou
 
 void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
 {
+
+    timestamp_prev = timestamp;
+    timestamp = get_sys_time_float();
+
     switch (fsm_state)
     {
         case FSM_INIT:
-            struct FloatVect3 *pos_start = (struct FloatVect3 *)stateGetPositionNed_f();
-            struct FloatVect3 *vel_start = (struct FloatVect3 *)stateGetSpeedNed_f();
-            struct FloatVect3 *accel_start = (struct FloatVect3 *)stateGetAccelNed_f();
+            pos_start = (struct FloatVect3 *)stateGetPositionNed_f();
+            vel_start = (struct FloatVect3 *)stateGetSpeedNed_f();
+            accel_start = (struct FloatVect3 *)stateGetAccelNed_f();
             compute_quintic_coefficients(pos_start, &POS_END, vel_start, accel_start);
-
-            load_csv_traj();
 
             timestamp_p2p_start = get_sys_time_float();
             fsm_state = FSM_STANDBY;
@@ -546,8 +558,8 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
             flatness_guidance_run(in_flight, cmd);
 
             if (timestamp_p2p > P2P_DT + P2P_TO_TRAJ_DELAY) {
-                // fsm_state = FSM_TRAJECTORY_INIT; //use for complete trajectory 
-                ; // use for only p2p
+                fsm_state = FSM_TRAJECTORY_INIT; //use for complete trajectory 
+                // ; // use for only p2p
             }
             break;
 
@@ -605,41 +617,41 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
     }
 }
 
-void compute_quintic_ref(float t, struct FloatVect3 *pos_start, const struct FloatVect3 *pos_end)
+void compute_quintic_ref(float t, struct FloatVect3 *ps, const struct FloatVect3 *pe)
 {
     float t2 = t*t, t3 = t2*t, t4 = t3*t, t5 = t4*t;
-    pos_ref.x = pos_start->x + (quintic_coeff_n[1]*t + quintic_coeff_n[2]*t2 + quintic_coeff_n[3]*t3 + quintic_coeff_n[4]*t4 + quintic_coeff_n[5]*t5)*(pos_end->x - pos_start->x);
-    pos_ref.y = pos_start->y + (quintic_coeff_e[1]*t + quintic_coeff_e[2]*t2 + quintic_coeff_e[3]*t3 + quintic_coeff_e[4]*t4 + quintic_coeff_e[5]*t5)*(pos_end->y - pos_start->y);
-    pos_ref.z = pos_start->z + (quintic_coeff_d[1]*t + quintic_coeff_d[2]*t2 + quintic_coeff_d[3]*t3 + quintic_coeff_d[4]*t4 + quintic_coeff_d[5]*t5)*(pos_end->z - pos_start->z);
+    pos_ref.x = ps->x + (quintic_coeff_n[1]*t + quintic_coeff_n[2]*t2 + quintic_coeff_n[3]*t3 + quintic_coeff_n[4]*t4 + quintic_coeff_n[5]*t5)*(pe->x - ps->x);
+    pos_ref.y = ps->y + (quintic_coeff_e[1]*t + quintic_coeff_e[2]*t2 + quintic_coeff_e[3]*t3 + quintic_coeff_e[4]*t4 + quintic_coeff_e[5]*t5)*(pe->y - ps->y);
+    pos_ref.z = ps->z + (quintic_coeff_d[1]*t + quintic_coeff_d[2]*t2 + quintic_coeff_d[3]*t3 + quintic_coeff_d[4]*t4 + quintic_coeff_d[5]*t5)*(pe->z - ps->z);
 
-    vel_ref.x = (quintic_coeff_n[1] + 2*quintic_coeff_n[2]*t + 3*quintic_coeff_n[3]*t2 + 4*quintic_coeff_n[4]*t3 + 5*quintic_coeff_n[5]*t4)*(pos_end->x - pos_start->x);
-    vel_ref.y = (quintic_coeff_e[1] + 2*quintic_coeff_e[2]*t + 3*quintic_coeff_e[3]*t2 + 4*quintic_coeff_e[4]*t3 + 5*quintic_coeff_e[5]*t4)*(pos_end->y - pos_start->y);
-    vel_ref.z = (quintic_coeff_d[1] + 2*quintic_coeff_d[2]*t + 3*quintic_coeff_d[3]*t2 + 4*quintic_coeff_d[4]*t3 + 5*quintic_coeff_d[5]*t4)*(pos_end->z - pos_start->z);
+    vel_ref.x = (quintic_coeff_n[1] + 2*quintic_coeff_n[2]*t + 3*quintic_coeff_n[3]*t2 + 4*quintic_coeff_n[4]*t3 + 5*quintic_coeff_n[5]*t4)*(pe->x - ps->x);
+    vel_ref.y = (quintic_coeff_e[1] + 2*quintic_coeff_e[2]*t + 3*quintic_coeff_e[3]*t2 + 4*quintic_coeff_e[4]*t3 + 5*quintic_coeff_e[5]*t4)*(pe->y - ps->y);
+    vel_ref.z = (quintic_coeff_d[1] + 2*quintic_coeff_d[2]*t + 3*quintic_coeff_d[3]*t2 + 4*quintic_coeff_d[4]*t3 + 5*quintic_coeff_d[5]*t4)*(pe->z - ps->z);
 
-    accel_ref.x = (2*quintic_coeff_n[2] + 6*quintic_coeff_n[3]*t + 12*quintic_coeff_n[4]*t2 + 20*quintic_coeff_n[5]*t3)*(pos_end->x - pos_start->x);
-    accel_ref.y = (2*quintic_coeff_e[2] + 6*quintic_coeff_e[3]*t + 12*quintic_coeff_e[4]*t2 + 20*quintic_coeff_e[5]*t3)*(pos_end->y - pos_start->y);
-    accel_ref.z = (2*quintic_coeff_d[2] + 6*quintic_coeff_d[3]*t + 12*quintic_coeff_d[4]*t2 + 20*quintic_coeff_d[5]*t3)*(pos_end->z - pos_start->z);
+    accel_ref.x = (2*quintic_coeff_n[2] + 6*quintic_coeff_n[3]*t + 12*quintic_coeff_n[4]*t2 + 20*quintic_coeff_n[5]*t3)*(pe->x - ps->x);
+    accel_ref.y = (2*quintic_coeff_e[2] + 6*quintic_coeff_e[3]*t + 12*quintic_coeff_e[4]*t2 + 20*quintic_coeff_e[5]*t3)*(pe->y - ps->y);
+    accel_ref.z = (2*quintic_coeff_d[2] + 6*quintic_coeff_d[3]*t + 12*quintic_coeff_d[4]*t2 + 20*quintic_coeff_d[5]*t3)*(pe->z - ps->z);
 }
 
-void compute_quintic_coefficients(struct FloatVect3 *pos_start, const struct FloatVect3 *pos_end, struct FloatVect3 *vel_start, struct FloatVect3 *accel_start)
+void compute_quintic_coefficients(struct FloatVect3 *ps, const struct FloatVect3 *pe, struct FloatVect3 *vs, struct FloatVect3 *as)
 {
     quintic_coeff_n[0] = 0;
-    quintic_coeff_n[1] = vel_start->x/(pos_end->x - pos_start->x);
-    quintic_coeff_n[2] = accel_start->x/(2*(pos_end->x - pos_start->x));
+    quintic_coeff_n[1] = vs->x/(pe->x - ps->x);
+    quintic_coeff_n[2] = as->x/(2*(pe->x - ps->x));
     quintic_coeff_n[3] = -(3*quintic_coeff_n[2]*P2P_DT*P2P_DT + 6*quintic_coeff_n[1]*P2P_DT - 10)/(P2P_DT*P2P_DT*P2P_DT);
     quintic_coeff_n[4] = (3*quintic_coeff_n[2]*P2P_DT*P2P_DT + 8*quintic_coeff_n[1]*P2P_DT - 15)/(P2P_DT*P2P_DT*P2P_DT*P2P_DT);
     quintic_coeff_n[5] = -(quintic_coeff_n[2]*P2P_DT*P2P_DT + 3*quintic_coeff_n[1]*P2P_DT - 6)/(P2P_DT*P2P_DT*P2P_DT*P2P_DT*P2P_DT);
 
     quintic_coeff_e[0] = 0;
-    quintic_coeff_e[1] = vel_start->y/(pos_end->y - pos_start->y);
-    quintic_coeff_e[2] = accel_start->y/(2*(pos_end->y - pos_start->y));
+    quintic_coeff_e[1] = vs->y/(pe->y - ps->y);
+    quintic_coeff_e[2] = as->y/(2*(pe->y - ps->y));
     quintic_coeff_e[3] = -(3*quintic_coeff_e[2]*P2P_DT*P2P_DT + 6*quintic_coeff_e[1]*P2P_DT - 10)/(P2P_DT*P2P_DT*P2P_DT);
     quintic_coeff_e[4] = (3*quintic_coeff_e[2]*P2P_DT*P2P_DT + 8*quintic_coeff_e[1]*P2P_DT - 15)/(P2P_DT*P2P_DT*P2P_DT*P2P_DT);
     quintic_coeff_e[5] = -(quintic_coeff_e[2]*P2P_DT*P2P_DT + 3*quintic_coeff_e[1]*P2P_DT - 6)/(P2P_DT*P2P_DT*P2P_DT*P2P_DT*P2P_DT);
 
     quintic_coeff_d[0] = 0;
-    quintic_coeff_d[1] = vel_start->z/(pos_end->z - pos_start->z);
-    quintic_coeff_d[2] = accel_start->z/(2*(pos_end->z - pos_start->z));
+    quintic_coeff_d[1] = vs->z/(pe->z - ps->z);
+    quintic_coeff_d[2] = as->z/(2*(pe->z - ps->z));
     quintic_coeff_d[3] = -(3*quintic_coeff_d[2]*P2P_DT*P2P_DT + 6*quintic_coeff_d[1]*P2P_DT - 10)/(P2P_DT*P2P_DT*P2P_DT);
     quintic_coeff_d[4] = (3*quintic_coeff_d[2]*P2P_DT*P2P_DT + 8*quintic_coeff_d[1]*P2P_DT - 15)/(P2P_DT*P2P_DT*P2P_DT*P2P_DT);
     quintic_coeff_d[5] = -(quintic_coeff_d[2]*P2P_DT*P2P_DT + 3*quintic_coeff_d[1]*P2P_DT - 6)/(P2P_DT*P2P_DT*P2P_DT*P2P_DT*P2P_DT);

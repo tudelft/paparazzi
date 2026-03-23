@@ -61,6 +61,8 @@ typedef struct {
     
     // data
     float timestamp;
+    float dt;
+    float Ts;
     float voltage;
     int32_t throttle;
     float spec_thrust_sp;
