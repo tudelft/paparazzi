@@ -34,22 +34,35 @@
 #include "modules/core/abi.h"
 #include "autopilot.h"
 #include "state.h"
+#include <stdio.h>
 
 // #include "modules/datalink/telemetry.h"
 
 #define SAFE_SQRT(x) (sqrtf((x) > 0 ? (x) : 0.0f))
 
+#define NB_CSV_ROWS 998
+
 typedef enum {
     FSM_INIT = 0,
     FSM_STANDBY,
-    FSM_TRAJECTORY
+    FSM_TRAJECTORY_INIT,
+    FSM_TRAJECTORY,
+    FSM_END
 } fl_guid_fsm_t;
 
+typedef struct {
+    float px, py, pz;
+    float vx, vy, vz;
+    float ax, ay, az;
+    float jx, jy, jz;
+    float psi, psidot;
+} Traj_row_t;
+
 // constants
-// static const float C_X = -0.612f;
-// static const float C_Z = -0.079f;
-static const float C_X = 0.0f;
-static const float C_Z = 0.0f;
+static const float C_X = -0.612f;
+static const float C_Z = -0.079f;
+// static const float C_X = 0.0f;
+// static const float C_Z = 0.0f;
 
 static const float MU_X_v = 4.5f  / 100000000.0f;
 static const float MU_Y_v = 10.4f / 100000000.0f;
@@ -67,8 +80,9 @@ static const Gain_t Komega = {14.0f, 15.0f, 14.0f};
 static const Gain_t Kp = {1.0f, 1.0f, 1.0f};
 static const Gain_t Kv = {2.0f, 2.0f, 2.0f};
 
-static const struct FloatVect3 POS_END = {0.0f, 0.0f, -2.0f};
-static const float P2P_DT = 3.0f;  
+static const struct FloatVect3 POS_END = {0.0f, 2.0f, -2.0f};
+static const float P2P_DT = 3.0f;
+static const float P2P_TO_TRAJ_DELAY = 5.0f;
 
 // global vars declared as extern in header file
 dbg_t dbg;
@@ -80,7 +94,7 @@ struct ThrustSetpoint rc_thr_sp;
 static float timestamp;
 static Butterworth2LowPass act_filter[4];
 static Butterworth2LowPass accel_filter[3];
-static Butterworth2LowPass spec_force_filter[4];
+static Butterworth2LowPass spec_force_filter[3];
 static Butterworth2LowPass rates_num_der_filter[3];
 static float ACT_DYN_ALPHA;
 static Act_t act = {
@@ -98,13 +112,16 @@ static float temp_spec_thrust_sp;
 struct FloatVect3 pos_ref = {0.0f, 0.0f, 0.0f};
 struct FloatVect3 vel_ref = {0.0f, 0.0f, 0.0f};
 struct FloatVect3 accel_ref = {0.0f, 0.0f, 0.0f};
+float psi_ref;
 static struct FloatVect3 vel_sp, accel_sp;
 static float accel_vector[3], accel_filt[3];
 float f_cmd[3];
 fl_guid_fsm_t fsm_state = FSM_INIT;
 float quintic_coeff_n[6], quintic_coeff_e[6], quintic_coeff_d[6];
-float timestamp_p2p_start, timestamp_p2p;
+float timestamp_p2p_start, timestamp_p2p, timestamp_traj, timestamp_traj_start;
 bool flatness_guided;
+static FILE *ref_traj_fd = NULL;
+static Traj_row_t traj[NB_CSV_ROWS];
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -118,6 +135,7 @@ float throttle_from_spec_thrust(float spec_thrust, float min_spec_thrust, float 
 void flatness_guidance_run(bool in_flight, int32_t *cmd);
 void compute_quintic_ref(float t, struct FloatVect3 *pos_start, const struct FloatVect3 *pos_end);
 void compute_quintic_coefficients(struct FloatVect3 *pos_start, const struct FloatVect3 *pos_end, struct FloatVect3 *vel_start, struct FloatVect3 *accel_start);
+void load_csv_traj(void);
 
 // -------- CODE ---------- //
 
@@ -205,6 +223,14 @@ void flatness_stabilization_init(void)
     ACT_DYN_ALPHA = exp(-ACT_CUTOFF_OMEGA/PERIODIC_FREQUENCY);
 
     AbiBindMsgRADIO_CONTROL(ABI_BROADCAST, &rc_ev, rc_cb);
+
+    char filename[256];
+    sprintf(filename, "%s/circular_vs2_R2.csv", STRINGIFY(REF_TRAJ_FILE_PATH));
+    ref_traj_fd = fopen(filename, "r");
+    if(!ref_traj_fd) {
+        printf("[ref_traj_fd] ERROR opening reference trajectory file %s!\n", filename);
+        return;
+    }
 }
 
 void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpoint *att_sp, float spec_thrust_sp, int32_t *cmd)
@@ -359,7 +385,7 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     f_cmd[2] = (accel_sp.z - accel_filt[2]) + fi_vector_filt[2];
 
     // inverse translational flatness (get attitude and spec. thrust sp)
-    struct FloatEulers eulers_sp = {0.0f, 0.0f, 0.0f};
+    struct FloatEulers eulers_sp = {psi_ref, 0.0f, 0.0f};
     float beta_x = -sinf(eulers_sp.psi)*f_cmd[0] + cosf(eulers_sp.psi)*f_cmd[1];
     float beta_z = f_cmd[2];
     eulers_sp.phi = atan2f(beta_x, -beta_z);
@@ -389,6 +415,50 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     // printf("%.2f\t%.2f\t%.2f\t%.2f\t", accel_sp.z , accel_filt[2], fi_filt.z, f_cmd[2]);
     // printf("%.0f\t%.0f\t%.0f\t%.0f\t", act.cmd[0], act.cmd[1], act.cmd[2], act.cmd[3]);
     // printf("\n");
+}
+
+void load_csv_traj(void)
+{
+    char line[512];
+
+    rewind(ref_traj_fd);
+
+    int csv_traj_i = 0;
+
+    while (fgets(line, sizeof(line), ref_traj_fd) != NULL && csv_traj_i < NB_CSV_ROWS) {
+        float t;
+        float px, py, pz;
+        float vx, vy, vz;
+        float ax, ay, az;
+        float jx, jy, jz;
+        float psi, psidot;
+
+        int n = sscanf(line, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
+                       &t, &px, &py, &pz, &vx, &vy, &vz, &ax, &ay, &az, &jx, &jy, &jz, &psi, &psidot);
+
+        if (n == 15) {
+            traj[csv_traj_i].px = px;
+            traj[csv_traj_i].py = py;
+            traj[csv_traj_i].pz = pz;
+
+            traj[csv_traj_i].vx = vx;
+            traj[csv_traj_i].vy = vy;
+            traj[csv_traj_i].vz = vz;
+
+            traj[csv_traj_i].ax = ax;
+            traj[csv_traj_i].ay = ay;
+            traj[csv_traj_i].az = az;
+
+            traj[csv_traj_i].jx = jx;
+            traj[csv_traj_i].jy = jy;
+            traj[csv_traj_i].jz = jz;
+
+            traj[csv_traj_i].psi = psi;
+            traj[csv_traj_i].psidot = psidot;
+
+            csv_traj_i++;
+        }
+    }
 }
 
 static void forw_transl_flatness(float vel_norm, struct FloatVect3 *vel_b, float *u, struct FloatVect3 *fb)
@@ -453,31 +523,80 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
     switch (fsm_state)
     {
         case FSM_INIT:
-            // printf("fsm_init\n");
-            timestamp_p2p_start = get_sys_time_float();
             struct FloatVect3 *pos_start = (struct FloatVect3 *)stateGetPositionNed_f();
             struct FloatVect3 *vel_start = (struct FloatVect3 *)stateGetSpeedNed_f();
             struct FloatVect3 *accel_start = (struct FloatVect3 *)stateGetAccelNed_f();
             compute_quintic_coefficients(pos_start, &POS_END, vel_start, accel_start);
+
+            load_csv_traj();
+
+            timestamp_p2p_start = get_sys_time_float();
             fsm_state = FSM_STANDBY;
              /* fall through */ 
 
         case FSM_STANDBY:
-            // printf("fsm_stdby\n");
             timestamp_p2p = get_sys_time_float() - timestamp_p2p_start;
-            if (timestamp_p2p > P2P_DT) {
-                timestamp_p2p = P2P_DT;
-            } 
-            compute_quintic_ref(timestamp_p2p, pos_start, &POS_END);
+            if (timestamp_p2p < P2P_DT) {
+                compute_quintic_ref(timestamp_p2p, pos_start, &POS_END);
+            } else {
+                compute_quintic_ref(P2P_DT, pos_start, &POS_END);
+            }
+            psi_ref = 0;
+
             flatness_guidance_run(in_flight, cmd);
 
-            // if (/* condition to start trajectory */) {
-            //     fsm_state = FSM_TRAJECTORY;
-            // }
+            if (timestamp_p2p > P2P_DT + P2P_TO_TRAJ_DELAY) {
+                // fsm_state = FSM_TRAJECTORY_INIT; //use for complete trajectory 
+                ; // use for only p2p
+            }
             break;
 
+        case FSM_TRAJECTORY_INIT:
+            timestamp_traj_start = get_sys_time_float();
+            fsm_state = FSM_TRAJECTORY;
+            /* fall through */
+
         case FSM_TRAJECTORY:
-            // TODO: trajectory execution logic
+            timestamp_traj = get_sys_time_float() - timestamp_traj_start;
+            int csv_i = (int)roundf(timestamp_traj/0.01f);
+            
+            if (csv_i < NB_CSV_ROWS) {
+                pos_ref.x = traj[csv_i].px;
+                pos_ref.y = traj[csv_i].py;
+                pos_ref.z = traj[csv_i].pz;
+
+                vel_ref.x = traj[csv_i].vx;
+                vel_ref.y = traj[csv_i].vy;
+                vel_ref.z = traj[csv_i].vz;
+
+                accel_ref.x = traj[csv_i].ax;
+                accel_ref.y = traj[csv_i].ay;
+                accel_ref.z = traj[csv_i].az;
+
+                psi_ref = traj[csv_i].psi;
+            } else {
+                pos_ref.x = traj[csv_i-1].px;
+                pos_ref.y = traj[csv_i-1].py;
+                pos_ref.z = traj[csv_i-1].pz;
+
+                vel_ref.x = 0;
+                vel_ref.y = 0;
+                vel_ref.z = 0;
+
+                accel_ref.x = 0;
+                accel_ref.y = 0;
+                accel_ref.z = 0;
+
+                psi_ref = traj[csv_i-1].psi;
+
+                fsm_state = FSM_END;
+            }
+
+            flatness_guidance_run(in_flight, cmd);
+            break;
+
+        case FSM_END:
+            flatness_guidance_run(in_flight, cmd); // wait in the last pos
             break;
 
         default:

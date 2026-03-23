@@ -32,9 +32,11 @@
             <module name="sys_mon"/>
 
             <module name="logger_file">
-                <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
+                <define name="LOGGER_FILE_PATH" value="/data/log"/>
                 <configure name="LOGGER_FILE_FREQUENCY" value="200"/>
             </module>
+
+            <define name="REF_TRAJ_FILE_PATH" value="/data"/>
         </target>
 
         <target name="nps" board="pc">
@@ -51,6 +53,7 @@
                 <configure name="LOGGER_FILE_FREQUENCY" value="200"/>
             </module>
 
+            <define name="REF_TRAJ_FILE_PATH" value="/home/ntouev/paparazzi/data"/>
         </target>
 
         <!-- common modules -->
