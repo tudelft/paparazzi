@@ -96,10 +96,6 @@
       <define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>
       <define name="VIDEO_CAPTURE_FPS" value="10"/>
     </module>
-    <module name="luke_optical_flow">
-      <define name="LUKE_OF_VISUAL_DETECTION_ID" value="3"/>
-      <define name="OPTICFLOW_CAMERA" value="front_camera"/>
-    </module>
     <!-- module name="cv_opencvdemo">
       <define name="OPENCVDEMO_CAMERA" value="front_camera"/>
       <define name="OPENCVDEMO_FPS" value="10"/>
@@ -107,9 +103,11 @@
     <module name="MAV_cv_detect_group12_cmjong">
       <define name="COLOR_OBJECT_DETECTOR_CAMERA" value="front_camera"/>
       <define name="COLOR_OBJECT_DETECTOR_FPS1" value="0"/>
-      <define name="COLOR_OBJECT_DETECTOR_DRAW" value="1"/>
-      <define name="THRESHOLD_ORANGE_DETECTOR" value="1000"/>
-      <define name="THRESHOLD_GREEN_DETECTOR" value="1000"/>
+      <define name="COLOR_OBJECT_DETECTOR_DRAW" value="0"/>
+      <define name="THRESHOLD_ORANGE_DETECTOR" value="400"/>
+      <define name="THRESHOLD_GREEN_DETECTOR" value="400"/>
+      <define name="LUKE_OF_VISUAL_DETECTION_ID" value="3"/>
+      <define name="OPTICFLOW_CAMERA" value="front_camera"/>
     </module>
     <module name="MAV_fast_controller_group12_cmjong">
       <define name="MAV_cmjong_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION1_ID"/>

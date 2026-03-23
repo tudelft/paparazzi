@@ -30,8 +30,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "modules/computer_vision/opticflow/opticflow_calculator.h"
 
-// Module settings
+// Color filter settings
 extern uint8_t orange_lum_min;
 extern uint8_t orange_lum_max;
 extern uint8_t orange_cb_min;
@@ -58,6 +59,20 @@ extern bool cod_draw;
 extern float threshold_orange_detector;
 extern float threshold_green_detector;
 
+// Crop settings (GCS-tunable)
+extern float crop_h_frac;
+extern float crop_w_frac;
+
+// Optical flow settings
+extern float luke_of_divergence_threshold;
+extern bool  luke_of_show_stream_overlay;
+extern bool  luke_of_derotation;
+extern float luke_of_ema_alpha;
+extern float luke_of_smoothed_divergence;
+extern struct opticflow_t luke_of_opticflow[];
+
+// OF reset request (set by fast controller after large avoidance turn)
+extern bool luke_of_request_reset;
 
 // Module functions
 extern void MAV_cv_detect_group12_cmjong_init(void);

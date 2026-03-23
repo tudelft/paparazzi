@@ -40,6 +40,7 @@
 struct opticflow_t {
   bool got_first_img;                 ///< If we got a image to work with
   bool just_switched_method;        ///< Boolean to check if methods has been switched (for reinitialization)
+  bool reset_requested;               ///< Force buffer/result reinitialization on the next frame
   struct image_t img_gray;              ///< Current gray image frame
   struct image_t prev_img_gray;         ///< Previous gray image frame
 

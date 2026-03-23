@@ -397,6 +397,9 @@ static struct flow_t *predict_flow_vectors(struct flow_t *flow_vectors, uint16_t
 void opticflow_calc_init(struct opticflow_t opticflow[])
 {
   /* Set the default values */
+  opticflow[0].got_first_img = false;
+  opticflow[0].just_switched_method = false;
+  opticflow[0].reset_requested = true;
   opticflow[0].method = OPTICFLOW_METHOD; //0 = LK_fast9, 1 = Edgeflow
   opticflow[0].window_size = OPTICFLOW_WINDOW_SIZE;
   opticflow[0].search_distance = OPTICFLOW_SEARCH_DISTANCE;
@@ -424,6 +427,9 @@ void opticflow_calc_init(struct opticflow_t opticflow[])
   opticflow[0].fast9_min_distance = OPTICFLOW_FAST9_MIN_DISTANCE;
   opticflow[0].fast9_padding = OPTICFLOW_FAST9_PADDING;
   opticflow[0].fast9_rsize = FAST9_MAX_CORNERS;
+  if (opticflow[0].fast9_ret_corners != NULL) {
+    free(opticflow[0].fast9_ret_corners);
+  }
   opticflow[0].fast9_ret_corners = calloc(opticflow[0].fast9_rsize, sizeof(struct point_t));
 
   opticflow[0].corner_method = OPTICFLOW_CORNER_METHOD;
@@ -439,6 +445,9 @@ void opticflow_calc_init(struct opticflow_t opticflow[])
   float_rmat_of_eulers(&body_to_cam[0], &euler_cam1);
 
 #ifdef OPTICFLOW_CAMERA2
+  opticflow[1].got_first_img = false;
+  opticflow[1].just_switched_method = false;
+  opticflow[1].reset_requested = true;
   opticflow[1].method = OPTICFLOW_METHOD_CAMERA2; //0 = LK_fast9, 1 = Edgeflow
   opticflow[1].window_size = OPTICFLOW_WINDOW_SIZE_CAMERA2;
   opticflow[1].search_distance = OPTICFLOW_SEARCH_DISTANCE_CAMERA2;
@@ -466,6 +475,9 @@ void opticflow_calc_init(struct opticflow_t opticflow[])
   opticflow[1].fast9_min_distance = OPTICFLOW_FAST9_MIN_DISTANCE_CAMERA2;
   opticflow[1].fast9_padding = OPTICFLOW_FAST9_PADDING_CAMERA2;
   opticflow[1].fast9_rsize = FAST9_MAX_CORNERS;
+  if (opticflow[1].fast9_ret_corners != NULL) {
+    free(opticflow[1].fast9_ret_corners);
+  }
   opticflow[1].fast9_ret_corners = calloc(opticflow[0].fast9_rsize, sizeof(struct point_t));
 
   opticflow[1].corner_method = OPTICFLOW_CORNER_METHOD_CAMERA2;
@@ -494,13 +506,26 @@ void opticflow_calc_init(struct opticflow_t opticflow[])
 bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
                              struct opticflow_result_t *result)
 {
-  if (opticflow->just_switched_method) {
+  bool recreate_buffers = opticflow->just_switched_method
+                          || opticflow->reset_requested
+                          || opticflow->img_gray.buf == NULL
+                          || opticflow->prev_img_gray.buf == NULL
+                          || opticflow->img_gray.w != img->w
+                          || opticflow->img_gray.h != img->h
+                          || opticflow->prev_img_gray.w != img->w
+                          || opticflow->prev_img_gray.h != img->h;
+  if (recreate_buffers) {
+    image_free(&opticflow->img_gray);
+    image_free(&opticflow->prev_img_gray);
+
     // Create the image buffers
     image_create(&opticflow->img_gray, img->w, img->h, IMAGE_GRAYSCALE);
     image_create(&opticflow->prev_img_gray, img->w, img->h, IMAGE_GRAYSCALE);
 
     // Set the previous values
     opticflow->got_first_img = false;
+    opticflow->reset_requested = false;
+    memset(result, 0, sizeof(struct opticflow_result_t));
 
     // Init median filters with zeros
     InitMedianFilterVect3Float(vel_filt, MEDIAN_DEFAULT_SIZE);
@@ -1185,7 +1210,7 @@ bool opticflow_calc_frame(struct opticflow_t *opticflow, struct image_t *img,
   // A switch counter that checks in the loop if the current method is similar,
   // to the previous (for reinitializing structs)
   static int8_t switch_counter[2] = {-1, -1};
-  if (switch_counter[opticflow->id] != opticflow->method) {
+  if (switch_counter[opticflow->id] != opticflow->method || opticflow->reset_requested) {
     opticflow->just_switched_method = true;
     switch_counter[opticflow->id] = opticflow->method;
     // Clear the static result

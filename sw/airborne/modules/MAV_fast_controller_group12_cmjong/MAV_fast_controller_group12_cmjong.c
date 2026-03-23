@@ -18,12 +18,15 @@
  */
 
 #include "modules/MAV_fast_controller_group12_cmjong/MAV_fast_controller_group12_cmjong.h"
+#include "modules/computer_vision/MAV_cv_detect_group12_cmjong.h"
 #include "firmwares/rotorcraft/navigation.h"
 #include "generated/airframe.h"
 #include "state.h"
 #include "modules/core/abi.h"
+#include "mcu_periph/sys_time.h"
 #include <time.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "generated/flight_plan.h"
 
@@ -52,14 +55,20 @@ enum navigation_state_t {
 };
 
 
-#define AVOIDANCE_TURN_DEGREES 10.f 
-#define MOVE_DISTANCE       0.5f   
+#define AVOIDANCE_TURN_DEGREES 10.f
+#define MOVE_DISTANCE       0.5f
 #define AVOIDANCE_TURN_DEGREES_OutOfBound 5.f
+#define OF_AVOIDANCE_TURN_DEGREES 120.f
+#define GYRO_YAW_RATE_THRESHOLD 0.15f
+#define OF_STARTUP_IGNORE_TIME 2.0f
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SAFE_AND_WAIT;
 
 static bool of_obstacle_ahead = false;
+static float of_turn_remaining = 0.0f;
+static bool was_in_flight = false;
+static float of_ignore_until = 0.0f;
 uint16_t detected_local = 1;
 uint16_t color_count_local = 0;
 
@@ -120,9 +129,35 @@ void MAV_fast_controller_group12_cmjong_init(void)
 void MAV_fast_controller_group12_cmjong_periodic(void)
 {
   // only evaluate our state machine if we are flying
-  if(!autopilot_in_flight()){ return; }
-  
-  VERBOSE_PRINT("State: %d | detected: %u, %u | of: %d\n", navigation_state, detected_local, color_count_local, of_obstacle_ahead);
+  if (!autopilot_in_flight()) {
+    was_in_flight = false;
+    navigation_state = SAFE_AND_WAIT;
+    of_obstacle_ahead = false;
+    of_turn_remaining = 0.0f;
+    return;
+  }
+
+  float now = get_sys_time_float();
+  if (!was_in_flight) {
+    was_in_flight = true;
+    of_ignore_until = now + OF_STARTUP_IGNORE_TIME;
+    of_obstacle_ahead = false;
+    of_turn_remaining = 0.0f;
+    luke_of_request_reset = true;
+  }
+
+  if (now < of_ignore_until) {
+    of_obstacle_ahead = false;
+  }
+
+  // Gyro-based rotation lock: suppress new OF triggers while already rotating
+  if (fabsf(stateGetBodyRates_f()->r) > GYRO_YAW_RATE_THRESHOLD) {
+    of_obstacle_ahead = false;
+  }
+
+  VERBOSE_PRINT("State: %d | detected: %u, %u | of: %d | of_turn_rem: %.1f | of_grace: %.1f\n",
+    navigation_state, detected_local, color_count_local, of_obstacle_ahead, of_turn_remaining,
+    fmaxf(0.0f, of_ignore_until - now));
 
 
   switch (navigation_state) {
@@ -134,12 +169,32 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
       if (detected_local == 0 && !of_obstacle_ahead) {
         navigation_state = MOVE_FORWARD_WITH_FIXED_DISTANCE;
       } else if (detected_local > 0 || of_obstacle_ahead) {
+        if (of_obstacle_ahead && detected_local == 0) {
+          of_turn_remaining = OF_AVOIDANCE_TURN_DEGREES;
+        }
         navigation_state = TURN_AVOID;
       }
       break;
 
     case TURN_AVOID:
-      if (detected_local > 0 || of_obstacle_ahead) {
+      if (of_turn_remaining > 0.f) {
+        // OF-triggered turn: execute fixed rotation incrementally
+        float step = (of_turn_remaining < AVOIDANCE_TURN_DEGREES)
+                     ? of_turn_remaining : AVOIDANCE_TURN_DEGREES;
+        rotate_drone_heading(step);
+        of_turn_remaining -= step;
+        if (of_turn_remaining <= 0.f) {
+          of_turn_remaining = 0.f;
+          luke_of_request_reset = true;
+          navigation_state = SAFE_AND_WAIT;
+        }
+      } else if (of_obstacle_ahead) {
+        // New OF detection: start large turn
+        of_turn_remaining = OF_AVOIDANCE_TURN_DEGREES;
+        rotate_drone_heading(AVOIDANCE_TURN_DEGREES);
+        of_turn_remaining -= AVOIDANCE_TURN_DEGREES;
+      } else if (detected_local > 0) {
+        // Color-triggered: small incremental turn
         rotate_drone_heading(AVOIDANCE_TURN_DEGREES);
       } else {
         navigation_state = SAFE_AND_WAIT;

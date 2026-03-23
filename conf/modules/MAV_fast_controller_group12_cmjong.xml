@@ -14,7 +14,7 @@
   </doc>
 
   <dep>
-    <depends>MAV_cv_detect_group12_cmjong,luke_optical_flow</depends>
+    <depends>MAV_cv_detect_group12_cmjong</depends>
   </dep>
 
   <header>
