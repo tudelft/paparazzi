@@ -107,7 +107,7 @@ let check_altitude_srtm = fun a x wgs84 ->
       fprintf stderr "MAJOR NOTICE: below SRTM ground altitude (%.0f<%.0f) in %s\n" a srtm_alt (Xml.to_string x)
     end
   with Srtm.Tile_not_found e ->
-    fprintf stderr "No SRTM data found to check altitude.\n"
+    fprintf stderr ""
 
 let check_altitude = fun a x ->
   if a < !ground_alt +. !security_height then begin
