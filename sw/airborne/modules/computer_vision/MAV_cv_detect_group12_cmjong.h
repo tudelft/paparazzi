@@ -57,6 +57,7 @@ extern uint8_t green_cr_max;
 extern bool cod_draw;
 
 extern float threshold_orange_detector;
+extern float threshold_blue_detector;
 extern float threshold_green_detector;
 
 // Crop settings (GCS-tunable)

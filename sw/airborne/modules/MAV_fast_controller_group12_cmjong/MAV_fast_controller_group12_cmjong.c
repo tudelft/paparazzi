@@ -58,7 +58,7 @@ enum navigation_state_t {
 #define AVOIDANCE_TURN_DEGREES 10.f
 #define MOVE_DISTANCE       0.5f
 #define AVOIDANCE_TURN_DEGREES_OutOfBound 5.f
-#define OF_AVOIDANCE_TURN_DEGREES 120.f
+#define OF_AVOIDANCE_TURN_DEGREES 100.f
 #define GYRO_YAW_RATE_THRESHOLD 0.15f
 #define OF_STARTUP_IGNORE_TIME 2.0f
 

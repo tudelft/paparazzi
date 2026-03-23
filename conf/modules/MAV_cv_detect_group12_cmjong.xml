@@ -35,6 +35,7 @@
     <define name="COLOR_OBJECT_DETECTOR_DRAW" value="FALSE" description="Draw detection on image"/>
 
     <define name="THRESHOLD_ORANGE_DETECTOR" value="0"/>
+    <define name="THRESHOLD_BLUE_DETECTOR" value="0"/>
     <define name="THRESHOLD_GREEN_DETECTOR" value="0"/>
 
     <define name="LUKE_OF_VISUAL_DETECTION_ID" value="ABI_BROADCAST" description="VISUAL_DETECTION sender id for optical flow"/>
@@ -85,6 +86,7 @@
     <dl_settings>
       <dl_settings name="Threshold_of_detectors">
          <dl_setting var="threshold_orange_detector" min="0" step="1" max="5000" shortname="W_orange_d"/>
+         <dl_setting var="threshold_blue_detector" min="0" step="1" max="5000" shortname="W_blue_d"/>
          <dl_setting var="threshold_green_detector" min="0" step="1" max="5000" shortname="W_green_d"/>
       </dl_settings>
     </dl_settings>

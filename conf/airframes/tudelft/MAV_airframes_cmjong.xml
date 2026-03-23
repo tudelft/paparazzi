@@ -105,6 +105,7 @@
       <define name="COLOR_OBJECT_DETECTOR_FPS1" value="0"/>
       <define name="COLOR_OBJECT_DETECTOR_DRAW" value="0"/>
       <define name="THRESHOLD_ORANGE_DETECTOR" value="400"/>
+      <define name="THRESHOLD_BLUE_DETECTOR" value="400"/>
       <define name="THRESHOLD_GREEN_DETECTOR" value="400"/>
       <define name="LUKE_OF_VISUAL_DETECTION_ID" value="3"/>
       <define name="OPTICFLOW_CAMERA" value="front_camera"/>
