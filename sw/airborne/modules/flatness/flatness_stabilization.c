@@ -125,6 +125,8 @@ static Traj_row_t traj[NB_CSV_ROWS];
 static struct FloatVect3 *pos_start;
 static struct FloatVect3 *vel_start;
 static struct FloatVect3 *accel_start;
+float fi_vector[3] = {0.0f, 0.0f, 0.0f};
+float fi_vector_filt[3] = {0.0f, 0.0f, 0.0f};
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -373,10 +375,15 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
 
     // forw flatness -> rotate -> filter
     struct FloatVect3 fb, fi;
-    forw_transl_flatness(vel_norm, &vel_b, act.state, &fb);
-    float_rmat_transp_vmult(&fi, R_i2b, &fb);
-    float fi_vector[3] = {fi.x, fi.y, fi.z}; 
-    float fi_vector_filt[3];
+    if (in_flight == true) {
+        forw_transl_flatness(vel_norm, &vel_b, act.state, &fb);
+        float_rmat_transp_vmult(&fi, R_i2b, &fb);
+    } else {
+        fi.x = 0;
+        fi.y = 0;
+        fi.z = 0;
+    }
+    fi_vector[0] = fi.x; fi_vector[1] = fi.y; fi_vector[2] = fi.z;
     for (int i = 0; i < 3; i++) {    
         update_butterworth_2_low_pass(&spec_force_filter[i], fi_vector[i]);
         fi_vector_filt[i] = spec_force_filter[i].o[0];
@@ -396,7 +403,8 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     f_cmd[2] = (accel_sp.z - accel_filt[2]) + fi_vector_filt[2];
 
     // inverse translational flatness (get attitude and spec. thrust sp)
-    struct FloatEulers eulers_sp = {psi_ref, 0.0f, 0.0f};
+    struct FloatEulers eulers_sp;
+    eulers_sp.psi = psi_ref;
     float beta_x = -sinf(eulers_sp.psi)*f_cmd[0] + cosf(eulers_sp.psi)*f_cmd[1];
     float beta_z = f_cmd[2];
     eulers_sp.phi = atan2f(beta_x, -beta_z);
@@ -425,6 +433,7 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
 
     // printf("%.2f\t%.2f\t%.2f\t%.2f\t", accel_sp.z , accel_filt[2], fi_filt.z, f_cmd[2]);
     // printf("%.0f\t%.0f\t%.0f\t%.0f\t", act.cmd[0], act.cmd[1], act.cmd[2], act.cmd[3]);
+    // printf("psi=%f", eulers_sp.psi);
     // printf("\n");
 }
 
@@ -541,6 +550,9 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
             pos_start = (struct FloatVect3 *)stateGetPositionNed_f();
             vel_start = (struct FloatVect3 *)stateGetSpeedNed_f();
             accel_start = (struct FloatVect3 *)stateGetAccelNed_f();
+            
+            vel_start->x = 0.0f; vel_start->y = 0.0f; vel_start->z = 0.0f;
+            accel_start->x = 0.0f; accel_start->y = 0.0f; accel_start->z = 0.0f;
             compute_quintic_coefficients(pos_start, &POS_END, vel_start, accel_start);
 
             timestamp_p2p_start = get_sys_time_float();
