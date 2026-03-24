@@ -162,11 +162,12 @@ static void crop_image_center(struct image_t *img, float keep_w_frac, float keep
  */
 static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
 {
+  if (camera_id >= 1) return img;
   uint16_t detected_local = 0;
   bool     of_ran = false;
 
   // --- Stage 0: crop to horizontal obstacle band (removes floor/ceiling) ---
-  crop_image_center(img, 1.0f, crop_h_frac);
+  // crop_image_center(img, 1.0f, crop_h_frac);
 
   // --- Stage 1: cheap color detection on cropped band ---
   uint16_t orange_count = color_detection(img, orange_lum_min, orange_lum_max,
