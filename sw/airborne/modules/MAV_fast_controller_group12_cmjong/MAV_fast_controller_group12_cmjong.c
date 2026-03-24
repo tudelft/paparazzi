@@ -44,9 +44,12 @@ static uint8_t calculate_forward_position(struct EnuCoor_i *new_coor, float dist
 static uint8_t set_waypoint_position(uint8_t waypoint, struct EnuCoor_i *new_coor);
 static uint8_t rotate_drone_heading(float degrees);
 static void hold_current_waypoints(void);
+static int16_t choose_color_turn_dir(void);
+static int16_t choose_of_turn_dir(float now);
 
 enum navigation_state_t {
   SAFE_AND_WAIT,
+  BRAKING,
   TURN_AVOID,
   SEARCH_FOR_SAFE_HEADING,
   MOVE_FORWARD_WITH_FIXED_DISTANCE,
@@ -58,9 +61,12 @@ enum navigation_state_t {
 #define AVOIDANCE_TURN_DEGREES 10.f
 #define MOVE_DISTANCE       0.5f
 #define AVOIDANCE_TURN_DEGREES_OutOfBound 5.f
-#define OF_AVOIDANCE_TURN_DEGREES 100.f
+#define OF_AVOIDANCE_TURN_DEGREES 120.f
 #define GYRO_YAW_RATE_THRESHOLD 0.15f
 #define OF_STARTUP_IGNORE_TIME 2.0f
+#define BRAKE_SPEED_THRESHOLD 0.1f
+#define BRAKE_TIMEOUT 2.0f
+#define RECENT_COLOR_DIR_TIMEOUT 3.0f
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SAFE_AND_WAIT;
@@ -69,10 +75,16 @@ static bool of_obstacle_ahead = false;
 static float of_turn_remaining = 0.0f;
 static bool was_in_flight = false;
 static float of_ignore_until = 0.0f;
+static float brake_start_time = 0.0f;
+static float recent_color_dir_until = 0.0f;
+static bool pending_turn_from_of = false;
+static int16_t pending_turn_dir = 1;
+static int16_t recent_color_dir = 0;
 uint16_t detected_local = 1;
-uint16_t color_count_orange_local = 0;
-uint16_t color_count_green_local = 0;
-uint16_t color_count_blue_local = 0;
+int16_t col_left_loss = 0;
+int16_t col_center_loss = 0;
+int16_t col_right_loss = 0;
+int16_t lowest_loss_dir = 1;
 
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
@@ -93,17 +105,17 @@ static abi_event luke_of_event;
 static void cv_detection_message_callback(
     uint8_t  __attribute__((unused)) sender_id,
     int16_t  detected,
-    int16_t  color_count_orange,
-    int16_t  color_count_green,
-    int16_t  color_count_blue,
-    int32_t  __attribute__((unused)) extra2,
-    int16_t  __attribute__((unused)) extra3)
+    int16_t  left_loss,
+    int16_t  center_loss,
+    int16_t  right_loss,
+    int32_t  lowest_dir,
+    int16_t  __attribute__((unused)) extra)
 {
-  // Safe cast: ABI guarantees int16, loss is always >= 0
-  detected_local = detected;
-  color_count_orange_local = color_count_orange;
-  color_count_green_local = color_count_green;
-  color_count_blue_local = color_count_blue;
+  detected_local   = detected;
+  col_left_loss    = left_loss;
+  col_center_loss  = center_loss;
+  col_right_loss   = right_loss;
+  lowest_loss_dir  = (int16_t)lowest_dir;
 }
 
 static void luke_of_message_callback(
@@ -138,6 +150,10 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
     navigation_state = SAFE_AND_WAIT;
     of_obstacle_ahead = false;
     of_turn_remaining = 0.0f;
+    pending_turn_from_of = false;
+    pending_turn_dir = 1;
+    recent_color_dir_until = 0.0f;
+    recent_color_dir = 0;
     return;
   }
 
@@ -147,6 +163,10 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
     of_ignore_until = now + OF_STARTUP_IGNORE_TIME;
     of_obstacle_ahead = false;
     of_turn_remaining = 0.0f;
+    pending_turn_from_of = false;
+    pending_turn_dir = 1;
+    recent_color_dir_until = 0.0f;
+    recent_color_dir = 0;
     luke_of_request_reset = true;
   }
 
@@ -159,18 +179,21 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
     of_obstacle_ahead = false;
   }
 
+  if (detected_local > 0) {
+    recent_color_dir = lowest_loss_dir;
+    recent_color_dir_until = now + RECENT_COLOR_DIR_TIMEOUT;
+  }
+
   VERBOSE_PRINT(
-  "State: %d | detected: %u, %u orange, %u green, %u blue | of: %d | of_turn_rem: %.1f | of_grace: %.1f\n",
+  "State: %d | det: %u | L:%d C:%d R:%d | LowestLoss: %s | of: %d | of_turn_rem: %.1f | of_grace: %.1f\n",
   navigation_state,
   detected_local,
-  color_count_orange_local,
-  color_count_green_local,
-  color_count_blue_local,
+  col_left_loss, col_center_loss, col_right_loss,
+  (lowest_loss_dir < 0) ? "LEFT" : ((lowest_loss_dir > 0) ? "RIGHT" : "CENTER"),
   of_obstacle_ahead,
   of_turn_remaining,
   fmaxf(0.0f, of_ignore_until - now)
 );
-
 
   switch (navigation_state) {
 
@@ -181,34 +204,56 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
       if (detected_local == 0 && !of_obstacle_ahead) {
         navigation_state = MOVE_FORWARD_WITH_FIXED_DISTANCE;
       } else if (detected_local > 0 || of_obstacle_ahead) {
-        if (of_obstacle_ahead && detected_local == 0) {
+        pending_turn_from_of = (of_obstacle_ahead && detected_local == 0);
+        pending_turn_dir = pending_turn_from_of ? choose_of_turn_dir(now) : choose_color_turn_dir();
+        if (pending_turn_from_of) {
           of_turn_remaining = OF_AVOIDANCE_TURN_DEGREES;
         }
-        navigation_state = TURN_AVOID;
+        // Brake first before turning
+        brake_start_time = now;
+        navigation_state = BRAKING;
       }
       break;
 
+    case BRAKING:
+    {
+      hold_current_waypoints();
+      float heading = stateGetNedToBodyEulers_f()->psi;
+      struct NedCoor_f *speed = stateGetSpeedNed_f();
+      float fwd_speed = speed->x * sinf(heading) + speed->y * cosf(heading);
+
+      if (fabsf(fwd_speed) < BRAKE_SPEED_THRESHOLD || (now - brake_start_time) > BRAKE_TIMEOUT) {
+        navigation_state = TURN_AVOID;
+      }
+      break;
+    }
+
     case TURN_AVOID:
-      if (of_turn_remaining > 0.f) {
-        // OF-triggered turn: execute fixed rotation incrementally
+      if (pending_turn_from_of && of_turn_remaining > 0.f) {
+        // OF-triggered turn: execute the full turn incrementally after braking.
         float step = (of_turn_remaining < AVOIDANCE_TURN_DEGREES)
                      ? of_turn_remaining : AVOIDANCE_TURN_DEGREES;
-        rotate_drone_heading(step);
+        rotate_drone_heading((pending_turn_dir < 0 ? -1.0f : 1.0f) * step);
         of_turn_remaining -= step;
         if (of_turn_remaining <= 0.f) {
           of_turn_remaining = 0.f;
+          pending_turn_from_of = false;
+          pending_turn_dir = 1;
           luke_of_request_reset = true;
           navigation_state = SAFE_AND_WAIT;
         }
       } else if (of_obstacle_ahead) {
-        // New OF detection: start large turn
+        // New OF detection: start a large turn using a recent color direction when available.
+        pending_turn_from_of = true;
+        pending_turn_dir = choose_of_turn_dir(now);
         of_turn_remaining = OF_AVOIDANCE_TURN_DEGREES;
-        rotate_drone_heading(AVOIDANCE_TURN_DEGREES);
-        of_turn_remaining -= AVOIDANCE_TURN_DEGREES;
       } else if (detected_local > 0) {
-        // Color-triggered: small incremental turn
-        rotate_drone_heading(AVOIDANCE_TURN_DEGREES);
+        // Color-triggered: center/tie defaults right, left stays left.
+        pending_turn_from_of = false;
+        pending_turn_dir = choose_color_turn_dir();
+        rotate_drone_heading((pending_turn_dir < 0 ? -1.0f : 1.0f) * AVOIDANCE_TURN_DEGREES);
       } else {
+        pending_turn_dir = 1;
         navigation_state = SAFE_AND_WAIT;
       }
       break;
@@ -222,7 +267,14 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
         navigation_state = OUT_OF_BOUNDS;
 
       } else if (detected_local > 0 || of_obstacle_ahead) {
-        navigation_state = SAFE_AND_WAIT;
+        pending_turn_from_of = (of_obstacle_ahead && detected_local == 0);
+        pending_turn_dir = pending_turn_from_of ? choose_of_turn_dir(now) : choose_color_turn_dir();
+        if (pending_turn_from_of) {
+          of_turn_remaining = OF_AVOIDANCE_TURN_DEGREES;
+        }
+        // Brake first before turning
+        brake_start_time = now;
+        navigation_state = BRAKING;
 
       } else {
         calculate_forward_position(&next_coor, MOVE_DISTANCE);
@@ -244,9 +296,6 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
       move_waypoint_forward(WP_TRAJECTORY, 1.5f);
 
       if (InsideObstacleZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
-        /* CHANGED: removed second rotate_drone_heading call here —
-           the single rotation per tick is enough; double-rotating on the 
-           re-entry tick caused unpredictable heading jumps */
         navigation_state = SAFE_AND_WAIT;
       }
       break;
@@ -302,4 +351,20 @@ static void hold_current_waypoints(void)
 {
   waypoint_move_here_2d(WP_GOAL);
   waypoint_move_here_2d(WP_TRAJECTORY);
+}
+
+static int16_t choose_color_turn_dir(void)
+{
+  return (lowest_loss_dir < 0) ? -1 : 1;
+}
+
+static int16_t choose_of_turn_dir(float now)
+{
+  if (now <= recent_color_dir_until && recent_color_dir < 0) {
+    return -1;
+  }
+  if (now <= recent_color_dir_until && recent_color_dir > 0) {
+    return 1;
+  }
+  return 1;
 }

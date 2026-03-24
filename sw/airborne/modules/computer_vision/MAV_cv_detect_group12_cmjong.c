@@ -91,8 +91,8 @@ float threshold_blue_detector = 0;
 float threshold_green_detector = 0;
 
 // ── Crop settings (GCS-tunable) ──────────────────────────────────────────────
-float crop_h_frac = 0.40f;  // height fraction for initial crop (color + edge)
-float crop_w_frac = 0.80f;  // width fraction for secondary OF crop
+float crop_h_frac = 0.80f;  // height fraction for initial crop (color + edge)
+float crop_w_frac = 0.40f;  // width fraction for secondary OF crop
 
 // ── Optical flow settings ────────────────────────────────────────────────────
 #ifndef LUKE_OF_VISUAL_DETECTION_ID
@@ -114,14 +114,27 @@ struct opticflow_t luke_of_opticflow[LUKE_OF_CAMERA_SLOTS];
 // ── Shared message struct ────────────────────────────────────────────────────
 struct cv_detect_message {
   int16_t  detected;
-  int16_t  orange_count;
-  int16_t  green_count;
-  int16_t  blue_count;
+  int16_t  left_loss;
+  int16_t  center_loss;
+  int16_t  right_loss;
+  int16_t  lowest_loss_dir;   // -1=left, 0=straight, +1=right
   bool     updated;
   struct opticflow_result_t of_result;
   bool     of_updated;
 };
 struct cv_detect_message global_message[1];
+
+static const char *loss_dir_to_str(int16_t dir) __attribute__((unused));
+static const char *loss_dir_to_str(int16_t dir)
+{
+  if (dir < 0) {
+    return "LEFT";
+  }
+  if (dir > 0) {
+    return "RIGHT";
+  }
+  return "CENTER";
+}
 
 
 // ── Crop helper ──────────────────────────────────────────────────────────────
@@ -169,22 +182,62 @@ static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
   // --- Stage 0: crop to horizontal obstacle band (removes floor/ceiling) ---
   crop_image_center(img, crop_w_frac, crop_h_frac);
 
-  // --- Stage 1: cheap color detection on cropped band ---
-  uint16_t orange_count = color_detection(img, orange_lum_min, orange_lum_max,
-                                          orange_cb_min, orange_cb_max,
-                                          orange_cr_min, orange_cr_max, false);
-  uint16_t blue_count = color_detection(img, blue_lum_min, blue_lum_max,
-                                        blue_cb_min, blue_cb_max,
-                                        blue_cr_min, blue_cr_max, false);
-  uint16_t green_count = color_detection(img, green_lum_min, green_lum_max,
-                                         green_cb_min, green_cb_max,
-                                         green_cr_min, green_cr_max, false);
-  bool orange_detected = threshold_orange_detector > 0.0f && orange_count >= threshold_orange_detector;
-  bool blue_detected = threshold_blue_detector > 0.0f && blue_count >= threshold_blue_detector;
-  bool green_detected = threshold_green_detector > 0.0f && green_count >= threshold_green_detector;
+  // --- Stage 1: cheap color detection on cropped band (per-column) ---
+  struct column_counts orange_cols = color_detection_columns(img,
+      orange_lum_min, orange_lum_max, orange_cb_min, orange_cb_max,
+      orange_cr_min, orange_cr_max, false);
+  struct column_counts blue_cols = color_detection_columns(img,
+      blue_lum_min, blue_lum_max, blue_cb_min, blue_cb_max,
+      blue_cr_min, blue_cr_max, false);
+  struct column_counts green_cols = color_detection_columns(img,
+      green_lum_min, green_lum_max, green_cb_min, green_cb_max,
+      green_cr_min, green_cr_max, cod_draw);
+
+  // Combined loss per column (sum all colors)
+  uint16_t left_loss   = orange_cols.left   + blue_cols.left   + green_cols.left;
+  uint16_t center_loss = orange_cols.center + blue_cols.center + green_cols.center;
+  uint16_t right_loss  = orange_cols.right  + blue_cols.right  + green_cols.right;
+
+  // Trigger on CENTER column only (per-color thresholds)
+  bool orange_detected = threshold_orange_detector > 0.0f && orange_cols.center >= threshold_orange_detector;
+  bool blue_detected   = threshold_blue_detector   > 0.0f && blue_cols.center   >= threshold_blue_detector;
+  bool green_detected  = threshold_green_detector  > 0.0f && green_cols.center  >= threshold_green_detector;
   if (orange_detected || blue_detected || green_detected) {
     detected_local = 1;
   }
+
+  // Determine lowest-loss direction across all three columns.
+  // Use 0 for "straight/center" and also for ties in the minimum-loss column.
+  int16_t lowest_loss_dir = 0;
+  uint16_t min_loss = center_loss;
+  bool min_is_unique = true;
+
+  if (left_loss < min_loss) {
+    min_loss = left_loss;
+    lowest_loss_dir = -1;
+    min_is_unique = true;
+  } else if (left_loss == min_loss) {
+    lowest_loss_dir = 0;
+    min_is_unique = false;
+  }
+
+  if (right_loss < min_loss) {
+    min_loss = right_loss;
+    lowest_loss_dir = 1;
+    min_is_unique = true;
+  } else if (right_loss == min_loss) {
+    lowest_loss_dir = 0;
+    min_is_unique = false;
+  }
+
+  if (!min_is_unique) {
+    lowest_loss_dir = 0;
+  }
+
+  VERBOSE_PRINT("LowestLoss: %s | det:%u | L:%u C:%u R:%u\n",
+                loss_dir_to_str(lowest_loss_dir),
+                detected_local,
+                left_loss, center_loss, right_loss);
 
   // --- Stage 2: edge detection (future — insert here) ---
   // if (detected_local == 0) {
@@ -227,11 +280,12 @@ static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
 
   // --- Store results ---
   pthread_mutex_lock(&mutex);
-  global_message[camera_id].detected     = detected_local;
-  global_message[camera_id].orange_count  = orange_count;
-  global_message[camera_id].green_count = green_count;
-  global_message[camera_id].blue_count   = blue_count;
-  global_message[camera_id].updated      = true;
+  global_message[camera_id].detected        = detected_local;
+  global_message[camera_id].left_loss       = left_loss;
+  global_message[camera_id].center_loss     = center_loss;
+  global_message[camera_id].right_loss      = right_loss;
+  global_message[camera_id].lowest_loss_dir = lowest_loss_dir;
+  global_message[camera_id].updated         = true;
   if (of_ran) {
     global_message[camera_id].of_result  = temp_of_result[0];
     global_message[camera_id].of_updated = true;
@@ -323,14 +377,14 @@ void MAV_cv_detect_group12_cmjong_periodic(void)
   global_message[0].of_updated = false;
   pthread_mutex_unlock(&mutex);
 
-  // Color detection ABI message
+  // Color detection ABI message: detected, left_loss, center_loss, right_loss, lowest_loss_dir
   if(local_message[0].updated){
     AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION1_ID,
     local_message[0].detected,
-    local_message[0].orange_count,
-    local_message[0].green_count,
-    local_message[0].blue_count,
-     0, 0);
+    local_message[0].left_loss,
+    local_message[0].center_loss,
+    local_message[0].right_loss,
+    (int32_t)local_message[0].lowest_loss_dir, 0);
   }
 
   // Optical flow ABI message (with EMA smoothing)
@@ -356,9 +410,10 @@ void MAV_cv_detect_group12_cmjong_periodic(void)
   int32_t quality = (luke_of_smoothed_divergence > luke_of_divergence_threshold) ? 1 : 0;
   AbiSendMsgVISUAL_DETECTION(LUKE_OF_VISUAL_DETECTION_ID, 0, 0, 0, 0, quality, 0);
 
-  // fprintf(stderr, "[cv_detect] %s orange=%d blue=%d color=%d div_raw=%.4f smoothed=%.4f thresh=%.4f q=%d tracked=%d\n",
+  // fprintf(stderr, "[cv_detect] %s L=%d C=%d R=%d dir=%d div_raw=%.4f smoothed=%.4f thresh=%.4f q=%d tracked=%d\n",
   //   ema_branch,
-  //   local_message[0].orange_count, local_message[0].blue_count, local_message[0].color_count,
+  //   local_message[0].left_loss, local_message[0].center_loss, local_message[0].right_loss,
+  //   local_message[0].lowest_loss_dir,
   //   local_message[0].of_updated ? local_message[0].of_result.div_size : -1.f,
   //   luke_of_smoothed_divergence, luke_of_divergence_threshold, quality,
   //   local_message[0].of_updated ? (int)local_message[0].of_result.tracked_cnt : -1);
