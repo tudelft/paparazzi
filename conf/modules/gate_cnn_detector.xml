@@ -35,7 +35,7 @@
   </header>
 
   <init fun="gate_cnn_detector_init()"/>
-  <periodic fun="gate_cnn_detector_periodic()" freq="4"/>
+  <periodic fun="gate_cnn_detector_periodic()" freq="50"/>
 
   <makefile target="ap|nps">
     <file name="gate_cnn_detector.c"/>
