@@ -127,6 +127,7 @@ static void logger_file_write_header(FILE *file) {
 
     // data
     fprintf(file, "timestamp");
+    fprintf(file, ",guided");
     fprintf(file, ",dt");
     fprintf(file, ",Ts");
     fprintf(file, ",voltage");
@@ -165,6 +166,7 @@ static void logger_file_write_row(FILE *file) {
     ACCELS_FLOAT_OF_BFP(acc_f, *acc_i);
 
     fprintf(file, "%f", dbg.timestamp);
+    fprintf(file, ",%d", dbg.guided);
     fprintf(file, ",%f", dbg.dt);
     fprintf(file, ",%f", dbg.Ts);
     fprintf(file, ",%f", dbg.voltage);

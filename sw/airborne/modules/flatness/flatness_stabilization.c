@@ -156,6 +156,7 @@ static void expose_dbg_variables(void)
 
     //data
     dbg.timestamp = timestamp;
+    dbg.guided = flatness_guided;
     dbg.dt = dt;
     dbg.Ts = timestamp - timestamp_prev;
     dbg.voltage = electrical.vsupply;

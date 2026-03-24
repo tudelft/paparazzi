@@ -61,6 +61,7 @@ typedef struct {
     
     // data
     float timestamp;
+    bool guided;
     float dt;
     float Ts;
     float voltage;
