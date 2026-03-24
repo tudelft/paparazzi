@@ -168,6 +168,7 @@ static void expose_dbg_variables(void)
     dbg.pos_ref = pos_ref;
     dbg.vel_ref = vel_ref;
     dbg.accel_ref = accel_ref;
+    dbg.psi_ref = psi_ref;
     dbg.vel_sp = vel_sp;
     dbg.accel_sp = accel_sp;
     dbg.f_cmd.x = f_cmd[0]; dbg.f_cmd.y = f_cmd[1]; dbg.f_cmd.z = f_cmd[2];
@@ -403,7 +404,7 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     f_cmd[2] = (accel_sp.z - accel_filt[2]) + fi_vector_filt[2];
 
     // inverse translational flatness (get attitude and spec. thrust sp)
-    struct FloatEulers eulers_sp;
+    struct FloatEulers eulers_sp = {0.0f, 0.0f, 0.0f};
     eulers_sp.psi = psi_ref;
     float beta_x = -sinf(eulers_sp.psi)*f_cmd[0] + cosf(eulers_sp.psi)*f_cmd[1];
     float beta_z = f_cmd[2];

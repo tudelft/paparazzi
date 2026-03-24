@@ -71,6 +71,7 @@ typedef struct {
     struct FloatVect3 pos_ref;
     struct FloatVect3 vel_ref;
     struct FloatVect3 accel_ref;
+    float psi_ref;
     struct FloatVect3 vel_sp;
     struct FloatVect3 accel_sp;
     struct FloatVect3 f_cmd;
