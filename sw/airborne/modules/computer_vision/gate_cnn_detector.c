@@ -37,7 +37,6 @@
 #define GATE_CNN_DEBUG_EVERY_N_FRAMES 5
 #endif
 
-
 /* --------------------------------------------------------- */
 /* Shared detector result                                    */
 /* --------------------------------------------------------- */
@@ -48,6 +47,18 @@ static struct video_listener *gate_cnn_listener;
 
 static uint32_t g_frame_counter = 0u;
 static float g_last_inference_ms = 0.0f;
+
+/*
+ * Latest image geometry seen by the detector callback.
+ * These are sent to nav together with the prediction so nav can compute
+ * image center dynamically instead of assuming a fixed value.
+ *
+ * IMPORTANT:
+ * Since the detector predicts center_x in the coordinate system of img->w,
+ * the correct dimension to pass for horizontal centering is img->w.
+ */
+static int16_t g_last_img_w = 0;
+static int16_t g_last_img_h = 0;
 
 #if GATE_CNN_DEBUG
 #define GATE_CNN_PRINT(...) printf(__VA_ARGS__)
@@ -432,10 +443,29 @@ static void gate_cnn_debug_print_prediction(const gate_prediction_t *pred, int w
                  width,
                  height);
 
-  if (pred->present) {
-    GATE_CNN_PRINT("[gate_cnn_detector.c][detection] frame=%lu DETECTED gate -> will send VISUAL_DETECTION with quality=%ld\n",
+  /*
+   * This warning does NOT prove semantic rotation, but it is useful as a
+   * practical hint during debugging. If height > width, the stream looks
+   * portrait-like, which may deserve inspection if nav was expected to use
+   * a landscape camera stream.
+   */
+  if (height > width) {
+    GATE_CNN_PRINT("[gate_cnn_detector.c][warn] frame=%lu image looks portrait-like (w=%d h=%d). extra will still carry img->w=%d because center_x/pixel_x are defined in that axis.\n",
                    (unsigned long)frame_idx,
-                   (long)(1000.0f * pred->present_prob));
+                   width,
+                   height,
+                   width);
+  }
+
+  if (pred->present) {
+    GATE_CNN_PRINT("[gate_cnn_detector.c][detection] frame=%lu DETECTED gate -> will send positive VISUAL_DETECTION quality=%ld extra(img_w)=%d\n",
+                   (unsigned long)frame_idx,
+                   (long)(1000.0f * pred->present_prob),
+                   width);
+  } else {
+    GATE_CNN_PRINT("[gate_cnn_detector.c][detection] frame=%lu NO gate -> will send negative VISUAL_DETECTION quality=0 extra(img_w)=%d\n",
+                   (unsigned long)frame_idx,
+                   width);
   }
 #endif
 }
@@ -470,12 +500,16 @@ static struct image_t *gate_cnn_detector_func(struct image_t *img, uint8_t camer
 
     pthread_mutex_lock(&gate_cnn_mutex);
     memcpy(&g_pred, &local_pred, sizeof(local_pred));
+    g_last_img_w = (int16_t)img->w;
+    g_last_img_h = (int16_t)img->h;
     pthread_mutex_unlock(&gate_cnn_mutex);
   } else {
-    GATE_CNN_PRINT("[gate_cnn_detector.c][cnn] frame=%lu prediction_failed status=%d time=%.3f ms\n",
+    GATE_CNN_PRINT("[gate_cnn_detector.c][cnn] frame=%lu prediction_failed status=%d time=%.3f ms img=%dx%d\n",
                    (unsigned long)g_frame_counter,
                    status,
-                   (double)g_last_inference_ms);
+                   (double)g_last_inference_ms,
+                   img->w,
+                   img->h);
   }
 
   return img;
@@ -494,6 +528,8 @@ void gate_cnn_detector_init(void)
   map_h = -1;
   g_frame_counter = 0u;
   g_last_inference_ms = 0.0f;
+  g_last_img_w = 0;
+  g_last_img_h = 0;
 
   gate_cnn_listener = cv_add_to_device(&GATE_CNN_DETECTOR_CAMERA,
                                        gate_cnn_detector_func,
@@ -505,25 +541,56 @@ void gate_cnn_detector_init(void)
 void gate_cnn_detector_periodic(void)
 {
   gate_prediction_t local_pred;
+  int16_t local_img_w = 0;
+  int16_t local_img_h = 0;
 
   pthread_mutex_lock(&gate_cnn_mutex);
   memcpy(&local_pred, &g_pred, sizeof(local_pred));
+  local_img_w = g_last_img_w;
+  local_img_h = g_last_img_h;
   g_pred.updated = 0u;
   pthread_mutex_unlock(&gate_cnn_mutex);
 
-  if (local_pred.updated && local_pred.present) {
-    int16_t msg_px = (int16_t)local_pred.center_x;
-    int16_t msg_py = (int16_t)local_pred.center_y;
-    int16_t msg_w = (int16_t)local_pred.bbox_width;
-    int16_t msg_h = (int16_t)local_pred.bbox_height;
-    int32_t msg_q = (int32_t)(1000.0f * local_pred.present_prob);
+  /*
+   * Revised sending behavior:
+   * - send on every updated detector output, not only on positive detections
+   * - if gate detected: send bbox + center + positive quality
+   * - if gate not detected: send zeroed geometry and quality=0
+   *
+   * extra carries image width so nav can compute center_x dynamically:
+   *   center_x = extra / 2
+   *
+   * IMPORTANT:
+   * We pass img->w (the horizontal dimension used to define center_x/pixel_x),
+   * not img->h. This remains correct even if the stream looks portrait-like,
+   * because pixel_x is still expressed in the width-axis of the received frame.
+   */
+  if (local_pred.updated) {
+    int16_t msg_px = 0;
+    int16_t msg_py = 0;
+    int16_t msg_w = 0;
+    int16_t msg_h = 0;
+    int32_t msg_q = 0;
+    int16_t msg_extra = local_img_w;
 
-    GATE_CNN_PRINT("[gate_cnn_detector.c][tx VISUAL_DETECTION] px=%d py=%d w=%d h=%d quality=%ld time=%.3f ms\n",
+    if (local_pred.present) {
+      msg_px = (int16_t)local_pred.center_x;
+      msg_py = (int16_t)local_pred.center_y;
+      msg_w = (int16_t)local_pred.bbox_width;
+      msg_h = (int16_t)local_pred.bbox_height;
+      msg_q = (int32_t)(1000.0f * local_pred.present_prob);
+    }
+
+    GATE_CNN_PRINT("[gate_cnn_detector.c][tx VISUAL_DETECTION] det=%u px=%d py=%d w=%d h=%d quality=%ld extra(img_w)=%d img=%dx%d time=%.3f ms\n",
+                   local_pred.present,
                    msg_px,
                    msg_py,
                    msg_w,
                    msg_h,
                    (long)msg_q,
+                   msg_extra,
+                   local_img_w,
+                   local_img_h,
                    (double)g_last_inference_ms);
 
     AbiSendMsgVISUAL_DETECTION(
@@ -533,7 +600,7 @@ void gate_cnn_detector_periodic(void)
       msg_w,
       msg_h,
       msg_q,
-      0
+      msg_extra
     );
   }
 }
