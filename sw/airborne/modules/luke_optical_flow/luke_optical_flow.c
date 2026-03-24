@@ -202,12 +202,12 @@ void luke_optical_flow_periodic(void)
   luke_of_smoothed_divergence = luke_of_ema_alpha * clamped_div
                               + (1.0f - luke_of_ema_alpha) * luke_of_smoothed_divergence;
 
-  printf("[luke_of] div=%.4f smooth=%.4f thr=%.3f tracked=%d max_corners=%d\n",
-         local_result.div_size,
-         luke_of_smoothed_divergence,
-         luke_of_divergence_threshold,
-         local_result.tracked_cnt,
-         luke_of_opticflow[0].max_track_corners);
+  // printf("[luke_of] div=%.4f smooth=%.4f thr=%.3f tracked=%d max_corners=%d\n",
+  //        local_result.div_size,
+  //        luke_of_smoothed_divergence,
+  //        luke_of_divergence_threshold,
+  //        local_result.tracked_cnt,
+  //        luke_of_opticflow[0].max_track_corners);
 
   int32_t quality = (luke_of_smoothed_divergence > luke_of_divergence_threshold) ? 1 : 0;
   AbiSendMsgVISUAL_DETECTION(LUKE_OF_VISUAL_DETECTION_ID,

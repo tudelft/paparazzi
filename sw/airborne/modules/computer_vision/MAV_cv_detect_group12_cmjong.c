@@ -114,8 +114,8 @@ struct opticflow_t luke_of_opticflow[LUKE_OF_CAMERA_SLOTS];
 // ── Shared message struct ────────────────────────────────────────────────────
 struct cv_detect_message {
   int16_t  detected;
-  int16_t  color_count;
   int16_t  orange_count;
+  int16_t  green_count;
   int16_t  blue_count;
   bool     updated;
   struct opticflow_result_t of_result;
@@ -171,11 +171,11 @@ static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
   // --- Stage 1: cheap color detection on cropped band ---
   uint16_t orange_count = color_detection(img, orange_lum_min, orange_lum_max,
                                           orange_cb_min, orange_cb_max,
-                                          orange_cr_min, orange_cr_max, cod_draw);
+                                          orange_cr_min, orange_cr_max, false);
   uint16_t blue_count = color_detection(img, blue_lum_min, blue_lum_max,
                                         blue_cb_min, blue_cb_max,
                                         blue_cr_min, blue_cr_max, false);
-  uint16_t count = orange_count > blue_count ? orange_count : blue_count;
+  uint16_t green_count = 0;
   bool orange_detected = threshold_orange_detector > 0.0f && orange_count >= threshold_orange_detector;
   bool blue_detected = threshold_blue_detector > 0.0f && blue_count >= threshold_blue_detector;
   if (orange_detected || blue_detected) {
@@ -212,11 +212,11 @@ static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
     luke_of_opticflow[0].derotation = luke_of_derotation;
 
     of_ran = opticflow_calc_frame(&luke_of_opticflow[0], img, &temp_of_result[0]);
-    fprintf(stderr,
-            "[cv_detect_cb] of_attempt reset=%d success=%d crop=%ux%u fast9=%u got_first=%d corners=%u tracked=%u orange=%u blue=%u color=%u\n",
-            of_reset_this_frame, of_ran, img->w, img->h, luke_of_opticflow[0].fast9_threshold,
-            luke_of_opticflow[0].got_first_img, temp_of_result[0].corner_cnt,
-            temp_of_result[0].tracked_cnt, orange_count, blue_count, count);
+    // fprintf(stderr,
+    //         "[cv_detect_cb] of_attempt reset=%d success=%d crop=%ux%u fast9=%u got_first=%d corners=%u tracked=%u orange=%u blue=%u green=%u\n",
+    //         of_reset_this_frame, of_ran, img->w, img->h, luke_of_opticflow[0].fast9_threshold,
+    //         luke_of_opticflow[0].got_first_img, temp_of_result[0].corner_cnt,
+    //         temp_of_result[0].tracked_cnt, orange_count, blue_count, green_count);
   } else {
     of_skip_count++;
   }
@@ -224,8 +224,8 @@ static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
   // --- Store results ---
   pthread_mutex_lock(&mutex);
   global_message[camera_id].detected     = detected_local;
-  global_message[camera_id].color_count  = count;
-  global_message[camera_id].orange_count = orange_count;
+  global_message[camera_id].orange_count  = orange_count;
+  global_message[camera_id].green_count = green_count;
   global_message[camera_id].blue_count   = blue_count;
   global_message[camera_id].updated      = true;
   if (of_ran) {
@@ -323,8 +323,10 @@ void MAV_cv_detect_group12_cmjong_periodic(void)
   if(local_message[0].updated){
     AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION1_ID,
     local_message[0].detected,
-    local_message[0].color_count,
-    0,0, 0, 0);
+    local_message[0].orange_count,
+    local_message[0].green_count,
+    local_message[0].blue_count,
+     0, 0);
   }
 
   // Optical flow ABI message (with EMA smoothing)
@@ -350,10 +352,10 @@ void MAV_cv_detect_group12_cmjong_periodic(void)
   int32_t quality = (luke_of_smoothed_divergence > luke_of_divergence_threshold) ? 1 : 0;
   AbiSendMsgVISUAL_DETECTION(LUKE_OF_VISUAL_DETECTION_ID, 0, 0, 0, 0, quality, 0);
 
-  fprintf(stderr, "[cv_detect] %s orange=%d blue=%d color=%d div_raw=%.4f smoothed=%.4f thresh=%.4f q=%d tracked=%d\n",
-    ema_branch,
-    local_message[0].orange_count, local_message[0].blue_count, local_message[0].color_count,
-    local_message[0].of_updated ? local_message[0].of_result.div_size : -1.f,
-    luke_of_smoothed_divergence, luke_of_divergence_threshold, quality,
-    local_message[0].of_updated ? (int)local_message[0].of_result.tracked_cnt : -1);
+  // fprintf(stderr, "[cv_detect] %s orange=%d blue=%d color=%d div_raw=%.4f smoothed=%.4f thresh=%.4f q=%d tracked=%d\n",
+  //   ema_branch,
+  //   local_message[0].orange_count, local_message[0].blue_count, local_message[0].color_count,
+  //   local_message[0].of_updated ? local_message[0].of_result.div_size : -1.f,
+  //   luke_of_smoothed_divergence, luke_of_divergence_threshold, quality,
+  //   local_message[0].of_updated ? (int)local_message[0].of_result.tracked_cnt : -1);
 }

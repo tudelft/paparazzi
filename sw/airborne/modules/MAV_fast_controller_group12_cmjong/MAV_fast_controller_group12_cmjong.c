@@ -70,7 +70,9 @@ static float of_turn_remaining = 0.0f;
 static bool was_in_flight = false;
 static float of_ignore_until = 0.0f;
 uint16_t detected_local = 1;
-uint16_t color_count_local = 0;
+uint16_t color_count_orange_local = 0;
+uint16_t color_count_green_local = 0;
+uint16_t color_count_blue_local = 0;
 
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
@@ -91,15 +93,17 @@ static abi_event luke_of_event;
 static void cv_detection_message_callback(
     uint8_t  __attribute__((unused)) sender_id,
     int16_t  detected,
-    int16_t  color_count,
-    int16_t  __attribute__((unused)) extra5,
-    int16_t  __attribute__((unused)) extra1,
+    int16_t  color_count_orange,
+    int16_t  color_count_green,
+    int16_t  color_count_blue,
     int32_t  __attribute__((unused)) extra2,
     int16_t  __attribute__((unused)) extra3)
 {
   // Safe cast: ABI guarantees int16, loss is always >= 0
   detected_local = detected;
-  color_count_local = color_count;
+  color_count_orange_local = color_count_orange;
+  color_count_green_local = color_count_green;
+  color_count_blue_local = color_count_blue;
 }
 
 static void luke_of_message_callback(
@@ -155,9 +159,17 @@ void MAV_fast_controller_group12_cmjong_periodic(void)
     of_obstacle_ahead = false;
   }
 
-  VERBOSE_PRINT("State: %d | detected: %u, %u | of: %d | of_turn_rem: %.1f | of_grace: %.1f\n",
-    navigation_state, detected_local, color_count_local, of_obstacle_ahead, of_turn_remaining,
-    fmaxf(0.0f, of_ignore_until - now));
+  VERBOSE_PRINT(
+  "State: %d | detected: %u, %u orange, %u green, %u blue | of: %d | of_turn_rem: %.1f | of_grace: %.1f\n",
+  navigation_state,
+  detected_local,
+  color_count_orange_local,
+  color_count_green_local,
+  color_count_blue_local,
+  of_obstacle_ahead,
+  of_turn_remaining,
+  fmaxf(0.0f, of_ignore_until - now)
+);
 
 
   switch (navigation_state) {
