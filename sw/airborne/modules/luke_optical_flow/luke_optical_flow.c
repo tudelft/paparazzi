@@ -92,8 +92,7 @@ static struct image_t *luke_optical_flow_process(struct image_t *img, uint8_t ca
   }
 
   // Crop to center: 40% horizontal, 80% vertical
-  crop_image_center(img, 0.40f, 0.80f);
-
+  
   // Match the standard opticflow module: use the pose closest to the image timestamp.
   struct pose_t pose = get_rotation_at_timestamp(img->pprz_ts);
   img->eulers = pose.eulers;

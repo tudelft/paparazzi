@@ -91,8 +91,8 @@ float threshold_blue_detector = 0;
 float threshold_green_detector = 0;
 
 // ── Crop settings (GCS-tunable) ──────────────────────────────────────────────
-float crop_h_frac = 0.60f;  // height fraction for initial crop (color + edge)
-float crop_w_frac = 0.60f;  // width fraction for secondary OF crop
+float crop_h_frac = 0.40f;  // height fraction for initial crop (color + edge)
+float crop_w_frac = 0.80f;  // width fraction for secondary OF crop
 
 // ── Optical flow settings ────────────────────────────────────────────────────
 #ifndef LUKE_OF_VISUAL_DETECTION_ID
@@ -167,7 +167,7 @@ static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
   bool     of_ran = false;
 
   // --- Stage 0: crop to horizontal obstacle band (removes floor/ceiling) ---
-  // crop_image_center(img, 1.0f, crop_h_frac);
+  crop_image_center(img, crop_w_frac, crop_h_frac);
 
   // --- Stage 1: cheap color detection on cropped band ---
   uint16_t orange_count = color_detection(img, orange_lum_min, orange_lum_max,
@@ -176,10 +176,13 @@ static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
   uint16_t blue_count = color_detection(img, blue_lum_min, blue_lum_max,
                                         blue_cb_min, blue_cb_max,
                                         blue_cr_min, blue_cr_max, false);
-  uint16_t green_count = 0;
+  uint16_t green_count = color_detection(img, green_lum_min, green_lum_max,
+                                         green_cb_min, green_cb_max,
+                                         green_cr_min, green_cr_max, false);
   bool orange_detected = threshold_orange_detector > 0.0f && orange_count >= threshold_orange_detector;
   bool blue_detected = threshold_blue_detector > 0.0f && blue_count >= threshold_blue_detector;
-  if (orange_detected || blue_detected) {
+  bool green_detected = threshold_green_detector > 0.0f && green_count >= threshold_green_detector;
+  if (orange_detected || blue_detected || green_detected) {
     detected_local = 1;
   }
 
@@ -207,7 +210,7 @@ static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
       }
     }
 
-    crop_image_center(img, crop_w_frac, 1.0f);  // narrow width further for OF
+    // crop_image_center(img, crop_w_frac, 1.0f);  // narrow width further for OF
     struct pose_t pose = get_rotation_at_timestamp(img->pprz_ts);
     img->eulers = pose.eulers;
     luke_of_opticflow[0].derotation = luke_of_derotation;
