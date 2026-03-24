@@ -34,7 +34,7 @@
 #endif
 
 #ifndef GATE_CNN_DEBUG_EVERY_N_FRAMES
-#define GATE_CNN_DEBUG_EVERY_N_FRAMES 1
+#define GATE_CNN_DEBUG_EVERY_N_FRAMES 5
 #endif
 
 
