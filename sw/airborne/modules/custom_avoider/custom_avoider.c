@@ -80,7 +80,7 @@ static uint8_t gate_msg_valid = 0;
  * - too large  -> drone starts forward motion while still misaligned
  */
 #ifndef GATE_FUSION_ALIGN_TOL_PX
-#define GATE_FUSION_ALIGN_TOL_PX 20
+#define GATE_FUSION_ALIGN_TOL_PX 10
 #endif
 
 /*
@@ -135,11 +135,11 @@ static uint8_t gate_msg_valid = 0;
  * - larger RX stride makes the behavior less twitchy, but slower to correct
  */
 #ifndef GATE_FUSION_FLY_HEADING_INC_DEG
-#define GATE_FUSION_FLY_HEADING_INC_DEG 2.0f
+#define GATE_FUSION_FLY_HEADING_INC_DEG 4.0f
 #endif
 
 #ifndef GATE_FUSION_FLY_CORRECTION_EVERY_RX
-#define GATE_FUSION_FLY_CORRECTION_EVERY_RX 3u
+#define GATE_FUSION_FLY_CORRECTION_EVERY_RX 1u
 #endif
 
 /*
@@ -715,7 +715,7 @@ static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters)
 
 static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
 {
-  float heading = stateGetNedToBodyEulers_f()->psi;
+  float heading = nav.heading;
 
   new_coor->x = stateGetPositionEnu_i()->x + POS_BFP_OF_REAL(sinf(heading) * distanceMeters);
   new_coor->y = stateGetPositionEnu_i()->y + POS_BFP_OF_REAL(cosf(heading) * distanceMeters);
