@@ -72,15 +72,17 @@ typedef struct {
     struct FloatVect3 vel_ref;
     struct FloatVect3 accel_ref;
     float psi_ref;
+    struct FloatRates rates_ref;
+
     struct FloatVect3 vel_sp;
     struct FloatVect3 accel_sp;
     struct FloatVect3 f_cmd;
     struct FloatVect3 accel_filt;
     
-    struct FloatQuat *quat;
     struct FloatQuat *quat_sp;
-    struct FloatRates *rates;
+    struct FloatQuat *quat;
     struct FloatRates *rates_sp;
+    struct FloatRates *rates;
     struct FloatRates *ang_accel_sp;
     float *ang_accel_filt;
     Act_t *act;

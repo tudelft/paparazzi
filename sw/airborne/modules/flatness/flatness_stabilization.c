@@ -44,7 +44,7 @@
 
 typedef enum {
     FSM_INIT = 0,
-    FSM_STANDBY,
+    FSM_P2P,
     FSM_TRAJECTORY_INIT,
     FSM_TRAJECTORY,
     FSM_END
@@ -54,8 +54,8 @@ typedef struct {
     float px, py, pz;
     float vx, vy, vz;
     float ax, ay, az;
-    float jx, jy, jz;
-    float psi, psidot;
+    float p, q, r;
+    float psi;
 } Traj_row_t;
 
 // constants
@@ -103,7 +103,7 @@ static Act_t act = {
     .state_filt = {0.0f}
 };
 static struct FloatQuat *quat, quat_sp;
-static struct FloatRates rates_sp;
+static struct FloatRates rates_sp, rates_ref;
 static struct FloatRates *rates;
 static struct FloatRates ang_accel_sp = {0.0f, 0.0f, 0.0f};
 static float ang_accel_filt[3] = {0.0f, 0.0f, 0.0f};
@@ -169,15 +169,17 @@ static void expose_dbg_variables(void)
     dbg.vel_ref = vel_ref;
     dbg.accel_ref = accel_ref;
     dbg.psi_ref = psi_ref;
+    dbg.rates_ref = rates_ref;
+
     dbg.vel_sp = vel_sp;
     dbg.accel_sp = accel_sp;
     dbg.f_cmd.x = f_cmd[0]; dbg.f_cmd.y = f_cmd[1]; dbg.f_cmd.z = f_cmd[2];
     dbg.accel_filt.x = accel_filt[0]; dbg.accel_filt.y = accel_filt[1]; dbg.accel_filt.z = accel_filt[2];
 
-    dbg.quat = quat;
     dbg.quat_sp = &quat_sp;
-    dbg.rates = rates;
+    dbg.quat = quat;
     dbg.rates_sp = &rates_sp;
+    dbg.rates = rates;
     dbg.ang_accel_sp = &ang_accel_sp;
     dbg.ang_accel_filt = ang_accel_filt;
     dbg.act = &act;
@@ -261,9 +263,13 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
     rates_sp.q = 2.0f * Kq.y * quat_err.qy;
     rates_sp.r = 2.0f * Kq.z * quat_err.qz;
 
-    // add FF rate sp
-    // struct FloatRates rate_ff = stab_sp_to_rates_f(att_sp);
-    // RATES_ADD(rates_sp, rate_ff);
+    // add FF rates
+    if (flatness_guided == false) {
+        rates_ref.p = 0.0f;
+        rates_ref.q = 0.0f;
+        rates_ref.r = 0.0f;
+    }
+    RATES_ADD(rates_sp, rates_ref);
 
     // calculate angular acceleration setpoint
     rates = stateGetBodyRates_f();
@@ -453,9 +459,10 @@ void load_csv_traj(void)
         float ax, ay, az;
         float jx, jy, jz;
         float psi, psidot;
+        float p, q, r;
 
-        int n = sscanf(line, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
-                       &t, &px, &py, &pz, &vx, &vy, &vz, &ax, &ay, &az, &jx, &jy, &jz, &psi, &psidot);
+        int n = sscanf(line, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
+                       &t, &px, &py, &pz, &vx, &vy, &vz, &ax, &ay, &az, &jx, &jy, &jz, &psi, &psidot, &p, &q, &r);
 
         if (n == 15) {
             traj[csv_traj_i].px = px;
@@ -470,12 +477,11 @@ void load_csv_traj(void)
             traj[csv_traj_i].ay = ay;
             traj[csv_traj_i].az = az;
 
-            traj[csv_traj_i].jx = jx;
-            traj[csv_traj_i].jy = jy;
-            traj[csv_traj_i].jz = jz;
+            traj[csv_traj_i].p = p;
+            traj[csv_traj_i].q = q;
+            traj[csv_traj_i].r = r;
 
             traj[csv_traj_i].psi = psi;
-            traj[csv_traj_i].psidot = psidot;
 
             csv_traj_i++;
         }
@@ -557,10 +563,10 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
             compute_quintic_coefficients(pos_start, &POS_END, vel_start, accel_start);
 
             timestamp_p2p_start = get_sys_time_float();
-            fsm_state = FSM_STANDBY;
+            fsm_state = FSM_P2P;
              /* fall through */ 
 
-        case FSM_STANDBY:
+        case FSM_P2P:
             timestamp_p2p = get_sys_time_float() - timestamp_p2p_start;
             if (timestamp_p2p < P2P_DT) {
                 compute_quintic_ref(timestamp_p2p, pos_start, &POS_END);
@@ -568,6 +574,9 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
                 compute_quintic_ref(P2P_DT, pos_start, &POS_END);
             }
             psi_ref = 0;
+            rates_ref.p = 0.0f;
+            rates_ref.q = 0.0f;
+            rates_ref.r = 0.0f;
 
             flatness_guidance_run(in_flight, cmd);
 
@@ -599,19 +608,27 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
                 accel_ref.y = traj[csv_i].ay;
                 accel_ref.z = traj[csv_i].az;
 
+                rates_ref.p = traj[csv_i].p;
+                rates_ref.q = traj[csv_i].q;
+                rates_ref.r = traj[csv_i].r;
+
                 psi_ref = traj[csv_i].psi;
             } else {
                 pos_ref.x = traj[csv_i-1].px;
                 pos_ref.y = traj[csv_i-1].py;
                 pos_ref.z = traj[csv_i-1].pz;
 
-                vel_ref.x = 0;
-                vel_ref.y = 0;
-                vel_ref.z = 0;
+                vel_ref.x = 0.0f;
+                vel_ref.y = 0.0f;
+                vel_ref.z = 0.0f;
 
-                accel_ref.x = 0;
-                accel_ref.y = 0;
-                accel_ref.z = 0;
+                accel_ref.x = 0.0f;
+                accel_ref.y = 0.0f;
+                accel_ref.z = 0.0f;
+
+                rates_ref.p = 0.0f;
+                rates_ref.q = 0.0f;
+                rates_ref.r = 0.0f;
 
                 psi_ref = traj[csv_i-1].psi;
 
