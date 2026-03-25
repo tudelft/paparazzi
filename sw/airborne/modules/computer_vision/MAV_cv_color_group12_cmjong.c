@@ -3,7 +3,7 @@
 // Scan-band configuration
 #define SCAN_NUM_LINES   5   // number of horizontal scan bands
 #define SCAN_THICKNESS   1   // width of each band in pixels
-#define SCAN_SPACING     20  // gap between band edges in pixels
+#define SCAN_SPACING     10  // gap between band edges in pixels
 #ifndef COLOR_OBJECT_DETECTOR_DRAW_GUIDES
 #define COLOR_OBJECT_DETECTOR_DRAW_GUIDES 0
 #endif
