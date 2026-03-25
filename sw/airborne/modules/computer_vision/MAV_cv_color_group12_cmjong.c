@@ -4,6 +4,16 @@
 #define SCAN_NUM_LINES   5   // number of horizontal scan bands
 #define SCAN_THICKNESS   1   // width of each band in pixels
 #define SCAN_SPACING     20  // gap between band edges in pixels
+#ifndef COLOR_OBJECT_DETECTOR_DRAW_GUIDES
+#define COLOR_OBJECT_DETECTOR_DRAW_GUIDES 0
+#endif
+
+/*
+YUV422 memory layout (4 bytes per 2 pixels):
+   [ U | Y1 | V | Y2 ]
+     0    1   2    3
+ Even pixel x reads:  U @ 2x,   Y1 @ 2x+1, V @ 2x+2
+ Odd  pixel x reads:  U @ 2x-2, V @ 2x,    Y2 @ 2x+1
 
 static void draw_horizontal_line(uint8_t *buffer, uint16_t img_w, uint16_t img_h,
                                 uint16_t x_col, uint8_t y_val, uint8_t u_val, uint8_t v_val)
@@ -102,6 +112,15 @@ uint16_t color_detection(struct image_t *img,
       draw_horizontal_line(buffer, w, h, band_start[i], 235, 128, 128);
       draw_horizontal_line(buffer, w, h, band_end[i] - 1u, 235, 128, 128);
     }
+  if (draw && COLOR_OBJECT_DETECTOR_DRAW_GUIDES) {
+    draw_horizontal_line(buffer, img->w, left_end,     255, 128, 128); // white
+    draw_horizontal_line(buffer, img->w, middle_start, 255, 128, 128); // white
+    draw_horizontal_line(buffer, img->w, middle_end,   255, 128, 128); // white
+    draw_horizontal_line(buffer, img->w, right_start,  255, 128, 128); // white
+
+    draw_horizontal_line(buffer, img->w, img->h / 6,       150, 90,  90);  // green  = left center
+    draw_horizontal_line(buffer, img->w, img->h / 2,       150, 80,  180); // orange = middle center
+    draw_horizontal_line(buffer, img->w, 5 * img->h / 6,   150, 90,  90);  // green  = right center
   }
 
   return (uint16_t)(total > 65535 ? 65535 : total);

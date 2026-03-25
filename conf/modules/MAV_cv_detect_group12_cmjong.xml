@@ -32,7 +32,8 @@
     <define name="GREEN_OBJECT_DETECTOR_CR_MIN" value="0"/>
     <define name="GREEN_OBJECT_DETECTOR_CR_MAX" value="0"/>
 
-    <define name="COLOR_OBJECT_DETECTOR_DRAW" value="FALSE" description="Draw detection on image"/>
+    <define name="COLOR_OBJECT_DETECTOR_DRAW" value="FALSE|TRUE" description="Draw detection on image"/>
+    <define name="GREEN_OBJECT_DETECTOR_DRAW" value="FALSE|TRUE" description="Force green mask drawing from plant detector"/>
 
     <define name="THRESHOLD_ORANGE_DETECTOR" value="0"/>
     <define name="THRESHOLD_BLUE_DETECTOR" value="0"/>
@@ -158,6 +159,7 @@
 
   <dep>
     <depends>video_thread,agl_dist,pose_history</depends>
+    <depends>video_thread,MAV_plant_avoider</depends>
   </dep>
 
   <header>

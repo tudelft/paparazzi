@@ -1,7 +1,7 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
-<airframe name="bebop_avoider">
-  <description>MAVLAB Course TUDelft 2023
+<airframe name="bebop_gate_detection">
+  <description>MAVLAB Course TU Delft 2023 - Gate detection only profile
   </description>
 
 
@@ -10,6 +10,14 @@
       <define name="VIDEO_CAPTURE_PATH" value="/data/ftp/internal_000/images"/>
       <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
       <define name="MT9V117_TARGET_FPS" value="20"/>
+      <define name="CAMERA_ROTATED_90DEG_RIGHT" value="TRUE"/>
+      <define name="DETECT_GATE_USE_EDGE_MODE" value="0"/>
+      <define name="DETECT_GATE_Y_MIN" value="100"/>
+      <define name="DETECT_GATE_Y_MAX" value="255"/>
+      <define name="DETECT_GATE_U_MIN" value="0"/>
+      <define name="DETECT_GATE_U_MAX" value="120"/>
+      <define name="DETECT_GATE_V_MIN" value="120"/>
+      <define name="DETECT_GATE_V_MAX" value="220"/>
       
       <!-- Detect orange -->
       <define name="ORANGE_OBJECT_DETECTOR_LUM_MIN" value="30"/>
@@ -43,6 +51,14 @@
       <module name="fdm" type="gazebo"/>
       <define name="VIDEO_CAPTURE_PATH" value="/tmp/paparazzi/images"/>
       <define name="LOGGER_FILE_PATH" value="/tmp/paparazzi/log"/>
+      <define name="CAMERA_ROTATED_90DEG_RIGHT" value="TRUE"/>
+      <define name="DETECT_GATE_USE_EDGE_MODE" value="1"/>
+      <define name="DETECT_GATE_Y_MIN" value="80"/>
+      <define name="DETECT_GATE_Y_MAX" value="255"/>
+      <define name="DETECT_GATE_U_MIN" value="0"/>
+      <define name="DETECT_GATE_U_MAX" value="130"/>
+      <define name="DETECT_GATE_V_MIN" value="110"/>
+      <define name="DETECT_GATE_V_MAX" value="230"/>
       
       <!-- Detect orange -->
       <define name="ORANGE_OBJECT_DETECTOR_LUM_MIN" value="41"/>
@@ -100,25 +116,21 @@
       <define name="OPENCVDEMO_CAMERA" value="front_camera"/>
       <define name="OPENCVDEMO_FPS" value="10"/>
     </module -->
-    <module name="MAV_cv_detect_group12_cmjong">
-      <define name="COLOR_OBJECT_DETECTOR_CAMERA" value="front_camera"/>
-      <define name="COLOR_OBJECT_DETECTOR_FPS1" value="0"/>
-      <define name="COLOR_OBJECT_DETECTOR_DRAW" value="0"/>
-      <define name="THRESHOLD_ORANGE_DETECTOR" value="400"/>
-      <define name="THRESHOLD_BLUE_DETECTOR" value="400"/>
-      <define name="THRESHOLD_GREEN_DETECTOR" value="400"/>
-      <define name="LUKE_OF_VISUAL_DETECTION_ID" value="3"/>
-      <define name="OPTICFLOW_CAMERA" value="front_camera"/>
-      <define name="GREEN_OBJECT_DETECTOR_DRAW" value="1"/>
+    <module name="cv_detect_gate_gd">
+      <define name="DETECT_GATE_CAMERA" value="front_camera"/>
+      <define name="DETECT_GATE_FPS" value="10"/>
+      <define name="DETECT_GATE_DRAW_GATE" value="1"/>
+      <define name="DETECT_GATE_N_SAMPLES" value="5000"/>
+      <define name="DETECT_GATE_SIMPLIFIED_PNP" value="1"/>
+      <define name="DETECT_GATE_GATE_SIZE_M" value="1.08"/>
+      <define name="DETECT_GATE_MIN_GATE_QUALITY" value="0.08"/>
+      <define name="DETECT_GATE_MIN_N_SIDES" value="3"/>
+      <define name="DETECT_GATE_MIN_PIX_SIZE" value="40"/>
+      <define name="DETECT_GATE_EXCLUDE_PIXELS_TOP" value="25"/>
+      <define name="DETECT_GATE_EXCLUDE_PIXELS_BOTTOM" value="40"/>
     </module>
-    <module name="MAV_fast_controller_group12_cmjong">
-      <define name="MAV_cmjong_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION1_ID"/>
-      <define name="MAV_cmjong_OF_VISUAL_DETECTION_ID" value="3"/>
-    </module>
-    <module name="MAV_plant_avoider">
-      <define name="PLANT_AVOIDER_CAMERA" value="front_camera"/>
-      <define name="PLANT_AVOIDER_FPS" value="5"/>
-      <define name="PLANT_AVOIDER_SHOW_MASK" value="1"/>
+    <module name="gate_center_follower_gd">
+      <define name="GATE_CENTER_RELATIVE_LOCALIZATION_ID" value="DETECT_GATE_ABI_ID"/>
     </module>
     <module name="video_rtp_stream">
       <define name="VIEWVIDEO_CAMERA" value="front_camera"/>
@@ -187,17 +199,7 @@
     <define name="MAG_Y_NEUTRAL" value="0"/>
     <define name="MAG_Z_NEUTRAL" value="0"/>
   </section>
-  <!-- Optical flow settings -->
-  <section name="OPTICFLOW" prefix="OPTICFLOW_">
-    <define name="MAX_TRACK_CORNERS" value="100"/>
-    <define name="FAST9_THRESHOLD" value="7"/>
-    <define name="FAST9_MIN_DISTANCE" value="5"/>
-    <define name="FEATURE_MANAGEMENT" value="TRUE"/>
-    <define name="FAST9_REGION_DETECT" value="TRUE"/>
-    <define name="FAST9_NUM_REGIONS" value="9"/>
-    <define name="PYRAMID_LEVEL" value="2"/>
-    <define name="METHOD" value="0"/>
-  </section>
+
   <!-- local magnetic field -->
   <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
   <section name="AHRS" prefix="AHRS_">

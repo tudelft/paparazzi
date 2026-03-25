@@ -1,0 +1,27 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="gate_center_follower_gd" dir="gate_center">
+  <doc>
+    <description>
+      Tracks gate center from RELATIVE_LOCALIZATION and commands GOAL/TRAJECTORY waypoints
+      to move toward and center on the detected gate.
+    </description>
+    <define name="GATE_CENTER_RELATIVE_LOCALIZATION_ID" value="DETECT_GATE_ABI_ID"
+            description="Which RELATIVE_LOCALIZATION sender to consume."/>
+  </doc>
+
+  <dep>
+    <depends>cv_detect_gate_gd</depends>
+  </dep>
+
+  <header>
+    <file name="gate_center_follower_gd.h"/>
+  </header>
+
+  <init fun="gate_center_follower_gd_init()"/>
+  <periodic fun="gate_center_follower_gd_periodic()" freq="4"/>
+
+  <makefile target="ap|nps">
+    <file name="gate_center_follower_gd.c"/>
+  </makefile>
+</module>

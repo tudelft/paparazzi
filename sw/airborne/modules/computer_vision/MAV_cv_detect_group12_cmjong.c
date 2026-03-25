@@ -29,6 +29,7 @@
 // Own header
 #include "modules/computer_vision/MAV_cv_detect_group12_cmjong.h"
 #include "modules/computer_vision/MAV_cv_color_group12_cmjong.h"
+#include "modules/computer_vision/MAV_plant_avoider.h"
 
 #include "modules/computer_vision/cv.h"
 #include "modules/core/abi.h"
@@ -63,6 +64,14 @@ static pthread_mutex_t mutex;
 #endif
 
 // ── Color filter settings ────────────────────────────────────────────────────
+/* Keep plant mask visible by default, even if generic detector draw is toggled off at runtime. */
+#ifndef GREEN_OBJECT_DETECTOR_DRAW
+#define GREEN_OBJECT_DETECTOR_DRAW false
+#endif
+
+#ifndef ORANGE_OBJECT_DETECTOR_DRAW
+#define ORANGE_OBJECT_DETECTOR_DRAW false
+#endif
 uint8_t orange_lum_min = 0;
 uint8_t orange_lum_max = 0;
 uint8_t orange_cb_min = 0;
@@ -122,7 +131,7 @@ struct cv_detect_message {
   struct opticflow_result_t of_result;
   bool     of_updated;
 };
-struct cv_detect_message global_message[1];
+struct cv_detect_message global_message[2];
 
 static const char *loss_dir_to_str(int16_t dir) __attribute__((unused));
 static const char *loss_dir_to_str(int16_t dir)
@@ -181,6 +190,18 @@ static struct image_t *object_detector(struct image_t *img, uint8_t camera_id)
 
   // --- Stage 0: crop to horizontal obstacle band (removes floor/ceiling) ---
   crop_image_center(img, crop_w_frac, crop_h_frac);
+  const bool draw_orange_mask = cod_draw || ORANGE_OBJECT_DETECTOR_DRAW;
+  PixelCount orange_count = color_detection(img,
+                                            orange_lum_min, orange_lum_max,
+                                            orange_cb_min, orange_cb_max,
+                                            orange_cr_min, orange_cr_max,
+                                            draw_orange_mask);
+
+  uint32_t plant_left = 0U;
+  uint32_t plant_middle = 0U;
+  uint32_t plant_right = 0U;
+  const bool draw_green_mask = cod_draw || GREEN_OBJECT_DETECTOR_DRAW;
+  plant_avoider_detect_losses(img, draw_green_mask, &plant_left, &plant_middle, &plant_right);
 
   // --- Stage 1: cheap color detection on cropped band (per-column) ---
   struct column_counts orange_cols = color_detection_columns(img,
@@ -311,7 +332,7 @@ struct image_t *object_detector1(struct image_t *img, uint8_t camera_id __attrib
  */
 void MAV_cv_detect_group12_cmjong_init(void)
 {
-  memset(global_message, 0, 1*sizeof(struct cv_detect_message));
+  memset(global_message, 0, 2*sizeof(struct cv_detect_message));
   pthread_mutex_init(&mutex, NULL);
 #ifdef COLOR_OBJECT_DETECTOR_CAMERA
 #ifdef ORANGE_OBJECT_DETECTOR_LUM_MIN

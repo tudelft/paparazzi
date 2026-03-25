@@ -220,6 +220,9 @@ hitl.compile: hitl.ac_h | print_version
 %.upload: %.compile
 	cd $(AIRBORNE); $(MAKE) TARGET=$* upload
 
+# Convenience alias so `make AIRCRAFT=<name> nps` works the same as `nps.compile`.
+nps: nps.compile
+
 hitl.upload: hitl.compile
 	cd $(AIRBORNE); $(MAKE) TARGET=ap upload
 
@@ -228,4 +231,4 @@ clean_ac :
 	@echo "CLEANING $(AIRCRAFT)"
 	$(Q)rm -fr $(AIRCRAFT_BUILD_DIR)
 
-.PHONY: all_ac_h clean_ac print_version generate_keys
+.PHONY: all_ac_h clean_ac print_version generate_keys nps

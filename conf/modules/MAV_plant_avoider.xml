@@ -1,0 +1,152 @@
+<?xml version="1.0"?>
+<!--
+  Plant Avoider Module
+  Copy to: conf/modules/MAV_plant_avoider.xml
+
+  Detects plants in the front camera using HSV colour + texture + shape
+  filters, divides the frame into three vertical zones (Left/Straight/Right),
+  scores each zone by weighted plant area and steers the drone to the
+  least-blocked zone.
+
+  Requires: video_thread, front_camera modules in the airframe.
+  Navigation: GUIDED mode via guidance_h_set_body_vel().
+
+  To add to your airframe:
+    <module name="MAV_plant_avoider"/>
+  and set the drone to GUIDED mode in the START flight-plan block.
+-->
+<module name="MAV_plant_avoider" dir="computer_vision">
+
+  <doc>
+    <description>
+      Detects plants/weeds in the front camera and steers the drone away
+      from them using GUIDED mode velocity setpoints.
+    </description>
+    <define name="PLANT_AVOIDER_CAMERA"
+            value="front_camera|bottom_camera"
+            description="Camera device (must match available simulator/airframe camera)"/>
+    <define name="PLANT_AVOIDER_FPS"
+            value="4"
+            description="Vision callback rate in Hz"/>
+        <define name="PLANT_AVOIDER_SHOW_MASK"
+          value="0|1"
+          description="Highlight detected green pixels in top half on camera feed (0/1)"/>
+        <define name="PLANT_AVOIDER_SHOW_DETECTIONS"
+          value="1"
+          description="Draw detected plant bounding boxes on the camera feed (0/1)"/>
+            <define name="PLANT_AVOIDER_SHOW_DEBUG_BOXES"
+              value="1"
+              description="Temporary debug: draw candidate/rejected boxes (yellow/blue) on camera feed (0/1)"/>
+            <define name="PLANT_AVOIDER_LOG_DETECTIONS"
+              value="1"
+              description="Enable console logs for detections, boxes, and decisions (0/1)"/>
+            <define name="PLANT_AVOIDER_LOG_EVERY_N_FRAMES"
+              value="8"
+              description="Log every N frames even if no detections (health heartbeat)"/>
+                <define name="PLANT_AVOIDER_DEBUG_REJECTS"
+                  value="1"
+                  description="Temporary debug: log why candidate contours are rejected (0/1)"/>
+                <define name="PLANT_AVOIDER_DEBUG_MAX_REJECT_LOGS"
+                  value="6"
+                  description="Temporary debug: max per-frame reject logs to avoid spam"/>
+    <define name="PLANT_AVOIDER_STRAIGHT_BIAS"
+            value="0.10f"
+            description="Fractional margin before a turn beats straight (0-1)"/>
+    <define name="PLANT_AVOIDER_FORWARD_SPEED"
+            value="0.3f"
+            description="Cruise forward body velocity (m/s)"/>
+    <define name="PLANT_AVOIDER_TURN_SPEED"
+            value="0.3f"
+            description="Lateral body velocity used when turning (m/s)"/>
+  </doc>
+
+  <dep>
+    <depends>video_thread</depends>
+  </dep>
+
+  <!-- Header available to the flight plan and other modules -->
+  <header>
+    <file name="MAV_plant_avoider.h"/>
+  </header>
+
+  <!-- Autopilot lifecycle hooks -->
+  <init    fun="plant_avoider_init()"/>
+  <periodic fun="plant_avoider_periodic()" freq="4" autorun="TRUE"/>
+
+  <!-- GCS-tunable settings (Settings tab -> PlantAvoider) -->
+  <!--<settings>
+    <dl_settings name="PlantAvoider">
+      <dl_setting var="pa_straight_bias"
+                  min="0.0" step="0.01" max="0.5"
+                  shortname="straight_bias" type="float"
+                  module="MAV_plant_avoider"
+                  doc="Extra tolerance before turning (fraction of total plant load)"/>
+      <dl_setting var="pa_forward_speed"
+                  min="0.0" step="0.05" max="1.0"
+                  shortname="fwd_speed" type="float"
+                  module="MAV_plant_avoider"
+                  doc="Forward cruise speed (m/s)"/>
+      <dl_setting var="pa_turn_speed"
+                  min="0.0" step="0.05" max="1.0"
+                  shortname="turn_speed" type="float"
+                  module="MAV_plant_avoider"
+                  doc="Lateral speed when turning (m/s)"/>
+    </dl_settings>
+  </settings> -->
+
+  <makefile target="ap">
+    <file name="MAV_plant_avoider.cpp"/>
+    <raw>
+      ap.CXXFLAGS += -DPLANT_AVOIDER_USE_SIM_DARK_GREEN_HSV=0
+      ap.CXXFLAGS += -DPLANT_AVOIDER_SHOW_MASK=1
+      ap.CXXFLAGS += -DPLANT_AVOIDER_SHOW_DETECTIONS=0
+      ap.CXXFLAGS += -DPLANT_AVOIDER_SHOW_DEBUG_BOXES=0
+      ap.CXXFLAGS += -DPLANT_AVOIDER_LOG_DETECTIONS=0
+      ap.CXXFLAGS += -DPLANT_AVOIDER_DEBUG_REJECTS=0
+    </raw>
+    <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_arm/include/opencv4"/>
+    <flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install_arm/lib"/>
+    <flag name="LDFLAGS" value="lopencv_world"/>
+    <flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install_arm/lib/opencv4/3rdparty"/>
+    <flag name="LDFLAGS" value="llibprotobuf"/>
+    <flag name="LDFLAGS" value="llibjpeg-turbo"/>
+    <flag name="LDFLAGS" value="llibpng"/>
+    <flag name="LDFLAGS" value="llibtiff"/>
+    <flag name="LDFLAGS" value="llibopenjp2"/>
+    <flag name="LDFLAGS" value="lzlib"/>
+    <flag name="LDFLAGS" value="lade"/>
+    <flag name="LDFLAGS" value="ldl"/>
+    <flag name="LDFLAGS" value="lm"/>
+    <flag name="LDFLAGS" value="lpthread"/>
+    <flag name="LDFLAGS" value="lrt"/>
+  </makefile>
+
+  <makefile target="nps">
+    <file name="MAV_plant_avoider.cpp"/>
+    <raw>
+      # Keep real-life YUV profile as default.
+      nps.CXXFLAGS += -DPLANT_AVOIDER_USE_SIM_DARK_GREEN_HSV=0
+      nps.CXXFLAGS += -DPLANT_AVOIDER_ROTATED_CAMERA_TOP_HALF=1
+      nps.CXXFLAGS += -DPLANT_AVOIDER_Y_CENTER=46
+      nps.CXXFLAGS += -DPLANT_AVOIDER_U_CENTER=106
+      nps.CXXFLAGS += -DPLANT_AVOIDER_V_CENTER=129
+      nps.CXXFLAGS += -DPLANT_AVOIDER_Y_TOL=20
+      nps.CXXFLAGS += -DPLANT_AVOIDER_U_TOL=20
+      nps.CXXFLAGS += -DPLANT_AVOIDER_V_TOL=20
+      nps.CXXFLAGS += -DPLANT_AVOIDER_STRAIGHT_SAFE_PCT=25.0f
+      nps.CXXFLAGS += -DPLANT_AVOIDER_STRAIGHT_BLOCKED_PCT=50.0f
+      nps.CXXFLAGS += -DPLANT_AVOIDER_FORWARD_SPEED=0.18f
+      nps.CXXFLAGS += -DPLANT_AVOIDER_TURN_SPEED=0.55f
+      nps.CXXFLAGS += -DPLANT_AVOIDER_SHOW_MASK=0
+      nps.CXXFLAGS += -DPLANT_AVOIDER_SHOW_DETECTIONS=0
+      nps.CXXFLAGS += -DPLANT_AVOIDER_SHOW_DEBUG_BOXES=0
+      nps.CXXFLAGS += -DPLANT_AVOIDER_LOG_DETECTIONS=0
+      nps.CXXFLAGS += -DPLANT_AVOIDER_DEBUG_REJECTS=0
+      # To test the simulator-specific dark-green profile later, use this instead:
+      # nps.CXXFLAGS += -DPLANT_AVOIDER_USE_SIM_DARK_GREEN_HSV=1
+      nps.CXXFLAGS += $(shell pkg-config --cflags opencv4 || pkg-config --cflags opencv)
+      nps.LDFLAGS  += $(shell pkg-config --libs opencv4 || pkg-config --libs opencv)
+    </raw>
+  </makefile>
+
+</module>

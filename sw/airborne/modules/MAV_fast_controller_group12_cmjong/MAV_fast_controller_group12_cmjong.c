@@ -32,6 +32,10 @@
 
 #define MAV_FAST_CONTROLLER_VERBOSE TRUE
 
+#ifndef MAV_FAST_CONTROLLER_ENABLE_NAV_COMMANDS
+#define MAV_FAST_CONTROLLER_ENABLE_NAV_COMMANDS 1
+#endif
+
 #define PRINT(string,...) fprintf(stderr, "[MAV_fast_controller_group12_cmjong->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 #if MAV_FAST_CONTROLLER_VERBOSE
 #define VERBOSE_PRINT PRINT
@@ -58,8 +62,9 @@ enum navigation_state_t {
 };
 
 
-#define AVOIDANCE_TURN_DEGREES 10.f
+#define AVOIDANCE_TURN_DEGREES 5.f
 #define MOVE_DISTANCE       0.5f
+#define LOSS_SAFE_THRESHOLD 9500u
 #define AVOIDANCE_TURN_DEGREES_OutOfBound 5.f
 #define OF_AVOIDANCE_TURN_DEGREES 120.f
 #define GYRO_YAW_RATE_THRESHOLD 0.15f
@@ -67,6 +72,18 @@ enum navigation_state_t {
 #define BRAKE_SPEED_THRESHOLD 0.1f
 #define BRAKE_TIMEOUT 2.0f
 #define RECENT_COLOR_DIR_TIMEOUT 3.0f
+
+#ifndef STUCK_TURN_TIMEOUT_S
+#define STUCK_TURN_TIMEOUT_S 20.0f
+#endif
+
+#ifndef STUCK_TURN_DEGREES
+#define STUCK_TURN_DEGREES 90.0f
+#endif
+
+#ifndef STUCK_POSITION_RADIUS_M
+#define STUCK_POSITION_RADIUS_M 0.30f
+#endif
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SAFE_AND_WAIT;
@@ -85,6 +102,10 @@ int16_t col_left_loss = 0;
 int16_t col_center_loss = 0;
 int16_t col_right_loss = 0;
 int16_t lowest_loss_dir = 1;
+Loss Loss_image = {0, 0, 0};
+static bool stuck_watchdog_initialized = false;
+static struct EnuCoor_f stuck_anchor_pos;
+static float stuck_last_move_time_s = 0.0f;
 
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
