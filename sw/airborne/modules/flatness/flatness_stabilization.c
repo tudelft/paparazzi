@@ -40,7 +40,23 @@
 
 #define SAFE_SQRT(x) (sqrtf((x) > 0 ? (x) : 0.0f))
 
-#define NB_CSV_ROWS 998
+#define REF_TRAJ_FILENAME "circle_vs2_r2.csv"
+#define NB_CSV_ROWS 1998 // circle vs2
+
+// #define REF_TRAJ_FILENAME "circle_vs3_r2.csv"
+// #define NB_CSV_ROWS 1698 // circle vs3
+
+// #define REF_TRAJ_FILENAME "circle_vs4_r2.csv"
+// #define NB_CSV_ROWS 1398 // circle vs4
+
+// #define REF_TRAJ_FILENAME "circle_vs5_r2.csv"
+// #define NB_CSV_ROWS 1198 // circle vs5
+#define NB_CSV_COLS 18
+
+static const float HEIGHT_OFFSET = 2.0f;
+static const struct FloatVect3 POS_END = {0.0f, 2.0f, -HEIGHT_OFFSET};
+static const float P2P_DT = 3.0f;
+static const float P2P_TO_TRAJ_DELAY = 5.0f;
 
 typedef enum {
     FSM_INIT = 0,
@@ -73,16 +89,12 @@ static const float MIN_TAU = -0.981f;
 static const float MAX_TAU = -2.0f*9.81f;
 static const float ACCEL_BOUND = 9.81f/1.0f;
 
-static const float ACT_CUTOFF_OMEGA = 11.0f;
+static const float ACT_CUTOFF_OMEGA = 15.0f; // 100->7000: 11 r/s, 5000->8000: 15 r/s and for KK: 20 r/s
 static const float FILT_CUTOFF_FREQ = 5.0f;
 static const Gain_t Kq = {3.0f, 3.0f, 3.0f};
 static const Gain_t Komega = {14.0f, 15.0f, 14.0f};
 static const Gain_t Kp = {1.0f, 1.0f, 1.0f};
 static const Gain_t Kv = {2.0f, 2.0f, 2.0f};
-
-static const struct FloatVect3 POS_END = {0.0f, 2.0f, -2.0f};
-static const float P2P_DT = 3.0f;
-static const float P2P_TO_TRAJ_DELAY = 5.0f;
 
 // global vars declared as extern in header file
 dbg_t dbg;
@@ -236,7 +248,7 @@ void flatness_stabilization_init(void)
     AbiBindMsgRADIO_CONTROL(ABI_BROADCAST, &rc_ev, rc_cb);
 
     char filename[256];
-    sprintf(filename, "%s/circle_vs2_r2.csv", STRINGIFY(REF_TRAJ_FILE_PATH));
+    sprintf(filename, "%s/%s", STRINGIFY(REF_TRAJ_FILE_PATH), REF_TRAJ_FILENAME);
     ref_traj_fd = fopen(filename, "r");
     if(!ref_traj_fd) {
         return; // todo: add error handling here?
@@ -464,7 +476,7 @@ void load_csv_traj(void)
         int n = sscanf(line, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
                        &t, &px, &py, &pz, &vx, &vy, &vz, &ax, &ay, &az, &jx, &jy, &jz, &psi, &psidot, &p, &q, &r);
 
-        if (n == 15) {
+        if (n == NB_CSV_COLS) {
             traj[csv_traj_i].px = px;
             traj[csv_traj_i].py = py;
             traj[csv_traj_i].pz = pz;
@@ -598,7 +610,7 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
             if (csv_i < NB_CSV_ROWS) {
                 pos_ref.x = traj[csv_i].px;
                 pos_ref.y = traj[csv_i].py;
-                pos_ref.z = traj[csv_i].pz;
+                pos_ref.z = traj[csv_i].pz - HEIGHT_OFFSET;
 
                 vel_ref.x = traj[csv_i].vx;
                 vel_ref.y = traj[csv_i].vy;
@@ -614,9 +626,6 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
 
                 psi_ref = traj[csv_i].psi;
             } else {
-                pos_ref.x = traj[csv_i-1].px;
-                pos_ref.y = traj[csv_i-1].py;
-                pos_ref.z = traj[csv_i-1].pz;
 
                 vel_ref.x = 0.0f;
                 vel_ref.y = 0.0f;
@@ -629,8 +638,6 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
                 rates_ref.p = 0.0f;
                 rates_ref.q = 0.0f;
                 rates_ref.r = 0.0f;
-
-                psi_ref = traj[csv_i-1].psi;
 
                 fsm_state = FSM_END;
             }
