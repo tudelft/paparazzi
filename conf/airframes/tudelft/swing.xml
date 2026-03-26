@@ -32,11 +32,11 @@
             <module name="sys_mon"/>
 
             <module name="logger_file">
-                <define name="LOGGER_FILE_PATH" value="/data/log"/>
-                <configure name="LOGGER_FILE_FREQUENCY" value="200"/>
+                <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
+                <configure name="LOGGER_FILE_FREQUENCY" value="100"/>
             </module>
 
-            <define name="REF_TRAJ_FILE_PATH" value="/data"/>
+            <define name="REF_TRAJ_FILE_PATH" value="/data/ftp/internal_000/ref_traj"/>
         </target>
 
         <target name="nps" board="pc">

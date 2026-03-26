@@ -236,7 +236,7 @@ void flatness_stabilization_init(void)
     AbiBindMsgRADIO_CONTROL(ABI_BROADCAST, &rc_ev, rc_cb);
 
     char filename[256];
-    sprintf(filename, "%s/circular_vs2_r2.csv", STRINGIFY(REF_TRAJ_FILE_PATH));
+    sprintf(filename, "%s/circle_vs2_r2.csv", STRINGIFY(REF_TRAJ_FILE_PATH));
     ref_traj_fd = fopen(filename, "r");
     if(!ref_traj_fd) {
         return; // todo: add error handling here?
