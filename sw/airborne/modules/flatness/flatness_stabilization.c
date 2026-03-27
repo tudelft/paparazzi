@@ -54,7 +54,7 @@
 #define NB_CSV_COLS 18
 
 static const float HEIGHT_OFFSET = 2.0f;
-static const struct FloatVect3 POS_END = {0.0f, 2.0f, -HEIGHT_OFFSET};
+static const struct FloatVect3 POS_END = {0.0f, 2.0f, -2.0f};
 static const float P2P_DT = 3.0f;
 static const float P2P_TO_TRAJ_DELAY = 5.0f;
 
@@ -80,16 +80,21 @@ static const float C_Z = -0.079f;
 // static const float C_X = 0.0f;
 // static const float C_Z = 0.0f;
 
-static const float MU_X_v = 4.5f  / 100000000.0f;
-static const float MU_Y_v = 10.4f / 100000000.0f;
-static const float MU_Z_v = 0.88f  / 100000000.0f;
-static const float C_T_v  = -0.25f  / 100000000.0f;
+// static const float MU_X_v = 4.5f  / 100000000.0f;
+// static const float MU_Y_v = 10.4f / 100000000.0f;
+// static const float MU_Z_v = 0.88f  / 100000000.0f;
+// static const float C_T_v  = -0.25f  / 100000000.0f;
+
+static const float MU_X_v = 6.0f  / 100000000.0f;
+static const float MU_Y_v = 12.0f / 100000000.0f;
+static const float MU_Z_v = 1.0f  / 100000000.0f;
+static const float C_T_v  = -0.3f  / 100000000.0f;
 
 static const float MIN_TAU = -0.981f;
 static const float MAX_TAU = -2.0f*9.81f;
-static const float ACCEL_BOUND = 9.81f/1.0f;
+static const float ACCEL_BOUND = 1.4*9.81f;
 
-static const float ACT_CUTOFF_OMEGA = 15.0f; // 100->7000: 11 r/s, 5000->8000: 15 r/s and for KK: 20 r/s
+static const float ACT_CUTOFF_OMEGA = 20.0f; // 100->7000: 11 r/s, 5000->8000: 15 r/s and for KK: 20 r/s
 static const float FILT_CUTOFF_FREQ = 5.0f;
 static const Gain_t Kq = {3.0f, 3.0f, 3.0f};
 static const Gain_t Komega = {14.0f, 15.0f, 14.0f};
@@ -402,7 +407,9 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
         fi.y = 0;
         fi.z = 0;
     }
-    fi_vector[0] = fi.x; fi_vector[1] = fi.y; fi_vector[2] = fi.z;
+    fi_vector[0] = fi.x; 
+    fi_vector[1] = fi.y; 
+    fi_vector[2] = fi.z;
     for (int i = 0; i < 3; i++) {    
         update_butterworth_2_low_pass(&spec_force_filter[i], fi_vector[i]);
         fi_vector_filt[i] = spec_force_filter[i].o[0];
@@ -440,8 +447,8 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     float theta_e = atan2f(-sigma_x, -sigma_z);
 
     float spec_thrust_sp = sinf(theta_e)*fe.x + 
-                        cos(theta_e)*fe.z - 
-                        C_Z*vel_norm*(sin(theta_e)*ve.x + cos(theta_e)*ve.z);
+                           cosf(theta_e)*fe.z - 
+                           C_Z*vel_norm*(sinf(theta_e)*ve.x + cosf(theta_e)*ve.z);
 
     eulers_sp.theta = theta_e;
     struct FloatQuat _quat_sp;
@@ -511,10 +518,6 @@ static void forw_transl_flatness(float vel_norm, struct FloatVect3 *vel_b, float
 
 static void forw_rot_flatness(float *u, float *m)
 {
-    // m[0] = MU_X * (u[0]*u[0] - u[1]*u[1] - u[2]*u[2] + u[3]*u[3]);
-    // m[1] = MU_Y * (u[0]*u[0] + u[1]*u[1] - u[2]*u[2] - u[3]*u[3]);
-    // m[2] = MU_Z * (-u[0]*u[0] + u[1]*u[1] - u[2]*u[2] + u[3]*u[3]);
-
     float v_squared = electrical.vsupply * electrical.vsupply;
 
     m[0] = MU_X_v * v_squared * (u[0]*u[0] - u[1]*u[1] - u[2]*u[2] + u[3]*u[3]);
@@ -524,11 +527,6 @@ static void forw_rot_flatness(float *u, float *m)
 
 static void inv_rot_flatness(float tau, float *m, float *u)
 {
-    // u[0] = SAFE_SQRT((tau/C_T + m[0]/MU_X + m[1]/MU_Y - m[2]/MU_Z)/4.0f);
-    // u[1] = SAFE_SQRT((tau/C_T - m[0]/MU_X + m[1]/MU_Y + m[2]/MU_Z)/4.0f);
-    // u[2] = SAFE_SQRT((tau/C_T - m[0]/MU_X - m[1]/MU_Y - m[2]/MU_Z)/4.0f);
-    // u[3] = SAFE_SQRT((tau/C_T + m[0]/MU_X - m[1]/MU_Y + m[2]/MU_Z)/4.0f);
-
     float v_squared = electrical.vsupply * electrical.vsupply;
 
     u[0] = SAFE_SQRT(( tau/(C_T_v   * v_squared) + 
@@ -626,7 +624,6 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
 
                 psi_ref = traj[csv_i].psi;
             } else {
-
                 vel_ref.x = 0.0f;
                 vel_ref.y = 0.0f;
                 vel_ref.z = 0.0f;
