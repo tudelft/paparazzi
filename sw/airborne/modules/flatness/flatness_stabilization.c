@@ -40,8 +40,8 @@
 
 #define SAFE_SQRT(x) (sqrtf((x) > 0 ? (x) : 0.0f))
 
-#define REF_TRAJ_FILENAME "circle_vs2_r2.csv"
-#define NB_CSV_ROWS 1998 // circle vs2
+// #define REF_TRAJ_FILENAME "circle_vs2_r2.csv"
+// #define NB_CSV_ROWS 1998 // circle vs2
 
 // #define REF_TRAJ_FILENAME "circle_vs3_r2.csv"
 // #define NB_CSV_ROWS 1698 // circle vs3
@@ -49,8 +49,8 @@
 // #define REF_TRAJ_FILENAME "circle_vs4_r2.csv"
 // #define NB_CSV_ROWS 1398 // circle vs4
 
-// #define REF_TRAJ_FILENAME "circle_vs5_r2.csv"
-// #define NB_CSV_ROWS 1198 // circle vs5
+#define REF_TRAJ_FILENAME "circle_vs5_r2.csv"
+#define NB_CSV_ROWS 1198 // circle vs5
 #define NB_CSV_COLS 18
 
 static const float HEIGHT_OFFSET = 2.0f;
@@ -75,7 +75,7 @@ typedef struct {
 } Traj_row_t;
 
 // constants
-static const float C_X = -0.612f;
+static const float C_X = -0.172;
 static const float C_Z = -0.079f;
 // static const float C_X = 0.0f;
 // static const float C_Z = 0.0f;
@@ -85,21 +85,21 @@ static const float C_Z = -0.079f;
 // static const float MU_Z_v = 0.88f  / 100000000.0f;
 // static const float C_T_v  = -0.25f  / 100000000.0f;
 
-static const float MU_X_v = 6.0f  / 100000000.0f;
-static const float MU_Y_v = 12.0f / 100000000.0f;
-static const float MU_Z_v = 1.0f  / 100000000.0f;
-static const float C_T_v  = -0.3f  / 100000000.0f;
+static const float MU_X_v = 4.05f  / 100000000.0f;
+static const float MU_Y_v = 8.54f / 100000000.0f;
+static const float MU_Z_v = 0.93f  / 100000000.0f;
+static const float C_T_v  = -0.281f  / 100000000.0f;
 
 static const float MIN_TAU = -0.981f;
 static const float MAX_TAU = -2.0f*9.81f;
-static const float ACCEL_BOUND = 1.4*9.81f;
+static const float ACCEL_BOUND = 1.6*9.81f;
 
-static const float ACT_CUTOFF_OMEGA = 20.0f; // 100->7000: 11 r/s, 5000->8000: 15 r/s and for KK: 20 r/s
+static const float ACT_CUTOFF_OMEGA = 19.0f;
 static const float FILT_CUTOFF_FREQ = 5.0f;
-static const Gain_t Kq = {3.0f, 3.0f, 3.0f};
-static const Gain_t Komega = {14.0f, 15.0f, 14.0f};
-static const Gain_t Kp = {1.0f, 1.0f, 1.0f};
-static const Gain_t Kv = {2.0f, 2.0f, 2.0f};
+static const Gain_t Kq = {2.5f, 2.5f, 2.5f};
+static const Gain_t Komega = {10.0f, 10.0f, 10.0f};
+static const Gain_t Kp = {1.5f, 1.5f, 1.5f};
+static const Gain_t Kv = {4.0f, 4.0f, 4.0f};
 
 // global vars declared as extern in header file
 dbg_t dbg;
