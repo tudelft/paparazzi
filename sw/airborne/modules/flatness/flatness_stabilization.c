@@ -75,7 +75,7 @@ typedef struct {
 } Traj_row_t;
 
 // constants
-static const float C_X = -0.172;
+static const float C_X = -0.172f;
 static const float C_Z = -0.079f;
 // static const float C_X = 0.0f;
 // static const float C_Z = 0.0f;
@@ -92,7 +92,7 @@ static const float C_T_v  = -0.281f  / 100000000.0f;
 
 static const float MIN_TAU = -0.981f;
 static const float MAX_TAU = -2.0f*9.81f;
-static const float ACCEL_BOUND = 1.6*9.81f;
+static const float ACCEL_BOUND = 1.6f*9.81f;
 
 static const float ACT_CUTOFF_OMEGA = 19.0f;
 static const float FILT_CUTOFF_FREQ = 5.0f;
@@ -172,6 +172,11 @@ static void expose_dbg_variables(void)
     dbg.MU_Y_v = MU_Y_v;
     dbg.MU_Z_v = MU_Z_v;
     dbg.C_T_v = C_T_v;
+    dbg.C_X = C_X;
+    dbg.C_Z = C_Z;
+    dbg.ACCEL_BOUND = ACCEL_BOUND;
+    dbg.ACT_CUTOFF_OMEGA = ACT_CUTOFF_OMEGA;
+    dbg.FILT_CUTOFF_FREQ = FILT_CUTOFF_FREQ;
 
     //data
     dbg.timestamp = timestamp;

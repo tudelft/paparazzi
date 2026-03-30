@@ -124,6 +124,11 @@ static void logger_file_write_header(FILE *file) {
     fprintf(file, "#MU_Y_v_1e_8,%.2f\n", dbg.MU_Y_v*1e8);
     fprintf(file, "#MU_Z_v_1e_8,%.2f\n", dbg.MU_Z_v*1e8);
     fprintf(file, "#C_T_v_1e_8,%.2f\n", dbg.C_T_v*1e8);
+    fprintf(file, "#C_X,%.3f\n", dbg.C_X);
+    fprintf(file, "#C_Z,%.3f\n", dbg.C_Z);
+    fprintf(file, "#ACCEL_BOUND,%.2f\n", dbg.ACCEL_BOUND);
+    fprintf(file, "#ACT_CUTOFF_OMEGA,%.2f\n", dbg.ACT_CUTOFF_OMEGA);
+    fprintf(file, "#FILT_CUTOFF_FREQ,%.2f\n", dbg.FILT_CUTOFF_FREQ);
 
     // data
     fprintf(file, "timestamp");

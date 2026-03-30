@@ -58,6 +58,11 @@ typedef struct {
     float MU_Y_v;
     float MU_Z_v;
     float C_T_v;
+    float C_X;
+    float C_Z;
+    float ACCEL_BOUND;
+    float ACT_CUTOFF_OMEGA;
+    float FILT_CUTOFF_FREQ;
     
     // data
     float timestamp;
