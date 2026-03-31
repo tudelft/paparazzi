@@ -44,6 +44,18 @@ TOO_CLOSE_THRESHOLD  = 0.25   # if detected pixels cover more than this fraction
 
 # Feature extractor (must remain same as training !!!!!!!!!!!!!!!!!!!)
 def extract_features(yuv, hsv, lab, y, x):
+    """
+    Extract a feature vector for a single pixel using multiple color spaces
+    and local neighborhood statistics.
+
+    @param yuv: Image in YUV color space
+    @param hsv: Image in HSV color space
+    @param lab: Image in LAB color space
+    @param y: Pixel row index
+    @param x: Pixel column index
+
+    @return: List representing the feature vector for the pixel
+    """
     p_yuv = yuv[y, x]
     p_hsv = hsv[y, x]
     p_lab = lab[y, x]
@@ -61,6 +73,14 @@ def extract_features(yuv, hsv, lab, y, x):
 
 # Run classifier on full image
 def run_classifier(clf, img):
+    """
+    Applies the trained classifier to every valid pixel in the image to produce a mask.
+
+    @param clf: The loaded joblib classifier model
+    @param img: The input BGR image array
+
+    @return: Binary mask (uint8) where 255 represents a detected class
+    """
     h, w, d = img.shape
     yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -78,8 +98,16 @@ def run_classifier(clf, img):
 
 
 # Edge density filter
-"""Keeps blobs with leafy/textured internal edges (trees); Rejects flat surface false positives (floor, walls, panels)"""
 def filter_by_edge_density(raw_mask, img):
+    """
+    Keeps blobs with leafy/textured internal edges (trees); 
+    Rejects flat surface false positives (floor, walls, panels)
+
+    @param raw_mask: The initial binary detection mask
+    @param img: The original BGR image for edge analysis
+
+    @return: Refined binary mask containing only high-density/textured blobs
+    """
     gray    = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (CANNY_BLUR, CANNY_BLUR), CANNY_SIGMA)
     edges   = cv2.Canny(blurred, CANNY_LOW, CANNY_HIGH)
@@ -124,9 +152,16 @@ def filter_by_edge_density(raw_mask, img):
 
 
 # Bounding box generator with clustering included
-"""Dilates tree mask merging nearby tree blobs into clusters then fits one padded bounding box per cluster also the 
-Aspect ratio filter destroys thin false positives"""
 def generate_tree_bounding_boxes(tree_mask, img_debug=None):
+    """
+    Dilates tree mask merging nearby tree blobs into clusters then fits one padded 
+    bounding box per cluster also the Aspect ratio filter destroys thin false positives
+
+    @param tree_mask: The binary mask of detected trees
+    @param img_debug: Optional image to draw internal debug info onto
+
+    @return: Tuple of (list of box dictionaries, debug image array)
+    """
     h, w  = tree_mask.shape
     debug = img_debug.copy() if img_debug is not None else None
 
@@ -209,6 +244,14 @@ def generate_tree_bounding_boxes(tree_mask, img_debug=None):
 
 # Drawing bounding boxes on the image
 def draw_boxes(img, boxes):
+    """
+    Draws stylized bounding boxes and labels on the image for visualization.
+
+    @param img: The image to draw on
+    @param boxes: List of box dictionaries containing coordinates and status
+
+    @return: Image array with visual boxes and text labels
+    """
     visual = img.copy()
     for box in boxes:
         if box.get('too_close', False):

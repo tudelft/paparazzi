@@ -22,6 +22,18 @@ SAVE_PATH   = '../results_figures/gate_detection_results.png'
 
 # Same feature extractor as the training
 def extract_features(yuv, hsv, lab, y, x):
+    """
+    Extract a feature vector for a single pixel using multiple color spaces
+    and local neighborhood statistics.
+
+    @param yuv: Image in YUV color space
+    @param hsv: Image in HSV color space
+    @param lab: Image in LAB color space
+    @param y: Pixel row index
+    @param x: Pixel column index
+
+    @return: List representing the feature vector for the pixel
+    """
     p_yuv = yuv[y, x]
     p_hsv = hsv[y, x]
     p_lab = lab[y, x]

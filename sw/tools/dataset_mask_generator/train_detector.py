@@ -1,3 +1,38 @@
+"""
+Pixel-wise Object Detector Training Script
+------------------------------------------
+
+This script trains a RandomForest-based pixel classifier using paired image
+and mask datasets. Each pixel is classified as either foreground (object)
+or background based on hand-labeled mask images.
+
+The model uses handcrafted features derived from multiple color spaces
+(YUV, HSV, LAB) along with local neighborhood statistics and gradient
+information to improve detection robustness.
+
+Main functionality:
+- Loads image/mask pairs from specified folders
+- Randomly samples pixels to build a training dataset
+- Extracts per-pixel feature vectors (21 features)
+- Trains a RandomForestClassifier
+- Evaluates accuracy on a held-out test set
+- Saves the trained model to disk
+- Optionally visualizes predictions on training images
+
+Originally designed for ground detection, but can be adapted for any
+binary segmentation task with appropriate masks.
+
+Dependencies:
+    - OpenCV (cv2)
+    - NumPy
+    - scikit-learn
+    - matplotlib
+    - joblib
+
+Author: [Your Name]
+Date: [Submission Date]
+"""
+
 import cv2
 import numpy as np
 import glob
@@ -21,15 +56,75 @@ def train_detector(
     maxfiles = 500, # safety cap on the number of images that have to be processed
 ):
     """
-    The function returns a  trained RandomForestClassifier which is saved to model_save_path and uses mask image pairs
+    Train a pixel-wise object detector using a Random Forest classifier.
+
+    This function builds a dataset by randomly sampling pixels from input
+    images and extracting feature vectors for each pixel. Labels are obtained
+    from corresponding mask images, where pixel intensity indicates foreground
+    or background. The trained model is saved to disk and optionally visualized.
+
+    Parameters
+    ----------
+    images_folder : str
+        Path to the folder containing input images.
+
+    masks_folder : str
+        Path to the folder containing ground truth mask images.
+        Mask filenames must follow the pattern: <image_name>_mask.jpg.
+
+    model_save_path : str, optional (default='detector.pkl')
+        File path where the trained model will be saved.
+
+    show_figures : bool, optional (default=False)
+        If True, displays side-by-side visualizations of original images
+        and predicted masks after training.
+
+    samples_per_image : int, optional (default=300000)
+        Number of random pixels sampled per image to build the dataset.
+
+    maxfiles : int, optional (default=500)
+        Maximum number of image/mask pairs to process (safety limit).
+
+    Returns
+    -------
+    clf : sklearn.ensemble.RandomForestClassifier
+        The trained Random Forest classifier.
+
+    Notes
+    -----
+    - Features include color values in YUV, HSV, and LAB color spaces,
+      as well as local neighborhood statistics and gradient information.
+    - Mask pixels are binarized using a threshold of 127.
+    - Stratified train/test split is used to preserve class balance.
+    - The function assumes masks align perfectly with input images.
     """
 
-    ''' 
-    Feature extractor: Converts a single pixel location into a 21-value feature vector: YUV, HSV, LAB + neighbourhood 
-    texture statistics and edge info
-    '''
-    # This function needs to stay the same otherwise the code will get messed up cause tests and predictions will be slightly off
+    # NOTE: modify this function only if you know what you're doing. It is finely hand-tuned.
     def extract_features(yuv, hsv, lab, y, x):
+        """
+        Extract a feature vector for a single pixel.
+
+        Features include:
+        - Pixel color values in YUV, HSV, and LAB color spaces
+        - Mean and standard deviation of a 3x3 neighborhood (YUV)
+        - Horizontal gradient in YUV space
+
+        Parameters
+        ----------
+        yuv, hsv, lab : np.ndarray
+            Image representations in different color spaces.
+
+        y : int
+            Vertical pixel coordinate.
+
+        x : int
+            Horizontal pixel coordinate.
+
+        Returns
+        -------
+        list of int/float
+            A 21-dimensional feature vector describing the pixel.
+        """
         p_yuv = yuv[y, x] # pixel values in YUV
         p_hsv = hsv[y, x] # pixel values in HSV
         p_lab = lab[y, x] # pixel values in LAB
@@ -49,7 +144,7 @@ def train_detector(
 
     # Load image/mask pairs (scans the masks folder for all *_mask.jpg then finds correct images in the images fodler)
     # labels = glob.glob(masks_folder + '\\*_mask.jpg', recursive=True)
-    labels = glob.glob(masks_folder + '\\*_mask.jpg', recursive=True)
+    labels = glob.glob(os.path.join(masks_folder, '*_mask.jpg'), recursive=True)
 
     images = []
     for lf in labels:

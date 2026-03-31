@@ -26,6 +26,13 @@ import os
 
 class MaskPainter:
     def __init__(self, root):
+
+        """
+        Initializes the application state, window settings, and UI components.
+
+        @param root: The Tkinter root window instance
+        """
+
         self.root = root
         self.root.title("Mask Painter — Orange Pole Labeller")
         self.root.configure(bg="#1e1e1e")
@@ -46,9 +53,12 @@ class MaskPainter:
         self.pan_start_y = 0
 
         self._build_ui()
-
+    
     # UI
     def _build_ui(self):
+        """
+        Constructs the toolbar, sliders, status bar, and drawing canvas.
+        """
         toolbar = tk.Frame(self.root, bg="#2d2d2d", pady=6)
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
@@ -131,6 +141,9 @@ class MaskPainter:
 
     # File operations
     def open_image(self):
+        """
+        Loads an image file, initializes a blank mask, and checks for existing mask files.
+        """
         path = filedialog.askopenfilename(
             title="Select an image",
             filetypes=[
@@ -169,6 +182,9 @@ class MaskPainter:
         self._refresh_canvas()
 
     def save_mask(self):
+        """
+        Saves the current mask as a BGR image to a user-specified directory.
+        """
         if self.mask is None:
             messagebox.showwarning("No mask", "Paint a mask first.")
             return
@@ -187,23 +203,43 @@ class MaskPainter:
         messagebox.showinfo("Saved", f"Mask saved to:\n{mask_path}")
 
     def clear_mask(self):
+        """
+        Wipes all drawing data from the current mask, resetting it to zero.
+        """
         if self.mask is not None:
             self.mask[:] = 0
             self._refresh_canvas()
 
     def reset_zoom(self):
+        """
+        Resets image scaling and centering to default canvas fit.
+        """
         self._fit_image()
         self._refresh_canvas()
 
     # Coordinate helpers
     def _canvas_to_image(self, cx, cy):
-        """Convert canvas pixel → original image pixel accounting for pan/zoom."""
+        """
+        Converts screen-space canvas coordinates to original image pixel coordinates.
+
+        @param cx: X-coordinate on the Tkinter canvas
+        @param cy: Y-coordinate on the Tkinter canvas
+
+        @return: Tuple of (x, y) coordinates mapped to the original image pixels
+        """
         ix = int((cx - self.offset_x) / self.scale)
         iy = int((cy - self.offset_y) / self.scale)
         return ix, iy
 
     # Drawing
     def _paint(self, cx, cy, value):
+        """
+        Modifies the mask array by drawing circles and connecting lines for smooth strokes.
+
+        @param cx: Current canvas X-coordinate
+        @param cy: Current canvas Y-coordinate
+        @param value: Pixel value to write (255 for paint, 0 for erase)
+        """
         if self.mask is None:
             return
         ix, iy = self._canvas_to_image(cx, cy)
@@ -219,24 +255,47 @@ class MaskPainter:
         self._refresh_canvas()
 
     def _on_lmb_press(self, e):
+        """
+        Event handler for left mouse button press to begin painting.
+
+        @param e: Tkinter event object containing cursor position
+        """
         self.drawing = True
         self.last_cx = self.last_cy = None
         self._paint(e.x, e.y, 255)
 
     def _on_lmb_drag(self, e):
+        """
+        Event handler for left mouse motion to continue drawing strokes.
+
+        @param e: Tkinter event object containing cursor position
+        """
         if self.drawing:
             self._paint(e.x, e.y, 255)
 
     def _on_rmb_press(self, e):
+        """
+        Event handler for right mouse button press to begin erasing.
+
+        @param e: Tkinter event object containing cursor position
+        """
         self.erasing = True
         self.last_cx = self.last_cy = None
         self._paint(e.x, e.y, 0)
 
     def _on_rmb_drag(self, e):
+        """
+        Event handler for right mouse motion to continue erasing strokes.
+
+        @param e: Tkinter event object containing cursor position
+        """
         if self.erasing:
             self._paint(e.x, e.y, 0)
 
     def _on_release(self, _):
+        """
+        Resets drawing state flags when mouse buttons are released.
+        """
         self.drawing = self.erasing = False
         self.last_cx = self.last_cy = None
 
@@ -246,7 +305,13 @@ class MaskPainter:
     ZOOM_MAX  = 20.0
 
     def _zoom(self, factor, cx, cy):
-        """Zoom by factor, keeping canvas point (cx, cy) fixed."""
+        """
+        Updates the global scale and pan offsets to zoom relative to a fixed canvas point.
+
+        @param factor: The multiplier for the current scale
+        @param cx: Pivot point X-coordinate on the canvas
+        @param cy: Pivot point Y-coordinate on the canvas
+        """
         if self.img_orig is None:
             return
         new_scale = max(self.ZOOM_MIN, min(self.ZOOM_MAX, self.scale * factor))
@@ -260,35 +325,65 @@ class MaskPainter:
         self._refresh_canvas()
 
     def _on_mousewheel(self, e):
+        """
+        Handles mouse wheel events for Windows and macOS.
+
+        @param e: Tkinter event object containing scroll delta
+        """
         factor = self.ZOOM_STEP if e.delta > 0 else 1 / self.ZOOM_STEP
         self._zoom(factor, e.x, e.y)
 
     def _on_scroll_up(self, e):
+        """
+        Handles Linux-specific scroll up (Button-4) events.
+
+        @param e: Tkinter event object
+        """
         self._zoom(self.ZOOM_STEP, e.x, e.y)
 
     def _on_scroll_down(self, e):
+        """
+        Handles Linux-specific scroll down (Button-5) events.
+
+        @param e: Tkinter event object
+        """
         self._zoom(1 / self.ZOOM_STEP, e.x, e.y)
 
     # Pan
     def _on_pan_start(self, e):
+        """
+        Initializes the panning state and calculates the initial anchor point.
+
+        @param e: Tkinter event object
+        """
         self.panning = True
         self.pan_start_x = e.x - self.offset_x
         self.pan_start_y = e.y - self.offset_y
         self.canvas.config(cursor="fleur")
 
     def _on_pan_drag(self, e):
+        """
+        Updates the image offset based on mouse drag while panning.
+
+        @param e: Tkinter event object
+        """
         if self.panning:
             self.offset_x = e.x - self.pan_start_x
             self.offset_y = e.y - self.pan_start_y
             self._refresh_canvas()
 
     def _on_pan_end(self, _):
+        """
+        Terminates the panning state and restores the default cursor.
+        """
         self.panning = False
         self.canvas.config(cursor="crosshair")
 
     # Rendering
     def _fit_image(self):
-        """Scale + centre image to fit the canvas, reset pan."""
+        """
+        Calculates the scale needed to fit the original image within the current canvas area.
+        """
         if self.img_orig is None:
             return
         cw = self.canvas.winfo_width()  or 900
@@ -301,11 +396,17 @@ class MaskPainter:
         self.zoom_var.set(f"Zoom: {int(self.scale * 100)}%")
 
     def _on_resize(self, _):
+        """
+        Automatically updates image fitting logic when the window is resized.
+        """
         if self.img_orig is not None:
             self._fit_image()
         self._refresh_canvas()
 
     def _refresh_canvas(self):
+        """
+        Blends the image and mask, resizes the result, and renders it to the Tkinter canvas.
+        """
         if self.img_orig is None:
             return
 
