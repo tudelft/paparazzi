@@ -1,4 +1,22 @@
-#include "modules/computer_vision/gate_cnn_detector.h"
+/*
+ * Author: Tommaso Calzolari
+ * Email: tcalzolari@tudelft.nl
+ * Group 9, MAVLab 2026
+ *
+ * This file implements a lightweight gate detector based on a small CNN for
+ * MAVLab gates from TU Delft in the Autonomous Flight of MAV course.
+ *
+ * The CNN was trained offline on images of these gates, then validated and
+ * tested before deployment. The resulting trained weights were embedded
+ * directly in the module source so that onboard runtime only performs image
+ * preprocessing and a forward pass through the network.
+ *
+ * Inference is implemented directly in C, without external ML libraries, to
+ * keep the execution path simple, portable, and as efficient as possible for
+ * onboard use.
+ */
+
+#include "modules/computer_vision/gate_cnn_detector/gate_cnn_detector.h"
 #include "modules/computer_vision/cv.h"
 #include "modules/core/abi.h"
 #include "std.h"
@@ -52,10 +70,6 @@ static float g_last_inference_ms = 0.0f;
  * Latest image geometry seen by the detector callback.
  * These are sent to nav together with the prediction so nav can compute
  * image center dynamically instead of assuming a fixed value.
- *
- * IMPORTANT:
- * Since the detector predicts center_x in the coordinate system of img->w,
- * the correct dimension to pass for horizontal centering is img->w.
  */
 static int16_t g_last_img_w = 0;
 static int16_t g_last_img_h = 0;
@@ -74,7 +88,7 @@ static inline double gate_cnn_now_ms(void)
 }
 
 /* --------------------------------------------------------- */
-/* Scratch buffers: fixed-size, no malloc                    */
+/* Scratch buffers: fixed-size, no malloc (no dynamic memory)                    */
 /* --------------------------------------------------------- */
 
 static float g_in[3 * GATE_CNN_INPUT_H * GATE_CNN_INPUT_W];
@@ -443,12 +457,7 @@ static void gate_cnn_debug_print_prediction(const gate_prediction_t *pred, int w
                  width,
                  height);
 
-  /*
-   * This warning does NOT prove semantic rotation, but it is useful as a
-   * practical hint during debugging. If height > width, the stream looks
-   * portrait-like, which may deserve inspection if nav was expected to use
-   * a landscape camera stream.
-   */
+
   if (height > width) {
     GATE_CNN_PRINT("[gate_cnn_detector.c][warn] frame=%lu image looks portrait-like (w=%d h=%d). extra will still carry img->w=%d because center_x/pixel_x are defined in that axis.\n",
                    (unsigned long)frame_idx,
@@ -559,11 +568,6 @@ void gate_cnn_detector_periodic(void)
    *
    * extra carries image width so nav can compute center_x dynamically:
    *   center_x = extra / 2
-   *
-   * IMPORTANT:
-   * We pass img->w (the horizontal dimension used to define center_x/pixel_x),
-   * not img->h. This remains correct even if the stream looks portrait-like,
-   * because pixel_x is still expressed in the width-axis of the received frame.
    */
   if (local_pred.updated) {
     int16_t msg_px = 0;

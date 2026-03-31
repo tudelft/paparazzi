@@ -1,3 +1,10 @@
+/*
+Author: Tommaso Calzolari
+email: tcalzolari@tudelft.nl
+Group 9 from MAVLab 2026 
+THESE WEIGHTS WERE GENERATED OFFLINE AFTER TRAINING ON MAV IMAGES OF MAVLAB GATES AND SHOULD NOT BE MODIFIED
+*/
+
 #include "gate_cnn_weights.h"
 
 const float features_0_weight[8][3][3][3] = {

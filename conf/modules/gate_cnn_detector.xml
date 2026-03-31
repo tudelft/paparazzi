@@ -1,6 +1,14 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="gate_cnn_detector" dir="computer_vision">
+<!--
+  This XML is for a small trained CNN for gate detection, specifically for
+  MAVLab gates from TU Delft for the Autonomous Flight of MAV course (AE4317) of
+  TU Delft.
+  Group 9 from MAVLab 2026
+  Tommaso Calzolari
+  tcalzolari@tudelft.nl
+-->
+<module name="gate_cnn_detector" dir="computer_vision/gate_cnn_detector">
   <doc>
     <description>
       Detects a gate from the camera image using a tiny CNN.

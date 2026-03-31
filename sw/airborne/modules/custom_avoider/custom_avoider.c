@@ -1,19 +1,23 @@
 /*
- * Gate-only navigation module:
- * - subscribes ONLY to VISUAL_DETECTION
- * - searches for gate
- * - aligns to gate
- * - flies toward gate
- * - performs blind pass-through when close
- *
- * Revised logic:
- * - does NOT use CNN quality threshold here; the detector already decides
- *   whether a gate is present before setting quality > 0.
- * - does NOT use bounding-box width/height as a distance proxy.
- * - uses dynamic image width from the incoming message (extra field) to
- *   compute image center instead of using a fixed center_x value.
- * - expects regular VISUAL_DETECTION messages, including negative detections
- *   (quality == 0), so stale detections can be rejected cleanly.
+Author: Tommaso Calzolari
+email: tcalzolari@tudelft.nl
+Group 9 from MAVLab 2026 
+
+Gate-only navigation module:
+ - subscribes ONLY to VISUAL_DETECTION
+ - searches for gate
+ - aligns to gate
+ - flies toward gate
+ - performs blind pass-through when close
+
+Revised logic:
+ - does NOT use CNN quality threshold here; the detector already decides
+    whether a gate is present before setting quality > 0.
+ - does NOT use bounding-box width/height as a distance proxy.
+ - uses dynamic image width from the incoming message (extra field) to
+   compute image center instead of using a fixed center_x value.
+ - expects regular VISUAL_DETECTION messages, including negative detections
+   (quality == 0), so stale detections can be rejected cleanly.
  */
 
 #include "modules/custom_avoider/custom_avoider.h"
@@ -43,22 +47,17 @@ static abi_event gate_ev;
 /* Latest detector output                                    */
 /* --------------------------------------------------------- */
 /*
- * Expected message convention from the detector:
- *
- *   quality > 0  -> positive detection
- *   quality == 0 -> negative detection (no gate seen in this frame)
- *
- *   extra = image width in pixels
- *
- * This lets nav:
- * - know the current horizontal image center dynamically
- * - distinguish a true "no gate now" from "no message arrived"
- *
- * NOTE:
- * If you later want stronger protection against rotated streams, the detector
- * should also send image height and/or an orientation flag through a separate
- * message or a custom ABI message. With the current VISUAL_DETECTION payload,
- * image width alone is already enough to remove the dangerous hardcoded 120.
+  Expected message convention from the detector:
+ 
+    quality > 0  -> positive detection
+    quality == 0 -> negative detection (no gate seen in this frame)
+ 
+    extra = image width in pixels
+ 
+  This lets nav:
+  - know the current horizontal image center dynamically
+  - distinguish a true "no gate now" from "no message arrived"
+
  */
 static uint8_t gate_detected = 0;
 static int16_t gate_px = 0;
@@ -283,9 +282,6 @@ static void gate_detection_cb(uint8_t sender_id,
    * Detection semantics:
    * - quality > 0  => positive detection
    * - quality == 0 => negative detection (detector ran, no gate found)
-   *
-   * We intentionally do not threshold quality here: the CNN threshold has
-   * already been decided upstream in the detector.
    */
   gate_detected = (quality > 0) ? 1u : 0u;
 
@@ -293,9 +289,6 @@ static void gate_detection_cb(uint8_t sender_id,
    * Validity of the incoming message geometry:
    * - image width must be > 0
    * - for positive detections, pixel_x must lie inside the reported image width
-   *
-   * This avoids blindly trusting a fixed center like 120 and helps catch
-   * inconsistent coordinates if the stream geometry is not what we expect.
    */
   gate_msg_valid = 1u;
   if (gate_img_w <= 1) {
@@ -438,7 +431,6 @@ void navigation_controller_periodic(void)
        * Since bbox-based closeness was removed, we use a simple heuristic:
        * after N consecutive FLY cycles with a fresh gate, commit to blind mode.
        *
-       * This should be flight-tested and tuned carefully.
        */
       if (!gate_is_good()) {
         debug_print_decision("fly", "lost_gate", gate_error_x());
@@ -542,15 +534,7 @@ static uint8_t gate_msg_geometry_is_valid(void)
 
 static uint8_t gate_is_good(void)
 {
-  /*
-   * A "good" gate now means:
-   * - detector is actively publishing
-   * - last message is fresh
-   * - message geometry is valid
-   * - detector says gate is present
-   *
-   * We intentionally do NOT threshold CNN quality here.
-   */
+
   return (gate_msg_is_fresh() &&
           gate_msg_geometry_is_valid() &&
           gate_detected);
@@ -562,9 +546,6 @@ static uint8_t gate_is_close(void)
    * Blind-pass engagement heuristic:
    * - enough continuous FLY_TO_GATE cycles with fresh detections
    * - plus a minimum consecutive centered window
-   *
-   * This is still heuristic, but it avoids committing to blind mode unless the
-   * gate has stayed centered for some time during the final approach.
    */
   if (!gate_is_good()) {
     return 0u;

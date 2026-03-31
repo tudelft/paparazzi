@@ -1,3 +1,22 @@
+<!--
+  Author: Tommaso Calzolari
+  Email: tcalzolari@tudelft.nl
+  Group 9, MAVLab 2026
+  
+  This custom airframe is for the Bebop platform used with the TU Delft
+  Autonomous Flight of MAV course workflow for MAVLab gate detection and
+  avoidance.
+  
+  It is configured to use the gate_cnn_detector module together with the
+  custom_avoider module. Briefly, the front camera image is processed by a
+  small trained CNN detector for MAVLab gates, the detector publishes gate
+  observations through VISUAL_DETECTION, and custom_avoider uses that message
+  stream for navigation and avoidance behavior.
+  
+  To use this airframe, select this custom airframe in the Paparazzi framework
+  under Airframe and build/run the aircraft configuration from there.
+-->
+
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
 <airframe name="bebop_avoider">
@@ -42,7 +61,12 @@
 
     <module name="logger_file"/>
 
-    <!-- Video/Camera modules -->
+    <!--
+      Gate detection and avoidance pipeline for this airframe:
+      video_capture acquires frames from the front camera, gate_cnn_detector
+      detects TU Delft MAVLab gates and sends VISUAL_DETECTION messages, and
+      custom_avoider consumes those detections for guidance behavior.
+    -->
     <module name="bebop_cam"/>
 
     <module name="video_capture">
@@ -242,4 +266,3 @@
     <define name="MAX_BAT_LEVEL" value="12.4" unit="V"/>
   </section>
 </airframe>
-
