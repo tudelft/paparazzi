@@ -19,6 +19,9 @@ The project extends **Paparazzi UAS** with an onboard gate detection pipeline ba
 
 ---
 
+## PULL REQUEST
+For pull request description look at PR_GROUP9_GATE_CNN.md file.
+
 ## Project overview
 
 This project implements a Bebop-based gate detection and gate-oriented navigation pipeline inside Paparazzi.
@@ -57,7 +60,6 @@ Relevant source files:
 
 This structure makes the detector usable as a standalone vision demo as well as part of a simple perception-to-navigation loop.
 
-First install Paparazzi following the standard Paparazzi Readme:
 
 # MAIN README
 
