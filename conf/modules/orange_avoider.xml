@@ -16,7 +16,8 @@ so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTI
     <settings>
     <dl_settings>
       <dl_settings name="OrangeAvoider">
-         <dl_setting var="oa_color_count_frac" min="0" step="0.01" max="0.5"/>
+          <dl_setting var="oa_color_count_frac" min="0" step="0.01" max="0.5"/>
+          <dl_setting var="heading_increment_setting" min="1" step="0.25" max="45"/>
       </dl_settings>
     </dl_settings>
   </settings>
