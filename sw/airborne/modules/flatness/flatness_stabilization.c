@@ -43,14 +43,14 @@
 // #define REF_TRAJ_FILENAME "circle_vs2_r2.csv"
 // #define NB_CSV_ROWS 1998 // circle vs2
 
-// #define REF_TRAJ_FILENAME "circle_vs3_r2.csv"
-// #define NB_CSV_ROWS 1698 // circle vs3
+#define REF_TRAJ_FILENAME "circle_vs3_r2.csv"
+#define NB_CSV_ROWS 1698 // circle vs3
 
 // #define REF_TRAJ_FILENAME "circle_vs4_r2.csv"
 // #define NB_CSV_ROWS 1398 // circle vs4
 
-#define REF_TRAJ_FILENAME "circle_vs5_r2.csv"
-#define NB_CSV_ROWS 1198 // circle vs5
+// #define REF_TRAJ_FILENAME "circle_vs5_r2.csv"
+// #define NB_CSV_ROWS 1198 // circle vs5
 #define NB_CSV_COLS 18
 
 static const float HEIGHT_OFFSET = 2.0f;
@@ -100,6 +100,8 @@ static const Gain_t Kq = {2.5f, 2.5f, 2.5f};
 static const Gain_t Komega = {10.0f, 10.0f, 10.0f};
 static const Gain_t Kp = {1.5f, 1.5f, 1.5f};
 static const Gain_t Kv = {4.0f, 4.0f, 4.0f};
+
+static const float VEL_NORM_THRESHOLD = 1.0f;
 
 // global vars declared as extern in header file
 dbg_t dbg;
@@ -433,31 +435,82 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     f_cmd[1] = (accel_sp.y - accel_filt[1]) + fi_vector_filt[1];
     f_cmd[2] = (accel_sp.z - accel_filt[2]) + fi_vector_filt[2];
 
-    // inverse translational flatness (get attitude and spec. thrust sp)
-    struct FloatEulers eulers_sp = {0.0f, 0.0f, 0.0f};
-    eulers_sp.psi = psi_ref;
-    float beta_x = -sinf(eulers_sp.psi)*f_cmd[0] + cosf(eulers_sp.psi)*f_cmd[1];
-    float beta_z = f_cmd[2];
-    eulers_sp.phi = atan2f(beta_x, -beta_z);
-
-    struct FloatRMat R_i2e;
-    float_rmat_of_eulers_312(&R_i2e, &eulers_sp);
-    struct FloatVect3 ve, fe;
-    struct FloatVect3 fi_cmd = {f_cmd[0], f_cmd[1], f_cmd[2]};
-    float_rmat_vmult(&ve, &R_i2e, vel_i);
-    float_rmat_vmult(&fe, &R_i2e, &fi_cmd);
-
-    float sigma_x = fe.x - C_X*vel_norm*ve.x;
-    float sigma_z = fe.z - C_X*vel_norm*ve.z;
-    float theta_e = atan2f(-sigma_x, -sigma_z);
-
-    float spec_thrust_sp = sinf(theta_e)*fe.x + 
-                           cosf(theta_e)*fe.z - 
-                           C_Z*vel_norm*(sinf(theta_e)*ve.x + cosf(theta_e)*ve.z);
-
-    eulers_sp.theta = theta_e;
+    // inverse rotational flatness
     struct FloatQuat _quat_sp;
-    float_quat_of_eulers_zxy(&_quat_sp, &eulers_sp);
+    float spec_thrust_sp;
+    if (vel_norm > VEL_NORM_THRESHOLD && fsm_state != FSM_P2P) {
+        // coordinated
+        struct FloatVect3 ey, ey_hat, ex, ex_hat, ez, ez_hat, tmp;
+        struct FloatVect3 f_cmd_vect3 = {f_cmd[0], f_cmd[1], f_cmd[2]};
+        VECT3_CROSS_PRODUCT(ey, *vel_i, f_cmd_vect3)
+        VECT3_SDIV(ey_hat, ey, sqrtf(VECT3_NORM2(ey)))
+
+        // todo multiply with the sign
+
+        // todo guard against r // ey
+
+        struct FloatVect3 arb_vect = {1.0f, 1.0f, 1.0f};
+        VECT3_SMUL(tmp, ey, (VECT3_DOT_PRODUCT(arb_vect, ey) / VECT3_DOT_PRODUCT(ey, ey)))
+        VECT3_SUB(arb_vect, tmp)
+        VECT3_COPY(ex, arb_vect)
+        VECT3_SDIV(ex_hat, ex, sqrtf(VECT3_NORM2(ex)))
+
+        VECT3_CROSS_PRODUCT(ez, ex, ey)
+        VECT3_SDIV(ez_hat, ez, sqrtf(VECT3_NORM2(ez)))
+
+        struct FloatRMat R_i2e;
+        R_i2e.m[0] = ex_hat.x; R_i2e.m[1] = ex_hat.y; R_i2e.m[2] = ex_hat.z;
+        R_i2e.m[3] = ey_hat.x; R_i2e.m[4] = ey_hat.y; R_i2e.m[5] = ey_hat.z;
+        R_i2e.m[6] = ez_hat.x; R_i2e.m[7] = ez_hat.y; R_i2e.m[8] = ez_hat.z;
+
+        struct FloatVect3 ve, fe;
+        struct FloatVect3 fi_cmd = {f_cmd[0], f_cmd[1], f_cmd[2]};
+        float_rmat_vmult(&ve, &R_i2e, vel_i);
+        float_rmat_vmult(&fe, &R_i2e, &fi_cmd);
+
+        float sigma_x = fe.x - C_X*vel_norm*ve.x;
+        float sigma_z = fe.z - C_X*vel_norm*ve.z;
+        float theta_e = atan2f(-sigma_x, -sigma_z);
+
+        spec_thrust_sp = sinf(theta_e)*fe.x + 
+                         cosf(theta_e)*fe.z - 
+                         C_Z*vel_norm*(sinf(theta_e)*ve.x + cosf(theta_e)*ve.z);
+
+        struct FloatRMat R_e2b, R_i2b_sp;
+        R_e2b.m[0] = cosf(theta_e);    R_e2b.m[1] = 0.0f;    R_e2b.m[2] = -sinf(theta_e);
+        R_e2b.m[3] = 0.0f;             R_e2b.m[4] = 1.0f;    R_e2b.m[5] = 0.0f;
+        R_e2b.m[6] = sinf(theta_e);    R_e2b.m[7] = 0.0f;    R_e2b.m[8] = cosf(theta_e);
+
+        float_rmat_comp(&R_i2b_sp, &R_i2e, &R_e2b);
+        float_quat_of_rmat(&_quat_sp, &R_i2b_sp);
+    } else {
+        // uncoordinated
+        struct FloatEulers eulers_sp = {0.0f, 0.0f, 0.0f};
+        eulers_sp.psi = psi_ref;
+        float beta_x = -sinf(eulers_sp.psi)*f_cmd[0] + cosf(eulers_sp.psi)*f_cmd[1];
+        float beta_z = f_cmd[2];
+        eulers_sp.phi = atan2f(beta_x, -beta_z);
+
+        struct FloatRMat R_i2e;
+        float_rmat_of_eulers_312(&R_i2e, &eulers_sp);
+        
+        struct FloatVect3 ve, fe;
+        struct FloatVect3 fi_cmd = {f_cmd[0], f_cmd[1], f_cmd[2]};
+        float_rmat_vmult(&ve, &R_i2e, vel_i);
+        float_rmat_vmult(&fe, &R_i2e, &fi_cmd);
+
+        float sigma_x = fe.x - C_X*vel_norm*ve.x;
+        float sigma_z = fe.z - C_X*vel_norm*ve.z;
+        float theta_e = atan2f(-sigma_x, -sigma_z);
+
+        spec_thrust_sp = sinf(theta_e)*fe.x + 
+                            cosf(theta_e)*fe.z - 
+                            C_Z*vel_norm*(sinf(theta_e)*ve.x + cosf(theta_e)*ve.z);
+
+        eulers_sp.theta = theta_e;
+        float_quat_of_eulers_zxy(&_quat_sp, &eulers_sp);
+    }
+
     struct StabilizationSetpoint _att_sp = stab_sp_from_quat_f(&_quat_sp);
 
     flatness_stabilization_run(in_flight, &_att_sp, spec_thrust_sp, cmd);
