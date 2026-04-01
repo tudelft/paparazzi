@@ -42,12 +42,14 @@ float * guidance_function(float *);
 static const float VEL_LIMIT = 15.0f;
 static const float ACC_LIMIT = 6.0f;
 static const float THRUST_LIMIT = 1.0f;
-static const float K_P = 0.8f;
-static const float K_V = 1.5f;
+static const float K_P = 0.9f;
+static const float K_V = 1.3f;
 // static const float K_P = 3.0f;
 // static const float K_V = 0.8f;
 static const float ROLL_RATE_GAIN = 5.0f;
 static const float PITCH_RATE_GAIN = 5.0f;
+
+static const float g = 9.81f;
 
 #ifndef MOL_DRONE_WEIGHT
 #error "You have to define MOL_DRONE_WEIGHT for the swing!"
@@ -74,6 +76,9 @@ struct FloatVect3 d_accel_ref_v_calc;
 #define M_PI 3.14159265358979323846
 #endif
 
+Butterworth2LowPass d_accel_filter_0;
+Butterworth2LowPass d_accel_filter_1;
+Butterworth2LowPass d_accel_filter_2;
 Butterworth2LowPass T_filter;  // "Measured thrust" (used for calculating commanded pitch rate, roll rate, thrust)
 Butterworth2LowPass T_cmd_filter;  // Commanded thrust
 Butterworth2LowPass cmd_pitch_filter;
@@ -110,6 +115,9 @@ void guidance_unified_init(void)
     float tau = 1.0 / (2.0 * M_PI * cutoff_freq);
     float sample_time = 1.0 / freq;
 
+    init_butterworth_2_low_pass(&d_accel_filter_0, tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&d_accel_filter_1, tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&d_accel_filter_2, tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&T_filter, tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&T_cmd_filter, tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&cmd_pitch_filter, tau, sample_time, 0.0);
@@ -187,6 +195,10 @@ void guidance_unified_run(bool in_flight)
         accel_ref_with_gains[i] = pos_component + vel_component + acc_component;
 
         d_accel_ref[i] = accel_ref_with_gains[i] - accel_a[i];  
+
+        d_accel_ref[0] = update_butterworth_2_low_pass(&d_accel_filter_0, d_accel_ref[0]);
+        d_accel_ref[1] = update_butterworth_2_low_pass(&d_accel_filter_1, d_accel_ref[1]);
+        d_accel_ref[2] = update_butterworth_2_low_pass(&d_accel_filter_2, d_accel_ref[2]);
     }
 
     //////////////// Control law ////////////////
@@ -194,8 +206,10 @@ void guidance_unified_run(bool in_flight)
     float * rates_guidance = guidance_function(d_accel_ref);
     
     // Send control to the drone (angular rates)
-    float roll_rate_filt = update_butterworth_2_low_pass(&cmd_roll_filter, rates_guidance[0]);
-    float pitch_rate_filt = update_butterworth_2_low_pass(&cmd_pitch_filter, rates_guidance[1]);
+    // float roll_rate_filt = update_butterworth_2_low_pass(&cmd_roll_filter, rates_guidance[0]);
+    // float pitch_rate_filt = update_butterworth_2_low_pass(&cmd_pitch_filter, rates_guidance[1]);
+    float roll_rate_filt = rates_guidance[0];
+    float pitch_rate_filt = rates_guidance[1];
     ctrl.cmd.p = roll_rate_filt;
     ctrl.cmd.q = pitch_rate_filt;
 
@@ -211,7 +225,7 @@ void guidance_unified_run(bool in_flight)
     T_cmd = rates_guidance[2];
 
     struct StabilizationSetpoint sp = stab_sp_from_rates_f(&(ctrl.cmd));
-    struct ThrustSetpoint th = th_sp_from_incr_f(rates_guidance[2], THRUST_AXIS_Z);
+    struct ThrustSetpoint th = th_sp_from_incr_f(T_cmd, THRUST_AXIS_Z);
     
     // execute attitude stabilization:
     stabilization_indi_rate_run(in_flight, &sp, &th, stabilization.cmd);
@@ -229,8 +243,8 @@ float * guidance_function(float *d_accel_ref)
   // Rotation matrix, replacing eul2rotm(eulerzyx,"ZYX"). This gets the desired acceleration in the body frame
   struct FloatRMat *rot = stateGetNedToBodyRMat_f(); 
 
-  // Add hover thrust to global z coordinate
-  d_accel_ref[2] = d_accel_ref[2] - mass * 9.81;
+  // Add gravity to global z coordinate
+//   d_accel_ref[2] = d_accel_ref[2] - g*mass;
 
   // Calculate d_accel_ref_b via "matrix" calculation: d_accel_ref_b = rot * d_accel_ref 
   struct FloatVect3 d_accel_ref_b;
@@ -244,8 +258,11 @@ float * guidance_function(float *d_accel_ref)
   // Calculate dcmd via "matrix" calculation: dcmd = B_inverse * d_accel_ref_b * mass;
   // Inverse of the control effectiveness matrix = {{0, 1/T, 0}, {1/T, 0, 0}, {0, 0, 1}};
   // dcmd[3] is defined globally
-  dcmd[0] = 1/T_filt * d_accel_ref_b.y * mass;
-  dcmd[1] = 1/T_filt * d_accel_ref_b.x * mass;
+//   dcmd[0] = 1/T_filt * d_accel_ref_b.y * mass;
+//   dcmd[1] = 1/T_filt * d_accel_ref_b.x * mass;
+//   dcmd[2] = 1 * d_accel_ref_b.z * mass;
+  dcmd[0] = 1/g * d_accel_ref_b.y;
+  dcmd[1] = 1/g * d_accel_ref_b.x;
   dcmd[2] = 1 * d_accel_ref_b.z * mass;
 
   // Quaternion
