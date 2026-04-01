@@ -40,21 +40,45 @@
 
 #define SAFE_SQRT(x) (sqrtf((x) > 0 ? (x) : 0.0f))
 
-// #define REF_TRAJ_FILENAME "circle_vs2_r2.csv"
-// #define NB_CSV_ROWS 1998 // circle vs2
+// ---- level circle ---- //
+// static const float DOWN_OFFSET = -2.0f;
+// static const float NORTH_OFFSET = 0.0f;
+// static const float EAST_OFFSET = 0.0f;
 
-#define REF_TRAJ_FILENAME "circle_vs3_r2.csv"
-#define NB_CSV_ROWS 1698 // circle vs3
+// #define REF_TRAJ_FILENAME "circle_vs2_r2.csv"
+// #define NB_CSV_ROWS 1998
+
+// #define REF_TRAJ_FILENAME "circle_vs3_r2.csv"
+// #define NB_CSV_ROWS 1698
 
 // #define REF_TRAJ_FILENAME "circle_vs4_r2.csv"
-// #define NB_CSV_ROWS 1398 // circle vs4
+// #define NB_CSV_ROWS 1398
 
 // #define REF_TRAJ_FILENAME "circle_vs5_r2.csv"
-// #define NB_CSV_ROWS 1198 // circle vs5
+// #define NB_CSV_ROWS 1198
+
+// ---- snap loop ---- //
+// static const float DOWN_OFFSET = -1.0f;
+// static const float NORTH_OFFSET = -5.0f + 1.41f;
+// static const float EAST_OFFSET = -5.0f + 1.41f;
+
+// #define REF_TRAJ_FILENAME "snap_loop_vs2_r2.csv"
+// #define NB_CSV_ROWS 1348
+
+// ---- immelmann ---- //
+static const float DOWN_OFFSET = -2.0f;
+static const float NORTH_OFFSET = 0.0f;
+static const float EAST_OFFSET = -5.0f + 3.0f;
+
+#define REF_TRAJ_FILENAME "snap_immelmann_vs2_r1.csv"
+#define NB_CSV_ROWS 620
+
+// #define REF_TRAJ_FILENAME "snap_immelmann_vs3.5_r1.csv"
+// #define NB_CSV_ROWS 355
+
 #define NB_CSV_COLS 18
 
-static const float HEIGHT_OFFSET = 2.0f;
-static const struct FloatVect3 POS_END = {0.0f, 2.0f, -2.0f};
+static struct FloatVect3 pos_end = {0.0f, 0.0f, -2.0f};
 static const float P2P_DT = 3.0f;
 static const float P2P_TO_TRAJ_DELAY = 5.0f;
 
@@ -93,13 +117,14 @@ static const float C_T_v  = -0.281f  / 100000000.0f;
 static const float MIN_TAU = -0.981f;
 static const float MAX_TAU = -2.0f*9.81f;
 static const float ACCEL_BOUND = 1.6f*9.81f;
+static const float RATES_BOUND = (float)M_PI/4.0f;
 
 static const float ACT_CUTOFF_OMEGA = 19.0f;
 static const float FILT_CUTOFF_FREQ = 5.0f;
 static const Gain_t Kq = {2.5f, 2.5f, 2.5f};
 static const Gain_t Komega = {10.0f, 10.0f, 10.0f};
-static const Gain_t Kp = {1.5f, 1.5f, 1.5f};
-static const Gain_t Kv = {4.0f, 4.0f, 4.0f};
+static const Gain_t Kp = {1.0f, 1.0f, 1.0f};
+static const Gain_t Kv = {3.5f, 3.5f, 3.5f};
 
 static const float VEL_NORM_THRESHOLD = 1.0f;
 
@@ -146,6 +171,7 @@ static struct FloatVect3 *vel_start;
 static struct FloatVect3 *accel_start;
 float fi_vector[3] = {0.0f, 0.0f, 0.0f};
 float fi_vector_filt[3] = {0.0f, 0.0f, 0.0f};
+int ey_sign;
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -199,6 +225,7 @@ static void expose_dbg_variables(void)
     dbg.accel_sp = accel_sp;
     dbg.f_cmd.x = f_cmd[0]; dbg.f_cmd.y = f_cmd[1]; dbg.f_cmd.z = f_cmd[2];
     dbg.accel_filt.x = accel_filt[0]; dbg.accel_filt.y = accel_filt[1]; dbg.accel_filt.z = accel_filt[2];
+    dbg.ey_sign = ey_sign;
 
     dbg.quat_sp = &quat_sp;
     dbg.quat = quat;
@@ -241,7 +268,7 @@ float throttle_from_spec_thrust(float spec_thrust, float min_spec_thrust, float 
 
 void flatness_stabilization_init(void)
 {
-    float tau = 1.0f / (2.0f * M_PI * FILT_CUTOFF_FREQ);
+    float tau = 1.0f / (2.0f * (float)M_PI * FILT_CUTOFF_FREQ);
     float sample_time = 1.0f / PERIODIC_FREQUENCY;
 
     for (int i = 0; i < 4; i++) {
@@ -294,7 +321,10 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
         rates_ref.r = 0.0f;
     }
     RATES_ADD(rates_sp, rates_ref);
-
+    if (fsm_state == FSM_P2P) {
+        RATES_BOUND_CUBE(rates_sp, -RATES_BOUND, RATES_BOUND);
+    }
+    
     // calculate angular acceleration setpoint
     rates = stateGetBodyRates_f();
     ang_accel_sp.p = Komega.x * (rates_sp.p - rates->p);
@@ -376,20 +406,22 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     accel_sp.z = accel_sp0.z + accel_ref.z;
 
     // bound the commanded acceleration
-    if (accel_sp.x > ACCEL_BOUND)
-        accel_sp.x = ACCEL_BOUND;
-    else if (accel_sp.x < -ACCEL_BOUND)
-        accel_sp.x = -ACCEL_BOUND;
+    // if (accel_sp.x > ACCEL_BOUND)
+    //     accel_sp.x = ACCEL_BOUND;
+    // else if (accel_sp.x < -ACCEL_BOUND)
+    //     accel_sp.x = -ACCEL_BOUND;
     
-    if (accel_sp.y > ACCEL_BOUND)
-        accel_sp.y = ACCEL_BOUND;
-    else if (accel_sp.y < -ACCEL_BOUND)
-        accel_sp.y = -ACCEL_BOUND;
+    // if (accel_sp.y > ACCEL_BOUND)
+    //     accel_sp.y = ACCEL_BOUND;
+    // else if (accel_sp.y < -ACCEL_BOUND)
+    //     accel_sp.y = -ACCEL_BOUND;
 
-    if (accel_sp.z > ACCEL_BOUND)
-        accel_sp.z = ACCEL_BOUND;
-    else if (accel_sp.z < -ACCEL_BOUND)
-        accel_sp.z = -ACCEL_BOUND;
+    // if (accel_sp.z > ACCEL_BOUND)
+    //     accel_sp.z = ACCEL_BOUND;
+    // else if (accel_sp.z < -ACCEL_BOUND)
+    //     accel_sp.z = -ACCEL_BOUND;
+
+    VECT3_STRIM(accel_sp, -ACCEL_BOUND, ACCEL_BOUND);
 
     // actuator state estimation + butterworth filter    
     for (int i = 0; i < 4; i++) {
@@ -440,12 +472,22 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     float spec_thrust_sp;
     if (vel_norm > VEL_NORM_THRESHOLD && fsm_state != FSM_P2P) {
         // coordinated
+        
+        // todo cross products with normalized vectors to avoid orthogonality loss
+
         struct FloatVect3 ey, ey_hat, ex, ex_hat, ez, ez_hat, tmp;
         struct FloatVect3 f_cmd_vect3 = {f_cmd[0], f_cmd[1], f_cmd[2]};
         VECT3_CROSS_PRODUCT(ey, *vel_i, f_cmd_vect3)
         VECT3_SDIV(ey_hat, ey, sqrtf(VECT3_NORM2(ey)))
 
-        // todo multiply with the sign
+        struct FloatVect3 ey_hat_cur = {R_i2b->m[3], R_i2b->m[4], R_i2b->m[5]};
+        float sign_test = VECT3_DOT_PRODUCT(ey_hat_cur, ey_hat);
+        if (sign_test >= 0) {
+            ey_sign = 1;
+        } else {
+            ey_sign = -1;
+        }
+        // VECT3_SMUL(ey_hat, ey_hat, ey_sign);
 
         // todo guard against r // ey
 
@@ -628,7 +670,12 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
             
             vel_start->x = 0.0f; vel_start->y = 0.0f; vel_start->z = 0.0f;
             accel_start->x = 0.0f; accel_start->y = 0.0f; accel_start->z = 0.0f;
-            compute_quintic_coefficients(pos_start, &POS_END, vel_start, accel_start);
+
+            pos_end.x = traj[0].px + NORTH_OFFSET;
+            pos_end.y = traj[0].py + EAST_OFFSET;
+            pos_end.z = traj[0].pz + DOWN_OFFSET;
+
+            compute_quintic_coefficients(pos_start, &pos_end, vel_start, accel_start);
 
             timestamp_p2p_start = get_sys_time_float();
             fsm_state = FSM_P2P;
@@ -637,11 +684,14 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
         case FSM_P2P:
             timestamp_p2p = get_sys_time_float() - timestamp_p2p_start;
             if (timestamp_p2p < P2P_DT) {
-                compute_quintic_ref(timestamp_p2p, pos_start, &POS_END);
+                compute_quintic_ref(timestamp_p2p, pos_start, &pos_end);
             } else {
-                compute_quintic_ref(P2P_DT, pos_start, &POS_END);
+                compute_quintic_ref(P2P_DT, pos_start, &pos_end);
             }
-            psi_ref = 0;
+
+            // todo bound yaw rate
+            psi_ref = traj[0].psi;
+
             rates_ref.p = 0.0f;
             rates_ref.q = 0.0f;
             rates_ref.r = 0.0f;
@@ -664,9 +714,9 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
             int csv_i = (int)roundf(timestamp_traj/0.01f);
             
             if (csv_i < NB_CSV_ROWS) {
-                pos_ref.x = traj[csv_i].px;
-                pos_ref.y = traj[csv_i].py;
-                pos_ref.z = traj[csv_i].pz - HEIGHT_OFFSET;
+                pos_ref.x = traj[csv_i].px + NORTH_OFFSET;
+                pos_ref.y = traj[csv_i].py + EAST_OFFSET;
+                pos_ref.z = traj[csv_i].pz + DOWN_OFFSET;
 
                 vel_ref.x = traj[csv_i].vx;
                 vel_ref.y = traj[csv_i].vy;
