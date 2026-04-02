@@ -66,15 +66,18 @@
 // #define NB_CSV_ROWS 1348
 
 // ---- immelmann ---- //
-static const float DOWN_OFFSET = -2.0f;
+static const float DOWN_OFFSET = -1.0f;
 static const float NORTH_OFFSET = 0.0f;
-static const float EAST_OFFSET = -5.0f + 3.0f;
+static const float EAST_OFFSET = -5.0f + 2.0f;
 
-#define REF_TRAJ_FILENAME "snap_immelmann_vs2_r1.csv"
-#define NB_CSV_ROWS 620
+// #define REF_TRAJ_FILENAME "snap_immelmann_vs2_r1.csv"
+// #define NB_CSV_ROWS 865
+
+#define REF_TRAJ_FILENAME "snap_immelmann_vs3_r1.csv"
+#define NB_CSV_ROWS 577
 
 // #define REF_TRAJ_FILENAME "snap_immelmann_vs3.5_r1.csv"
-// #define NB_CSV_ROWS 355
+// #define NB_CSV_ROWS 495
 
 #define NB_CSV_COLS 18
 
@@ -171,7 +174,7 @@ static struct FloatVect3 *vel_start;
 static struct FloatVect3 *accel_start;
 float fi_vector[3] = {0.0f, 0.0f, 0.0f};
 float fi_vector_filt[3] = {0.0f, 0.0f, 0.0f};
-int ey_sign;
+float sign_test;
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -225,7 +228,7 @@ static void expose_dbg_variables(void)
     dbg.accel_sp = accel_sp;
     dbg.f_cmd.x = f_cmd[0]; dbg.f_cmd.y = f_cmd[1]; dbg.f_cmd.z = f_cmd[2];
     dbg.accel_filt.x = accel_filt[0]; dbg.accel_filt.y = accel_filt[1]; dbg.accel_filt.z = accel_filt[2];
-    dbg.ey_sign = ey_sign;
+    dbg.sign_test = sign_test;
 
     dbg.quat_sp = &quat_sp;
     dbg.quat = quat;
@@ -405,23 +408,7 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     accel_sp.y = accel_sp0.y + accel_ref.y;
     accel_sp.z = accel_sp0.z + accel_ref.z;
 
-    // bound the commanded acceleration
-    // if (accel_sp.x > ACCEL_BOUND)
-    //     accel_sp.x = ACCEL_BOUND;
-    // else if (accel_sp.x < -ACCEL_BOUND)
-    //     accel_sp.x = -ACCEL_BOUND;
-    
-    // if (accel_sp.y > ACCEL_BOUND)
-    //     accel_sp.y = ACCEL_BOUND;
-    // else if (accel_sp.y < -ACCEL_BOUND)
-    //     accel_sp.y = -ACCEL_BOUND;
-
-    // if (accel_sp.z > ACCEL_BOUND)
-    //     accel_sp.z = ACCEL_BOUND;
-    // else if (accel_sp.z < -ACCEL_BOUND)
-    //     accel_sp.z = -ACCEL_BOUND;
-
-    VECT3_STRIM(accel_sp, -ACCEL_BOUND, ACCEL_BOUND);
+    // VECT3_STRIM(accel_sp, -ACCEL_BOUND, ACCEL_BOUND);
 
     // actuator state estimation + butterworth filter    
     for (int i = 0; i < 4; i++) {
@@ -472,33 +459,33 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     float spec_thrust_sp;
     if (vel_norm > VEL_NORM_THRESHOLD && fsm_state != FSM_P2P) {
         // coordinated
-        
-        // todo cross products with normalized vectors to avoid orthogonality loss
-
         struct FloatVect3 ey, ey_hat, ex, ex_hat, ez, ez_hat, tmp;
         struct FloatVect3 f_cmd_vect3 = {f_cmd[0], f_cmd[1], f_cmd[2]};
         VECT3_CROSS_PRODUCT(ey, *vel_i, f_cmd_vect3)
         VECT3_SDIV(ey_hat, ey, sqrtf(VECT3_NORM2(ey)))
 
         struct FloatVect3 ey_hat_cur = {R_i2b->m[3], R_i2b->m[4], R_i2b->m[5]};
-        float sign_test = VECT3_DOT_PRODUCT(ey_hat_cur, ey_hat);
+        sign_test = VECT3_DOT_PRODUCT(ey_hat_cur, ey_hat);
         if (sign_test >= 0) {
-            ey_sign = 1;
+            ;
         } else {
-            ey_sign = -1;
+            // VECT3_SMUL(ey_hat, ey_hat, -1.0f);
+            ey_hat.x = -ey_hat.x;
+            ey_hat.y = -ey_hat.y;
+            ey_hat.z = -ey_hat.z;
         }
-        // VECT3_SMUL(ey_hat, ey_hat, ey_sign);
+        
 
         // todo guard against r // ey
 
         struct FloatVect3 arb_vect = {1.0f, 1.0f, 1.0f};
-        VECT3_SMUL(tmp, ey, (VECT3_DOT_PRODUCT(arb_vect, ey) / VECT3_DOT_PRODUCT(ey, ey)))
+        VECT3_SMUL(tmp, ey_hat, (VECT3_DOT_PRODUCT(arb_vect, ey_hat) / VECT3_DOT_PRODUCT(ey_hat, ey_hat)))
         VECT3_SUB(arb_vect, tmp)
         VECT3_COPY(ex, arb_vect)
         VECT3_SDIV(ex_hat, ex, sqrtf(VECT3_NORM2(ex)))
 
-        VECT3_CROSS_PRODUCT(ez, ex, ey)
-        VECT3_SDIV(ez_hat, ez, sqrtf(VECT3_NORM2(ez)))
+        VECT3_CROSS_PRODUCT(ez, ex_hat, ey_hat)
+        VECT3_SDIV(ez_hat, ez, sqrtf(VECT3_NORM2(ez))) // renormalize just to be sure
 
         struct FloatRMat R_i2e;
         R_i2e.m[0] = ex_hat.x; R_i2e.m[1] = ex_hat.y; R_i2e.m[2] = ex_hat.z;

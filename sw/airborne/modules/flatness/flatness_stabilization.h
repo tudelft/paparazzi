@@ -83,7 +83,7 @@ typedef struct {
     struct FloatVect3 accel_sp;
     struct FloatVect3 f_cmd;
     struct FloatVect3 accel_filt;
-    int ey_sign;
+    float sign_test;
 
     struct FloatQuat *quat_sp;
     struct FloatQuat *quat;
