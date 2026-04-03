@@ -50,14 +50,16 @@ enum navigation_state_t {
 };
 
 // define settings
-float oa_color_count_frac = 0.18f;
+float oa_color_count_frac       = 0.18f;    // threshold for orange pixel count [fraction of total pixels]
+float heading_increment_setting = 5.f;      // angle by which the drone rotates with each increase_nav_heading() call [deg]
+float speed_multiplier          = 1.0f;     // speed multiplier for moveWaypointForward(WP_GOAL, ...) [-]
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
-int32_t color_count = 0;                // orange color count from color filter for obstacle detection
-int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
-float heading_increment = 5.f;          // heading angle increment [deg]
-float maxDistance = 2.25;               // max waypoint displacement [m]
+int32_t color_count = 0;                    // orange color count from color filter for obstacle detection
+int16_t obstacle_free_confidence = 0;       // a measure of how certain we are that the way ahead is safe.
+float heading_increment = 5.f;              // heading angle increment [deg]
+float maxDistance = 2.25;                   // max waypoint displacement [m]
 
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
 
@@ -129,7 +131,7 @@ void orange_avoider_periodic(void)
       } else if (obstacle_free_confidence == 0){
         navigation_state = OBSTACLE_FOUND;
       } else {
-        moveWaypointForward(WP_GOAL, moveDistance);
+        moveWaypointForward(WP_GOAL, speed_multiplier * moveDistance);
       }
 
       break;
@@ -235,10 +237,10 @@ uint8_t chooseRandomIncrementAvoidance(void)
 {
   // Randomly choose CW or CCW avoiding direction
   if (rand() % 2 == 0) {
-    heading_increment = 5.f;
+    heading_increment = heading_increment_setting;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   } else {
-    heading_increment = -5.f;
+    heading_increment = -heading_increment_setting;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
   return false;

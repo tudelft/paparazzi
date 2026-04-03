@@ -31,7 +31,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// Module settings
+// Module settings (found inside conf/modules/cv_detect_color_object.xml)
+// Those are sliders inside the Paparazzi Ground Control Station (GCS)
 extern uint8_t cod_lum_min1;
 extern uint8_t cod_lum_max1;
 extern uint8_t cod_cb_min1;

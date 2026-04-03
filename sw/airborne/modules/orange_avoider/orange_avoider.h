@@ -13,8 +13,11 @@
 #ifndef ORANGE_AVOIDER_H
 #define ORANGE_AVOIDER_H
 
-// settings
+// Module settings (found inside conf/modules/orange_avoider.xml)
+// Those are sliders inside the Paparazzi Ground Control Station (GCS)
 extern float oa_color_count_frac;
+extern float heading_increment_setting;
+extern float speed_multiplier;
 
 // functions
 extern void orange_avoider_init(void);

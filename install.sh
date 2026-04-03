@@ -86,6 +86,20 @@ then
   BASHRC_SOURCE_VENV=false
 fi
 
+# ── Update packages list ──────────────────────────────────────────────────
+
+print_header "Step 0/3 — Update packages list"
+
+if run_step "APT Update" sudo apt update; then
+  print_success "Packages list updated successfully"
+else
+  exit 1
+fi
+
+
+# ── Install Qt dependencies ──────────────────────────────────────────────────
+
+print_header "Step 1/3 — Installing Qt platform dependencies"
 
 # ── Install Qt dependencies ──────────────────────────────────────────────────
 
