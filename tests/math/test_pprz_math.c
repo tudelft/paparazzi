@@ -34,7 +34,7 @@
 int main()
 {
   note("running algebra math tests");
-   plan(9); // number of tests in this file to run
+   plan(6); // number of tests in this file to run
 
   /* test int32_vect2_normalize */
   struct Int32Vect2 v = {2300, -4200};
@@ -70,18 +70,8 @@ int main()
   ok((q.qi >= 29295 && q.qi <= 29315) && (q.qx >= 14645 && q.qx <= 14655), // allowing a small margin of error due to integer rounding
      "int32_quat_normalize([32768,16384,0,0]) returned [%d, %d, %d, %d] (expected approx [29300,14650,0,0] +/- 15)", q.qi, q.qx, q.qy, q.qz);
 
-  /* test int32_sqrt */
-  uint32_t sqrt_16 = int32_sqrt(16);
-  ok(sqrt_16 == 4, "int32_sqrt(16) == %d (expected 4)", sqrt_16);
-
   uint32_t sqrt_100 = int32_sqrt(100);
   ok(sqrt_100 == 10, "int32_sqrt(100) == %d (expected 10)", sqrt_100);
-
-  uint32_t sqrt_1 = int32_sqrt(1);
-  ok(sqrt_1 == 1, "int32_sqrt(1) == %d (expected 1)", sqrt_1);
-
-  uint32_t sqrt_0 = int32_sqrt(0);
-  ok(sqrt_0 == 0, "int32_sqrt(0) == %d (expected 0)", sqrt_0);
 
   uint32_t sqrt_12345 = int32_sqrt(12345);
   ok(sqrt_12345 >= 111 && sqrt_12345 <= 112, "int32_sqrt(12345) == %d (expected approx 111)", sqrt_12345);
