@@ -46,8 +46,29 @@ extern uint8_t cod_cb_max2;
 extern uint8_t cod_cr_min2;
 extern uint8_t cod_cr_max2;
 
+/* NEW: filter 3 */
+extern uint8_t cod_lum_min3;
+extern uint8_t cod_lum_max3;
+extern uint8_t cod_cb_min3;
+extern uint8_t cod_cb_max3;
+extern uint8_t cod_cr_min3;
+extern uint8_t cod_cr_max3;
+
 extern bool cod_draw1;
 extern bool cod_draw2;
+
+/* NEW */
+extern bool cod_draw3;
+
+/* NEW: filter 4 (Blue) */
+extern uint8_t cod_lum_min4;
+extern uint8_t cod_lum_max4;
+extern uint8_t cod_cb_min4;
+extern uint8_t cod_cb_max4;
+extern uint8_t cod_cr_min4;
+extern uint8_t cod_cr_max4;
+
+extern bool cod_draw4;
 
 // Module functions
 extern void color_object_detector_init(void);

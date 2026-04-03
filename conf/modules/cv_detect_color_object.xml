@@ -4,8 +4,8 @@
   <doc>
     <description>Color Object Detector
     Detects an object by a continuous color. Optionally draws on image.
-    
     </description>
+
     <define name="COLOR_OBJECT_DETECTOR_CAMERA1" value="front_camera|bottom_camera" description="Video device to use"/>
     <define name="COLOR_OBJECT_DETECTOR_FPS1" value="0" description="Desired FPS (0: camera rate)"/>
     <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="0" description="Filter 1 min luminance"/>
@@ -18,32 +18,59 @@
 
     <define name="COLOR_OBJECT_DETECTOR_CAMERA2" value="front_camera|bottom_camera" description="Video device to use"/>
     <define name="COLOR_OBJECT_DETECTOR_FPS2" value="0" description="Desired FPS (0: camera rate)"/>
-    <define name="COLOR_OBJECT_DETECTOR_LUM_MIN2" value="0" description="Filter 1 min luminance"/>
+    <define name="COLOR_OBJECT_DETECTOR_LUM_MIN2" value="0" description="Filter 2 min luminance"/>
     <define name="COLOR_OBJECT_DETECTOR_LUM_MAX2" value="0" description="Filter 2 max luminance"/>
     <define name="COLOR_OBJECT_DETECTOR_CB_MIN2" value="0" description="Filter 2 min blue chroma"/>
     <define name="COLOR_OBJECT_DETECTOR_CB_MAX2" value="0" description="Filter 2 max blue chroma"/>
     <define name="COLOR_OBJECT_DETECTOR_CR_MIN2" value="0" description="Filter 2 min red chroma"/>
     <define name="COLOR_OBJECT_DETECTOR_CR_MAX2" value="0" description="Filter 2 max red chroma"/>
     <define name="COLOR_OBJECT_DETECTOR_DRAW2" value="FALSE|TRUE" description="Whether or not to draw on image"/>
+
+    <define name="COLOR_OBJECT_DETECTOR_CAMERA3" value="front_camera|bottom_camera" description="Video device to use"/>
+    <define name="COLOR_OBJECT_DETECTOR_FPS3" value="0" description="Desired FPS (0: camera rate)"/>
+    <define name="COLOR_OBJECT_DETECTOR_LUM_MIN3" value="0" description="Filter 3 min luminance"/>
+    <define name="COLOR_OBJECT_DETECTOR_LUM_MAX3" value="0" description="Filter 3 max luminance"/>
+    <define name="COLOR_OBJECT_DETECTOR_CB_MIN3" value="0" description="Filter 3 min blue chroma"/>
+    <define name="COLOR_OBJECT_DETECTOR_CB_MAX3" value="0" description="Filter 3 max blue chroma"/>
+    <define name="COLOR_OBJECT_DETECTOR_CR_MIN3" value="0" description="Filter 3 min red chroma"/>
+    <define name="COLOR_OBJECT_DETECTOR_CR_MAX3" value="0" description="Filter 3 max red chroma"/>
+    <define name="COLOR_OBJECT_DETECTOR_DRAW3" value="FALSE|TRUE" description="Whether or not to draw on image"/>
   </doc>
 
   <settings>
     <dl_settings>
       <dl_settings name="ColorObjectDetector">
-         <dl_setting var="cod_lum_min1" min="0" step="1" max="255" shortname="y_min1"/>
-         <dl_setting var="cod_lum_max1" min="0" step="1" max="255" shortname="y_max1"/>
-         <dl_setting var="cod_cb_min1"   min="0" step="1" max="255" shortname="u_min1"/>
-         <dl_setting var="cod_cb_max1"   min="0" step="1" max="255" shortname="u_max1"/>
-         <dl_setting var="cod_cr_min1"   min="0" step="1" max="255" shortname="v_min1"/>
-         <dl_setting var="cod_cr_max1"   min="0" step="1" max="255" shortname="v_max1"/>
-         <dl_setting var="cod_draw1"  min="0" step="1" max="1" values="False|True" shortname="draw 1" />
-         <dl_setting var="cod_lum_min2" min="0" step="1" max="255" shortname="y_min2"/>
-         <dl_setting var="cod_lum_max2" min="0" step="1" max="255" shortname="y_max2"/>
-         <dl_setting var="cod_cb_min2"   min="0" step="1" max="255" shortname="u_min2"/>
-         <dl_setting var="cod_cb_max2"   min="0" step="1" max="255" shortname="u_max2"/>
-         <dl_setting var="cod_cr_min2"   min="0" step="1" max="255" shortname="v_min2"/>
-         <dl_setting var="cod_cr_max2"   min="0" step="1" max="255" shortname="v_max2"/>
-         <dl_setting var="cod_draw2"  min="0" step="1" max="1" values="False|True" shortname="draw 2" />
+        <dl_setting var="cod_lum_min1" min="0" step="1" max="255" shortname="y_min1"/>
+        <dl_setting var="cod_lum_max1" min="0" step="1" max="255" shortname="y_max1"/>
+        <dl_setting var="cod_cb_min1"  min="0" step="1" max="255" shortname="u_min1"/>
+        <dl_setting var="cod_cb_max1"  min="0" step="1" max="255" shortname="u_max1"/>
+        <dl_setting var="cod_cr_min1"  min="0" step="1" max="255" shortname="v_min1"/>
+        <dl_setting var="cod_cr_max1"  min="0" step="1" max="255" shortname="v_max1"/>
+        <dl_setting var="cod_draw1"    min="0" step="1" max="1" values="False|True" shortname="draw 1"/>
+
+        <dl_setting var="cod_lum_min2" min="0" step="1" max="255" shortname="y_min2"/>
+        <dl_setting var="cod_lum_max2" min="0" step="1" max="255" shortname="y_max2"/>
+        <dl_setting var="cod_cb_min2"  min="0" step="1" max="255" shortname="u_min2"/>
+        <dl_setting var="cod_cb_max2"  min="0" step="1" max="255" shortname="u_max2"/>
+        <dl_setting var="cod_cr_min2"  min="0" step="1" max="255" shortname="v_min2"/>
+        <dl_setting var="cod_cr_max2"  min="0" step="1" max="255" shortname="v_max2"/>
+        <dl_setting var="cod_draw2"    min="0" step="1" max="1" values="False|True" shortname="draw 2"/>
+
+        <dl_setting var="cod_lum_min3" min="0" step="1" max="255" shortname="y_min3"/>
+        <dl_setting var="cod_lum_max3" min="0" step="1" max="255" shortname="y_max3"/>
+        <dl_setting var="cod_cb_min3"  min="0" step="1" max="255" shortname="u_min3"/>
+        <dl_setting var="cod_cb_max3"  min="0" step="1" max="255" shortname="u_max3"/>
+        <dl_setting var="cod_cr_min3"  min="0" step="1" max="255" shortname="v_min3"/>
+        <dl_setting var="cod_cr_max3"  min="0" step="1" max="255" shortname="v_max3"/>
+        <dl_setting var="cod_draw3"    min="0" step="1" max="1" values="False|True" shortname="draw 3"/>
+
+        <dl_setting var="cod_lum_min4" min="0" step="1" max="255" shortname="y_min4"/>
+        <dl_setting var="cod_lum_max4" min="0" step="1" max="255" shortname="y_max4"/>
+        <dl_setting var="cod_cb_min4"  min="0" step="1" max="255" shortname="u_min4"/>
+        <dl_setting var="cod_cb_max4"  min="0" step="1" max="255" shortname="u_max4"/>
+        <dl_setting var="cod_cr_min4"  min="0" step="1" max="255" shortname="v_min4"/>
+        <dl_setting var="cod_cr_max4"  min="0" step="1" max="255" shortname="v_max4"/>
+        <dl_setting var="cod_draw4"    min="0" step="1" max="1" values="False|True" shortname="draw 4"/>
       </dl_settings>
     </dl_settings>
   </settings>
@@ -62,4 +89,3 @@
     <file name="cv_detect_color_object.c"/>
   </makefile>
 </module>
-
