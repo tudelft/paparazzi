@@ -22,8 +22,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     # Paparazzi PPA
     && add-apt-repository -y ppa:paparazzi-uav/ppa \
-    # kisak-mesa: Mesa 24.x backport — required for Intel Arc (Meteor Lake) iris driver
-    && add-apt-repository -y ppa:kisak/kisak-mesa \
+    # kisak/turtle: Mesa 25.x backport — required for Intel Arc (Meteor Lake) xe driver
+    && add-apt-repository -y ppa:kisak/turtle \
     # OSRF: Gazebo Classic 11
     && curl -sSL https://packages.osrfoundation.org/gazebo.gpg \
          -o /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg \
