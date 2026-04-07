@@ -65,7 +65,8 @@
 
 <!--killall -9 ap.elf || /data/ftp/internal_000/paparazzi/ap.elf -->
       <configure name="HOST" value="192.168.209.$(AC_ID)"/><!-- the airframe -->
-      <configure name="MODEM_HOST" value="192.168.209.155"/> <!-- the router -->
+      <!-- <configure name="MODEM_HOST" value="192.168.209.155"/> the router -->
+      <configure name="MODEM_HOST" value="192.168.209.105"/> <!-- new router -->
       <configure name="MODEM_BROADCAST" value="TRUE"/>
     </target>
 
@@ -205,7 +206,7 @@
     <define name="ACT_FREQ" value="{42.7, 42.7, 42.7, 42.7}"/>
 
     <!-- Adaptive Learning Rate -->
-    <define name="USE_ADAPTIVE" value="FALSE"/>
+    <define name="USE_ADAPTIVE" value="TRUE"/>
     <define name="ADAPTIVE_MU" value="0.0001f"/>
 
     <!--Priority for each axis (roll, pitch, yaw and thrust)-->
