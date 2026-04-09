@@ -1,0 +1,54 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<!--
+  This XML is for a small trained CNN for gate detection, specifically for
+  MAVLab gates from TU Delft for the Autonomous Flight of MAV course (AE4317) of
+  TU Delft.
+  Group 9 from MAVLab 2026
+  Tommaso Calzolari
+  tcalzolari@tudelft.nl
+-->
+<module name="gate_cnn_detector" dir="computer_vision/gate_cnn_detector">
+  <doc>
+    <description>
+      Detects a gate from the camera image using a tiny CNN.
+
+      The image is received in YUV422 format from the Paparazzi video pipeline.
+      The detector uses the raw UYVY buffer directly, resizes internally to 48x12,
+      runs the CNN, and publishes a VISUAL_DETECTION ABI message with:
+      pixel_x, pixel_y, pixel_width, pixel_height, quality, extra.
+
+      The CNN weights are compiled into the module through gate_cnn_weights.c.
+    </description>
+
+    <define name="GATE_CNN_DETECTOR_CAMERA"
+            value="front_camera|bottom_camera"
+            description="Video device to use"/>
+
+    <define name="GATE_CNN_DETECTOR_FPS"
+            value="0"
+            description="Desired FPS (0 = camera rate)"/>
+
+    <define name="GATE_CNN_VISUAL_DETECTION_ID"
+            value="ABI_BROADCAST"
+            description="Sender id for VISUAL_DETECTION ABI message"/>
+  </doc>
+
+  <dep>
+    <depends>video_thread</depends>
+  </dep>
+
+  <header>
+    <file name="gate_cnn_detector.h"/>
+  </header>
+
+  <init fun="gate_cnn_detector_init()"/>
+  <periodic fun="gate_cnn_detector_periodic()" freq="50"/>
+
+  <makefile target="ap|nps">
+    <file name="gate_cnn_detector.c"/>
+    <file name="gate_cnn_weights.c"/>
+    <flag name="CFLAGS" value="O3"/>
+    <flag name="CFLAGS" value="ffast-math"/>
+  </makefile>
+</module>

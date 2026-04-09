@@ -1,0 +1,34 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="custom_avoider">
+  <doc>
+    <description>
+This module is an example module for the course AE4317 Autonomous Flight of Micro Air Vehicles at the TU Delft.
+This module is used in combination with the custom_detect_color_object module and the navigation mode of the autopilot.
+The avoidance strategy is based on the CUSTOM_DETECTION ABI message, which contains three binary obstacle indicators
+for the left, middle, and right image regions.
+
+The detector publishes the VISUAL_DETECTION message, and this module receives it using the
+GATE_FUSION_VISUAL_DETECTION_ID setting.
+    </description>
+
+    <define name="GATE_FUSION_VISUAL_DETECTION_ID"
+        value="ABI_BROADCAST"
+        description="Sender id for VISUAL_DETECTION ABI message"/>
+  </doc>
+
+  <dep>
+    <depends>gate_cnn_detector</depends>
+  </dep>
+
+  <header>
+    <file name="custom_avoider.h"/>
+  </header>
+
+  <init fun="navigation_controller_init()"/>
+  <periodic fun="navigation_controller_periodic()" freq="4"/>
+
+  <makefile target="ap|nps">
+    <file name="custom_avoider.c"/>
+  </makefile>
+</module>
