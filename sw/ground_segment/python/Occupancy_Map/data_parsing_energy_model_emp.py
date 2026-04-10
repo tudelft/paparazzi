@@ -246,9 +246,9 @@ eq_str = f'$P(v) = {coeffs[0]:.3f}v^2 {coeffs[1]:+.3f}v {coeffs[2]:+.3f}$'
 plt.plot(x_fit, y_fit, color='crimson', linewidth=3, label=f'2nd Degree Fit\n{eq_str}')
 
 # Formatting
-plt.title('Empirical Aerodynamic Power Curve\n(2nd Degree Polynomial Fit)', fontsize=14)
-plt.xlabel('Horizontal Airspeed [m/s]', fontsize=12)
-plt.ylabel('Electrical Power $P_{elec}$ [W]', fontsize=12)
+plt.title('Empirical Aerodynamic Power Curve Parrot Bebop 2', fontsize=14)
+plt.xlabel('Airspeed [m/s]', fontsize=12)
+plt.ylabel('Power (W)', fontsize=12)
 plt.grid(True, linestyle='--', alpha=0.7)
 plt.legend(loc='lower right', fontsize=12)
 
