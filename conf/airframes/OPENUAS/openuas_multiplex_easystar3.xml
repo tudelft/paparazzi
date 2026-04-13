@@ -7,39 +7,46 @@
     + FC:           Lisa MX v2.1
     + ACTUATORS:    Default of set MS-12020-MG
     + GNSS          uBlox M10
-    + IMU           Default Aspirin v2.1 
+    + IMU           Default Aspirin v2.2 
     + MAGNETOMETER: QMC5883L on GNSS module
     + ESC:          Default of set ROXXY BL-Control 720 S-BEC ESC
     + RCRX:         OpenRXSR Receiver
     + AIRSPEED:     Sensirion SDP33
-    + BARO          MS5611 on FC
-    + TELEMETRY:    SiK 868MHz modem
+    + BARO          MS5611 on FC or the BMP88
+    + TELEMETRY:    SiK 868MHz/C3WiFi/E52-400 22SMesh/XBee S1 pro Mesh
     + CURRENT:      N/A
-    + RANGEFINDER:  VB50A
+    + RANGEFINDER:  Surertech VB50A
     + MOTOR:        Default of set ROXXY BL Outrunner C28-30 1100Kv
     + PROPPELLER:   Default Foldable 7" x 6" two bladed
 
     NOTES:
     + Servo pins point to aft(tail) of airframe
     + SBus output on receiver MUST modified to have un-inverted output, this F4 cannot do it in software
-      This is done by soldering the RX SBus output wire on pad B of the RCRX
+      This is done by soldering the RX SBus output wire on pad B of the OpenRXSR RC recever
     + Servos powered via BEC of ESC outputs 5.0V
     + Flightcontroller powered via servo rail
-    + JP8 Closed and JP9 Opened so on UART5_VCC is V_IN, thus 5V to RCRX
-    + Telemetry modem powered via V/GND pins of UART on FC
+    + JP8 Closed and JP9 Opened so on UART1_VCC and UART5 is V_IN, thus 5V to RCRX and UWB module
+    + Telemetry modem powered via V/GND pins of UART on FC is 3.3V
     + Uploading of the firmware via SWD (useing a BlackMagicProbe debug adapter)
     + A GNSS device with QMC8553L magneto on the same PCB
-    + GNSS set to ~13Hz update rate, 3 constelations, SBAS enabled
+    + GNSS on UART3 set to ~17Hz update rate, 3 constelations, SBAS enabled
     + Advised battery for this airframe is a 1500mAh 3S LiPo min. 30C
-    + If testing "Classic" (as in not ETECS..) make sure to disable the settings/estimation/ac_char
+    + If testing " lassic" (as in not ETECS..) make sure to disable the settings/estimation/ac_char
     + One could set the USE_AIRSPEED value to FALSE at first, for no airspeed tests
     + Make sure v7.0 or higher of PPRZ autopilot release is used
+    + Telemetry on UART2
+    + UWB serial data via UART5 RX and TX (PC12)
   </description>
 
   <firmware name="fixedwing">
 
     <target name="ap" board="lisa_mx_2.1_chibios">
-      <!-- <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/> -->
+
+      <!-- enable those 2 lines ONLY if flashing via JTAG cable -->
+      <configure name="FLASH_MODE"   value="SWD"/>
+      <configure name="BMP_PORT" value="/dev/ttyACM0"/>
+
+      <!-- <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/> --><!-- Still needs fixing for use with ChibiOS -->
       <configure name="CPU_LED" value="1"/>
 
       <configure name="PERIODIC_FREQUENCY" value="500"/>
@@ -78,6 +85,8 @@
         <define name="SENSOR_SYNC_SEND"/>
       </module>
 
+      <!-- Alternatively if using the BMP88 barometer on the same SPI bus as the MS5611, set the following configuration and make sure to connect the CS pin of the BMP88 to SPI_SLAVE4 for example: -->
+
       <module name="airspeed" type="sdp3x">
         <configure name="SDP3X_I2C_DEV" value="I2C2"/>
         <!-- <define name="SDP3X_I2C_ADDR" value="0x50"/> --> <!-- 0x50 is the deafault address -->
@@ -115,7 +124,7 @@
         <define name="QMC5883L_CHAN_X_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Y_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
-        <!--<define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/>-->
+        <<define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/>
       </module> 
 
       <module name="actuators" type="pwm"/>
@@ -125,7 +134,7 @@
         <configure name="GPS_BAUD" value="B460800"/>
       </module>
 
-      <!-- used for Remote position systems -->
+      <!-- used for Remote position systems  like Vicon or OptiTrack -->
       <!-- 
       <module name="gps" type="datalink"/>
       </module> 
@@ -140,21 +149,12 @@
         <define name="RADIO_LIGHTS" value="RADIO_AUX2"/>
       </module>
 
-      <module name="sys_mon"/>
-
       <module name="telemetry" type="transparent">
         <configure name="MODEM_PORT" value="UART2"/>
         <configure name="MODEM_BAUD" value="B57600"/>
+        <!--<configure name="MODEM_BAUD" value="B9600"/>--><!-- use this baudrate if using mesh E52 400 Module -->
       </module>
 
-      <!--
-      <module name="shell">
-        <configure name="SHELL_PORT" value="usb_serial_debug"/>
-      </module>
-      -->
-
-      <module name="tune_airspeed"/> <!-- Enable if one want to perform airspeed tuning -->
-      
       <!-- Build into the airframe is a rangfinder Surertech VB50A 0xA4 (0x52 7bit) -->
       <module name="rangefinder_i2c"> 
         <configure name="RANGEFINDER_I2C_PORT" value="i2c2"/>
@@ -171,6 +171,16 @@
         <define name="RANGEFINDER_I2C_READ_MODE_SINGLE" value="0x00"/><!-- Specifically to read for a VB50A sensor -->
       </module>
 
+      <!--
+      <module name="shell">
+        <configure name="SHELL_PORT" value="usb_serial_debug"/>
+      </module>
+      -->
+
+      <module name="sys_mon"/>
+
+      <!-- on the SPI bus and SD card for logger could be connected -->
+     
     </target>
 
     <target name="sim" board="pc">
@@ -235,7 +245,7 @@
 
     <!-- <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/>
     <configure name="USE_MAGNETOMETER" value="TRUE"/>
-  -->
+    -->
     <module name="ahrs" type="float_dcm">
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
       <define name="AHRS_DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
@@ -249,6 +259,7 @@
 
     <module name="geo_mag"/>
     <module name="air_data"/>
+
     <module name="navigation"/>
     <module name="nav" type="line"/>
     <module name="nav" type="line_border"/>
@@ -290,6 +301,8 @@
     <servo name="S_RUDDER"         no="3" min="1100" neutral="1500" max="1900"/>
     <servo name="S_AILERON_RIGHT"  no="4" min="1100" neutral="1500" max="1900"/>
     <servo name="S_LIGHT"          no="5" min="1100" neutral="1500" max="1900"/>
+    <servo name="S_DROP"           no="6" min="1100" neutral="1500" max="1900"/>
+    <servo name="S_CAM"            no="7" min="1100" neutral="1500" max="1900"/>
   </servos>
 
   <section name="ServoPositions">

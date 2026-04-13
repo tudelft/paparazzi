@@ -12,7 +12,7 @@
     + TELEMETRY:    Hope 868MHz
     + CURRENT:      Powerbrick clone
     + RCRX:         OpenRXSR on SBus port
-    + RANGeFINDER:  Via MTF02P Opticflowsensor
+    + RANGEFINDER:  Via MTF02P Opticflowsensor
     + OPTICFLOW:    MicoAir MTF02P serialbus
 
   </description>
@@ -84,7 +84,7 @@
 
       <!-- The the led_safety_status module will make the LEDs blink in certain patterns when there are safety violations -->
       <!-- Since we intend to use UART5 TX for something else,  we need to use the LED GPIO on GPIOC not the default LED BODY 
-      The LED will be connected to ADC2 pin C0 hFT (Five volt Tolerant) , Original LED bar was also fed with 5V -->
+      The LED will be connected to ADC2 pin C0 h FT (Five volt Tolerant) , Original LED bar was also fed with 5V -->
       <module name="led_safety_status.xml">
         <define name="MODE_MANUAL" value="AP_MODE_MANUAL"/>
         <configure name="LED_BODY_GPIO" value="GPIOC"/>
