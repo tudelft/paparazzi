@@ -15,8 +15,8 @@
     + BARO          MS5611 on FC or the BMP88
     + TELEMETRY:    SiK 868MHz/C3WiFi/E52-400 22SMesh/XBee S1 pro Mesh
     + CURRENT:      N/A
-    + RANGEFINDER:  Surertech VB50A
-    + MOTOR:        Default of set ROXXY BL Outrunner C28-30 1100Kv
+    + RANGEFINDER:  Surertech VB22A
+    + MOTOR:        Default of set ROXXY BL Outrunner C28-30 1100Kvwhatevery is needed
     + PROPPELLER:   Default Foldable 7" x 6" two bladed
 
     NOTES:
@@ -160,7 +160,7 @@
       </module>
 
       <module name="telemetry" type="transparent">
-        <configure name="MODEM_PORT" value="UART2"/>
+        <configure name="MODEM_PORT" value="UART5"/>
         <configure name="MODEM_BAUD" value="B57600"/>
         <!--<configure name="MODEM_BAUD" value="B9600"/>--><!-- use this baudrate if using mesh E52 400 Module -->
       </module>
@@ -394,13 +394,13 @@
 
   <!-- Define here to which CONNECTOR NUMBER the servo is connected to, on the autopilot circuit board -->
   <servos driver="Pwm">
-    <servo name="S_THROTTLE"       no="0" min="1040" neutral="1060" max="1850"/>
+    <servo name="S_THROTTLE"       no="0" min="1015" neutral="1040" max="1850"/>
     <servo name="S_AILERON_LEFT"   no="1" min="1900" neutral="1500" max="1100"/>
     <servo name="S_ELEVATOR"       no="2" min="1100" neutral="1500" max="1900"/>
     <servo name="S_RUDDER"         no="3" min="1100" neutral="1500" max="1900"/>
     <servo name="S_AILERON_RIGHT"  no="4" min="1100" neutral="1500" max="1900"/>
     <servo name="S_LIGHT"          no="5" min="1100" neutral="1500" max="1900"/>
-    <!-- 
+     <!--
     <servo name="S_DROP"           no="6" min="1100" neutral="1500" max="1900"/>
     <servo name="S_CAM"            no="7" min="1100" neutral="1500" max="1900"/> 
     -->
