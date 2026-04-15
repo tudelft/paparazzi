@@ -162,7 +162,7 @@ static bool log_started;
 #define DW_GET_CK 2
 #define DW_NB_DATA 6
 
-/** DW1000 positionning system structure */
+/** DW1000 positioning system structure */
 struct DW1000 {
   uint8_t buf[DW_NB_DATA];    ///< incoming data buffer
   uint8_t idx;                ///< buffer index
@@ -362,7 +362,7 @@ static bool check_anchor_timeout(struct DW1000 *dw, float timeout)
 }
 
 /** check new data and compute with the proper algorithm
- * @return true if processing is succesful
+ * @return true if processing is successful
  */
 static inline bool check_and_compute_data(struct DW1000 *dw)
 {
