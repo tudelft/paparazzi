@@ -651,5 +651,71 @@
         <arg flag="-srtm"/>
       </program>
     </session>
+    <session name="e52test">
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/ttyUSB0"/>
+        <arg flag="-s" constant="9600"/>
+      </program>
+      <program name="Server"/>
+      <program name="GCS"/>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+    </session>
+    <session name="simeasystar">
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Easystar_3"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
+        <arg flag="-layout" constant="OPENUAS/openuas_bottom_settings.xml"/>
+        <arg flag="-maximize"/>
+        <arg flag="-maps_fill"/>
+        <arg flag="-center_ac"/>
+        <arg flag="-mercator"/>
+        <arg flag="-maps_no_http"/>
+        <arg flag="-track_size" constant="200"/>
+        <arg flag="-zoom" constant="0.5"/>
+        <arg flag="-no_confirm_kill"/>
+        <arg flag="-srtm"/>
+      </program>
+    </session>
+    <session name="SimEasystar">
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Easystar_3"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
+        <arg flag="-layout" constant="OPENUAS/openuas_bottom_settings.xml"/>
+        <arg flag="-maximize"/>
+        <arg flag="-maps_fill"/>
+        <arg flag="-center_ac"/>
+        <arg flag="-mercator"/>
+        <arg flag="-maps_no_http"/>
+        <arg flag="-track_size" constant="200"/>
+        <arg flag="-zoom" constant="0.5"/>
+        <arg flag="-no_confirm_kill"/>
+        <arg flag="-srtm"/>
+      </program>
+    </session>
   </section>
 </control_panel>
