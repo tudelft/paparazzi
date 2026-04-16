@@ -246,7 +246,7 @@
         <configure name="RANGEFINDER_I2C_USE_FOR_AGL" value="FALSE"/>
         <configure name="RANGEFINDER_I2C_COMPENSATE_ROTATION" value="FALSE"/>
         <configure name="RANGEFINDER_I2C_PERIODIC_FREQUENCY" value="50"/><!-- 200Hz possible according to datasheet -->
-        <define name="RANGEFINDER_I2C_USE_FILTER" value="TRUE"/><!-- no need VB22A filters internally quite well-->
+        <define name="RANGEFINDER_I2C_USE_FILTER" value="FALSE"/><!-- no need VB22A filters internally quite well-->
         <define name="RANGEFINDER_I2C_MEDIAN_SIZE" value="5"/>
         <define name="RANGEFINDER_I2C_MIN_RANGE" value="0.005" unit="m"/>
         <define name="RANGEFINDER_I2C_MAX_RANGE" value="17.0" unit="m"/><!-- For e.g. VB22A Theoretically 20m at 90% reflectivity but practical less -->
