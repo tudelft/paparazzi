@@ -40,9 +40,6 @@
 
   <firmware name="fixedwing">
 
-    <configure name="PERIODIC_FREQUENCY" value="500"/>
-    <configure name="AHRS_PROPAGATE_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
-
     <target name="ap" board="lisa_mx_2.1_chibios">
 
       <!-- enable those 2 lines ONLY if flashing via JTAG cable -->
@@ -54,16 +51,19 @@
       <!--<define name="DEBUG" value="TRUE"/>--><!--Enable for debug output, e.g. ms5611-->
       <!--<define name="USE_PERIODIC_TELEMETRY_REPORT" value="TRUE"/> -->
 
+      <configure name="PERIODIC_FREQUENCY" value="500"/>
+      <configure name="AHRS_PROPAGATE_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
       <!-- <configure name="AHRS_CORRECT_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/> -->
-      <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="125"/>
+      <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="125"/> -->
 
       <configure name="NO_LUFTBOOT" value="1"/><!-- We do not have a bootloader on this FC -->
 
       <define name="AUTOPILOT_DISABLE_AHRS_KILL"/> <!--  Starts in KILL, but can now switch to NAV -->
       <!-- We are using aspirin 2.2, so we set the following barometer configuration: -->
-      <configure name="LISA_M_BARO" value="BARO_MS5611_SPI"/>
-      <configure name="USE_BARO_BOARD" value="TRUE"/><!-- already true per default -->
-      <configure name="USE_BARO_MEDIAN_FILTER" value="TRUE"/>
+      <!-- <configure name="LISA_M_BARO" value="BARO_MS5611_SPI"/> -->
+      <!-- <configure name="USE_BARO_BOARD" value="TRUE"/> -->
+      <!-- already true per default -->
+      <!-- <configure name="USE_BARO_MEDIAN_FILTER" value="TRUE"/> -->
       <!-- <define name="USE_BARO_MEDIAN_FILTER" value="TRUE"/> -->
       <configure name="USE_MAGNETOMETER" value="FALSE"/><!-- only when everything else works... improve -->
 
@@ -94,12 +94,12 @@
         -->
       </module>
    
-      <module name="baro_ms5611_spi">
+      <!-- <module name="baro_ms5611_spi"> -->
         <!-- <configure name="BARO_PERIODIC_FREQUENCY" value="10"/> -->
-        <configure name="MS5611_SPI_DEV" value="spi1"/>
-        <configure name="MS5611_SLAVE_IDX" value="SPI_SLAVE3"/>
+        <!-- <configure name="MS5611_SPI_DEV" value="spi1"/> -->
+        <!-- <configure name="MS5611_SLAVE_IDX" value="SPI_SLAVE3"/> -->
         <!--<define name="SENSOR_SYNC_SEND" value="TRUE"/>--><!-- TODO: Disable after all tuning is done -->
-      </module>
+      <!-- </module> -->
       <!-- Alternatively if using the BMP88 barometer on the same SPI bus as the MS5611, set the following configuration and make sure to connect the CS pin of the BMP88 to SPI_SLAVE4 for example: -->
 
       <module name="airspeed" type="sdp3x">
@@ -139,15 +139,15 @@
       </module> 
       -->
   
-      <configure name="USE_ADC_1" value="TRUE"/>
+      <!-- <configure name="USE_ADC_1" value="TRUE"/>
       <define name="ADC_CHANNEL_VSUPPLY" value="ADC_1"/>
       
       <module name="current_sensor">
         <configure name="USE_ADC_2" value="TRUE"/>
         <configure name="ADC_CURRENT_SENSOR" value="ADC_2"/>
-      </module>
+      </module> -->
 
-      <module name="mag" type="qmc5883l">
+      <!-- <module name="mag" type="qmc5883l">
         <configure name="MAG_QMC5883L_I2C_DEV" value="i2c2"/>
         <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="125"/>
         <define name="MODULE_QMC5883L_UPDATE_AHRS" value="FALSE"/>
@@ -159,7 +159,7 @@
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
         <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/>
         <define name="USE_MAG_TO_IMU" value="TRUE"/>
-      </module>
+      </module> -->
 
       <!-- Build into the airframe is a rangfinder Surertech VB22A 0xA4 (0x52 7bit) -->
 
@@ -176,12 +176,12 @@
         <define name="RANGEFINDER_I2C_OFFSET" value="0.0" unit="m"/>
         <define name="RANGEFINDER_I2C_SCALE" value="0.001"/><!-- Since VB22A sensor emits in millimeters per default-->
         <define name="RANGEFINDER_I2C_READ_MODE_SINGLE" value="0x00"/><!-- Specifically to read for a VB22A sensor -->
-        <!-- <define name="RANGEFINDER_I2C_SYNC_SEND" value="TRUE"/>  -->
+        <define name="RANGEFINDER_I2C_SYNC_SEND" value="TRUE"/>
       </module>
 
       <module name="actuators" type="pwm">
         <!-- <define name="SERVO_HZ" value="40"/> -->
-        <define name="USE_SERVOS_7AND8"/>
+        <!-- <define name="USE_SERVOS_7AND8"/> -->
       </module>
 
       <module name="radio_control" type="sbus">
@@ -269,7 +269,7 @@
        
       <!-- inter aircraft RSSI exchange -->
       <!-- <module name="rssi"/> -->
-      <module name="imu_quality_assessment"/>
+      <!-- <module name="imu_quality_assessment"/> -->
 
     </target>
 
@@ -328,8 +328,8 @@
     <!-- <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN"/> -->
     <define name="autopilot_motors_on" value="TRUE"/>
 
-    <configure name="USE_BARO_BOARD" value="TRUE"/>
-    <configure name="BARO_PERIODIC_FREQUENCY" value="50"/>
+    <!-- <configure name="USE_BARO_BOARD" value="TRUE"/> -->
+    <!-- <configure name="BARO_PERIODIC_FREQUENCY" value="50"/> -->
     <define name="USE_BARO_MEDIAN_FILTER"/>
     <define name="AUTOPILOT_DISABLE_AHRS_KILL"/>
 
@@ -348,20 +348,17 @@
     <module name="ahrs" type="float_dcm">
       <configure name="USE_MAGNETOMETER" value="FALSE"/><!-- AS in USE the device for readings , not the value in AHRS yet -->
       <define name="USE_AHRS_GPS_ACCELERATIONS"/>
-      <define name="AHRS_DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
+      <!-- <define name="AHRS_DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/> -->
     </module>
 
     <module name="ins" type="alt_float">
-      <define name="USE_INS_MODULE" value="TRUE"/>
+      <!-- <define name="USE_INS_MODULE" value="TRUE"/> -->
     </module>
 
-     <module name="auto1_commands"/> <!-- FIXME since not working in JSBSim target with RC controller steering in Simulator-->
-
+    <module name="auto1_commands"/> <!-- FIXME since not working in JSBSim target with RC controller steering in Simulator-->
+    <module name="air_data"/>
     <module name="control" type="new"/>
     <module name="navigation"/>
-
-    <module name="air_data"/>
-
     <module name="nav" type="line"/>
     <module name="nav" type="line_border"/>
     <module name="nav" type="line_osam"/>
@@ -383,7 +380,7 @@
 
     <module name="photogrammetry_calculator"/>
 
-    <module name="agl_dist"/>
+    <!-- <module name="agl_dist"/> -->
 
     <!-- Quite a good alternative for the catapult module in this case -->
     <!--<module name="takeoff_detect">-->
@@ -414,9 +411,9 @@
     </module> -->
 
     <!-- When flying multiple airframes at once, useful for interaction with other airframes -->
-    <module name="traffic_info"/>
+    <!-- <module name="traffic_info"/> -->
     <!-- Traffic Collision Avoidance System, reduce the incident rate of mid-air collision between UAS -->
-    <module name="tcas"/>
+    <!-- <module name="tcas"/> -->
 
     <!-- Can be disabled after initial tuning -->
     <!-- <module name="imu_quality_assessment"/>
@@ -534,8 +531,6 @@
     <set servo="S_LIGHT" value="@ACTIVELIGHTS"/> 
     -->
   </command_laws>
-
-
 
   <!-- Do not set MAX_ROLL, MAX_PITCH to small of a value, otherwise one can NOT control the plane very well manually -->
   <!-- If you have dual rate swith it of with same switch as mode switch thus auto1 means dualrate is switched off also -->
@@ -659,13 +654,6 @@
     <define name="MAG_TO_IMU_PSI" value="0.0"/>
   </section>
 
-  <!-- TODO: needs to be set to correct values -->
-  <!-- <section name="MAG_RM3100" prefix="RM3100_">
-    <define name="MAG_TO_IMU_PHI" value="0.0"/>
-    <define name="MAG_TO_IMU_THETA" value="0.0"/>
-    <define name="MAG_TO_IMU_PSI" value="0.0"/>
-  </section> -->
-
   <section name="AHRS" prefix="AHRS_">
     <!-- AHRS filter tuning values, adjust when needed -->
     <!--
@@ -674,7 +662,6 @@
     <define name="MAG_OMEGA" value="0.04"/>
     <define name="MAG_ZETA" value="0.9"/>
     -->
-    <define name="MAG_UPDATE_ALL_AXES" value="TRUE"/>
     <define name="GRAVITY_HEURISTIC_FACTOR" value="0.0"/>
     <define name="AHRS_MAG_UPDATE_ALL_AXES" value="TRUE"/>
     <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
