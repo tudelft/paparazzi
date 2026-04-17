@@ -176,7 +176,7 @@
         <define name="RANGEFINDER_I2C_OFFSET" value="0.0" unit="m"/>
         <define name="RANGEFINDER_I2C_SCALE" value="0.001"/><!-- Since VB22A sensor emits in millimeters per default-->
         <define name="RANGEFINDER_I2C_READ_MODE_SINGLE" value="0x00"/><!-- Specifically to read for a VB22A sensor -->
-        <define name="RANGEFINDER_I2C_SYNC_SEND" value="TRUE"/>
+        <!-- <define name="RANGEFINDER_I2C_SYNC_SEND" value="TRUE"/> -->
       </module>
 
       <module name="actuators" type="pwm">
