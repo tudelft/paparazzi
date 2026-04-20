@@ -11,6 +11,15 @@
       <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
       <configure name="PERIODIC_FREQUENCY" value="500"/>
 
+      <!-- If one want to use a Joystick over connection one can us this instead of sbus-->
+      <module name="radio_control" type="ppm">
+        <define name="RADIO_CONTROL_NB_CHANNEL" value="8"/>
+        <define name="RADIO_MODE" value="RADIO_AUX1"/>
+        <define name="RADIO_KILL_SWITCH" value="RADIO_AUX2"/>
+        <define name="RADIO_MANUAL_ROLL_CMD" value="RADIO_AUX3"/>
+        <define name="RADIO_MANUAL_PITCH_CMD" value="RADIO_AUX4"/>
+      </module>
+
       <module name="imu" type="cube"/>
 
       <module name="mag" type="rm3100">
@@ -54,15 +63,6 @@
         <configure name="GPS_BAUD" value="B460800"/>
         <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
       </module> -->
-
-      <!-- If one want to use a Joystick over connection one can us this instead of sbus-->
-      <module name="radio_control" type="ppm">
-        <define name="RADIO_CONTROL_NB_CHANNEL" value="8"/>
-        <define name="RADIO_MODE" value="RADIO_AUX1"/>
-        <define name="RADIO_KILL_SWITCH" value="RADIO_AUX2"/>
-        <define name="RADIO_MANUAL_ROLL_CMD" value="RADIO_AUX3"/>
-        <define name="RADIO_MANUAL_PITCH_CMD" value="RADIO_AUX4"/>
-      </module>
 
       <module name="sys_mon"/><!-- Enable if one want to check processor load for higher loop, nav, module etc. frequencies -->
 
@@ -149,6 +149,9 @@
       <define name="AGL_DIST_FILTER" value="0.1"/>
     </module>
 
+    <module name="ship_landing_module_AM">
+      <define name="PERIODIC_FREQUENCY_NAV_APPROACH_SHIP" value="10.0"/>
+    </module>
 
     <module name="overactuated_mixing"/>
 

@@ -117,6 +117,10 @@
       <define name="AGL_DIST_FILTER" value="0.1"/>
     </module>
 
+    <module name="ship_landing_module_AM">
+      <define name="PERIODIC_FREQUENCY_NAV_APPROACH_SHIP" value="10.0"/>
+    </module>
+
     <module name="overactuated_mixing">
       <define name="OVERACTUATED_MIXING_FREQUENCY" value="500"/>
     </module>
@@ -309,6 +313,7 @@
     <define name="W_DV_4_CRUISE" value="0.05"/>
     <define name="W_DV_5_CRUISE" value="0.05"/>
     <define name="W_DV_6_CRUISE" value="0.05"/>
+    <define name="GAMMA_QUADRATIC_DU_CRUISE_e_minus_8" value="5.0"/>
     <define name="SPEED_AOA_PROTECTION_CRUISE" value="0.2" unit="m/s"/>
     <define name="OVERESTIMATION_COEFF_CRUISE" value="1.4"/>
     <define name="MIN_SPEED_TRANSITION_CRUISE" value="2.0" unit="m/s"/>
@@ -334,6 +339,7 @@
     <define name="W_DV_4_APP" value="0.05"/>
     <define name="W_DV_5_APP" value="0.05"/>
     <define name="W_DV_6_APP" value="0.05"/>
+    <define name="GAMMA_QUADRATIC_DU_APP_e_minus_8" value="5.0"/>
     <define name="SPEED_AOA_PROTECTION_APP" value="15" unit="m/s"/>
     <define name="OVERESTIMATION_COEFF_APP" value="1.4"/>
     <define name="MIN_SPEED_TRANSITION_APP" value="4.0" unit="m/s"/>
