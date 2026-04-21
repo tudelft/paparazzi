@@ -4,7 +4,8 @@
   <process name="Ap">
     <mode name="default" key_press="d">
       <message name="ADC_GENERIC"         period="0.7"/>
-      <message name="AIRSPEED"            period="1"/>
+      <message name="AIRSPEED"            period="0.2"/>
+      <message name="AIRSPEED_RAW"        period="0.3"/>
       <message name="ALIVE"               period="5.1"/>
       <message name="GPS"                 period="0.5"/>
       <message name="NAVIGATION"          period="0.5"/>
