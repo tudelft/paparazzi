@@ -152,7 +152,7 @@
     </mode>
 
     <!-- Rate climb rc mode 5-->
-    <mode name="RATE_RC_CLIMB" shortname="CTRL_NB_ANDI">
+    <mode name="RATE_RC_CLIMB" shortname="nB_ANDI">
        <select cond="RCMode0() && RCAP1()"/>
       <on_enter>
         <!-- <call fun="printf(\"Entering INDI ATT\\n\")"/>  -->
@@ -210,7 +210,7 @@
       <select cond="(RCMode1() || RCMode2()) && RCAP1() && DLModeNav()" exception="HOME"/>
       <on_enter>
         <!-- <call fun="printf(\"Entering INDI NAV\\n\")"/>  -->
-        <call fun="oneloop_nB_enter(false, CTRL_INDI)"/>
+        <call fun="oneloop_nB_enter(false, CTRL_NB_ANDI)"/>
       </on_enter>
       <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
@@ -236,7 +236,7 @@
     </mode>
 
     <!-- FORWARD: 16 -->
-    <mode name="FORWARD" shortname="nB_NAV">
+    <mode name="FORWARD" shortname="nB_NAV_INDI">
       <select cond="(RCMode1() || RCMode2()) && RCAP2() && DLModeModule()" exception="HOME"/>
       <on_enter>
         <call fun="oneloop_nB_enter(false, CTRL_NB_INDI)"/>
