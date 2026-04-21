@@ -64,6 +64,7 @@
 
 //====================================================================================================================================
 // Declaration of global variables
+extern bool auto_fault_cmd;
 extern bool use_safety_killer;
 extern bool safety_killer_trigger;
 extern float safety_killer_cutoff;
