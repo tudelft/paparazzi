@@ -40,6 +40,9 @@
 
   <firmware name="fixedwing">
 
+    <configure name="PERIODIC_FREQUENCY" value="500"/>
+    <configure name="AHRS_PROPAGATE_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
+
     <target name="ap" board="lisa_mx_2.1_chibios">
 
       <!-- enable those 2 lines ONLY if flashing via JTAG cable -->
@@ -94,12 +97,12 @@
         -->
       </module>
    
-      <!-- <module name="baro_ms5611_spi"> -->
-        <!-- <configure name="BARO_PERIODIC_FREQUENCY" value="10"/> -->
-        <!-- <configure name="MS5611_SPI_DEV" value="spi1"/> -->
-        <!-- <configure name="MS5611_SLAVE_IDX" value="SPI_SLAVE3"/> -->
+      <module name="baro_ms5611_spi">
+        <configure name="BARO_PERIODIC_FREQUENCY" value="10"/>
+        <configure name="MS5611_SPI_DEV" value="spi1"/>
+        <configure name="MS5611_SLAVE_IDX" value="SPI_SLAVE3"/>
         <!--<define name="SENSOR_SYNC_SEND" value="TRUE"/>--><!-- TODO: Disable after all tuning is done -->
-      <!-- </module> -->
+      </module>
       <!-- Alternatively if using the BMP88 barometer on the same SPI bus as the MS5611, set the following configuration and make sure to connect the CS pin of the BMP88 to SPI_SLAVE4 for example: -->
 
       <module name="airspeed" type="sdp3x">
@@ -121,14 +124,9 @@
         <configure name="GPS_BAUD" value="B460800"/>
       </module>
 
-      <!-- used for Remote position systems  like Vicon or OptiTrack -->
-      <!-- 
-      <module name="gps" type="datalink"/>
-      </module> 
-      -->
+      <!-- used for Remote position systems like Vicon or OptiTrack -->
+      <!-- <module name="gps" type="datalink"/> -->
 
-      <!-- Optional alternative magnetometer driver chip on GNSS board --> 
-      
       <module name="geo_mag"/>
 
       <!-- NOT USED setup manually in u-center, only enable when needed-->
@@ -139,15 +137,18 @@
       </module> 
       -->
   
-      <!-- <configure name="USE_ADC_1" value="TRUE"/>
+      <!-- 
+      <configure name="USE_ADC_1" value="TRUE"/>
       <define name="ADC_CHANNEL_VSUPPLY" value="ADC_1"/>
       
       <module name="current_sensor">
         <configure name="USE_ADC_2" value="TRUE"/>
         <configure name="ADC_CURRENT_SENSOR" value="ADC_2"/>
-      </module> -->
+      </module> 
+      -->
 
-      <!-- <module name="mag" type="qmc5883l">
+      <!-- Optionally use alternative magnetometer driver chip on GNSS board instead of FC --> 
+      <module name="mag" type="qmc5883l">
         <configure name="MAG_QMC5883L_I2C_DEV" value="i2c2"/>
         <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="125"/>
         <define name="MODULE_QMC5883L_UPDATE_AHRS" value="FALSE"/>
@@ -159,29 +160,28 @@
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
         <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/>
         <define name="USE_MAG_TO_IMU" value="TRUE"/>
-      </module> -->
+      </module>
 
       <!-- Build into the airframe is a rangfinder Surertech VB22A 0xA4 (0x52 7bit) -->
-
       <module name="rangefinder_i2c"> 
         <configure name="RANGEFINDER_I2C_PORT" value="i2c2"/>
         <configure name="RANGEFINDER_I2C_ADDR" value="0xA4"/> <!-- 0x52 in 7 bit -->
         <configure name="RANGEFINDER_I2C_USE_FOR_AGL" value="FALSE"/>
         <configure name="RANGEFINDER_I2C_COMPENSATE_ROTATION" value="FALSE"/>
-        <configure name="RANGEFINDER_I2C_PERIODIC_FREQUENCY" value="50"/><!-- 200Hz possible according to datasheet -->
-        <define name="RANGEFINDER_I2C_USE_FILTER" value="FALSE"/><!-- no need VB22A filters internally quite well-->
+        <configure name="RANGEFINDER_I2C_PERIODIC_FREQUENCY" value="100"/><!-- 200Hz possible according to datasheet -->
+        <define name="RANGEFINDER_I2C_USE_FILTER" value="FALSE"/><!-- no need VB22A filters internally quite well for our purposes -->
         <define name="RANGEFINDER_I2C_MEDIAN_SIZE" value="5"/>
         <define name="RANGEFINDER_I2C_MIN_RANGE" value="0.005" unit="m"/>
-        <define name="RANGEFINDER_I2C_MAX_RANGE" value="17.0" unit="m"/><!-- For e.g. VB22A Theoretically 20m at 90% reflectivity but practical less -->
+        <define name="RANGEFINDER_I2C_MAX_RANGE" value="15.0" unit="m"/><!-- For e.g. VB22A Theoretically 20m at 90% reflectivity but in reality less -->
         <define name="RANGEFINDER_I2C_OFFSET" value="0.0" unit="m"/>
-        <define name="RANGEFINDER_I2C_SCALE" value="0.001"/><!-- Since VB22A sensor emits in millimeters per default-->
+        <define name="RANGEFINDER_I2C_SCALE" value="0.001"/><!-- Since VB22A sensor is set to emit in millimeters per default-->
         <define name="RANGEFINDER_I2C_READ_MODE_SINGLE" value="0x00"/><!-- Specifically to read for a VB22A sensor -->
         <!-- <define name="RANGEFINDER_I2C_SYNC_SEND" value="TRUE"/> -->
       </module>
 
       <module name="actuators" type="pwm">
-        <!-- <define name="SERVO_HZ" value="40"/> -->
-        <!-- <define name="USE_SERVOS_7AND8"/> -->
+        <define name="SERVO_HZ" value="40"/><!-- not higher else lightcontroller does not work -->
+        <define name="USE_SERVOS_7AND8"/>
       </module>
 
       <module name="radio_control" type="sbus">
@@ -198,8 +198,7 @@
       <module name="telemetry" type="transparent">
         <!-- <configure name="MODEM_PORT" value="usb_serial"/> -->       
         <configure name="MODEM_PORT" value="UART2"/>
-        <!--<configure name="MODEM_BAUD" value="B57600"/>-->
-        <configure name="MODEM_BAUD" value="B9600"/><!-- use this baudrate if using mesh E52 400 Module -->
+        <configure name="MODEM_BAUD" value="B9600"/><!-- use B9600 baudrate if using mesh network module else B57600-->
       </module>
 
       <!-- Only enable with a module that supports v_ctl_auto_airspeed_setpoint-->
@@ -216,13 +215,15 @@
 
       <!-- An simple SD reader converter SD card slot connected over SPI bus to the MCU -->
       <!-- For testflights this might come in handy to analyze flight data, when needed , enable it -->
-      <!-- <module name="tlsf"/>
-      <module name="pprzlog"/>
+      <!-- 
+      <module name="tlsf"/>
+      <module name="pprzlog"/> 
       <module name="logger" type="sd_chibios">
         <configure name="SDLOG_LED" value="2"/>
         <define naRM3100me="SDLOG_ENABLE_LOWBAT_FLUSH" value="FALSE"/>
         <define name="SDLOG_START_DELAY" value="20" unit="s"/>
-      </module> -->
+      </module> 
+      -->
 
       <!-- use the paprazzi/sd2log tool to convert log to be able to use in logplotter as normal -->
       <!-- 
@@ -257,17 +258,15 @@
       </process>
       -->
 
-      <!--
+      <!-- 
       <module name="shell">
         <configure name="SHELL_PORT" value="usb_serial_debug"/>
       </module>
       -->
 
       <module name="sys_mon"/>
-      <!-- on the SPI bus and SD card for logger could be connected -->
-       <!-- An simple SD reader converter SD card slot connected over SPI bus to the MCU -->
-       
-      <!-- inter aircraft RSSI exchange -->
+
+      <!-- Inter aircraft RSSI exchange -->
       <!-- <module name="rssi"/> -->
       <!-- <module name="imu_quality_assessment"/> -->
 
@@ -328,8 +327,8 @@
     <!-- <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN"/> -->
     <define name="autopilot_motors_on" value="TRUE"/>
 
-    <!-- <configure name="USE_BARO_BOARD" value="TRUE"/> -->
-    <!-- <configure name="BARO_PERIODIC_FREQUENCY" value="50"/> -->
+    <configure name="USE_BARO_BOARD" value="TRUE"/>
+    <configure name="BARO_PERIODIC_FREQUENCY" value="50"/>
     <define name="USE_BARO_MEDIAN_FILTER"/>
     <define name="AUTOPILOT_DISABLE_AHRS_KILL"/>
 
@@ -348,7 +347,7 @@
     <module name="ahrs" type="float_dcm">
       <configure name="USE_MAGNETOMETER" value="FALSE"/><!-- AS in USE the device for readings , not the value in AHRS yet -->
       <define name="USE_AHRS_GPS_ACCELERATIONS"/>
-      <!-- <define name="AHRS_DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/> -->
+      <define name="AHRS_DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
     </module>
 
     <module name="ins" type="alt_float">
@@ -406,6 +405,32 @@
     <module name="flight_recorder"/> 
     -->
 
+    <!-- TODO: Determine which Slave ID -->
+    <!--
+    <module name="logger_sd_spi_direct.xml">
+      <configure name="SDLOGGER_DIRECT_SPI" value="spi1"/>
+      <configure name="SDLOGGER_DIRECT_SPI_SLAVE" value="SPI_SLAVE1"/>
+      <configure name="SDLOGGER_DIRECT_CONTROL_SWITCH" value="RADIO_AUX3"/>
+      <configure name="LOGGER_LED" value="3"/>
+    </module>
+    -->
+
+  <!-- Below As in telemetry file to add still...
+  <process name="Logger">
+    <mode name="default">
+      <message name="FBW_STATUS"          period="1.2"/>
+      <message name="DL_VALUE"            period="0.5"/>
+      <message name="IMU_ACCEL"           period="0.05"/>
+      <message name="IMU_GYRO"            period="0.05"/>
+      <message name="IMU_MAG"             period="0.1"/>
+      <message name="IMU_ACCEL_RAW"       period="0.002"/>
+      <message name="IMU_GYRO_RAW"        period="0.002"/>
+      <message name="IMU_MAG_RAW"         period="0.002"/>
+      <message name="COMMANDS"            period=".002"/>
+    </mode>
+  </process>
+  -->
+
     <!-- <module name="digital_cam_video">
       <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="5.0"/>
     </module> -->
@@ -428,10 +453,10 @@
     </module> 
     -->
 
-    <!-- <module name = "decawave_anchorless_communication" >
+    <module name = "decawave_anchorless_communication" >
       <configure name="DECWAVE_ANCHORLESS_UART" value="UART5"/>
       <configure name="DECWAVE_ANCHORLESS_BAUD" value="B115200"/>
-    </module> -->
+    </module>
 
   </firmware>
 
