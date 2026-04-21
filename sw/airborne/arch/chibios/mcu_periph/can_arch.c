@@ -106,6 +106,7 @@ static void can_thd_rx(void* arg) {
     msg_t status = canReceiveTimeout(cas->cand, CAN_ANY_MAILBOX, &rx_frame, chTimeMS2I(50));
     if(status == MSG_OK) { 
       uint32_t id = 0;
+#ifdef USE_CAN_FD
       if(rx_frame.common.XTD) {
         id = rx_frame.ext.EID | CAN_FRAME_EFF;
       } else {
@@ -117,6 +118,16 @@ static void can_thd_rx(void* arg) {
       if(rx_frame.common.ESI) {
         id |= CAN_FRAME_ERR;
       }
+#else
+      if(rx_frame.IDE) {
+        id = rx_frame.EID | CAN_FRAME_EFF;
+      } else {
+        id = rx_frame.SID;
+      }
+      if(rx_frame.RTR) {
+        id |= CAN_FRAME_RTR;
+      }
+#endif
 
       struct pprzcan_frame pprz_frame = {
         .can_id = id,
@@ -125,12 +136,14 @@ static void can_thd_rx(void* arg) {
         .timestamp = TIME_I2US(chVTGetSystemTimeX())
       };
       
+#if defined(USE_CAN_FD)
       if(rx_frame.FDF) {
         pprz_frame.flags |= CANFD_FDF;
       }
       if(rx_frame.common.ESI) {
         pprz_frame.flags |= CANFD_ESI;
       }
+#endif
 
 
 
@@ -149,6 +162,7 @@ static void can_thd_rx(void* arg) {
 int can_transmit_frame(struct pprzcan_frame* txframe, struct pprzaddr_can* addr) {
   CANTxFrame frame = {0};
   frame.DLC = can_len_to_dlc(txframe->len);
+#if defined(USE_CAN_FD)
   if(txframe->can_id & CAN_FRAME_RTR) {
     frame.common.RTR = 1;
   }
@@ -158,6 +172,17 @@ int can_transmit_frame(struct pprzcan_frame* txframe, struct pprzaddr_can* addr)
   } else {
     frame.std.SID = txframe->can_id & CAN_SID_MASK;
   }
+#else
+  if(txframe->can_id & CAN_FRAME_RTR) {
+    frame.RTR = 1;
+  }
+  if(txframe->can_id & CAN_FRAME_EFF) {
+    frame.IDE = 1;
+    frame.EID = txframe->can_id & CAN_EID_MASK;
+  } else {
+    frame.SID = txframe->can_id & CAN_SID_MASK;
+  }
+#endif
   memcpy(frame.data8, txframe->data, txframe->len);
 
   #if USE_CAN1
