@@ -72,6 +72,7 @@ static void logger_file_write_header(FILE *file) {
   fprintf(file, "vel_ref_x,vel_ref_y,vel_ref_z,");
   fprintf(file, "acc_x,acc_y,acc_z,");
   fprintf(file, "acc_ref_x,acc_ref_y,acc_ref_z,");
+  fprintf(file, "acc_meas_x,acc_meas_y,acc_meas_z,");
   fprintf(file, "att_phi,att_theta,att_psi,");
   fprintf(file, "rate_p,rate_q,rate_r,");
   fprintf(file, "roll_rate_calc,pitch_rate_calc,");
@@ -105,6 +106,7 @@ static void logger_file_write_row(FILE *file) {
   fprintf(file, "%f,%f,%f,", vel_ref[0], vel_ref[1], vel_ref[2]);
   fprintf(file, "%f,%f,%f,", acc->x, acc->y, acc->z);
   fprintf(file, "%f,%f,%f,", accel_ref[0], accel_ref[1], accel_ref[2]);
+  fprintf(file, "%f,%f,%f,", accel_a_filt[0], accel_a_filt[1], accel_a_filt[2]);
   fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
   fprintf(file, "%f,%f,", roll_rate_calc, pitch_rate_calc);

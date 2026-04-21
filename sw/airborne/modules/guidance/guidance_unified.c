@@ -42,8 +42,8 @@ float * guidance_function(float *);
 static const float VEL_LIMIT = 15.0f;
 static const float ACC_LIMIT = 6.0f;
 static const float THRUST_LIMIT = 1.0f;
-static const float K_P = 0.9f;
-static const float K_V = 1.3f;
+static const float K_P = 4.0f;
+static const float K_V = 4.0f;
 // static const float K_P = 3.0f;
 // static const float K_V = 0.8f;
 static const float ROLL_RATE_GAIN = 5.0f;
@@ -62,6 +62,7 @@ float pos_ref[3];
 float vel_ref[3];
 float accel_ref[3];
 float accel_ref_with_gains[3];
+float accel_a_filt[3];
 float T;
 float roll_rate_calc;
 float pitch_rate_calc;
@@ -76,9 +77,9 @@ struct FloatVect3 d_accel_ref_v_calc;
 #define M_PI 3.14159265358979323846
 #endif
 
-Butterworth2LowPass d_accel_filter_0;
-Butterworth2LowPass d_accel_filter_1;
-Butterworth2LowPass d_accel_filter_2;
+Butterworth2LowPass accel_filter_0;
+Butterworth2LowPass accel_filter_1;
+Butterworth2LowPass accel_filter_2;
 Butterworth2LowPass T_filter;  // "Measured thrust" (used for calculating commanded pitch rate, roll rate, thrust)
 Butterworth2LowPass T_cmd_filter;  // Commanded thrust
 Butterworth2LowPass cmd_pitch_filter;
@@ -115,9 +116,9 @@ void guidance_unified_init(void)
     float tau = 1.0 / (2.0 * M_PI * cutoff_freq);
     float sample_time = 1.0 / freq;
 
-    init_butterworth_2_low_pass(&d_accel_filter_0, tau, sample_time, 0.0);
-    init_butterworth_2_low_pass(&d_accel_filter_1, tau, sample_time, 0.0);
-    init_butterworth_2_low_pass(&d_accel_filter_2, tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&accel_filter_0, tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&accel_filter_1, tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&accel_filter_2, tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&T_filter, tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&T_cmd_filter, tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&cmd_pitch_filter, tau, sample_time, 0.0);
@@ -144,7 +145,7 @@ void guidance_unified_run(bool in_flight)
     // pos_ref[0] = -5 * sinf(counter/freq);
     // pos_ref[1] = 1.0 * cosf(counter/freq);
     // pos_ref[1] = 1 * cosf(2* counter/freq);
-    pos_ref[1] = 0.0;
+    pos_ref[1] = 1.5;
     pos_ref[2] = -1.5;
 
     // Analytical derivatives of pos_ref for the feedforward input
@@ -180,10 +181,10 @@ void guidance_unified_run(bool in_flight)
     // Current accelerations
     struct NedCoor_f *accel_actual = stateGetAccelNed_f();
     float accel_a[3];
-    float accel_a_filt[3];
     accel_a[0] = accel_actual->x;
     accel_a[1] = accel_actual->y;
     accel_a[2] = accel_actual->z;
+
 
     // Difference in accelerations: d_accel_ref
     static float d_accel_ref[3];
@@ -192,13 +193,15 @@ void guidance_unified_run(bool in_flight)
         float vel_component = (vel_ref[i] - vel_a[i]) * K_V;
         float acc_component = accel_ref[i];
 
+        // Filter measured acceleration
+        accel_a_filt[0] = update_butterworth_2_low_pass(&accel_filter_0, accel_a[0]);
+        accel_a_filt[1] = update_butterworth_2_low_pass(&accel_filter_1, accel_a[1]);
+        accel_a_filt[2] = update_butterworth_2_low_pass(&accel_filter_2, accel_a[2]);
+        
         accel_ref_with_gains[i] = pos_component + vel_component + acc_component;
 
-        d_accel_ref[i] = accel_ref_with_gains[i] - accel_a[i];  
+        d_accel_ref[i] = accel_ref_with_gains[i] - accel_a_filt[i]; 
 
-        d_accel_ref[0] = update_butterworth_2_low_pass(&d_accel_filter_0, d_accel_ref[0]);
-        d_accel_ref[1] = update_butterworth_2_low_pass(&d_accel_filter_1, d_accel_ref[1]);
-        d_accel_ref[2] = update_butterworth_2_low_pass(&d_accel_filter_2, d_accel_ref[2]);
     }
 
     //////////////// Control law ////////////////
@@ -244,7 +247,7 @@ float * guidance_function(float *d_accel_ref)
   struct FloatRMat *rot = stateGetNedToBodyRMat_f(); 
 
   // Add gravity to global z coordinate
-//   d_accel_ref[2] = d_accel_ref[2] - g*mass;
+  d_accel_ref[2] = d_accel_ref[2] - g*mass;
 
   // Calculate d_accel_ref_b via "matrix" calculation: d_accel_ref_b = rot * d_accel_ref 
   struct FloatVect3 d_accel_ref_b;
@@ -278,6 +281,11 @@ float * guidance_function(float *d_accel_ref)
   array[0] = ROLL_RATE_GAIN*2*quat.qx;
   array[1] = -PITCH_RATE_GAIN*2*quat.qy;
   array[2] = dcmd[2]/mass;
+
+
+  // Clamp thrust increment
+  if (array[2] > 2.0f) array[2] = 2.0f;
+  if (array[2] < -2.0f) array[2] = -2.0f;
 
   return array;
 }

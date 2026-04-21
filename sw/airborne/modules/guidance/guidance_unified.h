@@ -32,6 +32,7 @@ extern float pos_ref[3];
 extern float vel_ref[3];
 extern float accel_ref[3];
 extern float accel_ref_with_gains[3];
+extern float accel_a_filt[3];
 extern float T;
 extern float roll_rate_calc;
 extern float pitch_rate_calc;
