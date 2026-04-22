@@ -62,7 +62,8 @@ typedef struct {
     float C_Z;
     float ACCEL_BOUND;
     float ACT_CUTOFF_OMEGA;
-    float FILT_CUTOFF_FREQ;
+    float ANG_ACCEL_FILT_CUTOFF_FREQ;
+    float ACCEL_FILT_CUTOFF_FREQ;
     
     // data
     float timestamp;

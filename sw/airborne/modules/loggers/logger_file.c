@@ -128,7 +128,8 @@ static void logger_file_write_header(FILE *file) {
     fprintf(file, "#C_Z,%.3f\n", dbg.C_Z);
     fprintf(file, "#ACCEL_BOUND,%.2f\n", dbg.ACCEL_BOUND);
     fprintf(file, "#ACT_CUTOFF_OMEGA,%.2f\n", dbg.ACT_CUTOFF_OMEGA);
-    fprintf(file, "#FILT_CUTOFF_FREQ,%.2f\n", dbg.FILT_CUTOFF_FREQ);
+    fprintf(file, "#ANG_ACCEL_FILT_CUTOFF_FREQ,%.1f\n", dbg.ANG_ACCEL_FILT_CUTOFF_FREQ);
+    fprintf(file, "#ACCEL_FILT_CUTOFF_FREQ,%.1f\n", dbg.ACCEL_FILT_CUTOFF_FREQ);
 
     // data
     fprintf(file, "timestamp");

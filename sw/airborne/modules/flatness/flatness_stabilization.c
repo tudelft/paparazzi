@@ -40,10 +40,10 @@
 
 #define SAFE_SQRT(x) (sqrtf((x) > 0 ? (x) : 0.0f))
 
-// ---- level circle ---- //
-// static const float DOWN_OFFSET = -2.0f;
-// static const float NORTH_OFFSET = 0.0f;
-// static const float EAST_OFFSET = 0.0f;
+// ------------------------------------- level circle ------------------------------------- //
+static const float DOWN_OFFSET = -2.0f;
+static const float NORTH_OFFSET = 0.0f;
+static const float EAST_OFFSET = 0.0f;
 
 // #define REF_TRAJ_FILENAME "circle_vs2_r2.csv"
 // #define NB_CSV_ROWS 1998
@@ -51,13 +51,13 @@
 // #define REF_TRAJ_FILENAME "circle_vs3_r2.csv"
 // #define NB_CSV_ROWS 1698
 
-// #define REF_TRAJ_FILENAME "circle_vs4_r2.csv"
-// #define NB_CSV_ROWS 1398
+#define REF_TRAJ_FILENAME "circle_vs5_r2.csv"
+#define NB_CSV_ROWS 1198
 
-// #define REF_TRAJ_FILENAME "circle_vs5_r2.csv"
-// #define NB_CSV_ROWS 1198
+#define REF_TRAJ_FILENAME "circle_vs6_r2.csv"
+#define NB_CSV_ROWS 1098
 
-// ---- snap loop ---- //
+// ------------------------------------- snap loop ------------------------------------- //
 // static const float DOWN_OFFSET = -1.0f;
 // static const float NORTH_OFFSET = -5.0f + 1.41f;
 // static const float EAST_OFFSET = -5.0f + 1.41f;
@@ -65,16 +65,16 @@
 // #define REF_TRAJ_FILENAME "snap_loop_vs2_r2.csv"
 // #define NB_CSV_ROWS 1348
 
-// ---- immelmann ---- //
-static const float DOWN_OFFSET = -1.0f;
-static const float NORTH_OFFSET = 0.0f;
-static const float EAST_OFFSET = -5.0f + 2.0f;
+// ------------------------------------- immelmann ------------------------------------- //
+// static const float DOWN_OFFSET = -2.0f;
+// static const float NORTH_OFFSET = 0.0f;
+// static const float EAST_OFFSET = -5.0f + 2.0f;
 
 // #define REF_TRAJ_FILENAME "snap_immelmann_vs2_r1.csv"
 // #define NB_CSV_ROWS 865
 
-#define REF_TRAJ_FILENAME "snap_immelmann_vs3_r1.csv"
-#define NB_CSV_ROWS 577
+// #define REF_TRAJ_FILENAME "snap_immelmann_vs3_r1.csv"
+// #define NB_CSV_ROWS 577
 
 // #define REF_TRAJ_FILENAME "snap_immelmann_vs3.5_r1.csv"
 // #define NB_CSV_ROWS 495
@@ -101,21 +101,14 @@ typedef struct {
     float psi;
 } Traj_row_t;
 
-// constants
-static const float C_X = -0.172f;
-static const float C_Z = -0.079f;
-// static const float C_X = 0.0f;
-// static const float C_Z = 0.0f;
-
-// static const float MU_X_v = 4.5f  / 100000000.0f;
-// static const float MU_Y_v = 10.4f / 100000000.0f;
-// static const float MU_Z_v = 0.88f  / 100000000.0f;
-// static const float C_T_v  = -0.25f  / 100000000.0f;
+// constantsx
+static const float C_X = -0.850f; // -0.170f
+static const float C_Z = -0.170f; // -0.060f
 
 static const float MU_X_v = 4.05f  / 100000000.0f;
 static const float MU_Y_v = 8.54f / 100000000.0f;
 static const float MU_Z_v = 0.93f  / 100000000.0f;
-static const float C_T_v  = -0.281f  / 100000000.0f;
+static const float C_T_v  = -0.460f  / 100000000.0f;
 
 static const float MIN_TAU = -0.981f;
 static const float MAX_TAU = -2.0f*9.81f;
@@ -123,7 +116,8 @@ static const float ACCEL_BOUND = 1.6f*9.81f;
 static const float RATES_BOUND = (float)M_PI/4.0f;
 
 static const float ACT_CUTOFF_OMEGA = 19.0f;
-static const float FILT_CUTOFF_FREQ = 5.0f;
+static const float ANG_ACCEL_FILT_CUTOFF_FREQ = 5.0f;
+static const float ACCEL_FILT_CUTOFF_FREQ = 5.0f;
 static const Gain_t Kq = {2.5f, 2.5f, 2.5f};
 static const Gain_t Komega = {10.0f, 10.0f, 10.0f};
 static const Gain_t Kp = {1.0f, 1.0f, 1.0f};
@@ -207,7 +201,8 @@ static void expose_dbg_variables(void)
     dbg.C_Z = C_Z;
     dbg.ACCEL_BOUND = ACCEL_BOUND;
     dbg.ACT_CUTOFF_OMEGA = ACT_CUTOFF_OMEGA;
-    dbg.FILT_CUTOFF_FREQ = FILT_CUTOFF_FREQ;
+    dbg.ACCEL_FILT_CUTOFF_FREQ = ACCEL_FILT_CUTOFF_FREQ;
+    dbg.ANG_ACCEL_FILT_CUTOFF_FREQ = ANG_ACCEL_FILT_CUTOFF_FREQ;
 
     //data
     dbg.timestamp = timestamp;
@@ -271,17 +266,18 @@ float throttle_from_spec_thrust(float spec_thrust, float min_spec_thrust, float 
 
 void flatness_stabilization_init(void)
 {
-    float tau = 1.0f / (2.0f * (float)M_PI * FILT_CUTOFF_FREQ);
+    float tau_ang_accel = 1.0f / (2.0f * (float)M_PI * ANG_ACCEL_FILT_CUTOFF_FREQ);
+    float tau_accel = 1.0f / (2.0f * (float)M_PI * ACCEL_FILT_CUTOFF_FREQ);
     float sample_time = 1.0f / PERIODIC_FREQUENCY;
 
     for (int i = 0; i < 4; i++) {
-        init_butterworth_2_low_pass(&act_filter[i], tau, sample_time, 0.0f);
+        init_butterworth_2_low_pass(&act_filter[i], tau_ang_accel, sample_time, 0.0f);
     }
 
     for (int i = 0; i < 3; i++) {
-        init_butterworth_2_low_pass(&rates_num_der_filter[i], tau, sample_time, 0.0f);
-        init_butterworth_2_low_pass(&accel_filter[i], tau, sample_time, 0.0f);
-        init_butterworth_2_low_pass(&spec_force_filter[i], tau, sample_time, 0.0f);
+        init_butterworth_2_low_pass(&rates_num_der_filter[i], tau_ang_accel, sample_time, 0.0f);
+        init_butterworth_2_low_pass(&accel_filter[i], tau_accel, sample_time, 0.0f);
+        init_butterworth_2_low_pass(&spec_force_filter[i], tau_accel, sample_time, 0.0f);
     }
 
     // actuator dynamics
@@ -365,6 +361,9 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
     inv_rot_flatness(spec_thrust_sp, m_cmd, act.cmd);
     
     for (int i = 0; i < 4; i++) {
+        if (act.cmd[i] > 9600.0f) {
+            act.cmd[i] = 9600.0f;
+        }
         actuators_pprz[i] = act.cmd[i];
     }
 
@@ -417,7 +416,7 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
         act.state_filt[i] = act_filter[i].o[0];
     }
 
-    // calculate body velocity and norm.
+    // calculate body velocity and norm
     struct FloatRMat *R_i2b = stateGetNedToBodyRMat_f();
     struct FloatVect3 vel_b;
     float_rmat_vmult(&vel_b, R_i2b, vel_i);
