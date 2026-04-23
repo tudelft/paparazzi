@@ -51,11 +51,23 @@ static const float EAST_OFFSET = 0.0f;
 // #define REF_TRAJ_FILENAME "circle_vs3_r2.csv"
 // #define NB_CSV_ROWS 1698
 
+// #define REF_TRAJ_FILENAME "circle_vs4_r2.csv"
+// #define NB_CSV_ROWS 1298
+
 // #define REF_TRAJ_FILENAME "circle_vs5_r2.csv"
 // #define NB_CSV_ROWS 1198
 
-#define REF_TRAJ_FILENAME "circle_vs6_r2.csv"
-#define NB_CSV_ROWS 1098
+// #define REF_TRAJ_FILENAME "circle_vs6_r2.csv"
+// #define NB_CSV_ROWS 1098
+
+// #define REF_TRAJ_FILENAME "circle_vs3_r2_long.csv"
+// #define NB_CSV_ROWS 1998
+
+// #define REF_TRAJ_FILENAME "circle_vs4_r2_long.csv"
+// #define NB_CSV_ROWS 1998
+
+// #define REF_TRAJ_FILENAME "circle_vs5_r2_long.csv"
+// #define NB_CSV_ROWS 1998
 
 // ------------------------------------- snap loop ------------------------------------- //
 // static const float DOWN_OFFSET = -1.0f;
@@ -68,16 +80,13 @@ static const float EAST_OFFSET = 0.0f;
 // ------------------------------------- immelmann ------------------------------------- //
 // static const float DOWN_OFFSET = -2.0f;
 // static const float NORTH_OFFSET = 0.0f;
-// static const float EAST_OFFSET = -5.0f + 2.0f;
+// static const float EAST_OFFSET = -5.0f + 2.5f;
 
-// #define REF_TRAJ_FILENAME "snap_immelmann_vs2_r1.csv"
-// #define NB_CSV_ROWS 865
+// #define REF_TRAJ_FILENAME "immelmann_vs2.csv"
+// #define NB_CSV_ROWS 842
 
-// #define REF_TRAJ_FILENAME "snap_immelmann_vs3_r1.csv"
-// #define NB_CSV_ROWS 577
-
-// #define REF_TRAJ_FILENAME "snap_immelmann_vs3.5_r1.csv"
-// #define NB_CSV_ROWS 495
+// #define REF_TRAJ_FILENAME "immelmann_vs3.csv"
+// #define NB_CSV_ROWS 561
 
 #define NB_CSV_COLS 18
 
