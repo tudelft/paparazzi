@@ -46,16 +46,15 @@
       <configure name="PERIODIC_FREQUENCY" value="500"/>
 
       <configure name="AHRS_PROPAGATE_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
-      <configure name="AHRS_CORRECT_FREQUENCY" value="500"/>
+      <configure name="AHRS_CORRECT_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
 
-      <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="20"/>
-      <!--
-      <configure name="BARO_PERIODIC_FREQUENCY" value="50"/>
+      <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/>
+      <configure name="BARO_PERIODIC_FREQUENCY" value="100"/> <!-- 8.22 ms response -->
 
       <configure name="NAVIGATION_FREQUENCY" value="20"/>
       <configure name="CONTROL_FREQUENCY" value="100"/>
       <configure name="TELEMETRY_FREQUENCY" value="50"/>
-      <configure name="MODULES_FREQUENCY" value="500"/>
+      <configure name="MODULES_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
       -->
 
       <module name="imu" type="mpu9250_spi">
@@ -101,7 +100,7 @@
         <!-- <define name="SDP3X_PRESSURE_SCALE" value="1.0"/> -->        <!-- pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet) -->
         <!-- <define name="SDP3X_PRESSURE_OFFSET" value="0.0"/>-->        <!-- pressure offset in Pa (default: set according to pressure range and output type according to datasheet) -->
         <!-- <define name="SDP3X_AIRSPEED_SCALE" value="1.6327"/> -->        <!-- quadratic scale factor to convert differential pressure to airspeed" -->
-        <!--<define name="USE_AIRSPEED_LOWPASS_FILTER" value="TRUE"/>-->        <!-- Already TRUE per default -->
+        <define name="USE_AIRSPEED_LOWPASS_FILTER" value="TRUE"/>        <!-- Already TRUE per default -->
         <define name="SDP3X_LOWPASS_TAU" value="0.09"/>
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
         <define name="USE_AIRSPEED" value="TRUE"/>
@@ -130,8 +129,8 @@
       <module name="mag" type="qmc5883l">
         <define name="USE_I2C1"/>
         <configure name="MAG_QMC5883L_I2C_DEV" value="i2c1"/>
-        <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="25"/>
-        <define name="MODULE_QMC5883L_UPDATE_AHRS" value="FALSE"/>
+        <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="200"/>
+        <define name="MODULE_QMC5883L_UPDATE_AHRS" value="TRUE"/>
         <define name="QMC5883L_CHAN_X" value="1"/>
         <define name="QMC5883L_CHAN_Y" value="0"/>
         <define name="QMC5883L_CHAN_Z" value="2"/>
@@ -150,13 +149,12 @@
         <configure name="RANGEFINDER_I2C_COMPENSATE_ROTATION" value="FALSE"/>
         <configure name="RANGEFINDER_I2C_PERIODIC_FREQUENCY" value="30"/>
         <define name="RANGEFINDER_I2C_USE_FILTER" value="TRUE"/>
-        <define name="RANGEFINDER_I2C_MEDIAN_SIZE" value="9"/>
+        <define name="RANGEFINDER_I2C_MEDIAN_SIZE" value="7"/>
         <define name="RANGEFINDER_I2C_MIN_RANGE" value="0.25" unit="m"/>
         <define name="RANGEFINDER_I2C_MAX_RANGE" value="6.2" unit="m"/>
         <define name="RANGEFINDER_I2C_OFFSET" value="0.02"/>
         <define name="RANGEFINDER_I2C_SCALE" value="0.000044"/>
-        <!-- <define name="RANGEFINDER_I2C_SYNC_SEND"/> -->
-        <!-- TODO: Disable after all tuning is done -->
+        <!-- <define name="RANGEFINDER_I2C_SYNC_SEND"/> --><!-- TODO: Disable after all tuning is done -->
       </module>
 
       <module name="actuators" type="pwm">
@@ -177,7 +175,7 @@
         <configure name="MODEM_BAUD" value="B57600"/><!--Connector Port Telem2 -->
       </module>
 
-      <!-- <module name="geo_mag"/> -->
+      <module name="geo_mag"/>
 
       <module name="sys_mon"/>
       <!-- 
