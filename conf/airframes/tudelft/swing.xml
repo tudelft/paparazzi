@@ -40,8 +40,8 @@
     
         <module name="guidance_unified">
             <define name="MOL_DRONE_WEIGHT" value="0.08"/>
-            <define name="FILT_CUTOFF" value="100"/>
-            <!-- <define name="FILT_CUTOFF" value="20"/> -->
+            <!-- <define name="FILT_CUTOFF" value="200"/> -->
+            <define name="FILT_CUTOFF" value="10"/>
         </module>
         
         <!-- ins configured for optitrack -->
