@@ -51,8 +51,8 @@ static const float EAST_OFFSET = 0.0f;
 // #define REF_TRAJ_FILENAME "circle_vs3_r2.csv"
 // #define NB_CSV_ROWS 1698
 
-#define REF_TRAJ_FILENAME "circle_vs5_r2.csv"
-#define NB_CSV_ROWS 1198
+// #define REF_TRAJ_FILENAME "circle_vs5_r2.csv"
+// #define NB_CSV_ROWS 1198
 
 #define REF_TRAJ_FILENAME "circle_vs6_r2.csv"
 #define NB_CSV_ROWS 1098
@@ -101,9 +101,9 @@ typedef struct {
     float psi;
 } Traj_row_t;
 
-// constantsx
-static const float C_X = -0.850f; // -0.170f
-static const float C_Z = -0.170f; // -0.060f
+// constants
+static const float C_X = -0.300;
+static const float C_Z = -0.050f;
 
 static const float MU_X_v = 4.05f  / 100000000.0f;
 static const float MU_Y_v = 8.54f / 100000000.0f;
@@ -169,6 +169,9 @@ static struct FloatVect3 *accel_start;
 float fi_vector[3] = {0.0f, 0.0f, 0.0f};
 float fi_vector_filt[3] = {0.0f, 0.0f, 0.0f};
 float sign_test;
+static struct FloatVect3 pos_start_buf;
+static struct FloatVect3 vel_start_buf;
+static struct FloatVect3 accel_start_buf;
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -293,6 +296,8 @@ void flatness_stabilization_init(void)
     }
     
     load_csv_traj();
+
+    // todo should i close the fd?
 }
 
 void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpoint *att_sp, float spec_thrust_sp, int32_t *cmd)
@@ -474,6 +479,7 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
             ey_hat.z = -ey_hat.z;
         }
         
+        // todo guard against v // f
 
         // todo guard against r // ey
 
@@ -650,18 +656,30 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
     switch (fsm_state)
     {
         case FSM_INIT:
+            // todo: getting the state is getting a pointer to the struct updated by another process.
+            // no need to "get" the most recent one by doing the following. So in the whole file one is enought then jusr dereferencing
             pos_start = (struct FloatVect3 *)stateGetPositionNed_f();
-            vel_start = (struct FloatVect3 *)stateGetSpeedNed_f();
-            accel_start = (struct FloatVect3 *)stateGetAccelNed_f();
+            // vel_start = (struct FloatVect3 *)stateGetSpeedNed_f();
+            // accel_start = (struct FloatVect3 *)stateGetAccelNed_f();
             
-            vel_start->x = 0.0f; vel_start->y = 0.0f; vel_start->z = 0.0f;
-            accel_start->x = 0.0f; accel_start->y = 0.0f; accel_start->z = 0.0f;
+            // copy the state (so that it can be manipulated)
+            pos_start_buf.x = pos_start->x;
+            pos_start_buf.y = pos_start->y;
+            pos_start_buf.z = pos_start->z;
+
+            vel_start_buf.x = 0.0f;
+            vel_start_buf.y = 0.0f;
+            vel_start_buf.z = 0.0f;
+            
+            accel_start_buf.x = 0.0f;
+            accel_start_buf.y = 0.0f;
+            accel_start_buf.z = 0.0f;
 
             pos_end.x = traj[0].px + NORTH_OFFSET;
             pos_end.y = traj[0].py + EAST_OFFSET;
             pos_end.z = traj[0].pz + DOWN_OFFSET;
 
-            compute_quintic_coefficients(pos_start, &pos_end, vel_start, accel_start);
+            compute_quintic_coefficients(&pos_start_buf, &pos_end, &vel_start_buf, &accel_start_buf);
 
             timestamp_p2p_start = get_sys_time_float();
             fsm_state = FSM_P2P;
@@ -697,7 +715,7 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
 
         case FSM_TRAJECTORY:
             timestamp_traj = get_sys_time_float() - timestamp_traj_start;
-            int csv_i = (int)roundf(timestamp_traj/0.01f);
+            int csv_i = (int)roundf(timestamp_traj/0.01f); // todo this is not a good implementation, it may skip samples
             
             if (csv_i < NB_CSV_ROWS) {
                 pos_ref.x = traj[csv_i].px + NORTH_OFFSET;
@@ -764,6 +782,8 @@ void compute_quintic_ref(float t, struct FloatVect3 *ps, const struct FloatVect3
 
 void compute_quintic_coefficients(struct FloatVect3 *ps, const struct FloatVect3 *pe, struct FloatVect3 *vs, struct FloatVect3 *as)
 {
+    // todo: handle divisions by zero
+
     quintic_coeff_n[0] = 0;
     quintic_coeff_n[1] = vs->x/(pe->x - ps->x);
     quintic_coeff_n[2] = as->x/(2*(pe->x - ps->x));
