@@ -154,6 +154,7 @@ static void logger_file_write_header(FILE *file) {
     fprintf(file, ",f_cmd_n,f_cmd_e,f_cmd_d");
     fprintf(file, ",acc_filt_n,acc_filt_e,acc_filt_d");
     fprintf(file, ",sign_test");
+    fprintf(file, ",vf_angle_cos");
     
     fprintf(file, ",qs_sp,qx_sp,qy_sp,qz_sp");
     fprintf(file, ",qs,qx,qy,qz");
@@ -197,6 +198,7 @@ static void logger_file_write_row(FILE *file) {
     fprintf(file, ",%f,%f,%f", dbg.f_cmd.x, dbg.f_cmd.y, dbg.f_cmd.z);
     fprintf(file, ",%f,%f,%f", dbg.accel_filt.x, dbg.accel_filt.y, dbg.accel_filt.z);
     fprintf(file, ",%f", dbg.sign_test);
+    fprintf(file, ",%f", dbg.vf_angle_cos);
 
     fprintf(file, ",%f,%f,%f,%f", dbg.quat_sp->qi, dbg.quat_sp->qx, dbg.quat_sp->qy, dbg.quat_sp->qz);
     fprintf(file, ",%f,%f,%f,%f", dbg.quat->qi, dbg.quat->qx, dbg.quat->qy, dbg.quat->qz);

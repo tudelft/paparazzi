@@ -41,9 +41,9 @@
 #define SAFE_SQRT(x) (sqrtf((x) > 0 ? (x) : 0.0f))
 
 // ------------------------------------- level circle ------------------------------------- //
-static const float DOWN_OFFSET = -2.0f;
-static const float NORTH_OFFSET = 0.0f;
-static const float EAST_OFFSET = 0.0f;
+// static const float DOWN_OFFSET = -2.0f;
+// static const float NORTH_OFFSET = 0.0f;
+// static const float EAST_OFFSET = 0.0f;
 
 // #define REF_TRAJ_FILENAME "circle_vs2_r2.csv"
 // #define NB_CSV_ROWS 1998
@@ -78,15 +78,28 @@ static const float EAST_OFFSET = 0.0f;
 // #define NB_CSV_ROWS 1348
 
 // ------------------------------------- immelmann ------------------------------------- //
-// static const float DOWN_OFFSET = -2.0f;
-// static const float NORTH_OFFSET = 0.0f;
-// static const float EAST_OFFSET = -5.0f + 2.5f;
+static const float DOWN_OFFSET = -1.0f;
+static const float NORTH_OFFSET = 0.0f;
+static const float EAST_OFFSET = -5.0f + 2.5f;
 
 // #define REF_TRAJ_FILENAME "immelmann_vs2.csv"
 // #define NB_CSV_ROWS 842
 
+#define REF_TRAJ_FILENAME "immelmann_vs2.5.csv"
+#define NB_CSV_ROWS 675
+
 // #define REF_TRAJ_FILENAME "immelmann_vs3.csv"
 // #define NB_CSV_ROWS 561
+
+// ------------------------------------- immelmann diag ------------------------------------- //
+// static const float DOWN_OFFSET = -1.5f;
+// static const float NORTH_OFFSET = -5.0f + 3.0f;
+// static const float EAST_OFFSET = -5.0f + 3.0f;
+
+// #define REF_TRAJ_FILENAME "immelmann_diag_vs3.csv"
+// #define NB_CSV_ROWS 830
+
+
 
 #define NB_CSV_COLS 18
 
@@ -173,14 +186,15 @@ bool flatness_guided;
 static FILE *ref_traj_fd = NULL;
 static Traj_row_t traj[NB_CSV_ROWS];
 static struct FloatVect3 *pos_start;
-static struct FloatVect3 *vel_start;
-static struct FloatVect3 *accel_start;
+// static struct FloatVect3 *vel_start;
+// static struct FloatVect3 *accel_start;
 float fi_vector[3] = {0.0f, 0.0f, 0.0f};
 float fi_vector_filt[3] = {0.0f, 0.0f, 0.0f};
 float sign_test;
 static struct FloatVect3 pos_start_buf;
 static struct FloatVect3 vel_start_buf;
 static struct FloatVect3 accel_start_buf;
+float vf_angle_cos;
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -236,6 +250,7 @@ static void expose_dbg_variables(void)
     dbg.f_cmd.x = f_cmd[0]; dbg.f_cmd.y = f_cmd[1]; dbg.f_cmd.z = f_cmd[2];
     dbg.accel_filt.x = accel_filt[0]; dbg.accel_filt.y = accel_filt[1]; dbg.accel_filt.z = accel_filt[2];
     dbg.sign_test = sign_test;
+    dbg.vf_angle_cos = vf_angle_cos;
 
     dbg.quat_sp = &quat_sp;
     dbg.quat = quat;
@@ -474,10 +489,17 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
         // coordinated
         struct FloatVect3 ey, ey_hat, ex, ex_hat, ez, ez_hat, tmp;
         struct FloatVect3 f_cmd_vect3 = {f_cmd[0], f_cmd[1], f_cmd[2]};
-        VECT3_CROSS_PRODUCT(ey, *vel_i, f_cmd_vect3)
-        VECT3_SDIV(ey_hat, ey, sqrtf(VECT3_NORM2(ey)))
-
         struct FloatVect3 ey_hat_cur = {R_i2b->m[3], R_i2b->m[4], R_i2b->m[5]};
+        vf_angle_cos = VECT3_DOT_PRODUCT(*vel_i, f_cmd_vect3)/(sqrtf(VECT3_NORM2(*vel_i))*sqrtf(VECT3_NORM2(f_cmd_vect3)));
+        
+        if ((vf_angle_cos > 0.9781f) || (vf_angle_cos < -0.9781f)) { // 10 degrees -> cos = 0.9848
+            // guard against v // f
+            VECT3_COPY(ey_hat, ey_hat_cur)
+        } else {
+            VECT3_CROSS_PRODUCT(ey, *vel_i, f_cmd_vect3)
+            VECT3_SDIV(ey_hat, ey, sqrtf(VECT3_NORM2(ey)))
+        }
+
         sign_test = VECT3_DOT_PRODUCT(ey_hat_cur, ey_hat);
         if (sign_test >= 0) {
             ;
@@ -488,8 +510,6 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
             ey_hat.z = -ey_hat.z;
         }
         
-        // todo guard against v // f
-
         // todo guard against r // ey
 
         struct FloatVect3 arb_vect = {1.0f, 1.0f, 1.0f};
