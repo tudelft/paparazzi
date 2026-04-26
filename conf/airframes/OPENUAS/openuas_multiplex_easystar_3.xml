@@ -34,6 +34,8 @@
     + If testing " lassic" (as in not ETECS..) make sure to disable the settings/estimation/ac_char
     + One could set the USE_AIRSPEED value to FALSE at first, for no airspeed tests
     + Make sure v7.0 or higher of PPRZ autopilot release is used
+    + SBUS receiver output must be set to non-inverted, this is done by soldering the RX SBus output wire on pad B of the OpenRXSR RC recever
+    + SBUS RC RX on UART1 
     + Telemetry on UART2
     + UWB serial data via UART5 RX and TX (PC12)
   </description>
@@ -444,18 +446,25 @@
     <!-- <module name="imu_quality_assessment"/>
     <module name="tune_airspeed"/> -->
 
-    <!-- 
-    <module name="dw1000_arduino">
-      <configure name="DW1000_ARDUINO_UART" value="UART5"/>
-      <configure name="DW1000_ARDUINO_BAUD" value="B115200"/>
-      <configure name="DW1000_USE_AS_LOCAL_POS" value="TRUE"/>
-      <configure name="DW1000_USE_AS_GPS" value="FALSE"/>
-    </module> 
-    -->
-
+    <!-- For relative localization and inter-aircraft communication, use the following module 
+    together with the appropriate code running on the attached UWB module on the Arduino side. -->
     <module name = "decawave_anchorless_communication" >
-      <configure name="DECWAVE_ANCHORLESS_UART" value="UART5"/>
-      <configure name="DECWAVE_ANCHORLESS_BAUD" value="B115200"/>
+      <!--<configure name="DECWAVE_ANCHORLESS_UART" value="UART5"/>-->
+      <!-- <configure name="DECWAVE_ANCHORLESS_BAUD" value="B115200"/> -->
+      <configure name="SERIAL_UART" value="UART5"/>
+      <configure name="SERIAL_BAUD" value="B115200"/>
+      <!-- <configure name="SERIAL_LED" value="3"/> -->
+    </module>
+
+    <module name="relative_localization_filter">
+      <!-- <configure name="RELATIVE_LOCALIZATION_FILTER_FREQUENCY" value="50"/>
+      <configure name="RELATIVE_LOCALIZATION_FILTER_MAX_RANGE" value="20.0" unit="m"/>
+      <configure name="RELATIVE_LOCALIZATION_FILTER_MIN_RANGE" value="0.5" unit="m"/>
+      <configure name="RELATIVE_LOCALIZATION_FILTER_MAX_VELOCITY" value="10.0" unit="m/s"/>
+      <configure name="RELATIVE_LOCALIZATION_FILTER_MIN_VELOCITY" value="0.1" unit="m/s"/>
+      <configure name="RELATIVE_LOCALIZATION_FILTER_PROCESS_NOISE" value="0.1"/>
+      <configure name="RELATIVE_LOCALIZATION_FILTER_MEASUREMENT_NOISE" value="0.5"/>
+      <configure name="RELATIVE_LOCALIZATION_FILTER_INITIAL_ESTIMATE" value="0.0"/> -->
     </module>
 
   </firmware>

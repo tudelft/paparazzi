@@ -55,7 +55,7 @@
       <configure name="CONTROL_FREQUENCY" value="100"/>
       <configure name="TELEMETRY_FREQUENCY" value="50"/>
       <configure name="MODULES_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
-      -->
+
 
       <module name="imu" type="mpu9250_spi">
         <define name="IMU_MPU9250_GYRO_RANGE" value="MPU9250_GYRO_RANGE_2000"/>

@@ -115,14 +115,14 @@ static void send_relative_localization_data(struct transport_tx *trans, struct l
     pprzmsg_cnt = 0;
   }
 
-  if (number_filters > 0) {
+  //if (number_filters > 0) {//DEBUG always send the first filter for testing
     pprz_msg_send_RLFILTER(trans, dev, AC_ID,
                            &id_array[pprzmsg_cnt], &range_array[pprzmsg_cnt],
                            &ekf_rl[pprzmsg_cnt].X[0], &ekf_rl[pprzmsg_cnt].X[1], // x y (tracked wrt own)
                            &ekf_rl[pprzmsg_cnt].X[2], &ekf_rl[pprzmsg_cnt].X[3], // vx vy (own)
                            &ekf_rl[pprzmsg_cnt].X[4], &ekf_rl[pprzmsg_cnt].X[5], // vx vy (tracked)
                            &ekf_rl[pprzmsg_cnt].X[6]); // height separation
-  }
+  //}
 };
 
 void relative_localization_filter_init(void)
