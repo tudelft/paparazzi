@@ -7,13 +7,13 @@
     + FC:           Lisa MX v2.1
     + ACTUATORS:    Default of set MS-12020-MG
     + GNSS          uBlox M10
-    + IMU           Default Aspirin v2.2 
+    + IMU           Default Aspirin v2.1 
     + MAGNETOMETER: QMC5883L on GNSS module
     + ESC:          Default of set ROXXY BL-Control 720 S-BEC ESC
     + RCRX:         OpenRXSR Receiver
     + AIRSPEED:     Sensirion SDP33
     + BARO          MS5611 on FC or the BMP88
-    + TELEMETRY:    SiK 868MHz/C3WiFi/E52-400 22SMesh/XBee S1 pro Mesh
+    + TELEMETRY:    E52-400NW22S
     + CURRENT:      N/A
     + RANGEFINDER:  Surertech VB22A
     + MOTOR:        Default of set ROXXY BL Outrunner C28-30 1100Kvwhatevery is needed
@@ -36,7 +36,7 @@
     + Make sure v7.0 or higher of PPRZ autopilot release is used
     + SBUS receiver output must be set to non-inverted, this is done by soldering the RX SBus output wire on pad B of the OpenRXSR RC recever
     + SBUS RC RX on UART1 
-    + Telemetry on UART2
+    + Telemetry on UART2 , use B9600 baudrate if using mesh network module else B57600
     + UWB serial data via UART5 RX and TX (PC12)
   </description>
 
@@ -122,7 +122,7 @@
       </module>
 
       <module name="gps" type="ublox">
-        <configure name="GPS_PORT" value="UART3"/><!-- Default is UART3-->
+        <configure name="GPS_PORT" value="UART3"/>
         <configure name="GPS_BAUD" value="B460800"/>
       </module>
 
@@ -132,12 +132,10 @@
       <module name="geo_mag"/>
 
       <!-- NOT USED setup manually in u-center, only enable when needed-->
-      <!--
       <module name="gps" type="ubx_ucenter">
         <define name="GPS_UBX_UCENTER_RATE" value="50"/>
         <define name="GPS_UBX_NAV5_DYNAMICS" value="NAV5_DYN_AIRBORNE_4G"/>
       </module> 
-      -->
   
       <!-- 
       <configure name="USE_ADC_1" value="TRUE"/>
@@ -189,10 +187,10 @@
       <module name="radio_control" type="sbus">
         <configure name="SBUS_PORT" value="UART1"/>
         <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>
+        <!-- <define name="RADIO_MANUALRELEASE" value="RADIO_AUX6"/> -->
         <!-- Mode set one a three way switch. Per default already GEAR if not defined  
         <define name="RADIO_GEAR" value="RADIO_AUX2"/>
         <define name="RADIO_FLAP" value="RADIO_AUX3"/>
-        <define name="RADIO_MANUALRELEASE" value="RADIO_AUX6"/>
         <define name="RADIO_LIGHTS" value="RADIO_AUX6"/>
         -->
       </module>
@@ -200,7 +198,7 @@
       <module name="telemetry" type="transparent">
         <!-- <configure name="MODEM_PORT" value="usb_serial"/> -->       
         <configure name="MODEM_PORT" value="UART2"/>
-        <configure name="MODEM_BAUD" value="B9600"/><!-- use B9600 baudrate if using mesh network module else B57600-->
+        <configure name="MODEM_BAUD" value="B9600"/>
       </module>
 
       <!-- Only enable with a module that supports v_ctl_auto_airspeed_setpoint-->
@@ -477,10 +475,8 @@
     <servo name="S_RUDDER"         no="3" min="1100" neutral="1500" max="1900"/>
     <servo name="S_AILERON_RIGHT"  no="4" min="1100" neutral="1500" max="1900"/>
     <servo name="S_LIGHT"          no="5" min="1100" neutral="1500" max="1900"/>
-     <!--
     <servo name="S_DROP"           no="6" min="1100" neutral="1500" max="1900"/>
-    <servo name="S_CAM"            no="7" min="1100" neutral="1500" max="1900"/> 
-    -->
+    <servo name="S_SHUTTER"        no="7" min="1100" neutral="1500" max="1900"/> 
   </servos>
 
   <rc_commands>

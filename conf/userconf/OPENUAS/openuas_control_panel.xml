@@ -177,6 +177,16 @@
       </program>
       <program name="Real-time Plotter"/>
     </session>
+    <session name="Easystar Desktest">
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/ttyACM1"/>
+        <arg flag="-s" constant="9600"/>
+      </program>
+      <program name="Server"/>
+      <program name="GCS"/>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+    </session>
     <session name="Flight ACM-serial@57600">
       <program name="Data Link">
         <arg flag="-d" constant="/dev/ttyACM0"/>
@@ -716,16 +726,6 @@
         <arg flag="-no_confirm_kill"/>
         <arg flag="-srtm"/>
       </program>
-    </session>
-    <session name="EasyStar">
-      <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyACM1"/>
-        <arg flag="-s" constant="9600"/>
-      </program>
-      <program name="Server"/>
-      <program name="GCS"/>
-      <program name="Messages"/>
-      <program name="Real-time Plotter"/>
     </session>
   </section>
 </control_panel>
