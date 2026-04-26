@@ -59,14 +59,14 @@
       <configure name="PERIODIC_FREQUENCY" value="500"/>
       <configure name="AHRS_PROPAGATE_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
       <!-- <configure name="AHRS_CORRECT_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/> -->
-      <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="125"/> -->
+      <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="100"/> -->
 
       <configure name="NO_LUFTBOOT" value="1"/><!-- We do not have a bootloader on this FC -->
 
       <define name="AUTOPILOT_DISABLE_AHRS_KILL"/> <!--  Starts in KILL, but can now switch to NAV -->
       <!-- We are using aspirin 2.2, so we set the following barometer configuration: -->
-      <!-- <configure name="LISA_M_BARO" value="BARO_MS5611_SPI"/> -->
-      <!-- <configure name="USE_BARO_BOARD" value="TRUE"/> -->
+      <configure name="LISA_M_BARO" value="BARO_MS5611_SPI"/>
+      <configure name="USE_BARO_BOARD" value="TRUE"/>
       <!-- already true per default -->
       <!-- <configure name="USE_BARO_MEDIAN_FILTER" value="TRUE"/> -->
       <!-- <define name="USE_BARO_MEDIAN_FILTER" value="TRUE"/> -->
@@ -75,7 +75,7 @@
       <!--<configure name="CPU_LED" value="1"/>-->
 
       <configure name="AHRS_CORRECT_FREQUENCY" value="500"/>
-      <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/> --><!-- set to 50 if using QMC-->
+      <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/> --><!-- set to 50 if using QMC?-->
       <!-- <configure name="BARO_PERIODIC_FREQUENCY" value="50"/> -->
       <!-- <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/> -->
 
@@ -121,21 +121,18 @@
         <!--<define name="SDP3X_SYNC_SEND" value="TRUE"/>--> <!-- Only enable while debugging -->
       </module>
 
-      <module name="gps" type="ublox">
-        <configure name="GPS_PORT" value="UART3"/>
-        <configure name="GPS_BAUD" value="B460800"/>
-      </module>
+
 
       <!-- used for Remote position systems like Vicon or OptiTrack -->
       <!-- <module name="gps" type="datalink"/> -->
 
-      <module name="geo_mag"/>
+      <!-- <module name="geo_mag"/> -->
 
       <!-- NOT USED setup manually in u-center, only enable when needed-->
-      <module name="gps" type="ubx_ucenter">
-        <define name="GPS_UBX_UCENTER_RATE" value="50"/>
-        <define name="GPS_UBX_NAV5_DYNAMICS" value="NAV5_DYN_AIRBORNE_4G"/>
-      </module> 
+      <!-- <module name="gps" type="ubx_ucenter"> -->
+        <!-- <define name="GPS_UBX_UCENTER_RATE" value="65"/> -->
+        <!-- <define name="GPS_UBX_NAV5_DYNAMICS" value="NAV5_DYN_AIRBORNE_4G"/> -->
+      <!-- </module> -->
   
       <!-- 
       <configure name="USE_ADC_1" value="TRUE"/>
@@ -150,16 +147,16 @@
       <!-- Optionally use alternative magnetometer driver chip on GNSS board instead of FC --> 
       <module name="mag" type="qmc5883l">
         <configure name="MAG_QMC5883L_I2C_DEV" value="i2c2"/>
-        <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="125"/>
-        <define name="MODULE_QMC5883L_UPDATE_AHRS" value="FALSE"/>
+        <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="100"/><!-- half of 200Hz, the maximum update rate for this sensor -->
+        <define name="MODULE_QMC5883L_UPDATE_AHRS" value="TRUE"/>
         <define name="QMC5883L_CHAN_X" value="1"/>
         <define name="QMC5883L_CHAN_Y" value="0"/>
         <define name="QMC5883L_CHAN_Z" value="2"/>
         <define name="QMC5883L_CHAN_X_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Y_SIGN" value="-"/>
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
-        <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/>
-        <define name="USE_MAG_TO_IMU" value="TRUE"/>
+        <!-- <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/> --><!-- will spam the datalink, only enable while debugging via fast connetion, NOT mesh -->
+        <!-- <define name="USE_MAG_TO_IMU" value="TRUE"/> -->
       </module>
 
       <!-- Build into the airframe is a rangfinder Surertech VB22A 0xA4 (0x52 7bit) -->
@@ -181,7 +178,7 @@
 
       <module name="actuators" type="pwm">
         <define name="SERVO_HZ" value="40"/><!-- not higher else lightcontroller does not work -->
-        <define name="USE_SERVOS_7AND8"/>
+        <!-- <define name="USE_SERVOS_7AND8"/> -->
       </module>
 
       <module name="radio_control" type="sbus">
@@ -199,6 +196,11 @@
         <!-- <configure name="MODEM_PORT" value="usb_serial"/> -->       
         <configure name="MODEM_PORT" value="UART2"/>
         <configure name="MODEM_BAUD" value="B9600"/>
+      </module>
+
+      <module name="gps" type="ublox">
+        <configure name="GPS_BAUD" value="B460800"/>
+        <configure name="GPS_PORT" value="UART4"/><!-- Note that the GPS is on UART4 since UART3 is not remapped -->
       </module>
 
       <!-- Only enable with a module that supports v_ctl_auto_airspeed_setpoint-->
