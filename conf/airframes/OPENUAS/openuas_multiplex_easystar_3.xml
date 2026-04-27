@@ -8,7 +8,7 @@
     + ACTUATORS:    Default of set MS-12020-MG
     + GNSS          uBlox M10
     + IMU           Default Aspirin v2.1 
-    + MAGNETOMETER: QMC5883L on GNSS module
+    + MAGNETOMETER: QMC5883L on GNSS module, optionally RM3100
     + ESC:          Default of set ROXXY BL-Control 720 S-BEC ESC
     + RCRX:         OpenRXSR Receiver
     + AIRSPEED:     Sensirion SDP33
@@ -38,43 +38,30 @@
     + SBUS RC RX on UART1 
     + Telemetry on UART2 , use B9600 baudrate if using mesh network module else B57600
     + UWB serial data via UART5 RX and TX (PC12)
+    + Additional RM3100 Magnetometer to compare with the QMC5883L
   </description>
 
   <firmware name="fixedwing">
 
+
     <configure name="PERIODIC_FREQUENCY" value="500"/>
     <configure name="AHRS_PROPAGATE_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
+    <configure name="AHRS_CORRECT_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
+    <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="30"/> -->
 
     <target name="ap" board="lisa_mx_2.1_chibios">
 
-      <!-- enable those 2 lines ONLY if flashing via JTAG cable -->
+      <!-- Enable those two lines below ONLY if flashing via JTAG cable -->
       <configure name="FLASH_MODE"   value="SWD"/>
       <configure name="BMP_PORT" value="/dev/ttyACM0"/>
-
-      <!-- <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/> --><!-- FIXME: Not working under Chibios -->
-
-      <!--<define name="DEBUG" value="TRUE"/>--><!--Enable for debug output, e.g. ms5611-->
-      <!--<define name="USE_PERIODIC_TELEMETRY_REPORT" value="TRUE"/> -->
-
-      <configure name="PERIODIC_FREQUENCY" value="500"/>
-      <configure name="AHRS_PROPAGATE_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
-      <!-- <configure name="AHRS_CORRECT_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/> -->
-      <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="100"/> -->
-
       <configure name="NO_LUFTBOOT" value="1"/><!-- We do not have a bootloader on this FC -->
 
-      <define name="AUTOPILOT_DISABLE_AHRS_KILL"/> <!--  Starts in KILL, but can now switch to NAV -->
-      <!-- We are using aspirin 2.2, so we set the following barometer configuration: -->
-      <configure name="LISA_M_BARO" value="BARO_MS5611_SPI"/>
-      <configure name="USE_BARO_BOARD" value="TRUE"/>
-      <!-- already true per default -->
-      <!-- <configure name="USE_BARO_MEDIAN_FILTER" value="TRUE"/> -->
-      <!-- <define name="USE_BARO_MEDIAN_FILTER" value="TRUE"/> -->
+      <!-- <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/> --><!-- FIXME: Not working under Chibios -->
+      
+      <!--<define name="DEBUG" value="TRUE"/>--><!--Enable for debug output, e.g. ms5611-->
+      <!--<define name="USE_PERIODIC_TELEMETRY_REPORT" value="TRUE"/> -->
       <configure name="USE_MAGNETOMETER" value="FALSE"/><!-- only when everything else works... improve -->
 
-      <!--<configure name="CPU_LED" value="1"/>-->
-
-      <configure name="AHRS_CORRECT_FREQUENCY" value="500"/>
       <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/> --><!-- set to 50 if using QMC?-->
       <!-- <configure name="BARO_PERIODIC_FREQUENCY" value="50"/> -->
       <!-- <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/> -->
@@ -85,64 +72,29 @@
       <!-- <configure name="MODULES_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/> -->
 
       <!--<module name="imu" type="aspirin_v2.2">--><!-- Should alsowork -->
+      
+      <!-- ***** First sensor modules... ***** -->
+      
       <module name="imu" type="lisa_mx_v2.1">
         <define name="ASPIRIN_2_DISABLE_MAG" value="TRUE"/>
         <!-- <define name="LISA_M_OR_MX_21" value="TRUE"/> -->
-        <!-- <define name="ASPIRIN_2_ROTATED_180_DEG" value="TRUE"/> -->
         <define name="LISA_M_OR_MX21_ROTATED_180_DEG" value="TRUE"/>
-        <!-- 
-        <define name="ASPIRIN_2_GYRO_RANGE" value="MPU60X0_GYRO_RANGE_2000"/>
-        <define name="ASPIRIN_2_ACCEL_RANGE" value="MPU60X0_ACCEL_RANGE_16G"/>
-        <define name="ASPIRIN_2_LOWPASS_FILTER" value="MPU60X0_DLPF_42HZ"/>
-        <define name="ASPIRIN_2_SMPLRT_DIV" value="0"/>
-        <define name="ASPIRIN_2_ACCEL_LOWPASS_FILTER" value="MPU60X0_DLPF_ACC_44HZ"/> 
-        -->
       </module>
-   
-      <module name="baro_ms5611_spi">
-        <configure name="BARO_PERIODIC_FREQUENCY" value="10"/>
-        <configure name="MS5611_SPI_DEV" value="spi1"/>
-        <configure name="MS5611_SLAVE_IDX" value="SPI_SLAVE3"/>
-        <!--<define name="SENSOR_SYNC_SEND" value="TRUE"/>--><!-- TODO: Disable after all tuning is done -->
+
+      <module name="baro_bmp">
+         <configure name="BARO_PERIODIC_FREQUENCY" value="10"/>
+         <configure name="BMP_I2C_DEV" value="i2c2"/>
+         <define name="SENSOR_SYNC_SEND" value="TRUE"/> 
       </module>
-      <!-- Alternatively if using the BMP88 barometer on the same SPI bus as the MS5611, set the following configuration and make sure to connect the CS pin of the BMP88 to SPI_SLAVE4 for example: -->
 
       <module name="airspeed" type="sdp3x">
         <configure name="SDP3X_I2C_DEV" value="i2c2"/>
-        <!-- <define name="SDP3X_I2C_ADDR" value="0x50"/> --> <!-- 0x50 is the deafault address -->
-        <!-- <define name="SDP3X_PRESSURE_SCALE" value="1.0"/> --> <!-- pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet) -->
-        <!-- <define name="SDP3X_PRESSURE_OFFSET" value="0.0"/>--> <!-- pressure offset in Pa (default: set according to pressure range and output type according to datasheet) -->
-        <!-- <define name="SDP3X_AIRSPEED_SCALE" value="1.6327"/> --> <!-- quadratic scale factor to convert differential pressure to airspeed" -->
         <define name="SDP3X_LOWPASS_TAU" value="0.09"/>
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
         <define name="USE_AIRSPEED" value="TRUE"/>
-        <!-- <define name="USE_AIRSPEED_LOWPASS_FILTER" value="TRUE"/> --><!-- Already TRUE per default -->
         <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>
         <!--<define name="SDP3X_SYNC_SEND" value="TRUE"/>--> <!-- Only enable while debugging -->
       </module>
-
-
-
-      <!-- used for Remote position systems like Vicon or OptiTrack -->
-      <!-- <module name="gps" type="datalink"/> -->
-
-      <!-- <module name="geo_mag"/> -->
-
-      <!-- NOT USED setup manually in u-center, only enable when needed-->
-      <!-- <module name="gps" type="ubx_ucenter"> -->
-        <!-- <define name="GPS_UBX_UCENTER_RATE" value="65"/> -->
-        <!-- <define name="GPS_UBX_NAV5_DYNAMICS" value="NAV5_DYN_AIRBORNE_4G"/> -->
-      <!-- </module> -->
-  
-      <!-- 
-      <configure name="USE_ADC_1" value="TRUE"/>
-      <define name="ADC_CHANNEL_VSUPPLY" value="ADC_1"/>
-      
-      <module name="current_sensor">
-        <configure name="USE_ADC_2" value="TRUE"/>
-        <configure name="ADC_CURRENT_SENSOR" value="ADC_2"/>
-      </module> 
-      -->
 
       <!-- Optionally use alternative magnetometer driver chip on GNSS board instead of FC --> 
       <module name="mag" type="qmc5883l">
@@ -155,8 +107,7 @@
         <define name="QMC5883L_CHAN_X_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Y_SIGN" value="-"/>
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
-        <!-- <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/> --><!-- will spam the datalink, only enable while debugging via fast connetion, NOT mesh -->
-        <!-- <define name="USE_MAG_TO_IMU" value="TRUE"/> -->
+        <!-- <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/> --><!-- Only enable while debugging via fast connetion, NOT mesh -->
       </module>
 
       <!-- Build into the airframe is a rangfinder Surertech VB22A 0xA4 (0x52 7bit) -->
@@ -173,35 +124,42 @@
         <define name="RANGEFINDER_I2C_OFFSET" value="0.0" unit="m"/>
         <define name="RANGEFINDER_I2C_SCALE" value="0.001"/><!-- Since VB22A sensor is set to emit in millimeters per default-->
         <define name="RANGEFINDER_I2C_READ_MODE_SINGLE" value="0x00"/><!-- Specifically to read for a VB22A sensor -->
-        <!-- <define name="RANGEFINDER_I2C_SYNC_SEND" value="TRUE"/> -->
+        <!-- <define name="RANGEFINDER_I2C_SYNC_SEND" value="TRUE"/> --><!-- Only enable while debugging via fast connetion, NOT mesh -->
       </module>
 
+      <module name="gps" type="ublox">
+        <configure name="GPS_BAUD" value="B460800"/>
+        <configure name="GPS_PORT" value="UART4"/><!-- Note that the GPS is on UART4 since UART3 is not re-mapped -->
+      </module>
+
+      <!-- ***** ...then the rest ***** -->
+
       <module name="actuators" type="pwm">
-        <define name="SERVO_HZ" value="40"/><!-- not higher else lightcontroller does not work -->
-        <!-- <define name="USE_SERVOS_7AND8"/> -->
+        <define name="SERVO_HZ" value="40"/><!-- not higher than 40 else lightcontroller does not work -->
+        <define name="USE_SERVOS_7AND8"/>
       </module>
 
       <module name="radio_control" type="sbus">
         <configure name="SBUS_PORT" value="UART1"/>
         <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>
-        <!-- <define name="RADIO_MANUALRELEASE" value="RADIO_AUX6"/> -->
-        <!-- Mode set one a three way switch. Per default already GEAR if not defined  
-        <define name="RADIO_GEAR" value="RADIO_AUX2"/>
-        <define name="RADIO_FLAP" value="RADIO_AUX3"/>
-        <define name="RADIO_LIGHTS" value="RADIO_AUX6"/>
-        -->
       </module>
 
-      <module name="telemetry" type="transparent">
-        <!-- <configure name="MODEM_PORT" value="usb_serial"/> -->       
+      <module name="telemetry" type="transparent">      
         <configure name="MODEM_PORT" value="UART2"/>
         <configure name="MODEM_BAUD" value="B9600"/>
       </module>
 
-      <module name="gps" type="ublox">
-        <configure name="GPS_BAUD" value="B460800"/>
-        <configure name="GPS_PORT" value="UART4"/><!-- Note that the GPS is on UART4 since UART3 is not remapped -->
+      <module name="geo_mag"/>
+
+      <!--
+      <module name="takeoff_detect">
+        <define name="TAKEOFF_DETECT_LAUNCH_PITCH" value="0.785398"/>
+        <define name="TAKEOFF_DETECT_ABORT_PITCH" value="-0.349066"/>
+        <define name="TAKEOFF_DETECT_TIMER" value="1.2"/>
+        <define name="TAKEOFF_DETECT_DISABLE_TIMER" value="5.0"/>
+        <define name="TAKEOFF_DETECT_ALSO_IN_AUTO1" value="TRUE"/> 
       </module>
+      -->
 
       <!-- Only enable with a module that supports v_ctl_auto_airspeed_setpoint-->
       <!--
@@ -232,17 +190,6 @@
       <module name="flight_recorder"/> 
       -->
 
-      <!-- Sometimes throwing and RC controlling at the same time is not so easy, even in takeoff auto1 is stabilized -->
-      <!-- 
-      <module name="takeoff_detect">
-        <define name="TAKEOFF_DETECT_LAUNCH_PITCH" value="0.785398"/>
-        <define name="TAKEOFF_DETECT_ABORT_PITCH" value="-0.349066"/>
-        <define name="TAKEOFF_DETECT_TIMER" value="1.2"/>
-        <define name="TAKEOFF_DETECT_DISABLE_TIMER" value="5.0"/>
-        <define name="TAKEOFF_DETECT_ALSO_IN_AUTO1" value="TRUE"/> 
-      </module>
-      -->
-
       <!-- 
       Below example of what to add to your telemetry_something.xml file
       <process name="FlightRecorder">
@@ -260,42 +207,29 @@
       </process>
       -->
 
-      <!-- 
-      <module name="shell">
-        <configure name="SHELL_PORT" value="usb_serial_debug"/>
-      </module>
-      -->
-
       <module name="sys_mon"/>
 
       <!-- Inter aircraft RSSI exchange -->
       <!-- <module name="rssi"/> -->
-      <!-- <module name="imu_quality_assessment"/> -->
 
     </target>
 
     <target name="sim" board="pc">
       <!--<define name="AHRS_FC_MAG_IDS_BARO_ID" value="BARO_SIM_SENDER_ID"/>-->
       <!--<define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>-->
-      <!--<configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>-->
       <module name="radio_control" type="ppm"/>
-      <define name="RADIO_GEAR" value="RADIO_AUX2"/>
-      <define name="RADIO_FLAP" value="RADIO_AUX3"/>
       <!--<define name="RADIO_CONTROL_NB_CHANNEL" value="8"/>-->
       <module name="telemetry" type="transparent"/>
       <module name="imu" type="sim"/>
       <module name="baro_sim"/>
       <module name="imu_nps"/>
       <!--<module name="gps" type="ublox"/>-->
+      <module name="udp"/>
     </target>
 
     <target name="nps" board="pc">
-      <!--<configure name="PERIODIC_FREQUENCY" value="500"/>
-      <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>-->
       <module name="fdm" type="jsbsim"/>
       <module name="radio_control" type="ppm"/>
-      <define name="RADIO_GEAR" value="RADIO_AUX2"/>
-      <define name="RADIO_FLAP" value="RADIO_AUX3"/>
      <!-- <define name="RADIO_CONTROL_NB_CHANNEL" value="8"/> -->
       <define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>
       <module name="telemetry" type="transparent"/>
@@ -313,6 +247,7 @@
       <module name="udp"/>
     </target>
 
+    <define name="AUTOPILOT_DISABLE_AHRS_KILL"/> <!--  Starts in KILL, but can now switch to NAV -->
     <define name="USE_AIRSPEED" value="TRUE"/>
 
     <define name="RADIO_CONTROL_AUTO1"/> <!--FIXME: not working in JSBSim target-->
@@ -326,7 +261,6 @@
     <define name="WIND_INFO"/>
     <define name="WIND_INFO_RET"/>
 
-    <!-- <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN"/> -->
     <define name="autopilot_motors_on" value="TRUE"/>
 
     <configure name="USE_BARO_BOARD" value="TRUE"/>
@@ -337,12 +271,11 @@
     <define name="BAT_CHECKER_DELAY" value="80"/>
     <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410"/> <!--unit="s/10" in tenth of seconds for engine kill or in ELECTRICAL_PERIODIC_FREQ-->
 
-
     <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
+    <!-- <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN"/> -->
     <!-- <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/> -->
-    <!--<define name="USE_MAGNETOMETER_ONGROUND" value="FALSE"/>-->
-    <!--<define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/>-->
     <!--<configure name="USE_MAGNETOMETER" value="TRUE"/>-->
+    <!--<define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/>-->
 
     <module name="stabilization" type="float_quat"/>
 
@@ -350,11 +283,13 @@
       <configure name="USE_MAGNETOMETER" value="FALSE"/><!-- AS in USE the device for readings , not the value in AHRS yet -->
       <define name="USE_AHRS_GPS_ACCELERATIONS"/>
       <define name="AHRS_DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
+      <!-- <define name="AHRS_DCM_MAG_ID" value="MAG_RM3100_SENDER_ID"/> -->
     </module>
 
     <module name="ins" type="alt_float">
-      <!-- <define name="USE_INS_MODULE" value="TRUE"/> -->
+      <define name="USE_INS_MODULE" value="TRUE"/>
     </module>
+
 
     <module name="auto1_commands"/> <!-- FIXME since not working in JSBSim target with RC controller steering in Simulator-->
     <module name="air_data"/>
@@ -363,6 +298,7 @@
     <module name="nav" type="line"/>
     <module name="nav" type="line_border"/>
     <module name="nav" type="line_osam"/>
+    <!-- needed to be able to survey an area -->
     <module name="nav" type="survey_polygon">
       <define name="POLYSURVEY_DEFAULT_DISTANCE" value="40"/> <!--unit="m"-->
       <!-- Make it your fit for plan and camera type for some needed overlap in photos -->
@@ -371,9 +307,16 @@
     <module name="nav" type="smooth"/>
     <module name="nav" type="vertical_raster"/>
     <module name="nav" type="flower"/>
-    <module name="nav" type="drop"/>
     <module name="nav" type="spiral_3D"/>
-    <!-- <module name="nav" type="cube"/> -->
+    <module name="nav" type="cube"/>
+    <module name="nav" type="drop">
+      <define name="TRIGGER_DELAY" value="3.0" unit="s"/> <!--TODO get correct value;  time it take from shoot command till actual release of payload -->
+      <define name="VELOCITY_AT_RELEASE" value="14" unit="m/s"/><!-- TODO not implemented - to set to min airspeed -->
+      <define name="ALPHA" value="44.18e-4"/><!-- TODO: adjust it for your specific payload -->
+      <define name="MASS" value="5.00e-3" unit="KG"/>
+      <define name="SAFE_CLIMB" value="10" unit="m"/>
+      <define name="CLIMB_TIME" value="3" unit="s"/>
+    </module>
     <!-- <module name="nav" type="launcher"/> -->
     <!-- <module name="nav" type="skid_landing"/> -->
     <!-- <module name="nav" type="bungee_takeoff"/> -->
@@ -394,8 +337,8 @@
     <!--<define name="TAKEOFF_DETECT_ALSO_IN_AUTO1" value="TRUE"/>-->    <!-- Sometimes throwing is not so easy :) so takeoff stabilized -->
     <!--</module>-->
 
-    <!-- The Pixracer has a built in SD card slot connected over SPI bus to the MCU -->
-    <!-- For testflights this might come in handy to analyze what is wrong -->
+    <!-- Additional microSD card slot via wires connected to SPI bus connector of flightcontroller 
+    This is used for hightspeed value loggin onboard for analysis later on ground -->
     <!-- 
     <module name="tlsf"/>
     <module name="pprzlog"/>
@@ -417,34 +360,37 @@
     </module>
     -->
 
-  <!-- Below As in telemetry file to add still...
-  <process name="Logger">
-    <mode name="default">
-      <message name="FBW_STATUS"          period="1.2"/>
-      <message name="DL_VALUE"            period="0.5"/>
-      <message name="IMU_ACCEL"           period="0.05"/>
-      <message name="IMU_GYRO"            period="0.05"/>
-      <message name="IMU_MAG"             period="0.1"/>
-      <message name="IMU_ACCEL_RAW"       period="0.002"/>
-      <message name="IMU_GYRO_RAW"        period="0.002"/>
-      <message name="IMU_MAG_RAW"         period="0.002"/>
-      <message name="COMMANDS"            period=".002"/>
-    </mode>
-  </process>
-  -->
+    <!-- Below As in telemetry file to add still...
+    <process name="Logger">
+      <mode name="default">
+        <message name="FBW_STATUS"          period="1.2"/>
+        <message name="DL_VALUE"            period="0.5"/>
+        <message name="IMU_ACCEL"           period="0.05"/>
+        <message name="IMU_GYRO"            period="0.05"/>
+        <message name="IMU_MAG"             period="0.1"/>
+        <message name="IMU_ACCEL_RAW"       period="0.002"/>
+        <message name="IMU_GYRO_RAW"        period="0.002"/>
+        <message name="IMU_MAG_RAW"         period="0.002"/>
+        <message name="COMMANDS"            period=".002"/>
+      </mode>
+    </process>
+    -->
 
     <!-- <module name="digital_cam_video">
       <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="5.0"/>
     </module> -->
 
-    <!-- When flying multiple airframes at once, useful for interaction with other airframes -->
-    <!-- <module name="traffic_info"/> -->
-    <!-- Traffic Collision Avoidance System, reduce the incident rate of mid-air collision between UAS -->
-    <!-- <module name="tcas"/> -->
+    <!-- When a compute board is connected -->
+    <!-- <module name="digital_cam_uart">
+      <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
+      <configure name="CAMERA_PORT" value="UART5"/>
+    </module> -->
 
-    <!-- Can be disabled after initial tuning -->
-    <!-- <module name="imu_quality_assessment"/>
-    <module name="tune_airspeed"/> -->
+    <module name="traffic_info"/>
+    <module name="tcas"/>
+
+    <!-- <module name="imu_quality_assessment"/>--><!-- Can be disabled after initial tuning -->
+    <module name="tune_airspeed"/><!-- Can be disabled after initial tuning -->
 
     <!-- For relative localization and inter-aircraft communication, use the following module 
     together with the appropriate code running on the attached UWB module on the Arduino side. -->
@@ -467,6 +413,10 @@
       <configure name="RELATIVE_LOCALIZATION_FILTER_INITIAL_ESTIMATE" value="0.0"/> -->
     </module>
 
+    <define name="RADIO_MANUALLIGHT" value="RADIO_AUX2"/>
+    <define name="RADIO_HATCH" value="RADIO_AUX3"/>
+    <define name="RADIO_MANUALSHUTTER" value="RADIO_AUX2"/>
+
   </firmware>
 
   <!-- Define here to which CONNECTOR NUMBER the servo is connected to, on the autopilot circuit board -->
@@ -477,7 +427,7 @@
     <servo name="S_RUDDER"         no="3" min="1100" neutral="1500" max="1900"/>
     <servo name="S_AILERON_RIGHT"  no="4" min="1100" neutral="1500" max="1900"/>
     <servo name="S_LIGHT"          no="5" min="1100" neutral="1500" max="1900"/>
-    <servo name="S_DROP"           no="6" min="1100" neutral="1500" max="1900"/>
+    <servo name="S_HATCH"          no="6" min="1100" neutral="1500" max="1900"/>
     <servo name="S_SHUTTER"        no="7" min="1100" neutral="1500" max="1900"/> 
   </servos>
 
@@ -485,32 +435,29 @@
     <set command="THROTTLE"     value="@THROTTLE"/>
     <set command="ROLL"         value="@ROLL"/>
     <set command="PITCH"        value="@PITCH"/>
-    <set command="YAW"          value="@YAW"/>
-    <!-- <set command="HATCH" value="@MANUALRELEASE"/>
-    <set command="CLICKSHUTTER" value="@MANUALRELEASE"/>
-    <set command="GEAR" value="@AUX1"/>
-    <set command="FLAP" value="@AUX2"/> -->
-    <set command="ACTIVELIGHTS" value="@AUX1"/>
+    <set command="YAW"          value="@YAW"/>    
+    <set command="ACTIVELIGHTS" value="@MANUALLIGHT"/>
+    <set command="HATCH"        value="@HATCH"/>
+    <set command="SHUTTER"      value="@MANUALSHUTTER"/> 
   </rc_commands>
 
+  <!-- When flying autonomous it is sometimes handy to override certain commands via RC when tuning 
+  in this case yaw, is for example the curve is to wide and would go out of boundary -->
   <auto_rc_commands>
-    <set command="YAW" value="@YAW"/>  <!-- TODO: Disable later -->
+    <set command="YAW" value="@YAW"/>
   </auto_rc_commands>
 
   <commands>
     <axis name="THROTTLE" failsafe_value="0"/>
-    <axis name="ROLL" failsafe_value="5"/>
-    <axis name="PITCH" failsafe_value="-6"/>
+    <axis name="ROLL" failsafe_value="500"/>
+    <axis name="PITCH" failsafe_value="-700"/>
     <axis name="YAW" failsafe_value="0"/>
-    <!-- <axis name="HATCH" failsafe_value="0"/>
-    <axis name="CLICKSHUTTER" failsafe_value="0"/>
-    <axis name="GEAR" failsafe_value="0"/>
-    <axis name="FLAP" failsafe_value="0"/> -->
-    <axis name="ACTIVELIGHTS" failsafe_value="0"/>
+    <axis name="ACTIVELIGHTS" failsafe_value="9600"/>
+    <axis name="HATCH" failsafe_value="-9600"/>
+    <axis name="SHUTTER" failsafe_value="-9600"/>
   </commands>
 
   <section name="ServoPositions">
-
     <define name="LANDINGGEAR_EXTEND" value="MIN_PPRZ"/>
     <define name="LANDINGGEAR_RETRACT" value="MAX_PPRZ"/>
     <define name="FLAP_FULL" value="MIN_PPRZ"/>
@@ -519,20 +466,19 @@
     <define name="BEACON_ROTATE" value="MAX_PPRZ"/>
     <define name="BEACON_FLASH" value="0"/>
     <define name="BEACON_OFF" value="MIN_PPRZ"/>
-
     <define name="SERVO_BRAKE_FULL" value="MIN_PPRZ"/>
     <define name="SERVO_HATCH_OPEN" value="0"/>
     <define name="SERVO_HATCH_CLOSED" value="MIN_PPRZ"/>
-    <!-- <define name="AirbrakesOff()" value="(commands[COMMAND_BRAKE]=0)"/> -->
-    <!-- <define name="AirbrakesOn()" value="(commands[COMMAND_BRAKE]=SERVO_BRAKE_FULL)"/> -->
+    <define name="AirbrakesOff()" value="(commands[COMMAND_BRAKE]=0)"/>
+    <define name="AirbrakesOn()" value="(commands[COMMAND_BRAKE]=SERVO_BRAKE_FULL)"/>
     <!-- <define name="Fly()" value="(commands[COMMAND_FORCECRASH]=0)"/> -->
     <!-- <define name="ForceCrash()" value="(commands[COMMAND_FORCECRASH]=9600)" /> -->
-    <define name="ThrottleHigh()" value="(commands[COMMAND_THROTTLE]>MAX_PPRZ/2)"/>
+    <define name="ThrottleHigh()" value="(commands[COMMAND_THROTTLE]>MAX_PPRZ/3)"/>
     <define name="SPOILERON_BRAKE_FULL" value="MIN_PPRZ"/>
     <define name="FLAPERON_BRAKE_FULL" value="MAX_PPRZ"/>
   </section>
 
-  <!--For mixed controls -->
+  <!--For mixed controls some pre-defined gains -->
   <section name="MIXER">
     <define name="ASSIST_ROLL_WITH_RUDDER" value="0.0"/>
     <define name="AILERON_DIFF" value="0.3"/>
@@ -541,7 +487,7 @@
 
   <command_laws>
     <!-- <let var="rc_gain_gyro" value="@GAIN1/PPRZ_MAX*.1"/> --><!-- RC TX digital slider input -->
-    <let var="rc_gain_gyro" value="0.4"/><!-- Not yet inflight tunable -->
+    <let var="rc_gain_gyro" value="0.4"/><!-- TODO: Not yet inflight tunable -->
     <let var="k_rudder_gyro" value="8.0 * $rc_gain_gyro"/><!--gain from yaw rate to rudder-->
     <let var="gyro_active" value="(1 > AP_MODE ? 0 : 1)"/><!-- yes a bit puzzling is it ;)-->
     <let var="gyro_yaw" value="$gyro_active * (stateGetBodyRates_i()->r)"/>
@@ -553,8 +499,8 @@
     <set servo="S_ELEVATOR" value="@PITCH+(-BRAKEGAIN*SPOILERON_BRAKE_FULL)"/>
     <set servo="S_RUDDER" value="$yaw_ctrl_sgl"/>
     <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MAX_PPRZ : @ACTIVELIGHTS)"/>
-    <!-- 
-    Enable bare  values debugging to validate the basics first 
+    <!-- Enable bare values below for debugging to validate the basics first. Make sure to disable the calculated ones above -->
+    <!---
     <set servo="S_THROTTLE" value="@THROTTLE"/>
     <set servo="S_AILERON_LEFT" value="@ROLL"/>
     <set servo="S_AILERON_RIGHT" value="-@ROLL"/>
@@ -562,6 +508,8 @@
     <set servo="S_RUDDER" value="@YAW"/>
     <set servo="S_LIGHT" value="@ACTIVELIGHTS"/> 
     -->
+    <set servo="S_HATCH" value="@HATCH"/>
+    <set servo="S_SHUTTER" value="@SHUTTER"/>
   </command_laws>
 
   <!-- Do not set MAX_ROLL, MAX_PITCH to small of a value, otherwise one can NOT control the plane very well manually -->
@@ -576,7 +524,7 @@
     <define name="PITCH_TRIM" value="0.0"/>
   </section>
 
-<!-- Strategy for failsafe is slow wide circles and losing height in a controlled fashion -->
+  <!-- The strategy for failsafe is slow wide circles and losing height in a controlled fashion -->
   <section name="FAILSAFE" prefix="FAILSAFE_">
     <define name="DEFAULT_THROTTLE" value="0.0" unit="%"/>
     <define name="DEFAULT_GEAR" value="1100"/>
@@ -588,7 +536,8 @@
   </section>
 
 <!-- MPU60X0_GYRO_RANGE_2000" -->
-  <!-- <section name="gyro_scaling">
+  <!-- 
+  <section name="gyro_scaling">
     <define name="IMU_GYRO_P_SENS" value="4.359"/>
     <define name="IMU_GYRO_Q_SENS" value="4.359"/>
     <define name="IMU_GYRO_R_SENS" value="4.359"/>
@@ -600,8 +549,6 @@
     <define name="IMU_GYRO_R_SENS_DEN" value="1000"/>
   </section> -->
 
-
-  <!-- External IST8310 TODO: Calibrate -->
   <!-- External QMC5338L TODO: Calibrate -->
   <!-- External RM3100 TODO: Calibrate -->
 
@@ -614,34 +561,29 @@
     <!-- <define name="GYRO_P_NEUTRAL" value="0"/> -->
     <!-- <define name="GYRO_Q_NEUTRAL" value="0"/> -->
     <!-- <define name="GYRO_R_NEUTRAL" value="0"/> -->
-
-    <!-- Calibrated 20240904-0032 --> 
-    <!--
-    <define name="IMU_ACCEL_CALIB" type="array"/>
-      <field type="struct"/>
-        <field name="abi_id" value="11"/>
-        <field name="calibrated" type="struct">
-          <field name="neutral" value="true"/>
-          <field name="scale" value="true"/>
-        </field>
-        <field name="neutral" value="11,42,12" type="int[]"/>
-        <field name="scale" value="{{32168,39220,47085},{6577,8009,9748}}"/>
-      </field>
-    </define>
-    -->
+    <!-- <define name="IMU_GYRO_P_SENS_NUM" value="4359"/>
+    <define name="IMU_GYRO_Q_SENS_NUM" value="4359"/>
+    <define name="IMU_GYRO_R_SENS_NUM" value="4359"/>
+    <define name="IMU_GYRO_P_SENS_DEN" value="1000"/>
+    <define name="IMU_GYRO_Q_SENS_DEN" value="1000"/>
+    <define name="IMU_GYRO_R_SENS_DEN" value="1000"/> -->
 
     <define name="ACCEL_X_NEUTRAL" value="0"/>
     <define name="ACCEL_Y_NEUTRAL" value="0"/>
     <define name="ACCEL_Z_NEUTRAL" value="0"/>
     
-    <!-- for 16G max-->
-    <define name="ACCEL_X_SENS" value="4.89435980708" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.8357530637" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.8850449494" integer="16"/>
+    <!-- set for 16G max-->
+    <define name="ACCEL_X_SENS" value="4.89" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="4.89" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="4.89" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI" value="0.0" unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0.0" unit="deg"/><!--15deg ,  was 0.25RAD could be moved from AUTO_THROTTLE_NOMINAL_CRUISE_PITCH -->
     <define name="BODY_TO_IMU_PSI" value="0.0" unit="deg"/><!--90-->
+
+    <define name="MAG_X_SIGN" value="1"/>
+    <define name="MAG_Y_SIGN" value="-1"/>
+    <define name="MAG_Z_SIGN" value="-1"/>
 
     <!-- Calibrated on 20240910 11:45. Extrem hard-iron offset due to magnets close by, room for improvement-->
     <!-- <define name="IMU_MAG_CALIB" type="array">
@@ -656,34 +598,21 @@
       </field>
     </define> -->
 
-    <define name="MAG_X_SIGN" value="1"/>
-    <define name="MAG_Y_SIGN" value="-1"/>
-    <define name="MAG_Z_SIGN" value="-1"/>
+    <!-- TODO: Calibrate QMC -->
+    <!-- 
+    <define name="MAG_X_NEUTRAL" value="0"/>
+    <define name="MAG_Y_NEUTRAL" value="0"/>
+    <define name="MAG_Z_NEUTRAL" value="0"/>
+    <define name="MAG_X_SENS" value="3.9" integer="16"/>
+    <define name="MAG_Y_SENS" value="3.9" integer="16"/>
+    <define name="MAG_Z_SENS" value="3.9" integer="16"/> -->
 
-    <define name="MAG_X_NEUTRAL" value="7"/>
-    <define name="MAG_Y_NEUTRAL" value="76"/>
-    <define name="MAG_Z_NEUTRAL" value="133"/>
-    <define name="MAG_X_SENS" value="3.82579687604" integer="16"/>
-    <define name="MAG_Y_SENS" value="3.6213651898" integer="16"/>
-    <define name="MAG_Z_SENS" value="4.01635370187" integer="16"/>
-
-    <!-- TODO: Reintroduce Calibrate MAG_XYZ_CURRENT_COEF i removed ATM" -->
-
-    <!--define name="MAG_OFFSET" value="-1.0" unit="deg"--> <!--  TODO: at least 3 axis in worst case -->
   </section>
 
   <section name="AIR_DATA" prefix="AIR_DATA_">
     <define name="CALC_AIRSPEED" value="TRUE"/>
     <define name="CALC_TAS_FACTOR" value="FALSE"/>
     <define name="CALC_AMSL_BARO" value="TRUE"/>
-  </section>
-
-  <!-- TODO: needs to be set to correct values -->
-  <!-- For e.g. Rotation between sensor frame and IMU frame (phi angle) -->
-  <section name="MAG_QMC" prefix="QMC5883L_">
-    <define name="MAG_TO_IMU_PHI" value="0.0"/>
-    <define name="MAG_TO_IMU_THETA" value="0.0"/>
-    <define name="MAG_TO_IMU_PSI" value="0.0"/>
   </section>
 
   <section name="AHRS" prefix="AHRS_">
@@ -699,11 +628,17 @@
     <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
     <!--<define name="AHRS_FC_IMU_ID" value="ABI_BROADCAST"/>--> <!-- ABI sender id of IMU to use Change if you change your AHRS type -->
     <!-- As ID choose MAG_CALIB_UKF_ID when using the mag_clib_ukf module change your AHRS type-->
-    <!--<define name="AHRS_FC_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>-->
-    <!-- <define name="AHRS_FC_MAG_ID" value="MAG_IST8310_SENDER_ID" />Use this insted of MAG_HMC5883_SENDER_ID for external alternative sensor -->
-    <!--<define name="AHRS_FC_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>-->
-    <!--<define name="AHRS_FC_MAG_ID" value="MAG_QMC5883P_SENDER_ID"/>-->
-    <!--<define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID"/>-->
+    <!--<define name="FC_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>-->
+    <!--<define name="FC_MAG_ID" value="MAG_IST8310_SENDER_ID" />-->
+    <!--<define name="FC_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>-->
+    <!--<define name="FC_MAG_ID" value="MAG_QMC5883P_SENDER_ID"/> -->
+    <!--<define name="FC_MAG_ID" value="MAG_RM3100_SENDER_ID"/>-->
+
+    <define name="AHRS_DCM_IMU_ID" value="ABI_BROADCAST"/>
+    <!--<define name="DCM_MAG_ID" value="MAG_IST8310_SENDER_ID"/>-->
+    <!--<define name="DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>-->
+    <!--<define name="DCM_MAG_ID" value="MAG_QMC5883P_SENDER_ID"/>-->
+    <!--<define name="DCM_MAG_ID" value="MAG_RM3100_SENDER_ID"/>-->
     <define name="DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
 
     <!-- 

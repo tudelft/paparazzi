@@ -1,9 +1,9 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
-<airframe name="Vifify">
+<airframe name="Vivify">
   <description>
     Basic Fixedwing airframe equipped with a Pixhawk flightcontroller hardware
 
-    + Model:       Vifify
+    + Model:       Vivify
     + Autopilot:   PX4FMU 2.4 in the form of a Pixhwawk v1.0
     + Actuators:   Hitec HQ metal gear servos
     + GNSS         Ublox M10 GNSS
@@ -224,7 +224,7 @@
 
       <module name="digital_cam_uart">
         <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
-        <configure name="CAMERA_PORT" value="UART3"/><!--TODO determine where-->
+        <configure name="CAMERA_PORT" value="UART5"/>
       </module>
 
       <!--
