@@ -1,0 +1,26 @@
+<!--
+The order of the list below is of importance if you do not define a
+"no=" (order in the PPM frame) parameter.
+If you do not define this then the order of the PPM is the one of
+the order of the functon in the list
+Although this TX has no more than 8 axis buttons it still sends 16 channels in the PPM frame, so we need to define all 16 channels.
+-->
+<!DOCTYPE radio SYSTEM "../radio.dtd">
+<radio name="LiteRadio 2SE OUTX--" data_min="987" data_max="2012" sync_min="2000" sync_max="20000" pulse_type="POSITIVE">
+    <channel ctl="left_stick_vert"   function="THROTTLE" min="987" neutral="988"  max="2011" average="0"/>
+    <channel ctl="right_stick_horiz" function="ROLL"     min="987" neutral="1500" max="2011" average="0"/>
+    <channel ctl="right_stick_vert"  function="PITCH"    min="987" neutral="1500" max="2011" average="0"/>
+    <channel ctl="left_stick_horiz"  function="YAW"      min="987" neutral="1500" max="2011" average="0"/>
+    <channel ctl="SC"                function="MODE"     min="987" neutral="1500" max="2011" average="2"/> <!-- SW Blue Right -->
+    <channel ctl="SA"                function="AUX1"     min="987" neutral="1500" max="2011" average="4"/> <!-- SW Red Left -->
+    <channel ctl="SB"                function="AUX2"     min="987" neutral="1500" max="2011" average="2"/> <!-- SW Green Left -->
+    <channel ctl="SD"                function="AUX3"     min="987" neutral="1500" max="2011" average="2"/> <!-- SW Yellow Right -->
+    <channel ctl=""                  function="AUX4"     min="987" neutral="1500" max="2011" average="0"/> <!-- NA -->
+    <channel ctl=""                  function="AUX5"     min="987" neutral="1500" max="2011" average="0"/> <!-- NA -->
+    <channel ctl=""                  function="AUX6"     min="987" neutral="1500" max="2011" average="0"/> <!-- NA -->
+    <channel ctl=""                  function="AUX7"     min="987" neutral="1500" max="2011" average="0"/> <!-- NA -->
+    <channel ctl=""                  function="AUX8"     min="987" neutral="1500" max="2011" average="0"/> <!-- NA -->
+    <channel ctl=""                  function="AUX9"     min="987" neutral="1500" max="2011" average="0"/> <!-- NA -->
+    <channel ctl=""                  function="AUX10"    min="987" neutral="1500" max="2011" average="0"/> <!-- NA -->
+    <channel ctl=""                  function="AUX11"    min="987" neutral="1500" max="2011" average="0"/> <!-- NA -->
+</radio>

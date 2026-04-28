@@ -5,7 +5,6 @@
     <mode name="default" key_press="d">
       <message name="ADC_GENERIC"         period="1.7"/>
       <message name="AIRSPEED"            period="1.4"/>
-      <message name="AIRSPEED_RAW"        period="0.3"/>
       <message name="AMSL"                period="1.4"/>
       <message name="ALIVE"               period="5.1"/>
       <message name="GPS"                 period="0.5"/>
@@ -72,10 +71,18 @@
     <mode name="raw_sensors" key_press="r">
       <message name="DL_VALUE"            period="0.8"/>
       <message name="ALIVE"               period="2.1"/>
-      <message name="IMU_ACCEL_RAW"       period="0.2"/>
-      <message name="IMU_GYRO_RAW"        period="0.2"/>
-      <message name="IMU_MAG_RAW"         period="0.2"/>
-      <message name="BARO_RAW"            period="0.35"/>
+      <message name="IMU_ACCEL_RAW"       period="0.4"/>
+      <message name="IMU_GYRO_RAW"        period="0.4"/>
+      <message name="IMU_MAG_RAW"         period="0.4"/>
+      <message name="BARO_RAW"            period="0.45"/>
+      <message name="AIRSPEED"            period="0.6"/>
+      <message name="AIRSPEED_RAW"        period="0.6"/>
+    </mode>
+    <mode name="debug_airspeed" key_press="a">
+      <message name="DL_VALUE"            period="0.8"/>
+      <message name="ALIVE"               period="2.1"/>
+      <message name="AIRSPEED"            period="0.2"/>
+      <message name="AIRSPEED_RAW"        period="0.2"/>
     </mode>
     <mode name="scaled_sensors" key_press="s">
       <message name="DL_VALUE"            period="0.5"/>

@@ -218,8 +218,18 @@ void sdp3x_event(void)
         return;
       }
 
-      int16_t p_raw = ((int16_t)(buf[0]) << 8) | (int16_t)(buf[1]);
-      sdp3x.raw_p = (uint16_t) p_raw;
+      uint16_t p_raw = ((uint16_t)(buf[0]) << 8) | (uint16_t)(buf[1]);
+      int16_t t_raw = ((int16_t)(buf[3]) << 8) | (int16_t)(buf[4]);
+  
+      /* Reject any values that are the absolute minimum or maximums these
+         can happen due to gnd lifts or communication errors on the bus */
+      if(p_raw == 0x3FFF) { //|| t_raw == 0x7FF || t_raw == 0) {
+        sdp3x_trans.status = I2CTransDone;
+        return;
+      }
+
+      sdp3x.raw_p = (int16_t) p_raw;
+      sdp3x.temperature = (float)t_raw / SDP3X_SCALE_TEMPERATURE;
 
       float p_out = ((float)p_raw / sdp3x.pressure_scale) - sdp3x.pressure_offset;
 
@@ -240,9 +250,6 @@ void sdp3x_event(void)
           sdp3x.autoset_offset = false;
         }
       }
-
-      int16_t t_raw = ((int16_t)(buf[3]) << 8) | (int16_t)(buf[4]);
-      sdp3x.temperature = (float)t_raw / SDP3X_SCALE_TEMPERATURE;
 
       // Send (differential) pressure via ABI
       AbiSendMsgBARO_DIFF(SDP3X_SENDER_ID, sdp3x.pressure);

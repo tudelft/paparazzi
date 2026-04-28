@@ -12,11 +12,11 @@
     + ESC:          Default of set ROXXY BL-Control 720 S-BEC ESC
     + RCRX:         OpenRXSR Receiver
     + AIRSPEED:     Sensirion SDP33
-    + BARO          MS5611 on FC or the BMP88
-    + TELEMETRY:    E52-400NW22S
+    + BARO          Bosch BMP085
+    + TELEMETRY:    eByte E52-400NW22S
     + CURRENT:      N/A
     + RANGEFINDER:  Surertech VB22A
-    + MOTOR:        Default of set ROXXY BL Outrunner C28-30 1100Kvwhatevery is needed
+    + MOTOR:        Default of set ROXXY BL Outrunner C28-30 1100kV
     + PROPPELLER:   Default Foldable 7" x 6" two bladed
 
     NOTES:
@@ -30,8 +30,8 @@
     + Uploading of the firmware via SWD (useing a BlackMagicProbe debug adapter)
     + A GNSS device with QMC8553L magneto on the same PCB
     + GNSS on UART3 set to ~17Hz update rate, 3 constelations, SBAS enabled
-    + Advised battery for this airframe is a 1500mAh 3S LiPo min. 30C
-    + If testing " lassic" (as in not ETECS..) make sure to disable the settings/estimation/ac_char
+    + Advised battery for this airframe is a 2200mAh 3S LiPo min. 20C
+    + If testing "Classic" (as in not ETECS..) make sure to disable the settings/estimation/ac_char
     + One could set the USE_AIRSPEED value to FALSE at first, for no airspeed tests
     + Make sure v7.0 or higher of PPRZ autopilot release is used
     + SBUS receiver output must be set to non-inverted, this is done by soldering the RX SBus output wire on pad B of the OpenRXSR RC recever
@@ -42,7 +42,6 @@
   </description>
 
   <firmware name="fixedwing">
-
 
     <configure name="PERIODIC_FREQUENCY" value="500"/>
     <configure name="AHRS_PROPAGATE_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
@@ -55,24 +54,19 @@
       <configure name="FLASH_MODE"   value="SWD"/>
       <configure name="BMP_PORT" value="/dev/ttyACM0"/>
       <configure name="NO_LUFTBOOT" value="1"/><!-- We do not have a bootloader on this FC -->
-
-      <!-- <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/> --><!-- FIXME: Not working under Chibios -->
-      
       <!--<define name="DEBUG" value="TRUE"/>--><!--Enable for debug output, e.g. ms5611-->
       <!--<define name="USE_PERIODIC_TELEMETRY_REPORT" value="TRUE"/> -->
-      <configure name="USE_MAGNETOMETER" value="FALSE"/><!-- only when everything else works... improve -->
 
-      <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/> --><!-- set to 50 if using QMC?-->
-      <!-- <configure name="BARO_PERIODIC_FREQUENCY" value="50"/> -->
-      <!-- <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/> -->
+      <!-- <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/> --><!-- FIXME: Not working under Chibios -->
 
       <!-- <configure name="NAVIGATION_FREQUENCY" value="50"/> -->
       <!-- <configure name="CONTROL_FREQUENCY" value="125"/> -->
       <!-- <configure name="TELEMETRY_FREQUENCY" value="50"/> -->
       <!-- <configure name="MODULES_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/> -->
+      <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/> --><!-- set to 50 if using QMC?-->
 
-      <!--<module name="imu" type="aspirin_v2.2">--><!-- Should alsowork -->
-      
+      <configure name="USE_MAGNETOMETER" value="FALSE"/><!-- only when everything else works... improve -->
+
       <!-- ***** First sensor modules... ***** -->
       
       <module name="imu" type="lisa_mx_v2.1">
@@ -82,14 +76,17 @@
       </module>
 
       <module name="baro_bmp">
-         <configure name="BARO_PERIODIC_FREQUENCY" value="10"/>
+         <!-- <configure name="BARO_PERIODIC_FREQUENCY" value="15"/> -->
          <configure name="BMP_I2C_DEV" value="i2c2"/>
-         <define name="SENSOR_SYNC_SEND" value="TRUE"/> 
+         <configure name="USE_BARO_BOARD" value="TRUE"/>
+         <!-- <configure name="INS_BARO_ID" value="BARO_BMP_SENDER_ID"/> -->
+         <!-- <define name="USE_BARO_MEDIAN_FILTER" value="TRUE"/> -->
+         <!-- <define name="SENSOR_SYNC_SEND" value="TRUE"/>  -->
       </module>
 
       <module name="airspeed" type="sdp3x">
         <configure name="SDP3X_I2C_DEV" value="i2c2"/>
-        <define name="SDP3X_LOWPASS_TAU" value="0.13"/>
+        <define name="SDP3X_LOWPASS_TAU" value="0.11"/>
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
         <define name="USE_AIRSPEED" value="TRUE"/>
         <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>
@@ -99,7 +96,7 @@
       <!-- Optionally use alternative magnetometer driver chip on GNSS board instead of FC --> 
       <module name="mag" type="qmc5883l">
         <configure name="MAG_QMC5883L_I2C_DEV" value="i2c2"/>
-        <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="100"/><!-- half of 200Hz, the maximum update rate for this sensor -->
+        <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="50"/><!-- 1/4 of 200Hz, the maximum update rate for this sensor -->
         <define name="MODULE_QMC5883L_UPDATE_AHRS" value="TRUE"/>
         <define name="QMC5883L_CHAN_X" value="1"/>
         <define name="QMC5883L_CHAN_Y" value="0"/>
@@ -247,6 +244,8 @@
       <module name="udp"/>
     </target>
 
+    <define name="USE_INS_MODULE" value="TRUE"/>
+
     <define name="AUTOPILOT_DISABLE_AHRS_KILL"/> <!--  Starts in KILL, but can now switch to NAV -->
     <define name="USE_AIRSPEED" value="TRUE"/>
 
@@ -262,11 +261,6 @@
     <define name="WIND_INFO_RET"/>
 
     <define name="autopilot_motors_on" value="TRUE"/>
-
-    <configure name="USE_BARO_BOARD" value="TRUE"/>
-    <configure name="BARO_PERIODIC_FREQUENCY" value="50"/>
-    <define name="USE_BARO_MEDIAN_FILTER"/>
-    <define name="AUTOPILOT_DISABLE_AHRS_KILL"/>
 
     <define name="BAT_CHECKER_DELAY" value="80"/>
     <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410"/> <!--unit="s/10" in tenth of seconds for engine kill or in ELECTRICAL_PERIODIC_FREQ-->
@@ -286,12 +280,10 @@
       <!-- <define name="AHRS_DCM_MAG_ID" value="MAG_RM3100_SENDER_ID"/> -->
     </module>
 
-    <module name="ins" type="alt_float">
-      <define name="USE_INS_MODULE" value="TRUE"/>
-    </module>
+    <module name="ins" type="alt_float"/>
 
-
-    <module name="auto1_commands"/> <!-- FIXME since not working in JSBSim target with RC controller steering in Simulator-->
+    <module name="auto1_commands"/> 
+    <!-- FIXME since not working in JSBSim target with RC controller steering in Simulator-->
     <module name="air_data"/>
     <module name="control" type="new"/>
     <module name="navigation"/>
@@ -486,10 +478,11 @@
   </section>
 
   <command_laws>
-    <!-- <let var="rc_gain_gyro" value="@GAIN1/PPRZ_MAX*.1"/> --><!-- RC TX digital slider input -->
+    <!--<let var="rc_gain_gyro" value="@GAIN1/PPRZ_MAX*.1"/> --><!-- RC TX digital slider input -->
+    <!--<let var="rc_gain_gyro" value="0.9"/>--><!-- Temporary set a high value to see if direction is OK-->
     <let var="rc_gain_gyro" value="0.4"/><!-- TODO: Not yet inflight tunable -->
     <let var="k_rudder_gyro" value="8.0 * $rc_gain_gyro"/><!--gain from yaw rate to rudder-->
-    <let var="gyro_active" value="(1 > AP_MODE ? 0 : 1)"/><!-- yes a bit puzzling is it ;)-->
+    <let var="gyro_active" value="1"/><!--(1 > AP_MODE ? 0 : 1)"/>--><!-- yes a bit puzzling is it ;)-->
     <let var="gyro_yaw" value="$gyro_active * (stateGetBodyRates_i()->r)"/>
     <let var="yaw_ctrl_sgl" value="@YAW - ($k_rudder_gyro * ($gyro_yaw)) - @ROLL * ASSIST_ROLL_WITH_RUDDER"/>
     <let var="aileron" value="@ROLL+(BRAKEGAIN*SPOILERON_BRAKE_FULL)"/>
@@ -499,15 +492,14 @@
     <set servo="S_ELEVATOR" value="@PITCH+(-BRAKEGAIN*SPOILERON_BRAKE_FULL)"/>
     <set servo="S_RUDDER" value="$yaw_ctrl_sgl"/>
     <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MAX_PPRZ : @ACTIVELIGHTS)"/>
+    
     <!-- Enable bare values below for debugging to validate the basics first. Make sure to disable the calculated ones above -->
-    <!---
-    <set servo="S_THROTTLE" value="@THROTTLE"/>
-    <set servo="S_AILERON_LEFT" value="@ROLL"/>
-    <set servo="S_AILERON_RIGHT" value="-@ROLL"/>
-    <set servo="S_ELEVATOR" value="@PITCH"/>
-    <set servo="S_RUDDER" value="@YAW"/>
-    <set servo="S_LIGHT" value="@ACTIVELIGHTS"/> 
-    -->
+    <!-- <set servo="S_THROTTLE" value="@THROTTLE"/> -->
+    <!-- <set servo="S_AILERON_LEFT" value="@ROLL"/> -->
+    <!-- <set servo="S_AILERON_RIGHT" value="@ROLL"/> -->
+    <!-- <set servo="S_ELEVATOR" value="@PITCH"/> -->
+    <!-- <set servo="S_RUDDER" value="@YAW"/> -->
+    <!-- <set servo="S_LIGHT" value="@ACTIVELIGHTS"/>  -->
     <set servo="S_HATCH" value="@HATCH"/>
     <set servo="S_SHUTTER" value="@SHUTTER"/>
   </command_laws>
@@ -635,6 +627,7 @@
     <!--<define name="FC_MAG_ID" value="MAG_RM3100_SENDER_ID"/>-->
 
     <define name="AHRS_DCM_IMU_ID" value="ABI_BROADCAST"/>
+    <!--<define name="DCM_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>-->
     <!--<define name="DCM_MAG_ID" value="MAG_IST8310_SENDER_ID"/>-->
     <define name="DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
     <!--<define name="DCM_MAG_ID" value="MAG_QMC5883P_SENDER_ID"/>-->
@@ -657,15 +650,16 @@
 
   </section>
 
-  <!-- For e.g. Rotation between sensor frame and IMU frame (phi angle) --><!-- TODO: Set it correctly -->
-  <section name="MAG_QMC5883L" prefix="QMC5883L_">
+  <!-- For e.g. Rotation between sensor frame and IMU frame (phi angle) is not axis aligned , eg for whatever reason 25 deg ofset etc. -->
+  <!-- In this airframe set differently, by the signs of the sensor since they are aligned axis only sign and sensor axis are different-->
+  <!-- <section name="MAG_QMC5883L" prefix="QMC5883L_">
       <define name="MAG_TO_IMU_PHI" value="0.0"/>
       <define name="MAG_TO_IMU_THETA" value="0.0"/>
       <define name="MAG_TO_IMU_PSI" value="0.0"/>
-  </section>
+  </section> -->
 
   <section name="INS" prefix="INS_">
-    <define name="BODY_TO_GPS_X" value="0.0" unit="m"/><!--TODO: unkn -->
+    <define name="BODY_TO_GPS_X" value="0.0" unit="m"/>
     <define name="BODY_TO_GPS_Y" value="0.0" unit="m"/>
     <define name="BODY_TO_GPS_Z" value="0.005" unit="m"/>
 
@@ -714,7 +708,6 @@
     <define name="MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)+4" unit="m"/><!-- For AGL -->
     <define name="FILTER" value="0.1"/>
   </section>
-
 
   <section name="HORIZONTAL CONTROL" prefix="H_CTL_">
 
@@ -851,7 +844,7 @@
   <!-- Skid Landing Configuration -->
   <section name="LANDING" prefix="SKID_LANDING_">
     <define name="AF_HEIGHT" value="40" unit="m"/>
-    <define name="FINAL_HEIGHT" value="40" unit="m"/>
+    <define name="FINAL_HEIGHT" value="30" unit="m"/>
     <define name="FINAL_STAGE_TIME" value="8" unit="s"/>
   </section>
 
@@ -868,7 +861,7 @@
 
   <section name="BAT">
     <!--<define name="VoltageOfAdc(adc)" value="(0.00385 * adc)"/>--><!-- Modify if needed to get correct value-->
-    <define name="MAX_BAT_CAPACITY" value="1550" unit="mAh"/>
+    <define name="MAX_BAT_CAPACITY" value="2200" unit="mAh"/>
     <define name="MILLIAMP_AT_IDLE_THROTTLE" value="300" unit="mA"/>
     <define name="MILLIAMP_AT_FULL_THROTTLE" value="12000" unit="mA"/>
     <!-- <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.01"/> -->
