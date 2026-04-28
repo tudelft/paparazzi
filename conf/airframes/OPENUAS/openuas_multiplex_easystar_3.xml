@@ -89,7 +89,7 @@
 
       <module name="airspeed" type="sdp3x">
         <configure name="SDP3X_I2C_DEV" value="i2c2"/>
-        <define name="SDP3X_LOWPASS_TAU" value="0.09"/>
+        <define name="SDP3X_LOWPASS_TAU" value="0.13"/>
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
         <define name="USE_AIRSPEED" value="TRUE"/>
         <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>
@@ -425,7 +425,7 @@
     <servo name="S_AILERON_LEFT"   no="1" min="1900" neutral="1500" max="1100"/>
     <servo name="S_ELEVATOR"       no="2" min="1100" neutral="1500" max="1900"/>
     <servo name="S_RUDDER"         no="3" min="1100" neutral="1500" max="1900"/>
-    <servo name="S_AILERON_RIGHT"  no="4" min="1100" neutral="1500" max="1900"/>
+    <servo name="S_AILERON_RIGHT"  no="4" min="1900" neutral="1500" max="1100"/>
     <servo name="S_LIGHT"          no="5" min="1100" neutral="1500" max="1900"/>
     <servo name="S_HATCH"          no="6" min="1100" neutral="1500" max="1900"/>
     <servo name="S_SHUTTER"        no="7" min="1100" neutral="1500" max="1900"/> 
@@ -570,15 +570,15 @@
 
     <define name="ACCEL_X_NEUTRAL" value="0"/>
     <define name="ACCEL_Y_NEUTRAL" value="0"/>
-    <define name="ACCEL_Z_NEUTRAL" value="0"/>
+    <define name="ACCEL_Z_NEUTRAL" value="-40"/>
     
     <!-- set for 16G max-->
-    <define name="ACCEL_X_SENS" value="4.89" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.89" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.89" integer="16"/>
+    <define name="ACCEL_X_SENS" value="4.86" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="4.87" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="4.82" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI" value="0.0" unit="deg"/>
-    <define name="BODY_TO_IMU_THETA" value="0.0" unit="deg"/><!--15deg ,  was 0.25RAD could be moved from AUTO_THROTTLE_NOMINAL_CRUISE_PITCH -->
+    <define name="BODY_TO_IMU_THETA" value="2.9" unit="deg"/><!-- could be moved from AUTO_THROTTLE_NOMINAL_CRUISE_PITCH -->
     <define name="BODY_TO_IMU_PSI" value="0.0" unit="deg"/><!--90-->
 
     <define name="MAG_X_SIGN" value="1"/>
@@ -636,10 +636,9 @@
 
     <define name="AHRS_DCM_IMU_ID" value="ABI_BROADCAST"/>
     <!--<define name="DCM_MAG_ID" value="MAG_IST8310_SENDER_ID"/>-->
-    <!--<define name="DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>-->
+    <define name="DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
     <!--<define name="DCM_MAG_ID" value="MAG_QMC5883P_SENDER_ID"/>-->
     <!--<define name="DCM_MAG_ID" value="MAG_RM3100_SENDER_ID"/>-->
-    <define name="DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
 
     <!-- 
     <define name="PROPAGATE_LOW_PASS_RATES" value="TRUE"/>
@@ -666,13 +665,12 @@
   </section>
 
   <section name="INS" prefix="INS_">
-    <!-- <define name="USE_INS_MODULE"/> -->
     <define name="BODY_TO_GPS_X" value="0.0" unit="m"/><!--TODO: unkn -->
     <define name="BODY_TO_GPS_Y" value="0.0" unit="m"/>
-    <define name="BODY_TO_GPS_Z" value="0.0" unit="m"/>
+    <define name="BODY_TO_GPS_Z" value="0.005" unit="m"/>
 
     <define name="ROLL_NEUTRAL_DEFAULT" value="0." unit="deg"/>
-    <define name="PITCH_NEUTRAL_DEFAULT" value="6." unit="deg"/><!--TODO: unkn -->
+    <define name="PITCH_NEUTRAL_DEFAULT" value="3." unit="deg"/><!-- TODO-->
     <define name="USE_GPS_ALT" value="TRUE"/>
     <!--<define name="USE_GPS_ALT_SPEED" value="FALSE"/>-->
     <!--<define name="VFF_R_GPS" value="0.03"/>--><!-- If one trusts baro a bit more -->
@@ -710,23 +708,13 @@
 
   <section name="AGL" prefix="AGL_DIST_SONAR_">
     <define name="ID" value="RANGEFINDER_I2C_SENDER_ID"/>
-   <!-- <define name="ID" value="AGL_RANGEFINDER_I2C_ID"/> --><!-- maybe?-->
+    <!-- <define name="ID" value="AGL_RANGEFINDER_I2C_ID"/> --><!-- maybe?-->
     <!-- <define name="ID" value="ABI_BROADCAST"/> -->
-    <define name="MAX_RANGE" value="$(RANGEFINDER_I2C_MAX_RANGE)/2" unit="m"/>
-    <define name="MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)+4" unit="m"/>
-    <!-- Or better?
-    <define name="MAX_RANGE" value="30." unit="m"/>
-    <define name="MIN_RANGE" value="0.06" unit="m"/>
-    -->
+    <define name="MAX_RANGE" value="$(RANGEFINDER_I2C_MAX_RANGE)/2" unit="m"/><!-- For AGL -->
+    <define name="MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)+4" unit="m"/><!-- For AGL -->
     <define name="FILTER" value="0.1"/>
   </section>
 
-  <!-- All set in sensor -->
-  <!-- 
-  <section name="SONAR" prefix="SONAR_I2C_">
-  </section> -->
-
-  <!-- <define name="USE_INS_MODULE"/>???  -->
 
   <section name="HORIZONTAL CONTROL" prefix="H_CTL_">
 
