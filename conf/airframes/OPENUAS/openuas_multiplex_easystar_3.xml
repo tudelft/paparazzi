@@ -93,7 +93,7 @@
         <!--<define name="SDP3X_SYNC_SEND" value="TRUE"/>--> <!-- Only enable while debugging -->
       </module>
 
-      <!-- Optionally use alternative magnetometer driver chip on GNSS board instead of FC --> 
+      <!-- Magnetometer chip on GNSS board instead of FC --> 
       <module name="mag" type="qmc5883l">
         <configure name="MAG_QMC5883L_I2C_DEV" value="i2c2"/>
         <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="50"/><!-- 1/4 of 200Hz, the maximum update rate for this sensor -->
@@ -106,6 +106,25 @@
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
         <!-- <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/> --><!-- Only enable while debugging via fast connetion, NOT mesh -->
       </module>
+
+      <!-- Optionally use alternative magnetometer if rate and quality of QMC5883l is insufficient --> 
+      <!-- MEDIAN_FILTER Enabled to avoid sporadic spikes in output-->
+      <!-- 
+      <module name="mag" type="rm3100">
+        <configure name="MAG_RM3100_I2C_DEV" value="i2c2"/>
+        <configure name="MAG_RM3100_PERIODIC_FREQUENCY" value="125"/>
+        <define name="RM3100_ADDR" value="RM3100_ADDR3"/>
+        <define name="RM3100_USE_MEDIAN_FILTER" value="TRUE"/>
+        <define name="RM3100_CHAN_X" value="1"/>
+        <define name="RM3100_CHAN_Y" value="0"/>
+        <define name="RM3100_CHAN_Z" value="2"/>
+        <define name="RM3100_CHAN_X_SIGN" value="-"/>
+        <define name="RM3100_CHAN_Y_SIGN" value="+"/>
+        <define name="RM3100_CHAN_Z_SIGN" value="-"/>
+        <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
+        <configure name="MODULE_RM3100_SYNC_SEND" value="TRUE"/>
+      </module> 
+      -->
 
       <!-- Build into the airframe is a rangfinder Surertech VB22A 0xA4 (0x52 7bit) -->
       <module name="rangefinder_i2c"> 
@@ -482,7 +501,7 @@
     <!--<let var="rc_gain_gyro" value="0.9"/>--><!-- Temporary set a high value to see if direction is OK-->
     <let var="rc_gain_gyro" value="0.4"/><!-- TODO: Not yet inflight tunable -->
     <let var="k_rudder_gyro" value="8.0 * $rc_gain_gyro"/><!--gain from yaw rate to rudder-->
-    <let var="gyro_active" value="1"/><!--(1 > AP_MODE ? 0 : 1)"/>--><!-- yes a bit puzzling is it ;)-->
+    <let var="gyro_active" value="(1 > AP_MODE ? 0 : 1)"/><!-- yes a bit puzzling is it ;)-->
     <let var="gyro_yaw" value="$gyro_active * (stateGetBodyRates_i()->r)"/>
     <let var="yaw_ctrl_sgl" value="@YAW - ($k_rudder_gyro * ($gyro_yaw)) - @ROLL * ASSIST_ROLL_WITH_RUDDER"/>
     <let var="aileron" value="@ROLL+(BRAKEGAIN*SPOILERON_BRAKE_FULL)"/>
