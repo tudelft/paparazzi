@@ -505,7 +505,7 @@ bool use_safety_killer = false;     // !!DANGER!! never turn on by default.
 bool safety_killer_trigger = false;
 bool auto_fault_cmd = false; //
 float temp_acc_des[3];
-float safety_killer_cutoff = 6500.0;
+float safety_killer_cutoff = 7500.0;
 float xi = 0.0;
 float max_pusher_cmd = 7500;
 float debug_state[3];
@@ -738,7 +738,7 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
 }
 static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
 {
-  float temp_debug_vect[19];
+  float temp_debug_vect[20];
   temp_debug_vect[0] = temp_acc_des[0]; // LP.p.meas;
   temp_debug_vect[1] = temp_acc_des[1]; // LP.q.meas;
   temp_debug_vect[2] = temp_acc_des[2]; // LP.r.meas;
@@ -758,7 +758,8 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
   temp_debug_vect[16] = debug_state[0];
   temp_debug_vect[17] = debug_state[1];
   temp_debug_vect[18] = debug_state[2];
-  debug_vect(trans, dev, "APF", temp_debug_vect, 19);
+  temp_debug_vect[19] = auto_fault_cmd;
+  debug_vect(trans, dev, "APF", temp_debug_vect, 20);
 }
 #endif
 //====================================================================================================================================
@@ -2442,7 +2443,7 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
     andi_u_n[i] = WLS_one_p.u[i];
     andi_u[i] = (float)(andi_u_n[i] * ratio_u_un[i]);
     Bound(andi_u[i], act_min[i], act_max[i]);
-    if (andi_u[i] > safety_killer_cutoff && use_safety_killer)
+    if ((actuator_state_1l[i]> safety_killer_cutoff||andi_u[i] > 8500.0) && use_safety_killer)
     {
       safety_killer_trigger = true;
     }
@@ -2467,6 +2468,7 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
   else
   {
     temp_thrust = (float)radio_control_get(RADIO_THROTTLE) - delta_fault;
+    counter_afc = 0;
   }
   Bound(temp_thrust, 0.0, max_fault_mot);
   if (fault_pitch_motors && !fault_roll_motors && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI))
