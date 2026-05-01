@@ -259,6 +259,10 @@ void ins_ext_pose_msg_update(uint8_t *buf)
 
   float_eulers_of_quat(&orient_eulers, &orient);
 
+  orient_eulers.psi += r*optitrack_delay;
+  NormRadAngle(orient_eulers.psi);
+
+
   ins_ext_pose.ev_time       = get_sys_time_usec();
   ENU_OF_TO_NED(ins_ext_pose.ev_pos, enu_pos);
   ENU_OF_TO_NED(ins_ext_pose.ev_vel, enu_vel);
