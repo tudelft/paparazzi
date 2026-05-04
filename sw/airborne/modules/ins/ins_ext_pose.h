@@ -75,6 +75,7 @@ enum ins_ext_pose_outputs {
   EKF_NUM_OUTPUTS
 };
 
+extern float opti_delay;
 extern float ekf_X[EKF_NUM_STATES];
 
 extern void ins_ext_pose_init(void);
