@@ -403,30 +403,36 @@
     <!-- <module name="imu_quality_assessment"/>--><!-- Can be disabled after initial tuning -->
     <module name="tune_airspeed"/><!-- Can be disabled after initial tuning -->
 
-    <!-- For relative localization and inter-aircraft communication, use the following module 
-    together with the appropriate code running on the attached UWB module on the Arduino side. -->
-    <module name = "decawave_anchorless_communication" >
-      <!--<configure name="DECWAVE_ANCHORLESS_UART" value="UART5"/>-->
-      <!-- <configure name="DECWAVE_ANCHORLESS_BAUD" value="B115200"/> -->
-      <configure name="SERIAL_UART" value="UART5"/>
-      <configure name="SERIAL_BAUD" value="B115200"/>
-      <!-- <configure name="SERIAL_LED" value="3"/> -->
+    <define name="RADIO_MANUALLIGHT" value="RADIO_AUX2"/>
+    <define name="RADIO_HATCH" value="RADIO_AUX3"/>
+    <define name="RADIO_MANUALSHUTTER" value="RADIO_AUX2"/>
+
+    <!-- For relative localization and inter-aircraft communication, use this UWB Swarm module 
+    together with the appropriate code running on the MCU of the attached UWB MiniTag PCB -->
+    <module name = "uwb_swarm" >
+      <configure name="UWB_SWARM_UART" value="UART5"/>
+      <configure name="UWB_SWARM_BAUD" value="B115200"/>
+      <!-- <configure name="UWB_SWARM_LED" value="3"/> -->
     </module>
 
-    <module name="relative_localization_filter">
-      <!-- <configure name="RELATIVE_LOCALIZATION_FILTER_FREQUENCY" value="50"/>
+    <!-- for collision avoidance between drones in a swarm, 
+    this module can be used to filter the relative localization data from the UWB Swarm module
+     and provide more accurate estimates of the relative position and velocity of nearby drones. 
+     The filter can be configured with parameters such as maximum range, velocity limits, 
+     and noise characteristics to suit the specific requirements of the swarm operation. -->
+
+    <!-- 
+      <module name="relative_localization_filter">
+      <configure name="RELATIVE_LOCALIZATION_FILTER_FREQUENCY" value="50"/>
       <configure name="RELATIVE_LOCALIZATION_FILTER_MAX_RANGE" value="20.0" unit="m"/>
       <configure name="RELATIVE_LOCALIZATION_FILTER_MIN_RANGE" value="0.5" unit="m"/>
       <configure name="RELATIVE_LOCALIZATION_FILTER_MAX_VELOCITY" value="10.0" unit="m/s"/>
       <configure name="RELATIVE_LOCALIZATION_FILTER_MIN_VELOCITY" value="0.1" unit="m/s"/>
       <configure name="RELATIVE_LOCALIZATION_FILTER_PROCESS_NOISE" value="0.1"/>
       <configure name="RELATIVE_LOCALIZATION_FILTER_MEASUREMENT_NOISE" value="0.5"/>
-      <configure name="RELATIVE_LOCALIZATION_FILTER_INITIAL_ESTIMATE" value="0.0"/> -->
-    </module>
-
-    <define name="RADIO_MANUALLIGHT" value="RADIO_AUX2"/>
-    <define name="RADIO_HATCH" value="RADIO_AUX3"/>
-    <define name="RADIO_MANUALSHUTTER" value="RADIO_AUX2"/>
+      <configure name="RELATIVE_LOCALIZATION_FILTER_INITIAL_ESTIMATE" value="0.0"/>
+    </module> 
+    -->
 
   </firmware>
 
@@ -452,8 +458,8 @@
     <set command="SHUTTER"      value="@MANUALSHUTTER"/> 
   </rc_commands>
 
-  <!-- When flying autonomous it is sometimes handy to override certain commands via RC when tuning 
-  in this case yaw, is for example the curve is to wide and would go out of boundary -->
+  <!-- When flying autonomous it is sometimes needed to override certain commands via RC when tuning 
+  in this case yaw, is for example the curve is to wide and would go out of sight or other boundary -->
   <auto_rc_commands>
     <set command="YAW" value="@YAW"/>
   </auto_rc_commands>
@@ -696,29 +702,6 @@
 
   </section>
 
-  <section name="DW1000" prefix="DW1000_">  
-    <define name="ANCHORS_IDS" value="{1,2,3}"/><!-- Comma separated list of anchors ID -->
-    <define name="ANCHORS_POS_X" value="{0., 0., 5.}"/>  <!-- Comma separated list of anchors ID over X axis -->
-    <define name="ANCHORS_POS_Y" value="{0., 5., 0.}"/> <!-- Comma separated list of anchors ID over Y axis -->
-    <define name="ANCHORS_POS_Z" value="{0., 0., 0.}"/><!-- Comma separated list of anchors ID over Z axis -->
-    <define name="OFFSET" value="{0., 0., 0.}"/><!-- Position offset other X, Y and Z axis -->
-    <define name="SCALE" value="{1., 1., 1.}"/> <!-- Position scale factor other X, Y and Z axis -->
-    <define name="INITIAL_HEADING" value="0."/> <!-- Initial heading correction between anchors frame and global frame -->
-    <define name="NB_ANCHORS" value="3"/><!-- Set number of anchors, only 3 are required/supported at the moment -->
-    <define name="USE_EKF" value="TRUE"/><!-- Enable EKF filtering, required to estimate speed -->
-    <define name="EKF_Q" value="1.0"/> <!-- EKF process noise -->
-    <define name="EKF_R_DIST" value="0.1"/><!-- EKF noise on distance measurements -->
-    <define name="EKF_R_SPEED" value="0.1"/><!-- EKF noise on speed measurements (if available) -->
-    <!-- Noise level reported by the POSITION_ESTIMATE message when USE_AS_LOCAL_POS is activated -->
-    <define name="NOISE_X" value="0.1"/>
-    <define name="NOISE_Y" value="0.1"/>
-    <define name="NOISE_Z" value="0.1"/>
-    <!-- Noise level reported by the VELOCITY_ESTIMATE message when USE_AS_LOCAL_POS is activated -->
-    <define name="VEL_NOISE_X" value="0.1"/>
-    <define name="VEL_NOISE_Y" value="0.1"/>
-    <define name="VEL_NOISE_Z" value="0.1"/>
-  </section>
-
   <section name="AGL" prefix="AGL_DIST_SONAR_">
     <define name="ID" value="RANGEFINDER_I2C_SENDER_ID"/>
     <!-- <define name="ID" value="AGL_RANGEFINDER_I2C_ID"/> --><!-- maybe?-->
@@ -924,7 +907,8 @@
 
     <define name="UNLOCKED_HOME_MODE" value="TRUE"/>
     <define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>
-        <!-- <define name="NO_GPS_NEEDED_FOR_NAV" value="TRUE"/>-->
+
+    <!-- <define name="NO_GPS_NEEDED_FOR_NAV" value="TRUE"/>-->
     <!-- Avoid GPS loss behavior when having RC or datalink -->
     <!-- <define name="NO_GPS_LOST_WITH_DATALINK_TIME" value="20000"/>-->
     <!-- <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/> -->
@@ -972,10 +956,12 @@
     <define name="TARGET_SPEED" value="NOMINAL_AIRSPEED" unit="m/s"/>
   </section>
 
-  <!-- <section name="DIGITAL_CAMERA" prefix="DC_">
+  <!-- 
+  <section name="DIGITAL_CAMERA" prefix="DC_">
     <define name="AUTOSHOOT_PERIOD" value="1.5" unit="sec"/>
     <define name="AUTOSHOOT_DISTANCE_INTERVAL" value="50" unit="meter"/>
-  </section> -->
+  </section> 
+  -->
 
   <section name="GCS">
     <define name="SPEECH_NAME" value="Easystar 3"/>

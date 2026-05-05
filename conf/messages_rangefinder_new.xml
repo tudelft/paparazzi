@@ -431,7 +431,17 @@
       <field name="cycle_time" type="uint32" unit="ms"/>
     </message>
 
-    <!-- 51 is free -->
+    <message name="UWB_SWARM" id="51">
+      <description>Relative localization data for other MAV</description>
+      <field name="id_tracked"    type="uint8" unit="">ID of the MAV this data refers to</field>
+      <field name="r_tracked"     type="float" unit="m">Distance of other MAV</field>
+      <field name="vx_tracked"    type="float" unit="m/s">X speed of other MAV</field>
+      <field name="vy_tracked"    type="float" unit="m/s">Y speed of other MAV</field>
+      <field name="z_tracked"     type="float" unit="m">Height position of other MAV</field>
+      <field name="ax_tracked"    type="float" unit="m/s^2">X acceleration of other MAV</field>
+      <field name="ay_tracked"    type="float" unit="m/s^2">Y acceleration of other MAV</field>
+      <field name="yawr_tracked"  type="float" unit="rad/s">Yaw rate of other MAV</field>
+    </message>
 
     <message name="MPPT" id="52">
       <field name="values" type="int16[]" alt_unit_coef="1e-3"/>

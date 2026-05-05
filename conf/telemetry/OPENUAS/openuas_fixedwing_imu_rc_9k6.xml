@@ -33,9 +33,9 @@
       <message name="COMMANDS"            period="5.2"/>
       <message name="FBW_STATUS"          period="2.0"/>
       <message name="PAYLOAD"             period="0.8"/>
-      <message name="AIR_DATA"            period="1.5"/>
+      <message name="AIR_DATA"            period="1.7"/>
       <message name="RANGEFINDER"         period="1.2"/>
-      <message name="RLFILTER"            period="1.3"/>
+      <message name="UWB_SWARM"           period="2.3"/>
     </mode>
     <mode name="minimal" key_press="m">
       <message name="ALIVE"               period="4.6"/>

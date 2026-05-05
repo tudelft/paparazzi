@@ -1,12 +1,5 @@
 /*
- * Serial_Communication.c
- *
- *  Created on: Jul 25, 2017
- *      Author: Steven van der Helm
- */
-
-/*
- * Copyright (C) C. DW
+ * Copyright (C) 2017 Steven van der Helm, C. DW
  *
  * This file is part of paparazzi
  *
@@ -24,26 +17,28 @@
  * along with paparazzi; see the file COPYING.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
+
 /**
  * @file "modules/decawave_anchorless_communication.h"
- * @author S. vd H, C. DW
+ * @author Steven van der Helm, C. DW
  *
   Decawave DWM1000 module serial communication for use in anchorless network where the UWB modules are attached to MAVs and need to communicate
   on-board values with each-other (for purposes such as relative localization, co-ordination, or collision avoidance).
   This module must be used together with the Decawave DWM1000 running the appropriate Serial Communication code, which can be flashed on the Arduino board.
   The arduino library can be found at:
-    https://github.com/StevenH2812/arduino-dw1000/tree/UWB_onboard
-  The example file to flash the Arduino Micro can be found in
-    examples/UWB_localization_v1_0/UWB_localization_v1_0.ino
+    https://github.com/tudelft/uwb-dw1000-pprz/
+
+  The example file to flash to the MCU Atmega can be found in
+    examples/UWB_localization/UWB_localization.ino
  */
 
+//#include <stdio.h>
 #include "decawave_anchorless_communication.h"
 #include "modules/datalink/telemetry.h"
-#include "modules/radio_control/radio_control.h"
+//#include "modules/radio_control/radio_control.h"
 #include "state.h"
 #include "mcu_periph/uart.h"
 #include "modules/core/abi.h"
-#include <stdio.h>
 
 #define UWB_SERIAL_PORT (&((SERIAL_UART).device))
 struct link_device *external_device = UWB_SERIAL_PORT;
