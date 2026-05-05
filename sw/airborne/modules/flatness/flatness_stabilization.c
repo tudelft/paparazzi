@@ -85,11 +85,17 @@ static const float EAST_OFFSET = -5.0f + 2.5f;
 // #define REF_TRAJ_FILENAME "immelmann_vs2.csv"
 // #define NB_CSV_ROWS 842
 
-#define REF_TRAJ_FILENAME "immelmann_vs2.5.csv"
+// #define REF_TRAJ_FILENAME "immelmann_vs2.5.csv"
+// #define NB_CSV_ROWS 675
+
+#define REF_TRAJ_FILENAME "immelmann_vs2.5_wdotref.csv"
 #define NB_CSV_ROWS 675
 
 // #define REF_TRAJ_FILENAME "immelmann_vs3.csv"
 // #define NB_CSV_ROWS 561
+
+// #define REF_TRAJ_FILENAME "immelmann_vs3_wdotref.csv"
+// #define NB_CSV_ROWS 562
 
 // ------------------------------------- immelmann diag ------------------------------------- //
 // static const float DOWN_OFFSET = -1.5f;
@@ -100,8 +106,7 @@ static const float EAST_OFFSET = -5.0f + 2.5f;
 // #define NB_CSV_ROWS 830
 
 
-
-#define NB_CSV_COLS 18
+#define NB_CSV_COLS 21
 
 static struct FloatVect3 pos_end = {0.0f, 0.0f, -2.0f};
 static const float P2P_DT = 3.0f;
@@ -120,6 +125,7 @@ typedef struct {
     float vx, vy, vz;
     float ax, ay, az;
     float p, q, r;
+    float pdot, qdot, rdot;
     float psi;
 } Traj_row_t;
 
@@ -166,7 +172,7 @@ static Act_t act = {
     .state_filt = {0.0f}
 };
 static struct FloatQuat *quat, quat_sp;
-static struct FloatRates rates_sp, rates_ref;
+static struct FloatRates rates_sp, rates_ref, angaccel_ref;
 static struct FloatRates *rates;
 static struct FloatRates ang_accel_sp = {0.0f, 0.0f, 0.0f};
 static float ang_accel_filt[3] = {0.0f, 0.0f, 0.0f};
@@ -244,6 +250,7 @@ static void expose_dbg_variables(void)
     dbg.accel_ref = accel_ref;
     dbg.psi_ref = psi_ref;
     dbg.rates_ref = rates_ref;
+    dbg.angaccel_ref = angaccel_ref;
 
     dbg.vel_sp = vel_sp;
     dbg.accel_sp = accel_sp;
@@ -349,6 +356,7 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
         rates_ref.r = 0.0f;
     }
     RATES_ADD(rates_sp, rates_ref);
+    
     if (fsm_state == FSM_P2P) {
         RATES_BOUND_CUBE(rates_sp, -RATES_BOUND, RATES_BOUND);
     }
@@ -358,6 +366,14 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
     ang_accel_sp.p = Komega.x * (rates_sp.p - rates->p);
     ang_accel_sp.q = Komega.y * (rates_sp.q - rates->q);
     ang_accel_sp.r = Komega.z * (rates_sp.r - rates->r);
+
+    // add FF angular accel
+    if (flatness_guided == false) {
+        angaccel_ref.p = 0.0f;
+        angaccel_ref.q = 0.0f;
+        angaccel_ref.r = 0.0f;
+    }
+    RATES_ADD(ang_accel_sp, angaccel_ref);
 
     if (flatness_guided == false) {
         // actuator state estimation + butterworth filter    
@@ -600,9 +616,10 @@ void load_csv_traj(void)
         float jx, jy, jz;
         float psi, psidot;
         float p, q, r;
+        float pdot, qdot, rdot;
 
-        int n = sscanf(line, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
-                       &t, &px, &py, &pz, &vx, &vy, &vz, &ax, &ay, &az, &jx, &jy, &jz, &psi, &psidot, &p, &q, &r);
+        int n = sscanf(line, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
+                       &t, &px, &py, &pz, &vx, &vy, &vz, &ax, &ay, &az, &jx, &jy, &jz, &psi, &psidot, &p, &q, &r, &pdot, &qdot, &rdot);
 
         if (n == NB_CSV_COLS) {
             traj[csv_traj_i].px = px;
@@ -620,6 +637,10 @@ void load_csv_traj(void)
             traj[csv_traj_i].p = p;
             traj[csv_traj_i].q = q;
             traj[csv_traj_i].r = r;
+
+            traj[csv_traj_i].pdot = pdot;
+            traj[csv_traj_i].qdot = qdot;
+            traj[csv_traj_i].rdot = rdot;
 
             traj[csv_traj_i].psi = psi;
 
@@ -729,6 +750,10 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
             rates_ref.q = 0.0f;
             rates_ref.r = 0.0f;
 
+            angaccel_ref.p = 0.0f;
+            angaccel_ref.q = 0.0f;
+            angaccel_ref.r = 0.0f;
+
             flatness_guidance_run(in_flight, cmd);
 
             if (timestamp_p2p > P2P_DT + P2P_TO_TRAJ_DELAY) {
@@ -763,6 +788,10 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
                 rates_ref.q = traj[csv_i].q;
                 rates_ref.r = traj[csv_i].r;
 
+                angaccel_ref.p = traj[csv_i].pdot;
+                angaccel_ref.q = traj[csv_i].qdot;
+                angaccel_ref.r = traj[csv_i].rdot;
+
                 psi_ref = traj[csv_i].psi;
             } else {
                 vel_ref.x = 0.0f;
@@ -776,6 +805,10 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
                 rates_ref.p = 0.0f;
                 rates_ref.q = 0.0f;
                 rates_ref.r = 0.0f;
+
+                angaccel_ref.p = 0.0f;
+                angaccel_ref.q = 0.0f;
+                angaccel_ref.r = 0.0f;
 
                 fsm_state = FSM_END;
             }

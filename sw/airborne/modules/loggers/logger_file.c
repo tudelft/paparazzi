@@ -146,6 +146,7 @@ static void logger_file_write_header(FILE *file) {
     fprintf(file, ",acc_ref_n,acc_ref_e,acc_ref_d");
     fprintf(file, ",psi_ref");
     fprintf(file, ",rates_ref_p,rates_ref_q,rates_ref_r");
+    fprintf(file, ",angaccel_ref_p,angaccel_ref_q,angaccel_ref_r");
 
     fprintf(file, ",pos_n,pos_e,pos_d");
     fprintf(file, ",vel_sp_n,vel_sp_e,vel_sp_d");
@@ -190,6 +191,7 @@ static void logger_file_write_row(FILE *file) {
     fprintf(file, ",%f,%f,%f", dbg.accel_ref.x, dbg.accel_ref.y, dbg.accel_ref.z);
     fprintf(file, ",%f", dbg.psi_ref);
     fprintf(file, ",%f,%f,%f", dbg.rates_ref.p, dbg.rates_ref.q, dbg.rates_ref.r);
+    fprintf(file, ",%f,%f,%f", dbg.angaccel_ref.p, dbg.angaccel_ref.q, dbg.angaccel_ref.r);
 
     fprintf(file, ",%f,%f,%f", pos->x, pos->y, pos->z);
     fprintf(file, ",%f,%f,%f", dbg.vel_sp.x, dbg.vel_sp.y, dbg.vel_sp.z);
