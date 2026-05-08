@@ -415,6 +415,12 @@
       <!-- <configure name="UWB_SWARM_LED" value="3"/> -->
     </module>
 
+    <module name = "multrawidebandcontroller">
+      <!-- <configure name="UWB_SWARM_UART" value="UART5"/>
+      <configure name="UWB_SWARM_BAUD" value="B115200"/> -->
+      <!-- <configure name="UWB_SWARM_LED" value="3"/> -->
+    </module>
+    
     <!-- for collision avoidance between drones in a swarm, 
     this module can be used to filter the relative localization data from the UWB Swarm module
      and provide more accurate estimates of the relative position and velocity of nearby drones. 

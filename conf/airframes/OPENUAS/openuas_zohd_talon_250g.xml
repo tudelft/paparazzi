@@ -39,12 +39,10 @@
     <!--<configure name="RTOS_DEBUG" value="0"/>-->
     <!--configure name="CH_OPT" value="0 -g -ggdb3"/-->
 
-    <!--<target name="ap" board="matek_f765_wing">-->
     <!-- <target name="ap" board="px4fmu_4.0_chibios"> -->
-    <target name="ap" board="matek_f405_wing_v1">
+    <target name="ap" board="matek_f405_te_sd">
     <!-- https://github.com/ArduPilot/ardupilot/blob/e4a27943f5b692ad331c09840960f0c408169599/libraries/AP_HAL_ChibiOS/hwdef/MatekF405-TE/hwdef.dat#L25 -->
     <!-- The debug pins for SWD PA13/PA14 are exposed as LED's, you can get an ST-LINK / J-LINK via those, but then you'd need to suppress in your code -->
-
 
       <!--<define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>-->
       <define name="DEBUG" value="0"/><!--Enable for debug output, e.g. ms5611-->
@@ -81,6 +79,35 @@
         <configure name="ACCEL_AAF" default="213"/> -->
       </module>
 
+      <!-- Magnetometer chip on GNSS board instead of FC --> 
+      <!-- <module name="mag" type="qmc5883l">
+        <configure name="MAG_QMC5883L_I2C_DEV" value="i2c1"/>
+        <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="50"/>
+        <define name="QMC5883L_CHAN_X" value="1"/>
+        <define name="QMC5883L_CHAN_Y" value="0"/>
+        <define name="QMC5883L_CHAN_Z" value="2"/>
+        <define name="QMC5883L_CHAN_X_SIGN" value="+"/>
+        <define name="QMC5883L_CHAN_Y_SIGN" value="-"/>
+        <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
+        <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/>
+      </module>  -->
+      <!-- 
+      <module name="mag" type="rm3100">
+        <configure name="MAG_RM3100_I2C_DEV" value="i2c2"/>
+        <configure name="MAG_RM3100_PERIODIC_FREQUENCY" value="125"/>
+        <define name="RM3100_ADDR" value="RM3100_ADDR3"/>
+        <define name="RM3100_USE_MEDIAN_FILTER" value="TRUE"/>
+        <define name="RM3100_CHAN_X" value="1"/>
+        <define name="RM3100_CHAN_Y" value="0"/>
+        <define name="RM3100_CHAN_Z" value="2"/>
+        <define name="RM3100_CHAN_X_SIGN" value="-"/>
+        <define name="RM3100_CHAN_Y_SIGN" value="+"/>
+        <define name="RM3100_CHAN_Z_SIGN" value="-"/>
+        <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
+        <configure name="MODULE_RM3100_SYNC_SEND" value="TRUE"/>
+      </module> 
+      -->
+
       <module name="telemetry" type="transparent">
         <configure name="MODEM_PORT" value="usb_serial"/>
         <!-- <configure  name="MODEM_BAUD" value="B57600"/>
@@ -90,14 +117,14 @@
       <module name="gps"  type="ublox" >
         <configure name="GPS_BAUD" value="B38400"/>
         <configure name="GPS_PORT" value="UART1"/>
-        <configure name="GPS_LED" value="2"/>
+        <configure name="GPS_LED"  value="2"/>
       </module>
 
       <module name="control" />
 
-      <module name="radio_control" type="ppm">
+      <!--<module name="radio_control" type="ppm">
         <define name="RADIO_CONTROL_PPM_PIN" value="UART2_RX"/>
-      </module>
+      </module>-->
 
       <!-- <module name="radio_control" type="sbus">
         <configure name="SBUS_PORT" value="UART2"/>
@@ -112,6 +139,8 @@
       </module>
 
       <module name="nav_line"/>
+
+
 
     </target>
 
@@ -145,8 +174,8 @@
 
 <!-- *********************** -->
   <firmware name="setup">
-    <target name="tunnel" board="matek_f405_wing_v1" />
-    <target name="usb_tunnel" board="matek_f405_wing_v1">
+    <target name="tunnel" board="matek_f405_te_sd" />
+    <target name="usb_tunnel" board="matek_f405_te_sd">
     <configure name="TUNNEL_PORT" value="UART3"/>
     </target>
   </firmware>
