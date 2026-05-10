@@ -285,7 +285,7 @@ void uwb_swarm_init(void)
   //Send AC_ID so a table can be made on the Arduino side to match the received UWB messages to the correct drone in the swarm based on AC_ID. Since we can only send floats, we encode the AC_ID as a float by multiplying it with 0x01010101, which means that when decoded back into bytes, all 4 bytes of the float will have the value of AC_ID, which makes it easy to decode back into the original AC_ID on the Arduino side.
   //The uncommon scenrio that AC_ID is larger than 253 (the special byte value) is not handled, but in that case the AC_ID can simply be set to 253 on the Arduino side as well, since it is only used for matching the received UWB messages to the correct drone in the swarm, and it does not matter if multiple drones have the same AC_ID as long as they are different from the AC_ID of the drone itself.
   //also sending the AC_ID as a float with all bytes the same value makes it easy to identify the messages from this drone on the Arduino side, since they will have a unique value that is different from the messages received from the other drones in the swarm, which can be used for debugging and testing purposes.
-/**/
+/*
   uint8_t v = AC_ID;
   union { uint32_t i; float f; } u = { v * 0x01010101 };
 
@@ -296,7 +296,7 @@ void uwb_swarm_init(void)
   sendFloat(UWB_SWARM_COMM_AX, u.f);
   sendFloat(UWB_SWARM_COMM_AY, u.f);
   sendFloat(UWB_SWARM_COMM_YAWR, u.f);
-  */
+*/
 }
 
 /**
@@ -333,7 +333,7 @@ void uwb_swarm_report(void)
 /* Add this to messages.xml data for downlink message: */
 /*
     <message name="UWB_SWARM" id="51">
-      <description>Relative localization data for other MAV</description>
+      <description>Relative localization data from current aircraft to be picked up by other Aircrafts in a swarm</description>
       <field name="id_tracked"    type="uint8" unit="">ID of the MAV this data refers to</field>
       <field name="r_tracked"     type="float" unit="m">Distance of other MAV</field>
       <field name="vx_tracked"    type="float" unit="m/s">X speed of other MAV</field>

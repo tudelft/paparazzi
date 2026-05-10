@@ -131,7 +131,7 @@
         <configure name="RANGEFINDER_I2C_PORT" value="i2c2"/>
         <configure name="RANGEFINDER_I2C_ADDR" value="0xA4"/> <!-- 0x52 in 7 bit -->
         <configure name="RANGEFINDER_I2C_USE_FOR_AGL" value="FALSE"/>
-        <configure name="RANGEFINDER_I2C_COMPENSATE_ROTATION" value="FALSE"/>
+        <configure name="RANGEFINDER_I2C_COMPENSATE_ROTATION" value="TRUE"/>
         <configure name="RANGEFINDER_I2C_PERIODIC_FREQUENCY" value="100"/><!-- 200Hz possible according to datasheet -->
         <define name="RANGEFINDER_I2C_USE_FILTER" value="FALSE"/><!-- no need VB22A filters internally quite well for our purposes -->
         <define name="RANGEFINDER_I2C_MEDIAN_SIZE" value="5"/>
@@ -407,7 +407,7 @@
     <define name="RADIO_HATCH" value="RADIO_AUX3"/>
     <define name="RADIO_MANUALSHUTTER" value="RADIO_AUX2"/>
 
-    <!-- For relative localization and inter-aircraft communication, use this UWB Swarm module 
+    <!-- For relative localization and minimal inter-aircraft communication, use this UWB Swarm module 
     together with the appropriate code running on the MCU of the attached UWB MiniTag PCB -->
     <module name = "uwb_swarm" >
       <configure name="UWB_SWARM_UART" value="UART5"/>
@@ -415,11 +415,12 @@
       <!-- <configure name="UWB_SWARM_LED" value="3"/> -->
     </module>
 
-    <module name = "multrawidebandcontroller">
+    <!-- WIP module multrawidebandcontroller not finished yet -->
+    <!-- <module name = "multrawidebandcontroller"> -->
       <!-- <configure name="UWB_SWARM_UART" value="UART5"/>
       <configure name="UWB_SWARM_BAUD" value="B115200"/> -->
       <!-- <configure name="UWB_SWARM_LED" value="3"/> -->
-    </module>
+    <!-- </module> -->
     
     <!-- for collision avoidance between drones in a swarm, 
     this module can be used to filter the relative localization data from the UWB Swarm module
@@ -711,7 +712,7 @@
   <section name="AGL" prefix="AGL_DIST_SONAR_">
     <define name="ID" value="RANGEFINDER_I2C_SENDER_ID"/>
     <!-- <define name="ID" value="AGL_RANGEFINDER_I2C_ID"/> --><!-- maybe?-->
-    <!-- <define name="ID" value="ABI_BROADCAST"/> -->
+    <define name="ID" value="ABI_BROADCAST"/>
     <define name="MAX_RANGE" value="$(RANGEFINDER_I2C_MAX_RANGE)/2" unit="m"/><!-- For AGL -->
     <define name="MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)+4" unit="m"/><!-- For AGL -->
     <define name="FILTER" value="0.1"/>

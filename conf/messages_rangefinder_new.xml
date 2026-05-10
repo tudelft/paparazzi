@@ -432,7 +432,7 @@
     </message>
 
     <message name="UWB_SWARM" id="51">
-      <description>Relative localization data for other MAV</description>
+      <description>Relative localization data from current aircraft to be picked up by other Aircrafts in a swarm</description>
       <field name="id_tracked"    type="uint8" unit="">ID of the MAV this data refers to</field>
       <field name="r_tracked"     type="float" unit="m">Distance of other MAV</field>
       <field name="vx_tracked"    type="float" unit="m/s">X speed of other MAV</field>

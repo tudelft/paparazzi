@@ -3,10 +3,10 @@
 <telemetry>
   <process name="Ap">
     <mode name="default" key_press="d">
-      <message name="ADC_GENERIC"         period="1.7"/>
-      <message name="AIRSPEED"            period="1.4"/>
-      <message name="AMSL"                period="1.4"/>
-      <message name="ALIVE"               period="5.1"/>
+      <message name="ADC_GENERIC"         period="1.6"/>
+      <message name="AIRSPEED"            period="1.5"/>
+      <message name="AMSL"                period="1.5"/>
+      <message name="ALIVE"               period="4.4"/>
       <message name="GPS"                 period="0.5"/>
       <message name="NAVIGATION"          period="1.1"/>
       <message name="ATTITUDE"            period="0.7"/>
@@ -16,26 +16,26 @@
       <message name="CIRCLE"              period="1.05"/>
       <message name="DESIRED"             period="1.05"/>
       <message name="SEGMENT"             period="1.2"/>
-      <message name="CALIBRATION"         period="2.1"/>
+      <message name="CALIBRATION"         period="2.2"/>
       <message name="NAVIGATION_REF"      period="9.0"/>
-      <message name="PPRZ_MODE"           period="3.2"/>
+      <message name="PPRZ_MODE"           period="1.2"/>
       <message name="SETTINGS"            period="5.1"/>
       <message name="STATE_FILTER_STATUS" period="2.2"/>
       <message name="DATALINK_REPORT"     period="5.1"/>
       <message name="DL_VALUE"            period="1.2"/>
-      <message name="SURVEY"              period="2.1"/>
-      <message name="GPS_SOL"             period="2.0"/>
-      <message name="IMU_ACCEL"           period=".8"/>
-      <message name="IMU_GYRO"            period=".9"/>
-      <message name="IMU_MAG"             period="1.9"/>
-      <message name="CAM"                 period="0.5"/>
-      <message name="CAM_POINT"           period="1.0"/>
-      <message name="COMMANDS"            period="5.2"/>
-      <message name="FBW_STATUS"          period="2.0"/>
-      <message name="PAYLOAD"             period="0.8"/>
+      <message name="SURVEY"              period="2.6"/>
+      <message name="GPS_SOL"             period="2.1"/>
+      <message name="IMU_ACCEL"           period="1.1"/>
+      <message name="IMU_GYRO"            period="1.1"/>
+      <message name="IMU_MAG"             period="2.1"/>
+      <message name="CAM"                 period="0.7"/>
+      <message name="CAM_POINT"           period="1.1"/>
+      <message name="COMMANDS"            period="5.1"/>
+      <message name="FBW_STATUS"          period="2.1"/>
+      <message name="PAYLOAD"             period="0.9"/>
       <message name="AIR_DATA"            period="1.7"/>
       <message name="RANGEFINDER"         period="1.2"/>
-      <message name="UWB_SWARM"           period="2.3"/>
+      <message name="UWB_SWARM"           period="0.9"/>
     </mode>
     <mode name="minimal" key_press="m">
       <message name="ALIVE"               period="4.6"/>
@@ -84,12 +84,17 @@
       <message name="AIRSPEED"            period="0.2"/>
       <message name="AIRSPEED_RAW"        period="0.2"/>
     </mode>
-    <mode name="scaled_sensors" key_press="s">
+    <mode name="scaled_sensors">
       <message name="DL_VALUE"            period="0.5"/>
       <message name="ALIVE"               period="2.1"/>
       <message name="IMU_GYRO"            period="0.075"/>
       <message name="IMU_ACCEL"           period="0.075"/>
       <message name="IMU_MAG"             period="0.1"/>
+    </mode>
+    <mode name="debug_uwb" key_press="s">
+      <message name="DL_VALUE"            period="0.5"/>
+      <message name="ALIVE"               period="2.1"/>
+      <message name="UWB_SWARM"           period="0.9"/>
     </mode>
     <mode name="debug_imu" key_press="i">
       <message name="ATTITUDE"            period="0.1"/>
