@@ -119,7 +119,8 @@ disp3d: disp3d.c
 	$(Q)$(CC)  $(CFLAGS) $(DISP3D_CFLAGS) -o $@ $^ $(DISP3D_LDFLAGS)
 
 
-IVY_C_LIBS = $(shell pkg-config --libs ivy-glib) $(shell pcre-config --libs)
+# IVY_C_LIBS = $(shell pkg-config --libs ivy-glib) $(shell pcre-config --libs)
+IVY_C_LIBS = $(shell pkg-config --libs ivy-glib) $(shell pcre-config --libs) $(shell pkg-config --libs libpcre2-8)
 GLIBIVY_CFLAGS = $(shell pkg-config --cflags ivy-glib)
 
 #
