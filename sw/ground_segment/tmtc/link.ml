@@ -205,7 +205,8 @@ let use_tele_message = fun ?udp_peername ?raw_data_size payload ->
     send_message_over_ivy (string_of_int ac_id) msg.PprzLink.name values;
     update_status ?udp_peername ac_id raw_data_size (msg.PprzLink.name = "PONG")
   with
-      exc ->
+    | Failure msg when String.length msg >= 25 && String.sub msg 0 25 = "PprzLink.invalid class ID" -> ()
+    | exc ->
         prerr_endline (Printexc.to_string exc);
         Debug.call 'W' (fun f ->  fprintf f "Warning, cannot use: %s\n" (Debug.xprint buf));
 
@@ -417,9 +418,10 @@ let message_uplink = fun device ->
   (* Set a forwarder or a broadcaster for all messages tagged in messages.xml *)
   Hashtbl.iter
     (fun _m_id msg ->
-      match msg.PprzLink.link with
-        | Some PprzLink.Forwarded -> set_forwarder msg.PprzLink.name
-        | Some PprzLink.Broadcasted -> if !ac_info then set_broadcaster msg.PprzLink.name
+      match msg.PprzLink.link, msg.PprzLink.name with
+        | _, "ACINFO" | _, "ACINFO_LLA" -> if !ac_info then set_broadcaster msg.PprzLink.name
+        | Some PprzLink.Forwarded, _ -> set_forwarder msg.PprzLink.name
+        | Some PprzLink.Broadcasted, _ -> set_broadcaster msg.PprzLink.name
         | _ -> ())
     Dl_Pprz.messages
 
@@ -518,7 +520,8 @@ let () =
       fun _io_event ->
         begin
           try buffered_parser fd with
-          exc -> prerr_endline (Printexc.to_string exc)
+          | Failure msg when String.length msg >= 25 && String.sub msg 0 25 = "PprzLink.invalid class ID" -> ()
+          | exc -> prerr_endline (Printexc.to_string exc)
       end;
       true (* Returns true to be called again *)
     in

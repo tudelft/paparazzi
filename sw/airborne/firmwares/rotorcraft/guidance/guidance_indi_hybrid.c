@@ -36,6 +36,7 @@
 #include "autopilot.h"
 #include "stdio.h"
 #include "filters/low_pass_filter.h"
+#include "filters/quaternion_filter.h"
 #include "modules/core/abi.h"
 #include "firmwares/rotorcraft/navigation.h"
 
@@ -234,12 +235,10 @@ struct FloatEulers eulers_zxy;
 float thrust_dyn = 0.f;
 float thrust_act = 0.f;
 Butterworth2LowPass filt_accel_ned[3];
-Butterworth2LowPass roll_filt;
-Butterworth2LowPass pitch_filt;
-Butterworth2LowPass yaw_filt;
 Butterworth2LowPass thrust_filt;
 Butterworth2LowPass accely_filt;
 Butterworth2LowPass guidance_indi_airspeed_filt;
+QuatButterworthLowPass quat_filt;
 
 struct FloatVect2 desired_airspeed;
 float gi_unbounded_airspeed_sp = 0.f;
@@ -359,9 +358,9 @@ void guidance_indi_init(void)
   for(int8_t i=0; i<3; i++) {
     init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
   }
-  init_butterworth_2_low_pass(&roll_filt, tau, sample_time, 0.0);
-  init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
-  init_butterworth_2_low_pass(&yaw_filt, tau, sample_time, 0.0);
+  struct FloatQuat q0;
+  float_quat_identity(&q0);
+  init_quat_butterworth_low_pass(&quat_filt, filter_cutoff, sample_time, q0);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
 
@@ -404,9 +403,7 @@ void guidance_indi_enter(void)
     init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
   }
 
-  init_butterworth_2_low_pass(&roll_filt, tau, sample_time, eulers_zxy.phi);
-  init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, eulers_zxy.theta);
-  init_butterworth_2_low_pass(&yaw_filt, tau, sample_time, eulers_zxy.psi);
+  init_quat_butterworth_low_pass(&quat_filt, filter_cutoff, sample_time, *stateGetNedToBodyQuat_f());
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, thrust_in);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
 
@@ -447,6 +444,8 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
 
   /* Obtain eulers with zxy rotation order */
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+  struct FloatEulers eulers_filtered;
+  float_eulers_of_quat_zxy(&eulers_filtered, &quat_filt.quat);
 
   /* Calculate the transition ratio so that the ctrl_effecitveness scheduling works */
   stabilization.transition_ratio = eulers_zxy.theta / RadOfDeg(-75.0f);
@@ -495,7 +494,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
 #if GUIDANCE_INDI_HYBRID_USE_WLS
 
   // Calculate the maximum deflections
-  guidance_indi_hybrid_set_wls_settings(v_gih, roll_filt.o[0], pitch_filt.o[0]);
+  guidance_indi_hybrid_set_wls_settings(v_gih, eulers_filtered.phi, eulers_filtered.theta);
 
   float du_gih[GUIDANCE_INDI_HYBRID_U]; // = {0.0f, 0.0f, 0.0f};
 
@@ -530,8 +529,8 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   // We are dividing by the airspeed, so a lower bound is important
   Bound(airspeed_turn, gih_coordinated_turn_min_airspeed, gih_coordinated_turn_max_airspeed);
 
-  guidance_euler_cmd.phi = roll_filt.o[0] + euler_cmd.x;
-  guidance_euler_cmd.theta = pitch_filt.o[0] + euler_cmd.y;
+  guidance_euler_cmd.phi = eulers_filtered.phi + euler_cmd.x;
+  guidance_euler_cmd.theta = eulers_filtered.theta + euler_cmd.y;
 
   //Bound euler angles to prevent flipping
   Bound(guidance_euler_cmd.phi, -guidance_indi_max_bank, guidance_indi_max_bank);
@@ -866,8 +865,7 @@ void guidance_indi_filter_thrust(void)
 
 /**
  * Low pass the accelerometer measurements to remove noise from vibrations.
- * The roll and pitch also need to be filtered to synchronize them with the
- * acceleration
+ * The orientation needs to be filtered to synchronize with the acceleration
  * Called as a periodic function with PERIODIC_FREQ
  */
 void guidance_indi_propagate_filters(void)
@@ -877,9 +875,7 @@ void guidance_indi_propagate_filters(void)
   update_butterworth_2_low_pass(&filt_accel_ned[1], accel->y);
   update_butterworth_2_low_pass(&filt_accel_ned[2], accel->z);
 
-  update_butterworth_2_low_pass(&roll_filt, eulers_zxy.phi);
-  update_butterworth_2_low_pass(&pitch_filt, eulers_zxy.theta);
-  update_butterworth_2_low_pass(&yaw_filt, eulers_zxy.psi);
+  update_quat_butterworth_low_pass(&quat_filt, *stateGetNedToBodyQuat_f());
 
   // Propagate filter for sideslip correction
   float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);

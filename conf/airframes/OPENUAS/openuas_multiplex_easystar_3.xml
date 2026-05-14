@@ -712,7 +712,7 @@
   <section name="AGL" prefix="AGL_DIST_SONAR_">
     <define name="ID" value="RANGEFINDER_I2C_SENDER_ID"/>
     <!-- <define name="ID" value="AGL_RANGEFINDER_I2C_ID"/> --><!-- maybe?-->
-    <define name="ID" value="ABI_BROADCAST"/>
+    <!-- <define name="ID" value="ABI_BROADCAST"/> --><!-- already defined -->
     <define name="MAX_RANGE" value="$(RANGEFINDER_I2C_MAX_RANGE)/2" unit="m"/><!-- For AGL -->
     <define name="MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)+4" unit="m"/><!-- For AGL -->
     <define name="FILTER" value="0.1"/>

@@ -45,7 +45,8 @@ let () =
 
         ignore (PprzTransport.parse use_tele_message (Bytes.to_string b))
       with
-          exc ->
+        | Failure msg when String.length msg >= 25 && String.sub msg 0 25 = "PprzLink.invalid class ID" -> ()
+        | exc ->
             prerr_endline (Printexc.to_string exc)
     end;
     true in
@@ -62,7 +63,10 @@ let () =
       let payload = Dl_Pprz.payload_of_values msg_id ac_id 0 vs in
       let buf = Pprz_transport.Transport.packet payload in
       fprintf o "%s%!" buf
-    with exc -> prerr_endline (Printexc.to_string exc) in
+    with
+      | Failure msg when String.length msg >= 25 && String.sub msg 0 25 = "PprzLink.invalid class ID" -> ()
+      | exc -> prerr_endline (Printexc.to_string exc)
+  in
   let _b = Ivy.bind get_ivy_message "^ground_dl (.*)" in
 
   let hangup = fun _ -> prerr_endline "hangup"; exit 1 in

@@ -58,7 +58,8 @@ let () =
 
         assert (PprzTransport.parse use_dl_message (Bytes.to_string b) = n)
       with
-          exc ->
+        | Failure msg when String.length msg >= 25 && String.sub msg 0 25 = "PprzLink.invalid class ID" -> ()
+        | exc ->
             prerr_endline (Printexc.to_string exc)
     end;
     true in

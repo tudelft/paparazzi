@@ -173,7 +173,6 @@ sim_static: libpprz
 
 ext:
 	$(MAKE) -C $(EXT)
-	$(MAKE) -C $(TOOLS)/bluegiga_usb_dongle
 
 opencv_bebop:
 	$(MAKE) -C $(EXT) opencv_bebop

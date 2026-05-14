@@ -187,6 +187,20 @@
       <program name="Messages"/>
       <program name="Real-time Plotter"/>
     </session>
+    <session name="EquinoxTest2">
+      <program name="Simulator">
+        <arg flag="-a" constant="Ziggy"/>
+        <arg flag="-t" constant="sim"/>
+      </program>
+      <program name="GCS"/>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+    </session>
     <session name="Flight ACM-serial@57600">
       <program name="Data Link">
         <arg flag="-d" constant="/dev/ttyACM0"/>
@@ -304,9 +318,8 @@
     </session>
     <session name="OU Simulation">
       <program name="Simulator">
-        <arg flag="-a" constant="@AIRCRAFT"/>
-        <arg flag="-t" constant="nps"/>
-        <arg flag="--norc"/>
+        <arg flag="-a" constant="Ziggy"/>
+        <arg flag="-t" constant="sim"/>
       </program>
       <program name="GCS"/>
       <program name="Server">
