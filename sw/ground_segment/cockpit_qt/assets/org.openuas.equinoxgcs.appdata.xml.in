@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+  <id>org.openuas.equinoxgcs</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <name>EquinoxGCS</name>
+  <summary>Equinox GCS</summary>
+  <launchable type="desktop-id">org.openuas.equinoxgcs.desktop</launchable>
+  <project_group>OpenUAS</project_group>
+  <provides>
+    <binary>equinoxgcs</binary>
+  </provides>
+  <releases>
+    <release version="1.0.0" date="2026-04-01"/>
+  </releases>
+  
+  <project_license>MIT</project_license>
+  <description>
+    <p>EquinoxGCS is a ground control station for UAS.</p>
+  </description>
+  <categories>
+    <category>Science</category>
+  </categories>
+  <url type="homepage">https://docs.openuas.org/EquinoxGCS/</url>
+  <url type="bugtracker">https://github.com/openuas/EquinoxGCS/issues</url>
+  <url type="help">https://docs.openuas.org/EquinoxGCS/</url>
+</component>
+

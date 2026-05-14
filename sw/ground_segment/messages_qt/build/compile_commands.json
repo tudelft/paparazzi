@@ -1,0 +1,86 @@
+[
+{
+  "directory": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_XML_LIB -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/messages_qt_autogen/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/src -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtXml -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -o CMakeFiles/messages_qt.dir/messages_qt_autogen/mocs_compilation.cpp.o -c /home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/messages_qt_autogen/mocs_compilation.cpp",
+  "file": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/messages_qt_autogen/mocs_compilation.cpp",
+  "output": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/CMakeFiles/messages_qt.dir/messages_qt_autogen/mocs_compilation.cpp.o"
+},
+{
+  "directory": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_XML_LIB -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/messages_qt_autogen/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/src -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtXml -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -o CMakeFiles/messages_qt.dir/src/MainWindow.cpp.o -c /home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/src/MainWindow.cpp",
+  "file": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/src/MainWindow.cpp",
+  "output": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/CMakeFiles/messages_qt.dir/src/MainWindow.cpp.o"
+},
+{
+  "directory": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_XML_LIB -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/messages_qt_autogen/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/src -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtXml -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -o CMakeFiles/messages_qt.dir/src/main.cpp.o -c /home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/src/main.cpp",
+  "file": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/src/main.cpp",
+  "output": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/CMakeFiles/messages_qt.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build",
+  "command": "/usr/bin/c++ -DPPRZLINKQT_LIBRARY -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_XML_LIB -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/pprzlinkQt_autogen/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/include -I/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtXml -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -o pprzlinkqt/CMakeFiles/pprzlinkQt.dir/pprzlinkQt_autogen/mocs_compilation.cpp.o -c /home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/pprzlinkQt_autogen/mocs_compilation.cpp",
+  "file": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/pprzlinkQt_autogen/mocs_compilation.cpp",
+  "output": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/CMakeFiles/pprzlinkQt.dir/pprzlinkQt_autogen/mocs_compilation.cpp.o"
+},
+{
+  "directory": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build",
+  "command": "/usr/bin/c++ -DPPRZLINKQT_LIBRARY -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_XML_LIB -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/pprzlinkQt_autogen/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/include -I/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtXml -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -o pprzlinkqt/CMakeFiles/pprzlinkQt.dir/src/FieldValue.cpp.o -c /home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/src/FieldValue.cpp",
+  "file": "/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/src/FieldValue.cpp",
+  "output": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/CMakeFiles/pprzlinkQt.dir/src/FieldValue.cpp.o"
+},
+{
+  "directory": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build",
+  "command": "/usr/bin/c++ -DPPRZLINKQT_LIBRARY -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_XML_LIB -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/pprzlinkQt_autogen/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/include -I/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtXml -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -o pprzlinkqt/CMakeFiles/pprzlinkQt.dir/src/Message.cpp.o -c /home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/src/Message.cpp",
+  "file": "/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/src/Message.cpp",
+  "output": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/CMakeFiles/pprzlinkQt.dir/src/Message.cpp.o"
+},
+{
+  "directory": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build",
+  "command": "/usr/bin/c++ -DPPRZLINKQT_LIBRARY -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_XML_LIB -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/pprzlinkQt_autogen/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/include -I/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtXml -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -o pprzlinkqt/CMakeFiles/pprzlinkQt.dir/src/MessageDefinition.cpp.o -c /home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/src/MessageDefinition.cpp",
+  "file": "/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/src/MessageDefinition.cpp",
+  "output": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/CMakeFiles/pprzlinkQt.dir/src/MessageDefinition.cpp.o"
+},
+{
+  "directory": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build",
+  "command": "/usr/bin/c++ -DPPRZLINKQT_LIBRARY -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_XML_LIB -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/pprzlinkQt_autogen/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/include -I/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtXml -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -o pprzlinkqt/CMakeFiles/pprzlinkQt.dir/src/MessageDictionary.cpp.o -c /home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/src/MessageDictionary.cpp",
+  "file": "/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/src/MessageDictionary.cpp",
+  "output": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/CMakeFiles/pprzlinkQt.dir/src/MessageDictionary.cpp.o"
+},
+{
+  "directory": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build",
+  "command": "/usr/bin/c++ -DPPRZLINKQT_LIBRARY -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_XML_LIB -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/pprzlinkQt_autogen/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/include -I/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtXml -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -o pprzlinkqt/CMakeFiles/pprzlinkQt.dir/src/MessageField.cpp.o -c /home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/src/MessageField.cpp",
+  "file": "/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/src/MessageField.cpp",
+  "output": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/CMakeFiles/pprzlinkQt.dir/src/MessageField.cpp.o"
+},
+{
+  "directory": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build",
+  "command": "/usr/bin/c++ -DPPRZLINKQT_LIBRARY -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_XML_LIB -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/pprzlinkQt_autogen/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/include -I/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtXml -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -o pprzlinkqt/CMakeFiles/pprzlinkQt.dir/src/MessageFieldTypes.cpp.o -c /home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/src/MessageFieldTypes.cpp",
+  "file": "/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/src/MessageFieldTypes.cpp",
+  "output": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/CMakeFiles/pprzlinkQt.dir/src/MessageFieldTypes.cpp.o"
+},
+{
+  "directory": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build",
+  "command": "/usr/bin/c++ -DPPRZLINKQT_LIBRARY -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_XML_LIB -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/pprzlinkQt_autogen/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/include -I/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtXml -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -o pprzlinkqt/CMakeFiles/pprzlinkQt.dir/src/IvyQtLink.cpp.o -c /home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/src/IvyQtLink.cpp",
+  "file": "/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/src/IvyQtLink.cpp",
+  "output": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/CMakeFiles/pprzlinkQt.dir/src/IvyQtLink.cpp.o"
+},
+{
+  "directory": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build",
+  "command": "/usr/bin/c++ -DIVYQT_LIBRARY -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/ivyqt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/ivyqt/IvyQt_autogen/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -o ivyqt/CMakeFiles/IvyQt.dir/IvyQt_autogen/mocs_compilation.cpp.o -c /home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/ivyqt/IvyQt_autogen/mocs_compilation.cpp",
+  "file": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/ivyqt/IvyQt_autogen/mocs_compilation.cpp",
+  "output": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/ivyqt/CMakeFiles/IvyQt.dir/IvyQt_autogen/mocs_compilation.cpp.o"
+},
+{
+  "directory": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build",
+  "command": "/usr/bin/c++ -DIVYQT_LIBRARY -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/ivyqt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/ivyqt/IvyQt_autogen/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -o ivyqt/CMakeFiles/IvyQt.dir/src/ivyqt.cpp.o -c /home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt/src/ivyqt.cpp",
+  "file": "/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt/src/ivyqt.cpp",
+  "output": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/ivyqt/CMakeFiles/IvyQt.dir/src/ivyqt.cpp.o"
+},
+{
+  "directory": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build",
+  "command": "/usr/bin/c++ -DIVYQT_LIBRARY -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/ivyqt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt -I/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/ivyqt/IvyQt_autogen/include -I/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -o ivyqt/CMakeFiles/IvyQt.dir/src/peer.cpp.o -c /home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt/src/peer.cpp",
+  "file": "/home/n3yh3hnii/paparazzi/sw/ground_segment/cockpit_qt/ext/pprzlinkQt/IvyQt/src/peer.cpp",
+  "output": "/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/ivyqt/CMakeFiles/IvyQt.dir/src/peer.cpp.o"
+}
+]

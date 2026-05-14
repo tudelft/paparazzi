@@ -1,0 +1,39 @@
+<gcsconf>
+    <layout width="1000" height="800">
+      <columns>
+        <widget name="map2d" size="800">
+          <configure>
+            <columnLeft>
+                <widget name="layers" icon="map_layers_normal.svg"/>
+                <widget name="commands" icon="nav.svg"/>
+                <widget name="gps_classic_viewer" icon="gps.svg"/>
+                <widget name="gvf_viewer"  icon="gvf.svg"/>
+                <widget name="grid_viewer" icon="grid.svg"/>
+            </columnLeft>
+            <columnRight>
+                <widget name="PFD" icon="pfd.svg"/>
+                <widget name="settings" icon="settings.svg"/>
+                <widget name="plotter" icon="plotter.svg">
+                    <configure>
+                        <plot name="ground:ENGINE_STATUS:bat" min="9" max="13"/>
+                    </configure>
+                </widget>
+                <widget name="link_status" icon="link_ok.svg"/>
+            </columnRight>
+          </configure>
+        </widget>
+        <rows size="200">
+            <widget name="strips" container="list" alt="commands"/>
+            <widget name="flightplan"/>
+        </rows>
+      </columns>
+    </layout>
+    <speech locale="en_GB">
+        <message name="ground:FLIGHT_PARAM:agl" text="{AC} altitude, {value} meters AGL" timeout="20" expire="10" priority="1"/>
+        <!--message name="ground:FLIGHT_PARAM:airspeed" text="airspeed.. {value} meters per second" timeout="20" expire="10" priority="0"/-->
+        <message name="ground:AP_STATUS:ap_mode" text="mode {value}" timeout="0" expire="20" priority="2" onChange="true"/>
+        <message name="ground:NAV_STATUS:cur_block" text="block {value}" timeout="0" expire="10" priority="0" onChange="true" postprocessing="block"/>
+        
+    </speech>
+    
+</gcsconf>

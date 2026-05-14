@@ -1,0 +1,249 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: PROJ
+Upstream-Contact: PROJ Developers <proj@lists.osgeo.org>
+Source: https://download.osgeo.org/proj/
+
+Files: *
+Comment: Version 4.3.3 was authored by:
+    Gerald (Jerry) Ian Evenden
+    email: gie@kai.er.usgs.gov   gevenden@capecod.net
+    phone: (508)563-6766
+    P.O. Box 1027
+    N.Falmouth, MA 02556-1027
+ .
+  Proj is a U.S. Government work and is not eligible for U.S. copyright
+  protection.  This is free software.
+ .
+  Here's what Jerry replied when I asked what the license was:
+ .
+   `The software was developed by the USGS and has no copyright
+    nor license.  Do with it what you will.  :-)'
+ .
+ Maintenance of proj has been taken up by Frank Warmerdam <warmerda@home.com>
+ under the following license:
+ .
+   All source, data files and other contents of the PROJ.4 package are
+   available under the following terms.  Note that the PROJ 4.3 and earlier
+   was "public domain" as is common with US government work, but apparently
+   this is not a well defined legal term in many countries.  I am placing
+   everything under the following MIT style license because I believe it is
+   effectively the same as public domain, allowing anyone to use the code as
+   they wish, including making proprietary derivatives.
+ .
+   Though I have put my own name as copyright holder, I don't mean to imply
+   I did the work.  Essentially all work was done by Gerald Evenden.
+Copyright:             2016-2019, Kristian Evers
+                       2008-2019, Even Rouault <even dot rouault at mines-paris dot org>
+                       2016-2018, Thomas Knudsen
+                       2016-2018, SDFE
+                       2012-2018, Charles Karney <charles@karney.com>
+                       2011-2018, Open Geospatial Consortium, Inc
+                            2018, Google Inc.
+                            2017, Lukasz Komsta
+                            2016, Karsten Engsager
+                            2015, Drazen Tutic
+                            2015, Lovro Gradiser
+ 2000-2002, 2009-2010, 2012-2013, Frank Warmerdam <warmerdam@pobox.com>
+                       2011-2012, Martin Lambers <marlam@marlam.de>
+                            2012, Martin Raspaud
+                            2011, Martin Desruisseaux
+           1995, 2003-2004, 2006, Gerald I. Evenden
+                            2006, Andrey Kiselev
+                            2005, Andrea Antonello
+                            2001, Thomas Flemming <tf@ttqv.com>
+License: Expat
+
+Files: include/proj/internal/lru_cache.hpp
+Copyright: 2012-22, SAURAV MOHAPATRA <mohaps@gmail.com>
+License: LRUCache11
+ Permission to use, copy, modify, and distribute this software for any
+ purpose with or without fee is hereby granted, provided that the above
+ copyright notice and this permission notice appear in all copies.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+Files: include/proj/internal/nlohmann/*
+Copyright: 2013-2019 Niels Lohmann <http://nlohmann.me>
+License: Expat
+
+Files: include/proj/nn.hpp
+Copyright: 2015, Dropbox, Inc.
+License: Apache-2.0
+
+Files: src/projections/isea.cpp
+Copyright: disclaimed
+License: public-domain
+ This code was entirely written by Nathan Wagner
+ and is in the public domain.
+
+Files: src/projections/patterson.cpp
+Copyright: 2014, Bojan Savric
+License: Apache-2.0
+
+Files: src/projections/sch.cpp
+Copyright: 2015, California Institute of Technology
+Comment: Government sponsorship acknowledged.
+License: public-domain
+ NOTE:  The SCH coordinate system is a sensor aligned coordinate system
+ developed at JPL for radar mapping missions. Details pertaining to the
+ coordinate system have been release in the public domain (see references above).
+ This code is an independent implementation of the SCH coordinate system
+ that conforms to the PROJ.4 conventions and uses the details presented in these
+ publicly released documents. All credit for the development of the coordinate
+ system and its use should be directed towards the original developers at JPL.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ DEALINGS IN THE SOFTWARE.
+
+Files: src/projections/tmerc.cpp
+Comment: The code in this file is largly based upon procedures:
+ .
+ Written by: Knud Poder and Karsten Engsager
+ .
+ Based on math from: R.Koenig and K.H. Weise, "Mathematische
+ Grundlagen der hoeheren Geodaesie und Kartographie,
+ Springer-Verlag, Berlin/Goettingen" Heidelberg, 1951.
+ .
+ Modified and used here by permission of Reference Networks
+ Division, Kort og Matrikelstyrelsen (KMS), Copenhagen, Denmark
+Copyright: 2008, Gerald I. Evenden
+License: Expat
+
+Files: src/wkt1_generated_parser.c
+ src/wkt1_generated_parser.h
+ src/wkt2_generated_parser.c
+ src/wkt2_generated_parser.h
+Copyright: 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+License: GPL-3+ with Bison exception
+
+Files: test/googletest/*
+Copyright: 2003, 2005-2009, 2015, Google Inc.
+License: BSD-3-Clause
+
+Files: debian/*
+Copyright:  1999-2005, Peter S Galbraith <psg@debian.org>
+ 2007-2009, 2012-2013, Francesco Paolo Lovergine <frankie@debian.org>
+                 2014, Bas Couwenberg <sebastic@debian.org>
+License: GPL-2+
+
+Files: debian/datumgrids.shar
+ debian/datumgrids-ch.shar
+Copyright: disclaimed
+License: public-domain
+ All those data are public domain, taken and collected from various
+ US/Canada, France, Switzerland and New Zealand public domain resources.
+
+License: BSD-3-Clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ .
+ 1) Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+ .
+ 2) Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+ .
+ 3) Neither the name of the ORGANIZATION nor the names of its contributors may
+    be used to endorse or promote products derived from this software without
+    specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+
+License: Expat
+ Permission is hereby granted, free of charge, to any person obtaining a
+ copy of this software and associated documentation files (the "Software"),
+ to deal in the Software without restriction, including without limitation
+ the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ and/or sell copies of the Software, and to permit persons to whom the
+ Software is furnished to do so, subject to the following conditions:
+ .
+ The above copyright notice and this permission notice shall be included
+ in all copies or substantial portions of the Software.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ DEALINGS IN THE SOFTWARE.
+
+License: GPL-2+
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License as
+ published by the Free Software Foundation; either version 2 of
+ the License, or (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ On Debian systems, the complete text of the GNU General Public
+ License can be found in the `/usr/share/common-licenses/GPL-2' file.
+
+License: GPL-3+ with Bison exception
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ On Debian systems, the complete text of version 3 of the GNU General
+ Public License can be found in `/usr/share/common-licenses/GPL-3'.
+ .
+ As a special exception, you may create a larger work that contains
+ part or all of the Bison parser skeleton and distribute that work
+ under terms of your choice, so long as that work isn't itself a
+ parser generator using the skeleton or a modified version thereof
+ as a parser skeleton.  Alternatively, if you modify or redistribute
+ the parser skeleton itself, you may (at your option) remove this
+ special exception, which will cause the skeleton and the resulting
+ Bison output files to be licensed under the GNU General Public
+ License without this special exception.
+ .
+ This special exception was added by the Free Software Foundation in
+ version 2.2 of Bison.
+
+License: Apache-2.0
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ .
+ http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ .
+ On Debian systems, the complete text of the Apache License can be found
+ in `/usr/share/common-licenses/Apache-2.0'.
+

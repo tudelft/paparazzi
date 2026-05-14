@@ -1,0 +1,1 @@
+For equinoxgcs building, avoid 'make clean' to save time. Just use 'make -j32 && make run' unless explicitly needed.

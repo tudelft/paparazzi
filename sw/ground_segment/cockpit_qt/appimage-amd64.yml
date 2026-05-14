@@ -1,0 +1,74 @@
+version: 1
+
+AppDir:
+  path: AppDir
+
+  app_info:
+    id: org.openuas.equinoxgcs
+    name: equinoxgcs
+    icon: equinoxgcs
+    version: !ENV ${EQUINOXGCS_VERSION}
+    exec: usr/bin/equinoxgcs
+    exec_args: $@
+
+  runtime:
+    path_mappings:
+      - /usr/share/equinoxgcs:$APPDIR/usr/share/equinoxgcs
+      - /usr/share/proj:$APPDIR/usr/share/proj
+    env:
+      APPDIR_LIBRARY_PATH: $APPDIR/lib/x86_64-linux-gnu:$APPDIR/usr/lib/x86_64-linux-gnu
+      EQUINOXGCS_DATA_PATH: $APPDIR/usr/share/equinoxgcs
+
+  apt:
+    arch: amd64
+    sources:
+      - sourceline: deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ focal main restricted universe multiverse
+      - sourceline: deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ focal-updates main restricted universe multiverse
+      - sourceline: deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ focal-backports main restricted universe multiverse
+        key_url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3b4fe6acc0b21f32
+      - sourceline: deb [arch=amd64] http://ppa.openuas.org/paparazzi-uav/ppa/ubuntu focal main
+        key_url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2D1C7EFC8697E423B273E69A167EF7F402599182
+    include:
+      # Required Qt packages.
+      - libqt6gui6
+      - libqt6network6
+      - libqt6texttospeech6
+      - libqt6xml6
+      - libqt6widgets6
+      - libqt6svg6
+      # Other dependencies.
+      - libsqlite3-0
+      - libproj15
+      - libzip5
+      - libxml2
+      - ivy-qt
+    exclude:
+      - "*dbgsym*"
+      - gnupg
+      - libwacom*
+      - perl
+      - perl-*
+      - sound-theme-freedesktop
+      - systemd
+      - systemd-*
+
+  files:
+    exclude:
+      - usr/include
+      - usr/share/man
+      - usr/share/doc
+      - usr/share/doc/*/README.*
+      - usr/share/doc/*/changelog.*
+      - usr/share/doc/*/NEWS.*
+      - usr/share/doc/*/TODO.*
+      - lib/systemd
+      - etc/systemd
+      - usr/bin/systemd*
+      - usr/bin/dpkg*
+      - usr/bin/*-linux-gnu-*
+
+AppImage:
+  arch: x86_64
+  update-information: None
+  sign-key: None
+

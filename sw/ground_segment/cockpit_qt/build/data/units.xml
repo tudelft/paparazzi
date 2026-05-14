@@ -1,0 +1,18 @@
+<units>
+  <unit from="rad" to="deg" coef="57.2957795131"/>
+  <unit from="deg" to="rad" coef="0.01745329251"/>
+  <unit from="m" to="ft" coef="3.28084"/>
+  <unit from="m" to="cm" coef="100.0"/>
+  <unit from="m" to="mm" coef="1000.0"/>
+  <unit from="m/s" to="km/h" coef="3.6"/>
+  <unit from="m/s" to="kts" coef="1.94384"/>
+  <unit from="m/s" to="mph" coef="2.23694"/>
+  <unit from="rad/s" to="deg/s" coef="57.2957795131"/>
+  <unit from="deg/s" to="rad/s" coef="0.01745329251"/>
+  <unit from="hPa" to="inhg" coef="0.02953"/>
+  <unit from="Celcius" to="Farenheit" coef="1.8"/>
+  <unit from="m/s" to="cm/s" coef="100."/>
+  <unit from="cm/s" to="m/s" coef="0.01"/>
+  <unit from="decideg" to="deg" coef="0.1"/>
+  <unit from="centideg" to="deg" coef="0.01"/>
+</units>

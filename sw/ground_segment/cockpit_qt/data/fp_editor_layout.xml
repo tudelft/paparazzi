@@ -1,0 +1,18 @@
+<gcsconf>
+    <layout width="1000" height="800">
+      <columns>
+        <widget name="map2d" size="200">
+          <configure>
+            <columnLeft>
+                <widget name="layers" icon="map_layers_normal.svg"/>
+            </columnLeft>
+            <columnRight>
+            </columnRight>
+          </configure>
+        </widget>
+        <widget name="flight_plan_editor" size="800"/>
+      </columns>
+    </layout>
+    <speech locale="en_GB">
+    </speech>
+</gcsconf>

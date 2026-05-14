@@ -1,0 +1,3 @@
+[submodule "IvyQt"]
+	path = IvyQt
+	url = https://gitlab.com/ivybus/IvyQt.git

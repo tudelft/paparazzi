@@ -1,0 +1,21 @@
+--- MainWindow.cpp
++++ MainWindow.cpp
+@@ -107,6 +107,18 @@
+         }
+     });
+ 
++    QTimer::singleShot(2000, this, [this]() {
++        qDebug() << "MainWindow minimumSizeHint =" << minimumSizeHint() << "minimumSize=" << minimumSize();
++        qDebug() << "MapWidget minHint =" << m_map->minimumSizeHint();
++        for (auto dock: findChildren<QDockWidget*>()) {
++            qDebug() << dock->objectName() << dock->windowTitle() << "minHint =" << dock->minimumSizeHint();
++            if (dock->widget()) {
++                qDebug() << "  -> inner widget minHint =" << dock->widget()->minimumSizeHint();
++            }
++        }
++        qDebug() << "QTabWidget infoTabs minHint =" << m_infoTabs->minimumSizeHint();
++    });
++
+     // Select default view
+     emit DispatcherUi::get()->ac_selected(appConfig()->value("GCS_DEFAULT_AC").toString());
+ }

@@ -1,0 +1,61 @@
+<sources>
+	<source
+		name="LubrizolPM5" dir="LubrizolPM5"
+		addr=""
+		zoomMin="0" zoomMax="18"
+		tileSize="256"
+		format=".png"
+	/>
+	<source
+		name="Voliere" dir="VOLIERE"
+		addr=""
+		zoomMin="15" zoomMax="25"
+		tileSize="256"
+		format=".png"
+	/>
+	<source
+		name="Google" dir="GOOGLE"
+		addr="https://mt1.google.com/vt/lyrs=s&amp;x={x}&amp;y={y}&amp;z={z}"
+		zoomMin="0" zoomMax="19"
+		tileSize="256"
+		format=".jpeg"
+	/>
+	<source
+		name="Google Hybrid" dir="GOOGLE_HYBRID"
+		addr="https://mt1.google.com/vt/lyrs=y&amp;x={x}&amp;y={y}&amp;z={z}"
+		zoomMin="0" zoomMax="19"
+		tileSize="256"
+		format=".jpeg"
+	/>
+	<source
+		name="ICAO" dir="ICAO"
+		addr="http://wxs.ign.fr/an7nvfzojv5wa96dsga5nk8w/geoportail/wmts?layer=GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN-OACI&amp;style=normal&amp;tilematrixset=PM&amp;Service=WMTS&amp;Request=GetTile&amp;Version=1.0.0&amp;Format=image%2Fjpeg&amp;TileMatrix={z}&amp;TileCol={x}&amp;TileRow={y}"
+		zoomMin="6" zoomMax="11"
+		xMin="-667520" xMax="1240767" yMin="4922676" yMax="6700229"
+		tileSize="256"
+		format=".jpeg"
+	/>
+	<source
+		name="DroneRestrict" dir="FR_UAV_RESTRICT"
+		addr="http://wxs.ign.fr/an7nvfzojv5wa96dsga5nk8w/geoportail/wmts?layer=TRANSPORTS.DRONES.RESTRICTIONS&amp;style=normal&amp;tilematrixset=PM&amp;Service=WMTS&amp;Request=GetTile&amp;Version=1.0.0&amp;Format=image%2Fpng&amp;TileMatrix={z}&amp;TileCol={x}&amp;TileRow={y}"
+		zoomMin="7" zoomMax="14"
+		xMin="-1100000" xMax="1300000" yMin="4950001" yMax="6699996"
+		tileSize="256"
+		format=".png"
+	/>
+	<source
+		name="OpenStreetMap" dir="OSM_CLASSIC"
+		addr="http://tile.openstreetmap.org/{z}/{x}/{y}.png"
+		zoomMin="0" zoomMax="19"
+		tileSize="256"
+		format=".png"
+	/>
+	<source
+		name="Hiking" dir="HIKING"
+		addr="http://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png"
+		zoomMin="0" zoomMax="19"
+		tileSize="256"
+		format=".png"
+	/>
+</sources>
+

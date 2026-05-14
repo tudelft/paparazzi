@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=EquinoxGCS
+Comment=Just a GCS for UAS
+Exec=equinoxgcs
+Terminal=false
+Type=Application
+Icon=equinoxgcs
+StartupNotify=true
+Categories=Robotics;Science;
+X-AppImage-Version=v6.4.0_stable-342-gb78874a307
+

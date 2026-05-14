@@ -1,0 +1,68 @@
+cmake_minimum_required(VERSION 3.14)
+
+project(IvyQt LANGUAGES CXX)
+
+include(GNUInstallDirs)
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+if(DEFINED ENV{QT_DIR})
+    set(Qt5_DIR $ENV{QT_DIR})
+    set(Qt6_DIR $ENV{QT_DIR})
+endif()
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Network)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Network)
+
+
+add_library(IvyQt
+  src/ivyqt.cpp
+  src/peer.cpp
+  include/IvyQt/ivyqt.h
+  include/IvyQt/peer.h
+)
+
+target_include_directories(
+    ${PROJECT_NAME}
+    PRIVATE
+    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
+           $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
+set_target_properties(IvyQt PROPERTIES
+    VERSION 1.0.0
+)
+
+target_link_libraries(IvyQt PRIVATE
+    Qt${QT_VERSION_MAJOR}::Core
+    Qt${QT_VERSION_MAJOR}::Network
+)
+
+
+target_compile_definitions(IvyQt PRIVATE IVYQT_LIBRARY)
+
+
+install(TARGETS ${PROJECT_NAME}
+        EXPORT ${PROJECT_NAME}Config 
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+
+install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/${PROJECT_NAME}/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
+
+export(TARGETS
+        ${PROJECT_NAME}
+        FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+)
+
+install(EXPORT ${PROJECT_NAME}Config DESTINATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/cmake")
+
