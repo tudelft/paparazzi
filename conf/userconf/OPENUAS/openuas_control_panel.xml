@@ -55,6 +55,10 @@
       <arg flag="-fbw" variable="fbw_serial_port"/>
       <arg flag="-ap" variable="ap_serial_port"/>
     </program>
+    <program name="GCS Classic" command="sw/ground_segment/cockpit_qt/build/equinoxgcs">
+      <arg flag="--speech"/>
+    </program>
+    <program name="Messages QT" command="sw/ground_segment/messages_qt/messages_qt"/>
   </section>
   <section name="sessions">
     <session name="Accelo only Debug Graphs">
@@ -186,6 +190,15 @@
       <program name="GCS"/>
       <program name="Messages"/>
       <program name="Real-time Plotter"/>
+    </session>
+    <session name="Equinox Flight Test">
+      <program name="GCS Classic"/>
+      <program name="Server"/>
+      <program name="Messages QT"/>
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/ttyACM0"/>
+        <arg flag="-s" constant="57600"/>
+      </program>
     </session>
     <session name="EquinoxTest2">
       <program name="Simulator">
