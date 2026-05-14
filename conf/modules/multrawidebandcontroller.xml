@@ -1,0 +1,18 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="multrawidebandcontroller" dir="multrawidebandcontroller">
+  <doc>
+    <description>
+      Ultra-Wideband (UWB) communication controller module.
+      Receives and processes UWB communication messages via ABI.
+    </description>
+  </doc>
+  <header>
+    <file name="multrawidebandcontroller.h"/>
+  </header>
+  <init fun="multrawidebandcontroller_init()"/>
+  <periodic fun="multrawidebandcontroller_periodic()" freq="10." autorun="TRUE"/>
+  <event fun="multrawidebandcontroller_event()"/>
+  <makefile>
+    <file name="multrawidebandcontroller.c"/>
+  </makefile>
+</module>
