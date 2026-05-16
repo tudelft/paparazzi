@@ -51,6 +51,7 @@ public:
 
 private:
     QTabWidget* m_classTabWidget;
+    QLabel* m_waitingLabel;
     QMap<QString, SenderTab*> m_senderTabs;
     pprzlink::MessageDictionary* m_dict;
     pprzlink::IvyQtLink* m_link;

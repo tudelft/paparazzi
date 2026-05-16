@@ -128,16 +128,27 @@ SenderTab::SenderTab(const QString& senderName, const QString& className, pprzli
     
     connect(m_listWidget, &QListWidget::currentRowChanged, m_stackedWidget, &QStackedWidget::setCurrentIndex);
     
+#define GREEN_DECAY_RATE_MS 500
+
     QTimer* globalTimer = new QTimer(this);
     connect(globalTimer, &QTimer::timeout, this, &SenderTab::updateTimers);
-    globalTimer->start(1000);
+    globalTimer->start(50);
 }
 
 void SenderTab::updateTimers() {
     for(auto& t : m_msgTrackers) {
-        int secs = t.timeLabel->property("lastUpdate").toTime().secsTo(QTime::currentTime());
-        if (secs < 0 || secs > 99999) secs = 0; // Just in case of midnight wrap
-        t.timeLabel->setText(QString::number(secs));
+        int msecs = t.timeLabel->property("lastUpdate").toTime().msecsTo(QTime::currentTime());
+        if (msecs < 0 || msecs > 99999999) msecs = 0; // Just in case of midnight wrap
+        
+        if (msecs > GREEN_DECAY_RATE_MS) {
+            t.timeBox->setStyleSheet(".QWidget { background-color: #000000; border-radius: 0px; }\nQLabel { color: #fff; font-weight: bold; }");
+        }
+        
+        if (msecs > 1999) {
+            t.timeLabel->setText(QString::number(msecs / 1000));
+        } else {
+            t.timeLabel->setText("");
+        }
     }
 }
 
@@ -162,7 +173,7 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
         QLabel* nameLabel = new QLabel(msgName);
         nameLabel->setAlignment(Qt::AlignCenter);
         
-        QLabel* timeLabel = new QLabel("0");
+        QLabel* timeLabel = new QLabel("");
         timeLabel->setMinimumWidth(30);
         timeLabel->setAlignment(Qt::AlignCenter);
         timeLabel->setProperty("lastUpdate", QTime::currentTime());
@@ -171,7 +182,7 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
         QHBoxLayout* tBoxL = new QHBoxLayout(timeBox);
         tBoxL->setContentsMargins(2, 2, 2, 2);
         tBoxL->addWidget(timeLabel);
-        timeBox->setStyleSheet(".QWidget { background-color: #55dd55; border-radius: 4px; }\nQLabel { color: #000; font-weight: bold; }");
+        timeBox->setStyleSheet(".QWidget { background-color: #000000; border-radius: 0px; }\nQLabel { color: #fff; font-weight: bold; }");
         
         itemLayout->addStretch();
         itemLayout->addWidget(nameLabel);
@@ -232,14 +243,11 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
     // Update values
     MsgTracker& tracker = m_msgTrackers[msgName];
     tracker.timeLabel->setProperty("lastUpdate", QTime::currentTime());
-    tracker.timeLabel->setText("0");
+    tracker.timeLabel->setText("");
     
     // Briefly flash green background
-    tracker.timeBox->setStyleSheet(".QWidget { background-color: #229922; border-radius: 4px; }\nQLabel { color: #fff; font-weight: bold; }");
-    QTimer::singleShot(200, tracker.timeBox, [tracker]() {
-        tracker.timeBox->setStyleSheet(".QWidget { background-color: #55dd55; border-radius: 4px; }\nQLabel { color: #000; font-weight: bold; }");
-    });
-
+    tracker.timeBox->setStyleSheet(".QWidget { background-color: #22ff22; border-radius: 0px; }\nQLabel { color: #000; font-weight: bold; }");
+    
     const auto& def = msg.getDefinition();
     for (int i = 0; i < (int)def.getNbFields(); ++i) {
         QString name = def.getField(i).getName();
@@ -257,11 +265,22 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
 }
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
-    setWindowTitle("Paparazzi Messages (Qt)");
+    setWindowTitle("Telemetry Messages");
     resize(300, 400);
 
+    QWidget* cntral = new QWidget(this);
+    QVBoxLayout* layout = new QVBoxLayout(cntral);
+    layout->setContentsMargins(0, 0, 0, 0);
+
+    m_waitingLabel = new QLabel("Waiting for telemetry", this);
+    m_waitingLabel->setAlignment(Qt::AlignCenter);
+
     m_classTabWidget = new QTabWidget(this);
-    setCentralWidget(m_classTabWidget);
+    m_classTabWidget->hide();
+
+    layout->addWidget(m_waitingLabel);
+    layout->addWidget(m_classTabWidget);
+    setCentralWidget(cntral);
     
     setupDictionaryAndLink();
 }
@@ -276,7 +295,7 @@ MainWindow::~MainWindow() {
 
 void MainWindow::setupDictionaryAndLink() {
     QString phome = qgetenv("PAPARAZZI_HOME");
-    if (phome.isEmpty()) phome = "/home/n3yh3hnii/paparazzi";
+    if (phome.isEmpty()) phome = QString("/home/%1/paparazzi").arg(qgetenv("USER"));
     QString xmlPath = phome + "/var/messages.xml";
     
     loadUnitCoefs(xmlPath);
@@ -290,6 +309,11 @@ void MainWindow::setupDictionaryAndLink() {
     const auto msgs = m_dict->getMsgsForClass(className);
     for (const auto& def : msgs) {
         m_link->BindMessage(def, this, [=](QString sender, pprzlink::Message msg) {
+            if (m_waitingLabel->isVisible()) {
+                m_waitingLabel->hide();
+                m_classTabWidget->show();
+            }
+            
             QString sId = sender;
             if (sId.isEmpty()) {
                 // telemetry usually starts with AC_ID like "2", get it dynamically

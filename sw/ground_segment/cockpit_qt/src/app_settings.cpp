@@ -183,7 +183,9 @@ SettingsEditor::SettingsEditor(bool standalone, QWidget* parent): QDialog(parent
             cb();
         }
 
-        auto res = QMessageBox::question(nullptr, "Restart application?", "Application need to be restarted to update settings. Do you want to restart now?");
+        emit GlobalConfig::get()->settingsChanged();
+
+        auto res = QMessageBox::question(nullptr, "Restart application?", "Application might need to be restarted to safely update deeper visual settings. Do you want to restart now?");
         accept();
         if(res == QMessageBox::Yes) {
             qDebug() << "Restarting application...";

@@ -21,7 +21,7 @@ public:
 signals:
 
 public slots:
-    void enableSpeech(bool s);
+    void enableSpeech(bool s, bool quiet = false);
 
 private:
 

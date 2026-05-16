@@ -47,7 +47,7 @@ signals:
     void backgroundChanged(QColor);
 
 public slots:
-
+    void updateSettings();
 
 protected:
     virtual void wheelEvent(QWheelEvent* event) override;

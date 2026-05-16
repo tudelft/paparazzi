@@ -2,6 +2,7 @@
 
 #include <QDebug>
 #include <QDir>
+#include <QStandardPaths>
 #include <QCommandLineParser>
 #include <QCommandLineOption>
 #include <QProcess>
@@ -21,16 +22,42 @@
 
 int main(int argc, char *argv[]) {
     PprzApplication app(argc, argv);
-    app.setApplicationName("Equinox GCS");
+    
+    // Set internal names in lowercase with underscores for safe XDG folder paths
+    app.setOrganizationName("paparazzi");
+    app.setApplicationName("equinox_gcs");
     app.setApplicationVersion("1.0");
 
     // Initialize global paths BEFORE creating the PprzMain / widgets
     // but AFTER the application object is created so applicationDirPath is available.
     auto config = GlobalConfig::get();
     QString app_dir = QCoreApplication::applicationDirPath();
+    
+    // robust XDG compliant user data location for Linux/Ubuntu (e.g., ~/.local/share/Paparazzi/Equinox GCS)
+    QString userDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir userDir(userDataPath);
+    if (!userDir.exists()) {
+        userDir.mkpath(".");
+    }
+    
+    // Ensure the maps sub-directory exists
+    QString mapDataPath = userDir.absoluteFilePath("map");
+    QDir mapDir(mapDataPath);
+    if (!mapDir.exists()) {
+        mapDir.mkpath(".");
+        qDebug() << "Created new map data directory at:" << mapDataPath;
+    }
+
+    // robust XDG compliant config location for Linux/Ubuntu (e.g., ~/.config/Paparazzi/Equinox GCS)
+    QString appConfigPath = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+    QDir configDir(appConfigPath);
+    if (!configDir.exists()) {
+        configDir.mkpath(".");
+    }
+
     config->setValue("APP_DATA_PATH", app_dir + "/data");
-    config->setValue("USER_DATA_PATH", app_dir + "/data");
-    config->setValue("SETTINGS_PATH", app_dir + "/data/settings.ini");
+    config->setValue("USER_DATA_PATH", userDataPath);
+    config->setValue("SETTINGS_PATH", configDir.absoluteFilePath("settings.ini"));
     config->setValue("MESSAGES", app_dir + "/data/messages.xml");
     config->setValue("IVY_BUS", "127.255.255.255:2010");
     config->setValue("LAYOUT_FILE", "default_layout.xml");

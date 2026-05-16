@@ -5,7 +5,7 @@
 
 int main(int argc, char *argv[])
 {
-    // Force GTK3 platform theme which natively supports Ubuntu 20.04's Adwaita dark/light
+    // Force GTK3 platform theme which natively supports Ubuntu Adwaita dark/light
     qputenv("QT_QPA_PLATFORMTHEME", "gtk3");
     
     QApplication a(argc, argv);

@@ -263,18 +263,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
             qDebug() << "XML map files not yet implemented in Qt C++ Cockpit for file:" << f;
         }
     }
-
-    QTimer::singleShot(2000, this, [this]() {
-        QTextStream out(stdout);
-        out << "MainWindow minimumSizeHint =" << minimumSizeHint().width() << "x" << minimumSizeHint().height() << " minimumSize=" << minimumSize().width() << "x" << minimumSize().height() << "\n";
-        for (auto dock: findChildren<QDockWidget*>()) {
-            out << dock->objectName() << " " << dock->windowTitle() << " minHint =" << dock->minimumSizeHint().width() << "x" << dock->minimumSizeHint().height() << "\n";
-            if (dock->widget()) {
-                out << "  -> inner widget minHint =" << dock->widget()->minimumSizeHint().width() << "x" << dock->widget()->minimumSizeHint().height() << "\n";
-            }
-        }
-        out << "QTabWidget infoTabs minHint =" << m_infoTabs->minimumSizeHint().width() << "x" << m_infoTabs->minimumSizeHint().height() << "\n";
-    });
 }
 
 MainWindow::~MainWindow() {}

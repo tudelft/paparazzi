@@ -72,6 +72,9 @@ Map2D::Map2D(QWidget *parent) : QGraphicsView(parent),
 
     GlobalConfig::get()->setValue("tile_providers_names", tile_providers_names);
 
+    // Listen to global config changes for dynamic settings updates
+    connect(GlobalConfig::get(), &GlobalConfig::settingsChanged, this, &Map2D::updateSettings);
+
     qreal maxxy = tile_size*pow(2, maxZoom);
     _scene = new MapScene(-maxxy, -maxxy, 2*tile_size*maxxy, 2*tile_size*maxxy, this);
     setScene(_scene);
@@ -414,4 +417,14 @@ QList<TileProvider*> Map2D::tileProviders() {
 
 Point2DLatLon Map2D::latlonFromView(QPoint viewPos, int zoom) {
     return CoordinatesTransform::get()->wgs84_from_scene(mapToScene(viewPos), zoom, tile_size);
+}
+
+void Map2D::updateSettings() {
+    auto settings = getAppSettings();
+    QString new_tiles_path = settings.value("map/tiles_path").toString();
+    for(auto &tp : tile_providers) {
+        tp->setTilesPath(new_tiles_path);
+    }
+    // Also re-apply background color in case it was changed
+    updateTiles();
 }

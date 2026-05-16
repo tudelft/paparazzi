@@ -23,6 +23,7 @@ public:
     }
 
 signals:
+    void settingsChanged();
 
 private:
     static GlobalConfig* singleton;

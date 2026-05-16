@@ -67,11 +67,26 @@ void Speaker::say() {
     }
 }
 
-void Speaker::enableSpeech(bool s) {
+void Speaker::enableSpeech(bool s, bool quiet) {
     setSpeech(s);
     if(s) {
         for(auto &msg: messages) {
             bindMessage(msg);
+        }
+        if (!quiet) {
+#if defined(Q_OS_MAC)
+            QProcess::startDetached("say", QStringList() << "Speech Enabled");
+#elif defined(Q_OS_LINUX)
+            QProcess::startDetached("espeak", QStringList() << "Speech Enabled");
+#endif
+        }
+    } else {
+        if (!quiet) {
+#if defined(Q_OS_MAC)
+            QProcess::startDetached("say", QStringList() << "Speech Disabled");
+#elif defined(Q_OS_LINUX)
+            QProcess::startDetached("espeak", QStringList() << "Speech Disabled");
+#endif
         }
     }
 }

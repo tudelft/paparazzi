@@ -124,10 +124,12 @@ void PprzMain::populate_menu() {
     
     // Explicitly seed the initial speech state to speaker tool 
     if(enable_speech && pprzApp() && pprzApp()->toolbox() && pprzApp()->toolbox()->speaker()) {
-        pprzApp()->toolbox()->speaker()->enableSpeech(true);
+        pprzApp()->toolbox()->speaker()->enableSpeech(true, true);
     }
     
-    connect(speech_action, &QAction::toggled, pprzApp()->toolbox()->speaker(), &Speaker::enableSpeech);
+    connect(speech_action, &QAction::toggled, pprzApp()->toolbox()->speaker(), [=](bool s) {
+        pprzApp()->toolbox()->speaker()->enableSpeech(s, false);
+    });
 
     nav_menu->addSeparator();
 
