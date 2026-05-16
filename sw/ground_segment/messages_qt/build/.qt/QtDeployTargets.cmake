@@ -1,6 +1,0 @@
-set(__QT_DEPLOY_TARGET_IvyQt_FILE /home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/ivyqt/libIvyQt.a)
-set(__QT_DEPLOY_TARGET_IvyQt_TYPE STATIC_LIBRARY)
-set(__QT_DEPLOY_TARGET_pprzlinkQt_FILE /home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/libpprzlinkQt.a)
-set(__QT_DEPLOY_TARGET_pprzlinkQt_TYPE STATIC_LIBRARY)
-set(__QT_DEPLOY_TARGET_messages_qt_FILE /home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/messages_qt)
-set(__QT_DEPLOY_TARGET_messages_qt_TYPE EXECUTABLE)

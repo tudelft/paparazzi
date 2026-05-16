@@ -1,9 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/cmake_install.cmake",
-		"/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/pprzlinkqt/cmake_install.cmake",
-		"/home/n3yh3hnii/paparazzi/sw/ground_segment/messages_qt/build/ivyqt/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

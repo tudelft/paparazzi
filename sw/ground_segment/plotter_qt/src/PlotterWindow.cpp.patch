@@ -1,0 +1,140 @@
+--- src/PlotterWindow.cpp
++++ src/PlotterWindow.cpp
+@@ -265,37 +265,22 @@
+ }
+ 
+ void PlotterWindow::handleMessage(QString sender, const pprzlink::Message& msg) {
++    if (m_paused) return; // Skip updating data while paused
++
+     QString sId = sender;
+     if (sId.isEmpty()) {
+         const auto& senderV = msg.getSenderId();
+         if (std::holds_alternative<QString>(senderV)) sId = std::get<QString>(senderV);
+         else sId = QString::number(std::get<uint8_t>(senderV));
+     }
+     if (sId.isEmpty()) sId = "ground";
+ 
+     QString msgName = msg.getDefinition().getName();
+     
+     double currentTime = (QDateTime::currentMSecsSinceEpoch() - m_startTime) / 1000.0;
+-    bool needsAxisUpdate = false;
+     
+     for (auto& plot : m_activePlots) {
+         if (plot.msgName == msgName && (plot.senderName == sId || plot.senderName == "all")) {
+             // Find field index
+             const auto& def = msg.getDefinition();
+             for (int i = 0; i < (int)def.getNbFields(); ++i) {
+                 if (def.getField(i).getName() == plot.fieldName) {
+                     try {
+                         const auto& rv = msg.getRawValue(i);
+                         std::stringstream ss;
+                         ss << rv;
+                         double val = QString::fromStdString(ss.str()).toDouble();
+                         val *= plot.coef;
+                         
+-                        if (m_paused) return; // Skip updating data while paused
+-                        
+-                        plot.series->append(currentTime, val);
+-
+-                        double windowSize = m_spnTimeWindow->value();
+-
+-                        // Remove old points to prevent memory leak and slow down
+-                        while (plot.series->count() > 0 && plot.series->at(0).x() < currentTime - windowSize) {
+-                            plot.series->remove(0);
+-                        }
+-
+-                        // Keep window defined size wide
+-                        if (currentTime > windowSize) {
+-                            m_axisX->setRange(currentTime - windowSize, currentTime);
+-                        } else {
+-                            m_axisX->setRange(0, windowSize);
+-                        }
+-                        
+-                        // Auto-scale Y
+-                        if (m_autoScale) {
+-                            if (val < m_minY) { m_minY = val; needsAxisUpdate = true; }
+-                            if (val > m_maxY) { m_maxY = val; needsAxisUpdate = true; }
+-                        }
++                        plot.buffer.append(QPointF(currentTime, val));
+                     } catch(...) {
+                     }
+                     break;
+                 }
+             }
+-        } else if (plot.className == "const") {
+-            // It's a constant curve (horizontal line)
+-            // continually update its right bound so it spans the window
+-            double val = plot.fieldName.section('=', 1).toDouble();
+-            
+-            double windowSize = m_spnTimeWindow->value();
+-            double startX = std::max(0.0, currentTime - windowSize);
+-            
+-            plot.series->clear();
+-            plot.series->append(startX, val);
+-            plot.series->append(std::max(windowSize, currentTime), val);
+         }
+     }
+-    
+-    if (needsAxisUpdate && m_autoScale) {
+-        double margin = (m_maxY - m_minY) * 0.1;
+-        if (margin == 0) margin = 1.0;
+-        m_axisY->setRange(m_minY - margin, m_maxY + margin);
+-    }
+ }
++
++void PlotterWindow::updatePlots() {
++    if (m_paused) return;
++
++    double currentTime = (QDateTime::currentMSecsSinceEpoch() - m_startTime) / 1000.0;
++    double windowSize = m_spnTimeWindow->value();
++    bool needsAxisUpdate = false;
++
++    for (auto& plot : m_activePlots) {
++        if (plot.className == "const") {
++            // It's a constant curve (horizontal line)
++            double val = plot.fieldName.section('=', 1).toDouble();
++            double startX = std::max(0.0, currentTime - windowSize);
++            
++            plot.series->replace(
++                QList<QPointF>() << QPointF(startX, val) << QPointF(std::max(windowSize, currentTime), val)
++            );
++            continue;
++        }
++
++        if (plot.buffer.isEmpty()) continue;
++
++        // Apply buffered points all at once to massively speed up UI
++        plot.series->append(plot.buffer);
++        
++        // Auto scale evaluate
++        if (m_autoScale) {
++            for (const QPointF& pt : qAsConst(plot.buffer)) {
++                if (pt.y() < m_minY) { m_minY = pt.y(); needsAxisUpdate = true; }
++                if (pt.y() > m_maxY) { m_maxY = pt.y(); needsAxisUpdate = true; }
++            }
++        }
++        
++        plot.buffer.clear();
++
++        // Expire points out of window
++        int pointsToRemove = 0;
++        while (pointsToRemove < plot.series->count() && plot.series->at(pointsToRemove).x() < currentTime - windowSize) {
++            pointsToRemove++;
++        }
++        if (pointsToRemove > 0) {
++            plot.series->removePoints(0, pointsToRemove);
++        }
++    }
++
++    if (currentTime > windowSize) {
++        m_axisX->setRange(currentTime - windowSize, currentTime);
++    } else {
++        m_axisX->setRange(0, windowSize);
++    }
++
++    if (needsAxisUpdate && m_autoScale) {
++        double margin = (m_maxY - m_minY) * 0.1;
++        if (margin == 0) margin = 1.0;
++        m_axisY->setRange(m_minY - margin, m_maxY + margin);
++    }
++}

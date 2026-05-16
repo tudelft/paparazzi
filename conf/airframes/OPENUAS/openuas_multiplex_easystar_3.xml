@@ -65,7 +65,7 @@
       <!-- <configure name="MODULES_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/> -->
       <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/> --><!-- set to 50 if using QMC?-->
 
-      <configure name="USE_MAGNETOMETER" value="FALSE"/><!-- only when everything else works... improve -->
+      <configure name="USE_MAGNETOMETER" value="TRUE"/><!-- only when everything else works... improve -->
 
       <!-- ***** First sensor modules... ***** -->
       
@@ -94,9 +94,9 @@
       </module>
 
       <!-- Magnetometer chip on GNSS board instead of FC --> 
-      <module name="mag" type="qmc5883l">
+      <!-- <module name="mag" type="qmc5883l">
         <configure name="MAG_QMC5883L_I2C_DEV" value="i2c2"/>
-        <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="50"/><!-- 1/4 of 200Hz, the maximum update rate for this sensor -->
+        <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="10"/>
         <define name="MODULE_QMC5883L_UPDATE_AHRS" value="TRUE"/>
         <define name="QMC5883L_CHAN_X" value="1"/>
         <define name="QMC5883L_CHAN_Y" value="0"/>
@@ -104,8 +104,21 @@
         <define name="QMC5883L_CHAN_X_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Y_SIGN" value="-"/>
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
-        <!-- <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/> --><!-- Only enable while debugging via fast connetion, NOT mesh -->
-      </module>
+        <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/>
+      </module> -->
+
+      <module name="mag" type="ist8310">
+        <configure name="MAG_IST8310_I2C_DEV" value="i2c2"/>
+        <configure name="MAG_IST8310_PERIODIC_FREQUENCY" value="10"/>
+        <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>
+        <define name="IST8310_CHAN_X" value="1"/>
+        <define name="IST8310_CHAN_Y" value="0"/>
+        <define name="IST8310_CHAN_Z" value="2"/>
+        <define name="IST8310_CHAN_X_SIGN" value="+"/>
+        <define name="IST8310_CHAN_Y_SIGN" value="-"/>
+        <define name="IST8310_CHAN_Z_SIGN" value="+"/>
+        <define name="MODULE_IST8310_SYNC_SEND" value="TRUE"/>
+      </module> 
 
       <!-- Optionally use alternative magnetometer if rate and quality of QMC5883l is insufficient --> 
       <!-- MEDIAN_FILTER Enabled to avoid sporadic spikes in output-->
@@ -145,7 +158,7 @@
 
       <module name="gps" type="ublox">
         <configure name="GPS_BAUD" value="B460800"/>
-        <configure name="GPS_PORT" value="UART4"/><!-- Note that the GPS is on UART4 since UART3 is not re-mapped -->
+        <configure name="GPS_PORT" value="UART4"/><!-- Note that the GPS is on UART3 since UART4 is not re-mapped -->
       </module>
 
       <!-- ***** ...then the rest ***** -->
@@ -287,15 +300,16 @@
     <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
     <!-- <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN"/> -->
     <!-- <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/> -->
-    <!--<configure name="USE_MAGNETOMETER" value="TRUE"/>-->
-    <!--<define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/>-->
+    <configure name="USE_MAGNETOMETER" value="TRUE"/>
+    <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/>
 
     <module name="stabilization" type="float_quat"/>
 
     <module name="ahrs" type="float_dcm">
-      <configure name="USE_MAGNETOMETER" value="FALSE"/><!-- AS in USE the device for readings , not the value in AHRS yet -->
+      <configure name="USE_MAGNETOMETER" value="TRUE"/><!-- AS in USE the device for readings , not the value in AHRS yet -->
       <define name="USE_AHRS_GPS_ACCELERATIONS"/>
-      <define name="AHRS_DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
+      <!-- <define name="AHRS_DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/> -->
+      <define name="AHRS_DCM_MAG_ID" value="MAG_IST8310_SENDER_ID"/>
       <!-- <define name="AHRS_DCM_MAG_ID" value="MAG_RM3100_SENDER_ID"/> -->
     </module>
 
@@ -660,8 +674,8 @@
 
     <define name="AHRS_DCM_IMU_ID" value="ABI_BROADCAST"/>
     <!--<define name="DCM_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>-->
-    <!--<define name="DCM_MAG_ID" value="MAG_IST8310_SENDER_ID"/>-->
-    <define name="DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
+    <define name="DCM_MAG_ID" value="MAG_IST8310_SENDER_ID"/>
+    <!--<define name="DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/> -->
     <!--<define name="DCM_MAG_ID" value="MAG_QMC5883P_SENDER_ID"/>-->
     <!--<define name="DCM_MAG_ID" value="MAG_RM3100_SENDER_ID"/>-->
 
