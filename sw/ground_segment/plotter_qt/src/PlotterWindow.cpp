@@ -1,5 +1,8 @@
 #include "PlotterWindow.h"
+#include <QGraphicsLayout>
+#include <QGraphicsScene>
 #include <QLineSeries>
+#include <QLegendMarker>
 #include <QChart>
 #include <QChartView>
 #include <QValueAxis>
@@ -16,6 +19,7 @@
 #include <QPushButton>
 #include <QCheckBox>
 #include <QDoubleSpinBox>
+#include <QLineEdit>
 #include <QLabel>
 #include <QTimer>
 #include <QMenuBar>
@@ -23,16 +27,26 @@
 #include <QAction>
 #include <QApplication>
 #include <QKeySequence>
+#include <QSlider>
 
 
 PlotterWindow::PlotterWindow(QWidget *parent) : QMainWindow(parent), m_minY(1e9), m_maxY(-1e9), m_paused(false), m_autoScale(true) {
+    m_legendOverlay = nullptr;
+    m_legendLayout = nullptr;
     setAcceptDrops(true);
-    setWindowTitle("Real-Time Plotter");
+    setWindowTitle("Plotter");
 
     m_chart = new QChart();
-    m_chart->setTitle("Drag & Drop fields here");
+    m_chart->setTitle("Drag & Drop messages here");
     m_chart->legend()->setVisible(true);
+    m_chart->legend()->setAlignment(Qt::AlignRight);
+    m_chart->legend()->detachFromChart();
+    m_chart->legend()->setBackgroundVisible(true);
     m_chart->setAnimationOptions(QChart::NoAnimation);
+    m_chart->setBackgroundRoundness(0);
+    m_chart->setMargins(QMargins(0, 0, 0, 0));
+    m_chart->layout()->setContentsMargins(0, 0, 0, 0);
+    m_chart->setBackgroundPen(QPen(Qt::NoPen));
 
     m_axisX = new QValueAxis();
     m_axisX->setTitleText("Time (s)");
@@ -71,73 +85,77 @@ void PlotterWindow::setupIvy() {
 void PlotterWindow::setupUI() {
     QWidget *mainWidget = new QWidget(this);
     QVBoxLayout *mainLayout = new QVBoxLayout(mainWidget);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
 
     QWidget *toolbarWidget = new QWidget();
     QHBoxLayout *toolbarLayout = new QHBoxLayout(toolbarWidget);
-
-    QPushButton *btnClear = new QPushButton("Clear");
-    QPushButton *btnPause = new QPushButton("Pause");
-    btnPause->setCheckable(true);
+    toolbarLayout->setContentsMargins(5, 5, 5, 5); // keep some margin for the toolbar
 
     m_cbAutoScale = new QCheckBox("Auto Scale");
     m_cbAutoScale->setChecked(true);
 
-    m_spnMinY = new QDoubleSpinBox();
-    m_spnMaxY = new QDoubleSpinBox();
-    m_spnMinY->setRange(-1000000, 1000000);
-    m_spnMaxY->setRange(-1000000, 1000000);
-    m_spnMinY->setEnabled(false);
-    m_spnMaxY->setEnabled(false);
+    m_edtMinY = new QLineEdit();
+    m_edtMaxY = new QLineEdit();
+    m_edtMinY->setEnabled(false);
+    m_edtMaxY->setEnabled(false);
 
-    QLabel *lblTime = new QLabel("Time Window (s):");
-    m_spnTimeWindow = new QDoubleSpinBox();
-    m_spnTimeWindow->setRange(1, 1000);
-    m_spnTimeWindow->setValue(10.0);
+    m_slTimeWindow = new QSlider(Qt::Horizontal);
+    m_slTimeWindow->setToolTip("Time Window (s)");
+    m_slTimeWindow->setRange(1, 1000);
+    m_slTimeWindow->setValue(10);
+
 
     QLabel *lblConst = new QLabel("Constant:");
-    m_spnConstant = new QDoubleSpinBox();
-    m_spnConstant->setRange(-1000000, 1000000);
-    QPushButton *btnAddConst = new QPushButton("Add");
+    m_edtConstant = new QLineEdit();
 
-    QLabel *lblUpdate = new QLabel("Update Rate (Hz):");
-    m_spnUpdateRate = new QDoubleSpinBox();
-    m_spnUpdateRate->setRange(1, 100); // 1Hz to 100Hz
-    m_spnUpdateRate->setValue(20.0); // Default to 20Hz (0.05s) - 10x faster than plotter.ml's 0.5s
+    QLabel *lblScaleNext = new QLabel("Scale next by:");
+    m_edtScaleNext = new QLineEdit("1.0");
+    m_edtScaleNext->setToolTip("Scale next curve (e.g. 0.0174 to convert deg in rad, 57.3 to convert rad in deg)");
+
+
+    m_slUpdateRate = new QSlider(Qt::Horizontal);
+    m_slUpdateRate->setToolTip("Update Rate (ms)");
+    m_slUpdateRate->setRange(10, 1000); // 10ms to 1000ms
+    m_slUpdateRate->setValue(50); // Default to 50ms (20Hz)
 
     m_updateTimer = new QTimer(this);
-    m_updateTimer->start(1000 / m_spnUpdateRate->value());
+    m_updateTimer->start(m_slUpdateRate->value());
 
-    toolbarLayout->addWidget(btnClear);
-    toolbarLayout->addWidget(btnPause);
     toolbarLayout->addWidget(m_cbAutoScale);
     toolbarLayout->addWidget(new QLabel("Min:"));
-    toolbarLayout->addWidget(m_spnMinY);
+    toolbarLayout->addWidget(m_edtMinY);
     toolbarLayout->addWidget(new QLabel("Max:"));
-    toolbarLayout->addWidget(m_spnMaxY);
-    toolbarLayout->addWidget(lblTime);
-    toolbarLayout->addWidget(m_spnTimeWindow);
+    toolbarLayout->addWidget(m_edtMaxY);
+    toolbarLayout->addWidget(m_slTimeWindow);
+    toolbarLayout->addWidget(m_slUpdateRate);
     toolbarLayout->addWidget(lblConst);
-    toolbarLayout->addWidget(m_spnConstant);
-    toolbarLayout->addWidget(btnAddConst);
-    toolbarLayout->addWidget(lblUpdate);
-    toolbarLayout->addWidget(m_spnUpdateRate);
+    toolbarLayout->addWidget(m_edtConstant);
+    toolbarLayout->addWidget(lblScaleNext);
+    toolbarLayout->addWidget(m_edtScaleNext);
     toolbarLayout->addStretch();
+
 
     QChartView *chartView = new QChartView(m_chart);
     chartView->setRenderHint(QPainter::Antialiasing);
     chartView->setAcceptDrops(false); // Let drops fall through
+    chartView->setContentsMargins(0, 0, 0, 0);
+    chartView->setFrameShape(QFrame::NoFrame);
 
     mainLayout->addWidget(toolbarWidget);
     mainLayout->addWidget(chartView);
     setCentralWidget(mainWidget);
 
-    connect(btnClear, &QPushButton::clicked, this, &PlotterWindow::onClearClicked);
-    connect(btnPause, &QPushButton::toggled, this, &PlotterWindow::onPauseToggled);
+    m_legendOverlay = new QWidget(chartView);
+    m_legendLayout = new QVBoxLayout(m_legendOverlay);
+    m_legendLayout->setContentsMargins(0, 0, 0, 0);
+    m_legendLayout->setSpacing(0);
+
     connect(m_cbAutoScale, &QCheckBox::toggled, this, &PlotterWindow::onAutoScaleToggled);
-    connect(m_spnMinY, &QDoubleSpinBox::editingFinished, this, &PlotterWindow::onManualScaleChanged);
-    connect(m_spnMaxY, &QDoubleSpinBox::editingFinished, this, &PlotterWindow::onManualScaleChanged);
-    connect(btnAddConst, &QPushButton::clicked, this, &PlotterWindow::onAddConstantClicked);
-    connect(m_spnUpdateRate, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &PlotterWindow::onUpdateRateChanged);
+    connect(m_edtMinY, &QLineEdit::editingFinished, this, &PlotterWindow::onManualScaleChanged);
+    connect(m_edtMaxY, &QLineEdit::editingFinished, this, &PlotterWindow::onManualScaleChanged);
+    connect(m_edtConstant, &QLineEdit::editingFinished, this, &PlotterWindow::onAddConstantClicked);
+    connect(m_slUpdateRate, &QSlider::valueChanged, this, &PlotterWindow::onUpdateRateChanged);
     connect(m_updateTimer, &QTimer::timeout, this, &PlotterWindow::updatePlots);
 }
 
@@ -147,6 +165,7 @@ void PlotterWindow::onClearClicked() {
         delete plot.series;
     }
     m_activePlots.clear();
+    m_chart->setTitle("Drag & Drop fields here");
     m_minY = 1e9;
     m_maxY = -1e9;
     m_startTime = QDateTime::currentMSecsSinceEpoch(); // reset time origin
@@ -159,21 +178,29 @@ void PlotterWindow::onPauseToggled(bool checked) {
 
 void PlotterWindow::onAutoScaleToggled(bool checked) {
     m_autoScale = checked;
-    m_spnMinY->setEnabled(!checked);
-    m_spnMaxY->setEnabled(!checked);
+    m_edtMinY->setEnabled(!checked);
+    m_edtMaxY->setEnabled(!checked);
     if (!checked) {
         onManualScaleChanged();
+    } else {
+        if (m_minY <= m_maxY) {
+            double margin = (m_maxY - m_minY) * 0.1;
+            if (margin == 0) margin = 1.0;
+            m_axisY->setRange(m_minY - margin, m_maxY + margin);
+        }
     }
 }
 
 void PlotterWindow::onManualScaleChanged() {
     if (!m_autoScale) {
-        m_axisY->setRange(m_spnMinY->value(), m_spnMaxY->value());
+        m_axisY->setRange(m_edtMinY->text().toDouble(), m_edtMaxY->text().toDouble());
     }
 }
 
 void PlotterWindow::onAddConstantClicked() {
-    double val = m_spnConstant->value();
+    bool ok;
+    double val = m_edtConstant->text().toDouble(&ok);
+    if (!ok) return;
     
     // Create a new constant series
     PlotConfig cfg;
@@ -188,18 +215,20 @@ void PlotterWindow::onAddConstantClicked() {
     
     // We add points initially, and the rest will be updated in handleMessage
     cfg.series->append(0, val);
-    cfg.series->append(m_spnTimeWindow->value(), val);
+    cfg.series->append(m_slTimeWindow->value(), val);
     
-    m_chart->addSeries(cfg.series);
     cfg.series->attachAxis(m_axisX);
     cfg.series->attachAxis(m_axisY);
     
     m_activePlots.append(cfg);
+    
+    addCurveToMenu(m_activePlots.last());
+    QTimer::singleShot(10, this, &PlotterWindow::updateLegendPosition);
 }
 
-void PlotterWindow::onUpdateRateChanged(double val) {
+void PlotterWindow::onUpdateRateChanged(int val) {
     if (val > 0) {
-        m_updateTimer->setInterval(1000.0 / val);
+        m_updateTimer->setInterval(val);
     }
 }
 
@@ -227,7 +256,13 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
         cfg.className = parts[1];
         cfg.msgName = parts[2];
         cfg.fieldName = parts[3];
-        cfg.coef = (parts.size() >= 5) ? parts[4].toDouble() : 1.0;
+        
+        bool ok = false;
+        double scaleNext = m_edtScaleNext->text().toDouble(&ok);
+        if (!ok) scaleNext = 1.0;
+        
+        cfg.coef = ((parts.size() >= 5) ? parts[4].toDouble() : 1.0) * scaleNext;
+
         if (cfg.coef == 0.0) cfg.coef = 1.0;
 
         // Check if already plotted
@@ -240,7 +275,8 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
         }
 
         cfg.series = new QLineSeries();
-        cfg.series->setName(QString("%1:%2").arg(cfg.msgName).arg(cfg.fieldName));
+        QString prefix = (cfg.senderName.isEmpty() || cfg.senderName == "all") ? "" : cfg.senderName + ":";
+        cfg.series->setName(QString("%1%2:%3").arg(prefix).arg(cfg.msgName).arg(cfg.fieldName));
         
         m_chart->addSeries(cfg.series);
         cfg.series->attachAxis(m_axisX);
@@ -256,6 +292,10 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
         }
         
         m_activePlots.append(cfg);
+        m_chart->setTitle("");
+        
+        addCurveToMenu(m_activePlots.last());
+    QTimer::singleShot(10, this, &PlotterWindow::updateLegendPosition);
 
         if (!alreadyBound) {
             const auto msgs = m_dict->getMsgsForClass(cfg.className);
@@ -339,6 +379,22 @@ void PlotterWindow::handleMessage(QString sender, const pprzlink::Message& msg) 
                         ss << rv;
                         double val = QString::fromStdString(ss.str()).toDouble();
                         val *= plot.coef;
+
+                        if (plot.discrete) {
+                            double lastY = val;
+                            bool hasLastY = false;
+                            if (!plot.buffer.isEmpty()) {
+                                lastY = plot.buffer.last().y();
+                                hasLastY = true;
+                            } else if (plot.series->count() > 0) {
+                                lastY = plot.series->at(plot.series->count() - 1).y();
+                                hasLastY = true;
+                            }
+                            if (hasLastY) {
+                                plot.buffer.append(QPointF(currentTime, lastY));
+                            }
+                        }
+
                         plot.buffer.append(QPointF(currentTime, val));
                     } catch(...) {}
                     break;
@@ -352,7 +408,7 @@ void PlotterWindow::updatePlots() {
     if (m_paused) return;
 
     double currentTime = (QDateTime::currentMSecsSinceEpoch() - m_startTime) / 1000.0;
-    double windowSize = m_spnTimeWindow->value();
+    double windowSize = m_slTimeWindow->value();
     bool needsAxisUpdate = false;
 
     for (auto& plot : m_activePlots) {
@@ -369,11 +425,9 @@ void PlotterWindow::updatePlots() {
 
         plot.series->append(plot.buffer);
         
-        if (m_autoScale) {
-            for (const QPointF& pt : qAsConst(plot.buffer)) {
-                if (pt.y() < m_minY) { m_minY = pt.y(); needsAxisUpdate = true; }
-                if (pt.y() > m_maxY) { m_maxY = pt.y(); needsAxisUpdate = true; }
-            }
+        for (const QPointF& pt : qAsConst(plot.buffer)) {
+            if (pt.y() < m_minY) { m_minY = pt.y(); needsAxisUpdate = true; }
+            if (pt.y() > m_maxY) { m_maxY = pt.y(); needsAxisUpdate = true; }
         }
         
         plot.buffer.clear();
@@ -398,4 +452,160 @@ void PlotterWindow::updatePlots() {
         if (margin == 0) margin = 1.0;
         m_axisY->setRange(m_minY - margin, m_maxY + margin);
     }
+}
+
+void PlotterWindow::addCurveToMenu(PlotConfig& cfg) {
+    if (!m_curvesMenu) return;
+
+    QPixmap pixmap(16, 16);
+    pixmap.fill(cfg.series->color());
+    QIcon icon(pixmap);
+
+    QMenu* curveMenu = m_curvesMenu->addMenu(icon, cfg.series->name());
+    
+    QAction* deleteAction = curveMenu->addAction(tr("Delete"));
+    QLineSeries* targetSeries = cfg.series;
+    connect(deleteAction, &QAction::triggered, this, [this, targetSeries, curveMenu]() {
+        removeCurve(targetSeries);
+        delete curveMenu;
+    });
+
+    QAction* discreteAction = curveMenu->addAction(tr("Discrete"));
+    discreteAction->setCheckable(true);
+    discreteAction->setChecked(cfg.discrete);
+    connect(discreteAction, &QAction::toggled, this, [this, targetSeries](bool checked) {
+        for (auto& plot : m_activePlots) {
+            if (plot.series == targetSeries) {
+                plot.discrete = checked;
+                break;
+            }
+        }
+    });
+}
+
+void PlotterWindow::removeCurve(QLineSeries* series) {
+    if (!series) return;
+    
+    for (int i = 0; i < m_activePlots.size(); ++i) {
+        if (m_activePlots[i].series == series) {
+            m_chart->removeSeries(series);
+            m_activePlots.removeAt(i);
+            delete series;
+            QTimer::singleShot(10, this, &PlotterWindow::updateLegendPosition);
+            break;
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+void PlotterWindow::updateLegendPosition() {
+    if (!m_chart || !m_legendOverlay) return;
+    
+    m_chart->legend()->hide();
+    
+    QLayoutItem *child;
+    while ((child = m_legendLayout->takeAt(0)) != nullptr) {
+        if (child->widget()) delete child->widget();
+        delete child;
+    }
+    
+    auto seriesList = m_chart->series();
+    if (seriesList.isEmpty()) {
+        m_legendOverlay->hide();
+        return;
+    }
+    
+    m_legendOverlay->show();
+    
+    for (auto* s : seriesList) {
+        QLineSeries* ls = qobject_cast<QLineSeries*>(s);
+        if (ls) {
+            QWidget* rowWidget = new QWidget;
+            QHBoxLayout* rowLayout = new QHBoxLayout(rowWidget);
+            rowLayout->setContentsMargins(5, 2, 5, 2);
+            rowLayout->setSpacing(5);
+            
+            QLabel* colorBox = new QLabel;
+            QString colorMsg = ls->pen().color().name();
+            colorBox->setStyleSheet(QString("background-color: %1; border: 1px solid black;").arg(colorMsg));
+            colorBox->setFixedSize(12, 12);
+            
+            double latestVal = 0.0;
+            if (ls->count() > 0) {
+                latestVal = ls->at(ls->count() - 1).y();
+            }
+            QLabel* textLbl = new QLabel(QString("%1 : %2").arg(ls->name()).arg(latestVal, 0, 'f', 4));
+            textLbl->setStyleSheet("color: black; font-weight: bold; border: none; background: transparent;");
+            textLbl->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            
+            rowLayout->addWidget(colorBox);
+            rowLayout->addWidget(textLbl, 1);
+            m_legendLayout->addWidget(rowWidget);
+        }
+    }
+    
+    m_legendOverlay->adjustSize();
+    QChartView* view = qobject_cast<QChartView*>(m_legendOverlay->parentWidget());
+    if (view) {
+        int x = view->width() - m_legendOverlay->width() - 15;
+        int y = 15;
+        m_legendOverlay->move(x, y);
+    }
+}
+
+void PlotterWindow::updateLegendValues() {
+    if (!m_legendOverlay || !m_legendLayout) return;
+    
+    auto seriesList = m_chart->series();
+    if (m_legendLayout->count() != seriesList.size()) {
+        updateLegendPosition();
+        return;
+    }
+    
+    for (int i = 0; i < seriesList.size(); ++i) {
+        QLineSeries* ls = qobject_cast<QLineSeries*>(seriesList[i]);
+        if (ls) {
+            double latestVal = 0.0;
+            if (ls->count() > 0) {
+                latestVal = ls->at(ls->count() - 1).y();
+            }
+            
+            QLayoutItem* item = m_legendLayout->itemAt(i);
+            if (item) {
+                QWidget* rowWidget = item->widget();
+                if (rowWidget) {
+                    QHBoxLayout* rowLayout = qobject_cast<QHBoxLayout*>(rowWidget->layout());
+                    if (rowLayout && rowLayout->count() >= 2) {
+                        QLabel* lbl = qobject_cast<QLabel*>(rowLayout->itemAt(1)->widget());
+                        if (lbl) {
+                            lbl->setText(QString("%1 : %2").arg(ls->name()).arg(latestVal, 0, 'f', 4));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    m_legendOverlay->adjustSize();
+    QChartView* view = qobject_cast<QChartView*>(m_legendOverlay->parentWidget());
+    if (view) {
+        int x = view->width() - m_legendOverlay->width() - 15;
+        int y = 15;
+        m_legendOverlay->move(x, y);
+    }
+}
+
+void PlotterWindow::resizeEvent(QResizeEvent *event) {
+    QMainWindow::resizeEvent(event);
+    updateLegendPosition();
 }

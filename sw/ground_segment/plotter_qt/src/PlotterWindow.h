@@ -30,6 +30,7 @@ struct PlotConfig {
     double coef;
     QLineSeries* series;
     QList<QPointF> buffer;
+    bool discrete = false;
 };
 
 class PlotterWindow : public QMainWindow {
@@ -39,6 +40,7 @@ public:
     ~PlotterWindow();
 
 protected:
+    void resizeEvent(QResizeEvent* event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
 
@@ -48,15 +50,23 @@ private slots:
     void onAutoScaleToggled(bool checked);
     void onManualScaleChanged();
     void onAddConstantClicked();
-    void onUpdateRateChanged(double val);
+    void onUpdateRateChanged(int val);
     void updatePlots();
 
 private:
+    QWidget* m_legendOverlay;
+    class QVBoxLayout* m_legendLayout;
+    void updateLegendValues();
+    void updateLegendPosition();
+
     void setupIvy();
     void setupUI();
     void setupMenu();
     void addPlotFromPayload(const QString& payload);
     void handleMessage(QString sender, const pprzlink::Message& msg);
+    
+    void addCurveToMenu(PlotConfig& config);
+    void removeCurve(QLineSeries* series);
     
     QChart *m_chart;
     QValueAxis *m_axisX;
@@ -74,11 +84,12 @@ private:
     bool m_autoScale;
     
     QCheckBox* m_cbAutoScale;
-    QDoubleSpinBox* m_spnMinY;
-    QDoubleSpinBox* m_spnMaxY;
-    QDoubleSpinBox* m_spnTimeWindow;
-    QDoubleSpinBox* m_spnConstant;
-    QDoubleSpinBox* m_spnUpdateRate;
+    class QLineEdit* m_edtMinY;
+    class QLineEdit* m_edtMaxY;
+    class QSlider* m_slTimeWindow;
+    class QLineEdit* m_edtConstant;
+    class QSlider* m_slUpdateRate;
+    class QLineEdit* m_edtScaleNext;
     QTimer* m_updateTimer;
     class QMenu* m_curvesMenu;
 };
