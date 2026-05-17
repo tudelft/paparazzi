@@ -1,14 +1,17 @@
-.PHONY: all clean run setup build_ninja
+.PHONY: all clean run setup
+
+BUILD_TYPE ?= Release
+JOBS ?= $(shell nproc)
 
 all: setup
-	cmake --build build --parallel "$(nproc)"
+	cmake --build build --config $(BUILD_TYPE) --parallel $(JOBS)
 
 setup:
 	@if [ ! -d "build" ]; then \
 		if command -v ninja >/dev/null 2>&1; then \
-			cmake -B build -S . -G Ninja; \
+			cmake -B build -S . -G Ninja -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
 		else \
-			cmake -B build -S .; \
+			cmake -B build -S . -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
 		fi \
 	fi
 
