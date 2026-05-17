@@ -198,6 +198,8 @@ void PlotterWindow::onAutoScaleToggled(bool checked) {
             double margin = (m_maxY - m_minY) * 0.1;
             if (margin == 0) margin = 1.0;
             m_axisY->setRange(m_minY - margin, m_maxY + margin);
+            m_edtMinY->setText(QString::number(m_minY - margin, 'f', 2));
+            m_edtMaxY->setText(QString::number(m_maxY + margin, 'f', 2));
         }
     }
 }
@@ -475,6 +477,8 @@ void PlotterWindow::updatePlots() {
         double margin = (m_maxY - m_minY) * 0.1;
         if (margin == 0) margin = 1.0;
         m_axisY->setRange(m_minY - margin, m_maxY + margin);
+        m_edtMinY->setText(QString::number(m_minY - margin, 'f', 2));
+        m_edtMaxY->setText(QString::number(m_maxY + margin, 'f', 2));
     }
     updateLegendValues();
 }
@@ -516,6 +520,29 @@ void PlotterWindow::removeCurve(QLineSeries* series) {
             m_chart->removeSeries(series);
             m_activePlots.removeAt(i);
             delete series;
+            
+            // Recalculate min/max if autoscale is on
+            if (m_autoScale) {
+                m_minY = 1e9;
+                m_maxY = -1e9;
+                bool hasPoints = false;
+                for (const auto& plot : qAsConst(m_activePlots)) {
+                    for (int j = 0; j < plot.series->count(); ++j) {
+                        double y = plot.series->at(j).y();
+                        if (y < m_minY) m_minY = y;
+                        if (y > m_maxY) m_maxY = y;
+                        hasPoints = true;
+                    }
+                }
+                if (hasPoints && m_minY <= m_maxY) {
+                    double margin = (m_maxY - m_minY) * 0.1;
+                    if (margin == 0) margin = 1.0;
+                    m_axisY->setRange(m_minY - margin, m_maxY + margin);
+                    m_edtMinY->setText(QString::number(m_minY - margin, 'f', 2));
+                    m_edtMaxY->setText(QString::number(m_maxY + margin, 'f', 2));
+                }
+            }
+            
             QTimer::singleShot(10, this, &PlotterWindow::updateLegendPosition);
             break;
         }
