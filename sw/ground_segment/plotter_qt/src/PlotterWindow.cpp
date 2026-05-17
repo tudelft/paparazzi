@@ -1,4 +1,15 @@
 #include "PlotterWindow.h"
+#include <QColor>
+#include <cmath>
+
+static int g_colorIndex = 0;
+static QColor getNextSaturatedColor() {
+    double h = std::fmod(g_colorIndex * 137.508, 360.0);
+    g_colorIndex++;
+    return QColor::fromHsvF(h / 360.0, 0.9, 0.9);
+}
+
+
 #include <QGraphicsLayout>
 #include <QGraphicsScene>
 #include <QLineSeries>
@@ -50,6 +61,8 @@ PlotterWindow::PlotterWindow(QWidget *parent) : QMainWindow(parent), m_minY(1e9)
 
     m_axisX = new QValueAxis();
     m_axisX->setTitleText("Time (s)");
+    m_axisX->setTitleVisible(false); // Hidden by default
+    m_axisX->setLabelFormat("%gs");
     m_chart->addAxis(m_axisX, Qt::AlignBottom);
 
     m_axisY = new QValueAxis();
@@ -226,12 +239,12 @@ void PlotterWindow::onAddConstantClicked() {
     cfg.series = new QLineSeries();
     cfg.series->setName(cfg.fieldName);
     
-    // Add series to chart BEFORE setting pen, so Qt auto-assigns a color
-    m_chart->addSeries(cfg.series);
-    
+    // Assign custom distinct saturated color
     QPen pen1 = cfg.series->pen();
+    pen1.setColor(getNextSaturatedColor());
     pen1.setWidth(m_spnLineThickness->value());
     cfg.series->setPen(pen1);
+    m_chart->addSeries(cfg.series);
     
     // We add points initially, and the rest will be updated in handleMessage
     cfg.series->append(0, val);
@@ -299,12 +312,12 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
         QString classPrefix = cfg.className.isEmpty() ? "" : cfg.className + ":";
         cfg.series->setName(QString("%1%2%3:%4").arg(prefix).arg(classPrefix).arg(cfg.msgName).arg(cfg.fieldName));
         
-        // Add series to chart BEFORE setting pen, so Qt auto-assigns a theme color
-        m_chart->addSeries(cfg.series);
-        
+        // Assign custom distinct saturated color
         QPen pen2 = cfg.series->pen();
+        pen2.setColor(getNextSaturatedColor());
         pen2.setWidth(m_spnLineThickness->value());
         cfg.series->setPen(pen2);
+        m_chart->addSeries(cfg.series);
         cfg.series->attachAxis(m_axisX);
         cfg.series->attachAxis(m_axisY);
 
