@@ -1,6 +1,41 @@
-#include "PlotterWindow.h"
+#include "plotter.h"
+#include <QAction>
+#include <QApplication>
+#include <QChart>
+#include <QChartView>
+#include <QCheckBox>
 #include <QColor>
+#include <QDebug>
+#include <QFrame>
+#include <QFile>
+#include <QGraphicsLayout>
+#include <QHBoxLayout>
+#include <QIcon>
+#include <QKeySequence>
+#include <QLabel>
+#include <QLineEdit>
+#include <QLineSeries>
+#include <QMenu>
+#include <QMenuBar>
+#include <QPainter>
+#include <QPen>
+#include <QPixmap>
+#include <QSlider>
+#include <QSpinBox>
+#include <QTimer>
+#include <QVBoxLayout>
+#include <QValueAxis>
+#include <QMimeData>
+#include <QDateTime>
+#include <QStringList>
 #include <cmath>
+#include <algorithm>
+#include <sstream>
+#include <utility>
+#include <variant>
+#include "pprzlinkQt/Message.h"
+#include "pprzlinkQt/MessageDictionary.h"
+#include "pprzlinkQt/IvyQtLink.h"
 
 static int g_colorIndex = 0;
 static QColor getNextSaturatedColor() {
@@ -9,37 +44,69 @@ static QColor getNextSaturatedColor() {
     return QColor::fromHsvF(h / 360.0, 0.9, 0.9);
 }
 
-
-#include <QGraphicsLayout>
-#include <QGraphicsScene>
-#include <QLineSeries>
-#include <QLegendMarker>
-#include <QChart>
-#include <QChartView>
-#include <QValueAxis>
-#include <QMimeData>
-#include <sstream>
-#include <iostream>
-
-#include "pprzlinkQt/Message.h"
-#include "pprzlinkQt/MessageDictionary.h"
-#include "pprzlinkQt/IvyQtLink.h"
-#include <QDebug>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QPushButton>
-#include <QCheckBox>
-#include <QDoubleSpinBox>
-#include <QLineEdit>
-#include <QLabel>
-#include <QTimer>
-#include <QMenuBar>
-#include <QMenu>
-#include <QAction>
-#include <QApplication>
-#include <QKeySequence>
-#include <QSlider>
-
+static double fieldValueAsDouble(const pprzlink::FieldValue &value)
+{
+    const auto &type = value.getType();
+    if (type.isArray()) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    switch (type.getBaseType()) {
+    case pprzlink::BaseType::CHAR: {
+        char v;
+        value.getValue(v);
+        return static_cast<double>(v);
+    }
+    case pprzlink::BaseType::INT8: {
+        int8_t v;
+        value.getValue(v);
+        return static_cast<double>(v);
+    }
+    case pprzlink::BaseType::INT16: {
+        int16_t v;
+        value.getValue(v);
+        return static_cast<double>(v);
+    }
+    case pprzlink::BaseType::INT32: {
+        int32_t v;
+        value.getValue(v);
+        return static_cast<double>(v);
+    }
+    case pprzlink::BaseType::UINT8: {
+        uint8_t v;
+        value.getValue(v);
+        return static_cast<double>(v);
+    }
+    case pprzlink::BaseType::UINT16: {
+        uint16_t v;
+        value.getValue(v);
+        return static_cast<double>(v);
+    }
+    case pprzlink::BaseType::UINT32: {
+        uint32_t v;
+        value.getValue(v);
+        return static_cast<double>(v);
+    }
+    case pprzlink::BaseType::FLOAT: {
+        float v;
+        value.getValue(v);
+        return static_cast<double>(v);
+    }
+    case pprzlink::BaseType::DOUBLE: {
+        double v;
+        value.getValue(v);
+        return v;
+    }
+    case pprzlink::BaseType::STRING: {
+        QString s;
+        value.getValue(s);
+        bool ok = false;
+        double d = s.toDouble(&ok);
+        return ok ? d : std::numeric_limits<double>::quiet_NaN();
+    }
+    default:
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+}
 
 PlotterWindow::PlotterWindow(QWidget *parent) : QMainWindow(parent), m_minY(1e9), m_maxY(-1e9), m_paused(false), m_autoScale(true) {
     m_legendOverlay = nullptr;
@@ -62,11 +129,13 @@ PlotterWindow::PlotterWindow(QWidget *parent) : QMainWindow(parent), m_minY(1e9)
     m_axisX = new QValueAxis();
     m_axisX->setTitleText("Time (s)");
     m_axisX->setTitleVisible(false); // Hidden by default
-    m_axisX->setLabelFormat("%gs");
+    // m_axisX->setLabelFormat("%gs"); previous if you want to
+    m_axisX->setLabelFormat("%.1fs");
     m_chart->addAxis(m_axisX, Qt::AlignBottom);
 
     m_axisY = new QValueAxis();
     m_axisY->setTitleText("Value");
+    m_axisY->setTitleVisible(false); // Hidden by default
     m_chart->addAxis(m_axisY, Qt::AlignLeft);
 
     setupUI();
@@ -81,8 +150,12 @@ PlotterWindow::~PlotterWindow() {
     if (m_link) {
         m_link->stop();
         delete m_link;
+        m_link = nullptr;
     }
-    delete m_dict;
+    if (m_dict) {
+        delete m_dict;
+        m_dict = nullptr;
+    }
 }
 
 void PlotterWindow::setupIvy() {
@@ -90,9 +163,30 @@ void PlotterWindow::setupIvy() {
     if (phome.isEmpty()) phome = QString("/home/%1/paparazzi").arg(qgetenv("USER"));
     QString xmlPath = phome + "/var/messages.xml";
 
-    m_dict = new pprzlink::MessageDictionary(xmlPath);
-    m_link = new pprzlink::IvyQtLink(*m_dict, "plotter_qt", this);
-    m_link->start("127.255.255.255:2010");
+    if (!QFile::exists(xmlPath)) {
+        qWarning() << "Plotter: message dictionary not found at" << xmlPath << ". Ivy telemetry will be disabled.";
+        m_dict = nullptr;
+        m_link = nullptr;
+        return;
+    }
+
+    try {
+        m_dict = new pprzlink::MessageDictionary(xmlPath);
+        m_link = new pprzlink::IvyQtLink(*m_dict, "plotter", this);
+        m_link->start("127.255.255.255:2010");
+    } catch (const std::exception &e) {
+        qWarning() << "Plotter: failed to initialize Ivy link or message dictionary:" << e.what();
+        delete m_link;
+        m_link = nullptr;
+        delete m_dict;
+        m_dict = nullptr;
+    } catch (...) {
+        qWarning() << "Plotter: unknown failure during Ivy initialization.";
+        delete m_link;
+        m_link = nullptr;
+        delete m_dict;
+        m_dict = nullptr;
+    }
 }
 
 void PlotterWindow::setupUI() {
@@ -110,27 +204,30 @@ void PlotterWindow::setupUI() {
 
     m_edtMinY = new QLineEdit();
     m_edtMaxY = new QLineEdit();
+    m_edtMinY->setMaximumWidth(60);
+    m_edtMaxY->setMaximumWidth(60);
     m_edtMinY->setEnabled(false);
     m_edtMaxY->setEnabled(false);
 
     m_slTimeWindow = new QSlider(Qt::Horizontal);
     m_slTimeWindow->setToolTip("Time Window (s)");
-    m_slTimeWindow->setRange(1, 1000);
-    m_slTimeWindow->setValue(10);
+    m_slTimeWindow->setRange(5, 1000); // 5 to 1000 (0.05s to 10.0s)
+    m_slTimeWindow->setValue(1000); // Default to 10s
 
 
     QLabel *lblConst = new QLabel("Constant:");
     m_edtConstant = new QLineEdit();
+    m_edtConstant->setMaximumWidth(60);
 
     QLabel *lblScaleNext = new QLabel("Scale next by:");
     m_edtScaleNext = new QLineEdit("1.0");
+    m_edtScaleNext->setMaximumWidth(60);
     m_edtScaleNext->setToolTip("Scale next curve (e.g. 0.0174 to convert deg in rad, 57.3 to convert rad in deg)");
-
 
     m_slUpdateRate = new QSlider(Qt::Horizontal);
     m_slUpdateRate->setToolTip("Update Rate (ms)");
     m_slUpdateRate->setRange(10, 1000); // 10ms to 1000ms
-    m_slUpdateRate->setValue(50); // Default to 50ms (20Hz)
+    m_slUpdateRate->setValue(16); // Default to 16ms (~60Hz)
 
     m_spnLineThickness = new QSpinBox();
     m_spnLineThickness->setToolTip("Line Thickness (px)");
@@ -141,13 +238,44 @@ void PlotterWindow::setupUI() {
     m_updateTimer = new QTimer(this);
     m_updateTimer->start(m_slUpdateRate->value());
 
+    m_legendUpdateTimer = new QTimer(this);
+    m_legendUpdateTimer->setInterval(200);
+    connect(m_legendUpdateTimer, &QTimer::timeout, this, &PlotterWindow::onLegendRefreshTimeout);
+    m_legendUpdateTimer->start();
+
     toolbarLayout->addWidget(m_cbAutoScale);
-    toolbarLayout->addWidget(new QLabel("Min:"));
+    toolbarLayout->addWidget(new QLabel("Min"));
     toolbarLayout->addWidget(m_edtMinY);
-    toolbarLayout->addWidget(new QLabel("Max:"));
+    toolbarLayout->addWidget(new QLabel("Max"));
     toolbarLayout->addWidget(m_edtMaxY);
-    toolbarLayout->addWidget(m_slTimeWindow);
-    toolbarLayout->addWidget(m_slUpdateRate);
+
+    QLabel *lblTimeWindowVal = new QLabel(QString("%1").arg(m_slTimeWindow->value() / 100.0, 0, 'f', 2));
+    lblTimeWindowVal->setAlignment(Qt::AlignCenter);
+    QVBoxLayout *vboxTime = new QVBoxLayout();
+    vboxTime->addWidget(lblTimeWindowVal);
+    vboxTime->addWidget(m_slTimeWindow);
+    vboxTime->setContentsMargins(0, 0, 0, 0);
+    QWidget *wTime = new QWidget();
+    wTime->setLayout(vboxTime);
+
+    QLabel *lblUpdateRateVal = new QLabel(QString("%1").arg(m_slUpdateRate->value()));
+    lblUpdateRateVal->setAlignment(Qt::AlignCenter);
+    QVBoxLayout *vboxRate = new QVBoxLayout();
+    vboxRate->addWidget(lblUpdateRateVal);
+    vboxRate->addWidget(m_slUpdateRate);
+    vboxRate->setContentsMargins(0, 0, 0, 0);
+    QWidget *wRate = new QWidget();
+    wRate->setLayout(vboxRate);
+
+    connect(m_slTimeWindow, &QSlider::valueChanged, lblTimeWindowVal, [lblTimeWindowVal](int val) {
+        lblTimeWindowVal->setText(QString("%1").arg(val / 100.0, 0, 'f', 2));
+    });
+    connect(m_slUpdateRate, &QSlider::valueChanged, lblUpdateRateVal, [lblUpdateRateVal](int val) {
+        lblUpdateRateVal->setText(QString("%1").arg(val));
+    });
+
+    toolbarLayout->addWidget(wTime, 1);
+    toolbarLayout->addWidget(wRate, 1);
     toolbarLayout->addWidget(lblConst);
     toolbarLayout->addWidget(m_edtConstant);
     toolbarLayout->addWidget(lblScaleNext);
@@ -156,7 +284,6 @@ void PlotterWindow::setupUI() {
     lblLineThickness->hide();
     toolbarLayout->addWidget(lblLineThickness);
     toolbarLayout->addWidget(m_spnLineThickness);
-    toolbarLayout->addStretch();
 
 
     QChartView *chartView = new QChartView(m_chart);
@@ -183,16 +310,32 @@ void PlotterWindow::setupUI() {
     connect(m_updateTimer, &QTimer::timeout, this, &PlotterWindow::updatePlots);
 }
 
+void PlotterWindow::onLegendRefreshTimeout()
+{
+    if (!m_legendNeedsRefresh) {
+        return;
+    }
+    m_legendNeedsRefresh = false;
+    updateLegendValues();
+}
+
 void PlotterWindow::onClearClicked() {
     for (auto& plot : m_activePlots) {
-        m_chart->removeSeries(plot.series);
-        delete plot.series;
+        if (plot.series) {
+            m_chart->removeSeries(plot.series);
+            delete plot.series;
+            plot.series = nullptr;
+        }
     }
     m_activePlots.clear();
+    if (m_curvesMenu) {
+        m_curvesMenu->clear();
+    }
     m_chart->setTitle("Drag & Drop fields here");
     m_minY = 1e9;
     m_maxY = -1e9;
     m_startTime = QDateTime::currentMSecsSinceEpoch(); // reset time origin
+    m_legendNeedsRefresh = true;
     // remove constants too if any
 }
 
@@ -219,14 +362,19 @@ void PlotterWindow::onAutoScaleToggled(bool checked) {
 
 void PlotterWindow::onManualScaleChanged() {
     if (!m_autoScale) {
-        m_axisY->setRange(m_edtMinY->text().toDouble(), m_edtMaxY->text().toDouble());
+        bool okMin = false, okMax = false;
+        double minY = m_edtMinY->text().toDouble(&okMin);
+        double maxY = m_edtMaxY->text().toDouble(&okMax);
+        if (okMin && okMax && minY < maxY) {
+            m_axisY->setRange(minY, maxY);
+        }
     }
 }
 
 void PlotterWindow::onAddConstantClicked() {
-    bool ok;
+    bool ok = false;
     double val = m_edtConstant->text().toDouble(&ok);
-    if (!ok) return;
+    if (!ok || !std::isfinite(val)) return;
     
     // Create a new constant series
     PlotConfig cfg;
@@ -248,7 +396,7 @@ void PlotterWindow::onAddConstantClicked() {
     
     // We add points initially, and the rest will be updated in handleMessage
     cfg.series->append(0, val);
-    cfg.series->append(m_slTimeWindow->value(), val);
+    cfg.series->append(m_slTimeWindow->value() / 100.0, val);
     
     cfg.series->attachAxis(m_axisX);
     cfg.series->attachAxis(m_axisY);
@@ -260,9 +408,8 @@ void PlotterWindow::onAddConstantClicked() {
 }
 
 void PlotterWindow::onUpdateRateChanged(int val) {
-    if (val > 0) {
-        m_updateTimer->setInterval(val);
-    }
+    const int interval = std::max(10, val);
+    m_updateTimer->setInterval(interval);
 }
 
 void PlotterWindow::dragEnterEvent(QDragEnterEvent *event) {
@@ -292,11 +439,15 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
         
         bool ok = false;
         double scaleNext = m_edtScaleNext->text().toDouble(&ok);
-        if (!ok) scaleNext = 1.0;
-        
-        cfg.coef = ((parts.size() >= 5) ? parts[4].toDouble() : 1.0) * scaleNext;
-
-        if (cfg.coef == 0.0) cfg.coef = 1.0;
+        if (!ok || !std::isfinite(scaleNext)) scaleNext = 1.0;
+        double coef = 1.0;
+        if (parts.size() >= 5) {
+            bool okCoef = false;
+            coef = parts[4].toDouble(&okCoef);
+            if (!okCoef || !std::isfinite(coef)) coef = 1.0;
+        }
+        cfg.coef = coef * scaleNext;
+        if (cfg.coef == 0.0 || !std::isfinite(cfg.coef)) cfg.coef = 1.0;
 
         // Check if already plotted
         for (const auto& existing : m_activePlots) {
@@ -321,37 +472,45 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
         cfg.series->attachAxis(m_axisX);
         cfg.series->attachAxis(m_axisY);
 
-        // Bind message if not already bound
+        int fieldIndex = -1;
         bool alreadyBound = false;
+        std::vector<pprzlink::MessageDefinition> defs;
+        if (m_dict) {
+            defs = m_dict->getMsgsForClass(cfg.className);
+        }
         for (const auto& existing : m_activePlots) {
             if (existing.msgName == cfg.msgName && existing.className == cfg.className) {
                 alreadyBound = true;
                 break;
             }
         }
-        
-        m_activePlots.append(cfg);
-        m_chart->setTitle("");
-        
-        addCurveToMenu(m_activePlots.last());
-    QTimer::singleShot(10, this, &PlotterWindow::updateLegendPosition);
-
-        if (!alreadyBound) {
-            const auto msgs = m_dict->getMsgsForClass(cfg.className);
-            for (const auto& def : msgs) {
-                if (def.getName() == cfg.msgName) {
+        for (const auto& def : defs) {
+            if (def.getName() == cfg.msgName) {
+                for (int k = 0; k < (int)def.getNbFields(); ++k) {
+                    if (def.getField(k).getName() == cfg.fieldName) {
+                        fieldIndex = k;
+                        break;
+                    }
+                }
+                if (!alreadyBound && m_link) {
                     qDebug() << "Binding message:" << cfg.msgName;
                     m_link->BindMessage(def, this, [this](QString sender, pprzlink::Message msg) {
                         this->handleMessage(sender, msg);
                     });
-                    break;
                 }
+                break;
             }
         }
+        cfg.fieldIndex = fieldIndex;
+
+        m_activePlots.append(cfg);
+        m_chart->setTitle("");
+        
+        addCurveToMenu(m_activePlots.last());
+        m_legendNeedsRefresh = true;
+    QTimer::singleShot(10, this, &PlotterWindow::updateLegendPosition);
     }
 }
-
-
 
 void PlotterWindow::setupMenu() {
     QMenu* plotMenu = menuBar()->addMenu(tr("&Plot"));
@@ -407,37 +566,49 @@ void PlotterWindow::handleMessage(QString sender, const pprzlink::Message& msg) 
     double currentTime = (QDateTime::currentMSecsSinceEpoch() - m_startTime) / 1000.0;
     
     for (auto& plot : m_activePlots) {
+        if (!plot.series) continue;
         if (plot.msgName == msgName && (plot.senderName == sId || plot.senderName == "all")) {
-            // Find field index
             const auto& def = msg.getDefinition();
-            for (int i = 0; i < (int)def.getNbFields(); ++i) {
-                if (def.getField(i).getName() == plot.fieldName) {
-                    try {
-                        const auto& rv = msg.getRawValue(i);
-                        std::stringstream ss;
-                        ss << rv;
-                        double val = QString::fromStdString(ss.str()).toDouble();
-                        val *= plot.coef;
-
-                        if (plot.discrete) {
-                            double lastY = val;
-                            bool hasLastY = false;
-                            if (!plot.buffer.isEmpty()) {
-                                lastY = plot.buffer.last().y();
-                                hasLastY = true;
-                            } else if (plot.series->count() > 0) {
-                                lastY = plot.series->at(plot.series->count() - 1).y();
-                                hasLastY = true;
-                            }
-                            if (hasLastY) {
-                                plot.buffer.append(QPointF(currentTime, lastY));
-                            }
-                        }
-
-                        plot.buffer.append(QPointF(currentTime, val));
-                    } catch(...) {}
-                    break;
+            int fieldIndex = plot.fieldIndex;
+            if (fieldIndex < 0 || fieldIndex >= (int)def.getNbFields()) {
+                // fallback path for legacy configs or missing cached index
+                for (int i = 0; i < (int)def.getNbFields(); ++i) {
+                    if (def.getField(i).getName() == plot.fieldName) {
+                        fieldIndex = i;
+                        plot.fieldIndex = i;
+                        break;
+                    }
                 }
+            }
+            if (fieldIndex < 0 || fieldIndex >= (int)def.getNbFields()) {
+                continue;
+            }
+            try {
+                const auto& rv = msg.getRawValue(fieldIndex);
+                double val = fieldValueAsDouble(rv);
+                if (!std::isfinite(val)) continue;
+                val *= plot.coef;
+
+                if (plot.discrete) {
+                    double lastY = val;
+                    bool hasLastY = false;
+                    if (!plot.buffer.isEmpty()) {
+                        lastY = plot.buffer.last().y();
+                        hasLastY = true;
+                    } else if (plot.series && plot.series->count() > 0) {
+                        lastY = plot.series->at(plot.series->count() - 1).y();
+                        hasLastY = true;
+                    }
+                    if (hasLastY) {
+                        plot.buffer.append(QPointF(currentTime, lastY));
+                    }
+                }
+
+                plot.buffer.append(QPointF(currentTime, val));
+            } catch (const std::exception& e) {
+                qWarning() << "Exception in handleMessage:" << e.what();
+            } catch (...) {
+                qWarning() << "Unknown exception in handleMessage.";
             }
         }
     }
@@ -447,12 +618,15 @@ void PlotterWindow::updatePlots() {
     if (m_paused) return;
 
     double currentTime = (QDateTime::currentMSecsSinceEpoch() - m_startTime) / 1000.0;
-    double windowSize = m_slTimeWindow->value();
+    double windowSize = m_slTimeWindow->value() / 100.0;
     bool needsAxisUpdate = false;
 
     for (auto& plot : m_activePlots) {
+        if (!plot.series) continue;
         if (plot.className == "const") {
-            double val = plot.fieldName.section('=', 1).toDouble();
+            bool ok = false;
+            double val = plot.fieldName.section('=', 1).toDouble(&ok);
+            if (!ok || !std::isfinite(val)) continue;
             double startX = std::max(0.0, currentTime - windowSize);
             plot.series->replace(
                 QList<QPointF>() << QPointF(startX, val) << QPointF(std::max(windowSize, currentTime), val)
@@ -460,16 +634,14 @@ void PlotterWindow::updatePlots() {
             continue;
         }
 
-        if (plot.buffer.isEmpty()) continue;
-
-        plot.series->append(plot.buffer);
-        
-        for (const QPointF& pt : qAsConst(plot.buffer)) {
-            if (pt.y() < m_minY) { m_minY = pt.y(); needsAxisUpdate = true; }
-            if (pt.y() > m_maxY) { m_maxY = pt.y(); needsAxisUpdate = true; }
+        if (!plot.buffer.isEmpty()) {
+            plot.series->append(plot.buffer);
+            for (const QPointF& pt : std::as_const(plot.buffer)) {
+                if (pt.y() < m_minY) { m_minY = pt.y(); needsAxisUpdate = true; }
+                if (pt.y() > m_maxY) { m_maxY = pt.y(); needsAxisUpdate = true; }
+            }
+            plot.buffer.clear();
         }
-        
-        plot.buffer.clear();
 
         int pointsToRemove = 0;
         while (pointsToRemove < plot.series->count() && plot.series->at(pointsToRemove).x() < currentTime - windowSize) {
@@ -493,11 +665,11 @@ void PlotterWindow::updatePlots() {
         m_edtMinY->setText(QString::number(m_minY - margin, 'f', 2));
         m_edtMaxY->setText(QString::number(m_maxY + margin, 'f', 2));
     }
-    updateLegendValues();
+    m_legendNeedsRefresh = true;
 }
 
 void PlotterWindow::addCurveToMenu(PlotConfig& cfg) {
-    if (!m_curvesMenu) return;
+    if (!m_curvesMenu || !cfg.series) return;
 
     QPixmap pixmap(16, 16);
     pixmap.fill(cfg.series->color());
@@ -527,19 +699,20 @@ void PlotterWindow::addCurveToMenu(PlotConfig& cfg) {
 
 void PlotterWindow::removeCurve(QLineSeries* series) {
     if (!series) return;
-    
     for (int i = 0; i < m_activePlots.size(); ++i) {
         if (m_activePlots[i].series == series) {
             m_chart->removeSeries(series);
+            m_activePlots[i].series = nullptr;
             m_activePlots.removeAt(i);
             delete series;
-            
+            series = nullptr;
             // Recalculate min/max if autoscale is on
             if (m_autoScale) {
                 m_minY = 1e9;
                 m_maxY = -1e9;
                 bool hasPoints = false;
-                for (const auto& plot : qAsConst(m_activePlots)) {
+                for (const auto& plot : std::as_const(m_activePlots)) {
+                    if (!plot.series) continue;
                     for (int j = 0; j < plot.series->count(); ++j) {
                         double y = plot.series->at(j).y();
                         if (y < m_minY) m_minY = y;
@@ -555,27 +728,15 @@ void PlotterWindow::removeCurve(QLineSeries* series) {
                     m_edtMaxY->setText(QString::number(m_maxY + margin, 'f', 2));
                 }
             }
-            
             QTimer::singleShot(10, this, &PlotterWindow::updateLegendPosition);
+            m_legendNeedsRefresh = true;
             break;
         }
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 void PlotterWindow::updateLegendPosition() {
-    if (!m_chart || !m_legendOverlay) return;
+    if (!m_chart || !m_legendOverlay || !m_legendLayout) return;
     
     m_chart->legend()->hide();
     
@@ -628,7 +789,7 @@ void PlotterWindow::updateLegendPosition() {
     m_legendOverlay->adjustSize();
     QChartView* view = qobject_cast<QChartView*>(m_legendOverlay->parentWidget());
     if (view) {
-        int x = view->width() - m_legendOverlay->width() - 15;
+        int x = std::max(0, view->width() - m_legendOverlay->width() - 15);
         int y = 15;
         m_legendOverlay->move(x, y);
     }
@@ -669,7 +830,7 @@ void PlotterWindow::updateLegendValues() {
     m_legendOverlay->adjustSize();
     QChartView* view = qobject_cast<QChartView*>(m_legendOverlay->parentWidget());
     if (view) {
-        int x = view->width() - m_legendOverlay->width() - 15;
+        int x = std::max(0, view->width() - m_legendOverlay->width() - 15);
         int y = 15;
         m_legendOverlay->move(x, y);
     }
@@ -682,8 +843,22 @@ void PlotterWindow::resizeEvent(QResizeEvent *event) {
 
 void PlotterWindow::onLineThicknessChanged(int val) {
     for (auto& plot : m_activePlots) {
+        if (!plot.series) continue;
         QPen p = plot.series->pen();
         p.setWidth(val);
         plot.series->setPen(p);
     }
+}
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+    
+    app.setApplicationName("Real-time Plotter");
+    app.setApplicationVersion("1.0");
+
+    PlotterWindow window;
+    window.resize(800, 600);
+    window.show();
+
+    return app.exec();
 }

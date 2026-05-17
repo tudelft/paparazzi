@@ -1,7 +1,7 @@
 .PHONY: all clean run setup build_ninja
 
 all: setup
-	cmake --build build --parallel $32
+	cmake --build build --parallel "$(nproc)"
 
 setup:
 	@if [ ! -d "build" ]; then \

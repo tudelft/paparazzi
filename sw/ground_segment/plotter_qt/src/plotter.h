@@ -1,21 +1,21 @@
-#ifndef PLOTTERWINDOW_H
-#define PLOTTERWINDOW_H
+#ifndef PLOTTER_H
+#define PLOTTER_H
 
 #include <QMainWindow>
-#include <QMap>
-#include <QDateTime>
-#include <QDragEnterEvent>
-#include <QDropEvent>
 #include <QList>
-#include <QSpinBox>
+#include <QPointF>
+#include <QString>
 
 class QLineSeries;
 class QChart;
 class QChartView;
 class QValueAxis;
 class QCheckBox;
-class QDoubleSpinBox;
-class QPushButton;
+class QLineEdit;
+class QSlider;
+class QMenu;
+class QTimer;
+class QWidget;
 
 namespace pprzlink {
     class MessageDictionary;
@@ -28,8 +28,9 @@ struct PlotConfig {
     QString className;
     QString msgName;
     QString fieldName;
-    double coef;
-    QLineSeries* series;
+    int fieldIndex = -1;
+    double coef = 1.0;
+    QLineSeries* series = nullptr;
     QList<QPointF> buffer;
     bool discrete = false;
 };
@@ -54,12 +55,15 @@ private slots:
     void onUpdateRateChanged(int val);
     void onLineThicknessChanged(int val);
     void updatePlots();
+    void onLegendRefreshTimeout();
 
 private:
     QWidget* m_legendOverlay;
     class QVBoxLayout* m_legendLayout;
     void updateLegendValues();
     void updateLegendPosition();
+    bool m_legendNeedsRefresh = false;
+    QTimer* m_legendUpdateTimer = nullptr;
 
     void setupIvy();
     void setupUI();
@@ -70,31 +74,31 @@ private:
     void addCurveToMenu(PlotConfig& config);
     void removeCurve(QLineSeries* series);
     
-    QChart *m_chart;
-    QValueAxis *m_axisX;
-    QValueAxis *m_axisY;
-    qint64 m_startTime;
+    QChart *m_chart = nullptr;
+    QValueAxis *m_axisX = nullptr;
+    QValueAxis *m_axisY = nullptr;
+    qint64 m_startTime = 0;
     
-    pprzlink::MessageDictionary* m_dict;
-    pprzlink::IvyQtLink* m_link;
+    pprzlink::MessageDictionary* m_dict = nullptr;
+    pprzlink::IvyQtLink* m_link = nullptr;
     
     QList<PlotConfig> m_activePlots;
     
-    double m_minY;
-    double m_maxY;
-    bool m_paused;
-    bool m_autoScale;
+    double m_minY = 1e9;
+    double m_maxY = -1e9;
+    bool m_paused = false;
+    bool m_autoScale = true;
     
-    QCheckBox* m_cbAutoScale;
-    class QLineEdit* m_edtMinY;
-    class QLineEdit* m_edtMaxY;
-    class QSlider* m_slTimeWindow;
-    class QLineEdit* m_edtConstant;
-    class QSlider* m_slUpdateRate;
-    class QLineEdit* m_edtScaleNext;
-    class QSpinBox* m_spnLineThickness;
-    QTimer* m_updateTimer;
-    class QMenu* m_curvesMenu;
+    QCheckBox* m_cbAutoScale = nullptr;
+    class QLineEdit* m_edtMinY = nullptr;
+    class QLineEdit* m_edtMaxY = nullptr;
+    class QSlider* m_slTimeWindow = nullptr;
+    class QLineEdit* m_edtConstant = nullptr;
+    class QSlider* m_slUpdateRate = nullptr;
+    class QLineEdit* m_edtScaleNext = nullptr;
+    class QSpinBox* m_spnLineThickness = nullptr;
+    QTimer* m_updateTimer = nullptr;
+    class QMenu* m_curvesMenu = nullptr;
 };
 
-#endif // PLOTTERWINDOW_H
+#endif // PLOTTER_H

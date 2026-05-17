@@ -403,6 +403,24 @@
         <arg flag="-srtm"/>
       </program>
     </session>
+    <session name="OUAS Sim All New QT">
+      <program name="Simulator">
+        <arg flag="-t" constant="sim"/>
+        <arg flag="-a" constant="Easystar_3"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag="--speech"/>
+      </program>
+    </session>
     <session name="OUAS SimWithClassicGCS">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
@@ -783,24 +801,6 @@
         <arg flag="-zoom" constant="0.5"/>
         <arg flag="-no_confirm_kill"/>
         <arg flag="-srtm"/>
-      </program>
-    </session>
-    <session name="OUAS Sim All New QT">
-      <program name="Simulator">
-        <arg flag="-t" constant="sim"/>
-        <arg flag="-a" constant="Easystar_3"/>
-      </program>
-      <program name="Data Link">
-        <arg flag="-udp"/>
-        <arg flag="-udp_broadcast"/>
-      </program>
-      <program name="Server">
-        <arg flag="-n"/>
-      </program>
-      <program name="Messages"/>
-      <program name="Real-time Plotter"/>
-      <program name="GCS Classic">
-        <arg flag="--speech"/>
       </program>
     </session>
   </section>
