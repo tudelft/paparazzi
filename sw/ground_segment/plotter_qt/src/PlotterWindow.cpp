@@ -550,8 +550,8 @@ void PlotterWindow::updateLegendPosition() {
             textLbl->setStyleSheet("color: black; font-weight: bold; border: none; background: transparent;");
             textLbl->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
             
-            rowLayout->addWidget(colorBox);
             rowLayout->addWidget(textLbl, 1);
+            rowLayout->addWidget(colorBox);
             m_legendLayout->addWidget(rowWidget);
         }
     }
@@ -588,7 +588,7 @@ void PlotterWindow::updateLegendValues() {
                 if (rowWidget) {
                     QHBoxLayout* rowLayout = qobject_cast<QHBoxLayout*>(rowWidget->layout());
                     if (rowLayout && rowLayout->count() >= 2) {
-                        QLabel* lbl = qobject_cast<QLabel*>(rowLayout->itemAt(1)->widget());
+                        QLabel* lbl = qobject_cast<QLabel*>(rowLayout->itemAt(0)->widget());
                         if (lbl) {
                             lbl->setText(QString("%1 : %2").arg(ls->name()).arg(latestVal, 0, 'f', 4));
                         }
