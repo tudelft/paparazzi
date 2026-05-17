@@ -39,9 +39,9 @@
         <module name="ahrs" type="int_cmpl_quat"/>
     
         <module name="guidance_unified">
-            <define name="MOL_DRONE_WEIGHT" value="0.08"/>
+            <define name="MOL_DRONE_WEIGHT" value="0.09"/>
             <!-- <define name="FILT_CUTOFF" value="200"/> -->
-            <define name="FILT_CUTOFF" value="10"/>
+            <define name="FILT_CUTOFF" value="8"/>
         </module>
         
         <!-- ins configured for optitrack -->
