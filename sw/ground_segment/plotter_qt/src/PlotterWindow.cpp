@@ -452,6 +452,7 @@ void PlotterWindow::updatePlots() {
         if (margin == 0) margin = 1.0;
         m_axisY->setRange(m_minY - margin, m_maxY + margin);
     }
+    updateLegendValues();
 }
 
 void PlotterWindow::addCurveToMenu(PlotConfig& cfg) {
