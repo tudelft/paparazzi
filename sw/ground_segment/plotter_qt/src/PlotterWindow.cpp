@@ -90,7 +90,7 @@ void PlotterWindow::setupUI() {
 
     QWidget *toolbarWidget = new QWidget();
     QHBoxLayout *toolbarLayout = new QHBoxLayout(toolbarWidget);
-    toolbarLayout->setContentsMargins(5, 5, 5, 5); // keep some margin for the toolbar
+    toolbarLayout->setContentsMargins(2, 2, 2, 2); // keep some margin for the toolbar
 
     m_cbAutoScale = new QCheckBox("Auto Scale");
     m_cbAutoScale->setChecked(true);
@@ -119,6 +119,12 @@ void PlotterWindow::setupUI() {
     m_slUpdateRate->setRange(10, 1000); // 10ms to 1000ms
     m_slUpdateRate->setValue(50); // Default to 50ms (20Hz)
 
+    m_spnLineThickness = new QSpinBox();
+    m_spnLineThickness->setToolTip("Line Thickness (px)");
+    m_spnLineThickness->setRange(1, 10);
+    m_spnLineThickness->setValue(1);
+    m_spnLineThickness->hide();
+
     m_updateTimer = new QTimer(this);
     m_updateTimer->start(m_slUpdateRate->value());
 
@@ -133,6 +139,10 @@ void PlotterWindow::setupUI() {
     toolbarLayout->addWidget(m_edtConstant);
     toolbarLayout->addWidget(lblScaleNext);
     toolbarLayout->addWidget(m_edtScaleNext);
+    QLabel* lblLineThickness = new QLabel("Line:");
+    lblLineThickness->hide();
+    toolbarLayout->addWidget(lblLineThickness);
+    toolbarLayout->addWidget(m_spnLineThickness);
     toolbarLayout->addStretch();
 
 
@@ -156,6 +166,7 @@ void PlotterWindow::setupUI() {
     connect(m_edtMaxY, &QLineEdit::editingFinished, this, &PlotterWindow::onManualScaleChanged);
     connect(m_edtConstant, &QLineEdit::editingFinished, this, &PlotterWindow::onAddConstantClicked);
     connect(m_slUpdateRate, &QSlider::valueChanged, this, &PlotterWindow::onUpdateRateChanged);
+    connect(m_spnLineThickness, QOverload<int>::of(&QSpinBox::valueChanged), this, &PlotterWindow::onLineThicknessChanged);
     connect(m_updateTimer, &QTimer::timeout, this, &PlotterWindow::updatePlots);
 }
 
@@ -212,6 +223,13 @@ void PlotterWindow::onAddConstantClicked() {
     
     cfg.series = new QLineSeries();
     cfg.series->setName(cfg.fieldName);
+    
+    // Add series to chart BEFORE setting pen, so Qt auto-assigns a color
+    m_chart->addSeries(cfg.series);
+    
+    QPen pen1 = cfg.series->pen();
+    pen1.setWidth(m_spnLineThickness->value());
+    cfg.series->setPen(pen1);
     
     // We add points initially, and the rest will be updated in handleMessage
     cfg.series->append(0, val);
@@ -276,9 +294,15 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
 
         cfg.series = new QLineSeries();
         QString prefix = (cfg.senderName.isEmpty() || cfg.senderName == "all") ? "" : cfg.senderName + ":";
-        cfg.series->setName(QString("%1%2:%3").arg(prefix).arg(cfg.msgName).arg(cfg.fieldName));
+        QString classPrefix = cfg.className.isEmpty() ? "" : cfg.className + ":";
+        cfg.series->setName(QString("%1%2%3:%4").arg(prefix).arg(classPrefix).arg(cfg.msgName).arg(cfg.fieldName));
         
+        // Add series to chart BEFORE setting pen, so Qt auto-assigns a theme color
         m_chart->addSeries(cfg.series);
+        
+        QPen pen2 = cfg.series->pen();
+        pen2.setWidth(m_spnLineThickness->value());
+        cfg.series->setPen(pen2);
         cfg.series->attachAxis(m_axisX);
         cfg.series->attachAxis(m_axisY);
 
@@ -539,16 +563,21 @@ void PlotterWindow::updateLegendPosition() {
             
             QLabel* colorBox = new QLabel;
             QString colorMsg = ls->pen().color().name();
-            colorBox->setStyleSheet(QString("background-color: %1; border: 1px solid black;").arg(colorMsg));
-            colorBox->setFixedSize(12, 12);
+            colorBox->setStyleSheet(QString("background-color: %1; border: none;").arg(colorMsg));
             
             double latestVal = 0.0;
             if (ls->count() > 0) {
                 latestVal = ls->at(ls->count() - 1).y();
             }
             QLabel* textLbl = new QLabel(QString("%1 : %2").arg(ls->name()).arg(latestVal, 0, 'f', 4));
-            textLbl->setStyleSheet("color: black; font-weight: bold; border: none; background: transparent;");
+            textLbl->setStyleSheet("color: black; border: none; background: transparent;");
             textLbl->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            
+            int textHeight = textLbl->fontMetrics().height();
+            // Optional: You can reduce it slightly if the font height includes big ascender/descender margins, 
+            // e.g. int boxSize = textHeight * 0.8; but textHeight directly is a safe square.
+            int boxSize = textHeight;
+            colorBox->setFixedSize(boxSize, boxSize);
             
             rowLayout->addWidget(textLbl, 1);
             rowLayout->addWidget(colorBox);
@@ -609,4 +638,12 @@ void PlotterWindow::updateLegendValues() {
 void PlotterWindow::resizeEvent(QResizeEvent *event) {
     QMainWindow::resizeEvent(event);
     updateLegendPosition();
+}
+
+void PlotterWindow::onLineThicknessChanged(int val) {
+    for (auto& plot : m_activePlots) {
+        QPen p = plot.series->pen();
+        p.setWidth(val);
+        plot.series->setPen(p);
+    }
 }

@@ -7,6 +7,7 @@
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QList>
+#include <QSpinBox>
 
 class QLineSeries;
 class QChart;
@@ -51,6 +52,7 @@ private slots:
     void onManualScaleChanged();
     void onAddConstantClicked();
     void onUpdateRateChanged(int val);
+    void onLineThicknessChanged(int val);
     void updatePlots();
 
 private:
@@ -90,6 +92,7 @@ private:
     class QLineEdit* m_edtConstant;
     class QSlider* m_slUpdateRate;
     class QLineEdit* m_edtScaleNext;
+    class QSpinBox* m_spnLineThickness;
     QTimer* m_updateTimer;
     class QMenu* m_curvesMenu;
 };
