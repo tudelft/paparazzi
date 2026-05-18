@@ -452,7 +452,7 @@ void stabilization_indi_init(void)
   AbiBindMsgACT_FEEDBACK(STABILIZATION_INDI_ACT_FEEDBACK_ID, &act_feedback_ev, act_feedback_cb);
 #endif
 
-  AbiBindMsgAGL(AGL_LIDAR_TFMINI_ID, &lidar_ev, lidar_cb);
+  AbiBindMsgAGL(ABI_BROADCAST, &lidar_ev, lidar_cb);
 
   float_vect_zero(actuator_state_filt_vectd, INDI_NUM_ACT);
   float_vect_zero(actuator_state_filt_vectdd, INDI_NUM_ACT);
@@ -675,13 +675,13 @@ void stabilization_indi_rate_run(bool in_flight, struct StabilizationSetpoint *s
   // This term compensates for the spinup torque in the yaw axis
   float g2_times_u = float_vect_dot_product(g2, indi_u, INDI_NUM_ACT)/INDI_G_SCALING;
 
-  float range_dt = (float)(range_finder.timestamp - get_sys_time_usec()) / 1e6;
+  float range_dt = (float)(get_sys_time_usec() - range_finder.timestamp) / 1e6;
 
   if ((fabsf(range_dt) < 0.2) && (range_finder.distance > STABILIZATION_INDI_INTEGRATION_RANGE)){
     agl_inflight = true;
   }
 
-  if ( agl_inflight || radio_control.values[RADIO_CONTROL_ACTIVATE_INTEGRATION]) {
+  if ( agl_inflight || (radio_control.values[RADIO_CONTROL_ACTIVATE_INTEGRATION] > 0)) {
     // Limit the estimated disturbance in yaw for drones that are stable in sideslip
     BoundAbs(angular_acc_disturbance_estimate[2], stablization_indi_yaw_dist_limit);
   } else {
