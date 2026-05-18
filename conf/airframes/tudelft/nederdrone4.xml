@@ -48,6 +48,7 @@
       <define name="RADIO_FMODE"       value="RADIO_AUX2"/> <!-- Throttle curve select -->
       <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> <!-- Switch between AP and FBW control -->
       <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
+      <define name="RADIO_CONTROL_ACTIVATE_INTEGRATION" value="RADIO_AUX4"/>
 
       <!-- <module name="ahrs" type="int_cmpl_quat">
         <configure name="USE_MAGNETOMETER" value="FALSE"/>
@@ -114,6 +115,8 @@
       <define name="WLS_N_U_MAX" value="8"/>
       <define name="WLS_N_V_MAX" value="4"/>
       <define name="TILT_TWIST_CTRL" value="TRUE"/>
+
+      <define name="STABILIZATION_INDI_INTEGRATION_RANGE" value="1.0"/>
     </module>
     <module name="stabilization" type="rate_indi"/>
 
@@ -291,7 +294,8 @@
     <!--The Nederdrone uses a slightly different axis system for the setpoint, to make both hovering and flying forward intuitive-->
     <define name="USE_EARTH_BOUND_RC_SETPOINT" value="TRUE"/>
     <!-- This is the pitch angle that the Nederdrone will have in forward flight, where 0 degrees is hover-->
-    <define name="TRANSITION_MAX_OFFSET" value="-80.0" unit="deg"/>
+    <!-- <define name="TRANSITION_MAX_OFFSET" value="-80.0" unit="deg"/> -->
+    <define name="TRANSITION_MAX_OFFSET" value="-45.0" unit="deg"/>
     <!-- For RC coordinated turns, lower because the yawing was too slow -->
     <define name="MAX_FWD_SPEED" value="20.0"/>
     <!-- For hybrid guidance -->

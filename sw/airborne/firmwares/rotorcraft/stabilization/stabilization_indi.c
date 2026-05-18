@@ -286,6 +286,21 @@ static void act_feedback_cb(uint8_t sender_id, struct act_feedback_t *feedback, 
 PRINT_CONFIG_MSG("STABILIZATION_INDI_RPM_FEEDBACK")
 #endif
 
+struct range_finder_t {
+  float distance;
+  uint32_t timestamp;
+};
+
+struct range_finder_t range_finder = {
+  .distance = 0.0,
+  .timestamp = 0
+};
+
+abi_event lidar_ev;
+static void lidar_cb(uint8_t sender_id, uint32_t timestamp, float distance);
+
+bool agl_inflight = false;
+
 float g1g2_pseudo_inv[INDI_NUM_ACT][INDI_OUTPUTS];
 float g2[INDI_NUM_ACT] = STABILIZATION_INDI_G2; //scaled by INDI_G_SCALING
 #ifdef STABILIZATION_INDI_G1
@@ -436,6 +451,8 @@ void stabilization_indi_init(void)
 #if STABILIZATION_INDI_RPM_FEEDBACK
   AbiBindMsgACT_FEEDBACK(STABILIZATION_INDI_ACT_FEEDBACK_ID, &act_feedback_ev, act_feedback_cb);
 #endif
+
+  AbiBindMsgAGL(AGL_LIDAR_TFMINI_ID, &lidar_ev, lidar_cb);
 
   float_vect_zero(actuator_state_filt_vectd, INDI_NUM_ACT);
   float_vect_zero(actuator_state_filt_vectdd, INDI_NUM_ACT);
@@ -655,7 +672,16 @@ void stabilization_indi_rate_run(bool in_flight, struct StabilizationSetpoint *s
   float angular_acc_disturbance_estimate[INDI_OUTPUTS];
   float_vect_diff(angular_acc_disturbance_estimate, angular_acceleration, angular_acc_prediction_filt, 3);
 
-  if (in_flight) {
+  // This term compensates for the spinup torque in the yaw axis
+  float g2_times_u = float_vect_dot_product(g2, indi_u, INDI_NUM_ACT)/INDI_G_SCALING;
+
+  float range_dt = (float)(range_finder.timestamp - get_sys_time_usec()) / 1e6;
+
+  if ((fabsf(range_dt) < 0.2) && (range_finder.distance > STABILIZATION_INDI_INTEGRATION_RANGE)){
+    agl_inflight = true;
+  }
+
+  if ( agl_inflight || radio_control.values[RADIO_CONTROL_ACTIVATE_INTEGRATION]) {
     // Limit the estimated disturbance in yaw for drones that are stable in sideslip
     BoundAbs(angular_acc_disturbance_estimate[2], stablization_indi_yaw_dist_limit);
   } else {
@@ -724,17 +750,6 @@ void stabilization_indi_rate_run(bool in_flight, struct StabilizationSetpoint *s
     }
     // store estimated thrust
     stab_thrust_filt = v_thrust;
-  }
-
-  // This term compensates for the spinup torque in the yaw axis
-  float g2_times_u = float_vect_dot_product(g2, indi_u, INDI_NUM_ACT)/INDI_G_SCALING;
-
-  if (in_flight) {
-    // Limit the estimated disturbance in yaw for drones that are stable in sideslip
-    BoundAbs(angular_acc_disturbance_estimate[2], stablization_indi_yaw_dist_limit);
-  } else {
-    // Not in flight, so don't estimate disturbance
-    float_vect_zero(angular_acc_disturbance_estimate, INDI_OUTPUTS);
   }
 
   // The control objective in array format
@@ -1151,6 +1166,12 @@ static void act_feedback_cb(uint8_t sender_id UNUSED, struct act_feedback_t *fee
   }
 }
 #endif
+
+static void lidar_cb(UNUSED uint8_t sender_id, uint32_t timestamp, float distance)
+{
+  range_finder.distance = distance;
+  range_finder.timestamp = timestamp;
+}
 
 static void bound_g_mat(void)
 {
