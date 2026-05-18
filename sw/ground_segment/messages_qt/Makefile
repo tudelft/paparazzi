@@ -16,4 +16,4 @@ clean:
 	rm -rf build
 
 run: all
-	./messages_qt
+	./messages

@@ -1,11 +1,10 @@
-#include "plotter.h"
 #include <QAction>
 #include <QApplication>
 #include <QChart>
 #include <QChartView>
 #include <QCheckBox>
 #include <QColor>
-#include <QDebug>
+#include <QDateTime>
 #include <QFrame>
 #include <QFile>
 #include <QGraphicsLayout>
@@ -15,27 +14,108 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QLineSeries>
+#include <QList>
+#include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
+#include <QMimeData>
 #include <QPainter>
 #include <QPen>
 #include <QPixmap>
+#include <QPointF>
 #include <QSlider>
 #include <QSpinBox>
+#include <QString>
+#include <QStringList>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QValueAxis>
-#include <QMimeData>
-#include <QDateTime>
-#include <QStringList>
+//#include <QDebug>
 #include <cmath>
 #include <algorithm>
-#include <sstream>
-#include <utility>
 #include <variant>
+#include <vector>
 #include "pprzlinkQt/Message.h"
 #include "pprzlinkQt/MessageDictionary.h"
 #include "pprzlinkQt/IvyQtLink.h"
+
+struct PlotConfig {
+    QString senderName;
+    QString className;
+    QString msgName;
+    QString fieldName;
+    double coef;
+    QLineSeries* series;
+    QList<QPointF> buffer;
+    int fieldIndex = -1;
+    bool discrete = false;
+};
+
+class PlotterWindow : public QMainWindow {
+    Q_OBJECT
+public:
+    explicit PlotterWindow(QWidget *parent = nullptr);
+    ~PlotterWindow();
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
+
+private slots:
+    void onClearClicked();
+    void onPauseToggled(bool checked);
+    void onAutoScaleToggled(bool checked);
+    void onManualScaleChanged();
+    void onAddConstantClicked();
+    void onUpdateRateChanged(int val);
+    void onLineThicknessChanged(int val);
+    void updatePlots();
+
+private:
+    QWidget* m_legendOverlay;
+    QVBoxLayout* m_legendLayout;
+    void updateLegendValues();
+    void updateLegendPosition();
+
+    void setupIvy();
+    void setupUI();
+    void setupMenu();
+    void addPlotFromPayload(const QString& payload);
+    void handleMessage(QString sender, const pprzlink::Message& msg);
+    void onLegendRefreshTimeout();
+    
+    void addCurveToMenu(PlotConfig& config);
+    void removeCurve(QLineSeries* series);
+    
+    QChart *m_chart;
+    QValueAxis *m_axisX;
+    QValueAxis *m_axisY;
+    qint64 m_startTime;
+    
+    pprzlink::MessageDictionary* m_dict;
+    pprzlink::IvyQtLink* m_link;
+    
+    QList<PlotConfig> m_activePlots;
+    
+    double m_minY;
+    double m_maxY;
+    bool m_paused;
+    bool m_autoScale;
+    
+    QCheckBox* m_cbAutoScale;
+    QLineEdit* m_edtMinY;
+    QLineEdit* m_edtMaxY;
+    QSlider* m_slTimeWindow;
+    QLineEdit* m_edtConstant;
+    QSlider* m_slUpdateRate;
+    QLineEdit* m_edtScaleNext;
+    QSpinBox* m_spnLineThickness;
+    QTimer* m_updateTimer;
+    QMenu* m_curvesMenu;
+    QTimer* m_legendUpdateTimer;
+    bool m_legendNeedsRefresh;
+};
 
 static int g_colorIndex = 0;
 static QColor getNextSaturatedColor() {
@@ -108,7 +188,7 @@ static double fieldValueAsDouble(const pprzlink::FieldValue &value)
     }
 }
 
-PlotterWindow::PlotterWindow(QWidget *parent) : QMainWindow(parent), m_minY(1e9), m_maxY(-1e9), m_paused(false), m_autoScale(true) {
+PlotterWindow::PlotterWindow(QWidget *parent) : QMainWindow(parent), m_minY(1e9), m_maxY(-1e9), m_paused(false), m_autoScale(true), m_legendNeedsRefresh(false) {
     m_legendOverlay = nullptr;
     m_legendLayout = nullptr;
     setAcceptDrops(true);
@@ -215,13 +295,13 @@ void PlotterWindow::setupUI() {
     m_slTimeWindow->setValue(1000); // Default to 10s
 
 
-    QLabel *lblConst = new QLabel("Constant:");
+    QLabel *lblConst = new QLabel("Constant");
     m_edtConstant = new QLineEdit();
-    m_edtConstant->setMaximumWidth(60);
+    m_edtConstant->setMaximumWidth(50);
 
-    QLabel *lblScaleNext = new QLabel("Scale next by:");
+    QLabel *lblScaleNext = new QLabel("Scale next by");
     m_edtScaleNext = new QLineEdit("1.0");
-    m_edtScaleNext->setMaximumWidth(60);
+    m_edtScaleNext->setMaximumWidth(50);
     m_edtScaleNext->setToolTip("Scale next curve (e.g. 0.0174 to convert deg in rad, 57.3 to convert rad in deg)");
 
     m_slUpdateRate = new QSlider(Qt::Horizontal);
@@ -421,7 +501,7 @@ void PlotterWindow::dragEnterEvent(QDragEnterEvent *event) {
 void PlotterWindow::dropEvent(QDropEvent *event) {
     if (event->mimeData()->hasText()) {
         QString payload = event->mimeData()->text();
-        qDebug() << "Dropped payload:" << payload;
+        //qDebug() << "Dropped payload:" << payload;
         addPlotFromPayload(payload);
         event->acceptProposedAction();
     }
@@ -493,7 +573,7 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
                     }
                 }
                 if (!alreadyBound && m_link) {
-                    qDebug() << "Binding message:" << cfg.msgName;
+                    //qDebug() << "Binding message:" << cfg.msgName;
                     m_link->BindMessage(def, this, [this](QString sender, pprzlink::Message msg) {
                         this->handleMessage(sender, msg);
                     });
@@ -759,7 +839,7 @@ void PlotterWindow::updateLegendPosition() {
         if (ls) {
             QWidget* rowWidget = new QWidget;
             QHBoxLayout* rowLayout = new QHBoxLayout(rowWidget);
-            rowLayout->setContentsMargins(5, 2, 5, 2);
+            rowLayout->setContentsMargins(4, 2, 4, 2);
             rowLayout->setSpacing(5);
             
             QLabel* colorBox = new QLabel;
@@ -789,8 +869,8 @@ void PlotterWindow::updateLegendPosition() {
     m_legendOverlay->adjustSize();
     QChartView* view = qobject_cast<QChartView*>(m_legendOverlay->parentWidget());
     if (view) {
-        int x = std::max(0, view->width() - m_legendOverlay->width() - 15);
-        int y = 15;
+        int x = std::max(0, view->width() - m_legendOverlay->width() - 15);//TODO: better margin handling
+        int y = 15;//TODO:
         m_legendOverlay->move(x, y);
     }
 }
@@ -830,8 +910,8 @@ void PlotterWindow::updateLegendValues() {
     m_legendOverlay->adjustSize();
     QChartView* view = qobject_cast<QChartView*>(m_legendOverlay->parentWidget());
     if (view) {
-        int x = std::max(0, view->width() - m_legendOverlay->width() - 15);
-        int y = 15;
+        int x = std::max(0, view->width() - m_legendOverlay->width() - 15);//TODO: better margin handling
+        int y = 15;// TODO: 
         m_legendOverlay->move(x, y);
     }
 }
@@ -862,3 +942,5 @@ int main(int argc, char *argv[]) {
 
     return app.exec();
 }
+
+#include "plotter.moc"

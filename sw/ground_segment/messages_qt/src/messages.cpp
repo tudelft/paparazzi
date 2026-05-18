@@ -1,4 +1,8 @@
-#include "MainWindow.h"
+#include "messages.h"
+#include <QMainWindow>
+#include <QTabWidget>
+#include <QMap>
+#include <QString>
 #include <QApplication>
 #include <QListWidget>
 #include <QStackedWidget>
@@ -17,12 +21,15 @@
 #include <QDebug>
 #include <QTimer>
 #include <QTime>
+#include <cstdlib>
+#include <sstream>
+#include "pprzlinkQt/IvyQtLink.h"
+#include "pprzlinkQt/Message.h"
 #include "pprzlinkQt/MessageDictionary.h"
 #include "pprzlinkQt/MessageDefinition.h"
-#include "pprzlinkQt/IvyQtLink.h"
 #include "pprzlinkQt/MessageField.h"
 #include "pprzlinkQt/FieldValue.h"
-#include <sstream>
+
 
 static QMap<QString, QMap<QString, QMap<QString, QString>>> s_unitCoefs;
 static QMap<QString, QMap<QString, QMap<QString, QString>>> s_unitNames;
@@ -334,3 +341,15 @@ void MainWindow::setupDictionaryAndLink() {
         });
     }
 }
+
+int main(int argc, char *argv[])
+{
+    // Force GTK3 platform theme which natively supports Ubuntu Adwaita dark/light
+    //qputenv("QT_QPA_PLATFORMTHEME", "gtk3");
+    
+    QApplication a(argc, argv);
+    MainWindow w;
+    w.show();
+    return a.exec();
+}
+

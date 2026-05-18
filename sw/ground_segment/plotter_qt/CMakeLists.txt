@@ -18,35 +18,31 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Xml Network Charts)
 
 add_subdirectory(../cockpit_qt/ext/pprzlinkQt ${CMAKE_BINARY_DIR}/pprzlinkqt)
 
-file(GLOB_RECURSE SRC_FILES "src/*.cpp")
-list(FILTER SRC_FILES EXCLUDE REGEX ".*/main\\.cpp$")
+add_executable(plotter plotter.cpp)
 
-add_executable(plotter_qt ${SRC_FILES})
+target_include_directories(plotter PRIVATE .)
 
-target_include_directories(plotter_qt PRIVATE src)
-
-target_compile_options(plotter_qt PRIVATE
+target_compile_options(plotter PRIVATE
   $<$<CONFIG:Release>:-O2 -DNDEBUG -fdata-sections -ffunction-sections -flto -g0>
 )
-target_link_options(plotter_qt PRIVATE
+target_link_options(plotter PRIVATE
   $<$<CONFIG:Release>:-Wl,--gc-sections -Wl,-O1 -Wl,-s -flto>
 )
 
 # Enable link-time optimization for the Release configuration.
-set_target_properties(plotter_qt PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+set_target_properties(plotter PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
 
 find_program(STRIP_EXECUTABLE strip)
 if(STRIP_EXECUTABLE)
-  add_custom_command(TARGET plotter_qt POST_BUILD
-    COMMAND ${STRIP_EXECUTABLE} $<TARGET_FILE:plotter_qt>
-    COMMENT "Stripping executable"
+  add_custom_command(TARGET plotter POST_BUILD
+    COMMAND ${STRIP_EXECUTABLE} $<TARGET_FILE:plotter>
   )
 endif()
 
-target_link_libraries(plotter_qt PRIVATE 
+target_link_libraries(plotter PRIVATE 
     Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Xml Qt6::Network Qt6::Charts
     pprzlinkQt
 )
 
-install(TARGETS plotter_qt DESTINATION bin)
-set_target_properties(plotter_qt PROPERTIES OUTPUT_NAME plotter RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
+install(TARGETS plotter DESTINATION bin)
+set_target_properties(plotter PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})

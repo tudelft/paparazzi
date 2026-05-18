@@ -1,10 +1,9 @@
 .PHONY: all clean run setup
 
 BUILD_TYPE ?= Release
-JOBS ?= $(shell nproc)
 
 all: setup
-	cmake --build build --config $(BUILD_TYPE) --parallel $(JOBS)
+	cmake --build build --config $(BUILD_TYPE)
 
 setup:
 	@if [ ! -d "build" ]; then \

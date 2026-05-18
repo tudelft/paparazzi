@@ -15,14 +15,14 @@ add_subdirectory(../cockpit_qt/ext/pprzlinkQt ${CMAKE_BINARY_DIR}/pprzlinkqt)
 
 file(GLOB_RECURSE SRC_FILES "src/*.cpp")
 
-add_executable(messages_qt ${SRC_FILES})
+add_executable(messages ${SRC_FILES})
 
-target_include_directories(messages_qt PRIVATE src)
+target_include_directories(messages PRIVATE src)
 
-target_link_libraries(messages_qt PRIVATE 
+target_link_libraries(messages PRIVATE 
     Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Xml Qt6::Network
     pprzlinkQt
 )
 
-install(TARGETS messages_qt DESTINATION bin)
-set_target_properties(messages_qt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
+install(TARGETS messages DESTINATION bin)
+set_target_properties(messages PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
