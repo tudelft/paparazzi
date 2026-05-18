@@ -277,19 +277,6 @@ void MainWindow::addAC(QString ac_id) {
     QTabWidget *acTabs = new QTabWidget(m_infoTabs);
     acTabs->setObjectName("acTabs_" + ac_id);
     
-    if (AircraftManager::get()->getAircraft(ac_id)) {
-        QColor ac_color = AircraftManager::get()->getAircraft(ac_id)->getColor();
-        int hue = ac_color.hue();
-        int sat = ac_color.saturation();
-        ac_color.setHsv(hue, static_cast<int>(sat*0.2), 255);
-        QString style = QString(
-            "QTabWidget::pane { background: %1; border: 1px solid %2; } "
-            "QTabBar::tab:selected { background: %1; }"
-            "QWidget#%3 { background: %1; }" 
-        ).arg(ac_color.name(), ac_color.darker(150).name(), acTabs->objectName());
-        acTabs->setStyleSheet(style);
-    }
-    
     // Add Link, Horizon, Alerts, Infrared, Misc specifically for this Aircraft
     auto wrapInScroll = [acTabs](QWidget* w) {
         QScrollArea *sa = new QScrollArea(acTabs);
@@ -385,22 +372,6 @@ void MainWindow::handleACSelected(QString ac_id) {
     if (m_acTabWidgets.contains(ac_id)) {
         QWidget *w = m_acTabWidgets[ac_id];
         m_infoTabs->setCurrentWidget(w);
-        
-        auto ac = AircraftManager::get()->getAircraft(ac_id);
-        if (ac) {
-            QColor ac_color = ac->getColor();
-            int hue = ac_color.hue();
-            int sat = ac_color.saturation();
-            ac_color.setHsv(hue, static_cast<int>(sat*0.2), 255);
-            QString const c = ac_color.name();
-            QString dark_c = ac_color.darker(150).name();
-
-            QString style = QString(
-                "QTabWidget#infoTabs::pane { background: %1; border: 1px solid %2; }"
-                "QTabWidget#infoTabs > QTabBar::tab:selected { background: %1; }"
-            ).arg(c, dark_c);
-            m_infoTabs->setStyleSheet(style);
-        }
     }
 }
 

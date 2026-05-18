@@ -511,9 +511,7 @@
       </program>
       <program name="Messages"/>
       <program name="Real-time Plotter"/>
-      <program name="GCS">
-        <arg flag="-speech"/>
-      </program>
+      <program name="GCS"/>
     </session>
     <session name="OpenUAS_Replay">
       <program name="Log File Player"/>
