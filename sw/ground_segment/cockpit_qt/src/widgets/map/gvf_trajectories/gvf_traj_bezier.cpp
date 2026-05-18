@@ -124,28 +124,47 @@ void GVF_traj_bezier::set_param(QList<float> param, QList<float> _phi, float wb)
 
   float N_SEG;
 
+  auto read_float = [](FILE *f, float *value) {
+    int ret = fscanf(f, "%f", value);
+    return (ret == 1);
+  };
+
   // Read:
   if ((file_x = fopen(x_val, "r")) != NULL) {
-    fscanf(file_x, "%f ", &N_SEG);
-    n_seg = -(int)N_SEG;
-    for (k = 0; k < 3 * (int)n_seg + 1; k++) {
-      fscanf(file_x, "%f ", &xx[k]);
+    bool ok = read_float(file_x, &N_SEG);
+    if (ok) {
+      n_seg = -(int)N_SEG;
+      for (k = 0; ok && k < 3 * (int)n_seg + 1; k++) {
+        ok = read_float(file_x, &xx[k]);
+      }
     }
     fclose(file_x);
+    if (!ok) {
+      n_seg = 0;
+    }
   }
   if ((file_y = fopen(y_val, "r")) != NULL) {
-    fscanf(file_y, "%f ", &N_SEG);
-    n_seg = (int)N_SEG;
-    for (k = 0; k < 3 * (int)n_seg + 1; k++) {
-      fscanf(file_y, "%f ", &yy[k]);
+    bool ok = read_float(file_y, &N_SEG);
+    if (ok) {
+      n_seg = (int)N_SEG;
+      for (k = 0; ok && k < 3 * (int)n_seg + 1; k++) {
+        ok = read_float(file_y, &yy[k]);
+      }
     }
     fclose(file_y);
+    if (!ok) {
+      n_seg = 0;
+    }
   }
   if ((file_ks = fopen(ks_val, "r")) != NULL) {
-    fscanf(file_ks, "%f", &kx);
-    fscanf(file_ks, "%f", &ky);
-    fscanf(file_ks, "%f", &beta);
+    bool ok = true;
+    ok = ok && read_float(file_ks, &kx);
+    ok = ok && read_float(file_ks, &ky);
+    ok = ok && read_float(file_ks, &beta);
     fclose(file_ks);
+    if (!ok) {
+      kx = ky = beta = 0.0f;
+    }
   }
 
   phi = QPointF(_phi[0], _phi[1]);   //TODO: Display error in GVF viewer??

@@ -501,19 +501,6 @@
       <program name="Environment Simulator"/>
     </session>
     <session name="OpenUAS testflights 2026">
-      <program name="GCS">
-        <arg flag="-speech"/>
-        <arg flag="-layout" constant="OPENUAS/openuas_bottom_settings.xml"/>
-        <arg flag="-maximize"/>
-        <arg flag="-maps_fill"/>
-        <arg flag="-center_ac"/>
-        <arg flag="-mercator"/>
-        <arg flag="-maps_no_http"/>
-        <arg flag="-track_size" constant="200"/>
-        <arg flag="-zoom" constant="0.5"/>
-        <arg flag="-no_confirm_kill"/>
-        <arg flag="-srtm"/>
-      </program>
       <program name="Data Link">
         <arg flag="-d" constant="/dev/ttyUSB0"/>
         <arg flag="-s" constant="115200"/>
