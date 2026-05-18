@@ -237,12 +237,12 @@
     <call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
 
     <!-- <set servo="MOTOR_1"   value="($th_hold? -9600 : actuators_pprz[8])"/> -->
-    <set servo="MOTOR_1"   value="($th_hold? -9600 : -9600)"/>
+    <set servo="MOTOR_1"   value="($th_hold? -9600 : actuators_pprz[8])"/>
     <set servo="MOTOR_2"   value="($th_hold? -9600 : actuators_pprz[0])"/>
     <set servo="MOTOR_3"   value="($th_hold? -9600 : actuators_pprz[0])"/>
     <set servo="MOTOR_4"   value="($th_hold? -9600 : actuators_pprz[1])"/>
     <set servo="MOTOR_5"   value="($th_hold? -9600 : actuators_pprz[1])"/>
-    <set servo="MOTOR_6"   value="($th_hold? -9600 : -9600)"/>
+    <set servo="MOTOR_6"   value="($th_hold? -9600 : actuators_pprz[8])"/>
     <set servo="MOTOR_7"   value="($th_hold? -9600 : actuators_pprz[2])"/>
     <set servo="MOTOR_8"   value="($th_hold? -9600 : actuators_pprz[2])"/>
     <set servo="MOTOR_9"   value="($th_hold? -9600 : actuators_pprz[2])"/>
