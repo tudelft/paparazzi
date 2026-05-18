@@ -1,28 +1,26 @@
-#include "messages.h"
-#include <QMainWindow>
-#include <QTabWidget>
-#include <QMap>
-#include <QString>
 #include <QApplication>
-#include <QListWidget>
-#include <QStackedWidget>
-#include <QSplitter>
-#include <QListWidgetItem>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QPushButton>
-#include <QScrollArea>
-#include <QDrag>
-#include <QMimeData>
-#include <QMouseEvent>
+#include <QDebug>
 #include <QDomDocument>
 #include <QFile>
-#include <QDebug>
+#include <QDrag>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include <QMainWindow>
+#include <QMap>
+#include <QMimeData>
+#include <QMouseEvent>
+#include <QPushButton>
+#include <QSplitter>
+#include <QStackedWidget>
+#include <QTabWidget>
 #include <QTimer>
 #include <QTime>
-#include <cstdlib>
+#include <QVBoxLayout>
+#include <QVariant>
 #include <sstream>
+#include <variant>
 #include "pprzlinkQt/IvyQtLink.h"
 #include "pprzlinkQt/Message.h"
 #include "pprzlinkQt/MessageDictionary.h"
@@ -30,9 +28,53 @@
 #include "pprzlinkQt/MessageField.h"
 #include "pprzlinkQt/FieldValue.h"
 
+struct MsgTracker {
+    QWidget* pageWidget;
+    QLabel* timeLabel;
+    QWidget* timeBox;
+};
+
+class SenderTab : public QWidget {
+    Q_OBJECT
+public:
+    explicit SenderTab(const QString& senderName, const QString& className, pprzlink::MessageDictionary* dict, QWidget* parent = nullptr);
+    void handleMessage(const pprzlink::Message& msg);
+
+private slots:
+    void updateTimers();
+
+private:
+    QString m_senderName;
+    QString m_className;
+    pprzlink::MessageDictionary* m_dict;
+
+    QListWidget* m_listWidget;
+    QStackedWidget* m_stackedWidget;
+
+    QMap<QString, MsgTracker> m_msgTrackers;
+    QMap<QString, QMap<QString, QLabel*>> m_fieldLabels;
+};
+
+class MainWindow : public QMainWindow {
+    Q_OBJECT
+public:
+    explicit MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
+
+private:
+    QTabWidget* m_classTabWidget;
+    QLabel* m_waitingLabel;
+    QMap<QString, SenderTab*> m_senderTabs;
+    pprzlink::MessageDictionary* m_dict = nullptr;
+    pprzlink::IvyQtLink* m_link = nullptr;
+
+    void setupDictionaryAndLink();
+};
+
 
 static QMap<QString, QMap<QString, QMap<QString, QString>>> s_unitCoefs;
 static QMap<QString, QMap<QString, QMap<QString, QString>>> s_unitNames;
+static constexpr int GREEN_DECAY_RATE_MS = 500;
 
 static void loadUnitCoefs(const QString& xmlPath) {
     QFile file(xmlPath);
@@ -75,6 +117,30 @@ static void loadUnitCoefs(const QString& xmlPath) {
         }
         n = n.nextSibling();
     }
+}
+
+static QString senderIdToString(const std::variant<QString, uint8_t> &senderV)
+{
+    if (std::holds_alternative<QString>(senderV)) {
+        return std::get<QString>(senderV).trimmed();
+    }
+    return QString::number(static_cast<int>(std::get<uint8_t>(senderV)));
+}
+
+static QString safeFieldName(const QString& fieldName, int index)
+{
+    if (!fieldName.isEmpty()) {
+        return fieldName;
+    }
+    return QStringLiteral("field_%1").arg(index);
+}
+
+static QString safeMessageName(const QString& msgName)
+{
+    if (!msgName.isEmpty()) {
+        return msgName;
+    }
+    return QStringLiteral("<unknown message>");
 }
 
 class DraggableButton : public QPushButton {
@@ -134,8 +200,6 @@ SenderTab::SenderTab(const QString& senderName, const QString& className, pprzli
     layout->addWidget(splitter);
     
     connect(m_listWidget, &QListWidget::currentRowChanged, m_stackedWidget, &QStackedWidget::setCurrentIndex);
-    
-#define GREEN_DECAY_RATE_MS 500
 
     QTimer* globalTimer = new QTimer(this);
     connect(globalTimer, &QTimer::timeout, this, &SenderTab::updateTimers);
@@ -144,13 +208,25 @@ SenderTab::SenderTab(const QString& senderName, const QString& className, pprzli
 
 void SenderTab::updateTimers() {
     for(auto& t : m_msgTrackers) {
-        int msecs = t.timeLabel->property("lastUpdate").toTime().msecsTo(QTime::currentTime());
-        if (msecs < 0 || msecs > 99999999) msecs = 0; // Just in case of midnight wrap
-        
+        if (!t.timeLabel || !t.timeBox) {
+            continue;
+        }
+
+        QVariant lastUpdate = t.timeLabel->property("lastUpdate");
+        if (!lastUpdate.isValid() || !lastUpdate.canConvert<QTime>()) {
+            t.timeLabel->setProperty("lastUpdate", QTime::currentTime());
+            continue;
+        }
+
+        int msecs = lastUpdate.toTime().msecsTo(QTime::currentTime());
+        if (msecs < 0 || msecs > 99999999) {
+            msecs = 0; // Just in case of midnight wrap
+        }
+
         if (msecs > GREEN_DECAY_RATE_MS) {
             t.timeBox->setStyleSheet(".QWidget { background-color: #000000; border-radius: 0px; }\nQLabel { color: #fff; font-weight: bold; }");
         }
-        
+
         if (msecs > 1999) {
             t.timeLabel->setText(QString::number(msecs / 1000));
         } else {
@@ -159,19 +235,18 @@ void SenderTab::updateTimers() {
     }
 }
 
-
 void SenderTab::handleMessage(const pprzlink::Message& msg) {
-    QString msgName = msg.getDefinition().getName();
+    QString msgName = safeMessageName(msg.getDefinition().getName());
     
     if (!m_msgTrackers.contains(msgName)) {
         QWidget* page = new QWidget(this);
         QVBoxLayout* vlayout = new QVBoxLayout(page);
         
         // Item in list widget
-        QListWidgetItem* item = new QListWidgetItem();
+        QListWidgetItem* item = new QListWidgetItem(m_listWidget);
         
         // Custom widget for list item
-        QWidget* itemWidget = new QWidget();
+        QWidget* itemWidget = new QWidget(m_listWidget);
         itemWidget->setStyleSheet("background: transparent;");
         itemWidget->setStyleSheet("background: transparent;");
         QHBoxLayout* itemLayout = new QHBoxLayout(itemWidget);
@@ -224,7 +299,7 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
             const auto& field = def.getField(i);
             QHBoxLayout* hlayout = new QHBoxLayout();
             
-            QString fieldName = field.getName();
+            QString fieldName = safeFieldName(field.getName(), i);
             QString typeName = field.getType().toString();
             
             QString coef = s_unitCoefs[m_className][msgName][fieldName];
@@ -234,8 +309,8 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
             QString btnText = typeName + " " + fieldName + (unit.isEmpty() ? "" : ": (" + unit + ")");
             QString payload = m_senderName + ":" + m_className + ":" + msgName + ":" + fieldName + ":" + coef;
             
-            DraggableButton* btn = new DraggableButton(btnText, payload);
-            QLabel* valLabel = new QLabel("XXXX");
+            DraggableButton* btn = new DraggableButton(btnText, payload, page);
+            QLabel* valLabel = new QLabel("XXXX", page);
             
             hlayout->addWidget(btn);
             hlayout->addWidget(valLabel);
@@ -248,7 +323,17 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
     }
     
     // Update values
+    if (!m_msgTrackers.contains(msgName)) {
+        qWarning() << "Received message with unknown name" << msgName;
+        return;
+    }
+
     MsgTracker& tracker = m_msgTrackers[msgName];
+    if (!tracker.timeLabel || !tracker.timeBox) {
+        qWarning() << "Invalid tracker for message" << msgName;
+        return;
+    }
+
     tracker.timeLabel->setProperty("lastUpdate", QTime::currentTime());
     tracker.timeLabel->setText("");
     
@@ -257,16 +342,33 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
     
     const auto& def = msg.getDefinition();
     for (int i = 0; i < (int)def.getNbFields(); ++i) {
-        QString name = def.getField(i).getName();
+        const auto& field = def.getField(i);
+        if (field.getName().isEmpty()) {
+            continue;
+        }
+
         try {
             const auto& rv = msg.getRawValue(i);
             std::stringstream ss;
             ss << rv;
             QString s = QString::fromStdString(ss.str());
             
-            QLabel* lbl = m_fieldLabels[msgName][name];
-            if (lbl) lbl->setText(s);
+            auto fieldMapIt = m_fieldLabels.find(msgName);
+            if (fieldMapIt == m_fieldLabels.end()) {
+                continue;
+            }
+            const auto fieldMap = fieldMapIt.value();
+            if (!fieldMap.contains(field.getName())) {
+                continue;
+            }
+            QLabel* lbl = fieldMap.value(field.getName());
+            if (lbl) {
+                lbl->setText(s);
+            }
+        } catch(const std::exception &ex) {
+            qWarning() << "Failed to read field value for" << msgName << "field" << field.getName() << ":" << ex.what();
         } catch(...) {
+            qWarning() << "Unknown error while updating field value for" << msgName;
         }
     }
 }
@@ -304,40 +406,87 @@ void MainWindow::setupDictionaryAndLink() {
     QString phome = qgetenv("PAPARAZZI_HOME");
     if (phome.isEmpty()) phome = QString("/home/%1/paparazzi").arg(qgetenv("USER"));
     QString xmlPath = phome + "/var/messages.xml";
-    
+
+    if (!QFile::exists(xmlPath)) {
+        m_waitingLabel->setText(tr("Missing messages.xml at %1").arg(xmlPath));
+        qWarning() << "Missing messages.xml at" << xmlPath;
+        return;
+    }
+
     loadUnitCoefs(xmlPath);
-    
-    m_dict = new pprzlink::MessageDictionary(xmlPath);
-    m_link = new pprzlink::IvyQtLink(*m_dict, "messages_qt", this);
-    m_link->start("127.255.255.255:2010");
-    
+
+    try {
+        m_dict = new pprzlink::MessageDictionary(xmlPath);
+        if (!m_dict) {
+            throw std::runtime_error("Failed to allocate MessageDictionary");
+        }
+        m_link = new pprzlink::IvyQtLink(*m_dict, "messages_qt", this);
+        if (!m_link) {
+            throw std::runtime_error("Failed to allocate IvyQtLink");
+        }
+        m_link->start("127.255.255.255:2010");
+    } catch (const std::exception &ex) {
+        qWarning() << "Failed to initialize messaging:" << ex.what();
+        m_waitingLabel->setText(tr("Telemetry initialization failed"));
+        delete m_link;
+        m_link = nullptr;
+        delete m_dict;
+        m_dict = nullptr;
+        return;
+    } catch (...) {
+        qWarning() << "Failed to initialize messaging due to unknown error.";
+        m_waitingLabel->setText(tr("Telemetry initialization failed"));
+        delete m_link;
+        m_link = nullptr;
+        delete m_dict;
+        m_dict = nullptr;
+        return;
+    }
+
+    if (!m_dict) {
+        m_waitingLabel->setText(tr("Telemetry dictionary unavailable"));
+        return;
+    }
+
     QString className = "telemetry";
-    
     const auto msgs = m_dict->getMsgsForClass(className);
+    if (msgs.empty()) {
+        m_waitingLabel->setText(tr("No telemetry message definitions found for %1").arg(className));
+        qWarning() << "No telemetry message definitions found for" << className;
+        return;
+    }
+
     for (const auto& def : msgs) {
+        if (!m_link) {
+            break;
+        }
         m_link->BindMessage(def, this, [=](QString sender, pprzlink::Message msg) {
-            if (m_waitingLabel->isVisible()) {
+            if (m_waitingLabel && m_waitingLabel->isVisible()) {
                 m_waitingLabel->hide();
-                m_classTabWidget->show();
+                if (m_classTabWidget) {
+                    m_classTabWidget->show();
+                }
             }
-            
-            QString sId = sender;
+
+            QString sId = sender.trimmed();
             if (sId.isEmpty()) {
-                // telemetry usually starts with AC_ID like "2", get it dynamically
                 const auto& senderV = msg.getSenderId();
-                if (std::holds_alternative<QString>(senderV)) sId = std::get<QString>(senderV);
-                else sId = QString::number(std::get<uint8_t>(senderV));
+                sId = senderIdToString(senderV);
             }
-            if (sId.isEmpty()) sId = "ground";
-            
+            if (sId.isEmpty()) {
+                sId = QStringLiteral("ground");
+            }
+
             QString tabName = className + ":" + sId;
             if (!m_senderTabs.contains(tabName)) {
                 SenderTab* tab = new SenderTab(sId, className, m_dict, this);
                 m_classTabWidget->addTab(tab, tabName);
                 m_senderTabs[tabName] = tab;
             }
-            
-            m_senderTabs[tabName]->handleMessage(msg);
+
+            if (m_senderTabs.contains(tabName)) {
+                m_senderTabs[tabName]->handleMessage(msg);
+            }
         });
     }
 }
@@ -347,9 +496,11 @@ int main(int argc, char *argv[])
     // Force GTK3 platform theme which natively supports Ubuntu Adwaita dark/light
     //qputenv("QT_QPA_PLATFORMTHEME", "gtk3");
     
-    QApplication a(argc, argv);
+    QApplication app(argc, argv);
     MainWindow w;
     w.show();
-    return a.exec();
+    return app.exec();
 }
+
+#include "messages.moc"
 
