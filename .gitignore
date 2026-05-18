@@ -64,6 +64,8 @@ Cargo.lock
 
 /var
 /dox
+/build
+/leftovers
 
 # /conf/
 /conf/conf.xml
@@ -91,6 +93,14 @@ Cargo.lock
 /sw/ground_segment/cockpit/ant_track
 /sw/ground_segment/cockpit/compass
 
+# /sw/ground_segment/cockpit_qt/build
+/sw/ground_segment/cockpit_qt/build
+
+# /sw/ground_segment/plotter_qt/build
+/sw/ground_segment/plotter_qt/build
+
+# /sw/ground_segment/messages_qt/build
+/sw/ground_segment/messages_qt/build
 
 # /sw/ground_segment/lpc21iap/
 /sw/ground_segment/lpc21iap/lpc21iap

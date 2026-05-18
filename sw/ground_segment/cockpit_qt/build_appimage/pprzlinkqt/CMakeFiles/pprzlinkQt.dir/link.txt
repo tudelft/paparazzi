@@ -1,2 +1,0 @@
-/usr/bin/ar qc libpprzlinkQt.a CMakeFiles/pprzlinkQt.dir/pprzlinkQt_autogen/mocs_compilation.cpp.o CMakeFiles/pprzlinkQt.dir/src/FieldValue.cpp.o CMakeFiles/pprzlinkQt.dir/src/Message.cpp.o CMakeFiles/pprzlinkQt.dir/src/MessageDefinition.cpp.o CMakeFiles/pprzlinkQt.dir/src/MessageDictionary.cpp.o CMakeFiles/pprzlinkQt.dir/src/MessageField.cpp.o CMakeFiles/pprzlinkQt.dir/src/MessageFieldTypes.cpp.o CMakeFiles/pprzlinkQt.dir/src/IvyQtLink.cpp.o
-/usr/bin/ranlib libpprzlinkQt.a

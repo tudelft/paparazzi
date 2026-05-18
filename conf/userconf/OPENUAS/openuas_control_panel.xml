@@ -14,19 +14,19 @@
     </program>
     <program name="UnifiedMoCap" command="sw/ext/unifiedmocaprouter/build/mocap-router"/>
     <program name="Link Combiner" command="sw/ground_segment/python/redundant_link/link_combiner.py"/>
-    <program name="GCS" command="sw/ground_segment/cockpit/gcs">
+    <program name="GCS" command="sw/ground_segment/cockpit_qt/equinoxgcs">
       <arg flag="-speech"/>
     </program>
     <program name="Flight Plan Editor" command="sw/ground_segment/cockpit/gcs">
       <arg flag="-edit"/>
     </program>
-    <program name="Messages" command="sw/ground_segment/tmtc/messages"/>
+    <program name="Messages" command="sw/ground_segment/messages_qt/messages"/>
     <program name="Settings" command="sw/ground_segment/tmtc/settings">
       <arg flag="-ac" constant="@AIRCRAFT"/>
     </program>
     <program name="GPSd position display" command="sw/ground_segment/tmtc/gpsd2ivy"/>
     <program name="Log Plotter" command="sw/logalizer/logplotter"/>
-    <program name="Real-time Plotter" command="sw/logalizer/plotter"/>
+    <program name="Real-time Plotter" command="sw/ground_segment/plotter_qt/plotter"/>
     <program name="Real-time Plotter (Python)" command="sw/ground_segment/python/real_time_plot/messagepicker.py"/>
     <program name="Log File Player" command="sw/logalizer/play"/>
     <program name="Simulator" command="sw/simulator/pprzsim-launch"/>
@@ -516,11 +516,17 @@
       </program>
       <program name="Data Link">
         <arg flag="-d" constant="/dev/ttyUSB0"/>
-        <arg flag="-s" constant="57600"/>
+        <arg flag="-s" constant="115200"/>
       </program>
-      <program name="Server"/>
+      <program name="Server">
+        <arg flag=""/>
+        <arg flag="-no_md5_check"/>
+      </program>
       <program name="Messages"/>
       <program name="Real-time Plotter"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
+      </program>
     </session>
     <session name="OpenUAS_Replay">
       <program name="Log File Player"/>
