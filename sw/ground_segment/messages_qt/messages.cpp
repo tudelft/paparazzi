@@ -10,7 +10,10 @@
 #include <QMainWindow>
 #include <QMap>
 #include <QMimeData>
+#include <QScrollBar>
+#include <QSizePolicy>
 #include <QMouseEvent>
+#include <QStyle>
 #include <QPushButton>
 #include <QSplitter>
 #include <QStackedWidget>
@@ -51,6 +54,9 @@ private:
     QListWidget* m_listWidget;
     QStackedWidget* m_stackedWidget;
 
+    int m_listWidgetWidth = 100;
+    void updateListWidgetWidth(int contentWidth);
+
     QMap<QString, MsgTracker> m_msgTrackers;
     QMap<QString, QMap<QString, QLabel*>> m_fieldLabels;
 };
@@ -74,7 +80,7 @@ private:
 
 static QMap<QString, QMap<QString, QMap<QString, QString>>> s_unitCoefs;
 static QMap<QString, QMap<QString, QMap<QString, QString>>> s_unitNames;
-static constexpr int GREEN_DECAY_RATE_MS = 500;
+static constexpr int GREEN_DECAY_RATE_MS = 200;
 
 static void loadUnitCoefs(const QString& xmlPath) {
     QFile file(xmlPath);
@@ -185,17 +191,23 @@ SenderTab::SenderTab(const QString& senderName, const QString& className, pprzli
     m_listWidget = new QListWidget(this);
     m_listWidget->setFrameShape(QFrame::NoFrame);
     m_listWidget->setAttribute(Qt::WA_MacShowFocusRect, false);
-    m_listWidget->setFrameShape(QFrame::NoFrame);
-    m_listWidget->setAttribute(Qt::WA_MacShowFocusRect, false);
     m_listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
-    // minimal styling to look like a flat list
+    m_listWidget->setMinimumWidth(100);
+    m_listWidget->setMaximumWidth(100);
+    m_listWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+    m_listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     
     m_stackedWidget = new QStackedWidget(this);
+    m_stackedWidget->setMinimumWidth(100);
+    m_stackedWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     splitter->addWidget(m_listWidget);
     splitter->addWidget(m_stackedWidget);
-    splitter->setStretchFactor(0, 1);
-    splitter->setStretchFactor(1, 4);
+    splitter->setHandleWidth(0);
+    splitter->setStretchFactor(0, 0);
+    splitter->setStretchFactor(1, 1);
+    splitter->setCollapsible(0, false);
+    splitter->setCollapsible(1, false);
     
     layout->addWidget(splitter);
     
@@ -235,6 +247,21 @@ void SenderTab::updateTimers() {
     }
 }
 
+void SenderTab::updateListWidgetWidth(int contentWidth) {
+    const int scrollbarWidth = m_listWidget->verticalScrollBar()->isVisible()
+        ? m_listWidget->verticalScrollBar()->sizeHint().width()
+        : m_listWidget->style()->pixelMetric(QStyle::PM_ScrollBarExtent);
+    const int extraPadding = 20; // extra buffer for item margins and layout spacing
+    const int desiredWidth = qMax(100, contentWidth + scrollbarWidth + extraPadding);
+
+    if (desiredWidth <= m_listWidgetWidth)
+        return;
+
+    m_listWidgetWidth = desiredWidth;
+    m_listWidget->setMinimumWidth(m_listWidgetWidth);
+    m_listWidget->setMaximumWidth(m_listWidgetWidth);
+}
+
 void SenderTab::handleMessage(const pprzlink::Message& msg) {
     QString msgName = safeMessageName(msg.getDefinition().getName());
     
@@ -243,7 +270,7 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
         QVBoxLayout* vlayout = new QVBoxLayout(page);
         
         // Item in list widget
-        QListWidgetItem* item = new QListWidgetItem(m_listWidget);
+        QListWidgetItem* item = new QListWidgetItem();
         
         // Custom widget for list item
         QWidget* itemWidget = new QWidget(m_listWidget);
@@ -256,7 +283,7 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
         nameLabel->setAlignment(Qt::AlignCenter);
         
         QLabel* timeLabel = new QLabel("");
-        timeLabel->setMinimumWidth(30);
+        timeLabel->setMinimumWidth(40);
         timeLabel->setAlignment(Qt::AlignCenter);
         timeLabel->setProperty("lastUpdate", QTime::currentTime());
         
@@ -271,18 +298,16 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
         itemLayout->addStretch();
         itemLayout->addWidget(timeBox);
         
+        itemWidget->adjustSize();
         item->setSizeHint(itemWidget->sizeHint());
+        item->setData(Qt::UserRole, msgName);
+        updateListWidgetWidth(itemWidget->sizeHint().width());
         
-        // Find insert position alphabetically
         int insertRow = 0;
         for (; insertRow < m_listWidget->count(); ++insertRow) {
-            QWidget* iw = m_listWidget->itemWidget(m_listWidget->item(insertRow));
-            if (iw) {
-                QLabel* nL = iw->findChild<QLabel*>();
-                if (nL && nL->text() > msgName) break;
-            }
+            const QString existingName = m_listWidget->item(insertRow)->data(Qt::UserRole).toString();
+            if (existingName > msgName) break;
         }
-        
         m_listWidget->insertItem(insertRow, item);
         m_listWidget->setItemWidget(item, itemWidget);
         m_stackedWidget->insertWidget(insertRow, page);
@@ -374,14 +399,14 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
 }
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
-    setWindowTitle("Telemetry Messages");
-    resize(300, 400);
+    setWindowTitle("Messages");
+    //resize(300, 400);
 
     QWidget* cntral = new QWidget(this);
     QVBoxLayout* layout = new QVBoxLayout(cntral);
     layout->setContentsMargins(0, 0, 0, 0);
 
-    m_waitingLabel = new QLabel("Waiting for telemetry", this);
+    m_waitingLabel = new QLabel("Initializing telemetry...", this);
     m_waitingLabel->setAlignment(Qt::AlignCenter);
 
     m_classTabWidget = new QTabWidget(this);
@@ -424,7 +449,16 @@ void MainWindow::setupDictionaryAndLink() {
         if (!m_link) {
             throw std::runtime_error("Failed to allocate IvyQtLink");
         }
+        m_waitingLabel->setText(tr("Starting Ivy bus..."));
+        connect(m_link, &pprzlink::IvyQtLink::serverConnected, this, [this]() {
+            if (m_waitingLabel && m_waitingLabel->isVisible()) {
+                m_waitingLabel->setText(tr("Connected to Ivy bus, waiting for telemetry data..."));
+            }
+        });
         m_link->start("127.255.255.255:2010");
+        if (m_waitingLabel && m_waitingLabel->isVisible()) {
+            m_waitingLabel->setText(tr("Waiting for telemetry data..."));
+        }
     } catch (const std::exception &ex) {
         qWarning() << "Failed to initialize messaging:" << ex.what();
         m_waitingLabel->setText(tr("Telemetry initialization failed"));
