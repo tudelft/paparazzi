@@ -69,42 +69,31 @@
 // #define REF_TRAJ_FILENAME "circle_vs5_r2_long.csv"
 // #define NB_CSV_ROWS 1998
 
-// ------------------------------------- snap loop ------------------------------------- //
-// static const float DOWN_OFFSET = -1.0f;
-// static const float NORTH_OFFSET = -5.0f + 1.41f;
-// static const float EAST_OFFSET = -5.0f + 1.41f;
-
-// #define REF_TRAJ_FILENAME "snap_loop_vs2_r2.csv"
-// #define NB_CSV_ROWS 1348
-
-// ------------------------------------- immelmann ------------------------------------- //
-static const float DOWN_OFFSET = -1.0f;
-static const float NORTH_OFFSET = 0.0f;
-static const float EAST_OFFSET = -5.0f + 2.5f;
-
-// #define REF_TRAJ_FILENAME "immelmann_vs2.csv"
-// #define NB_CSV_ROWS 842
-
-// #define REF_TRAJ_FILENAME "immelmann_vs2.5.csv"
-// #define NB_CSV_ROWS 675
-
-#define REF_TRAJ_FILENAME "immelmann_vs2.5_wdotref.csv"
-#define NB_CSV_ROWS 675
-
-// #define REF_TRAJ_FILENAME "immelmann_vs3.csv"
-// #define NB_CSV_ROWS 561
-
-// #define REF_TRAJ_FILENAME "immelmann_vs3_wdotref.csv"
-// #define NB_CSV_ROWS 562
-
 // ------------------------------------- immelmann diag ------------------------------------- //
 // static const float DOWN_OFFSET = -1.5f;
-// static const float NORTH_OFFSET = -5.0f + 3.0f;
-// static const float EAST_OFFSET = -5.0f + 3.0f;
+// static const float NORTH_OFFSET = -5.0f + 2.0f;
+// static const float EAST_OFFSET = -5.0f + 2.0f;
 
-// #define REF_TRAJ_FILENAME "immelmann_diag_vs3.csv"
-// #define NB_CSV_ROWS 830
+// #define REF_TRAJ_FILENAME "immelmann_2_2_45deg.csv"
+// #define NB_CSV_ROWS 1247
 
+// #define REF_TRAJ_FILENAME "immelmann_2_3_45deg.csv"
+// #define NB_CSV_ROWS 1052
+
+// #define REF_TRAJ_FILENAME "immelmann_2_3_60deg.csv"
+// #define NB_CSV_ROWS 1055
+
+// #define REF_TRAJ_FILENAME "immelmann_2_4_60deg.csv"
+// #define NB_CSV_ROWS 955
+
+
+// ------------------------------------- clothoid ------------------------------------- //
+static const float DOWN_OFFSET = -1.5f;
+static const float NORTH_OFFSET = -5.0f + 2.2f;
+static const float EAST_OFFSET = -5.0f + 2.2f;
+
+#define REF_TRAJ_FILENAME "clothoid.csv"
+#define NB_CSV_ROWS 799
 
 #define NB_CSV_COLS 21
 
@@ -133,17 +122,25 @@ typedef struct {
 static const float C_X = -0.300;
 static const float C_Z = -0.050f;
 
+// KK props
 static const float MU_X_v = 4.05f  / 100000000.0f;
 static const float MU_Y_v = 8.54f / 100000000.0f;
 static const float MU_Z_v = 0.93f  / 100000000.0f;
 static const float C_T_v  = -0.460f  / 100000000.0f;
+static const float ACT_CUTOFF_OMEGA = 19.0f;
+
+// new motors "AB"
+// static const float MU_X_v = 4.30f  / 100000000.0f;
+// static const float MU_Y_v = 9.60f / 100000000.0f;
+// static const float MU_Z_v = 1.00f  / 100000000.0f;
+// static const float C_T_v  = -0.430f  / 100000000.0f;
+// static const float ACT_CUTOFF_OMEGA = 15.0f;
 
 static const float MIN_TAU = -0.981f;
 static const float MAX_TAU = -2.0f*9.81f;
 static const float ACCEL_BOUND = 1.6f*9.81f;
 static const float RATES_BOUND = (float)M_PI/4.0f;
 
-static const float ACT_CUTOFF_OMEGA = 19.0f;
 static const float ANG_ACCEL_FILT_CUTOFF_FREQ = 5.0f;
 static const float ACCEL_FILT_CUTOFF_FREQ = 5.0f;
 static const Gain_t Kq = {2.5f, 2.5f, 2.5f};
@@ -373,7 +370,7 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
         angaccel_ref.q = 0.0f;
         angaccel_ref.r = 0.0f;
     }
-    RATES_ADD(ang_accel_sp, angaccel_ref);
+    // RATES_ADD(ang_accel_sp, angaccel_ref);
 
     if (flatness_guided == false) {
         // actuator state estimation + butterworth filter    
@@ -508,7 +505,7 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
         struct FloatVect3 ey_hat_cur = {R_i2b->m[3], R_i2b->m[4], R_i2b->m[5]};
         vf_angle_cos = VECT3_DOT_PRODUCT(*vel_i, f_cmd_vect3)/(sqrtf(VECT3_NORM2(*vel_i))*sqrtf(VECT3_NORM2(f_cmd_vect3)));
         
-        if ((vf_angle_cos > 0.9781f) || (vf_angle_cos < -0.9781f)) { // 10 degrees -> cos = 0.9848
+        if ((vf_angle_cos > 0.9781f) || (vf_angle_cos < -0.9397f)) { // 10 degrees -> cos = 0.9848
             // guard against v // f
             VECT3_COPY(ey_hat, ey_hat_cur)
         } else {
@@ -554,6 +551,10 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
         spec_thrust_sp = sinf(theta_e)*fe.x + 
                          cosf(theta_e)*fe.z - 
                          C_Z*vel_norm*(sinf(theta_e)*ve.x + cosf(theta_e)*ve.z);
+
+        if (spec_thrust_sp > 0) {
+            spec_thrust_sp = 0;
+        }
 
         struct FloatRMat R_e2b, R_i2b_sp;
         R_e2b.m[0] = cosf(theta_e);    R_e2b.m[1] = 0.0f;    R_e2b.m[2] = -sinf(theta_e);
