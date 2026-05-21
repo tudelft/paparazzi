@@ -18,7 +18,12 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Xml Network Charts)
 
 add_subdirectory(../cockpit_qt/ext/pprzlinkQt ${CMAKE_BINARY_DIR}/pprzlinkqt)
 
-add_executable(plotter plotter.cpp)
+set(SRC_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/plotter.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources.qrc"
+)
+
+add_executable(plotter ${SRC_FILES})
 
 target_include_directories(plotter PRIVATE .)
 

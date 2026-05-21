@@ -1,5 +1,6 @@
 #include <QAction>
 #include <QApplication>
+
 #include <QChart>
 #include <QChartView>
 #include <QCheckBox>
@@ -31,6 +32,7 @@
 #include <QVBoxLayout>
 #include <QValueAxis>
 //#include <QDebug>
+#include "../linux_desktop_utils.h"
 #include <cmath>
 #include <algorithm>
 #include <variant>
@@ -193,6 +195,7 @@ PlotterWindow::PlotterWindow(QWidget *parent) : QMainWindow(parent), m_minY(1e9)
     m_legendLayout = nullptr;
     setAcceptDrops(true);
     setWindowTitle("Plotter");
+    resize(300, 400);
 
     m_chart = new QChart();
     m_chart->setTitle("Drag & Drop messages here");
@@ -921,6 +924,7 @@ void PlotterWindow::resizeEvent(QResizeEvent *event) {
     updateLegendPosition();
 }
 
+// FEATURE NOT ENABLED YET: Slot to handle line thickness change from the spin box
 void PlotterWindow::onLineThicknessChanged(int val) {
     for (auto& plot : m_activePlots) {
         if (!plot.series) continue;
@@ -930,14 +934,25 @@ void PlotterWindow::onLineThicknessChanged(int val) {
     }
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) 
+{
     QApplication app(argc, argv);
-    
-    app.setApplicationName("Real-time Plotter");
+
     app.setApplicationVersion("1.0");
+    //app.setOrganizationName("paparazzi"); only for settings, not really relevant here
+    app.setDesktopFileName(QStringLiteral("paparazzi_plotter"));//Follow XDG spec for desktop integration (https://specifications.freedesktop.org/desktop-entry-spec/latest/ar01s05.html) and use a fixed name to ensure the .desktop file is correctly associated with the app, allowing features like "Open with" and proper icon display in file managers and launchers.
+
+    app.setApplicationName(QStringLiteral("Real-time Plotter"));
+    //app.setApplicationDisplayName(QStringLiteral("Real-time Plotter"));
+
+    QString iconPath = ":/penguin_icon_rtp.png";
+    QIcon icon(iconPath);
+    installLinuxDesktopIntegration(app.desktopFileName(), "Paparazzi Real-Time Plotter", "Real-time plotter for telemetry messages", iconPath, "paparazzi-plotter");
+
+    app.setWindowIcon(icon);
 
     PlotterWindow window;
-    window.resize(800, 600);
+    window.setWindowIcon(icon);
     window.show();
 
     return app.exec();

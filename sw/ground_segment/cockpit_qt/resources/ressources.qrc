@@ -52,5 +52,6 @@
         <file>pictures/pfd_rover_yaw.svg</file>
         <file>pictures/pfd_rover_pitch.svg</file>
         <file>pictures/pfd_rover_roll.svg</file>
+        <file alias="penguin_icon_gcs.png">../../../../data/pictures/penguin_icon_gcs.png</file>
     </qresource>
 </RCC>

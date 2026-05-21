@@ -18,15 +18,25 @@
 #include "Particules.h"
 #include "Intruders.h"
 #include "Shapes.h"
-
+#include "../../linux_desktop_utils.h"
 
 int main(int argc, char *argv[]) {
     PprzApplication app(argc, argv);
-    
+
+    app.setApplicationVersion("1.0");
     // Set internal names in lowercase with underscores for safe XDG folder paths
     app.setOrganizationName("paparazzi");
-    app.setApplicationName("equinox_gcs");
-    app.setApplicationVersion("1.0");
+    app.setDesktopFileName(QStringLiteral("paparazzi_gcs"));
+
+    app.setApplicationName("paparazzi-gcs");
+    //app.setApplicationDisplayName(QStringLiteral("Paparazzi GCS"));
+
+    QString iconPath = ":/penguin_icon_gcs.png";
+    QIcon icon(iconPath);
+
+    installLinuxDesktopIntegration(app.desktopFileName(), "Paparazzi GCS", "Ground Control Station for UAV", iconPath, "paparazzi-gcs");
+
+    app.setWindowIcon(icon);
 
     // Initialize global paths BEFORE creating the PprzMain / widgets
     // but AFTER the application object is created so applicationDirPath is available.
@@ -48,7 +58,7 @@ int main(int argc, char *argv[]) {
         qDebug() << "Created new map data directory at:" << mapDataPath;
     }
 
-    // robust XDG compliant config location for Linux/Ubuntu (e.g., ~/.config/Paparazzi/Equinox GCS)
+    // XDG compliant config location for Linux (e.g., ~/.config/paparazzi/gcs/settings.ini)
     QString appConfigPath = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
     QDir configDir(appConfigPath);
     if (!configDir.exists()) {
@@ -65,11 +75,11 @@ int main(int argc, char *argv[]) {
     static const int InitialWindowWidth = 800;
     static const int InitialWindowHeight = 600;
     static const double InitialZoom = 17.0;
-    static const char InitialWindowInfo[] = "Classic GCS";
+    static const char InitialWindowInfo[] = "GCS";
 
     QCommandLineParser parser;
     parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
-    parser.setApplicationDescription("Equinox GCS");
+    parser.setApplicationDescription("Ground Control Station (GCS) for UAVs");
     parser.addHelpOption();
     parser.addVersionOption();
 
@@ -220,6 +230,7 @@ int main(int argc, char *argv[]) {
     PprzMain *mainWin = pprzApp()->mainWindow();
     mainWin->setupUi(InitialWindowWidth, InitialWindowHeight, cockpit);
     mainWin->setWindowTitle(InitialWindowInfo);
+    mainWin->setWindowIcon(icon);
 
     // Apply window state options
     if (parser.isSet(fullscreenOption)) {
@@ -235,4 +246,3 @@ int main(int argc, char *argv[]) {
 
     return app.exec();
 }
-
