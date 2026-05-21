@@ -26,6 +26,7 @@
  */
 
 #include "tfmini.h"
+#include "modules/lidar/slam/lidar_correction.h"
 #include "state.h"
 
 // Messages

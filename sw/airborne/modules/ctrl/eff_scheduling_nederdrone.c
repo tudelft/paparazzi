@@ -222,6 +222,11 @@ void schdule_control_effectiveness(void) {
   float pitch_range_deg = sched_tip_prop_upper_pitch_limit_deg - sched_tip_prop_lower_pitch_limit_deg;
   if (autopilot.mode == AP_MODE_FORWARD) {
     sched_ratio_tip_props = 0.0;
+
+    // In FORWARD mode, tips are off, so the control effectiveness is reduced (same as front wing).
+    g1g2[0][2] = g_forward[0][0];
+    g1g2[0][3] = g_forward[0][1];
+
   } else if (sched_tip_props_always_on || low_airspeed || radio_control.values[RADIO_AUX2] > 0) {
     sched_ratio_tip_props = 1.0;
   } else {
