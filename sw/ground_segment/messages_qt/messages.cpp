@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QDrag>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QLabel>
 #include <QListWidget>
 #include <QListWidgetItem>
@@ -22,6 +23,10 @@
 #include <QTime>
 #include <QVBoxLayout>
 #include <QVariant>
+#include <QStandardPaths>
+#include <QDir>
+#include <QTextStream>
+#include <QProcess>
 #include <sstream>
 #include <variant>
 #include "pprzlinkQt/IvyQtLink.h"
@@ -80,7 +85,7 @@ private:
 
 static QMap<QString, QMap<QString, QMap<QString, QString>>> s_unitCoefs;
 static QMap<QString, QMap<QString, QMap<QString, QString>>> s_unitNames;
-static constexpr int GREEN_DECAY_RATE_MS = 200;
+static constexpr int GREEN_DECAY_RATE_MS = 200;//TODO: make it based on message rate set in telemetry file.
 
 static void loadUnitCoefs(const QString& xmlPath) {
     QFile file(xmlPath);
@@ -193,7 +198,7 @@ SenderTab::SenderTab(const QString& senderName, const QString& className, pprzli
     m_listWidget->setAttribute(Qt::WA_MacShowFocusRect, false);
     m_listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
     m_listWidget->setMinimumWidth(100);
-    m_listWidget->setMaximumWidth(100);
+    //m_listWidget->setMaximumWidth(100);
     m_listWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
     m_listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     
@@ -373,7 +378,8 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
         }
 
         try {
-            const auto& rv = msg.getRawValue(i);
+            auto rv = msg.getRawValue(i);
+            rv.setOutputInt8AsInt(true);
             std::stringstream ss;
             ss << rv;
             QString s = QString::fromStdString(ss.str());
@@ -400,7 +406,7 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setWindowTitle("Messages");
-    //resize(300, 400);
+    resize(300, 400);// TODO: Dynamically resize based available screen size, with sensible limits. Note that it DOES resize based on content requirement after startup and messages come in.
 
     QWidget* cntral = new QWidget(this);
     QVBoxLayout* layout = new QVBoxLayout(cntral);
@@ -452,7 +458,7 @@ void MainWindow::setupDictionaryAndLink() {
         m_waitingLabel->setText(tr("Starting Ivy bus..."));
         connect(m_link, &pprzlink::IvyQtLink::serverConnected, this, [this]() {
             if (m_waitingLabel && m_waitingLabel->isVisible()) {
-                m_waitingLabel->setText(tr("Connected to Ivy bus, waiting for telemetry data..."));
+                m_waitingLabel->setText(tr("Connected to Ivy bus just fine,\nbut still waiting for telemetry data..."));
             }
         });
         m_link->start("127.255.255.255:2010");
@@ -528,10 +534,78 @@ void MainWindow::setupDictionaryAndLink() {
 int main(int argc, char *argv[])
 {
     // Force GTK3 platform theme which natively supports Ubuntu Adwaita dark/light
-    //qputenv("QT_QPA_PLATFORMTHEME", "gtk3");
+    // qputenv("QT_QPA_PLATFORMTHEME", "gtk3");//QT5 and fallback for QT6<6.8, also seems to work fine with QT6.8+ as gtk3 is not strictly required for dark mode support on newer Qt versions.
     
     QApplication app(argc, argv);
+    app.setApplicationName(QStringLiteral("paparazzi_messages"));
+    //app.setApplicationDisplayName(QStringLiteral("Paparazzi Messages"));//How much is too much ;)
+    app.setDesktopFileName(QStringLiteral("paparazzi-messages"));
+
+#if defined(Q_OS_LINUX)
+    // Dynamically install desktop integration files so GNOME/Wayland can pick them up dynamically
+    QString exePath = QCoreApplication::arguments().at(0);
+    if (!exePath.contains("/")) {
+        exePath = QStandardPaths::findExecutable(exePath);
+    } else {
+        exePath = QDir::cleanPath(QDir().absoluteFilePath(exePath));
+    }
+
+    QString userName = qgetenv("USER");
+    if (!userName.isEmpty() && exePath.startsWith("/home/" + userName + "/")) {
+        // Substitute /home/user/ with ~/ internally wrapped in a bash exec so it's fully portable
+        // and doesn't pollute the .desktop file with hardcoded sensitive user names.
+        // E.g. bash -c "exec ~/paparazzi/.../messages"
+        exePath.replace(0, ("/home/" + userName).length(), "~");
+        //Yes, backslashes are there to escape the doublequotes indeed
+        exePath = "bash -c \"exec " + exePath + "\"";//overkill? Just exec with ~ directly, it seems to work fine in .desktop files and is more transparent.
+        //exePath = "\"" + exePath + "\"";
+    }
+
+    QString appsLocation = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
+    if (!appsLocation.isEmpty()) {
+        QDir().mkpath(appsLocation);
+        QString desktopFilePath = appsLocation + "/paparazzi-messages.desktop";
+        QFile dfile(desktopFilePath);
+        if (dfile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            QTextStream out(&dfile);
+            out << "[Desktop Entry]\n"
+                << "Version=1.0\n"
+                << "Type=Application\n"
+                << "Name=Paparazzi Messages\n"
+                << "Comment=View and inspect telemetry messages in the Paparazzi ground segment\n"
+                << "Exec=" << exePath << "\n"
+                << "Icon=paparazzi-messages\n"
+                << "Terminal=false\n"
+                << "Categories=Development;Education;Viewer;Science;Robotics;\n"
+                << "StartupNotify=true\n"
+                << "StartupWMClass=paparazzi_messages\n";
+            dfile.close();
+        }
+
+        QString iconDir = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/icons/hicolor/128x128/apps";
+        QDir().mkpath(iconDir);
+        QString iconFilePath = iconDir + "/paparazzi-messages.png";
+        if (QFile::exists(iconFilePath)) {
+            QFile::remove(iconFilePath);
+        }
+        QFile::copy(":/penguin_icon_msg.png", iconFilePath);
+        
+        // Let the system catch up using Qt's native cross-platform process API
+        // Although it would be more efficient to call the underlying update-desktop-database and gtk-update-icon-cache
+        // functions directly via a native platform API, this approach is more maintainable and portable, 
+        // and the performance impact should be negligible since it's only done once at startup.
+        // YEAH: if you want to get fancy, feel free to improve
+        QProcess::startDetached("update-desktop-database", QStringList() << appsLocation);
+        QString hicolorDir = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/icons/hicolor";
+        QProcess::startDetached("gtk-update-icon-cache", QStringList() << "-f" << "-t" << hicolorDir);
+    }
+#endif
+
+    QIcon icon(QStringLiteral(":/penguin_icon_msg.png"));
+    app.setWindowIcon(icon);
+
     MainWindow w;
+    w.setWindowIcon(icon);
     w.show();
     return app.exec();
 }

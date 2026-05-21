@@ -1,36 +1,43 @@
 <!DOCTYPE module SYSTEM "module.dtd" >
-
-<module name = "uwb_swarm" dir = "decawave" >
+<module name = "uwb_swarm" dir = "decawave">
   <doc>
     <description>
       Communication module for use in anchorless network where the UWB modules are attached to MAVs
-      and need to communicate on-board values with each - other(for purposes such as relative localization, co - ordination,
+      and need to communicate on-board values with each other (for purposes such as relative localization, coordination,
       or collision avoidance).
-      This module must be used together with a UWB hardware such as the Decawave DWM1000 running the appropriate SCommunication code,
-      which runs on an intermediate MCU like a ATmega 328 as found on e.g, an Arduino Pro Mini board.
-      The code that must run on this extra electronics can be found at :
+      This module must be used together with a UWB hardware such as the Decawave DWM1000 running the appropriate communication code,
+      which runs on an intermediate MCU like a ATmega 328 as found on e.g., an Arduino Pro Mini board.
+      The code that must run on this extra electronics can be found at:
         https://github.com/tudelft/uwb_swarm_extender
-     An example file to flash the extention board can be found in
+      An example file to flash the extension board can be found in
         examples/UWB_localization_v1_0/UWB_localization_v1_0.ino
-    </description >
-    <configure name="UWB_SWARM_UART" value="UARTX" description="UART on Flightcontroller on which the UWB Swarm extention PCB is connected"/>
+
+      Dynamic UWB Addressing:
+
+        Set dynamic_address to TRUE to use the AC_ID as the UWB address (non-sequential, unique per drone).
+        When enabled, the flight controller sends the AC_ID encoded as a float at startup, which the UWB module decodes and uses as its address.
+        This feature requires compatible code on the UWB module (see documentation).
+    </description>
+    <configure name="UWB_SWARM_UART" value="UARTX" description="UART on Flightcontroller on which the UWB Swarm extension PCB is connected"/>
     <configure name="UWB_SWARM_BAUD" value="B115200" description="UART Baudrate, default is 115200 baud"/>
+    <configure name="UWB_SWARM_DYNAMIC_ADDRESS" value="FALSE" description="Set to TRUE to use AC_ID as UWB address (dynamic, non-sequential)."/>
   </doc>
   <header>
-    <file name = "uwb_swarm.h" />
+    <file name = "uwb_swarm.h"/>
   </header>
-  <init fun = "uwb_swarm_init()" />
-  <periodic fun = "uwb_swarm_periodic()" freq = "30" autorun = "TRUE" />
+  <init fun = "uwb_swarm_init()"/>
+  <periodic fun = "uwb_swarm_periodic()" freq = "30" autorun = "TRUE"/>
   <periodic fun = "uwb_swarm_report()" freq="15" autorun="TRUE"/>
-  <event fun = "uwb_swarm_event()" />
-  <makefile target = "ap" >
-    <file name = "uwb_swarm.c" />
-    <configure name="UWB_SWARM_UART" default = "UART5"case="upper|lower"/>
-    <configure name="UWB_SWARM_BAUD" default="B115200"/>
-    <configure name = "UWB_SWARM_LED" default = "3" />
-    <define name = "USE_$(UWB_SWARM_UART_UPPER)" />
+  <event fun = "uwb_swarm_event()"/>
+  <makefile target = "ap">
+    <file name = "uwb_swarm.c"/>
+    <configure name= "UWB_SWARM_UART" default = "UART5" case="upper|lower"/>
+    <configure name= "UWB_SWARM_BAUD" default= "B115200"/>
+    <configure name= "UWB_SWARM_LED" default = "3"/>
+    <configure name= "UWB_SWARM_DYNAMIC_ADDRESS" default="FALSE"/>
+    <define name = "USE_$(UWB_SWARM_UART_UPPER)"/>
     <define name = "UWB_SWARM_UART" value = "$(UWB_SWARM_UART_LOWER)" />
-    <define name = "$(UWB_SWARM_UART_UPPER)_BAUD" value = "$(UWB_SWARM_BAUD)" />
+    <define name = "$(UWB_SWARM_UART_UPPER)_BAUD" value = "$(UWB_SWARM_BAUD)"/>
   </makefile>
 </module>
 

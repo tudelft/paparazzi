@@ -14,7 +14,7 @@
     </program>
     <program name="UnifiedMoCap" command="sw/ext/unifiedmocaprouter/build/mocap-router"/>
     <program name="Link Combiner" command="sw/ground_segment/python/redundant_link/link_combiner.py"/>
-    <program name="GCS" command="sw/ground_segment/cockpit_qt/equinoxgcs">
+    <program name="GCS" command="sw/ground_segment/cockpit_qt/gcs">
       <arg flag="-speech"/>
     </program>
     <program name="Flight Plan Editor" command="sw/ground_segment/cockpit/gcs">
@@ -55,7 +55,7 @@
       <arg flag="-fbw" variable="fbw_serial_port"/>
       <arg flag="-ap" variable="ap_serial_port"/>
     </program>
-    <program name="GCS Classic" command="sw/ground_segment/cockpit_qt/build/equinoxgcs">
+    <program name="GCS Classic" command="sw/ground_segment/cockpit_qt/gcs">
       <arg flag="--speech"/>
     </program>
     <program name="Messages QT" command="sw/ground_segment/messages_qt/messages_qt"/>
@@ -505,10 +505,7 @@
         <arg flag="-d" constant="/dev/ttyUSB0"/>
         <arg flag="-s" constant="115200"/>
       </program>
-      <program name="Server">
-        <arg flag=""/>
-        <arg flag="-no_md5_check"/>
-      </program>
+      <program name="Server"/>
       <program name="Messages"/>
       <program name="Real-time Plotter"/>
       <program name="GCS"/>

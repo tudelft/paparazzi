@@ -94,9 +94,12 @@
       </module>
 
       <!-- Magnetometer chip on GNSS board instead of FC --> 
-      <!-- <module name="mag" type="qmc5883l">
+      <module name="mag" type="qmc5883l">
         <configure name="MAG_QMC5883L_I2C_DEV" value="i2c2"/>
-        <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="10"/>
+        <!-- <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="50"/> -->
+        <!-- <define name="QMC5883L_ADDR" value="0x1E"/> -->
+        <define name="QMC5883L_ADDR" value="0x1A"/>
+        <!-- <define name="QMC5883L_ADDR" value="0x1B"/> -->
         <define name="MODULE_QMC5883L_UPDATE_AHRS" value="TRUE"/>
         <define name="QMC5883L_CHAN_X" value="1"/>
         <define name="QMC5883L_CHAN_Y" value="0"/>
@@ -104,10 +107,10 @@
         <define name="QMC5883L_CHAN_X_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Y_SIGN" value="-"/>
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
-        <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/>
-      </module> -->
+        <!-- <define name="MODULE_QMC5883L_SYNC_SEND" value="1"/> -->
+      </module>
 
-      <module name="mag" type="ist8310">
+      <!-- <module name="mag" type="ist8310">
         <configure name="MAG_IST8310_I2C_DEV" value="i2c2"/>
         <configure name="MAG_IST8310_PERIODIC_FREQUENCY" value="10"/>
         <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>
@@ -118,7 +121,7 @@
         <define name="IST8310_CHAN_Y_SIGN" value="-"/>
         <define name="IST8310_CHAN_Z_SIGN" value="+"/>
         <define name="MODULE_IST8310_SYNC_SEND" value="TRUE"/>
-      </module> 
+      </module>  -->
 
       <!-- Optionally use alternative magnetometer if rate and quality of QMC5883l is insufficient --> 
       <!-- MEDIAN_FILTER Enabled to avoid sporadic spikes in output-->
@@ -175,7 +178,8 @@
 
       <module name="telemetry" type="transparent">      
         <configure name="MODEM_PORT" value="UART2"/>
-        <configure name="MODEM_BAUD" value="B9600"/>
+        <configure name="MODEM_BAUD" value="B9600"/><!-- for mesh modem-->
+        <!--<configure name="MODEM_BAUD" value="B57600"/>--><!-- for direct cable desktest -->
       </module>
 
       <module name="geo_mag"/>
@@ -308,8 +312,8 @@
     <module name="ahrs" type="float_dcm">
       <configure name="USE_MAGNETOMETER" value="TRUE"/><!-- AS in USE the device for readings , not the value in AHRS yet -->
       <define name="USE_AHRS_GPS_ACCELERATIONS"/>
-      <!-- <define name="AHRS_DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/> -->
-      <define name="AHRS_DCM_MAG_ID" value="MAG_IST8310_SENDER_ID"/>
+      <define name="AHRS_DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
+      <!-- <define name="AHRS_DCM_MAG_ID" value="MAG_IST8310_SENDER_ID"/> -->
       <!-- <define name="AHRS_DCM_MAG_ID" value="MAG_RM3100_SENDER_ID"/> -->
     </module>
 
@@ -427,6 +431,8 @@
       <configure name="UWB_SWARM_UART" value="UART5"/>
       <configure name="UWB_SWARM_BAUD" value="B115200"/>
       <!-- <configure name="UWB_SWARM_LED" value="3"/> -->
+      <!--<configure name="UWB_SWARM_DYNAMIC_ADDRESS" value="TRUE"/>-->
+      <!--<define name="UWB_SWARM_DYNAMIC_ADDRESS" value="TRUE"/>-->
     </module>
 
     <!-- WIP module multrawidebandcontroller not finished yet -->
@@ -674,7 +680,7 @@
 
     <define name="AHRS_DCM_IMU_ID" value="ABI_BROADCAST"/>
     <!--<define name="DCM_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>-->
-    <define name="DCM_MAG_ID" value="MAG_IST8310_SENDER_ID"/>
+    <!-- <define name="DCM_MAG_ID" value="MAG_IST8310_SENDER_ID"/> -->
     <!--<define name="DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/> -->
     <!--<define name="DCM_MAG_ID" value="MAG_QMC5883P_SENDER_ID"/>-->
     <!--<define name="DCM_MAG_ID" value="MAG_RM3100_SENDER_ID"/>-->

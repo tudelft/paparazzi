@@ -66,6 +66,7 @@ struct link_device *external_device = UWB_SWARM_SERIAL_PORT;
 #define UWB_SWARM_COMM_AX 4    // Acceleration in X direction
 #define UWB_SWARM_COMM_AY 5    // Acceleration in Y direction
 #define UWB_SWARM_COMM_YAWR 6  // Yaw rate
+#define UWB_SWARM_COMM_AC_ID 7 // Unique AC_ID sent at startup for dynamic UWB addressing
 
 struct nodeState {
   uint8_t nodeAddress;
@@ -181,7 +182,7 @@ static void encodeHighBytes(uint8_t *send_data, uint8_t msg_size, uint8_t *data_
 }
 
 /**
- * Function that will send a float over the bus. The actual message that will be sent will have
+ * Function localization/that will send a float over the bus. The actual message that will be sent will have
  * a start marker, the message type, 4 bytes for the float, and the end marker.
  */
 static void sendFloat(uint8_t msg_type, float data)
@@ -282,21 +283,15 @@ void uwb_swarm_init(void)
     setNodeStatesFalse(i);
   }
 
-  //Send AC_ID so a table can be made on the Arduino side to match the received UWB messages to the correct drone in the swarm based on AC_ID. Since we can only send floats, we encode the AC_ID as a float by multiplying it with 0x01010101, which means that when decoded back into bytes, all 4 bytes of the float will have the value of AC_ID, which makes it easy to decode back into the original AC_ID on the Arduino side.
-  //The uncommon scenrio that AC_ID is larger than 253 (the special byte value) is not handled, but in that case the AC_ID can simply be set to 253 on the Arduino side as well, since it is only used for matching the received UWB messages to the correct drone in the swarm, and it does not matter if multiple drones have the same AC_ID as long as they are different from the AC_ID of the drone itself.
-  //also sending the AC_ID as a float with all bytes the same value makes it easy to identify the messages from this drone on the Arduino side, since they will have a unique value that is different from the messages received from the other drones in the swarm, which can be used for debugging and testing purposes.
-/*
+  /*
+   * Send AC_ID as a float at startup for dynamic UWB address assignment.
+   * This enables the UWB module to use a non-sequential, unique address per drone.
+   */
+#ifdef UWB_SWARM_DYNAMIC_ADDRESS
   uint8_t v = AC_ID;
   union { uint32_t i; float f; } u = { v * 0x01010101 };
-
-  sendFloat(UWB_SWARM_COMM_RANGE, u.f);
-  sendFloat(UWB_SWARM_COMM_VX, u.f);
-  sendFloat(UWB_SWARM_COMM_VY, u.f);
-  sendFloat(UWB_SWARM_COMM_Z, u.f);
-  sendFloat(UWB_SWARM_COMM_AX, u.f);
-  sendFloat(UWB_SWARM_COMM_AY, u.f);
-  sendFloat(UWB_SWARM_COMM_YAWR, u.f);
-*/
+  sendFloat(UWB_SWARM_COMM_AC_ID, u.f);
+#endif
 }
 
 /**

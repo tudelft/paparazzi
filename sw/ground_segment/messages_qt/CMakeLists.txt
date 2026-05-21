@@ -18,7 +18,10 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Xml Network)
 
 add_subdirectory(../cockpit_qt/ext/pprzlinkQt ${CMAKE_BINARY_DIR}/pprzlinkqt)
 
-set(SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/messages.cpp")
+set(SRC_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/messages.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources.qrc"
+)
 
 add_executable(messages ${SRC_FILES})
 
@@ -45,4 +48,8 @@ target_link_libraries(messages PRIVATE
 )
 
 install(TARGETS messages DESTINATION bin)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/paparazzi-messages.desktop" DESTINATION share/applications)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../../../data/pictures/penguin_logo.svg"
+        DESTINATION share/icons/hicolor/scalable/apps
+        RENAME paparazzi-messages.svg)
 set_target_properties(messages PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
