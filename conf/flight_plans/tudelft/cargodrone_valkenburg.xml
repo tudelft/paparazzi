@@ -85,6 +85,7 @@
       <exception cond="GetPosHeight() @GT 30.0" deroute="Oval"/>
       <call_once fun="nav_set_heading_current()"/>
       <go climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
+      <deroute block="Oval"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="FALSE" var="force_forward"/>

@@ -418,6 +418,7 @@
       <item name="goal" type="text">Goal of the flight</item>
       <item name="wind" type="text">Windspeed [m/s deg]</item>
       <item name="basic law">Location, airspace and weather</item>
+      <item name="camera">Calibrate airspeed</item>
       <item name="camera">Switch on camera</item>
       <item name="announce">Announce flight to other airspace users</item>
   </checklist>
