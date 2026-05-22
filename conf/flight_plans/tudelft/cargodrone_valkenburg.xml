@@ -64,6 +64,7 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="Start Engine" strip_button="Takeoff" strip_icon="takeoff.png">
+      <set value="FALSE" var="agl_inflight"/>
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="nav_set_heading_current()"/>

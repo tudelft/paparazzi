@@ -680,6 +680,9 @@ void stabilization_indi_rate_run(bool in_flight, struct StabilizationSetpoint *s
   if ((fabsf(range_dt) < 0.2) && (range_finder.distance > STABILIZATION_INDI_INTEGRATION_RANGE)){
     agl_inflight = true;
   }
+  else if(!in_flight) {
+    agl_inflight = false;
+  }
 
   if ( agl_inflight || (radio_control.values[RADIO_CONTROL_ACTIVATE_INTEGRATION] > 0)) {
     // Limit the estimated disturbance in yaw for drones that are stable in sideslip
