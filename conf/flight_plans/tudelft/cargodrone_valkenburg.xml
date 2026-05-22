@@ -71,14 +71,15 @@
       <set value="FALSE" var="agl_inflight"/>
       <set value="FALSE" var="force_forward"/>
       <set value="DegOfRad(stateGetNedToBodyEulers_f()->theta)" var="gear_pitch"/>
+      <call_once fun="waypoint_set_xy_i(WP_CLIMB,POS_BFP_OF_REAL(GetPosX()+100.0*sinf(stateGetNedToBodyEulers_f()->psi)),POS_BFP_OF_REAL(GetPosY()+100.0*cosf(stateGetNedToBodyEulers_f()->psi)))"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="RadOfDeg(gear_pitch)" roll="0" throttle="0.0" until="stage_time @GT 1" vmode="throttle"/>
+      <attitude pitch="gear_pitch" roll="0" throttle="0.0" until="stage_time @GT 1" vmode="throttle"/>
     </block>
     <block name="Rolling Phase">
       <exception cond="GetPosHeight() @GT 5.0" deroute="Climb"/>
       <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="RadOfDeg(gear_pitch)" roll="0" throttle="takeoff_thrust" vmode="throttle"/>
+      <attitude pitch="gear_pitch" roll="0" throttle="takeoff_thrust" vmode="throttle"/>
     </block>
     <block name="Climb">
       <exception cond="GetPosHeight() @GT 30.0" deroute="Oval"/>
