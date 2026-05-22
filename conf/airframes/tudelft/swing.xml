@@ -94,8 +94,8 @@
     </command_laws>
 
     <section name="IMU" prefix="IMU_">
-        <!-- Accelero -->
-        <define name="ACCEL_CALIB" type="array">
+        <!-- swing: 134511 (first) -->
+        <!-- <define name="ACCEL_CALIB" type="array">
             <field type="struct">
                 <field name="abi_id" value="1"/>
                 <field name="calibrated" type="struct">
@@ -105,8 +105,21 @@
                 <field name="neutral" value="47,24,199" type="int[]"/>
                 <field name="scale_f" value="{ 2.4534, 2.4401, 2.4339 }"/>
             </field>
-        </define>
+        </define> -->
 
+        <!-- swing: 052969 -->
+        <define name="ACCEL_CALIB" type="array">
+        <field type="struct">
+            <field name="abi_id" value="1"/>
+            <field name="calibrated" type="struct">
+            <field name="neutral" value="true"/>
+            <field name="scale_f" value="true"/>
+            </field>
+            <field name="neutral" value="57,2,-87" type="int[]"/>
+            <field name="scale_f" value="{ 2.4433, 2.4609, 2.4445 }"/>
+        </field>
+        </define>
+        
         <!-- Magneto calibration -->
         <define name="MAG_X_NEUTRAL" value="18"/>
         <define name="MAG_Y_NEUTRAL" value="157"/>
