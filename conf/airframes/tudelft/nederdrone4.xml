@@ -62,6 +62,10 @@
         <define name="INS_USE_GPS_ALT_SPEED" value="1"/>
         <define name="INS_VFF_R_GPS" value="0.01"/>
       </module-->
+      <module name="lidar" type="tfmini">
+        <configure name="TFMINI_PORT" value="UART4"/>
+        <configure name="USE_TFMINI_AGL" value="TRUE"/>
+      </module>
     </target>
 
     <target name="nps" board="pc">
@@ -144,10 +148,6 @@
       <configure name="MAG_LIS3MDL_I2C_DEV" value="I2C1"/>
       <define name="LIS3MDL_CHAN_X_SIGN" value="-"/>
       <define name="LIS3MDL_CHAN_Y_SIGN" value="-"/>
-    </module>
-    <module name="lidar" type="tfmini">
-      <configure name="TFMINI_PORT" value="UART4"/>
-      <configure name="USE_TFMINI_AGL" value="TRUE"/>
     </module>
 
     <module name="nav" type="hybrid">
