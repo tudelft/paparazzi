@@ -1,5 +1,5 @@
+<?xml version="1.0"?>
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-
 <flight_plan alt="60" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="5000" name="Nederdrone Valkenburg" security_height="2">
   <header>
     #include "autopilot.h"
@@ -9,14 +9,14 @@
     <waypoint name="HOME" x="12.6" y="-48.7"/>
     <waypoint name="CLIMB" x="62.6" y="-80.4"/>
     <waypoint name="STDBY" x="106.0" y="-55.1"/>
-    <waypoint name="p1" x="322.0" y="-254.3"/>
+    <waypoint name="p1" x="298.634" y="-260.614"/>
     <waypoint name="p2" x="696.0" y="-148.1"/>
     <waypoint name="p3" x="600.4" y="73.4"/>
     <waypoint name="p4" x="238.6" y="-48.5"/>
     <waypoint name="TD" x="-4.1" y="-23.7"/>
-    <waypoint name="FOLLOW" x="123.2" y="-87.8"/>
-    <waypoint name="S1" lat="52.1669450" lon="4.4174372"/>
-    <waypoint name="S2" lat="52.1689871" lon="4.4208804"/>
+    <!-- <waypoint name="FOLLOW" x="123.2" y="-87.8"/> -->
+    <waypoint name="l1" lat="52.1685507" lon="4.4123303" alt="20"/>
+    <waypoint name="l2" lat="52.1662956" lon="4.4135311" alt="0"/>
     <waypoint lat="52.169189" lon="4.410820" name="C1"/>
     <waypoint lat="52.168049" lon="4.406923" name="C2"/>
     <waypoint lat="52.166515" lon="4.408235" name="C3"/>
@@ -68,14 +68,14 @@
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="-50" roll="0" throttle="0.0" until="stage_time>1" vmode="throttle"/>
+      <attitude pitch="-50" roll="0" throttle="0.0" until="stage_time @GT 1" vmode="throttle"/>
     </block>
     <block name="Rolling Phase">
       <exception cond="GetPosHeight() @GT 5.0" deroute="Climb"/>
       <call_once fun="nav_set_heading_current()"/>
       <attitude pitch="-50." roll="0" throttle="0.85" vmode="throttle"/>
     </block>
-    <block name="Climb" strip_button="Takeoff" strip_icon="takeoff.png">
+    <block name="Climb">
       <exception cond="GetPosHeight() @GT 30.0" deroute="Oval"/>
       <call_once fun="nav_set_heading_current()"/>
       <go climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
@@ -96,7 +96,7 @@
     <block name="line_p1_p2">
       <set value="TRUE" var="force_forward"/>
       <go from="p1" hmode="route" wp="p2"/>
-      <stay until="stage_time>10" wp="p2"/>
+      <stay until="stage_time @GT 10" wp="p2"/>
       <go from="p2" hmode="route" wp="p1"/>
       <deroute block="line_p1_p2"/>
     </block>

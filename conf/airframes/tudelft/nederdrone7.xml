@@ -247,19 +247,6 @@
 
   <section name="MISC">
     <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 18.028 * adc)"/>
-
-    <!-- Basic navigation settings -->
-    <define name="NAV_CLIMB_VSPEED" value="3.5"/>
-    <define name="NAV_DESCEND_VSPEED" value="-0.7"/>
-    <define name="ARRIVED_AT_WAYPOINT" value="50.0"/>
-
-    <!-- Settings for circle -->
-    <define name="DEFAULT_CIRCLE_RADIUS" value="700"/>
-    <define name="NAV_CARROT_DIST" value="200"/>
-
-    <!-- Avoid GPS loss behavior when having RC or datalink -->
-    <define name="NO_GPS_LOST_WITH_DATALINK_TIME" value="20"/>
-    <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
   </section>
 
   <section name="IMU" prefix="IMU_">
