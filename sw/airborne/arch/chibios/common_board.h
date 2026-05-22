@@ -241,6 +241,9 @@
 #endif
 
 #if defined(LINE_ADC6)
+#ifndef USE_ADC_6
+#define USE_ADC_6 1
+#endif
 #if USE_ADC_6
 #if defined(ADC6_ADC_IN)
 #define AD1_6_CHANNEL     CONCAT_BOARD_PARAM(ADC_CHANNEL_IN, ADC6_ADC_IN)

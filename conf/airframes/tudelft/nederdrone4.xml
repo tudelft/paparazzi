@@ -42,7 +42,8 @@
       <module name="sys_mon"/>
       <!--module name="status_nederdrone"/-->
 
-      <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
+      <define name="UAVCAN_ACTUATORS_USE_CURRENT" value="FALSE"/>
+      <define name="ADC_CHANNEL_CURRENT" value="ADC_6"/>
 
       <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
       <define name="RADIO_FMODE"       value="RADIO_AUX2"/> <!-- Throttle curve select -->
@@ -263,7 +264,8 @@
   </command_laws>
 
   <section name="MISC">
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 18.1 * adc)"/><!-- TODO: verify/calibrate -->
+    <define name="MilliAmpereOfAdc(adc)" value="((3.3f/4096.0f) * 50000.0f * adc - 300.0f)"/>
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 18.405 * adc)"/>
 
     <!-- Basic navigation settings -->
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>
