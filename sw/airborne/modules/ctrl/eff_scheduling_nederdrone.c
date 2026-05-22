@@ -220,7 +220,7 @@ void schdule_control_effectiveness(void) {
   // Tip prop ratio
   float pitch_deg = eulers_zxy.theta / M_PI * 180.f;
   float pitch_range_deg = sched_tip_prop_upper_pitch_limit_deg - sched_tip_prop_lower_pitch_limit_deg;
-  if (autopilot.mode == AP_MODE_FORWARD) {
+  if ((autopilot.mode == AP_MODE_FORWARD || autopilot.mode == AP_MODE_NAV) && !sched_tip_props_always_on) {
     sched_ratio_tip_props = 0.0;
 
     // In FORWARD mode, tips are off, so the control effectiveness is reduced (same as front wing).
