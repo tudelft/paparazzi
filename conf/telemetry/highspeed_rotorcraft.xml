@@ -54,8 +54,8 @@
       <message name="TARGET_POS_INFO"          period="0.1"/>
       <message name="ROTATING_WING_STATE"      period="0.2"/>
       <message name="ACTUATORS"                period="0.02"/>
-      <message name="EFF_MAT_STAB"             period="0.02"/>
-      <message name="EFF_MAT_GUID"             period="0.02"/>
+      <!-- <message name="EFF_MAT_STAB"             period="5.0"/> -->
+      <!-- <message name="EFF_MAT_GUID"             period="5.0"/> -->
       <message name="GUIDANCE"                 period="0.02"/> 
       <message name="STAB_ATTITUDE"            period="0.02"/>
       <message name="ROTORCRAFT_CMD"           period="0.2"/>

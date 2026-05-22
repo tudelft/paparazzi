@@ -1,0 +1,32 @@
+<!DOCTYPE airframe SYSTEM "../airframe.dtd">
+
+<airframe>
+  <section name="TAKEOFF">
+    <define name="STABILIZATION_INDI_INTEGRATION_RANGE" value="1.0"/>
+
+    <define name="OBSTACLE_WALLS" value="{0}"/>
+  </section>
+
+  <section name="FORWARD">
+    <!--The Nederdrone uses a slightly different axis system for the setpoint, to make both hovering and flying forward intuitive-->
+    <define name="USE_EARTH_BOUND_RC_SETPOINT" value="TRUE"/>
+    <!-- This is the pitch angle that the Nederdrone will have in forward flight, where 0 degrees is hover-->
+    <!-- <define name="TRANSITION_MAX_OFFSET" value="-80.0" unit="deg"/> -->
+    <define name="TRANSITION_MAX_OFFSET" value="-50.0" unit="deg"/>
+    <!-- For RC coordinated turns, lower because the yawing was too slow -->
+    <define name="MAX_FWD_SPEED" value="20.0"/>
+    <!-- For hybrid guidance -->
+    <define name="MAX_AIRSPEED" value="20.0"/>
+    <!-- Enable airspeed measurements -->
+    <define name="USE_AIRSPEED" value="TRUE"/>
+  </section>
+
+  <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
+    <!-- setpoints -->
+    <define name="SP_MAX_PHI" value="60." unit="deg"/>
+    <define name="SP_MAX_THETA" value="80." unit="deg"/>
+    <define name="SP_MAX_R" value="90." unit="deg/s"/>
+    <define name="DEADBAND_R" value="200"/>
+    <define name="SP_PSI_DELTA_LIMIT" value="45" unit="deg"/>
+  </section>
+</airframe>
