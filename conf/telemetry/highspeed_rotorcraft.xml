@@ -57,7 +57,7 @@
       <!-- <message name="EFF_MAT_STAB"             period="5.0"/> -->
       <!-- <message name="EFF_MAT_GUID"             period="5.0"/> -->
       <message name="GUIDANCE"                 period="0.02"/> 
-      <message name="STAB_ATTITUDE"            period="0.02"/>
+      <!-- <message name="STAB_ATTITUDE"                 period="0.02"/> -->
       <message name="ROTORCRAFT_CMD"           period="0.2"/>
       <message name="DEBUG_VECT"               period="0.2"/>
       <message name="EXTERNAL_POSE_DOWN"       period="0.2"/>
