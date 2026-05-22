@@ -40,6 +40,10 @@
       <corner name="C9"/>
     </sector>
   </sectors>
+  <variables>
+    <variable var="gear_pitch" init="-50" type="float" min="-90.0" max="0." step="1.0"/>
+    <variable var="takeoff_thrust" init="0.85" type="float" min="0." max="1.0" step="0.01"/>
+  </variables>
   <modules>
     <!--module name="follow_me"/-->
     <module name="nav" type="survey_rectangle_rotorcraft">
@@ -66,14 +70,15 @@
     <block name="Start Engine" strip_button="Takeoff" strip_icon="takeoff.png">
       <set value="FALSE" var="agl_inflight"/>
       <set value="FALSE" var="force_forward"/>
+      <set value="DegOfRad(stateGetNedToBodyEulers_f()->theta)" var="gear_pitch"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="-50" roll="0" throttle="0.0" until="stage_time @GT 1" vmode="throttle"/>
+      <attitude pitch="RadOfDeg(gear_pitch)" roll="0" throttle="0.0" until="stage_time @GT 1" vmode="throttle"/>
     </block>
     <block name="Rolling Phase">
       <exception cond="GetPosHeight() @GT 5.0" deroute="Climb"/>
       <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="-50." roll="0" throttle="0.85" vmode="throttle"/>
+      <attitude pitch="RadOfDeg(gear_pitch)" roll="0" throttle="takeoff_thrust" vmode="throttle"/>
     </block>
     <block name="Climb">
       <exception cond="GetPosHeight() @GT 30.0" deroute="Oval"/>
