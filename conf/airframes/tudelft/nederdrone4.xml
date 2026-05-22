@@ -424,6 +424,17 @@
     <define name="MODE_STARTUP"  value="AP_MODE_NAV"/>
   </section>
 
+  <checklist>
+      <item name="pic" type="text">Enter the PIC</item>
+      <item name="pac" type="text">Enter the PAC</item>
+      <item name="gcs" type="text">Enter the GCS op</item>
+      <item name="goal" type="text">Goal of the flight</item>
+      <item name="wind" type="text">Windspeed [m/s deg]</item>
+      <item name="basic law">Location, airspace and weather</item>
+      <item name="camera">Switch on camera</item>
+      <item name="announce">Announce flight to other airspace users</item>
+  </checklist>
+
   <section name="BAT">
     <define name="CATASTROPHIC_BAT_LEVEL" value="18.0" unit="V"/>
     <define name="CRITIC_BAT_LEVEL" value="18.6" unit="V"/>
