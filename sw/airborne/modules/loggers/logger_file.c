@@ -75,6 +75,7 @@ static void logger_file_write_header(FILE *file) {
   fprintf(file, "acc_ref_x,acc_ref_y,acc_ref_z,");
   fprintf(file, "acc_meas_x,acc_meas_y,acc_meas_z,");
   fprintf(file, "accel_ref_with_gains_x,accel_ref_with_gains_y,accel_ref_with_gains_z,");
+  fprintf(file, "acc_body_x,acc_body_x_y,acc_body_x_z,");
   fprintf(file, "att_phi,att_theta,att_psi,");
   fprintf(file, "rate_p,rate_q,rate_r,");
   fprintf(file, "roll_rate_calc,pitch_rate_calc,yaw_rate_calc,");
@@ -101,6 +102,7 @@ static void logger_file_write_row(FILE *file) {
   struct NedCoor_f *acc = stateGetAccelNed_f();
   struct FloatEulers *att = stateGetNedToBodyEulers_f();
   struct FloatRates *rates = stateGetBodyRates_f();
+  struct Int32Vect3 *acc_body = stateGetAccelBody_i();
 
   fprintf(file, "%f,", get_sys_time_float());
   fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
@@ -112,6 +114,7 @@ static void logger_file_write_row(FILE *file) {
   fprintf(file, "%f,%f,%f,", accel_ref[0], accel_ref[1], accel_ref[2]);
   fprintf(file, "%f,%f,%f,", accel_a_filt[0], accel_a_filt[1], accel_a_filt[2]);
   fprintf(file, "%f,%f,%f,", accel_ref_with_gains[0], accel_ref_with_gains[1], accel_ref_with_gains[2]);
+  fprintf(file, "%d,%d,%d,", acc_body->x, acc_body->y, acc_body->z);
   fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
   fprintf(file, "%f,%f,%f,", roll_rate_calc, pitch_rate_calc, cmd_yaw_rate);

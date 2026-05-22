@@ -37,15 +37,28 @@ static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
 struct ThrustSetpoint thr_sp;
 
 float yaw_damping(void);
-float * guidance_function(float *d_accel_ref);
 
 // Gains and limits
-static const float THRUST_LIMIT = 2.0f;
-static const float K_P = 0.0f;
-static const float K_V = 0.0f;
+static const float THRUST_LIMIT = 7.0f;
+static const float p_LIMIT = 3.5f;
+static const float q_LIMIT = 3.5f;
+static const float K_P = 3.0f;
+static const float K_V = 2.2f;
+static const float K_A = 0.8f;
 static const float K_psi = 2.0f;
 static const float ROLL_RATE_GAIN = 5.0f;
 static const float PITCH_RATE_GAIN = 5.0f;
+
+// Gains and limits SIM
+// static const float THRUST_LIMIT = 3.5f;
+// static const float p_LIMIT = 3.5f;
+// static const float q_LIMIT = 3.5f;
+// static const float K_P = 0.8f;
+// static const float K_V = 1.5f;
+// static const float K_A = 0.8f;
+// static const float K_psi = 2.0f;
+// static const float ROLL_RATE_GAIN = 5.0f;
+// static const float PITCH_RATE_GAIN = 5.0f;
 
 static const float g = 9.81f;
 
@@ -63,6 +76,7 @@ float accel_ref[3];
 float accel_ref_with_gains[3];
 float accel_a_filt[3];
 float T;
+float T_filt;
 float roll_rate_calc;
 float pitch_rate_calc;
 float cmd_yaw_rate;
@@ -135,29 +149,33 @@ void guidance_unified_run(bool in_flight)
     // Counter for desired trajectory
     static int counter = 0;
     counter += 1;
-
-    float A = 1.0f;
+    float A = 1.5f;
     float b = 2.0f;
 
+    float t = get_sys_time_float();
+
     // Desired position
-    pos_ref[0] = 0.0;
+    // pos_ref[0] = 0.0;
     // pos_ref[0] = A * cosf(b*counter/freq);
-    // pos_ref[1] = A * sinf(b*counter/freq);
-    pos_ref[1] = 0.0;
+    pos_ref[0] = A * cosf(b*t);
+    pos_ref[1] = -A * sinf(b*t);
+    // pos_ref[1] = 0.0;
     pos_ref[2] = -1.5;
 
     // Analytical derivatives of pos_ref for the feedforward input
     // Not including frequency in the derivative, as time = counter / freq
-    vel_ref[0] = 0.0;
+    // vel_ref[0] = 0.0;
     // vel_ref[0] = -A * b * sinf(b*counter/freq);
-    // vel_ref[1] = A * b * cosf(b*counter/freq);
-    vel_ref[1] = 0.0;
+    vel_ref[0] = -A * b * sinf(b*t);
+    vel_ref[1] = -A * b * cosf(b*t);
+    // vel_ref[1] = 0.0;
     vel_ref[2] = 0.0;
 
-    accel_ref[0] = 0.0;
+    // accel_ref[0] = 0.0;
     // accel_ref[0] = -A * b * b * cosf(b * counter/freq);
-    // accel_ref[1] = -A * b * b * sinf(b * counter/freq);
-    accel_ref[1] = 0.0;
+    accel_ref[0] = -A * b * b * cosf(b * t);
+    accel_ref[1] = A * b * b * sinf(b * t);
+    // accel_ref[1] = 0.0;
     accel_ref[2] = 0.0;
 
     // Current positions
@@ -181,57 +199,107 @@ void guidance_unified_run(bool in_flight)
     accel_a[1] = accel_actual->y;
     accel_a[2] = accel_actual->z;
 
+    accel_a_filt[0] = update_butterworth_2_low_pass(&accel_filter_0, accel_a[0]);
+    accel_a_filt[1] = update_butterworth_2_low_pass(&accel_filter_1, accel_a[1]);
+    accel_a_filt[2] = update_butterworth_2_low_pass(&accel_filter_2, accel_a[2]);
+
 
     // Difference in accelerations: d_accel_ref
     static float d_accel_ref[3];
     for (int i = 0; i < 3; i++) {
         float pos_component = (pos_ref[i] - pos_a[i]) * K_P;
         float vel_component = (vel_ref[i] - vel_a[i]) * K_V;
-        float acc_component = accel_ref[i];
-
         // Filter measured acceleration
-        accel_a_filt[0] = update_butterworth_2_low_pass(&accel_filter_0, accel_a[0]);
-        accel_a_filt[1] = update_butterworth_2_low_pass(&accel_filter_1, accel_a[1]);
-        accel_a_filt[2] = update_butterworth_2_low_pass(&accel_filter_2, accel_a[2]);
+        // accel_a_filt[0] = update_butterworth_2_low_pass(&accel_filter_0, accel_a[0]);
+        // accel_a_filt[1] = update_butterworth_2_low_pass(&accel_filter_1, accel_a[1]);
+        // accel_a_filt[2] = update_butterworth_2_low_pass(&accel_filter_2, accel_a[2]);
+        float acc_component = (accel_ref[i] - accel_a_filt[i]) * K_A;
         
         accel_ref_with_gains[i] = pos_component + vel_component + acc_component;
 
-        d_accel_ref[i] = accel_ref_with_gains[i] - accel_a_filt[i]; 
+        d_accel_ref[i] = accel_ref_with_gains[i]; 
 
     }
+    // Add gravity to global z coordinate
+    d_accel_ref[2] = d_accel_ref[2] - g*mass;
+    // d_accel_ref[2] = d_accel_ref[2] - g*0.2;
 
     //////////////// Control law ////////////////
-    // Get results of guidance function
-    float * rates_guidance = guidance_function(d_accel_ref);
-    
-    // Send control to the drone (angular rates)
-    float roll_rate_filt = rates_guidance[0];
-    float pitch_rate_filt = rates_guidance[1];
-    ctrl.cmd.p = roll_rate_filt;
-    ctrl.cmd.q = pitch_rate_filt;
+    T = -ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->z)*mass; //Not used for now
 
-    // ctrl.cmd.p = rates_guidance[0];
-    // ctrl.cmd.q = rates_guidance[1];
+    // Rotation matrix, replacing eul2rotm(eulerzyx,"ZYX"). This gets the desired acceleration in the body frame
+    struct FloatRMat *rot = stateGetNedToBodyRMat_f(); 
+
+    // Calculate d_accel_ref_b via "matrix" calculation: d_accel_ref_b = rot * d_accel_ref 
+    struct FloatVect3 d_accel_ref_b;
+    struct FloatVect3 d_accel_ref_v = {d_accel_ref[0], d_accel_ref[1], d_accel_ref[2]};
+
+    float_rmat_vmult(&d_accel_ref_b, rot, &d_accel_ref_v);
+
+    d_accel_ref_v_calc = d_accel_ref_v;
+    d_accel_ref_b_calc = d_accel_ref_b;
+
+    // Calculate dcmd via "matrix" calculation: dcmd = B_inverse * d_accel_ref_b * mass;
+    // Inverse of the control effectiveness matrix = {{0, 1/T, 0}, {1/T, 0, 0}, {0, 0, 1}};
+    // dcmd[3] is defined globally
+    //   dcmd[0] = 1/T * d_accel_ref_b.y * mass;
+    //   dcmd[1] = 1/T * d_accel_ref_b.x * mass;
+    //   dcmd[2] = 1 * d_accel_ref_b.z * mass;
+    dcmd[0] = 1/g * d_accel_ref_b.y;
+    dcmd[1] = 1/g * d_accel_ref_b.x;
+    dcmd[2] = 1 * d_accel_ref_b.z * mass;
+
+    // Quaternion
+    struct FloatEulers e;
+    e.psi = 0.0;     
+    e.theta = dcmd[1]; 
+    e.phi = dcmd[0]; 
+    float_quat_of_eulers(&quat, &e); //This function employs ZYX, as in MATLab
+
+
+    // Make array to return
+    static float rates_guidance[3];
+    // rates_guidance[0] = -PITCH_RATE_GAIN*2*quat.qy;
+    // rates_guidance[1] = ROLL_RATE_GAIN*2*quat.qx;
+    rates_guidance[0] = ROLL_RATE_GAIN*2*quat.qx;
+    rates_guidance[1] = -PITCH_RATE_GAIN*2*quat.qy;
+    rates_guidance[2] = dcmd[2]/mass;
+
+    // Clamp roll rate
+    if (rates_guidance[0] > p_LIMIT) rates_guidance[0] = p_LIMIT;
+    if (rates_guidance[0] < -p_LIMIT) rates_guidance[0] = -p_LIMIT;
+
+    // Clamp pitch rate
+    if (rates_guidance[1] > q_LIMIT) rates_guidance[1] = q_LIMIT;
+    if (rates_guidance[1] < -q_LIMIT) rates_guidance[1] = -q_LIMIT;
+
+    // Clamp thrust increment
+    if (rates_guidance[2] > THRUST_LIMIT) rates_guidance[2] = THRUST_LIMIT;
+    if (rates_guidance[2] < -THRUST_LIMIT) rates_guidance[2] = -THRUST_LIMIT;
+
+    // Send control to the drone (angular rates)
+    ctrl.cmd.p = rates_guidance[0];
+    ctrl.cmd.q = rates_guidance[1];
+    roll_rate_calc = ctrl.cmd.p;
+    pitch_rate_calc = ctrl.cmd.q;
 
     struct FloatEulers *angles = stateGetNedToBodyEulers_f();
     float psi = angles->psi;
 
     cmd_yaw_rate = 0.0f;
 
-    // if (psi != 0) {
+    if (psi != 0.0) {
+        cmd_yaw_rate = -K_psi * psi;
+    }
+    // if (psi > M_PI/2) {
+    //     cmd_yaw_rate = -K_psi * psi;
+    // } else if (psi < M_PI/2) {
     //     cmd_yaw_rate = K_psi * psi;
-    // } else {
-    //     cmd_yaw_rate = 0.0f;
     // }
 
     ctrl.cmd.r = cmd_yaw_rate;
-    // ctrl.cmd.r = 0.0;
-    // ctrl.cmd.r = yaw_damping();
+    cmd_yaw_rate = ctrl.cmd.r;
 
-    roll_rate_calc = ctrl.cmd.p;
-    pitch_rate_calc = ctrl.cmd.q;
-    
-    // float T_cmd_filt = update_butterworth_2_low_pass(&T_cmd_filter, rates_guidance[2]);
     T_cmd = rates_guidance[2];
 
     struct StabilizationSetpoint sp = stab_sp_from_rates_f(&(ctrl.cmd));
@@ -239,74 +307,24 @@ void guidance_unified_run(bool in_flight)
     
     // execute attitude stabilization:
     stabilization_indi_rate_run(in_flight, &sp, &th, stabilization.cmd);
-}
 
-float yaw_damping(void)
-{
-    struct FloatEulers *angles = stateGetNedToBodyEulers_f();
-    float psi = angles->psi;
+    // pos_ref[0] = 0.0;
+    // // pos_ref[0] = A * cosf(b*counter/freq);
+    // pos_ref[1] = -A * sinf(b*(t-0.1));
+    // // pos_ref[1] = 0.0;
+    // pos_ref[2] = -1.5;
 
-    cmd_yaw_rate = 0.0;
+    // // Analytical derivatives of pos_ref for the feedforward input
+    // // Not including frequency in the derivative, as time = counter / freq
+    // vel_ref[0] = 0.0;
+    // // vel_ref[0] = -A * b * sinf(b*counter/freq);
+    // vel_ref[1] = -A * b * cosf(b*(t-0.1));
+    // // vel_ref[1] = 0.0;
+    // vel_ref[2] = 0.0;
 
-    // if (psi != 0) {
-    //     cmd_yaw_rate = K_psi * psi;
-    // } else {
-    //     cmd_yaw_rate = 0.0;
-    // }
-
-    return cmd_yaw_rate;
-}
-
-float * guidance_function(float *d_accel_ref)
-{
-  // Get thrust
-//   T = mass*9.81*2.0; // Hard-coding as a constant needed for a hover to counteract gravity for now, probably have to change.
-  // T = -thrust_estimate;  
-  T = -ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->z)*mass;
-
-  // Rotation matrix, replacing eul2rotm(eulerzyx,"ZYX"). This gets the desired acceleration in the body frame
-  struct FloatRMat *rot = stateGetNedToBodyRMat_f(); 
-
-  // Add gravity to global z coordinate
-  d_accel_ref[2] = d_accel_ref[2] - g*mass;
-
-  // Calculate d_accel_ref_b via "matrix" calculation: d_accel_ref_b = rot * d_accel_ref 
-  struct FloatVect3 d_accel_ref_b;
-  struct FloatVect3 d_accel_ref_v = {d_accel_ref[0], d_accel_ref[1], d_accel_ref[2]};
-
-  float_rmat_vmult(&d_accel_ref_b, rot, &d_accel_ref_v);
-
-  d_accel_ref_v_calc = d_accel_ref_v;
-  d_accel_ref_b_calc = d_accel_ref_b;
-
-  // Calculate dcmd via "matrix" calculation: dcmd = B_inverse * d_accel_ref_b * mass;
-  // Inverse of the control effectiveness matrix = {{0, 1/T, 0}, {1/T, 0, 0}, {0, 0, 1}};
-  // dcmd[3] is defined globally
-//   dcmd[0] = 1/T * d_accel_ref_b.y * mass;
-//   dcmd[1] = 1/T * d_accel_ref_b.x * mass;
-//   dcmd[2] = 1 * d_accel_ref_b.z * mass;
-  dcmd[0] = 1/g * d_accel_ref_b.y;
-  dcmd[1] = 1/g * d_accel_ref_b.x;
-  dcmd[2] = 1 * d_accel_ref_b.z * mass;
-
-  // Quaternion
-  struct FloatEulers e;
-  e.psi = 0.0;     
-  e.theta = dcmd[1]; 
-  e.phi = dcmd[0]; 
-  float_quat_of_eulers(&quat, &e); //This function employs ZYX, as in MATLab
-
-
-  // Make array to return
-  static float array[3];
-  array[0] = ROLL_RATE_GAIN*2*quat.qx;
-  array[1] = -PITCH_RATE_GAIN*2*quat.qy;
-  array[2] = dcmd[2]/mass;
-
-
-  // Clamp thrust increment
-  if (array[2] > THRUST_LIMIT) array[2] = THRUST_LIMIT;
-  if (array[2] < -THRUST_LIMIT) array[2] = -THRUST_LIMIT;
-
-  return array;
+    // accel_ref[0] = 0.0;
+    // // accel_ref[0] = -A * b * b * cosf(b * counter/freq);
+    // accel_ref[1] = A * b * b * sinf(b * (t-0.1));
+    // // accel_ref[1] = 0.0;
+    // accel_ref[2] = 0.0;
 }

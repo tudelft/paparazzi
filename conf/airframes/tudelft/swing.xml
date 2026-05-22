@@ -19,7 +19,7 @@
             <define name="STABILIZATION_INDI_RPM_FEEDBACK" value="FALSE"/>
 
             <module name="logger_file">
-                <define name="LOGGER_FILE_PATH" value="/home/bimse/Documents/Sim_logsg"/>
+                <define name="LOGGER_FILE_PATH" value="/home/bimse/Documents/Sim_logs"/>
                 <configure name="LOGGER_FILE_FREQUENCY" value="500"/>
             </module>
         </target>
@@ -40,8 +40,7 @@
     
         <module name="guidance_unified">
             <define name="MOL_DRONE_WEIGHT" value="0.09"/>
-            <!-- <define name="FILT_CUTOFF" value="200"/> -->
-            <define name="FILT_CUTOFF" value="8"/>
+            <define name="FILT_CUTOFF" value="5"/>
         </module>
         
         <!-- ins configured for optitrack -->
@@ -134,7 +133,8 @@
     <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
         <define name="G1_ROLL" value="{8 , -8, -8 , 8 }"/>
         <define name="G1_PITCH" value="{17 , 17, -17 , -17 }"/>
-        <define name="G1_YAW" value="{-1.5, 1.5, -1.5, 1.5}"/>
+        <!-- <define name="G1_YAW" value="{-1.5, 1.5, -1.5, 1.5}"/> -->
+        <define name="G1_YAW" value="{-12, 12, -12, 12}"/>
         <define name="G1_THRUST" value="{-0.4, -0.4, -0.4, -0.4}"/>
         <define name="G2" value="{0, 0, 0, 0}"/>
 
@@ -155,7 +155,7 @@
         <define name="ADAPTIVE_MU" value="0.0001"/>
 
         <!--Priority for each axis (roll, pitch, yaw and thrust)-->
-        <define name="WLS_PRIORITIES" value="{1000, 1000, 1, 100}"/>
+        <define name="WLS_PRIORITIES" value="{1000, 1000, 10, 100}"/>
     </section>
 
     <section name="SIMULATOR" prefix="NPS_">
