@@ -76,10 +76,9 @@
       <attitude pitch="-50." roll="0" throttle="0.85" vmode="throttle"/>
     </block>
     <block name="Climb" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="GetPosHeight() @GT 40.0" deroute="Standby"/>
+      <exception cond="GetPosHeight() @GT 30.0" deroute="Oval"/>
       <call_once fun="nav_set_heading_current()"/>
-      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
-      <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
+      <go climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="FALSE" var="force_forward"/>
@@ -112,6 +111,12 @@
     <block name="Oval">
       <set value="TRUE" var="force_forward"/>
       <oval p1="p1" p2="p2" radius="nav.radius"/>
+    </block>
+    <block name="landing line l1 l2">
+      <set value="TRUE" var="force_forward"/>
+      <go wp="l1"/>
+      <go from="l1" hmode="route" wp="l2" vmode="climb" climb="nav.descend_vspeed"/>
+      <stay wp="l2"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <set value="FALSE" var="force_forward"/>
