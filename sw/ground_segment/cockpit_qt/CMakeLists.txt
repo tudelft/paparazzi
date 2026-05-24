@@ -48,7 +48,6 @@ add_executable(equinoxgcs
 
 set_target_properties(equinoxgcs PROPERTIES
     OUTPUT_NAME gcs
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 
 target_include_directories(equinoxgcs PRIVATE 

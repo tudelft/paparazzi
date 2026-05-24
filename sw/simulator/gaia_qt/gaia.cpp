@@ -225,10 +225,13 @@ void GaiaWindow::sendWorldEnv()
 
 int main(int argc, char *argv[])
 {
+    // Set metadata BEFORE application instantiation to prevent XDG portal double-registration 
+    // root cause ("Connection already associated with an application ID").
+    QCoreApplication::setApplicationVersion("1.0");
+    QGuiApplication::setDesktopFileName(QStringLiteral("paparazzi_gaia"));
+    QCoreApplication::setApplicationName(QStringLiteral("Gaia"));
+
     QApplication app(argc, argv);
-    app.setApplicationVersion("1.0");
-    app.setDesktopFileName(QStringLiteral("paparazzi_gaia"));
-    app.setApplicationName(QStringLiteral("Gaia"));
 
     QString iconPath = ":/penguin_icon_sim.png";
     QIcon icon(iconPath);

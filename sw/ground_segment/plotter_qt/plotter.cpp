@@ -982,13 +982,16 @@ void PlotterWindow::onLineThicknessChanged(int val) {
 
 int main(int argc, char *argv[]) 
 {
+    // Set metadata BEFORE application instantiation to prevent XDG portal double-registration 
+    // root cause ("Connection already associated with an application ID").
+    QCoreApplication::setApplicationVersion("1.0");
+    //QCoreApplication::setOrganizationName("paparazzi"); // only for settings, not really relevant here
+    // Follow XDG spec for desktop integration and use a fixed name to ensure the .desktop file is correctly associated with the app
+    QGuiApplication::setDesktopFileName(QStringLiteral("paparazzi_plotter"));
+    QCoreApplication::setApplicationName(QStringLiteral("Real-time Plotter"));
+
     QApplication app(argc, argv);
 
-    app.setApplicationVersion("1.0");
-    //app.setOrganizationName("paparazzi"); only for settings, not really relevant here
-    app.setDesktopFileName(QStringLiteral("paparazzi_plotter"));//Follow XDG spec for desktop integration (https://specifications.freedesktop.org/desktop-entry-spec/latest/ar01s05.html) and use a fixed name to ensure the .desktop file is correctly associated with the app, allowing features like "Open with" and proper icon display in file managers and launchers.
-
-    app.setApplicationName(QStringLiteral("Real-time Plotter"));
     //app.setApplicationDisplayName(QStringLiteral("Real-time Plotter"));
 
     QString iconPath = ":/penguin_icon_rtp.png";

@@ -1,16 +1,16 @@
-#include "graphics_aircraft.h"
 #include <QPainter>
 #include <QPixmap>
 #include <QtXml>
 #include <QFile>
 #include <QtSvg/QSvgRenderer>
+#include <QRegularExpression>
+#include "graphics_aircraft.h"
 
 void SetAttrRecur(QDomElement &elem, QString ac_color, QString target_stroke);
 
-
 GraphicsAircraft::GraphicsAircraft(PprzPalette palette, QString icon_path, int size, QObject *parent) :
     GraphicsObject(palette, parent),
-    size(size * 10) //    pixmap(size, size)
+    size(size) //    pixmap(size, size)
 {
     loadSvg(icon_path);
     changeColor(palette.getColor());
@@ -61,8 +61,6 @@ void GraphicsAircraft::changeColor(QColor color) {
     svgRenderer.render(&pixPainter);
     pixmap = pix;
 }
-
-#include <QRegularExpression>
 
 void SetAttrRecur(QDomElement &elem, QString ac_color, QString target_stroke)
 {

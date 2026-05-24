@@ -52,4 +52,3 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/paparazzi-messages.desktop" DE
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../../../data/pictures/penguin_logo.svg"
         DESTINATION share/icons/hicolor/scalable/apps
         RENAME paparazzi-messages.svg)
-set_target_properties(messages PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})

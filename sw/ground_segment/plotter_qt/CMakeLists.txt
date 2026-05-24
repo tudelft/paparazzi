@@ -50,4 +50,3 @@ target_link_libraries(plotter PRIVATE
 )
 
 install(TARGETS plotter DESTINATION bin)
-set_target_properties(plotter PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})

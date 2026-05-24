@@ -530,14 +530,17 @@ void MainWindow::setupDictionaryAndLink() {
 
 int main(int argc, char *argv[])
 {
+    // Set metadata BEFORE application instantiation to prevent XDG portal double-registration 
+    // root cause ("Connection already associated with an application ID").
+    QCoreApplication::setApplicationVersion("1.0");
+    // Set internal names in lowercase with underscores for safe XDG folder paths
+    //QCoreApplication::setOrganizationName("paparazzi"); // only for settings, not really relevant here  
+    // Mint de XDG underscore for filesystem compatibility
+    QGuiApplication::setDesktopFileName(QStringLiteral("paparazzi_messages"));
+    QCoreApplication::setApplicationName(QStringLiteral("paparazzi-messages"));
+
     QApplication app(argc, argv);
 
-    app.setApplicationVersion("1.0");
-    // Set internal names in lowercase with underscores for safe XDG folder paths
-    //app.setOrganizationName("paparazzi"); only for settings, not really relevant here  
-    app.setDesktopFileName(QStringLiteral("paparazzi_messages"));//Mint de XDG underscore for filesystem compatibility, 
-    
-    app.setApplicationName(QStringLiteral("paparazzi-messages"));
     //app.setApplicationDisplayName(QStringLiteral("Paparazzi Messages"));
 
     QString iconPath = ":/penguin_icon_msg.png";

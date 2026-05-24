@@ -21,17 +21,15 @@
 #include "../../linux_desktop_utils.h"
 
 int main(int argc, char *argv[]) {
-    // Suppress qt.qpa.services Wayland/XDG portal DBus registration warnings
-    qputenv("QT_LOGGING_RULES", "qt.qpa.services.warning=false");
+    // Set metadata BEFORE application instantiation to prevent XDG portal double-registration 
+    // root cause ("Connection already associated with an application ID").
+    QCoreApplication::setApplicationVersion("1.0");
+    QCoreApplication::setOrganizationName("paparazzi");
+    QGuiApplication::setDesktopFileName(QStringLiteral("paparazzi_gcs"));
+    QCoreApplication::setApplicationName("paparazzi-gcs");
 
     PprzApplication app(argc, argv);
 
-    app.setApplicationVersion("1.0");
-    // Set internal names in lowercase with underscores for safe XDG folder paths
-    app.setOrganizationName("paparazzi");
-    app.setDesktopFileName(QStringLiteral("paparazzi_gcs"));
-
-    app.setApplicationName("paparazzi-gcs");
     //app.setApplicationDisplayName(QStringLiteral("Paparazzi GCS"));
 
     QString iconPath = ":/penguin_icon_gcs.png";
