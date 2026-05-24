@@ -30,7 +30,7 @@
 #include "widgets/flightplan_viewerv2.h"
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
-    setWindowTitle("Equinox GCS");
+    setWindowTitle("GCS");
     
     // Central Map
     m_map = new MapWidget(this);

@@ -21,6 +21,9 @@
 #include "../../linux_desktop_utils.h"
 
 int main(int argc, char *argv[]) {
+    // Suppress qt.qpa.services Wayland/XDG portal DBus registration warnings
+    qputenv("QT_LOGGING_RULES", "qt.qpa.services.warning=false");
+
     PprzApplication app(argc, argv);
 
     app.setApplicationVersion("1.0");

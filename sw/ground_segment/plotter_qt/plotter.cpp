@@ -51,6 +51,8 @@ struct PlotConfig {
     QList<QPointF> buffer;
     int fieldIndex = -1;
     bool discrete = false;
+    QAction* avgAction = nullptr;
+    QAction* stdevAction = nullptr;
 };
 
 class PlotterWindow : public QMainWindow {
@@ -123,7 +125,8 @@ static int g_colorIndex = 0;
 static QColor getNextSaturatedColor() {
     double h = std::fmod(g_colorIndex * 137.508, 360.0);
     g_colorIndex++;
-    return QColor::fromHsvF(h / 360.0, 0.9, 0.9);
+    // Hue varies, Saturation = 1.0 (no white/gray, min channel is 0), Value = 1.0 (no dark colors, max channel is 255)
+    return QColor::fromHsvF(h / 360.0, 1.0, 1.0);
 }
 
 static double fieldValueAsDouble(const pprzlink::FieldValue &value)
@@ -400,6 +403,41 @@ void PlotterWindow::onLegendRefreshTimeout()
     }
     m_legendNeedsRefresh = false;
     updateLegendValues();
+
+    // Compute average and standard deviation for each curve
+    for (const auto& plot : m_activePlots) {
+        if (!plot.series || (!plot.avgAction && !plot.stdevAction)) continue;
+        int n = plot.series->count();
+        if (n < 1) {
+            if (plot.avgAction) plot.avgAction->setText(tr("Average: N/A"));
+            if (plot.stdevAction) plot.stdevAction->setText(tr("Stdev: N/A"));
+            continue;
+        }
+        double sum = 0.0;
+        double sum_sq = 0.0;
+        const auto& points = plot.series->points();
+        for (const QPointF& pt : points) {
+            double y = pt.y();
+            sum += y;
+            sum_sq += y * y;
+        }
+        double fn = static_cast<double>(n);
+        double avg = sum / fn;
+        
+        if (plot.avgAction) {
+            plot.avgAction->setText(QString("Average: %1").arg(avg, 0, 'f', 6));
+        }
+
+        if (plot.stdevAction) {
+            if (n < 2) {
+                plot.stdevAction->setText(tr("Stdev: N/A"));
+            } else {
+                double variance = (sum_sq - fn * avg * avg) / fn;
+                double stdev = (variance > 0.0) ? std::sqrt(variance) : 0.0;
+                plot.stdevAction->setText(QString("Stdev: %1").arg(stdev, 0, 'f', 6));
+            }
+        }
+    }
 }
 
 void PlotterWindow::onClearClicked() {
@@ -470,9 +508,9 @@ void PlotterWindow::onAddConstantClicked() {
     cfg.series = new QLineSeries();
     cfg.series->setName(cfg.fieldName);
     
-    // Assign custom distinct saturated color
+    // Assign black color for constant lines
     QPen pen1 = cfg.series->pen();
-    pen1.setColor(getNextSaturatedColor());
+    pen1.setColor(Qt::black);
     pen1.setWidth(m_spnLineThickness->value());
     cfg.series->setPen(pen1);
     m_chart->addSeries(cfg.series);
@@ -759,6 +797,14 @@ void PlotterWindow::addCurveToMenu(PlotConfig& cfg) {
     QIcon icon(pixmap);
 
     QMenu* curveMenu = m_curvesMenu->addMenu(icon, cfg.series->name());
+
+    QAction* avgAction = curveMenu->addAction(tr("Average: N/A"));
+    avgAction->setEnabled(false);
+    cfg.avgAction = avgAction;
+
+    QAction* stdevAction = curveMenu->addAction(tr("Stdev: N/A"));
+    stdevAction->setEnabled(false);
+    cfg.stdevAction = stdevAction;
     
     QAction* deleteAction = curveMenu->addAction(tr("Delete"));
     QLineSeries* targetSeries = cfg.series;

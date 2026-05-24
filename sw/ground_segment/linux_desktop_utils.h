@@ -62,10 +62,10 @@ inline void installLinuxDesktopIntegration(const QString& appDesktopFileName, co
             QFile::copy(iconResourcePath, iconFilePath);
         }
         
-        // Let the system catch up using Qt's native cross-platform process API
-        QProcess::startDetached("update-desktop-database", QStringList() << appsLocation);
+        // Let the system catch up using Qt's native cross-platform process API, discarding any desktop error messages
+        QProcess::startDetached("/bin/sh", QStringList() << "-c" << QString("update-desktop-database -q \"%1\" >/dev/null 2>&1").arg(appsLocation));
         QString hicolorDir = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/icons/hicolor";
-        QProcess::startDetached("gtk-update-icon-cache", QStringList() << "-f" << "-t" << hicolorDir);
+        QProcess::startDetached("/bin/sh", QStringList() << "-c" << QString("gtk-update-icon-cache -q -t -f \"%1\" >/dev/null 2>&1").arg(hicolorDir));
     }
 #endif
 }

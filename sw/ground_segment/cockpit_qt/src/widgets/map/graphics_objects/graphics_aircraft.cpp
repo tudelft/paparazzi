@@ -10,7 +10,7 @@ void SetAttrRecur(QDomElement &elem, QString ac_color, QString target_stroke);
 
 GraphicsAircraft::GraphicsAircraft(PprzPalette palette, QString icon_path, int size, QObject *parent) :
     GraphicsObject(palette, parent),
-    size(size)
+    size(size * 10) //    pixmap(size, size)
 {
     loadSvg(icon_path);
     changeColor(palette.getColor());
@@ -41,11 +41,11 @@ void GraphicsAircraft::loadSvg(QString path) {
 
 void GraphicsAircraft::changeColor(QColor color) {
     auto el = svgdoc.documentElement();
-    // recusivelly change color
+    // recursively change color
     // calculate proper stroke width for outline based on SVG size
     QSvgRenderer preRenderer(svgdoc.toByteArray());
     double svgWidth = preRenderer.defaultSize().width();
-    double targetStroke = 1.5 * (svgWidth / (double)size);
+    double targetStroke = 6.0 * (svgWidth / (double)size);
     SetAttrRecur(el, color.name(), QString::number(targetStroke));
 
     // create svg renderer with edited contents
