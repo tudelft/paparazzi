@@ -87,7 +87,6 @@
    settings_modules="modules/ahrs_int_cmpl_quat.xml modules/electrical.xml modules/gps.xml modules/guidance_pid_rotorcraft.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_rotorcraft.xml modules/stabilization_indi.xml"
    gui_color="#ffffbc3bce5b"
   />
-
   <aircraft
    name="CYFOAM"
    ac_id="94"

@@ -160,7 +160,7 @@ void sonar_bebop_event(void)
 
     // Send ABI message
     uint32_t now_ts = get_sys_time_usec();
-    AbiSendMsgAGL(AGL_SONAR_ADC_ID, now_ts, sonar_bebop.distance);
+    AbiSendMsgAGL(AGL_RANGEFINDER_ADC_ID, now_ts, sonar_bebop.distance);
 
 #ifdef SENSOR_SYNC_SEND_SONAR
     // Send Telemetry report
