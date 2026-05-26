@@ -1,0 +1,20 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="terrain" dir="terrain">
+  <doc>
+    <description>
+      Provides functionality to get from a coordinate the height of terrain in respect to AMSL 
+      The data is retrieved from terrain data files stored on onboard storage e.g. SD card.
+      The files to generates should be compatible with AP .DAT format.
+    </description>
+    <configure name="TERRAIN_DATA_DIR" value="/TERRAIN" description="Directory for terrain DAT files"/>
+  </doc>
+  <header>
+    <file name="terrain.h"/>
+  </header>
+  <init fun="terrain_init()"/>
+  <makefile>
+    <file name="terrain.c"/>
+    <configure name="TERRAIN_DATA_DIR" default="/TERRAIN"/>
+    <define name="TERRAIN_DATA_DIR" value="$(TERRAIN_DATA_DIR)" type="string"/>
+  </makefile>
+</module>

@@ -20,7 +20,7 @@ add_subdirectory(../cockpit_qt/ext/pprzlinkQt ${CMAKE_BINARY_DIR}/pprzlinkqt)
 
 set(SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/messages.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/resources.qrc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/messages.qrc"
 )
 
 add_executable(messages ${SRC_FILES})

@@ -20,7 +20,7 @@ add_subdirectory(../cockpit_qt/ext/pprzlinkQt ${CMAKE_BINARY_DIR}/pprzlinkqt)
 
 set(SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/plotter.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/resources.qrc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/plotter.qrc"
 )
 
 add_executable(plotter ${SRC_FILES})

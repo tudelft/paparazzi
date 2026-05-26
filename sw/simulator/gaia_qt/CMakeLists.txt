@@ -19,7 +19,7 @@ add_subdirectory(../../ground_segment/cockpit_qt/ext/pprzlinkQt ${CMAKE_BINARY_D
 
 set(SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/gaia.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/resources.qrc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/gaia.qrc"
 )
 
 add_executable(gaia ${SRC_FILES})
@@ -46,7 +46,7 @@ target_link_libraries(gaia PRIVATE
     pprzlinkQt
 )
 
-# Copy the final executable to the simulator directory (/home/n3yh3hnii/paparazzi/sw/simulator/)
+# Copy the final executable to the simulator directory
 add_custom_command(TARGET gaia POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/../
     COMMAND ${CMAKE_COMMAND} -E copy
