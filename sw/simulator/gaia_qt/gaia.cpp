@@ -8,9 +8,15 @@
 #include <QSlider>
 #include <QCheckBox>
 #include <QTimer>
+#include <QDial>
+#include <QFrame>
 #include <QIcon>
 #include <QFile>
-#include <QDebug>
+//#include <QDebug>
+#include <QPainter>
+#include <QPolygon>
+#include <QSpinBox>
+#include <QGridLayout>
 #include <cmath>
 #include <vector>
 
@@ -24,6 +30,81 @@
 #endif
 
 #define SENDING_PERIOD_MS 5000
+
+class ArrowDial : public QDial {
+    Q_OBJECT
+public:
+    explicit ArrowDial(QWidget* parent = nullptr) : QDial(parent) {
+        setMinimumSize(100, 100);
+        setWrapping(true);
+        setNotchesVisible(true);
+    }
+
+protected:
+    void paintEvent(QPaintEvent*) override {
+        QPainter painter(this);
+        
+        painter.translate(width() / 2.0, height() / 2.0);
+        double side = qMin(width(), height());
+        painter.scale(side / 200.0, side / 200.0);
+        
+        QColor edgeColor(255, 255, 255, 255);
+        QColor fillColor(0, 0, 0, 255);
+        
+        QPen pen = painter.pen();
+        pen.setWidth(1);
+        pen.setColor(edgeColor);
+        painter.setPen(pen);
+        painter.setBrush(fillColor);
+        
+        painter.setRenderHint(QPainter::Antialiasing);
+        
+        painter.save();
+        
+        double minimum = this->minimum();
+        double maximum = this->maximum();
+        double val = this->value();
+        double percent = (val - minimum) / (maximum - minimum);
+        double angle = 360.0 * percent;
+        
+        painter.rotate(angle);
+        
+        QPolygon polygon;
+        polygon << QPoint(0, 80)
+                << QPoint(8, -80)
+                << QPoint(0, -75)
+                << QPoint(-8, -80);
+        
+        painter.drawPolygon(polygon, Qt::OddEvenFill);
+        painter.restore();
+        
+        if (notchesVisible()) {
+            painter.save();
+            for (int i = 0; i < 4; i++) {
+                painter.drawRect(-2, 85, 4, 13);
+                painter.rotate(90);
+            }
+            painter.restore();
+            
+            painter.save();
+            painter.rotate(45);
+            for (int i = 0; i < 4; i++) {
+                painter.drawRect(-1, 90, 2, 8);
+                painter.rotate(90);
+            }
+            painter.restore();
+            
+            painter.save();
+            for (int i = 0; i < 360; i += 10) {
+                if (i % 90 != 0) {
+                    painter.drawRect(-1, 94, 2, 4);
+                }
+                painter.rotate(10);
+            }
+            painter.restore();
+        }
+    }
+};
 
 class GaiaWindow : public QMainWindow {
     Q_OBJECT
@@ -39,13 +120,13 @@ private:
     void setupUI(double initTimeScale, double initWindSpeed, double initWindDir, double initWindUp, bool initGpsOff);
     void setupIvy(const QString &ivyBus);
 
-    QDoubleSpinBox *m_spinTimeScale;
-    QSlider *m_sliderWindDir;
-    QLabel *m_lblWindDirVal;
+    QSlider *m_sliderTimeScale;
+    QDoubleSpinBox *m_spinTimeScaleVal;
+    ArrowDial *m_dialWindDir;
     QSlider *m_sliderWindSpeed;
-    QLabel *m_lblWindSpeedVal;
+    QDoubleSpinBox *m_spinWindSpeedVal;
     QSlider *m_sliderWindUp;
-    QLabel *m_lblWindUpVal;
+    QDoubleSpinBox *m_spinWindUpVal;
     QCheckBox *m_chkGpsOff;
     QTimer *m_timer;
 
@@ -59,7 +140,7 @@ GaiaWindow::GaiaWindow(const QString &ivyBus, double timeScale, double windSpeed
     : QMainWindow(parent), m_dict(nullptr), m_link(nullptr)
 {
     setWindowTitle("Gaia");
-    resize(300, 200);
+    resize(500, 250);
 
     setupUI(timeScale, windSpeed, windDir, windUp, gpsOff);
     setupIvy(ivyBus);
@@ -83,77 +164,119 @@ GaiaWindow::~GaiaWindow()
 void GaiaWindow::setupUI(double initTimeScale, double initWindSpeed, double initWindDir, double initWindUp, bool initGpsOff)
 {
     QWidget *central = new QWidget(this);
-    QVBoxLayout *vbox = new QVBoxLayout(central);
+    QHBoxLayout *mainLayout = new QHBoxLayout(central);
+
+    // Left side: sliders
+    QFrame *slidersFrame = new QFrame();
+    slidersFrame->setFrameShape(QFrame::StyledPanel);
+    QVBoxLayout *slidersLayout = new QVBoxLayout(slidersFrame);
+
+    auto createSliderBlock = [this, slidersLayout](const QString& text, double min, double max, double step, int decimals, double current, QSlider*& slider, QDoubleSpinBox*& spinBox) {
+        QHBoxLayout* textLayout = new QHBoxLayout();
+        QLabel* titleLabel = new QLabel(text);
+        spinBox = new QDoubleSpinBox();
+        spinBox->setDecimals(decimals);
+        spinBox->setRange(min, max);
+        spinBox->setSingleStep(step);
+        spinBox->setValue(current);
+        //spinBox->setButtonSymbols(QAbstractSpinBox::NoButtons); //Whatever you fancy
+        spinBox->setMinimumWidth(40);
+        spinBox->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        // By default spinboxes show up/down arrows
+        textLayout->addWidget(titleLabel);
+        textLayout->addWidget(spinBox);
+        
+        slider = new QSlider(Qt::Horizontal);
+        int factor = pow(10, decimals);
+        slider->setRange(min * factor, max * factor);
+        slider->setSingleStep(step * factor);
+        slider->setValue(current * factor);
+        
+        slidersLayout->addLayout(textLayout);
+        slidersLayout->addWidget(slider);
+        
+        QFrame* hline = new QFrame();
+        hline->setFrameShape(QFrame::HLine);
+        hline->setFrameShadow(QFrame::Plain);
+        slidersLayout->addWidget(hline);
+        
+        // Connect slider and spinbox
+        connect(slider, &QSlider::valueChanged, this, [spinBox, factor](int value) {
+            spinBox->setValue(value / static_cast<double>(factor));
+        });
+        connect(spinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [slider, factor](double value) {
+            slider->setValue(value * factor);
+        });
+    };
 
     // Time scale
-    QHBoxLayout *hboxTS = new QHBoxLayout();
-    hboxTS->addWidget(new QLabel("Time scale:"));
-    m_spinTimeScale = new QDoubleSpinBox();
-    m_spinTimeScale->setDecimals(1);
-    m_spinTimeScale->setRange(0.5, 10.0);
-    m_spinTimeScale->setSingleStep(0.5);
-    m_spinTimeScale->setValue(initTimeScale);
-    connect(m_spinTimeScale, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &GaiaWindow::sendWorldEnv);
-    hboxTS->addWidget(m_spinTimeScale);
-    vbox->addLayout(hboxTS);
+    createSliderBlock("Time scale", 0.1, 10.0, 0.1, 1, initTimeScale, m_sliderTimeScale, m_spinTimeScaleVal);
+    connect(m_sliderTimeScale, &QSlider::valueChanged, this, [this](int) { sendWorldEnv(); });
 
-    // Wind direction
-    QHBoxLayout *hboxWD = new QHBoxLayout();
-    hboxWD->addWidget(new QLabel("Wind dir:"));
-    m_sliderWindDir = new QSlider(Qt::Horizontal);
-    m_sliderWindDir->setRange(0, 359);
-    m_sliderWindDir->setSingleStep(1);
-    m_sliderWindDir->setValue(static_cast<int>(initWindDir));
-    m_lblWindDirVal = new QLabel(QString::number(initWindDir, 'f', 0));
-    m_lblWindDirVal->setMinimumWidth(30);
-    connect(m_sliderWindDir, &QSlider::valueChanged, this, [this](int value) {
-        m_lblWindDirVal->setText(QString::number(value));
-        sendWorldEnv();
-    });
-    hboxWD->addWidget(m_sliderWindDir);
-    hboxWD->addWidget(m_lblWindDirVal);
-    vbox->addLayout(hboxWD);
+    // Wind speed
+    createSliderBlock("Wind speed (m/s)", 0.0, 30.0, 0.1, 1, initWindSpeed, m_sliderWindSpeed, m_spinWindSpeedVal);
+    connect(m_sliderWindSpeed, &QSlider::valueChanged, this, [this](int) { sendWorldEnv(); });
 
-    // Wind speed (store *10 in slider to keep 0.1 precision)
-    QHBoxLayout *hboxWS = new QHBoxLayout();
-    hboxWS->addWidget(new QLabel("Wind speed:"));
-    m_sliderWindSpeed = new QSlider(Qt::Horizontal);
-    m_sliderWindSpeed->setRange(0, 300); // 0 to 30.0
-    m_sliderWindSpeed->setSingleStep(1);
-    m_sliderWindSpeed->setValue(static_cast<int>(initWindSpeed * 10));
-    m_lblWindSpeedVal = new QLabel(QString::number(initWindSpeed, 'f', 1));
-    m_lblWindSpeedVal->setMinimumWidth(30);
-    connect(m_sliderWindSpeed, &QSlider::valueChanged, this, [this](int value) {
-        m_lblWindSpeedVal->setText(QString::number(value / 10.0, 'f', 1));
-        sendWorldEnv();
-    });
-    hboxWS->addWidget(m_sliderWindSpeed);
-    hboxWS->addWidget(m_lblWindSpeedVal);
-    vbox->addLayout(hboxWS);
-
-    // Wind up (store *10 in slider for -10 to 10)
-    QHBoxLayout *hboxWU = new QHBoxLayout();
-    hboxWU->addWidget(new QLabel("Wind up:"));
-    m_sliderWindUp = new QSlider(Qt::Horizontal);
-    m_sliderWindUp->setRange(-100, 100); // -10.0 to 10.0
-    m_sliderWindUp->setSingleStep(1);
-    m_sliderWindUp->setValue(static_cast<int>(initWindUp * 10));
-    m_lblWindUpVal = new QLabel(QString::number(initWindUp, 'f', 1));
-    m_lblWindUpVal->setMinimumWidth(30);
-    connect(m_sliderWindUp, &QSlider::valueChanged, this, [this](int value) {
-        m_lblWindUpVal->setText(QString::number(value / 10.0, 'f', 1));
-        sendWorldEnv();
-    });
-    hboxWU->addWidget(m_sliderWindUp);
-    hboxWU->addWidget(m_lblWindUpVal);
-    vbox->addLayout(hboxWU);
+    // Wind up
+    createSliderBlock("Vertical up/down draft (m/s)", -10.0, 10.0, 0.1, 1, initWindUp, m_sliderWindUp, m_spinWindUpVal);
+    connect(m_sliderWindUp, &QSlider::valueChanged, this, [this](int) { sendWorldEnv(); });
 
     // GPS availability
-    m_chkGpsOff = new QCheckBox("GPS OFF");
+    m_chkGpsOff = new QCheckBox("Emulate GPS signal unavailable");
     m_chkGpsOff->setChecked(initGpsOff);
     connect(m_chkGpsOff, &QCheckBox::toggled, this, &GaiaWindow::sendWorldEnv);
-    vbox->addWidget(m_chkGpsOff);
+    slidersLayout->addWidget(m_chkGpsOff, 0, Qt::AlignHCenter);
 
+    mainLayout->addWidget(slidersFrame);
+
+    // Right side: Dial (Angle Selector)
+    QWidget *angleSelectorWidget = new QWidget();
+    QVBoxLayout *angleSelectorLayout = new QVBoxLayout(angleSelectorWidget);
+    
+    QGridLayout *gridLayout = new QGridLayout();
+    
+    QLabel *lbl0 = new QLabel("0");
+    gridLayout->addWidget(lbl0, 0, 1, 1, 1, Qt::AlignHCenter | Qt::AlignBottom);
+    
+    QLabel *lbl90 = new QLabel("90");
+    gridLayout->addWidget(lbl90, 1, 2, 1, 1, Qt::AlignLeft | Qt::AlignVCenter);
+    
+    QLabel *lbl270 = new QLabel("270");
+    gridLayout->addWidget(lbl270, 1, 0, 1, 1, Qt::AlignRight | Qt::AlignVCenter);
+    
+    QLabel *lbl180 = new QLabel("180");
+    gridLayout->addWidget(lbl180, 2, 1, 1, 1, Qt::AlignHCenter | Qt::AlignTop);
+
+    m_dialWindDir = new ArrowDial();
+    m_dialWindDir->setRange(0, 359);
+    m_dialWindDir->setValue(static_cast<int>(initWindDir));
+    QSizePolicy sp(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    sp.setHorizontalStretch(0);
+    sp.setVerticalStretch(0);
+    m_dialWindDir->setSizePolicy(sp);
+    
+    gridLayout->addWidget(m_dialWindDir, 1, 1, 1, 1);
+    angleSelectorLayout->addLayout(gridLayout);
+    
+    QHBoxLayout *spinBoxLayout = new QHBoxLayout();
+    QLabel *spinBoxLabel = new QLabel("Wind direction (°)");
+    spinBoxLayout->addWidget(spinBoxLabel);
+    
+    QSpinBox *spinBox = new QSpinBox();
+    spinBox->setWrapping(true);
+    spinBox->setRange(0, 359);
+    spinBox->setValue(static_cast<int>(initWindDir));
+    spinBoxLayout->addWidget(spinBox);
+    
+    angleSelectorLayout->addLayout(spinBoxLayout);
+    
+    connect(m_dialWindDir, &QDial::valueChanged, spinBox, &QSpinBox::setValue);
+    connect(spinBox, &QSpinBox::valueChanged, m_dialWindDir, &QDial::setValue);
+    connect(m_dialWindDir, &QDial::valueChanged, this, &GaiaWindow::sendWorldEnv);
+    
+    mainLayout->addWidget(angleSelectorWidget);
+
+    //resize(500, 300);
     setCentralWidget(central);
 }
 
@@ -200,11 +323,11 @@ void GaiaWindow::sendWorldEnv()
         msg.setSenderId("gaia");
 
         double windSpeed = m_sliderWindSpeed->value() / 10.0;
-        double windDirDeg = m_sliderWindDir->value();
-        double windDirRad = M_PI / 2.0 - (windDirDeg * M_PI / 180.0);
+        double windDirDeg = m_dialWindDir->value();
+        double windDirRad = windDirDeg * M_PI / 180.0;
 
-        double windEast = -windSpeed * cos(windDirRad);
-        double windNorth = -windSpeed * sin(windDirRad);
+        double windEast = -windSpeed * sin(windDirRad);
+        double windNorth = -windSpeed * cos(windDirRad);
         double windUp = m_sliderWindUp->value() / 10.0;
 
         uint8_t gpsAvail = m_chkGpsOff->isChecked() ? 0 : 1;
@@ -213,7 +336,7 @@ void GaiaWindow::sendWorldEnv()
         msg.addField("wind_north", static_cast<float>(windNorth));
         msg.addField("wind_up", static_cast<float>(windUp));
         msg.addField("ir_contrast", static_cast<float>(m_irContrast));
-        msg.addField("time_scale", static_cast<float>(m_spinTimeScale->value()));
+        msg.addField("time_scale", static_cast<float>(m_sliderTimeScale->value() / 10.0));
         msg.addField("gps_availability", gpsAvail);
 
         m_link->sendMessage(msg);
@@ -255,10 +378,10 @@ int main(int argc, char *argv[])
     QCommandLineOption windDirOption(QStringList() << "d", "Set wind direction 0-359 deg", "windDir", "0.0");
     parser.addOption(windDirOption);
     
-    QCommandLineOption windUpOption(QStringList() << "u", "Set wind updraft (-10 to 10m/s)", "windUp", "0.0");
+    QCommandLineOption windUpOption(QStringList() << "u", "Set wind vertical draft (-10 to 10m/s)", "windUp", "0.0");
     parser.addOption(windUpOption);
     
-    QCommandLineOption gpsOffOption(QStringList() << "g", "Turn off GPS");
+    QCommandLineOption gpsOffOption(QStringList() << "g", "Emulate GPS signal unavailable (default: false)");
     parser.addOption(gpsOffOption);
 
     parser.process(app);
