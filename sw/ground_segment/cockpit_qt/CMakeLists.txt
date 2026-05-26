@@ -74,11 +74,14 @@ target_link_libraries(equinoxgcs PRIVATE
     zip
 )
 
-# Copy data directory to build folder
+# Copy data directory to build folder and copy executable to source directory
 add_custom_command(TARGET equinoxgcs POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/data
         ${CMAKE_CURRENT_BINARY_DIR}/data
+    COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:equinoxgcs>
+        ${CMAKE_CURRENT_SOURCE_DIR}/
 )
 
 install(TARGETS equinoxgcs DESTINATION bin)

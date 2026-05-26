@@ -47,6 +47,14 @@ target_link_libraries(messages PRIVATE
     pprzlinkQt
 )
 
+# Copy the final executable to the tmtc directory
+add_custom_command(TARGET messages POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/../tmtc
+    COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:messages>
+        ${CMAKE_CURRENT_SOURCE_DIR}/../tmtc/
+)
+
 install(TARGETS messages DESTINATION bin)
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/paparazzi-messages.desktop" DESTINATION share/applications)
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../../../data/pictures/penguin_logo.svg"

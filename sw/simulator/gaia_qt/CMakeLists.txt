@@ -46,5 +46,12 @@ target_link_libraries(gaia PRIVATE
     pprzlinkQt
 )
 
+# Copy the final executable to the simulator directory (/home/n3yh3hnii/paparazzi/sw/simulator/)
+add_custom_command(TARGET gaia POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/../
+    COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:gaia>
+        ${CMAKE_CURRENT_SOURCE_DIR}/../
+)
+
 install(TARGETS gaia DESTINATION bin)
-set_target_properties(gaia PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})

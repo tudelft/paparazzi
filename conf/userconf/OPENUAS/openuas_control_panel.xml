@@ -14,20 +14,19 @@
     </program>
     <program name="UnifiedMoCap" command="sw/ext/unifiedmocaprouter/build/mocap-router"/>
     <program name="Link Combiner" command="sw/ground_segment/python/redundant_link/link_combiner.py"/>
-    <program name="GCS" command="sw/ground_segment/cockpit_qt/gcs">
+    <program name="GCS" command="sw/ground_segment/cockpit/gcs">
       <arg flag="-speech"/>
     </program>
     <program name="Flight Plan Editor" command="sw/ground_segment/cockpit/gcs">
       <arg flag="-edit"/>
     </program>
-    <program name="Messages" command="sw/ground_segment/messages_qt/messages"/>
+    <program name="Messages" command="sw/ground_segment/tmtc/messages"/>
     <program name="Settings" command="sw/ground_segment/tmtc/settings">
       <arg flag="-ac" constant="@AIRCRAFT"/>
     </program>
     <program name="GPSd position display" command="sw/ground_segment/tmtc/gpsd2ivy"/>
     <program name="Log Plotter" command="sw/logalizer/logplotter"/>
-    <program name="Real-time Plotter" command="sw/ground_segment/plotter_qt/plotter"/>
-    <program name="Real-time Plotter (Python)" command="sw/ground_segment/python/real_time_plot/messagepicker.py"/>
+    <program name="Real-time Plotter" command="sw/logalizer/plotter"/>
     <program name="Log File Player" command="sw/logalizer/play"/>
     <program name="Simulator" command="sw/simulator/pprzsim-launch"/>
     <program name="Video Synchronizer" command="sw/ground_segment/misc/video_synchronizer"/>
@@ -424,6 +423,7 @@
         <arg flag="-t" constant="sim"/>
         <arg flag="-a" constant="Twisty"/>
       </program>
+      <program name="Environment Simulator (Legacy)"/>
     </session>
     <session name="OUAS SimWithClassicGCS">
       <program name="Simulator">

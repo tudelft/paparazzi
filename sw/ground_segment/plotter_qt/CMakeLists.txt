@@ -49,4 +49,11 @@ target_link_libraries(plotter PRIVATE
     pprzlinkQt
 )
 
+# Copy the final executable to the logalizer directory
+add_custom_command(TARGET plotter POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:plotter>
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../logalizer/
+)
+
 install(TARGETS plotter DESTINATION bin)
