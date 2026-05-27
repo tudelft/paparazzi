@@ -148,7 +148,7 @@ Cargo.lock
 /sw/lib/ocaml/expr_lexer.ml
 
 # /sw/logalizer/
-/sw/logalizer/logplotter
+#/sw/logalizer/logplotter
 /sw/logalizer/play
 #/sw/logalizer/plotter
 /sw/logalizer/gtk_export.ml

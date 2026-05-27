@@ -539,10 +539,6 @@ int main(int argc, char *argv[])
     QGuiApplication::setDesktopFileName(QStringLiteral("paparazzi_messages"));
     QCoreApplication::setApplicationName(QStringLiteral("paparazzi-messages"));
 
-// Remove default window frames and enable alpha channel background
-setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
-setAttribute(Qt::WA_TranslucentBackground);
-
     QApplication app(argc, argv);
 
     //app.setApplicationDisplayName(QStringLiteral("Paparazzi Messages"));
