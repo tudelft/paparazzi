@@ -13,6 +13,8 @@
 #include <QFileDialog>
 #include <QSplitter>
 #include <QDebug>
+#include <QShortcut>
+#include <QWheelEvent>
 #include <QFile>
 #include <QTextStream>
 #include <QRegularExpression>
@@ -103,6 +105,36 @@ public:
             // Apply it ONLY to this specific widget
             widget->setPalette(customPalette);
         }
+    }
+};
+
+#include <functional>
+
+class ChartViewFilter : public QObject {
+    QChart* m_chart;
+    std::function<void()> m_onZoom;
+public:
+    ChartViewFilter(QChart* chart, std::function<void()> onZoom, QObject* parent = nullptr) : QObject(parent), m_chart(chart), m_onZoom(onZoom) {}
+    bool eventFilter(QObject *obj, QEvent *event) override {
+        if (event->type() == QEvent::Wheel) {
+            QWheelEvent *wheelEvent = static_cast<QWheelEvent*>(event);
+            qreal factor = wheelEvent->angleDelta().y() > 0 ? 1.2 : 1.0 / 1.2;
+            m_chart->zoom(factor);
+            if (m_onZoom) m_onZoom();
+            return true;
+        } else if (event->type() == QEvent::MouseButtonPress) {
+            QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+            if (mouseEvent->button() == Qt::RightButton) {
+                m_chart->zoomReset();
+                return true;
+            }
+        } else if (event->type() == QEvent::MouseButtonRelease) {
+            QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+            if (mouseEvent->button() == Qt::LeftButton) {
+                if (m_onZoom) m_onZoom();
+            }
+        }
+        return QObject::eventFilter(obj, event);
     }
 };
 
@@ -404,18 +436,18 @@ private:
 
         m_edtMinY = new QLineEdit();
         m_edtMaxY = new QLineEdit();
-        m_edtMinY->setMaximumWidth(60);
-        m_edtMaxY->setMaximumWidth(60);
+        m_edtMinY->setMaximumWidth(90);
+        m_edtMaxY->setMaximumWidth(90);
         m_edtMinY->setEnabled(false);
         m_edtMaxY->setEnabled(false);
 
         QLabel *lblConst = new QLabel("Constant");
         m_edtConstant = new QLineEdit();
-        m_edtConstant->setMaximumWidth(50);
+        m_edtConstant->setMaximumWidth(75);
 
         QLabel *lblScaleNext = new QLabel("Scale next by");
         m_edtScaleNext = new QLineEdit("1.0");
-        m_edtScaleNext->setMaximumWidth(50);
+        m_edtScaleNext->setMaximumWidth(75);
 
         m_spnLineThickness = new QSpinBox();
         m_spnLineThickness->setToolTip("Line Thickness (px)");
@@ -443,10 +475,29 @@ private:
         lblLineThickness->hide();
         toolbarLayout->addWidget(lblLineThickness);
         toolbarLayout->addWidget(m_spnLineThickness);
+        toolbarLayout->addStretch();
 
         m_chartView = new QChartView();
-        m_chartView->setContentsMargins(0, 0, 0, 0);
+                m_chartView->setContentsMargins(0, 0, 0, 0);
         m_chartView->setFrameShape(QFrame::NoFrame);
+        m_chartView->setRubberBand(QChartView::RectangleRubberBand);
+
+        // Zooming and Panning Shortcuts
+        QShortcut *zoomInSc = new QShortcut(QKeySequence(Qt::Key_Plus), this);
+        connect(zoomInSc, &QShortcut::activated, this, [this]() { if(m_chart) { m_chart->zoomIn(); m_cbAutoScale->setChecked(false); } });
+        QShortcut *zoomOutSc = new QShortcut(QKeySequence(Qt::Key_Minus), this);
+        connect(zoomOutSc, &QShortcut::activated, this, [this]() { if(m_chart) { m_chart->zoomOut(); m_cbAutoScale->setChecked(false); } });
+        QShortcut *zoomResetSc = new QShortcut(QKeySequence(Qt::Key_0), this);
+        connect(zoomResetSc, &QShortcut::activated, this, [this]() { if(m_chart) m_chart->zoomReset(); });
+
+        QShortcut *panLeftSc = new QShortcut(QKeySequence(Qt::Key_Left), this);
+        connect(panLeftSc, &QShortcut::activated, this, [this]() { if(m_chart) { m_chart->scroll(-50, 0); m_cbAutoScale->setChecked(false); } });
+        QShortcut *panRightSc = new QShortcut(QKeySequence(Qt::Key_Right), this);
+        connect(panRightSc, &QShortcut::activated, this, [this]() { if(m_chart) { m_chart->scroll(50, 0); m_cbAutoScale->setChecked(false); } });
+        QShortcut *panUpSc = new QShortcut(QKeySequence(Qt::Key_Up), this);
+        connect(panUpSc, &QShortcut::activated, this, [this]() { if(m_chart) { m_chart->scroll(0, 50); m_cbAutoScale->setChecked(false); } });
+        QShortcut *panDownSc = new QShortcut(QKeySequence(Qt::Key_Down), this);
+        connect(panDownSc, &QShortcut::activated, this, [this]() { if(m_chart) { m_chart->scroll(0, -50); m_cbAutoScale->setChecked(false); } });
         
         m_chart = new QChart();
         m_chart->setMargins(QMargins(0, 0, 0, 0));
@@ -454,7 +505,8 @@ private:
         m_chart->setBackgroundRoundness(0);
         m_chart->setBackgroundPen(QPen(Qt::NoPen));
         m_chartView->setChart(m_chart);
-        m_chartView->setRenderHint(QPainter::Antialiasing);
+                m_chartView->setRenderHint(QPainter::Antialiasing);
+        m_chartView->viewport()->installEventFilter(new ChartViewFilter(m_chart, [this](){ m_cbAutoScale->setChecked(false); }, m_chartView));
         
         m_axisX = new QValueAxis();
         m_axisY = new QValueAxis();
