@@ -31,6 +31,20 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QValueAxis>
+
+
+
+#include <QProxyStyle>
+#include <QPalette>
+#include <QColor>
+
+// Include the widgets you want to target
+
+#include <QTextEdit>
+#include <QPlainTextEdit>
+#include <QAbstractSpinBox> // Covers QSpinBox and QDoubleSpinBox
+
+
 //#include <QDebug>
 #include "../linux_desktop_utils.h"
 #include <cmath>
@@ -980,6 +994,35 @@ void PlotterWindow::onLineThicknessChanged(int val) {
     }
 }
 
+class EditorLighteningStyle : public QProxyStyle {
+public:
+    // Inherit constructors from QProxyStyle
+    using QProxyStyle::QProxyStyle; 
+
+    // The polish function is called automatically for every widget 
+    // right before it is displayed.
+    void polish(QWidget *widget) override {
+        // Always call the base class implementation first
+        QProxyStyle::polish(widget); 
+
+        // Check if the current widget is an edit field or a spinbox
+        if (qobject_cast<QLineEdit*>(widget) ||
+            qobject_cast<QTextEdit*>(widget) ||
+            qobject_cast<QPlainTextEdit*>(widget) ||
+            qobject_cast<QAbstractSpinBox*>(widget)) {
+            
+            // It's a match! Grab this specific widget's palette
+            QPalette customPalette = widget->palette();
+            
+            // Change the Base color to your lighter dark-mode gray
+            customPalette.setColor(QPalette::Base, QColor("#b02a2a"));
+            
+            // Apply it ONLY to this specific widget
+            widget->setPalette(customPalette);
+        }
+    }
+};
+
 int main(int argc, char *argv[]) 
 {
     // Set metadata BEFORE application instantiation to prevent XDG portal double-registration 
@@ -991,6 +1034,11 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName(QStringLiteral("Real-time Plotter"));
 
     QApplication app(argc, argv);
+
+    // Apply the custom proxy style to the application.
+    // We pass app.style() so it inherits all the default OS/Wayland drawing 
+    // behavior, simply layering our palette override on top.
+    app.setStyle(new EditorLighteningStyle(app.style()));
 
     //app.setApplicationDisplayName(QStringLiteral("Real-time Plotter"));
 

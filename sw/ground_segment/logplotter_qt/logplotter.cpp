@@ -227,11 +227,33 @@ private slots:
         }
     }
 
-void openLogFile() {
+    void closeLogFile() {
+        if (m_chart) {
+            m_chart->removeAllSeries();
+        }
+        if (m_curvesMenu) {
+            m_curvesMenu->clear();
+        }
+        for (QMenu* menu : m_logMenus) {
+            if (menu) {
+                delete menu;
+            }
+        }
+        m_logMenus.clear();
+        m_currentLogFile.clear();
+
+        if (m_axisX) m_axisX->hide();
+        if (m_axisY) m_axisY->hide();
+
+        if (m_legendManager) m_legendManager->updateLegendPosition();
+        if (m_chartView && m_chartView->viewport()) m_chartView->viewport()->update();
+    }
+
+    void openLogFile() {
         QString fileName;
         {
             StderrBlocker blocker;
-            fileName = QFileDialog::getOpenFileName(this, "Open Paparazzi Log", QDir::homePath() + "/paparazzi/var/logs", "Data Files (*.data);;All Files (*)");
+            fileName = QFileDialog::getOpenFileName(this, "Open Paparazzi Log", QDir::homePath() + "/paparazzi/var/logs", "Log Files (*.log);;All Files (*)");
         }
         if (!fileName.isEmpty()) {
             loadLogFile(fileName);
@@ -262,6 +284,7 @@ private:
     QLineEdit* m_edtScaleNext;
     QSpinBox* m_spnLineThickness;
     QTimer* m_updateTimer;
+    QList<QMenu*> m_logMenus;
 
     void setupMenu() {
         QMenu* fileMenu = menuBar()->addMenu(tr("&File"));
@@ -278,20 +301,18 @@ private:
         });
 
         QAction* exportFigAction = fileMenu->addAction(tr("Export Fig"));
+        exportFigAction->setShortcut(QKeySequence("Ctrl+E"));
         connect(exportFigAction, &QAction::triggered, this, &LogPlotterWindow::exportFig);
 
         QAction* saveAction = fileMenu->addAction(tr("Save screenshot"));
         saveAction->setShortcut(QKeySequence("Ctrl+S"));
         connect(saveAction, &QAction::triggered, this, &LogPlotterWindow::saveScreenshot);
 
-        QAction* exportAction = fileMenu->addAction(tr("Export fig"));
-        exportAction->setShortcut(QKeySequence("Ctrl+X"));
-
-        fileMenu->addSeparator();
-
         QAction* closeAction = fileMenu->addAction(tr("Close"));
         closeAction->setShortcut(QKeySequence("Ctrl+W"));
-        connect(closeAction, &QAction::triggered, this, &QWidget::close);
+        connect(closeAction, &QAction::triggered, this, &LogPlotterWindow::closeLogFile);
+
+        fileMenu->addSeparator();
 
         QAction* quitAction = fileMenu->addAction(tr("Quit"));
         quitAction->setShortcut(QKeySequence("Ctrl+Q"));
@@ -493,6 +514,7 @@ private:
         }
     }
 
+public:
     void loadLogFile(const QString &fileName) {
         QString dataFileName = fileName;
         QMap<QString, QString> acIdToName;
@@ -527,6 +549,7 @@ private:
                 int protoStart = content.indexOf("<protocol>");
                 int protoEnd = content.indexOf("</protocol>", protoStart);
                 if (protoStart != -1 && protoEnd != -1) {
+                    printf("Found protocol from %d to %d\n", protoStart, protoEnd); fflush(stdout);
                     QString protocolXml = content.mid(protoStart, protoEnd - protoStart + 11);
                     QXmlStreamReader xml(protocolXml);
                     while (!xml.atEnd() && !xml.hasError()) {
@@ -544,11 +567,16 @@ private:
                                     }
                                 }
                                 dictFields[msgName] = fields;
+                            printf("Extracted msg: %s with %lld fields\n", msgName.toStdString().c_str(), fields.size()); fflush(stdout);
                             }
                         }
                     }
                 }
             }
+        }
+
+        if (!dataFileName.isEmpty() && m_currentLogFile == dataFileName) {
+            return;
         }
 
         m_currentLogFile = dataFileName;
@@ -616,17 +644,20 @@ private:
             QString acNameDisplay = acIdToName.value(acId, "AC_" + acId);
             QString menuTitle = logName + ":" + acNameDisplay + " (" + acId + ")";
             QMenu* acMenu = menuBar()->addMenu(menuTitle);
+            m_logMenus.append(acMenu);
             
             QStringList msgs = it.value().values();
             msgs.sort(); // Sorting messages alphabetically
             
             for (const QString& msgName : msgs) {
+                
                 if (dictFields.contains(msgName)) {
+                    printf("Found MSG in dict: %s\n", msgName.toStdString().c_str()); fflush(stdout);
                     QMenu* msgMenu = acMenu->addMenu(msgName);
                     const QStringList& fields = dictFields.value(msgName);
                     for (int i = 0; i < fields.size(); ++i) {
                         QString fieldName = fields.at(i);
-                        QAction* fieldAction = msgMenu->addAction(fieldName);
+                                                QAction* fieldAction = msgMenu->addAction(fieldName);
                         connect(fieldAction, &QAction::triggered, this, [this, acId, msgName, fieldName, i]() {
                             this->addCurve(acId, msgName, fieldName, i);
                         });
@@ -640,7 +671,6 @@ private:
 };
 
 int main(int argc, char *argv[]) {
-    // Suppress Wayland text input harmless warnings
 
     // Set metadata BEFORE application instantiation to prevent XDG portal double-registration 
     // root cause ("Connection already associated with an application ID").
@@ -650,7 +680,7 @@ int main(int argc, char *argv[]) {
     QGuiApplication::setDesktopFileName(QStringLiteral("paparazzi_logplotter"));
     QCoreApplication::setApplicationName(QStringLiteral("Paparazzi log plotter"));
 
-    // Suppress Wayland text input harmless warnings
+    // Suppress Wayland text input garbage warnings, ybe Mutter dev get their act together one day and fix this upstream, but until then, this is the cleanest solution to avoid spamming the console with GTK criticals when opening native dialogs on Wayland.
     qputenv("QT_LOGGING_RULES", "qt.qpa.wayland.textinput=false");
 
     QApplication app(argc, argv);
@@ -661,11 +691,26 @@ int main(int argc, char *argv[]) {
     QIcon icon(iconPath);
     installLinuxDesktopIntegration(app.desktopFileName(), "Paparazzi log plotter", "Log plotter for telemetry messages", iconPath, "paparazzi-logplotter");
 
+    // Get the current OS-provided dark mode palette
+    // QPalette customPalette = app.palette();
+    // QPalette::Base controls the background of text entry fields.
+    // Set it to a lighter gray (e.g., #3a3a3a or #444444).
+    //customPalette.setColor(QPalette::Base, QColor("#c61818"));
+    // Apply the modified palette back to the application
+    //app.setPalette(customPalette);
+
     app.setWindowIcon(icon);
 
     LogPlotterWindow window;
     window.setWindowIcon(icon);
     window.show();
+    
+    if (argc > 1) {
+        QString argFile = argv[1];
+        if (argFile != "--platform") {
+            window.loadLogFile(argFile);
+        }
+    }
 
     return app.exec();
 
