@@ -27,6 +27,17 @@
 #include <QSpinBox>
 #include <QTimer>
 #include <QFileInfo>
+
+#include <QProxyStyle>
+#include <QPalette>
+#include <QColor>
+
+// Include the widgets you want to target for color changes
+#include <QLineEdit>
+#include <QTextEdit>
+#include <QPlainTextEdit>
+#include <QAbstractSpinBox> // Covers QSpinBox and QDoubleSpinBox
+
 #include <unistd.h>
 #include <fcntl.h>
 #include "../linux_desktop_utils.h"
@@ -66,6 +77,35 @@ public:
 #include "pprzlinkQt/MessageDefinition.h"
 #include "shared_plot.h"
 
+class EditorLighteningStyle : public QProxyStyle { //TODO: Move to common header linux_desktop_utils.h since we like this elsewhere also
+public:
+    // Inherit constructors from QProxyStyle
+    using QProxyStyle::QProxyStyle; 
+
+    // The polish function is called automatically for every widget 
+    // right before it is displayed.
+    void polish(QWidget *widget) override {
+        // Always call the base class implementation first
+        QProxyStyle::polish(widget); 
+
+        // Check if the current widget is an edit field or a spinbox
+        if (qobject_cast<QLineEdit*>(widget) ||
+            qobject_cast<QTextEdit*>(widget) ||
+            qobject_cast<QPlainTextEdit*>(widget) ||
+            qobject_cast<QAbstractSpinBox*>(widget)) {
+            
+            // It's a match! Grab this specific widget's palette
+            QPalette customPalette = widget->palette();
+            
+            // Change the Base color to your lighter dark-mode gray
+            customPalette.setColor(QPalette::Base, QColor("#3a3a3a"));
+            
+            // Apply it ONLY to this specific widget
+            widget->setPalette(customPalette);
+        }
+    }
+};
+
 class LogPlotterWindow : public QMainWindow {
     Q_OBJECT
 
@@ -92,6 +132,28 @@ private slots:
                 QMessageBox::warning(this, tr("Error"), tr("Failed to save screenshot to %1").arg(fileName));
             } else {
                 qDebug() << "Screenshot saved to" << fileName;
+            }
+        }
+    }
+
+
+    void onAutoScaleToggled(bool checked) {
+        m_edtMinY->setEnabled(!checked);
+        m_edtMaxY->setEnabled(!checked);
+        if (checked) {
+            autoRescaleAxes();
+        } else {
+            onManualScaleChanged();
+        }
+    }
+
+    void onManualScaleChanged() {
+        if (!m_cbAutoScale->isChecked()) {
+            bool okMin = false, okMax = false;
+            double minY = m_edtMinY->text().toDouble(&okMin);
+            double maxY = m_edtMaxY->text().toDouble(&okMax);
+            if (okMin && okMax && minY < maxY) {
+                m_axisY->setRange(minY, maxY);
             }
         }
     }
@@ -364,6 +426,9 @@ private:
         m_updateTimer = new QTimer(this);
 
         toolbarLayout->addWidget(m_cbAutoScale);
+        connect(m_cbAutoScale, &QCheckBox::toggled, this, &LogPlotterWindow::onAutoScaleToggled);
+        connect(m_edtMinY, &QLineEdit::editingFinished, this, &LogPlotterWindow::onManualScaleChanged);
+        connect(m_edtMaxY, &QLineEdit::editingFinished, this, &LogPlotterWindow::onManualScaleChanged);
         toolbarLayout->addWidget(new QLabel("Min"));
         toolbarLayout->addWidget(m_edtMinY);
         toolbarLayout->addWidget(new QLabel("Max"));
@@ -427,8 +492,22 @@ private:
             if (calcMinX == calcMaxX) { calcMinX -= 1; calcMaxX += 1; }
             if (calcMinY == calcMaxY) { calcMinY -= 1; calcMaxY += 1; }
             double marginY = (calcMaxY - calcMinY) * 0.05;
+            
             m_axisX->setRange(calcMinX, calcMaxX);
-            m_axisY->setRange(calcMinY - marginY, calcMaxY + marginY);
+            
+            if (m_cbAutoScale->isChecked()) {
+                m_axisY->setRange(calcMinY - marginY, calcMaxY + marginY);
+                m_edtMinY->setText(QString::number(calcMinY - marginY, 'f', 2));
+                m_edtMaxY->setText(QString::number(calcMaxY + marginY, 'f', 2));
+            } else {
+                bool okMin = false, okMax = false;
+                double minY = m_edtMinY->text().toDouble(&okMin);
+                double maxY = m_edtMaxY->text().toDouble(&okMax);
+                if (okMin && okMax && minY < maxY) {
+                    m_axisY->setRange(minY, maxY);
+                }
+            }
+            
             m_axisX->show();
             m_axisY->show();
         }
@@ -691,13 +770,10 @@ int main(int argc, char *argv[]) {
     QIcon icon(iconPath);
     installLinuxDesktopIntegration(app.desktopFileName(), "Paparazzi log plotter", "Log plotter for telemetry messages", iconPath, "paparazzi-logplotter");
 
-    // Get the current OS-provided dark mode palette
-    // QPalette customPalette = app.palette();
-    // QPalette::Base controls the background of text entry fields.
-    // Set it to a lighter gray (e.g., #3a3a3a or #444444).
-    //customPalette.setColor(QPalette::Base, QColor("#c61818"));
-    // Apply the modified palette back to the application
-    //app.setPalette(customPalette);
+    // Apply the custom proxy style to the application.
+    // We pass app.style() so it inherits all the default OS/Wayland drawing 
+    // behavior, simply layering our palette override on top.
+    app.setStyle(new EditorLighteningStyle(app.style()));
 
     app.setWindowIcon(icon);
 
