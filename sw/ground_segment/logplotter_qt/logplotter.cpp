@@ -298,6 +298,7 @@ private:
         connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
 
         m_curvesMenu = menuBar()->addMenu(tr("&Curves"));
+        m_curvesMenu->setToolTipsVisible(true);
     }
 
     void setupUI() {
@@ -468,14 +469,15 @@ private:
                 QPixmap pixmap(16, 16);
                 pixmap.fill(pen.color());
                 QIcon icon(pixmap);
-                QMenu* curveMenu = m_curvesMenu->addMenu(icon, curveTitle);
-
-                QAction* deleteAction = curveMenu->addAction(tr("Delete"));
+                QAction* deleteAction = m_curvesMenu->addAction(icon, curveTitle);
+                deleteAction->setToolTip(tr("Delete curve"));
+                deleteAction->setStatusTip(tr("Delete curve"));
+                
                 QLineSeries* targetSeries = series;
-                connect(deleteAction, &QAction::triggered, this, [this, targetSeries, curveMenu]() {
+                connect(deleteAction, &QAction::triggered, this, [this, targetSeries, deleteAction]() {
                     m_chart->removeSeries(targetSeries);
                     delete targetSeries;
-                    delete curveMenu;
+                    deleteAction->deleteLater();
                     autoRescaleAxes();
                     if (m_legendManager) m_legendManager->updateLegendPosition();
                     m_chartView->viewport()->update();
@@ -492,53 +494,146 @@ private:
     }
 
     void loadLogFile(const QString &fileName) {
-        m_currentLogFile = fileName;
-        QFile file(fileName);
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            QMessageBox::warning(this, "Error", "Cannot open file " + fileName);
-            return;
-        }
+        QString dataFileName = fileName;
+        QMap<QString, QString> acIdToName;
+        QMap<QString, QStringList> dictFields;
 
-        QTextStream in(&file);
-        QSet<QPair<QString, QString>> acMsgPairs;
-        QRegularExpression re("\\s+");
+        if (fileName.endsWith(".log", Qt::CaseInsensitive)) {
+            QFile logFile(fileName);
+            if (logFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                QString content = logFile.readAll();
+                
+                QRegularExpression reDataFile("<configuration[^>]*data_file=\"([^\"]+)\"");
+                QRegularExpressionMatch matchDataFile = reDataFile.match(content);
+                if (matchDataFile.hasMatch()) {
+                    QString dFile = matchDataFile.captured(1);
+                    QFileInfo fi(fileName);
+                    dataFileName = fi.absolutePath() + "/" + dFile;
+                }
 
-        while (!in.atEnd()) {
-            QString line = in.readLine();
-            QStringList parts = line.split(re, Qt::SkipEmptyParts);
-            if (parts.size() >= 3) {
-                QString acId = parts[1];
-                QString msgName = parts[2];
-                acMsgPairs.insert(qMakePair(acId, msgName));
+                QRegularExpression reAircraft("<aircraft([^>]+)>");
+                QRegularExpressionMatchIterator itAc = reAircraft.globalMatch(content);
+                while (itAc.hasNext()) {
+                    QString attrs = itAc.next().captured(1);
+                    QRegularExpression reName("name=\"([^\"]+)\"");
+                    QRegularExpression reId("ac_id=\"([^\"]+)\"");
+                    QString acName = reName.match(attrs).captured(1);
+                    QString acId = reId.match(attrs).captured(1);
+                    if (!acId.isEmpty()) {
+                        acIdToName[acId] = acName;
+                    }
+                }
+
+                int protoStart = content.indexOf("<protocol>");
+                int protoEnd = content.indexOf("</protocol>", protoStart);
+                if (protoStart != -1 && protoEnd != -1) {
+                    QString protocolXml = content.mid(protoStart, protoEnd - protoStart + 11);
+                    QXmlStreamReader xml(protocolXml);
+                    while (!xml.atEnd() && !xml.hasError()) {
+                        QXmlStreamReader::TokenType token = xml.readNext();
+                        if (token == QXmlStreamReader::StartElement) {
+                            if (xml.name().toString() == "message" && xml.attributes().hasAttribute("NAME")) {
+                                QString msgName = xml.attributes().value("NAME").toString();
+                                QStringList fields;
+                                while (!(xml.tokenType() == QXmlStreamReader::EndElement && xml.name().toString() == "message") && !xml.atEnd()) {
+                                    xml.readNext();
+                                    if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name().toString() == "field") {
+                                        if (xml.attributes().hasAttribute("NAME")) {
+                                            fields.append(xml.attributes().value("NAME").toString());
+                                        }
+                                    }
+                                }
+                                dictFields[msgName] = fields;
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        QFileInfo fi(fileName);
-        QString logName = fi.fileName();
+        m_currentLogFile = dataFileName;
+        QFile file(dataFileName);
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QMessageBox::warning(this, "Error", "Cannot open file " + dataFileName);
+            return;
+        }
 
-        QMenu* logMenu = menuBar()->addMenu(logName);
-
-        for (const auto& pair : acMsgPairs) {
-            QString acId = pair.first;
-            QString msgName = pair.second;
-            QString menuTitle = acId + ":" + msgName;
+        QSet<QPair<QString, QString>> acMsgPairs;
+        
+        // Fast parsing of the data file
+        const int CHUNK_SIZE = 1024 * 1024;
+        QByteArray buffer;
+        while (!file.atEnd()) {
+            buffer.append(file.read(CHUNK_SIZE));
+            int lineStart = 0;
+            int nlIdx = 0;
             
-            if (m_dict) {
-                try {
-                    const pprzlink::MessageDefinition& def = m_dict->getDefinition(msgName);
-                    QMenu* msgMenu = logMenu->addMenu(menuTitle);
-                    for (size_t i = 0; i < def.getNbFields(); ++i) {
-                        QString fieldName = def.getField(i).getName();
+            while ((nlIdx = buffer.indexOf('\n', lineStart)) != -1) {
+                int lineLen = nlIdx - lineStart;
+                if (lineLen > 0) {
+                    const char* lineData = buffer.constData() + lineStart;
+                    
+                    int s1 = -1, len1 = 0;
+                    int s2 = -1, len2 = 0;
+                    int s3 = -1, len3 = 0;
+                    
+                    for (int i = 0; i < lineLen; ++i) {
+                        if (lineData[i] != ' ' && lineData[i] != '\t' && lineData[i] != '\r') {
+                            if (s1 == -1) { s1 = i; }
+                            else if (len1 > 0 && s2 == -1) { s2 = i; }
+                            else if (len2 > 0 && s3 == -1) { s3 = i; }
+                        } else {
+                            if (s1 != -1 && s2 == -1) { len1 = i - s1; }
+                            else if (s2 != -1 && s3 == -1) { len2 = i - s2; }
+                            else if (s3 != -1 && len3 == 0) { len3 = i - s3; break; }
+                        }
+                    }
+                    if (s3 != -1 && len3 == 0) {
+                         len3 = lineLen - s3;
+                    }
+                    
+                    if (s2 != -1 && len2 > 0 && s3 != -1 && len3 > 0) {
+                        QString acId = QString::fromUtf8(lineData + s2, len2);
+                        QString msgName = QString::fromUtf8(lineData + s3, len3);
+                        acMsgPairs.insert(qMakePair(acId, msgName));
+                    }
+                }
+                lineStart = nlIdx + 1;
+            }
+            buffer.remove(0, lineStart);
+        }
+
+        QFileInfo fi(fileName);
+        QString logName = fi.baseName();
+        
+        QMap<QString, QSet<QString>> acToMsgs;
+        for (const auto& pair : acMsgPairs) {
+            acToMsgs[pair.first].insert(pair.second);
+        }
+
+        for (auto it = acToMsgs.begin(); it != acToMsgs.end(); ++it) {
+            QString acId = it.key();
+            QString acNameDisplay = acIdToName.value(acId, "AC_" + acId);
+            QString menuTitle = logName + ":" + acNameDisplay + " (" + acId + ")";
+            QMenu* acMenu = menuBar()->addMenu(menuTitle);
+            
+            QStringList msgs = it.value().values();
+            msgs.sort(); // Sorting messages alphabetically
+            
+            for (const QString& msgName : msgs) {
+                if (dictFields.contains(msgName)) {
+                    QMenu* msgMenu = acMenu->addMenu(msgName);
+                    const QStringList& fields = dictFields.value(msgName);
+                    for (int i = 0; i < fields.size(); ++i) {
+                        QString fieldName = fields.at(i);
                         QAction* fieldAction = msgMenu->addAction(fieldName);
                         connect(fieldAction, &QAction::triggered, this, [this, acId, msgName, fieldName, i]() {
                             this->addCurve(acId, msgName, fieldName, i);
                         });
                     }
-                } catch (...) {
-                    logMenu->addAction(menuTitle);
+                } else {
+                    acMenu->addAction(msgName);
                 }
-            } else {
-                logMenu->addAction(menuTitle);
             }
         }
     }
