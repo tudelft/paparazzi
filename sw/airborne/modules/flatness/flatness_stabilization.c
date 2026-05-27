@@ -40,60 +40,50 @@
 
 #define SAFE_SQRT(x) (sqrtf((x) > 0 ? (x) : 0.0f))
 
+// ------------------------------------- straight ------------------------------------- //
+// static const float DOWN_OFFSET = -1.0f;
+// static const float NORTH_OFFSET = -5.0f + 5.0f;
+// static const float EAST_OFFSET = -5.0f + 1.0f;
+
+// #define REF_TRAJ_FILENAME "straight_vhigh3_cx1.11_533.csv"
+// #define NB_CSV_ROWS 533
+
+// #define REF_TRAJ_FILENAME "straight_vhigh4_cx1.11_401.csv"
+// #define NB_CSV_ROWS 401
+
+// #define REF_TRAJ_FILENAME "straight_vhigh5_cx1.11_321.csv"
+// #define NB_CSV_ROWS 321
+
+// #define REF_TRAJ_FILENAME "straight_vhigh6_cx1.11_267.csv"
+// #define NB_CSV_ROWS 267
+
+
 // ------------------------------------- level circle ------------------------------------- //
 // static const float DOWN_OFFSET = -2.0f;
 // static const float NORTH_OFFSET = 0.0f;
 // static const float EAST_OFFSET = 0.0f;
 
-// #define REF_TRAJ_FILENAME "circle_vs2_r2.csv"
-// #define NB_CSV_ROWS 1998
+// #define REF_TRAJ_FILENAME "circle_vs2_cx1.00_2001.csv"
+// #define REF_TRAJ_FILENAME "circle_vs3_cx1.00_2001.csv"
+// #define REF_TRAJ_FILENAME "circle_vs4_cx1.11_2001.csv"
+// #define NB_CSV_ROWS 2001
 
-// #define REF_TRAJ_FILENAME "circle_vs3_r2.csv"
-// #define NB_CSV_ROWS 1698
 
-// #define REF_TRAJ_FILENAME "circle_vs4_r2.csv"
-// #define NB_CSV_ROWS 1298
-
-// #define REF_TRAJ_FILENAME "circle_vs5_r2.csv"
-// #define NB_CSV_ROWS 1198
-
-// #define REF_TRAJ_FILENAME "circle_vs6_r2.csv"
-// #define NB_CSV_ROWS 1098
-
-// #define REF_TRAJ_FILENAME "circle_vs3_r2_long.csv"
-// #define NB_CSV_ROWS 1998
-
-// #define REF_TRAJ_FILENAME "circle_vs4_r2_long.csv"
-// #define NB_CSV_ROWS 1998
-
-// #define REF_TRAJ_FILENAME "circle_vs5_r2_long.csv"
-// #define NB_CSV_ROWS 1998
-
-// ------------------------------------- immelmann diag ------------------------------------- //
-// static const float DOWN_OFFSET = -1.5f;
-// static const float NORTH_OFFSET = -5.0f + 2.0f;
+// ------------------------------------- immelmann ------------------------------------- //
+// static const float DOWN_OFFSET = -0.8f;
+// static const float NORTH_OFFSET = -5.0f + 5.0f;
 // static const float EAST_OFFSET = -5.0f + 2.0f;
 
-// #define REF_TRAJ_FILENAME "immelmann_2_2_45deg.csv"
-// #define NB_CSV_ROWS 1247
-
-// #define REF_TRAJ_FILENAME "immelmann_2_3_45deg.csv"
-// #define NB_CSV_ROWS 1052
-
-// #define REF_TRAJ_FILENAME "immelmann_2_3_60deg.csv"
-// #define NB_CSV_ROWS 1055
-
-// #define REF_TRAJ_FILENAME "immelmann_2_4_60deg.csv"
-// #define NB_CSV_ROWS 955
-
+// #define REF_TRAJ_FILENAME "immelmann.csv"
+// #define NB_CSV_ROWS 716
 
 // ------------------------------------- clothoid ------------------------------------- //
 static const float DOWN_OFFSET = -1.5f;
-static const float NORTH_OFFSET = -5.0f + 2.2f;
-static const float EAST_OFFSET = -5.0f + 2.2f;
+static const float NORTH_OFFSET = -5.0f + 5.0f;
+static const float EAST_OFFSET = -5.0f + 0.5f;
 
 #define REF_TRAJ_FILENAME "clothoid.csv"
-#define NB_CSV_ROWS 799
+#define NB_CSV_ROWS 817
 
 #define NB_CSV_COLS 21
 
@@ -119,22 +109,15 @@ typedef struct {
 } Traj_row_t;
 
 // constants
-static const float C_X = -0.300;
-static const float C_Z = -0.050f;
+static const float C_X = -1.110;  // -0.300 
+static const float C_Z = -0.154; // -0.050
 
 // KK props
-static const float MU_X_v = 4.05f  / 100000000.0f;
-static const float MU_Y_v = 8.54f / 100000000.0f;
-static const float MU_Z_v = 0.93f  / 100000000.0f;
-static const float C_T_v  = -0.460f  / 100000000.0f;
+static const float MU_X_v = 3.86f  / 100000000.0f;
+static const float MU_Y_v = 8.73f / 100000000.0f;
+static const float MU_Z_v = 0.85f  / 100000000.0f;
+static const float C_T_v  = -0.480f  / 100000000.0f;
 static const float ACT_CUTOFF_OMEGA = 19.0f;
-
-// new motors "AB"
-// static const float MU_X_v = 4.30f  / 100000000.0f;
-// static const float MU_Y_v = 9.60f / 100000000.0f;
-// static const float MU_Z_v = 1.00f  / 100000000.0f;
-// static const float C_T_v  = -0.430f  / 100000000.0f;
-// static const float ACT_CUTOFF_OMEGA = 15.0f;
 
 static const float MIN_TAU = -0.981f;
 static const float MAX_TAU = -2.0f*9.81f;
@@ -198,6 +181,7 @@ static struct FloatVect3 pos_start_buf;
 static struct FloatVect3 vel_start_buf;
 static struct FloatVect3 accel_start_buf;
 float vf_angle_cos;
+struct FloatVect3 ey_hat_prev;
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -370,7 +354,7 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
         angaccel_ref.q = 0.0f;
         angaccel_ref.r = 0.0f;
     }
-    // RATES_ADD(ang_accel_sp, angaccel_ref);
+    RATES_ADD(ang_accel_sp, angaccel_ref);
 
     if (flatness_guided == false) {
         // actuator state estimation + butterworth filter    
@@ -500,39 +484,44 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
     float spec_thrust_sp;
     if (vel_norm > VEL_NORM_THRESHOLD && fsm_state != FSM_P2P) {
         // coordinated
-        struct FloatVect3 ey, ey_hat, ex, ex_hat, ez, ez_hat, tmp;
+        struct FloatVect3 ey, ey_hat, ex, ex_hat, ez, ez_hat;
         struct FloatVect3 f_cmd_vect3 = {f_cmd[0], f_cmd[1], f_cmd[2]};
-        struct FloatVect3 ey_hat_cur = {R_i2b->m[3], R_i2b->m[4], R_i2b->m[5]};
+        // struct FloatVect3 ey_hat_cur = {R_i2b->m[3], R_i2b->m[4], R_i2b->m[5]};
         vf_angle_cos = VECT3_DOT_PRODUCT(*vel_i, f_cmd_vect3)/(sqrtf(VECT3_NORM2(*vel_i))*sqrtf(VECT3_NORM2(f_cmd_vect3)));
         
-        if ((vf_angle_cos > 0.9781f) || (vf_angle_cos < -0.9397f)) { // 10 degrees -> cos = 0.9848
+        if ((vf_angle_cos > 0.9781f) || (vf_angle_cos < -0.9781f)) { // 10 degrees -> cos = 0.9848
             // guard against v // f
-            VECT3_COPY(ey_hat, ey_hat_cur)
+            VECT3_COPY(ey_hat, ey_hat_prev);
         } else {
-            VECT3_CROSS_PRODUCT(ey, *vel_i, f_cmd_vect3)
-            VECT3_SDIV(ey_hat, ey, sqrtf(VECT3_NORM2(ey)))
+            VECT3_CROSS_PRODUCT(ey, *vel_i, f_cmd_vect3);
+            VECT3_SDIV(ey_hat, ey, sqrtf(VECT3_NORM2(ey)));
         }
 
-        sign_test = VECT3_DOT_PRODUCT(ey_hat_cur, ey_hat);
-        if (sign_test >= 0) {
-            ;
-        } else {
+        sign_test = VECT3_DOT_PRODUCT(ey_hat_prev, ey_hat);
+        if (sign_test < 0) {
             // VECT3_SMUL(ey_hat, ey_hat, -1.0f);
-            ey_hat.x = -ey_hat.x;
-            ey_hat.y = -ey_hat.y;
-            ey_hat.z = -ey_hat.z;
+                ey_hat.x = -ey_hat.x;
+                ey_hat.y = -ey_hat.y;
+                ey_hat.z = -ey_hat.z;
         }
-        
-        // todo guard against r // ey
 
-        struct FloatVect3 arb_vect = {1.0f, 1.0f, 1.0f};
-        VECT3_SMUL(tmp, ey_hat, (VECT3_DOT_PRODUCT(arb_vect, ey_hat) / VECT3_DOT_PRODUCT(ey_hat, ey_hat)))
-        VECT3_SUB(arb_vect, tmp)
-        VECT3_COPY(ex, arb_vect)
-        VECT3_SDIV(ex_hat, ex, sqrtf(VECT3_NORM2(ex)))
+        VECT3_COPY(ey_hat_prev, ey_hat) // keep an copy of the current commanded body-y axis
 
-        VECT3_CROSS_PRODUCT(ez, ex_hat, ey_hat)
-        VECT3_SDIV(ez_hat, ez, sqrtf(VECT3_NORM2(ez))) // renormalize just to be sure
+        struct FloatVect3 arb_vect = {R_i2b->m[0], R_i2b->m[1], R_i2b->m[2]};
+
+        // VECT3_SMUL(tmp, ey_hat, (VECT3_DOT_PRODUCT(arb_vect, ey_hat) / VECT3_DOT_PRODUCT(ey_hat, ey_hat)))
+        // VECT3_SUB(arb_vect, tmp)
+        // VECT3_COPY(ex, arb_vect)
+        // VECT3_SDIV(ex_hat, ex, sqrtf(VECT3_NORM2(ex)))
+
+        // VECT3_CROSS_PRODUCT(ez, ex_hat, ey_hat)
+        // VECT3_SDIV(ez_hat, ez, sqrtf(VECT3_NORM2(ez))) // renormalize just to be sure
+
+        VECT3_CROSS_PRODUCT(ez, arb_vect, ey_hat);
+        VECT3_SDIV(ez_hat, ez, sqrtf(VECT3_NORM2(ez)));
+
+        VECT3_CROSS_PRODUCT(ex, ey_hat, ez_hat);
+        VECT3_SDIV(ex_hat, ex, sqrtf(VECT3_NORM2(ex)));
 
         struct FloatRMat R_i2e;
         R_i2e.m[0] = ex_hat.x; R_i2e.m[1] = ex_hat.y; R_i2e.m[2] = ex_hat.z;
@@ -544,9 +533,9 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
         float_rmat_vmult(&ve, &R_i2e, vel_i);
         float_rmat_vmult(&fe, &R_i2e, &fi_cmd);
 
-        float sigma_x = fe.x - C_X*vel_norm*ve.x;
-        float sigma_z = fe.z - C_X*vel_norm*ve.z;
-        float theta_e = atan2f(-sigma_x, -sigma_z);
+        float sigma_x = -fe.x + C_X*vel_norm*ve.x;
+        float sigma_z = -fe.z + C_X*vel_norm*ve.z;
+        float theta_e = atan2f(sigma_x, sigma_z);
 
         spec_thrust_sp = sinf(theta_e)*fe.x + 
                          cosf(theta_e)*fe.z - 
@@ -765,6 +754,13 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
 
         case FSM_TRAJECTORY_INIT:
             timestamp_traj_start = get_sys_time_float();
+
+            // initialize ey_hat_prev with current by axis
+            struct FloatRMat *R_i2b = stateGetNedToBodyRMat_f();
+            ey_hat_prev.x = R_i2b->m[3];
+            ey_hat_prev.y = R_i2b->m[4];
+            ey_hat_prev.z = R_i2b->m[5];
+
             fsm_state = FSM_TRAJECTORY;
             /* fall through */
 
