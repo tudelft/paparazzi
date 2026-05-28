@@ -733,7 +733,7 @@ private:
     }
 
 public:
-    void loadLogFile(const QString &fileName) {
+    void loadLogFile(const QString &fileName, bool autoExportCsv = false) {
         QApplication::setOverrideCursor(Qt::WaitCursor);
         
         m_originallyLoadedFile = fileName;
@@ -1257,6 +1257,106 @@ public:
                     QMessageBox::information(this, tr("Export CSV"), tr("CSV Export Complete!"));
                 }
             });
+
+            if (autoExportCsv) {
+                QString outFileName = QFileInfo(m_currentLogFile).path() + "/" + logName + "_" + acId + "_export.csv";
+                QMap<QString, QList<int>> selectedFields;
+                QMap<QString, QStringList> selectedFieldNames;
+                int totalCols = 0;
+                QStringList headerCols;
+                headerCols << "Time";
+                
+                for (const QString& msgName : msgs) {
+                    if (dictFields.contains(msgName)) {
+                        const QStringList& fields = dictFields.value(msgName);
+                        for (int j = 0; j < fields.size(); ++j) {
+                            selectedFields[msgName].append(j);
+                            QString cName = msgName + "." + fields[j];
+                            selectedFieldNames[msgName].append(cName);
+                            headerCols << cName;
+                            totalCols++;
+                        }
+                    }
+                }
+                
+                if (totalCols > 0) {
+                    QFile inFileBatch(m_currentLogFile);
+                    if (inFileBatch.open(QIODevice::ReadOnly)) {
+                        QFile outFileBatch(outFileName);
+                        if (outFileBatch.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                            QTextStream out(&outFileBatch);
+                            out << headerCols.join(",") << "\n";
+                            
+                            const int CHUNK_SIZE = 1048576;
+                            QByteArray buffer;
+                            QByteArray acIdBytes = acId.toUtf8();
+                            const char* targetAcId = acIdBytes.constData();
+                            int targetAcIdLen = acIdBytes.length();
+
+                            while (!inFileBatch.atEnd()) {
+                                buffer.append(inFileBatch.read(CHUNK_SIZE));
+                                int lineStart = 0;
+                                while (true) {
+                                    int nlIdx = buffer.indexOf('\n', lineStart);
+                                    if (nlIdx == -1) break;
+
+                                    int lineLen = nlIdx - lineStart;
+                                    if (lineLen > 0 && buffer.at(nlIdx - 1) == '\r') lineLen--;
+
+                                    if (lineLen > 0) {
+                                        const char* lineData = buffer.constData() + lineStart;
+                                        int s1 = -1, len1 = 0; int s2 = -1, len2 = 0; int s3 = -1, len3 = 0; int dataStart = -1;
+                                        for (int i = 0; i < lineLen; ++i) {
+                                            if (lineData[i] != ' ' && lineData[i] != '\t' && lineData[i] != '\r') {
+                                                if (s1 == -1) { s1 = i; }
+                                                else if (len1 > 0 && s2 == -1) { s2 = i; }
+                                                else if (len2 > 0 && s3 == -1) { s3 = i; }
+                                                else if (len3 > 0 && dataStart == -1) { dataStart = i; break; }
+                                            } else {
+                                                if (s1 != -1 && s2 == -1) { len1 = i - s1; }
+                                                else if (s2 != -1 && s3 == -1) { len2 = i - s2; }
+                                                else if (s3 != -1 && len3 == 0) { len3 = i - s3; }
+                                            }
+                                        }
+                                        if (s3 != -1 && len3 == 0) len3 = lineLen - s3;
+
+                                        if (s2 != -1 && len2 > 0 && s3 != -1 && len3 > 0) {
+                                            if (len2 == targetAcIdLen && qstrncmp(lineData + s2, targetAcId, len2) == 0) {
+                                                QString msgName = QString::fromUtf8(lineData + s3, len3);
+                                                if (selectedFields.contains(msgName)) {
+                                                    QString timeStr = QString::fromUtf8(lineData + s1, len1);
+                                                    QStringList values;
+                                                    if (dataStart != -1) {
+                                                        QString dataPart = QString::fromUtf8(lineData + dataStart, lineLen - dataStart);
+                                                        values = dataPart.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+                                                    }
+                                                    QStringList row;
+                                                    row << timeStr;
+                                                    for (int i = 1; i < headerCols.size(); ++i) {
+                                                        const QString& col = headerCols[i];
+                                                        if (col.startsWith(msgName + ".")) {
+                                                            int fIdx = selectedFieldNames[msgName].indexOf(col);
+                                                            if (fIdx != -1 && fIdx < selectedFields[msgName].size()) {
+                                                                int paramIdx = selectedFields[msgName][fIdx];
+                                                                if (paramIdx < values.size()) {
+                                                                    row << values[paramIdx].trimmed();
+                                                                } else row << "";
+                                                            } else row << "";
+                                                        } else row << "";
+                                                    }
+                                                    out << row.join(",") << "\n";
+                                                }
+                                            }
+                                        }
+                                    }
+                                    lineStart = nlIdx + 1;
+                                }
+                                buffer.remove(0, lineStart);
+                            }
+                        }
+                    }
+                }
+            }
         }
         
         while (QApplication::overrideCursor()) {
@@ -1313,10 +1413,6 @@ int main(int argc, char *argv[]) {
     bool verbose = parser.isSet(verboseOption);
     QStringList logFiles = parser.positionalArguments();
 
-    if (exportCsv) {
-        qWarning() << "Batch CSV export via CLI is not currently supported in the Qt C++ backend. Please use the GUI Export CSV feature.";
-    }
-
     if (verbose) {
         qDebug() << "Verbose mode enabled.";
         qDebug() << "Log files to process:" << logFiles;
@@ -1335,7 +1431,7 @@ int main(int argc, char *argv[]) {
             LogPlotterWindow* window = new LogPlotterWindow();
             window->setWindowIcon(icon);
             window->setAttribute(Qt::WA_DeleteOnClose);
-            window->loadLogFile(argFile);
+            window->loadLogFile(argFile, exportCsv);
             
             if (!exportCsv) {
                 window->show();
