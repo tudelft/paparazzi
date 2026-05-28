@@ -38,6 +38,8 @@
 #include <QFileInfo>
 
 #include <QProxyStyle>
+#include <QCommandLineParser>
+#include <QCommandLineOption>
 #include <QPalette>
 #include <QColor>
 
@@ -49,7 +51,12 @@
 
 #include <unistd.h>
 #include <fcntl.h>
+#include <functional>
 #include "../linux_desktop_utils.h"
+#include "shared_plot.h"
+
+#include "pprzlinkQt/MessageDictionary.h"//TODO: should not be needed
+#include "pprzlinkQt/MessageDefinition.h"//TODO: should not be needed
 
 // Helper class to temporarily suppress stderr warnings (like GTK Wayland criticals) during native dialogs.
 //
@@ -82,10 +89,9 @@ public:
         close(oldStderr);
     }
 };
-#include "pprzlinkQt/MessageDictionary.h"
-#include "pprzlinkQt/MessageDefinition.h"
-#include "shared_plot.h"
 
+// The default background of the edit fields in a Dark theme is too dark, almost not visible it is an entry box
+// We tweak those fields to be a lighter gray just for better visibility in dark mode, without affecting the rest of the UI which is already dark themed and looks fine
 class EditorLighteningStyle : public QProxyStyle { //TODO: Move to common header linux_desktop_utils.h since we like this elsewhere also
 public:
     // Inherit constructors from QProxyStyle
@@ -114,8 +120,6 @@ public:
         }
     }
 };
-
-#include <functional>
 
 class ChartViewFilter : public QObject {
     QChart* m_chart;
@@ -151,7 +155,7 @@ class LogPlotterWindow : public QMainWindow {
 public:
     LogPlotterWindow(QWidget *parent = nullptr) : QMainWindow(parent) {
         setWindowTitle("Log Plotter");
-        resize(600, 300);
+        resize(900, 300);
         QString xmlPath = QDir::homePath() + "/paparazzi/var/messages.xml";
         try { m_dict = new pprzlink::MessageDictionary(xmlPath); } catch (...) { m_dict = nullptr; }
         setupUI();
@@ -204,11 +208,10 @@ private slots:
             if (!pixmap.save(fileName)) {
                 QMessageBox::warning(this, tr("Error"), tr("Failed to save screenshot to %1").arg(fileName));
             } else {
-                qDebug() << "Screenshot saved to" << fileName;
+                //qDebug() << "Screenshot saved to" << fileName;
             }
         }
     }
-
 
     void onAutoScaleToggled(bool checked) {
         m_edtMinY->setEnabled(!checked);
@@ -271,6 +274,26 @@ private slots:
         series->attachAxis(m_axisX);
         series->attachAxis(m_axisY);
         autoRescaleAxes();
+
+        if (m_curvesMenu) {
+            QPixmap pixmap(16, 16);
+            pixmap.fill(pen.color());
+            QIcon icon(pixmap);
+            QString title = QString("C=%1").arg(val);
+            QAction* deleteAction = m_curvesMenu->addAction(icon, title);
+            deleteAction->setToolTip(tr("Delete constant curve"));
+            deleteAction->setStatusTip(tr("Delete constant curve"));
+
+            QLineSeries* targetSeries = series;
+            connect(deleteAction, &QAction::triggered, this, [this, targetSeries, deleteAction]() {
+                m_chart->removeSeries(targetSeries);
+                delete targetSeries;
+                deleteAction->deleteLater();
+                autoRescaleAxes();
+                if (m_legendManager) m_legendManager->updateLegendPosition();
+                m_chartView->viewport()->update();
+            });
+        }
         
         QTimer::singleShot(15, this, [this]() {
             if (m_legendManager) m_legendManager->updateLegendPosition();
@@ -535,7 +558,7 @@ private:
         toolbarLayout->addStretch();
 
         m_chartView = new QChartView();
-                m_chartView->setContentsMargins(0, 0, 0, 0);
+        m_chartView->setContentsMargins(0, 0, 0, 0);
         m_chartView->setFrameShape(QFrame::NoFrame);
         m_chartView->setRubberBand(QChartView::RectangleRubberBand);
 
@@ -562,11 +585,13 @@ private:
         m_chart->setBackgroundRoundness(0);
         m_chart->setBackgroundPen(QPen(Qt::NoPen));
         m_chartView->setChart(m_chart);
-                m_chartView->setRenderHint(QPainter::Antialiasing);
+        m_chartView->setRenderHint(QPainter::Antialiasing);
         m_chartView->viewport()->installEventFilter(new ChartViewFilter(m_chart, [this](){ m_cbAutoScale->setChecked(false); }, m_chartView));
         
         m_axisX = new QValueAxis();
+        m_axisX->setLabelFormat("%gs");
         m_axisY = new QValueAxis();
+        
         m_axisX->hide();
         m_axisY->hide();
 
@@ -619,6 +644,9 @@ private:
             
             m_axisX->show();
             m_axisY->show();
+        } else {
+            m_axisX->hide();
+            m_axisY->hide();
         }
     }
 
@@ -637,11 +665,13 @@ private:
 
         QFileInfo fi(m_currentLogFile);
         QString logName = fi.baseName();
-        logName.replace("__", "#TEMP#");
-        logName.replace("_", "");
-        logName.replace("#TEMP#", "_");
+        QString logNameCondensed = logName;
+        logNameCondensed.replace("__", "#TEMP#");
+        logNameCondensed.replace("_", "");
+        logNameCondensed.replace("#TEMP#", "_");
 
-        QString curveTitle = logName + ":" + acId + ":" + msgName + ":" + fieldName + ":" + QString::number(scale) + "," + QString::number(transpose);
+        QString curveTitle = logName + ":" + acId + ":" + msgName + ":" + fieldName + ":" + QString::number(scale) + "+" + QString::number(transpose);
+        QString curveTitleCondensed = logNameCondensed + ":" + acId + ":" + msgName + ":" + fieldName + ":" + QString::number(scale) + "+" + QString::number(transpose);
 
         QLineSeries *series = new QLineSeries();
         series->setName(curveTitle);
@@ -678,7 +708,7 @@ private:
                 QPixmap pixmap(16, 16);
                 pixmap.fill(pen.color());
                 QIcon icon(pixmap);
-                QAction* deleteAction = m_curvesMenu->addAction(icon, curveTitle);
+                QAction* deleteAction = m_curvesMenu->addAction(icon, curveTitleCondensed);
                 deleteAction->setToolTip(tr("Delete curve"));
                 deleteAction->setStatusTip(tr("Delete curve"));
                 
@@ -847,8 +877,9 @@ public:
 
         for (auto it = acToMsgs.begin(); it != acToMsgs.end(); ++it) {
             QString acId = it.key();
-            QString acNameDisplay = acIdToName.value(acId, "AC_" + acId);
-            QString menuTitle = logName + ":" + acNameDisplay + " (" + acId + ")";
+            //QString acNameDisplay = acIdToName.value(acId, "AC_" + acId);
+            //QString menuTitle = logName + ":" + acNameDisplay + " (" + acId + ")";
+            QString menuTitle = logName + ":" + acId ;
             QMenu* acMenu = menuBar()->addMenu(menuTitle);
             m_logMenus.append(acMenu);
             
@@ -874,6 +905,7 @@ public:
             }
 
             acMenu->addSeparator();
+
             QAction* exportKmlAction = acMenu->addAction("Export KML");
             connect(exportKmlAction, &QAction::triggered, this, [this, acId, logName, dictFields]() {
                 QString defaultName = QFileInfo(m_currentLogFile).path() + "/" + logName + "_" + acId + ".kml";
@@ -1041,6 +1073,7 @@ public:
                 }
 
             });
+
             QAction* exportCsvAction = acMenu->addAction("Export CSV");
             connect(exportCsvAction, &QAction::triggered, this, [this, acId, logName, dictFields, msgs]() {
                 QDialog dialog(this);
@@ -1260,15 +1293,60 @@ int main(int argc, char *argv[]) {
 
     app.setWindowIcon(icon);
 
-    LogPlotterWindow window;
-    window.setWindowIcon(icon);
-    window.show();
-    
-    if (argc > 1) {
-        QString argFile = argv[1];
-        if (argFile != "--platform") {
-            window.loadLogFile(argFile);
+    QCommandLineParser parser;
+    parser.setApplicationDescription("Paparazzi Log Plotter");
+    parser.addHelpOption();
+    parser.addVersionOption();
+
+    QCommandLineOption exportCsvOption(QStringList() << "export_csv", "Export in CSV in batch mode according to saved preferences.");
+    parser.addOption(exportCsvOption);
+
+    QCommandLineOption verboseOption(QStringList() << "v" << "verbose", "Verbose mode.");
+    parser.addOption(verboseOption);
+
+    parser.addPositionalArgument("logs", "Log files to open.", "[log files...]");
+
+    // Parse the command line arguments
+    parser.process(app);
+
+    bool exportCsv = parser.isSet(exportCsvOption);
+    bool verbose = parser.isSet(verboseOption);
+    QStringList logFiles = parser.positionalArguments();
+
+    if (exportCsv) {
+        qWarning() << "Batch CSV export via CLI is not currently supported in the Qt C++ backend. Please use the GUI Export CSV feature.";
+    }
+
+    if (verbose) {
+        qDebug() << "Verbose mode enabled.";
+        qDebug() << "Log files to process:" << logFiles;
+    }
+
+    if (logFiles.isEmpty()) {
+        LogPlotterWindow* window = new LogPlotterWindow();
+        window->setWindowIcon(icon);
+        window->setAttribute(Qt::WA_DeleteOnClose);
+        window->show();
+    } else {
+        for (const QString& argFile : logFiles) {
+            // Ignore arguments that sneak through Qt arg parsing like wayland parameters just in case
+            if (argFile == "--platform") continue;
+            
+            LogPlotterWindow* window = new LogPlotterWindow();
+            window->setWindowIcon(icon);
+            window->setAttribute(Qt::WA_DeleteOnClose);
+            window->loadLogFile(argFile);
+            
+            if (!exportCsv) {
+                window->show();
+            }
         }
+    }
+
+    if (exportCsv) {
+        // Mock OCaml behavior where CSV export skips GUI loop execution
+        app.processEvents();
+        return 0;
     }
 
     return app.exec();
