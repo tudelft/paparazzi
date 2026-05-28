@@ -25,7 +25,9 @@
 #include <QMenu>
 #include <QAction>
 #include <QDialog>
+#include <QComboBox>
 #include <QTreeWidget>
+#include <QDateTime>
 #include <QTreeWidgetItem>
 #include <QDialogButtonBox>
 #include <QDir>
@@ -235,64 +237,69 @@ private slots:
     }
 
     void onAddConstantClicked() {
-        bool ok = false;
-        double val = m_edtConstant->text().toDouble(&ok);
-        if (!ok || !std::isfinite(val)) return;
+        QString text = m_edtConstant->text();
+        QStringList parts = text.split(';');
 
-        QLineSeries* series = new QLineSeries();
-        series->setName(QString("C=%1").arg(val));
+        for (const QString& part : parts) {
+            bool ok = false;
+            double val = part.trimmed().toDouble(&ok);
+            if (!ok || !std::isfinite(val)) continue;
 
-        QPen pen = series->pen();
-        pen.setColor(Qt::black);
-        pen.setWidth(m_spnLineThickness->value());
-        series->setPen(pen);
+            QLineSeries* series = new QLineSeries();
+            series->setName(QString("C=%1").arg(val));
 
-        double minX = 0;
-        double maxX = 100;
-        if (m_chart->series().count() > 0) {
-            auto axes = m_chart->axes(Qt::Horizontal);
-            if (!axes.isEmpty()) {
-                QValueAxis *axisX = qobject_cast<QValueAxis*>(axes.first());
-                if (axisX) {
-                    minX = axisX->min();
-                    maxX = axisX->max();
-                }
-            } else {
-                auto existing = m_chart->series().first();
-                QLineSeries *ls = qobject_cast<QLineSeries*>(existing);
-                if (ls && ls->count() > 0) {
-                    minX = ls->at(0).x();
-                    maxX = ls->at(ls->count() - 1).x();
+            QPen pen = series->pen();
+            pen.setColor(Qt::black);
+            pen.setWidth(m_spnLineThickness->value());
+            series->setPen(pen);
+
+            double minX = 0;
+            double maxX = 100;
+            if (m_chart->series().count() > 0) {
+                auto axes = m_chart->axes(Qt::Horizontal);
+                if (!axes.isEmpty()) {
+                    QValueAxis *axisX = qobject_cast<QValueAxis*>(axes.first());
+                    if (axisX) {
+                        minX = axisX->min();
+                        maxX = axisX->max();
+                    }
+                } else {
+                    auto existing = m_chart->series().first();
+                    QLineSeries *ls = qobject_cast<QLineSeries*>(existing);
+                    if (ls && ls->count() > 0) {
+                        minX = ls->at(0).x();
+                        maxX = ls->at(ls->count() - 1).x();
+                    }
                 }
             }
-        }
 
-        series->append(minX, val);
-        series->append(maxX, val);
+            series->append(minX, val);
+            series->append(maxX, val);
 
-        m_chart->addSeries(series);
-        series->attachAxis(m_axisX);
-        series->attachAxis(m_axisY);
-        autoRescaleAxes();
+            m_chart->addSeries(series);
+            series->attachAxis(m_axisX);
+            series->attachAxis(m_axisY);
+            autoRescaleAxes();
 
-        if (m_curvesMenu) {
-            QPixmap pixmap(16, 16);
-            pixmap.fill(pen.color());
-            QIcon icon(pixmap);
-            QString title = QString("C=%1").arg(val);
-            QAction* deleteAction = m_curvesMenu->addAction(icon, title);
-            deleteAction->setToolTip(tr("Delete constant curve"));
-            deleteAction->setStatusTip(tr("Delete constant curve"));
+            if (m_curvesMenu) {
+                QPixmap pixmap(16, 16);
+                pixmap.fill(pen.color());
+                QIcon icon(pixmap);
+                QString title = QString("C=%1").arg(val);
+                QAction* deleteAction = m_curvesMenu->addAction(icon, title);
+                deleteAction->setToolTip(tr("Delete constant curve"));
+                deleteAction->setStatusTip(tr("Delete constant curve"));
 
-            QLineSeries* targetSeries = series;
-            connect(deleteAction, &QAction::triggered, this, [this, targetSeries, deleteAction]() {
-                m_chart->removeSeries(targetSeries);
-                delete targetSeries;
-                deleteAction->deleteLater();
-                autoRescaleAxes();
-                if (m_legendManager) m_legendManager->updateLegendPosition();
-                m_chartView->viewport()->update();
-            });
+                QLineSeries* targetSeries = series;
+                connect(deleteAction, &QAction::triggered, this, [this, targetSeries, deleteAction]() {
+                    m_chart->removeSeries(targetSeries);
+                    delete targetSeries;
+                    deleteAction->deleteLater();
+                    autoRescaleAxes();
+                    if (m_legendManager) m_legendManager->updateLegendPosition();
+                    m_chartView->viewport()->update();
+                });
+            }
         }
         
         QTimer::singleShot(15, this, [this]() {
@@ -302,10 +309,11 @@ private slots:
     }
 
         void exportFig() {
+        QString defaultName = QDateTime::currentDateTime().toString("yy_MM_dd__HH_mm_ss") + "_graph.fig";
         QString fileName;
         {
             StderrBlocker blocker;
-            fileName = QFileDialog::getSaveFileName(this, tr("Export FIG"), "", tr("FIG Files (*.fig)"));
+            fileName = QFileDialog::getSaveFileName(this, tr("Export FIG"), defaultName, tr("FIG Files (*.fig)"));
         }
         if (fileName.isEmpty()) return;
 
@@ -435,6 +443,7 @@ private:
     QString m_originallyLoadedFile;
     ChartLegendManager* m_legendManager;
     pprzlink::MessageDictionary *m_dict;
+    QMap<QPair<QString, QString>, double> m_fieldCoefMap;
     QMenu *m_curvesMenu;
     QCheckBox* m_cbAutoScale;
     QLineEdit* m_edtMinY;
@@ -526,7 +535,8 @@ private:
         m_edtConstant->setMaximumWidth(75);
 
         QLabel *lblScaleNext = new QLabel("Scale next by");
-        m_edtScaleNext = new QLineEdit("1.0");
+        m_edtScaleNext = new QLineEdit("1.0+0");
+        m_edtScaleNext->setToolTip(tr("Format: scale+transpose or scale-transpose (e.g. 2.0+10.5)"));
         m_edtScaleNext->setMaximumWidth(75);
 
         m_spnLineThickness = new QSpinBox();
@@ -655,13 +665,37 @@ private:
         QFile file(m_currentLogFile);
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
 
-        bool okScale = false;
-        double scale = m_edtScaleNext->text().toDouble(&okScale);
-        if (!okScale) scale = 1.0;
+        QString txt = m_edtScaleNext->text().trimmed();
+        txt.replace(" ", "");
+        double scale = 1.0;
+        double transpose = 0.0;
+        
+        int splitIdx = -1;
+        for (int i = 1; i < txt.length(); ++i) {
+            if (txt.at(i) == '+' || txt.at(i) == '-') {
+                if (txt.at(i-1) != 'e' && txt.at(i-1) != 'E') {
+                    splitIdx = i;
+                    break;
+                }
+            }
+        }
 
-        bool okTranspose = false;
-        double transpose = m_edtConstant->text().toDouble(&okTranspose);
-        if (!okTranspose) transpose = 0.0;
+        if (splitIdx != -1) {
+            bool ok1 = false, ok2 = false;
+            double s = txt.left(splitIdx).toDouble(&ok1);
+            if (ok1) scale = s;
+            double t = txt.mid(splitIdx).toDouble(&ok2);
+            if (ok2) transpose = t;
+        } else {
+            bool ok = false;
+            double s = txt.toDouble(&ok);
+            if (ok) scale = s;
+        }
+
+        QPair<QString, QString> dictKey = qMakePair(msgName, fieldName);
+        if (m_fieldCoefMap.contains(dictKey)) {
+            scale *= m_fieldCoefMap[dictKey];
+        }
 
         QFileInfo fi(m_currentLogFile);
         QString logName = fi.baseName();
@@ -783,7 +817,15 @@ public:
                                     xml.readNext();
                                     if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name().toString() == "field") {
                                         if (xml.attributes().hasAttribute("NAME")) {
-                                            fields.append(xml.attributes().value("NAME").toString());
+                                            QString fName = xml.attributes().value("NAME").toString();
+                                            fields.append(fName);
+                                            if (xml.attributes().hasAttribute("ALT_UNIT_COEF")) {
+                                                bool ok = false;
+                                                double coef = xml.attributes().value("ALT_UNIT_COEF").toDouble(&ok);
+                                                if (ok) {
+                                                    m_fieldCoefMap[qMakePair(msgName, fName)] = coef;
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -1104,11 +1146,25 @@ public:
                 
                 QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
                 buttonBox->button(QDialogButtonBox::Ok)->setText("Export");
+                
+                QHBoxLayout* delimLayout = new QHBoxLayout();
+                QLabel* delimLabel = new QLabel("Delimiter:");
+                QComboBox* delimCombo = new QComboBox();
+                delimCombo->addItem("Comma (,)", ",");
+                delimCombo->addItem("TAB", "\t");
+                delimCombo->addItem("SPACE", " ");
+                delimCombo->addItem("Semicolon (;)", ";");
+                delimLayout->addWidget(delimLabel);
+                delimLayout->addWidget(delimCombo);
+                delimLayout->addStretch();
+                layout->addLayout(delimLayout);
+                
                 layout->addWidget(buttonBox);
                 connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
                 connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
                 
                 if (dialog.exec() == QDialog::Accepted) {
+                    QString delimiter = delimCombo->currentData().toString();
                     QString defaultName = QFileInfo(m_currentLogFile).path() + "/" + logName + "_" + acId + "_export.csv";
                     QString outFileName;
                     {
@@ -1156,7 +1212,7 @@ public:
                     }
 
                     QTextStream out(&outFile);
-                    out << headerCols.join(",") << "\n";
+                    out << headerCols.join(delimiter) << "\n";
                     
                     QProgressDialog progress(tr("Exporting CSV..."), tr("Cancel"), 0, inFile.size(), this);
                     progress.setWindowModality(Qt::WindowModal);
@@ -1243,7 +1299,7 @@ public:
                                                     row << "";
                                                 }
                                             }
-                                            out << row.join(",") << "\n";
+                                            out << row.join(delimiter) << "\n";
                                         }
                                     }
                                 }
@@ -1396,7 +1452,9 @@ int main(int argc, char *argv[]) {
     QCommandLineParser parser;
     parser.setApplicationDescription("Paparazzi Log Plotter");
     parser.addHelpOption();
-    parser.addVersionOption();
+    // Use manual version option to avoid "-v" conflict with verbose
+    QCommandLineOption versionOption(QStringList() << "version", "Displays version information.");
+    parser.addOption(versionOption);
 
     QCommandLineOption exportCsvOption(QStringList() << "export_csv", "Export in CSV in batch mode according to saved preferences.");
     parser.addOption(exportCsvOption);
@@ -1408,6 +1466,11 @@ int main(int argc, char *argv[]) {
 
     // Parse the command line arguments
     parser.process(app);
+
+    if (parser.isSet(versionOption)) {
+        parser.showVersion();
+        return 0;
+    }
 
     bool exportCsv = parser.isSet(exportCsvOption);
     bool verbose = parser.isSet(verboseOption);
