@@ -1,4 +1,5 @@
 #include <QPair>
+#include <QProcess>
 #include <QPainter>
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -390,15 +391,7 @@ private slots:
             fileName = QFileDialog::getOpenFileName(this, "Open Paparazzi Log", QDir::homePath() + "/paparazzi/var/logs", "Log Files (*.log);;All Files (*)");
         }
         if (!fileName.isEmpty()) {
-            QProgressDialog progress("Busy opening log file...", QString(), 0, 0, this);
-            progress.setWindowModality(Qt::WindowModal);
-            progress.setCancelButton(nullptr);
-            progress.show();
-            QCoreApplication::processEvents();
-            
             loadLogFile(fileName);
-            
-            progress.close();
         }
     }
 
@@ -416,6 +409,7 @@ private:
     QValueAxis *m_axisX;
     QValueAxis *m_axisY;
     QString m_currentLogFile;
+    QString m_originallyLoadedFile;
     ChartLegendManager* m_legendManager;
     pprzlink::MessageDictionary *m_dict;
     QMenu *m_curvesMenu;
@@ -437,9 +431,24 @@ private:
 
         QAction* newAction = fileMenu->addAction(tr("New"));
         newAction->setShortcut(QKeySequence("Ctrl+N"));
-        connect(newAction, &QAction::triggered, this, []() {
-            LogPlotterWindow* newWindow = new LogPlotterWindow();
-            newWindow->show();
+        connect(newAction, &QAction::triggered, this, [this]() {
+            QStringList args;
+            if (!m_originallyLoadedFile.isEmpty()) {
+                args << m_originallyLoadedFile;
+            }
+            
+            // Start detached process for maximum robustness and memory isolation.
+            // This ensures huge log files don't share identical process memory or block the current UI thread.
+            bool processStarted = QProcess::startDetached(QCoreApplication::applicationFilePath(), args);
+            
+            if (!processStarted) {
+                // Elegant fallback to in-process spawn if binary launching is unexpectedly restricted.
+                LogPlotterWindow* newWindow = new LogPlotterWindow();
+                if (!m_originallyLoadedFile.isEmpty()) {
+                    newWindow->loadLogFile(m_originallyLoadedFile);
+                }
+                newWindow->show();
+            }
         });
 
         QAction* exportFigAction = fileMenu->addAction(tr("Export Fig"));
@@ -695,6 +704,9 @@ private:
 
 public:
     void loadLogFile(const QString &fileName) {
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        
+        m_originallyLoadedFile = fileName;
         QString dataFileName = fileName;
         QMap<QString, QString> acIdToName;
         QMap<QString, QStringList> dictFields;
@@ -755,15 +767,22 @@ public:
         }
 
         if (!dataFileName.isEmpty() && m_currentLogFile == dataFileName) {
+            while (QApplication::overrideCursor()) QApplication::restoreOverrideCursor();
             return;
         }
 
         m_currentLogFile = dataFileName;
         QFile file(dataFileName);
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            while (QApplication::overrideCursor()) QApplication::restoreOverrideCursor();
             QMessageBox::warning(this, "Error", "Cannot open file " + dataFileName);
             return;
         }
+
+        qint64 totalSize = file.size();
+        QProgressDialog progress(tr("Parsing log file..."), tr("Cancel"), 0, totalSize > 0 ? totalSize : 1, this);
+        progress.setWindowModality(Qt::WindowModal);
+        progress.setMinimumDuration(200);
 
         QSet<QPair<QString, QString>> acMsgPairs;
         
@@ -771,7 +790,15 @@ public:
         const int CHUNK_SIZE = 1024 * 1024; //Adjust chunk size as you deem fit for performance/memory balance
         QByteArray buffer;
         while (!file.atEnd()) {
+            if (progress.wasCanceled()) {
+                m_currentLogFile.clear();
+                while (QApplication::overrideCursor()) QApplication::restoreOverrideCursor();
+                return;
+            }
             buffer.append(file.read(CHUNK_SIZE));
+            progress.setValue(file.pos());
+            QCoreApplication::processEvents();
+            
             int lineStart = 0;
             int nlIdx = 0;
             
@@ -1197,6 +1224,10 @@ public:
                     QMessageBox::information(this, tr("Export CSV"), tr("CSV Export Complete!"));
                 }
             });
+        }
+        
+        while (QApplication::overrideCursor()) {
+            QApplication::restoreOverrideCursor();
         }
     }
 };
