@@ -38,6 +38,7 @@
 #include <QSpinBox>
 #include <QTimer>
 #include <QFileInfo>
+#include <QXmlStreamReader>
 
 #include <QProxyStyle>
 #include <QCommandLineParser>
@@ -56,9 +57,6 @@
 #include <functional>
 #include "../linux_desktop_utils.h"
 #include "shared_plot.h"
-
-#include "pprzlinkQt/MessageDictionary.h"//TODO: should not be needed
-#include "pprzlinkQt/MessageDefinition.h"//TODO: should not be needed
 
 // Helper class to temporarily suppress stderr warnings (like GTK Wayland criticals) during native dialogs.
 //
@@ -158,8 +156,6 @@ public:
     LogPlotterWindow(QWidget *parent = nullptr) : QMainWindow(parent) {
         setWindowTitle("Log Plotter");
         resize(900, 300);
-        QString xmlPath = QDir::homePath() + "/paparazzi/var/messages.xml";
-        try { m_dict = new pprzlink::MessageDictionary(xmlPath); } catch (...) { m_dict = nullptr; }
         setupUI();
     }
 
@@ -442,7 +438,6 @@ private:
     QString m_currentLogFile;
     QString m_originallyLoadedFile;
     ChartLegendManager* m_legendManager;
-    pprzlink::MessageDictionary *m_dict;
     QMap<QPair<QString, QString>, double> m_fieldCoefMap;
     QMenu *m_curvesMenu;
     QCheckBox* m_cbAutoScale;
