@@ -1,5 +1,6 @@
 #include <QPair>
 #include <QMessageBox>
+#include <QProgressDialog>
 #include <QApplication>
 #include <QMainWindow>
 #include <QGraphicsLayout>
@@ -350,7 +351,15 @@ private slots:
             fileName = QFileDialog::getOpenFileName(this, "Open Paparazzi Log", QDir::homePath() + "/paparazzi/var/logs", "Log Files (*.log);;All Files (*)");
         }
         if (!fileName.isEmpty()) {
+            QProgressDialog progress("Busy opening log file...", QString(), 0, 0, this);
+            progress.setWindowModality(Qt::WindowModal);
+            progress.setCancelButton(nullptr);
+            progress.show();
+            QCoreApplication::processEvents();
+            
             loadLogFile(fileName);
+            
+            progress.close();
         }
     }
 
@@ -680,7 +689,7 @@ public:
                 int protoStart = content.indexOf("<protocol>");
                 int protoEnd = content.indexOf("</protocol>", protoStart);
                 if (protoStart != -1 && protoEnd != -1) {
-                    printf("Found protocol from %d to %d\n", protoStart, protoEnd); fflush(stdout);
+                    //printf("Found protocol from %d to %d\n", protoStart, protoEnd); fflush(stdout);//Enable for Debug only
                     QString protocolXml = content.mid(protoStart, protoEnd - protoStart + 11);
                     QXmlStreamReader xml(protocolXml);
                     while (!xml.atEnd() && !xml.hasError()) {
@@ -698,7 +707,7 @@ public:
                                     }
                                 }
                                 dictFields[msgName] = fields;
-                            printf("Extracted msg: %s with %lld fields\n", msgName.toStdString().c_str(), fields.size()); fflush(stdout);
+                            //printf("Extracted msg: %s with %lld fields\n", msgName.toStdString().c_str(), fields.size()); fflush(stdout);//Enable for Debug only
                             }
                         }
                     }
@@ -720,7 +729,7 @@ public:
         QSet<QPair<QString, QString>> acMsgPairs;
         
         // Fast parsing of the data file
-        const int CHUNK_SIZE = 1024 * 1024;
+        const int CHUNK_SIZE = 1024 * 1024; //Adjust chunk size as you deem fit for performance/memory balance
         QByteArray buffer;
         while (!file.atEnd()) {
             buffer.append(file.read(CHUNK_SIZE));
@@ -783,7 +792,7 @@ public:
             for (const QString& msgName : msgs) {
                 
                 if (dictFields.contains(msgName)) {
-                    printf("Found MSG in dict: %s\n", msgName.toStdString().c_str()); fflush(stdout);
+                    //printf("Found MSG in dict: %s\n", msgName.toStdString().c_str()); fflush(stdout);//Enable for Debug only
                     QMenu* msgMenu = acMenu->addMenu(msgName);
                     const QStringList& fields = dictFields.value(msgName);
                     for (int i = 0; i < fields.size(); ++i) {
@@ -797,6 +806,179 @@ public:
                     acMenu->addAction(msgName);
                 }
             }
+
+            acMenu->addSeparator();
+            QAction* exportKmlAction = acMenu->addAction("Export KML");
+            connect(exportKmlAction, &QAction::triggered, this, [this, acId, logName, dictFields]() {
+                QString defaultName = QFileInfo(m_currentLogFile).path() + "/" + logName + "_" + acId + ".kml";
+                
+                QString fileName;
+                {
+                    StderrBlocker blocker;
+                    fileName = QFileDialog::getSaveFileName(this, tr("Export KML"), defaultName, tr("KML Files (*.kml)"));
+                }
+                if (fileName.isEmpty()) return;
+                
+                QFile file(m_currentLogFile);
+                if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                    QMessageBox::warning(this, "Export KML", "Cannot open data file.");
+                    return;
+                }
+                
+                int latIdx = -1, lonIdx = -1, altIdx = -1;
+                int utmEastIdx = -1, utmNorthIdx = -1, utmZoneIdx = -1;
+                QString targetMsg;
+                bool isUtm = false;
+                double latScale = 1.0, lonScale = 1.0, altScale = 1.0;
+                
+                if (dictFields.contains("GPS")) {
+                    targetMsg = "GPS";
+                    utmEastIdx = dictFields["GPS"].indexOf("utm_east");
+                    utmNorthIdx = dictFields["GPS"].indexOf("utm_north");
+                    utmZoneIdx = dictFields["GPS"].indexOf("utm_zone");
+                    altIdx = dictFields["GPS"].indexOf("alt");
+                    altScale = 1e-3;
+                    isUtm = true;
+                } else if (dictFields.contains("GPS_INT")) {
+                    targetMsg = "GPS_INT";
+                    latIdx = dictFields["GPS_INT"].indexOf("lat");
+                    lonIdx = dictFields["GPS_INT"].indexOf("lon");
+                    altIdx = dictFields["GPS_INT"].indexOf("hmsl");
+                    if (altIdx == -1) altIdx = dictFields["GPS_INT"].indexOf("alt");
+                    latScale = 1e-7; lonScale = 1e-7; altScale = 1e-3;
+                } else if (dictFields.contains("MINIMAL_COM")) {
+                    targetMsg = "MINIMAL_COM";
+                    latIdx = dictFields["MINIMAL_COM"].indexOf("lat");
+                    lonIdx = dictFields["MINIMAL_COM"].indexOf("lon");
+                    altIdx = dictFields["MINIMAL_COM"].indexOf("hmsl");
+                    if (altIdx == -1) altIdx = dictFields["MINIMAL_COM"].indexOf("alt");
+                } else {
+                    // Try to dynamically figure it out from file scanning if not correctly in dict
+                    QFile checkFile(m_currentLogFile);
+                    if (checkFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                        QTextStream checkIn(&checkFile);
+                        QRegularExpression checkRe("\\s+");
+                        while (!checkIn.atEnd()) {
+                            QString line = checkIn.readLine();
+                            QStringList parts = line.split(checkRe, Qt::SkipEmptyParts);
+                            if (parts.size() > 3 && parts[1] == acId) {
+                                if (parts[2] == "GPS") { targetMsg = "GPS"; break; }
+                                else if (parts[2] == "GPS_INT") { targetMsg = "GPS_INT"; break; }
+                                else if (parts[2] == "MINIMAL_COM") { targetMsg = "MINIMAL_COM"; break; }
+                            }
+                        }
+                    }
+                    if (targetMsg == "GPS" && dictFields.contains("GPS")) {
+                        utmEastIdx = dictFields["GPS"].indexOf("utm_east");
+                        utmNorthIdx = dictFields["GPS"].indexOf("utm_north");
+                        utmZoneIdx = dictFields["GPS"].indexOf("utm_zone");
+                        altIdx = dictFields["GPS"].indexOf("alt");
+                        altScale = 1e-3;
+                        isUtm = true;
+                    }
+                }
+                
+                if (targetMsg.isEmpty() || (!isUtm && (latIdx == -1 || lonIdx == -1)) || (isUtm && (utmEastIdx == -1 || utmNorthIdx == -1 || utmZoneIdx == -1))) {
+                    QMessageBox::warning(this, "Export KML", "Could not find valid GPS coordinates in the log for this AC.");
+                    return;
+                }
+                
+                QTextStream in(&file);
+                QRegularExpression re("\\s+");
+                QString kmlCoords;
+                
+                auto utm2deg = [](double x, double y, int zone, double& lat, double& lon) {
+                    double a = 6378137.0;
+                    double eccSquared = 0.00669438000426224;
+                    double k0 = 0.9996;
+                    double eccPrimeSquared = eccSquared / (1.0 - eccSquared);
+                    x = x / (k0 * a);
+                    y = y / k0;
+                    double m = y / a;
+                    double mu = m / (1.0 - eccSquared / 4.0 - 3.0 * eccSquared * eccSquared / 64.0 - 5.0 * pow(eccSquared, 3) / 256.0);
+                    double e1 = (1.0 - sqrt(1.0 - eccSquared)) / (1.0 + sqrt(1.0 - eccSquared));
+                    
+                    double phi1Rad = mu + (3.0 * e1 / 2.0 - 27.0 * pow(e1, 3) / 32.0) * sin(2.0 * mu)
+                                     + (21.0 * e1 * e1 / 16.0 - 55.0 * pow(e1, 4) / 32.0) * sin(4.0 * mu)
+                                     + (151.0 * pow(e1, 3) / 96.0) * sin(6.0 * mu);
+                    double N1 = a / sqrt(1.0 - eccSquared * pow(sin(phi1Rad), 2));
+                    double T1 = pow(tan(phi1Rad), 2);
+                    double C1 = eccPrimeSquared * pow(cos(phi1Rad), 2);
+                    double R1 = a * (1.0 - eccSquared) / pow(1.0 - eccSquared * pow(sin(phi1Rad), 2), 1.5);
+                    double D = x;
+                    double LongOrigin = (zone - 1) * 6 - 180 + 3;
+                    
+                    lat = phi1Rad - (N1 * tan(phi1Rad) / R1) * (D * D / 2.0 - (5.0 + 3.0 * T1 + 10.0 * C1 - 4.0 * C1 * C1 - 9.0 * eccPrimeSquared) * D * D * D * D / 24.0
+                          + (61.0 + 90.0 * T1 + 298.0 * C1 + 45.0 * T1 * T1 - 252.0 * eccPrimeSquared - 3.0 * C1 * C1) * pow(D, 6) / 720.0);
+                    lat = lat * 180.0 / M_PI;
+                    lon = (D - (1.0 + 2.0 * T1 + C1) * pow(D, 3) / 6.0 + (5.0 - 2.0 * C1 + 28.0 * T1 - 3.0 * C1 * C1 + 8.0 * eccPrimeSquared + 24.0 * T1 * T1)
+                          * pow(D, 5) / 120.0) / cos(phi1Rad);
+                    lon = LongOrigin + lon * 180.0 / M_PI;
+                };
+
+                while (!in.atEnd()) {
+                    QString line = in.readLine();
+                    QStringList parts = line.split(re, Qt::SkipEmptyParts);
+                    if (parts.size() > 3 && parts[1] == acId && parts[2] == targetMsg) {
+                        if (!isUtm && parts.size() > 3 + std::max({latIdx, lonIdx, altIdx})) {
+                            double lat = parts[3 + latIdx].toDouble() * latScale;
+                            double lon = parts[3 + lonIdx].toDouble() * lonScale;
+                            double alt = altIdx != -1 ? parts[3 + altIdx].toDouble() * altScale : 0.0;
+                            kmlCoords += QString::number(lon, 'f', 6) + "," + QString::number(lat, 'f', 6) + "," + QString::number(alt, 'f', 6) + " ";
+                        } else if (isUtm && parts.size() > 3 + std::max({utmEastIdx, utmNorthIdx, utmZoneIdx, altIdx})) {
+                            double utmEast = parts[3 + utmEastIdx].toDouble() / 100.0;
+                            double utmNorth = parts[3 + utmNorthIdx].toDouble() / 100.0;
+                            int utmZone = parts[3 + utmZoneIdx].toInt();
+                            double alt = altIdx != -1 ? parts[3 + altIdx].toDouble() * altScale : 0.0;
+                            
+                            if (utmZone > 0 && alt > 0) {
+                                double lat, lon;
+                                utm2deg(utmEast, utmNorth, utmZone, lat, lon);
+                                kmlCoords += QString::number(lon, 'f', 6) + "," + QString::number(lat, 'f', 6) + "," + QString::number(alt, 'f', 6) + " ";
+                            }
+                        }
+                    }
+                }
+
+                QFile kmlFile(fileName);
+                if (kmlFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                    // QColor c = getNextSaturatedColor();
+                    // QString kmlColor = QString("%1%2%3%4")
+                    //     .arg(c.alpha(), 2, 16, QLatin1Char('0'))
+                    //     .arg(c.blue(), 2, 16, QLatin1Char('0'))
+                    //     .arg(c.green(), 2, 16, QLatin1Char('0'))
+                    //     .arg(c.red(), 2, 16, QLatin1Char('0'));
+
+                    QTextStream out(&kmlFile);
+                    out << "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n";
+                    out << "  <Document>\n";
+                    out << "    <name>" << logName << "_" << acId << "</name>\n";
+                    out << "    <Placemark>\n";
+                    out << "      <name>" << logName << "</name>\n";
+                    out << "      <Style>\n";
+                    out << "        <LineStyle>\n";
+                    //out << "          <color>" << kmlColor << "</color>\n";//New option to you gusto
+                    out << "          <color>ff0000ff</color>\n"; // Red color like in original code
+                    out << "          <width>2</width>\n";
+                    out << "        </LineStyle>\n";
+                    out << "      </Style>\n";
+                    out << "      <LineString>\n";
+                    out << "        <altitudeMode>absolute</altitudeMode>\n";
+                    out << "        <coordinates>\n";
+                    out << "          " << kmlCoords << "\n";
+                    out << "        </coordinates>\n";
+                    out << "      </LineString>\n";
+                    out << "    </Placemark>\n";
+                    out << "  </Document>\n";
+                    out << "</kml>\n";
+
+                }
+
+            });
+            QAction* exportCsvAction = acMenu->addAction("Export CSV");
+            connect(exportCsvAction, &QAction::triggered, this, []() {
+                qDebug() << "Export CSV placeholder";
+            });
         }
     }
 };
