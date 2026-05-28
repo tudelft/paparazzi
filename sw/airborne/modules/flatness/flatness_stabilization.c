@@ -41,12 +41,13 @@
 #define SAFE_SQRT(x) (sqrtf((x) > 0 ? (x) : 0.0f))
 
 // ------------------------------------- straight ------------------------------------- //
-// static const float DOWN_OFFSET = -1.0f;
+// static const float DOWN_OFFSET = -2.0f;
 // static const float NORTH_OFFSET = -5.0f + 5.0f;
-// static const float EAST_OFFSET = -5.0f + 1.0f;
+// static const float EAST_OFFSET = -5.0f + 0.8f;
 
 // #define REF_TRAJ_FILENAME "straight_vhigh3_cx1.11_533.csv"
 // #define NB_CSV_ROWS 533
+// #define FLIP_CSV_I 10
 
 // #define REF_TRAJ_FILENAME "straight_vhigh4_cx1.11_401.csv"
 // #define NB_CSV_ROWS 401
@@ -71,19 +72,28 @@
 
 // ------------------------------------- immelmann ------------------------------------- //
 // static const float DOWN_OFFSET = -0.8f;
-// static const float NORTH_OFFSET = -5.0f + 5.0f;
-// static const float EAST_OFFSET = -5.0f + 2.0f;
+// static const float NORTH_OFFSET = -5.0f + 2.0f;
+// static const float EAST_OFFSET = -5.0f + 3.0f;
 
 // #define REF_TRAJ_FILENAME "immelmann.csv"
-// #define NB_CSV_ROWS 716
+// #define NB_CSV_ROWS 529
+
+// ------------------------------------- immelmann + lateral --------------------------- //
+static const float DOWN_OFFSET = -0.8f;
+static const float NORTH_OFFSET = -5.0f + 1.0f;
+static const float EAST_OFFSET = -5.0f + 4.0f;
+
+#define REF_TRAJ_FILENAME "immelmann_lateral.csv"
+#define NB_CSV_ROWS 288
+#define FLIP_CSV_I NB_CSV_ROWS + 1
 
 // ------------------------------------- clothoid ------------------------------------- //
-static const float DOWN_OFFSET = -1.5f;
-static const float NORTH_OFFSET = -5.0f + 5.0f;
-static const float EAST_OFFSET = -5.0f + 0.5f;
+// static const float DOWN_OFFSET = -1.5f;
+// static const float NORTH_OFFSET = -5.0f + 5.0f;
+// static const float EAST_OFFSET = -5.0f + 0.5f;
 
-#define REF_TRAJ_FILENAME "clothoid.csv"
-#define NB_CSV_ROWS 817
+// #define REF_TRAJ_FILENAME "clothoid.csv"
+// #define NB_CSV_ROWS 817
 
 #define NB_CSV_COLS 21
 
@@ -122,7 +132,7 @@ static const float ACT_CUTOFF_OMEGA = 19.0f;
 static const float MIN_TAU = -0.981f;
 static const float MAX_TAU = -2.0f*9.81f;
 static const float ACCEL_BOUND = 1.6f*9.81f;
-static const float RATES_BOUND = (float)M_PI/4.0f;
+static const float RATES_BOUND = (float)M_PI/1.0f;
 
 static const float ANG_ACCEL_FILT_CUTOFF_FREQ = 5.0f;
 static const float ACCEL_FILT_CUTOFF_FREQ = 5.0f;
@@ -182,6 +192,8 @@ static struct FloatVect3 vel_start_buf;
 static struct FloatVect3 accel_start_buf;
 float vf_angle_cos;
 struct FloatVect3 ey_hat_prev;
+bool flip = false;
+bool flipped = false;
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -338,7 +350,7 @@ void flatness_stabilization_run(bool UNUSED in_flight, struct StabilizationSetpo
     }
     RATES_ADD(rates_sp, rates_ref);
     
-    if (fsm_state == FSM_P2P) {
+    if (fsm_state == FSM_P2P || fsm_state == FSM_TRAJECTORY) {
         RATES_BOUND_CUBE(rates_sp, -RATES_BOUND, RATES_BOUND);
     }
     
@@ -503,6 +515,15 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
                 ey_hat.x = -ey_hat.x;
                 ey_hat.y = -ey_hat.y;
                 ey_hat.z = -ey_hat.z;
+        }
+
+        if (flip == true) {
+                ey_hat.x = -ey_hat.x;
+                ey_hat.y = -ey_hat.y;
+                ey_hat.z = -ey_hat.z;
+
+                flip = false;
+                flipped = true;
         }
 
         VECT3_COPY(ey_hat_prev, ey_hat) // keep an copy of the current commanded body-y axis
@@ -808,6 +829,10 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
                 angaccel_ref.r = 0.0f;
 
                 fsm_state = FSM_END;
+            }
+
+            if (csv_i > FLIP_CSV_I && flipped == false) {
+                flip = true;
             }
 
             flatness_guidance_run(in_flight, cmd);
