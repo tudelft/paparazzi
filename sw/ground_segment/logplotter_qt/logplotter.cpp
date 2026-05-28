@@ -1,4 +1,5 @@
 #include <QPair>
+#include <QPainter>
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QApplication>
@@ -22,6 +23,10 @@
 #include <QMenuBar>
 #include <QMenu>
 #include <QAction>
+#include <QDialog>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QCheckBox>
 #include <QLineEdit>
@@ -154,13 +159,47 @@ public:
 private slots:
     void saveScreenshot() {
         if (!m_chartView) return;
+        
+        QString defaultPath = QDir::homePath() + "/paparazzi/var/logs/screenshot.png";
+        if (!m_currentLogFile.isEmpty()) {
+            QFileInfo fi(m_currentLogFile);
+            defaultPath = fi.path() + "/" + fi.completeBaseName() + ".png";
+        }
+
         QString fileName;
         {
             StderrBlocker blocker;
-            fileName = QFileDialog::getSaveFileName(this, tr("Save Screenshot"), QDir::homePath() + "/paparazzi/var/logs", tr("Images (*.png *.webp *.jpg *.bmp)"));
+            QFileDialog dialog(this, tr("Save Screenshot"), defaultPath);
+            dialog.setAcceptMode(QFileDialog::AcceptSave);
+            dialog.setNameFilters({
+                tr("PNG Image (*.png)"),
+                tr("JPEG Image (*.jpg)"),
+                tr("WebP Image (*.webp)"),
+                tr("BMP Image (*.bmp)")
+            });
+            dialog.setDefaultSuffix("png");
+            
+            // Updates the default suffix whenever a new filter is selected from the combobox
+            connect(&dialog, &QFileDialog::filterSelected, &dialog, [&dialog](const QString& filter) {
+                if (filter.contains("*.png")) dialog.setDefaultSuffix("png");
+                else if (filter.contains("*.jpg")) dialog.setDefaultSuffix("jpg");
+                else if (filter.contains("*.webp")) dialog.setDefaultSuffix("webp");
+                else if (filter.contains("*.bmp")) dialog.setDefaultSuffix("bmp");
+            });
+
+            if (dialog.exec() == QDialog::Accepted) {
+                fileName = dialog.selectedFiles().first();
+            }
         }
+
         if (!fileName.isEmpty()) {
-            QPixmap pixmap = m_chartView->grab();
+            QPixmap pixmap(m_chartView->size() * 2);
+            pixmap.fill(Qt::transparent);
+            QPainter painter(&pixmap);
+            painter.setRenderHint(QPainter::Antialiasing);
+            painter.setRenderHint(QPainter::TextAntialiasing);
+            m_chartView->scene()->render(&painter, QRectF(pixmap.rect()), m_chartView->sceneRect());
+            painter.end();
             if (!pixmap.save(fileName)) {
                 QMessageBox::warning(this, tr("Error"), tr("Failed to save screenshot to %1").arg(fileName));
             } else {
@@ -976,8 +1015,187 @@ public:
 
             });
             QAction* exportCsvAction = acMenu->addAction("Export CSV");
-            connect(exportCsvAction, &QAction::triggered, this, []() {
-                qDebug() << "Export CSV placeholder";
+            connect(exportCsvAction, &QAction::triggered, this, [this, acId, logName, dictFields, msgs]() {
+                QDialog dialog(this);
+                dialog.setWindowTitle(tr("Export CSV - %1").arg(acId));
+                dialog.resize(500, 600);
+                QVBoxLayout* layout = new QVBoxLayout(&dialog);
+                
+                QTreeWidget* tree = new QTreeWidget(&dialog);
+                tree->setHeaderLabel("Messages and Fields");
+                layout->addWidget(tree);
+                
+                for (const QString& msgName : msgs) {
+                    if (dictFields.contains(msgName)) {
+                        QTreeWidgetItem* msgItem = new QTreeWidgetItem(tree);
+                        msgItem->setText(0, msgName);
+                        msgItem->setFlags(msgItem->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsAutoTristate);
+                        msgItem->setCheckState(0, Qt::Unchecked);
+                        
+                        const QStringList& fields = dictFields.value(msgName);
+                        for (const QString& fieldName : fields) {
+                            QTreeWidgetItem* fieldItem = new QTreeWidgetItem(msgItem);
+                            fieldItem->setText(0, fieldName);
+                            fieldItem->setFlags(fieldItem->flags() | Qt::ItemIsUserCheckable);
+                            fieldItem->setCheckState(0, Qt::Unchecked);
+                        }
+                    }
+                }
+                
+                QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+                buttonBox->button(QDialogButtonBox::Ok)->setText("Export");
+                layout->addWidget(buttonBox);
+                connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+                connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+                
+                if (dialog.exec() == QDialog::Accepted) {
+                    QString defaultName = QFileInfo(m_currentLogFile).path() + "/" + logName + "_" + acId + "_export.csv";
+                    QString outFileName;
+                    {
+                        StderrBlocker blocker;
+                        outFileName = QFileDialog::getSaveFileName(this, tr("Save CSV"), defaultName, tr("CSV Files (*.csv)"));
+                    }
+                    if (outFileName.isEmpty()) return;
+                    
+                    QMap<QString, QList<int>> selectedFields;
+                    QMap<QString, QStringList> selectedFieldNames;
+                    
+                    int totalCols = 0;
+                    QStringList headerCols;
+                    headerCols << "Time";
+                    
+                    for (int i = 0; i < tree->topLevelItemCount(); ++i) {
+                        QTreeWidgetItem* msgItem = tree->topLevelItem(i);
+                        QString msgName = msgItem->text(0);
+                        for (int j = 0; j < msgItem->childCount(); ++j) {
+                            QTreeWidgetItem* fieldItem = msgItem->child(j);
+                            if (fieldItem->checkState(0) == Qt::Checked) {
+                                selectedFields[msgName].append(j);
+                                QString cName = msgName + "." + fieldItem->text(0);
+                                selectedFieldNames[msgName].append(cName);
+                                headerCols << cName;
+                                totalCols++;
+                            }
+                        }
+                    }
+                    if (totalCols == 0) {
+                        QMessageBox::information(this, tr("Export CSV"), tr("No fields selected for export."));
+                        return;
+                    }
+
+                    QFile inFile(m_currentLogFile);
+                    if (!inFile.open(QIODevice::ReadOnly)) {
+                        QMessageBox::warning(this, "Export CSV", "Cannot open data file.");
+                        return;
+                    }
+
+                    QFile outFile(outFileName);
+                    if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                        QMessageBox::warning(this, "Export CSV", "Cannot write to CSV file.");
+                        return;
+                    }
+
+                    QTextStream out(&outFile);
+                    out << headerCols.join(",") << "\n";
+                    
+                    QProgressDialog progress(tr("Exporting CSV..."), tr("Cancel"), 0, inFile.size(), this);
+                    progress.setWindowModality(Qt::WindowModal);
+                    progress.setMinimumDuration(100);
+                    
+                    const int CHUNK_SIZE = 1048576; // 1MB chunks
+                    QByteArray buffer;
+                    qint64 processedBytes = 0;
+                    
+                    // Pre-convert acId to UTF-8 to speed up comparison
+                    QByteArray acIdBytes = acId.toUtf8();
+                    const char* targetAcId = acIdBytes.constData();
+                    int targetAcIdLen = acIdBytes.length();
+
+                    while (!inFile.atEnd()) {
+                        buffer.append(inFile.read(CHUNK_SIZE));
+                        if (progress.wasCanceled()) break;
+                        processedBytes = inFile.pos();
+                        progress.setValue(processedBytes);
+                        QCoreApplication::processEvents();
+
+                        int lineStart = 0;
+                        while (true) {
+                            int nlIdx = buffer.indexOf('\n', lineStart);
+                            if (nlIdx == -1) break;
+
+                            int lineLen = nlIdx - lineStart;
+                            if (lineLen > 0 && buffer.at(nlIdx - 1) == '\r') {
+                                lineLen--;
+                            }
+
+                            if (lineLen > 0) {
+                                const char* lineData = buffer.constData() + lineStart;
+                                int s1 = -1, len1 = 0; // timestamp
+                                int s2 = -1, len2 = 0; // ac_id
+                                int s3 = -1, len3 = 0; // msg_name
+                                int dataStart = -1;
+
+                                for (int i = 0; i < lineLen; ++i) {
+                                    if (lineData[i] != ' ' && lineData[i] != '\t' && lineData[i] != '\r') {
+                                        if (s1 == -1) { s1 = i; }
+                                        else if (len1 > 0 && s2 == -1) { s2 = i; }
+                                        else if (len2 > 0 && s3 == -1) { s3 = i; }
+                                        else if (len3 > 0 && dataStart == -1) { dataStart = i; break; }
+                                    } else {
+                                        if (s1 != -1 && s2 == -1) { len1 = i - s1; }
+                                        else if (s2 != -1 && s3 == -1) { len2 = i - s2; }
+                                        else if (s3 != -1 && len3 == 0) { len3 = i - s3; }
+                                    }
+                                }
+                                if (s3 != -1 && len3 == 0) {
+                                     len3 = lineLen - s3;
+                                }
+
+                                if (s2 != -1 && len2 > 0 && s3 != -1 && len3 > 0) {
+                                    if (len2 == targetAcIdLen && qstrncmp(lineData + s2, targetAcId, len2) == 0) {
+                                        QString msgName = QString::fromUtf8(lineData + s3, len3);
+                                        if (selectedFields.contains(msgName)) {
+                                            QString timeStr = QString::fromUtf8(lineData + s1, len1);
+                                            QStringList values;
+                                            if (dataStart != -1) {
+                                                QString dataPart = QString::fromUtf8(lineData + dataStart, lineLen - dataStart);
+                                                values = dataPart.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+                                            }
+                                            
+                                            QStringList row;
+                                            row << timeStr;
+                                            
+                                            for (int i = 1; i < headerCols.size(); ++i) {
+                                                const QString& col = headerCols[i];
+                                                if (col.startsWith(msgName + ".")) {
+                                                    int fIdx = selectedFieldNames[msgName].indexOf(col);
+                                                    if (fIdx != -1 && fIdx < selectedFields[msgName].size()) {
+                                                        int paramIdx = selectedFields[msgName][fIdx];
+                                                        if (paramIdx < values.size()) {
+                                                            row << values[paramIdx].trimmed();
+                                                        } else {
+                                                            row << "";
+                                                        }
+                                                    } else {
+                                                        row << "";
+                                                    }
+                                                } else {
+                                                    row << "";
+                                                }
+                                            }
+                                            out << row.join(",") << "\n";
+                                        }
+                                    }
+                                }
+                            }
+                            lineStart = nlIdx + 1;
+                        }
+                        buffer.remove(0, lineStart);
+                    }
+                    
+                    progress.setValue(inFile.size());
+                    QMessageBox::information(this, tr("Export CSV"), tr("CSV Export Complete!"));
+                }
             });
         }
     }
