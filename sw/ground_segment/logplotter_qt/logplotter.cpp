@@ -1,75 +1,58 @@
-#include <QPair>
-#include <QProcess>
-#include <QPainter>
+/**
+ * @file logplotter.cpp
+ * @brief Primary Entrypoint for the Paparazzi Log Plotter Toolkit.
+ * 
+ * @details This file constructs the main UI context loop. It encompasses telemetry parsing, 
+ * dynamic data visualization scaling, and heavy multi-megabyte I/O log loading 
+ * optimized natively via Qt's C++ toolings.
+ */
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QApplication>
 #include <QMainWindow>
 #include <QGraphicsLayout>
-#include <QChart>
-#include <QChartView>
-#include <QLineSeries>
 #include <QValueAxis>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
 #include <QPushButton>
 #include <QFileDialog>
-#include <QSplitter>
-#include <QDebug>
 #include <QShortcut>
-#include <QWheelEvent>
-#include <QFile>
-#include <QTextStream>
-#include <QRegularExpression>
 #include <QMenuBar>
-#include <QMenu>
-#include <QAction>
-#include <QDialog>
 #include <QComboBox>
 #include <QTreeWidget>
-#include <QDateTime>
-#include <QTreeWidgetItem>
-#include <QDialogButtonBox>
-#include <QDir>
 #include <QCheckBox>
 #include <QLineEdit>
-#include <QSlider>
-#include <QLabel>
 #include <QSpinBox>
-#include <QTimer>
-#include <QFileInfo>
 #include <QXmlStreamReader>
 
 #include <QProxyStyle>
 #include <QCommandLineParser>
-#include <QCommandLineOption>
-#include <QPalette>
-#include <QColor>
 
 // Include the widgets you want to target for color changes
-#include <QLineEdit>
-#include <QTextEdit>
 #include <QPlainTextEdit>
-#include <QAbstractSpinBox> // Covers QSpinBox and QDoubleSpinBox
+// #include <QTextEdit>
+// #include <QAbstractSpinBox> 
 
 #include <unistd.h>
 #include <fcntl.h>
-#include <functional>
 #include "../linux_desktop_utils.h"
 #include "shared_plot.h"
 
-// Helper class to temporarily suppress stderr warnings (like GTK Wayland criticals) during native dialogs.
-//
-// WHY WE NEED THIS: 
-// When Qt runs natively on Wayland and opens a native file dialog (QFileDialog), 
-// the underlying GTK portal throws verbose `Gdk-CRITICAL` assertion errors into 
-// the console because it misunderstands the Wayland window handles provided by Qt.
-// 
-// WHY THIS APPROACH:
-// Instead of hacking global environment variables (like forcing GDK_BACKEND=x11) 
-// which could break Wayland integration elsewhere, we simply use this RAII class 
-// to mute 'stderr' (routing it to /dev/null) precisely while the dialog is open. 
-// This keeps our Qt/Wayland environment perfectly clean while hiding the GTK spam.
+/**
+ * @class StderrBlocker
+ * @brief An RAII helper to temporarily suppress stderr warnings (like GTK Wayland criticals) during native dialogs.
+ * 
+ * @details 
+ * WHY WE NEED THIS: 
+ * When Qt runs natively on Wayland and attempts to open native file dialogs (`QFileDialog`), 
+ * the underlying GTK portals often throw verbose `Gdk-CRITICAL` assertion errors into the 
+ * console. This occurs because GTK misunderstands the Wayland window handles provided by Qt, 
+ * filling logs with phantom errors during otherwise benign file picking.
+ * 
+ * WHY THIS APPROACH:
+ * Instead of compromising global environment variables (e.g., forcing `GDK_BACKEND=x11`), 
+ * which could aggressively break Wayland integrations downstream, we use this RAII lock 
+ * to temporarily route `stderr` blackholes (`/dev/null`) directly matching the lifespan 
+ * of the dialog scope. This effectively suppresses GTK spam cleanly.
+ */
 class StderrBlocker {
     int oldStderr;
     int devNull;
@@ -90,14 +73,27 @@ public:
     }
 };
 
-// The default background of the edit fields in a Dark theme is too dark, almost not visible it is an entry box
-// We tweak those fields to be a lighter gray just for better visibility in dark mode, without affecting the rest of the UI which is already dark themed and looks fine
+/**
+ * @class EditorLighteningStyle
+ * @brief Tames aggressively dark input widgets natively assigned by dark system themes.
+ * 
+ * @details Default dark mode palettes often render QLineEdits so dark that the input 
+ * borders or contrasts fail visibility checks. By proxying the widget polish phase, 
+ * we precisely elevate the `QPalette::Base` without touching Qt's global stylesheet mechanism, 
+ * which is notorious for stripping native OS-render configurations.
+ */
 class EditorLighteningStyle : public QProxyStyle { //TODO: Move to common header linux_desktop_utils.h since we like this elsewhere also
 public:
     // Inherit constructors from QProxyStyle
     using QProxyStyle::QProxyStyle; 
 
-    // The polish function is called automatically for every widget 
+        /**
+     * @brief The polish function is invoked automatically right before a widget renders.
+     * @param widget The Qt widget being prepped.
+     * 
+     * @details Hooks specifically into input-based widgets (LineEdits, SpinBoxes) 
+     * to forcefully override their base background color to a readable `#3a3a3a`.
+     */ 
     // right before it is displayed.
     void polish(QWidget *widget) override {
         // Always call the base class implementation first
@@ -121,6 +117,13 @@ public:
     }
 };
 
+/**
+ * @class ChartViewFilter
+ * @brief Event filter routing explicit mouse and scroll controls dynamically into the Chart view.
+ * 
+ * @details This decouples input logic (zooming with the scroll wheel, resetting bounds on 
+ * right-click) from subclassing native UI views, improving modularity.
+ */
 class ChartViewFilter : public QObject {
     QChart* m_chart;
     std::function<void()> m_onZoom;
@@ -149,24 +152,44 @@ public:
     }
 };
 
+/**
+ * @class LogPlotterWindow
+ * @brief The Core User Interface and execution context for rendering parsed telemetry logs.
+ * 
+ * @details 
+ * Implements a heavyweight rendering application leveraging `QChart`. The window encompasses 
+ * both visual plotting (axes formatting, legend integrations) and heavy I/O abstractions 
+ * (parsing multi-megabyte log files asynchronously without blocking the UI thread).
+ */
 class LogPlotterWindow : public QMainWindow {
     Q_OBJECT
 
 public:
     LogPlotterWindow(QWidget *parent = nullptr) : QMainWindow(parent) {
+        setAttribute(Qt::WA_DeleteOnClose);
         setWindowTitle("Log Plotter");
         resize(900, 300);
         setupUI();
     }
 
 private slots:
+    /**
+     * @brief Exports the current visual state of the chart to a rasterized image file.
+     * 
+     * @details Prioritizes XDG-compliant `PicturesLocation` for automatic saving, intercepting
+     * rendering engines to construct a high-resolution representation independent of native UI scaling limits.
+     */
     void saveScreenshot() {
         if (!m_chartView) return;
         
-        QString defaultPath = QDir::homePath() + "/paparazzi/var/logs/screenshot.png";
+        QString picsLocation = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
+        if (picsLocation.isEmpty()) {
+            picsLocation = QDir::currentPath();
+        }
+        QString defaultPath = QDir(picsLocation).filePath("screenshot.png");
         if (!m_currentLogFile.isEmpty()) {
             QFileInfo fi(m_currentLogFile);
-            defaultPath = fi.path() + "/" + "pprz_log-" + fi.completeBaseName() + ".png";
+            defaultPath = QDir(picsLocation).filePath("pprz_log-" + fi.completeBaseName() + ".png");
         }
 
         QString fileName;
@@ -305,7 +328,9 @@ private slots:
     }
 
         void exportFig() {
-        QString defaultName = "pprz_log-" + QDateTime::currentDateTime().toString("yy_MM_dd__HH_mm_ss") + ".fig";
+        QString docsLocation = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        if (docsLocation.isEmpty()) docsLocation = QDir::currentPath();
+        QString defaultName = QDir(docsLocation).filePath("pprz_log-" + QDateTime::currentDateTime().toString("yy_MM_dd__HH_mm_ss") + ".fig");
         QString fileName;
         {
             StderrBlocker blocker;
@@ -411,11 +436,47 @@ private slots:
         if (m_chartView && m_chartView->viewport()) m_chartView->viewport()->update();
     }
 
+    /**
+     * @brief Interactively prompts the user to select and load a raw `.log` telemetry file.
+     * 
+     * @details Contains specific heuristic search rules. It attempts to traverse the `PAPARAZZI_HOME`
+     * variables or up-folder structures strictly looking for the `var/logs` environment map, falling
+     * back safely to the FHS standard `AppDataLocation` to guarantee users aren't stranded in arbitrary paths.
+     */
     void openLogFile() {
         QString fileName;
         {
             StderrBlocker blocker;
-            fileName = QFileDialog::getOpenFileName(this, "Open Paparazzi Log", QDir::homePath() + "/paparazzi/var/logs", "Log Files (*.log);;All Files (*)");
+            const QString defaultLogExtPath = QStringLiteral("var/logs");
+            QString logDir;
+            QString envHome = qEnvironmentVariable("PAPARAZZI_HOME");
+            if (envHome.isEmpty()) envHome = qEnvironmentVariable("PAPARAZZI_SRC");
+            if (!envHome.isEmpty()) {
+                logDir = QDir(envHome).filePath(defaultLogExtPath);
+            }
+            if (logDir.isEmpty() || !QDir(logDir).exists()) {
+                QDir searchDir(QCoreApplication::applicationDirPath());
+                bool found = false;
+                for (int i = 0; i < 4; ++i) {
+                    if (QDir(searchDir.filePath(defaultLogExtPath)).exists()) {
+                        logDir = searchDir.filePath(defaultLogExtPath);
+                        found = true;
+                        break;
+                    }
+                    if (!searchDir.cdUp()) break;
+                }
+                if (!found) {
+                    if (QDir(QDir::current().filePath(defaultLogExtPath)).exists()) {
+                        logDir = QDir::current().filePath(defaultLogExtPath);
+                        found = true;
+                    }
+                }
+                if (!found) {
+                    QString dataLoc = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+                    logDir = QDir(dataLoc).filePath("logs");
+                }
+            }
+            fileName = QFileDialog::getOpenFileName(this, "Open Paparazzi Log", logDir, "Log Files (*.log);;All Files (*)");
         }
         if (!fileName.isEmpty()) {
             loadLogFile(fileName);
@@ -431,22 +492,22 @@ protected:
     }
 
 private:
-    QChart *m_chart;
-    QChartView *m_chartView;
-    QValueAxis *m_axisX;
-    QValueAxis *m_axisY;
+    QChart *m_chart = nullptr;
+    QChartView *m_chartView = nullptr;
+    QValueAxis *m_axisX = nullptr;
+    QValueAxis *m_axisY = nullptr;
     QString m_currentLogFile;
     QString m_originallyLoadedFile;
-    ChartLegendManager* m_legendManager;
+    ChartLegendManager* m_legendManager = nullptr;
     QMap<QPair<QString, QString>, double> m_fieldCoefMap;
-    QMenu *m_curvesMenu;
-    QCheckBox* m_cbAutoScale;
-    QLineEdit* m_edtMinY;
-    QLineEdit* m_edtMaxY;
-    QLineEdit* m_edtConstant;
-    QLineEdit* m_edtScaleNext;
-    QSpinBox* m_spnLineThickness;
-    QTimer* m_updateTimer;
+    QMenu *m_curvesMenu = nullptr;
+    QCheckBox* m_cbAutoScale = nullptr;
+    QLineEdit* m_edtMinY = nullptr;
+    QLineEdit* m_edtMaxY = nullptr;
+    QLineEdit* m_edtConstant = nullptr;
+    QLineEdit* m_edtScaleNext = nullptr;
+    QSpinBox* m_spnLineThickness = nullptr;
+    QTimer* m_updateTimer = nullptr;
     QList<QMenu*> m_logMenus;
 
     void setupMenu() {
@@ -509,8 +570,6 @@ private:
         mainLayout->setContentsMargins(0, 0, 0, 0);
         mainLayout->setSpacing(0);
 
-
-        
         QWidget *toolbarWidget = new QWidget();
         QHBoxLayout *toolbarLayout = new QHBoxLayout(toolbarWidget);
         toolbarLayout->setContentsMargins(2, 2, 2, 2);
@@ -610,8 +669,10 @@ private:
     }
 
     void autoRescaleAxes() {
-        double calcMinX = 1e9, calcMaxX = -1e9;
-        double calcMinY = 1e9, calcMaxY = -1e9;
+        double calcMinX = std::numeric_limits<double>::infinity();
+        double calcMaxX = -std::numeric_limits<double>::infinity();
+        double calcMinY = std::numeric_limits<double>::infinity();
+        double calcMaxY = -std::numeric_limits<double>::infinity();
         bool hasData = false;
 
         for (auto* s : m_chart->series()) {
@@ -705,22 +766,24 @@ private:
         QLineSeries *series = new QLineSeries();
         series->setName(curveTitle);
 
-        QTextStream in(&file);
-        QRegularExpression re("\\s+");
-        while (!in.atEnd()) {
-            QString line = in.readLine();
-            QStringList parts = line.split(re, Qt::SkipEmptyParts);
-            if (parts.size() > 3 + fieldIndex) {
-                if (parts[1] == acId && parts[2] == msgName) {
+        file.close(); // Not using the standard QTextStream any more
+        
+        processLogLines(m_currentLogFile, acId, nullptr, [&](const QString& timeStr, const QString& msgNameStr, const QString& dataPart, const QRegularExpression& spaceRe) {
+            if (msgNameStr == msgName) {
+                QStringList values;
+                if (!dataPart.isEmpty()) {
+                    values = dataPart.split(spaceRe, Qt::SkipEmptyParts);
+                }
+                if (values.size() > fieldIndex) {
                     bool okTime, okVal;
-                    double t = parts[0].toDouble(&okTime);
-                    double v = parts[3 + fieldIndex].toDouble(&okVal);
+                    double t = timeStr.toDouble(&okTime);
+                    double v = values[fieldIndex].toDouble(&okVal);
                     if (okTime && okVal) {
                         series->append(t, v * scale + transpose);
                     }
                 }
             }
-        }
+        });
         
         if (series->count() > 0) {
             QPen pen = series->pen();
@@ -762,13 +825,150 @@ private:
     }
 
 public:
+    /**
+     * @brief Asynchronous, zero-allocation log chunk parser.
+     * @tparam Func Lambda callback signature for handling regex matching per sequence line.
+     * @param logFileName The absolute path to the data file being processed.
+     * @param acId The target Aircraft ID to selectively parse.
+     * @param progress Optional pointer to UI progress tracking.
+     * @param callback Executor firing upon every isolated data block.
+     * 
+     * @details 
+     * THE BIG GOTCHA (Performance Strategy):
+     * Native iteration strings (e.g. `QTextStream::readLine()`) are devastatingly slow for files > 10MB because 
+     * they dynamically allocate heap memory for every single generated string buffer.
+     * 
+     * THE "WHY": 
+     * This function reads flat blocks of 1,048,576 bytes (1MB chunks) straight into memory, stepping via 
+     * pure `char*` pointers. Memory extraction into actual readable `QString` constructs is ONLY permitted 
+     * functionally if the target Aircraft ID cleanly matches the strict sequence check, evading thousands 
+     * of useless allocations per tick.
+     */
+    template <typename Func>
+    void processLogLines(const QString& logFileName, const QString& acId, QProgressDialog* progress, Func callback) {
+        QFile file(logFileName);
+        if (!file.open(QIODevice::ReadOnly)) return;
+
+        QByteArray acIdBytes = acId.toUtf8();
+        const char* targetAcId = acIdBytes.constData();
+        int targetAcIdLen = acIdBytes.length();
+
+        const int CHUNK_SIZE = 1048576;
+        QByteArray buffer;
+        QRegularExpression spaceRe("\\s+");
+        
+        while (!file.atEnd()) {
+            buffer.append(file.read(CHUNK_SIZE));
+            if (progress) {
+                if (progress->wasCanceled()) break;
+                progress->setValue(file.pos());
+                QCoreApplication::processEvents();
+            }
+
+            int lineStart = 0;
+            while (true) {
+                int nlIdx = buffer.indexOf('\n', lineStart);
+                if (nlIdx == -1) break;
+
+                int lineLen = nlIdx - lineStart;
+                if (lineLen > 0 && buffer.at(nlIdx - 1) == '\r') lineLen--;
+
+                if (lineLen > 0) {
+                    const char* lineData = buffer.constData() + lineStart;
+                    int s1 = -1, len1 = 0; 
+                    int s2 = -1, len2 = 0; 
+                    int s3 = -1, len3 = 0; 
+                    int dataStart = -1;
+
+                    for (int i = 0; i < lineLen; ++i) {
+                        if (lineData[i] != ' ' && lineData[i] != '\t' && lineData[i] != '\r') {
+                            if (s1 == -1) { s1 = i; }
+                            else if (len1 > 0 && s2 == -1) { s2 = i; }
+                            else if (len2 > 0 && s3 == -1) { s3 = i; }
+                            else if (len3 > 0 && dataStart == -1) { dataStart = i; break; }
+                        } else {
+                            if (s1 != -1 && s2 == -1) { len1 = i - s1; }
+                            else if (s2 != -1 && s3 == -1) { len2 = i - s2; }
+                            else if (s3 != -1 && len3 == 0) { len3 = i - s3; }
+                        }
+                    }
+                    if (s3 != -1 && len3 == 0) len3 = lineLen - s3;
+
+                    if (s2 != -1 && len2 > 0 && s3 != -1 && len3 > 0) {
+                        if (len2 == targetAcIdLen && qstrncmp(lineData + s2, targetAcId, len2) == 0) {
+                            QString timeStr = QString::fromUtf8(lineData + s1, len1);
+                            QString msgNameStr = QString::fromUtf8(lineData + s3, len3);
+                            
+                            QString dataPart;
+                            if (dataStart != -1) {
+                                dataPart = QString::fromUtf8(lineData + dataStart, lineLen - dataStart);
+                            }
+                            
+                            callback(timeStr, msgNameStr, dataPart, spaceRe);
+                        }
+                    }
+                }
+                lineStart = nlIdx + 1;
+            }
+            buffer.remove(0, lineStart);
+        }
+    }
+
+    void doExportCsv(const QString& acId, const QString& inFileStr, const QString& outFileName,
+                     const QMap<QString, QList<int>>& selectedFields,
+                     const QMap<QString, QStringList>& selectedFieldNames,
+                     const QStringList& headerCols, const QString& delimiter,
+                     QProgressDialog* progress = nullptr) {
+        QFile outFile(outFileName);
+        if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            QMessageBox::warning(this, "Export CSV", "Cannot write to CSV file.");
+            return;
+        }
+
+        QTextStream out(&outFile);
+        out << headerCols.join(delimiter) << "\n";
+        
+        processLogLines(inFileStr, acId, progress, [&](const QString& timeStr, const QString& msgName, const QString& dataPart, const QRegularExpression& spaceRe) {
+            if (selectedFields.contains(msgName)) {
+                QStringList values;
+                if (!dataPart.isEmpty()) {
+                    values = dataPart.split(spaceRe, Qt::SkipEmptyParts);
+                }
+                
+                QStringList row;
+                row << timeStr;
+                
+                for (int i = 1; i < headerCols.size(); ++i) {
+                    const QString& col = headerCols[i];
+                    if (col.startsWith(msgName + ".")) {
+                        int fIdx = selectedFieldNames[msgName].indexOf(col);
+                        if (fIdx != -1 && fIdx < selectedFields[msgName].size()) {
+                            int paramIdx = selectedFields[msgName][fIdx];
+                            if (paramIdx < values.size()) {
+                                row << values[paramIdx].trimmed();
+                            } else {
+                                row << "";
+                            }
+                        } else {
+                            row << "";
+                        }
+                    } else {
+                        row << "";
+                    }
+                }
+                out << row.join(delimiter) << "\n";
+            }
+        });
+        
+        if (progress) progress->setValue(progress->maximum());
+    }
+
     void loadLogFile(const QString &fileName, bool autoExportCsv = false) {
         QApplication::setOverrideCursor(Qt::WaitCursor);
         
         m_originallyLoadedFile = fileName;
         QString dataFileName = fileName;
-        QMap<QString, QString> acIdToName;
-        QMap<QString, QStringList> dictFields;
+                QMap<QString, QStringList> dictFields;
 
         if (fileName.endsWith(".log", Qt::CaseInsensitive)) {
             QFile logFile(fileName);
@@ -780,20 +980,7 @@ public:
                 if (matchDataFile.hasMatch()) {
                     QString dFile = matchDataFile.captured(1);
                     QFileInfo fi(fileName);
-                    dataFileName = fi.absolutePath() + "/" + dFile;
-                }
-
-                QRegularExpression reAircraft("<aircraft([^>]+)>");
-                QRegularExpressionMatchIterator itAc = reAircraft.globalMatch(content);
-                while (itAc.hasNext()) {
-                    QString attrs = itAc.next().captured(1);
-                    QRegularExpression reName("name=\"([^\"]+)\"");
-                    QRegularExpression reId("ac_id=\"([^\"]+)\"");
-                    QString acName = reName.match(attrs).captured(1);
-                    QString acId = reId.match(attrs).captured(1);
-                    if (!acId.isEmpty()) {
-                        acIdToName[acId] = acName;
-                    }
+                    dataFileName = fi.absoluteDir().filePath(dFile);
                 }
 
                 int protoStart = content.indexOf("<protocol>");
@@ -914,8 +1101,7 @@ public:
 
         for (auto it = acToMsgs.begin(); it != acToMsgs.end(); ++it) {
             QString acId = it.key();
-            //QString acNameDisplay = acIdToName.value(acId, "AC_" + acId);
-            //QString menuTitle = logName + ":" + acNameDisplay + " (" + acId + ")";
+
             QString menuTitle = logName + ":" + acId ;
             QMenu* acMenu = menuBar()->addMenu(menuTitle);
             m_logMenus.append(acMenu);
@@ -945,7 +1131,9 @@ public:
 
             QAction* exportKmlAction = acMenu->addAction("Export KML");
             connect(exportKmlAction, &QAction::triggered, this, [this, acId, logName, dictFields]() {
-                QString defaultName = QFileInfo(m_currentLogFile).path() + "/" + logName + "_" + acId + ".kml";
+                QString docsLocation = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+                if (docsLocation.isEmpty()) docsLocation = QFileInfo(m_currentLogFile).path();
+                QString defaultName = QDir(docsLocation).filePath(logName + ":" + acId + ".kml");//Well maybe a - is better than : for Windowsfile systems, but we keep it consistent with the previous OCAML code
                 
                 QString fileName;
                 {
@@ -1018,8 +1206,7 @@ public:
                     return;
                 }
                 
-                QTextStream in(&file);
-                QRegularExpression re("\\s+");
+                file.close(); // Abandon standard file iter for chunk processor
                 QString kmlCoords;
                 
                 auto utm2deg = [](double x, double y, int zone, double& lat, double& lon) {
@@ -1051,20 +1238,22 @@ public:
                     lon = LongOrigin + lon * 180.0 / M_PI;
                 };
 
-                while (!in.atEnd()) {
-                    QString line = in.readLine();
-                    QStringList parts = line.split(re, Qt::SkipEmptyParts);
-                    if (parts.size() > 3 && parts[1] == acId && parts[2] == targetMsg) {
-                        if (!isUtm && parts.size() > 3 + std::max({latIdx, lonIdx, altIdx})) {
-                            double lat = parts[3 + latIdx].toDouble() * latScale;
-                            double lon = parts[3 + lonIdx].toDouble() * lonScale;
-                            double alt = altIdx != -1 ? parts[3 + altIdx].toDouble() * altScale : 0.0;
+                processLogLines(m_currentLogFile, acId, nullptr, [&](const QString& timeStr, const QString& msgNameStr, const QString& dataPart, const QRegularExpression& spaceRe) {
+                    if (msgNameStr == targetMsg) {
+                        QStringList values;
+                        if (!dataPart.isEmpty()) {
+                            values = dataPart.split(spaceRe, Qt::SkipEmptyParts);
+                        }
+                        if (!isUtm && values.size() > std::max({latIdx, lonIdx, altIdx})) {
+                            double lat = values[latIdx].toDouble() * latScale;
+                            double lon = values[lonIdx].toDouble() * lonScale;
+                            double alt = altIdx != -1 ? values[altIdx].toDouble() * altScale : 0.0;
                             kmlCoords += QString::number(lon, 'f', 6) + "," + QString::number(lat, 'f', 6) + "," + QString::number(alt, 'f', 6) + " ";
-                        } else if (isUtm && parts.size() > 3 + std::max({utmEastIdx, utmNorthIdx, utmZoneIdx, altIdx})) {
-                            double utmEast = parts[3 + utmEastIdx].toDouble() / 100.0;
-                            double utmNorth = parts[3 + utmNorthIdx].toDouble() / 100.0;
-                            int utmZone = parts[3 + utmZoneIdx].toInt();
-                            double alt = altIdx != -1 ? parts[3 + altIdx].toDouble() * altScale : 0.0;
+                        } else if (isUtm && values.size() > std::max({utmEastIdx, utmNorthIdx, utmZoneIdx, altIdx})) {
+                            double utmEast = values[utmEastIdx].toDouble() / 100.0;
+                            double utmNorth = values[utmNorthIdx].toDouble() / 100.0;
+                            int utmZone = values[utmZoneIdx].toInt();
+                            double alt = altIdx != -1 ? values[altIdx].toDouble() * altScale : 0.0;
                             
                             if (utmZone > 0 && alt > 0) {
                                 double lat, lon;
@@ -1073,7 +1262,7 @@ public:
                             }
                         }
                     }
-                }
+                });
 
                 QFile kmlFile(fileName);
                 if (kmlFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -1160,7 +1349,9 @@ public:
                 
                 if (dialog.exec() == QDialog::Accepted) {
                     QString delimiter = delimCombo->currentData().toString();
-                    QString defaultName = QFileInfo(m_currentLogFile).path() + "/" + logName + "_" + acId + "_export.csv";
+                    QString docsLocation = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+                    if (docsLocation.isEmpty()) docsLocation = QFileInfo(m_currentLogFile).path();
+                    QString defaultName = QDir(docsLocation).filePath(logName + "_" + acId + "_export.csv");
                     QString outFileName;
                     {
                         StderrBlocker blocker;
@@ -1194,123 +1385,20 @@ public:
                         return;
                     }
 
-                    QFile inFile(m_currentLogFile);
-                    if (!inFile.open(QIODevice::ReadOnly)) {
-                        QMessageBox::warning(this, "Export CSV", "Cannot open data file.");
-                        return;
-                    }
-
-                    QFile outFile(outFileName);
-                    if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-                        QMessageBox::warning(this, "Export CSV", "Cannot write to CSV file.");
-                        return;
-                    }
-
-                    QTextStream out(&outFile);
-                    out << headerCols.join(delimiter) << "\n";
-                    
-                    QProgressDialog progress(tr("Exporting CSV..."), tr("Cancel"), 0, inFile.size(), this);
+                    QProgressDialog progress(tr("Exporting CSV..."), tr("Cancel"), 0, QFileInfo(m_currentLogFile).size(), this);
                     progress.setWindowModality(Qt::WindowModal);
                     progress.setMinimumDuration(100);
                     
-                    const int CHUNK_SIZE = 1048576; // 1MB chunks
-                    QByteArray buffer;
-                    qint64 processedBytes = 0;
+                    doExportCsv(acId, m_currentLogFile, outFileName, selectedFields, selectedFieldNames, headerCols, delimiter, &progress);
                     
-                    // Pre-convert acId to UTF-8 to speed up comparison
-                    QByteArray acIdBytes = acId.toUtf8();
-                    const char* targetAcId = acIdBytes.constData();
-                    int targetAcIdLen = acIdBytes.length();
-
-                    while (!inFile.atEnd()) {
-                        buffer.append(inFile.read(CHUNK_SIZE));
-                        if (progress.wasCanceled()) break;
-                        processedBytes = inFile.pos();
-                        progress.setValue(processedBytes);
-                        QCoreApplication::processEvents();
-
-                        int lineStart = 0;
-                        while (true) {
-                            int nlIdx = buffer.indexOf('\n', lineStart);
-                            if (nlIdx == -1) break;
-
-                            int lineLen = nlIdx - lineStart;
-                            if (lineLen > 0 && buffer.at(nlIdx - 1) == '\r') {
-                                lineLen--;
-                            }
-
-                            if (lineLen > 0) {
-                                const char* lineData = buffer.constData() + lineStart;
-                                int s1 = -1, len1 = 0; // timestamp
-                                int s2 = -1, len2 = 0; // ac_id
-                                int s3 = -1, len3 = 0; // msg_name
-                                int dataStart = -1;
-
-                                for (int i = 0; i < lineLen; ++i) {
-                                    if (lineData[i] != ' ' && lineData[i] != '\t' && lineData[i] != '\r') {
-                                        if (s1 == -1) { s1 = i; }
-                                        else if (len1 > 0 && s2 == -1) { s2 = i; }
-                                        else if (len2 > 0 && s3 == -1) { s3 = i; }
-                                        else if (len3 > 0 && dataStart == -1) { dataStart = i; break; }
-                                    } else {
-                                        if (s1 != -1 && s2 == -1) { len1 = i - s1; }
-                                        else if (s2 != -1 && s3 == -1) { len2 = i - s2; }
-                                        else if (s3 != -1 && len3 == 0) { len3 = i - s3; }
-                                    }
-                                }
-                                if (s3 != -1 && len3 == 0) {
-                                     len3 = lineLen - s3;
-                                }
-
-                                if (s2 != -1 && len2 > 0 && s3 != -1 && len3 > 0) {
-                                    if (len2 == targetAcIdLen && qstrncmp(lineData + s2, targetAcId, len2) == 0) {
-                                        QString msgName = QString::fromUtf8(lineData + s3, len3);
-                                        if (selectedFields.contains(msgName)) {
-                                            QString timeStr = QString::fromUtf8(lineData + s1, len1);
-                                            QStringList values;
-                                            if (dataStart != -1) {
-                                                QString dataPart = QString::fromUtf8(lineData + dataStart, lineLen - dataStart);
-                                                values = dataPart.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
-                                            }
-                                            
-                                            QStringList row;
-                                            row << timeStr;
-                                            
-                                            for (int i = 1; i < headerCols.size(); ++i) {
-                                                const QString& col = headerCols[i];
-                                                if (col.startsWith(msgName + ".")) {
-                                                    int fIdx = selectedFieldNames[msgName].indexOf(col);
-                                                    if (fIdx != -1 && fIdx < selectedFields[msgName].size()) {
-                                                        int paramIdx = selectedFields[msgName][fIdx];
-                                                        if (paramIdx < values.size()) {
-                                                            row << values[paramIdx].trimmed();
-                                                        } else {
-                                                            row << "";
-                                                        }
-                                                    } else {
-                                                        row << "";
-                                                    }
-                                                } else {
-                                                    row << "";
-                                                }
-                                            }
-                                            out << row.join(delimiter) << "\n";
-                                        }
-                                    }
-                                }
-                            }
-                            lineStart = nlIdx + 1;
-                        }
-                        buffer.remove(0, lineStart);
-                    }
-                    
-                    progress.setValue(inFile.size());
                     QMessageBox::information(this, tr("Export CSV"), tr("CSV Export Complete!"));
                 }
             });
 
             if (autoExportCsv) {
-                QString outFileName = QFileInfo(m_currentLogFile).path() + "/" + logName + "_" + acId + "_export.csv";
+                QString docsLocation = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+                if (docsLocation.isEmpty()) docsLocation = QFileInfo(m_currentLogFile).path();
+                QString outFileName = QDir(docsLocation).filePath(logName + "_" + acId + "_export.csv");
                 QMap<QString, QList<int>> selectedFields;
                 QMap<QString, QStringList> selectedFieldNames;
                 int totalCols = 0;
@@ -1331,82 +1419,7 @@ public:
                 }
                 
                 if (totalCols > 0) {
-                    QFile inFileBatch(m_currentLogFile);
-                    if (inFileBatch.open(QIODevice::ReadOnly)) {
-                        QFile outFileBatch(outFileName);
-                        if (outFileBatch.open(QIODevice::WriteOnly | QIODevice::Text)) {
-                            QTextStream out(&outFileBatch);
-                            out << headerCols.join(",") << "\n";
-                            
-                            const int CHUNK_SIZE = 1048576;
-                            QByteArray buffer;
-                            QByteArray acIdBytes = acId.toUtf8();
-                            const char* targetAcId = acIdBytes.constData();
-                            int targetAcIdLen = acIdBytes.length();
-
-                            while (!inFileBatch.atEnd()) {
-                                buffer.append(inFileBatch.read(CHUNK_SIZE));
-                                int lineStart = 0;
-                                while (true) {
-                                    int nlIdx = buffer.indexOf('\n', lineStart);
-                                    if (nlIdx == -1) break;
-
-                                    int lineLen = nlIdx - lineStart;
-                                    if (lineLen > 0 && buffer.at(nlIdx - 1) == '\r') lineLen--;
-
-                                    if (lineLen > 0) {
-                                        const char* lineData = buffer.constData() + lineStart;
-                                        int s1 = -1, len1 = 0; int s2 = -1, len2 = 0; int s3 = -1, len3 = 0; int dataStart = -1;
-                                        for (int i = 0; i < lineLen; ++i) {
-                                            if (lineData[i] != ' ' && lineData[i] != '\t' && lineData[i] != '\r') {
-                                                if (s1 == -1) { s1 = i; }
-                                                else if (len1 > 0 && s2 == -1) { s2 = i; }
-                                                else if (len2 > 0 && s3 == -1) { s3 = i; }
-                                                else if (len3 > 0 && dataStart == -1) { dataStart = i; break; }
-                                            } else {
-                                                if (s1 != -1 && s2 == -1) { len1 = i - s1; }
-                                                else if (s2 != -1 && s3 == -1) { len2 = i - s2; }
-                                                else if (s3 != -1 && len3 == 0) { len3 = i - s3; }
-                                            }
-                                        }
-                                        if (s3 != -1 && len3 == 0) len3 = lineLen - s3;
-
-                                        if (s2 != -1 && len2 > 0 && s3 != -1 && len3 > 0) {
-                                            if (len2 == targetAcIdLen && qstrncmp(lineData + s2, targetAcId, len2) == 0) {
-                                                QString msgName = QString::fromUtf8(lineData + s3, len3);
-                                                if (selectedFields.contains(msgName)) {
-                                                    QString timeStr = QString::fromUtf8(lineData + s1, len1);
-                                                    QStringList values;
-                                                    if (dataStart != -1) {
-                                                        QString dataPart = QString::fromUtf8(lineData + dataStart, lineLen - dataStart);
-                                                        values = dataPart.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
-                                                    }
-                                                    QStringList row;
-                                                    row << timeStr;
-                                                    for (int i = 1; i < headerCols.size(); ++i) {
-                                                        const QString& col = headerCols[i];
-                                                        if (col.startsWith(msgName + ".")) {
-                                                            int fIdx = selectedFieldNames[msgName].indexOf(col);
-                                                            if (fIdx != -1 && fIdx < selectedFields[msgName].size()) {
-                                                                int paramIdx = selectedFields[msgName][fIdx];
-                                                                if (paramIdx < values.size()) {
-                                                                    row << values[paramIdx].trimmed();
-                                                                } else row << "";
-                                                            } else row << "";
-                                                        } else row << "";
-                                                    }
-                                                    out << row.join(",") << "\n";
-                                                }
-                                            }
-                                        }
-                                    }
-                                    lineStart = nlIdx + 1;
-                                }
-                                buffer.remove(0, lineStart);
-                            }
-                        }
-                    }
-                }
+                    doExportCsv(acId, m_currentLogFile, outFileName, selectedFields, selectedFieldNames, headerCols, ",");}
             }
         }
         

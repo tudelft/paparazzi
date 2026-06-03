@@ -1,3 +1,11 @@
+/**
+ * @file linux_desktop_utils.h
+ * @brief Utilities for dynamically integrating applications into the Linux desktop environment.
+ * 
+ * @details This component enables auto-generation of XDG desktop rules (creating `.desktop` files)
+ * directly from the binary executable at runtime. This allows seamless integration into 
+ * GNOME/Wayland launchers without requiring elevated system or `sudo` compilation passes.
+ */
 #ifndef LINUX_DESKTOP_UTILS_H
 #define LINUX_DESKTOP_UTILS_H
 
@@ -10,6 +18,22 @@
 #include <QString>
 #include <QStringList>
 
+/**
+ * @brief Bootstraps a Linux `.desktop` file dynamically so the desktop manager recognizes the app.
+ * 
+ * @param appDesktopFileName The base file name for the `.desktop` file (without extension).
+ * @param displayName The generic visual name displayed to the End User.
+ * @param appComment A short tooltip explanation displayed by the desktop launcher.
+ * @param iconResourcePath Absolute file path to the native icon resource.
+ * @param startupWMClass Represents the `WM_CLASS` X11 property to bind window groups.
+ * 
+ * @details
+ * This algorithm bypasses global system folders (`/usr/share/applications`) avoiding 
+ * Permission Denied issues. It accurately delegates to the `QStandardPaths::ApplicationsLocation`, 
+ * ensuring compatibility across strict sandbox models (like Flatpaks and AppImages).
+ * 
+ * @note If the icon resource is missing, the application launcher will fallback to the default generic system icon.
+ */
 inline void installLinuxDesktopIntegration(const QString& appDesktopFileName, const QString& displayName, const QString& appComment, const QString& iconResourcePath, const QString& startupWMClass) {
 #if defined(Q_OS_LINUX)
     // Dynamically install desktop integration files so GNOME/Wayland can pick them up dynamically
@@ -20,6 +44,10 @@ inline void installLinuxDesktopIntegration(const QString& appDesktopFileName, co
         exePath = QDir::cleanPath(QDir().absoluteFilePath(exePath));
     }
 
+    // Substitute standard user home locations dynamically into terminal bindings.
+    // Why wrap in bash? 
+    // Absolute paths can confuse sandboxed environments if they hardcode local host mount paths. 
+    // Passing through standard bash executes allows environment path expansion on run.
     QString userName = qgetenv("USER");
     if (!userName.isEmpty() && exePath.startsWith("/home/" + userName + "/")) {
         // Substitute /home/user/ with ~/ internally wrapped in a bash exec so it's fully portable
@@ -27,7 +55,8 @@ inline void installLinuxDesktopIntegration(const QString& appDesktopFileName, co
         exePath = "bash -c \"exec " + exePath + "\"";
     }
 
-    //Follow also XDG rules for file locations, so that we don't need sudo and it works in flatpaks/snap/other containerized environments without special permissions
+    // Follow also XDG rules for file locations, so that we don't need sudo and it 
+    // works in flatpaks/snap/other containerized environments without special permissions
     QString appsLocation = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
     if (!appsLocation.isEmpty()) {
         QDir().mkpath(appsLocation);
@@ -63,6 +92,7 @@ inline void installLinuxDesktopIntegration(const QString& appDesktopFileName, co
         }
         
         // Let the system catch up using Qt's native cross-platform process API, discarding any desktop error messages
+        // Running standard Linux DBs sync asynchronously
         QProcess::startDetached("/bin/sh", QStringList() << "-c" << QString("update-desktop-database -q \"%1\" >/dev/null 2>&1").arg(appsLocation));
         QString hicolorDir = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/icons/hicolor";
         QProcess::startDetached("/bin/sh", QStringList() << "-c" << QString("gtk-update-icon-cache -q -t -f \"%1\" >/dev/null 2>&1").arg(hicolorDir));
