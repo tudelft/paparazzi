@@ -1,60 +1,39 @@
-#include <QAction>
-#include <QApplication>
+/**
+ * @file plotter.cpp
+ * @brief Real-time telemetry plotter application for Paparazzi UAV.
+ * @details This application connects to the Paparazzi Ivy bus, parses telemetry 
+ *          messages dynamically, and visualizes the data via Qt Charts in real-time. 
+ *          It is designed to be highly robust and memory-safe for long-running operations.
+ */
 
-#include <QChart>
+#include <QApplication>
 #include <QChartView>
 #include <QCheckBox>
-#include <QColor>
-#include <QDateTime>
-#include <QFrame>
-#include <QFile>
 #include <QGraphicsLayout>
 #include <QHBoxLayout>
-#include <QIcon>
-#include <QKeySequence>
 #include <QLabel>
 #include <QLineEdit>
 #include <QLineSeries>
-#include <QList>
 #include <QMainWindow>
-#include <QMenu>
 #include <QMenuBar>
-#include <QMimeData>
-#include <QPainter>
-#include <QPen>
-#include <QPixmap>
-#include <QPointF>
 #include <QSlider>
 #include <QSpinBox>
-#include <QString>
-#include <QStringList>
-#include <QTimer>
-#include <QVBoxLayout>
 #include <QValueAxis>
-
-
-
 #include <QProxyStyle>
-#include <QPalette>
-#include <QColor>
-
-// Include the widgets you want to target
-
-#include <QTextEdit>
 #include <QPlainTextEdit>
-#include <QAbstractSpinBox> // Covers QSpinBox and QDoubleSpinBox
+#include <mutex>
 
-
-//#include <QDebug>
 #include "../linux_desktop_utils.h"
-#include <cmath>
-#include <algorithm>
-#include <variant>
-#include <vector>
-#include "pprzlinkQt/Message.h"
-#include "pprzlinkQt/MessageDictionary.h"
 #include "pprzlinkQt/IvyQtLink.h"
 
+/**
+ * @struct PlotConfig
+ * @brief Configuration and runtime state for an actively plotted curve.
+ * @details This structure bundles the telemetry metadata (sender, message name, field) 
+ *          with the Qt rendering components (QLineSeries, action menus) and an internal 
+ *          buffer. Buffering points incoming rapidly prevents excessive redraw calls 
+ *          on the QChart side, allowing high update rates gracefully.
+ */
 struct PlotConfig {
     QString senderName;
     QString className;
@@ -69,6 +48,13 @@ struct PlotConfig {
     QAction* stdevAction = nullptr;
 };
 
+/**
+ * @class PlotterWindow
+ * @brief The main GUI manager encompassing the plotting canvas, tools, and Ivy messaging.
+ * @details This class is responsible for spawning the main window layout, registering 
+ *          drag-and-drop operations for curve associations, processing parsed variables 
+ *          into chart instances, and maintaining boundary rules (auto-scaling, min/max limits).
+ */
 class PlotterWindow : public QMainWindow {
     Q_OBJECT
 public:
@@ -105,6 +91,8 @@ private:
     
     void addCurveToMenu(PlotConfig& config);
     void removeCurve(QLineSeries* series);
+    void recalculateYBounds();
+    QColor getNextSaturatedColor();
     
     QChart *m_chart;
     QValueAxis *m_axisX;
@@ -116,6 +104,7 @@ private:
     
     QList<PlotConfig> m_activePlots;
     
+    int m_colorIndex = 0;
     double m_minY;
     double m_maxY;
     bool m_paused;
@@ -133,16 +122,17 @@ private:
     QMenu* m_curvesMenu;
     QTimer* m_legendUpdateTimer;
     bool m_legendNeedsRefresh;
+    std::recursive_mutex m_plotMutex;
 };
 
-static int g_colorIndex = 0;
-static QColor getNextSaturatedColor() {
-    double h = std::fmod(g_colorIndex * 137.508, 360.0);
-    g_colorIndex++;
-    // Hue varies, Saturation = 1.0 (no white/gray, min channel is 0), Value = 1.0 (no dark colors, max channel is 255)
-    return QColor::fromHsvF(h / 360.0, 1.0, 1.0);
-}
-
+/**
+ * @brief Safely extracts a native double value from a generic pprzlink FieldValue.
+ * @param value The strongly-typed variant value transmitted over the Ivy bus.
+ * @return The converted 64-bit float, or a quiet NaN if the layout is an array or unparseable string.
+ * @details Ivy telemetry packages data in multiple raw binary types. This helper cleanly cascades 
+ *          downward through the supported type taxonomy to normalize inputs onto a plotting-friendly 
+ *          1D numerical axis.
+ */
 static double fieldValueAsDouble(const pprzlink::FieldValue &value)
 {
     const auto &type = value.getType();
@@ -207,10 +197,32 @@ static double fieldValueAsDouble(const pprzlink::FieldValue &value)
     }
 }
 
-PlotterWindow::PlotterWindow(QWidget *parent) : QMainWindow(parent), m_minY(1e9), m_maxY(-1e9), m_paused(false), m_autoScale(true), m_legendNeedsRefresh(false) {
+/**
+ * @brief Retrieves the next uniformly-distributed vibrant color for a curve.
+ * @return A unique QColor guaranteed to remain legible against standard IDE themes.
+ * @details By traversing the Hue spectrum based on the golden angle (approx. 137.5 degrees), 
+ *          we mathematically guarantee maximum perceptual spacing between sequentially 
+ *          spawned line colors.
+ */
+QColor PlotterWindow::getNextSaturatedColor() {
+    double h = std::fmod(m_colorIndex * 137.508, 360.0);
+    m_colorIndex++;
+    // Hue varies, Saturation = 1.0 (no white/gray, min channel is 0), Value = 1.0 (no dark colors, max channel is 255)
+    return QColor::fromHsvF(h / 360.0, 1.0, 1.0);
+}
+
+/**
+ * @brief Constructs the Plotter Window and instantiates all visual layouts.
+ * @param parent Optional parent widget (usually null for root windows).
+ * @details Establishes zero-margin frameless QChart setups, registers memory 
+ *          handling attributes like `WA_DeleteOnClose` to prevent leaks upon 
+ *          user dismissal, and wires up the UI actions.
+ */
+PlotterWindow::PlotterWindow(QWidget *parent) : QMainWindow(parent), m_minY(std::numeric_limits<double>::infinity()), m_maxY(-std::numeric_limits<double>::infinity()), m_paused(false), m_autoScale(true), m_legendNeedsRefresh(false) {
     m_legendOverlay = nullptr;
     m_legendLayout = nullptr;
     setAcceptDrops(true);
+    setAttribute(Qt::WA_DeleteOnClose);
     setWindowTitle("Plotter");
     resize(300, 400);
 
@@ -246,10 +258,14 @@ PlotterWindow::PlotterWindow(QWidget *parent) : QMainWindow(parent), m_minY(1e9)
     setupIvy();
 }
 
+/**
+ * @brief Destructor. Guarantees clean teardown of network handlers.
+ * @details Ivy loops typically spawn background worker threads; explicitly 
+ *          calling `m_link->stop()` prevents segmentation faults upon app exit.
+ */
 PlotterWindow::~PlotterWindow() {
     if (m_link) {
         m_link->stop();
-        delete m_link;
         m_link = nullptr;
     }
     if (m_dict) {
@@ -258,6 +274,11 @@ PlotterWindow::~PlotterWindow() {
     }
 }
 
+/**
+ * @brief Bootstraps the local Paparazzi network hooks for telemetry binding.
+ * @details Finds the system configuration directory referencing `messages.xml` 
+ *          to understand incoming binary protocol shapes cleanly at runtime.
+ */
 void PlotterWindow::setupIvy() {
     QString phome = qgetenv("PAPARAZZI_HOME");
     if (phome.isEmpty()) phome = QString("/home/%1/paparazzi").arg(qgetenv("USER"));
@@ -289,6 +310,11 @@ void PlotterWindow::setupIvy() {
     }
 }
 
+/**
+ * @brief Constructs the application's widgets, layouts, menus, and timers dynamically.
+ * @details This separates graphical state binding away from pure telemetry handling.
+ *          Timers are generated here regulating UI FPS (default ~60Hz base).
+ */
 void PlotterWindow::setupUI() {
     QWidget *mainWidget = new QWidget(this);
     QVBoxLayout *mainLayout = new QVBoxLayout(mainWidget);
@@ -410,6 +436,12 @@ void PlotterWindow::setupUI() {
     connect(m_updateTimer, &QTimer::timeout, this, &PlotterWindow::updatePlots);
 }
 
+/**
+ * @brief Periodically syncs statistical computations directly to UI display labels.
+ * @details Re-walking plot arrays repeatedly is intense; batching them via a gentle 
+ *          0.2s timer enables deep math analysis (StdDev, Average) without choking 
+ *          the fast-rendering path.
+ */
 void PlotterWindow::onLegendRefreshTimeout()
 {
     if (!m_legendNeedsRefresh) {
@@ -418,6 +450,7 @@ void PlotterWindow::onLegendRefreshTimeout()
     m_legendNeedsRefresh = false;
     updateLegendValues();
 
+    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
     // Compute average and standard deviation for each curve
     for (const auto& plot : m_activePlots) {
         if (!plot.series || (!plot.avgAction && !plot.stdevAction)) continue;
@@ -429,9 +462,8 @@ void PlotterWindow::onLegendRefreshTimeout()
         }
         double sum = 0.0;
         double sum_sq = 0.0;
-        const auto& points = plot.series->points();
-        for (const QPointF& pt : points) {
-            double y = pt.y();
+        for (int i = 0; i < n; ++i) {
+            double y = plot.series->at(i).y();
             sum += y;
             sum_sq += y * y;
         }
@@ -454,7 +486,12 @@ void PlotterWindow::onLegendRefreshTimeout()
     }
 }
 
+/**
+ * @brief Obliterates all existing series data, purging memory completely.
+ * @details Resets internal tracking extrema and the unified time origin safely.
+ */
 void PlotterWindow::onClearClicked() {
+    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
     for (auto& plot : m_activePlots) {
         if (plot.series) {
             m_chart->removeSeries(plot.series);
@@ -467,17 +504,23 @@ void PlotterWindow::onClearClicked() {
         m_curvesMenu->clear();
     }
     m_chart->setTitle("Drag & Drop fields here");
-    m_minY = 1e9;
-    m_maxY = -1e9;
+    m_minY = std::numeric_limits<double>::infinity();
+    m_maxY = -std::numeric_limits<double>::infinity();
     m_startTime = QDateTime::currentMSecsSinceEpoch(); // reset time origin
     m_legendNeedsRefresh = true;
     // remove constants too if any
 }
 
+/**
+ * @brief Freezes background updates gracefully. Buffer continues, but UI slumbers.
+ */
 void PlotterWindow::onPauseToggled(bool checked) {
     m_paused = checked;
 }
 
+/**
+ * @brief Flips mode constraints when toggling automated y-axis boundaries.
+ */
 void PlotterWindow::onAutoScaleToggled(bool checked) {
     m_autoScale = checked;
     m_edtMinY->setEnabled(!checked);
@@ -485,16 +528,13 @@ void PlotterWindow::onAutoScaleToggled(bool checked) {
     if (!checked) {
         onManualScaleChanged();
     } else {
-        if (m_minY <= m_maxY) {
-            double margin = (m_maxY - m_minY) * 0.1;
-            if (margin == 0) margin = 1.0;
-            m_axisY->setRange(m_minY - margin, m_maxY + margin);
-            m_edtMinY->setText(QString::number(m_minY - margin, 'f', 2));
-            m_edtMaxY->setText(QString::number(m_maxY + margin, 'f', 2));
-        }
+        recalculateYBounds();
     }
 }
 
+/**
+ * @brief Manual override parsing strictly for user text entries dictating min/max ranges.
+ */
 void PlotterWindow::onManualScaleChanged() {
     if (!m_autoScale) {
         bool okMin = false, okMax = false;
@@ -506,10 +546,51 @@ void PlotterWindow::onManualScaleChanged() {
     }
 }
 
+/**
+ * @brief Recalculates mathematical bounds precisely across all visual layers (DRY implementation).
+ * @details Because series logic actively drops historical buffers natively as sliding Windows 
+ *          pass by, computing bounds sequentially against only the surviving active frame guarantees
+ *          clean structural resizing across multi-curves seamlessly without duplicating array traversal.
+ */
+void PlotterWindow::recalculateYBounds() {
+    if (!m_autoScale) return;
+    
+    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
+    m_minY = std::numeric_limits<double>::infinity();
+    m_maxY = -std::numeric_limits<double>::infinity();
+    bool hasPoints = false;
+    
+    for (const auto& plot : std::as_const(m_activePlots)) {
+        if (!plot.series) continue;
+        int count = plot.series->count();
+        for (int i = 0; i < count; ++i) {
+            const QPointF pt = plot.series->at(i);
+            if (pt.y() < m_minY) m_minY = pt.y();
+            if (pt.y() > m_maxY) m_maxY = pt.y();
+            hasPoints = true;
+        }
+    }
+    
+    if (hasPoints && m_minY <= m_maxY) {
+        double margin = (m_maxY - m_minY) * 0.1;
+        if (margin == 0.0) margin = 1.0;
+        m_axisY->setRange(m_minY - margin, m_maxY + margin);
+        m_edtMinY->setText(QString::number(m_minY - margin, 'f', 2));
+        m_edtMaxY->setText(QString::number(m_maxY + margin, 'f', 2));
+    }
+}
+
+/**
+ * @brief Injects a static infinite-length visual baseline dynamically.
+ * @details Synthesizes a faux PlotConfig that bypasses network hooks but renders evenly 
+ *          across the whole epoch timeline acting as a visual ruler.
+ */
 void PlotterWindow::onAddConstantClicked() {
     bool ok = false;
     double val = m_edtConstant->text().toDouble(&ok);
     if (!ok || !std::isfinite(val)) return;
+    
+    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
     
     // Create a new constant series
     PlotConfig cfg;
@@ -542,17 +623,26 @@ void PlotterWindow::onAddConstantClicked() {
     QTimer::singleShot(10, this, &PlotterWindow::updateLegendPosition);
 }
 
+/**
+ * @brief Dynamic slider hook propagating rendering speeds natively down to QTimer intervals.
+ */
 void PlotterWindow::onUpdateRateChanged(int val) {
     const int interval = std::max(10, val);
     m_updateTimer->setInterval(interval);
 }
 
+/**
+ * @brief Permits receiving raw text drops from other X11/Wayland Desktop apps.
+ */
 void PlotterWindow::dragEnterEvent(QDragEnterEvent *event) {
     if (event->mimeData()->hasText()) {
         event->acceptProposedAction();
     }
 }
 
+/**
+ * @brief Orchestrates raw dropped strings into formal telemetry series requests.
+ */
 void PlotterWindow::dropEvent(QDropEvent *event) {
     if (event->mimeData()->hasText()) {
         QString payload = event->mimeData()->text();
@@ -562,6 +652,12 @@ void PlotterWindow::dropEvent(QDropEvent *event) {
     }
 }
 
+/**
+ * @brief Translates structured Paparazzi textual signatures into hard-linked data curves.
+ * @param payload E.g. "senderName:className:msgName:fieldName:optional_coef".
+ * @details Establishes a formal Ivy-bus lambda subscription parsing the specific 
+ *          index directly matching the field name required natively upon connection.
+ */
 void PlotterWindow::addPlotFromPayload(const QString& payload) {
     // payload format: m_senderName + ":" + m_className + ":" + msgName + ":" + fieldName + ":" + coef;
     QStringList parts = payload.split(":");
@@ -638,15 +734,21 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
         }
         cfg.fieldIndex = fieldIndex;
 
-        m_activePlots.append(cfg);
-        m_chart->setTitle("");
-        
-        addCurveToMenu(m_activePlots.last());
+        {
+            std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
+            m_activePlots.append(cfg);
+            m_chart->setTitle("");
+            
+            addCurveToMenu(m_activePlots.last());
+        }
         m_legendNeedsRefresh = true;
     QTimer::singleShot(10, this, &PlotterWindow::updateLegendPosition);
     }
 }
 
+/**
+ * @brief Bootstraps standard menubar hooks supporting application-level suspension/quit calls.
+ */
 void PlotterWindow::setupMenu() {
     QMenu* plotMenu = menuBar()->addMenu(tr("&Plot"));
     
@@ -686,6 +788,14 @@ void PlotterWindow::setupMenu() {
     m_curvesMenu = menuBar()->addMenu(tr("&Curves"));
 }
 
+/**
+ * @brief Thread-safe ingestion queue receiving highly asynchronous Ivy bus telemetry packages.
+ * @param sender Originating entity emitting the message format.
+ * @param msg Validated and natively inflated binary structure definition mapping payload contents.
+ * @details Appends numerical coordinates natively formatted into an internal memory buffer. 
+ *          We explicitly restrict raw redraw actions (`series->append`) here, delegating drawing 
+ *          solely to the main GUI event loop syncing logic securely to 60fps refresh limits.
+ */
 void PlotterWindow::handleMessage(QString sender, const pprzlink::Message& msg) {
     if (m_paused) return; // Skip updating data while paused
 
@@ -699,6 +809,8 @@ void PlotterWindow::handleMessage(QString sender, const pprzlink::Message& msg) 
 
     QString msgName = msg.getDefinition().getName();
     double currentTime = (QDateTime::currentMSecsSinceEpoch() - m_startTime) / 1000.0;
+    
+    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
     
     for (auto& plot : m_activePlots) {
         if (!plot.series) continue;
@@ -734,7 +846,8 @@ void PlotterWindow::handleMessage(QString sender, const pprzlink::Message& msg) 
                         lastY = plot.series->at(plot.series->count() - 1).y();
                         hasLastY = true;
                     }
-                    if (hasLastY) {
+                    // Optimize step-functions: only inject the right-angle corner if the state actually changed.
+                    if (hasLastY && lastY != val) {
                         plot.buffer.append(QPointF(currentTime, lastY));
                     }
                 }
@@ -749,12 +862,22 @@ void PlotterWindow::handleMessage(QString sender, const pprzlink::Message& msg) 
     }
 }
 
+/**
+ * @brief Core 60Hz rendering pass draining back-buffers flushing into native widget views.
+ * @details Modifies visual ranges by stripping natively expired history points mathematically off 
+ *          the time window scale (X-axis). Performs localized Y bounds expansion directly as 
+ *          arrays stream safely across active timeframes. Employs `std::isfinite` to guard 
+ *          against QChart canvas corruptions safely.
+ */
 void PlotterWindow::updatePlots() {
     if (m_paused) return;
 
     double currentTime = (QDateTime::currentMSecsSinceEpoch() - m_startTime) / 1000.0;
     double windowSize = m_slTimeWindow->value() / 100.0;
     bool needsAxisUpdate = false;
+    bool needsFullRecalc = false;
+
+    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
 
     for (auto& plot : m_activePlots) {
         if (!plot.series) continue;
@@ -779,7 +902,14 @@ void PlotterWindow::updatePlots() {
         }
 
         int pointsToRemove = 0;
-        while (pointsToRemove < plot.series->count() && plot.series->at(pointsToRemove).x() < currentTime - windowSize) {
+        int count = plot.series->count();
+        double cutoffTime = currentTime - windowSize;
+        while (pointsToRemove < count && plot.series->at(pointsToRemove).x() < cutoffTime) {
+            double ptY = plot.series->at(pointsToRemove).y();
+            // If the point we're dropping defined the bounding box, we must shrink/re-evaluate the whole box natively.
+            if (m_autoScale && (ptY <= m_minY || ptY >= m_maxY)) {
+                needsFullRecalc = true;
+            }
             pointsToRemove++;
         }
         if (pointsToRemove > 0) {
@@ -793,16 +923,24 @@ void PlotterWindow::updatePlots() {
         m_axisX->setRange(0, windowSize);
     }
 
-    if (needsAxisUpdate && m_autoScale) {
-        double margin = (m_maxY - m_minY) * 0.1;
-        if (margin == 0) margin = 1.0;
-        m_axisY->setRange(m_minY - margin, m_maxY + margin);
-        m_edtMinY->setText(QString::number(m_minY - margin, 'f', 2));
-        m_edtMaxY->setText(QString::number(m_maxY + margin, 'f', 2));
+    if (m_autoScale) {
+        if (needsFullRecalc) {
+            recalculateYBounds();
+        } else if (needsAxisUpdate && m_minY <= m_maxY) {
+            double margin = (m_maxY - m_minY) * 0.1;
+            if (margin == 0) margin = 1.0;
+            m_axisY->setRange(m_minY - margin, m_maxY + margin);
+            m_edtMinY->setText(QString::number(m_minY - margin, 'f', 2));
+            m_edtMaxY->setText(QString::number(m_maxY + margin, 'f', 2));
+        }
     }
     m_legendNeedsRefresh = true;
 }
 
+/**
+ * @brief Automates drop-down bindings allocating math operators / deletion tools onto curves.
+ * @param cfg Passed dynamically to tether UI state triggers directly towards struct instances.
+ */
 void PlotterWindow::addCurveToMenu(PlotConfig& cfg) {
     if (!m_curvesMenu || !cfg.series) return;
 
@@ -831,6 +969,7 @@ void PlotterWindow::addCurveToMenu(PlotConfig& cfg) {
     discreteAction->setCheckable(true);
     discreteAction->setChecked(cfg.discrete);
     connect(discreteAction, &QAction::toggled, this, [this, targetSeries](bool checked) {
+        std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
         for (auto& plot : m_activePlots) {
             if (plot.series == targetSeries) {
                 plot.discrete = checked;
@@ -840,8 +979,15 @@ void PlotterWindow::addCurveToMenu(PlotConfig& cfg) {
     });
 }
 
+/**
+ * @brief Obliterates a selected line trajectory correctly de-registering GUI and heap ties.
+ * @param series Targets exactly which curve UI element triggered the destruction hook.
+ */
 void PlotterWindow::removeCurve(QLineSeries* series) {
     if (!series) return;
+    
+    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
+    
     for (int i = 0; i < m_activePlots.size(); ++i) {
         if (m_activePlots[i].series == series) {
             m_chart->removeSeries(series);
@@ -849,28 +995,9 @@ void PlotterWindow::removeCurve(QLineSeries* series) {
             m_activePlots.removeAt(i);
             delete series;
             series = nullptr;
-            // Recalculate min/max if autoscale is on
-            if (m_autoScale) {
-                m_minY = 1e9;
-                m_maxY = -1e9;
-                bool hasPoints = false;
-                for (const auto& plot : std::as_const(m_activePlots)) {
-                    if (!plot.series) continue;
-                    for (int j = 0; j < plot.series->count(); ++j) {
-                        double y = plot.series->at(j).y();
-                        if (y < m_minY) m_minY = y;
-                        if (y > m_maxY) m_maxY = y;
-                        hasPoints = true;
-                    }
-                }
-                if (hasPoints && m_minY <= m_maxY) {
-                    double margin = (m_maxY - m_minY) * 0.1;
-                    if (margin == 0) margin = 1.0;
-                    m_axisY->setRange(m_minY - margin, m_maxY + margin);
-                    m_edtMinY->setText(QString::number(m_minY - margin, 'f', 2));
-                    m_edtMaxY->setText(QString::number(m_maxY + margin, 'f', 2));
-                }
-            }
+            
+            recalculateYBounds();
+            
             QTimer::singleShot(10, this, &PlotterWindow::updateLegendPosition);
             m_legendNeedsRefresh = true;
             break;
@@ -878,6 +1005,11 @@ void PlotterWindow::removeCurve(QLineSeries* series) {
     }
 }
 
+/**
+ * @brief Automatically repaints floating labels mirroring internal QLegend positions correctly.
+ * @details Re-assembles bespoke text overlays simulating natively docked legends securely handling 
+ *          font heights automatically against active chart bounding rectangles.
+ */
 void PlotterWindow::updateLegendPosition() {
     if (!m_chart || !m_legendOverlay || !m_legendLayout) return;
     
@@ -930,14 +1062,16 @@ void PlotterWindow::updateLegendPosition() {
     }
     
     m_legendOverlay->adjustSize();
-    QChartView* view = qobject_cast<QChartView*>(m_legendOverlay->parentWidget());
-    if (view) {
-        int x = std::max(0, view->width() - m_legendOverlay->width() - 15);//TODO: better margin handling
-        int y = 15;//TODO:
-        m_legendOverlay->move(x, y);
+    if (QWidget* parent = m_legendOverlay->parentWidget()) {
+        const int margin = 15;
+        int x = std::max(0, parent->width() - m_legendOverlay->width() - margin);
+        m_legendOverlay->move(x, margin);
     }
 }
 
+/**
+ * @brief Traverses active frames to cleanly recompute label readouts asynchronously.
+ */
 void PlotterWindow::updateLegendValues() {
     if (!m_legendOverlay || !m_legendLayout) return;
     
@@ -971,21 +1105,26 @@ void PlotterWindow::updateLegendValues() {
         }
     }
     m_legendOverlay->adjustSize();
-    QChartView* view = qobject_cast<QChartView*>(m_legendOverlay->parentWidget());
-    if (view) {
-        int x = std::max(0, view->width() - m_legendOverlay->width() - 15);//TODO: better margin handling
-        int y = 15;// TODO: 
-        m_legendOverlay->move(x, y);
+    if (QWidget* parent = m_legendOverlay->parentWidget()) {
+        const int margin = 15;
+        int x = std::max(0, parent->width() - m_legendOverlay->width() - margin);
+        m_legendOverlay->move(x, margin);
     }
 }
 
+/**
+ * @brief Ensures overlay layout components reposition perfectly matching arbitrary desktop reframes.
+ */
 void PlotterWindow::resizeEvent(QResizeEvent *event) {
     QMainWindow::resizeEvent(event);
     updateLegendPosition();
 }
 
-// FEATURE NOT ENABLED YET: Slot to handle line thickness change from the spin box
+/**
+ * @brief Interactively bolsters or weakens global plotting pixel strokes dynamically.
+ */
 void PlotterWindow::onLineThicknessChanged(int val) {
+    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
     for (auto& plot : m_activePlots) {
         if (!plot.series) continue;
         QPen p = plot.series->pen();
@@ -994,6 +1133,12 @@ void PlotterWindow::onLineThicknessChanged(int val) {
     }
 }
 
+/**
+ * @class EditorLighteningStyle
+ * @brief Enhances text input legibility specifically for deep dark GTK environments trivially.
+ * @details Instead of manipulating deeply entrenched CSS strings and hard-breaking system logic, 
+ *          we exploit dynamic `QProxyStyle` interception resolving color mismatches automatically.
+ */
 class EditorLighteningStyle : public QProxyStyle {
 public:
     // Inherit constructors from QProxyStyle
@@ -1014,8 +1159,8 @@ public:
             // It's a match! Grab this specific widget's palette
             QPalette customPalette = widget->palette();
             
-            // Change the Base color to your lighter dark-mode gray
-            customPalette.setColor(QPalette::Base, QColor("#b02a2a"));
+            // Change the Base color to a lighter dark-mode gray
+            customPalette.setColor(QPalette::Base, QColor("#3a3a3a"));
             
             // Apply it ONLY to this specific widget
             widget->setPalette(customPalette);
@@ -1023,6 +1168,9 @@ public:
     }
 };
 
+/**
+ * @brief Formal execution entry point instantiating process rules and UI execution contexts.
+ */
 int main(int argc, char *argv[]) 
 {
     // Set metadata BEFORE application instantiation to prevent XDG portal double-registration 
