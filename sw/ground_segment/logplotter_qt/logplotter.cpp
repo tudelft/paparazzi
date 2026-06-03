@@ -166,13 +166,13 @@ private slots:
         QString defaultPath = QDir::homePath() + "/paparazzi/var/logs/screenshot.png";
         if (!m_currentLogFile.isEmpty()) {
             QFileInfo fi(m_currentLogFile);
-            defaultPath = fi.path() + "/" + fi.completeBaseName() + ".png";
+            defaultPath = fi.path() + "/" + "pprz_log-" + fi.completeBaseName() + ".png";
         }
 
         QString fileName;
         {
             StderrBlocker blocker;
-            QFileDialog dialog(this, tr("Save Screenshot"), defaultPath);
+            QFileDialog dialog(this, tr("Save snapshot"), defaultPath);
             dialog.setAcceptMode(QFileDialog::AcceptSave);
             dialog.setNameFilters({
                 tr("PNG Image (*.png)"),
@@ -305,7 +305,7 @@ private slots:
     }
 
         void exportFig() {
-        QString defaultName = QDateTime::currentDateTime().toString("yy_MM_dd__HH_mm_ss") + "_graph.fig";
+        QString defaultName = "pprz_log-" + QDateTime::currentDateTime().toString("yy_MM_dd__HH_mm_ss") + ".fig";
         QString fileName;
         {
             StderrBlocker blocker;
