@@ -269,10 +269,10 @@ PlotterWindow::PlotterWindow(const PlotterWindowConfig& config, pprzlink::Messag
                 move(x, y);
             }
         } else {
-            resize(600, 300);
+            resize(900, 200);
         }
     } else {
-        resize(600, 300);
+        resize(900, 200);
     }
 
     m_chart = new QChart();
@@ -353,7 +353,9 @@ void PlotterWindow::setupUI() {
 
     m_slTimeWindow = new QSlider(Qt::Horizontal);
     m_slTimeWindow->setToolTip("Memory Size");
-    m_slTimeWindow->setRange(10, 1010); // 10 to 1010 points
+    m_slTimeWindow->setRange(10, 1000); // 10 to 1000 points
+    m_slTimeWindow->setSingleStep(10);
+    m_slTimeWindow->setPageStep(10);
     m_slTimeWindow->setValue(500); // Default to 500
 
     QLabel *lblConst = new QLabel("Constant");
@@ -435,6 +437,7 @@ void PlotterWindow::setupUI() {
     chartView->setAcceptDrops(false); // Let drops fall through
     chartView->setContentsMargins(0, 0, 0, 0);
     chartView->setFrameShape(QFrame::NoFrame);
+    chartView->setToolTip(tr("Drop a messages field here to draw it"));
 
     mainLayout->addWidget(toolbarWidget);
     mainLayout->addWidget(chartView);
@@ -836,6 +839,7 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
  */
 void PlotterWindow::setupMenu() {
     QMenu* plotMenu = menuBar()->addMenu(tr("&Plot"));
+    plotMenu->setToolTipsVisible(true);
     
     QAction* newAction = plotMenu->addAction(tr("New"));
     newAction->setShortcut(QKeySequence("Ctrl+N"));
@@ -868,11 +872,11 @@ void PlotterWindow::setupMenu() {
     restartAction->setShortcut(QKeySequence("Ctrl+X"));
     connect(restartAction, &QAction::triggered, this, [this]() { m_paused = false; });
 
+    plotMenu->addSeparator();
+
     QAction* closeAction = plotMenu->addAction(tr("Close"));
     closeAction->setShortcut(QKeySequence("Ctrl+W"));
     connect(closeAction, &QAction::triggered, this, &PlotterWindow::onClearClicked);
-
-    plotMenu->addSeparator();
 
     QAction* quitAction = plotMenu->addAction(tr("Quit"));
     quitAction->setShortcut(QKeySequence("Ctrl+Q"));
@@ -907,7 +911,14 @@ void PlotterWindow::handleMessage(QString sender, const pprzlink::Message& msg) 
     
     for (auto& plot : m_activePlots) {
         if (!plot.series) continue;
-        if (plot.msgName == msgName && (plot.senderName == sId || plot.senderName == "all")) {
+        
+        bool senderMatches = (plot.senderName == sId || plot.senderName == "all" || plot.senderName == "*" || plot.senderName.isEmpty());
+        if (!senderMatches) {
+            QRegularExpression rx(QRegularExpression::wildcardToRegularExpression(plot.senderName));
+            senderMatches = rx.match(sId).hasMatch();
+        }
+        
+        if (plot.msgName == msgName && senderMatches) {
             const auto& def = msg.getDefinition();
             int fieldIndex = plot.fieldIndex;
             if (fieldIndex < 0 || fieldIndex >= (int)def.getNbFields()) {
@@ -1348,34 +1359,64 @@ int main(int argc, char *argv[])
     PlotterWindowConfig currentConfig;
     
     QStringList args = app.arguments();
-    for (int i = 1; i < args.size(); ++i) {
+    QStringList mergedArgs;
+    for (int i = 0; i < args.size(); ++i) {
         QString arg = args[i];
+        if ((arg.startsWith('\'') && !arg.endsWith('\'')) || (arg.startsWith('"') && !arg.endsWith('"'))) {
+            QChar quoteType = arg[0];
+            QString merged = arg;
+            int j = i + 1;
+            bool foundClosed = false;
+            while (j < args.size()) {
+                merged += " " + args[j];
+                if (args[j].endsWith(quoteType)) {
+                    foundClosed = true;
+                    break;
+                }
+                j++;
+            }
+            if (foundClosed) {
+                i = j;
+                mergedArgs.append(merged.mid(1, merged.length() - 2));
+            } else {
+                mergedArgs.append(arg);
+            }
+        } else if ((arg.startsWith('\'') && arg.endsWith('\'') && arg.length() >= 2) ||
+                   (arg.startsWith('"') && arg.endsWith('"') && arg.length() >= 2)) {
+            mergedArgs.append(arg.mid(1, arg.length() - 2));
+        } else {
+            mergedArgs.append(arg);
+        }
+    }
+
+    for (int i = 1; i < mergedArgs.size(); ++i) {
+        QString arg = mergedArgs[i];
         if (arg == "-b") {
-            if (i + 1 < args.size()) {
-                ivyBus = args[++i];
+            if (i + 1 < mergedArgs.size()) {
+                ivyBus = mergedArgs[++i];
             }
         } else if (arg == "-m") {
-            if (i + 1 < args.size()) {
-                globalConfig.memorySize = args[++i].toInt();
+            if (i + 1 < mergedArgs.size()) {
+                globalConfig.memorySize = mergedArgs[++i].toInt();
             }
         } else if (arg == "-u") {
-            if (i + 1 < args.size()) {
-                globalConfig.updateTime = args[++i].toDouble();
+            if (i + 1 < mergedArgs.size()) {
+                globalConfig.updateTime = mergedArgs[++i].toDouble();
             }
         } else if (arg == "-n") {
             windowConfigs.append(currentConfig);
             currentConfig = PlotterWindowConfig(); // start fresh
         } else if (arg == "-c") {
-            if (i + 1 < args.size()) {
-                currentConfig.curves.append(args[++i]);
+            if (i + 1 < mergedArgs.size()) {
+                currentConfig.curves.append(mergedArgs[++i]);
             }
         } else if (arg == "-t") {
-            if (i + 1 < args.size()) {
-                currentConfig.title = args[++i];
+            if (i + 1 < mergedArgs.size()) {
+                currentConfig.title = mergedArgs[++i];
             }
         } else if (arg == "-g") {
-            if (i + 1 < args.size()) {
-                currentConfig.geometry = args[++i];
+            if (i + 1 < mergedArgs.size()) {
+                currentConfig.geometry = mergedArgs[++i];
             }
         }
     }
