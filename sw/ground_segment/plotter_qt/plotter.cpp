@@ -27,6 +27,7 @@
 #include <QRegularExpression>
 #include <mutex>
 
+#include "../logplotter_qt/shared_plot.h"
 #include "../linux_desktop_utils.h"
 #include "pprzlinkQt/IvyQtLink.h"
 
@@ -106,7 +107,6 @@ private:
     void addCurveToMenu(PlotConfig& config);
     void removeCurve(QLineSeries* series);
     void recalculateYBounds();
-    QColor getNextSaturatedColor();
     
     QChart *m_chart;
     QValueAxis *m_axisX;
@@ -226,20 +226,6 @@ static double fieldValueAsDouble(const pprzlink::FieldValue &value, int arrayInd
     default:
         return std::numeric_limits<double>::quiet_NaN();
     }
-}
-
-/**
- * @brief Retrieves the next uniformly-distributed vibrant color for a curve.
- * @return A unique QColor guaranteed to remain legible against standard IDE themes.
- * @details By traversing the Hue spectrum based on the golden angle (approx. 137.5 degrees), 
- *          we mathematically guarantee maximum perceptual spacing between sequentially 
- *          spawned line colors.
- */
-QColor PlotterWindow::getNextSaturatedColor() {
-    double h = std::fmod(m_colorIndex * 137.508, 360.0);
-    m_colorIndex++;
-    // Hue varies, Saturation = 1.0 (no white/gray, min channel is 0), Value = 1.0 (no dark colors, max channel is 255)
-    return QColor::fromHsvF(h / 360.0, 1.0, 1.0);
 }
 
 /**
