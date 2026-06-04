@@ -36,6 +36,12 @@ static inline int g_colorIndex = 0;
  * 
  * @return QColor A highly saturated, perceptually distinct color.
  */
+// For real classic behaviour the first colors should be:
+// "red"; "blue"; "green"; "orange"; "purple"; "magenta" 
+// "FF0000"; "0000FF"; "00FF00"; "FFA500"; "800080"; "FF00FF"
+// Not implemented this full classic behaviour but if needed feel free
+// to add the code to return these specific colors for the first 6 calls 
+// before switching to the golden angle method for 100% classic behavior.
 static inline QColor getNextSaturatedColor() {
     double h = std::fmod(g_colorIndex * 137.508, 360.0);
     g_colorIndex++;
