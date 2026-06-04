@@ -269,10 +269,10 @@ PlotterWindow::PlotterWindow(const PlotterWindowConfig& config, pprzlink::Messag
                 move(x, y);
             }
         } else {
-            resize(500, 300);
+            resize(600, 300);
         }
     } else {
-        resize(500, 300);
+        resize(600, 300);
     }
 
     m_chart = new QChart();
@@ -845,18 +845,26 @@ void PlotterWindow::setupMenu() {
     });
 
     QAction* resetAction = plotMenu->addAction(tr("Reset"));
+    resetAction->setToolTip(tr("Reset the current display and the current data"));
+    resetAction->setStatusTip(tr("Reset the current display and the current data"));
     resetAction->setShortcut(QKeySequence("Ctrl+L"));
     connect(resetAction, &QAction::triggered, this, &PlotterWindow::onClearClicked);
 
     QAction* suspendAction = plotMenu->addAction(tr("Suspend"));
+    suspendAction->setToolTip(tr("Freeze the display while the data are still updated"));
+    suspendAction->setStatusTip(tr("Freeze the display while the data are still updated"));
     suspendAction->setShortcut(QKeySequence("Ctrl+S"));
     connect(suspendAction, &QAction::triggered, this, [this]() { m_paused = true; });
 
     QAction* stopAction = plotMenu->addAction(tr("Stop"));
+    stopAction->setToolTip(tr("Freeze the data update while the display is active (e.g. resizable)"));
+    stopAction->setStatusTip(tr("Freeze the data update while the display is active (e.g. resizable)"));
     stopAction->setShortcut(QKeySequence("Ctrl+C"));
     connect(stopAction, &QAction::triggered, this, [this]() { m_paused = true; });
 
     QAction* restartAction = plotMenu->addAction(tr("Restart"));
+    restartAction->setToolTip(tr("UnFreeze"));
+    restartAction->setStatusTip(tr("UnFreeze"));
     restartAction->setShortcut(QKeySequence("Ctrl+X"));
     connect(restartAction, &QAction::triggered, this, [this]() { m_paused = false; });
 
@@ -1088,6 +1096,8 @@ void PlotterWindow::addCurveToMenu(PlotConfig& cfg) {
     cfg.stdevAction = stdevAction;
     
     QAction* deleteAction = curveMenu->addAction(tr("Delete"));
+    deleteAction->setToolTip(tr("Delete the curve"));
+    deleteAction->setStatusTip(tr("Delete the curve"));
     QLineSeries* targetSeries = cfg.series;
     connect(deleteAction, &QAction::triggered, this, [this, targetSeries, curveMenu]() {
         removeCurve(targetSeries);
