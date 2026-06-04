@@ -1,4 +1,6 @@
 #include <QApplication>
+#include <QCommandLineParser>
+#include <QCommandLineOption>
 #include <QMimeData>
 #include <QDrag>
 #include <QLabel>
@@ -14,6 +16,15 @@
 #include <QRegularExpression>
 #include "../linux_desktop_utils.h"
 #include "pprzlinkQt/IvyQtLink.h"
+
+struct MessagesConfig {
+    QString ivyBus;
+    QStringList classes;
+    bool timestamp;
+    bool force;
+    QString geometry;
+    MessagesConfig() : timestamp(false), force(false) {}
+};
 
 struct MsgTracker {
     QLabel* timeLabel = nullptr;
@@ -51,10 +62,11 @@ private:
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(const MessagesConfig& config, QWidget *parent = nullptr);
     ~MainWindow();
 
 private:
+    MessagesConfig m_config;
     QTabWidget* m_classTabWidget;
     QLabel* m_waitingLabel;
     QHash<QString, SenderTab*> m_senderTabs;
@@ -485,9 +497,27 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
     }
 }
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
+MainWindow::MainWindow(const MessagesConfig& config, QWidget *parent) : QMainWindow(parent), m_config(config) {
     setWindowTitle("Messages");
-    resize(300, 400);// TODO: Dynamically resize based available screen size, with sensible limits. Note that it DOES resize based on content requirement after startup and messages come in.
+
+    if (!m_config.geometry.isEmpty()) {
+        QRegularExpression re("^(\\d+)x(\\d+)(?:\\+[-]?(\\d+)\\+[-]?(\\d+))?$");
+        QRegularExpressionMatch match = re.match(m_config.geometry);
+        if (match.hasMatch()) {
+            int w = match.captured(1).toInt();
+            int h = match.captured(2).toInt();
+            resize(w, h);
+            if (!match.captured(3).isEmpty() && !match.captured(4).isEmpty()) {
+                int x = match.captured(3).toInt();
+                int y = match.captured(4).toInt();
+                move(x, y);
+            }
+        } else {
+            resize(300, 400);
+        }
+    } else {
+        resize(300, 400);
+    }
 
     QWidget* cntral = new QWidget(this);
     QVBoxLayout* layout = new QVBoxLayout(cntral);
@@ -542,7 +572,7 @@ void MainWindow::setupDictionaryAndLink() {
                 m_waitingLabel->setText(tr("Connected to Ivy bus just fine,\nbut still waiting for telemetry data..."));
             }
         });
-        m_link->start("127.255.255.255:2010");
+        m_link->start(m_config.ivyBus.isEmpty() ? "127.255.255.255:2010" : m_config.ivyBus);
         if (m_waitingLabel && m_waitingLabel->isVisible()) {
             m_waitingLabel->setText(tr("Waiting for telemetry data..."));
         }
@@ -569,46 +599,77 @@ void MainWindow::setupDictionaryAndLink() {
         return;
     }
 
-    QString className = "telemetry";
-    const auto msgs = m_dict->getMsgsForClass(className);
-    if (msgs.empty()) {
-        m_waitingLabel->setText(tr("No telemetry message definitions found for %1").arg(className));
-        qWarning() << "No telemetry message definitions found for" << className;
-        return;
+    struct ClassFilter {
+        QString className;
+        QString sender;
+    };
+    QList<ClassFilter> filters;
+    QStringList classArgs = m_config.classes;
+    if (classArgs.isEmpty()) {
+        classArgs.append("telemetry:*");
     }
 
-    for (const auto& def : msgs) {
-        if (!m_link) {
-            break;
+    for (const QString& c : classArgs) {
+        QStringList parts = c.split(':');
+        ClassFilter f;
+        f.className = parts[0];
+        f.sender = (parts.size() > 1) ? parts[1] : "*";
+        filters.append(f);
+    }
+
+    for (const ClassFilter& filter : filters) {
+        QString className = filter.className;
+        const auto msgs = m_dict->getMsgsForClass(className);
+        if (msgs.empty()) {
+            qWarning() << "No message definitions found for class" << className;
+            continue;
         }
-        m_link->BindMessage(def, this, [=](const QString& sender, const pprzlink::Message& msg) {
-            if (m_waitingLabel && m_waitingLabel->isVisible()) {
-                m_waitingLabel->hide();
-                if (m_classTabWidget) {
-                    m_classTabWidget->show();
+
+        for (const auto& def : msgs) {
+            if (!m_link) break;
+            
+            // To emulate OCaml's non-force behavior on the local side, we can filter out creating tabs
+            // until ALIVE is seen, or we just bind everything as IvyQtLink doesn't support sender-specific binding anyway.
+            
+            m_link->BindMessage(def, this, [this, className, filter, def](const QString& sender, const pprzlink::Message& msg) {
+                QString sId = sender.trimmed();
+                if (sId.isEmpty()) {
+                    const auto& senderV = msg.getSenderId();
+                    sId = senderIdToString(senderV);
                 }
-            }
+                if (sId.isEmpty()) {
+                    sId = QStringLiteral("ground");
+                }
 
-            QString sId = sender.trimmed();
-            if (sId.isEmpty()) {
-                const auto& senderV = msg.getSenderId();
-                sId = senderIdToString(senderV);
-            }
-            if (sId.isEmpty()) {
-                sId = QStringLiteral("ground");
-            }
+                if (filter.sender != "*" && filter.sender != sId) {
+                    return; // Skip messages from unrequested sender
+                }
 
-            QString tabName = className + ":" + sId;
-            if (!m_senderTabs.contains(tabName)) {
-                SenderTab* tab = new SenderTab(sId, className, m_dict, this);
-                m_classTabWidget->addTab(tab, tabName);
-                m_senderTabs[tabName] = tab;
-            }
+                if (!m_config.force && className == "telemetry" && filter.sender == "*" && def.getName() != "ALIVE") {
+                    // Only start tracking a sender if we've seen ALIVE, or if we have force enabled
+                    QString tabName = className + ":" + sId;
+                    if (!m_senderTabs.contains(tabName)) {
+                        return;
+                    }
+                }
 
-            if (m_senderTabs.contains(tabName)) {
+                if (m_waitingLabel && m_waitingLabel->isVisible()) {
+                    m_waitingLabel->hide();
+                    if (m_classTabWidget) {
+                        m_classTabWidget->show();
+                    }
+                }
+
+                QString tabName = className + ":" + sId;
+                if (!m_senderTabs.contains(tabName)) {
+                    SenderTab* tab = new SenderTab(sId, className, m_dict, this);
+                    m_classTabWidget->addTab(tab, tabName);
+                    m_senderTabs[tabName] = tab;
+                }
+
                 m_senderTabs[tabName]->handleMessage(msg);
-            }
-        });
+            });
+        }
     }
 }
 
@@ -625,7 +686,32 @@ int main(int argc, char *argv[])
 
     QApplication app(argc, argv);
 
-    //app.setApplicationDisplayName(QStringLiteral("Paparazzi Messages"));
+    QCommandLineParser parser;
+    parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
+    parser.setApplicationDescription("Paparazzi Messages Viewer");
+    parser.addHelpOption();
+    parser.addVersionOption();
+
+    QCommandLineOption ivyBusOption("b", "Ivy bus (default 127.255.255.255:2010)", "bus", qEnvironmentVariable("IVY_BUS", "127.255.255.255:2010"));
+    QCommandLineOption classOption("c", "Class name to listen to (can be used multiple times, e.g. telemetry:*)", "class");
+    QCommandLineOption timestampOption("timestamp", "Bind to timestamped messages (currently ignored)");
+    QCommandLineOption forceOption("force", "Force waiting on all messages, not only ALIVE for telemetry class");
+    QCommandLineOption geometryOption("g", "Set the window geometry (e.g., '500x500+100+100')", "geometry");
+
+    parser.addOption(ivyBusOption);
+    parser.addOption(classOption);
+    parser.addOption(timestampOption);
+    parser.addOption(forceOption);
+    parser.addOption(geometryOption);
+
+    parser.process(app);
+
+    MessagesConfig config;
+    config.ivyBus = parser.value(ivyBusOption);
+    config.classes = parser.values(classOption);
+    config.timestamp = parser.isSet(timestampOption);
+    config.force = parser.isSet(forceOption);
+    config.geometry = parser.value(geometryOption);
 
     QString iconPath = ":/penguin_icon_msg.png";
     QIcon icon(iconPath);
@@ -633,7 +719,7 @@ int main(int argc, char *argv[])
 
     app.setWindowIcon(icon);
     
-    MainWindow window;
+    MainWindow window(config);
     window.setWindowIcon(icon);
     window.show();
 

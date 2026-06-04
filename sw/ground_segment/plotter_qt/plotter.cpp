@@ -59,10 +59,18 @@ struct PlotConfig {
  *          drag-and-drop operations for curve associations, processing parsed variables 
  *          into chart instances, and maintaining boundary rules (auto-scaling, min/max limits).
  */
+struct PlotterWindowConfig {
+    QString title;
+    QString geometry;
+    int memorySize = 500;
+    double updateTime = 0.016;
+    QStringList curves;
+};
+
 class PlotterWindow : public QMainWindow {
     Q_OBJECT
 public:
-    explicit PlotterWindow(QWidget *parent = nullptr);
+    explicit PlotterWindow(const PlotterWindowConfig& config, pprzlink::MessageDictionary* dict, pprzlink::IvyQtLink* link, QWidget *parent = nullptr);
     ~PlotterWindow();
 
 protected:
@@ -86,7 +94,6 @@ private:
     void updateLegendValues();
     void updateLegendPosition();
 
-    void setupIvy();
     void setupUI();
     void setupMenu();
     void addPlotFromPayload(const QString& payload);
@@ -239,13 +246,31 @@ QColor PlotterWindow::getNextSaturatedColor() {
  *          handling attributes like `WA_DeleteOnClose` to prevent leaks upon 
  *          user dismissal, and wires up the UI actions.
  */
-PlotterWindow::PlotterWindow(QWidget *parent) : QMainWindow(parent), m_minY(std::numeric_limits<double>::infinity()), m_maxY(-std::numeric_limits<double>::infinity()), m_paused(false), m_autoScale(true), m_legendNeedsRefresh(false) {
+PlotterWindow::PlotterWindow(const PlotterWindowConfig& config, pprzlink::MessageDictionary* dict, pprzlink::IvyQtLink* link, QWidget *parent) : QMainWindow(parent), m_dict(dict), m_link(link), m_minY(std::numeric_limits<double>::infinity()), m_maxY(-std::numeric_limits<double>::infinity()), m_paused(false), m_autoScale(true), m_legendNeedsRefresh(false) {
     m_legendOverlay = nullptr;
     m_legendLayout = nullptr;
     setAcceptDrops(true);
     setAttribute(Qt::WA_DeleteOnClose);
-    setWindowTitle("Plotter");
-    resize(300, 400);
+    setWindowTitle(config.title.isEmpty() ? "Plotter" : config.title);
+
+    if (!config.geometry.isEmpty()) {
+        QRegularExpression re("^(\\d+)x(\\d+)(?:\\+[-]?(\\d+)\\+[-]?(\\d+))?$");
+        QRegularExpressionMatch match = re.match(config.geometry);
+        if (match.hasMatch()) {
+            int w = match.captured(1).toInt();
+            int h = match.captured(2).toInt();
+            resize(w, h);
+            if (!match.captured(3).isEmpty() && !match.captured(4).isEmpty()) {
+                int x = match.captured(3).toInt();
+                int y = match.captured(4).toInt();
+                move(x, y);
+            }
+        } else {
+            resize(300, 400);
+        }
+    } else {
+        resize(300, 400);
+    }
 
     m_chart = new QChart();
     m_chart->setTitle("Drag & Drop messages here");
@@ -276,60 +301,27 @@ PlotterWindow::PlotterWindow(QWidget *parent) : QMainWindow(parent), m_minY(std:
 
     m_startTime = QDateTime::currentMSecsSinceEpoch();
 
-    setupIvy();
+    // Apply configuration values
+    if (config.updateTime > 0) {
+        int updateMs = static_cast<int>(config.updateTime * 1000.0);
+        m_slUpdateRate->setValue(std::clamp(updateMs, m_slUpdateRate->minimum(), m_slUpdateRate->maximum()));
+    }
+    if (config.memorySize > 0) {
+        m_slTimeWindow->setValue(std::clamp(config.memorySize * 10, m_slTimeWindow->minimum(), m_slTimeWindow->maximum()));
+    }
+
+    for (const QString& curve : config.curves) {
+        addPlotFromPayload(curve);
+    }
 }
 
 /**
- * @brief Destructor. Guarantees clean teardown of network handlers.
- * @details Ivy loops typically spawn background worker threads; explicitly 
- *          calling `m_link->stop()` prevents segmentation faults upon app exit.
+ * @brief Destructor.
  */
 PlotterWindow::~PlotterWindow() {
-    if (m_link) {
-        m_link->stop();
-        m_link = nullptr;
-    }
-    if (m_dict) {
-        delete m_dict;
-        m_dict = nullptr;
-    }
+    // Windows no longer own m_link or m_dict; managed in main().
 }
 
-/**
- * @brief Bootstraps the local Paparazzi network hooks for telemetry binding.
- * @details Finds the system configuration directory referencing `messages.xml` 
- *          to understand incoming binary protocol shapes cleanly at runtime.
- */
-void PlotterWindow::setupIvy() {
-    QString phome = qgetenv("PAPARAZZI_HOME");
-    if (phome.isEmpty()) phome = QString("/home/%1/paparazzi").arg(qgetenv("USER"));
-    QString xmlPath = phome + "/var/messages.xml";
-
-    if (!QFile::exists(xmlPath)) {
-        qWarning() << "Plotter: message dictionary not found at" << xmlPath << ". Ivy telemetry will be disabled.";
-        m_dict = nullptr;
-        m_link = nullptr;
-        return;
-    }
-
-    try {
-        m_dict = new pprzlink::MessageDictionary(xmlPath);
-        m_link = new pprzlink::IvyQtLink(*m_dict, "plotter", this);
-        m_link->start("127.255.255.255:2010");
-    } catch (const std::exception &e) {
-        qWarning() << "Plotter: failed to initialize Ivy link or message dictionary:" << e.what();
-        delete m_link;
-        m_link = nullptr;
-        delete m_dict;
-        m_dict = nullptr;
-    } catch (...) {
-        qWarning() << "Plotter: unknown failure during Ivy initialization.";
-        delete m_link;
-        m_link = nullptr;
-        delete m_dict;
-        m_dict = nullptr;
-    }
-}
 
 /**
  * @brief Constructs the application's widgets, layouts, menus, and timers dynamically.
@@ -840,8 +832,8 @@ void PlotterWindow::setupMenu() {
     
     QAction* newAction = plotMenu->addAction(tr("New"));
     newAction->setShortcut(QKeySequence("Ctrl+N"));
-    connect(newAction, &QAction::triggered, this, []() {
-        PlotterWindow* newWindow = new PlotterWindow();
+    connect(newAction, &QAction::triggered, this, [this]() {
+        PlotterWindow* newWindow = new PlotterWindow(PlotterWindowConfig(), m_dict, m_link);
         newWindow->show();
     });
 
@@ -1295,34 +1287,134 @@ public:
  */
 int main(int argc, char *argv[]) 
 {
-    // Set metadata BEFORE application instantiation to prevent XDG portal double-registration 
-    // root cause ("Connection already associated with an application ID").
     QCoreApplication::setApplicationVersion("1.0");
-    //QCoreApplication::setOrganizationName("paparazzi"); // only for settings, not really relevant here
-    // Follow XDG spec for desktop integration and use a fixed name to ensure the .desktop file is correctly associated with the app
     QGuiApplication::setDesktopFileName(QStringLiteral("paparazzi_plotter"));
-    QCoreApplication::setApplicationName(QStringLiteral("Real-time Plotter"));
+    QCoreApplication::setApplicationName(QStringLiteral("Paparazzi Real-time Plotter"));
 
     QApplication app(argc, argv);
-
-    // Apply the custom proxy style to the application.
-    // We pass app.style() so it inherits all the default OS/Wayland drawing 
-    // behavior, simply layering our palette override on top.
     app.setStyle(new EditorLighteningStyle(app.style()));
 
-    //app.setApplicationDisplayName(QStringLiteral("Real-time Plotter"));
+    QCommandLineParser parser;
+    parser.setApplicationDescription("Paparazzi Real-time Plotter");
+    parser.addHelpOption();
+    // Add same options as Logalizer/Plotter for the help display
+    QCommandLineOption busOpt("b", "ivy bus (Default is 127.255.255.255:2010)", "ivy bus");
+    parser.addOption(busOpt);
+    QCommandLineOption curveOpt("c", "Add a curve (e.g. '*:telemetry:BAT:voltage') or constant (e.g. '1.5'). The curve is inserted into the last open window (cf -n option)", "curve");
+    parser.addOption(curveOpt);
+    QCommandLineOption titleOpt("t", "Set the last opened window title (cf -n option)", "title");
+    parser.addOption(titleOpt);
+    QCommandLineOption geomOpt("g", "Set the last opened window geometry ( '500x500+100+100' )", "geometry");
+    parser.addOption(geomOpt);
+    QCommandLineOption newOpt("n", "Open another window for the next curves");
+    parser.addOption(newOpt);
+    QCommandLineOption memOpt("m", "Memory size (default 500)", "size");
+    parser.addOption(memOpt);
+    QCommandLineOption updateOpt("u", "Update time in s (default 0.016)", "time");
+    parser.addOption(updateOpt);
+
+    parser.process(app);
+
+    // Initialize global config
+    PlotterWindowConfig globalConfig;
+    QString ivyBus = "127.255.255.255:2010"; // default
+
+    QList<PlotterWindowConfig> windowConfigs;
+    PlotterWindowConfig currentConfig;
+    
+    QStringList args = app.arguments();
+    for (int i = 1; i < args.size(); ++i) {
+        QString arg = args[i];
+        if (arg == "-b") {
+            if (i + 1 < args.size()) {
+                ivyBus = args[++i];
+            }
+        } else if (arg == "-m") {
+            if (i + 1 < args.size()) {
+                globalConfig.memorySize = args[++i].toInt();
+            }
+        } else if (arg == "-u") {
+            if (i + 1 < args.size()) {
+                globalConfig.updateTime = args[++i].toDouble();
+            }
+        } else if (arg == "-n") {
+            windowConfigs.append(currentConfig);
+            currentConfig = PlotterWindowConfig(); // start fresh
+        } else if (arg == "-c") {
+            if (i + 1 < args.size()) {
+                currentConfig.curves.append(args[++i]);
+            }
+        } else if (arg == "-t") {
+            if (i + 1 < args.size()) {
+                currentConfig.title = args[++i];
+            }
+        } else if (arg == "-g") {
+            if (i + 1 < args.size()) {
+                currentConfig.geometry = args[++i];
+            }
+        }
+    }
+    windowConfigs.append(currentConfig);
+
+    // Setup Ivy Globally
+    QString phome = qgetenv("PAPARAZZI_HOME");
+    if (phome.isEmpty()) phome = QString("/home/%1/paparazzi").arg(qgetenv("USER"));
+    QString xmlPath = phome + "/var/messages.xml";
+
+    pprzlink::MessageDictionary* g_dict = nullptr;
+    pprzlink::IvyQtLink* g_link = nullptr;
+
+    if (!QFile::exists(xmlPath)) {
+        qWarning() << "Plotter: message dictionary not found at" << xmlPath << ". Ivy telemetry will be disabled.";
+    } else {
+        try {
+            g_dict = new pprzlink::MessageDictionary(xmlPath);
+            g_link = new pprzlink::IvyQtLink(*g_dict, "plotter", &app);
+            g_link->start(ivyBus);
+        } catch (const std::exception &e) {
+            qWarning() << "Plotter: failed to initialize Ivy link or message dictionary:" << e.what();
+            delete g_link;
+            g_link = nullptr;
+            delete g_dict;
+            g_dict = nullptr;
+        } catch (...) {
+            qWarning() << "Plotter: unknown failure during Ivy initialization.";
+            delete g_link;
+            g_link = nullptr;
+            delete g_dict;
+            g_dict = nullptr;
+        }
+    }
 
     QString iconPath = ":/penguin_icon_rtp.png";
     QIcon icon(iconPath);
     installLinuxDesktopIntegration(app.desktopFileName(), "Paparazzi Real-Time Plotter", "Real-time plotter for telemetry messages", iconPath, "paparazzi-plotter");
-
     app.setWindowIcon(icon);
 
-    PlotterWindow window;
-    window.setWindowIcon(icon);
-    window.show();
+    QList<PlotterWindow*> windows;
+    for (auto& cfg : windowConfigs) {
+        if (globalConfig.memorySize != 500) cfg.memorySize = globalConfig.memorySize;
+        // Float precision safe check
+        if (std::abs(globalConfig.updateTime - 0.016) > 1e-5) cfg.updateTime = globalConfig.updateTime;
+        
+        PlotterWindow* w = new PlotterWindow(cfg, g_dict, g_link);
+        w->setWindowIcon(icon);
+        w->show();
+        windows.append(w);
+    }
 
-    return app.exec();
+    int ret = app.exec();
+
+    // Clean up
+    if (g_link) {
+        g_link->stop();
+        delete g_link;
+    }
+    if (g_dict) {
+        delete g_dict;
+    }
+
+    return ret;
 }
 
 #include "plotter.moc"
