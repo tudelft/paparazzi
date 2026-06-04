@@ -91,18 +91,15 @@ private slots:
     void onUpdateRateChanged(int val);
     void onLineThicknessChanged(int val);
     void updatePlots();
+    void onLegendRefreshTimeout();
 
 private:
-    QWidget* m_legendOverlay;
-    QVBoxLayout* m_legendLayout;
-    void updateLegendValues();
-    void updateLegendPosition();
+    ChartLegendManager* m_legendManager;
 
     void setupUI();
     void setupMenu();
     void addPlotFromPayload(const QString& payload);
     void handleMessage(QString sender, const pprzlink::Message& msg);
-    void onLegendRefreshTimeout();
     
     void addCurveToMenu(PlotConfig& config);
     void removeCurve(QLineSeries* series);
@@ -134,8 +131,8 @@ private:
     QSpinBox* m_spnLineThickness;
     QTimer* m_updateTimer;
     QMenu* m_curvesMenu;
-    QTimer* m_legendUpdateTimer;
-    bool m_legendNeedsRefresh;
+    QTimer* m_statsTimer;
+    bool m_statsNeedsRefresh;
     std::recursive_mutex m_plotMutex;
 };
 
@@ -235,9 +232,8 @@ static double fieldValueAsDouble(const pprzlink::FieldValue &value, int arrayInd
  *          handling attributes like `WA_DeleteOnClose` to prevent leaks upon 
  *          user dismissal, and wires up the UI actions.
  */
-PlotterWindow::PlotterWindow(const PlotterWindowConfig& config, pprzlink::MessageDictionary* dict, pprzlink::IvyQtLink* link, QWidget *parent) : QMainWindow(parent), m_dict(dict), m_link(link), m_minY(std::numeric_limits<double>::infinity()), m_maxY(-std::numeric_limits<double>::infinity()), m_paused(false), m_autoScale(true), m_legendNeedsRefresh(false) {
-    m_legendOverlay = nullptr;
-    m_legendLayout = nullptr;
+PlotterWindow::PlotterWindow(const PlotterWindowConfig& config, pprzlink::MessageDictionary* dict, pprzlink::IvyQtLink* link, QWidget *parent) : QMainWindow(parent), m_dict(dict), m_link(link), m_minY(std::numeric_limits<double>::infinity()), m_maxY(-std::numeric_limits<double>::infinity()), m_paused(false), m_autoScale(true), m_statsNeedsRefresh(false) {
+    m_legendManager = nullptr;
     setAcceptDrops(true);
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowTitle(config.title.isEmpty() ? "Plotter" : config.title);
@@ -263,10 +259,6 @@ PlotterWindow::PlotterWindow(const PlotterWindowConfig& config, pprzlink::Messag
 
     m_chart = new QChart();
     m_chart->setTitle("Drag & Drop messages here");
-    m_chart->legend()->setVisible(true);
-    m_chart->legend()->setAlignment(Qt::AlignRight);
-    m_chart->legend()->detachFromChart();
-    m_chart->legend()->setBackgroundVisible(true);
     m_chart->setAnimationOptions(QChart::NoAnimation);
     m_chart->setBackgroundRoundness(0);
     m_chart->setMargins(QMargins(0, 0, 0, 0));
@@ -367,10 +359,10 @@ void PlotterWindow::setupUI() {
     m_updateTimer = new QTimer(this);
     m_updateTimer->start(m_slUpdateRate->value() * 10);
 
-    m_legendUpdateTimer = new QTimer(this);
-    m_legendUpdateTimer->setInterval(200);
-    connect(m_legendUpdateTimer, &QTimer::timeout, this, &PlotterWindow::onLegendRefreshTimeout);
-    m_legendUpdateTimer->start();
+    m_statsTimer = new QTimer(this);
+    m_statsTimer->setInterval(200);
+    connect(m_statsTimer, &QTimer::timeout, this, &PlotterWindow::onLegendRefreshTimeout);
+    m_statsTimer->start();
 
     toolbarLayout->addWidget(m_cbAutoScale);
     toolbarLayout->addWidget(new QLabel("Min"));
@@ -429,10 +421,7 @@ void PlotterWindow::setupUI() {
     mainLayout->addWidget(chartView);
     setCentralWidget(mainWidget);
 
-    m_legendOverlay = new QWidget(chartView);
-    m_legendLayout = new QVBoxLayout(m_legendOverlay);
-    m_legendLayout->setContentsMargins(0, 0, 0, 0);
-    m_legendLayout->setSpacing(0);
+    m_legendManager = new ChartLegendManager(m_chart, chartView);
 
     connect(m_cbAutoScale, &QCheckBox::toggled, this, &PlotterWindow::onAutoScaleToggled);
     connect(m_edtMinY, &QLineEdit::editingFinished, this, &PlotterWindow::onManualScaleChanged);
@@ -451,11 +440,10 @@ void PlotterWindow::setupUI() {
  */
 void PlotterWindow::onLegendRefreshTimeout()
 {
-    if (!m_legendNeedsRefresh) {
+    if (!m_statsNeedsRefresh) {
         return;
     }
-    m_legendNeedsRefresh = false;
-    updateLegendValues();
+    m_statsNeedsRefresh = false;
 
     std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
     // Compute average and standard deviation for each curve
@@ -516,7 +504,7 @@ void PlotterWindow::onClearClicked() {
     m_minY = std::numeric_limits<double>::infinity();
     m_maxY = -std::numeric_limits<double>::infinity();
     m_startTime = QDateTime::currentMSecsSinceEpoch(); // reset time origin
-    m_legendNeedsRefresh = true;
+    m_statsNeedsRefresh = true;
     // remove constants too if any
 }
 
@@ -628,7 +616,7 @@ void PlotterWindow::onAddConstantClicked() {
     m_activePlots.append(cfg);
     
     addCurveToMenu(m_activePlots.last());
-    QTimer::singleShot(10, this, &PlotterWindow::updateLegendPosition);
+    QTimer::singleShot(10, m_legendManager, &ChartLegendManager::updateLegendPosition);
 }
 
 /**
@@ -815,8 +803,8 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
             
             addCurveToMenu(m_activePlots.last());
         }
-        m_legendNeedsRefresh = true;
-    QTimer::singleShot(10, this, &PlotterWindow::updateLegendPosition);
+        m_statsNeedsRefresh = true;
+    QTimer::singleShot(10, m_legendManager, &ChartLegendManager::updateLegendPosition);
     }
 }
 
@@ -1068,7 +1056,7 @@ void PlotterWindow::updatePlots() {
             m_edtMaxY->setText(QString::number(m_maxY + margin, 'f', 2));
         }
     }
-    m_legendNeedsRefresh = true;
+    m_statsNeedsRefresh = true;
 }
 
 /**
@@ -1134,117 +1122,10 @@ void PlotterWindow::removeCurve(QLineSeries* series) {
             
             recalculateYBounds();
             
-            QTimer::singleShot(10, this, &PlotterWindow::updateLegendPosition);
-            m_legendNeedsRefresh = true;
+            QTimer::singleShot(10, m_legendManager, &ChartLegendManager::updateLegendPosition);
+            m_statsNeedsRefresh = true;
             break;
         }
-    }
-}
-
-/**
- * @brief Automatically repaints floating labels mirroring internal QLegend positions correctly.
- * @details Re-assembles bespoke text overlays simulating natively docked legends securely handling 
- *          font heights automatically against active chart bounding rectangles.
- */
-void PlotterWindow::updateLegendPosition() {
-    if (!m_chart || !m_legendOverlay || !m_legendLayout) return;
-    
-    m_chart->legend()->hide();
-    
-    QLayoutItem *child;
-    while ((child = m_legendLayout->takeAt(0)) != nullptr) {
-        if (child->widget()) delete child->widget();
-        delete child;
-    }
-    
-    auto seriesList = m_chart->series();
-    if (seriesList.isEmpty()) {
-        m_legendOverlay->hide();
-        return;
-    }
-    
-    m_legendOverlay->show();
-    
-    for (auto* s : seriesList) {
-        QLineSeries* ls = qobject_cast<QLineSeries*>(s);
-        if (ls) {
-            QWidget* rowWidget = new QWidget;
-            QHBoxLayout* rowLayout = new QHBoxLayout(rowWidget);
-            rowLayout->setContentsMargins(4, 2, 4, 2);
-            rowLayout->setSpacing(5);
-            
-            QLabel* colorBox = new QLabel;
-            QString colorMsg = ls->pen().color().name();
-            colorBox->setStyleSheet(QString("background-color: %1; border: none;").arg(colorMsg));
-            
-            double latestVal = 0.0;
-            if (ls->count() > 0) {
-                latestVal = ls->at(ls->count() - 1).y();
-            }
-            QLabel* textLbl = new QLabel(QString("%1 : %2").arg(ls->name()).arg(latestVal, 0, 'f', 4));
-            textLbl->setStyleSheet("color: black; border: none; background: transparent;");
-            textLbl->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            
-            int textHeight = textLbl->fontMetrics().height();
-            // Optional: You can reduce it slightly if the font height includes big ascender/descender margins, 
-            // e.g. int boxSize = textHeight * 0.8; but textHeight directly is a safe square.
-            int boxSize = textHeight;
-            colorBox->setFixedSize(boxSize, boxSize);
-            
-            rowLayout->addWidget(textLbl, 1);
-            rowLayout->addWidget(colorBox);
-            m_legendLayout->addWidget(rowWidget);
-        }
-    }
-    
-    m_legendOverlay->adjustSize();
-    if (QWidget* parent = m_legendOverlay->parentWidget()) {
-        const int margin = 15;
-        int x = std::max(0, parent->width() - m_legendOverlay->width() - margin);
-        m_legendOverlay->move(x, margin);
-    }
-}
-
-/**
- * @brief Traverses active frames to cleanly recompute label readouts asynchronously.
- */
-void PlotterWindow::updateLegendValues() {
-    if (!m_legendOverlay || !m_legendLayout) return;
-    
-    auto seriesList = m_chart->series();
-    if (m_legendLayout->count() != seriesList.size()) {
-        updateLegendPosition();
-        return;
-    }
-    
-    for (int i = 0; i < seriesList.size(); ++i) {
-        QLineSeries* ls = qobject_cast<QLineSeries*>(seriesList[i]);
-        if (ls) {
-            double latestVal = 0.0;
-            if (ls->count() > 0) {
-                latestVal = ls->at(ls->count() - 1).y();
-            }
-            
-            QLayoutItem* item = m_legendLayout->itemAt(i);
-            if (item) {
-                QWidget* rowWidget = item->widget();
-                if (rowWidget) {
-                    QHBoxLayout* rowLayout = qobject_cast<QHBoxLayout*>(rowWidget->layout());
-                    if (rowLayout && rowLayout->count() >= 2) {
-                        QLabel* lbl = qobject_cast<QLabel*>(rowLayout->itemAt(0)->widget());
-                        if (lbl) {
-                            lbl->setText(QString("%1 : %2").arg(ls->name()).arg(latestVal, 0, 'f', 4));
-                        }
-                    }
-                }
-            }
-        }
-    }
-    m_legendOverlay->adjustSize();
-    if (QWidget* parent = m_legendOverlay->parentWidget()) {
-        const int margin = 15;
-        int x = std::max(0, parent->width() - m_legendOverlay->width() - margin);
-        m_legendOverlay->move(x, margin);
     }
 }
 
@@ -1253,7 +1134,7 @@ void PlotterWindow::updateLegendValues() {
  */
 void PlotterWindow::resizeEvent(QResizeEvent *event) {
     QMainWindow::resizeEvent(event);
-    updateLegendPosition();
+    m_legendManager->updateLegendPosition();
 }
 
 /**
