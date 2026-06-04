@@ -9,6 +9,7 @@
 #include <QApplication>
 #include <QChartView>
 #include <QCheckBox>
+#include <QFile>
 #include <QGraphicsLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -18,6 +19,7 @@
 #include <QMenuBar>
 #include <QSlider>
 #include <QSpinBox>
+#include <QTimer>
 #include <QValueAxis>
 #include <QProxyStyle>
 #include <QPlainTextEdit>
@@ -43,6 +45,7 @@ struct PlotConfig {
     QString fieldName;
     double coef;
     QLineSeries* series;
+    QList<QPointF> history; // Master absolute timestamps tracking points
     QList<QPointF> buffer;
     int fieldIndex = -1;
     bool discrete = false;
@@ -63,7 +66,7 @@ struct PlotterWindowConfig {
     QString title;
     QString geometry;
     int memorySize = 500;
-    double updateTime = 0.016;
+    double updateTime = 0.5;
     QStringList curves;
 };
 
@@ -266,10 +269,10 @@ PlotterWindow::PlotterWindow(const PlotterWindowConfig& config, pprzlink::Messag
                 move(x, y);
             }
         } else {
-            resize(300, 400);
+            resize(500, 300);
         }
     } else {
-        resize(300, 400);
+        resize(500, 300);
     }
 
     m_chart = new QChart();
@@ -303,11 +306,11 @@ PlotterWindow::PlotterWindow(const PlotterWindowConfig& config, pprzlink::Messag
 
     // Apply configuration values
     if (config.updateTime > 0) {
-        int updateMs = static_cast<int>(config.updateTime * 1000.0);
-        m_slUpdateRate->setValue(std::clamp(updateMs, m_slUpdateRate->minimum(), m_slUpdateRate->maximum()));
+        int updateVal = static_cast<int>(config.updateTime * 100.0);
+        m_slUpdateRate->setValue(std::clamp(updateVal, m_slUpdateRate->minimum(), m_slUpdateRate->maximum()));
     }
     if (config.memorySize > 0) {
-        m_slTimeWindow->setValue(std::clamp(config.memorySize * 10, m_slTimeWindow->minimum(), m_slTimeWindow->maximum()));
+        m_slTimeWindow->setValue(std::clamp(config.memorySize, m_slTimeWindow->minimum(), m_slTimeWindow->maximum()));
     }
 
     for (const QString& curve : config.curves) {
@@ -349,10 +352,9 @@ void PlotterWindow::setupUI() {
     m_edtMaxY->setEnabled(false);
 
     m_slTimeWindow = new QSlider(Qt::Horizontal);
-    m_slTimeWindow->setToolTip("Time Window (s)");
-    m_slTimeWindow->setRange(5, 1000); // 5 to 1000 (0.05s to 10.0s)
-    m_slTimeWindow->setValue(1000); // Default to 10s
-
+    m_slTimeWindow->setToolTip("Memory Size");
+    m_slTimeWindow->setRange(10, 1010); // 10 to 1010 points
+    m_slTimeWindow->setValue(500); // Default to 500
 
     QLabel *lblConst = new QLabel("Constant");
     m_edtConstant = new QLineEdit();
@@ -364,9 +366,9 @@ void PlotterWindow::setupUI() {
     m_edtScaleNext->setToolTip("Scale next curve (e.g. 0.0174 to convert deg in rad, 57.3 to convert rad in deg)");
 
     m_slUpdateRate = new QSlider(Qt::Horizontal);
-    m_slUpdateRate->setToolTip("Update Rate (ms)");
-    m_slUpdateRate->setRange(10, 1000); // 10ms to 1000ms
-    m_slUpdateRate->setValue(16); // Default to 16ms (~60Hz)
+    m_slUpdateRate->setToolTip("Update Rate (s)");
+    m_slUpdateRate->setRange(5, 100); // 0.05s to 1.00s (multiplied by 100 for integer slider)
+    m_slUpdateRate->setValue(50); // Default to 0.5s => 50
 
     m_spnLineThickness = new QSpinBox();
     m_spnLineThickness->setToolTip("Line Thickness (px)");
@@ -375,7 +377,7 @@ void PlotterWindow::setupUI() {
     m_spnLineThickness->hide();
 
     m_updateTimer = new QTimer(this);
-    m_updateTimer->start(m_slUpdateRate->value());
+    m_updateTimer->start(m_slUpdateRate->value() * 10);
 
     m_legendUpdateTimer = new QTimer(this);
     m_legendUpdateTimer->setInterval(200);
@@ -388,8 +390,9 @@ void PlotterWindow::setupUI() {
     toolbarLayout->addWidget(new QLabel("Max"));
     toolbarLayout->addWidget(m_edtMaxY);
 
-    QLabel *lblTimeWindowVal = new QLabel(QString("%1").arg(m_slTimeWindow->value() / 100.0, 0, 'f', 2));
+    QLabel *lblTimeWindowVal = new QLabel(QString("%1").arg(m_slTimeWindow->value()));
     lblTimeWindowVal->setAlignment(Qt::AlignCenter);
+    lblTimeWindowVal->setToolTip("Memory Size");
     QVBoxLayout *vboxTime = new QVBoxLayout();
     vboxTime->addWidget(lblTimeWindowVal);
     vboxTime->addWidget(m_slTimeWindow);
@@ -397,8 +400,9 @@ void PlotterWindow::setupUI() {
     QWidget *wTime = new QWidget();
     wTime->setLayout(vboxTime);
 
-    QLabel *lblUpdateRateVal = new QLabel(QString("%1").arg(m_slUpdateRate->value()));
+    QLabel *lblUpdateRateVal = new QLabel(QString("%1").arg(m_slUpdateRate->value() / 100.0, 0, 'f', 2));
     lblUpdateRateVal->setAlignment(Qt::AlignCenter);
+    lblUpdateRateVal->setToolTip("Update Rate (s)");
     QVBoxLayout *vboxRate = new QVBoxLayout();
     vboxRate->addWidget(lblUpdateRateVal);
     vboxRate->addWidget(m_slUpdateRate);
@@ -406,15 +410,16 @@ void PlotterWindow::setupUI() {
     QWidget *wRate = new QWidget();
     wRate->setLayout(vboxRate);
 
-    connect(m_slTimeWindow, &QSlider::valueChanged, lblTimeWindowVal, [lblTimeWindowVal](int val) {
-        lblTimeWindowVal->setText(QString("%1").arg(val / 100.0, 0, 'f', 2));
+    connect(m_slTimeWindow, &QSlider::valueChanged, lblTimeWindowVal, [this, lblTimeWindowVal](int val) {
+        lblTimeWindowVal->setText(QString("%1").arg(val));
+        this->updatePlots(); // Instantly apply memory crop to the graph rendering
     });
     connect(m_slUpdateRate, &QSlider::valueChanged, lblUpdateRateVal, [lblUpdateRateVal](int val) {
-        lblUpdateRateVal->setText(QString("%1").arg(val));
+        lblUpdateRateVal->setText(QString("%1").arg(val / 100.0, 0, 'f', 2));
     });
 
-    toolbarLayout->addWidget(wTime, 1);
     toolbarLayout->addWidget(wRate, 1);
+    toolbarLayout->addWidget(wTime, 1);
     toolbarLayout->addWidget(lblConst);
     toolbarLayout->addWidget(m_edtConstant);
     toolbarLayout->addWidget(lblScaleNext);
@@ -511,6 +516,8 @@ void PlotterWindow::onClearClicked() {
             delete plot.series;
             plot.series = nullptr;
         }
+        plot.history.clear();
+        plot.buffer.clear();
     }
     m_activePlots.clear();
     if (m_curvesMenu) {
@@ -623,9 +630,8 @@ void PlotterWindow::onAddConstantClicked() {
     cfg.series->setPen(pen1);
     m_chart->addSeries(cfg.series);
     
-    // We add points initially, and the rest will be updated in handleMessage
-    cfg.series->append(0, val);
-    cfg.series->append(m_slTimeWindow->value() / 100.0, val);
+    // Series points will populate robustly on the first handleMessage payload,
+    // or continuously from updatePlots() geometry-shaping if this is a 'const'.
     
     cfg.series->attachAxis(m_axisX);
     cfg.series->attachAxis(m_axisY);
@@ -640,8 +646,12 @@ void PlotterWindow::onAddConstantClicked() {
  * @brief Dynamic slider hook propagating rendering speeds natively down to QTimer intervals.
  */
 void PlotterWindow::onUpdateRateChanged(int val) {
-    const int interval = std::max(10, val);
-    m_updateTimer->setInterval(interval);
+    const int interval = std::max(10, val * 10);
+    // Restart the timer so it immediately adapts to the new interval
+    m_updateTimer->start(interval);
+    
+    // Smoothly redraw to instantly clamp or expand the visible time window
+    updatePlots();
 }
 
 /**
@@ -656,9 +666,6 @@ void PlotterWindow::dragEnterEvent(QDragEnterEvent *event) {
 /**
  * @brief Orchestrates raw dropped strings into formal telemetry series requests.
  */
-#include <QFile>
-#include <QTimer>
-
 class DelayedDropWatcher : public QObject {
     Q_OBJECT
     QString m_filePath;
@@ -853,11 +860,11 @@ void PlotterWindow::setupMenu() {
     restartAction->setShortcut(QKeySequence("Ctrl+X"));
     connect(restartAction, &QAction::triggered, this, [this]() { m_paused = false; });
 
-    plotMenu->addSeparator();
-
     QAction* closeAction = plotMenu->addAction(tr("Close"));
     closeAction->setShortcut(QKeySequence("Ctrl+W"));
-    connect(closeAction, &QAction::triggered, this, &QWidget::close);
+    connect(closeAction, &QAction::triggered, this, &PlotterWindow::onClearClicked);
+
+    plotMenu->addSeparator();
 
     QAction* quitAction = plotMenu->addAction(tr("Quit"));
     quitAction->setShortcut(QKeySequence("Ctrl+Q"));
@@ -956,8 +963,8 @@ void PlotterWindow::handleMessage(QString sender, const pprzlink::Message& msg) 
                     if (!plot.buffer.isEmpty()) {
                         lastY = plot.buffer.last().y();
                         hasLastY = true;
-                    } else if (plot.series && plot.series->count() > 0) {
-                        lastY = plot.series->at(plot.series->count() - 1).y();
+                    } else if (plot.history.count() > 0) {
+                        lastY = plot.history.last().y();
                         hasLastY = true;
                     }
                     // Optimize step-functions: only inject the right-angle corner if the state actually changed.
@@ -987,7 +994,8 @@ void PlotterWindow::updatePlots() {
     if (m_paused) return;
 
     double currentTime = (QDateTime::currentMSecsSinceEpoch() - m_startTime) / 1000.0;
-    double windowSize = m_slTimeWindow->value() / 100.0;
+    // OCaml total time window corresponds to (Memory Size) * (Update Time)
+    double windowSize = m_slTimeWindow->value() * (m_slUpdateRate->value() / 100.0);
     bool needsAxisUpdate = false;
     bool needsFullRecalc = false;
 
@@ -999,15 +1007,18 @@ void PlotterWindow::updatePlots() {
             bool ok = false;
             double val = plot.fieldName.section('=', 1).toDouble(&ok);
             if (!ok || !std::isfinite(val)) continue;
-            double startX = std::max(0.0, currentTime - windowSize);
             plot.series->replace(
-                QList<QPointF>() << QPointF(startX, val) << QPointF(std::max(windowSize, currentTime), val)
+                QList<QPointF>() << QPointF(-windowSize, val) << QPointF(0, val)
             );
+            if (m_autoScale) {
+                if (val < m_minY) { m_minY = val; needsAxisUpdate = true; }
+                if (val > m_maxY) { m_maxY = val; needsAxisUpdate = true; }
+            }
             continue;
         }
 
         if (!plot.buffer.isEmpty()) {
-            plot.series->append(plot.buffer);
+            plot.history.append(plot.buffer);
             for (const QPointF& pt : std::as_const(plot.buffer)) {
                 if (pt.y() < m_minY) { m_minY = pt.y(); needsAxisUpdate = true; }
                 if (pt.y() > m_maxY) { m_maxY = pt.y(); needsAxisUpdate = true; }
@@ -1016,10 +1027,10 @@ void PlotterWindow::updatePlots() {
         }
 
         int pointsToRemove = 0;
-        int count = plot.series->count();
+        int count = plot.history.count();
         double cutoffTime = currentTime - windowSize;
-        while (pointsToRemove < count && plot.series->at(pointsToRemove).x() < cutoffTime) {
-            double ptY = plot.series->at(pointsToRemove).y();
+        while (pointsToRemove < count && plot.history.at(pointsToRemove).x() < cutoffTime) {
+            double ptY = plot.history.at(pointsToRemove).y();
             // If the point we're dropping defined the bounding box, we must shrink/re-evaluate the whole box natively.
             if (m_autoScale && (ptY <= m_minY || ptY >= m_maxY)) {
                 needsFullRecalc = true;
@@ -1027,15 +1038,19 @@ void PlotterWindow::updatePlots() {
             pointsToRemove++;
         }
         if (pointsToRemove > 0) {
-            plot.series->removePoints(0, pointsToRemove);
+            plot.history.remove(0, pointsToRemove);
         }
+        
+        QList<QPointF> relativePoints;
+        relativePoints.reserve(plot.history.size());
+        for (const QPointF& pt : std::as_const(plot.history)) {
+            relativePoints.append(QPointF(pt.x() - currentTime, pt.y()));
+        }
+        plot.series->replace(relativePoints);
     }
 
-    if (currentTime > windowSize) {
-        m_axisX->setRange(currentTime - windowSize, currentTime);
-    } else {
-        m_axisX->setRange(0, windowSize);
-    }
+    // Anchor X-axis such that 0 is the current time and leftwards is the past (-windowSize)
+    m_axisX->setRange(-windowSize, 0);
 
     if (m_autoScale) {
         if (needsFullRecalc) {
@@ -1310,7 +1325,7 @@ int main(int argc, char *argv[])
     parser.addOption(newOpt);
     QCommandLineOption memOpt("m", "Memory size (default 500)", "size");
     parser.addOption(memOpt);
-    QCommandLineOption updateOpt("u", "Update time in s (default 0.016)", "time");
+    QCommandLineOption updateOpt("u", "Update time in s (default 0.5)", "time");
     parser.addOption(updateOpt);
 
     parser.process(app);
@@ -1395,7 +1410,7 @@ int main(int argc, char *argv[])
     for (auto& cfg : windowConfigs) {
         if (globalConfig.memorySize != 500) cfg.memorySize = globalConfig.memorySize;
         // Float precision safe check
-        if (std::abs(globalConfig.updateTime - 0.016) > 1e-5) cfg.updateTime = globalConfig.updateTime;
+        if (std::abs(globalConfig.updateTime - 0.5) > 1e-5) cfg.updateTime = globalConfig.updateTime;
         
         PlotterWindow* w = new PlotterWindow(cfg, g_dict, g_link);
         w->setWindowIcon(icon);
