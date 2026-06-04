@@ -19,6 +19,7 @@
 #include <QFrame>
 #include <QIcon>
 #include <QFile>
+#include <QDir>
 #include <QDebug>
 #include <QPolygon>
 #include <cmath>
@@ -207,9 +208,14 @@ GaiaWindow::GaiaWindow(const QString &ivyBus, double timeScale, double windSpeed
 
 GaiaWindow::~GaiaWindow()
 {
+    if (m_timer) {
+        m_timer->stop();
+    }
     if (m_link) {
         m_link->stop();
+        m_link.reset();
     }
+    m_dict.reset();
 }
 
 void GaiaWindow::setupUI(double initTimeScale, double initWindSpeed, double initWindDir, double initWindUp, bool initGpsOff)
@@ -261,7 +267,7 @@ void GaiaWindow::setupUI(double initTimeScale, double initWindSpeed, double init
             spinBox->setValue(value / static_cast<double>(factor));
         });
         connect(spinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [slider, factor](double value) {
-            slider->setValue(value * factor);
+            slider->setValue(static_cast<int>(std::round(value * factor)));
         });
         connect(spinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](double) { this->sendWorldEnv(); });
         return spinBox;
@@ -341,7 +347,9 @@ void GaiaWindow::setupUI(double initTimeScale, double initWindSpeed, double init
 void GaiaWindow::setupIvy(const QString &ivyBus)
 {
     QString phome = qgetenv("PAPARAZZI_HOME");
-    if (phome.isEmpty()) phome = QString("/home/%1/paparazzi").arg(qgetenv("USER"));
+    if (phome.isEmpty()) {
+        phome = QDir::homePath() + "/paparazzi";
+    }
     QString xmlPath = phome + "/var/messages.xml";
 
     if (!QFile::exists(xmlPath)) {
