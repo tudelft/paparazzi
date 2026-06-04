@@ -12,7 +12,7 @@
 #include <QFrame>
 #include <QIcon>
 #include <QFile>
-//#include <QDebug>
+#include <QDebug>
 #include <QPainter>
 #include <QPolygon>
 #include <QSpinBox>
@@ -20,9 +20,7 @@
 #include <cmath>
 #include <vector>
 
-#include "../../ground_segment/linux_desktop_utils.h"
-#include "pprzlinkQt/Message.h"
-#include "pprzlinkQt/MessageDictionary.h"
+#include "../../logalizer/linux_desktop_utils.h"
 #include "pprzlinkQt/IvyQtLink.h"
 
 #ifndef M_PI
@@ -368,22 +366,16 @@ int main(int argc, char *argv[])
 
     QCommandLineOption busOption(QStringList() << "b", "Ivy Bus (Default: 127.255.255.255:2010)", "bus", "127.255.255.255:2010");
     parser.addOption(busOption);
-    
     QCommandLineOption timeOption(QStringList() << "t", "Set time scale (default: 1.0)", "timeScale", "1.0");
     parser.addOption(timeOption);
-    
     QCommandLineOption windSpeedOption(QStringList() << "w", "Set wind speed (0-30m/s)", "windSpeed", "0.0");
     parser.addOption(windSpeedOption);
-    
     QCommandLineOption windDirOption(QStringList() << "d", "Set wind direction 0-359 deg", "windDir", "0.0");
-    parser.addOption(windDirOption);
-    
+    parser.addOption(windDirOption); 
     QCommandLineOption windUpOption(QStringList() << "u", "Set wind vertical draft (-10 to 10m/s)", "windUp", "0.0");
     parser.addOption(windUpOption);
-    
     QCommandLineOption gpsOffOption(QStringList() << "g", "Emulate GPS signal unavailable (default: false)");
     parser.addOption(gpsOffOption);
-
     parser.process(app);
 
     QString ivyBus = parser.value(busOption);

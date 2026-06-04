@@ -39,18 +39,24 @@ SERVERCMX = $(SERVERCMO:.cmo=.cmx)
 
 all: link server ivy_tcp_aircraft ivy_tcp_controller ivy2udp ivy2serial ivy2nmea gpsd2ivy gtk_tools
 
-ifeq ($(USE_LABELGTK),lablgtk2)
 gtk_tools: messages
-endif
 
 opt: server.opt
 
 clean:
 	$(Q)rm -f link server messages *.bak *~ core *.o .depend *.opt *.out *.cm* ivy_tcp_aircraft ivy_tcp_controller ivy2udp ivy2serial ivy_serial_bridge gpsd2ivy c_ivy_client_example_1 c_ivy_client_example_2 ivy2nmea
+	$(Q)rm -rf $(BUILD_DIR_QT_MESSAGES)
 
-messages : messages.cmo $(LIBPPRZCMA) $(LIBPPRZLINKCMA)
-	@echo OL $@
-	$(Q)$(OCAMLC) $(INCLUDES) -o $@ $(LINKPKG) gtkInit.cmo $<
+BUILD_DIR_QT_MESSAGES ?= ../../../var/build_qt/messages
+
+messages:
+	@echo "CMAKE messages"
+	$(Q)if command -v ninja >/dev/null 2>&1; then \
+		cmake -B $(BUILD_DIR_QT_MESSAGES) -S . -G Ninja -DCMAKE_BUILD_TYPE=Release; \
+	else \
+		cmake -B $(BUILD_DIR_QT_MESSAGES) -S . -DCMAKE_BUILD_TYPE=Release; \
+	fi
+	$(Q)cmake --build $(BUILD_DIR_QT_MESSAGES) --target messages --parallel
 
 server : $(SERVERCMO) $(LIBPPRZCMA) $(LIBPPRZLINKCMA)
 	@echo OL $@
@@ -137,7 +143,7 @@ c_ivy_client_example_1: c_ivy_client_example_1.c Makefile
 c_ivy_client_example_2: c_ivy_client_example_2.c Makefile
 	$(CC) $(GLIBIVY_CFLAGS) -o $@ $< $(GLIBIVY_LDFLAGS)
 
-.PHONY: all opt clean gtk_tools
+.PHONY: all opt clean gtk_tools messages
 
 #
 # Dependencies

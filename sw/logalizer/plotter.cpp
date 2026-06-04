@@ -21,8 +21,9 @@
 #include <QRegularExpression>
 #include <mutex>
 
-#include "../plotter_common.h"
-#include "../linux_desktop_utils.h"
+#include "plotter_common.h"
+#include "linux_desktop_utils.h"
+
 #include "pprzlinkQt/IvyQtLink.h"
 
 /**
