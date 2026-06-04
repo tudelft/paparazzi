@@ -21,6 +21,8 @@
 #include <QValueAxis>
 #include <QProxyStyle>
 #include <QPlainTextEdit>
+#include <QInputDialog>
+#include <QRegularExpression>
 #include <mutex>
 
 #include "../linux_desktop_utils.h"
@@ -46,6 +48,8 @@ struct PlotConfig {
     bool discrete = false;
     QAction* avgAction = nullptr;
     QAction* stdevAction = nullptr;
+    int arrayIndex = -1;
+    QLabel* legendLabel = nullptr;
 };
 
 /**
@@ -133,10 +137,27 @@ private:
  *          downward through the supported type taxonomy to normalize inputs onto a plotting-friendly 
  *          1D numerical axis.
  */
-static double fieldValueAsDouble(const pprzlink::FieldValue &value)
+static double fieldValueAsDouble(const pprzlink::FieldValue &value, int arrayIndex = -1)
 {
     const auto &type = value.getType();
     if (type.isArray()) {
+        if (arrayIndex >= 0) {
+            try {
+                switch (type.getBaseType()) {
+                    case pprzlink::BaseType::CHAR: { std::vector<char> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::INT8: { std::vector<int8_t> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::INT16: { std::vector<int16_t> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::INT32: { std::vector<int32_t> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::UINT8: { std::vector<uint8_t> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::UINT16: { std::vector<uint16_t> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::UINT32: { std::vector<uint32_t> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::FLOAT: { std::vector<float> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::DOUBLE: { std::vector<double> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    default: return std::numeric_limits<double>::quiet_NaN();
+                }
+            } catch (...) {
+            }
+        }
         return std::numeric_limits<double>::quiet_NaN();
     }
     switch (type.getBaseType()) {
@@ -643,11 +664,65 @@ void PlotterWindow::dragEnterEvent(QDragEnterEvent *event) {
 /**
  * @brief Orchestrates raw dropped strings into formal telemetry series requests.
  */
+#include <QFile>
+#include <QTimer>
+
+class DelayedDropWatcher : public QObject {
+    Q_OBJECT
+    QString m_filePath;
+    QTimer *m_timer;
+    int m_attempts;
+public:
+    DelayedDropWatcher(const QString& path, QObject* parent) : QObject(parent), m_filePath(path), m_attempts(0) {
+        m_timer = new QTimer(this);
+        connect(m_timer, &QTimer::timeout, this, &DelayedDropWatcher::checkFile);
+        m_timer->start(100);
+    }
+signals:
+    void payloadsReady(const QString& text);
+private slots:
+    void checkFile() {
+        m_attempts++;
+        QFile f(m_filePath);
+        if (f.exists()) {
+            if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                QString content = f.readAll();
+                f.close();
+                f.remove();
+                if (!content.isEmpty()) {
+                    emit payloadsReady(content);
+                }
+                m_timer->stop();
+                deleteLater();
+            }
+        } else if (m_attempts > 600) { // 60 seconds timeout
+            m_timer->stop();
+            deleteLater();
+        }
+    }
+};
+
 void PlotterWindow::dropEvent(QDropEvent *event) {
     if (event->mimeData()->hasText()) {
-        QString payload = event->mimeData()->text();
-        //qDebug() << "Dropped payload:" << payload;
-        addPlotFromPayload(payload);
+        QString payloadText = event->mimeData()->text();
+        if (payloadText.startsWith("delayed_array:")) {
+            QString filePath = payloadText.mid(14);
+            DelayedDropWatcher* watcher = new DelayedDropWatcher(filePath, this);
+            connect(watcher, &DelayedDropWatcher::payloadsReady, this, [this](const QString& content) {
+                QStringList payloads = content.split('\n', Qt::SkipEmptyParts);
+                for (const QString& payload : payloads) {
+                    this->addPlotFromPayload(payload);
+                }
+            });
+            event->acceptProposedAction();
+            return;
+        }
+        
+        // payloadText can contain multiple payloads separated by newline
+        QStringList payloads = payloadText.split('\n', Qt::SkipEmptyParts);
+        for (const QString& payload : payloads) {
+            addPlotFromPayload(payload);
+        }
         event->acceptProposedAction();
     }
 }
@@ -666,7 +741,16 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
         cfg.senderName = parts[0];
         cfg.className = parts[1];
         cfg.msgName = parts[2];
-        cfg.fieldName = parts[3];
+        
+        QString fieldStr = parts[3];
+        int bracketIndex = fieldStr.indexOf('[');
+        if (bracketIndex != -1 && fieldStr.endsWith(']')) {
+            cfg.fieldName = fieldStr.left(bracketIndex);
+            cfg.arrayIndex = fieldStr.mid(bracketIndex + 1, fieldStr.length() - bracketIndex - 2).toInt();
+        } else {
+            cfg.fieldName = fieldStr;
+            cfg.arrayIndex = -1;
+        }
         
         bool ok = false;
         double scaleNext = m_edtScaleNext->text().toDouble(&ok);
@@ -684,7 +768,8 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
         for (const auto& existing : m_activePlots) {
             if (existing.senderName == cfg.senderName &&
                 existing.msgName == cfg.msgName &&
-                existing.fieldName == cfg.fieldName) {
+                existing.fieldName == cfg.fieldName &&
+                existing.arrayIndex == cfg.arrayIndex) {
                 return; // already plotting
             }
         }
@@ -692,7 +777,8 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
         cfg.series = new QLineSeries();
         QString prefix = (cfg.senderName.isEmpty() || cfg.senderName == "all") ? "" : cfg.senderName + ":";
         QString classPrefix = cfg.className.isEmpty() ? "" : cfg.className + ":";
-        cfg.series->setName(QString("%1%2%3:%4").arg(prefix).arg(classPrefix).arg(cfg.msgName).arg(cfg.fieldName));
+        QString arraySuffix = (cfg.arrayIndex >= 0) ? QString("[%1]").arg(cfg.arrayIndex) : "";
+        cfg.series->setName(QString("%1%2%3:%4%5").arg(prefix).arg(classPrefix).arg(cfg.msgName).arg(cfg.fieldName).arg(arraySuffix));
         
         // Assign custom distinct saturated color
         QPen pen2 = cfg.series->pen();
@@ -832,7 +918,43 @@ void PlotterWindow::handleMessage(QString sender, const pprzlink::Message& msg) 
             }
             try {
                 const auto& rv = msg.getRawValue(fieldIndex);
-                double val = fieldValueAsDouble(rv);
+                if (rv.getType().isArray() && plot.arrayIndex == -1) {
+                    try {
+                        int arrSize = 0;
+                        switch (rv.getType().getBaseType()) {
+                            case pprzlink::BaseType::CHAR: { std::vector<char> v; rv.getValue(v); arrSize = v.size(); } break;
+                            case pprzlink::BaseType::INT8: { std::vector<int8_t> v; rv.getValue(v); arrSize = v.size(); } break;
+                            case pprzlink::BaseType::INT16: { std::vector<int16_t> v; rv.getValue(v); arrSize = v.size(); } break;
+                            case pprzlink::BaseType::INT32: { std::vector<int32_t> v; rv.getValue(v); arrSize = v.size(); } break;
+                            case pprzlink::BaseType::UINT8: { std::vector<uint8_t> v; rv.getValue(v); arrSize = v.size(); } break;
+                            case pprzlink::BaseType::UINT16: { std::vector<uint16_t> v; rv.getValue(v); arrSize = v.size(); } break;
+                            case pprzlink::BaseType::UINT32: { std::vector<uint32_t> v; rv.getValue(v); arrSize = v.size(); } break;
+                            case pprzlink::BaseType::FLOAT: { std::vector<float> v; rv.getValue(v); arrSize = v.size(); } break;
+                            case pprzlink::BaseType::DOUBLE: { std::vector<double> v; rv.getValue(v); arrSize = v.size(); } break;
+                            default: break;
+                        }
+                        if (arrSize > 0) {
+                            for (int k = 0; k < arrSize; ++k) {
+                                QString subPayload = QString("%1:%2:%3:%4[%5]:%6")
+                                    .arg(plot.senderName)
+                                    .arg(plot.className)
+                                    .arg(plot.msgName)
+                                    .arg(plot.fieldName)
+                                    .arg(k)
+                                    .arg(plot.coef);
+                                QMetaObject::invokeMethod(this, [this, subPayload]() {
+                                    this->addPlotFromPayload(subPayload);
+                                }, Qt::QueuedConnection);
+                            }
+                            QMetaObject::invokeMethod(this, [this, series = plot.series]() {
+                                this->removeCurve(series);
+                            }, Qt::QueuedConnection);
+                        }
+                    } catch (...) {}
+                    continue;
+                }
+
+                double val = fieldValueAsDouble(rv, plot.arrayIndex);
                 if (!std::isfinite(val)) continue;
                 val *= plot.coef;
 

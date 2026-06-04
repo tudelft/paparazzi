@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QMimeData>
 #include <QDrag>
 #include <QLabel>
 #include <QListWidgetItem>
@@ -8,6 +9,9 @@
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QVBoxLayout>
+#include <QInputDialog>
+#include <QLineEdit>
+#include <QRegularExpression>
 #include "../linux_desktop_utils.h"
 #include "pprzlinkQt/IvyQtLink.h"
 
@@ -15,6 +19,7 @@ struct MsgTracker {
     QLabel* timeLabel = nullptr;
     QWidget* timeBox = nullptr;
     QVector<QLabel*> fieldLabels;
+    QVector<class DraggableButton*> fieldButtons;
     qint64 lastUpdateMs = 0;
     bool isGreen = false;
     int lastSecs = -1;
@@ -131,11 +136,17 @@ static QString safeMessageName(const QString& msgName)
     return QStringLiteral("<unknown message>");
 }
 
+
+
 class DraggableButton : public QPushButton {
 public:
-    DraggableButton(const QString& text, const QString& payload, QWidget* parent = nullptr)
-        : QPushButton(text, parent), m_payload(payload) {
+    DraggableButton(const QString& text, const QString& senderName, const QString& className, const QString& msgName, const QString& fieldName, const QString& coef, bool isArray, int arraySize, QWidget* parent = nullptr)
+        : QPushButton(text, parent), m_senderName(senderName), m_className(className), m_msgName(msgName), m_fieldName(fieldName), m_coef(coef), m_isArray(isArray), m_arraySize(arraySize) {
         setToolTip("Drag-and-drop field on:\n\t- Real-Time Plotter to plot a curve\n\t- GCS map to display as a papget");
+    }
+
+    void setDynamicArraySize(int sz) {
+        if (m_isArray) m_arraySize = sz;
     }
 
 protected:
@@ -154,13 +165,80 @@ protected:
 
         QDrag *drag = new QDrag(this);
         QMimeData *mimeData = new QMimeData;
-        mimeData->setText(m_payload);
+        QString delayedFilePath;
+        if (m_isArray) {
+            delayedFilePath = QString("/tmp/pprz_dnd_%1_%2.txt").arg(QCoreApplication::applicationPid()).arg(QDateTime::currentMSecsSinceEpoch());
+            QFile::remove(delayedFilePath); // ensure clear
+            mimeData->setText("delayed_array:" + delayedFilePath);
+        } else {
+            QString payload = m_senderName + ":" + m_className + ":" + m_msgName + ":" + m_fieldName + ":" + m_coef;
+            mimeData->setText(payload);
+        }
         drag->setMimeData(mimeData);
-        drag->exec(Qt::CopyAction | Qt::MoveAction);
+
+        Qt::DropAction action = drag->exec(Qt::CopyAction | Qt::MoveAction);
+
+        if (m_isArray && action != Qt::IgnoreAction) {
+            QString defaultRange = (m_arraySize > 0) ? QString("0-%1").arg(m_arraySize - 1) : "0";
+            
+            QInputDialog dialog(nullptr);
+            dialog.setWindowFlags(Qt::Window | Qt::WindowStaysOnTopHint);
+            dialog.setWindowTitle("Index of value to plot");
+            dialog.setLabelText("Index or range in the array?");
+            dialog.setTextValue(defaultRange);
+
+            QStringList parts;
+            if (dialog.exec() == QDialog::Accepted) {
+                QString text = dialog.textValue();
+                QList<int> indices;
+                QStringList tokens = text.split(QRegularExpression("[,;\\s]+"), Qt::SkipEmptyParts);
+                for (const QString& token : tokens) {
+                    if (token.contains("-")) {
+                        QStringList range = token.split("-");
+                        if (range.size() == 2) {
+                            int start = range[0].toInt();
+                            int end = range[1].toInt();
+                            if (start <= end) {
+                                for (int i = start; i <= end; ++i) {
+                                    if (i >= 0 && (m_arraySize == 0 || i < m_arraySize)) indices.append(i);
+                                }
+                            }
+                        }
+                    } else {
+                        int i = token.toInt();
+                        if (i >= 0 && (m_arraySize == 0 || i < m_arraySize)) indices.append(i);
+                    }
+                }
+                for (int n : indices) {
+                    parts << QString("%1:%2:%3:%4[%5]:%6").arg(m_senderName).arg(m_className).arg(m_msgName).arg(m_fieldName).arg(n).arg(m_coef);
+                }
+                
+                QFile f(delayedFilePath);
+                if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                    QTextStream out(&f);
+                    out << parts.join('\n');
+                    f.close();
+                }
+            } else {
+                // write empty to unblock receiver
+                QFile f(delayedFilePath);
+                if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                    QTextStream out(&f);
+                    out << "";
+                    f.close();
+                }
+            }
+        }
     }
 private:
     QPoint m_dragStartPos;
-    QString m_payload;
+    QString m_senderName;
+    QString m_className;
+    QString m_msgName;
+    QString m_fieldName;
+    QString m_coef;
+    bool m_isArray;
+    int m_arraySize;
 };
 
 SenderTab::SenderTab(const QString& senderName, const QString& className, pprzlink::MessageDictionary* dict, QWidget* parent)
@@ -293,6 +371,7 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
         // Fields for the right page
         const auto& def = msg.getDefinition();
         tracker.fieldLabels.resize(def.getNbFields());
+        tracker.fieldButtons.resize(def.getNbFields());
         for (int i = 0; i < (int)def.getNbFields(); ++i) {
             const auto& field = def.getField(i);
             QHBoxLayout* hlayout = new QHBoxLayout();
@@ -305,9 +384,8 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
             QString unit = s_unitNames[m_className][msgName][fieldName];
             
             QString btnText = typeName + " " + fieldName + (unit.isEmpty() ? "" : ": (" + unit + ")");
-            QString payload = m_senderName + ":" + m_className + ":" + msgName + ":" + fieldName + ":" + coef;
             
-            DraggableButton* btn = new DraggableButton(btnText, payload, page);
+            DraggableButton* btn = new DraggableButton(btnText, m_senderName, m_className, msgName, fieldName, coef, field.getType().isArray(), field.getType().getArraySize(), page);
             QLabel* valLabel = new QLabel("XXXX", page);
             
             hlayout->addWidget(btn);
@@ -316,6 +394,7 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
             
             vlayout->addLayout(hlayout);
             tracker.fieldLabels[i] = valLabel;
+            tracker.fieldButtons[i] = btn;
         }
         vlayout->addStretch();
         m_msgTrackers.insert(msgName, tracker);
@@ -375,6 +454,24 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
                     } break;
                 }
             } else {
+                try {
+                    int dynSize = 0;
+                    switch (type.getBaseType()) {
+                        case pprzlink::BaseType::CHAR: { std::vector<char> v; rv.getValue(v); dynSize = v.size(); } break;
+                        case pprzlink::BaseType::INT8: { std::vector<int8_t> v; rv.getValue(v); dynSize = v.size(); } break;
+                        case pprzlink::BaseType::INT16: { std::vector<int16_t> v; rv.getValue(v); dynSize = v.size(); } break;
+                        case pprzlink::BaseType::INT32: { std::vector<int32_t> v; rv.getValue(v); dynSize = v.size(); } break;
+                        case pprzlink::BaseType::UINT8: { std::vector<uint8_t> v; rv.getValue(v); dynSize = v.size(); } break;
+                        case pprzlink::BaseType::UINT16: { std::vector<uint16_t> v; rv.getValue(v); dynSize = v.size(); } break;
+                        case pprzlink::BaseType::UINT32: { std::vector<uint32_t> v; rv.getValue(v); dynSize = v.size(); } break;
+                        case pprzlink::BaseType::FLOAT: { std::vector<float> v; rv.getValue(v); dynSize = v.size(); } break;
+                        case pprzlink::BaseType::DOUBLE: { std::vector<double> v; rv.getValue(v); dynSize = v.size(); } break;
+                        default: break;
+                    }
+                    if (dynSize > 0) {
+                        tracker.fieldButtons[i]->setDynamicArraySize(dynSize);
+                    }
+                } catch (...) {}
                 rv.setOutputInt8AsInt(true);
                 std::stringstream ss;
                 ss << rv;
