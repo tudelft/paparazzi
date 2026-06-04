@@ -34,7 +34,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "../linux_desktop_utils.h"
-#include "shared_plot.h"
+#include "../plotter_common.h"
 
 /**
  * @class StderrBlocker
@@ -768,7 +768,7 @@ private:
 
         file.close(); // Not using the standard QTextStream any more
         
-        processLogLines(m_currentLogFile, acId, nullptr, [&](const QString& timeStr, const QString& msgNameStr, const QString& dataPart, const QRegularExpression& spaceRe) {
+        processLogLines(m_currentLogFile, acId, nullptr, [&]([[maybe_unused]] const QString& timeStr, const QString& msgNameStr, const QString& dataPart, const QRegularExpression& spaceRe) {
             if (msgNameStr == msgName) {
                 QStringList values;
                 if (!dataPart.isEmpty()) {
@@ -928,7 +928,7 @@ public:
         QTextStream out(&outFile);
         out << headerCols.join(delimiter) << "\n";
         
-        processLogLines(inFileStr, acId, progress, [&](const QString& timeStr, const QString& msgName, const QString& dataPart, const QRegularExpression& spaceRe) {
+        processLogLines(inFileStr, acId, progress, [&]([[maybe_unused]] const QString& timeStr, const QString& msgName, const QString& dataPart, const QRegularExpression& spaceRe) {
             if (selectedFields.contains(msgName)) {
                 QStringList values;
                 if (!dataPart.isEmpty()) {
@@ -1238,7 +1238,7 @@ public:
                     lon = LongOrigin + lon * 180.0 / M_PI;
                 };
 
-                processLogLines(m_currentLogFile, acId, nullptr, [&](const QString& timeStr, const QString& msgNameStr, const QString& dataPart, const QRegularExpression& spaceRe) {
+                processLogLines(m_currentLogFile, acId, nullptr, [&]([[maybe_unused]] const QString& timeStr, const QString& msgNameStr, const QString& dataPart, const QRegularExpression& spaceRe) {
                     if (msgNameStr == targetMsg) {
                         QStringList values;
                         if (!dataPart.isEmpty()) {
@@ -1429,6 +1429,12 @@ public:
     }
 };
 
+/**
+ * @brief Application entry point.
+ * @param argc Number of command-line arguments.
+ * @param argv Array of command-line arguments.
+ * @return Exit status code.
+ */
 int main(int argc, char *argv[]) {
 
     // Set metadata BEFORE application instantiation to prevent XDG portal double-registration 
@@ -1473,7 +1479,38 @@ int main(int argc, char *argv[]) {
     parser.addPositionalArgument("logs", "Log files to open.", "[log files...]");
 
     // Parse the command line arguments
-    parser.process(app);
+    QStringList args = app.arguments();
+    QStringList mergedArgs;
+    for (int i = 0; i < args.size(); ++i) {
+        QString arg = args[i];
+        if ((arg.startsWith('\'') && !arg.endsWith('\'')) || (arg.startsWith('"') && !arg.endsWith('"'))) {
+            QChar quoteType = arg[0];
+            QString merged = arg;
+            int j = i + 1;
+            bool foundClosed = false;
+            while (j < args.size()) {
+                merged += " " + args[j];
+                if (args[j].endsWith(quoteType)) {
+                    foundClosed = true;
+                    break;
+                }
+                j++;
+            }
+            if (foundClosed) {
+                i = j;
+                mergedArgs.append(merged.mid(1, merged.length() - 2));
+            } else {
+                mergedArgs.append(arg);
+            }
+        } else if ((arg.startsWith('\'') && arg.endsWith('\'') && arg.length() >= 2) ||
+                   (arg.startsWith('"') && arg.endsWith('"') && arg.length() >= 2)) {
+            mergedArgs.append(arg.mid(1, arg.length() - 2));
+        } else {
+            mergedArgs.append(arg);
+        }
+    }
+
+    parser.process(mergedArgs);
 
     if (parser.isSet(versionOption)) {
         parser.showVersion();

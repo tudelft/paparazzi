@@ -1,5 +1,5 @@
 /** 
- * @file shared_plot.h
+ * @file plotter_common.h
  * @brief Common plotting and rendering definitions for the Paparazzi Log Plotter.
  * 
  * @details This file implements dynamic color generation algorithms to assure contrast

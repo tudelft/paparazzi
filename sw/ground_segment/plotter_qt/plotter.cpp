@@ -7,27 +7,21 @@
  */
 
 #include <QApplication>
-#include <QChartView>
 #include <QCheckBox>
 #include <QFile>
 #include <QGraphicsLayout>
-#include <QHBoxLayout>
-#include <QLabel>
 #include <QLineEdit>
-#include <QLineSeries>
 #include <QMainWindow>
 #include <QMenuBar>
 #include <QSlider>
 #include <QSpinBox>
-#include <QTimer>
 #include <QValueAxis>
 #include <QProxyStyle>
 #include <QPlainTextEdit>
-#include <QInputDialog>
 #include <QRegularExpression>
 #include <mutex>
 
-#include "../logplotter_qt/shared_plot.h"
+#include "../plotter_common.h"
 #include "../linux_desktop_utils.h"
 #include "pprzlinkQt/IvyQtLink.h"
 
@@ -41,6 +35,8 @@
  */
 struct PlotConfig {
     QString senderName;
+    QRegularExpression senderNameRegex;
+    bool hasWildcard = false;
     QString className;
     QString msgName;
     QString fieldName;
@@ -53,7 +49,6 @@ struct PlotConfig {
     QAction* avgAction = nullptr;
     QAction* stdevAction = nullptr;
     int arrayIndex = -1;
-    QLabel* legendLabel = nullptr;
 };
 
 /**
@@ -71,6 +66,11 @@ struct PlotterWindowConfig {
     QStringList curves;
 };
 
+/**
+ * @brief Represents the PlotterWindow class.
+ * @details This class encapsulates the primary logic and UI structures required 
+ * for PlotterWindow operations, ensuring robust and memory-safe management within the telemetry pipeline.
+ */
 class PlotterWindow : public QMainWindow {
     Q_OBJECT
 public:
@@ -115,7 +115,6 @@ private:
     
     QList<PlotConfig> m_activePlots;
     
-    int m_colorIndex = 0;
     double m_minY;
     double m_maxY;
     bool m_paused;
@@ -151,15 +150,15 @@ static double fieldValueAsDouble(const pprzlink::FieldValue &value, int arrayInd
         if (arrayIndex >= 0) {
             try {
                 switch (type.getBaseType()) {
-                    case pprzlink::BaseType::CHAR: { std::vector<char> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::INT8: { std::vector<int8_t> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::INT16: { std::vector<int16_t> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::INT32: { std::vector<int32_t> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::UINT8: { std::vector<uint8_t> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::UINT16: { std::vector<uint16_t> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::UINT32: { std::vector<uint32_t> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::FLOAT: { std::vector<float> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::DOUBLE: { std::vector<double> v; value.getValue(v); if (arrayIndex < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::CHAR: { std::vector<char> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::INT8: { std::vector<int8_t> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::INT16: { std::vector<int16_t> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::INT32: { std::vector<int32_t> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::UINT8: { std::vector<uint8_t> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::UINT16: { std::vector<uint16_t> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::UINT32: { std::vector<uint32_t> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::FLOAT: { std::vector<float> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
+                    case pprzlink::BaseType::DOUBLE: { std::vector<double> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
                     default: return std::numeric_limits<double>::quiet_NaN();
                 }
             } catch (...) {
@@ -447,9 +446,9 @@ void PlotterWindow::onLegendRefreshTimeout()
 
     std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
     // Compute average and standard deviation for each curve
-    for (const auto& plot : m_activePlots) {
+    for (const auto& plot : std::as_const(m_activePlots)) {
         if (!plot.series || (!plot.avgAction && !plot.stdevAction)) continue;
-        int n = plot.series->count();
+        int n = plot.history.size();
         if (n < 1) {
             if (plot.avgAction) plot.avgAction->setText(tr("Average: N/A"));
             if (plot.stdevAction) plot.stdevAction->setText(tr("Stdev: N/A"));
@@ -458,7 +457,7 @@ void PlotterWindow::onLegendRefreshTimeout()
         double sum = 0.0;
         double sum_sq = 0.0;
         for (int i = 0; i < n; ++i) {
-            double y = plot.series->at(i).y();
+            double y = plot.history.at(i).y();
             sum += y;
             sum_sq += y * y;
         }
@@ -559,9 +558,8 @@ void PlotterWindow::recalculateYBounds() {
     
     for (const auto& plot : std::as_const(m_activePlots)) {
         if (!plot.series) continue;
-        int count = plot.series->count();
-        for (int i = 0; i < count; ++i) {
-            const QPointF pt = plot.series->at(i);
+        for (int i = 0; i < plot.history.size(); ++i) {
+            const QPointF pt = plot.history.at(i);
             if (pt.y() < m_minY) m_minY = pt.y();
             if (pt.y() > m_maxY) m_maxY = pt.y();
             hasPoints = true;
@@ -715,6 +713,10 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
     if (parts.size() >= 4) {
         PlotConfig cfg;
         cfg.senderName = parts[0];
+        if (cfg.senderName.contains('*') || cfg.senderName.contains('?')) {
+            cfg.hasWildcard = true;
+            cfg.senderNameRegex.setPattern(QRegularExpression::wildcardToRegularExpression(cfg.senderName));
+        }
         cfg.className = parts[1];
         cfg.msgName = parts[2];
         
@@ -886,10 +888,13 @@ void PlotterWindow::handleMessage(QString sender, const pprzlink::Message& msg) 
     for (auto& plot : m_activePlots) {
         if (!plot.series) continue;
         
-        bool senderMatches = (plot.senderName == sId || plot.senderName == "all" || plot.senderName == "*" || plot.senderName.isEmpty());
-        if (!senderMatches) {
-            QRegularExpression rx(QRegularExpression::wildcardToRegularExpression(plot.senderName));
-            senderMatches = rx.match(sId).hasMatch();
+        bool senderMatches = false;
+        if (plot.senderName.isEmpty() || plot.senderName == "all" || plot.senderName == "*") {
+            senderMatches = true;
+        } else if (plot.hasWildcard) {
+            senderMatches = plot.senderNameRegex.match(sId).hasMatch();
+        } else {
+            senderMatches = (plot.senderName == sId);
         }
         
         if (plot.msgName == msgName && senderMatches) {
@@ -1001,7 +1006,7 @@ void PlotterWindow::updatePlots() {
             double val = plot.fieldName.section('=', 1).toDouble(&ok);
             if (!ok || !std::isfinite(val)) continue;
             plot.series->replace(
-                QList<QPointF>() << QPointF(-windowSize, val) << QPointF(0, val)
+                QList<QPointF>() << QPointF(currentTime - windowSize, val) << QPointF(currentTime, val)
             );
             if (m_autoScale) {
                 if (val < m_minY) { m_minY = val; needsAxisUpdate = true; }
@@ -1034,16 +1039,11 @@ void PlotterWindow::updatePlots() {
             plot.history.remove(0, pointsToRemove);
         }
         
-        QList<QPointF> relativePoints;
-        relativePoints.reserve(plot.history.size());
-        for (const QPointF& pt : std::as_const(plot.history)) {
-            relativePoints.append(QPointF(pt.x() - currentTime, pt.y()));
-        }
-        plot.series->replace(relativePoints);
+        plot.series->replace(plot.history);
     }
 
-    // Anchor X-axis such that 0 is the current time and leftwards is the past (-windowSize)
-    m_axisX->setRange(-windowSize, 0);
+    // Anchor X-axis such that right is current time and left is past (-windowSize)
+    m_axisX->setRange(currentTime - windowSize, currentTime);
 
     if (m_autoScale) {
         if (needsFullRecalc) {
@@ -1187,6 +1187,12 @@ public:
 
 /**
  * @brief Formal execution entry point instantiating process rules and UI execution contexts.
+ */
+/**
+ * @brief Application entry point.
+ * @param argc Number of command-line arguments.
+ * @param argv Array of command-line arguments.
+ * @return Exit status code.
  */
 int main(int argc, char *argv[]) 
 {

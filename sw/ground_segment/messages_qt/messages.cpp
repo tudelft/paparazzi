@@ -1,3 +1,10 @@
+/**
+ * @file messages.cpp
+ * @brief Paparazzi Telemetry Messages Viewer.
+ * 
+ * This file implements the Qt-based UI for monitoring and inspecting Ivy telemetry messages. It dynamically parses the unit and coefficient geometries to reflect real-time telemetry variables.
+ */
+
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QCommandLineOption>
@@ -12,11 +19,15 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 #include <QInputDialog>
-#include <QLineEdit>
 #include <QRegularExpression>
 #include "../linux_desktop_utils.h"
 #include "pprzlinkQt/IvyQtLink.h"
 
+/**
+ * @brief Represents the MessagesConfig struct.
+ * @details This struct encapsulates the primary logic and UI structures required 
+ * for MessagesConfig operations, ensuring robust and memory-safe management within the telemetry pipeline.
+ */
 struct MessagesConfig {
     QString ivyBus;
     QStringList classes;
@@ -26,6 +37,11 @@ struct MessagesConfig {
     MessagesConfig() : timestamp(false), force(false) {}
 };
 
+/**
+ * @brief Represents the MsgTracker struct.
+ * @details This struct encapsulates the primary logic and UI structures required 
+ * for MsgTracker operations, ensuring robust and memory-safe management within the telemetry pipeline.
+ */
 struct MsgTracker {
     QLabel* timeLabel = nullptr;
     QWidget* timeBox = nullptr;
@@ -36,6 +52,11 @@ struct MsgTracker {
     int lastSecs = -1;
 };
 
+/**
+ * @brief Represents the SenderTab class.
+ * @details This class encapsulates the primary logic and UI structures required 
+ * for SenderTab operations, ensuring robust and memory-safe management within the telemetry pipeline.
+ */
 class SenderTab : public QWidget {
     Q_OBJECT
 public:
@@ -59,11 +80,16 @@ private:
     QHash<QString, MsgTracker> m_msgTrackers;
 };
 
-class MainWindow : public QMainWindow {
+/**
+ * @brief Represents the MessagesWindow class.
+ * @details This class encapsulates the primary logic and UI structures required 
+ * for MessagesWindow operations, ensuring robust and memory-safe management within the telemetry pipeline.
+ */
+class MessagesWindow : public QMainWindow {
     Q_OBJECT
 public:
-    explicit MainWindow(const MessagesConfig& config, QWidget *parent = nullptr);
-    ~MainWindow();
+    explicit MessagesWindow(const MessagesConfig& config, QWidget *parent = nullptr);
+    ~MessagesWindow();
 
 private:
     MessagesConfig m_config;
@@ -77,50 +103,54 @@ private:
 };
 
 
-static QHash<QString, QHash<QString, QHash<QString, QString>>> s_unitCoefs;
-static QHash<QString, QHash<QString, QHash<QString, QString>>> s_unitNames;
-static constexpr int GREEN_DECAY_RATE_MS = 200;//TODO: make it based on message rate set in telemetry file.
+/**
+ * @brief Represents the FieldInfo struct.
+ * @details This struct encapsulates the primary logic and UI structures required 
+ * for FieldInfo operations, ensuring robust and memory-safe management within the telemetry pipeline.
+ */
+struct FieldInfo {
+    QString coef;
+    QString unit;
+};
+static QHash<QString, QHash<QString, QHash<QString, FieldInfo>>> s_fieldInfos;
+static constexpr int GREEN_DECAY_RATE_MS = 200;
 
+#include <QXmlStreamReader>
 static void loadUnitCoefs(const QString& xmlPath) {
     QFile file(xmlPath);
     if (!file.open(QIODevice::ReadOnly)) {
         qWarning() << "Could not open" << xmlPath << "to parse unit coefs";
         return;
     }
-    QDomDocument doc("mydocument");
-    if (!doc.setContent(&file)) {
-        file.close();
-        return;
-    }
-    file.close();
-    
-    QDomElement docElem = doc.documentElement();
-    QDomNode n = docElem.firstChild();
-    while(!n.isNull()) {
-        QDomElement e = n.toElement(); 
-        if(!e.isNull() && e.tagName() == "msg_class") {
-            QString className = e.attribute("name");
-            QDomNode m = e.firstChild();
-            while(!m.isNull()) {
-                QDomElement me = m.toElement();
-                if(!me.isNull() && me.tagName() == "message") {
-                    QString msgName = me.attribute("name");
-                    QDomNode f = me.firstChild();
-                    while(!f.isNull()) {
-                        QDomElement fe = f.toElement();
-                        if(!fe.isNull() && fe.tagName() == "field") {
-                            QString fieldName = fe.attribute("name");
-                            QString coef = fe.attribute("alt_unit_coef", "1.");
-                            s_unitCoefs[className][msgName][fieldName] = coef;
-                            s_unitNames[className][msgName][fieldName] = fe.attribute("alt_unit", fe.attribute("unit", ""));
-                        }
-                        f = f.nextSibling();
-                    }
-                }
-                m = m.nextSibling();
+    QXmlStreamReader xml(&file);
+    QString currentClass, currentMessage;
+    while (!xml.atEnd() && !xml.hasError()) {
+        QXmlStreamReader::TokenType token = xml.readNext();
+        if (token == QXmlStreamReader::StartElement) {
+            auto name = xml.name();
+            if (name == QLatin1String("msg_class")) {
+                currentClass = xml.attributes().value(QLatin1String("name")).toString();
+            } else if (name == QLatin1String("message")) {
+                currentMessage = xml.attributes().value(QLatin1String("name")).toString();
+            } else if (name == QLatin1String("field")) {
+                auto attrs = xml.attributes();
+                QString fieldName = attrs.value(QLatin1String("name")).toString();
+                QString coef = attrs.value(QLatin1String("alt_unit_coef")).toString();
+                if (coef.isEmpty()) coef = QStringLiteral("1.");
+                QString unit = attrs.value(QLatin1String("alt_unit")).toString();
+                if (unit.isEmpty()) unit = attrs.value(QLatin1String("unit")).toString();
+                
+                s_fieldInfos[currentClass][currentMessage][fieldName] = {coef, unit};
             }
         }
-        n = n.nextSibling();
+        else if (token == QXmlStreamReader::EndElement) {
+            auto name = xml.name();
+            if (name == QLatin1String("msg_class")) currentClass.clear();
+            else if (name == QLatin1String("message")) currentMessage.clear();
+        }
+    }
+    if (xml.hasError()) {
+        qWarning() << "XML error in" << xmlPath << ":" << xml.errorString();
     }
 }
 
@@ -150,6 +180,11 @@ static QString safeMessageName(const QString& msgName)
 
 
 
+/**
+ * @brief Represents the DraggableButton class.
+ * @details This class encapsulates the primary logic and UI structures required 
+ * for DraggableButton operations, ensuring robust and memory-safe management within the telemetry pipeline.
+ */
 class DraggableButton : public QPushButton {
 public:
     DraggableButton(const QString& text, const QString& senderName, const QString& className, const QString& msgName, const QString& fieldName, const QString& coef, bool isArray, int arraySize, QWidget* parent = nullptr)
@@ -189,6 +224,7 @@ protected:
         drag->setMimeData(mimeData);
 
         Qt::DropAction action = drag->exec(Qt::CopyAction | Qt::MoveAction);
+        drag->deleteLater(); // Prevent QDrag memory leak on repeated drops
 
         if (m_isArray && action != Qt::IgnoreAction) {
             QString defaultRange = (m_arraySize > 0) ? QString("0-%1").arg(m_arraySize - 1) : "0";
@@ -369,8 +405,11 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
         
         int insertRow = 0;
         for (; insertRow < m_listWidget->count(); ++insertRow) {
-            const QString existingName = m_listWidget->item(insertRow)->data(Qt::UserRole).toString();
-            if (existingName > msgName) break;
+            auto widgetItem = m_listWidget->item(insertRow);
+            if (widgetItem) {
+                const QString existingName = widgetItem->data(Qt::UserRole).toString();
+                if (existingName > msgName) break;
+            }
         }
         m_listWidget->insertItem(insertRow, item);
         m_listWidget->setItemWidget(item, itemWidget);
@@ -391,9 +430,19 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
             QString fieldName = safeFieldName(field.getName(), i);
             QString typeName = field.getType().toString();
             
-            QString coef = s_unitCoefs[m_className][msgName][fieldName];
-            if (coef.isEmpty()) coef = "1.";
-            QString unit = s_unitNames[m_className][msgName][fieldName];
+            QString coef = QStringLiteral("1.");
+            QString unit;
+            auto classIt = s_fieldInfos.constFind(m_className);
+            if (classIt != s_fieldInfos.constEnd()) {
+                auto msgIt = classIt->constFind(msgName);
+                if (msgIt != classIt->constEnd()) {
+                    auto fieldIt = msgIt->constFind(fieldName);
+                    if (fieldIt != msgIt->constEnd()) {
+                        coef = fieldIt->coef;
+                        unit = fieldIt->unit;
+                    }
+                }
+            }
             
             QString btnText = typeName + " " + fieldName + (unit.isEmpty() ? "" : ": (" + unit + ")");
             
@@ -497,7 +546,7 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
     }
 }
 
-MainWindow::MainWindow(const MessagesConfig& config, QWidget *parent) : QMainWindow(parent), m_config(config) {
+MessagesWindow::MessagesWindow(const MessagesConfig& config, QWidget *parent) : QMainWindow(parent), m_config(config) {
     setWindowTitle("Messages");
 
     if (!m_config.geometry.isEmpty()) {
@@ -513,10 +562,10 @@ MainWindow::MainWindow(const MessagesConfig& config, QWidget *parent) : QMainWin
                 move(x, y);
             }
         } else {
-            resize(300, 400);
+            resize(400, 400);
         }
     } else {
-        resize(300, 400);
+        resize(400, 400);
     }
 
     QWidget* cntral = new QWidget(this);
@@ -536,7 +585,7 @@ MainWindow::MainWindow(const MessagesConfig& config, QWidget *parent) : QMainWin
     setupDictionaryAndLink();
 }
 
-MainWindow::~MainWindow() {
+MessagesWindow::~MessagesWindow() {
     if (m_link) {
         m_link->stop();
         delete m_link;
@@ -544,7 +593,7 @@ MainWindow::~MainWindow() {
     if (m_dict) delete m_dict;
 }
 
-void MainWindow::setupDictionaryAndLink() {
+void MessagesWindow::setupDictionaryAndLink() {
     QString phome = qgetenv("PAPARAZZI_HOME");
     if (phome.isEmpty()) phome = QString("/home/%1/paparazzi").arg(qgetenv("USER"));
     QString xmlPath = phome + "/var/messages.xml";
@@ -673,6 +722,12 @@ void MainWindow::setupDictionaryAndLink() {
     }
 }
 
+/**
+ * @brief Application entry point.
+ * @param argc Number of command-line arguments.
+ * @param argv Array of command-line arguments.
+ * @return Exit status code.
+ */
 int main(int argc, char *argv[])
 {
     // Set metadata BEFORE application instantiation to prevent XDG portal double-registration 
@@ -693,18 +748,48 @@ int main(int argc, char *argv[])
     parser.addVersionOption();
 
     QCommandLineOption ivyBusOption("b", "Ivy bus (default 127.255.255.255:2010)", "bus", qEnvironmentVariable("IVY_BUS", "127.255.255.255:2010"));
-    QCommandLineOption classOption("c", "Class name to listen to (can be used multiple times, e.g. telemetry:*)", "class");
-    QCommandLineOption timestampOption("timestamp", "Bind to timestamped messages (currently ignored)");
-    QCommandLineOption forceOption("force", "Force waiting on all messages, not only ALIVE for telemetry class");
-    QCommandLineOption geometryOption("g", "Set the window geometry (e.g., '500x500+100+100')", "geometry");
-
     parser.addOption(ivyBusOption);
+    QCommandLineOption classOption("c", "Class name to listen to (can be used multiple times, e.g. telemetry:*)", "class");
     parser.addOption(classOption);
+    QCommandLineOption timestampOption("timestamp", "Bind to timestamped messages (currently ignored)");
     parser.addOption(timestampOption);
+    QCommandLineOption forceOption("force", "Force waiting on all messages, not only ALIVE for telemetry class");
     parser.addOption(forceOption);
+    QCommandLineOption geometryOption("g", "Set the window geometry (e.g., '500x500+100+100')", "geometry");
     parser.addOption(geometryOption);
 
-    parser.process(app);
+    QStringList args = app.arguments();
+    QStringList mergedArgs;
+    for (int i = 0; i < args.size(); ++i) {
+        QString arg = args[i];
+        if ((arg.startsWith('\'') && !arg.endsWith('\'')) || (arg.startsWith('"') && !arg.endsWith('"'))) {
+            QChar quoteType = arg[0];
+            QString merged = arg;
+            int j = i + 1;
+            bool foundClosed = false;
+            while (j < args.size()) {
+                merged += " " + args[j];
+                if (args[j].endsWith(quoteType)) {
+                    foundClosed = true;
+                    break;
+                }
+                j++;
+            }
+            if (foundClosed) {
+                i = j;
+                mergedArgs.append(merged.mid(1, merged.length() - 2));
+            } else {
+                mergedArgs.append(arg);
+            }
+        } else if ((arg.startsWith('\'') && arg.endsWith('\'') && arg.length() >= 2) ||
+                   (arg.startsWith('"') && arg.endsWith('"') && arg.length() >= 2)) {
+            mergedArgs.append(arg.mid(1, arg.length() - 2));
+        } else {
+            mergedArgs.append(arg);
+        }
+    }
+
+    parser.process(mergedArgs);
 
     MessagesConfig config;
     config.ivyBus = parser.value(ivyBusOption);
@@ -719,7 +804,7 @@ int main(int argc, char *argv[])
 
     app.setWindowIcon(icon);
     
-    MainWindow window(config);
+    MessagesWindow window(config);
     window.setWindowIcon(icon);
     window.show();
 
