@@ -1,42 +1,23 @@
 #include <QApplication>
-#include <QDebug>
-#include <QDomDocument>
-#include <QFile>
 #include <QDrag>
-#include <QHBoxLayout>
-#include <QIcon>
 #include <QLabel>
-#include <QListWidget>
 #include <QListWidgetItem>
 #include <QMainWindow>
-#include <QMap>
-#include <QMimeData>
 #include <QScrollBar>
-#include <QSizePolicy>
 #include <QMouseEvent>
-#include <QStyle>
 #include <QPushButton>
-#include <QSplitter>
 #include <QStackedWidget>
-#include <QTabWidget>
-#include <QTimer>
-#include <QTime>
 #include <QVBoxLayout>
-#include <QVariant>
 #include "../linux_desktop_utils.h"
-#include <sstream>
-#include <variant>
 #include "pprzlinkQt/IvyQtLink.h"
-#include "pprzlinkQt/Message.h"
-#include "pprzlinkQt/MessageDictionary.h"
-#include "pprzlinkQt/MessageDefinition.h"
-#include "pprzlinkQt/MessageField.h"
-#include "pprzlinkQt/FieldValue.h"
 
 struct MsgTracker {
-    QWidget* pageWidget;
-    QLabel* timeLabel;
-    QWidget* timeBox;
+    QLabel* timeLabel = nullptr;
+    QWidget* timeBox = nullptr;
+    QVector<QLabel*> fieldLabels;
+    qint64 lastUpdateMs = 0;
+    bool isGreen = false;
+    int lastSecs = -1;
 };
 
 class SenderTab : public QWidget {
@@ -59,8 +40,7 @@ private:
     int m_listWidgetWidth = 100;
     void updateListWidgetWidth(int contentWidth);
 
-    QMap<QString, MsgTracker> m_msgTrackers;
-    QMap<QString, QMap<QString, QLabel*>> m_fieldLabels;
+    QHash<QString, MsgTracker> m_msgTrackers;
 };
 
 class MainWindow : public QMainWindow {
@@ -72,7 +52,7 @@ public:
 private:
     QTabWidget* m_classTabWidget;
     QLabel* m_waitingLabel;
-    QMap<QString, SenderTab*> m_senderTabs;
+    QHash<QString, SenderTab*> m_senderTabs;
     pprzlink::MessageDictionary* m_dict = nullptr;
     pprzlink::IvyQtLink* m_link = nullptr;
 
@@ -80,8 +60,8 @@ private:
 };
 
 
-static QMap<QString, QMap<QString, QMap<QString, QString>>> s_unitCoefs;
-static QMap<QString, QMap<QString, QMap<QString, QString>>> s_unitNames;
+static QHash<QString, QHash<QString, QHash<QString, QString>>> s_unitCoefs;
+static QHash<QString, QHash<QString, QHash<QString, QString>>> s_unitNames;
 static constexpr int GREEN_DECAY_RATE_MS = 200;//TODO: make it based on message rate set in telemetry file.
 
 static void loadUnitCoefs(const QString& xmlPath) {
@@ -187,8 +167,7 @@ SenderTab::SenderTab(const QString& senderName, const QString& className, pprzli
     : QWidget(parent), m_senderName(senderName), m_className(className), m_dict(dict) {
     auto layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
-    
-    QSplitter* splitter = new QSplitter(Qt::Horizontal, this);
+    layout->setSpacing(0);
     
     m_listWidget = new QListWidget(this);
     m_listWidget->setFrameShape(QFrame::NoFrame);
@@ -203,15 +182,8 @@ SenderTab::SenderTab(const QString& senderName, const QString& className, pprzli
     m_stackedWidget->setMinimumWidth(100);
     m_stackedWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
-    splitter->addWidget(m_listWidget);
-    splitter->addWidget(m_stackedWidget);
-    splitter->setHandleWidth(0);
-    splitter->setStretchFactor(0, 0);
-    splitter->setStretchFactor(1, 1);
-    splitter->setCollapsible(0, false);
-    splitter->setCollapsible(1, false);
-    
-    layout->addWidget(splitter);
+    layout->addWidget(m_listWidget);
+    layout->addWidget(m_stackedWidget, 1);
     
     connect(m_listWidget, &QListWidget::currentRowChanged, m_stackedWidget, &QStackedWidget::setCurrentIndex);
 
@@ -221,30 +193,32 @@ SenderTab::SenderTab(const QString& senderName, const QString& className, pprzli
 }
 
 void SenderTab::updateTimers() {
+    qint64 now = QDateTime::currentMSecsSinceEpoch();
     for(auto& t : m_msgTrackers) {
-        if (!t.timeLabel || !t.timeBox) {
+        if (!t.timeLabel || !t.timeBox || t.lastUpdateMs == 0) {
             continue;
         }
 
-        QVariant lastUpdate = t.timeLabel->property("lastUpdate");
-        if (!lastUpdate.isValid() || !lastUpdate.canConvert<QTime>()) {
-            t.timeLabel->setProperty("lastUpdate", QTime::currentTime());
-            continue;
+        qint64 msecs = now - t.lastUpdateMs;
+        if (msecs < 0) {
+            msecs = 0;
         }
 
-        int msecs = lastUpdate.toTime().msecsTo(QTime::currentTime());
-        if (msecs < 0 || msecs > 99999999) {
-            msecs = 0; // Just in case of midnight wrap
-        }
-
-        if (msecs > GREEN_DECAY_RATE_MS) {
+        if (t.isGreen && msecs > GREEN_DECAY_RATE_MS) {
             t.timeBox->setStyleSheet(".QWidget { background-color: #000000; border-radius: 0px; }\nQLabel { color: #fff; font-weight: bold; }");
+            t.isGreen = false;
+            t.lastSecs = -1; // force text update
         }
 
         if (msecs > 1999) {
-            t.timeLabel->setText(QString::number(msecs / 1000));
-        } else {
+            int secs = static_cast<int>(msecs / 1000);
+            if (secs != t.lastSecs) {
+                t.timeLabel->setText(QString::number(secs));
+                t.lastSecs = secs;
+            }
+        } else if (t.lastSecs != 0) {
             t.timeLabel->setText("");
+            t.lastSecs = 0;
         }
     }
 }
@@ -277,7 +251,6 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
         // Custom widget for list item
         QWidget* itemWidget = new QWidget(m_listWidget);
         itemWidget->setStyleSheet("background: transparent;");
-        itemWidget->setStyleSheet("background: transparent;");
         QHBoxLayout* itemLayout = new QHBoxLayout(itemWidget);
         itemLayout->setContentsMargins(4, 2, 4, 2);
         
@@ -287,7 +260,6 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
         QLabel* timeLabel = new QLabel("");
         timeLabel->setMinimumWidth(40);
         timeLabel->setAlignment(Qt::AlignCenter);
-        timeLabel->setProperty("lastUpdate", QTime::currentTime());
         
         QWidget* timeBox = new QWidget();
         QHBoxLayout* tBoxL = new QHBoxLayout(timeBox);
@@ -315,13 +287,12 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
         m_stackedWidget->insertWidget(insertRow, page);
         
         MsgTracker tracker;
-        tracker.pageWidget = page;
         tracker.timeLabel = timeLabel;
         tracker.timeBox = timeBox;
-        m_msgTrackers[msgName] = tracker;
         
         // Fields for the right page
         const auto& def = msg.getDefinition();
+        tracker.fieldLabels.resize(def.getNbFields());
         for (int i = 0; i < (int)def.getNbFields(); ++i) {
             const auto& field = def.getField(i);
             QHBoxLayout* hlayout = new QHBoxLayout();
@@ -344,57 +315,73 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
             hlayout->addStretch();
             
             vlayout->addLayout(hlayout);
-            m_fieldLabels[msgName][fieldName] = valLabel;
+            tracker.fieldLabels[i] = valLabel;
         }
         vlayout->addStretch();
+        m_msgTrackers.insert(msgName, tracker);
     }
     
     // Update values
-    if (!m_msgTrackers.contains(msgName)) {
+    auto it = m_msgTrackers.find(msgName);
+    if (it == m_msgTrackers.end()) {
         qWarning() << "Received message with unknown name" << msgName;
         return;
     }
 
-    MsgTracker& tracker = m_msgTrackers[msgName];
+    MsgTracker& tracker = it.value();
     if (!tracker.timeLabel || !tracker.timeBox) {
         qWarning() << "Invalid tracker for message" << msgName;
         return;
     }
 
-    tracker.timeLabel->setProperty("lastUpdate", QTime::currentTime());
-    tracker.timeLabel->setText("");
+    tracker.lastUpdateMs = QDateTime::currentMSecsSinceEpoch();
+    if (tracker.lastSecs != 0) {
+        tracker.timeLabel->setText("");
+        tracker.lastSecs = 0;
+    }
     
     // Briefly flash green background
-    tracker.timeBox->setStyleSheet(".QWidget { background-color: #22ff22; border-radius: 0px; }\nQLabel { color: #000; font-weight: bold; }");
+    if (!tracker.isGreen) {
+        tracker.timeBox->setStyleSheet(".QWidget { background-color: #22ff22; border-radius: 0px; }\nQLabel { color: #000; font-weight: bold; }");
+        tracker.isGreen = true;
+    }
     
     const auto& def = msg.getDefinition();
     for (int i = 0; i < (int)def.getNbFields(); ++i) {
-        const auto& field = def.getField(i);
-        if (field.getName().isEmpty()) {
+        if (i >= tracker.fieldLabels.size() || !tracker.fieldLabels[i]) {
             continue;
         }
 
         try {
             auto rv = msg.getRawValue(i);
-            rv.setOutputInt8AsInt(true);
-            std::stringstream ss;
-            ss << rv;
-            QString s = QString::fromStdString(ss.str());
-            
-            auto fieldMapIt = m_fieldLabels.find(msgName);
-            if (fieldMapIt == m_fieldLabels.end()) {
-                continue;
-            }
-            const auto fieldMap = fieldMapIt.value();
-            if (!fieldMap.contains(field.getName())) {
-                continue;
-            }
-            QLabel* lbl = fieldMap.value(field.getName());
-            if (lbl) {
-                lbl->setText(s);
+            const auto& type = def.getField(i).getType();
+            if (!type.isArray()) {
+                switch (type.getBaseType()) {
+                    case pprzlink::BaseType::CHAR: { char v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(static_cast<int>(v))); } break;
+                    case pprzlink::BaseType::INT8: { int8_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v)); } break;
+                    case pprzlink::BaseType::INT16: { int16_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v)); } break;
+                    case pprzlink::BaseType::INT32: { int32_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v)); } break;
+                    case pprzlink::BaseType::UINT8: { uint8_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v)); } break;
+                    case pprzlink::BaseType::UINT16: { uint16_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v)); } break;
+                    case pprzlink::BaseType::UINT32: { uint32_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v)); } break;
+                    case pprzlink::BaseType::FLOAT: { float v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v, 'g', 6)); } break;
+                    case pprzlink::BaseType::DOUBLE: { double v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v, 'g', 6)); } break;
+                    case pprzlink::BaseType::STRING: { QString v; rv.getValue(v); tracker.fieldLabels[i]->setText(v); } break;
+                    default: {
+                        rv.setOutputInt8AsInt(true);
+                        std::stringstream ss;
+                        ss << rv;
+                        tracker.fieldLabels[i]->setText(QString::fromStdString(ss.str()));
+                    } break;
+                }
+            } else {
+                rv.setOutputInt8AsInt(true);
+                std::stringstream ss;
+                ss << rv;
+                tracker.fieldLabels[i]->setText(QString::fromStdString(ss.str()));
             }
         } catch(const std::exception &ex) {
-            qWarning() << "Failed to read field value for" << msgName << "field" << field.getName() << ":" << ex.what();
+            qWarning() << "Failed to read field value for" << msgName << "field index" << i << ":" << ex.what();
         } catch(...) {
             qWarning() << "Unknown error while updating field value for" << msgName;
         }
@@ -497,7 +484,7 @@ void MainWindow::setupDictionaryAndLink() {
         if (!m_link) {
             break;
         }
-        m_link->BindMessage(def, this, [=](QString sender, pprzlink::Message msg) {
+        m_link->BindMessage(def, this, [=](const QString& sender, const pprzlink::Message& msg) {
             if (m_waitingLabel && m_waitingLabel->isVisible()) {
                 m_waitingLabel->hide();
                 if (m_classTabWidget) {
