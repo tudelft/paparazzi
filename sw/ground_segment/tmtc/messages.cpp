@@ -20,8 +20,9 @@
 #include <QVBoxLayout>
 #include <QInputDialog>
 #include <QRegularExpression>
-#include "../linux_desktop_utils.h"
+
 #include "pprzlinkQt/IvyQtLink.h"
+#include "../../include/linux_desktop_utils.h"
 
 /**
  * @brief Represents the MessagesConfig struct.

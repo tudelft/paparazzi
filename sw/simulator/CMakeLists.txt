@@ -15,7 +15,7 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Xml Network)
 
-add_subdirectory(../../ground_segment/cockpit_qt/ext/pprzlinkQt ${CMAKE_BINARY_DIR}/pprzlinkqt)
+add_subdirectory(../ground_segment/cockpit_qt/ext/pprzlinkQt ${CMAKE_BINARY_DIR}/pprzlinkqt)
 
 set(SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/gaia.cpp"
@@ -48,10 +48,10 @@ target_link_libraries(gaia PRIVATE
 
 # Copy the final executable to the simulator directory
 add_custom_command(TARGET gaia POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/../
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/
     COMMAND ${CMAKE_COMMAND} -E copy
         $<TARGET_FILE:gaia>
-        ${CMAKE_CURRENT_SOURCE_DIR}/../
+        ${CMAKE_CURRENT_SOURCE_DIR}/
 )
 
 install(TARGETS gaia DESTINATION bin)

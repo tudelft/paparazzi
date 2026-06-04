@@ -34,8 +34,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "linux_desktop_utils.h"
 #include "plotter_common.h"
+#include "../include/linux_desktop_utils.h"
 
 /**
  * @class StderrBlocker

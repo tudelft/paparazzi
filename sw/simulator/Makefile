@@ -22,61 +22,26 @@
 # Quiet compilation
 Q=@
 
-
 include ../../conf/Makefile.local
-include ../Makefile.ocaml
 
-OCAMLC += -g
-INCLUDES =
-PKG = -package glibivy,pprz,$(USE_LABELGTK)
-LINKPKG = $(PKG) -linkpkg -dllpath-pkg pprz,pprzlink,$(USE_LABELGTK)
+BUILD_TYPE ?= Release
+BUILD_DIR ?= ../../var/build_gaia
 
-AIRBORNE = ../airborne
-VARINCLUDE=$(PAPARAZZI_HOME)/var/include
-ACINCLUDE = $(PAPARAZZI_HOME)/var/$(AIRCRAFT)
-
-CAML_CFLAGS = -I $(shell $(OCAMLC) -where)
-
-ifeq ($(USE_LABELGTK),lablgtk2)
 all : gaia
-else
-all :
-endif
 
-gaia : gaia.cmo $(LIBPPRZCMA) $(LIBPPRZLINKCMA)
-	@echo OL $@
-	$(Q)$(OCAMLC) $(INCLUDES) -o $@ $(LINKPKG) gtkInit.cmo $<
-
-%.cmo : %.ml
-	@echo OC $<
-	$(Q)$(OCAMLC) $(INCLUDES) -c $(PKG) $<
-
-%.o : %.c
-	@echo CC $<
-	$(Q)$(CC) -fPIC -c $< $(CAML_CFLAGS)
-
-%.cmx : %.ml
-	@echo OOC $<
-	$(Q)$(OCAMLOPT) $(INCLUDES) -c $(PKG) $<
-
-%.cmi : %.mli
-	@echo OC $<
-	$(Q)$(OCAMLC) $(INCLUDES) -c $(PKG) $<
+gaia :
+	@echo "Building Gaia (C++/Qt) via CMake"
+	@if [ ! -d "$(BUILD_DIR)" ]; then \
+		if command -v ninja >/dev/null 2>&1; then \
+			cmake -B $(BUILD_DIR) -S . -G Ninja -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
+		else \
+			cmake -B $(BUILD_DIR) -S . -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
+		fi \
+	fi
+	cmake --build $(BUILD_DIR) --config $(BUILD_TYPE) --parallel "$$(nproc)"
 
 clean :
-	$(Q)rm -f *.cm* *~ *.out .depend *.o *.a *.so gaia
+	$(Q)rm -f *~ *.out .depend *.o *.a gaia
+	$(Q)rm -rf $(BUILD_DIR)
 
-.PHONY: all clean
-
-
-#
-# Dependencies
-#
-
-.depend: Makefile
-	@echo DEPEND $@
-	$(Q)$(OCAMLDEP) -I $(LIBPPRZDIR) *.ml* > .depend
-
-ifneq ($(MAKECMDGOALS),clean)
--include .depend
-endif
+.PHONY: all clean gaia

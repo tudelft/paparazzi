@@ -18,7 +18,7 @@
 #include "Particules.h"
 #include "Intruders.h"
 #include "Shapes.h"
-#include "../../linux_desktop_utils.h"
+#include "../../../include/linux_desktop_utils.h"
 
 int main(int argc, char *argv[]) {
     // Set metadata BEFORE application instantiation to prevent XDG portal double-registration 

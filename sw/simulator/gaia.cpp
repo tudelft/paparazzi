@@ -1,26 +1,40 @@
-#include <QApplication>
+/**
+ * @file gaia.cpp
+ * @brief Paparazzi Gaia: World Environment Simulator UI.
+ *
+ * @details 
+ * This file provides the graphical user interface for the Gaia simulator component
+ * within the Paparazzi UAV framework. It broadcasts environmental parameters
+ * (e.g., wind speed, updrafts, time scaling, GPS availability) via the Ivy bus.
+ * The telemetry values are encapsulated in the WORLD_ENV message schema.
+ *
+ * It uses the Qt6 framework for UI construction and the pprzlink library for
+ * cross-process Ivy communication.
+ */
 #include <QCommandLineParser>
-#include <QMainWindow>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QLabel>
 #include <QDoubleSpinBox>
-#include <QSlider>
-#include <QCheckBox>
 #include <QTimer>
-#include <QDial>
 #include <QFrame>
 #include <QIcon>
 #include <QFile>
 #include <QDebug>
-#include <QPainter>
 #include <QPolygon>
-#include <QSpinBox>
-#include <QGridLayout>
 #include <cmath>
 #include <vector>
+#include <QApplication>
+#include <QMainWindow>
+#include <QLabel>
+#include <QSlider>
+#include <QCheckBox>
+#include <QDial>
+#include <QPainter>
+#include <QSpinBox>
+#include <QGridLayout>
+#include <memory>
 
-#include "../../logalizer/linux_desktop_utils.h"
+#include "../include/linux_desktop_utils.h"
 #include "pprzlinkQt/IvyQtLink.h"
 
 #ifndef M_PI
@@ -29,6 +43,15 @@
 
 #define SENDING_PERIOD_MS 5000
 
+/**
+ * @class ArrowDial
+ * @brief Custom Qt dial widget rendered as a directional arrow compass.
+ *
+ * @details 
+ * Inherits from QDial to provide a 360-degree rotational selector. Instead of a
+ * standard knob, it heavily overrides the paintEvent to manually draw an arrowhead 
+ * mapping strictly to wind direction angles.
+ */
 class ArrowDial : public QDial {
     Q_OBJECT
 public:
@@ -39,6 +62,13 @@ public:
     }
 
 protected:
+    /**
+     * @brief Custom render loop overriding the default QDial drawing.
+     * @param event The triggered paint event.
+     * 
+     * @details Uses QPainter to scale, translate, and orient a geometric polygon 
+     * (the arrow) dynamically matched to the current bounding angle (0 to 359).
+     */
     void paintEvent(QPaintEvent*) override {
         QPainter painter(this);
         
@@ -67,11 +97,7 @@ protected:
         
         painter.rotate(angle);
         
-        QPolygon polygon;
-        polygon << QPoint(0, 80)
-                << QPoint(8, -80)
-                << QPoint(0, -75)
-                << QPoint(-8, -80);
+        static const QPolygon polygon({QPoint(0, 80), QPoint(8, -80), QPoint(0, -75), QPoint(-8, -80)});
         
         painter.drawPolygon(polygon, Qt::OddEvenFill);
         painter.restore();
@@ -104,6 +130,15 @@ protected:
     }
 };
 
+/**
+ * @class GaiaWindow
+ * @brief The main graphical window for the Gaia environment simulation.
+ *
+ * @details
+ * Constructs the layout, spins up the UI elements (sliders, dials, and spinboxes),
+ * and establishes a bi-directional Ivy network link. It leverages a single QTimer 
+ * cycle to continuously dump environmental telemetry onto the bus.
+ */
 class GaiaWindow : public QMainWindow {
     Q_OBJECT
 
@@ -112,30 +147,52 @@ public:
     ~GaiaWindow();
 
 private slots:
+    /**
+     * @brief Periodically broadcasts internal environmental states to the Ivy network.
+     * 
+     * @details Trigonometrically breaks down the wind direction and magnitude into East/North vectors.
+     * Binds all scalar values safely into the pprzlink::Message schema.
+     */
     void sendWorldEnv();
 
 private:
+    /**
+     * @brief Instantiates and layouts all Qt widgets.
+     * @param initTimeScale Initial time scaling factor.
+     * @param initWindSpeed Initial wind magnitude.
+     * @param initWindDir Initial wind direction (degrees).
+     * @param initWindUp Initial vertical updraft magnitude.
+     * @param initGpsOff Emulated GPS signal blocking toggle.
+     * 
+     * @details Uses a localized lambda to neatly stack coupled layout blocks (QLabel + QSlider + QDoubleSpinBox).
+     */
     void setupUI(double initTimeScale, double initWindSpeed, double initWindDir, double initWindUp, bool initGpsOff);
+    /**
+     * @brief Initializes the Paparazzi Ivy datalink.
+     * @param ivyBus The IP:Port binding address for Ivy broadcasts.
+     * 
+     * @details Parses the global internal XML message dictionaries to understand the WORLD_ENV
+     * schema before allowing safe bindings.
+     */
     void setupIvy(const QString &ivyBus);
 
-    QSlider *m_sliderTimeScale;
     QDoubleSpinBox *m_spinTimeScaleVal;
     ArrowDial *m_dialWindDir;
-    QSlider *m_sliderWindSpeed;
     QDoubleSpinBox *m_spinWindSpeedVal;
-    QSlider *m_sliderWindUp;
     QDoubleSpinBox *m_spinWindUpVal;
+    QDoubleSpinBox *m_spinIrContrastVal;
     QCheckBox *m_chkGpsOff;
     QTimer *m_timer;
 
-    pprzlink::MessageDictionary *m_dict;
-    pprzlink::IvyQtLink *m_link;
+    std::unique_ptr<pprzlink::MessageDictionary> m_dict;
+    std::unique_ptr<pprzlink::IvyQtLink> m_link;
+    pprzlink::MessageDefinition m_worldEnvDef;
+    bool m_defFound = false;
 
-    double m_irContrast = 266.0;
 };
 
 GaiaWindow::GaiaWindow(const QString &ivyBus, double timeScale, double windSpeed, double windDir, double windUp, bool gpsOff, QWidget *parent)
-    : QMainWindow(parent), m_dict(nullptr), m_link(nullptr)
+    : QMainWindow(parent)
 {
     setWindowTitle("Gaia");
     resize(500, 250);
@@ -152,10 +209,6 @@ GaiaWindow::~GaiaWindow()
 {
     if (m_link) {
         m_link->stop();
-        delete m_link;
-    }
-    if (m_dict) {
-        delete m_dict;
     }
 }
 
@@ -169,10 +222,13 @@ void GaiaWindow::setupUI(double initTimeScale, double initWindSpeed, double init
     slidersFrame->setFrameShape(QFrame::StyledPanel);
     QVBoxLayout *slidersLayout = new QVBoxLayout(slidersFrame);
 
-    auto createSliderBlock = [this, slidersLayout](const QString& text, double min, double max, double step, int decimals, double current, QSlider*& slider, QDoubleSpinBox*& spinBox) {
+    auto createSliderBlock = [this, slidersLayout](const QString& text, double min, double max, double step, int decimals, double current, bool isVisible = true) -> QDoubleSpinBox* {
+        QWidget* container = new QWidget();
+        QVBoxLayout* containerLayout = new QVBoxLayout(container);
+        containerLayout->setContentsMargins(0, 0, 0, 0);
         QHBoxLayout* textLayout = new QHBoxLayout();
         QLabel* titleLabel = new QLabel(text);
-        spinBox = new QDoubleSpinBox();
+        QDoubleSpinBox* spinBox = new QDoubleSpinBox();
         spinBox->setDecimals(decimals);
         spinBox->setRange(min, max);
         spinBox->setSingleStep(step);
@@ -184,19 +240,21 @@ void GaiaWindow::setupUI(double initTimeScale, double initWindSpeed, double init
         textLayout->addWidget(titleLabel);
         textLayout->addWidget(spinBox);
         
-        slider = new QSlider(Qt::Horizontal);
+        QSlider* slider = new QSlider(Qt::Horizontal);
         int factor = pow(10, decimals);
         slider->setRange(min * factor, max * factor);
         slider->setSingleStep(step * factor);
         slider->setValue(current * factor);
         
-        slidersLayout->addLayout(textLayout);
-        slidersLayout->addWidget(slider);
+        containerLayout->addLayout(textLayout);
+        containerLayout->addWidget(slider);
         
         QFrame* hline = new QFrame();
         hline->setFrameShape(QFrame::HLine);
         hline->setFrameShadow(QFrame::Plain);
-        slidersLayout->addWidget(hline);
+        containerLayout->addWidget(hline);
+        slidersLayout->addWidget(container);
+        container->setVisible(isVisible);
         
         // Connect slider and spinbox
         connect(slider, &QSlider::valueChanged, this, [spinBox, factor](int value) {
@@ -205,19 +263,21 @@ void GaiaWindow::setupUI(double initTimeScale, double initWindSpeed, double init
         connect(spinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [slider, factor](double value) {
             slider->setValue(value * factor);
         });
+        connect(spinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](double) { this->sendWorldEnv(); });
+        return spinBox;
     };
 
     // Time scale
-    createSliderBlock("Time scale", 0.1, 10.0, 0.1, 1, initTimeScale, m_sliderTimeScale, m_spinTimeScaleVal);
-    connect(m_sliderTimeScale, &QSlider::valueChanged, this, [this](int) { sendWorldEnv(); });
+    m_spinTimeScaleVal = createSliderBlock("Time scale", 0.1, 10.0, 0.1, 1, initTimeScale);
 
     // Wind speed
-    createSliderBlock("Wind speed (m/s)", 0.0, 30.0, 0.1, 1, initWindSpeed, m_sliderWindSpeed, m_spinWindSpeedVal);
-    connect(m_sliderWindSpeed, &QSlider::valueChanged, this, [this](int) { sendWorldEnv(); });
+    m_spinWindSpeedVal = createSliderBlock("Wind speed (m/s)", 0.0, 30.0, 0.1, 1, initWindSpeed);
 
     // Wind up
-    createSliderBlock("Vertical up/down draft (m/s)", -10.0, 10.0, 0.1, 1, initWindUp, m_sliderWindUp, m_spinWindUpVal);
-    connect(m_sliderWindUp, &QSlider::valueChanged, this, [this](int) { sendWorldEnv(); });
+    m_spinWindUpVal = createSliderBlock("Vertical up/down draft (m/s)", -10.0, 10.0, 0.1, 1, initWindUp);
+
+    // IR Contrast
+    m_spinIrContrastVal = createSliderBlock("IR Contrast", 0.0, 1010.0, 10.0, 0, 266.0, false);
 
     // GPS availability
     m_chkGpsOff = new QCheckBox("Emulate GPS signal unavailable");
@@ -290,8 +350,14 @@ void GaiaWindow::setupIvy(const QString &ivyBus)
     }
 
     try {
-        m_dict = new pprzlink::MessageDictionary(xmlPath);
-        m_link = new pprzlink::IvyQtLink(*m_dict, "gaia", this);
+        m_dict = std::make_unique<pprzlink::MessageDictionary>(xmlPath);
+        m_link = std::make_unique<pprzlink::IvyQtLink>(*m_dict, "gaia", this);
+        try {
+            m_worldEnvDef = m_dict->getDefinition("WORLD_ENV");
+            m_defFound = true;
+        } catch(...) {
+            qWarning() << "Gaia: WORLD_ENV message not found in dictionary";
+        }
         m_link->start(ivyBus);
 
         // Listen for WORLD_ENV_REQ and respond. This mirrors `Ground_Pprz.message_answerer my_id "WORLD_ENV"`
@@ -313,28 +379,27 @@ void GaiaWindow::setupIvy(const QString &ivyBus)
 
 void GaiaWindow::sendWorldEnv()
 {
-    if (!m_link || !m_dict) return;
+    if (!m_link || !m_dict || !m_defFound) return;
 
     try {
-        auto def = m_dict->getDefinition("WORLD_ENV");
-        pprzlink::Message msg(def);
+        pprzlink::Message msg(m_worldEnvDef);
         msg.setSenderId("gaia");
 
-        double windSpeed = m_sliderWindSpeed->value() / 10.0;
+        double windSpeed = m_spinWindSpeedVal->value();
         double windDirDeg = m_dialWindDir->value();
         double windDirRad = windDirDeg * M_PI / 180.0;
 
         double windEast = -windSpeed * sin(windDirRad);
         double windNorth = -windSpeed * cos(windDirRad);
-        double windUp = m_sliderWindUp->value() / 10.0;
+        double windUp = m_spinWindUpVal->value();
 
         uint8_t gpsAvail = m_chkGpsOff->isChecked() ? 0 : 1;
 
         msg.addField("wind_east", static_cast<float>(windEast));
         msg.addField("wind_north", static_cast<float>(windNorth));
         msg.addField("wind_up", static_cast<float>(windUp));
-        msg.addField("ir_contrast", static_cast<float>(m_irContrast));
-        msg.addField("time_scale", static_cast<float>(m_sliderTimeScale->value() / 10.0));
+        msg.addField("ir_contrast", static_cast<float>(m_spinIrContrastVal->value()));
+        msg.addField("time_scale", static_cast<float>(m_spinTimeScaleVal->value()));
         msg.addField("gps_availability", gpsAvail);
 
         m_link->sendMessage(msg);
@@ -344,6 +409,15 @@ void GaiaWindow::sendWorldEnv()
     }
 }
 
+/**
+ * @brief Application entry point.
+ * @param argc Number of command-line arguments.
+ * @param argv Array of command-line arguments.
+ * @return Exit status code.
+ * 
+ * @details Pre-configures the XDG desktop environment hooks, sets up argument parameters 
+ * (including safe space-character concatenation loops), and triggers the main Qt event loop.
+ */
 int main(int argc, char *argv[])
 {
     // Set metadata BEFORE application instantiation to prevent XDG portal double-registration 
@@ -376,7 +450,38 @@ int main(int argc, char *argv[])
     parser.addOption(windUpOption);
     QCommandLineOption gpsOffOption(QStringList() << "g", "Emulate GPS signal unavailable (default: false)");
     parser.addOption(gpsOffOption);
-    parser.process(app);
+    QStringList args = app.arguments();
+    QStringList mergedArgs;
+    for (int i = 0; i < args.size(); ++i) {
+        QString arg = args[i];
+        if ((arg.startsWith('\'') && !arg.endsWith('\'')) || (arg.startsWith('"') && !arg.endsWith('"'))) {
+            QChar quoteType = arg[0];
+            QString merged = arg;
+            int j = i + 1;
+            bool foundClosed = false;
+            while (j < args.size()) {
+                merged += " " + args[j];
+                if (args[j].endsWith(quoteType)) {
+                    foundClosed = true;
+                    break;
+                }
+                j++;
+            }
+            if (foundClosed) {
+                i = j;
+                mergedArgs.append(merged.mid(1, merged.length() - 2));
+            } else {
+                mergedArgs.append(arg);
+            }
+        } else if ((arg.startsWith('\'') && arg.endsWith('\'') && arg.length() >= 2) ||
+                   (arg.startsWith('"') && arg.endsWith('"') && arg.length() >= 2)) {
+            mergedArgs.append(arg.mid(1, arg.length() - 2));
+        } else {
+            mergedArgs.append(arg);
+        }
+    }
+
+    parser.process(mergedArgs);
 
     QString ivyBus = parser.value(busOption);
     double timeScale = parser.value(timeOption).toDouble();
