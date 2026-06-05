@@ -1,17 +1,17 @@
 .PHONY: all clean run setup build_ninja strip
 
 BUILD_TYPE ?= Release
-BUILD_DIR ?= ../../../var/build_qt
+BUILD_DIR ?= ../../../var/build_qt_super
 
 all: setup
-	cmake --build $(BUILD_DIR) --config $(BUILD_TYPE) --parallel $$(nproc)
+	cmake --build $(BUILD_DIR) --config $(BUILD_TYPE) --target equinoxgcs --parallel $$(nproc)
 
 setup:
 	@if [ ! -f "$(BUILD_DIR)/CMakeCache.txt" ]; then \
 		if command -v ninja >/dev/null 2>&1; then \
-			cmake -B $(BUILD_DIR) -S . -G Ninja -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
+			cmake -B $(BUILD_DIR) -S ../../../sw/qt_superbuild -G Ninja -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
 		else \
-			cmake -B $(BUILD_DIR) -S . -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
+			cmake -B $(BUILD_DIR) -S ../../../sw/qt_superbuild -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
 		fi \
 	fi
 

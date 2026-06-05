@@ -2,7 +2,8 @@
  * @file messages.cpp
  * @brief Paparazzi Telemetry Messages Viewer.
  * 
- * This file implements the Qt-based UI for monitoring and inspecting Ivy telemetry messages. It dynamically parses the unit and coefficient geometries to reflect real-time telemetry variables.
+ * This file implements the Qt-based UI for monitoring and inspecting Ivy telemetry messages. 
+ * It dynamically parses the unit and coefficient geometries to reflect real-time telemetry variables.
  */
 
 #include <QApplication>
@@ -20,7 +21,10 @@
 #include <QVBoxLayout>
 #include <QInputDialog>
 #include <QRegularExpression>
-
+#include <QTimer>
+#include <QFile>
+#include <QXmlStreamReader>
+#include <QDebug>
 #include "pprzlinkQt/IvyQtLink.h"
 #include "../../include/linux_desktop_utils.h"
 

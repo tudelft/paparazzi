@@ -5,12 +5,14 @@
  * @details 
  * This file provides the graphical user interface for the Gaia simulator component
  * within the Paparazzi UAV framework. It broadcasts environmental parameters
- * (e.g., wind speed, updrafts, time scaling, GPS availability) via the Ivy bus.
+ * (e.g., wind speed, updrafts, sim time scaling, GPS availability) via the Ivy bus.
  * The telemetry values are encapsulated in the WORLD_ENV message schema.
  *
  * It uses the Qt6 framework for UI construction and the pprzlink library for
  * cross-process Ivy communication.
  */
+#include <QApplication>
+#include <QMainWindow>
 #include <QCommandLineParser>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -23,9 +25,6 @@
 #include <QDebug>
 #include <QPolygon>
 #include <cmath>
-#include <vector>
-#include <QApplication>
-#include <QMainWindow>
 #include <QLabel>
 #include <QSlider>
 #include <QCheckBox>
@@ -34,6 +33,8 @@
 #include <QSpinBox>
 #include <QGridLayout>
 #include <memory>
+#include <algorithm>
+#include <vector>
 
 #include "../include/linux_desktop_utils.h"
 #include "pprzlinkQt/IvyQtLink.h"
@@ -77,7 +78,7 @@ protected:
         double side = qMin(width(), height());
         painter.scale(side / 200.0, side / 200.0);
         
-        QColor edgeColor(255, 255, 255, 255);
+        QColor edgeColor(255, 255, 255, 255);//White edge for contrast
         QColor fillColor(0, 0, 0, 255);
         
         QPen pen = painter.pen();
@@ -274,7 +275,7 @@ void GaiaWindow::setupUI(double initTimeScale, double initWindSpeed, double init
     };
 
     // Time scale
-    m_spinTimeScaleVal = createSliderBlock("Time scale", 0.1, 10.0, 0.1, 1, initTimeScale);
+    m_spinTimeScaleVal = createSliderBlock("Time scale", 0.5, 10.0, 0.5, 1, initTimeScale);
 
     // Wind speed
     m_spinWindSpeedVal = createSliderBlock("Wind speed (m/s)", 0.0, 30.0, 0.1, 1, initWindSpeed);
@@ -393,21 +394,33 @@ void GaiaWindow::sendWorldEnv()
         pprzlink::Message msg(m_worldEnvDef);
         msg.setSenderId("gaia");
 
-        double windSpeed = m_spinWindSpeedVal->value();
+        // Explicitly clamp all values to prevent any out-of-bounds telemetry injection
+        double windSpeed = std::clamp(m_spinWindSpeedVal->value(), 0.0, 30.0);
+        
+        // Normalize wind direction to 0-359 degrees
         double windDirDeg = m_dialWindDir->value();
+        windDirDeg = std::fmod(windDirDeg, 360.0);
+        if (windDirDeg < 0) windDirDeg += 360.0;
         double windDirRad = windDirDeg * M_PI / 180.0;
 
+        // Calculate velocity vectors
         double windEast = -windSpeed * sin(windDirRad);
         double windNorth = -windSpeed * cos(windDirRad);
-        double windUp = m_spinWindUpVal->value();
+        
+        // Clamp vertical updraft
+        double windUp = std::clamp(m_spinWindUpVal->value(), -10.0, 10.0);
 
+        // Clamp hardware settings prevent any out-of-bounds telemetry
+        float irContrast = static_cast<float>(std::clamp(m_spinIrContrastVal->value(), 0.0, 1010.0));
+        float timeScale = static_cast<float>(std::clamp(m_spinTimeScaleVal->value(), 0.5, 10.0));
         uint8_t gpsAvail = m_chkGpsOff->isChecked() ? 0 : 1;
 
+        // Try mapping the verified fields securely to the Ivy schema
         msg.addField("wind_east", static_cast<float>(windEast));
         msg.addField("wind_north", static_cast<float>(windNorth));
         msg.addField("wind_up", static_cast<float>(windUp));
-        msg.addField("ir_contrast", static_cast<float>(m_spinIrContrastVal->value()));
-        msg.addField("time_scale", static_cast<float>(m_spinTimeScaleVal->value()));
+        msg.addField("ir_contrast", irContrast);
+        msg.addField("time_scale", timeScale);
         msg.addField("gps_availability", gpsAvail);
 
         m_link->sendMessage(msg);

@@ -38,7 +38,6 @@ else()
 endif()
 find_package(LibXml2 REQUIRED)
 
-add_subdirectory(ext/pprzlinkQt ${CMAKE_BINARY_DIR}/pprzlinkqt)
 
 file(GLOB_RECURSE SRC_FILES 
     "src/*.cpp"

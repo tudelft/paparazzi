@@ -51,12 +51,14 @@ BUILD_DIR_QT_MESSAGES ?= ../../../var/build_qt/messages
 
 messages:
 	@echo "CMAKE messages"
-	$(Q)if command -v ninja >/dev/null 2>&1; then \
-		cmake -B $(BUILD_DIR_QT_MESSAGES) -S . -G Ninja -DCMAKE_BUILD_TYPE=Release; \
-	else \
-		cmake -B $(BUILD_DIR_QT_MESSAGES) -S . -DCMAKE_BUILD_TYPE=Release; \
+		$(Q)if [ ! -f "../../../var/build_qt_super/CMakeCache.txt" ]; then \
+		if command -v ninja >/dev/null 2>&1; then \
+			cmake -B ../../../var/build_qt_super -S ../../../sw/qt_superbuild -G Ninja -DCMAKE_BUILD_TYPE=Release; \
+		else \
+			cmake -B ../../../var/build_qt_super -S ../../../sw/qt_superbuild -DCMAKE_BUILD_TYPE=Release; \
+		fi \
 	fi
-	$(Q)cmake --build $(BUILD_DIR_QT_MESSAGES) --target messages --parallel
+	$(Q)cmake --build ../../../var/build_qt_super --target messages --parallel
 
 server : $(SERVERCMO) $(LIBPPRZCMA) $(LIBPPRZLINKCMA)
 	@echo OL $@

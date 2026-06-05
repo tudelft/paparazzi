@@ -59,23 +59,27 @@ BUILD_DIR_QT_PLOTTER ?= ../../var/build_qt/plotter
 
 plotter:
 	@echo "CMAKE plotter"
-	$(Q)if command -v ninja >/dev/null 2>&1; then \
-		cmake -B $(BUILD_DIR_QT_PLOTTER) -S . -G Ninja -DCMAKE_BUILD_TYPE=Release; \
-	else \
-		cmake -B $(BUILD_DIR_QT_PLOTTER) -S . -DCMAKE_BUILD_TYPE=Release; \
+		$(Q)if [ ! -f "../../var/build_qt_super/CMakeCache.txt" ]; then \
+		if command -v ninja >/dev/null 2>&1; then \
+			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -G Ninja -DCMAKE_BUILD_TYPE=Release; \
+		else \
+			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -DCMAKE_BUILD_TYPE=Release; \
+		fi \
 	fi
-	$(Q)cmake --build $(BUILD_DIR_QT_PLOTTER) --target plotter --parallel
+	$(Q)cmake --build ../../var/build_qt_super --target plotter --parallel
 
 BUILD_DIR_QT_LOGPLOTTER ?= ../../var/build_qt/logplotter
 
 logplotter:
 	@echo "CMAKE logplotter"
-	$(Q)if command -v ninja >/dev/null 2>&1; then \
-		cmake -B $(BUILD_DIR_QT_LOGPLOTTER) -S . -G Ninja -DCMAKE_BUILD_TYPE=Release; \
-	else \
-		cmake -B $(BUILD_DIR_QT_LOGPLOTTER) -S . -DCMAKE_BUILD_TYPE=Release; \
+		$(Q)if [ ! -f "../../var/build_qt_super/CMakeCache.txt" ]; then \
+		if command -v ninja >/dev/null 2>&1; then \
+			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -G Ninja -DCMAKE_BUILD_TYPE=Release; \
+		else \
+			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -DCMAKE_BUILD_TYPE=Release; \
+		fi \
 	fi
-	$(Q)cmake --build $(BUILD_DIR_QT_LOGPLOTTER) --target logplotter --parallel
+	$(Q)cmake --build ../../var/build_qt_super --target logplotter --parallel
 
 sd2log : sd2log.cmo $(LIBPPRZCMA) $(LIBPPRZLINKCMA)
 	@echo OL $@

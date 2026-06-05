@@ -31,14 +31,14 @@ all : gaia
 
 gaia :
 	@echo "Building Gaia (C++/Qt) via CMake"
-	@if [ ! -d "$(BUILD_DIR)" ]; then \
+	@if [ ! -f "../../var/build_qt_super/CMakeCache.txt" ]; then \
 		if command -v ninja >/dev/null 2>&1; then \
-			cmake -B $(BUILD_DIR) -S . -G Ninja -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
+			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -G Ninja -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
 		else \
-			cmake -B $(BUILD_DIR) -S . -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
+			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
 		fi \
 	fi
-	cmake --build $(BUILD_DIR) --config $(BUILD_TYPE) --parallel "$$(nproc)"
+	cmake --build ../../var/build_qt_super --config $(BUILD_TYPE) --target gaia --parallel $$(nproc)
 
 clean :
 	$(Q)rm -f *~ *.out .depend *.o *.a gaia

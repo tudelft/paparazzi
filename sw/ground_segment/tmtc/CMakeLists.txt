@@ -25,7 +25,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Xml Network)
 
-add_subdirectory(../cockpit_qt/ext/pprzlinkQt ${CMAKE_BINARY_DIR}/pprzlinkqt)
 
 set(SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/messages.cpp"

@@ -15,7 +15,6 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Xml Network)
 
-add_subdirectory(../ground_segment/cockpit_qt/ext/pprzlinkQt ${CMAKE_BINARY_DIR}/pprzlinkqt)
 
 set(SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/gaia.cpp"
