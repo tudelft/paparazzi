@@ -826,7 +826,40 @@ int main(int argc, char *argv[]) {
     
     parser.addPositionalArgument("log", "Log file to load.", "[log file]");
 
-    parser.process(app);
+    // Robust Command-Line Argument Parsing (Ported from LogPlotter)
+    // Resolves issues where external launchers incorrectly fragment quoted file paths or arguments.
+    QStringList argsList = app.arguments();
+    QStringList mergedArgs;
+    for (int i = 0; i < argsList.size(); ++i) {
+        QString arg = argsList[i];
+        if ((arg.startsWith('\'') && !arg.endsWith('\'')) || (arg.startsWith('"') && !arg.endsWith('"'))) {
+            QChar quoteType = arg[0];
+            QString merged = arg;
+            int j = i + 1;
+            bool foundClosed = false;
+            while (j < argsList.size()) {
+                merged += " " + argsList[j];
+                if (argsList[j].endsWith(quoteType)) {
+                    foundClosed = true;
+                    break;
+                }
+                j++;
+            }
+            if (foundClosed) {
+                i = j;
+                mergedArgs.append(merged.mid(1, merged.length() - 2));
+            } else {
+                mergedArgs.append(arg);
+            }
+        } else if ((arg.startsWith('\'') && arg.endsWith('\'') && arg.length() >= 2) ||
+                   (arg.startsWith('"') && arg.endsWith('"') && arg.length() >= 2)) {
+            mergedArgs.append(arg.mid(1, arg.length() - 2));
+        } else {
+            mergedArgs.append(arg);
+        }
+    }
+
+    parser.process(mergedArgs);
 
     if (parser.isSet("version")) {
         parser.showVersion();
