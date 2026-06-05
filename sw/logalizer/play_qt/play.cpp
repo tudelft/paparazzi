@@ -22,6 +22,9 @@
 
 #include <QApplication>
 #include <QMainWindow>
+#include <QMenuBar>
+#include <QMenu>
+#include <QAction>
 #include <QCommandLineParser>
 #include <QDebug>
 #include <QVBoxLayout>
@@ -383,11 +386,13 @@ public:
         m_virtualTime = m_log[m_currentIndex].time;
         m_elapsed.start();
         m_tickTimer->start();
+        emit stateChanged(true);
     }
 
     void stop() {
         m_isPlaying = false;
         m_tickTimer->stop();
+        emit stateChanged(false);
     }
 
 signals:
@@ -395,6 +400,7 @@ signals:
     void timeUpdated(double currentT);
     void speedChangedByNetwork(double newSpeed);
     void finished();
+    void stateChanged(bool isPlaying);
 
 private slots:
     /**
@@ -705,6 +711,26 @@ public:
         setWindowTitle("Paparazzi Replay");
         resize(480, 100);
         
+                // Mimic original OCaml GTK Menu ("File" -> "Open Log", "Play", "Stop", "Quit")
+        QMenu* fileMenu = menuBar()->addMenu(tr("&File"));
+        
+        QAction* actionOpen = fileMenu->addAction(tr("Open Log"));
+        actionOpen->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_O));
+        
+        QAction* actionPlay = fileMenu->addAction(tr("Play"));
+        actionPlay->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_X)); // OCaml used _X
+        
+        QAction* actionStop = fileMenu->addAction(tr("Stop"));
+        actionStop->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_S)); // OCaml used _S
+        
+        QAction* actionQuit = fileMenu->addAction(tr("Quit"));
+        actionQuit->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Q));
+        
+        connect(actionOpen, &QAction::triggered, this, &PlayWindow::onOpen);
+        connect(actionPlay, &QAction::triggered, m_core, &PlayCore::play);
+        connect(actionStop, &QAction::triggered, m_core, &PlayCore::stop);
+        connect(actionQuit, &QAction::triggered, qApp, &QApplication::quit);
+
         QWidget* central = new QWidget(this);
         QVBoxLayout* vlayout = new QVBoxLayout(central);
         
@@ -746,6 +772,11 @@ public:
         // Core Interaction Guard: Programmatic `setValue` commands trigger slider signals causing cyclic jump commands. Uniquely binds user inputs exclusively protecting processing operations robustly.
         connect(m_slider, &QAbstractSlider::valueChanged, this, &PlayWindow::onSliderValueChanged);
         connect(m_slider, &QSlider::sliderPressed, m_core, &PlayCore::stop);
+        
+        // Match OCaml behavior: slider is disabled during playback
+        connect(m_core, &PlayCore::stateChanged, m_slider, [this](bool isPlaying) {
+            m_slider->setEnabled(!isPlaying);
+        });
         
         connect(m_core, &PlayCore::logLoaded, this, &PlayWindow::onLogLoaded);
         connect(m_core, &PlayCore::timeUpdated, this, &PlayWindow::onTimeUpdated);
