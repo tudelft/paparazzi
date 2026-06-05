@@ -251,6 +251,11 @@ public:
                 if (chunk.isEmpty()) break;
                 
                 buffer.append(chunk);
+                // GUARANTEE: Prevent infinitely expanding buffers resulting in OOM on malformed binaries
+                if (buffer.size() > 50 * 1024 * 1024) { 
+                    qWarning() << "Malformed log file: excessively long line strings detected. Halting stream parser.";
+                    break;
+                }
                 int lineStart = 0;
                 while (true) {
                     int nlIdx = buffer.indexOf('\n', lineStart);
@@ -285,7 +290,14 @@ public:
             return false;
         }
 
+        // GUARANTEE: Ensure absolute chronological integrity. Some logs reset or jump timelines.
+        // std::lower_bound exhibits undefined behavior (crashing) if the timeline is un-ordered.
+        std::sort(m_log.begin(), m_log.end(), [](const LogIndex& a, const LogIndex& b) {
+            return a.time < b.time;
+        });
+
         // Extract native configs and load internal routing dictionaries
+
         storeConf(root, acs);
         storeMessages(root);
         initDictionary();
@@ -337,6 +349,8 @@ public:
      * @brief Programmatically jumps the virtual head explicitly to matching telemetry frames via Binary Search.
      */
     void setTime(double t) {
+        if (m_log.isEmpty()) return; // Absolute protection against empty references
+
         auto it = std::lower_bound(m_log.begin(), m_log.end(), t, [](const LogIndex& a, double tVal) {
             return a.time < tVal;
         });
@@ -468,10 +482,14 @@ private:
         if (s2 != -1 && len2 == 0) len2 = lineLen - s2;
 
         if (s1 != -1 && len1 > 0 && s2 != -1 && len2 > 0) {
-            double t = QByteArray::fromRawData(lineData + s1, len1).toDouble();
-            m_log.push_back({t, fileOffset, lineLen});
-            QString ac = QString::fromUtf8(lineData + s2, len2);
-            acs.insert(ac); 
+            bool ok = false;
+            double t = QByteArray::fromRawData(lineData + s1, len1).toDouble(&ok);
+            // GUARANTEE: Filter out NaN/Infinity artifacts which fatally corrupt binary searches
+            if (ok && std::isfinite(t)) {
+                m_log.push_back({t, fileOffset, lineLen});
+                QString ac = QString::fromUtf8(lineData + s2, len2);
+                acs.insert(ac); 
+            }
         }
     }
 
@@ -683,6 +701,7 @@ class PlayWindow : public QMainWindow {
     Q_OBJECT
 public:
     explicit PlayWindow(PlayCore* core, QWidget* parent = nullptr) : QMainWindow(parent), m_core(core) {
+        setAttribute(Qt::WA_DeleteOnClose);
         setWindowTitle("Paparazzi Replay");
         resize(480, 100);
         
@@ -780,6 +799,7 @@ private:
      * @brief Translates generic double fractions explicitly to visually human read clocks dynamically explicitly successfully effectively reliably cleanly natively uniquely correctly cleanly inherently. 
      */
     void updateLabel(double currentT) {
+        if (!std::isfinite(currentT) || !std::isfinite(m_maxT)) return;
         int cM = static_cast<int>(currentT) / 60;
         int cS = static_cast<int>(currentT) % 60;
         int mM = static_cast<int>(m_maxT) / 60;
