@@ -38,6 +38,7 @@
 #include <QTextStream>
 #include <QDomDocument>
 #include <QDir>
+#include <QHash>
 #include <QProcess>
 #include <QStandardPaths>
 #include <QRegularExpression>
@@ -269,6 +270,7 @@ public:
         }
 
         m_log.clear();
+        m_streamFrames.clear(); // invalidate any prior scrub index before re-indexing
         QSet<QString> acs; 
         
         // Core Performance Optimization 1: System Memory Boundary Mappings mapping native file tracks into explicit pointer references zeroing block cache arrays naturally.
@@ -351,6 +353,10 @@ public:
             return a.time < b.time;
         });
 
+        // Build the per-stream frame index now that m_log is time-sorted; this powers
+        // O(log n) snapshot lookups for responsive live scrubbing (see broadcastSnapshot).
+        buildStreamIndex();
+
         // Now parse the standard XML properties (Conf and Protocols). Many Paparazzi .log files miss a single root element wrapper.
         QDomDocument doc;
         QDomDocument::ParseResult result = doc.setContent(content);
@@ -414,25 +420,27 @@ public:
     }
 
     /**
-     * @brief Programmatically jumps the virtual head explicitly to matching telemetry frames via Binary Search.
+     * @brief Live-scrubbing seek: repositions the playback head to time `t` AND immediately
+     * broadcasts a coherent state snapshot so any connected GCS reflects the exact aircraft
+     * state at the scrubbed position -- the heart of responsive back-and-forward scrubbing.
+     *
+     * @details Three concerns are handled together:
+     *  1. **Seek** -- an O(log n) binary search (`indexForTime`) positions the head; combined
+     *     with the memory-mapped data this makes the jump itself effectively instantaneous on
+     *     any log size.
+     *  2. **Snapshot** -- `broadcastSnapshot` resends the latest frame of every distinct message
+     *     stream at or before `t`. Sending only the single frame under the cursor would leave
+     *     every other signal stale, so a per-stream snapshot is what makes the displayed state
+     *     correct whether the user jumps forward or backward.
+     *  3. **Clock safety** -- if a scrub happens mid-playback the elapsed accumulator is
+     *     restarted so the next tick does not dump a huge delta and fast-forward.
      */
-    void setTime(double t) {
+    void scrubTo(double t) {
         if (m_log.isEmpty()) return; // Absolute protection against empty references
-
-        auto it = std::lower_bound(m_log.begin(), m_log.end(), t, [](const LogIndex& a, double tVal) {
-            return a.time < tVal;
-        });
-        m_currentIndex = std::distance(m_log.begin(), it);
-        if (m_currentIndex >= m_log.size()) m_currentIndex = m_log.size() - 1;
-        
+        m_currentIndex = indexForTime(t);
         m_virtualTime = m_log[m_currentIndex].time;
-        
-        // Critical: When a user skips around the log, the clock accumulator MUST be restarted.
-        // Otherwise, it dumps immense time-delta on the next tick triggering unwanted fast-forward leaps.
-        if (m_isPlaying) {
-             m_elapsed.restart(); 
-        }
-        
+        if (m_isPlaying) m_elapsed.restart();
+        broadcastSnapshot(m_virtualTime);
         emit timeUpdated(m_virtualTime);
     }
     
@@ -446,7 +454,13 @@ public:
     }
 
     void play() {
-        if (m_log.isEmpty() || m_currentIndex >= m_log.size()) return;
+        if (m_log.isEmpty()) return;
+        // If the head sits at (or past) the end of the log -- e.g. a previous run played
+        // out completely -- rewind to the start so "Play" is never a silent no-op.
+        if (m_currentIndex >= m_log.size()) {
+            m_currentIndex = 0;
+            emit timeUpdated(m_log.first().time);
+        }
         m_isPlaying = true;
         m_virtualTime = m_log[m_currentIndex].time;
         m_elapsed.start();
@@ -459,6 +473,9 @@ public:
         m_tickTimer->stop();
         emit stateChanged(false);
     }
+
+    /** @brief Whether playback is currently active (used to auto-resume after a scrub). */
+    bool isPlaying() const { return m_isPlaying; }
 
 signals:
     void logLoaded(double minT, double maxT);
@@ -487,30 +504,9 @@ private slots:
         
         // Loop resolves strictly passing messages evaluating valid mapped structures locally bounding transmission natively identically bypassing stall behaviors organically
         while (m_currentIndex < m_log.size() && m_log[m_currentIndex].time <= m_virtualTime) {
-            const LogIndex& entry = m_log[m_currentIndex];
-            QString ac, msgName, msg;
-            
-            if (m_mappedData) { 
-                const char* data = reinterpret_cast<const char*>(m_mappedData + entry.offset);
-                extractMsgData(data, entry.length, ac, msgName, msg);
-            } else {            
-                m_dataFile.seek(entry.offset);
-                QByteArray chunk = m_dataFile.read(entry.length);
-                extractMsgData(chunk.constData(), chunk.length(), ac, msgName, msg);
-            }
-            
-            if (m_bus && !msgName.isEmpty()) {
-                // Strictly evaluate telemetry class bindings independently matching OCaml's sequential `try/with` execution blocks
-                if (m_telemetryMsgs.contains(msgName)) {
-                    m_bus->send(QString("replay%1 %2").arg(ac).arg(msg));
-                    m_bus->send(QString("time%1 %2").arg(ac).arg(QString::number(entry.time, 'f', 6)));
-                }
-                
-                // Ground class evaluations process concurrently without overlapping `else` blockers seamlessly
-                if (m_groundMsgs.contains(msgName)) {
-                    m_bus->send(QString("replay_ground %1").arg(msg));
-                }
-            }
+            // Broadcasting is delegated to sendFrame() so the identical wire format can be
+            // reused by a future live-scrubbing seek path without duplicating any logic.
+            sendFrame(m_log[m_currentIndex]);
 
             m_currentIndex++;
             messagesSent++;
@@ -590,6 +586,142 @@ private:
             msgName = QString::fromUtf8(data + s3, len3);
             msg = QString::fromUtf8(data + s3, lineLen - s3).trimmed();
         }
+    }
+
+    /**
+     * @brief Broadcasts a single telemetry frame over the Ivy bus in the exact wire
+     * format produced by the OCaml player.
+     *
+     * @details Mirrors OCaml `run`/`loop`: a telemetry-class message emits
+     * `replay<ac> <msg>` plus `time<ac> <t>` (t = the frame's own timestamp, six
+     * decimals like OCaml `%f`), and a ground-class message emits `replay_ground <msg>`.
+     * The two class checks are independent -- exactly like OCaml's two separate
+     * `try/with` blocks -- so a message registered in both classes is forwarded twice.
+     *
+     * Centralising the send path keeps `onTimeout` lean and makes the engine ready for
+     * live scrubbing: a seek handler can replay the frame(s) at the new slider position
+     * simply by calling this method, with zero duplicated formatting. The multi-argument
+     * `arg(a, b)` form also performs simultaneous substitution, so a payload that happens
+     * to contain `%1`/`%2` can never be re-interpreted as a placeholder.
+     */
+    inline void sendFrame(const LogIndex& entry) {
+        if (!m_bus) return;
+        QString ac, msgName, msg;
+        if (m_mappedData) {
+            const char* data = reinterpret_cast<const char*>(m_mappedData + entry.offset);
+            extractMsgData(data, entry.length, ac, msgName, msg);
+        } else {
+            m_dataFile.seek(entry.offset);
+            QByteArray chunk = m_dataFile.read(entry.length);
+            extractMsgData(chunk.constData(), chunk.length(), ac, msgName, msg);
+        }
+        if (msgName.isEmpty()) return;
+
+        if (m_telemetryMsgs.contains(msgName)) {
+            m_bus->send(QString("replay%1 %2").arg(ac, msg));
+            m_bus->send(QString("time%1 %2").arg(ac, QString::number(entry.time, 'f', 6)));
+        }
+        if (m_groundMsgs.contains(msgName)) {
+            m_bus->send(QString("replay_ground %1").arg(msg));
+        }
+    }
+
+    /**
+     * @brief Returns the index of the first frame at or after time `t`, clamped to valid bounds.
+     */
+    inline int indexForTime(double t) const {
+        auto it = std::lower_bound(m_log.begin(), m_log.end(), t, [](const LogIndex& a, double tVal) {
+            return a.time < tVal;
+        });
+        int idx = std::distance(m_log.begin(), it);
+        if (idx >= m_log.size()) idx = m_log.size() - 1;
+        if (idx < 0) idx = 0;
+        return idx;
+    }
+
+    /**
+     * @brief Lightweight stream-key extractor: returns "<ac> <msgName>" for a raw data line,
+     * or an empty string if the line lacks the required leading fields.
+     *
+     * @details Deliberately mirrors the tokeniser in extractMsgData() but stops after the third
+     * field and allocates only the short key (never the full payload), so building the per-stream
+     * index at load time stays cheap even on multi-million-frame logs.
+     */
+    inline QString streamKeyOf(const char* data, int lineLen) const {
+        int s1 = -1, len1 = 0, s2 = -1, len2 = 0, s3 = -1, len3 = 0;
+        for (int i = 0; i < lineLen; ++i) {
+            const char c = data[i];
+            if (c != ' ' && c != '\t' && c != '\r') {
+                if (s1 == -1) { s1 = i; }
+                else if (len1 > 0 && s2 == -1) { s2 = i; }
+                else if (len2 > 0 && s3 == -1) { s3 = i; }
+            } else {
+                if (s1 != -1 && s2 == -1) { len1 = i - s1; }
+                else if (s2 != -1 && s3 == -1) { len2 = i - s2; }
+                else if (s3 != -1 && len3 == 0) { len3 = i - s3; break; }
+            }
+        }
+        if (s3 != -1 && len3 == 0) len3 = lineLen - s3;
+        if (s2 == -1 || len2 <= 0 || s3 == -1 || len3 <= 0) return QString();
+        return QString::fromUtf8(data + s2, len2) + QChar(' ') + QString::fromUtf8(data + s3, len3);
+    }
+
+    /**
+     * @brief Builds the per-stream frame index used for O(streams x log n) scrub snapshots.
+     *
+     * @details Runs once per load, AFTER m_log has been time-sorted, so every stream's index
+     * vector is itself chronologically ordered (indices into the sorted log are monotonic in
+     * time). Keyed by "<ac> <msgName>", each entry lists the frames belonging to that stream,
+     * letting broadcastSnapshot() binary-search the latest value of every signal at any instant.
+     */
+    void buildStreamIndex() {
+        m_streamFrames.clear();
+        QByteArray scratch;
+        for (int i = 0; i < m_log.size(); ++i) {
+            const LogIndex& e = m_log[i];
+            const char* data;
+            int len;
+            if (m_mappedData) {
+                data = reinterpret_cast<const char*>(m_mappedData + e.offset);
+                len = e.length;
+            } else {
+                m_dataFile.seek(e.offset);
+                scratch = m_dataFile.read(e.length);
+                data = scratch.constData();
+                len = static_cast<int>(scratch.size());
+            }
+            const QString key = streamKeyOf(data, len);
+            if (!key.isEmpty()) m_streamFrames[key].push_back(i);
+        }
+    }
+
+    /**
+     * @brief Broadcasts a coherent state snapshot at time `t`: the latest frame of every distinct
+     * message stream at or before `t`, sent in chronological order via sendFrame().
+     *
+     * @details This is what makes scrubbing "live". For each stream a binary search finds the most
+     * recent frame whose timestamp is <= t; that frame is (re)broadcast so the receiver shows the
+     * exact state at the cursor regardless of travel direction. Total cost is O(streams x log n) --
+     * independent of cursor position and tiny in practice (a few dozen streams), which keeps
+     * scrubbing responsive even on gigabyte logs. The scratch buffer is reused to stay
+     * allocation-free in steady state.
+     */
+    void broadcastSnapshot(double t) {
+        if (!m_bus || m_streamFrames.isEmpty()) return;
+        m_snapshotScratch.clear();
+        m_snapshotScratch.reserve(m_streamFrames.size());
+        for (auto it = m_streamFrames.cbegin(); it != m_streamFrames.cend(); ++it) {
+            const QVector<int>& v = it.value();
+            // Predecessor of the first frame whose time exceeds t == latest frame with time <= t.
+            int lo = 0, hi = static_cast<int>(v.size());
+            while (lo < hi) {
+                const int mid = (lo + hi) >> 1;
+                if (m_log[v[mid]].time <= t) lo = mid + 1; else hi = mid;
+            }
+            if (lo > 0) m_snapshotScratch.push_back(v[lo - 1]);
+        }
+        std::sort(m_snapshotScratch.begin(), m_snapshotScratch.end());
+        for (int fi : m_snapshotScratch) sendFrame(m_log[fi]);
     }
 
     /**
@@ -789,6 +921,8 @@ private:
     
     QString m_xmlFile;       ///< Functional generic origin boundary strictly uniquely correctly generating tracks linearly efficiently.
     QVector<LogIndex> m_log; ///< Operational boundary structure storing mapped locations accurately linearly uniquely organically normally efficiently.
+    QHash<QString, QVector<int>> m_streamFrames; ///< Per-stream ("<ac> <msgName>") frame indices into the sorted log; powers O(log n) scrub snapshots.
+    QVector<int> m_snapshotScratch;              ///< Reused buffer for snapshot frame collection (steady-state zero-allocation).
     QFile m_dataFile;        ///< Physical boundary pointer limiting load conditions functionally tracking loops functionally normally implicitly implicitly natively naturally efficiently.
     uchar* m_mappedData;     ///< Explicit memory boundary zero-allocation target mapping securely.
     
@@ -861,7 +995,21 @@ public:
         
         m_slider = new QSlider(Qt::Horizontal);
         m_slider->setPageStep(500); 
+        m_slider->setEnabled(false); // becomes interactive once a log is loaded
+        m_slider->setToolTip("Drag to scrub backward/forward through the log");
         vlayout->addWidget(m_slider);
+
+        // Coalescing timer that bounds how often the cheap-but-bus-heavy scrub snapshot is sent.
+        m_scrubThrottle = new QTimer(this);
+        m_scrubThrottle->setSingleShot(true);
+        m_scrubThrottle->setInterval(kScrubThrottleMs);
+
+        // End-of-scrub detector: fires once the user has stopped moving the slider for a moment.
+        // This is what makes auto-resume robust for interaction modes that never emit
+        // sliderReleased (groove clicks, keyboard, mouse wheel).
+        m_scrubIdle = new QTimer(this);
+        m_scrubIdle->setSingleShot(true);
+        m_scrubIdle->setInterval(kScrubIdleMs);
         
         setCentralWidget(central);
         
@@ -873,11 +1021,30 @@ public:
 
         // Core Interaction Guard: Programmatic `setValue` commands trigger slider signals causing cyclic jump commands. Uniquely binds user inputs exclusively protecting processing operations robustly.
         connect(m_slider, &QAbstractSlider::valueChanged, this, &PlayWindow::onSliderValueChanged);
-        connect(m_slider, &QSlider::sliderPressed, m_core, &PlayCore::stop);
-        
-        // Match OCaml behavior: slider is disabled during playback
-        connect(m_core, &PlayCore::stateChanged, m_slider, [this](bool isPlaying) {
-            m_slider->setEnabled(!isPlaying);
+
+        // --- Live scrubbing wiring --------------------------------------------------------
+        // A scrub is detected from valueChanged -- the ONLY signal every interaction mode emits
+        // (handle drag, groove click, keyboard, wheel). Playback's own slider updates are
+        // blockSignals-guarded upstream, so they never reach the scrub path. beginScrub() pauses
+        // playback and remembers whether it was running; finishScrub() resumes it.
+        //
+        // End-of-scrub is detected by whichever of these fires first:
+        //   * sliderReleased -> instant resume when the user lets go of the handle.
+        //   * m_scrubIdle    -> resume ~150 ms after the LAST value change; the robust fallback
+        //                       for groove clicks / keyboard / wheel, where sliderReleased never
+        //                       fires (these were the cases that left playback stuck paused).
+        // Both funnel through the idempotent finishScrub(), so a double trigger is harmless.
+        connect(m_slider, &QSlider::sliderPressed,  this, &PlayWindow::beginScrub);
+        connect(m_slider, &QSlider::sliderReleased, this, &PlayWindow::finishScrub);
+        connect(m_scrubIdle, &QTimer::timeout,      this, &PlayWindow::finishScrub);
+
+        // The throttle's trailing tick coalesces rapid drag updates so the Ivy bus is never flooded.
+        connect(m_scrubThrottle, &QTimer::timeout, this, [this] {
+            if (m_scrubPendingFlush) {
+                m_scrubPendingFlush = false;
+                m_core->scrubTo(m_pendingScrubT);
+                m_scrubThrottle->start(); // keep coalescing while the drag continues
+            }
         });
         
         connect(m_core, &PlayCore::logLoaded, this, &PlayWindow::onLogLoaded);
@@ -926,9 +1093,10 @@ private slots:
     }
     
     void onLogLoaded(double minT, double maxT) {
-        m_slider->setRange(0, 10000); 
+        m_slider->setRange(0, kSliderSteps); 
         m_minT = minT;
         m_maxT = maxT;
+        m_slider->setEnabled(true); // log present -> scrubbing available
         m_slider->blockSignals(true);
         m_slider->setValue(0);
         m_slider->blockSignals(false);
@@ -939,41 +1107,103 @@ private slots:
         if (!m_slider->isSliderDown() && m_maxT > m_minT) {
             double frac = (currentT - m_minT) / (m_maxT - m_minT);
             m_slider->blockSignals(true);
-            m_slider->setValue(qBound(0, static_cast<int>(frac * 10000), 10000));
+            m_slider->setValue(qBound(0, static_cast<int>(frac * kSliderSteps), kSliderSteps));
             m_slider->blockSignals(false);
             updateLabel(currentT);
         }
     }
     
     void onSliderValueChanged(int val) {
-        if (m_maxT > m_minT) {
-            double currentT = m_minT + (val / 10000.0) * (m_maxT - m_minT);
-            m_core->setTime(currentT);
-            updateLabel(currentT);
+        if (m_maxT <= m_minT) return;
+        // Robust begin: every user-driven value change marks an active scrub (and pauses playback
+        // the first time). Programmatic updates from playback are blockSignals-guarded upstream,
+        // so they never reach this slot.
+        beginScrub();
+        const double t = m_minT + (val / static_cast<double>(kSliderSteps)) * (m_maxT - m_minT);
+        updateLabel(t); // instant visual feedback, independent of broadcast throttling
+        m_pendingScrubT = t;
+        if (m_scrubThrottle->isActive()) {
+            m_scrubPendingFlush = true;  // coalesce; the trailing timer tick broadcasts the latest position
+        } else {
+            m_core->scrubTo(t);          // leading edge: broadcast immediately so scrubbing feels responsive
+            m_scrubThrottle->start();    // open the throttle window
+        }
+        m_scrubIdle->start();            // (re)arm end-of-scrub detection; resume fires once movement stops
+    }
+
+    /**
+     * @brief Marks the start of a scrub gesture: records whether playback was active, then pauses it.
+     * Idempotent -- safe to call on sliderPressed and on every subsequent value change.
+     */
+    void beginScrub() {
+        if (m_scrubbing) return;
+        m_scrubbing = true;
+        m_wasPlayingBeforeScrub = m_core->isPlaying();
+        if (m_wasPlayingBeforeScrub) m_core->stop();
+    }
+
+    /**
+     * @brief Ends a scrub gesture: flushes the exact final position and resumes playback if it was
+     * running when the scrub began. Idempotent -- whichever of sliderReleased / m_scrubIdle fires
+     * first wins; the other becomes a no-op. While the handle is still physically held
+     * (isSliderDown), resume is deferred to sliderReleased so the idle timer can't resume mid-drag.
+     */
+    void finishScrub() {
+        if (!m_scrubbing) return;
+        if (m_slider->isSliderDown()) return; // handle still held: let sliderReleased finish the gesture
+        m_scrubbing = false;
+        m_scrubIdle->stop();
+        m_scrubThrottle->stop();
+        if (m_scrubPendingFlush) {
+            m_scrubPendingFlush = false;
+            m_core->scrubTo(m_pendingScrubT); // guarantee the exact final position is broadcast
+        }
+        if (m_wasPlayingBeforeScrub) {
+            m_wasPlayingBeforeScrub = false;
+            m_core->play();                   // seamless resume from the scrubbed position
         }
     }
 
 private:
     /**
-     * @brief Translates generic double fractions explicitly to visually human read clocks dynamically explicitly successfully effectively reliably cleanly natively uniquely correctly cleanly inherently. 
+     * @brief Renders the playback head and total duration as human-readable clocks,
+     * measured relative to the log's start (so a freshly loaded log reads 00:00) and
+     * widening automatically to H:MM:SS for logs longer than one hour.
      */
     void updateLabel(double currentT) {
         if (!std::isfinite(currentT) || !std::isfinite(m_maxT)) return;
-        int cM = static_cast<int>(currentT) / 60;
-        int cS = static_cast<int>(currentT) % 60;
-        int mM = static_cast<int>(m_maxT) / 60;
-        int mS = static_cast<int>(m_maxT) % 60;
-        m_timeLabel->setText(QString("%1:%2 / %3:%4")
-                                .arg(cM, 2, 10, QChar('0'))
-                                .arg(cS, 2, 10, QChar('0'))
-                                .arg(mM, 2, 10, QChar('0'))
-                                .arg(mS, 2, 10, QChar('0')));
+        const double elapsed = std::max(0.0, currentT - m_minT);
+        const double total = std::max(0.0, m_maxT - m_minT);
+        m_timeLabel->setText(formatClock(elapsed) + " / " + formatClock(total));
+    }
+
+    /**
+     * @brief Formats a non-negative second count as MM:SS, or H:MM:SS when >= 1 hour.
+     */
+    static QString formatClock(double seconds) {
+        const int totalSecs = static_cast<int>(seconds);
+        const int h = totalSecs / 3600;
+        const int m = (totalSecs % 3600) / 60;
+        const int s = totalSecs % 60;
+        if (h > 0) {
+            return QString("%1:%2:%3").arg(h).arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
+        }
+        return QString("%1:%2").arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
     }
 
     PlayCore* m_core;             ///< Pointer coordinating GUI interactions dynamically bounded to internal engines.
     QSlider* m_slider;            ///< User structural UI input bounds explicitly tracking track position.
     QDoubleSpinBox* m_speedBox;   ///< Visual speed multiplier tracking limits intuitively.
     QLabel* m_timeLabel;          ///< Human readable clock supporting visual string outputs seamlessly.
+    static constexpr int kSliderSteps = 10000;  ///< Slider granularity; higher = finer live-scrubbing resolution.
+    static constexpr int kScrubThrottleMs = 33; ///< Min interval between scrub snapshot broadcasts (~30 Hz) to keep the bus calm.
+    QTimer* m_scrubThrottle = nullptr;          ///< Coalesces rapid drag updates so the Ivy bus is never flooded.
+    static constexpr int kScrubIdleMs = 150;    ///< Idle gap after the last slider move that marks end-of-scrub.
+    QTimer* m_scrubIdle = nullptr;              ///< Fires kScrubIdleMs after the last move; robust end-of-scrub resume.
+    bool m_scrubbing = false;                   ///< True between begin/finish of a scrub gesture (any interaction mode).
+    double m_pendingScrubT = 0.0;               ///< Latest scrub target awaiting a throttled broadcast.
+    bool m_scrubPendingFlush = false;           ///< True when a coalesced scrub position still needs to be sent.
+    bool m_wasPlayingBeforeScrub = false;       ///< Remembers play state at scrub start so playback auto-resumes on end.
     double m_minT = 0, m_maxT = 0;///< Explicitly cached variable boundaries logically limiting dynamic parameters.
 };
 
