@@ -863,7 +863,26 @@ private:
                 protoStr.replace(QRegularExpression("\\bVALUES="), "values=");
                 
                 outT << "<?xml version=\"1.0\"?>\n";
-                outT << "<!DOCTYPE protocol SYSTEM \"messages.dtd\">\n";
+                // ---------------------------------------------------------------------------
+                // WORKAROUND: deliberately DO NOT emit `<!DOCTYPE protocol SYSTEM "messages.dtd">`.
+                //
+                // This messages.xml lands in <PAPARAZZI_HOME>/var/replay/var/ and is later read by
+                // other Paparazzi tools (GCS / server) that parse with OCaml's xml-light. xml-light
+                // resolves a SYSTEM DTD relative to the XML file, so a DOCTYPE pointing at
+                // "messages.dtd" makes it look for <...>/var/replay/var/messages.dtd -- a file we
+                // never generate -- and it aborts with:
+                //     Xml_light_errors.File_not_found(".../var/replay/var/messages.dtd")
+                // The original OCaml store_messages (Xml.to_string_fmt) emitted no DOCTYPE either,
+                // so omitting it also restores behavioural parity. The C++ PprzLinkCPP reader used
+                // in initDictionary() ignores DOCTYPE, so this is safe for our own parsing too.
+                //
+                // POSSIBLE IMPROVEMENT (proper fix vs. this workaround): if DTD validation is
+                // wanted during development, copy the canonical DTD
+                // (paparazziSrc() + "/conf/messages.dtd") into this same directory alongside the
+                // generated messages.xml, then re-enable the DOCTYPE line below -- ideally gated
+                // behind a dev/debug flag so production replay stays dependency-free:
+                //     // outT << "<!DOCTYPE protocol SYSTEM \"messages.dtd\">\n";
+                // ---------------------------------------------------------------------------
                 outT << protoStr;
             }
         }
