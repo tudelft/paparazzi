@@ -89,6 +89,38 @@ public:
 };
 
 /**
+ * @brief Resolves the Paparazzi home directory, mirroring OCaml `Env.paparazzi_home`.
+ *
+ * @details Honors `$PAPARAZZI_HOME`; if unset, falls back to `$HOME/paparazzi`
+ * exactly like the OCaml original (`Sys.getenv "HOME" // "paparazzi"`). As an
+ * extra safety net (the OCaml code would raise an uncaught exception if `$HOME`
+ * were also missing) we finally fall back to the current working directory so
+ * headless/CI invocations never crash.
+ */
+static QString paparazziHome() {
+    const QString home = qEnvironmentVariable("PAPARAZZI_HOME");
+    if (!home.isEmpty()) return home;
+    const QString userHome = qEnvironmentVariable("HOME");
+    if (!userHome.isEmpty()) return userHome + "/paparazzi";
+    return QDir::currentPath();
+}
+
+/**
+ * @brief Resolves the Paparazzi source tree, mirroring OCaml `Env.paparazzi_src`.
+ *
+ * @details Honors `$PAPARAZZI_SRC`; if unset, falls back to the system install
+ * prefix `/usr/share/paparazzi` exactly like the OCaml original. This guarantees
+ * `dump_flight_plan.out` resolves to a valid absolute path even when only
+ * `$PAPARAZZI_HOME` is exported (previously an empty `$PAPARAZZI_SRC` produced the
+ * broken root path `/sw/tools/generators/dump_flight_plan.out`).
+ */
+static QString paparazziSrc() {
+    const QString src = qEnvironmentVariable("PAPARAZZI_SRC");
+    if (!src.isEmpty()) return src;
+    return QStringLiteral("/usr/share/paparazzi");
+}
+
+/**
  * @struct LogIndex
  * @brief An ultra-lightweight structural pointer indexing telemetry frames sequentially.
  * 
@@ -204,12 +236,29 @@ public:
         QFileInfo fi(xmlFile);
         QString dataFilePath = fi.absoluteDir().filePath(dataFileName);
         
-        // Target automated unpacking sequences resolving typical system outputs flawlessly inline
+        // Resolve a compressed data file the same way OCaml `Ocaml_tools.find_file` +
+        // `open_compress` do: search the log's own directory for a known archive
+        // extension and decompress it. Unlike the previous in-place `gunzip <file>`
+        // (which DELETED the user's original archive), we stream via `-c` to a plain
+        // sidecar file, leaving the original intact -- matching OCaml's `gunzip -c`.
         if (!QFile::exists(dataFilePath)) {
-            if (QFile::exists(dataFilePath + ".gz")) {
-                QProcess::execute("gunzip", {dataFilePath + ".gz"});
-            } else if (QFile::exists(dataFilePath + ".bz2")) {
-                QProcess::execute("bunzip2", {dataFilePath + ".bz2"});
+            struct Variant { const char* ext; const char* tool; };
+            static const Variant variants[] = {
+                {".gz", "gunzip"}, {".Z", "gunzip"}, {".bz2", "bunzip2"}
+            };
+            for (const auto& v : variants) {
+                const QString compressed = dataFilePath + v.ext;
+                if (QFile::exists(compressed)) {
+                    QProcess proc;
+                    proc.setStandardOutputFile(dataFilePath, QIODevice::Truncate);
+                    proc.start(v.tool, {"-c", compressed});
+                    proc.waitForFinished(-1);
+                    if (proc.exitStatus() != QProcess::NormalExit || proc.exitCode() != 0) {
+                        QFile::remove(dataFilePath); // discard any partial/garbage output
+                        qWarning() << "Failed to decompress data file:" << compressed;
+                    }
+                    break;
+                }
             }
         }
 
@@ -551,8 +600,7 @@ private:
      * enabling external tool execution explicitly alongside the dataset replay natively.
      */
     void storeConf(const QDomElement& root, const QSet<QString>& acs) {
-        QString pprzHome = qEnvironmentVariable("PAPARAZZI_HOME");
-        if (pprzHome.isEmpty()) pprzHome = QDir::currentPath();
+        QString pprzHome = paparazziHome();
         
         QString replayDir = pprzHome + "/var/replay";
         QDir().mkpath(replayDir + "/conf");
@@ -621,8 +669,11 @@ private:
                         // Automatically compile target Flight Plan out outputs using PAPARAZZI tooling natively.
                         extractChild("flight_plan");
                         QString fpName = acEl.attribute("flight_plan");
-                        QString dumpFpProg = qEnvironmentVariable("PAPARAZZI_SRC") + "/sw/tools/generators/dump_flight_plan.out";
-                        QString fpath = replayDir + "/conf/" + fpName;
+                        QString dumpFpProg = paparazziSrc() + "/sw/tools/generators/dump_flight_plan.out";
+                        // OCaml feeds the aircraft-local copy (the return value of `w`) to
+                        // dump_flight_plan; both copies are byte-identical, but using the
+                        // ac_dir path keeps include-resolution depth identical to OCaml.
+                        QString fpath = acDirStr + "/conf/" + fpName;
                         QString dumpPath = acDirStr + "/flight_plan.xml";
                         QProcess::execute(dumpFpProg, {fpath, dumpPath});
                     } else {
@@ -632,7 +683,12 @@ private:
                             writeXmlFile(acDirStr + "/flight_plan.xml", dumps.at(0).toElement());
                         }
                     }
-                    outConf.appendChild(acEl.cloneNode(true));
+                    // OCaml emits `Xml.Element ("aircraft", Xml.attribs x, [])` -- the
+                    // aircraft node carries its attributes but NO children in conf.xml
+                    // (the expanded airframe/radio/fp subtrees live under var/aircrafts).
+                    // A shallow clone reproduces that exactly; a deep clone would leak the
+                    // full log payload into conf.xml and break downstream conf consumers.
+                    outConf.appendChild(acEl.cloneNode(false));
                 }
             } else {
                 outConf.appendChild(child.cloneNode(true));
@@ -651,8 +707,7 @@ private:
      * @brief Integrates Paparazzi's native XML protocol Dictionary definitions mapping metadata.
      */
     void storeMessages(const QDomElement& root) {
-        QString pprzHome = qEnvironmentVariable("PAPARAZZI_HOME");
-        if (pprzHome.isEmpty()) pprzHome = QDir::currentPath();
+        QString pprzHome = paparazziHome();
         QString replayDir = pprzHome + "/var/replay";
         QDir().mkpath(replayDir + "/var");
 
@@ -686,8 +741,7 @@ private:
      * @brief Initializes dictionary classification indices parsing variables dynamically reliably.
      */
     void initDictionary() {
-        QString pprzHome = qEnvironmentVariable("PAPARAZZI_HOME");
-        if (pprzHome.isEmpty()) pprzHome = QDir::currentPath();
+        QString pprzHome = paparazziHome();
         try {
             pprzlink::MessageDictionary dict(pprzHome + "/var/replay/var/messages.xml");
             
@@ -837,13 +891,10 @@ private slots:
         {
             StderrBlocker blocker;
             const QString defaultLogExtPath = QStringLiteral("var/logs");
-            QString logDir;
-            QString envHome = qEnvironmentVariable("PAPARAZZI_HOME");
-            if (envHome.isEmpty()) envHome = qEnvironmentVariable("PAPARAZZI_SRC");
-            if (!envHome.isEmpty()) {
-                logDir = QDir(envHome).filePath(defaultLogExtPath);
-            }
-            if (logDir.isEmpty() || !QDir(logDir).exists()) {
+            // Primary default mirrors OCaml `Log_file.logs_dir` = $PAPARAZZI_HOME/var/logs
+            // (with the same $HOME/paparazzi fallback baked into paparazziHome()).
+            QString logDir = QDir(paparazziHome()).filePath(defaultLogExtPath);
+            if (!QDir(logDir).exists()) {
                 QDir searchDir(QCoreApplication::applicationDirPath());
                 bool found = false;
                 for (int i = 0; i < 4; ++i) {
