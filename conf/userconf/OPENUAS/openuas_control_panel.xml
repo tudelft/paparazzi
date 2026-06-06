@@ -795,5 +795,16 @@
         <arg flag="-srtm"/>
       </program>
     </session>
+    <session name="OUAS Replay All New QT">
+      <program name="Log File Player"/>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag=""/>
+      </program>
+    </session>
   </section>
 </control_panel>

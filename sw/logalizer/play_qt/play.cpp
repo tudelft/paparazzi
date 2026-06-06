@@ -39,6 +39,8 @@
 #include <QDomDocument>
 #include <QDir>
 #include <QProcess>
+#include <QStandardPaths>
+#include <QRegularExpression>
 #include <QFileDialog>
 #include <QDoubleSpinBox>
 #include <cmath>
@@ -171,30 +173,31 @@ public:
 
         m_xmlFile = xmlFile;
         QFile file(xmlFile);
-        if (!file.open(QIODevice::ReadOnly)) {
-            qWarning() << "Cannot open file:" << xmlFile;
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            qWarning() << "Cannot open log file:" << xmlFile;
             return false;
         }
 
-        QDomDocument doc;
-        if (!doc.setContent(&file)) {
-            qWarning() << "Failed to parse XML:" << xmlFile;
-            return false;
-        }
+        QString content = file.readAll();
+        file.close();
 
-        QDomElement root = doc.documentElement();
-        QString dataFileName;
+        // GUARANTEE: Legacy paparazzi logs contain heavily misformatted XML with un-escaped entities
+        // natively encoded into attributes. 
+        // Qt strictly rejects these violating standard definitions. Normalize explicitly!
+        // We only target strictly cased variants of explicit layout keys and never `CaseInsensitive` (<control> vs <Control>)
+        content.replace(QRegularExpression("<(Control|Shift|Alt)>"), "&lt;\\1&gt;");
+        // Only safely replace unescaped ampersands to avoid destroying valid tags (like <control> blocks in flight plans)
+        content.replace(QRegularExpression("&(?!(amp|lt|gt|quot|apos|#)[a-zA-Z0-9]*;)"), "&amp;");
+
+        QString dataFileName = xmlFile;
         
-        // Discover explicit target arrays determining extraction structures dynamically across varied log configurations
-        QDomNodeList dataFileNodes = root.elementsByTagName("data_file");
-        if (!dataFileNodes.isEmpty()) {
-            dataFileName = dataFileNodes.at(0).toElement().attribute("name");
-        } else if (root.hasAttribute("data_file")) {
-            dataFileName = root.attribute("data_file");
-        }
-
-        if (dataFileName.isEmpty()) {
-            qWarning() << "data_file not found in XML";
+        // Using robust RegEx from logplotter to find the data_file securely even if XML is poorly formed root-wise
+        QRegularExpression reDataFile("data_file=\"([^\"]+)\"");
+        QRegularExpressionMatch matchDataFile = reDataFile.match(content);
+        if (matchDataFile.hasMatch()) {
+            dataFileName = matchDataFile.captured(1);
+        } else if (!xmlFile.endsWith(".data", Qt::CaseInsensitive)) {
+            qWarning() << "data_file property not found in log.";
             return false;
         }
 
@@ -245,7 +248,7 @@ public:
             }
         } else {
             // Core Performance Fallback: Chunked boundaries protecting constrained generic environments failing OS large-file Mmap bindings dynamically.
-            const int CHUNK_SIZE = 1048576; // 1MB bounds avoiding line-by-line file descriptors
+            const int CHUNK_SIZE = 1048576; // 1MB chunks
             QByteArray buffer;
             qint64 fileOffset = 0;
             
@@ -255,7 +258,7 @@ public:
                 
                 buffer.append(chunk);
                 // GUARANTEE: Prevent infinitely expanding buffers resulting in OOM on malformed binaries
-                if (buffer.size() > 50 * 1024 * 1024) { 
+                if (buffer.size() > 50 * 1024 * 1024) {
                     qWarning() << "Malformed log file: excessively long line strings detected. Halting stream parser.";
                     break;
                 }
@@ -299,8 +302,21 @@ public:
             return a.time < b.time;
         });
 
-        // Extract native configs and load internal routing dictionaries
+        // Now parse the standard XML properties (Conf and Protocols). Many Paparazzi .log files miss a single root element wrapper.
+        QDomDocument doc;
+        QDomDocument::ParseResult result = doc.setContent(content);
+        if (!result) {
+            // Attempt to wrap it
+            QString wrapped = "<root>" + content + "</root>";
+            result = doc.setContent(wrapped);
+            if (!result) {
+                qWarning() << "XML Parse Error:" << result.errorMessage << "at line:" << result.errorLine;
+            }
+        }
+        
+        QDomElement root = doc.documentElement();
 
+        // Extract native configs and load internal routing dictionaries
         storeConf(root, acs);
         storeMessages(root);
         initDictionary();
@@ -562,10 +578,14 @@ private:
                     acDir.mkpath("conf");
                     
                     auto writeXmlFile = [](const QString& path, const QDomElement& el) {
+                        QFileInfo fi(path);
+                        fi.absoluteDir().mkpath("."); // Force dependency folders into existence natively!
                         QFile f(path);
                         if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
                             QTextStream out(&f);
                             el.save(out, 2);
+                        } else {
+                            qWarning() << "Failed to dump log asset to:" << path;
                         }
                     };
 
@@ -638,9 +658,23 @@ private:
             QFile protoFile(replayDir + "/var/messages.xml");
             if (protoFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
                 QTextStream outT(&protoFile);
-                QDomDocument tmpDoc;
-                tmpDoc.appendChild(tmpDoc.importNode(protoNodes.at(0), true));
-                tmpDoc.save(outT, 2);
+                QString protoStr;
+                QTextStream tmp(&protoStr);
+                protoNodes.at(0).save(tmp, 2);
+                tmp.flush(); // IMPORTANT: flush before string operations!
+                
+                // GUARANTEE: Legacy logger outputs explicitly uppercase attributes (NAME, ID, TYPE) 
+                // which violates case-sensitive PprzLinkCPP dictionary parsers. Force normalize bindings!
+                protoStr.replace(QRegularExpression("\\bNAME="), "name=");
+                protoStr.replace(QRegularExpression("\\bID="), "id=");
+                protoStr.replace(QRegularExpression("\\bTYPE="), "type=");
+                protoStr.replace(QRegularExpression("\\bUNIT="), "unit=");
+                protoStr.replace(QRegularExpression("\\bALT_UNIT_COEF="), "alt_unit_coef=");
+                protoStr.replace(QRegularExpression("\\bVALUES="), "values=");
+                
+                outT << "<?xml version=\"1.0\"?>\n";
+                outT << "<!DOCTYPE protocol SYSTEM \"messages.dtd\">\n";
+                outT << protoStr;
             }
         }
     }
@@ -653,13 +687,22 @@ private:
         if (pprzHome.isEmpty()) pprzHome = QDir::currentPath();
         try {
             pprzlink::MessageDictionary dict(pprzHome + "/var/replay/var/messages.xml");
-            auto groundDefs = dict.getMsgsForClass("ground");
-            for (auto& def : groundDefs) {
-                m_groundMsgs.insert(def.getName());
-            }
-            auto telDefs = dict.getMsgsForClass("telemetry");
-            for (auto& def : telDefs) {
-                m_telemetryMsgs.insert(def.getName());
+            
+            try {
+                auto groundDefs = dict.getMsgsForClass("ground");
+                for (auto& def : groundDefs) {
+                    m_groundMsgs.insert(def.getName());
+                }
+            } catch (...) {}
+            
+            QStringList telClasses = {"telemetry", "telemetry_ap", "telemetry_fbw"};
+            for (const QString& tc : telClasses) {
+                try {
+                    auto telDefs = dict.getMsgsForClass(tc);
+                    for (auto& def : telDefs) {
+                        m_telemetryMsgs.insert(def.getName());
+                    }
+                } catch (...) {}
             }
             
             try {
@@ -790,7 +833,36 @@ private slots:
         QString fileName;
         {
             StderrBlocker blocker;
-            fileName = QFileDialog::getOpenFileName(this, "Open Log", "", "XML Log Files (*.xml);;All Files (*)");
+            const QString defaultLogExtPath = QStringLiteral("var/logs");
+            QString logDir;
+            QString envHome = qEnvironmentVariable("PAPARAZZI_HOME");
+            if (envHome.isEmpty()) envHome = qEnvironmentVariable("PAPARAZZI_SRC");
+            if (!envHome.isEmpty()) {
+                logDir = QDir(envHome).filePath(defaultLogExtPath);
+            }
+            if (logDir.isEmpty() || !QDir(logDir).exists()) {
+                QDir searchDir(QCoreApplication::applicationDirPath());
+                bool found = false;
+                for (int i = 0; i < 4; ++i) {
+                    if (QDir(searchDir.filePath(defaultLogExtPath)).exists()) {
+                        logDir = searchDir.filePath(defaultLogExtPath);
+                        found = true;
+                        break;
+                    }
+                    if (!searchDir.cdUp()) break;
+                }
+                if (!found) {
+                    if (QDir(QDir::current().filePath(defaultLogExtPath)).exists()) {
+                        logDir = QDir::current().filePath(defaultLogExtPath);
+                        found = true;
+                    }
+                }
+                if (!found) {
+                    QString dataLoc = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+                    logDir = QDir(dataLoc).filePath("logs");
+                }
+            }
+            fileName = QFileDialog::getOpenFileName(this, "Open Paparazzi Log", logDir, "Log Files (*.log *.xml);;All Files (*)");
         }
         if (!fileName.isEmpty()) {
             if (m_core->loadLog(fileName)) {
