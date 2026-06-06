@@ -723,6 +723,8 @@ public:
         QAction* actionStop = fileMenu->addAction(tr("Stop"));
         actionStop->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_S)); // OCaml used _S
         
+        fileMenu->addSeparator();
+
         QAction* actionQuit = fileMenu->addAction(tr("Quit"));
         actionQuit->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Q));
         
