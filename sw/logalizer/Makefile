@@ -42,13 +42,23 @@ XLINKPKG = $(XPKG) -linkpkg -dllpath-pkg pprz.xlib,pprzlink,$(USE_LABELGTK)
 all : play plotter logplotter sd2log openlog2tlm sdlogger_download
 endif
 else # no gtk2
-all: sd2log openlog2tlm sdlogger_download plotter logplotter
+all: sd2log openlog2tlm sdlogger_download plotter logplotter play
 endif
 
 
-play : log_file.cmo play_core.cmo play.cmo $(LIBPPRZCMA) $(LIBPPRZLINKCMA)
-	@echo OL $@
-	$(Q)$(OCAMLC) $(INCLUDES) -o $@ $(LINKPKG) gtkInit.cmo $^
+# play is now the native Qt6 replay app, built through the qt_superbuild exactly like the
+# plotter/logplotter targets below (the legacy OCaml GUI player has been reimplemented in
+# sw/logalizer/play.cpp). Only the headless play-nox remains in OCaml.
+play:
+	@echo "CMAKE play"
+		$(Q)if [ ! -f "../../var/build_qt_super/CMakeCache.txt" ]; then \
+		if command -v ninja >/dev/null 2>&1; then \
+			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -G Ninja -DCMAKE_BUILD_TYPE=Release; \
+		else \
+			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -DCMAKE_BUILD_TYPE=Release; \
+		fi \
+	fi
+	$(Q)cmake --build ../../var/build_qt_super --target play --parallel
 
 play-nox : play_core.cmo play-nox.cmo $(LIBPPRZCMA) $(LIBPPRZLINKCMA)
 	@echo OL $@
@@ -135,7 +145,7 @@ clean:
 	$(Q)rm -f *.opt *.out *~ core *.o *.bak .depend *.cm* play logplotter plotter gtk_export.ml openlog2tlm sd2log sdlogger_download
 	$(Q)rm -rf $(BUILD_DIR_QT)
 
-.PHONY: all clean plotter logplotter
+.PHONY: all clean play plotter logplotter
 
 #
 # Dependencies

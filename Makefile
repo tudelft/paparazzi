@@ -367,6 +367,10 @@ plotter:
 logplotter:
 	$(MAKE) -C sw/logalizer logplotter
 
+.PHONY: play
+play:
+	$(MAKE) -C sw/logalizer play
+
 .PHONY: messages
 messages:
 	$(MAKE) -C sw/ground_segment/tmtc messages

@@ -90,3 +90,41 @@ target_link_libraries(logplotter PRIVATE
 )
 
 install(TARGETS logplotter DESTINATION bin)
+
+# --- PLAY ---
+# Log replay tool, built exactly like plotter/logplotter (Release LTO + section GC + strip, with
+# the executable emitted beside the sources via CMAKE_RUNTIME_OUTPUT_DIRECTORY above). It needs
+# NEITHER Qt Charts NOR the pprzlink message library: replay only re-broadcasts already-formatted
+# log lines on the Ivy bus and reads the few message facts it needs (telemetry/ground routing,
+# integer-typed fields) straight from messages.xml via Qt6::Xml. It therefore links only IvyQt
+# (provided centrally by the qt_superbuild alongside pprzlinkQt).
+set(PLAY_SRC_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/play.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/play.qrc"
+)
+
+add_executable(play ${PLAY_SRC_FILES})
+
+target_include_directories(play PRIVATE . ../ground_segment)
+
+target_compile_options(play PRIVATE
+  $<$<CONFIG:Release>:-O2 -DNDEBUG -fdata-sections -ffunction-sections -flto -g0>
+)
+target_link_options(play PRIVATE
+  $<$<CONFIG:Release>:-Wl,--gc-sections -Wl,-O1 -Wl,-s -flto>
+)
+
+set_target_properties(play PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+
+if(STRIP_EXECUTABLE)
+  add_custom_command(TARGET play POST_BUILD
+    COMMAND ${STRIP_EXECUTABLE} $<TARGET_FILE:play>
+  )
+endif()
+
+target_link_libraries(play PRIVATE 
+    Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Xml Qt6::Network
+    IvyQt
+)
+
+install(TARGETS play DESTINATION bin)
