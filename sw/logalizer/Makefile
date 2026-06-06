@@ -48,7 +48,7 @@ endif
 
 # play is now the native Qt6 replay app, built through the qt_superbuild exactly like the
 # plotter/logplotter targets below (the legacy OCaml GUI player has been reimplemented in
-# sw/logalizer/play.cpp). Only the headless play-nox remains in OCaml.
+# sw/logalizer/play.cpp).
 play:
 	@echo "CMAKE play"
 		$(Q)if [ ! -f "../../var/build_qt_super/CMakeCache.txt" ]; then \
@@ -59,10 +59,6 @@ play:
 		fi \
 	fi
 	$(Q)cmake --build ../../var/build_qt_super --target play --parallel
-
-play-nox : play_core.cmo play-nox.cmo $(LIBPPRZCMA) $(LIBPPRZLINKCMA)
-	@echo OL $@
-	$(Q)$(OCAMLC) $(INCLUDES) -o $@ $(LINKPKG) $^
 
 BUILD_DIR_QT ?= ../../var/build_qt
 BUILD_DIR_QT_PLOTTER ?= ../../var/build_qt/plotter
