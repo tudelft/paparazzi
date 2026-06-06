@@ -451,13 +451,16 @@ private slots:
             }
             
             if (m_bus && !msgName.isEmpty()) {
-                if (m_groundMsgs.contains(msgName)) {
-                    m_bus->send(QString("replay_ground %1").arg(msg));
-                } else if (m_telemetryMsgs.contains(msgName) || !m_groundMsgs.contains(msgName)) {
-                    // Forward unknown elements dynamically onto standard telemetry tracks maintaining generic structure alignments globally verifying payload capabilities accurately
+                // Strictly evaluate telemetry class bindings independently matching OCaml's sequential `try/with` execution blocks
+                if (m_telemetryMsgs.contains(msgName)) {
                     m_bus->send(QString("replay%1 %2").arg(ac).arg(msg));
                     m_bus->send(QString("time%1 %2").arg(ac).arg(QString::number(entry.time, 'f', 6)));
-                } // Ignore globally unrecognized/filtered fields
+                }
+                
+                // Ground class evaluations process concurrently without overlapping `else` blockers seamlessly
+                if (m_groundMsgs.contains(msgName)) {
+                    m_bus->send(QString("replay_ground %1").arg(msg));
+                }
             }
 
             m_currentIndex++;
