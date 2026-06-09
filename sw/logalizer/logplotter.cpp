@@ -22,14 +22,13 @@
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QXmlStreamReader>
-
 #include <QProxyStyle>
 #include <QCommandLineParser>
 
 // Include the widgets you want to target for color changes
 #include <QPlainTextEdit>
-// #include <QTextEdit>
-// #include <QAbstractSpinBox> 
+// #include <QTextEdit>    <-- Uncomment if you also want to target QTextEdit
+// #include <QAbstractSpinBox> <-- Uncomment if you also want to target SpinBoxes
 
 #include <unistd.h>
 #include <fcntl.h>

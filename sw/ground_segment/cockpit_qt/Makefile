@@ -1,28 +1,23 @@
-.PHONY: all clean run setup build_ninja strip
+.PHONY: all build clean run setup strip
 
-BUILD_TYPE ?= Release
-BUILD_DIR ?= ../../../var/build_qt_super
+include ../../../conf/Makefile.qt
 
-all: setup
-	cmake --build $(BUILD_DIR) --config $(BUILD_TYPE) --target equinoxgcs --parallel $$(nproc)
+# gcs is the native Qt6/C++ ground control station (CMake target "equinoxgcs",
+# output name "gcs"), built through the shared Qt super-build defined in
+# sw/CMakeLists.txt and driven via conf/Makefile.qt.
+all: qt-configure
+	$(Q)$(QT_CMAKE_BUILD) equinoxgcs
 
-setup:
-	@if [ ! -f "$(BUILD_DIR)/CMakeCache.txt" ]; then \
-		if command -v ninja >/dev/null 2>&1; then \
-			cmake -B $(BUILD_DIR) -S ../../../sw/qt_superbuild -G Ninja -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
-		else \
-			cmake -B $(BUILD_DIR) -S ../../../sw/qt_superbuild -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
-		fi \
-	fi
+# Backwards-compatible alias for the shared configure step.
+setup: qt-configure
 
 build: all
 
-clean:
-	rm -rf $(BUILD_DIR)
-	rm -f gcs
+clean: qt-clean
+	$(Q)rm -f gcs
 
 strip: all
-	strip -s $(BUILD_DIR)/gcs || true
+	$(Q)strip -s "$(QT_BUILD_DIR)/cockpit_qt/gcs" || true
 
 run: all
-	$(BUILD_DIR)/gcs
+	$(Q)"$(QT_BUILD_DIR)/cockpit_qt/gcs"

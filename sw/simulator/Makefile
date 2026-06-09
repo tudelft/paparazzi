@@ -23,25 +23,16 @@
 Q=@
 
 include ../../conf/Makefile.local
-
-BUILD_TYPE ?= Release
-BUILD_DIR ?= ../../var/build_gaia
+include ../../conf/Makefile.qt
 
 all : gaia
 
-gaia :
-	@echo "Building Gaia (C++/Qt) via CMake"
-	@if [ ! -f "../../var/build_qt_super/CMakeCache.txt" ]; then \
-		if command -v ninja >/dev/null 2>&1; then \
-			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -G Ninja -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
-		else \
-			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -DCMAKE_BUILD_TYPE=$(BUILD_TYPE); \
-		fi \
-	fi
-	cmake --build ../../var/build_qt_super --config $(BUILD_TYPE) --target gaia --parallel $$(nproc)
+# gaia is a native Qt6/C++ application built through the shared Qt super-build
+# (see conf/Makefile.qt and sw/CMakeLists.txt).
+gaia: qt-configure
+	$(Q)$(QT_CMAKE_BUILD) gaia
 
-clean :
+clean: qt-clean
 	$(Q)rm -f *~ *.out .depend *.o *.a gaia
-	$(Q)rm -rf $(BUILD_DIR)
 
 .PHONY: all clean gaia

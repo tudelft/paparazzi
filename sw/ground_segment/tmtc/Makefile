@@ -24,6 +24,7 @@
 Q=@
 
 include ../../../conf/Makefile.local
+include ../../../conf/Makefile.qt
 include ../../Makefile.ocaml
 CONF = ../../../conf
 VAR = ../../../var
@@ -43,22 +44,11 @@ gtk_tools: messages
 
 opt: server.opt
 
-clean:
+clean: qt-clean
 	$(Q)rm -f link server messages *.bak *~ core *.o .depend *.opt *.out *.cm* ivy_tcp_aircraft ivy_tcp_controller ivy2udp ivy2serial ivy_serial_bridge gpsd2ivy c_ivy_client_example_1 c_ivy_client_example_2 ivy2nmea
-	$(Q)rm -rf $(BUILD_DIR_QT_MESSAGES)
 
-BUILD_DIR_QT_MESSAGES ?= ../../../var/build_qt/messages
-
-messages:
-	@echo "CMAKE messages"
-		$(Q)if [ ! -f "../../../var/build_qt_super/CMakeCache.txt" ]; then \
-		if command -v ninja >/dev/null 2>&1; then \
-			cmake -B ../../../var/build_qt_super -S ../../../sw/qt_superbuild -G Ninja -DCMAKE_BUILD_TYPE=Release; \
-		else \
-			cmake -B ../../../var/build_qt_super -S ../../../sw/qt_superbuild -DCMAKE_BUILD_TYPE=Release; \
-		fi \
-	fi
-	$(Q)cmake --build ../../../var/build_qt_super --target messages --parallel
+messages: qt-configure
+	$(Q)$(QT_CMAKE_BUILD) messages
 
 server : $(SERVERCMO) $(LIBPPRZCMA) $(LIBPPRZLINKCMA)
 	@echo OL $@

@@ -24,6 +24,7 @@
 Q=@
 
 include ../Makefile.ocaml
+include ../../conf/Makefile.qt
 INCLUDES=
 PKG = -package glibivy,pprz,$(USE_LABELGTK)
 LINKPKG = $(PKG) -linkpkg -dllpath-pkg pprz,pprzlink,$(USE_LABELGTK)
@@ -46,46 +47,17 @@ all: sd2log openlog2tlm sdlogger_download plotter logplotter play
 endif
 
 
-# play is now the native Qt6 replay app, built through the qt_superbuild exactly like the
-# plotter/logplotter targets below (the legacy OCaml GUI player has been reimplemented in
-# sw/logalizer/play.cpp).
-play:
-	@echo "CMAKE play"
-		$(Q)if [ ! -f "../../var/build_qt_super/CMakeCache.txt" ]; then \
-		if command -v ninja >/dev/null 2>&1; then \
-			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -G Ninja -DCMAKE_BUILD_TYPE=Release; \
-		else \
-			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -DCMAKE_BUILD_TYPE=Release; \
-		fi \
-	fi
-	$(Q)cmake --build ../../var/build_qt_super --target play --parallel
+# play, plotter and logplotter are native Qt6/C++ applications built through the
+# shared Qt super-build (see conf/Makefile.qt and sw/CMakeLists.txt). The legacy
+# OCaml GUIs have been reimplemented in sw/logalizer/{play,plotter,logplotter}.cpp.
+play: qt-configure
+	$(Q)$(QT_CMAKE_BUILD) play
 
-BUILD_DIR_QT ?= ../../var/build_qt
-BUILD_DIR_QT_PLOTTER ?= ../../var/build_qt/plotter
+plotter: qt-configure
+	$(Q)$(QT_CMAKE_BUILD) plotter
 
-plotter:
-	@echo "CMAKE plotter"
-		$(Q)if [ ! -f "../../var/build_qt_super/CMakeCache.txt" ]; then \
-		if command -v ninja >/dev/null 2>&1; then \
-			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -G Ninja -DCMAKE_BUILD_TYPE=Release; \
-		else \
-			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -DCMAKE_BUILD_TYPE=Release; \
-		fi \
-	fi
-	$(Q)cmake --build ../../var/build_qt_super --target plotter --parallel
-
-BUILD_DIR_QT_LOGPLOTTER ?= ../../var/build_qt/logplotter
-
-logplotter:
-	@echo "CMAKE logplotter"
-		$(Q)if [ ! -f "../../var/build_qt_super/CMakeCache.txt" ]; then \
-		if command -v ninja >/dev/null 2>&1; then \
-			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -G Ninja -DCMAKE_BUILD_TYPE=Release; \
-		else \
-			cmake -B ../../var/build_qt_super -S ../../sw/qt_superbuild -DCMAKE_BUILD_TYPE=Release; \
-		fi \
-	fi
-	$(Q)cmake --build ../../var/build_qt_super --target logplotter --parallel
+logplotter: qt-configure
+	$(Q)$(QT_CMAKE_BUILD) logplotter
 
 sd2log : sd2log.cmo $(LIBPPRZCMA) $(LIBPPRZLINKCMA)
 	@echo OL $@
@@ -137,9 +109,8 @@ openlog2tlm: openlog2tlm.c
 	$(Q)$(CC) $(CFLAGS) -o $@ $^
 
 
-clean:
+clean: qt-clean
 	$(Q)rm -f *.opt *.out *~ core *.o *.bak .depend *.cm* play logplotter plotter gtk_export.ml openlog2tlm sd2log sdlogger_download
-	$(Q)rm -rf $(BUILD_DIR_QT)
 
 .PHONY: all clean play plotter logplotter
 

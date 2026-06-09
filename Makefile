@@ -374,3 +374,7 @@ play:
 .PHONY: messages
 messages:
 	$(MAKE) -C sw/ground_segment/tmtc messages
+
+.PHONY: gaia
+gaia:
+	$(MAKE) -C sw/simulator gaia
