@@ -66,9 +66,9 @@
 #include <fcntl.h>
 
 // ---------------------------------------------------------------------------
-// Fast-forward / fast-backward seek step, in seconds. This is the single fixed
-// compile-time knob the request asks for: change this one value to tune how far
-// the  <<  /  >>  transport buttons jump. No runtime / dynamic setting involved.
+// Fast-forward / fast-backward seek step, in seconds. Since fixed at compile-time,
+// change this one value to tune how far the  <<  /  >>  transport buttons jump. 
+// No runtime / dynamic setting involved, keeping the UI clean and focused on core playback controls.
 // ---------------------------------------------------------------------------
 #define PLAY_SEEK_STEP_SECONDS 10.0
 
@@ -106,7 +106,7 @@ public:
 };
 
 /**
- * @brief Resolves the Paparazzi home directory, mirroring OCaml `Env.paparazzi_home`.
+ * @brief Resolves the Paparazzi home directory
  *
  * @details Honors `$PAPARAZZI_HOME`; if unset, falls back to `$HOME/paparazzi`
  * exactly like the OCaml original (`Sys.getenv "HOME" // "paparazzi"`). As an
@@ -144,7 +144,7 @@ static QString paparazziSrc() {
  * @details
  * Rather than instantiating heavily bloated object strings (`QString` naturally bounds internal arrays, encoders,
  * and meta layouts scaling around ~24+ bytes linearly per sequence), we track only physical properties. 
- * If a 2GB raw file harbors ~20 million rows of data bounds, storing an array of constructed strings would 
+ * If a e.g. 2GB raw file harbors ~20 million rows of data bounds, storing an array of constructed strings would 
  * dynamically pull upwards of 12GB of operational virtual memory space triggering Garbage Collection lockups.
  * Using this struct, a dense 20-million sequence requires approximately `sizeof(LogIndex) * 20_000_000` 
  * (approx. 400 MB) of indexing capability linearly!
@@ -238,9 +238,9 @@ public:
         QString content = file.readAll();
         file.close();
 
-        // GUARANTEE: Legacy paparazzi logs contain heavily misformatted XML with un-escaped entities
+        // GUARANTEE: Legacy paparazzi logs could contain heavily misformatted XML with un-escaped entities
         // natively encoded into attributes. 
-        // Qt strictly rejects these violating standard definitions. Normalize explicitly!
+        // Used library strictly rejects these violating standard definitions. Normalize explicitly!
         // We only target strictly cased variants of explicit layout keys and never `CaseInsensitive` (<control> vs <Control>)
         content.replace(QRegularExpression("<(Control|Shift|Alt)>"), "&lt;\\1&gt;");
         // Only safely replace unescaped ampersands to avoid destroying valid tags (like <control> blocks in flight plans)
@@ -248,7 +248,7 @@ public:
 
         QString dataFileName = xmlFile;
         
-        // Using robust RegEx from logplotter to find the data_file securely even if XML is poorly formed root-wise
+        // Using robust RegEx same as from logplotter to find the data_file securely even if XML is poorly formed root-wise
         QRegularExpression reDataFile("data_file=\"([^\"]+)\"");
         QRegularExpressionMatch matchDataFile = reDataFile.match(content);
         if (matchDataFile.hasMatch()) {
@@ -557,8 +557,8 @@ private slots:
 
 private:
     /**
-     * @brief Manual raw char pointer string sequence parser dictating array definitions flawlessly.
-     * @details Extracts values directly indexing chronological elements without executing complex heap conversions enabling ultra low-latency evaluation variables robustly natively.
+     * @brief Manual raw char pointer string sequence parser dictating array definitions without issue.
+     * @details Extracts values directly indexing chronological elements without executing complex heap conversions enabling ultra low-latency evaluation variables natively.
      */
     inline void processLineForIndex(const char* lineData, int lineLen, qint64 fileOffset, QSet<QString>& acs) {
         int s1 = -1, len1 = 0; 
@@ -622,7 +622,7 @@ private:
 
     /**
      * @brief True iff `s` is a plain decimal integer (optional sign + digits) -- exactly what the
-     * OCaml/PprzLink consumers accept via int_of_string for integer-typed fields.
+     * (OCaml or other)/PprzLink consumers accept via int_of_string for integer-typed fields.
      */
     static bool isDecimalInteger(QStringView s) {
         if (s.isEmpty()) return false;
@@ -662,7 +662,7 @@ private:
      * a valid integer.
      *
      * @details `msg` is "<MSGNAME> <f0> <f1> ..."; declared field i is token (i+1). `checks` is in
-     * ascending field order. This mirrors how a consumer tokenises the payload and applies
+     * ascending field order. This mirrors how a consumer tokenizes the payload and applies
      * int_of_string, so a frame that would make a consumer throw Failure("int_of_string") is
      * detected here. Returns false if a required integer field is absent (the line is under-filled
      * versus the current definition -- which the consumer cannot parse either).
@@ -697,7 +697,8 @@ private:
      * @details A replay tool needs nothing more than plain XML here: the .log already embeds this
      * very dictionary, so QtXml (already a dependency) fully replaces the pprzlink message library.
      * setContent() ignores the SYSTEM DOCTYPE, so a `<!DOCTYPE protocol SYSTEM "messages.dtd">`
-     * header never triggers an external-DTD fetch.
+     * header never triggers an external-DTD fetch. This is like the past OCaml code's `Xmlm.make_input` + `Xmlm.input` sequence,
+     * but with the robustness of Qt's forgiving parser and the convenience of a live DOM tree to query.
      */
     static QDomElement openProtocol(const QString& path, QDomDocument& docOut) {
         QFile f(path);
@@ -754,7 +755,7 @@ private:
     /**
      * @brief Precomputes, for one <message> element, the integer fields that must be validated
      * before broadcast. Stops at the first string/char[] field, because free text can contain
-     * spaces and would misalign whitespace tokenisation of everything after it.
+     * spaces and would misalign whitespace tokenization of everything after it.
      *
      * @details Reads each field's @c type attribute directly from messages.xml. A trailing
      * `[]`/`[N]` marks an array (every element must parse as an integer); the base name before it
@@ -788,7 +789,7 @@ private:
 
     /**
      * @brief Class-aware guard: true if `msgName`'s payload is safe to broadcast. Logs a single
-     * notice per offending message so a version-mismatched log is easy to diagnose without spam.
+     * notice per offending message so a version-mismatched log is easy to diagnose without spamming the log
      */
     bool frameIsBroadcastSafe(const QHash<QString, QVector<IntFieldCheck>>& checks,
                               const QString& msgName, const QString& msg) {
@@ -808,7 +809,7 @@ private:
 
     /**
      * @brief Broadcasts a single telemetry frame over the Ivy bus in the exact wire
-     * format produced by the OCaml player.
+     * format produced by the previous OCaml player.
      *
      * @details Mirrors OCaml `run`/`loop`: a telemetry-class message emits
      * `replay<ac> <msg>` plus `time<ac> <t>` (t = the frame's own timestamp, six
@@ -868,7 +869,7 @@ private:
      * @brief Lightweight stream-key extractor: returns "<ac> <msgName>" for a raw data line,
      * or an empty string if the line lacks the required leading fields.
      *
-     * @details Deliberately mirrors the tokeniser in extractMsgData() but stops after the third
+     * @details Deliberately mirrors the tokenizer in extractMsgData() but stops after the third
      * field and allocates only the short key (never the full payload), so building the per-stream
      * index at load time stays cheap even on multi-million-frame logs.
      */
@@ -1027,7 +1028,7 @@ private:
                         extractChild("flight_plan");
                         QString fpName = acEl.attribute("flight_plan");
                         QString dumpFpProg = paparazziSrc() + "/sw/tools/generators/dump_flight_plan.out";
-                        // OCaml feeds the aircraft-local copy (the return value of `w`) to
+                        // OCaml feeded the aircraft-local copy (the return value of `w`) to
                         // dump_flight_plan; both copies are byte-identical, but using the
                         // ac_dir path keeps include-resolution depth identical to OCaml.
                         QString fpath = acDirStr + "/conf/" + fpName;
@@ -1098,7 +1099,7 @@ private:
                 // never generate -- and it aborts with:
                 //     Xml_light_errors.File_not_found(".../var/replay/var/messages.dtd")
                 // The original OCaml store_messages (Xml.to_string_fmt) emitted no DOCTYPE either,
-                // so omitting it also restores behavioural parity. The C++ PprzLinkCPP reader used
+                // so omitting it also restores behavioral parity. The C++ PprzLinkCPP reader used
                 // in initDictionary() ignores DOCTYPE, so this is safe for our own parsing too.
                 //
                 // POSSIBLE IMPROVEMENT (proper fix vs. this workaround): if DTD validation is
