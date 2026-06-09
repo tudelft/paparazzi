@@ -70,20 +70,20 @@
 
 
 // ------------------------------------- immelmann ------------------------------------- //
-// static const float DOWN_OFFSET = -0.8f;
-// static const float NORTH_OFFSET = -5.0f + 2.0f;
-// static const float EAST_OFFSET = -5.0f + 3.0f;
+static const float DOWN_OFFSET = -1.0f;
+static const float NORTH_OFFSET = -5.0f + 5.0f;
+static const float EAST_OFFSET = -5.0f + 1.5f;
 
-// #define REF_TRAJ_FILENAME "immelmann.csv"
-// #define NB_CSV_ROWS 529
+#define REF_TRAJ_FILENAME "immelmann.csv"
+#define NB_CSV_ROWS 1029
 
 // ------------------------------------- immelmann + lateral --------------------------- //
-static const float DOWN_OFFSET = -0.8f;
-static const float NORTH_OFFSET = -5.0f + 1.0f;
-static const float EAST_OFFSET = -5.0f + 4.0f;
+// static const float DOWN_OFFSET = -1.0f;
+// static const float NORTH_OFFSET = -5.0f + 0.8f;
+// static const float EAST_OFFSET = -5.0f + 3.0f;
 
-#define REF_TRAJ_FILENAME "immelmann_lateral.csv"
-#define NB_CSV_ROWS 288
+// #define REF_TRAJ_FILENAME "immelmann_lateral.csv"
+// #define NB_CSV_ROWS 821
 
 // ------------------------------------- clothoid ------------------------------------- //
 // static const float DOWN_OFFSET = -1.5f;
@@ -117,8 +117,8 @@ typedef struct {
 } Traj_row_t;
 
 // constants
-static const float C_X = -1.110;  // -0.300 
-static const float C_Z = -0.154; // -0.050
+static const float C_X = -1.11f;  // -0.300 
+static const float C_Z = -0.154f; // -0.050
 
 // KK props
 static const float MU_X_v = 3.86f  / 100000000.0f;
@@ -189,7 +189,7 @@ static struct FloatVect3 pos_start_buf;
 static struct FloatVect3 vel_start_buf;
 static struct FloatVect3 accel_start_buf;
 float vf_angle_cos;
-struct FloatVect3 ey_hat_prev;
+// struct FloatVect3 ey_hat_prev;
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -494,18 +494,25 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
         // coordinated
         struct FloatVect3 ey, ey_hat, ex, ex_hat, ez, ez_hat;
         struct FloatVect3 f_cmd_vect3 = {f_cmd[0], f_cmd[1], f_cmd[2]};
-        // struct FloatVect3 ey_hat_cur = {R_i2b->m[3], R_i2b->m[4], R_i2b->m[5]};
+        struct FloatVect3 ey_hat_cur = {R_i2b->m[3], R_i2b->m[4], R_i2b->m[5]};
         vf_angle_cos = VECT3_DOT_PRODUCT(*vel_i, f_cmd_vect3)/(sqrtf(VECT3_NORM2(*vel_i))*sqrtf(VECT3_NORM2(f_cmd_vect3)));
         
         if ((vf_angle_cos > 0.9781f) || (vf_angle_cos < -0.9781f)) { // 10 degrees -> cos = 0.9848
+            if (vf_angle_cos > 0.9781f)
+                vf_angle_cos = 1.0f;
+            else 
+                vf_angle_cos = -1.0f;
+                
             // guard against v // f
-            VECT3_COPY(ey_hat, ey_hat_prev);
+            // VECT3_COPY(ey_hat, ey_hat_prev);
+            VECT3_COPY(ey_hat, ey_hat_cur);
         } else {
             VECT3_CROSS_PRODUCT(ey, *vel_i, f_cmd_vect3);
             VECT3_SDIV(ey_hat, ey, sqrtf(VECT3_NORM2(ey)));
         }
 
-        sign_test = VECT3_DOT_PRODUCT(ey_hat_prev, ey_hat);
+        // sign_test = VECT3_DOT_PRODUCT(ey_hat_prev, ey_hat);
+        sign_test = VECT3_DOT_PRODUCT(ey_hat, ey_hat_cur);
         if (sign_test < 0) {
             // VECT3_SMUL(ey_hat, ey_hat, -1.0f);
                 ey_hat.x = -ey_hat.x;
@@ -513,7 +520,7 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
                 ey_hat.z = -ey_hat.z;
         }
 
-        VECT3_COPY(ey_hat_prev, ey_hat) // keep an copy of the current commanded body-y axis
+        // VECT3_COPY(ey_hat_prev, ey_hat)
 
         struct FloatVect3 arb_vect = {R_i2b->m[0], R_i2b->m[1], R_i2b->m[2]};
 
@@ -764,10 +771,10 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
             timestamp_traj_start = get_sys_time_float();
 
             // initialize ey_hat_prev with current by axis
-            struct FloatRMat *R_i2b = stateGetNedToBodyRMat_f();
-            ey_hat_prev.x = R_i2b->m[3];
-            ey_hat_prev.y = R_i2b->m[4];
-            ey_hat_prev.z = R_i2b->m[5];
+            // struct FloatRMat *R_i2b = stateGetNedToBodyRMat_f();
+            // ey_hat_prev.x = R_i2b->m[3];
+            // ey_hat_prev.y = R_i2b->m[4];
+            // ey_hat_prev.z = R_i2b->m[5];
 
             fsm_state = FSM_TRAJECTORY;
             /* fall through */
