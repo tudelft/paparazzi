@@ -83,7 +83,7 @@ AircraftStatus::AircraftStatus(QString ac_id, QObject *parent) : QObject(parent)
             uint8_t other_id;
             try {
                 msg.getField("ac_id", other_id);
-                emit text_message(QString("tcas TA : %1 -> %2").arg(AircraftManager::get()->getAircraft(ac_id) ? AircraftManager::get()->getAircraft(ac_id)->speechName() : ac_id, AircraftManager::get()->getAircraft(QString::number(other_id)) ? AircraftManager::get()->getAircraft(QString::number(other_id))->speechName() : QString::number(other_id)));
+                emit text_message(QString("TCAS T A : %1 -> %2").arg(AircraftManager::get()->getAircraft(ac_id) ? AircraftManager::get()->getAircraft(ac_id)->speechName() : ac_id, AircraftManager::get()->getAircraft(QString::number(other_id)) ? AircraftManager::get()->getAircraft(QString::number(other_id))->speechName() : QString::number(other_id)));
             } catch(...) {}
         }
     });
@@ -99,7 +99,7 @@ AircraftStatus::AircraftStatus(QString ac_id, QObject *parent) : QObject(parent)
                 if (resolve == 1) resolve_str = "LEVEL";
                 else if (resolve == 2) resolve_str = "CLIMB";
                 else if (resolve == 3) resolve_str = "DESCEND";
-                emit text_message(QString("TCAS RA : %1 -> %2 %3").arg(AircraftManager::get()->getAircraft(ac_id) ? AircraftManager::get()->getAircraft(ac_id)->speechName() : ac_id, AircraftManager::get()->getAircraft(QString::number(other_id)) ? AircraftManager::get()->getAircraft(QString::number(other_id))->speechName() : QString::number(other_id), resolve_str));
+                emit text_message(QString("TCAS R A : %1 -> %2 %3").arg(AircraftManager::get()->getAircraft(ac_id) ? AircraftManager::get()->getAircraft(ac_id)->speechName() : ac_id, AircraftManager::get()->getAircraft(QString::number(other_id)) ? AircraftManager::get()->getAircraft(QString::number(other_id))->speechName() : QString::number(other_id), resolve_str));
             } catch(...) {}
         }
     });

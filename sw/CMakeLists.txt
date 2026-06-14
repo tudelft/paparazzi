@@ -5,7 +5,7 @@ project(PaparazziQtSuperBuild LANGUAGES C CXX)
 # Aggregating ("super") build for every native Qt6/C++ ground-segment & tool
 # application shipped with Paparazzi:
 #
-#     ground_segment/cockpit_qt   -> gcs       (equinoxgcs target)
+#     ground_segment/cockpit_qt   -> gcs (or ground_segment/PprzGCS if you prefer)
 #     ground_segment/tmtc         -> messages
 #     logalizer                   -> plotter, logplotter, play
 #     simulator                   -> gaia

@@ -382,6 +382,17 @@
         <arg flag="--ac_id" constant="239"/>
       </program>
     </session>
+    <session name="OUAS Replay All New QT">
+      <program name="Log File Player"/>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag=""/>
+      </program>
+    </session>
     <session name="OUAS Replay flight">
       <program name="Log Plotter"/>
       <program name="Log File Player"/>
@@ -793,17 +804,6 @@
         <arg flag="-zoom" constant="0.5"/>
         <arg flag="-no_confirm_kill"/>
         <arg flag="-srtm"/>
-      </program>
-    </session>
-    <session name="OUAS Replay All New QT">
-      <program name="Log File Player"/>
-      <program name="Server">
-        <arg flag="-n"/>
-      </program>
-      <program name="Messages"/>
-      <program name="Real-time Plotter"/>
-      <program name="GCS Classic">
-        <arg flag=""/>
       </program>
     </session>
   </section>
