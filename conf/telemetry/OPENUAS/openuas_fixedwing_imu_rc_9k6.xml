@@ -35,7 +35,7 @@
       <message name="PAYLOAD"             period="0.9"/>
       <message name="AIR_DATA"            period="1.7"/>
       <message name="RANGEFINDER"         period="1.2"/>
-      <message name="UWB_SWARM"           period="0.9"/>
+      <!-- <message name="UWB_SWARM"           period="0.9"/> -->
     </mode>
     <mode name="minimal" key_press="m">
       <message name="ALIVE"               period="4.6"/>
@@ -94,7 +94,7 @@
     <mode name="debug_uwb" key_press="s">
       <message name="DL_VALUE"            period="0.5"/>
       <message name="ALIVE"               period="2.1"/>
-      <message name="UWB_SWARM"           period="0.9"/>
+      <!-- <message name="UWB_SWARM"           period="0.9"/> -->
     </mode>
     <mode name="debug_imu" key_press="i">
       <message name="ATTITUDE"            period="0.1"/>

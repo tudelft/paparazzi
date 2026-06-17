@@ -427,13 +427,13 @@
 
     <!-- For relative localization and minimal inter-aircraft communication, use this UWB Swarm module 
     together with the appropriate code running on the MCU of the attached UWB MiniTag PCB -->
-    <module name = "uwb_swarm" >
+    <!-- <module name = "uwb_swarm" >
       <configure name="UWB_SWARM_UART" value="UART5"/>
-      <configure name="UWB_SWARM_BAUD" value="B115200"/>
+      <configure name="UWB_SWARM_BAUD" value="B115200"/> -->
       <!-- <configure name="UWB_SWARM_LED" value="3"/> -->
       <!--<configure name="UWB_SWARM_DYNAMIC_ADDRESS" value="TRUE"/>-->
       <!--<define name="UWB_SWARM_DYNAMIC_ADDRESS" value="TRUE"/>-->
-    </module>
+    <!-- </module> -->
 
     <!-- WIP module multrawidebandcontroller not finished yet -->
     <!-- <module name = "multrawidebandcontroller"> -->
