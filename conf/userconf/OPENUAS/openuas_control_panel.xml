@@ -14,7 +14,7 @@
     </program>
     <program name="UnifiedMoCap" command="sw/ext/unifiedmocaprouter/build/mocap-router"/>
     <program name="Link Combiner" command="sw/ground_segment/python/redundant_link/link_combiner.py"/>
-    <program name="GCS" command="sw/ground_segment/cockpit/gcs">
+    <program name="GCS" command="sw/ground_segment/cockpit/pprzgcs">
       <arg flag="-speech"/>
     </program>
     <program name="Flight Plan Editor" command="sw/ground_segment/cockpit/gcs">
@@ -54,10 +54,10 @@
       <arg flag="-fbw" variable="fbw_serial_port"/>
       <arg flag="-ap" variable="ap_serial_port"/>
     </program>
-    <program name="GCS Classic" command="sw/ground_segment/cockpit_qt/gcs">
+    <program name="GCS Classic" command="sw/ground_segment/cockpit/pprzgcs --layout classic_layout.xml">
       <arg flag="--speech"/>
     </program>
-    <program name="Messages QT" command="sw/ground_segment/messages_qt/messages_qt"/>
+    <program name="Messages QT" command="sw/ground_segment/tmtc/messages"/>
   </section>
   <section name="sessions">
     <session name="Accelo only Debug Graphs">
@@ -428,7 +428,7 @@
       <program name="Messages"/>
       <program name="Real-time Plotter"/>
       <program name="GCS Classic">
-        <arg flag="--speech"/>
+        <arg flag="--maximize"/>
       </program>
       <program name="Simulator">
         <arg flag="-t" constant="sim"/>

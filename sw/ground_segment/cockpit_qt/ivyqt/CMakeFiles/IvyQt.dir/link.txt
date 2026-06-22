@@ -1,2 +1,0 @@
-/usr/bin/ar qc libIvyQt.a CMakeFiles/IvyQt.dir/IvyQt_autogen/mocs_compilation.cpp.o CMakeFiles/IvyQt.dir/src/ivyqt.cpp.o CMakeFiles/IvyQt.dir/src/peer.cpp.o
-/usr/bin/ranlib libIvyQt.a

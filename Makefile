@@ -107,9 +107,21 @@ MAVLINK_PROTOCOL_H=$(MAVLINK_DIR)protocol.h
 
 GEN_HEADERS = $(UBX_PROTOCOL_H) $(MTK_PROTOCOL_H) $(XSENS_PROTOCOL_H) $(ABI_MESSAGES_H)
 
+# Wall-clock build timer: capture the start time once when this Makefile is read
+# (the very beginning of the make invocation) and report the total elapsed time
+# at the end of a full build. pprz_report_build_time is appended to the recipes
+# of the top-level build targets (core / all / ground_segment.opt) so it runs
+# only after every prerequisite has finished, and exactly once per invocation.
+PPRZ_BUILD_START := $(shell date +%s)
+define pprz_report_build_time
+@echo "Building took $$(($$(date +%s) - $(PPRZ_BUILD_START))) seconds."
+endef
+
 core: ground_segment ext subdirs_extra
+	$(pprz_report_build_time)
 
 all: ground_segment ext subdirs_extra $(MAVLINK_PROTOCOL_H)
+	$(pprz_report_build_time)
 
 _print_building:
 	@echo "------------------------------------------------------------"
@@ -138,6 +150,7 @@ conf/tools/blacklisted: conf/tools/blacklisted_example
 
 ground_segment: _print_building conf libpprz subdirs static
 ground_segment.opt: ground_segment cockpit.opt tmtc.opt
+	$(pprz_report_build_time)
 
 static: cockpit tmtc generators sim_static joystick static_h
 
@@ -150,11 +163,28 @@ libpprzlink.install:
 libpprz: libpprzlink.update libpprzlink.install _save_build_version
 	$(MAKE) -C $(LIB)/ocaml
 	
+# Message printed when the GCS source is not present. Kept on a single line (no
+# embedded newlines) so it expands cleanly inside the recipe shell-if below;
+# printf prints each quoted argument on its own line.
+COCKPIT_MISSING_MSG = printf '%s\n' "" "------------------------------------------------------------" "No '$(COCKPIT)' found -- skipping the GCS (cockpit) build." "Make a symlink to your PprzGCS source code if you want to compile a GCS, e.g.:" "    cd $(dir $(COCKPIT)) && ln -s yourpprzgcssourcedir cockpit" "------------------------------------------------------------" ""
+
+# The cockpit is normally a symlink to an external PprzGCS checkout. It is
+# optional: if the directory is missing the build must NOT fail -- print how to
+# add it and continue. ([ -d ] follows the symlink, so a dangling or absent link
+# both take the skip branch.)
 cockpit: libpprz
-	$(MAKE) -C $(COCKPIT)
+	$(Q)if [ -d $(COCKPIT) ]; then \
+		$(MAKE) -C $(COCKPIT) ISCOCKPIT=1 COCKPIT_SRC=$(abspath $(COCKPIT)); \
+	else \
+		$(COCKPIT_MISSING_MSG); \
+	fi
 
 cockpit.opt: libpprz
-	$(MAKE) -C $(COCKPIT) opt
+	$(Q)if [ -d $(COCKPIT) ]; then \
+		$(MAKE) -C $(COCKPIT) ISCOCKPIT=1 COCKPIT_SRC=$(abspath $(COCKPIT)) opt; \
+	else \
+		$(COCKPIT_MISSING_MSG); \
+	fi
 
 tmtc: libpprz
 	$(MAKE) -C $(TMTC)

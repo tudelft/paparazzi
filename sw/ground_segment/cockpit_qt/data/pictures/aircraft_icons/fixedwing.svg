@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-500 -500 1000 1000" width="1000" height="1000">
-  <g stroke="black" stroke-width="80" fill="white" pprz="ac_color" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="0.0,-60.0 0.0,140.0" pprz="ac_color" fill="white" />
-    <polyline points="-90.0,0.0 90.0,0.0" pprz="ac_color" fill="white" />
-    <polyline points="-40.0,100.0 40.0,100.0" pprz="ac_color" fill="white" />
-  </g>
-</svg>

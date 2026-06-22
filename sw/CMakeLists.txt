@@ -2,13 +2,16 @@ cmake_minimum_required(VERSION 3.16)
 project(PaparazziQtSuperBuild LANGUAGES C CXX)
 
 # ---------------------------------------------------------------------------
-# Aggregating ("super") build for every native Qt6/C++ ground-segment & tool
-# application shipped with Paparazzi:
+# Aggregating ("super") build for the native Qt6/C++ ground-segment & tool
+# applications shipped with Paparazzi:
 #
-#     ground_segment/cockpit_qt   -> gcs (or ground_segment/PprzGCS if you prefer)
 #     ground_segment/tmtc         -> messages
 #     logalizer                   -> plotter, logplotter, play
 #     simulator                   -> gaia
+#
+# (The GCS "cockpit" application is NOT part of this super-build: it is built
+# separately from sw/ground_segment/cockpit via the top-level `make cockpit`,
+# which reuses the same shared sw/ext Qt libraries.)
 #
 # This file lives at the root of the source tree it governs (sw/), which is the
 # idiomatic CMake layout: every add_subdirectory() below is a plain, in-tree
@@ -21,7 +24,7 @@ project(PaparazziQtSuperBuild LANGUAGES C CXX)
 # directly, e.g.:
 #
 #     cmake -B var/build_qt -S sw -G Ninja -DCMAKE_BUILD_TYPE=Release
-#     cmake --build var/build_qt --target gcs messages gaia plotter logplotter play
+#     cmake --build var/build_qt --target messages gaia plotter logplotter play
 # ---------------------------------------------------------------------------
 
 set(CMAKE_CXX_STANDARD 17)
@@ -52,9 +55,23 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Xml Network Svg Charts)
 
-# One central PprzlinkQt compilation (this also builds the IvyQt library that
-# pprzlinkQt depends on).
-add_subdirectory(ground_segment/cockpit_qt/ext/pprzlinkQt ${CMAKE_BINARY_DIR}/pprzlinkqt)
+# One central compilation of the shared Qt link libraries, taken from the
+# Paparazzi sw/ext tree. ivy-qt (the IvyQt target) is added FIRST so that
+# pprzlink-qt (the pprzlinkQt target) reuses that single shared IvyQt rather
+# than its own bundled copy -- pprzlink-qt's CMakeLists guards the bundled one
+# with if(NOT TARGET IvyQt). Every consumer below links these compiled-once
+# targets.
+add_subdirectory(ext/ivy-qt      ${CMAKE_BINARY_DIR}/ivyqt)
+add_subdirectory(ext/pprzlink-qt ${CMAKE_BINARY_DIR}/pprzlinkqt)
+
+# The shared libraries are pinned upstream sources that must not be edited;
+# silence diagnostics emitted while compiling their own translation units so the
+# super-build stays clean.
+foreach(_shared_lib pprzlinkQt IvyQt)
+    if(TARGET ${_shared_lib})
+        target_compile_options(${_shared_lib} PRIVATE -w)
+    endif()
+endforeach()
 
 # ---------------------------------------------------------------------------
 # logalizer tools: plotter, logplotter, play
@@ -101,5 +118,4 @@ target_link_libraries(play       PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Xm
 # $(QT_BUILD_DIR)/<name>/ regardless of where its sources live under sw/.
 # ---------------------------------------------------------------------------
 add_subdirectory(ground_segment/tmtc tmtc)
-add_subdirectory(ground_segment/cockpit_qt cockpit_qt)
 add_subdirectory(simulator simulator)
