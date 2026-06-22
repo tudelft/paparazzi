@@ -49,29 +49,41 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
     add_compile_options($<$<CONFIG:Release>:-march=native>)
 endif()
 
+# ---------------------------------------------------------------------------
+# Faster linking: prefer mold, then lld, otherwise fall back to the default
+# system linker. check_linker_flag() actually try-links a test program with the
+# flag, so a linker is selected only when it is installed AND accepted by the
+# active compiler -- this whole block is a safe no-op when neither is present.
+# Set at directory scope so every target defined here, and every
+# add_subdirectory() child added below (tmtc, simulator), inherits it.
+# ---------------------------------------------------------------------------
+if(NOT CMAKE_VERSION VERSION_LESS 3.18)
+    include(CheckLinkerFlag)
+    foreach(_pprz_linker mold lld)
+        check_linker_flag(CXX "-fuse-ld=${_pprz_linker}" PPRZ_HAVE_LD_${_pprz_linker})
+        if(PPRZ_HAVE_LD_${_pprz_linker})
+            add_link_options(-fuse-ld=${_pprz_linker})
+            message(STATUS "Faster linker enabled: -fuse-ld=${_pprz_linker}")
+            break()
+        endif()
+    endforeach()
+endif()
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Xml Network Svg Charts)
 
-# One central compilation of the shared Qt link libraries, taken from the
-# Paparazzi sw/ext tree. ivy-qt (the IvyQt target) is added FIRST so that
-# pprzlink-qt (the pprzlinkQt target) reuses that single shared IvyQt rather
-# than its own bundled copy -- pprzlink-qt's CMakeLists guards the bundled one
-# with if(NOT TARGET IvyQt). Every consumer below links these compiled-once
-# targets.
-add_subdirectory(ext/ivy-qt      ${CMAKE_BINARY_DIR}/ivyqt)
-add_subdirectory(ext/pprzlink-qt ${CMAKE_BINARY_DIR}/pprzlinkqt)
-
-# The shared libraries are pinned upstream sources that must not be edited;
-# silence diagnostics emitted while compiling their own translation units so the
-# super-build stays clean.
-foreach(_shared_lib pprzlinkQt IvyQt)
-    if(TARGET ${_shared_lib})
-        target_compile_options(${_shared_lib} PRIVATE -w)
-    endif()
-endforeach()
+# One central compilation of the shared Qt link libraries (IvyQt + pprzlinkQt),
+# taken from the Paparazzi sw/ext tree. The helper provides IvyQt from the
+# standalone sw/ext/ivy-qt and builds pprzlinkQt directly from the
+# sw/ext/pprzlink-qt sources, deliberately bypassing pprzlink-qt's own
+# CMakeLists (which hard-codes an add_subdirectory() of its bundled, soon-to-be
+# removed nested IvyQt submodule). Both targets are created once and silenced of
+# upstream warnings inside the helper; every consumer below links them.
+include(${CMAKE_CURRENT_SOURCE_DIR}/ext/pprzlinkqt.cmake)
+pprz_provide_qt_link_libraries()
 
 # ---------------------------------------------------------------------------
 # logalizer tools: plotter, logplotter, play
@@ -91,10 +103,10 @@ foreach(app plotter logplotter play)
     )
     target_include_directories(${app} PRIVATE logalizer ground_segment)
     target_compile_options(${app} PRIVATE
-        $<$<CONFIG:Release>:-O2 -DNDEBUG -fdata-sections -ffunction-sections -flto -g0>
+        $<$<CONFIG:Release>:-O2 -DNDEBUG -fdata-sections -ffunction-sections -flto=auto -g0>
     )
     target_link_options(${app} PRIVATE
-        $<$<CONFIG:Release>:-Wl,--gc-sections -Wl,-O1 -Wl,-s -flto>
+        $<$<CONFIG:Release>:-Wl,--gc-sections -Wl,-O1 -Wl,-s -flto=auto>
     )
     set_target_properties(${app} PROPERTIES
         INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE

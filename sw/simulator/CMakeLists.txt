@@ -25,10 +25,10 @@ add_executable(gaia ${SRC_FILES})
 target_include_directories(gaia PRIVATE .)
 
 target_compile_options(gaia PRIVATE
-  $<$<CONFIG:Release>:-O2 -DNDEBUG -fdata-sections -ffunction-sections -flto -g0>
+  $<$<CONFIG:Release>:-O2 -DNDEBUG -fdata-sections -ffunction-sections -flto=auto -g0>
 )
 target_link_options(gaia PRIVATE
-  $<$<CONFIG:Release>:-Wl,--gc-sections -Wl,-O1 -Wl,-s -flto>
+  $<$<CONFIG:Release>:-Wl,--gc-sections -Wl,-O1 -Wl,-s -flto=auto>
 )
 
 set_target_properties(gaia PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)

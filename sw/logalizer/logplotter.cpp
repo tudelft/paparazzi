@@ -27,7 +27,7 @@
 
 // Include the widgets you want to target for color changes
 #include <QPlainTextEdit>
-// #include <QTextEdit>    <-- Uncomment if you also want to target QTextEdit
+#include <QTextEdit>  //  <-- Uncomment if you also want to target QTextEdit
 // #include <QAbstractSpinBox> <-- Uncomment if you also want to target SpinBoxes
 
 #include <unistd.h>

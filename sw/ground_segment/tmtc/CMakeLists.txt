@@ -34,10 +34,10 @@ set(SRC_FILES
 add_executable(messages ${SRC_FILES})
 
 target_compile_options(messages PRIVATE
-  $<$<CONFIG:Release>:-O2 -DNDEBUG -fdata-sections -ffunction-sections -flto -g0>
+  $<$<CONFIG:Release>:-O2 -DNDEBUG -fdata-sections -ffunction-sections -flto=auto -g0>
 )
 target_link_options(messages PRIVATE
-  $<$<CONFIG:Release>:-Wl,-O1 -Wl,-s -flto>
+  $<$<CONFIG:Release>:-Wl,-O1 -Wl,-s -flto=auto>
 )
 
 # Enable link-time optimization for the Release configuration.
